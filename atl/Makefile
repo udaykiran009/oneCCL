@@ -30,12 +30,12 @@ endif
 
 default: $(TARGET)
 
-$(TARGET): $(ATL_OFI_TARGET)
+$(TARGET):
 	$(CC) $(CFLAGS) -c atl.c
 	ar -cvq $(TARGET).a atl.o
 	$(CC) $(CFLAGS) -shared -Wl,-soname,$(TARGET).so.1 -o $(TARGET).so.1.0 *.o $(LDFLAGS)
 
-$(ATL_OFI_TARGET):
+$(ATL_OFI_TARGET): $(TARGET)
 	cd $(ATL_OFI_DIR) && $(MAKE) CC="$(CC)" EXTRA_CFLAGS="$(EXTRA_CFLAGS)" EXTRA_LDFLAGS="$(EXTRA_LDFLAGS)" \
 	                             ENABLE_DEBUG=$(ENABLE_DEBUG) USE_SECURITY_FLAGS=$(USE_SECURITY_FLAGS) \
 	                             libmlsl_atl_ofi
