@@ -1,0 +1,25 @@
+MLSL_YEAR                   = 2018
+MLSL_MAJOR_VERSION          = 2018
+MLSL_MINOR_VERSION          = 1
+MLSL_PACKAGE_ID             = 005
+MLSL_FULL_VERSION           = $(MLSL_MAJOR_VERSION).$(MLSL_MINOR_VERSION).$(MLSL_PACKAGE_ID)
+# Examples: "2017 Beta", "2017", "2017 Update 1"
+ifeq (true, $(shell git rev-parse --is-inside-work-tree 2>/dev/null))
+    MLSL_GIT_VERSION        = `git log --pretty=format:"%h" -1`
+else
+    MLSL_GIT_VERSION        = UNKNOWN
+endif
+MLSL_OFFICIAL_VERSION       = $(MLSL_MAJOR_VERSION) Update 1 Preview
+MLSL_COPYRIGHT_YEAR         = `date +%Y`
+MLSL_PRODUCT_PREFIX         = l_mlsl_p
+MLSL_PRODUCT_GROUP_NAME     = $(MLSL_PRODUCT_PREFIX)_$(MLSL_MAJOR_VERSION)
+MLSL_PRODUCT_NAME           = $(MLSL_PRODUCT_PREFIX)_$(MLSL_FULL_VERSION)
+MLSL_RPM_PREFIX_NAME        = intel-mlsl-devel-64
+MLSL_DEB_PREFIX_NAME        = $(MLSL_RPM_PREFIX_NAME)
+MLSL_ARCHIVE_PREFIX         = l_mlsl_$(MLSL_FULL_VERSION)
+MLSL_ARCHIVE_SUFFIX         ?=
+MLSL_ARCHIVE_NAME           = $(MLSL_ARCHIVE_PREFIX)$(MLSL_ARCHIVE_SUFFIX).tgz
+LIBMLSL_SONAME              = libmlsl.so.1
+LIBMLSL_SO_FILENAME         = libmlsl.so.1.0
+SIGNTOOL_DIR                = /p/pdsd/opt/tools/sign_tool
+SIGNFILE_PATH               = $(SIGNTOOL_DIR)/SignFile
