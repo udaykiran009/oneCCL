@@ -14,15 +14,15 @@
 	((type *) ((char *)ptr - offsetof(type, field)))
 #endif
 
-typedef enum atl_ret_val {
-    ATL_FAILURE = -1,
-    ATL_SUCCESS = 0,
-} atl_ret_val_t;
+typedef enum atl_status {
+    atl_status_success = 0,
+    atl_status_failure = 1,
+} atl_status_t;
 
 typedef struct atl_desc atl_desc_t;
 
 typedef struct atl_ops {
-    atl_ret_val_t (*finalize)(atl_desc_t *desc, atl_comm_t **comms);
+    atl_status_t (*finalize)(atl_desc_t *desc, atl_comm_t **comms);
 } atl_ops_t;
 
 struct atl_desc {
@@ -48,13 +48,13 @@ typedef struct atl_attr {
  */
 #define ATL_EXT_INI \
 __attribute__((visibility ("default"),EXTERNALLY_VISIBLE)) \
-atl_ret_val_t atl_ini(ARG_LIST)
+atl_status_t atl_ini(ARG_LIST)
 
 
 /* Provider initialization function signature that built-in providers
  * must specify. */
 #define INI_SIG(name)   \
-atl_ret_val_t name(ARG_LIST)
+atl_status_t name(ARG_LIST)
 
 /* for each provider defines for three scenarios:
  * dl: externally visible ctor with known name (see fi_prov.h)
@@ -78,9 +78,9 @@ static inline INI_SIG(atl_noop_init)
     return 0;
 }
 
-atl_ret_val_t atl_init(ARG_LIST);
+atl_status_t atl_init(ARG_LIST);
 
-static inline atl_ret_val_t atl_finalize(atl_desc_t *desc, atl_comm_t **comms)
+static inline atl_status_t atl_finalize(atl_desc_t *desc, atl_comm_t **comms)
 {
     return desc->ops->finalize(desc, comms);
 }

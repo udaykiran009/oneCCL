@@ -33,7 +33,7 @@
 #define ATL_OFI_PM_KEY "atl-ofi"
 
 /* OFI returns 0 or -errno */
-#define RET2ATL(ret) ((ret) ? ATL_FAILURE : ATL_SUCCESS)
+#define RET2ATL(ret) ((ret) ? atl_status_failure : atl_status_success)
 
 typedef struct atl_ofi_context {
     atl_desc_t atl_desc;
@@ -69,7 +69,7 @@ typedef struct atl_ofi_comm_context {
     atl_ofi_comm_name_t *name;
 } atl_ofi_comm_context_t;
 
-static atl_ret_val_t
+static atl_status_t
 atl_ofi_comms_connect(atl_ofi_context_t *atl_ofi_context,
                       atl_comm_t **comms, size_t comm_count)
 {
@@ -86,7 +86,7 @@ atl_ofi_comms_connect(atl_ofi_context_t *atl_ofi_context,
                         atl_ofi_context->proc_count;
     epnames_table = (char *)calloc(1, epnames_table_len);
     if (!epnames_table)
-        return ATL_FAILURE;
+        return atl_status_failure;
 
     for (i = 0; i < atl_ofi_context->addr_table.ep_num; i++) {
         atl_ofi_comm_context_t *comm_context =
@@ -129,7 +129,7 @@ atl_ofi_comms_connect(atl_ofi_context_t *atl_ofi_context,
                        atl_ofi_context->proc_count,
                        atl_ofi_context->addr_table.table, 0, NULL);
     if (ret != atl_ofi_context->proc_count) {
-        ret = ATL_FAILURE;
+        ret = atl_status_failure;
         goto err_addr_table;
     }
 
@@ -146,7 +146,7 @@ err_ep_names:
     return RET2ATL(ret);
 }
 
-static atl_ret_val_t atl_ofi_comms_destroy_conns(atl_ofi_context_t *atl_ofi_context)
+static atl_status_t atl_ofi_comms_destroy_conns(atl_ofi_context_t *atl_ofi_context)
 {
     int ret;
 
@@ -162,14 +162,14 @@ static atl_ret_val_t atl_ofi_comms_destroy_conns(atl_ofi_context_t *atl_ofi_cont
     return RET2ATL(ret);
 }
 
-static atl_ret_val_t
+static atl_status_t
 atl_ofi_comm_get_epname(struct fid_ep *ep, atl_ofi_comm_name_t **name)
 {
     int ret;
 
     *name = calloc(1, sizeof(*name));
     if (!*name)
-        return ATL_FAILURE;
+        return atl_status_failure;
 
     ret = fi_getname(&ep->fid, (*name)->addr, &(*name)->len);
     if ((ret != -FI_ETOOSMALL) || ((*name)->len <= 0))
@@ -183,7 +183,7 @@ atl_ofi_comm_get_epname(struct fid_ep *ep, atl_ofi_comm_name_t **name)
     if (ret)
         goto err_getname;
 
-    return 0;
+    return atl_status_success;
 err_getname:
     free((*name)->addr);
     (*name)->len = 0;
@@ -266,7 +266,7 @@ static void atl_ofi_comms_destroy(atl_ofi_context_t *atl_ofi_context,
         fi_close(&atl_ofi_context->sep->fid);
 }
 
-static atl_ret_val_t atl_ofi_finalize(atl_desc_t *atl_desc, atl_comm_t **atl_comms)
+static atl_status_t atl_ofi_finalize(atl_desc_t *atl_desc, atl_comm_t **atl_comms)
 {
     int ret;
     atl_ofi_context_t *atl_ofi_context =
@@ -284,7 +284,7 @@ static atl_ret_val_t atl_ofi_finalize(atl_desc_t *atl_desc, atl_comm_t **atl_com
     return RET2ATL(ret);
 }
 
-static atl_ret_val_t
+static atl_status_t
 ofi_comm_ep_create(atl_ofi_context_t *atl_ofi_context,
                    atl_ofi_comm_context_t *atl_ofi_comm_context,
                    size_t index)
@@ -299,7 +299,7 @@ ofi_comm_ep_create(atl_ofi_context_t *atl_ofi_context,
     ret = fi_cq_open(atl_ofi_context->domain, &cq_attr,
                      &atl_ofi_comm_context->cq, NULL);
     if (ret)
-        return ATL_FAILURE;
+        return atl_status_failure;
 
     if (atl_ofi_context->sep) {
         rx_attr = *atl_ofi_context->prov->rx_attr;
@@ -350,7 +350,7 @@ ofi_comm_ep_create(atl_ofi_context_t *atl_ofi_context,
             goto err;
     }
 
-    return 0;
+    return atl_status_success;
 err:
     ofi_comm_ep_destroy(atl_ofi_context, atl_ofi_comm_context);
     return RET2ATL(ret);
@@ -358,7 +358,7 @@ err:
 
 static atl_pt2pt_ops_t atl_ofi_comm_pt2pt_ops = { 0 };
 
-static atl_ret_val_t
+static atl_status_t
 atl_ofi_comm_init(atl_ofi_context_t *atl_ofi_context, atl_comm_attr_t *attr,
                   size_t index, atl_comm_t **comm)
 {
@@ -367,7 +367,7 @@ atl_ofi_comm_init(atl_ofi_context_t *atl_ofi_context, atl_comm_attr_t *attr,
 
     atl_ofi_comm_context = calloc(1, sizeof(*atl_ofi_comm_context));
     if (!atl_ofi_context)
-        return ATL_FAILURE;
+        return atl_status_failure;
 
     ret = ofi_comm_ep_create(atl_ofi_context, atl_ofi_comm_context, index);
     if (ret)
@@ -378,13 +378,13 @@ atl_ofi_comm_init(atl_ofi_context_t *atl_ofi_context, atl_comm_attr_t *attr,
     (*comm)->atl_desc = &atl_ofi_context->atl_desc;
     (*comm)->pt2pt = &atl_ofi_comm_pt2pt_ops;
 
-    return 0;
+    return atl_status_success;
 err_ep:
     free(atl_ofi_comm_context);
     return RET2ATL(ret);
 }
 
-static atl_ret_val_t
+static atl_status_t
 atl_ofi_comms_init(atl_ofi_context_t *atl_ofi_context, size_t comm_count,
                    atl_comm_attr_t *attr, atl_comm_t ***comms)
 {
@@ -392,7 +392,7 @@ atl_ofi_comms_init(atl_ofi_context_t *atl_ofi_context, size_t comm_count,
 
     *comms = calloc(1, sizeof(**comms) * comm_count);
     if (!*comms)
-        return ATL_FAILURE;
+        return atl_status_failure;
 
     if (atl_ofi_context->prov->domain_attr->max_ep_tx_ctx > 1) {
         ret = fi_scalable_ep(atl_ofi_context->domain, atl_ofi_context->prov,
@@ -428,7 +428,7 @@ atl_ofi_comms_init(atl_ofi_context_t *atl_ofi_context, size_t comm_count,
     if (ret)
         goto err_comm;
 
-    return 0;
+    return atl_status_success;
 err_comm:
     if (atl_ofi_context->sep)
         fi_close(&atl_ofi_context->sep->fid);
@@ -457,7 +457,7 @@ ATL_OFI_INI
 
     atl_ofi_context = calloc(1, sizeof(*atl_ofi_context));
     if (!atl_ofi_context)
-        return ATL_FAILURE;
+        return atl_status_failure;
 
     ret = pmrt_init(proc_idx, proc_count, &atl_ofi_context->pm_rt);
     if (ret)
@@ -511,7 +511,7 @@ ATL_OFI_INI
     atl_ofi_context->atl_desc.ops = &atl_ofi_ops;
     *atl_desc = &atl_ofi_context->atl_desc;
 
-    return 0;
+    return atl_status_success;
 err_comms_init:
     fi_close(&atl_ofi_context->av->fid);
 err_av:

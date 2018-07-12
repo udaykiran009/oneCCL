@@ -15,24 +15,24 @@ typedef struct atl_req {
 
 typedef struct atl_comm atl_comm_t;
 
-typedef enum atl_ret_val atl_ret_val_t;
+typedef enum atl_status atl_status_t;
 
 typedef struct atl_pt2pt_ops {
     /* Non-blocking I/O vector pt2pt ops */
-    atl_ret_val_t (*sendv)(atl_comm_t *comm, const struct iovec *iov, size_t count,
+    atl_status_t (*sendv)(atl_comm_t *comm, const struct iovec *iov, size_t count,
                            uint64_t tag, atl_req_t *req);
-    atl_ret_val_t (*recvv)(atl_comm_t *comm, struct iovec *iov, size_t count,
+    atl_status_t (*recvv)(atl_comm_t *comm, struct iovec *iov, size_t count,
                            uint64_t tag, atl_req_t *req);
     /* Non-blocking pt2pt ops */
-    atl_ret_val_t (*send)(atl_comm_t *comm, const void *buf, size_t len,
+    atl_status_t (*send)(atl_comm_t *comm, const void *buf, size_t len,
                            uint64_t tag, atl_req_t *req);
-    atl_ret_val_t (*recv)(atl_comm_t *comm, void *buf, size_t len,
+    atl_status_t (*recv)(atl_comm_t *comm, void *buf, size_t len,
                           uint64_t tag, atl_req_t *req);
 
-    atl_ret_val_t (*wait)(atl_comm_t *comm, atl_req_t *req);
-    atl_ret_val_t (*wait_all)(atl_comm_t *comm, atl_req_t *reqs, size_t count);
+    atl_status_t (*wait)(atl_comm_t *comm, atl_req_t *req);
+    atl_status_t (*wait_all)(atl_comm_t *comm, atl_req_t *reqs, size_t count);
 
-    atl_ret_val_t (*test)(atl_comm_t *comm, int *status, atl_req_t *req);
+    atl_status_t (*test)(atl_comm_t *comm, int *status, atl_req_t *req);
 } atl_pt2pt_ops_t;
 
 struct atl_comm {
