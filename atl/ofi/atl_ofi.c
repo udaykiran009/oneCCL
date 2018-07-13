@@ -1,6 +1,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
+#include <assert.h>
 
 #include <rdma/fabric.h>
 #include <rdma/fi_cm.h>
@@ -9,11 +10,9 @@
 #include <rdma/fi_domain.h>
 #include <rdma/fi_tagged.h>
 
-#include "atl.h"
-
 #include "pm_rt.h"
 
-#define CACHELINE_SIZE	64
+#include "atl.h"
 
 #ifdef ENABLE_DEBUG
 #define ATL_OFI_DEBUG_PRINT(s, ...)                   \
@@ -33,7 +32,7 @@
 #define ATL_OFI_PM_KEY "atl-ofi"
 
 /* OFI returns 0 or -errno */
-#define RET2ATL(ret) ((ret) ? ATL_FAILURE : ATL_SUCCESS)
+#define RET2ATL(ret) ((ret) ? atl_status_failure : atl_status_success)
 
 typedef struct atl_ofi_context {
     atl_desc_t atl_desc;
@@ -69,7 +68,20 @@ typedef struct atl_ofi_comm_context {
     atl_ofi_comm_name_t *name;
 } atl_ofi_comm_context_t;
 
-static atl_ret_val_t
+typedef struct atl_ofi_req {
+    struct fi_context ofi_context;
+
+    atl_ofi_comm_context_t *comm;
+    int is_completed;
+} atl_ofi_req_t;
+
+static inline fi_addr_t
+atl_ofi_comm_atl_addr_2_fi_addr(atl_ofi_context_t *atl, size_t proc_idx, size_t ep_idx)
+{
+    return *(atl->addr_table.table + ((atl->addr_table.ep_num * proc_idx) + ep_idx));
+}
+
+static atl_status_t
 atl_ofi_comms_connect(atl_ofi_context_t *atl_ofi_context,
                       atl_comm_t **comms, size_t comm_count)
 {
@@ -86,7 +98,7 @@ atl_ofi_comms_connect(atl_ofi_context_t *atl_ofi_context,
                         atl_ofi_context->proc_count;
     epnames_table = (char *)calloc(1, epnames_table_len);
     if (!epnames_table)
-        return ATL_FAILURE;
+        return atl_status_failure;
 
     for (i = 0; i < atl_ofi_context->addr_table.ep_num; i++) {
         atl_ofi_comm_context_t *comm_context =
@@ -129,7 +141,7 @@ atl_ofi_comms_connect(atl_ofi_context_t *atl_ofi_context,
                        atl_ofi_context->proc_count,
                        atl_ofi_context->addr_table.table, 0, NULL);
     if (ret != atl_ofi_context->proc_count) {
-        ret = ATL_FAILURE;
+        ret = atl_status_failure;
         goto err_addr_table;
     }
 
@@ -146,7 +158,7 @@ err_ep_names:
     return RET2ATL(ret);
 }
 
-static atl_ret_val_t atl_ofi_comms_destroy_conns(atl_ofi_context_t *atl_ofi_context)
+static atl_status_t atl_ofi_comms_destroy_conns(atl_ofi_context_t *atl_ofi_context)
 {
     int ret;
 
@@ -162,14 +174,14 @@ static atl_ret_val_t atl_ofi_comms_destroy_conns(atl_ofi_context_t *atl_ofi_cont
     return RET2ATL(ret);
 }
 
-static atl_ret_val_t
+static atl_status_t
 atl_ofi_comm_get_epname(struct fid_ep *ep, atl_ofi_comm_name_t **name)
 {
     int ret;
 
     *name = calloc(1, sizeof(*name));
     if (!*name)
-        return ATL_FAILURE;
+        return atl_status_failure;
 
     ret = fi_getname(&ep->fid, (*name)->addr, &(*name)->len);
     if ((ret != -FI_ETOOSMALL) || ((*name)->len <= 0))
@@ -183,7 +195,7 @@ atl_ofi_comm_get_epname(struct fid_ep *ep, atl_ofi_comm_name_t **name)
     if (ret)
         goto err_getname;
 
-    return 0;
+    return atl_status_success;
 err_getname:
     free((*name)->addr);
     (*name)->len = 0;
@@ -266,7 +278,7 @@ static void atl_ofi_comms_destroy(atl_ofi_context_t *atl_ofi_context,
         fi_close(&atl_ofi_context->sep->fid);
 }
 
-static atl_ret_val_t atl_ofi_finalize(atl_desc_t *atl_desc, atl_comm_t **atl_comms)
+static atl_status_t atl_ofi_finalize(atl_desc_t *atl_desc, atl_comm_t **atl_comms)
 {
     int ret;
     atl_ofi_context_t *atl_ofi_context =
@@ -284,7 +296,7 @@ static atl_ret_val_t atl_ofi_finalize(atl_desc_t *atl_desc, atl_comm_t **atl_com
     return RET2ATL(ret);
 }
 
-static atl_ret_val_t
+static atl_status_t
 ofi_comm_ep_create(atl_ofi_context_t *atl_ofi_context,
                    atl_ofi_comm_context_t *atl_ofi_comm_context,
                    size_t index)
@@ -299,7 +311,7 @@ ofi_comm_ep_create(atl_ofi_context_t *atl_ofi_context,
     ret = fi_cq_open(atl_ofi_context->domain, &cq_attr,
                      &atl_ofi_comm_context->cq, NULL);
     if (ret)
-        return ATL_FAILURE;
+        return atl_status_failure;
 
     if (atl_ofi_context->sep) {
         rx_attr = *atl_ofi_context->prov->rx_attr;
@@ -350,15 +362,190 @@ ofi_comm_ep_create(atl_ofi_context_t *atl_ofi_context,
             goto err;
     }
 
-    return 0;
+    return atl_status_success;
 err:
     ofi_comm_ep_destroy(atl_ofi_context, atl_ofi_comm_context);
     return RET2ATL(ret);
 }
 
-static atl_pt2pt_ops_t atl_ofi_comm_pt2pt_ops = { 0 };
+/* Non-blocking I/O vector pt2pt ops */
+atl_status_t atl_ofi_comm_sendv(atl_comm_t *comm, const struct iovec *iov, size_t count,
+                                size_t dest_proc_idx, uint64_t tag, atl_req_t *req)
+{
+    atl_ofi_comm_context_t *comm_context =
+        container_of(comm, atl_ofi_comm_context_t, atl_comm);
+    atl_ofi_req_t *ofi_req = ((atl_ofi_req_t *)req->internal);
 
-static atl_ret_val_t
+    req->remote_proc_idx = dest_proc_idx;
+    req->tag = tag;
+    ofi_req->is_completed = 0;
+
+    return RET2ATL(fi_tsendv(comm_context->tx_ctx, iov, NULL, count,
+                             atl_ofi_comm_atl_addr_2_fi_addr(
+                                 container_of(comm->atl_desc,
+                                              atl_ofi_context_t,
+                                              atl_desc),
+                             dest_proc_idx, comm_context->idx),
+			     tag, &ofi_req->ofi_context));
+}
+
+atl_status_t atl_ofi_comm_recvv(atl_comm_t *comm, struct iovec *iov, size_t count,
+                                size_t src_proc_idx, uint64_t tag, atl_req_t *req)
+{
+    atl_ofi_comm_context_t *comm_context =
+        container_of(comm, atl_ofi_comm_context_t, atl_comm);
+    atl_ofi_req_t *ofi_req = ((atl_ofi_req_t *)req->internal);
+
+    req->remote_proc_idx = src_proc_idx;
+    req->tag = tag;
+    ofi_req->is_completed = 0;
+
+    return RET2ATL(fi_trecvv(comm_context->rx_ctx, iov, NULL, count,
+                             atl_ofi_comm_atl_addr_2_fi_addr(
+                                 container_of(comm->atl_desc,
+                                              atl_ofi_context_t,
+                                              atl_desc),
+                             src_proc_idx, comm_context->idx),
+                             tag, 0, &ofi_req->ofi_context));
+}
+
+/* Non-blocking pt2pt ops */
+atl_status_t atl_ofi_comm_send(atl_comm_t *comm, const void *buf, size_t len,
+                               size_t dest_proc_idx, uint64_t tag, atl_req_t *req)
+{
+    atl_ofi_comm_context_t *comm_context =
+        container_of(comm, atl_ofi_comm_context_t, atl_comm);
+    atl_ofi_req_t *ofi_req = ((atl_ofi_req_t *)req->internal);
+
+    req->remote_proc_idx = dest_proc_idx;
+    req->tag = tag;
+    ofi_req->is_completed = 0;
+
+    return RET2ATL(fi_tsend(comm_context->tx_ctx, buf, len, NULL,
+                            atl_ofi_comm_atl_addr_2_fi_addr(
+                                container_of(comm->atl_desc,
+                                             atl_ofi_context_t,
+                                             atl_desc),
+                            dest_proc_idx, comm_context->idx),
+			    tag, &ofi_req->ofi_context));
+}
+
+atl_status_t atl_ofi_comm_recv(atl_comm_t *comm, void *buf, size_t len,
+                               size_t src_proc_idx, uint64_t tag, atl_req_t *req)
+{
+    atl_ofi_comm_context_t *comm_context =
+        container_of(comm, atl_ofi_comm_context_t, atl_comm);
+    atl_ofi_req_t *ofi_req = ((atl_ofi_req_t *)req->internal);
+
+    req->remote_proc_idx = src_proc_idx;
+    req->tag = tag;
+    ofi_req->is_completed = 0;
+
+    return RET2ATL(fi_trecv(comm_context->rx_ctx, buf, len, NULL,
+                            atl_ofi_comm_atl_addr_2_fi_addr(
+                                container_of(comm->atl_desc,
+                                             atl_ofi_context_t,
+                                             atl_desc),
+                            src_proc_idx, comm_context->idx),
+                            tag, 0, &ofi_req->ofi_context));
+}
+
+atl_status_t atl_ofi_comm_wait(atl_comm_t *comm, atl_req_t *req)
+{
+    atl_ofi_comm_context_t *comm_context =
+        container_of(comm, atl_ofi_comm_context_t, atl_comm);
+    struct fi_cq_tagged_entry entry;
+    ssize_t ret;
+    atl_ofi_req_t *comp_ofi_req;
+    atl_ofi_req_t *ofi_req = ((atl_ofi_req_t *)req->internal);
+
+    if (ofi_req->is_completed)
+        return atl_status_success;
+
+    do {
+        ret = fi_cq_read(comm_context->cq, &entry, 1);
+        if ((ret < 0) && (ret != -FI_EAGAIN)) {
+            return atl_status_failure;
+        } else if (ret == 1) {
+            comp_ofi_req = container_of(entry.op_context, atl_ofi_req_t,
+                                        ofi_context);
+            assert(comp_ofi_req->is_completed == 0);
+            comp_ofi_req->is_completed = 1;
+
+            if (comp_ofi_req != ofi_req)
+                ret = 0;
+        }
+    } while (!ret);
+
+    return atl_status_success;
+}
+
+atl_status_t atl_ofi_comm_test(atl_comm_t *comm, int *status, atl_req_t *req)
+{
+    atl_ofi_comm_context_t *comm_context =
+        container_of(comm, atl_ofi_comm_context_t, atl_comm);
+    struct fi_cq_tagged_entry entry;
+    ssize_t ret;
+    atl_ofi_req_t *comp_ofi_req;
+    atl_ofi_req_t *ofi_req = ((atl_ofi_req_t *)req->internal);
+
+    if (ofi_req->is_completed) {
+        *status = ofi_req->is_completed;
+        return atl_status_success;
+    }
+
+    ret = fi_cq_read(comm_context->cq, &entry, 1);
+    if ((ret < 0) && (ret != -FI_EAGAIN)) {
+        return atl_status_failure;
+    } else if (ret == 1) {
+        comp_ofi_req = container_of(entry.op_context, atl_ofi_req_t,
+                                    ofi_context);
+        comp_ofi_req->is_completed = 1;
+
+        if (comp_ofi_req != ofi_req)
+            *status = 0;
+        else
+            *status = comp_ofi_req->is_completed;
+    }
+
+    return atl_status_success;
+}
+
+atl_status_t atl_ofi_comm_wait_all(atl_comm_t *comm, atl_req_t *reqs, size_t count)
+{
+    size_t comp_count = 0, i = 0;
+    atl_status_t ret = atl_status_success;
+    int comp_status;
+
+    do {
+        atl_ofi_req_t *ofi_req = ((atl_ofi_req_t *)reqs[i].internal);
+
+        if (!ofi_req->is_completed) {
+            ret = atl_ofi_comm_test(comm, &comp_status, &reqs[i]);
+            if (comp_status)
+                comp_count++;
+        }
+        if (++i > count)
+            i = 0;
+    } while ((comp_count != count) && (ret == atl_status_success));
+
+    return ret;
+}
+
+static atl_pt2pt_ops_t atl_ofi_comm_pt2pt_ops = {
+    .sendv = atl_ofi_comm_sendv,
+    .recvv = atl_ofi_comm_recvv,
+    .send = atl_ofi_comm_send,
+    .recv = atl_ofi_comm_recv,
+};
+
+static atl_comp_ops_t atl_ofi_comm_comp_ops = {
+    .wait = atl_ofi_comm_wait,
+    .wait_all = atl_ofi_comm_wait_all,
+    .test = atl_ofi_comm_test,
+};
+
+static atl_status_t
 atl_ofi_comm_init(atl_ofi_context_t *atl_ofi_context, atl_comm_attr_t *attr,
                   size_t index, atl_comm_t **comm)
 {
@@ -367,7 +554,7 @@ atl_ofi_comm_init(atl_ofi_context_t *atl_ofi_context, atl_comm_attr_t *attr,
 
     atl_ofi_comm_context = calloc(1, sizeof(*atl_ofi_comm_context));
     if (!atl_ofi_context)
-        return ATL_FAILURE;
+        return atl_status_failure;
 
     ret = ofi_comm_ep_create(atl_ofi_context, atl_ofi_comm_context, index);
     if (ret)
@@ -376,15 +563,16 @@ atl_ofi_comm_init(atl_ofi_context_t *atl_ofi_context, atl_comm_attr_t *attr,
     atl_ofi_comm_context->idx = index;
     *comm = &atl_ofi_comm_context->atl_comm;
     (*comm)->atl_desc = &atl_ofi_context->atl_desc;
-    (*comm)->pt2pt = &atl_ofi_comm_pt2pt_ops;
+    (*comm)->pt2pt_ops = &atl_ofi_comm_pt2pt_ops;
+    (*comm)->comp_ops = &atl_ofi_comm_comp_ops;
 
-    return 0;
+    return atl_status_success;
 err_ep:
     free(atl_ofi_comm_context);
     return RET2ATL(ret);
 }
 
-static atl_ret_val_t
+static atl_status_t
 atl_ofi_comms_init(atl_ofi_context_t *atl_ofi_context, size_t comm_count,
                    atl_comm_attr_t *attr, atl_comm_t ***comms)
 {
@@ -392,7 +580,7 @@ atl_ofi_comms_init(atl_ofi_context_t *atl_ofi_context, size_t comm_count,
 
     *comms = calloc(1, sizeof(**comms) * comm_count);
     if (!*comms)
-        return ATL_FAILURE;
+        return atl_status_failure;
 
     if (atl_ofi_context->prov->domain_attr->max_ep_tx_ctx > 1) {
         ret = fi_scalable_ep(atl_ofi_context->domain, atl_ofi_context->prov,
@@ -428,7 +616,7 @@ atl_ofi_comms_init(atl_ofi_context_t *atl_ofi_context, size_t comm_count,
     if (ret)
         goto err_comm;
 
-    return 0;
+    return atl_status_success;
 err_comm:
     if (atl_ofi_context->sep)
         fi_close(&atl_ofi_context->sep->fid);
@@ -455,9 +643,11 @@ ATL_OFI_INI
     int fi_version, ret;
     atl_ofi_context_t *atl_ofi_context;
 
+    assert(sizeof(atl_ofi_req_t) <= sizeof(offsetof(atl_req_t, internal)));
+
     atl_ofi_context = calloc(1, sizeof(*atl_ofi_context));
     if (!atl_ofi_context)
-        return ATL_FAILURE;
+        return atl_status_failure;
 
     ret = pmrt_init(proc_idx, proc_count, &atl_ofi_context->pm_rt);
     if (ret)
@@ -511,7 +701,7 @@ ATL_OFI_INI
     atl_ofi_context->atl_desc.ops = &atl_ofi_ops;
     *atl_desc = &atl_ofi_context->atl_desc;
 
-    return 0;
+    return atl_status_success;
 err_comms_init:
     fi_close(&atl_ofi_context->av->fid);
 err_av:

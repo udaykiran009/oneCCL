@@ -35,7 +35,7 @@ OFI_LDFLAGS = $(LDFLAGS) -L$(OFILIB_DIR)/lib -lfabric
 default: $(TARGET)
 
 $(TARGET): pmi_rt
-	$(CC) $(OFI_CFLAGS) -c ofi_atl.c
+	$(CC) $(OFI_CFLAGS) -c atl_ofi.c
 	$(CC) $(PMI_CFLAGS) -c pmi_rt.c
 	ar -cvq $(TARGET).a pmi_rt.o
 	$(CC) $(PMI_CFLAGS) $(OFI_CFLAGS) -shared -Wl,-soname,$(TARGET).so.1 -o $(TARGET).so.1.0 *.o \
