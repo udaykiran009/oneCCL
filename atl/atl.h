@@ -7,7 +7,7 @@
 
 // TODO: remove:
 #define HAVE_OFI    1
-#define HAVE_OFI_DL 0
+#define HAVE_OFI_DL 1
 #define HAVE_MPI    0
 #define HAVE_MPI_DL 0
 
@@ -29,14 +29,6 @@ typedef enum {
 typedef struct atl_desc atl_desc_t;
 typedef struct atl_comm atl_comm_t;
 
-typedef struct atl_ops {
-    atl_status_t (*finalize)(atl_desc_t *desc, atl_comm_t **comms);
-} atl_ops_t;
-
-struct atl_desc {
-    atl_ops_t *ops;
-};
-
 typedef struct atl_comm_attr {
 } atl_comm_attr_t;
 
@@ -44,6 +36,20 @@ typedef struct atl_attr {
     size_t comm_count;
     atl_comm_attr_t comm_attr;
 } atl_attr_t;
+
+typedef struct atl_ops {    
+    atl_status_t (*finalize)(atl_desc_t *desc, atl_comm_t **comms);
+} atl_ops_t;
+
+struct atl_desc {
+    atl_ops_t *ops;
+};
+
+typedef struct atl_transport {
+    const char *name;
+    atl_status_t (*init)(int *argc, char ***argv, size_t *proc_idx, size_t *proc_count,
+                         atl_attr_t *attr, atl_comm_t ***atl_comms, atl_desc_t **atl_desc);
+} atl_transport_t;
 
 typedef struct atl_req {
     uint64_t tag;
@@ -77,30 +83,22 @@ struct atl_comm {
     atl_comp_ops_t *comp_ops;
 };
 
-#define ARG_LIST                          \
-    int *argc, char ***argv,              \
-    size_t *proc_idx, size_t *proc_count, \
-    atl_attr_t *attr,                     \
-    atl_comm_t ***atl_comms,              \
-    atl_desc_t **atl_desc
-
 /*
- * Dynamically loaded providers must export the following entry point.
- * This is invoked by the ATL framework when the provider library
+ * Dynamically loaded transports must export the following entry point.
+ * This is invoked by the ATL framework when the transport library
  * is loaded.
  */
-#define ATL_EXT_INI \
+#define ATL_EXT_INI                                        \
 __attribute__((visibility ("default"),EXTERNALLY_VISIBLE)) \
-atl_status_t atl_ini(ARG_LIST)
+atl_status_t atl_ini(atl_transport_t *atl_transport)
 
-
-/* Provider initialization function signature that built-in providers
+/* Transport initialization function signature that built-in transportss
  * must specify. */
-#define INI_SIG(name)   \
-atl_status_t name(ARG_LIST)
+#define INI_SIG(name)                            \
+atl_status_t name(atl_transport_t *atl_transport)
 
-/* for each provider defines for three scenarios:
- * dl: externally visible ctor with known name (see fi_prov.h)
+/* for each transport defines for three scenarios:
+ * dl: externally visible ctor with known name
  * built-in: ctor function def, don't export symbols
  * not built: no-op call for ctor
  */
@@ -109,7 +107,7 @@ atl_status_t name(ARG_LIST)
 #  define ATL_OFI_INI ATL_EXT_INI
 #  define ATL_OFI_INIT atl_noop_init
 #elif (HAVE_OFI)
-#  define ATL_OFI_INI INI_SIG(atl_ofi_init)
+#  define ATL_OFI_INI INI_SIG(atl_ofi_ini)
 #  define ATL_OFI_INIT atl_ofi_init
 ATL_OFI_INI ;
 #else
@@ -121,7 +119,8 @@ static inline INI_SIG(atl_noop_init)
     return 0;
 }
 
-atl_status_t atl_init(ARG_LIST);
+atl_status_t atl_init(int *argc, char ***argv, size_t *proc_idx, size_t *proc_count,
+                      atl_attr_t *attr, atl_comm_t ***atl_comms, atl_desc_t **atl_desc);
 
 static inline atl_status_t atl_finalize(atl_desc_t *desc, atl_comm_t **comms)
 {
