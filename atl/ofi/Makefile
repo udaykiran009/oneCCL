@@ -6,7 +6,10 @@ CC         ?= gcc
 BASE_DIR = $(shell pwd)
 
 PMILIB_TARGET       = libpmi
-PMILIB_DIR          = $(BASE_DIR)/../../pmi
+PMILIB_DIR          = $(BASE_DIR)/../util/pm/pmi_rt/pmi
+
+PM_RT_DIR          = $(BASE_DIR)/../util/pm
+PMI_RT_DIR          = $(PM_RT_DIR)/pmi_rt
 
 OFILIB_DIR          = $(BASE_DIR)/../../ofi_rt
 
@@ -26,23 +29,22 @@ ifeq ($(USE_SECURITY_FLAGS), 1)
     LDFLAGS             += $(SECURITY_LDFLAGS)
 endif
 
-PMI_CFLAGS = $(CFLAGS) -I$(PMILIB_DIR)
+CFLAGS += -I$(PMILIB_DIR)
 PMI_LDFLAGS = $(LDFLAGS) -L$(PMILIB_DIR) -lpmi
 
-OFI_CFLAGS = $(PMI_CFLAGS) -I$(OFILIB_DIR)/include
+CFLAGS += -I$(OFILIB_DIR)/include
 OFI_LDFLAGS = $(LDFLAGS) -L$(OFILIB_DIR)/lib -lfabric
+
+CFLAGS += -I$(PM_RT_DIR)
 
 default: $(TARGET)
 
-$(TARGET): pmi_rt
-	$(CC) $(OFI_CFLAGS) -c atl_ofi.c
-	$(CC) $(PMI_CFLAGS) -c pmi_rt.c
-	ar -cvq $(TARGET).a pmi_rt.o
-	$(CC) $(PMI_CFLAGS) $(OFI_CFLAGS) -shared -Wl,-soname,$(TARGET).so.1 -o $(TARGET).so.1.0 *.o \
-		$(PMI_LDFLAGS) $(OFI_LDFLAGS)
-
-pmi_rt: $(PMILIB_TARGET) pmi_rt.c
-	$(CC) $(PMI_CFLAGS) -c pmi_rt.c
+$(TARGET): $(PMILIB_TARGET)
+	$(CC) $(CFLAGS) -c atl_ofi.c
+	$(CC) $(CFLAGS) -c $(PMI_RT_DIR)/pmi_rt.c
+	ar -cvq $(TARGET).a atl_ofi.o pmi_rt.o
+	$(CC) $(OFI_CFLAGS) -shared -Wl,-soname,$(TARGET).so.1 -o $(TARGET).so.1.0 *.o \
+	$(PMI_LDFLAGS) $(OFI_LDFLAGS)
 
 $(PMILIB_TARGET):
 	cd $(PMILIB_DIR) && $(MAKE) CC="$(CC)" EXTRA_CFLAGS="$(EXTRA_CFLAGS)" EXTRA_LDFLAGS="$(EXTRA_LDFLAGS)" \

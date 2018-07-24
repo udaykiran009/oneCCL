@@ -34,6 +34,8 @@
 /* OFI returns 0 or -errno */
 #define RET2ATL(ret) ((ret) ? atl_status_failure : atl_status_success)
 
+static const char *atl_ofi_name = "OFI";
+
 typedef struct atl_ofi_context {
     atl_desc_t atl_desc;
     size_t proc_idx;
@@ -85,7 +87,8 @@ static atl_status_t
 atl_ofi_comms_connect(atl_ofi_context_t *atl_ofi_context,
                       atl_comm_t **comms, size_t comm_count)
 {
-    int ret, i, j = 0;
+    int ret;
+    size_t i, j;
     char *epnames_table;
     size_t epnames_table_len;
 
@@ -93,7 +96,7 @@ atl_ofi_comms_connect(atl_ofi_context_t *atl_ofi_context,
         (atl_ofi_context->sep ? 1 : comm_count);
 
     /* Allocate OFI EP names table that will contain all published names */
-    epnames_table_len = FI_NAME_MAX *
+    epnames_table_len = atl_ofi_context->addr_len *
                         atl_ofi_context->addr_table.ep_num *
                         atl_ofi_context->proc_count;
     epnames_table = (char *)calloc(1, epnames_table_len);
@@ -118,11 +121,10 @@ atl_ofi_comms_connect(atl_ofi_context_t *atl_ofi_context,
         for (j = 0; j < atl_ofi_context->addr_table.ep_num; j++) {
             ret = pmrt_kvs_get(atl_ofi_context->pm_rt, ATL_OFI_PM_KEY, i, j,
                                epnames_table +
-                               /* iterate by comms(EPs) per process */
-                               (j * atl_ofi_context->addr_len) +
-                               /* iterate by processes */
-                               ((i * atl_ofi_context->proc_count) *
-                                atl_ofi_context->addr_len), 
+                               (/* iterate by comms(EPs) per process */ j +
+                                /* iterate by processes */
+                                (i * atl_ofi_context->addr_table.ep_num)) *
+			       atl_ofi_context->addr_len,
                                atl_ofi_context->addr_len);
             if (ret)
                 goto err_ep_names;
@@ -135,6 +137,7 @@ atl_ofi_comms_connect(atl_ofi_context_t *atl_ofi_context,
                   sizeof(fi_addr_t));
     if (!atl_ofi_context->addr_table.table)
         goto err_ep_names;
+
     /* Insert all the EP names into the AV */
     ret = fi_av_insert(atl_ofi_context->av, epnames_table,
                        atl_ofi_context->addr_table.ep_num *
@@ -143,6 +146,8 @@ atl_ofi_comms_connect(atl_ofi_context_t *atl_ofi_context,
     if (ret != atl_ofi_context->proc_count) {
         ret = atl_status_failure;
         goto err_addr_table;
+    } else {
+        ret = atl_status_success;
     }
 
     /* Normal end of execution */
@@ -634,27 +639,27 @@ atl_ops_t atl_ofi_ops = {
     .finalize = atl_ofi_finalize,
 };
 
-atl_pt2pt_ops_t atl_ofi_pt2pt_ops;
-
-ATL_OFI_INI
+atl_status_t atl_ofi_init(int *argc, char ***argv, size_t *proc_idx, size_t *proc_count,
+                          atl_attr_t *attr, atl_comm_t ***atl_comms, atl_desc_t **atl_desc)
 {
     struct fi_info *providers, *hints;
     struct fi_av_attr av_attr = { (enum fi_av_type)0 };
     int fi_version, ret;
     atl_ofi_context_t *atl_ofi_context;
 
-    assert(sizeof(atl_ofi_req_t) <= sizeof(offsetof(atl_req_t, internal)));
+    assert(sizeof(atl_ofi_req_t) <= sizeof(atl_req_t) - offsetof(atl_req_t, internal));
 
     atl_ofi_context = calloc(1, sizeof(*atl_ofi_context));
     if (!atl_ofi_context)
         return atl_status_failure;
 
-    ret = pmrt_init(proc_idx, proc_count, &atl_ofi_context->pm_rt);
+    ret = pmrt_init(&atl_ofi_context->proc_idx, &atl_ofi_context->proc_count,
+                    &atl_ofi_context->pm_rt);
     if (ret)
         goto err_pmrt_init;
 
-    atl_ofi_context->proc_idx = *proc_idx;
-    atl_ofi_context->proc_count = *proc_count;
+    *proc_idx = atl_ofi_context->proc_idx;
+    *proc_count = atl_ofi_context->proc_count;
 
     hints = fi_allocinfo();
     if (!hints)
@@ -719,4 +724,12 @@ err_hints:
 err_pmrt_init:
     free(atl_ofi_context);
     return RET2ATL(ret);
+}
+
+ATL_OFI_INI
+{
+    atl_transport->name = atl_ofi_name;
+    atl_transport->init = atl_ofi_init;
+
+    return atl_status_success;
 }

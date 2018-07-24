@@ -137,8 +137,8 @@ atl_status_t pmirt_init(size_t *proc_idx, size_t *proc_count, pm_rt_desc_t **pmr
     int ret, spawned, max_kvsnamelen;
 
     if (pmi_ctx_singleton.pmirt_main.initialized) {
-        PMI_Get_size((int *)proc_count);
-        PMI_Get_rank((int *)proc_idx);
+        PMI_Get_size((int *)proc_idx);
+        PMI_Get_rank((int *)proc_count);
         *pmrt_desc = &pmi_ctx_singleton.pmrt_desc;
         pmi_ctx_singleton.pmirt_main.ref_cnt++;
         return atl_status_success;
@@ -151,7 +151,6 @@ atl_status_t pmirt_init(size_t *proc_idx, size_t *proc_count, pm_rt_desc_t **pmr
     ret = PMI_Get_size((int *)proc_count);
     if (ret != PMI_SUCCESS)
         goto err_pmi;
-
     ret = PMI_Get_rank((int *)proc_idx);
     if (ret != PMI_SUCCESS)
         goto err_pmi;

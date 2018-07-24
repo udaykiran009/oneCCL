@@ -9,6 +9,7 @@
 #define PMI_RT_CODEC_H
 
 #include <string.h>
+#include <stdio.h>
 
 static inline int
 encode(const void *inval, int invallen, char *outval, int outvallen)
@@ -21,9 +22,10 @@ encode(const void *inval, int invallen, char *outval, int outvallen)
     if (invallen * 2 + 1 > outvallen)
         return -1;
 
-    for (i = 0; i < invallen; i++)
+    for (i = 0; i < invallen; i++) {
         outval[2 * i] = encodings[((unsigned char *)inval)[i] & 0xf];
         outval[2 * i + 1] = encodings[((unsigned char *)inval)[i] >> 4];
+    }
 
     outval[invallen * 2] = '\0';
 
