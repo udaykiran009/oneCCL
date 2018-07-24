@@ -6,7 +6,10 @@ CC         ?= gcc
 BASE_DIR = $(shell pwd)
 
 PMILIB_TARGET       = libpmi
-PMILIB_DIR          = $(BASE_DIR)/../../pmi
+PMILIB_DIR          = $(BASE_DIR)/../util/pm/pmi_rt/pmi
+
+PM_RT_DIR          = $(BASE_DIR)/../util/pm
+PMI_RT_DIR          = $(PM_RT_DIR)/pmi_rt
 
 OFILIB_DIR          = $(BASE_DIR)/../../ofi_rt
 
@@ -32,11 +35,13 @@ PMI_LDFLAGS = $(LDFLAGS) -L$(PMILIB_DIR) -lpmi
 CFLAGS += -I$(OFILIB_DIR)/include
 OFI_LDFLAGS = $(LDFLAGS) -L$(OFILIB_DIR)/lib -lfabric
 
+CFLAGS += -I$(PM_RT_DIR)
+
 default: $(TARGET)
 
 $(TARGET): $(PMILIB_TARGET)
 	$(CC) $(CFLAGS) -c atl_ofi.c
-	$(CC) $(CFLAGS) -c pmi_rt.c
+	$(CC) $(CFLAGS) -c $(PMI_RT_DIR)/pmi_rt.c
 	ar -cvq $(TARGET).a atl_ofi.o pmi_rt.o
 	$(CC) $(OFI_CFLAGS) -shared -Wl,-soname,$(TARGET).so.1 -o $(TARGET).so.1.0 *.o \
 	$(PMI_LDFLAGS) $(OFI_LDFLAGS)
