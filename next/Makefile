@@ -11,8 +11,8 @@ MLSL_DIR     = $(BASE_DIR)
 SRC_DIR      = $(MLSL_DIR)/src
 EXAMPLES_DIR = $(MLSL_DIR)/examples
 
-CFLAGS  += -Wall -O2 -std=gnu99 -I. -fPIC -D_GNU_SOURCE -fvisibility=internal
-LDFLAGS +=
+CFLAGS  += -Wall -Werror -pthread -O2 -std=gnu99 -I. -fPIC -D_GNU_SOURCE -fvisibility=internal
+LDFLAGS += -lpthread
 
 TARGET   = libmlsl2
 
@@ -37,16 +37,17 @@ endif
 default: $(TARGET)
 	make -C $(EXAMPLES_DIR)
 
-INCS = -I$(MLSL_DIR)/include -I$(SRC_DIR)/sched \
-       -I$(SRC_DIR)/exec -I$(SRC_DIR)/transport \
-       -I$(SRC_DIR)/common -I$(SRC_DIR)/common/comm \
-       -I$(SRC_DIR)/common/env -I$(SRC_DIR)/common/global \
-       -I$(SRC_DIR)/common/log -I$(SRC_DIR)/common/request \
-       -I$(SRC_DIR)/common/utils
+INCS += -I$(MLSL_DIR)/include -iquote $(SRC_DIR)/sched \
+        -I$(SRC_DIR)/exec -I$(SRC_DIR)/transport \
+        -I$(SRC_DIR)/common -I$(SRC_DIR)/common/comm \
+        -I$(SRC_DIR)/common/env -I$(SRC_DIR)/common/global \
+        -I$(SRC_DIR)/common/log -I$(SRC_DIR)/common/request \
+        -I$(SRC_DIR)/common/utils
 
 SRCS += $(SRC_DIR)/mlsl.c
 SRCS += $(SRC_DIR)/sched/sched.c
 SRCS += $(SRC_DIR)/exec/exec.c
+SRCS += $(SRC_DIR)/exec/worker.c
 SRCS += $(SRC_DIR)/transport/transport.c
 SRCS += $(SRC_DIR)/common/comm/comm.c
 SRCS += $(SRC_DIR)/common/env/env.c

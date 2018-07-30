@@ -6,15 +6,17 @@
 
 struct mlsl_executor
 {
-    //struct mlsl_worker *workers;
+    size_t worker_count;
+    struct mlsl_worker **workers;
 };
 
 typedef struct mlsl_executor mlsl_executor;
 
-mlsl_status_t mlsl_exec_create(mlsl_executor **exec, void *t /*mlsl_transport_t transport*/);
-mlsl_status_t mlsl_exec_free(mlsl_executor *exec);
+extern mlsl_executor *global_executor;
 
-mlsl_status_t mlsl_exec_start(mlsl_executor *exec, mlsl_sched *sched, mlsl_request **req);
-mlsl_status_t mlsl_exec_wait(mlsl_executor *exec, mlsl_request *req);
+mlsl_status_t mlsl_executor_create(size_t worker_count, size_t priority_count, mlsl_executor **executor);
+mlsl_status_t mlsl_executor_free(mlsl_executor *executor);
+mlsl_status_t mlsl_executor_start(mlsl_executor *executor, mlsl_sched *sched, mlsl_request **req);
+mlsl_status_t mlsl_executor_wait(mlsl_executor *executor, mlsl_request *req);
 
 #endif /* EXEC_H */

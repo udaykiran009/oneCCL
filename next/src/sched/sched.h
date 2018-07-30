@@ -2,16 +2,24 @@
 #define SCHED_H
 
 #include "comm.h"
+#include "lock.h"
+#include "log.h"
+#include "mlsl.h"
 #include "mlsl_sched.h"
 #include "request.h"
+
+#define MAX_SCHED_BINS (1024)
+
+struct mlsl_sched_queue;
+struct mlsl_sched_queue_bin;
 
 enum mlsl_sched_entry_type
 {
     mlsl_sched_entry_send    = 0,
     mlsl_sched_entry_recv    = 1,
     mlsl_sched_entry_reduce  = 2,
-    mlsl_sched_entry_compute = 3,
-    mlsl_sched_entry_copy    = 4,
+    mlsl_sched_entry_copy    = 3,
+    mlsl_sched_entry_compute = 4,
     mlsl_sched_entry_nop     = 5
 };
 typedef enum mlsl_sched_entry_type mlsl_sched_entry_type;
@@ -109,6 +117,8 @@ typedef struct mlsl_sched_entry mlsl_sched_entry;
 
 struct mlsl_sched
 {
+    struct mlsl_sched_queue_bin *bin;
+
     size_t size;               /* capacity (in entries) of the entries array */
     size_t idx;                /* index into entries array of first yet-outstanding entry */ /* index to start */
     size_t num_entries;        /* number of populated entries, num_entries <= size */
@@ -121,16 +131,41 @@ struct mlsl_sched
 };
 typedef struct mlsl_sched mlsl_sched;
 
-struct mlsl_sched_state
-{
-    mlsl_sched *head;
-};
-typedef struct mlsl_sched_state mlsl_sched_state;
-
 mlsl_status_t mlsl_sched_add_compute_1i1o(mlsl_sched *sched, mlsl_sched_compute_1i1o_fn_t cb_p,
                                           const void *in_buf, size_t in_count, mlsl_data_type_t dtype, void *out_buf, size_t *out_count);
-mlsl_status_t mlsl_sched_progress(int *made_progress);
+mlsl_status_t mlsl_sched_progress(struct mlsl_sched_queue_bin *bin, size_t sched_count, size_t *processed_sched_count);
 mlsl_status_t mlsl_sched_next_tag(mlsl_comm *comm, int *tag);
 mlsl_status_t mlsl_sched_clone(mlsl_sched *orig, mlsl_sched **cloned);
+
+struct mlsl_sched_queue_bin
+{
+    struct mlsl_sched_queue *queue;
+    size_t priority;
+    mlsl_sched *elems;
+    size_t elem_count;
+
+    // TODO: use ATL
+    void *comm_ctx;
+
+    // TODO:
+    void *comp_ctx;
+};
+typedef struct mlsl_sched_queue_bin mlsl_sched_queue_bin;
+
+struct mlsl_sched_queue
+{
+    mlsl_fastlock_t lock;
+    size_t used_bins;
+    size_t max_bins;
+    size_t max_priority;
+    mlsl_sched_queue_bin bins[MAX_SCHED_BINS];
+};
+typedef struct mlsl_sched_queue mlsl_sched_queue;
+
+mlsl_status_t mlsl_sched_queue_create(size_t max_bins, void **comm_ctxts, mlsl_sched_queue **queue);
+mlsl_status_t mlsl_sched_queue_free(mlsl_sched_queue *queue);
+mlsl_status_t mlsl_sched_queue_add(mlsl_sched_queue *queue, mlsl_sched *sched, size_t priority);
+mlsl_status_t mlsl_sched_queue_remove(mlsl_sched_queue *queue, mlsl_sched_queue_bin *bin, mlsl_sched *sched);
+mlsl_status_t mlsl_sched_queue_peek(mlsl_sched_queue *queue, mlsl_sched_queue_bin **bin, size_t *count);
 
 #endif /* SCHED_H */

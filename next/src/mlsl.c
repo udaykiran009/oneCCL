@@ -3,23 +3,23 @@
 #include "log.h"
 #include "mlsl.h"
 
-mlsl_executor *executor;
-
 mlsl_status_t mlsl_init()
 {
     mlsl_env_parse();
     mlsl_comm_create(&global_comm);
-    mlsl_exec_create(&executor, NULL /*transport*/);
+    mlsl_executor_create(env_data.worker_count, 1 /* priority_count */, &global_executor);
 
     global_data.comm = global_comm;
+    global_data.executor = global_executor;
 
     return mlsl_status_success;
 }
 
 mlsl_status_t mlsl_finalize()
 {
-    mlsl_comm_free(global_comm);
-    mlsl_exec_free(executor);
+    mlsl_comm_free(global_data.comm);
+    mlsl_executor_free(global_data.executor);
+    mlsl_env_free();
     return mlsl_status_success;
 }
 
@@ -52,25 +52,9 @@ size_t mlsl_get_dtype_size(mlsl_data_type_t dtype)
     return dtype_size;
 }
 
-/* TODO: move to 'collectives' module which will create/adjust/commit/start sched using sched API */
-mlsl_status_t mlsl_allreduce(
-    void *send_buf,
-    void *recv_buf,
-    size_t count,
-    mlsl_data_type_t dtype,
-    mlsl_reduction_t reduction,
-    mlsl_request_t *req)
-{
-    return mlsl_status_unimplemented;
-}
-
 mlsl_status_t mlsl_wait(mlsl_request *req)
 {
-    return mlsl_status_unimplemented;
+    mlsl_executor_wait(global_data.executor, req);
+    mlsl_request_free(req);
+    return mlsl_status_success;
 }
-
-mlsl_status_t mlsl_start(mlsl_sched *sched, mlsl_request **req)
-{
-    return mlsl_status_unimplemented;
-}
-

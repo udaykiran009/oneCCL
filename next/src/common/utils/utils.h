@@ -8,6 +8,12 @@
 
 /* common */
 
+#define MLSL_CALL(expr)                              \
+  do {                                               \
+        status = expr;                               \
+        MLSL_ASSERTP(status == mlsl_status_success); \
+  } while (0)
+
 #define MIN(a,b) ((a) < (b) ? (a) : (b))
 #define MAX(a,b) ((a) > (b) ? (a) : (b))
 
@@ -65,7 +71,7 @@ do {                                                  \
 /* malloc/realloc/free */
 
 #if defined(__INTEL_COMPILER) || defined(__ICC)
-#define MLSL_MALLOC_IMPL(size, align) _mm_malloc(size, align)
+#define MLSL_MEMALIGN_IMPL(size, align) _mm_malloc(size, align)
 #define MLSL_REALLOC_IMPL(old_ptr, old_size, new_size, align)    \
       ({                                                         \
           void* new_ptr = NULL;                                  \
@@ -79,22 +85,52 @@ do {                                                  \
           }                                                      \
           new_ptr;                                               \
       })
+#define MLSL_CALLOC_IMPL(size, align)          \
+      ({                                       \
+          void* ptr = _mm_malloc(size, align); \
+          memset(ptr, 0, size);                \
+          ptr;                                 \
+      })
 #define MLSL_FREE_IMPL(ptr) _mm_free(ptr)
 #elif defined(__GNUC__)
-#define MLSL_MALLOC_IMPL(size, align)                                                   \
+#define MLSL_MEMALIGN_IMPL(size, align)                                                 \
     ({                                                                                  \
       void* ptr;                                                                        \
       int pm_ret __attribute__((unused)) = posix_memalign((void**)(&ptr), align, size); \
       ptr;                                                                              \
     })
 #define MLSL_REALLOC_IMPL(old_ptr, old_size, new_size, align) realloc(old_ptr, new_size)
+#define MLSL_CALLOC_IMPL(size, align) calloc(size, 1)
 #define MLSL_FREE_IMPL(ptr) free(ptr)
 #else
 # error "this compiler is not supported" 
 #endif
 
-#define MLSL_MALLOC(size, align)                         MLSL_MALLOC_IMPL(size, align)
-#define MLSL_REALLOC(old_ptr, old_size, new_size, align) MLSL_REALLOC_IMPL(old_ptr, old_size, new_size, align)
-#define MLSL_FREE(ptr)                                   MLSL_FREE_IMPL(ptr)
+#define MLSL_MEMALIGN_WRAPPER(size, align, name)   \
+    ({                                             \
+      void *ptr = MLSL_MEMALIGN_IMPL(size, align); \
+      MLSL_ASSERTP_FMT(ptr, name);                 \
+      ptr;                                         \
+    })
+
+#define MLSL_REALLOC_WRAPPER(old_ptr, old_size, new_size, align, name)   \
+    ({                                                                   \
+      void *ptr = MLSL_REALLOC_IMPL(old_ptr, old_size, new_size, align); \
+      MLSL_ASSERTP_FMT(ptr, name);                                       \
+      ptr;                                                               \
+    })
+
+#define MLSL_CALLOC_WRAPPER(size, align, name)   \
+    ({                                           \
+      void *ptr = MLSL_CALLOC_IMPL(size, align); \
+      MLSL_ASSERTP_FMT(ptr, name);               \
+      ptr;                                       \
+    })
+
+#define MLSL_MALLOC(size, name)                                MLSL_MEMALIGN_WRAPPER(size, CACHELINE_SIZE, name)
+#define MLSL_MEMALIGN(size, align, name)                       MLSL_MEMALIGN_WRAPPER(size, align, name)
+#define MLSL_CALLOC(size, name)                                MLSL_CALLOC_WRAPPER(size, CACHELINE_SIZE, name)
+#define MLSL_REALLOC(old_ptr, old_size, new_size, align, name) MLSL_REALLOC_WRAPPER(old_ptr, old_size, new_size, align, name)
+#define MLSL_FREE(ptr)                                         MLSL_FREE_IMPL(ptr)
 
 #endif /* UTILS_H */
