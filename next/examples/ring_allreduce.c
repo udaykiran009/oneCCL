@@ -88,8 +88,15 @@ int main()
     mlsl_status_t status = mlsl_status_success;
     size_t proc_count;
 
-    float send_buf[COUNT] = { [0 ... (COUNT - 1)] = 1.0 };
-    float recv_buf[COUNT] = { [0 ... (COUNT - 1)] = 0.0 };
+    float send_buf[COUNT];
+    float recv_buf[COUNT];
+
+    size_t idx;
+    for (idx = 0; idx < COUNT; idx++)
+    {
+        send_buf[idx] = 1.0;
+        recv_buf[idx] = 0.0;
+    }
 
     MLSL_CALL(mlsl_init());
     MLSL_CALL(mlsl_sched_create(&sched));
@@ -98,7 +105,6 @@ int main()
     MLSL_CALL(mlsl_sched_start(sched, &request));
     MLSL_CALL(mlsl_wait(request));
 
-    size_t idx;
     proc_count = mlsl_get_proc_count();
     for (idx = 0; idx < COUNT; idx++)
     {

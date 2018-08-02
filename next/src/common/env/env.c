@@ -94,7 +94,7 @@ int mlsl_env_parse_affinity()
     tmp = affinity_copy;
 
     for (w_idx = 0; w_idx < workers_per_node; w_idx++) {
-        proc_id_str = strsep(&tmp, " \n\t,");
+        proc_id_str = strsep(&tmp, ",");
         if (proc_id_str != NULL) {
             if (atoi(proc_id_str) < 0) {
                 MLSL_LOG(ERROR, "unexpected proc_id %s, affinity string %s", proc_id_str, affinity_to_parse);
