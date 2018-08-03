@@ -88,28 +88,33 @@ int main()
     mlsl_status_t status = mlsl_status_success;
     size_t proc_count;
 
-    float send_buf[COUNT] = { 1.0 };
-    float recv_buf[COUNT] = { 0.0 };
-
-    MLSL_CALL(mlsl_init());
-
-    MLSL_CALL(mlsl_sched_create(&sched));
-
-    MLSL_CALL(build_ring_allreduce(sched, send_buf, recv_buf, COUNT,
-                                   mlsl_dtype_float, mlsl_reduction_sum));
-
-    MLSL_CALL(mlsl_sched_start(sched, &request));
-
-    MLSL_CALL(mlsl_wait(request));
+    float send_buf[COUNT];
+    float recv_buf[COUNT];
 
     size_t idx;
+    for (idx = 0; idx < COUNT; idx++)
+    {
+        send_buf[idx] = 1.0;
+        recv_buf[idx] = 0.0;
+    }
+
+    MLSL_CALL(mlsl_init());
+    MLSL_CALL(mlsl_sched_create(&sched));
+    MLSL_CALL(build_ring_allreduce(sched, send_buf, recv_buf, COUNT,
+                                   mlsl_dtype_float, mlsl_reduction_sum));
+    MLSL_CALL(mlsl_sched_start(sched, &request));
+    MLSL_CALL(mlsl_wait(request));
+
     proc_count = mlsl_get_proc_count();
     for (idx = 0; idx < COUNT; idx++)
     {
-        assert(recv_buf[idx] == (float)proc_count);
+        if (recv_buf[idx] != (float)proc_count)
+        {
+            printf("idx %zu, expected %f, got %f\n", idx, (float)proc_count, recv_buf[idx]);
+            assert(0);
+        }
     }
 
     MLSL_CALL(mlsl_sched_free(sched));
-
     MLSL_CALL(mlsl_finalize());
 }
