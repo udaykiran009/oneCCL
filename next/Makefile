@@ -1,5 +1,5 @@
 USE_SECURITY_FLAGS ?= 0
-ENABLE_DEBUG       ?= 0
+ENABLE_DEBUG       ?= 1
 
 CC         ?= gcc
 
@@ -12,7 +12,7 @@ SRC_DIR      = $(MLSL_DIR)/src
 EXAMPLES_DIR = $(MLSL_DIR)/examples
 
 CFLAGS  += -Wall -Werror -pthread -O2 -std=gnu99 -I. -fPIC -D_GNU_SOURCE -fvisibility=internal
-LDFLAGS += -lpthread
+LDFLAGS += -L$(BASE_DIR)/../atl -lmlsl_atl -lpthread -ldl
 
 TARGET   = libmlsl2
 
@@ -38,13 +38,16 @@ default: $(TARGET)
 	make -C $(EXAMPLES_DIR)
 
 INCS += -I$(MLSL_DIR)/include -iquote $(SRC_DIR)/sched \
+        -I$(SRC_DIR)/comp \
         -I$(SRC_DIR)/exec -I$(SRC_DIR)/transport \
         -I$(SRC_DIR)/common -I$(SRC_DIR)/common/comm \
         -I$(SRC_DIR)/common/env -I$(SRC_DIR)/common/global \
         -I$(SRC_DIR)/common/log -I$(SRC_DIR)/common/request \
-        -I$(SRC_DIR)/common/utils
+        -I$(SRC_DIR)/common/utils \
+        -I$(SRC_DIR)/../../atl
 
 SRCS += $(SRC_DIR)/mlsl.c
+SRCS += $(SRC_DIR)/comp/comp.c
 SRCS += $(SRC_DIR)/sched/sched.c
 SRCS += $(SRC_DIR)/exec/exec.c
 SRCS += $(SRC_DIR)/exec/worker.c

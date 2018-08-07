@@ -58,6 +58,7 @@ static void atl_ini_dir(int *argc, char ***argv, size_t *proc_idx, size_t *proc_
             dlclose(dlhandle);
         } else {
             atl_transport_t transport;
+            // TODO: propagate atl_status to upper level
             atl_status_t ret;
 
             if ((inif)(&transport) != atl_status_success)

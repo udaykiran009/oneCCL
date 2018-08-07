@@ -54,9 +54,10 @@ mlsl_status_t build_ring_allreduce(mlsl_sched_t sched, const void *send_buf, voi
         MLSL_CALL(mlsl_sched_add_recv(sched, (char *) recv_buf + count0 * recv_idx * dtype_size,
                                       recv_count, dtype, src));
         MLSL_CALL(mlsl_sched_add_barrier(sched));
-        MLSL_CALL(mlsl_sched_add_reduce(sched, (char *) send_buf + count0 * recv_idx * dtype_size,
-                                        (char *) recv_buf + count0 * recv_idx * dtype_size,
-                                        recv_count, dtype, op));
+        MLSL_CALL(mlsl_sched_add_reduce(sched,
+                                        (char *) send_buf + count0 * recv_idx * dtype_size, recv_count,
+                                        (char *) recv_buf + count0 * recv_idx * dtype_size, NULL,
+                                        dtype, op));
         MLSL_CALL(mlsl_sched_add_barrier(sched));
     }
 

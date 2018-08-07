@@ -17,6 +17,8 @@ extern "C" {
  * 5. free sched
  */
 
+size_t MLSL_API mlsl_get_dtype_size(mlsl_data_type_t dtype);
+
 mlsl_status_t MLSL_API mlsl_sched_create(mlsl_sched_t *sched);
 mlsl_status_t MLSL_API mlsl_sched_commit(mlsl_sched_t sched);
 mlsl_status_t MLSL_API mlsl_sched_start(mlsl_sched_t sched, mlsl_request_t *req);
@@ -33,8 +35,8 @@ mlsl_status_t MLSL_API mlsl_sched_add_recv(
     mlsl_data_type_t data_type, size_t src);
 
 mlsl_status_t MLSL_API mlsl_sched_add_reduce(
-    mlsl_sched_t sched, const void *in_buf,
-    void *inout_buf, size_t count,
+    mlsl_sched_t sched, const void *in_buf, size_t in_count,
+    void *inout_buf, size_t *out_count,
     mlsl_data_type_t dtype, mlsl_reduction_t reduction);
 
 mlsl_status_t MLSL_API mlsl_sched_add_copy(

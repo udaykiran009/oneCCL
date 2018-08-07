@@ -71,10 +71,13 @@ typedef struct atl_pt2pt_ops {
                          size_t src_proc_idx, uint64_t tag, atl_req_t *req);
 } atl_pt2pt_ops_t;
 
+// TODO: align with PSM2 progress functions
 typedef struct atl_comp_ops {
     atl_status_t (*wait)(atl_comm_t *comm, atl_req_t *req);
     atl_status_t (*wait_all)(atl_comm_t *comm, atl_req_t *reqs, size_t count);
     atl_status_t (*test)(atl_comm_t *comm, int *status, atl_req_t *req);
+    atl_status_t (*poll)(atl_comm_t *comm);
+    atl_status_t (*check)(atl_comm_t *comm, int *status, atl_req_t *req);
 } atl_comp_ops_t;
 
 struct atl_comm {
@@ -164,6 +167,16 @@ static inline atl_status_t atl_comm_wait_all(atl_comm_t *comm, atl_req_t *req, s
 static inline atl_status_t atl_comm_test(atl_comm_t *comm, int *status, atl_req_t *req)
 {
     return comm->comp_ops->test(comm, status, req);
+}
+
+static inline atl_status_t atl_comm_poll(atl_comm_t *comm)
+{
+    return comm->comp_ops->poll(comm);
+}
+
+static inline atl_status_t atl_comm_check(atl_comm_t *comm, int *status, atl_req_t *req)
+{
+    return comm->comp_ops->check(comm, status, req);
 }
 
 #endif

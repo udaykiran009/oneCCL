@@ -25,14 +25,12 @@ mlsl_status_t mlsl_finalize()
 
 size_t mlsl_get_proc_idx()
 {
-    return 0;
-    //mlsl_transport_get_proc_idx(transport);
+    return mlsl_executor_get_proc_idx(global_data.executor);
 }
 
 size_t mlsl_get_proc_count()
 {
-    return 1;
-    //mlsl_transport_get_proc_count(transport);
+    return mlsl_executor_get_proc_count(global_data.executor);
 }
 
 size_t mlsl_get_dtype_size(mlsl_data_type_t dtype)
@@ -46,7 +44,7 @@ size_t mlsl_get_dtype_size(mlsl_data_type_t dtype)
         case mlsl_dtype_float: { dtype_size = 4; break; }
         case mlsl_dtype_double: { dtype_size = 8; break; }
         case mlsl_dtype_int64: { dtype_size = 8; break; }
-        case mlsl_dtype_unit64: { dtype_size = 8; break; }
+        case mlsl_dtype_uint64: { dtype_size = 8; break; }
         default: MLSL_ASSERTP(0);
     }
     return dtype_size;

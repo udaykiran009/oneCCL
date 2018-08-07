@@ -1,6 +1,7 @@
 #ifndef SCHED_H
 #define SCHED_H
 
+#include "atl.h"
 #include "comm.h"
 #include "lock.h"
 #include "log.h"
@@ -31,7 +32,8 @@ struct mlsl_sched_send
     mlsl_data_type_t dtype;
     size_t dest;
     mlsl_comm *comm;
-    struct mlsl_request *req;
+    // TODO: replace by handle instead of explicit structure
+    atl_req_t req;
 };
 typedef struct mlsl_sched_send mlsl_sched_send;
 
@@ -42,15 +44,16 @@ struct mlsl_sched_recv
     mlsl_data_type_t dtype;
     size_t src;
     mlsl_comm *comm;
-    struct mlsl_request *req;
+    atl_req_t req;
 };
 typedef struct mlsl_sched_recv mlsl_sched_recv;
 
 struct mlsl_sched_reduce
 {
     const void *in_buf;
+    size_t in_count;
     void *inout_buf;
-    size_t count;
+    size_t *out_count;
     mlsl_data_type_t dtype;
     mlsl_reduction_t op;
 };
@@ -71,7 +74,7 @@ enum mlsl_sched_compute_type
 };
 typedef enum mlsl_sched_compute_type mlsl_sched_compute_type;
 
-typedef mlsl_status_t(*mlsl_sched_compute_1i1o_fn_t) (const void*, size_t, mlsl_data_type_t, void*, size_t*);
+typedef mlsl_status_t(*mlsl_sched_compute_1i1o_fn_t) (const void*, size_t, void*, size_t*, mlsl_data_type_t);
 
 struct mlsl_sched_compute
 {
@@ -132,7 +135,9 @@ struct mlsl_sched
 typedef struct mlsl_sched mlsl_sched;
 
 mlsl_status_t mlsl_sched_add_compute_1i1o(mlsl_sched *sched, mlsl_sched_compute_1i1o_fn_t cb_p,
-                                          const void *in_buf, size_t in_count, mlsl_data_type_t dtype, void *out_buf, size_t *out_count);
+                                          const void *in_buf, size_t in_count,
+                                          void *out_buf, size_t *out_count,
+                                          mlsl_data_type_t dtype);
 mlsl_status_t mlsl_sched_progress(struct mlsl_sched_queue_bin *bin, size_t sched_count, size_t *processed_sched_count);
 mlsl_status_t mlsl_sched_next_tag(mlsl_comm *comm, int *tag);
 mlsl_status_t mlsl_sched_clone(mlsl_sched *orig, mlsl_sched **cloned);
@@ -144,8 +149,7 @@ struct mlsl_sched_queue_bin
     mlsl_sched *elems;
     size_t elem_count;
 
-    // TODO: use ATL
-    void *comm_ctx;
+    atl_comm_t *comm_ctx;
 
     // TODO:
     void *comp_ctx;
@@ -162,7 +166,7 @@ struct mlsl_sched_queue
 };
 typedef struct mlsl_sched_queue mlsl_sched_queue;
 
-mlsl_status_t mlsl_sched_queue_create(size_t max_bins, void **comm_ctxts, mlsl_sched_queue **queue);
+mlsl_status_t mlsl_sched_queue_create(size_t max_bins, atl_comm_t **comm_ctxs, mlsl_sched_queue **queue);
 mlsl_status_t mlsl_sched_queue_free(mlsl_sched_queue *queue);
 mlsl_status_t mlsl_sched_queue_add(mlsl_sched_queue *queue, mlsl_sched *sched, size_t priority);
 mlsl_status_t mlsl_sched_queue_remove(mlsl_sched_queue *queue, mlsl_sched_queue_bin *bin, mlsl_sched *sched);
