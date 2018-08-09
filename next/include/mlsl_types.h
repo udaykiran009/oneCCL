@@ -37,7 +37,7 @@ typedef enum {
     mlsl_dtype_float  = 3,
     mlsl_dtype_double = 4,
     mlsl_dtype_int64  = 5,
-    mlsl_dtype_unit64 = 6
+    mlsl_dtype_uint64 = 6
 } mlsl_data_type_t;
 
 /** Reduction specification */
@@ -57,12 +57,12 @@ typedef struct mlsl_sched *mlsl_sched_t;
 struct mlsl_request;
 typedef struct mlsl_request *mlsl_request_t;
 
-/* in_buf, in_count, datatype, out_buf, out_count */
-typedef mlsl_status_t(*mlsl_sched_prolog_fn_t) (const void*, size_t, mlsl_data_type_t, void*, size_t*);
-typedef mlsl_status_t(*mlsl_sched_epilog_fn_t) (const void*, size_t, mlsl_data_type_t, void*, size_t*);
+/* in_buf, in_count, out_buf, out_count, datatype */
+typedef mlsl_status_t(*mlsl_sched_prolog_fn_t) (const void*, size_t, void*, size_t*, mlsl_data_type_t);
+typedef mlsl_status_t(*mlsl_sched_epilog_fn_t) (const void*, size_t, void*, size_t*, mlsl_data_type_t);
 
-/* in_buf, inout_buf, in_count, datatype, out_count */
-typedef mlsl_status_t(*mlsl_sched_reduction_fn_t) (const void*, void*, size_t, mlsl_data_type_t, size_t*);
+/* in_buf, in_count, inout_buf, out_count, datatype */
+typedef mlsl_status_t(*mlsl_sched_reduction_fn_t) (const void*, size_t, void*, size_t*, mlsl_data_type_t);
 
 #ifdef __cplusplus
 }

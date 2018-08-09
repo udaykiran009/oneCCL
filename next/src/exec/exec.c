@@ -11,21 +11,28 @@ mlsl_status_t mlsl_executor_create(size_t worker_count, size_t priority_count, m
     mlsl_executor *e = MLSL_CALLOC(sizeof(mlsl_executor), "executor");
     e->worker_count = worker_count;
     e->workers = MLSL_CALLOC(sizeof(mlsl_worker*) * worker_count, "executor->workers");
-    *executor = e;
 
-    // TODO: create transport with ep_count = (worker_count * priority_count)
-    void *eps[4] = { 0 };
+    atl_attr_t attr = { .comm_count = (worker_count * priority_count) };
+    atl_status_t atl_status = atl_init(NULL, NULL, &e->proc_idx, &e->proc_count, &attr, &e->atl_comms, &e->atl_desc);
+    MLSL_ASSERTP(atl_status == atl_status_success);
+    MLSL_ASSERTP(e->atl_desc);
+    MLSL_ASSERTP(e->atl_comms);
+
+    MLSL_LOG(DEBUG, "proc_idx %zu, proc_count %zu, atl_desc %p",
+             e->proc_idx, e->proc_count, e->atl_desc);
 
     size_t idx;
     for (idx = 0; idx < worker_count; idx++)
     {
         mlsl_sched_queue *queue;
-        mlsl_sched_queue_create(priority_count, eps + idx * priority_count, &queue);
+        mlsl_sched_queue_create(priority_count, e->atl_comms + idx * priority_count, &queue);
         mlsl_worker_create(e, idx, queue, &(e->workers[idx]));
         mlsl_worker_start(e->workers[idx]);
         mlsl_worker_pin(e->workers[idx], env_data.worker_affinity[idx]);
         MLSL_LOG(INFO, "created worker # %zu", idx);
     }
+
+    *executor = e;
 
     return mlsl_status_success;
 }
@@ -40,6 +47,8 @@ mlsl_status_t mlsl_executor_free(mlsl_executor *executor)
         mlsl_sched_queue_free(executor->workers[idx]->sched_queue);
         MLSL_LOG(INFO, "freed worker # %zu", idx);
     }
+
+    atl_finalize(executor->atl_desc, executor->atl_comms);
     MLSL_FREE(executor->workers);
     MLSL_FREE(executor);
 
@@ -78,4 +87,14 @@ mlsl_status_t mlsl_executor_wait(mlsl_executor *executor, mlsl_request *req)
         _mm_pause();
     }
     return mlsl_status_success;
+}
+
+size_t mlsl_executor_get_proc_idx(mlsl_executor *executor)
+{
+    return executor->proc_idx;
+}
+
+size_t mlsl_executor_get_proc_count(mlsl_executor *executor)
+{
+    return executor->proc_count;
 }

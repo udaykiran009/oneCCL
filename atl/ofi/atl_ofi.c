@@ -31,6 +31,8 @@
 
 #define ATL_OFI_PM_KEY "atl-ofi"
 
+#define ATL_OFI_CQ_BUNCH_SIZE (8)
+
 /* OFI returns 0 or -errno */
 #define RET2ATL(ret) ((ret) ? atl_status_failure : atl_status_success)
 
@@ -272,9 +274,9 @@ static void atl_ofi_comms_destroy(atl_ofi_context_t *atl_ofi_context,
     }
 
     do {
+        atl_ofi_context->comm_ref_count--;
         atl_ofi_comm_destroy(atl_ofi_context,
                              comm[atl_ofi_context->comm_ref_count]);
-        atl_ofi_context->comm_ref_count--;
     } while (atl_ofi_context->comm_ref_count);
 
     free(comm);
@@ -470,6 +472,7 @@ atl_status_t atl_ofi_comm_wait(atl_comm_t *comm, atl_req_t *req)
     do {
         ret = fi_cq_read(comm_context->cq, &entry, 1);
         if ((ret < 0) && (ret != -FI_EAGAIN)) {
+            // TODO: add error handling with fi_cq_readerr
             return atl_status_failure;
         } else if (ret == 1) {
             comp_ofi_req = container_of(entry.op_context, atl_ofi_req_t,
@@ -537,6 +540,39 @@ atl_status_t atl_ofi_comm_wait_all(atl_comm_t *comm, atl_req_t *reqs, size_t cou
     return ret;
 }
 
+atl_status_t atl_ofi_comm_poll(atl_comm_t *comm)
+{
+    atl_ofi_comm_context_t *comm_context =
+        container_of(comm, atl_ofi_comm_context_t, atl_comm);
+    struct fi_cq_tagged_entry entries[ATL_OFI_CQ_BUNCH_SIZE];
+    ssize_t ret;
+    atl_ofi_req_t *comp_ofi_req;
+    size_t idx;
+
+    do {
+        ret = fi_cq_read(comm_context->cq, entries, ATL_OFI_CQ_BUNCH_SIZE);
+
+        if ((ret < 0) && (ret != -FI_EAGAIN)) {
+            return atl_status_failure;
+        } else if (ret > 0) {
+            for (idx = 0; idx < ret; idx++) {
+                comp_ofi_req = container_of(entries[idx].op_context, atl_ofi_req_t,
+                                            ofi_context);
+                comp_ofi_req->is_completed = 1;
+            }
+        }
+    } while (ret > 0);
+
+    return atl_status_success;
+}
+
+atl_status_t atl_ofi_comm_check(atl_comm_t *comm, int *status, atl_req_t *req)
+{
+    atl_ofi_req_t *ofi_req = ((atl_ofi_req_t *)req->internal);
+    *status = (ofi_req->is_completed);
+    return atl_status_success;
+}
+
 static atl_pt2pt_ops_t atl_ofi_comm_pt2pt_ops = {
     .sendv = atl_ofi_comm_sendv,
     .recvv = atl_ofi_comm_recvv,
@@ -548,6 +584,8 @@ static atl_comp_ops_t atl_ofi_comm_comp_ops = {
     .wait = atl_ofi_comm_wait,
     .wait_all = atl_ofi_comm_wait_all,
     .test = atl_ofi_comm_test,
+    .poll = atl_ofi_comm_poll,
+    .check = atl_ofi_comm_check
 };
 
 static atl_status_t

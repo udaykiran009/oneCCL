@@ -9,7 +9,6 @@ extern "C" {
 
 size_t MLSL_API mlsl_get_proc_idx();
 size_t MLSL_API mlsl_get_proc_count();
-size_t MLSL_API mlsl_get_dtype_size(mlsl_data_type_t dtype);
 
 mlsl_status_t MLSL_API mlsl_init();
 mlsl_status_t MLSL_API mlsl_finalize();
@@ -23,6 +22,9 @@ mlsl_status_t MLSL_API mlsl_allreduce(
     mlsl_data_type_t dtype,
     mlsl_reduction_t reduction,
     mlsl_request_t *req);
+
+// TODO: add comm create/free
+// TODO: add priority
 
 mlsl_status_t MLSL_API mlsl_wait(mlsl_request_t req);
 
