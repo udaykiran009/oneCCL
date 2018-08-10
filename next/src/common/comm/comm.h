@@ -17,7 +17,7 @@ typedef struct mlsl_comm mlsl_comm;
 /* use global comm for all operations */
 extern mlsl_comm *global_comm;
 
-mlsl_status_t mlsl_comm_create(mlsl_comm **comm);
+mlsl_status_t mlsl_comm_create(size_t proc_idx, size_t proc_count, mlsl_comm **comm);
 mlsl_status_t mlsl_comm_free(mlsl_comm *comm);
 
 mlsl_status_t mlsl_comm_add_ref(mlsl_comm *comm);

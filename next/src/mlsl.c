@@ -2,15 +2,19 @@
 #include "global.h"
 #include "log.h"
 #include "mlsl.h"
+#include "sched_cache.h"
 
 mlsl_status_t mlsl_init()
 {
     mlsl_env_parse();
-    mlsl_comm_create(&global_comm);
+    mlsl_env_print();
+    mlsl_sched_cache_create(&global_sched_cache);
     mlsl_executor_create(env_data.worker_count, 1 /* priority_count */, &global_executor);
+    mlsl_comm_create(global_executor->proc_idx, global_executor->proc_count, &global_comm);
 
-    global_data.comm = global_comm;
+    global_data.sched_cache = global_sched_cache;
     global_data.executor = global_executor;
+    global_data.comm = global_comm;
 
     return mlsl_status_success;
 }
@@ -19,18 +23,19 @@ mlsl_status_t mlsl_finalize()
 {
     mlsl_comm_free(global_data.comm);
     mlsl_executor_free(global_data.executor);
+    mlsl_sched_cache_free(global_data.sched_cache);
     mlsl_env_free();
     return mlsl_status_success;
 }
 
 size_t mlsl_get_proc_idx()
 {
-    return mlsl_executor_get_proc_idx(global_data.executor);
+    return global_data.comm->proc_idx;
 }
 
 size_t mlsl_get_proc_count()
 {
-    return mlsl_executor_get_proc_count(global_data.executor);
+    return global_data.comm->proc_count;
 }
 
 size_t mlsl_get_dtype_size(mlsl_data_type_t dtype)
@@ -53,6 +58,12 @@ size_t mlsl_get_dtype_size(mlsl_data_type_t dtype)
 mlsl_status_t mlsl_wait(mlsl_request *req)
 {
     mlsl_executor_wait(global_data.executor, req);
-    mlsl_request_free(req);
+
+    mlsl_sched *sched = req->sched;
+    MLSL_ASSERTP(sched);
+
+    if (sched->type == mlsl_sched_non_persistent)
+        mlsl_sched_free(sched);
+
     return mlsl_status_success;
 }

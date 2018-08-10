@@ -1,5 +1,5 @@
 USE_SECURITY_FLAGS ?= 0
-ENABLE_DEBUG       ?= 1
+ENABLE_DEBUG       ?= 0
 
 CC         ?= gcc
 
@@ -22,7 +22,7 @@ endif
 
 ifeq ($(ENABLE_DEBUG), 1)
     USE_SECURITY_FLAGS = 0
-    CFLAGS += -O0 -g
+    CFLAGS += -O0 -g -DENABLE_DEBUG=1
 else
     CFLAGS += -O2
 endif
@@ -34,11 +34,13 @@ ifeq ($(USE_SECURITY_FLAGS), 1)
     LDFLAGS             += $(SECURITY_LDFLAGS)
 endif
 
+CFLAGS += -DPT_LOCK_SPIN=1
+
 default: $(TARGET)
 	make -C $(EXAMPLES_DIR)
 
 INCS += -I$(MLSL_DIR)/include -iquote $(SRC_DIR)/sched \
-        -I$(SRC_DIR)/comp \
+        -I$(SRC_DIR)/coll -I$(SRC_DIR)/comp \
         -I$(SRC_DIR)/exec -I$(SRC_DIR)/transport \
         -I$(SRC_DIR)/common -I$(SRC_DIR)/common/comm \
         -I$(SRC_DIR)/common/env -I$(SRC_DIR)/common/global \
@@ -47,11 +49,12 @@ INCS += -I$(MLSL_DIR)/include -iquote $(SRC_DIR)/sched \
         -I$(SRC_DIR)/../../atl
 
 SRCS += $(SRC_DIR)/mlsl.c
+SRCS += $(SRC_DIR)/coll/coll.c
 SRCS += $(SRC_DIR)/comp/comp.c
 SRCS += $(SRC_DIR)/sched/sched.c
+SRCS += $(SRC_DIR)/sched/sched_cache.c
 SRCS += $(SRC_DIR)/exec/exec.c
 SRCS += $(SRC_DIR)/exec/worker.c
-SRCS += $(SRC_DIR)/transport/transport.c
 SRCS += $(SRC_DIR)/common/comm/comm.c
 SRCS += $(SRC_DIR)/common/env/env.c
 SRCS += $(SRC_DIR)/common/global/global.c

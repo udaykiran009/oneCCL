@@ -32,6 +32,7 @@
 #define ATL_OFI_PM_KEY "atl-ofi"
 
 #define ATL_OFI_CQ_BUNCH_SIZE (8)
+#define ATL_OFI_RX_CTX_BITS   (8) // TODO: calculate bit count according to: 2 ^ rx_ctx_bits >= rx_ctx_cnt
 
 /* OFI returns 0 or -errno */
 #define RET2ATL(ret) ((ret) ? atl_status_failure : atl_status_success)
@@ -82,7 +83,10 @@ typedef struct atl_ofi_req {
 static inline fi_addr_t
 atl_ofi_comm_atl_addr_2_fi_addr(atl_ofi_context_t *atl, size_t proc_idx, size_t ep_idx)
 {
-    return *(atl->addr_table.table + ((atl->addr_table.ep_num * proc_idx) + ep_idx));
+    if (atl->sep)
+        return fi_rx_addr(*(atl->addr_table.table + ((atl->addr_table.ep_num * proc_idx))), ep_idx, ATL_OFI_RX_CTX_BITS);
+    else
+        return *(atl->addr_table.table + ((atl->addr_table.ep_num * proc_idx) + ep_idx));
 }
 
 static atl_status_t
@@ -680,6 +684,10 @@ atl_ops_t atl_ofi_ops = {
 atl_status_t atl_ofi_init(int *argc, char ***argv, size_t *proc_idx, size_t *proc_count,
                           atl_attr_t *attr, atl_comm_t ***atl_comms, atl_desc_t **atl_desc)
 {
+    // TODO: add env vars tuning for different providers
+    setenv("FI_PSM2_LOCK_LEVEL", "0", 0);
+    setenv("HFI_NO_CPUAFFINITY", "1", 0);
+
     struct fi_info *providers, *hints;
     struct fi_av_attr av_attr = { (enum fi_av_type)0 };
     int fi_version, ret;
@@ -706,6 +714,8 @@ atl_status_t atl_ofi_init(int *argc, char ***argv, size_t *proc_idx, size_t *pro
     hints->ep_attr->type = FI_EP_RDM;
     hints->domain_attr->resource_mgmt = FI_RM_ENABLED;
     hints->caps = FI_TAGGED;
+    hints->ep_attr->tx_ctx_cnt = attr->comm_count;
+    hints->ep_attr->rx_ctx_cnt = attr->comm_count;
 
     fi_version = FI_VERSION(1, 0);
 
@@ -729,6 +739,7 @@ atl_status_t atl_ofi_init(int *argc, char ***argv, size_t *proc_idx, size_t *pro
         goto err_dom;
 
     av_attr.type = FI_AV_TABLE;
+    av_attr.rx_ctx_bits = ATL_OFI_RX_CTX_BITS;
     ret = fi_av_open(atl_ofi_context->domain, &av_attr,
                      &atl_ofi_context->av, NULL);
     if (ret)

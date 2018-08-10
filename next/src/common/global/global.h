@@ -3,6 +3,7 @@
 
 #include "comm.h"
 #include "exec.h"
+#include "sched_cache.h"
 #include "utils.h"
 
 #define MLSL_TAG_UNDEFINED (-1)
@@ -13,6 +14,7 @@ struct mlsl_global_data
     int tag_ub;
     mlsl_comm *comm;
     mlsl_executor *executor;
+    mlsl_sched_cache *sched_cache;
 } __attribute__ ((aligned (CACHELINE_SIZE)));
 
 typedef struct mlsl_global_data mlsl_global_data;

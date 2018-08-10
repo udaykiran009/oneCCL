@@ -26,8 +26,9 @@ mlsl_status_t mlsl_request_release_ref(mlsl_request *req)
 
 mlsl_status_t mlsl_request_complete(mlsl_request *req)
 {
-    // TODO: use atomics
-    req->completion_counter--;
+    int prev_counter __attribute__ ((unused));
+    prev_counter = __atomic_fetch_sub(&(req->completion_counter), 1, __ATOMIC_RELEASE);
+    MLSL_ASSERTP(prev_counter);
     return mlsl_status_success;
 }
 

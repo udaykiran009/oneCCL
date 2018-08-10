@@ -14,6 +14,13 @@
 struct mlsl_sched_queue;
 struct mlsl_sched_queue_bin;
 
+enum mlsl_sched_type
+{
+    mlsl_sched_persistent     = 0,
+    mlsl_sched_non_persistent = 1
+};
+typedef enum mlsl_sched_type mlsl_sched_type;
+
 enum mlsl_sched_entry_type
 {
     mlsl_sched_entry_send    = 0,
@@ -32,7 +39,7 @@ struct mlsl_sched_send
     mlsl_data_type_t dtype;
     size_t dest;
     mlsl_comm *comm;
-    // TODO: replace by handle instead of explicit structure
+    // TODO_ATL: replace by handle instead of explicit structure
     atl_req_t req;
 };
 typedef struct mlsl_sched_send mlsl_sched_send;
@@ -122,6 +129,7 @@ struct mlsl_sched
 {
     struct mlsl_sched_queue_bin *bin;
 
+    mlsl_sched_type type;
     size_t size;               /* capacity (in entries) of the entries array */
     size_t idx;                /* index into entries array of first yet-outstanding entry */ /* index to start */
     size_t num_entries;        /* number of populated entries, num_entries <= size */
@@ -141,6 +149,10 @@ mlsl_status_t mlsl_sched_add_compute_1i1o(mlsl_sched *sched, mlsl_sched_compute_
 mlsl_status_t mlsl_sched_progress(struct mlsl_sched_queue_bin *bin, size_t sched_count, size_t *processed_sched_count);
 mlsl_status_t mlsl_sched_next_tag(mlsl_comm *comm, int *tag);
 mlsl_status_t mlsl_sched_clone(mlsl_sched *orig, mlsl_sched **cloned);
+mlsl_status_t mlsl_sched_adjust(mlsl_sched *sched, size_t partition_idx, size_t partition_count);
+mlsl_status_t mlsl_sched_dump(mlsl_sched *sched);
+mlsl_status_t mlsl_sched_reset(mlsl_sched *sched);
+mlsl_status_t mlsl_sched_commit_with_type(mlsl_sched *sched, mlsl_sched_type type);
 
 struct mlsl_sched_queue_bin
 {

@@ -12,6 +12,7 @@
 #include <unistd.h>
 
 #include "env.h"
+#include "mlsl.h"
 
 #define GET_TID()    syscall(SYS_gettid)
 #define IS_SPACE(c)  ((c==0x20 || c==0x09 || c==0x0a || c==0x0b || c==0x0c || c==0x0d) ? 8 : 0)
@@ -30,6 +31,8 @@
                     printf("%s: ERROR: (%ld): %s:%u " fmt "\n", time_buf, GET_TID(),   \
                             __FUNCTION__, __LINE__, ##__VA_ARGS__);                    \
                     mlsl_log_print_backtrace();                                        \
+                    mlsl_finalize();                                                   \
+                    _exit(1);                                                          \
                     break;                                                             \
                 }                                                                      \
                 case INFO:                                                             \
@@ -62,7 +65,7 @@
           fprintf(stderr, "(%ld): %s:%s:%d: ASSERT '%s' FAILED: " fmt "\n",               \
                   GET_TID(), __FILENAME__, __FUNCTION__, __LINE__, #cond, ##__VA_ARGS__); \
           fflush(stderr);                                                                 \
-          /* TODO: mlsl_finalize */                                                       \
+          mlsl_finalize();                                                                \
           _exit(1);                                                                       \
       }                                                                                   \
   } while(0)
@@ -71,7 +74,7 @@
 
 #ifdef ENABLE_DEBUG
 #define MLSL_ASSERT_FMT(cond, fmt, ...) MLSL_ASSERTP_FMT(cond, fmt, ##__VA_ARGS__);
-#define MLSL_ASSERT(cond, fmt, ...) MLSL_ASSERTP(cond);
+#define MLSL_ASSERT(cond) MLSL_ASSERTP(cond);
 #else
 #define MLSL_ASSERT_FMT(cond, fmt, ...)
 #define MLSL_ASSERT(cond)

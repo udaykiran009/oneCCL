@@ -1,4 +1,7 @@
 #include "exec.h"
+#include "global.h"
+#include "sched_cache.h"
+
 #include <immintrin.h>
 
 mlsl_executor *global_executor = NULL;
@@ -55,24 +58,51 @@ mlsl_status_t mlsl_executor_free(mlsl_executor *executor)
     return mlsl_status_success;
 }
 
-mlsl_status_t mlsl_executor_start(mlsl_executor *executor, mlsl_sched *sched, mlsl_request **req)
+mlsl_status_t mlsl_executor_start(mlsl_executor *executor, mlsl_sched *sched)
 {
     // TODO:
     // optimize sched if possible
-    // parallelize sched
-    // cache sched
 
-    // offload to workers
-    // size_t idx;
-    // for (idx = 0; idx < executor->worker_count; idx++)
-    // {
-    //     mlsl_sched_queue_add(executor->workers[idx]->sched_queue, &(scheds[idx]), 0 /* priority */);
-    // }
+    // TODO: offload sched clone/adjust/reset on worker side
 
-    // set sched->req completion_counter according to parallelization scheme
+    /* find sched in cache */
+    size_t idx;
+    mlsl_sched_cache_entry *e;
+    mlsl_sched_cache_get_entry(global_data.sched_cache, sched, &e);
+    MLSL_ASSERTP(e);
 
-    sched->req->completion_counter = 1;
-    mlsl_sched_queue_add(executor->workers[0]->sched_queue, sched, 0 /* priority */);
+    mlsl_sched **worker_scheds = e->worker_scheds;
+    if (!worker_scheds)
+    {
+        MLSL_LOG(DEBUG, "clone and adjust worker_scheds");
+        /* clone and adjust scheds */
+        worker_scheds = MLSL_CALLOC(sizeof(mlsl_sched*) * executor->worker_count, "worker_scheds");
+        for (idx = 0; idx < executor->worker_count; idx++)
+        {
+            mlsl_sched_clone(sched, &worker_scheds[idx]);
+            mlsl_sched_adjust(worker_scheds[idx], idx, executor->worker_count);
+        }
+        e->worker_scheds = worker_scheds;
+    }
+    else
+    {
+        MLSL_LOG(DEBUG, "reset worker_scheds");
+        for (idx = 0; idx < executor->worker_count; idx++)
+            mlsl_sched_reset(worker_scheds[idx]);
+    }
+
+    if (executor->proc_idx == 0)
+        mlsl_sched_dump(e->origin_sched);
+
+    /* offload scheds to workers */
+    sched->req->completion_counter = executor->worker_count;
+    for (idx = 0; idx < executor->worker_count; idx++)
+    {
+        if (executor->proc_idx == 0)
+            mlsl_sched_dump(worker_scheds[idx]);
+
+        mlsl_sched_queue_add(executor->workers[idx]->sched_queue, worker_scheds[idx], 0 /* priority */);
+    }
 
     return mlsl_status_success;
 }
@@ -80,21 +110,9 @@ mlsl_status_t mlsl_executor_start(mlsl_executor *executor, mlsl_sched *sched, ml
 mlsl_status_t mlsl_executor_wait(mlsl_executor *executor, mlsl_request *req)
 {
     MLSL_LOG(DEBUG, "req %p, req->cc %d", req, req->completion_counter);
-
-    // TODO: do atomic load because cc is updated from worker threads
-    while (req->completion_counter)
+    while (__atomic_load_n(&req->completion_counter, __ATOMIC_ACQUIRE))
     {
         _mm_pause();
     }
     return mlsl_status_success;
-}
-
-size_t mlsl_executor_get_proc_idx(mlsl_executor *executor)
-{
-    return executor->proc_idx;
-}
-
-size_t mlsl_executor_get_proc_count(mlsl_executor *executor)
-{
-    return executor->proc_count;
 }

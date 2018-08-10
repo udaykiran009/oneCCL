@@ -22,6 +22,13 @@ ifeq ($(CC), icc)
     LDFLAGS += -static-intel
 endif
 
+ifeq ($(ENABLE_DEBUG), 1)
+    USE_SECURITY_FLAGS = 0
+    CFLAGS += -O0 -g -DENABLE_DEBUG=1
+else
+    CFLAGS += -O2
+endif
+
 ifeq ($(USE_SECURITY_FLAGS), 1)
     SECURITY_CXXFLAGS   = -Wformat -Wformat-security -D_FORTIFY_SOURCE=2 -fstack-protector
     SECURITY_LDFLAGS    = -z noexecstack -z relro -z now
