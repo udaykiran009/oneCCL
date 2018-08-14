@@ -57,7 +57,7 @@ mlsl_status_t MLSL_API mlsl_sched_allreduce(
     size_t count,
     mlsl_data_type_t dtype,
     mlsl_reduction_t reduction,
-    mlsl_sched_t **sched);
+    mlsl_sched_t *sched);
 
 #ifdef __cplusplus
 }

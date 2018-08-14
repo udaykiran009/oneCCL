@@ -10,6 +10,7 @@ mlsl_status_t mlsl_comm_create(size_t proc_idx, size_t proc_count, mlsl_comm **c
     c->next_sched_tag = MLSL_TAG_FIRST;
     c->proc_idx = proc_idx;
     c->proc_count = proc_count;
+    c->pof2 = mlsl_pof2(proc_count);
     *comm = c;
     return mlsl_status_success;
 }

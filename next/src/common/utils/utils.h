@@ -133,4 +133,17 @@ do {                                                  \
 #define MLSL_REALLOC(old_ptr, old_size, new_size, align, name) MLSL_REALLOC_WRAPPER(old_ptr, old_size, new_size, align, name)
 #define MLSL_FREE(ptr)                                         MLSL_FREE_IMPL(ptr)
 
+/* other */
+
+inline size_t mlsl_pof2(size_t number)
+{
+    size_t pof2 = 1;
+
+    while (pof2 <= number)
+        pof2 <<= 1;
+    pof2 >>= 1;
+
+    return pof2;
+}
+
 #endif /* UTILS_H */

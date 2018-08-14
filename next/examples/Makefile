@@ -10,7 +10,7 @@ LDFLAGS  = -L ../src -lmlsl2 -lrt
 
 CC      ?= gcc
 
-c_test    = ring_allreduce
+c_test    = allreduce
 
 tests     = $(c_test)
 

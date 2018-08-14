@@ -10,6 +10,7 @@ struct mlsl_comm
     size_t next_sched_tag;
     size_t proc_idx;
     size_t proc_count;
+    size_t pof2;
 };
 
 typedef struct mlsl_comm mlsl_comm;

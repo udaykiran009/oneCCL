@@ -125,6 +125,23 @@ struct mlsl_sched_entry
 };
 typedef struct mlsl_sched_entry mlsl_sched_entry;
 
+enum mlsl_sched_memory_type
+{
+    mlsl_sched_memory_buffer     = 0,
+    mlsl_sched_memory_registered = 1
+};
+typedef enum mlsl_sched_memory_type mlsl_sched_memory_type;
+
+struct mlsl_sched_memory
+{
+    mlsl_sched_memory_type type;
+    void *ptr;
+
+    struct mlsl_sched_memory *next;
+    struct mlsl_sched_memory *prev;
+};
+typedef struct mlsl_sched_memory mlsl_sched_memory;
+
 struct mlsl_sched
 {
     struct mlsl_sched_queue_bin *bin;
@@ -136,6 +153,7 @@ struct mlsl_sched
     int tag;
     struct mlsl_request *req;
     mlsl_sched_entry *entries;
+    mlsl_sched_memory *persistent_memory;
 
     struct mlsl_sched *next;   /* linked-list next pointer */
     struct mlsl_sched *prev;   /* linked-list next pointer */
@@ -153,6 +171,9 @@ mlsl_status_t mlsl_sched_adjust(mlsl_sched *sched, size_t partition_idx, size_t 
 mlsl_status_t mlsl_sched_dump(mlsl_sched *sched);
 mlsl_status_t mlsl_sched_reset(mlsl_sched *sched);
 mlsl_status_t mlsl_sched_commit_with_type(mlsl_sched *sched, mlsl_sched_type type);
+
+mlsl_status_t mlsl_sched_add_persistent_memory(mlsl_sched *sched, mlsl_sched_memory_type type, void *ptr);
+mlsl_status_t mlsl_sched_free_persistent_memory(mlsl_sched *sched);
 
 struct mlsl_sched_queue_bin
 {

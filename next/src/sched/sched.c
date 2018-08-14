@@ -1,4 +1,5 @@
 #include "comp.h"
+#include "coll.h"
 #include "global.h"
 #include "log.h"
 #include "sched.h"
@@ -683,10 +684,44 @@ mlsl_status_t mlsl_sched_commit(mlsl_sched *sched)
     return mlsl_status_success;
 }
 
+mlsl_status_t mlsl_sched_add_persistent_memory(mlsl_sched *sched, mlsl_sched_memory_type type, void *ptr)
+{
+    MLSL_LOG(DEBUG, "sched %p, type %d, ptr %p", sched, type, ptr);
+
+    mlsl_sched_memory *mem = MLSL_CALLOC(sizeof(mlsl_sched_memory), "sched_memory");
+    mem->type = type;
+    mem->ptr = ptr;
+    MLSL_DLIST_APPEND(sched->persistent_memory, mem);
+    return mlsl_status_success;
+}
+
+mlsl_status_t mlsl_sched_free_persistent_memory(mlsl_sched *sched)
+{
+    MLSL_LOG(DEBUG, "sched %p", sched);
+
+    mlsl_sched_memory *mem, *tmp;
+    MLSL_DLIST_FOREACH_SAFE(sched->persistent_memory, mem, tmp)
+    {
+        switch (mem->type)
+        {
+            case mlsl_sched_memory_buffer:
+                MLSL_LOG(DEBUG, "free %p", mem->ptr);
+                MLSL_FREE(mem->ptr);
+                break;
+            case mlsl_sched_memory_registered:
+                // TODO: unregister memory
+                break;
+        }
+        MLSL_FREE(mem);
+    }
+    return mlsl_status_success;
+}
+
 mlsl_status_t mlsl_sched_free(mlsl_sched *sched)
 {
     mlsl_sched_cache_free_entry(global_data.sched_cache, sched);
     mlsl_request_free(sched->req);
+    mlsl_sched_free_persistent_memory(sched);
     MLSL_FREE(sched->entries);
     MLSL_FREE(sched);
     return mlsl_status_success;
@@ -713,9 +748,15 @@ mlsl_status_t mlsl_sched_allreduce(
     size_t count,
     mlsl_data_type_t dtype,
     mlsl_reduction_t reduction,
-    mlsl_sched_t **sched)
+    mlsl_sched **sched)
 {
-    return mlsl_status_unimplemented;
+    mlsl_status_t status = mlsl_status_success;
+
+    MLSL_CALL(mlsl_sched_create(sched));
+    MLSL_CALL(mlsl_coll_build_allreduce(*sched, send_buf, recv_buf, count, dtype, reduction));
+    MLSL_CALL(mlsl_sched_commit(*sched));
+
+    return status;
 }
 
 mlsl_status_t mlsl_sched_queue_create(size_t max_bins, atl_comm_t **comm_ctxs, mlsl_sched_queue **queue)
