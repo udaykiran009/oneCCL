@@ -100,14 +100,14 @@ mlsl_status_t mlsl_executor_start(mlsl_executor *executor, mlsl_sched *sched)
     }
 
     if (executor->proc_idx == 0)
-        mlsl_sched_dump(e->origin_sched);
+        mlsl_sched_dump(e->origin_sched, "origin_sched");
 
     /* add scheds into worker queues */
     sched->req->completion_counter = executor->worker_count;
     for (idx = 0; idx < executor->worker_count; idx++)
     {
         if (executor->proc_idx == 0)
-            mlsl_sched_dump(worker_scheds[idx]);
+            mlsl_sched_dump(worker_scheds[idx], "worker_sched");
 
         mlsl_sched_queue_add(executor->workers[idx]->sched_queue, worker_scheds[idx], 0 /* priority */);
     }

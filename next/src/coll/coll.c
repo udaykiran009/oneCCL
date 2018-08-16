@@ -102,6 +102,7 @@ mlsl_status_t mlsl_coll_build_rabenseifner_allreduce(mlsl_sched *sched, const vo
     if (send_buf != recv_buf) {
         MLSL_CALL(mlsl_sched_add_copy(sched, send_buf, recv_buf, count, dtype));
         MLSL_CALL(mlsl_sched_add_barrier(sched));
+        MLSL_CALL(mlsl_sched_add_sync(sched));
     }
 
     /* get nearest power-of-two less than or equal to proc_count */

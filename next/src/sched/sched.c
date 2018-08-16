@@ -5,6 +5,7 @@
 #include "sched.h"
 #include "utils.h"
 
+#include <immintrin.h>
 #include <stdio.h>
 
 #define MLSL_SCHED_INITIAL_ENTRIES (16)
@@ -22,6 +23,8 @@ static const char *mlsl_sched_entry_type_to_str(mlsl_sched_entry_type type)
             return "COMPUTE";
         case mlsl_sched_entry_copy:
             return "COPY";
+        case mlsl_sched_entry_sync:
+            return "SYNC";
         case mlsl_sched_entry_nop:
             return "NOP";
         default:
@@ -30,7 +33,7 @@ static const char *mlsl_sched_entry_type_to_str(mlsl_sched_entry_type type)
     }
 }
 
-mlsl_status_t mlsl_sched_dump(mlsl_sched *s)
+mlsl_status_t mlsl_sched_dump(mlsl_sched *s, const char *name)
 {
     if (!env_data.sched_dump) return mlsl_status_success;
 
@@ -40,8 +43,8 @@ mlsl_status_t mlsl_sched_dump(mlsl_sched *s)
 
     buf_offset += sprintf(buf + buf_offset, "\n--------------------------------\n");
     if (s) {
-        buf_offset += sprintf(buf + buf_offset, "sched: %p, sz %zu, start_idx %zu, num_entries %zu, tag %d, req %p, entries %p\n",
-                              s, s->size, s->idx, s->num_entries, s->tag, s->req, s->entries);
+        buf_offset += sprintf(buf + buf_offset, "sched: %s, %p, sz %zu, start_idx %zu, num_entries %zu, tag %d, req %p, entries %p\n",
+                              name, s, s->size, s->idx, s->num_entries, s->tag, s->req, s->entries);
 
         for (i = 0; i < s->num_entries; ++i) {
             mlsl_sched_entry *e = &(s->entries[i]);
@@ -77,6 +80,10 @@ mlsl_status_t mlsl_sched_dump(mlsl_sched *s)
                                           e->u.compute.in_buf, e->u.compute.in_count,
                                           e->u.compute.out_buf, e->u.compute.out_count,
                                           e->u.compute.dtype);
+                    break;
+                case mlsl_sched_entry_sync:
+                    buf_offset += sprintf(buf + buf_offset, "ptr %p, counter %d\n",
+                                          e->u.sync.counter_ptr, (*e->u.sync.counter_ptr));
                     break;
                 case mlsl_sched_entry_nop:
                     break;
@@ -150,6 +157,9 @@ static void mlsl_sched_entry_adjust(mlsl_sched_entry *entry, size_t partition_id
             MLSL_ADJUST_PTR(entry->u.compute.in_buf, adjust_offset);
             MLSL_ADJUST_PTR(entry->u.compute.out_buf, adjust_offset);
             break;
+        case mlsl_sched_entry_sync:
+            (*entry->u.sync.counter_ptr)++;
+            break;
         case mlsl_sched_entry_nop:
             break;
         default:
@@ -185,8 +195,7 @@ mlsl_status_t mlsl_sched_start_entry(mlsl_sched *s, size_t idx, mlsl_sched_entry
 
     switch (e->type) {
         case mlsl_sched_entry_send:
-            MLSL_LOG(DEBUG, "starting SEND entry %zu", idx);
-
+            MLSL_LOG(DEBUG, "starting SEND entry %zu, sreq %p", idx, &e->u.send.req);
             atl_status = atl_comm_send(s->bin->comm_ctx, e->u.send.buf,
                                        e->u.send.count * mlsl_get_dtype_size(e->u.send.dtype),
                                        e->u.send.dest, s->tag, &e->u.send.req);
@@ -199,8 +208,7 @@ mlsl_status_t mlsl_sched_start_entry(mlsl_sched *s, size_t idx, mlsl_sched_entry
             }
             break;
         case mlsl_sched_entry_recv:
-            MLSL_LOG(DEBUG, "starting RECV entry %zu", idx);
-
+            MLSL_LOG(DEBUG, "starting RECV entry %zu, rreq %p", idx, &e->u.recv.req);
             atl_status = atl_comm_recv(s->bin->comm_ctx, e->u.recv.buf,
                                        e->u.recv.count * mlsl_get_dtype_size(e->u.recv.dtype),
                                        e->u.recv.src, s->tag, &e->u.recv.req);
@@ -229,6 +237,30 @@ mlsl_status_t mlsl_sched_start_entry(mlsl_sched *s, size_t idx, mlsl_sched_entry
             // indtype is not builtin - release ref
             // outdtype is not builtin - release ref
             e->status = mlsl_sched_entry_status_complete;
+            break;
+        case mlsl_sched_entry_sync:
+            if (e->u.sync.was_used == 0)
+            {
+                MLSL_LOG(DEBUG, "starting SYNC entry %zu", idx);
+                int prev_counter = __atomic_fetch_sub(e->u.sync.counter_ptr, 1, __ATOMIC_RELEASE);
+                MLSL_ASSERTP(prev_counter >= 0);
+                e->u.sync.was_used = 1;
+            }
+
+            if (e->u.sync.was_used == 1)
+            {
+                int counter = __atomic_load_n(e->u.sync.counter_ptr, __ATOMIC_ACQUIRE);
+                if (counter == 0)
+                {
+                    MLSL_LOG(DEBUG, "completed SYNC entry %zu", idx);
+                    e->status = mlsl_sched_entry_status_complete;
+                }
+                else
+                {
+                    MLSL_LOG(DEBUG, "waiting SYNC entry %zu, cnt %d", idx, counter);
+                    _mm_pause();
+                }
+            }
             break;
         case mlsl_sched_entry_nop:
             MLSL_LOG(DEBUG, "starting NOP entry %zu", idx);
@@ -368,6 +400,11 @@ mlsl_status_t mlsl_sched_reset(mlsl_sched *sched)
     for (idx = 0; idx < sched->num_entries; idx++)
     {
         sched->entries[idx].status = mlsl_sched_entry_status_not_started;
+        if (sched->entries[idx].type == mlsl_sched_entry_sync)
+        {
+            (*sched->entries[idx].u.sync.counter_ptr)++;
+            sched->entries[idx].u.sync.was_used = 0;
+        }
     }
     return mlsl_status_success;
 }
@@ -537,6 +574,27 @@ mlsl_status_t mlsl_sched_add_barrier(mlsl_sched *sched)
     return status;
 }
 
+mlsl_status_t mlsl_sched_add_sync(mlsl_sched *sched)
+{
+    mlsl_status_t status = mlsl_status_success;
+    mlsl_sched_entry *e = NULL;
+    mlsl_sched_sync *sync = NULL;
+
+    status = mlsl_sched_add_entry(sched, NULL, &e);
+    MLSL_ASSERTP(status == mlsl_status_success);
+
+    e->type = mlsl_sched_entry_sync;
+    e->status = mlsl_sched_entry_status_not_started;
+    e->is_barrier = 1;
+    sync = &e->u.sync;
+
+    sync->counter = 0;
+    sync->counter_ptr = &sync->counter;
+    sync->was_used = 0;
+
+    return status;
+}
+
 mlsl_status_t mlsl_sched_add_compute_1i1o(mlsl_sched *sched, mlsl_sched_compute_1i1o_fn_t fn_ptr,
                                           const void* in_buf, size_t in_count,
                                           void *out_buf, size_t *out_count,
@@ -634,6 +692,8 @@ mlsl_status_t mlsl_sched_progress(mlsl_sched_queue_bin *bin, size_t sched_count,
                     MLSL_ASSERTP(status == mlsl_status_success);
                 }
             } else if (e->is_barrier && e->status < mlsl_sched_entry_status_complete) {
+                if (e->type == mlsl_sched_entry_sync)
+                    status = mlsl_sched_continue(s);
                 /* don't process anything after this barrier entry */
                 break;
             }
@@ -781,6 +841,7 @@ mlsl_status_t mlsl_sched_queue_free(mlsl_sched_queue *queue)
 {
     mlsl_fastlock_destroy(&queue->lock);
     MLSL_ASSERTP(queue->used_bins == 0);
+    MLSL_ASSERTP(queue->max_priority == 0);
     MLSL_FREE(queue);
 
     return mlsl_status_success;
@@ -810,6 +871,7 @@ mlsl_status_t mlsl_sched_queue_remove(mlsl_sched_queue *queue, mlsl_sched_queue_
     bin->elem_count--;
     if (!bin->elems)
     {
+        MLSL_ASSERT(bin->elem_count == 0);
         queue->used_bins--;
         if (queue->used_bins == 0) queue->max_priority = 0;
         else
@@ -835,6 +897,7 @@ mlsl_status_t mlsl_sched_queue_peek(mlsl_sched_queue *queue, mlsl_sched_queue_bi
     {
         *bin = &(queue->bins[queue->max_priority]);
         *count = (*bin)->elem_count;
+        MLSL_ASSERT(*count > 0);
     }
     else
     {

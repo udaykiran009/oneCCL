@@ -28,7 +28,8 @@ enum mlsl_sched_entry_type
     mlsl_sched_entry_reduce  = 2,
     mlsl_sched_entry_copy    = 3,
     mlsl_sched_entry_compute = 4,
-    mlsl_sched_entry_nop     = 5
+    mlsl_sched_entry_sync    = 5,
+    mlsl_sched_entry_nop     = 6
 };
 typedef enum mlsl_sched_entry_type mlsl_sched_entry_type;
 
@@ -99,6 +100,14 @@ struct mlsl_sched_compute
 };
 typedef struct mlsl_sched_compute mlsl_sched_compute;
 
+struct mlsl_sched_sync
+{
+    int counter;
+    int *counter_ptr;
+    int was_used;
+};
+typedef struct mlsl_sched_sync mlsl_sched_sync;
+
 enum mlsl_sched_entry_status
 {
     mlsl_sched_entry_status_not_started = 0,
@@ -121,6 +130,7 @@ struct mlsl_sched_entry
         mlsl_sched_reduce reduce;
         mlsl_sched_copy copy;
         mlsl_sched_compute compute;
+        mlsl_sched_sync sync;
     } u;
 };
 typedef struct mlsl_sched_entry mlsl_sched_entry;
@@ -160,15 +170,17 @@ struct mlsl_sched
 };
 typedef struct mlsl_sched mlsl_sched;
 
+mlsl_status_t mlsl_sched_add_sync(mlsl_sched* sched);
 mlsl_status_t mlsl_sched_add_compute_1i1o(mlsl_sched *sched, mlsl_sched_compute_1i1o_fn_t cb_p,
                                           const void *in_buf, size_t in_count,
                                           void *out_buf, size_t *out_count,
                                           mlsl_data_type_t dtype);
+mlsl_status_t mlsl_sched_add_sync(mlsl_sched *sched);
 mlsl_status_t mlsl_sched_progress(struct mlsl_sched_queue_bin *bin, size_t sched_count, size_t *processed_sched_count);
 mlsl_status_t mlsl_sched_next_tag(mlsl_comm *comm, int *tag);
 mlsl_status_t mlsl_sched_clone(mlsl_sched *orig, mlsl_sched **cloned);
 mlsl_status_t mlsl_sched_adjust(mlsl_sched *sched, size_t partition_idx, size_t partition_count);
-mlsl_status_t mlsl_sched_dump(mlsl_sched *sched);
+mlsl_status_t mlsl_sched_dump(mlsl_sched *sched, const char *name);
 mlsl_status_t mlsl_sched_reset(mlsl_sched *sched);
 mlsl_status_t mlsl_sched_commit_with_type(mlsl_sched *sched, mlsl_sched_type type);
 
