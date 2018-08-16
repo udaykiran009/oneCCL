@@ -21,5 +21,6 @@ mlsl_status_t mlsl_worker_free(mlsl_worker *worker);
 mlsl_status_t mlsl_worker_start(mlsl_worker *worker);
 mlsl_status_t mlsl_worker_stop(mlsl_worker *worker);
 mlsl_status_t mlsl_worker_pin(mlsl_worker *worker, int proc_id);
+mlsl_status_t mlsl_worker_peek_and_progress(mlsl_worker *worker, size_t *processed_count);
 
 #endif /* WORKER_H */

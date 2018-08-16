@@ -8,6 +8,7 @@ mlsl_env_data env_data = {
                            .log_level = ERROR,
                            .sched_dump = 0,
                            .worker_count = 1,
+                           .worker_offload = 1,
                            .worker_affinity = NULL
                          };
 
@@ -16,6 +17,7 @@ void mlsl_env_parse()
     mlsl_env_2_int("MLSL_LOG_LEVEL", (int*)&env_data.log_level);
     mlsl_env_2_int("MLSL_SCHED_DUMP", (int*)&env_data.sched_dump);
     mlsl_env_2_int("MLSL_WORKER_COUNT", (int*)&env_data.worker_count);
+    mlsl_env_2_int("MLSL_WORKER_OFFLOAD", (int*)&env_data.worker_offload);
     mlsl_env_parse_affinity();
 }
 
@@ -29,6 +31,7 @@ void mlsl_env_print()
     MLSL_LOG(INFO, "MLSL_LOG_LEVEL: %d", env_data.log_level);
     MLSL_LOG(INFO, "MLSL_SCHED_DUMP: %d", env_data.sched_dump);
     MLSL_LOG(INFO, "MLSL_WORKER_COUNT: %d", env_data.worker_count);
+    MLSL_LOG(INFO, "MLSL_WORKER_OFFLOAD: %d", env_data.worker_offload);
     mlsl_env_print_affinity();
 }
 

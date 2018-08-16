@@ -135,7 +135,7 @@ do {                                                  \
 
 /* other */
 
-inline size_t mlsl_pof2(size_t number)
+static inline size_t mlsl_pof2(size_t number)
 {
     size_t pof2 = 1;
 

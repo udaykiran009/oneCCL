@@ -88,10 +88,22 @@ mlsl_status_t mlsl_worker_pin(mlsl_worker *worker, int proc_id)
     return mlsl_status_success;
 }
 
-static mlsl_status_t mlsl_worker_do_progress(mlsl_sched_queue_bin *bin, size_t sched_count, size_t *processed_sched_count)
+mlsl_status_t mlsl_worker_peek_and_progress(mlsl_worker *worker, size_t *processed_count)
 {
-    mlsl_sched_progress(bin, sched_count, processed_sched_count);
-    MLSL_ASSERTP(*processed_sched_count <= sched_count);
+    size_t peek_count;
+    mlsl_sched_queue_bin *bin;
+
+    MLSL_ASSERTP(processed_count);
+    *processed_count = 0;
+
+    mlsl_sched_queue_peek(worker->sched_queue, &bin, &peek_count);
+    if (peek_count)
+    {
+        MLSL_ASSERTP(bin);
+        mlsl_sched_progress(bin, peek_count, processed_count);
+        MLSL_ASSERTP(*processed_count <= peek_count);
+    }
+
     return mlsl_status_success;
 }
 
@@ -102,21 +114,17 @@ static void* mlsl_worker_func(void *args)
 
     size_t iter_count = 0;
     size_t yield_spin_count = 0;
-    size_t processed_sched_count = 0;
-    size_t sched_count = 0;
-    mlsl_sched_queue_bin *bin = NULL;
+    size_t processed_count = 0;
+
     do
     {
-        processed_sched_count = 0;
-        mlsl_sched_queue_peek(worker->sched_queue, &bin, &sched_count);
-        if (sched_count)
-            mlsl_worker_do_progress(bin, sched_count, &processed_sched_count);
+        mlsl_worker_peek_and_progress(worker, &processed_count);
 
         iter_count++;
         if ((iter_count % MLSL_WORKER_CHECK_CANCEL_ITERS) == 0)
             pthread_testcancel();
 
-        if (processed_sched_count == 0)
+        if (processed_count == 0)
         {
             yield_spin_count++;
             if (yield_spin_count > MLSL_WORKER_YIELD_ITERS)

@@ -8,6 +8,7 @@ struct mlsl_env_data
     int log_level;
     int sched_dump;
     int worker_count;
+    int worker_offload;
     int *worker_affinity;
 } __attribute__ ((aligned (CACHELINE_SIZE)));
 

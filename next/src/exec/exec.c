@@ -30,9 +30,13 @@ mlsl_status_t mlsl_executor_create(size_t worker_count, size_t priority_count, m
         mlsl_sched_queue *queue;
         mlsl_sched_queue_create(priority_count, e->atl_comms + idx * priority_count, &queue);
         mlsl_worker_create(e, idx, queue, &(e->workers[idx]));
-        mlsl_worker_start(e->workers[idx]);
-        mlsl_worker_pin(e->workers[idx], env_data.worker_affinity[idx]);
-        MLSL_LOG(INFO, "created worker # %zu", idx);
+
+        if (env_data.worker_offload)
+        {
+            mlsl_worker_start(e->workers[idx]);
+            mlsl_worker_pin(e->workers[idx], env_data.worker_affinity[idx]);
+            MLSL_LOG(INFO, "started worker # %zu", idx);
+        }
     }
 
     *executor = e;
@@ -45,10 +49,14 @@ mlsl_status_t mlsl_executor_free(mlsl_executor *executor)
     size_t idx;
     for (idx = 0; idx < executor->worker_count; idx++)
     {
-        mlsl_worker_stop(executor->workers[idx]);
+        if (env_data.worker_offload)
+        {
+            mlsl_worker_stop(executor->workers[idx]);
+            MLSL_LOG(INFO, "stopped worker # %zu", idx);
+        }
+
         mlsl_worker_free(executor->workers[idx]);
         mlsl_sched_queue_free(executor->workers[idx]->sched_queue);
-        MLSL_LOG(INFO, "freed worker # %zu", idx);
     }
 
     atl_finalize(executor->atl_desc, executor->atl_comms);
@@ -94,7 +102,7 @@ mlsl_status_t mlsl_executor_start(mlsl_executor *executor, mlsl_sched *sched)
     if (executor->proc_idx == 0)
         mlsl_sched_dump(e->origin_sched);
 
-    /* offload scheds to workers */
+    /* add scheds into worker queues */
     sched->req->completion_counter = executor->worker_count;
     for (idx = 0; idx < executor->worker_count; idx++)
     {
@@ -110,9 +118,18 @@ mlsl_status_t mlsl_executor_start(mlsl_executor *executor, mlsl_sched *sched)
 mlsl_status_t mlsl_executor_wait(mlsl_executor *executor, mlsl_request *req)
 {
     MLSL_LOG(DEBUG, "req %p, req->cc %d", req, req->completion_counter);
+
     while (__atomic_load_n(&req->completion_counter, __ATOMIC_ACQUIRE))
     {
-        _mm_pause();
+        if (env_data.worker_offload)
+            _mm_pause();
+        else
+        {
+            size_t idx, processed_count;
+            for (idx = 0; idx < executor->worker_count; idx++)
+                mlsl_worker_peek_and_progress(executor->workers[idx], &processed_count);
+        }
     }
+
     return mlsl_status_success;
 }

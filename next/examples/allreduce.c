@@ -6,7 +6,7 @@
 #include <sys/time.h>
 
 #define COUNT 1048576
-#define ITERS 128
+#define ITERS 1024
 #define MLSL_CALL(expr)                        \
   do {                                         \
         status = expr;                         \
