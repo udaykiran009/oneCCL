@@ -9,7 +9,7 @@ mlsl_status_t mlsl_request_create(mlsl_request **req)
 
 mlsl_status_t mlsl_request_free(mlsl_request *req)
 {
-    MLSL_ASSERTP(req->completion_counter == 0);
+    MLSL_ASSERT(req->completion_counter == 0);
     MLSL_FREE(req);
     return mlsl_status_success;
 }
@@ -26,6 +26,7 @@ mlsl_status_t mlsl_request_release_ref(mlsl_request *req)
 
 mlsl_status_t mlsl_request_complete(mlsl_request *req)
 {
+    MLSL_ASSERT(req);
     int prev_counter __attribute__ ((unused));
     prev_counter = __atomic_fetch_sub(&(req->completion_counter), 1, __ATOMIC_RELEASE);
     MLSL_ASSERTP(prev_counter);

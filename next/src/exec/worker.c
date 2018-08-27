@@ -4,7 +4,7 @@
 #include "worker.h"
 
 #define MLSL_WORKER_CHECK_CANCEL_ITERS (32768)
-#define MLSL_WORKER_YIELD_ITERS        (10000)
+#define MLSL_WORKER_YIELD_ITERS        (32768)
 
 static void* mlsl_worker_func(void *args);
 
@@ -93,15 +93,15 @@ mlsl_status_t mlsl_worker_peek_and_progress(mlsl_worker *worker, size_t *process
     size_t peek_count;
     mlsl_sched_queue_bin *bin;
 
-    MLSL_ASSERTP(processed_count);
+    MLSL_ASSERT(processed_count);
     *processed_count = 0;
 
     mlsl_sched_queue_peek(worker->sched_queue, &bin, &peek_count);
     if (peek_count)
     {
-        MLSL_ASSERTP(bin);
+        MLSL_ASSERT(bin);
         mlsl_sched_progress(bin, peek_count, processed_count);
-        MLSL_ASSERTP(*processed_count <= peek_count);
+        MLSL_ASSERT(*processed_count <= peek_count);
     }
 
     return mlsl_status_success;
@@ -110,7 +110,7 @@ mlsl_status_t mlsl_worker_peek_and_progress(mlsl_worker *worker, size_t *process
 static void* mlsl_worker_func(void *args)
 {
     mlsl_worker *worker = (mlsl_worker*)args;
-    MLSL_LOG(DEBUG, "worker_idx %zu", worker->idx);
+    MLSL_LOG(INFO, "worker_idx %zu", worker->idx);
 
     size_t iter_count = 0;
     size_t yield_spin_count = 0;

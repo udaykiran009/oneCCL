@@ -11,7 +11,7 @@
 #define MLSL_CALL(expr)                              \
   do {                                               \
         status = expr;                               \
-        MLSL_ASSERTP(status == mlsl_status_success); \
+        MLSL_ASSERT(status == mlsl_status_success); \
   } while (0)
 
 #define MIN(a,b) ((a) < (b) ? (a) : (b))
@@ -34,6 +34,19 @@
 #define MLSL_DLIST_FOREACH_SAFE(head, el, tmp) MLSL_DLIST_FOREACH_SAFE_NP(head, el, tmp, next, prev)
 #define MLSL_DLIST_FOREACH_SAFE_NP(head, el, tmp, _next, _prev) \
   for ((el)=(head); (el) && (tmp = (el)->_next, 1); (el) = tmp)
+
+#define MLSL_DLIST_PREPEND(head, add) MLSL_DLIST_PREPEND_NP(head, add, next, prev)
+#define MLSL_DLIST_PREPEND_NP(head, add, _next, _prev) \
+  do {                                                 \
+       (add)->_next = head;                            \
+       if (head) {                                     \
+         (add)->_prev = (head)->_prev;                 \
+         (head)->_prev = (add);                        \
+       } else {                                        \
+         (add)->_prev = (add);                         \
+       }                                               \
+       (head) = (add);                                 \
+  } while (0)
 
 #define MLSL_DLIST_APPEND(head, add) MLSL_DLIST_APPEND_NP(head, add, next, prev)
 #define MLSL_DLIST_APPEND_NP(head,add,_next,_prev) \
@@ -109,21 +122,21 @@ do {                                                  \
 #define MLSL_MEMALIGN_WRAPPER(size, align, name)   \
     ({                                             \
       void *ptr = MLSL_MEMALIGN_IMPL(size, align); \
-      MLSL_ASSERTP_FMT(ptr, name);                 \
+      MLSL_ASSERT_FMT(ptr, name);                  \
       ptr;                                         \
     })
 
 #define MLSL_REALLOC_WRAPPER(old_ptr, old_size, new_size, align, name)   \
     ({                                                                   \
       void *ptr = MLSL_REALLOC_IMPL(old_ptr, old_size, new_size, align); \
-      MLSL_ASSERTP_FMT(ptr, name);                                       \
+      MLSL_ASSERT_FMT(ptr, name);                                        \
       ptr;                                                               \
     })
 
 #define MLSL_CALLOC_WRAPPER(size, align, name)   \
     ({                                           \
       void *ptr = MLSL_CALLOC_IMPL(size, align); \
-      MLSL_ASSERTP_FMT(ptr, name);               \
+      MLSL_ASSERT_FMT(ptr, name);                \
       ptr;                                       \
     })
 

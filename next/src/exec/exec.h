@@ -26,5 +26,6 @@ mlsl_status_t mlsl_executor_create(size_t worker_count, size_t priority_count, m
 mlsl_status_t mlsl_executor_free(mlsl_executor *executor);
 mlsl_status_t mlsl_executor_start(mlsl_executor *executor, mlsl_sched *sched);
 mlsl_status_t mlsl_executor_wait(mlsl_executor *executor, mlsl_request *req);
+mlsl_status_t mlsl_executor_test(mlsl_executor *executor, mlsl_request *req, int *is_completed);
 
 #endif /* EXEC_H */

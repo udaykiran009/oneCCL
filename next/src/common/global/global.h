@@ -3,6 +3,7 @@
 
 #include "comm.h"
 #include "exec.h"
+#include "parallelizer.h"
 #include "sched_cache.h"
 #include "utils.h"
 
@@ -15,6 +16,7 @@ struct mlsl_global_data
     mlsl_comm *comm;
     mlsl_executor *executor;
     mlsl_sched_cache *sched_cache;
+    mlsl_parallelizer *parallelizer;
 } __attribute__ ((aligned (CACHELINE_SIZE)));
 
 typedef struct mlsl_global_data mlsl_global_data;

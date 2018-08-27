@@ -75,41 +75,34 @@ mlsl_status_t mlsl_executor_start(mlsl_executor *executor, mlsl_sched *sched)
 
     /* find sched in cache */
     size_t idx;
-    mlsl_sched_cache_entry *e;
-    mlsl_sched_cache_get_entry(global_data.sched_cache, sched, &e);
-    MLSL_ASSERTP(e);
+    mlsl_sched_cache_entry *e = sched->cache_entry;
+    MLSL_ASSERT(e && (e->origin_sched == sched) && e->worker_scheds);
 
     mlsl_sched **worker_scheds = e->worker_scheds;
-    if (!worker_scheds)
+
+    for (idx = 0; idx < e->worker_sched_count; idx++)
     {
-        MLSL_LOG(DEBUG, "clone and adjust worker_scheds");
-        /* clone and adjust scheds */
-        worker_scheds = MLSL_CALLOC(sizeof(mlsl_sched*) * executor->worker_count, "worker_scheds");
-        for (idx = 0; idx < executor->worker_count; idx++)
-        {
-            mlsl_sched_clone(sched, &worker_scheds[idx]);
-            mlsl_sched_adjust(worker_scheds[idx], idx, executor->worker_count);
-        }
-        e->worker_scheds = worker_scheds;
-    }
-    else
-    {
-        MLSL_LOG(DEBUG, "reset worker_scheds");
-        for (idx = 0; idx < executor->worker_count; idx++)
-            mlsl_sched_reset(worker_scheds[idx]);
+        worker_scheds[idx]->first_progress = 1;
+        mlsl_sched_adjust_tag(worker_scheds[idx]);
     }
 
     if (executor->proc_idx == 0)
         mlsl_sched_dump(e->origin_sched, "origin_sched");
 
     /* add scheds into worker queues */
-    sched->req->completion_counter = executor->worker_count;
-    for (idx = 0; idx < executor->worker_count; idx++)
+    sched->req->completion_counter = e->worker_sched_count;
+    for (idx = 0; idx < e->worker_sched_count; idx++)
     {
         if (executor->proc_idx == 0)
             mlsl_sched_dump(worker_scheds[idx], "worker_sched");
 
-        mlsl_sched_queue_add(executor->workers[idx]->sched_queue, worker_scheds[idx], 0 /* priority */);
+        mlsl_sched_queue *queue = executor->workers[idx % executor->worker_count]->sched_queue;
+        size_t priority = 0;
+        if (sched->coll_desc->ctype == mlsl_coll_barrier)
+            mlsl_sched_queue_get_max_priority(queue, &priority);
+
+        worker_scheds[idx]->req = sched->req;
+        mlsl_sched_queue_add(queue, worker_scheds[idx], priority);
     }
 
     return mlsl_status_success;
@@ -130,6 +123,29 @@ mlsl_status_t mlsl_executor_wait(mlsl_executor *executor, mlsl_request *req)
                 mlsl_worker_peek_and_progress(executor->workers[idx], &processed_count);
         }
     }
+
+    return mlsl_status_success;
+}
+
+mlsl_status_t mlsl_executor_test(mlsl_executor *executor, mlsl_request *req, int *is_completed)
+{
+    MLSL_LOG(DEBUG, "req %p, req->cc %d", req, req->completion_counter);
+
+    size_t completion_counter = __atomic_load_n(&req->completion_counter, __ATOMIC_ACQUIRE);
+    if (completion_counter)
+    {
+        if (env_data.worker_offload)
+            _mm_pause();
+        else
+        {
+            size_t idx, processed_count;
+            for (idx = 0; idx < executor->worker_count; idx++)
+                mlsl_worker_peek_and_progress(executor->workers[idx], &processed_count);
+        }
+        *is_completed = (!__atomic_load_n(&req->completion_counter, __ATOMIC_ACQUIRE));
+    }
+    else
+        *is_completed = 1;
 
     return mlsl_status_success;
 }

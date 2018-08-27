@@ -1,5 +1,5 @@
 
-ENABLE_DEBUG ?= 1
+ENABLE_DEBUG ?= 0
 SHELL = bash
 
 #INCLUDES = -I$(MLSL_ROOT)/intel64/include
@@ -10,7 +10,7 @@ LDFLAGS  = -L ../src -lmlsl2 -lrt
 
 CC      ?= gcc
 
-c_test    = allreduce
+c_test    = allreduce reduce bcast allgatherv
 
 tests     = $(c_test)
 

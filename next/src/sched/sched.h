@@ -2,6 +2,7 @@
 #define SCHED_H
 
 #include "atl.h"
+#include "coll.h"
 #include "comm.h"
 #include "lock.h"
 #include "log.h"
@@ -13,6 +14,7 @@
 
 struct mlsl_sched_queue;
 struct mlsl_sched_queue_bin;
+struct mlsl_coll_desc;
 
 enum mlsl_sched_type
 {
@@ -56,7 +58,7 @@ struct mlsl_sched_recv
 };
 typedef struct mlsl_sched_recv mlsl_sched_recv;
 
-struct mlsl_sched_reduce
+struct mlsl_sched_reduce_local
 {
     const void *in_buf;
     size_t in_count;
@@ -65,7 +67,7 @@ struct mlsl_sched_reduce
     mlsl_data_type_t dtype;
     mlsl_reduction_t op;
 };
-typedef struct mlsl_sched_reduce mlsl_sched_reduce;
+typedef struct mlsl_sched_reduce_local mlsl_sched_reduce_local;
 
 struct mlsl_sched_copy
 {
@@ -127,7 +129,7 @@ struct mlsl_sched_entry
     {
         mlsl_sched_send send;
         mlsl_sched_recv recv;
-        mlsl_sched_reduce reduce;
+        mlsl_sched_reduce_local reduce;
         mlsl_sched_copy copy;
         mlsl_sched_compute compute;
         mlsl_sched_sync sync;
@@ -154,8 +156,10 @@ typedef struct mlsl_sched_memory mlsl_sched_memory;
 
 struct mlsl_sched
 {
+    int first_progress;
+    struct mlsl_sched_cache_entry *cache_entry;
     struct mlsl_sched_queue_bin *bin;
-
+    struct mlsl_coll_desc *coll_desc;
     mlsl_sched_type type;
     size_t size;               /* capacity (in entries) of the entries array */
     size_t idx;                /* index into entries array of first yet-outstanding entry */ /* index to start */
@@ -166,20 +170,23 @@ struct mlsl_sched
     mlsl_sched_memory *persistent_memory;
 
     struct mlsl_sched *next;   /* linked-list next pointer */
-    struct mlsl_sched *prev;   /* linked-list next pointer */
+    struct mlsl_sched *prev;   /* linked-list prev pointer */
 };
 typedef struct mlsl_sched mlsl_sched;
 
-mlsl_status_t mlsl_sched_add_sync(mlsl_sched* sched);
+mlsl_status_t mlsl_sched_add_sync(mlsl_sched *sched, mlsl_sched_entry **sync_entry);
+mlsl_status_t mlsl_sched_sync_schedules(mlsl_sched **scheds, size_t count);
+
 mlsl_status_t mlsl_sched_add_compute_1i1o(mlsl_sched *sched, mlsl_sched_compute_1i1o_fn_t cb_p,
                                           const void *in_buf, size_t in_count,
                                           void *out_buf, size_t *out_count,
                                           mlsl_data_type_t dtype);
-mlsl_status_t mlsl_sched_add_sync(mlsl_sched *sched);
 mlsl_status_t mlsl_sched_progress(struct mlsl_sched_queue_bin *bin, size_t sched_count, size_t *processed_sched_count);
 mlsl_status_t mlsl_sched_next_tag(mlsl_comm *comm, int *tag);
-mlsl_status_t mlsl_sched_clone(mlsl_sched *orig, mlsl_sched **cloned);
+mlsl_status_t mlsl_sched_clone(mlsl_sched *orig, mlsl_sched **clone);
 mlsl_status_t mlsl_sched_adjust(mlsl_sched *sched, size_t partition_idx, size_t partition_count);
+mlsl_status_t mlsl_sched_adjust_entries(mlsl_sched *sched, size_t partition_idx, size_t partition_count);
+mlsl_status_t mlsl_sched_adjust_tag(mlsl_sched *sched);
 mlsl_status_t mlsl_sched_dump(mlsl_sched *sched, const char *name);
 mlsl_status_t mlsl_sched_reset(mlsl_sched *sched);
 mlsl_status_t mlsl_sched_commit_with_type(mlsl_sched *sched, mlsl_sched_type type);
@@ -216,5 +223,6 @@ mlsl_status_t mlsl_sched_queue_free(mlsl_sched_queue *queue);
 mlsl_status_t mlsl_sched_queue_add(mlsl_sched_queue *queue, mlsl_sched *sched, size_t priority);
 mlsl_status_t mlsl_sched_queue_remove(mlsl_sched_queue *queue, mlsl_sched_queue_bin *bin, mlsl_sched *sched);
 mlsl_status_t mlsl_sched_queue_peek(mlsl_sched_queue *queue, mlsl_sched_queue_bin **bin, size_t *count);
+mlsl_status_t mlsl_sched_queue_get_max_priority(mlsl_sched_queue *queue, size_t *priority);
 
 #endif /* SCHED_H */

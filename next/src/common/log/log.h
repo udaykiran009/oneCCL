@@ -65,6 +65,7 @@
           fprintf(stderr, "(%ld): %s:%s:%d: ASSERT '%s' FAILED: " fmt "\n",               \
                   GET_TID(), __FILENAME__, __FUNCTION__, __LINE__, #cond, ##__VA_ARGS__); \
           fflush(stderr);                                                                 \
+          mlsl_log_print_backtrace();                                                     \
           mlsl_finalize();                                                                \
           _exit(1);                                                                       \
       }                                                                                   \

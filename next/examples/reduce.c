@@ -20,7 +20,7 @@
       float expected = proc_count;                                         \
       for (idx = 0; idx < COUNT; idx++)                                    \
       {                                                                    \
-          if (recv_buf[idx] != expected)                                   \
+          if ((proc_idx == ROOT) && (recv_buf[idx] != expected))           \
           {                                                                \
               printf("iter %zu, idx %zu, expected %f, got %f\n",           \
                       iter_idx, idx, expected, recv_buf[idx]);             \
@@ -42,13 +42,13 @@ int main()
     proc_idx = mlsl_get_proc_idx();
     proc_count = mlsl_get_proc_count();
 
-    MLSL_CALL(mlsl_sched_allreduce(send_buf, recv_buf, COUNT, mlsl_dtype_float, mlsl_reduction_sum, &sched));
+    MLSL_CALL(mlsl_sched_reduce(send_buf, recv_buf, COUNT, mlsl_dtype_float, mlsl_reduction_sum, ROOT, &sched));
     MLSL_CALL(mlsl_sched_commit(sched));
-    RUN_COLLECTIVE(mlsl_sched_start(sched, &request), "persistent_allreduce");
+    RUN_COLLECTIVE(mlsl_sched_start(sched, &request), "persistent_reduce");
     MLSL_CALL(mlsl_sched_free(sched));
 
-    RUN_COLLECTIVE(mlsl_allreduce(send_buf, recv_buf, COUNT, mlsl_dtype_float, mlsl_reduction_sum, &request),
-                   "regular_allreduce");
+    RUN_COLLECTIVE(mlsl_reduce(send_buf, recv_buf, COUNT, mlsl_dtype_float, mlsl_reduction_sum, ROOT, &request),
+                   "regular_reduce");
 
     MLSL_CALL(mlsl_finalize());
 

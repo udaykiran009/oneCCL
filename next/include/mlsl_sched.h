@@ -51,12 +51,36 @@ mlsl_status_t MLSL_API mlsl_sched_set_reduction(mlsl_sched_t sched, mlsl_sched_r
 
 /* pre-filled schedules */
 
-mlsl_status_t MLSL_API mlsl_sched_allreduce(
-    void *send_buf,
+mlsl_status_t MLSL_API mlsl_sched_bcast(
+    void *buf,
+    size_t count,
+    mlsl_data_type_t dtype,
+    size_t root,
+    mlsl_sched_t *sched);
+
+mlsl_status_t MLSL_API mlsl_sched_reduce(
+    const void *send_buf,
     void *recv_buf,
     size_t count,
     mlsl_data_type_t dtype,
     mlsl_reduction_t reduction,
+    size_t root,
+    mlsl_sched_t *sched);
+
+mlsl_status_t MLSL_API mlsl_sched_allreduce(
+    const void *send_buf,
+    void *recv_buf,
+    size_t count,
+    mlsl_data_type_t dtype,
+    mlsl_reduction_t reduction,
+    mlsl_sched_t *sched);
+
+mlsl_status_t MLSL_API mlsl_sched_allgatherv(
+    const void *send_buf,
+    size_t send_count,
+    void *recv_buf,
+    size_t *recv_counts,
+    mlsl_data_type_t dtype,
     mlsl_sched_t *sched);
 
 #ifdef __cplusplus
