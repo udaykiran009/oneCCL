@@ -42,10 +42,11 @@ typedef enum {
 
 /** Reduction specification */
 typedef enum {
-    mlsl_reduction_sum  = 0,
-    mlsl_reduction_prod = 1,
-    mlsl_reduction_min  = 2,
-    mlsl_reduction_max  = 3
+    mlsl_reduction_sum    = 0,
+    mlsl_reduction_prod   = 1,
+    mlsl_reduction_min    = 2,
+    mlsl_reduction_max    = 3,
+    mlsl_reduction_custom = 4
 } mlsl_reduction_t;
 
 
@@ -53,11 +54,11 @@ struct mlsl_request;
 typedef struct mlsl_request *mlsl_request_t;
 
 /* in_buf, in_count, out_buf, out_count, datatype */
-typedef mlsl_status_t(*mlsl_sched_prologue_fn_t) (const void*, size_t, void*, size_t*, mlsl_data_type_t);
-typedef mlsl_status_t(*mlsl_sched_epilogue_fn_t) (const void*, size_t, void*, size_t*, mlsl_data_type_t);
+typedef mlsl_status_t(*mlsl_prologue_fn_t) (const void*, size_t, void*, size_t*, mlsl_data_type_t);
+typedef mlsl_status_t(*mlsl_epilogue_fn_t) (const void*, size_t, void*, size_t*, mlsl_data_type_t);
 
-/* in_buf, in_count, inout_buf, out_count, datatype */
-typedef mlsl_status_t(*mlsl_sched_reduction_fn_t) (const void*, size_t, void*, size_t*, mlsl_data_type_t);
+/* in_buf, in_count, inout_buf, out_count, context, datatype */
+typedef mlsl_status_t(*mlsl_reduction_fn_t) (const void*, size_t, void*, size_t*, void**, mlsl_data_type_t);
 
 /* Extendable list of collective attributes */
 struct mlsl_coll_attr

@@ -104,20 +104,38 @@ mlsl_status_t mlsl_coll_build_rabenseifner_allreduce(mlsl_sched *sched, const vo
                     recv_cnt += cnts[i];
             }
 
-            /* Send data from recv_buf. Recv into tmp_buf */
-            MLSL_CALL(mlsl_sched_add_recv(sched, ((char *) tmp_buf + disps[recv_idx] * dtype_size), recv_cnt, dtype, dst));
-            /* sendrecv, no barrier here */
-            MLSL_CALL(mlsl_sched_add_send(sched, ((char *) recv_buf + disps[send_idx] * dtype_size), send_cnt, dtype, dst));
-            MLSL_CALL(mlsl_sched_add_barrier(sched));
+            int can_use_recv_reduce = 0;
+            char* buf1 = ((char *) recv_buf + disps[send_idx] * dtype_size);
+            char* buf2 = ((char *) recv_buf + disps[recv_idx] * dtype_size);
+            if (buf1 != buf2 && ((buf1 + send_cnt * dtype_size <= buf2) || (buf2 + recv_cnt * dtype_size <= buf1)))
+                can_use_recv_reduce = 1;
 
-            /* tmp_buf contains data received in this step.
-             * recv_buf contains data accumulated so far */
+            MLSL_ASSERTP(can_use_recv_reduce);
 
-            /* This algorithm is used only for predefined ops
-             * and predefined ops are always commutative. */
-            MLSL_CALL(mlsl_sched_add_reduce(sched, ((char *) tmp_buf + disps[recv_idx] * dtype_size), recv_cnt,
-                                            ((char *) recv_buf + disps[recv_idx] * dtype_size), NULL, dtype, op));
-            MLSL_CALL(mlsl_sched_add_barrier(sched));
+            if (can_use_recv_reduce) {
+                MLSL_CALL(mlsl_sched_add_recv_reduce(sched,
+                                                     ((char *) recv_buf + disps[recv_idx] * dtype_size),
+                                                     recv_cnt, dtype, dst, op));
+                MLSL_CALL(mlsl_sched_add_send(sched, ((char *) recv_buf + disps[send_idx] * dtype_size), send_cnt, dtype, dst));
+                MLSL_CALL(mlsl_sched_add_barrier(sched));
+            }
+
+            else {
+                /* Send data from recv_buf. Recv into tmp_buf */
+                MLSL_CALL(mlsl_sched_add_recv(sched, ((char *) tmp_buf + disps[recv_idx] * dtype_size), recv_cnt, dtype, dst));
+                /* sendrecv, no barrier here */
+                MLSL_CALL(mlsl_sched_add_send(sched, ((char *) recv_buf + disps[send_idx] * dtype_size), send_cnt, dtype, dst));
+                MLSL_CALL(mlsl_sched_add_barrier(sched));
+
+                /* tmp_buf contains data received in this step.
+                 * recv_buf contains data accumulated so far */
+
+                /* This algorithm is used only for predefined ops
+                 * and predefined ops are always commutative. */
+                MLSL_CALL(mlsl_sched_add_reduce(sched, ((char *) tmp_buf + disps[recv_idx] * dtype_size), recv_cnt,
+                                                ((char *) recv_buf + disps[recv_idx] * dtype_size), NULL, dtype, op));
+                MLSL_CALL(mlsl_sched_add_barrier(sched));
+            }
 
             /* update send_idx for next iteration */
             send_idx = recv_idx;

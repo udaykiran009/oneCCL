@@ -17,13 +17,14 @@ struct mlsl_coll_param;
 
 enum mlsl_sched_entry_type
 {
-    mlsl_sched_entry_send    = 0,
-    mlsl_sched_entry_recv    = 1,
-    mlsl_sched_entry_reduce  = 2,
-    mlsl_sched_entry_copy    = 3,
-    mlsl_sched_entry_compute = 4,
-    mlsl_sched_entry_sync    = 5,
-    mlsl_sched_entry_nop     = 6
+    mlsl_sched_entry_send        = 0,
+    mlsl_sched_entry_recv        = 1,
+    mlsl_sched_entry_reduce      = 2,
+    mlsl_sched_entry_recv_reduce = 3,
+    mlsl_sched_entry_copy        = 4,
+    mlsl_sched_entry_compute     = 5,
+    mlsl_sched_entry_sync        = 6,
+    mlsl_sched_entry_nop         = 7
 };
 typedef enum mlsl_sched_entry_type mlsl_sched_entry_type;
 
@@ -58,8 +59,24 @@ struct mlsl_sched_reduce_local
     size_t *out_count;
     mlsl_data_type_t dtype;
     mlsl_reduction_t op;
+    mlsl_reduction_fn_t reduction_fn;
 };
 typedef struct mlsl_sched_reduce_local mlsl_sched_reduce_local;
+
+struct mlsl_sched_recv_reduce
+{
+    void *in_buf;
+    size_t in_count;
+    void *inout_buf;
+    size_t *out_count;
+    mlsl_data_type_t dtype;
+    mlsl_reduction_t op;
+    mlsl_reduction_fn_t reduction_fn;
+    size_t src;
+    mlsl_comm *comm;
+    atl_req_t req;
+};
+typedef struct mlsl_sched_recv_reduce mlsl_sched_recv_reduce;
 
 struct mlsl_sched_copy
 {
@@ -122,6 +139,7 @@ struct mlsl_sched_entry
         mlsl_sched_send send;
         mlsl_sched_recv recv;
         mlsl_sched_reduce_local reduce;
+        mlsl_sched_recv_reduce recv_reduce;
         mlsl_sched_copy copy;
         mlsl_sched_compute compute;
         mlsl_sched_sync sync;
@@ -208,13 +226,22 @@ mlsl_status_t mlsl_sched_add_recv(mlsl_sched *sched, void *buf, size_t count,
 mlsl_status_t mlsl_sched_add_reduce(mlsl_sched *sched, const void *in_buf, size_t in_count,
                                              void *inout_buf, size_t *out_count,
                                              mlsl_data_type_t dtype, mlsl_reduction_t reduction);
+mlsl_status_t mlsl_sched_add_recv_reduce(mlsl_sched *sched, void *buf, size_t count,
+                                         mlsl_data_type_t dtype, size_t src, mlsl_reduction_t reduction);
 mlsl_status_t mlsl_sched_add_copy(mlsl_sched *sched, const void *in_buf,
                                            void *out_buf, size_t count, mlsl_data_type_t dtype);
 mlsl_status_t mlsl_sched_add_barrier(mlsl_sched *sched);
+mlsl_status_t mlsl_sched_add_sync(mlsl_sched *sched, mlsl_sched_entry **sync_entry);
+mlsl_status_t mlsl_sched_sync_schedules(mlsl_sched **scheds, size_t count);
 
-mlsl_status_t mlsl_sched_set_prologue(mlsl_sched *sched, mlsl_sched_prologue_fn_t fn);
-mlsl_status_t mlsl_sched_set_epilogue(mlsl_sched *sched, mlsl_sched_epilogue_fn_t fn);
-mlsl_status_t mlsl_sched_set_reduction(mlsl_sched *sched, mlsl_sched_reduction_fn_t fn);
+mlsl_status_t mlsl_sched_add_compute_1i1o(mlsl_sched *sched, mlsl_sched_compute_1i1o_fn_t cb_p,
+                                          const void *in_buf, size_t in_count,
+                                          void *out_buf, size_t *out_count,
+                                          mlsl_data_type_t dtype);
+
+mlsl_status_t mlsl_sched_set_prologue(mlsl_sched *sched, mlsl_prologue_fn_t fn);
+mlsl_status_t mlsl_sched_set_epilogue(mlsl_sched *sched, mlsl_epilogue_fn_t fn);
+mlsl_status_t mlsl_sched_set_reduction(mlsl_sched *sched, mlsl_reduction_fn_t fn);
 
 mlsl_status_t mlsl_sched_bcast(void *buf, size_t count, mlsl_data_type_t dtype,
                                size_t root, mlsl_sched **sched);
@@ -226,13 +253,6 @@ mlsl_status_t mlsl_sched_allgatherv(const void *send_buf, size_t send_count, voi
                                     mlsl_data_type_t dtype, mlsl_sched **sched);
 mlsl_status_t mlsl_sched_barrier(mlsl_sched **sched);
 
-mlsl_status_t mlsl_sched_add_sync(mlsl_sched *sched, mlsl_sched_entry **sync_entry);
-mlsl_status_t mlsl_sched_sync_schedules(mlsl_sched **scheds, size_t count);
-
-mlsl_status_t mlsl_sched_add_compute_1i1o(mlsl_sched *sched, mlsl_sched_compute_1i1o_fn_t cb_p,
-                                          const void *in_buf, size_t in_count,
-                                          void *out_buf, size_t *out_count,
-                                          mlsl_data_type_t dtype);
 mlsl_status_t mlsl_sched_progress(struct mlsl_sched_queue_bin *bin, size_t sched_count, size_t *processed_sched_count);
 mlsl_status_t mlsl_sched_next_tag(mlsl_comm *comm, int *tag);
 mlsl_status_t mlsl_sched_clone(mlsl_sched *orig, mlsl_sched **clone);

@@ -43,12 +43,17 @@ mlsl_status_t mlsl_comp_copy(const void *in_buf, void *out_buf, size_t count, ml
     return mlsl_status_success;
 }
 
-mlsl_status_t mlsl_comp_reduce(const void *in_buf, size_t in_count,
-                               void *inout_buf, size_t *out_count,
-                               mlsl_data_type_t dtype, mlsl_reduction_t reduction)
+mlsl_status_t mlsl_comp_reduce(const void *in_buf, size_t in_count, void *inout_buf, size_t *out_count,
+                               mlsl_data_type_t dtype, mlsl_reduction_t reduction, mlsl_reduction_fn_t reduction_fn)
 {
-    size_t i;
+    if (reduction == mlsl_reduction_custom)
+    {
+        MLSL_ASSERTP(reduction_fn);
+        reduction_fn(in_buf, in_count, inout_buf, out_count, NULL /* context */, dtype);
+        return mlsl_status_success;
+    }
 
+    size_t i;
     switch (dtype) {
         case mlsl_dtype_char:
             MLSL_REDUCE(char);
