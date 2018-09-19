@@ -33,7 +33,6 @@
 
 int main()
 {
-    mlsl_status_t status = mlsl_status_success;
     float buf[COUNT];
 
     MLSL_CALL(mlsl_init());
@@ -41,12 +40,12 @@ int main()
     proc_idx = mlsl_get_proc_idx();
     proc_count = mlsl_get_proc_count();
 
-    MLSL_CALL(mlsl_sched_bcast(buf, COUNT, mlsl_dtype_float, ROOT, &sched));
-    MLSL_CALL(mlsl_sched_commit(sched));
-    RUN_COLLECTIVE(mlsl_sched_start(sched, &request), "persistent_bcast");
-    MLSL_CALL(mlsl_sched_free(sched));
+    coll_attr.to_cache = 1;
+    RUN_COLLECTIVE(mlsl_bcast(buf, COUNT, mlsl_dtype_float, ROOT, &coll_attr, &request),
+                   "persistent_bcast");
 
-    RUN_COLLECTIVE(mlsl_bcast(buf, COUNT, mlsl_dtype_float, ROOT, &request),
+    coll_attr.to_cache = 0;
+    RUN_COLLECTIVE(mlsl_bcast(buf, COUNT, mlsl_dtype_float, ROOT, &coll_attr, &request),
                    "regular_bcast");
 
     MLSL_CALL(mlsl_finalize());

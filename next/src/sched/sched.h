@@ -7,21 +7,13 @@
 #include "lock.h"
 #include "log.h"
 #include "mlsl.h"
-#include "mlsl_sched.h"
 #include "request.h"
 
-#define MAX_SCHED_BINS (1024)
+#define MLSL_MATCH_ID_MAX_LEN (64)
 
 struct mlsl_sched_queue;
 struct mlsl_sched_queue_bin;
-struct mlsl_coll_desc;
-
-enum mlsl_sched_type
-{
-    mlsl_sched_persistent     = 0,
-    mlsl_sched_non_persistent = 1
-};
-typedef enum mlsl_sched_type mlsl_sched_type;
+struct mlsl_coll_param;
 
 enum mlsl_sched_entry_type
 {
@@ -154,13 +146,40 @@ struct mlsl_sched_memory
 };
 typedef struct mlsl_sched_memory mlsl_sched_memory;
 
+struct mlsl_sched_coll_attr
+{
+    mlsl_sched_prologue_fn_t prologue_fn;
+    mlsl_sched_epilogue_fn_t epilogue_fn;
+    mlsl_sched_reduction_fn_t reduction_fn;
+    size_t priority;
+    int synchronous;
+    char match_id[MLSL_MATCH_ID_MAX_LEN];
+    int to_cache;
+};
+typedef struct mlsl_sched_coll_attr mlsl_sched_coll_attr;
+
+struct mlsl_sched_coll_param
+{
+    enum mlsl_coll_type ctype;
+    void *buf;
+    const void *send_buf;
+    void *recv_buf;
+    size_t count;
+    size_t send_count;
+    size_t *recv_counts;
+    mlsl_data_type_t dtype;
+    mlsl_reduction_t reduction;
+    size_t root;
+    mlsl_comm *comm;
+};
+typedef struct mlsl_sched_coll_param mlsl_sched_coll_param;
+
 struct mlsl_sched
 {
     int first_progress;
-    struct mlsl_sched_cache_entry *cache_entry;
     struct mlsl_sched_queue_bin *bin;
-    struct mlsl_coll_desc *coll_desc;
-    mlsl_sched_type type;
+    mlsl_sched_coll_param coll_param;
+    mlsl_sched_coll_attr coll_attr;
     size_t size;               /* capacity (in entries) of the entries array */
     size_t idx;                /* index into entries array of first yet-outstanding entry */ /* index to start */
     size_t num_entries;        /* number of populated entries, num_entries <= size */
@@ -169,10 +188,43 @@ struct mlsl_sched
     mlsl_sched_entry *entries;
     mlsl_sched_memory *persistent_memory;
 
+    struct mlsl_sched **partial_scheds;
+    size_t partial_sched_count;
+
     struct mlsl_sched *next;   /* linked-list next pointer */
     struct mlsl_sched *prev;   /* linked-list prev pointer */
 };
 typedef struct mlsl_sched mlsl_sched;
+
+mlsl_status_t mlsl_sched_create(mlsl_sched **sched);
+mlsl_status_t mlsl_sched_commit(mlsl_sched *sched);
+mlsl_status_t mlsl_sched_start(mlsl_sched *sched, struct mlsl_request **req);
+mlsl_status_t mlsl_sched_free(mlsl_sched *sched);
+
+mlsl_status_t mlsl_sched_add_send(mlsl_sched *sched, const void *buf, size_t count,
+                                           mlsl_data_type_t dtype, size_t dest);
+mlsl_status_t mlsl_sched_add_recv(mlsl_sched *sched, void *buf, size_t count,
+                                           mlsl_data_type_t data_type, size_t src);
+mlsl_status_t mlsl_sched_add_reduce(mlsl_sched *sched, const void *in_buf, size_t in_count,
+                                             void *inout_buf, size_t *out_count,
+                                             mlsl_data_type_t dtype, mlsl_reduction_t reduction);
+mlsl_status_t mlsl_sched_add_copy(mlsl_sched *sched, const void *in_buf,
+                                           void *out_buf, size_t count, mlsl_data_type_t dtype);
+mlsl_status_t mlsl_sched_add_barrier(mlsl_sched *sched);
+
+mlsl_status_t mlsl_sched_set_prologue(mlsl_sched *sched, mlsl_sched_prologue_fn_t fn);
+mlsl_status_t mlsl_sched_set_epilogue(mlsl_sched *sched, mlsl_sched_epilogue_fn_t fn);
+mlsl_status_t mlsl_sched_set_reduction(mlsl_sched *sched, mlsl_sched_reduction_fn_t fn);
+
+mlsl_status_t mlsl_sched_bcast(void *buf, size_t count, mlsl_data_type_t dtype,
+                               size_t root, mlsl_sched **sched);
+mlsl_status_t mlsl_sched_reduce(const void *send_buf, void *recv_buf, size_t count, mlsl_data_type_t dtype,
+                                mlsl_reduction_t reduction, size_t root, mlsl_sched **sched);
+mlsl_status_t mlsl_sched_allreduce(const void *send_buf, void *recv_buf, size_t count, mlsl_data_type_t dtype,
+                                   mlsl_reduction_t reduction, mlsl_sched **sched);
+mlsl_status_t mlsl_sched_allgatherv(const void *send_buf, size_t send_count, void *recv_buf, size_t *recv_counts,
+                                    mlsl_data_type_t dtype, mlsl_sched **sched);
+mlsl_status_t mlsl_sched_barrier(mlsl_sched **sched);
 
 mlsl_status_t mlsl_sched_add_sync(mlsl_sched *sched, mlsl_sched_entry **sync_entry);
 mlsl_status_t mlsl_sched_sync_schedules(mlsl_sched **scheds, size_t count);
@@ -189,40 +241,12 @@ mlsl_status_t mlsl_sched_adjust_entries(mlsl_sched *sched, size_t partition_idx,
 mlsl_status_t mlsl_sched_adjust_tag(mlsl_sched *sched);
 mlsl_status_t mlsl_sched_dump(mlsl_sched *sched, const char *name);
 mlsl_status_t mlsl_sched_reset(mlsl_sched *sched);
-mlsl_status_t mlsl_sched_commit_with_type(mlsl_sched *sched, mlsl_sched_type type);
 
 mlsl_status_t mlsl_sched_add_persistent_memory(mlsl_sched *sched, mlsl_sched_memory_type type, void *ptr);
 mlsl_status_t mlsl_sched_free_persistent_memory(mlsl_sched *sched);
 
-struct mlsl_sched_queue_bin
-{
-    struct mlsl_sched_queue *queue;
-    size_t priority;
-    mlsl_sched *elems;
-    size_t elem_count;
+mlsl_status_t mlsl_sched_set_coll_attr(mlsl_sched *sched, const struct mlsl_coll_attr *attr);
 
-    atl_comm_t *comm_ctx;
-
-    // TODO:
-    void *comp_ctx;
-};
-typedef struct mlsl_sched_queue_bin mlsl_sched_queue_bin;
-
-struct mlsl_sched_queue
-{
-    mlsl_fastlock_t lock;
-    size_t used_bins;
-    size_t max_bins;
-    size_t max_priority;
-    mlsl_sched_queue_bin bins[MAX_SCHED_BINS];
-};
-typedef struct mlsl_sched_queue mlsl_sched_queue;
-
-mlsl_status_t mlsl_sched_queue_create(size_t max_bins, atl_comm_t **comm_ctxs, mlsl_sched_queue **queue);
-mlsl_status_t mlsl_sched_queue_free(mlsl_sched_queue *queue);
-mlsl_status_t mlsl_sched_queue_add(mlsl_sched_queue *queue, mlsl_sched *sched, size_t priority);
-mlsl_status_t mlsl_sched_queue_remove(mlsl_sched_queue *queue, mlsl_sched_queue_bin *bin, mlsl_sched *sched);
-mlsl_status_t mlsl_sched_queue_peek(mlsl_sched_queue *queue, mlsl_sched_queue_bin **bin, size_t *count);
-mlsl_status_t mlsl_sched_queue_get_max_priority(mlsl_sched_queue *queue, size_t *priority);
+mlsl_priority_mode mlsl_sched_get_priority(mlsl_sched *sched);
 
 #endif /* SCHED_H */

@@ -17,6 +17,7 @@ struct mlsl_global_data
     mlsl_executor *executor;
     mlsl_sched_cache *sched_cache;
     mlsl_parallelizer *parallelizer;
+    mlsl_coll_attr_t *default_coll_attr;
 } __attribute__ ((aligned (CACHELINE_SIZE)));
 
 typedef struct mlsl_global_data mlsl_global_data;

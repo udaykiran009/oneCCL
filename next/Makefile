@@ -57,6 +57,7 @@ SRCS += $(SRC_DIR)/coll/reduce.c
 SRCS += $(SRC_DIR)/comp/comp.c
 SRCS += $(SRC_DIR)/sched/sched.c
 SRCS += $(SRC_DIR)/sched/sched_cache.c
+SRCS += $(SRC_DIR)/sched/sched_queue.c
 SRCS += $(SRC_DIR)/exec/exec.c
 SRCS += $(SRC_DIR)/exec/worker.c
 SRCS += $(SRC_DIR)/parallelizer/parallelizer.c

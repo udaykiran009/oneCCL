@@ -32,7 +32,6 @@
 
 int main()
 {
-    mlsl_status_t status = mlsl_status_success;
     float send_buf[COUNT];
     float *recv_buf;
     size_t *recv_counts;
@@ -48,12 +47,12 @@ int main()
     for (idx = 0; idx < proc_count; idx++)
         recv_counts[idx] = COUNT;
 
-    MLSL_CALL(mlsl_sched_allgatherv(send_buf, COUNT, recv_buf, recv_counts, mlsl_dtype_float, &sched));
-    MLSL_CALL(mlsl_sched_commit(sched));
-    RUN_COLLECTIVE(mlsl_sched_start(sched, &request), "persistent_allgatherv");
-    MLSL_CALL(mlsl_sched_free(sched));
+    coll_attr.to_cache = 1;
+    RUN_COLLECTIVE(mlsl_allgatherv(send_buf, COUNT, recv_buf, recv_counts, mlsl_dtype_float, &coll_attr, &request),
+                   "persistent_allgatherv");
 
-    RUN_COLLECTIVE(mlsl_allgatherv(send_buf, COUNT, recv_buf, recv_counts, mlsl_dtype_float, &request),
+    coll_attr.to_cache = 0;
+    RUN_COLLECTIVE(mlsl_allgatherv(send_buf, COUNT, recv_buf, recv_counts, mlsl_dtype_float, &coll_attr, &request),
                    "regular_allgatherv");
 
     free(recv_counts);

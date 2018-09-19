@@ -1,34 +1,61 @@
 #include "exec.h"
 #include "global.h"
-#include "sched_cache.h"
+#include "sched_queue.h"
 
 #include <immintrin.h>
+
+#define MLSL_ATL_MAX_COMMS (8)
 
 mlsl_executor *global_executor = NULL;
 
 mlsl_status_t mlsl_executor_create(size_t worker_count, size_t priority_count, mlsl_executor **executor)
 {
-    MLSL_LOG(DEBUG, "worker_count %zu, priority_count %zu",
+    MLSL_LOG(INFO, "worker_count %zu, priority_count %zu",
              worker_count, priority_count);
 
     mlsl_executor *e = MLSL_CALLOC(sizeof(mlsl_executor), "executor");
     e->worker_count = worker_count;
     e->workers = MLSL_CALLOC(sizeof(mlsl_worker*) * worker_count, "executor->workers");
 
-    atl_attr_t attr = { .comm_count = (worker_count * priority_count) };
+    /* it is unlikely that ATL will provide comms for each (worker, priority) pair
+       so request some moderate amount of comms and spread them evenly with repetitions */
+    size_t total_comm_count = worker_count * priority_count;
+    size_t comm_count = MIN(total_comm_count, MLSL_ATL_MAX_COMMS);
+
+    if (env_data.priority_mode == mlsl_priority_none)
+        comm_count = worker_count;
+
+    MLSL_ASSERTP(comm_count >= worker_count);
+    atl_attr_t attr = { .comm_count = comm_count };
     atl_status_t atl_status = atl_init(NULL, NULL, &e->proc_idx, &e->proc_count, &attr, &e->atl_comms, &e->atl_desc);
     MLSL_ASSERTP(atl_status == atl_status_success);
     MLSL_ASSERTP(e->atl_desc);
     MLSL_ASSERTP(e->atl_comms);
 
-    MLSL_LOG(DEBUG, "proc_idx %zu, proc_count %zu, atl_desc %p",
+    MLSL_LOG(INFO, "proc_idx %zu, proc_count %zu, atl_desc %p",
              e->proc_idx, e->proc_count, e->atl_desc);
 
-    size_t idx;
+    atl_comm_t **comms = MLSL_CALLOC(sizeof(atl_comm_t *) * total_comm_count, "comms");
+    size_t comms_per_worker = comm_count / worker_count;
+    size_t priorities_per_comm = priority_count / comms_per_worker;
+    size_t idx, pr_idx;
+    for (idx = 0; idx < worker_count; idx++)
+    {
+        for (pr_idx = 0; pr_idx < priority_count; pr_idx++)
+        {
+            comms[idx * priority_count + pr_idx] =
+                e->atl_comms[idx * comms_per_worker + pr_idx / priorities_per_comm];
+
+            if (e->proc_idx == 0)
+                MLSL_LOG(INFO, "map atl comms: w_idx %zu, pr_idx %zu, comm_idx %zu, comms_per_worker %zu",
+                    idx, pr_idx, idx * comms_per_worker + pr_idx / priorities_per_comm, comms_per_worker);
+        }
+    }
+
     for (idx = 0; idx < worker_count; idx++)
     {
         mlsl_sched_queue *queue;
-        mlsl_sched_queue_create(priority_count, e->atl_comms + idx * priority_count, &queue);
+        mlsl_sched_queue_create(priority_count, comms + idx * priority_count, &queue);
         mlsl_worker_create(e, idx, queue, &(e->workers[idx]));
 
         if (env_data.worker_offload)
@@ -38,6 +65,8 @@ mlsl_status_t mlsl_executor_create(size_t worker_count, size_t priority_count, m
             MLSL_LOG(INFO, "started worker # %zu", idx);
         }
     }
+
+    MLSL_FREE(comms);
 
     *executor = e;
 
@@ -73,36 +102,30 @@ mlsl_status_t mlsl_executor_start(mlsl_executor *executor, mlsl_sched *sched)
 
     // TODO: offload sched clone/adjust/reset on worker side
 
-    /* find sched in cache */
+    mlsl_sched **partial_scheds = sched->partial_scheds;
+    size_t partial_sched_count = sched->partial_sched_count;
+    MLSL_ASSERTP(partial_scheds && partial_sched_count > 0);
+
     size_t idx;
-    mlsl_sched_cache_entry *e = sched->cache_entry;
-    MLSL_ASSERT(e && (e->origin_sched == sched) && e->worker_scheds);
-
-    mlsl_sched **worker_scheds = e->worker_scheds;
-
-    for (idx = 0; idx < e->worker_sched_count; idx++)
+    for (idx = 0; idx < partial_sched_count; idx++)
     {
-        worker_scheds[idx]->first_progress = 1;
-        mlsl_sched_adjust_tag(worker_scheds[idx]);
+        partial_scheds[idx]->first_progress = 1;
+        mlsl_sched_adjust_tag(partial_scheds[idx]);
     }
 
     if (executor->proc_idx == 0)
-        mlsl_sched_dump(e->origin_sched, "origin_sched");
+        mlsl_sched_dump(sched, "origin_sched");
 
     /* add scheds into worker queues */
-    sched->req->completion_counter = e->worker_sched_count;
-    for (idx = 0; idx < e->worker_sched_count; idx++)
+    sched->req->completion_counter = partial_sched_count;
+    for (idx = 0; idx < partial_sched_count; idx++)
     {
         if (executor->proc_idx == 0)
-            mlsl_sched_dump(worker_scheds[idx], "worker_sched");
+            mlsl_sched_dump(partial_scheds[idx], "worker_sched");
 
         mlsl_sched_queue *queue = executor->workers[idx % executor->worker_count]->sched_queue;
-        size_t priority = 0;
-        if (sched->coll_desc->ctype == mlsl_coll_barrier)
-            mlsl_sched_queue_get_max_priority(queue, &priority);
-
-        worker_scheds[idx]->req = sched->req;
-        mlsl_sched_queue_add(queue, worker_scheds[idx], priority);
+        partial_scheds[idx]->req = sched->req;
+        mlsl_sched_queue_add(queue, partial_scheds[idx], mlsl_sched_get_priority(partial_scheds[idx]));
     }
 
     return mlsl_status_success;

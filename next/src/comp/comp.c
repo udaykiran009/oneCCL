@@ -1,6 +1,5 @@
 #include "comp.h"
 #include "log.h"
-#include "mlsl_sched.h"
 #include "utils.h"
 
 #include <stdint.h>

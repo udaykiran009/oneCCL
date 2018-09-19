@@ -4,12 +4,28 @@
 #include <string.h>
 #include <unistd.h>
 
+const char *mlsl_priority_mode_to_str(mlsl_priority_mode mode)
+{
+    switch (mode) {
+        case mlsl_priority_none:
+            return "NONE";
+        case mlsl_priority_direct:
+            return "DIRECT";
+        case mlsl_priority_lifo:
+            return "LIFO";
+        default:
+            MLSL_ASSERT_FMT(0, "unexpected prio_mode %d", mode);
+            return "(out of range)";
+    }
+}
+
 mlsl_env_data env_data = {
                            .log_level = ERROR,
                            .sched_dump = 0,
                            .worker_count = 1,
                            .worker_offload = 1,
-                           .worker_affinity = NULL
+                           .worker_affinity = NULL,
+                           .priority_mode = mlsl_priority_none
                          };
 
 void mlsl_env_parse()
@@ -18,6 +34,7 @@ void mlsl_env_parse()
     mlsl_env_2_int("MLSL_SCHED_DUMP", (int*)&env_data.sched_dump);
     mlsl_env_2_int("MLSL_WORKER_COUNT", (int*)&env_data.worker_count);
     mlsl_env_2_int("MLSL_WORKER_OFFLOAD", (int*)&env_data.worker_offload);
+    mlsl_env_parse_priority_mode();
     mlsl_env_parse_affinity();
 }
 
@@ -32,6 +49,7 @@ void mlsl_env_print()
     MLSL_LOG(INFO, "MLSL_SCHED_DUMP: %d", env_data.sched_dump);
     MLSL_LOG(INFO, "MLSL_WORKER_COUNT: %d", env_data.worker_count);
     MLSL_LOG(INFO, "MLSL_WORKER_OFFLOAD: %d", env_data.worker_offload);
+    MLSL_LOG(INFO, "MLSL_PRIORITY_MODE: %s", mlsl_priority_mode_to_str(env_data.priority_mode));
     mlsl_env_print_affinity();
 }
 
@@ -67,6 +85,26 @@ int mlsl_env_2_int(const char* env_name, int* val)
         return 1;
     }
     return 0;
+}
+
+int mlsl_env_parse_priority_mode()
+{
+    char *mode_env = getenv("MLSL_PRIORITY_MODE");
+    if (mode_env)
+    {
+        if (strcmp(mode_env, "none") == 0)
+            env_data.priority_mode = mlsl_priority_none;
+        else if (strcmp(mode_env, "direct") == 0)
+            env_data.priority_mode = mlsl_priority_direct;
+        else if (strcmp(mode_env, "lifo") == 0)
+            env_data.priority_mode = mlsl_priority_lifo;
+        else
+        {
+            MLSL_ASSERT_FMT(0, "unexpected priority_mode %s", mode_env);
+            return 0;
+        }
+    }
+    return 1;
 }
 
 int mlsl_env_parse_affinity()

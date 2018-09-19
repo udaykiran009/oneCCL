@@ -104,6 +104,24 @@ mlsl_status_t mlsl_worker_peek_and_progress(mlsl_worker *worker, size_t *process
         MLSL_ASSERT(*processed_count <= peek_count);
     }
 
+#if 0
+    if (peek_count && *processed_count == 0)
+    {
+        worker->empty_progress_counter++;
+        if (worker->empty_progress_counter >= 16384)
+        {
+            size_t bin_idx;
+            for (bin_idx = 0; bin_idx < worker->sched_queue->max_bins; bin_idx++)
+            {
+                atl_status_t atl_status __attribute__ ((unused));
+                atl_status = atl_comm_poll(worker->sched_queue->bins[bin_idx].comm_ctx);
+                MLSL_ASSERT(atl_status == atl_status_success);
+            }
+            worker->empty_progress_counter = 0;
+        }
+    }
+#endif
+
     return mlsl_status_success;
 }
 

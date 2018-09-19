@@ -10,7 +10,7 @@ LDFLAGS  = -L ../src -lmlsl2 -lrt
 
 CC      ?= gcc
 
-c_test    = allreduce reduce bcast allgatherv
+c_test    = allreduce reduce bcast allgatherv priority_allreduce
 
 tests     = $(c_test)
 

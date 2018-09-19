@@ -33,7 +33,6 @@
 
 int main()
 {
-    mlsl_status_t status = mlsl_status_success;
     float send_buf[COUNT];
     float recv_buf[COUNT];
 
@@ -42,12 +41,12 @@ int main()
     proc_idx = mlsl_get_proc_idx();
     proc_count = mlsl_get_proc_count();
 
-    MLSL_CALL(mlsl_sched_allreduce(send_buf, recv_buf, COUNT, mlsl_dtype_float, mlsl_reduction_sum, &sched));
-    MLSL_CALL(mlsl_sched_commit(sched));
-    RUN_COLLECTIVE(mlsl_sched_start(sched, &request), "persistent_allreduce");
-    MLSL_CALL(mlsl_sched_free(sched));
+    coll_attr.to_cache = 1;
+    RUN_COLLECTIVE(mlsl_allreduce(send_buf, recv_buf, COUNT, mlsl_dtype_float, mlsl_reduction_sum, &coll_attr, &request),
+                   "persistent_allreduce");
 
-    RUN_COLLECTIVE(mlsl_allreduce(send_buf, recv_buf, COUNT, mlsl_dtype_float, mlsl_reduction_sum, &request),
+    coll_attr.to_cache = 0;
+    RUN_COLLECTIVE(mlsl_allreduce(send_buf, recv_buf, COUNT, mlsl_dtype_float, mlsl_reduction_sum, &coll_attr, &request),
                    "regular_allreduce");
 
     MLSL_CALL(mlsl_finalize());

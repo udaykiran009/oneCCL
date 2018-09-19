@@ -3,7 +3,7 @@
 
 #include "exec.h"
 #include "pthread.h"
-#include "sched.h"
+#include "sched_queue.h"
 
 struct mlsl_worker
 {
@@ -11,6 +11,7 @@ struct mlsl_worker
     size_t idx;
     struct mlsl_executor *executor;
     mlsl_sched_queue *sched_queue;
+    size_t empty_progress_counter;
 };
 
 typedef struct mlsl_worker mlsl_worker;

@@ -48,21 +48,32 @@ typedef enum {
     mlsl_reduction_max  = 3
 } mlsl_reduction_t;
 
-/** @struct mlsl_sched
- * An opaque structure to describe a schedule of non-blocking collective. */
-struct mlsl_sched;
-/** A non-blocking collective handle. */
-typedef struct mlsl_sched *mlsl_sched_t;
 
 struct mlsl_request;
 typedef struct mlsl_request *mlsl_request_t;
 
 /* in_buf, in_count, out_buf, out_count, datatype */
-typedef mlsl_status_t(*mlsl_sched_prolog_fn_t) (const void*, size_t, void*, size_t*, mlsl_data_type_t);
-typedef mlsl_status_t(*mlsl_sched_epilog_fn_t) (const void*, size_t, void*, size_t*, mlsl_data_type_t);
+typedef mlsl_status_t(*mlsl_sched_prologue_fn_t) (const void*, size_t, void*, size_t*, mlsl_data_type_t);
+typedef mlsl_status_t(*mlsl_sched_epilogue_fn_t) (const void*, size_t, void*, size_t*, mlsl_data_type_t);
 
 /* in_buf, in_count, inout_buf, out_count, datatype */
 typedef mlsl_status_t(*mlsl_sched_reduction_fn_t) (const void*, size_t, void*, size_t*, mlsl_data_type_t);
+
+/* Extendable list of collective attributes */
+struct mlsl_coll_attr
+{
+    mlsl_sched_prologue_fn_t prologue_fn;
+    mlsl_sched_epilogue_fn_t epilogue_fn;
+    mlsl_sched_reduction_fn_t reduction_fn;
+    size_t priority;
+    int synchronous;
+    char *match_id;
+    int to_cache;
+};
+typedef struct mlsl_coll_attr mlsl_coll_attr_t;
+
+size_t MLSL_API mlsl_get_dtype_size(mlsl_data_type_t dtype);
+mlsl_status_t MLSL_API mlsl_get_priority_range(size_t *min_priority, size_t *max_priority);
 
 #ifdef __cplusplus
 }
