@@ -67,6 +67,7 @@ SRCS += $(SRC_DIR)/common/env/env.c
 SRCS += $(SRC_DIR)/common/global/global.c
 SRCS += $(SRC_DIR)/common/log/log.c
 SRCS += $(SRC_DIR)/common/request/request.c
+SRCS += $(SRC_DIR)/common/utils/buf_pool.c
 
 OBJS := $(SRCS:.c=.o)
 

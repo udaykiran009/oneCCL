@@ -5,6 +5,7 @@
 #include <mm_malloc.h>
 #endif
 #include <stdlib.h>
+#include <stddef.h>
 
 /* common */
 
@@ -19,6 +20,11 @@
 
 #define unlikely(x_) __builtin_expect(!!(x_), 0)
 #define likely(x_)   __builtin_expect(!!(x_), 1)
+
+#ifndef container_of
+#define container_of(ptr, type, field)                  \
+	((type *) ((char *)ptr - offsetof(type, field)))
+#endif
 
 #define CACHELINE_SIZE 64
 #define ONE_MB         1048576
@@ -80,6 +86,63 @@ do {                                                  \
         }                                             \
     }                                                 \
 } while (0)
+
+/* Single-linked list */
+
+typedef struct mlsl_slist_entry mlsl_slist_entry_t;
+struct mlsl_slist_entry {
+    mlsl_slist_entry_t *next;
+};
+
+typedef struct {
+    mlsl_slist_entry_t *head;
+    mlsl_slist_entry_t *tail;
+} mlsl_slist_t;
+
+#define MLSL_SLIST_INIT(list)               \
+    ({                                      \
+        (list)->head = (list)->tail = NULL; \
+    })
+
+#define MLSL_SLIST_EMPTY(list) \
+    ({                         \
+        !(list)->head;	       \
+    })
+
+#define MLSL_SLIST_INSERT_HEAD(list, item)          \
+    MLSL_SLIST_INSERT_HEAD_NP(list, &(item)->entry)
+#define MLSL_SLIST_INSERT_HEAD_NP(list, entry) \
+    ({                                         \
+        if (MLSL_SLIST_EMPTY(list))            \
+            (list)->tail = entry;              \
+        else                                   \
+            (list)->tail = entry;              \
+        (list)->head = entry;                  \
+    })
+
+#define MLSL_SLIST_INSERT_TAIL(list, item)          \
+    MLSL_SLIST_INSERT_TAIL_NP(list, &(item)->entry)
+#define MLSL_SLIST_INSERT_TAIL_NP(list, entry) \
+    ({                                         \
+        if (MLSL_SLIST_EMPTY(list))            \
+            (list)->head = entry;              \
+        else                                   \
+            (list)->tail->next = entry;        \
+        (list)->tail = entry;                  \
+    })
+
+#define MLSL_SLIST_REMOVE_HEAD(list) \
+    MLSL_SLIST_REMOVE_HEAD_NP(list)
+#define MLSL_SLIST_REMOVE_HEAD_NP(list)     \
+    ({                                      \
+        mlsl_slist_entry_t *tmp_entry;      \
+        tmp_entry = (list)->head;           \
+        if ((list)->head == (list)->tail)   \
+            MLSL_SLIST_INIT(list);          \
+	else                                \
+            (list)->head = tmp_entry->next; \
+        tmp_entry;                          \
+    })
 
 /* malloc/realloc/free */
 
@@ -157,6 +220,12 @@ static inline size_t mlsl_pof2(size_t number)
     pof2 >>= 1;
 
     return pof2;
+}
+
+static inline size_t mlsl_aligned_sz(size_t size, size_t alignment)
+{
+    return ((size % alignment) == 0) ?
+           size : ((size / alignment) + 1) * alignment;
 }
 
 #endif /* UTILS_H */

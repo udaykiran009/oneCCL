@@ -37,7 +37,9 @@ typedef struct atl_attr {
     atl_comm_attr_t comm_attr;
 } atl_attr_t;
 
-typedef struct atl_ops {    
+typedef struct atl_ops {
+    void (*proc_idx)(atl_desc_t *desc, size_t *proc_idx);
+    void (*proc_count)(atl_desc_t *desc, size_t *proc_count);
     atl_status_t (*finalize)(atl_desc_t *desc, atl_comm_t **comms);
 } atl_ops_t;
 
@@ -75,7 +77,6 @@ typedef struct atl_pt2pt_ops {
 typedef struct atl_comp_ops {
     atl_status_t (*wait)(atl_comm_t *comm, atl_req_t *req);
     atl_status_t (*wait_all)(atl_comm_t *comm, atl_req_t *reqs, size_t count);
-    atl_status_t (*test)(atl_comm_t *comm, int *status, atl_req_t *req);
     atl_status_t (*poll)(atl_comm_t *comm);
     atl_status_t (*check)(atl_comm_t *comm, int *status, atl_req_t *req);
 } atl_comp_ops_t;
@@ -125,6 +126,16 @@ static inline INI_SIG(atl_noop_init)
 atl_status_t atl_init(int *argc, char ***argv, size_t *proc_idx, size_t *proc_count,
                       atl_attr_t *attr, atl_comm_t ***atl_comms, atl_desc_t **atl_desc);
 
+static inline void atl_proc_idx(atl_desc_t *desc, size_t *proc_idx)
+{
+    return desc->ops->proc_idx(desc, proc_idx);
+}
+
+static inline void atl_proc_count(atl_desc_t *desc, size_t *proc_count)
+{
+    return desc->ops->proc_count(desc, proc_count);
+}
+
 static inline atl_status_t atl_finalize(atl_desc_t *desc, atl_comm_t **comms)
 {
     return desc->ops->finalize(desc, comms);
@@ -162,11 +173,6 @@ static inline atl_status_t atl_comm_wait(atl_comm_t *comm, atl_req_t *req)
 static inline atl_status_t atl_comm_wait_all(atl_comm_t *comm, atl_req_t *req, size_t count)
 {
     return comm->comp_ops->wait_all(comm, req, count);
-}
-
-static inline atl_status_t atl_comm_test(atl_comm_t *comm, int *status, atl_req_t *req)
-{
-    return comm->comp_ops->test(comm, status, req);
 }
 
 static inline atl_status_t atl_comm_poll(atl_comm_t *comm)
