@@ -114,8 +114,8 @@ mlsl_status_t mlsl_coll_build_rabenseifner_allreduce(mlsl_sched *sched, const vo
 
             if (can_use_recv_reduce) {
                 MLSL_CALL(mlsl_sched_add_recv_reduce(sched,
-                                                     ((char *) recv_buf + disps[recv_idx] * dtype_size),
-                                                     recv_cnt, dtype, dst, op));
+                                                    ((char *) recv_buf + disps[recv_idx] * dtype_size),
+                                                    recv_cnt, NULL, dtype, op, dst, NULL));
                 MLSL_CALL(mlsl_sched_add_send(sched, ((char *) recv_buf + disps[send_idx] * dtype_size), send_cnt, dtype, dst));
                 MLSL_CALL(mlsl_sched_add_barrier(sched));
             }
@@ -302,6 +302,69 @@ mlsl_status_t mlsl_coll_build_recursive_doubling_allreduce(mlsl_sched *sched, co
             MLSL_CALL(mlsl_sched_add_recv(sched, recv_buf, count, dtype, rank + 1));
         }
     }
+
+    return status;
+}
+
+mlsl_status_t mlsl_coll_build_starlike_allreduce(mlsl_sched *sched, const void *send_buf, void *recv_buf,
+                                                 size_t count, mlsl_data_type_t dtype, mlsl_reduction_t op)
+{
+    MLSL_LOG(DEBUG, "build starlike allreduce");
+
+    mlsl_status_t status = mlsl_status_success;
+    size_t comm_size = global_data.comm->proc_count;
+    size_t this_rank = global_data.comm->proc_idx;
+    size_t* buffer_counts = MLSL_MALLOC(comm_size * sizeof(size_t), "buffer_count");
+    size_t* buffer_offsets = MLSL_MALLOC(comm_size * sizeof(size_t), "buffer_offsets");
+    size_t dtype_size = mlsl_get_dtype_size(dtype);
+
+    // find counts and offsets for each rank
+    size_t common_buffer_count = count / comm_size;
+    for (size_t rank_idx = 0; rank_idx < comm_size; ++ rank_idx)
+    {
+        buffer_counts[rank_idx] = common_buffer_count;
+        buffer_offsets[rank_idx] = rank_idx * buffer_counts[rank_idx] * dtype_size;
+    }
+    buffer_counts[comm_size - 1] += count % comm_size;
+
+    // buffer to receive and reduce parts related to the current rank
+    size_t this_rank_buf_size = buffer_counts[this_rank] * dtype_size;
+    void* tmp_buf = MLSL_MALLOC(this_rank_buf_size * (comm_size -1), "tmp_buf");
+    mlsl_sched_add_persistent_memory(sched, mlsl_sched_memory_buffer, tmp_buf);
+
+    // copy local data into recv_buf
+    if (send_buf != recv_buf) {
+        MLSL_CALL(mlsl_sched_add_copy(sched, send_buf, recv_buf, count, dtype));
+        MLSL_CALL(mlsl_sched_add_barrier(sched));
+    }
+
+    size_t tmp_buf_recv_idx = 0;
+    for (size_t rank_idx = 0; rank_idx < comm_size; ++rank_idx)
+    {
+        if (rank_idx != this_rank)
+        {
+            // send buffer to others
+            MLSL_CALL(mlsl_sched_add_send(sched, recv_buf + buffer_offsets[rank_idx],
+                                          buffer_counts[rank_idx], dtype, rank_idx));
+
+            // recv part of buffer from others and perform reduce
+            MLSL_CALL(mlsl_sched_add_recv_reduce(sched,
+                                                 recv_buf + buffer_offsets[this_rank],
+                                                 buffer_counts[this_rank], NULL,
+                                                 dtype, op, rank_idx,
+                                                 tmp_buf + this_rank_buf_size * tmp_buf_recv_idx));
+            ++tmp_buf_recv_idx;
+        }
+    }
+
+    MLSL_CALL(mlsl_sched_add_barrier(sched));
+
+    // allgatherv
+    MLSL_CALL(mlsl_coll_build_naive_allgatherv(sched, recv_buf, buffer_counts[this_rank],
+                                               recv_buf, buffer_counts, dtype));
+
+    MLSL_FREE(buffer_counts);
+    MLSL_FREE(buffer_offsets);
 
     return status;
 }

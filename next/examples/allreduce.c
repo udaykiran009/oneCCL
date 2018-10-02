@@ -7,7 +7,7 @@
       {                                                                    \
           for (idx = 0; idx < COUNT; idx++)                                \
           {                                                                \
-              send_buf[idx] = 1.0;                                         \
+              send_buf[idx] = (float)proc_idx;                             \
               recv_buf[idx] = 0.0;                                         \
           }                                                                \
           t1 = when();                                                     \
@@ -17,7 +17,7 @@
           t += (t2 - t1);                                                  \
       }                                                                    \
       mlsl_barrier();                                                      \
-      float expected = proc_count;                                         \
+      float expected = (proc_count - 1) * ((float)proc_count / 2);         \
       for (idx = 0; idx < COUNT; idx++)                                    \
       {                                                                    \
           if (recv_buf[idx] != expected)                                   \

@@ -63,9 +63,9 @@ typedef mlsl_status_t(*mlsl_reduction_fn_t) (const void*, size_t, void*, size_t*
 /* Extendable list of collective attributes */
 struct mlsl_coll_attr
 {
-    mlsl_sched_prologue_fn_t prologue_fn;
-    mlsl_sched_epilogue_fn_t epilogue_fn;
-    mlsl_sched_reduction_fn_t reduction_fn;
+    mlsl_prologue_fn_t prologue_fn;
+    mlsl_epilogue_fn_t epilogue_fn;
+    mlsl_reduction_fn_t reduction_fn;
     size_t priority;
     int synchronous;
     char *match_id;

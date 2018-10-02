@@ -54,6 +54,7 @@ SRCS += $(SRC_DIR)/coll/allreduce.c
 SRCS += $(SRC_DIR)/coll/barrier.c
 SRCS += $(SRC_DIR)/coll/bcast.c
 SRCS += $(SRC_DIR)/coll/reduce.c
+SRCS += $(SRC_DIR)/coll/allgatherv.c
 SRCS += $(SRC_DIR)/comp/comp.c
 SRCS += $(SRC_DIR)/sched/sched.c
 SRCS += $(SRC_DIR)/sched/sched_cache.c

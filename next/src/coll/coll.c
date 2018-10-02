@@ -121,9 +121,24 @@ mlsl_status_t mlsl_coll_build_allreduce(
     sched->coll_param.ctype = mlsl_coll_allreduce;
 
     if ((count < global_data.comm->pof2) || (count * mlsl_get_dtype_size(dtype) <= 8192))
+    {
         MLSL_CALL(mlsl_coll_build_recursive_doubling_allreduce(sched, send_buf, recv_buf, count, dtype, reduction));
+    }
     else
-        MLSL_CALL(mlsl_coll_build_rabenseifner_allreduce(sched, send_buf, recv_buf, count, dtype, reduction));
+    {
+        switch (env_data.allreduce_algo)
+        {
+            case mlsl_allreduce_algo_rabenseifner:
+                MLSL_CALL(mlsl_coll_build_rabenseifner_allreduce(sched, send_buf, recv_buf, count, dtype, reduction));
+                break;
+            case mlsl_allreduce_algo_starlike:
+                MLSL_CALL(mlsl_coll_build_starlike_allreduce(sched, send_buf, recv_buf, count, dtype, reduction));
+                break;
+            default:
+                MLSL_ASSERT_FMT(0, "unexpected allreduce_algo %d", env_data.allreduce_algo);
+                return mlsl_status_invalid_arguments;
+        }
+    }
 
     return status;
 }

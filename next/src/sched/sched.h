@@ -65,14 +65,14 @@ typedef struct mlsl_sched_reduce_local mlsl_sched_reduce_local;
 
 struct mlsl_sched_recv_reduce
 {
-    void *in_buf;
-    size_t in_count;
     void *inout_buf;
+    size_t in_count;
     size_t *out_count;
     mlsl_data_type_t dtype;
     mlsl_reduction_t op;
     mlsl_reduction_fn_t reduction_fn;
     size_t src;
+    void* comm_buf;
     mlsl_comm *comm;
     atl_req_t req;
 };
@@ -166,9 +166,9 @@ typedef struct mlsl_sched_memory mlsl_sched_memory;
 
 struct mlsl_sched_coll_attr
 {
-    mlsl_sched_prologue_fn_t prologue_fn;
-    mlsl_sched_epilogue_fn_t epilogue_fn;
-    mlsl_sched_reduction_fn_t reduction_fn;
+    mlsl_prologue_fn_t prologue_fn;
+    mlsl_epilogue_fn_t epilogue_fn;
+    mlsl_reduction_fn_t reduction_fn;
     size_t priority;
     int synchronous;
     char match_id[MLSL_MATCH_ID_MAX_LEN];
@@ -226,8 +226,22 @@ mlsl_status_t mlsl_sched_add_recv(mlsl_sched *sched, void *buf, size_t count,
 mlsl_status_t mlsl_sched_add_reduce(mlsl_sched *sched, const void *in_buf, size_t in_count,
                                              void *inout_buf, size_t *out_count,
                                              mlsl_data_type_t dtype, mlsl_reduction_t reduction);
-mlsl_status_t mlsl_sched_add_recv_reduce(mlsl_sched *sched, void *buf, size_t count,
-                                         mlsl_data_type_t dtype, size_t src, mlsl_reduction_t reduction);
+/**
+ * Combination of recv and reduce operations.
+ * @param sched Pointer to schedule for adding entries
+ * @param inout_buf Buffer with local data, will hold result of reduction.
+ * @param count Number of elements in inout_buf for reduce operation and number of elements in comm_buf for receive operation
+ * @param out_count Pointer to buffer to hold number of elements in inout_buf after reduce operation. Can be NULL
+ * @param dtype Data type of inout_buf and comm_buf
+ * @param op Reduction operation, see @ref mlsl_reduction_t
+ * @param src Remote rank ID for receiving data
+ * @param comm_buf Optional buffer for communication. Can be a @B NULL, in that case MLSL will allocate temporal buffer
+ */
+mlsl_status_t mlsl_sched_add_recv_reduce(mlsl_sched *sched, void *inout_buf, size_t count,
+                                         size_t *out_count, mlsl_data_type_t dtype,
+                                         mlsl_reduction_t op, size_t src,
+                                         void* comm_buf);
+
 mlsl_status_t mlsl_sched_add_copy(mlsl_sched *sched, const void *in_buf,
                                            void *out_buf, size_t count, mlsl_data_type_t dtype);
 mlsl_status_t mlsl_sched_add_barrier(mlsl_sched *sched);

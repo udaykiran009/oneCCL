@@ -19,23 +19,38 @@ const char *mlsl_priority_mode_to_str(mlsl_priority_mode mode)
     }
 }
 
+const char *mlsl_allreduce_algo_to_str(mlsl_allreduce_algo algo)
+{
+    switch (algo) {
+        case mlsl_allreduce_algo_rabenseifner:
+            return "RABENSEIFNER";
+        case mlsl_allreduce_algo_starlike:
+            return "STARLIKE";
+        default:
+            MLSL_ASSERT_FMT(0, "unexpected allreduce_algo %d", algo);
+            return "(out of range)";
+    }
+}
+
 mlsl_env_data env_data = {
                            .log_level = ERROR,
                            .sched_dump = 0,
                            .worker_count = 1,
                            .worker_offload = 1,
                            .worker_affinity = NULL,
-                           .priority_mode = mlsl_priority_none
+                           .priority_mode = mlsl_priority_none,
+                           .allreduce_algo = mlsl_allreduce_algo_rabenseifner
                          };
 
 void mlsl_env_parse()
 {
-    mlsl_env_2_int("MLSL_LOG_LEVEL", (int*)&env_data.log_level);
-    mlsl_env_2_int("MLSL_SCHED_DUMP", (int*)&env_data.sched_dump);
-    mlsl_env_2_int("MLSL_WORKER_COUNT", (int*)&env_data.worker_count);
-    mlsl_env_2_int("MLSL_WORKER_OFFLOAD", (int*)&env_data.worker_offload);
+    mlsl_env_2_int("MLSL_LOG_LEVEL", &env_data.log_level);
+    mlsl_env_2_int("MLSL_SCHED_DUMP", &env_data.sched_dump);
+    mlsl_env_2_int("MLSL_WORKER_COUNT", &env_data.worker_count);
+    mlsl_env_2_int("MLSL_WORKER_OFFLOAD", &env_data.worker_offload);
     mlsl_env_parse_priority_mode();
     mlsl_env_parse_affinity();
+    mlsl_env_parse_allreduce_algo();
 }
 
 void mlsl_env_free()
@@ -50,6 +65,7 @@ void mlsl_env_print()
     MLSL_LOG(INFO, "MLSL_WORKER_COUNT: %d", env_data.worker_count);
     MLSL_LOG(INFO, "MLSL_WORKER_OFFLOAD: %d", env_data.worker_offload);
     MLSL_LOG(INFO, "MLSL_PRIORITY_MODE: %s", mlsl_priority_mode_to_str(env_data.priority_mode));
+    MLSL_LOG(INFO, "MLSL_ALLREDUCE_ALGO: %s", mlsl_allreduce_algo_to_str(env_data.allreduce_algo));
     mlsl_env_print_affinity();
 }
 
@@ -173,5 +189,23 @@ int mlsl_env_print_affinity()
     for (w_idx = 0; w_idx < workers_per_node; w_idx++)
         MLSL_LOG(INFO, "worker: %zu, processor: %d",
                  w_idx, env_data.worker_affinity[w_idx]);
+    return 1;
+}
+
+int mlsl_env_parse_allreduce_algo()
+{
+    char *mode_env = getenv("MLSL_ALLREDUCE_ALGO");
+    if (mode_env)
+    {
+        if (strcmp(mode_env, "RABENSEIFNER") == 0)
+            env_data.allreduce_algo = mlsl_allreduce_algo_rabenseifner;
+        else if (strcmp(mode_env, "STARLIKE") == 0)
+            env_data.allreduce_algo = mlsl_allreduce_algo_starlike;
+        else
+        {
+            MLSL_ASSERT_FMT(0, "unexpected allreduce_algo %s", mode_env);
+            return 0;
+        }
+    }
     return 1;
 }

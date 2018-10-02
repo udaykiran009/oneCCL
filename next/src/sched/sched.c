@@ -161,14 +161,15 @@ mlsl_status_t mlsl_sched_dump(mlsl_sched *s, const char *name)
                                           e->u.reduce.reduction_fn);
                     break;
                 case mlsl_sched_entry_recv_reduce:
-                    buf_offset += sprintf(buf + buf_offset, "dt %s, in_buf %p, in_cnt %zu, inout_buf %p, out_cnt %p, op %s, red_fn %p, "
-                                          "src %zu, comm %p, req %p\n",
+                    buf_offset += sprintf(buf + buf_offset, "dt %s, inout_buf %p, in_cnt %zu, out_cnt %p, op %s, red_fn %p, "
+                                          "src %zu, comm_buf %p, comm %p, req %p\n",
                                           mlsl_dtype_to_str(e->u.recv_reduce.dtype),
-                                          e->u.recv_reduce.in_buf, e->u.recv_reduce.in_count,
-                                          e->u.recv_reduce.inout_buf, e->u.recv_reduce.out_count,
+                                          e->u.recv_reduce.inout_buf, e->u.recv_reduce.in_count,
+                                          e->u.recv_reduce.out_count,
                                           mlsl_reduction_to_str(e->u.recv_reduce.op),
                                           e->u.recv_reduce.reduction_fn,
-                                          e->u.recv_reduce.src, e->u.recv_reduce.comm, &e->u.recv_reduce.req);
+                                          e->u.recv_reduce.src, e->u.recv_reduce.comm_buf,
+                                          e->u.recv_reduce.comm, &e->u.recv_reduce.req);
                     break;
                 case mlsl_sched_entry_copy:
                     buf_offset += sprintf(buf + buf_offset, "dt %s, cnt %zu, in_buf %p, out_buf %p\n",
@@ -247,8 +248,8 @@ static void mlsl_sched_entry_adjust(mlsl_sched_entry *entry, size_t partition_id
                                       partition_idx, partition_count,
                                       adjust_count, adjust_offset);
             entry->u.recv_reduce.in_count = adjust_count;
-            MLSL_ADJUST_PTR(entry->u.recv_reduce.in_buf, adjust_offset);
             MLSL_ADJUST_PTR(entry->u.recv_reduce.inout_buf, adjust_offset);
+            MLSL_ADJUST_PTR(entry->u.recv_reduce.comm_buf, adjust_offset);
             break;
         case mlsl_sched_entry_copy:
             MLSL_GET_COUNT_AND_OFFSET(entry->u.copy.count, entry->u.copy.dtype,
@@ -348,7 +349,7 @@ mlsl_status_t mlsl_sched_start_entry(mlsl_sched *s, size_t idx, mlsl_sched_entry
             if (e->status != mlsl_sched_entry_status_started)
             {
                 MLSL_LOG(DEBUG, "starting RECV in RECV_REDUCE entry %zu, rreq %p", idx, &e->u.recv_reduce.req);
-                atl_status = atl_comm_recv(s->bin->comm_ctx, e->u.recv_reduce.in_buf,
+                atl_status = atl_comm_recv(s->bin->comm_ctx, e->u.recv_reduce.comm_buf,
                                            e->u.recv_reduce.in_count * mlsl_get_dtype_size(e->u.recv_reduce.dtype),
                                            e->u.recv_reduce.src, mlsl_sched_create_atl_tag(s->tag, e->u.recv_reduce.src),
                                            &e->u.recv_reduce.req);
@@ -363,7 +364,7 @@ mlsl_status_t mlsl_sched_start_entry(mlsl_sched *s, size_t idx, mlsl_sched_entry
             else
             {
                 MLSL_LOG(DEBUG, "starting REDUCE in RECV_REDUCE entry %zu", idx);
-                comp_status = mlsl_comp_reduce(e->u.recv_reduce.in_buf, e->u.recv_reduce.in_count,
+                comp_status = mlsl_comp_reduce(e->u.recv_reduce.comm_buf, e->u.recv_reduce.in_count,
                                                e->u.recv_reduce.inout_buf, e->u.recv_reduce.out_count,
                                                e->u.recv_reduce.dtype, e->u.recv_reduce.op, e->u.recv_reduce.reduction_fn);
                 MLSL_ASSERT(comp_status == mlsl_status_success);
@@ -714,28 +715,39 @@ mlsl_status_t mlsl_sched_add_reduce(mlsl_sched *sched, const void *in_buf, size_
     return status;
 }
 
-mlsl_status_t mlsl_sched_add_recv_reduce(mlsl_sched *sched, void *buf, size_t count,
-                                         mlsl_data_type_t dtype, size_t src, mlsl_reduction_t op)
+mlsl_status_t mlsl_sched_add_recv_reduce(mlsl_sched *sched, void *inout_buf, size_t count,
+                                         size_t *out_count, mlsl_data_type_t dtype,
+                                         mlsl_reduction_t op, size_t src,
+                                         void* comm_buf)
 {
     mlsl_status_t status = mlsl_status_success;
     mlsl_sched_entry *e = NULL;
 
     status = mlsl_sched_add_entry(sched, NULL, &e);
     MLSL_ASSERT(status == mlsl_status_success);
+    MLSL_ASSERT(inout_buf != NULL);
 
     e->type = mlsl_sched_entry_recv_reduce;
     e->status = mlsl_sched_entry_status_not_started;
     e->is_barrier = 0;
 
-    e->u.recv_reduce.in_buf = MLSL_MALLOC(count * mlsl_get_dtype_size(dtype), "recv_reduce.in_buf");
-    mlsl_sched_add_persistent_memory(sched, mlsl_sched_memory_buffer, e->u.recv_reduce.in_buf);
-    e->u.recv_reduce.in_count = count;
-    e->u.recv_reduce.inout_buf = buf;
-    e->u.recv_reduce.out_count = NULL;
-    e->u.recv_reduce.dtype = dtype;
-    e->u.recv_reduce.op = op;
-    e->u.recv_reduce.src = src;
-    e->u.recv_reduce.comm = global_data.comm;
+    mlsl_sched_recv_reduce *recv_reduce = &e->u.recv_reduce;
+    recv_reduce->inout_buf = inout_buf;
+    recv_reduce->in_count = count;
+    recv_reduce->out_count = out_count;
+    recv_reduce->dtype = dtype;
+    recv_reduce->op = op;
+    recv_reduce->src = src;
+    recv_reduce->comm = global_data.comm;
+    if (comm_buf == NULL || comm_buf == inout_buf)
+    {
+        recv_reduce->comm_buf = MLSL_MALLOC(count * mlsl_get_dtype_size(dtype), "recv_reduce.comm_buf");
+        mlsl_sched_add_persistent_memory(sched, mlsl_sched_memory_buffer, recv_reduce->comm_buf);
+    }
+    else
+    {
+        recv_reduce->comm_buf = comm_buf;
+    }
 
     mlsl_comm_add_ref(e->u.recv_reduce.comm);
 
