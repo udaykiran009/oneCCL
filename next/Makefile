@@ -11,8 +11,13 @@ MLSL_DIR     = $(BASE_DIR)
 SRC_DIR      = $(MLSL_DIR)/src
 EXAMPLES_DIR = $(MLSL_DIR)/examples
 
+ATL_OFI_DIR    = $(SRC_DIR)/atl/ofi
+ATL_OFI_TARGET = libmlsl_atl_ofi
+
 CFLAGS  += -Wall -Werror -pthread -std=gnu99 -I. -fPIC -D_GNU_SOURCE -fvisibility=internal
-LDFLAGS += -L$(BASE_DIR)/../atl -lmlsl_atl -lpthread -ldl
+LDFLAGS += -lpthread -ldl
+
+CFLAGS += -DATL_TRANSPORT_DL_DIR=\"$(ATL_OFI_DIR)\"
 
 TARGET   = libmlsl2
 
@@ -40,15 +45,17 @@ default: $(TARGET)
 	make -C $(EXAMPLES_DIR)
 
 INCS += -I$(MLSL_DIR)/include -iquote $(SRC_DIR)/sched \
+        -I$(SRC_DIR)/atl \
+        -I$(ATL_OFI_DIR) \
         -I$(SRC_DIR)/coll -I$(SRC_DIR)/comp \
         -I$(SRC_DIR)/exec -I$(SRC_DIR)/parallelizer \
         -I$(SRC_DIR)/common -I$(SRC_DIR)/common/comm \
         -I$(SRC_DIR)/common/env -I$(SRC_DIR)/common/global \
         -I$(SRC_DIR)/common/log -I$(SRC_DIR)/common/request \
-        -I$(SRC_DIR)/common/utils \
-        -I$(SRC_DIR)/../../atl
+        -I$(SRC_DIR)/common/utils
 
 SRCS += $(SRC_DIR)/mlsl.c
+SRCS += $(SRC_DIR)/atl/atl.c
 SRCS += $(SRC_DIR)/coll/coll.c
 SRCS += $(SRC_DIR)/coll/allreduce.c
 SRCS += $(SRC_DIR)/coll/barrier.c
@@ -80,9 +87,13 @@ $(SRC_DIR)/$(TARGET).a: $(OBJS)
 $(SRC_DIR)/$(TARGET).so: $(OBJS)
 	$(CC) $(CFLAGS) $(INCS) $(LIBS) -shared -Wl,-soname,$(TARGET).so -o $(SRC_DIR)/$(TARGET).so $(OBJS) $(LDFLAGS)
 
-$(TARGET): $(SRC_DIR)/$(TARGET).a $(SRC_DIR)/$(TARGET).so
+$(TARGET): $(SRC_DIR)/$(TARGET).a $(SRC_DIR)/$(TARGET).so  $(ATL_OFI_TARGET)
+
+$(ATL_OFI_TARGET):
+	cd $(ATL_OFI_DIR) && $(MAKE) CC="$(CC)" ENABLE_DEBUG=$(ENABLE_DEBUG) USE_SECURITY_FLAGS=$(USE_SECURITY_FLAGS) libmlsl_atl_ofi
 
 clean:
 	rm -f $(SRC_DIR)/$(TARGET).a $(SRC_DIR)/$(TARGET).so
 	find . -name "*.o" -type f -delete
 	make -C $(EXAMPLES_DIR) clean
+	make -C $(ATL_OFI_DIR) clean

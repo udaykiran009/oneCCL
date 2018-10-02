@@ -93,7 +93,7 @@ struct atl_comm {
  * is loaded.
  */
 #define ATL_EXT_INI                                        \
-__attribute__((visibility ("default"),EXTERNALLY_VISIBLE)) \
+__attribute__((visibility ("default"))) \
 atl_status_t atl_ini(atl_transport_t *atl_transport)
 
 /* Transport initialization function signature that built-in transportss
