@@ -30,14 +30,28 @@
         char hoststr[32];                            \
         gethostname(hoststr, sizeof(hoststr));       \
         fprintf(stdout, "(%d): %s: @ %s:%d:%s() " s, \
-	        tid, hoststr,                        \
+                tid, hoststr,                        \
                 __FILE__, __LINE__,                  \
-		__func__, ##__VA_ARGS__);            \
+                __func__, ##__VA_ARGS__);            \
         fflush(stdout);                              \
     } while (0)
 #else
 #define ATL_OFI_DEBUG_PRINT(s, ...)
 #endif
+
+#define ATL_OFI_RETRY(func, comm, ret_val)                       \
+    do {                                                         \
+        ret_val = func;                                          \
+        if (ret_val == FI_SUCCESS)                               \
+            break;                                               \
+        if (ret_val != -FI_EAGAIN) {                             \
+            ATL_OFI_DEBUG_PRINT(#func "fails with ret "PRId64"", \
+                                ret_val);                        \
+            assert(0);                                           \
+            break;                                               \
+        }                                                        \
+        (void) atl_ofi_comm_poll(comm);                          \
+    } while (ret_val == -FI_EAGAIN)
 
 #define ATL_OFI_PM_KEY "atl-ofi"
 
@@ -141,7 +155,7 @@ atl_ofi_comms_connect(atl_ofi_context_t *atl_ofi_context,
                                (/* iterate by comms(EPs) per process */ j +
                                 /* iterate by processes */
                                 (i * atl_ofi_context->addr_table.ep_num)) *
-			       atl_ofi_context->addr_len,
+                               atl_ofi_context->addr_len,
                                atl_ofi_context->addr_len);
             if (ret)
                 goto err_ep_names;
@@ -392,92 +406,6 @@ err:
     return RET2ATL(ret);
 }
 
-/* Non-blocking I/O vector pt2pt ops */
-static atl_status_t
-atl_ofi_comm_sendv(atl_comm_t *comm, const struct iovec *iov, size_t count,
-                   size_t dest_proc_idx, uint64_t tag, atl_req_t *req)
-{
-    atl_ofi_comm_context_t *comm_context =
-        container_of(comm, atl_ofi_comm_context_t, atl_comm);
-    atl_ofi_req_t *ofi_req = ((atl_ofi_req_t *)req->internal);
-
-    req->remote_proc_idx = dest_proc_idx;
-    req->tag = tag;
-    ofi_req->is_completed = 0;
-
-    return RET2ATL(fi_tsendv(comm_context->tx_ctx, iov, NULL, count,
-                             atl_ofi_comm_atl_addr_2_fi_addr(
-                                 container_of(comm->atl_desc,
-                                              atl_ofi_context_t,
-                                              atl_desc),
-                             dest_proc_idx, comm_context->idx),
-			     tag, &ofi_req->ofi_context));
-}
-
-static atl_status_t
-atl_ofi_comm_recvv(atl_comm_t *comm, struct iovec *iov, size_t count,
-                   size_t src_proc_idx, uint64_t tag, atl_req_t *req)
-{
-    atl_ofi_comm_context_t *comm_context =
-        container_of(comm, atl_ofi_comm_context_t, atl_comm);
-    atl_ofi_req_t *ofi_req = ((atl_ofi_req_t *)req->internal);
-
-    req->remote_proc_idx = src_proc_idx;
-    req->tag = tag;
-    ofi_req->is_completed = 0;
-
-    return RET2ATL(fi_trecvv(comm_context->rx_ctx, iov, NULL, count,
-                             atl_ofi_comm_atl_addr_2_fi_addr(
-                                 container_of(comm->atl_desc,
-                                              atl_ofi_context_t,
-                                              atl_desc),
-                             src_proc_idx, comm_context->idx),
-                             tag, 0, &ofi_req->ofi_context));
-}
-
-/* Non-blocking pt2pt ops */
-static atl_status_t
-atl_ofi_comm_send(atl_comm_t *comm, const void *buf, size_t len,
-                  size_t dest_proc_idx, uint64_t tag, atl_req_t *req)
-{
-    atl_ofi_comm_context_t *comm_context =
-        container_of(comm, atl_ofi_comm_context_t, atl_comm);
-    atl_ofi_req_t *ofi_req = ((atl_ofi_req_t *)req->internal);
-
-    req->remote_proc_idx = dest_proc_idx;
-    req->tag = tag;
-    ofi_req->is_completed = 0;
-
-    return RET2ATL(fi_tsend(comm_context->tx_ctx, buf, len, NULL,
-                            atl_ofi_comm_atl_addr_2_fi_addr(
-                                container_of(comm->atl_desc,
-                                             atl_ofi_context_t,
-                                             atl_desc),
-                            dest_proc_idx, comm_context->idx),
-			    tag, &ofi_req->ofi_context));
-}
-
-static atl_status_t
-atl_ofi_comm_recv(atl_comm_t *comm, void *buf, size_t len,
-                  size_t src_proc_idx, uint64_t tag, atl_req_t *req)
-{
-    atl_ofi_comm_context_t *comm_context =
-        container_of(comm, atl_ofi_comm_context_t, atl_comm);
-    atl_ofi_req_t *ofi_req = ((atl_ofi_req_t *)req->internal);
-
-    req->remote_proc_idx = src_proc_idx;
-    req->tag = tag;
-    ofi_req->is_completed = 0;
-
-    return RET2ATL(fi_trecv(comm_context->rx_ctx, buf, len, NULL,
-                            atl_ofi_comm_atl_addr_2_fi_addr(
-                                container_of(comm->atl_desc,
-                                             atl_ofi_context_t,
-                                             atl_desc),
-                            src_proc_idx, comm_context->idx),
-                            tag, 0, &ofi_req->ofi_context));
-}
-
 static void atl_ofi_comm_handle_cq_err(atl_ofi_comm_context_t *comm_context)
 {
     struct fi_cq_err_entry err_entry;
@@ -528,6 +456,104 @@ static inline atl_status_t atl_ofi_comm_poll(atl_comm_t *comm)
     } while (ret > 0);
 
     return atl_status_success;
+}
+
+/* Non-blocking I/O vector pt2pt ops */
+static atl_status_t
+atl_ofi_comm_sendv(atl_comm_t *comm, const struct iovec *iov, size_t count,
+                   size_t dest_proc_idx, uint64_t tag, atl_req_t *req)
+{
+    atl_ofi_comm_context_t *comm_context =
+        container_of(comm, atl_ofi_comm_context_t, atl_comm);
+    atl_ofi_req_t *ofi_req = ((atl_ofi_req_t *)req->internal);
+    ssize_t ret;
+
+    req->remote_proc_idx = dest_proc_idx;
+    req->tag = tag;
+    ofi_req->is_completed = 0;
+
+    ATL_OFI_RETRY(fi_tsendv(comm_context->tx_ctx, iov, NULL, count,
+                             atl_ofi_comm_atl_addr_2_fi_addr(
+                             container_of(comm->atl_desc,
+                                          atl_ofi_context_t,
+                                          atl_desc),
+                             dest_proc_idx, comm_context->idx),
+                             tag, &ofi_req->ofi_context),
+                  comm, ret);
+    return RET2ATL(ret);
+}
+
+static atl_status_t
+atl_ofi_comm_recvv(atl_comm_t *comm, struct iovec *iov, size_t count,
+                   size_t src_proc_idx, uint64_t tag, atl_req_t *req)
+{
+    atl_ofi_comm_context_t *comm_context =
+        container_of(comm, atl_ofi_comm_context_t, atl_comm);
+    atl_ofi_req_t *ofi_req = ((atl_ofi_req_t *)req->internal);
+    ssize_t ret;
+
+    req->remote_proc_idx = src_proc_idx;
+    req->tag = tag;
+    ofi_req->is_completed = 0;
+
+    ATL_OFI_RETRY(fi_trecvv(comm_context->rx_ctx, iov, NULL, count,
+                            atl_ofi_comm_atl_addr_2_fi_addr(
+                                 container_of(comm->atl_desc,
+                                              atl_ofi_context_t,
+                                              atl_desc),
+                                 src_proc_idx, comm_context->idx),
+                            tag, 0, &ofi_req->ofi_context),
+                  comm, ret);
+    return RET2ATL(ret);
+}
+
+/* Non-blocking pt2pt ops */
+static atl_status_t
+atl_ofi_comm_send(atl_comm_t *comm, const void *buf, size_t len,
+                  size_t dest_proc_idx, uint64_t tag, atl_req_t *req)
+{
+    atl_ofi_comm_context_t *comm_context =
+        container_of(comm, atl_ofi_comm_context_t, atl_comm);
+    atl_ofi_req_t *ofi_req = ((atl_ofi_req_t *)req->internal);
+    ssize_t ret;
+
+    req->remote_proc_idx = dest_proc_idx;
+    req->tag = tag;
+    ofi_req->is_completed = 0;
+
+    ATL_OFI_RETRY(fi_tsend(comm_context->tx_ctx, buf, len, NULL,
+                           atl_ofi_comm_atl_addr_2_fi_addr(
+                                container_of(comm->atl_desc,
+                                             atl_ofi_context_t,
+                                             atl_desc),
+                                dest_proc_idx, comm_context->idx),
+                           tag, &ofi_req->ofi_context),
+                  comm, ret);
+    return RET2ATL(ret);
+}
+
+static atl_status_t
+atl_ofi_comm_recv(atl_comm_t *comm, void *buf, size_t len,
+                  size_t src_proc_idx, uint64_t tag, atl_req_t *req)
+{
+    atl_ofi_comm_context_t *comm_context =
+        container_of(comm, atl_ofi_comm_context_t, atl_comm);
+    atl_ofi_req_t *ofi_req = ((atl_ofi_req_t *)req->internal);
+    ssize_t ret;
+
+    req->remote_proc_idx = src_proc_idx;
+    req->tag = tag;
+    ofi_req->is_completed = 0;
+
+    ATL_OFI_RETRY(fi_trecv(comm_context->rx_ctx, buf, len, NULL,
+                           atl_ofi_comm_atl_addr_2_fi_addr(
+                                container_of(comm->atl_desc,
+                                             atl_ofi_context_t,
+                                             atl_desc),
+                                src_proc_idx, comm_context->idx),
+                           tag, 0, &ofi_req->ofi_context),
+                  comm, ret);
+    return RET2ATL(ret);
 }
 
 static atl_status_t atl_ofi_comm_wait(atl_comm_t *comm, atl_req_t *req)

@@ -11,7 +11,7 @@ PMILIB_DIR          = $(BASE_DIR)/../util/pm/pmi_rt/pmi
 PM_RT_DIR          = $(BASE_DIR)/../util/pm
 PMI_RT_DIR          = $(PM_RT_DIR)/pmi_rt
 
-OFILIB_DIR          = $(BASE_DIR)/../../ofi_rt
+OFILIB_DIR          = $(BASE_DIR)/../../../ofi_rt
 
 CFLAGS  += $(EXTRA_CFLAGS) -Wall -O2 -std=gnu99 -I. -I../ -fPIC -D_GNU_SOURCE
 LDFLAGS += $(EXTRA_LDFLAGS)
