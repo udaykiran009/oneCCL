@@ -1,6 +1,9 @@
 #ifndef LOG_H
 #define LOG_H
 
+#include "common/env/env.h"
+#include "mlsl.h"
+
 #include <assert.h>
 #include <string.h>
 #include <ctype.h>
@@ -10,9 +13,6 @@
 #include <sys/syscall.h>
 #include <time.h>
 #include <unistd.h>
-
-#include "env.h"
-#include "mlsl.h"
 
 #define GET_TID()    syscall(SYS_gettid)
 #define IS_SPACE(c)  ((c==0x20 || c==0x09 || c==0x0a || c==0x0b || c==0x0c || c==0x0d) ? 8 : 0)
@@ -72,13 +72,14 @@
   } while(0)
 #define MLSL_ASSERTP(cond) MLSL_ASSERTP_FMT(cond, "")
 
+#define MLSL_UNUSED(expr) do { (void)sizeof(expr); } while(0)
 
 #ifdef ENABLE_DEBUG
 #define MLSL_ASSERT_FMT(cond, fmt, ...) MLSL_ASSERTP_FMT(cond, fmt, ##__VA_ARGS__);
 #define MLSL_ASSERT(cond) MLSL_ASSERTP(cond);
 #else
-#define MLSL_ASSERT_FMT(cond, fmt, ...)
-#define MLSL_ASSERT(cond)
+#define MLSL_ASSERT_FMT(cond, fmt, ...) MLSL_UNUSED(cond)
+#define MLSL_ASSERT(cond) MLSL_UNUSED(cond)
 #endif
 
 enum mlsl_log_level

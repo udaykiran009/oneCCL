@@ -22,6 +22,7 @@
         mlsl_status_t status = mlsl_status_success; \
         status = expr;                              \
         assert(status == mlsl_status_success);      \
+        (void)status;                               \
   } while (0)
 
 mlsl_coll_attr_t coll_attr;

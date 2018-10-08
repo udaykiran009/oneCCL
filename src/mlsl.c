@@ -1,9 +1,9 @@
-#include "exec.h"
-#include "global.h"
-#include "log.h"
 #include "mlsl.h"
-#include "sched_cache.h"
-#include "sched_queue.h"
+#include "exec/exec.h"
+#include "common/global/global.h"
+#include "common/log/log.h"
+#include "sched/sched_cache.h"
+#include "sched/sched_queue.h"
 
 mlsl_status_t mlsl_init()
 {

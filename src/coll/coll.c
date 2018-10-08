@@ -1,8 +1,8 @@
-#include "coll.h"
-#include "coll_algorithms.h"
-#include "global.h"
-#include "sched.h"
-#include "utils.h"
+#include "coll/coll.h"
+#include "coll/coll_algorithms.h"
+#include "sched/sched.h"
+#include "common/global/global.h"
+#include "common/utils/utils.h"
 
 mlsl_coll_attr_t *default_coll_attr = NULL;
 
@@ -40,43 +40,43 @@ const char *mlsl_coll_type_to_str(mlsl_coll_type type)
     }
 }
 
-#define MLSL_COLL(coll_attr, fill_cache_key_expr, create_sched_expr)           \
-  do {                                                                         \
-    const struct mlsl_coll_attr *attr = (coll_attr) ?                          \
-        coll_attr : global_data.default_coll_attr;                             \
-    mlsl_sched *sched = NULL;                                                  \
-    mlsl_sched_cache_entry *entry = NULL;                                      \
-    if (attr->to_cache)                                                        \
-    {                                                                          \
-        mlsl_sched_cache_key key;                                              \
-        memset(&key, 0, sizeof(mlsl_sched_cache_key));                         \
-        fill_cache_key_expr;                                                   \
-        if (attr->match_id)                                                    \
-            strncpy(key.match_id, attr->match_id, MLSL_MATCH_ID_MAX_LEN - 1);  \
-        mlsl_sched_cache_get_entry(global_data.sched_cache, &key, &entry);     \
-        sched = entry->sched;                                                  \
-    }                                                                          \
-    if (!sched)                                                                \
-    {                                                                          \
-        create_sched_expr;                                                     \
-        MLSL_LOG(DEBUG, "didn't find sched, create new one %p, type %s",       \
-                 sched, mlsl_coll_type_to_str(sched->coll_param.ctype));       \
-        MLSL_CALL(mlsl_sched_set_coll_attr(sched, attr));                      \
-        MLSL_CALL(mlsl_sched_commit(sched));                                   \
-        if (entry) entry->sched = sched;                                       \
-    }                                                                          \
-    else                                                                       \
-    {                                                                          \
-        MLSL_LOG(DEBUG, "found sched, reuse %p, type %s",                      \
-                 sched, mlsl_coll_type_to_str(sched->coll_param.ctype));       \
-        MLSL_CALL(mlsl_sched_set_coll_attr(sched, attr));                      \
-    }                                                                          \
-    MLSL_CALL(mlsl_sched_start(sched, req));                                   \
-    if (attr->synchronous)                                                     \
-    {                                                                          \
-        mlsl_wait(*req);                                                       \
-        *req = NULL;                                                           \
-    }                                                                          \
+#define MLSL_COLL(coll_attr, fill_cache_key_expr, create_sched_expr)                \
+  do {                                                                              \
+    const struct mlsl_coll_attr *attr = ((uintptr_t)coll_attr != (uintptr_t)NULL) ? \
+        coll_attr : global_data.default_coll_attr;                                  \
+    mlsl_sched *sched = NULL;                                                       \
+    mlsl_sched_cache_entry *entry = NULL;                                           \
+    if (attr->to_cache)                                                             \
+    {                                                                               \
+        mlsl_sched_cache_key key;                                                   \
+        memset(&key, 0, sizeof(mlsl_sched_cache_key));                              \
+        fill_cache_key_expr;                                                        \
+        if (attr->match_id)                                                         \
+            strncpy(key.match_id, attr->match_id, MLSL_MATCH_ID_MAX_LEN - 1);       \
+        mlsl_sched_cache_get_entry(global_data.sched_cache, &key, &entry);          \
+        sched = entry->sched;                                                       \
+    }                                                                               \
+    if (!sched)                                                                     \
+    {                                                                               \
+        create_sched_expr;                                                          \
+        MLSL_LOG(DEBUG, "didn't find sched, create new one %p, type %s",            \
+                 sched, mlsl_coll_type_to_str(sched->coll_param.ctype));            \
+        MLSL_CALL(mlsl_sched_set_coll_attr(sched, attr));                           \
+        MLSL_CALL(mlsl_sched_commit(sched));                                        \
+        if (entry) entry->sched = sched;                                            \
+    }                                                                               \
+    else                                                                            \
+    {                                                                               \
+        MLSL_LOG(DEBUG, "found sched, reuse %p, type %s",                           \
+                 sched, mlsl_coll_type_to_str(sched->coll_param.ctype));            \
+        MLSL_CALL(mlsl_sched_set_coll_attr(sched, attr));                           \
+    }                                                                               \
+    MLSL_CALL(mlsl_sched_start(sched, req));                                        \
+    if (attr->synchronous)                                                          \
+    {                                                                               \
+        mlsl_wait(*req);                                                            \
+        *req = NULL;                                                                \
+    }                                                                               \
   } while (0)
 
 mlsl_status_t mlsl_coll_build_barrier(mlsl_sched *sched)

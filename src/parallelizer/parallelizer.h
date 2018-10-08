@@ -1,7 +1,7 @@
 #ifndef PARALLELIZER_H
 #define PARALLELIZER_H
 
-#include "sched.h"
+#include "sched/sched.h"
 
 struct mlsl_parallelizer
 {

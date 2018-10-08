@@ -1,8 +1,8 @@
 #ifndef REQUEST_H
 #define REQUEST_H
 
-#include "comm.h"
-#include "sched.h"
+#include "common/comm/comm.h"
+#include "sched/sched.h"
 
 // TODO: use request allocator
 

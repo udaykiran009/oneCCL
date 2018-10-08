@@ -1,4 +1,4 @@
-#include "coll_algorithms.h"
+#include "coll/coll_algorithms.h"
 
 mlsl_status_t mlsl_coll_build_rabenseifner_allreduce(mlsl_sched *sched, const void *send_buf, void *recv_buf,
                                                      size_t count, mlsl_data_type_t dtype, mlsl_reduction_t op)

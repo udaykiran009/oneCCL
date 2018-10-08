@@ -1,4 +1,4 @@
-#include "sched_queue.h"
+#include "sched/sched_queue.h"
 
 mlsl_status_t mlsl_sched_queue_create(size_t max_bins, atl_comm_t **comm_ctxs, mlsl_sched_queue **queue)
 {
@@ -35,7 +35,7 @@ mlsl_status_t mlsl_sched_queue_add(mlsl_sched_queue *queue, mlsl_sched *sched, s
     if (!bin->elems)
     {
         MLSL_ASSERT(bin->priority == 0);
-        MLSL_ASSERT(bin->elem == 0);
+        MLSL_ASSERT(bin->elem_count == 0);
         bin->priority = priority;
         queue->used_bins++;
     }

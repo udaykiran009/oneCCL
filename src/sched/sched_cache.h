@@ -1,8 +1,8 @@
 #ifndef SCHED_CACHE_H
 #define SCHED_CACHE_H
 
-#include "sched.h"
-#include "uthash.h"
+#include "sched/sched.h"
+#include "common/utils/uthash.h"
 
 struct mlsl_sched_cache_key
 {

@@ -160,6 +160,7 @@ int main()
         size_t msg_size = msg_sizes[idx];
         int pm_ret = posix_memalign(&(msg_buffers[idx]), CACHELINE_SIZE, msg_size);
         assert((pm_ret == 0) && msg_buffers[idx]);
+        (void)pm_ret;
         memset(msg_buffers[idx], 'a' + idx, msg_size);
         msg_priorities[idx] = idx;
     }

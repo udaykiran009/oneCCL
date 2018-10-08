@@ -1,8 +1,7 @@
 #ifndef COLL_H
 #define COLL_H
 
-#include "comm.h"
-#include "sched.h"
+#include "common/comm/comm.h"
 
 #define MLSL_INVALID_PROC_IDX (-1)
 

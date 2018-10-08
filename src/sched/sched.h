@@ -1,13 +1,13 @@
 #ifndef SCHED_H
 #define SCHED_H
 
-#include "atl.h"
-#include "coll.h"
-#include "comm.h"
-#include "lock.h"
-#include "log.h"
+#include "atl/atl.h"
+#include "coll/coll.h"
+#include "common/comm/comm.h"
+#include "common/log/log.h"
+#include "common/request/request.h"
+#include "common/utils/lock.h"
 #include "mlsl.h"
-#include "request.h"
 
 #define MLSL_MATCH_ID_MAX_LEN (64)
 

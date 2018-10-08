@@ -1,9 +1,9 @@
 #ifndef EXEC_H
 #define EXEC_H
 
-#include "atl.h"
-#include "sched.h"
-#include "worker.h"
+#include "sched/sched.h"
+#include "atl/atl.h"
+#include "exec/worker.h"
 
 struct mlsl_executor
 {

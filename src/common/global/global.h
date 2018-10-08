@@ -1,11 +1,11 @@
 #ifndef GLOBAL_H
 #define GLOBAL_H
 
-#include "comm.h"
-#include "exec.h"
-#include "parallelizer.h"
-#include "sched_cache.h"
-#include "utils.h"
+#include "common/comm/comm.h"
+#include "common/utils/utils.h"
+#include "exec/exec.h"
+#include "parallelizer/parallelizer.h"
+#include "sched/sched_cache.h"
 
 #define MLSL_TAG_UNDEFINED (-1)
 #define MLSL_TAG_FIRST     (0)

@@ -1,4 +1,4 @@
-#include "coll_algorithms.h"
+#include "coll/coll_algorithms.h"
 
 mlsl_status_t mlsl_coll_build_dissemination_barrier(mlsl_sched *sched)
 {

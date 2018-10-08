@@ -1,7 +1,7 @@
 #ifndef SCHED_QUEUE_H
 #define SCHED_QUEUE_H
 
-#include "sched.h"
+#include "sched/sched.h"
 
 #define MLSL_SCHED_QUEUE_MAX_BINS (64)
 

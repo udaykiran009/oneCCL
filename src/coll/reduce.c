@@ -1,4 +1,4 @@
-#include "coll_algorithms.h"
+#include "coll/coll_algorithms.h"
 
 /* An implementation of Rabenseifner's reduce algorithm (see
    http://www.hlrs.de/mpi/myreduce.html).

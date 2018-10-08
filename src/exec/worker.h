@@ -1,9 +1,9 @@
 #ifndef WORKER_H
 #define WORKER_H
 
-#include "exec.h"
-#include "pthread.h"
-#include "sched_queue.h"
+#include "exec/exec.h"
+#include "sched/sched_queue.h"
+#include <pthread.h>
 
 struct mlsl_worker
 {

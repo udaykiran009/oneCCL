@@ -30,7 +30,7 @@
  * SOFTWARE.
  */
 
-#include "buf_pool.h"
+#include "common/utils/buf_pool.h"
 
 static inline void mlsl_buf_set_region(union mlsl_buf *buf,
                                        struct mlsl_buf_region *region,

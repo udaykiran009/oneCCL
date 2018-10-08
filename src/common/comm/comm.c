@@ -1,6 +1,6 @@
-#include "comm.h"
-#include "global.h"
-#include "utils.h"
+#include "common/comm/comm.h"
+#include "common/global/global.h"
+#include "common/utils/utils.h"
 
 mlsl_comm *global_comm = NULL;
 

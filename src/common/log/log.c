@@ -1,5 +1,5 @@
-#include "env.h"
-#include "log.h"
+#include "common/log/log.h"
+#include "common/env/env.h"
 
 void mlsl_log_get_time(char* buf, size_t buf_size)
 {

@@ -1,17 +1,17 @@
-#include "comp.h"
-#include "global.h"
-#include "log.h"
-#include "sched.h"
-#include "utils.h"
+#include "sched/sched.h"
+#include "comp/comp.h"
+#include "common/global/global.h"
+#include "common/log/log.h"
+#include "common/utils/utils.h"
 
 #include <immintrin.h>
 #include <stdio.h>
+
 
 #define MLSL_SCHED_INITIAL_ENTRIES (16)
 
 mlsl_priority_mode mlsl_sched_get_priority(mlsl_sched *sched)
 {
-    static size_t lifo_priority = 0;
     size_t priority;
     switch (env_data.priority_mode)
     {

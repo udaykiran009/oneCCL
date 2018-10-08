@@ -1,6 +1,6 @@
-#include "comp.h"
-#include "log.h"
-#include "utils.h"
+#include "comp/comp.h"
+#include "common/log/log.h"
+#include "common/utils/utils.h"
 
 #include <stdint.h>
 #include <string.h>

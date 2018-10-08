@@ -1,7 +1,7 @@
 #pragma once
 
-#include "global.h"
-#include "sched.h"
+#include "common/global/global.h"
+#include "sched/sched.h"
 
 mlsl_status_t mlsl_coll_build_dissemination_barrier(mlsl_sched *sched);
 

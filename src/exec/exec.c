@@ -1,6 +1,6 @@
-#include "exec.h"
-#include "global.h"
-#include "sched_queue.h"
+#include "exec/exec.h"
+#include "common/global/global.h"
+#include "sched/sched_queue.h"
 
 #include <immintrin.h>
 

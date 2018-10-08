@@ -1,4 +1,4 @@
-#include "coll_algorithms.h"
+#include "coll/coll_algorithms.h"
 
 mlsl_status_t mlsl_coll_build_scatter_for_bcast(mlsl_sched *sched, void *tmp_buf, size_t root, size_t nbytes)
 {

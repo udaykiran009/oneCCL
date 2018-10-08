@@ -1,5 +1,5 @@
-#include "comp.h"
-#include "parallelizer.h"
+#include "parallelizer/parallelizer.h"
+#include "comp/comp.h"
 
 #define MLSL_MIN_PART_SIZE (2048)
 
