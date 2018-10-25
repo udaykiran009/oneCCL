@@ -56,6 +56,7 @@ typedef struct atl_transport {
 typedef struct atl_req {
     uint64_t tag;
     size_t remote_proc_idx;
+    size_t recv_len;
 
     void *internal[ATL_REQ_SIZE];
 } atl_req_t __attribute__ ((aligned (ATL_CACHELINE_LEN)));
@@ -71,6 +72,8 @@ typedef struct atl_pt2pt_ops {
                          size_t dest_proc_idx, uint64_t tag, atl_req_t *req);
     atl_status_t (*recv)(atl_comm_t *comm, void *buf, size_t len,
                          size_t src_proc_idx, uint64_t tag, atl_req_t *req);
+    atl_status_t (*probe)(atl_comm_t *comm, size_t src_proc_idx, uint64_t tag,
+                          atl_req_t *req);
 } atl_pt2pt_ops_t;
 
 // TODO: align with PSM2 progress functions
@@ -163,6 +166,12 @@ static inline atl_status_t atl_comm_recvv(atl_comm_t *comm, struct iovec *iov, s
                                           size_t src_proc_idx, uint64_t tag, atl_req_t *req)
 {
     return comm->pt2pt_ops->recvv(comm, iov, count, src_proc_idx, tag, req);
+}
+
+static inline atl_status_t atl_comm_probe(atl_comm_t *comm, size_t src_proc_idx,
+                                          uint64_t tag, atl_req_t *req)
+{
+    return comm->pt2pt_ops->probe(comm, src_proc_idx, tag, req);
 }
 
 static inline atl_status_t atl_comm_wait(atl_comm_t *comm, atl_req_t *req)
