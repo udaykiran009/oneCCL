@@ -183,8 +183,8 @@ mlsl_status_t mlsl_sched_dump(mlsl_sched *s, const char *name)
                                           e->u.compute.out_buf, e->u.compute.out_count);
                     break;
                 case mlsl_sched_entry_sync:
-                    buf_offset += sprintf(buf + buf_offset, "ptr %p, counter %d\n",
-                                          e->u.sync.counter_ptr, (*e->u.sync.counter_ptr));
+                    buf_offset += sprintf(buf + buf_offset, "root_sched %p, counter %d\n",
+                                          e->u.sync.root_sched, e->u.sync.root_sched->entries[e->u.sync.entry_idx].u.sync.counter);
                     break;
                 case mlsl_sched_entry_nop:
                     break;
@@ -268,7 +268,7 @@ static void mlsl_sched_entry_adjust(mlsl_sched_entry *entry, size_t partition_id
             MLSL_ADJUST_PTR(entry->u.compute.out_buf, adjust_offset);
             break;
         case mlsl_sched_entry_sync:
-            (*entry->u.sync.counter_ptr)++;
+            entry->u.sync.root_sched->entries[entry->u.sync.entry_idx].u.sync.counter++;
             break;
         case mlsl_sched_entry_nop:
             break;
@@ -382,18 +382,20 @@ mlsl_status_t mlsl_sched_start_entry(mlsl_sched *s, size_t idx, mlsl_sched_entry
             MLSL_LOG(DEBUG, "completed COPY entry %zu", idx);
             break;
         case mlsl_sched_entry_sync:
+        {
+            int* counter_ptr = &e->u.sync.root_sched->entries[e->u.sync.entry_idx].u.sync.counter;
             if (e->u.sync.was_used == 0)
             {
                 MLSL_LOG(DEBUG, "starting SYNC entry %zu", idx);
                 int prev_counter __attribute__ ((unused));
-                prev_counter = __atomic_fetch_sub(e->u.sync.counter_ptr, 1, __ATOMIC_RELEASE);
+                prev_counter = __atomic_fetch_sub(counter_ptr, 1, __ATOMIC_RELEASE);
                 MLSL_ASSERT(prev_counter >= 0);
                 e->u.sync.was_used = 1;
             }
 
             if (e->u.sync.was_used == 1)
             {
-                int counter = __atomic_load_n(e->u.sync.counter_ptr, __ATOMIC_ACQUIRE);
+                int counter = __atomic_load_n(counter_ptr, __ATOMIC_ACQUIRE);
                 if (counter == 0)
                 {
                     MLSL_LOG(DEBUG, "completed SYNC entry %zu", idx);
@@ -406,6 +408,7 @@ mlsl_status_t mlsl_sched_start_entry(mlsl_sched *s, size_t idx, mlsl_sched_entry
                 }
             }
             break;
+        }
         case mlsl_sched_entry_nop:
             MLSL_LOG(DEBUG, "starting NOP entry %zu", idx);
             /* nothing to be done */
@@ -565,8 +568,12 @@ mlsl_status_t mlsl_sched_reset(mlsl_sched *sched)
         sched->entries[idx].status = mlsl_sched_entry_status_not_started;
         if (sched->entries[idx].type == mlsl_sched_entry_sync)
         {
-            __atomic_fetch_add(sched->entries[idx].u.sync.counter_ptr, 1, __ATOMIC_ACQUIRE);
             sched->entries[idx].u.sync.was_used = 0;
+            if(sched->entries[idx].u.sync.root_sched == sched)
+            {
+                //reset counter for the root sched only
+                sched->entries[idx].u.sync.counter = sched->entries[idx].u.sync.initial_counter;
+            }
         }
     }
     return mlsl_status_success;
@@ -580,10 +587,13 @@ mlsl_status_t mlsl_sched_sync_schedules(mlsl_sched **scheds, size_t count)
     {
         mlsl_sched_add_sync(scheds[idx], &sync_entry);
         if (idx == 0) root_sync_entry = sync_entry;
-
-        MLSL_ASSERTP(root_sync_entry);
-        sync_entry->u.sync.counter_ptr = root_sync_entry->u.sync.counter_ptr;
+        //Save pointer to the root
+        sync_entry->u.sync.root_sched = scheds[0];
     }
+
+    MLSL_ASSERTP(root_sync_entry);
+    root_sync_entry->u.sync.initial_counter = count;
+    root_sync_entry->u.sync.counter = count;
 
     return mlsl_status_success;
 }
@@ -797,8 +807,8 @@ mlsl_status_t mlsl_sched_add_sync(mlsl_sched *sched, mlsl_sched_entry **sync_ent
     mlsl_status_t status = mlsl_status_success;
     mlsl_sched_entry *e = NULL;
     mlsl_sched_sync *sync = NULL;
-
-    status = mlsl_sched_add_entry(sched, NULL, &e);
+    int entry_idx;
+    status = mlsl_sched_add_entry(sched, &entry_idx, &e);
     MLSL_ASSERT(status == mlsl_status_success);
 
     e->type = mlsl_sched_entry_sync;
@@ -807,8 +817,8 @@ mlsl_status_t mlsl_sched_add_sync(mlsl_sched *sched, mlsl_sched_entry **sync_ent
     sync = &e->u.sync;
 
     sync->counter = 0;
-    sync->counter_ptr = &sync->counter;
     sync->was_used = 0;
+    sync->entry_idx = entry_idx;
 
     *sync_entry = e;
 
@@ -871,7 +881,6 @@ mlsl_status_t mlsl_sched_progress(mlsl_sched_queue_bin *bin, size_t sched_count,
         if (s->first_progress)
         {
             MLSL_LOG(DEBUG, "do initial mlsl_sched_continue");
-            mlsl_sched_reset(s);
             status = mlsl_sched_continue(s);
             MLSL_ASSERT(status == mlsl_status_success);
             s->first_progress = 0;

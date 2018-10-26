@@ -111,6 +111,7 @@ mlsl_status_t mlsl_executor_start(mlsl_executor *executor, mlsl_sched *sched)
     {
         partial_scheds[idx]->first_progress = 1;
         mlsl_sched_adjust_tag(partial_scheds[idx]);
+        mlsl_sched_reset(partial_scheds[idx]);
     }
 
     if (executor->proc_idx == 0)

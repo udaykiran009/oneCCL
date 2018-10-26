@@ -14,6 +14,7 @@
 struct mlsl_sched_queue;
 struct mlsl_sched_queue_bin;
 struct mlsl_coll_param;
+struct mlsl_sched;
 
 enum mlsl_sched_entry_type
 {
@@ -113,8 +114,14 @@ typedef struct mlsl_sched_compute mlsl_sched_compute;
 
 struct mlsl_sched_sync
 {
+    /* Initial value of the counter, used to restore value of the counter */
+    int initial_counter;
+    /* Current working counter */
     int counter;
-    int *counter_ptr;
+    /* Pointer to the root schedule which sync entry will be used to check completion */
+    struct mlsl_sched* root_sched;
+    /* Index of the current sync entry in the array of entries */
+    size_t entry_idx;
     int was_used;
 };
 typedef struct mlsl_sched_sync mlsl_sched_sync;
