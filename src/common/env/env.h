@@ -1,6 +1,10 @@
 #ifndef ENV_H
 #define ENV_H
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #include "common/utils/utils.h"
 
 enum mlsl_priority_mode
@@ -41,5 +45,9 @@ int mlsl_env_parse_priority_mode();
 int mlsl_env_parse_affinity();
 int mlsl_env_print_affinity();
 int mlsl_env_parse_allreduce_algo();
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* ENV_H */

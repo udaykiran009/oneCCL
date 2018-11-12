@@ -8,7 +8,7 @@
       {                                                                    \
           for (idx = 0; idx < COUNT; idx++)                                \
           {                                                                \
-              if (proc_idx == ROOT) buf[idx] = expected;                   \
+              if (rank == ROOT) buf[idx] = expected;                       \
               else buf[idx] = 0.0;                                         \
           }                                                                \
           t1 = when();                                                     \
@@ -17,7 +17,7 @@
           t2 = when();                                                     \
           t += (t2 - t1);                                                  \
       }                                                                    \
-      mlsl_barrier();                                                      \
+      mlsl_barrier(NULL);                                                  \
       for (idx = 0; idx < COUNT; idx++)                                    \
       {                                                                    \
           if (buf[idx] != expected)                                        \
@@ -27,7 +27,7 @@
               assert(0);                                                   \
           }                                                                \
       }                                                                    \
-      printf("[%zu] avg %s time: %8.2lf us\n", proc_idx, name, t / ITERS); \
+      printf("[%zu] avg %s time: %8.2lf us\n", rank, name, t / ITERS);     \
       fflush(stdout);                                                      \
   } while (0)
 
@@ -37,15 +37,15 @@ int main()
 
     MLSL_CALL(mlsl_init());
 
-    proc_idx = mlsl_get_proc_idx();
-    proc_count = mlsl_get_proc_count();
+    rank = mlsl_get_comm_rank(NULL);
+    size = mlsl_get_comm_size(NULL);
 
     coll_attr.to_cache = 1;
-    RUN_COLLECTIVE(mlsl_bcast(buf, COUNT, mlsl_dtype_float, ROOT, &coll_attr, &request),
+    RUN_COLLECTIVE(mlsl_bcast(buf, COUNT, mlsl_dtype_float, ROOT, &coll_attr, NULL, &request),
                    "persistent_bcast");
 
     coll_attr.to_cache = 0;
-    RUN_COLLECTIVE(mlsl_bcast(buf, COUNT, mlsl_dtype_float, ROOT, &coll_attr, &request),
+    RUN_COLLECTIVE(mlsl_bcast(buf, COUNT, mlsl_dtype_float, ROOT, &coll_attr, NULL, &request),
                    "regular_bcast");
 
     MLSL_CALL(mlsl_finalize());

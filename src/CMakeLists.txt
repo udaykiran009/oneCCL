@@ -22,7 +22,8 @@ set(MLSL_SRC
     exec/exec.c
     exec/worker.c
     parallelizer/parallelizer.c
-    common/comm/comm.c
+    common/comm/comm.cpp
+    common/comm/comm_id.cpp
     common/env/env.c
     common/global/global.c
     common/log/log.c
@@ -38,14 +39,12 @@ set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -pthread -fvisibility=internal")
 add_library(mlsl2-objects OBJECT ${MLSL_SRC})
 set_target_properties(mlsl2-objects PROPERTIES POSITION_INDEPENDENT_CODE 1)
 target_compile_definitions(mlsl2-objects PRIVATE PT_LOCK_SPIN=1)
-target_compile_definitions(mlsl2-objects PRIVATE ATL_TRANSPORT_DL_DIR=\"${MLSL_INSTALL_LIB}\")
-target_include_directories(mlsl2-objects PUBLIC ${MLSL_INC_DIRS})
-target_link_libraries(mlsl2-objects PUBLIC mlsl_atl_ofi)
+target_compile_definitions(mlsl2-objects PRIVATE ATL_TRANSPORT_DL_DIR=\"${MLSL_BUILD_DIR}\")
+target_include_directories(mlsl2-objects PRIVATE ${MLSL_INC_DIRS})
 
 #shared library
 add_library(mlsl2 SHARED $<TARGET_OBJECTS:mlsl2-objects>)
 target_include_directories(mlsl2 PUBLIC ${MLSL_INC_DIRS})
-target_link_libraries(mlsl2 PUBLIC mlsl_atl_ofi)
 target_link_libraries(mlsl2 PUBLIC dl pthread)
 set_target_properties(mlsl2 PROPERTIES LIBRARY_OUTPUT_DIRECTORY ${MLSL_BUILD_DIR})
 install(TARGETS mlsl2 LIBRARY DESTINATION ${MLSL_INSTALL_LIB})

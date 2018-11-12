@@ -5,8 +5,8 @@ mlsl_status_t mlsl_coll_build_naive_allgatherv(mlsl_sched* sched, const void* se
 {
     MLSL_LOG(DEBUG, "build naive allgatherv");
 
-    size_t comm_size     = global_data.comm->proc_count;
-    size_t this_rank     = global_data.comm->proc_idx;
+    size_t comm_size     = sched->coll_param.comm->size;
+    size_t this_rank     = sched->coll_param.comm->rank;
     size_t dtype_size    = mlsl_get_dtype_size(dtype);
     size_t* offsets      = MLSL_MALLOC(comm_size * sizeof(size_t), "offsets");
     mlsl_status_t status = mlsl_status_success;
@@ -23,7 +23,7 @@ mlsl_status_t mlsl_coll_build_naive_allgatherv(mlsl_sched* sched, const void* se
         MLSL_CALL(mlsl_sched_add_copy(sched, send_buf, recv_buf + offsets[this_rank], send_count, dtype));
     }
 
-    for (size_t rank_idx = 0; rank_idx < global_data.comm->proc_count; ++rank_idx)
+    for (size_t rank_idx = 0; rank_idx < sched->coll_param.comm->size; ++rank_idx)
     {
         if (rank_idx != this_rank)
         {

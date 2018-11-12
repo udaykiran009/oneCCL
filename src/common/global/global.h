@@ -1,18 +1,18 @@
 #ifndef GLOBAL_H
 #define GLOBAL_H
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #include "common/comm/comm.h"
 #include "common/utils/utils.h"
 #include "exec/exec.h"
 #include "parallelizer/parallelizer.h"
 #include "sched/sched_cache.h"
 
-#define MLSL_TAG_UNDEFINED (-1)
-#define MLSL_TAG_FIRST     (0)
-
 struct mlsl_global_data
 {
-    int tag_ub;
     mlsl_comm *comm;
     mlsl_executor *executor;
     mlsl_sched_cache *sched_cache;
@@ -23,5 +23,9 @@ struct mlsl_global_data
 typedef struct mlsl_global_data mlsl_global_data;
 
 extern mlsl_global_data global_data;
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* GLOBAL_H */

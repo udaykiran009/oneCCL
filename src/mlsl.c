@@ -14,7 +14,7 @@ mlsl_status_t mlsl_init()
     size_t min_priority, max_priority;
     mlsl_get_priority_range(&min_priority, &max_priority);
     mlsl_executor_create(env_data.worker_count, (max_priority - min_priority + 1), &global_executor);
-    mlsl_comm_create(global_executor->proc_idx, global_executor->proc_count, &global_comm);
+    mlsl_comm_create_global_comm(global_executor->proc_idx, global_executor->proc_count, &global_comm);
     mlsl_coll_create_attr(&default_coll_attr);
     default_coll_attr->to_cache = 1;
 
@@ -38,14 +38,14 @@ mlsl_status_t mlsl_finalize()
     return mlsl_status_success;
 }
 
-size_t mlsl_get_proc_idx()
+size_t mlsl_get_comm_rank(mlsl_comm_t comm)
 {
-    return global_data.comm->proc_idx;
+    return comm ? comm->rank : global_data.comm->rank;
 }
 
-size_t mlsl_get_proc_count()
+size_t mlsl_get_comm_size(mlsl_comm_t comm)
 {
-    return global_data.comm->proc_count;
+    return comm ? comm->size : global_data.comm->size;
 }
 
 size_t mlsl_get_dtype_size(mlsl_data_type_t dtype)

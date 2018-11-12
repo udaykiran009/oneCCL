@@ -27,7 +27,7 @@
 
 mlsl_coll_attr_t coll_attr;
 mlsl_request_t request;
-size_t proc_idx, proc_count;
+size_t rank, size;
 double t1, t2, t;
 size_t idx, iter_idx;
 

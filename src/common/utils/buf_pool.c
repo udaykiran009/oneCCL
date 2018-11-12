@@ -56,13 +56,13 @@ mlsl_status_t mlsl_buf_grow(struct mlsl_buf_pool *pool)
 
     buf_region = MLSL_CALLOC(sizeof(*buf_region), "buf_region");
     if (!buf_region)
-        return mlsl_status_out_of_memory;
+        return mlsl_status_out_of_resource;
 
     buf_region->mem_region = MLSL_MEMALIGN(pool->attr.alignment,
                                            pool->attr.chunk_cnt * pool->entry_sz,
                                            "buf_region->mem_region");
     if (!buf_region->mem_region) {
-        ret = mlsl_status_out_of_memory;
+        ret = mlsl_status_out_of_resource;
         goto err_buf_reg;
     }
 
@@ -97,7 +97,7 @@ mlsl_status_t mlsl_buf_pool_create_attr(struct mlsl_buf_attr *attr,
 
     (*buf_pool) = MLSL_CALLOC(sizeof(**buf_pool), "buf_pool");
     if (!*buf_pool)
-        return mlsl_status_out_of_memory;
+        return mlsl_status_out_of_resource;
 
     (*buf_pool)->attr = *attr;
 
@@ -110,7 +110,7 @@ mlsl_status_t mlsl_buf_pool_create_attr(struct mlsl_buf_attr *attr,
 
     if (mlsl_buf_grow(*buf_pool)) {
         MLSL_FREE(*buf_pool);
-        return mlsl_status_out_of_memory;
+        return mlsl_status_out_of_resource;
     }
     return mlsl_status_success;
 }

@@ -1,6 +1,10 @@
 #ifndef SCHED_CACHE_H
 #define SCHED_CACHE_H
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #include "sched/sched.h"
 #include "common/utils/uthash.h"
 
@@ -14,6 +18,7 @@ struct mlsl_sched_cache_key
     mlsl_data_type_t dtype;
     size_t root;
     mlsl_reduction_t reduction;
+    const mlsl_comm* comm;
     char match_id[MLSL_MATCH_ID_MAX_LEN];
     /* TODO: extend to support more collectives */
 };
@@ -42,5 +47,9 @@ mlsl_status_t mlsl_sched_cache_create(mlsl_sched_cache **cache);
 mlsl_status_t mlsl_sched_cache_free(mlsl_sched_cache *cache);
 mlsl_status_t mlsl_sched_cache_get_entry(mlsl_sched_cache *cache, mlsl_sched_cache_key *key, mlsl_sched_cache_entry **entry);
 mlsl_status_t mlsl_sched_cache_free_all(mlsl_sched_cache *cache);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* SCHED_CACHE_H */

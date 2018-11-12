@@ -7,7 +7,7 @@
       {                                                                    \
           for (idx = 0; idx < COUNT; idx++)                                \
           {                                                                \
-              send_buf[idx] = (float)proc_idx;                             \
+              send_buf[idx] = (float)rank;                                 \
               recv_buf[idx] = 0.0;                                         \
           }                                                                \
           t1 = when();                                                     \
@@ -16,8 +16,8 @@
           t2 = when();                                                     \
           t += (t2 - t1);                                                  \
       }                                                                    \
-      mlsl_barrier();                                                      \
-      float expected = (proc_count - 1) * ((float)proc_count / 2);         \
+      mlsl_barrier(NULL);                                                  \
+      float expected = (size - 1) * ((float)size / 2);                     \
       for (idx = 0; idx < COUNT; idx++)                                    \
       {                                                                    \
           if (recv_buf[idx] != expected)                                   \
@@ -27,7 +27,7 @@
               assert(0);                                                   \
           }                                                                \
       }                                                                    \
-      printf("[%zu] avg %s time: %8.2lf us\n", proc_idx, name, t / ITERS); \
+      printf("[%zu] avg %s time: %8.2lf us\n", rank, name, t / ITERS);     \
       fflush(stdout);                                                      \
   } while (0)
 
@@ -38,15 +38,15 @@ int main()
 
     MLSL_CALL(mlsl_init());
 
-    proc_idx = mlsl_get_proc_idx();
-    proc_count = mlsl_get_proc_count();
+    rank = mlsl_get_comm_rank(NULL);
+    size = mlsl_get_comm_size(NULL);
 
     coll_attr.to_cache = 1;
-    RUN_COLLECTIVE(mlsl_allreduce(send_buf, recv_buf, COUNT, mlsl_dtype_float, mlsl_reduction_sum, &coll_attr, &request),
+    RUN_COLLECTIVE(mlsl_allreduce(send_buf, recv_buf, COUNT, mlsl_dtype_float, mlsl_reduction_sum, &coll_attr, NULL, &request),
                    "persistent_allreduce");
 
     coll_attr.to_cache = 0;
-    RUN_COLLECTIVE(mlsl_allreduce(send_buf, recv_buf, COUNT, mlsl_dtype_float, mlsl_reduction_sum, &coll_attr, &request),
+    RUN_COLLECTIVE(mlsl_allreduce(send_buf, recv_buf, COUNT, mlsl_dtype_float, mlsl_reduction_sum, &coll_attr, NULL, &request),
                    "regular_allreduce");
 
     MLSL_CALL(mlsl_finalize());

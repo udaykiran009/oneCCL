@@ -1,6 +1,10 @@
 #ifndef UTILS_H
 #define UTILS_H
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #if defined(__INTEL_COMPILER) || defined(__ICC)
 #include <mm_malloc.h>
 #endif
@@ -182,25 +186,34 @@ typedef struct {
 # error "this compiler is not supported" 
 #endif
 
-#define MLSL_MEMALIGN_WRAPPER(size, align, name)   \
-    ({                                             \
-      void *ptr = MLSL_MEMALIGN_IMPL(size, align); \
-      MLSL_ASSERT_FMT(ptr, name);                  \
-      ptr;                                         \
+#define MLSL_MEMALIGN_WRAPPER(size, align, name)            \
+    ({                                                      \
+        void *ptr = MLSL_MEMALIGN_IMPL(size, align);        \
+        if(!ptr)                                            \
+        {                                                   \
+            MLSL_FATAL("MLSL Out of memory, %s", name);     \
+        }                                                   \
+        ptr;                                                \
     })
 
-#define MLSL_REALLOC_WRAPPER(old_ptr, old_size, new_size, align, name)   \
-    ({                                                                   \
-      void *ptr = MLSL_REALLOC_IMPL(old_ptr, old_size, new_size, align); \
-      MLSL_ASSERT_FMT(ptr, name);                                        \
-      ptr;                                                               \
+#define MLSL_REALLOC_WRAPPER(old_ptr, old_size, new_size, align, name)      \
+    ({                                                                      \
+        void *ptr = MLSL_REALLOC_IMPL(old_ptr, old_size, new_size, align);  \
+        if(!ptr)                                                            \
+        {                                                                   \
+            MLSL_FATAL("MLSL Out of memory, %s", name);                     \
+        }                                                                   \
+        ptr;                                                                \
     })
 
-#define MLSL_CALLOC_WRAPPER(size, align, name)   \
-    ({                                           \
-      void *ptr = MLSL_CALLOC_IMPL(size, align); \
-      MLSL_ASSERT_FMT(ptr, name);                \
-      ptr;                                       \
+#define MLSL_CALLOC_WRAPPER(size, align, name)              \
+    ({                                                      \
+        void *ptr = MLSL_CALLOC_IMPL(size, align);          \
+        if(!ptr)                                            \
+        {                                                   \
+            MLSL_FATAL("MLSL Out of memory, %s", name);     \
+        }                                                   \
+        ptr;                                                \
     })
 
 #define MLSL_MALLOC(size, name)                                MLSL_MEMALIGN_WRAPPER(size, CACHELINE_SIZE, name)
@@ -227,5 +240,9 @@ static inline size_t mlsl_aligned_sz(size_t size, size_t alignment)
     return ((size % alignment) == 0) ?
            size : ((size / alignment) + 1) * alignment;
 }
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* UTILS_H */

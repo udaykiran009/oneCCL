@@ -16,9 +16,6 @@ size_t comp_iter_time_ms = 0;
 #define ITER_COUNT        20
 #define WARMUP_ITER_COUNT 4
 
-size_t proc_idx;
-size_t proc_count;
-
 size_t min_priority, max_priority;
 
 int collect_iso = 1;
@@ -52,14 +49,14 @@ void do_iter(size_t iter_idx)
 
     if (collect_iso)
     {
-        mlsl_barrier();
+        mlsl_barrier(NULL);
 
         iter_start = when();
         for (idx = 0; idx < MSG_COUNT; idx++)
         {
             tmp_start_timer = when();
             MLSL_CALL(mlsl_allreduce(msg_buffers[idx], msg_buffers[idx], msg_sizes[idx] / MLSL_DTYPE_SIZE(mlsl_dtype_float),
-                                     mlsl_dtype_float, mlsl_reduction_sum, &coll_attr, &msg_requests[idx]));
+                                     mlsl_dtype_float, mlsl_reduction_sum, &coll_attr, NULL, &msg_requests[idx]));
             MLSL_CALL(mlsl_wait(msg_requests[idx]));
             tmp_stop_timer = when();
             msg_iso_timers[idx] += (tmp_stop_timer - tmp_start_timer);
@@ -69,7 +66,7 @@ void do_iter(size_t iter_idx)
         collect_iso = 0;
     }
 
-    mlsl_barrier();
+    mlsl_barrier(NULL);
 
     memset(msg_completions, 0, MSG_COUNT * sizeof(int));
     size_t completions = 0;
@@ -88,7 +85,7 @@ void do_iter(size_t iter_idx)
         msg_starts[idx] = when();
         tmp_start_timer = when();
         MLSL_CALL(mlsl_allreduce(msg_buffers[idx], msg_buffers[idx], msg_sizes[idx] / MLSL_DTYPE_SIZE(mlsl_dtype_float),
-                                 mlsl_dtype_float, mlsl_reduction_sum, &coll_attr, &msg_requests[idx]));
+                                 mlsl_dtype_float, mlsl_reduction_sum, &coll_attr, NULL, &msg_requests[idx]));
         tmp_stop_timer = when();
         msg_pure_start_timers[idx] += (tmp_stop_timer - tmp_start_timer);
     }
@@ -128,8 +125,8 @@ int main()
 {
     MLSL_CALL(mlsl_init());
 
-    proc_idx = mlsl_get_proc_idx();
-    proc_count = mlsl_get_proc_count();
+    rank = mlsl_get_comm_rank(NULL);
+    size = mlsl_get_comm_size(NULL);
 
     mlsl_get_priority_range(&min_priority, &max_priority);
 
@@ -145,7 +142,7 @@ int main()
     for (idx = 0; idx < MSG_COUNT; idx++)
         total_msg_size += msg_sizes[idx];
 
-    if (proc_idx == 0)
+    if (rank == 0)
     {
         printf("iter_count: %d, warmup_iter_count: %d\n", ITER_COUNT, WARMUP_ITER_COUNT);
         printf("msg_count: %zu, total_msg_size: %zu bytes\n", MSG_COUNT, total_msg_size);
@@ -186,7 +183,7 @@ int main()
         do_iter(idx);
     }
 
-    if (proc_idx == 0)
+    if (rank == 0)
     {
         printf("-------------------------------------------------------------------------------------------------------------\n");
         printf("msg_idx | size (bytes) | msg_time (usec) | msg_start_time (usec) | msg_wait_time (usec) | msg_iso_time (usec)\n");
@@ -196,7 +193,7 @@ int main()
     for (idx = 0; idx < MSG_COUNT; idx++)
     {
         free(msg_buffers[idx]);
-        if (proc_idx == 0)
+        if (rank == 0)
         {
             printf("%7zu | %12zu | %15.2lf | %21.2lf | %20.2lf | %19.2lf ",
                    idx, msg_sizes[idx], msg_timers[idx] / ITER_COUNT,
@@ -207,7 +204,7 @@ int main()
         }
     }
 
-    if (proc_idx == 0)
+    if (rank == 0)
     {
         printf("-------------------------------------------------------------------------------------------------------------\n");
         printf("iter_time     (usec): %12.2lf\n", iter_timer / ITER_COUNT);

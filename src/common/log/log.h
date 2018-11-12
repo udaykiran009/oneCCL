@@ -1,6 +1,10 @@
 #ifndef LOG_H
 #define LOG_H
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #include "common/env/env.h"
 #include "mlsl.h"
 
@@ -57,19 +61,30 @@
         }                                                                              \
   } while (0)
 
-#define MLSL_ASSERTP_FMT(cond, fmt, ...)                                                  \
-  do                                                                                      \
-  {                                                                                       \
-      if (!(cond))                                                                        \
-      {                                                                                   \
-          fprintf(stderr, "(%ld): %s:%s:%d: ASSERT '%s' FAILED: " fmt "\n",               \
-                  GET_TID(), __FILENAME__, __FUNCTION__, __LINE__, #cond, ##__VA_ARGS__); \
-          fflush(stderr);                                                                 \
-          mlsl_log_print_backtrace();                                                     \
-          mlsl_finalize();                                                                \
-          _exit(1);                                                                       \
-      }                                                                                   \
+
+#define MLSL_FATAL(fmt, ...)                                                        \
+do                                                                                  \
+{                                                                                   \
+    fprintf(stderr, "(%ld): %s:%s:%d: FATAL ERROR: " fmt "\n",                      \
+            GET_TID(), __FILENAME__, __FUNCTION__, __LINE__, ##__VA_ARGS__);        \
+    fflush(stderr);                                                                 \
+    mlsl_log_print_backtrace();                                                     \
+    mlsl_finalize();                                                                \
+    _exit(1);                                                                       \
+} while(0)
+
+
+#define MLSL_ASSERTP_FMT(cond, fmt, ...)                                            \
+  do                                                                                \
+  {                                                                                 \
+      if (!(cond))                                                                  \
+      {                                                                             \
+          fprintf(stderr, "(%ld): ASSERT '%s' FAILED\n", GET_TID(), #cond);         \
+          MLSL_FATAL(fmt, ##__VA_ARGS__);                                           \
+      }                                                                             \
   } while(0)
+
+
 #define MLSL_ASSERTP(cond) MLSL_ASSERTP_FMT(cond, "")
 
 #define MLSL_UNUSED(expr) do { (void)sizeof(expr); } while(0)
@@ -93,5 +108,9 @@ typedef enum mlsl_log_level mlsl_log_level;
 
 void mlsl_log_get_time(char* buf, size_t buf_size);
 void mlsl_log_print_backtrace(void);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* LOG_H */

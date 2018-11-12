@@ -12,10 +12,10 @@ mlsl_status_t mlsl_coll_build_rabenseifner_allreduce(mlsl_sched *sched, const vo
     int *cnts = NULL, *disps = NULL;
     size_t dtype_size = mlsl_get_dtype_size(dtype);
 
-    mlsl_comm *comm = global_data.comm;
+    mlsl_comm *comm = sched->coll_param.comm;
 
-    comm_size = comm->proc_count;
-    rank = comm->proc_idx;
+    comm_size = comm->size;
+    rank = comm->rank;
 
     tmp_buf = MLSL_MALLOC(count * dtype_size, "tmp_buf");
     mlsl_sched_add_persistent_memory(sched, mlsl_sched_memory_buffer, tmp_buf);
@@ -215,9 +215,9 @@ mlsl_status_t mlsl_coll_build_recursive_doubling_allreduce(mlsl_sched *sched, co
     int newrank, mask, newdst, dst;
     void *tmp_buf = NULL;
 
-    mlsl_comm *comm = global_data.comm;
-    comm_size = comm->proc_count;
-    rank = comm->proc_idx;
+    mlsl_comm *comm = sched->coll_param.comm;
+    comm_size = comm->size;
+    rank = comm->rank;
 
     size_t dtype_size = mlsl_get_dtype_size(dtype);
     tmp_buf = MLSL_MALLOC(count * dtype_size, "tmp_buf");
@@ -312,8 +312,8 @@ mlsl_status_t mlsl_coll_build_starlike_allreduce(mlsl_sched *sched, const void *
     MLSL_LOG(DEBUG, "build starlike allreduce");
 
     mlsl_status_t status = mlsl_status_success;
-    size_t comm_size = global_data.comm->proc_count;
-    size_t this_rank = global_data.comm->proc_idx;
+    size_t comm_size = sched->coll_param.comm->size;
+    size_t this_rank = sched->coll_param.comm->rank;
     size_t* buffer_counts = MLSL_MALLOC(comm_size * sizeof(size_t), "buffer_count");
     size_t* buffer_offsets = MLSL_MALLOC(comm_size * sizeof(size_t), "buffer_offsets");
     size_t dtype_size = mlsl_get_dtype_size(dtype);

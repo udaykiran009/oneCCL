@@ -34,6 +34,10 @@
 #ifndef LOCK_H
 #define LOCK_H
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #include <assert.h>
 #include <pthread.h>
 #include <stdlib.h>
@@ -117,6 +121,10 @@ static inline void mlsl_fastlock_release(mlsl_fastlock_t *lock)
 #  define mlsl_fastlock_tryacquire(lock) mlsl_fastlock_tryacquire_(lock)
 #  define mlsl_fastlock_release(lock) mlsl_fastlock_release_(lock)
 
+#endif
+
+#ifdef __cplusplus
+}
 #endif
 
 #endif /* LOCK_H */

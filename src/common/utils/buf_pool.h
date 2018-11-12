@@ -30,6 +30,13 @@
  * SOFTWARE.
  */
 
+#ifndef BUF_POOL_H
+#define BUF_POOL_H
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #include "common/utils/utils.h"
 #include "common/log/log.h"
 #include "mlsl_types.h"
@@ -186,3 +193,9 @@ static inline void *mlsl_buf_get_ctx(struct mlsl_buf_pool *pool, void *buf)
 }
 
 void mlsl_buf_pool_destroy(struct mlsl_buf_pool *pool);
+
+#ifdef __cplusplus
+}
+#endif
+
+#endif /* BUF_POOL_H */

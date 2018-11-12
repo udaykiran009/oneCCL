@@ -101,7 +101,7 @@ mlsl_status_t mlsl_coll_build_reduce(mlsl_sched *sched, const void *send_buf, vo
     mlsl_status_t status;
     sched->coll_param.ctype = mlsl_coll_reduce;
 
-    if (count < global_data.comm->pof2)
+    if (count < sched->coll_param.comm->pof2)
         MLSL_CALL(mlsl_coll_build_binomial_reduce(sched, send_buf, recv_buf, count, dtype, reduction, root));
     else
         MLSL_CALL(mlsl_coll_build_rabenseifner_reduce(sched, send_buf, recv_buf, count, dtype, reduction, root));
@@ -120,7 +120,7 @@ mlsl_status_t mlsl_coll_build_allreduce(
     mlsl_status_t status;
     sched->coll_param.ctype = mlsl_coll_allreduce;
 
-    if ((count < global_data.comm->pof2) || (count * mlsl_get_dtype_size(dtype) <= 8192))
+    if ((count < sched->coll_param.comm->pof2) || (count * mlsl_get_dtype_size(dtype) <= 8192))
     {
         MLSL_CALL(mlsl_coll_build_recursive_doubling_allreduce(sched, send_buf, recv_buf, count, dtype, reduction));
     }
@@ -149,6 +149,7 @@ mlsl_status_t mlsl_bcast(
     mlsl_data_type_t dtype,
     size_t root,
     const struct mlsl_coll_attr *attributes,
+    mlsl_comm* comm,
     mlsl_request **req)
 {
     mlsl_status_t status;
@@ -159,9 +160,10 @@ mlsl_status_t mlsl_bcast(
             key.count1 = count;
             key.dtype = dtype;
             key.root = root;
+            key.comm = comm;
         },
         {
-            MLSL_CALL(mlsl_sched_bcast(buf, count, dtype, root, &sched));
+            MLSL_CALL(mlsl_sched_bcast(buf, count, dtype, root, comm, &sched));
         });
     return status;
 }
@@ -174,6 +176,7 @@ mlsl_status_t mlsl_reduce(
     mlsl_reduction_t reduction,
     size_t root,
     const struct mlsl_coll_attr *attributes,
+    mlsl_comm* comm,
     mlsl_request **req)
 {
     mlsl_status_t status;
@@ -186,9 +189,10 @@ mlsl_status_t mlsl_reduce(
             key.dtype = dtype;
             key.reduction = reduction;
             key.root = root;
+            key.comm = comm;
         },
         {
-            MLSL_CALL(mlsl_sched_reduce(send_buf, recv_buf, count, dtype, reduction, root, &sched));
+            MLSL_CALL(mlsl_sched_reduce(send_buf, recv_buf, count, dtype, reduction, root, comm, &sched));
         });
     return status;
 }
@@ -200,6 +204,7 @@ mlsl_status_t mlsl_allreduce(
     mlsl_data_type_t dtype,
     mlsl_reduction_t reduction,
     const struct mlsl_coll_attr *attributes,
+    mlsl_comm* comm,
     mlsl_request **req)
 {
     mlsl_status_t status;
@@ -211,9 +216,10 @@ mlsl_status_t mlsl_allreduce(
             key.count1 = count;
             key.dtype = dtype;
             key.reduction = reduction;
+            key.comm = comm;
         },
         {
-            MLSL_CALL(mlsl_sched_allreduce(send_buf, recv_buf, count, dtype, reduction, &sched));
+            MLSL_CALL(mlsl_sched_allreduce(send_buf, recv_buf, count, dtype, reduction, comm, &sched));
         });
     return status;
 }
@@ -225,6 +231,7 @@ mlsl_status_t mlsl_allgatherv(
     size_t *recv_counts,
     mlsl_data_type_t dtype,
     const struct mlsl_coll_attr *attributes,
+    mlsl_comm* comm,
     mlsl_request **req)
 {
     mlsl_status_t status;
@@ -235,14 +242,15 @@ mlsl_status_t mlsl_allgatherv(
             key.buf2 = recv_buf;
             key.count1 = send_count;
             key.dtype = dtype;
+            key.comm = comm;
         },
         {
-            MLSL_CALL(mlsl_sched_allgatherv(send_buf, send_count, recv_buf, recv_counts, dtype, &sched));
+            MLSL_CALL(mlsl_sched_allgatherv(send_buf, send_count, recv_buf, recv_counts, dtype, comm, &sched));
         });
     return status;
 }
 
-mlsl_status_t mlsl_barrier()
+mlsl_status_t mlsl_barrier(mlsl_comm* comm)
 {
     mlsl_status_t status;
     mlsl_request *barrier_req;
@@ -253,9 +261,10 @@ mlsl_status_t mlsl_barrier()
     MLSL_COLL((&attributes),
         {
             key.ctype = mlsl_coll_barrier;
+            key.comm = comm;
         },
         {
-            MLSL_CALL(mlsl_sched_barrier(&sched));
+            MLSL_CALL(mlsl_sched_barrier(comm, &sched));
         });
     return status;
 }

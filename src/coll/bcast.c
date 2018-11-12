@@ -9,9 +9,8 @@ mlsl_status_t mlsl_coll_build_scatter_for_bcast(mlsl_sched *sched, void *tmp_buf
     int relative_rank, mask;
     int scatter_size, curr_size, recv_size, send_size;
 
-    mlsl_comm *comm = global_data.comm;
-    comm_size = comm->proc_count;
-    rank = comm->proc_idx;
+    comm_size = sched->coll_param.comm->size;
+    rank = sched->coll_param.comm->rank;
     relative_rank = (rank >= root) ? rank - root : rank - root + comm_size;
 
     /* The scatter algorithm divides the buffer into nprocs pieces and
@@ -94,9 +93,8 @@ mlsl_status_t mlsl_coll_build_scatter_ring_allgather_bcast(mlsl_sched *sched, vo
     void *tmp_buf = NULL;
     size_t dtype_size = mlsl_get_dtype_size(dtype);
 
-    mlsl_comm *comm = global_data.comm;
-    comm_size = comm->proc_count;
-    rank = comm->proc_idx;
+    comm_size = sched->coll_param.comm->size;
+    rank = sched->coll_param.comm->rank;
 
     /* If there is only one process, return */
     if (comm_size == 1)

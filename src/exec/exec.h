@@ -1,6 +1,10 @@
 #ifndef EXEC_H
 #define EXEC_H
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #include "sched/sched.h"
 #include "atl/atl.h"
 #include "exec/worker.h"
@@ -27,5 +31,9 @@ mlsl_status_t mlsl_executor_free(mlsl_executor *executor);
 mlsl_status_t mlsl_executor_start(mlsl_executor *executor, mlsl_sched *sched);
 mlsl_status_t mlsl_executor_wait(mlsl_executor *executor, mlsl_request *req);
 mlsl_status_t mlsl_executor_test(mlsl_executor *executor, mlsl_request *req, int *is_completed);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* EXEC_H */

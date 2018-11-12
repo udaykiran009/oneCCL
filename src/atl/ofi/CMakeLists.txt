@@ -17,17 +17,22 @@ set(COMMON_OFI_INC_DIRS
 #special library that holds objects only
 add_library(mlsl_atl_ofi-objects OBJECT ${OFI_SRC})
 set_target_properties(mlsl_atl_ofi-objects PROPERTIES POSITION_INDEPENDENT_CODE 1)
-target_include_directories(mlsl_atl_ofi-objects PUBLIC ${COMMON_OFI_INC_DIRS})
-target_link_libraries(mlsl_atl_ofi-objects PUBLIC pmi)
+target_include_directories(mlsl_atl_ofi-objects PRIVATE ${COMMON_OFI_INC_DIRS})
+target_link_libraries(mlsl_atl_ofi-objects PRIVATE pmi)
 
 #add library search directory
-link_directories(${PROJECT_SOURCE_DIR}/ofi_rt/lib)
+#TODO: uncomment line below when ofi_rt will be updated
+#link_directories(${PROJECT_SOURCE_DIR}/ofi_rt/lib)
 
 #shared
 add_library(mlsl_atl_ofi SHARED $<TARGET_OBJECTS:mlsl_atl_ofi-objects>)
-target_include_directories(mlsl_atl_ofi PUBLIC ${COMMON_OFI_INC_DIRS})
-target_link_libraries(mlsl_atl_ofi PUBLIC pmi)
+target_include_directories(mlsl_atl_ofi PRIVATE ${COMMON_OFI_INC_DIRS})
+#TODO: remove line below when ofi_rt will be updated
+target_link_libraries(mlsl_atl_ofi PRIVATE "-L${PROJECT_SOURCE_DIR}/ofi_rt/lib")
+
+target_link_libraries(mlsl_atl_ofi PRIVATE pmi)
 target_link_libraries(mlsl_atl_ofi PRIVATE fabric m)
+set_target_properties(mlsl_atl_ofi PROPERTIES VERSION 1 SOVERSION 1.0)
 set_target_properties(mlsl_atl_ofi PROPERTIES LIBRARY_OUTPUT_DIRECTORY ${MLSL_BUILD_DIR})
 install(TARGETS mlsl_atl_ofi LIBRARY DESTINATION ${MLSL_INSTALL_LIB})
 

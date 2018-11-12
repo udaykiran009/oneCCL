@@ -52,7 +52,7 @@ mlsl_status_t mlsl_parallelizer_process(mlsl_parallelizer *parallelizer, mlsl_sc
                 part_count = parallelizer->partition_count;
             break;
         case mlsl_coll_allgatherv:
-            part_count = coll_param->comm->proc_count;
+            part_count = coll_param->comm->size;
             break;
         default:
             MLSL_ASSERT_FMT(0, "unexpected coll_type %d", coll_type);
@@ -73,7 +73,10 @@ mlsl_status_t mlsl_parallelizer_process(mlsl_parallelizer *parallelizer, mlsl_sc
         counts = MLSL_MALLOC(sizeof(size_t) * part_count, "counts");
         offsets = MLSL_MALLOC(sizeof(size_t) * part_count, "counts");
         for (idx = 0; idx < part_count; idx++)
+        {
             MLSL_CALL(mlsl_sched_create(&(part_scheds[idx])));
+            part_scheds[idx]->coll_param.comm = sched->coll_param.comm;
+        }
     }
 
     switch (coll_type)
@@ -155,15 +158,15 @@ mlsl_status_t mlsl_parallelizer_process(mlsl_parallelizer *parallelizer, mlsl_sc
                 size_t *copy_offsets = MLSL_MALLOC(part_count * sizeof(size_t), "copy_offsets");
                 for (idx = 0; idx < part_count; idx++)
                 {
-                    copy_counts[idx] = counts[coll_param->comm->proc_idx] / part_count;
+                    copy_counts[idx] = counts[coll_param->comm->rank] / part_count;
                     copy_offsets[idx] = idx * copy_counts[idx] * dtype_size;
                 }
-                copy_counts[part_count - 1] += counts[coll_param->comm->proc_idx] % part_count;
+                copy_counts[part_count - 1] += counts[coll_param->comm->rank] % part_count;
                 for (idx = 0; idx < part_count; idx++)
                 {
                     mlsl_sched_add_copy(part_scheds[idx],
                                         (char *)coll_param->send_buf + copy_offsets[idx],
-                                        (char *)coll_param->recv_buf + offsets[coll_param->comm->proc_idx] + copy_offsets[idx],
+                                        (char *)coll_param->recv_buf + offsets[coll_param->comm->rank] + copy_offsets[idx],
                                         copy_counts[idx], dtype);
                 }
                 mlsl_sched_sync_schedules(part_scheds, part_count);

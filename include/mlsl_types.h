@@ -6,6 +6,7 @@ extern "C" {
 #endif
 
 #include "stdlib.h"
+#include <stdbool.h>
 
 /* All symbols shall be internal unless marked as MLSL_API */
 #ifdef __linux__
@@ -23,7 +24,7 @@ extern "C" {
 /** Status values returned by MLSL functions. */
 typedef enum {
     mlsl_status_success           = 0,
-    mlsl_status_out_of_memory     = 1,
+    mlsl_status_out_of_resource   = 1,
     mlsl_status_invalid_arguments = 2,
     mlsl_status_unimplemented     = 3,
     mlsl_status_runtime_error     = 4
@@ -60,7 +61,7 @@ typedef mlsl_status_t(*mlsl_epilogue_fn_t) (const void*, size_t, void*, size_t*,
 /* in_buf, in_count, inout_buf, out_count, context, datatype */
 typedef mlsl_status_t(*mlsl_reduction_fn_t) (const void*, size_t, void*, size_t*, void**, mlsl_data_type_t);
 
-/* Extendable list of collective attributes */
+/* Extendible list of collective attributes */
 struct mlsl_coll_attr
 {
     mlsl_prologue_fn_t prologue_fn;
@@ -72,6 +73,24 @@ struct mlsl_coll_attr
     int to_cache;
 };
 typedef struct mlsl_coll_attr mlsl_coll_attr_t;
+
+typedef struct mlsl_comm_attr
+{
+    /* Used to split global communicator into parts. Ranks with identical color
+     * will form a new communicator. */
+    int color;
+    /* List of rank ids for current process. Unused */
+    size_t* ranks;
+    /* Total number of ranks in the communicator. Unused */
+    size_t size;
+    /* List of device ids for current process. Unused */
+    const size_t* dev_list;
+    /* Hint that operation is local to process. Unused */
+    bool local;
+} mlsl_comm_attr_t;
+
+struct mlsl_comm;
+typedef struct mlsl_comm* mlsl_comm_t;
 
 size_t MLSL_API mlsl_get_dtype_size(mlsl_data_type_t dtype);
 mlsl_status_t MLSL_API mlsl_get_priority_range(size_t *min_priority, size_t *max_priority);

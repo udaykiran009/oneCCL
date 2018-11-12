@@ -1,5 +1,9 @@
 #pragma once
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #include "common/global/global.h"
 #include "sched/sched.h"
 
@@ -25,3 +29,7 @@ mlsl_status_t mlsl_coll_build_starlike_allreduce(mlsl_sched *sched, const void *
 
 mlsl_status_t mlsl_coll_build_naive_allgatherv(mlsl_sched* sched, const void* send_buf, size_t send_count,
                                                void* recv_buf, size_t* recv_counts, mlsl_data_type_t dtype);
+
+#ifdef __cplusplus
+}
+#endif

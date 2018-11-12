@@ -1,6 +1,10 @@
 #ifndef ATL_H
 #define ATL_H
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #include <stddef.h>
 #include <stdint.h>
 #include <sys/uio.h>
@@ -123,7 +127,7 @@ ATL_OFI_INI ;
 
 static inline INI_SIG(atl_noop_init)
 {
-    return 0;
+    return atl_status_success;
 }
 
 atl_status_t atl_init(int *argc, char ***argv, size_t *proc_idx, size_t *proc_count,
@@ -193,5 +197,9 @@ static inline atl_status_t atl_comm_check(atl_comm_t *comm, int *status, atl_req
 {
     return comm->comp_ops->check(comm, status, req);
 }
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif

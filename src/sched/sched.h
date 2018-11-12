@@ -1,6 +1,10 @@
 #ifndef SCHED_H
 #define SCHED_H
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #include "atl/atl.h"
 #include "coll/coll.h"
 #include "common/comm/comm.h"
@@ -208,7 +212,7 @@ struct mlsl_sched
     size_t size;               /* capacity (in entries) of the entries array */
     size_t idx;                /* index into entries array of first yet-outstanding entry */ /* index to start */
     size_t num_entries;        /* number of populated entries, num_entries <= size */
-    int tag;
+    mlsl_sched_id_t sched_id;   /* sequence number of the schedule in the communicator */
     struct mlsl_request *req;
     mlsl_sched_entry *entries;
     mlsl_sched_memory *persistent_memory;
@@ -265,17 +269,16 @@ mlsl_status_t mlsl_sched_set_epilogue(mlsl_sched *sched, mlsl_epilogue_fn_t fn);
 mlsl_status_t mlsl_sched_set_reduction(mlsl_sched *sched, mlsl_reduction_fn_t fn);
 
 mlsl_status_t mlsl_sched_bcast(void *buf, size_t count, mlsl_data_type_t dtype,
-                               size_t root, mlsl_sched **sched);
+                               size_t root, mlsl_comm* comm, mlsl_sched **sched);
 mlsl_status_t mlsl_sched_reduce(const void *send_buf, void *recv_buf, size_t count, mlsl_data_type_t dtype,
-                                mlsl_reduction_t reduction, size_t root, mlsl_sched **sched);
+                                mlsl_reduction_t reduction, size_t root, mlsl_comm* comm, mlsl_sched **sched);
 mlsl_status_t mlsl_sched_allreduce(const void *send_buf, void *recv_buf, size_t count, mlsl_data_type_t dtype,
-                                   mlsl_reduction_t reduction, mlsl_sched **sched);
+                                   mlsl_reduction_t reduction, mlsl_comm* comm, mlsl_sched **sched);
 mlsl_status_t mlsl_sched_allgatherv(const void *send_buf, size_t send_count, void *recv_buf, size_t *recv_counts,
-                                    mlsl_data_type_t dtype, mlsl_sched **sched);
-mlsl_status_t mlsl_sched_barrier(mlsl_sched **sched);
+                                    mlsl_data_type_t dtype, mlsl_comm* comm, mlsl_sched **sched);
+mlsl_status_t mlsl_sched_barrier(mlsl_comm* comm, mlsl_sched **sched);
 
 mlsl_status_t mlsl_sched_progress(struct mlsl_sched_queue_bin *bin, size_t sched_count, size_t *processed_sched_count);
-mlsl_status_t mlsl_sched_next_tag(mlsl_comm *comm, int *tag);
 mlsl_status_t mlsl_sched_clone(mlsl_sched *orig, mlsl_sched **clone);
 mlsl_status_t mlsl_sched_adjust(mlsl_sched *sched, size_t partition_idx, size_t partition_count);
 mlsl_status_t mlsl_sched_adjust_entries(mlsl_sched *sched, size_t partition_idx, size_t partition_count);
@@ -289,5 +292,9 @@ mlsl_status_t mlsl_sched_free_persistent_memory(mlsl_sched *sched);
 mlsl_status_t mlsl_sched_set_coll_attr(mlsl_sched *sched, const struct mlsl_coll_attr *attr);
 
 mlsl_priority_mode mlsl_sched_get_priority(mlsl_sched *sched);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* SCHED_H */

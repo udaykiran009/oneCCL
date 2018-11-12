@@ -42,15 +42,14 @@ mlsl_status_t mlsl_coll_build_rabenseifner_reduce(mlsl_sched *sched, const void 
     int *cnts = NULL, *disps = NULL;
     size_t dtype_size = mlsl_get_dtype_size(dtype);
 
-    mlsl_comm *comm = global_data.comm;
-    comm_size = comm->proc_count;
-    rank = comm->proc_idx;
+    comm_size = sched->coll_param.comm->size;
+    rank = sched->coll_param.comm->rank;
 
     tmp_buf = MLSL_MALLOC(count * dtype_size, "tmp_buf");
     mlsl_sched_add_persistent_memory(sched, mlsl_sched_memory_buffer, tmp_buf);
 
     /* get nearest power-of-two less than or equal to comm_size */
-    pof2 = comm->pof2;
+    pof2 = sched->coll_param.comm->pof2;
     MLSL_ASSERTP_FMT(count >= pof2, "count %zu, pof2 %d", count, pof2);
     rem = comm_size - pof2;
 
@@ -309,9 +308,8 @@ mlsl_status_t mlsl_coll_build_binomial_reduce(mlsl_sched *sched, const void *sen
     if (count == 0)
         return status;
 
-    mlsl_comm *comm = global_data.comm;
-    comm_size = comm->proc_count;
-    rank = comm->proc_idx;
+    comm_size = sched->coll_param.comm->size;
+    rank = sched->coll_param.comm->rank;
 
     /* Create a temporary buffer */
 

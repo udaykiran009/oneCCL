@@ -1,6 +1,10 @@
 #ifndef WORKER_H
 #define WORKER_H
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #include "exec/exec.h"
 #include "sched/sched_queue.h"
 #include <pthread.h>
@@ -23,5 +27,9 @@ mlsl_status_t mlsl_worker_start(mlsl_worker *worker);
 mlsl_status_t mlsl_worker_stop(mlsl_worker *worker);
 mlsl_status_t mlsl_worker_pin(mlsl_worker *worker, int proc_id);
 mlsl_status_t mlsl_worker_peek_and_progress(mlsl_worker *worker, size_t *processed_count);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* WORKER_H */
