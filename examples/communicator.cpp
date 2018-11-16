@@ -1,4 +1,4 @@
-#include "base.h"
+#include "base.hpp"
 
 #include <iostream>
 #include <vector>
@@ -7,7 +7,7 @@
 using namespace std;
 
 #define PRINT_BY_ROOT(fmt, ...)             \
-    if(::rank == 0) {                    \
+    if(::rank == 0) {                       \
         printf(fmt"\n", ##__VA_ARGS__); }   \
 
 void check_allreduce_on_comm(mlsl_comm_t comm)

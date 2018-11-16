@@ -1,9 +1,4 @@
-#ifndef ATL_H
-#define ATL_H
-
-#ifdef __cplusplus
-extern "C" {
-#endif
+#pragma once
 
 #include <stddef.h>
 #include <stdint.h>
@@ -197,9 +192,3 @@ static inline atl_status_t atl_comm_check(atl_comm_t *comm, int *status, atl_req
 {
     return comm->comp_ops->check(comm, status, req);
 }
-
-#ifdef __cplusplus
-}
-#endif
-
-#endif

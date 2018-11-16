@@ -1,15 +1,12 @@
-#include "common/comm/comm.h"
-#include "sched/sched.h"
-#include "coll/coll_algorithms.h"
+#include "common/comm/comm.hpp"
+#include "sched/sched.hpp"
+#include "coll/coll_algorithms.hpp"
 
 #include <vector>
-#include <unordered_map>
 
 class mlsl_comm_map
 {
 public:
-    //key = rank, value = global rank
-    using rank_to_global_rank_map = std::unordered_map<size_t, size_t>;
     using comm_to_rank_map = std::unordered_map<mlsl_comm*, rank_to_global_rank_map>;
 
     mlsl_status_t add_comm(mlsl_comm* comm, rank_to_global_rank_map&& ranks_map);
@@ -81,8 +78,7 @@ static mlsl_comm_map comm_map;
 mlsl_comm *global_comm = NULL;
 
 static mlsl_status_t mlsl_comm_create_with_color(mlsl_comm** comm, int color);
-static mlsl_status_t mlsl_comm_create_internal(size_t rank, size_t size, mlsl_comm **comm,
-                                               mlsl_comm_map::rank_to_global_rank_map&& ranks_map);
+
 static mlsl_status_t mlsl_comm_exchange_colors(std::vector<int>& colors);
 
 mlsl_status_t mlsl_comm_create(mlsl_comm** comm, mlsl_comm_attr_t* comm_attr)
@@ -95,18 +91,11 @@ mlsl_status_t mlsl_comm_create(mlsl_comm** comm, mlsl_comm_attr_t* comm_attr)
         mlsl_status_t result = mlsl_comm_create_internal(global_data.comm->rank,
                                                          global_data.comm->size,
                                                          comm,
-                                                         mlsl_comm_map::rank_to_global_rank_map { });
+                                                         rank_to_global_rank_map { });
         return result;
     }
 
     return mlsl_comm_create_with_color(comm, comm_attr->color);
-}
-
-mlsl_status_t mlsl_comm_create_global_comm(size_t rank, size_t size, mlsl_comm **comm)
-{
-    // wrapper over internal function, creates comm with empty ranks map
-    return mlsl_comm_create_internal(rank, size, comm,
-                                     mlsl_comm_map::rank_to_global_rank_map { });
 }
 
 mlsl_status_t mlsl_comm_get_global_rank(mlsl_comm* comm, size_t rank, size_t* global_rank)
@@ -115,8 +104,8 @@ mlsl_status_t mlsl_comm_get_global_rank(mlsl_comm* comm, size_t rank, size_t* gl
     return comm_map.get_global_rank(comm, rank, *global_rank);
 }
 
-static mlsl_status_t mlsl_comm_create_internal(size_t rank, size_t size, mlsl_comm **comm,
-                                               mlsl_comm_map::rank_to_global_rank_map&& ranks_map)
+mlsl_status_t mlsl_comm_create_internal(size_t rank, size_t size, mlsl_comm **comm,
+                                               rank_to_global_rank_map&& ranks_map)
 {
     mlsl_comm_id_t comm_id;
     mlsl_status_t result = mlsl_comm_id_acquire(&comm_id);
@@ -149,8 +138,7 @@ static mlsl_status_t mlsl_comm_create_with_color(mlsl_comm** comm, int color)
     std::vector<int> all_colors(global_comm->size);
     all_colors[global_comm->rank] = color;
 
-    mlsl_comm_exchange_colors(all_colors);
-
+    status = mlsl_comm_exchange_colors(all_colors);
     if (status != mlsl_status_success)
     {
         return status;
@@ -159,7 +147,7 @@ static mlsl_status_t mlsl_comm_create_with_color(mlsl_comm** comm, int color)
     size_t colors_match = 0;
     size_t new_rank = 0;
 
-    mlsl_comm_map::rank_to_global_rank_map ranks_map;
+    rank_to_global_rank_map ranks_map;
     for (size_t i = 0; i < global_comm->size; ++i)
     {
         if (all_colors[i] == color)
@@ -190,7 +178,7 @@ static mlsl_status_t mlsl_comm_create_with_color(mlsl_comm** comm, int color)
         return status;
     }
 
-    MLSL_LOG(INFO, "New comm: color %d, rank %zu, size %zu, comm_id %hu", color,
+    MLSL_LOG(DEBUG, "New comm: color %d, rank %zu, size %zu, comm_id %hu", color,
              (*comm)->rank, (*comm)->size, (*comm)->comm_id);
 
     return status;
@@ -217,10 +205,11 @@ static mlsl_status_t mlsl_comm_exchange_colors(std::vector<int>& colors)
     coll_attr.to_cache = 0;
     mlsl_request_t request;
 
-    mlsl_status_t status = mlsl_allgatherv(colors.data(), exchange_count,
-                                           colors.data(), recv_counts.data(),
-                                           mlsl_dtype_int, &coll_attr,
-                                           nullptr, &request);
+    mlsl_status_t status;
+    MLSL_CALL(mlsl_allgatherv(colors.data(), exchange_count,
+                              colors.data(), recv_counts.data(),
+                              mlsl_dtype_int, &coll_attr,
+                              nullptr, &request));
 
     //wait for completion
     MLSL_CALL(mlsl_wait(request));

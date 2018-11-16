@@ -7,27 +7,27 @@ set(CMAKE_C_COMPILER "icc")
 set(CMAKE_CXX_COMPILER "icpc")
 
 set(MLSL_SRC
-    mlsl.c
-    atl/atl.c
-    coll/coll.c
-    coll/allreduce.c
-    coll/barrier.c
-    coll/bcast.c
-    coll/reduce.c
-    coll/allgatherv.c
-    comp/comp.c
-    sched/sched.c
-    sched/sched_cache.c
-    sched/sched_queue.c
-    exec/exec.c
-    exec/worker.c
-    parallelizer/parallelizer.c
+    mlsl.cpp
+    atl/atl.cpp
+    coll/coll.cpp
+    coll/allreduce.cpp
+    coll/barrier.cpp
+    coll/bcast.cpp
+    coll/reduce.cpp
+    coll/allgatherv.cpp
+    comp/comp.cpp
+    sched/sched.cpp
+    sched/sched_cache.cpp
+    sched/sched_queue.cpp
+    exec/exec.cpp
+    exec/worker.cpp
+    parallelizer/parallelizer.cpp
     common/comm/comm.cpp
     common/comm/comm_id.cpp
-    common/env/env.c
-    common/global/global.c
-    common/log/log.c
-    common/request/request.c)
+    common/env/env.cpp
+    common/global/global.cpp
+    common/log/log.cpp
+    common/request/request.cpp)
 
 set(MLSL_INC_DIRS
     ${PROJECT_SOURCE_DIR}/include

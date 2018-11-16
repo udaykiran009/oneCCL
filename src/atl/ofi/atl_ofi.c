@@ -15,6 +15,7 @@
 #include <rdma/fi_domain.h>
 #include <rdma/fi_tagged.h>
 
+#include <inttypes.h>
 #include "pm_rt.h"
 
 #include "atl.h"
@@ -39,18 +40,18 @@
 #define ATL_OFI_DEBUG_PRINT(s, ...)
 #endif
 
-#define ATL_OFI_RETRY(func, comm, ret_val)                       \
-    do {                                                         \
-        ret_val = func;                                          \
-        if (ret_val == FI_SUCCESS)                               \
-            break;                                               \
-        if (ret_val != -FI_EAGAIN) {                             \
-            ATL_OFI_DEBUG_PRINT(#func "fails with ret "PRId64"", \
-                                ret_val);                        \
-            assert(0);                                           \
-            break;                                               \
-        }                                                        \
-        (void) atl_ofi_comm_poll(comm);                          \
+#define ATL_OFI_RETRY(func, comm, ret_val)                        \
+    do {                                                          \
+        ret_val = func;                                           \
+        if (ret_val == FI_SUCCESS)                                \
+            break;                                                \
+        if (ret_val != -FI_EAGAIN) {                              \
+            ATL_OFI_DEBUG_PRINT(#func "fails with ret %"PRId64"", \
+                                ret_val);                         \
+            assert(0);                                            \
+            break;                                                \
+        }                                                         \
+        (void) atl_ofi_comm_poll(comm);                           \
     } while (ret_val == -FI_EAGAIN)
 
 #define ATL_OFI_PM_KEY "atl-ofi"
@@ -446,7 +447,7 @@ static inline void atl_ofi_process_comps(struct fi_cq_tagged_entry *entries,
         comp_ofi_req = container_of(entries[idx].op_context, atl_ofi_req_t,
                                     ofi_context);
         switch (comp_ofi_req->comp_state) {
-	case ATL_OFI_COMP_POSTED:
+        case ATL_OFI_COMP_POSTED:
             comp_ofi_req->comp_state = ATL_OFI_COMP_COMPLETED;
             break;
         case ATL_OFI_COMP_PROBE_STARTED:
