@@ -145,7 +145,8 @@ int mlsl_env_parse_affinity()
                 env_data.worker_affinity[w_idx] = env_data.worker_affinity[w_idx % proc_count];
         }
         read_env = 1;
-        goto fn_exit;
+        MLSL_FREE(affinity_copy);
+        return read_env;
     }
 
     /* create copy of original buffer cause it will be modified in strsep */
@@ -160,7 +161,8 @@ int mlsl_env_parse_affinity()
             if (atoi(proc_id_str) < 0) {
                 MLSL_LOG(ERROR, "unexpected proc_id %s, affinity string %s", proc_id_str, affinity_to_parse);
                 read_env = 0;
-                goto fn_exit;
+                MLSL_FREE(affinity_copy);
+                return read_env;
             }
             env_data.worker_affinity[w_idx] = atoi(proc_id_str);
             read_count++;
@@ -168,18 +170,19 @@ int mlsl_env_parse_affinity()
             MLSL_LOG(ERROR, "unexpected end of affinity string, expected %zu numbers, read %zu, affinity string %s",
                      workers_per_node, read_count, affinity_to_parse);
             read_env = 0;
-            goto fn_exit;
+            MLSL_FREE(affinity_copy);
+            return read_env;
         }
     }
     if (read_count < workers_per_node) {
         MLSL_LOG(ERROR, "unexpected number of processors (specify 1 logical processor per 1 progress thread), affinity string %s",
                  affinity_to_parse);
         read_env = 0;
-        goto fn_exit;
+        MLSL_FREE(affinity_copy);
+        return read_env;
     }
     read_env = 1;
 
-fn_exit:
     MLSL_FREE(affinity_copy);
     return read_env;
 }

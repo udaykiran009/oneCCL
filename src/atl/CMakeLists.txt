@@ -1,24 +1,22 @@
 #builds mlsl_atl_ofi
 
-set(OFI_SRC_DIR ${PROJECT_SOURCE_DIR}/src/atl/ofi)
-set(PMI_RT_SRC_DIR ${PROJECT_SOURCE_DIR}/src/atl/util/pm/pmi_rt)
+add_subdirectory(util/pm/pmi_rt/pmi)
 
 set(OFI_SRC
-    atl_ofi.c
-    ${PMI_RT_SRC_DIR}/pmi_rt.c)
+    ofi/atl_ofi.c
+    util/pm/pmi_rt/pmi_rt.c)
 
 set(COMMON_OFI_INC_DIRS
-    ${PROJECT_SOURCE_DIR}/ofi_rt/include
-    ${PROJECT_SOURCE_DIR}/src/atl
-    ${OFI_SRC_DIR}
-    ${PROJECT_SOURCE_DIR}/src/atl/util/pm
-    ${PMI_RT_SRC_DIR})
+    ${CMAKE_CURRENT_SOURCE_DIR}
+    ${CMAKE_CURRENT_SOURCE_DIR}/util/pm
+    ${CMAKE_CURRENT_SOURCE_DIR}/util/pm/pmi_rt
+    ${PROJECT_SOURCE_DIR}/ofi_rt/include)
 
 #special library that holds objects only
 add_library(mlsl_atl_ofi-objects OBJECT ${OFI_SRC})
 set_target_properties(mlsl_atl_ofi-objects PROPERTIES POSITION_INDEPENDENT_CODE 1)
 target_include_directories(mlsl_atl_ofi-objects PRIVATE ${COMMON_OFI_INC_DIRS})
-target_link_libraries(mlsl_atl_ofi-objects PRIVATE pmi)
+target_include_directories(mlsl_atl_ofi-objects PRIVATE $<TARGET_PROPERTY:pmi,INTERFACE_INCLUDE_DIRECTORIES>)
 
 #add library search directory
 #TODO: uncomment line below when ofi_rt will be updated

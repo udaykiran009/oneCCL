@@ -1,7 +1,6 @@
 #builds mlsl2
 
-add_subdirectory(atl/ofi)
-add_subdirectory(atl/util/pm/pmi_rt/pmi)
+add_subdirectory(atl)
 
 set(CMAKE_C_COMPILER "icc")
 set(CMAKE_CXX_COMPILER "icpc")
@@ -34,6 +33,7 @@ set(MLSL_INC_DIRS
     ${PROJECT_SOURCE_DIR}/src)
 
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -pthread -fvisibility=internal")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -pthread -fvisibility=internal")
 
 #special library that holds objects only
 add_library(mlsl2-objects OBJECT ${MLSL_SRC})

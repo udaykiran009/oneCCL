@@ -170,7 +170,7 @@ struct mlsl_slist_t{
 #elif defined(__GNUC__)
 #define MLSL_MEMALIGN_IMPL(size, align)                                                 \
     ({                                                                                  \
-      void* ptr;                                                                        \
+      void* ptr = NULL;                                                                 \
       int pm_ret __attribute__((unused)) = posix_memalign((void**)(&ptr), align, size); \
       ptr;                                                                              \
     })

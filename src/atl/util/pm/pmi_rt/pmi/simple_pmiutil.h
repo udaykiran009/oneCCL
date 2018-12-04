@@ -6,6 +6,7 @@
 
 /* maximum sizes for arrays */
 #define PMIU_MAXLINE 1024
+#define PMIU_ERROR_MSG_SIZE (PMIU_MAXLINE*3)
 #define PMIU_IDSIZE    32
 
 /* we don't have access to MPIR_Assert and friends here in the PMI code */
@@ -22,12 +23,20 @@
 
 
 /* prototypes for PMIU routines */
-void PMIU_Set_rank( int PMI_rank );
-void PMIU_SetServer( void );
-void PMIU_printf( int print_flag, const char *fmt, ... );
-int  PMIU_readline( int fd, char *buf, int max );
-int  PMIU_writeline( int fd, char *buf );
-int  PMIU_parse_keyvals( char *st );
-void PMIU_dump_keyvals( void );
-char *PMIU_getval( const char *keystr, char *valstr, int vallen );
-void PMIU_chgval( const char *keystr, char *valstr );
+void PMIU_Set_rank(int PMI_rank);
+
+void PMIU_SetServer(void);
+
+void PMIU_printf(int print_flag, const char* fmt, ...);
+
+int PMIU_readline(int fd, char* buf, int max);
+
+int PMIU_writeline(int fd, char* buf);
+
+int PMIU_parse_keyvals(char* st);
+
+void PMIU_dump_keyvals(void);
+
+char* PMIU_getval(const char* keystr, char* valstr, int vallen);
+
+void PMIU_chgval(const char* keystr, char* valstr);

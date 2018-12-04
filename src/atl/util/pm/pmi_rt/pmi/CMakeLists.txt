@@ -14,12 +14,9 @@ set_target_properties(pmi-objects PROPERTIES POSITION_INDEPENDENT_CODE 1)
 target_include_directories(pmi-objects PUBLIC ${COMMON_PMI_INC_DIRS})
 target_compile_definitions(pmi-objects PRIVATE HAVE_UNISTD_H HAVE_STDLIB_H HAVE_STRING_H HAVE_STRINGS_H)
 
-link_directories(${CMAKE_CURRENT_BINARY_DIR})
-
 #shared lib
 add_library(pmi SHARED $<TARGET_OBJECTS:pmi-objects>)
-target_include_directories(pmi PUBLIC ${COMMON_PMI_INC_DIRS})
-
+target_include_directories(pmi PUBLIC INTERFACE ${COMMON_PMI_INC_DIRS})
 set_target_properties(pmi PROPERTIES VERSION 1 SOVERSION 1.0)
 set_target_properties(pmi PROPERTIES LIBRARY_OUTPUT_DIRECTORY ${MLSL_BUILD_DIR})
 
