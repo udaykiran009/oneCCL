@@ -10,6 +10,10 @@ set(PROJECT_FULL_NAME "Intel(R) Machine Learning Scaling Library (Intel(R) MLSL)
 
 project(${PROJECT_NAME})
 
+include(cmake/helpers.cmake)
+
+check_compiler_version()
+
 #set default build types.
 #Available build types are: Debug, Release, RelWithDebInfo and MinSizeRel
 if (NOT CMAKE_BUILD_TYPE)
@@ -78,6 +82,10 @@ set(MLSL_BUILD_DIR ${CMAKE_CURRENT_BINARY_DIR}/src)
 #include other CMakeLists
 add_subdirectory(src)
 add_subdirectory(examples)
+
+#generate & install mlslvars.sh
+configure_file(cmake/mlslvars.sh.in ${CMAKE_CURRENT_BINARY_DIR}/mlslvars.sh @ONLY)
+install(PROGRAMS ${CMAKE_CURRENT_BINARY_DIR}/mlslvars.sh DESTINATION ${MLSL_INSTALL_BIN})
 
 #TODO
 #add_custom_target(style-check

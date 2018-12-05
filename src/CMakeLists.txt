@@ -57,8 +57,8 @@ install(TARGETS mlsl2-static ARCHIVE DESTINATION ${MLSL_INSTALL_LIB})
 
 #headers installation
 install(DIRECTORY ${PROJECT_SOURCE_DIR}/include/
-        DESTINATION ${MLSL_INSTALL_INCLUDE}
-        FILES_MATCHING PATTERN "*.h")
+        DESTINATION ${MLSL_INSTALL_INCLUDE})
+
 #mpi & ofi rt
 file(GLOB mpi_bins "${PROJECT_SOURCE_DIR}/mpirt/bin/*")
 install(PROGRAMS ${mpi_bins} DESTINATION ${MLSL_INSTALL_BIN})

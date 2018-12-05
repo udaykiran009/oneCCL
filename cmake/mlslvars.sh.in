@@ -1,0 +1,17 @@
+#!/bin/bash
+
+export MLSL_ROOT="@CMAKE_INSTALL_PREFIX@"
+
+if [ -z "${PATH}" ]
+then
+    PATH="${MLSL_ROOT}/bin"; export PATH
+else
+    PATH="${MLSL_ROOT}/bin:${PATH}"; export PATH
+fi
+
+if [ -z "${LD_LIBRARY_PATH}" ]
+then
+    LD_LIBRARY_PATH="${MLSL_ROOT}/lib64"; export LD_LIBRARY_PATH
+else
+    LD_LIBRARY_PATH="${MLSL_ROOT}/lib64:${LD_LIBRARY_PATH}"; export LD_LIBRARY_PATH
+fi
