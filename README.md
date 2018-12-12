@@ -28,7 +28,7 @@ build directory, e.g. `mlsl2/build/_install`
 Modify `cmake` command as follow:
 
 ```
-cmake .. -DCMAKE_C_COMPILER=your_compiler
+cmake .. -DCMAKE_C_COMPILER=your_c_compiler -DCMAKE_CXX_COMPILER=your_cxx_compiler
 ```
 
 ### Specify build type
@@ -38,9 +38,23 @@ Modify `cmake` command as follow:
 cmake .. -DCMAKE_BUILD_TYPE=[Debug|Release|RelWithDebInfo|MinSizeRel]
 ```
 
-### Enable make verbose output
-Modify `make` command as follow:
+### Enable `make` verbose output
+Modify `make` command as follow to see all parameters used by `make` during compilation
+and linkage:
 
 ```
 make -j VERBOSE=1
 ```
+
+## FAQ
+
+### When do I need a clean build? When should I remove my favorite build directory?
+
+In the most cases there is no need in removal of the current build directory. Just run `make` to 
+compile and link changed files. Only if one sees some suspicious build errors after significant 
+change in the code (e.g. after rebase or change of branch) then it is a hint to clean build directory.
+
+### I can't run mlsl examples
+
+It is recommended to use environment values stored in `bin/mlslvars.sh` of your current
+installation directory.
