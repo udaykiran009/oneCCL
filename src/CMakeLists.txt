@@ -2,9 +2,6 @@
 
 add_subdirectory(atl)
 
-set(CMAKE_C_COMPILER "icc")
-set(CMAKE_CXX_COMPILER "icpc")
-
 set(MLSL_SRC
     mlsl.cpp
     atl/atl.cpp
