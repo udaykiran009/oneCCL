@@ -20,6 +20,7 @@ set(MLSL_SRC
     parallelizer/parallelizer.cpp
     common/comm/comm.cpp
     common/comm/comm_id.cpp
+    common/datatype/datatype.cpp
     common/env/env.cpp
     common/global/global.cpp
     common/log/log.cpp

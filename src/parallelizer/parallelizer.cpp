@@ -1,5 +1,6 @@
-#include "parallelizer/parallelizer.hpp"
+#include "common/datatype/datatype.hpp"
 #include "comp/comp.hpp"
+#include "parallelizer/parallelizer.hpp"
 
 #define MLSL_MIN_PART_SIZE (2048)
 
@@ -29,8 +30,8 @@ mlsl_status_t mlsl_parallelizer_process(mlsl_parallelizer *parallelizer, mlsl_sc
     mlsl_status_t status = mlsl_status_success;
     size_t part_count = 1, idx, base_count, dtype_size;
     mlsl_sched_coll_param *coll_param = &(sched->coll_param);
-    mlsl_data_type_t dtype = coll_param->dtype;
-    dtype_size = mlsl_get_dtype_size(dtype);
+    mlsl_datatype_internal_t dtype = coll_param->dtype;
+    dtype_size = mlsl_datatype_get_size(dtype);
     mlsl_coll_type coll_type = coll_param->ctype;
 
     size_t *counts = NULL, *offsets = NULL;
@@ -65,6 +66,7 @@ mlsl_status_t mlsl_parallelizer_process(mlsl_parallelizer *parallelizer, mlsl_sc
     part_scheds = static_cast<mlsl_sched**>(MLSL_MALLOC(sizeof(mlsl_sched*) * part_count, "scheds"));
     if (coll_type == mlsl_coll_custom)
     {
+        MLSL_ASSERTP(0);
         for (idx = 0; idx < part_count; idx++)
             mlsl_sched_clone(sched, &part_scheds[idx]);
     }
@@ -76,8 +78,19 @@ mlsl_status_t mlsl_parallelizer_process(mlsl_parallelizer *parallelizer, mlsl_sc
         {
             MLSL_CALL(mlsl_sched_create(&(part_scheds[idx])));
             part_scheds[idx]->coll_param.comm = sched->coll_param.comm;
+            part_scheds[idx]->coll_param.ctype = sched->coll_param.ctype;
         }
     }
+
+    for (idx = 0; idx < part_count; idx++)
+    {
+        memcpy(&(part_scheds[idx]->coll_attr), &(sched->coll_attr), sizeof(mlsl_sched_coll_attr));
+        if (env_data.priority_mode == mlsl_priority_lifo)
+            part_scheds[idx]->coll_attr.priority = lifo_priority;
+    }
+
+    if (env_data.priority_mode == mlsl_priority_lifo)
+        lifo_priority++;
 
     switch (coll_type)
     {
@@ -141,14 +154,96 @@ mlsl_status_t mlsl_parallelizer_process(mlsl_parallelizer *parallelizer, mlsl_sc
             }
             break;
         case mlsl_coll_allreduce:
-            for (idx = 0; idx < part_count; idx++)
+            if (sched->coll_attr.prologue_fn)
             {
-                MLSL_CALL(mlsl_coll_build_allreduce(part_scheds[idx],
-                                                    (char *)coll_param->send_buf + offsets[idx],
-                                                    (char *)coll_param->recv_buf + offsets[idx],
-                                                    counts[idx],
-                                                    dtype,
-                                                    coll_param->reduction));
+                MLSL_CALL(mlsl_sched_add_prologue(part_scheds[0],
+                                                  sched->coll_attr.prologue_fn,
+                                                  (char *)coll_param->send_buf,
+                                                  coll_param->count,
+                                                  dtype,
+                                                  &(sched->postponed_fields.buf),
+                                                  &(sched->postponed_fields.count),
+                                                  &(sched->postponed_fields.dtype)));
+                MLSL_CALL(mlsl_sched_sync_schedules(part_scheds, part_count));
+
+                for (idx = 0; idx < part_count; idx++)
+                {
+                    MLSL_CALL(mlsl_sched_add_copy(part_scheds[idx],
+                                                  &(sched->postponed_fields),
+                                                  &(part_scheds[idx]->postponed_fields),
+                                                  sizeof(mlsl_sched_postponed_fields),
+                                                  mlsl_dtype_internal_char));
+                    MLSL_CALL(mlsl_sched_add_update_postponed_fields(part_scheds[idx], idx, part_count));
+                    MLSL_CALL(mlsl_sched_add_collective(part_scheds[idx],
+                                                        mlsl_coll_allreduce,
+                                                        MLSL_POSTPONED_ADDR,
+                                                        MLSL_POSTPONED_ADDR,
+                                                        MLSL_POSTPONED_COUNT,
+                                                        MLSL_POSTPONED_DTYPE,
+                                                        coll_param->reduction));
+                }
+                if (!sched->coll_attr.epilogue_fn)
+                {
+                    MLSL_CALL(mlsl_sched_sync_schedules(part_scheds, part_count));
+                    MLSL_CALL(mlsl_sched_add_copy(part_scheds[0],
+                                                  &(sched->postponed_fields),
+                                                  &(part_scheds[0]->postponed_fields),
+                                                  sizeof(mlsl_sched_postponed_fields),
+                                                  mlsl_dtype_internal_char));
+                    MLSL_CALL(mlsl_sched_add_update_postponed_fields(part_scheds[0], 0, 1));
+                    MLSL_CALL(mlsl_sched_add_copy(part_scheds[0],
+                                                  MLSL_POSTPONED_ADDR,
+                                                  coll_param->recv_buf,
+                                                  MLSL_POSTPONED_COUNT,
+                                                  MLSL_POSTPONED_DTYPE));
+                }
+            }
+            else
+            {
+                for (idx = 0; idx < part_count; idx++)
+                {
+
+                    MLSL_CALL(mlsl_coll_build_allreduce(part_scheds[idx],
+                                                        (char *)coll_param->send_buf + offsets[idx],
+                                                        (char *)coll_param->recv_buf + offsets[idx],
+                                                        counts[idx],
+                                                        dtype,
+                                                        coll_param->reduction));
+                }
+            }
+            if (sched->coll_attr.epilogue_fn)
+            {
+                void* epilogue_in_buf = NULL;
+                size_t epilogue_in_count = 0;
+                mlsl_datatype_internal_t epilogue_in_dtype = NULL;
+                MLSL_CALL(mlsl_sched_sync_schedules(part_scheds, part_count));
+                if (sched->coll_attr.prologue_fn)
+                {
+                    MLSL_CALL(mlsl_sched_add_copy(part_scheds[0],
+                                                  &(sched->postponed_fields),
+                                                  &(part_scheds[0]->postponed_fields),
+                                                  sizeof(mlsl_sched_postponed_fields),
+                                                  mlsl_dtype_internal_char));
+                    MLSL_CALL(mlsl_sched_add_update_postponed_fields(part_scheds[0], 0, 1));
+                    epilogue_in_buf = MLSL_POSTPONED_ADDR;
+                    epilogue_in_count = MLSL_POSTPONED_COUNT;
+                    epilogue_in_dtype = MLSL_POSTPONED_DTYPE;
+                }
+                else
+                {
+                    epilogue_in_buf = coll_param->recv_buf;
+                    epilogue_in_count = coll_param->count;
+                    epilogue_in_dtype = dtype;
+                }
+                MLSL_CALL(mlsl_sched_add_epilogue(part_scheds[0],
+                                                  sched->coll_attr.epilogue_fn,
+                                                  epilogue_in_buf,
+                                                  epilogue_in_count,
+                                                  epilogue_in_dtype,
+                                                  (char *)coll_param->recv_buf,
+                                                  &(part_scheds[0]->postponed_fields.count),
+                                                  coll_param->count,
+                                                  dtype));
             }
             break;
         case mlsl_coll_allgatherv:
@@ -191,16 +286,6 @@ mlsl_status_t mlsl_parallelizer_process(mlsl_parallelizer *parallelizer, mlsl_sc
             MLSL_ASSERT_FMT(0, "unexpected coll_type %d", coll_type);
             break;
     }
-
-    for (idx = 0; idx < part_count; idx++)
-    {
-        memcpy(&(part_scheds[idx]->coll_attr), &(sched->coll_attr), sizeof(mlsl_sched_coll_attr));
-        if (env_data.priority_mode == mlsl_priority_lifo)
-            part_scheds[idx]->coll_attr.priority = lifo_priority;
-    }
-
-    if (env_data.priority_mode == mlsl_priority_lifo)
-        lifo_priority++;
 
     // TODO: analyze custom sched and insert sync entries
     // MLSL_CALL(mlsl_sched_add_sync(sched));

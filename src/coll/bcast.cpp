@@ -48,7 +48,7 @@ mlsl_status_t mlsl_coll_build_scatter_for_bcast(mlsl_sched *sched, void *tmp_buf
 
             if (recv_size > 0) {
                 MLSL_CALL(mlsl_sched_add_recv(sched, ((char *) tmp_buf + relative_rank * scatter_size),
-                                              recv_size, mlsl_dtype_char, src));
+                                              recv_size, mlsl_dtype_internal_char, src));
                 MLSL_CALL(mlsl_sched_add_barrier(sched));
             }
             break;
@@ -73,7 +73,7 @@ mlsl_status_t mlsl_coll_build_scatter_for_bcast(mlsl_sched *sched, void *tmp_buf
                 if (dst >= comm_size)
                     dst -= comm_size;
                 MLSL_CALL(mlsl_sched_add_send(sched, ((char *) tmp_buf + scatter_size * (relative_rank + mask)),
-                                              send_size, mlsl_dtype_char, dst));
+                                              send_size, mlsl_dtype_internal_char, dst));
                 MLSL_CALL(mlsl_sched_add_barrier(sched));
                 curr_size -= send_size;
             }
@@ -85,7 +85,7 @@ mlsl_status_t mlsl_coll_build_scatter_for_bcast(mlsl_sched *sched, void *tmp_buf
 }
 
 mlsl_status_t mlsl_coll_build_scatter_ring_allgather_bcast(mlsl_sched *sched, void *buf,
-                                                           size_t count, mlsl_data_type_t dtype, size_t root)
+                                                           size_t count, mlsl_datatype_internal_t dtype, size_t root)
 {
     MLSL_LOG(DEBUG, "build scatter_ring_allgather bcast");
 
@@ -95,7 +95,7 @@ mlsl_status_t mlsl_coll_build_scatter_ring_allgather_bcast(mlsl_sched *sched, vo
     int scatter_size, curr_size;
     int i, j, jnext, left, right;
     void *tmp_buf = NULL;
-    size_t dtype_size = mlsl_get_dtype_size(dtype);
+    size_t dtype_size = mlsl_datatype_get_size(dtype);
 
     comm_size = sched->coll_param.comm->size;
     rank = sched->coll_param.comm->rank;
@@ -140,10 +140,10 @@ mlsl_status_t mlsl_coll_build_scatter_ring_allgather_bcast(mlsl_sched *sched, vo
         right_disp = rel_j * scatter_size;
 
         MLSL_CALL(mlsl_sched_add_send(sched, ((char *) tmp_buf + right_disp),
-                                      right_count, mlsl_dtype_char, right));
+                                      right_count, mlsl_dtype_internal_char, right));
         /* sendrecv, no barrier here */
         MLSL_CALL(mlsl_sched_add_recv(sched, ((char *) tmp_buf + left_disp),
-                                      left_count, mlsl_dtype_char, left));
+                                      left_count, mlsl_dtype_internal_char, left));
         MLSL_CALL(mlsl_sched_add_barrier(sched));
 
         j = jnext;

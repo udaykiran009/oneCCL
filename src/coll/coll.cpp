@@ -40,12 +40,18 @@ const char *mlsl_coll_type_to_str(mlsl_coll_type type)
     }
 }
 
-#define MLSL_COLL(coll_attr, fill_cache_key_expr, create_sched_expr)                \
+#define MLSL_COLL(coll_type, coll_attr, fill_cache_key_expr, create_sched_expr)     \
   do {                                                                              \
     const mlsl_coll_attr_t* attr = ((uintptr_t)coll_attr != (uintptr_t)NULL) ?      \
         coll_attr : global_data.default_coll_attr;                                  \
     mlsl_sched *sched = NULL;                                                       \
     mlsl_sched_cache_entry *entry = NULL;                                           \
+    MLSL_ASSERTP((coll_type == mlsl_coll_allreduce) ||                              \
+        !(attr->prologue_fn || attr->epilogue_fn || attr->reduction_fn));           \
+    MLSL_ASSERTP_FMT(dtype != mlsl_dtype_custom,                                    \
+        "custom datatype can't be input for collective");                           \
+    mlsl_datatype_internal_t dtype_internal __attribute__((unused))                 \
+        = mlsl_datatype_get(dtype);                                                 \
     if (attr->to_cache)                                                             \
     {                                                                               \
         mlsl_sched_cache_key key;                                                   \
@@ -53,6 +59,12 @@ const char *mlsl_coll_type_to_str(mlsl_coll_type type)
         fill_cache_key_expr;                                                        \
         if (attr->match_id)                                                         \
             strncpy(key.match_id, attr->match_id, MLSL_MATCH_ID_MAX_LEN - 1);       \
+        if (attr->prologue_fn)                                                      \
+            key.prologue_fn = attr->prologue_fn;                                    \
+        if (attr->epilogue_fn)                                                      \
+            key.epilogue_fn = attr->epilogue_fn;                                    \
+        if (attr->reduction_fn)                                                     \
+            key.reduction_fn = attr->reduction_fn;                                  \
         mlsl_sched_cache_get_entry(global_data.sched_cache, &key, &entry);          \
         sched = entry->sched;                                                       \
     }                                                                               \
@@ -87,7 +99,7 @@ mlsl_status_t mlsl_coll_build_barrier(mlsl_sched *sched)
     return status;
 }
 
-mlsl_status_t mlsl_coll_build_bcast(mlsl_sched *sched, void *buf, size_t count, mlsl_data_type_t dtype, size_t root)
+mlsl_status_t mlsl_coll_build_bcast(mlsl_sched *sched, void *buf, size_t count, mlsl_datatype_internal_t dtype, size_t root)
 {
     mlsl_status_t status;
     sched->coll_param.ctype = mlsl_coll_bcast;
@@ -96,7 +108,7 @@ mlsl_status_t mlsl_coll_build_bcast(mlsl_sched *sched, void *buf, size_t count, 
 }
 
 mlsl_status_t mlsl_coll_build_reduce(mlsl_sched *sched, const void *send_buf, void *recv_buf, size_t count,
-                                     mlsl_data_type_t dtype, mlsl_reduction_t reduction, size_t root)
+                                     mlsl_datatype_internal_t dtype, mlsl_reduction_t reduction, size_t root)
 {
     mlsl_status_t status;
     sched->coll_param.ctype = mlsl_coll_reduce;
@@ -114,13 +126,13 @@ mlsl_status_t mlsl_coll_build_allreduce(
     const void *send_buf,
     void *recv_buf,
     size_t count,
-    mlsl_data_type_t dtype,
+    mlsl_datatype_internal_t dtype,
     mlsl_reduction_t reduction)
 {
     mlsl_status_t status;
     sched->coll_param.ctype = mlsl_coll_allreduce;
 
-    if ((count < sched->coll_param.comm->pof2) || (count * mlsl_get_dtype_size(dtype) <= 8192))
+    if ((count < sched->coll_param.comm->pof2) || (count * mlsl_datatype_get_size(dtype) <= 8192))
     {
         MLSL_CALL(mlsl_coll_build_recursive_doubling_allreduce(sched, send_buf, recv_buf, count, dtype, reduction));
     }
@@ -135,7 +147,7 @@ mlsl_status_t mlsl_coll_build_allreduce(
                 MLSL_CALL(mlsl_coll_build_starlike_allreduce(sched, send_buf, recv_buf, count, dtype, reduction));
                 break;
             default:
-                MLSL_ASSERT_FMT(0, "unexpected allreduce_algo %d", env_data.allreduce_algo);
+                MLSL_ASSERTP_FMT(0, "unexpected allreduce_algo %d", env_data.allreduce_algo);
                 return mlsl_status_invalid_arguments;
         }
     }
@@ -146,14 +158,15 @@ mlsl_status_t mlsl_coll_build_allreduce(
 mlsl_status_t mlsl_bcast(
     void *buf,
     size_t count,
-    mlsl_data_type_t dtype,
+    mlsl_datatype_t dtype,
     size_t root,
     const mlsl_coll_attr_t *attributes,
     mlsl_comm* comm,
     mlsl_request **req)
 {
     mlsl_status_t status;
-    MLSL_COLL(attributes,
+    MLSL_COLL(mlsl_coll_bcast,
+        attributes,
         {
             key.ctype = mlsl_coll_bcast;
             key.buf1 = buf;
@@ -163,7 +176,7 @@ mlsl_status_t mlsl_bcast(
             key.comm = comm;
         },
         {
-            MLSL_CALL(mlsl_sched_bcast(buf, count, dtype, root, comm, &sched));
+            MLSL_CALL(mlsl_sched_bcast(buf, count, dtype_internal, root, comm, &sched));
         });
     return status;
 }
@@ -172,7 +185,7 @@ mlsl_status_t mlsl_reduce(
     const void *send_buf,
     void *recv_buf,
     size_t count,
-    mlsl_data_type_t dtype,
+    mlsl_datatype_t dtype,
     mlsl_reduction_t reduction,
     size_t root,
     const mlsl_coll_attr_t *attributes,
@@ -180,7 +193,8 @@ mlsl_status_t mlsl_reduce(
     mlsl_request **req)
 {
     mlsl_status_t status;
-    MLSL_COLL(attributes,
+    MLSL_COLL(mlsl_coll_reduce,
+        attributes,
         {
             key.ctype = mlsl_coll_reduce;
             key.buf1 = (void *)send_buf;
@@ -192,7 +206,7 @@ mlsl_status_t mlsl_reduce(
             key.comm = comm;
         },
         {
-            MLSL_CALL(mlsl_sched_reduce(send_buf, recv_buf, count, dtype, reduction, root, comm, &sched));
+            MLSL_CALL(mlsl_sched_reduce(send_buf, recv_buf, count, dtype_internal, reduction, root, comm, &sched));
         });
     return status;
 }
@@ -201,14 +215,15 @@ mlsl_status_t mlsl_allreduce(
     const void *send_buf,
     void *recv_buf,
     size_t count,
-    mlsl_data_type_t dtype,
+    mlsl_datatype_t dtype,
     mlsl_reduction_t reduction,
     const mlsl_coll_attr_t *attributes,
     mlsl_comm* comm,
     mlsl_request **req)
 {
     mlsl_status_t status;
-    MLSL_COLL(attributes,
+    MLSL_COLL(mlsl_coll_allreduce,
+        attributes,
         {
             key.ctype = mlsl_coll_allreduce;
             key.buf1 = (void *)send_buf;
@@ -219,7 +234,7 @@ mlsl_status_t mlsl_allreduce(
             key.comm = comm;
         },
         {
-            MLSL_CALL(mlsl_sched_allreduce(send_buf, recv_buf, count, dtype, reduction, comm, &sched));
+            MLSL_CALL(mlsl_sched_allreduce(send_buf, recv_buf, count, dtype_internal, reduction, comm, &sched));
         });
     return status;
 }
@@ -229,13 +244,14 @@ mlsl_status_t mlsl_allgatherv(
     size_t send_count,
     void *recv_buf,
     size_t *recv_counts,
-    mlsl_data_type_t dtype,
+    mlsl_datatype_t dtype,
     const mlsl_coll_attr_t *attributes,
     mlsl_comm* comm,
     mlsl_request **req)
 {
     mlsl_status_t status;
-    MLSL_COLL(attributes,
+    MLSL_COLL(mlsl_coll_allgatherv,
+        attributes,
         {
             key.ctype = mlsl_coll_allgatherv;
             key.buf1 = (void *)send_buf;
@@ -245,7 +261,7 @@ mlsl_status_t mlsl_allgatherv(
             key.comm = comm;
         },
         {
-            MLSL_CALL(mlsl_sched_allgatherv(send_buf, send_count, recv_buf, recv_counts, dtype, comm, &sched));
+            MLSL_CALL(mlsl_sched_allgatherv(send_buf, send_count, recv_buf, recv_counts, dtype_internal, comm, &sched));
         });
     return status;
 }
@@ -256,8 +272,10 @@ mlsl_status_t mlsl_barrier(mlsl_comm* comm)
     mlsl_request *barrier_req;
     mlsl_request **req = &barrier_req;
     mlsl_coll_attr_t attributes{};
+    mlsl_datatype_t dtype = mlsl_dtype_char;
     attributes.synchronous = 1;
-    MLSL_COLL((&attributes),
+    MLSL_COLL(mlsl_coll_barrier,
+        (&attributes),
         {
             key.ctype = mlsl_coll_barrier;
             key.comm = comm;

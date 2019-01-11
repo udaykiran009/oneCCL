@@ -36,10 +36,7 @@ int main()
     float send_buf[COUNT];
     float recv_buf[COUNT];
 
-    MLSL_CALL(mlsl_init());
-
-    rank = mlsl_get_comm_rank(NULL);
-    size = mlsl_get_comm_size(NULL);
+    test_init();
 
     coll_attr.to_cache = 1;
     RUN_COLLECTIVE(mlsl_allreduce(send_buf, recv_buf, COUNT, mlsl_dtype_float, mlsl_reduction_sum, &coll_attr, NULL, &request),
@@ -49,7 +46,7 @@ int main()
     RUN_COLLECTIVE(mlsl_allreduce(send_buf, recv_buf, COUNT, mlsl_dtype_float, mlsl_reduction_sum, &coll_attr, NULL, &request),
                    "regular_allreduce");
 
-    MLSL_CALL(mlsl_finalize());
+    test_finalize();
 
     return 0;
 }

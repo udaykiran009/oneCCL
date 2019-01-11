@@ -9,7 +9,6 @@ size_t comp_iter_time_ms = 0;
 
 #define sizeofa(arr)        (sizeof(arr) / sizeof(*arr))
 #define DTYPE               float
-#define MLSL_DTYPE_SIZE(dt) (mlsl_get_dtype_size(dt))
 #define CACHELINE_SIZE      64
 
 #define MSG_COUNT         sizeofa(msg_sizes)
@@ -39,6 +38,23 @@ double msg_pure_wait_timers[MSG_COUNT];
 
 size_t comp_delay_ms;
 
+size_t get_dtype_size(mlsl_datatype_t dtype)
+{
+    size_t dtype_size = 1;
+    switch (dtype)
+    {
+        case mlsl_dtype_char: { dtype_size = 1; break; }
+        case mlsl_dtype_int: { dtype_size = 4; break; }
+        case mlsl_dtype_bfp16: { dtype_size = 2; break; }
+        case mlsl_dtype_float: { dtype_size = 4; break; }
+        case mlsl_dtype_double: { dtype_size = 8; break; }
+        case mlsl_dtype_int64: { dtype_size = 8; break; }
+        case mlsl_dtype_uint64: { dtype_size = 8; break; }
+        default: assert(0);
+    }
+    return dtype_size;
+}
+
 void do_iter(size_t iter_idx)
 {
     printf("started iter %zu\n", iter_idx); fflush(stdout);
@@ -53,7 +69,7 @@ void do_iter(size_t iter_idx)
         for (idx = 0; idx < MSG_COUNT; idx++)
         {
             tmp_start_timer = when();
-            MLSL_CALL(mlsl_allreduce(msg_buffers[idx], msg_buffers[idx], msg_sizes[idx] / MLSL_DTYPE_SIZE(mlsl_dtype_float),
+            MLSL_CALL(mlsl_allreduce(msg_buffers[idx], msg_buffers[idx], msg_sizes[idx] / get_dtype_size(mlsl_dtype_float),
                                      mlsl_dtype_float, mlsl_reduction_sum, &coll_attr, NULL, &msg_requests[idx]));
             MLSL_CALL(mlsl_wait(msg_requests[idx]));
             tmp_stop_timer = when();
@@ -82,7 +98,7 @@ void do_iter(size_t iter_idx)
 
         msg_starts[idx] = when();
         tmp_start_timer = when();
-        MLSL_CALL(mlsl_allreduce(msg_buffers[idx], msg_buffers[idx], msg_sizes[idx] / MLSL_DTYPE_SIZE(mlsl_dtype_float),
+        MLSL_CALL(mlsl_allreduce(msg_buffers[idx], msg_buffers[idx], msg_sizes[idx] / get_dtype_size(mlsl_dtype_float),
                                  mlsl_dtype_float, mlsl_reduction_sum, &coll_attr, NULL, &msg_requests[idx]));
         tmp_stop_timer = when();
         msg_pure_start_timers[idx] += (tmp_stop_timer - tmp_start_timer);
@@ -121,10 +137,7 @@ void do_iter(size_t iter_idx)
 
 int main()
 {
-    MLSL_CALL(mlsl_init());
-
-    rank = mlsl_get_comm_rank(NULL);
-    size = mlsl_get_comm_size(NULL);
+    test_init();
 
     mlsl_get_priority_range(&min_priority, &max_priority);
 
@@ -209,7 +222,7 @@ int main()
         printf("iter_iso_time (usec): %12.2lf\n", iter_iso_timer /*/ ITER_COUNT*/);
     }
 
-    MLSL_CALL(mlsl_finalize());
+    test_finalize();
 
     return 0;
 }

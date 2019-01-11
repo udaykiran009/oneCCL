@@ -37,24 +37,24 @@
         }                                                               \
     } while (0)
 
-mlsl_status_t mlsl_comp_copy(const void *in_buf, void *out_buf, size_t count, mlsl_data_type_t dtype)
+mlsl_status_t mlsl_comp_copy(const void *in_buf, void *out_buf, size_t count, mlsl_datatype_internal_t dtype)
 {
-    memcpy(out_buf, in_buf, count * mlsl_get_dtype_size(dtype));
+    memcpy(out_buf, in_buf, count * mlsl_datatype_get_size(dtype));
     return mlsl_status_success;
 }
 
 mlsl_status_t mlsl_comp_reduce(const void *in_buf, size_t in_count, void *inout_buf, size_t *out_count,
-                               mlsl_data_type_t dtype, mlsl_reduction_t reduction, mlsl_reduction_fn_t reduction_fn)
+                               mlsl_datatype_internal_t dtype, mlsl_reduction_t reduction, mlsl_reduction_fn_t reduction_fn)
 {
     if (reduction == mlsl_reduction_custom)
     {
         MLSL_ASSERTP(reduction_fn);
-        reduction_fn(in_buf, in_count, inout_buf, out_count, NULL /* context */, dtype);
+        reduction_fn(in_buf, in_count, inout_buf, out_count, NULL /* context */, dtype->type);
         return mlsl_status_success;
     }
 
     size_t i;
-    switch (dtype) {
+    switch (dtype->type) {
         case mlsl_dtype_char:
             MLSL_REDUCE(char);
             break;
@@ -75,6 +75,9 @@ mlsl_status_t mlsl_comp_reduce(const void *in_buf, size_t in_count, void *inout_
             break;
         case mlsl_dtype_uint64:
             MLSL_REDUCE(uint64_t);
+            break;
+        default:
+            MLSL_ASSERTP(0);
             break;
     }
     return mlsl_status_success;

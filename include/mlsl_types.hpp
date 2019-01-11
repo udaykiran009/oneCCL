@@ -26,7 +26,7 @@ enum mlsl_status_t
 };
 
 /** Data type specification */
-enum mlsl_data_type_t
+enum mlsl_datatype_t
 {
     mlsl_dtype_char   = 0,
     mlsl_dtype_int    = 1,
@@ -34,7 +34,8 @@ enum mlsl_data_type_t
     mlsl_dtype_float  = 3,
     mlsl_dtype_double = 4,
     mlsl_dtype_int64  = 5,
-    mlsl_dtype_uint64 = 6
+    mlsl_dtype_uint64 = 6,
+    mlsl_dtype_custom = 7
 };
 
 /** Reduction specification */
@@ -50,12 +51,14 @@ enum mlsl_reduction_t
 struct mlsl_request;
 typedef struct mlsl_request *mlsl_request_t;
 
-/* in_buf, in_count, out_buf, out_count, datatype */
-typedef mlsl_status_t(*mlsl_prologue_fn_t) (const void*, size_t, void*, size_t*, mlsl_data_type_t);
-typedef mlsl_status_t(*mlsl_epilogue_fn_t) (const void*, size_t, void*, size_t*, mlsl_data_type_t);
+/* in_buf, in_count, in_dtype, out_buf, out_count, out_dtype, out_dtype_size */
+typedef mlsl_status_t(*mlsl_prologue_fn_t) (const void*, size_t, mlsl_datatype_t, void**, size_t*, mlsl_datatype_t*, size_t*);
+
+/* in_buf, in_count, in_dtype, out_buf, out_count, out_dtype */
+typedef mlsl_status_t(*mlsl_epilogue_fn_t) (const void*, size_t, mlsl_datatype_t, void*, size_t*, mlsl_datatype_t);
 
 /* in_buf, in_count, inout_buf, out_count, context, datatype */
-typedef mlsl_status_t(*mlsl_reduction_fn_t) (const void*, size_t, void*, size_t*, void**, mlsl_data_type_t);
+typedef mlsl_status_t(*mlsl_reduction_fn_t) (const void*, size_t, void*, size_t*, const void**, mlsl_datatype_t);
 
 /* Extendible list of collective attributes */
 struct mlsl_coll_attr_t
@@ -87,5 +90,4 @@ struct mlsl_comm_attr_t
 struct mlsl_comm;
 typedef struct mlsl_comm* mlsl_comm_t;
 
-size_t MLSL_API mlsl_get_dtype_size(mlsl_data_type_t dtype);
 mlsl_status_t MLSL_API mlsl_get_priority_range(size_t *min_priority, size_t *max_priority);

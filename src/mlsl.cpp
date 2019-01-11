@@ -1,5 +1,6 @@
 #include "mlsl.hpp"
 #include "exec/exec.hpp"
+#include "common/datatype/datatype.hpp"
 #include "common/global/global.hpp"
 #include "common/log/log.hpp"
 #include "sched/sched_cache.hpp"
@@ -9,6 +10,7 @@ mlsl_status_t mlsl_init()
 {
     mlsl_env_parse();
     mlsl_env_print();
+    mlsl_datatype_init();
     mlsl_sched_cache_create(&global_sched_cache);
     mlsl_parallelizer_create(env_data.worker_count, &global_parallelizer);
     size_t min_priority, max_priority;
@@ -30,12 +32,17 @@ mlsl_status_t mlsl_init()
 
 mlsl_status_t mlsl_finalize()
 {
-    mlsl_comm_free(global_data.comm);
-    mlsl_executor_free(global_data.executor);
-    mlsl_parallelizer_free(global_data.parallelizer);
-    mlsl_sched_cache_free(global_data.sched_cache);
+    if (global_data.comm)
+        mlsl_comm_free(global_data.comm);
+    if (global_data.executor)
+        mlsl_executor_free(global_data.executor);
+    if (global_data.parallelizer)
+        mlsl_parallelizer_free(global_data.parallelizer);
+    if (global_data.sched_cache)
+        mlsl_sched_cache_free(global_data.sched_cache);
+    if (global_data.default_coll_attr)
+        mlsl_coll_free_attr(global_data.default_coll_attr);
     mlsl_env_free();
-    mlsl_coll_free_attr(global_data.default_coll_attr);
     return mlsl_status_success;
 }
 
@@ -47,23 +54,6 @@ size_t mlsl_get_comm_rank(mlsl_comm_t comm)
 size_t mlsl_get_comm_size(mlsl_comm_t comm)
 {
     return comm ? comm->size : global_data.comm->size;
-}
-
-size_t mlsl_get_dtype_size(mlsl_data_type_t dtype)
-{
-    size_t dtype_size = 1;
-    switch (dtype)
-    {
-        case mlsl_dtype_char: { dtype_size = 1; break; }
-        case mlsl_dtype_int: { dtype_size = 4; break; }
-        case mlsl_dtype_bfp16: { dtype_size = 2; break; }
-        case mlsl_dtype_float: { dtype_size = 4; break; }
-        case mlsl_dtype_double: { dtype_size = 8; break; }
-        case mlsl_dtype_int64: { dtype_size = 8; break; }
-        case mlsl_dtype_uint64: { dtype_size = 8; break; }
-        default: MLSL_ASSERT_FMT(0, "unexpected dtype %d", dtype);
-    }
-    return dtype_size;
 }
 
 mlsl_status_t mlsl_wait(mlsl_request *req)

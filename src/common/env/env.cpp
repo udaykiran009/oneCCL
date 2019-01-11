@@ -24,7 +24,7 @@ const char *mlsl_allreduce_algo_to_str(mlsl_allreduce_algo algo)
 {
     switch (algo) {
         case mlsl_allreduce_algo_rabenseifner:
-            return "RABENSEIFNER";
+            return "RSAG";
         case mlsl_allreduce_algo_starlike:
             return "STARLIKE";
         default:
@@ -202,9 +202,9 @@ int mlsl_env_parse_allreduce_algo()
     char *mode_env = getenv("MLSL_ALLREDUCE_ALGO");
     if (mode_env)
     {
-        if (strcmp(mode_env, "RABENSEIFNER") == 0)
+        if (strcmp(mode_env, "rsag") == 0) // reduce_scatter + allgather
             env_data.allreduce_algo = mlsl_allreduce_algo_rabenseifner;
-        else if (strcmp(mode_env, "STARLIKE") == 0)
+        else if (strcmp(mode_env, "starlike") == 0)
             env_data.allreduce_algo = mlsl_allreduce_algo_starlike;
         else
         {

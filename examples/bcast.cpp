@@ -35,10 +35,7 @@ int main()
 {
     float buf[COUNT];
 
-    MLSL_CALL(mlsl_init());
-
-    rank = mlsl_get_comm_rank(NULL);
-    size = mlsl_get_comm_size(NULL);
+    test_init();
 
     coll_attr.to_cache = 1;
     RUN_COLLECTIVE(mlsl_bcast(buf, COUNT, mlsl_dtype_float, ROOT, &coll_attr, NULL, &request),
@@ -48,7 +45,7 @@ int main()
     RUN_COLLECTIVE(mlsl_bcast(buf, COUNT, mlsl_dtype_float, ROOT, &coll_attr, NULL, &request),
                    "regular_bcast");
 
-    MLSL_CALL(mlsl_finalize());
+    test_finalize();
 
     return 0;
 }

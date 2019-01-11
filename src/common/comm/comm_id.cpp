@@ -76,7 +76,7 @@ public:
     {
         if (free_ids[id])
         {
-            MLSL_LOG(ERROR, "Attempt to relase not acquired id %hu", id);
+            MLSL_LOG(ERROR, "Attempt to release not acquired id %hu", id);
             return mlsl_status_invalid_arguments;
         }
         free_ids[id] = true;

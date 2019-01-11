@@ -16,8 +16,8 @@ mlsl_status_t mlsl_coll_build_dissemination_barrier(mlsl_sched *sched)
     while (mask < size) {
         dst = (rank + mask) % size;
         src = (rank - mask + size) % size;
-        MLSL_CALL(mlsl_sched_add_send(sched, NULL, 0, mlsl_dtype_char, dst));
-        MLSL_CALL(mlsl_sched_add_recv(sched, NULL, 0, mlsl_dtype_char, src));
+        MLSL_CALL(mlsl_sched_add_send(sched, NULL, 0, mlsl_dtype_internal_char, dst));
+        MLSL_CALL(mlsl_sched_add_recv(sched, NULL, 0, mlsl_dtype_internal_char, src));
         MLSL_CALL(mlsl_sched_add_barrier(sched));
         mask <<= 1;
     }

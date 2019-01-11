@@ -25,6 +25,18 @@
         (void)status;                               \
   } while (0)
 
+#define ASSERT(cond, fmt, ...)                            \
+  do                                                      \
+  {                                                       \
+      if (!(cond))                                        \
+      {                                                   \
+          fprintf(stderr, "ASSERT '%s' FAILED " fmt "\n", \
+              #cond, ##__VA_ARGS__);                      \
+          test_finalize();                                \
+          exit(1);                                        \
+      }                                                   \
+  } while (0)
+
 mlsl_coll_attr_t coll_attr;
 mlsl_request_t request;
 size_t rank, size;
@@ -47,6 +59,23 @@ double when(void)
         is_first = 0;
     }
     return (double)(tv.tv_sec - tv_base.tv_sec) * 1.0e6 + (double)(tv.tv_usec - tv_base.tv_usec);
+}
+
+void test_init()
+{
+    MLSL_CALL(mlsl_init());
+
+    rank = mlsl_get_comm_rank(NULL);
+    size = mlsl_get_comm_size(NULL);
+
+    coll_attr.prologue_fn = NULL;
+    coll_attr.epilogue_fn = NULL;
+    coll_attr.reduction_fn = NULL;
+}
+
+void test_finalize()
+{
+    MLSL_CALL(mlsl_finalize());
 }
 
 #endif /* BASE_H */

@@ -1,7 +1,7 @@
 #include "coll/coll_algorithms.hpp"
 
 mlsl_status_t mlsl_coll_build_rabenseifner_allreduce(mlsl_sched *sched, const void *send_buf, void *recv_buf,
-                                                     size_t count, mlsl_data_type_t dtype, mlsl_reduction_t op)
+                                                     size_t count, mlsl_datatype_internal_t dtype, mlsl_reduction_t op)
 {
     MLSL_LOG(DEBUG, "build Rabenseifner's allreduce");
 
@@ -10,7 +10,7 @@ mlsl_status_t mlsl_coll_build_rabenseifner_allreduce(mlsl_sched *sched, const vo
     int i, send_idx, recv_idx, last_idx, mask, newdst, dst, send_cnt, recv_cnt;
     void *tmp_buf = NULL;
     int *cnts = NULL, *disps = NULL;
-    size_t dtype_size = mlsl_get_dtype_size(dtype);
+    size_t dtype_size = mlsl_datatype_get_size(dtype);
 
     mlsl_comm *comm = sched->coll_param.comm;
 
@@ -205,7 +205,7 @@ mlsl_status_t mlsl_coll_build_rabenseifner_allreduce(mlsl_sched *sched, const vo
 }
 
 mlsl_status_t mlsl_coll_build_recursive_doubling_allreduce(mlsl_sched *sched, const void *send_buf, void *recv_buf,
-                                                           size_t count, mlsl_data_type_t dtype, mlsl_reduction_t op)
+                                                           size_t count, mlsl_datatype_internal_t dtype, mlsl_reduction_t op)
 {
     MLSL_LOG(DEBUG, "build recursive_doubling allreduce");
 
@@ -219,7 +219,7 @@ mlsl_status_t mlsl_coll_build_recursive_doubling_allreduce(mlsl_sched *sched, co
     comm_size = comm->size;
     rank = comm->rank;
 
-    size_t dtype_size = mlsl_get_dtype_size(dtype);
+    size_t dtype_size = mlsl_datatype_get_size(dtype);
     tmp_buf = MLSL_MALLOC(count * dtype_size, "tmp_buf");
     mlsl_sched_add_persistent_memory(sched, mlsl_sched_memory_buffer, tmp_buf);
 
@@ -307,7 +307,7 @@ mlsl_status_t mlsl_coll_build_recursive_doubling_allreduce(mlsl_sched *sched, co
 }
 
 mlsl_status_t mlsl_coll_build_starlike_allreduce(mlsl_sched *sched, const void *send_buf, void *recv_buf,
-                                                 size_t count, mlsl_data_type_t dtype, mlsl_reduction_t op)
+                                                 size_t count, mlsl_datatype_internal_t dtype, mlsl_reduction_t op)
 {
     MLSL_LOG(DEBUG, "build starlike allreduce");
 
@@ -316,7 +316,7 @@ mlsl_status_t mlsl_coll_build_starlike_allreduce(mlsl_sched *sched, const void *
     size_t this_rank = sched->coll_param.comm->rank;
     size_t* buffer_counts = static_cast<size_t*>(MLSL_MALLOC(comm_size * sizeof(size_t), "buffer_count"));
     size_t* buffer_offsets = static_cast<size_t*>(MLSL_MALLOC(comm_size * sizeof(size_t), "buffer_offsets"));
-    size_t dtype_size = mlsl_get_dtype_size(dtype);
+    size_t dtype_size = mlsl_datatype_get_size(dtype);
 
     // find counts and offsets for each rank
     size_t common_buffer_count = count / comm_size;

@@ -29,7 +29,7 @@
 */
 
 mlsl_status_t mlsl_coll_build_rabenseifner_reduce(mlsl_sched *sched, const void *send_buf, void *recv_buf,
-                                                  size_t count, mlsl_data_type_t dtype, mlsl_reduction_t reduction, size_t root)
+                                                  size_t count, mlsl_datatype_internal_t dtype, mlsl_reduction_t reduction, size_t root)
 {
     MLSL_LOG(DEBUG, "build Rabenseifner's reduce");
 
@@ -40,7 +40,7 @@ mlsl_status_t mlsl_coll_build_rabenseifner_reduce(mlsl_sched *sched, const void 
     int send_cnt, recv_cnt, newroot, newdst_tree_root, newroot_tree_root;
     void *tmp_buf = NULL;
     int *cnts = NULL, *disps = NULL;
-    size_t dtype_size = mlsl_get_dtype_size(dtype);
+    size_t dtype_size = mlsl_datatype_get_size(dtype);
     local_root = static_cast<int>(root);
 
     comm_size = sched->coll_param.comm->size;
@@ -296,7 +296,7 @@ mlsl_status_t mlsl_coll_build_rabenseifner_reduce(mlsl_sched *sched, const void 
 
 
 mlsl_status_t mlsl_coll_build_binomial_reduce(mlsl_sched *sched, const void *send_buf, void *recv_buf,
-                                              size_t count, mlsl_data_type_t dtype, mlsl_reduction_t reduction, size_t root)
+                                              size_t count, mlsl_datatype_internal_t dtype, mlsl_reduction_t reduction, size_t root)
 {
     MLSL_LOG(DEBUG, "build binomial reduce");
 
@@ -315,7 +315,7 @@ mlsl_status_t mlsl_coll_build_binomial_reduce(mlsl_sched *sched, const void *sen
 
     /* Create a temporary buffer */
 
-    size_t dtype_size = mlsl_get_dtype_size(dtype);
+    size_t dtype_size = mlsl_datatype_get_size(dtype);
     tmp_buf = MLSL_MALLOC(count * dtype_size, "tmp_buf");
     mlsl_sched_add_persistent_memory(sched, mlsl_sched_memory_buffer, tmp_buf);
 

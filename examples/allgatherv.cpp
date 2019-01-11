@@ -36,12 +36,9 @@ int main()
     float *recv_buf;
     size_t *recv_counts;
 
-    MLSL_CALL(mlsl_init());
+    test_init();
 
-    rank = mlsl_get_comm_rank(NULL);
-    size = mlsl_get_comm_size(NULL);
-
-    recv_buf = static_cast<float*>(malloc(size * COUNT * mlsl_get_dtype_size(mlsl_dtype_float)));
+    recv_buf = static_cast<float*>(malloc(size * COUNT * sizeof(float)));
     recv_counts = static_cast<size_t*>(malloc(size * sizeof(size_t)));
 
     for (idx = 0; idx < size; idx++)
@@ -58,7 +55,7 @@ int main()
     free(recv_counts);
     free(recv_buf);
 
-    MLSL_CALL(mlsl_finalize());
+    test_finalize();
 
     return 0;
 }

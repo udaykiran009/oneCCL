@@ -163,10 +163,7 @@ void check_comm_create_identical_color()
 
 int main()
 {
-    MLSL_CALL(mlsl_init());
-
-    ::rank = mlsl_get_comm_rank(nullptr);
-    size = mlsl_get_comm_size(nullptr);
+    test_init();
 
     PRINT_BY_ROOT("Running communicators on %zu ranks", size);
 
@@ -178,7 +175,7 @@ int main()
 
     check_comm_create_identical_color();
 
-    MLSL_CALL(mlsl_finalize());
+    test_finalize();
 
     return 0;
 }
