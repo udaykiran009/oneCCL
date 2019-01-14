@@ -1,4 +1,4 @@
-#include "base.hpp"
+#include "base.h"
 
 #include <vector>
 #include <list>
@@ -36,7 +36,7 @@ int main()
     std::vector<std::vector<float>> allreduce_send_bufs;
     std::vector<std::vector<float>> allreduce_recv_bufs;
 
-    mlsl_init();
+    test_init();
 
     size_t comm_size = mlsl_get_comm_size(nullptr);
 
@@ -113,5 +113,5 @@ int main()
         printf("## Iteration #%zu has been finished\n", iteration);
     }
 
-    mlsl_finalize();
+    test_finalize();
 }

@@ -1,6 +1,6 @@
 #pragma once
 
-#include "mlsl_types.hpp"
+#include "mlsl_types.h"
 
 #define MLSL_POSTPONED_DTYPE ((mlsl_datatype_internal_t)(0xFFFFFFFFFFFFFFFF))
 

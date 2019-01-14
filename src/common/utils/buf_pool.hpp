@@ -35,7 +35,7 @@
 
 #include "common/utils/utils.hpp"
 #include "common/log/log.hpp"
-#include "mlsl_types.hpp"
+#include "mlsl_types.h"
 
 #include <assert.h>
 #include <stdlib.h>

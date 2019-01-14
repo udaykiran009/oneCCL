@@ -4,6 +4,7 @@ add_subdirectory(atl)
 
 set(MLSL_SRC
     mlsl.cpp
+    mlsl_cpp_api.cpp
     atl/atl.cpp
     coll/coll.cpp
     coll/allreduce.cpp

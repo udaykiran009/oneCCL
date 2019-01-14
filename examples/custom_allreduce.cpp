@@ -1,4 +1,4 @@
-#include "base.hpp"
+#include "base.h"
 
 #define RUN_COLLECTIVE(start_cmd, name, expected)                          \
   do {                                                                     \

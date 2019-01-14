@@ -1,4 +1,4 @@
-#include "base.hpp"
+#include "base.h"
 
 /* VGG16 in backprop order */
 size_t msg_sizes[] = { 16384000, 4000, 67108864, 16384, 411041792, 16384, 9437184, 2048, 9437184, 2048, 9437184, 2048,

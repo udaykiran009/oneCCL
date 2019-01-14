@@ -1,59 +1,211 @@
 #pragma once
 
-#include "mlsl_types.hpp"
+#include "mlsl.h"
 
-size_t MLSL_API mlsl_get_comm_rank(mlsl_comm_t comm);
-size_t MLSL_API mlsl_get_comm_size(mlsl_comm_t comm);
+#include <exception>
+#include <memory>
 
-mlsl_status_t MLSL_API mlsl_init();
-mlsl_status_t MLSL_API mlsl_finalize();
+namespace mlsl
+{
 
-mlsl_status_t MLSL_API mlsl_bcast(
-    void *buf,
-    size_t count,
-    mlsl_datatype_t dtype,
-    size_t root,
-    const mlsl_coll_attr_t *attributes,
-    mlsl_comm_t comm,
-    mlsl_request_t *req);
+/**
+ * Supported mlsl reduction types
+ */
+enum class reduction
+{
+    sum    = mlsl_reduction_sum,
+    prod   = mlsl_reduction_prod,
+    min    = mlsl_reduction_min,
+    max    = mlsl_reduction_max,
+    custom = mlsl_reduction_custom
+};
 
-mlsl_status_t MLSL_API mlsl_reduce(
-    const void *send_buf,
-    void *recv_buf,
-    size_t count,
-    mlsl_datatype_t dtype,
-    mlsl_reduction_t reduction,
-    size_t root,
-    const mlsl_coll_attr_t *attributes,
-    mlsl_comm_t comm,
-    mlsl_request_t *req);
+/**
+ * Supported mlsl data types
+ */
+enum class data_type
+{
+    dtype_char   = mlsl_dtype_char,
+    dtype_int    = mlsl_dtype_int,
+    dtype_bfp16  = mlsl_dtype_bfp16,
+    dtype_float  = mlsl_dtype_float,
+    dtype_double = mlsl_dtype_double,
+    dtype_int64  = mlsl_dtype_int64,
+    dtype_uint64 = mlsl_dtype_uint64
+};
 
-mlsl_status_t MLSL_API mlsl_allreduce(
-    const void *send_buf,
-    void *recv_buf,
-    size_t count,
-    mlsl_datatype_t dtype,
-    mlsl_reduction_t reduction,
-    const mlsl_coll_attr_t *attributes,
-    mlsl_comm_t comm,
-    mlsl_request_t *req);
+/**
+ * Exception type that may be thrown by mlsl API
+ */
+class mlsl_error : public std::runtime_error
+{
+public:
+    explicit mlsl_error(const std::string& message) : std::runtime_error(message) {}
 
-mlsl_status_t MLSL_API mlsl_allgatherv(
-    const void *send_buf,
-    size_t send_count,
-    void *recv_buf,
-    size_t *recv_counts,
-    mlsl_datatype_t dtype,
-    const mlsl_coll_attr_t *attributes,
-    mlsl_comm_t comm,
-    mlsl_request_t *req);
+    explicit mlsl_error(const char* message) : std::runtime_error(message) {}
+};
 
-mlsl_status_t MLSL_API mlsl_barrier(mlsl_comm_t comm);
+/**
+ * mlsl environemt. The user must guarantee that the only instance of this class exists
+ * during application life time.
+ */
+class environment
+{
+public:
+    environment();
 
-mlsl_status_t MLSL_API mlsl_comm_create(mlsl_comm_t* comm, mlsl_comm_attr_t* comm_attr);
+    ~environment();
 
-mlsl_status_t MLSL_API mlsl_comm_free(mlsl_comm_t comm);
+private:
+    static bool is_initialized;
+};
 
-mlsl_status_t MLSL_API mlsl_wait(mlsl_request_t req);
+/**
+ * A request object that allows the user to track collective operation progress
+ */
+class request
+{
+public:
+    /**
+     * Blocking wait for collective operation completion
+     */
+    virtual void wait() = 0;
 
-mlsl_status_t MLSL_API mlsl_test(mlsl_request_t req, int *is_completed);
+    /**
+     * Non-blocking check for collective operation completion
+     * @retval true if the operations has been completed
+     * @retval false if the operations has not been completed
+     */
+    virtual bool test() = 0;
+
+    virtual ~request() = default;
+};
+
+/**
+ * A communicator that permits collective operations
+ */
+class communicator
+{
+public:
+    /**
+     * Creates mlsl communicator as a copy of global communicator
+     */
+    communicator() = default;
+
+    /**
+     * Creates a new communicator according to @c comm_attr parametersmlsl_t
+     * @param comm_attr
+     */
+    explicit communicator(mlsl_comm_attr_t* comm_attr);
+
+    ~communicator();
+
+    /**
+     * Retrieves the rank of the current process in a communicator
+     * @return rank of the current process
+     */
+    size_t rank()
+    {
+        return mlsl_get_comm_rank(comm_detail);
+    }
+
+    /**
+     * Retrieves the number of processes in a communicator
+     * @return number of the processes
+     */
+    size_t size()
+    {
+        return mlsl_get_comm_size(comm_detail);
+    }
+
+    /**
+     * Retrieves minimum and maximum priorities to be used for collective operation parametrization
+     * @return a pair where @c pair.first is minimum priority and @c pair.second is maximum priority
+     */
+    static std::pair<size_t, size_t> priority_range();
+
+    /**
+     * Broadcasts @c buf from the @c root process to other processes in a communicator
+     * @param buf [in,out] the buffer with @c count elements of @c dtype to be transmitted
+     * if the rank of the communicator is equal to @c root or to be received by other ranks
+     * @param count number of elements of type @c dtype in @c buf
+     * @param dtype data type of elements in the buffer @c buf
+     * @param root the rank of the process that will transmit @c buf
+     * @param attributes optional attributes that customize operation
+     * @return @ref mlsl::request object that can be used to track the progress of the operation
+     */
+    std::shared_ptr<mlsl::request> bcast(void* buf,
+                                         size_t count,
+                                         mlsl::data_type dtype,
+                                         size_t root,
+                                         const mlsl_coll_attr_t* attributes = nullptr);
+
+    /**
+     * Reduces @c buf on all process in the communicator and stores result in @c recv_buf
+     * on the @c root process
+     * @param send_buf the buffer with @c count elements of @c dtype that stores local data to be reduced
+     * @param recv_buf [out] the buffer to store reduced result on the @c root process, must have the same dimension
+     * as @c buf. Used by the @c root process only, ignored by other processes
+     * @param count number of elements of type @c dtype in @c buf
+     * @param dtype data type of elements in the buffer @c buf and @c recv_buf
+     * @param reduction type of reduction operation to be applied
+     * @param root the rank of the process that will held result of reduction
+     * @param attributes optional attributes that customize operation
+     * @return @ref mlsl::request object that can be used to track the progress of the operation
+     */
+    std::shared_ptr<mlsl::request> reduce(const void* send_buf,
+                                          void* recv_buf,
+                                          size_t count,
+                                          mlsl::data_type dtype,
+                                          mlsl::reduction reduction,
+                                          size_t root,
+                                          const mlsl_coll_attr_t* attributes = nullptr);
+
+    /**
+     * Reduces @c buf on all process in the communicator and stores result in @c recv_buf
+     * on each process
+     * @param send_buf the buffer with @c count elements of @c dtype that stores local data to be reduced
+     * @param recv_buf [out] - the buffer to store reduced result , must have the same dimension
+     * as @c buf.
+     * @param count number of elements of type @c dtype in @c buf
+     * @param dtype data type of elements in the buffer @c buf and @c recv_buf
+     * @param reduction type of reduction operation to be applied
+     * @param attributes optional attributes that customize operation
+     * @return @ref mlsl::request object that can be used to track the progress of the operation
+     */
+    std::shared_ptr<mlsl::request> allreduce(const void* send_buf,
+                                             void* recv_buf,
+                                             size_t count,
+                                             mlsl::data_type dtype,
+                                             mlsl::reduction reduction,
+                                             const mlsl_coll_attr_t* attributes = nullptr);
+
+    /**
+     * Gathers @c buf on all process in the communicator and stores result in @c recv_buf
+     * on each process
+     * @param send_buf the buffer with @c count elements of @c dtype that stores local data to be gathered
+     * @param send_count number of elements of type @c dtype in @c send_buf
+     * @param recv_buf [out] the buffer to store gathered result on the @c each process, must have the same dimension
+     * as @c buf. Used by the @c root process only, ignored by other processes
+     * @param recv_counts array with number of elements received by each process
+     * @param dtype data type of elements in the buffer @c buf and @c recv_buf
+     * @param attributes optional attributes that customize operation
+     * @return @ref mlsl::request object that can be used to track the progress of the operation
+     */
+    std::shared_ptr<mlsl::request> allgatherv(const void* send_buf,
+                                              size_t send_count,
+                                              void* recv_buf,
+                                              size_t* recv_counts,
+                                              mlsl::data_type dtype,
+                                              const mlsl_coll_attr_t* attributes = nullptr);
+
+    /**
+     * Collective operation that blocks each process until every process have reached it
+     */
+    void barrier();
+
+private:
+    mlsl_comm_t comm_detail = nullptr;
+};
+
+}

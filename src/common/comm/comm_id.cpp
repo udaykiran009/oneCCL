@@ -1,6 +1,6 @@
 #include "common/comm/comm.hpp"
 #include "common/log/log.hpp"
-#include "mlsl_types.hpp"
+#include "mlsl_types.h"
 #include "comm.hpp"
 
 #include <vector>

@@ -12,7 +12,7 @@
 #include <sys/time.h>
 #include <unistd.h>
 
-#include "mlsl.hpp"
+#include "mlsl.h"
 
 #define COUNT 1048576
 #define ITERS 128
