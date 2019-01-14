@@ -14,10 +14,12 @@ struct mlsl_sched_cache_key
     size_t root;
     mlsl_reduction_t reduction;
     const mlsl_comm* comm;
-    char match_id[MLSL_MATCH_ID_MAX_LEN];
     mlsl_prologue_fn_t prologue_fn;
     mlsl_epilogue_fn_t epilogue_fn;
     mlsl_reduction_fn_t reduction_fn;
+    size_t priority;
+    int synchronous;
+    char match_id[MLSL_MATCH_ID_MAX_LEN];
     /* TODO: extend to support more collectives */
 };
 

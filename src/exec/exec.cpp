@@ -41,7 +41,6 @@ mlsl_executor::mlsl_executor(size_t workers_count, size_t priority_count, bool s
         for (pr_idx = 0; pr_idx < priority_count; pr_idx++)
         {
             comms[idx * priority_count + pr_idx] = atl_comms[idx * comms_per_worker + pr_idx / priorities_per_comm];
-
             if (proc_idx == 0)
                 MLSL_LOG(DEBUG, "map atl comms: w_idx %zu, pr_idx %zu, comm_idx %zu, comms_per_worker %zu",
                          idx, pr_idx, idx * comms_per_worker + pr_idx / priorities_per_comm, comms_per_worker);

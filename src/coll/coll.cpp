@@ -76,14 +76,16 @@ const char *mlsl_coll_type_to_str(mlsl_coll_type type)
         mlsl_sched_cache_key key;                                                           \
         memset(&key, 0, sizeof(mlsl_sched_cache_key));                                      \
         fill_cache_key_expr;                                                                \
-        if (attr->match_id)                                                                 \
-            strncpy(key.match_id, attr->match_id, MLSL_MATCH_ID_MAX_LEN - 1);               \
+        key.priority = attr->priority;                                                      \
+        key.synchronous = attr->synchronous;                                                \
         if (attr->prologue_fn)                                                              \
             key.prologue_fn = attr->prologue_fn;                                            \
         if (attr->epilogue_fn)                                                              \
             key.epilogue_fn = attr->epilogue_fn;                                            \
         if (attr->reduction_fn)                                                             \
             key.reduction_fn = attr->reduction_fn;                                          \
+        if (attr->match_id)                                                                 \
+            strncpy(key.match_id, attr->match_id, MLSL_MATCH_ID_MAX_LEN - 1);               \
         mlsl_sched_cache_get_entry(global_data.sched_cache, &key, &entry);                  \
         sched = entry->sched;                                                               \
     }                                                                                       \

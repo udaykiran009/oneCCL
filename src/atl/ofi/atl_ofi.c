@@ -24,8 +24,7 @@
 #define gettid() syscall(SYS_gettid)
 #endif
 
-#ifdef ENABLE_DEBUG
-#define ATL_OFI_DEBUG_PRINT(s, ...)                  \
+#define ATL_OFI_PRINT(s, ...)                        \
     do {                                             \
         pid_t tid = gettid();                        \
         char hoststr[32];                            \
@@ -36,6 +35,9 @@
                 __func__, ##__VA_ARGS__);            \
         fflush(stdout);                              \
     } while (0)
+
+#ifdef ENABLE_DEBUG
+#define ATL_OFI_DEBUG_PRINT(s, ...) ATL_OFI_PRINT(s, ##__VA_ARGS__)
 #else
 #define ATL_OFI_DEBUG_PRINT(s, ...)
 #endif
@@ -424,11 +426,11 @@ static atl_status_t atl_ofi_comm_handle_cq_err(atl_ofi_comm_context_t *comm_cont
         return atl_status_failure;
     } else {
         if (err_entry.err != FI_ENOMSG) {
-            ATL_OFI_DEBUG_PRINT("fi_cq_readerr: err: %d, prov_err: %s (%d)\n",
-                                err_entry.err, fi_cq_strerror(comm_context->cq,
-                                                              err_entry.prov_errno,
-                                                              err_entry.err_data,
-                                                              NULL, 0),
+            ATL_OFI_PRINT("fi_cq_readerr: err: %d, prov_err: %s (%d)\n",
+                           err_entry.err, fi_cq_strerror(comm_context->cq,
+                                                         err_entry.prov_errno,
+                                                         err_entry.err_data,
+                                                         NULL, 0),
                                 err_entry.prov_errno);
             return atl_status_failure;
         }

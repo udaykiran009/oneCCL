@@ -71,6 +71,24 @@ static const char *mlsl_sched_entry_type_to_str(mlsl_sched_entry_type type)
     }
 }
 
+static const char *mlsl_sched_entry_status_to_str(mlsl_sched_entry_status status)
+{
+    switch (status) {
+        case mlsl_sched_entry_status_not_started:
+            return "NOT_STARTED";
+        case mlsl_sched_entry_status_started:
+            return "STARTED";
+        case mlsl_sched_entry_status_complete:
+            return "COMPLETE";
+        case mlsl_sched_entry_status_failed:
+            return "FAILED";
+        case mlsl_sched_entry_status_invalid:
+            return "INVALID";
+        default:
+            return "UNKNOWN";
+    }
+}
+
 static const char *mlsl_reduction_to_str(mlsl_reduction_t type)
 {
     switch (type) {
@@ -106,9 +124,10 @@ mlsl_status_t mlsl_sched_dump(mlsl_sched *s, const char *name)
 
         for (i = 0; i < s->num_entries; ++i) {
             mlsl_sched_entry *e = &(s->entries[i]);
-            buf_offset += sprintf(buf + buf_offset, "entries[%3zu]: type %-7s, status %d, is_barrier %-5s, ",
+            buf_offset += sprintf(buf + buf_offset, "entries[%3zu]: type %-7s, status %-11s, is_barrier %-5s, ",
                                   i, mlsl_sched_entry_type_to_str(e->type),
-                                  e->status, (e->is_barrier ? "TRUE" : "FALSE"));
+                                  mlsl_sched_entry_status_to_str(e->status),
+                                  (e->is_barrier ? "TRUE" : "FALSE"));
 
             switch (e->type) {
                 case mlsl_sched_entry_send:
@@ -279,6 +298,7 @@ mlsl_status_t mlsl_sched_start_entry(mlsl_sched *s, size_t idx, mlsl_sched_entry
     int* counter_ptr;
     int counter, prev_counter;
     size_t part_idx, part_count, orig_count;
+    mlsl_atl_comm_tag_t atl_tag;
 
     MLSL_ASSERTP_FMT(e->status == mlsl_sched_entry_status_not_started ||
       (e->status == mlsl_sched_entry_status_started &&
@@ -289,31 +309,33 @@ mlsl_status_t mlsl_sched_start_entry(mlsl_sched *s, size_t idx, mlsl_sched_entry
 
     switch (e->type) {
         case mlsl_sched_entry_send:
-            MLSL_LOG(DEBUG, "starting SEND entry %zu, dest %zu, sreq %p", idx, e->u.send.dest, &e->u.send.req);
+            atl_tag = mlsl_create_atl_tag(s->coll_param.comm->comm_id, s->sched_id, e->u.send.comm->rank);
+            MLSL_LOG(DEBUG, "starting SEND entry %zu, dest %zu, tag %lu, sreq %p",
+                     idx, e->u.send.dest, atl_tag, &e->u.send.req);
             atl_status = atl_comm_send(s->bin->comm_ctx, e->u.send.buf,
                                        e->u.send.count * mlsl_datatype_get_size(e->u.send.dtype),
                                        e->u.send.dest,
-                                       mlsl_create_atl_tag(s->coll_param.comm->comm_id, s->sched_id, e->u.send.comm->rank),
+                                       atl_tag,
                                        &e->u.send.req);
-
             if (unlikely(atl_status != atl_status_success)) {
                 e->status = mlsl_sched_entry_status_failed;
-                MLSL_LOG(DEBUG, "SEND entry failed. atl_status: %d", atl_status);
+                MLSL_LOG(ERROR, "SEND entry failed. atl_status: %d", atl_status);
             } else {
                 e->status = mlsl_sched_entry_status_started;
             }
             break;
         case mlsl_sched_entry_recv:
-            MLSL_LOG(DEBUG, "starting RECV entry %zu, src %zu, rreq %p", idx, e->u.recv.src, &e->u.recv.req);
+            atl_tag = mlsl_create_atl_tag(s->coll_param.comm->comm_id, s->sched_id, e->u.recv.src);
+            MLSL_LOG(DEBUG, "starting RECV entry %zu, src %zu, tag %lu, rreq %p",
+                     idx, e->u.recv.src, atl_tag, &e->u.recv.req);
             atl_status = atl_comm_recv(s->bin->comm_ctx, e->u.recv.buf,
                                        e->u.recv.count * mlsl_datatype_get_size(e->u.recv.dtype),
                                        e->u.recv.src,
-                                       mlsl_create_atl_tag(s->coll_param.comm->comm_id, s->sched_id, e->u.recv.src),
+                                       atl_tag,
                                        &e->u.recv.req);
-
             if (unlikely(atl_status != atl_status_success)) {
                 e->status = mlsl_sched_entry_status_failed;
-                MLSL_LOG(DEBUG, "RECV entry failed. atl_status: %d", atl_status);
+                MLSL_LOG(ERROR, "RECV entry failed. atl_status: %d", atl_status);
             } else {
                 e->status = mlsl_sched_entry_status_started;
             }
@@ -332,16 +354,18 @@ mlsl_status_t mlsl_sched_start_entry(mlsl_sched *s, size_t idx, mlsl_sched_entry
             MLSL_LOG(DEBUG, "starting RECV_REDUCE entry %zu, rreq %p", idx, &e->u.recv_reduce.req);
             if (e->status != mlsl_sched_entry_status_started)
             {
-                MLSL_LOG(DEBUG, "starting RECV in RECV_REDUCE entry %zu, rreq %p", idx, &e->u.recv_reduce.req);
+                atl_tag = mlsl_create_atl_tag(s->coll_param.comm->comm_id, s->sched_id, e->u.recv_reduce.src);
+                MLSL_LOG(DEBUG, "starting RECV in RECV_REDUCE entry %zu, src %zu, tag %lu, rreq %p",
+                         idx, e->u.recv_reduce.src, atl_tag, &e->u.recv_reduce.req);
                 atl_status = atl_comm_recv(s->bin->comm_ctx, e->u.recv_reduce.comm_buf,
                                            e->u.recv_reduce.in_count * mlsl_datatype_get_size(e->u.recv_reduce.dtype),
                                            e->u.recv_reduce.src,
-                                           mlsl_create_atl_tag(s->coll_param.comm->comm_id, s->sched_id, e->u.recv_reduce.src),
+                                           atl_tag,
                                            &e->u.recv_reduce.req);
 
                 if (unlikely(atl_status != atl_status_success)) {
                     e->status = mlsl_sched_entry_status_failed;
-                    MLSL_LOG(DEBUG, "RECV entry failed. atl_status: %d", atl_status);
+                    MLSL_LOG(ERROR, "RECV entry failed. atl_status: %d", atl_status);
                 } else {
                     e->status = mlsl_sched_entry_status_started;
                 }
@@ -598,6 +622,7 @@ mlsl_status_t mlsl_sched_create(mlsl_sched **sp)
 /* clones orig and returns a handle to the new schedule */
 mlsl_status_t mlsl_sched_clone(mlsl_sched *orig, mlsl_sched **clone)
 {
+    MLSL_ASSERTP(0);
     mlsl_sched *s = static_cast<mlsl_sched*>(MLSL_CALLOC(sizeof(mlsl_sched), "schedule"));
 
     s->size = orig->size;
@@ -645,7 +670,6 @@ mlsl_status_t mlsl_sched_adjust_entries(mlsl_sched *sched, size_t partition_idx,
 mlsl_status_t mlsl_sched_adjust_tag(mlsl_sched *sched)
 {
     sched->sched_id = mlsl_comm_get_sched_id(sched->coll_param.comm);
-
     return mlsl_status_success;
 }
 
@@ -1092,7 +1116,7 @@ mlsl_status_t mlsl_sched_progress(mlsl_sched_queue_bin *bin, size_t sched_count,
         if (s->first_progress)
         {
             /* TODO: do we need special handling for first_progress ? */
-            MLSL_LOG(DEBUG, "do initial mlsl_sched_continue");
+            MLSL_LOG(DEBUG, "do initial mlsl_sched_continue for sched %p", s);
             status = mlsl_sched_continue(s);
             MLSL_ASSERT(status == mlsl_status_success);
             s->first_progress = 0;
@@ -1401,7 +1425,6 @@ void mlsl_sched_prepare(mlsl_sched *sched, bool dump)
     size_t idx;
     for (idx = 0; idx < partial_sched_count; idx++)
     {
-        partial_scheds[idx]->first_progress = 1;
         mlsl_sched_adjust_tag(partial_scheds[idx]);
         mlsl_sched_reset(partial_scheds[idx]);
         partial_scheds[idx]->req = sched->req;

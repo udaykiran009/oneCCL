@@ -228,7 +228,6 @@ struct mlsl_sched_postponed_fields
     void* buf;
     size_t count;
     mlsl_datatype_internal dtype;
-    void* ctx;
 };
 
 struct mlsl_sched

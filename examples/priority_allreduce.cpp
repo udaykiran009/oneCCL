@@ -50,7 +50,7 @@ size_t get_dtype_size(mlsl_datatype_t dtype)
         case mlsl_dtype_double: { dtype_size = 8; break; }
         case mlsl_dtype_int64: { dtype_size = 8; break; }
         case mlsl_dtype_uint64: { dtype_size = 8; break; }
-        default: assert(0);
+        default: ASSERT(0, "unexpected dtype %d", dtype);
     }
     return dtype_size;
 }
@@ -91,7 +91,6 @@ void do_iter(size_t iter_idx)
     {
         if (idx % 2 == 0) usleep(comp_delay_ms * 1000);
 
-        coll_attr.to_cache = 1;
         priority = min_priority + idx;
         if (priority > max_priority) priority = max_priority;
         coll_attr.priority = priority;

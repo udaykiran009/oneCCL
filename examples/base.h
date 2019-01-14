@@ -71,6 +71,10 @@ void test_init()
     coll_attr.prologue_fn = NULL;
     coll_attr.epilogue_fn = NULL;
     coll_attr.reduction_fn = NULL;
+    coll_attr.priority = 0;
+    coll_attr.synchronous = 0;
+    coll_attr.match_id = NULL;
+    coll_attr.to_cache = 1;
 }
 
 void test_finalize()

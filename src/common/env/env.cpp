@@ -5,6 +5,18 @@
 #include <string.h>
 #include <unistd.h>
 
+mlsl_env_data env_data =
+{
+    .log_level = ERROR,
+    .sched_dump = 0,
+    .worker_count = 1,
+    .worker_offload = 1,
+    .out_of_order_support = 0,
+    .worker_affinity = NULL,
+    .priority_mode = mlsl_priority_none,
+    .allreduce_algo = mlsl_allreduce_algo_rabenseifner
+};
+
 const char *mlsl_priority_mode_to_str(mlsl_priority_mode mode)
 {
     switch (mode) {
@@ -33,17 +45,6 @@ const char *mlsl_allreduce_algo_to_str(mlsl_allreduce_algo algo)
     }
 }
 
-mlsl_env_data env_data =
-{
-   .log_level = ERROR,
-   .sched_dump = 0,
-   .worker_count = 1,
-   .worker_offload = 1,
-   .out_of_order_support = 0,
-   .worker_affinity = nullptr,
-   .priority_mode = mlsl_priority_none,
-   .allreduce_algo = mlsl_allreduce_algo_rabenseifner
-};
 
 void mlsl_env_parse()
 {
