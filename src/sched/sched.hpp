@@ -9,7 +9,6 @@
 #include "common/utils/lock.hpp"
 #include "mlsl.hpp"
 
-#define MLSL_MATCH_ID_MAX_LEN (64)
 #define MLSL_POSTPONED_COUNT  ((size_t)(0xFFFFFFFFFFFFFFFF))
 #define MLSL_POSTPONED_ADDR   ((void*)(0xFFFFFFFFFFFFFFFF))
 
@@ -17,6 +16,11 @@ struct mlsl_sched_queue;
 struct mlsl_sched_queue_bin;
 struct mlsl_coll_param;
 struct mlsl_sched;
+
+namespace out_of_order
+{
+class ooo_match;
+}
 
 enum mlsl_sched_entry_type
 {
@@ -30,7 +34,8 @@ enum mlsl_sched_entry_type
     mlsl_sched_entry_prologue                = 7,
     mlsl_sched_entry_epilogue                = 8,
     mlsl_sched_entry_update_postponed_fields = 9,
-    mlsl_sched_entry_nop                     = 10
+    mlsl_sched_entry_tensor_comm             = 10,
+    mlsl_sched_entry_nop                     = 11
 };
 
 struct mlsl_sched_send
@@ -141,6 +146,12 @@ struct mlsl_sched_update_postponed_fields
     size_t part_count;
 };
 
+struct mlsl_sched_tensor_comm
+{
+    out_of_order::ooo_match* ooo_handler;
+    const char* tensor_name;
+};
+
 enum mlsl_sched_entry_status
 {
     mlsl_sched_entry_status_not_started = 0,
@@ -167,6 +178,7 @@ struct mlsl_sched_entry
         mlsl_sched_prologue prologue;
         mlsl_sched_epilogue epilogue;
         mlsl_sched_update_postponed_fields update_fields;
+        mlsl_sched_tensor_comm tensor_comm;
     } u;
 };
 
@@ -238,6 +250,8 @@ struct mlsl_sched
     mlsl_sched **partial_scheds;
     size_t partial_sched_count;
 
+    mlsl_sched* root;
+
     mlsl_sched *next;   /* linked-list next pointer */
     mlsl_sched *prev;   /* linked-list prev pointer */
 };
@@ -288,6 +302,10 @@ mlsl_status_t mlsl_sched_add_epilogue(mlsl_sched *sched, mlsl_epilogue_fn_t fn, 
                                       size_t expected_out_count, mlsl_datatype_internal_t out_dtype);
 mlsl_status_t mlsl_sched_add_update_postponed_fields(mlsl_sched *sched, size_t part_idx, size_t part_count);
 
+mlsl_status_t mlsl_sched_add_tensor_comm_create_entry(mlsl_sched* sched,
+                                                      out_of_order::ooo_match* ooo_handler,
+                                                      const char* tensor_name_buffer);
+
 mlsl_status_t mlsl_sched_bcast(void *buf, size_t count, mlsl_datatype_internal_t dtype,
                                size_t root, mlsl_comm* comm, mlsl_sched **sched);
 mlsl_status_t mlsl_sched_reduce(const void *send_buf, void *recv_buf, size_t count, mlsl_datatype_internal_t dtype,
@@ -297,6 +315,8 @@ mlsl_status_t mlsl_sched_allreduce(const void *send_buf, void *recv_buf, size_t 
 mlsl_status_t mlsl_sched_allgatherv(const void *send_buf, size_t send_count, void *recv_buf, size_t *recv_counts,
                                     mlsl_datatype_internal_t dtype, mlsl_comm* comm, mlsl_sched **sched);
 mlsl_status_t mlsl_sched_barrier(mlsl_comm* comm, mlsl_sched **sched);
+
+mlsl_status_t mlsl_sched_tensor_bcast(mlsl_comm* comm, mlsl_sched** sched, bool temporal);
 
 mlsl_status_t mlsl_sched_progress(mlsl_sched_queue_bin *bin, size_t sched_count, size_t *processed_sched_count);
 mlsl_status_t mlsl_sched_clone(mlsl_sched *orig, mlsl_sched **clone);
@@ -312,3 +332,7 @@ mlsl_status_t mlsl_sched_free_persistent_memory(mlsl_sched *sched);
 mlsl_status_t mlsl_sched_set_coll_attr(mlsl_sched *sched, const mlsl_coll_attr_t *attr);
 
 size_t mlsl_sched_get_priority(mlsl_sched *sched);
+
+void mlsl_update_request_reference(mlsl_sched *s, mlsl_request **req);
+
+void mlsl_sched_prepare(mlsl_sched *sched, bool dump);

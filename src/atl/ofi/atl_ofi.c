@@ -361,7 +361,7 @@ ofi_comm_ep_create(atl_ofi_context_t *atl_ofi_context,
 
     if (atl_ofi_context->sep) {
         rx_attr = *atl_ofi_context->prov->rx_attr;
-        rx_attr.caps |= FI_TAGGED | FI_RECV;
+        rx_attr.caps |= FI_TAGGED;
         ret = fi_rx_context(atl_ofi_context->sep, index, &rx_attr,
                             &atl_ofi_comm_context->rx_ctx, NULL);
         if (ret)
@@ -372,7 +372,7 @@ ofi_comm_ep_create(atl_ofi_context_t *atl_ofi_context,
             goto err;
 
         tx_attr = *atl_ofi_context->prov->tx_attr;
-        tx_attr.caps |= FI_TAGGED | FI_SEND;
+        tx_attr.caps |= FI_TAGGED;
         ret = fi_tx_context(atl_ofi_context->sep, index, &tx_attr,
                             &atl_ofi_comm_context->tx_ctx, NULL);
         if (ret)

@@ -3,7 +3,6 @@
 #include "mlsl_types.hpp"
 
 #include <unordered_map>
-#include <stdint.h>
 
 typedef uint16_t mlsl_comm_id_t;
 typedef uint16_t mlsl_sched_id_t;
@@ -26,6 +25,8 @@ extern mlsl_comm *global_comm;
 
 mlsl_status_t mlsl_comm_create_internal(size_t rank, size_t size, mlsl_comm **comm,
                                         rank_to_global_rank_map&& ranks_map);
+
+mlsl_status_t mlsl_comm_create_copy(mlsl_comm* original, mlsl_comm** new_comm, mlsl_comm_id_t comm_id);
 
 mlsl_status_t mlsl_comm_get_global_rank(mlsl_comm* comm, size_t rank, size_t* global_rank);
 

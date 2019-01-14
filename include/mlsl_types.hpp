@@ -15,6 +15,11 @@
 
 #define MLSL_API MLSL_HELPER_DLL_EXPORT
 
+/**
+ * Maximum length of @b match_id parameter in @b mlsl_coll_attr_t struct
+ */
+#define MLSL_MATCH_ID_MAX_LEN (128)
+
 /** Status values returned by MLSL functions. */
 enum mlsl_status_t
 {
@@ -68,14 +73,21 @@ struct mlsl_coll_attr_t
     mlsl_reduction_fn_t reduction_fn;
     size_t priority;
     int synchronous;
-    char *match_id;
     int to_cache;
+    /**
+     * Id of the operation. If specified, new communicator will be created and collective
+     * operations with the same @b match_id will be executed in the same order.
+     * Length of the string must not exceed @ref MLSL_MATCH_ID_MAX_LEN
+     */
+    const char* match_id;
 };
 
 struct mlsl_comm_attr_t
 {
-    /* Used to split global communicator into parts. Ranks with identical color
-     * will form a new communicator. */
+    /**
+     * Used to split global communicator into parts. Ranks with identical color
+     * will form a new communicator.
+     */
     int color;
     /* List of rank ids for current process. Unused */
     size_t* ranks;

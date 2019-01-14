@@ -5,8 +5,10 @@
 #include "common/log/log.hpp"
 #include "common/utils/utils.hpp"
 #include "common/comm/comm.hpp"
+#include "out_of_order/ooo_match.hpp"
 
 #include <stdio.h>
+#include <string.h>
 
 #define MLSL_SCHED_INITIAL_ENTRIES (16)
 
@@ -60,6 +62,8 @@ static const char *mlsl_sched_entry_type_to_str(mlsl_sched_entry_type type)
             return "EPILOGUE";
         case mlsl_sched_entry_update_postponed_fields:
             return "UPDATE_FIELDS";
+        case mlsl_sched_entry_tensor_comm:
+            return "TENSOR_COMM";
         case mlsl_sched_entry_nop:
             return "NOP";
         default:
@@ -170,6 +174,7 @@ mlsl_status_t mlsl_sched_dump(mlsl_sched *s, const char *name)
                                           e->u.update_fields.part_count);
                     break;
                 case mlsl_sched_entry_nop:
+                case mlsl_sched_entry_tensor_comm:
                     break;
                 default:
                     MLSL_ASSERT_FMT(0, "unexpected entry_type %d", e->type);
@@ -248,12 +253,12 @@ static void mlsl_sched_entry_adjust(mlsl_sched_entry *entry, size_t partition_id
             entry->u.sync.root_sched->entries[entry->u.sync.entry_idx].u.sync.counter++;
             break;
         case mlsl_sched_entry_nop:
+        case mlsl_sched_entry_tensor_comm:
             break;
         default:
             MLSL_ASSERTP_FMT(0, "unexpected entry_type %d", entry->type);
             break;
     }
-    return;
 }
 
 /* initiates the schedule entry "e" in the NBC described by "s", where
@@ -454,8 +459,8 @@ mlsl_status_t mlsl_sched_start_entry(mlsl_sched *s, size_t idx, mlsl_sched_entry
                 e->u.coll.req = coll_req;
                 coll_sched->sched_id = s->sched_id;
                 mlsl_sched_reset(coll_sched);
-                mlsl_sched_dump(coll_sched, "coll_sched");    
-                mlsl_sched_queue_add(s->bin->queue, coll_sched, mlsl_sched_get_priority(s));
+                mlsl_sched_dump(coll_sched, "coll_sched");
+                s->bin->queue->add(coll_sched, mlsl_sched_get_priority(s));
                 MLSL_LOG(DEBUG, "COLLECTIVE entry %zu: queue %p, sched %p, req %p",
                          idx, s->bin->queue, coll_sched, coll_req);
                 // TODO: insert into per-worker sched cache
@@ -498,6 +503,16 @@ mlsl_status_t mlsl_sched_start_entry(mlsl_sched *s, size_t idx, mlsl_sched_entry
                      idx, part_idx, part_count, mlsl_datatype_get_name(elem_dtype), s->postponed_fields.count, s->postponed_fields.buf);
             e->status = mlsl_sched_entry_status_complete;
             break;
+        case mlsl_sched_entry_tensor_comm:
+        {
+            std::string tensor_name{s->coll_attr.match_id};
+            MLSL_LOG(DEBUG, "TENSOR_COMM entry, tensor name %s", tensor_name.c_str());
+
+            e->u.tensor_comm.ooo_handler->create_comm_and_run_sched(tensor_name);
+
+            e->status = mlsl_sched_entry_status_complete;
+            break;
+        }
         case mlsl_sched_entry_nop:
             MLSL_LOG(DEBUG, "starting NOP entry %zu", idx);
             /* nothing to be done */
@@ -682,6 +697,17 @@ mlsl_status_t mlsl_sched_sync_schedules(mlsl_sched **scheds, size_t count)
     return mlsl_status_success;
 }
 
+void mlsl_update_request_reference(mlsl_sched *s, mlsl_request **req)
+{
+    s->req->completion_counter = s->partial_sched_count;
+    for(size_t idx = 0; idx < s->partial_sched_count; ++idx)
+    {
+        s->partial_scheds[idx]->req = s->req;
+    }
+
+    *req = s->req;
+}
+
 mlsl_status_t mlsl_sched_start(mlsl_sched *s, mlsl_request **req)
 {
     MLSL_ASSERTP(s && req);
@@ -693,8 +719,8 @@ mlsl_status_t mlsl_sched_start(mlsl_sched *s, mlsl_request **req)
     MLSL_ASSERT(s->entries != NULL);
     MLSL_ASSERT(s->coll_param.comm);
 
-    mlsl_executor_start(global_data.executor, s);
-    MLSL_LOG(DEBUG, "started schedule %p", s);
+    MLSL_LOG(DEBUG, "starting schedule %p, type %s", s, mlsl_coll_type_to_str(s->coll_param.ctype));
+    global_data.executor->start_sched(s);
 
     *req = s->req;
 
@@ -1023,6 +1049,23 @@ mlsl_status_t mlsl_sched_add_update_postponed_fields(mlsl_sched *sched, size_t p
     return status;
 }
 
+mlsl_status_t mlsl_sched_add_tensor_comm_create_entry(mlsl_sched* sched,
+                                                      out_of_order::ooo_match* ooo_handler,
+                                                      const char* tensor_name_buffer)
+{
+    mlsl_sched_entry *e = nullptr;
+
+    mlsl_status_t  status = mlsl_sched_add_entry(sched, nullptr, &e);
+    MLSL_ASSERT(status == mlsl_status_success);
+
+    e->type = mlsl_sched_entry_tensor_comm;
+    e->status = mlsl_sched_entry_status_not_started;
+    e->u.tensor_comm.ooo_handler = ooo_handler;
+    e->u.tensor_comm.tensor_name = tensor_name_buffer;
+
+    return status;
+}
+
 mlsl_status_t mlsl_sched_progress(mlsl_sched_queue_bin *bin, size_t sched_count, size_t *processed_sched_count)
 {
     mlsl_status_t status = mlsl_status_success;
@@ -1101,7 +1144,7 @@ mlsl_status_t mlsl_sched_progress(mlsl_sched_queue_bin *bin, size_t sched_count,
 
             if (i == s->idx && e->status >= mlsl_sched_entry_status_complete) {
                 ++s->idx;
-                MLSL_LOG(DEBUG, "completed OTHER entry %zu, shift start_idx", i);
+                MLSL_LOG(DEBUG, "completed OTHER entry %zu, shift start_idx, sched %p", i, s);
                 if (e->is_barrier) {
                     /* post/perform the next round of operations */
                     status = mlsl_sched_continue(s);
@@ -1117,7 +1160,7 @@ mlsl_status_t mlsl_sched_progress(mlsl_sched_queue_bin *bin, size_t sched_count,
             MLSL_LOG(DEBUG, "completing and dequeuing: sched %p, req %p", s, s->req);
 
             /* dequeue this schedule, it's complete */
-            mlsl_sched_queue_remove(bin->queue, bin, s);
+            bin->queue->erase(bin, s);
 
             req = s->req;
             s->req = NULL;
@@ -1203,6 +1246,9 @@ mlsl_status_t mlsl_sched_set_coll_attr(mlsl_sched *sched, const mlsl_coll_attr_t
 mlsl_status_t mlsl_sched_free(mlsl_sched *sched)
 {
     size_t idx;
+
+    MLSL_LOG(DEBUG, "Sched free %p, type %s", sched, mlsl_coll_type_to_str(sched->coll_param.ctype));
+
     for (idx = 0; idx < sched->partial_sched_count; idx++)
         mlsl_sched_free(sched->partial_scheds[idx]);
     MLSL_FREE(sched->partial_scheds);
@@ -1329,4 +1375,47 @@ mlsl_status_t mlsl_sched_barrier(mlsl_comm* comm, mlsl_sched **sched)
     p->comm =  comm ? comm : global_data.comm;
 
     return status;
+}
+
+mlsl_status_t mlsl_sched_tensor_bcast(mlsl_comm* comm, mlsl_sched** sched, bool temporal)
+{
+    MLSL_ASSERT(comm != nullptr);
+    mlsl_status_t status = mlsl_status_success;
+
+    MLSL_CALL(mlsl_sched_create(sched));
+
+    mlsl_sched_coll_param *p = &((*sched)->coll_param);
+    p->ctype = temporal ? mlsl_coll_service_temporal : mlsl_coll_service_persistent;
+    p->dtype = mlsl_dtype_internal_char;
+    p->comm =  comm;
+
+    return status;
+}
+
+void mlsl_sched_prepare(mlsl_sched *sched, bool dump)
+{
+    mlsl_sched **partial_scheds = sched->partial_scheds;
+    size_t partial_sched_count = sched->partial_sched_count;
+    MLSL_ASSERTP(partial_scheds && partial_sched_count > 0);
+
+    size_t idx;
+    for (idx = 0; idx < partial_sched_count; idx++)
+    {
+        partial_scheds[idx]->first_progress = 1;
+        mlsl_sched_adjust_tag(partial_scheds[idx]);
+        mlsl_sched_reset(partial_scheds[idx]);
+        partial_scheds[idx]->req = sched->req;
+
+        if (dump)
+        {
+            mlsl_sched_dump(partial_scheds[idx], "worker_sched");
+        }
+    }
+
+    if (dump)
+    {
+        mlsl_sched_dump(sched, "origin_sched");
+    }
+
+    sched->req->completion_counter = partial_sched_count;
 }

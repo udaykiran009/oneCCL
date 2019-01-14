@@ -33,15 +33,17 @@ const char *mlsl_allreduce_algo_to_str(mlsl_allreduce_algo algo)
     }
 }
 
-mlsl_env_data env_data = {
-                           .log_level = ERROR,
-                           .sched_dump = 0,
-                           .worker_count = 1,
-                           .worker_offload = 1,
-                           .worker_affinity = NULL,
-                           .priority_mode = mlsl_priority_none,
-                           .allreduce_algo = mlsl_allreduce_algo_rabenseifner
-                         };
+mlsl_env_data env_data =
+{
+   .log_level = ERROR,
+   .sched_dump = 0,
+   .worker_count = 1,
+   .worker_offload = 1,
+   .out_of_order_support = 0,
+   .worker_affinity = nullptr,
+   .priority_mode = mlsl_priority_none,
+   .allreduce_algo = mlsl_allreduce_algo_rabenseifner
+};
 
 void mlsl_env_parse()
 {
@@ -49,6 +51,7 @@ void mlsl_env_parse()
     mlsl_env_2_int("MLSL_SCHED_DUMP", &env_data.sched_dump);
     mlsl_env_2_int("MLSL_WORKER_COUNT", &env_data.worker_count);
     mlsl_env_2_int("MLSL_WORKER_OFFLOAD", &env_data.worker_offload);
+    mlsl_env_2_int("MLSL_OUT_OF_ORDER_SUPPORT", &env_data.out_of_order_support);
     mlsl_env_parse_priority_mode();
     mlsl_env_parse_affinity();
     mlsl_env_parse_allreduce_algo();
@@ -65,6 +68,7 @@ void mlsl_env_print()
     MLSL_LOG(INFO, "MLSL_SCHED_DUMP: %d", env_data.sched_dump);
     MLSL_LOG(INFO, "MLSL_WORKER_COUNT: %d", env_data.worker_count);
     MLSL_LOG(INFO, "MLSL_WORKER_OFFLOAD: %d", env_data.worker_offload);
+    MLSL_LOG(INFO, "MLSL_OUT_OF_ORDER_SUPPORT: %d", env_data.out_of_order_support);
     MLSL_LOG(INFO, "MLSL_PRIORITY_MODE: %s", mlsl_priority_mode_to_str(env_data.priority_mode));
     MLSL_LOG(INFO, "MLSL_ALLREDUCE_ALGO: %s", mlsl_allreduce_algo_to_str(env_data.allreduce_algo));
     mlsl_env_print_affinity();

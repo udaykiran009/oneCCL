@@ -15,11 +15,24 @@
 
 #define GET_TID()    syscall(SYS_gettid)
 #define IS_SPACE(c)  ((c==0x20 || c==0x09 || c==0x0a || c==0x0b || c==0x0c || c==0x0d) ? 8 : 0)
-#define __FILENAME__ (strrchr(__FILE__, '/') ? strrchr(__FILE__, '/') + 1 : __FILE__)
+
+#define __FILENAME__                                                        \
+({                                                                          \
+        const char *ptr = strrchr(__FILE__, '/');                           \
+        if(ptr)                                                             \
+        {                                                                   \
+            ++ptr;                                                          \
+        }                                                                   \
+        else                                                                \
+        {                                                                   \
+            ptr = __FILE__;                                                 \
+        }                                                                   \
+        ptr;                                                                \
+})
 
 #define MLSL_LOG(log_lvl, fmt, ...)                                                    \
   do {                                                                                 \
-        if (log_lvl <= env_data.log_level)                                             \
+        if (static_cast<int>(log_lvl) <= env_data.log_level)                           \
         {                                                                              \
             char time_buf[20]; /*2016:07:21 14:47:39*/                                 \
             mlsl_log_get_time(time_buf, 20);                                           \

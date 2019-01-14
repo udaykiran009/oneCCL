@@ -1,8 +1,5 @@
 #include "coll/coll.hpp"
 #include "coll/coll_algorithms.hpp"
-#include "common/global/global.hpp"
-#include "common/utils/utils.hpp"
-#include "sched/sched.hpp"
 
 mlsl_coll_attr_t *default_coll_attr = NULL;
 
@@ -34,61 +31,105 @@ const char *mlsl_coll_type_to_str(mlsl_coll_type type)
             return "ALLGATHERV";
         case mlsl_coll_custom:
             return "CUSTOM";
+        case mlsl_coll_service_temporal:
+            return "SERVICE_TEMP";
+        case mlsl_coll_service_persistent:
+            return "SERVICE_PERS";
         default:
             MLSL_ASSERT_FMT(0, "unexpected coll_type %d", type);
             return "(out of range)";
     }
 }
+//todo: need to sync checking of tensor communicator and possible creation of tensor
+//todo: this macro has become too large, refactoring is needed
 
-#define MLSL_COLL(coll_type, coll_attr, fill_cache_key_expr, create_sched_expr)     \
-  do {                                                                              \
-    const mlsl_coll_attr_t* attr = ((uintptr_t)coll_attr != (uintptr_t)NULL) ?      \
-        coll_attr : global_data.default_coll_attr;                                  \
-    mlsl_sched *sched = NULL;                                                       \
-    mlsl_sched_cache_entry *entry = NULL;                                           \
-    MLSL_ASSERTP((coll_type == mlsl_coll_allreduce) ||                              \
-        !(attr->prologue_fn || attr->epilogue_fn || attr->reduction_fn));           \
-    MLSL_ASSERTP_FMT(dtype != mlsl_dtype_custom,                                    \
-        "custom datatype can't be input for collective");                           \
-    mlsl_datatype_internal_t dtype_internal __attribute__((unused))                 \
-        = mlsl_datatype_get(dtype);                                                 \
-    if (attr->to_cache)                                                             \
-    {                                                                               \
-        mlsl_sched_cache_key key;                                                   \
-        memset(&key, 0, sizeof(mlsl_sched_cache_key));                              \
-        fill_cache_key_expr;                                                        \
-        if (attr->match_id)                                                         \
-            strncpy(key.match_id, attr->match_id, MLSL_MATCH_ID_MAX_LEN - 1);       \
-        if (attr->prologue_fn)                                                      \
-            key.prologue_fn = attr->prologue_fn;                                    \
-        if (attr->epilogue_fn)                                                      \
-            key.epilogue_fn = attr->epilogue_fn;                                    \
-        if (attr->reduction_fn)                                                     \
-            key.reduction_fn = attr->reduction_fn;                                  \
-        mlsl_sched_cache_get_entry(global_data.sched_cache, &key, &entry);          \
-        sched = entry->sched;                                                       \
-    }                                                                               \
-    if (!sched)                                                                     \
-    {                                                                               \
-        create_sched_expr;                                                          \
-        MLSL_LOG(DEBUG, "didn't find sched, create new one %p, type %s",            \
-                 sched, mlsl_coll_type_to_str(sched->coll_param.ctype));            \
-        MLSL_CALL(mlsl_sched_set_coll_attr(sched, attr));                           \
-        MLSL_CALL(mlsl_sched_commit(sched));                                        \
-        if (entry) entry->sched = sched;                                            \
-    }                                                                               \
-    else                                                                            \
-    {                                                                               \
-        MLSL_LOG(DEBUG, "found sched, reuse %p, type %s",                           \
-                 sched, mlsl_coll_type_to_str(sched->coll_param.ctype));            \
-        MLSL_CALL(mlsl_sched_set_coll_attr(sched, attr));                           \
-    }                                                                               \
-    MLSL_CALL(mlsl_sched_start(sched, req));                                        \
-    if (attr->synchronous)                                                          \
-    {                                                                               \
-        mlsl_wait(*req);                                                            \
-        *req = NULL;                                                                \
-    }                                                                               \
+#define MLSL_COLL(coll_type, coll_attr, fill_cache_key_expr, create_sched_expr)             \
+  do {                                                                                      \
+    const mlsl_coll_attr_t* attr = ((uintptr_t)coll_attr != (uintptr_t)NULL) ?              \
+        coll_attr : global_data.default_coll_attr;                                          \
+    mlsl_sched *sched = NULL;                                                               \
+    mlsl_sched_cache_entry *entry = NULL;                                                   \
+    mlsl_comm* tensor_comm = nullptr;                                                       \
+    bool sched_to_be_posponed = false;                                                      \
+    MLSL_ASSERTP((coll_type == mlsl_coll_allreduce) ||                                      \
+        !(attr->prologue_fn || attr->epilogue_fn || attr->reduction_fn));                   \
+    MLSL_ASSERTP_FMT(dtype != mlsl_dtype_custom,                                            \
+        "custom datatype can't be input for collective");                                   \
+    mlsl_datatype_internal_t dtype_internal __attribute__((unused))                         \
+        = mlsl_datatype_get(dtype);                                                         \
+    if(attr->match_id && env_data.out_of_order_support)                                     \
+    {                                                                                       \
+        if(strlen(attr->match_id) > MLSL_MATCH_ID_MAX_LEN)                                  \
+        {                                                                                   \
+            MLSL_LOG(ERROR, "Match_id length exceeds limit %d", MLSL_MATCH_ID_MAX_LEN);     \
+            return mlsl_status_invalid_arguments;                                           \
+        }                                                                                   \
+        tensor_comm =                                                                       \
+            global_data.ooo_handler->get_comm_for_tensor(attr->match_id);                   \
+        if(!tensor_comm)                                                                    \
+        {                                                                                   \
+            sched_to_be_posponed = true;                                                    \
+        }                                                                                   \
+    }                                                                                       \
+    if (attr->to_cache)                                                                     \
+    {                                                                                       \
+        mlsl_sched_cache_key key;                                                           \
+        memset(&key, 0, sizeof(mlsl_sched_cache_key));                                      \
+        fill_cache_key_expr;                                                                \
+        if (attr->match_id)                                                                 \
+            strncpy(key.match_id, attr->match_id, MLSL_MATCH_ID_MAX_LEN - 1);               \
+        if (attr->prologue_fn)                                                              \
+            key.prologue_fn = attr->prologue_fn;                                            \
+        if (attr->epilogue_fn)                                                              \
+            key.epilogue_fn = attr->epilogue_fn;                                            \
+        if (attr->reduction_fn)                                                             \
+            key.reduction_fn = attr->reduction_fn;                                          \
+        mlsl_sched_cache_get_entry(global_data.sched_cache, &key, &entry);                  \
+        sched = entry->sched;                                                               \
+    }                                                                                       \
+    if (!sched)                                                                             \
+    {                                                                                       \
+        create_sched_expr;                                                                  \
+        MLSL_LOG(DEBUG, "didn't find sched, create new one %p, type %s",                    \
+                 sched, mlsl_coll_type_to_str(sched->coll_param.ctype));                    \
+        if(tensor_comm) sched->coll_param.comm = tensor_comm;                               \
+        MLSL_CALL(mlsl_sched_set_coll_attr(sched, attr));                                   \
+        MLSL_CALL(mlsl_sched_commit(sched));                                                \
+        if (entry) entry->sched = sched;                                                    \
+    }                                                                                       \
+    else                                                                                    \
+    {                                                                                       \
+        MLSL_LOG(DEBUG, "found sched, reuse %p, type %s",                                   \
+                 sched, mlsl_coll_type_to_str(sched->coll_param.ctype));                    \
+        if(tensor_comm) sched->coll_param.comm = tensor_comm;                               \
+        MLSL_CALL(mlsl_sched_set_coll_attr(sched, attr));                                   \
+    }                                                                                       \
+    if(!sched_to_be_posponed)                                                               \
+    {                                                                                       \
+        MLSL_CALL(mlsl_sched_start(sched, req));                                            \
+        if (attr->synchronous)                                                              \
+        {                                                                                   \
+            mlsl_wait(*req);                                                                \
+            *req = NULL;                                                                    \
+        }                                                                                   \
+    }                                                                                       \
+    else                                                                                    \
+    {                                                                                       \
+        MLSL_LOG(INFO, "Sched %p postponed for tensor comm resolution", sched);             \
+        std::string tensor_name{attr->match_id};                                            \
+        /* sched->coll_param.comm points to the user defined or global comm */              \
+        if(sched->coll_param.comm->rank == 0 &&                                             \
+           !global_data.ooo_handler->is_bcast_in_progress(tensor_name))                     \
+        {                                                                                   \
+            MLSL_LOG(INFO, "Root rank broadcasts tensor %s", attr->match_id);               \
+            mlsl_sched* service_sched = global_data.ooo_handler->build_bcast_sched(         \
+                                tensor_name.c_str());                                       \
+            global_data.executor->start_sched(service_sched);                               \
+        }                                                                                   \
+        /* root rank already broadcasts the tensor or it is not root rank */                \
+        global_data.ooo_handler->postpone_for_tensor(attr->match_id, sched);                \
+        mlsl_update_request_reference(sched, req);                                          \
+    }                                                                                       \
   } while (0)
 
 mlsl_status_t mlsl_coll_build_barrier(mlsl_sched *sched)

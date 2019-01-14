@@ -21,6 +21,7 @@ struct mlsl_env_data
     int sched_dump;
     int worker_count;
     int worker_offload;
+    int out_of_order_support;
     int *worker_affinity;
     mlsl_priority_mode priority_mode;
     mlsl_allreduce_algo allreduce_algo;

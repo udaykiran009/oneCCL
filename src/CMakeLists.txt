@@ -18,6 +18,9 @@ set(MLSL_SRC
     exec/exec.cpp
     exec/worker.cpp
     parallelizer/parallelizer.cpp
+    out_of_order/ooo_match.cpp
+    out_of_order/postponed_sched.cpp
+    out_of_order/tensor_comm.cpp
     common/comm/comm.cpp
     common/comm/comm_id.cpp
     common/datatype/datatype.cpp
@@ -61,7 +64,5 @@ install(DIRECTORY ${PROJECT_SOURCE_DIR}/include/
 file(GLOB mpi_bins "${PROJECT_SOURCE_DIR}/mpirt/bin/*")
 install(PROGRAMS ${mpi_bins} DESTINATION ${MLSL_INSTALL_BIN})
 
-install(DIRECTORY ${PROJECT_SOURCE_DIR}/mpirt/lib/
-        DESTINATION ${MLSL_INSTALL_LIB})
 install(DIRECTORY ${PROJECT_SOURCE_DIR}/ofi_rt/lib/
         DESTINATION ${MLSL_INSTALL_LIB})

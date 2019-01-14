@@ -6,6 +6,7 @@
 #include <vector>
 #include <limits>
 #include <iostream>
+#include <mutex>
 
 constexpr const size_t MLSL_COMM_ID_MAX = std::numeric_limits<mlsl_comm_id_t>::max();
 constexpr const size_t MLSL_SCHED_ID_MAX = std::numeric_limits<mlsl_sched_id_t>::max();
@@ -40,6 +41,7 @@ public:
 
     mlsl_status_t acquire_id(mlsl_comm_id_t& result)
     {
+        std::lock_guard<std::mutex> lock (sync_guard);
         //search from the current position till the end
         for (size_t i = last_used; i < MLSL_COMM_ID_MAX; ++i)
         {
@@ -74,6 +76,7 @@ public:
 
     mlsl_status_t release_id(mlsl_comm_id_t id)
     {
+        std::lock_guard<std::mutex> lock (sync_guard);
         if (free_ids[id])
         {
             MLSL_LOG(ERROR, "Attempt to release not acquired id %hu", id);
@@ -86,8 +89,9 @@ public:
     }
 
 private:
-    size_t last_used = 0;
+    size_t last_used {};
     std::vector<bool> free_ids;
+    std::mutex sync_guard;
 };
 
 static comm_id_storage id_storage;

@@ -6,29 +6,30 @@
 
 struct mlsl_sched_queue_bin
 {
-    mlsl_sched_queue *queue;
-    size_t priority;
-    mlsl_sched *elems;
-    size_t elem_count;
-
-    atl_comm_t *comm_ctx;
-
-    // TODO:
-    void *comp_ctx;
+    mlsl_sched_queue *queue = nullptr;
+    atl_comm_t *comm_ctx = nullptr;
+    mlsl_sched *elems = nullptr;
+    size_t priority {};
+    size_t elem_count {};
 };
 
-struct mlsl_sched_queue
+class mlsl_sched_queue
 {
-    mlsl_fastlock_t lock;
-    size_t used_bins;
-    size_t max_bins;
-    size_t max_priority;
-    mlsl_sched_queue_bin bins[MLSL_SCHED_QUEUE_MAX_BINS];
-};
+public:
+    mlsl_sched_queue() = delete;
+    mlsl_sched_queue(size_t capacity, atl_comm_t **comm_ctxs);
+    ~mlsl_sched_queue();
 
-mlsl_status_t mlsl_sched_queue_create(size_t max_bins, atl_comm_t **comm_ctxs, mlsl_sched_queue **queue);
-mlsl_status_t mlsl_sched_queue_free(mlsl_sched_queue *queue);
-mlsl_status_t mlsl_sched_queue_add(mlsl_sched_queue *queue, mlsl_sched *sched, size_t priority);
-mlsl_status_t mlsl_sched_queue_remove(mlsl_sched_queue *queue, mlsl_sched_queue_bin *bin, mlsl_sched *sched);
-mlsl_status_t mlsl_sched_queue_peek(mlsl_sched_queue *queue, mlsl_sched_queue_bin **bin, size_t *count);
-mlsl_status_t mlsl_sched_queue_get_max_priority(mlsl_sched_queue *queue, size_t *priority);
+    void add(mlsl_sched* sched, size_t priority);
+    void erase(mlsl_sched_queue_bin* bin, mlsl_sched* sched);
+    mlsl_sched_queue_bin* peek(size_t& count);
+
+    std::vector<mlsl_sched_queue_bin> bins;
+
+private:
+    size_t used_bins {};
+    size_t max_bins {};
+    size_t max_priority {};
+
+    mlsl_fastlock_t lock;
+};

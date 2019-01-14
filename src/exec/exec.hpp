@@ -3,25 +3,34 @@
 #include "sched/sched.hpp"
 #include "atl/atl.h"
 
-struct mlsl_worker;
+#include <vector>
+#include <memory>
 
-struct mlsl_executor
+class mlsl_worker;
+class mlsl_service_worker;
+
+class mlsl_executor
 {
-    atl_desc_t *atl_desc;
-    atl_comm_t **atl_comms;
+public:
+    mlsl_executor() = delete;
+    mlsl_executor(const mlsl_executor& other) = delete;
+    mlsl_executor(size_t workers_count,
+                  size_t priority_count,
+                  bool service_support,
+                  int* workers_affinity = nullptr,
+                  mlsl_priority_mode priority_mode = mlsl_priority_none);
+    ~mlsl_executor();
+    void start_sched(mlsl_sched* sched);
+    void wait(mlsl_request* req);
+    bool test(mlsl_request* req);
 
     // TODO_ATL: add corresponding ATL methods like MPI_Comm_rank/size
-    size_t proc_idx;
-    size_t proc_count;
+    size_t proc_idx{};
+    size_t proc_count{};
 
-    size_t worker_count;
-    mlsl_worker **workers;
+private:
+    atl_desc_t* atl_desc = nullptr;
+    atl_comm_t** atl_comms = nullptr;
+
+    std::vector<std::unique_ptr<mlsl_worker>> workers;
 };
-
-extern mlsl_executor *global_executor;
-
-mlsl_status_t mlsl_executor_create(size_t worker_count, size_t priority_count, mlsl_executor **executor);
-mlsl_status_t mlsl_executor_free(mlsl_executor *executor);
-mlsl_status_t mlsl_executor_start(mlsl_executor *executor, mlsl_sched *sched);
-mlsl_status_t mlsl_executor_wait(mlsl_executor *executor, mlsl_request *req);
-mlsl_status_t mlsl_executor_test(mlsl_executor *executor, mlsl_request *req, int *is_completed);

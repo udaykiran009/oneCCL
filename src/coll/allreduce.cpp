@@ -71,7 +71,7 @@ mlsl_status_t mlsl_coll_build_rabenseifner_allreduce(mlsl_sched *sched, const vo
         disps = static_cast<int*>(MLSL_MALLOC(pof2 * sizeof(int), "displacements"));
 
         /* the cnts calculations assume this */
-        MLSL_ASSERT_FMT(count >= pof2, "count %zu, pof2 %d", count, pof2);
+        MLSL_ASSERT_FMT(count >= static_cast<size_t>(pof2), "count %zu, pof2 %d", count, pof2);
 
         for (i = 0; i < (pof2 - 1); i++)
             cnts[i] = count / pof2;

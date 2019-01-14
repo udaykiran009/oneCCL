@@ -58,7 +58,9 @@ void check_allreduce()
 void check_max_comm_number()
 {
     //skip world communicator
-    const size_t max_comms = 65534;
+    //skip possible service comm
+    //todo: properly handle max number of comms since extra comm is created for ooo support
+    const size_t max_comms = 65533;
     PRINT_BY_ROOT("Create max number of communicators");
     vector<mlsl_comm_t> communicators(max_comms);
 
@@ -93,9 +95,9 @@ void check_max_comm_number()
         throw runtime_error("Can't create communicator after free");
     }
 
-    for(auto& comm: communicators)
+    for(auto& comm_elem: communicators)
     {
-        MLSL_CALL(mlsl_comm_free(comm));
+        MLSL_CALL(mlsl_comm_free(comm_elem));
     }
 }
 

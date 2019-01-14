@@ -1,6 +1,6 @@
+#include "parallelizer/parallelizer.hpp"
 #include "common/datatype/datatype.hpp"
 #include "comp/comp.hpp"
-#include "parallelizer/parallelizer.hpp"
 
 #define MLSL_MIN_PART_SIZE (2048)
 
@@ -79,6 +79,7 @@ mlsl_status_t mlsl_parallelizer_process(mlsl_parallelizer *parallelizer, mlsl_sc
             MLSL_CALL(mlsl_sched_create(&(part_scheds[idx])));
             part_scheds[idx]->coll_param.comm = sched->coll_param.comm;
             part_scheds[idx]->coll_param.ctype = sched->coll_param.ctype;
+            part_scheds[idx]->root = sched;
         }
     }
 

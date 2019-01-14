@@ -4,15 +4,16 @@
 
 #include <vector>
 
+//todo: move mapping to communicator class
 class mlsl_comm_map
 {
 public:
     using comm_to_rank_map = std::unordered_map<mlsl_comm*, rank_to_global_rank_map>;
 
     mlsl_status_t add_comm(mlsl_comm* comm, rank_to_global_rank_map&& ranks_map);
+    mlsl_status_t add_comm_copy(mlsl_comm* original, mlsl_comm* new_comm);
     mlsl_status_t remove_comm(mlsl_comm* comm);
-    mlsl_status_t get_global_rank(mlsl_comm* comm, size_t rank,
-                                      size_t& global_rank);
+    mlsl_status_t get_global_rank(mlsl_comm* comm, size_t rank, size_t& global_rank);
 private:
     comm_to_rank_map comm_map;
 };
@@ -27,6 +28,26 @@ mlsl_status_t mlsl_comm_map::add_comm(mlsl_comm* comm, rank_to_global_rank_map&&
 
     MLSL_LOG(DEBUG, "Add comm %p with %zu ranks to the map", comm, ranks_map.size());
     comm_map.emplace(comm, ranks_map);
+    return mlsl_status_success;
+}
+
+mlsl_status_t mlsl_comm_map::add_comm_copy(mlsl_comm* original, mlsl_comm* new_comm)
+{
+    if (comm_map.find(new_comm) != comm_map.end())
+    {
+        MLSL_LOG(INFO, "Communicator %p is already in the map", new_comm);
+        return mlsl_status_invalid_arguments;
+    }
+
+    if (comm_map.find(original) == comm_map.end())
+    {
+        MLSL_LOG(INFO, "Original communicator %p was not found in the map", original);
+        return mlsl_status_invalid_arguments;
+    }
+
+    auto ranks_map = comm_map[original];
+    MLSL_LOG(DEBUG, "Add comm %p with %zu ranks to the map", new_comm, ranks_map.size());
+    comm_map.insert(std::make_pair(new_comm, ranks_map));
     return mlsl_status_success;
 }
 
@@ -75,7 +96,7 @@ mlsl_status_t mlsl_comm_map::get_global_rank(mlsl_comm* comm, size_t rank,
 
 static mlsl_comm_map comm_map;
 
-mlsl_comm *global_comm = NULL;
+mlsl_comm* global_comm = nullptr;
 
 static mlsl_status_t mlsl_comm_create_with_color(mlsl_comm** comm, int color);
 
@@ -127,6 +148,21 @@ mlsl_status_t mlsl_comm_create_internal(size_t rank, size_t size, mlsl_comm **co
 
     MLSL_LOG(DEBUG, "New comm: rank %zu, size %zu, tag %hu", rank, size,
              comm_id);
+
+    return result;
+}
+
+mlsl_status_t mlsl_comm_create_copy(mlsl_comm* original, mlsl_comm** new_comm, mlsl_comm_id_t comm_id)
+{
+    mlsl_comm *c = new mlsl_comm{};
+    memcpy(c, original, sizeof(mlsl_comm));
+    c->comm_id = comm_id;
+    c->next_sched_id = 0;
+    *new_comm = c;
+
+    mlsl_status_t  result = comm_map.add_comm_copy(original, c);
+
+    MLSL_LOG(DEBUG, "New comm: rank %zu, size %zu, tag %hu", c->rank, c->size, comm_id);
 
     return result;
 }
@@ -202,7 +238,7 @@ static mlsl_status_t mlsl_comm_exchange_colors(std::vector<int>& colors)
     const size_t exchange_count = 1;
     std::vector<size_t> recv_counts(colors.size(), exchange_count);
     mlsl_coll_attr_t coll_attr{};
-    coll_attr.to_cache = 0;
+    coll_attr.to_cache = false;
     mlsl_request_t request;
 
     mlsl_status_t status;

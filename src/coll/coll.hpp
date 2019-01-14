@@ -9,12 +9,14 @@ struct mlsl_sched;
 
 enum mlsl_coll_type
 {
-    mlsl_coll_barrier     = 0,
-    mlsl_coll_bcast       = 1,
-    mlsl_coll_reduce      = 2,
-    mlsl_coll_allreduce   = 3,
-    mlsl_coll_allgatherv  = 4,
-    mlsl_coll_custom      = 5
+    mlsl_coll_barrier            = 0,
+    mlsl_coll_bcast              = 1,
+    mlsl_coll_reduce             = 2,
+    mlsl_coll_allreduce          = 3,
+    mlsl_coll_allgatherv         = 4,
+    mlsl_coll_custom             = 5,
+    mlsl_coll_service_temporal   = 6,
+    mlsl_coll_service_persistent = 7,
 };
 
 extern mlsl_coll_attr_t *default_coll_attr;

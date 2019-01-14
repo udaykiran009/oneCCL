@@ -24,6 +24,6 @@ install(TARGETS pmi LIBRARY DESTINATION ${MLSL_INSTALL_LIB})
 
 #static lib
 add_library(pmi-static STATIC $<TARGET_OBJECTS:pmi-objects>)
-set_target_properties(pmi-static PROPERTIES OUTPUT_NAME libpmi)
+set_target_properties(pmi-static PROPERTIES OUTPUT_NAME pmi)
 set_target_properties(pmi-static PROPERTIES ARCHIVE_OUTPUT_DIRECTORY ${MLSL_BUILD_DIR})
 install(TARGETS pmi-static ARCHIVE DESTINATION ${MLSL_INSTALL_LIB}) 
