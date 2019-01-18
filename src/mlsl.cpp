@@ -5,6 +5,11 @@
 
 mlsl_status_t mlsl_init()
 {
+#ifdef ENABLE_DEBUG
+    allocations_count = 0;
+    deallocations_count = 0;
+#endif
+
     mlsl_env_parse();
     mlsl_env_print();
     mlsl_datatype_init();
@@ -54,6 +59,20 @@ mlsl_status_t mlsl_finalize()
         mlsl_coll_free_attr(global_data.default_coll_attr);
     mlsl_env_free();
 
+#ifdef ENABLE_DEBUG
+    //simple memory leak checking, does not guarantee strong precision since global objects may be destroyed after
+    //call of mlsl_finalize and may impact on memory allocation
+
+    size_t allocations_cnt = allocations_count.load();
+    size_t deallocations_cnt = deallocations_count.load();
+    MLSL_LOG(INFO, "Operator new called %zu times, operator free called %zu times", allocations_cnt, deallocations_cnt);
+    if(allocations_cnt != deallocations_cnt)
+    {
+        //todo: use MLSL_LOG(ERROR, ...) which does not throw
+        fprintf(stderr, "Alloc (%zu) / dealloc (%zu) mismatch, possible memory leak\n", allocations_cnt, deallocations_cnt);
+    }
+#endif
+
     return mlsl_status_success;
 }
 
@@ -78,7 +97,7 @@ mlsl_status_t mlsl_wait(mlsl_request *req)
     MLSL_ASSERT(sched);
 
     if (!sched->coll_attr.to_cache)
-        mlsl_sched_free(sched);
+        delete sched;
 
     return mlsl_status_success;
 }
@@ -99,7 +118,7 @@ mlsl_status_t MLSL_API mlsl_test(mlsl_request *req, int *is_completed)
         MLSL_ASSERTP(sched);
 
         if (!sched->coll_attr.to_cache)
-            mlsl_sched_free(sched);
+            delete sched;
     }
 
     *is_completed = static_cast<int>(completed);

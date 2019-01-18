@@ -1,4 +1,5 @@
 #include "out_of_order/ooo_match.hpp"
+#include "sched/entry_factory.hpp"
 
 out_of_order::ooo_match::ooo_match(mlsl_executor* exec)
 {
@@ -91,7 +92,7 @@ mlsl_sched* out_of_order::ooo_match::build_bcast_sched(const char* tensor_name)
     bcast_sched->partial_sched_count = 1;
     bcast_sched->partial_scheds = static_cast<mlsl_sched**>(MLSL_MALLOC(sizeof(mlsl_sched*), "scheds"));
 
-    mlsl_sched_create(&(bcast_sched->partial_scheds[0]));
+    bcast_sched->partial_scheds[0] = new mlsl_sched{};
 
     bcast_sched->partial_scheds[0]->coll_attr.priority = bcast_sched->coll_attr.priority;
     bcast_sched->partial_scheds[0]->coll_param.comm = service_comm.get();
@@ -111,9 +112,9 @@ mlsl_sched* out_of_order::ooo_match::build_bcast_sched(const char* tensor_name)
 
     mlsl_sched_add_barrier(bcast_sched->partial_scheds[0]);
 
-    mlsl_sched_add_tensor_comm_create_entry(bcast_sched->partial_scheds[0],
-                                            this,
-                                            bcast_sched->partial_scheds[0]->coll_attr.match_id);
+    //created tensor_comm entry will have an address of bcast_sched->match_id where tensor name will be broadcasted
+    bcast_sched->partial_scheds[0]->add_entry(entry_factory::make_tensor_comm_entry(this,
+                                                           bcast_sched->partial_scheds[0]->coll_attr.match_id));
 
     //overwrite schedule type that was set in mlsl_coll_build_bcast
     bcast_sched->partial_scheds[0]->coll_param.ctype = bcast_sched->coll_param.ctype;

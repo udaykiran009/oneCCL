@@ -29,6 +29,9 @@ mlsl_request* start_allreduce_with_tensor_name(const std::string& tensor_name,
 
 int main()
 {
+    printf("Forced out of order support\n");
+    setenv("MLSL_OUT_OF_ORDER_SUPPORT", "1", 1);
+
     const size_t iterations_count = 4;
     std::vector<std::string> tensor_names;
     //request, operation idx (for example purpose)
@@ -50,7 +53,7 @@ int main()
         allreduce_recv_bufs.emplace_back(COUNT, 0.0f);
     }
 
-    if(mlsl_get_comm_rank(nullptr) != 0)
+    if (mlsl_get_comm_rank(nullptr) != 0)
     {
         //delay non-root ranks to check that delayed comm creation works
         std::this_thread::sleep_for(std::chrono::milliseconds(500));
@@ -64,7 +67,7 @@ int main()
         size_t rank_idx = start_idx;
         size_t operations_count = 0;
 
-        for (; operations_count < comm_size; ++operations_count, rank_idx = (rank_idx + 1) % comm_size )
+        for (; operations_count < comm_size; ++operations_count, rank_idx = (rank_idx + 1) % comm_size)
         {
             //start allreduce with shift in tensor names
             printf("   Submit allreduce #%zu for tensor %s\n", rank_idx, tensor_names[rank_idx].c_str());

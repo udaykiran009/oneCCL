@@ -154,7 +154,7 @@ mlsl_status_t mlsl_comm_create_internal(size_t rank, size_t size, mlsl_comm **co
 
 mlsl_status_t mlsl_comm_create_copy(mlsl_comm* original, mlsl_comm** new_comm, mlsl_comm_id_t comm_id)
 {
-    mlsl_comm *c = new mlsl_comm{};
+    mlsl_comm *c = static_cast<mlsl_comm*>(MLSL_CALLOC(sizeof(mlsl_comm), "comm"));
     memcpy(c, original, sizeof(mlsl_comm));
     c->comm_id = comm_id;
     c->next_sched_id = 0;

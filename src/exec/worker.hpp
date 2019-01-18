@@ -49,12 +49,12 @@ private:
     void register_persistent_service_sched(mlsl_sched* sched)
     {
         MLSL_ASSERT(sched);
-        persistent_service_scheds.emplace_back(sched, mlsl_sched_free);
+        persistent_service_scheds.emplace_back(sched);
     }
     void register_temporal_service_sched(mlsl_sched* sched)
     {
         MLSL_ASSERT(sched);
-        temporal_service_scheds.emplace_back(sched, mlsl_sched_free);
+        temporal_service_scheds.emplace_back(sched);
     }
     void check_persistent();
     void check_temporal();

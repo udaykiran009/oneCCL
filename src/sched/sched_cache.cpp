@@ -42,7 +42,7 @@ mlsl_status_t mlsl_sched_cache_free_all(mlsl_sched_cache *cache)
     HASH_ITER(hh, cache->head, current_entry, tmp_entry)
     {
         HASH_DEL(cache->head, current_entry);
-        mlsl_sched_free(current_entry->sched);
+        delete current_entry->sched;
     }
 
     return mlsl_status_success;

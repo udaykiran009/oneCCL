@@ -9,6 +9,7 @@
 
 #include <memory>
 
+
 struct mlsl_global_data
 {
     mlsl_comm* comm;
@@ -21,3 +22,10 @@ struct mlsl_global_data
 } __attribute__ ((aligned (CACHELINE_SIZE)));
 
 extern mlsl_global_data global_data;
+
+#ifdef ENABLE_DEBUG
+#include <atomic>
+
+extern std::atomic_size_t allocations_count;
+extern std::atomic_size_t deallocations_count;
+#endif

@@ -1,4 +1,5 @@
 #include "coll/coll_algorithms.hpp"
+#include "sched/entry_factory.hpp"
 
 mlsl_status_t mlsl_coll_build_naive_allgatherv(mlsl_sched* sched, const void* send_buf, size_t send_count,
                                                void* recv_buf, size_t* recv_counts, mlsl_datatype_internal_t dtype)
@@ -20,8 +21,8 @@ mlsl_status_t mlsl_coll_build_naive_allgatherv(mlsl_sched* sched, const void* se
     if (send_buf != recv_buf)
     {
         //out-of-place case
-        MLSL_CALL(mlsl_sched_add_copy(sched, send_buf, static_cast<char*>(recv_buf) + offsets[this_rank],
-                                      send_count, dtype));
+        sched->add_entry(entry_factory::make_copy_entry(sched, send_buf, static_cast<char*>(recv_buf) + offsets[this_rank],
+                                                        send_count, dtype));
     }
 
     for (size_t rank_idx = 0; rank_idx < sched->coll_param.comm->size; ++rank_idx)
@@ -29,11 +30,11 @@ mlsl_status_t mlsl_coll_build_naive_allgatherv(mlsl_sched* sched, const void* se
         if (rank_idx != this_rank)
         {
             // send own buffer to other rank
-            MLSL_CALL(mlsl_sched_add_send(sched, static_cast<char*>(recv_buf) + offsets[this_rank],
-                                          send_count, dtype, rank_idx));
+            sched->add_entry(entry_factory::make_send_entry(sched, static_cast<char*>(recv_buf) + offsets[this_rank],
+                                                            send_count, dtype, rank_idx));
             // recv other's rank buffer
-            MLSL_CALL(mlsl_sched_add_recv(sched, static_cast<char*>(recv_buf) + offsets[rank_idx],
-                                          recv_counts[rank_idx], dtype, rank_idx));
+            sched->add_entry(entry_factory::make_recv_entry(sched, static_cast<char*>(recv_buf) + offsets[rank_idx],
+                                                            recv_counts[rank_idx], dtype, rank_idx));
         }
     }
 

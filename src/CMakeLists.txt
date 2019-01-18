@@ -16,6 +16,7 @@ set(MLSL_SRC
     sched/sched.cpp
     sched/sched_cache.cpp
     sched/sched_queue.cpp
+    sched/entry_factory.cpp
     exec/exec.cpp
     exec/worker.cpp
     parallelizer/parallelizer.cpp

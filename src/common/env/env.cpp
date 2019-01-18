@@ -45,7 +45,6 @@ const char *mlsl_allreduce_algo_to_str(mlsl_allreduce_algo algo)
     }
 }
 
-
 void mlsl_env_parse()
 {
     mlsl_env_2_int("MLSL_LOG_LEVEL", &env_data.log_level);

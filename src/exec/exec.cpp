@@ -19,11 +19,13 @@ mlsl_executor::mlsl_executor(size_t workers_count, size_t priority_count, bool s
 
     MLSL_ASSERTP(comm_count >= workers_count);
     atl_attr_t attr = {.comm_count = comm_count};
+    MLSL_LOG(INFO, "Atl comms count %zu", attr.comm_count);
     if (service_support)
     {
         MLSL_LOG(DEBUG, "Service atl comm will be created");
         ++attr.comm_count;
     }
+
     atl_status_t atl_status = atl_init(nullptr, nullptr, &proc_idx, &proc_count, &attr, &atl_comms, &atl_desc);
     MLSL_ASSERTP(atl_status == atl_status_success);
     MLSL_ASSERTP(atl_desc);

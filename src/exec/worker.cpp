@@ -145,7 +145,6 @@ size_t mlsl_service_worker::peek_and_progress()
 
 void mlsl_service_worker::peek_service()
 {
-    MLSL_LOG(DEBUG, "working with service queue");
     size_t peek_count = 0;
     mlsl_sched_queue_bin* bin;
     size_t processed_count = 0;
