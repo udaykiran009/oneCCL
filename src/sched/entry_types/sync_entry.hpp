@@ -9,33 +9,28 @@ class sync_entry : public sched_entry
 {
 public:
     sync_entry() = delete;
-    explicit sync_entry(std::shared_ptr<sync_object> sync_obj) : sync(sync_obj)
+    explicit sync_entry(mlsl_sched* sched,
+                        std::shared_ptr<sync_object> sync_obj) :
+        sched_entry(sched, true), sync(sync_obj)
+    {}
+
+    void start_derived()
     {
-        barrier = true;
+        sync->visit();
+        status = mlsl_sched_entry_status_started;
     }
 
-    void execute()
+    void update_derived()
     {
-        if (status == mlsl_sched_entry_status_not_started)
+        auto counter = sync->value();
+        if (counter == 0)
         {
-            MLSL_LOG(DEBUG, "starting SYNC entry");
-            sync->visit();
-            status = mlsl_sched_entry_status_started;
+            status = mlsl_sched_entry_status_complete;
         }
-
-        if (status == mlsl_sched_entry_status_started)
+        else
         {
-            auto counter = sync->value();
-            if (counter == 0)
-            {
-                MLSL_LOG(DEBUG, "completed SYNC entry");
-                status = mlsl_sched_entry_status_complete;
-            }
-            else
-            {
-                MLSL_LOG(TRACE, "waiting SYNC entry cnt %zu", counter);
-                _mm_pause();
-            }
+            MLSL_LOG(TRACE, "waiting SYNC entry cnt %zu", counter);
+            _mm_pause();
         }
     }
 
@@ -48,12 +43,6 @@ public:
     const char* name() const
     {
         return "SYNC";
-    }
-
-    std::shared_ptr<sched_entry> clone() const
-    {
-        //need to find out how to create new sync_object because full copy has no sense
-        throw std::runtime_error("sync_entry clone is not implemented");
     }
 
 protected:

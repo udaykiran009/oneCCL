@@ -15,7 +15,7 @@
 #include "mlsl.h"
 
 #define COUNT 1048576
-#define ITERS 128
+#define ITERS 100
 #define ROOT  0
 #define MLSL_CALL(expr)                             \
   do {                                              \
@@ -74,7 +74,7 @@ void test_init()
     coll_attr.priority = 0;
     coll_attr.synchronous = 0;
     coll_attr.match_id = NULL;
-    coll_attr.to_cache = 1;
+    coll_attr.to_cache = 0;
 }
 
 void test_finalize()

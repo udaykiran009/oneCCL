@@ -1,61 +1,54 @@
 #pragma once
 
 #include "sched/entry_types/entry.hpp"
-#include "sched/sched.hpp"
 #include "sched/sched_queue.hpp"
 
 class send_entry : public sched_entry
 {
 public:
     send_entry() = delete;
-    send_entry(mlsl_sched* schedule,
-               const void* buffer,
-               size_t count,
-               mlsl_datatype_internal_t data_type,
-               size_t destination,
-               const mlsl_comm* communicator) :
-        sched_entry(schedule), buf(buffer), cnt(count), dtype(data_type), dest(destination), comm(communicator)
-    {}
-
-    void execute()
+    send_entry(mlsl_sched* sched,
+               const void* buf,
+               size_t cnt,
+               mlsl_datatype_internal_t dtype,
+               size_t dst) :
+        sched_entry(sched), buf(buf), cnt(cnt), dtype(dtype), dst(dst)
     {
-        if (status == mlsl_sched_entry_status_not_started)
-        {
-            auto atl_tag = mlsl_create_atl_tag(sched->coll_param.comm->comm_id, sched->sched_id, comm->rank);
-            MLSL_LOG(DEBUG, "SEND entry dest %zu, tag %lu, req %p", dest, atl_tag, &req);
-
-            atl_status_t atl_status = atl_comm_send(sched->bin->comm_ctx, buf, cnt * mlsl_datatype_get_size(dtype),
-                                                    dest, atl_tag, &req);
-
-            if (unlikely(atl_status != atl_status_success))
-            {
-                status = mlsl_sched_entry_status_failed;
-                MLSL_LOG(ERROR, "SEND entry failed. atl_status: %d", atl_status);
-            }
-            else
-            {
-                status = mlsl_sched_entry_status_started;
-            }
-        }
-        else if (status == mlsl_sched_entry_status_started)
-        {
-            int req_status;
-            atl_comm_check(sched->bin->comm_ctx, &req_status, &req);
-            if (req_status)
-            {
-                MLSL_LOG(DEBUG, "completed SEND entry req=%p", &req);
-                status = mlsl_sched_entry_status_complete;
-            }
-        }
+        pfields.add_available(mlsl_sched_entry_field_buf);
     }
 
-    void adjust(size_t partition_idx,
-                size_t partition_count)
+    void start_derived()
     {
-        size_t adjust_count, adjust_offset;
-        get_count_and_offset(cnt, dtype, partition_idx, partition_count, adjust_count, adjust_offset);
-        cnt = adjust_count;
-        adjust_ptr(buf, adjust_offset);
+        auto atl_tag = mlsl_create_atl_tag(sched->coll_param.comm->comm_id, sched->sched_id,
+                                           sched->coll_param.comm->rank);
+        size_t bytes = cnt * mlsl_datatype_get_size(dtype);
+        MLSL_LOG(DEBUG, "SEND entry dst %zu, tag %lu, req %p, bytes %zu", dst, atl_tag, &req, bytes);
+        atl_status_t atl_status = atl_comm_send(sched->bin->comm_ctx, buf,
+                                                bytes, dst, atl_tag, &req);
+        if (unlikely(atl_status != atl_status_success))
+        {
+            status = mlsl_sched_entry_status_failed;
+            MLSL_LOG(ERROR, "SEND entry failed. atl_status: %d", atl_status);
+        }
+        else
+            status = mlsl_sched_entry_status_started;
+    }
+
+    void update_derived()
+    {
+        int req_status;
+        atl_comm_check(sched->bin->comm_ctx, &req_status, &req);
+        if (req_status)
+            status = mlsl_sched_entry_status_complete;
+    }
+
+    void* get_field_ptr(mlsl_sched_entry_field_id id)
+    {
+        switch (id)
+        {
+            case mlsl_sched_entry_field_buf: return &buf;
+            default: MLSL_ASSERTP(0);
+        }
     }
 
     const char* name() const
@@ -63,18 +56,12 @@ public:
         return "SEND";
     }
 
-    std::shared_ptr<sched_entry> clone() const
-    {
-        //full member-wise copy
-        return std::make_shared<send_entry>(*this);
-    }
-
 protected:
     char* dump_detail(char* dump_buf) const
     {
         auto bytes_written = sprintf(dump_buf, "dt %s, cnt %zu, buf %p, dst %zu, comm %p, req %p\n",
                                      mlsl_datatype_get_name(dtype), cnt, buf,
-                                     dest, comm, &req);
+                                     dst, sched->coll_param.comm, &req);
         return dump_buf + bytes_written;
     }
 
@@ -82,7 +69,6 @@ private:
     const void* buf;
     size_t cnt;
     mlsl_datatype_internal_t dtype;
-    size_t dest;
-    const mlsl_comm* comm;
+    size_t dst;
     atl_req_t req{};
 };

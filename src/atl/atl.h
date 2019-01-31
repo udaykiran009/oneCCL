@@ -33,8 +33,17 @@ typedef struct atl_comm_attr {
 
 typedef struct atl_attr {
     size_t comm_count;
+    int enable_rma;
+    size_t max_order_waw_size;
     atl_comm_attr_t comm_attr;
 } atl_attr_t;
+
+typedef struct atl_mr {
+    void *buf;
+    size_t len;
+    uintptr_t l_key;
+    uintptr_t r_key;
+} atl_mr_t;
 
 typedef struct atl_ops {
     void (*proc_idx)(atl_desc_t *desc, size_t *proc_idx);
@@ -42,8 +51,15 @@ typedef struct atl_ops {
     atl_status_t (*finalize)(atl_desc_t *desc, atl_comm_t **comms);
 } atl_ops_t;
 
+typedef struct atl_mr_ops {
+    atl_status_t (*mr_reg)(atl_desc_t *atl_desc, const void *buf, size_t len,
+                           atl_mr_t **atl_mr);
+    atl_status_t (*mr_dereg)(atl_desc_t *atl_desc, atl_mr_t *atl_mr);
+} atl_mr_ops_t;
+
 struct atl_desc {
     atl_ops_t *ops;
+    atl_mr_ops_t *mr_ops;
 };
 
 typedef struct atl_transport {
@@ -75,7 +91,13 @@ typedef struct atl_pt2pt_ops {
                           atl_req_t *req);
 } atl_pt2pt_ops_t;
 
-// TODO: align with PSM2 progress functions
+typedef struct atl_rma_ops {
+    atl_status_t (*read)(atl_comm_t *comm, void *buf, size_t len, atl_mr_t *atl_mr,
+                         uint64_t addr, uintptr_t r_key, size_t dest_proc_idx, atl_req_t *req);
+    atl_status_t (*write)(atl_comm_t *comm, const void *buf, size_t len, atl_mr_t *atl_mr,
+       uint64_t addr, uintptr_t r_key, size_t dest_proc_idx, atl_req_t *req);
+} atl_rma_ops_t;
+
 typedef struct atl_comp_ops {
     atl_status_t (*wait)(atl_comm_t *comm, atl_req_t *req);
     atl_status_t (*wait_all)(atl_comm_t *comm, atl_req_t *reqs, size_t count);
@@ -86,6 +108,7 @@ typedef struct atl_comp_ops {
 struct atl_comm {
     atl_desc_t *atl_desc;
     atl_pt2pt_ops_t *pt2pt_ops;
+    atl_rma_ops_t *rma_ops;
     atl_comp_ops_t *comp_ops;
 };
 
@@ -165,6 +188,29 @@ static inline atl_status_t atl_comm_recvv(atl_comm_t *comm, struct iovec *iov, s
                                           size_t src_proc_idx, uint64_t tag, atl_req_t *req)
 {
     return comm->pt2pt_ops->recvv(comm, iov, count, src_proc_idx, tag, req);
+}
+
+static inline atl_status_t atl_mr_reg(atl_desc_t *atl_desc, const void *buf, size_t len,
+                                      atl_mr_t **atl_mr)
+{
+    return atl_desc->mr_ops->mr_reg(atl_desc, buf, len, atl_mr);
+}
+
+static inline atl_status_t atl_mr_dereg(atl_desc_t *atl_desc, atl_mr_t *atl_mr)
+{
+    return atl_desc->mr_ops->mr_dereg(atl_desc, atl_mr);
+}
+
+static inline atl_status_t atl_comm_read(atl_comm_t *comm, void *buf, size_t len, atl_mr_t *atl_mr,
+                                         uint64_t addr, uintptr_t r_key, size_t dest_proc_idx, atl_req_t *req)
+{
+    return comm->rma_ops->read(comm, buf, len, atl_mr, addr, r_key, dest_proc_idx, req);
+}
+
+static inline atl_status_t atl_comm_write(atl_comm_t *comm, const void *buf, size_t len, atl_mr_t *atl_mr,
+                                          uint64_t addr, uintptr_t r_key, size_t dest_proc_idx, atl_req_t *req)
+{
+    return comm->rma_ops->write(comm, buf, len, atl_mr, addr, r_key, dest_proc_idx, req);
 }
 
 static inline atl_status_t atl_comm_probe(atl_comm_t *comm, size_t src_proc_idx,

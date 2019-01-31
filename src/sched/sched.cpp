@@ -97,14 +97,16 @@ static mlsl_status_t mlsl_sched_continue(mlsl_sched *s)
         auto& entry = s->entries[i];
 
         if (entry->get_status() == mlsl_sched_entry_status_not_started) {
-            MLSL_LOG(DEBUG, "Starting entry %s [%zu/%zu]", entry->name(), i, s->entries.size());
-            entry->execute();
+            MLSL_LOG(DEBUG, "starting entry %s [%zu/%zu]", entry->name(), i, s->entries.size());
+            entry->start();
             entry = s->entries[i];
         }
 
         /* _start_entry may have completed the operation, but won't update s->idx */
         if (i == s->idx && entry->get_status() >= mlsl_sched_entry_status_complete) {
             ++s->idx;   /* this is valid even for barrier entries */
+            MLSL_LOG(DEBUG, "completed %s%s entry [%zu/%zu], shift start_idx, sched %p", entry->name(),
+                         entry->is_barrier() ? " barrier" : "", i, s->entries.size(), s);
         }
 
         /* watch the indexing, s->idx might have been incremented above, so
@@ -117,20 +119,6 @@ static mlsl_status_t mlsl_sched_continue(mlsl_sched *s)
     }
 
     return status;
-}
-
-mlsl_status_t mlsl_sched_adjust_entries(mlsl_sched *sched, size_t partition_idx, size_t partition_count)
-{
-    MLSL_LOG(DEBUG, "sched %p, partition_idx %zu, partition_count %zu",
-             sched, partition_idx, partition_count);
-
-    size_t idx;
-    for (idx = 0; idx < sched->entries.size(); idx++)
-    {
-        sched->entries[idx]->adjust(partition_idx, partition_count);
-    }
-
-    return mlsl_status_success;
 }
 
 mlsl_status_t mlsl_sched_adjust_tag(mlsl_sched *sched)
@@ -156,7 +144,7 @@ mlsl_status_t mlsl_sched_sync_schedules(mlsl_sched **scheds, size_t count)
 
     for(size_t idx = 0; idx < count; ++idx)
     {
-        scheds[idx]->add_entry(entry_factory::make_sync_entry(sync_obj));
+        entry_factory::make_sync_entry(scheds[idx], sync_obj);
     }
 
     return mlsl_status_success;
@@ -205,7 +193,6 @@ mlsl_status_t mlsl_sched_add_barrier(mlsl_sched *sched)
     return status;
 }
 
-
 mlsl_status_t mlsl_sched_progress(mlsl_sched_queue_bin *bin, size_t sched_count, size_t *processed_sched_count)
 {
     mlsl_status_t status = mlsl_status_success;
@@ -240,7 +227,11 @@ mlsl_status_t mlsl_sched_progress(mlsl_sched_queue_bin *bin, size_t sched_count,
 
         for (i = s->idx; i < s->entries.size(); ++i) {
             auto& entry = s->entries[i];
-            entry->execute();
+            entry->update();
+
+            if (entry->get_status() == mlsl_sched_entry_status_complete &&
+                entry->get_exec_mode() == mlsl_sched_entry_exec_once)
+                entry->set_status(mlsl_sched_entry_status_complete_once);
 
             if (i == s->idx && entry->get_status() >= mlsl_sched_entry_status_complete)
             {
@@ -300,36 +291,63 @@ mlsl_status_t mlsl_sched_commit(mlsl_sched *sched)
     return mlsl_status_success;
 }
 
-mlsl_status_t mlsl_sched_add_persistent_memory(mlsl_sched *sched, mlsl_sched_memory_type type, void *ptr)
+mlsl_status_t mlsl_sched_alloc_buffer(mlsl_sched* sched, size_t size, void** ptr)
 {
-    MLSL_LOG(DEBUG, "sched %p, type %d, ptr %p", sched, type, ptr);
-
-    mlsl_sched_memory *mem = static_cast<mlsl_sched_memory*>(MLSL_CALLOC(sizeof(mlsl_sched_memory), "sched_memory"));
-    mem->type = type;
-    mem->ptr = ptr;
-    MLSL_DLIST_APPEND(sched->persistent_memory, mem);
+    MLSL_LOG(DEBUG, "sched %p, size %zu", sched, size);
+    MLSL_ASSERTP(size > 0);
+    MLSL_ASSERTP(ptr);
+    void* p = MLSL_CALLOC(size, "sched_buffer");
+    sched->memory.buf_list.emplace_back(p, size);
+    *ptr = p;
     return mlsl_status_success;
 }
 
-mlsl_status_t mlsl_sched_free_persistent_memory(mlsl_sched *sched)
+mlsl_status_t mlsl_sched_free_buffers(mlsl_sched* sched)
 {
     MLSL_LOG(DEBUG, "sched %p", sched);
-
-    mlsl_sched_memory *mem, *tmp;
-    MLSL_DLIST_FOREACH_SAFE(sched->persistent_memory, mem, tmp)
+    std::list<mlsl_sched_buffer_handler>::iterator it;
+    for (it = sched->memory.buf_list.begin(); it != sched->memory.buf_list.end(); it++)
     {
-        switch (mem->type)
-        {
-            case mlsl_sched_memory_buffer:
-                MLSL_LOG(DEBUG, "free %p", mem->ptr);
-                MLSL_FREE(mem->ptr);
-                break;
-            case mlsl_sched_memory_registered:
-                // TODO: unregister memory
-                break;
-        }
-        MLSL_FREE(mem);
+        MLSL_LOG(DEBUG, "free %p", it->ptr);
+        MLSL_FREE(it->ptr);
     }
+    sched->memory.buf_list.clear();
+    return mlsl_status_success;
+}
+
+/*
+not used currently, reg/dereg happen in register entry
+mlsl_status_t mlsl_sched_register_buffer(mlsl_sched* sched, size_t size, void* ptr, atl_mr_t** mr)
+{
+    MLSL_LOG(DEBUG, "sched %p, size %zu, ptr %p", sched, size, ptr);
+    MLSL_ASSERTP(size > 0);
+    MLSL_ASSERTP(ptr);
+    MLSL_ASSERTP(mr);
+    atl_mr_t* m;
+    atl_status_t atl_status = atl_mr_reg(global_data.executor->atl_desc, ptr, size, &m);
+    MLSL_ASSERTP(atl_status == atl_status_success);
+    sched->memory.mr_list.emplace_back(ptr, size, m);
+    *mr = m;
+    return mlsl_status_success;
+}
+mlsl_status_t mlsl_sched_deregister_buffers(mlsl_sched* sched)
+{
+    MLSL_LOG(DEBUG, "sched %p", sched);
+    atl_status_t atl_status;
+    std::list<mlsl_sched_mr_handler>::iterator it;
+    for (it = sched->memory.mr_list.begin(); it != sched->memory.mr_list.end(); it++)
+    {
+        MLSL_LOG(DEBUG, "deregister %p", it->ptr);
+        atl_status = atl_mr_dereg(global_data.executor->atl_desc, it->mr);
+        MLSL_ASSERTP(atl_status == atl_status_success);
+    }
+    sched->memory.mr_list.clear();
+    return mlsl_status_success;
+}*/
+
+mlsl_status_t mlsl_sched_set_entry_exec_mode(mlsl_sched* sched, mlsl_sched_entry_exec_mode mode)
+{
+    sched->exec_mode = mode;
     return mlsl_status_success;
 }
 
@@ -346,7 +364,6 @@ mlsl_status_t mlsl_sched_set_coll_attr(mlsl_sched *sched, const mlsl_coll_attr_t
 
     return mlsl_status_success;
 }
-
 
 mlsl_status_t mlsl_sched_bcast(
     void *buf,
@@ -504,25 +521,6 @@ void mlsl_sched_prepare(mlsl_sched *sched, bool dump)
     sched->req->completion_counter = partial_sched_count;
 }
 
-mlsl_sched::mlsl_sched(const mlsl_sched& other) :
-    first_progress(other.first_progress),
-    coll_param{},
-    coll_attr(other.coll_attr),
-    sched_id(other.sched_id),
-    req(other.req),
-    postponed_fields(other.postponed_fields),
-    root(other.root)
-{
-    //deep copy of entries
-    for(size_t i = 0; i < other.entries.size(); ++i)
-    {
-        entries.push_back(other.entries[i]->clone());
-    }
-
-    //todo: copy persistent memory
-    //todo: copy part_scheds
-}
-
 mlsl_sched& mlsl_sched::operator=(const mlsl_sched& other)
 {
     if(this != &other)
@@ -543,7 +541,8 @@ mlsl_sched::~mlsl_sched()
     if (req)
         mlsl_request_free(req);
 
-    mlsl_sched_free_persistent_memory(this);
+    //mlsl_sched_deregister_buffers(this);
+    mlsl_sched_free_buffers(this);
 }
 
 void mlsl_sched::swap(mlsl_sched& other)
@@ -556,8 +555,8 @@ void mlsl_sched::swap(mlsl_sched& other)
     std::swap(entries, other.entries);
     std::swap(sched_id, other.sched_id);
     std::swap(req, other.req);
-    std::swap(persistent_memory, other.persistent_memory);
-    std::swap(postponed_fields, other.postponed_fields);
+    std::swap(memory, other.memory);
+    std::swap(exec_mode, other.exec_mode);
     std::swap(partial_scheds, other.partial_scheds);
     std::swap(partial_sched_count, other.partial_sched_count);
     std::swap(root, other.root);

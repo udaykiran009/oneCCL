@@ -8,6 +8,7 @@ set(MLSL_SRC
     atl/atl.cpp
     coll/coll.cpp
     coll/allreduce.cpp
+    coll/allreduce_rma.cpp
     coll/barrier.cpp
     coll/bcast.cpp
     coll/reduce.cpp
@@ -17,6 +18,8 @@ set(MLSL_SRC
     sched/sched_cache.cpp
     sched/sched_queue.cpp
     sched/entry_factory.cpp
+    sched/entry_types/entry.cpp
+    sched/entry_types/postponed_fields.cpp
     exec/exec.cpp
     exec/worker.cpp
     parallelizer/parallelizer.cpp

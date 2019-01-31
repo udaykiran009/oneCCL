@@ -35,3 +35,23 @@ void mlsl_log_print_backtrace(void)
     }
     free(strings);
 }
+
+void mlsl_log_print_buffer(void* buf, size_t cnt, mlsl_datatype_internal_t dtype, const char* prefix)
+{
+    char b[1024];
+    char* dump_buf = b;
+    auto bytes_written = sprintf(dump_buf, "%s: cnt %zu, dt %s [",
+                                 prefix, cnt, mlsl_datatype_get_name(dtype));
+    dump_buf = (char*)dump_buf + bytes_written;
+    size_t idx;
+    for (idx = 0; idx < cnt; idx++)
+    {
+        if (dtype == mlsl_dtype_internal_float)
+            bytes_written = sprintf(dump_buf, "%f ", ((float*)buf)[idx]);
+        else
+            MLSL_ASSERTP(0);
+        dump_buf += bytes_written;
+    }
+    bytes_written = sprintf(dump_buf, "]");
+    MLSL_LOG(INFO, "%s", b);
+}

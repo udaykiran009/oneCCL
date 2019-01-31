@@ -1,6 +1,7 @@
 #include "common/datatype/datatype.hpp"
 #include "common/log/log.hpp"
 
+mlsl_datatype_internal_t mlsl_dtype_internal_none;
 mlsl_datatype_internal_t mlsl_dtype_internal_char;
 mlsl_datatype_internal_t mlsl_dtype_internal_int;
 mlsl_datatype_internal_t mlsl_dtype_internal_bfp16;
@@ -9,6 +10,7 @@ mlsl_datatype_internal_t mlsl_dtype_internal_double;
 mlsl_datatype_internal_t mlsl_dtype_internal_int64;
 mlsl_datatype_internal_t mlsl_dtype_internal_uint64;
 
+const mlsl_datatype_internal mlsl_dtype_internal_none_value = { .type = mlsl_dtype_char, .size = 0, .name = "NONE" };
 const mlsl_datatype_internal mlsl_dtype_internal_char_value = { .type = mlsl_dtype_char, .size = 1, .name = "CHAR" };
 const mlsl_datatype_internal mlsl_dtype_internal_int_value = { .type = mlsl_dtype_int, .size = 4, .name = "INT" };
 const mlsl_datatype_internal mlsl_dtype_internal_bfp16_value = { .type = mlsl_dtype_bfp16, .size = 2, .name = "BFP16" };
@@ -19,6 +21,7 @@ const mlsl_datatype_internal mlsl_dtype_internal_uint64_value = { .type = mlsl_d
 
 mlsl_status_t mlsl_datatype_init()
 {
+    mlsl_dtype_internal_none = &mlsl_dtype_internal_none_value;
     mlsl_dtype_internal_char = &mlsl_dtype_internal_char_value;
     mlsl_dtype_internal_int = &mlsl_dtype_internal_int_value;
     mlsl_dtype_internal_bfp16 = &mlsl_dtype_internal_bfp16_value;
@@ -39,7 +42,6 @@ size_t mlsl_datatype_get_size(mlsl_datatype_internal_t dtype)
 const char* mlsl_datatype_get_name(mlsl_datatype_internal_t dtype)
 {
     MLSL_ASSERTP(dtype);
-    if (dtype == MLSL_POSTPONED_DTYPE) return "POSTPONED";
     return dtype->name;
 }
 

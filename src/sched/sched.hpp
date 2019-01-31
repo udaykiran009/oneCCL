@@ -10,10 +10,11 @@
 #include "common/utils/lock.hpp"
 
 #include <memory>
-#include <deque>
 
-#define MLSL_POSTPONED_COUNT  ((size_t)(0xFFFFFFFFFFFFFFFF))
-#define MLSL_POSTPONED_ADDR   ((void*)(0xFFFFFFFFFFFFFFFF))
+#include <deque>
+#include <list>
+
+typedef mlsl_status_t(*mlsl_sched_entry_postponed_field_function_t) (void*, void*);
 
 struct mlsl_sched_queue;
 struct mlsl_sched_queue_bin;
@@ -25,19 +26,29 @@ namespace out_of_order
 class ooo_match;
 }
 
-enum mlsl_sched_memory_type
+struct mlsl_sched_buffer_handler
 {
-    mlsl_sched_memory_buffer     = 0,
-    mlsl_sched_memory_registered = 1
+    void *ptr;
+    size_t size;
+
+    mlsl_sched_buffer_handler(void* ptr, size_t size)
+        : ptr(ptr), size(size) {} 
+};
+
+struct mlsl_sched_mr_handler
+{
+    void *ptr;
+    size_t size;
+    atl_mr_t* mr;
+
+    mlsl_sched_mr_handler(void* ptr, size_t size, atl_mr_t* mr)
+        : ptr(ptr), size(size), mr(mr) {}
 };
 
 struct mlsl_sched_memory
 {
-    mlsl_sched_memory_type type;
-    void *ptr;
-
-    mlsl_sched_memory *next;
-    mlsl_sched_memory *prev;
+    std::list<mlsl_sched_buffer_handler> buf_list;
+    std::list<mlsl_sched_mr_handler> mr_list;
 };
 
 struct mlsl_sched_coll_attr
@@ -66,18 +77,10 @@ struct mlsl_sched_coll_param
     mlsl_comm *comm;
 };
 
-struct mlsl_sched_postponed_fields
-{
-    void* buf;
-    size_t count;
-    mlsl_datatype_internal dtype;
-};
-
 struct mlsl_sched
 {
     mlsl_sched() = default;
     ~mlsl_sched();
-    mlsl_sched(const mlsl_sched& other);
     mlsl_sched& operator = (const mlsl_sched& other);
 
     bool first_progress = true;
@@ -85,14 +88,14 @@ struct mlsl_sched
     mlsl_sched_coll_param coll_param{};
     mlsl_sched_coll_attr coll_attr{};
 
-    size_t idx = 0;  /* index into entries array of first yet-outstanding entry */ /* index to start */
+    mlsl_sched_memory memory;
+    mlsl_sched_entry_exec_mode exec_mode = mlsl_sched_entry_exec_regular;
+
+    size_t idx = 0;  /* index to start */
     std::deque<std::shared_ptr<sched_entry>> entries;
 
     mlsl_sched_id_t sched_id = 0;   /* sequence number of the schedule in the communicator */
     mlsl_request *req = nullptr;
-    mlsl_sched_memory *persistent_memory = nullptr;
-
-    mlsl_sched_postponed_fields postponed_fields{};
 
     mlsl_sched **partial_scheds{};
     size_t partial_sched_count = 0;
@@ -104,6 +107,7 @@ struct mlsl_sched
 
     void add_entry(std::shared_ptr<sched_entry> entry)
     {
+        entry->set_exec_mode(exec_mode);
         entries.push_back(entry);
     }
 
@@ -113,7 +117,6 @@ private:
 
 mlsl_status_t mlsl_sched_commit(mlsl_sched *sched);
 mlsl_status_t mlsl_sched_start(mlsl_sched *sched, mlsl_request **req);
-
 mlsl_status_t mlsl_sched_add_barrier(mlsl_sched *sched);
 mlsl_status_t mlsl_sched_sync_schedules(mlsl_sched **scheds, size_t count);
 
@@ -130,20 +133,19 @@ mlsl_status_t mlsl_sched_barrier(mlsl_comm* comm, mlsl_sched **sched);
 mlsl_status_t mlsl_sched_tensor_bcast(mlsl_comm* comm, mlsl_sched** sched, bool temporal);
 
 mlsl_status_t mlsl_sched_progress(mlsl_sched_queue_bin *bin, size_t sched_count, size_t *processed_sched_count);
-mlsl_status_t mlsl_sched_adjust_entries(mlsl_sched *sched, size_t partition_idx, size_t partition_count);
 mlsl_status_t mlsl_sched_adjust_tag(mlsl_sched *sched);
 mlsl_status_t mlsl_sched_dump(mlsl_sched *sched, const char *name);
 mlsl_status_t mlsl_sched_reset(mlsl_sched *sched);
 
-mlsl_status_t mlsl_sched_add_persistent_memory(mlsl_sched *sched, mlsl_sched_memory_type type, void *ptr);
-mlsl_status_t mlsl_sched_free_persistent_memory(mlsl_sched *sched);
+mlsl_status_t mlsl_sched_alloc_buffer(mlsl_sched *sched, size_t size, void** ptr);
+mlsl_status_t mlsl_sched_free_buffers(mlsl_sched *sched);
+/*mlsl_status_t mlsl_sched_register_buffer(mlsl_sched* sched, size_t size, void* ptr, atl_mr_t** mr);
+mlsl_status_t mlsl_sched_deregister_buffers(mlsl_sched* sched);*/
+
+mlsl_status_t mlsl_sched_set_entry_exec_mode(mlsl_sched* sched, mlsl_sched_entry_exec_mode mode);
 
 const char *mlsl_reduction_to_str(mlsl_reduction_t type);
-
 mlsl_status_t mlsl_sched_set_coll_attr(mlsl_sched *sched, const mlsl_coll_attr_t *attr);
-
 size_t mlsl_sched_get_priority(mlsl_sched *sched);
-
 void mlsl_update_request_reference(mlsl_sched *s, mlsl_request **req);
-
 void mlsl_sched_prepare(mlsl_sched *sched, bool dump);

@@ -1,60 +1,70 @@
 #pragma once
 
 #include "sched/entry_types/entry.hpp"
-#include "sched/sched.hpp"
 
-class collective_entry : public sched_entry
+class coll_entry : public sched_entry
 {
 public:
-    collective_entry() = delete;
-    collective_entry(mlsl_sched* schedule,
-                     mlsl_coll_type coll_type,
-                     const void* send_buffer,
-                     void* recv_buffer,
-                     size_t count,
-                     mlsl_datatype_internal_t data_type,
-                     mlsl_reduction_t reduction_op,
-                     mlsl_comm* communicator)
-        : sched_entry(schedule, true), ctype(coll_type), send_buf(send_buffer), recv_buf(recv_buffer), cnt(count),
-          dtype(data_type), op(reduction_op), comm(communicator), req(nullptr)
-    {}
-
-    void execute()
+    coll_entry() = delete;
+    coll_entry(mlsl_sched* sched,
+               mlsl_coll_type coll_type,
+               const void* send_buf,
+               void* recv_buf,
+               size_t cnt,
+               mlsl_datatype_internal_t dtype,
+               mlsl_reduction_t reduction_op)
+        : sched_entry(sched, true), ctype(coll_type),
+          send_buf(send_buf), recv_buf(recv_buf), cnt(cnt),
+          dtype(dtype), op(reduction_op), req(nullptr)
     {
-        if (status == mlsl_sched_entry_status_started)
-        {
-            MLSL_ASSERTP(req);
-            if (mlsl_request_is_complete(req))
-            {
-                MLSL_LOG(DEBUG, "COLLECTIVE entry, completed coll_sched");
-                delete req->sched;
-                status = mlsl_sched_entry_status_complete;
-            }
-            return;
-        }
+        pfields.add_available(mlsl_sched_entry_field_send_buf);
+        pfields.add_available(mlsl_sched_entry_field_recv_buf);
+        pfields.add_available(mlsl_sched_entry_field_cnt);
+        pfields.add_available(mlsl_sched_entry_field_dtype);
+    }
 
+    void start_derived()
+    {
         create_schedule();
+        status = mlsl_sched_entry_status_started;
+    }
+
+    void update_derived()
+    {
+        MLSL_ASSERTP(req);
+        if (mlsl_request_is_complete(req))
+        {
+            MLSL_LOG(DEBUG, "COLL entry, completed sched");
+            delete req->sched;
+            status = mlsl_sched_entry_status_complete;
+        }
+    }
+
+    void* get_field_ptr(mlsl_sched_entry_field_id id)
+    {
+        switch (id)
+        {
+            case mlsl_sched_entry_field_send_buf: return &send_buf;
+            case mlsl_sched_entry_field_recv_buf: return &recv_buf;
+            case mlsl_sched_entry_field_cnt: return &cnt;
+            case mlsl_sched_entry_field_dtype: return &dtype;
+            default: MLSL_ASSERTP(0);
+        }
     }
 
     const char* name() const
     {
-        return "COLLECTIVE";
-    }
-
-    std::shared_ptr<sched_entry> clone() const
-    {
-        //todo: we can eithir make a full copy or a new object with the same inputs
-        return std::make_shared<collective_entry>(*this);
+        return "COLL";
     }
 
 protected:
     char* dump_detail(char* dump_buf) const
     {
         auto bytes_written = sprintf(dump_buf,
-                                     "dt %s, coll_type %s, send_buf %p, recv_buf %p, count %zu, op %s, comm %p, req %p\n",
+                                     "dt %s, coll_type %s, send_buf %p, recv_buf %p, cnt %zu, op %s, comm %p, req %p\n",
                                      mlsl_datatype_get_name(dtype), mlsl_coll_type_to_str(ctype),
                                      send_buf, recv_buf, cnt, mlsl_reduction_to_str(op),
-                                     comm, &req);
+                                     sched->coll_param.comm, &req);
         return dump_buf + bytes_written;
     }
 
@@ -71,15 +81,10 @@ private:
                 break;
             case mlsl_coll_allreduce:
             {
-                auto elem_sbuf = send_buf == MLSL_POSTPONED_ADDR ? sched->postponed_fields.buf : send_buf;
-                auto elem_rbuf = recv_buf == MLSL_POSTPONED_ADDR ? sched->postponed_fields.buf : recv_buf;
-                auto elem_count = cnt == MLSL_POSTPONED_COUNT ? sched->postponed_fields.count : cnt;
-                auto elem_dtype = dtype == MLSL_POSTPONED_DTYPE ? &sched->postponed_fields.dtype : dtype;
-
-                mlsl_status_t result = mlsl_sched_allreduce(elem_sbuf,
-                                                            elem_rbuf,
-                                                            elem_count,
-                                                            elem_dtype,
+                mlsl_status_t result = mlsl_sched_allreduce(send_buf,
+                                                            recv_buf,
+                                                            cnt,
+                                                            dtype,
                                                             op,
                                                             sched->coll_param.comm,
                                                             &coll_sched);
@@ -106,6 +111,7 @@ private:
         }
         if (coll_sched)
         {
+            // TODO: share this logic with executor
             MLSL_LOG(DEBUG, "starting COLLECTIVE entry");
             mlsl_request* coll_req;
             coll_sched->sched_id = sched->sched_id;
@@ -121,7 +127,6 @@ private:
                      sched->bin->queue, coll_sched, coll_req);
             // TODO: insert into per-worker sched cache
         }
-        status = mlsl_sched_entry_status_started;
     }
 
     mlsl_coll_type ctype;
@@ -130,6 +135,5 @@ private:
     size_t cnt;
     mlsl_datatype_internal_t dtype;
     mlsl_reduction_t op;
-    mlsl_comm* comm;
     mlsl_request* req;
 };

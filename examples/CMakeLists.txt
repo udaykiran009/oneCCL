@@ -5,6 +5,7 @@ foreach(src ${sources})
     add_executable(${executable} ${src})
 
     target_link_libraries(${executable} PUBLIC rt)
+    target_link_libraries(${executable} PUBLIC m)
     target_link_libraries(${executable} PRIVATE mlsl2)
     install(TARGETS ${executable} RUNTIME DESTINATION ${MLSL_INSTALL_EXAMPLES})
 endforeach()

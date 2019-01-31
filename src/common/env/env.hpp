@@ -12,7 +12,9 @@ enum mlsl_priority_mode
 enum mlsl_allreduce_algo
 {
     mlsl_allreduce_algo_rabenseifner = 0,
-    mlsl_allreduce_algo_starlike     = 1
+    mlsl_allreduce_algo_starlike     = 1,
+    mlsl_allreduce_algo_ring         = 2,
+    mlsl_allreduce_algo_ring_rma     = 3
 };
 
 struct mlsl_env_data
@@ -25,6 +27,7 @@ struct mlsl_env_data
     int *worker_affinity;
     mlsl_priority_mode priority_mode;
     mlsl_allreduce_algo allreduce_algo;
+    int enable_rma;
 } __attribute__ ((aligned (CACHELINE_SIZE)));
 
 
@@ -38,3 +41,4 @@ int mlsl_env_parse_priority_mode();
 int mlsl_env_parse_affinity();
 int mlsl_env_print_affinity();
 int mlsl_env_parse_allreduce_algo();
+const char *mlsl_allreduce_algo_to_str(mlsl_allreduce_algo algo);

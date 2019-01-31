@@ -47,14 +47,16 @@ mlsl_status_t mlsl_init()
 mlsl_status_t mlsl_finalize()
 {
     global_data.ooo_handler.reset();
+
+    if (global_data.sched_cache)
+        mlsl_sched_cache_free(global_data.sched_cache);
+
     global_data.executor.reset();
 
     if (global_data.comm)
         mlsl_comm_free(global_data.comm);
     if (global_data.parallelizer)
         mlsl_parallelizer_free(global_data.parallelizer);
-    if (global_data.sched_cache)
-        mlsl_sched_cache_free(global_data.sched_cache);
     if (global_data.default_coll_attr)
         mlsl_coll_free_attr(global_data.default_coll_attr);
     mlsl_env_free();

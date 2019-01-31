@@ -1,3 +1,4 @@
+#include "common/env/env.hpp"
 #include "coll/coll.hpp"
 #include "coll/coll_algorithms.hpp"
 
@@ -172,12 +173,27 @@ mlsl_status_t mlsl_coll_build_allreduce(
     mlsl_datatype_internal_t dtype,
     mlsl_reduction_t reduction)
 {
-    mlsl_status_t status;
+    mlsl_status_t status = mlsl_status_success;
     sched->coll_param.ctype = mlsl_coll_allreduce;
 
     if ((count < sched->coll_param.comm->pof2) || (count * mlsl_datatype_get_size(dtype) <= 8192))
     {
-        MLSL_CALL(mlsl_coll_build_recursive_doubling_allreduce(sched, send_buf, recv_buf, count, dtype, reduction));
+        switch (env_data.allreduce_algo)
+        {
+            case mlsl_allreduce_algo_ring:
+                MLSL_CALL(mlsl_coll_build_ring_allreduce(sched, send_buf, recv_buf, count, dtype, reduction));
+                break;
+            case mlsl_allreduce_algo_ring_rma:
+                if (global_data.executor->is_rma_enabled)
+                    MLSL_CALL(mlsl_coll_build_ring_rma_allreduce(sched, send_buf, recv_buf, count, dtype, reduction));
+                else
+                    MLSL_ASSERTP_FMT(0, "unexpected allreduce_algo '%s'",
+                                     mlsl_allreduce_algo_to_str(env_data.allreduce_algo));
+                break;
+            default:
+                MLSL_CALL(mlsl_coll_build_recursive_doubling_allreduce(sched, send_buf, recv_buf, count, dtype, reduction));
+                break;
+        }
     }
     else
     {
@@ -189,8 +205,18 @@ mlsl_status_t mlsl_coll_build_allreduce(
             case mlsl_allreduce_algo_starlike:
                 MLSL_CALL(mlsl_coll_build_starlike_allreduce(sched, send_buf, recv_buf, count, dtype, reduction));
                 break;
+            case mlsl_allreduce_algo_ring:
+                MLSL_CALL(mlsl_coll_build_ring_allreduce(sched, send_buf, recv_buf, count, dtype, reduction));
+                break;
+            case mlsl_allreduce_algo_ring_rma:
+                if (global_data.executor->is_rma_enabled)
+                {
+                    MLSL_CALL(mlsl_coll_build_ring_rma_allreduce(sched, send_buf, recv_buf, count, dtype, reduction));
+                    break;
+                }
             default:
-                MLSL_ASSERTP_FMT(0, "unexpected allreduce_algo %d", env_data.allreduce_algo);
+                MLSL_ASSERTP_FMT(0, "unexpected allreduce_algo '%s'",
+                                     mlsl_allreduce_algo_to_str(env_data.allreduce_algo));
                 return mlsl_status_invalid_arguments;
         }
     }
@@ -299,6 +325,7 @@ mlsl_status_t mlsl_allgatherv(
             key.ctype = mlsl_coll_allgatherv;
             key.buf1 = (void *)send_buf;
             key.buf2 = recv_buf;
+            key.buf3 = recv_counts;
             key.count1 = send_count;
             key.dtype = dtype;
             key.comm = comm;

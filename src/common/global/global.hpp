@@ -17,7 +17,6 @@ struct mlsl_global_data
     mlsl_sched_cache* sched_cache;
     mlsl_parallelizer* parallelizer;
     mlsl_coll_attr_t* default_coll_attr;
-
     std::unique_ptr<out_of_order::ooo_match> ooo_handler;
 } __attribute__ ((aligned (CACHELINE_SIZE)));
 

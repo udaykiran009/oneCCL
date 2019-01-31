@@ -8,6 +8,7 @@ struct mlsl_sched_cache_key
     mlsl_coll_type ctype;
     void *buf1;
     void *buf2;
+    void *buf3;
     size_t count1;
     size_t count2;
     mlsl_datatype_t dtype;

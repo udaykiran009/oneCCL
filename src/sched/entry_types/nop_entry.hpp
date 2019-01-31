@@ -5,28 +5,14 @@
 class nop_entry : public sched_entry
 {
 public:
-    nop_entry() = default;
+    nop_entry(mlsl_sched* sched) : sched_entry(sched)
+    {}
 
-    void execute()
-    {
-        //nothing to do here
-    }
+    void start_derived()
+    {}
 
     const char* name() const
     {
-        return "";
-    }
-
-    std::shared_ptr<sched_entry> clone() const
-    {
-        //full member-wise copy
-        return std::make_shared<nop_entry>(*this);
-    }
-
-protected:
-    char* dump_detail(char* dump_buf) const
-    {
-        //nothing to do here
-        return dump_buf;
+        return "NOOP";
     }
 };

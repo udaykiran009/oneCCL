@@ -1,6 +1,7 @@
 #pragma once
 
 #include "common/env/env.hpp"
+#include "common/datatype/datatype.hpp"
 #include "mlsl.h"
 
 #include <assert.h>
@@ -115,3 +116,4 @@ enum mlsl_log_level
 
 void mlsl_log_get_time(char* buf, size_t buf_size);
 void mlsl_log_print_backtrace(void);
+void mlsl_log_print_buffer(const void* buf, size_t cnt, mlsl_datatype_internal_t dtype, const char* prefix);

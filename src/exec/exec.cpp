@@ -18,11 +18,16 @@ mlsl_executor::mlsl_executor(size_t workers_count, size_t priority_count, bool s
     }
 
     MLSL_ASSERTP(comm_count >= workers_count);
-    atl_attr_t attr = {.comm_count = comm_count};
-    MLSL_LOG(INFO, "Atl comms count %zu", attr.comm_count);
+    atl_attr_t attr =
+    {
+        .comm_count = comm_count,
+        .enable_rma = env_data.enable_rma
+    };
+    MLSL_LOG(INFO, "atl comm count %zu", attr.comm_count);
+
     if (service_support)
     {
-        MLSL_LOG(DEBUG, "Service atl comm will be created");
+        MLSL_LOG(DEBUG, "additional atl comm will be requested");
         ++attr.comm_count;
     }
 
@@ -31,8 +36,15 @@ mlsl_executor::mlsl_executor(size_t workers_count, size_t priority_count, bool s
     MLSL_ASSERTP(atl_desc);
     MLSL_ASSERTP(atl_comms);
 
-    MLSL_LOG(DEBUG, "proc_idx %zu, proc_count %zu, atl_desc %p",
+    /* atl will return back whether rma is supported */
+    is_rma_enabled = attr.enable_rma;
+    max_order_waw_size = attr.max_order_waw_size;
+
+    MLSL_LOG(INFO, "proc_idx %zu, proc_count %zu, atl_desc %p",
              proc_idx, proc_count, atl_desc);
+
+    MLSL_LOG(INFO, "atl parameters: is_rma_enabled %d, max_order_waw_size %zu",
+             is_rma_enabled, max_order_waw_size);
 
     std::vector<atl_comm_t*> comms(total_comm_count, nullptr);
     size_t comms_per_worker = comm_count / workers_count;
@@ -65,7 +77,7 @@ mlsl_executor::mlsl_executor(size_t workers_count, size_t priority_count, bool s
             workers.emplace_back(new mlsl_worker(this, idx, std::move(data_queue)));
         }
 
-        if (workers_affinity)
+        if (env_data.worker_offload)
         {
             workers.back()->start();
             workers.back()->pin_to_proc(workers_affinity[idx]);

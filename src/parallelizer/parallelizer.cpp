@@ -9,6 +9,50 @@ static size_t lifo_priority = 0;
 
 mlsl_parallelizer* global_parallelizer = NULL;
 
+typedef struct
+{
+    /* keep these 4 fields on the top of structure */
+    void* buf;
+    size_t count;
+    mlsl_datatype_t dtype;
+    size_t dtype_size;
+    /*---*/
+
+    mlsl_datatype_internal dtype_internal;
+    size_t part_idx;
+    size_t part_count;
+}
+mlsl_parallelizer_prologue_ctx;
+
+mlsl_status_t mlsl_parallelizer_prologue_get_buf(const void* ctx, void* field_ptr)
+{
+    mlsl_parallelizer_prologue_ctx* pctx = (mlsl_parallelizer_prologue_ctx*)ctx;
+    void** buf_ptr = (void**)field_ptr;
+    *buf_ptr = (char*)pctx->buf + pctx->part_idx * (pctx->count / pctx->part_count) * pctx->dtype_size;
+    return mlsl_status_success;
+}
+
+mlsl_status_t mlsl_parallelizer_prologue_get_count(const void* ctx, void* field_ptr)
+{
+    mlsl_parallelizer_prologue_ctx* pctx = (mlsl_parallelizer_prologue_ctx*)ctx;
+    size_t count = pctx->count / pctx->part_count;
+    if (pctx->part_idx == (pctx->part_count - 1)) count += pctx->count % pctx->part_count;
+    size_t* count_ptr = (size_t*)field_ptr;
+    *count_ptr = count;
+    return mlsl_status_success;
+}
+
+mlsl_status_t mlsl_parallelizer_prologue_get_dtype(const void* ctx, void* field_ptr)
+{
+    mlsl_parallelizer_prologue_ctx* pctx = (mlsl_parallelizer_prologue_ctx*)ctx;
+    mlsl_datatype_internal_t* dtype_ptr = (mlsl_datatype_internal_t*)field_ptr;
+    pctx->dtype_internal.type = pctx->dtype;
+    pctx->dtype_internal.size = pctx->dtype_size;
+    pctx->dtype_internal.name = "UNKNOWN";
+    *dtype_ptr = &pctx->dtype_internal;
+    return mlsl_status_success;
+}
+
 mlsl_status_t mlsl_parallelizer_create(size_t partition_count,
                                        mlsl_parallelizer** parallelizer)
 {
@@ -41,6 +85,7 @@ mlsl_status_t mlsl_parallelizer_process(mlsl_parallelizer* parallelizer,
     size_t* counts = NULL, * offsets = NULL;
     mlsl_sched** part_scheds = NULL;
     size_t* recv_counts = NULL;
+    std::shared_ptr<sched_entry> e;
 
     switch (coll_type)
     {
@@ -75,10 +120,6 @@ mlsl_status_t mlsl_parallelizer_process(mlsl_parallelizer* parallelizer,
     if (coll_type == mlsl_coll_custom)
     {
         MLSL_ASSERTP(0);
-        for (idx = 0; idx < part_count; idx++)
-        {
-            part_scheds[idx] = new mlsl_sched(*sched);
-        }
     }
     else
     {
@@ -169,57 +210,71 @@ mlsl_status_t mlsl_parallelizer_process(mlsl_parallelizer* parallelizer,
             }
             break;
         case mlsl_coll_allreduce:
+            mlsl_parallelizer_prologue_ctx* main_ctx;
             if (sched->coll_attr.prologue_fn)
             {
-                part_scheds[0]->add_entry(entry_factory::make_prologue_entry(sched->coll_attr.prologue_fn,
-                                                                             (char*) coll_param->send_buf,
-                                                                             coll_param->count,
-                                                                             dtype,
-                                                                             &(sched->postponed_fields.buf),
-                                                                             &(sched->postponed_fields.count),
-                                                                             &(sched->postponed_fields.dtype)));
+                MLSL_CALL(mlsl_sched_alloc_buffer(part_scheds[0], sizeof(mlsl_parallelizer_prologue_ctx), (void**)&main_ctx));
+                main_ctx->part_idx = 0;
+                main_ctx->part_count = 1;
+                entry_factory::make_prologue_entry(part_scheds[0],
+                                                   sched->coll_attr.prologue_fn,
+                                                   (char*) coll_param->send_buf,
+                                                   coll_param->count,
+                                                   dtype,
+                                                   &(main_ctx->buf),
+                                                   &(main_ctx->count),
+                                                   &(main_ctx->dtype),
+                                                   &(main_ctx->dtype_size));
                 MLSL_CALL(mlsl_sched_sync_schedules(part_scheds, part_count));
-
                 for (idx = 0; idx < part_count; idx++)
                 {
-                    part_scheds[idx]->add_entry(entry_factory::make_copy_entry(part_scheds[idx],
-                                                                               &(sched->postponed_fields),
-                                                                               &(part_scheds[idx]->postponed_fields),
-                                                                               sizeof(mlsl_sched_postponed_fields),
-                                                                               mlsl_dtype_internal_char));
-
-                    part_scheds[idx]->add_entry(
-                        entry_factory::make_postponed_fields_entry(part_scheds[idx], idx, part_count));
-                    part_scheds[idx]->add_entry(entry_factory::make_coll_entry(part_scheds[idx],
-                                                                               mlsl_coll_allreduce,
-                                                                               MLSL_POSTPONED_ADDR,
-                                                                               MLSL_POSTPONED_ADDR,
-                                                                               MLSL_POSTPONED_COUNT,
-                                                                               MLSL_POSTPONED_DTYPE,
-                                                                               coll_param->reduction,
-                                                                               part_scheds[idx]->coll_param.comm));
+                    mlsl_parallelizer_prologue_ctx* part_ctx;
+                    MLSL_CALL(mlsl_sched_alloc_buffer(part_scheds[idx], sizeof(mlsl_parallelizer_prologue_ctx),
+                                                      (void**)&part_ctx));
+                    part_ctx->part_idx = idx;
+                    part_ctx->part_count = part_count;
+                    entry_factory::make_copy_entry(part_scheds[idx],
+                                                   main_ctx,
+                                                   part_ctx,
+                                                   sizeof(void*) + sizeof(size_t) +
+                                                   sizeof(mlsl_datatype_t) + sizeof(size_t),
+                                                   mlsl_dtype_internal_char);
+                    e = entry_factory::make_coll_entry(part_scheds[idx],
+                                                       mlsl_coll_allreduce,
+                                                       NULL, /* send_buf */
+                                                       NULL, /* recv_buf */
+                                                       0, /* count */
+                                                       mlsl_dtype_internal_none,
+                                                       coll_param->reduction);
+                    e->set_field_fn(mlsl_sched_entry_field_send_buf,
+                                    mlsl_parallelizer_prologue_get_buf, part_ctx, false);
+                    e->set_field_fn(mlsl_sched_entry_field_recv_buf,
+                                    mlsl_parallelizer_prologue_get_buf, part_ctx, false); // in-place
+                    e->set_field_fn(mlsl_sched_entry_field_cnt,
+                                    mlsl_parallelizer_prologue_get_count, part_ctx, false);
+                    e->set_field_fn(mlsl_sched_entry_field_dtype,
+                                    mlsl_parallelizer_prologue_get_dtype, part_ctx, false);
                 }
                 if (!sched->coll_attr.epilogue_fn)
                 {
                     MLSL_CALL(mlsl_sched_sync_schedules(part_scheds, part_count));
-                    part_scheds[0]->add_entry(entry_factory::make_copy_entry(part_scheds[0],
-                                                                             &(sched->postponed_fields),
-                                                                             &(part_scheds[0]->postponed_fields),
-                                                                             sizeof(mlsl_sched_postponed_fields),
-                                                                             mlsl_dtype_internal_char));
-                    part_scheds[0]->add_entry(entry_factory::make_postponed_fields_entry(part_scheds[0], 0, 1));
-                    part_scheds[0]->add_entry(entry_factory::make_copy_entry(part_scheds[0],
-                                                                             MLSL_POSTPONED_ADDR,
-                                                                             coll_param->recv_buf,
-                                                                             MLSL_POSTPONED_COUNT,
-                                                                             MLSL_POSTPONED_DTYPE));
+                    e = entry_factory::make_copy_entry(part_scheds[0],
+                                                       NULL, /* in_buf */
+                                                       coll_param->recv_buf,
+                                                       0, /* count */
+                                                       mlsl_dtype_internal_none);
+                    e->set_field_fn(mlsl_sched_entry_field_in_buf,
+                                    mlsl_parallelizer_prologue_get_buf, main_ctx, false);
+                    e->set_field_fn(mlsl_sched_entry_field_cnt,
+                                    mlsl_parallelizer_prologue_get_count, main_ctx, false);
+                    e->set_field_fn(mlsl_sched_entry_field_dtype,
+                                    mlsl_parallelizer_prologue_get_dtype, main_ctx, false);
                 }
             }
             else
             {
                 for (idx = 0; idx < part_count; idx++)
                 {
-
                     MLSL_CALL(mlsl_coll_build_allreduce(part_scheds[idx],
                                                         (char*) coll_param->send_buf + offsets[idx],
                                                         (char*) coll_param->recv_buf + offsets[idx],
@@ -230,39 +285,24 @@ mlsl_status_t mlsl_parallelizer_process(mlsl_parallelizer* parallelizer,
             }
             if (sched->coll_attr.epilogue_fn)
             {
-                void* epilogue_in_buf = NULL;
-                size_t epilogue_in_count = 0;
-                mlsl_datatype_internal_t epilogue_in_dtype = NULL;
                 MLSL_CALL(mlsl_sched_sync_schedules(part_scheds, part_count));
+                e = entry_factory::make_epilogue_entry(part_scheds[0],
+                                                       sched->coll_attr.epilogue_fn,
+                                                       (char*)coll_param->recv_buf,
+                                                       coll_param->count,
+                                                       dtype,
+                                                       (char*)coll_param->recv_buf,
+                                                       coll_param->count,
+                                                       dtype);
                 if (sched->coll_attr.prologue_fn)
                 {
-                    part_scheds[0]->add_entry(entry_factory::make_copy_entry(part_scheds[0],
-                                                                             &(sched->postponed_fields),
-                                                                             &(part_scheds[0]->postponed_fields),
-                                                                             sizeof(mlsl_sched_postponed_fields),
-                                                                             mlsl_dtype_internal_char));
-                    part_scheds[0]->add_entry(entry_factory::make_postponed_fields_entry(part_scheds[0], 0, 1));
-                    epilogue_in_buf = MLSL_POSTPONED_ADDR;
-                    epilogue_in_count = MLSL_POSTPONED_COUNT;
-                    epilogue_in_dtype = MLSL_POSTPONED_DTYPE;
+                    e->set_field_fn(mlsl_sched_entry_field_in_buf,
+                                    mlsl_parallelizer_prologue_get_buf, main_ctx, false);
+                    e->set_field_fn(mlsl_sched_entry_field_in_cnt,
+                                    mlsl_parallelizer_prologue_get_count, main_ctx, false);
+                    e->set_field_fn(mlsl_sched_entry_field_in_dtype,
+                                    mlsl_parallelizer_prologue_get_dtype, main_ctx, false);
                 }
-                else
-                {
-                    epilogue_in_buf = coll_param->recv_buf;
-                    epilogue_in_count = coll_param->count;
-                    epilogue_in_dtype = dtype;
-                }
-
-                auto* data_type = const_cast<mlsl_datatype_internal*>(dtype);
-                part_scheds[0]->add_entry(entry_factory::make_epilogue_entry(part_scheds[0],
-                                                                             sched->coll_attr.epilogue_fn,
-                                                                             epilogue_in_buf,
-                                                                             epilogue_in_count,
-                                                                             epilogue_in_dtype,
-                                                                             (char*) coll_param->recv_buf,
-                                                                             &(part_scheds[0]->postponed_fields.count),
-                                                                             coll_param->count,
-                                                                             data_type));
             }
             break;
         case mlsl_coll_allgatherv:
@@ -278,13 +318,13 @@ mlsl_status_t mlsl_parallelizer_process(mlsl_parallelizer* parallelizer,
                 copy_counts[part_count - 1] += counts[coll_param->comm->rank] % part_count;
                 for (idx = 0; idx < part_count; idx++)
                 {
-                    part_scheds[idx]->add_entry(entry_factory::make_copy_entry(part_scheds[idx],
-                                                                               (char*) coll_param->send_buf +
-                                                                               copy_offsets[idx],
-                                                                               (char*) coll_param->recv_buf +
-                                                                               offsets[coll_param->comm->rank] +
-                                                                               copy_offsets[idx],
-                                                                               copy_counts[idx], dtype));
+                    entry_factory::make_copy_entry(part_scheds[idx],
+                                                   (char*) coll_param->send_buf +
+                                                   copy_offsets[idx],
+                                                   (char*) coll_param->recv_buf +
+                                                   offsets[coll_param->comm->rank] +
+                                                   copy_offsets[idx],
+                                                   copy_counts[idx], dtype);
                 }
                 mlsl_sched_sync_schedules(part_scheds, part_count);
                 MLSL_FREE(copy_counts);
@@ -301,17 +341,11 @@ mlsl_status_t mlsl_parallelizer_process(mlsl_parallelizer* parallelizer,
             }
             break;
         case mlsl_coll_custom:
-            for (idx = 0; idx < part_count; idx++)
-            {
-                mlsl_sched_adjust_entries(part_scheds[idx], idx, part_count);
-            }
             break;
         default:
             MLSL_ASSERT_FMT(0, "unexpected coll_type %d", coll_type);
             break;
     }
-
-    // TODO: analyze custom sched and insert sync entries
 
     MLSL_FREE(counts);
     MLSL_FREE(offsets);

@@ -14,6 +14,7 @@
 #include <rdma/fi_endpoint.h>
 #include <rdma/fi_domain.h>
 #include <rdma/fi_tagged.h>
+#include <rdma/fi_rma.h>
 
 #include <inttypes.h>
 #include "pm_rt.h"
@@ -24,16 +25,16 @@
 #define gettid() syscall(SYS_gettid)
 #endif
 
-#define ATL_OFI_PRINT(s, ...)                        \
-    do {                                             \
-        pid_t tid = gettid();                        \
-        char hoststr[32];                            \
-        gethostname(hoststr, sizeof(hoststr));       \
-        fprintf(stdout, "(%d): %s: @ %s:%d:%s() " s, \
-                tid, hoststr,                        \
-                __FILE__, __LINE__,                  \
-                __func__, ##__VA_ARGS__);            \
-        fflush(stdout);                              \
+#define ATL_OFI_PRINT(s, ...)                             \
+    do {                                                  \
+        pid_t tid = gettid();                             \
+        char hoststr[32];                                 \
+        gethostname(hoststr, sizeof(hoststr));            \
+        fprintf(stdout, "(%d): %s: @ %s:%d:%s() " s "\n", \
+                tid, hoststr,                             \
+                __FILE__, __LINE__,                       \
+                __func__, ##__VA_ARGS__);                 \
+        fflush(stdout);                                   \
     } while (0)
 
 #ifdef ENABLE_DEBUG
@@ -61,7 +62,20 @@
 #define ATL_OFI_CQ_BUNCH_SIZE (8)
 
 /* OFI returns 0 or -errno */
-#define RET2ATL(ret) ((ret) ? atl_status_failure : atl_status_success)
+#define RET2ATL(ret)                                 \
+  ({                                                 \
+      int r = ret;                                   \
+      atl_status_t status;                           \
+      if (r)                                         \
+      {                                              \
+          printf("OFI error: %s\n", fi_strerror(r)); \
+          fflush(stdout);                            \
+          status = atl_status_failure;               \
+      }                                              \
+      else                                           \
+          status = atl_status_success;               \
+      status;                                        \
+  })
 
 static const char *atl_ofi_name = "OFI";
 
@@ -113,6 +127,11 @@ typedef struct atl_ofi_req {
     atl_ofi_comm_context_t *comm;
     atl_ofi_comp_state_t comp_state;
 } atl_ofi_req_t;
+
+typedef struct atl_ofi_mr {
+    atl_mr_t atl_mr;
+    struct fid_mr *mr;
+} atl_ofi_mr_t;
 
 static inline fi_addr_t
 atl_ofi_comm_atl_addr_2_fi_addr(atl_ofi_context_t *atl, size_t proc_idx, size_t ep_idx)
@@ -212,7 +231,7 @@ static atl_status_t atl_ofi_comms_destroy_conns(atl_ofi_context_t *atl_ofi_conte
                        atl_ofi_context->addr_table.ep_num *
                        atl_ofi_context->proc_count, 0);
     if (ret)
-        ATL_OFI_DEBUG_PRINT("AV remove failed (%d)\n", ret);
+        ATL_OFI_DEBUG_PRINT("AV remove failed (%d)", ret);
 
     free(atl_ofi_context->addr_table.table);
     atl_ofi_context->addr_table.ep_num = 0;
@@ -421,7 +440,7 @@ static atl_status_t atl_ofi_comm_handle_cq_err(atl_ofi_comm_context_t *comm_cont
     struct fi_cq_err_entry err_entry;
     int ret = fi_cq_readerr(comm_context->cq, &err_entry, 0);
     if (ret != 1) {
-        ATL_OFI_DEBUG_PRINT("Unable to fi_cq_readerr\n");
+        ATL_OFI_DEBUG_PRINT("Unable to fi_cq_readerr");
         assert(0);
         return atl_status_failure;
     } else {
@@ -632,6 +651,48 @@ atl_ofi_comm_recv(atl_comm_t *comm, void *buf, size_t len,
 }
 
 static atl_status_t
+atl_ofi_comm_read(atl_comm_t *comm, void *buf, size_t len, atl_mr_t *atl_mr,
+                  uint64_t addr, uintptr_t r_key, size_t dest_proc_idx, atl_req_t *req)
+{
+    atl_ofi_comm_context_t *comm_context =
+        container_of(comm, atl_ofi_comm_context_t, atl_comm);
+    atl_ofi_req_t *ofi_req = ((atl_ofi_req_t *)req->internal);
+
+    req->remote_proc_idx = dest_proc_idx;
+    req->tag = 0;
+    ofi_req->comp_state = ATL_OFI_COMP_POSTED;
+
+    return RET2ATL(fi_read(comm_context->tx_ctx, buf, len, (void*)atl_mr->l_key,
+                           atl_ofi_comm_atl_addr_2_fi_addr(
+                               container_of(comm->atl_desc,
+                                            atl_ofi_context_t,
+                                            atl_desc),
+                               dest_proc_idx, comm_context->idx),
+                           addr, r_key, &ofi_req->ofi_context));
+}
+
+static atl_status_t
+atl_ofi_comm_write(atl_comm_t *comm, const void *buf, size_t len, atl_mr_t *atl_mr,
+                   uint64_t addr, uintptr_t r_key, size_t dest_proc_idx, atl_req_t *req)
+{
+    atl_ofi_comm_context_t *comm_context =
+        container_of(comm, atl_ofi_comm_context_t, atl_comm);
+    atl_ofi_req_t *ofi_req = ((atl_ofi_req_t *)req->internal);
+
+    req->remote_proc_idx = dest_proc_idx;
+    req->tag = 0;
+    ofi_req->comp_state = ATL_OFI_COMP_POSTED;
+
+    return RET2ATL(fi_write(comm_context->tx_ctx, buf, len, (void*)atl_mr->l_key,
+                            atl_ofi_comm_atl_addr_2_fi_addr(
+                                container_of(comm->atl_desc,
+                                             atl_ofi_context_t,
+                                             atl_desc),
+                                dest_proc_idx, comm_context->idx),
+                            addr, r_key, &ofi_req->ofi_context));
+}
+
+static atl_status_t
 atl_ofi_comm_probe(atl_comm_t *comm, size_t src_proc_idx, uint64_t tag, atl_req_t *req)
 {
     
@@ -710,6 +771,11 @@ static atl_pt2pt_ops_t atl_ofi_comm_pt2pt_ops = {
     .probe = atl_ofi_comm_probe,
 };
 
+static atl_rma_ops_t atl_ofi_comm_rma_ops = {
+    .read = atl_ofi_comm_read,
+    .write = atl_ofi_comm_write,
+};
+
 static atl_comp_ops_t atl_ofi_comm_comp_ops = {
     .wait = atl_ofi_comm_wait,
     .wait_all = atl_ofi_comm_wait_all,
@@ -736,6 +802,7 @@ atl_ofi_comm_init(atl_ofi_context_t *atl_ofi_context, atl_comm_attr_t *attr,
     *comm = &atl_ofi_comm_context->atl_comm;
     (*comm)->atl_desc = &atl_ofi_context->atl_desc;
     (*comm)->pt2pt_ops = &atl_ofi_comm_pt2pt_ops;
+    (*comm)->rma_ops = &atl_ofi_comm_rma_ops;
     (*comm)->comp_ops = &atl_ofi_comm_comp_ops;
 
     return atl_status_success;
@@ -820,10 +887,57 @@ static void atl_ofi_proc_count(atl_desc_t *atl_desc, size_t *proc_count)
     *proc_count = atl_ofi_context->proc_count;
 }
 
+static atl_status_t atl_ofi_mr_reg(atl_desc_t *atl_desc, const void *buf, size_t len,
+                                   atl_mr_t **atl_mr)
+{
+    int ret;
+    atl_ofi_context_t *atl_context =
+        container_of(atl_desc, atl_ofi_context_t, atl_desc);
+    atl_ofi_mr_t *atl_ofi_mr = calloc(1, sizeof(*atl_ofi_mr));
+    if (!atl_ofi_mr)
+        return atl_status_failure;
+
+    ret = fi_mr_reg(atl_context->domain, buf, len,
+                    FI_SEND | FI_RECV | FI_READ | FI_WRITE |
+                    FI_REMOTE_READ | FI_REMOTE_WRITE, 0, 0, 0,
+                    &atl_ofi_mr->mr, NULL);
+    if (ret)
+        goto mr_reg_err;
+
+    atl_ofi_mr->atl_mr.buf = (void *)buf;
+    atl_ofi_mr->atl_mr.len = len;
+    atl_ofi_mr->atl_mr.r_key = (uintptr_t)fi_mr_key(atl_ofi_mr->mr);
+    atl_ofi_mr->atl_mr.l_key = (uintptr_t)fi_mr_desc(atl_ofi_mr->mr);
+
+    *atl_mr = &atl_ofi_mr->atl_mr;
+    return atl_status_success;
+
+mr_reg_err:
+    free(atl_ofi_mr);
+    return atl_status_failure;
+}
+
+static atl_status_t atl_ofi_mr_dereg(atl_desc_t *atl_desc, atl_mr_t *atl_mr)
+{
+    atl_ofi_mr_t *atl_ofi_mr = container_of(atl_mr, atl_ofi_mr_t, atl_mr);
+    int ret = fi_close(&atl_ofi_mr->mr->fid);
+    if (ret) {
+        return atl_status_failure;
+    } else {
+        free(atl_ofi_mr);
+        return atl_status_success;
+    }
+}
+
 atl_ops_t atl_ofi_ops = {
     .proc_idx = atl_ofi_proc_idx,
     .proc_count = atl_ofi_proc_count,
     .finalize = atl_ofi_finalize,
+};
+
+static atl_mr_ops_t atl_ofi_mr_ops = {
+    .mr_reg = atl_ofi_mr_reg,
+    .mr_dereg = atl_ofi_mr_dereg,
 };
 
 static void atl_ofi_tune(void)
@@ -863,6 +977,14 @@ atl_status_t atl_ofi_init(int *argc, char ***argv, size_t *proc_idx, size_t *pro
     hints->ep_attr->type = FI_EP_RDM;
     hints->domain_attr->resource_mgmt = FI_RM_ENABLED;
     hints->caps = FI_TAGGED;
+    if (attr->enable_rma)
+    {
+        ATL_OFI_DEBUG_PRINT("try to enable RMA");
+        hints->caps |= FI_RMA | FI_READ | FI_WRITE | FI_REMOTE_READ | FI_REMOTE_WRITE;
+        hints->domain_attr->mr_mode = FI_MR_UNSPEC;
+        // TODO:
+        //hints->domain_attr->mr_mode = FI_MR_VIRT_ADDR | FI_MR_ALLOCATED | FI_MR_PROV_KEY;
+    }
     hints->ep_attr->tx_ctx_cnt = attr->comm_count;
     hints->ep_attr->rx_ctx_cnt = attr->comm_count;
 
@@ -870,12 +992,29 @@ atl_status_t atl_ofi_init(int *argc, char ***argv, size_t *proc_idx, size_t *pro
 
     ret = fi_getinfo(fi_version, NULL, NULL, 0ULL, hints, &providers);
     if (ret || !providers)
-        goto err_getinfo;
+    {
+        if (attr->enable_rma)
+        {
+            attr->enable_rma = 0;
+            ATL_OFI_DEBUG_PRINT("try without RMA");
+            hints->caps = FI_TAGGED;
+            hints->domain_attr->mr_mode = FI_MR_UNSPEC;
+            ret = fi_getinfo(fi_version, NULL, NULL, 0ULL, hints, &providers);
+            if (ret || !providers)
+                goto err_getinfo;
+        }
+        else
+            goto err_getinfo;
+    }
 
     /* Use first provider from the list of providers */
     atl_ofi_context->prov = fi_dupinfo(providers);
     if (!atl_ofi_context->prov)
         goto err_prov;
+
+    attr->max_order_waw_size = atl_ofi_context->prov->ep_attr->max_order_waw_size;
+
+    ATL_OFI_DEBUG_PRINT("mr_mode %d", atl_ofi_context->prov->domain_attr->mr_mode);
 
     ret = fi_fabric(atl_ofi_context->prov->fabric_attr,
                     &atl_ofi_context->fabric, NULL);
@@ -903,6 +1042,7 @@ atl_status_t atl_ofi_init(int *argc, char ***argv, size_t *proc_idx, size_t *pro
         goto err_comms_init;
 
     atl_ofi_context->atl_desc.ops = &atl_ofi_ops;
+    atl_ofi_context->atl_desc.mr_ops = &atl_ofi_mr_ops;
     *atl_desc = &atl_ofi_context->atl_desc;
 
     return atl_status_success;

@@ -24,12 +24,15 @@ public:
     void wait(mlsl_request* req);
     bool test(mlsl_request* req);
 
-    // TODO_ATL: add corresponding ATL methods like MPI_Comm_rank/size
     size_t proc_idx{};
     size_t proc_count{};
+    atl_desc_t* atl_desc = nullptr;
+
+    /* TODO: group output ATL parameters */
+    int is_rma_enabled = 0;
+    size_t max_order_waw_size = 0;
 
 private:
-    atl_desc_t* atl_desc = nullptr;
     atl_comm_t** atl_comms = nullptr;
 
     std::vector<std::unique_ptr<mlsl_worker>> workers;

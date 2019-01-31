@@ -24,7 +24,7 @@
           {                                                                \
               printf("iter %zu, idx %zu, expected %f, got %f\n",           \
                       iter_idx, idx, expected, recv_buf[idx]);             \
-              assert(0);                                                   \
+              ASSERT(0, "unexpected value");                               \
           }                                                                \
       }                                                                    \
       printf("[%zu] avg %s time: %8.2lf us\n", rank, name, t / ITERS);     \
@@ -37,6 +37,10 @@ int main()
     float recv_buf[COUNT];
 
     test_init();
+
+    coll_attr.to_cache = 0;
+    RUN_COLLECTIVE(mlsl_allreduce(send_buf, recv_buf, COUNT, mlsl_dtype_float, mlsl_reduction_sum, &coll_attr, NULL, &request),
+                   "warmup_allreduce");
 
     coll_attr.to_cache = 1;
     RUN_COLLECTIVE(mlsl_allreduce(send_buf, recv_buf, COUNT, mlsl_dtype_float, mlsl_reduction_sum, &coll_attr, NULL, &request),

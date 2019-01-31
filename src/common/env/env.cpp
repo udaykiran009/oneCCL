@@ -14,7 +14,8 @@ mlsl_env_data env_data =
     .out_of_order_support = 0,
     .worker_affinity = NULL,
     .priority_mode = mlsl_priority_none,
-    .allreduce_algo = mlsl_allreduce_algo_rabenseifner
+    .allreduce_algo = mlsl_allreduce_algo_rabenseifner,
+    .enable_rma = 0
 };
 
 const char *mlsl_priority_mode_to_str(mlsl_priority_mode mode)
@@ -36,9 +37,13 @@ const char *mlsl_allreduce_algo_to_str(mlsl_allreduce_algo algo)
 {
     switch (algo) {
         case mlsl_allreduce_algo_rabenseifner:
-            return "RSAG";
+            return "tree";
         case mlsl_allreduce_algo_starlike:
-            return "STARLIKE";
+            return "starlike";
+        case mlsl_allreduce_algo_ring:
+            return "ring";
+        case mlsl_allreduce_algo_ring_rma:
+            return "ring_rma";
         default:
             MLSL_ASSERT_FMT(0, "unexpected allreduce_algo %d", algo);
             return "(out of range)";
@@ -52,6 +57,7 @@ void mlsl_env_parse()
     mlsl_env_2_int("MLSL_WORKER_COUNT", &env_data.worker_count);
     mlsl_env_2_int("MLSL_WORKER_OFFLOAD", &env_data.worker_offload);
     mlsl_env_2_int("MLSL_OUT_OF_ORDER_SUPPORT", &env_data.out_of_order_support);
+    mlsl_env_2_int("MLSL_ENABLE_RMA", &env_data.enable_rma);
     mlsl_env_parse_priority_mode();
     mlsl_env_parse_affinity();
     mlsl_env_parse_allreduce_algo();
@@ -69,6 +75,7 @@ void mlsl_env_print()
     MLSL_LOG(INFO, "MLSL_WORKER_COUNT: %d", env_data.worker_count);
     MLSL_LOG(INFO, "MLSL_WORKER_OFFLOAD: %d", env_data.worker_offload);
     MLSL_LOG(INFO, "MLSL_OUT_OF_ORDER_SUPPORT: %d", env_data.out_of_order_support);
+    MLSL_LOG(INFO, "MLSL_ENABLE_RMA: %d", env_data.enable_rma);
     MLSL_LOG(INFO, "MLSL_PRIORITY_MODE: %s", mlsl_priority_mode_to_str(env_data.priority_mode));
     MLSL_LOG(INFO, "MLSL_ALLREDUCE_ALGO: %s", mlsl_allreduce_algo_to_str(env_data.allreduce_algo));
     mlsl_env_print_affinity();
@@ -206,10 +213,14 @@ int mlsl_env_parse_allreduce_algo()
     char *mode_env = getenv("MLSL_ALLREDUCE_ALGO");
     if (mode_env)
     {
-        if (strcmp(mode_env, "rsag") == 0) // reduce_scatter + allgather
+        if (strcmp(mode_env, "tree") == 0)
             env_data.allreduce_algo = mlsl_allreduce_algo_rabenseifner;
         else if (strcmp(mode_env, "starlike") == 0)
             env_data.allreduce_algo = mlsl_allreduce_algo_starlike;
+        else if (strcmp(mode_env, "ring") == 0)
+            env_data.allreduce_algo = mlsl_allreduce_algo_ring;
+        else if (strcmp(mode_env, "ring_rma") == 0)
+            env_data.allreduce_algo = mlsl_allreduce_algo_ring_rma;
         else
         {
             MLSL_ASSERT_FMT(0, "unexpected allreduce_algo %s", mode_env);

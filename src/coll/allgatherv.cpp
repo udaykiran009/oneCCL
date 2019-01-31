@@ -21,8 +21,8 @@ mlsl_status_t mlsl_coll_build_naive_allgatherv(mlsl_sched* sched, const void* se
     if (send_buf != recv_buf)
     {
         //out-of-place case
-        sched->add_entry(entry_factory::make_copy_entry(sched, send_buf, static_cast<char*>(recv_buf) + offsets[this_rank],
-                                                        send_count, dtype));
+        entry_factory::make_copy_entry(sched, send_buf, static_cast<char*>(recv_buf) + offsets[this_rank],
+                                       send_count, dtype);
     }
 
     for (size_t rank_idx = 0; rank_idx < sched->coll_param.comm->size; ++rank_idx)
@@ -30,15 +30,14 @@ mlsl_status_t mlsl_coll_build_naive_allgatherv(mlsl_sched* sched, const void* se
         if (rank_idx != this_rank)
         {
             // send own buffer to other rank
-            sched->add_entry(entry_factory::make_send_entry(sched, static_cast<char*>(recv_buf) + offsets[this_rank],
-                                                            send_count, dtype, rank_idx));
+            entry_factory::make_send_entry(sched, static_cast<char*>(recv_buf) + offsets[this_rank],
+                                           send_count, dtype, rank_idx);
             // recv other's rank buffer
-            sched->add_entry(entry_factory::make_recv_entry(sched, static_cast<char*>(recv_buf) + offsets[rank_idx],
-                                                            recv_counts[rank_idx], dtype, rank_idx));
+            entry_factory::make_recv_entry(sched, static_cast<char*>(recv_buf) + offsets[rank_idx],
+                                           recv_counts[rank_idx], dtype, rank_idx);
         }
     }
 
     MLSL_FREE(offsets);
-
     return status;
 }

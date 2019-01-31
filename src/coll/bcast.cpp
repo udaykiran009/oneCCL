@@ -48,8 +48,8 @@ mlsl_status_t mlsl_coll_build_scatter_for_bcast(mlsl_sched *sched, void *tmp_buf
             curr_size = recv_size;
 
             if (recv_size > 0) {
-                sched->add_entry( entry_factory::make_recv_entry(sched, ((char*) tmp_buf + relative_rank * scatter_size),
-                                                                 recv_size, mlsl_dtype_internal_char, src));
+                entry_factory::make_recv_entry(sched, ((char*) tmp_buf + relative_rank * scatter_size),
+                                               recv_size, mlsl_dtype_internal_char, src);
                 MLSL_CALL(mlsl_sched_add_barrier(sched));
             }
             break;
@@ -74,8 +74,8 @@ mlsl_status_t mlsl_coll_build_scatter_for_bcast(mlsl_sched *sched, void *tmp_buf
                 if (dst >= comm_size)
                     dst -= comm_size;
 
-                sched->add_entry( entry_factory::make_send_entry(sched, ((char*) tmp_buf + scatter_size * (relative_rank + mask)),
-                                                                 send_size, mlsl_dtype_internal_char, dst));
+                entry_factory::make_send_entry(sched, ((char*) tmp_buf + scatter_size * (relative_rank + mask)),
+                                               send_size, mlsl_dtype_internal_char, dst);
                 MLSL_CALL(mlsl_sched_add_barrier(sched));
                 curr_size -= send_size;
             }
@@ -141,11 +141,11 @@ mlsl_status_t mlsl_coll_build_scatter_ring_allgather_bcast(mlsl_sched *sched, vo
             right_count = 0;
         right_disp = rel_j * scatter_size;
 
-        sched->add_entry(entry_factory::make_send_entry(sched, ((char*) tmp_buf + right_disp),
-                                                        right_count, mlsl_dtype_internal_char, right));
+        entry_factory::make_send_entry(sched, ((char*) tmp_buf + right_disp),
+                                       right_count, mlsl_dtype_internal_char, right);
         /* sendrecv, no barrier here */
-        sched->add_entry(entry_factory::make_recv_entry(sched, ((char*) tmp_buf + left_disp),
-                                                        left_count, mlsl_dtype_internal_char, left));
+        entry_factory::make_recv_entry(sched, ((char*) tmp_buf + left_disp),
+                                       left_count, mlsl_dtype_internal_char, left);
         MLSL_CALL(mlsl_sched_add_barrier(sched));
 
         j = jnext;

@@ -17,8 +17,8 @@ mlsl_status_t mlsl_coll_build_dissemination_barrier(mlsl_sched *sched)
     while (mask < size) {
         dst = (rank + mask) % size;
         src = (rank - mask + size) % size;
-        sched->add_entry(entry_factory::make_send_entry(sched, NULL, 0, mlsl_dtype_internal_char, dst));
-        sched->add_entry(entry_factory::make_recv_entry(sched, NULL, 0, mlsl_dtype_internal_char, src));
+        entry_factory::make_send_entry(sched, NULL, 0, mlsl_dtype_internal_char, dst);
+        entry_factory::make_recv_entry(sched, NULL, 0, mlsl_dtype_internal_char, src);
         MLSL_CALL(mlsl_sched_add_barrier(sched));
         mask <<= 1;
     }

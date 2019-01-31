@@ -113,8 +113,8 @@ mlsl_sched* out_of_order::ooo_match::build_bcast_sched(const char* tensor_name)
     mlsl_sched_add_barrier(bcast_sched->partial_scheds[0]);
 
     //created tensor_comm entry will have an address of bcast_sched->match_id where tensor name will be broadcasted
-    bcast_sched->partial_scheds[0]->add_entry(entry_factory::make_tensor_comm_entry(this,
-                                                           bcast_sched->partial_scheds[0]->coll_attr.match_id));
+    entry_factory::make_tensor_comm_entry(bcast_sched->partial_scheds[0], this,
+                                          bcast_sched->partial_scheds[0]->coll_attr.match_id);
 
     //overwrite schedule type that was set in mlsl_coll_build_bcast
     bcast_sched->partial_scheds[0]->coll_param.ctype = bcast_sched->coll_param.ctype;

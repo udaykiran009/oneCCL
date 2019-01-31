@@ -17,6 +17,12 @@ mlsl_status_t mlsl_coll_build_binomial_reduce(mlsl_sched *sched, const void *sen
 mlsl_status_t mlsl_coll_build_rabenseifner_allreduce(mlsl_sched *sched, const void *send_buf, void *recv_buf,
                                                      size_t count, mlsl_datatype_internal_t dtype, mlsl_reduction_t op);
 
+mlsl_status_t mlsl_coll_build_ring_allreduce(mlsl_sched *sched, const void *send_buf, void *recv_buf,
+                                             size_t count, mlsl_datatype_internal_t dtype, mlsl_reduction_t op);
+
+mlsl_status_t mlsl_coll_build_ring_rma_allreduce(mlsl_sched *sched, const void *send_buf, void *recv_buf,
+                                                 size_t count, mlsl_datatype_internal_t dtype, mlsl_reduction_t op);
+
 mlsl_status_t mlsl_coll_build_recursive_doubling_allreduce(mlsl_sched *sched, const void *send_buf, void *recv_buf,
                                                            size_t count, mlsl_datatype_internal_t dtype, mlsl_reduction_t op);
 
