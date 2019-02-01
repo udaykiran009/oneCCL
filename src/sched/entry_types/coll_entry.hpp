@@ -64,7 +64,7 @@ protected:
                                      "dt %s, coll_type %s, send_buf %p, recv_buf %p, cnt %zu, op %s, comm %p, req %p\n",
                                      mlsl_datatype_get_name(dtype), mlsl_coll_type_to_str(ctype),
                                      send_buf, recv_buf, cnt, mlsl_reduction_to_str(op),
-                                     sched->coll_param.comm, &req);
+                                     sched->coll_param.comm, req);
         return dump_buf + bytes_written;
     }
 
@@ -111,20 +111,9 @@ private:
         }
         if (coll_sched)
         {
-            // TODO: share this logic with executor
-            MLSL_LOG(DEBUG, "starting COLLECTIVE entry");
-            mlsl_request* coll_req;
-            coll_sched->sched_id = sched->sched_id;
-            mlsl_request_create(&coll_req);
-            coll_req->completion_counter = 1;
-            coll_req->sched = coll_sched;
-            coll_sched->req = coll_req;
-            req = coll_req;
-            mlsl_sched_reset(coll_sched);
-            mlsl_sched_dump(coll_sched, "coll_sched");
-            sched->bin->queue->add(coll_sched, mlsl_sched_get_priority(sched));
-            MLSL_LOG(DEBUG, "COLLECTIVE entry: queue %p, sched %p, req %p",
-                     sched->bin->queue, coll_sched, coll_req);
+            MLSL_LOG(DEBUG, "starting COLL entry");
+            mlsl_sched_start_subsched(sched, coll_sched, &req);
+            MLSL_LOG(DEBUG, "COLL entry: sched %p, req %p", coll_sched, req);
             // TODO: insert into per-worker sched cache
         }
     }

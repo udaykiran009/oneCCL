@@ -131,7 +131,7 @@ const char *mlsl_coll_type_to_str(mlsl_coll_type type)
         }                                                                                   \
         /* root rank already broadcasts the tensor or it is not root rank */                \
         global_data.ooo_handler->postpone_for_tensor(attr->match_id, sched);                \
-        mlsl_update_request_reference(sched, req);                                          \
+        mlsl_sched_reset_request(sched, req);                                               \
     }                                                                                       \
   } while (0)
 

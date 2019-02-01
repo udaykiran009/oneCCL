@@ -43,18 +43,18 @@
 #define ATL_OFI_DEBUG_PRINT(s, ...)
 #endif
 
-#define ATL_OFI_RETRY(func, comm, ret_val)                        \
-    do {                                                          \
-        ret_val = func;                                           \
-        if (ret_val == FI_SUCCESS)                                \
-            break;                                                \
-        if (ret_val != -FI_EAGAIN) {                              \
-            ATL_OFI_DEBUG_PRINT(#func "fails with ret %"PRId64"", \
-                                ret_val);                         \
-            assert(0);                                            \
-            break;                                                \
-        }                                                         \
-        (void) atl_ofi_comm_poll(comm);                           \
+#define ATL_OFI_RETRY(func, comm, ret_val)                         \
+    do {                                                           \
+        ret_val = func;                                            \
+        if (ret_val == FI_SUCCESS)                                 \
+            break;                                                 \
+        if (ret_val != -FI_EAGAIN) {                               \
+            ATL_OFI_PRINT(#func "\n fails with ret %"PRId64", %s", \
+                                ret_val, fi_strerror(ret_val));    \
+            assert(0);                                             \
+            break;                                                 \
+        }                                                          \
+        (void) atl_ofi_comm_poll(comm);                            \
     } while (ret_val == -FI_EAGAIN)
 
 #define ATL_OFI_PM_KEY "atl-ofi"
@@ -62,20 +62,7 @@
 #define ATL_OFI_CQ_BUNCH_SIZE (8)
 
 /* OFI returns 0 or -errno */
-#define RET2ATL(ret)                                 \
-  ({                                                 \
-      int r = ret;                                   \
-      atl_status_t status;                           \
-      if (r)                                         \
-      {                                              \
-          printf("OFI error: %s\n", fi_strerror(r)); \
-          fflush(stdout);                            \
-          status = atl_status_failure;               \
-      }                                              \
-      else                                           \
-          status = atl_status_success;               \
-      status;                                        \
-  })
+#define RET2ATL(ret) (ret) ? atl_status_failure : atl_status_success
 
 static const char *atl_ofi_name = "OFI";
 
@@ -657,18 +644,21 @@ atl_ofi_comm_read(atl_comm_t *comm, void *buf, size_t len, atl_mr_t *atl_mr,
     atl_ofi_comm_context_t *comm_context =
         container_of(comm, atl_ofi_comm_context_t, atl_comm);
     atl_ofi_req_t *ofi_req = ((atl_ofi_req_t *)req->internal);
+    ssize_t ret;
 
     req->remote_proc_idx = dest_proc_idx;
     req->tag = 0;
     ofi_req->comp_state = ATL_OFI_COMP_POSTED;
 
-    return RET2ATL(fi_read(comm_context->tx_ctx, buf, len, (void*)atl_mr->l_key,
-                           atl_ofi_comm_atl_addr_2_fi_addr(
-                               container_of(comm->atl_desc,
-                                            atl_ofi_context_t,
-                                            atl_desc),
-                               dest_proc_idx, comm_context->idx),
-                           addr, r_key, &ofi_req->ofi_context));
+    ATL_OFI_RETRY(fi_read(comm_context->tx_ctx, buf, len, (void*)atl_mr->l_key,
+                          atl_ofi_comm_atl_addr_2_fi_addr(
+                              container_of(comm->atl_desc,
+                                           atl_ofi_context_t,
+                                           atl_desc),
+                              dest_proc_idx, comm_context->idx),
+                          addr, r_key, &ofi_req->ofi_context),
+                  comm, ret);
+    return RET2ATL(ret);
 }
 
 static atl_status_t
@@ -678,18 +668,21 @@ atl_ofi_comm_write(atl_comm_t *comm, const void *buf, size_t len, atl_mr_t *atl_
     atl_ofi_comm_context_t *comm_context =
         container_of(comm, atl_ofi_comm_context_t, atl_comm);
     atl_ofi_req_t *ofi_req = ((atl_ofi_req_t *)req->internal);
+    ssize_t ret;
 
     req->remote_proc_idx = dest_proc_idx;
     req->tag = 0;
     ofi_req->comp_state = ATL_OFI_COMP_POSTED;
 
-    return RET2ATL(fi_write(comm_context->tx_ctx, buf, len, (void*)atl_mr->l_key,
-                            atl_ofi_comm_atl_addr_2_fi_addr(
-                                container_of(comm->atl_desc,
-                                             atl_ofi_context_t,
-                                             atl_desc),
-                                dest_proc_idx, comm_context->idx),
-                            addr, r_key, &ofi_req->ofi_context));
+    ATL_OFI_RETRY(fi_write(comm_context->tx_ctx, buf, len, (void*)atl_mr->l_key,
+                           atl_ofi_comm_atl_addr_2_fi_addr(
+                               container_of(comm->atl_desc,
+                                            atl_ofi_context_t,
+                                            atl_desc),
+                               dest_proc_idx, comm_context->idx),
+                           addr, r_key, &ofi_req->ofi_context),
+                   comm, ret);
+    return RET2ATL(ret);
 }
 
 static atl_status_t
@@ -921,12 +914,8 @@ static atl_status_t atl_ofi_mr_dereg(atl_desc_t *atl_desc, atl_mr_t *atl_mr)
 {
     atl_ofi_mr_t *atl_ofi_mr = container_of(atl_mr, atl_ofi_mr_t, atl_mr);
     int ret = fi_close(&atl_ofi_mr->mr->fid);
-    if (ret) {
-        return atl_status_failure;
-    } else {
-        free(atl_ofi_mr);
-        return atl_status_success;
-    }
+    free(atl_ofi_mr);
+    return RET2ATL(ret);
 }
 
 atl_ops_t atl_ofi_ops = {
@@ -1015,6 +1004,7 @@ atl_status_t atl_ofi_init(int *argc, char ***argv, size_t *proc_idx, size_t *pro
     attr->max_order_waw_size = atl_ofi_context->prov->ep_attr->max_order_waw_size;
 
     ATL_OFI_DEBUG_PRINT("mr_mode %d", atl_ofi_context->prov->domain_attr->mr_mode);
+    ATL_OFI_DEBUG_PRINT("threading %d", atl_ofi_context->prov->domain_attr->threading);
 
     ret = fi_fabric(atl_ofi_context->prov->fabric_attr,
                     &atl_ofi_context->fabric, NULL);

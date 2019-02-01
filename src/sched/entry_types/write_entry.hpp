@@ -27,6 +27,13 @@ public:
     {
         MLSL_LOG(DEBUG, "WRITE entry dst %zu, req %p", dst, &req);
         MLSL_ASSERTP(src_buf && src_mr && dst_mr);
+
+        if (!cnt)
+        {
+            status = mlsl_sched_entry_status_complete;
+            return;
+        }
+
         atl_status_t atl_status = atl_comm_write(sched->bin->comm_ctx, src_buf,
                                                  cnt * mlsl_datatype_get_size(dtype), src_mr,
                                                  (uint64_t)dst_mr->buf + dst_buf_off,

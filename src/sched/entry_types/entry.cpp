@@ -17,6 +17,7 @@ void sched_entry::start()
     MLSL_ASSERTP(status >= mlsl_sched_entry_status_started);
     if (status == mlsl_sched_entry_status_complete)
         MLSL_LOG(DEBUG, "completed %s entry", name());
+    check_exec_mode();
 }
 
 void sched_entry::update()
@@ -27,6 +28,7 @@ void sched_entry::update()
     MLSL_ASSERTP(status >= mlsl_sched_entry_status_started);
     if (status == mlsl_sched_entry_status_complete)
         MLSL_LOG(DEBUG, "completed %s entry", name());
+    check_exec_mode();
 }
 
 void sched_entry::update_derived()
@@ -57,12 +59,18 @@ void* sched_entry::get_field_ptr(mlsl_sched_entry_field_id id)
 }
 
 void sched_entry::make_barrier() { barrier = true; }
-bool sched_entry::is_barrier() { return barrier; }
+bool sched_entry::is_barrier() const { return barrier; }
 mlsl_sched_entry_status sched_entry::get_status() const { return status; }
 void sched_entry::set_status(mlsl_sched_entry_status s) { status = s; }
 void sched_entry::set_exec_mode(mlsl_sched_entry_exec_mode mode) { exec_mode = mode; }
-mlsl_sched_entry_exec_mode sched_entry::get_exec_mode() { return exec_mode; }
 char* sched_entry::dump_detail(char* dump_buf) const { return dump_buf; }
+
+void sched_entry::check_exec_mode()
+{
+    if (status == mlsl_sched_entry_status_complete &&
+        exec_mode == mlsl_sched_entry_exec_once)
+        status = mlsl_sched_entry_status_complete_once;
+}
 
 const char* sched_entry::entry_status_to_str(mlsl_sched_entry_status status) const
 {

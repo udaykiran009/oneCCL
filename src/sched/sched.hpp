@@ -35,20 +35,10 @@ struct mlsl_sched_buffer_handler
         : ptr(ptr), size(size) {} 
 };
 
-struct mlsl_sched_mr_handler
-{
-    void *ptr;
-    size_t size;
-    atl_mr_t* mr;
-
-    mlsl_sched_mr_handler(void* ptr, size_t size, atl_mr_t* mr)
-        : ptr(ptr), size(size), mr(mr) {}
-};
-
 struct mlsl_sched_memory
 {
     std::list<mlsl_sched_buffer_handler> buf_list;
-    std::list<mlsl_sched_mr_handler> mr_list;
+    std::list<atl_mr_t*> mr_list;
 };
 
 struct mlsl_sched_coll_attr
@@ -133,19 +123,18 @@ mlsl_status_t mlsl_sched_barrier(mlsl_comm* comm, mlsl_sched **sched);
 mlsl_status_t mlsl_sched_tensor_bcast(mlsl_comm* comm, mlsl_sched** sched, bool temporal);
 
 mlsl_status_t mlsl_sched_progress(mlsl_sched_queue_bin *bin, size_t sched_count, size_t *processed_sched_count);
-mlsl_status_t mlsl_sched_adjust_tag(mlsl_sched *sched);
+mlsl_status_t mlsl_sched_update_id(mlsl_sched *sched);
 mlsl_status_t mlsl_sched_dump(mlsl_sched *sched, const char *name);
 mlsl_status_t mlsl_sched_reset(mlsl_sched *sched);
 
 mlsl_status_t mlsl_sched_alloc_buffer(mlsl_sched *sched, size_t size, void** ptr);
 mlsl_status_t mlsl_sched_free_buffers(mlsl_sched *sched);
-/*mlsl_status_t mlsl_sched_register_buffer(mlsl_sched* sched, size_t size, void* ptr, atl_mr_t** mr);
-mlsl_status_t mlsl_sched_deregister_buffers(mlsl_sched* sched);*/
 
 mlsl_status_t mlsl_sched_set_entry_exec_mode(mlsl_sched* sched, mlsl_sched_entry_exec_mode mode);
 
 const char *mlsl_reduction_to_str(mlsl_reduction_t type);
 mlsl_status_t mlsl_sched_set_coll_attr(mlsl_sched *sched, const mlsl_coll_attr_t *attr);
 size_t mlsl_sched_get_priority(mlsl_sched *sched);
-void mlsl_update_request_reference(mlsl_sched *s, mlsl_request **req);
-void mlsl_sched_prepare(mlsl_sched *sched, bool dump);
+void mlsl_sched_reset_request(mlsl_sched *s, mlsl_request **req);
+void mlsl_sched_prepare_partial_scheds(mlsl_sched *sched, bool dump);
+mlsl_status_t mlsl_sched_start_subsched(mlsl_sched* sched, mlsl_sched* subsched, mlsl_request **req);

@@ -1,7 +1,7 @@
 #include "base.h"
 
 #define BUF_COUNT  (16)
-#define ELEM_COUNT (8 * 1024 * 1024)
+#define ELEM_COUNT (2 * 1024 * 1024)
 #define ALIGNMENT  (2 * 1024 * 1024)
 #define DTYPE      float
 #define MLSL_DTYPE (mlsl_dtype_float)
@@ -109,7 +109,7 @@ int main()
     }
 
     /* warmup */
-    coll_attr.to_cache = 1; // TODO: fails with to_cache = 0
+    coll_attr.to_cache = 0;
     for (count = 1; count <= ELEM_COUNT; count *= 2)
     {
         for (idx = 0; idx < BUF_COUNT; idx++)

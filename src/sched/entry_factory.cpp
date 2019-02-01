@@ -15,6 +15,7 @@
 #include "sched/entry_types/wait_value_entry.hpp"
 #include "sched/entry_types/function_entry.hpp"
 #include "sched/entry_types/register_entry.hpp"
+#include "sched/entry_types/deregister_entry.hpp"
 #include "sched/entry_types/nop_entry.hpp"
 #include "common/global/global.hpp"
 #include "common/log/log.hpp"
@@ -200,6 +201,15 @@ std::shared_ptr<sched_entry> entry_factory::make_register_entry(mlsl_sched* sche
 {
     MLSL_LOG(DEBUG, "creating REGISTER entry");
     std::shared_ptr<sched_entry> e = std::make_shared<register_entry>(sched, size, ptr, mr);
+    sched->add_entry(e);
+    return e;
+}
+
+std::shared_ptr<sched_entry> entry_factory::make_deregister_entry(mlsl_sched* sched,
+                                                                  std::list<atl_mr_t*>& mr_list)
+{
+    MLSL_LOG(DEBUG, "creating DEREGISTER entry");
+    std::shared_ptr<sched_entry> e = std::make_shared<deregister_entry>(sched, mr_list);
     sched->add_entry(e);
     return e;
 }

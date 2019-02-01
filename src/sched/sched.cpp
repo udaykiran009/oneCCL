@@ -121,7 +121,7 @@ static mlsl_status_t mlsl_sched_continue(mlsl_sched *s)
     return status;
 }
 
-mlsl_status_t mlsl_sched_adjust_tag(mlsl_sched *sched)
+mlsl_status_t mlsl_sched_update_id(mlsl_sched *sched)
 {
     sched->sched_id = mlsl_comm_get_sched_id(sched->coll_param.comm);
     return mlsl_status_success;
@@ -150,7 +150,7 @@ mlsl_status_t mlsl_sched_sync_schedules(mlsl_sched **scheds, size_t count)
     return mlsl_status_success;
 }
 
-void mlsl_update_request_reference(mlsl_sched *s, mlsl_request **req)
+void mlsl_sched_reset_request(mlsl_sched *s, mlsl_request **req)
 {
     s->req->completion_counter = s->partial_sched_count;
     for(size_t idx = 0; idx < s->partial_sched_count; ++idx)
@@ -158,7 +158,8 @@ void mlsl_update_request_reference(mlsl_sched *s, mlsl_request **req)
         s->partial_scheds[idx]->req = s->req;
     }
 
-    *req = s->req;
+    if (req)
+        *req = s->req;
 }
 
 mlsl_status_t mlsl_sched_start(mlsl_sched *s, mlsl_request **req)
@@ -228,11 +229,6 @@ mlsl_status_t mlsl_sched_progress(mlsl_sched_queue_bin *bin, size_t sched_count,
         for (i = s->idx; i < s->entries.size(); ++i) {
             auto& entry = s->entries[i];
             entry->update();
-
-            if (entry->get_status() == mlsl_sched_entry_status_complete &&
-                entry->get_exec_mode() == mlsl_sched_entry_exec_once)
-                entry->set_status(mlsl_sched_entry_status_complete_once);
-
             if (i == s->idx && entry->get_status() >= mlsl_sched_entry_status_complete)
             {
                 ++s->idx;
@@ -315,35 +311,20 @@ mlsl_status_t mlsl_sched_free_buffers(mlsl_sched* sched)
     return mlsl_status_success;
 }
 
-/*
-not used currently, reg/dereg happen in register entry
-mlsl_status_t mlsl_sched_register_buffer(mlsl_sched* sched, size_t size, void* ptr, atl_mr_t** mr)
+mlsl_status_t mlsl_sched_start_subsched(mlsl_sched* sched, mlsl_sched* subsched, mlsl_request **r)
 {
-    MLSL_LOG(DEBUG, "sched %p, size %zu, ptr %p", sched, size, ptr);
-    MLSL_ASSERTP(size > 0);
-    MLSL_ASSERTP(ptr);
-    MLSL_ASSERTP(mr);
-    atl_mr_t* m;
-    atl_status_t atl_status = atl_mr_reg(global_data.executor->atl_desc, ptr, size, &m);
-    MLSL_ASSERTP(atl_status == atl_status_success);
-    sched->memory.mr_list.emplace_back(ptr, size, m);
-    *mr = m;
+    mlsl_request* req;
+    mlsl_request_create(&req);
+    req->completion_counter = 1;
+    req->sched = subsched;
+    subsched->req = req;
+    subsched->sched_id = sched->sched_id;
+    mlsl_sched_reset(subsched);
+    mlsl_sched_dump(subsched, "subsched");
+    sched->bin->queue->add(subsched, mlsl_sched_get_priority(sched));
+    *r = req;
     return mlsl_status_success;
 }
-mlsl_status_t mlsl_sched_deregister_buffers(mlsl_sched* sched)
-{
-    MLSL_LOG(DEBUG, "sched %p", sched);
-    atl_status_t atl_status;
-    std::list<mlsl_sched_mr_handler>::iterator it;
-    for (it = sched->memory.mr_list.begin(); it != sched->memory.mr_list.end(); it++)
-    {
-        MLSL_LOG(DEBUG, "deregister %p", it->ptr);
-        atl_status = atl_mr_dereg(global_data.executor->atl_desc, it->mr);
-        MLSL_ASSERTP(atl_status == atl_status_success);
-    }
-    sched->memory.mr_list.clear();
-    return mlsl_status_success;
-}*/
 
 mlsl_status_t mlsl_sched_set_entry_exec_mode(mlsl_sched* sched, mlsl_sched_entry_exec_mode mode)
 {
@@ -494,7 +475,7 @@ mlsl_status_t mlsl_sched_tensor_bcast(mlsl_comm* comm, mlsl_sched** sched, bool 
     return status;
 }
 
-void mlsl_sched_prepare(mlsl_sched *sched, bool dump)
+void mlsl_sched_prepare_partial_scheds(mlsl_sched *sched, bool dump)
 {
     mlsl_sched **partial_scheds = sched->partial_scheds;
     size_t partial_sched_count = sched->partial_sched_count;
@@ -503,9 +484,8 @@ void mlsl_sched_prepare(mlsl_sched *sched, bool dump)
     size_t idx;
     for (idx = 0; idx < partial_sched_count; idx++)
     {
-        mlsl_sched_adjust_tag(partial_scheds[idx]);
+        mlsl_sched_update_id(partial_scheds[idx]);
         mlsl_sched_reset(partial_scheds[idx]);
-        partial_scheds[idx]->req = sched->req;
 
         if (dump)
         {
@@ -518,7 +498,7 @@ void mlsl_sched_prepare(mlsl_sched *sched, bool dump)
         mlsl_sched_dump(sched, "origin_sched");
     }
 
-    sched->req->completion_counter = partial_sched_count;
+    mlsl_sched_reset_request(sched, NULL);
 }
 
 mlsl_sched& mlsl_sched::operator=(const mlsl_sched& other)
@@ -541,12 +521,23 @@ mlsl_sched::~mlsl_sched()
     if (req)
         mlsl_request_free(req);
 
-    //mlsl_sched_deregister_buffers(this);
+    if (memory.mr_list.size())
+    {
+        mlsl_sched* dereg_sched = new mlsl_sched{};
+        dereg_sched->coll_attr.to_cache = false;
+        entry_factory::make_deregister_entry(dereg_sched, memory.mr_list);
+
+        mlsl_request *dereg_req;
+        mlsl_sched_start_subsched(this, dereg_sched, &dereg_req);
+        mlsl_wait(dereg_req);
+        MLSL_ASSERTP(memory.mr_list.size() == 0);
+    }
     mlsl_sched_free_buffers(this);
 }
 
 void mlsl_sched::swap(mlsl_sched& other)
 {
+    MLSL_ASSERTP(0);
     std::swap(first_progress, other.first_progress);
     std::swap(bin, other.bin);
     std::swap(coll_param, other.coll_param);

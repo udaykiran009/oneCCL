@@ -66,17 +66,17 @@ public:
     virtual void* get_field_ptr(mlsl_sched_entry_field_id id);
 
     void make_barrier();
-    bool is_barrier();
+    bool is_barrier() const;
     mlsl_sched_entry_status get_status() const;
     void set_status(mlsl_sched_entry_status s);
     void set_exec_mode(mlsl_sched_entry_exec_mode mode);
-    mlsl_sched_entry_exec_mode get_exec_mode();
 
     virtual const char* name() const = 0;
 
 protected:
 
     virtual char* dump_detail(char* dump_buf) const;
+    void check_exec_mode();
     const char* entry_status_to_str(mlsl_sched_entry_status status) const;
 
     mlsl_sched* sched = nullptr;

@@ -171,7 +171,7 @@ void mlsl_service_worker::check_persistent()
         if (completion_counter == 0)
         {
             MLSL_LOG(DEBUG, "restart persistent service sched %p", service_sched.get());
-            mlsl_sched_prepare(service_sched.get(), false);
+            mlsl_sched_prepare_partial_scheds(service_sched.get(), false);
             for (size_t idx = 0; idx < service_sched->partial_sched_count; ++idx)
             {
                 service_queue->add(service_sched->partial_scheds[idx], mlsl_sched_get_priority(service_sched.get()));

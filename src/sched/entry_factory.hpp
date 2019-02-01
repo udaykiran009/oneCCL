@@ -118,5 +118,8 @@ public:
                                                             void* ptr,
                                                             atl_mr_t** mr);
 
+    static std::shared_ptr<sched_entry> make_deregister_entry(mlsl_sched* sched,
+                                                              std::list<atl_mr_t*>& mr_list);
+
     static std::shared_ptr<sched_entry> make_nop_entry(mlsl_sched* sched);
 };
