@@ -190,7 +190,11 @@ atl_ofi_comms_connect(atl_ofi_context_t *atl_ofi_context,
                        atl_ofi_context->addr_table.ep_num *
                        atl_ofi_context->proc_count,
                        atl_ofi_context->addr_table.table, 0, NULL);
-    if (ret != atl_ofi_context->proc_count) {
+
+    ATL_OFI_DEBUG_PRINT("av_insert: ep_num %zu, proc_count %zu, inserted %d",
+        atl_ofi_context->addr_table.ep_num, atl_ofi_context->proc_count, ret);
+
+    if (ret != atl_ofi_context->addr_table.ep_num * atl_ofi_context->proc_count) {
         ret = atl_status_failure;
         goto err_addr_table;
     } else {
@@ -931,6 +935,7 @@ static atl_mr_ops_t atl_ofi_mr_ops = {
 
 static void atl_ofi_tune(void)
 {
+    setenv("FI_PSM2_TIMEOUT", "1", 0);
     setenv("FI_PSM2_LOCK_LEVEL", "0", 0);
     setenv("HFI_NO_CPUAFFINITY", "1", 0);
 }
@@ -962,22 +967,35 @@ atl_status_t atl_ofi_init(int *argc, char ***argv, size_t *proc_idx, size_t *pro
     hints = fi_allocinfo();
     if (!hints)
         goto err_hints;
+
     hints->mode = FI_CONTEXT;
     hints->ep_attr->type = FI_EP_RDM;
     hints->domain_attr->resource_mgmt = FI_RM_ENABLED;
+    hints->domain_attr->control_progress = FI_PROGRESS_MANUAL;
+    hints->domain_attr->data_progress = FI_PROGRESS_MANUAL;
     hints->caps = FI_TAGGED;
+
+    fi_version = FI_VERSION(1, 0);
+
+    ret = fi_getinfo(fi_version, NULL, NULL, 0ULL, hints, &providers);
+    if (ret || !providers)
+        goto err_getinfo;
+
+    if (providers->domain_attr->max_ep_tx_ctx > 1)
+    {
+        hints->ep_attr->tx_ctx_cnt = attr->comm_count;
+        hints->ep_attr->rx_ctx_cnt = attr->comm_count;
+    }
+    fi_freeinfo(providers);
+
     if (attr->enable_rma)
     {
         ATL_OFI_DEBUG_PRINT("try to enable RMA");
         hints->caps |= FI_RMA | FI_READ | FI_WRITE | FI_REMOTE_READ | FI_REMOTE_WRITE;
         hints->domain_attr->mr_mode = FI_MR_UNSPEC;
         // TODO:
-        //hints->domain_attr->mr_mode = FI_MR_VIRT_ADDR | FI_MR_ALLOCATED | FI_MR_PROV_KEY;
+        //hints->domain_attr->mr_mode = FI_MR_ALLOCATED | FI_MR_PROV_KEY | FI_MR_VIRT_ADDR | FI_MR_LOCAL | FI_MR_BASIC;
     }
-    hints->ep_attr->tx_ctx_cnt = attr->comm_count;
-    hints->ep_attr->rx_ctx_cnt = attr->comm_count;
-
-    fi_version = FI_VERSION(1, 0);
 
     ret = fi_getinfo(fi_version, NULL, NULL, 0ULL, hints, &providers);
     if (ret || !providers)
@@ -1003,8 +1021,11 @@ atl_status_t atl_ofi_init(int *argc, char ***argv, size_t *proc_idx, size_t *pro
 
     attr->max_order_waw_size = atl_ofi_context->prov->ep_attr->max_order_waw_size;
 
+    ATL_OFI_DEBUG_PRINT("provider %s", atl_ofi_context->prov->fabric_attr->prov_name);
     ATL_OFI_DEBUG_PRINT("mr_mode %d", atl_ofi_context->prov->domain_attr->mr_mode);
     ATL_OFI_DEBUG_PRINT("threading %d", atl_ofi_context->prov->domain_attr->threading);
+    ATL_OFI_DEBUG_PRINT("tx_ctx_cnt %zu", atl_ofi_context->prov->domain_attr->tx_ctx_cnt);
+    ATL_OFI_DEBUG_PRINT("max_ep_tx_ctx %zu", atl_ofi_context->prov->domain_attr->max_ep_tx_ctx);
 
     ret = fi_fabric(atl_ofi_context->prov->fabric_attr,
                     &atl_ofi_context->fabric, NULL);
@@ -1035,7 +1056,11 @@ atl_status_t atl_ofi_init(int *argc, char ***argv, size_t *proc_idx, size_t *pro
     atl_ofi_context->atl_desc.mr_ops = &atl_ofi_mr_ops;
     *atl_desc = &atl_ofi_context->atl_desc;
 
+    fi_freeinfo(providers);
+    fi_freeinfo(hints);
+
     return atl_status_success;
+
 err_comms_init:
     fi_close(&atl_ofi_context->av->fid);
 err_av:
@@ -1047,6 +1072,7 @@ err_fab:
 err_prov:
     fi_freeinfo(providers);
 err_getinfo:
+    ATL_OFI_DEBUG_PRINT("can't find suitable provider");
     fi_freeinfo(hints);
 err_hints:
     pmrt_finalize(atl_ofi_context->pm_rt);
