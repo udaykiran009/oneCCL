@@ -62,6 +62,8 @@ if(CMAKE_C_COMPILER EQUAL "icc" OR CMAKE_CXX_COMPILER EQUAL "icpc")
     set(CMAKE_STATIC_LINKER_FLAGS "${CMAKE_STATIC_LINKER_FLAGS} -static-intel")
 endif()
 
+#TODO: add -Wextra to c/cxx flags
+
 #common release/debug compilation settings
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${C_COMPILER_FLAGS} -Wall -Werror -D_GNU_SOURCE")
 set(CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG} ${C_COMPILER_FLAGS} -O0 -g -DENABLE_DEBUG=1")

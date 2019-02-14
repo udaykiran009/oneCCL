@@ -1,4 +1,5 @@
 #include "mlsl.hpp"
+#include "common/global/global.hpp"
 
 #include <utility>
 #include <iostream>
@@ -90,26 +91,33 @@ MLSL_API environment::~environment()
     }
 }
 
-MLSL_API communicator::communicator(mlsl_comm_attr_t* comm_attr)
+MLSL_API communicator::communicator()
 {
-    mlsl_status_t result = mlsl_comm_create(&comm_detail, comm_attr);
-    CHECK_AND_THROW(result, "Failed to create communicator");
+    //default constructor uses global communicator
+    //todo: possibly we should introduce some proxy/getter for global data class to make unit testing easier
+    comm_impl = global_data.comm;
 }
 
-MLSL_API communicator::~communicator()
+MLSL_API communicator::communicator(mlsl_comm_attr_t* comm_attr)
 {
-    if (comm_detail != nullptr)
+    if(!comm_attr)
     {
-        try
-        {
-            mlsl_comm_free(comm_detail);
-        }
-        catch (...)
-        {
-            //todo: rework MLSL_LOG(ERROR, ...) to not throw/terminate and use it here
-            std::cerr << "Exception caught during communicator deletion" << std::endl;
-        }
+        comm_impl = global_data.comm;
     }
+    else
+    {
+        comm_impl = std::shared_ptr<mlsl_comm>(mlsl_comm::create_with_color(comm_attr->color, global_data.comm_ids.get(), global_data.comm.get()));
+    }
+}
+
+MLSL_API size_t communicator::rank()
+{
+    return comm_impl->rank();
+}
+
+MLSL_API size_t communicator::size()
+{
+    return comm_impl->size();
 }
 
 std::pair<size_t, size_t> MLSL_API communicator::priority_range()
@@ -130,7 +138,7 @@ std::shared_ptr<mlsl::request> MLSL_API communicator::bcast(void* buf,
     mlsl_request_t mlsl_req;
     auto mlsl_data_type = static_cast<mlsl_datatype_t>(dtype);
 
-    mlsl_status_t result = mlsl_bcast(buf, count, mlsl_data_type, root, attributes, comm_detail, &mlsl_req);
+    mlsl_status_t result = mlsl_bcast(buf, count, mlsl_data_type, root, attributes, comm_impl.get(), &mlsl_req);
     CHECK_AND_THROW(result, "Broadcast failed");
 
     return std::make_shared<mlsl::request_impl>(mlsl_req);
@@ -149,7 +157,7 @@ std::shared_ptr<mlsl::request> MLSL_API communicator::reduce(const void* send_bu
     auto mlsl_reduction_type = static_cast<mlsl_reduction_t>(reduction);
 
     mlsl_status_t result = mlsl_reduce(send_buf, recv_buf, count, mlsl_data_type, mlsl_reduction_type,
-                                       root, attributes, comm_detail, &mlsl_req);
+                                       root, attributes, comm_impl.get(), &mlsl_req);
     CHECK_AND_THROW(result, "Reduce failed");
 
     return std::make_shared<mlsl::request_impl>(mlsl_req);
@@ -167,7 +175,7 @@ std::shared_ptr<mlsl::request> MLSL_API communicator::allreduce(const void* send
     auto mlsl_reduction_type = static_cast<mlsl_reduction_t>(reduction);
 
     mlsl_status_t result = mlsl_allreduce(send_buf, recv_buf, count, mlsl_data_type, mlsl_reduction_type,
-                                          attributes, comm_detail, &mlsl_req);
+                                          attributes, comm_impl.get(), &mlsl_req);
     CHECK_AND_THROW(result, "Allreduce failed");
 
     return std::make_shared<mlsl::request_impl>(mlsl_req);
@@ -184,7 +192,7 @@ std::shared_ptr<mlsl::request> MLSL_API communicator::allgatherv(const void* sen
     auto mlsl_data_type = static_cast<mlsl_datatype_t>(dtype);
 
     mlsl_status_t result = mlsl_allgatherv(send_buf, send_count, recv_buf, recv_counts, mlsl_data_type, attributes,
-                                           comm_detail, &mlsl_req);
+                                           comm_impl.get(), &mlsl_req);
     CHECK_AND_THROW(result, "Allgatherv failed");
 
     return std::make_shared<mlsl::request_impl>(mlsl_req);
@@ -192,5 +200,5 @@ std::shared_ptr<mlsl::request> MLSL_API communicator::allgatherv(const void* sen
 
 void MLSL_API communicator::barrier()
 {
-    mlsl_barrier(comm_detail);
+    mlsl_barrier(comm_impl.get());
 }

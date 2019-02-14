@@ -13,8 +13,8 @@ mlsl_status_t mlsl_coll_build_scatter_for_bcast(mlsl_sched *sched, void *tmp_buf
     int relative_rank, mask;
     int scatter_size, curr_size, recv_size, send_size;
 
-    comm_size = sched->coll_param.comm->size;
-    rank = sched->coll_param.comm->rank;
+    comm_size = sched->coll_param.comm->size();
+    rank = sched->coll_param.comm->rank();
     local_root = static_cast<int>(root);
     relative_rank = (rank >= local_root) ? rank - local_root : rank - local_root + comm_size;
 
@@ -99,8 +99,8 @@ mlsl_status_t mlsl_coll_build_scatter_ring_allgather_bcast(mlsl_sched *sched, vo
     void *tmp_buf = NULL;
     size_t dtype_size = mlsl_datatype_get_size(dtype);
 
-    comm_size = sched->coll_param.comm->size;
-    rank = sched->coll_param.comm->rank;
+    comm_size = sched->coll_param.comm->size();
+    rank = sched->coll_param.comm->rank();
 
     /* If there is only one process, return */
     if (comm_size == 1)

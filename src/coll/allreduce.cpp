@@ -15,8 +15,8 @@ mlsl_status_t mlsl_coll_build_rabenseifner_allreduce(mlsl_sched *sched, const vo
 
     mlsl_comm *comm = sched->coll_param.comm;
 
-    comm_size = comm->size;
-    rank = comm->rank;
+    comm_size = comm->size();
+    rank = comm->rank();
 
     mlsl_sched_alloc_buffer(sched, count * dtype_size, &tmp_buf);
 
@@ -27,7 +27,7 @@ mlsl_status_t mlsl_coll_build_rabenseifner_allreduce(mlsl_sched *sched, const vo
     }
 
     /* get nearest power-of-two less than or equal to comm_size */
-    pof2 = comm->pof2;
+    pof2 = comm->pof2();
 
     rem = comm_size - pof2;
 
@@ -115,7 +115,7 @@ mlsl_status_t mlsl_coll_build_rabenseifner_allreduce(mlsl_sched *sched, const vo
             if (can_use_recv_reduce) {
                 entry_factory::make_recv_reduce_entry(sched,
                                                       ((char*) recv_buf + disps[recv_idx] * dtype_size),
-                                                      recv_cnt, NULL, dtype, op, dst, NULL);
+                                                      recv_cnt, NULL, dtype, op, sched->coll_attr.reduction_fn, dst, NULL);
                 entry_factory::make_send_entry(sched, ((char*) recv_buf + disps[send_idx] * dtype_size), send_cnt, dtype, dst);
                 MLSL_CALL(mlsl_sched_add_barrier(sched));
             }
@@ -216,8 +216,8 @@ mlsl_status_t mlsl_coll_build_recursive_doubling_allreduce(mlsl_sched *sched, co
     void *tmp_buf = NULL;
 
     mlsl_comm *comm = sched->coll_param.comm;
-    comm_size = comm->size;
-    rank = comm->rank;
+    comm_size = comm->size();
+    rank = comm->rank();
 
     size_t dtype_size = mlsl_datatype_get_size(dtype);
     mlsl_sched_alloc_buffer(sched, count * dtype_size, &tmp_buf);
@@ -229,7 +229,7 @@ mlsl_status_t mlsl_coll_build_recursive_doubling_allreduce(mlsl_sched *sched, co
     }
 
     /* get nearest power-of-two less than or equal to comm_size */
-    pof2 = comm->pof2;
+    pof2 = comm->pof2();
     rem = comm_size - pof2;
 
     /* In the non-power-of-two case, all even-numbered
@@ -310,8 +310,8 @@ mlsl_status_t mlsl_coll_build_starlike_allreduce(mlsl_sched *sched, const void *
     MLSL_LOG(DEBUG, "build starlike allreduce");
 
     mlsl_status_t status = mlsl_status_success;
-    size_t comm_size = sched->coll_param.comm->size;
-    size_t this_rank = sched->coll_param.comm->rank;
+    size_t comm_size = sched->coll_param.comm->size();
+    size_t this_rank = sched->coll_param.comm->rank();
     size_t* buffer_counts = static_cast<size_t*>(MLSL_MALLOC(comm_size * sizeof(size_t), "buffer_count"));
     size_t* buffer_offsets = static_cast<size_t*>(MLSL_MALLOC(comm_size * sizeof(size_t), "buffer_offsets"));
     size_t dtype_size = mlsl_datatype_get_size(dtype);
@@ -349,7 +349,7 @@ mlsl_status_t mlsl_coll_build_starlike_allreduce(mlsl_sched *sched, const void *
             entry_factory::make_recv_reduce_entry(sched,
                                                   static_cast<char*>(recv_buf) + buffer_offsets[this_rank],
                                                   buffer_counts[this_rank], NULL,
-                                                  dtype, op, rank_idx,
+                                                  dtype, op, sched->coll_attr.reduction_fn, rank_idx,
                                                   static_cast<char*>(tmp_buf) + this_rank_buf_size * tmp_buf_recv_idx);
             ++tmp_buf_recv_idx;
         }
@@ -381,8 +381,8 @@ mlsl_status_t mlsl_coll_build_ring_allreduce(mlsl_sched *sched, const void *send
     void* tmp_buf = NULL;
     size_t src, dst;
 
-    comm_size = comm->size;
-    rank = comm->rank;
+    comm_size = comm->size();
+    rank = comm->rank();
 
     MLSL_ASSERTP(sched && send_buf && recv_buf);
 

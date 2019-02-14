@@ -129,8 +129,8 @@ mlsl_status_t mlsl_coll_build_ring_rma_allreduce(mlsl_sched* sched, const void* 
     void* tmp_buf = NULL;
     std::shared_ptr<sched_entry> e;
 
-    comm_size = comm->size;
-    rank = comm->rank;
+    comm_size = comm->size();
+    rank = comm->rank();
 
     MLSL_ASSERTP(sched && send_buf && recv_buf);
 

@@ -1,26 +1,27 @@
 #pragma once
 
 #include "sched/entry_types/entry.hpp"
+#include "sched/sched.hpp"
 #include "sched/sched_queue.hpp"
 
 class send_entry : public sched_entry
 {
 public:
     send_entry() = delete;
-    send_entry(mlsl_sched* sched,
-               const void* buf,
-               size_t cnt,
-               mlsl_datatype_internal_t dtype,
-               size_t dst) :
-        sched_entry(sched), buf(buf), cnt(cnt), dtype(dtype), dst(dst)
-    {
-        pfields.add_available(mlsl_sched_entry_field_buf);
-    }
+    send_entry(mlsl_sched* schedule,
+               const void* buffer,
+               size_t count,
+               mlsl_datatype_internal_t data_type,
+               size_t dest_global,
+               size_t rank_global) :
+        sched_entry(schedule), buf(buffer), cnt(count), dtype(data_type),
+        dst(dest_global), rank(rank_global)
+    {}
 
     void start_derived()
     {
-        auto atl_tag = mlsl_create_atl_tag(sched->coll_param.comm->comm_id, sched->sched_id,
-                                           sched->coll_param.comm->rank);
+        auto atl_tag = mlsl_create_atl_tag(sched->coll_param.comm->id(), sched->sched_id,
+                                           rank);
         size_t bytes = cnt * mlsl_datatype_get_size(dtype);
         MLSL_LOG(DEBUG, "SEND entry dst %zu, tag %lu, req %p, bytes %zu", dst, atl_tag, &req, bytes);
         atl_status_t atl_status = atl_comm_send(sched->bin->comm_ctx, buf,
@@ -56,6 +57,7 @@ public:
         return "SEND";
     }
 
+
 protected:
     char* dump_detail(char* dump_buf) const
     {
@@ -69,6 +71,9 @@ private:
     const void* buf;
     size_t cnt;
     mlsl_datatype_internal_t dtype;
+    //destination in global communicator
     size_t dst;
+    //its rank in global communicator
+    size_t rank;
     atl_req_t req{};
 };

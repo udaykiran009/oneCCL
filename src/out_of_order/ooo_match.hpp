@@ -20,9 +20,9 @@ class ooo_match
 public:
     ooo_match() = delete;
     ooo_match(const ooo_match& other) = delete;
-    ooo_match& operator= (const ooo_match& other) = delete;
+    const ooo_match& operator= (const ooo_match& other) = delete;
 
-    explicit ooo_match(mlsl_executor* exec);
+    ooo_match(mlsl_executor& exec, comm_id_storage& comm_ids);
 
     /**
      * Searches for already created communicator for specific tensor name
@@ -31,7 +31,7 @@ public:
      */
     mlsl_comm* get_comm_for_tensor(const std::string& tensor_name)
     {
-        return tensor_comm_storage.get_comm_for_tensor(tensor_name);
+        return m_tensor_comm_storage.get_comm_for_tensor(tensor_name);
     }
 
     /**
@@ -41,7 +41,7 @@ public:
      */
     bool is_bcast_in_progress(const std::string& tensor_name)
     {
-        return postponed_schedules.is_in_progress(tensor_name);
+        return m_postponed_schedules.is_in_progress(tensor_name);
     }
 
     /**
@@ -68,10 +68,12 @@ public:
 
 private:
 
-    out_of_order::tensor_to_comm_handler tensor_comm_storage {};
-    out_of_order::postponed_sched_storage postponed_schedules {};
-    std::shared_ptr<mlsl_comm> service_comm;
-    std::unordered_map<std::string, mlsl_comm_id_t> unresolved_comm {};
+    mlsl_executor& m_executor;
+    comm_id_storage& m_comm_ids;
+    out_of_order::tensor_to_comm_handler m_tensor_comm_storage {};
+    out_of_order::postponed_sched_storage m_postponed_schedules {};
+    std::shared_ptr<mlsl_comm> m_service_comm;
+    std::unordered_map<std::string, std::unique_ptr<comm_id>> m_unresolved_comms {};
 };
 
 }

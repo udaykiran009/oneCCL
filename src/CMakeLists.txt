@@ -27,7 +27,6 @@ set(MLSL_SRC
     out_of_order/postponed_sched.cpp
     out_of_order/tensor_comm.cpp
     common/comm/comm.cpp
-    common/comm/comm_id.cpp
     common/datatype/datatype.cpp
     common/env/env.cpp
     common/global/global.cpp

@@ -1,22 +1,23 @@
 #pragma once
 
 #include "sched/entry_types/entry.hpp"
+#include "sched/sched.hpp"
 
 class recv_entry : public sched_entry
 {
 public:
     recv_entry() = delete;
-    recv_entry(mlsl_sched* sched,
-               void* buf,
-               size_t cnt,
-               mlsl_datatype_internal_t dtype,
-               size_t src) :
-        sched_entry(sched), buf(buf), cnt(cnt), dtype(dtype), src(src)
+    recv_entry(mlsl_sched* schedule,
+               void* buffer,
+               size_t count,
+               mlsl_datatype_internal_t data_type,
+               size_t source_global) :
+        sched_entry(schedule), buf(buffer), cnt(count), dtype(data_type), src(source_global)
     {}
 
     void start_derived()
     {
-        auto atl_tag = mlsl_create_atl_tag(sched->coll_param.comm->comm_id, sched->sched_id, src);
+        auto atl_tag = mlsl_create_atl_tag(sched->coll_param.comm->id(), sched->sched_id, src);
         size_t bytes = cnt * mlsl_datatype_get_size(dtype);
         MLSL_LOG(DEBUG, "RECV entry src %zu, tag %lu, req %p, bytes %zu", src, atl_tag, &req, bytes);
         atl_status_t atl_status = atl_comm_recv(sched->bin->comm_ctx, buf,

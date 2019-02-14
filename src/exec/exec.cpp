@@ -143,8 +143,6 @@ bool mlsl_executor::test(mlsl_request* req)
 {
     bool completed = false;
 
-    MLSL_LOG(DEBUG, "req %p, req->cc %d", req, req->completion_counter);
-
     size_t completion_counter = __atomic_load_n(&req->completion_counter, __ATOMIC_ACQUIRE);
     if (completion_counter)
     {

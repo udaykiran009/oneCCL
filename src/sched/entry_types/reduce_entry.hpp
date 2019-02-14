@@ -13,19 +13,20 @@ public:
                  void* inout_buf,
                  size_t* out_cnt,
                  mlsl_datatype_internal_t dtype,
-                 mlsl_reduction_t reduction_op) :
+                 mlsl_reduction_t reduction_op,
+                 mlsl_reduction_fn_t reduction_fn) :
         sched_entry(sched), in_buf(in_buf),
         in_cnt(in_cnt), inout_buf(inout_buf),
-        out_cnt(out_cnt), dtype(dtype), op(reduction_op)
+        out_cnt(out_cnt), dtype(dtype), op(reduction_op), fn(reduction_fn)
     {
-        MLSL_ASSERTP_FMT(op != mlsl_reduction_custom || sched->coll_attr.reduction_fn,
+        MLSL_ASSERTP_FMT(op != mlsl_reduction_custom || fn,
             "custom reduction requires user provided callback");
     }
 
     void start_derived()
     {
         mlsl_status_t comp_status = mlsl_comp_reduce(in_buf, in_cnt, inout_buf, out_cnt,
-                                                     dtype, op, sched->coll_attr.reduction_fn);
+                                                     dtype, op, fn);
         MLSL_ASSERT(comp_status == mlsl_status_success);
         status = mlsl_sched_entry_status_complete;
     }
@@ -41,7 +42,7 @@ protected:
         auto bytes_written = sprintf(dump_buf,
                                      "dt %s, in_buf %p, in_cnt %zu, inout_buf %p, out_cnt %p, op %s, red_fn %p\n",
                                      mlsl_datatype_get_name(dtype), in_buf, in_cnt, inout_buf, out_cnt,
-                                     mlsl_reduction_to_str(op), sched->coll_attr.reduction_fn);
+                                     mlsl_reduction_to_str(op), fn);
 
         return dump_buf + bytes_written;
     }
@@ -53,4 +54,5 @@ private:
     size_t* out_cnt;
     mlsl_datatype_internal_t dtype;
     mlsl_reduction_t op;
+    mlsl_reduction_fn_t fn;
 };

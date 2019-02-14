@@ -21,7 +21,8 @@ class tensor_to_comm_handler
 public:
     tensor_to_comm_handler() = default;
     mlsl_comm* get_comm_for_tensor(const std::string& tensor_name);
-    void add_comm_for_tensor(const std::string& tensor_name, mlsl_comm* comm);
+    void add_comm_for_tensor(const std::string& tensor_name,
+                             std::shared_ptr<mlsl_comm> comm);
 
 private:
     using tensor_to_comm_map_type = std::unordered_map<std::string, std::shared_ptr<mlsl_comm>>;

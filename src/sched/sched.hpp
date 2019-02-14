@@ -20,6 +20,7 @@ struct mlsl_sched_queue;
 struct mlsl_sched_queue_bin;
 struct mlsl_coll_param;
 struct mlsl_sched;
+struct mlsl_request;
 
 namespace out_of_order
 {

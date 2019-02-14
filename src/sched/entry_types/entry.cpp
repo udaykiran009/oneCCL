@@ -67,9 +67,10 @@ char* sched_entry::dump_detail(char* dump_buf) const { return dump_buf; }
 
 void sched_entry::check_exec_mode()
 {
-    if (status == mlsl_sched_entry_status_complete &&
-        exec_mode == mlsl_sched_entry_exec_once)
+    if (status == mlsl_sched_entry_status_complete && exec_mode == mlsl_sched_entry_exec_once)
+    {
         status = mlsl_sched_entry_status_complete_once;
+    }
 }
 
 const char* sched_entry::entry_status_to_str(mlsl_sched_entry_status status) const

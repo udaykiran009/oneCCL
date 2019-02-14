@@ -7,8 +7,8 @@ mlsl_status_t mlsl_coll_build_dissemination_barrier(mlsl_sched *sched)
 
     mlsl_status_t status = mlsl_status_success;
     int size, rank, src, dst, mask;
-    size = sched->coll_param.comm->size;
-    rank = sched->coll_param.comm->rank;
+    size = sched->coll_param.comm->size();
+    rank = sched->coll_param.comm->rank();
 
     if (size == 1)
         return status;

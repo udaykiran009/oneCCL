@@ -1,8 +1,11 @@
+#include <mlsl.hpp>
+
 #include "base.h"
 
 #include <iostream>
 #include <vector>
 #include <algorithm>
+#include <list>
 
 using namespace std;
 
@@ -12,12 +15,14 @@ using namespace std;
 
 void check_allreduce_on_comm(mlsl_comm_t comm)
 {
-    size_t cur_comm_rank_idx = mlsl_get_comm_rank(comm);
-    size_t cur_comm_ranks_count = mlsl_get_comm_size(comm);
-    vector<float> send_buf(COUNT, cur_comm_rank_idx);
+    size_t cur_comm_rank{};
+    size_t cur_comm_size{};
+    MLSL_CALL(mlsl_get_comm_rank(comm, &cur_comm_rank));
+    MLSL_CALL(mlsl_get_comm_size(comm, &cur_comm_size));
+    vector<float> send_buf(COUNT, cur_comm_rank);
     vector<float> recv_buf(COUNT, 0.0f);
 
-    PRINT_BY_ROOT("Allreduce on %zu ranks", cur_comm_ranks_count);
+    PRINT_BY_ROOT("Allreduce on %zu ranks", cur_comm_size);
 
     coll_attr.to_cache = 0;
 
@@ -31,7 +36,7 @@ void check_allreduce_on_comm(mlsl_comm_t comm)
                              &request));
     MLSL_CALL(mlsl_wait(request));
 
-    float expected = (cur_comm_ranks_count - 1) * ((float) cur_comm_ranks_count / 2);
+    float expected = (cur_comm_size - 1) * ((float) cur_comm_size / 2);
 
     for(size_t i = 0; i < recv_buf.size(); ++i)
     {
@@ -57,32 +62,40 @@ void check_allreduce()
 
 void check_max_comm_number()
 {
-    //skip world communicator
-    //skip possible service comm
-    //todo: properly handle max number of comms since extra comm is created for ooo support
-    const size_t max_comms = 65533;
-    PRINT_BY_ROOT("Create max number of communicators");
-    vector<mlsl_comm_t> communicators(max_comms);
+    size_t user_comms = 0;
 
-    for (size_t i = 0; i < max_comms; ++i)
+    PRINT_BY_ROOT("Create max number of communicators");
+    std::vector<mlsl_comm_t> communicators;
+
+    mlsl_status_t status = mlsl_status_success;
+
+    do
     {
-        mlsl_status_t status = mlsl_comm_create(&communicators[i], nullptr);
+        mlsl_comm_t new_comm;
+        status = mlsl_comm_create(&new_comm, nullptr);
+
+        ++user_comms;
         if (status != mlsl_status_success)
         {
-            throw runtime_error("Can't create communicator " + to_string(i));
+            break;
         }
-    }
+
+        communicators.push_back(new_comm);
+
+    } while(status == mlsl_status_success);
+
+    PRINT_BY_ROOT("created %zu communicators\n", user_comms);
 
     PRINT_BY_ROOT("Try to create one more communicator, it should fail");
     mlsl_comm_t comm;
-    mlsl_status_t status = mlsl_comm_create(&comm, nullptr);
+    status = mlsl_comm_create(&comm, nullptr);
     if (status == mlsl_status_success)
     {
         throw runtime_error("Extra communicator has been created");
     }
 
     PRINT_BY_ROOT("Free one comm, try to create again");
-    size_t comm_idx = max_comms / 2;
+    size_t comm_idx = user_comms / 2;
     status = mlsl_comm_free(communicators[comm_idx]);
     if (status != mlsl_status_success)
     {
@@ -110,20 +123,25 @@ void check_comm_create_colored()
         mlsl_comm_t comm;
         mlsl_comm_attr_t comm_attr;
         comm_attr.color = ::rank % split_by;
+        size_t comm_size{};
+        size_t comm_rank{};
 
         PRINT_BY_ROOT("Splitting global comm into %zu parts", split_by);
         MLSL_CALL(mlsl_comm_create(&comm, &comm_attr));
 
-        size_t expected_ranks_count = mlsl_get_comm_size(nullptr) / split_by;
-        if (mlsl_get_comm_size(comm) != expected_ranks_count)
+        MLSL_CALL(mlsl_get_comm_size(comm, &comm_size));
+        MLSL_CALL(mlsl_get_comm_rank(comm, &comm_rank));
+
+        size_t expected_ranks_count = size / split_by;
+        if (comm_size != expected_ranks_count)
         {
             throw runtime_error("Mismatch in size, expected " +
                                 to_string(expected_ranks_count) +
-                                " received " + to_string(mlsl_get_comm_size(comm)));
+                                " received " + to_string(comm_size));
         }
 
-        PRINT_BY_ROOT("Global comm: idx=%zu, count=%zu; new comm: idx=%zu, count=%zu", ::rank,
-                      size, mlsl_get_comm_rank(comm), mlsl_get_comm_size(comm));
+        PRINT_BY_ROOT("Global comm: idx=%zu, count=%zu; new comm: rank=%zu, size=%zu", ::rank,
+                      size, comm_rank, comm_size);
 
         check_allreduce_on_comm(comm);
 
@@ -136,27 +154,31 @@ void check_comm_create_identical_color()
     mlsl_comm_t comm;
     mlsl_comm_attr_t comm_attr;
     comm_attr.color = 123;
+    size_t comm_size{};
+    size_t comm_rank{};
 
     PRINT_BY_ROOT("Create comm as a copy of the global one by settings identical colors");
 
     MLSL_CALL(mlsl_comm_create(&comm, &comm_attr));
+    MLSL_CALL(mlsl_get_comm_size(comm, &comm_size));
+    MLSL_CALL(mlsl_get_comm_rank(comm, &comm_rank));
 
-    if (mlsl_get_comm_size(comm) != size)
+    if (comm_size != size)
     {
         throw runtime_error("Mismatch in size, expected " +
                             to_string(size) +
-                            " received " + to_string(mlsl_get_comm_size(comm)));
+                            " received " + to_string(comm_size));
     }
 
-    if (mlsl_get_comm_rank(comm) != ::rank)
+    if (comm_rank != ::rank)
     {
         throw runtime_error("Mismatch in rank, expected " +
                             to_string(::rank) +
-                            " received " + to_string(mlsl_get_comm_rank(comm)));
+                            " received " + to_string(comm_rank));
     }
 
-    PRINT_BY_ROOT("Global comm: idx=%zu, count=%zu; new comm: idx=%zu, count=%zu", ::rank,
-                  size, mlsl_get_comm_rank(comm), mlsl_get_comm_size(comm));
+    PRINT_BY_ROOT("Global comm: rank=%zu, size=%zu; new comm: rank=%zu, size=%zu", ::rank,
+                  size, comm_rank, comm_size);
 
     check_allreduce_on_comm(comm);
 

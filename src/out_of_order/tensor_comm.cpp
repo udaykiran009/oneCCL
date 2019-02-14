@@ -20,7 +20,8 @@ mlsl_comm* out_of_order::tensor_to_comm_handler::get_comm_for_tensor(const std::
     return nullptr;
 }
 
-void out_of_order::tensor_to_comm_handler::add_comm_for_tensor(const std::string& tensor_name, mlsl_comm* comm)
+void out_of_order::tensor_to_comm_handler::add_comm_for_tensor(const std::string& tensor_name,
+                                                               std::shared_ptr<mlsl_comm> comm)
 {
     std::lock_guard<std::mutex> lock(sync_guard);
     if (tensor_to_comm_map.find(tensor_name) != tensor_to_comm_map.end())
@@ -28,5 +29,5 @@ void out_of_order::tensor_to_comm_handler::add_comm_for_tensor(const std::string
         MLSL_LOG(ERROR, "Tensor %s already exists", tensor_name.c_str());
         return;
     }
-    tensor_to_comm_map.emplace(tensor_name, std::shared_ptr<mlsl_comm>(comm, mlsl_comm_free));
+    tensor_to_comm_map.emplace(tensor_name, comm);
 }

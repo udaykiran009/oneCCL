@@ -1,9 +1,11 @@
 #pragma once
 
-#include "mlsl.h"
+#include "mlsl_types.h"
 
 #include <exception>
 #include <memory>
+
+class mlsl_comm;
 
 namespace mlsl
 {
@@ -90,7 +92,7 @@ public:
     /**
      * Creates mlsl communicator as a copy of global communicator
      */
-    communicator() = default;
+    communicator();
 
     /**
      * Creates a new communicator according to @c comm_attr parametersmlsl_t
@@ -98,25 +100,17 @@ public:
      */
     explicit communicator(mlsl_comm_attr_t* comm_attr);
 
-    ~communicator();
-
     /**
      * Retrieves the rank of the current process in a communicator
      * @return rank of the current process
      */
-    size_t rank()
-    {
-        return mlsl_get_comm_rank(comm_detail);
-    }
+    size_t rank();
 
     /**
      * Retrieves the number of processes in a communicator
      * @return number of the processes
      */
-    size_t size()
-    {
-        return mlsl_get_comm_size(comm_detail);
-    }
+    size_t size();
 
     /**
      * Retrieves minimum and maximum priorities to be used for collective operation parametrization
@@ -205,7 +199,7 @@ public:
     void barrier();
 
 private:
-    mlsl_comm_t comm_detail = nullptr;
+    std::shared_ptr<mlsl_comm> comm_impl;
 };
 
 }

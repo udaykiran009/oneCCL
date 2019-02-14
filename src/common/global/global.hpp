@@ -9,10 +9,31 @@
 
 #include <memory>
 
+//todo: rework MLSL_LOG(ERROR, ..) to not throw
+#define COMMON_CATCH_BLOCK()                                        \
+catch (mlsl::mlsl_error& mlsl_e)                                    \
+{                                                                   \
+    MLSL_LOG(INFO, "mlsl intrenal error: %s", mlsl_e.what());       \
+    return mlsl_status_invalid_arguments;                           \
+}                                                                   \
+catch (std::runtime_error& e)                                       \
+{                                                                   \
+    MLSL_LOG(INFO, "error: %s", e.what());                          \
+    return mlsl_status_runtime_error;                               \
+}                                                                   \
+catch (...)                                                         \
+{                                                                   \
+    MLSL_LOG(INFO, "general error");                                \
+    return mlsl_status_runtime_error;                               \
+}                                                                   \
+
+
+class comm_id_storage;
 
 struct mlsl_global_data
 {
-    mlsl_comm* comm;
+    std::shared_ptr<mlsl_comm> comm;
+    std::unique_ptr<comm_id_storage> comm_ids;
     std::unique_ptr<mlsl_executor> executor;
     mlsl_sched_cache* sched_cache;
     mlsl_parallelizer* parallelizer;

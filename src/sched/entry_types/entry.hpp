@@ -40,7 +40,7 @@ enum mlsl_condition
 class sched_entry
 {
 public:
-    sched_entry() = default;
+    sched_entry() = delete;
     explicit sched_entry(mlsl_sched* sched,
                          bool is_barrier = false) :
         sched(sched),

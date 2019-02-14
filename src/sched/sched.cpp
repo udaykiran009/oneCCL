@@ -123,7 +123,7 @@ static mlsl_status_t mlsl_sched_continue(mlsl_sched *s)
 
 mlsl_status_t mlsl_sched_update_id(mlsl_sched *sched)
 {
-    sched->sched_id = mlsl_comm_get_sched_id(sched->coll_param.comm);
+    sched->sched_id = sched->coll_param.comm->get_sched_id();
     return mlsl_status_success;
 }
 
@@ -272,7 +272,7 @@ mlsl_status_t mlsl_sched_progress(mlsl_sched_queue_bin *bin, size_t sched_count,
 
 mlsl_status_t mlsl_sched_commit(mlsl_sched *sched)
 {
-    sched->sched_id = mlsl_comm_get_sched_id(sched->coll_param.comm);
+    sched->sched_id = sched->coll_param.comm->get_sched_id();
     mlsl_request *req;
     mlsl_request_create(&req);
     req->sched = sched;
@@ -364,7 +364,7 @@ mlsl_status_t mlsl_sched_bcast(
     p->count = count;
     p->dtype = dtype;
     p->root = root;
-    p->comm = comm ? comm : global_data.comm;
+    p->comm = comm ? comm : global_data.comm.get();
 
     return status;
 }
@@ -391,7 +391,7 @@ mlsl_status_t mlsl_sched_reduce(
     p->dtype = dtype;
     p->reduction = reduction;
     p->root = root;
-    p->comm = comm ? comm : global_data.comm;
+    p->comm = comm ? comm : global_data.comm.get();
 
     return status;
 }
@@ -416,7 +416,7 @@ mlsl_status_t mlsl_sched_allreduce(
     p->count = count;
     p->dtype = dtype;
     p->reduction = reduction;
-    p->comm =  comm ? comm : global_data.comm;
+    p->comm =  comm ? comm : global_data.comm.get();
 
     return status;
 }
@@ -441,7 +441,7 @@ mlsl_status_t mlsl_sched_allgatherv(
     p->recv_buf = recv_buf;
     p->recv_counts = recv_counts;
     p->dtype = dtype;
-    p->comm =  comm ? comm : global_data.comm;
+    p->comm =  comm ? comm : global_data.comm.get();
 
     return status;
 }
@@ -455,7 +455,7 @@ mlsl_status_t mlsl_sched_barrier(mlsl_comm* comm, mlsl_sched **sched)
     mlsl_sched_coll_param *p = &((*sched)->coll_param);
     p->ctype = mlsl_coll_barrier;
     p->dtype = mlsl_dtype_internal_char;
-    p->comm =  comm ? comm : global_data.comm;
+    p->comm =  comm ? comm : global_data.comm.get();
 
     return status;
 }

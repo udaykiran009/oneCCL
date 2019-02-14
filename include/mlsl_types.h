@@ -57,9 +57,6 @@ typedef enum
     mlsl_reduction_custom = 4
 } mlsl_reduction_t;
 
-struct mlsl_request;
-typedef struct mlsl_request *mlsl_request_t;
-
 /* in_buf, in_count, in_dtype, out_buf, out_count, out_dtype, out_dtype_size */
 typedef mlsl_status_t(*mlsl_prologue_fn_t) (const void*, size_t, mlsl_datatype_t, void**, size_t*, mlsl_datatype_t*, size_t*);
 
@@ -103,10 +100,11 @@ typedef struct
     int local;
 } mlsl_comm_attr_t;
 
-struct mlsl_comm;
-typedef struct mlsl_comm* mlsl_comm_t;
+typedef void* mlsl_comm_t;
 
-mlsl_status_t MLSL_API mlsl_get_priority_range(size_t *min_priority, size_t *max_priority);
+struct mlsl_request;
+typedef struct mlsl_request *mlsl_request_t;
+
 
 #ifdef __cplusplus
 }   /*extern C */

@@ -22,7 +22,7 @@ typedef struct
     size_t part_idx;
     size_t part_count;
 }
-mlsl_parallelizer_prologue_ctx;
+    mlsl_parallelizer_prologue_ctx;
 
 mlsl_status_t mlsl_parallelizer_prologue_get_buf(const void* ctx, void* field_ptr)
 {
@@ -106,7 +106,7 @@ mlsl_status_t mlsl_parallelizer_process(mlsl_parallelizer* parallelizer,
             }
             break;
         case mlsl_coll_allgatherv:
-            part_count = coll_param->comm->size;
+            part_count = coll_param->comm->size();
             break;
         default:
             MLSL_ASSERT_FMT(0, "unexpected coll_type %d", coll_type);
@@ -312,17 +312,17 @@ mlsl_status_t mlsl_parallelizer_process(mlsl_parallelizer* parallelizer,
                 size_t* copy_offsets = static_cast<size_t*>(MLSL_MALLOC(part_count * sizeof(size_t), "copy_offsets"));
                 for (idx = 0; idx < part_count; idx++)
                 {
-                    copy_counts[idx] = counts[coll_param->comm->rank] / part_count;
+                    copy_counts[idx] = counts[coll_param->comm->rank()] / part_count;
                     copy_offsets[idx] = idx * copy_counts[idx] * dtype_size;
                 }
-                copy_counts[part_count - 1] += counts[coll_param->comm->rank] % part_count;
+                copy_counts[part_count - 1] += counts[coll_param->comm->rank()] % part_count;
                 for (idx = 0; idx < part_count; idx++)
                 {
                     entry_factory::make_copy_entry(part_scheds[idx],
                                                    (char*) coll_param->send_buf +
                                                    copy_offsets[idx],
                                                    (char*) coll_param->recv_buf +
-                                                   offsets[coll_param->comm->rank] +
+                                                   offsets[coll_param->comm->rank()] +
                                                    copy_offsets[idx],
                                                    copy_counts[idx], dtype);
                 }

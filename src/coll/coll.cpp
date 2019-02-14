@@ -1,25 +1,28 @@
-#include "common/env/env.hpp"
+#include <mlsl.hpp>
 #include "coll/coll.hpp"
 #include "coll/coll_algorithms.hpp"
+#include "common/global/global.hpp"
 
-mlsl_coll_attr_t *default_coll_attr = NULL;
 
-mlsl_status_t mlsl_coll_create_attr(mlsl_coll_attr_t **coll_attr)
+mlsl_coll_attr_t* default_coll_attr = NULL;
+
+mlsl_status_t mlsl_coll_create_attr(mlsl_coll_attr_t** coll_attr)
 {
-    mlsl_coll_attr_t *attr = static_cast<mlsl_coll_attr_t*>(MLSL_CALLOC(sizeof(mlsl_coll_attr_t), "coll_attr"));
+    mlsl_coll_attr_t* attr = static_cast<mlsl_coll_attr_t*>(MLSL_CALLOC(sizeof(mlsl_coll_attr_t), "coll_attr"));
     *coll_attr = attr;
     return mlsl_status_success;
 }
 
-mlsl_status_t mlsl_coll_free_attr(mlsl_coll_attr_t *coll_attr)
+mlsl_status_t mlsl_coll_free_attr(mlsl_coll_attr_t* coll_attr)
 {
     MLSL_FREE(coll_attr);
     return mlsl_status_success;
 }
 
-const char *mlsl_coll_type_to_str(mlsl_coll_type type)
+const char* mlsl_coll_type_to_str(mlsl_coll_type type)
 {
-    switch (type) {
+    switch (type)
+    {
         case mlsl_coll_barrier:
             return "BARRIER";
         case mlsl_coll_bcast:
@@ -41,6 +44,9 @@ const char *mlsl_coll_type_to_str(mlsl_coll_type type)
             return "(out of range)";
     }
 }
+//todo: need to sync checking of tensor communicator and possible creation of tensor
+//todo: this macro has become too large, refactoring is needed
+
 //todo: need to sync checking of tensor communicator and possible creation of tensor
 //todo: this macro has become too large, refactoring is needed
 
@@ -121,7 +127,7 @@ const char *mlsl_coll_type_to_str(mlsl_coll_type type)
         MLSL_LOG(INFO, "Sched %p postponed for tensor comm resolution", sched);             \
         std::string tensor_name{attr->match_id};                                            \
         /* sched->coll_param.comm points to the user defined or global comm */              \
-        if(sched->coll_param.comm->rank == 0 &&                                             \
+        if(sched->coll_param.comm->rank() == 0 &&                                           \
            !global_data.ooo_handler->is_bcast_in_progress(tensor_name))                     \
         {                                                                                   \
             MLSL_LOG(INFO, "Root rank broadcasts tensor %s", attr->match_id);               \
@@ -135,7 +141,7 @@ const char *mlsl_coll_type_to_str(mlsl_coll_type type)
     }                                                                                       \
   } while (0)
 
-mlsl_status_t mlsl_coll_build_barrier(mlsl_sched *sched)
+mlsl_status_t mlsl_coll_build_barrier(mlsl_sched* sched)
 {
     mlsl_status_t status;
     sched->coll_param.ctype = mlsl_coll_barrier;
@@ -143,7 +149,11 @@ mlsl_status_t mlsl_coll_build_barrier(mlsl_sched *sched)
     return status;
 }
 
-mlsl_status_t mlsl_coll_build_bcast(mlsl_sched *sched, void *buf, size_t count, mlsl_datatype_internal_t dtype, size_t root)
+mlsl_status_t mlsl_coll_build_bcast(mlsl_sched* sched,
+                                    void* buf,
+                                    size_t count,
+                                    mlsl_datatype_internal_t dtype,
+                                    size_t root)
 {
     mlsl_status_t status;
     sched->coll_param.ctype = mlsl_coll_bcast;
@@ -151,13 +161,18 @@ mlsl_status_t mlsl_coll_build_bcast(mlsl_sched *sched, void *buf, size_t count, 
     return status;
 }
 
-mlsl_status_t mlsl_coll_build_reduce(mlsl_sched *sched, const void *send_buf, void *recv_buf, size_t count,
-                                     mlsl_datatype_internal_t dtype, mlsl_reduction_t reduction, size_t root)
+mlsl_status_t mlsl_coll_build_reduce(mlsl_sched* sched,
+                                     const void* send_buf,
+                                     void* recv_buf,
+                                     size_t count,
+                                     mlsl_datatype_internal_t dtype,
+                                     mlsl_reduction_t reduction,
+                                     size_t root)
 {
     mlsl_status_t status;
     sched->coll_param.ctype = mlsl_coll_reduce;
 
-    if (count < sched->coll_param.comm->pof2)
+    if (count < sched->coll_param.comm->pof2())
         MLSL_CALL(mlsl_coll_build_binomial_reduce(sched, send_buf, recv_buf, count, dtype, reduction, root));
     else
         MLSL_CALL(mlsl_coll_build_rabenseifner_reduce(sched, send_buf, recv_buf, count, dtype, reduction, root));
@@ -166,9 +181,9 @@ mlsl_status_t mlsl_coll_build_reduce(mlsl_sched *sched, const void *send_buf, vo
 }
 
 mlsl_status_t mlsl_coll_build_allreduce(
-    mlsl_sched *sched,
-    const void *send_buf,
-    void *recv_buf,
+    mlsl_sched* sched,
+    const void* send_buf,
+    void* recv_buf,
     size_t count,
     mlsl_datatype_internal_t dtype,
     mlsl_reduction_t reduction)
@@ -176,7 +191,7 @@ mlsl_status_t mlsl_coll_build_allreduce(
     mlsl_status_t status = mlsl_status_success;
     sched->coll_param.ctype = mlsl_coll_allreduce;
 
-    if ((count < sched->coll_param.comm->pof2) || (count * mlsl_datatype_get_size(dtype) <= 8192))
+    if ((count < sched->coll_param.comm->pof2()) || (count * mlsl_datatype_get_size(dtype) <= 8192))
     {
         switch (env_data.allreduce_algo)
         {
@@ -191,7 +206,8 @@ mlsl_status_t mlsl_coll_build_allreduce(
                                      mlsl_allreduce_algo_to_str(env_data.allreduce_algo));
                 break;
             default:
-                MLSL_CALL(mlsl_coll_build_recursive_doubling_allreduce(sched, send_buf, recv_buf, count, dtype, reduction));
+                MLSL_CALL(
+                    mlsl_coll_build_recursive_doubling_allreduce(sched, send_buf, recv_buf, count, dtype, reduction));
                 break;
         }
     }
@@ -216,7 +232,7 @@ mlsl_status_t mlsl_coll_build_allreduce(
                 }
             default:
                 MLSL_ASSERTP_FMT(0, "unexpected allreduce_algo '%s'",
-                                     mlsl_allreduce_algo_to_str(env_data.allreduce_algo));
+                                 mlsl_allreduce_algo_to_str(env_data.allreduce_algo));
                 return mlsl_status_invalid_arguments;
         }
     }
@@ -225,133 +241,165 @@ mlsl_status_t mlsl_coll_build_allreduce(
 }
 
 mlsl_status_t mlsl_bcast(
-    void *buf,
+    void* buf,
     size_t count,
     mlsl_datatype_t dtype,
     size_t root,
-    const mlsl_coll_attr_t *attributes,
-    mlsl_comm* comm,
-    mlsl_request **req)
+    const mlsl_coll_attr_t* attributes,
+    mlsl_comm_t comm_t,
+    mlsl_request** req)
 {
-    mlsl_status_t status;
-    MLSL_COLL(mlsl_coll_bcast,
-        attributes,
-        {
-            key.ctype = mlsl_coll_bcast;
-            key.buf1 = buf;
-            key.count1 = count;
-            key.dtype = dtype;
-            key.root = root;
-            key.comm = comm;
-        },
-        {
-            MLSL_CALL(mlsl_sched_bcast(buf, count, dtype_internal, root, comm, &sched));
-        });
-    return status;
+    try
+    {
+        mlsl_comm* comm = static_cast<mlsl_comm*>(comm_t);
+        mlsl_status_t status;
+        MLSL_COLL(mlsl_coll_bcast,
+                  attributes,
+                  {
+                      key.ctype = mlsl_coll_bcast;
+                      key.buf1 = buf;
+                      key.count1 = count;
+                      key.dtype = dtype;
+                      key.root = root;
+                      key.comm = comm;
+                  },
+                  {
+                      MLSL_CALL(mlsl_sched_bcast(buf, count, dtype_internal, root, comm, &sched));
+                  });
+        return status;
+    }
+    COMMON_CATCH_BLOCK();
 }
 
 mlsl_status_t mlsl_reduce(
-    const void *send_buf,
-    void *recv_buf,
+    const void* send_buf,
+    void* recv_buf,
     size_t count,
     mlsl_datatype_t dtype,
     mlsl_reduction_t reduction,
     size_t root,
-    const mlsl_coll_attr_t *attributes,
-    mlsl_comm* comm,
-    mlsl_request **req)
+    const mlsl_coll_attr_t* attributes,
+    mlsl_comm_t comm_t,
+    mlsl_request** req)
 {
-    mlsl_status_t status;
-    MLSL_COLL(mlsl_coll_reduce,
-        attributes,
-        {
-            key.ctype = mlsl_coll_reduce;
-            key.buf1 = (void *)send_buf;
-            key.buf2 = recv_buf;
-            key.count1 = count;
-            key.dtype = dtype;
-            key.reduction = reduction;
-            key.root = root;
-            key.comm = comm;
-        },
-        {
-            MLSL_CALL(mlsl_sched_reduce(send_buf, recv_buf, count, dtype_internal, reduction, root, comm, &sched));
-        });
-    return status;
+    try
+    {
+        mlsl_comm* comm = static_cast<mlsl_comm*>(comm_t);
+
+        mlsl_status_t status;
+        MLSL_COLL(mlsl_coll_reduce,
+                  attributes,
+                  {
+                      key.ctype = mlsl_coll_reduce;
+                      key.buf1 = (void*) send_buf;
+                      key.buf2 = recv_buf;
+                      key.count1 = count;
+                      key.dtype = dtype;
+                      key.reduction = reduction;
+                      key.root = root;
+                      key.comm = comm;
+                  },
+                  {
+                      MLSL_CALL(
+                          mlsl_sched_reduce(send_buf, recv_buf, count, dtype_internal, reduction, root, comm, &sched));
+                  });
+        return status;
+    }
+    COMMON_CATCH_BLOCK();
 }
 
 mlsl_status_t mlsl_allreduce(
-    const void *send_buf,
-    void *recv_buf,
+    const void* send_buf,
+    void* recv_buf,
     size_t count,
     mlsl_datatype_t dtype,
     mlsl_reduction_t reduction,
-    const mlsl_coll_attr_t *attributes,
-    mlsl_comm* comm,
-    mlsl_request **req)
+    const mlsl_coll_attr_t* attributes,
+    mlsl_comm_t comm_t,
+    mlsl_request** req)
 {
-    mlsl_status_t status;
-    MLSL_COLL(mlsl_coll_allreduce,
-        attributes,
-        {
-            key.ctype = mlsl_coll_allreduce;
-            key.buf1 = (void *)send_buf;
-            key.buf2 = recv_buf;
-            key.count1 = count;
-            key.dtype = dtype;
-            key.reduction = reduction;
-            key.comm = comm;
-        },
-        {
-            MLSL_CALL(mlsl_sched_allreduce(send_buf, recv_buf, count, dtype_internal, reduction, comm, &sched));
-        });
-    return status;
+    try
+    {
+        mlsl_comm* comm = static_cast<mlsl_comm*>(comm_t);
+
+        mlsl_status_t status;
+        MLSL_COLL(mlsl_coll_allreduce,
+                  attributes,
+                  {
+                      key.ctype = mlsl_coll_allreduce;
+                      key.buf1 = (void*) send_buf;
+                      key.buf2 = recv_buf;
+                      key.count1 = count;
+                      key.dtype = dtype;
+                      key.reduction = reduction;
+                      key.comm = comm;
+                  },
+                  {
+                      MLSL_CALL(
+                          mlsl_sched_allreduce(send_buf, recv_buf, count, dtype_internal, reduction, comm, &sched));
+                  });
+        return status;
+    }
+    COMMON_CATCH_BLOCK();
 }
 
 mlsl_status_t mlsl_allgatherv(
-    const void *send_buf,
+    const void* send_buf,
     size_t send_count,
-    void *recv_buf,
-    size_t *recv_counts,
+    void* recv_buf,
+    size_t* recv_counts,
     mlsl_datatype_t dtype,
-    const mlsl_coll_attr_t *attributes,
-    mlsl_comm* comm,
-    mlsl_request **req)
+    const mlsl_coll_attr_t* attributes,
+    mlsl_comm_t comm_t,
+    mlsl_request** req)
 {
-    mlsl_status_t status;
-    MLSL_COLL(mlsl_coll_allgatherv,
-        attributes,
-        {
-            key.ctype = mlsl_coll_allgatherv;
-            key.buf1 = (void *)send_buf;
-            key.buf2 = recv_buf;
-            key.buf3 = recv_counts;
-            key.count1 = send_count;
-            key.dtype = dtype;
-            key.comm = comm;
-        },
-        {
-            MLSL_CALL(mlsl_sched_allgatherv(send_buf, send_count, recv_buf, recv_counts, dtype_internal, comm, &sched));
-        });
-    return status;
+    try
+    {
+        mlsl_comm* comm = static_cast<mlsl_comm*>(comm_t);
+
+        mlsl_status_t status;
+        MLSL_COLL(mlsl_coll_allgatherv,
+                  attributes,
+                  {
+                      key.ctype = mlsl_coll_allgatherv;
+                      key.buf1 = (void*) send_buf;
+                      key.buf2 = recv_buf;
+                      key.buf3 = recv_counts;
+                      key.count1 = send_count;
+                      key.dtype = dtype;
+                      key.comm = comm;
+                  },
+                  {
+                      MLSL_CALL(mlsl_sched_allgatherv(send_buf, send_count, recv_buf, recv_counts, dtype_internal, comm,
+                                                      &sched));
+                  });
+        return status;
+    }
+    COMMON_CATCH_BLOCK();
 }
 
-mlsl_status_t mlsl_barrier(mlsl_comm* comm)
+mlsl_status_t mlsl_barrier(mlsl_comm_t comm_t)
 {
-    mlsl_status_t status;
-    mlsl_request *barrier_req;
-    mlsl_request **req = &barrier_req;
-    mlsl_coll_attr_t attributes{};
-    mlsl_datatype_t dtype = mlsl_dtype_char;
-    attributes.synchronous = 1;
-    MLSL_COLL(mlsl_coll_barrier,
-        (&attributes),
-        {
-            key.ctype = mlsl_coll_barrier;
-            key.comm = comm;
-        },
-        {
-            MLSL_CALL(mlsl_sched_barrier(comm, &sched));
-        });
-    return status;
+    try
+    {
+        mlsl_comm* comm = static_cast<mlsl_comm*>(comm_t);
+
+        mlsl_status_t status;
+        mlsl_request* barrier_req;
+        mlsl_request** req = &barrier_req;
+        mlsl_coll_attr_t attributes{};
+        mlsl_datatype_t dtype = mlsl_dtype_char;
+        attributes.synchronous = 1;
+        MLSL_COLL(mlsl_coll_barrier,
+                  (&attributes),
+                  {
+                      key.ctype = mlsl_coll_barrier;
+                      key.comm = comm;
+                  },
+                  {
+                      MLSL_CALL(mlsl_sched_barrier(comm, &sched));
+                  });
+        return status;
+    }
+    COMMON_CATCH_BLOCK();
 }

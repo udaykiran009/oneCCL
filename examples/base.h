@@ -65,8 +65,8 @@ void test_init()
 {
     MLSL_CALL(mlsl_init());
 
-    rank = mlsl_get_comm_rank(NULL);
-    size = mlsl_get_comm_size(NULL);
+    MLSL_CALL(mlsl_get_comm_rank(NULL, &rank));
+    MLSL_CALL(mlsl_get_comm_size(NULL, &size));
 
     coll_attr.prologue_fn = NULL;
     coll_attr.epilogue_fn = NULL;

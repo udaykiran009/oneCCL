@@ -6,9 +6,6 @@
 extern "C" {
 #endif
 
-size_t MLSL_API mlsl_get_comm_rank(mlsl_comm_t comm);
-size_t MLSL_API mlsl_get_comm_size(mlsl_comm_t comm);
-
 mlsl_status_t MLSL_API mlsl_init();
 mlsl_status_t MLSL_API mlsl_finalize();
 
@@ -54,13 +51,19 @@ mlsl_status_t MLSL_API mlsl_allgatherv(
 
 mlsl_status_t MLSL_API mlsl_barrier(mlsl_comm_t comm);
 
+mlsl_status_t MLSL_API mlsl_wait(mlsl_request_t req);
+
+mlsl_status_t MLSL_API mlsl_test(mlsl_request_t req, int* is_completed);
+
 mlsl_status_t MLSL_API mlsl_comm_create(mlsl_comm_t* comm, mlsl_comm_attr_t* comm_attr);
 
 mlsl_status_t MLSL_API mlsl_comm_free(mlsl_comm_t comm);
 
-mlsl_status_t MLSL_API mlsl_wait(mlsl_request_t req);
+mlsl_status_t MLSL_API mlsl_get_comm_rank(mlsl_comm_t comm, size_t* out_rank);
 
-mlsl_status_t MLSL_API mlsl_test(mlsl_request_t req, int* is_completed);
+mlsl_status_t MLSL_API mlsl_get_comm_size(mlsl_comm_t comm, size_t* out_size);
+
+mlsl_status_t MLSL_API mlsl_get_priority_range(size_t *min_priority, size_t *max_priority);
 
 #ifdef __cplusplus
 }   /*extern C */
