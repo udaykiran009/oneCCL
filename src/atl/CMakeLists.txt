@@ -19,14 +19,11 @@ target_include_directories(mlsl_atl_ofi-objects PRIVATE ${COMMON_OFI_INC_DIRS})
 target_include_directories(mlsl_atl_ofi-objects PRIVATE $<TARGET_PROPERTY:pmi,INTERFACE_INCLUDE_DIRECTORIES>)
 
 #add library search directory
-#TODO: uncomment line below when ofi_rt will be updated
-#link_directories(${PROJECT_SOURCE_DIR}/ofi_rt/lib)
+link_directories(${PROJECT_SOURCE_DIR}/ofi_rt/lib)
 
 #shared
 add_library(mlsl_atl_ofi SHARED $<TARGET_OBJECTS:mlsl_atl_ofi-objects>)
 target_include_directories(mlsl_atl_ofi PRIVATE ${COMMON_OFI_INC_DIRS})
-#TODO: remove line below when ofi_rt will be updated
-target_link_libraries(mlsl_atl_ofi PRIVATE "-L${PROJECT_SOURCE_DIR}/ofi_rt/lib")
 
 target_link_libraries(mlsl_atl_ofi PRIVATE pmi)
 target_link_libraries(mlsl_atl_ofi PRIVATE fabric m)
