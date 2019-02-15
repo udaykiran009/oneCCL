@@ -115,7 +115,7 @@ mlsl_status_t mlsl_coll_build_rabenseifner_allreduce(mlsl_sched *sched, const vo
             if (can_use_recv_reduce) {
                 entry_factory::make_recv_reduce_entry(sched,
                                                       ((char*) recv_buf + disps[recv_idx] * dtype_size),
-                                                      recv_cnt, NULL, dtype, op, sched->coll_attr.reduction_fn, dst, NULL);
+                                                      recv_cnt, NULL, dtype, op, dst, NULL);
                 entry_factory::make_send_entry(sched, ((char*) recv_buf + disps[send_idx] * dtype_size), send_cnt, dtype, dst);
                 MLSL_CALL(mlsl_sched_add_barrier(sched));
             }
@@ -349,7 +349,7 @@ mlsl_status_t mlsl_coll_build_starlike_allreduce(mlsl_sched *sched, const void *
             entry_factory::make_recv_reduce_entry(sched,
                                                   static_cast<char*>(recv_buf) + buffer_offsets[this_rank],
                                                   buffer_counts[this_rank], NULL,
-                                                  dtype, op, sched->coll_attr.reduction_fn, rank_idx,
+                                                  dtype, op, rank_idx,
                                                   static_cast<char*>(tmp_buf) + this_rank_buf_size * tmp_buf_recv_idx);
             ++tmp_buf_recv_idx;
         }

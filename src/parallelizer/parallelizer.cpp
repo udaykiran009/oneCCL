@@ -21,8 +21,7 @@ typedef struct
     mlsl_datatype_internal dtype_internal;
     size_t part_idx;
     size_t part_count;
-}
-    mlsl_parallelizer_prologue_ctx;
+} mlsl_parallelizer_prologue_ctx;
 
 mlsl_status_t mlsl_parallelizer_prologue_get_buf(const void* ctx, void* field_ptr)
 {

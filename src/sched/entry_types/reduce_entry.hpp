@@ -13,11 +13,11 @@ public:
                  void* inout_buf,
                  size_t* out_cnt,
                  mlsl_datatype_internal_t dtype,
-                 mlsl_reduction_t reduction_op,
-                 mlsl_reduction_fn_t reduction_fn) :
+                 mlsl_reduction_t reduction_op) :
         sched_entry(sched), in_buf(in_buf),
         in_cnt(in_cnt), inout_buf(inout_buf),
-        out_cnt(out_cnt), dtype(dtype), op(reduction_op), fn(reduction_fn)
+        out_cnt(out_cnt), dtype(dtype), op(reduction_op),
+        fn(sched->coll_attr.reduction_fn)
     {
         MLSL_ASSERTP_FMT(op != mlsl_reduction_custom || fn,
             "custom reduction requires user provided callback");

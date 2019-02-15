@@ -58,14 +58,13 @@ public:
      * @param comm_buf Optional buffer for communication. Can be a @B NULL, in that case MLSL will allocate temporal buffer
      */
     static std::shared_ptr<sched_entry> make_recv_reduce_entry(mlsl_sched* sched,
-                                                               void* inout_buffer,
-                                                               size_t count,
-                                                               size_t* out_count,
-                                                               mlsl_datatype_internal_t data_type,
+                                                               void* inout_buf,
+                                                               size_t in_cnt,
+                                                               size_t* out_cnt,
+                                                               mlsl_datatype_internal_t dtype,
                                                                mlsl_reduction_t reduction_op,
-                                                               mlsl_reduction_fn_t reduction_fn,
-                                                               size_t source,
-                                                               void* communication_buf);
+                                                               size_t src,
+                                                               void* comm_buf);
 
     static std::shared_ptr<sched_entry> make_copy_entry(mlsl_sched* sched,
                                                         const void* in_buf,
@@ -78,10 +77,10 @@ public:
 
     static std::shared_ptr<sched_entry> make_coll_entry(mlsl_sched* sched,
                                                         mlsl_coll_type coll_type,
-                                                        const void* send_buffer,
-                                                        void* recv_buffer,
-                                                        size_t count,
-                                                        mlsl_datatype_internal_t data_type,
+                                                        const void* send_buf,
+                                                        void* recv_buf,
+                                                        size_t cnt,
+                                                        mlsl_datatype_internal_t dtype,
                                                         mlsl_reduction_t reduction_op);
 
     static std::shared_ptr<sched_entry> make_prologue_entry(mlsl_sched* sched,
@@ -95,13 +94,13 @@ public:
                                                             size_t* out_dtype_size);
 
     static std::shared_ptr<sched_entry> make_epilogue_entry(mlsl_sched* sched,
-                                                            mlsl_epilogue_fn_t epilogue_fn,
-                                                            const void* in_buffer,
-                                                            size_t in_count,
-                                                            mlsl_datatype_internal_t in_data_type,
-                                                            void* out_buffer,
-                                                            size_t expected_out_count,
-                                                            mlsl_datatype_internal_t out_data_type);
+                                                            mlsl_epilogue_fn_t fn,
+                                                            const void* in_buf,
+                                                            size_t in_cnt,
+                                                            mlsl_datatype_internal_t in_dtype,
+                                                            void* out_buf,
+                                                            size_t expected_out_cnt,
+                                                            mlsl_datatype_internal_t out_dtype);
 
     static std::shared_ptr<sched_entry> make_tensor_comm_entry(mlsl_sched* sched,
                                                                out_of_order::ooo_match* ooo_handler,

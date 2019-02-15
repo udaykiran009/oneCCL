@@ -1,18 +1,18 @@
 #pragma once
 
 #include "sched/entry_types/entry.hpp"
-#include "sched/sched.hpp"
+#include "sched/sched_queue.hpp"
 
 class recv_entry : public sched_entry
 {
 public:
     recv_entry() = delete;
-    recv_entry(mlsl_sched* schedule,
-               void* buffer,
-               size_t count,
-               mlsl_datatype_internal_t data_type,
-               size_t source_global) :
-        sched_entry(schedule), buf(buffer), cnt(count), dtype(data_type), src(source_global)
+    recv_entry(mlsl_sched* sched,
+               void* buf,
+               size_t cnt,
+               mlsl_datatype_internal_t dtype,
+               size_t src) :
+        sched_entry(sched), buf(buf), cnt(cnt), dtype(dtype), src(src)
     {}
 
     void start_derived()

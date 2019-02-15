@@ -59,9 +59,9 @@ mlsl_status_t MLSL_API mlsl_comm_create(mlsl_comm_t* comm, mlsl_comm_attr_t* com
 
 mlsl_status_t MLSL_API mlsl_comm_free(mlsl_comm_t comm);
 
-mlsl_status_t MLSL_API mlsl_get_comm_rank(mlsl_comm_t comm, size_t* out_rank);
+mlsl_status_t MLSL_API mlsl_get_comm_rank(mlsl_comm_t comm, size_t* rank);
 
-mlsl_status_t MLSL_API mlsl_get_comm_size(mlsl_comm_t comm, size_t* out_size);
+mlsl_status_t MLSL_API mlsl_get_comm_size(mlsl_comm_t comm, size_t* size);
 
 mlsl_status_t MLSL_API mlsl_get_priority_range(size_t *min_priority, size_t *max_priority);
 
