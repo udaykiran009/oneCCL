@@ -235,7 +235,7 @@ atl_ofi_comm_get_epname(struct fid_ep *ep, atl_ofi_comm_name_t **name)
 {
     int ret;
 
-    *name = calloc(1, sizeof(*name));
+    *name = calloc(1, sizeof(atl_ofi_comm_name_t));
     if (!*name)
         return atl_status_failure;
 
