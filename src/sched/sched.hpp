@@ -93,8 +93,7 @@ public:
     mlsl_sched_id_t sched_id = 0;   /* sequence number of the schedule in the communicator */
     mlsl_request *req = nullptr;
 
-    mlsl_sched **partial_scheds{};
-    size_t partial_sched_count = 0;
+    std::vector<std::shared_ptr<mlsl_sched>> partial_scheds{};
 
     mlsl_sched* root = nullptr;
 
@@ -116,7 +115,7 @@ private:
 mlsl_status_t mlsl_sched_commit(mlsl_sched *sched);
 mlsl_status_t mlsl_sched_start(mlsl_sched *sched, mlsl_request **req);
 mlsl_status_t mlsl_sched_add_barrier(mlsl_sched *sched);
-mlsl_status_t mlsl_sched_sync_schedules(mlsl_sched **scheds, size_t count);
+mlsl_status_t mlsl_sched_sync_schedules(std::vector<std::shared_ptr<mlsl_sched>>& scheds);
 mlsl_status_t mlsl_sched_progress(mlsl_sched_queue_bin *bin, size_t sched_count, size_t *processed_sched_count);
 mlsl_status_t mlsl_sched_update_id(mlsl_sched *sched);
 mlsl_status_t mlsl_sched_dump(mlsl_sched *sched, const char *name);

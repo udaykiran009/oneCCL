@@ -41,7 +41,7 @@ void out_of_order::postponed_sched_storage::run_scheds_for_tensor(const std::str
             mlsl_sched* schedule_obj = sched_it->second;
             //update communicator & run
             schedule_obj->coll_param.comm = tensor_comm;
-            for (size_t part_idx = 0; part_idx < schedule_obj->partial_sched_count; ++part_idx)
+            for (size_t part_idx = 0; part_idx < schedule_obj->partial_scheds.size(); ++part_idx)
             {
                 schedule_obj->partial_scheds[part_idx]->coll_param.comm = tensor_comm;
             }

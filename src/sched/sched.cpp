@@ -138,13 +138,13 @@ mlsl_status_t mlsl_sched_reset(mlsl_sched *sched)
     return mlsl_status_success;
 }
 
-mlsl_status_t mlsl_sched_sync_schedules(mlsl_sched **scheds, size_t count)
+mlsl_status_t mlsl_sched_sync_schedules(std::vector<std::shared_ptr<mlsl_sched>>& scheds)
 {
-    auto sync_obj = std::make_shared<sync_object>(count);
+    auto sync_obj = std::make_shared<sync_object>(scheds.size());
 
-    for(size_t idx = 0; idx < count; ++idx)
+    for(size_t idx = 0; idx < scheds.size(); ++idx)
     {
-        entry_factory::make_sync_entry(scheds[idx], sync_obj);
+        entry_factory::make_sync_entry(scheds[idx].get(), sync_obj);
     }
 
     return mlsl_status_success;
@@ -152,10 +152,11 @@ mlsl_status_t mlsl_sched_sync_schedules(mlsl_sched **scheds, size_t count)
 
 void mlsl_sched_reset_request(mlsl_sched *s, mlsl_request **req)
 {
-    s->req->completion_counter = s->partial_sched_count;
-    for(size_t idx = 0; idx < s->partial_sched_count; ++idx)
+    s->req->completion_counter = s->partial_scheds.size();
+
+    for(auto& part_sched : s->partial_scheds)
     {
-        s->partial_scheds[idx]->req = s->req;
+        part_sched->req = s->req;
     }
 
     if (req)
@@ -278,11 +279,10 @@ mlsl_status_t mlsl_sched_commit(mlsl_sched *sched)
     req->sched = sched;
     sched->req = req;
 
-    mlsl_parallelizer_process(global_data.parallelizer, sched, &sched->partial_scheds,
-                              &sched->partial_sched_count);
+    mlsl_parallelizer_process(global_data.parallelizer, sched);
 
-    MLSL_LOG(DEBUG, "sched %p, num_entries %zu, number %u, req %p, part_scheds %p, part_count %zu",
-             sched, sched->entries.size(), sched->sched_id, req, sched->partial_scheds, sched->partial_sched_count);
+    MLSL_LOG(DEBUG, "sched %p, num_entries %zu, number %u, req %p, part_count %zu",
+             sched, sched->entries.size(), sched->sched_id, req, sched->partial_scheds.size());
 
     return mlsl_status_success;
 }
@@ -334,19 +334,17 @@ mlsl_status_t mlsl_sched_set_entry_exec_mode(mlsl_sched* sched, mlsl_sched_entry
 
 void mlsl_sched_prepare_partial_scheds(mlsl_sched *sched, bool dump)
 {
-    mlsl_sched **partial_scheds = sched->partial_scheds;
-    size_t partial_sched_count = sched->partial_sched_count;
-    MLSL_ASSERTP(partial_scheds && partial_sched_count > 0);
+    size_t partial_sched_count = sched->partial_scheds.size();
+    MLSL_ASSERTP(partial_sched_count > 0);
 
-    size_t idx;
-    for (idx = 0; idx < partial_sched_count; idx++)
+    for (size_t idx = 0; idx < partial_sched_count; idx++)
     {
-        mlsl_sched_update_id(partial_scheds[idx]);
-        mlsl_sched_reset(partial_scheds[idx]);
+        mlsl_sched_update_id(sched->partial_scheds[idx].get());
+        mlsl_sched_reset(sched->partial_scheds[idx].get());
 
         if (dump)
         {
-            mlsl_sched_dump(partial_scheds[idx], "worker_sched");
+            mlsl_sched_dump(sched->partial_scheds[idx].get(), "worker_sched");
         }
     }
 
@@ -355,7 +353,7 @@ void mlsl_sched_prepare_partial_scheds(mlsl_sched *sched, bool dump)
         mlsl_sched_dump(sched, "origin_sched");
     }
 
-    mlsl_sched_reset_request(sched, NULL);
+    mlsl_sched_reset_request(sched, nullptr);
 }
 
 mlsl_sched& mlsl_sched::operator=(const mlsl_sched& other)
@@ -369,25 +367,24 @@ mlsl_sched& mlsl_sched::operator=(const mlsl_sched& other)
 
 mlsl_sched::~mlsl_sched()
 {
-    for (idx = 0; idx < partial_sched_count; idx++)
+    for (auto& part_sched: partial_scheds)
     {
-        delete partial_scheds[idx];
+        part_sched.reset();
     }
-    MLSL_FREE(partial_scheds);
 
     if (req)
         mlsl_request_free(req);
 
-    if (memory.mr_list.size())
+    if (!memory.mr_list.empty())
     {
-        mlsl_sched* dereg_sched = new mlsl_sched{};
+        auto dereg_sched = new mlsl_sched{};
         dereg_sched->coll_attr.to_cache = false;
         entry_factory::make_deregister_entry(dereg_sched, memory.mr_list);
 
         mlsl_request *dereg_req;
         mlsl_sched_start_subsched(this, dereg_sched, &dereg_req);
         mlsl_wait(dereg_req);
-        MLSL_ASSERTP(memory.mr_list.size() == 0);
+        MLSL_ASSERTP(memory.mr_list.empty());
     }
     mlsl_sched_free_buffers(this);
 }
@@ -406,7 +403,6 @@ void mlsl_sched::swap(mlsl_sched& other)
     std::swap(memory, other.memory);
     std::swap(exec_mode, other.exec_mode);
     std::swap(partial_scheds, other.partial_scheds);
-    std::swap(partial_sched_count, other.partial_sched_count);
     std::swap(root, other.root);
     std::swap(next, other.next);
     std::swap(prev, other.prev);
