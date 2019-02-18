@@ -81,22 +81,25 @@ private:
                 break;
             case mlsl_coll_allreduce:
             {
-                mlsl_status_t result = mlsl_sched_allreduce(send_buf,
-                                                            recv_buf,
-                                                            cnt,
-                                                            dtype,
-                                                            op,
-                                                            sched->coll_param.comm,
-                                                            &coll_sched);
-                MLSL_ASSERT(result == mlsl_status_success);
+                mlsl_sched_coll_param sched_param{};
+
+                sched_param.ctype = mlsl_coll_allreduce;
+                sched_param.send_buf = send_buf;
+                sched_param.recv_buf = recv_buf;
+                sched_param.count = cnt;
+                sched_param.dtype = dtype;
+                sched_param.reduction = op;
+                sched_param.comm = sched->coll_param.comm;
+
+                coll_sched = new mlsl_sched(sched_param);
 
                 coll_sched->coll_attr.reduction_fn = sched->coll_attr.reduction_fn;
-                result = mlsl_coll_build_allreduce(coll_sched,
-                                                   coll_sched->coll_param.send_buf,
-                                                   coll_sched->coll_param.recv_buf,
-                                                   coll_sched->coll_param.count,
-                                                   coll_sched->coll_param.dtype,
-                                                   coll_sched->coll_param.reduction);
+                auto result = mlsl_coll_build_allreduce(coll_sched,
+                                                        coll_sched->coll_param.send_buf,
+                                                        coll_sched->coll_param.recv_buf,
+                                                        coll_sched->coll_param.count,
+                                                        coll_sched->coll_param.dtype,
+                                                        coll_sched->coll_param.reduction);
 
                 MLSL_ASSERT(result == mlsl_status_success);
 

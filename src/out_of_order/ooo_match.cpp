@@ -77,14 +77,19 @@ void out_of_order::ooo_match::create_comm_and_run_sched(const std::string& tenso
 mlsl_sched* out_of_order::ooo_match::build_bcast_sched(const char* tensor_name)
 {
     MLSL_ASSERT_FMT(m_service_comm->rank() != 0 || tensor_name != nullptr, "Only root rank can pass a valid tensor name");
-    mlsl_sched* bcast_sched;
-    mlsl_sched_tensor_bcast(m_service_comm.get(), &bcast_sched, tensor_name != nullptr);
+
+    bool temp_sched = tensor_name != nullptr;
+    mlsl_sched_coll_param bcast_param{};
+    bcast_param.ctype = temp_sched ? mlsl_coll_service_temporal : mlsl_coll_service_persistent;
+    bcast_param.dtype = mlsl_dtype_internal_char;
+    bcast_param.comm = m_service_comm.get();
+    auto bcast_sched = new mlsl_sched(bcast_param);
+
     mlsl_request_create(&bcast_sched->req);
 
     MLSL_LOG(DEBUG, "Building service sched %p, req %p", bcast_sched, bcast_sched->req);
 
     mlsl_get_priority_range(nullptr, &bcast_sched->coll_attr.priority);
-    bcast_sched->coll_param.comm = m_service_comm.get();
     bcast_sched->partial_sched_count = 1;
     bcast_sched->partial_scheds = static_cast<mlsl_sched**>(MLSL_MALLOC(sizeof(mlsl_sched*), "scheds"));
 

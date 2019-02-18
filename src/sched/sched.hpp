@@ -68,10 +68,15 @@ struct mlsl_sched_coll_param
     mlsl_comm *comm;
 };
 
-struct mlsl_sched
+class mlsl_sched
 {
+public:
     mlsl_sched() = default;
+    explicit mlsl_sched(mlsl_sched_coll_param& params) : coll_param(params)
+    {}
+
     ~mlsl_sched();
+
     mlsl_sched& operator = (const mlsl_sched& other);
 
     bool first_progress = true;
@@ -102,6 +107,8 @@ struct mlsl_sched
         entries.push_back(entry);
     }
 
+    void set_coll_attr(const mlsl_coll_attr_t *attr);
+
 private:
     void swap(mlsl_sched& other);
 };
@@ -110,19 +117,6 @@ mlsl_status_t mlsl_sched_commit(mlsl_sched *sched);
 mlsl_status_t mlsl_sched_start(mlsl_sched *sched, mlsl_request **req);
 mlsl_status_t mlsl_sched_add_barrier(mlsl_sched *sched);
 mlsl_status_t mlsl_sched_sync_schedules(mlsl_sched **scheds, size_t count);
-
-mlsl_status_t mlsl_sched_bcast(void *buf, size_t count, mlsl_datatype_internal_t dtype,
-                               size_t root, mlsl_comm* comm, mlsl_sched **sched);
-mlsl_status_t mlsl_sched_reduce(const void *send_buf, void *recv_buf, size_t count, mlsl_datatype_internal_t dtype,
-                                mlsl_reduction_t reduction, size_t root, mlsl_comm* comm, mlsl_sched **sched);
-mlsl_status_t mlsl_sched_allreduce(const void *send_buf, void *recv_buf, size_t count, mlsl_datatype_internal_t dtype,
-                                   mlsl_reduction_t reduction, mlsl_comm* comm, mlsl_sched **sched);
-mlsl_status_t mlsl_sched_allgatherv(const void *send_buf, size_t send_count, void *recv_buf, size_t *recv_counts,
-                                    mlsl_datatype_internal_t dtype, mlsl_comm* comm, mlsl_sched **sched);
-mlsl_status_t mlsl_sched_barrier(mlsl_comm* comm, mlsl_sched **sched);
-
-mlsl_status_t mlsl_sched_tensor_bcast(mlsl_comm* comm, mlsl_sched** sched, bool temporal);
-
 mlsl_status_t mlsl_sched_progress(mlsl_sched_queue_bin *bin, size_t sched_count, size_t *processed_sched_count);
 mlsl_status_t mlsl_sched_update_id(mlsl_sched *sched);
 mlsl_status_t mlsl_sched_dump(mlsl_sched *sched, const char *name);
@@ -134,7 +128,6 @@ mlsl_status_t mlsl_sched_free_buffers(mlsl_sched *sched);
 mlsl_status_t mlsl_sched_set_entry_exec_mode(mlsl_sched* sched, mlsl_sched_entry_exec_mode mode);
 
 const char *mlsl_reduction_to_str(mlsl_reduction_t type);
-mlsl_status_t mlsl_sched_set_coll_attr(mlsl_sched *sched, const mlsl_coll_attr_t *attr);
 size_t mlsl_sched_get_priority(mlsl_sched *sched);
 void mlsl_sched_reset_request(mlsl_sched *s, mlsl_request **req);
 void mlsl_sched_prepare_partial_scheds(mlsl_sched *sched, bool dump);

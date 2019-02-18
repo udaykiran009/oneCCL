@@ -332,149 +332,6 @@ mlsl_status_t mlsl_sched_set_entry_exec_mode(mlsl_sched* sched, mlsl_sched_entry
     return mlsl_status_success;
 }
 
-mlsl_status_t mlsl_sched_set_coll_attr(mlsl_sched *sched, const mlsl_coll_attr_t *attr)
-{
-    sched->coll_attr.prologue_fn = attr->prologue_fn;
-    sched->coll_attr.epilogue_fn = attr->epilogue_fn;
-    sched->coll_attr.reduction_fn = attr->reduction_fn;
-    sched->coll_attr.priority = attr->priority;
-    sched->coll_attr.synchronous = attr->synchronous;
-    sched->coll_attr.to_cache = attr->to_cache;
-    if (attr->match_id)
-        strncpy(sched->coll_attr.match_id, attr->match_id, MLSL_MATCH_ID_MAX_LEN - 1);
-
-    return mlsl_status_success;
-}
-
-mlsl_status_t mlsl_sched_bcast(
-    void *buf,
-    size_t count,
-    mlsl_datatype_internal_t dtype,
-    size_t root,
-    mlsl_comm* comm,
-    mlsl_sched **sched)
-{
-    mlsl_status_t status = mlsl_status_success;
-
-    *sched = new mlsl_sched{};
-
-    mlsl_sched_coll_param *p = &((*sched)->coll_param);
-    p->ctype = mlsl_coll_bcast;
-    p->buf = buf;
-    p->count = count;
-    p->dtype = dtype;
-    p->root = root;
-    p->comm = comm ? comm : global_data.comm.get();
-
-    return status;
-}
-
-mlsl_status_t mlsl_sched_reduce(
-    const void *send_buf,
-    void *recv_buf,
-    size_t count,
-    mlsl_datatype_internal_t dtype,
-    mlsl_reduction_t reduction,
-    size_t root,
-    mlsl_comm* comm,
-    mlsl_sched **sched)
-{
-    mlsl_status_t status = mlsl_status_success;
-
-    *sched = new mlsl_sched{};
-
-    mlsl_sched_coll_param *p = &((*sched)->coll_param);
-    p->ctype = mlsl_coll_reduce;
-    p->send_buf = send_buf;
-    p->recv_buf = recv_buf;
-    p->count = count;
-    p->dtype = dtype;
-    p->reduction = reduction;
-    p->root = root;
-    p->comm = comm ? comm : global_data.comm.get();
-
-    return status;
-}
-
-mlsl_status_t mlsl_sched_allreduce(
-    const void *send_buf,
-    void *recv_buf,
-    size_t count,
-    mlsl_datatype_internal_t dtype,
-    mlsl_reduction_t reduction,
-    mlsl_comm* comm,
-    mlsl_sched **sched)
-{
-    mlsl_status_t status = mlsl_status_success;
-
-    *sched = new mlsl_sched{};
-
-    mlsl_sched_coll_param *p = &((*sched)->coll_param);
-    p->ctype = mlsl_coll_allreduce;
-    p->send_buf = send_buf;
-    p->recv_buf = recv_buf;
-    p->count = count;
-    p->dtype = dtype;
-    p->reduction = reduction;
-    p->comm =  comm ? comm : global_data.comm.get();
-
-    return status;
-}
-
-mlsl_status_t mlsl_sched_allgatherv(
-    const void *send_buf,
-    size_t send_count,
-    void *recv_buf,
-    size_t *recv_counts,
-    mlsl_datatype_internal_t dtype,
-    mlsl_comm* comm,
-    mlsl_sched **sched)
-{
-    mlsl_status_t status = mlsl_status_success;
-
-    *sched = new mlsl_sched{};
-
-    mlsl_sched_coll_param *p = &((*sched)->coll_param);
-    p->ctype = mlsl_coll_allgatherv;
-    p->send_buf = send_buf;
-    p->send_count = send_count;
-    p->recv_buf = recv_buf;
-    p->recv_counts = recv_counts;
-    p->dtype = dtype;
-    p->comm =  comm ? comm : global_data.comm.get();
-
-    return status;
-}
-
-mlsl_status_t mlsl_sched_barrier(mlsl_comm* comm, mlsl_sched **sched)
-{
-    mlsl_status_t status = mlsl_status_success;
-
-    *sched = new mlsl_sched{};
-
-    mlsl_sched_coll_param *p = &((*sched)->coll_param);
-    p->ctype = mlsl_coll_barrier;
-    p->dtype = mlsl_dtype_internal_char;
-    p->comm =  comm ? comm : global_data.comm.get();
-
-    return status;
-}
-
-mlsl_status_t mlsl_sched_tensor_bcast(mlsl_comm* comm, mlsl_sched** sched, bool temporal)
-{
-    MLSL_ASSERT(comm != nullptr);
-    mlsl_status_t status = mlsl_status_success;
-
-    *sched = new mlsl_sched{};
-
-    mlsl_sched_coll_param *p = &((*sched)->coll_param);
-    p->ctype = temporal ? mlsl_coll_service_temporal : mlsl_coll_service_persistent;
-    p->dtype = mlsl_dtype_internal_char;
-    p->comm =  comm;
-
-    return status;
-}
-
 void mlsl_sched_prepare_partial_scheds(mlsl_sched *sched, bool dump)
 {
     mlsl_sched **partial_scheds = sched->partial_scheds;
@@ -553,4 +410,17 @@ void mlsl_sched::swap(mlsl_sched& other)
     std::swap(root, other.root);
     std::swap(next, other.next);
     std::swap(prev, other.prev);
+}
+
+void mlsl_sched::set_coll_attr(const mlsl_coll_attr_t *attr)
+{
+    MLSL_ASSERT(attr);
+    coll_attr.prologue_fn = attr->prologue_fn;
+    coll_attr.epilogue_fn = attr->epilogue_fn;
+    coll_attr.reduction_fn = attr->reduction_fn;
+    coll_attr.priority = attr->priority;
+    coll_attr.synchronous = attr->synchronous;
+    coll_attr.to_cache = attr->to_cache;
+    if (attr->match_id)
+        strncpy(coll_attr.match_id, attr->match_id, MLSL_MATCH_ID_MAX_LEN - 1);
 }
