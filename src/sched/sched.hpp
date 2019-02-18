@@ -97,9 +97,6 @@ public:
 
     mlsl_sched* root = nullptr;
 
-    mlsl_sched *next = nullptr;   /* linked-list next pointer */
-    mlsl_sched *prev = nullptr;   /* linked-list prev pointer */
-
     void add_entry(std::shared_ptr<sched_entry> entry)
     {
         entry->set_exec_mode(exec_mode);

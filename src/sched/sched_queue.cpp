@@ -30,16 +30,14 @@ void mlsl_sched_queue::add(mlsl_sched* sched, size_t priority)
 {
     mlsl_fastlock_acquire(&lock);
     mlsl_sched_queue_bin *bin = &(bins[priority % max_bins]);
-    if (!bin->elems)
+    if (bin->elems.empty())
     {
         MLSL_ASSERT(bin->priority == 0);
-        MLSL_ASSERT(bin->elem_count == 0);
         bin->priority = priority;
         ++used_bins;
     }
-    MLSL_DLIST_APPEND(bin->elems, sched);
+    bin->elems.push_back(sched);
     sched->bin = bin;
-    bin->elem_count++;
     max_priority = std::max(max_priority, priority);
     mlsl_fastlock_release(&lock);
 }
@@ -47,30 +45,51 @@ void mlsl_sched_queue::add(mlsl_sched* sched, size_t priority)
 
 void mlsl_sched_queue::erase(mlsl_sched_queue_bin* bin, mlsl_sched* sched)
 {
-    MLSL_LOG(DEBUG, "queue %p, bin %p, elems %p, sched %p, count %zu",
-             this, bin, bin->elems, sched, bin->elem_count);
+    MLSL_LOG(DEBUG, "queue %p, bin %p, sched %p, elems count %zu",
+             this, bin, sched, bin->elems.size());
 
     mlsl_fastlock_acquire(&lock);
-    MLSL_DLIST_DELETE(bin->elems, sched);
-    MLSL_ASSERT(bin->elem_count > 0);
-    bin->elem_count--;
-    if (bin->elem_count == 0) MLSL_ASSERT(!bin->elems);
-    if (!bin->elems)
+    bin->elems.remove(sched);
+    if (bin->elems.empty())
     {
-        used_bins--;
-        if (used_bins == 0) max_priority = 0;
-        else
-        {
-            size_t bin_idx = max_priority % max_bins;
-            while (!bins[bin_idx].elems)
-            {
-                bin_idx = (bin_idx - 1 + max_bins) % max_bins;
-            }
-            max_priority = bins[bin_idx].priority;
-        }
+        update_priority_on_erase();
         bin->priority = 0;
     }
     mlsl_fastlock_release(&lock);
+}
+
+std::list<mlsl_sched*>::iterator mlsl_sched_queue::erase(mlsl_sched_queue_bin* bin, std::list<mlsl_sched*>::iterator it)
+{
+    MLSL_LOG(DEBUG, "queue %p, bin %p, sched %p, elems count %zu",
+             this, bin, *it, bin->elems.size());
+
+    mlsl_fastlock_acquire(&lock);
+    auto next_it = bin->elems.erase(it);
+    if (bin->elems.empty())
+    {
+        update_priority_on_erase();
+        bin->priority = 0;
+    }
+    mlsl_fastlock_release(&lock);
+    return next_it;
+}
+
+void mlsl_sched_queue::update_priority_on_erase()
+{
+    used_bins--;
+    if (used_bins == 0)
+    {
+        max_priority = 0;
+    }
+    else
+    {
+        size_t bin_idx = max_priority % max_bins;
+        while (bins[bin_idx].elems.empty())
+        {
+            bin_idx = (bin_idx - 1 + max_bins) % max_bins;
+        }
+        max_priority = bins[bin_idx].priority;
+    }
 }
 
 mlsl_sched_queue_bin* mlsl_sched_queue::peek(size_t& count)
@@ -80,7 +99,7 @@ mlsl_sched_queue_bin* mlsl_sched_queue::peek(size_t& count)
     if (used_bins > 0)
     {
         result = &(bins[max_priority % max_bins]);
-        count = result->elem_count;
+        count = result->elems.size();
         MLSL_ASSERT(count > 0);
     }
     else

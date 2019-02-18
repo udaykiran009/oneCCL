@@ -198,46 +198,43 @@ mlsl_status_t mlsl_sched_add_barrier(mlsl_sched *sched)
 mlsl_status_t mlsl_sched_progress(mlsl_sched_queue_bin *bin, size_t sched_count, size_t *processed_sched_count)
 {
     mlsl_status_t status = mlsl_status_success;
-    size_t i;
-    mlsl_sched *s;
-    mlsl_sched *tmp;
     mlsl_request *req __attribute__ ((unused));
-    size_t sched_idx = 0;
+    size_t processed_scheds_count = 0;
 
     if (processed_sched_count)
         *processed_sched_count = 0;
 
-    MLSL_LOG(TRACE, "bin %p, elems %p, sched_count %zu",
-             bin, bin->elems, sched_count);
+    MLSL_LOG(TRACE, "bin %p, elems count %zu, sched_count %zu",
+             bin, bin->elems.size(), sched_count);
 
     /* ensure communication progress */
     atl_status_t atl_status __attribute__ ((unused));
     atl_status = atl_comm_poll(bin->comm_ctx);
     MLSL_ASSERT(atl_status == atl_status_success);
 
-    /* update schedule states */
-    MLSL_DLIST_FOREACH_SAFE(bin->elems, s, tmp) {
-
-        if (s->first_progress)
+    for(auto it = bin->elems.begin(); it != bin->elems.end(); )
+    {
+        mlsl_sched* sched = *it;
+        if (sched->first_progress)
         {
             /* TODO: do we need special handling for first_progress ? */
-            MLSL_LOG(DEBUG, "do initial mlsl_sched_continue for sched %p", s);
-            status = mlsl_sched_continue(s);
+            MLSL_LOG(DEBUG, "do initial mlsl_sched_continue for sched %p", sched);
+            status = mlsl_sched_continue(sched);
             MLSL_ASSERT(status == mlsl_status_success);
-            s->first_progress = false;
+            sched->first_progress = false;
         }
 
-        for (i = s->idx; i < s->entries.size(); ++i) {
-            auto& entry = s->entries[i];
+        for (auto entry_idx = sched->idx; entry_idx < sched->entries.size(); ++entry_idx) {
+            auto& entry = sched->entries[entry_idx];
             entry->update();
-            if (i == s->idx && entry->get_status() >= mlsl_sched_entry_status_complete)
+            if (entry_idx == sched->idx && entry->get_status() >= mlsl_sched_entry_status_complete)
             {
-                ++s->idx;
+                ++sched->idx;
                 MLSL_LOG(DEBUG, "completed %s%s entry [%zu/%zu], shift start_idx, sched %p", entry->name(),
-                         entry->is_barrier() ? " barrier" : "", i, s->entries.size(), s);
+                         entry->is_barrier() ? " barrier" : "", entry_idx, sched->entries.size(), sched);
                 if (entry->is_barrier()) {
                     /* post/perform the next round of operations */
-                    status = mlsl_sched_continue(s);
+                    status = mlsl_sched_continue(sched);
                     MLSL_ASSERT(status == mlsl_status_success);
                 }
             }
@@ -248,14 +245,14 @@ mlsl_status_t mlsl_sched_progress(mlsl_sched_queue_bin *bin, size_t sched_count,
             }
         }
 
-        if (s->idx == s->entries.size()) {
-            MLSL_LOG(DEBUG, "completing and dequeuing: sched %p, req %p", s, s->req);
+        if (sched->idx == sched->entries.size()) {
+            MLSL_LOG(DEBUG, "completing and dequeuing: sched %p, req %p", sched, sched->req);
 
-            /* dequeue this schedule, it's complete */
-            bin->queue->erase(bin, s);
+            /* remove completed schedule from the bin. it points to the next elem in bin->elems */
+            it = bin->queue->erase(bin, it);
 
-            req = s->req;
-            s->req = NULL;
+            req = sched->req;
+            sched->req = nullptr;
 
             status = mlsl_request_complete(req);
             MLSL_ASSERT(status == mlsl_status_success);
@@ -263,9 +260,18 @@ mlsl_status_t mlsl_sched_progress(mlsl_sched_queue_bin *bin, size_t sched_count,
             if (processed_sched_count)
                 (*processed_sched_count)++;
         }
+        else
+        {
+            //this schedule is not completed yet, switch to the next sched in bin elems list
+            ++it;
+        }
 
-        sched_idx++;
-        if (sched_idx == sched_count) break;
+        processed_scheds_count++;
+        if (processed_scheds_count == sched_count)
+        {
+            //desired number of processed scheds is reached
+            break;
+        }
     }
 
     return status;
