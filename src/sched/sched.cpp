@@ -35,7 +35,7 @@ size_t mlsl_sched_get_priority(mlsl_sched *sched)
             MLSL_ASSERTP_FMT(0, "unexpected priority_mode %d", env_data.priority_mode);
             break;
     }
-    MLSL_LOG(DEBUG, "mlsl_sched_get_priority: s %p, p %zu", sched, priority);
+    MLSL_LOG(DEBUG, "sched %p, prio %zu", sched, priority);
     return priority;
 }
 

@@ -116,5 +116,7 @@ mlsl_sched* out_of_order::ooo_match::build_bcast_sched(const char* tensor_name)
     //overwrite schedule type that was set in mlsl_coll_build_bcast
     bcast_sched->partial_scheds[0]->coll_param.ctype = bcast_sched->coll_param.ctype;
 
+    bcast_sched->prepare_partial_scheds();
+
     return bcast_sched;
 }
