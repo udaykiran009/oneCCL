@@ -95,17 +95,17 @@ static mlsl_status_t mlsl_sched_continue(mlsl_sched *s)
 }
 
 mlsl_status_t mlsl_sched_progress(mlsl_sched_queue_bin* bin,
-                                  size_t progressed_scheds_limit,
+                                  size_t max_sched_count,
                                   size_t& completed_sched_count)
 {
     mlsl_status_t status = mlsl_status_success;
     mlsl_request *req __attribute__ ((unused));
-    size_t progressed_scheds = 0;
+    size_t sched_count = 0;
 
     completed_sched_count = 0;
 
-    MLSL_LOG(TRACE, "bin %p, elems count %zu, scheds limit %zu",
-             bin, bin->elems.size(), progressed_scheds_limit);
+    MLSL_LOG(TRACE, "bin %p, elems count %zu, max scheds %zu",
+             bin, bin->elems.size(), max_sched_count);
 
     /* ensure communication progress */
     atl_status_t atl_status __attribute__ ((unused));
@@ -180,8 +180,8 @@ mlsl_status_t mlsl_sched_progress(mlsl_sched_queue_bin* bin,
             ++it;
         }
 
-        progressed_scheds++;
-        if (progressed_scheds == progressed_scheds_limit)
+        sched_count++;
+        if (sched_count == max_sched_count)
         {
             //desired number of processed scheds is reached, exit
             break;

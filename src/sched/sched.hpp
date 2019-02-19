@@ -162,7 +162,7 @@ private:
 };
 
 mlsl_status_t mlsl_sched_progress(mlsl_sched_queue_bin* bin,
-                                  size_t progressed_scheds_limit,
+                                  size_t max_sched_count,
                                   size_t& completed_sched_count);
 
 mlsl_status_t mlsl_sched_alloc_buffer(mlsl_sched *sched, size_t size, void** ptr);
