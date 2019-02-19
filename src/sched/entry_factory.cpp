@@ -30,7 +30,7 @@ std::shared_ptr<sched_entry> entry_factory::make_send_entry(mlsl_sched* sched,
 {
     MLSL_LOG(DEBUG, "creating SEND entry");
     auto e = std::make_shared<send_entry>(sched, buf, cnt, dtype,
-                                          global_data.comm->get_global_rank(dst), global_data.comm->rank());
+                                          sched->coll_param.comm->get_global_rank(dst), global_data.comm->rank());
     sched->add_entry(e);
     return e;
 }
@@ -42,7 +42,7 @@ std::shared_ptr<sched_entry> entry_factory::make_recv_entry(mlsl_sched* sched,
                                                             size_t src)
 {
     MLSL_LOG(DEBUG, "creating RECV entry");
-    auto e = std::make_shared<recv_entry>(sched, buf, cnt, dtype, global_data.comm->get_global_rank(src));
+    auto e = std::make_shared<recv_entry>(sched, buf, cnt, dtype, sched->coll_param.comm->get_global_rank(src));
     sched->add_entry(e);
     return e;
 }
@@ -89,7 +89,7 @@ std::shared_ptr<sched_entry> entry_factory::make_recv_reduce_entry(mlsl_sched* s
 {
     MLSL_LOG(DEBUG, "creating RECV_REDUCE entry");
     auto e = std::make_shared<recv_reduce_entry>(sched, inout_buf, cnt, out_cnt, dtype, reduction_op,
-                                                 global_data.comm->get_global_rank(src), comm_buff);
+                                                 sched->coll_param.comm->get_global_rank(src), comm_buff);
     sched->add_entry(e);
     return e;
 }

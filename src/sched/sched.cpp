@@ -195,10 +195,8 @@ void mlsl_sched::commit(mlsl_parallelizer* parallelizer)
 {
     sched_id = coll_param.comm->get_sched_id();
 
-    mlsl_request *req;
     mlsl_request_create(&req);
     req->sched = this;
-    this->req = req;
 
     mlsl_parallelizer_process(parallelizer, this);
 
