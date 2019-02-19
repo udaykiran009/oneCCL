@@ -138,7 +138,7 @@ mlsl_status_t mlsl_coll_build_ring_rma_allreduce(mlsl_sched* sched, const void* 
     {
         if (!inplace) {
             entry_factory::make_copy_entry(sched, send_buf, recv_buf, count, dtype);
-            mlsl_sched_add_barrier(sched);
+            sched->add_barrier();
         }
         return mlsl_status_success;
     }
@@ -147,7 +147,7 @@ mlsl_status_t mlsl_coll_build_ring_rma_allreduce(mlsl_sched* sched, const void* 
     mlsl_sched_alloc_buffer(sched, sizeof(mlsl_rma_ring_allreduce_handler), (void**)&ar_handler);
     mlsl_sched_alloc_buffer(sched, 2 * comm_size * sizeof(uint64_t), (void**)&ar_handler->sync_flags);
 
-    mlsl_sched_set_entry_exec_mode(sched, mlsl_sched_entry_exec_once);
+    sched->set_entry_exec_mode(mlsl_sched_entry_exec_once);
 
     entry_factory::make_register_entry(sched, 2 * comm_size * sizeof(uint64_t), ar_handler->sync_flags, &ar_handler->sync_flags_mr);
     entry_factory::make_register_entry(sched, sizeof(uint64_t), (void*)&ar_handler->sync_flag, &ar_handler->sync_flag_mr);
@@ -163,7 +163,7 @@ mlsl_status_t mlsl_coll_build_ring_rma_allreduce(mlsl_sched* sched, const void* 
         entry_factory::make_register_entry(sched, count * dtype_size, (void*)send_buf, &ar_handler->send_buf_mr);
     entry_factory::make_register_entry(sched, count * dtype_size, (void*)recv_buf, &ar_handler->recv_buf_mr);
 
-    mlsl_sched_set_entry_exec_mode(sched, mlsl_sched_entry_exec_regular);
+    sched->set_entry_exec_mode(mlsl_sched_entry_exec_regular);
 
     ar_handler->wait_dst = 1;
     for (idx = 0; idx < 2 * comm_size; idx++)
@@ -173,9 +173,10 @@ mlsl_status_t mlsl_coll_build_ring_rma_allreduce(mlsl_sched* sched, const void* 
     ar_handler->dst_peer = (comm_size + rank + 1) % comm_size;
 
     entry_factory::make_function_entry(sched, rma_ring_allreduce_reset_sync_flag, ar_handler);
-    mlsl_sched_add_barrier(sched);
+    sched->add_barrier();
 
-    mlsl_sched_set_entry_exec_mode(sched, mlsl_sched_entry_exec_once);
+    sched->set_entry_exec_mode(mlsl_sched_entry_exec_once);
+
     if (inplace)
     {
         e = entry_factory::make_send_entry(sched, ar_handler->tmp_buf_mr, sizeof(atl_mr_t),
@@ -221,9 +222,9 @@ mlsl_status_t mlsl_coll_build_ring_rma_allreduce(mlsl_sched* sched, const void* 
         entry_factory::make_recv_entry(sched, &ar_handler->remote_dst_ready_flag_mr, sizeof(atl_mr_t),
                                        mlsl_dtype_internal_char, ar_handler->src_peer);
     }
-    mlsl_sched_add_barrier(sched);
+    sched->add_barrier();
 
-    mlsl_sched_set_entry_exec_mode(sched, mlsl_sched_entry_exec_regular);
+    sched->set_entry_exec_mode(mlsl_sched_entry_exec_regular);
 
     if (ar_handler->wait_dst)
     {
@@ -288,7 +289,7 @@ mlsl_status_t mlsl_coll_build_ring_rma_allreduce(mlsl_sched* sched, const void* 
                         ar_handler);
 
         if (block_count * mlsl_datatype_get_size(dtype) > global_data.executor->max_order_waw_size)
-            mlsl_sched_add_barrier(sched);
+            sched->add_barrier();
 
         e = entry_factory::make_write_entry(sched,
                                             &ar_handler->sync_flags[idx],
@@ -346,7 +347,7 @@ mlsl_status_t mlsl_coll_build_ring_rma_allreduce(mlsl_sched* sched, const void* 
                         ar_handler);
 
         if (block_count * mlsl_datatype_get_size(dtype) > global_data.executor->max_order_waw_size)
-            mlsl_sched_add_barrier(sched);
+            sched->add_barrier();
 
         e = entry_factory::make_write_entry(sched,
                                             &ar_handler->sync_flags[flag_idx_offset + idx],

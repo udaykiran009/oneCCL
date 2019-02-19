@@ -36,12 +36,12 @@ void mlsl_sched_queue::add(mlsl_sched* sched, size_t priority)
         bin->priority = priority;
         ++used_bins;
     }
+    //todo: update bin->priority?
     bin->elems.push_back(sched);
     sched->bin = bin;
     max_priority = std::max(max_priority, priority);
     mlsl_fastlock_release(&lock);
 }
-
 
 void mlsl_sched_queue::erase(mlsl_sched_queue_bin* bin, mlsl_sched* sched)
 {
@@ -83,6 +83,7 @@ void mlsl_sched_queue::update_priority_on_erase()
     }
     else
     {
+        //bins are arranged by (maximum supported priority) % max_bins
         size_t bin_idx = max_priority % max_bins;
         while (bins[bin_idx].elems.empty())
         {

@@ -30,13 +30,12 @@ void out_of_order::ooo_match::postpone_for_tensor(const std::string& tensor_name
         auto tensor_comm = sched->coll_param.comm->clone_with_new_id(std::move(unresolved->second));
 
         m_tensor_comm_storage.add_comm_for_tensor(tensor_name, tensor_comm);
-        mlsl_request* req;
         sched->coll_param.comm = tensor_comm.get();
         for (size_t part_idx = 0; part_idx < sched->partial_scheds.size(); ++part_idx)
         {
             sched->partial_scheds[part_idx]->coll_param.comm = tensor_comm.get();
         }
-        mlsl_sched_start(sched, &req);
+        sched->start(&m_executor);
 
         m_unresolved_comms.erase(unresolved);
     }
@@ -71,7 +70,7 @@ void out_of_order::ooo_match::create_comm_and_run_sched(const std::string& tenso
     //store new communicator
     m_tensor_comm_storage.add_comm_for_tensor(tensor_name, tensor_comm);
     //run all postponed schedules
-    m_postponed_schedules.run_scheds_for_tensor(tensor_name, tensor_comm.get());
+    m_postponed_schedules.run_scheds_for_tensor(tensor_name, tensor_comm.get(), &m_executor);
 }
 
 mlsl_sched* out_of_order::ooo_match::build_bcast_sched(const char* tensor_name)
@@ -108,7 +107,7 @@ mlsl_sched* out_of_order::ooo_match::build_bcast_sched(const char* tensor_name)
                           mlsl_dtype_internal_char,
                           0);
 
-    mlsl_sched_add_barrier(bcast_sched->partial_scheds[0].get());
+    bcast_sched->partial_scheds[0]->add_barrier();
 
     //created tensor_comm entry will have an address of bcast_sched->match_id where tensor name will be broadcasted
     entry_factory::make_tensor_comm_entry(bcast_sched->partial_scheds[0].get(), this,

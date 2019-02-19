@@ -224,7 +224,9 @@ mlsl_status_t mlsl_parallelizer_process(mlsl_parallelizer* parallelizer,
                                                    &(main_ctx->count),
                                                    &(main_ctx->dtype),
                                                    &(main_ctx->dtype_size));
-                MLSL_CALL(mlsl_sched_sync_schedules(part_scheds));
+
+                sched->sync_part_scheds();
+
                 for (idx = 0; idx < part_count; idx++)
                 {
                     mlsl_parallelizer_prologue_ctx* part_ctx;
@@ -256,7 +258,8 @@ mlsl_status_t mlsl_parallelizer_process(mlsl_parallelizer* parallelizer,
                 }
                 if (!sched->coll_attr.epilogue_fn)
                 {
-                    MLSL_CALL(mlsl_sched_sync_schedules(part_scheds));
+                    sched->sync_part_scheds();
+
                     e = entry_factory::make_copy_entry(part_scheds[0].get(),
                                                        nullptr, /* in_buf */
                                                        coll_param->recv_buf,
@@ -284,7 +287,8 @@ mlsl_status_t mlsl_parallelizer_process(mlsl_parallelizer* parallelizer,
             }
             if (sched->coll_attr.epilogue_fn)
             {
-                MLSL_CALL(mlsl_sched_sync_schedules(part_scheds));
+                sched->sync_part_scheds();
+
                 e = entry_factory::make_epilogue_entry(part_scheds[0].get(),
                                                        sched->coll_attr.epilogue_fn,
                                                        (char*) coll_param->recv_buf,
@@ -326,7 +330,8 @@ mlsl_status_t mlsl_parallelizer_process(mlsl_parallelizer* parallelizer,
                                                    copy_offsets[idx],
                                                    copy_counts[idx], dtype);
                 }
-                mlsl_sched_sync_schedules(part_scheds);
+
+                sched->sync_part_scheds();
             }
 
             for (idx = 0; idx < part_count; idx++)

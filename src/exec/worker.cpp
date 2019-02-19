@@ -86,7 +86,7 @@ size_t mlsl_worker::peek_and_progress()
     if (peek_count)
     {
         MLSL_ASSERT(bin);
-        mlsl_sched_progress(bin, peek_count, &processed_count);
+        mlsl_sched_progress(bin, peek_count, processed_count);
         MLSL_ASSERT(processed_count <= peek_count);
     }
 
@@ -154,7 +154,7 @@ void mlsl_service_worker::peek_service()
     if (peek_count > 0)
     {
         MLSL_ASSERT(bin);
-        mlsl_sched_progress(bin, peek_count, &processed_count);
+        mlsl_sched_progress(bin, peek_count, processed_count);
         MLSL_ASSERT(processed_count <= peek_count);
 
         //todo: visitor might be useful there
@@ -171,7 +171,7 @@ void mlsl_service_worker::check_persistent()
         if (completion_counter == 0)
         {
             MLSL_LOG(DEBUG, "restart persistent service sched %p", service_sched.get());
-            mlsl_sched_prepare_partial_scheds(service_sched.get(), false);
+            service_sched->prepare_partial_scheds();
             for (size_t idx = 0; idx < service_sched->partial_scheds.size(); ++idx)
             {
                 service_queue->add(service_sched->partial_scheds[idx].get(), mlsl_sched_get_priority(service_sched.get()));

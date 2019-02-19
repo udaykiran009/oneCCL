@@ -99,9 +99,12 @@ static mlsl_status_t mlsl_coll_create(mlsl_request** req,
             sched->coll_param.comm = tensor_comm;
         }
 
-        mlsl_sched_commit(sched);
+        sched->commit(global_data.parallelizer);
+
         if (entry)
-        { entry->sched = sched; }
+        {
+            entry->sched = sched;
+        }
     }
     else
     {
@@ -114,7 +117,7 @@ static mlsl_status_t mlsl_coll_create(mlsl_request** req,
     }
     if (!sched_to_be_posponed)
     {
-        mlsl_sched_start(sched, req);
+        *req = sched->start(global_data.executor.get());
         if (attr->synchronous)
         {
             mlsl_wait(*req);
@@ -136,7 +139,7 @@ static mlsl_status_t mlsl_coll_create(mlsl_request** req,
         }
         /* root rank already broadcasts the tensor or it is not root rank */
         global_data.ooo_handler->postpone_for_tensor(attr->match_id, sched);
-        mlsl_sched_reset_request(sched, req);
+        *req = sched->reset_request();
     }
 
     return mlsl_status_success;
@@ -247,12 +250,12 @@ mlsl_status_t mlsl_bcast(
     mlsl_datatype_t dtype,
     size_t root,
     const mlsl_coll_attr_t* attributes,
-    mlsl_comm_t comm_t,
+    mlsl_comm_t communicator,
     mlsl_request** req)
 {
     try
     {
-        auto comm = static_cast<mlsl_comm*>(comm_t);
+        auto comm = static_cast<mlsl_comm*>(communicator);
 
         mlsl_sched_coll_param sched_param{};
         sched_param.ctype = mlsl_coll_bcast;
@@ -283,12 +286,12 @@ mlsl_status_t mlsl_reduce(
     mlsl_reduction_t reduction,
     size_t root,
     const mlsl_coll_attr_t* attributes,
-    mlsl_comm_t comm_t,
+    mlsl_comm_t communicator,
     mlsl_request** req)
 {
     try
     {
-        auto comm = static_cast<mlsl_comm*>(comm_t);
+        auto comm = static_cast<mlsl_comm*>(communicator);
 
         mlsl_sched_coll_param sched_param{};
         sched_param.ctype = mlsl_coll_reduce;
@@ -322,12 +325,12 @@ mlsl_status_t mlsl_allreduce(
     mlsl_datatype_t dtype,
     mlsl_reduction_t reduction,
     const mlsl_coll_attr_t* attributes,
-    mlsl_comm_t comm_t,
+    mlsl_comm_t communicator,
     mlsl_request** req)
 {
     try
     {
-        auto comm = static_cast<mlsl_comm*>(comm_t);
+        auto comm = static_cast<mlsl_comm*>(communicator);
 
         mlsl_sched_coll_param sched_param{};
         sched_param.ctype = mlsl_coll_allreduce;
@@ -359,12 +362,12 @@ mlsl_status_t mlsl_allgatherv(
     size_t* recv_counts,
     mlsl_datatype_t dtype,
     const mlsl_coll_attr_t* attributes,
-    mlsl_comm_t comm_t,
+    mlsl_comm_t communicator,
     mlsl_request** req)
 {
     try
     {
-        auto comm = static_cast<mlsl_comm*>(comm_t);
+        auto comm = static_cast<mlsl_comm*>(communicator);
 
         mlsl_sched_coll_param sched_param{};
         sched_param.ctype = mlsl_coll_allgatherv;
@@ -388,11 +391,11 @@ mlsl_status_t mlsl_allgatherv(
     COMMON_CATCH_BLOCK();
 }
 
-mlsl_status_t mlsl_barrier(mlsl_comm_t comm_t)
+mlsl_status_t mlsl_barrier(mlsl_comm_t communicator)
 {
     try
     {
-        auto comm = static_cast<mlsl_comm*>(comm_t);
+        auto comm = static_cast<mlsl_comm*>(communicator);
         mlsl_request* barrier_req;
         mlsl_coll_attr_t attributes{};
         attributes.synchronous = 1;

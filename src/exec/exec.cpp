@@ -109,8 +109,6 @@ void mlsl_executor::start_sched(mlsl_sched* sched)
                      sched->partial_scheds.size() == 1,
                      "Service schedule must have exactly 1 entry");
 
-    mlsl_sched_prepare_partial_scheds(sched, proc_idx == 0);
-
     /* add scheds into worker queues */
     for (size_t idx = 0; idx < sched->partial_scheds.size(); idx++)
     {

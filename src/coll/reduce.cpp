@@ -82,7 +82,7 @@ mlsl_status_t mlsl_coll_build_rabenseifner_reduce(mlsl_sched *sched, const void 
     if (rank < 2 * rem) {
         if (rank % 2 != 0) {    /* odd */
             entry_factory::make_send_entry(sched, recv_buf, count, dtype, rank - 1);
-            MLSL_CALL(mlsl_sched_add_barrier(sched));
+            sched->add_barrier();
 
             /* temporarily set the rank to -1 so that this
              * process does not pariticipate in recursive
@@ -90,14 +90,14 @@ mlsl_status_t mlsl_coll_build_rabenseifner_reduce(mlsl_sched *sched, const void 
             new_rank = MLSL_INVALID_PROC_IDX;
         } else {        /* even */
             entry_factory::make_recv_entry(sched, tmp_buf, count, dtype, rank + 1);
-            MLSL_CALL(mlsl_sched_add_barrier(sched));
+            sched->add_barrier();
 
             /* do the reduction on received data. */
             /* This algorithm is used only for predefined ops
              * and predefined ops are always commutative. */
             entry_factory::make_reduce_entry(sched, tmp_buf, count,
                                              recv_buf, NULL, dtype, reduction);
-            MLSL_CALL(mlsl_sched_add_barrier(sched));
+            sched->add_barrier();
 
             /* change the rank */
             new_rank = rank / 2;
@@ -156,7 +156,7 @@ mlsl_status_t mlsl_coll_build_rabenseifner_reduce(mlsl_sched *sched, const void 
             /* sendrecv, no barrier here */
             entry_factory::make_recv_entry(sched, ((char*) tmp_buf + disps[recv_idx] * dtype_size),
                                            recv_cnt, dtype, dst);
-            MLSL_CALL(mlsl_sched_add_barrier(sched));
+            sched->add_barrier();
 
 
             /* tmp_buf contains data received in this step.
@@ -166,7 +166,7 @@ mlsl_status_t mlsl_coll_build_rabenseifner_reduce(mlsl_sched *sched, const void 
              * and predefined ops are always commutative. */
             entry_factory::make_reduce_entry(sched, ((char *) tmp_buf + disps[recv_idx] * dtype_size), recv_cnt,
                                              ((char *) recv_buf + disps[recv_idx] * dtype_size), NULL, dtype, reduction);
-            MLSL_CALL(mlsl_sched_add_barrier(sched));
+            sched->add_barrier();
 
             /* update send_idx for next iteration */
             send_idx = recv_idx;
@@ -199,14 +199,14 @@ mlsl_status_t mlsl_coll_build_rabenseifner_reduce(mlsl_sched *sched, const void 
                     disps[i] = disps[i - 1] + cnts[i - 1];
 
                 entry_factory::make_recv_entry(sched, recv_buf, cnts[0], dtype, 0);
-                MLSL_CALL(mlsl_sched_add_barrier(sched));
+                sched->add_barrier();
 
                 new_rank = 0;
                 send_idx = 0;
                 last_idx = 2;
             } else if (new_rank == 0) {  /* send */
                 entry_factory::make_send_entry(sched, recv_buf, cnts[0], dtype, local_root);
-                MLSL_CALL(mlsl_sched_add_barrier(sched));
+                sched->add_barrier();
 
                 new_rank = MLSL_INVALID_PROC_IDX;
             }
@@ -270,13 +270,13 @@ mlsl_status_t mlsl_coll_build_rabenseifner_reduce(mlsl_sched *sched, const void 
                 /* Send data from recv_buf. Recv into tmp_buf */
                 entry_factory::make_send_entry(sched, ((char*) recv_buf + disps[send_idx] * dtype_size),
                                                send_cnt, dtype, dst);
-                MLSL_CALL(mlsl_sched_add_barrier(sched));
+                sched->add_barrier();
                 break;
             } else {
                 /* recv and continue */
                 entry_factory::make_recv_entry(sched, ((char*) recv_buf + disps[recv_idx] * dtype_size),
                                                recv_cnt, dtype, dst);
-                MLSL_CALL(mlsl_sched_add_barrier(sched));
+                sched->add_barrier();
             }
 
             if (new_rank > new_dst)
@@ -324,7 +324,7 @@ mlsl_status_t mlsl_coll_build_binomial_reduce(mlsl_sched *sched, const void *sen
 
     if ((rank != local_root) || (send_buf != recv_buf)) {
         entry_factory::make_copy_entry(sched, send_buf, recv_buf, count, dtype);
-        MLSL_CALL(mlsl_sched_add_barrier(sched));
+        sched->add_barrier();
     }
 
     /* This code is from MPICH-1. */
@@ -370,11 +370,11 @@ mlsl_status_t mlsl_coll_build_binomial_reduce(mlsl_sched *sched, const void *sen
                 source = (source + lroot) % comm_size;
 
                 entry_factory::make_recv_entry(sched, tmp_buf, count, dtype, source);
-                MLSL_CALL(mlsl_sched_add_barrier(sched));
+                sched->add_barrier();
 
                 entry_factory::make_reduce_entry(sched, tmp_buf, count,
                                                  recv_buf, NULL, dtype, reduction);
-                MLSL_CALL(mlsl_sched_add_barrier(sched));
+                sched->add_barrier();
 
             }
         } else {
@@ -382,7 +382,7 @@ mlsl_status_t mlsl_coll_build_binomial_reduce(mlsl_sched *sched, const void *sen
              * my parent */
             source = ((relrank & (~mask)) + lroot) % comm_size;
             entry_factory::make_send_entry(sched, recv_buf, count, dtype, source);
-            MLSL_CALL(mlsl_sched_add_barrier(sched));
+            sched->add_barrier();
             break;
         }
         mask <<= 1;

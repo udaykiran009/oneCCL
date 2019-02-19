@@ -15,7 +15,7 @@ mlsl_status_t MLSL_API mlsl_bcast(
     mlsl_datatype_t dtype,
     size_t root,
     const mlsl_coll_attr_t* attributes,
-    mlsl_comm_t comm,
+    mlsl_comm_t communicator,
     mlsl_request_t* req);
 
 mlsl_status_t MLSL_API mlsl_reduce(
@@ -26,7 +26,7 @@ mlsl_status_t MLSL_API mlsl_reduce(
     mlsl_reduction_t reduction,
     size_t root,
     const mlsl_coll_attr_t* attributes,
-    mlsl_comm_t comm,
+    mlsl_comm_t communicator,
     mlsl_request_t* req);
 
 mlsl_status_t MLSL_API mlsl_allreduce(
@@ -36,7 +36,7 @@ mlsl_status_t MLSL_API mlsl_allreduce(
     mlsl_datatype_t dtype,
     mlsl_reduction_t reduction,
     const mlsl_coll_attr_t* attributes,
-    mlsl_comm_t comm,
+    mlsl_comm_t communicator,
     mlsl_request_t* req);
 
 mlsl_status_t MLSL_API mlsl_allgatherv(
@@ -46,10 +46,10 @@ mlsl_status_t MLSL_API mlsl_allgatherv(
     size_t* recv_counts,
     mlsl_datatype_t dtype,
     const mlsl_coll_attr_t* attributes,
-    mlsl_comm_t comm,
+    mlsl_comm_t communicator,
     mlsl_request_t* req);
 
-mlsl_status_t MLSL_API mlsl_barrier(mlsl_comm_t comm);
+mlsl_status_t MLSL_API mlsl_barrier(mlsl_comm_t communicator);
 
 mlsl_status_t MLSL_API mlsl_wait(mlsl_request_t req);
 

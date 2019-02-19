@@ -1,6 +1,6 @@
 #pragma once
 
-#include "sched/sched.hpp"
+#include "common/env/env.hpp"
 #include "atl/atl.h"
 
 #include <vector>
@@ -8,6 +8,8 @@
 
 class mlsl_worker;
 class mlsl_service_worker;
+class mlsl_sched;
+struct mlsl_request;
 
 class mlsl_executor
 {
