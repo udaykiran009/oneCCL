@@ -47,8 +47,8 @@ public:
 protected:
     char* dump_detail(char* dump_buf) const
     {
-        auto bytes_written = sprintf(dump_buf, "dt %s, cnt %zu, buf %p, src %zu, comm %p, req %p\n",
-                                     mlsl_datatype_get_name(dtype), cnt, buf, src, sched->coll_param.comm, &req);
+        auto bytes_written = sprintf(dump_buf, "dt %s, cnt %zu, buf %p, src %zu, comm_id %hu, req %p\n",
+                                     mlsl_datatype_get_name(dtype), cnt, buf, src, sched->coll_param.comm->id(), &req);
         return dump_buf + bytes_written;
     }
 

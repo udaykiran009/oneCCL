@@ -33,8 +33,8 @@
 
 int main()
 {
-    float send_buf[COUNT];
-    float recv_buf[COUNT];
+    float* send_buf = malloc(sizeof(float) * COUNT);
+    float* recv_buf = malloc(sizeof(float) * COUNT);
 
     test_init();
 
@@ -51,6 +51,9 @@ int main()
                    "regular_allreduce");
 
     test_finalize();
+
+    free(send_buf);
+    free(recv_buf);
 
     return 0;
 }

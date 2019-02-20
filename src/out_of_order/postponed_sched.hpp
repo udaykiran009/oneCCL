@@ -15,7 +15,9 @@ public:
 
     void postpone_for_tensor(const std::string& tensor_name, mlsl_sched* sched);
 
-    void run_scheds_for_tensor(const std::string& tensor_name, mlsl_comm* tensor_comm);
+    void run_scheds_for_tensor(const std::string& tensor_name,
+                                   mlsl_comm* tensor_comm,
+                                   mlsl_executor* executor);
 
     mlsl_comm* get_sched_comm_by_tensor(const std::string& tensor_name);
 

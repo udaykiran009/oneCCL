@@ -5,10 +5,8 @@
 
 struct mlsl_request
 {
-    int ref_counter;
     int completion_counter;
-    struct mlsl_sched *sched;
-    struct mlsl_comm *comm;
+    mlsl_sched *sched;
 };
 
 mlsl_status_t mlsl_request_create(mlsl_request **req);

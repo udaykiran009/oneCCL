@@ -1,3 +1,4 @@
+#include <exec/exec.hpp>
 #include "postponed_sched.hpp"
 
 void out_of_order::postponed_sched_storage::postpone_for_tensor(const std::string& tensor_name, mlsl_sched* sched)
@@ -20,7 +21,9 @@ mlsl_comm* out_of_order::postponed_sched_storage::get_sched_comm_by_tensor(const
     return nullptr;
 }
 
-void out_of_order::postponed_sched_storage::run_scheds_for_tensor(const std::string& tensor_name, mlsl_comm* tensor_comm)
+void out_of_order::postponed_sched_storage::run_scheds_for_tensor(const std::string& tensor_name,
+                                                                  mlsl_comm* tensor_comm,
+                                                                  mlsl_executor* executor)
 {
     MLSL_ASSERTP(tensor_comm);
 
@@ -37,16 +40,15 @@ void out_of_order::postponed_sched_storage::run_scheds_for_tensor(const std::str
             MLSL_LOG(INFO, "Running sched %p, type %s for tensor %s", sched_it->second,
                 mlsl_coll_type_to_str(sched_it->second->coll_param.ctype),  sched_it->first.c_str());
             //user who started postponed collective has already had a request object
-            mlsl_request* req;
             mlsl_sched* schedule_obj = sched_it->second;
             //update communicator & run
             schedule_obj->coll_param.comm = tensor_comm;
-            for (size_t part_idx = 0; part_idx < schedule_obj->partial_sched_count; ++part_idx)
+            for (size_t part_idx = 0; part_idx < schedule_obj->partial_scheds.size(); ++part_idx)
             {
                 schedule_obj->partial_scheds[part_idx]->coll_param.comm = tensor_comm;
             }
 
-            mlsl_sched_start(schedule_obj, &req);
+            schedule_obj->start(executor);
         }
 
         MLSL_LOG(DEBUG, "Erase postponed scheds for tensor %s if any", tensor_name.c_str());

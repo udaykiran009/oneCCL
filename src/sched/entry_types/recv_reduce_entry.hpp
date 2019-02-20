@@ -82,9 +82,9 @@ protected:
     char* dump_detail(char* dump_buf) const
     {
         auto bytes_written = sprintf(dump_buf, "dt %s, inout_buf %p, in_cnt %zu, out_cnt %p, op %s, red_fn %p, "
-                                               "src %zu, comm_buf %p, comm %p, req %p\n",
+                                               "src %zu, comm_buf %p, comm_id %hu, req %p\n",
                                      mlsl_datatype_get_name(dtype), inout_buf, in_cnt, out_cnt,
-                                     mlsl_reduction_to_str(op), fn, src, comm_buf, sched->coll_param.comm, &req);
+                                     mlsl_reduction_to_str(op), fn, src, comm_buf, sched->coll_param.comm->id(), &req);
         return dump_buf + bytes_written;
     }
 

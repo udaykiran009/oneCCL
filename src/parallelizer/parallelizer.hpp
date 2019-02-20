@@ -11,5 +11,5 @@ extern mlsl_parallelizer *global_parallelizer;
 
 mlsl_status_t mlsl_parallelizer_create(size_t partition_count, mlsl_parallelizer **parallelizer);
 mlsl_status_t mlsl_parallelizer_free(mlsl_parallelizer *parallelizer);
-mlsl_status_t mlsl_parallelizer_process(mlsl_parallelizer *parallelizer, mlsl_sched *sched,
-                                        mlsl_sched ***scheds, size_t *sched_count);
+mlsl_status_t mlsl_parallelizer_process(mlsl_parallelizer* parallelizer,
+                                        mlsl_sched* sched);

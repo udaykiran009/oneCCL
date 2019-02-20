@@ -30,13 +30,12 @@ void out_of_order::ooo_match::postpone_for_tensor(const std::string& tensor_name
         auto tensor_comm = sched->coll_param.comm->clone_with_new_id(std::move(unresolved->second));
 
         m_tensor_comm_storage.add_comm_for_tensor(tensor_name, tensor_comm);
-        mlsl_request* req;
         sched->coll_param.comm = tensor_comm.get();
-        for (size_t part_idx = 0; part_idx < sched->partial_sched_count; ++part_idx)
+        for (size_t part_idx = 0; part_idx < sched->partial_scheds.size(); ++part_idx)
         {
             sched->partial_scheds[part_idx]->coll_param.comm = tensor_comm.get();
         }
-        mlsl_sched_start(sched, &req);
+        sched->start(&m_executor);
 
         m_unresolved_comms.erase(unresolved);
     }
@@ -71,25 +70,27 @@ void out_of_order::ooo_match::create_comm_and_run_sched(const std::string& tenso
     //store new communicator
     m_tensor_comm_storage.add_comm_for_tensor(tensor_name, tensor_comm);
     //run all postponed schedules
-    m_postponed_schedules.run_scheds_for_tensor(tensor_name, tensor_comm.get());
+    m_postponed_schedules.run_scheds_for_tensor(tensor_name, tensor_comm.get(), &m_executor);
 }
 
 mlsl_sched* out_of_order::ooo_match::build_bcast_sched(const char* tensor_name)
 {
     MLSL_ASSERT_FMT(m_service_comm->rank() != 0 || tensor_name != nullptr, "Only root rank can pass a valid tensor name");
-    mlsl_sched* bcast_sched;
-    mlsl_sched_tensor_bcast(m_service_comm.get(), &bcast_sched, tensor_name != nullptr);
+
+    bool temp_sched = tensor_name != nullptr;
+    mlsl_sched_coll_param bcast_param{};
+    bcast_param.ctype = temp_sched ? mlsl_coll_service_temporal : mlsl_coll_service_persistent;
+    bcast_param.dtype = mlsl_dtype_internal_char;
+    bcast_param.comm = m_service_comm.get();
+    auto bcast_sched = new mlsl_sched(bcast_param);
+
     mlsl_request_create(&bcast_sched->req);
 
     MLSL_LOG(DEBUG, "Building service sched %p, req %p", bcast_sched, bcast_sched->req);
 
     mlsl_get_priority_range(nullptr, &bcast_sched->coll_attr.priority);
-    bcast_sched->coll_param.comm = m_service_comm.get();
-    bcast_sched->partial_sched_count = 1;
-    bcast_sched->partial_scheds = static_cast<mlsl_sched**>(MLSL_MALLOC(sizeof(mlsl_sched*), "scheds"));
 
-    bcast_sched->partial_scheds[0] = new mlsl_sched{};
-
+    bcast_sched->partial_scheds.emplace_back(std::make_shared<mlsl_sched>());
     bcast_sched->partial_scheds[0]->coll_attr.priority = bcast_sched->coll_attr.priority;
     bcast_sched->partial_scheds[0]->coll_param.comm = m_service_comm.get();
     bcast_sched->partial_scheds[0]->root = bcast_sched;
@@ -100,20 +101,22 @@ mlsl_sched* out_of_order::ooo_match::build_bcast_sched(const char* tensor_name)
         strncpy(bcast_sched->partial_scheds[0]->coll_attr.match_id, tensor_name, MLSL_MATCH_ID_MAX_LEN);
     }
 
-    mlsl_coll_build_bcast(bcast_sched->partial_scheds[0],
+    mlsl_coll_build_bcast(bcast_sched->partial_scheds[0].get(),
                           bcast_sched->partial_scheds[0]->coll_attr.match_id,
                           MLSL_MATCH_ID_MAX_LEN,
                           mlsl_dtype_internal_char,
                           0);
 
-    mlsl_sched_add_barrier(bcast_sched->partial_scheds[0]);
+    bcast_sched->partial_scheds[0]->add_barrier();
 
     //created tensor_comm entry will have an address of bcast_sched->match_id where tensor name will be broadcasted
-    entry_factory::make_tensor_comm_entry(bcast_sched->partial_scheds[0], this,
+    entry_factory::make_tensor_comm_entry(bcast_sched->partial_scheds[0].get(), this,
                                           bcast_sched->partial_scheds[0]->coll_attr.match_id);
 
     //overwrite schedule type that was set in mlsl_coll_build_bcast
     bcast_sched->partial_scheds[0]->coll_param.ctype = bcast_sched->coll_param.ctype;
+
+    bcast_sched->prepare_partial_scheds();
 
     return bcast_sched;
 }

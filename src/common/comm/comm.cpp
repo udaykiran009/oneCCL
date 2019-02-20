@@ -13,7 +13,7 @@ mlsl_comm::mlsl_comm(size_t rank,
                      size_t size,
                      std::unique_ptr<comm_id> id,
                      rank_to_global_rank_map&& ranks) :
-    m_rank(rank), m_size(size), m_pof2(mlsl_pof2(m_size)), m_id(std::move(id)), m_ranks_map(ranks)
+    m_rank(rank), m_size(size), m_pof2(mlsl_pof2(m_size)), m_id(std::move(id)), m_ranks_map(std::move(ranks))
 {
     ++comm_count;
 }

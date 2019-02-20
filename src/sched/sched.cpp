@@ -35,7 +35,7 @@ size_t mlsl_sched_get_priority(mlsl_sched *sched)
             MLSL_ASSERTP_FMT(0, "unexpected priority_mode %d", env_data.priority_mode);
             break;
     }
-    MLSL_LOG(DEBUG, "mlsl_sched_get_priority: s %p, p %zu", sched, priority);
+    MLSL_LOG(DEBUG, "sched %p, prio %zu", sched, priority);
     return priority;
 }
 
@@ -55,33 +55,6 @@ const char *mlsl_reduction_to_str(mlsl_reduction_t type)
         default:
             return "UNKNOWN";
     }
-}
-
-mlsl_status_t mlsl_sched_dump(mlsl_sched *s, const char *name)
-{
-    if (!env_data.sched_dump) return mlsl_status_success;
-
-    size_t i;
-    char buf[32768] = { 0 };
-    char* write_buf = buf;
-
-    write_buf += sprintf(write_buf, "\n--------------------------------\n");
-    if (s)
-    {
-        write_buf += sprintf(write_buf, "sched: %s, coll %s, %p, start_idx %zu, "
-                             "num_entries %zu, sched_id %u, req %p\n",
-                             name, mlsl_coll_type_to_str(s->coll_param.ctype), s, s->idx,
-                             s->entries.size(), s->sched_id, s->req);
-
-        for (i = 0; i < s->entries.size(); ++i)
-        {
-            write_buf = s->entries[i]->dump(write_buf, i);
-        }
-    }
-    write_buf += sprintf(write_buf, "--------------------------------\n");
-    MLSL_LOG(INFO, "%s", buf);
-
-    return mlsl_status_success;
 }
 
 /* Posts or performs any NOT_STARTED operations in the given schedule that are
@@ -121,170 +94,286 @@ static mlsl_status_t mlsl_sched_continue(mlsl_sched *s)
     return status;
 }
 
-mlsl_status_t mlsl_sched_update_id(mlsl_sched *sched)
-{
-    sched->sched_id = sched->coll_param.comm->get_sched_id();
-    return mlsl_status_success;
-}
-
-mlsl_status_t mlsl_sched_reset(mlsl_sched *sched)
-{
-    sched->idx = 0;
-    sched->first_progress = true;
-    for (size_t idx = 0; idx < sched->entries.size(); idx++)
-    {
-        sched->entries[idx]->reset();
-    }
-    return mlsl_status_success;
-}
-
-mlsl_status_t mlsl_sched_sync_schedules(mlsl_sched **scheds, size_t count)
-{
-    auto sync_obj = std::make_shared<sync_object>(count);
-
-    for(size_t idx = 0; idx < count; ++idx)
-    {
-        entry_factory::make_sync_entry(scheds[idx], sync_obj);
-    }
-
-    return mlsl_status_success;
-}
-
-void mlsl_sched_reset_request(mlsl_sched *s, mlsl_request **req)
-{
-    s->req->completion_counter = s->partial_sched_count;
-    for(size_t idx = 0; idx < s->partial_sched_count; ++idx)
-    {
-        s->partial_scheds[idx]->req = s->req;
-    }
-
-    if (req)
-        *req = s->req;
-}
-
-mlsl_status_t mlsl_sched_start(mlsl_sched *s, mlsl_request **req)
-{
-    MLSL_ASSERTP(s && req);
-
-    /* sanity check the schedule */
-    MLSL_ASSERT(s->entries.size() == 0 || s->idx < s->entries.size());
-    MLSL_ASSERT(s->req != NULL);
-    MLSL_ASSERT(s->coll_param.comm);
-
-    MLSL_LOG(DEBUG, "starting schedule %p, type %s", s, mlsl_coll_type_to_str(s->coll_param.ctype));
-    global_data.executor->start_sched(s);
-
-    *req = s->req;
-
-    return mlsl_status_success;
-}
-
-/* require that all previously added ops are complete before subsequent ops
- * may begin to execute */
-mlsl_status_t mlsl_sched_add_barrier(mlsl_sched *sched)
+mlsl_status_t mlsl_sched_progress(mlsl_sched_queue_bin* bin,
+                                  size_t max_sched_count,
+                                  size_t& completed_sched_count)
 {
     mlsl_status_t status = mlsl_status_success;
-
-    /* mark the previous entry as a barrier unless we're at the beginning, which
-     * would be a pointless barrier */
-    if (sched->entries.size() > 0) {
-        sched->entries[sched->entries.size() - 1]->make_barrier();
-    }
-
-    return status;
-}
-
-mlsl_status_t mlsl_sched_progress(mlsl_sched_queue_bin *bin, size_t sched_count, size_t *processed_sched_count)
-{
-    mlsl_status_t status = mlsl_status_success;
-    size_t i;
-    mlsl_sched *s;
-    mlsl_sched *tmp;
     mlsl_request *req __attribute__ ((unused));
-    size_t sched_idx = 0;
+    size_t sched_count = 0;
 
-    if (processed_sched_count)
-        *processed_sched_count = 0;
+    completed_sched_count = 0;
 
-    MLSL_LOG(TRACE, "bin %p, elems %p, sched_count %zu",
-             bin, bin->elems, sched_count);
+    MLSL_LOG(TRACE, "bin %p, elems count %zu, max scheds %zu",
+             bin, bin->elems.size(), max_sched_count);
 
     /* ensure communication progress */
     atl_status_t atl_status __attribute__ ((unused));
     atl_status = atl_comm_poll(bin->comm_ctx);
     MLSL_ASSERT(atl_status == atl_status_success);
 
-    /* update schedule states */
-    MLSL_DLIST_FOREACH_SAFE(bin->elems, s, tmp) {
-
-        if (s->first_progress)
+    //iterate through the scheds store in the bin
+    for(auto it = bin->elems.begin(); it != bin->elems.end(); )
+    {
+        mlsl_sched* sched = *it;
+        if (sched->first_progress)
         {
+            //perform initial progress, iterate throught schedule entries
+            //some entries are running in 'synchronous' way, they are completed right after execution
+            //other entries are running in 'asynchronous' way and may not be completed right after execution
+            //entry N+1 may be started right after entry N even if entry N has not been completed
+            //if entry N+1 (and all subsequent entries) depends on entry N, then entry N is marked as a barrier and
+            //      entry N+1 (and all subsequent) won't be started until entry N is completed
             /* TODO: do we need special handling for first_progress ? */
-            MLSL_LOG(DEBUG, "do initial mlsl_sched_continue for sched %p", s);
-            status = mlsl_sched_continue(s);
+            MLSL_LOG(DEBUG, "do initial mlsl_sched_continue for sched %p", sched);
+            status = mlsl_sched_continue(sched);
             MLSL_ASSERT(status == mlsl_status_success);
-            s->first_progress = false;
+            sched->first_progress = false;
         }
 
-        for (i = s->idx; i < s->entries.size(); ++i) {
-            auto& entry = s->entries[i];
+        //continue iteration of already started schedule. @b sched->idx is an index of the last completed entry
+        for (auto entry_idx = sched->idx; entry_idx < sched->entries.size(); ++entry_idx)
+        {
+            auto& entry = sched->entries[entry_idx];
+            //check for completion of 'asynchronous' entries
             entry->update();
-            if (i == s->idx && entry->get_status() >= mlsl_sched_entry_status_complete)
+            if (entry_idx == sched->idx && entry->get_status() >= mlsl_sched_entry_status_complete)
             {
-                ++s->idx;
+                //the entry has been completed, increment the index
+                ++sched->idx;
                 MLSL_LOG(DEBUG, "completed %s%s entry [%zu/%zu], shift start_idx, sched %p", entry->name(),
-                         entry->is_barrier() ? " barrier" : "", i, s->entries.size(), s);
-                if (entry->is_barrier()) {
-                    /* post/perform the next round of operations */
-                    status = mlsl_sched_continue(s);
+                         entry->is_barrier() ? " barrier" : "", entry_idx, sched->entries.size(), sched);
+                if (entry->is_barrier())
+                {
+                    //that entry was marked as a barrier, run the rest entries (if any) which depend on it
+                    status = mlsl_sched_continue(sched);
                     MLSL_ASSERT(status == mlsl_status_success);
                 }
             }
             else if (entry->is_barrier() && entry->get_status() < mlsl_sched_entry_status_complete)
             {
-                /* don't process anything after this barrier entry */
+                //the entry has not been completed yet. It is marked as a barrier, don't process anything after it
                 break;
             }
         }
 
-        if (s->idx == s->entries.size()) {
-            MLSL_LOG(DEBUG, "completing and dequeuing: sched %p, req %p", s, s->req);
+        if (sched->idx == sched->entries.size())
+        {
+            //the last entry in the schedule has been completed, clean up the schedule and complete its request
+            MLSL_LOG(DEBUG, "completing and dequeuing: sched %p, req %p", sched, sched->req);
 
-            /* dequeue this schedule, it's complete */
-            bin->queue->erase(bin, s);
+            // remove completed schedule from the bin. Iterator @b it will point to the next elem in bin->elems
+            it = bin->queue->erase(bin, it);
 
-            req = s->req;
-            s->req = NULL;
+            req = sched->req;
+            sched->req = nullptr;
 
             status = mlsl_request_complete(req);
             MLSL_ASSERT(status == mlsl_status_success);
 
-            if (processed_sched_count)
-                (*processed_sched_count)++;
+            ++completed_sched_count;
+        }
+        else
+        {
+            //this schedule is not completed yet, switch to the next sched in bin elems list
+            //progression of unfinished schedules will be continued in the next call of @ref mlsl_sched_progress
+            ++it;
         }
 
-        sched_idx++;
-        if (sched_idx == sched_count) break;
+        sched_count++;
+        if (sched_count == max_sched_count)
+        {
+            //desired number of processed scheds is reached, exit
+            break;
+        }
     }
 
     return status;
 }
 
-mlsl_status_t mlsl_sched_commit(mlsl_sched *sched)
+void mlsl_sched::commit(mlsl_parallelizer* parallelizer)
 {
-    sched->sched_id = sched->coll_param.comm->get_sched_id();
-    mlsl_request *req;
+    sched_id = coll_param.comm->get_sched_id();
+
     mlsl_request_create(&req);
-    req->sched = sched;
-    sched->req = req;
+    req->sched = this;
 
-    mlsl_parallelizer_process(global_data.parallelizer, sched, &sched->partial_scheds,
-                              &sched->partial_sched_count);
+    mlsl_parallelizer_process(parallelizer, this);
 
-    MLSL_LOG(DEBUG, "sched %p, num_entries %zu, number %u, req %p, part_scheds %p, part_count %zu",
-             sched, sched->entries.size(), sched->sched_id, req, sched->partial_scheds, sched->partial_sched_count);
+    MLSL_LOG(DEBUG, "sched %p, num_entries %zu, number %u, req %p, part_count %zu",
+             this, entries.size(), sched_id, req, partial_scheds.size());
+}
 
-    return mlsl_status_success;
+mlsl_request* mlsl_sched::start(mlsl_executor* exec)
+{
+    /* sanity check the schedule */
+    MLSL_ASSERT(entries.empty() || idx < entries.size());
+    MLSL_ASSERT(req);
+    MLSL_ASSERT(coll_param.comm);
+
+    MLSL_LOG(DEBUG, "starting schedule %p, type %s", this, mlsl_coll_type_to_str(coll_param.ctype));
+
+    prepare_partial_scheds(exec->proc_idx == 0);
+
+    exec->start_sched(this);
+
+    return req;
+}
+
+void mlsl_sched::prepare_partial_scheds(bool dump_scheds)
+{
+    size_t partial_sched_count = partial_scheds.size();
+    MLSL_ASSERTP(partial_sched_count > 0);
+
+    for (size_t idx = 0; idx < partial_sched_count; idx++)
+    {
+        partial_scheds[idx]->update_id();
+        partial_scheds[idx]->reset();
+        if (dump_scheds)
+        {
+            partial_scheds[idx]->dump("worker_sched");
+        }
+    }
+
+    if (dump_scheds)
+    {
+        dump("origin_sched");
+    }
+
+    reset_request();
+}
+
+void mlsl_sched::reset()
+{
+    idx = 0;
+    first_progress = true;
+    for (auto& entry :  entries)
+    {
+        entry->reset();
+    }
+}
+
+mlsl_request* mlsl_sched::reset_request()
+{
+    req->completion_counter = static_cast<int>(partial_scheds.size());
+
+    for(auto& part_sched : partial_scheds)
+    {
+        part_sched->req = req;
+    }
+
+    return req;
+}
+
+void mlsl_sched::add_barrier()
+{
+    /* mark the last entry as a barrier unless we're at the beginning, which
+     * would be a pointless barrier */
+    if (!entries.empty())
+    {
+        entries.back()->make_barrier();
+    }
+}
+
+void mlsl_sched::sync_partial_scheds()
+{
+    if(!partial_scheds.empty())
+    {
+        auto sync_obj = std::make_shared<sync_object>(partial_scheds.size());
+
+        for(auto& sched : partial_scheds)
+        {
+            entry_factory::make_sync_entry(sched.get(), sync_obj);
+        }
+    }
+}
+
+void mlsl_sched::set_coll_attr(const mlsl_coll_attr_t *attr)
+{
+    MLSL_ASSERT(attr);
+    coll_attr.prologue_fn = attr->prologue_fn;
+    coll_attr.epilogue_fn = attr->epilogue_fn;
+    coll_attr.reduction_fn = attr->reduction_fn;
+    coll_attr.priority = attr->priority;
+    coll_attr.synchronous = attr->synchronous;
+    coll_attr.to_cache = attr->to_cache;
+    if (attr->match_id)
+    {
+        strncpy(coll_attr.match_id, attr->match_id, MLSL_MATCH_ID_MAX_LEN - 1);
+    }
+}
+
+void mlsl_sched::dump(const char *name) const
+{
+    if (!env_data.sched_dump)
+        return;
+
+    const size_t bytes_per_sched_entry = 2048; //some heuristic value
+    std::vector<char> buf (bytes_per_sched_entry * (entries.size() + 1));
+    char* write_buf = buf.data();
+
+    write_buf += sprintf(write_buf, "\n--------------------------------\n");
+    write_buf += sprintf(write_buf, "sched: %s, coll %s, %p, start_idx %zu, "
+                                    "num_entries %zu, comm_id %u, sched_id %u, req %p\n",
+                         name, mlsl_coll_type_to_str(coll_param.ctype), this, idx,
+                         entries.size(), coll_param.comm->id(), sched_id, req);
+
+    for (size_t i = 0; i < entries.size(); ++i)
+    {
+        write_buf = entries[i]->dump(write_buf, i);
+    }
+    sprintf(write_buf, "--------------------------------\n");
+    MLSL_LOG(INFO, "%s", buf.data());
+}
+
+mlsl_sched& mlsl_sched::operator=(const mlsl_sched& other)
+{
+    if(this != &other)
+    {
+        mlsl_sched(other).swap(*this);
+    }
+    return *this;
+}
+
+mlsl_sched::~mlsl_sched()
+{
+    for (auto& part_sched: partial_scheds)
+    {
+        part_sched.reset();
+    }
+
+    if (req)
+        mlsl_request_free(req);
+
+    if (!memory.mr_list.empty())
+    {
+        auto dereg_sched = new mlsl_sched{};
+        dereg_sched->coll_attr.to_cache = false;
+        entry_factory::make_deregister_entry(dereg_sched, memory.mr_list);
+
+        mlsl_request *dereg_req;
+        mlsl_sched_start_subsched(this, dereg_sched, &dereg_req);
+        mlsl_wait(dereg_req);
+        MLSL_ASSERTP(memory.mr_list.empty());
+    }
+    mlsl_sched_free_buffers(this);
+}
+
+void mlsl_sched::swap(mlsl_sched& other)
+{
+    MLSL_ASSERTP(0);
+    std::swap(first_progress, other.first_progress);
+    std::swap(bin, other.bin);
+    std::swap(coll_param, other.coll_param);
+    std::swap(coll_attr, other.coll_attr);
+    std::swap(idx, other.idx);
+    std::swap(entries, other.entries);
+    std::swap(sched_id, other.sched_id);
+    std::swap(req, other.req);
+    std::swap(memory, other.memory);
+    std::swap(exec_mode, other.exec_mode);
+    std::swap(partial_scheds, other.partial_scheds);
+    std::swap(root, other.root);
 }
 
 mlsl_status_t mlsl_sched_alloc_buffer(mlsl_sched* sched, size_t size, void** ptr)
@@ -319,238 +408,9 @@ mlsl_status_t mlsl_sched_start_subsched(mlsl_sched* sched, mlsl_sched* subsched,
     req->sched = subsched;
     subsched->req = req;
     subsched->sched_id = sched->sched_id;
-    mlsl_sched_reset(subsched);
-    mlsl_sched_dump(subsched, "subsched");
+    subsched->reset();
+    subsched->dump("subsched");
     sched->bin->queue->add(subsched, mlsl_sched_get_priority(sched));
     *r = req;
     return mlsl_status_success;
-}
-
-mlsl_status_t mlsl_sched_set_entry_exec_mode(mlsl_sched* sched, mlsl_sched_entry_exec_mode mode)
-{
-    sched->exec_mode = mode;
-    return mlsl_status_success;
-}
-
-mlsl_status_t mlsl_sched_set_coll_attr(mlsl_sched *sched, const mlsl_coll_attr_t *attr)
-{
-    sched->coll_attr.prologue_fn = attr->prologue_fn;
-    sched->coll_attr.epilogue_fn = attr->epilogue_fn;
-    sched->coll_attr.reduction_fn = attr->reduction_fn;
-    sched->coll_attr.priority = attr->priority;
-    sched->coll_attr.synchronous = attr->synchronous;
-    sched->coll_attr.to_cache = attr->to_cache;
-    if (attr->match_id)
-        strncpy(sched->coll_attr.match_id, attr->match_id, MLSL_MATCH_ID_MAX_LEN - 1);
-
-    return mlsl_status_success;
-}
-
-mlsl_status_t mlsl_sched_bcast(
-    void *buf,
-    size_t count,
-    mlsl_datatype_internal_t dtype,
-    size_t root,
-    mlsl_comm* comm,
-    mlsl_sched **sched)
-{
-    mlsl_status_t status = mlsl_status_success;
-
-    *sched = new mlsl_sched{};
-
-    mlsl_sched_coll_param *p = &((*sched)->coll_param);
-    p->ctype = mlsl_coll_bcast;
-    p->buf = buf;
-    p->count = count;
-    p->dtype = dtype;
-    p->root = root;
-    p->comm = comm ? comm : global_data.comm.get();
-
-    return status;
-}
-
-mlsl_status_t mlsl_sched_reduce(
-    const void *send_buf,
-    void *recv_buf,
-    size_t count,
-    mlsl_datatype_internal_t dtype,
-    mlsl_reduction_t reduction,
-    size_t root,
-    mlsl_comm* comm,
-    mlsl_sched **sched)
-{
-    mlsl_status_t status = mlsl_status_success;
-
-    *sched = new mlsl_sched{};
-
-    mlsl_sched_coll_param *p = &((*sched)->coll_param);
-    p->ctype = mlsl_coll_reduce;
-    p->send_buf = send_buf;
-    p->recv_buf = recv_buf;
-    p->count = count;
-    p->dtype = dtype;
-    p->reduction = reduction;
-    p->root = root;
-    p->comm = comm ? comm : global_data.comm.get();
-
-    return status;
-}
-
-mlsl_status_t mlsl_sched_allreduce(
-    const void *send_buf,
-    void *recv_buf,
-    size_t count,
-    mlsl_datatype_internal_t dtype,
-    mlsl_reduction_t reduction,
-    mlsl_comm* comm,
-    mlsl_sched **sched)
-{
-    mlsl_status_t status = mlsl_status_success;
-
-    *sched = new mlsl_sched{};
-
-    mlsl_sched_coll_param *p = &((*sched)->coll_param);
-    p->ctype = mlsl_coll_allreduce;
-    p->send_buf = send_buf;
-    p->recv_buf = recv_buf;
-    p->count = count;
-    p->dtype = dtype;
-    p->reduction = reduction;
-    p->comm =  comm ? comm : global_data.comm.get();
-
-    return status;
-}
-
-mlsl_status_t mlsl_sched_allgatherv(
-    const void *send_buf,
-    size_t send_count,
-    void *recv_buf,
-    size_t *recv_counts,
-    mlsl_datatype_internal_t dtype,
-    mlsl_comm* comm,
-    mlsl_sched **sched)
-{
-    mlsl_status_t status = mlsl_status_success;
-
-    *sched = new mlsl_sched{};
-
-    mlsl_sched_coll_param *p = &((*sched)->coll_param);
-    p->ctype = mlsl_coll_allgatherv;
-    p->send_buf = send_buf;
-    p->send_count = send_count;
-    p->recv_buf = recv_buf;
-    p->recv_counts = recv_counts;
-    p->dtype = dtype;
-    p->comm =  comm ? comm : global_data.comm.get();
-
-    return status;
-}
-
-mlsl_status_t mlsl_sched_barrier(mlsl_comm* comm, mlsl_sched **sched)
-{
-    mlsl_status_t status = mlsl_status_success;
-
-    *sched = new mlsl_sched{};
-
-    mlsl_sched_coll_param *p = &((*sched)->coll_param);
-    p->ctype = mlsl_coll_barrier;
-    p->dtype = mlsl_dtype_internal_char;
-    p->comm =  comm ? comm : global_data.comm.get();
-
-    return status;
-}
-
-mlsl_status_t mlsl_sched_tensor_bcast(mlsl_comm* comm, mlsl_sched** sched, bool temporal)
-{
-    MLSL_ASSERT(comm != nullptr);
-    mlsl_status_t status = mlsl_status_success;
-
-    *sched = new mlsl_sched{};
-
-    mlsl_sched_coll_param *p = &((*sched)->coll_param);
-    p->ctype = temporal ? mlsl_coll_service_temporal : mlsl_coll_service_persistent;
-    p->dtype = mlsl_dtype_internal_char;
-    p->comm =  comm;
-
-    return status;
-}
-
-void mlsl_sched_prepare_partial_scheds(mlsl_sched *sched, bool dump)
-{
-    mlsl_sched **partial_scheds = sched->partial_scheds;
-    size_t partial_sched_count = sched->partial_sched_count;
-    MLSL_ASSERTP(partial_scheds && partial_sched_count > 0);
-
-    size_t idx;
-    for (idx = 0; idx < partial_sched_count; idx++)
-    {
-        mlsl_sched_update_id(partial_scheds[idx]);
-        mlsl_sched_reset(partial_scheds[idx]);
-
-        if (dump)
-        {
-            mlsl_sched_dump(partial_scheds[idx], "worker_sched");
-        }
-    }
-
-    if (dump)
-    {
-        mlsl_sched_dump(sched, "origin_sched");
-    }
-
-    mlsl_sched_reset_request(sched, NULL);
-}
-
-mlsl_sched& mlsl_sched::operator=(const mlsl_sched& other)
-{
-    if(this != &other)
-    {
-        mlsl_sched(other).swap(*this);
-    }
-    return *this;
-}
-
-mlsl_sched::~mlsl_sched()
-{
-    for (idx = 0; idx < partial_sched_count; idx++)
-    {
-        delete partial_scheds[idx];
-    }
-    MLSL_FREE(partial_scheds);
-
-    if (req)
-        mlsl_request_free(req);
-
-    if (memory.mr_list.size())
-    {
-        mlsl_sched* dereg_sched = new mlsl_sched{};
-        dereg_sched->coll_attr.to_cache = false;
-        entry_factory::make_deregister_entry(dereg_sched, memory.mr_list);
-
-        mlsl_request *dereg_req;
-        mlsl_sched_start_subsched(this, dereg_sched, &dereg_req);
-        mlsl_wait(dereg_req);
-        MLSL_ASSERTP(memory.mr_list.size() == 0);
-    }
-    mlsl_sched_free_buffers(this);
-}
-
-void mlsl_sched::swap(mlsl_sched& other)
-{
-    MLSL_ASSERTP(0);
-    std::swap(first_progress, other.first_progress);
-    std::swap(bin, other.bin);
-    std::swap(coll_param, other.coll_param);
-    std::swap(coll_attr, other.coll_attr);
-    std::swap(idx, other.idx);
-    std::swap(entries, other.entries);
-    std::swap(sched_id, other.sched_id);
-    std::swap(req, other.req);
-    std::swap(memory, other.memory);
-    std::swap(exec_mode, other.exec_mode);
-    std::swap(partial_scheds, other.partial_scheds);
-    std::swap(partial_sched_count, other.partial_sched_count);
-    std::swap(root, other.root);
-    std::swap(next, other.next);
-    std::swap(prev, other.prev);
 }
