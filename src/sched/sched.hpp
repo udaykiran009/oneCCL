@@ -130,7 +130,7 @@ public:
     /**
      * Synchronizes partial schedules on local barrier
      */
-    void sync_part_scheds();
+    void sync_partial_scheds();
 
     void set_entry_exec_mode(mlsl_sched_entry_exec_mode mode)
     {

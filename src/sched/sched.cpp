@@ -120,7 +120,7 @@ mlsl_status_t mlsl_sched_progress(mlsl_sched_queue_bin* bin,
         {
             //perform initial progress, iterate throught schedule entries
             //some entries are running in 'synchronous' way, they are completed right after execution
-            //other entries are running in 'asynchronous' way and may not complete right after execution
+            //other entries are running in 'asynchronous' way and may not be completed right after execution
             //entry N+1 may be started right after entry N even if entry N has not been completed
             //if entry N+1 (and all subsequent entries) depends on entry N, then entry N is marked as a barrier and
             //      entry N+1 (and all subsequent) won't be started until entry N is completed
@@ -162,7 +162,7 @@ mlsl_status_t mlsl_sched_progress(mlsl_sched_queue_bin* bin,
             //the last entry in the schedule has been completed, clean up the schedule and complete its request
             MLSL_LOG(DEBUG, "completing and dequeuing: sched %p, req %p", sched, sched->req);
 
-            /* remove completed schedule from the bin. Iterator @b it will point to the next elem in bin->elems */
+            // remove completed schedule from the bin. Iterator @b it will point to the next elem in bin->elems
             it = bin->queue->erase(bin, it);
 
             req = sched->req;
@@ -275,7 +275,7 @@ void mlsl_sched::add_barrier()
     }
 }
 
-void mlsl_sched::sync_part_scheds()
+void mlsl_sched::sync_partial_scheds()
 {
     if(!partial_scheds.empty())
     {

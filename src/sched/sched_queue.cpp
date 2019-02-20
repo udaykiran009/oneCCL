@@ -36,7 +36,7 @@ void mlsl_sched_queue::add(mlsl_sched* sched, size_t priority)
         bin->priority = priority;
         ++used_bins;
     }
-    //todo: update bin->priority?
+
     bin->elems.push_back(sched);
     sched->bin = bin;
     max_priority = std::max(max_priority, priority);

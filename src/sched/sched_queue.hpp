@@ -49,9 +49,6 @@ public:
 
     /**
      * A vector of size @ref max_bins, holds bins arranged by max_priority % max_bins
-     * If @ref max_bins is less than @ref max_priority then some bins may contain schedules of mixed priorities,
-     * effective bin priority will be the maximum from all variants.
-     * For example, if max_priority=10, max_bins=4 then bin at idx=0 will handle schedules with priorities 0, 4 and 8.
      */
     std::vector<mlsl_sched_queue_bin> bins;
 

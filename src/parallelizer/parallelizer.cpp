@@ -225,7 +225,7 @@ mlsl_status_t mlsl_parallelizer_process(mlsl_parallelizer* parallelizer,
                                                    &(main_ctx->dtype),
                                                    &(main_ctx->dtype_size));
 
-                sched->sync_part_scheds();
+                sched->sync_partial_scheds();
 
                 for (idx = 0; idx < part_count; idx++)
                 {
@@ -258,7 +258,7 @@ mlsl_status_t mlsl_parallelizer_process(mlsl_parallelizer* parallelizer,
                 }
                 if (!sched->coll_attr.epilogue_fn)
                 {
-                    sched->sync_part_scheds();
+                    sched->sync_partial_scheds();
 
                     e = entry_factory::make_copy_entry(part_scheds[0].get(),
                                                        nullptr, /* in_buf */
@@ -287,7 +287,7 @@ mlsl_status_t mlsl_parallelizer_process(mlsl_parallelizer* parallelizer,
             }
             if (sched->coll_attr.epilogue_fn)
             {
-                sched->sync_part_scheds();
+                sched->sync_partial_scheds();
 
                 e = entry_factory::make_epilogue_entry(part_scheds[0].get(),
                                                        sched->coll_attr.epilogue_fn,
@@ -331,7 +331,7 @@ mlsl_status_t mlsl_parallelizer_process(mlsl_parallelizer* parallelizer,
                                                    copy_counts[idx], dtype);
                 }
 
-                sched->sync_part_scheds();
+                sched->sync_partial_scheds();
             }
 
             for (idx = 0; idx < part_count; idx++)
