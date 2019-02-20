@@ -22,7 +22,7 @@ extern "C" {
 /**
  * Maximum length of @b match_id parameter in @b mlsl_coll_attr_t struct
  */
-#define MLSL_MATCH_ID_MAX_LEN (128)
+#define MLSL_MATCH_ID_MAX_LEN (256)
 
 /** Status values returned by MLSL functions. */
 typedef enum

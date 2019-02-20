@@ -314,9 +314,9 @@ void mlsl_sched::dump(const char *name) const
 
     write_buf += sprintf(write_buf, "\n--------------------------------\n");
     write_buf += sprintf(write_buf, "sched: %s, coll %s, %p, start_idx %zu, "
-                                    "num_entries %zu, sched_id %u, req %p\n",
+                                    "num_entries %zu, comm_id %u, sched_id %u, req %p\n",
                          name, mlsl_coll_type_to_str(coll_param.ctype), this, idx,
-                         entries.size(), sched_id, req);
+                         entries.size(), coll_param.comm->id(), sched_id, req);
 
     for (size_t i = 0; i < entries.size(); ++i)
     {
