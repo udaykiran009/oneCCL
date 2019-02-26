@@ -1,6 +1,6 @@
 #!/bin/bash
 
-export MLSL_ROOT="@CMAKE_INSTALL_PREFIX@"
+export MLSL_ROOT="@CMAKE_INSTALL_PREFIX@/@MLSL_COMMON_INSTALL_PREFIX@"
 
 if [ -z "${PATH}" ]
 then

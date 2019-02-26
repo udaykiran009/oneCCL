@@ -46,6 +46,12 @@ and linkage:
 make -j VERBOSE=1
 ```
 
+### Generate archive with installed files
+```
+make -j install
+make archive
+```
+
 ## FAQ
 
 ### When do I need a clean build? When should I remove my favorite build directory?
@@ -56,5 +62,5 @@ change in the code (e.g. after rebase or change of branch) then it is a hint to 
 
 ### I can't run mlsl examples
 
-It is recommended to use environment values stored in `bin/mlslvars.sh` of your current
+It is recommended to use environment values stored in `intel64/bin//mlslvars.sh` of your current
 installation directory.
