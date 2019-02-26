@@ -18,7 +18,7 @@ mlsl_status_t mlsl_coll_build_rabenseifner_allreduce(mlsl_sched *sched, const vo
     comm_size = comm->size();
     rank = comm->rank();
 
-    mlsl_sched_alloc_buffer(sched, count * dtype_size, &tmp_buf);
+    tmp_buf = sched->alloc_buffer(count * dtype_size);
 
     /* copy local data into recv_buf */
     if (send_buf != recv_buf) {
@@ -220,7 +220,7 @@ mlsl_status_t mlsl_coll_build_recursive_doubling_allreduce(mlsl_sched *sched, co
     rank = comm->rank();
 
     size_t dtype_size = mlsl_datatype_get_size(dtype);
-    mlsl_sched_alloc_buffer(sched, count * dtype_size, &tmp_buf);
+    tmp_buf = sched->alloc_buffer(count * dtype_size);
 
     /* copy local data into recv_buf */
     if (send_buf != recv_buf) {
@@ -328,7 +328,7 @@ mlsl_status_t mlsl_coll_build_starlike_allreduce(mlsl_sched *sched, const void *
 
     // buffer to receive and reduce parts related to the current rank
     size_t this_rank_buf_size = buffer_counts[this_rank] * dtype_size;
-    mlsl_sched_alloc_buffer(sched, this_rank_buf_size * (comm_size - 1), &tmp_buf);
+    tmp_buf = sched->alloc_buffer(this_rank_buf_size * (comm_size - 1));
 
     // copy local data into recv_buf
     if (send_buf != recv_buf) {
@@ -396,7 +396,7 @@ mlsl_status_t mlsl_coll_build_ring_allreduce(mlsl_sched *sched, const void *send
     }
 
     if (inplace)
-        mlsl_sched_alloc_buffer(sched, count * dtype_size, (void**)&tmp_buf);
+        tmp_buf = sched->alloc_buffer(count * dtype_size);
 
     src = (comm_size + rank - 1) % comm_size;
     dst = (comm_size + rank + 1) % comm_size;

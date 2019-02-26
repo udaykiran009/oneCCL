@@ -14,13 +14,8 @@ public:
 
     void visit()
     {
-        MLSL_ASSERT_FMT(sync > 0, "Already completed");
+        MLSL_ASSERT_FMT(sync > 0, "already completed");
         --sync;
-    }
-
-    bool is_completed() const
-    {
-        return sync.load() == 0;
     }
 
     void reset()

@@ -1,10 +1,11 @@
 #include "base.h"
 
-#define BUF_COUNT  (16)
-#define ELEM_COUNT (2 * 1024 * 1024)
-#define ALIGNMENT  (2 * 1024 * 1024)
-#define DTYPE      float
-#define MLSL_DTYPE (mlsl_dtype_float)
+#define BUF_COUNT         (256)
+#define ELEM_COUNT        (1024 * 1024 / 128)
+#define SINGLE_ELEM_COUNT (BUF_COUNT * ELEM_COUNT)
+#define ALIGNMENT         (2 * 1024 * 1024)
+#define DTYPE             float
+#define MLSL_DTYPE        (mlsl_dtype_float)
 
 void fill_buffers(void** send_bufs, void** recv_bufs, size_t buf_count, size_t elem_count)
 {
@@ -48,7 +49,7 @@ void check_buffers(void** send_bufs, void** recv_bufs, size_t buf_count, size_t 
     }
 }
 
-void print_timings(double* timer, size_t count)
+void print_timings(double* timer, size_t elem_count, size_t buf_count)
 {
     double* timers = (double*)malloc(size * sizeof(double));
     size_t* recv_counts = (size_t*)malloc(size * sizeof(size_t));
@@ -66,22 +67,24 @@ void print_timings(double* timer, size_t count)
     if (rank == 0)
     {
         double avg_timer = 0;
+        double avg_timer_per_buf = 0;
         for (idx = 0; idx < size; idx++)
         {
-            double val = timers[idx] / (ITERS * BUF_COUNT);
-            avg_timer += val;
+            avg_timer += timers[idx];
         }
-        avg_timer /= size;
+        avg_timer /= (ITERS * size);
+        avg_timer_per_buf = avg_timer / buf_count;
+
         double stddev_timer = 0;
         double sum = 0;
         for (idx = 0; idx < size; idx++)
         {
-            double val = timers[idx] / (ITERS * BUF_COUNT);
+            double val = timers[idx] / ITERS;
             sum += (val - avg_timer) * (val - avg_timer);
         }
         stddev_timer = sqrt(sum / size) / avg_timer * 100;
-        printf("size %10zu bytes, avg %10.2lf us, stddev %5.1lf %%\n",
-                count * sizeof(DTYPE), avg_timer, stddev_timer);
+        printf("size %10zu x %5zu bytes, avg %10.2lf us, avg_per_buf %10.2f, stddev %5.1lf %%\n",
+                elem_count * sizeof(DTYPE), buf_count, avg_timer, avg_timer_per_buf, stddev_timer);
     }
     mlsl_barrier(NULL);
     free(timers);
@@ -93,6 +96,8 @@ int main()
     size_t idx, iter_idx, count;
     DTYPE* send_bufs[BUF_COUNT];
     DTYPE* recv_bufs[BUF_COUNT];
+    DTYPE* single_send_buf;
+    DTYPE* single_recv_buf;
     mlsl_request_t reqs[BUF_COUNT];
     double t, t1, t2;
     int check_values = 0;
@@ -107,6 +112,8 @@ int main()
         posix_memalign((void**)&send_bufs[idx], ALIGNMENT, ELEM_COUNT * sizeof(DTYPE));
         posix_memalign((void**)&recv_bufs[idx], ALIGNMENT, ELEM_COUNT * sizeof(DTYPE));
     }
+    posix_memalign((void**)&single_send_buf, ALIGNMENT, SINGLE_ELEM_COUNT * sizeof(DTYPE));
+    posix_memalign((void**)&single_recv_buf, ALIGNMENT, SINGLE_ELEM_COUNT * sizeof(DTYPE));
 
     /* warmup */
     coll_attr.to_cache = 0;
@@ -136,7 +143,7 @@ int main()
             for (idx = 0; idx < BUF_COUNT; idx++)
             {
                 mlsl_allreduce(send_bufs[idx], recv_bufs[idx], count, MLSL_DTYPE,
-                               mlsl_reduction_sum, &coll_attr, NULL, &reqs[idx]);    
+                               mlsl_reduction_sum, &coll_attr, NULL, &reqs[idx]);
             }
             for (idx = 0; idx < BUF_COUNT; idx++)
             {
@@ -146,7 +153,25 @@ int main()
             t += (t2 - t1);
             if (check_values) check_buffers((void**)send_bufs, (void**)recv_bufs, BUF_COUNT, count);
         }
-        print_timings(&t, count);
+        print_timings(&t, count, BUF_COUNT);
+    }
+
+    mlsl_barrier(NULL);
+
+    coll_attr.to_cache = 1;
+    for (count = BUF_COUNT; count <= SINGLE_ELEM_COUNT; count *= 2)
+    {
+        t = 0;
+        for (iter_idx = 0; iter_idx < ITERS; iter_idx++)
+        {
+            t1 = when();
+            mlsl_allreduce(single_send_buf, single_recv_buf, count, MLSL_DTYPE,
+                           mlsl_reduction_sum, &coll_attr, NULL, &reqs[0]);
+            mlsl_wait(reqs[0]);
+            t2 = when();
+            t += (t2 - t1);
+        }
+        print_timings(&t, count, 1);
     }
 
     for (idx = 0; idx < BUF_COUNT; idx++)
@@ -154,6 +179,8 @@ int main()
         free(send_bufs[idx]);
         free(recv_bufs[idx]);
     }
+    free(single_send_buf);
+    free(single_recv_buf);
 
     test_finalize();
 

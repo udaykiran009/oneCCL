@@ -5,6 +5,7 @@ mlsl_sched_cache *global_sched_cache = NULL;
 mlsl_status_t mlsl_sched_cache_create(mlsl_sched_cache **cache)
 {
     mlsl_sched_cache *c = static_cast<mlsl_sched_cache*>(MLSL_CALLOC(sizeof(mlsl_sched_cache), "sched_cache"));
+    mlsl_fastlock_init(&c->lock);
     *cache = c;
     return mlsl_status_success;
 }
@@ -12,12 +13,15 @@ mlsl_status_t mlsl_sched_cache_create(mlsl_sched_cache **cache)
 mlsl_status_t mlsl_sched_cache_free(mlsl_sched_cache *cache)
 {
     mlsl_sched_cache_free_all(cache);
+    mlsl_fastlock_init(&cache->lock);
     MLSL_FREE(cache);
     return mlsl_status_success;
 }
 
 mlsl_status_t mlsl_sched_cache_get_entry(mlsl_sched_cache *cache, mlsl_sched_cache_key *key, mlsl_sched_cache_entry **entry)
 {
+    mlsl_fastlock_acquire(&cache->lock);
+
     mlsl_sched_cache_entry *e = NULL;
     HASH_FIND(hh, cache->head, key, sizeof(mlsl_sched_cache_key), e);
     if (!e)
@@ -31,6 +35,8 @@ mlsl_status_t mlsl_sched_cache_get_entry(mlsl_sched_cache *cache, mlsl_sched_cac
     else
         MLSL_LOG(DEBUG, "found sched in cache, %p", e->sched);
     *entry = e;
+
+    mlsl_fastlock_release(&cache->lock);
 
     return mlsl_status_success;
 }

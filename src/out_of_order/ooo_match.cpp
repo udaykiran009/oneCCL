@@ -78,19 +78,18 @@ mlsl_sched* out_of_order::ooo_match::build_bcast_sched(const char* tensor_name)
     MLSL_ASSERT_FMT(m_service_comm->rank() != 0 || tensor_name != nullptr, "Only root rank can pass a valid tensor name");
 
     bool temp_sched = tensor_name != nullptr;
-    mlsl_sched_coll_param bcast_param{};
+    mlsl_coll_param bcast_param{};
     bcast_param.ctype = temp_sched ? mlsl_coll_service_temporal : mlsl_coll_service_persistent;
     bcast_param.dtype = mlsl_dtype_internal_char;
     bcast_param.comm = m_service_comm.get();
     auto bcast_sched = new mlsl_sched(bcast_param);
 
-    mlsl_request_create(&bcast_sched->req);
-
     MLSL_LOG(DEBUG, "Building service sched %p, req %p", bcast_sched, bcast_sched->req);
 
     mlsl_get_priority_range(nullptr, &bcast_sched->coll_attr.priority);
 
-    bcast_sched->partial_scheds.emplace_back(std::make_shared<mlsl_sched>());
+    /* TODO: remove work with partial schedule, use original bcast_sched for execution */
+    bcast_sched->partial_scheds.emplace_back(std::make_shared<mlsl_sched>(bcast_param));
     bcast_sched->partial_scheds[0]->coll_attr.priority = bcast_sched->coll_attr.priority;
     bcast_sched->partial_scheds[0]->coll_param.comm = m_service_comm.get();
     bcast_sched->partial_scheds[0]->root = bcast_sched;

@@ -74,7 +74,7 @@ mlsl_status_t mlsl_parallelizer_process(mlsl_parallelizer* parallelizer,
 
     mlsl_status_t status = mlsl_status_success;
     size_t part_count = 1, idx, base_count, dtype_size;
-    mlsl_sched_coll_param* coll_param = &(sched->coll_param);
+    mlsl_coll_param* coll_param = &(sched->coll_param);
     mlsl_datatype_internal_t dtype = coll_param->dtype;
     dtype_size = mlsl_datatype_get_size(dtype);
     mlsl_coll_type coll_type = coll_param->ctype;
@@ -124,16 +124,18 @@ mlsl_status_t mlsl_parallelizer_process(mlsl_parallelizer* parallelizer,
         offsets.resize(part_count, 0);
         for (idx = 0; idx < part_count; idx++)
         {
-            part_scheds.emplace_back(std::make_shared<mlsl_sched>());
-            part_scheds.back()->coll_param.comm = sched->coll_param.comm;
-            part_scheds.back()->coll_param.ctype = sched->coll_param.ctype;
+            mlsl_coll_param part_coll_param{};
+            part_coll_param.comm = sched->coll_param.comm;
+            part_coll_param.ctype = sched->coll_param.ctype;
+            part_coll_param.dtype = sched->coll_param.dtype;
+            sched->add_partial_sched(part_coll_param);
             part_scheds.back()->root = sched;
         }
     }
 
     for (idx = 0; idx < part_count; idx++)
     {
-        memcpy(&(part_scheds[idx]->coll_attr), &(sched->coll_attr), sizeof(mlsl_sched_coll_attr));
+        memcpy(&(part_scheds[idx]->coll_attr), &(sched->coll_attr), sizeof(mlsl_coll_attr));
         if (env_data.priority_mode == mlsl_priority_lifo)
         {
             part_scheds[idx]->coll_attr.priority = lifo_priority;
@@ -159,6 +161,10 @@ mlsl_status_t mlsl_parallelizer_process(mlsl_parallelizer* parallelizer,
                 offsets[idx] = idx * counts[idx] * dtype_size;
             }
             counts[part_count - 1] += coll_param->count % part_count;
+            for (idx = 0; idx < part_count; idx++)
+            {
+                part_scheds[idx]->coll_param.count = counts[idx];
+            }
             break;
         case mlsl_coll_allgatherv:
             recv_counts = coll_param->recv_counts;
@@ -211,8 +217,7 @@ mlsl_status_t mlsl_parallelizer_process(mlsl_parallelizer* parallelizer,
             mlsl_parallelizer_prologue_ctx* main_ctx = nullptr;
             if (sched->coll_attr.prologue_fn)
             {
-                MLSL_CALL(mlsl_sched_alloc_buffer(part_scheds[0].get(), sizeof(mlsl_parallelizer_prologue_ctx),
-                                                  (void**) &main_ctx));
+                main_ctx = (mlsl_parallelizer_prologue_ctx*)part_scheds[0]->alloc_buffer(sizeof(mlsl_parallelizer_prologue_ctx));
                 main_ctx->part_idx = 0;
                 main_ctx->part_count = 1;
                 entry_factory::make_prologue_entry(part_scheds[0].get(),
@@ -229,9 +234,8 @@ mlsl_status_t mlsl_parallelizer_process(mlsl_parallelizer* parallelizer,
 
                 for (idx = 0; idx < part_count; idx++)
                 {
-                    mlsl_parallelizer_prologue_ctx* part_ctx;
-                    MLSL_CALL(mlsl_sched_alloc_buffer(part_scheds[idx].get(), sizeof(mlsl_parallelizer_prologue_ctx),
-                                                      (void**) &part_ctx));
+                    mlsl_parallelizer_prologue_ctx* part_ctx =
+                        (mlsl_parallelizer_prologue_ctx*)part_scheds[idx]->alloc_buffer(sizeof(mlsl_parallelizer_prologue_ctx));
                     part_ctx->part_idx = idx;
                     part_ctx->part_count = part_count;
                     entry_factory::make_copy_entry(part_scheds[idx].get(),

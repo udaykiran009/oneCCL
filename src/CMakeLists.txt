@@ -22,6 +22,8 @@ set(MLSL_SRC
     sched/entry_types/postponed_fields.cpp
     exec/exec.cpp
     exec/worker.cpp
+    exec/service_worker.cpp
+    fusion/fusion.cpp
     parallelizer/parallelizer.cpp
     out_of_order/ooo_match.cpp
     out_of_order/postponed_sched.cpp

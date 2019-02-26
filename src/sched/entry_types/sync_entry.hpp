@@ -10,8 +10,8 @@ class sync_entry : public sched_entry
 public:
     sync_entry() = delete;
     explicit sync_entry(mlsl_sched* sched,
-                        std::shared_ptr<sync_object> sync_obj) :
-        sched_entry(sched, true), sync(sync_obj)
+                        std::shared_ptr<sync_object> sync) :
+        sched_entry(sched, true), sync(sync)
     {}
 
     void start_derived()

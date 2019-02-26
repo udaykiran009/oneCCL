@@ -1,10 +1,11 @@
 #include "exec/exec.hpp"
 #include "exec/worker.hpp"
+#include "exec/service_worker.hpp"
 #include "common/global/global.hpp"
 #include "sched/sched_queue.hpp"
 #include "common/utils/utils.hpp"
 
-const size_t MLSL_ATL_MAX_COMMS = 8;
+const size_t MLSL_ATL_MAX_COMMS = 32;
 
 mlsl_executor::mlsl_executor(size_t workers_count, size_t priority_count, bool service_support, int* workers_affinity, mlsl_priority_mode priority_mode)
 {
@@ -80,7 +81,7 @@ mlsl_executor::mlsl_executor(size_t workers_count, size_t priority_count, bool s
         if (env_data.worker_offload)
         {
             workers.back()->start();
-            workers.back()->pin_to_proc(workers_affinity[idx]);
+            workers.back()->pin(workers_affinity[idx]);
             MLSL_LOG(DEBUG, "started worker #%zu", idx);
         }
     }
@@ -93,7 +94,6 @@ mlsl_executor::~mlsl_executor()
     {
         if (env_data.worker_offload)
         {
-            //todo: move to worker's destructor
             workers[idx]->stop();
             MLSL_LOG(DEBUG, "stopped worker # %zu", idx);
         }
@@ -110,9 +110,17 @@ void mlsl_executor::start_sched(mlsl_sched* sched)
                      "Service schedule must have exactly 1 entry");
 
     /* add scheds into worker queues */
-    for (size_t idx = 0; idx < sched->partial_scheds.size(); idx++)
+    if (sched->partial_scheds.empty())
     {
-        workers[idx % workers.size()]->add_to_queue(sched->partial_scheds[idx].get());
+        MLSL_ASSERTP(0); // for now
+        workers[0]->add(sched);
+    }
+    else
+    {
+        for (size_t idx = 0; idx < sched->partial_scheds.size(); idx++)
+        {
+            workers[idx % workers.size()]->add(sched->partial_scheds[idx].get());
+        }
     }
 }
 
@@ -120,6 +128,7 @@ void mlsl_executor::wait(mlsl_request* req)
 {
     MLSL_LOG(DEBUG, "req %p, req->cc %d", req, req->completion_counter);
 
+    req->sched->urgent = true;
     while (__atomic_load_n(&req->completion_counter, __ATOMIC_ACQUIRE))
     {
         if (env_data.worker_offload)
@@ -131,10 +140,12 @@ void mlsl_executor::wait(mlsl_request* req)
             size_t idx;
             for (idx = 0; idx < workers.size(); idx++)
             {
-                workers[idx]->peek_and_progress();
+                workers[idx]->do_work();
             }
         }
     }
+
+    req->sched->urgent = false;
 }
 
 bool mlsl_executor::test(mlsl_request* req)
@@ -144,6 +155,7 @@ bool mlsl_executor::test(mlsl_request* req)
     size_t completion_counter = __atomic_load_n(&req->completion_counter, __ATOMIC_ACQUIRE);
     if (completion_counter)
     {
+        req->sched->urgent = true;
         if (env_data.worker_offload)
         {
             _mm_pause();
@@ -153,7 +165,7 @@ bool mlsl_executor::test(mlsl_request* req)
             size_t idx;
             for (idx = 0; idx < workers.size(); idx++)
             {
-                workers[idx]->peek_and_progress();
+                workers[idx]->do_work();
             }
         }
         completed = __atomic_load_n(&req->completion_counter, __ATOMIC_ACQUIRE) == 0;
@@ -162,6 +174,9 @@ bool mlsl_executor::test(mlsl_request* req)
     {
         completed = true;
     }
+
+    if (completed)
+        req->sched->urgent = false;
 
     return completed;
 }

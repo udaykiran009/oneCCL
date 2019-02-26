@@ -34,6 +34,7 @@ struct mlsl_sched_cache_entry
 struct mlsl_sched_cache
 {
     mlsl_sched_cache_entry *head;
+    mlsl_fastlock_t lock;
 };
 
 extern mlsl_sched_cache *global_sched_cache;

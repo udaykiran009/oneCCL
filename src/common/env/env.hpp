@@ -28,6 +28,11 @@ struct mlsl_env_data
     mlsl_priority_mode priority_mode;
     mlsl_allreduce_algo allreduce_algo;
     int enable_rma;
+    int enable_fusion;
+    int fusion_bytes_threshold;
+    int fusion_count_threshold;
+    int fusion_check_urgent;
+    float fusion_cycle_ms;
 } __attribute__ ((aligned (CACHELINE_SIZE)));
 
 
@@ -37,6 +42,7 @@ void mlsl_env_parse();
 void mlsl_env_print();
 void mlsl_env_free();
 int mlsl_env_2_int(const char* env_name, int* val);
+int mlsl_env_2_float(const char* env_name, float* val);
 int mlsl_env_parse_priority_mode();
 int mlsl_env_parse_affinity();
 int mlsl_env_print_affinity();

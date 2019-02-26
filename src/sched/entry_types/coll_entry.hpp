@@ -81,17 +81,17 @@ private:
                 break;
             case mlsl_coll_allreduce:
             {
-                mlsl_sched_coll_param sched_param{};
+                mlsl_coll_param coll_param{};
 
-                sched_param.ctype = mlsl_coll_allreduce;
-                sched_param.send_buf = send_buf;
-                sched_param.recv_buf = recv_buf;
-                sched_param.count = cnt;
-                sched_param.dtype = dtype;
-                sched_param.reduction = op;
-                sched_param.comm = sched->coll_param.comm;
+                coll_param.ctype = mlsl_coll_allreduce;
+                coll_param.send_buf = send_buf;
+                coll_param.recv_buf = recv_buf;
+                coll_param.count = cnt;
+                coll_param.dtype = dtype;
+                coll_param.reduction = op;
+                coll_param.comm = sched->coll_param.comm;
 
-                coll_sched = new mlsl_sched(sched_param);
+                coll_sched = new mlsl_sched(coll_param);
 
                 coll_sched->coll_attr.reduction_fn = sched->coll_attr.reduction_fn;
                 auto result = mlsl_coll_build_allreduce(coll_sched,
@@ -115,7 +115,7 @@ private:
         if (coll_sched)
         {
             MLSL_LOG(DEBUG, "starting COLL entry");
-            mlsl_sched_start_subsched(sched, coll_sched, &req);
+            req = sched->start_subsched(coll_sched);
             MLSL_LOG(DEBUG, "COLL entry: sched %p, req %p", coll_sched, req);
             // TODO: insert into per-worker sched cache
         }

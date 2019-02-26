@@ -19,9 +19,16 @@ mlsl_status_t mlsl_init()
         size_t min_priority, max_priority;
         mlsl_get_priority_range(&min_priority, &max_priority);
 
+        if (env_data.enable_fusion)
+        {
+            global_data.fusion_manager =
+                std::unique_ptr<mlsl_fusion_manager>(new mlsl_fusion_manager());
+        }
+
         global_data.executor = std::unique_ptr<mlsl_executor>(new mlsl_executor(env_data.worker_count,
                                                                                 max_priority - min_priority + 1,
-                                                                                env_data.out_of_order_support != 0,
+                                                                                env_data.out_of_order_support != 0 ||
+                                                                                env_data.enable_fusion != 0,
                                                                                 env_data.worker_affinity,
                                                                                 env_data.priority_mode));
 
@@ -58,13 +65,16 @@ mlsl_status_t mlsl_finalize()
 
         global_data.ooo_handler.reset();
         global_data.executor.reset();
+        global_data.fusion_manager.reset();
         global_data.comm.reset();
         global_data.comm_ids.reset();
 
         if (global_data.parallelizer)
             mlsl_parallelizer_free(global_data.parallelizer);
+
         if (global_data.default_coll_attr)
             mlsl_coll_free_attr(global_data.default_coll_attr);
+
         mlsl_env_free();
 
 #ifdef ENABLE_DEBUG
@@ -98,10 +108,12 @@ mlsl_status_t mlsl_wait(mlsl_request *req)
     try
     {
         if (!req)
+        {
+            MLSL_ASSERTP(0);
             return mlsl_status_success;
+        }
 
         global_data.executor->wait(req);
-
         mlsl_sched* sched = req->sched;
         MLSL_ASSERT(sched);
 
@@ -119,6 +131,7 @@ mlsl_status_t MLSL_API mlsl_test(mlsl_request *req, int *is_completed)
     {
         if (!req)
         {
+            MLSL_ASSERTP(0);
             if (is_completed) *is_completed = 1;
             return mlsl_status_success;
         }

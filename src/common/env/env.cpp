@@ -15,7 +15,12 @@ mlsl_env_data env_data =
     .worker_affinity = NULL,
     .priority_mode = mlsl_priority_none,
     .allreduce_algo = mlsl_allreduce_algo_rabenseifner,
-    .enable_rma = 0
+    .enable_rma = 0,
+    .enable_fusion = 0,
+    .fusion_bytes_threshold = 16384,
+    .fusion_count_threshold = 256,
+    .fusion_check_urgent = 1,
+    .fusion_cycle_ms = 0.2
 };
 
 const char *mlsl_priority_mode_to_str(mlsl_priority_mode mode)
@@ -37,7 +42,7 @@ const char *mlsl_allreduce_algo_to_str(mlsl_allreduce_algo algo)
 {
     switch (algo) {
         case mlsl_allreduce_algo_rabenseifner:
-            return "rsag";
+            return "tree";
         case mlsl_allreduce_algo_starlike:
             return "starlike";
         case mlsl_allreduce_algo_ring:
@@ -58,9 +63,16 @@ void mlsl_env_parse()
     mlsl_env_2_int("MLSL_WORKER_OFFLOAD", &env_data.worker_offload);
     mlsl_env_2_int("MLSL_OUT_OF_ORDER_SUPPORT", &env_data.out_of_order_support);
     mlsl_env_2_int("MLSL_ENABLE_RMA", &env_data.enable_rma);
+    mlsl_env_2_int("MLSL_ENABLE_FUSION", &env_data.enable_fusion);
+    mlsl_env_2_int("MLSL_FUSION_BYTES_THRESHOLD", &env_data.fusion_bytes_threshold);
+    mlsl_env_2_int("MLSL_FUSION_COUNT_THRESHOLD", &env_data.fusion_count_threshold);
+    mlsl_env_2_int("MLSL_FUSION_CHECK_URGENT", &env_data.fusion_check_urgent);
+    mlsl_env_2_float("MLSL_FUSION_CYCLE_MS", &env_data.fusion_cycle_ms);
     mlsl_env_parse_priority_mode();
     mlsl_env_parse_affinity();
     mlsl_env_parse_allreduce_algo();
+
+    MLSL_ASSERTP(env_data.worker_count >= 1);
 }
 
 void mlsl_env_free()
@@ -76,6 +88,11 @@ void mlsl_env_print()
     MLSL_LOG(INFO, "MLSL_WORKER_OFFLOAD: %d", env_data.worker_offload);
     MLSL_LOG(INFO, "MLSL_OUT_OF_ORDER_SUPPORT: %d", env_data.out_of_order_support);
     MLSL_LOG(INFO, "MLSL_ENABLE_RMA: %d", env_data.enable_rma);
+    MLSL_LOG(INFO, "MLSL_ENABLE_FUSION: %d", env_data.enable_fusion);
+    MLSL_LOG(INFO, "MLSL_FUSION_BYTES_THRESHOLD: %d", env_data.fusion_bytes_threshold);
+    MLSL_LOG(INFO, "MLSL_FUSION_COUNT_THRESHOLD: %d", env_data.fusion_count_threshold);
+    MLSL_LOG(INFO, "MLSL_FUSION_CHECK_URGENT: %d", env_data.fusion_check_urgent);
+    MLSL_LOG(INFO, "MLSL_FUSION_CYCLE_MS: %.1f", env_data.fusion_cycle_ms);
     MLSL_LOG(INFO, "MLSL_PRIORITY_MODE: %s", mlsl_priority_mode_to_str(env_data.priority_mode));
     MLSL_LOG(INFO, "MLSL_ALLREDUCE_ALGO: %s", mlsl_allreduce_algo_to_str(env_data.allreduce_algo));
     mlsl_env_print_affinity();
@@ -84,32 +101,22 @@ void mlsl_env_print()
 int mlsl_env_2_int(const char* env_name, int* val)
 {
     const char* val_ptr;
-
     val_ptr = getenv(env_name);
     if (val_ptr)
     {
-        const char* p;
-        int sign = 1, value = 0;
-        p = val_ptr;
-        while (*p && IS_SPACE(*p))
-            p++;
-        if (*p == '-')
-        {
-            p++;
-            sign = -1;
-        }
-        if (*p == '+')
-            p++;
+        *val = std::strtol(val_ptr, NULL, 10);
+        return 1;
+    }
+    return 0;
+}
 
-        while (*p && isdigit(*p))
-            value = 10 * value + (*p++ - '0');
-
-        if (*p)
-        {
-            MLSL_LOG(ERROR, "invalid character %c in %s", *p, env_name);
-            return -1;
-        }
-        *val = sign * value;
+int mlsl_env_2_float(const char* env_name, float* val)
+{
+    const char* val_ptr;
+    val_ptr = getenv(env_name);
+    if (val_ptr)
+    {
+        *val = std::strtof(val_ptr, NULL);
         return 1;
     }
     return 0;

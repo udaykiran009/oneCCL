@@ -143,9 +143,9 @@ mlsl_status_t mlsl_coll_build_ring_rma_allreduce(mlsl_sched* sched, const void* 
         return mlsl_status_success;
     }
 
-    mlsl_rma_ring_allreduce_handler* ar_handler;
-    mlsl_sched_alloc_buffer(sched, sizeof(mlsl_rma_ring_allreduce_handler), (void**)&ar_handler);
-    mlsl_sched_alloc_buffer(sched, 2 * comm_size * sizeof(uint64_t), (void**)&ar_handler->sync_flags);
+    mlsl_rma_ring_allreduce_handler* ar_handler =
+        (mlsl_rma_ring_allreduce_handler*)sched->alloc_buffer(sizeof(mlsl_rma_ring_allreduce_handler));
+    ar_handler->sync_flags = (uint64_t*)sched->alloc_buffer(2 * comm_size * sizeof(uint64_t));
 
     sched->set_entry_exec_mode(mlsl_sched_entry_exec_once);
 
@@ -156,7 +156,7 @@ mlsl_status_t mlsl_coll_build_ring_rma_allreduce(mlsl_sched* sched, const void* 
 
     if (inplace)
     {
-        mlsl_sched_alloc_buffer(sched, count * dtype_size, (void**)&tmp_buf);
+        tmp_buf = sched->alloc_buffer(count * dtype_size);
         entry_factory::make_register_entry(sched, count * dtype_size, (void*)tmp_buf, &ar_handler->tmp_buf_mr);
     }
     else

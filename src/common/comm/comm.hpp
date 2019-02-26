@@ -47,19 +47,24 @@ public:
         return m_id->value();
     }
 
-    mlsl_comm_id_t get_sched_id()
+    mlsl_sched_id_t get_sched_id(bool use_internal_space)
     {
-        mlsl_sched_id_t id = m_next_sched_id;
+        mlsl_sched_id_t& next_sched_id = (use_internal_space) ? m_next_sched_id_internal : m_next_sched_id_external;
+        mlsl_sched_id_t max_sched_id = (use_internal_space) ? mlsl_comm::max_sched_count : mlsl_comm::max_sched_count / 2;
+        mlsl_sched_id_t first_sched_id = (use_internal_space) ? mlsl_comm::max_sched_count / 2 : 0;
 
-        ++m_next_sched_id;
+        mlsl_sched_id_t id = next_sched_id;
 
-        if (m_next_sched_id == mlsl_comm::max_sched_count)
+        ++next_sched_id;
+
+        if (next_sched_id == max_sched_id)
         {
             /* wrap the sched numbers around to the start */
-            m_next_sched_id = 0;
+            //MLSL_ASSERTP(0);
+            next_sched_id = first_sched_id;
         }
 
-        MLSL_LOG(DEBUG, "sched_id %u, comm_id %hu, next sched_id %hu", id, m_id->value(), m_next_sched_id);
+        MLSL_LOG(DEBUG, "sched_id %u, comm_id %hu, next sched_id %hu", id, m_id->value(), next_sched_id);
 
         return id;
     }
@@ -89,6 +94,7 @@ private:
     size_t m_size;
     size_t m_pof2;
     std::unique_ptr<comm_id> m_id;
-    mlsl_comm_id_t m_next_sched_id = 0;
+    mlsl_sched_id_t m_next_sched_id_internal = mlsl_comm::max_sched_count / 2;
+    mlsl_sched_id_t m_next_sched_id_external = 0;
     rank_to_global_rank_map m_ranks_map{};
 };

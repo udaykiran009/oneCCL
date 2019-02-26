@@ -47,15 +47,17 @@ const char* mlsl_coll_type_to_str(mlsl_coll_type type)
 static mlsl_status_t mlsl_coll_create(mlsl_request** req,
                                       const mlsl_coll_attr_t* attributes,
                                       mlsl_sched_cache_key& key,
-                                      mlsl_sched_coll_param& sched_param)
+                                      mlsl_coll_param& coll_param)
 {
     mlsl_sched* sched = nullptr;
     mlsl_sched_cache_entry* entry = nullptr;
     mlsl_comm* tensor_comm = nullptr;
     bool sched_to_be_posponed = false;
+    bool should_commit = false;
+    bool was_fused = false;
     const mlsl_coll_attr_t* attr = attributes ? attributes : global_data.default_coll_attr;
 
-    MLSL_ASSERTP((sched_param.ctype == mlsl_coll_allreduce) ||
+    MLSL_ASSERTP((coll_param.ctype == mlsl_coll_allreduce) ||
                  !(attr->prologue_fn || attr->epilogue_fn || attr->reduction_fn));
 
     if (attr->match_id && env_data.out_of_order_support)
@@ -72,6 +74,7 @@ static mlsl_status_t mlsl_coll_create(mlsl_request** req,
             sched_to_be_posponed = true;
         }
     }
+
     if (attr->to_cache)
     {
         key.prologue_fn = attr->prologue_fn;
@@ -88,33 +91,44 @@ static mlsl_status_t mlsl_coll_create(mlsl_request** req,
         mlsl_sched_cache_get_entry(global_data.sched_cache, &key, &entry);
         sched = entry->sched;
     }
+
     if (!sched)
     {
-        sched = new mlsl_sched(sched_param);
-        sched->set_coll_attr(attr);
-        MLSL_LOG(DEBUG, "didn't find sched, create new one %p, type %s", sched,
-                 mlsl_coll_type_to_str(sched->coll_param.ctype));
-        if (tensor_comm)
-        {
-            sched->coll_param.comm = tensor_comm;
-        }
-
-        sched->commit(global_data.parallelizer);
+        sched = new mlsl_sched(coll_param);
+        MLSL_LOG(DEBUG, "didn't find sched, create new one %p, type %s",
+                 sched, mlsl_coll_type_to_str(sched->coll_param.ctype));
 
         if (entry)
-        {
             entry->sched = sched;
-        }
+
+        sched->set_coll_attr(attr);
+        should_commit = true;
     }
     else
     {
-        MLSL_LOG(DEBUG, "found sched, reuse %p, type %s", sched, mlsl_coll_type_to_str(sched->coll_param.ctype));
-        if (tensor_comm)
-        {
-            sched->coll_param.comm = tensor_comm;
-        }
-        sched->set_coll_attr(attr);
+        MLSL_LOG(DEBUG, "found sched, reuse %p, type %s",
+                 sched, mlsl_coll_type_to_str(sched->coll_param.ctype));
     }
+
+    if (tensor_comm)
+        sched->coll_param.comm = tensor_comm;
+
+    if (env_data.enable_fusion)
+    {
+        MLSL_LOG(DEBUG, "try to add sched %p, ctype %d", sched, sched->coll_param.ctype);
+        was_fused = global_data.fusion_manager->add(sched);
+        if (was_fused)
+        {
+            *req = sched->req;
+            return mlsl_status_success;
+        }
+    }
+
+    MLSL_ASSERTP(!was_fused);
+
+    if (should_commit)
+        sched->commit(global_data.parallelizer);
+
     if (!sched_to_be_posponed)
     {
         *req = sched->start(global_data.executor.get());
@@ -257,13 +271,13 @@ mlsl_status_t mlsl_bcast(
     {
         auto comm = static_cast<mlsl_comm*>(communicator);
 
-        mlsl_sched_coll_param sched_param{};
-        sched_param.ctype = mlsl_coll_bcast;
-        sched_param.buf = buf;
-        sched_param.count = count;
-        sched_param.dtype = mlsl_datatype_get(dtype);
-        sched_param.root = root;
-        sched_param.comm = comm ? comm : global_data.comm.get();
+        mlsl_coll_param coll_param{};
+        coll_param.ctype = mlsl_coll_bcast;
+        coll_param.buf = buf;
+        coll_param.count = count;
+        coll_param.dtype = mlsl_datatype_get(dtype);
+        coll_param.root = root;
+        coll_param.comm = comm ? comm : global_data.comm.get();
 
         mlsl_sched_cache_key key{};
         key.ctype = mlsl_coll_bcast;
@@ -273,7 +287,7 @@ mlsl_status_t mlsl_bcast(
         key.root = root;
         key.comm = comm;
 
-        return mlsl_coll_create(req, attributes, key, sched_param);
+        return mlsl_coll_create(req, attributes, key, coll_param);
     }
     COMMON_CATCH_BLOCK();
 }
@@ -293,15 +307,15 @@ mlsl_status_t mlsl_reduce(
     {
         auto comm = static_cast<mlsl_comm*>(communicator);
 
-        mlsl_sched_coll_param sched_param{};
-        sched_param.ctype = mlsl_coll_reduce;
-        sched_param.send_buf = send_buf;
-        sched_param.recv_buf = recv_buf;
-        sched_param.count = count;
-        sched_param.dtype = mlsl_datatype_get(dtype);
-        sched_param.reduction = reduction;
-        sched_param.root = root;
-        sched_param.comm = comm ? comm : global_data.comm.get();
+        mlsl_coll_param coll_param{};
+        coll_param.ctype = mlsl_coll_reduce;
+        coll_param.send_buf = send_buf;
+        coll_param.recv_buf = recv_buf;
+        coll_param.count = count;
+        coll_param.dtype = mlsl_datatype_get(dtype);
+        coll_param.reduction = reduction;
+        coll_param.root = root;
+        coll_param.comm = comm ? comm : global_data.comm.get();
 
         mlsl_sched_cache_key key{};
         key.ctype = mlsl_coll_reduce;
@@ -313,7 +327,7 @@ mlsl_status_t mlsl_reduce(
         key.root = root;
         key.comm = comm;
 
-        return mlsl_coll_create(req, attributes, key, sched_param);
+        return mlsl_coll_create(req, attributes, key, coll_param);
     }
     COMMON_CATCH_BLOCK();
 }
@@ -332,14 +346,14 @@ mlsl_status_t mlsl_allreduce(
     {
         auto comm = static_cast<mlsl_comm*>(communicator);
 
-        mlsl_sched_coll_param sched_param{};
-        sched_param.ctype = mlsl_coll_allreduce;
-        sched_param.send_buf = send_buf;
-        sched_param.recv_buf = recv_buf;
-        sched_param.count = count;
-        sched_param.dtype = mlsl_datatype_get(dtype);
-        sched_param.reduction = reduction;
-        sched_param.comm = comm ? comm : global_data.comm.get();
+        mlsl_coll_param coll_param{};
+        coll_param.ctype = mlsl_coll_allreduce;
+        coll_param.send_buf = send_buf;
+        coll_param.recv_buf = recv_buf;
+        coll_param.count = count;
+        coll_param.dtype = mlsl_datatype_get(dtype);
+        coll_param.reduction = reduction;
+        coll_param.comm = comm ? comm : global_data.comm.get();
 
         mlsl_sched_cache_key key{};
         key.ctype = mlsl_coll_reduce;
@@ -350,7 +364,7 @@ mlsl_status_t mlsl_allreduce(
         key.reduction = reduction;
         key.comm = comm;
 
-        return mlsl_coll_create(req, attributes, key, sched_param);
+        return mlsl_coll_create(req, attributes, key, coll_param);
     }
     COMMON_CATCH_BLOCK();
 }
@@ -369,14 +383,14 @@ mlsl_status_t mlsl_allgatherv(
     {
         auto comm = static_cast<mlsl_comm*>(communicator);
 
-        mlsl_sched_coll_param sched_param{};
-        sched_param.ctype = mlsl_coll_allgatherv;
-        sched_param.send_buf = send_buf;
-        sched_param.recv_buf = recv_buf;
-        sched_param.send_count = send_count;
-        sched_param.recv_counts = recv_counts;
-        sched_param.dtype = mlsl_datatype_get(dtype);
-        sched_param.comm = comm ? comm : global_data.comm.get();
+        mlsl_coll_param coll_param{};
+        coll_param.ctype = mlsl_coll_allgatherv;
+        coll_param.send_buf = send_buf;
+        coll_param.recv_buf = recv_buf;
+        coll_param.send_count = send_count;
+        coll_param.recv_counts = recv_counts;
+        coll_param.dtype = mlsl_datatype_get(dtype);
+        coll_param.comm = comm ? comm : global_data.comm.get();
 
         mlsl_sched_cache_key key{};
         key.ctype = mlsl_coll_allgatherv;
@@ -386,7 +400,7 @@ mlsl_status_t mlsl_allgatherv(
         key.count1 = send_count;
         key.comm = comm;
 
-        return mlsl_coll_create(req, attributes, key, sched_param);
+        return mlsl_coll_create(req, attributes, key, coll_param);
     }
     COMMON_CATCH_BLOCK();
 }
@@ -401,16 +415,16 @@ mlsl_status_t mlsl_barrier(mlsl_comm_t communicator)
         attributes.synchronous = 1;
 
 
-        mlsl_sched_coll_param sched_param{};
-        sched_param.ctype = mlsl_coll_barrier;
-        sched_param.dtype = mlsl_dtype_internal_char;
-        sched_param.comm = comm ? comm : global_data.comm.get();
+        mlsl_coll_param coll_param{};
+        coll_param.ctype = mlsl_coll_barrier;
+        coll_param.dtype = mlsl_dtype_internal_char;
+        coll_param.comm = comm ? comm : global_data.comm.get();
 
         mlsl_sched_cache_key key{};
         key.ctype = mlsl_coll_barrier;
         key.comm = comm;
 
-        return mlsl_coll_create(&barrier_req, &attributes, key, sched_param);
+        return mlsl_coll_create(&barrier_req, &attributes, key, coll_param);
     }
     COMMON_CATCH_BLOCK();
 }

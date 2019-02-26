@@ -1,0 +1,7 @@
+sched_cache: struct -> class, replace uthash by map
+sched_queue: replace fixed-size array by container to support any lifo priority
+locks: unify locks in code, implement spinlock (for example using std::atomic_flag), wrap mutexes and spinlocks under the single class
+atomics: replace gcc atomics by std::atomics with corresponding memory orders
+parallelizer: struct -> class
+ooo: split comm_id space on internal/external to ensure the same comm_id accross ranks, remove persistent/temporal sched types, remove unresolved_comms - resolve comm on first access from app level, don't use partial_scheds[0] for bcast sched
+general: avoid direct usage of global variables. Pass pointer/reference to the global variable from high level calls (API functions) and propagate them to the place of usage.
