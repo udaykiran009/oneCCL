@@ -216,11 +216,13 @@ err_ep_names:
 
 static atl_status_t atl_ofi_comms_destroy_conns(atl_ofi_context_t *atl_ofi_context)
 {
-    int ret;
+    int ret = atl_status_success;
 
-    ret = fi_av_remove(atl_ofi_context->av, atl_ofi_context->addr_table.table,
-                       atl_ofi_context->addr_table.ep_num *
-                       atl_ofi_context->proc_count, 0);
+    /* disabled as it leads to unstable fails */
+    // ret = fi_av_remove(atl_ofi_context->av, atl_ofi_context->addr_table.table,
+    //                    atl_ofi_context->addr_table.ep_num *
+    //                    atl_ofi_context->proc_count, 0);
+
     if (ret)
         ATL_OFI_DEBUG_PRINT("AV remove failed (%d)", ret);
 
@@ -936,7 +938,7 @@ static atl_mr_ops_t atl_ofi_mr_ops = {
 static void atl_ofi_tune(void)
 {
     setenv("FI_PSM2_TIMEOUT", "1", 0);
-    setenv("FI_PSM2_LOCK_LEVEL", "0", 0);
+    setenv("FI_PSM2_LOCK_LEVEL", "1", 0);
     setenv("HFI_NO_CPUAFFINITY", "1", 0);
 }
 

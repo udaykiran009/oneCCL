@@ -3,6 +3,7 @@
 #include <new>
 
 mlsl_global_data global_data{};
+thread_local bool mlsl_global_data::is_worker_thread = false;
 
 #ifdef ENABLE_DEBUG
 std::atomic_size_t allocations_count;

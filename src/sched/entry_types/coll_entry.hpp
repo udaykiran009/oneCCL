@@ -106,7 +106,6 @@ private:
                 break;
             }
             case mlsl_coll_allgatherv:
-            case mlsl_coll_custom:
             default:
                 /* only allreduce for now */
                 MLSL_ASSERTP(0);

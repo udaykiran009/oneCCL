@@ -232,7 +232,7 @@ mlsl_sched* mlsl_fusion_manager::build_sched()
                 MLSL_ASSERTP(0);
                 break;
         }
-        sched->commit(global_data.parallelizer);
+        sched->commit(global_data.parallelizer.get());
         sched->coll_attr.to_cache = (use_cache) ? 1 : 0;
         if (entry) entry->sched = sched;
     }

@@ -32,15 +32,15 @@ const char* mlsl_coll_type_to_str(mlsl_coll_type type)
             return "ALLREDUCE";
         case mlsl_coll_allgatherv:
             return "ALLGATHERV";
-        case mlsl_coll_custom:
-            return "CUSTOM";
         case mlsl_coll_service_temporal:
             return "SERVICE_TEMP";
         case mlsl_coll_service_persistent:
             return "SERVICE_PERS";
+        case mlsl_coll_none:
+            return "NONE";
         default:
             MLSL_ASSERT_FMT(0, "unexpected coll_type %d", type);
-            return "(out of range)";
+            return "UNKNOWN";
     }
 }
 
@@ -127,7 +127,7 @@ static mlsl_status_t mlsl_coll_create(mlsl_request** req,
     MLSL_ASSERTP(!was_fused);
 
     if (should_commit)
-        sched->commit(global_data.parallelizer);
+        sched->commit(global_data.parallelizer.get());
 
     if (!sched_to_be_posponed)
     {

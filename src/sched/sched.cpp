@@ -35,10 +35,21 @@ mlsl_sched::~mlsl_sched()
 
     if (!memory.mr_list.empty())
     {
-        auto dereg_sched = new mlsl_sched();
-        dereg_sched->coll_attr.to_cache = false;
+        /* perform deregistration in worker thread */
+        mlsl_coll_param cparam{};
+        cparam.ctype = mlsl_coll_none;
+        cparam.comm = coll_param.comm;
+        mlsl_sched* dereg_sched = new mlsl_sched(cparam);
         entry_factory::make_deregister_entry(dereg_sched, memory.mr_list);
-        mlsl_wait(start_subsched(dereg_sched));
+        if (global_data.is_worker_thread || !env_data.worker_offload)
+        {
+            dereg_sched->do_progress();
+            delete dereg_sched;
+        }
+        else
+        {
+            mlsl_wait(start_subsched(dereg_sched));
+        }
         MLSL_ASSERTP(memory.mr_list.empty());
     }
 
@@ -224,7 +235,7 @@ mlsl_status_t mlsl_sched_progress(mlsl_sched_queue_bin* bin,
 void mlsl_sched::commit(mlsl_parallelizer* parallelizer)
 {
     update_id();
-    mlsl_parallelizer_process(parallelizer, this);
+    parallelizer->process(this);
     MLSL_LOG(DEBUG, "sched %p, num_entries %zu, number %u, req %p, part_count %zu",
              this, entries.size(), sched_id, req, partial_scheds.size());
 }

@@ -7,8 +7,6 @@
 
 static size_t lifo_priority = 0;
 
-mlsl_parallelizer* global_parallelizer = NULL;
-
 typedef struct
 {
     /* keep these 4 fields on the top of structure */
@@ -52,23 +50,7 @@ mlsl_status_t mlsl_parallelizer_prologue_get_dtype(const void* ctx, void* field_
     return mlsl_status_success;
 }
 
-mlsl_status_t mlsl_parallelizer_create(size_t partition_count,
-                                       mlsl_parallelizer** parallelizer)
-{
-    mlsl_parallelizer* p = static_cast<mlsl_parallelizer*>(MLSL_CALLOC(sizeof(mlsl_parallelizer), "parallelizer"));
-    p->partition_count = partition_count;
-    *parallelizer = p;
-    return mlsl_status_success;
-}
-
-mlsl_status_t mlsl_parallelizer_free(mlsl_parallelizer* parallelizer)
-{
-    MLSL_FREE(parallelizer);
-    return mlsl_status_success;
-}
-
-mlsl_status_t mlsl_parallelizer_process(mlsl_parallelizer* parallelizer,
-                                        mlsl_sched* sched)
+mlsl_status_t mlsl_parallelizer::process(mlsl_sched* sched)
 {
     MLSL_ASSERT(sched);
 
@@ -93,14 +75,13 @@ mlsl_status_t mlsl_parallelizer_process(mlsl_parallelizer* parallelizer,
         case mlsl_coll_bcast:
         case mlsl_coll_reduce:
         case mlsl_coll_allreduce:
-        case mlsl_coll_custom:
             if (coll_param->count * dtype_size <= MLSL_MIN_PART_SIZE)
             {
                 part_count = 1;
             }
             else
             {
-                part_count = parallelizer->partition_count;
+                part_count = max_data_partition_count;
             }
             break;
         case mlsl_coll_allgatherv:
@@ -114,23 +95,16 @@ mlsl_status_t mlsl_parallelizer_process(mlsl_parallelizer* parallelizer,
     MLSL_LOG(DEBUG, "sched %p, num_entries %zu, coll_type %d, part_count %zu",
              sched, sched->entries.size(), coll_type, part_count);
 
-    if (coll_type == mlsl_coll_custom)
+    counts.resize(part_count, 0);
+    offsets.resize(part_count, 0);
+    for (idx = 0; idx < part_count; idx++)
     {
-        MLSL_ASSERTP(0);
-    }
-    else
-    {
-        counts.resize(part_count, 0);
-        offsets.resize(part_count, 0);
-        for (idx = 0; idx < part_count; idx++)
-        {
-            mlsl_coll_param part_coll_param{};
-            part_coll_param.comm = sched->coll_param.comm;
-            part_coll_param.ctype = sched->coll_param.ctype;
-            part_coll_param.dtype = sched->coll_param.dtype;
-            sched->add_partial_sched(part_coll_param);
-            part_scheds.back()->root = sched;
-        }
+        mlsl_coll_param part_coll_param{};
+        part_coll_param.comm = sched->coll_param.comm;
+        part_coll_param.ctype = sched->coll_param.ctype;
+        part_coll_param.dtype = sched->coll_param.dtype;
+        sched->add_partial_sched(part_coll_param);
+        part_scheds.back()->root = sched;
     }
 
     for (idx = 0; idx < part_count; idx++)
@@ -292,7 +266,6 @@ mlsl_status_t mlsl_parallelizer_process(mlsl_parallelizer* parallelizer,
             if (sched->coll_attr.epilogue_fn)
             {
                 sched->sync_partial_scheds();
-
                 e = entry_factory::make_epilogue_entry(part_scheds[0].get(),
                                                        sched->coll_attr.epilogue_fn,
                                                        (char*) coll_param->recv_buf,
@@ -346,8 +319,6 @@ mlsl_status_t mlsl_parallelizer_process(mlsl_parallelizer* parallelizer,
                                                 dtype,
                                                 idx));
             }
-            break;
-        case mlsl_coll_custom:
             break;
         default:
             MLSL_ASSERT_FMT(0, "unexpected coll_type %d", coll_type);

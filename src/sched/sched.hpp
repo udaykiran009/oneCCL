@@ -85,17 +85,13 @@ class mlsl_sched
 {
 public:
 
-    mlsl_sched()
-    {
-        alloc_req();
-    }
-
     mlsl_sched(mlsl_coll_param& coll_param)
         : coll_param(coll_param)
     {
         alloc_req();
     }
 
+    mlsl_sched() = delete;
     mlsl_sched(const mlsl_sched& other) = delete;
     mlsl_sched& operator= (const mlsl_sched& other) = delete;
 

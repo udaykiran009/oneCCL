@@ -15,9 +15,7 @@ mlsl_status_t mlsl_init()
         mlsl_env_print();
         mlsl_datatype_init();
         mlsl_sched_cache_create(&global_sched_cache);
-        mlsl_parallelizer_create(env_data.worker_count, &global_parallelizer);
-        size_t min_priority, max_priority;
-        mlsl_get_priority_range(&min_priority, &max_priority);
+        global_data.parallelizer = std::unique_ptr<mlsl_parallelizer>(new mlsl_parallelizer(env_data.worker_count));
 
         if (env_data.enable_fusion)
         {
@@ -25,6 +23,8 @@ mlsl_status_t mlsl_init()
                 std::unique_ptr<mlsl_fusion_manager>(new mlsl_fusion_manager());
         }
 
+        size_t min_priority, max_priority;
+        mlsl_get_priority_range(&min_priority, &max_priority);
         global_data.executor = std::unique_ptr<mlsl_executor>(new mlsl_executor(env_data.worker_count,
                                                                                 max_priority - min_priority + 1,
                                                                                 env_data.out_of_order_support != 0 ||
@@ -42,7 +42,6 @@ mlsl_status_t mlsl_init()
         default_coll_attr->to_cache = true;
 
         global_data.sched_cache = global_sched_cache;
-        global_data.parallelizer = global_parallelizer;
         global_data.default_coll_attr = default_coll_attr;
 
         if (env_data.out_of_order_support)
@@ -68,9 +67,7 @@ mlsl_status_t mlsl_finalize()
         global_data.fusion_manager.reset();
         global_data.comm.reset();
         global_data.comm_ids.reset();
-
-        if (global_data.parallelizer)
-            mlsl_parallelizer_free(global_data.parallelizer);
+        global_data.parallelizer.reset();
 
         if (global_data.default_coll_attr)
             mlsl_coll_free_attr(global_data.default_coll_attr);

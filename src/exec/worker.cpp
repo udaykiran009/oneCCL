@@ -108,6 +108,8 @@ static void* mlsl_worker_func(void* args)
     size_t yield_spin_count = 0;
     size_t processed_count = 0;
 
+    global_data.is_worker_thread = true;
+
     do
     {
         processed_count = worker->do_work();

@@ -9,6 +9,7 @@
 #include "sched/sched_cache.hpp"
 
 #include <memory>
+#include <thread>
 
 //todo: rework MLSL_LOG(ERROR, ..) to not throw
 #define COMMON_CATCH_BLOCK()                                        \
@@ -37,10 +38,11 @@ struct mlsl_global_data
     std::unique_ptr<comm_id_storage> comm_ids;
     std::unique_ptr<mlsl_executor> executor;
     mlsl_sched_cache* sched_cache;
-    mlsl_parallelizer* parallelizer;
     mlsl_coll_attr_t* default_coll_attr;
+    std::unique_ptr<mlsl_parallelizer> parallelizer;
     std::unique_ptr<out_of_order::ooo_match> ooo_handler;
     std::unique_ptr<mlsl_fusion_manager> fusion_manager;
+    static thread_local bool is_worker_thread;
 } __attribute__ ((aligned (CACHELINE_SIZE)));
 
 extern mlsl_global_data global_data;
