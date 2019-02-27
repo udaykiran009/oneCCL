@@ -141,7 +141,6 @@ mlsl_status_t mlsl_sched_progress(mlsl_sched_queue_bin* bin,
                                   size_t& completed_sched_count)
 {
     mlsl_status_t status = mlsl_status_success;
-    mlsl_request *req __attribute__ ((unused));
     size_t sched_count = 0;
 
     completed_sched_count = 0;
@@ -207,9 +206,7 @@ mlsl_status_t mlsl_sched_progress(mlsl_sched_queue_bin* bin,
             // remove completed schedule from the bin. Iterator @b it will point to the next elem in bin->elems
             it = bin->queue->erase(bin, it);
 
-            req = sched->req;
-
-            status = mlsl_request_complete(req);
+            status = mlsl_request_complete(sched->req);
             MLSL_ASSERT(status == mlsl_status_success);
 
             ++completed_sched_count;

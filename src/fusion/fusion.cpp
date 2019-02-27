@@ -256,6 +256,7 @@ mlsl_sched* mlsl_fusion_manager::build_sched()
 
     for (size_t idx = 0; idx < part_count; idx++)
     {
+        part_scheds[idx]->add_barrier();
         part_scheds[idx]->set_add_mode(mlsl_sched_add_front);
     }
     sched->sync_partial_scheds();
