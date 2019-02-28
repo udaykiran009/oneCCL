@@ -15,6 +15,7 @@ mlsl_env_data env_data =
     .worker_affinity = NULL,
     .priority_mode = mlsl_priority_none,
     .allreduce_algo = mlsl_allreduce_algo_rabenseifner,
+    .sparse_allreduce_algo = mlsl_sparse_allreduce_algo_basic,
     .enable_rma = 0,
     .enable_fusion = 0,
     .fusion_bytes_threshold = 16384,

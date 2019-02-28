@@ -13,7 +13,10 @@ public:
                mlsl_datatype_internal_t dtype,
                size_t src) :
         sched_entry(sched), buf(buf), cnt(cnt), dtype(dtype), src(src)
-    {}
+    {
+        pfields.add_available(mlsl_sched_entry_field_buf);
+        pfields.add_available(mlsl_sched_entry_field_cnt);
+    }
 
     void start_derived()
     {
@@ -37,6 +40,16 @@ public:
         atl_comm_check(sched->bin->comm_ctx, &req_status, &req);
         if (req_status)
             status = mlsl_sched_entry_status_complete;
+    }
+    
+    void* get_field_ptr(mlsl_sched_entry_field_id id)
+    {
+        switch (id)
+        {
+            case mlsl_sched_entry_field_buf: return &buf;
+            case mlsl_sched_entry_field_cnt: return &cnt;
+            default: MLSL_ASSERTP(0);
+        }
     }
 
     const char* name() const

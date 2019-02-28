@@ -49,6 +49,22 @@ mlsl_status_t MLSL_API mlsl_allgatherv(
     mlsl_comm_t communicator,
     mlsl_request_t* req);
 
+mlsl_status_t MLSL_API mlsl_sparse_allreduce(
+    const void* send_ind_buf,
+    size_t send_ind_count,
+    const void* send_val_buf,
+    size_t send_val_count,
+    void** recv_ind_buf,
+    size_t* recv_ind_count,
+    void** recv_val_buf,
+    size_t* recv_val_count,
+    mlsl_datatype_t index_dtype,
+    mlsl_datatype_t dtype,
+    mlsl_reduction_t reduction,
+    const mlsl_coll_attr_t* attributes,
+    mlsl_comm_t communicator,
+    mlsl_request_t* req);
+
 mlsl_status_t MLSL_API mlsl_barrier(mlsl_comm_t communicator);
 
 mlsl_status_t MLSL_API mlsl_wait(mlsl_request_t req);

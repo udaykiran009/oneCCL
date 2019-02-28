@@ -17,6 +17,12 @@ enum mlsl_allreduce_algo
     mlsl_allreduce_algo_ring_rma     = 3
 };
 
+enum mlsl_sparse_allreduce_algo
+{
+    mlsl_sparse_allreduce_algo_basic = 0,
+    mlsl_sparse_allreduce_algo_mask  = 1
+};
+
 struct mlsl_env_data
 {
     int log_level;
@@ -27,6 +33,7 @@ struct mlsl_env_data
     int *worker_affinity;
     mlsl_priority_mode priority_mode;
     mlsl_allreduce_algo allreduce_algo;
+    mlsl_sparse_allreduce_algo sparse_allreduce_algo;
     int enable_rma;
     int enable_fusion;
     int fusion_bytes_threshold;

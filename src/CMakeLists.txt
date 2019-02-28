@@ -13,6 +13,7 @@ set(MLSL_SRC
     coll/bcast.cpp
     coll/reduce.cpp
     coll/allgatherv.cpp
+    coll/sparse.cpp
     comp/comp.cpp
     sched/sched.cpp
     sched/sched_cache.cpp

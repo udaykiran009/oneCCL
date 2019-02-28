@@ -14,6 +14,7 @@
 #include "sched/entry_types/tensor_comm_entry.hpp"
 #include "sched/entry_types/wait_value_entry.hpp"
 #include "sched/entry_types/function_entry.hpp"
+#include "sched/entry_types/probe_entry.hpp"
 #include "sched/entry_types/register_entry.hpp"
 #include "sched/entry_types/deregister_entry.hpp"
 #include "sched/entry_types/nop_entry.hpp"
@@ -218,6 +219,16 @@ std::shared_ptr<sched_entry> entry_factory::make_nop_entry(mlsl_sched* sched)
 {
     MLSL_LOG(DEBUG, "creating NOP entry");
     auto e = std::make_shared<nop_entry>(sched);
+    sched->add_entry(e);
+    return e;
+}
+
+std::shared_ptr<sched_entry> entry_factory::make_probe_entry(mlsl_sched* sched,
+                                                           size_t src,
+                                                           size_t* cnt)
+{
+    MLSL_LOG(DEBUG, "creating PROBE entry");
+    std::shared_ptr<sched_entry> e = std::make_shared<probe_entry>(sched, global_data.comm->get_global_rank(src), cnt);
     sched->add_entry(e);
     return e;
 }

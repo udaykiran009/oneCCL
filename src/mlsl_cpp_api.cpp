@@ -202,3 +202,29 @@ void MLSL_API communicator::barrier()
 {
     mlsl_barrier(comm_impl.get());
 }
+
+std::shared_ptr<mlsl::request> MLSL_API communicator::sparse_allreduce(const void* send_ind_buf,
+                                                                size_t send_ind_count,
+                                                                const void* send_val_buf,
+                                                                size_t send_val_count,
+                                                                void** recv_ind_buf,
+                                                                size_t* recv_ind_count,
+                                                                void** recv_val_buf,
+                                                                size_t* recv_val_count,
+                                                                mlsl::data_type index_dtype,
+                                                                mlsl::data_type value_dtype,
+                                                                mlsl::reduction reduction,
+                                                                const mlsl_coll_attr_t* attributes)
+{
+    mlsl_request_t mlsl_req;
+    auto mlsl_index_type = static_cast<mlsl_datatype_t>(index_dtype);
+    auto mlsl_data_type = static_cast<mlsl_datatype_t>(value_dtype);
+    auto mlsl_reduction_type = static_cast<mlsl_reduction_t>(reduction);
+
+    mlsl_status_t result = mlsl_sparse_allreduce(send_ind_buf, send_ind_count, send_val_buf, send_val_count, recv_ind_buf,
+                                                 recv_ind_count, recv_val_buf, recv_val_count, mlsl_index_type, mlsl_data_type,
+                                                 mlsl_reduction_type, attributes, comm_impl.get(), &mlsl_req);
+    CHECK_AND_THROW(result, "Sparse allreduce failed");
+
+    return std::make_shared<mlsl::request_impl>(mlsl_req);
+}

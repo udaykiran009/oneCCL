@@ -124,4 +124,8 @@ public:
                                                               std::list<atl_mr_t*>& mr_list);
 
     static std::shared_ptr<sched_entry> make_nop_entry(mlsl_sched* sched);
-};
+    
+    static std::shared_ptr<sched_entry> make_probe_entry(mlsl_sched* sched,
+                                                         size_t src,
+                                                         size_t* cnt);
+};   

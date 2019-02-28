@@ -198,6 +198,36 @@ public:
      */
     void barrier();
 
+    /**
+     * Reduces sparse @c buf on all process in the communicator and stores result in @c recv_buf
+     * on each process
+     * @param send_ind_buf the buffer of indices with @c send_ind_count elements of @c index_dtype
+     * @param send_int_count number of elements of type @c index_type @c send_ind_buf
+     * @param send_val_buf the buffer of values with @c send_val_count elements of @c value_dtype
+     * @param send_val_count number of elements of type @c value_type @c send_val_buf
+     * @param recv_ind_buf [out] the buffer to store reduced indices, must have the same dimension as @c send_ind_buf
+     * @param recv_ind_count [out] the amount of reduced indices
+     * @param recv_val_buf [out] the buffer to store reduced values, must have the same dimension as @c send_val_buf
+     * @param recv_val_count [out] the amount of reduced values
+     * @param index_dtype index type of elements in the buffer @c send_ind_buf and @c recv_ind_buf
+     * @param value_dtype data type of elements in the buffer @c send_val_buf and @c recv_val_buf
+     * @param reduction type of reduction operation to be applied
+     * @param attributes optional attributes that customize operation
+     * @return @ref mlsl::request object that can be used to track the progress of the operation
+     */
+    std::shared_ptr<mlsl::request> sparse_allreduce(const void* send_ind_buf,
+                                             size_t send_ind_count,
+                                             const void* send_val_buf,
+                                             size_t send_val_count,
+                                             void** recv_ind_buf,
+                                             size_t* recv_ind_count,
+                                             void** recv_val_buf,
+                                             size_t* recv_val_count,
+                                             mlsl::data_type index_dtype,
+                                             mlsl::data_type value_dtype,
+                                             mlsl::reduction reduction,
+                                             const mlsl_coll_attr_t* attributes = nullptr);
+
 private:
     std::shared_ptr<mlsl_comm> comm_impl;
 };

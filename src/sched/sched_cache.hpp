@@ -9,9 +9,13 @@ struct mlsl_sched_cache_key
     void *buf1;
     void *buf2;
     void *buf3;
+    void *buf4; /* used in sparse collective to store recv value buf */
     size_t count1;
     size_t count2;
+    size_t *count3; /* used in sparse collective to store recv index count */ 
+    size_t *count4; /* used in sparse collective to store recv value count */ 
     mlsl_datatype_t dtype;
+    mlsl_datatype_t itype; /* used in sparse collective to store index type */
     size_t root;
     mlsl_reduction_t reduction;
     const mlsl_comm* comm;

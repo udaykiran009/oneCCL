@@ -32,6 +32,8 @@ const char* mlsl_coll_type_to_str(mlsl_coll_type type)
             return "ALLREDUCE";
         case mlsl_coll_allgatherv:
             return "ALLGATHERV";
+        case mlsl_coll_sparse_allreduce:
+            return "SPARSE_ALLREDUCE";
         case mlsl_coll_service_temporal:
             return "SERVICE_TEMP";
         case mlsl_coll_service_persistent:
@@ -258,6 +260,43 @@ mlsl_status_t mlsl_coll_build_allreduce(
     return status;
 }
 
+mlsl_status_t mlsl_coll_build_sparse_allreduce(
+    mlsl_sched *sched,
+    const void *send_ind_buf,
+    size_t send_ind_count,
+    const void *send_val_buf,
+    size_t send_val_count,
+    void **recv_ind_buf,
+    size_t *recv_ind_count,
+    void **recv_val_buf,
+    size_t *recv_val_count,
+    mlsl_datatype_internal_t index_dtype,
+    mlsl_datatype_internal_t value_dtype,
+    mlsl_reduction_t reduction)
+{
+    mlsl_status_t status;
+    sched->coll_param.ctype = mlsl_coll_sparse_allreduce;
+    sched->coll_param.sparse_param.snd_val_buf = send_val_buf;
+    sched->coll_param.sparse_param.snd_val_count = send_val_count;
+    sched->coll_param.sparse_param.rcv_val_buf = recv_val_buf;
+    sched->coll_param.sparse_param.rcv_val_count = recv_val_count;
+    sched->coll_param.sparse_param.itype = index_dtype;
+
+    switch (env_data.sparse_allreduce_algo)
+    {
+        case mlsl_sparse_allreduce_algo_basic:
+            MLSL_CALL(mlsl_coll_build_sparse_allreduce_basic(sched, send_ind_buf, send_ind_count, send_val_buf, send_val_count,
+                                                             recv_ind_buf, recv_ind_count, recv_val_buf, recv_val_count,
+                                                             index_dtype, value_dtype, reduction));
+            break;
+        default:
+            MLSL_ASSERTP_FMT(0, "unexpected sparse_allreduce_algo %d", env_data.sparse_allreduce_algo);
+            return mlsl_status_invalid_arguments;
+    }
+
+    return status;
+}
+
 mlsl_status_t mlsl_bcast(
     void* buf,
     size_t count,
@@ -401,6 +440,61 @@ mlsl_status_t mlsl_allgatherv(
         key.comm = comm;
 
         return mlsl_coll_create(req, attributes, key, coll_param);
+    }
+    COMMON_CATCH_BLOCK();
+}
+
+mlsl_status_t mlsl_sparse_allreduce(
+    const void* send_ind_buf,
+    size_t send_ind_count,
+    const void* send_val_buf,
+    size_t send_val_count,
+    void** recv_ind_buf,
+    size_t* recv_ind_count,
+    void** recv_val_buf,
+    size_t* recv_val_count,
+    mlsl_datatype_t index_dtype,
+    mlsl_datatype_t dtype,
+    mlsl_reduction_t reduction,
+    const mlsl_coll_attr_t* attributes,
+    mlsl_comm_t communicator,
+    mlsl_request** req)
+{
+    try
+    {
+        auto comm = static_cast<mlsl_comm*>(communicator);
+
+        mlsl_coll_param sched_param{};
+        sched_param.ctype = mlsl_coll_sparse_allreduce;
+        sched_param.send_buf = send_ind_buf;
+        sched_param.send_count = send_ind_count;
+        sched_param.sparse_param.snd_val_buf = send_val_buf;
+        sched_param.sparse_param.snd_val_count = send_val_count;
+        sched_param.sparse_param.rcv_ind_buf = recv_ind_buf;
+        sched_param.recv_counts = recv_ind_count;
+        sched_param.sparse_param.rcv_val_buf = recv_val_buf;
+        sched_param.sparse_param.rcv_val_count = recv_val_count;       
+        sched_param.dtype = mlsl_datatype_get(dtype);
+        sched_param.sparse_param.itype = mlsl_datatype_get(index_dtype);
+        sched_param.reduction = reduction;
+        sched_param.comm = comm ? comm : global_data.comm.get();
+
+        mlsl_sched_cache_key key{};        
+        key.ctype = mlsl_coll_sparse_allreduce;
+        key.buf1 = (void *)send_ind_buf;
+        key.count1 = send_ind_count;
+        key.buf2 = (void *)send_val_buf;
+        key.count2 = send_val_count;
+        key.buf3 = recv_ind_buf;
+        key.count3 = recv_ind_count;
+        key.buf4 = recv_val_buf;
+        key.count4 = recv_val_count;
+        key.itype = index_dtype;
+        key.dtype = dtype;
+        key.reduction = reduction;
+        key.comm = comm;
+
+        return mlsl_coll_create(req, attributes, key, sched_param);
     }
     COMMON_CATCH_BLOCK();
 }

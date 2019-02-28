@@ -70,6 +70,7 @@ mlsl_status_t mlsl_parallelizer::process(mlsl_sched* sched)
     switch (coll_type)
     {
         case mlsl_coll_barrier:
+        case mlsl_coll_sparse_allreduce:
             part_count = 1;
             break;
         case mlsl_coll_bcast:
@@ -124,6 +125,7 @@ mlsl_status_t mlsl_parallelizer::process(mlsl_sched* sched)
     switch (coll_type)
     {
         case mlsl_coll_barrier:
+        case mlsl_coll_sparse_allreduce:
             break;
         case mlsl_coll_bcast:
         case mlsl_coll_reduce:
@@ -320,6 +322,25 @@ mlsl_status_t mlsl_parallelizer::process(mlsl_sched* sched)
                                                 idx));
             }
             break;
+
+        case mlsl_coll_sparse_allreduce:
+            for (idx = 0; idx < part_count; idx++)
+            {
+                MLSL_CALL(mlsl_coll_build_sparse_allreduce(part_scheds[idx].get(),
+                                                           coll_param->send_buf,
+                                                           coll_param->send_count,
+                                                           coll_param->sparse_param.snd_val_buf,
+                                                           coll_param->sparse_param.snd_val_count,
+                                                           coll_param->sparse_param.rcv_ind_buf,
+                                                           coll_param->recv_counts,
+                                                           coll_param->sparse_param.rcv_val_buf,
+                                                           coll_param->sparse_param.rcv_val_count,
+                                                           coll_param->sparse_param.itype,
+                                                           dtype,
+                                                           coll_param->reduction));
+            }
+            break;
+
         default:
             MLSL_ASSERT_FMT(0, "unexpected coll_type %d", coll_type);
             break;

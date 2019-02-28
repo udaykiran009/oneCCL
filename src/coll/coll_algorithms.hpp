@@ -31,3 +31,9 @@ mlsl_status_t mlsl_coll_build_starlike_allreduce(mlsl_sched *sched, const void *
 
 mlsl_status_t mlsl_coll_build_naive_allgatherv(mlsl_sched* sched, const void* send_buf, size_t send_count,
                                                void* recv_buf, size_t* recv_counts, mlsl_datatype_internal_t dtype);
+
+mlsl_status_t mlsl_coll_build_sparse_allreduce_basic(mlsl_sched* sched, const void* send_ind_buf, size_t send_ind_count,
+                                                     const void* send_val_buf, size_t send_val_count, void** recv_ind_buf,
+                                                     size_t* recv_ind_count, void** recv_val_buf, size_t* recv_val_count,
+                                                     mlsl_datatype_internal_t index_dtype, mlsl_datatype_internal_t value_dtype,
+                                                     mlsl_reduction_t op);

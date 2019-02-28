@@ -54,6 +54,16 @@ struct mlsl_coll_attr
     int to_cache;
 };
 
+struct mlsl_coll_sparse_param
+{
+    const void *snd_val_buf;
+    size_t snd_val_count;
+    void **rcv_ind_buf;
+    void **rcv_val_buf;
+    size_t *rcv_val_count;
+    mlsl_datatype_internal_t itype;    
+};
+
 struct mlsl_coll_param
 {
     mlsl_coll_type ctype;
@@ -67,6 +77,7 @@ struct mlsl_coll_param
     mlsl_reduction_t reduction;
     size_t root;
     mlsl_comm *comm;
+    mlsl_coll_sparse_param sparse_param;
 };
 
 

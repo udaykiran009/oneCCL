@@ -18,6 +18,7 @@ public:
         dst(dst), rank(rank)
     {
         pfields.add_available(mlsl_sched_entry_field_buf);
+        pfields.add_available(mlsl_sched_entry_field_cnt);
     }
 
     void start_derived()
@@ -49,6 +50,7 @@ public:
         switch (id)
         {
             case mlsl_sched_entry_field_buf: return &buf;
+            case mlsl_sched_entry_field_cnt: return &cnt;
             default: MLSL_ASSERTP(0);
         }
     }
