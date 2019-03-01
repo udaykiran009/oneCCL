@@ -23,7 +23,7 @@ public:
         sched_entry(sched), inout_buf(inout_buf), in_cnt(cnt), out_cnt(out_cnt), dtype(dtype),
         op(reduction_op), src(src), comm_buf(comm_buf), fn(sched->coll_attr.reduction_fn)
     {
-        MLSL_ASSERT(op != mlsl_reduction_custom || fn,
+        MLSL_ASSERT_FMT(op != mlsl_reduction_custom || fn,
             "custom reduction requires user provided callback");
         if (comm_buf == nullptr || comm_buf == inout_buf)
         {
@@ -38,7 +38,7 @@ public:
         size_t bytes = in_cnt * mlsl_datatype_get_size(dtype);
         MLSL_LOG(DEBUG, "starting RECV in RECV_REDUCE entry, src %zu, tag %lu, req %p, bytes %zu",
                  src, atl_tag, &req, bytes);
-        atl_status_t atl_status = atl_comm_recv(sched->bin->comm_ctx, comm_buf,
+        atl_status_t atl_status = atl_comm_recv(sched->bin->get_comm_ctx(), comm_buf,
                                                 bytes, src, atl_tag, &req);
 
         if (unlikely(atl_status != atl_status_success))
@@ -52,13 +52,19 @@ public:
     void update_derived()
     {
         int req_status;
-        atl_comm_check(sched->bin->comm_ctx, &req_status, &req);
+        atl_status_t atl_status = atl_comm_check(sched->bin->get_comm_ctx(), &req_status, &req);
+
+        if (unlikely(atl_status != atl_status_success))
+        {
+            MLSL_THROW("RECV_REDUCE entry failed. atl_status: %d", atl_status);
+        }
+
         if (req_status)
         {
             MLSL_LOG(DEBUG, "completed RECV in RECV_REDUCE entry, req=%p, starting REDUCE", &req);
             mlsl_status_t comp_status = mlsl_comp_reduce(comm_buf, in_cnt, inout_buf, out_cnt,
                                                          dtype, op, fn);
-            MLSL_ASSERT(comp_status == mlsl_status_success, "bad status %d", comp_status);
+            MLSL_ASSERT_FMT(comp_status == mlsl_status_success, "bad status %d", comp_status);
             status = mlsl_sched_entry_status_complete;
             MLSL_LOG(DEBUG, "completed REDUCE in RECV_REDUCE entry");
         }

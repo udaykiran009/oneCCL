@@ -15,7 +15,7 @@ out_of_order::ooo_match::ooo_match(mlsl_executor& exec, comm_id_storage& comm_id
         mlsl_sched* service_sched = build_bcast_sched();
 
         MLSL_LOG(DEBUG, "Submit persistent service schedule(s) %p", service_sched);
-        m_executor.start_sched(service_sched);
+        m_executor.start(service_sched);
     }
 }
 
@@ -76,7 +76,7 @@ void out_of_order::ooo_match::create_comm_and_run_sched(const std::string& tenso
 
 mlsl_sched* out_of_order::ooo_match::build_bcast_sched(const char* tensor_name)
 {
-    MLSL_ASSERT(m_service_comm->rank() != 0 || tensor_name != nullptr, "Only root rank can pass a valid tensor name");
+    MLSL_ASSERT_FMT(m_service_comm->rank() != 0 || tensor_name != nullptr, "Only root rank can pass a valid tensor name");
 
     bool temp_sched = tensor_name != nullptr;
     mlsl_coll_param bcast_param{};
@@ -86,8 +86,6 @@ mlsl_sched* out_of_order::ooo_match::build_bcast_sched(const char* tensor_name)
     auto bcast_sched = new mlsl_sched(bcast_param);
 
     MLSL_LOG(DEBUG, "Building service sched %p, req %p", bcast_sched, bcast_sched->req);
-
-    mlsl_get_priority_range(nullptr, &bcast_sched->coll_attr.priority);
 
     /* TODO: remove work with partial schedule, use original bcast_sched for execution */
     bcast_sched->partial_scheds.emplace_back(std::make_shared<mlsl_sched>(bcast_param));

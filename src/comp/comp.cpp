@@ -82,3 +82,21 @@ mlsl_status_t mlsl_comp_reduce(const void *in_buf, size_t in_count, void *inout_
     }
     return mlsl_status_success;
 }
+
+const char *mlsl_reduction_to_str(mlsl_reduction_t type)
+{
+    switch (type) {
+        case mlsl_reduction_sum:
+            return "SUM";
+        case mlsl_reduction_prod:
+            return "PROD";
+        case mlsl_reduction_min:
+            return "MIN";
+        case mlsl_reduction_max:
+            return "MAX";
+        case mlsl_reduction_custom:
+            return "CUSTOM";
+        default:
+            return "UNKNOWN";
+    }
+}

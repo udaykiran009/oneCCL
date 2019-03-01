@@ -44,11 +44,10 @@ const char* mlsl_coll_type_to_str(mlsl_coll_type type)
 }
 
 static mlsl_request* mlsl_coll_create(const mlsl_coll_attr_t* attributes,
-                                      mlsl_sched_cache_key& key,
+                                      mlsl_sched_key& key,
                                       mlsl_coll_param& coll_param)
 {
     mlsl_sched* sched = nullptr;
-    mlsl_sched_cache_entry* entry = nullptr;
     mlsl_comm* tensor_comm = nullptr;
     bool sched_to_be_posponed = false;
     bool should_commit = false;
@@ -58,12 +57,13 @@ static mlsl_request* mlsl_coll_create(const mlsl_coll_attr_t* attributes,
 
     MLSL_THROW_IF_NOT((coll_param.ctype == mlsl_coll_allreduce) ||
                       !(attr->prologue_fn || attr->epilogue_fn || attr->reduction_fn),
-                      "Incorrect input");
+                      "incorrect input");
 
     if (attr->match_id && env_data.out_of_order_support)
     {
         MLSL_THROW_IF_NOT(strlen(attr->match_id) <= MLSL_MATCH_ID_MAX_LEN,
                           "match_id length exceeds limit %d", MLSL_MATCH_ID_MAX_LEN);
+
         //todo: need to sync checking of tensor communicator and possible creation of tensor
         tensor_comm = global_data.ooo_handler->get_comm_for_tensor(attr->match_id);
         if (!tensor_comm)
@@ -79,14 +79,12 @@ static mlsl_request* mlsl_coll_create(const mlsl_coll_attr_t* attributes,
         key.reduction_fn = attr->reduction_fn;
         key.priority = attr->priority;
         key.synchronous = attr->synchronous;
-
-        if (attr->match_id)
+        if (attr->match_id && strlen(attr->match_id))
         {
-            strncpy(key.match_id, attr->match_id, MLSL_MATCH_ID_MAX_LEN - 1);
+            key.match_id.assign(attr->match_id, MLSL_MATCH_ID_MAX_LEN);
         }
 
-        mlsl_sched_cache_get_entry(global_data.sched_cache, &key, &entry);
-        sched = entry->sched;
+        sched = global_data.sched_cache->find(key);
     }
 
     if (!sched)
@@ -95,9 +93,9 @@ static mlsl_request* mlsl_coll_create(const mlsl_coll_attr_t* attributes,
         MLSL_LOG(DEBUG, "didn't find sched, create new one %p, type %s",
                  sched, mlsl_coll_type_to_str(sched->coll_param.ctype));
 
-        if (entry)
+        if (attr->to_cache)
         {
-            entry->sched = sched;
+            global_data.sched_cache->add(key, sched);
         }
 
         sched->set_coll_attr(attr);
@@ -125,7 +123,7 @@ static mlsl_request* mlsl_coll_create(const mlsl_coll_attr_t* attributes,
         }
     }
 
-    MLSL_ASSERT(!was_fused, "");
+    MLSL_ASSERT(!was_fused);
 
     if (should_commit)
     {
@@ -143,16 +141,16 @@ static mlsl_request* mlsl_coll_create(const mlsl_coll_attr_t* attributes,
     }
     else
     {
-        MLSL_LOG(INFO, "Sched %p postponed for tensor comm resolution", sched);
+        MLSL_LOG(DEBUG, "sched %p postponed for tensor comm resolution", sched);
         std::string tensor_name{attr->match_id};
         /* sched->coll_param.comm points to the user defined or global comm */
         if (sched->coll_param.comm->rank() == 0 &&
             !global_data.ooo_handler->is_bcast_in_progress(tensor_name))
         {
-            MLSL_LOG(INFO, "Root rank broadcasts tensor %s", attr->match_id);
+            MLSL_LOG(DEBUG, "root rank broadcasts tensor %s", attr->match_id);
             mlsl_sched* service_sched = global_data.ooo_handler->build_bcast_sched(
                 tensor_name.c_str());
-            global_data.executor->start_sched(service_sched);
+            global_data.executor->start(service_sched);
         }
         /* root rank already broadcasts the tensor or it is not root rank */
         global_data.ooo_handler->postpone_for_tensor(attr->match_id, sched);
@@ -328,7 +326,7 @@ mlsl_request* mlsl_sparse_allreduce_impl(const void* send_ind_buf,
     coll_param.reduction = reduction;
     coll_param.comm = communicator;
 
-    mlsl_sched_cache_key key{};
+    mlsl_sched_key key{};
     key.ctype = mlsl_coll_sparse_allreduce;
     key.buf1 = (void*) send_ind_buf;
     key.count1 = send_ind_count;
@@ -344,7 +342,7 @@ mlsl_request* mlsl_sparse_allreduce_impl(const void* send_ind_buf,
     key.comm = communicator;
 
     auto req = mlsl_coll_create(attributes, key, coll_param);
-    MLSL_LOG(INFO, "coll %s created, req %p", mlsl_coll_type_to_str(coll_param.ctype), req);
+    MLSL_LOG(DEBUG, "coll %s created, req %p", mlsl_coll_type_to_str(coll_param.ctype), req);
     return req;
 }
 
@@ -363,7 +361,7 @@ mlsl_request* mlsl_bcast_impl(void* buf,
     coll_param.root = root;
     coll_param.comm = communicator;
 
-    mlsl_sched_cache_key key{};
+    mlsl_sched_key key{};
     key.ctype = mlsl_coll_bcast;
     key.buf1 = buf;
     key.count1 = count;
@@ -372,7 +370,7 @@ mlsl_request* mlsl_bcast_impl(void* buf,
     key.comm = communicator;
 
     auto req = mlsl_coll_create(attributes, key, coll_param);
-    MLSL_LOG(INFO, "coll %s created, req %p", mlsl_coll_type_to_str(coll_param.ctype), req);
+    MLSL_LOG(DEBUG, "coll %s created, req %p", mlsl_coll_type_to_str(coll_param.ctype), req);
     return req;
 }
 
@@ -395,7 +393,7 @@ mlsl_request* mlsl_reduce_impl(const void* send_buf,
     coll_param.root = root;
     coll_param.comm = communicator;
 
-    mlsl_sched_cache_key key{};
+    mlsl_sched_key key{};
     key.ctype = mlsl_coll_reduce;
     key.buf1 = (void*) send_buf;
     key.buf2 = recv_buf;
@@ -406,7 +404,7 @@ mlsl_request* mlsl_reduce_impl(const void* send_buf,
     key.comm = communicator;
 
     auto req = mlsl_coll_create(attributes, key, coll_param);
-    MLSL_LOG(INFO, "coll %s created, req %p", mlsl_coll_type_to_str(coll_param.ctype), req);
+    MLSL_LOG(DEBUG, "coll %s created, req %p", mlsl_coll_type_to_str(coll_param.ctype), req);
     return req;
 }
 
@@ -427,7 +425,7 @@ mlsl_request* mlsl_allreduce_impl(const void* send_buf,
     coll_param.reduction = reduction;
     coll_param.comm = communicator;
 
-    mlsl_sched_cache_key key{};
+    mlsl_sched_key key{};
     key.ctype = mlsl_coll_reduce;
     key.buf1 = (void*) send_buf;
     key.buf2 = recv_buf;
@@ -437,7 +435,7 @@ mlsl_request* mlsl_allreduce_impl(const void* send_buf,
     key.comm = communicator;
 
     auto req = mlsl_coll_create(attributes, key, coll_param);
-    MLSL_LOG(INFO, "coll %s created, req %p", mlsl_coll_type_to_str(coll_param.ctype), req);
+    MLSL_LOG(DEBUG, "coll %s created, req %p", mlsl_coll_type_to_str(coll_param.ctype), req);
     return req;
 }
 
@@ -458,7 +456,7 @@ mlsl_request* mlsl_allgatherv_impl(const void* send_buf,
     coll_param.dtype = mlsl_datatype_get(dtype);
     coll_param.comm = communicator;
 
-    mlsl_sched_cache_key key{};
+    mlsl_sched_key key{};
     key.ctype = mlsl_coll_allgatherv;
     key.buf1 = (void*) send_buf;
     key.buf2 = recv_buf;
@@ -467,7 +465,7 @@ mlsl_request* mlsl_allgatherv_impl(const void* send_buf,
     key.comm = communicator;
 
     auto req = mlsl_coll_create(attributes, key, coll_param);
-    MLSL_LOG(INFO, "coll %s created, req %p", mlsl_coll_type_to_str(coll_param.ctype), req);
+    MLSL_LOG(DEBUG, "coll %s created, req %p", mlsl_coll_type_to_str(coll_param.ctype), req);
     return req;
 }
 
@@ -482,7 +480,7 @@ void mlsl_barrier_impl(mlsl_comm* communicator)
     coll_param.dtype = mlsl_dtype_internal_char;
     coll_param.comm = communicator;
 
-    mlsl_sched_cache_key key{};
+    mlsl_sched_key key{};
     key.ctype = mlsl_coll_barrier;
     key.comm = communicator;
 

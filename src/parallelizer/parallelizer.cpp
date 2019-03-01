@@ -5,8 +5,6 @@
 
 #define MLSL_MIN_PART_SIZE (2048)
 
-static size_t lifo_priority = 0;
-
 typedef struct
 {
     /* keep these 4 fields on the top of structure */
@@ -52,7 +50,7 @@ mlsl_status_t mlsl_parallelizer_prologue_get_dtype(const void* ctx, void* field_
 
 mlsl_status_t mlsl_parallelizer::process(mlsl_sched* sched)
 {
-    MLSL_ASSERT(sched, "empty sched");
+    MLSL_ASSERT(sched);
 
     mlsl_status_t status = mlsl_status_success;
     size_t part_count = 1, idx, base_count, dtype_size;
@@ -111,15 +109,6 @@ mlsl_status_t mlsl_parallelizer::process(mlsl_sched* sched)
     for (idx = 0; idx < part_count; idx++)
     {
         memcpy(&(part_scheds[idx]->coll_attr), &(sched->coll_attr), sizeof(mlsl_coll_attr));
-        if (env_data.priority_mode == mlsl_priority_lifo)
-        {
-            part_scheds[idx]->coll_attr.priority = lifo_priority;
-        }
-    }
-
-    if (env_data.priority_mode == mlsl_priority_lifo)
-    {
-        lifo_priority++;
     }
 
     switch (coll_type)
@@ -144,7 +133,7 @@ mlsl_status_t mlsl_parallelizer::process(mlsl_sched* sched)
             break;
         case mlsl_coll_allgatherv:
             recv_counts = coll_param->recv_counts;
-            MLSL_ASSERT(recv_counts, "empty recv_counts");
+            MLSL_ASSERT(recv_counts);
             counts[0] = recv_counts[0];
             offsets[0] = 0;
             for (idx = 1; idx < part_count; idx++)

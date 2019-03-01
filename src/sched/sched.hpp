@@ -16,10 +16,10 @@
 
 typedef mlsl_status_t(*mlsl_sched_finalize_fn_t) (mlsl_sched*, const void*);
 
-struct mlsl_sched_queue;
-struct mlsl_sched_queue_bin;
+class mlsl_sched_queue;
+class mlsl_sched_bin;
 struct mlsl_request;
-struct mlsl_parallelizer;
+class mlsl_parallelizer;
 class mlsl_executor;
 
 enum mlsl_sched_add_mode
@@ -61,7 +61,7 @@ struct mlsl_coll_sparse_param
     void **rcv_ind_buf;
     void **rcv_val_buf;
     size_t *rcv_val_count;
-    mlsl_datatype_internal_t itype;    
+    mlsl_datatype_internal_t itype;
 };
 
 struct mlsl_coll_param
@@ -79,7 +79,6 @@ struct mlsl_coll_param
     mlsl_comm *comm;
     mlsl_coll_sparse_param sparse_param;
 };
-
 
 //todo: sequence diagram
 //workflow:
@@ -185,7 +184,8 @@ public:
     mlsl_request* start_subsched(mlsl_sched* subsched);
 
     bool first_progress = true;
-    mlsl_sched_queue_bin *bin = nullptr;
+    mlsl_sched_bin* bin = nullptr; /* valid only during execution */
+    mlsl_sched_queue* queue = nullptr; /* cached pointer to queue, valid even after execution */
     mlsl_coll_param coll_param{};
     mlsl_coll_attr coll_attr{};
 
@@ -219,8 +219,6 @@ private:
     void alloc_req();
 };
 
-mlsl_status_t mlsl_sched_progress(mlsl_sched_queue_bin* bin,
+mlsl_status_t mlsl_sched_progress(mlsl_sched_bin* bin,
                                   size_t max_sched_count,
                                   size_t& completed_sched_count);
-
-const char *mlsl_reduction_to_str(mlsl_reduction_t type);

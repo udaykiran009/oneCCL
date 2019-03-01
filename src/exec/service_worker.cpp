@@ -54,16 +54,16 @@ size_t mlsl_service_worker::do_work()
 void mlsl_service_worker::peek_service()
 {
     size_t peek_count = 0;
-    mlsl_sched_queue_bin* bin;
+    mlsl_sched_bin* bin;
     size_t processed_count = 0;
 
     bin = service_queue->peek(peek_count);
 
     if (peek_count > 0)
     {
-        MLSL_ASSERT(bin, "empty bin");
+        MLSL_ASSERT(bin);
         mlsl_sched_progress(bin, peek_count, processed_count);
-        MLSL_ASSERT(processed_count <= peek_count, "incorrect values %zu %zu", processed_count, peek_count);
+        MLSL_ASSERT_FMT(processed_count <= peek_count, "incorrect values %zu %zu", processed_count, peek_count);
 
         //todo: visitor might be useful there
         check_persistent();
@@ -116,7 +116,8 @@ void mlsl_service_worker::erase_service_scheds(std::list<std::shared_ptr<mlsl_sc
             it->get()->partial_scheds[idx]->req = nullptr;
             if (it->get()->partial_scheds[idx]->bin)
             {
-                service_queue->erase(it->get()->partial_scheds[idx]->bin, it->get()->partial_scheds[idx].get());
+                /* TODO: commented for now, ooo module will be refactored, sched will be removed from queue in mlsl_sched_progress */
+                //service_queue->erase(it->get()->partial_scheds[idx].get());
             }
         }
         it = scheds.erase(it);

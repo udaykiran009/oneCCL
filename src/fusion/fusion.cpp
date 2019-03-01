@@ -3,14 +3,13 @@
 #include "sched/entry_factory.hpp"
 
 #include <algorithm>
-#include <type_traits>
 
 #define MLSL_FUSION_CHECK_SCHEDS_ITERS (1024)
 
 mlsl_status_t complete_user_request(const void* ctx)
 {
     mlsl_sched* sched = (mlsl_sched*) ctx;
-    MLSL_LOG(INFO, "Completing request");
+    MLSL_LOG(DEBUG, "completing request");
     sched->req->complete();
     return mlsl_status_success;
 }
@@ -88,9 +87,9 @@ mlsl_fusion_manager::mlsl_fusion_manager()
       count_threshold(env_data.fusion_count_threshold),
       buf_cache(env_data.fusion_bytes_threshold * env_data.fusion_count_threshold)
 {
-    MLSL_ASSERT(bytes_threshold >= 1, "unexpected fusion_bytes_threshold %zu",
+    MLSL_ASSERT_FMT(bytes_threshold >= 1, "unexpected fusion_bytes_threshold %zu",
                     bytes_threshold);
-    MLSL_ASSERT(count_threshold >= 1, "unexpected fusion_count_threshold %zu",
+    MLSL_ASSERT_FMT(count_threshold >= 1, "unexpected fusion_count_threshold %zu",
                     count_threshold);
 
     long cycle_usec = long(env_data.fusion_cycle_ms * 1000.0);
@@ -108,8 +107,8 @@ mlsl_fusion_manager::~mlsl_fusion_manager()
 
     check_tracked_scheds();
 
-    MLSL_ASSERT(postponed_queue.empty() && exec_queue.empty() && tracked_scheds.empty(),
-                "queues are not empty, %zu %zu %zu", postponed_queue.size(),
+    MLSL_ASSERT_FMT(postponed_queue.empty() && exec_queue.empty() && tracked_scheds.empty(),
+                    "queues are not empty, %zu %zu %zu", postponed_queue.size(),
                     exec_queue.size(), tracked_scheds.size());
 }
 
@@ -199,11 +198,9 @@ mlsl_sched* mlsl_fusion_manager::build_sched()
              sum_count, sum_bytes, exec_queue.size());
 
     mlsl_sched* sched = nullptr;
-    mlsl_sched_cache_entry* entry = nullptr;
-
+    mlsl_sched_key key{};
     if (use_cache)
     {
-        mlsl_sched_cache_key key{};
         key.ctype = mlsl_coll_allreduce;
         key.buf1 = (void*) first_sched;
         key.buf2 = (void*) first_sched->coll_param.send_buf;
@@ -213,8 +210,7 @@ mlsl_sched* mlsl_fusion_manager::build_sched()
         key.dtype = dtype->type;
         key.reduction = reduction;
         key.comm = comm;
-        mlsl_sched_cache_get_entry(global_data.sched_cache, &key, &entry);
-        sched = entry->sched;
+        sched = global_data.sched_cache->find(key);
     }
 
     stat_fused_bytes += sum_bytes;
@@ -245,8 +241,11 @@ mlsl_sched* mlsl_fusion_manager::build_sched()
         }
         sched->commit(global_data.parallelizer.get());
         sched->coll_attr.to_cache = (use_cache) ? 1 : 0;
-        if (entry)
-        { entry->sched = sched; }
+
+        if (use_cache)
+        {
+            global_data.sched_cache->add(key, sched);
+        }
     }
     else
     {
@@ -263,7 +262,7 @@ mlsl_sched* mlsl_fusion_manager::build_sched()
     size_t copies_per_last_part = copies_per_part + exec_queue_size % part_count;
     std::shared_ptr<sched_entry> e;
 
-    MLSL_ASSERT(part_count > 0, "part_count = 0");
+    MLSL_ASSERT(part_count > 0);
     MLSL_LOG(DEBUG, "part_count %zu, sum_count %zu", part_count, sum_count);
 
     for (size_t idx = 0; idx < part_count; idx++)

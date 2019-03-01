@@ -20,13 +20,12 @@ public:
     mlsl_executor(mlsl_executor&& other) = delete;
     mlsl_executor& operator= (mlsl_executor&& other) = delete;
 
-    mlsl_executor(size_t workers_count,
-                  size_t priority_count,
-                  bool service_support,
-                  int* workers_affinity = nullptr,
-                  mlsl_priority_mode priority_mode = mlsl_priority_none);
+    mlsl_executor(size_t worker_count,
+                  int* workers_affinity,
+                  bool create_service_worker);
     ~mlsl_executor();
-    void start_sched(mlsl_sched* sched);
+
+    void start(mlsl_sched* sched);
     void wait(mlsl_request* req);
     bool test(mlsl_request* req);
 
@@ -40,7 +39,6 @@ public:
 
 private:
     atl_comm_t** atl_comms = nullptr;
-
     std::vector<std::unique_ptr<mlsl_worker>> workers;
 };
 
@@ -50,9 +48,9 @@ private:
 inline void mlsl_wait_impl(mlsl_executor* exec, mlsl_request* request)
 {
     exec->wait(request);
-    MLSL_ASSERT(request->sched, "empty sched");
+    MLSL_ASSERT(request->sched);
 
-    MLSL_LOG(INFO, "req %p completed, sched %s", request,
+    MLSL_LOG(DEBUG, "req %p completed, sched %s", request,
              mlsl_coll_type_to_str(request->sched->coll_param.ctype));
 
     if (!request->sched->coll_attr.to_cache)
@@ -65,8 +63,8 @@ inline bool mlsl_test_impl(mlsl_executor* exec, mlsl_request* request)
 
     if (completed)
     {
-        MLSL_ASSERT(request->sched, "empty sched");
-        MLSL_LOG(INFO, "req %p completed, sched %s", request,
+        MLSL_ASSERT(request->sched);
+        MLSL_LOG(DEBUG, "req %p completed, sched %s", request,
                  mlsl_coll_type_to_str(request->sched->coll_param.ctype));
 
         if (!request->sched->coll_attr.to_cache)

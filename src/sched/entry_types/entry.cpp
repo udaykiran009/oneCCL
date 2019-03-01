@@ -11,10 +11,10 @@ void sched_entry::set_field_fn(mlsl_sched_entry_field_id id,
 void sched_entry::start()
 {
     MLSL_LOG(DEBUG, "starting %s entry", name());
-    MLSL_ASSERT(status == mlsl_sched_entry_status_not_started, "bad status %d", status);
+    MLSL_ASSERT_FMT(status == mlsl_sched_entry_status_not_started, "bad status %d", status);
     pfields.update();
     start_derived();
-    MLSL_ASSERT(status >= mlsl_sched_entry_status_started, "bad status %d", status);
+    MLSL_ASSERT_FMT(status >= mlsl_sched_entry_status_started, "bad status %d", status);
     if (status == mlsl_sched_entry_status_complete)
         MLSL_LOG(DEBUG, "completed %s entry", name());
     check_exec_mode();
@@ -23,9 +23,9 @@ void sched_entry::start()
 void sched_entry::update()
 {
     if (status != mlsl_sched_entry_status_started) return;
-    MLSL_ASSERT(status == mlsl_sched_entry_status_started, "bad status %d", status);
+    MLSL_ASSERT_FMT(status == mlsl_sched_entry_status_started, "bad status %d", status);
     update_derived();
-    MLSL_ASSERT(status >= mlsl_sched_entry_status_started, "bad status %d", status);
+    MLSL_ASSERT_FMT(status >= mlsl_sched_entry_status_started, "bad status %d", status);
     if (status == mlsl_sched_entry_status_complete)
         MLSL_LOG(DEBUG, "completed %s entry", name());
     check_exec_mode();

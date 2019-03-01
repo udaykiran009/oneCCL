@@ -87,13 +87,13 @@ size_t mlsl_worker::do_work()
 {
     size_t peek_count;
     size_t processed_count = 0;
-    mlsl_sched_queue_bin* bin = data_queue->peek(peek_count);
+    mlsl_sched_bin* bin = data_queue->peek(peek_count);
 
     if (peek_count)
     {
-        MLSL_ASSERT(bin, "empty bin");
+        MLSL_ASSERT(bin);
         mlsl_sched_progress(bin, peek_count, processed_count);
-        MLSL_ASSERT(processed_count <= peek_count, "incorrect values %zu %zu", processed_count, peek_count);
+        MLSL_ASSERT_FMT(processed_count <= peek_count, "incorrect values %zu %zu", processed_count, peek_count);
     }
 
     return processed_count;

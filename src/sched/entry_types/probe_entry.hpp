@@ -17,7 +17,7 @@ public:
     {
         auto atl_tag = mlsl_create_atl_tag(sched->coll_param.comm->id(), sched->sched_id, src);
         MLSL_LOG(DEBUG, "PROBE entry src %zu, tag %lu", src, atl_tag);
-        atl_status_t atl_status = atl_comm_probe(sched->bin->comm_ctx, src, atl_tag, &req);
+        atl_status_t atl_status = atl_comm_probe(sched->bin->get_comm_ctx(), src, atl_tag, &req);
 
         if (unlikely(atl_status != atl_status_success))
         {
@@ -31,7 +31,7 @@ public:
     void update_derived()
     {
         int req_status;
-        atl_comm_check(sched->bin->comm_ctx, &req_status, &req);
+        atl_comm_check(sched->bin->get_comm_ctx(), &req_status, &req);
         if (req_status)
         {
             status = mlsl_sched_entry_status_complete;

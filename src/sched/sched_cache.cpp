@@ -1,53 +1,40 @@
 #include "sched/sched_cache.hpp"
 
-mlsl_status_t mlsl_sched_cache_create(mlsl_sched_cache **cache)
+mlsl_sched* mlsl_sched_cache::find(mlsl_sched_key& key)
 {
-    mlsl_sched_cache *c = static_cast<mlsl_sched_cache*>(MLSL_CALLOC(sizeof(mlsl_sched_cache), "sched_cache"));
-    mlsl_fastlock_init(&c->lock);
-    *cache = c;
-    return mlsl_status_success;
-}
-
-mlsl_status_t mlsl_sched_cache_free(mlsl_sched_cache *cache)
-{
-    mlsl_sched_cache_free_all(cache);
-    mlsl_fastlock_init(&cache->lock);
-    MLSL_FREE(cache);
-    return mlsl_status_success;
-}
-
-mlsl_status_t mlsl_sched_cache_get_entry(mlsl_sched_cache *cache, mlsl_sched_cache_key *key, mlsl_sched_cache_entry **entry)
-{
-    mlsl_fastlock_acquire(&cache->lock);
-
-    mlsl_sched_cache_entry *e = NULL;
-    HASH_FIND(hh, cache->head, key, sizeof(mlsl_sched_cache_key), e);
-    if (!e)
+    std::lock_guard<std::mutex> lock{guard};
+    auto it = table.find(key);
+    if (it != table.end())
     {
-        e = static_cast<mlsl_sched_cache_entry*>(MLSL_CALLOC(sizeof(mlsl_sched_cache_entry), "sched_cache_entry"));
-        memcpy(&(e->key), key, sizeof(mlsl_sched_cache_key));
-        e->sched = NULL;
-        HASH_ADD(hh, cache->head, key, sizeof(mlsl_sched_cache_key), e);
-        MLSL_LOG(DEBUG, "didn't find sched in cache, add entry with NULL sched into cache");
+        MLSL_LOG(INFO, "found sched in cache, %p", it->second);
+        return it->second;
     }
     else
-        MLSL_LOG(DEBUG, "found sched in cache, %p", e->sched);
-    *entry = e;
-
-    mlsl_fastlock_release(&cache->lock);
-
-    return mlsl_status_success;
+    {
+        MLSL_LOG(INFO, "didn't find sched in cache");
+        return nullptr;
+    }
 }
 
-mlsl_status_t mlsl_sched_cache_free_all(mlsl_sched_cache *cache)
+void mlsl_sched_cache::add(mlsl_sched_key& key, mlsl_sched* sched)
 {
-    mlsl_sched_cache_entry *current_entry, *tmp_entry;
+    std::lock_guard<std::mutex> lock{guard};
+    auto emplace_result = table.emplace(key, sched);
+    MLSL_ASSERT(emplace_result.second);
 
-    HASH_ITER(hh, cache->head, current_entry, tmp_entry)
+    MLSL_LOG(INFO, "size %zu, bucket_count %zu, load_factor %f, max_load_factor %f",
+        table.size(), table.bucket_count(), table.load_factor(), table.max_load_factor());
+}
+
+void mlsl_sched_cache::remove_all()
+{
+    std::lock_guard<std::mutex> lock{guard};
+    for (auto it = table.begin(); it != table.end(); ++it)
     {
-        HASH_DEL(cache->head, current_entry);
-        delete current_entry->sched;
+        mlsl_sched* sched = it->second;
+        MLSL_ASSERT(sched);
+        MLSL_LOG(INFO, "remove sched %p from cache", sched);
+        delete sched;
     }
-
-    return mlsl_status_success;
+    table.clear();
 }

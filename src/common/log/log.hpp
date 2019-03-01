@@ -119,22 +119,25 @@ do                                                                              
 /**
  * Raises failed assertion if provided condition is not true. Works in debug build only
  */
-#define MLSL_ASSERT(cond, fmt, ...)                                               \
-do                                                                                \
-{                                                                                 \
-    if (!(cond))                                                                  \
-    {                                                                             \
-        fprintf(stderr, "(%ld): ASSERT FAILED '%s'\n", GET_TID(), #cond);         \
-        assert(0);                                                                \
-    }                                                                             \
+#define MLSL_ASSERT_FMT(cond, fmt, ...)                                                 \
+do                                                                                      \
+{                                                                                       \
+    if (!(cond))                                                                        \
+    {                                                                                   \
+        fprintf(stderr, "(%ld): %s:%s:%d: ASSERT FAILED '%s' " fmt "\n",                \
+                GET_TID(), __FILENAME__, __FUNCTION__, __LINE__, #cond, ##__VA_ARGS__); \
+        assert(0);                                                                      \
+    }                                                                                   \
 } while(0)
 
+#define MLSL_ASSERT(cond) MLSL_ASSERT_FMT(cond, "")
 #else
 
 /**
  * Raises failed assertion if provided condition is not true. Works in debug build only
  */
-#define MLSL_ASSERT(cond, fmt, ...) MLSL_UNUSED(cond)
+#define MLSL_ASSERT_FMT(cond, fmt, ...) MLSL_UNUSED(cond)
+#define MLSL_ASSERT(cond, ...) MLSL_UNUSED(cond)
 
 #endif
 

@@ -23,7 +23,7 @@ public:
         auto atl_tag = mlsl_create_atl_tag(sched->coll_param.comm->id(), sched->sched_id, src);
         size_t bytes = cnt * mlsl_datatype_get_size(dtype);
         MLSL_LOG(DEBUG, "RECV entry src %zu, tag %lu, req %p, bytes %zu", src, atl_tag, &req, bytes);
-        atl_status_t atl_status = atl_comm_recv(sched->bin->comm_ctx, buf,
+        atl_status_t atl_status = atl_comm_recv(sched->bin->get_comm_ctx(), buf,
                                                 bytes, src, atl_tag, &req);
         if (unlikely(atl_status != atl_status_success))
         {
@@ -36,11 +36,17 @@ public:
     void update_derived()
     {
         int req_status;
-        atl_comm_check(sched->bin->comm_ctx, &req_status, &req);
+        atl_status_t atl_status = atl_comm_check(sched->bin->get_comm_ctx(), &req_status, &req);
+
+        if (unlikely(atl_status != atl_status_success))
+        {
+            MLSL_THROW("RECV entry failed. atl_status: %d", atl_status);
+        }
+
         if (req_status)
             status = mlsl_sched_entry_status_complete;
     }
-    
+
     void* get_field_ptr(mlsl_sched_entry_field_id id)
     {
         switch (id)

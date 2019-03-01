@@ -27,7 +27,7 @@ public:
     void start_derived()
     {
         fn(in_buf, in_cnt, in_dtype->type, out_buf, &out_cnt, out_dtype->type);
-        MLSL_ASSERT(expected_out_cnt == out_cnt, "incorrect values %zu %zu", expected_out_cnt, out_cnt);
+        MLSL_ASSERT_FMT(expected_out_cnt == out_cnt, "incorrect values %zu %zu", expected_out_cnt, out_cnt);
         status = mlsl_sched_entry_status_complete;
     }
 

@@ -21,7 +21,7 @@ public:
     void start_derived()
     {
         auto comp_status = mlsl_comp_copy(in_buf, out_buf, cnt, dtype);
-        MLSL_ASSERT(comp_status == mlsl_status_success, "bad status %d", comp_status);
+        MLSL_ASSERT_FMT(comp_status == mlsl_status_success, "bad status %d", comp_status);
         status = mlsl_sched_entry_status_complete;
     }
 

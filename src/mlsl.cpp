@@ -9,7 +9,8 @@ mlsl_status_t mlsl_init()
         mlsl_env_parse();
         mlsl_env_print();
         mlsl_datatype_init();
-        mlsl_sched_cache_create(&global_data.sched_cache);
+
+        global_data.sched_cache = std::unique_ptr<mlsl_sched_cache>(new mlsl_sched_cache());
         global_data.parallelizer = std::unique_ptr<mlsl_parallelizer>(new mlsl_parallelizer(env_data.worker_count));
 
         if (env_data.enable_fusion)
@@ -18,14 +19,10 @@ mlsl_status_t mlsl_init()
                 std::unique_ptr<mlsl_fusion_manager>(new mlsl_fusion_manager());
         }
 
-        size_t min_priority, max_priority;
-        mlsl_get_priority_range(&min_priority, &max_priority);
         global_data.executor = std::unique_ptr<mlsl_executor>(new mlsl_executor(env_data.worker_count,
-                                                                                max_priority - min_priority + 1,
-                                                                                env_data.out_of_order_support != 0 ||
-                                                                                env_data.enable_fusion != 0,
                                                                                 env_data.worker_affinity,
-                                                                                env_data.priority_mode));
+                                                                                env_data.out_of_order_support != 0 ||
+                                                                                env_data.enable_fusion != 0));
 
         global_data.comm_ids = std::unique_ptr<comm_id_storage>(new comm_id_storage(mlsl_comm::max_comm_count));
 
@@ -52,11 +49,7 @@ mlsl_status_t mlsl_finalize()
 {
     try
     {
-        if (global_data.sched_cache)
-        {
-            mlsl_sched_cache_free(global_data.sched_cache);
-        }
-
+        global_data.sched_cache.reset();
         global_data.ooo_handler.reset();
         global_data.executor.reset();
         global_data.fusion_manager.reset();
@@ -121,7 +114,7 @@ mlsl_status_t MLSL_API mlsl_test(mlsl_request_t req,
 mlsl_status_t mlsl_comm_create(mlsl_comm_t* comm_t,
                                mlsl_comm_attr_t* comm_attr)
 {
-    MLSL_ASSERT(comm_t, "comm_t nullptr");
+    MLSL_ASSERT(comm_t);
     try
     {
         mlsl_comm* comm = nullptr;
@@ -145,7 +138,7 @@ mlsl_status_t mlsl_comm_create(mlsl_comm_t* comm_t,
 
 mlsl_status_t mlsl_comm_free(mlsl_comm_t comm_t)
 {
-    MLSL_ASSERT(comm_t, "comm_t nullptr");
+    MLSL_ASSERT(comm_t);
     MLSL_LOG(DEBUG, "Free comm %p", comm_t);
     try
     {
@@ -186,18 +179,6 @@ mlsl_status_t MLSL_API mlsl_get_comm_size(mlsl_comm_t comm_t,
         return mlsl_status_success;
     }
     COMMON_CATCH_BLOCK()
-}
-
-mlsl_status_t MLSL_API mlsl_get_priority_range(size_t* min_priority,
-                                               size_t* max_priority)
-{
-    if (min_priority)
-    { *min_priority = 0; }
-    if (max_priority)
-    { *max_priority = (MLSL_SCHED_QUEUE_MAX_BINS - 1); }
-    if (min_priority && max_priority)
-        MLSL_ASSERT(*min_priority <= *max_priority, "");
-    return mlsl_status_success;
 }
 
 mlsl_status_t MLSL_API mlsl_bcast(

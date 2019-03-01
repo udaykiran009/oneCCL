@@ -2,67 +2,86 @@
 
 #include "sched/sched.hpp"
 
-#include <list>
+#include <deque>
+#include <unordered_map>
 
-#define MLSL_SCHED_QUEUE_MAX_BINS (64)
+#define MLSL_SCHED_QUEUE_INITIAL_BUCKET_COUNT (1024)
 
-struct mlsl_sched_queue_bin
+using sched_list_t = std::deque<mlsl_sched*>;
+using sched_bin_list_t = std::unordered_map<size_t, mlsl_sched_bin>;
+
+/* ATL comm is limited resource, each priority bucket consumes single ATL comm and uses it for all bins in bucket */
+#define MLSL_PRIORITY_BUCKET_COUNT (4)
+
+/* the size of priority bucket, each bin in bucket use the same ATL comm although bins have different priorities */
+#define MLSL_PRIORITY_BUCKET_SIZE (8)
+
+class mlsl_sched_bin
 {
-    mlsl_sched_queue *queue = nullptr;  //!< pointer to the queue which owns the bin
-    atl_comm_t *comm_ctx = nullptr;     //!< ATL communication context
-    std::list<mlsl_sched*> elems{};     //!< list of schedules
-    size_t priority {};                 //!< current priority
+public:
+    mlsl_sched_bin(mlsl_sched_queue* queue, atl_comm_t* comm_ctx, size_t priority)
+        : queue(queue),
+          comm_ctx(comm_ctx),
+          priority(priority)
+    {
+        MLSL_ASSERT(queue);
+        MLSL_ASSERT(comm_ctx);
+    }
+
+    mlsl_sched_bin(const mlsl_sched_bin& other) = default;
+
+    ~mlsl_sched_bin()
+    {
+        MLSL_ASSERT_FMT(scheds.empty(),
+            "unexpected scheds size %zu, expected 0",
+            scheds.size());
+    }
+
+    mlsl_sched_bin() = delete;
+    mlsl_sched_bin& operator= (const mlsl_sched_bin& other) = delete;
+
+    size_t size() { return scheds.size(); }
+    size_t get_priority() { return priority; }
+    atl_comm_t* get_comm_ctx() { return comm_ctx; }
+    sched_list_t& get_scheds() { return scheds; }
+    mlsl_sched_queue* get_queue() { return queue; }
+
+    void add(mlsl_sched* sched);
+    sched_list_t::iterator erase(sched_list_t::iterator sched_it);
+
+private:
+    mlsl_sched_queue* queue = nullptr; //!< pointer to the queue which owns the bin
+    atl_comm_t* comm_ctx = nullptr;    //!< ATL communication context
+    sched_list_t scheds{};             //!< list of schedules
+    size_t priority{};                 //!< the single priority for all elems
 };
 
 class mlsl_sched_queue
 {
 public:
-    mlsl_sched_queue() = delete;
-    mlsl_sched_queue(size_t capacity, atl_comm_t **comm_ctxs);
+    mlsl_sched_queue(std::vector<atl_comm_t*> comm_ctxs);
     ~mlsl_sched_queue();
 
+    mlsl_sched_queue() = delete;
+    mlsl_sched_queue(const mlsl_sched_queue& other) = delete;
+    mlsl_sched_queue& operator= (const mlsl_sched_queue& other) = delete;
+
     void add(mlsl_sched* sched, size_t priority);
-
-    //todo: this method might be removed in scope of
-    /**
-     * Remove @b sched by its value from the list of schedules stored in @b bin
-     * @note: this method will remove all scheds with identical value (address of the sched in that case)
-     * @param bin holds a list of @ref mlsl_sched
-     * @param sched entry in a list to be removed
-     */
-    void erase(mlsl_sched_queue_bin* bin, mlsl_sched* sched);
-
-    /**
-     * Remove @b it from the list of schedules stored in @b bin and returns iterator to the next schedule
-     * @param bin holds a list of @ref mlsl_sched
-     * @param it an iterator that points to the particular schedule in @b bin->elems
-     * @return iterator to the next sched in @b bin->elems
-     */
-    std::list<mlsl_sched*>::iterator erase(mlsl_sched_queue_bin* bin, std::list<mlsl_sched*>::iterator it);
+    sched_list_t::iterator erase(sched_list_t::iterator sched_it);
 
     /**
      * Retrieve a pointer to the bin with the highest priority and number of its elements
-     * @param count[out] number of elements in bin. May have a zero if the queue has no bins with elements
+     * @param bin_size[out] the current number of elements in bin. May have a zero if the queue has no bins with elements
      * @return a pointer to the bin with the highest priority or nullptr if there is no bins with content
      */
-    mlsl_sched_queue_bin* peek(size_t& count);
-
-    /**
-     * A vector of size @ref max_bins, holds bins arranged by max_priority % max_bins
-     */
-    std::vector<mlsl_sched_queue_bin> bins;
+    mlsl_sched_bin* peek(size_t& bin_size);
 
 private:
 
-    /**
-     * Updates @ref max_priority when some bin is completed. Iterates through the bins starting from the previously
-     * estimated @ref max_prioirity, finds the next non empty bin and saves its priority in @ref max_priority
-     */
-    void update_priority_on_erase();
-
-    size_t used_bins {};       //!< Number of non empty bins
-    size_t max_priority {};    //!< Maximum priority
-    const size_t max_bins {};  //!< Maximum number of bins
-
-    mlsl_fastlock_t lock;
+    /* TODO: spinlock */
+    std::mutex guard{};
+    std::vector<atl_comm_t*> comm_ctxs;
+    sched_bin_list_t bins { MLSL_SCHED_QUEUE_INITIAL_BUCKET_COUNT };
+    size_t max_priority = 0;
+    mlsl_sched_bin* cached_max_priority_bin = nullptr;
 };

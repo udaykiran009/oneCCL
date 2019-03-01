@@ -35,13 +35,13 @@ mlsl_status_t mlsl_datatype_init()
 size_t mlsl_datatype_get_size(mlsl_datatype_internal_t dtype)
 {
     MLSL_THROW_IF_NOT(dtype, "empty dtype");
-    MLSL_ASSERT(dtype->size > 0, "");
+    MLSL_ASSERT(dtype->size > 0);
     return dtype->size;
 }
 
 const char* mlsl_datatype_get_name(mlsl_datatype_internal_t dtype)
 {
-    MLSL_ASSERT(dtype, "");
+    MLSL_ASSERT(dtype);
     return dtype->name;
 }
 

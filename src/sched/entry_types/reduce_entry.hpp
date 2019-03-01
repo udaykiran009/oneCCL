@@ -27,7 +27,7 @@ public:
     {
         mlsl_status_t comp_status = mlsl_comp_reduce(in_buf, in_cnt, inout_buf, out_cnt,
                                                      dtype, op, fn);
-        MLSL_ASSERT(comp_status == mlsl_status_success, "bad status %d", comp_status);
+        MLSL_ASSERT_FMT(comp_status == mlsl_status_success, "bad status %d", comp_status);
         status = mlsl_sched_entry_status_complete;
     }
 

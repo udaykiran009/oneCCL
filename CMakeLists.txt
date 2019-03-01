@@ -17,7 +17,7 @@ check_compiler_version()
 #set default build types.
 #Available build types are: Debug, Release, RelWithDebInfo and MinSizeRel
 if (NOT CMAKE_BUILD_TYPE)
-    set(CMAKE_BUILD_TYPE "Release")
+    set(CMAKE_BUILD_TYPE "Debug")
 endif()
 
 #show build info

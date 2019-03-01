@@ -118,15 +118,6 @@ MLSL_API size_t communicator::size()
     return comm_impl->size();
 }
 
-std::pair<size_t, size_t> MLSL_API communicator::priority_range()
-{
-    size_t min_priority = 0;
-    size_t max_priority = 0;
-    mlsl_get_priority_range(&min_priority, &max_priority);
-
-    return std::make_pair(min_priority, max_priority);
-}
-
 std::shared_ptr<mlsl::request> MLSL_API communicator::bcast(void* buf,
                                                             size_t count,
                                                             mlsl::data_type dtype,

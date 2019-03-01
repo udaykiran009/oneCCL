@@ -12,6 +12,8 @@
 #include <stdio.h>
 #include <string.h>
 
+static size_t lifo_priority = 0;
+
 void mlsl_sched::alloc_req()
 {
     req = new mlsl_request();
@@ -58,7 +60,7 @@ mlsl_sched::~mlsl_sched()
         {
             MLSL_LOG(ERROR, "memory list is not empty");
         }
-        MLSL_ASSERT(memory.mr_list.empty(), "");
+        MLSL_ASSERT(memory.mr_list.empty());
     }
 
     free_buffers();
@@ -73,15 +75,8 @@ size_t mlsl_sched::get_priority()
             priority = 0;
             break;
         case mlsl_priority_direct:
-            if (coll_param.ctype == mlsl_coll_barrier)
-                priority = (MLSL_SCHED_QUEUE_MAX_BINS - 1);
-            else
-                priority = coll_attr.priority;
-            MLSL_ASSERT(priority >= 0 && priority < MLSL_SCHED_QUEUE_MAX_BINS, "");
-            break;
         case mlsl_priority_lifo:
             priority = coll_attr.priority;
-            MLSL_ASSERT(priority >= 0, "");
             break;
         default:
             MLSL_FATAL("unexpected priority_mode %d", env_data.priority_mode);
@@ -90,24 +85,6 @@ size_t mlsl_sched::get_priority()
 
     MLSL_LOG(DEBUG, "sched %p, prio %zu", this, priority);
     return priority;
-}
-
-const char *mlsl_reduction_to_str(mlsl_reduction_t type)
-{
-    switch (type) {
-        case mlsl_reduction_sum:
-            return "SUM";
-        case mlsl_reduction_prod:
-            return "PROD";
-        case mlsl_reduction_min:
-            return "MIN";
-        case mlsl_reduction_max:
-            return "MAX";
-        case mlsl_reduction_custom:
-            return "CUSTOM";
-        default:
-            return "UNKNOWN";
-    }
 }
 
 /* Posts or performs any NOT_STARTED operations in the given schedule that are
@@ -145,7 +122,7 @@ void mlsl_sched::do_progress()
     }
 }
 
-mlsl_status_t mlsl_sched_progress(mlsl_sched_queue_bin* bin,
+mlsl_status_t mlsl_sched_progress(mlsl_sched_bin* bin,
                                   size_t max_sched_count,
                                   size_t& completed_sched_count)
 {
@@ -154,16 +131,18 @@ mlsl_status_t mlsl_sched_progress(mlsl_sched_queue_bin* bin,
 
     completed_sched_count = 0;
 
-    MLSL_LOG(TRACE, "bin %p, elems count %zu, max scheds %zu",
-             bin, bin->elems.size(), max_sched_count);
+    MLSL_LOG(TRACE, "bin %p, sched_count %zu, max_scheds %zu",
+             bin, bin->size(), max_sched_count);
 
     /* ensure communication progress */
     atl_status_t atl_status __attribute__ ((unused));
-    atl_status = atl_comm_poll(bin->comm_ctx);
-    MLSL_ASSERT(atl_status == atl_status_success, "bad status %d", atl_status);
+    atl_status = atl_comm_poll(bin->get_comm_ctx());
+    MLSL_ASSERT_FMT(atl_status == atl_status_success, "bad status %d", atl_status);
 
     // iterate through the scheds store in the bin
-    for (auto it = bin->elems.begin(); it != bin->elems.end(); )
+    auto last_it = bin->get_scheds().end();
+    auto sched_queue = bin->get_queue();
+    for (auto it = bin->get_scheds().begin(); it != last_it; )
     {
         mlsl_sched* sched = *it;
         if (sched->first_progress)
@@ -212,16 +191,17 @@ mlsl_status_t mlsl_sched_progress(mlsl_sched_queue_bin* bin,
             // the last entry in the schedule has been completed, clean up the schedule and complete its request
             MLSL_LOG(DEBUG, "completing and dequeuing: sched %p %s, req %p", sched, mlsl_coll_type_to_str(sched->coll_param.ctype), sched->req);
 
-            // remove completed schedule from the bin. Iterator @b it will point to the next elem in bin->elems
-            it = bin->queue->erase(bin, it);
-            MLSL_LOG(DEBUG, "Completing request %p", sched->req);
+            // remove completed schedule from the bin. Iterator @b it will point to the next elem in bin->scheds
+            it = sched_queue->erase(it);
+
+            MLSL_LOG(DEBUG, "completing request %p", sched->req);
             sched->req->complete();
 
             ++completed_sched_count;
         }
         else
         {
-            // this schedule is not completed yet, switch to the next sched in bin elems list
+            // this schedule is not completed yet, switch to the next sched in bin scheds list
             // progression of unfinished schedules will be continued in the next call of @ref mlsl_sched_progress
             ++it;
         }
@@ -240,7 +220,16 @@ mlsl_status_t mlsl_sched_progress(mlsl_sched_queue_bin* bin,
 void mlsl_sched::commit(mlsl_parallelizer* parallelizer)
 {
     update_id();
-    parallelizer->process(this);
+
+    if (env_data.priority_mode == mlsl_priority_lifo)
+    {
+        coll_attr.priority = lifo_priority;
+        lifo_priority++;
+    }
+
+    if (parallelizer)
+        parallelizer->process(this);
+
     MLSL_LOG(DEBUG, "sched %p, num_entries %zu, number %u, req %p, part_count %zu",
              this, entries.size(), sched_id, req, partial_scheds.size());
 }
@@ -248,15 +237,16 @@ void mlsl_sched::commit(mlsl_parallelizer* parallelizer)
 mlsl_request* mlsl_sched::start(mlsl_executor* exec)
 {
     /* sanity check the schedule */
-    MLSL_ASSERT(start_idx == 0, "");
-    MLSL_ASSERT(req, "");
-    MLSL_ASSERT(coll_param.comm, "");
+    MLSL_ASSERT(start_idx == 0);
+    MLSL_ASSERT(req);
+    MLSL_ASSERT(coll_param.comm);
 
-    MLSL_LOG(DEBUG, "starting schedule %p, type %s", this, mlsl_coll_type_to_str(coll_param.ctype));
+    MLSL_LOG(DEBUG, "starting schedule %p, type %s",
+        this, mlsl_coll_type_to_str(coll_param.ctype));
 
     prepare_partial_scheds(exec->proc_idx == 0);
 
-    exec->start_sched(this);
+    exec->start(this);
 
     return req;
 }
@@ -354,7 +344,7 @@ void mlsl_sched::sync_partial_scheds()
 
 void mlsl_sched::set_coll_attr(const mlsl_coll_attr_t *attr)
 {
-    MLSL_ASSERT(attr, "empty attr");
+    MLSL_ASSERT(attr);
     coll_attr.prologue_fn = attr->prologue_fn;
     coll_attr.epilogue_fn = attr->epilogue_fn;
     coll_attr.reduction_fn = attr->reduction_fn;
@@ -417,6 +407,6 @@ mlsl_request* mlsl_sched::start_subsched(mlsl_sched* subsched)
     subsched->sched_id = sched_id;
     subsched->reset();
     subsched->dump("subsched");
-    bin->queue->add(subsched, get_priority());
+    queue->add(subsched, subsched->get_priority());
     return subsched->req;
 }

@@ -71,7 +71,7 @@ mlsl_status_t mlsl_coll_build_rabenseifner_allreduce(mlsl_sched *sched, const vo
         disps = static_cast<int*>(MLSL_MALLOC(pof2 * sizeof(int), "displacements"));
 
         /* the cnts calculations assume this */
-        MLSL_ASSERT(count >= static_cast<size_t>(pof2), "count %zu, pof2 %d", count, pof2);
+        MLSL_ASSERT_FMT(count >= static_cast<size_t>(pof2), "count %zu, pof2 %d", count, pof2);
 
         for (i = 0; i < (pof2 - 1); i++)
             cnts[i] = count / pof2;
@@ -110,7 +110,7 @@ mlsl_status_t mlsl_coll_build_rabenseifner_allreduce(mlsl_sched *sched, const vo
             if (buf1 != buf2 && ((buf1 + send_cnt * dtype_size <= buf2) || (buf2 + recv_cnt * dtype_size <= buf1)))
                 can_use_recv_reduce = 1;
 
-            MLSL_ASSERT(can_use_recv_reduce, "");
+            MLSL_ASSERT(can_use_recv_reduce);
 
             if (can_use_recv_reduce) {
                 entry_factory::make_recv_reduce_entry(sched,

@@ -7,7 +7,3 @@ Reference: https://github.com/pmodels/mpich/blob/master/COPYRIGHT
 OFI - framework focused on exporting fabric communication services to applications
 License: BSD
 Reference: https://github.com/ofiwg/libfabric/blob/master/COPYING
-
-uthash - hash table for C structures
-License: BSD
-Reference: https://troydhanson.github.io/uthash/license.html

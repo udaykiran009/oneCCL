@@ -107,7 +107,7 @@ private:
                                                         coll_sched->coll_param.dtype,
                                                         coll_sched->coll_param.reduction);
 
-                MLSL_ASSERT(result == mlsl_status_success, "bad result %d", result);
+                MLSL_ASSERT_FMT(result == mlsl_status_success, "bad result %d", result);
 
                 break;
             }

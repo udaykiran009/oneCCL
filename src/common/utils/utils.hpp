@@ -15,11 +15,11 @@
 
 /* common */
 
-#define MLSL_CALL(expr)                              \
-  do {                                               \
-        status = expr;                               \
-        MLSL_ASSERT(status == mlsl_status_success,   \
-            "bad status %d", status);                \
+#define MLSL_CALL(expr)                                \
+  do {                                                 \
+        status = expr;                                 \
+        MLSL_ASSERT_FMT(status == mlsl_status_success, \
+            "bad status %d", status);                  \
   } while (0)
 
 #define unlikely(x_) __builtin_expect(!!(x_), 0)

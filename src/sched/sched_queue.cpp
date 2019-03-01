@@ -1,113 +1,146 @@
 #include "sched/sched_queue.hpp"
 #include "common/utils/utils.hpp"
 
-
-mlsl_sched_queue::mlsl_sched_queue(size_t capacity, atl_comm_t **comm_ctxs)
-    : bins(capacity), max_bins(capacity)
+void mlsl_sched_bin::add(mlsl_sched* sched)
 {
-    MLSL_ASSERT(max_bins <= MLSL_SCHED_QUEUE_MAX_BINS, "");
-    mlsl_fastlock_init(&lock);
-
-    for (size_t idx = 0; idx < max_bins; idx++)
+    if (env_data.priority_mode != mlsl_priority_none)
     {
-        bins[idx].queue = this;
-        bins[idx].comm_ctx = comm_ctxs[idx];
-        MLSL_LOG(DEBUG, "comm_ctxs[%zu]: %p", idx, comm_ctxs[idx]);
+        MLSL_ASSERT_FMT(sched->coll_attr.priority == priority,
+            "unexpected sched priority %zu, expected %zu",
+            sched->coll_attr.priority, priority);
     }
-    MLSL_LOG(INFO, "used_bins %zu max_prio %zu", used_bins, max_priority);
+    scheds.emplace_back(sched);
+}
+
+sched_list_t::iterator mlsl_sched_bin::erase(sched_list_t::iterator sched_it)
+{
+    (*sched_it)->bin = nullptr;
+    sched_list_t::iterator next_sched_it = scheds.erase(sched_it);
+    return next_sched_it;
+}
+
+mlsl_sched_queue::mlsl_sched_queue(std::vector<atl_comm_t*> comm_ctxs)
+    : comm_ctxs(comm_ctxs)
+{
+    MLSL_LOG(DEBUG, "created sched_queue, comm_ctxs count %zu", comm_ctxs.size());
+
+    if (env_data.priority_mode != mlsl_priority_none)
+    {
+        MLSL_ASSERT_FMT(comm_ctxs.size() == MLSL_PRIORITY_BUCKET_COUNT,
+            "unexpected comm_cxt count %zu, expected %d",
+            comm_ctxs.size(), MLSL_PRIORITY_BUCKET_COUNT);
+    }
+    else
+        MLSL_ASSERT(!comm_ctxs.empty());
 }
 
 mlsl_sched_queue::~mlsl_sched_queue()
 {
-    mlsl_fastlock_destroy(&lock);
-    //todo: MLSL_ASSERT throws an exception which is unacceptable in destructors
-    //need to create another macro to handle errors via e.g. exit()
-    assert(used_bins == 0);
-    assert(max_priority == 0);
+    MLSL_ASSERT_FMT(bins.empty(),
+        "unexpected bins size %zu, expected 0",
+        bins.size());
+
+    MLSL_ASSERT_FMT(max_priority == 0,
+        "unexpected max_priority %zu, expected 0",
+        max_priority);
+
+    MLSL_ASSERT(!cached_max_priority_bin);
 }
 
 void mlsl_sched_queue::add(mlsl_sched* sched, size_t priority)
 {
-    mlsl_fastlock_acquire(&lock);
-    mlsl_sched_queue_bin *bin = &(bins[priority % max_bins]);
-    if (bin->elems.empty())
+    if (env_data.priority_mode != mlsl_priority_none)
     {
-        MLSL_ASSERT(bin->priority == 0, "");
-        bin->priority = priority;
-        ++used_bins;
+        if (sched->coll_param.ctype == mlsl_coll_barrier)
+        {
+            priority = max_priority;
+            sched->coll_attr.priority = priority;
+        }
     }
 
-    bin->elems.push_back(sched);
+    std::lock_guard<std::mutex> lock{guard};
+
+    MLSL_LOG(DEBUG, "sched %p, priority %zu", sched, priority);
+
+    mlsl_sched_bin* bin = nullptr;
+    sched_bin_list_t::iterator it = bins.find(priority);
+    if (it != bins.end())
+    {
+        it->second.add(sched);
+        bin = &(it->second);
+        MLSL_LOG(DEBUG, "found bin %p", bin);
+    }
+    else
+    {
+        atl_comm_t* comm_ctx = nullptr;
+        if (env_data.priority_mode == mlsl_priority_none)
+            comm_ctx = comm_ctxs[0];
+        else
+        {
+            size_t comm_idx = (priority / MLSL_PRIORITY_BUCKET_SIZE) % MLSL_PRIORITY_BUCKET_COUNT;
+            comm_ctx = comm_ctxs[comm_idx];
+            MLSL_LOG(DEBUG, "priority %zu, comm_idx %zu", priority, comm_idx);
+        }
+
+        auto emplace_result = bins.emplace(priority, mlsl_sched_bin{this, comm_ctx, priority});
+        MLSL_ASSERT(emplace_result.second);
+        bin = &(emplace_result.first->second);
+        bin->add(sched);
+        if (priority >= max_priority)
+        {
+            max_priority = priority;
+            cached_max_priority_bin = bin;
+        }
+        MLSL_LOG(DEBUG, "didn't find bin, emplaced new one, max_priority %zu", max_priority);
+    }
+    MLSL_ASSERT(bin);
+
     sched->bin = bin;
-    max_priority = std::max(max_priority, priority);
-    mlsl_fastlock_release(&lock);
+    sched->queue = this;
 }
 
-void mlsl_sched_queue::erase(mlsl_sched_queue_bin* bin, mlsl_sched* sched)
+sched_list_t::iterator mlsl_sched_queue::erase(sched_list_t::iterator sched_it)
 {
-    MLSL_LOG(DEBUG, "queue %p, bin %p, sched %p, elems count %zu",
-             this, bin, sched, bin->elems.size());
+    mlsl_sched* sched = *sched_it;
+    MLSL_ASSERT(sched);
 
-    mlsl_fastlock_acquire(&lock);
-    bin->elems.remove(sched);
-    if (bin->elems.empty())
+    mlsl_sched_bin* bin = sched->bin;
+    MLSL_ASSERT(bin);
+
+    MLSL_LOG(DEBUG, "queue %p, bin %p, sched %p", this, bin, sched);
+    size_t bin_priority = bin->get_priority();
+
+    std::lock_guard<std::mutex> lock{guard};
+    sched_list_t::iterator next_sched = bin->erase(sched_it);
+    size_t bin_size = bin->size();
+    sched_list_t::iterator last_sched = std::end(bin->get_scheds());
+    if (bin_size == 0)
     {
-        update_priority_on_erase();
-        bin->priority = 0;
+        bins.erase(bin_priority);
+        sched->bin = nullptr;
     }
-    mlsl_fastlock_release(&lock);
-}
 
-std::list<mlsl_sched*>::iterator mlsl_sched_queue::erase(mlsl_sched_queue_bin* bin, std::list<mlsl_sched*>::iterator it)
-{
-    MLSL_LOG(DEBUG, "queue %p, bin %p, sched %p, elems count %zu",
-             this, bin, *it, bin->elems.size());
-
-    mlsl_fastlock_acquire(&lock);
-    auto next_it = bin->elems.erase(it);
-    if (bin->elems.empty())
-    {
-        update_priority_on_erase();
-        bin->priority = 0;
-    }
-    mlsl_fastlock_release(&lock);
-    return next_it;
-}
-
-void mlsl_sched_queue::update_priority_on_erase()
-{
-    used_bins--;
-    if (used_bins == 0)
+    if (bins.empty())
     {
         max_priority = 0;
+        cached_max_priority_bin = nullptr;
     }
-    else
+    else if ((bin_priority == max_priority) && (bin_size == 0))
     {
-        //bins are arranged by (maximum supported priority) % max_bins
-        size_t bin_idx = max_priority % max_bins;
-        while (bins[bin_idx].elems.empty())
+        max_priority--;
+        sched_bin_list_t::iterator it;
+        while ((it = bins.find(max_priority)) == bins.end())
         {
-            bin_idx = (bin_idx - 1 + max_bins) % max_bins;
+            max_priority--;
         }
-        max_priority = bins[bin_idx].priority;
+        cached_max_priority_bin = &(it->second);
     }
+    return next_sched;
 }
 
-mlsl_sched_queue_bin* mlsl_sched_queue::peek(size_t& count)
+mlsl_sched_bin* mlsl_sched_queue::peek(size_t& bin_size)
 {
-    mlsl_fastlock_acquire(&lock);
-    mlsl_sched_queue_bin* result = nullptr;
-    if (used_bins > 0)
-    {
-        result = &(bins[max_priority % max_bins]);
-        count = result->elems.size();
-        MLSL_ASSERT(count > 0, "");
-    }
-    else
-    {
-        count = 0;
-    }
-    mlsl_fastlock_release(&lock);
-
-    return result;
+    std::lock_guard<std::mutex> lock{guard};
+    bin_size = (cached_max_priority_bin) ? cached_max_priority_bin->size() : 0;
+    return cached_max_priority_bin;
 }

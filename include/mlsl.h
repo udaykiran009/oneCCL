@@ -79,8 +79,6 @@ mlsl_status_t MLSL_API mlsl_get_comm_rank(mlsl_comm_t comm, size_t* rank);
 
 mlsl_status_t MLSL_API mlsl_get_comm_size(mlsl_comm_t comm, size_t* size);
 
-mlsl_status_t MLSL_API mlsl_get_priority_range(size_t *min_priority, size_t *max_priority);
-
 #ifdef __cplusplus
 }   /*extern C */
 #endif

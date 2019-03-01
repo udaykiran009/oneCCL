@@ -35,7 +35,7 @@ public:
             return;
         }
 
-        atl_status_t atl_status = atl_comm_write(sched->bin->comm_ctx, src_buf,
+        atl_status_t atl_status = atl_comm_write(sched->bin->get_comm_ctx(), src_buf,
                                                  cnt * mlsl_datatype_get_size(dtype), src_mr,
                                                  (uint64_t)dst_mr->buf + dst_buf_off,
                                                  dst_mr->r_key, dst, &req);
@@ -50,7 +50,13 @@ public:
     void update_derived()
     {
         int req_status;
-        atl_comm_check(sched->bin->comm_ctx, &req_status, &req);
+        atl_status_t atl_status = atl_comm_check(sched->bin->get_comm_ctx(), &req_status, &req);
+
+        if (unlikely(atl_status != atl_status_success))
+        {
+            MLSL_THROW("WRITE entry failed. atl_status: %d", atl_status);
+        }
+
         if (req_status)
             status = mlsl_sched_entry_status_complete;
     }

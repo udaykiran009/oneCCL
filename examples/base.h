@@ -14,7 +14,7 @@
 
 #include "mlsl.h"
 
-#define COUNT 2560
+#define COUNT 32768
 #define ITERS 256
 #define ROOT  0
 #define MLSL_CALL(expr)                             \

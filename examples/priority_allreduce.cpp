@@ -2,8 +2,6 @@
 
 /* mg sizes in bytes in backprop order */
 
-size_t msg_sizes_test[] = { 256, 256 };
-
 size_t msg_sizes_vgg16[] = { 16384000, 4000, 67108864, 16384, 411041792, 16384, 9437184, 2048, 9437184, 2048, 9437184, 2048,
                              9437184, 2048, 9437184, 2048, 4718592, 2048, 2359296, 1024, 2359296, 1024, 1179648, 1024, 589824,
                              512, 294912, 512, 147456, 256, 6912, 256 };
@@ -31,8 +29,6 @@ size_t comp_iter_time_ms = 0;
 #define MSG_COUNT         sizeofa(msg_sizes)
 #define ITER_COUNT        20
 #define WARMUP_ITER_COUNT 4
-
-size_t min_priority, max_priority;
 
 int collect_iso = 1;
 
@@ -108,14 +104,12 @@ void do_iter(size_t iter_idx)
     size_t completions = 0;
 
     iter_start = when();
-    size_t priority;
     for (idx = 0; idx < MSG_COUNT; idx++)
     {
         if (idx % 2 == 0) usleep(comp_delay_ms * 1000);
-
-        priority = min_priority + idx;
-        if (priority > max_priority) priority = max_priority;
-        coll_attr.priority = priority;
+        
+        /* sequentially increase priority over iterations and messages */
+        coll_attr.priority = iter_idx * MSG_COUNT + idx;
 
         msg_starts[idx] = when();
         tmp_start_timer = when();
@@ -167,8 +161,6 @@ int main()
 {
     test_init();
 
-    mlsl_get_priority_range(&min_priority, &max_priority);
-
     char* comp_iter_time_ms_env = getenv("COMP_ITER_TIME_MS");
     if (comp_iter_time_ms_env)
     {
@@ -187,7 +179,6 @@ int main()
         printf("msg_count: %zu, total_msg_size: %zu bytes\n", MSG_COUNT, total_msg_size);
         printf("comp_iter_time_ms: %zu, comp_delay_ms: %zu (between each pair of messages)\n", comp_iter_time_ms, comp_delay_ms);
         printf("messages are started in direct order and completed in reverse order\n");
-        printf("min_priority %zu, max_priority %zu\n", min_priority, max_priority);
         fflush(stdout);
     }
 
