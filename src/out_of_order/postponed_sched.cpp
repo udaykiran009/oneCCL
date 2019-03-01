@@ -25,7 +25,7 @@ void out_of_order::postponed_sched_storage::run_scheds_for_tensor(const std::str
                                                                   mlsl_comm* tensor_comm,
                                                                   mlsl_executor* executor)
 {
-    MLSL_ASSERTP(tensor_comm);
+    MLSL_THROW_IF_NOT(tensor_comm, "incorrect comm");
 
     std::lock_guard<std::mutex> lock{sync_guard};
     auto scheds = user_scheds.equal_range(tensor_name);

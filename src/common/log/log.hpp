@@ -1,8 +1,8 @@
 #pragma once
 
+#include "mlsl_types.hpp"
 #include "common/env/env.hpp"
 #include "common/datatype/datatype.hpp"
-#include "mlsl.h"
 
 #include <assert.h>
 #include <string.h>
@@ -15,7 +15,8 @@
 #include <unistd.h>
 
 #define GET_TID()    syscall(SYS_gettid)
-#define IS_SPACE(c)  ((c==0x20 || c==0x09 || c==0x0a || c==0x0b || c==0x0c || c==0x0d) ? 8 : 0)
+
+constexpr const size_t THROW_MESSAGE_LEN = 1024 * 2;
 
 #define __FILENAME__                                                        \
 ({                                                                          \
@@ -41,11 +42,9 @@
             {                                                                          \
                 case ERROR:                                                            \
                 {                                                                      \
-                    printf("%s: ERROR: (%ld): %s:%u " fmt "\n", time_buf, GET_TID(),   \
-                            __FUNCTION__, __LINE__, ##__VA_ARGS__);                    \
+                    fprintf(stderr,"%s: ERROR: (%ld): %s:%u " fmt "\n",                \
+                        time_buf, GET_TID(),__FUNCTION__, __LINE__, ##__VA_ARGS__);    \
                     mlsl_log_print_backtrace();                                        \
-                    mlsl_finalize();                                                   \
-                    _exit(1);                                                          \
                     break;                                                             \
                 }                                                                      \
                 case INFO:                                                             \
@@ -71,6 +70,9 @@
   } while (0)
 
 
+/**
+ * Macro to handle critical unrecoverable error. Can be used in destructors
+ */
 #define MLSL_FATAL(fmt, ...)                                                        \
 do                                                                                  \
 {                                                                                   \
@@ -78,32 +80,62 @@ do                                                                              
             GET_TID(), __FILENAME__, __FUNCTION__, __LINE__, ##__VA_ARGS__);        \
     fflush(stderr);                                                                 \
     mlsl_log_print_backtrace();                                                     \
-    mlsl_finalize();                                                                \
-    _exit(1);                                                                       \
+    std::terminate();                                                               \
 } while(0)
 
 
-#define MLSL_ASSERTP_FMT(cond, fmt, ...)                                            \
-  do                                                                                \
-  {                                                                                 \
-      if (!(cond))                                                                  \
-      {                                                                             \
-          fprintf(stderr, "(%ld): ASSERT '%s' FAILED\n", GET_TID(), #cond);         \
-          MLSL_FATAL(fmt, ##__VA_ARGS__);                                           \
-      }                                                                             \
-  } while(0)
+/**
+ * Helper macro to throw mlsl::mlsl_error exception. Must never be used in destructors
+ */
+#define MLSL_THROW(fmt, ...)                                                        \
+do                                                                                  \
+{                                                                                   \
+    char msg[THROW_MESSAGE_LEN];                                                    \
+    snprintf(msg, THROW_MESSAGE_LEN, "(%ld): %s:%s:%d: EXCEPTION: " fmt "\n",       \
+            GET_TID(), __FILENAME__, __FUNCTION__, __LINE__, ##__VA_ARGS__);        \
+    mlsl_log_print_backtrace();                                                     \
+    throw mlsl::mlsl_error(msg);                                                    \
+} while(0)
 
+/**
+ * Helper macro to throw mlsl::mlsl_error exception if provided condition is not true.
+ * Must never be used in destructors
+ */
+#define MLSL_THROW_IF_NOT(cond, fmt, ...)                                         \
+do                                                                                \
+{                                                                                 \
+    if (!(cond))                                                                  \
+    {                                                                             \
+        fprintf(stderr, "(%ld): condition '%s' FAILED\n", GET_TID(), #cond);      \
+        MLSL_THROW(fmt, ##__VA_ARGS__);                                           \
+    }                                                                             \
+} while(0)
 
-#define MLSL_ASSERTP(cond) MLSL_ASSERTP_FMT(cond, "")
 
 #define MLSL_UNUSED(expr) do { (void)sizeof(expr); } while(0)
 
 #ifdef ENABLE_DEBUG
-#define MLSL_ASSERT_FMT(cond, fmt, ...) MLSL_ASSERTP_FMT(cond, fmt, ##__VA_ARGS__);
-#define MLSL_ASSERT(cond) MLSL_ASSERTP(cond);
+
+/**
+ * Raises failed assertion if provided condition is not true. Works in debug build only
+ */
+#define MLSL_ASSERT(cond, fmt, ...)                                               \
+do                                                                                \
+{                                                                                 \
+    if (!(cond))                                                                  \
+    {                                                                             \
+        fprintf(stderr, "(%ld): ASSERT FAILED '%s'\n", GET_TID(), #cond);         \
+        assert(0);                                                                \
+    }                                                                             \
+} while(0)
+
 #else
-#define MLSL_ASSERT_FMT(cond, fmt, ...) MLSL_UNUSED(cond)
-#define MLSL_ASSERT(cond) MLSL_UNUSED(cond)
+
+/**
+ * Raises failed assertion if provided condition is not true. Works in debug build only
+ */
+#define MLSL_ASSERT(cond, fmt, ...) MLSL_UNUSED(cond)
+
 #endif
 
 enum mlsl_log_level
@@ -114,6 +146,10 @@ enum mlsl_log_level
     TRACE
 };
 
-void mlsl_log_get_time(char* buf, size_t buf_size);
+void mlsl_log_get_time(char* buf,
+                       size_t buf_size);
 void mlsl_log_print_backtrace(void);
-void mlsl_log_print_buffer(const void* buf, size_t cnt, mlsl_datatype_internal_t dtype, const char* prefix);
+void mlsl_log_print_buffer(const void* buf,
+                           size_t cnt,
+                           mlsl_datatype_internal_t dtype,
+                           const char* prefix);

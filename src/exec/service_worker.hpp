@@ -22,12 +22,12 @@ private:
     void peek_service();
     void register_persistent_service_sched(mlsl_sched* sched)
     {
-        MLSL_ASSERT(sched);
+        MLSL_ASSERT(sched, "empty sched");
         persistent_service_scheds.emplace_back(sched);
     }
     void register_temporal_service_sched(mlsl_sched* sched)
     {
-        MLSL_ASSERT(sched);
+        MLSL_ASSERT(sched, "empty sched");
         temporal_service_scheds.emplace_back(sched);
     }
     void check_persistent();

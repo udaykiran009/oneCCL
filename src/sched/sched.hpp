@@ -92,7 +92,7 @@ struct mlsl_coll_param
 //      4.1.2 reset()
 //      4.1.3 reset_request()
 
-class mlsl_sched
+class alignas(CACHELINE_SIZE) mlsl_sched
 {
 public:
 
@@ -147,7 +147,7 @@ public:
         else if (add_mode == mlsl_sched_add_front)
             entries.push_front(entry);
         else
-            MLSL_ASSERTP(0);
+            MLSL_FATAL("unexpected mode %d", add_mode);
     }
 
     /**

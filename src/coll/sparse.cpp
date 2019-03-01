@@ -166,7 +166,7 @@ mlsl_status_t sparse_prepare_result(const void* ctx)
 
     if (sa_handler->recv_buff_size < total_size)
     { 
-        *sa_handler->recv_buf = MLSL_REALLOC(*sa_handler->recv_buf, 0, total_size, 64, "recv_buf");
+        *sa_handler->recv_buf = MLSL_REALLOC(*sa_handler->recv_buf, 0ul, total_size, 64, "recv_buf");
     }
 
     sa_handler->iv_map->clear();

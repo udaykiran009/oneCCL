@@ -52,7 +52,7 @@ public:
         std::lock_guard<std::mutex> lock (sync_guard);
         if (free_ids[id])
         {
-            MLSL_LOG(ERROR, "Attempt to release not acquired id %hu", id);
+            MLSL_LOG(ERROR, "attempt to release not acquired id %hu", id);
             return;
         }
         MLSL_LOG(DEBUG, "free comm id %hu", id);

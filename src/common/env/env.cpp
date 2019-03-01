@@ -34,8 +34,7 @@ const char *mlsl_priority_mode_to_str(mlsl_priority_mode mode)
         case mlsl_priority_lifo:
             return "LIFO";
         default:
-            MLSL_ASSERT_FMT(0, "unexpected prio_mode %d", mode);
-            return "(out of range)";
+            MLSL_FATAL("unexpected prio_mode %d", mode);
     }
 }
 
@@ -51,8 +50,7 @@ const char *mlsl_allreduce_algo_to_str(mlsl_allreduce_algo algo)
         case mlsl_allreduce_algo_ring_rma:
             return "ring_rma";
         default:
-            MLSL_ASSERT_FMT(0, "unexpected allreduce_algo %d", algo);
-            return "(out of range)";
+            MLSL_FATAL("unexpected allreduce_algo %d", algo);
     }
 }
 
@@ -73,7 +71,14 @@ void mlsl_env_parse()
     mlsl_env_parse_affinity();
     mlsl_env_parse_allreduce_algo();
 
-    MLSL_ASSERTP(env_data.worker_count >= 1);
+    MLSL_THROW_IF_NOT(env_data.worker_count >= 1, "incorrect MLSL_WORKER_COUNT %d", env_data.worker_count);
+    if(env_data.enable_fusion)
+    {
+        MLSL_THROW_IF_NOT(env_data.fusion_bytes_threshold >= 1, "incorrect MLSL_FUSION_BYTES_THRESHOLD %d",
+                          env_data.fusion_bytes_threshold);
+        MLSL_THROW_IF_NOT(env_data.fusion_count_threshold >= 1, "incorrect MLSL_FUSION_COUNT_THRESHOLD %d",
+                          env_data.fusion_count_threshold);
+    }
 }
 
 void mlsl_env_free()
@@ -136,8 +141,7 @@ int mlsl_env_parse_priority_mode()
             env_data.priority_mode = mlsl_priority_lifo;
         else
         {
-            MLSL_ASSERT_FMT(0, "unexpected priority_mode %s", mode_env);
-            return 0;
+            MLSL_FATAL("unexpected priority_mode %s", mode_env);
         }
     }
     return 1;
@@ -231,7 +235,7 @@ int mlsl_env_parse_allreduce_algo()
             env_data.allreduce_algo = mlsl_allreduce_algo_ring_rma;
         else
         {
-            MLSL_ASSERTP_FMT(0, "unexpected allreduce_algo %s", mode_env);
+            MLSL_THROW("incorrect MLSL_ALLREDUCE_ALGO %s", mode_env);
             return 0;
         }
     }

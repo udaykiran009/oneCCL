@@ -112,7 +112,7 @@ size_t mlsl_comm::get_global_rank(size_t rank) const
     auto result = m_ranks_map.find(rank);
     if (result == m_ranks_map.end())
     {
-        MLSL_FATAL("No rank %zu was found in comm %p id %u", rank, this, m_id->value());
+        MLSL_THROW("no rank %zu was found in comm %p id %u", rank, this, m_id->value());
     }
 
     MLSL_LOG(DEBUG, "Comm %p id %u, map rank %zu to global %zu", this, m_id->value(), rank, result->second);

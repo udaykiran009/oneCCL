@@ -18,10 +18,6 @@
 #include "sched/entry_types/register_entry.hpp"
 #include "sched/entry_types/deregister_entry.hpp"
 #include "sched/entry_types/nop_entry.hpp"
-#include "common/global/global.hpp"
-#include "common/log/log.hpp"
-
-#include <memory>
 
 std::shared_ptr<sched_entry> entry_factory::make_send_entry(mlsl_sched* sched,
                                                             const void* buf,

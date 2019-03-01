@@ -26,7 +26,8 @@ public:
     void start_derived()
     {
         MLSL_LOG(DEBUG, "WRITE entry dst %zu, req %p", dst, &req);
-        MLSL_ASSERTP(src_buf && src_mr && dst_mr);
+
+        MLSL_THROW_IF_NOT(src_buf && src_mr && dst_mr, "incorrect values");
 
         if (!cnt)
         {
@@ -40,8 +41,7 @@ public:
                                                  dst_mr->r_key, dst, &req);
         if (unlikely(atl_status != atl_status_success))
         {
-            status = mlsl_sched_entry_status_failed;
-            MLSL_LOG(ERROR, "WRITE entry failed. atl_status: %d", atl_status);
+            MLSL_THROW("WRITE entry failed. atl_status: %d", atl_status);
         }
         else
             status = mlsl_sched_entry_status_started;
@@ -61,8 +61,9 @@ public:
         {
             case mlsl_sched_entry_field_src_mr: return &src_mr;
             case mlsl_sched_entry_field_dst_mr: return &dst_mr;
-            default: MLSL_ASSERTP(0);
+            default: MLSL_FATAL("unexpected id %d", id);
         }
+        return nullptr;
     }
 
     const char* name() const

@@ -41,8 +41,6 @@ struct mlsl_sched_cache
     mlsl_fastlock_t lock;
 };
 
-extern mlsl_sched_cache *global_sched_cache;
-
 mlsl_status_t mlsl_sched_cache_create(mlsl_sched_cache **cache);
 mlsl_status_t mlsl_sched_cache_free(mlsl_sched_cache *cache);
 mlsl_status_t mlsl_sched_cache_get_entry(mlsl_sched_cache *cache, mlsl_sched_cache_key *key, mlsl_sched_cache_entry **entry);

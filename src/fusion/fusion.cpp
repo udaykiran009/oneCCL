@@ -9,20 +9,21 @@
 
 mlsl_status_t complete_user_request(const void* ctx)
 {
-    mlsl_sched* sched = (mlsl_sched*)ctx;
-    MLSL_ASSERTP(sched->req->completion_counter == 1);
-    mlsl_request_complete(sched->req);
+    mlsl_sched* sched = (mlsl_sched*) ctx;
+    MLSL_LOG(INFO, "Completing request");
+    sched->req->complete();
     return mlsl_status_success;
 }
 
 mlsl_status_t release_fusion_buf(const void* ctx)
 {
-    void* buf = (void*)ctx;
+    void* buf = (void*) ctx;
     global_data.fusion_manager->release_buffer(buf);
     return mlsl_status_success;
 }
 
-mlsl_status_t release_fusion_buf_for_cached_sched(mlsl_sched* sched, const void* ctx)
+mlsl_status_t release_fusion_buf_for_cached_sched(mlsl_sched* sched,
+                                                  const void* ctx)
 {
     return release_fusion_buf(ctx);
 }
@@ -43,7 +44,11 @@ mlsl_buffer_cache::mlsl_buffer_cache(size_t buf_size)
 mlsl_buffer_cache::~mlsl_buffer_cache()
 {
     std::lock_guard<std::mutex> lock{guard};
-    MLSL_ASSERTP(free_buffers.size() == all_buffers.size());
+    if(free_buffers.size() != all_buffers.size())
+    {
+        MLSL_FATAL("size mismatch %zu %zu", free_buffers.size(), all_buffers.size());
+    }
+
     for (size_t idx = 0; idx < all_buffers.size(); idx++)
     {
         MLSL_FREE(all_buffers[idx]);
@@ -67,14 +72,14 @@ void* mlsl_buffer_cache::get()
         MLSL_LOG(DEBUG, "get buf from extra allocation %p", buf);
         all_buffers.push_back(buf);
     }
-    MLSL_ASSERTP(buf);
+    MLSL_THROW_IF_NOT(buf, "empty buf");
     return buf;
 }
 
 void mlsl_buffer_cache::release(void* buf)
 {
     std::lock_guard<std::mutex> lock{guard};
-    MLSL_ASSERTP(buf);
+    MLSL_THROW_IF_NOT(buf, "empty buf");
     free_buffers.push_back(buf);
 }
 
@@ -83,17 +88,17 @@ mlsl_fusion_manager::mlsl_fusion_manager()
       count_threshold(env_data.fusion_count_threshold),
       buf_cache(env_data.fusion_bytes_threshold * env_data.fusion_count_threshold)
 {
-    MLSL_ASSERTP_FMT(bytes_threshold >= 1, "unexpected fusion_bytes_threshold %zu",
-        bytes_threshold);
-    MLSL_ASSERTP_FMT(count_threshold >= 1, "unexpected fusion_count_threshold %zu",
-        count_threshold);
+    MLSL_ASSERT(bytes_threshold >= 1, "unexpected fusion_bytes_threshold %zu",
+                    bytes_threshold);
+    MLSL_ASSERT(count_threshold >= 1, "unexpected fusion_count_threshold %zu",
+                    count_threshold);
 
     long cycle_usec = long(env_data.fusion_cycle_ms * 1000.0);
     cycle = std::chrono::microseconds(cycle_usec);
     last_exec_time = std::chrono::steady_clock::now();
 
     MLSL_LOG(INFO, "created fusion manager, cycle_usec %ld, bytes_threshold %zu, count_threshold %zu",
-        cycle_usec, bytes_threshold, count_threshold);
+             cycle_usec, bytes_threshold, count_threshold);
 }
 
 mlsl_fusion_manager::~mlsl_fusion_manager()
@@ -103,9 +108,9 @@ mlsl_fusion_manager::~mlsl_fusion_manager()
 
     check_tracked_scheds();
 
-    MLSL_ASSERTP(postponed_queue.empty() &&
-                 exec_queue.empty() &&
-                 tracked_scheds.empty());
+    MLSL_ASSERT(postponed_queue.empty() && exec_queue.empty() && tracked_scheds.empty(),
+                "queues are not empty, %zu %zu %zu", postponed_queue.size(),
+                    exec_queue.size(), tracked_scheds.size());
 }
 
 bool mlsl_fusion_manager::can_fuse(mlsl_sched* sched)
@@ -124,10 +129,10 @@ bool mlsl_fusion_manager::can_fuse(mlsl_sched* sched)
         return false;
     }
 
-    if (sched->coll_attr.prologue_fn  ||
-        sched->coll_attr.epilogue_fn  ||
+    if (sched->coll_attr.prologue_fn ||
+        sched->coll_attr.epilogue_fn ||
         sched->coll_attr.reduction_fn ||
-        sched->coll_attr.synchronous  ||
+        sched->coll_attr.synchronous ||
         strlen(sched->coll_attr.match_id))
     {
         MLSL_LOG(DEBUG, "can't fuse due to unexpected fields in coll_attr");
@@ -140,11 +145,13 @@ bool mlsl_fusion_manager::can_fuse(mlsl_sched* sched)
 
 bool mlsl_fusion_manager::add(mlsl_sched* sched)
 {
-    if (!can_fuse(sched)) return false;
+    if (!can_fuse(sched))
+    { return false; }
 
-    MLSL_ASSERTP(!env_data.fusion_check_urgent || sched->urgent == false);
-    MLSL_ASSERTP(sched->req->completion_counter == 0);
-    sched->req->completion_counter = 1;
+    MLSL_THROW_IF_NOT(!env_data.fusion_check_urgent || !sched->urgent, "incorrect values : %d vs %d",
+                      env_data.fusion_check_urgent, sched->urgent);
+    MLSL_THROW_IF_NOT(sched->req->is_completed(), "incorrect completion counter");
+    sched->req->set_count(1);
 
     std::lock_guard<std::mutex> lock{guard};
     postponed_queue.push_back(sched);
@@ -162,7 +169,7 @@ mlsl_sched* mlsl_fusion_manager::build_sched()
     mlsl_coll_type ctype;
     void* fusion_buf = nullptr;
 
-    MLSL_ASSERTP(exec_queue.size());
+    MLSL_THROW_IF_NOT(exec_queue.size(), "empty queue");
 
     auto first_sched = exec_queue.front();
     auto last_sched = exec_queue.back();
@@ -178,9 +185,13 @@ mlsl_sched* mlsl_fusion_manager::build_sched()
         auto s = *it;
         sum_count += s->coll_param.count;
         if (!s->coll_attr.to_cache)
+        {
             use_cache = false;
+        }
         if (s->coll_attr.priority > max_priority)
+        {
             max_priority = s->coll_attr.priority;
+        }
     }
     sum_bytes = sum_count * dtype_size;
 
@@ -194,9 +205,9 @@ mlsl_sched* mlsl_fusion_manager::build_sched()
     {
         mlsl_sched_cache_key key{};
         key.ctype = mlsl_coll_allreduce;
-        key.buf1 = (void*)first_sched;
-        key.buf2 = (void*)first_sched->coll_param.send_buf;
-        key.buf3 = (void*)last_sched->coll_param.send_buf;
+        key.buf1 = (void*) first_sched;
+        key.buf2 = (void*) first_sched->coll_param.send_buf;
+        key.buf3 = (void*) last_sched->coll_param.send_buf;
         key.count1 = sum_count;
         key.count2 = exec_queue.size();
         key.dtype = dtype->type;
@@ -229,17 +240,18 @@ mlsl_sched* mlsl_fusion_manager::build_sched()
                 sched->coll_attr.priority = max_priority;
                 break;
             default:
-                MLSL_ASSERTP(0);
+                MLSL_FATAL("not supported");
                 break;
         }
         sched->commit(global_data.parallelizer.get());
         sched->coll_attr.to_cache = (use_cache) ? 1 : 0;
-        if (entry) entry->sched = sched;
+        if (entry)
+        { entry->sched = sched; }
     }
     else
     {
         MLSL_LOG(DEBUG, "found allreduce fused_sched in cache");
-        MLSL_ASSERTP(mlsl_request_is_complete(sched->req));
+        MLSL_THROW_IF_NOT(sched->req->is_completed(), "non completed sched found in cache");
         clear_exec_queue();
         return sched;
     }
@@ -251,7 +263,7 @@ mlsl_sched* mlsl_fusion_manager::build_sched()
     size_t copies_per_last_part = copies_per_part + exec_queue_size % part_count;
     std::shared_ptr<sched_entry> e;
 
-    MLSL_ASSERTP(part_count > 0);
+    MLSL_ASSERT(part_count > 0, "part_count = 0");
     MLSL_LOG(DEBUG, "part_count %zu, sum_count %zu", part_count, sum_count);
 
     for (size_t idx = 0; idx < part_count; idx++)
@@ -265,14 +277,14 @@ mlsl_sched* mlsl_fusion_manager::build_sched()
     for (size_t idx = 0; idx < part_count; idx++)
     {
         size_t copies_count = (idx < part_count - 1) ?
-            copies_per_part : copies_per_last_part;
+                              copies_per_part : copies_per_last_part;
 
         for (size_t copy_idx = 0; copy_idx < copies_count; copy_idx++)
         {
             size_t global_copy_idx = idx * copies_per_part + copy_idx;
             entry_factory::make_copy_entry(part_scheds[idx].get(),
                                            exec_queue[global_copy_idx]->coll_param.send_buf,
-                                           (char*)fusion_buf + offset,
+                                           (char*) fusion_buf + offset,
                                            exec_queue[global_copy_idx]->coll_param.count,
                                            dtype);
             offset += exec_queue[global_copy_idx]->coll_param.count * dtype_size;
@@ -289,13 +301,13 @@ mlsl_sched* mlsl_fusion_manager::build_sched()
     for (size_t idx = 0; idx < part_count; idx++)
     {
         size_t copies_count = (idx < part_count - 1) ?
-            copies_per_part : copies_per_last_part;
+                              copies_per_part : copies_per_last_part;
 
         for (size_t copy_idx = 0; copy_idx < copies_count; copy_idx++)
         {
             size_t global_copy_idx = idx * copies_per_part + copy_idx;
             entry_factory::make_copy_entry(part_scheds[idx].get(),
-                                           (char*)fusion_buf + offset,
+                                           (char*) fusion_buf + offset,
                                            exec_queue[global_copy_idx]->coll_param.recv_buf,
                                            exec_queue[global_copy_idx]->coll_param.count,
                                            dtype);
@@ -303,7 +315,8 @@ mlsl_sched* mlsl_fusion_manager::build_sched()
             entry_factory::make_function_entry(part_scheds[idx].get(),
                                                complete_user_request,
                                                exec_queue[global_copy_idx]);
-            MLSL_ASSERTP(exec_queue[global_copy_idx]->req->completion_counter == 1);
+            MLSL_THROW_IF_NOT(!exec_queue[global_copy_idx]->req->is_completed(),
+                              "incorrect completion counter");
         }
     }
 
@@ -318,7 +331,9 @@ mlsl_sched* mlsl_fusion_manager::build_sched()
     }
 
     if (!use_cache)
+    {
         tracked_scheds.push_back(sched);
+    }
 
     clear_exec_queue();
     return sched;
@@ -361,7 +376,9 @@ void mlsl_fusion_manager::execute()
 
             mlsl_sched* first_sched;
             if (!exec_queue.empty())
+            {
                 first_sched = exec_queue.front();
+            }
             else
             {
                 first_sched = postponed_queue.front();
@@ -390,7 +407,8 @@ void mlsl_fusion_manager::execute()
 
                     if (env_data.fusion_check_urgent && !flush_exec_queue && s->urgent)
                     {
-                        MLSL_LOG(DEBUG, "found urgent sched in postponed_queue, flush_exec_queue, postponed_queue size %zu",
+                        MLSL_LOG(DEBUG,
+                                 "found urgent sched in postponed_queue, flush_exec_queue, postponed_queue size %zu",
                                  postponed_queue.size());
                         flush_exec_queue = true;
                     }
@@ -406,7 +424,9 @@ void mlsl_fusion_manager::execute()
                     }
                 }
                 else
+                {
                     ++it;
+                }
             }
         }
     }
@@ -419,7 +439,9 @@ void mlsl_fusion_manager::execute()
     }
 
     if (stat_fused_ops % MLSL_FUSION_CHECK_SCHEDS_ITERS == 0)
+    {
         check_tracked_scheds();
+    }
 }
 
 void mlsl_fusion_manager::release_buffer(void* buf)
@@ -438,12 +460,14 @@ void mlsl_fusion_manager::check_tracked_scheds()
     for (auto it = tracked_scheds.begin(); it != tracked_scheds.end();)
     {
         mlsl_sched* sched = *it;
-        if (mlsl_request_is_complete(sched->req))
+        if (sched->req->is_completed())
         {
             delete sched;
             it = tracked_scheds.erase(it);
         }
         else
+        {
             ++it;
+        }
     }
 }

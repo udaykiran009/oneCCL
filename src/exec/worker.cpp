@@ -91,9 +91,9 @@ size_t mlsl_worker::do_work()
 
     if (peek_count)
     {
-        MLSL_ASSERT(bin);
+        MLSL_ASSERT(bin, "empty bin");
         mlsl_sched_progress(bin, peek_count, processed_count);
-        MLSL_ASSERT(processed_count <= peek_count);
+        MLSL_ASSERT(processed_count <= peek_count, "incorrect values %zu %zu", processed_count, peek_count);
     }
 
     return processed_count;
@@ -134,4 +134,6 @@ static void* mlsl_worker_func(void* args)
             yield_spin_count = 0;
         }
     } while (true);
+
+    return nullptr;
 }

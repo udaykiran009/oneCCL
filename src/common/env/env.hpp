@@ -23,7 +23,7 @@ enum mlsl_sparse_allreduce_algo
     mlsl_sparse_allreduce_algo_mask  = 1
 };
 
-struct mlsl_env_data
+struct alignas(CACHELINE_SIZE) mlsl_env_data
 {
     int log_level;
     int sched_dump;
@@ -40,8 +40,7 @@ struct mlsl_env_data
     int fusion_count_threshold;
     int fusion_check_urgent;
     float fusion_cycle_ms;
-} __attribute__ ((aligned (CACHELINE_SIZE)));
-
+};
 
 extern mlsl_env_data env_data;
 

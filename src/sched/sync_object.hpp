@@ -9,12 +9,12 @@ class sync_object
 public:
     explicit sync_object(size_t count) : initial_cnt(count), sync(count)
     {
-        MLSL_ASSERT_FMT(initial_cnt > 0, "count must be greater than 0");
+        MLSL_ASSERT(initial_cnt > 0, "count must be greater than 0");
     }
 
     void visit()
     {
-        MLSL_ASSERT_FMT(sync > 0, "already completed");
+        MLSL_ASSERT(sync > 0, "already completed");
         --sync;
     }
 

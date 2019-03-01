@@ -132,7 +132,8 @@ mlsl_status_t mlsl_coll_build_ring_rma_allreduce(mlsl_sched* sched, const void* 
     comm_size = comm->size();
     rank = comm->rank();
 
-    MLSL_ASSERTP(sched && send_buf && recv_buf);
+    MLSL_THROW_IF_NOT(sched && send_buf && recv_buf, "incorrect values, sched %p send %p recv %p",
+                      sched, send_buf, recv_buf);
 
     if (comm_size == 1)
     {

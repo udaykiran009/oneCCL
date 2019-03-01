@@ -14,7 +14,7 @@
 
 void mlsl_sched::alloc_req()
 {
-    mlsl_request_create(&req);
+    req = new mlsl_request();
     req->sched = this;
 }
 
@@ -30,8 +30,12 @@ mlsl_sched::~mlsl_sched()
         part_sched.reset();
     }
 
-    if (req && is_own_req)
-        mlsl_request_free(req);
+    if (is_own_req)
+    {
+        MLSL_LOG(DEBUG, "Delete own req");
+        delete req;
+        req = nullptr;
+    }
 
     if (!memory.mr_list.empty())
     {
@@ -50,7 +54,11 @@ mlsl_sched::~mlsl_sched()
         {
             mlsl_wait(start_subsched(dereg_sched));
         }
-        MLSL_ASSERTP(memory.mr_list.empty());
+        if(!memory.mr_list.empty())
+        {
+            MLSL_LOG(ERROR, "memory list is not empty");
+        }
+        MLSL_ASSERT(memory.mr_list.empty(), "");
     }
 
     free_buffers();
@@ -58,7 +66,7 @@ mlsl_sched::~mlsl_sched()
 
 size_t mlsl_sched::get_priority()
 {
-    size_t priority;
+    size_t priority = 0;
     switch (env_data.priority_mode)
     {
         case mlsl_priority_none:
@@ -69,16 +77,17 @@ size_t mlsl_sched::get_priority()
                 priority = (MLSL_SCHED_QUEUE_MAX_BINS - 1);
             else
                 priority = coll_attr.priority;
-            MLSL_ASSERT(priority >= 0 && priority < MLSL_SCHED_QUEUE_MAX_BINS);
+            MLSL_ASSERT(priority >= 0 && priority < MLSL_SCHED_QUEUE_MAX_BINS, "");
             break;
         case mlsl_priority_lifo:
             priority = coll_attr.priority;
-            MLSL_ASSERT(priority >= 0);
+            MLSL_ASSERT(priority >= 0, "");
             break;
         default:
-            MLSL_ASSERTP_FMT(0, "unexpected priority_mode %d", env_data.priority_mode);
+            MLSL_FATAL("unexpected priority_mode %d", env_data.priority_mode);
             break;
     }
+
     MLSL_LOG(DEBUG, "sched %p, prio %zu", this, priority);
     return priority;
 }
@@ -151,7 +160,7 @@ mlsl_status_t mlsl_sched_progress(mlsl_sched_queue_bin* bin,
     /* ensure communication progress */
     atl_status_t atl_status __attribute__ ((unused));
     atl_status = atl_comm_poll(bin->comm_ctx);
-    MLSL_ASSERT(atl_status == atl_status_success);
+    MLSL_ASSERT(atl_status == atl_status_success, "bad status %d", atl_status);
 
     // iterate through the scheds store in the bin
     for (auto it = bin->elems.begin(); it != bin->elems.end(); )
@@ -201,13 +210,12 @@ mlsl_status_t mlsl_sched_progress(mlsl_sched_queue_bin* bin,
         if (sched->start_idx == sched->entries.size())
         {
             // the last entry in the schedule has been completed, clean up the schedule and complete its request
-            MLSL_LOG(DEBUG, "completing and dequeuing: sched %p, req %p", sched, sched->req);
+            MLSL_LOG(DEBUG, "completing and dequeuing: sched %p %s, req %p", sched, mlsl_coll_type_to_str(sched->coll_param.ctype), sched->req);
 
             // remove completed schedule from the bin. Iterator @b it will point to the next elem in bin->elems
             it = bin->queue->erase(bin, it);
-
-            status = mlsl_request_complete(sched->req);
-            MLSL_ASSERT(status == mlsl_status_success);
+            MLSL_LOG(DEBUG, "Completing request %p", sched->req);
+            sched->req->complete();
 
             ++completed_sched_count;
         }
@@ -240,9 +248,9 @@ void mlsl_sched::commit(mlsl_parallelizer* parallelizer)
 mlsl_request* mlsl_sched::start(mlsl_executor* exec)
 {
     /* sanity check the schedule */
-    MLSL_ASSERT(start_idx == 0);
-    MLSL_ASSERT(req);
-    MLSL_ASSERT(coll_param.comm);
+    MLSL_ASSERT(start_idx == 0, "");
+    MLSL_ASSERT(req, "");
+    MLSL_ASSERT(coll_param.comm, "");
 
     MLSL_LOG(DEBUG, "starting schedule %p, type %s", this, mlsl_coll_type_to_str(coll_param.ctype));
 
@@ -263,7 +271,7 @@ void mlsl_sched::add_partial_sched(mlsl_coll_param& coll_param)
 void mlsl_sched::set_request(mlsl_request* req)
 {
     if (this->req)
-        mlsl_request_free(this->req);
+        delete this->req;
 
     this->req = req;
     is_own_req = false;
@@ -272,7 +280,7 @@ void mlsl_sched::set_request(mlsl_request* req)
 void mlsl_sched::prepare_partial_scheds(bool dump_scheds)
 {
     size_t partial_sched_count = partial_scheds.size();
-    MLSL_ASSERTP(partial_sched_count > 0);
+    MLSL_THROW_IF_NOT(partial_sched_count > 0, "partial_sched_count = 0");
 
     for (size_t idx = 0; idx < partial_sched_count; idx++)
     {
@@ -304,10 +312,18 @@ void mlsl_sched::reset()
 
 mlsl_request* mlsl_sched::reset_request()
 {
+    int completion_counter = 0;
     if (partial_scheds.empty())
-        req->completion_counter = 1;
+    {
+        completion_counter = 1;
+    }
     else
-        req->completion_counter = static_cast<int>(partial_scheds.size());
+    {
+        completion_counter = static_cast<int>(partial_scheds.size());
+    }
+    MLSL_LOG(DEBUG, "req %p, set count %d", req, completion_counter);
+
+    req->set_count(completion_counter);
     return req;
 }
 
@@ -320,7 +336,7 @@ void mlsl_sched::add_barrier()
         else if (add_mode == mlsl_sched_add_front)
             entries.front()->make_barrier();
         else
-            MLSL_ASSERTP(0);
+            MLSL_FATAL("unexpected mode %d", add_mode);
     }
 }
 
@@ -338,7 +354,7 @@ void mlsl_sched::sync_partial_scheds()
 
 void mlsl_sched::set_coll_attr(const mlsl_coll_attr_t *attr)
 {
-    MLSL_ASSERT(attr);
+    MLSL_ASSERT(attr, "empty attr");
     coll_attr.prologue_fn = attr->prologue_fn;
     coll_attr.epilogue_fn = attr->epilogue_fn;
     coll_attr.reduction_fn = attr->reduction_fn;
@@ -377,7 +393,8 @@ void mlsl_sched::dump(const char *name) const
 void* mlsl_sched::alloc_buffer(size_t size)
 {
     MLSL_LOG(DEBUG, "size %zu", size);
-    MLSL_ASSERTP(size > 0);
+    MLSL_THROW_IF_NOT(size > 0, "incorrect buffer size");
+
     void* p = MLSL_CALLOC(size, "sched_buffer");
     memory.buf_list.emplace_back(p, size);
     return p;
@@ -396,7 +413,7 @@ void mlsl_sched::free_buffers()
 
 mlsl_request* mlsl_sched::start_subsched(mlsl_sched* subsched)
 {
-    subsched->req->completion_counter = 1;
+    subsched->req->set_count(1);
     subsched->sched_id = sched_id;
     subsched->reset();
     subsched->dump("subsched");

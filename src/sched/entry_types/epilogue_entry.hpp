@@ -27,7 +27,7 @@ public:
     void start_derived()
     {
         fn(in_buf, in_cnt, in_dtype->type, out_buf, &out_cnt, out_dtype->type);
-        MLSL_ASSERTP(expected_out_cnt == out_cnt);
+        MLSL_ASSERT(expected_out_cnt == out_cnt, "incorrect values %zu %zu", expected_out_cnt, out_cnt);
         status = mlsl_sched_entry_status_complete;
     }
 
@@ -38,8 +38,9 @@ public:
             case mlsl_sched_entry_field_in_buf: return &in_buf;
             case mlsl_sched_entry_field_in_cnt: return &in_cnt;
             case mlsl_sched_entry_field_in_dtype: return &in_dtype;
-            default: MLSL_ASSERTP(0);
+            default: MLSL_FATAL("unexpected id %d", id);
         }
+        return nullptr;
     }
 
     const char* name() const

@@ -1,3 +1,4 @@
+#include "common/global/global.hpp"
 #include "out_of_order/ooo_match.hpp"
 #include "sched/entry_factory.hpp"
 
@@ -75,7 +76,7 @@ void out_of_order::ooo_match::create_comm_and_run_sched(const std::string& tenso
 
 mlsl_sched* out_of_order::ooo_match::build_bcast_sched(const char* tensor_name)
 {
-    MLSL_ASSERT_FMT(m_service_comm->rank() != 0 || tensor_name != nullptr, "Only root rank can pass a valid tensor name");
+    MLSL_ASSERT(m_service_comm->rank() != 0 || tensor_name != nullptr, "Only root rank can pass a valid tensor name");
 
     bool temp_sched = tensor_name != nullptr;
     mlsl_coll_param bcast_param{};
@@ -93,6 +94,7 @@ mlsl_sched* out_of_order::ooo_match::build_bcast_sched(const char* tensor_name)
     bcast_sched->partial_scheds[0]->coll_attr.priority = bcast_sched->coll_attr.priority;
     bcast_sched->partial_scheds[0]->coll_param.comm = m_service_comm.get();
     bcast_sched->partial_scheds[0]->root = bcast_sched;
+    bcast_sched->partial_scheds[0]->set_request(bcast_sched->req);
 
     if(tensor_name != nullptr)
     {

@@ -27,8 +27,7 @@ public:
                                                 bytes, src, atl_tag, &req);
         if (unlikely(atl_status != atl_status_success))
         {
-            status = mlsl_sched_entry_status_failed;
-            MLSL_LOG(ERROR, "RECV entry failed. atl_status: %d", atl_status);
+            MLSL_THROW("RECV entry failed. atl_status: %d", atl_status);
         }
         else
             status = mlsl_sched_entry_status_started;
@@ -48,7 +47,7 @@ public:
         {
             case mlsl_sched_entry_field_buf: return &buf;
             case mlsl_sched_entry_field_cnt: return &cnt;
-            default: MLSL_ASSERTP(0);
+            default: MLSL_FATAL("unexpected id %d", id);
         }
     }
 

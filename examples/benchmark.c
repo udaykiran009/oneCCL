@@ -96,8 +96,8 @@ int main()
     size_t idx, iter_idx, count;
     DTYPE* send_bufs[BUF_COUNT];
     DTYPE* recv_bufs[BUF_COUNT];
-    DTYPE* single_send_buf;
-    DTYPE* single_recv_buf;
+    DTYPE* single_send_buf = NULL;
+    DTYPE* single_recv_buf = NULL;
     mlsl_request_t reqs[BUF_COUNT];
     double t, t1, t2;
     int check_values = 0;
@@ -107,13 +107,15 @@ int main()
     if (rank == 0)
         printf("buf_count %d, ranks %zu, check_values %d\n", BUF_COUNT, size, check_values);
 
+    int result = 0;
     for (idx = 0; idx < BUF_COUNT; idx++)
     {
-        posix_memalign((void**)&send_bufs[idx], ALIGNMENT, ELEM_COUNT * sizeof(DTYPE));
-        posix_memalign((void**)&recv_bufs[idx], ALIGNMENT, ELEM_COUNT * sizeof(DTYPE));
+        result = posix_memalign((void**)&send_bufs[idx], ALIGNMENT, ELEM_COUNT * sizeof(DTYPE));
+        result = posix_memalign((void**)&recv_bufs[idx], ALIGNMENT, ELEM_COUNT * sizeof(DTYPE));
     }
-    posix_memalign((void**)&single_send_buf, ALIGNMENT, SINGLE_ELEM_COUNT * sizeof(DTYPE));
-    posix_memalign((void**)&single_recv_buf, ALIGNMENT, SINGLE_ELEM_COUNT * sizeof(DTYPE));
+    result = posix_memalign((void**)&single_send_buf, ALIGNMENT, SINGLE_ELEM_COUNT * sizeof(DTYPE));
+    result = posix_memalign((void**)&single_recv_buf, ALIGNMENT, SINGLE_ELEM_COUNT * sizeof(DTYPE));
+    (void)result;
 
     /* warmup */
     coll_attr.to_cache = 0;

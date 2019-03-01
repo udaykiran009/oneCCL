@@ -5,7 +5,7 @@
 mlsl_sched_queue::mlsl_sched_queue(size_t capacity, atl_comm_t **comm_ctxs)
     : bins(capacity), max_bins(capacity)
 {
-    MLSL_ASSERTP(max_bins <= MLSL_SCHED_QUEUE_MAX_BINS);
+    MLSL_ASSERT(max_bins <= MLSL_SCHED_QUEUE_MAX_BINS, "");
     mlsl_fastlock_init(&lock);
 
     for (size_t idx = 0; idx < max_bins; idx++)
@@ -32,7 +32,7 @@ void mlsl_sched_queue::add(mlsl_sched* sched, size_t priority)
     mlsl_sched_queue_bin *bin = &(bins[priority % max_bins]);
     if (bin->elems.empty())
     {
-        MLSL_ASSERT(bin->priority == 0);
+        MLSL_ASSERT(bin->priority == 0, "");
         bin->priority = priority;
         ++used_bins;
     }
@@ -101,7 +101,7 @@ mlsl_sched_queue_bin* mlsl_sched_queue::peek(size_t& count)
     {
         result = &(bins[max_priority % max_bins]);
         count = result->elems.size();
-        MLSL_ASSERT(count > 0);
+        MLSL_ASSERT(count > 0, "");
     }
     else
     {

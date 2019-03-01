@@ -61,9 +61,9 @@ void mlsl_service_worker::peek_service()
 
     if (peek_count > 0)
     {
-        MLSL_ASSERT(bin);
+        MLSL_ASSERT(bin, "empty bin");
         mlsl_sched_progress(bin, peek_count, processed_count);
-        MLSL_ASSERT(processed_count <= peek_count);
+        MLSL_ASSERT(processed_count <= peek_count, "incorrect values %zu %zu", processed_count, peek_count);
 
         //todo: visitor might be useful there
         check_persistent();
@@ -75,8 +75,8 @@ void mlsl_service_worker::check_persistent()
 {
     for (auto& service_sched : persistent_service_scheds)
     {
-        size_t completion_counter = __atomic_load_n(&service_sched->req->completion_counter, __ATOMIC_ACQUIRE);
-        if (completion_counter == 0)
+
+        if (service_sched->req->is_completed())
         {
             MLSL_LOG(DEBUG, "restart persistent service sched %p", service_sched.get());
             service_sched->prepare_partial_scheds(false);
@@ -92,8 +92,7 @@ void mlsl_service_worker::check_temporal()
 {
     for (auto it = temporal_service_scheds.begin(); it != temporal_service_scheds.end();)
     {
-        size_t completion_counter = __atomic_load_n(&it->get()->req->completion_counter, __ATOMIC_ACQUIRE);
-        if (completion_counter == 0)
+        if (it->get()->req->is_completed())
         {
             MLSL_LOG(DEBUG, "remove completed temporal service sched %p", it->get());
             it = temporal_service_scheds.erase(it);
@@ -112,7 +111,8 @@ void mlsl_service_worker::erase_service_scheds(std::list<std::shared_ptr<mlsl_sc
     {
         for (size_t idx = 0; idx < it->get()->partial_scheds.size(); ++idx)
         {
-            mlsl_request_complete(it->get()->partial_scheds[idx]->req);
+            it->get()->partial_scheds[idx]->req->complete();
+            //forget about req object, it will be deleted by root sched
             it->get()->partial_scheds[idx]->req = nullptr;
             if (it->get()->partial_scheds[idx]->bin)
             {

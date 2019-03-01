@@ -11,7 +11,7 @@
 //key = rank, value = global rank
 using rank_to_global_rank_map = std::unordered_map<size_t, size_t>;
 
-class mlsl_comm
+class alignas(CACHELINE_SIZE) mlsl_comm
 {
 public:
     mlsl_comm() = delete;
@@ -60,7 +60,6 @@ public:
         if (next_sched_id == max_sched_id)
         {
             /* wrap the sched numbers around to the start */
-            //MLSL_ASSERTP(0);
             next_sched_id = first_sched_id;
         }
 

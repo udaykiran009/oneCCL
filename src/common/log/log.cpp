@@ -49,7 +49,7 @@ void mlsl_log_print_buffer(void* buf, size_t cnt, mlsl_datatype_internal_t dtype
         if (dtype == mlsl_dtype_internal_float)
             bytes_written = sprintf(dump_buf, "%f ", ((float*)buf)[idx]);
         else
-            MLSL_ASSERTP(0);
+            MLSL_FATAL("unexpected");
         dump_buf += bytes_written;
     }
     bytes_written = sprintf(dump_buf, "]");

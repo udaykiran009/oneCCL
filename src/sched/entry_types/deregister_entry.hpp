@@ -23,9 +23,7 @@ public:
             atl_status = atl_mr_dereg(global_data.executor->atl_desc, *it);
             if (unlikely(atl_status != atl_status_success))
             {
-                status = mlsl_sched_entry_status_failed;
-                MLSL_LOG(ERROR, "DEREGISTER entry failed. atl_status: %d", atl_status);
-                break;
+                MLSL_THROW("DEREGISTER entry failed. atl_status: %d", atl_status);
             }
         }
         mr_list.clear();

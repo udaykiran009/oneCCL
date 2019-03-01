@@ -37,7 +37,7 @@ enum mlsl_condition
     mlsl_condition_greater_or_equal = 5
 };
 
-class sched_entry
+class alignas(CACHELINE_SIZE) sched_entry
 {
 public:
     sched_entry() = delete;

@@ -9,14 +9,16 @@ public:
         : max_data_partition_count(max_data_partition_count)
     {}
 
-    ~mlsl_parallelizer()
-    {}
+    ~mlsl_parallelizer() = default;
 
     mlsl_parallelizer(const mlsl_parallelizer& other) = delete;
     mlsl_parallelizer& operator= (const mlsl_parallelizer& other) = delete;
 
+    mlsl_parallelizer(mlsl_parallelizer&& other) = delete;
+    mlsl_parallelizer& operator= (mlsl_parallelizer&& other) = delete;
+
     mlsl_status_t process(mlsl_sched* sched);
 
 private:
-	size_t max_data_partition_count;
+    size_t max_data_partition_count;
 };

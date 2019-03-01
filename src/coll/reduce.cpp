@@ -51,7 +51,7 @@ mlsl_status_t mlsl_coll_build_rabenseifner_reduce(mlsl_sched *sched, const void 
 
     /* get nearest power-of-two less than or equal to comm_size */
     pof2 = sched->coll_param.comm->pof2();
-    MLSL_ASSERTP_FMT(count >= static_cast<size_t>(pof2), "count %zu, pof2 %d", count, pof2);
+    MLSL_THROW_IF_NOT(count >= static_cast<size_t>(pof2), "count %zu, pof2 %d", count, pof2);
     rem = comm_size - pof2;
 
     /* If I'm not the root, then my recv_buf may not be valid, therefore

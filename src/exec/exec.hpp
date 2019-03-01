@@ -1,6 +1,7 @@
 #pragma once
 
 #include "common/env/env.hpp"
+#include "common/request/request.hpp"
 #include "atl/atl.h"
 
 #include <vector>
@@ -9,13 +10,16 @@
 class mlsl_worker;
 class mlsl_service_worker;
 class mlsl_sched;
-struct mlsl_request;
 
-class mlsl_executor
+class alignas(CACHELINE_SIZE) mlsl_executor
 {
 public:
     mlsl_executor() = delete;
     mlsl_executor(const mlsl_executor& other) = delete;
+    mlsl_executor& operator= (const mlsl_executor& other) = delete;
+    mlsl_executor(mlsl_executor&& other) = delete;
+    mlsl_executor& operator= (mlsl_executor&& other) = delete;
+
     mlsl_executor(size_t workers_count,
                   size_t priority_count,
                   bool service_support,
@@ -39,3 +43,35 @@ private:
 
     std::vector<std::unique_ptr<mlsl_worker>> workers;
 };
+
+
+//free functions
+
+inline void mlsl_wait_impl(mlsl_executor* exec, mlsl_request* request)
+{
+    exec->wait(request);
+    MLSL_ASSERT(request->sched, "empty sched");
+
+    MLSL_LOG(INFO, "req %p completed, sched %s", request,
+             mlsl_coll_type_to_str(request->sched->coll_param.ctype));
+
+    if (!request->sched->coll_attr.to_cache)
+        delete request->sched;
+}
+
+inline bool mlsl_test_impl(mlsl_executor* exec, mlsl_request* request)
+{
+    bool completed = exec->test(request);
+
+    if (completed)
+    {
+        MLSL_ASSERT(request->sched, "empty sched");
+        MLSL_LOG(INFO, "req %p completed, sched %s", request,
+                 mlsl_coll_type_to_str(request->sched->coll_param.ctype));
+
+        if (!request->sched->coll_attr.to_cache)
+            delete request->sched;
+    }
+
+    return completed;
+}

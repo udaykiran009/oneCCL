@@ -102,8 +102,7 @@ typedef struct
 
 typedef void* mlsl_comm_t;
 
-struct mlsl_request;
-typedef struct mlsl_request *mlsl_request_t;
+typedef void* mlsl_request_t;
 
 
 #ifdef __cplusplus

@@ -52,7 +52,7 @@ mlsl_status_t mlsl_parallelizer_prologue_get_dtype(const void* ctx, void* field_
 
 mlsl_status_t mlsl_parallelizer::process(mlsl_sched* sched)
 {
-    MLSL_ASSERT(sched);
+    MLSL_ASSERT(sched, "empty sched");
 
     mlsl_status_t status = mlsl_status_success;
     size_t part_count = 1, idx, base_count, dtype_size;
@@ -89,7 +89,7 @@ mlsl_status_t mlsl_parallelizer::process(mlsl_sched* sched)
             part_count = coll_param->comm->size();
             break;
         default:
-            MLSL_ASSERT_FMT(0, "unexpected coll_type %d", coll_type);
+            MLSL_FATAL("unexpected coll_type %d", coll_type);
             break;
     }
 
@@ -144,7 +144,7 @@ mlsl_status_t mlsl_parallelizer::process(mlsl_sched* sched)
             break;
         case mlsl_coll_allgatherv:
             recv_counts = coll_param->recv_counts;
-            MLSL_ASSERTP(recv_counts);
+            MLSL_ASSERT(recv_counts, "empty recv_counts");
             counts[0] = recv_counts[0];
             offsets[0] = 0;
             for (idx = 1; idx < part_count; idx++)
@@ -154,7 +154,7 @@ mlsl_status_t mlsl_parallelizer::process(mlsl_sched* sched)
             }
             break;
         default:
-            MLSL_ASSERT_FMT(0, "unexpected coll_type %d", coll_type);
+            MLSL_FATAL("unexpected coll_type %d", coll_type);
             break;
     }
 
@@ -342,7 +342,7 @@ mlsl_status_t mlsl_parallelizer::process(mlsl_sched* sched)
             break;
 
         default:
-            MLSL_ASSERT_FMT(0, "unexpected coll_type %d", coll_type);
+            MLSL_FATAL("unexpected coll_type %d", coll_type);
             break;
     }
 

@@ -17,15 +17,12 @@ public:
     void start_derived()
     {
         MLSL_LOG(DEBUG, "REGISTER entry size %zu, ptr %p", size, ptr);
-        MLSL_ASSERTP(size > 0);
-        MLSL_ASSERTP(ptr);
-        MLSL_ASSERTP(mr);
+        MLSL_THROW_IF_NOT(size > 0 && ptr && mr, "incorrect input, size %zu ptr %p mr %p", size, ptr, mr);
         atl_status_t atl_status = atl_mr_reg(global_data.executor->atl_desc, ptr, size, mr);
         sched->memory.mr_list.emplace_back(*mr);
         if (unlikely(atl_status != atl_status_success))
         {
-            status = mlsl_sched_entry_status_failed;
-            MLSL_LOG(ERROR, "REGISTER entry failed. atl_status: %d", atl_status);
+            MLSL_THROW("REGISTER entry failed. atl_status: %d", atl_status);
         }
         else
             status = mlsl_sched_entry_status_complete;

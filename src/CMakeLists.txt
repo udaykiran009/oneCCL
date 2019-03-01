@@ -33,15 +33,14 @@ set(MLSL_SRC
     common/datatype/datatype.cpp
     common/env/env.cpp
     common/global/global.cpp
-    common/log/log.cpp
-    common/request/request.cpp)
+    common/log/log.cpp)
 
 set(MLSL_INC_DIRS
     ${PROJECT_SOURCE_DIR}/include
     ${PROJECT_SOURCE_DIR}/src)
 
-set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -pthread -fvisibility=internal")
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -pthread -fvisibility=internal")
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -pthread")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -pthread")
 
 #special library that holds objects only
 add_library(mlsl2-objects OBJECT ${MLSL_SRC})

@@ -26,7 +26,7 @@ void out_of_order::tensor_to_comm_handler::add_comm_for_tensor(const std::string
     std::lock_guard<std::mutex> lock(sync_guard);
     if (tensor_to_comm_map.find(tensor_name) != tensor_to_comm_map.end())
     {
-        MLSL_LOG(ERROR, "Tensor %s already exists", tensor_name.c_str());
+        MLSL_LOG(ERROR, "tensor %s already exists", tensor_name.c_str());
         return;
     }
     tensor_to_comm_map.emplace(tensor_name, comm);

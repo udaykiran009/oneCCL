@@ -34,14 +34,14 @@ mlsl_status_t mlsl_datatype_init()
 
 size_t mlsl_datatype_get_size(mlsl_datatype_internal_t dtype)
 {
-    MLSL_ASSERTP(dtype);
-    MLSL_ASSERTP(dtype->size > 0);
+    MLSL_THROW_IF_NOT(dtype, "empty dtype");
+    MLSL_ASSERT(dtype->size > 0, "");
     return dtype->size;
 }
 
 const char* mlsl_datatype_get_name(mlsl_datatype_internal_t dtype)
 {
-    MLSL_ASSERTP(dtype);
+    MLSL_ASSERT(dtype, "");
     return dtype->name;
 }
 
@@ -57,7 +57,7 @@ mlsl_datatype_internal_t mlsl_datatype_get(mlsl_datatype_t type)
         case mlsl_dtype_double: { dtype = mlsl_dtype_internal_double; break; }
         case mlsl_dtype_int64: { dtype = mlsl_dtype_internal_int64; break; }
         case mlsl_dtype_uint64: { dtype = mlsl_dtype_internal_uint64; break; }
-        default: MLSL_ASSERTP_FMT(0, "unexpected dtype %d", type);
+        default: MLSL_FATAL("unexpected dtype %d", type);
     }
     return dtype;
 }

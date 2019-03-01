@@ -1,7 +1,5 @@
 #include "sched/sched_cache.hpp"
 
-mlsl_sched_cache *global_sched_cache = NULL;
-
 mlsl_status_t mlsl_sched_cache_create(mlsl_sched_cache **cache)
 {
     mlsl_sched_cache *c = static_cast<mlsl_sched_cache*>(MLSL_CALLOC(sizeof(mlsl_sched_cache), "sched_cache"));

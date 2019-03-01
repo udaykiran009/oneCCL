@@ -31,8 +31,8 @@ public:
 
     void update_derived()
     {
-        MLSL_ASSERTP(req);
-        if (mlsl_request_is_complete(req))
+        MLSL_THROW_IF_NOT(req, "empty request");
+        if (req->is_completed())
         {
             MLSL_LOG(DEBUG, "COLL entry, completed sched");
             delete req->sched;
@@ -44,12 +44,18 @@ public:
     {
         switch (id)
         {
-            case mlsl_sched_entry_field_send_buf: return &send_buf;
-            case mlsl_sched_entry_field_recv_buf: return &recv_buf;
-            case mlsl_sched_entry_field_cnt: return &cnt;
-            case mlsl_sched_entry_field_dtype: return &dtype;
-            default: MLSL_ASSERTP(0);
+            case mlsl_sched_entry_field_send_buf:
+                return &send_buf;
+            case mlsl_sched_entry_field_recv_buf:
+                return &recv_buf;
+            case mlsl_sched_entry_field_cnt:
+                return &cnt;
+            case mlsl_sched_entry_field_dtype:
+                return &dtype;
+            default:
+                MLSL_FATAL("unexpected id %d", id);
         }
+        return nullptr;
     }
 
     const char* name() const
@@ -101,14 +107,13 @@ private:
                                                         coll_sched->coll_param.dtype,
                                                         coll_sched->coll_param.reduction);
 
-                MLSL_ASSERT(result == mlsl_status_success);
+                MLSL_ASSERT(result == mlsl_status_success, "bad result %d", result);
 
                 break;
             }
             case mlsl_coll_allgatherv:
             default:
-                /* only allreduce for now */
-                MLSL_ASSERTP(0);
+                MLSL_FATAL("not supported type %d", ctype);
                 break;
         }
         if (coll_sched)

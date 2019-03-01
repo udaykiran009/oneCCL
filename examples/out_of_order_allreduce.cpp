@@ -7,14 +7,14 @@
 #include <thread>
 #include <random>
 
-mlsl_request* start_allreduce_with_tensor_name(const std::string& tensor_name,
+mlsl_request_t start_allreduce_with_tensor_name(const std::string& tensor_name,
                                                const float* send_buff,
                                                float* recv_buff)
 {
     coll_attr.to_cache = false;
     coll_attr.match_id = tensor_name.c_str();
 
-    mlsl_request* req = nullptr;
+    mlsl_request_t req = nullptr;
 
     MLSL_CALL(mlsl_allreduce(send_buff,
                              recv_buff,
@@ -35,7 +35,7 @@ int main()
     const size_t iterations_count = 4;
     std::vector<std::string> tensor_names;
     //request, operation idx (for example purpose)
-    std::list<std::pair<mlsl_request*, size_t>> started_ops;
+    std::list<std::pair<mlsl_request_t, size_t>> started_ops;
     std::vector<std::vector<float>> allreduce_send_bufs;
     std::vector<std::vector<float>> allreduce_recv_bufs;
 

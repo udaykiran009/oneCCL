@@ -33,7 +33,7 @@
                 }                                                       \
                 break;                                                  \
             default:                                                    \
-                MLSL_ASSERTP(0);                                        \
+                MLSL_FATAL("unexpected value %d", reduction);           \
         }                                                               \
     } while (0)
 
@@ -48,7 +48,7 @@ mlsl_status_t mlsl_comp_reduce(const void *in_buf, size_t in_count, void *inout_
 {
     if (reduction == mlsl_reduction_custom)
     {
-        MLSL_ASSERTP(reduction_fn);
+        MLSL_THROW_IF_NOT(reduction_fn, "custom reduction requires user callback");
         reduction_fn(in_buf, in_count, inout_buf, out_count, NULL /* context */, dtype->type);
         return mlsl_status_success;
     }
@@ -77,7 +77,7 @@ mlsl_status_t mlsl_comp_reduce(const void *in_buf, size_t in_count, void *inout_
             MLSL_REDUCE(uint64_t);
             break;
         default:
-            MLSL_ASSERTP(0);
+            MLSL_FATAL("unexpected value %d", dtype->type);
             break;
     }
     return mlsl_status_success;

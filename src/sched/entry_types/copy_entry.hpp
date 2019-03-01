@@ -21,7 +21,7 @@ public:
     void start_derived()
     {
         auto comp_status = mlsl_comp_copy(in_buf, out_buf, cnt, dtype);
-        MLSL_ASSERT(comp_status == mlsl_status_success);
+        MLSL_ASSERT(comp_status == mlsl_status_success, "bad status %d", comp_status);
         status = mlsl_sched_entry_status_complete;
     }
 
@@ -32,8 +32,9 @@ public:
             case mlsl_sched_entry_field_in_buf: return &in_buf;
             case mlsl_sched_entry_field_cnt: return &cnt;
             case mlsl_sched_entry_field_dtype: return &dtype;
-            default: MLSL_ASSERTP(0);
+            default: MLSL_FATAL("unexpected id %d", id);
         }
+        return nullptr;
     }
 
     const char* name() const

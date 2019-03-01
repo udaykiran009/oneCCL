@@ -18,7 +18,7 @@ mlsl_executor::mlsl_executor(size_t workers_count, size_t priority_count, bool s
         comm_count = workers_count;
     }
 
-    MLSL_ASSERTP(comm_count >= workers_count);
+    MLSL_THROW_IF_NOT(comm_count >= workers_count, "incorrect values %zu %zu", comm_count, workers_count);
     atl_attr_t attr =
     {
         .comm_count = comm_count,
@@ -33,9 +33,9 @@ mlsl_executor::mlsl_executor(size_t workers_count, size_t priority_count, bool s
     }
 
     atl_status_t atl_status = atl_init(nullptr, nullptr, &proc_idx, &proc_count, &attr, &atl_comms, &atl_desc);
-    MLSL_ASSERTP(atl_status == atl_status_success);
-    MLSL_ASSERTP(atl_desc);
-    MLSL_ASSERTP(atl_comms);
+    MLSL_THROW_IF_NOT(atl_status == atl_status_success && atl_desc && atl_comms,
+                      "ATL init failed, res %d, desc %p, comm %p",
+                      atl_status, atl_desc, atl_comms);
 
     /* atl will return back whether rma is supported */
     is_rma_enabled = attr.enable_rma;
@@ -99,12 +99,13 @@ mlsl_executor::~mlsl_executor()
         }
     }
 
+    MLSL_LOG(DEBUG, "finalizing ATL..");
     atl_finalize(atl_desc, atl_comms);
 }
 
 void mlsl_executor::start_sched(mlsl_sched* sched)
 {
-    MLSL_ASSERTP_FMT((sched->coll_param.ctype != mlsl_coll_service_temporal &&
+    MLSL_ASSERT((sched->coll_param.ctype != mlsl_coll_service_temporal &&
                       sched->coll_param.ctype != mlsl_coll_service_persistent) ||
                      sched->partial_scheds.size() == 1,
                      "Service schedule must have exactly 1 entry");
@@ -112,7 +113,7 @@ void mlsl_executor::start_sched(mlsl_sched* sched)
     /* add scheds into worker queues */
     if (sched->partial_scheds.empty())
     {
-        MLSL_ASSERTP(0); // for now
+        MLSL_FATAL("empty sched is not supported"); // for now
         workers[0]->add(sched);
     }
     else
@@ -126,10 +127,8 @@ void mlsl_executor::start_sched(mlsl_sched* sched)
 
 void mlsl_executor::wait(mlsl_request* req)
 {
-    MLSL_LOG(DEBUG, "req %p, req->cc %d", req, req->completion_counter);
-
     req->sched->urgent = true;
-    while (__atomic_load_n(&req->completion_counter, __ATOMIC_ACQUIRE))
+    while (!req->is_completed())
     {
         if (env_data.worker_offload)
         {
@@ -152,8 +151,7 @@ bool mlsl_executor::test(mlsl_request* req)
 {
     bool completed = false;
 
-    size_t completion_counter = __atomic_load_n(&req->completion_counter, __ATOMIC_ACQUIRE);
-    if (completion_counter)
+    if (!req->is_completed())
     {
         req->sched->urgent = true;
         if (env_data.worker_offload)
@@ -168,7 +166,6 @@ bool mlsl_executor::test(mlsl_request* req)
                 workers[idx]->do_work();
             }
         }
-        completed = __atomic_load_n(&req->completion_counter, __ATOMIC_ACQUIRE) == 0;
     }
     else
     {
