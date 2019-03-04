@@ -1,6 +1,6 @@
 #include "base.h"
 
-#define BUF_COUNT         (256)
+#define BUF_COUNT         (1024)
 #define ELEM_COUNT        (1024 * 1024 / 128)
 #define SINGLE_ELEM_COUNT (BUF_COUNT * ELEM_COUNT)
 #define ALIGNMENT         (2 * 1024 * 1024)

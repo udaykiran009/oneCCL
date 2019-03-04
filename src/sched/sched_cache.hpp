@@ -1,5 +1,6 @@
 #pragma once
 
+#include "common/utils/spinlock.hpp"
 #include "comp/comp.hpp"
 #include "sched/sched.hpp"
 
@@ -111,8 +112,8 @@ public:
 private:
     void remove_all();
 
-    /* TODO: spinlock */
-    std::mutex guard{};
+    using sched_cache_lock_t = mlsl_spinlock;
+    sched_cache_lock_t guard{};
     using sched_table_t = std::unordered_map<mlsl_sched_key, mlsl_sched*, mlsl_sched_key_hasher>;
     sched_table_t table { MLSL_SCHED_CACHE_INITIAL_BUCKET_COUNT };
 };

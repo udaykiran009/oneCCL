@@ -1,5 +1,6 @@
 #pragma once
 
+#include "common/utils/spinlock.hpp"
 #include "exec/exec.hpp"
 #include "sched/sched.hpp"
 
@@ -11,6 +12,8 @@
 #define MLSL_FUSION_COUNT_THRESHOLD (256)
 #define MLSL_FUSION_BUFFER_SIZE     (MLSL_FUSION_BYTES_THRESHOLD * MLSL_FUSION_COUNT_THRESHOLD)
 #define MLSL_BUFFER_CACHE_PREALLOC  (4)
+
+using fusion_lock_t = mlsl_spinlock;
 
 class mlsl_buffer_cache
 {
@@ -26,7 +29,7 @@ public:
 
 private:
     size_t buf_size;
-    std::mutex guard{};
+    fusion_lock_t guard{};
     std::deque<void*> free_buffers;
     std::deque<void*> all_buffers;
 };
@@ -53,7 +56,7 @@ private:
     size_t bytes_threshold;
     size_t count_threshold;
 
-    std::mutex guard{};
+    fusion_lock_t guard{};
     using sched_queue_t = std::deque<mlsl_sched*>;
     sched_queue_t postponed_queue{};
     sched_queue_t exec_queue{};

@@ -42,7 +42,7 @@ mlsl_buffer_cache::mlsl_buffer_cache(size_t buf_size)
 
 mlsl_buffer_cache::~mlsl_buffer_cache()
 {
-    std::lock_guard<std::mutex> lock{guard};
+    std::lock_guard<fusion_lock_t> lock{guard};
     if(free_buffers.size() != all_buffers.size())
     {
         MLSL_FATAL("size mismatch %zu %zu", free_buffers.size(), all_buffers.size());
@@ -58,7 +58,7 @@ mlsl_buffer_cache::~mlsl_buffer_cache()
 
 void* mlsl_buffer_cache::get()
 {
-    std::lock_guard<std::mutex> lock{guard};
+    std::lock_guard<fusion_lock_t> lock{guard};
     void* buf;
     if (!free_buffers.empty())
     {
@@ -77,7 +77,7 @@ void* mlsl_buffer_cache::get()
 
 void mlsl_buffer_cache::release(void* buf)
 {
-    std::lock_guard<std::mutex> lock{guard};
+    std::lock_guard<fusion_lock_t> lock{guard};
     MLSL_THROW_IF_NOT(buf, "empty buf");
     free_buffers.push_back(buf);
 }
@@ -150,9 +150,9 @@ bool mlsl_fusion_manager::add(mlsl_sched* sched)
     MLSL_THROW_IF_NOT(!env_data.fusion_check_urgent || !sched->urgent, "incorrect values : %d vs %d",
                       env_data.fusion_check_urgent, sched->urgent);
     MLSL_THROW_IF_NOT(sched->req->is_completed(), "incorrect completion counter");
-    sched->req->set_count(1);
+    sched->req->set_counter(1);
 
-    std::lock_guard<std::mutex> lock{guard};
+    std::lock_guard<fusion_lock_t> lock{guard};
     postponed_queue.push_back(sched);
     return true;
 }
@@ -368,7 +368,7 @@ void mlsl_fusion_manager::execute()
 
     /* separate block to reduce lock scope */
     {
-        std::lock_guard<std::mutex> lock{guard};
+        std::lock_guard<fusion_lock_t> lock{guard};
         if (!postponed_queue.empty())
         {
             MLSL_LOG(DEBUG, "postponed_queue size %zu", postponed_queue.size());

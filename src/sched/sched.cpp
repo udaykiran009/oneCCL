@@ -126,10 +126,13 @@ mlsl_status_t mlsl_sched_progress(mlsl_sched_bin* bin,
                                   size_t max_sched_count,
                                   size_t& completed_sched_count)
 {
+    MLSL_ASSERT(bin);
+
     mlsl_status_t status = mlsl_status_success;
     size_t sched_count = 0;
-
-    completed_sched_count = 0;
+    auto sched_queue = bin->get_queue();
+    size_t bin_size = bin->size();
+    MLSL_ASSERT(bin_size > 0 && bin_size >= max_sched_count);
 
     MLSL_LOG(TRACE, "bin %p, sched_count %zu, max_scheds %zu",
              bin, bin->size(), max_sched_count);
@@ -140,11 +143,12 @@ mlsl_status_t mlsl_sched_progress(mlsl_sched_bin* bin,
     MLSL_ASSERT_FMT(atl_status == atl_status_success, "bad status %d", atl_status);
 
     // iterate through the scheds store in the bin
-    auto last_it = bin->get_scheds().end();
-    auto sched_queue = bin->get_queue();
-    for (auto it = bin->get_scheds().begin(); it != last_it; )
+    completed_sched_count = 0;
+    for (size_t sched_idx = 0; sched_idx < bin_size; )
     {
-        mlsl_sched* sched = *it;
+        mlsl_sched* sched = bin->get(sched_idx);
+        MLSL_ASSERT(sched && bin == sched->bin);
+
         if (sched->first_progress)
         {
             // perform initial progress, iterate throught schedule entries
@@ -189,24 +193,23 @@ mlsl_status_t mlsl_sched_progress(mlsl_sched_bin* bin,
         if (sched->start_idx == sched->entries.size())
         {
             // the last entry in the schedule has been completed, clean up the schedule and complete its request
-            MLSL_LOG(DEBUG, "completing and dequeuing: sched %p %s, req %p", sched, mlsl_coll_type_to_str(sched->coll_param.ctype), sched->req);
+            MLSL_LOG(DEBUG, "completing and dequeuing: sched %p %s, req %p",
+                     sched, mlsl_coll_type_to_str(sched->coll_param.ctype), sched->req);
 
-            // remove completed schedule from the bin. Iterator @b it will point to the next elem in bin->scheds
-            it = sched_queue->erase(it);
-
+            // remove completed schedule from the bin
+            sched_idx = sched_queue->erase(bin, sched_idx);
             MLSL_LOG(DEBUG, "completing request %p", sched->req);
             sched->req->complete();
-
             ++completed_sched_count;
         }
         else
         {
             // this schedule is not completed yet, switch to the next sched in bin scheds list
             // progression of unfinished schedules will be continued in the next call of @ref mlsl_sched_progress
-            ++it;
+            ++sched_idx;
         }
-
         sched_count++;
+
         if (sched_count == max_sched_count)
         {
             // desired number of processed scheds is reached, exit
@@ -313,7 +316,7 @@ mlsl_request* mlsl_sched::reset_request()
     }
     MLSL_LOG(DEBUG, "req %p, set count %d", req, completion_counter);
 
-    req->set_count(completion_counter);
+    req->set_counter(completion_counter);
     return req;
 }
 
@@ -403,7 +406,7 @@ void mlsl_sched::free_buffers()
 
 mlsl_request* mlsl_sched::start_subsched(mlsl_sched* subsched)
 {
-    subsched->req->set_count(1);
+    subsched->req->set_counter(1);
     subsched->sched_id = sched_id;
     subsched->reset();
     subsched->dump("subsched");

@@ -9,14 +9,16 @@ void mlsl_sched_bin::add(mlsl_sched* sched)
             "unexpected sched priority %zu, expected %zu",
             sched->coll_attr.priority, priority);
     }
-    scheds.emplace_back(sched);
+    MLSL_ASSERT(sched);
+    sched_list.add(sched);
 }
 
-sched_list_t::iterator mlsl_sched_bin::erase(sched_list_t::iterator sched_it)
+size_t mlsl_sched_bin::erase(size_t idx)
 {
-    (*sched_it)->bin = nullptr;
-    sched_list_t::iterator next_sched_it = scheds.erase(sched_it);
-    return next_sched_it;
+    mlsl_sched* sched = sched_list.get(idx);
+    MLSL_ASSERT(sched);
+    sched->bin = nullptr;
+    return sched_list.erase(idx);
 }
 
 mlsl_sched_queue::mlsl_sched_queue(std::vector<atl_comm_t*> comm_ctxs)
@@ -58,7 +60,9 @@ void mlsl_sched_queue::add(mlsl_sched* sched, size_t priority)
         }
     }
 
-    std::lock_guard<std::mutex> lock{guard};
+    MLSL_ASSERT(sched);
+
+    std::lock_guard<sched_queue_lock_t> lock{guard};
 
     MLSL_LOG(DEBUG, "sched %p, priority %zu", sched, priority);
 
@@ -99,25 +103,23 @@ void mlsl_sched_queue::add(mlsl_sched* sched, size_t priority)
     sched->queue = this;
 }
 
-sched_list_t::iterator mlsl_sched_queue::erase(sched_list_t::iterator sched_it)
+size_t mlsl_sched_queue::erase(mlsl_sched_bin* bin, size_t idx)
 {
-    mlsl_sched* sched = *sched_it;
-    MLSL_ASSERT(sched);
-
-    mlsl_sched_bin* bin = sched->bin;
     MLSL_ASSERT(bin);
+    mlsl_sched* sched = bin->get(idx);
+    MLSL_ASSERT(sched);
 
     MLSL_LOG(DEBUG, "queue %p, bin %p, sched %p", this, bin, sched);
     size_t bin_priority = bin->get_priority();
 
-    std::lock_guard<std::mutex> lock{guard};
-    sched_list_t::iterator next_sched = bin->erase(sched_it);
+    std::lock_guard<sched_queue_lock_t> lock{guard};
+    size_t next_idx = bin->erase(idx);
     size_t bin_size = bin->size();
-    sched_list_t::iterator last_sched = std::end(bin->get_scheds());
+
     if (bin_size == 0)
     {
         bins.erase(bin_priority);
-        sched->bin = nullptr;
+        MLSL_LOG(DEBUG, "erase bin %p", bin);
     }
 
     if (bins.empty())
@@ -125,7 +127,7 @@ sched_list_t::iterator mlsl_sched_queue::erase(sched_list_t::iterator sched_it)
         max_priority = 0;
         cached_max_priority_bin = nullptr;
     }
-    else if ((bin_priority == max_priority) && (bin_size == 0))
+    else if ((bin_priority == max_priority) && !bin_size)
     {
         max_priority--;
         sched_bin_list_t::iterator it;
@@ -135,12 +137,13 @@ sched_list_t::iterator mlsl_sched_queue::erase(sched_list_t::iterator sched_it)
         }
         cached_max_priority_bin = &(it->second);
     }
-    return next_sched;
+
+    return next_idx;
 }
 
 mlsl_sched_bin* mlsl_sched_queue::peek(size_t& bin_size)
 {
-    std::lock_guard<std::mutex> lock{guard};
+    std::lock_guard<sched_queue_lock_t> lock{guard};
     bin_size = (cached_max_priority_bin) ? cached_max_priority_bin->size() : 0;
     return cached_max_priority_bin;
 }

@@ -7,7 +7,6 @@
 #include "common/datatype/datatype.hpp"
 #include "common/log/log.hpp"
 #include "common/request/request.hpp"
-#include "common/utils/lock.hpp"
 
 #include <memory>
 
