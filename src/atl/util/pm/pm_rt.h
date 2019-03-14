@@ -9,14 +9,18 @@ typedef struct pm_rt_desc pm_rt_desc_t;
 
 /* PMI RT */
 atl_status_t pmirt_init(size_t *proc_idx, size_t *procs_num, pm_rt_desc_t **pmrt_desc);
+atl_status_t kube_init(size_t *proc_idx, size_t *procs_num, pm_rt_desc_t **pmrt_desc);
+atl_status_t kube_set_framework_function(update_checker_f user_checker);
 
 typedef enum pm_rt_type {
     PM_RT_PMI,
+    PM_RT_KUBE,
 } pm_rt_type_t;
 
 typedef struct pm_rt_ops {
     void (*finalize)(pm_rt_desc_t *pmrt_desc);
     void (*barrier)(pm_rt_desc_t *pmrt_desc);
+    atl_status_t (*update)(size_t *proc_idx, size_t *proc_count);
 } pm_rt_ops_t;
 
 typedef struct pm_rt_kvs_ops {
@@ -31,16 +35,34 @@ struct pm_rt_desc {
     pm_rt_kvs_ops_t *kvs_ops;
 };
 
+//TODO: Add customize
+static pm_rt_type_t type = PM_RT_PMI;
+//static pm_rt_type_t type = PM_RT_KUBE;
+
 static inline atl_status_t
 pmrt_init(size_t *proc_idx, size_t *procs_num, pm_rt_desc_t **pmrt_desc)
 {
-    pm_rt_type_t type = PM_RT_PMI;
-
     switch (type) {
     case PM_RT_PMI:
         return pmirt_init(proc_idx, procs_num, pmrt_desc);
+    case PM_RT_KUBE:
+        return kube_init(proc_idx, procs_num, pmrt_desc);
     }
     return atl_status_failure;
+}
+static inline atl_status_t
+pmrt_set_framework_function(update_checker_f user_checker)
+{
+    switch (type) {
+    case PM_RT_KUBE:
+        return kube_set_framework_function(user_checker);
+    default:
+        return atl_status_success;
+    }
+}
+static inline atl_status_t pmrt_update(size_t *proc_idx, size_t *proc_count, pm_rt_desc_t *pmrt_desc)
+{
+    return pmrt_desc->ops->update(proc_idx, proc_count);
 }
 static inline void pmrt_finalize(pm_rt_desc_t *pmrt_desc)
 {

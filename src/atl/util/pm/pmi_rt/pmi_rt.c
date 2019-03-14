@@ -1,4 +1,4 @@
-#include "pmi_rt_codec.h"
+#include "pm_rt_codec.h"
 
 #include <stdlib.h>
 #include <string.h>
@@ -122,9 +122,15 @@ static void pmirt_barrier(pm_rt_desc_t *pmrt_desc)
     (void) PMI_Barrier();
 }
 
+atl_status_t pmirt_update(size_t *proc_idx, size_t *proc_count)
+{
+    return atl_status_success;
+}
+
 pm_rt_ops_t ops = {
     .finalize = pmirt_finalize,
     .barrier = pmirt_barrier,
+    .update = pmirt_update,
 };
 
 pm_rt_kvs_ops_t kvs_ops = {

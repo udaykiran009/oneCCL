@@ -8,6 +8,7 @@
 #include <dlfcn.h>
 #include <dirent.h>
 #include <assert.h>
+#include <algorithm>
 
 #define LIB_SUFFIX ".so"
 

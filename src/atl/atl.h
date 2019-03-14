@@ -20,6 +20,15 @@
 
 #define ATL_REQ_SIZE 8
 
+typedef enum framework_answers
+{
+    FA_WAIT     = 0,
+    FA_USE      = 1,
+    FA_FINALIZE = 2,
+}framework_answers_t;
+
+typedef framework_answers_t (*update_checker_f)(size_t comm_size);
+
 typedef enum {
     atl_status_success   = 0,
     atl_status_failure   = 1,
@@ -49,6 +58,8 @@ typedef struct atl_ops {
     void (*proc_idx)(atl_desc_t *desc, size_t *proc_idx);
     void (*proc_count)(atl_desc_t *desc, size_t *proc_count);
     atl_status_t (*finalize)(atl_desc_t *desc, atl_comm_t **comms);
+    atl_status_t (*update)(size_t *proc_idx, size_t *proc_count, atl_desc_t *desc);
+    atl_status_t (*set_framework_function)(update_checker_f user_checker);
 } atl_ops_t;
 
 typedef struct atl_mr_ops {
@@ -161,9 +172,19 @@ static inline void atl_proc_count(atl_desc_t *desc, size_t *proc_count)
     return desc->ops->proc_count(desc, proc_count);
 }
 
+static inline atl_status_t atl_update(size_t *proc_idx, size_t *proc_count, atl_desc_t *desc)
+{
+    return desc->ops->update(proc_idx, proc_count, desc);
+}
+
 static inline atl_status_t atl_finalize(atl_desc_t *desc, atl_comm_t **comms)
 {
     return desc->ops->finalize(desc, comms);
+}
+
+static inline atl_status_t atl_set_framework_function(atl_desc_t *desc, update_checker_f user_checker)
+{
+    return desc->ops->set_framework_function(user_checker);
 }
 
 static inline atl_status_t atl_comm_send(atl_comm_t *comm, const void *buf, size_t len,

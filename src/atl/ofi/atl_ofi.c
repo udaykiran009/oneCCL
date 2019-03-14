@@ -131,16 +131,12 @@ atl_ofi_comm_atl_addr_2_fi_addr(atl_ofi_context_t *atl, size_t proc_idx, size_t 
 }
 
 static atl_status_t
-atl_ofi_comms_connect(atl_ofi_context_t *atl_ofi_context,
-                      atl_comm_t **comms, size_t comm_count)
+atl_ofi_update_addr_table(atl_ofi_context_t *atl_ofi_context)
 {
     int ret;
     size_t i, j;
     char *epnames_table;
     size_t epnames_table_len;
-
-    atl_ofi_context->addr_table.ep_num =
-        (atl_ofi_context->sep ? 1 : comm_count);
 
     /* Allocate OFI EP names table that will contain all published names */
     epnames_table_len = atl_ofi_context->addr_len *
@@ -149,18 +145,6 @@ atl_ofi_comms_connect(atl_ofi_context_t *atl_ofi_context,
     epnames_table = (char *)calloc(1, epnames_table_len);
     if (!epnames_table)
         return atl_status_failure;
-
-    for (i = 0; i < atl_ofi_context->addr_table.ep_num; i++) {
-        atl_ofi_comm_context_t *comm_context =
-            container_of(comms[i], atl_ofi_comm_context_t, atl_comm);
-        ret = pmrt_kvs_put(atl_ofi_context->pm_rt, ATL_OFI_PM_KEY,
-                           atl_ofi_context->proc_idx, i,
-                           comm_context->name->addr,
-                           comm_context->name->len);
-        if (ret)
-            goto err_ep_names;
-    }
-
     pmrt_barrier(atl_ofi_context->pm_rt);
 
     /* Retrieve all the OFI EP names in order */
@@ -177,6 +161,9 @@ atl_ofi_comms_connect(atl_ofi_context_t *atl_ofi_context,
                 goto err_ep_names;
         }
     }
+
+    if (atl_ofi_context->addr_table.table != NULL)
+        free(atl_ofi_context->addr_table.table);
 
     atl_ofi_context->addr_table.table =
         calloc(1, atl_ofi_context->addr_table.ep_num *
@@ -212,6 +199,32 @@ err_addr_table:
 err_ep_names:
     free(epnames_table);
     return RET2ATL(ret);
+}
+
+static atl_status_t
+atl_ofi_comms_connect(atl_ofi_context_t *atl_ofi_context,
+                      atl_comm_t **comms, size_t comm_count)
+{
+    int ret;
+    size_t i;
+
+    atl_ofi_context->addr_table.ep_num =
+        (atl_ofi_context->sep ? 1 : comm_count);
+
+    for (i = 0; i < atl_ofi_context->addr_table.ep_num; i++) {
+        atl_ofi_comm_context_t *comm_context =
+            container_of(comms[i], atl_ofi_comm_context_t, atl_comm);
+        ret = pmrt_kvs_put(atl_ofi_context->pm_rt, ATL_OFI_PM_KEY,
+                           atl_ofi_context->proc_idx, i,
+                           comm_context->name->addr,
+                           comm_context->name->len);
+        if (ret)
+            return atl_status_failure;
+    }
+
+    ret = atl_ofi_update_addr_table(atl_ofi_context);
+
+    return ret;
 }
 
 static atl_status_t atl_ofi_comms_destroy_conns(atl_ofi_context_t *atl_ofi_context)
@@ -466,6 +479,10 @@ static inline void atl_ofi_process_comps(struct fi_cq_tagged_entry *entries,
             break;
         case ATL_OFI_COMP_PROBE_STARTED:
             comp_ofi_req->comp_state = ATL_OFI_COMP_PROBE_COMPLETED;
+            break;
+        case ATL_OFI_COMP_COMPLETED:
+            break;
+        case ATL_OFI_COMP_PROBE_COMPLETED:
             break;
         default:
             assert(0);
@@ -886,6 +903,33 @@ static void atl_ofi_proc_count(atl_desc_t *atl_desc, size_t *proc_count)
     *proc_count = atl_ofi_context->proc_count;
 }
 
+static atl_status_t
+atl_ofi_update(size_t *proc_idx, size_t *proc_count, atl_desc_t *atl_desc)
+{
+    int ret;
+
+    atl_ofi_context_t *atl_ofi_context =
+        container_of(atl_desc, atl_ofi_context_t, atl_desc);
+
+    ret = pmrt_update(&atl_ofi_context->proc_idx, &atl_ofi_context->proc_count, atl_ofi_context->pm_rt);
+    if (ret)
+        goto err_pmrt_update;
+
+    ret = atl_ofi_update_addr_table(atl_ofi_context);
+    if (ret)
+        goto err_pmrt_update;
+
+    *proc_idx = atl_ofi_context->proc_idx;
+    *proc_count = atl_ofi_context->proc_count;
+
+    /* Normal end of execution */
+    return ret;
+
+    /*Abnormal end of execution */
+err_pmrt_update:
+    return RET2ATL(ret);
+}
+
 static atl_status_t atl_ofi_mr_reg(atl_desc_t *atl_desc, const void *buf, size_t len,
                                    atl_mr_t **atl_mr)
 {
@@ -924,10 +968,18 @@ static atl_status_t atl_ofi_mr_dereg(atl_desc_t *atl_desc, atl_mr_t *atl_mr)
     return RET2ATL(ret);
 }
 
+
+static atl_status_t atl_ofi_set_framework_function(update_checker_f user_checker)
+{
+    return pmrt_set_framework_function(user_checker);
+}
+
 atl_ops_t atl_ofi_ops = {
-    .proc_idx = atl_ofi_proc_idx,
-    .proc_count = atl_ofi_proc_count,
-    .finalize = atl_ofi_finalize,
+    .proc_idx               = atl_ofi_proc_idx,
+    .proc_count             = atl_ofi_proc_count,
+    .finalize               = atl_ofi_finalize,
+    .update                 = atl_ofi_update,
+    .set_framework_function = atl_ofi_set_framework_function,
 };
 
 static atl_mr_ops_t atl_ofi_mr_ops = {
