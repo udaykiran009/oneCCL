@@ -986,6 +986,11 @@ static void atl_ofi_tune(void)
     setenv("FI_PSM2_TIMEOUT", "1", 0);
     setenv("FI_PSM2_LOCK_LEVEL", "1", 0);
     setenv("HFI_NO_CPUAFFINITY", "1", 0);
+
+    setenv("FI_OFI_RXM_RX_SIZE", "8192", 0);
+    setenv("FI_OFI_RXM_TX_SIZE", "8192", 0);
+    setenv("FI_OFI_RXM_MSG_RX_SIZE", "1024", 0);
+    setenv("FI_OFI_RXM_MSG_TX_SIZE", "1024", 0);
 }
 
 atl_status_t atl_ofi_init(int *argc, char ***argv, size_t *proc_idx, size_t *proc_count,

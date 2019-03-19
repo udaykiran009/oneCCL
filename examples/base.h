@@ -14,9 +14,9 @@
 
 #include "mlsl.h"
 
-#define COUNT 32768
-#define ITERS 256
-#define ROOT  0
+#define COUNT     32768
+#define ITERS     256
+#define COLL_ROOT 0
 #define MLSL_CALL(expr)                             \
   do {                                              \
         mlsl_status_t status = mlsl_status_success; \

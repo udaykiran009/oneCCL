@@ -20,7 +20,7 @@
       float expected = size;                                               \
       for (idx = 0; idx < COUNT; idx++)                                    \
       {                                                                    \
-          if ((rank == ROOT) && (recv_buf[idx] != expected))               \
+          if ((rank == COLL_ROOT) && (recv_buf[idx] != expected))          \
           {                                                                \
               printf("iter %zu, idx %zu, expected %f, got %f\n",           \
                       iter_idx, idx, expected, recv_buf[idx]);             \
@@ -39,11 +39,11 @@ int main()
     test_init();
 
     coll_attr.to_cache = 1;
-    RUN_COLLECTIVE(mlsl_reduce(send_buf, recv_buf, COUNT, mlsl_dtype_float, mlsl_reduction_sum, ROOT, &coll_attr, NULL, &request),
+    RUN_COLLECTIVE(mlsl_reduce(send_buf, recv_buf, COUNT, mlsl_dtype_float, mlsl_reduction_sum, COLL_ROOT, &coll_attr, NULL, &request),
                    "persistent_reduce");
 
     coll_attr.to_cache = 0;
-    RUN_COLLECTIVE(mlsl_reduce(send_buf, recv_buf, COUNT, mlsl_dtype_float, mlsl_reduction_sum, ROOT, &coll_attr, NULL, &request),
+    RUN_COLLECTIVE(mlsl_reduce(send_buf, recv_buf, COUNT, mlsl_dtype_float, mlsl_reduction_sum, COLL_ROOT, &coll_attr, NULL, &request),
                    "regular_reduce");
 
     test_finalize();

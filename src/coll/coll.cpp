@@ -410,7 +410,7 @@ mlsl_request* mlsl_allreduce_impl(const void* send_buf,
     coll_param.comm = communicator;
 
     mlsl_sched_key key{};
-    key.ctype = mlsl_coll_reduce;
+    key.ctype = mlsl_coll_allreduce;
     key.buf1 = (void*) send_buf;
     key.buf2 = recv_buf;
     key.count1 = count;

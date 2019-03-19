@@ -161,6 +161,8 @@ int main()
 {
     test_init();
 
+    coll_attr.to_cache = 1;
+
     char* comp_iter_time_ms_env = getenv("COMP_ITER_TIME_MS");
     if (comp_iter_time_ms_env)
     {
@@ -237,7 +239,6 @@ int main()
     mlsl_request_t timer_req = NULL;
     mlsl_coll_attr_t attr;
     memset(&attr, 0, sizeof(mlsl_coll_attr_t));
-    coll_attr.to_cache = 1;
 
     MLSL_CALL(mlsl_allgatherv(msg_timers, MSG_COUNT, recv_msg_timers, recv_msg_timers_counts,
                               mlsl_dtype_double, &attr, NULL, &timer_req));

@@ -8,7 +8,7 @@
       {                                                                    \
           for (idx = 0; idx < COUNT; idx++)                                \
           {                                                                \
-              if (rank == ROOT) buf[idx] = expected;                       \
+              if (rank == COLL_ROOT) buf[idx] = expected;                  \
               else buf[idx] = 0.0;                                         \
           }                                                                \
           t1 = when();                                                     \
@@ -38,11 +38,11 @@ int main()
     test_init();
 
     coll_attr.to_cache = 1;
-    RUN_COLLECTIVE(mlsl_bcast(buf, COUNT, mlsl_dtype_float, ROOT, &coll_attr, NULL, &request),
+    RUN_COLLECTIVE(mlsl_bcast(buf, COUNT, mlsl_dtype_float, COLL_ROOT, &coll_attr, NULL, &request),
                    "persistent_bcast");
 
     coll_attr.to_cache = 0;
-    RUN_COLLECTIVE(mlsl_bcast(buf, COUNT, mlsl_dtype_float, ROOT, &coll_attr, NULL, &request),
+    RUN_COLLECTIVE(mlsl_bcast(buf, COUNT, mlsl_dtype_float, COLL_ROOT, &coll_attr, NULL, &request),
                    "regular_bcast");
 
     test_finalize();

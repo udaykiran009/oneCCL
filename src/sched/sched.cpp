@@ -134,7 +134,7 @@ mlsl_status_t mlsl_sched_progress(mlsl_sched_bin* bin,
     /* ensure communication progress */
     atl_status_t atl_status __attribute__ ((unused));
     atl_status = atl_comm_poll(bin->get_comm_ctx());
-    MLSL_ASSERT_FMT(atl_status == atl_status_success, "bad status %d", atl_status);
+    MLSL_THROW_IF_NOT(atl_status == atl_status_success, "bad status %d", atl_status);
 
     // iterate through the scheds store in the bin
     completed_sched_count = 0;

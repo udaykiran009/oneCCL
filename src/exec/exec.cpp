@@ -92,7 +92,7 @@ void mlsl_executor::start(mlsl_sched* sched)
     {
         for (size_t idx = 0; idx < sched->partial_scheds.size(); idx++)
         {
-            workers[idx % workers.size()]->add(sched->partial_scheds[idx].get());
+            workers[sched->partial_scheds[idx]->sched_id % workers.size()]->add(sched->partial_scheds[idx].get());
         }
     }
 }
