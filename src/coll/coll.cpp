@@ -1,19 +1,10 @@
 #include <mlsl.hpp>
 #include "coll/coll.hpp"
 #include "coll/coll_algorithms.hpp"
-
-mlsl_status_t mlsl_coll_create_attr(mlsl_coll_attr_t** coll_attr)
-{
-    mlsl_coll_attr_t* attr = static_cast<mlsl_coll_attr_t*>(MLSL_CALLOC(sizeof(mlsl_coll_attr_t), "coll_attr"));
-    *coll_attr = attr;
-    return mlsl_status_success;
-}
-
-mlsl_status_t mlsl_coll_free_attr(mlsl_coll_attr_t* coll_attr)
-{
-    MLSL_FREE(coll_attr);
-    return mlsl_status_success;
-}
+#include "sched/sched_cache.hpp"
+#include "common/request/request.hpp"
+#include "out_of_order/ooo_match.hpp"
+#include "fusion/fusion.hpp"
 
 const char* mlsl_coll_type_to_str(mlsl_coll_type type)
 {
@@ -31,10 +22,6 @@ const char* mlsl_coll_type_to_str(mlsl_coll_type type)
             return "ALLGATHERV";
         case mlsl_coll_sparse_allreduce:
             return "SPARSE_ALLREDUCE";
-        case mlsl_coll_service_temporal:
-            return "SERVICE_TEMP";
-        case mlsl_coll_service_persistent:
-            return "SERVICE_PERS";
         case mlsl_coll_none:
             return "NONE";
         default:
@@ -48,27 +35,32 @@ static mlsl_request* mlsl_coll_create(const mlsl_coll_attr_t* attributes,
                                       mlsl_coll_param& coll_param)
 {
     mlsl_sched* sched = nullptr;
-    mlsl_comm* tensor_comm = nullptr;
-    bool sched_to_be_posponed = false;
+    mlsl_comm* match_id_comm = nullptr;
+    bool should_run = true;
     bool should_commit = false;
     bool was_fused = false;
+    std::string match_id;
     mlsl_request* request = nullptr;
-    const mlsl_coll_attr_t* attr = attributes ? attributes : global_data.default_coll_attr;
+    const mlsl_coll_attr_t* attr = attributes ? attributes : global_data.default_coll_attr.get();
 
-    MLSL_THROW_IF_NOT((coll_param.ctype == mlsl_coll_allreduce) ||
+    MLSL_THROW_IF_NOT(coll_param.ctype == mlsl_coll_allreduce ||
                       !(attr->prologue_fn || attr->epilogue_fn || attr->reduction_fn),
                       "incorrect input");
 
     if (attr->match_id && env_data.out_of_order_support)
     {
-        MLSL_THROW_IF_NOT(strlen(attr->match_id) <= MLSL_MATCH_ID_MAX_LEN,
-                          "match_id length exceeds limit %d", MLSL_MATCH_ID_MAX_LEN);
-
-        //todo: need to sync checking of tensor communicator and possible creation of tensor
-        tensor_comm = global_data.ooo_handler->get_comm_for_tensor(attr->match_id);
-        if (!tensor_comm)
+        //copy user-defined match_id
+        match_id.assign(attr->match_id);
+        match_id_comm = global_data.ooo_manager->get_comm(match_id);
+        if (!match_id_comm)
         {
-            sched_to_be_posponed = true;
+            //user has provided match_id that has not been resolved yet.
+            //schedule will be postponed until comm resolution
+            should_run = false;
+        }
+        else
+        {
+            MLSL_LOG(DEBUG, "found comm id %hu for match_id %s", match_id_comm->id(), match_id.c_str());
         }
     }
 
@@ -79,11 +71,8 @@ static mlsl_request* mlsl_coll_create(const mlsl_coll_attr_t* attributes,
         key.reduction_fn = attr->reduction_fn;
         key.priority = attr->priority;
         key.synchronous = attr->synchronous;
-        if (attr->match_id && strlen(attr->match_id))
-        {
-            key.match_id.assign(attr->match_id, MLSL_MATCH_ID_MAX_LEN);
-        }
-
+        //match_id contains empty string or user-defined match_id
+        key.match_id = match_id;
         sched = global_data.sched_cache->find(key);
     }
 
@@ -98,7 +87,7 @@ static mlsl_request* mlsl_coll_create(const mlsl_coll_attr_t* attributes,
             global_data.sched_cache->add(key, sched);
         }
 
-        sched->set_coll_attr(attr);
+        sched->set_coll_attr(attr, std::move(match_id));
         should_commit = true;
     }
     else
@@ -106,20 +95,23 @@ static mlsl_request* mlsl_coll_create(const mlsl_coll_attr_t* attributes,
         MLSL_LOG(DEBUG, "found sched, reuse %p, type %s",
                  sched, mlsl_coll_type_to_str(sched->coll_param.ctype));
     }
-
-    if (tensor_comm)
+    if (match_id_comm)
     {
-        sched->coll_param.comm = tensor_comm;
+        sched->coll_param.comm = match_id_comm;
     }
 
-    if (env_data.enable_fusion)
+    if(should_run)
     {
-        MLSL_LOG(DEBUG, "try to add sched %p, ctype %d", sched, sched->coll_param.ctype);
-        was_fused = global_data.fusion_manager->add(sched);
-        if (was_fused)
+        if (env_data.enable_fusion)
         {
-            request = sched->req;
-            return request;
+            was_fused = global_data.fusion_manager->add(sched);
+            if (was_fused)
+            {
+                MLSL_LOG(DEBUG, "sched %p, ctype %s will be fused", sched,
+                         mlsl_coll_type_to_str(sched->coll_param.ctype));
+                request = sched->req;
+                return request;
+            }
         }
     }
 
@@ -130,8 +122,9 @@ static mlsl_request* mlsl_coll_create(const mlsl_coll_attr_t* attributes,
         sched->commit(global_data.parallelizer.get());
     }
 
-    if (!sched_to_be_posponed)
+    if (should_run)
     {
+        //normal schedule execution - either with user-defined or match_id specific communicator
         request = sched->start(global_data.executor.get());
         if (attr->synchronous)
         {
@@ -141,20 +134,11 @@ static mlsl_request* mlsl_coll_create(const mlsl_coll_attr_t* attributes,
     }
     else
     {
-        MLSL_LOG(DEBUG, "sched %p postponed for tensor comm resolution", sched);
-        std::string tensor_name{attr->match_id};
-        /* sched->coll_param.comm points to the user defined or global comm */
-        if (sched->coll_param.comm->rank() == 0 &&
-            !global_data.ooo_handler->is_bcast_in_progress(tensor_name))
-        {
-            MLSL_LOG(DEBUG, "root rank broadcasts tensor %s", attr->match_id);
-            mlsl_sched* service_sched = global_data.ooo_handler->build_bcast_sched(
-                tensor_name.c_str());
-            global_data.executor->start(service_sched);
-        }
-        /* root rank already broadcasts the tensor or it is not root rank */
-        global_data.ooo_handler->postpone_for_tensor(attr->match_id, sched);
+        MLSL_ASSERT_FMT(!sched->coll_attr.match_id.empty(), "invalid match_id");
+
         request = sched->reset_request();
+        MLSL_LOG(INFO, "sched %p postponed for match_id resolution", sched);
+        global_data.ooo_manager->postpone(sched);
     }
 
     return request;

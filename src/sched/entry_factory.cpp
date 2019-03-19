@@ -11,7 +11,6 @@
 #include "sched/entry_types/coll_entry.hpp"
 #include "sched/entry_types/prologue_entry.hpp"
 #include "sched/entry_types/epilogue_entry.hpp"
-#include "sched/entry_types/tensor_comm_entry.hpp"
 #include "sched/entry_types/wait_value_entry.hpp"
 #include "sched/entry_types/function_entry.hpp"
 #include "sched/entry_types/probe_entry.hpp"
@@ -118,11 +117,12 @@ std::shared_ptr<sched_entry> entry_factory::make_coll_entry(mlsl_sched* sched,
                                                             void* recv_buf,
                                                             size_t cnt,
                                                             mlsl_datatype_internal_t dtype,
-                                                            mlsl_reduction_t reduction_op)
+                                                            mlsl_reduction_t reduction_op,
+                                                            size_t root)
 {
     MLSL_LOG(DEBUG, "creating COLLECTIVE entry");
     auto e = std::make_shared<coll_entry>(sched, coll_type, send_buf, recv_buf,
-                                          cnt, dtype, reduction_op);
+                                          cnt, dtype, reduction_op, root);
     sched->add_entry(e);
     return e;
 }
@@ -156,16 +156,6 @@ std::shared_ptr<sched_entry> entry_factory::make_epilogue_entry(mlsl_sched* sche
     MLSL_LOG(DEBUG, "creating EPILOGUE entry");
     auto e = std::make_shared<epilogue_entry>(sched, fn, in_buf, in_cnt, in_dtype, out_buf,
                                               expected_out_cnt, out_dtype);
-    sched->add_entry(e);
-    return e;
-}
-
-std::shared_ptr<sched_entry> entry_factory::make_tensor_comm_entry(mlsl_sched* sched,
-                                                                   out_of_order::ooo_match* ooo_handler,
-                                                                   const char* tensor_name)
-{
-    MLSL_LOG(DEBUG, "creating TENSOR_COMM entry");
-    auto e = std::make_shared<tensor_comm_entry>(sched, ooo_handler, tensor_name);
     sched->add_entry(e);
     return e;
 }

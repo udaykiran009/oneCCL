@@ -1,10 +1,12 @@
 #pragma once
 
-#include "exec/exec.hpp"
 #include "sched/sched_queue.hpp"
+
 #include <memory>
 #include <list>
 #include <pthread.h>
+
+class mlsl_executor;
 
 class mlsl_worker
 {
@@ -19,7 +21,7 @@ public:
     mlsl_status_t stop();
     mlsl_status_t pin(int proc_id);
     
-    virtual void add(mlsl_sched* sched);
+    void add(mlsl_sched* sched);
 
     virtual size_t do_work();
 

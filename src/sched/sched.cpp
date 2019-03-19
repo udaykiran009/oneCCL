@@ -2,15 +2,9 @@
 #include "sched/sched_queue.hpp"
 #include "sched/sync_object.hpp"
 #include "sched/entry_factory.hpp"
-#include "comp/comp.hpp"
 #include "common/global/global.hpp"
-#include "common/log/log.hpp"
-#include "common/utils/utils.hpp"
-#include "common/comm/comm.hpp"
 #include "out_of_order/ooo_match.hpp"
-
-#include <stdio.h>
-#include <string.h>
+#include "parallelizer/parallelizer.hpp"
 
 static size_t lifo_priority = 0;
 
@@ -151,7 +145,7 @@ mlsl_status_t mlsl_sched_progress(mlsl_sched_bin* bin,
 
         if (sched->first_progress)
         {
-            // perform initial progress, iterate throught schedule entries
+            // perform initial progress, iterate through schedule entries
             // some entries are running in 'synchronous' way, they are completed right after execution
             // other entries are running in 'asynchronous' way and may not be completed right after execution
             // entry N+1 may be started right after entry N even if entry N has not been completed
@@ -237,7 +231,8 @@ void mlsl_sched::commit(mlsl_parallelizer* parallelizer)
              this, entries.size(), sched_id, req, partial_scheds.size());
 }
 
-mlsl_request* mlsl_sched::start(mlsl_executor* exec)
+mlsl_request* mlsl_sched::start(mlsl_executor* exec,
+                                bool reset_sched)
 {
     /* sanity check the schedule */
     MLSL_ASSERT(start_idx == 0);
@@ -245,9 +240,19 @@ mlsl_request* mlsl_sched::start(mlsl_executor* exec)
     MLSL_ASSERT(coll_param.comm);
 
     MLSL_LOG(DEBUG, "starting schedule %p, type %s",
-        this, mlsl_coll_type_to_str(coll_param.ctype));
+             this, mlsl_coll_type_to_str(coll_param.ctype));
 
-    prepare_partial_scheds(exec->proc_idx == 0);
+    prepare_partial_scheds();
+
+    if(reset_sched)
+    {
+        reset_request();
+    }
+
+    if (env_data.sched_dump)
+    {
+        dump_all();
+    }
 
     exec->start(this);
 
@@ -270,27 +275,13 @@ void mlsl_sched::set_request(mlsl_request* req)
     is_own_req = false;
 }
 
-void mlsl_sched::prepare_partial_scheds(bool dump_scheds)
+void mlsl_sched::prepare_partial_scheds()
 {
-    size_t partial_sched_count = partial_scheds.size();
-    MLSL_THROW_IF_NOT(partial_sched_count > 0, "partial_sched_count = 0");
-
-    for (size_t idx = 0; idx < partial_sched_count; idx++)
+    for (auto& sched: partial_scheds)
     {
-        partial_scheds[idx]->update_id();
-        partial_scheds[idx]->reset();
-        if (dump_scheds)
-        {
-            partial_scheds[idx]->dump("worker_sched");
-        }
+        sched->update_id();
+        sched->reset();
     }
-
-    if (dump_scheds)
-    {
-        dump("origin_sched");
-    }
-
-    reset_request();
 }
 
 void mlsl_sched::reset()
@@ -345,7 +336,8 @@ void mlsl_sched::sync_partial_scheds()
     }
 }
 
-void mlsl_sched::set_coll_attr(const mlsl_coll_attr_t *attr)
+void mlsl_sched::set_coll_attr(const mlsl_coll_attr_t* attr,
+                               std::string match_id)
 {
     MLSL_ASSERT(attr);
     coll_attr.prologue_fn = attr->prologue_fn;
@@ -354,10 +346,17 @@ void mlsl_sched::set_coll_attr(const mlsl_coll_attr_t *attr)
     coll_attr.priority = attr->priority;
     coll_attr.synchronous = attr->synchronous;
     coll_attr.to_cache = attr->to_cache;
-    if (attr->match_id)
+    coll_attr.match_id = std::move(match_id);
+}
+
+void mlsl_sched::dump_all() const
+{
+    for(const auto& sched : partial_scheds)
     {
-        strncpy(coll_attr.match_id, attr->match_id, MLSL_MATCH_ID_MAX_LEN - 1);
+        sched->dump("worker_sched");
     }
+
+    dump("origin_sched");
 }
 
 void mlsl_sched::dump(const char *name) const

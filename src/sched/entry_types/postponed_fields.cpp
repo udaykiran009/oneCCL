@@ -1,5 +1,4 @@
 #include "sched/entry_types/entry.hpp"
-#include "sched/entry_types/postponed_fields.hpp"
 #include "common/log/log.hpp"
 
 void postponed_fields::add_available(mlsl_sched_entry_field_id id)

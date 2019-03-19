@@ -1,9 +1,5 @@
 #include "comp/comp.hpp"
 #include "common/log/log.hpp"
-#include "common/utils/utils.hpp"
-
-#include <stdint.h>
-#include <string.h>
 
 #define MLSL_REDUCE(type)                                               \
     do {                                                                \

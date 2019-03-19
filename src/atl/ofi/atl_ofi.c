@@ -4,22 +4,16 @@
 #include <assert.h>
 #include <math.h>
 
-#include <sys/types.h>
 #include <unistd.h>
 #include <sys/syscall.h>
 
 #include <rdma/fabric.h>
 #include <rdma/fi_cm.h>
-#include <rdma/fi_errno.h>
-#include <rdma/fi_endpoint.h>
-#include <rdma/fi_domain.h>
 #include <rdma/fi_tagged.h>
 #include <rdma/fi_rma.h>
 
 #include <inttypes.h>
 #include "pm_rt.h"
-
-#include "atl.h"
 
 #ifndef gettid
 #define gettid() syscall(SYS_gettid)

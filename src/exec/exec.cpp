@@ -1,16 +1,15 @@
 #include "exec/exec.hpp"
 #include "exec/worker.hpp"
 #include "exec/service_worker.hpp"
-#include "common/global/global.hpp"
-#include "sched/sched_queue.hpp"
-#include "common/utils/utils.hpp"
 
-mlsl_executor::mlsl_executor(size_t worker_count, int* worker_affinity, bool create_service_worker)
+mlsl_executor::mlsl_executor(const mlsl_env_data& env_vars,
+                             const mlsl_global_data& global_data)
 {
+    auto worker_count = static_cast<size_t>(env_vars.worker_count);
     workers.reserve(worker_count);
+    auto comm_count = worker_count;
 
-    size_t comm_count = worker_count;
-    if (env_data.priority_mode != mlsl_priority_none)
+    if (env_vars.priority_mode != mlsl_priority_none)
     {
         comm_count *= MLSL_PRIORITY_BUCKET_COUNT;
     }
@@ -18,7 +17,7 @@ mlsl_executor::mlsl_executor(size_t worker_count, int* worker_affinity, bool cre
     atl_attr_t attr =
     {
         .comm_count = comm_count,
-        .enable_rma = env_data.enable_rma
+        .enable_rma = env_vars.enable_rma
     };
 
     MLSL_LOG(INFO, "atl comm count %zu", attr.comm_count);
@@ -45,30 +44,23 @@ mlsl_executor::mlsl_executor(size_t worker_count, int* worker_affinity, bool cre
     {
         std::vector<atl_comm_t*> comm_vec(atl_comms + idx * comm_per_worker,
                                           atl_comms + (idx + 1) * comm_per_worker);
-        std::unique_ptr<mlsl_sched_queue> data_queue
-        {
-            new mlsl_sched_queue(comm_vec)
-        };
+        std::unique_ptr<mlsl_sched_queue> data_queue{new mlsl_sched_queue(comm_vec)};
 
-        if (create_service_worker && idx == 0)
+        if (env_vars.enable_fusion && idx == 0)
         {
-            std::unique_ptr<mlsl_sched_queue> service_queue
-            {
-                new mlsl_sched_queue(comm_vec)
-            };
             MLSL_LOG(DEBUG, "creating service worker");
             workers.emplace_back(new mlsl_service_worker(this, idx,
-                std::move(data_queue), std::move(service_queue)));
+                std::move(data_queue), *global_data.fusion_manager));
         }
         else
         {
             workers.emplace_back(new mlsl_worker(this, idx, std::move(data_queue)));
         }
 
-        if (env_data.worker_offload)
+        if (env_vars.worker_offload)
         {
             workers.back()->start();
-            workers.back()->pin(worker_affinity[idx]);
+            workers.back()->pin(env_vars.worker_affinity[idx]);
             MLSL_LOG(DEBUG, "started worker #%zu", idx);
         }
     }
@@ -91,16 +83,9 @@ mlsl_executor::~mlsl_executor()
 
 void mlsl_executor::start(mlsl_sched* sched)
 {
-    MLSL_ASSERT_FMT((sched->coll_param.ctype != mlsl_coll_service_temporal &&
-                     sched->coll_param.ctype != mlsl_coll_service_persistent) ||
-                     sched->partial_scheds.size() == 1,
-                     "Service schedule must have exactly 1 entry");
-
-    /* add scheds into worker queues */
-    if (sched->partial_scheds.empty())
+    if (sched->is_internal)
     {
-        /* TODO: use regular non-partial schedue for ooo module */
-        MLSL_FATAL("empty sched is not supported"); // for now
+        MLSL_ASSERT_FMT(sched->partial_scheds.empty(), "internal sched should not have partial scheds");
         workers[0]->add(sched);
     }
     else

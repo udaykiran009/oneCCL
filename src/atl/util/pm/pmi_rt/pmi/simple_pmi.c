@@ -46,8 +46,6 @@
 #endif
 #ifdef HAVE_STRINGS_H
 
-#include <strings.h>
-
 #endif
 #ifdef USE_PMI_PORT
 #ifndef MAXHOSTNAME
@@ -955,22 +953,13 @@ static int GetResponse(const char request[], const char expectedCmd[],
 #include <sys/types.h>
 #endif
 
-#include <sys/param.h>
-#include <sys/socket.h>
-
 /* sockaddr_in (Internet) */
 #include <netinet/in.h>
 /* TCP_NODELAY */
 #include <netinet/tcp.h>
 
-/* sockaddr_un (Unix) */
-#include <sys/un.h>
-
 /* defs of gethostbyname */
 #include <netdb.h>
-
-/* fcntl, F_GET/SETFL */
-#include <fcntl.h>
 
 /* This is really IP!? */
 #ifndef TCP

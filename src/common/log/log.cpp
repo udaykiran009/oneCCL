@@ -1,5 +1,4 @@
 #include "common/log/log.hpp"
-#include "common/env/env.hpp"
 
 void mlsl_log_get_time(char* buf, size_t buf_size)
 {

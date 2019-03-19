@@ -1,5 +1,4 @@
 #include "coll/coll_algorithms.hpp"
-#include "sched/sched.hpp"
 #include "coll/sparse_types.hpp"
 #include "sched/entry_factory.hpp"
 

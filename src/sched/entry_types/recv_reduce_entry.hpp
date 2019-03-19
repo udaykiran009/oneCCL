@@ -36,7 +36,7 @@ public:
     {
         auto atl_tag = mlsl_create_atl_tag(sched->coll_param.comm->id(), sched->sched_id, src);
         size_t bytes = in_cnt * mlsl_datatype_get_size(dtype);
-        MLSL_LOG(DEBUG, "starting RECV in RECV_REDUCE entry, src %zu, tag %lu, req %p, bytes %zu",
+        MLSL_LOG(DEBUG, "starting RECV in RECV_REDUCE entry, src %zu, tag %lx, req %p, bytes %zu",
                  src, atl_tag, &req, bytes);
         atl_status_t atl_status = atl_comm_recv(sched->bin->get_comm_ctx(), comm_buf,
                                                 bytes, src, atl_tag, &req);

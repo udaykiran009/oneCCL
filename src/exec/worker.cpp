@@ -1,8 +1,5 @@
 #include "common/global/global.hpp"
 #include "exec/worker.hpp"
-#include "sched/sched.hpp"
-
-#include <stdint.h>
 
 #define MLSL_WORKER_CHECK_CANCEL_ITERS (32768)
 #define MLSL_WORKER_YIELD_ITERS        (32768)
@@ -102,7 +99,7 @@ size_t mlsl_worker::do_work()
 static void* mlsl_worker_func(void* args)
 {
     auto worker = static_cast<mlsl_worker*>(args);
-    MLSL_LOG(INFO, "worker_idx %zu", worker->get_idx());
+    MLSL_LOG(DEBUG, "worker_idx %zu", worker->get_idx());
 
     size_t iter_count = 0;
     size_t yield_spin_count = 0;

@@ -1,7 +1,5 @@
 #include "parallelizer/parallelizer.hpp"
 #include "sched/entry_factory.hpp"
-#include "common/datatype/datatype.hpp"
-#include "comp/comp.hpp"
 
 #define MLSL_MIN_PART_SIZE (2048)
 
@@ -103,12 +101,11 @@ mlsl_status_t mlsl_parallelizer::process(mlsl_sched* sched)
         part_coll_param.ctype = sched->coll_param.ctype;
         part_coll_param.dtype = sched->coll_param.dtype;
         sched->add_partial_sched(part_coll_param);
-        part_scheds.back()->root = sched;
     }
 
     for (idx = 0; idx < part_count; idx++)
     {
-        memcpy(&(part_scheds[idx]->coll_attr), &(sched->coll_attr), sizeof(mlsl_coll_attr));
+        part_scheds[idx]->coll_attr = sched->coll_attr;
     }
 
     switch (coll_type)

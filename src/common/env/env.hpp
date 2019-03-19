@@ -23,6 +23,7 @@ enum mlsl_sparse_allreduce_algo
     mlsl_sparse_allreduce_algo_mask  = 1
 };
 
+//todo: set/get methods
 struct alignas(CACHELINE_SIZE) mlsl_env_data
 {
     int log_level;

@@ -2,6 +2,7 @@
 
 #include "sched/entry_types/entry.hpp"
 #include "common/global/global.hpp"
+#include "exec/exec.hpp"
 
 class register_entry : public sched_entry
 {

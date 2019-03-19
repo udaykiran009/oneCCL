@@ -39,7 +39,7 @@ void use_additional_update(int sig)
     is_need_additional_update = 1;
 }
 
-int KUBE_Update()
+int KUBE_API KUBE_Update()
 {
     FILE *fp;
     char get_up_idx[REQUEST_POSTFIX_SIZE];
@@ -225,7 +225,7 @@ void Extreme_finalize(int sig)
     finalized = 1;
 }
 
-int KUBE_Init(void)
+int KUBE_API KUBE_Init(void)
 {
     FILE *fp_name;
     FILE *fp_type;
@@ -316,7 +316,7 @@ void add_str(char* dst, const char* src)
 }
 
 
-int KUBE_Finalize(void)
+int KUBE_API KUBE_Finalize(void)
 {
     FILE *fp;
     char patch[REQUEST_POSTFIX_SIZE];
@@ -380,7 +380,7 @@ int KUBE_Finalize(void)
     return 0;
 }
 
-int KUBE_Barrier(void)
+int KUBE_API KUBE_Barrier(void)
 {
     FILE *fp;
     char patch[REQUEST_POSTFIX_SIZE];
@@ -429,48 +429,48 @@ int KUBE_Barrier(void)
     return 0;
 }
 
-int KUBE_Get_size(size_t *size)
+int KUBE_API KUBE_Get_size(size_t *size)
 {
     *size = count_pods;
     return 0;
 }
 
-int KUBE_Get_rank(size_t *rank)
+int KUBE_API KUBE_Get_rank(size_t *rank)
 {
     *rank = my_rank;
     return 0;
 }
 
-int KUBE_KVS_Get_my_name(char kvsname[], size_t length)
+int KUBE_API KUBE_KVS_Get_my_name(char kvsname[], size_t length)
 {
     strncpy(kvsname, KVS_NAME, strlen(KVS_NAME));
     return 0;
 }
 
-int KUBE_KVS_Get_name_length_max(size_t *length)
+int KUBE_API KUBE_KVS_Get_name_length_max(size_t *length)
 {
     *length =  MAX_KVS_NAME_LENGTH;
     return 0;
 }
 
-int KUBE_KVS_Get_key_length_max(size_t *length)
+int KUBE_API KUBE_KVS_Get_key_length_max(size_t *length)
 {
     *length = MAX_KVS_KEY_LENGTH;
     return 0;
 }
 
-int KUBE_KVS_Get_value_length_max(size_t *length)
+int KUBE_API KUBE_KVS_Get_value_length_max(size_t *length)
 {
     *length = MAX_KVS_VAL_LENGTH;
     return 0;
 }
 
-int KUBE_KVS_Commit(const char kvsname[])
+int KUBE_API KUBE_KVS_Commit(const char kvsname[])
 {
     return 0;
 }
 
-int KUBE_KVS_Put(const char kvsname[], const char key[], const char value[])
+int KUBE_API KUBE_KVS_Put(const char kvsname[], const char key[], const char value[])
 {
     FILE* fp;
     char patch[REQUEST_POSTFIX_SIZE];
@@ -489,7 +489,7 @@ int KUBE_KVS_Put(const char kvsname[], const char key[], const char value[])
     return 0;
 }
 
-int KUBE_KVS_Get(const char kvsname[], const char key[], char value[], size_t length)
+int KUBE_API KUBE_KVS_Get(const char kvsname[], const char key[], char value[], size_t length)
 {
     FILE *fp;
 
@@ -525,7 +525,7 @@ int KUBE_KVS_Get(const char kvsname[], const char key[], char value[], size_t le
     return 0;
 }
 
-int KUBE_set_framework_function(update_checker__f user_checker)
+int KUBE_API KUBE_set_framework_function(update_checker__f user_checker)
 {
     ask_framework = user_checker;
     return 0;

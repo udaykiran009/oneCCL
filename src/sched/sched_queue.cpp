@@ -1,5 +1,4 @@
 #include "sched/sched_queue.hpp"
-#include "common/utils/utils.hpp"
 
 void mlsl_sched_bin::add(mlsl_sched* sched)
 {
@@ -24,7 +23,7 @@ size_t mlsl_sched_bin::erase(size_t idx)
 mlsl_sched_queue::mlsl_sched_queue(std::vector<atl_comm_t*> comm_ctxs)
     : comm_ctxs(comm_ctxs)
 {
-    MLSL_LOG(DEBUG, "created sched_queue, comm_ctxs count %zu", comm_ctxs.size());
+    MLSL_LOG(DEBUG, "created sched_queue, comm_ctxs count %zu val %p", comm_ctxs.size(), comm_ctxs[0]);
 
     if (env_data.priority_mode != mlsl_priority_none)
     {

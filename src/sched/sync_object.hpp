@@ -14,18 +14,18 @@ public:
 
     void visit()
     {
-        MLSL_ASSERT_FMT(sync > 0, "already completed");
-        --sync;
+        auto value = sync.fetch_sub(1, std::memory_order_release);
+        MLSL_ASSERT_FMT(value >= 0 && value <= initial_cnt, "invalid count %zu", value);
     }
 
     void reset()
     {
-        sync = initial_cnt;
+        sync.store(initial_cnt, std::memory_order_release);
     }
 
     size_t value() const
     {
-        return sync.load();
+        return sync.load(std::memory_order_acquire);
     }
 
 private:

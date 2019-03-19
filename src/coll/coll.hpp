@@ -15,15 +15,9 @@ enum mlsl_coll_type
     mlsl_coll_reduce =              2,
     mlsl_coll_allreduce =           3,
     mlsl_coll_allgatherv =          4,
-    mlsl_coll_service_temporal =    5,
-    mlsl_coll_service_persistent =  6,
-    mlsl_coll_sparse_allreduce =    7,
-    mlsl_coll_none =                8
+    mlsl_coll_sparse_allreduce =    5,
+    mlsl_coll_none =                6
 };
-
-mlsl_status_t mlsl_coll_create_attr(mlsl_coll_attr_t** coll_attr);
-
-mlsl_status_t mlsl_coll_free_attr(mlsl_coll_attr_t* coll_attr);
 
 mlsl_status_t mlsl_coll_build_barrier(mlsl_sched* sched);
 

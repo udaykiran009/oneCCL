@@ -1,8 +1,6 @@
 #include "pm_rt_codec.h"
 
 #include <stdlib.h>
-#include <string.h>
-#include <stdio.h>
 
 #include <pmi.h>
 

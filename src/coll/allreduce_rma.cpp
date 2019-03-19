@@ -1,6 +1,7 @@
 #include "coll/allreduce_rma.hpp"
 #include "coll/coll_algorithms.hpp"
 #include "sched/entry_factory.hpp"
+#include "exec/exec.hpp"
 
 mlsl_status_t rma_ring_allreduce_reset_sync_flag(const void* ctx)
 {

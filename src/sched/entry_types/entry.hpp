@@ -1,8 +1,8 @@
 #pragma once
 
 #include "common/datatype/datatype.hpp"
-#include "common/log/log.hpp"
 #include "sched/entry_types/postponed_fields.hpp"
+#include "common/utils/utils.hpp"
 
 #include <memory>
 

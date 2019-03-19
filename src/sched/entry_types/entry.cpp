@@ -1,4 +1,5 @@
 #include "sched/entry_types/entry.hpp"
+#include "common/log/log.hpp"
 
 void sched_entry::set_field_fn(mlsl_sched_entry_field_id id,
                                mlsl_sched_entry_field_function_t fn,

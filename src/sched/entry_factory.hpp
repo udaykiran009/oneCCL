@@ -78,10 +78,11 @@ public:
     static std::shared_ptr<sched_entry> make_coll_entry(mlsl_sched* sched,
                                                         mlsl_coll_type coll_type,
                                                         const void* send_buf,
-                                                        void* recv_buf,
+                                                        void* recv_buf, //buf for bcast
                                                         size_t cnt,
                                                         mlsl_datatype_internal_t dtype,
-                                                        mlsl_reduction_t reduction_op);
+                                                        mlsl_reduction_t reduction_op,
+                                                        size_t root = 0);
 
     static std::shared_ptr<sched_entry> make_prologue_entry(mlsl_sched* sched,
                                                             mlsl_prologue_fn_t fn,
@@ -101,10 +102,6 @@ public:
                                                             void* out_buf,
                                                             size_t expected_out_cnt,
                                                             mlsl_datatype_internal_t out_dtype);
-
-    static std::shared_ptr<sched_entry> make_tensor_comm_entry(mlsl_sched* sched,
-                                                               out_of_order::ooo_match* ooo_handler,
-                                                               const char* tensor_name);
 
     static std::shared_ptr<sched_entry> make_wait_value_entry(mlsl_sched* sched,
                                                               const volatile uint64_t* ptr,

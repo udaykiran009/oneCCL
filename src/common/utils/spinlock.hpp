@@ -7,7 +7,7 @@ class mlsl_spinlock
 public:
     mlsl_spinlock()
     {
-    	flag.clear();
+        flag.clear();
     }
 
     mlsl_spinlock(const mlsl_spinlock&) = delete;

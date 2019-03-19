@@ -2,10 +2,12 @@
 
 #include "common/env/env.hpp"
 #include "common/request/request.hpp"
+#include "common/global/global.hpp"
 #include "atl/atl.h"
 
 #include <vector>
 #include <memory>
+
 
 class mlsl_worker;
 class mlsl_service_worker;
@@ -20,9 +22,7 @@ public:
     mlsl_executor(mlsl_executor&& other) = delete;
     mlsl_executor& operator= (mlsl_executor&& other) = delete;
 
-    mlsl_executor(size_t worker_count,
-                  int* workers_affinity,
-                  bool create_service_worker);
+    mlsl_executor(const mlsl_env_data& env_vars, const mlsl_global_data& global_data);
     ~mlsl_executor();
 
     void start(mlsl_sched* sched);

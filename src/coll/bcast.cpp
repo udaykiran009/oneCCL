@@ -1,5 +1,4 @@
 #include "coll/coll_algorithms.hpp"
-#include "common/utils/utils.hpp"
 #include "sched/entry_factory.hpp"
 
 #define MIN(a,b) std::min(a,b)

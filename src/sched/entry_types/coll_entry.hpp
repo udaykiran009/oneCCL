@@ -1,6 +1,7 @@
 #pragma once
 
 #include "sched/entry_types/entry.hpp"
+#include "common/request/request.hpp"
 
 class coll_entry : public sched_entry
 {
@@ -12,11 +13,13 @@ public:
                void* recv_buf,
                size_t cnt,
                mlsl_datatype_internal_t dtype,
-               mlsl_reduction_t reduction_op)
+               mlsl_reduction_t reduction_op,
+               size_t root = 0)
         : sched_entry(sched, true), ctype(coll_type),
           send_buf(send_buf), recv_buf(recv_buf), cnt(cnt),
-          dtype(dtype), op(reduction_op), req(nullptr)
+          dtype(dtype), op(reduction_op), req(nullptr), root(root)
     {
+        pfields.add_available(mlsl_sched_entry_field_buf);
         pfields.add_available(mlsl_sched_entry_field_send_buf);
         pfields.add_available(mlsl_sched_entry_field_recv_buf);
         pfields.add_available(mlsl_sched_entry_field_cnt);
@@ -44,6 +47,8 @@ public:
     {
         switch (id)
         {
+            case mlsl_sched_entry_field_buf:
+                return &recv_buf;
             case mlsl_sched_entry_field_send_buf:
                 return &send_buf;
             case mlsl_sched_entry_field_recv_buf:
@@ -83,6 +88,25 @@ private:
         {
             case mlsl_coll_barrier:
             case mlsl_coll_bcast:
+            {
+                mlsl_coll_param coll_param{};
+                coll_param.ctype = mlsl_coll_bcast;
+                coll_param.buf = recv_buf;
+                coll_param.count = cnt;
+                coll_param.dtype = dtype;
+                coll_param.root = root;
+                coll_param.comm = sched->coll_param.comm;
+                coll_sched = new mlsl_sched(coll_param);
+
+                auto result = mlsl_coll_build_bcast(coll_sched,
+                                                    coll_sched->coll_param.buf,
+                                                    coll_sched->coll_param.count,
+                                                    coll_sched->coll_param.dtype,
+                                                    coll_sched->coll_param.root);
+
+                MLSL_ASSERT_FMT(result == mlsl_status_success, "bad result %d", result);
+
+            }
             case mlsl_coll_reduce:
                 break;
             case mlsl_coll_allreduce:
@@ -132,4 +156,6 @@ private:
     mlsl_datatype_internal_t dtype;
     mlsl_reduction_t op;
     mlsl_request* req;
+    //for bcast
+    size_t root;
 };

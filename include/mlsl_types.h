@@ -19,11 +19,6 @@ extern "C" {
 
 #define MLSL_API MLSL_HELPER_DLL_EXPORT
 
-/**
- * Maximum length of @b match_id parameter in @b mlsl_coll_attr_t struct
- */
-#define MLSL_MATCH_ID_MAX_LEN (256)
-
 /** Status values returned by MLSL functions. */
 typedef enum
 {
@@ -78,7 +73,6 @@ typedef struct
     /**
      * Id of the operation. If specified, new communicator will be created and collective
      * operations with the same @b match_id will be executed in the same order.
-     * Length of the string must not exceed @ref MLSL_MATCH_ID_MAX_LEN
      */
     const char* match_id;
 } mlsl_coll_attr_t;

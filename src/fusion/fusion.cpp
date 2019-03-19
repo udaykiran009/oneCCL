@@ -1,8 +1,6 @@
-#include "common/global/global.hpp"
 #include "fusion/fusion.hpp"
 #include "sched/entry_factory.hpp"
-
-#include <algorithm>
+#include "sched/sched_cache.hpp"
 
 #define MLSL_FUSION_CHECK_SCHEDS_ITERS (1024)
 
@@ -96,7 +94,7 @@ mlsl_fusion_manager::mlsl_fusion_manager()
     cycle = std::chrono::microseconds(cycle_usec);
     last_exec_time = std::chrono::steady_clock::now();
 
-    MLSL_LOG(INFO, "created fusion manager, cycle_usec %ld, bytes_threshold %zu, count_threshold %zu",
+    MLSL_LOG(INFO, "created fusion_manager manager, cycle_usec %ld, bytes_threshold %zu, count_threshold %zu",
              cycle_usec, bytes_threshold, count_threshold);
 }
 
@@ -132,7 +130,7 @@ bool mlsl_fusion_manager::can_fuse(mlsl_sched* sched)
         sched->coll_attr.epilogue_fn ||
         sched->coll_attr.reduction_fn ||
         sched->coll_attr.synchronous ||
-        strlen(sched->coll_attr.match_id))
+        sched->coll_attr.match_id.length())
     {
         MLSL_LOG(DEBUG, "can't fuse due to unexpected fields in coll_attr");
         return false;

@@ -27,8 +27,6 @@ set(MLSL_SRC
     fusion/fusion.cpp
     parallelizer/parallelizer.cpp
     out_of_order/ooo_match.cpp
-    out_of_order/postponed_sched.cpp
-    out_of_order/tensor_comm.cpp
     common/comm/comm.cpp
     common/datatype/datatype.cpp
     common/env/env.cpp

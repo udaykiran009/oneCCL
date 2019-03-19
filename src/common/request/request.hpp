@@ -35,7 +35,7 @@ public:
     bool is_completed()
     {
         auto counter = completion_counter.load(std::memory_order_acquire);
-        MLSL_LOG(DEBUG, "req %p, counter %d", this, counter);
+        MLSL_LOG(TRACE, "req %p, counter %d", this, counter);
         return counter == 0;
     }
 

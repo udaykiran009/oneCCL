@@ -1,6 +1,8 @@
 #include "exec/exec.hpp"
-#include "common/global/global.hpp"
-#include "sched/sched_queue.hpp"
+#include "out_of_order/ooo_match.hpp"
+#include "fusion/fusion.hpp"
+#include "parallelizer/parallelizer.hpp"
+#include "sched/sched_cache.hpp"
 
 mlsl_status_t mlsl_init()
 {
@@ -19,23 +21,21 @@ mlsl_status_t mlsl_init()
                 std::unique_ptr<mlsl_fusion_manager>(new mlsl_fusion_manager());
         }
 
-        global_data.executor = std::unique_ptr<mlsl_executor>(new mlsl_executor(env_data.worker_count,
-                                                                                env_data.worker_affinity,
-                                                                                env_data.out_of_order_support != 0 ||
-                                                                                env_data.enable_fusion != 0));
+        global_data.executor = std::unique_ptr<mlsl_executor>(new mlsl_executor(env_data, global_data));
 
         global_data.comm_ids = std::unique_ptr<comm_id_storage>(new comm_id_storage(mlsl_comm::max_comm_count));
 
         global_data.comm = std::make_shared<mlsl_comm>(global_data.executor->proc_idx,
                                                        global_data.executor->proc_count,
-                                                       std::unique_ptr<comm_id>(new comm_id(*global_data.comm_ids)));
+                                                       std::unique_ptr<comm_id>(
+                                                           new comm_id(*global_data.comm_ids, true)));
 
-        mlsl_coll_create_attr(&global_data.default_coll_attr);
+        global_data.default_coll_attr.reset(new mlsl_coll_attr_t{});
         global_data.default_coll_attr->to_cache = 1;
 
         if (env_data.out_of_order_support)
         {
-            global_data.ooo_handler =
+            global_data.ooo_manager =
                 std::unique_ptr<out_of_order::ooo_match>(
                     new out_of_order::ooo_match(*global_data.executor, *global_data.comm_ids));
         }
@@ -50,17 +50,13 @@ mlsl_status_t mlsl_finalize()
     try
     {
         global_data.sched_cache.reset();
-        global_data.ooo_handler.reset();
+        global_data.ooo_manager.reset();
         global_data.executor.reset();
         global_data.fusion_manager.reset();
         global_data.comm.reset();
         global_data.comm_ids.reset();
         global_data.parallelizer.reset();
-
-        if (global_data.default_coll_attr)
-        {
-            mlsl_coll_free_attr(global_data.default_coll_attr);
-        }
+        global_data.default_coll_attr.reset();
 
         mlsl_env_free();
         return mlsl_status_success;
@@ -193,7 +189,9 @@ mlsl_status_t MLSL_API mlsl_bcast(
     try
     {
         if (!req)
-        { return mlsl_status_invalid_arguments; }
+        {
+            return mlsl_status_invalid_arguments;
+        }
 
         auto comm = static_cast<mlsl_comm*>(communicator);
         mlsl_comm* real_comm = comm ?: global_data.comm.get();
@@ -220,7 +218,9 @@ mlsl_status_t MLSL_API mlsl_reduce(
     try
     {
         if (!req)
-        { return mlsl_status_invalid_arguments; }
+        {
+            return mlsl_status_invalid_arguments;
+        }
 
         auto comm = static_cast<mlsl_comm*>(communicator);
         mlsl_comm* real_comm = comm ?: global_data.comm.get();

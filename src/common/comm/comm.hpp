@@ -50,8 +50,8 @@ public:
     mlsl_sched_id_t get_sched_id(bool use_internal_space)
     {
         mlsl_sched_id_t& next_sched_id = (use_internal_space) ? m_next_sched_id_internal : m_next_sched_id_external;
-        mlsl_sched_id_t max_sched_id = (use_internal_space) ? mlsl_comm::max_sched_count : mlsl_comm::max_sched_count / 2;
-        mlsl_sched_id_t first_sched_id = (use_internal_space) ? mlsl_comm::max_sched_count / 2 : 0;
+        mlsl_sched_id_t first_sched_id = (use_internal_space) ? static_cast<mlsl_sched_id_t>(0) : mlsl_comm::max_sched_count / 2;
+        mlsl_sched_id_t max_sched_id = (use_internal_space) ? mlsl_comm::max_sched_count / 2 : mlsl_comm::max_sched_count ;
 
         mlsl_sched_id_t id = next_sched_id;
 
@@ -82,11 +82,11 @@ public:
     /**
      * Maximum available number of active communicators
      */
-    static constexpr const size_t max_comm_count = std::numeric_limits<mlsl_comm_id_t>::max();
+    static constexpr mlsl_sched_id_t max_comm_count = std::numeric_limits<mlsl_comm_id_t>::max();
     /**
      * Maximum value of schedule id in scope of the current communicator
      */
-    static constexpr const size_t max_sched_count = std::numeric_limits<mlsl_sched_id_t>::max();
+    static constexpr mlsl_sched_id_t max_sched_count = std::numeric_limits<mlsl_sched_id_t>::max();
 
 private:
     size_t m_rank;

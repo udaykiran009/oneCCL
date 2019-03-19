@@ -3,10 +3,6 @@
 #include "sched/entry_types/entry.hpp"
 #include "atl/atl.h"
 #include "coll/coll.hpp"
-#include "common/comm/comm.hpp"
-#include "common/datatype/datatype.hpp"
-#include "common/log/log.hpp"
-#include "common/request/request.hpp"
 
 #include <memory>
 
@@ -17,7 +13,7 @@ typedef mlsl_status_t(*mlsl_sched_finalize_fn_t) (mlsl_sched*, const void*);
 
 class mlsl_sched_queue;
 class mlsl_sched_bin;
-struct mlsl_request;
+class mlsl_request;
 class mlsl_parallelizer;
 class mlsl_executor;
 
@@ -49,8 +45,8 @@ struct mlsl_coll_attr
     mlsl_reduction_fn_t reduction_fn;
     size_t priority;
     int synchronous;
-    char match_id[MLSL_MATCH_ID_MAX_LEN];
     int to_cache;
+    std::string match_id;
 };
 
 struct mlsl_coll_sparse_param
@@ -88,7 +84,7 @@ struct mlsl_coll_param
 //  4.1 prepare_partial_scheds()
 //      4.1.1 update_id()
 //      4.1.2 reset()
-//      4.1.3 reset_request()
+//  4.2 reset_request()
 
 class alignas(CACHELINE_SIZE) mlsl_sched
 {
@@ -108,22 +104,20 @@ public:
 
     void do_progress();
 
-    void set_coll_attr(const mlsl_coll_attr_t *attr);
+    void set_coll_attr(const mlsl_coll_attr_t* attr,
+                        std::string match_id);
 
     void commit(mlsl_parallelizer* parallelizer);
 
-    mlsl_request* start(mlsl_executor* exec);
+    mlsl_request* start(mlsl_executor* exec,
+                            bool reset_sched = true);
 
     void add_partial_sched(mlsl_coll_param& coll_param);
 
     void set_request(mlsl_request* req);
 
-    void prepare_partial_scheds(bool dump_scheds = false);
+    void prepare_partial_scheds();
 
-    void update_id()
-    {
-        sched_id = coll_param.comm->get_sched_id(is_internal);
-    }
 
     /**
      * Reset runtime parameters and all entries
@@ -175,8 +169,6 @@ public:
         finalize_fn_ctx = ctx;
     }
 
-    void dump(const char *name) const;
-
     void* alloc_buffer(size_t size);
     void free_buffers();
     size_t get_priority();
@@ -189,8 +181,6 @@ public:
     mlsl_coll_attr coll_attr{};
 
     mlsl_sched_memory memory;
-    mlsl_sched_entry_exec_mode exec_mode = mlsl_sched_entry_exec_regular;
-    mlsl_sched_add_mode add_mode = mlsl_sched_add_back;
 
     size_t start_idx = 0;  /* index to start */
     std::deque<std::shared_ptr<sched_entry>> entries{};
@@ -200,21 +190,30 @@ public:
 
     std::vector<std::shared_ptr<mlsl_sched>> partial_scheds{};
 
-    /* whether sched was created by internal module (fusion/ooo) */
+    /* whether sched was created by internal module (fusion_manager/ooo_manager) */
     bool is_internal = false;
 
     /* whether sched was once checked for completion from user level (by wait/test) */
     bool urgent = false;
 
-    /* whether req is owned by this schedule or was set externally */
-    bool is_own_req = true;
+private:
+
+    mlsl_sched_entry_exec_mode exec_mode = mlsl_sched_entry_exec_regular;
+    mlsl_sched_add_mode add_mode = mlsl_sched_add_back;
 
     mlsl_sched_finalize_fn_t finalize_fn = nullptr;
     void* finalize_fn_ctx;
 
-    mlsl_sched* root = nullptr;
+    /* whether req is owned by this schedule or was set externally */
+    bool is_own_req = true;
 
-private:
+    void update_id()
+    {
+        sched_id = coll_param.comm->get_sched_id(is_internal);
+    }
+
+    void dump_all() const;
+    void dump(const char *name) const;
     void alloc_req();
 };
 

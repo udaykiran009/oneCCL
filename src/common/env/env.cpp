@@ -1,10 +1,6 @@
 #include "common/env/env.hpp"
 #include "common/log/log.hpp"
 
-#include <stdlib.h>
-#include <string.h>
-#include <unistd.h>
-
 mlsl_env_data env_data =
 {
     .log_level = ERROR,
