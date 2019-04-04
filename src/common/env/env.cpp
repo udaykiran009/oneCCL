@@ -17,7 +17,8 @@ mlsl_env_data env_data =
     .fusion_bytes_threshold = 16384,
     .fusion_count_threshold = 256,
     .fusion_check_urgent = 1,
-    .fusion_cycle_ms = 0.2
+    .fusion_cycle_ms = 0.2,
+    .vector_allgatherv = 0
 };
 
 const char *mlsl_priority_mode_to_str(mlsl_priority_mode mode)
@@ -63,6 +64,7 @@ void mlsl_env_parse()
     mlsl_env_2_int("MLSL_FUSION_COUNT_THRESHOLD", &env_data.fusion_count_threshold);
     mlsl_env_2_int("MLSL_FUSION_CHECK_URGENT", &env_data.fusion_check_urgent);
     mlsl_env_2_float("MLSL_FUSION_CYCLE_MS", &env_data.fusion_cycle_ms);
+    mlsl_env_2_int("MLSL_VECTOR_ALLGATHERV", &env_data.vector_allgatherv);
     mlsl_env_parse_priority_mode();
     mlsl_env_parse_affinity();
     mlsl_env_parse_allreduce_algo();
@@ -95,6 +97,7 @@ void mlsl_env_print()
     MLSL_LOG(INFO, "MLSL_FUSION_COUNT_THRESHOLD: %d", env_data.fusion_count_threshold);
     MLSL_LOG(INFO, "MLSL_FUSION_CHECK_URGENT: %d", env_data.fusion_check_urgent);
     MLSL_LOG(INFO, "MLSL_FUSION_CYCLE_MS: %.1f", env_data.fusion_cycle_ms);
+    MLSL_LOG(INFO, "MLSL_VECTOR_ALLGATHERV: %d", env_data.vector_allgatherv);
     MLSL_LOG(INFO, "MLSL_PRIORITY_MODE: %s", mlsl_priority_mode_to_str(env_data.priority_mode));
     MLSL_LOG(INFO, "MLSL_ALLREDUCE_ALGO: %s", mlsl_allreduce_algo_to_str(env_data.allreduce_algo));
     mlsl_env_print_affinity();

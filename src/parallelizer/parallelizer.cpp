@@ -63,6 +63,8 @@ mlsl_status_t mlsl_parallelizer::process(mlsl_sched* sched)
     size_t* recv_counts = nullptr;
     std::shared_ptr<sched_entry> e;
 
+    std::vector<char*> ag_recv_bufs;
+
     switch (coll_type)
     {
         case mlsl_coll_barrier:
@@ -83,6 +85,7 @@ mlsl_status_t mlsl_parallelizer::process(mlsl_sched* sched)
             break;
         case mlsl_coll_allgatherv:
             part_count = coll_param->comm->size();
+            ag_recv_bufs.resize(part_count);
             break;
         default:
             MLSL_FATAL("unexpected coll_type %d", coll_type);
@@ -275,6 +278,12 @@ mlsl_status_t mlsl_parallelizer::process(mlsl_sched* sched)
             break;
         }
         case mlsl_coll_allgatherv:
+            for (size_t idx = 0; idx < coll_param->comm->size(); idx++)
+            {
+                ag_recv_bufs[idx] = (env_data.vector_allgatherv) ?
+                    ((char**)coll_param->recv_buf)[idx] :
+                    (char*)coll_param->recv_buf + offsets[idx];
+            }
             if (coll_param->send_buf != coll_param->recv_buf)
             {
                 std::vector<size_t> copy_counts(part_count);
@@ -290,8 +299,7 @@ mlsl_status_t mlsl_parallelizer::process(mlsl_sched* sched)
                     entry_factory::make_copy_entry(part_scheds[idx].get(),
                                                    (char*) coll_param->send_buf +
                                                    copy_offsets[idx],
-                                                   (char*) coll_param->recv_buf +
-                                                   offsets[coll_param->comm->rank()] +
+                                                   ag_recv_bufs[coll_param->comm->rank()] +
                                                    copy_offsets[idx],
                                                    copy_counts[idx], dtype);
                 }
@@ -302,7 +310,7 @@ mlsl_status_t mlsl_parallelizer::process(mlsl_sched* sched)
             for (idx = 0; idx < part_count; idx++)
             {
                 MLSL_CALL(mlsl_coll_build_bcast(part_scheds[idx].get(),
-                                                (char*) coll_param->recv_buf + offsets[idx],
+                                                ag_recv_bufs[idx],
                                                 counts[idx],
                                                 dtype,
                                                 idx));

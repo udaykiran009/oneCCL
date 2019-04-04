@@ -41,6 +41,7 @@ struct alignas(CACHELINE_SIZE) mlsl_env_data
     int fusion_count_threshold;
     int fusion_check_urgent;
     float fusion_cycle_ms;
+    int vector_allgatherv; /* TODO: figure out if there're options better than env var to control this feature */
 };
 
 extern mlsl_env_data env_data;
