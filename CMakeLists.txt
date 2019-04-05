@@ -92,7 +92,7 @@ install(PROGRAMS ${CMAKE_CURRENT_BINARY_DIR}/mlslvars.sh DESTINATION ${MLSL_INST
 
 #CPack re-uses generated install rules and puts all targets into archive
 #archive creation, generates a target 'package'
-set(CPACK_GENERATOR TGZ)
+set(CPACK_GENERATOR TGZ STGZ)
 set(CPACK_PACKAGE_VERSION_MAJOR 0)
 set(CPACK_PACKAGE_VERSION_MINOR 1)
 set(CPACK_PACKAGE_VERSION_PATCH 0)
