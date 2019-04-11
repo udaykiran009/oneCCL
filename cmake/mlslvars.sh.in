@@ -7,9 +7,9 @@ INTERMEDIATE_DIR="intel64"
 
 if [ -z "${PATH}" ]
 then
-    PATH="${MLSL_ROOT}/bin"; export PATH
+    PATH="${MLSL_ROOT}/${INTERMEDIATE_DIR}/bin"; export PATH
 else
-    PATH="${MLSL_ROOT}/bin:${PATH}"; export PATH
+    PATH="${MLSL_ROOT}/${INTERMEDIATE_DIR}/bin:${PATH}"; export PATH
 fi
 
 if [ -z "${LD_LIBRARY_PATH}" ]
