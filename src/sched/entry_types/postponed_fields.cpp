@@ -11,9 +11,9 @@ void postponed_fields::add(mlsl_sched_entry_field_id id,
                            const void* ctx,
                            bool update_once)
 {
-    MLSL_ASSERT_FMT(available_fields.find(id) != available_fields.end(),
+    MLSL_ASSERT(available_fields.find(id) != available_fields.end(),
                     "unexpected field_id %d", id);
-    MLSL_ASSERT_FMT(fields.find(id) == fields.end(),
+    MLSL_ASSERT(fields.find(id) == fields.end(),
                     "duplicated field_id %d", id);
     fields.emplace(id, postponed_field(id, fn, ctx, update_once));
 }

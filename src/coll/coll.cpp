@@ -25,7 +25,7 @@ const char* mlsl_coll_type_to_str(mlsl_coll_type type)
         case mlsl_coll_none:
             return "NONE";
         default:
-            MLSL_FATAL("unexpected coll_type %d", type);
+            MLSL_FATAL("unexpected coll_type ", type);
             return "UNKNOWN";
     }
 }
@@ -60,7 +60,7 @@ static mlsl_request* mlsl_coll_create(const mlsl_coll_attr_t* attributes,
         }
         else
         {
-            MLSL_LOG(DEBUG, "found comm id %hu for match_id %s", match_id_comm->id(), match_id.c_str());
+            LOG_DEBUG("found comm id ", match_id_comm->id(), " for match_id ", match_id.c_str());
         }
     }
 
@@ -79,8 +79,8 @@ static mlsl_request* mlsl_coll_create(const mlsl_coll_attr_t* attributes,
     if (!sched)
     {
         sched = new mlsl_sched(coll_param);
-        MLSL_LOG(DEBUG, "didn't find sched, create new one %p, type %s",
-                 sched, mlsl_coll_type_to_str(sched->coll_param.ctype));
+        LOG_DEBUG("didn't find sched, create new one ", sched, ", type ",
+                 mlsl_coll_type_to_str(sched->coll_param.ctype));
 
         if (attr->to_cache)
         {
@@ -92,8 +92,8 @@ static mlsl_request* mlsl_coll_create(const mlsl_coll_attr_t* attributes,
     }
     else
     {
-        MLSL_LOG(DEBUG, "found sched, reuse %p, type %s",
-                 sched, mlsl_coll_type_to_str(sched->coll_param.ctype));
+        LOG_DEBUG("found sched, reuse ", sched, ", type ",
+                 mlsl_coll_type_to_str(sched->coll_param.ctype));
     }
     if (match_id_comm)
     {
@@ -107,8 +107,7 @@ static mlsl_request* mlsl_coll_create(const mlsl_coll_attr_t* attributes,
             was_fused = global_data.fusion_manager->add(sched);
             if (was_fused)
             {
-                MLSL_LOG(DEBUG, "sched %p, ctype %s will be fused", sched,
-                         mlsl_coll_type_to_str(sched->coll_param.ctype));
+                LOG_DEBUG("sched ", sched, ", ctype ", mlsl_coll_type_to_str(sched->coll_param.ctype), "will be fused");
                 request = sched->req;
                 return request;
             }
@@ -134,10 +133,10 @@ static mlsl_request* mlsl_coll_create(const mlsl_coll_attr_t* attributes,
     }
     else
     {
-        MLSL_ASSERT_FMT(!sched->coll_attr.match_id.empty(), "invalid match_id");
+        MLSL_ASSERT(!sched->coll_attr.match_id.empty(), "invalid match_id");
 
         request = sched->reset_request();
-        MLSL_LOG(INFO, "sched %p postponed for match_id resolution", sched);
+        LOG_INFO("sched ", sched, ", postponed for match_id resolution");
         global_data.ooo_manager->postpone(sched);
     }
 
@@ -205,7 +204,7 @@ mlsl_status_t mlsl_coll_build_allreduce(
                 if (global_data.executor->is_rma_enabled)
                     MLSL_CALL(mlsl_coll_build_ring_rma_allreduce(sched, send_buf, recv_buf, count, dtype, reduction));
                 else
-                    MLSL_FATAL("unexpected allreduce_algo '%s'",
+                    MLSL_FATAL("unexpected allreduce_algo ",
                                mlsl_allreduce_algo_to_str(env_data.allreduce_algo));
                 break;
             default:
@@ -234,7 +233,7 @@ mlsl_status_t mlsl_coll_build_allreduce(
                     break;
                 }
             default:
-                MLSL_FATAL("unexpected allreduce_algo '%s'",
+                MLSL_FATAL("unexpected allreduce_algo ",
                            mlsl_allreduce_algo_to_str(env_data.allreduce_algo));
                 return mlsl_status_invalid_arguments;
         }
@@ -274,7 +273,7 @@ mlsl_status_t mlsl_coll_build_sparse_allreduce(
                                                              index_dtype, value_dtype, reduction));
             break;
         default:
-            MLSL_FATAL("unexpected sparse_allreduce_algo %d", env_data.sparse_allreduce_algo);
+            MLSL_FATAL("unexpected sparse_allreduce_algo ", env_data.sparse_allreduce_algo);
             return mlsl_status_invalid_arguments;
     }
 
@@ -326,7 +325,7 @@ mlsl_request* mlsl_sparse_allreduce_impl(const void* send_ind_buf,
     key.comm = communicator;
 
     auto req = mlsl_coll_create(attributes, key, coll_param);
-    MLSL_LOG(DEBUG, "coll %s created, req %p", mlsl_coll_type_to_str(coll_param.ctype), req);
+    LOG_DEBUG("coll ", mlsl_coll_type_to_str(coll_param.ctype), " created, req ", req);
     return req;
 }
 
@@ -354,7 +353,7 @@ mlsl_request* mlsl_bcast_impl(void* buf,
     key.comm = communicator;
 
     auto req = mlsl_coll_create(attributes, key, coll_param);
-    MLSL_LOG(DEBUG, "coll %s created, req %p", mlsl_coll_type_to_str(coll_param.ctype), req);
+    LOG_DEBUG("coll ", mlsl_coll_type_to_str(coll_param.ctype), " created, req ", req);
     return req;
 }
 
@@ -388,7 +387,7 @@ mlsl_request* mlsl_reduce_impl(const void* send_buf,
     key.comm = communicator;
 
     auto req = mlsl_coll_create(attributes, key, coll_param);
-    MLSL_LOG(DEBUG, "coll %s created, req %p", mlsl_coll_type_to_str(coll_param.ctype), req);
+    LOG_DEBUG("coll ", mlsl_coll_type_to_str(coll_param.ctype), " created, req ", req);
     return req;
 }
 
@@ -419,7 +418,7 @@ mlsl_request* mlsl_allreduce_impl(const void* send_buf,
     key.comm = communicator;
 
     auto req = mlsl_coll_create(attributes, key, coll_param);
-    MLSL_LOG(DEBUG, "coll %s created, req %p", mlsl_coll_type_to_str(coll_param.ctype), req);
+    LOG_DEBUG("coll ", mlsl_coll_type_to_str(coll_param.ctype), " created, req ", req);
     return req;
 }
 
@@ -449,7 +448,7 @@ mlsl_request* mlsl_allgatherv_impl(const void* send_buf,
     key.comm = communicator;
 
     auto req = mlsl_coll_create(attributes, key, coll_param);
-    MLSL_LOG(DEBUG, "coll %s created, req %p", mlsl_coll_type_to_str(coll_param.ctype), req);
+    LOG_DEBUG("coll ", mlsl_coll_type_to_str(coll_param.ctype), " created, req ", req);
     return req;
 }
 

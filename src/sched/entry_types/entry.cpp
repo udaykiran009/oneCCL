@@ -11,24 +11,24 @@ void sched_entry::set_field_fn(mlsl_sched_entry_field_id id,
 
 void sched_entry::start()
 {
-    MLSL_LOG(DEBUG, "starting %s entry", name());
-    MLSL_ASSERT_FMT(status == mlsl_sched_entry_status_not_started, "bad status %d", status);
+    LOG_DEBUG("starting entry ", name());
+    MLSL_ASSERT(status == mlsl_sched_entry_status_not_started, "bad status ", status);
     pfields.update();
     start_derived();
-    MLSL_ASSERT_FMT(status >= mlsl_sched_entry_status_started, "bad status %d", status);
+    MLSL_ASSERT(status >= mlsl_sched_entry_status_started, "bad status ", status);
     if (status == mlsl_sched_entry_status_complete)
-        MLSL_LOG(DEBUG, "completed %s entry", name());
+        LOG_DEBUG("completed entry ", name());
     check_exec_mode();
 }
 
 void sched_entry::update()
 {
     if (status != mlsl_sched_entry_status_started) return;
-    MLSL_ASSERT_FMT(status == mlsl_sched_entry_status_started, "bad status %d", status);
+    MLSL_ASSERT(status == mlsl_sched_entry_status_started, "bad status ", status);
     update_derived();
-    MLSL_ASSERT_FMT(status >= mlsl_sched_entry_status_started, "bad status %d", status);
+    MLSL_ASSERT(status >= mlsl_sched_entry_status_started, "bad status ", status);
     if (status == mlsl_sched_entry_status_complete)
-        MLSL_LOG(DEBUG, "completed %s entry", name());
+        LOG_DEBUG("completed entry ", name());
     check_exec_mode();
 }
 
@@ -46,11 +46,18 @@ void sched_entry::reset()
     status = mlsl_sched_entry_status_not_started;
 }
 
-char* sched_entry::dump(char* dump_buf, size_t idx) const
+void sched_entry::dump(std::stringstream& str,
+                       size_t idx) const
 {
-    auto bytes_written = sprintf(dump_buf, "[%3zu]  %-7s entry, status %s, is_barrier %-5s, ",
-                                 idx, name(), entry_status_to_str(status), barrier ? "TRUE" : "FALSE");
-    return dump_detail(dump_buf + bytes_written);
+    //update with the longest name
+    const int entry_name_w = 12;
+
+    mlsl_logger::format(str,
+                       "[", std::left, std::setw(3), idx, "] ", std::left, std::setw(entry_name_w), name(),
+                       " entry, status ", entry_status_to_str(status),
+                       " is_barrier ", std::left, std::setw(5), barrier ? "TRUE" : "FALSE",
+                       " ");
+    dump_detail(str);
 }
 
 void* sched_entry::get_field_ptr(mlsl_sched_entry_field_id id)
@@ -64,7 +71,7 @@ bool sched_entry::is_barrier() const { return barrier; }
 mlsl_sched_entry_status sched_entry::get_status() const { return status; }
 void sched_entry::set_status(mlsl_sched_entry_status s) { status = s; }
 void sched_entry::set_exec_mode(mlsl_sched_entry_exec_mode mode) { exec_mode = mode; }
-char* sched_entry::dump_detail(char* dump_buf) const { return dump_buf; }
+void sched_entry::dump_detail(std::stringstream& str) const { }
 
 void sched_entry::check_exec_mode()
 {

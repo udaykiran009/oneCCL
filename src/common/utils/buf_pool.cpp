@@ -144,7 +144,7 @@ void *mlsl_buf_get(struct mlsl_buf_pool *pool)
     entry = MLSL_SLIST_REMOVE_HEAD(&pool->buf_list);
     buf_ftr = (struct mlsl_buf_footer *) ((char *) entry + pool->attr.size);
     buf_ftr->region->num_used++;
-    MLSL_ASSERT_FMT(buf_ftr->region->num_used);
+    MLSL_ASSERT(buf_ftr->region->num_used);
     return entry;
 }
 
@@ -154,7 +154,7 @@ void mlsl_buf_release(struct mlsl_buf_pool *pool, void *buf)
     struct mlsl_buf_footer *buf_ftr;
 
     buf_ftr = (struct mlsl_buf_footer *)((char *)buf + pool->attr.size);
-    MLSL_ASSERT_FMT(buf_ftr->region->num_used);
+    MLSL_ASSERT(buf_ftr->region->num_used);
     buf_ftr->region->num_used--;
     MLSL_SLIST_INSERT_HEAD(&pool->buf_list, mlsl_buf);
 }

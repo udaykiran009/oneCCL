@@ -28,7 +28,7 @@ mlsl_sched::~mlsl_sched()
 
     if (is_own_req)
     {
-        MLSL_LOG(DEBUG, "Delete own req");
+        LOG_DEBUG("Delete own req");
         delete req;
         req = nullptr;
     }
@@ -52,7 +52,7 @@ mlsl_sched::~mlsl_sched()
         }
         if(!memory.mr_list.empty())
         {
-            MLSL_LOG(ERROR, "memory list is not empty");
+            LOG_ERROR("memory list is not empty");
         }
         MLSL_ASSERT(memory.mr_list.empty());
     }
@@ -73,11 +73,11 @@ size_t mlsl_sched::get_priority()
             priority = coll_attr.priority;
             break;
         default:
-            MLSL_FATAL("unexpected priority_mode %d", env_data.priority_mode);
+            MLSL_FATAL("unexpected priority_mode ", env_data.priority_mode);
             break;
     }
 
-    MLSL_LOG(DEBUG, "sched %p, prio %zu", this, priority);
+    LOG_DEBUG("sched, ", this, ", prio ", priority);
     return priority;
 }
 
@@ -92,7 +92,7 @@ void mlsl_sched::do_progress()
 
         if (entry->get_status() == mlsl_sched_entry_status_not_started)
         {
-            MLSL_LOG(DEBUG, "starting entry %s [%zu/%zu]", entry->name(), i, entries.size());
+            LOG_DEBUG("starting entry ", entry->name(), "[", i, "/", entries.size(), "]");
             entry->start();
             entry = entries[i];
         }
@@ -101,8 +101,8 @@ void mlsl_sched::do_progress()
         if (i == start_idx && entry->get_status() >= mlsl_sched_entry_status_complete)
         {
             ++start_idx;   /* this is valid even for barrier entries */
-            MLSL_LOG(DEBUG, "completed %s%s entry [%zu/%zu], shift start_idx, sched %p", entry->name(),
-                     entry->is_barrier() ? " barrier" : "", i, entries.size(), this);
+            LOG_DEBUG("completed ", entry->name(), entry->is_barrier() ? " barrier" : "",
+                " entry [", i, "/", entries.size(), "] shift start_idx, sched ", this);
         }
 
         /* watch the indexing, start_idx might have been incremented above, so
@@ -128,13 +128,12 @@ mlsl_status_t mlsl_sched_progress(mlsl_sched_bin* bin,
     size_t bin_size = bin->size();
     MLSL_ASSERT(bin_size > 0 && bin_size >= max_sched_count);
 
-    MLSL_LOG(TRACE, "bin %p, sched_count %zu, max_scheds %zu",
-             bin, bin->size(), max_sched_count);
+    LOG_TRACE("bin ", bin, ", sched_count ", bin->size(), ", max_scheds ", max_sched_count);
 
     /* ensure communication progress */
     atl_status_t atl_status __attribute__ ((unused));
     atl_status = atl_comm_poll(bin->get_comm_ctx());
-    MLSL_THROW_IF_NOT(atl_status == atl_status_success, "bad status %d", atl_status);
+    MLSL_THROW_IF_NOT(atl_status == atl_status_success, "bad status ", atl_status);
 
     // iterate through the scheds store in the bin
     completed_sched_count = 0;
@@ -152,7 +151,7 @@ mlsl_status_t mlsl_sched_progress(mlsl_sched_bin* bin,
             // if entry N+1 (and all subsequent entries) depends on entry N, then entry N is marked as a barrier and
             //     entry N+1 (and all subsequent) won't be started until entry N is completed
             /* TODO: do we need special handling for first_progress ? */
-            MLSL_LOG(DEBUG, "initial do_progress for sched %p", sched);
+            LOG_DEBUG("initial do_progress for sched ", sched);
             sched->do_progress();
             sched->first_progress = false;
         }
@@ -169,8 +168,8 @@ mlsl_status_t mlsl_sched_progress(mlsl_sched_bin* bin,
             {
                 // the entry has been completed, increment start_idx
                 ++sched->start_idx;
-                MLSL_LOG(DEBUG, "completed %s%s entry [%zu/%zu], shift start_idx, sched %p", entry->name(),
-                         entry->is_barrier() ? " barrier" : "", entry_idx, sched->entries.size(), sched);
+                LOG_DEBUG("completed ", entry->name(), entry->is_barrier() ? " barrier" : "",
+                          " entry [", entry_idx, "/", sched->entries.size(), "] shift start_idx, sched ", sched);
                 if (entry->is_barrier())
                 {
                     // that entry was marked as a barrier, run the rest entries (if any) which depend on it
@@ -187,12 +186,12 @@ mlsl_status_t mlsl_sched_progress(mlsl_sched_bin* bin,
         if (sched->start_idx == sched->entries.size())
         {
             // the last entry in the schedule has been completed, clean up the schedule and complete its request
-            MLSL_LOG(DEBUG, "completing and dequeuing: sched %p %s, req %p",
-                     sched, mlsl_coll_type_to_str(sched->coll_param.ctype), sched->req);
+            LOG_DEBUG("completing and dequeuing: sched ", sched, " ", mlsl_coll_type_to_str(sched->coll_param.ctype),
+                " req ", sched->req);
 
             // remove completed schedule from the bin
             sched_idx = sched_queue->erase(bin, sched_idx);
-            MLSL_LOG(DEBUG, "completing request %p", sched->req);
+            LOG_DEBUG("completing request ", sched->req);
             sched->req->complete();
             ++completed_sched_count;
         }
@@ -227,8 +226,8 @@ void mlsl_sched::commit(mlsl_parallelizer* parallelizer)
     if (parallelizer)
         parallelizer->process(this);
 
-    MLSL_LOG(DEBUG, "sched %p, num_entries %zu, number %u, req %p, part_count %zu",
-             this, entries.size(), sched_id, req, partial_scheds.size());
+    LOG_DEBUG("sched ", this, ", num_entries ", entries.size(), ", number ", sched_id, ", req ", req,
+              ", part_count ", partial_scheds.size());
 }
 
 mlsl_request* mlsl_sched::start(mlsl_executor* exec,
@@ -239,8 +238,7 @@ mlsl_request* mlsl_sched::start(mlsl_executor* exec,
     MLSL_ASSERT(req);
     MLSL_ASSERT(coll_param.comm);
 
-    MLSL_LOG(DEBUG, "starting schedule %p, type %s",
-             this, mlsl_coll_type_to_str(coll_param.ctype));
+    LOG_DEBUG("starting schedule ", this, ", type ", mlsl_coll_type_to_str(coll_param.ctype));
 
     prepare_partial_scheds();
 
@@ -305,7 +303,7 @@ mlsl_request* mlsl_sched::reset_request()
     {
         completion_counter = static_cast<int>(partial_scheds.size());
     }
-    MLSL_LOG(DEBUG, "req %p, set count %d", req, completion_counter);
+    LOG_DEBUG("req ", req, ", set count ", completion_counter);
 
     req->set_counter(completion_counter);
     return req;
@@ -320,7 +318,7 @@ void mlsl_sched::add_barrier()
         else if (add_mode == mlsl_sched_add_front)
             entries.front()->make_barrier();
         else
-            MLSL_FATAL("unexpected mode %d", add_mode);
+            MLSL_FATAL("unexpected mode ", add_mode);
     }
 }
 
@@ -364,27 +362,31 @@ void mlsl_sched::dump(const char *name) const
     if (!env_data.sched_dump)
         return;
 
-    const size_t bytes_per_sched_entry = 2048; //some heuristic value
-    std::vector<char> buf (bytes_per_sched_entry * (entries.size() + 1));
-    char* write_buf = buf.data();
+    LOG_INFO("sched dump");
 
-    write_buf += sprintf(write_buf, "\n--------------------------------\n");
-    write_buf += sprintf(write_buf, "sched: %s, coll %s, %p, start_idx %zu, "
-                                    "num_entries %zu, comm_id %u, sched_id %u, req %p\n",
-                         name, mlsl_coll_type_to_str(coll_param.ctype), this, start_idx,
-                         entries.size(), coll_param.comm->id(), sched_id, req);
+    std::stringstream msg;
+    mlsl_logger::format(msg, "\n--------------------------------\n");
+    mlsl_logger::format(msg,
+                        "sched: ", name, " ", this,
+                        ", coll ", mlsl_coll_type_to_str(coll_param.ctype),
+                        ", start_idx, ", start_idx,
+                        ", num_entries ", entries.size(),
+                        ", comm_id ", coll_param.comm->id(),
+                        ", sched_id ", sched_id,
+                        ", req ", req,
+                        "\n");
 
     for (size_t i = 0; i < entries.size(); ++i)
     {
-        write_buf = entries[i]->dump(write_buf, i);
+        entries[i]->dump(msg, i);
     }
-    sprintf(write_buf, "--------------------------------\n");
-    MLSL_LOG(INFO, "%s", buf.data());
+    mlsl_logger::format(msg, "--------------------------------\n");
+    std::cout << msg.str();
 }
 
 void* mlsl_sched::alloc_buffer(size_t size)
 {
-    MLSL_LOG(DEBUG, "size %zu", size);
+    LOG_DEBUG("size ", size);
     MLSL_THROW_IF_NOT(size > 0, "incorrect buffer size");
 
     void* p = MLSL_CALLOC(size, "sched_buffer");
@@ -397,7 +399,7 @@ void mlsl_sched::free_buffers()
     std::list<mlsl_sched_buffer_handler>::iterator it;
     for (it = memory.buf_list.begin(); it != memory.buf_list.end(); it++)
     {
-        MLSL_LOG(DEBUG, "free %p", it->ptr);
+        LOG_DEBUG("free ", it->ptr);
         MLSL_FREE(it->ptr);
     }
     memory.buf_list.clear();

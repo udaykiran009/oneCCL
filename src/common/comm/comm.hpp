@@ -4,6 +4,7 @@
 #include "common/comm/comm_id.hpp"
 #include "common/comm/atl_tag.hpp"
 #include "common/log/log.hpp"
+#include "common/utils/utils.hpp"
 
 #include <unordered_map>
 #include <atomic>
@@ -63,7 +64,7 @@ public:
             next_sched_id = first_sched_id;
         }
 
-        MLSL_LOG(DEBUG, "sched_id %u, comm_id %hu, next sched_id %hu", id, m_id->value(), next_sched_id);
+        LOG_DEBUG("sched_id ", id, ", comm_id ", m_id->value(), ", next sched_id ", next_sched_id);
 
         return id;
     }

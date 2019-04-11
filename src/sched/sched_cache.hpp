@@ -48,30 +48,34 @@ public:
         size_t bytes_to_compare = last_field1 - first_field1;
         bool is_equal = !memcmp(first_field1, first_field2, bytes_to_compare) &&
                         !match_id.compare(k.match_id);
-        MLSL_LOG(DEBUG, "is_equal %d, bytes_to_compare %zu",
-                 is_equal, bytes_to_compare);
-        print(DEBUG);
-        k.print(DEBUG);
+        LOG_DEBUG("is_equal ", is_equal, ", bytes_to_compare ", bytes_to_compare);
+        print();
+        k.print();
         return is_equal;
     } 
 
-    void print(mlsl_log_level log_level) const
+    void print() const
     {
-        MLSL_LOG(log_level, "ctype %s, dtype %s, itype %s, reduction %s, "
-                            "buf1 %p, buf2 %p, buf3 %p, buf4 %p, "
-                            "count1 %zu, count2 %zu, count3 %p, count4 %p, "
-                            "root %zu, comm %p, "
-                            "prologue_fn %p, epilogue_fn %p, reduction_fn %p, "
-                            "priority %zu, sync %d, match_id %s",
-                            mlsl_coll_type_to_str(ctype),
-                            mlsl_datatype_get(dtype)->name,
-                            mlsl_datatype_get(itype)->name,
-                            mlsl_reduction_to_str(reduction),
-                            buf1, buf2, buf3, buf4,
-                            count1, count2, count3, count4,
-                            root, comm,
-                            prologue_fn, epilogue_fn, reduction_fn,
-                            priority, synchronous, match_id.c_str());
+        LOG_DEBUG( "ctype ", mlsl_coll_type_to_str(ctype),
+                   ", dtype ", mlsl_datatype_get(dtype)->name,
+                   ", itype ", mlsl_datatype_get(itype)->name,
+                   ", reduction ", mlsl_reduction_to_str(reduction),
+                   ", buf1 ", buf1,
+                   ", buf2 ", buf2,
+                   ", buf3 ", buf3,
+                   ", buf4 ", buf4,
+                   ", count1 ", count1,
+                   ", count2 ", count2,
+                   ", count3 ", count3,
+                   ", count4 ", count4,
+                   ", root ", root,
+                   ", comm ", comm,
+                   ", prologue_fn ", prologue_fn,
+                   ", epilogue_fn ", epilogue_fn,
+                   ", reduction_fn ", reduction_fn,
+                   ", priority ", priority,
+                   ", sync ", synchronous,
+                   ", match_id ", match_id);
     }
 };
 
@@ -86,8 +90,8 @@ public:
                (size_t)k.count3 + (size_t)k.count4 + (size_t)k.comm +
                (size_t)k.prologue_fn + (size_t)k.epilogue_fn + (size_t)k.reduction_fn +
                string_hasher(k.match_id);
-        MLSL_LOG(DEBUG, "hash_value %zu", hash_value);
-        k.print(DEBUG);
+        LOG_DEBUG("hash_value ", hash_value);
+        k.print();
         return hash_value;
     }
 private:

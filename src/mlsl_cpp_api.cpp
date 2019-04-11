@@ -31,7 +31,7 @@ public:
     {
         if (!completed)
         {
-            MLSL_LOG(ERROR, "not completed request is destroyed");
+            LOG_ERROR("not completed request is destroyed");
         }
     }
 

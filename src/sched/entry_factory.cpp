@@ -24,7 +24,6 @@ std::shared_ptr<sched_entry> entry_factory::make_send_entry(mlsl_sched* sched,
                                                             mlsl_datatype_internal_t dtype,
                                                             size_t dst)
 {
-    MLSL_LOG(DEBUG, "creating SEND entry");
     auto e = std::make_shared<send_entry>(sched, buf, cnt, dtype,
                                           sched->coll_param.comm->get_global_rank(dst), global_data.comm->rank());
     sched->add_entry(e);
@@ -37,7 +36,6 @@ std::shared_ptr<sched_entry> entry_factory::make_recv_entry(mlsl_sched* sched,
                                                             mlsl_datatype_internal_t dtype,
                                                             size_t src)
 {
-    MLSL_LOG(DEBUG, "creating RECV entry");
     auto e = std::make_shared<recv_entry>(sched, buf, cnt, dtype, sched->coll_param.comm->get_global_rank(src));
     sched->add_entry(e);
     return e;
@@ -52,7 +50,6 @@ std::shared_ptr<sched_entry> entry_factory::make_write_entry(mlsl_sched* sched,
                                                              atl_mr_t* dst_mr,
                                                              size_t dst_buf_offset)
 {
-    MLSL_LOG(DEBUG, "creating WRITE entry");
     auto e = std::make_shared<write_entry>(sched, src_buf, src_mr, cnt, dtype,
                                            dst, dst_mr, dst_buf_offset);
     sched->add_entry(e);
@@ -67,7 +64,6 @@ std::shared_ptr<sched_entry> entry_factory::make_reduce_entry(mlsl_sched* sched,
                                                               mlsl_datatype_internal_t dtype,
                                                               mlsl_reduction_t reduction_op)
 {
-    MLSL_LOG(DEBUG, "creating REDUCE entry");
     auto e = std::make_shared<reduce_entry>(sched, in_buf, in_cnt, inout_buf,
                                             out_cnt, dtype, reduction_op);
     sched->add_entry(e);
@@ -83,7 +79,6 @@ std::shared_ptr<sched_entry> entry_factory::make_recv_reduce_entry(mlsl_sched* s
                                                                    size_t src,
                                                                    void* comm_buff)
 {
-    MLSL_LOG(DEBUG, "creating RECV_REDUCE entry");
     auto e = std::make_shared<recv_reduce_entry>(sched, inout_buf, cnt, out_cnt, dtype, reduction_op,
                                                  sched->coll_param.comm->get_global_rank(src), comm_buff);
     sched->add_entry(e);
@@ -96,7 +91,6 @@ std::shared_ptr<sched_entry> entry_factory::make_copy_entry(mlsl_sched* sched,
                                                             size_t cnt,
                                                             mlsl_datatype_internal_t dtype)
 {
-    MLSL_LOG(DEBUG, "creating COPY entry");
     auto e = std::make_shared<copy_entry>(sched, in_buf, out_buf, cnt, dtype);
     sched->add_entry(e);
     return e;
@@ -105,7 +99,6 @@ std::shared_ptr<sched_entry> entry_factory::make_copy_entry(mlsl_sched* sched,
 std::shared_ptr<sched_entry> entry_factory::make_sync_entry(mlsl_sched* sched,
                                                             std::shared_ptr<sync_object> sync_obj)
 {
-    MLSL_LOG(DEBUG, "creating SYNC entry");
     auto e = std::make_shared<sync_entry>(sched, sync_obj);
     sched->add_entry(e);
     return e;
@@ -120,7 +113,6 @@ std::shared_ptr<sched_entry> entry_factory::make_coll_entry(mlsl_sched* sched,
                                                             mlsl_reduction_t reduction_op,
                                                             size_t root)
 {
-    MLSL_LOG(DEBUG, "creating COLLECTIVE entry");
     auto e = std::make_shared<coll_entry>(sched, coll_type, send_buf, recv_buf,
                                           cnt, dtype, reduction_op, root);
     sched->add_entry(e);
@@ -137,7 +129,6 @@ std::shared_ptr<sched_entry> entry_factory::make_prologue_entry(mlsl_sched* sche
                                                                 mlsl_datatype_t* out_dtype,
                                                                 size_t* out_dtype_size)
 {
-    MLSL_LOG(DEBUG, "creating PROLOGUE entry");
     auto e = std::make_shared<prologue_entry>(sched, fn, in_buf, in_cnt, in_dtype,
                                               out_buf, out_cnt, out_dtype, out_dtype_size);
     sched->add_entry(e);
@@ -153,7 +144,6 @@ std::shared_ptr<sched_entry> entry_factory::make_epilogue_entry(mlsl_sched* sche
                                                                 size_t expected_out_cnt,
                                                                 mlsl_datatype_internal_t out_dtype)
 {
-    MLSL_LOG(DEBUG, "creating EPILOGUE entry");
     auto e = std::make_shared<epilogue_entry>(sched, fn, in_buf, in_cnt, in_dtype, out_buf,
                                               expected_out_cnt, out_dtype);
     sched->add_entry(e);
@@ -165,7 +155,6 @@ std::shared_ptr<sched_entry> entry_factory::make_wait_value_entry(mlsl_sched* sc
                                                                   uint64_t expected_value,
                                                                   mlsl_condition condition)
 {
-    MLSL_LOG(DEBUG, "creating WAIT_VALUE entry");
     auto e = std::make_shared<wait_value_entry>(sched, ptr, expected_value, condition);
     sched->add_entry(e);
     return e;
@@ -175,7 +164,6 @@ std::shared_ptr<sched_entry> entry_factory::make_function_entry(mlsl_sched* sche
                                                                 mlsl_sched_entry_function_t fn,
                                                                 const void* ctx)
 {
-    MLSL_LOG(DEBUG, "creating FUNCTION entry");
     auto e = std::make_shared<function_entry>(sched, fn, ctx);
     sched->add_entry(e);
     return e;
@@ -186,7 +174,6 @@ std::shared_ptr<sched_entry> entry_factory::make_register_entry(mlsl_sched* sche
                                                                 void* ptr,
                                                                 atl_mr_t** mr)
 {
-    MLSL_LOG(DEBUG, "creating REGISTER entry");
     auto e = std::make_shared<register_entry>(sched, size, ptr, mr);
     sched->add_entry(e);
     return e;
@@ -195,7 +182,6 @@ std::shared_ptr<sched_entry> entry_factory::make_register_entry(mlsl_sched* sche
 std::shared_ptr<sched_entry> entry_factory::make_deregister_entry(mlsl_sched* sched,
                                                                   std::list<atl_mr_t*>& mr_list)
 {
-    MLSL_LOG(DEBUG, "creating DEREGISTER entry");
     auto e = std::make_shared<deregister_entry>(sched, mr_list);
     sched->add_entry(e);
     return e;
@@ -203,7 +189,6 @@ std::shared_ptr<sched_entry> entry_factory::make_deregister_entry(mlsl_sched* sc
 
 std::shared_ptr<sched_entry> entry_factory::make_nop_entry(mlsl_sched* sched)
 {
-    MLSL_LOG(DEBUG, "creating NOP entry");
     auto e = std::make_shared<nop_entry>(sched);
     sched->add_entry(e);
     return e;
@@ -213,7 +198,6 @@ std::shared_ptr<sched_entry> entry_factory::make_probe_entry(mlsl_sched* sched,
                                                            size_t src,
                                                            size_t* cnt)
 {
-    MLSL_LOG(DEBUG, "creating PROBE entry");
     std::shared_ptr<sched_entry> e = std::make_shared<probe_entry>(sched, global_data.comm->get_global_rank(src), cnt);
     sched->add_entry(e);
     return e;

@@ -12,12 +12,13 @@ public:
                      mlsl_condition condition) :
         sched_entry(sched, true), ptr(ptr),
         expected_value(expected_value), condition(condition)
-    {}
+    {
+        LOG_DEBUG("creating ", name(), " entry");
+    }
 
     void start_derived()
     {
-        MLSL_LOG(DEBUG, "WAIT_VALUE entry current_val %lu, expected_val %lu",
-                 *ptr, expected_value);
+        LOG_DEBUG("WAIT_VALUE entry current_val ", *ptr, ", expected_val ", expected_value);
         status = mlsl_sched_entry_status_started;
         update_derived();
     }
@@ -34,7 +35,7 @@ public:
         }
         else
         {
-            MLSL_LOG(TRACE, "waiting WAIT_VALUE");
+            LOG_TRACE("waiting WAIT_VALUE");
             //_mm_pause();
         }
     }
@@ -45,11 +46,13 @@ public:
     }
 
 protected:
-    char* dump_detail(char* dump_buf) const
+    void dump_detail(std::stringstream& str) const
     {
-        auto bytes_written = sprintf(dump_buf, "ptr %p, expected_value %lu, condition %d\n",
-                                     ptr, expected_value, condition);
-        return dump_buf + bytes_written;
+        mlsl_logger::format(str,
+                            "ptr ", ptr,
+                            ", expected_value ", expected_value,
+                            ", condition ", condition,
+                            "\n");
     }
 
 private:

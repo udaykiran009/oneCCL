@@ -6,14 +6,14 @@
 
 #include <memory>
 
-typedef mlsl_status_t(*mlsl_sched_entry_function_t) (const void*);
+typedef mlsl_status_t(* mlsl_sched_entry_function_t)(const void*);
 
 struct mlsl_sched;
 
 enum mlsl_sched_entry_exec_mode
 {
     mlsl_sched_entry_exec_regular = 0,
-    mlsl_sched_entry_exec_once    = 1
+    mlsl_sched_entry_exec_once = 1
 };
 
 //todo: enum class
@@ -62,7 +62,8 @@ public:
 
     virtual void reset();
 
-    char* dump(char* dump_buf, size_t idx) const;
+    void dump(std::stringstream& str,
+              size_t idx) const;
     virtual void* get_field_ptr(mlsl_sched_entry_field_id id);
 
     void make_barrier();
@@ -75,7 +76,7 @@ public:
 
 protected:
 
-    virtual char* dump_detail(char* dump_buf) const;
+    virtual void dump_detail(std::stringstream& str) const;
     void check_exec_mode();
     const char* entry_status_to_str(mlsl_sched_entry_status status) const;
 

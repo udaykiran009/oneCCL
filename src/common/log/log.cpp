@@ -1,56 +1,58 @@
 #include "common/log/log.hpp"
+#include <execinfo.h>
+#include <sys/syscall.h>
+#include <unistd.h>
 
-void mlsl_log_get_time(char* buf, size_t buf_size)
+mlsl_log_level mlsl_logger::level = mlsl_log_level::ERROR;
+thread_local mlsl_logger logger;
+
+std::ostream& operator<<(std::ostream& os,
+                         mlsl_streambuf& buf)
 {
+    buf.set_eol();
+    os << buf.buffer.get();
+    buf.reset();
+    return os;
+}
+
+void mlsl_logger::write_prefix(std::ostream& str)
+{
+#if __GNUC__ >= 5
+    std::time_t t = std::time(nullptr);
+    std::tm tm = *std::localtime(&t);
+    str << std::put_time(&tm, "%Y:%m:%d-%H:%M:%S");
+#else
+    constexpr size_t time_buf_size = 20;
     time_t timer;
-    struct tm* time_info = 0;
+    char time_buf[time_buf_size]{};
+    struct tm* time_info = nullptr;
     time(&timer);
     time_info = localtime(&timer);
-    assert(time_info);
-    strftime(buf, buf_size, "%Y:%m:%d %H:%M:%S", time_info);
+    if(time_info)
+    {
+        strftime(time_buf, time_buf_size, "%Y:%m:%d-%H:%M:%S", time_info);
+        str << time_buf;
+    }
+#endif
+    str << ":(" << syscall(SYS_gettid) << ") ";
 }
 
-void mlsl_log_print_backtrace(void)
+void mlsl_logger::write_backtrace(std::ostream& str)
 {
-    int j, nptrs;
     void* buffer[100];
-    char** strings;
+    auto nptrs = backtrace(buffer, 100);
+    str << "backtrace() returned " << nptrs << " addresses\n";
 
-    nptrs = backtrace(buffer, 100);
-    printf("backtrace() returned %d addresses\n", nptrs);
-    fflush(stdout);
-
-    strings = backtrace_symbols(buffer, nptrs);
-    if (strings == NULL)
+    auto strings = backtrace_symbols(buffer, nptrs);
+    if (!strings)
     {
-        perror("backtrace_symbols");
-        exit(EXIT_FAILURE);
+        str << "backtrace_symbols error\n";
+        return;
     }
 
-    for (j = 0; j < nptrs; j++)
+    for (int j = 0; j < nptrs; j++)
     {
-        printf("%s\n", strings[j]);
-        fflush(stdout);
+        str << strings[j] << "\n";
     }
     free(strings);
-}
-
-void mlsl_log_print_buffer(void* buf, size_t cnt, mlsl_datatype_internal_t dtype, const char* prefix)
-{
-    char b[1024];
-    char* dump_buf = b;
-    auto bytes_written = sprintf(dump_buf, "%s: cnt %zu, dt %s [",
-                                 prefix, cnt, mlsl_datatype_get_name(dtype));
-    dump_buf = (char*)dump_buf + bytes_written;
-    size_t idx;
-    for (idx = 0; idx < cnt; idx++)
-    {
-        if (dtype == mlsl_dtype_internal_float)
-            bytes_written = sprintf(dump_buf, "%f ", ((float*)buf)[idx]);
-        else
-            MLSL_FATAL("unexpected");
-        dump_buf += bytes_written;
-    }
-    bytes_written = sprintf(dump_buf, "]");
-    MLSL_LOG(INFO, "%s", b);
 }

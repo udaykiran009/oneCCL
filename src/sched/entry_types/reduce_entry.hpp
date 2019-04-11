@@ -19,6 +19,7 @@ public:
         out_cnt(out_cnt), dtype(dtype), op(reduction_op),
         fn(sched->coll_attr.reduction_fn)
     {
+        LOG_DEBUG("creating ", name(), " entry");
         MLSL_THROW_IF_NOT(op != mlsl_reduction_custom || fn,
                           "custom reduction requires user provided callback");
     }
@@ -27,7 +28,7 @@ public:
     {
         mlsl_status_t comp_status = mlsl_comp_reduce(in_buf, in_cnt, inout_buf, out_cnt,
                                                      dtype, op, fn);
-        MLSL_ASSERT_FMT(comp_status == mlsl_status_success, "bad status %d", comp_status);
+        MLSL_ASSERT(comp_status == mlsl_status_success, "bad status ", comp_status);
         status = mlsl_sched_entry_status_complete;
     }
 
@@ -37,14 +38,17 @@ public:
     }
 
 protected:
-    char* dump_detail(char* dump_buf) const
+    void dump_detail(std::stringstream& str) const
     {
-        auto bytes_written = sprintf(dump_buf,
-                                     "dt %s, in_buf %p, in_cnt %zu, inout_buf %p, out_cnt %p, op %s, red_fn %p\n",
-                                     mlsl_datatype_get_name(dtype), in_buf, in_cnt, inout_buf, out_cnt,
-                                     mlsl_reduction_to_str(op), fn);
-
-        return dump_buf + bytes_written;
+        mlsl_logger::format(str,
+                            "dt ", mlsl_datatype_get_name(dtype),
+                            ", in_buf ", in_buf,
+                            ", in_cnt ", in_cnt,
+                            ", inout_buf ", inout_buf,
+                            ", out_cnt ", out_cnt,
+                            ", op ", mlsl_reduction_to_str(op),
+                            ", red_fn ", fn,
+                            "\n");
     }
 
 private:

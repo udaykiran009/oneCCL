@@ -20,24 +20,22 @@ mlsl_executor::mlsl_executor(const mlsl_env_data& env_vars,
         .enable_rma = env_vars.enable_rma
     };
 
-    MLSL_LOG(INFO, "atl comm count %zu", attr.comm_count);
+    LOG_INFO("atl comm count ", attr.comm_count);
 
     atl_status_t atl_status = atl_init(nullptr, nullptr,
                                        &proc_idx, &proc_count,
                                        &attr, &atl_comms, &atl_desc);
     MLSL_THROW_IF_NOT(atl_status == atl_status_success && atl_desc && atl_comms,
-                      "ATL init failed, res %d, desc %p, comm %p",
-                      atl_status, atl_desc, atl_comms);
+                      "ATL init failed, res ", atl_status, ", desc ", atl_desc, ", comm ",atl_comms);
 
     /* atl will return back whether rma is supported */
     is_rma_enabled = attr.enable_rma;
     max_order_waw_size = attr.max_order_waw_size;
 
-    MLSL_LOG(INFO, "proc_idx %zu, proc_count %zu, atl_desc %p",
-             proc_idx, proc_count, atl_desc);
+    LOG_INFO("proc_idx ", proc_idx, ", proc_count ", proc_count, ", atl_desc ", atl_desc);
 
-    MLSL_LOG(INFO, "atl parameters: is_rma_enabled %d, max_order_waw_size %zu",
-             is_rma_enabled, max_order_waw_size);
+    LOG_INFO("atl parameters: is_rma_enabled ", is_rma_enabled, ", max_order_waw_size ",
+             max_order_waw_size);
 
     size_t comm_per_worker = comm_count / worker_count;
     for (size_t idx = 0; idx < worker_count; idx++)
@@ -48,7 +46,7 @@ mlsl_executor::mlsl_executor(const mlsl_env_data& env_vars,
 
         if (env_vars.enable_fusion && idx == 0)
         {
-            MLSL_LOG(DEBUG, "creating service worker");
+            LOG_DEBUG("creating service worker");
             workers.emplace_back(new mlsl_service_worker(this, idx,
                 std::move(data_queue), *global_data.fusion_manager));
         }
@@ -61,7 +59,7 @@ mlsl_executor::mlsl_executor(const mlsl_env_data& env_vars,
         {
             workers.back()->start();
             workers.back()->pin(env_vars.worker_affinity[idx]);
-            MLSL_LOG(DEBUG, "started worker #%zu", idx);
+            LOG_DEBUG("started worker # ", idx);
         }
     }
 }
@@ -73,11 +71,11 @@ mlsl_executor::~mlsl_executor()
         if (env_data.worker_offload)
         {
             workers[idx]->stop();
-            MLSL_LOG(DEBUG, "stopped worker # %zu", idx);
+            LOG_DEBUG("stopped worker # ", idx);
         }
     }
 
-    MLSL_LOG(DEBUG, "finalizing ATL..");
+    LOG_DEBUG("finalizing ATL..");
     atl_finalize(atl_desc, atl_comms);
 }
 
@@ -85,7 +83,7 @@ void mlsl_executor::start(mlsl_sched* sched)
 {
     if (sched->is_internal)
     {
-        MLSL_ASSERT_FMT(sched->partial_scheds.empty(), "internal sched should not have partial scheds");
+        MLSL_ASSERT(sched->partial_scheds.empty(), "internal sched should not have partial scheds");
         workers[0]->add(sched);
     }
     else

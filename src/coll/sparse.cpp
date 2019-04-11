@@ -2,7 +2,6 @@
 #include "coll/sparse_types.hpp"
 #include "sched/entry_factory.hpp"
 
-
 mlsl_status_t sparse_before_recv(const void* ctx)
 {
     /* if our neighbour sent us data more than we ever had before
@@ -213,7 +212,7 @@ mlsl_status_t mlsl_coll_build_sparse_allreduce_basic(mlsl_sched *sched, const vo
                                                      size_t *recv_ind_count, void **recv_val_buf, size_t *recv_val_count,
                                                      mlsl_datatype_internal_t index_dtype, mlsl_datatype_internal_t value_dtype, mlsl_reduction_t op)
 {
-    MLSL_LOG(DEBUG, "build sparse allreduce");
+    LOG_DEBUG("build sparse allreduce");
 
     mlsl_status_t status = mlsl_status_success;
     std::shared_ptr<sched_entry> e;

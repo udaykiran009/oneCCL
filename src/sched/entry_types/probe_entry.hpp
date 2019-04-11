@@ -11,18 +11,20 @@ public:
                size_t source,
                size_t* count) :
         sched_entry(sched), src(source), cnt(count)
-    {}
+    {
+        LOG_DEBUG("creating ", name(), " entry");
+    }
 
     void start_derived()
     {
         auto atl_tag = mlsl_create_atl_tag(sched->coll_param.comm->id(), sched->sched_id, src);
-        MLSL_LOG(DEBUG, "PROBE entry src %zu, tag %lu", src, atl_tag);
+        LOG_DEBUG("PROBE entry src ", src, ", tag ", std::setbase(16), atl_tag);
         atl_status_t atl_status = atl_comm_probe(sched->bin->get_comm_ctx(), src, atl_tag, &req);
 
         if (unlikely(atl_status != atl_status_success))
         {
             status = mlsl_sched_entry_status_failed;
-            MLSL_LOG(ERROR, "PROBE entry failed. atl_status: %d", atl_status);
+            LOG_ERROR("PROBE entry failed. atl_status: ", atl_status);
         }
         else
             status = mlsl_sched_entry_status_started;
@@ -35,7 +37,7 @@ public:
         if (req_status)
         {
             status = mlsl_sched_entry_status_complete;
-            MLSL_LOG(DEBUG, "completed PROBE entry req=%p", &req);
+            LOG_DEBUG("completed PROBE entry req=", &req);
             status = mlsl_sched_entry_status_complete;
             *cnt = req.recv_len;
         }
@@ -47,11 +49,14 @@ public:
     }
 
 protected:
-    char* dump_detail(char* dump_buf) const
+    void dump_detail(std::stringstream& str) const
     {
-        auto bytes_written = sprintf(dump_buf, "cnt %zu, src %zu, comm %p, req %p\n",
-                                     *cnt, src, sched->coll_param.comm, &req);
-        return dump_buf + bytes_written;
+        mlsl_logger::format(str,
+                            "cnt ", *cnt,
+                            ", src ", src,
+                            ", comm ", sched->coll_param.comm,
+                            ", req ", &req,
+                            "\n");
     }
 
 private:

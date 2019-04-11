@@ -33,7 +33,10 @@ inline mlsl_atl_comm_tag_t mlsl_create_atl_tag(mlsl_comm_id_t comm_id, mlsl_sche
     tag |= (static_cast<mlsl_atl_comm_tag_t>(sched_id) << MLSL_ATL_TAG_SCHED_ID_SHIFT) & MLSL_ATL_TAG_SCHED_ID_MASK;
     tag |= (static_cast<mlsl_atl_comm_tag_t>(rank)     << MLSL_ATL_TAG_RANK_SHIFT)     & MLSL_ATL_TAG_RANK_MASK;
 
-    MLSL_LOG(DEBUG, "comm %u, sched_id %u, rank %zu, tag %lx", comm_id, sched_id, rank, tag);
+    LOG_DEBUG("comm ", std::setbase(16), comm_id,
+              ", sched_id ", std::setbase(16), sched_id,
+              ", rank ", std::setbase(16), rank,
+              ", tag ", std::setbase(16), tag);
     return tag;
 }
 

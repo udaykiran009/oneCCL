@@ -5,7 +5,7 @@
 
 mlsl_status_t mlsl_coll_build_scatter_for_bcast(mlsl_sched *sched, void *tmp_buf, size_t root, size_t nbytes)
 {
-    MLSL_LOG(DEBUG, "build scatter_for_bcast");
+    LOG_DEBUG("build scatter_for_bcast");
 
     mlsl_status_t status = mlsl_status_success;
     int rank, local_root, comm_size, src, dst;
@@ -88,7 +88,7 @@ mlsl_status_t mlsl_coll_build_scatter_for_bcast(mlsl_sched *sched, void *tmp_buf
 mlsl_status_t mlsl_coll_build_scatter_ring_allgather_bcast(mlsl_sched *sched, void *buf,
                                                            size_t count, mlsl_datatype_internal_t dtype, size_t root)
 {
-    MLSL_LOG(DEBUG, "build scatter_ring_allgather bcast");
+    LOG_DEBUG("build scatter_ring_allgather bcast");
 
     mlsl_status_t status = mlsl_status_success;
 

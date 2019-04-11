@@ -12,7 +12,9 @@ public:
     explicit sync_entry(mlsl_sched* sched,
                         std::shared_ptr<sync_object> sync) :
         sched_entry(sched, true), sync(sync)
-    {}
+    {
+        LOG_DEBUG("creating ", name(), " entry");
+    }
 
     void start_derived()
     {
@@ -29,7 +31,7 @@ public:
         }
         else
         {
-            MLSL_LOG(TRACE, "waiting SYNC entry cnt %zu", counter);
+            LOG_TRACE("waiting SYNC entry cnt ", counter);
             _mm_pause();
         }
     }
@@ -46,10 +48,11 @@ public:
     }
 
 protected:
-    char* dump_detail(char* dump_buf) const
+    void dump_detail(std::stringstream& str) const
     {
-        auto bytes_written = sprintf(dump_buf, "counter %zu\n", sync->value());
-        return dump_buf + bytes_written;
+        mlsl_logger::format(str,
+                            "counter ", sync->value(),
+                            "\n");
     }
 
 private:

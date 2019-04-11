@@ -1,14 +1,16 @@
 #include "common/env/env.hpp"
 #include "common/log/log.hpp"
 
+#include <unistd.h>
+
 mlsl_env_data env_data =
 {
-    .log_level = ERROR,
+    .log_level = static_cast<int>(mlsl_log_level::ERROR),
     .sched_dump = 0,
     .worker_count = 1,
     .worker_offload = 1,
     .out_of_order_support = 0,
-    .worker_affinity = NULL,
+    .worker_affinity = nullptr,
     .priority_mode = mlsl_priority_none,
     .allreduce_algo = mlsl_allreduce_algo_rabenseifner,
     .sparse_allreduce_algo = mlsl_sparse_allreduce_algo_basic,
@@ -31,7 +33,7 @@ const char *mlsl_priority_mode_to_str(mlsl_priority_mode mode)
         case mlsl_priority_lifo:
             return "LIFO";
         default:
-            MLSL_FATAL("unexpected prio_mode %d", mode);
+            MLSL_FATAL("unexpected prio_mode ", mode);
     }
 }
 
@@ -47,13 +49,14 @@ const char *mlsl_allreduce_algo_to_str(mlsl_allreduce_algo algo)
         case mlsl_allreduce_algo_ring_rma:
             return "ring_rma";
         default:
-            MLSL_FATAL("unexpected allreduce_algo %d", algo);
+            MLSL_FATAL("unexpected allreduce_algo ", algo);
     }
 }
 
 void mlsl_env_parse()
 {
     mlsl_env_2_int("MLSL_LOG_LEVEL", &env_data.log_level);
+    mlsl_logger::set_log_level(static_cast<mlsl_log_level>(env_data.log_level));
     mlsl_env_2_int("MLSL_SCHED_DUMP", &env_data.sched_dump);
     mlsl_env_2_int("MLSL_WORKER_COUNT", &env_data.worker_count);
     mlsl_env_2_int("MLSL_WORKER_OFFLOAD", &env_data.worker_offload);
@@ -69,12 +72,12 @@ void mlsl_env_parse()
     mlsl_env_parse_affinity();
     mlsl_env_parse_allreduce_algo();
 
-    MLSL_THROW_IF_NOT(env_data.worker_count >= 1, "incorrect MLSL_WORKER_COUNT %d", env_data.worker_count);
+    MLSL_THROW_IF_NOT(env_data.worker_count >= 1, "incorrect MLSL_WORKER_COUNT ", env_data.worker_count);
     if(env_data.enable_fusion)
     {
-        MLSL_THROW_IF_NOT(env_data.fusion_bytes_threshold >= 1, "incorrect MLSL_FUSION_BYTES_THRESHOLD %d",
+        MLSL_THROW_IF_NOT(env_data.fusion_bytes_threshold >= 1, "incorrect MLSL_FUSION_BYTES_THRESHOLD ",
                           env_data.fusion_bytes_threshold);
-        MLSL_THROW_IF_NOT(env_data.fusion_count_threshold >= 1, "incorrect MLSL_FUSION_COUNT_THRESHOLD %d",
+        MLSL_THROW_IF_NOT(env_data.fusion_count_threshold >= 1, "incorrect MLSL_FUSION_COUNT_THRESHOLD ",
                           env_data.fusion_count_threshold);
     }
 }
@@ -86,20 +89,20 @@ void mlsl_env_free()
 
 void mlsl_env_print()
 {
-    MLSL_LOG(INFO, "MLSL_LOG_LEVEL: %d", env_data.log_level);
-    MLSL_LOG(INFO, "MLSL_SCHED_DUMP: %d", env_data.sched_dump);
-    MLSL_LOG(INFO, "MLSL_WORKER_COUNT: %d", env_data.worker_count);
-    MLSL_LOG(INFO, "MLSL_WORKER_OFFLOAD: %d", env_data.worker_offload);
-    MLSL_LOG(INFO, "MLSL_OUT_OF_ORDER_SUPPORT: %d", env_data.out_of_order_support);
-    MLSL_LOG(INFO, "MLSL_ENABLE_RMA: %d", env_data.enable_rma);
-    MLSL_LOG(INFO, "MLSL_ENABLE_FUSION: %d", env_data.enable_fusion);
-    MLSL_LOG(INFO, "MLSL_FUSION_BYTES_THRESHOLD: %d", env_data.fusion_bytes_threshold);
-    MLSL_LOG(INFO, "MLSL_FUSION_COUNT_THRESHOLD: %d", env_data.fusion_count_threshold);
-    MLSL_LOG(INFO, "MLSL_FUSION_CHECK_URGENT: %d", env_data.fusion_check_urgent);
-    MLSL_LOG(INFO, "MLSL_FUSION_CYCLE_MS: %.1f", env_data.fusion_cycle_ms);
-    MLSL_LOG(INFO, "MLSL_VECTOR_ALLGATHERV: %d", env_data.vector_allgatherv);
-    MLSL_LOG(INFO, "MLSL_PRIORITY_MODE: %s", mlsl_priority_mode_to_str(env_data.priority_mode));
-    MLSL_LOG(INFO, "MLSL_ALLREDUCE_ALGO: %s", mlsl_allreduce_algo_to_str(env_data.allreduce_algo));
+    LOG_INFO("MLSL_LOG_LEVEL: ", env_data.log_level);
+    LOG_INFO("MLSL_SCHED_DUMP: ", env_data.sched_dump);
+    LOG_INFO("MLSL_WORKER_COUNT: ", env_data.worker_count);
+    LOG_INFO("MLSL_WORKER_OFFLOAD: ", env_data.worker_offload);
+    LOG_INFO("MLSL_OUT_OF_ORDER_SUPPORT: ", env_data.out_of_order_support);
+    LOG_INFO("MLSL_ENABLE_RMA: ", env_data.enable_rma);
+    LOG_INFO("MLSL_ENABLE_FUSION: ", env_data.enable_fusion);
+    LOG_INFO("MLSL_FUSION_BYTES_THRESHOLD: ", env_data.fusion_bytes_threshold);
+    LOG_INFO("MLSL_FUSION_COUNT_THRESHOLD: ", env_data.fusion_count_threshold);
+    LOG_INFO("MLSL_FUSION_CHECK_URGENT: ", env_data.fusion_check_urgent);
+    LOG_INFO("MLSL_FUSION_CYCLE_MS: ", env_data.fusion_cycle_ms);
+    LOG_INFO("MLSL_PRIORITY_MODE: ", mlsl_priority_mode_to_str(env_data.priority_mode));
+    LOG_INFO("MLSL_ALLREDUCE_ALGO: ", mlsl_allreduce_algo_to_str(env_data.allreduce_algo));
+
     mlsl_env_print_affinity();
 }
 
@@ -140,7 +143,7 @@ int mlsl_env_parse_priority_mode()
             env_data.priority_mode = mlsl_priority_lifo;
         else
         {
-            MLSL_FATAL("unexpected priority_mode %s", mode_env);
+            MLSL_FATAL("unexpected priority_mode ", mode_env);
         }
     }
     return 1;
@@ -181,7 +184,7 @@ int mlsl_env_parse_affinity()
         proc_id_str = strsep(&tmp, ",");
         if (proc_id_str != NULL) {
             if (atoi(proc_id_str) < 0) {
-                MLSL_LOG(ERROR, "unexpected proc_id %s, affinity string %s", proc_id_str, affinity_to_parse);
+                LOG_ERROR("unexpected proc_id ", proc_id_str, ", affinity string ", affinity_to_parse);
                 read_env = 0;
                 MLSL_FREE(affinity_copy);
                 return read_env;
@@ -189,15 +192,15 @@ int mlsl_env_parse_affinity()
             env_data.worker_affinity[w_idx] = atoi(proc_id_str);
             read_count++;
         } else {
-            MLSL_LOG(ERROR, "unexpected end of affinity string, expected %zu numbers, read %zu, affinity string %s",
-                     workers_per_node, read_count, affinity_to_parse);
+            LOG_ERROR("unexpected end of affinity string, expected ", workers_per_node, " numbers, read ", read_count,
+                      ", affinity string ", affinity_to_parse);
             read_env = 0;
             MLSL_FREE(affinity_copy);
             return read_env;
         }
     }
     if (read_count < workers_per_node) {
-        MLSL_LOG(ERROR, "unexpected number of processors (specify 1 logical processor per 1 progress thread), affinity string %s",
+        LOG_ERROR("unexpected number of processors (specify 1 logical processor per 1 progress thread), affinity string ",
                  affinity_to_parse);
         read_env = 0;
         MLSL_FREE(affinity_copy);
@@ -214,8 +217,9 @@ int mlsl_env_print_affinity()
     size_t w_idx;
     size_t workers_per_node = env_data.worker_count;
     for (w_idx = 0; w_idx < workers_per_node; w_idx++)
-        MLSL_LOG(INFO, "worker: %zu, processor: %d",
-                 w_idx, env_data.worker_affinity[w_idx]);
+    {
+        LOG_INFO("worker: ", w_idx, ", processor: ", env_data.worker_affinity[w_idx]);
+    }
     return 1;
 }
 
@@ -234,7 +238,7 @@ int mlsl_env_parse_allreduce_algo()
             env_data.allreduce_algo = mlsl_allreduce_algo_ring_rma;
         else
         {
-            MLSL_THROW("incorrect MLSL_ALLREDUCE_ALGO %s", mode_env);
+            MLSL_THROW("incorrect MLSL_ALLREDUCE_ALGO ", mode_env);
             return 0;
         }
     }

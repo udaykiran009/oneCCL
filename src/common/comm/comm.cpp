@@ -65,7 +65,7 @@ mlsl_comm* mlsl_comm::create_with_color(int color,
     {
         if (all_colors[i] == color)
         {
-            MLSL_LOG(DEBUG, "map local rank %zu to global %zu", colors_match, i);
+            LOG_DEBUG("map local rank ", colors_match, " to global ", i);
             ranks_map[colors_match] = i;
             ++colors_match;
             if (i < global_comm->rank())
@@ -88,8 +88,7 @@ mlsl_comm* mlsl_comm::create_with_color(int color,
 
     mlsl_comm* comm = new mlsl_comm(new_rank, colors_match, std::unique_ptr<comm_id>(new comm_id(*comm_ids)),
                                     std::move(ranks_map));
-    MLSL_LOG(DEBUG, "New comm: color %d, rank %zu, size %zu, comm_id %hu", color,
-             comm->rank(), comm->size(), comm->id());
+    LOG_DEBUG("New comm: color ", color, ", rank ", comm->rank(), ", size ", comm->size(), ", comm_id ", comm->id());
 
     return comm;
 }
@@ -105,16 +104,16 @@ size_t mlsl_comm::get_global_rank(size_t rank) const
     if (m_ranks_map.empty())
     {
         //global comm and its copies do not have entries in the map
-        MLSL_LOG(DEBUG, "Direct mapping of rank %zu", rank);
+        LOG_DEBUG("Direct mapping of rank ", rank);
         return rank;
     }
 
     auto result = m_ranks_map.find(rank);
     if (result == m_ranks_map.end())
     {
-        MLSL_THROW("no rank %zu was found in comm %p id %u", rank, this, m_id->value());
+        MLSL_THROW("no rank ", rank, " was found in comm ", this, ", id ", m_id->value());
     }
 
-    MLSL_LOG(DEBUG, "Comm %p id %u, map rank %zu to global %zu", this, m_id->value(), rank, result->second);
+    LOG_DEBUG("comm , ", this, " id ", m_id->value(), ", map rank ", rank, " to global ", result->second);
     return result->second;
 }

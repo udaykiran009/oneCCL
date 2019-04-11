@@ -120,7 +120,7 @@ mlsl_status_t mlsl_coll_build_ring_rma_allreduce(mlsl_sched* sched, const void* 
                                                  size_t count, mlsl_datatype_internal_t dtype, mlsl_reduction_t op)
 {
     int inplace = (send_buf == recv_buf) ? 1 : 0;
-    MLSL_LOG(DEBUG, "build ring rma allreduce (%s)", (inplace) ? "in-place" : "out-of-place");
+    LOG_DEBUG("build ring rma allreduce (", (inplace) ? "in-place" : "out-of-place", ")");
 
     mlsl_status_t status = mlsl_status_success;
     size_t comm_size, rank;
@@ -133,8 +133,8 @@ mlsl_status_t mlsl_coll_build_ring_rma_allreduce(mlsl_sched* sched, const void* 
     comm_size = comm->size();
     rank = comm->rank();
 
-    MLSL_THROW_IF_NOT(sched && send_buf && recv_buf, "incorrect values, sched %p send %p recv %p",
-                      sched, send_buf, recv_buf);
+    MLSL_THROW_IF_NOT(sched && send_buf && recv_buf, "incorrect values, sched ", sched,
+                    ", send ", send_buf, ", recv ", recv_buf);
 
     if (comm_size == 1)
     {

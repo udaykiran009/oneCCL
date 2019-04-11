@@ -3,7 +3,7 @@
 
 mlsl_status_t mlsl_coll_build_dissemination_barrier(mlsl_sched *sched)
 {
-    MLSL_LOG(DEBUG, "build dissemination barrier");
+    LOG_DEBUG("build dissemination barrier");
 
     mlsl_status_t status = mlsl_status_success;
     int size, rank, src, dst, mask;

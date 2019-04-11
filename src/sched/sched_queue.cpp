@@ -1,12 +1,13 @@
 #include "sched/sched_queue.hpp"
+#include "common/env/env.hpp"
 
 void mlsl_sched_bin::add(mlsl_sched* sched)
 {
     if (env_data.priority_mode != mlsl_priority_none)
     {
-        MLSL_ASSERT_FMT(sched->coll_attr.priority == priority,
-            "unexpected sched priority %zu, expected %zu",
-            sched->coll_attr.priority, priority);
+        MLSL_ASSERT(sched->coll_attr.priority == priority,
+            "unexpected sched priority ", sched->coll_attr.priority,
+            " expected ", priority);
     }
     MLSL_ASSERT(sched);
     sched_list.add(sched);
@@ -23,13 +24,13 @@ size_t mlsl_sched_bin::erase(size_t idx)
 mlsl_sched_queue::mlsl_sched_queue(std::vector<atl_comm_t*> comm_ctxs)
     : comm_ctxs(comm_ctxs)
 {
-    MLSL_LOG(DEBUG, "created sched_queue, comm_ctxs count %zu val %p", comm_ctxs.size(), comm_ctxs[0]);
+    LOG_DEBUG("created sched_queue, comm_ctxs count ",  comm_ctxs.size(), ", val ", comm_ctxs[0]);
 
     if (env_data.priority_mode != mlsl_priority_none)
     {
-        MLSL_ASSERT_FMT(comm_ctxs.size() == MLSL_PRIORITY_BUCKET_COUNT,
-            "unexpected comm_cxt count %zu, expected %d",
-            comm_ctxs.size(), MLSL_PRIORITY_BUCKET_COUNT);
+        MLSL_ASSERT(comm_ctxs.size() == MLSL_PRIORITY_BUCKET_COUNT,
+            "unexpected comm_cxt count ", comm_ctxs.size(), ", expected ",
+            MLSL_PRIORITY_BUCKET_COUNT);
     }
     else
         MLSL_ASSERT(!comm_ctxs.empty());
@@ -37,13 +38,11 @@ mlsl_sched_queue::mlsl_sched_queue(std::vector<atl_comm_t*> comm_ctxs)
 
 mlsl_sched_queue::~mlsl_sched_queue()
 {
-    MLSL_ASSERT_FMT(bins.empty(),
-        "unexpected bins size %zu, expected 0",
-        bins.size());
+    MLSL_ASSERT(bins.empty(),
+        "unexpected bins size ", bins.size(), ", expected 0");
 
-    MLSL_ASSERT_FMT(max_priority == 0,
-        "unexpected max_priority %zu, expected 0",
-        max_priority);
+    MLSL_ASSERT(max_priority == 0,
+        "unexpected max_priority ", max_priority, ", expected 0");
 
     MLSL_ASSERT(!cached_max_priority_bin);
 }
@@ -63,7 +62,7 @@ void mlsl_sched_queue::add(mlsl_sched* sched, size_t priority)
 
     std::lock_guard<sched_queue_lock_t> lock{guard};
 
-    MLSL_LOG(DEBUG, "sched %p, priority %zu", sched, priority);
+    LOG_DEBUG("sched ", sched, ", priority ", priority);
 
     mlsl_sched_bin* bin = nullptr;
     sched_bin_list_t::iterator it = bins.find(priority);
@@ -71,7 +70,7 @@ void mlsl_sched_queue::add(mlsl_sched* sched, size_t priority)
     {
         it->second.add(sched);
         bin = &(it->second);
-        MLSL_LOG(DEBUG, "found bin %p", bin);
+        LOG_DEBUG("found bin ", bin);
     }
     else
     {
@@ -82,7 +81,7 @@ void mlsl_sched_queue::add(mlsl_sched* sched, size_t priority)
         {
             size_t comm_idx = (priority / MLSL_PRIORITY_BUCKET_SIZE) % MLSL_PRIORITY_BUCKET_COUNT;
             comm_ctx = comm_ctxs[comm_idx];
-            MLSL_LOG(DEBUG, "priority %zu, comm_idx %zu", priority, comm_idx);
+            LOG_DEBUG("priority ", priority, ", comm_idx ", comm_idx);
         }
 
         auto emplace_result = bins.emplace(priority, mlsl_sched_bin{this, comm_ctx, priority});
@@ -94,7 +93,7 @@ void mlsl_sched_queue::add(mlsl_sched* sched, size_t priority)
             max_priority = priority;
             cached_max_priority_bin = bin;
         }
-        MLSL_LOG(DEBUG, "didn't find bin, emplaced new one, max_priority %zu", max_priority);
+        LOG_DEBUG("didn't find bin, emplaced new one, max_priority ", max_priority);
     }
     MLSL_ASSERT(bin);
 
@@ -108,7 +107,7 @@ size_t mlsl_sched_queue::erase(mlsl_sched_bin* bin, size_t idx)
     mlsl_sched* sched = bin->get(idx);
     MLSL_ASSERT(sched);
 
-    MLSL_LOG(DEBUG, "queue %p, bin %p, sched %p", this, bin, sched);
+    LOG_DEBUG("queue ", this, ", bin ", bin, ", sched ", sched);
     size_t bin_priority = bin->get_priority();
 
     std::lock_guard<sched_queue_lock_t> lock{guard};
@@ -118,7 +117,7 @@ size_t mlsl_sched_queue::erase(mlsl_sched_bin* bin, size_t idx)
     if (bin_size == 0)
     {
         bins.erase(bin_priority);
-        MLSL_LOG(DEBUG, "erase bin %p", bin);
+        LOG_DEBUG("erase bin ", bin);
     }
 
     if (bins.empty())

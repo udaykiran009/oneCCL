@@ -57,7 +57,7 @@ mlsl_datatype_internal_t mlsl_datatype_get(mlsl_datatype_t type)
         case mlsl_dtype_double: { dtype = mlsl_dtype_internal_double; break; }
         case mlsl_dtype_int64: { dtype = mlsl_dtype_internal_int64; break; }
         case mlsl_dtype_uint64: { dtype = mlsl_dtype_internal_uint64; break; }
-        default: MLSL_FATAL("unexpected dtype %d", type);
+        default: MLSL_FATAL("unexpected dtype ", type);
     }
     return dtype;
 }

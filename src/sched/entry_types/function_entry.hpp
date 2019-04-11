@@ -10,7 +10,9 @@ public:
                    mlsl_sched_entry_function_t fn,
                    const void* ctx) :
         sched_entry(sched), fn(fn), ctx(ctx)
-    {}
+    {
+        LOG_DEBUG("creating ", name(), " entry");
+    }
 
     void start_derived()
     {
@@ -24,10 +26,12 @@ public:
     }
 
 protected:
-    char* dump_detail(char* dump_buf) const
+    void dump_detail(std::stringstream& str) const
     {
-        auto bytes_written = sprintf(dump_buf, "fn %p, ctx %p\n", fn, ctx);
-        return dump_buf + bytes_written;
+        mlsl_logger::format(str,
+                            "fn ", fn,
+                            ", ctx ", ctx,
+                            "\n");
     }
 
 private:

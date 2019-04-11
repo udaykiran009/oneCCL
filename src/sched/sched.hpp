@@ -139,7 +139,7 @@ public:
         else if (add_mode == mlsl_sched_add_front)
             entries.push_front(entry);
         else
-            MLSL_FATAL("unexpected mode %d", add_mode);
+            MLSL_FATAL("unexpected mode ", add_mode);
     }
 
     /**

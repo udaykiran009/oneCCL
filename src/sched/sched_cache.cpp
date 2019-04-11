@@ -10,12 +10,12 @@ mlsl_sched* mlsl_sched_cache::find(mlsl_sched_key& key)
 
     if (it != table.end())
     {
-        MLSL_LOG(DEBUG, "found sched in cache, %p", it->second);
+        LOG_DEBUG("found sched in cache, ", it->second);
         return it->second;
     }
     else
     {
-        MLSL_LOG(DEBUG, "didn't find sched in cache");
+        LOG_DEBUG("didn't find sched in cache");
         return nullptr;
     }
 }
@@ -28,8 +28,8 @@ void mlsl_sched_cache::add(mlsl_sched_key& key, mlsl_sched* sched)
         MLSL_ASSERT(emplace_result.second);
     }
 
-    MLSL_LOG(DEBUG, "size %zu, bucket_count %zu, load_factor %f, max_load_factor %f",
-             table.size(), table.bucket_count(), table.load_factor(), table.max_load_factor());
+    LOG_DEBUG("size ", table.size(), ",  bucket_count", table.bucket_count(), ", load_factor ", table.load_factor(),
+              ", max_load_factor ", table.max_load_factor());
 }
 
 void mlsl_sched_cache::remove_all()
@@ -39,7 +39,7 @@ void mlsl_sched_cache::remove_all()
     {
         mlsl_sched* sched = it->second;
         MLSL_ASSERT(sched);
-        MLSL_LOG(DEBUG, "remove sched %p from cache", sched);
+        LOG_DEBUG("remove sched ", sched, " from cache");
         delete sched;
     }
     table.clear();

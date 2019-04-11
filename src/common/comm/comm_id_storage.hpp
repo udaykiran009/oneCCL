@@ -28,7 +28,7 @@ public:
         mlsl_comm_id_t lower_bound = internal ? static_cast<mlsl_comm_id_t>(0) : external_ids_range_start;
         mlsl_comm_id_t upper_bound = internal ? external_ids_range_start : max_comm;
 
-        MLSL_LOG(DEBUG, "looking for free %s id", internal ? "internal" : "external");
+        LOG_DEBUG("looking for free ", internal ? "internal" : "external", " comm id");
         //overwrite last_used with new value
         last_used_ref = acquire_id_impl(last_used_ref, lower_bound, upper_bound);
         return last_used_ref;
@@ -39,11 +39,11 @@ public:
      */
     void pull_id(mlsl_comm_id_t id)
     {
-        MLSL_ASSERT_FMT(id > 0 && id < max_comm, "id %hu is out of bounds", id);
+        MLSL_ASSERT(id > 0 && id < max_comm, "id ", id, " is out of bounds");
         std::lock_guard<mlsl_spinlock> lock(sync_guard);
         if (!free_ids[id])
         {
-            MLSL_THROW("comm id %hu is already used", id);
+            MLSL_THROW("comm id ", id, " is already used");
         }
         free_ids[id] = false;
     }
@@ -53,10 +53,10 @@ public:
         std::lock_guard<mlsl_spinlock> lock(sync_guard);
         if (free_ids[id])
         {
-            MLSL_LOG(ERROR, "attempt to release not acquired id %hu", id);
+            LOG_ERROR("attempt to release not acquired id ", id);
             return;
         }
-        MLSL_LOG(DEBUG, "free comm id %hu", id);
+        LOG_DEBUG("free comm id ", id);
         free_ids[id] = true;
         last_used_id_internal = id;
     }
@@ -67,13 +67,13 @@ private:
                                    mlsl_comm_id_t upper_bound)
     {
         //search from the current position till the end
-        MLSL_LOG(DEBUG, "last %hu, low %hu, up %hu", last_used, lower_bound, upper_bound);
+        LOG_DEBUG("last ", last_used, ", low ", lower_bound, " up ", upper_bound);
         for (mlsl_comm_id_t id = last_used; id < upper_bound; ++id)
         {
             if (free_ids[id])
             {
                 free_ids[id] = false;
-                MLSL_LOG(DEBUG, "Found free comm id %hu", id);
+                LOG_DEBUG("Found free comm id ", id);
                 return id;
             }
         }
@@ -85,7 +85,7 @@ private:
             if (free_ids[id])
             {
                 free_ids[id] = false;
-                MLSL_LOG(DEBUG, "Found free comm id %hu", id);
+                LOG_DEBUG("Found free comm id ", id);
                 return id;
             }
         }

@@ -29,7 +29,7 @@
                 }                                                       \
                 break;                                                  \
             default:                                                    \
-                MLSL_FATAL("unexpected value %d", reduction);           \
+                MLSL_FATAL("unexpected value ", reduction);             \
         }                                                               \
     } while (0)
 
@@ -73,7 +73,7 @@ mlsl_status_t mlsl_comp_reduce(const void *in_buf, size_t in_count, void *inout_
             MLSL_REDUCE(uint64_t);
             break;
         default:
-            MLSL_FATAL("unexpected value %d", dtype->type);
+            MLSL_FATAL("unexpected value ", dtype->type);
             break;
     }
     return mlsl_status_success;

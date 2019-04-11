@@ -17,6 +17,7 @@ public:
         cnt(count), dtype(dtype),
         dst(dst), rank(rank)
     {
+        LOG_DEBUG("creating ", name(), " entry");
         pfields.add_available(mlsl_sched_entry_field_buf);
         pfields.add_available(mlsl_sched_entry_field_cnt);
     }
@@ -25,12 +26,12 @@ public:
     {
         auto atl_tag = mlsl_create_atl_tag(sched->coll_param.comm->id(), sched->sched_id, rank);
         size_t bytes = cnt * mlsl_datatype_get_size(dtype);
-        MLSL_LOG(DEBUG, "SEND entry dst %zu, tag %lx, req %p, bytes %zu", dst, atl_tag, &req, bytes);
+        LOG_DEBUG("SEND entry dst, ", dst, ", tag ", std::setbase(16), atl_tag, ", req ", &req, ", bytes ", bytes);
         atl_status_t atl_status = atl_comm_send(sched->bin->get_comm_ctx(), buf,
                                                 bytes, dst, atl_tag, &req);
         if (unlikely(atl_status != atl_status_success))
         {
-            MLSL_THROW("SEND entry failed. atl_status: %d", atl_status);
+            MLSL_THROW("SEND entry failed. atl_status: ", atl_status);
         }
         else
             status = mlsl_sched_entry_status_started;
@@ -43,7 +44,7 @@ public:
 
         if (unlikely(atl_status != atl_status_success))
         {
-            MLSL_THROW("SEND entry failed. atl_status: %d", atl_status);
+            MLSL_THROW("SEND entry failed. atl_status: ", atl_status);
         }
 
         if (req_status)
@@ -56,7 +57,7 @@ public:
         {
             case mlsl_sched_entry_field_buf: return &buf;
             case mlsl_sched_entry_field_cnt: return &cnt;
-            default: MLSL_FATAL("unexpected id %d", id);
+            default: MLSL_FATAL("unexpected  ", id);
         }
         return nullptr;
     }
@@ -67,12 +68,16 @@ public:
     }
 
 protected:
-    char* dump_detail(char* dump_buf) const
+    void dump_detail(std::stringstream& str) const
     {
-        auto bytes_written = sprintf(dump_buf, "dt %s, cnt %zu, buf %p, dst %zu, comm_id %hu, req %p\n",
-                                     mlsl_datatype_get_name(dtype), cnt, buf,
-                                     dst, sched->coll_param.comm->id(), &req);
-        return dump_buf + bytes_written;
+        mlsl_logger::format(str,
+                            "dt ", mlsl_datatype_get_name(dtype),
+                            ", cnt ", cnt,
+                            ", buf ", buf,
+                            ", dst ", dst,
+                            ", comm_id ", sched->coll_param.comm->id(),
+                            ", req ",&req,
+                            "\n");
     }
 
 private:

@@ -50,8 +50,7 @@ inline void mlsl_wait_impl(mlsl_executor* exec, mlsl_request* request)
     exec->wait(request);
     MLSL_ASSERT(request->sched);
 
-    MLSL_LOG(DEBUG, "req %p completed, sched %s", request,
-             mlsl_coll_type_to_str(request->sched->coll_param.ctype));
+    LOG_DEBUG("req ", request, " completed, sched ", mlsl_coll_type_to_str(request->sched->coll_param.ctype));
 
     if (!request->sched->coll_attr.to_cache)
         delete request->sched;
@@ -64,8 +63,7 @@ inline bool mlsl_test_impl(mlsl_executor* exec, mlsl_request* request)
     if (completed)
     {
         MLSL_ASSERT(request->sched);
-        MLSL_LOG(DEBUG, "req %p completed, sched %s", request,
-                 mlsl_coll_type_to_str(request->sched->coll_param.ctype));
+        LOG_DEBUG("req ", request, " completed, sched ", mlsl_coll_type_to_str(request->sched->coll_param.ctype));
 
         if (!request->sched->coll_attr.to_cache)
             delete request->sched;

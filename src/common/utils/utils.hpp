@@ -17,9 +17,9 @@
 
 #define MLSL_CALL(expr)                                \
   do {                                                 \
-        status = expr;                                 \
-        MLSL_ASSERT_FMT(status == mlsl_status_success, \
-            "bad status %d", status);                  \
+        status = (expr);                                 \
+        MLSL_ASSERT(status == mlsl_status_success,     \
+            "bad status ", status);                    \
   } while (0)
 
 #define unlikely(x_) __builtin_expect(!!(x_), 0)
@@ -88,21 +88,21 @@ struct mlsl_slist_t
 #define MLSL_MEMALIGN_WRAPPER(size, align, name)                \
     ({                                                          \
         void *ptr = MLSL_MEMALIGN_IMPL(size, align);            \
-        MLSL_THROW_IF_NOT(ptr, "MLSL Out of memory, %s", name); \
+        MLSL_THROW_IF_NOT(ptr, "MLSL Out of memory, ", name);   \
         ptr;                                                    \
     })
 
 #define MLSL_REALLOC_WRAPPER(old_ptr, old_size, new_size, align, name)      \
     ({                                                                      \
         void *ptr = MLSL_REALLOC_IMPL(old_ptr, old_size, new_size, align);  \
-        MLSL_THROW_IF_NOT(ptr, "MLSL Out of memory, %s", name);             \
+        MLSL_THROW_IF_NOT(ptr, "MLSL Out of memory, ", name);               \
         ptr;                                                                \
     })
 
 #define MLSL_CALLOC_WRAPPER(size, align, name)                  \
     ({                                                          \
         void *ptr = MLSL_CALLOC_IMPL(size, align);              \
-        MLSL_THROW_IF_NOT(ptr, "MLSL Out of memory, %s", name); \
+        MLSL_THROW_IF_NOT(ptr, "MLSL Out of memory, ", name);   \
         ptr;                                                    \
     })
 

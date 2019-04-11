@@ -18,31 +18,31 @@ public:
     ~mlsl_request()
     {
         auto counter = completion_counter.load(std::memory_order_acquire);
-        MLSL_LOG(DEBUG, "deleting req %p with counter %d", this, counter);
+        LOG_DEBUG("deleting req ", this, " with counter ", counter);
         if (counter != 0)
         {
-            MLSL_LOG(ERROR, "deleting request with unexpected completion_counter %d", counter);
+            LOG_ERROR("deleting request with unexpected completion_counter ", counter);
         }
     }
 
     void complete()
     {
         int prev_counter = completion_counter.fetch_sub(1, std::memory_order_release);
-        MLSL_THROW_IF_NOT(prev_counter > 0, "unexpected prev_counter %d", prev_counter);
-        MLSL_LOG(DEBUG, "req %p, counter %d", this, prev_counter - 1);
+        MLSL_THROW_IF_NOT(prev_counter > 0, "unexpected prev_counter ", prev_counter);
+        LOG_DEBUG("req ", this, ", counter ", prev_counter - 1);
     }
 
     bool is_completed()
     {
         auto counter = completion_counter.load(std::memory_order_acquire);
-        MLSL_LOG(TRACE, "req %p, counter %d", this, counter);
+        LOG_TRACE("req ", this, ", counter ", counter);
         return counter == 0;
     }
 
     void set_counter(int counter)
     {
         int current_counter = completion_counter.load(std::memory_order_acquire);
-        MLSL_THROW_IF_NOT(current_counter == 0, "unexpected counter %d", current_counter);
+        MLSL_THROW_IF_NOT(current_counter == 0, "unexpected counter ", current_counter);
         completion_counter.store(counter, std::memory_order_release);
     }
 

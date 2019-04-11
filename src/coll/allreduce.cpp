@@ -4,7 +4,8 @@
 mlsl_status_t mlsl_coll_build_rabenseifner_allreduce(mlsl_sched *sched, const void *send_buf, void *recv_buf,
                                                      size_t count, mlsl_datatype_internal_t dtype, mlsl_reduction_t op)
 {
-    MLSL_LOG(DEBUG, "build Rabenseifner's allreduce");
+    LOG_DEBUG("build Rabenseifner's allreduce");
+    MLSL_ASSERT(sched != nullptr, "empty sched");
 
     mlsl_status_t status = mlsl_status_success;
     int comm_size, rank, newrank, pof2, rem;
@@ -71,7 +72,7 @@ mlsl_status_t mlsl_coll_build_rabenseifner_allreduce(mlsl_sched *sched, const vo
         disps = static_cast<int*>(MLSL_MALLOC(pof2 * sizeof(int), "displacements"));
 
         /* the cnts calculations assume this */
-        MLSL_ASSERT_FMT(count >= static_cast<size_t>(pof2), "count %zu, pof2 %d", count, pof2);
+        MLSL_ASSERT(count >= static_cast<size_t>(pof2), "count ", count, ", pof2 ", pof2);
 
         for (i = 0; i < (pof2 - 1); i++)
             cnts[i] = count / pof2;
@@ -207,7 +208,7 @@ mlsl_status_t mlsl_coll_build_rabenseifner_allreduce(mlsl_sched *sched, const vo
 mlsl_status_t mlsl_coll_build_recursive_doubling_allreduce(mlsl_sched *sched, const void *send_buf, void *recv_buf,
                                                            size_t count, mlsl_datatype_internal_t dtype, mlsl_reduction_t op)
 {
-    MLSL_LOG(DEBUG, "build recursive_doubling allreduce");
+    LOG_DEBUG("build recursive_doubling allreduce");
 
     mlsl_status_t status = mlsl_status_success;
 
@@ -307,7 +308,7 @@ mlsl_status_t mlsl_coll_build_recursive_doubling_allreduce(mlsl_sched *sched, co
 mlsl_status_t mlsl_coll_build_starlike_allreduce(mlsl_sched *sched, const void *send_buf, void *recv_buf,
                                                  size_t count, mlsl_datatype_internal_t dtype, mlsl_reduction_t op)
 {
-    MLSL_LOG(DEBUG, "build starlike allreduce");
+    LOG_DEBUG("build starlike allreduce");
 
     mlsl_status_t status = mlsl_status_success;
     size_t comm_size = sched->coll_param.comm->size();
@@ -371,11 +372,11 @@ mlsl_status_t mlsl_coll_build_ring_allreduce(mlsl_sched *sched, const void *send
                                              size_t count, mlsl_datatype_internal_t dtype, mlsl_reduction_t op)
 {
     int inplace = (send_buf == recv_buf) ? 1 : 0;
-    MLSL_LOG(DEBUG, "build ring allreduce (%s)", (inplace) ? "in-place" : "out-of-place");
+    LOG_DEBUG("build ring allreduce ", inplace ? "in-place" : "out-of-place");
 
     mlsl_status_t status = mlsl_status_success;
     size_t comm_size, rank;
-    mlsl_comm *comm = sched->coll_param.comm;
+    mlsl_comm* comm = sched->coll_param.comm;
     size_t dtype_size = mlsl_datatype_get_size(dtype);
     size_t idx = 0;
     void* tmp_buf = NULL;
@@ -384,12 +385,13 @@ mlsl_status_t mlsl_coll_build_ring_allreduce(mlsl_sched *sched, const void *send
     comm_size = comm->size();
     rank = comm->rank();
 
-    MLSL_THROW_IF_NOT(sched && send_buf && recv_buf, "incorrect values, sched %p send %p recv %p",
-                                                      sched, send_buf, recv_buf);
+    MLSL_THROW_IF_NOT(sched && send_buf && recv_buf, "incorrect values, sched ", sched, ", send ", send_buf,
+                      " recv ", recv_buf);
 
     if (comm_size == 1)
     {
-        if (!inplace) {
+        if (!inplace)
+        {
             entry_factory::make_copy_entry(sched, send_buf, recv_buf, count, dtype);
             sched->add_barrier();
         }
@@ -408,7 +410,7 @@ mlsl_status_t mlsl_coll_build_ring_allreduce(mlsl_sched *sched, const void *send
     size_t send_block_idx, recv_block_idx;
     size_t send_block_count, recv_block_count;
     size_t send_block_offset, recv_block_offset;
-    void* sbuf, *rbuf, *reduce_inout_buf;
+    void *sbuf, *rbuf, *reduce_inout_buf;
     const void* reduce_in_buf;
 
     /* reduce-scatter */
@@ -429,15 +431,15 @@ mlsl_status_t mlsl_coll_build_ring_allreduce(mlsl_sched *sched, const void *send
         }
         else
         {
-            sbuf = (idx == 0) ? (void*)send_buf : recv_buf;
+            sbuf = (idx == 0) ? (void*) send_buf : recv_buf;
             rbuf = recv_buf;
             reduce_in_buf = send_buf;
             reduce_inout_buf = recv_buf;
         }
-        sbuf = (char*)sbuf + send_block_offset;
-        rbuf = (char*)rbuf + recv_block_offset;
-        reduce_in_buf = (char*)reduce_in_buf + recv_block_offset;
-        reduce_inout_buf = (char*)reduce_inout_buf + recv_block_offset;
+        sbuf = (char*) sbuf + send_block_offset;
+        rbuf = (char*) rbuf + recv_block_offset;
+        reduce_in_buf = (char*) reduce_in_buf + recv_block_offset;
+        reduce_inout_buf = (char*) reduce_inout_buf + recv_block_offset;
 
         entry_factory::make_send_entry(sched, sbuf, send_block_count,
                                        dtype, dst);
@@ -460,8 +462,8 @@ mlsl_status_t mlsl_coll_build_ring_allreduce(mlsl_sched *sched, const void *send
         recv_block_count = (recv_block_idx == (comm_size - 1)) ? last_block_count : main_block_count;
         send_block_offset = main_block_count * dtype_size * send_block_idx;
         recv_block_offset = main_block_count * dtype_size * recv_block_idx;
-        sbuf = (char*)recv_buf + send_block_offset;
-        rbuf = (char*)recv_buf + recv_block_offset;
+        sbuf = (char*) recv_buf + send_block_offset;
+        rbuf = (char*) recv_buf + recv_block_offset;
 
         entry_factory::make_send_entry(sched, sbuf, send_block_count,
                                        dtype, dst);

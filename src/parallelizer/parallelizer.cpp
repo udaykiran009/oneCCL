@@ -1,5 +1,6 @@
 #include "parallelizer/parallelizer.hpp"
 #include "sched/entry_factory.hpp"
+#include "common/env/env.hpp"
 
 #define MLSL_MIN_PART_SIZE (2048)
 
@@ -88,12 +89,11 @@ mlsl_status_t mlsl_parallelizer::process(mlsl_sched* sched)
             ag_recv_bufs.resize(part_count);
             break;
         default:
-            MLSL_FATAL("unexpected coll_type %d", coll_type);
+            MLSL_FATAL("unexpected coll_type ", coll_type);
             break;
     }
 
-    MLSL_LOG(DEBUG, "sched %p, num_entries %zu, coll_type %d, part_count %zu",
-             sched, sched->entries.size(), coll_type, part_count);
+    LOG_DEBUG("sched ", sched, ", num_entries ", sched->entries.size(), ", coll_type ", coll_type, ", part_count ", part_count);
 
     counts.resize(part_count, 0);
     offsets.resize(part_count, 0);
@@ -143,7 +143,7 @@ mlsl_status_t mlsl_parallelizer::process(mlsl_sched* sched)
             }
             break;
         default:
-            MLSL_FATAL("unexpected coll_type %d", coll_type);
+            MLSL_FATAL("unexpected coll_type ", coll_type);
             break;
     }
 
@@ -336,7 +336,7 @@ mlsl_status_t mlsl_parallelizer::process(mlsl_sched* sched)
             break;
 
         default:
-            MLSL_FATAL("unexpected coll_type %d", coll_type);
+            MLSL_FATAL("unexpected coll_type ", coll_type);
             break;
     }
 

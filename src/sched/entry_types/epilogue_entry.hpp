@@ -19,6 +19,7 @@ public:
         out_buf(out_buf), expected_out_cnt(expected_out_cnt),
         out_dtype(out_dtype)
     {
+        LOG_DEBUG("creating ", name(), " entry");
         pfields.add_available(mlsl_sched_entry_field_in_buf);
         pfields.add_available(mlsl_sched_entry_field_in_cnt);
         pfields.add_available(mlsl_sched_entry_field_in_dtype);
@@ -27,7 +28,7 @@ public:
     void start_derived()
     {
         fn(in_buf, in_cnt, in_dtype->type, out_buf, &out_cnt, out_dtype->type);
-        MLSL_ASSERT_FMT(expected_out_cnt == out_cnt, "incorrect values %zu %zu", expected_out_cnt, out_cnt);
+        MLSL_ASSERT(expected_out_cnt == out_cnt, "incorrect values ", expected_out_cnt, " ", out_cnt);
         status = mlsl_sched_entry_status_complete;
     }
 
@@ -38,7 +39,7 @@ public:
             case mlsl_sched_entry_field_in_buf: return &in_buf;
             case mlsl_sched_entry_field_in_cnt: return &in_cnt;
             case mlsl_sched_entry_field_in_dtype: return &in_dtype;
-            default: MLSL_FATAL("unexpected id %d", id);
+            default: MLSL_FATAL("unexpected id ", id);
         }
         return nullptr;
     }
@@ -49,15 +50,18 @@ public:
     }
 
 protected:
-    char* dump_detail(char* dump_buf) const
+    void dump_detail(std::stringstream& str) const
     {
-        auto bytes_written = sprintf(dump_buf,
-                                     "in_dt %s, in_cnt %zu, in_buf %p, out_dt %s, out_cnt %zu, "
-                                     "out_buf %p, fn %p, exp_out_count %zu\n",
-                                     mlsl_datatype_get_name(in_dtype), in_cnt, in_buf,
-                                     mlsl_datatype_get_name(out_dtype),
-                                     out_cnt, out_buf, fn, expected_out_cnt);
-        return dump_buf + bytes_written;
+        mlsl_logger::format(str,
+                            "in_dt ", mlsl_datatype_get_name(in_dtype),
+                            ", in_cnt ", in_cnt,
+                            ", in_buf ", in_buf,
+                            ", out_dt ", mlsl_datatype_get_name(out_dtype),
+                            ", out_cnt ", out_cnt,
+                            ", out_buf ", out_buf,
+                            ", fn ", fn,
+                            ", exp_out_count ", expected_out_cnt,
+                            "\n");
     }
 
 private:

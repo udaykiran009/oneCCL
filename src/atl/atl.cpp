@@ -5,6 +5,7 @@
 #include <dirent.h>
 #include <assert.h>
 #include <algorithm>
+#include <cstring>
 
 #define LIB_SUFFIX ".so"
 
@@ -43,7 +44,7 @@ static void atl_ini_dir(int *argc, char ***argv, size_t *proc_idx, size_t *proc_
         dlhandle = dlopen(lib, RTLD_NOW);
         free(liblist[n]);
         if (dlhandle == NULL) {
-            MLSL_LOG(DEBUG, "can't open lib %s, %s", lib, dlerror());
+            LOG_DEBUG("can't open lib ", lib, ", error ", dlerror());
             free(lib);
             continue;
         }

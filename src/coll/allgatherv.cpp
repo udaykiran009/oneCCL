@@ -4,7 +4,7 @@
 mlsl_status_t mlsl_coll_build_naive_allgatherv(mlsl_sched* sched, const void* send_buf, size_t send_count,
                                                void* recv_buf, size_t* recv_counts, mlsl_datatype_internal_t dtype)
 {
-    MLSL_LOG(DEBUG, "build naive allgatherv");
+    LOG_DEBUG("build naive allgatherv");
 
     size_t comm_size     = sched->coll_param.comm->size();
     size_t this_rank     = sched->coll_param.comm->rank();

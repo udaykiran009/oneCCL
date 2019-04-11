@@ -25,7 +25,7 @@ public:
     mlsl_sched_list() = default;
     ~mlsl_sched_list()
     {
-        MLSL_ASSERT_FMT(elems.empty(),
+        MLSL_ASSERT(elems.empty(),
             "unexpected elem_count %zu, expected 0",
             elems.size());
     }

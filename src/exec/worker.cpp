@@ -14,12 +14,11 @@ mlsl_worker::mlsl_worker(mlsl_executor* executor,
 
 mlsl_status_t mlsl_worker::start()
 {
-    MLSL_LOG(DEBUG, "worker_idx %zu", idx);
+    LOG_DEBUG("worker_idx ", idx);
     int err = pthread_create(&thread, nullptr, mlsl_worker_func, static_cast<void*>(this));
     if (err)
     {
-        MLSL_LOG(ERROR, "error while creating worker thread # %zu, pthread_create returns %d",
-                 idx, err);
+        LOG_ERROR("error while creating worker thread #", idx, " pthread_create returns ", err);
         return mlsl_status_runtime_error;
     }
     return mlsl_status_success;
@@ -27,26 +26,28 @@ mlsl_status_t mlsl_worker::start()
 
 mlsl_status_t mlsl_worker::stop()
 {
-    MLSL_LOG(DEBUG, "worker_idx %zu", idx);
+    LOG_DEBUG("worker # ", idx);
     void* exit_code;
     int err = pthread_cancel(thread);
     if (err)
-        MLSL_LOG(INFO, "error while canceling progress thread # %zu, pthread_cancel returns %d",
-                 idx, err);
+        LOG_INFO("error while canceling progress thread # ", idx, ", pthread_cancel returns ", err);
 
     err = pthread_join(thread, &exit_code);
     if (err)
-        MLSL_LOG(INFO, "error while joining progress thread # %zu, pthread_join returns %d",
-                 idx, err);
+    {
+        LOG_INFO("error while joining progress thread # ", idx, " , pthread_join returns ", err);
+    }
     else
-        MLSL_LOG(DEBUG, "progress thread # %zu exited with code %ld (%s)",
-                 idx, (uintptr_t) exit_code, (exit_code == PTHREAD_CANCELED) ? "PTHREAD_CANCELED" : "?");
+    {
+        LOG_DEBUG("progress thread # ", idx, ", exited with code ",
+                  idx, " (", (uintptr_t) exit_code, (exit_code == PTHREAD_CANCELED) ? "PTHREAD_CANCELED" : "?", ")");
+    }
     return mlsl_status_success;
 }
 
 mlsl_status_t mlsl_worker::pin(int proc_id)
 {
-    MLSL_LOG(DEBUG, "worker_idx %zu, proc_id %d", idx, proc_id);
+    LOG_DEBUG("worker_idx ", idx, ", proc_id ", proc_id);
     int pthread_err;
     cpu_set_t cpuset;
 
@@ -55,19 +56,19 @@ mlsl_status_t mlsl_worker::pin(int proc_id)
 
     if ((pthread_err = pthread_setaffinity_np(thread, sizeof(cpu_set_t), &cpuset)) != 0)
     {
-        MLSL_LOG(ERROR, "pthread_setaffinity_np failed, err %d", pthread_err);
+        LOG_ERROR("pthread_setaffinity_np failed, err ", pthread_err);
         return mlsl_status_runtime_error;
     }
 
     if ((pthread_err = pthread_getaffinity_np(thread, sizeof(cpu_set_t), &cpuset)) != 0)
     {
-        MLSL_LOG(ERROR, "pthread_getaffinity_np failed, err %d", pthread_err);
+        LOG_ERROR("pthread_getaffinity_np failed, err ", pthread_err);
         return mlsl_status_runtime_error;
     }
 
     if (!__CPU_ISSET_S(proc_id, sizeof(cpu_set_t), &cpuset))
     {
-        MLSL_LOG(ERROR, "worker %zu is not pinned on proc_id %d", idx, proc_id);
+        LOG_ERROR("worker ", idx, " is not pinned on proc_id ", proc_id);
         return mlsl_status_runtime_error;
     }
 
@@ -76,7 +77,7 @@ mlsl_status_t mlsl_worker::pin(int proc_id)
 
 void mlsl_worker::add(mlsl_sched* sched)
 {
-    MLSL_LOG(DEBUG, "add sched %p type %s", sched, mlsl_coll_type_to_str(sched->coll_param.ctype));
+    LOG_DEBUG("add sched ", sched, ", type ", mlsl_coll_type_to_str(sched->coll_param.ctype));
     data_queue->add(sched, sched->get_priority());
 }
 
@@ -90,7 +91,7 @@ size_t mlsl_worker::do_work()
     {
         MLSL_ASSERT(bin);
         mlsl_sched_progress(bin, peek_count, processed_count);
-        MLSL_ASSERT_FMT(processed_count <= peek_count, "incorrect values %zu %zu", processed_count, peek_count);
+        MLSL_ASSERT(processed_count <= peek_count, "incorrect values ", processed_count, " ", peek_count);
     }
 
     return processed_count;
@@ -99,7 +100,7 @@ size_t mlsl_worker::do_work()
 static void* mlsl_worker_func(void* args)
 {
     auto worker = static_cast<mlsl_worker*>(args);
-    MLSL_LOG(DEBUG, "worker_idx %zu", worker->get_idx());
+    LOG_DEBUG("worker_idx ", worker->get_idx());
 
     size_t iter_count = 0;
     size_t yield_spin_count = 0;

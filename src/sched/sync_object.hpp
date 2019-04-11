@@ -9,13 +9,13 @@ class sync_object
 public:
     explicit sync_object(size_t count) : initial_cnt(count), sync(count)
     {
-        MLSL_ASSERT_FMT(initial_cnt > 0, "count must be greater than 0");
+        MLSL_ASSERT(initial_cnt > 0, "count must be greater than 0");
     }
 
     void visit()
     {
         auto value = sync.fetch_sub(1, std::memory_order_release);
-        MLSL_ASSERT_FMT(value >= 0 && value <= initial_cnt, "invalid count %zu", value);
+        MLSL_ASSERT(value >= 0 && value <= initial_cnt, "invalid count ", value);
     }
 
     void reset()

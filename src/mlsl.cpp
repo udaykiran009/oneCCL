@@ -70,7 +70,7 @@ mlsl_status_t MLSL_API mlsl_wait(mlsl_request_t req)
     {
         if (!req)
         {
-            MLSL_LOG(ERROR, "empty request");
+            LOG_ERROR("empty request");
             return mlsl_status_success;
         }
 
@@ -90,7 +90,7 @@ mlsl_status_t MLSL_API mlsl_test(mlsl_request_t req,
     {
         if (!req)
         {
-            MLSL_LOG(ERROR, "empty request");
+            LOG_ERROR("empty request");
             if (is_completed)
             { *is_completed = 1; }
             return mlsl_status_success;
@@ -116,7 +116,7 @@ mlsl_status_t mlsl_comm_create(mlsl_comm_t* comm_t,
         mlsl_comm* comm = nullptr;
         if (!comm_attr)
         {
-            MLSL_LOG(DEBUG, "Duplicating global comm");
+            LOG_DEBUG("Duplicating global comm");
             comm = new mlsl_comm(global_data.comm->rank(), global_data.comm->size(),
                                  std::unique_ptr<comm_id>(new comm_id(*global_data.comm_ids)));
         }
@@ -135,7 +135,7 @@ mlsl_status_t mlsl_comm_create(mlsl_comm_t* comm_t,
 mlsl_status_t mlsl_comm_free(mlsl_comm_t comm_t)
 {
     MLSL_ASSERT(comm_t);
-    MLSL_LOG(DEBUG, "Free comm %p", comm_t);
+    LOG_DEBUG("Free comm ", comm_t);
     try
     {
         auto comm = static_cast<mlsl_comm*>(comm_t);

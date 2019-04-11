@@ -10,17 +10,17 @@
 #define COMMON_CATCH_BLOCK()                                        \
 catch (mlsl::mlsl_error& mlsl_e)                                    \
 {                                                                   \
-    MLSL_LOG(ERROR, "mlsl intrenal error: %s", mlsl_e.what());      \
+    LOG_ERROR("mlsl intrenal error: ", mlsl_e.what());              \
     return mlsl_status_invalid_arguments;                           \
 }                                                                   \
 catch (std::exception& e)                                           \
 {                                                                   \
-    MLSL_LOG(ERROR, "error: %s", e.what());                         \
+    LOG_ERROR("error: ", e.what());                                 \
     return mlsl_status_runtime_error;                               \
 }                                                                   \
 catch (...)                                                         \
 {                                                                   \
-    MLSL_LOG(ERROR, "general error");                               \
+    LOG_ERROR("general error");                                     \
     return mlsl_status_runtime_error;                               \
 }                                                                   \
 

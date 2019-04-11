@@ -19,6 +19,7 @@ public:
           send_buf(send_buf), recv_buf(recv_buf), cnt(cnt),
           dtype(dtype), op(reduction_op), req(nullptr), root(root)
     {
+        LOG_DEBUG("creating ", name(), " entry");
         pfields.add_available(mlsl_sched_entry_field_buf);
         pfields.add_available(mlsl_sched_entry_field_send_buf);
         pfields.add_available(mlsl_sched_entry_field_recv_buf);
@@ -37,7 +38,7 @@ public:
         MLSL_THROW_IF_NOT(req, "empty request");
         if (req->is_completed())
         {
-            MLSL_LOG(DEBUG, "COLL entry, completed sched");
+            LOG_DEBUG("COLL entry, completed sched");
             delete req->sched;
             status = mlsl_sched_entry_status_complete;
         }
@@ -58,7 +59,7 @@ public:
             case mlsl_sched_entry_field_dtype:
                 return &dtype;
             default:
-                MLSL_FATAL("unexpected id %d", id);
+                MLSL_FATAL("unexpected id ", id);
         }
         return nullptr;
     }
@@ -69,14 +70,18 @@ public:
     }
 
 protected:
-    char* dump_detail(char* dump_buf) const
+    void dump_detail(std::stringstream& str) const
     {
-        auto bytes_written = sprintf(dump_buf,
-                                     "dt %s, coll_type %s, send_buf %p, recv_buf %p, cnt %zu, op %s, comm %p, req %p\n",
-                                     mlsl_datatype_get_name(dtype), mlsl_coll_type_to_str(ctype),
-                                     send_buf, recv_buf, cnt, mlsl_reduction_to_str(op),
-                                     sched->coll_param.comm, req);
-        return dump_buf + bytes_written;
+        mlsl_logger::format(str,
+                            "dt ", mlsl_datatype_get_name(dtype),
+                            ", coll_type ", mlsl_coll_type_to_str(ctype),
+                            ", send_buf ", send_buf,
+                            ", recv_buf ", recv_buf,
+                            ", cnt ", cnt,
+                            ", op ", mlsl_reduction_to_str(op),
+                            ", comm ", sched->coll_param.comm,
+                            ", req ", req,
+                            "\n");
     }
 
 private:
@@ -104,7 +109,7 @@ private:
                                                     coll_sched->coll_param.dtype,
                                                     coll_sched->coll_param.root);
 
-                MLSL_ASSERT_FMT(result == mlsl_status_success, "bad result %d", result);
+                MLSL_ASSERT(result == mlsl_status_success, "bad result ", result);
 
             }
             case mlsl_coll_reduce:
@@ -131,20 +136,20 @@ private:
                                                         coll_sched->coll_param.dtype,
                                                         coll_sched->coll_param.reduction);
 
-                MLSL_ASSERT_FMT(result == mlsl_status_success, "bad result %d", result);
+                MLSL_ASSERT(result == mlsl_status_success, "bad result ", result);
 
                 break;
             }
             case mlsl_coll_allgatherv:
             default:
-                MLSL_FATAL("not supported type %d", ctype);
+                MLSL_FATAL("not supported type ", ctype);
                 break;
         }
         if (coll_sched)
         {
-            MLSL_LOG(DEBUG, "starting COLL entry");
+            LOG_DEBUG("starting COLL entry");
             req = sched->start_subsched(coll_sched);
-            MLSL_LOG(DEBUG, "COLL entry: sched %p, req %p", coll_sched, req);
+            LOG_DEBUG("COLL entry: sched ", coll_sched, ", req ", req);
             // TODO: insert into per-worker sched cache
         }
     }
