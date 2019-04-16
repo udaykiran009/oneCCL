@@ -1,20 +1,25 @@
 #ifndef BASE_HPP
 #define BASE_HPP
 
-#include <sys/syscall.h> /* syscall */
+#include <sys/syscall.h>        /* syscall */
 
 #include "gtest/gtest.h"
 
 #include "mlsl.hpp"
-#include <mpi.h>
-#include <cstdlib> /* malloc */
+#include <cstdlib>      /* malloc */
 
 #include <ctime>
-
-using namespace MLSL;
+using namespace mlsl;
 using namespace std;
 
-#define TIMEOUT 400
+
+#define sizeofa(arr)        (sizeof(arr) / sizeof(*arr))
+#define DTYPE               float
+#define CACHELINE_SIZE      64
+
+#define BUFFER_COUNT         7
+
+#define TIMEOUT 30
 
 #define GETTID() syscall(SYS_gettid)
 
@@ -26,499 +31,547 @@ using namespace std;
       printf("\n(%ld): %s: " fmt "\n",                \
               GETTID(), __FUNCTION__, ##__VA_ARGS__); \
       fflush(stdout);                                 \
-  } while (0)
+     } while (0)
 
 #define PRINT_BUFFER(buf, bufSize, prefix)           \
   do {                                               \
       std::string strToPrint;                        \
       for (size_t idx = 0; idx < bufSize; idx++)     \
       {                                              \
-          strToPrint += to_string(buf[idx]);         \
+     strToPrint += std::to_string(buf[idx]);         \
           if (idx != bufSize - 1)                    \
               strToPrint += ", ";                    \
       }                                              \
       strToPrint = std::string(prefix) + strToPrint; \
       PRINT("%s", strToPrint.c_str());               \
-  } while (0)
-
+} while (0)
+    
 #else /* ENABLE_DEBUG */
 
 #define PRINT(fmt, ...) {}
 #define PRINT_BUFFER(buf, bufSize, prefix) {}
-
+    
 #endif /* ENABLE_DEBUG */
 
-#if defined(__INTEL_COMPILER) || defined(__ICC)
-#define MY_MALLOC(size) _mm_malloc(size, 64)
-#define MY_FREE(ptr)    _mm_free(ptr)
-#elif defined(__GNUC__)
-#define MY_MALLOC(size) malloc(size)
-#define MY_FREE(ptr)    free(ptr)
-#else
-# error "this compiler is not supported"
-#endif
-//TODO: Fix me (< 1)
-#define OUTPUT_NAME_ARG "--gtest_output="
-#define PATCH_OUTPUT_NAME_ARG(argc, argv)                                               \
-  do {                                                                                  \
-      if (Environment::GetEnv().GetProcessCount() > 1)                                  \
-      {                                                                                 \
-          for (int idx = 1; idx < argc; idx++)                                          \
-          {                                                                             \
-              if (strstr(argv[idx], OUTPUT_NAME_ARG))                                   \
-              {                                                                         \
-                  string patchedArg;                                                    \
-                  string originArg = string(argv[idx]);                                 \
-                  size_t extPos = originArg.find(".xml");                               \
-                  size_t argLen = strlen(OUTPUT_NAME_ARG);                              \
-                  patchedArg = originArg.substr(argLen, extPos - argLen) + "_"          \
-                      + to_string(Environment::GetEnv().GetProcessIdx())                \
-                      + ".xml";                                                         \
-                  PRINT("originArg %s, extPos %zu, argLen %zu, patchedArg %s",          \
-                         originArg.c_str(), extPos, argLen, patchedArg.c_str());        \
-                  argv[idx] = '\0';                                                     \
-                  if (Environment::GetEnv().GetProcessIdx())                            \
-                      ::testing::GTEST_FLAG(output) = "";                               \
-                  else                                                                  \
-                      ::testing::GTEST_FLAG(output) = patchedArg.c_str();               \
-              }                                                                         \
-          }                                                                             \
-      }                                                                                 \
-  } while (0)
 
-void PrintErrMessage(char* errMessage, std::ostream &output)
-{
-    int messageLen = strlen(errMessage);
-    int numProc, myRank;
-    MPI_Comm_size(MPI_COMM_WORLD, &numProc);
-    MPI_Comm_rank(MPI_COMM_WORLD, &myRank);
-    int* arrMessageLen = new int[numProc];
-    MPI_Allgather(&messageLen, 1, MPI_INT, arrMessageLen, 1, MPI_INT, MPI_COMM_WORLD);
-    int fullMessageLen = 0;
-    for (int i = 0; i < numProc; i++)
-        fullMessageLen += arrMessageLen[i];
-    if (fullMessageLen == 0)
-    {
-        delete[] arrMessageLen;
-        return;
-    }
-    char* arrErrMessage = new char[fullMessageLen];
-    int* displs = new int[numProc];
-    displs[0] = 0;
-    for (int i = 1; i < numProc; i++)
-        displs[i] = displs[i - 1] + arrMessageLen[i - 1];
-    MPI_Gatherv(errMessage, messageLen, MPI_CHAR, arrErrMessage, arrMessageLen, displs, MPI_CHAR, 0, MPI_COMM_WORLD);
-    if (myRank == 0)
-    {
-        output << arrErrMessage;
-    }
-    delete[] arrMessageLen;
-    delete[] arrErrMessage;
-    delete[] displs;
+
+#define OUTPUT_NAME_ARG "--gtest_output=xml:./testAll.xml"
+#define PATCH_OUTPUT_NAME_ARG(argc, argv)                                                 \
+    do                                                                                    \
+    {                                                                                     \
+        mlsl::communicator comm;                                                          \
+        if (comm.size() > 1)                                                              \
+        {                                                                                 \
+            for (int idx = 1; idx < argc; idx++)                                          \
+            {                                                                             \
+                if (strstr(argv[idx], OUTPUT_NAME_ARG))                                   \
+                {                                                                         \
+                    string patchedArg;                                                    \
+                    string originArg = string(argv[idx]);                                 \
+                    size_t extPos = originArg.find(".xml");                               \
+                    size_t argLen = strlen(OUTPUT_NAME_ARG);                              \
+                    patchedArg = originArg.substr(argLen, extPos - argLen) + "_"          \
+                                + std::to_string(comm.rank())                             \
+                                + ".xml";                                                 \
+                    PRINT("originArg %s, extPos %zu, argLen %zu, patchedArg %s",          \
+                    originArg.c_str(), extPos, argLen, patchedArg.c_str());               \
+                    argv[idx] = '\0';                                                     \
+                        if (comm.rank())                                                  \
+                            ::testing::GTEST_FLAG(output) = "";                           \
+                        else                                                              \
+                            ::testing::GTEST_FLAG(output) = patchedArg.c_str();           \
+                }                                                                         \
+            }                                                                             \
+        }                                                                                 \
+    } while (0)
+
+#define RUN_METHOD_DEFINITION(ClassName)                        \
+    template <typename T>                                       \
+    int MainTest::Run(TestParam tParam)                         \
+    {                                                           \
+        ClassName<T> className;                                 \
+        int timeout = TIMEOUT;                                  \
+        char* timeoutEnv = getenv("MLSL_FUNC_TEST_TIMEOUT");    \
+        if (timeoutEnv)                                         \
+            timeout = atoi(timeoutEnv);                         \
+      TypedTestParam<T> typedParam(tParam);                     \
+      std::ostringstream output;                                \
+      typedParam.Print(output);                                 \
+      if (typedParam.processIdx == 0)                           \
+      printf("%s", output.str().c_str());                       \
+      clock_t start = clock();                                  \
+      int result = className.Run(typedParam);                   \
+      clock_t end = clock();                                    \
+      double time = (end - start) / CLOCKS_PER_SEC;             \
+      if ((result != TEST_SUCCESS) || (time >= timeout))        \
+      {                                                         \
+          if (typedParam.processIdx == 0)                       \
+          {                                                     \
+              output << "over timeout=" << time << endl;        \
+              printf("%s", output.str().c_str());               \
+              EXPECT_TRUE(false) << output.str();               \
+          }                                                     \
+          output.str("");                                       \
+          output.clear();                                       \
+          return TEST_FAILURE;                                  \
+      }                                                         \
+      return TEST_SUCCESS;                                      \
 }
-
-#define RUN_METHOD_DEFINITION(ClassName)                      \
-  template <typename T>                                       \
-  int MainTest::Run(TestParam tParam)                         \
-  {                                                           \
-      ClassName<T> className;                                 \
-      int timeout = TIMEOUT;                                  \
-      char* timeoutEnv = getenv("MLSL_FUNC_TEST_TIMEOUT");    \
-      if (timeoutEnv)                                         \
-          timeout = atoi(timeoutEnv);                         \
-      TypedTestParam<T> typedParam(tParam);                   \
-      clock_t start = clock();                                \
-      int result = className.Run(typedParam);                 \
-      clock_t end = clock();                                  \
-      double time = (end - start) / CLOCKS_PER_SEC;           \
-      MPI_Allreduce(MPI_IN_PLACE, &result, 1,                 \
-                    MPI_INT, MPI_LOR, MPI_COMM_WORLD);        \
-      if ((result != TEST_SUCCESS) || (time >= timeout))      \
-      {                                                       \
-          std::ostringstream output;                          \
-          PrintErrMessage(className.GetErrMessage(), output); \
-          if (typedParam.processIdx == 0)                     \
-          {                                                   \
-              output << "over timeout=" << time << endl;      \
-              typedParam.Print(output);                       \
-              printf("%s", output.str().c_str());             \
-              EXPECT_TRUE(false) << output.str();             \
-          }                                                   \
-          output.str("");                                     \
-          output.clear();                                     \
-          return TEST_FAILURE;                                \
-      }                                                       \
-      return TEST_SUCCESS;                                    \
-  }
-
 #define ASSERT(cond, fmt, ...)                                                       \
-  do                                                                                 \
-  {                                                                                  \
-      if (!(cond))                                                                   \
-      {                                                                              \
-          fprintf(stderr, "(%ld): %s:%s:%d: ASSERT '%s' FAILED: " fmt "\n",          \
-                  GETTID(), __FILE__, __FUNCTION__, __LINE__, #cond, ##__VA_ARGS__); \
-          fflush(stderr);                                                            \
-          Environment::GetEnv().Finalize();                                          \
-          exit(0);                                                                   \
-      }                                                                              \
-  } while(0)
+    do {                                                                             \
+           if (!(cond))                                                              \
+           {                                                                         \
+                fprintf(stderr, "(%ld): %s:%s:%d: ASSERT '%s' FAILED: " fmt "\n",    \
+                GETTID(), __FILE__, __FUNCTION__, __LINE__, #cond, ##__VA_ARGS__);   \
+                fflush(stderr);                                                      \
+                exit(0);                                                             \
+            }                                                                        \
+        } while (0)
 
-#define MAIN_FUNCTION()                         \
-  int main(int argc, char **argv)               \
-  {                                             \
-      InitTestParams();                         \
-      Environment::GetEnv().Init(&argc, &argv); \
-      PATCH_OUTPUT_NAME_ARG(argc, argv);        \
-      ::testing::InitGoogleTest(&argc, argv);   \
-      int res = RUN_ALL_TESTS();                \
-      Environment::GetEnv().Finalize();         \
-      return res;                               \
-  }
+#define MAIN_FUNCTION()                           \
+    int main(int argc, char **argv)               \
+    {                                             \
+        InitTestParams();                         \
+        mlsl::environment env;                    \
+        PATCH_OUTPUT_NAME_ARG(argc, argv);        \
+        testing::InitGoogleTest(&argc, argv);     \
+        int res = RUN_ALL_TESTS();                \
+        env.~environment();                       \
+        return res;                               \
+    }
 
 #define UNUSED_ATTR __attribute__((unused))
 
 #define TEST_SUCCESS 0
 #define TEST_FAILURE 1
 
-#define TEST_CASES_DEFINITION(FuncName)                             \
-  TEST_P(MainTest, FuncName) {                                      \
-      TestParam param = GetParam();                                 \
-      EXPECT_EQ(TEST_SUCCESS, this->Test(param));                   \
-  }                                                                 \
-  INSTANTIATE_TEST_CASE_P(TestWithParameters,                       \
-                          MainTest,                                 \
-                          ::testing::ValuesIn(testParams));
+#define TEST_CASES_DEFINITION(FuncName)                               \
+    TEST_P(MainTest, FuncName) {                                      \
+        TestParam param = GetParam();                                 \
+        EXPECT_EQ(TEST_SUCCESS, this->Test(param));                   \
+    }                                                                 \
+    INSTANTIATE_TEST_CASE_P(TestWithParameters,                       \
+                            MainTest,                                 \
+::testing::ValuesIn(testParams));
 
-#define POST_AND_PRE_INCREMENTS(EnumName, LAST_ELEM)                                                                   \
-  EnumName& operator++(EnumName& orig) { if (orig != LAST_ELEM) orig = static_cast<EnumName>(orig + 1); return orig; } \
-  EnumName operator++(EnumName& orig, int) { EnumName rVal = orig; ++orig; return rVal; }
+#define POST_AND_PRE_INCREMENTS(EnumName, LAST_ELEM)                                                                     \
+    EnumName& operator++(EnumName& orig) { if (orig != LAST_ELEM) orig = static_cast<EnumName>(orig + 1); return orig; } \
+    EnumName operator++(EnumName& orig, int) { EnumName rVal = orig; ++orig; return rVal; }
 
 #define SOME_VALUE (0xdeadbeef)
 
-#define SELF_COMM(param) (((param.GetGroupType() == TGT_DATA && param.GetDistType() == DIST_TYPE_MODEL)                   \
-                         || (param.GetGroupType() == TGT_MODEL && param.GetDistType() == DIST_TYPE_DATA)) ? true : false)
-
-#define CHECK_SELF_COMM(param)                                                                                    \
-  if (SELF_COMM(param))                                                                                           \
-  {                                                                                                               \
-      for (size_t i = 0; i < param.elemCount; i++)                                                                \
-      {                                                                                                           \
-          if (param.recvBuf[i] != param.sendBuf[i])                                                               \
-          {                                                                                                       \
-              sprintf(this->errMessage, "self_comm: [%zu] got recvBuf[%zu] = %f, but expected = %f\n",            \
-                                        param.processIdx, i, (double)param.recvBuf[i], (double)param.sendBuf[i]); \
-              return TEST_FAILURE;                                                                                \
-          }                                                                                                       \
-      }                                                                                                           \
-      return TEST_SUCCESS;                                                                                        \
-  }
 
 #define ROOT_PROCESS_IDX (0)
-
-template<class TYPE>
-string to_string(TYPE value)
-{
-    stringstream stream;
-    stream << value;
-    return stream.str();
-}
-
-typedef enum
-{
-    DIST_TYPE_DATA   = 0,
-    DIST_TYPE_MODEL  = 1,
-    DIST_TYPE_HYBRID = 2,
-    DIST_TYPE_LAST
-} DistType;
-DistType firstDistType = DIST_TYPE_DATA;
-map<int, const char*> distTypeStr = { {DIST_TYPE_DATA,   "DATA"},
-                                      {DIST_TYPE_MODEL,  "MODEL"},
-                                      {DIST_TYPE_HYBRID, "HYBRID"} };
-
-typedef enum
-{
-    TGT_DATA   = GT_DATA,
-    TGT_MODEL  = GT_MODEL,
-    TGT_GLOBAL = GT_GLOBAL,
-    TGT_LAST
-} TestGroupType;
-TestGroupType firstGroupType = TGT_DATA;
-map<int, const char*> groupTypeStr = { {TGT_DATA,   "DATA"},
-                                       {TGT_MODEL,  "MODEL"},
-                                       {TGT_GLOBAL, "GLOBAL"} };
-
-typedef enum
-{
+	
+    
+typedef enum {
     PT_OOP = 0,
-    PT_IN  = 1,
+    PT_IN = 1,
     PT_LAST
 } PlaceType;
 PlaceType firstPlaceType = PT_OOP;
-map<int, const char*> placeTypeStr = { {PT_OOP, "OUT_OF_PLACE"},
-                                       {PT_IN,  "IN_PLACE"} };
+map <int, const char *>placeTypeStr = { {PT_OOP, "OUT_OF_PLACE"},
+                                        {PT_IN, "IN_PLACE"}};
 
-typedef enum
-{
-    BT_MLSL = 0,
-    BT_USER = 1,
-    BT_LAST
-} BufType;
-BufType firstBufType = BT_MLSL;
-map<int, const char*> bufTypeStr = { {BT_MLSL, "MLSL"},
-                                     {BT_USER, "USER"} };
 
-typedef enum
-{
-    ST_SMALL  = 0,
+typedef enum {
+    ST_SMALL = 0,
     ST_MEDIUM = 1,
-    ST_LARGE  = 2,
+    ST_LARGE = 2,
     ST_LAST
 } SizeType;
 SizeType firstSizeType = ST_SMALL;
-map<int, const char*> sizeTypeStr = { {ST_SMALL,  "SMALL"},
-                                      {ST_MEDIUM, "MEDIUM"},
-                                      {ST_LARGE,  "LARGE"} };
+map < int, const char *>sizeTypeStr = { {ST_SMALL, "SMALL"},
+                                        {ST_MEDIUM, "MEDIUM"},
+                                        {ST_LARGE, "LARGE"}};
 
-map<int, size_t> sizeTypeValues = { {ST_SMALL,  16},
-                                    {ST_MEDIUM, 32768},
-                                    {ST_LARGE,  524288} };
+map < int, size_t > sizeTypeValues = { {ST_SMALL, 16},
+                                       {ST_MEDIUM, 32768},
+                                       {ST_LARGE, 524288}};
 
-typedef enum
-{
-    CT_WAIT = 0,
-    CT_TEST = 1,
-    CT_LAST
+typedef enum {
+    BC_SMALL = 0,
+    BC_MEDIUM = 1,
+    BC_LARGE = 2,
+    BC_LAST
+} BufferCount;
+BufferCount firstBufferCount = BC_SMALL;
+map < int, const char *>bufferCountStr = { {BC_SMALL, "SMALL"},
+                                           {BC_MEDIUM, "MEDIUM"},
+                                           {BC_LARGE, "LARGE"}};
+
+map < int, size_t > bufferCountValues = { {BC_SMALL, 1},
+                                          {BC_MEDIUM, 7},
+                                          {BC_LARGE, 12}};
+
+
+typedef enum {
+    CMPT_WAIT = 0,
+    CMPT_TEST = 1,
+    CMPT_LAST
 } CompletionType;
-CompletionType firstCompletionType = CT_WAIT;
-map<int, const char*> completionTypeStr = { {CT_WAIT, "WAIT"},
-                                            {CT_TEST, "TEST"} };
+CompletionType firstCompletionType = CMPT_WAIT;
+map < int, const char *>completionTypeStr = { {CMPT_WAIT, "WAIT"},
+                                              {CMPT_TEST, "TEST"}};
 
-typedef enum
-{
-    TDT_FLOAT  = DT_FLOAT,
-    TDT_DOUBLE = DT_DOUBLE,
-//    TDT_BYTE   = DT_BYTE,
-    TDT_LAST
+typedef enum {
+    DT_CHAR = mlsl_dtype_char,
+    DT_INT = mlsl_dtype_int,
+    DT_BFP16 = mlsl_dtype_bfp16,
+    DT_FLOAT = mlsl_dtype_float,
+    DT_DOUBLE = mlsl_dtype_double,
+    // DT_INT64 = mlsl_dtype_int64,
+    // DT_UINT64 = mlsl_dtype_uint64,
+    DT_LAST
 } TestDataType;
-TestDataType firstDataType = TDT_FLOAT;
-map<int, const char*> dataTypeStr = { {TDT_FLOAT,  "FLOAT"},
-                                      {TDT_DOUBLE, "DOUBLE"} };//,
-//                                      {TDT_BYTE,   "BYTE"} };
-
-POST_AND_PRE_INCREMENTS(DistType, DIST_TYPE_LAST);
-POST_AND_PRE_INCREMENTS(TestGroupType, TGT_LAST);
-POST_AND_PRE_INCREMENTS(PlaceType, PT_LAST);
-POST_AND_PRE_INCREMENTS(BufType, BT_LAST);
-POST_AND_PRE_INCREMENTS(SizeType, ST_LAST);
-POST_AND_PRE_INCREMENTS(CompletionType, CT_LAST);
-POST_AND_PRE_INCREMENTS(TestDataType, TDT_LAST);
-
-//This struct needed for gtest
-struct TestParam
-{
-    TestParam() {}
-    TestParam(TestParam* const tParam)
-    {
-        distType = tParam->distType;
-        groupType = tParam->groupType;
-        placeType = tParam->placeType;
-        bufType = tParam->bufType;
-        sizeType = tParam->sizeType;
-        completionType = tParam->completionType;
-        dataType = tParam->dataType;
-    }
-    DistType distType;
-    TestGroupType groupType;
-    PlaceType placeType;
-    BufType bufType;
-    SizeType sizeType;
-    CompletionType completionType;
-    TestDataType dataType;
+TestDataType firstDataType = DT_CHAR;
+map < int, const char *>dataTypeStr = { {DT_CHAR, "CHAR"},
+                                        {DT_INT, "INT"},
+                                        {DT_BFP16, "BFP16"},
+                                        {DT_FLOAT, "FLOAT"},
+                                        {DT_DOUBLE, "DOUBLE"},
+                                        // {DT_INT64, "INT64"},
+                                        // {DT_UINT64, "UINT64"}
 };
 
-#define TEST_COUNT (DIST_TYPE_LAST * TGT_LAST * PT_LAST * BT_LAST * ST_LAST * CT_LAST * TDT_LAST)
+
+typedef enum {
+    RT_SUM = mlsl_reduction_sum,
+    RT_PROD = mlsl_reduction_prod,
+    RT_MIN = mlsl_reduction_min,
+    RT_MAX = mlsl_reduction_max,
+    RT_LAST
+} TestReductionType;
+TestReductionType firstReductionType = RT_SUM;
+map < int, const char *>reductionTypeStr = { {RT_SUM, "SUM"},
+                                             {RT_PROD, "PROD"},
+                                             {RT_MIN, "MIN"},
+                                             {RT_MAX, "MAX"}};
+
+typedef enum {
+    CT_CACHE_0 = 0,
+    CT_CACHE_1 = 1,
+    CT_LAST
+} TestCacheType;
+TestCacheType firstCacheType = CT_CACHE_0;
+map < int, const char * >cacheTypeStr = { {CT_CACHE_0, "CACHE_0"},
+                                          {CT_CACHE_1, "CACHE_1"}};
+
+map < int, int > cacheTypeValues = { {CT_CACHE_0, 0},
+                                     {CT_CACHE_1, 1}};           
+
+typedef enum {
+    SNCT_SYNC_0 = 0,
+    SNCT_SYNC_1 = 1,
+    SNCT_LAST
+} TestSyncType;
+TestSyncType firstSyncType = SNCT_SYNC_0;
+map < int, const char * >syncTypeStr = { {SNCT_SYNC_0, "SYNC_0"},
+                                         {SNCT_SYNC_1, "SYNC_1"}};
+
+map < int, int > syncTypeValues = { {SNCT_SYNC_0, 0},
+                                    {SNCT_SYNC_1, 1}};                                  
+
+
+typedef enum {
+    PRT_DISABLE = 0,
+    PRT_ENABLE = 1,
+    PRT_LAST
+} PriorityType;
+PriorityType firstPriorityType = PRT_DISABLE;
+map < int, const char * >priorityTypeStr = { {PRT_DISABLE, "PRT_DISABLE"},
+                                             {PRT_ENABLE, "PRT_ENABLE"}};
+
+map < int, int > priorityTypeValues = { {PRT_DISABLE, 0},
+                                        {PRT_ENABLE, 1}
+};  
+
+POST_AND_PRE_INCREMENTS(PlaceType, PT_LAST);
+POST_AND_PRE_INCREMENTS(SizeType, ST_LAST);
+POST_AND_PRE_INCREMENTS(CompletionType, CMPT_LAST);
+POST_AND_PRE_INCREMENTS(TestDataType, DT_LAST);
+POST_AND_PRE_INCREMENTS(TestReductionType, RT_LAST);
+POST_AND_PRE_INCREMENTS(TestCacheType, CT_LAST);
+POST_AND_PRE_INCREMENTS(TestSyncType, SNCT_LAST);
+POST_AND_PRE_INCREMENTS(PriorityType, PRT_LAST);
+POST_AND_PRE_INCREMENTS(BufferCount, BC_LAST);
+
+//This struct needed for gtest
+struct TestParam {
+	PlaceType placeType;
+	TestCacheType cacheType;
+	TestSyncType syncType;
+	SizeType sizeType;
+	CompletionType completionType;
+	TestReductionType reductionType;
+	TestDataType dataType;
+	PriorityType priorityType;
+	BufferCount bufferCount;
+};
+
+#define TEST_COUNT (PRT_LAST * CMPT_LAST * SNCT_LAST * DT_LAST * ST_LAST *  RT_LAST * BC_LAST * CT_LAST * PT_LAST)
 
 TestParam testParams[TEST_COUNT];
 
 void InitTestParams()
 {
-    size_t idx = 0;
-    for (DistType distType = firstDistType; distType < DIST_TYPE_LAST; distType++)
-    {
-        for (TestGroupType groupType = firstGroupType; groupType < TGT_LAST; groupType++)
-        {
-            for (PlaceType placeType = firstPlaceType; placeType < PT_LAST; placeType++)
-            {
-                for (BufType bufType = firstBufType; bufType < BT_LAST; bufType++)
-                {
-                    for (SizeType sizeType = firstSizeType; sizeType < ST_LAST; sizeType++)
-                    {
-                        for (CompletionType completionType = firstCompletionType; completionType < CT_LAST; completionType++)
-                        {
-                            for (TestDataType dataType = firstDataType; dataType < TDT_LAST; dataType++)
-                            {
-                                testParams[idx].distType = distType;
-                                testParams[idx].groupType = groupType;
-                                testParams[idx].placeType = placeType;
-                                testParams[idx].bufType = bufType;
-                                testParams[idx].sizeType = sizeType;
-                                testParams[idx].completionType = completionType;
-                                testParams[idx].dataType = dataType;
-                                idx++;
-                            }
-                        }
-                    }
-                }
-            }
-        }
-    }
+	size_t idx = 0;
+	for (TestSyncType syncType = firstSyncType; syncType < SNCT_LAST; syncType++) {
+		for (TestCacheType cacheType = firstCacheType; cacheType < CT_LAST; cacheType++) {      
+			for (TestReductionType reductionType = firstReductionType; reductionType < RT_LAST; reductionType++) {
+				for (SizeType sizeType = firstSizeType; sizeType < ST_LAST; sizeType++) {
+					for (TestDataType dataType = firstDataType; dataType < DT_LAST; dataType++) {
+						for (CompletionType completionType = firstCompletionType; completionType < CMPT_LAST; completionType++) {
+							for (PlaceType placeType = firstPlaceType; placeType < PT_LAST; placeType++) {
+								for (PriorityType priorityType = firstPriorityType; priorityType < PRT_LAST; priorityType++) {
+									for (BufferCount bufferCount = firstBufferCount; bufferCount < BC_LAST; bufferCount++) {
+										testParams[idx].placeType = placeType;
+										testParams[idx].sizeType = sizeType;
+										testParams[idx].dataType = dataType;
+										testParams[idx].cacheType = cacheType;
+										testParams[idx].syncType = syncType;
+										testParams[idx].completionType = completionType;
+										testParams[idx].reductionType = reductionType;
+										testParams[idx].bufferCount = bufferCount;
+										testParams[idx].priorityType = priorityType;
+										idx++;
+									}   
+								}
+							}
+						}
+					}
+				}
+			}
+		}
+	}
 }
 
-template <typename T>
-struct TypedTestParam
+template <typename T> 
+struct TypedTestParam 
 {
-    TestParam testParam;
-    Distribution* dist;
-    size_t elemCount;
-    size_t processCount;
-    size_t processIdx;
-    T* sendBuf;
-    T* recvBuf;
+	TestParam testParam;
+	size_t elemCount;
+	size_t bufferCount;
+	size_t processCount;
+	size_t processIdx;
+	std::vector<std::vector<T>> sendBuf;
+	std::vector<std::vector<T>> recvBuf;
+	mlsl::communicator comm;
+	std::vector<std::shared_ptr<mlsl::request>> req;
+	mlsl_coll_attr_t coll_attr {};
+	mlsl::communicator global_comm;
 
-    TypedTestParam(TestParam tParam) : testParam(tParam)
-    {
-        dist = NULL;
-        CreateDistribution();
-        elemCount = GetElemCount();
-        processCount = dist->GetProcessCount((GroupType)testParam.groupType);
-        processIdx = dist->GetProcessIdx((GroupType)testParam.groupType);
-        sendBuf = AllocBuf();
-        if (testParam.placeType == PT_OOP) recvBuf = AllocBuf();
-        else recvBuf = sendBuf;
-    }
+	TypedTestParam(TestParam tParam):testParam(tParam) {
+		elemCount = GetElemCount();
+		bufferCount = GetBufferCount();
+		processCount = comm.size();
+		processIdx = comm.rank();
+		coll_attr.prologue_fn = NULL;
+		coll_attr.epilogue_fn = NULL;
+		coll_attr.reduction_fn = NULL;
+		coll_attr.priority = 0;
+		coll_attr.synchronous = 0;
+		coll_attr.match_id = NULL;
+		coll_attr.to_cache = 0;
+		sendBuf.resize(bufferCount); 
+		recvBuf.resize(bufferCount); 
+		req.resize(bufferCount);
+		for (size_t i = 0; i < bufferCount; i++)
+			sendBuf[i].resize(elemCount * processCount * sizeof(T));
+		if (testParam.placeType == PT_OOP)
+			for (size_t i = 0; i < bufferCount; i++)
+				recvBuf[i].resize(elemCount * processCount * sizeof(T));
+		else
+			for (size_t i = 0; i < bufferCount; i++)
+				recvBuf[i] = sendBuf[i];
+	}
 
-    ~TypedTestParam()
-    {
-        FreeBuf(sendBuf);
-        if (testParam.placeType == PT_OOP) FreeBuf(recvBuf);
-        Environment::GetEnv().DeleteDistribution(dist);
-    }
+	void CompleteRequest(std::shared_ptr < mlsl::request > req) { 
+		if (testParam.completionType == CMPT_TEST) {
+			bool isCompleted = false;
+			size_t count = 0;
+			do {
+				isCompleted = req->test();
+				count++;
+			} while (!isCompleted);
+		}
+		else if (testParam.completionType == CMPT_WAIT)
+			req->wait();
+		else
+			ASSERT(0, "unexpected completion type %d", testParam.completionType);
+	}
 
-    T* AllocBuf()
-    {
-        size_t bytesToAlloc = elemCount * processCount * sizeof(T);
-        if (testParam.bufType == BT_MLSL) return (T*)(Environment::GetEnv().Alloc(bytesToAlloc, 64));
-        else return (T*)MY_MALLOC(bytesToAlloc);
-    }
+	size_t PriorityRequest() {
+		size_t min_priority = 0, max_priority = 0, priority, idx = 0, comp_iter_time_ms = 0, comp_delay_ms;
+		if (testParam.priorityType == PRT_ENABLE) {
+			size_t msg_completions[bufferCount];
+			char* comp_iter_time_ms_env = getenv("COMP_ITER_TIME_MS");
+			if (comp_iter_time_ms_env)
+			{
+				comp_iter_time_ms = atoi(comp_iter_time_ms_env);
+			}
+			comp_delay_ms = 2 * comp_iter_time_ms /bufferCount;
+			memset(msg_completions, 0, bufferCount * sizeof(size_t));
+			for (idx = 0; idx < bufferCount; idx++) {   
+				if (idx % 2 == 0) usleep(comp_delay_ms * 1000);
+				priority = min_priority + idx;
+				if (priority > max_priority) 
+					priority = max_priority;
+			}
+		}
+		else
+			priority = 0;
+		return priority; 
+	}
 
-    void FreeBuf(T* buf)
-    {
-        if (testParam.bufType == BT_MLSL) Environment::GetEnv().Free(buf);
-        else MY_FREE(buf);
-    }
+	void Print(std::ostream & output) {
+		char strParameters[1000];
+		memset(strParameters, '\0', 1000);
 
-    void CreateDistribution()
-    {
-        size_t modelParts = 2;
-        size_t globalProcessCount = Environment::GetEnv().GetProcessCount();
-        ASSERT(globalProcessCount % modelParts == 0, "globalProcessCount (%zu) should be divisible by modelParts (%zu)",
-               globalProcessCount, modelParts);
-        if (testParam.distType == DIST_TYPE_DATA)
-            dist = Environment::GetEnv().CreateDistribution(globalProcessCount, 1);
-        else if (testParam.distType == DIST_TYPE_MODEL)
-            dist = Environment::GetEnv().CreateDistribution(1, globalProcessCount);
-        else if (testParam.distType == DIST_TYPE_HYBRID)
-            dist = Environment::GetEnv().CreateDistribution(Environment::GetEnv().GetProcessCount() / modelParts, modelParts);
-        EXPECT_TRUE(dist) << "Unknown dist type: " << testParam.distType;
-    }
+		sprintf(strParameters, "Test params: \
+							   \nbufferCount %zu \
+							   \nreductionType %s \
+							   \ndataType %s \
+							   \nsizeValue %s \
+							   \ncacheType %s \
+							   \nplaceType %s \
+							   \ncompletionType %s \
+							   \npriorityType %s \
+							   \nsyncType %s \
+							   \nelemCount %zu \
+							   \nprocessCount %zu \
+							   \nprocessIdx %zu \
+							   \n-------------\n",
+							   bufferCount,
+							   GetReductionTypeStr(),
+							   GetDataTypeStr(), 
+							   GetSizeTypeStr(),
+							   GetCacheTypeStr(),
+							   GetPlaceTypeStr(),
+							   GetCompletionTypeStr(),
+							   GetPriorityTypeStr(), 
+							   GetSyncTypeStr(), 
+							   elemCount, 
+							   processCount,
+							   processIdx);
+		output << strParameters;
 
-    void CompleteRequest(CommReq* req)
-    {
-        bool isCompleted = false;
-        if  (testParam.completionType == CT_TEST)
-            do { Environment::GetEnv().Test(req, &isCompleted); } while (!isCompleted);
-        else if (testParam.completionType == CT_WAIT)
-            Environment::GetEnv().Wait(req);
-        else ASSERT(0, "unexpected completion type %d", testParam.completionType);
-    }
+		fflush(stdout);
+	}
 
-    void Print(std::ostream &output)
-    {
-        char strParameters[1000];
-        memset(strParameters, '\0', 1000);
 
-        sprintf(strParameters, "test_param:\ndataType %s\ndistType %s\ngroupType %s\nplaceType %s\nbufType %s\nsizeType %s\ncompletionType %s\n"
-                               "dist %p\nelemCount %zu\nprocessCount %zu\nprocessIdx %zu\n"
-                               "sendBuf %p\nrecvBuf %p\n-------------\n",
-                               GetDataTypeStr(), GetDistTypeStr(), GetGroupTypeStr(), GetPlaceTypeStr(),
-                               GetBufTypeStr(), GetSizeTypeStr(), GetCompletionTypeStr(),
-                               dist, elemCount, processCount, processIdx, sendBuf, recvBuf);
-        output << strParameters;
-
-        fflush(stdout);
-    }
-
-    const char* GetDistTypeStr() { return distTypeStr[testParam.distType]; }
-    const char* GetGroupTypeStr() { return groupTypeStr[testParam.groupType]; }
-    const char* GetPlaceTypeStr() { return placeTypeStr[testParam.placeType]; }
-    const char* GetBufTypeStr() { return bufTypeStr[testParam.bufType]; }
-    const char* GetSizeTypeStr() { return sizeTypeStr[testParam.sizeType]; }
-    const char* GetCompletionTypeStr() { return completionTypeStr[testParam.completionType]; }
-    const char* GetDataTypeStr() { return dataTypeStr[testParam.dataType]; }
-    size_t GetElemCount() { return sizeTypeValues[testParam.sizeType]; }
-    PlaceType GetPlaceType() { return testParam.placeType; }
-    TestGroupType GetGroupType() { return testParam.groupType; }
-    DistType GetDistType() { return testParam.distType; }
-    SizeType GetSizeType() { return testParam.sizeType; }
-    TestDataType GetDataType() { return testParam.dataType; }
+	const char *GetPlaceTypeStr() {
+		return placeTypeStr[testParam.placeType];
+	}
+	int GetCacheType() {
+		return cacheTypeValues[testParam.cacheType];
+	}
+	int GetSyncType() {
+		return syncTypeValues[testParam.syncType];
+	}
+	const char *GetSizeTypeStr() {
+		return sizeTypeStr[testParam.sizeType];
+	}
+	const char *GetDataTypeStr() {
+		return dataTypeStr[testParam.dataType];
+	}
+	const char *GetReductionTypeStr() {
+		return reductionTypeStr[testParam.reductionType];
+	}
+	const char *GetCompletionTypeStr() {
+		return completionTypeStr[testParam.completionType];
+	}
+	const char *GetPriorityTypeStr() {
+		return priorityTypeStr[testParam.priorityType];
+	}
+	const char *GetCacheTypeStr() {
+		return cacheTypeStr[testParam.cacheType];
+	}
+	const char *GetSyncTypeStr() {
+		return syncTypeStr[testParam.syncType];
+	}
+	size_t GetElemCount() {
+		return sizeTypeValues[testParam.sizeType];
+	}
+	size_t GetBufferCount() {
+		return bufferCountValues[testParam.bufferCount];
+	}
+	PlaceType GetPlaceType() {
+		return testParam.placeType;
+	}
+	SizeType GetSizeType() {
+		return testParam.sizeType;
+	}
+	TestDataType GetDataType() {
+		return testParam.dataType;
+	}
+	TestReductionType GetReductionType() {
+		return testParam.reductionType;
+	}
+	PriorityType GetPriorityType() {
+		return testParam.priorityType;
+	}
 };
 
-template <typename T>
-class BaseTest
-{
+
+// std::ostream&  operator<<(std::ostream & stream, TestParam tParam) {
+	// TypedTestParam tParam;
+	// return stream <<  "Test params: 
+	 // bufferCount " << tParam.GetBufferCount() << " reductionType " << tParam.GetReductionTypeStr() << " dataType " << tParam.GetDataType();
+// }
+
+template <typename T> class BaseTest {
 
 public:
-    size_t globalProcessIdx;
-    size_t globalProcessCount;
+	size_t globalProcessIdx;
+	size_t globalProcessCount;
+	mlsl::communicator comm;
 
-    void SetUp()
-    {
-        globalProcessIdx = Environment::GetEnv().GetProcessIdx();
-        globalProcessCount = Environment::GetEnv().GetProcessCount();
-    }
-    char* GetErrMessage() { return errMessage; }
-    void TearDown() {}
+	void SetUp() {
+		globalProcessIdx = comm.rank();
+		globalProcessCount = comm.size();
+	}
+	char *GetErrMessage() {
+		return errMessage;
+	}
+	void TearDown() {
+	}
 
-    char errMessage[100];
+	char errMessage[100]{};
 
-    BaseTest() { memset(this->errMessage, '\0', 100); }
+	BaseTest() = default;
 
-    virtual int Run(TypedTestParam<T>& param) = 0;
+	virtual int Run(TypedTestParam <T> &param) = 0; 
+	virtual int Check(TypedTestParam <T> &param) = 0;
 
-    virtual int Check(TypedTestParam<T>& param) = 0;
 };
 
-class MainTest :
-    public ::testing::TestWithParam<TestParam>
-{
-    template <typename T>
-    int Run(TestParam param);
-    public:
-    int Test(TestParam param)
-    {
-        switch(param.dataType)
-        {
-            case TDT_FLOAT:
-                return Run<float>(param);
-            case TDT_DOUBLE:
-                return Run<double>(param);
-//            case TDT_BYTE:
-//                return Run<char>(param);
-            default:
-                EXPECT_TRUE(false) << "Unknown data type: " << param.dataType;
-                return TEST_FAILURE;
-        }
-    }
+class MainTest:public::testing::TestWithParam <TestParam> {
+	template <typename T> 
+	int Run(TestParam param);
+public:
+	int Test(TestParam param) {
+		switch (param.dataType) {
+		case DT_CHAR:
+			return Run <char>(param);
+		case DT_INT:
+			return Run <int>(param);
+		case DT_BFP16:
+			return TEST_SUCCESS;
+		case DT_FLOAT:
+			return Run <float>(param);
+		case DT_DOUBLE:
+			return Run <double>(param);
+			// case DT_INT64:
+			// temporary
+			// return TEST_SUCCESS;
+			// case DT_UINT64:
+			// temporary
+			// return TEST_SUCCESS;
+		default:
+			EXPECT_TRUE(false) << "Unknown data type: " << param.dataType;
+			return TEST_FAILURE;
+		}
+	}
 };
 #endif /* BASE_HPP */

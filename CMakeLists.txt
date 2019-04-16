@@ -40,7 +40,8 @@ set(MLSL_INSTALL_LIB "${MLSL_COMMON_INSTALL_PREFIX}/${CMAKE_INSTALL_LIBDIR}")
 set(MLSL_INSTALL_INCLUDE "${MLSL_COMMON_INSTALL_PREFIX}/${CMAKE_INSTALL_INCLUDEDIR}")
 set(MLSL_INSTALL_DOC "${MLSL_COMMON_INSTALL_PREFIX}/${CMAKE_INSTALL_DOCDIR}")
 set(MLSL_INSTALL_BIN "${MLSL_COMMON_INSTALL_PREFIX}/${CMAKE_INSTALL_BINDIR}")
-set(MLSL_INSTALL_EXAMPLES "examples")
+set(MLSL_INSTALL_EXAMPLES "${MLSL_COMMON_INSTALL_PREFIX}/examples")
+set(MLSL_INSTALL_TESTS "${CMAKE_INSTALL_PREFIX}/tests")
 
 set(CMAKE_INSTALL_RPATH "$ORIGIN;../${CMAKE_INSTALL_LIBDIR}")
 
@@ -82,9 +83,13 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 set(MLSL_BUILD_DIR ${CMAKE_CURRENT_BINARY_DIR}/src)
 
+enable_testing()
+
 #include other CMakeLists
 add_subdirectory(src)
 add_subdirectory(examples)
+add_subdirectory(tests/functional)
+
 
 #generate & install mlslvars.sh
 configure_file(cmake/mlslvars.sh.in ${CMAKE_CURRENT_BINARY_DIR}/mlslvars.sh @ONLY)
