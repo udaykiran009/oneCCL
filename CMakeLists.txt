@@ -49,7 +49,7 @@ set(CMAKE_INSTALL_RPATH "$ORIGIN;../${CMAKE_INSTALL_LIBDIR}")
 if (${CMAKE_VERSION} VERSION_LESS 3.1)
 #cmake version below 3.1 does not support CMAKE_C[XX}_STANDARD flags
 #set manually
-    set(CXX_COMPILER_FLAGS "-std=c++11 -fPIC")
+    set(CXX_COMPILER_FLAGS "-std=c++11")
     set(C_COMPILER_FLAGS "-std=gnu99")
 endif()
 
