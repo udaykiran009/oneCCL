@@ -5,7 +5,8 @@ file(GLOB sources "*.c" "*.cpp")
 ################################
 ADD_SUBDIRECTORY (googletest-release-1.8.1/googletest/)
 include_directories(${PROJECT_SOURCE_DIR}/tests/googletest-release-1.8.1/googletest/include ${PROJECT_SOURCE_DIR}/tests/googletest-release-1.8.1/googletest/src)
-
+configure_file(test-base test-base COPYONLY)
+install(FILES test-base DESTINATION ${MLSL_INSTALL_TESTS})
 foreach(src ${sources})
     get_filename_component(executable ${src} NAME_WE)
     add_executable(${executable} ${src})
@@ -16,5 +17,6 @@ foreach(src ${sources})
     target_link_libraries(${executable} PUBLIC m)
     target_link_libraries(${executable} PRIVATE mlsl2)
     install(TARGETS ${executable} RUNTIME DESTINATION ${MLSL_INSTALL_TESTS})
-	add_test (NAME ${executable} COMMAND mpiexec.hydra -n 2 -ppn 1 ${MLSL_INSTALL_TESTS}/${executable})
+	add_test (NAME ${executable} COMMAND mpiexec.hydra -n 2 -ppn 1 ${CMAKE_INSTALL_PREFIX}/${MLSL_INSTALL_TESTS}/${executable})
 endforeach()
+
