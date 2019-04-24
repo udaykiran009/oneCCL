@@ -393,7 +393,6 @@ void InitTestParams()
 			bufferCount = strBufferCount[tmp_value];
 			testParams[idx].bufferCount = bufferCount;
 			ss >> tmp_value;
-			cout << "SS priorityType" << ss << endl;
 			priorityType = strPriorityType[tmp_value];
 			testParams[idx].priorityType = priorityType;
 			idx++;
@@ -484,7 +483,6 @@ struct TypedTestParam
 	void Print(std::ostream & output) {
 		char strParameters[1000];
 		memset(strParameters, '\0', 1000);
-
 		sprintf(strParameters, "Test params: \
 							   \nbufferCount %zu \
 							   \nreductionType %s \
@@ -571,12 +569,6 @@ struct TypedTestParam
 };
 
 
-// std::ostream&  operator<<(std::ostream & stream, TestParam tParam) {
-	// TypedTestParam tParam;
-	// return stream <<  "Test params: 
-	 // bufferCount " << tParam.GetBufferCount() << " reductionType " << tParam.GetReductionTypeStr() << " dataType " << tParam.GetDataType();
-// }
-
 template <typename T> class BaseTest {
 
 public:
@@ -598,6 +590,24 @@ public:
 
 	BaseTest() = default;
 
+	virtual void Init(TypedTestParam <T> &param){
+			param.coll_attr.priority = (int)param.PriorityRequest();
+			param.coll_attr.to_cache = (int)param.GetCacheType();
+			param.coll_attr.synchronous = (int)param.GetSyncType();
+	}
+	T get_expected_min(size_t i, size_t processCount)
+	{
+		if ((T)(i + processCount - 1) < T(i))
+			return (T)(i + processCount - 1);
+		return (T)i;
+	}
+
+	T get_expected_max(size_t i, size_t processCount)
+	{
+		if ((T)(i + processCount - 1) > T(i))
+			return (T)(i + processCount - 1);
+		return (T)i;
+	} 
 	virtual int Run(TypedTestParam <T> &param) = 0; 
 	virtual int Check(TypedTestParam <T> &param) = 0;
 

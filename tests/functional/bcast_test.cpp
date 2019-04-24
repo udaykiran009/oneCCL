@@ -29,9 +29,10 @@ public:
 			}
 			size_t idx = 0;
 			for (idx = 0; idx < param.bufferCount; idx++) {	
-				param.coll_attr.priority = (int)param.PriorityRequest();
-				param.coll_attr.to_cache = (int)param.GetCacheType();
-				param.coll_attr.synchronous = (int)param.GetSyncType();		
+				BaseTest<T>::Init (param);
+				// param.coll_attr.priority = (int)param.PriorityRequest();
+				// param.coll_attr.to_cache = (int)param.GetCacheType();
+				// param.coll_attr.synchronous = (int)param.GetSyncType();		
 				param.req[idx] = param.global_comm.bcast(param.sendBuf[idx].data(), param.elemCount,
 					(mlsl::data_type) param.GetDataType(),
 					ROOT_PROCESS_IDX, &param.coll_attr);						

@@ -3,7 +3,21 @@
 #include <vector>
 #include <chrono>
 
+// template < typename T >
+// T get_expected_min(size_t i, size_t processCount)
+// {
+	// if ((T)(i + processCount - 1) < T(i))
+		// return (T)(i + processCount - 1);
+	// return (T)i;
+// }
 
+// template < typename T >
+// T get_expected_max(size_t i, size_t processCount)
+// {
+	// if ((T)(i + processCount - 1) > T(i))
+		// return (T)(i + processCount - 1);
+	// return (T)i;
+// } 
 template < typename T > class AllReduceTest:public BaseTest < T > {
 public:
 	int Check(TypedTestParam < T > &param) {
@@ -21,15 +35,15 @@ public:
 				}
 
 				if (param.GetReductionType() == RT_MAX) {
-					T expected = i + (param.processCount - 1);
+					T expected = BaseTest<T>::get_expected_max(i, param.processCount);
 					if (param.recvBuf[j][i] != expected) {
-						sprintf(this->errMessage, "[%zu] sent sendBuf[%zu][%zu] = %f, got recvBuf[%zu][%zu] = %f, but expected = %f\n",
-							param.processIdx, j, i, (double) param.sendBuf[j][i], j, i, (double) param.recvBuf[j][i], (double) expected);
+						printf("[%zu] sent sendBuf[%zu][%zu] = %f, got recvBuf[%zu][%zu] = %f, but expected = %f\n",
+						param.processIdx, j, i, (double) param.sendBuf[j][i], j, i, (double) param.recvBuf[j][i], (double) expected);
 						return TEST_FAILURE;
 					}
 				}
 				if (param.GetReductionType() == RT_MIN) {
-					T expected = i;
+					T expected = BaseTest<T>::get_expected_min(i, param.processCount);
 					if (param.recvBuf[j][i] != expected) {
 						sprintf(this->errMessage, "[%zu] sent sendBuf[%zu][%zu] = %f, got recvBuf[%zu][%zu] = %f, but expected = %f\n",
 							param.processIdx, j, i, (double) param.sendBuf[j][i], j, i, (double) param.recvBuf[j][i], (double) expected);
@@ -60,9 +74,10 @@ public:
 		}
 		size_t idx = 0;
 		for (idx = 0; idx < param.bufferCount; idx++) {	
-			param.coll_attr.priority = (int)param.PriorityRequest();
-			param.coll_attr.to_cache = (int)param.GetCacheType();
-			param.coll_attr.synchronous = (int)param.GetSyncType();		
+			BaseTest<T>::Init (param);
+			// param.coll_attr.priority = (int)param.PriorityRequest();
+			// param.coll_attr.to_cache = (int)param.GetCacheType();
+			// param.coll_attr.synchronous = (int)param.GetSyncType();		
 			param.req[idx] = param.global_comm.allreduce(param.sendBuf[idx].data(), param.recvBuf[idx].data(), param.elemCount,
 				(mlsl::data_type) param.GetDataType(),
 				(mlsl::reduction) param.GetReductionType(), &param.coll_attr);						
