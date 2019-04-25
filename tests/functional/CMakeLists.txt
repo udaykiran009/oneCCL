@@ -17,6 +17,6 @@ foreach(src ${sources})
     target_link_libraries(${executable} PUBLIC m)
     target_link_libraries(${executable} PRIVATE mlsl2)
     install(TARGETS ${executable} RUNTIME DESTINATION ${MLSL_INSTALL_TESTS})
-	add_test (NAME ${executable} COMMAND mpiexec.hydra -n 2 -ppn 1 ${CMAKE_INSTALL_PREFIX}/${MLSL_INSTALL_TESTS}/${executable})
+	add_test (NAME ${executable} COMMAND mpiexec.hydra -n 2 -ppn 1 ${CMAKE_INSTALL_PREFIX}/${MLSL_INSTALL_TESTS}/${executable}  --gtest_output=xml:${executable}_report.junit.xml)
 endforeach()
 

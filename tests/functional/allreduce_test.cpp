@@ -74,10 +74,7 @@ public:
 		}
 		size_t idx = 0;
 		for (idx = 0; idx < param.bufferCount; idx++) {	
-			BaseTest<T>::Init (param);
-			// param.coll_attr.priority = (int)param.PriorityRequest();
-			// param.coll_attr.to_cache = (int)param.GetCacheType();
-			// param.coll_attr.synchronous = (int)param.GetSyncType();		
+			BaseTest<T>::Init (param);	
 			param.req[idx] = param.global_comm.allreduce(param.sendBuf[idx].data(), param.recvBuf[idx].data(), param.elemCount,
 				(mlsl::data_type) param.GetDataType(),
 				(mlsl::reduction) param.GetReductionType(), &param.coll_attr);						

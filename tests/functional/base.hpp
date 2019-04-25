@@ -98,7 +98,6 @@ using namespace std;
             timeout = atoi(timeoutEnv);                         \
       TypedTestParam<T> typedParam(tParam);                     \
       std::ostringstream output;                                \
-      typedParam.Print(output);                                 \
       if (typedParam.processIdx == 0)                           \
       printf("%s", output.str().c_str());                       \
       clock_t start = clock();                                  \
@@ -480,39 +479,7 @@ struct TypedTestParam
 		return priority; 
 	}
 
-	void Print(std::ostream & output) {
-		char strParameters[1000];
-		memset(strParameters, '\0', 1000);
-		sprintf(strParameters, "Test params: \
-							   \nbufferCount %zu \
-							   \nreductionType %s \
-							   \ndataType %s \
-							   \nsizeValue %s \
-							   \ncacheType %s \
-							   \nplaceType %s \
-							   \ncompletionType %s \
-							   \npriorityType %s \
-							   \nsyncType %s \
-							   \nelemCount %zu \
-							   \nprocessCount %zu \
-							   \nprocessIdx %zu \
-							   \n-------------\n",
-							   bufferCount,
-							   GetReductionTypeStr(),
-							   GetDataTypeStr(), 
-							   GetSizeTypeStr(),
-							   GetCacheTypeStr(),
-							   GetPlaceTypeStr(),
-							   GetCompletionTypeStr(),
-							   GetPriorityTypeStr(), 
-							   GetSyncTypeStr(), 
-							   elemCount, 
-							   processCount,
-							   processIdx);
-		output << strParameters;
 
-		fflush(stdout);
-	}
 
 
 	const char *GetPlaceTypeStr() {
@@ -566,7 +533,16 @@ struct TypedTestParam
 	PriorityType GetPriorityType() {
 		return testParam.priorityType;
 	}
+friend std::ostream&  operator<<(std::ostream & stream, const TestParam & tParam);	
 };
+std::ostream&  operator<<(std::ostream & stream, const TestParam & tParam) {
+	// TypedTestParam ttParam(tParam);
+	// TypedTestParam<type> ttParam(tParam); 
+	return stream 
+	<<  "Test parameters: bufferCount " << bufferCountStr[tParam.bufferCount]
+	<< " reductionType " << reductionTypeStr[tParam.reductionType] 
+	<< " dataType " << dataTypeStr[tParam.dataType];	
+}
 
 
 template <typename T> class BaseTest {

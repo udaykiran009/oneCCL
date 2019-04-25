@@ -76,9 +76,6 @@ public:
 		size_t idx = 0;
 		for (idx = 0; idx < param.bufferCount; idx++) {	
 			BaseTest<T>::Init (param);
-			// param.coll_attr.priority = (int)param.PriorityRequest();
-			// param.coll_attr.to_cache = (int)param.GetCacheType();
-			// param.coll_attr.synchronous = (int)param.GetSyncType();
 			param.req[idx] =
 				param.global_comm.allgatherv(param.sendBuf[idx].data(), recvCounts[param.processIdx], param.recvBuf[idx].data(),
 				recvCounts.data(), (mlsl::data_type) param.GetDataType(), &param.coll_attr);
