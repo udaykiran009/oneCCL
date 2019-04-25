@@ -76,7 +76,11 @@ mlsl_executor::~mlsl_executor()
     }
 
     LOG_DEBUG("finalizing ATL..");
-    atl_finalize(atl_desc, atl_comms);
+    auto result = atl_finalize(atl_desc, atl_comms);
+    if(result != atl_status_success)
+    {
+        LOG_ERROR("atl_finalize failed, error ", result);
+    }
 }
 
 void mlsl_executor::start(mlsl_sched* sched)
@@ -129,10 +133,9 @@ bool mlsl_executor::test(mlsl_request* req)
         }
         else
         {
-            size_t idx;
-            for (idx = 0; idx < workers.size(); idx++)
+            for (auto& worker : workers)
             {
-                workers[idx]->do_work();
+                worker->do_work();
             }
         }
     }

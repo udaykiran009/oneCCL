@@ -5,6 +5,7 @@
 #include "common/comm/atl_tag.hpp"
 #include "common/log/log.hpp"
 #include "common/utils/utils.hpp"
+#include "common/utils/tree.hpp"
 
 #include <unordered_map>
 #include <atomic>
@@ -22,7 +23,7 @@ public:
     mlsl_comm(size_t rank, size_t size, std::unique_ptr<comm_id> id);
     mlsl_comm(size_t rank, size_t size, std::unique_ptr<comm_id> id, rank_to_global_rank_map&& ranks);
 
-    ~mlsl_comm();
+    ~mlsl_comm() = default;
 
     static mlsl_comm* create_with_color(int color, comm_id_storage* comm_ids, const mlsl_comm* global_comm);
 
@@ -76,6 +77,11 @@ public:
      */
     size_t get_global_rank(size_t rank) const;
 
+    const double_tree& dtree() const
+    {
+        return m_dtree;
+    }
+
     /**
      * Total number of active communicators
      */
@@ -97,4 +103,5 @@ private:
     mlsl_sched_id_t m_next_sched_id_internal = mlsl_comm::max_sched_count / 2;
     mlsl_sched_id_t m_next_sched_id_external = 0;
     rank_to_global_rank_map m_ranks_map{};
+    double_tree m_dtree;
 };

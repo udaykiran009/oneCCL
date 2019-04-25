@@ -116,9 +116,9 @@ void mlsl_sched::do_progress()
     }
 }
 
-mlsl_status_t mlsl_sched_progress(mlsl_sched_bin* bin,
-                                  size_t max_sched_count,
-                                  size_t& completed_sched_count)
+mlsl_status_t mlsl_bin_progress(mlsl_sched_bin* bin,
+                                size_t max_sched_count,
+                                size_t& completed_sched_count)
 {
     MLSL_ASSERT(bin);
 
@@ -142,46 +142,7 @@ mlsl_status_t mlsl_sched_progress(mlsl_sched_bin* bin,
         mlsl_sched* sched = bin->get(sched_idx);
         MLSL_ASSERT(sched && bin == sched->bin);
 
-        if (sched->first_progress)
-        {
-            // perform initial progress, iterate through schedule entries
-            // some entries are running in 'synchronous' way, they are completed right after execution
-            // other entries are running in 'asynchronous' way and may not be completed right after execution
-            // entry N+1 may be started right after entry N even if entry N has not been completed
-            // if entry N+1 (and all subsequent entries) depends on entry N, then entry N is marked as a barrier and
-            //     entry N+1 (and all subsequent) won't be started until entry N is completed
-            /* TODO: do we need special handling for first_progress ? */
-            LOG_DEBUG("initial do_progress for sched ", sched);
-            sched->do_progress();
-            sched->first_progress = false;
-        }
-
-        // continue iteration of already started schedule. @b start_idx is an index of the first non-started entry
-        for (auto entry_idx = sched->start_idx; entry_idx < sched->entries.size(); ++entry_idx)
-        {
-            auto& entry = sched->entries[entry_idx];
-
-            // check for completion of 'asynchronous' entries
-            entry->update();
-
-            if (entry_idx == sched->start_idx && entry->get_status() >= mlsl_sched_entry_status_complete)
-            {
-                // the entry has been completed, increment start_idx
-                ++sched->start_idx;
-                LOG_DEBUG("completed ", entry->name(), entry->is_barrier() ? " barrier" : "",
-                          " entry [", entry_idx, "/", sched->entries.size(), "] shift start_idx, sched ", sched);
-                if (entry->is_barrier())
-                {
-                    // that entry was marked as a barrier, run the rest entries (if any) which depend on it
-                    sched->do_progress();
-                }
-            }
-            else if (entry->is_barrier() && entry->get_status() < mlsl_sched_entry_status_complete)
-            {
-                // the entry has not been completed yet. It is marked as a barrier, don't process anything after it
-                break;
-            }
-        }
+        mlsl_sched_progress(sched);
 
         if (sched->start_idx == sched->entries.size())
         {
@@ -192,13 +153,13 @@ mlsl_status_t mlsl_sched_progress(mlsl_sched_bin* bin,
             // remove completed schedule from the bin
             sched_idx = sched_queue->erase(bin, sched_idx);
             LOG_DEBUG("completing request ", sched->req);
-            sched->req->complete();
+            sched->complete();
             ++completed_sched_count;
         }
         else
         {
             // this schedule is not completed yet, switch to the next sched in bin scheds list
-            // progression of unfinished schedules will be continued in the next call of @ref mlsl_sched_progress
+            // progression of unfinished schedules will be continued in the next call of @ref mlsl_bin_progress
             ++sched_idx;
         }
         sched_count++;
@@ -212,6 +173,52 @@ mlsl_status_t mlsl_sched_progress(mlsl_sched_bin* bin,
 
     return status;
 }
+
+void mlsl_sched_progress(mlsl_sched* sched)
+{
+    if (sched->first_progress)
+    {
+        // perform initial progress, iterate through schedule entries
+        // some entries are running in 'synchronous' way, they are completed right after execution
+        // other entries are running in 'asynchronous' way and may not be completed right after execution
+        // entry N+1 may be started right after entry N even if entry N has not been completed
+        // if entry N+1 (and all subsequent entries) depends on entry N, then entry N is marked as a barrier and
+        //     entry N+1 (and all subsequent) won't be started until entry N is completed
+        /* TODO: do we need special handling for first_progress ? */
+        LOG_DEBUG("initial do_progress for sched ", sched);
+        sched->do_progress();
+        sched->first_progress = false;
+    }
+
+    // continue iteration of already started schedule. @b start_idx is an index of the first non-started entry
+    for (auto entry_idx = sched->start_idx; entry_idx < sched->entries.size(); ++entry_idx)
+    {
+        auto& entry = sched->entries[entry_idx];
+
+        // check for completion of 'asynchronous' entries
+        entry->update();
+
+        if (entry_idx == sched->start_idx && entry->get_status() >= mlsl_sched_entry_status_complete)
+        {
+            // the entry has been completed, increment start_idx
+            ++sched->start_idx;
+            LOG_DEBUG("completed ", entry->name(), entry->is_barrier() ? " barrier" : "",
+                      " entry [", entry_idx, "/", sched->entries.size(), "] shift start_idx, sched ", sched);
+            if (entry->is_barrier())
+            {
+                // that entry was marked as a barrier, run the rest entries (if any) which depend on it
+                sched->do_progress();
+            }
+        }
+        else if (entry->is_barrier() && entry->get_status() < mlsl_sched_entry_status_complete)
+        {
+            // the entry has not been completed yet. It is marked as a barrier, don't process anything after it
+            break;
+        }
+    }
+
+}
+
 
 void mlsl_sched::commit(mlsl_parallelizer* parallelizer)
 {
@@ -240,6 +247,7 @@ mlsl_request* mlsl_sched::start(mlsl_executor* exec,
 
     LOG_DEBUG("starting schedule ", this, ", type ", mlsl_coll_type_to_str(coll_param.ctype));
 
+    reset();
     prepare_partial_scheds();
 
     if(reset_sched)
@@ -255,6 +263,19 @@ mlsl_request* mlsl_sched::start(mlsl_executor* exec,
     exec->start(this);
 
     return req;
+}
+
+void mlsl_sched::complete()
+{
+#ifdef ENABLE_DEBUG
+    exec_complete_time = timer_type::now();
+    if(env_data.sched_dump)
+    {
+        dump("completed_sched");
+    }
+#endif
+
+    req->complete();
 }
 
 void mlsl_sched::add_partial_sched(mlsl_coll_param& coll_param)
@@ -284,6 +305,10 @@ void mlsl_sched::prepare_partial_scheds()
 
 void mlsl_sched::reset()
 {
+#ifdef ENABLE_DEBUG
+    exec_start_time = timer_type::now();
+    exec_complete_time = exec_start_time;
+#endif
     start_idx = 0;
     first_progress = true;
     for (auto& entry : entries)
@@ -362,7 +387,10 @@ void mlsl_sched::dump(const char *name) const
     if (!env_data.sched_dump)
         return;
 
-    LOG_INFO("sched dump");
+    if(coll_param.ctype == mlsl_coll_internal)
+    {
+        return;
+    }
 
     std::stringstream msg;
     mlsl_logger::format(msg, "\n--------------------------------\n");
@@ -380,6 +408,12 @@ void mlsl_sched::dump(const char *name) const
     {
         entries[i]->dump(msg, i);
     }
+
+#ifdef ENABLE_DEBUG
+    mlsl_logger::format(msg, "life time [us] ", std::setw(5), std::setbase(10),
+        std::chrono::duration_cast<std::chrono::microseconds>(exec_complete_time - exec_start_time).count(),
+        "\n");
+#endif
     mlsl_logger::format(msg, "--------------------------------\n");
     std::cout << msg.str();
 }
@@ -410,7 +444,6 @@ mlsl_request* mlsl_sched::start_subsched(mlsl_sched* subsched)
     subsched->req->set_counter(1);
     subsched->sched_id = sched_id;
     subsched->reset();
-    subsched->dump("subsched");
     queue->add(subsched, subsched->get_priority());
     return subsched->req;
 }

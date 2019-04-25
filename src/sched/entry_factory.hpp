@@ -6,6 +6,7 @@
 
 #include <memory>
 #include <list>
+#include <functional>
 
 class sync_object;
 
@@ -21,13 +22,15 @@ public:
                                                         const void* buf,
                                                         size_t cnt,
                                                         mlsl_datatype_internal_t dtype,
-                                                        size_t dst);
+                                                        size_t dst,
+                                                        mlsl_op_id_t op_id = 0);
 
     static std::shared_ptr<sched_entry> make_recv_entry(mlsl_sched* sched,
                                                         void* buf,
                                                         size_t cnt,
                                                         mlsl_datatype_internal_t dtype,
-                                                        size_t src);
+                                                        size_t src,
+                                                        mlsl_op_id_t op_id = 0);
 
     static std::shared_ptr<sched_entry> make_write_entry(mlsl_sched* sched,
                                                          const void* src_buf,
@@ -55,7 +58,8 @@ public:
      * @param reduction_op Reduction operation, see @ref mlsl_reduction_t
      * @param reduction_fn Pointer to the user provided custom reduction function
      * @param src Remote rank ID for receiving data
-     * @param comm_buf Optional buffer for communication. Can be a @B NULL, in that case MLSL will allocate temporal buffer
+     * @param comm_buf Optional buffer for communication. Can be a @B nullptr, in that case MLSL will allocate temporal buffer
+     * @param op_id local operation id, used to construct atl tag
      */
     static std::shared_ptr<sched_entry> make_recv_reduce_entry(mlsl_sched* sched,
                                                                void* inout_buf,
@@ -64,7 +68,8 @@ public:
                                                                mlsl_datatype_internal_t dtype,
                                                                mlsl_reduction_t reduction_op,
                                                                size_t src,
-                                                               void* comm_buf);
+                                                               void* comm_buf = nullptr,
+                                                               mlsl_op_id_t op_id = 0);
 
     static std::shared_ptr<sched_entry> make_copy_entry(mlsl_sched* sched,
                                                         const void* in_buf,
@@ -120,9 +125,14 @@ public:
     static std::shared_ptr<sched_entry> make_deregister_entry(mlsl_sched* sched,
                                                               std::list<atl_mr_t*>& mr_list);
 
-    static std::shared_ptr<sched_entry> make_nop_entry(mlsl_sched* sched);
-    
     static std::shared_ptr<sched_entry> make_probe_entry(mlsl_sched* sched,
                                                          size_t src,
-                                                         size_t* cnt);
-};   
+                                                         size_t* cnt,
+                                                         mlsl_op_id_t op_id = 0);
+
+    static std::shared_ptr<sched_entry> make_chain_call_entry(mlsl_sched* sched,
+                                                              std::function<void(mlsl_sched*)> sched_fill_function,
+                                                              const char* entry_name = nullptr);
+
+    static std::shared_ptr<sched_entry> make_nop_entry(mlsl_sched* sched);
+};

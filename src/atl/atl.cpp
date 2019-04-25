@@ -41,10 +41,11 @@ static void atl_ini_dir(int *argc, char ***argv, size_t *proc_idx, size_t *proc_
         if (asprintf(&lib, "%s/%s", dir, liblist[n]->d_name) < 0)
             goto libdl_done;
 
+        LOG_DEBUG("opening lib ", lib);
         dlhandle = dlopen(lib, RTLD_NOW);
         free(liblist[n]);
         if (dlhandle == NULL) {
-            LOG_DEBUG("can't open lib ", lib, ", error ", dlerror());
+            LOG_ERROR("can't open lib ", lib, ", error ", dlerror());
             free(lib);
             continue;
         }
@@ -54,6 +55,7 @@ static void atl_ini_dir(int *argc, char ***argv, size_t *proc_idx, size_t *proc_
         if (init_func == NULL) {
             dlclose(dlhandle);
         } else {
+            LOG_INFO("lib ", lib, " contains necessary symbol");
             atl_transport_t transport;
             // TODO: propagate atl_status to upper level
             atl_status_t ret;

@@ -443,7 +443,7 @@ int KUBE_API KUBE_Get_rank(size_t *rank)
 
 int KUBE_API KUBE_KVS_Get_my_name(char kvsname[], size_t length)
 {
-    strncpy(kvsname, KVS_NAME, strlen(KVS_NAME));
+    strncpy(kvsname, KVS_NAME, length);
     return 0;
 }
 

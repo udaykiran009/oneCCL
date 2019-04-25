@@ -69,12 +69,12 @@ MLSL_API environment::environment()
     {
         //todo avoid try/carch block in mlsl_init
         mlsl_status_t result = mlsl_init();
-        CHECK_AND_THROW(result, "Failed to initialize mlsl");
+        CHECK_AND_THROW(result, "failed to initialize mlsl");
         is_initialized = true;
     }
     else
     {
-        throw mlsl::mlsl_error("Already initialized");
+        throw mlsl::mlsl_error("already initialized");
     }
 }
 
@@ -82,7 +82,11 @@ MLSL_API environment::~environment()
 {
     if (is_initialized)
     {
-        mlsl_finalize();
+        auto result = mlsl_finalize();
+        if(result != mlsl_status_success)
+        {
+            abort();
+        }
         is_initialized = false;
     }
 }

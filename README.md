@@ -52,6 +52,15 @@ make -j install
 make archive
 ```
 
+### Build with address sanitizer
+Modify `cmake` command as follow:
+```
+cmake .. -DCMAKE_BUILD_TYPE=Debug -DWITH_ASAN=true
+```
+*Note:* address sanitizer only works in Debug build
+
+Make sure that libasan.so exists.
+
 ## FAQ
 
 ### When do I need a clean build? When should I remove my favorite build directory?

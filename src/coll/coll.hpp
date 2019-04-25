@@ -16,7 +16,8 @@ enum mlsl_coll_type
     mlsl_coll_allreduce =           3,
     mlsl_coll_allgatherv =          4,
     mlsl_coll_sparse_allreduce =    5,
-    mlsl_coll_none =                6
+    mlsl_coll_internal =            6,
+    mlsl_coll_none =                7
 };
 
 mlsl_status_t mlsl_coll_build_barrier(mlsl_sched* sched);

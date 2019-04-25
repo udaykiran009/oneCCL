@@ -28,6 +28,7 @@ message(STATUS "CXX compiler : ${CMAKE_CXX_COMPILER}")
 
 #predefined options
 option(USE_SECURITY_FLAGS "Use security flags" FALSE)
+option(WITH_ASAN "Use address sanitizer, can only be used in Debug build" FALSE)
 
 #installation path variables
 include(GNUInstallDirs)
@@ -80,6 +81,20 @@ set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} ${CXX_COMPILER_FLAGS} -O
 set(CMAKE_CXX_FLAGS_RELWITHDEBINFO "${CMAKE_CXX_FLAGS_RELWITHDEBINFO} ${CXX_COMPILER_FLAGS} -O2 -g")
 set(CMAKE_CXX_STANDARD 11)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
+
+if(${CMAKE_C_COMPILER_ID} STREQUAL "GNU")
+    if(${CMAKE_CXX_COMPILER_VERSION} VERSION_GREATER_EQUAL "7.0")
+        #c++17 introduces algined new operator, use it
+        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -faligned-new")
+    endif()
+endif()
+
+if(WITH_ASAN AND ${CMAKE_BUILD_TYPE} STREQUAL "Debug")
+    message(STATUS "Compiling with address sanitizer")
+    set(CMAKE_CXX_FLAGS_DEBUG  "${CMAKE_CXX_FLAGS_DEBUG} -fsanitize=address -fno-omit-frame-pointer")
+    set(CMAKE_C_FLAGS_DEBUG  "${CMAKE_C_FLAGS_DEBUG} -fsanitize=address -fno-omit-frame-pointer")
+    set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -lasan")
+endif()
 
 set(MLSL_BUILD_DIR ${CMAKE_CURRENT_BINARY_DIR}/src)
 

@@ -1,8 +1,9 @@
-#include <mlsl.hpp>
+#include "mlsl.hpp"
 #include "coll/coll.hpp"
 #include "coll/coll_algorithms.hpp"
 #include "sched/sched_cache.hpp"
 #include "common/request/request.hpp"
+#include "common/utils/tree.hpp"
 #include "out_of_order/ooo_match.hpp"
 #include "fusion/fusion.hpp"
 
@@ -22,6 +23,8 @@ const char* mlsl_coll_type_to_str(mlsl_coll_type type)
             return "ALLGATHERV";
         case mlsl_coll_sparse_allreduce:
             return "SPARSE_ALLREDUCE";
+        case mlsl_coll_internal:
+            return "INTERNAL";
         case mlsl_coll_none:
             return "NONE";
         default:
@@ -80,7 +83,7 @@ static mlsl_request* mlsl_coll_create(const mlsl_coll_attr_t* attributes,
     {
         sched = new mlsl_sched(coll_param);
         LOG_DEBUG("didn't find sched, create new one ", sched, ", type ",
-                 mlsl_coll_type_to_str(sched->coll_param.ctype));
+                  mlsl_coll_type_to_str(sched->coll_param.ctype));
 
         if (attr->to_cache)
         {
@@ -93,14 +96,14 @@ static mlsl_request* mlsl_coll_create(const mlsl_coll_attr_t* attributes,
     else
     {
         LOG_DEBUG("found sched, reuse ", sched, ", type ",
-                 mlsl_coll_type_to_str(sched->coll_param.ctype));
+                  mlsl_coll_type_to_str(sched->coll_param.ctype));
     }
     if (match_id_comm)
     {
         sched->coll_param.comm = match_id_comm;
     }
 
-    if(should_run)
+    if (should_run)
     {
         if (env_data.enable_fusion)
         {
@@ -159,7 +162,18 @@ mlsl_status_t mlsl_coll_build_bcast(mlsl_sched* sched,
 {
     mlsl_status_t status;
     sched->coll_param.ctype = mlsl_coll_bcast;
-    MLSL_CALL(mlsl_coll_build_scatter_ring_allgather_bcast(sched, buf, count, dtype, root));
+    if (env_data.bcast_algo == mlsl_bcast_algo_double_tree)
+    {
+        MLSL_CALL(mlsl_coll_build_double_tree_op(sched, mlsl_coll_bcast, nullptr, buf, count, dtype,
+                                                 mlsl_reduction_custom,
+                                                 root == 0 ? sched->coll_param.comm->dtree() :
+                                                 sched->coll_param.comm->dtree().copy_with_new_root(root)));
+    }
+    else
+    {
+        MLSL_CALL(mlsl_coll_build_scatter_ring_allgather_bcast(sched, buf, count, dtype, root));
+    }
+
     return status;
 }
 
@@ -175,9 +189,24 @@ mlsl_status_t mlsl_coll_build_reduce(mlsl_sched* sched,
     sched->coll_param.ctype = mlsl_coll_reduce;
 
     if (count < sched->coll_param.comm->pof2())
+    {
         MLSL_CALL(mlsl_coll_build_binomial_reduce(sched, send_buf, recv_buf, count, dtype, reduction, root));
+    }
     else
-        MLSL_CALL(mlsl_coll_build_rabenseifner_reduce(sched, send_buf, recv_buf, count, dtype, reduction, root));
+    {
+        if (env_data.reduce_algo == mlsl_reduce_algo_double_tree)
+        {
+            MLSL_CALL(mlsl_coll_build_double_tree_op(sched, mlsl_coll_reduce, send_buf, recv_buf, count, dtype,
+                                                     reduction,
+                                                     root == 0 ? sched->coll_param.comm->dtree() :
+                                                     sched->coll_param.comm->dtree().copy_with_new_root(root)));
+        }
+        else
+        {
+            MLSL_CALL(mlsl_coll_build_rabenseifner_reduce(sched, send_buf, recv_buf, count, dtype, reduction, root));
+        }
+
+    }
 
     return status;
 }
@@ -232,6 +261,11 @@ mlsl_status_t mlsl_coll_build_allreduce(
                     MLSL_CALL(mlsl_coll_build_ring_rma_allreduce(sched, send_buf, recv_buf, count, dtype, reduction));
                     break;
                 }
+            case mlsl_allreduce_algo_double_tree:
+                MLSL_CALL(mlsl_coll_build_double_tree_op(sched, mlsl_coll_allreduce, send_buf, recv_buf, count, dtype,
+                                                         reduction,
+                                                         sched->coll_param.comm->dtree()));
+                break;
             default:
                 MLSL_FATAL("unexpected allreduce_algo ",
                            mlsl_allreduce_algo_to_str(env_data.allreduce_algo));

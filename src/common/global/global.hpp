@@ -29,6 +29,8 @@ class comm_id_storage;
 class mlsl_executor;
 class mlsl_sched_cache;
 class mlsl_parallelizer;
+class double_tree;
+
 namespace out_of_order
 {
     class ooo_match;

@@ -112,12 +112,13 @@ public:
     mlsl_request* start(mlsl_executor* exec,
                             bool reset_sched = true);
 
+    void complete();
+
     void add_partial_sched(mlsl_coll_param& coll_param);
 
     void set_request(mlsl_request* req);
 
     void prepare_partial_scheds();
-
 
     /**
      * Reset runtime parameters and all entries
@@ -174,6 +175,8 @@ public:
     size_t get_priority();
     mlsl_request* start_subsched(mlsl_sched* subsched);
 
+    void dump_all() const;
+
     bool first_progress = true;
     mlsl_sched_bin* bin = nullptr; /* valid only during execution */
     mlsl_sched_queue* queue = nullptr; /* cached pointer to queue, valid even after execution */
@@ -207,16 +210,23 @@ private:
     /* whether req is owned by this schedule or was set externally */
     bool is_own_req = true;
 
+#ifdef ENABLE_DEBUG
+    using timer_type = std::chrono::system_clock;
+    timer_type::time_point exec_start_time{};
+    timer_type::time_point exec_complete_time{};
+#endif
+
     void update_id()
     {
         sched_id = coll_param.comm->get_sched_id(is_internal);
     }
 
-    void dump_all() const;
     void dump(const char *name) const;
     void alloc_req();
 };
 
-mlsl_status_t mlsl_sched_progress(mlsl_sched_bin* bin,
-                                  size_t max_sched_count,
-                                  size_t& completed_sched_count);
+mlsl_status_t mlsl_bin_progress(mlsl_sched_bin* bin,
+                                size_t max_sched_count,
+                                size_t& completed_sched_count);
+
+void mlsl_sched_progress(mlsl_sched* sched);

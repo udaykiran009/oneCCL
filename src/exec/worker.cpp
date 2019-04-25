@@ -90,7 +90,7 @@ size_t mlsl_worker::do_work()
     if (peek_count)
     {
         MLSL_ASSERT(bin);
-        mlsl_sched_progress(bin, peek_count, processed_count);
+        mlsl_bin_progress(bin, peek_count, processed_count);
         MLSL_ASSERT(processed_count <= peek_count, "incorrect values ", processed_count, " ", peek_count);
     }
 
@@ -110,7 +110,22 @@ static void* mlsl_worker_func(void* args)
 
     do
     {
-        processed_count = worker->do_work();
+        try
+        {
+            processed_count = worker->do_work();
+        }
+        catch (mlsl::mlsl_error& mlsl_e)
+        {
+            LOG_ERROR("worker ", worker->get_idx(), " caught internal exception: ", mlsl_e.what());
+        }
+        catch (std::exception& e)
+        {
+            LOG_ERROR("worker ", worker->get_idx(), " caught exception: ", e.what());
+        }
+        catch (...)
+        {
+            LOG_ERROR("worker ", worker->get_idx(), " caught general exception");
+        }
 
         iter_count++;
         if ((iter_count % MLSL_WORKER_CHECK_CANCEL_ITERS) == 0)

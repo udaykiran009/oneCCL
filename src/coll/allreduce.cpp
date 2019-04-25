@@ -116,7 +116,7 @@ mlsl_status_t mlsl_coll_build_rabenseifner_allreduce(mlsl_sched *sched, const vo
             if (can_use_recv_reduce) {
                 entry_factory::make_recv_reduce_entry(sched,
                                                       ((char*) recv_buf + disps[recv_idx] * dtype_size),
-                                                      recv_cnt, NULL, dtype, op, dst, NULL);
+                                                      recv_cnt, NULL, dtype, op, dst);
                 entry_factory::make_send_entry(sched, ((char*) recv_buf + disps[send_idx] * dtype_size), send_cnt, dtype, dst);
                 sched->add_barrier();
             }

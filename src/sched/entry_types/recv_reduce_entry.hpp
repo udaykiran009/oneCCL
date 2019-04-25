@@ -19,13 +19,14 @@ public:
                       mlsl_datatype_internal_t dtype,
                       mlsl_reduction_t reduction_op,
                       size_t src,
-                      void* comm_buf) :
+                      void* comm_buf,
+                      mlsl_op_id_t op_id) :
         sched_entry(sched), inout_buf(inout_buf), in_cnt(cnt), out_cnt(out_cnt), dtype(dtype),
-        op(reduction_op), src(src), comm_buf(comm_buf), fn(sched->coll_attr.reduction_fn)
+        op(reduction_op), src(src), comm_buf(comm_buf), op_id(op_id), fn(sched->coll_attr.reduction_fn)
     {
         LOG_DEBUG("creating ", name(), " entry");
         MLSL_ASSERT(op != mlsl_reduction_custom || fn,
-            "custom reduction requires user provided callback");
+                    "custom reduction requires user provided callback");
         if (comm_buf == nullptr || comm_buf == inout_buf)
         {
             this->comm_buf = MLSL_MALLOC(in_cnt * mlsl_datatype_get_size(dtype), "recv_reduce.comm_buf");
@@ -35,10 +36,10 @@ public:
 
     void start_derived()
     {
-        auto atl_tag = mlsl_create_atl_tag(sched->coll_param.comm->id(), sched->sched_id, src);
+        atl_tag = mlsl_create_atl_tag(sched->coll_param.comm->id(), sched->sched_id, op_id, src);
         size_t bytes = in_cnt * mlsl_datatype_get_size(dtype);
         LOG_DEBUG("starting RECV in RECV_REDUCE entry, src ", src, ", tag ", std::setbase(16), atl_tag,
-            ", req ", &req, ", bytes", bytes);
+                  ", req ", &req, ", bytes", bytes);
         atl_status_t atl_status = atl_comm_recv(sched->bin->get_comm_ctx(), comm_buf,
                                                 bytes, src, atl_tag, &req);
 
@@ -47,7 +48,9 @@ public:
             MLSL_THROW("RECV_REDUCE entry failed. atl_status: ", atl_status);
         }
         else
+        {
             status = mlsl_sched_entry_status_started;
+        }
     }
 
     void update_derived()
@@ -96,6 +99,7 @@ protected:
                             ", red_fn  ", fn,
                             ", src ", src,
                             ", comm_buf ", comm_buf,
+                            ", atl_tag ", std::setbase(16), atl_tag,
                             ", comm_id ", sched->coll_param.comm->id(),
                             ", req ", &req,
                             "\n");
@@ -109,7 +113,9 @@ private:
     mlsl_reduction_t op;
     size_t src;
     void* comm_buf;
+    mlsl_op_id_t op_id = 0;
     atl_req_t req{};
+    mlsl_atl_comm_tag_t atl_tag{};
     bool allocated_comm_buff = false;
     mlsl_reduction_fn_t fn;
 };

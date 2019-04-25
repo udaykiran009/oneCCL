@@ -5,77 +5,97 @@
 #include <vector>
 #include <chrono>
 
-const size_t COUNT = 1048576;
-const size_t ITERS = 128;
+const size_t ITERS = 1000;
 
-void run_collective(const std::function<std::shared_ptr<mlsl::request>()>& start_cmd,
-                    const char* cmd_name,
+#define PRINT_BY_ROOT(fmt, ...)             \
+    if(comm.rank() == 0) {                  \
+        printf(fmt"\n", ##__VA_ARGS__); }   \
+
+void run_collective(const char* cmd_name,
+                    const std::vector<float>& send_buf,
                     std::vector<float>& recv_buf,
-                    mlsl::communicator& comm)
+                    mlsl::communicator& comm,
+                    mlsl_coll_attr_t& coll_attr)
 {
     std::chrono::system_clock::duration exec_time{};
     float expected = (comm.size() - 1) * (static_cast<float>(comm.size()) / 2);
-    printf("Running %s\n", cmd_name);
+
+    comm.barrier();
 
     for (size_t idx = 0; idx < ITERS; ++idx)
     {
         std::fill(recv_buf.begin(), recv_buf.end(), static_cast<float>(comm.rank()));
-        auto start = std::chrono::system_clock::now();
-        start_cmd()->wait();
-        exec_time += std::chrono::system_clock::now() - start;
 
-        //check result after every iteration
-        for (size_t recv_idx = 0; recv_idx < recv_buf.size(); ++recv_idx)
+        auto start = std::chrono::system_clock::now();
+        comm.allreduce(send_buf.data(),
+                       recv_buf.data(),
+                       recv_buf.size(),
+                       mlsl::data_type::dtype_float,
+                       mlsl::reduction::sum,
+                       &coll_attr)->wait();
+
+        exec_time += std::chrono::system_clock::now() - start;
+    }
+
+    for (size_t recv_idx = 0; recv_idx < recv_buf.size(); ++recv_idx)
+    {
+        if (recv_buf[recv_idx] != expected)
         {
-            if (recv_buf[recv_idx] != expected)
-            {
-                fprintf(stderr, "iter %zu, idx %zu, expected %4.4f, got %4.4f\n",
-                        idx, recv_idx, expected, recv_buf[recv_idx]);
-                std::terminate();
-            }
+            fprintf(stderr, "idx %zu, expected %4.4f, got %4.4f\n",
+                    recv_idx, expected, recv_buf[recv_idx]);
+            std::terminate();
         }
     }
 
     comm.barrier();
 
-    fprintf(stdout, "avg time of %s: %lu us\n", cmd_name,
-            std::chrono::duration_cast<std::chrono::microseconds>(exec_time).count() / ITERS);
+    printf("avg time of %s: %lu us\n", cmd_name,
+           std::chrono::duration_cast<std::chrono::microseconds>(exec_time).count() / ITERS);
 }
 
 int main()
 {
-    mlsl::environment env;
-    mlsl::communicator global_comm;
+    size_t start_msg_size_power = 10;
+    const size_t msg_size_count = 11;
+    std::vector<size_t> msg_counts(msg_size_count);
 
-    std::vector<float> recv_buf(COUNT);
-    std::vector<float> send_buf(COUNT, static_cast<float>(global_comm.rank()));
-    mlsl_coll_attr_t coll_attr{};
-
-    auto command = [&]() -> std::shared_ptr<mlsl::request>
+    for (size_t idx = 0; idx < msg_size_count; ++idx)
     {
-        return global_comm.allreduce(static_cast<void*>(send_buf.data()),
-                                     static_cast<void*>(recv_buf.data()),
-                                     COUNT,
-                                     mlsl::data_type::dtype_float,
-                                     mlsl::reduction::sum,
-                                     &coll_attr);
-    };
+        msg_counts[idx] = 1u << (start_msg_size_power + idx);
+    }
+
+    mlsl_coll_attr_t coll_attr{};
 
     try
     {
-        coll_attr.to_cache = 1;
-        run_collective(command, "persistent allreduce", recv_buf, global_comm);
+        mlsl::environment env;
+        mlsl::communicator comm;
 
-        coll_attr.to_cache = 0;
-        run_collective(command, "regular allreduce", recv_buf, global_comm);
+        for (auto msg_count : msg_counts)
+        {
+            PRINT_BY_ROOT("msg_size=%zu", msg_count * sizeof(float));
+
+            std::vector<float> recv_buf(msg_count);
+            std::vector<float> send_buf(msg_count, static_cast<float>(comm.rank()));
+
+            coll_attr.to_cache = 0;
+            run_collective("warmup allreduce", send_buf, recv_buf, comm, coll_attr);
+
+            coll_attr.to_cache = 1;
+            run_collective("persistent allreduce", send_buf, recv_buf, comm, coll_attr);
+
+            coll_attr.to_cache = 0;
+            run_collective("regular allreduce", send_buf, recv_buf, comm, coll_attr);
+        }
     }
     catch (mlsl::mlsl_error& e)
     {
-        fprintf(stderr, "mlsl exception has been caught:\n%s\n", e.what());
+        fprintf(stderr, "mlsl exception:\n%s\n", e.what());
     }
     catch (...)
     {
-        fprintf(stderr, "other exception has been caught\n");
+        fprintf(stderr, "other exception\n");
     }
+
     return 0;
 }

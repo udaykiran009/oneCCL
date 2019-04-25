@@ -5,6 +5,7 @@
 #include "common/utils/utils.hpp"
 
 #include <memory>
+#include <chrono>
 
 typedef mlsl_status_t(* mlsl_sched_entry_function_t)(const void*);
 
@@ -85,4 +86,11 @@ protected:
     postponed_fields pfields;
     mlsl_sched_entry_status status = mlsl_sched_entry_status_not_started;
     mlsl_sched_entry_exec_mode exec_mode = mlsl_sched_entry_exec_regular;
+
+#ifdef ENABLE_DEBUG
+    using timer_type = std::chrono::system_clock;
+    timer_type::duration exec_time{};
+    timer_type::time_point start_time{};
+    timer_type::time_point complete_time{};
+#endif
 };

@@ -11,6 +11,7 @@ set(MLSL_SRC
     coll/allreduce_rma.cpp
     coll/barrier.cpp
     coll/bcast.cpp
+    coll/double_tree_ops.cpp
     coll/reduce.cpp
     coll/allgatherv.cpp
     coll/sparse.cpp

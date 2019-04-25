@@ -8,7 +8,6 @@
 #include <vector>
 #include <memory>
 
-
 class mlsl_worker;
 class mlsl_service_worker;
 class mlsl_sched;
@@ -18,11 +17,12 @@ class alignas(CACHELINE_SIZE) mlsl_executor
 public:
     mlsl_executor() = delete;
     mlsl_executor(const mlsl_executor& other) = delete;
-    mlsl_executor& operator= (const mlsl_executor& other) = delete;
+    mlsl_executor& operator=(const mlsl_executor& other) = delete;
     mlsl_executor(mlsl_executor&& other) = delete;
-    mlsl_executor& operator= (mlsl_executor&& other) = delete;
+    mlsl_executor& operator=(mlsl_executor&& other) = delete;
 
-    mlsl_executor(const mlsl_env_data& env_vars, const mlsl_global_data& global_data);
+    mlsl_executor(const mlsl_env_data& env_vars,
+                  const mlsl_global_data& global_data);
     ~mlsl_executor();
 
     void start(mlsl_sched* sched);
@@ -45,7 +45,8 @@ private:
 
 //free functions
 
-inline void mlsl_wait_impl(mlsl_executor* exec, mlsl_request* request)
+inline void mlsl_wait_impl(mlsl_executor* exec,
+                           mlsl_request* request)
 {
     exec->wait(request);
     MLSL_ASSERT(request->sched);
@@ -53,10 +54,13 @@ inline void mlsl_wait_impl(mlsl_executor* exec, mlsl_request* request)
     LOG_DEBUG("req ", request, " completed, sched ", mlsl_coll_type_to_str(request->sched->coll_param.ctype));
 
     if (!request->sched->coll_attr.to_cache)
+    {
         delete request->sched;
+    }
 }
 
-inline bool mlsl_test_impl(mlsl_executor* exec, mlsl_request* request)
+inline bool mlsl_test_impl(mlsl_executor* exec,
+                           mlsl_request* request)
 {
     bool completed = exec->test(request);
 
@@ -66,7 +70,9 @@ inline bool mlsl_test_impl(mlsl_executor* exec, mlsl_request* request)
         LOG_DEBUG("req ", request, " completed, sched ", mlsl_coll_type_to_str(request->sched->coll_param.ctype));
 
         if (!request->sched->coll_attr.to_cache)
+        {
             delete request->sched;
+        }
     }
 
     return completed;

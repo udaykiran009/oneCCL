@@ -3,6 +3,7 @@
 #include "fusion/fusion.hpp"
 #include "parallelizer/parallelizer.hpp"
 #include "sched/sched_cache.hpp"
+#include "common/utils/tree.hpp"
 
 mlsl_status_t mlsl_init()
 {
@@ -92,7 +93,9 @@ mlsl_status_t MLSL_API mlsl_test(mlsl_request_t req,
         {
             LOG_ERROR("empty request");
             if (is_completed)
-            { *is_completed = 1; }
+            {
+                *is_completed = 1;
+            }
             return mlsl_status_success;
         }
 
@@ -246,7 +249,9 @@ mlsl_status_t MLSL_API mlsl_allreduce(
     try
     {
         if (!req)
-        { return mlsl_status_invalid_arguments; }
+        {
+            return mlsl_status_invalid_arguments;
+        }
 
         auto comm = static_cast<mlsl_comm*>(communicator);
         mlsl_comm* real_comm = comm ?: global_data.comm.get();
@@ -272,7 +277,9 @@ mlsl_status_t MLSL_API mlsl_allgatherv(
     try
     {
         if (!req)
-        { return mlsl_status_invalid_arguments; }
+        {
+            return mlsl_status_invalid_arguments;
+        }
 
         auto comm = static_cast<mlsl_comm*>(communicator);
         mlsl_comm* real_comm = comm ?: global_data.comm.get();
@@ -303,7 +310,9 @@ mlsl_status_t MLSL_API mlsl_sparse_allreduce(const void* send_ind_buf,
     try
     {
         if (!req)
-        { return mlsl_status_invalid_arguments; }
+        {
+            return mlsl_status_invalid_arguments;
+        }
 
         auto comm = static_cast<mlsl_comm*>(communicator);
         mlsl_comm* real_comm = comm ?: global_data.comm.get();

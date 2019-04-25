@@ -75,7 +75,10 @@ size_t get_dtype_size(mlsl_datatype_t dtype)
 void do_iter(size_t iter_idx)
 {
     if (rank == 0)
-        printf("started iter %zu\n", iter_idx); fflush(stdout);
+    {
+        printf("started iter %zu\n", iter_idx);
+        fflush(stdout);
+    }
 
     size_t idx, msg_idx;
 
@@ -154,7 +157,10 @@ void do_iter(size_t iter_idx)
     iter_timer += (iter_stop - iter_start);
 
     if (rank == 0)
-        printf("completed iter %zu\n", iter_idx); fflush(stdout);
+    {
+        printf("completed iter %zu\n", iter_idx);
+        fflush(stdout);
+    }
 }
 
 int main()

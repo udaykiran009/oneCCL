@@ -16,16 +16,19 @@
 #include "sched/entry_types/probe_entry.hpp"
 #include "sched/entry_types/register_entry.hpp"
 #include "sched/entry_types/deregister_entry.hpp"
+#include "sched/entry_types/chain_call_entry.hpp"
 #include "sched/entry_types/nop_entry.hpp"
 
 std::shared_ptr<sched_entry> entry_factory::make_send_entry(mlsl_sched* sched,
                                                             const void* buf,
                                                             size_t cnt,
                                                             mlsl_datatype_internal_t dtype,
-                                                            size_t dst)
+                                                            size_t dst,
+                                                            mlsl_op_id_t op_id)
 {
     auto e = std::make_shared<send_entry>(sched, buf, cnt, dtype,
-                                          sched->coll_param.comm->get_global_rank(dst), global_data.comm->rank());
+                                          sched->coll_param.comm->get_global_rank(dst), global_data.comm->rank(),
+                                          op_id);
     sched->add_entry(e);
     return e;
 }
@@ -34,9 +37,10 @@ std::shared_ptr<sched_entry> entry_factory::make_recv_entry(mlsl_sched* sched,
                                                             void* buf,
                                                             size_t cnt,
                                                             mlsl_datatype_internal_t dtype,
-                                                            size_t src)
+                                                            size_t src,
+                                                            mlsl_op_id_t op_id)
 {
-    auto e = std::make_shared<recv_entry>(sched, buf, cnt, dtype, sched->coll_param.comm->get_global_rank(src));
+    auto e = std::make_shared<recv_entry>(sched, buf, cnt, dtype, sched->coll_param.comm->get_global_rank(src), op_id);
     sched->add_entry(e);
     return e;
 }
@@ -72,15 +76,16 @@ std::shared_ptr<sched_entry> entry_factory::make_reduce_entry(mlsl_sched* sched,
 
 std::shared_ptr<sched_entry> entry_factory::make_recv_reduce_entry(mlsl_sched* sched,
                                                                    void* inout_buf,
-                                                                   size_t cnt,
+                                                                   size_t in_cnt,
                                                                    size_t* out_cnt,
                                                                    mlsl_datatype_internal_t dtype,
                                                                    mlsl_reduction_t reduction_op,
                                                                    size_t src,
-                                                                   void* comm_buff)
+                                                                   void* comm_buf,
+                                                                   mlsl_op_id_t op_id)
 {
-    auto e = std::make_shared<recv_reduce_entry>(sched, inout_buf, cnt, out_cnt, dtype, reduction_op,
-                                                 sched->coll_param.comm->get_global_rank(src), comm_buff);
+    auto e = std::make_shared<recv_reduce_entry>(sched, inout_buf, in_cnt, out_cnt, dtype, reduction_op,
+                                                 sched->coll_param.comm->get_global_rank(src), comm_buf, op_id);
     sched->add_entry(e);
     return e;
 }
@@ -187,18 +192,29 @@ std::shared_ptr<sched_entry> entry_factory::make_deregister_entry(mlsl_sched* sc
     return e;
 }
 
-std::shared_ptr<sched_entry> entry_factory::make_nop_entry(mlsl_sched* sched)
+std::shared_ptr<sched_entry> entry_factory::make_probe_entry(mlsl_sched* sched,
+                                                             size_t src,
+                                                             size_t* cnt,
+                                                             mlsl_op_id_t op_id)
 {
-    auto e = std::make_shared<nop_entry>(sched);
+    std::shared_ptr<sched_entry> e = std::make_shared<probe_entry>(sched, global_data.comm->get_global_rank(src), cnt,
+                                                                   op_id);
     sched->add_entry(e);
     return e;
 }
 
-std::shared_ptr<sched_entry> entry_factory::make_probe_entry(mlsl_sched* sched,
-                                                           size_t src,
-                                                           size_t* cnt)
+std::shared_ptr<sched_entry> entry_factory::make_chain_call_entry(mlsl_sched* sched,
+                                                                  std::function<void(mlsl_sched*)> sched_fill_function,
+                                                                  const char* entry_name)
 {
-    std::shared_ptr<sched_entry> e = std::make_shared<probe_entry>(sched, global_data.comm->get_global_rank(src), cnt);
+    std::shared_ptr<sched_entry> e = std::make_shared<chain_call_entry>(sched, sched_fill_function, entry_name);
+    sched->add_entry(e);
+    return e;
+}
+
+std::shared_ptr<sched_entry> entry_factory::make_nop_entry(mlsl_sched* sched)
+{
+    auto e = std::make_shared<nop_entry>(sched);
     sched->add_entry(e);
     return e;
 }

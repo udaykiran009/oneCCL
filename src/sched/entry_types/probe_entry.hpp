@@ -8,17 +8,18 @@ class probe_entry : public sched_entry
 public:
     probe_entry() = delete;
     probe_entry(mlsl_sched* sched,
-               size_t source,
-               size_t* count) :
-        sched_entry(sched), src(source), cnt(count)
+                size_t source,
+                size_t* count,
+                mlsl_op_id_t op_id) :
+        sched_entry(sched), src(source), cnt(count), op_id(op_id)
     {
         LOG_DEBUG("creating ", name(), " entry");
     }
 
     void start_derived()
     {
-        auto atl_tag = mlsl_create_atl_tag(sched->coll_param.comm->id(), sched->sched_id, src);
-        LOG_DEBUG("PROBE entry src ", src, ", tag ", std::setbase(16), atl_tag);
+        atl_tag = mlsl_create_atl_tag(sched->coll_param.comm->id(), sched->sched_id, op_id, src);
+        LOG_DEBUG("PROBE entry src ", src, ", tag ", atl_tag);
         atl_status_t atl_status = atl_comm_probe(sched->bin->get_comm_ctx(), src, atl_tag, &req);
 
         if (unlikely(atl_status != atl_status_success))
@@ -27,7 +28,9 @@ public:
             LOG_ERROR("PROBE entry failed. atl_status: ", atl_status);
         }
         else
+        {
             status = mlsl_sched_entry_status_started;
+        }
     }
 
     void update_derived()
@@ -55,12 +58,15 @@ protected:
                             "cnt ", *cnt,
                             ", src ", src,
                             ", comm ", sched->coll_param.comm,
+                            ", atl_tag ", std::setbase(16), atl_tag,
                             ", req ", &req,
                             "\n");
     }
 
 private:
     size_t src;
-    size_t* cnt;   
+    size_t* cnt;
+    mlsl_op_id_t op_id;
+    mlsl_atl_comm_tag_t atl_tag{};
     atl_req_t req{};
 };

@@ -3,12 +3,11 @@
 #define RUN_COLLECTIVE(start_cmd, name)                                    \
   do {                                                                     \
       t = 0;                                                               \
-      float expected = 1.0;                                                \
       for (iter_idx = 0; iter_idx < ITERS; iter_idx++)                     \
       {                                                                    \
           for (idx = 0; idx < COUNT; idx++)                                \
           {                                                                \
-              if (rank == COLL_ROOT) buf[idx] = expected;                  \
+              if (rank == COLL_ROOT) buf[idx] = idx;                       \
               else buf[idx] = 0.0;                                         \
           }                                                                \
           t1 = when();                                                     \
@@ -20,10 +19,10 @@
       mlsl_barrier(NULL);                                                  \
       for (idx = 0; idx < COUNT; idx++)                                    \
       {                                                                    \
-          if (buf[idx] != expected)                                        \
+          if (buf[idx] != idx)                                             \
           {                                                                \
-              printf("iter %zu, idx %zu, expected %f, got %f\n",           \
-                      iter_idx, idx, expected, buf[idx]);                  \
+              printf("iter %zu, idx %zu, expected %zu, got %f\n",          \
+                      iter_idx, idx, idx, buf[idx]);                       \
               assert(0);                                                   \
           }                                                                \
       }                                                                    \
