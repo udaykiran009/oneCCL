@@ -10,7 +10,7 @@ mlsl_env_data env_data =
         .worker_count = 1,
         .worker_offload = 1,
         .out_of_order_support = 0,
-        .worker_affinity = nullptr,
+        .worker_affinity = std::vector<int>(),
         .priority_mode = mlsl_priority_none,
         .allreduce_algo = mlsl_allreduce_algo_rabenseifner,
         .bcast_algo = mlsl_bcast_algo_ring,
@@ -21,12 +21,14 @@ mlsl_env_data env_data =
         .fusion_bytes_threshold = 16384,
         .fusion_count_threshold = 256,
         .fusion_check_urgent = 1,
-        .fusion_cycle_ms = 0.2
+        .fusion_cycle_ms = 0.2,
+        .vector_allgatherv = 0
     };
 
-const char *mlsl_priority_mode_to_str(mlsl_priority_mode mode)
+const char* mlsl_priority_mode_to_str(mlsl_priority_mode mode)
 {
-    switch (mode) {
+    switch (mode)
+    {
         case mlsl_priority_none:
             return "NONE";
         case mlsl_priority_direct:
@@ -85,25 +87,27 @@ const char* mlsl_bcast_algo_to_str(mlsl_bcast_algo algo)
 
 void mlsl_env_parse()
 {
-    mlsl_env_2_int(MLSL_LOG_LEVEL, &env_data.log_level);
+    mlsl_env_2_int(MLSL_LOG_LEVEL, env_data.log_level);
     mlsl_logger::set_log_level(static_cast<mlsl_log_level>(env_data.log_level));
-    mlsl_env_2_int(MLSL_SCHED_DUMP, &env_data.sched_dump);
-    mlsl_env_2_int(MLSL_WORKER_COUNT, &env_data.worker_count);
-    mlsl_env_2_int(MLSL_WORKER_OFFLOAD, &env_data.worker_offload);
-    mlsl_env_2_int(MLSL_OUT_OF_ORDER_SUPPORT, &env_data.out_of_order_support);
-    mlsl_env_2_int(MLSL_ENABLE_RMA, &env_data.enable_rma);
-    mlsl_env_2_int(MLSL_ENABLE_FUSION, &env_data.enable_fusion);
-    mlsl_env_2_int(MLSL_FUSION_BYTES_THRESHOLD, &env_data.fusion_bytes_threshold);
-    mlsl_env_2_int(MLSL_FUSION_COUNT_THRESHOLD, &env_data.fusion_count_threshold);
-    mlsl_env_2_int(MLSL_FUSION_CHECK_URGENT, &env_data.fusion_check_urgent);
-    mlsl_env_2_float(MLSL_FUSION_CYCLE_MS, &env_data.fusion_cycle_ms);
-    mlsl_env_2_int(MLSL_VECTOR_ALLGATHERV, &env_data.vector_allgatherv);
+    mlsl_env_2_int(MLSL_SCHED_DUMP, env_data.sched_dump);
+    mlsl_env_2_size_t(MLSL_WORKER_COUNT, env_data.worker_count);
+    mlsl_env_2_int(MLSL_WORKER_OFFLOAD, env_data.worker_offload);
+    mlsl_env_2_int(MLSL_OUT_OF_ORDER_SUPPORT, env_data.out_of_order_support);
+    mlsl_env_2_int(MLSL_ENABLE_RMA, env_data.enable_rma);
+    mlsl_env_2_int(MLSL_ENABLE_FUSION, env_data.enable_fusion);
+    mlsl_env_2_int(MLSL_FUSION_BYTES_THRESHOLD, env_data.fusion_bytes_threshold);
+    mlsl_env_2_int(MLSL_FUSION_COUNT_THRESHOLD, env_data.fusion_count_threshold);
+    mlsl_env_2_int(MLSL_FUSION_CHECK_URGENT, env_data.fusion_check_urgent);
+    mlsl_env_2_float(MLSL_FUSION_CYCLE_MS, env_data.fusion_cycle_ms);
+    mlsl_env_2_int(MLSL_VECTOR_ALLGATHERV, env_data.vector_allgatherv);
 
     mlsl_env_parse_priority_mode();
-    mlsl_env_parse_affinity();
     mlsl_env_parse_allreduce_algo();
     mlsl_env_parse_reduce_algo();
     mlsl_env_parse_bcast_algo();
+
+    auto result = mlsl_env_parse_affinity();
+    MLSL_THROW_IF_NOT(result == 1, "failed to parse ", MLSL_WORKER_AFFINITY);
 
     MLSL_THROW_IF_NOT(env_data.worker_count >= 1, "incorrect %s %d", MLSL_WORKER_COUNT, env_data.worker_count);
     if (env_data.enable_fusion)
@@ -113,11 +117,6 @@ void mlsl_env_parse()
         MLSL_THROW_IF_NOT(env_data.fusion_count_threshold >= 1, "incorrect ",
                           MLSL_FUSION_COUNT_THRESHOLD, " ", env_data.fusion_count_threshold);
     }
-}
-
-void mlsl_env_free()
-{
-    MLSL_FREE(env_data.worker_affinity);
 }
 
 void mlsl_env_print()
@@ -142,26 +141,39 @@ void mlsl_env_print()
 }
 
 int mlsl_env_2_int(const char* env_name,
-                   int* val)
+                   int& val)
 {
     const char* val_ptr;
     val_ptr = getenv(env_name);
     if (val_ptr)
     {
-        *val = std::strtol(val_ptr, NULL, 10);
+        val = std::strtol(val_ptr, nullptr, 10);
+        return 1;
+    }
+    return 0;
+}
+
+int mlsl_env_2_size_t(const char* env_name,
+                      size_t& val)
+{
+    const char* val_ptr;
+    val_ptr = getenv(env_name);
+    if (val_ptr)
+    {
+        val = std::strtoul(val_ptr, nullptr, 10);
         return 1;
     }
     return 0;
 }
 
 int mlsl_env_2_float(const char* env_name,
-                     float* val)
+                     float& val)
 {
     const char* val_ptr;
     val_ptr = getenv(env_name);
     if (val_ptr)
     {
-        *val = std::strtof(val_ptr, NULL);
+        val = std::strtof(val_ptr, nullptr);
         return 1;
     }
     return 0;
@@ -192,16 +204,69 @@ int mlsl_env_parse_priority_mode()
     return 1;
 }
 
+constexpr const char* AVAILABLE_CORES_ENV = "I_MPI_PIN_INFO";
+
+template<typename T>
+void str_to_array(const char* input,
+                  std::vector<T>& output,
+                  char delimiter)
+{
+    std::stringstream ss(input);
+
+    T temp{};
+
+    while (ss >> temp)
+    {
+        output.push_back(temp);
+        if (ss.peek() == delimiter)
+        {
+            ss.ignore();
+        }
+    }
+}
+
+static int parse_auto_affinity()
+{
+    char* available_cores = std::getenv(AVAILABLE_CORES_ENV);
+    MLSL_THROW_IF_NOT(available_cores && strlen(available_cores) != 0, "auto pinning requires ",
+                      AVAILABLE_CORES_ENV, " env variable to be set");
+    std::vector<int> cores;
+    str_to_array(available_cores + 1, cores, ',');
+
+    MLSL_THROW_IF_NOT(env_data.worker_count <= cores.size(), "count of workers ", env_data.worker_count,
+                      " exceeds the number of available cores ", cores.size());
+
+    size_t mlsl_cores_start = cores.size() - 1 - env_data.worker_count;
+
+    std::stringstream str;
+    mlsl_logger::format(str, "mlsl uses cores: ");
+    for(size_t idx = 0; idx < env_data.worker_count; ++idx)
+    {
+        env_data.worker_affinity[idx] = cores[mlsl_cores_start + idx];
+        mlsl_logger::format(str, env_data.worker_affinity[idx], " ");
+    }
+    LOG_INFO(str.str());
+
+    return 1;
+}
+
 int mlsl_env_parse_affinity()
 {
     int read_env = 0;
     size_t workers_per_node = env_data.worker_count;
     size_t w_idx, read_count = 0;
-    char* affinity_copy = NULL, * affinity_to_parse = getenv(MLSL_WORKER_AFFINITY);
-    char* proc_id_str, * tmp;
+    char* affinity_copy = nullptr;
+    char* affinity_to_parse = getenv(MLSL_WORKER_AFFINITY);
+    char* proc_id_str;
+    char* tmp;
     size_t proc_count;
 
-    env_data.worker_affinity = static_cast<int*>(MLSL_CALLOC(workers_per_node * sizeof(int), "worker_affinity"));
+    env_data.worker_affinity.reserve(workers_per_node);
+
+    if (affinity_to_parse && strcmp(affinity_to_parse, "auto") == 0)
+    {
+        return parse_auto_affinity();
+    }
 
     if (!affinity_to_parse || strlen(affinity_to_parse) == 0)
     {
@@ -232,7 +297,6 @@ int mlsl_env_parse_affinity()
     for (w_idx = 0; w_idx < workers_per_node; w_idx++)
     {
         proc_id_str = strsep(&tmp, ",");
-
         if (proc_id_str != NULL)
         {
             if (atoi(proc_id_str) < 0)
@@ -256,8 +320,9 @@ int mlsl_env_parse_affinity()
     }
     if (read_count < workers_per_node)
     {
-        LOG_ERROR("unexpected number of processors (specify 1 logical processor per 1 progress thread), affinity string ",
-                 affinity_to_parse);
+        LOG_ERROR(
+            "unexpected number of processors (specify 1 logical processor per 1 progress thread), affinity string ",
+            affinity_to_parse);
         read_env = 0;
         MLSL_FREE(affinity_copy);
         return read_env;

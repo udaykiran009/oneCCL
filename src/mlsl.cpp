@@ -59,7 +59,6 @@ mlsl_status_t mlsl_finalize()
         global_data.parallelizer.reset();
         global_data.default_coll_attr.reset();
 
-        mlsl_env_free();
         return mlsl_status_success;
     }
     COMMON_CATCH_BLOCK()

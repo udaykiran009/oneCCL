@@ -263,7 +263,7 @@ do                                                                              
 {                                                                                 \
     if (!(cond))                                                                  \
     {                                                                             \
-        LOG_ERROR("condition", #cond, " failed\n", ##__VA_ARGS__);                \
+        LOG_ERROR("condition ", #cond, " failed\n", ##__VA_ARGS__);               \
         MLSL_THROW(__VA_ARGS__);                                                  \
     }                                                                             \
 } while(0)

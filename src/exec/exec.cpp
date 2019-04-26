@@ -5,7 +5,7 @@
 mlsl_executor::mlsl_executor(const mlsl_env_data& env_vars,
                              const mlsl_global_data& global_data)
 {
-    auto worker_count = static_cast<size_t>(env_vars.worker_count);
+    auto worker_count = env_vars.worker_count;
     workers.reserve(worker_count);
     auto comm_count = worker_count;
 

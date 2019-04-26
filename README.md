@@ -61,6 +61,37 @@ cmake .. -DCMAKE_BUILD_TYPE=Debug -DWITH_ASAN=true
 
 Make sure that libasan.so exists.
 
+## Usage
+
+### Setting workers affinity
+There are two ways to set workers threads affinity - explicit and automatic
+
+#### Setting affinity explicitly
+1. Set environment variable *MLSL_WORKER_COUNT* with desired number of workers threads
+2. Set environment variable *MLSL_WORKER_AFFINITY* with IDs of cores to be bound to
+
+Example:
+```
+export MLSL_WORKER_COUNT=4
+export MLSL_WORKER_AFFINITY=3,4,5,6
+```
+With variables above MLSL will create 4 threads and pin them to cores with numbers 3,4,5 and 6 accordingly
+
+#### Setting affinity automatically
+*NOTE:* automatic pinning only works if application has been launched using *mpirun* provided by MLSL distribution package.
+
+1. Set environment variable *MLSL_WORKER_COUNT* with desired number of workers threads
+2. Set environment variable *MLSL_WORKER_AFFINITY* with value *auto*
+
+Example:
+```
+export MLSL_WORKER_COUNT=4
+export MLSL_WORKER_AFFINITY=auto
+```
+With variables above MLSL will create 4 threads and pin them to the last 4 cores available for the launched process.
+
+The exact IDs of CPU cores depend on parameters passed to *mpirun* 
+
 ## FAQ
 
 ### When do I need a clean build? When should I remove my favorite build directory?
