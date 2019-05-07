@@ -6,7 +6,6 @@
 #include <string>
 #include <fstream>
 #include "gtest/gtest.h"
-
 #include "mlsl.hpp"
 #include <cstdlib>      /* malloc */
 
@@ -57,7 +56,7 @@ using namespace std;
 
 
 
-#define OUTPUT_NAME_ARG "--gtest_output=xml:./testAll.xml"
+#define OUTPUT_NAME_ARG "--gtest_output="
 #define PATCH_OUTPUT_NAME_ARG(argc, argv)                                                 \
     do                                                                                    \
     {                                                                                     \
@@ -78,9 +77,6 @@ using namespace std;
                     PRINT("originArg %s, extPos %zu, argLen %zu, patchedArg %s",          \
                     originArg.c_str(), extPos, argLen, patchedArg.c_str());               \
                     argv[idx] = '\0';                                                     \
-                        if (comm.rank())                                                  \
-                            ::testing::GTEST_FLAG(output) = "";                           \
-                        else                                                              \
                             ::testing::GTEST_FLAG(output) = patchedArg.c_str();           \
                 }                                                                         \
             }                                                                             \
@@ -118,6 +114,7 @@ using namespace std;
       }                                                         \
       return TEST_SUCCESS;                                      \
 }
+
 #define ASSERT(cond, fmt, ...)                                                       \
     do {                                                                             \
            if (!(cond))                                                              \
@@ -480,8 +477,6 @@ struct TypedTestParam
 	}
 
 
-
-
 	const char *GetPlaceTypeStr() {
 		return placeTypeStr[testParam.placeType];
 	}
@@ -536,14 +531,17 @@ struct TypedTestParam
 friend std::ostream&  operator<<(std::ostream & stream, const TestParam & tParam);	
 };
 std::ostream&  operator<<(std::ostream & stream, const TestParam & tParam) {
-	// TypedTestParam ttParam(tParam);
-	// TypedTestParam<type> ttParam(tParam); 
 	return stream 
 	<<  "Test parameters: bufferCount " << bufferCountStr[tParam.bufferCount]
-	<< " reductionType " << reductionTypeStr[tParam.reductionType] 
-	<< " dataType " << dataTypeStr[tParam.dataType];	
+	<< " reductionType " << reductionTypeStr[tParam.reductionType]
+	<< " placeType " << placeTypeStr[tParam.placeType]
+	<< " cacheType " << cacheTypeStr[tParam.cacheType]
+	<< " sizeType " << sizeTypeStr[tParam.sizeType]
+	<< " priorityType " << priorityTypeStr[tParam.priorityType]
+	<< " bufferCount " << bufferCountStr[tParam.bufferCount]
+	<< " syncType " << syncTypeStr[tParam.syncType]
+	<< " dataType " << dataTypeStr[tParam.dataType];
 }
-
 
 template <typename T> class BaseTest {
 
