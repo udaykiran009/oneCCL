@@ -88,23 +88,21 @@ using namespace std;
     int MainTest::Run(TestParam tParam)                         \
     {                                                           \
         ClassName<T> className;                                 \
-        int timeout = TIMEOUT;                                  \
-        char* timeoutEnv = getenv("MLSL_FUNC_TEST_TIMEOUT");    \
-        if (timeoutEnv)                                         \
-            timeout = atoi(timeoutEnv);                         \
       TypedTestParam<T> typedParam(tParam);                     \
       std::ostringstream output;                                \
       if (typedParam.processIdx == 0)                           \
       printf("%s", output.str().c_str());                       \
-      clock_t start = clock();                                  \
       int result = className.Run(typedParam);                   \
-      clock_t end = clock();                                    \
-      double time = (end - start) / CLOCKS_PER_SEC;             \
-      if ((result != TEST_SUCCESS) || (time >= timeout))        \
+	  mlsl::communicator comm;                                  \
+	  mlsl_coll_attr_t coll_attr{};                             \
+	  comm.reduce(&result, &result, 1,                          \
+				  mlsl::data_type::dtype_int,                   \
+				  mlsl::reduction::sum, 0, &coll_attr);         \
+      if ((result > 0))                                         \
       {                                                         \
           if (typedParam.processIdx == 0)                       \
           {                                                     \
-              output << "over timeout=" << time << endl;        \
+              output << "FAILED TEST" << endl;                  \
               printf("%s", output.str().c_str());               \
               EXPECT_TRUE(false) << output.str();               \
           }                                                     \
@@ -114,6 +112,7 @@ using namespace std;
       }                                                         \
       return TEST_SUCCESS;                                      \
 }
+
 
 #define ASSERT(cond, fmt, ...)                                                       \
     do {                                                                             \
@@ -131,7 +130,6 @@ using namespace std;
     {                                             \
         InitTestParams();                         \
         mlsl::environment env;                    \
-        PATCH_OUTPUT_NAME_ARG(argc, argv);        \
         testing::InitGoogleTest(&argc, argv);     \
         int res = RUN_ALL_TESTS();                \
         env.~environment();                       \
@@ -358,7 +356,10 @@ void InitTestParams()
 	PlaceType placeType;
 	PriorityType priorityType;
 	BufferCount bufferCount;
-	if (file.is_open()) {
+	if (!file.is_open()) {
+		ASSERT(0, "file doesn't exist\n");
+	}
+	else {
 		std::string line;
 		size_t idx = 0;
 		while (std::getline(file, line)) {   
@@ -394,7 +395,7 @@ void InitTestParams()
 			idx++;
 		}
 		testParams.resize(idx);
-    file.close();
+		file.close();
 	}
 }
 
@@ -531,8 +532,11 @@ struct TypedTestParam
 friend std::ostream&  operator<<(std::ostream & stream, const TestParam & tParam);	
 };
 std::ostream&  operator<<(std::ostream & stream, const TestParam & tParam) {
+	mlsl::communicator comm;
+	size_t processIdx = comm.rank();
 	return stream 
-	<<  "Test parameters: bufferCount " << bufferCountStr[tParam.bufferCount]
+	<<  "Test parameters: processIdx " << processIdx
+	<< " bufferCount " << bufferCountStr[tParam.bufferCount]
 	<< " reductionType " << reductionTypeStr[tParam.reductionType]
 	<< " placeType " << placeTypeStr[tParam.placeType]
 	<< " cacheType " << cacheTypeStr[tParam.cacheType]

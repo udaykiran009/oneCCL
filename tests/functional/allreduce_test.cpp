@@ -3,21 +3,6 @@
 #include <vector>
 #include <chrono>
 
-// template < typename T >
-// T get_expected_min(size_t i, size_t processCount)
-// {
-	// if ((T)(i + processCount - 1) < T(i))
-		// return (T)(i + processCount - 1);
-	// return (T)i;
-// }
-
-// template < typename T >
-// T get_expected_max(size_t i, size_t processCount)
-// {
-	// if ((T)(i + processCount - 1) > T(i))
-		// return (T)(i + processCount - 1);
-	// return (T)i;
-// } 
 template < typename T > class AllReduceTest:public BaseTest < T > {
 public:
 	int Check(TypedTestParam < T > &param) {
