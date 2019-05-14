@@ -83,7 +83,7 @@ set(CMAKE_CXX_STANDARD 11)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 if(${CMAKE_C_COMPILER_ID} STREQUAL "GNU")
-    if(${CMAKE_CXX_COMPILER_VERSION} VERSION_GREATER_EQUAL "7.0")
+    if(NOT CMAKE_CXX_COMPILER_VERSION VERSION_LESS 7.0)
         #c++17 introduces algined new operator, use it
         set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -faligned-new")
     endif()
