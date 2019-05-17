@@ -14,7 +14,7 @@ public:
 							((param.processCount * (param.processCount - 1) / 2) +
 							(i * param.processCount));
 						if (param.recvBuf[j][i] != expected) {
-							printf("[%zu] sent sendBuf[%zu][%zu] = %f, got recvBuf[%zu][%zu] = %f, but expected = %f\n",
+							sprintf(this->errMessage, "[%zu] sent sendBuf[%zu][%zu] = %f, got recvBuf[%zu][%zu] = %f, but expected = %f\n",
 								param.processIdx, j, i, (double) param.sendBuf[j][i], j, i, (double) param.recvBuf[j][i], (double) expected);
 							return TEST_FAILURE;
 						}
