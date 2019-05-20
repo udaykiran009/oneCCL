@@ -55,7 +55,6 @@ using namespace std;
 #endif /* ENABLE_DEBUG */
 
 
-
 #define OUTPUT_NAME_ARG "--gtest_output="
 #define PATCH_OUTPUT_NAME_ARG(argc, argv)                                                 \
     do                                                                                    \
@@ -77,6 +76,9 @@ using namespace std;
                     PRINT("originArg %s, extPos %zu, argLen %zu, patchedArg %s",          \
                     originArg.c_str(), extPos, argLen, patchedArg.c_str());               \
                     argv[idx] = '\0';                                                     \
+					if (comm.rank())                                                      \
+                            ::testing::GTEST_FLAG(output) = "";                           \
+                        else                                                              \
                             ::testing::GTEST_FLAG(output) = patchedArg.c_str();           \
                 }                                                                         \
             }                                                                             \
@@ -87,22 +89,25 @@ using namespace std;
     template <typename T>                                       \
     int MainTest::Run(TestParam tParam)                         \
     {                                                           \
-        ClassName<T> className;                                 \
+      ClassName<T> className;                                   \
       TypedTestParam<T> typedParam(tParam);                     \
       std::ostringstream output;                                \
       if (typedParam.processIdx == 0)                           \
       printf("%s", output.str().c_str());                       \
       int result = className.Run(typedParam);                   \
+      int result_final = 0;                                     \
 	  mlsl::communicator comm;                                  \
-	  mlsl_coll_attr_t coll_attr{};                             \
-	  comm.reduce(&result, &result, 1,                          \
+	  std::shared_ptr <mlsl::request> req;                      \
+	  req = comm.allreduce(&result, &result_final, 1,           \
 				  mlsl::data_type::dtype_int,                   \
-				  mlsl::reduction::sum, 0, &coll_attr);         \
-      if ((result > 0))                                         \
+				  mlsl::reduction::sum);                        \
+	  req->wait();                                              \
+	  if (result_final > 0)                                     \
       {                                                         \
+	  	  PrintErrMessage(className.GetErrMessage(),            \
+		                  output);      \
           if (typedParam.processIdx == 0)                       \
           {                                                     \
-              output << "FAILED TEST" << endl;                  \
               printf("%s", output.str().c_str());               \
               EXPECT_TRUE(false) << output.str();               \
           }                                                     \
@@ -130,6 +135,7 @@ using namespace std;
     {                                             \
         InitTestParams();                         \
         mlsl::environment env;                    \
+		PATCH_OUTPUT_NAME_ARG(argc, argv);        \
         testing::InitGoogleTest(&argc, argv);     \
         int res = RUN_ALL_TESTS();                \
         env.~environment();                       \
@@ -326,6 +332,47 @@ POST_AND_PRE_INCREMENTS(TestCacheType, CT_LAST);
 POST_AND_PRE_INCREMENTS(TestSyncType, SNCT_LAST);
 POST_AND_PRE_INCREMENTS(PriorityType, PRT_LAST);
 POST_AND_PRE_INCREMENTS(BufferCount, BC_LAST);
+
+void PrintErrMessage(char* errMessage, std::ostream &output)
+{
+    size_t messageLen = strlen(errMessage);
+	mlsl::communicator comm;
+	std::shared_ptr <mlsl::request> req;
+	int processCount = comm.size();
+	int processIdx = comm.rank();
+    size_t* arrMessageLen = new size_t[processCount];
+    int* arrMessageLen_copy = new int[processCount];
+	size_t* displs = new size_t[processCount];
+    displs[0] = 1;
+    for (int i = 1; i < processCount; i++)
+        displs[i] = 1;
+	req = comm.allgatherv(&messageLen, 1, arrMessageLen_copy, displs, mlsl::data_type::dtype_int);
+	req->wait();
+	for (int i = 0; i < processCount; i++)
+        arrMessageLen[i] = arrMessageLen_copy[i];
+    int fullMessageLen = 0;
+    for (int i = 0; i < processCount; i++)
+        fullMessageLen += arrMessageLen[i];
+    if (fullMessageLen == 0)
+    {
+        delete[] arrMessageLen;
+		delete[] displs;
+        return;
+    }
+    char* arrErrMessage = new char[fullMessageLen];
+	req = comm.allgatherv(errMessage, messageLen, arrErrMessage, arrMessageLen, mlsl::data_type::dtype_char);
+	req->wait();
+    if (processIdx == 0)
+    {
+        output << arrErrMessage;
+    }
+    delete[] arrMessageLen;
+    delete[] arrMessageLen_copy;
+    delete[] arrErrMessage;
+	delete[] displs;
+    
+}
+
 
 //This struct needed for gtest
 struct TestParam {
@@ -535,16 +582,16 @@ std::ostream&  operator<<(std::ostream & stream, const TestParam & tParam) {
 	mlsl::communicator comm;
 	size_t processIdx = comm.rank();
 	return stream 
-	<<  "Test parameters: processIdx " << processIdx
-	<< " bufferCount " << bufferCountStr[tParam.bufferCount]
-	<< " reductionType " << reductionTypeStr[tParam.reductionType]
-	<< " placeType " << placeTypeStr[tParam.placeType]
-	<< " cacheType " << cacheTypeStr[tParam.cacheType]
-	<< " sizeType " << sizeTypeStr[tParam.sizeType]
-	<< " priorityType " << priorityTypeStr[tParam.priorityType]
-	<< " bufferCount " << bufferCountStr[tParam.bufferCount]
-	<< " syncType " << syncTypeStr[tParam.syncType]
-	<< " dataType " << dataTypeStr[tParam.dataType];
+	<< " \nprocessIdx " << processIdx
+	<< " \nbufferCount " << bufferCountStr[tParam.bufferCount]
+	<< " \nreductionType " << reductionTypeStr[tParam.reductionType]
+	<< " \nplaceType " << placeTypeStr[tParam.placeType]
+	<< " \ncacheType " << cacheTypeStr[tParam.cacheType]
+	<< " \nsizeType " << sizeTypeStr[tParam.sizeType]
+	<< " \npriorityType " << priorityTypeStr[tParam.priorityType]
+	<< " \nbufferCount " << bufferCountStr[tParam.bufferCount]
+	<< " \nsyncType " << syncTypeStr[tParam.syncType]
+	<< " \ndataType " << dataTypeStr[tParam.dataType];
 }
 
 template <typename T> class BaseTest {
@@ -566,8 +613,8 @@ public:
 
 	char errMessage[100]{};
 
-	BaseTest() = default;
-
+	// BaseTest() = default;
+	BaseTest() { memset(this->errMessage, '\0', 100); }
 	virtual void Init(TypedTestParam <T> &param){
 			param.coll_attr.priority = (int)param.PriorityRequest();
 			param.coll_attr.to_cache = (int)param.GetCacheType();
