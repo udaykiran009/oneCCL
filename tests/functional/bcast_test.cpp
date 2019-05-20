@@ -3,7 +3,6 @@
 #include <vector>
 #include <chrono>
 
-
 template <typename T> class BcastTest:public BaseTest <T> {
 public:
     int Check(TypedTestParam <T> &param) {

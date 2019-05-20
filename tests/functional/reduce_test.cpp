@@ -1,7 +1,10 @@
+#define TEST_MLSL_REDUCE
+
 #include "base.hpp"
 #include <functional>
 #include <vector>
 #include <chrono>
+
 
 template < typename T > class ReduceTest:public BaseTest < T > {
 public:

@@ -172,9 +172,6 @@ typedef enum {
 PlaceType firstPlaceType = PT_OOP;
 map <int, const char *>placeTypeStr = { {PT_OOP, "PT_OOP"},
                                         {PT_IN, "PT_IN"}};
-map <const string, PlaceType>strPlaceType = { {"PT_OOP", PT_OOP},
-                                              {"PT_IN", PT_IN}};
-
 
 typedef enum {
     ST_SMALL = 0,
@@ -186,10 +183,6 @@ SizeType firstSizeType = ST_SMALL;
 map < int, const char *>sizeTypeStr = { {ST_SMALL, "ST_SMALL"},
                                         {ST_MEDIUM, "ST_MEDIUM"},
                                         {ST_LARGE, "ST_LARGE"}};
-
-map < const string, SizeType>strSizeType = { {"ST_SMALL", ST_SMALL},
-                                             {"ST_MEDIUM", ST_MEDIUM},
-                                             {"ST_LARGE", ST_LARGE}};
 
 map < int, size_t > sizeTypeValues = { {ST_SMALL, 16},
                                        {ST_MEDIUM, 32768},
@@ -206,10 +199,6 @@ map < int, const char *>bufferCountStr = { {BC_SMALL, "BC_SMALL"},
                                            {BC_MEDIUM, "BC_MEDIUM"},
                                            {BC_LARGE, "BC_LARGE"}};
 
-map < const string, BufferCount>strBufferCount = { {"BC_SMALL", BC_SMALL},
-                                                   {"BC_MEDIUM", BC_MEDIUM },
-                                                   {"BC_LARGE", BC_LARGE}};
-
 map < int, size_t > bufferCountValues = { {BC_SMALL, 1},
                                           {BC_MEDIUM, 7},
                                           {BC_LARGE, 12}};
@@ -222,11 +211,6 @@ typedef enum {
 CompletionType firstCompletionType = CMPT_WAIT;
 map < int, const char *>completionTypeStr = { {CMPT_WAIT, "CMPT_WAIT"},
                                               {CMPT_TEST, "CMPT_TEST"}};
-
-
-map < const string, CompletionType>strCompletionType = { {"CMPT_WAIT", CMPT_WAIT},
-                                                         {"CMPT_TEST", CMPT_TEST}};
-
 
 typedef enum {
     DT_CHAR = mlsl_dtype_char,
@@ -247,45 +231,38 @@ map < int, const char *>dataTypeStr = { {DT_CHAR, "DT_CHAR"},
                                         // {DT_INT64, "INT64"},
                                         // {DT_UINT64, "UINT64"}
 };
- 
-map < const string, TestDataType >strDataType = { {"DT_CHAR", DT_CHAR},
-                                                  {"DT_INT", DT_INT},
-                                                  {"DT_BFP16", DT_BFP16},
-                                                  {"DT_FLOAT", DT_FLOAT},
-                                                  {"DT_DOUBLE", DT_DOUBLE}};
 
 typedef enum {
     RT_SUM = mlsl_reduction_sum,
+#ifdef TEST_MLSL_REDUCE
     RT_PROD = mlsl_reduction_prod,
     RT_MIN = mlsl_reduction_min,
     RT_MAX = mlsl_reduction_max,
+#endif
     RT_LAST
 } TestReductionType;
 TestReductionType firstReductionType = RT_SUM;
 map < int, const char *>reductionTypeStr = { {RT_SUM, "RT_SUM"},
+#ifdef TEST_MLSL_REDUCE
                                              {RT_PROD, "RT_PROD"},
                                              {RT_MIN, "RT_MIN"},
-                                             {RT_MAX, "RT_MAX"}};
-
-map < const string, TestReductionType >strReductionType= { {"RT_SUM", RT_SUM},
-                                                           {"RT_PROD", RT_PROD},
-                                                           {"RT_MIN", RT_MIN},
-                                                           {"RT_MAX", RT_MAX}};
+                                             {RT_MAX, "RT_MAX"}
+#endif											 
+											 };
 
 typedef enum {
     CT_CACHE_0 = 0,
-    CT_CACHE_1 = 1,
+//    CT_CACHE_1 = 1,
     CT_LAST
 } TestCacheType;
 TestCacheType firstCacheType = CT_CACHE_0;
 map < int, const char * >cacheTypeStr = { {CT_CACHE_0, "CT_CACHE_0"},
-                                          {CT_CACHE_1, "CT_CACHE_1"}};
-
-map < const string, TestCacheType >strCacheType = { {"CT_CACHE_0", CT_CACHE_0},
-                                                    {"CT_CACHE_1", CT_CACHE_1}};
+//                                          {CT_CACHE_1, "CT_CACHE_1"}
+										  };
 
 map < int, int > cacheTypeValues = { {CT_CACHE_0, 0},
-                                     {CT_CACHE_1, 1}};
+//                                     {CT_CACHE_1, 1}
+									 };
 
 typedef enum {
     SNCT_SYNC_0 = 0,
@@ -295,9 +272,6 @@ typedef enum {
 TestSyncType firstSyncType = SNCT_SYNC_0;
 map < int, const char * >syncTypeStr = { {SNCT_SYNC_0, "SNCT_SYNC_0"},
                                          {SNCT_SYNC_1, "SNCT_SYNC_1"}};
-
-map < const string, TestSyncType >strSyncType = { {"SNCT_SYNC_0", SNCT_SYNC_0},
-                                                  {"SNCT_SYNC_1", SNCT_SYNC_1}};
                                                       
 map < int, int > syncTypeValues = { {SNCT_SYNC_0, 0},
                                     {SNCT_SYNC_1, 1}};
@@ -311,9 +285,6 @@ typedef enum {
 PriorityType firstPriorityType = PRT_DISABLE;
 map < int, const char * >priorityTypeStr = { {PRT_DISABLE, "PRT_DISABLE"},
                                              {PRT_ENABLE, "PRT_ENABLE"}};
-
-map < const string, PriorityType >strPriorityType = { {"PRT_DISABLE", PRT_DISABLE},
-                                                      {"PRT_ENABLE", PRT_ENABLE}};
 
 map < int, int > priorityTypeValues = { {PRT_DISABLE, 0},
                                         {PRT_ENABLE, 1}
@@ -369,7 +340,6 @@ void PrintErrMessage(char* errMessage, std::ostream &output)
     
 }
 
-
 //This struct needed for gtest
 struct TestParam {
     PlaceType placeType;
@@ -384,62 +354,40 @@ struct TestParam {
 };
 
 #define TEST_COUNT (PRT_LAST * CMPT_LAST * SNCT_LAST * DT_LAST * ST_LAST *  RT_LAST * BC_LAST * CT_LAST * PT_LAST)
-
 std::vector<TestParam> testParams(TEST_COUNT);
 
 void InitTestParams()
 {
-    std::ifstream file( "test-base" );
-    TestSyncType syncType;
-    TestCacheType cacheType;
-    TestReductionType reductionType;
-    SizeType sizeType;
-    TestDataType dataType;
-    CompletionType completionType;
-    PlaceType placeType;
-    PriorityType priorityType;
-    BufferCount bufferCount;
-    if (!file.is_open()) {
-        ASSERT(0, "file doesn't exist\n");
-    }
-    else {
-        std::string line;
-        size_t idx = 0;
-        while (std::getline(file, line)) {   
-            std::istringstream ss(line);
-            string tmp_value;
-            ss >> tmp_value;
-            placeType = strPlaceType[tmp_value];
-            testParams[idx].placeType = placeType;
-            ss >> tmp_value;
-            sizeType = strSizeType[tmp_value];
-            testParams[idx].sizeType = sizeType;
-            ss >> tmp_value;
-            dataType = strDataType[tmp_value];
-            testParams[idx].dataType = dataType;
-            ss >> tmp_value;
-            cacheType = strCacheType[tmp_value];
-            testParams[idx].cacheType = cacheType;
-            ss >> tmp_value;
-            syncType = strSyncType[tmp_value];
-            testParams[idx].syncType = syncType;
-            ss >> tmp_value;
-            completionType = strCompletionType[tmp_value];
-            testParams[idx].completionType = completionType;
-            ss >> tmp_value;
-            reductionType = strReductionType[tmp_value];
-            testParams[idx].reductionType = reductionType;
-            ss >> tmp_value;
-            bufferCount = strBufferCount[tmp_value];
-            testParams[idx].bufferCount = bufferCount;
-            ss >> tmp_value;
-            priorityType = strPriorityType[tmp_value];
-            testParams[idx].priorityType = priorityType;
-            idx++;
-        }
-        testParams.resize(idx);
-        file.close();
-    }
+	size_t idx = 0;
+	
+	for (TestReductionType reductionType = firstReductionType; reductionType < RT_LAST; reductionType++) {
+		for (TestSyncType syncType = firstSyncType; syncType < SNCT_LAST; syncType++) {
+			for (TestCacheType cacheType = firstCacheType; cacheType < CT_LAST; cacheType++) {      
+				for (SizeType sizeType = firstSizeType; sizeType < ST_LAST; sizeType++) {
+					for (TestDataType dataType = firstDataType; dataType < DT_LAST; dataType++) {
+						for (CompletionType completionType = firstCompletionType; completionType < CMPT_LAST; completionType++) {
+							for (PlaceType placeType = firstPlaceType; placeType < PT_LAST; placeType++) {
+								for (PriorityType priorityType = firstPriorityType; priorityType < PRT_LAST; priorityType++) {
+									for (BufferCount bufferCount = firstBufferCount; bufferCount < BC_LAST; bufferCount++) {
+										testParams[idx].placeType = placeType;
+										testParams[idx].sizeType = sizeType;
+										testParams[idx].dataType = dataType;
+										testParams[idx].cacheType = cacheType;
+										testParams[idx].syncType = syncType;
+										testParams[idx].completionType = completionType;
+										testParams[idx].reductionType = reductionType;
+										testParams[idx].bufferCount = bufferCount;
+										testParams[idx].priorityType = priorityType;
+										idx++;
+									}   
+								}
+							}
+						}
+					}
+				}
+			}
+		}
+	}
 }
 
 template <typename T> 

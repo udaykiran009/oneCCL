@@ -1,7 +1,10 @@
+#define TEST_MLSL_REDUCE
+
 #include "base.hpp"
 #include <functional>
 #include <vector>
 #include <chrono>
+
 
 template < typename T > class AllReduceTest:public BaseTest < T > {
 public:
@@ -62,7 +65,7 @@ public:
             BaseTest<T>::Init (param);  
             param.req[idx] = param.global_comm.allreduce(param.sendBuf[idx].data(), param.recvBuf[idx].data(), param.elemCount,
                 (mlsl::data_type) param.GetDataType(),
-                (mlsl::reduction) param.GetReductionType(), &param.coll_attr);                      
+                (mlsl::reduction) param.GetReductionType(), &param.coll_attr);
         }
         for (idx = 0; idx < param.bufferCount; idx++) {
             param.CompleteRequest(param.req[idx]);
