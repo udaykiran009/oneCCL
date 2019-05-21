@@ -85,36 +85,43 @@ using namespace std;
         }                                                                                 \
     } while (0)
 
-#define RUN_METHOD_DEFINITION(ClassName)                        \
-    template <typename T>                                       \
-    int MainTest::Run(TestParam tParam)                         \
-    {                                                           \
-      ClassName<T> className;                                   \
-      TypedTestParam<T> typedParam(tParam);                     \
-      std::ostringstream output;                                \
-      if (typedParam.processIdx == 0)                           \
-      printf("%s", output.str().c_str());                       \
-      int result = className.Run(typedParam);                   \
-      int result_final = 0;                                     \
-      mlsl::communicator comm;                                  \
-      std::shared_ptr <mlsl::request> req;                      \
-      req = comm.allreduce(&result, &result_final, 1,           \
-                           mlsl::data_type::dtype_int,          \
-                           mlsl::reduction::sum);               \
-      req->wait();                                              \
-      if (result_final > 0)                                     \
-      {                                                         \
-          PrintErrMessage(className.GetErrMessage(), output);   \
-          if (typedParam.processIdx == 0)                       \
-          {                                                     \
-              printf("%s", output.str().c_str());               \
-              EXPECT_TRUE(false) << output.str();               \
-          }                                                     \
-          output.str("");                                       \
-          output.clear();                                       \
-          return TEST_FAILURE;                                  \
-      }                                                         \
-      return TEST_SUCCESS;                                      \
+
+#define RUN_METHOD_DEFINITION(ClassName)                                 \
+    template <typename T>                                                \
+    int MainTest::Run(TestParam tParam)                                  \
+    {                                                                    \
+      ClassName<T> className;                                            \
+      TypedTestParam<T> typedParam(tParam);                              \
+      std::ostringstream output;                                         \
+      if (typedParam.processIdx == 0)                                    \
+      printf("%s", output.str().c_str());                                \
+      int result = className.Run(typedParam);                            \
+      int result_final = 0;                                              \
+      static int glob_idx = 0;                                           \
+      mlsl::communicator comm;                                           \
+      std::shared_ptr <mlsl::request> req;                               \
+      req = comm.allreduce(&result, &result_final, 1,                    \
+                           mlsl::data_type::dtype_int,                   \
+                           mlsl::reduction::sum);                        \
+      req->wait();                                                       \
+      if (result_final > 0)                                              \
+      {                                                                  \
+          PrintErrMessage(className.GetErrMessage(), output);            \
+          if (typedParam.processIdx == 0)                                \
+          {                                                              \
+              printf("%s", output.str().c_str());                        \
+              if (glob_idx) {                                            \
+                  TypedTestParam<T> testParam(testParams[glob_idx - 1]); \
+                  testParam.Print(output);                               \
+              }                                                          \
+              typedParam.Print(output);                                  \
+              EXPECT_TRUE(false) << output.str();                        \
+          }                                                              \
+          output.str("");                                                \
+          output.clear();                                                \
+          return TEST_FAILURE;                                           \
+      }         glob_idx++;                                              \
+      return TEST_SUCCESS;                                               \
 }
 
 
@@ -227,7 +234,7 @@ map < int, const char *>dataTypeStr = { {DT_CHAR, "DT_CHAR"},
                                         {DT_INT, "DT_INT"},
                                         {DT_BFP16, "DT_BFP16"},
                                         {DT_FLOAT, "DT_FLOAT"},
-                                        {DT_DOUBLE, "DT_DOUBLE"},
+                                        {DT_DOUBLE, "DT_DOUBLE"}
                                         // {DT_INT64, "INT64"},
                                         // {DT_UINT64, "UINT64"}
 };
@@ -247,8 +254,8 @@ map < int, const char *>reductionTypeStr = { {RT_SUM, "RT_SUM"},
                                              {RT_PROD, "RT_PROD"},
                                              {RT_MIN, "RT_MIN"},
                                              {RT_MAX, "RT_MAX"}
-#endif											 
-											 };
+#endif
+                                             };
 
 typedef enum {
     CT_CACHE_0 = 0,
@@ -258,11 +265,11 @@ typedef enum {
 TestCacheType firstCacheType = CT_CACHE_0;
 map < int, const char * >cacheTypeStr = { {CT_CACHE_0, "CT_CACHE_0"},
 //                                          {CT_CACHE_1, "CT_CACHE_1"}
-										  };
+                                          };
 
 map < int, int > cacheTypeValues = { {CT_CACHE_0, 0},
 //                                     {CT_CACHE_1, 1}
-									 };
+                                     };
 
 typedef enum {
     SNCT_SYNC_0 = 0,
@@ -300,11 +307,24 @@ POST_AND_PRE_INCREMENTS(TestSyncType, SNCT_LAST);
 POST_AND_PRE_INCREMENTS(PriorityType, PRT_LAST);
 POST_AND_PRE_INCREMENTS(BufferCount, BC_LAST);
 
+void InitCollAttr(mlsl_coll_attr_t *coll_attr)
+{
+        coll_attr->prologue_fn = NULL;
+        coll_attr->epilogue_fn = NULL;
+        coll_attr->reduction_fn = NULL;
+        coll_attr->priority = 0;
+        coll_attr->synchronous = 0;
+        coll_attr->match_id = NULL;
+        coll_attr->to_cache = 0;
+}
+
 void PrintErrMessage(char* errMessage, std::ostream &output)
 {
     size_t messageLen = strlen(errMessage);
     mlsl::communicator comm;
     std::shared_ptr <mlsl::request> req;
+    mlsl_coll_attr_t coll_attr {};
+    InitCollAttr(&coll_attr);
     int processCount = comm.size();
     int processIdx = comm.rank();
     size_t* arrMessageLen = new size_t[processCount];
@@ -313,7 +333,7 @@ void PrintErrMessage(char* errMessage, std::ostream &output)
     displs[0] = 1;
     for (int i = 1; i < processCount; i++)
         displs[i] = 1;
-    req = comm.allgatherv(&messageLen, 1, arrMessageLen_copy, displs, mlsl::data_type::dtype_int);
+    req = comm.allgatherv(&messageLen, 1, arrMessageLen_copy, displs, mlsl::data_type::dtype_int, &coll_attr);
     req->wait();
     for (int i = 0; i < processCount; i++)
         arrMessageLen[i] = arrMessageLen_copy[i];
@@ -327,7 +347,7 @@ void PrintErrMessage(char* errMessage, std::ostream &output)
         return;
     }
     char* arrErrMessage = new char[fullMessageLen];
-    req = comm.allgatherv(errMessage, messageLen, arrErrMessage, arrMessageLen, mlsl::data_type::dtype_char);
+    req = comm.allgatherv(errMessage, messageLen, arrErrMessage, arrMessageLen, mlsl::data_type::dtype_char, &coll_attr);
     req->wait();
     if (processIdx == 0)
     {
@@ -358,36 +378,35 @@ std::vector<TestParam> testParams(TEST_COUNT);
 
 void InitTestParams()
 {
-	size_t idx = 0;
-	
-	for (TestReductionType reductionType = firstReductionType; reductionType < RT_LAST; reductionType++) {
-		for (TestSyncType syncType = firstSyncType; syncType < SNCT_LAST; syncType++) {
-			for (TestCacheType cacheType = firstCacheType; cacheType < CT_LAST; cacheType++) {      
-				for (SizeType sizeType = firstSizeType; sizeType < ST_LAST; sizeType++) {
-					for (TestDataType dataType = firstDataType; dataType < DT_LAST; dataType++) {
-						for (CompletionType completionType = firstCompletionType; completionType < CMPT_LAST; completionType++) {
-							for (PlaceType placeType = firstPlaceType; placeType < PT_LAST; placeType++) {
-								for (PriorityType priorityType = firstPriorityType; priorityType < PRT_LAST; priorityType++) {
-									for (BufferCount bufferCount = firstBufferCount; bufferCount < BC_LAST; bufferCount++) {
-										testParams[idx].placeType = placeType;
-										testParams[idx].sizeType = sizeType;
-										testParams[idx].dataType = dataType;
-										testParams[idx].cacheType = cacheType;
-										testParams[idx].syncType = syncType;
-										testParams[idx].completionType = completionType;
-										testParams[idx].reductionType = reductionType;
-										testParams[idx].bufferCount = bufferCount;
-										testParams[idx].priorityType = priorityType;
-										idx++;
-									}   
-								}
-							}
-						}
-					}
-				}
-			}
-		}
-	}
+    size_t idx = 0;
+    for (TestReductionType reductionType = firstReductionType; reductionType < RT_LAST; reductionType++) {
+        for (TestSyncType syncType = firstSyncType; syncType < SNCT_LAST; syncType++) {
+            for (TestCacheType cacheType = firstCacheType; cacheType < CT_LAST; cacheType++) {
+                for (SizeType sizeType = firstSizeType; sizeType < ST_LAST; sizeType++) {
+                    for (TestDataType dataType = firstDataType; dataType < DT_LAST; dataType++) {
+                         for (CompletionType completionType = firstCompletionType; completionType < CMPT_LAST; completionType++) {
+                            for (PlaceType placeType = firstPlaceType; placeType < PT_LAST; placeType++) {
+                                for (PriorityType priorityType = firstPriorityType; priorityType < PRT_LAST; priorityType++) {
+                                    for (BufferCount bufferCount = firstBufferCount; bufferCount < BC_LAST; bufferCount++) {
+                                        testParams[idx].placeType = placeType;
+                                        testParams[idx].sizeType = sizeType;
+                                        testParams[idx].dataType = dataType;
+                                        testParams[idx].cacheType = cacheType;
+                                        testParams[idx].syncType = syncType;
+                                        testParams[idx].completionType = completionType;
+                                        testParams[idx].reductionType = reductionType;
+                                        testParams[idx].bufferCount = bufferCount;
+                                        testParams[idx].priorityType = priorityType;
+                                        idx++;
+                                    }
+                                }
+                            }
+                         }
+                    }
+                }
+            }
+        }
+    }
 }
 
 template <typename T> 
@@ -406,17 +425,11 @@ struct TypedTestParam
     mlsl::communicator global_comm;
 
     TypedTestParam(TestParam tParam):testParam(tParam) {
+        InitCollAttr(&coll_attr);
         elemCount = GetElemCount();
         bufferCount = GetBufferCount();
         processCount = comm.size();
         processIdx = comm.rank();
-        coll_attr.prologue_fn = NULL;
-        coll_attr.epilogue_fn = NULL;
-        coll_attr.reduction_fn = NULL;
-        coll_attr.priority = 0;
-        coll_attr.synchronous = 0;
-        coll_attr.match_id = NULL;
-        coll_attr.to_cache = 0;
         sendBuf.resize(bufferCount); 
         recvBuf.resize(bufferCount); 
         req.resize(bufferCount);
@@ -467,7 +480,40 @@ struct TypedTestParam
             priority = 0;
         return priority; 
     }
-
+	
+void Print(std::ostream &output) {
+            char strParameters[1000];
+        memset(strParameters, '\0', 1000);
+        sprintf(strParameters, "\nTest params: \
+               \nprocessIdx %zu \
+               \nbufferCount %zu \
+               \nreductionType %s \
+               \nplaceType %s \
+               \ncacheType %s \
+               \nsizeValue %s \
+               \npriorityType %s \
+               \nsyncType %s \
+               \ndataType %s \
+               \ncompletionType %s \
+               \nelemCount %zu \
+               \nprocessCount %zu \
+               \n-------------\n",
+               processIdx,
+               bufferCount,
+               GetReductionTypeStr(),
+               GetPlaceTypeStr(),
+               GetCacheTypeStr(),
+               GetSizeTypeStr(),
+               GetPriorityTypeStr(),
+               GetSyncTypeStr(),
+               GetDataTypeStr(),
+               GetCompletionTypeStr(),
+               elemCount,
+               processCount
+               );
+               output << strParameters;
+               fflush(stdout);
+    }
 
     const char *GetPlaceTypeStr() {
         return placeTypeStr[testParam.placeType];
@@ -533,9 +579,9 @@ std::ostream&  operator<<(std::ostream & stream, const TestParam & tParam) {
     << " \ncacheType " << cacheTypeStr[tParam.cacheType]
     << " \nsizeType " << sizeTypeStr[tParam.sizeType]
     << " \npriorityType " << priorityTypeStr[tParam.priorityType]
-    << " \nbufferCount " << bufferCountStr[tParam.bufferCount]
     << " \nsyncType " << syncTypeStr[tParam.syncType]
-    << " \ndataType " << dataTypeStr[tParam.dataType];
+    << " \ndataType " << dataTypeStr[tParam.dataType]
+    << " \ndataType " << completionTypeStr[tParam.completionType];
 }
 
 template <typename T> class BaseTest {
@@ -557,7 +603,6 @@ public:
 
     char errMessage[100]{};
 
-    // BaseTest() = default;
     BaseTest() { memset(this->errMessage, '\0', 100); }
     virtual void Init(TypedTestParam <T> &param){
             param.coll_attr.priority = (int)param.PriorityRequest();
@@ -587,13 +632,15 @@ class MainTest:public::testing::TestWithParam <TestParam> {
     int Run(TestParam param);
 public:
     int Test(TestParam param) {
+        // printf("type = %d\n", param.dataType);
         switch (param.dataType) {
         case DT_CHAR:
             return Run <char>(param);
         case DT_INT:
             return Run <int>(param);
-        case DT_BFP16:
-            return TEST_SUCCESS;
+        // case DT_BFP16:
+             // temporary
+            // return TEST_SUCCESS;
         case DT_FLOAT:
             return Run <float>(param);
         case DT_DOUBLE:
