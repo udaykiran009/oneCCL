@@ -72,9 +72,9 @@ public:
                     param.sendBuf[j][offset[param.processIdx] + i] = param.processIdx + i;
                 }
             }
-        }   
+        }
         size_t idx = 0;
-        for (idx = 0; idx < param.bufferCount; idx++) { 
+        for (idx = 0; idx < param.bufferCount; idx++) {
             BaseTest<T>::Init (param);
             param.req[idx] =
                 param.global_comm.allgatherv(param.sendBuf[idx].data(), recvCounts[param.processIdx], param.recvBuf[idx].data(),

@@ -19,7 +19,7 @@ public:
     }
 
     int Run(TypedTestParam <T> &param) {
-        for (size_t j = 0; j < param.bufferCount; j++) 
+        for (size_t j = 0; j < param.bufferCount; j++)
             for (size_t i = 0; i < param.elemCount; i++) {
                 if (param.processIdx == ROOT_PROCESS_IDX)
                     param.sendBuf[j][i] = i;
@@ -27,7 +27,7 @@ public:
                     param.sendBuf[j][i] = static_cast<T>(SOME_VALUE);
             }
             size_t idx = 0;
-            for (idx = 0; idx < param.bufferCount; idx++) { 
+            for (idx = 0; idx < param.bufferCount; idx++) {
                 BaseTest<T>::Init (param);
                 param.req[idx] = param.global_comm.bcast(param.sendBuf[idx].data(), param.elemCount,
                     (mlsl::data_type) param.GetDataType(),

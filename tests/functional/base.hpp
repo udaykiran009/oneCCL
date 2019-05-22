@@ -46,12 +46,12 @@ using namespace std;
       strToPrint = std::string(prefix) + strToPrint; \
       PRINT("%s", strToPrint.c_str());               \
 } while (0)
-    
+
 #else /* ENABLE_DEBUG */
 
 #define PRINT(fmt, ...) {}
 #define PRINT_BUFFER(buf, bufSize, prefix) {}
-    
+
 #endif /* ENABLE_DEBUG */
 
 
@@ -112,15 +112,19 @@ using namespace std;
               printf("%s", output.str().c_str());                        \
               if (glob_idx) {                                            \
                   TypedTestParam<T> testParam(testParams[glob_idx - 1]); \
+                  output << "Previous case:";                            \
                   testParam.Print(output);                               \
               }                                                          \
+              output << "Current case:";                                 \
               typedParam.Print(output);                                  \
               EXPECT_TRUE(false) << output.str();                        \
           }                                                              \
           output.str("");                                                \
           output.clear();                                                \
+          glob_idx++;                                                    \
           return TEST_FAILURE;                                           \
-      }         glob_idx++;                                              \
+      }                                                                  \
+      glob_idx++;                                                        \
       return TEST_SUCCESS;                                               \
 }
 
@@ -264,6 +268,7 @@ typedef enum {
 } TestCacheType;
 TestCacheType firstCacheType = CT_CACHE_0;
 map < int, const char * >cacheTypeStr = { {CT_CACHE_0, "CT_CACHE_0"},
+//TODO: implement cache types support
 //                                          {CT_CACHE_1, "CT_CACHE_1"}
                                           };
 
@@ -279,7 +284,7 @@ typedef enum {
 TestSyncType firstSyncType = SNCT_SYNC_0;
 map < int, const char * >syncTypeStr = { {SNCT_SYNC_0, "SNCT_SYNC_0"},
                                          {SNCT_SYNC_1, "SNCT_SYNC_1"}};
-                                                      
+
 map < int, int > syncTypeValues = { {SNCT_SYNC_0, 0},
                                     {SNCT_SYNC_1, 1}};
 
@@ -309,13 +314,13 @@ POST_AND_PRE_INCREMENTS(BufferCount, BC_LAST);
 
 void InitCollAttr(mlsl_coll_attr_t *coll_attr)
 {
-        coll_attr->prologue_fn = NULL;
-        coll_attr->epilogue_fn = NULL;
-        coll_attr->reduction_fn = NULL;
-        coll_attr->priority = 0;
-        coll_attr->synchronous = 0;
-        coll_attr->match_id = NULL;
-        coll_attr->to_cache = 0;
+    coll_attr->prologue_fn = NULL;
+    coll_attr->epilogue_fn = NULL;
+    coll_attr->reduction_fn = NULL;
+    coll_attr->priority = 0;
+    coll_attr->synchronous = 0;
+    coll_attr->match_id = NULL;
+    coll_attr->to_cache = 0;
 }
 
 void PrintErrMessage(char* errMessage, std::ostream &output)
@@ -357,7 +362,7 @@ void PrintErrMessage(char* errMessage, std::ostream &output)
     delete[] arrMessageLen_copy;
     delete[] arrErrMessage;
     delete[] displs;
-    
+
 }
 
 //This struct needed for gtest
@@ -373,7 +378,7 @@ struct TestParam {
     BufferCount bufferCount;
 };
 
-#define TEST_COUNT (PRT_LAST * CMPT_LAST * SNCT_LAST * DT_LAST * ST_LAST *  RT_LAST * BC_LAST * CT_LAST * PT_LAST)
+#define TEST_COUNT (PRT_LAST * CMPT_LAST * SNCT_LAST * (DT_LAST-1) * ST_LAST *  RT_LAST * BC_LAST * CT_LAST * PT_LAST)
 std::vector<TestParam> testParams(TEST_COUNT);
 
 void InitTestParams()
@@ -384,7 +389,10 @@ void InitTestParams()
             for (TestCacheType cacheType = firstCacheType; cacheType < CT_LAST; cacheType++) {
                 for (SizeType sizeType = firstSizeType; sizeType < ST_LAST; sizeType++) {
                     for (TestDataType dataType = firstDataType; dataType < DT_LAST; dataType++) {
-                         for (CompletionType completionType = firstCompletionType; completionType < CMPT_LAST; completionType++) {
+                        if (dataType == DT_BFP16)
+                            //TODO: remove skipped data type
+                            continue;
+                        for (CompletionType completionType = firstCompletionType; completionType < CMPT_LAST; completionType++) {
                             for (PlaceType placeType = firstPlaceType; placeType < PT_LAST; placeType++) {
                                 for (PriorityType priorityType = firstPriorityType; priorityType < PRT_LAST; priorityType++) {
                                     for (BufferCount bufferCount = firstBufferCount; bufferCount < BC_LAST; bufferCount++) {
@@ -409,8 +417,8 @@ void InitTestParams()
     }
 }
 
-template <typename T> 
-struct TypedTestParam 
+template <typename T>
+struct TypedTestParam
 {
     TestParam testParam;
     size_t elemCount;
@@ -430,8 +438,8 @@ struct TypedTestParam
         bufferCount = GetBufferCount();
         processCount = comm.size();
         processIdx = comm.rank();
-        sendBuf.resize(bufferCount); 
-        recvBuf.resize(bufferCount); 
+        sendBuf.resize(bufferCount);
+        recvBuf.resize(bufferCount);
         req.resize(bufferCount);
         for (size_t i = 0; i < bufferCount; i++)
             sendBuf[i].resize(elemCount * processCount * sizeof(T));
@@ -443,7 +451,7 @@ struct TypedTestParam
                 recvBuf[i] = sendBuf[i];
     }
 
-    void CompleteRequest(std::shared_ptr < mlsl::request > req) { 
+    void CompleteRequest(std::shared_ptr < mlsl::request > req) {
         if (testParam.completionType == CMPT_TEST) {
             bool isCompleted = false;
             size_t count = 0;
@@ -469,50 +477,50 @@ struct TypedTestParam
             }
             comp_delay_ms = 2 * comp_iter_time_ms /bufferCount;
             memset(msg_completions, 0, bufferCount * sizeof(size_t));
-            for (idx = 0; idx < bufferCount; idx++) {   
+            for (idx = 0; idx < bufferCount; idx++) {
                 if (idx % 2 == 0) usleep(comp_delay_ms * 1000);
                 priority = min_priority + idx;
-                if (priority > max_priority) 
+                if (priority > max_priority)
                     priority = max_priority;
             }
         }
         else
             priority = 0;
-        return priority; 
+        return priority;
     }
-	
-void Print(std::ostream &output) {
-            char strParameters[1000];
+
+    void Print(std::ostream &output) {
+        char strParameters[1000];
         memset(strParameters, '\0', 1000);
         sprintf(strParameters, "\nTest params: \
+               \nprocessCount %zu \
                \nprocessIdx %zu \
-               \nbufferCount %zu \
+               \nelemCount %zu \
                \nreductionType %s \
-               \nplaceType %s \
+               \nsyncType %s \
                \ncacheType %s \
                \nsizeValue %s \
-               \npriorityType %s \
-               \nsyncType %s \
                \ndataType %s \
                \ncompletionType %s \
-               \nelemCount %zu \
-               \nprocessCount %zu \
+               \nplaceType %s \
+               \npriorityType %s \
+               \nbufferCount %zu \
                \n-------------\n",
+               processCount,
                processIdx,
-               bufferCount,
+               elemCount,
                GetReductionTypeStr(),
-               GetPlaceTypeStr(),
+               GetSyncTypeStr(),
                GetCacheTypeStr(),
                GetSizeTypeStr(),
-               GetPriorityTypeStr(),
-               GetSyncTypeStr(),
                GetDataTypeStr(),
                GetCompletionTypeStr(),
-               elemCount,
-               processCount
+               GetPlaceTypeStr(),
+               GetPriorityTypeStr(),
+               bufferCount
                );
-               output << strParameters;
-               fflush(stdout);
+       output << strParameters;
+       fflush(stdout);
     }
 
     const char *GetPlaceTypeStr() {
@@ -566,23 +574,7 @@ void Print(std::ostream &output) {
     PriorityType GetPriorityType() {
         return testParam.priorityType;
     }
-friend std::ostream&  operator<<(std::ostream & stream, const TestParam & tParam);  
 };
-std::ostream&  operator<<(std::ostream & stream, const TestParam & tParam) {
-    mlsl::communicator comm;
-    size_t processIdx = comm.rank();
-    return stream 
-    << " \nprocessIdx " << processIdx
-    << " \nbufferCount " << bufferCountStr[tParam.bufferCount]
-    << " \nreductionType " << reductionTypeStr[tParam.reductionType]
-    << " \nplaceType " << placeTypeStr[tParam.placeType]
-    << " \ncacheType " << cacheTypeStr[tParam.cacheType]
-    << " \nsizeType " << sizeTypeStr[tParam.sizeType]
-    << " \npriorityType " << priorityTypeStr[tParam.priorityType]
-    << " \nsyncType " << syncTypeStr[tParam.syncType]
-    << " \ndataType " << dataTypeStr[tParam.dataType]
-    << " \ndataType " << completionTypeStr[tParam.completionType];
-}
 
 template <typename T> class BaseTest {
 
@@ -621,35 +613,32 @@ public:
         if ((T)(i + processCount - 1) > T(i))
             return (T)(i + processCount - 1);
         return (T)i;
-    } 
-    virtual int Run(TypedTestParam <T> &param) = 0; 
+    }
+    virtual int Run(TypedTestParam <T> &param) = 0;
     virtual int Check(TypedTestParam <T> &param) = 0;
 
 };
 
 class MainTest:public::testing::TestWithParam <TestParam> {
-    template <typename T> 
+    template <typename T>
     int Run(TestParam param);
 public:
     int Test(TestParam param) {
-        // printf("type = %d\n", param.dataType);
         switch (param.dataType) {
         case DT_CHAR:
             return Run <char>(param);
         case DT_INT:
             return Run <int>(param);
+        //TODO: add additional type to testing
         // case DT_BFP16:
-             // temporary
-            // return TEST_SUCCESS;
+           // return Run <>(param);
         case DT_FLOAT:
             return Run <float>(param);
         case DT_DOUBLE:
             return Run <double>(param);
-            // case DT_INT64:
-            // temporary
+        // case DT_INT64:
             // return TEST_SUCCESS;
-            // case DT_UINT64:
-            // temporary
+        // case DT_UINT64:
             // return TEST_SUCCESS;
         default:
             EXPECT_TRUE(false) << "Unknown data type: " << param.dataType;

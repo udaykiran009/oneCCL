@@ -49,7 +49,7 @@ public:
                         return TEST_FAILURE;
                     }
                 }
-            }   
+            }
         }
         return TEST_SUCCESS;
     }
@@ -61,8 +61,8 @@ public:
             }
         }
         size_t idx = 0;
-        for (idx = 0; idx < param.bufferCount; idx++) { 
-            BaseTest<T>::Init (param);  
+        for (idx = 0; idx < param.bufferCount; idx++) {
+            BaseTest<T>::Init (param);
             param.req[idx] = param.global_comm.allreduce(param.sendBuf[idx].data(), param.recvBuf[idx].data(), param.elemCount,
                 (mlsl::data_type) param.GetDataType(),
                 (mlsl::reduction) param.GetReductionType(), &param.coll_attr);
