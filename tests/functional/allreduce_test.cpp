@@ -1,4 +1,5 @@
 #define TEST_MLSL_REDUCE
+#define Collective_Name "MLSL_ALLREDUCE_ALGO"
 
 #include "base.hpp"
 #include <functional>
@@ -11,7 +12,7 @@ public:
     int Check(TypedTestParam < T > &param) {
         for (size_t j = 0; j < param.bufferCount; j++) {
             for (size_t i = 0; i < param.elemCount; i++) {
-                if (param.GetReductionType() == RT_SUM) {
+                if (param.GetReductionName() == RT_SUM) {
                     T expected =
                         ((param.processCount * (param.processCount - 1) / 2) +
                         (i * param.processCount));
@@ -22,23 +23,23 @@ public:
                     }
                 }
 
-                if (param.GetReductionType() == RT_MAX) {
-                    T expected = BaseTest<T>::get_expected_max(i, param.processCount);
+                if (param.GetReductionName() == RT_MAX) {
+                    T expected = get_expected_max<T>(i, param.processCount);
                     if (param.recvBuf[j][i] != expected) {
                         sprintf(this->errMessage, "[%zu] sent sendBuf[%zu][%zu] = %f, got recvBuf[%zu][%zu] = %f, but expected = %f\n",
                         param.processIdx, j, i, (double) param.sendBuf[j][i], j, i, (double) param.recvBuf[j][i], (double) expected);
                         return TEST_FAILURE;
                     }
                 }
-                if (param.GetReductionType() == RT_MIN) {
-                    T expected = BaseTest<T>::get_expected_min(i, param.processCount);
+                if (param.GetReductionName() == RT_MIN) {
+                    T expected = get_expected_min<T>(i, param.processCount);
                     if (param.recvBuf[j][i] != expected) {
                         sprintf(this->errMessage, "[%zu] sent sendBuf[%zu][%zu] = %f, got recvBuf[%zu][%zu] = %f, but expected = %f\n",
                             param.processIdx, j, i, (double) param.sendBuf[j][i], j, i, (double) param.recvBuf[j][i], (double) expected);
                         return TEST_FAILURE;
                     }
                 }
-                if (param.GetReductionType() == RT_PROD) {
+                if (param.GetReductionName() == RT_PROD) {
                     T expected = 1;
                     for (size_t k = 0; k < param.processCount; k++) {
                         expected *= i + k;
@@ -55,21 +56,19 @@ public:
     }
 
     int Run(TypedTestParam < T > &param) {
-        for (size_t j = 0; j < param.bufferCount; j++) {
-            for (size_t i = 0; i < param.elemCount; i++) {
-                param.sendBuf[j][i] = param.processIdx + i;
-            }
-        }
+        SHOW_ALGO(Collective_Name);
+        this->FillBuffers (param);
         size_t idx = 0;
+        size_t* Buffers = param.DefineStartOrder();
         for (idx = 0; idx < param.bufferCount; idx++) {
-            BaseTest<T>::Init (param);
-            param.req[idx] = param.global_comm.allreduce(param.sendBuf[idx].data(), param.recvBuf[idx].data(), param.elemCount,
-                (mlsl::data_type) param.GetDataType(),
-                (mlsl::reduction) param.GetReductionType(), &param.coll_attr);
+            this->Init (param);
+            param.req[Buffers[idx]] = (param.GetPlaceType() == PT_IN) ?
+                param.global_comm.allreduce(param.recvBuf[idx].data(), param.recvBuf[idx].data(), param.elemCount,
+                              (mlsl::data_type) param.GetDataType(),(mlsl::reduction) param.GetReductionName(), &param.coll_attr) :
+                param.global_comm.allreduce(param.sendBuf[idx].data(), param.recvBuf[idx].data(), param.elemCount,
+                              (mlsl::data_type) param.GetDataType(),(mlsl::reduction) param.GetReductionName(), &param.coll_attr);
         }
-        for (idx = 0; idx < param.bufferCount; idx++) {
-            param.CompleteRequest(param.req[idx]);
-        }
+        param.DefineCompletionOrderAndComplete();
         int result = Check(param);
         return result;
     }

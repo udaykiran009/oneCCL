@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/bash -x
 
 echo "DEBUG: GIT_BRANCH = ${GIT_BRANCH}"
 echo "DEBUG: MLSL_BUILD_ID = ${MLSL_BUILD_ID}"
@@ -11,65 +11,21 @@ then
     exit 1
 fi
 
-. ${SCRIPT_DIR}/settings.sh
-
+# . ${SCRIPT_DIR}/settings.sh
+CURRENT_MLSL_BUILD_DIR="${MLSL_REPO_DIR}/${MLSL_BUILD_ID}"
+MLSL_INSTALL_DIR="${SCRIPT_DIR}/../../build/_install"
 BASENAME=`basename $0 .sh`
-WORK_DIR=`cd ${SCRIPT_DIR}/../.. && pwd -P`
-MLSL_INSTALL_DIR="${WORK_DIR}/_install"
+WORK_DIR=`cd ${SCRIPT_DIR}/../../ && pwd -P`
 HOSTNAME=`hostname -s`
 
-#TODO: Fix it
-if [ "$os" = "rhel6.7" ]
-then
-    export PATH_TO_QUANT_LIB=""
-else
-    export PATH_TO_QUANT_LIB="/p/pdsd/scratch/Software/DL_COMPRESS_LIB/libdlcomp.so"
-fi
-
-if [ "$coverage" = "true" ] && [ "$compiler" != "gcc" ]
-then
-    export CODECOV=1
-    
-    if [ -z "${MLSL_BUILD_ID}" ]
-    then
-        export TMP_COVERAGE_DIR=${WORK_DIR}/coverage
-    else
-        export TMP_COVERAGE_DIR=${MLSL_REPO_DIR}/${MLSL_BUILD_ID}/coverage
-        export CODECOV_SRCROOT=${WORK_DIR}
-    fi
-fi
-
-CURRENT_MLSL_BUILD_DIR="${MLSL_REPO_DIR}/${MLSL_BUILD_ID}"
-CURRENT_MLSL_BUILD=`cd ${CURRENT_MLSL_BUILD_DIR} && ls -1 *.tgz 2>/dev/null | head -1`
-CURRENT_MLSL_BUILD_BASENAME=`basename ${CURRENT_MLSL_BUILD} .tgz`
-
-echo "DEBUG: CURRENT_MLSL_BUILD_DIR = $CURRENT_MLSL_BUILD_DIR"
-echo "DEBUG: CURRENT_MLSL_BUILD = $CURRENT_MLSL_BUILD"
-echo "DEBUG: CURRENT_MLSL_BUILD_BASENAME = $CURRENT_MLSL_BUILD_BASENAME"
-
-if [ -f ${CURRENT_MLSL_BUILD_DIR}/${CURRENT_MLSL_BUILD} ]
-then
-    tar xfmz ${CURRENT_MLSL_BUILD_DIR}/${CURRENT_MLSL_BUILD}
-    if [ $? -ne 0 ]
-    then
-        echo "ERROR: tar failed"
-        exit 1
-    fi
-
-    cd ${WORK_DIR}/${CURRENT_MLSL_BUILD_BASENAME} && ./install.sh -s -d ${MLSL_INSTALL_DIR}
-    if [ $? -ne 0 ]
-    then
-        echo "ERROR: install.sh failed"
-        exit 1
-    fi
-    
-    cd - > /dev/null
-fi
+echo "WORK_DIR = $WORK_DIR"
+echo "MLSL_INSTALL_DIR = $MLSL_INSTALL_DIR"
+# echo "WORK_DIR = $WORK_DIR"
 
 # 'compiler' is set by Jenkins
 case $compiler in
-    icc16.0.4)
-        . /p/pdsd/opt/EM64T-LIN/intel/compilers_and_libraries_2016.4.258/linux/bin/compilervars.sh intel64
+    icc18.0.1)
+        . /p/pdsd/opt/EM64T-LIN/intel/compilers_and_libraries_2018.1.163/linux/bin/compilervars.sh intel64
         COMPILER=intel
         ;;
     icc17.0.4)
@@ -97,6 +53,34 @@ then
     fi
 fi
 
+#export I_MPI_JOB_TIMEOUT=400
+
+if [ -n "${TESTING_ENVIRONMENT}" ]
+then
+    echo "TESTING_ENVIRONMENT is " ${TESTING_ENVIRONMENT}
+    for line in ${TESTING_ENVIRONMENT}
+    do
+        export "$line"
+    done
+fi
+
+cd ${WORK_DIR}/build/
+# cmake .. && make clean && make && make install
+
+pwd
+rm -rf ${WORK_DIR}/_log
+mkdir -p ${WORK_DIR}/_log
+
+if [ -z "$runtime" ]
+then
+    runtime="ofi"
+fi
+
+if [ "$runtime" == "mpi_adjust" ] || [ "$runtime" == "mpi" ]
+then
+    . /p/pdsd/scratch/Uploads/IMPI/linux/functional_testing/impi/impi2019u4/intel64/bin/mpivars.sh
+fi
+
 if [ -z "${MLSL_ROOT}" ]
 then
     echo "WARNING: MLSL_ROOT isn't set"
@@ -109,42 +93,68 @@ then
     fi
 fi
 
-#export I_MPI_JOB_TIMEOUT=400
 
-if [ -n "${TESTING_ENVIRONMENT}" ]
-then
-    for line in ${TESTING_ENVIRONMENT}
-    do
-	export "$line"
-    done
-fi
+case "$runtime" in
+       mpi )
+           export MLSL_ATL_TRANSPORT=MPI
+           ctest -VV -C Mpi
+           ;;
+       mpi_adjust )
+            export MLSL_ATL_TRANSPORT=MPI
+            for bcast in "ring" "double_tree" "whole"
+                do
+                    MLSL_BCAST_ALGO=$bcast ctest -VV -C mpi_bcast_$bcast
+                done
+            for reduce in "tree" "double_tree" "whole"
+                do
+                    MLSL_REDUCE_ALGO=$reduce ctest -VV -C mpi_reduce_$reduce
+                done
+            for allreduce in "tree" "starlike" "ring" "double_tree" "whole"
+                do
+                    MLSL_ALLREDUCE_ALGO=$allreduce ctest -VV -C mpi_allreduce_$allreduce
+                done
+            for allgatherv in "naive" "whole"
+                do
+                    MLSL_ALLGATHERV_ALGO=$allgatherv ctest -VV -C mpi_allgatherv_$allgatherv
+                done
+           ;;
+       ofi_adjust )
+            for bcast in "ring" "double_tree"
+                do
+                    MLSL_BCAST_ALGO=$bcast ctest -VV -C mpi_bcast_$bcast
+                done
+            for reduce in "tree" "double_tree"
+                do
+                    MLSL_REDUCE_ALGO=$reduce ctest -VV -C mpi_reduce_$reduce
+                done
+            for allreduce in "tree" "starlike" "ring" "double_tree"
+                do
+                    MLSL_ALLREDUCE_ALGO=$allreduce ctest -VV -C mpi_allreduce_$allreduce
+                done
+            for allgatherv in "naive"
+                do
+                    MLSL_ALLGATHERV_ALGO=$allgatherv ctest -VV -C mpi_allgatherv_$allgatherv
+                done
+           ;;
+       * )
+           ctest -VV -C Default
+           ;;
+esac
 
-pwd
-rm -rf ${WORK_DIR}/_log
-mkdir -p ${WORK_DIR}/_log
-echo "make testing..."
-make COMPILER=${COMPILER} testing > >(tee -a ${WORK_DIR}/_log/out.log) 2> >(tee -a ${WORK_DIR}/_log/err.log >&2)
-testing_status=${PIPESTATUS[0]}
-grep -r "FAILED" ${WORK_DIR}/tests/examples/*/*.log > /dev/null 2>&1
-grep_status_fail=${PIPESTATUS[0]}
-grep -r 'Run FAILED\|Make FAILED' ${WORK_DIR}/_log/*.log > /dev/null 2>&1
-log_status_fail=${PIPESTATUS[0]}
 
-if [ "$testing_status" -eq 0 ] && [ "$grep_status_fail" -ne 0 ] && [ "$log_status_fail" -ne 0 ]
-then
-    echo "make testing... OK"
-else
-    echo "make testing... NOK"
-    exit 1
-fi
-cd ${WORK_DIR}
+echo "MLSL_ATL_TRANSPORT is " $MLSL_ATL_TRANSPORT
+
+FTESTS_DIR=${WORK_DIR}/tests/functional
 if [ "$coverage" = "true" ] && [ "$compiler" != "gcc" ]
 then
-    # Do not create ep_server processes in case of single node
-    export MLSL_CHECK_SINGLE_NODE=1
 
     echo "Code Coverage"
-    make COMPILER=intel codecov
+    cd $(UTESTS_DIR) && profmerge -prof_dpi pgopti_unit.dpi && cp pgopti_unit.dpi $(BASE_DIR)/pgopti_unit.dpi
+    cd $(FTESTS_DIR) && profmerge -prof_dpi pgopti_func.dpi && cp pgopti_func.dpi $(CURRENT_MLSL_BUILD_DIR)/pgopti_func.dpi
+    cd $(EXAMPLES_DIR) && profmerge -prof_dpi pgopti_examples.dpi && cp pgopti_examples.dpi $(BASE_DIR)/pgopti_examples.dpi
+    profmerge -prof_dpi pgopti.dpi -a pgopti_unit.dpi pgopti_func.dpi
+    codecov -prj mlsl -comp $(ICT_INFRA_DIR)/code_coverage/codecov_filter_mlsl.txt -spi $(TMP_COVERAGE_DIR)/pgopti.spi -dpi pgopti.dpi -xmlbcvrgfull codecov.xml -srcroot $(CODECOV_SRCROOT)
+    python $(ICT_INFRA_DIR)/code_coverage/codecov_to_cobertura.py codecov.xml coverage.xml
     if [ $? -ne 0 ]
     then
         echo "make codecov... NOK"

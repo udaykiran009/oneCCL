@@ -7,7 +7,8 @@
 #include <fstream>
 #include "gtest/gtest.h"
 #include "mlsl.hpp"
-#include <cstdlib>      /* malloc */
+#include <cstdlib>
+#include <stdlib.h>     /* malloc */
 
 #include <ctime>
 using namespace mlsl;
@@ -85,6 +86,21 @@ using namespace std;
         }                                                                                 \
     } while (0)
 
+#define SHOW_ALGO(Collective_Name)\
+do {   \
+    char* algo_name = getenv(Collective_Name);  \
+    if (algo_name) \
+        printf("%s=%s\n", Collective_Name, algo_name);\
+} while (0)
+
+#define SSHOW_ALGO()\
+( {   \
+    std::string algo_name = getenv(Collective_Name);  \
+    std::string transp_name = getenv("MLSL_ATL_TRANSPORT");  \
+    std::string res_str = algo_name + transp_name; \
+    res_str;\
+} )
+
 
 #define RUN_METHOD_DEFINITION(ClassName)                                 \
     template <typename T>                                                \
@@ -100,9 +116,11 @@ using namespace std;
       static int glob_idx = 0;                                           \
       mlsl::communicator comm;                                           \
       std::shared_ptr <mlsl::request> req;                               \
+      mlsl_coll_attr_t coll_attr {};                                     \
+      InitCollAttr(&coll_attr);                                          \
       req = comm.allreduce(&result, &result_final, 1,                    \
                            mlsl::data_type::dtype_int,                   \
-                           mlsl::reduction::sum);                        \
+                           mlsl::reduction::sum, &coll_attr);            \
       req->wait();                                                       \
       if (result_final > 0)                                              \
       {                                                                  \
@@ -141,7 +159,7 @@ using namespace std;
         } while (0)
 
 #define MAIN_FUNCTION()                           \
-    int main(int argc, char **argv)               \
+    int main(int argc, char **argv, char* envs[]) \
     {                                             \
         InitTestParams();                         \
         mlsl::environment env;                    \
@@ -162,11 +180,16 @@ using namespace std;
         TestParam param = GetParam();                                 \
         EXPECT_EQ(TEST_SUCCESS, this->Test(param));                   \
     }                                                                 \
-    INSTANTIATE_TEST_CASE_P(TestWithParameters,                       \
+    INSTANTIATE_TEST_CASE_P(testParams,                       \
                             MainTest,                                 \
 ::testing::ValuesIn(testParams));
 
+
 #define POST_AND_PRE_INCREMENTS(EnumName, LAST_ELEM)                                                                     \
+    EnumName& operator++(EnumName& orig) { if (orig != LAST_ELEM) orig = static_cast<EnumName>(orig + 1); return orig; } \
+    EnumName operator++(EnumName& orig, int) { EnumName rVal = orig; ++orig; return rVal; }
+
+#define GET_ELEMENT_BEFORE_LAST(EnumName, LAST_ELEM)                                                                     \
     EnumName& operator++(EnumName& orig) { if (orig != LAST_ELEM) orig = static_cast<EnumName>(orig + 1); return orig; } \
     EnumName operator++(EnumName& orig, int) { EnumName rVal = orig; ++orig; return rVal; }
 
@@ -182,7 +205,8 @@ typedef enum {
 } PlaceType;
 PlaceType firstPlaceType = PT_OOP;
 map <int, const char *>placeTypeStr = { {PT_OOP, "PT_OOP"},
-                                        {PT_IN, "PT_IN"}};
+                                        {PT_IN, "PT_IN"}
+                                        };
 
 typedef enum {
     ST_SMALL = 0,
@@ -211,8 +235,8 @@ map < int, const char *>bufferCountStr = { {BC_SMALL, "BC_SMALL"},
                                            {BC_LARGE, "BC_LARGE"}};
 
 map < int, size_t > bufferCountValues = { {BC_SMALL, 1},
-                                          {BC_MEDIUM, 7},
-                                          {BC_LARGE, 12}};
+                                          {BC_MEDIUM, 2},
+                                          {BC_LARGE, 4}};
 
 typedef enum {
     CMPT_WAIT = 0,
@@ -222,6 +246,38 @@ typedef enum {
 CompletionType firstCompletionType = CMPT_WAIT;
 map < int, const char *>completionTypeStr = { {CMPT_WAIT, "CMPT_WAIT"},
                                               {CMPT_TEST, "CMPT_TEST"}};
+
+typedef enum {
+#ifdef TEST_MLSL_CUSTOM_PROLOG
+    PRT_T_TO_2X = 0,
+    PRT_T_TO_CHAR = 1,
+#endif
+    PRT_NULL = 2,
+    PRLT_LAST
+} PrologType;
+PrologType firstPrologType = PRT_NULL;
+map < int, const char *>prologTypeStr = { {PRT_NULL, "PRT_NULL"},
+#ifdef TEST_MLSL_CUSTOM_PROLOG
+                                          {PRT_T_TO_2X, "PRT_T_TO_2X"},
+                                          {PRT_T_TO_CHAR, "PRT_T_TO_CHAR"}
+#endif
+                                          };
+
+typedef enum {
+#ifdef TEST_MLSL_CUSTOM_EPILOG
+    EPLT_T_TO_2X = 0,
+    EPLT_CHAR_TO_T = 1,
+#endif
+    EPLT_NULL = 2,
+    EPLT_LAST
+} EpilogType;
+EpilogType firstEpilogType = EPLT_NULL;
+map < int, const char *>epilogTypeStr = { {EPLT_NULL, "EPLT_NULL"},
+#ifdef TEST_MLSL_CUSTOM_EPILOG
+                                          {EPLT_T_TO_2X, "EPLT_T_TO_2X"},
+                                          {EPLT_CHAR_TO_T, "EPLT_CHAR_TO_T"}
+#endif
+                                          };
 
 typedef enum {
     DT_CHAR = mlsl_dtype_char,
@@ -244,11 +300,15 @@ map < int, const char *>dataTypeStr = { {DT_CHAR, "DT_CHAR"},
 };
 
 typedef enum {
-    RT_SUM = mlsl_reduction_sum,
+    RT_SUM = 0,
 #ifdef TEST_MLSL_REDUCE
-    RT_PROD = mlsl_reduction_prod,
-    RT_MIN = mlsl_reduction_min,
-    RT_MAX = mlsl_reduction_max,
+    RT_PROD = 1,
+    RT_MIN = 2,
+    RT_MAX = 3,
+#ifdef TEST_MLSL_CUSTOM_REDUCE
+    RT_CUSTOM = 4,
+    RT_CUSTOM_NULL = 5,
+#endif
 #endif
     RT_LAST
 } TestReductionType;
@@ -257,9 +317,24 @@ map < int, const char *>reductionTypeStr = { {RT_SUM, "RT_SUM"},
 #ifdef TEST_MLSL_REDUCE
                                              {RT_PROD, "RT_PROD"},
                                              {RT_MIN, "RT_MIN"},
-                                             {RT_MAX, "RT_MAX"}
+                                             {RT_MAX, "RT_MAX"},
+#ifdef TEST_MLSL_CUSTOM_REDUCE
+                                             {RT_CUSTOM, "RT_CUSTOM"},
+                                             {RT_CUSTOM_NULL, "RT_CUSTOM_NULL"}
+#endif
 #endif
                                              };
+map < int, mlsl_reduction_t > reductionTypeValues = { {RT_SUM, mlsl_reduction_sum},
+#ifdef TEST_MLSL_REDUCE
+                                                    {RT_PROD, mlsl_reduction_prod},
+                                                    {RT_MIN, mlsl_reduction_min},
+                                                    {RT_MAX, mlsl_reduction_max},
+#ifdef TEST_MLSL_CUSTOM_REDUCE
+                                                    {RT_CUSTOM, mlsl_reduction_custom},
+                                                    {RT_CUSTOM_NULL, mlsl_reduction_custom}
+#endif
+#endif
+                                                    };
 
 typedef enum {
     CT_CACHE_0 = 0,
@@ -291,15 +366,21 @@ map < int, int > syncTypeValues = { {SNCT_SYNC_0, 0},
 
 typedef enum {
     PRT_DISABLE = 0,
-    PRT_ENABLE = 1,
+    PRT_DIRECT = 1,
+    PRT_INDIRECT = 2,
+    PRT_RANDOM = 3,
     PRT_LAST
 } PriorityType;
 PriorityType firstPriorityType = PRT_DISABLE;
 map < int, const char * >priorityTypeStr = { {PRT_DISABLE, "PRT_DISABLE"},
-                                             {PRT_ENABLE, "PRT_ENABLE"}};
+                                             {PRT_DIRECT, "PRT_DIRECT"},
+                                             {PRT_INDIRECT, "PRT_INDIRECT"},
+                                             {PRT_RANDOM, "PRT_RANDOM"}};
 
 map < int, int > priorityTypeValues = { {PRT_DISABLE, 0},
-                                        {PRT_ENABLE, 1}
+                                        {PRT_DIRECT, 1},
+                                        {PRT_INDIRECT, 2},
+                                        {PRT_RANDOM, 3}
 };
 
 POST_AND_PRE_INCREMENTS(PlaceType, PT_LAST);
@@ -311,6 +392,8 @@ POST_AND_PRE_INCREMENTS(TestCacheType, CT_LAST);
 POST_AND_PRE_INCREMENTS(TestSyncType, SNCT_LAST);
 POST_AND_PRE_INCREMENTS(PriorityType, PRT_LAST);
 POST_AND_PRE_INCREMENTS(BufferCount, BC_LAST);
+POST_AND_PRE_INCREMENTS(PrologType, PRLT_LAST);
+POST_AND_PRE_INCREMENTS(EpilogType, EPLT_LAST);
 
 void InitCollAttr(mlsl_coll_attr_t *coll_attr)
 {
@@ -375,47 +458,122 @@ struct TestParam {
     TestReductionType reductionType;
     TestDataType dataType;
     PriorityType priorityType;
+    PriorityType priorityStartType;
     BufferCount bufferCount;
+    PrologType prologType;
+    EpilogType epilogType;
 };
 
-#define TEST_COUNT (PRT_LAST * CMPT_LAST * SNCT_LAST * (DT_LAST-1) * ST_LAST *  RT_LAST * BC_LAST * CT_LAST * PT_LAST)
-std::vector<TestParam> testParams(TEST_COUNT);
+size_t CalculateTestCount ()
+{
+    size_t testCount = PRT_LAST * PRT_LAST * CMPT_LAST * SNCT_LAST * (DT_LAST-1) * ST_LAST *  RT_LAST * BC_LAST * CT_LAST * PT_LAST * PRLT_LAST * EPLT_LAST;
+// MLSL_TEST_PROLOG_TYPE=0 MLSL_TEST_PLACE_TYPE=0 MLSL_TEST_CACHE_TYPE=0 MLSL_TEST_BUFFER_COUNT=0 MLSL_TEST_SIZE_TYPE=0 MLSL_TEST_PRIORITY_TYPE=1 MLSL_TEST_COMPLETION_TYPE=0 MLSL_TEST_SYNC_TYPE=0 MLSL_TEST_REDUCTION_TYPE=0 MLSL_TEST_DATA_TYPE=0
+    char* testDatatypeEnabled = getenv("MLSL_TEST_DATA_TYPE");
+    char* testReductionEnabled = getenv("MLSL_TEST_REDUCTION_TYPE");
+    char* testSyncEnabled = getenv("MLSL_TEST_SYNC_TYPE");
+    char* testCompletionEnabled = getenv("MLSL_TEST_COMPLETION_TYPE");
+    char* testPriorityEnabled = getenv("MLSL_TEST_PRIORITY_TYPE");
+    char* testSizeTypeEnabled = getenv("MLSL_TEST_SIZE_TYPE");
+    char* testBufferCountEnabled = getenv("MLSL_TEST_BUFFER_COUNT");
+    char* testCacheEnabled = getenv("MLSL_TEST_CACHE_TYPE");
+    char* testPlaceTypeEnabled = getenv("MLSL_TEST_PLACE_TYPE");
+    char* testPrologEnabled = getenv("MLSL_TEST_PROLOG_TYPE");
+    char* testEpilogEnabled = getenv("MLSL_TEST_EPILOG_TYPE");
+    if (testDatatypeEnabled && atoi(testDatatypeEnabled) == 0) {
+        firstDataType = static_cast<TestDataType>(DT_LAST - 1);
+        testCount /= (DT_LAST-1);
+        }
+    if (testReductionEnabled && atoi(testReductionEnabled) == 0) {
+        firstReductionType = static_cast<TestReductionType>(RT_LAST - 1);
+        testCount /= RT_LAST;
+        }
+    if (testSyncEnabled && atoi(testSyncEnabled) == 0) {
+        firstSyncType = static_cast<TestSyncType>(SNCT_LAST - 1);;
+        testCount /= SNCT_LAST;
+        }
+    if (testCompletionEnabled && atoi(testCompletionEnabled) == 0) {
+        firstCompletionType = static_cast<CompletionType>(CMPT_LAST - 1);
+        testCount /= CMPT_LAST;
+        }
+    if (testPriorityEnabled && atoi(testPriorityEnabled) == 0) {
+        firstPriorityType = static_cast<PriorityType>(PRT_LAST - 1);
+        testCount /= (PRT_LAST * PRT_LAST);
+        }
+    if (testSizeTypeEnabled && atoi(testSizeTypeEnabled) == 0) {
+        firstSizeType = static_cast<SizeType>(ST_LAST - 1);
+        testCount /= ST_LAST;
+        }
+    if (testBufferCountEnabled && atoi(testBufferCountEnabled) == 0) {
+        firstBufferCount = static_cast<BufferCount>(BC_LAST - 1);
+        testCount /= BC_LAST;
+        }
+    if (testCacheEnabled && atoi(testCacheEnabled) == 0) {
+        firstCacheType = static_cast<TestCacheType>(CT_LAST - 1);
+        testCount /= CT_LAST;
+        }
+    if (testPlaceTypeEnabled && atoi(testPlaceTypeEnabled) == 0) {
+        firstPlaceType = static_cast<PlaceType>(PT_LAST - 1);
+        testCount /= PT_LAST;
+        }
+    if (testPrologEnabled && atoi(testPrologEnabled) == 0) {
+        firstPrologType = static_cast<PrologType>(PRLT_LAST - 1);
+        testCount /= PRLT_LAST;
+        }
+    if (testEpilogEnabled && atoi(testEpilogEnabled) == 0) {
+        firstEpilogType = static_cast<EpilogType>(EPLT_LAST - 1);
+        testCount /= EPLT_LAST;
+        }       
+    return testCount;
+}
+
+std::vector<TestParam> testParams(CalculateTestCount());
 
 void InitTestParams()
 {
     size_t idx = 0;
-    for (TestReductionType reductionType = firstReductionType; reductionType < RT_LAST; reductionType++) {
-        for (TestSyncType syncType = firstSyncType; syncType < SNCT_LAST; syncType++) {
-            for (TestCacheType cacheType = firstCacheType; cacheType < CT_LAST; cacheType++) {
-                for (SizeType sizeType = firstSizeType; sizeType < ST_LAST; sizeType++) {
-                    for (TestDataType dataType = firstDataType; dataType < DT_LAST; dataType++) {
-                        if (dataType == DT_BFP16)
-                            //TODO: remove skipped data type
-                            continue;
-                        for (CompletionType completionType = firstCompletionType; completionType < CMPT_LAST; completionType++) {
-                            for (PlaceType placeType = firstPlaceType; placeType < PT_LAST; placeType++) {
-                                for (PriorityType priorityType = firstPriorityType; priorityType < PRT_LAST; priorityType++) {
-                                    for (BufferCount bufferCount = firstBufferCount; bufferCount < BC_LAST; bufferCount++) {
-                                        testParams[idx].placeType = placeType;
-                                        testParams[idx].sizeType = sizeType;
-                                        testParams[idx].dataType = dataType;
-                                        testParams[idx].cacheType = cacheType;
-                                        testParams[idx].syncType = syncType;
-                                        testParams[idx].completionType = completionType;
-                                        testParams[idx].reductionType = reductionType;
-                                        testParams[idx].bufferCount = bufferCount;
-                                        testParams[idx].priorityType = priorityType;
-                                        idx++;
+    for (PrologType prologType = firstPrologType; prologType < PRLT_LAST; prologType++) {
+        for (EpilogType epilogType = firstEpilogType; epilogType < EPLT_LAST; epilogType++) {
+            for (TestReductionType reductionType = firstReductionType; reductionType < RT_LAST; reductionType++) {
+                for (TestSyncType syncType = firstSyncType; syncType < SNCT_LAST; syncType++) {
+                    for (TestCacheType cacheType = firstCacheType; cacheType < CT_LAST; cacheType++) {
+                        for (SizeType sizeType = firstSizeType; sizeType < ST_LAST; sizeType++) {
+                            for (TestDataType dataType = firstDataType; dataType < DT_LAST; dataType++) {
+                                if (dataType == DT_BFP16)
+                                    // TODO: remove skipped data type
+                                    continue;
+                                for (CompletionType completionType = firstCompletionType; completionType < CMPT_LAST; completionType++) {
+                                    for (PlaceType placeType = firstPlaceType; placeType < PT_LAST; placeType++) {
+                                        for (PriorityType priorityType = firstPriorityType; priorityType < PRT_LAST; priorityType++) {
+                                            for (PriorityType priorityStartType = firstPriorityType; priorityStartType < PRT_LAST; priorityStartType++) {
+                                                for (BufferCount bufferCount = firstBufferCount; bufferCount < BC_LAST; bufferCount++) {
+                                                    testParams[idx].placeType = placeType;
+                                                    testParams[idx].sizeType = sizeType;
+                                                    testParams[idx].dataType = dataType;
+                                                    testParams[idx].cacheType = cacheType;
+                                                    testParams[idx].syncType = syncType;
+                                                    testParams[idx].completionType = completionType;
+                                                    testParams[idx].reductionType = reductionType;
+                                                    testParams[idx].bufferCount = bufferCount;
+                                                    testParams[idx].priorityType = priorityType;
+                                                    testParams[idx].priorityStartType = priorityStartType;
+                                                    testParams[idx].prologType = prologType;
+                                                    testParams[idx].epilogType = epilogType;
+                                                    idx++;
+                                                }
+                                            }
+                                        }
                                     }
                                 }
                             }
-                         }
+                        }
                     }
                 }
             }
         }
     }
 }
+
+
 
 template <typename T>
 struct TypedTestParam
@@ -431,6 +589,7 @@ struct TypedTestParam
     std::vector<std::shared_ptr<mlsl::request>> req;
     mlsl_coll_attr_t coll_attr {};
     mlsl::communicator global_comm;
+    size_t *startArr;
 
     TypedTestParam(TestParam tParam):testParam(tParam) {
         InitCollAttr(&coll_attr);
@@ -440,18 +599,13 @@ struct TypedTestParam
         processIdx = comm.rank();
         sendBuf.resize(bufferCount);
         recvBuf.resize(bufferCount);
+        startArr = (size_t*) malloc(bufferCount * sizeof(size_t));
         req.resize(bufferCount);
         for (size_t i = 0; i < bufferCount; i++)
             sendBuf[i].resize(elemCount * processCount * sizeof(T));
-        if (testParam.placeType == PT_OOP)
-            for (size_t i = 0; i < bufferCount; i++)
-                recvBuf[i].resize(elemCount * processCount * sizeof(T));
-        else
-            for (size_t i = 0; i < bufferCount; i++)
-                recvBuf[i] = sendBuf[i];
     }
 
-    void CompleteRequest(std::shared_ptr < mlsl::request > req) {
+    bool CompleteRequest(std::shared_ptr < mlsl::request > req) {
         if (testParam.completionType == CMPT_TEST) {
             bool isCompleted = false;
             size_t count = 0;
@@ -464,21 +618,60 @@ struct TypedTestParam
             req->wait();
         else
             ASSERT(0, "unexpected completion type %d", testParam.completionType);
+        return TEST_SUCCESS;
     }
-
-    size_t PriorityRequest() {
-        size_t min_priority = 0, max_priority = 0, priority, idx = 0, comp_iter_time_ms = 0, comp_delay_ms;
-        if (testParam.priorityType == PRT_ENABLE) {
-            size_t msg_completions[bufferCount];
-            char* comp_iter_time_ms_env = getenv("COMP_ITER_TIME_MS");
-            if (comp_iter_time_ms_env)
+    size_t* DefineStartOrder()
+    {
+            size_t idx;
+            for (idx = 0; idx < bufferCount; idx++)
             {
-                comp_iter_time_ms = atoi(comp_iter_time_ms_env);
+                if (testParam.priorityStartType == PRT_DIRECT || testParam.priorityStartType == PRT_DISABLE)
+                    startArr[idx] = idx;
+                else if (testParam.priorityStartType == PRT_INDIRECT)
+                    startArr[idx] = (bufferCount - idx - 1);
+                else if (testParam.priorityStartType == PRT_RANDOM){
+                    startArr[idx] = (idx + processIdx) % bufferCount;
+                }
+                else
+                    startArr[idx] = idx;
             }
-            comp_delay_ms = 2 * comp_iter_time_ms /bufferCount;
-            memset(msg_completions, 0, bufferCount * sizeof(size_t));
+        return startArr;
+    }
+    bool DefineCompletionOrderAndComplete()
+    {
+            size_t idx, msg_idx, is_completed;
+            size_t completions = 0;
+            int msg_completions[bufferCount];
+            memset(msg_completions, 0, bufferCount * sizeof(int));
+            while (completions < bufferCount)
+            {
+                for (idx = 0; idx < bufferCount; idx++)
+                {
+                    if (testParam.priorityType == PRT_DIRECT || testParam.priorityType == PRT_DISABLE)
+                        msg_idx = idx;
+                    else if (testParam.priorityType == PRT_INDIRECT)
+                        msg_idx = (bufferCount - idx - 1);
+                    else if (testParam.priorityType == PRT_RANDOM){
+                        msg_idx = rand() % bufferCount;
+                    }
+                    else 
+                        msg_idx = idx;
+                    if (msg_completions[msg_idx]) continue;
+                    is_completed = -1;
+                    is_completed = CompleteRequest(req[msg_idx]);
+                    if (is_completed == 0)
+                    {
+                        completions++;
+                        msg_completions[msg_idx] = 1;
+                    }
+                }
+            }
+        return TEST_SUCCESS;
+    }
+    size_t PriorityRequest() {
+        size_t min_priority = 0, max_priority = bufferCount, priority = 0, idx = 0;
+        if (testParam.priorityType != PRT_DISABLE) {
             for (idx = 0; idx < bufferCount; idx++) {
-                if (idx % 2 == 0) usleep(comp_delay_ms * 1000);
                 priority = min_priority + idx;
                 if (priority > max_priority)
                     priority = max_priority;
@@ -505,6 +698,8 @@ struct TypedTestParam
                \nplaceType %s \
                \npriorityType %s \
                \nbufferCount %zu \
+               \nprologType %s \
+               \nepilogType %s \
                \n-------------\n",
                processCount,
                processIdx,
@@ -517,7 +712,9 @@ struct TypedTestParam
                GetCompletionTypeStr(),
                GetPlaceTypeStr(),
                GetPriorityTypeStr(),
-               bufferCount
+               bufferCount,
+               GetPrologTypeStr(),
+               GetEpilogTypeStr()
                );
        output << strParameters;
        fflush(stdout);
@@ -568,13 +765,43 @@ struct TypedTestParam
     TestDataType GetDataType() {
         return testParam.dataType;
     }
-    TestReductionType GetReductionType() {
+    TestReductionType GetReductionName() {
         return testParam.reductionType;
+    }
+    mlsl_reduction_t GetReductionType() {
+        return reductionTypeValues[testParam.reductionType];
     }
     PriorityType GetPriorityType() {
         return testParam.priorityType;
     }
+    PrologType GetPrologType() {
+        return testParam.prologType;
+    }
+    EpilogType GetEpilogType() {
+        return testParam.epilogType;
+    }
+    const char *GetPrologTypeStr() {
+        return prologTypeStr[testParam.prologType];
+    }
+    const char *GetEpilogTypeStr() {
+        return epilogTypeStr[testParam.epilogType];
+    }
 };
+
+template <typename T>
+T get_expected_min(size_t i, size_t processCount, size_t coeff = 1)
+{
+    if ((T)(coeff *(i + processCount - 1)) < T(coeff * i))
+        return (T)(coeff * (i + processCount - 1));
+    return (T)(coeff * i);
+}
+template <typename T>
+T get_expected_max(size_t i, size_t processCount, size_t coeff = 1)
+{
+    if ((T)(coeff *(i + processCount - 1)) > T(coeff * i))
+        return (T)(coeff * (i + processCount - 1));
+    return (T)(coeff * i);
+}
 
 template <typename T> class BaseTest {
 
@@ -596,30 +823,36 @@ public:
     char errMessage[100]{};
 
     BaseTest() { memset(this->errMessage, '\0', 100); }
-    virtual void Init(TypedTestParam <T> &param){
-            param.coll_attr.priority = (int)param.PriorityRequest();
-            param.coll_attr.to_cache = (int)param.GetCacheType();
-            param.coll_attr.synchronous = (int)param.GetSyncType();
+    void Init(TypedTestParam <T> &param){
+        param.coll_attr.priority = (int)param.PriorityRequest();
+        param.coll_attr.to_cache = (int)param.GetCacheType();
+        param.coll_attr.synchronous = (int)param.GetSyncType();
     }
-    T get_expected_min(size_t i, size_t processCount)
-    {
-        if ((T)(i + processCount - 1) < T(i))
-            return (T)(i + processCount - 1);
-        return (T)i;
-    }
-
-    T get_expected_max(size_t i, size_t processCount)
-    {
-        if ((T)(i + processCount - 1) > T(i))
-            return (T)(i + processCount - 1);
-        return (T)i;
+    void FillBuffers(TypedTestParam <T> &param){
+        for (size_t j = 0; j < param.bufferCount; j++) {
+            for (size_t i = 0; i < param.elemCount; i++) {
+                param.sendBuf[j][i] = param.processIdx + i;
+            }
+        }
+        if (param.testParam.placeType == PT_OOP)
+        {
+            for (size_t i = 0; i < param.bufferCount; i++)
+                param.recvBuf[i].resize(param.elemCount * param.processCount * sizeof(T));
+        }
+        else
+        {
+            for (size_t i = 0; i < param.bufferCount; i++)
+            {
+                    param.recvBuf[i] = param.sendBuf[i];
+            }
+        }
     }
     virtual int Run(TypedTestParam <T> &param) = 0;
     virtual int Check(TypedTestParam <T> &param) = 0;
 
 };
 
-class MainTest:public::testing::TestWithParam <TestParam> {
+class MainTest : public::testing :: TestWithParam <TestParam> {
     template <typename T>
     int Run(TestParam param);
 public:

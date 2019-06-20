@@ -3,6 +3,8 @@
 #include <vector>
 #include <chrono>
 
+#define Collective_Name "MLSL_BCAST_ALGO"
+
 template <typename T> class BcastTest:public BaseTest <T> {
 public:
     int Check(TypedTestParam <T> &param) {
@@ -17,27 +19,29 @@ public:
         }
         return TEST_SUCCESS;
     }
-
-    int Run(TypedTestParam <T> &param) {
-        for (size_t j = 0; j < param.bufferCount; j++)
+    void FillBuffers(TypedTestParam <T> &param){
+        for (size_t j = 0; j < param.bufferCount; j++) {
             for (size_t i = 0; i < param.elemCount; i++) {
                 if (param.processIdx == ROOT_PROCESS_IDX)
                     param.sendBuf[j][i] = i;
                 else
                     param.sendBuf[j][i] = static_cast<T>(SOME_VALUE);
             }
-            size_t idx = 0;
-            for (idx = 0; idx < param.bufferCount; idx++) {
-                BaseTest<T>::Init (param);
-                param.req[idx] = param.global_comm.bcast(param.sendBuf[idx].data(), param.elemCount,
-                    (mlsl::data_type) param.GetDataType(),
-                    ROOT_PROCESS_IDX, &param.coll_attr);
-            }
-            for (idx = 0; idx < param.bufferCount; idx++) {
-                param.CompleteRequest(param.req[idx]);
-            }
-            int result = Check(param);
-            return result;
+        }
+    }
+    int Run(TypedTestParam <T> &param) {
+        size_t idx = 0;
+        SHOW_ALGO(Collective_Name);
+        this->FillBuffers(param);
+        size_t* Buffers = param.DefineStartOrder();
+        for (idx = 0; idx < param.bufferCount; idx++) {
+            this->Init (param);
+            param.req[Buffers[idx]] = param.global_comm.bcast(param.sendBuf[idx].data(), param.elemCount,
+                              (mlsl::data_type) param.GetDataType(), ROOT_PROCESS_IDX, &param.coll_attr);
+        }
+        param.DefineCompletionOrderAndComplete();
+        int result = Check(param);
+        return result;
     }
 };
 
