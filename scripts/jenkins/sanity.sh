@@ -18,9 +18,11 @@ BASENAME=`basename $0 .sh`
 WORK_DIR=`cd ${SCRIPT_DIR}/../../ && pwd -P`
 HOSTNAME=`hostname -s`
 
+echo "SCRIPT_DIR = $SCRIPT_DIR"
 echo "WORK_DIR = $WORK_DIR"
 echo "MLSL_INSTALL_DIR = $MLSL_INSTALL_DIR"
-# echo "WORK_DIR = $WORK_DIR"
+
+cd ${WORK_DIR}/build/
 
 # 'compiler' is set by Jenkins
 case $compiler in
@@ -96,7 +98,6 @@ then
     fi
 fi
 
-cd ${WORK_DIR}/build/
 case "$runtime" in
        mpi )
            export MLSL_ATL_TRANSPORT=MPI
