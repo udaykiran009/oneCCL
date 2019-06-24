@@ -64,9 +64,6 @@ then
     done
 fi
 
-cd ${WORK_DIR}/build/
-# cmake .. && make clean && make && make install
-
 pwd
 rm -rf ${WORK_DIR}/_log
 mkdir -p ${WORK_DIR}/_log
@@ -78,7 +75,13 @@ fi
 
 if [ "$runtime" == "mpi_adjust" ] || [ "$runtime" == "mpi" ]
 then
-    . /p/pdsd/scratch/Uploads/IMPI/linux/functional_testing/impi/impi2019u4/intel64/bin/mpivars.sh
+    if [ -z "${IMPI_PATH}" ]
+    then
+        echo "WARNING: I_MPI_ROOT isn't set, impi2019u4 will be used."
+        . /p/pdsd/scratch/jenkins/artefacts/impi-ch4-weekly/last/impi/intel64/bin/mpivars.sh release_mt
+    else
+        . ${IMPI_PATH}/intel64/bin/mpivars.sh release_mt
+    fi
 fi
 
 if [ -z "${MLSL_ROOT}" ]
@@ -93,7 +96,7 @@ then
     fi
 fi
 
-
+cd ${WORK_DIR}/build/
 case "$runtime" in
        mpi )
            export MLSL_ATL_TRANSPORT=MPI
@@ -101,19 +104,19 @@ case "$runtime" in
            ;;
        mpi_adjust )
             export MLSL_ATL_TRANSPORT=MPI
-            for bcast in "ring" "double_tree" "whole"
+            for bcast in "ring" "double_tree" "direct"
                 do
                     MLSL_BCAST_ALGO=$bcast ctest -VV -C mpi_bcast_$bcast
                 done
-            for reduce in "tree" "double_tree" "whole"
+            for reduce in "tree" "double_tree" "direct"
                 do
                     MLSL_REDUCE_ALGO=$reduce ctest -VV -C mpi_reduce_$reduce
                 done
-            for allreduce in "tree" "starlike" "ring" "double_tree" "whole"
+            for allreduce in "tree" "starlike" "ring" "double_tree" "direct"
                 do
                     MLSL_ALLREDUCE_ALGO=$allreduce ctest -VV -C mpi_allreduce_$allreduce
                 done
-            for allgatherv in "naive" "whole"
+            for allgatherv in "naive" "direct"
                 do
                     MLSL_ALLGATHERV_ALGO=$allgatherv ctest -VV -C mpi_allgatherv_$allgatherv
                 done
@@ -135,6 +138,10 @@ case "$runtime" in
                 do
                     MLSL_ALLGATHERV_ALGO=$allgatherv ctest -VV -C mpi_allgatherv_$allgatherv
                 done
+           ;;
+        priority_mode )
+            MLSL_PRIORITY_MODE=lifo ctest -VV -C Default
+            MLSL_PRIORITY_MODE=direct ctest -VV -C Default
            ;;
        * )
            ctest -VV -C Default
