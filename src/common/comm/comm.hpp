@@ -25,7 +25,7 @@ public:
 
     ~mlsl_comm() = default;
 
-    static mlsl_comm* create_with_color(int color, comm_id_storage* comm_ids, const mlsl_comm* global_comm);
+    static mlsl_comm* create_with_color(int color, mlsl_comm_id_storage* comm_ids, const mlsl_comm* global_comm);
 
     std::shared_ptr<mlsl_comm> clone_with_new_id(std::unique_ptr<comm_id> id);
 

@@ -37,10 +37,10 @@ public:
         auto counter = completion_counter.load(std::memory_order_acquire);
 
 #ifdef ENABLE_DEBUG
-        if(counter != 0)
+        if (counter != 0)
         {
             ++complete_checks_count;
-            if(complete_checks_count >= CHECK_COUNT_BEFORE_DUMP)
+            if (complete_checks_count >= CHECK_COUNT_BEFORE_DUMP)
             {
                 complete_checks_count = 0;
                 sched->dump_all();

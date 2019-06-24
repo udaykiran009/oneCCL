@@ -17,13 +17,8 @@
 #define COUNT     1048576
 #define ITERS     100
 #define COLL_ROOT 0
-#define MLSL_CALL(expr)                             \
-  do {                                              \
-        mlsl_status_t status = mlsl_status_success; \
-        status = expr;                              \
-        assert(status == mlsl_status_success);      \
-        (void)status;                               \
-  } while (0)
+
+void test_finalize();
 
 #define ASSERT(cond, fmt, ...)                            \
   do                                                      \
@@ -35,6 +30,14 @@
           test_finalize();                                \
           exit(1);                                        \
       }                                                   \
+  } while (0)
+
+#define MLSL_CALL(expr)                                      \
+  do {                                                       \
+        mlsl_status_t status = mlsl_status_success;          \
+        status = expr;                                       \
+        ASSERT(status == mlsl_status_success, "MLSL error"); \
+        (void)status;                                        \
   } while (0)
 
 mlsl_coll_attr_t coll_attr;

@@ -1,6 +1,15 @@
 #include "coll/coll_algorithms.hpp"
 #include "sched/entry_factory.hpp"
 
+mlsl_status_t mlsl_coll_build_direct_allreduce(mlsl_sched *sched, const void *send_buf, void *recv_buf,
+                                               size_t count, mlsl_datatype_internal_t dtype, mlsl_reduction_t op)
+{
+    LOG_DEBUG("build direct allreduce");
+
+    entry_factory::make_allreduce_entry(sched, send_buf, recv_buf, count, dtype, op);
+    return mlsl_status_success;
+}
+
 mlsl_status_t mlsl_coll_build_rabenseifner_allreduce(mlsl_sched *sched, const void *send_buf, void *recv_buf,
                                                      size_t count, mlsl_datatype_internal_t dtype, mlsl_reduction_t op)
 {
@@ -54,8 +63,8 @@ mlsl_status_t mlsl_coll_build_rabenseifner_allreduce(mlsl_sched *sched, const vo
             /* do the reduction on received data. since the
              * ordering is right, it doesn't matter whether
              * the operation is commutative or not. */
-            entry_factory::make_reduce_entry(sched, tmp_buf, count,
-                                             recv_buf, NULL, dtype, op);
+            entry_factory::make_reduce_local_entry(sched, tmp_buf, count,
+                                                   recv_buf, NULL, dtype, op);
             sched->add_barrier();
 
             /* change the rank */
@@ -133,8 +142,8 @@ mlsl_status_t mlsl_coll_build_rabenseifner_allreduce(mlsl_sched *sched, const vo
 
                 /* This algorithm is used only for predefined ops
                  * and predefined ops are always commutative. */
-                entry_factory::make_reduce_entry(sched, ((char *) tmp_buf + disps[recv_idx] * dtype_size), recv_cnt,
-                                                 ((char *) recv_buf + disps[recv_idx] * dtype_size), NULL, dtype, op);
+                entry_factory::make_reduce_local_entry(sched, ((char *) tmp_buf + disps[recv_idx] * dtype_size), recv_cnt,
+                                                       ((char *) recv_buf + disps[recv_idx] * dtype_size), NULL, dtype, op);
                 sched->add_barrier();
             }
 
@@ -256,8 +265,8 @@ mlsl_status_t mlsl_coll_build_recursive_doubling_allreduce(mlsl_sched *sched, co
              * ordering is right, it doesn't matter whether
              * the operation is commutative or not. */
 
-            entry_factory::make_reduce_entry(sched, tmp_buf, count,
-                                             recv_buf, NULL, dtype, op);
+            entry_factory::make_reduce_local_entry(sched, tmp_buf, count,
+                                                   recv_buf, NULL, dtype, op);
             sched->add_barrier();
 
             /* change the rank */
@@ -282,8 +291,8 @@ mlsl_status_t mlsl_coll_build_recursive_doubling_allreduce(mlsl_sched *sched, co
 
             /* tmp_buf contains data received in this step.
              * recv_buf contains data accumulated so far */
-            entry_factory::make_reduce_entry(sched, tmp_buf, count,
-                                             recv_buf, NULL, dtype, op);
+            entry_factory::make_reduce_local_entry(sched, tmp_buf, count,
+                                                   recv_buf, NULL, dtype, op);
             sched->add_barrier();
 
             mask <<= 1;
@@ -446,8 +455,8 @@ mlsl_status_t mlsl_coll_build_ring_allreduce(mlsl_sched *sched, const void *send
         entry_factory::make_recv_entry(sched, rbuf, recv_block_count,
                                        dtype, src);
         sched->add_barrier();
-        entry_factory::make_reduce_entry(sched, reduce_in_buf, recv_block_count,
-                                         reduce_inout_buf, NULL, dtype, op);
+        entry_factory::make_reduce_local_entry(sched, reduce_in_buf, recv_block_count,
+                                               reduce_inout_buf, NULL, dtype, op);
         sched->add_barrier();
 
         block_idx = (comm_size + block_idx - 1) % comm_size; // move left

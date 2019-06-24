@@ -30,9 +30,46 @@ typedef enum framework_answers
 typedef framework_answers_t (*update_checker_f)(size_t comm_size);
 
 typedef enum {
-    atl_status_success   = 0,
-    atl_status_failure   = 1,
+    atl_status_success     = 0,
+    atl_status_failure     = 1,
+    atl_status_unsupported = 2,
 } atl_status_t;
+
+inline const char* atl_status_to_str(atl_status_t status)
+{
+    switch (status)
+    {
+        case atl_status_success:
+            return "SUCCESS";
+        case atl_status_failure:
+            return "FAILURE";
+        case atl_status_unsupported:
+            return "UNSUPPORTED";
+        default:
+            return "UNKNOWN";
+    }
+}
+
+typedef enum
+{
+    atl_dtype_char   = 0,
+    atl_dtype_int    = 1,
+    atl_dtype_bfp16  = 2,
+    atl_dtype_float  = 3,
+    atl_dtype_double = 4,
+    atl_dtype_int64  = 5,
+    atl_dtype_uint64 = 6,
+    atl_dtype_custom = 7
+} atl_datatype_t;
+
+typedef enum
+{
+    atl_reduction_sum    = 0,
+    atl_reduction_prod   = 1,
+    atl_reduction_min    = 2,
+    atl_reduction_max    = 3,
+    atl_reduction_custom = 4
+} atl_reduction_t;
 
 typedef struct atl_desc atl_desc_t;
 typedef struct atl_comm atl_comm_t;
@@ -44,6 +81,9 @@ typedef struct atl_attr {
     size_t comm_count;
     int enable_rma;
     size_t max_order_waw_size;
+    int is_tagged_coll_enabled;
+    size_t tag_bits;
+    uint64_t max_tag;
     atl_comm_attr_t comm_attr;
 } atl_attr_t;
 
@@ -87,6 +127,18 @@ typedef struct atl_req {
     void *internal[ATL_REQ_SIZE];
 } atl_req_t __attribute__ ((aligned (ATL_CACHELINE_LEN)));
 
+typedef struct atl_coll_ops {
+    atl_status_t (*allreduce)(atl_comm_t *comm, const void *s_buf, void *r_buf, size_t len,
+                              atl_datatype_t dtype, atl_reduction_t op, atl_req_t *req);
+    atl_status_t (*reduce)(atl_comm_t *comm, const void *s_buf, void *r_buf, size_t len, size_t root,
+                           atl_datatype_t dtype, atl_reduction_t op, atl_req_t *req);
+    atl_status_t (*allgatherv)(atl_comm_t *comm, const void *s_buf, void *r_buf, size_t s_len,
+                               int r_lens[], int  displs[], atl_req_t *req);
+    atl_status_t (*bcast)(atl_comm_t *comm, void *buf, size_t len, size_t root,
+                          atl_req_t *req);
+    atl_status_t (*barrier)(atl_comm_t *comm, atl_req_t *req);
+} atl_coll_ops_t;
+
 typedef struct atl_pt2pt_ops {
     /* Non-blocking I/O vector pt2pt ops */
     atl_status_t (*sendv)(atl_comm_t *comm, const struct iovec *iov, size_t count,
@@ -118,6 +170,7 @@ typedef struct atl_comp_ops {
 
 struct atl_comm {
     atl_desc_t *atl_desc;
+    atl_coll_ops_t *coll_ops;
     atl_pt2pt_ops_t *pt2pt_ops;
     atl_rma_ops_t *rma_ops;
     atl_comp_ops_t *comp_ops;
@@ -145,6 +198,7 @@ atl_status_t name(atl_transport_t *atl_transport)
 
 #if (HAVE_OFI) && (HAVE_OFI_DL)
 #  define ATL_OFI_INI ATL_EXT_INI
+#  define ATL_MPI_INI ATL_EXT_INI
 #  define ATL_OFI_INIT atl_noop_init
 #elif (HAVE_OFI)
 #  define ATL_OFI_INI INI_SIG(atl_ofi_ini)
@@ -258,4 +312,37 @@ static inline atl_status_t atl_comm_poll(atl_comm_t *comm)
 static inline atl_status_t atl_comm_check(atl_comm_t *comm, int *status, atl_req_t *req)
 {
     return comm->comp_ops->check(comm, status, req);
+}
+
+static inline atl_status_t
+atl_comm_allreduce(atl_comm_t *comm, const void *s_buf, void *r_buf, size_t len,
+                   atl_datatype_t dtype, atl_reduction_t op, atl_req_t *req)
+{
+    return comm->coll_ops->allreduce(comm, s_buf, r_buf, len, dtype, op, req);
+}
+
+static inline atl_status_t
+atl_comm_reduce(atl_comm_t *comm, const void *s_buf, void *r_buf, size_t len, size_t root,
+                atl_datatype_t dtype, atl_reduction_t op, atl_req_t *req)
+{
+    return comm->coll_ops->reduce(comm, s_buf, r_buf, len, root,  dtype, op,req);
+}
+
+static inline atl_status_t
+atl_comm_allgatherv(atl_comm_t *comm, const void *s_buf, void *r_buf, size_t s_len,
+                    int r_lens[], int displs[], atl_req_t *req)
+{
+    return comm->coll_ops->allgatherv(comm, s_buf, r_buf, s_len, r_lens, displs, req);
+}
+
+static inline atl_status_t
+atl_comm_bcast(atl_comm_t *comm, void *buf, size_t len, size_t root, atl_req_t *req)
+{
+    return comm->coll_ops->bcast(comm, buf, len, root, req);
+}
+
+static inline atl_status_t
+atl_comm_barrier(atl_comm_t *comm, atl_req_t *req)
+{
+    return comm->coll_ops->barrier(comm, req);
 }

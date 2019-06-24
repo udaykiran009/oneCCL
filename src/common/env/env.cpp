@@ -13,8 +13,10 @@ mlsl_env_data env_data =
         .worker_affinity = std::vector<int>(),
         .priority_mode = mlsl_priority_none,
         .allreduce_algo = mlsl_allreduce_algo_rabenseifner,
+        .allgatherv_algo = mlsl_allgatherv_algo_naive,
         .bcast_algo = mlsl_bcast_algo_ring,
         .reduce_algo = mlsl_reduce_algo_tree,
+        .barrier_algo = mlsl_barrier_algo_ring,
         .sparse_allreduce_algo = mlsl_sparse_allreduce_algo_basic,
         .enable_rma = 0,
         .enable_fusion = 0,
@@ -27,16 +29,27 @@ mlsl_env_data env_data =
 
 const char* mlsl_priority_mode_to_str(mlsl_priority_mode mode)
 {
-    switch (mode)
-    {
+    switch (mode) {
         case mlsl_priority_none:
-            return "NONE";
+            return "none";
         case mlsl_priority_direct:
-            return "DIRECT";
+            return "direct";
         case mlsl_priority_lifo:
-            return "LIFO";
+            return "lifo";
         default:
             MLSL_FATAL("unexpected prio_mode ", mode);
+    }
+}
+
+const char *mlsl_allgatherv_algo_to_str(mlsl_allgatherv_algo algo)
+{
+    switch (algo) {
+        case mlsl_allgatherv_algo_naive:
+            return "naive";
+        case mlsl_allgatherv_algo_direct:
+            return "direct";
+        default:
+            MLSL_FATAL("unexpected allgatherv_algo ", algo);
     }
 }
 
@@ -54,6 +67,8 @@ const char* mlsl_allreduce_algo_to_str(mlsl_allreduce_algo algo)
             return "ring_rma";
         case mlsl_allreduce_algo_double_tree:
             return "double_tree";
+        case mlsl_allreduce_algo_direct:
+            return "direct";
         default:
             MLSL_FATAL("unexpected allreduce_algo ", algo);
     }
@@ -67,6 +82,8 @@ const char* mlsl_reduce_algo_to_str(mlsl_reduce_algo algo)
             return "tree";
         case mlsl_reduce_algo_double_tree:
             return "double_tree";
+        case mlsl_reduce_algo_direct:
+            return "direct";
         default:
             MLSL_FATAL("unexpected allreduce_algo ", algo);
     }
@@ -77,11 +94,25 @@ const char* mlsl_bcast_algo_to_str(mlsl_bcast_algo algo)
     switch (algo)
     {
         case mlsl_bcast_algo_ring:
-            return "tree";
+            return "ring";
         case mlsl_bcast_algo_double_tree:
             return "double_tree";
+        case mlsl_bcast_algo_direct:
+            return "direct";
         default:
             MLSL_FATAL("unexpected allreduce_algo ", algo);
+    }
+}
+
+const char *mlsl_barrier_algo_to_str(mlsl_barrier_algo algo)
+{
+    switch (algo) {
+        case mlsl_barrier_algo_ring:
+            return "ring";
+        case mlsl_barrier_algo_direct:
+            return "direct";
+        default:
+            MLSL_FATAL("unexpected barrier_algo ", algo);
     }
 }
 
@@ -103,8 +134,9 @@ void mlsl_env_parse()
 
     mlsl_env_parse_priority_mode();
     mlsl_env_parse_allreduce_algo();
-    mlsl_env_parse_reduce_algo();
     mlsl_env_parse_bcast_algo();
+    mlsl_env_parse_reduce_algo();
+    mlsl_env_parse_barrier_algo();
 
     auto result = mlsl_env_parse_affinity();
     MLSL_THROW_IF_NOT(result == 1, "failed to parse ", MLSL_WORKER_AFFINITY);
@@ -136,6 +168,7 @@ void mlsl_env_print()
     LOG_INFO(MLSL_ALLREDUCE_ALGO, ": ", mlsl_allreduce_algo_to_str(env_data.allreduce_algo));
     LOG_INFO(MLSL_REDUCE_ALGO, ": ", mlsl_reduce_algo_to_str(env_data.reduce_algo));
     LOG_INFO(MLSL_BCAST_ALGO, ": ", mlsl_bcast_algo_to_str(env_data.bcast_algo));
+    LOG_INFO(MLSL_BARRIER_ALGO, ": ",  mlsl_barrier_algo_to_str(env_data.barrier_algo));
 
     mlsl_env_print_affinity();
 }
@@ -185,21 +218,13 @@ int mlsl_env_parse_priority_mode()
     if (mode_env)
     {
         if (strcmp(mode_env, "none") == 0)
-        {
             env_data.priority_mode = mlsl_priority_none;
-        }
         else if (strcmp(mode_env, "direct") == 0)
-        {
             env_data.priority_mode = mlsl_priority_direct;
-        }
         else if (strcmp(mode_env, "lifo") == 0)
-        {
             env_data.priority_mode = mlsl_priority_lifo;
-        }
         else
-        {
             MLSL_FATAL("unexpected priority_mode ", mode_env);
-        }
     }
     return 1;
 }
@@ -350,25 +375,17 @@ int mlsl_env_parse_allreduce_algo()
     if (mode_env)
     {
         if (strcmp(mode_env, "tree") == 0)
-        {
             env_data.allreduce_algo = mlsl_allreduce_algo_rabenseifner;
-        }
         else if (strcmp(mode_env, "starlike") == 0)
-        {
             env_data.allreduce_algo = mlsl_allreduce_algo_starlike;
-        }
         else if (strcmp(mode_env, "ring") == 0)
-        {
             env_data.allreduce_algo = mlsl_allreduce_algo_ring;
-        }
         else if (strcmp(mode_env, "ring_rma") == 0)
-        {
             env_data.allreduce_algo = mlsl_allreduce_algo_ring_rma;
-        }
+        else if (strcmp(mode_env, "direct") == 0)
+            env_data.allreduce_algo = mlsl_allreduce_algo_direct;
         else if (strcmp(mode_env, "double_tree") == 0)
-        {
             env_data.allreduce_algo = mlsl_allreduce_algo_double_tree;
-        }
         else
         {
             MLSL_THROW("incorrect ", MLSL_ALLREDUCE_ALGO, " ", mode_env);
@@ -384,13 +401,11 @@ int mlsl_env_parse_bcast_algo()
     if (mode_env)
     {
         if (strcmp(mode_env, "ring") == 0)
-        {
             env_data.bcast_algo = mlsl_bcast_algo_ring;
-        }
         else if (strcmp(mode_env, "double_tree") == 0)
-        {
             env_data.bcast_algo = mlsl_bcast_algo_double_tree;
-        }
+        else if (strcmp(mode_env, "direct") == 0)
+            env_data.bcast_algo = mlsl_bcast_algo_direct;
         else
         {
             MLSL_THROW("incorrect ", MLSL_BCAST_ALGO, " ", mode_env);
@@ -407,16 +422,50 @@ int mlsl_env_parse_reduce_algo()
     if (mode_env)
     {
         if (strcmp(mode_env, "tree") == 0)
-        {
             env_data.reduce_algo = mlsl_reduce_algo_tree;
-        }
         else if (strcmp(mode_env, "double_tree") == 0)
-        {
             env_data.reduce_algo = mlsl_reduce_algo_double_tree;
-        }
+        else if (strcmp(mode_env, "direct") == 0)
+            env_data.reduce_algo = mlsl_reduce_algo_direct;
         else
         {
             MLSL_THROW("incorrect ", MLSL_REDUCE_ALGO, " ", mode_env);
+            return 0;
+        }
+    }
+    return 1;
+}
+
+int mlsl_env_parse_allgatherv_algo()
+{
+    char *mode_env = getenv("MLSL_ALLGATHERV_ALGO");
+    if (mode_env)
+    {
+        if (strcmp(mode_env, "naive") == 0)
+            env_data.allgatherv_algo = mlsl_allgatherv_algo_naive;
+        else if (strcmp(mode_env, "direct") == 0)
+            env_data.allgatherv_algo = mlsl_allgatherv_algo_direct;
+        else
+        {
+            MLSL_THROW("incorrect MLSL_ALLGATHERV_ALGO ", mode_env);
+            return 0;
+        }
+    }
+    return 1;
+}
+
+int mlsl_env_parse_barrier_algo()
+{
+    char *mode_env = getenv("MLSL_BARRIER_ALGO");
+    if (mode_env)
+    {
+        if (strcmp(mode_env, "ring") == 0)
+            env_data.barrier_algo = mlsl_barrier_algo_ring;
+        else if (strcmp(mode_env, "direct") == 0)
+            env_data.barrier_algo = mlsl_barrier_algo_direct;
+        else
+        {
+            MLSL_THROW("incorrect MLSL_BARRIER_ALGO ", mode_env);
             return 0;
         }
     }

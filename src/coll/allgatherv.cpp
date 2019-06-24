@@ -1,6 +1,15 @@
 #include "coll/coll_algorithms.hpp"
 #include "sched/entry_factory.hpp"
 
+mlsl_status_t mlsl_coll_build_direct_allgatherv(mlsl_sched* sched, const void* send_buf, size_t s_count,
+                                                void* recv_buf, size_t* r_counts, mlsl_datatype_internal_t dtype)
+{
+    LOG_DEBUG("build direct allgatherv");
+
+    entry_factory::make_allgatherv_entry(sched, send_buf, s_count, recv_buf, r_counts, dtype);
+    return mlsl_status_success;
+}
+
 mlsl_status_t mlsl_coll_build_naive_allgatherv(mlsl_sched* sched, const void* send_buf, size_t send_count,
                                                void* recv_buf, size_t* recv_counts, mlsl_datatype_internal_t dtype)
 {

@@ -1,6 +1,14 @@
 #include "coll/coll_algorithms.hpp"
 #include "sched/entry_factory.hpp"
 
+mlsl_status_t mlsl_coll_build_direct_barrier(mlsl_sched *sched)
+{
+    LOG_DEBUG("build direct barrier");
+
+    entry_factory::make_barrier_entry(sched);
+    return mlsl_status_success;
+}
+
 mlsl_status_t mlsl_coll_build_dissemination_barrier(mlsl_sched *sched)
 {
     LOG_DEBUG("build dissemination barrier");

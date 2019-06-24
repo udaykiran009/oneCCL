@@ -1,8 +1,9 @@
 #pragma once
 
-#include "sched/entry_types/entry.hpp"
-#include "sched/sched_queue.hpp"
+#include "common/global/global.hpp"
 #include "comp/comp.hpp"
+#include "sched/entry/entry.hpp"
+#include "sched/sched_queue.hpp"
 
 #include <utility>
 
@@ -36,16 +37,16 @@ public:
 
     void start_derived()
     {
-        atl_tag = mlsl_create_atl_tag(sched->coll_param.comm->id(), sched->sched_id, op_id, src);
+        atl_tag = global_data.atl_tag->create(sched->coll_param.comm->id(), src, sched->sched_id, op_id);
         size_t bytes = in_cnt * mlsl_datatype_get_size(dtype);
-        LOG_DEBUG("starting RECV in RECV_REDUCE entry, src ", src, ", tag ", std::setbase(16), atl_tag,
+        LOG_DEBUG("starting RECV in RECV_REDUCE entry, src ", src, ", tag ", atl_tag,
                   ", req ", &req, ", bytes", bytes);
         atl_status_t atl_status = atl_comm_recv(sched->bin->get_comm_ctx(), comm_buf,
                                                 bytes, src, atl_tag, &req);
 
         if (unlikely(atl_status != atl_status_success))
         {
-            MLSL_THROW("RECV_REDUCE entry failed. atl_status: ", atl_status);
+            MLSL_THROW("RECV_REDUCE entry failed. atl_status: ", atl_status_to_str(atl_status));
         }
         else
         {
@@ -60,7 +61,7 @@ public:
 
         if (unlikely(atl_status != atl_status_success))
         {
-            MLSL_THROW("RECV_REDUCE entry failed. atl_status: ", atl_status);
+            MLSL_THROW("RECV_REDUCE entry failed. atl_status: ", atl_status_to_str(atl_status));
         }
 
         if (req_status)
@@ -99,7 +100,7 @@ protected:
                             ", red_fn  ", fn,
                             ", src ", src,
                             ", comm_buf ", comm_buf,
-                            ", atl_tag ", std::setbase(16), atl_tag,
+                            ", atl_tag ", atl_tag,
                             ", comm_id ", sched->coll_param.comm->id(),
                             ", req ", &req,
                             "\n");
@@ -115,7 +116,7 @@ private:
     void* comm_buf;
     mlsl_op_id_t op_id = 0;
     atl_req_t req{};
-    mlsl_atl_comm_tag_t atl_tag{};
+    uint64_t atl_tag{};
     bool allocated_comm_buff = false;
     mlsl_reduction_fn_t fn;
 };

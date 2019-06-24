@@ -4,6 +4,7 @@
 #include "parallelizer/parallelizer.hpp"
 #include "sched/sched_cache.hpp"
 #include "common/utils/tree.hpp"
+#include "common/comm/atl_tag.hpp"
 
 mlsl_status_t mlsl_init()
 {
@@ -24,7 +25,10 @@ mlsl_status_t mlsl_init()
 
         global_data.executor = std::unique_ptr<mlsl_executor>(new mlsl_executor(env_data, global_data));
 
-        global_data.comm_ids = std::unique_ptr<comm_id_storage>(new comm_id_storage(mlsl_comm::max_comm_count));
+        global_data.atl_tag = std::unique_ptr<mlsl_atl_tag>(new mlsl_atl_tag(global_data.executor->tag_bits,
+                                                                             global_data.executor->max_tag));
+
+        global_data.comm_ids = std::unique_ptr<mlsl_comm_id_storage>(new mlsl_comm_id_storage(mlsl_comm::max_comm_count));
 
         global_data.comm = std::make_shared<mlsl_comm>(global_data.executor->proc_idx,
                                                        global_data.executor->proc_count,
@@ -43,7 +47,7 @@ mlsl_status_t mlsl_init()
 
         return mlsl_status_success;
     }
-    COMMON_CATCH_BLOCK()
+    COMMON_CATCH_BLOCK();
 }
 
 mlsl_status_t mlsl_finalize()
@@ -56,12 +60,13 @@ mlsl_status_t mlsl_finalize()
         global_data.fusion_manager.reset();
         global_data.comm.reset();
         global_data.comm_ids.reset();
+        global_data.atl_tag.reset();
         global_data.parallelizer.reset();
         global_data.default_coll_attr.reset();
 
         return mlsl_status_success;
     }
-    COMMON_CATCH_BLOCK()
+    COMMON_CATCH_BLOCK();
 }
 
 mlsl_status_t MLSL_API mlsl_wait(mlsl_request_t req)
@@ -80,7 +85,7 @@ mlsl_status_t MLSL_API mlsl_wait(mlsl_request_t req)
 
         return mlsl_status_success;
     }
-    COMMON_CATCH_BLOCK()
+    COMMON_CATCH_BLOCK();
 }
 
 mlsl_status_t MLSL_API mlsl_test(mlsl_request_t req,
@@ -106,7 +111,7 @@ mlsl_status_t MLSL_API mlsl_test(mlsl_request_t req,
 
         return mlsl_status_success;
     }
-    COMMON_CATCH_BLOCK()
+    COMMON_CATCH_BLOCK();
 }
 
 mlsl_status_t mlsl_comm_create(mlsl_comm_t* comm_t,
@@ -131,7 +136,7 @@ mlsl_status_t mlsl_comm_create(mlsl_comm_t* comm_t,
         *comm_t = static_cast<void*>(comm);
         return mlsl_status_success;
     }
-    COMMON_CATCH_BLOCK()
+    COMMON_CATCH_BLOCK();
 }
 
 mlsl_status_t mlsl_comm_free(mlsl_comm_t comm_t)
@@ -144,7 +149,7 @@ mlsl_status_t mlsl_comm_free(mlsl_comm_t comm_t)
         delete comm;
         return mlsl_status_success;
     }
-    COMMON_CATCH_BLOCK()
+    COMMON_CATCH_BLOCK();
 }
 
 mlsl_status_t MLSL_API mlsl_get_comm_rank(mlsl_comm_t comm_t,
@@ -160,7 +165,7 @@ mlsl_status_t MLSL_API mlsl_get_comm_rank(mlsl_comm_t comm_t,
         }
         return mlsl_status_success;
     }
-    COMMON_CATCH_BLOCK()
+    COMMON_CATCH_BLOCK();
 }
 
 mlsl_status_t MLSL_API mlsl_get_comm_size(mlsl_comm_t comm_t,
@@ -176,7 +181,7 @@ mlsl_status_t MLSL_API mlsl_get_comm_size(mlsl_comm_t comm_t,
         }
         return mlsl_status_success;
     }
-    COMMON_CATCH_BLOCK()
+    COMMON_CATCH_BLOCK();
 }
 
 mlsl_status_t MLSL_API mlsl_bcast(

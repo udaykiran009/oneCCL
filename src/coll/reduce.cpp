@@ -29,6 +29,15 @@
            n.(1+(p-1)/p).gamma
 */
 
+mlsl_status_t mlsl_coll_build_direct_reduce(mlsl_sched *sched, const void *send_buf, void *recv_buf,
+                                            size_t count, mlsl_datatype_internal_t dtype, mlsl_reduction_t reduction, size_t root)
+{
+    LOG_DEBUG("build direct reduce");
+
+    entry_factory::make_reduce_entry(sched, send_buf, recv_buf, count, dtype, reduction, root);
+    return mlsl_status_success;
+}
+
 mlsl_status_t mlsl_coll_build_rabenseifner_reduce(mlsl_sched *sched, const void *send_buf, void *recv_buf,
                                                   size_t count, mlsl_datatype_internal_t dtype, mlsl_reduction_t reduction, size_t root)
 {
@@ -95,8 +104,8 @@ mlsl_status_t mlsl_coll_build_rabenseifner_reduce(mlsl_sched *sched, const void 
             /* do the reduction on received data. */
             /* This algorithm is used only for predefined ops
              * and predefined ops are always commutative. */
-            entry_factory::make_reduce_entry(sched, tmp_buf, count,
-                                             recv_buf, NULL, dtype, reduction);
+            entry_factory::make_reduce_local_entry(sched, tmp_buf, count,
+                                                   recv_buf, NULL, dtype, reduction);
             sched->add_barrier();
 
             /* change the rank */
@@ -164,8 +173,8 @@ mlsl_status_t mlsl_coll_build_rabenseifner_reduce(mlsl_sched *sched, const void 
 
             /* This algorithm is used only for predefined ops
              * and predefined ops are always commutative. */
-            entry_factory::make_reduce_entry(sched, ((char *) tmp_buf + disps[recv_idx] * dtype_size), recv_cnt,
-                                             ((char *) recv_buf + disps[recv_idx] * dtype_size), NULL, dtype, reduction);
+            entry_factory::make_reduce_local_entry(sched, ((char *) tmp_buf + disps[recv_idx] * dtype_size), recv_cnt,
+                                                   ((char *) recv_buf + disps[recv_idx] * dtype_size), NULL, dtype, reduction);
             sched->add_barrier();
 
             /* update send_idx for next iteration */
@@ -372,8 +381,8 @@ mlsl_status_t mlsl_coll_build_binomial_reduce(mlsl_sched *sched, const void *sen
                 entry_factory::make_recv_entry(sched, tmp_buf, count, dtype, source);
                 sched->add_barrier();
 
-                entry_factory::make_reduce_entry(sched, tmp_buf, count,
-                                                 recv_buf, NULL, dtype, reduction);
+                entry_factory::make_reduce_local_entry(sched, tmp_buf, count,
+                                                       recv_buf, NULL, dtype, reduction);
                 sched->add_barrier();
 
             }

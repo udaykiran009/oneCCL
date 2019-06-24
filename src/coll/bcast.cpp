@@ -3,6 +3,15 @@
 
 #define MIN(a,b) std::min(a,b)
 
+mlsl_status_t mlsl_coll_build_direct_bcast(mlsl_sched *sched, void *buf, size_t count,
+                                           mlsl_datatype_internal_t dtype, size_t root)
+{
+    LOG_DEBUG("build direct bcast");
+
+    entry_factory::make_bcast_entry(sched, buf, count, dtype, root);
+    return mlsl_status_success;
+}
+
 mlsl_status_t mlsl_coll_build_scatter_for_bcast(mlsl_sched *sched, void *tmp_buf, size_t root, size_t nbytes)
 {
     LOG_DEBUG("build scatter_for_bcast");

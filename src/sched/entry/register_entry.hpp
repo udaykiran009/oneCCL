@@ -1,8 +1,8 @@
 #pragma once
 
-#include "sched/entry_types/entry.hpp"
 #include "common/global/global.hpp"
 #include "exec/exec.hpp"
+#include "sched/entry/entry.hpp"
 
 class register_entry : public sched_entry
 {
@@ -25,7 +25,7 @@ public:
         sched->memory.mr_list.emplace_back(*mr);
         if (unlikely(atl_status != atl_status_success))
         {
-            MLSL_THROW("REGISTER entry failed. atl_status: ", atl_status);
+            MLSL_THROW("REGISTER entry failed. atl_status: ", atl_status_to_str(atl_status));
         }
         else
             status = mlsl_sched_entry_status_complete;

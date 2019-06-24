@@ -1,8 +1,8 @@
 #pragma once
 
 #include "common/datatype/datatype.hpp"
-#include "sched/entry_types/postponed_fields.hpp"
 #include "common/utils/utils.hpp"
+#include "sched/entry/postponed_fields.hpp"
 
 #include <memory>
 #include <chrono>
@@ -17,7 +17,6 @@ enum mlsl_sched_entry_exec_mode
     mlsl_sched_entry_exec_once = 1
 };
 
-//todo: enum class
 enum mlsl_sched_entry_status
 {
     mlsl_sched_entry_status_not_started = 0,

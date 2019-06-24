@@ -78,7 +78,7 @@ mlsl_status_t mlsl_worker::pin(int proc_id)
 void mlsl_worker::add(mlsl_sched* sched)
 {
     LOG_DEBUG("add sched ", sched, ", type ", mlsl_coll_type_to_str(sched->coll_param.ctype));
-    data_queue->add(sched, sched->get_priority());
+    data_queue->add(sched);
 }
 
 size_t mlsl_worker::do_work()
@@ -116,15 +116,15 @@ static void* mlsl_worker_func(void* args)
         }
         catch (mlsl::mlsl_error& mlsl_e)
         {
-            LOG_ERROR("worker ", worker->get_idx(), " caught internal exception: ", mlsl_e.what());
+            MLSL_FATAL("worker ", worker->get_idx(), " caught internal exception: ", mlsl_e.what());
         }
         catch (std::exception& e)
         {
-            LOG_ERROR("worker ", worker->get_idx(), " caught exception: ", e.what());
+            MLSL_FATAL("worker ", worker->get_idx(), " caught exception: ", e.what());
         }
         catch (...)
         {
-            LOG_ERROR("worker ", worker->get_idx(), " caught general exception");
+            MLSL_FATAL("worker ", worker->get_idx(), " caught general exception");
         }
 
         iter_count++;

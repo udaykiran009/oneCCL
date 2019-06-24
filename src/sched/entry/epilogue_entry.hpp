@@ -1,6 +1,6 @@
 #pragma once
 
-#include "sched/entry_types/entry.hpp"
+#include "sched/entry/entry.hpp"
 
 class epilogue_entry : public sched_entry
 {

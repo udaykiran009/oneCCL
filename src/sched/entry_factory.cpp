@@ -1,23 +1,28 @@
 #include "sched/sched.hpp"
 #include "sched/entry_factory.hpp"
 #include "sched/sync_object.hpp"
-#include "sched/entry_types/send_entry.hpp"
-#include "sched/entry_types/recv_entry.hpp"
-#include "sched/entry_types/write_entry.hpp"
-#include "sched/entry_types/reduce_entry.hpp"
-#include "sched/entry_types/recv_reduce_entry.hpp"
-#include "sched/entry_types/copy_entry.hpp"
-#include "sched/entry_types/sync_entry.hpp"
-#include "sched/entry_types/coll_entry.hpp"
-#include "sched/entry_types/prologue_entry.hpp"
-#include "sched/entry_types/epilogue_entry.hpp"
-#include "sched/entry_types/wait_value_entry.hpp"
-#include "sched/entry_types/function_entry.hpp"
-#include "sched/entry_types/probe_entry.hpp"
-#include "sched/entry_types/register_entry.hpp"
-#include "sched/entry_types/deregister_entry.hpp"
-#include "sched/entry_types/chain_call_entry.hpp"
-#include "sched/entry_types/nop_entry.hpp"
+#include "sched/entry/send_entry.hpp"
+#include "sched/entry/recv_entry.hpp"
+#include "sched/entry/write_entry.hpp"
+#include "sched/entry/reduce_local_entry.hpp"
+#include "sched/entry/recv_reduce_entry.hpp"
+#include "sched/entry/copy_entry.hpp"
+#include "sched/entry/sync_entry.hpp"
+#include "sched/entry/prologue_entry.hpp"
+#include "sched/entry/epilogue_entry.hpp"
+#include "sched/entry/wait_value_entry.hpp"
+#include "sched/entry/function_entry.hpp"
+#include "sched/entry/probe_entry.hpp"
+#include "sched/entry/register_entry.hpp"
+#include "sched/entry/deregister_entry.hpp"
+#include "sched/entry/chain_call_entry.hpp"
+#include "sched/entry/nop_entry.hpp"
+#include "sched/entry/coll/coll_entry.hpp"
+#include "sched/entry/coll/allreduce_entry.hpp"
+#include "sched/entry/coll/allgatherv_entry.hpp"
+#include "sched/entry/coll/bcast_entry.hpp"
+#include "sched/entry/coll/reduce_entry.hpp"
+#include "sched/entry/coll/barrier_entry.hpp"
 
 std::shared_ptr<sched_entry> entry_factory::make_send_entry(mlsl_sched* sched,
                                                             const void* buf,
@@ -60,16 +65,16 @@ std::shared_ptr<sched_entry> entry_factory::make_write_entry(mlsl_sched* sched,
     return e;
 }
 
-std::shared_ptr<sched_entry> entry_factory::make_reduce_entry(mlsl_sched* sched,
-                                                              const void* in_buf,
-                                                              size_t in_cnt,
-                                                              void* inout_buf,
-                                                              size_t* out_cnt,
-                                                              mlsl_datatype_internal_t dtype,
-                                                              mlsl_reduction_t reduction_op)
+std::shared_ptr<sched_entry> entry_factory::make_reduce_local_entry(mlsl_sched* sched,
+                                                                    const void* in_buf,
+                                                                    size_t in_cnt,
+                                                                    void* inout_buf,
+                                                                    size_t* out_cnt,
+                                                                    mlsl_datatype_internal_t dtype,
+                                                                    mlsl_reduction_t reduction_op)
 {
-    auto e = std::make_shared<reduce_entry>(sched, in_buf, in_cnt, inout_buf,
-                                            out_cnt, dtype, reduction_op);
+    auto e = std::make_shared<reduce_local_entry>(sched, in_buf, in_cnt, inout_buf,
+                                                  out_cnt, dtype, reduction_op);
     sched->add_entry(e);
     return e;
 }
@@ -199,6 +204,64 @@ std::shared_ptr<sched_entry> entry_factory::make_probe_entry(mlsl_sched* sched,
 {
     std::shared_ptr<sched_entry> e = std::make_shared<probe_entry>(sched, global_data.comm->get_global_rank(src), cnt,
                                                                    op_id);
+    sched->add_entry(e);
+    return e;
+}
+
+std::shared_ptr<sched_entry> entry_factory::make_allreduce_entry(mlsl_sched* sched,
+                                                                 const void* send_buf,
+                                                                 void* recv_buf,
+                                                                 size_t cnt,
+                                                                 mlsl_datatype_internal_t dtype,
+                                                                 mlsl_reduction_t reduction_op)
+{
+    std::shared_ptr<sched_entry> e = std::make_shared<allreduce_entry>(sched, send_buf, recv_buf, cnt, dtype,
+                                                                       reduction_op);
+    sched->add_entry(e);
+    return e;
+}
+
+std::shared_ptr<sched_entry> entry_factory::make_allgatherv_entry(mlsl_sched* sched,
+                                                                  const void* send_buf,
+                                                                  size_t send_cnt,
+                                                                  void* recv_buf,
+                                                                  size_t* recv_cnts,
+                                                                  mlsl_datatype_internal_t dtype)
+{
+    std::shared_ptr<sched_entry> e = std::make_shared<allgatherv_entry>(sched, send_buf, send_cnt, recv_buf,
+                                                                        recv_cnts, dtype);
+    sched->add_entry(e);
+    return e;
+}
+
+std::shared_ptr<sched_entry> entry_factory::make_bcast_entry(mlsl_sched* sched,
+                                                             void* buf,
+                                                             size_t cnt,
+                                                             mlsl_datatype_internal_t dtype,
+                                                             size_t root)
+{
+    std::shared_ptr<sched_entry> e = std::make_shared<bcast_entry>(sched, buf, cnt, dtype, root);
+    sched->add_entry(e);
+    return e;
+}
+
+std::shared_ptr<sched_entry> entry_factory::make_reduce_entry(mlsl_sched *sched,
+                                                              const void *send_buf,
+                                                              void *recv_buf,
+                                                              size_t cnt,
+                                                              mlsl_datatype_internal_t dtype,
+                                                              mlsl_reduction_t reduction,
+                                                              size_t root)
+{
+    std::shared_ptr<sched_entry> e = std::make_shared<reduce_entry>(sched, send_buf, recv_buf,
+                                                                    cnt, dtype, reduction, root);
+    sched->add_entry(e);
+    return e;
+}
+
+std::shared_ptr<sched_entry> entry_factory::make_barrier_entry(mlsl_sched *sched)
+{
+    std::shared_ptr<sched_entry> e = std::make_shared<barrier_entry>(sched);
     sched->add_entry(e);
     return e;
 }

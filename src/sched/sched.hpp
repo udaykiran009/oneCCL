@@ -1,6 +1,6 @@
 #pragma once
 
-#include "sched/entry_types/entry.hpp"
+#include "sched/entry/entry.hpp"
 #include "atl/atl.h"
 #include "coll/coll.hpp"
 
@@ -16,6 +16,13 @@ class mlsl_sched_bin;
 class mlsl_request;
 class mlsl_parallelizer;
 class mlsl_executor;
+
+enum mlsl_sched_internal_type
+{
+    mlsl_sched_internal_none = 0,
+    mlsl_sched_internal_fusion,
+    mlsl_sched_internal_ooo
+};
 
 enum mlsl_sched_add_mode
 {
@@ -194,10 +201,13 @@ public:
     std::vector<std::shared_ptr<mlsl_sched>> partial_scheds{};
 
     /* whether sched was created by internal module (fusion_manager/ooo_manager) */
-    bool is_internal = false;
+    mlsl_sched_internal_type internal_type = mlsl_sched_internal_none;
 
     /* whether sched was once checked for completion from user level (by wait/test) */
     bool urgent = false;
+
+    /* whether sched should be started in the same order as in user code */
+    bool strict_start_order = false;
 
 private:
 
@@ -218,7 +228,7 @@ private:
 
     void update_id()
     {
-        sched_id = coll_param.comm->get_sched_id(is_internal);
+        sched_id = coll_param.comm->get_sched_id(internal_type != mlsl_sched_internal_none);
     }
 
     void dump(const char *name) const;

@@ -85,8 +85,15 @@ mlsl_status_t mlsl_parallelizer::process(mlsl_sched* sched)
             }
             break;
         case mlsl_coll_allgatherv:
-            part_count = coll_param->comm->size();
-            ag_recv_bufs.resize(part_count);
+            if (env_data.allgatherv_algo == mlsl_allgatherv_algo_direct)
+            {
+                part_count = 1;
+            }
+            else
+            {
+                part_count = coll_param->comm->size();
+                ag_recv_bufs.resize(part_count);
+            }
             break;
         default:
             MLSL_FATAL("unexpected coll_type ", coll_type);
@@ -108,6 +115,8 @@ mlsl_status_t mlsl_parallelizer::process(mlsl_sched* sched)
 
     for (idx = 0; idx < part_count; idx++)
     {
+        /* in this place all coll attributes for partial schedules
+         * are taken from master schedule, including priority */
         part_scheds[idx]->coll_attr = sched->coll_attr;
     }
 
@@ -278,42 +287,54 @@ mlsl_status_t mlsl_parallelizer::process(mlsl_sched* sched)
             break;
         }
         case mlsl_coll_allgatherv:
-            for (size_t idx = 0; idx < coll_param->comm->size(); idx++)
+            if (env_data.allgatherv_algo == mlsl_allgatherv_algo_direct)
             {
-                ag_recv_bufs[idx] = (env_data.vector_allgatherv) ?
-                    ((char**)coll_param->recv_buf)[idx] :
-                    (char*)coll_param->recv_buf + offsets[idx];
+                MLSL_CALL(mlsl_coll_build_allgatherv(part_scheds[idx].get(),
+                                                    (char*) coll_param->send_buf,
+                                                    (char*) coll_param->recv_buf,
+                                                    coll_param->send_count,
+                                                    coll_param->recv_counts,
+                                                    dtype));
             }
-            if (coll_param->send_buf != coll_param->recv_buf)
+            else
             {
-                std::vector<size_t> copy_counts(part_count);
-                std::vector<size_t> copy_offsets(part_count);
-                for (idx = 0; idx < part_count; idx++)
+                for (size_t idx = 0; idx < coll_param->comm->size(); idx++)
                 {
-                    copy_counts[idx] = counts[coll_param->comm->rank()] / part_count;
-                    copy_offsets[idx] = idx * copy_counts[idx] * dtype_size;
+                    ag_recv_bufs[idx] = (env_data.vector_allgatherv) ?
+                        ((char**)coll_param->recv_buf)[idx] :
+                        (char*)coll_param->recv_buf + offsets[idx];
                 }
-                copy_counts[part_count - 1] += counts[coll_param->comm->rank()] % part_count;
-                for (idx = 0; idx < part_count; idx++)
+                if (coll_param->send_buf != coll_param->recv_buf)
                 {
-                    entry_factory::make_copy_entry(part_scheds[idx].get(),
-                                                   (char*) coll_param->send_buf +
-                                                   copy_offsets[idx],
-                                                   ag_recv_bufs[coll_param->comm->rank()] +
-                                                   copy_offsets[idx],
-                                                   copy_counts[idx], dtype);
+                    std::vector<size_t> copy_counts(part_count);
+                    std::vector<size_t> copy_offsets(part_count);
+                    for (idx = 0; idx < part_count; idx++)
+                    {
+                        copy_counts[idx] = counts[coll_param->comm->rank()] / part_count;
+                        copy_offsets[idx] = idx * copy_counts[idx] * dtype_size;
+                    }
+                    copy_counts[part_count - 1] += counts[coll_param->comm->rank()] % part_count;
+                    for (idx = 0; idx < part_count; idx++)
+                    {
+                        entry_factory::make_copy_entry(part_scheds[idx].get(),
+                                                       (char*) coll_param->send_buf +
+                                                       copy_offsets[idx],
+                                                       ag_recv_bufs[coll_param->comm->rank()] +
+                                                       copy_offsets[idx],
+                                                       copy_counts[idx], dtype);
+                    }
+
+                    sched->sync_partial_scheds();
                 }
 
-                sched->sync_partial_scheds();
-            }
-
-            for (idx = 0; idx < part_count; idx++)
-            {
-                MLSL_CALL(mlsl_coll_build_bcast(part_scheds[idx].get(),
-                                                ag_recv_bufs[idx],
-                                                counts[idx],
-                                                dtype,
-                                                idx));
+                for (idx = 0; idx < part_count; idx++)
+                {
+                    MLSL_CALL(mlsl_coll_build_bcast(part_scheds[idx].get(),
+                                                    ag_recv_bufs[idx],
+                                                    counts[idx],
+                                                    dtype,
+                                                    idx));
+                }
             }
             break;
 

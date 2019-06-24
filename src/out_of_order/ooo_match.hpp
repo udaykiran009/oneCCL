@@ -24,7 +24,7 @@ public:
     const ooo_match& operator=(const ooo_match& other) = delete;
 
     ooo_match(mlsl_executor& exec,
-              comm_id_storage& comm_ids);
+              mlsl_comm_id_storage& comm_ids);
 
     /**
      * Searches for already created communicator for specific match_id
@@ -55,7 +55,7 @@ private:
                              mlsl_comm* comm);
 
     mlsl_executor& executor;
-    comm_id_storage& comm_ids;
+    mlsl_comm_id_storage& comm_ids;
 
     //dedicated service communicator
     std::shared_ptr<mlsl_comm> service_comm;

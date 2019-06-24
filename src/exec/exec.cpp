@@ -28,14 +28,24 @@ mlsl_executor::mlsl_executor(const mlsl_env_data& env_vars,
     MLSL_THROW_IF_NOT(atl_status == atl_status_success && atl_desc && atl_comms,
                       "ATL init failed, res ", atl_status, ", desc ", atl_desc, ", comm ",atl_comms);
 
-    /* atl will return back whether rma is supported */
+    is_tagged_coll_enabled = attr.is_tagged_coll_enabled;
+    tag_bits = attr.tag_bits;
+    max_tag = attr.max_tag;
     is_rma_enabled = attr.enable_rma;
     max_order_waw_size = attr.max_order_waw_size;
 
-    LOG_INFO("proc_idx ", proc_idx, ", proc_count ", proc_count, ", atl_desc ", atl_desc);
+    LOG_INFO("proc_idx ", proc_idx, ", proc_count ", proc_count,
+        ", worker_count ", worker_count, ", atl_desc ", atl_desc);
 
-    LOG_INFO("atl parameters: is_rma_enabled ", is_rma_enabled, ", max_order_waw_size ",
-             max_order_waw_size);
+    if (proc_idx == 0)
+    {
+        LOG_INFO("ATL parameters: comm_count: ", comm_count);
+        LOG_INFO("ATL parameters: is_tagged_coll_enabled: ", is_tagged_coll_enabled);
+        LOG_INFO("ATL parameters: tag_bits: ", tag_bits);
+        LOG_INFO("ATL parameters: max_tag: ", max_tag);
+        LOG_INFO("ATL parameters: is_rma_enabled: ", is_rma_enabled);
+        LOG_INFO("ATL parameters: max_order_waw_size: ", max_order_waw_size);
+    }
 
     size_t comm_per_worker = comm_count / worker_count;
     for (size_t idx = 0; idx < worker_count; idx++)
@@ -85,9 +95,9 @@ mlsl_executor::~mlsl_executor()
 
 void mlsl_executor::start(mlsl_sched* sched)
 {
-    if (sched->is_internal)
+    if (sched->internal_type == mlsl_sched_internal_ooo)
     {
-        MLSL_ASSERT(sched->partial_scheds.empty(), "internal sched should not have partial scheds");
+        MLSL_ASSERT(sched->partial_scheds.empty(), "internal ooo sched should not have partial scheds");
         workers[0]->add(sched);
     }
     else

@@ -43,6 +43,13 @@ mlsl_status_t mlsl_coll_build_allreduce(mlsl_sched* sched,
                                         mlsl_datatype_internal_t dtype,
                                         mlsl_reduction_t reduction);
 
+mlsl_status_t mlsl_coll_build_allgatherv(mlsl_sched* sched,
+                                         const void* send_buf,
+                                         void* recv_buf,
+                                         size_t s_count,
+                                         size_t* r_counts,
+                                         mlsl_datatype_internal_t dtype);
+
 mlsl_status_t mlsl_coll_build_sparse_allreduce(mlsl_sched* sched,
                                                const void* send_ind_buf,
                                                size_t send_ind_count,

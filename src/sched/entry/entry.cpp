@@ -1,4 +1,4 @@
-#include "sched/entry_types/entry.hpp"
+#include "sched/entry/entry.hpp"
 #include "common/log/log.hpp"
 
 void sched_entry::set_field_fn(mlsl_sched_entry_field_id id,
@@ -125,7 +125,6 @@ void* sched_entry::get_field_ptr(mlsl_sched_entry_field_id id)
     MLSL_FATAL("not supported");
     return nullptr;
 }
-
 
 void sched_entry::make_barrier()
 {

@@ -773,6 +773,48 @@ atl_ofi_comm_check(atl_comm_t *comm, int *status, atl_req_t *req)
     return atl_status_success;
 }
 
+static atl_status_t
+atl_ofi_comm_allreduce(atl_comm_t *comm, const void *s_buf, void *r_buf, size_t len,
+                       atl_datatype_t dtype, atl_reduction_t op, atl_req_t *req)
+{
+    return atl_status_unsupported;
+}
+
+static atl_status_t
+atl_ofi_comm_reduce(atl_comm_t *comm, const void *s_buf, void *r_buf, size_t len, size_t root,
+                    atl_datatype_t dtype, atl_reduction_t op, atl_req_t *req)
+{
+    return atl_status_unsupported;
+}
+
+static atl_status_t
+atl_ofi_comm_allgatherv(atl_comm_t *comm, const void *s_buf, void *r_buf, size_t s_len,
+                        int r_lens[], int  displs[], atl_req_t *req)
+{
+    return atl_status_unsupported;
+}
+
+static atl_status_t
+atl_ofi_comm_bcast(atl_comm_t *comm, void *buf, size_t len, size_t root,
+                   atl_req_t *req)
+{
+    return atl_status_unsupported;
+}
+
+static atl_status_t
+atl_ofi_comm_barrier(atl_comm_t *comm, atl_req_t *req)
+{
+    return atl_status_unsupported;
+}
+
+static atl_coll_ops_t atl_ofi_comm_coll_ops = {
+    .allreduce = atl_ofi_comm_allreduce,
+    .reduce = atl_ofi_comm_reduce,
+    .allgatherv = atl_ofi_comm_allgatherv,
+    .bcast = atl_ofi_comm_bcast,
+    .barrier = atl_ofi_comm_barrier,
+};
+
 static atl_pt2pt_ops_t atl_ofi_comm_pt2pt_ops = {
     .sendv = atl_ofi_comm_sendv,
     .recvv = atl_ofi_comm_recvv,
@@ -811,6 +853,7 @@ atl_ofi_comm_init(atl_ofi_context_t *atl_ofi_context, atl_comm_attr_t *attr,
     atl_ofi_comm_context->idx = index;
     *comm = &atl_ofi_comm_context->atl_comm;
     (*comm)->atl_desc = &atl_ofi_context->atl_desc;
+    (*comm)->coll_ops = &atl_ofi_comm_coll_ops;
     (*comm)->pt2pt_ops = &atl_ofi_comm_pt2pt_ops;
     (*comm)->rma_ops = &atl_ofi_comm_rma_ops;
     (*comm)->comp_ops = &atl_ofi_comm_comp_ops;
@@ -1073,6 +1116,9 @@ atl_status_t atl_ofi_init(int *argc, char ***argv, size_t *proc_idx, size_t *pro
         goto err_prov;
 
     attr->max_order_waw_size = atl_ofi_context->prov->ep_attr->max_order_waw_size;
+    attr->is_tagged_coll_enabled = 0;
+    attr->tag_bits = 64;
+    attr->max_tag = 0xFFFFFFFFFFFFFFFF;
 
     ATL_OFI_DEBUG_PRINT("provider %s", atl_ofi_context->prov->fabric_attr->prov_name);
     ATL_OFI_DEBUG_PRINT("mr_mode %d", atl_ofi_context->prov->domain_attr->mr_mode);

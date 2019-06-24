@@ -18,6 +18,7 @@ constexpr const char* MLSL_PRIORITY_MODE = "MLSL_PRIORITY_MODE";
 constexpr const char* MLSL_WORKER_AFFINITY = "MLSL_WORKER_AFFINITY";
 constexpr const char* MLSL_ALLREDUCE_ALGO = "MLSL_ALLREDUCE_ALGO";
 constexpr const char* MLSL_BCAST_ALGO = "MLSL_BCAST_ALGO";
+constexpr const char* MLSL_BARRIER_ALGO = "MLSL_BARRIER_ALGO";
 constexpr const char* MLSL_REDUCE_ALGO = "MLSL_REDUCE_ALGO";
 constexpr const char* MLSL_VECTOR_ALLGATHERV = "MLSL_VECTOR_ALLGATHERV";
 
@@ -31,29 +32,43 @@ enum mlsl_priority_mode
 enum mlsl_allreduce_algo
 {
     mlsl_allreduce_algo_rabenseifner = 0,
-    mlsl_allreduce_algo_starlike = 1,
-    mlsl_allreduce_algo_ring = 2,
-    mlsl_allreduce_algo_ring_rma = 3,
-    mlsl_allreduce_algo_double_tree = 4
+    mlsl_allreduce_algo_starlike     = 1,
+    mlsl_allreduce_algo_ring         = 2,
+    mlsl_allreduce_algo_ring_rma     = 3,
+    mlsl_allreduce_algo_double_tree  = 4,
+    mlsl_allreduce_algo_direct       = 5
+};
+
+enum mlsl_allgatherv_algo
+{
+    mlsl_allgatherv_algo_naive       = 0,
+    mlsl_allgatherv_algo_direct      = 1
 };
 
 enum mlsl_bcast_algo
 {
-    mlsl_bcast_algo_ring = 0,
-    mlsl_bcast_algo_double_tree = 1
+    mlsl_bcast_algo_ring             = 0,
+    mlsl_bcast_algo_double_tree      = 1,
+    mlsl_bcast_algo_direct           = 2
 };
 
 enum mlsl_reduce_algo
 {
-    mlsl_reduce_algo_tree = 0,
-    mlsl_reduce_algo_double_tree = 1
+    mlsl_reduce_algo_tree            = 0,
+    mlsl_reduce_algo_double_tree     = 1,
+    mlsl_reduce_algo_direct          = 2
 };
 
+enum mlsl_barrier_algo
+{
+    mlsl_barrier_algo_ring           = 0,
+    mlsl_barrier_algo_direct         = 1
+};
 
 enum mlsl_sparse_allreduce_algo
 {
     mlsl_sparse_allreduce_algo_basic = 0,
-    mlsl_sparse_allreduce_algo_mask = 1
+    mlsl_sparse_allreduce_algo_mask  = 1
 };
 
 //todo: set/get methods
@@ -67,8 +82,10 @@ struct alignas(CACHELINE_SIZE) mlsl_env_data
     std::vector<int> worker_affinity;
     mlsl_priority_mode priority_mode;
     mlsl_allreduce_algo allreduce_algo;
+    mlsl_allgatherv_algo allgatherv_algo;
     mlsl_bcast_algo bcast_algo;
     mlsl_reduce_algo reduce_algo;
+    mlsl_barrier_algo barrier_algo;
     mlsl_sparse_allreduce_algo sparse_allreduce_algo;
     int enable_rma;
     int enable_fusion;
@@ -95,4 +112,10 @@ int mlsl_env_print_affinity();
 int mlsl_env_parse_allreduce_algo();
 int mlsl_env_parse_bcast_algo();
 int mlsl_env_parse_reduce_algo();
-const char* mlsl_allreduce_algo_to_str(mlsl_allreduce_algo algo);
+int mlsl_env_parse_barrier_algo();
+const char *mlsl_allreduce_algo_to_str(mlsl_allreduce_algo algo);
+const char *mlsl_allgatherv_algo_to_str(mlsl_allgatherv_algo algo);
+const char *mlsl_bcast_algo_to_str(mlsl_bcast_algo algo);
+const char *mlsl_reduce_algo_to_str(mlsl_reduce_algo algo);
+const char *mlsl_barrier_algo_to_str(mlsl_barrier_algo algo);
+

@@ -1,7 +1,7 @@
 #pragma once
 
-#include "sched/entry_types/entry.hpp"
 #include "common/global/global.hpp"
+#include "sched/entry/entry.hpp"
 
 class deregister_entry : public sched_entry
 {
@@ -25,7 +25,7 @@ public:
             atl_status = atl_mr_dereg(global_data.executor->atl_desc, *it);
             if (unlikely(atl_status != atl_status_success))
             {
-                MLSL_THROW("DEREGISTER entry failed. atl_status: ", atl_status);
+                MLSL_THROW("DEREGISTER entry failed. atl_status: ", atl_status_to_str(atl_status));
             }
         }
         mr_list.clear();

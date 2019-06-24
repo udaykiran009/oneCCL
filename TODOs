@@ -1,1 +1,0 @@
-general: avoid direct usage of global variables. Pass pointer/reference to the global variable from high level calls (API functions) and propagate them to the place of usage.

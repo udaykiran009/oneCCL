@@ -43,7 +43,7 @@ static mlsl_status_t mlsl_comm_exchange_colors(std::vector<int>& colors)
 }
 
 mlsl_comm* mlsl_comm::create_with_color(int color,
-                                        comm_id_storage* comm_ids,
+                                        mlsl_comm_id_storage* comm_ids,
                                         const mlsl_comm* global_comm)
 {
     mlsl_status_t status = mlsl_status_success;

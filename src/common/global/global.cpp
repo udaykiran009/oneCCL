@@ -1,4 +1,5 @@
 #include "common/global/global.hpp"
+#include "common/comm/atl_tag.hpp"
 #include "common/comm/comm_id_storage.hpp"
 #include "common/utils/tree.hpp"
 #include "exec/exec.hpp"

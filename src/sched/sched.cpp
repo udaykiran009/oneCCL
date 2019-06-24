@@ -28,7 +28,7 @@ mlsl_sched::~mlsl_sched()
 
     if (is_own_req)
     {
-        LOG_DEBUG("Delete own req");
+        LOG_DEBUG("delete own req");
         delete req;
         req = nullptr;
     }
@@ -147,11 +147,14 @@ mlsl_status_t mlsl_bin_progress(mlsl_sched_bin* bin,
         if (sched->start_idx == sched->entries.size())
         {
             // the last entry in the schedule has been completed, clean up the schedule and complete its request
-            LOG_DEBUG("completing and dequeuing: sched ", sched, " ", mlsl_coll_type_to_str(sched->coll_param.ctype),
-                " req ", sched->req);
+            LOG_DEBUG("completing and dequeuing: sched ", sched,
+                ", coll ", mlsl_coll_type_to_str(sched->coll_param.ctype),
+                ", req ", sched->req,
+                ", entry_count ", sched->entries.size());
 
             // remove completed schedule from the bin
             sched_idx = sched_queue->erase(bin, sched_idx);
+            bin_size = bin->size();
             LOG_DEBUG("completing request ", sched->req);
             sched->complete();
             ++completed_sched_count;
@@ -237,8 +240,7 @@ void mlsl_sched::commit(mlsl_parallelizer* parallelizer)
               ", part_count ", partial_scheds.size());
 }
 
-mlsl_request* mlsl_sched::start(mlsl_executor* exec,
-                                bool reset_sched)
+mlsl_request* mlsl_sched::start(mlsl_executor* exec, bool reset_sched)
 {
     /* sanity check the schedule */
     MLSL_ASSERT(start_idx == 0);
@@ -250,7 +252,7 @@ mlsl_request* mlsl_sched::start(mlsl_executor* exec,
     reset();
     prepare_partial_scheds();
 
-    if(reset_sched)
+    if (reset_sched)
     {
         reset_request();
     }
@@ -281,7 +283,7 @@ void mlsl_sched::complete()
 void mlsl_sched::add_partial_sched(mlsl_coll_param& coll_param)
 {
     partial_scheds.emplace_back(std::make_shared<mlsl_sched>(coll_param));
-    partial_scheds.back()->is_internal = is_internal;
+    partial_scheds.back()->internal_type = internal_type;
     partial_scheds.back()->set_request(req);
 }
 
@@ -444,6 +446,6 @@ mlsl_request* mlsl_sched::start_subsched(mlsl_sched* subsched)
     subsched->req->set_counter(1);
     subsched->sched_id = sched_id;
     subsched->reset();
-    queue->add(subsched, subsched->get_priority());
+    queue->add(subsched);
     return subsched->req;
 }

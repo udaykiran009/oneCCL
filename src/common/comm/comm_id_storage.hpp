@@ -11,14 +11,14 @@
 
 using mlsl_comm_id_t = uint16_t;
 
-class comm_id_storage
+class mlsl_comm_id_storage
 {
 public:
-    explicit comm_id_storage(mlsl_comm_id_t max_comm_count) : max_comm(max_comm_count),
-                                                              external_ids_range_start(max_comm >> 1),
-                                                              last_used_id_internal(),
-                                                              last_used_id_external(external_ids_range_start),
-                                                              free_ids(max_comm, true)
+    explicit mlsl_comm_id_storage(mlsl_comm_id_t max_comm_count) : max_comm(max_comm_count),
+                                                                   external_ids_range_start(max_comm >> 1),
+                                                                   last_used_id_internal(),
+                                                                   last_used_id_external(external_ids_range_start),
+                                                                   free_ids(max_comm, true)
     {}
 
     mlsl_comm_id_t acquire_id(bool internal = false)

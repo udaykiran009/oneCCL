@@ -34,7 +34,10 @@ public:
     atl_desc_t* atl_desc = nullptr;
 
     /* TODO: group output ATL parameters */
-    int is_rma_enabled = 0;
+    bool is_tagged_coll_enabled = false;
+    size_t tag_bits = 64;
+    uint64_t max_tag = 0xFFFFFFFFFFFFFFFF;
+    bool is_rma_enabled = false;
     size_t max_order_waw_size = 0;
 
 private:

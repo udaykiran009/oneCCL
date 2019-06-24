@@ -1,19 +1,19 @@
 #pragma once
 
-#include "sched/entry_types/entry.hpp"
 #include "comp/comp.hpp"
+#include "sched/entry/entry.hpp"
 
-class reduce_entry : public sched_entry
+class reduce_local_entry : public sched_entry
 {
 public:
-    reduce_entry() = delete;
-    reduce_entry(mlsl_sched* sched,
-                 const void* in_buf,
-                 size_t in_cnt,
-                 void* inout_buf,
-                 size_t* out_cnt,
-                 mlsl_datatype_internal_t dtype,
-                 mlsl_reduction_t reduction_op) :
+    reduce_local_entry() = delete;
+    reduce_local_entry(mlsl_sched* sched,
+                       const void* in_buf,
+                       size_t in_cnt,
+                       void* inout_buf,
+                       size_t* out_cnt,
+                       mlsl_datatype_internal_t dtype,
+                       mlsl_reduction_t reduction_op) :
         sched_entry(sched), in_buf(in_buf),
         in_cnt(in_cnt), inout_buf(inout_buf),
         out_cnt(out_cnt), dtype(dtype), op(reduction_op),
@@ -34,7 +34,7 @@ public:
 
     const char* name() const
     {
-        return "REDUCE";
+        return "REDUCE_LOCAL";
     }
 
 protected:

@@ -1,6 +1,6 @@
 #pragma once
 
-#include "sched/entry_types/entry.hpp"
+#include "sched/entry/entry.hpp"
 #include "sched/sched_queue.hpp"
 
 class write_entry : public sched_entry
@@ -42,7 +42,7 @@ public:
                                                  dst_mr->r_key, dst, &req);
         if (unlikely(atl_status != atl_status_success))
         {
-            MLSL_THROW("WRITE entry failed. atl_status: ", atl_status);
+            MLSL_THROW("WRITE entry failed. atl_status: ", atl_status_to_str(atl_status));
         }
         else
             status = mlsl_sched_entry_status_started;
@@ -55,7 +55,7 @@ public:
 
         if (unlikely(atl_status != atl_status_success))
         {
-            MLSL_THROW("WRITE entry failed. atl_status: ", atl_status);
+            MLSL_THROW("WRITE entry failed. atl_status: ", atl_status_to_str(atl_status));
         }
 
         if (req_status)

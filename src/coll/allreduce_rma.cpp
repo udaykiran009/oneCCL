@@ -319,8 +319,8 @@ mlsl_status_t mlsl_coll_build_ring_rma_allreduce(mlsl_sched* sched, const void* 
 
         const void* reduce_in_buf = (inplace) ? (const void*)tmp_buf : send_buf;
         void* reduce_inout_buf = recv_buf;
-        entry_factory::make_reduce_entry(sched, (char*)reduce_in_buf + buf_offset, block_count,
-                                         (char*)reduce_inout_buf + buf_offset, NULL, dtype, op);
+        entry_factory::make_reduce_local_entry(sched, (char*)reduce_in_buf + buf_offset, block_count,
+                                               (char*)reduce_inout_buf + buf_offset, NULL, dtype, op);
     }
 
     /* allgather */

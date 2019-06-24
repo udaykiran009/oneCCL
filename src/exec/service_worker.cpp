@@ -12,6 +12,5 @@ mlsl_service_worker::mlsl_service_worker(mlsl_executor* executor, size_t idx,
 size_t mlsl_service_worker::do_work()
 {
     fusion_manager.execute();
-
     return mlsl_worker::do_work();
 }

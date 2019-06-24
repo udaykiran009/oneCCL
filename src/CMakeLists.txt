@@ -20,14 +20,15 @@ set(MLSL_SRC
     sched/sched_cache.cpp
     sched/sched_queue.cpp
     sched/entry_factory.cpp
-    sched/entry_types/entry.cpp
-    sched/entry_types/postponed_fields.cpp
+    sched/entry/entry.cpp
+    sched/entry/postponed_fields.cpp
     exec/exec.cpp
     exec/worker.cpp
     exec/service_worker.cpp
     fusion/fusion.cpp
     parallelizer/parallelizer.cpp
     out_of_order/ooo_match.cpp
+    common/comm/atl_tag.cpp
     common/comm/comm.cpp
     common/datatype/datatype.cpp
     common/env/env.cpp

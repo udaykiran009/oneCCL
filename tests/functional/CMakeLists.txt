@@ -18,19 +18,19 @@ foreach(src ${sources})
     add_test (NAME ${executable} CONFIGURATIONS Default COMMAND mpiexec.hydra -l -n 2 -ppn 1 ${MLSL_INSTALL_TESTS}/${executable} --gtest_output=xml:${MLSL_INSTALL_TESTS}/${executable}_default_report.junit.xml)
     add_test (NAME ${executable}_mpi CONFIGURATIONS Mpi COMMAND mpiexec.hydra -l -n 2 -ppn 1 ${MLSL_INSTALL_TESTS}/${executable} --gtest_output=xml:${MLSL_INSTALL_TESTS}/${executable}_mpi_runtime_report.junit.xml)
 endforeach()
-foreach(algo ring; double_tree; whole)
+foreach(algo ring; double_tree; direct)
 add_test (NAME bcast_test_mpi_${algo} CONFIGURATIONS mpi_bcast_${algo} COMMAND mpiexec.hydra -l -n 2 -ppn 1 ${MLSL_INSTALL_TESTS}/bcast_test --gtest_output=xml:${MLSL_INSTALL_TESTS}/bcast_test_mpi_runtime_adjust_${algo}_report.junit.xml)
 endforeach()
 
-foreach(algo tree; double_tree; whole)
+foreach(algo tree; double_tree; direct)
 add_test (NAME reduce_test_mpi_${algo} CONFIGURATIONS mpi_reduce_${algo} COMMAND mpiexec.hydra -l -n 2 -ppn 1 ${MLSL_INSTALL_TESTS}/reduce_test --gtest_output=xml:${MLSL_INSTALL_TESTS}/reduce_test_mpi_runtime_adjust_${algo}_report.junit.xml)
 endforeach()
 
-foreach(algo tree; starlike; ring; ring_rma; whole; double_tree)
+foreach(algo tree; starlike; ring; ring_rma; direct; double_tree)
 add_test (NAME allreduce_test_mpi_${algo} CONFIGURATIONS mpi_allreduce_${algo} COMMAND mpiexec.hydra -l -n 2 -ppn 1 ${MLSL_INSTALL_TESTS}/allreduce_test --gtest_output=xml:${MLSL_INSTALL_TESTS}/allreduce_test_mpi_runtime_adjust_${algo}_report.junit.xml)
 endforeach()
 
-foreach(algo naive; whole)
+foreach(algo naive; direct)
 add_test (NAME allgatherv_test_mpi_${algo} CONFIGURATIONS mpi_allgatherv_${algo} COMMAND mpiexec.hydra -l -n 2 -ppn 1 ${MLSL_INSTALL_TESTS}/allgatherv_test --gtest_output=xml:${MLSL_INSTALL_TESTS}/allgatherv_test_mpi_runtime_adjust_${algo}_report.junit.xml)
 endforeach()
 

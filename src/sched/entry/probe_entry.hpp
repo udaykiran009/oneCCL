@@ -1,6 +1,6 @@
 #pragma once
 
-#include "sched/entry_types/entry.hpp"
+#include "sched/entry/entry.hpp"
 #include "sched/sched.hpp"
 
 class probe_entry : public sched_entry
@@ -18,14 +18,14 @@ public:
 
     void start_derived()
     {
-        atl_tag = mlsl_create_atl_tag(sched->coll_param.comm->id(), sched->sched_id, op_id, src);
+        atl_tag = global_data.atl_tag->create(sched->coll_param.comm->id(), src, sched->sched_id, op_id);
         LOG_DEBUG("PROBE entry src ", src, ", tag ", atl_tag);
         atl_status_t atl_status = atl_comm_probe(sched->bin->get_comm_ctx(), src, atl_tag, &req);
 
         if (unlikely(atl_status != atl_status_success))
         {
             status = mlsl_sched_entry_status_failed;
-            LOG_ERROR("PROBE entry failed. atl_status: ", atl_status);
+            LOG_ERROR("PROBE entry failed. atl_status: ", atl_status_to_str(atl_status));
         }
         else
         {
@@ -36,7 +36,13 @@ public:
     void update_derived()
     {
         int req_status;
-        atl_comm_check(sched->bin->get_comm_ctx(), &req_status, &req);
+        atl_status_t atl_status = atl_comm_check(sched->bin->get_comm_ctx(), &req_status, &req);
+
+        if (unlikely(atl_status != atl_status_success))
+        {
+            MLSL_THROW("SEND entry failed. atl_status: ", atl_status_to_str(atl_status));
+        }
+
         if (req_status)
         {
             status = mlsl_sched_entry_status_complete;
@@ -58,7 +64,7 @@ protected:
                             "cnt ", *cnt,
                             ", src ", src,
                             ", comm ", sched->coll_param.comm,
-                            ", atl_tag ", std::setbase(16), atl_tag,
+                            ", atl_tag ", atl_tag,
                             ", req ", &req,
                             "\n");
     }
@@ -67,6 +73,6 @@ private:
     size_t src;
     size_t* cnt;
     mlsl_op_id_t op_id;
-    mlsl_atl_comm_tag_t atl_tag{};
+    uint64_t atl_tag{};
     atl_req_t req{};
 };

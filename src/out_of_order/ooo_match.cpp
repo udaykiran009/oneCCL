@@ -17,7 +17,7 @@ struct ooo_runtime_info
 };
 
 out_of_order::ooo_match::ooo_match(mlsl_executor& exec,
-                                   comm_id_storage& comm_ids)
+                                   mlsl_comm_id_storage& comm_ids)
     : executor(exec), comm_ids(comm_ids)
 {
     LOG_INFO("Configuring out-of-order collectives support");
@@ -110,7 +110,7 @@ void out_of_order::ooo_match::bcast_match_id(const std::string& match_id)
     bcast_param.dtype = mlsl_dtype_internal_char;
     bcast_param.comm = service_comm.get();
     auto bcast_sched = new mlsl_sched(bcast_param);
-    bcast_sched->is_internal = true;
+    bcast_sched->internal_type = mlsl_sched_internal_ooo;
 
     LOG_DEBUG("Building service sched ", bcast_sched, ", req ", bcast_sched->req);
 

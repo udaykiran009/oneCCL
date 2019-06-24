@@ -1,6 +1,6 @@
 #pragma once
 
-#include "sched/entry_types/entry.hpp"
+#include "sched/entry/entry.hpp"
 #include "coll/coll.hpp"
 #include "atl/atl.h"
 
@@ -41,13 +41,13 @@ public:
                                                          atl_mr_t* dst_mr,
                                                          size_t dst_buf_offset);
 
-    static std::shared_ptr<sched_entry> make_reduce_entry(mlsl_sched* sched,
-                                                          const void* in_buf,
-                                                          size_t in_cnt,
-                                                          void* inout_buf,
-                                                          size_t* out_cnt,
-                                                          mlsl_datatype_internal_t dtype,
-                                                          mlsl_reduction_t reduction_op);
+    static std::shared_ptr<sched_entry> make_reduce_local_entry(mlsl_sched* sched,
+                                                                const void* in_buf,
+                                                                size_t in_cnt,
+                                                                void* inout_buf,
+                                                                size_t* out_cnt,
+                                                                mlsl_datatype_internal_t dtype,
+                                                                mlsl_reduction_t reduction_op);
 
     /**
      * Fused recv_reduce operation.
@@ -129,6 +129,36 @@ public:
                                                          size_t src,
                                                          size_t* cnt,
                                                          mlsl_op_id_t op_id = 0);
+
+    static std::shared_ptr<sched_entry> make_allreduce_entry(mlsl_sched* sched,
+                                                             const void* send_buf,
+                                                             void* recv_buf,
+                                                             size_t cnt,
+                                                             mlsl_datatype_internal_t dtype,
+                                                             mlsl_reduction_t reduction_op);
+
+    static std::shared_ptr<sched_entry> make_allgatherv_entry(mlsl_sched* sched,
+                                                              const void* send_buf,
+                                                              size_t send_cnt,
+                                                              void* recv_buf,
+                                                              size_t* recv_cnts,
+                                                              mlsl_datatype_internal_t dtype);
+
+    static std::shared_ptr<sched_entry> make_bcast_entry(mlsl_sched* sched,
+                                                         void* buf,
+                                                         size_t cnt,
+                                                         mlsl_datatype_internal_t dtype,
+                                                         size_t root);
+
+    static std::shared_ptr<sched_entry> make_reduce_entry(mlsl_sched *sched,
+                                                          const void *send_buf,
+                                                          void *recv_buf,
+                                                          size_t cnt,
+                                                          mlsl_datatype_internal_t dtype,
+                                                          mlsl_reduction_t reduction,
+                                                          size_t root);
+
+    static std::shared_ptr<sched_entry> make_barrier_entry(mlsl_sched *sched);
 
     static std::shared_ptr<sched_entry> make_chain_call_entry(mlsl_sched* sched,
                                                               std::function<void(mlsl_sched*)> sched_fill_function,

@@ -1,6 +1,6 @@
 #pragma once
 
-#include "sched/entry_types/entry.hpp"
+#include "sched/entry/entry.hpp"
 #include "common/request/request.hpp"
 
 class coll_entry : public sched_entry

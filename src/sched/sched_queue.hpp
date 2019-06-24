@@ -6,7 +6,7 @@
 #include <deque>
 #include <unordered_map>
 
-#define MLSL_SCHED_QUEUE_INITIAL_BUCKET_COUNT (1024)
+#define MLSL_SCHED_QUEUE_INITIAL_BIN_COUNT (1024)
 
 using sched_container_t = std::deque<mlsl_sched*>;
 using sched_bin_list_t = std::unordered_map<size_t, mlsl_sched_bin>;
@@ -21,7 +21,6 @@ using sched_queue_lock_t = mlsl_spinlock;
 class mlsl_sched_list
 {
 public:
-
     mlsl_sched_list() = default;
     ~mlsl_sched_list()
     {
@@ -68,7 +67,6 @@ public:
     mlsl_sched_bin& operator= (const mlsl_sched_bin& other) = delete;
 
     size_t size() { return sched_list.size(); }
-    mlsl_sched_list& get_sched_list() { return sched_list; }
     size_t get_priority() { return priority; }
     atl_comm_t* get_comm_ctx() { return comm_ctx; }
     mlsl_sched_queue* get_queue() { return queue; }
@@ -94,7 +92,7 @@ public:
     mlsl_sched_queue(const mlsl_sched_queue& other) = delete;
     mlsl_sched_queue& operator= (const mlsl_sched_queue& other) = delete;
 
-    void add(mlsl_sched* sched, size_t priority);
+    void add(mlsl_sched* sched);
     size_t erase(mlsl_sched_bin* bin, size_t idx);
 
     /**
@@ -106,9 +104,14 @@ public:
 
 private:
 
+    void add_internal(mlsl_sched* sched);
+
     sched_queue_lock_t guard{};
     std::vector<atl_comm_t*> comm_ctxs;
-    sched_bin_list_t bins { MLSL_SCHED_QUEUE_INITIAL_BUCKET_COUNT };
+    sched_bin_list_t bins { MLSL_SCHED_QUEUE_INITIAL_BIN_COUNT };
     size_t max_priority = 0;
     mlsl_sched_bin* cached_max_priority_bin = nullptr;
+
+    /* used to get strict start ordering for transports w/o tagging support for collectives */
+    std::deque<mlsl_sched*> postponed_queue{};
 };

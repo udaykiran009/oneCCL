@@ -179,6 +179,8 @@ atl_status_t atl_init(int *argc, char ***argv, size_t *proc_idx, size_t *proc_co
         atl_free_string_array(dirs);
     }
 
+    LOG_INFO("use transport ", transport_name);
+
     return atl_status_success;
 
     err_dlopen:

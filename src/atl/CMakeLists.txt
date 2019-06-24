@@ -1,5 +1,7 @@
 #builds mlsl_atl_ofi
 
+add_subdirectory(mpi)
+
 add_subdirectory(util/pm/pmi_rt/pmi)
 add_subdirectory(util/pm/kube_rt/kube)
 

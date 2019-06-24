@@ -150,7 +150,21 @@ mlsl_status_t mlsl_coll_build_barrier(mlsl_sched* sched)
 {
     mlsl_status_t status;
     sched->coll_param.ctype = mlsl_coll_barrier;
-    MLSL_CALL(mlsl_coll_build_dissemination_barrier(sched));
+
+    switch (env_data.barrier_algo)
+    {
+        case mlsl_barrier_algo_ring:
+            MLSL_CALL(mlsl_coll_build_dissemination_barrier(sched));
+            break;
+        case mlsl_barrier_algo_direct:
+            MLSL_CALL(mlsl_coll_build_direct_barrier(sched));
+            break;
+        default:
+            MLSL_FATAL("unexpected barrier_algo ",
+                       mlsl_barrier_algo_to_str(env_data.barrier_algo));
+            return mlsl_status_invalid_arguments;
+    }
+
     return status;
 }
 
@@ -162,18 +176,25 @@ mlsl_status_t mlsl_coll_build_bcast(mlsl_sched* sched,
 {
     mlsl_status_t status;
     sched->coll_param.ctype = mlsl_coll_bcast;
-    if (env_data.bcast_algo == mlsl_bcast_algo_double_tree)
+    switch (env_data.bcast_algo)
     {
-        MLSL_CALL(mlsl_coll_build_double_tree_op(sched, mlsl_coll_bcast, nullptr, buf, count, dtype,
-                                                 mlsl_reduction_custom,
-                                                 root == 0 ? sched->coll_param.comm->dtree() :
-                                                 sched->coll_param.comm->dtree().copy_with_new_root(root)));
+        case mlsl_bcast_algo_ring:
+            MLSL_CALL(mlsl_coll_build_scatter_ring_allgather_bcast(sched, buf, count, dtype, root));
+            break;
+        case mlsl_bcast_algo_double_tree:
+            MLSL_CALL(mlsl_coll_build_double_tree_op(sched, mlsl_coll_bcast, nullptr, buf, count, dtype,
+                                                     mlsl_reduction_custom,
+                                                     root == 0 ? sched->coll_param.comm->dtree() :
+                                                     sched->coll_param.comm->dtree().copy_with_new_root(root)));
+            break;
+        case mlsl_bcast_algo_direct:
+            MLSL_CALL(mlsl_coll_build_direct_bcast(sched, buf, count, dtype, root));
+            break;
+        default:
+            MLSL_FATAL("unexpected bcast_algo ",
+                       mlsl_bcast_algo_to_str(env_data.bcast_algo));
+            return mlsl_status_invalid_arguments;
     }
-    else
-    {
-        MLSL_CALL(mlsl_coll_build_scatter_ring_allgather_bcast(sched, buf, count, dtype, root));
-    }
-
     return status;
 }
 
@@ -188,26 +209,60 @@ mlsl_status_t mlsl_coll_build_reduce(mlsl_sched* sched,
     mlsl_status_t status;
     sched->coll_param.ctype = mlsl_coll_reduce;
 
-    if (count < sched->coll_param.comm->pof2())
+    switch (env_data.reduce_algo)
     {
-        MLSL_CALL(mlsl_coll_build_binomial_reduce(sched, send_buf, recv_buf, count, dtype, reduction, root));
+        case mlsl_reduce_algo_tree:
+            if (count < sched->coll_param.comm->pof2())
+                MLSL_CALL(mlsl_coll_build_binomial_reduce(sched, send_buf, recv_buf, count, dtype, reduction, root));
+            else
+                MLSL_CALL(mlsl_coll_build_rabenseifner_reduce(sched, send_buf, recv_buf, count, dtype, reduction, root));
+            break;
+        case mlsl_reduce_algo_double_tree:
+            if (count < sched->coll_param.comm->pof2())
+                MLSL_CALL(mlsl_coll_build_binomial_reduce(sched, send_buf, recv_buf, count, dtype, reduction, root));
+            else
+                MLSL_CALL(mlsl_coll_build_double_tree_op(sched, mlsl_coll_reduce, send_buf, recv_buf, count, dtype,
+                                                         reduction,
+                                                         root == 0 ? sched->coll_param.comm->dtree() :
+                                                         sched->coll_param.comm->dtree().copy_with_new_root(root)));
+            break;
+        case mlsl_reduce_algo_direct:
+            MLSL_CALL(mlsl_coll_build_direct_reduce(sched, send_buf, recv_buf, count, dtype, reduction, root));
+            break;
+        default:
+            MLSL_FATAL("unexpected reduce_algo ",
+                       mlsl_reduce_algo_to_str(env_data.reduce_algo));
+            return mlsl_status_invalid_arguments;
     }
-    else
+
+    return status;
+}
+
+mlsl_status_t mlsl_coll_build_allgatherv(
+    mlsl_sched* sched,
+    const void* send_buf,
+    void* recv_buf,
+    size_t s_count,
+    size_t* r_counts,
+    mlsl_datatype_internal_t dtype)
+{
+    mlsl_status_t status;
+    sched->coll_param.ctype = mlsl_coll_allgatherv;
+    switch (env_data.allgatherv_algo)
     {
-        if (env_data.reduce_algo == mlsl_reduce_algo_double_tree)
-        {
-            MLSL_CALL(mlsl_coll_build_double_tree_op(sched, mlsl_coll_reduce, send_buf, recv_buf, count, dtype,
-                                                     reduction,
-                                                     root == 0 ? sched->coll_param.comm->dtree() :
-                                                     sched->coll_param.comm->dtree().copy_with_new_root(root)));
-        }
-        else
-        {
-            MLSL_CALL(mlsl_coll_build_rabenseifner_reduce(sched, send_buf, recv_buf, count, dtype, reduction, root));
-        }
-
+        case mlsl_allgatherv_algo_naive:
+            MLSL_CALL(mlsl_coll_build_naive_allgatherv(sched, send_buf, s_count, recv_buf, r_counts,
+                                                       dtype));
+            break;
+        case mlsl_allgatherv_algo_direct:
+            MLSL_CALL(mlsl_coll_build_direct_allgatherv(sched, send_buf, s_count, recv_buf, r_counts,
+                                                       dtype));
+            break;
+        default:
+            MLSL_FATAL("unexpected allgatherv_algo ",
+                       mlsl_allgatherv_algo_to_str(env_data.allgatherv_algo));
+            return mlsl_status_invalid_arguments;
     }
-
     return status;
 }
 
@@ -235,6 +290,9 @@ mlsl_status_t mlsl_coll_build_allreduce(
                 else
                     MLSL_FATAL("unexpected allreduce_algo ",
                                mlsl_allreduce_algo_to_str(env_data.allreduce_algo));
+                break;
+            case mlsl_allreduce_algo_direct:
+                MLSL_CALL(mlsl_coll_build_direct_allreduce(sched, send_buf, recv_buf, count, dtype, reduction));
                 break;
             default:
                 MLSL_CALL(
@@ -265,6 +323,9 @@ mlsl_status_t mlsl_coll_build_allreduce(
                 MLSL_CALL(mlsl_coll_build_double_tree_op(sched, mlsl_coll_allreduce, send_buf, recv_buf, count, dtype,
                                                          reduction,
                                                          sched->coll_param.comm->dtree()));
+                break;
+            case mlsl_allreduce_algo_direct:
+                MLSL_CALL(mlsl_coll_build_direct_allreduce(sched, send_buf, recv_buf, count, dtype, reduction));
                 break;
             default:
                 MLSL_FATAL("unexpected allreduce_algo ",
@@ -452,7 +513,7 @@ mlsl_request* mlsl_allreduce_impl(const void* send_buf,
     key.comm = communicator;
 
     auto req = mlsl_coll_create(attributes, key, coll_param);
-    LOG_DEBUG("coll ", mlsl_coll_type_to_str(coll_param.ctype), " created, req ", req);
+    LOG_DEBUG("coll ", mlsl_coll_type_to_str(coll_param.ctype), " created, req ", req, " count ", count);
     return req;
 }
 
@@ -490,7 +551,6 @@ void mlsl_barrier_impl(mlsl_comm* communicator)
 {
     mlsl_coll_attr_t attributes{};
     attributes.synchronous = 1;
-
 
     mlsl_coll_param coll_param{};
     coll_param.ctype = mlsl_coll_barrier;

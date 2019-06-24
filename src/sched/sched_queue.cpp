@@ -24,7 +24,8 @@ size_t mlsl_sched_bin::erase(size_t idx)
 mlsl_sched_queue::mlsl_sched_queue(std::vector<atl_comm_t*> comm_ctxs)
     : comm_ctxs(comm_ctxs)
 {
-    LOG_DEBUG("created sched_queue, comm_ctxs count ",  comm_ctxs.size(), ", val ", comm_ctxs[0]);
+    LOG_DEBUG("created sched_queue, comm_ctxs count ",  comm_ctxs.size(),
+              ", comm_ctxs[0] ", comm_ctxs[0]);
 
     if (env_data.priority_mode != mlsl_priority_none)
     {
@@ -47,8 +48,19 @@ mlsl_sched_queue::~mlsl_sched_queue()
     MLSL_ASSERT(!cached_max_priority_bin);
 }
 
-void mlsl_sched_queue::add(mlsl_sched* sched, size_t priority)
+void mlsl_sched_queue::add(mlsl_sched* sched)
 {
+    std::lock_guard<sched_queue_lock_t> lock{guard};
+
+    if (sched->strict_start_order)
+        postponed_queue.push_back(sched);
+    else
+        add_internal(sched);
+}
+
+void mlsl_sched_queue::add_internal(mlsl_sched* sched)
+{
+    size_t priority = sched->get_priority();
     if (env_data.priority_mode != mlsl_priority_none)
     {
         if (sched->coll_param.ctype == mlsl_coll_barrier)
@@ -57,10 +69,7 @@ void mlsl_sched_queue::add(mlsl_sched* sched, size_t priority)
             sched->coll_attr.priority = priority;
         }
     }
-
     MLSL_ASSERT(sched);
-
-    std::lock_guard<sched_queue_lock_t> lock{guard};
 
     LOG_DEBUG("sched ", sched, ", priority ", priority);
 
@@ -142,6 +151,15 @@ size_t mlsl_sched_queue::erase(mlsl_sched_bin* bin, size_t idx)
 mlsl_sched_bin* mlsl_sched_queue::peek(size_t& bin_size)
 {
     std::lock_guard<sched_queue_lock_t> lock{guard};
+
+    while (!postponed_queue.empty())
+    {
+        mlsl_sched* sched = postponed_queue.front();
+        add_internal(sched);
+        mlsl_sched_progress(sched);
+        postponed_queue.pop_front();
+    }
+    
     bin_size = (cached_max_priority_bin) ? cached_max_priority_bin->size() : 0;
     return cached_max_priority_bin;
 }

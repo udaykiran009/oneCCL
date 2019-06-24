@@ -229,7 +229,7 @@ mlsl_sched* mlsl_fusion_manager::build_sched()
                 coll_param.reduction = reduction;
                 coll_param.comm = comm;
                 sched = new mlsl_sched(coll_param);
-                sched->is_internal = true;
+                sched->internal_type = mlsl_sched_internal_fusion;
                 sched->coll_attr.priority = max_priority;
                 break;
             default:
@@ -260,7 +260,9 @@ mlsl_sched* mlsl_fusion_manager::build_sched()
     std::shared_ptr<sched_entry> e;
 
     MLSL_ASSERT(part_count > 0);
-    LOG_DEBUG("part_count ", part_count, ", sum_count ", sum_count);
+    LOG_DEBUG("part_count ", part_count,
+        ", sum_count ", sum_count,
+        ", exec_queue_size ", exec_queue_size);
 
     for (size_t idx = 0; idx < part_count; idx++)
     {
@@ -332,6 +334,7 @@ mlsl_sched* mlsl_fusion_manager::build_sched()
     }
 
     clear_exec_queue();
+
     return sched;
 }
 
