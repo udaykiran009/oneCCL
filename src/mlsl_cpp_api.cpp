@@ -69,8 +69,11 @@ MLSL_API environment::environment()
     {
         //todo avoid try/carch block in mlsl_init
         mlsl_status_t result = mlsl_init();
+        if (result == mlsl_status_success)
+        {
+            is_initialized = true;
+        }
         CHECK_AND_THROW(result, "failed to initialize mlsl");
-        is_initialized = true;
     }
     else
     {
