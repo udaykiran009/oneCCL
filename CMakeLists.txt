@@ -5,8 +5,8 @@ cmake_minimum_required (VERSION 2.8)
 set(CMAKE_DISABLE_SOURCE_CHANGES ON)
 set(CMAKE_DISABLE_IN_SOURCE_BUILD ON)
 
-set(PROJECT_NAME "Intel(R) MLSL")
-set(PROJECT_FULL_NAME "Intel(R) Machine Learning Scaling Library (Intel(R) MLSL)")
+set(PROJECT_NAME "Intel(R) One API Collective Communications Library")
+set(PROJECT_FULL_NAME "Intel(R) One API Collective Communications Library")
 
 project(${PROJECT_NAME})
 
@@ -113,11 +113,11 @@ install(PROGRAMS ${CMAKE_CURRENT_BINARY_DIR}/mlslvars.sh DESTINATION ${MLSL_INST
 #CPack re-uses generated install rules and puts all targets into archive
 #archive creation, generates a target 'package'
 set(CPACK_GENERATOR TGZ STGZ)
-set(CPACK_PACKAGE_VERSION_MAJOR 0)
-set(CPACK_PACKAGE_VERSION_MINOR 1)
+set(CPACK_PACKAGE_VERSION_MAJOR 1)
+set(CPACK_PACKAGE_VERSION_MINOR 0)
 set(CPACK_PACKAGE_VERSION_PATCH 0)
 set(CPACK_PACKAGE_VERSION "${CPACK_PACKAGE_VERSION_MAJOR}.${CPACK_PACKAGE_VERSION_MINOR}.${CPACK_PACKAGE_VERSION_PATCH}")
-set(CPACK_PACKAGE_NAME "mlsl2")
+set(CPACK_PACKAGE_NAME "ccl")
 set(CPACK_PACKAGE_VENDOR "Intel(R)")
 set(CPACK_PACKAGE_DESCRIPTION_SUMMARY "${PROJECT_FULL_NAME}")
 set(CPACK_PACKAGE_FILE_NAME "${CPACK_PACKAGE_NAME}-${CPACK_PACKAGE_VERSION}")
