@@ -1,12 +1,12 @@
 
-/* MLSL library API unordered communication test */
+/* ICCL library API unordered communication test */
 
 #include <stdio.h>  /* printf */
 #include <stdlib.h> /* exit */
 
-#include "mlsl.hpp"
+#include "iccl.hpp"
 
-using namespace MLSL;
+using namespace ICCL;
 
 #define MY_ASSERT(cond,...)                                                   \
   do                                                                          \
@@ -21,7 +21,7 @@ using namespace MLSL;
   } while(0)
 
 
-/* MLSL Test stuff */
+/* ICCL Test stuff */
 
 #define DTYPE                 float
 #define DTYPE_SIZE            sizeof(DTYPE)
@@ -136,7 +136,7 @@ int main(int argc, char** argv)
 {
     if (argc != 1)
     {
-        printf("specify parameters: mlsl_unorder_test\n");
+        printf("specify parameters: iccl_unorder_test\n");
         exit(0);
     }
 

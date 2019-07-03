@@ -1,17 +1,17 @@
 
-/* Intel(R) MLSL library API usage example */
+/* Intel(R) CCL library API usage example */
 
 #include <cstdio>  /* printf */
 #include <cstdlib> /* atoi */
 #include <string.h>
 
-#include "mlsl.hpp"
+#include "iccl.hpp"
 
-using namespace MLSL;
+using namespace ICCL;
 
 #define DTYPE                 float
 #define DTYPE_SIZE            sizeof(DTYPE)
-#define MLSL_DTYPE            ((DTYPE_SIZE == 4) ? DT_FLOAT : DT_DOUBLE)
+#define ICCL_DTYPE            ((DTYPE_SIZE == 4) ? DT_FLOAT : DT_DOUBLE)
 #define CACHELINE_SIZE        64
 #define GLOBAL_MINIBATCH_SIZE 16
 #define LAYER_COUNT           2
@@ -148,9 +148,9 @@ public:
 Layer* CreateLayer(Session* session, Distribution* distribution, Layer* prevLayer)
 {
     OperationRegInfo* regInfo = session->CreateOperationRegInfo(OT_CC);
-    regInfo->AddInput(256 /* feature map count */, 400 /* feature map size */, MLSL_DTYPE);
-    regInfo->AddOutput(256 /* feature map count */, 400 /* feature map size */, MLSL_DTYPE);
-    regInfo->AddParameterSet(256 * 256 /* kernel count */, 9 /* kernel size */, MLSL_DTYPE,
+    regInfo->AddInput(256 /* feature map count */, 400 /* feature map size */, ICCL_DTYPE);
+    regInfo->AddOutput(256 /* feature map count */, 400 /* feature map size */, ICCL_DTYPE);
+    regInfo->AddParameterSet(256 * 256 /* kernel count */, 9 /* kernel size */, ICCL_DTYPE,
                              false /* use dist update */ , compressType);
     size_t opIdx = session->AddOperation(regInfo, distribution);
     session->DeleteOperationRegInfo(regInfo);
@@ -162,10 +162,10 @@ int main(int argc, char** argv)
 {
     if (argc != 2 && argc != 3)
     {
-        printf("specify parameters: mlsl_example MODEL_PARTS [PATH_TO_QUANTIZATION_LIB]\n");
+        printf("specify parameters: iccl_example MODEL_PARTS [PATH_TO_QUANTIZATION_LIB]\n");
         printf("MODEL_PARTS - count of model partitions\n");
         printf("[MODEL_PARTS = 1] - pure data parallelism\n");
-        printf("[MODEL_PARTS = N, where N is number of Intel(R) MLSL processes] - pure model parallelism\n");
+        printf("[MODEL_PARTS = N, where N is number of Intel(R) CCL processes] - pure model parallelism\n");
         printf("[MODEL_PARTS = M, where 1 < M < N] - hybrid parallelism\n");
         printf("[PATH_TO_QUANTIZATION_LIB] - path to quantization library\n");
         return 0;

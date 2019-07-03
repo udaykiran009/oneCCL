@@ -35,38 +35,38 @@
 
 #include "common/utils/utils.hpp"
 #include "common/log/log.hpp"
-#include "mlsl_types.h"
+#include "iccl_types.h"
 
 #include <assert.h>
 #include <stdlib.h>
 #include <stdint.h>
 
-struct mlsl_buf_pool;
-typedef mlsl_status_t (*mlsl_buf_region_alloc_hndlr)(void *pool_ctx, void *addr,
+struct iccl_buf_pool;
+typedef iccl_status_t (*iccl_buf_region_alloc_hndlr)(void *pool_ctx, void *addr,
                                                      size_t len, void **context);
-typedef void (*mlsl_buf_region_free_hndlr)(void *pool_ctx, void *context);
+typedef void (*iccl_buf_region_free_hndlr)(void *pool_ctx, void *context);
 
-struct mlsl_buf_attr {
+struct iccl_buf_attr {
     size_t                      size;
     size_t                      alignment;
     size_t                      max_cnt;
     size_t                      chunk_cnt;
-    mlsl_buf_region_alloc_hndlr alloc_hndlr;
-    mlsl_buf_region_free_hndlr  free_hndlr;
+    iccl_buf_region_alloc_hndlr alloc_hndlr;
+    iccl_buf_region_free_hndlr  free_hndlr;
     void                        *ctx;
     uint8_t                     track_used;
 };
 
-struct mlsl_buf_pool {
+struct iccl_buf_pool {
     size_t               entry_sz;
     size_t               num_allocated;
-    mlsl_slist_t         buf_list;
-    mlsl_slist_t         region_list;
-    struct mlsl_buf_attr attr;
+    iccl_slist_t         buf_list;
+    iccl_slist_t         region_list;
+    struct iccl_buf_attr attr;
 };
 
-struct mlsl_buf_region {
-    mlsl_slist_entry_t entry;
+struct iccl_buf_region {
+    iccl_slist_entry_t entry;
     char               *mem_region;
     void               *context;
 #if ENABLE_DEBUG
@@ -74,120 +74,120 @@ struct mlsl_buf_region {
 #endif
 };
 
-struct mlsl_buf_footer {
-    struct mlsl_buf_region *region;
+struct iccl_buf_footer {
+    struct iccl_buf_region *region;
 };
 
-union mlsl_buf {
-    mlsl_slist_entry_t entry;
+union iccl_buf {
+    iccl_slist_entry_t entry;
     uint8_t data[0];
 };
 
-mlsl_status_t mlsl_buf_pool_create_attr(struct mlsl_buf_attr *attr,
-                                        struct mlsl_buf_pool **buf_pool);
+iccl_status_t iccl_buf_pool_create_attr(struct iccl_buf_attr *attr,
+                                        struct iccl_buf_pool **buf_pool);
 
 /* create buffer pool with alloc/free handlers */
-mlsl_status_t mlsl_buf_pool_create_ex(struct mlsl_buf_pool **pool,
+iccl_status_t iccl_buf_pool_create_ex(struct iccl_buf_pool **pool,
                                       size_t size, size_t alignment,
                                       size_t max_cnt, size_t chunk_cnt,
-                                      mlsl_buf_region_alloc_hndlr alloc_hndlr,
-                                      mlsl_buf_region_free_hndlr free_hndlr,
+                                      iccl_buf_region_alloc_hndlr alloc_hndlr,
+                                      iccl_buf_region_free_hndlr free_hndlr,
                                       void *pool_ctx);
 
 /* create buffer pool */
-static inline mlsl_status_t mlsl_buf_pool_create(struct mlsl_buf_pool **pool,
+static inline iccl_status_t iccl_buf_pool_create(struct iccl_buf_pool **pool,
                                                  size_t size, size_t alignment,
                                                  size_t max_cnt, size_t chunk_cnt)
 {
-    return mlsl_buf_pool_create_ex(pool, size, alignment,
+    return iccl_buf_pool_create_ex(pool, size, alignment,
                                    max_cnt, chunk_cnt,
                                    NULL, NULL, NULL);
 }
 
-static inline mlsl_status_t mlsl_buf_avail(struct mlsl_buf_pool *pool)
+static inline iccl_status_t iccl_buf_avail(struct iccl_buf_pool *pool)
 {
-	return !MLSL_SLIST_EMPTY(&pool->buf_list);
+	return !ICCL_SLIST_EMPTY(&pool->buf_list);
 }
 
-mlsl_status_t mlsl_buf_grow(struct mlsl_buf_pool *pool);
+iccl_status_t iccl_buf_grow(struct iccl_buf_pool *pool);
 
 #if ENABLE_DEBUG
 
-void *mlsl_buf_get(struct mlsl_buf_pool *pool);
-void mlsl_buf_release(struct mlsl_buf_pool *pool, void *buf);
+void *iccl_buf_get(struct iccl_buf_pool *pool);
+void iccl_buf_release(struct iccl_buf_pool *pool, void *buf);
 
 #else
 
-static inline void *mlsl_buf_get(struct mlsl_buf_pool *pool)
+static inline void *iccl_buf_get(struct iccl_buf_pool *pool)
 {
-    mlsl_slist_entry_t *entry;
-    entry = MLSL_SLIST_REMOVE_HEAD(&pool->buf_list);
+    iccl_slist_entry_t *entry;
+    entry = ICCL_SLIST_REMOVE_HEAD(&pool->buf_list);
     return entry;
 }
 
-static inline void mlsl_buf_release(struct mlsl_buf_pool *pool, void *buf)
+static inline void iccl_buf_release(struct iccl_buf_pool *pool, void *buf)
 {
-    union mlsl_buf *mlsl_buf = buf;
-    MLSL_SLIST_INSERT_HEAD(&pool->buf_list, mlsl_buf);
+    union iccl_buf *iccl_buf = buf;
+    ICCL_SLIST_INSERT_HEAD(&pool->buf_list, iccl_buf);
 }
 #endif
 
-static inline void *mlsl_buf_get_ex(struct mlsl_buf_pool *pool, void **context)
+static inline void *iccl_buf_get_ex(struct iccl_buf_pool *pool, void **context)
 {
-    union mlsl_buf *buf;
-    struct mlsl_buf_footer *buf_ftr;
+    union iccl_buf *buf;
+    struct iccl_buf_footer *buf_ftr;
 
-    buf = mlsl_buf_get(pool);
-    buf_ftr = (struct mlsl_buf_footer *)((char *)buf + pool->attr.size);
-    MLSL_ASSERT(context);
+    buf = iccl_buf_get(pool);
+    buf_ftr = (struct iccl_buf_footer *)((char *)buf + pool->attr.size);
+    ICCL_ASSERT(context);
     *context = buf_ftr->region->context;
     return buf;
 }
 
-static inline void *mlsl_buf_alloc(struct mlsl_buf_pool *pool)
+static inline void *iccl_buf_alloc(struct iccl_buf_pool *pool)
 {
-    if (unlikely(!mlsl_buf_avail(pool))) {
-        if (mlsl_buf_grow(pool))
+    if (unlikely(!iccl_buf_avail(pool))) {
+        if (iccl_buf_grow(pool))
 	    return NULL;
     }
-    return mlsl_buf_get(pool);
+    return iccl_buf_get(pool);
 }
 
-static inline void *mlsl_buf_alloc_ex(struct mlsl_buf_pool *pool, void **context)
+static inline void *iccl_buf_alloc_ex(struct iccl_buf_pool *pool, void **context)
 {
-    union mlsl_buf *buf;
-    struct mlsl_buf_footer *buf_ftr;
+    union iccl_buf *buf;
+    struct iccl_buf_footer *buf_ftr;
 
-    buf = mlsl_buf_alloc(pool);
+    buf = iccl_buf_alloc(pool);
     if (unlikely(!buf))
         return NULL;
 
-    buf_ftr = (struct mlsl_buf_footer *)((char *) buf + pool->attr.size);
-    MLSL_ASSERT(context);
+    buf_ftr = (struct iccl_buf_footer *)((char *) buf + pool->attr.size);
+    ICCL_ASSERT(context);
     *context = buf_ftr->region->context;
     return buf;
 }
 
 #if ENABLE_DEBUG
-static inline int mlsl_buf_use_ftr(struct mlsl_buf_pool *pool)
+static inline int iccl_buf_use_ftr(struct iccl_buf_pool *pool)
 {
     return 1;
 }
 #else
-static inline int mlsl_buf_use_ftr(struct mlsl_buf_pool *pool)
+static inline int iccl_buf_use_ftr(struct iccl_buf_pool *pool)
 {
     return (pool->attr.alloc_hndlr || pool->attr.free_hndlr) ? 1 : 0;
 }
 #endif
 
-static inline void *mlsl_buf_get_ctx(struct mlsl_buf_pool *pool, void *buf)
+static inline void *iccl_buf_get_ctx(struct iccl_buf_pool *pool, void *buf)
 {
-    struct mlsl_buf_footer *buf_ftr;
-    MLSL_ASSERT(mlsl_buf_use_ftr(pool));
-    buf_ftr = (struct mlsl_buf_footer *)((char *) buf + pool->attr.size);
+    struct iccl_buf_footer *buf_ftr;
+    ICCL_ASSERT(iccl_buf_use_ftr(pool));
+    buf_ftr = (struct iccl_buf_footer *)((char *) buf + pool->attr.size);
     return buf_ftr->region->context;
 }
 
-void mlsl_buf_pool_destroy(struct mlsl_buf_pool *pool);
+void iccl_buf_pool_destroy(struct iccl_buf_pool *pool);
 
 #endif /* BUF_POOL_H */

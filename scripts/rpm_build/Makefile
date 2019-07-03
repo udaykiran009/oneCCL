@@ -2,9 +2,9 @@ BASE_DIR        = $(shell pwd)
 
 include $(BASE_DIR)/../../Makefile.custom
 
-VERSION_SHORT   = $(MLSL_MAJOR_VERSION).$(MLSL_MINOR_VERSION)
+VERSION_SHORT   = $(ICCL_MAJOR_VERSION).$(ICCL_MINOR_VERSION)
 INSTALL_DIR     = /opt/intel
-INSTALL_SUBDIR  = mlsl_$(VERSION_SHORT).$(MLSL_PACKAGE_ID)
+INSTALL_SUBDIR  = iccl_$(VERSION_SHORT).$(ICCL_PACKAGE_ID)
 INSTALL_FULLDIR = $(INSTALL_DIR)/$(INSTALL_SUBDIR)
 ARCH            = x86_64
 TEMPORARY_DIR   = $(BASE_DIR)/tmp
@@ -13,7 +13,7 @@ STAGING_DIR     = $(BASE_DIR)/../../_staging
 RPM_RESULT_DIR  = $(BASE_DIR)/../../_rpm
 DEB_RESULT_DIR  = $(BASE_DIR)/../../_deb
 REPOS_DIR       = $(BASE_DIR)/../../_repositories
-AWS_REPO_DIR    = mlsl/$(MLSL_MAJOR_VERSION)
+AWS_REPO_DIR    = iccl/$(ICCL_MAJOR_VERSION)
 
 all: rpm deb yum_repo apt_repo
 packages: rpm deb
@@ -21,7 +21,7 @@ packages: rpm deb
 apt_repo:
 	mkdir -p $(TEMPORARY_DIR)/apt/binary
 	cp $(DEB_RESULT_DIR)/*.deb $(TEMPORARY_DIR)/apt/binary
-	sed -i "s|MLSL_SUBSTITUTE_OFFICIAL_VERSION|$(MLSL_OFFICIAL_VERSION)|g" "$(TEMPORARY_DIR)/release_file.sh"
+	sed -i "s|ICCL_SUBSTITUTE_OFFICIAL_VERSION|$(ICCL_OFFICIAL_VERSION)|g" "$(TEMPORARY_DIR)/release_file.sh"
 	cd $(TEMPORARY_DIR)/apt && dpkg-scanpackages -m binary > binary/Packages
 	cd $(TEMPORARY_DIR)/apt/binary && $(TEMPORARY_DIR)/release_file.sh
 	$(SIGNFILE_PATH) -s cl -cf $(TEMPORARY_DIR)/apt/binary/Release.pgp $(TEMPORARY_DIR)/apt/binary/Release
@@ -61,13 +61,13 @@ deb_sign: deb_build
 
 rpm_build: rpm_build_prepare
 	rpmbuild -bb -vv --target $(ARCH) \
-		--nodeps $(TEMPORARY_DIR)/_out/build/rpm/SPECS/intel-mlsl.spec \
+		--nodeps $(TEMPORARY_DIR)/_out/build/rpm/SPECS/intel-iccl.spec \
 		--define _binary_payload=w9.gzdio \
 		--define "_topdir $(TEMPORARY_DIR)/_out/build/rpm" \
 		--buildroot $(BASE_DIR)/tmp/_out/build/rpm/SOURCES
 
 deb_build: deb_build_prepare
-	cd $(TEMPORARY_DIR)/_out/build; fakeroot dpkg-deb --build debian $(MLSL_DEB_PREFIX_NAME)-$(VERSION_SHORT)-$(MLSL_PACKAGE_ID)_amd64.deb
+	cd $(TEMPORARY_DIR)/_out/build; fakeroot dpkg-deb --build debian $(ICCL_DEB_PREFIX_NAME)-$(VERSION_SHORT)-$(ICCL_PACKAGE_ID)_amd64.deb
 
 rpm_build_prepare: templates_prepare
 	mkdir -p $(TEMPORARY_DIR)/_out/build/rpm/SOURCES/$(INSTALL_FULLDIR)
@@ -75,7 +75,7 @@ rpm_build_prepare: templates_prepare
 	mkdir -p $(TEMPORARY_DIR)/_out/build/rpm/RPMS/$(ARCH)
 	chmod -R 755 $(TEMPORARY_DIR)/_out/build/rpm/SOURCES/
 	cp -pr $(TEMPORARY_DIR)/_in/* $(TEMPORARY_DIR)/_out/build/rpm/SOURCES/$(INSTALL_FULLDIR)
-	cp $(TEMPORARY_DIR)/intel-mlsl.spec $(TEMPORARY_DIR)/_out/build/rpm/SPECS
+	cp $(TEMPORARY_DIR)/intel-iccl.spec $(TEMPORARY_DIR)/_out/build/rpm/SPECS
 
 deb_build_prepare: templates_prepare
 	mkdir -p $(TEMPORARY_DIR)/_out/build/debian/$(INSTALL_FULLDIR)
@@ -90,20 +90,20 @@ deb_build_prepare: templates_prepare
 templates_prepare: staging_prepare
 	mkdir -p $(TEMPORARY_DIR)/_out
 	cp $(TEMPLATES_DIR)/* $(TEMPORARY_DIR)/
-	sed -i "s|RPM_NAME|$(MLSL_RPM_PREFIX_NAME)|g" "$(TEMPORARY_DIR)/intel-mlsl.spec"
-	sed -i "s|VERSION_SHORT|$(VERSION_SHORT)|g" "$(TEMPORARY_DIR)/intel-mlsl.spec"
-	sed -i "s|PACKAGE_ID|$(MLSL_PACKAGE_ID)|g" "$(TEMPORARY_DIR)/intel-mlsl.spec"
-	sed -i "s|ARCH|$(ARCH)|g" "$(TEMPORARY_DIR)/intel-mlsl.spec"
-	sed -i "s|INSTALL_DIR|$(INSTALL_DIR)|g" "$(TEMPORARY_DIR)/intel-mlsl.spec"
-	sed -i "s|INSTALL_SUBDIR|$(INSTALL_SUBDIR)|g" "$(TEMPORARY_DIR)/intel-mlsl.spec"
-	sed -i "s|INSTALL_FULLDIR|$(INSTALL_FULLDIR)|g" "$(TEMPORARY_DIR)/intel-mlsl.spec"
-	sed -i "s|BUILD_ROOT|$(TEMPORARY_DIR)/_out/build/SOURCES|g" "$(TEMPORARY_DIR)/intel-mlsl.spec"
-	sed -i "s|MLSL_SUBSTITUTE_OFFICIAL_VERSION|$(MLSL_OFFICIAL_VERSION)|g" "$(TEMPORARY_DIR)/intel-mlsl.spec"
-	sed -i "s|MLSL_SUBSTITUTE_COPYRIGHT_YEAR|$(MLSL_COPYRIGHT_YEAR)|g" "$(TEMPORARY_DIR)/intel-mlsl.spec"
-	sed -i "s|DEB_NAME|$(MLSL_RPM_PREFIX_NAME)|g" "$(TEMPORARY_DIR)/control"
-	sed -i "s|VERSION_FULL|$(MLSL_FULL_VERSION)|g" "$(TEMPORARY_DIR)/control"
+	sed -i "s|RPM_NAME|$(ICCL_RPM_PREFIX_NAME)|g" "$(TEMPORARY_DIR)/intel-iccl.spec"
+	sed -i "s|VERSION_SHORT|$(VERSION_SHORT)|g" "$(TEMPORARY_DIR)/intel-iccl.spec"
+	sed -i "s|PACKAGE_ID|$(ICCL_PACKAGE_ID)|g" "$(TEMPORARY_DIR)/intel-iccl.spec"
+	sed -i "s|ARCH|$(ARCH)|g" "$(TEMPORARY_DIR)/intel-iccl.spec"
+	sed -i "s|INSTALL_DIR|$(INSTALL_DIR)|g" "$(TEMPORARY_DIR)/intel-iccl.spec"
+	sed -i "s|INSTALL_SUBDIR|$(INSTALL_SUBDIR)|g" "$(TEMPORARY_DIR)/intel-iccl.spec"
+	sed -i "s|INSTALL_FULLDIR|$(INSTALL_FULLDIR)|g" "$(TEMPORARY_DIR)/intel-iccl.spec"
+	sed -i "s|BUILD_ROOT|$(TEMPORARY_DIR)/_out/build/SOURCES|g" "$(TEMPORARY_DIR)/intel-iccl.spec"
+	sed -i "s|ICCL_SUBSTITUTE_OFFICIAL_VERSION|$(ICCL_OFFICIAL_VERSION)|g" "$(TEMPORARY_DIR)/intel-iccl.spec"
+	sed -i "s|ICCL_SUBSTITUTE_COPYRIGHT_YEAR|$(ICCL_COPYRIGHT_YEAR)|g" "$(TEMPORARY_DIR)/intel-iccl.spec"
+	sed -i "s|DEB_NAME|$(ICCL_RPM_PREFIX_NAME)|g" "$(TEMPORARY_DIR)/control"
+	sed -i "s|VERSION_FULL|$(ICCL_FULL_VERSION)|g" "$(TEMPORARY_DIR)/control"
 	sed -i "s|ARCH|$(ARCH)|g" "$(TEMPORARY_DIR)/control"
-	sed -i "s|MLSL_SUBSTITUTE_OFFICIAL_VERSION|$(MLSL_OFFICIAL_VERSION)|g" "$(TEMPORARY_DIR)/control"
+	sed -i "s|ICCL_SUBSTITUTE_OFFICIAL_VERSION|$(ICCL_OFFICIAL_VERSION)|g" "$(TEMPORARY_DIR)/control"
 	sed -i "s|INSTALL_DIR|$(INSTALL_DIR)|g" "$(TEMPORARY_DIR)/preinst"
 	sed -i "s|INSTALL_DIR|$(INSTALL_DIR)|g" "$(TEMPORARY_DIR)/postinst"
 	sed -i "s|INSTALL_SUBDIR|$(INSTALL_SUBDIR)|g" "$(TEMPORARY_DIR)/postinst"

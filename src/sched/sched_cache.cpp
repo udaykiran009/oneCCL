@@ -1,6 +1,6 @@
 #include "sched/sched_cache.hpp"
 
-mlsl_sched* mlsl_sched_cache::find(mlsl_sched_key& key)
+iccl_sched* iccl_sched_cache::find(iccl_sched_key& key)
 {
     sched_table_t::iterator it;
     {
@@ -20,25 +20,25 @@ mlsl_sched* mlsl_sched_cache::find(mlsl_sched_key& key)
     }
 }
 
-void mlsl_sched_cache::add(mlsl_sched_key& key, mlsl_sched* sched)
+void iccl_sched_cache::add(iccl_sched_key& key, iccl_sched* sched)
 {
     {
         std::lock_guard<sched_cache_lock_t> lock{guard};
         auto emplace_result = table.emplace(key, sched);
-        MLSL_ASSERT(emplace_result.second);
+        ICCL_ASSERT(emplace_result.second);
     }
 
     LOG_DEBUG("size ", table.size(), ",  bucket_count", table.bucket_count(), ", load_factor ", table.load_factor(),
               ", max_load_factor ", table.max_load_factor());
 }
 
-void mlsl_sched_cache::remove_all()
+void iccl_sched_cache::remove_all()
 {
     std::lock_guard<sched_cache_lock_t> lock{guard};
     for (auto it = table.begin(); it != table.end(); ++it)
     {
-        mlsl_sched* sched = it->second;
-        MLSL_ASSERT(sched);
+        iccl_sched* sched = it->second;
+        ICCL_ASSERT(sched);
         LOG_DEBUG("remove sched ", sched, " from cache");
         delete sched;
     }

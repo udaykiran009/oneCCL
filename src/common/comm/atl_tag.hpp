@@ -2,25 +2,25 @@
 
 #include "common/comm/comm_id.hpp"
 
-using mlsl_op_id_t = uint8_t;
-using mlsl_sched_id_t = uint16_t;
-using mlsl_comm_id_t = uint16_t;
+using iccl_op_id_t = uint8_t;
+using iccl_sched_id_t = uint16_t;
+using iccl_comm_id_t = uint16_t;
 
-class mlsl_atl_tag
+class iccl_atl_tag
 {
 public:
-    mlsl_atl_tag(size_t tag_bits, size_t max_tag) :
+    iccl_atl_tag(size_t tag_bits, size_t max_tag) :
         tag_bits(tag_bits),
         max_tag(max_tag)
     {}
 
-    mlsl_atl_tag(const mlsl_atl_tag& other) = delete;
-    mlsl_atl_tag(mlsl_atl_tag&& other) = delete;
+    iccl_atl_tag(const iccl_atl_tag& other) = delete;
+    iccl_atl_tag(iccl_atl_tag&& other) = delete;
 
-    mlsl_atl_tag& operator=(const mlsl_atl_tag& other) = delete;
-    mlsl_atl_tag& operator=(mlsl_atl_tag&& other) = delete;
+    iccl_atl_tag& operator=(const iccl_atl_tag& other) = delete;
+    iccl_atl_tag& operator=(iccl_atl_tag&& other) = delete;
 
-    ~mlsl_atl_tag() = default;
+    ~iccl_atl_tag() = default;
 
     /**
      * Generates the tag to be used by ATL communication operations
@@ -29,7 +29,7 @@ public:
      * @param op_id local operation ID. Used to generate unique ATL tag when the rest of input parameters do not change
      * @return ATL communication tag
      */
-    uint64_t create(mlsl_comm_id_t comm_id, size_t rank, mlsl_sched_id_t sched_id, mlsl_op_id_t op_id);
+    uint64_t create(iccl_comm_id_t comm_id, size_t rank, iccl_sched_id_t sched_id, iccl_op_id_t op_id);
 
 private:
 

@@ -3,7 +3,7 @@
 #include <vector>
 #include <chrono>
 
-#define Collective_Name "MLSL_BCAST_ALGO"
+#define Collective_Name "ICCL_BCAST_ALGO"
 
 template <typename T> class BcastTest:public BaseTest <T> {
 public:
@@ -37,7 +37,7 @@ public:
         for (idx = 0; idx < param.bufferCount; idx++) {
             this->Init (param);
             param.req[Buffers[idx]] = param.global_comm.bcast(param.sendBuf[idx].data(), param.elemCount,
-                              (mlsl::data_type) param.GetDataType(), ROOT_PROCESS_IDX, &param.coll_attr);
+                              (iccl::data_type) param.GetDataType(), ROOT_PROCESS_IDX, &param.coll_attr);
         }
         param.DefineCompletionOrderAndComplete();
         int result = Check(param);

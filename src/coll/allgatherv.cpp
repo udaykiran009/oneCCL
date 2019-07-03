@@ -1,25 +1,25 @@
 #include "coll/coll_algorithms.hpp"
 #include "sched/entry_factory.hpp"
 
-mlsl_status_t mlsl_coll_build_direct_allgatherv(mlsl_sched* sched, const void* send_buf, size_t s_count,
-                                                void* recv_buf, size_t* r_counts, mlsl_datatype_internal_t dtype)
+iccl_status_t iccl_coll_build_direct_allgatherv(iccl_sched* sched, const void* send_buf, size_t s_count,
+                                                void* recv_buf, size_t* r_counts, iccl_datatype_internal_t dtype)
 {
     LOG_DEBUG("build direct allgatherv");
 
     entry_factory::make_allgatherv_entry(sched, send_buf, s_count, recv_buf, r_counts, dtype);
-    return mlsl_status_success;
+    return iccl_status_success;
 }
 
-mlsl_status_t mlsl_coll_build_naive_allgatherv(mlsl_sched* sched, const void* send_buf, size_t send_count,
-                                               void* recv_buf, size_t* recv_counts, mlsl_datatype_internal_t dtype)
+iccl_status_t iccl_coll_build_naive_allgatherv(iccl_sched* sched, const void* send_buf, size_t send_count,
+                                               void* recv_buf, size_t* recv_counts, iccl_datatype_internal_t dtype)
 {
     LOG_DEBUG("build naive allgatherv");
 
     size_t comm_size     = sched->coll_param.comm->size();
     size_t this_rank     = sched->coll_param.comm->rank();
-    size_t dtype_size    = mlsl_datatype_get_size(dtype);
-    size_t* offsets      = static_cast<size_t*>(MLSL_MALLOC(comm_size * sizeof(size_t), "offsets"));
-    mlsl_status_t status = mlsl_status_success;
+    size_t dtype_size    = iccl_datatype_get_size(dtype);
+    size_t* offsets      = static_cast<size_t*>(ICCL_MALLOC(comm_size * sizeof(size_t), "offsets"));
+    iccl_status_t status = iccl_status_success;
 
     offsets[0] = 0;
     for (size_t rank_idx = 1; rank_idx < comm_size; ++rank_idx)
@@ -47,6 +47,6 @@ mlsl_status_t mlsl_coll_build_naive_allgatherv(mlsl_sched* sched, const void* se
         }
     }
 
-    MLSL_FREE(offsets);
+    ICCL_FREE(offsets);
     return status;
 }

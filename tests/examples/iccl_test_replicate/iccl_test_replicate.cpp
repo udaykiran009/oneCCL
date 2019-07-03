@@ -1,13 +1,13 @@
 
-/* MLSL library API usage example and correctness check test */
+/* ICCL library API usage example and correctness check test */
 
 #include <math.h>   /* fabs */
 #include <stdio.h>  /* printf */
 #include <stdlib.h> /* exit */
 
-#include "mlsl.hpp"
+#include "iccl.hpp"
 
-using namespace MLSL;
+using namespace ICCL;
 
 /* Memory stuff */
 
@@ -65,7 +65,7 @@ int printCount = 0;
   } while(0)
 
 
-/* MLSL Test stuff */
+/* ICCL Test stuff */
 
 #define DTYPE                 float
 #define DTYPE_SIZE            sizeof(DTYPE)
@@ -529,18 +529,18 @@ int main(int argc, char** argv)
 {
     if (argc != 5)
     {
-        printf("specify parameters: mlsl_test [GROUP_COUNT] [DIST_UPDATE] [USER_BUF] [REPLICA_COUNT]\n");
+        printf("specify parameters: iccl_test [GROUP_COUNT] [DIST_UPDATE] [USER_BUF] [REPLICA_COUNT]\n");
         exit(0);
     }
 
     int runtime_version = Environment::GetEnv().GetVersion();
-    printf("built with MLSL API version: %d.%d, used MLSL API version: %d.%d\n",
-           MLSL_MAJOR_VERSION, MLSL_MINOR_VERSION, MLSL_MAJOR(runtime_version), MLSL_MINOR(runtime_version));
+    printf("built with ICCL API version: %d.%d, used ICCL API version: %d.%d\n",
+           ICCL_MAJOR_VERSION, ICCL_MINOR_VERSION, ICCL_MAJOR(runtime_version), ICCL_MINOR(runtime_version));
 
-    if (MLSL_MAJOR_VERSION != MLSL_MAJOR(runtime_version))
+    if (ICCL_MAJOR_VERSION != ICCL_MAJOR(runtime_version))
     {
-        printf("incompatible MLSL API version: %d.%d, exit\n",
-               MLSL_MAJOR(runtime_version), MLSL_MINOR(runtime_version));
+        printf("incompatible ICCL API version: %d.%d, exit\n",
+               ICCL_MAJOR(runtime_version), ICCL_MINOR(runtime_version));
         return 0;
     }
 

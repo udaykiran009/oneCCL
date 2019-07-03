@@ -1,14 +1,14 @@
 
 ENABLE_DEBUG ?= 1
 SHELL = bash
-INCLUDES = -I$(MLSL_ROOT)/intel64/include
-LDFLAGS  = -L$(MLSL_ROOT)/intel64/lib -lmlsl -lrt
+INCLUDES = -I$(ICCL_ROOT)/intel64/include
+LDFLAGS  = -L$(ICCL_ROOT)/intel64/lib -liccl -lrt
 CC      ?= gcc
 CXX     ?= g++
 
-py_test  = mlsl_test
-cpp_test  = mlsl_test
-c_test    = cmlsl_test
+py_test  = iccl_test
+cpp_test  = iccl_test
+c_test    = ciccl_test
 
 
 tests      = $(cpp_test) $(c_test)
@@ -41,7 +41,7 @@ clean_log:
 	-rm -f *.log
 
 run_c: clean_log $(c_test)
-	echo "running cmlsl_test ..." ; \
+	echo "running ciccl_test ..." ; \
 	for group_count in 1 2 4 ; do \
 		for usr_buf in 1 0 ; do \
 			for dist_upd in 1 0 ; do \
@@ -55,7 +55,7 @@ run_c: clean_log $(c_test)
 	done
 
 run_cpp: clean_log $(cpp_test)
-	echo "running mlsl_test ..." ; \
+	echo "running iccl_test ..." ; \
 	for group_count in 1 2 4 ; do \
 		for usr_buf in 1 0 ; do \
 			for dist_upd in 1 0 ; do \
@@ -68,7 +68,7 @@ run_cpp: clean_log $(cpp_test)
 		done ; \
 	done ;
 	if [ $(PATH_TO_QUANT_LIB) ] ; then \
-		echo "running mlsl_test with quantization ..." ; \
+		echo "running iccl_test with quantization ..." ; \
 		echo "group_count = 1, dist_update = 0, user_buf = 0, stats = 0" >> output_with_quant.log 2>&1 ; \
 		mpiexec.hydra -n 4 -ppn 1 -l ./$(cpp_test) 1 0 0 0 $(PATH_TO_QUANT_LIB) >> output_with_quant.log 2>&1 ; \
 		if [ "$${PIPESTATUS[0]}" -ne 0 ]; then \
@@ -77,7 +77,7 @@ run_cpp: clean_log $(cpp_test)
 	fi ;
 
 run_py: clean_log
-	echo "running mlsl_test.py ..." ; \
+	echo "running iccl_test.py ..." ; \
 	for group_count in 1 2 4 ; do \
 		for usr_buf in 0 ; do \
 			for dist_upd in 1 0 ; do \

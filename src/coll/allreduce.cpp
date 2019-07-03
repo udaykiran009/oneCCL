@@ -1,29 +1,29 @@
 #include "coll/coll_algorithms.hpp"
 #include "sched/entry_factory.hpp"
 
-mlsl_status_t mlsl_coll_build_direct_allreduce(mlsl_sched *sched, const void *send_buf, void *recv_buf,
-                                               size_t count, mlsl_datatype_internal_t dtype, mlsl_reduction_t op)
+iccl_status_t iccl_coll_build_direct_allreduce(iccl_sched *sched, const void *send_buf, void *recv_buf,
+                                               size_t count, iccl_datatype_internal_t dtype, iccl_reduction_t op)
 {
     LOG_DEBUG("build direct allreduce");
 
     entry_factory::make_allreduce_entry(sched, send_buf, recv_buf, count, dtype, op);
-    return mlsl_status_success;
+    return iccl_status_success;
 }
 
-mlsl_status_t mlsl_coll_build_rabenseifner_allreduce(mlsl_sched *sched, const void *send_buf, void *recv_buf,
-                                                     size_t count, mlsl_datatype_internal_t dtype, mlsl_reduction_t op)
+iccl_status_t iccl_coll_build_rabenseifner_allreduce(iccl_sched *sched, const void *send_buf, void *recv_buf,
+                                                     size_t count, iccl_datatype_internal_t dtype, iccl_reduction_t op)
 {
     LOG_DEBUG("build Rabenseifner's allreduce");
-    MLSL_ASSERT(sched != nullptr, "empty sched");
+    ICCL_ASSERT(sched != nullptr, "empty sched");
 
-    mlsl_status_t status = mlsl_status_success;
+    iccl_status_t status = iccl_status_success;
     int comm_size, rank, newrank, pof2, rem;
     int i, send_idx, recv_idx, last_idx, mask, newdst, dst, send_cnt, recv_cnt;
     void *tmp_buf = NULL;
     int *cnts = NULL, *disps = NULL;
-    size_t dtype_size = mlsl_datatype_get_size(dtype);
+    size_t dtype_size = iccl_datatype_get_size(dtype);
 
-    mlsl_comm *comm = sched->coll_param.comm;
+    iccl_comm *comm = sched->coll_param.comm;
 
     comm_size = comm->size();
     rank = comm->rank();
@@ -55,7 +55,7 @@ mlsl_status_t mlsl_coll_build_rabenseifner_allreduce(mlsl_sched *sched, const vo
             /* temporarily set the rank to -1 so that this
              * process does not pariticipate in recursive
              * doubling */
-            newrank = MLSL_INVALID_PROC_IDX;
+            newrank = ICCL_INVALID_PROC_IDX;
         } else {        /* odd */
             entry_factory::make_recv_entry(sched, tmp_buf, count, dtype, rank - 1);
             sched->add_barrier();
@@ -73,15 +73,15 @@ mlsl_status_t mlsl_coll_build_rabenseifner_allreduce(mlsl_sched *sched, const vo
     } else      /* rank >= 2*rem */
         newrank = rank - rem;
 
-    if (newrank != MLSL_INVALID_PROC_IDX) {
+    if (newrank != ICCL_INVALID_PROC_IDX) {
         /* for the reduce-scatter, calculate the count that
          * each process receives and the displacement within
          * the buffer */
-        cnts = static_cast<int*>(MLSL_MALLOC(pof2 * sizeof(int), "counts"));
-        disps = static_cast<int*>(MLSL_MALLOC(pof2 * sizeof(int), "displacements"));
+        cnts = static_cast<int*>(ICCL_MALLOC(pof2 * sizeof(int), "counts"));
+        disps = static_cast<int*>(ICCL_MALLOC(pof2 * sizeof(int), "displacements"));
 
         /* the cnts calculations assume this */
-        MLSL_ASSERT(count >= static_cast<size_t>(pof2), "count ", count, ", pof2 ", pof2);
+        ICCL_ASSERT(count >= static_cast<size_t>(pof2), "count ", count, ", pof2 ", pof2);
 
         for (i = 0; i < (pof2 - 1); i++)
             cnts[i] = count / pof2;
@@ -120,7 +120,7 @@ mlsl_status_t mlsl_coll_build_rabenseifner_allreduce(mlsl_sched *sched, const vo
             if (buf1 != buf2 && ((buf1 + send_cnt * dtype_size <= buf2) || (buf2 + recv_cnt * dtype_size <= buf1)))
                 can_use_recv_reduce = 1;
 
-            MLSL_ASSERT(can_use_recv_reduce);
+            ICCL_ASSERT(can_use_recv_reduce);
 
             if (can_use_recv_reduce) {
                 entry_factory::make_recv_reduce_entry(sched,
@@ -208,28 +208,28 @@ mlsl_status_t mlsl_coll_build_rabenseifner_allreduce(mlsl_sched *sched, const vo
         }
     }
 
-    MLSL_FREE(cnts);
-    MLSL_FREE(disps);
+    ICCL_FREE(cnts);
+    ICCL_FREE(disps);
 
     return status;
 }
 
-mlsl_status_t mlsl_coll_build_recursive_doubling_allreduce(mlsl_sched *sched, const void *send_buf, void *recv_buf,
-                                                           size_t count, mlsl_datatype_internal_t dtype, mlsl_reduction_t op)
+iccl_status_t iccl_coll_build_recursive_doubling_allreduce(iccl_sched *sched, const void *send_buf, void *recv_buf,
+                                                           size_t count, iccl_datatype_internal_t dtype, iccl_reduction_t op)
 {
     LOG_DEBUG("build recursive_doubling allreduce");
 
-    mlsl_status_t status = mlsl_status_success;
+    iccl_status_t status = iccl_status_success;
 
     int pof2, rem, comm_size, rank;
     int newrank, mask, newdst, dst;
     void *tmp_buf = NULL;
 
-    mlsl_comm *comm = sched->coll_param.comm;
+    iccl_comm *comm = sched->coll_param.comm;
     comm_size = comm->size();
     rank = comm->rank();
 
-    size_t dtype_size = mlsl_datatype_get_size(dtype);
+    size_t dtype_size = iccl_datatype_get_size(dtype);
     tmp_buf = sched->alloc_buffer(count * dtype_size);
 
     /* copy local data into recv_buf */
@@ -314,17 +314,17 @@ mlsl_status_t mlsl_coll_build_recursive_doubling_allreduce(mlsl_sched *sched, co
     return status;
 }
 
-mlsl_status_t mlsl_coll_build_starlike_allreduce(mlsl_sched *sched, const void *send_buf, void *recv_buf,
-                                                 size_t count, mlsl_datatype_internal_t dtype, mlsl_reduction_t op)
+iccl_status_t iccl_coll_build_starlike_allreduce(iccl_sched *sched, const void *send_buf, void *recv_buf,
+                                                 size_t count, iccl_datatype_internal_t dtype, iccl_reduction_t op)
 {
     LOG_DEBUG("build starlike allreduce");
 
-    mlsl_status_t status = mlsl_status_success;
+    iccl_status_t status = iccl_status_success;
     size_t comm_size = sched->coll_param.comm->size();
     size_t this_rank = sched->coll_param.comm->rank();
-    size_t* buffer_counts = static_cast<size_t*>(MLSL_MALLOC(comm_size * sizeof(size_t), "buffer_count"));
-    size_t* buffer_offsets = static_cast<size_t*>(MLSL_MALLOC(comm_size * sizeof(size_t), "buffer_offsets"));
-    size_t dtype_size = mlsl_datatype_get_size(dtype);
+    size_t* buffer_counts = static_cast<size_t*>(ICCL_MALLOC(comm_size * sizeof(size_t), "buffer_count"));
+    size_t* buffer_offsets = static_cast<size_t*>(ICCL_MALLOC(comm_size * sizeof(size_t), "buffer_offsets"));
+    size_t dtype_size = iccl_datatype_get_size(dtype);
     void *tmp_buf = NULL;
 
     // find counts and offsets for each rank
@@ -368,25 +368,25 @@ mlsl_status_t mlsl_coll_build_starlike_allreduce(mlsl_sched *sched, const void *
     sched->add_barrier();
 
     // allgatherv
-    MLSL_CALL(mlsl_coll_build_naive_allgatherv(sched, recv_buf, buffer_counts[this_rank],
+    ICCL_CALL(iccl_coll_build_naive_allgatherv(sched, recv_buf, buffer_counts[this_rank],
                                                recv_buf, buffer_counts, dtype));
 
-    MLSL_FREE(buffer_counts);
-    MLSL_FREE(buffer_offsets);
+    ICCL_FREE(buffer_counts);
+    ICCL_FREE(buffer_offsets);
 
     return status;
 }
 
-mlsl_status_t mlsl_coll_build_ring_allreduce(mlsl_sched *sched, const void *send_buf, void *recv_buf,
-                                             size_t count, mlsl_datatype_internal_t dtype, mlsl_reduction_t op)
+iccl_status_t iccl_coll_build_ring_allreduce(iccl_sched *sched, const void *send_buf, void *recv_buf,
+                                             size_t count, iccl_datatype_internal_t dtype, iccl_reduction_t op)
 {
     int inplace = (send_buf == recv_buf) ? 1 : 0;
     LOG_DEBUG("build ring allreduce ", inplace ? "in-place" : "out-of-place");
 
-    mlsl_status_t status = mlsl_status_success;
+    iccl_status_t status = iccl_status_success;
     size_t comm_size, rank;
-    mlsl_comm* comm = sched->coll_param.comm;
-    size_t dtype_size = mlsl_datatype_get_size(dtype);
+    iccl_comm* comm = sched->coll_param.comm;
+    size_t dtype_size = iccl_datatype_get_size(dtype);
     size_t idx = 0;
     void* tmp_buf = NULL;
     size_t src, dst;
@@ -394,7 +394,7 @@ mlsl_status_t mlsl_coll_build_ring_allreduce(mlsl_sched *sched, const void *send
     comm_size = comm->size();
     rank = comm->rank();
 
-    MLSL_THROW_IF_NOT(sched && send_buf && recv_buf, "incorrect values, sched ", sched, ", send ", send_buf,
+    ICCL_THROW_IF_NOT(sched && send_buf && recv_buf, "incorrect values, sched ", sched, ", send ", send_buf,
                       " recv ", recv_buf);
 
     if (comm_size == 1)
@@ -404,7 +404,7 @@ mlsl_status_t mlsl_coll_build_ring_allreduce(mlsl_sched *sched, const void *send
             entry_factory::make_copy_entry(sched, send_buf, recv_buf, count, dtype);
             sched->add_barrier();
         }
-        return mlsl_status_success;
+        return iccl_status_success;
     }
 
     if (inplace)

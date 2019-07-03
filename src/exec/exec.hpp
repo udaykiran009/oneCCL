@@ -8,26 +8,26 @@
 #include <vector>
 #include <memory>
 
-class mlsl_worker;
-class mlsl_service_worker;
-class mlsl_sched;
+class iccl_worker;
+class iccl_service_worker;
+class iccl_sched;
 
-class alignas(CACHELINE_SIZE) mlsl_executor
+class alignas(CACHELINE_SIZE) iccl_executor
 {
 public:
-    mlsl_executor() = delete;
-    mlsl_executor(const mlsl_executor& other) = delete;
-    mlsl_executor& operator=(const mlsl_executor& other) = delete;
-    mlsl_executor(mlsl_executor&& other) = delete;
-    mlsl_executor& operator=(mlsl_executor&& other) = delete;
+    iccl_executor() = delete;
+    iccl_executor(const iccl_executor& other) = delete;
+    iccl_executor& operator=(const iccl_executor& other) = delete;
+    iccl_executor(iccl_executor&& other) = delete;
+    iccl_executor& operator=(iccl_executor&& other) = delete;
 
-    mlsl_executor(const mlsl_env_data& env_vars,
-                  const mlsl_global_data& global_data);
-    ~mlsl_executor();
+    iccl_executor(const iccl_env_data& env_vars,
+                  const iccl_global_data& global_data);
+    ~iccl_executor();
 
-    void start(mlsl_sched* sched);
-    void wait(mlsl_request* req);
-    bool test(mlsl_request* req);
+    void start(iccl_sched* sched);
+    void wait(iccl_request* req);
+    bool test(iccl_request* req);
 
     size_t proc_idx{};
     size_t proc_count{};
@@ -42,19 +42,19 @@ public:
 
 private:
     atl_comm_t** atl_comms = nullptr;
-    std::vector<std::unique_ptr<mlsl_worker>> workers;
+    std::vector<std::unique_ptr<iccl_worker>> workers;
 };
 
 
 //free functions
 
-inline void mlsl_wait_impl(mlsl_executor* exec,
-                           mlsl_request* request)
+inline void iccl_wait_impl(iccl_executor* exec,
+                           iccl_request* request)
 {
     exec->wait(request);
-    MLSL_ASSERT(request->sched);
+    ICCL_ASSERT(request->sched);
 
-    LOG_DEBUG("req ", request, " completed, sched ", mlsl_coll_type_to_str(request->sched->coll_param.ctype));
+    LOG_DEBUG("req ", request, " completed, sched ", iccl_coll_type_to_str(request->sched->coll_param.ctype));
 
     if (!request->sched->coll_attr.to_cache)
     {
@@ -62,15 +62,15 @@ inline void mlsl_wait_impl(mlsl_executor* exec,
     }
 }
 
-inline bool mlsl_test_impl(mlsl_executor* exec,
-                           mlsl_request* request)
+inline bool iccl_test_impl(iccl_executor* exec,
+                           iccl_request* request)
 {
     bool completed = exec->test(request);
 
     if (completed)
     {
-        MLSL_ASSERT(request->sched);
-        LOG_DEBUG("req ", request, " completed, sched ", mlsl_coll_type_to_str(request->sched->coll_param.ctype));
+        ICCL_ASSERT(request->sched);
+        LOG_DEBUG("req ", request, " completed, sched ", iccl_coll_type_to_str(request->sched->coll_param.ctype));
 
         if (!request->sched->coll_attr.to_cache)
         {

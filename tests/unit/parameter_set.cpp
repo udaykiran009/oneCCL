@@ -103,7 +103,7 @@ TEST_F(ParameterSetTest, test_GetOwnedKernelOffset)
 TEST_F(ParameterSetTest, test_GetDataType)
 {
     ITERATE_OVER_NETS_OPS_TRS(
-        EXPECT_EQ(MLSL_DTYPE, param->GetDataType());
+        EXPECT_EQ(ICCL_DTYPE, param->GetDataType());
     );
 
     ITERATE_OVER_DEF_DISTS(

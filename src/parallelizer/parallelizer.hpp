@@ -2,22 +2,22 @@
 
 #include "sched/sched.hpp"
 
-class mlsl_parallelizer
+class iccl_parallelizer
 {
 public:
-    mlsl_parallelizer(size_t max_data_partition_count)
+    iccl_parallelizer(size_t max_data_partition_count)
         : max_data_partition_count(max_data_partition_count)
     {}
 
-    ~mlsl_parallelizer() = default;
+    ~iccl_parallelizer() = default;
 
-    mlsl_parallelizer(const mlsl_parallelizer& other) = delete;
-    mlsl_parallelizer& operator= (const mlsl_parallelizer& other) = delete;
+    iccl_parallelizer(const iccl_parallelizer& other) = delete;
+    iccl_parallelizer& operator= (const iccl_parallelizer& other) = delete;
 
-    mlsl_parallelizer(mlsl_parallelizer&& other) = delete;
-    mlsl_parallelizer& operator= (mlsl_parallelizer&& other) = delete;
+    iccl_parallelizer(iccl_parallelizer&& other) = delete;
+    iccl_parallelizer& operator= (iccl_parallelizer&& other) = delete;
 
-    mlsl_status_t process(mlsl_sched* sched);
+    iccl_status_t process(iccl_sched* sched);
 
 private:
     size_t max_data_partition_count;

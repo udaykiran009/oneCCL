@@ -1,13 +1,13 @@
 
-/* MLSL library API test for multiple sequential communications */
+/* ICCL library API test for multiple sequential communications */
 
 #include <stdio.h>  /* printf */
 #include <stdlib.h> /* exit */
 #include <unistd.h> /* usleep */
 
-#include "mlsl.hpp"
+#include "iccl.hpp"
 
-using namespace MLSL;
+using namespace ICCL;
 
 #define MY_ASSERT(cond,...)                                                   \
   do                                                                          \
@@ -23,7 +23,7 @@ using namespace MLSL;
 
 #define DTYPE          float
 #define DTYPE_SIZE     sizeof(DTYPE)
-#define MLSL_DTYPE     ((DTYPE_SIZE == 4) ? DT_FLOAT : DT_DOUBLE)
+#define ICCL_DTYPE     ((DTYPE_SIZE == 4) ? DT_FLOAT : DT_DOUBLE)
 #define CACHELINE_SIZE 64
 #define ELEM_COUNT     32768
 #define ITER_COUNT     1000
@@ -32,7 +32,7 @@ int main(int argc, char** argv)
 {
     if (argc != 1)
     {
-        printf("specify parameters: mlsl_multiple_comms\n");
+        printf("specify parameters: iccl_multiple_comms\n");
         exit(0);
     }
 
@@ -48,10 +48,10 @@ int main(int argc, char** argv)
     {
         CommReq* req;
 
-        req = dist->AllReduce(sendBuf, sendBuf, ELEM_COUNT, MLSL_DTYPE, RT_SUM, GT_GLOBAL);
+        req = dist->AllReduce(sendBuf, sendBuf, ELEM_COUNT, ICCL_DTYPE, RT_SUM, GT_GLOBAL);
         Environment::GetEnv().Wait(req);
 
-        req = dist->Gather(sendBuf, ELEM_COUNT, recvBuf, MLSL_DTYPE, 0, GT_MODEL);
+        req = dist->Gather(sendBuf, ELEM_COUNT, recvBuf, ICCL_DTYPE, 0, GT_MODEL);
         Environment::GetEnv().Wait(req);
     }
 

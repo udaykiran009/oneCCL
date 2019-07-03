@@ -3,11 +3,11 @@
 #include "common/utils/tree.hpp"
 
 static void bcast_tree(const bin_tree& tree,
-                       mlsl_sched* sched,
+                       iccl_sched* sched,
                        void* buffer,
                        size_t count,
-                       mlsl_datatype_internal_t dtype,
-                       mlsl_op_id_t op_id)
+                       iccl_datatype_internal_t dtype,
+                       iccl_op_id_t op_id)
 {
     if (tree.parent() != -1)
     {
@@ -28,12 +28,12 @@ static void bcast_tree(const bin_tree& tree,
 }
 
 static void reduce_tree(const bin_tree& tree,
-                        mlsl_sched* sched,
+                        iccl_sched* sched,
                         void* buffer,
                         size_t count,
-                        mlsl_datatype_internal_t dtype,
-                        mlsl_reduction_t reduction,
-                        mlsl_op_id_t op_id)
+                        iccl_datatype_internal_t dtype,
+                        iccl_reduction_t reduction,
+                        iccl_op_id_t op_id)
 {
     if (tree.left() != -1)
     {
@@ -59,12 +59,12 @@ static void reduce_tree(const bin_tree& tree,
 }
 
 static void reduce_bcast_tree(const bin_tree& tree,
-                              mlsl_sched* sched,
+                              iccl_sched* sched,
                               void* buffer,
                               size_t count,
-                              mlsl_datatype_internal_t dtype,
-                              mlsl_reduction_t reduction,
-                              mlsl_op_id_t op_id)
+                              iccl_datatype_internal_t dtype,
+                              iccl_reduction_t reduction,
+                              iccl_op_id_t op_id)
 {
     if (tree.left() != -1)
     {
@@ -109,20 +109,20 @@ static void reduce_bcast_tree(const bin_tree& tree,
     }
 }
 
-mlsl_status_t mlsl_coll_build_double_tree_op(mlsl_sched* sched,
-                                             mlsl_coll_type coll_type,
+iccl_status_t iccl_coll_build_double_tree_op(iccl_sched* sched,
+                                             iccl_coll_type coll_type,
                                              const void* send_buf,
                                              void* recv_buf,
                                              size_t count,
-                                             mlsl_datatype_internal_t dtype,
-                                             mlsl_reduction_t op,
+                                             iccl_datatype_internal_t dtype,
+                                             iccl_reduction_t op,
                                              const double_tree& dtree)
 {
-    mlsl_status_t status = mlsl_status_success;
+    iccl_status_t status = iccl_status_success;
 
-    LOG_DEBUG("build double tree ", mlsl_coll_type_to_str(coll_type));
+    LOG_DEBUG("build double tree ", iccl_coll_type_to_str(coll_type));
 
-    if (coll_type != mlsl_coll_bcast && send_buf != recv_buf)
+    if (coll_type != iccl_coll_bcast && send_buf != recv_buf)
     {
         LOG_DEBUG("out of place op");
         entry_factory::make_copy_entry(sched, send_buf, recv_buf, count, dtype);
@@ -154,8 +154,8 @@ mlsl_status_t mlsl_coll_build_double_tree_op(mlsl_sched* sched,
               ", count ", t2_count,
               ", part size ", t2_part_count);
 
-    mlsl_op_id_t t1_op_id = 0;
-    mlsl_op_id_t t2_op_id = t1_op_id + static_cast<mlsl_op_id_t>(parts);
+    iccl_op_id_t t1_op_id = 0;
+    iccl_op_id_t t2_op_id = t1_op_id + static_cast<iccl_op_id_t>(parts);
 
     for (size_t iter = 0; iter < parts; ++iter)
     {
@@ -179,41 +179,41 @@ mlsl_status_t mlsl_coll_build_double_tree_op(mlsl_sched* sched,
 
         void* t2_work_buf = (char*) t2_start + t2_work_count * dtype->size * iter;
 
-        std::function<void(mlsl_sched*)> funcT1;
-        std::function<void(mlsl_sched*)> funcT2;
+        std::function<void(iccl_sched*)> funcT1;
+        std::function<void(iccl_sched*)> funcT2;
 
         const auto& t1 = dtree.T1();
         const auto& t2 = dtree.T2();
 
         switch (coll_type)
         {
-            case mlsl_coll_bcast:
+            case iccl_coll_bcast:
                 entry_factory::make_chain_call_entry(sched,
-                    [t1_work_buf, t1_work_count, dtype, t1_op_id, t1](mlsl_sched* s)
+                    [t1_work_buf, t1_work_count, dtype, t1_op_id, t1](iccl_sched* s)
                     {
                         bcast_tree(t1, s, t1_work_buf, t1_work_count, dtype, t1_op_id);
                     }, "bcast_t1");
 
                 entry_factory::make_chain_call_entry(sched,
-                    [t2_work_buf, t2_work_count, dtype, t2_op_id, t2](mlsl_sched* s)
+                    [t2_work_buf, t2_work_count, dtype, t2_op_id, t2](iccl_sched* s)
                     {
                         bcast_tree(t2, s, t2_work_buf, t2_work_count, dtype, t2_op_id);
                     }, "bcast_t2");
 
                 break;
-            case mlsl_coll_reduce:
+            case iccl_coll_reduce:
             {
                 if(sched->coll_param.comm->rank() % 2 == 0)
                 {
                     //even ranks are leaves in T2, start schedule with T2
                     entry_factory::make_chain_call_entry(sched,
-                        [t2_work_buf, t2_work_count, dtype, t2_op_id, op, t2](mlsl_sched* s)
+                        [t2_work_buf, t2_work_count, dtype, t2_op_id, op, t2](iccl_sched* s)
                         {
                             reduce_tree(t2, s, t2_work_buf, t2_work_count, dtype, op, t2_op_id);
                         },"reduce_t2");
 
                     entry_factory::make_chain_call_entry(sched,
-                        [t1_work_buf, t1_work_count, dtype, t1_op_id, op, t1](mlsl_sched* s)
+                        [t1_work_buf, t1_work_count, dtype, t1_op_id, op, t1](iccl_sched* s)
                         {
                             reduce_tree(t1, s, t1_work_buf, t1_work_count, dtype, op, t1_op_id);
                         },"reduce_t1");
@@ -221,13 +221,13 @@ mlsl_status_t mlsl_coll_build_double_tree_op(mlsl_sched* sched,
                 else
                 {
                     entry_factory::make_chain_call_entry(sched,
-                        [t2_work_buf, t2_work_count, dtype, t2_op_id, op, t2](mlsl_sched* s)
+                        [t2_work_buf, t2_work_count, dtype, t2_op_id, op, t2](iccl_sched* s)
                         {
                             reduce_tree(t2, s, t2_work_buf, t2_work_count, dtype, op, t2_op_id);
                         },"reduce_t2");
 
                     entry_factory::make_chain_call_entry(sched,
-                        [t1_work_buf, t1_work_count, dtype, t1_op_id, op, t1](mlsl_sched* s)
+                        [t1_work_buf, t1_work_count, dtype, t1_op_id, op, t1](iccl_sched* s)
                         {
                             reduce_tree(t1, s, t1_work_buf, t1_work_count, dtype, op, t1_op_id);
                         },"reduce_t1");
@@ -235,19 +235,19 @@ mlsl_status_t mlsl_coll_build_double_tree_op(mlsl_sched* sched,
 
                 break;
             }
-            case mlsl_coll_allreduce:
+            case iccl_coll_allreduce:
             {
                 if(sched->coll_param.comm->rank() % 2 == 0)
                 {
                     //even ranks are leaves in T2, start schedule with T2
                     entry_factory::make_chain_call_entry(sched,
-                        [t2_work_buf, t2_work_count, dtype, t2_op_id, op, t2](mlsl_sched* s)
+                        [t2_work_buf, t2_work_count, dtype, t2_op_id, op, t2](iccl_sched* s)
                         {
                             reduce_bcast_tree(t2, s, t2_work_buf, t2_work_count, dtype, op, t2_op_id);
                         }, "reduce_bcast_t2");
 
                     entry_factory::make_chain_call_entry(sched,
-                        [t1_work_buf, t1_work_count, dtype, t1_op_id, op, t1](mlsl_sched* s)
+                        [t1_work_buf, t1_work_count, dtype, t1_op_id, op, t1](iccl_sched* s)
                         {
                             reduce_bcast_tree(t1, s, t1_work_buf, t1_work_count, dtype, op, t1_op_id);
                         },
@@ -256,14 +256,14 @@ mlsl_status_t mlsl_coll_build_double_tree_op(mlsl_sched* sched,
                 else
                 {
                     entry_factory::make_chain_call_entry(sched,
-                        [t1_work_buf, t1_work_count, dtype, t1_op_id, op, t1](mlsl_sched* s)
+                        [t1_work_buf, t1_work_count, dtype, t1_op_id, op, t1](iccl_sched* s)
                         {
                             reduce_bcast_tree(t1, s, t1_work_buf, t1_work_count, dtype, op, t1_op_id);
                         },
                         "reduce_bcast_t1");
 
                     entry_factory::make_chain_call_entry(sched,
-                        [t2_work_buf, t2_work_count, dtype, t2_op_id, op, t2](mlsl_sched* s)
+                        [t2_work_buf, t2_work_count, dtype, t2_op_id, op, t2](iccl_sched* s)
                         {
                             reduce_bcast_tree(t2, s, t2_work_buf, t2_work_count, dtype, op, t2_op_id);
                         }, "reduce_bcast_t2");
@@ -271,7 +271,7 @@ mlsl_status_t mlsl_coll_build_double_tree_op(mlsl_sched* sched,
                 break;
             }
             default:
-                MLSL_FATAL("unsupported double tree op ", mlsl_coll_type_to_str(coll_type));
+                ICCL_FATAL("unsupported double tree op ", iccl_coll_type_to_str(coll_type));
         }
 
         ++t1_op_id;

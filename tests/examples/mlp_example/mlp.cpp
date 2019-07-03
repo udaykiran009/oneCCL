@@ -3,8 +3,8 @@
 #include "inner_product_layer.hpp"
 #include "softmax_loss_layer.hpp"
 
-#if USE_MLSL
-#include "mlsl_wrapper.hpp"
+#if USE_ICCL
+#include "iccl_wrapper.hpp"
 #endif
 
 BaseLayer* layers[LAYER_COUNT];
@@ -45,18 +45,18 @@ BaseLayer* CreateLayer(size_t layerIdx)
 
 int main(int argc, char** argv)
 {
-#if USE_MLSL
-    printf("use MLSL\n");
-    InitMLSL(argc, argv);
+#if USE_ICCL
+    printf("use ICCL\n");
+    InitICCL(argc, argv);
 #else
-    printf("don't use MLSL\n");
+    printf("don't use ICCL\n");
 #endif
 
     size_t layerIdx;
     for (layerIdx = 0; layerIdx < LAYER_COUNT; layerIdx++)
         layers[layerIdx] = CreateLayer(layerIdx);
 
-#if USE_MLSL
+#if USE_ICCL
     session->Commit();
 #endif
 
@@ -80,8 +80,8 @@ int main(int argc, char** argv)
     for (layerIdx = 0; layerIdx < LAYER_COUNT; layerIdx++)
         delete layers[layerIdx];
 
-#if USE_MLSL
-    FinalizeMLSL();
+#if USE_ICCL
+    FinalizeICCL();
 #endif
 
     printf("exited normally\n");

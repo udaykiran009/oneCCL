@@ -1,10 +1,10 @@
-#builds mlsl2
+#builds iccl
 
 add_subdirectory(atl)
 
-set(MLSL_SRC
-    mlsl.cpp
-    mlsl_cpp_api.cpp
+set(ICCL_SRC
+    iccl.cpp
+    iccl_cpp_api.cpp
     atl/atl.cpp
     coll/coll.cpp
     coll/allreduce.cpp
@@ -35,7 +35,7 @@ set(MLSL_SRC
     common/global/global.cpp
     common/log/log.cpp)
 
-set(MLSL_INC_DIRS
+set(ICCL_INC_DIRS
     ${PROJECT_SOURCE_DIR}/include
     ${PROJECT_SOURCE_DIR}/src)
 
@@ -43,32 +43,32 @@ set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -pthread")
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -pthread")
 
 #special library that holds objects only
-add_library(mlsl2-objects OBJECT ${MLSL_SRC})
-set_target_properties(mlsl2-objects PROPERTIES POSITION_INDEPENDENT_CODE 1)
-target_compile_definitions(mlsl2-objects PRIVATE PT_LOCK_SPIN=1)
-target_compile_definitions(mlsl2-objects PRIVATE ATL_TRANSPORT_DL_DIR=\"${MLSL_BUILD_DIR}\")
-target_include_directories(mlsl2-objects PRIVATE ${MLSL_INC_DIRS})
+add_library(iccl-objects OBJECT ${ICCL_SRC})
+set_target_properties(iccl-objects PROPERTIES POSITION_INDEPENDENT_CODE 1)
+target_compile_definitions(iccl-objects PRIVATE PT_LOCK_SPIN=1)
+target_compile_definitions(iccl-objects PRIVATE ATL_TRANSPORT_DL_DIR=\"${ICCL_BUILD_DIR}\")
+target_include_directories(iccl-objects PRIVATE ${ICCL_INC_DIRS})
 
 #shared library
-add_library(mlsl2 SHARED $<TARGET_OBJECTS:mlsl2-objects>)
-target_include_directories(mlsl2 PUBLIC ${MLSL_INC_DIRS})
-target_link_libraries(mlsl2 PUBLIC dl pthread)
-set_target_properties(mlsl2 PROPERTIES LIBRARY_OUTPUT_DIRECTORY ${MLSL_BUILD_DIR})
-install(TARGETS mlsl2 LIBRARY DESTINATION ${MLSL_INSTALL_LIB})
+add_library(iccl SHARED $<TARGET_OBJECTS:iccl-objects>)
+target_include_directories(iccl PUBLIC ${ICCL_INC_DIRS})
+target_link_libraries(iccl PUBLIC dl pthread)
+set_target_properties(iccl PROPERTIES LIBRARY_OUTPUT_DIRECTORY ${ICCL_BUILD_DIR})
+install(TARGETS iccl LIBRARY DESTINATION ${ICCL_INSTALL_LIB})
 
 #static library
-add_library(mlsl2-static STATIC $<TARGET_OBJECTS:mlsl2-objects>)
-set_target_properties(mlsl2-static PROPERTIES OUTPUT_NAME mlsl2)
-set_target_properties(mlsl2-static PROPERTIES ARCHIVE_OUTPUT_DIRECTORY ${MLSL_BUILD_DIR})
-install(TARGETS mlsl2-static ARCHIVE DESTINATION ${MLSL_INSTALL_LIB})
+add_library(iccl-static STATIC $<TARGET_OBJECTS:iccl-objects>)
+set_target_properties(iccl-static PROPERTIES OUTPUT_NAME iccl)
+set_target_properties(iccl-static PROPERTIES ARCHIVE_OUTPUT_DIRECTORY ${ICCL_BUILD_DIR})
+install(TARGETS iccl-static ARCHIVE DESTINATION ${ICCL_INSTALL_LIB})
 
 #headers installation
 install(DIRECTORY ${PROJECT_SOURCE_DIR}/include/
-        DESTINATION ${MLSL_INSTALL_INCLUDE})
+        DESTINATION ${ICCL_INSTALL_INCLUDE})
 
 #mpi & ofi rt
 file(GLOB mpi_bins "${PROJECT_SOURCE_DIR}/mpirt/bin/*")
-install(PROGRAMS ${mpi_bins} DESTINATION ${MLSL_INSTALL_BIN})
+install(PROGRAMS ${mpi_bins} DESTINATION ${ICCL_INSTALL_BIN})
 
 install(DIRECTORY ${PROJECT_SOURCE_DIR}/ofi_rt/lib/
-        DESTINATION ${MLSL_INSTALL_LIB})
+        DESTINATION ${ICCL_INSTALL_LIB})

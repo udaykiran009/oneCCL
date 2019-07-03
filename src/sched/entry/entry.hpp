@@ -7,41 +7,41 @@
 #include <memory>
 #include <chrono>
 
-typedef mlsl_status_t(* mlsl_sched_entry_function_t)(const void*);
+typedef iccl_status_t(* iccl_sched_entry_function_t)(const void*);
 
-struct mlsl_sched;
+struct iccl_sched;
 
-enum mlsl_sched_entry_exec_mode
+enum iccl_sched_entry_exec_mode
 {
-    mlsl_sched_entry_exec_regular = 0,
-    mlsl_sched_entry_exec_once = 1
+    iccl_sched_entry_exec_regular = 0,
+    iccl_sched_entry_exec_once = 1
 };
 
-enum mlsl_sched_entry_status
+enum iccl_sched_entry_status
 {
-    mlsl_sched_entry_status_not_started = 0,
-    mlsl_sched_entry_status_started = 1,
-    mlsl_sched_entry_status_complete = 2,
-    mlsl_sched_entry_status_complete_once = 3, // should has higher value than 'complete'
-    mlsl_sched_entry_status_failed = 4,
-    mlsl_sched_entry_status_invalid = 5
+    iccl_sched_entry_status_not_started = 0,
+    iccl_sched_entry_status_started = 1,
+    iccl_sched_entry_status_complete = 2,
+    iccl_sched_entry_status_complete_once = 3, // should has higher value than 'complete'
+    iccl_sched_entry_status_failed = 4,
+    iccl_sched_entry_status_invalid = 5
 };
 
-enum mlsl_condition
+enum iccl_condition
 {
-    mlsl_condition_equal = 0,
-    mlsl_condition_not_equal = 1,
-    mlsl_condition_less = 2,
-    mlsl_condition_greater = 3,
-    mlsl_condition_less_or_equal = 4,
-    mlsl_condition_greater_or_equal = 5
+    iccl_condition_equal = 0,
+    iccl_condition_not_equal = 1,
+    iccl_condition_less = 2,
+    iccl_condition_greater = 3,
+    iccl_condition_less_or_equal = 4,
+    iccl_condition_greater_or_equal = 5
 };
 
 class alignas(CACHELINE_SIZE) sched_entry
 {
 public:
     sched_entry() = delete;
-    explicit sched_entry(mlsl_sched* sched,
+    explicit sched_entry(iccl_sched* sched,
                          bool is_barrier = false) :
         sched(sched),
         barrier(is_barrier),
@@ -50,8 +50,8 @@ public:
 
     virtual ~sched_entry() {}
 
-    void set_field_fn(mlsl_sched_entry_field_id id,
-                      mlsl_sched_entry_field_function_t fn,
+    void set_field_fn(iccl_sched_entry_field_id id,
+                      iccl_sched_entry_field_function_t fn,
                       const void* ctx,
                       bool update_once = true);
     void start();
@@ -64,13 +64,13 @@ public:
 
     void dump(std::stringstream& str,
               size_t idx) const;
-    virtual void* get_field_ptr(mlsl_sched_entry_field_id id);
+    virtual void* get_field_ptr(iccl_sched_entry_field_id id);
 
     void make_barrier();
     bool is_barrier() const;
-    mlsl_sched_entry_status get_status() const;
-    void set_status(mlsl_sched_entry_status s);
-    void set_exec_mode(mlsl_sched_entry_exec_mode mode);
+    iccl_sched_entry_status get_status() const;
+    void set_status(iccl_sched_entry_status s);
+    void set_exec_mode(iccl_sched_entry_exec_mode mode);
 
     virtual const char* name() const = 0;
 
@@ -78,13 +78,13 @@ protected:
 
     virtual void dump_detail(std::stringstream& str) const;
     void check_exec_mode();
-    const char* entry_status_to_str(mlsl_sched_entry_status status) const;
+    const char* entry_status_to_str(iccl_sched_entry_status status) const;
 
-    mlsl_sched* sched = nullptr;
+    iccl_sched* sched = nullptr;
     bool barrier = false;
     postponed_fields pfields;
-    mlsl_sched_entry_status status = mlsl_sched_entry_status_not_started;
-    mlsl_sched_entry_exec_mode exec_mode = mlsl_sched_entry_exec_regular;
+    iccl_sched_entry_status status = iccl_sched_entry_status_not_started;
+    iccl_sched_entry_exec_mode exec_mode = iccl_sched_entry_exec_regular;
 
 #ifdef ENABLE_DEBUG
     using timer_type = std::chrono::system_clock;

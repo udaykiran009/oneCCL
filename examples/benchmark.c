@@ -5,7 +5,7 @@
 #define SINGLE_ELEM_COUNT (BUF_COUNT * ELEM_COUNT)
 #define ALIGNMENT         (2 * 1024 * 1024)
 #define DTYPE             float
-#define MLSL_DTYPE        (mlsl_dtype_float)
+#define ICCL_DTYPE        (iccl_dtype_float)
 
 void fill_buffers(void** send_bufs, void** recv_bufs, size_t buf_count, size_t elem_count)
 {
@@ -58,11 +58,11 @@ void print_timings(double* timer, size_t elem_count, size_t buf_count)
     for (idx = 0; idx < size; idx++)
         recv_counts[idx] = 1;
 
-    mlsl_request_t request = NULL;
-    mlsl_coll_attr_t attr;
-    memset(&attr, 0, sizeof(mlsl_coll_attr_t));
-    MLSL_CALL(mlsl_allgatherv(timer, 1, timers, recv_counts, mlsl_dtype_double, &attr, NULL, &request));
-    MLSL_CALL(mlsl_wait(request));
+    iccl_request_t request = NULL;
+    iccl_coll_attr_t attr;
+    memset(&attr, 0, sizeof(iccl_coll_attr_t));
+    ICCL_CALL(iccl_allgatherv(timer, 1, timers, recv_counts, iccl_dtype_double, &attr, NULL, &request));
+    ICCL_CALL(iccl_wait(request));
 
     if (rank == 0)
     {
@@ -86,7 +86,7 @@ void print_timings(double* timer, size_t elem_count, size_t buf_count)
         printf("size %10zu x %5zu bytes, avg %10.2lf us, avg_per_buf %10.2f, stddev %5.1lf %%\n",
                 elem_count * sizeof(DTYPE), buf_count, avg_timer, avg_timer_per_buf, stddev_timer);
     }
-    mlsl_barrier(NULL);
+    iccl_barrier(NULL);
     free(timers);
     free(recv_counts);
 }
@@ -98,7 +98,7 @@ int main()
     DTYPE* recv_bufs[BUF_COUNT];
     DTYPE* single_send_buf = NULL;
     DTYPE* single_recv_buf = NULL;
-    mlsl_request_t reqs[BUF_COUNT];
+    iccl_request_t reqs[BUF_COUNT];
     double t, t1, t2;
     int check_values = 0;
 
@@ -123,16 +123,16 @@ int main()
     {
         for (idx = 0; idx < BUF_COUNT; idx++)
         {
-            mlsl_allreduce(send_bufs[idx], recv_bufs[idx], count, MLSL_DTYPE,
-                           mlsl_reduction_sum, &coll_attr, NULL, &reqs[idx]);
+            iccl_allreduce(send_bufs[idx], recv_bufs[idx], count, ICCL_DTYPE,
+                           iccl_reduction_sum, &coll_attr, NULL, &reqs[idx]);
         }
         for (idx = 0; idx < BUF_COUNT; idx++)
         {
-            mlsl_wait(reqs[idx]);
+            iccl_wait(reqs[idx]);
         }
     }
 
-    mlsl_barrier(NULL);
+    iccl_barrier(NULL);
 
     coll_attr.to_cache = 1;
     for (count = 1; count <= ELEM_COUNT; count *= 2)
@@ -144,12 +144,12 @@ int main()
             t1 = when();
             for (idx = 0; idx < BUF_COUNT; idx++)
             {
-                mlsl_allreduce(send_bufs[idx], recv_bufs[idx], count, MLSL_DTYPE,
-                               mlsl_reduction_sum, &coll_attr, NULL, &reqs[idx]);
+                iccl_allreduce(send_bufs[idx], recv_bufs[idx], count, ICCL_DTYPE,
+                               iccl_reduction_sum, &coll_attr, NULL, &reqs[idx]);
             }
             for (idx = 0; idx < BUF_COUNT; idx++)
             {
-                mlsl_wait(reqs[idx]);
+                iccl_wait(reqs[idx]);
             }
             t2 = when();
             t += (t2 - t1);
@@ -158,7 +158,7 @@ int main()
         print_timings(&t, count, BUF_COUNT);
     }
 
-    mlsl_barrier(NULL);
+    iccl_barrier(NULL);
 
     coll_attr.to_cache = 1;
     for (count = BUF_COUNT; count <= SINGLE_ELEM_COUNT; count *= 2)
@@ -167,9 +167,9 @@ int main()
         for (iter_idx = 0; iter_idx < ITERS; iter_idx++)
         {
             t1 = when();
-            mlsl_allreduce(single_send_buf, single_recv_buf, count, MLSL_DTYPE,
-                           mlsl_reduction_sum, &coll_attr, NULL, &reqs[0]);
-            mlsl_wait(reqs[0]);
+            iccl_allreduce(single_send_buf, single_recv_buf, count, ICCL_DTYPE,
+                           iccl_reduction_sum, &coll_attr, NULL, &reqs[0]);
+            iccl_wait(reqs[0]);
             t2 = when();
             t += (t2 - t1);
         }

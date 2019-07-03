@@ -7,8 +7,8 @@
 
 #include "base_layer.hpp"
 
-#if USE_MLSL
-#include "mlsl_wrapper.hpp"
+#if USE_ICCL
+#include "iccl_wrapper.hpp"
 #endif
 
 class InnerProductLayer : public BaseLayer
@@ -19,7 +19,7 @@ private:
     size_t paramSize;
     DTYPE* history; /* for SGD */
 
-#if USE_MLSL
+#if USE_ICCL
     Operation* op;
 #endif
 
@@ -43,9 +43,9 @@ public:
         for (size_t idx = 0; idx < elemCount; idx++)
             params[0][idx] = (DTYPE)((rand() % 100) / 10000.0);
 
-#if USE_MLSL
+#if USE_ICCL
         OperationRegInfo* regInfo = session->CreateOperationRegInfo(OT_CC);
-        regInfo->AddParameterSet(elemCount, 1, MLSL_DTYPE);
+        regInfo->AddParameterSet(elemCount, 1, ICCL_DTYPE);
         size_t opIdx = session->AddOperation(regInfo, distribution);
         op = session->GetOperation(opIdx);
         session->DeleteOperationRegInfo(regInfo);
@@ -95,7 +95,7 @@ public:
         /*for (size_t idx = 0; idx < elemCount; idx++)
             printf("paramGrads[%zu] = %f\n", idx, paramGrads[0][idx]);*/
 
-#if USE_MLSL
+#if USE_ICCL
         op->GetParameterSet(0)->StartGradientComm(paramGrads[0]);
 #endif
 
@@ -120,7 +120,7 @@ public:
 
     void Update()
     {
-#if USE_MLSL
+#if USE_ICCL
         DTYPE* commBuf = (DTYPE*)op->GetParameterSet(0)->WaitGradientComm();
 #else
         DTYPE* commBuf = NULL;
@@ -142,7 +142,7 @@ public:
         DTYPE lr = BASE_LR;
 
         /* normalize */
-#if USE_MLSL
+#if USE_ICCL
         if (processCount > 1)
         {
             const DTYPE normCoef = DTYPE(1.) / processCount;

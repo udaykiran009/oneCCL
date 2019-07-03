@@ -1,7 +1,7 @@
 #!/bin/bash -x
 
 echo "DEBUG: GIT_BRANCH = ${GIT_BRANCH}"
-echo "DEBUG: MLSL_BUILD_ID = ${MLSL_BUILD_ID}"
+echo "DEBUG: ICCL_BUILD_ID = ${ICCL_BUILD_ID}"
 echo "DEBUG: coverage = ${coverage}"
 
 SCRIPT_DIR=`cd $(dirname "$BASH_SOURCE") && pwd -P`
@@ -12,15 +12,15 @@ then
 fi
 
 # . ${SCRIPT_DIR}/settings.sh
-CURRENT_MLSL_BUILD_DIR="${MLSL_REPO_DIR}/${MLSL_BUILD_ID}"
-MLSL_INSTALL_DIR="${SCRIPT_DIR}/../../build/_install"
+CURRENT_ICCL_BUILD_DIR="${ICCL_REPO_DIR}/${ICCL_BUILD_ID}"
+ICCL_INSTALL_DIR="${SCRIPT_DIR}/../../build/_install"
 BASENAME=`basename $0 .sh`
 WORK_DIR=`cd ${SCRIPT_DIR}/../../ && pwd -P`
 HOSTNAME=`hostname -s`
 
 echo "SCRIPT_DIR = $SCRIPT_DIR"
 echo "WORK_DIR = $WORK_DIR"
-echo "MLSL_INSTALL_DIR = $MLSL_INSTALL_DIR"
+echo "ICCL_INSTALL_DIR = $ICCL_INSTALL_DIR"
 
 cd ${WORK_DIR}/build/
 
@@ -86,63 +86,63 @@ then
     fi
 fi
 
-if [ -z "${MLSL_ROOT}" ]
+if [ -z "${ICCL_ROOT}" ]
 then
-    echo "WARNING: MLSL_ROOT isn't set"
-    if [ -f ${MLSL_INSTALL_DIR}/intel64/bin/mlslvars.sh ]
+    echo "WARNING: ICCL_ROOT isn't set"
+    if [ -f ${ICCL_INSTALL_DIR}/intel64/bin/icclvars.sh ]
     then
-        . ${MLSL_INSTALL_DIR}/intel64/bin/mlslvars.sh
+        . ${ICCL_INSTALL_DIR}/intel64/bin/icclvars.sh
     else
-        echo "ERROR: ${MLSL_INSTALL_DIR}/intel64/bin/mlslvars.sh doesn't exist"
+        echo "ERROR: ${ICCL_INSTALL_DIR}/intel64/bin/icclvars.sh doesn't exist"
         exit 1
     fi
 fi
 
 case "$runtime" in
        mpi )
-           export MLSL_ATL_TRANSPORT=MPI
+           export ICCL_ATL_TRANSPORT=MPI
            ctest -VV -C Mpi
            ;;
        mpi_adjust )
-            export MLSL_ATL_TRANSPORT=MPI
+            export ICCL_ATL_TRANSPORT=MPI
             for bcast in "ring" "double_tree" "direct"
                 do
-                    MLSL_BCAST_ALGO=$bcast ctest -VV -C mpi_bcast_$bcast
+                    ICCL_BCAST_ALGO=$bcast ctest -VV -C mpi_bcast_$bcast
                 done
             for reduce in "tree" "double_tree" "direct"
                 do
-                    MLSL_REDUCE_ALGO=$reduce ctest -VV -C mpi_reduce_$reduce
+                    ICCL_REDUCE_ALGO=$reduce ctest -VV -C mpi_reduce_$reduce
                 done
             for allreduce in "tree" "starlike" "ring" "double_tree" "direct"
                 do
-                    MLSL_ALLREDUCE_ALGO=$allreduce ctest -VV -C mpi_allreduce_$allreduce
+                    ICCL_ALLREDUCE_ALGO=$allreduce ctest -VV -C mpi_allreduce_$allreduce
                 done
             for allgatherv in "naive" "direct"
                 do
-                    MLSL_ALLGATHERV_ALGO=$allgatherv ctest -VV -C mpi_allgatherv_$allgatherv
+                    ICCL_ALLGATHERV_ALGO=$allgatherv ctest -VV -C mpi_allgatherv_$allgatherv
                 done
            ;;
        ofi_adjust )
             for bcast in "ring" "double_tree"
                 do
-                    MLSL_BCAST_ALGO=$bcast ctest -VV -C mpi_bcast_$bcast
+                    ICCL_BCAST_ALGO=$bcast ctest -VV -C mpi_bcast_$bcast
                 done
             for reduce in "tree" "double_tree"
                 do
-                    MLSL_REDUCE_ALGO=$reduce ctest -VV -C mpi_reduce_$reduce
+                    ICCL_REDUCE_ALGO=$reduce ctest -VV -C mpi_reduce_$reduce
                 done
             for allreduce in "tree" "starlike" "ring" "double_tree"
                 do
-                    MLSL_ALLREDUCE_ALGO=$allreduce ctest -VV -C mpi_allreduce_$allreduce
+                    ICCL_ALLREDUCE_ALGO=$allreduce ctest -VV -C mpi_allreduce_$allreduce
                 done
             for allgatherv in "naive"
                 do
-                    MLSL_ALLGATHERV_ALGO=$allgatherv ctest -VV -C mpi_allgatherv_$allgatherv
+                    ICCL_ALLGATHERV_ALGO=$allgatherv ctest -VV -C mpi_allgatherv_$allgatherv
                 done
            ;;
         priority_mode )
-            MLSL_PRIORITY_MODE=lifo ctest -VV -C Default
-            MLSL_PRIORITY_MODE=direct ctest -VV -C Default
+            ICCL_PRIORITY_MODE=lifo ctest -VV -C Default
+            ICCL_PRIORITY_MODE=direct ctest -VV -C Default
            ;;
        * )
            ctest -VV -C Default
@@ -150,7 +150,7 @@ case "$runtime" in
 esac
 
 
-echo "MLSL_ATL_TRANSPORT is " $MLSL_ATL_TRANSPORT
+echo "ICCL_ATL_TRANSPORT is " $ICCL_ATL_TRANSPORT
 
 FTESTS_DIR=${WORK_DIR}/tests/functional
 if [ "$coverage" = "true" ] && [ "$compiler" != "gcc" ]
@@ -158,10 +158,10 @@ then
 
     echo "Code Coverage"
     cd $(UTESTS_DIR) && profmerge -prof_dpi pgopti_unit.dpi && cp pgopti_unit.dpi $(BASE_DIR)/pgopti_unit.dpi
-    cd $(FTESTS_DIR) && profmerge -prof_dpi pgopti_func.dpi && cp pgopti_func.dpi $(CURRENT_MLSL_BUILD_DIR)/pgopti_func.dpi
+    cd $(FTESTS_DIR) && profmerge -prof_dpi pgopti_func.dpi && cp pgopti_func.dpi $(CURRENT_ICCL_BUILD_DIR)/pgopti_func.dpi
     cd $(EXAMPLES_DIR) && profmerge -prof_dpi pgopti_examples.dpi && cp pgopti_examples.dpi $(BASE_DIR)/pgopti_examples.dpi
     profmerge -prof_dpi pgopti.dpi -a pgopti_unit.dpi pgopti_func.dpi
-    codecov -prj mlsl -comp $(ICT_INFRA_DIR)/code_coverage/codecov_filter_mlsl.txt -spi $(TMP_COVERAGE_DIR)/pgopti.spi -dpi pgopti.dpi -xmlbcvrgfull codecov.xml -srcroot $(CODECOV_SRCROOT)
+    codecov -prj iccl -comp $(ICT_INFRA_DIR)/code_coverage/codecov_filter_iccl.txt -spi $(TMP_COVERAGE_DIR)/pgopti.spi -dpi pgopti.dpi -xmlbcvrgfull codecov.xml -srcroot $(CODECOV_SRCROOT)
     python $(ICT_INFRA_DIR)/code_coverage/codecov_to_cobertura.py codecov.xml coverage.xml
     if [ $? -ne 0 ]
     then

@@ -8,7 +8,7 @@ class register_entry : public sched_entry
 {
 public:
     register_entry() = delete;
-    register_entry(mlsl_sched* sched,
+    register_entry(iccl_sched* sched,
                    size_t size,
                    void* ptr,
                    atl_mr_t** mr) :
@@ -20,15 +20,15 @@ public:
     void start_derived()
     {
         LOG_DEBUG("REGISTER entry size ", size, ", ptr ", ptr);
-        MLSL_THROW_IF_NOT(size > 0 && ptr && mr, "incorrect input, size ", size, ", ptr ", ptr, " mr ", mr);
+        ICCL_THROW_IF_NOT(size > 0 && ptr && mr, "incorrect input, size ", size, ", ptr ", ptr, " mr ", mr);
         atl_status_t atl_status = atl_mr_reg(global_data.executor->atl_desc, ptr, size, mr);
         sched->memory.mr_list.emplace_back(*mr);
         if (unlikely(atl_status != atl_status_success))
         {
-            MLSL_THROW("REGISTER entry failed. atl_status: ", atl_status_to_str(atl_status));
+            ICCL_THROW("REGISTER entry failed. atl_status: ", atl_status_to_str(atl_status));
         }
         else
-            status = mlsl_sched_entry_status_complete;
+            status = iccl_sched_entry_status_complete;
     }
 
     const char* name() const
@@ -39,7 +39,7 @@ public:
 protected:
     void dump_detail(std::stringstream& str) const
     {
-        mlsl_logger::format(str,
+        iccl_logger::format(str,
                             "sz ", size,
                             ", ptr ", ptr,
                             ", mr ", mr,

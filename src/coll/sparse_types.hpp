@@ -5,7 +5,7 @@
 
 typedef std::unordered_map<size_t, size_t> idx_offset_map;
 
-struct mlsl_sparse_allreduce_handler
+struct iccl_sparse_allreduce_handler
 {
    size_t val_dim_cnt;
    size_t recv_buff_size;
@@ -24,5 +24,5 @@ struct mlsl_sparse_allreduce_handler
    size_t* recv_vcount;
 
    idx_offset_map *iv_map;
-   std::list<mlsl_sched_buffer_handler>* buf_list;
+   std::list<iccl_sched_buffer_handler>* buf_list;
 };

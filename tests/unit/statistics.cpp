@@ -1,7 +1,7 @@
 #include <stdlib.h>
 #include "base.hpp"
 
-#define STATS_OUTPUT_FILE "mlsl_stats.log"
+#define STATS_OUTPUT_FILE "iccl_stats.log"
 
 class StatisticsTest : public BaseTest
 {};
@@ -10,7 +10,7 @@ TEST_F(StatisticsTest, test_GetStats)
 {
     EXPECT_NE((void*)NULL, (void*)defSession->GetStats());
     ITERATE_OVER_NETS_OPS(
-        EXPECT_NE((void*)NULL, (void*)net.mlslSession->GetStats());
+        EXPECT_NE((void*)NULL, (void*)net.icclSession->GetStats());
     );
 }
 

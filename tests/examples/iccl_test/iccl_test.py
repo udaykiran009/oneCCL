@@ -1,20 +1,20 @@
 #!/usr/bin/python
 
-# Intel(R) MLSL library API usage example and correctness check test
+# Intel(R) CCL library API usage example and correctness check test
 
 #from builtins import range
 from collections import namedtuple
-import mlsl
+import iccl
 import numpy as np
 from math import fabs
 import sys
 import ctypes
 
-mlsl_obj = mlsl.MLSL()
+iccl_obj = iccl.ICCL()
 
 dtype_size = 8
 np_type = "float32" if dtype_size == 4 else "float64"
-mlsl_dtype = mlsl.DataType.FLOAT if dtype_size == 4 else mlsl.DataType.DOUBLE
+iccl_dtype = iccl.DataType.FLOAT if dtype_size == 4 else iccl.DataType.DOUBLE
 cacheline_size = 64
 fail_counter_max = 5
 
@@ -106,15 +106,15 @@ class Layer(object):
             self.param_arr[idx] = idx
 
     def destroy(self):
-        mlsl_obj.free(np.ctypeslib.as_ctypes(self.input_act_arr))
-        mlsl_obj.free(np.ctypeslib.as_ctypes(self.input_act_grad_arr))
+        iccl_obj.free(np.ctypeslib.as_ctypes(self.input_act_arr))
+        iccl_obj.free(np.ctypeslib.as_ctypes(self.input_act_grad_arr))
 
         if use_user_buf is True:
             assert False, "unsupported case"
         else:
-            mlsl_obj.free(np.ctypeslib.as_ctypes(self.param_arr))
-            mlsl_obj.free(np.ctypeslib.as_ctypes(self.param_grad_arr))
-            mlsl_obj.free(np.ctypeslib.as_ctypes(self.param_inc_arr))
+            iccl_obj.free(np.ctypeslib.as_ctypes(self.param_arr))
+            iccl_obj.free(np.ctypeslib.as_ctypes(self.param_grad_arr))
+            iccl_obj.free(np.ctypeslib.as_ctypes(self.param_inc_arr))
 
     def get_param_arr_count(self):
         return self.param_arr_count
@@ -178,7 +178,7 @@ class Layer(object):
             mb_local_len = self.op.get_local_minibatch_size()
             fm_size = self.op.get_input(0).get_fm_size()
             fm_offset = self.op.get_input(0).get_global_fm_offset()
-            fm_group_size = self.op.get_distribution().get_process_count(mlsl.GroupType.MODEL)
+            fm_group_size = self.op.get_distribution().get_process_count(iccl.GroupType.MODEL)
             fail_counter = 0
 
             for mb_idx in range(0, mb_local_len):
@@ -257,7 +257,7 @@ class Layer(object):
             mb_local_len = self.op.get_local_minibatch_size()
             fm_size = self.op.get_input(0).get_fm_size()
             act_offset = self.op.get_input(0).get_global_fm_offset()
-            group_size = self.op.get_distribution().get_process_count(mlsl.GroupType.MODEL)
+            group_size = self.op.get_distribution().get_process_count(iccl.GroupType.MODEL)
             for mb_idx in range(0, mb_local_len):
                 for fm_idx in range(0, fm_local_count):
                     for space_idx in range(0, fm_size):
@@ -276,7 +276,7 @@ class Layer(object):
 
     def update_compute(self, param_grad, param_inc, owned_param, owned_size):
         assert (self.op.get_parameter_set(0) is not None), "parameter is null"
-        mb_group_size = self.op.get_distribution().get_process_count(mlsl.GroupType.DATA)
+        mb_group_size = self.op.get_distribution().get_process_count(iccl.GroupType.DATA)
         owned_offset = self.op.get_parameter_set(0).get_owned_kernel_offset() \
             * self.op.get_parameter_set(0).get_kernel_size()
         fail_counter = 0
@@ -382,12 +382,12 @@ class Layer(object):
 
 
 def create_array(size, buf=None):
-    # print('create_array: mlsl_dtype {}, size {}, dtype_size {}, size/dtype_size {}'\
-    #       .format(mlsl_dtype, size, dtype_size, (size/dtype_size)))
+    # print('create_array: iccl_dtype {}, size {}, dtype_size {}, size/dtype_size {}'\
+    #       .format(iccl_dtype, size, dtype_size, (size/dtype_size)))
     if size == 0:
         return np.empty(0, dtype=np_type)
     if buf is None:
-        buf = mlsl_obj.alloc(size, cacheline_size)
+        buf = iccl_obj.alloc(size, cacheline_size)
     if dtype_size == 4:
         buf_pointer = ctypes.cast(buf, ctypes.POINTER(ctypes.c_float * int(size / dtype_size)))
     elif dtype_size == 8:
@@ -410,13 +410,13 @@ def create_layer(session, layer_type, layer_params, distribution, prev_layer):
         "incorrect layer type"
 
     layer_idx = layer_params.layer_idx
-    reg_info = session.create_operation_reg_info(mlsl.OperationType.CC)
+    reg_info = session.create_operation_reg_info(iccl.OperationType.CC)
     reg_info.set_name(("layer_" + str(layer_idx)).encode('utf-8'))
-    reg_info.add_input(layer_params.ifm, layer_params.ifm_w * layer_params.ifm_h, mlsl_dtype)
-    reg_info.add_output(layer_params.ofm, layer_params.ofm_w * layer_params.ofm_h, mlsl_dtype)
+    reg_info.add_input(layer_params.ifm, layer_params.ifm_w * layer_params.ifm_h, iccl_dtype)
+    reg_info.add_output(layer_params.ofm, layer_params.ofm_w * layer_params.ofm_h, iccl_dtype)
     reg_info.add_parameter_set(layer_params.ifm * layer_params.ofm,
                                layer_params.k_w * layer_params.k_h,
-                               mlsl_dtype,
+                               iccl_dtype,
                                use_dist_update)
 
     op_idx = session.add_operation_with_distribution(reg_info, distribution)
@@ -430,7 +430,7 @@ def create_layer(session, layer_type, layer_params, distribution, prev_layer):
 def main():
     argc = len(sys.argv)
     if argc < 2:
-        print('specify parameters: mlsl_test.py GROUP_COUNT [DIST_UPDATE] [USER_BUF] [USE_TEST]')
+        print('specify parameters: iccl_test.py GROUP_COUNT [DIST_UPDATE] [USER_BUF] [USE_TEST]')
         sys.exit(0)
 
     global group_count
@@ -440,10 +440,10 @@ def main():
     global process_idx
     global process_count
 
-    mlsl_obj.init()
-    session = mlsl_obj.create_session(mlsl.PhaseType.TRAIN)
+    iccl_obj.init()
+    session = iccl_obj.create_session(iccl.PhaseType.TRAIN)
     session.set_global_minibatch_size(global_minibatch_size)
-    process_count = mlsl_obj.get_process_count()
+    process_count = iccl_obj.get_process_count()
 
     if argc > 1:
         group_count = int(sys.argv[1])
@@ -463,7 +463,7 @@ def main():
     if group_count > process_count:
         group_count = process_count
 
-    process_idx = mlsl_obj.get_process_idx()
+    process_idx = iccl_obj.get_process_idx()
     if process_idx == 0:
         print('process_count = %u, distribution = %u x %u (data_parts x model_parts), '
               'dist_update %d, user_buf %d, use_test %d\n'
@@ -471,7 +471,7 @@ def main():
                  group_count, use_dist_update, use_user_buf, use_test))
 
     # Correctness test assumes both the layers use same distribution
-    distribution = mlsl_obj.create_distribution(int(process_count / group_count), group_count)
+    distribution = iccl_obj.create_distribution(int(process_count / group_count), group_count)
 
     # Init all the layers
     for layer_idx in range(0, layer_count):
@@ -493,8 +493,8 @@ def main():
                                          None if layer_idx == 0 else layers[layer_idx - 1])
         req = distribution.bcast(layers[layer_idx].get_param_arr(),
                                  layers[layer_idx].get_param_arr_count(),
-                                 mlsl_dtype, 0, mlsl.GroupType.GLOBAL)
-        mlsl_obj.wait(req)
+                                 iccl_dtype, 0, iccl.GroupType.GLOBAL)
+        iccl_obj.wait(req)
 
     session.commit()
 
@@ -537,9 +537,9 @@ def main():
     for layer_idx in range(0, layer_count):
         layers[layer_idx].destroy()
 
-    mlsl_obj.delete_session(session)
-    mlsl_obj.delete_distribution(distribution)
-    mlsl_obj.finalize()
+    iccl_obj.delete_session(session)
+    iccl_obj.delete_distribution(distribution)
+    iccl_obj.finalize()
 
     print('[%u] exited normally\n' % (process_idx))
 

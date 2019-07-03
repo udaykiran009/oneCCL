@@ -12,7 +12,7 @@
 #include <sys/time.h>
 #include <unistd.h>
 
-#include "mlsl.h"
+#include "iccl.h"
 
 #define COUNT     1048576
 #define ITERS     100
@@ -32,16 +32,16 @@ void test_finalize();
       }                                                   \
   } while (0)
 
-#define MLSL_CALL(expr)                                      \
+#define ICCL_CALL(expr)                                      \
   do {                                                       \
-        mlsl_status_t status = mlsl_status_success;          \
+        iccl_status_t status = iccl_status_success;          \
         status = expr;                                       \
-        ASSERT(status == mlsl_status_success, "MLSL error"); \
+        ASSERT(status == iccl_status_success, "ICCL error"); \
         (void)status;                                        \
   } while (0)
 
-mlsl_coll_attr_t coll_attr;
-mlsl_request_t request;
+iccl_coll_attr_t coll_attr;
+iccl_request_t request;
 size_t rank, size;
 double t1, t2, t;
 size_t idx, iter_idx;
@@ -66,10 +66,10 @@ double when(void)
 
 void test_init()
 {
-    MLSL_CALL(mlsl_init());
+    ICCL_CALL(iccl_init());
 
-    MLSL_CALL(mlsl_get_comm_rank(NULL, &rank));
-    MLSL_CALL(mlsl_get_comm_size(NULL, &size));
+    ICCL_CALL(iccl_get_comm_rank(NULL, &rank));
+    ICCL_CALL(iccl_get_comm_size(NULL, &size));
 
     coll_attr.prologue_fn = NULL;
     coll_attr.epilogue_fn = NULL;
@@ -82,7 +82,7 @@ void test_init()
 
 void test_finalize()
 {
-    MLSL_CALL(mlsl_finalize());
+    ICCL_CALL(iccl_finalize());
 }
 
 #endif /* BASE_H */

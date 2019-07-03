@@ -2,7 +2,7 @@ Intel Simplified Software License (Version January 2018)
 
 For: Intel(R) Math Kernel Library (Intel(R) MKL)
      Intel(R) Integrated Performance Primitives (Intel(R) IPP)
-     Intel(R) Machine Learning Scaling Library (Intel(R) MLSL)
+     Intel(R) oneAPI Collective Communications Library (Intel(R) CCL)
      Intel(R) Data Analytics Acceleration Library (Intel(R) DAAL)
      Intel(R) Threading Building Blocks (Intel(R) TBB)
      Intel(R) Distribution for Python*
@@ -11,24 +11,24 @@ For: Intel(R) Math Kernel Library (Intel(R) MKL)
 
 Copyright (c) 2018 Intel Corporation.
 
-Use and Redistribution.  You may use and redistribute the software (the
+Use and Redistribution.ï¿½ You may use and redistribute the software (the
 "Software"), without modification, provided the following conditions are met:
 
 * Redistributions must reproduce the above copyright notice and the following
   terms of use in the Software and in the documentation and/or other materials
   provided with the distribution.
-* Neither the name of Intel nor the names of its suppliers may be used to  
+* Neither the name of Intel nor the names of its suppliers may be used to ï¿½
   endorse or promote products derived from this Software without specific prior
   written permission.
 * No reverse engineering, decompilation, or disassembly of this Software is
   permitted.
 
-Limited patent license.  Intel grants you a world-wide, royalty-free,
+Limited patent license.ï¿½ Intel grants you a world-wide, royalty-free,
 non-exclusive license under patents it now or hereafter owns or controls to
 make, have made, use, import, offer to sell and sell ("Utilize") this Software,
 but solely to the extent that any such patent is necessary to Utilize the
 Software alone. The patent license shall not apply to any combinations which
-include this software.  No hardware per se is licensed hereunder.
+include this software.ï¿½ No hardware per se is licensed hereunder.
 
 Third party and other Intel programs.  "Third Party Programs" are the files
 listed in the "third-party-programs.txt" text file that is included with the
@@ -37,7 +37,7 @@ Party Programs, even if included with the distribution of the Materials, are
 governed by separate license terms and those license terms solely govern your
 use of those programs.
 
-DISCLAIMER.  THIS SOFTWARE IS PROVIDED "AS IS" AND ANY EXPRESS OR IMPLIED
+DISCLAIMER.ï¿½ THIS SOFTWARE IS PROVIDED "AS IS" AND ANY EXPRESS OR IMPLIED
 WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF
 MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE, AND NON-INFRINGEMENT ARE
 DISCLAIMED. THIS SOFTWARE IS NOT INTENDED FOR USE IN SYSTEMS OR APPLICATIONS

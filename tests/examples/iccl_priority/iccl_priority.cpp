@@ -8,7 +8,7 @@
 #include <inttypes.h>
 #include <unistd.h>
 
-#include "mlsl.hpp"
+#include "iccl.hpp"
 
 size_t compIterTimeMs = 0; // 1900 for VGG-16 with BS=64, 970 for Resnet-50 with BS=64, 950 for GN V3
 
@@ -53,12 +53,12 @@ size_t msgSizes[] = { 8192000, 4000, 768, 768, 1572864, 1536, 1536, 1769472, 153
                        331776, 384, 384, 221184, 256, 256, 49152, 256, 256, 307200, 192, 192, 36864, 256, 256, 49152, 768, 768,
                        552960, 320, 320, 20480, 256, 256, 73728, 128, 128, 36864, 128, 128, 3456 };
 
-using namespace MLSL;
+using namespace ICCL;
 
 #define sizeofa(arr)      (sizeof(arr) / sizeof(*arr))
 #define DTYPE             float
 #define DTYPE_SIZE        sizeof(DTYPE)
-#define MLSL_DTYPE        ((DTYPE_SIZE == 4) ? DT_FLOAT : DT_DOUBLE)
+#define ICCL_DTYPE        ((DTYPE_SIZE == 4) ? DT_FLOAT : DT_DOUBLE)
 #define CACHELINE_SIZE    64
 
 #define MAX_MSG_COUNT     512
@@ -260,7 +260,7 @@ int main(int argc, char** argv)
     {
         msgIdx = (totalMsgCount - idx - 1);
         /* add param_set with higher priority firstly */
-        regInfo->AddParameterSet(msgSizes[msgIdx] / 4, 1, MLSL_DTYPE);
+        regInfo->AddParameterSet(msgSizes[msgIdx] / 4, 1, ICCL_DTYPE);
     }
 
     size_t opIdx = session->AddOperation(regInfo, distribution);

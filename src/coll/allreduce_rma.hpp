@@ -31,4 +31,4 @@ typedef struct
     atl_mr_t remote_rs_dst_buf_mr;
     atl_mr_t remote_recv_buf_mr;
 
-} mlsl_rma_ring_allreduce_handler;
+} iccl_rma_ring_allreduce_handler;

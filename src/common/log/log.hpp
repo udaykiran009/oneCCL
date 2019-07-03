@@ -1,6 +1,6 @@
 #pragma once
 
-#include "mlsl_types.hpp"
+#include "iccl_types.hpp"
 
 #include <iostream>
 #include <iomanip>
@@ -25,7 +25,7 @@
 
 constexpr size_t LOGGER_BUFFER_SIZE = 2048;
 
-enum class mlsl_log_level
+enum class iccl_log_level
 {
     ERROR = 0,
     INFO,
@@ -36,22 +36,22 @@ enum class mlsl_log_level
 /**
  * Wrapper over streambuf class to provide presistent buffer
  */
-class mlsl_streambuf : public std::streambuf
+class iccl_streambuf : public std::streambuf
 {
 public:
-    explicit mlsl_streambuf(size_t s) : size(s), buffer(new char[size])
+    explicit iccl_streambuf(size_t s) : size(s), buffer(new char[size])
     {
         reset();
     }
 
-    mlsl_streambuf(const mlsl_streambuf& other) = delete;
-    mlsl_streambuf(mlsl_streambuf&& other) = delete;
+    iccl_streambuf(const iccl_streambuf& other) = delete;
+    iccl_streambuf(iccl_streambuf&& other) = delete;
 
-    mlsl_streambuf& operator=(const mlsl_streambuf& other) = delete;
-    mlsl_streambuf& operator=(mlsl_streambuf&& other) = delete;
+    iccl_streambuf& operator=(const iccl_streambuf& other) = delete;
+    iccl_streambuf& operator=(iccl_streambuf&& other) = delete;
 
     friend std::ostream& operator<<(std::ostream& os,
-                                    mlsl_streambuf& buf);
+                                    iccl_streambuf& buf);
 
 private:
     size_t size;
@@ -93,23 +93,23 @@ private:
  * To format base of digital values one can use std::dec, std::hex, std::oct as a parameter of logger interface
  * To set justification one can use std::left, std::right, std::internal as a parameter of logger interface
  */
-class mlsl_logger
+class iccl_logger
 {
 public:
-    mlsl_logger() :
+    iccl_logger() :
         streambuf(LOGGER_BUFFER_SIZE),
         out_stream(&streambuf),
         initial_flags(out_stream.flags())
     {
     }
 
-    mlsl_logger(const mlsl_logger& other) = delete;
-    mlsl_logger(mlsl_logger&& other) = delete;
+    iccl_logger(const iccl_logger& other) = delete;
+    iccl_logger(iccl_logger&& other) = delete;
 
-    mlsl_logger& operator=(const mlsl_logger& other) = delete;
-    mlsl_logger& operator=(mlsl_logger&& other) = delete;
+    iccl_logger& operator=(const iccl_logger& other) = delete;
+    iccl_logger& operator=(iccl_logger&& other) = delete;
 
-    static void set_log_level(mlsl_log_level lvl)
+    static void set_log_level(iccl_log_level lvl)
     {
         level = lvl;
     }
@@ -118,7 +118,7 @@ public:
     void error(T&& first,
                Tpackage&& ... others)
     {
-        if (level >= mlsl_log_level::ERROR)
+        if (level >= iccl_log_level::ERROR)
         {
             write_stream_wrapper(out_stream, std::cerr, "ERROR: ",
                                  std::forward<T>(first), std::forward<Tpackage>(others)...);
@@ -135,7 +135,7 @@ public:
     void info(T&& first,
               Tpackage&& ... others)
     {
-        if (level >= mlsl_log_level::INFO)
+        if (level >= iccl_log_level::INFO)
         {
             write_stream_wrapper(out_stream, std::cout, std::forward<T>(first),
                                  std::forward<Tpackage>(others)...);
@@ -146,7 +146,7 @@ public:
     void debug(T&& first,
                Tpackage&& ... others)
     {
-        if (level >= mlsl_log_level::DEBUG)
+        if (level >= iccl_log_level::DEBUG)
         {
             write_stream_wrapper(out_stream, std::cout, std::forward<T>(first),
                                  std::forward<Tpackage>(others)...);
@@ -157,7 +157,7 @@ public:
     void trace(T&& first,
                Tpackage&& ... others)
     {
-        if (level >= mlsl_log_level::TRACE)
+        if (level >= iccl_log_level::TRACE)
         {
             write_stream_wrapper(out_stream, std::cout, std::forward<T>(first),
                                  std::forward<Tpackage>(others)...);
@@ -180,9 +180,9 @@ public:
 
 
 private:
-    static mlsl_log_level level;
+    static iccl_log_level level;
 
-    mlsl_streambuf streambuf;
+    iccl_streambuf streambuf;
     std::ostream out_stream;
     std::ios::fmtflags initial_flags;
 
@@ -224,7 +224,7 @@ private:
     static void write_backtrace(std::ostream& str);
 };
 
-extern thread_local mlsl_logger logger;
+extern thread_local iccl_logger logger;
 
 #define LOG_ERROR(...) logger.error(__FILENAME__,":", __FUNCTION__, ":", __LINE__, " ", ##__VA_ARGS__);
 #define LOG_INFO(...) logger.info( __FUNCTION__, ":", __LINE__, " ", ##__VA_ARGS__);
@@ -234,7 +234,7 @@ extern thread_local mlsl_logger logger;
 /**
  * Macro to handle critical unrecoverable error. Can be used in destructors
  */
-#define MLSL_FATAL(...)                                                 \
+#define ICCL_FATAL(...)                                                 \
 do                                                                      \
 {                                                                       \
     LOG_ERROR(__VA_ARGS__)                                              \
@@ -243,40 +243,40 @@ do                                                                      \
 
 
 /**
- * Helper macro to throw mlsl::mlsl_error exception. Must never be used in destructors
+ * Helper macro to throw iccl::iccl_error exception. Must never be used in destructors
  */
-#define MLSL_THROW(...)                                                              \
+#define ICCL_THROW(...)                                                              \
 do                                                                                   \
 {                                                                                    \
     std::stringstream throw_msg_ss;                                                  \
-    mlsl_logger::format(throw_msg_ss, __FILENAME__, ":", __FUNCTION__, ":", __LINE__,\
+    iccl_logger::format(throw_msg_ss, __FILENAME__, ":", __FUNCTION__, ":", __LINE__,\
         ": EXCEPTION: " , ##__VA_ARGS__);                                            \
-    throw mlsl::mlsl_error(throw_msg_ss.str());                                      \
+    throw iccl::iccl_error(throw_msg_ss.str());                                      \
 } while(0)
 
 /**
- * Helper macro to throw mlsl::mlsl_error exception if provided condition is not true.
+ * Helper macro to throw iccl::iccl_error exception if provided condition is not true.
  * Must never be used in destructors
  */
-#define MLSL_THROW_IF_NOT(cond, ...)                                              \
+#define ICCL_THROW_IF_NOT(cond, ...)                                              \
 do                                                                                \
 {                                                                                 \
     if (!(cond))                                                                  \
     {                                                                             \
         LOG_ERROR("condition ", #cond, " failed\n", ##__VA_ARGS__);               \
-        MLSL_THROW(__VA_ARGS__);                                                  \
+        ICCL_THROW(__VA_ARGS__);                                                  \
     }                                                                             \
 } while(0)
 
 
-#define MLSL_UNUSED(expr) do { (void)sizeof(expr); } while(0)
+#define ICCL_UNUSED(expr) do { (void)sizeof(expr); } while(0)
 
 #ifdef ENABLE_DEBUG
 
 /**
  * Raises failed assertion if provided condition is not true. Works in debug build only
  */
-#define MLSL_ASSERT(cond, ...)                                                          \
+#define ICCL_ASSERT(cond, ...)                                                          \
 do                                                                                      \
 {                                                                                       \
     if (!(cond))                                                                        \
@@ -291,6 +291,6 @@ do                                                                              
 /**
  * Raises failed assertion if provided condition is not true. Works in debug build only
  */
-#define MLSL_ASSERT(cond, ...) MLSL_UNUSED(cond)
+#define ICCL_ASSERT(cond, ...) ICCL_UNUSED(cond)
 
 #endif

@@ -7,7 +7,7 @@ PKGS=$(wc -c Packages)
 PKGS_GZ=$(wc -c Packages.gz)
 cat > Release << EOF
 Architectures: amd64
-Label: Intel(R) Machine Learning Scaling Library MLSL_SUBSTITUTE_OFFICIAL_VERSION for Linux* OS
+Label: Intel(R) Machine Learning Scaling Library ICCL_SUBSTITUTE_OFFICIAL_VERSION for Linux* OS
 Date: $(date -R -u)
 MD5Sum:
  $(md5sum Packages  | cut -d" " -f1) $PKGS

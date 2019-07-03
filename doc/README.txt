@@ -1,13 +1,15 @@
 -------------------------------------------------------
-Intel(R) Machine Learning Scaling Library for Linux* OS
+Intel(R) oneAPI Collective Communications Library for Linux* OS
 README
 -------------------------------------------------------
+
+TODO: Should be updated!!!
 
 ------------
 Introduction
 ------------
 
-Intel(R) Machine Learning Scaling Library (Intel(R) MLSL) is a library providing
+Intel(R) oneAPI Collective Communications Library (Intel(R) CCL) is a library providing
 an efficient implementation of communication patterns used in deep learning.
 
     - Built on top of MPI, allows for use of other communication libraries
@@ -17,59 +19,59 @@ an efficient implementation of communication patterns used in deep learning.
     - Common API to support Deep Learning frameworks (Caffe*, Theano*,
       Torch*, etc.)
 
-Intel(R) MLSL package comprises the Intel MLSL Software Development Kit (SDK)
+Intel(R) CCL package comprises the Intel CCL Software Development Kit (SDK)
 and the Intel(R) MPI Library Runtime components.
 
 ----------------------------------------------------
-Installing Intel(R) Machine Learning Scaling Library
+Installing Intel(R) oneAPI Collective Communications Library
 ----------------------------------------------------
 
-I.   Installing Intel(R) MLSL using RPM Package Manager (root mode):
+I.   Installing Intel(R) CCL using RPM Package Manager (root mode):
 
         1. Log in as root.
 
         2. Install the package:
-            $ rpm -i intel-mlsl-devel-64-<version>.<update>-<package#>.x86_64.rpm
+            $ rpm -i intel-iccl-devel-64-<version>.<update>-<package#>.x86_64.rpm
 
             where <version>.<update>-<package#> is a string, such as: 2017.0-009
 
-     To uninstall Intel(R) MLSL, use the command:
-     $ rpm -e intel-mlsl-devel-64-<version>.<update>-<package#>.x86_64
+     To uninstall Intel(R) CCL, use the command:
+     $ rpm -e intel-iccl-devel-64-<version>.<update>-<package#>.x86_64
 
-II.  Installing Intel(R) MLSL using install.sh (user mode):
+II.  Installing Intel(R) CCL using install.sh (user mode):
 
      Run install.sh and follow the instructions.
 
-     There is no uninstall script. To uninstall Intel(R) MLSL, delete the entire
+     There is no uninstall script. To uninstall Intel(R) CCL, delete the entire
      directory where you have installed the package.
 
 -------------------
 Directory Structure
 -------------------
 
-Following a successful installation, the files associated with the Intel(R) MLSL
+Following a successful installation, the files associated with the Intel(R) CCL
 are installed on your host system. The following directory map indicates the 
 default structure and identifies the file types stored in each sub-directory:
 
 `-- opt
     `-- intel        Common directory for Intel(R) Software Development Products.
-            `-- mlsl_<version>.<update>.<package#>
+            `-- iccl_<version>.<update>.<package#>
                 |               Subdirectory for the version, specific update
-                |               and package number of Intel(R) MLSL.
+                |               and package number of Intel(R) CCL.
                 |-- doc         Subdirectory with documentation.
                 |-- |-- API_Reference.htm
                 |   |-- Developer_Guide.pdf
                 |   |-- README.txt
                 |   |-- Release_Notes.txt
                 |   |-- api     Subdirectory with API reference.
-                |-- example     Intel(R) MLSL example
+                |-- example     Intel(R) CCL example
                 |   |-- Makefile
-                |   `-- mlsl_example.cpp 
+                |   `-- iccl_example.cpp
                 |-- intel64     Files for specific architecture.
                 |   |-- bin     Binaries, scripts, and executable files.
                 |   |   |-- ep_server
                 |   |   |-- hydra_persist
-                |   |   |-- mlslvars.sh
+                |   |   |-- icclvars.sh
                 |   |   |-- mpiexec -> mpiexec.hydra
                 |   |   |-- mpiexec.hydra
                 |   |   |-- mpirun
@@ -78,13 +80,13 @@ default structure and identifies the file types stored in each sub-directory:
                 |   |   |-- mpiexec.conf
                 |   |   `-- tmi.conf
                 |   |-- include Include and header files.
-                |   |   |-- mlsl    Subdirectory for Python* module
-                |   |   |-- mlsl.hpp
-                |   |   `-- mlsl.h
+                |   |   |-- iccl    Subdirectory for Python* module
+                |   |   |-- iccl.hpp
+                |   |   `-- iccl.h
                 |   `-- lib     Libraries
-                |       |-- libmlsl.so -> libmlsl.so.1
-                |       |-- libmlsl.so.1 -> libmlsl.so.1.0
-                |       |-- libmlsl.so.1.0
+                |       |-- libiccl.so -> libiccl.so.1
+                |       |-- libiccl.so.1 -> libiccl.so.1.0
+                |       |-- libiccl.so.1.0
                 |       |-- libmpi.so -> libmpi.so.12
                 |       |-- libmpi.so.12 -> libmpi.so.12.0
                 |       |-- libmpi.so.12.0
@@ -95,15 +97,15 @@ default structure and identifies the file types stored in each sub-directory:
                 |       |-- libtmip_psm2.so -> libtmip_psm2.so.1.0
                 |       `-- libtmip_psm2.so.1.0
                 |-- licensing
-                |   |-- mlsl    Subdirectory for supported files, license 
-                |   |           of the Intel(R) MLSL
+                |   |-- iccl    Subdirectory for supported files, license
+                |   |           of the Intel(R) CCL
                 |   `-- mpi     Subdirectory for supported files, EULAs,
                 |               redist files, third-party-programs file 
                 |               of the Intel(R) MPI Library
-                `-- test        Intel(R) MLSL tests
+                `-- test        Intel(R) CCL tests
                     |-- Makefile
-                    |-- mlsl_test.py
-                    `-- mlsl_test.cpp
+                    |-- iccl_test.py
+                    `-- iccl_test.cpp
 
 --------------------------------
 Disclaimer and Legal Information

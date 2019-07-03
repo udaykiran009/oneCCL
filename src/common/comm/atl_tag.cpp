@@ -2,7 +2,7 @@
 #include "common/global/global.hpp"
 #include "exec/exec.hpp"
 
-uint64_t mlsl_atl_tag::create(mlsl_comm_id_t comm_id, size_t rank, mlsl_sched_id_t sched_id, mlsl_op_id_t op_id)
+uint64_t iccl_atl_tag::create(iccl_comm_id_t comm_id, size_t rank, iccl_sched_id_t sched_id, iccl_op_id_t op_id)
 {
     uint64_t tag = 0;
 
@@ -20,11 +20,11 @@ uint64_t mlsl_atl_tag::create(mlsl_comm_id_t comm_id, size_t rank, mlsl_sched_id
     }
     else
     {
-        MLSL_ASSERT(0);
+        ICCL_ASSERT(0);
     }
 
     LOG_DEBUG("tag ", tag, "(comm_id: ", comm_id, ", rank ", rank, ", sched_id: ", sched_id, ", op_id: ", (int)op_id, ")");
-    MLSL_THROW_IF_NOT(tag <= max_tag, "unexpected tag value ", tag, ", max_tag ", max_tag);
+    ICCL_THROW_IF_NOT(tag <= max_tag, "unexpected tag value ", tag, ", max_tag ", max_tag);
 
     return tag;
 }

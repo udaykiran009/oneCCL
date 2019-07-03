@@ -6,7 +6,7 @@ class barrier_entry : public base_coll_entry
 {
 public:
     barrier_entry() = delete;
-    barrier_entry(mlsl_sched* sched) :
+    barrier_entry(iccl_sched* sched) :
         base_coll_entry(sched)
     {
         LOG_DEBUG("creating ", name(), " entry");
@@ -19,10 +19,10 @@ public:
         atl_status_t atl_status = atl_comm_barrier(sched->bin->get_comm_ctx(), &req);
         if (unlikely(atl_status != atl_status_success))
         {
-            MLSL_THROW("BARRIER entry failed. atl_status: ", atl_status_to_str(atl_status));
+            ICCL_THROW("BARRIER entry failed. atl_status: ", atl_status_to_str(atl_status));
         }
         else
-            status = mlsl_sched_entry_status_started;
+            status = iccl_sched_entry_status_started;
     }
 
     void update_derived()
@@ -32,11 +32,11 @@ public:
 
         if (unlikely(atl_status != atl_status_success))
         {
-            MLSL_THROW("BARRIER entry failed. atl_status: ", atl_status_to_str(atl_status));
+            ICCL_THROW("BARRIER entry failed. atl_status: ", atl_status_to_str(atl_status));
         }
 
         if (req_status)
-            status = mlsl_sched_entry_status_complete;
+            status = iccl_sched_entry_status_complete;
     }
 
     const char* name() const
@@ -47,7 +47,7 @@ public:
 protected:
     void dump_detail(std::stringstream& str) const
     {
-        mlsl_logger::format(str,
+        iccl_logger::format(str,
                             "comm_id ", sched->coll_param.comm->id(),
                             ", req ",&req,
                             "\n");

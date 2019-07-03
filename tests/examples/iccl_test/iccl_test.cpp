@@ -1,5 +1,5 @@
 
-/* Intel(R) MLSL library API usage example and correctness check test */
+/* Intel(R) CCL library API usage example and correctness check test */
 
 #include <math.h>   /* fabs */
 #include <stdio.h>  /* printf */
@@ -8,9 +8,9 @@
 #include <string.h>
 #include <sstream>
 
-#include "mlsl.hpp"
+#include "iccl.hpp"
 
-using namespace MLSL;
+using namespace ICCL;
 using namespace std;
 
 /* Logging stuff */
@@ -53,11 +53,11 @@ int printCount = 0;
   } while(0)
 
 
-/* Intel(R) MLSL Test stuff */
+/* Intel(R) CCL Test stuff */
 
 #define DTYPE                 float
 #define DTYPE_SIZE            sizeof(DTYPE)
-#define MLSL_DTYPE            ((DTYPE_SIZE == 4) ? DT_FLOAT : DT_DOUBLE)
+#define ICCL_DTYPE            ((DTYPE_SIZE == 4) ? DT_FLOAT : DT_DOUBLE)
 #define CACHELINE_SIZE        64
 #define FAIL_COUNTER_MAX      size_t(5)
 
@@ -524,9 +524,9 @@ Layer* CreateLayer(Session* session, LayerType type, LayerParams* lParams, Distr
     stringstream stream;
     stream << "layer_" << layerIdx;
     regInfo->SetName(stream.str().c_str());
-    regInfo->AddInput(lParams->ifm, lParams->ifmWidth * lParams->ifmHeight, MLSL_DTYPE);
-    regInfo->AddOutput(lParams->ofm, lParams->ofmWidth * lParams->ofmHeight, MLSL_DTYPE);
-    regInfo->AddParameterSet(lParams->ifm * lParams->ofm, lParams->kw * lParams->kh, MLSL_DTYPE,
+    regInfo->AddInput(lParams->ifm, lParams->ifmWidth * lParams->ifmHeight, ICCL_DTYPE);
+    regInfo->AddOutput(lParams->ofm, lParams->ofmWidth * lParams->ofmHeight, ICCL_DTYPE);
+    regInfo->AddParameterSet(lParams->ifm * lParams->ofm, lParams->kw * lParams->kh, ICCL_DTYPE,
                              useDistUpdate, compressType);
 
     size_t opIdx = session->AddOperation(regInfo, distribution);
@@ -543,18 +543,18 @@ int main(int argc, char** argv)
 {
     if (argc < 2)
     {
-        printf("specify parameters: mlsl_test GROUP_COUNT [DIST_UPDATE] [USER_BUF] [USE_TEST] [PATH_TO_QUANTIZATION_LIB]\n");
+        printf("specify parameters: iccl_test GROUP_COUNT [DIST_UPDATE] [USER_BUF] [USE_TEST] [PATH_TO_QUANTIZATION_LIB]\n");
         exit(0);
     }
 
     int runtime_version = Environment::GetEnv().GetVersion();
-    printf("built with Intel(R) MLSL API version: %d.%d, used Intel(R) MLSL API version: %d.%d\n",
-           MLSL_MAJOR_VERSION, MLSL_MINOR_VERSION, MLSL_MAJOR(runtime_version), MLSL_MINOR(runtime_version));
+    printf("built with Intel(R) CCL API version: %d.%d, used Intel(R) CCL API version: %d.%d\n",
+           ICCL_MAJOR_VERSION, ICCL_MINOR_VERSION, ICCL_MAJOR(runtime_version), ICCL_MINOR(runtime_version));
 
-    if (MLSL_MAJOR_VERSION != MLSL_MAJOR(runtime_version))
+    if (ICCL_MAJOR_VERSION != ICCL_MAJOR(runtime_version))
     {
-        printf("incompatible Intel(R) MLSL API version: %d.%d, exit\n",
-               MLSL_MAJOR(runtime_version), MLSL_MINOR(runtime_version));
+        printf("incompatible Intel(R) CCL API version: %d.%d, exit\n",
+               ICCL_MAJOR(runtime_version), ICCL_MINOR(runtime_version));
         return 0;
     }
 
@@ -633,7 +633,7 @@ int main(int argc, char** argv)
                                        &layerParams[layerIdx],
                                        distribution,
                                        (layerIdx == 0 ? NULL : layers[layerIdx - 1]));
-        CommReq* req = distribution->Bcast(layers[layerIdx]->GetParamBuf(), layers[layerIdx]->GetParamBufCount(), MLSL_DTYPE, 0, GT_GLOBAL);
+        CommReq* req = distribution->Bcast(layers[layerIdx]->GetParamBuf(), layers[layerIdx]->GetParamBufCount(), ICCL_DTYPE, 0, GT_GLOBAL);
         Environment::GetEnv().Wait(req);
     }
 

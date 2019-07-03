@@ -2,59 +2,59 @@
 #include "sched/entry_factory.hpp"
 #include "sched/sched_cache.hpp"
 
-#define MLSL_FUSION_CHECK_SCHEDS_ITERS (1024)
+#define ICCL_FUSION_CHECK_SCHEDS_ITERS (1024)
 
-mlsl_status_t complete_user_request(const void* ctx)
+iccl_status_t complete_user_request(const void* ctx)
 {
-    mlsl_sched* sched = (mlsl_sched*) ctx;
+    iccl_sched* sched = (iccl_sched*) ctx;
     LOG_DEBUG("completing request");
     sched->req->complete();
-    return mlsl_status_success;
+    return iccl_status_success;
 }
 
-mlsl_status_t release_fusion_buf(const void* ctx)
+iccl_status_t release_fusion_buf(const void* ctx)
 {
     void* buf = (void*) ctx;
     global_data.fusion_manager->release_buffer(buf);
-    return mlsl_status_success;
+    return iccl_status_success;
 }
 
-mlsl_status_t release_fusion_buf_for_cached_sched(mlsl_sched* sched,
+iccl_status_t release_fusion_buf_for_cached_sched(iccl_sched* sched,
                                                   const void* ctx)
 {
     return release_fusion_buf(ctx);
 }
 
-mlsl_buffer_cache::mlsl_buffer_cache(size_t buf_size)
+iccl_buffer_cache::iccl_buffer_cache(size_t buf_size)
     : buf_size(buf_size)
 {
     void* buf;
-    for (size_t idx = 0; idx < MLSL_BUFFER_CACHE_PREALLOC; idx++)
+    for (size_t idx = 0; idx < ICCL_BUFFER_CACHE_PREALLOC; idx++)
     {
-        buf = MLSL_MALLOC(buf_size, "buffer");
+        buf = ICCL_MALLOC(buf_size, "buffer");
         free_buffers.push_back(buf);
         all_buffers.push_back(buf);
     }
     LOG_INFO("created buffer_cache: buf_size ", buf_size);
 }
 
-mlsl_buffer_cache::~mlsl_buffer_cache()
+iccl_buffer_cache::~iccl_buffer_cache()
 {
     std::lock_guard<fusion_lock_t> lock{guard};
     if(free_buffers.size() != all_buffers.size())
     {
-        MLSL_FATAL("size mismatch ", free_buffers.size(), " vs ", all_buffers.size());
+        ICCL_FATAL("size mismatch ", free_buffers.size(), " vs ", all_buffers.size());
     }
 
     for (size_t idx = 0; idx < all_buffers.size(); idx++)
     {
-        MLSL_FREE(all_buffers[idx]);
+        ICCL_FREE(all_buffers[idx]);
     }
     all_buffers.clear();
     free_buffers.clear();
 }
 
-void* mlsl_buffer_cache::get()
+void* iccl_buffer_cache::get()
 {
     std::lock_guard<fusion_lock_t> lock{guard};
     void* buf;
@@ -65,29 +65,29 @@ void* mlsl_buffer_cache::get()
     }
     else
     {
-        buf = MLSL_MALLOC(buf_size, "buffer");
+        buf = ICCL_MALLOC(buf_size, "buffer");
         LOG_DEBUG("get buf from extra allocation ", buf);
         all_buffers.push_back(buf);
     }
-    MLSL_THROW_IF_NOT(buf, "empty buf");
+    ICCL_THROW_IF_NOT(buf, "empty buf");
     return buf;
 }
 
-void mlsl_buffer_cache::release(void* buf)
+void iccl_buffer_cache::release(void* buf)
 {
     std::lock_guard<fusion_lock_t> lock{guard};
-    MLSL_THROW_IF_NOT(buf, "empty buf");
+    ICCL_THROW_IF_NOT(buf, "empty buf");
     free_buffers.push_back(buf);
 }
 
-mlsl_fusion_manager::mlsl_fusion_manager()
+iccl_fusion_manager::iccl_fusion_manager()
     : bytes_threshold(env_data.fusion_bytes_threshold),
       count_threshold(env_data.fusion_count_threshold),
       buf_cache(env_data.fusion_bytes_threshold * env_data.fusion_count_threshold)
 {
-    MLSL_ASSERT(bytes_threshold >= 1, "unexpected fusion_bytes_threshold ",
+    ICCL_ASSERT(bytes_threshold >= 1, "unexpected fusion_bytes_threshold ",
                     bytes_threshold);
-    MLSL_ASSERT(count_threshold >= 1, "unexpected fusion_count_threshold ",
+    ICCL_ASSERT(count_threshold >= 1, "unexpected fusion_count_threshold ",
                     count_threshold);
 
     long cycle_usec = long(env_data.fusion_cycle_ms * 1000.0);
@@ -98,30 +98,30 @@ mlsl_fusion_manager::mlsl_fusion_manager()
         ", count_threshold ", count_threshold);
 }
 
-mlsl_fusion_manager::~mlsl_fusion_manager()
+iccl_fusion_manager::~iccl_fusion_manager()
 {
     LOG_INFO("fused_bytes ", stat_fused_bytes, ", fused_ops ", stat_fused_ops,
         ", empty_exec_calls ", stat_empty_exec_calls);
 
     check_tracked_scheds();
 
-    MLSL_ASSERT(postponed_queue.empty() && exec_queue.empty() && tracked_scheds.empty(),
+    ICCL_ASSERT(postponed_queue.empty() && exec_queue.empty() && tracked_scheds.empty(),
                     "queues are not empty, ", postponed_queue.size(), " ",
                     exec_queue.size(), " ", tracked_scheds.size());
 }
 
-bool mlsl_fusion_manager::can_fuse(mlsl_sched* sched)
+bool iccl_fusion_manager::can_fuse(iccl_sched* sched)
 {
-    size_t bytes = sched->coll_param.count * mlsl_datatype_get_size(sched->coll_param.dtype);
+    size_t bytes = sched->coll_param.count * iccl_datatype_get_size(sched->coll_param.dtype);
     if (bytes >= bytes_threshold)
     {
         LOG_DEBUG("can't fuse due to size ", bytes , ", max ", bytes_threshold);
         return false;
     }
 
-    if (sched->coll_param.ctype != mlsl_coll_allreduce)
+    if (sched->coll_param.ctype != iccl_coll_allreduce)
     {
-        LOG_DEBUG("can't fuse due to coll_type ", mlsl_coll_type_to_str(sched->coll_param.ctype));
+        LOG_DEBUG("can't fuse due to coll_type ", iccl_coll_type_to_str(sched->coll_param.ctype));
         return false;
     }
 
@@ -139,14 +139,14 @@ bool mlsl_fusion_manager::can_fuse(mlsl_sched* sched)
     return true;
 }
 
-bool mlsl_fusion_manager::add(mlsl_sched* sched)
+bool iccl_fusion_manager::add(iccl_sched* sched)
 {
     if (!can_fuse(sched))
     { return false; }
 
-    MLSL_THROW_IF_NOT(!env_data.fusion_check_urgent || !sched->urgent, "incorrect values : ",
+    ICCL_THROW_IF_NOT(!env_data.fusion_check_urgent || !sched->urgent, "incorrect values : ",
                       env_data.fusion_check_urgent, " vs ", sched->urgent);
-    MLSL_THROW_IF_NOT(sched->req->is_completed(), "incorrect completion counter");
+    ICCL_THROW_IF_NOT(sched->req->is_completed(), "incorrect completion counter");
     sched->req->set_counter(1);
 
     std::lock_guard<fusion_lock_t> lock{guard};
@@ -154,23 +154,23 @@ bool mlsl_fusion_manager::add(mlsl_sched* sched)
     return true;
 }
 
-mlsl_sched* mlsl_fusion_manager::build_sched()
+iccl_sched* iccl_fusion_manager::build_sched()
 {
     size_t sum_count = 0, sum_bytes = 0, dtype_size;
     size_t max_priority = 0;
     bool use_cache = true;
-    mlsl_comm* comm;
-    mlsl_datatype_internal_t dtype;
-    mlsl_reduction_t reduction;
-    mlsl_coll_type ctype;
+    iccl_comm* comm;
+    iccl_datatype_internal_t dtype;
+    iccl_reduction_t reduction;
+    iccl_coll_type ctype;
     void* fusion_buf = nullptr;
 
-    MLSL_THROW_IF_NOT(exec_queue.size(), "empty queue");
+    ICCL_THROW_IF_NOT(exec_queue.size(), "empty queue");
 
     auto first_sched = exec_queue.front();
     auto last_sched = exec_queue.back();
     dtype = first_sched->coll_param.dtype;
-    dtype_size = mlsl_datatype_get_size(dtype);
+    dtype_size = iccl_datatype_get_size(dtype);
     reduction = first_sched->coll_param.reduction;
     comm = first_sched->coll_param.comm;
     ctype = first_sched->coll_param.ctype;
@@ -194,11 +194,11 @@ mlsl_sched* mlsl_fusion_manager::build_sched()
     LOG_DEBUG("build fused_sched for sum_count ", sum_count, ", sum_bytes ", sum_bytes,
         ", sched_count ", exec_queue.size());
 
-    mlsl_sched* sched = nullptr;
-    mlsl_sched_key key{};
+    iccl_sched* sched = nullptr;
+    iccl_sched_key key{};
     if (use_cache)
     {
-        key.ctype = mlsl_coll_allreduce;
+        key.ctype = iccl_coll_allreduce;
         key.buf1 = (void*) first_sched;
         key.buf2 = (void*) first_sched->coll_param.send_buf;
         key.buf3 = (void*) last_sched->coll_param.send_buf;
@@ -215,25 +215,25 @@ mlsl_sched* mlsl_fusion_manager::build_sched()
 
     if (!sched)
     {
-        mlsl_coll_param coll_param{};
+        iccl_coll_param coll_param{};
         LOG_DEBUG("didn't find allreduce fused_sched in cache");
         switch (ctype)
         {
-            case mlsl_coll_allreduce:
+            case iccl_coll_allreduce:
                 fusion_buf = buf_cache.get();
-                coll_param.ctype = mlsl_coll_allreduce;
+                coll_param.ctype = iccl_coll_allreduce;
                 coll_param.send_buf = fusion_buf;
                 coll_param.recv_buf = fusion_buf;
                 coll_param.count = sum_count;
                 coll_param.dtype = dtype;
                 coll_param.reduction = reduction;
                 coll_param.comm = comm;
-                sched = new mlsl_sched(coll_param);
-                sched->internal_type = mlsl_sched_internal_fusion;
+                sched = new iccl_sched(coll_param);
+                sched->internal_type = iccl_sched_internal_fusion;
                 sched->coll_attr.priority = max_priority;
                 break;
             default:
-                MLSL_FATAL("not supported");
+                ICCL_FATAL("not supported");
                 break;
         }
         sched->commit(global_data.parallelizer.get());
@@ -247,19 +247,19 @@ mlsl_sched* mlsl_fusion_manager::build_sched()
     else
     {
         LOG_DEBUG("found allreduce fused_sched in cache");
-        MLSL_THROW_IF_NOT(sched->req->is_completed(), "non completed sched found in cache");
+        ICCL_THROW_IF_NOT(sched->req->is_completed(), "non completed sched found in cache");
         clear_exec_queue();
         return sched;
     }
 
     size_t exec_queue_size = exec_queue.size();
     size_t part_count = sched->partial_scheds.size();
-    std::vector<std::shared_ptr<mlsl_sched>>& part_scheds = sched->partial_scheds;
+    std::vector<std::shared_ptr<iccl_sched>>& part_scheds = sched->partial_scheds;
     size_t copies_per_part = exec_queue_size / part_count;
     size_t copies_per_last_part = copies_per_part + exec_queue_size % part_count;
     std::shared_ptr<sched_entry> e;
 
-    MLSL_ASSERT(part_count > 0);
+    ICCL_ASSERT(part_count > 0);
     LOG_DEBUG("part_count ", part_count,
         ", sum_count ", sum_count,
         ", exec_queue_size ", exec_queue_size);
@@ -267,7 +267,7 @@ mlsl_sched* mlsl_fusion_manager::build_sched()
     for (size_t idx = 0; idx < part_count; idx++)
     {
         part_scheds[idx]->add_barrier();
-        part_scheds[idx]->set_add_mode(mlsl_sched_add_front);
+        part_scheds[idx]->set_add_mode(iccl_sched_add_front);
     }
     sched->sync_partial_scheds();
 
@@ -291,7 +291,7 @@ mlsl_sched* mlsl_fusion_manager::build_sched()
 
     for (size_t idx = 0; idx < part_count; idx++)
     {
-        part_scheds[idx]->set_add_mode(mlsl_sched_add_back);
+        part_scheds[idx]->set_add_mode(iccl_sched_add_back);
     }
     sched->sync_partial_scheds();
 
@@ -313,7 +313,7 @@ mlsl_sched* mlsl_fusion_manager::build_sched()
             entry_factory::make_function_entry(part_scheds[idx].get(),
                                                complete_user_request,
                                                exec_queue[global_copy_idx]);
-            MLSL_THROW_IF_NOT(!exec_queue[global_copy_idx]->req->is_completed(),
+            ICCL_THROW_IF_NOT(!exec_queue[global_copy_idx]->req->is_completed(),
                               "incorrect completion counter");
         }
     }
@@ -338,7 +338,7 @@ mlsl_sched* mlsl_fusion_manager::build_sched()
     return sched;
 }
 
-void mlsl_fusion_manager::execute()
+void iccl_fusion_manager::execute()
 {
     auto this_time = std::chrono::steady_clock::now();
     auto diff = (last_exec_time + cycle - this_time);
@@ -373,7 +373,7 @@ void mlsl_fusion_manager::execute()
         {
             LOG_DEBUG("postponed_queue size ", postponed_queue.size());
 
-            mlsl_sched* first_sched;
+            iccl_sched* first_sched;
             if (!exec_queue.empty())
             {
                 first_sched = exec_queue.front();
@@ -384,7 +384,7 @@ void mlsl_fusion_manager::execute()
                 exec_queue.push_back(first_sched);
                 postponed_queue.pop_front();
                 exec_queue_sum_bytes = first_sched->coll_param.count *
-                                       mlsl_datatype_get_size(first_sched->coll_param.dtype);
+                                       iccl_datatype_get_size(first_sched->coll_param.dtype);
             }
 
             for (auto it = postponed_queue.begin(); it != postponed_queue.end();)
@@ -395,8 +395,8 @@ void mlsl_fusion_manager::execute()
                     s->coll_param.ctype == first_sched->coll_param.ctype &&
                     s->coll_param.reduction == first_sched->coll_param.reduction)
                 {
-                    size_t size = s->coll_param.count * mlsl_datatype_get_size(s->coll_param.dtype);
-                    if (exec_queue_sum_bytes + size > MLSL_FUSION_BUFFER_SIZE)
+                    size_t size = s->coll_param.count * iccl_datatype_get_size(s->coll_param.dtype);
+                    if (exec_queue_sum_bytes + size > ICCL_FUSION_BUFFER_SIZE)
                     {
                         LOG_DEBUG("too much bytes in buffer, flush_exec_queue");
                         flush_exec_queue = true;
@@ -432,32 +432,32 @@ void mlsl_fusion_manager::execute()
     if (flush_exec_queue)
     {
         LOG_DEBUG("exec_queue size ", exec_queue.size(), ", bytes ", exec_queue_sum_bytes);
-        mlsl_sched* sched = build_sched();
+        iccl_sched* sched = build_sched();
         sched->start(global_data.executor.get());
     }
 
-    if (stat_fused_ops % MLSL_FUSION_CHECK_SCHEDS_ITERS == 0)
+    if (stat_fused_ops % ICCL_FUSION_CHECK_SCHEDS_ITERS == 0)
     {
         check_tracked_scheds();
     }
 }
 
-void mlsl_fusion_manager::release_buffer(void* buf)
+void iccl_fusion_manager::release_buffer(void* buf)
 {
     buf_cache.release(buf);
 }
 
-void mlsl_fusion_manager::clear_exec_queue()
+void iccl_fusion_manager::clear_exec_queue()
 {
     exec_queue.clear();
     exec_queue_sum_bytes = 0;
 }
 
-void mlsl_fusion_manager::check_tracked_scheds()
+void iccl_fusion_manager::check_tracked_scheds()
 {
     for (auto it = tracked_scheds.begin(); it != tracked_scheds.end();)
     {
-        mlsl_sched* sched = *it;
+        iccl_sched* sched = *it;
         if (sched->req->is_completed())
         {
             delete sched;

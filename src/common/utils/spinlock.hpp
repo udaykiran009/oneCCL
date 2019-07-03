@@ -2,16 +2,16 @@
 
 #include <atomic>
 
-class mlsl_spinlock
+class iccl_spinlock
 {
 public:
-    mlsl_spinlock()
+    iccl_spinlock()
     {
         flag.clear();
     }
 
-    mlsl_spinlock(const mlsl_spinlock&) = delete;
-    ~mlsl_spinlock() = default;
+    iccl_spinlock(const iccl_spinlock&) = delete;
+    ~iccl_spinlock() = default;
 
     void lock()
     {

@@ -6,10 +6,10 @@ class bcast_entry : public base_coll_entry
 {
 public:
     bcast_entry() = delete;
-    bcast_entry(mlsl_sched* sched,
+    bcast_entry(iccl_sched* sched,
                 void* buf,
                 size_t cnt,
-                mlsl_datatype_internal_t dtype,
+                iccl_datatype_internal_t dtype,
                 size_t root) :
         base_coll_entry(sched), buf(buf),
         cnt(cnt), root(root), dtype(dtype)
@@ -19,17 +19,17 @@ public:
 
     void start_derived()
     {
-        size_t bytes = cnt * mlsl_datatype_get_size(dtype);
+        size_t bytes = cnt * iccl_datatype_get_size(dtype);
         LOG_DEBUG("BCAST entry req ", &req, ", bytes ", bytes);
 
         atl_status_t atl_status = atl_comm_bcast(sched->bin->get_comm_ctx(), buf,
                                                  bytes, root, &req);
         if (unlikely(atl_status != atl_status_success))
         {
-            MLSL_THROW("BCAST entry failed. atl_status: ", atl_status_to_str(atl_status));
+            ICCL_THROW("BCAST entry failed. atl_status: ", atl_status_to_str(atl_status));
         }
         else
-            status = mlsl_sched_entry_status_started;
+            status = iccl_sched_entry_status_started;
     }
 
     void update_derived()
@@ -39,12 +39,12 @@ public:
 
         if (unlikely(atl_status != atl_status_success))
         {
-            MLSL_THROW("BCAST entry failed. atl_status: ", atl_status_to_str(atl_status));
+            ICCL_THROW("BCAST entry failed. atl_status: ", atl_status_to_str(atl_status));
         }
 
         if (req_status)
         {
-            status = mlsl_sched_entry_status_complete;
+            status = iccl_sched_entry_status_complete;
         }
     }
 
@@ -56,8 +56,8 @@ public:
 protected:
     void dump_detail(std::stringstream& str) const
     {
-        mlsl_logger::format(str,
-                            "dt ", mlsl_datatype_get_name(dtype),
+        iccl_logger::format(str,
+                            "dt ", iccl_datatype_get_name(dtype),
                             ", cnt ", cnt,
                             ", root ", root,
                             ", buf ", buf,
@@ -70,6 +70,6 @@ private:
     void* buf;
     size_t cnt;
     size_t root;
-    mlsl_datatype_internal_t dtype;
+    iccl_datatype_internal_t dtype;
     atl_req_t req{};
 };

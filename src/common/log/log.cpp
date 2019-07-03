@@ -3,11 +3,11 @@
 #include <sys/syscall.h>
 #include <unistd.h>
 
-mlsl_log_level mlsl_logger::level = mlsl_log_level::ERROR;
-thread_local mlsl_logger logger;
+iccl_log_level iccl_logger::level = iccl_log_level::ERROR;
+thread_local iccl_logger logger;
 
 std::ostream& operator<<(std::ostream& os,
-                         mlsl_streambuf& buf)
+                         iccl_streambuf& buf)
 {
     buf.set_eol();
     os << buf.buffer.get();
@@ -15,7 +15,7 @@ std::ostream& operator<<(std::ostream& os,
     return os;
 }
 
-void mlsl_logger::write_prefix(std::ostream& str)
+void iccl_logger::write_prefix(std::ostream& str)
 {
 #if __GNUC__ >= 5
     std::time_t t = std::time(nullptr);
@@ -37,7 +37,7 @@ void mlsl_logger::write_prefix(std::ostream& str)
     str << ":(" << syscall(SYS_gettid) << ") ";
 }
 
-void mlsl_logger::write_backtrace(std::ostream& str)
+void iccl_logger::write_backtrace(std::ostream& str)
 {
     void* buffer[100];
     auto nptrs = backtrace(buffer, 100);

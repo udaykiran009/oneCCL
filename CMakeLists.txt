@@ -1,12 +1,12 @@
-#common CMakeList.txt to build MLSL2, ATL, tests
+#common CMakeList.txt to build ICCL, ATL, tests
 
 cmake_minimum_required (VERSION 2.8)
 
 set(CMAKE_DISABLE_SOURCE_CHANGES ON)
 set(CMAKE_DISABLE_IN_SOURCE_BUILD ON)
 
-set(PROJECT_NAME "Intel(R) One API Collective Communications Library")
-set(PROJECT_FULL_NAME "Intel(R) One API Collective Communications Library")
+set(PROJECT_NAME "Intel(R) oneAPI Collective Communications Library")
+set(PROJECT_FULL_NAME "Intel(R) oneAPI Collective Communications Library")
 
 project(${PROJECT_NAME})
 
@@ -36,13 +36,13 @@ if(CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT)
     set(CMAKE_INSTALL_PREFIX "${CMAKE_BINARY_DIR}/_install" CACHE PATH "Default install path" FORCE)
 endif()
 
-set(MLSL_COMMON_INSTALL_PREFIX "intel64")
-set(MLSL_INSTALL_LIB "${MLSL_COMMON_INSTALL_PREFIX}/${CMAKE_INSTALL_LIBDIR}")
-set(MLSL_INSTALL_INCLUDE "${MLSL_COMMON_INSTALL_PREFIX}/${CMAKE_INSTALL_INCLUDEDIR}")
-set(MLSL_INSTALL_DOC "${MLSL_COMMON_INSTALL_PREFIX}/${CMAKE_INSTALL_DOCDIR}")
-set(MLSL_INSTALL_BIN "${MLSL_COMMON_INSTALL_PREFIX}/${CMAKE_INSTALL_BINDIR}")
-set(MLSL_INSTALL_EXAMPLES "${CMAKE_INSTALL_PREFIX}/examples")
-set(MLSL_INSTALL_TESTS "${CMAKE_INSTALL_PREFIX}/tests/functional")
+set(ICCL_COMMON_INSTALL_PREFIX "intel64")
+set(ICCL_INSTALL_LIB "${ICCL_COMMON_INSTALL_PREFIX}/${CMAKE_INSTALL_LIBDIR}")
+set(ICCL_INSTALL_INCLUDE "${ICCL_COMMON_INSTALL_PREFIX}/${CMAKE_INSTALL_INCLUDEDIR}")
+set(ICCL_INSTALL_DOC "${ICCL_COMMON_INSTALL_PREFIX}/${CMAKE_INSTALL_DOCDIR}")
+set(ICCL_INSTALL_BIN "${ICCL_COMMON_INSTALL_PREFIX}/${CMAKE_INSTALL_BINDIR}")
+set(ICCL_INSTALL_EXAMPLES "${CMAKE_INSTALL_PREFIX}/examples")
+set(ICCL_INSTALL_TESTS "${CMAKE_INSTALL_PREFIX}/tests/functional")
 
 set(CMAKE_INSTALL_RPATH "$ORIGIN;../${CMAKE_INSTALL_LIBDIR}")
 
@@ -96,7 +96,7 @@ if(WITH_ASAN AND ${CMAKE_BUILD_TYPE} STREQUAL "Debug")
     set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -lasan")
 endif()
 
-set(MLSL_BUILD_DIR ${CMAKE_CURRENT_BINARY_DIR}/src)
+set(ICCL_BUILD_DIR ${CMAKE_CURRENT_BINARY_DIR}/src)
 
 enable_testing()
 
@@ -106,9 +106,9 @@ add_subdirectory(examples)
 add_subdirectory(tests/functional)
 
 
-#generate & install mlslvars.sh
-configure_file(cmake/mlslvars.sh.in ${CMAKE_CURRENT_BINARY_DIR}/mlslvars.sh @ONLY)
-install(PROGRAMS ${CMAKE_CURRENT_BINARY_DIR}/mlslvars.sh DESTINATION ${MLSL_INSTALL_BIN})
+#generate & install icclvars.sh
+configure_file(cmake/icclvars.sh.in ${CMAKE_CURRENT_BINARY_DIR}/icclvars.sh @ONLY)
+install(PROGRAMS ${CMAKE_CURRENT_BINARY_DIR}/icclvars.sh DESTINATION ${ICCL_INSTALL_BIN})
 
 #CPack re-uses generated install rules and puts all targets into archive
 #archive creation, generates a target 'package'

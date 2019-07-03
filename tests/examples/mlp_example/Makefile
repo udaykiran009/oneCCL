@@ -1,7 +1,7 @@
 
 ENABLE_DEBUG ?= 1
-INCLUDES = -I$(MLSL_ROOT)/intel64/include -I$(MKLROOT)/include
-LDFLAGS  = -L$(MLSL_ROOT)/intel64/lib -L$(MKLROOT)/lib/intel64 -lmlsl -lmkl_rt -lrt
+INCLUDES = -I$(ICCL_ROOT)/intel64/include -I$(MKLROOT)/include
+LDFLAGS  = -L$(ICCL_ROOT)/intel64/lib -L$(MKLROOT)/lib/intel64 -liccl -lmkl_rt -lrt
 CXX      = icpc
 TARGET   = mlp
 
@@ -15,20 +15,20 @@ else
   CFLAGS += -O2
 endif
 
-USE_MLSL = 1
-ifeq ($(USE_MLSL),1)
-  CFLAGS += -DUSE_MLSL=1
+USE_ICCL = 1
+ifeq ($(USE_ICCL),1)
+  CFLAGS += -DUSE_ICCL=1
 else
-  CFLAGS += -DUSE_MLSL=0
+  CFLAGS += -DUSE_ICCL=0
 endif
 
 CXX_COMPILE = $(CXX) $(CFLAGS) $(INCLUDES)
 
-$(TARGET): mlp.cpp mlsl_wrapper.cpp
-	echo "running mlsl_wrappers_test ..." ; \
+$(TARGET): mlp.cpp iccl_wrapper.cpp
+	echo "running iccl_wrappers_test ..." ; \
 	$(CXX_COMPILE) -c mlp.cpp
-	$(CXX_COMPILE) -c mlsl_wrapper.cpp
-	$(CXX_COMPILE) mlp.o mlsl_wrapper.o -o $(TARGET) $(LDFLAGS)
+	$(CXX_COMPILE) -c iccl_wrapper.cpp
+	$(CXX_COMPILE) mlp.o iccl_wrapper.o -o $(TARGET) $(LDFLAGS)
 	if [ "$$?" -ne 0 ]; then \
 		echo "Run FAILED." ; \
 		exit 1; \

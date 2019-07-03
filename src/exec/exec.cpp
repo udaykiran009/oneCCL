@@ -2,16 +2,16 @@
 #include "exec/worker.hpp"
 #include "exec/service_worker.hpp"
 
-mlsl_executor::mlsl_executor(const mlsl_env_data& env_vars,
-                             const mlsl_global_data& global_data)
+iccl_executor::iccl_executor(const iccl_env_data& env_vars,
+                             const iccl_global_data& global_data)
 {
     auto worker_count = env_vars.worker_count;
     workers.reserve(worker_count);
     auto comm_count = worker_count;
 
-    if (env_vars.priority_mode != mlsl_priority_none)
+    if (env_vars.priority_mode != iccl_priority_none)
     {
-        comm_count *= MLSL_PRIORITY_BUCKET_COUNT;
+        comm_count *= ICCL_PRIORITY_BUCKET_COUNT;
     }
 
     atl_attr_t attr =
@@ -25,7 +25,7 @@ mlsl_executor::mlsl_executor(const mlsl_env_data& env_vars,
     atl_status_t atl_status = atl_init(nullptr, nullptr,
                                        &proc_idx, &proc_count,
                                        &attr, &atl_comms, &atl_desc);
-    MLSL_THROW_IF_NOT(atl_status == atl_status_success && atl_desc && atl_comms,
+    ICCL_THROW_IF_NOT(atl_status == atl_status_success && atl_desc && atl_comms,
                       "ATL init failed, res ", atl_status, ", desc ", atl_desc, ", comm ",atl_comms);
 
     is_tagged_coll_enabled = attr.is_tagged_coll_enabled;
@@ -52,17 +52,17 @@ mlsl_executor::mlsl_executor(const mlsl_env_data& env_vars,
     {
         std::vector<atl_comm_t*> comm_vec(atl_comms + idx * comm_per_worker,
                                           atl_comms + (idx + 1) * comm_per_worker);
-        std::unique_ptr<mlsl_sched_queue> data_queue{new mlsl_sched_queue(comm_vec)};
+        std::unique_ptr<iccl_sched_queue> data_queue{new iccl_sched_queue(comm_vec)};
 
         if (env_vars.enable_fusion && idx == 0)
         {
             LOG_DEBUG("creating service worker");
-            workers.emplace_back(new mlsl_service_worker(this, idx,
+            workers.emplace_back(new iccl_service_worker(this, idx,
                 std::move(data_queue), *global_data.fusion_manager));
         }
         else
         {
-            workers.emplace_back(new mlsl_worker(this, idx, std::move(data_queue)));
+            workers.emplace_back(new iccl_worker(this, idx, std::move(data_queue)));
         }
 
         if (env_vars.worker_offload)
@@ -74,7 +74,7 @@ mlsl_executor::mlsl_executor(const mlsl_env_data& env_vars,
     }
 }
 
-mlsl_executor::~mlsl_executor()
+iccl_executor::~iccl_executor()
 {
     for (size_t idx = 0; idx < workers.size(); idx++)
     {
@@ -93,11 +93,11 @@ mlsl_executor::~mlsl_executor()
     }
 }
 
-void mlsl_executor::start(mlsl_sched* sched)
+void iccl_executor::start(iccl_sched* sched)
 {
-    if (sched->internal_type == mlsl_sched_internal_ooo)
+    if (sched->internal_type == iccl_sched_internal_ooo)
     {
-        MLSL_ASSERT(sched->partial_scheds.empty(), "internal ooo sched should not have partial scheds");
+        ICCL_ASSERT(sched->partial_scheds.empty(), "internal ooo sched should not have partial scheds");
         workers[0]->add(sched);
     }
     else
@@ -109,7 +109,7 @@ void mlsl_executor::start(mlsl_sched* sched)
     }
 }
 
-void mlsl_executor::wait(mlsl_request* req)
+void iccl_executor::wait(iccl_request* req)
 {
     req->sched->urgent = true;
     while (!req->is_completed())
@@ -130,7 +130,7 @@ void mlsl_executor::wait(mlsl_request* req)
     req->sched->urgent = false;
 }
 
-bool mlsl_executor::test(mlsl_request* req)
+bool iccl_executor::test(iccl_request* req)
 {
     bool completed = false;
 

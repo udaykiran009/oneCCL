@@ -162,11 +162,11 @@ atl_status_t atl_init(int *argc, char ***argv, size_t *proc_idx, size_t *proc_co
     }
     dlclose(dlhandle);
 
-    transport_dl_dir = getenv("MLSL_ATL_TRANSPORT_PATH");
+    transport_dl_dir = getenv("ICCL_ATL_TRANSPORT_PATH");
     if (!transport_dl_dir)
         transport_dl_dir = ATL_TRANSPORT_DL_DIR;
 
-    transport_name = getenv("MLSL_ATL_TRANSPORT");
+    transport_name = getenv("ICCL_ATL_TRANSPORT");
     if (!transport_name)
         transport_name = "OFI";
 

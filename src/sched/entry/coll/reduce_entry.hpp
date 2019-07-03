@@ -6,12 +6,12 @@ class reduce_entry : public base_coll_entry
 {
 public:
     reduce_entry() = delete;
-    reduce_entry(mlsl_sched *sched,
+    reduce_entry(iccl_sched *sched,
                      const void *send_buf,
                      void *recv_buf,
                      size_t cnt,
-                     mlsl_datatype_internal_t dtype,
-                     mlsl_reduction_t reduction,
+                     iccl_datatype_internal_t dtype,
+                     iccl_reduction_t reduction,
                      size_t root) :
         base_coll_entry(sched), send_buf(send_buf), recv_buf(recv_buf),
         cnt(cnt), dtype(dtype), op(reduction), root(root)
@@ -28,10 +28,10 @@ public:
 
         if (unlikely(atl_status != atl_status_success))
         {
-            MLSL_THROW("REDUCE entry failed. atl_status: ", atl_status_to_str(atl_status));
+            ICCL_THROW("REDUCE entry failed. atl_status: ", atl_status_to_str(atl_status));
         }
         else
-            status = mlsl_sched_entry_status_started;
+            status = iccl_sched_entry_status_started;
     }
 
     void update_derived()
@@ -41,11 +41,11 @@ public:
 
         if (unlikely(atl_status != atl_status_success))
         {
-            MLSL_THROW("REDUCE entry failed. atl_status: ", atl_status_to_str(atl_status));
+            ICCL_THROW("REDUCE entry failed. atl_status: ", atl_status_to_str(atl_status));
         }
 
         if (req_status)
-            status = mlsl_sched_entry_status_complete;
+            status = iccl_sched_entry_status_complete;
     }
 
     const char* name() const
@@ -56,12 +56,12 @@ public:
 protected:
     void dump_detail(std::stringstream& str) const
     {
-        mlsl_logger::format(str,
-                            "dt ", mlsl_datatype_get_name(dtype),
+        iccl_logger::format(str,
+                            "dt ", iccl_datatype_get_name(dtype),
                             ", cnt ", cnt,
                             ", send_buf ", send_buf,
                             ", recv_buf ", recv_buf,
-                            ", op ", mlsl_reduction_to_str(op),
+                            ", op ", iccl_reduction_to_str(op),
                             ", root ", root,
                             ", comm_id ", sched->coll_param.comm->id(),
                             ", req ",&req,
@@ -72,8 +72,8 @@ private:
     const void* send_buf;
     void* recv_buf;
     size_t cnt;
-    mlsl_datatype_internal_t dtype;
-    mlsl_reduction_t op;
+    iccl_datatype_internal_t dtype;
+    iccl_reduction_t op;
     size_t root;
     atl_req_t req{};
 };

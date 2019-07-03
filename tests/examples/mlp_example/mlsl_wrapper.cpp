@@ -1,13 +1,13 @@
-#if USE_MLSL
+#if USE_ICCL
 
-#include "mlsl_wrapper.hpp"
+#include "iccl_wrapper.hpp"
 
 Session* session;
 Distribution* distribution;
 size_t processIdx;
 size_t processCount;
 
-void InitMLSL(int argc, char** argv)
+void InitICCL(int argc, char** argv)
 {
     Environment::GetEnv().Init(&argc, &argv);
     session = Environment::GetEnv().CreateSession();
@@ -23,7 +23,7 @@ void InitMLSL(int argc, char** argv)
         printf("process_count = %zu, distribution = %zu x %zu (data_parts x model_parts)\n", processCount, dataParts, modelParts);
 }
 
-void FinalizeMLSL()
+void FinalizeICCL()
 {
     Environment::GetEnv().DeleteSession(session);
     Environment::GetEnv().DeleteDistribution(distribution);
@@ -32,7 +32,7 @@ void FinalizeMLSL()
 
 void Bcast(void* buffer, size_t count)
 {
-    CommReq* req = distribution->Bcast(buffer, count, MLSL_DTYPE,
+    CommReq* req = distribution->Bcast(buffer, count, ICCL_DTYPE,
                                        0, GT_GLOBAL);
     Environment::GetEnv().Wait(req);
 }

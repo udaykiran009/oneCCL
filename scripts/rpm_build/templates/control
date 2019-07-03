@@ -4,5 +4,5 @@ Section: libs
 Priority: optional
 Architecture: amd64
 Maintainer: Intel Corporation
-Description: Intel(R) Machine Learning Scaling Library MLSL_SUBSTITUTE_OFFICIAL_VERSION for Linux* OS
+Description: Intel(R) Machine Learning Scaling Library ICCL_SUBSTITUTE_OFFICIAL_VERSION for Linux* OS
 Multi-Arch: foreign

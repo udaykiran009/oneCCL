@@ -7,10 +7,10 @@ class probe_entry : public sched_entry
 {
 public:
     probe_entry() = delete;
-    probe_entry(mlsl_sched* sched,
+    probe_entry(iccl_sched* sched,
                 size_t source,
                 size_t* count,
-                mlsl_op_id_t op_id) :
+                iccl_op_id_t op_id) :
         sched_entry(sched), src(source), cnt(count), op_id(op_id)
     {
         LOG_DEBUG("creating ", name(), " entry");
@@ -24,12 +24,12 @@ public:
 
         if (unlikely(atl_status != atl_status_success))
         {
-            status = mlsl_sched_entry_status_failed;
+            status = iccl_sched_entry_status_failed;
             LOG_ERROR("PROBE entry failed. atl_status: ", atl_status_to_str(atl_status));
         }
         else
         {
-            status = mlsl_sched_entry_status_started;
+            status = iccl_sched_entry_status_started;
         }
     }
 
@@ -40,14 +40,14 @@ public:
 
         if (unlikely(atl_status != atl_status_success))
         {
-            MLSL_THROW("SEND entry failed. atl_status: ", atl_status_to_str(atl_status));
+            ICCL_THROW("SEND entry failed. atl_status: ", atl_status_to_str(atl_status));
         }
 
         if (req_status)
         {
-            status = mlsl_sched_entry_status_complete;
+            status = iccl_sched_entry_status_complete;
             LOG_DEBUG("completed PROBE entry req=", &req);
-            status = mlsl_sched_entry_status_complete;
+            status = iccl_sched_entry_status_complete;
             *cnt = req.recv_len;
         }
     }
@@ -60,7 +60,7 @@ public:
 protected:
     void dump_detail(std::stringstream& str) const
     {
-        mlsl_logger::format(str,
+        iccl_logger::format(str,
                             "cnt ", *cnt,
                             ", src ", src,
                             ", comm ", sched->coll_param.comm,
@@ -72,7 +72,7 @@ protected:
 private:
     size_t src;
     size_t* cnt;
-    mlsl_op_id_t op_id;
+    iccl_op_id_t op_id;
     uint64_t atl_tag{};
     atl_req_t req{};
 };

@@ -1,10 +1,10 @@
 
 ENABLE_DEBUG ?= 1
 SHELL = bash
-INCLUDES = -I$(MLSL_ROOT)/intel64/include
-LDFLAGS  = -L$(MLSL_ROOT)/intel64/lib -lmlsl -lrt
+INCLUDES = -I$(ICCL_ROOT)/intel64/include
+LDFLAGS  = -L$(ICCL_ROOT)/intel64/lib -liccl -lrt
 CXX     ?= g++
-tests    = mlsl_example
+tests    = iccl_example
 
 ifeq ($(ENABLE_DEBUG),1)
   CFLAGS += -O0 -g
@@ -24,7 +24,7 @@ all: $(tests)
 
 run: all
 	-rm -f *.log
-	echo "running mlsl_example ..." ; \
+	echo "running iccl_example ..." ; \
 	for group_count in 1 2 4 ; do \
 		echo "mpiexec.hydra -n 4 -ppn 1 -l ./$(tests) $$group_count" >> output.log 2>&1 ; \
 		mpiexec.hydra -n 4 -ppn 1 -l ./$(tests) $$group_count >> output.log 2>&1 ; \

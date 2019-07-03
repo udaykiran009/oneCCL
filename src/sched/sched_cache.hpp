@@ -7,21 +7,21 @@
 #include <cstring>
 #include <unordered_map>
 
-#define MLSL_SCHED_CACHE_INITIAL_BUCKET_COUNT (4096)
+#define ICCL_SCHED_CACHE_INITIAL_BUCKET_COUNT (4096)
 
-class mlsl_sched_key
+class iccl_sched_key
 {
 public:
-    mlsl_sched_key() = default;
-    ~mlsl_sched_key() = default;
-    mlsl_sched_key(const mlsl_sched_key& other) = default;
+    iccl_sched_key() = default;
+    ~iccl_sched_key() = default;
+    iccl_sched_key(const iccl_sched_key& other) = default;
 
-    mlsl_sched_key& operator= (const mlsl_sched_key& other) = delete;
+    iccl_sched_key& operator= (const iccl_sched_key& other) = delete;
 
-    mlsl_coll_type ctype = mlsl_coll_none;
-    mlsl_datatype_t dtype = mlsl_dtype_char;
-    mlsl_datatype_t itype = mlsl_dtype_char; /* used in sparse collective to store index type */
-    mlsl_reduction_t reduction = mlsl_reduction_sum;
+    iccl_coll_type ctype = iccl_coll_none;
+    iccl_datatype_t dtype = iccl_dtype_char;
+    iccl_datatype_t itype = iccl_dtype_char; /* used in sparse collective to store index type */
+    iccl_reduction_t reduction = iccl_reduction_sum;
     void* buf1 = nullptr;
     void* buf2 = nullptr;
     void* buf3 = nullptr;
@@ -31,16 +31,16 @@ public:
     size_t* count3 = nullptr; /* used in sparse collective to store recv index count */
     size_t* count4 = nullptr; /* used in sparse collective to store recv value count */
     size_t root = 0;
-    const mlsl_comm* comm = nullptr;
-    mlsl_prologue_fn_t prologue_fn = nullptr;
-    mlsl_epilogue_fn_t epilogue_fn = nullptr;
-    mlsl_reduction_fn_t reduction_fn = nullptr;
+    const iccl_comm* comm = nullptr;
+    iccl_prologue_fn_t prologue_fn = nullptr;
+    iccl_epilogue_fn_t epilogue_fn = nullptr;
+    iccl_reduction_fn_t reduction_fn = nullptr;
     size_t priority = 0;
     int synchronous = 0;
     int filler = 0; /* to zeroize 4 bytes hole */
     std::string match_id{}; /* should always be last field */
 
-    bool operator== (const mlsl_sched_key& k) const
+    bool operator== (const iccl_sched_key& k) const
     { 
         char* first_field1 = (char*)&ctype;
         char* last_field1 = (char*)&match_id;
@@ -56,10 +56,10 @@ public:
 
     void print() const
     {
-        LOG_DEBUG( "ctype ", mlsl_coll_type_to_str(ctype),
-                   ", dtype ", mlsl_datatype_get(dtype)->name,
-                   ", itype ", mlsl_datatype_get(itype)->name,
-                   ", reduction ", mlsl_reduction_to_str(reduction),
+        LOG_DEBUG( "ctype ", iccl_coll_type_to_str(ctype),
+                   ", dtype ", iccl_datatype_get(dtype)->name,
+                   ", itype ", iccl_datatype_get(itype)->name,
+                   ", reduction ", iccl_reduction_to_str(reduction),
                    ", buf1 ", buf1,
                    ", buf2 ", buf2,
                    ", buf3 ", buf3,
@@ -79,10 +79,10 @@ public:
     }
 };
 
-class mlsl_sched_key_hasher
+class iccl_sched_key_hasher
 {
 public:
-    size_t operator()(const mlsl_sched_key& k) const
+    size_t operator()(const iccl_sched_key& k) const
     {
         size_t hash_value = k.ctype + k.dtype + k.itype + k.reduction + k.count1 +
                k.count2 + k.root + k.priority + k.synchronous +
@@ -98,26 +98,26 @@ private:
     std::hash<std::string> string_hasher{};
 };
 
-class mlsl_sched_cache
+class iccl_sched_cache
 {
 public:
-    mlsl_sched_cache() = default;
-    ~mlsl_sched_cache()
+    iccl_sched_cache() = default;
+    ~iccl_sched_cache()
     {
         remove_all();
     }
 
-    mlsl_sched_cache(const mlsl_sched_cache& other) = delete;
-    mlsl_sched_cache& operator= (const mlsl_sched_cache& other) = delete;
+    iccl_sched_cache(const iccl_sched_cache& other) = delete;
+    iccl_sched_cache& operator= (const iccl_sched_cache& other) = delete;
 
-    mlsl_sched* find(mlsl_sched_key& key);
-    void add(mlsl_sched_key& key, mlsl_sched* sched);
+    iccl_sched* find(iccl_sched_key& key);
+    void add(iccl_sched_key& key, iccl_sched* sched);
 
 private:
     void remove_all();
 
-    using sched_cache_lock_t = mlsl_spinlock;
+    using sched_cache_lock_t = iccl_spinlock;
     sched_cache_lock_t guard{};
-    using sched_table_t = std::unordered_map<mlsl_sched_key, mlsl_sched*, mlsl_sched_key_hasher>;
-    sched_table_t table { MLSL_SCHED_CACHE_INITIAL_BUCKET_COUNT };
+    using sched_table_t = std::unordered_map<iccl_sched_key, iccl_sched*, iccl_sched_key_hasher>;
+    sched_table_t table { ICCL_SCHED_CACHE_INITIAL_BUCKET_COUNT };
 };

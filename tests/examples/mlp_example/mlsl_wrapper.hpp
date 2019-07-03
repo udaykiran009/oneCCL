@@ -1,19 +1,19 @@
-#ifndef MLSL_WRAPPER_HPP
-#define MLSL_WRAPPER_HPP
+#ifndef ICCL_WRAPPER_HPP
+#define ICCL_WRAPPER_HPP
 
 #include "common.hpp"
 
-#include "mlsl.hpp"
+#include "iccl.hpp"
 
-using namespace MLSL;
+using namespace ICCL;
 
 extern Session* session;
 extern Distribution* distribution;
 extern size_t processIdx;
 extern size_t processCount;
 
-void InitMLSL(int argc, char** argv);
-void FinalizeMLSL();
+void InitICCL(int argc, char** argv);
+void FinalizeICCL();
 void Bcast(void* buffer, size_t count);
 
-#endif /* MLSL_WRAPPER_HPP */
+#endif /* ICCL_WRAPPER_HPP */

@@ -8,33 +8,33 @@ class recv_entry : public sched_entry
 {
 public:
     recv_entry() = delete;
-    recv_entry(mlsl_sched* sched,
+    recv_entry(iccl_sched* sched,
                void* buf,
                size_t cnt,
-               mlsl_datatype_internal_t dtype,
+               iccl_datatype_internal_t dtype,
                size_t src,
-               mlsl_op_id_t op_id) :
+               iccl_op_id_t op_id) :
         sched_entry(sched), buf(buf), cnt(cnt), dtype(dtype), src(src), op_id(op_id)
     {
         LOG_DEBUG("creating ", name(), " entry");
-        pfields.add_available(mlsl_sched_entry_field_buf);
-        pfields.add_available(mlsl_sched_entry_field_cnt);
+        pfields.add_available(iccl_sched_entry_field_buf);
+        pfields.add_available(iccl_sched_entry_field_cnt);
     }
 
     void start_derived()
     {
         atl_tag = global_data.atl_tag->create(sched->coll_param.comm->id(), src, sched->sched_id, op_id);
-        size_t bytes = cnt * mlsl_datatype_get_size(dtype);
+        size_t bytes = cnt * iccl_datatype_get_size(dtype);
         LOG_DEBUG("RECV entry src ", src, ", tag ", atl_tag, ", req ", &req, ", bytes ", bytes);
         atl_status_t atl_status = atl_comm_recv(sched->bin->get_comm_ctx(), buf,
                                                 bytes, src, atl_tag, &req);
         if (unlikely(atl_status != atl_status_success))
         {
-            MLSL_THROW("RECV entry failed. atl_status: ", atl_status_to_str(atl_status));
+            ICCL_THROW("RECV entry failed. atl_status: ", atl_status_to_str(atl_status));
         }
         else
         {
-            status = mlsl_sched_entry_status_started;
+            status = iccl_sched_entry_status_started;
         }
     }
 
@@ -45,22 +45,22 @@ public:
 
         if (unlikely(atl_status != atl_status_success))
         {
-            MLSL_THROW("RECV entry failed. atl_status: ", atl_status_to_str(atl_status));
+            ICCL_THROW("RECV entry failed. atl_status: ", atl_status_to_str(atl_status));
         }
 
         if (req_status)
         {
-            status = mlsl_sched_entry_status_complete;
+            status = iccl_sched_entry_status_complete;
         }
     }
 
-    void* get_field_ptr(mlsl_sched_entry_field_id id)
+    void* get_field_ptr(iccl_sched_entry_field_id id)
     {
         switch (id)
         {
-            case mlsl_sched_entry_field_buf: return &buf;
-            case mlsl_sched_entry_field_cnt: return &cnt;
-            default: MLSL_FATAL("unexpected id ", id);
+            case iccl_sched_entry_field_buf: return &buf;
+            case iccl_sched_entry_field_cnt: return &cnt;
+            default: ICCL_FATAL("unexpected id ", id);
         }
     }
 
@@ -72,8 +72,8 @@ public:
 protected:
     void dump_detail(std::stringstream& str) const
     {
-        mlsl_logger::format(str,
-                            "dt ", mlsl_datatype_get_name(dtype),
+        iccl_logger::format(str,
+                            "dt ", iccl_datatype_get_name(dtype),
                             ", cnt ", cnt,
                             ", buf ", buf,
                             ", src ", src,
@@ -86,9 +86,9 @@ protected:
 private:
     void* buf;
     size_t cnt;
-    mlsl_datatype_internal_t dtype;
+    iccl_datatype_internal_t dtype;
     size_t src;
-    mlsl_op_id_t op_id = 0;
+    iccl_op_id_t op_id = 0;
     uint64_t atl_tag{};
     atl_req_t req{};
 };

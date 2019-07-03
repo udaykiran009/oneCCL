@@ -18,12 +18,12 @@ target_compile_definitions(pmi-objects PRIVATE HAVE_UNISTD_H HAVE_STDLIB_H HAVE_
 add_library(pmi SHARED $<TARGET_OBJECTS:pmi-objects>)
 target_include_directories(pmi PUBLIC INTERFACE ${COMMON_PMI_INC_DIRS})
 set_target_properties(pmi PROPERTIES VERSION 1 SOVERSION 1.0)
-set_target_properties(pmi PROPERTIES LIBRARY_OUTPUT_DIRECTORY ${MLSL_BUILD_DIR})
+set_target_properties(pmi PROPERTIES LIBRARY_OUTPUT_DIRECTORY ${ICCL_BUILD_DIR})
 
-install(TARGETS pmi LIBRARY DESTINATION ${MLSL_INSTALL_LIB})
+install(TARGETS pmi LIBRARY DESTINATION ${ICCL_INSTALL_LIB})
 
 #static lib
 add_library(pmi-static STATIC $<TARGET_OBJECTS:pmi-objects>)
 set_target_properties(pmi-static PROPERTIES OUTPUT_NAME pmi)
-set_target_properties(pmi-static PROPERTIES ARCHIVE_OUTPUT_DIRECTORY ${MLSL_BUILD_DIR})
-install(TARGETS pmi-static ARCHIVE DESTINATION ${MLSL_INSTALL_LIB}) 
+set_target_properties(pmi-static PROPERTIES ARCHIVE_OUTPUT_DIRECTORY ${ICCL_BUILD_DIR})
+install(TARGETS pmi-static ARCHIVE DESTINATION ${ICCL_INSTALL_LIB})

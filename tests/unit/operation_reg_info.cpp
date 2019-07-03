@@ -165,9 +165,9 @@ TEST_F(OperationRegInfoTest, test_Validate)
         OperationRegInfo* regInfo = CreateDefaultOperationRegInfo(opParam);
         for (size_t idx = 0; idx < TRIPLET_COUNT; idx++)
         {
-            EXPECT_EQ(DEFAULT_IN_ACT_COUNT + idx, regInfo->AddInput(10, 10, MLSL_DTYPE));
-            EXPECT_EQ(DEFAULT_OUT_ACT_COUNT + idx, regInfo->AddOutput(10, 10, MLSL_DTYPE));
-            EXPECT_EQ(DEFAULT_PARAM_COUNT + idx, regInfo->AddParameterSet(10, 10, MLSL_DTYPE));
+            EXPECT_EQ(DEFAULT_IN_ACT_COUNT + idx, regInfo->AddInput(10, 10, ICCL_DTYPE));
+            EXPECT_EQ(DEFAULT_OUT_ACT_COUNT + idx, regInfo->AddOutput(10, 10, ICCL_DTYPE));
+            EXPECT_EQ(DEFAULT_PARAM_COUNT + idx, regInfo->AddParameterSet(10, 10, ICCL_DTYPE));
         }
         if (IS_OP_SUPPORTED(opType))
             ASSERT_NO_THROW(regInfo->Validate());

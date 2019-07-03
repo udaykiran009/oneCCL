@@ -8,10 +8,10 @@
 
 #include "gtest/gtest.h"
 
-#include "mlsl.hpp"
+#include "iccl.hpp"
 
 using namespace std;
-using namespace MLSL;
+using namespace ICCL;
 
 #define GETTID() syscall(SYS_gettid)
 
@@ -121,7 +121,7 @@ using namespace MLSL;
 #define DTYPE          float
 #define DTYPE_SIZE     sizeof(DTYPE)
 #define CACHELINE_SIZE 64
-#define MLSL_DTYPE     DataType::DT_FLOAT
+#define ICCL_DTYPE     DataType::DT_FLOAT
 
 #define OP_TYPE_FIRST OpType::OT_CC
 #define OP_TYPE_LAST  OpType::OT_EVAL
@@ -154,15 +154,15 @@ using namespace MLSL;
       for (NetworkType netType = (NetworkType)0; netType < NT_LAST; netType++) \
       {                                                                        \
           TestNetwork& net = nets[netType];                                    \
-          Statistics* stats UNUSED_ATTR = net.mlslSession->GetStats();         \
+          Statistics* stats UNUSED_ATTR = net.icclSession->GetStats();         \
           TestOperation (&ops)[OPERATION_COUNT] = net.ops;                     \
           for (size_t opIdx = 0; opIdx < OPERATION_COUNT; opIdx++)             \
           {                                                                    \
               TestOperation& op = ops[opIdx];                                  \
               TestDistribution& dist = op.dist;                                \
               TestTriplet* trs = op.trs;                                       \
-              Operation* mlslOp UNUSED_ATTR = op.mlslOp;                       \
-              Distribution* mlslDist UNUSED_ATTR = dist.mlslDist;              \
+              Operation* icclOp UNUSED_ATTR = op.icclOp;                       \
+              Distribution* icclDist UNUSED_ATTR = dist.icclDist;              \
               for (size_t trIdx = 0; trIdx < TRIPLET_COUNT; trIdx++)           \
               {                                                                \
                   TestTriplet& tr = trs[trIdx];                                \
@@ -184,15 +184,15 @@ using namespace MLSL;
       for (NetworkType netType = (NetworkType)0; netType < NT_LAST; netType++) \
       {                                                                        \
           TestNetwork& net = nets[netType];                                    \
-          Statistics* stats UNUSED_ATTR = net.mlslSession->GetStats();         \
+          Statistics* stats UNUSED_ATTR = net.icclSession->GetStats();         \
           TestOperation (&ops)[OPERATION_COUNT] = net.ops;                     \
           for (size_t opIdx = 0; opIdx < OPERATION_COUNT; opIdx++)             \
           {                                                                    \
               TestOperation& op = ops[opIdx];                                  \
               TestDistribution& dist = op.dist;                                \
               TestTriplet* trs UNUSED_ATTR = op.trs;                           \
-              Operation* mlslOp UNUSED_ATTR = op.mlslOp;                       \
-              Distribution* mlslDist UNUSED_ATTR = dist.mlslDist;              \
+              Operation* icclOp UNUSED_ATTR = op.icclOp;                       \
+              Distribution* icclDist UNUSED_ATTR = dist.icclDist;              \
               PRINT("ITERATE_OVER_NETS_OPS: "                                  \
                     "netType: %d, opIdx: %zu",                                 \
                     netType, opIdx);                                           \
@@ -270,7 +270,7 @@ typedef enum
 {
     NT_SAME_DISTS = 0,
     NT_LAST,
-    NT_DIFF_DISTS, /* currently this case is not supported yet by MLSL */
+    NT_DIFF_DISTS, /* currently this case is not supported yet by ICCL */
 } NetworkType;
 
 NetworkType& operator++(NetworkType& orig)
@@ -313,7 +313,7 @@ public:
                        kernelSize(DEFAULT_KERNEL_SIZE),
                        distUpdate(DEFAULT_IS_DIST_UPDATE),
                        opType(DEFAULT_OP_TYPE),
-                       dataType(MLSL_DTYPE),
+                       dataType(ICCL_DTYPE),
                        opName(DEFAULT_OP_NAME)
     {}
 };
@@ -346,7 +346,7 @@ public:
 class TestDistribution
 {
 public:
-    Distribution* mlslDist;
+    Distribution* icclDist;
     size_t processIdx, processCount;
     size_t dataProcessIdx, dataProcessCount;
     size_t modelProcessIdx, modelProcessCount;
@@ -363,7 +363,7 @@ class TestOperation
 {
 public:
     TestTriplet trs[TRIPLET_COUNT];
-    Operation* mlslOp;
+    Operation* icclOp;
     TestDistribution dist;
 
     void Print()
@@ -380,7 +380,7 @@ public:
 class TestNetwork
 {
 public:
-    Session* mlslSession;
+    Session* icclSession;
     TestOperation ops[OPERATION_COUNT];
 
     void Print()
@@ -500,20 +500,20 @@ public:
             {
                 PRINT("create network using the same distributions");
 
-                Session* mlslSession = Environment::GetEnv().CreateSession();
-                mlslSession->SetGlobalMinibatchSize(GLOBAL_MINIBATCH_SIZE);
-                Distribution* mlslDist = CreateHybridDistribution();
+                Session* icclSession = Environment::GetEnv().CreateSession();
+                icclSession->SetGlobalMinibatchSize(GLOBAL_MINIBATCH_SIZE);
+                Distribution* icclDist = CreateHybridDistribution();
 
                 size_t processIdx = Environment::GetEnv().GetProcessIdx();
                 size_t processCount = Environment::GetEnv().GetProcessCount();
 
-                size_t dataProcessIdx = mlslDist->GetProcessIdx(GT_DATA);
-                size_t dataProcessCount = mlslDist->GetProcessCount(GT_DATA);
+                size_t dataProcessIdx = icclDist->GetProcessIdx(GT_DATA);
+                size_t dataProcessCount = icclDist->GetProcessCount(GT_DATA);
 
-                size_t modelProcessIdx = mlslDist->GetProcessIdx(GT_MODEL);
-                size_t modelProcessCount = mlslDist->GetProcessCount(GT_MODEL);
+                size_t modelProcessIdx = icclDist->GetProcessIdx(GT_MODEL);
+                size_t modelProcessCount = icclDist->GetProcessCount(GT_MODEL);
 
-                net.mlslSession = mlslSession;
+                net.icclSession = icclSession;
                 TestOperation (&ops)[OPERATION_COUNT] = net.ops;
 
                 for (int opIdx = 0; opIdx < OPERATION_COUNT; opIdx++)
@@ -535,36 +535,36 @@ public:
                     }
 
                     TestDistribution& dist = op.dist;
-                    dist.mlslDist = mlslDist;
+                    dist.icclDist = icclDist;
                     dist.processIdx = processIdx; dist.processCount = processCount;
                     dist.dataProcessIdx = dataProcessIdx; dist.dataProcessCount = dataProcessCount;
                     dist.modelProcessIdx = modelProcessIdx; dist.modelProcessCount = modelProcessCount;
                     CreateTestOperation(netType, opIdx);
                 }
-                mlslSession->Commit();
+                icclSession->Commit();
             }
             else if (netType == NT_DIFF_DISTS)
             {
                 PRINT("create network using the different distributions");
 
-                Session* mlslSession = Environment::GetEnv().CreateSession();
-                mlslSession->SetGlobalMinibatchSize(GLOBAL_MINIBATCH_SIZE);
+                Session* icclSession = Environment::GetEnv().CreateSession();
+                icclSession->SetGlobalMinibatchSize(GLOBAL_MINIBATCH_SIZE);
 
-                net.mlslSession = mlslSession;
+                net.icclSession = icclSession;
                 TestOperation (&ops)[OPERATION_COUNT] = net.ops;
 
                 for (int opIdx = 0; opIdx < OPERATION_COUNT; opIdx++)
                 {
-                    Distribution* mlslDist = CreateHybridDistribution();
+                    Distribution* icclDist = CreateHybridDistribution();
 
                     size_t processIdx = Environment::GetEnv().GetProcessIdx();
                     size_t processCount = Environment::GetEnv().GetProcessCount();
 
-                    size_t dataProcessIdx = mlslDist->GetProcessIdx(GT_DATA);
-                    size_t dataProcessCount = mlslDist->GetProcessCount(GT_DATA);
+                    size_t dataProcessIdx = icclDist->GetProcessIdx(GT_DATA);
+                    size_t dataProcessCount = icclDist->GetProcessCount(GT_DATA);
 
-                    size_t modelProcessIdx = mlslDist->GetProcessIdx(GT_MODEL);
-                    size_t modelProcessCount = mlslDist->GetProcessCount(GT_MODEL);
+                    size_t modelProcessIdx = icclDist->GetProcessIdx(GT_MODEL);
+                    size_t modelProcessCount = icclDist->GetProcessCount(GT_MODEL);
 
                     TestOperation& op = ops[opIdx];
                     for (int trIdx = 0; trIdx < TRIPLET_COUNT; trIdx++)
@@ -583,14 +583,14 @@ public:
                     }
 
                     TestDistribution& dist = op.dist;
-                    dist.mlslDist = mlslDist;
+                    dist.icclDist = icclDist;
                     dist.processIdx = processIdx; dist.processCount = processCount;
                     dist.dataProcessIdx = dataProcessIdx; dist.dataProcessCount = dataProcessCount;
                     dist.modelProcessIdx = modelProcessIdx; dist.modelProcessCount = modelProcessCount;
 
                     CreateTestOperation(netType, opIdx);
                 }
-                mlslSession->Commit();
+                icclSession->Commit();
             }
             else
                 ASSERT(0, "unexpected network type");
@@ -605,9 +605,9 @@ public:
         TestOperation (&ops)[OPERATION_COUNT] = net.ops;
         TestOperation& op = ops[opIdx];
         TestTriplet (&triplets)[TRIPLET_COUNT] = ops[opIdx].trs;
-        Session* mlslSession = net.mlslSession;
-        Distribution* mlslDist = op.dist.mlslDist;
-        OperationRegInfo* regInfo = mlslSession->CreateOperationRegInfo(DEFAULT_OP_TYPE);
+        Session* icclSession = net.icclSession;
+        Distribution* icclDist = op.dist.icclDist;
+        OperationRegInfo* regInfo = icclSession->CreateOperationRegInfo(DEFAULT_OP_TYPE);
         regInfo->SetName(to_string(opIdx).c_str());
 
         for (int trIdx = 0; trIdx < TRIPLET_COUNT; trIdx++)
@@ -617,27 +617,27 @@ public:
             if (opIdx != 0)
                 regInfo->AddInput(tr.inActFmCount,
                                   tr.inActFmSize,
-                                  MLSL_DTYPE);
+                                  ICCL_DTYPE);
 
             regInfo->AddParameterSet(tr.kernelCount,
                                      tr.kernelSize,
-                                     MLSL_DTYPE,
+                                     ICCL_DTYPE,
                                      (trIdx % 2) ? true : false /* dist_update */ );
 
             if (opIdx != (OPERATION_COUNT - 1))
                  regInfo->AddOutput(tr.outActFmCount,
                                    tr.outActFmSize,
-                                   MLSL_DTYPE);
+                                   ICCL_DTYPE);
         }
 
-        ASSERT(opIdx == mlslSession->AddOperation(regInfo, mlslDist), "different op indexes");
-        op.mlslOp = mlslSession->GetOperation(opIdx);
-        mlslSession->DeleteOperationRegInfo(regInfo);
+        ASSERT(opIdx == icclSession->AddOperation(regInfo, icclDist), "different op indexes");
+        op.icclOp = icclSession->GetOperation(opIdx);
+        icclSession->DeleteOperationRegInfo(regInfo);
 
         if (opIdx != 0)
         {
             for (int trIdx = 0; trIdx < TRIPLET_COUNT; trIdx++)
-                op.mlslOp->SetPrev(ops[opIdx - 1].mlslOp, trIdx, trIdx);
+                op.icclOp->SetPrev(ops[opIdx - 1].icclOp, trIdx, trIdx);
         }
 
         for (int trIdx = 0; trIdx < TRIPLET_COUNT; trIdx++)
@@ -645,16 +645,16 @@ public:
             TestTriplet& tr = triplets[trIdx];
 
             if (opIdx != 0)
-                tr.inAct = op.mlslOp->GetInput(trIdx);
+                tr.inAct = op.icclOp->GetInput(trIdx);
             else
                 tr.inAct = NULL;
 
             if (opIdx != (OPERATION_COUNT - 1))
-                tr.outAct = op.mlslOp->GetOutput(trIdx);
+                tr.outAct = op.icclOp->GetOutput(trIdx);
             else
                 tr.outAct = NULL;
 
-            tr.param = op.mlslOp->GetParameterSet(trIdx);
+            tr.param = op.icclOp->GetParameterSet(trIdx);
         }
     }
 
@@ -680,19 +680,19 @@ public:
         for (NetworkType netType = (NetworkType)0; netType < NT_LAST; netType++)
         {
             TestNetwork& net = nets[netType];
-            Environment::GetEnv().DeleteSession(net.mlslSession);
+            Environment::GetEnv().DeleteSession(net.icclSession);
 
             if (netType == NT_SAME_DISTS)
             {
-                Distribution* mlslDist = net.ops[0].dist.mlslDist;
-                Environment::GetEnv().DeleteDistribution(mlslDist);
+                Distribution* icclDist = net.ops[0].dist.icclDist;
+                Environment::GetEnv().DeleteDistribution(icclDist);
             }
             else if (netType == NT_DIFF_DISTS)
             {
                 for (int opIdx = 0; opIdx < OPERATION_COUNT; opIdx++)
                 {
-                    Distribution* mlslDist = net.ops[opIdx].dist.mlslDist;
-                    Environment::GetEnv().DeleteDistribution(mlslDist);
+                    Distribution* icclDist = net.ops[opIdx].dist.icclDist;
+                    Environment::GetEnv().DeleteDistribution(icclDist);
                 }
             }
             else

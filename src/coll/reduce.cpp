@@ -29,28 +29,28 @@
            n.(1+(p-1)/p).gamma
 */
 
-mlsl_status_t mlsl_coll_build_direct_reduce(mlsl_sched *sched, const void *send_buf, void *recv_buf,
-                                            size_t count, mlsl_datatype_internal_t dtype, mlsl_reduction_t reduction, size_t root)
+iccl_status_t iccl_coll_build_direct_reduce(iccl_sched *sched, const void *send_buf, void *recv_buf,
+                                            size_t count, iccl_datatype_internal_t dtype, iccl_reduction_t reduction, size_t root)
 {
     LOG_DEBUG("build direct reduce");
 
     entry_factory::make_reduce_entry(sched, send_buf, recv_buf, count, dtype, reduction, root);
-    return mlsl_status_success;
+    return iccl_status_success;
 }
 
-mlsl_status_t mlsl_coll_build_rabenseifner_reduce(mlsl_sched *sched, const void *send_buf, void *recv_buf,
-                                                  size_t count, mlsl_datatype_internal_t dtype, mlsl_reduction_t reduction, size_t root)
+iccl_status_t iccl_coll_build_rabenseifner_reduce(iccl_sched *sched, const void *send_buf, void *recv_buf,
+                                                  size_t count, iccl_datatype_internal_t dtype, iccl_reduction_t reduction, size_t root)
 {
     LOG_DEBUG("build Rabenseifner's reduce");
 
-    mlsl_status_t status = mlsl_status_success;
+    iccl_status_t status = iccl_status_success;
 
     int i, j, comm_size, rank, local_root, pof2;
     int rem, dst, new_rank, new_dst, mask, send_idx, recv_idx, last_idx;
     int send_cnt, recv_cnt, newroot, newdst_tree_root, newroot_tree_root;
     void *tmp_buf = NULL;
     int *cnts = NULL, *disps = NULL;
-    size_t dtype_size = mlsl_datatype_get_size(dtype);
+    size_t dtype_size = iccl_datatype_get_size(dtype);
     local_root = static_cast<int>(root);
 
     comm_size = sched->coll_param.comm->size();
@@ -60,7 +60,7 @@ mlsl_status_t mlsl_coll_build_rabenseifner_reduce(mlsl_sched *sched, const void 
 
     /* get nearest power-of-two less than or equal to comm_size */
     pof2 = sched->coll_param.comm->pof2();
-    MLSL_THROW_IF_NOT(count >= static_cast<size_t>(pof2), "count ", count, ", pof2 ", pof2);
+    ICCL_THROW_IF_NOT(count >= static_cast<size_t>(pof2), "count ", count, ", pof2 ", pof2);
     rem = comm_size - pof2;
 
     /* If I'm not the root, then my recv_buf may not be valid, therefore
@@ -96,7 +96,7 @@ mlsl_status_t mlsl_coll_build_rabenseifner_reduce(mlsl_sched *sched, const void 
             /* temporarily set the rank to -1 so that this
              * process does not pariticipate in recursive
              * doubling */
-            new_rank = MLSL_INVALID_PROC_IDX;
+            new_rank = ICCL_INVALID_PROC_IDX;
         } else {        /* even */
             entry_factory::make_recv_entry(sched, tmp_buf, count, dtype, rank + 1);
             sched->add_barrier();
@@ -122,12 +122,12 @@ mlsl_status_t mlsl_coll_build_rabenseifner_reduce(mlsl_sched *sched, const void 
     /* We allocate these arrays on all processes, even if new_rank=-1,
      * because if root is one of the excluded processes, we will
      * need them on the root later on below. */
-    cnts = static_cast<int*>(MLSL_MALLOC(pof2 * sizeof(int), "counts"));
-    disps = static_cast<int*>(MLSL_MALLOC(pof2 * sizeof(int), "displacements"));
+    cnts = static_cast<int*>(ICCL_MALLOC(pof2 * sizeof(int), "counts"));
+    disps = static_cast<int*>(ICCL_MALLOC(pof2 * sizeof(int), "displacements"));
 
     last_idx = send_idx = 0;    /* suppress spurious compiler warnings */
 
-    if (new_rank != MLSL_INVALID_PROC_IDX) {
+    if (new_rank != ICCL_INVALID_PROC_IDX) {
         for (i = 0; i < (pof2 - 1); i++)
             cnts[i] = count / pof2;
         cnts[pof2 - 1] = count - (count / pof2) * (pof2 - 1);
@@ -217,7 +217,7 @@ mlsl_status_t mlsl_coll_build_rabenseifner_reduce(mlsl_sched *sched, const void 
                 entry_factory::make_send_entry(sched, recv_buf, cnts[0], dtype, local_root);
                 sched->add_barrier();
 
-                new_rank = MLSL_INVALID_PROC_IDX;
+                new_rank = ICCL_INVALID_PROC_IDX;
             }
             newroot = 0;
         } else
@@ -226,7 +226,7 @@ mlsl_status_t mlsl_coll_build_rabenseifner_reduce(mlsl_sched *sched, const void 
         newroot = local_root - rem;
     }
 
-    if (new_rank != MLSL_INVALID_PROC_IDX) {
+    if (new_rank != ICCL_INVALID_PROC_IDX) {
         j = 0;
         mask = 0x1;
         while (mask < pof2) {
@@ -296,19 +296,19 @@ mlsl_status_t mlsl_coll_build_rabenseifner_reduce(mlsl_sched *sched, const void 
         }
     }
 
-    MLSL_FREE(cnts);
-    MLSL_FREE(disps);
+    ICCL_FREE(cnts);
+    ICCL_FREE(disps);
 
     return status;
 }
 
 
-mlsl_status_t mlsl_coll_build_binomial_reduce(mlsl_sched *sched, const void *send_buf, void *recv_buf,
-                                              size_t count, mlsl_datatype_internal_t dtype, mlsl_reduction_t reduction, size_t root)
+iccl_status_t iccl_coll_build_binomial_reduce(iccl_sched *sched, const void *send_buf, void *recv_buf,
+                                              size_t count, iccl_datatype_internal_t dtype, iccl_reduction_t reduction, size_t root)
 {
     LOG_DEBUG("build binomial reduce");
 
-    mlsl_status_t status = mlsl_status_success;
+    iccl_status_t status = iccl_status_success;
 
     int comm_size, rank, local_root;
     int mask, relrank, source, lroot;
@@ -322,7 +322,7 @@ mlsl_status_t mlsl_coll_build_binomial_reduce(mlsl_sched *sched, const void *sen
     local_root = static_cast<int>(root);
 
     /* Create a temporary buffer */
-    size_t dtype_size = mlsl_datatype_get_size(dtype);
+    size_t dtype_size = iccl_datatype_get_size(dtype);
     tmp_buf = sched->alloc_buffer(count * dtype_size);
 
     /* If I'm not the root, then my recv_buf may not be valid, therefore

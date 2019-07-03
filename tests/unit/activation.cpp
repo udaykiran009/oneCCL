@@ -17,7 +17,7 @@ TEST_F(ActivationTest, test_GetGlobalFmOffset)
         if (inAct) EXPECT_EQ((tr.inActFmCount / dist.modelProcessCount) * dist.modelProcessIdx, inAct->GetGlobalFmOffset());
         if (outAct)
         {
-            if (mlslOp->GetOpType() == OpType::OT_CC)
+            if (icclOp->GetOpType() == OpType::OT_CC)
                 EXPECT_EQ(0 /* no offset for outAct of conv */, outAct->GetGlobalFmOffset());
             else
                 EXPECT_EQ((tr.outActFmCount / dist.modelProcessCount) * dist.modelProcessIdx, outAct->GetGlobalFmOffset());
@@ -31,7 +31,7 @@ TEST_F(ActivationTest, test_GetLocalFmCount)
         if (inAct) EXPECT_EQ((tr.inActFmCount / dist.modelProcessCount), inAct->GetLocalFmCount());
         if (outAct)
         {
-            if (mlslOp->GetOpType() == OpType::OT_CC)
+            if (icclOp->GetOpType() == OpType::OT_CC)
                 EXPECT_EQ(tr.outActFmCount /* equal to global count for outAct of conv */, outAct->GetLocalFmCount());
             else
                 EXPECT_EQ(tr.outActFmCount / dist.modelProcessCount, outAct->GetLocalFmCount());
@@ -80,8 +80,8 @@ TEST_F(ActivationTest, test_GetUnpackBlockCount)
 TEST_F(ActivationTest, test_GetDataType)
 {
     ITERATE_OVER_NETS_OPS_TRS(
-        if (inAct) EXPECT_EQ(MLSL_DTYPE, inAct->GetDataType());
-        if (outAct) EXPECT_EQ(MLSL_DTYPE, outAct->GetDataType());
+        if (inAct) EXPECT_EQ(ICCL_DTYPE, inAct->GetDataType());
+        if (outAct) EXPECT_EQ(ICCL_DTYPE, outAct->GetDataType());
     );
 }
 
@@ -169,12 +169,12 @@ TEST_F(ActivationTest, test_CommBlockInfo)
                 {
                     CommBlockInfo* packBlock = inAct->GetPackBlock(blockIdx);
                     EXPECT_EQ(0, packBlock->GetMbOffset());
-                    EXPECT_EQ(mlslOp->GetLocalMinibatchSize(), packBlock->GetMbCount());
+                    EXPECT_EQ(icclOp->GetLocalMinibatchSize(), packBlock->GetMbCount());
                     EXPECT_EQ(0, packBlock->GetFmOffset());
                     EXPECT_EQ(localFmCount, packBlock->GetFmCount());
                     EXPECT_EQ(tr.inActFmSize, packBlock->GetFmSize());
-                    EXPECT_EQ(MLSL_DTYPE, packBlock->GetDataType());
-                    EXPECT_EQ(dist.modelProcessIdx * mlslOp->GetLocalMinibatchSize() * localFmCount * tr.inActFmSize, packBlock->GetBufOffset());
+                    EXPECT_EQ(ICCL_DTYPE, packBlock->GetDataType());
+                    EXPECT_EQ(dist.modelProcessIdx * icclOp->GetLocalMinibatchSize() * localFmCount * tr.inActFmSize, packBlock->GetBufOffset());
                 }
             }
 
@@ -184,11 +184,11 @@ TEST_F(ActivationTest, test_CommBlockInfo)
                 {
                     CommBlockInfo* unpackBlock = inAct->GetUnpackBlock(blockIdx);
                     EXPECT_EQ(0, unpackBlock->GetMbOffset());
-                    EXPECT_EQ(mlslOp->GetLocalMinibatchSize(), unpackBlock->GetMbCount());
+                    EXPECT_EQ(icclOp->GetLocalMinibatchSize(), unpackBlock->GetMbCount());
                     EXPECT_EQ(0, unpackBlock->GetFmOffset());
                     EXPECT_EQ(localFmCount, unpackBlock->GetFmCount());
                     EXPECT_EQ(tr.inActFmSize, unpackBlock->GetFmSize());
-                    EXPECT_EQ(MLSL_DTYPE, unpackBlock->GetDataType());
+                    EXPECT_EQ(ICCL_DTYPE, unpackBlock->GetDataType());
                     EXPECT_EQ(0, unpackBlock->GetBufOffset());
                 }
             }
@@ -205,12 +205,12 @@ TEST_F(ActivationTest, test_CommBlockInfo)
                 {
                     CommBlockInfo* packBlock = outAct->GetPackBlock(blockIdx);
                     EXPECT_EQ(0, packBlock->GetMbOffset());
-                    EXPECT_EQ(mlslOp->GetLocalMinibatchSize(), packBlock->GetMbCount());
+                    EXPECT_EQ(icclOp->GetLocalMinibatchSize(), packBlock->GetMbCount());
                     EXPECT_EQ(blockIdx * localFmCount, packBlock->GetFmOffset());
                     EXPECT_EQ(localFmCount, packBlock->GetFmCount());
                     EXPECT_EQ(tr.outActFmSize, packBlock->GetFmSize());
-                    EXPECT_EQ(MLSL_DTYPE, packBlock->GetDataType());
-                    EXPECT_EQ(blockIdx * mlslOp->GetLocalMinibatchSize() * localFmCount * tr.outActFmSize, packBlock->GetBufOffset());
+                    EXPECT_EQ(ICCL_DTYPE, packBlock->GetDataType());
+                    EXPECT_EQ(blockIdx * icclOp->GetLocalMinibatchSize() * localFmCount * tr.outActFmSize, packBlock->GetBufOffset());
                 }
             }
 
@@ -220,12 +220,12 @@ TEST_F(ActivationTest, test_CommBlockInfo)
                 {
                     CommBlockInfo* unpackBlock = outAct->GetUnpackBlock(blockIdx);
                     EXPECT_EQ(0, unpackBlock->GetMbOffset());
-                    EXPECT_EQ(mlslOp->GetLocalMinibatchSize(), unpackBlock->GetMbCount());
+                    EXPECT_EQ(icclOp->GetLocalMinibatchSize(), unpackBlock->GetMbCount());
                     EXPECT_EQ(blockIdx * localFmCount, unpackBlock->GetFmOffset());
                     EXPECT_EQ(localFmCount, unpackBlock->GetFmCount());
                     EXPECT_EQ(tr.outActFmSize, unpackBlock->GetFmSize());
-                    EXPECT_EQ(MLSL_DTYPE, unpackBlock->GetDataType());
-                    EXPECT_EQ(blockIdx * mlslOp->GetLocalMinibatchSize() * localFmCount * tr.outActFmSize, unpackBlock->GetBufOffset());
+                    EXPECT_EQ(ICCL_DTYPE, unpackBlock->GetDataType());
+                    EXPECT_EQ(blockIdx * icclOp->GetLocalMinibatchSize() * localFmCount * tr.outActFmSize, unpackBlock->GetBufOffset());
                 }
             }
         }

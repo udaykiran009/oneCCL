@@ -200,7 +200,7 @@ TEST_F(OperationTest, test_SetPrevNextDiffentDataTypes)
 TEST_F(OperationTest, test_GetGlobalMinibatchSize)
 {
     ITERATE_OVER_NETS_OPS(
-        ASSERT_EQ(GLOBAL_MINIBATCH_SIZE, mlslOp->GetGlobalMinibatchSize());
+        ASSERT_EQ(GLOBAL_MINIBATCH_SIZE, icclOp->GetGlobalMinibatchSize());
     );
 
     ITERATE_OVER_DEF_DISTS(
@@ -213,7 +213,7 @@ TEST_F(OperationTest, test_GetGlobalMinibatchSize)
 TEST_F(OperationTest, test_GetGlobalMinibatchOffset)
 {
     ITERATE_OVER_NETS_OPS(
-        ASSERT_EQ(GLOBAL_MINIBATCH_SIZE / dist.dataProcessCount * dist.dataProcessIdx, mlslOp->GetGlobalMinibatchOffset());
+        ASSERT_EQ(GLOBAL_MINIBATCH_SIZE / dist.dataProcessCount * dist.dataProcessIdx, icclOp->GetGlobalMinibatchOffset());
     );
 
     ITERATE_OVER_DEF_DISTS(
@@ -226,7 +226,7 @@ TEST_F(OperationTest, test_GetGlobalMinibatchOffset)
 TEST_F(OperationTest, test_GetLocalMinibatchSize)
 {
     ITERATE_OVER_NETS_OPS(
-        ASSERT_EQ(GLOBAL_MINIBATCH_SIZE / dist.dataProcessCount, mlslOp->GetLocalMinibatchSize());
+        ASSERT_EQ(GLOBAL_MINIBATCH_SIZE / dist.dataProcessCount, icclOp->GetLocalMinibatchSize());
     );
 
     ITERATE_OVER_DEF_DISTS(
@@ -238,8 +238,8 @@ TEST_F(OperationTest, test_GetLocalMinibatchSize)
 TEST_F(OperationTest, test_GetInputCount)
 {
     ITERATE_OVER_NETS_OPS(
-        if (opIdx == 0) ASSERT_EQ(0, mlslOp->GetInputCount());
-        else ASSERT_EQ(TRIPLET_COUNT, mlslOp->GetInputCount());
+        if (opIdx == 0) ASSERT_EQ(0, icclOp->GetInputCount());
+        else ASSERT_EQ(TRIPLET_COUNT, icclOp->GetInputCount());
     );
 
     ITERATE_OVER_DEF_DISTS(
@@ -252,8 +252,8 @@ TEST_F(OperationTest, test_GetInputCount)
 TEST_F(OperationTest, test_GetOutputCount)
 {
     ITERATE_OVER_NETS_OPS(
-        if (opIdx == (OPERATION_COUNT - 1)) ASSERT_EQ(0, mlslOp->GetOutputCount());
-        else ASSERT_EQ(TRIPLET_COUNT, mlslOp->GetOutputCount());
+        if (opIdx == (OPERATION_COUNT - 1)) ASSERT_EQ(0, icclOp->GetOutputCount());
+        else ASSERT_EQ(TRIPLET_COUNT, icclOp->GetOutputCount());
     );
 
     ITERATE_OVER_DEF_DISTS(
@@ -266,7 +266,7 @@ TEST_F(OperationTest, test_GetOutputCount)
 TEST_F(OperationTest, test_GetParameterSetCount)
 {
     ITERATE_OVER_NETS_OPS(
-        ASSERT_EQ(TRIPLET_COUNT, mlslOp->GetParameterSetCount());
+        ASSERT_EQ(TRIPLET_COUNT, icclOp->GetParameterSetCount());
     );
 
     ITERATE_OVER_DEF_DISTS(
@@ -279,7 +279,7 @@ TEST_F(OperationTest, test_GetParameterSetCount)
 TEST_F(OperationTest, test_HasParameterSets)
 {
     ITERATE_OVER_NETS_OPS(
-        ASSERT_EQ((TRIPLET_COUNT > 0) ? true : false, mlslOp->HasParameterSets());
+        ASSERT_EQ((TRIPLET_COUNT > 0) ? true : false, icclOp->HasParameterSets());
     );
 
     ITERATE_OVER_DEF_DISTS(
@@ -310,9 +310,9 @@ TEST_F(OperationTest, test_GetGlobalFmCount)
 TEST_F(OperationTest, test_GetInputOutputParamCorrect)
 {
     ITERATE_OVER_NETS_OPS_TRS(
-        if (inAct) EXPECT_EQ(inAct, mlslOp->GetInput(trIdx));
-        if (outAct) EXPECT_EQ(outAct, mlslOp->GetOutput(trIdx));
-        EXPECT_EQ(param, mlslOp->GetParameterSet(trIdx));
+        if (inAct) EXPECT_EQ(inAct, icclOp->GetInput(trIdx));
+        if (outAct) EXPECT_EQ(outAct, icclOp->GetOutput(trIdx));
+        EXPECT_EQ(param, icclOp->GetParameterSet(trIdx));
     );
 
     ITERATE_OVER_DEF_DISTS(
@@ -332,15 +332,15 @@ TEST_F(OperationTest, test_GetInputOutputParamCorrect)
 TEST_F(OperationTest, test_GetInputOutputParamOutOfRange)
 {
     ITERATE_OVER_NETS_OPS(
-        EXPECT_THROW(mlslOp->GetInput(TRIPLET_COUNT), std::out_of_range);
+        EXPECT_THROW(icclOp->GetInput(TRIPLET_COUNT), std::out_of_range);
     );
 
     ITERATE_OVER_NETS_OPS(
-        EXPECT_THROW(mlslOp->GetOutput(TRIPLET_COUNT), std::out_of_range);
+        EXPECT_THROW(icclOp->GetOutput(TRIPLET_COUNT), std::out_of_range);
     );
 
     ITERATE_OVER_NETS_OPS(
-        EXPECT_THROW(mlslOp->GetParameterSet(TRIPLET_COUNT), std::out_of_range);
+        EXPECT_THROW(icclOp->GetParameterSet(TRIPLET_COUNT), std::out_of_range);
     );
 
     ITERATE_OVER_DEF_DISTS(

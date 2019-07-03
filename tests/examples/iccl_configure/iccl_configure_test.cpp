@@ -1,15 +1,15 @@
 
-/* MLSL library API usage example and correctness check test */
+/* ICCL library API usage example and correctness check test */
 
 #include <math.h>   /* fabs */
 #include <stdio.h>  /* printf */
 #include <stdlib.h> /* exit */
 #include <iostream>
 #include <string>
-#include "mlsl.hpp"
+#include "iccl.hpp"
 #include <sstream>
 
-using namespace MLSL;
+using namespace ICCL;
 using namespace std;
 
 /* Memory stuff */
@@ -68,7 +68,7 @@ int printCount = 0;
   } while(0)
 
 
-/* MLSL Test stuff */
+/* ICCL Test stuff */
 
 #define DTYPE                 float
 #define DTYPE_SIZE            sizeof(DTYPE)
@@ -528,7 +528,7 @@ int main(int argc, char** argv)
 {
     if (argc != 3)
     {
-        printf("specify parameters: mlsl_configure_test PARAM_SERVER_COUNT COMPUTE_GROUP_COUNT\n");
+        printf("specify parameters: iccl_configure_test PARAM_SERVER_COUNT COMPUTE_GROUP_COUNT\n");
         exit(0);
     }
 

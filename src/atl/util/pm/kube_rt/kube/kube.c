@@ -213,7 +213,7 @@ void Extreme_finalize(int sig)
     SET_STR(rank_str, INT_STR_SIZE, SIZE_T_TEMPLATE, my_rank);
     SET_STR(patch, REQUEST_POSTFIX_SIZE, PATCH_TEMPLATE, kvs_name_key, rank_str);
 
-    /*set: MLSL_DEAD_POD-$HOSTNAME=rank*/
+    /*set: ICCL_DEAD_POD-$HOSTNAME=rank*/
     SET_STR(run_str, RUN_REQUEST_SIZE, run_v2_template, patch);
 
     fp = popen(run_str, READ_ONLY);

@@ -7,20 +7,20 @@
 #include <thread>
 #include <random>
 
-mlsl_request_t start_allreduce_with_tensor_name(const std::string& tensor_name,
+iccl_request_t start_allreduce_with_tensor_name(const std::string& tensor_name,
                                                const float* send_buff,
                                                float* recv_buff)
 {
     coll_attr.to_cache = false;
     coll_attr.match_id = tensor_name.c_str();
 
-    mlsl_request_t req = nullptr;
+    iccl_request_t req = nullptr;
 
-    MLSL_CALL(mlsl_allreduce(send_buff,
+    ICCL_CALL(iccl_allreduce(send_buff,
                              recv_buff,
                              COUNT,
-                             mlsl_dtype_float,
-                             mlsl_reduction_sum,
+                             iccl_dtype_float,
+                             iccl_reduction_sum,
                              &coll_attr,
                              nullptr,
                              &req));
@@ -30,12 +30,12 @@ mlsl_request_t start_allreduce_with_tensor_name(const std::string& tensor_name,
 int main()
 {
     printf("Forced out of order support\n");
-    setenv("MLSL_OUT_OF_ORDER_SUPPORT", "1", 1);
+    setenv("ICCL_OUT_OF_ORDER_SUPPORT", "1", 1);
 
     const size_t iterations_count = 4;
     std::vector<std::string> tensor_names;
     //request, operation idx (for example purpose)
-    std::list<std::pair<mlsl_request_t, size_t>> started_ops;
+    std::list<std::pair<iccl_request_t, size_t>> started_ops;
     std::vector<std::vector<float>> allreduce_send_bufs;
     std::vector<std::vector<float>> allreduce_recv_bufs;
 
@@ -81,7 +81,7 @@ int main()
         {
             for (auto it = started_ops.begin(); it != started_ops.end();)
             {
-                mlsl_test(it->first, &test_completed);
+                iccl_test(it->first, &test_completed);
                 if (test_completed)
                 {
                     float expected = (it->second + 1) * size;

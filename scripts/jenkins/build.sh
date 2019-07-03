@@ -30,7 +30,7 @@ fi
 # 'archive' is set by Jenkins
 if [ "$archive" = "true" ] && [ "${release}" != "true" ]
 then
-    export MLSL_ARCHIVE_SUFFIX=_`date +%Y%m%d.%H%M%S`
+    export ICCL_ARCHIVE_SUFFIX=_`date +%Y%m%d.%H%M%S`
 fi
 
 cd ${WORK_DIR}
@@ -47,7 +47,7 @@ then
     then
         TMP_COVERAGE_DIR=${WORK_DIR}/coverage
     else
-        TMP_COVERAGE_DIR=${MLSL_REPO_DIR}/${BUILD_ID}/coverage
+        TMP_COVERAGE_DIR=${ICCL_REPO_DIR}/${BUILD_ID}/coverage
     fi
     
     rm -rf ${TMP_COVERAGE_DIR}
@@ -101,13 +101,13 @@ fi
 
 if [ -n "${BUILD_ID}" ]
 then
-    MLSL_ARCHIVE_NAME=`cd ${WORK_DIR} && ls -1 *.tgz 2>/dev/null`
-    mkdir -p ${MLSL_REPO_DIR}/${BUILD_ID}
+    ICCL_ARCHIVE_NAME=`cd ${WORK_DIR} && ls -1 *.tgz 2>/dev/null`
+    mkdir -p ${ICCL_REPO_DIR}/${BUILD_ID}
     
-    if [ -n "${MLSL_ARCHIVE_NAME}" ]
+    if [ -n "${ICCL_ARCHIVE_NAME}" ]
     then
-        cp ${WORK_DIR}/${MLSL_ARCHIVE_NAME} ${MLSL_REPO_DIR}/${BUILD_ID}/
-        echo "DEBUG: MLSL build = ${MLSL_REPO_DIR}/${BUILD_ID}/${MLSL_ARCHIVE_NAME}"
+        cp ${WORK_DIR}/${ICCL_ARCHIVE_NAME} ${ICCL_REPO_DIR}/${BUILD_ID}/
+        echo "DEBUG: ICCL build = ${ICCL_REPO_DIR}/${BUILD_ID}/${ICCL_ARCHIVE_NAME}"
     else
         echo "WARNING: no tgz files in ${WORK_DIR}"
     fi

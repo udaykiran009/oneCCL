@@ -6,12 +6,12 @@ class allgatherv_entry : public base_coll_entry
 {
 public:
     allgatherv_entry() = delete;
-    allgatherv_entry(mlsl_sched* sched,
+    allgatherv_entry(iccl_sched* sched,
                      const void* send_buf,
                      size_t send_cnt,
                      void* recv_buf,
                      size_t* recv_cnts,
-                     mlsl_datatype_internal_t dtype) :
+                     iccl_datatype_internal_t dtype) :
         base_coll_entry(sched), send_buf(send_buf), recv_buf(recv_buf),
         send_cnt(send_cnt), recv_cnts(recv_cnts), dtype(dtype)
     {
@@ -20,13 +20,13 @@ public:
 
     void start_derived()
     {
-        size_t dt_size = mlsl_datatype_get_size(dtype);
+        size_t dt_size = iccl_datatype_get_size(dtype);
         size_t send_bytes = send_cnt * dt_size;
         size_t comm_size = sched->coll_param.comm->size();
         size_t i = 0;
 
-        recv_bytes = static_cast<int*>(MLSL_MALLOC(comm_size * sizeof(int), "recv_bytes"));
-        offsets = static_cast<int*>(MLSL_MALLOC(comm_size * sizeof(int), "offsets"));
+        recv_bytes = static_cast<int*>(ICCL_MALLOC(comm_size * sizeof(int), "recv_bytes"));
+        offsets = static_cast<int*>(ICCL_MALLOC(comm_size * sizeof(int), "offsets"));
 
         recv_bytes[0] = recv_cnts[0] * dt_size;
         offsets[0] = 0;
@@ -41,10 +41,10 @@ public:
 
         if (unlikely(atl_status != atl_status_success))
         {
-            MLSL_THROW("ALLGATHERV entry failed. atl_status: ", atl_status_to_str(atl_status));
+            ICCL_THROW("ALLGATHERV entry failed. atl_status: ", atl_status_to_str(atl_status));
         }
         else
-            status = mlsl_sched_entry_status_started;
+            status = iccl_sched_entry_status_started;
     }
 
     void update_derived()
@@ -54,14 +54,14 @@ public:
 
         if (unlikely(atl_status != atl_status_success))
         {
-            MLSL_THROW("ALLGATHERV entry failed. atl_status: ", atl_status_to_str(atl_status));
+            ICCL_THROW("ALLGATHERV entry failed. atl_status: ", atl_status_to_str(atl_status));
         }
 
         if (req_status)
         {
-            status = mlsl_sched_entry_status_complete;
-            MLSL_FREE(recv_bytes);
-            MLSL_FREE(offsets);
+            status = iccl_sched_entry_status_complete;
+            ICCL_FREE(recv_bytes);
+            ICCL_FREE(offsets);
         }
     }
 
@@ -73,8 +73,8 @@ public:
 protected:
     void dump_detail(std::stringstream& str) const
     {
-        mlsl_logger::format(str,
-                            "dt ", mlsl_datatype_get_name(dtype),
+        iccl_logger::format(str,
+                            "dt ", iccl_datatype_get_name(dtype),
                             ", send_cnt ", send_cnt,
                             ", send_buf ", send_buf,
                             ", recv_cnt ", recv_cnts,
@@ -93,6 +93,6 @@ private:
     size_t* recv_cnts;
     int* recv_bytes;
     int* offsets;
-    mlsl_datatype_internal_t dtype;
+    iccl_datatype_internal_t dtype;
     atl_req_t req{};
 };

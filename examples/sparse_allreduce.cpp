@@ -22,11 +22,11 @@
           }                                                                \
           }                                                                \
           t1 = when();                                                     \
-          MLSL_CALL(start_cmd);                                            \
-          MLSL_CALL(mlsl_wait(request));                                   \
+          ICCL_CALL(start_cmd);                                            \
+          ICCL_CALL(iccl_wait(request));                                   \
           t2 = when();                                                     \
           t += (t2 - t1);                                                  \
-          mlsl_barrier(NULL);                                              \
+          iccl_barrier(NULL);                                              \
 \
           int* rcv_idx = (int*)recv_ibuf;                                  \
           rcv_val = (float*)recv_vbuf;                                     \
@@ -97,9 +97,9 @@ int main()
     size_t recv_vcount = 0;
 
     coll_attr.to_cache = 0;
-    RUN_COLLECTIVE(mlsl_sparse_allreduce(send_ibuf, COUNT_I, send_vbuf, COUNT_I * VDIM_SIZE, 
+    RUN_COLLECTIVE(iccl_sparse_allreduce(send_ibuf, COUNT_I, send_vbuf, COUNT_I * VDIM_SIZE,
                                          &recv_ibuf, &recv_icount, &recv_vbuf, &recv_vcount, 
-                                         mlsl_dtype_int, mlsl_dtype_float, mlsl_reduction_sum,
+                                         iccl_dtype_int, iccl_dtype_float, iccl_reduction_sum,
                                          &coll_attr, NULL, &request),
                    "basic_sparse_allreduce");
 

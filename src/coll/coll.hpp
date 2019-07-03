@@ -3,54 +3,54 @@
 #include "common/comm/comm.hpp"
 #include "common/datatype/datatype.hpp"
 
-#define MLSL_INVALID_PROC_IDX (-1)
+#define ICCL_INVALID_PROC_IDX (-1)
 
-class mlsl_sched;
-class mlsl_request;
+class iccl_sched;
+class iccl_request;
 
-enum mlsl_coll_type
+enum iccl_coll_type
 {
-    mlsl_coll_barrier =             0,
-    mlsl_coll_bcast =               1,
-    mlsl_coll_reduce =              2,
-    mlsl_coll_allreduce =           3,
-    mlsl_coll_allgatherv =          4,
-    mlsl_coll_sparse_allreduce =    5,
-    mlsl_coll_internal =            6,
-    mlsl_coll_none =                7
+    iccl_coll_barrier =             0,
+    iccl_coll_bcast =               1,
+    iccl_coll_reduce =              2,
+    iccl_coll_allreduce =           3,
+    iccl_coll_allgatherv =          4,
+    iccl_coll_sparse_allreduce =    5,
+    iccl_coll_internal =            6,
+    iccl_coll_none =                7
 };
 
-mlsl_status_t mlsl_coll_build_barrier(mlsl_sched* sched);
+iccl_status_t iccl_coll_build_barrier(iccl_sched* sched);
 
-mlsl_status_t mlsl_coll_build_bcast(mlsl_sched* sched,
+iccl_status_t iccl_coll_build_bcast(iccl_sched* sched,
                                     void* buf,
                                     size_t count,
-                                    mlsl_datatype_internal_t dtype,
+                                    iccl_datatype_internal_t dtype,
                                     size_t root);
 
-mlsl_status_t mlsl_coll_build_reduce(mlsl_sched* sched,
+iccl_status_t iccl_coll_build_reduce(iccl_sched* sched,
                                      const void* send_buf,
                                      void* recv_buf,
                                      size_t count,
-                                     mlsl_datatype_internal_t dtype,
-                                     mlsl_reduction_t reduction,
+                                     iccl_datatype_internal_t dtype,
+                                     iccl_reduction_t reduction,
                                      size_t root);
 
-mlsl_status_t mlsl_coll_build_allreduce(mlsl_sched* sched,
+iccl_status_t iccl_coll_build_allreduce(iccl_sched* sched,
                                         const void* send_buf,
                                         void* recv_buf,
                                         size_t count,
-                                        mlsl_datatype_internal_t dtype,
-                                        mlsl_reduction_t reduction);
+                                        iccl_datatype_internal_t dtype,
+                                        iccl_reduction_t reduction);
 
-mlsl_status_t mlsl_coll_build_allgatherv(mlsl_sched* sched,
+iccl_status_t iccl_coll_build_allgatherv(iccl_sched* sched,
                                          const void* send_buf,
                                          void* recv_buf,
                                          size_t s_count,
                                          size_t* r_counts,
-                                         mlsl_datatype_internal_t dtype);
+                                         iccl_datatype_internal_t dtype);
 
-mlsl_status_t mlsl_coll_build_sparse_allreduce(mlsl_sched* sched,
+iccl_status_t iccl_coll_build_sparse_allreduce(iccl_sched* sched,
                                                const void* send_ind_buf,
                                                size_t send_ind_count,
                                                const void* send_val_buf,
@@ -59,45 +59,45 @@ mlsl_status_t mlsl_coll_build_sparse_allreduce(mlsl_sched* sched,
                                                size_t* recv_ind_count,
                                                void** recv_val_buf,
                                                size_t* recv_val_count,
-                                               mlsl_datatype_internal_t index_dtype,
-                                               mlsl_datatype_internal_t value_dtype,
-                                               mlsl_reduction_t reduction);
+                                               iccl_datatype_internal_t index_dtype,
+                                               iccl_datatype_internal_t value_dtype,
+                                               iccl_reduction_t reduction);
 
-const char* mlsl_coll_type_to_str(mlsl_coll_type type);
+const char* iccl_coll_type_to_str(iccl_coll_type type);
 
-mlsl_request* mlsl_bcast_impl(void* buf,
+iccl_request* iccl_bcast_impl(void* buf,
                               size_t count,
-                              mlsl_datatype_t dtype,
+                              iccl_datatype_t dtype,
                               size_t root,
-                              const mlsl_coll_attr_t* attributes,
-                              mlsl_comm* communicator);
+                              const iccl_coll_attr_t* attributes,
+                              iccl_comm* communicator);
 
-mlsl_request* mlsl_reduce_impl(const void* send_buf,
+iccl_request* iccl_reduce_impl(const void* send_buf,
                                void* recv_buf,
                                size_t count,
-                               mlsl_datatype_t dtype,
-                               mlsl_reduction_t reduction,
+                               iccl_datatype_t dtype,
+                               iccl_reduction_t reduction,
                                size_t root,
-                               const mlsl_coll_attr_t* attributes,
-                               mlsl_comm* communicator);
+                               const iccl_coll_attr_t* attributes,
+                               iccl_comm* communicator);
 
-mlsl_request* mlsl_allreduce_impl(const void* send_buf,
+iccl_request* iccl_allreduce_impl(const void* send_buf,
                                   void* recv_buf,
                                   size_t count,
-                                  mlsl_datatype_t dtype,
-                                  mlsl_reduction_t reduction,
-                                  const mlsl_coll_attr_t* attributes,
-                                  mlsl_comm* communicator);
+                                  iccl_datatype_t dtype,
+                                  iccl_reduction_t reduction,
+                                  const iccl_coll_attr_t* attributes,
+                                  iccl_comm* communicator);
 
-mlsl_request* mlsl_allgatherv_impl(const void* send_buf,
+iccl_request* iccl_allgatherv_impl(const void* send_buf,
                                    size_t send_count,
                                    void* recv_buf,
                                    size_t* recv_counts,
-                                   mlsl_datatype_t dtype,
-                                   const mlsl_coll_attr_t* attributes,
-                                   mlsl_comm* communicator);
+                                   iccl_datatype_t dtype,
+                                   const iccl_coll_attr_t* attributes,
+                                   iccl_comm* communicator);
 
-mlsl_request* mlsl_sparse_allreduce_impl(const void* send_ind_buf,
+iccl_request* iccl_sparse_allreduce_impl(const void* send_ind_buf,
                                          size_t send_ind_count,
                                          const void* send_val_buf,
                                          size_t send_val_count,
@@ -105,10 +105,10 @@ mlsl_request* mlsl_sparse_allreduce_impl(const void* send_ind_buf,
                                          size_t* recv_ind_count,
                                          void** recv_val_buf,
                                          size_t* recv_val_count,
-                                         mlsl_datatype_t index_dtype,
-                                         mlsl_datatype_t dtype,
-                                         mlsl_reduction_t reduction,
-                                         const mlsl_coll_attr_t* attributes,
-                                         mlsl_comm* communicator);
+                                         iccl_datatype_t index_dtype,
+                                         iccl_datatype_t dtype,
+                                         iccl_reduction_t reduction,
+                                         const iccl_coll_attr_t* attributes,
+                                         iccl_comm* communicator);
 
-void mlsl_barrier_impl(mlsl_comm* communicator);
+void iccl_barrier_impl(iccl_comm* communicator);

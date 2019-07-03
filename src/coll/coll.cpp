@@ -1,4 +1,4 @@
-#include "mlsl.hpp"
+#include "iccl.hpp"
 #include "coll/coll.hpp"
 #include "coll/coll_algorithms.hpp"
 #include "sched/sched_cache.hpp"
@@ -7,46 +7,46 @@
 #include "out_of_order/ooo_match.hpp"
 #include "fusion/fusion.hpp"
 
-const char* mlsl_coll_type_to_str(mlsl_coll_type type)
+const char* iccl_coll_type_to_str(iccl_coll_type type)
 {
     switch (type)
     {
-        case mlsl_coll_barrier:
+        case iccl_coll_barrier:
             return "BARRIER";
-        case mlsl_coll_bcast:
+        case iccl_coll_bcast:
             return "BCAST";
-        case mlsl_coll_reduce:
+        case iccl_coll_reduce:
             return "REDUCE";
-        case mlsl_coll_allreduce:
+        case iccl_coll_allreduce:
             return "ALLREDUCE";
-        case mlsl_coll_allgatherv:
+        case iccl_coll_allgatherv:
             return "ALLGATHERV";
-        case mlsl_coll_sparse_allreduce:
+        case iccl_coll_sparse_allreduce:
             return "SPARSE_ALLREDUCE";
-        case mlsl_coll_internal:
+        case iccl_coll_internal:
             return "INTERNAL";
-        case mlsl_coll_none:
+        case iccl_coll_none:
             return "NONE";
         default:
-            MLSL_FATAL("unexpected coll_type ", type);
+            ICCL_FATAL("unexpected coll_type ", type);
             return "UNKNOWN";
     }
 }
 
-static mlsl_request* mlsl_coll_create(const mlsl_coll_attr_t* attributes,
-                                      mlsl_sched_key& key,
-                                      mlsl_coll_param& coll_param)
+static iccl_request* iccl_coll_create(const iccl_coll_attr_t* attributes,
+                                      iccl_sched_key& key,
+                                      iccl_coll_param& coll_param)
 {
-    mlsl_sched* sched = nullptr;
-    mlsl_comm* match_id_comm = nullptr;
+    iccl_sched* sched = nullptr;
+    iccl_comm* match_id_comm = nullptr;
     bool should_run = true;
     bool should_commit = false;
     bool was_fused = false;
     std::string match_id;
-    mlsl_request* request = nullptr;
-    const mlsl_coll_attr_t* attr = attributes ? attributes : global_data.default_coll_attr.get();
+    iccl_request* request = nullptr;
+    const iccl_coll_attr_t* attr = attributes ? attributes : global_data.default_coll_attr.get();
 
-    MLSL_THROW_IF_NOT(coll_param.ctype == mlsl_coll_allreduce ||
+    ICCL_THROW_IF_NOT(coll_param.ctype == iccl_coll_allreduce ||
                       !(attr->prologue_fn || attr->epilogue_fn || attr->reduction_fn),
                       "incorrect input");
 
@@ -81,9 +81,9 @@ static mlsl_request* mlsl_coll_create(const mlsl_coll_attr_t* attributes,
 
     if (!sched)
     {
-        sched = new mlsl_sched(coll_param);
+        sched = new iccl_sched(coll_param);
         LOG_DEBUG("didn't find sched, create new one ", sched, ", type ",
-                  mlsl_coll_type_to_str(sched->coll_param.ctype));
+                  iccl_coll_type_to_str(sched->coll_param.ctype));
 
         if (attr->to_cache)
         {
@@ -96,7 +96,7 @@ static mlsl_request* mlsl_coll_create(const mlsl_coll_attr_t* attributes,
     else
     {
         LOG_DEBUG("found sched, reuse ", sched, ", type ",
-                  mlsl_coll_type_to_str(sched->coll_param.ctype));
+                  iccl_coll_type_to_str(sched->coll_param.ctype));
     }
     if (match_id_comm)
     {
@@ -110,14 +110,14 @@ static mlsl_request* mlsl_coll_create(const mlsl_coll_attr_t* attributes,
             was_fused = global_data.fusion_manager->add(sched);
             if (was_fused)
             {
-                LOG_DEBUG("sched ", sched, ", ctype ", mlsl_coll_type_to_str(sched->coll_param.ctype), "will be fused");
+                LOG_DEBUG("sched ", sched, ", ctype ", iccl_coll_type_to_str(sched->coll_param.ctype), "will be fused");
                 request = sched->req;
                 return request;
             }
         }
     }
 
-    MLSL_ASSERT(!was_fused);
+    ICCL_ASSERT(!was_fused);
 
     if (should_commit)
     {
@@ -130,13 +130,13 @@ static mlsl_request* mlsl_coll_create(const mlsl_coll_attr_t* attributes,
         request = sched->start(global_data.executor.get());
         if (attr->synchronous)
         {
-            mlsl_wait(request);
+            iccl_wait(request);
             request = nullptr;
         }
     }
     else
     {
-        MLSL_ASSERT(!sched->coll_attr.match_id.empty(), "invalid match_id");
+        ICCL_ASSERT(!sched->coll_attr.match_id.empty(), "invalid match_id");
 
         request = sched->reset_request();
         LOG_INFO("sched ", sched, ", postponed for match_id resolution");
@@ -146,157 +146,157 @@ static mlsl_request* mlsl_coll_create(const mlsl_coll_attr_t* attributes,
     return request;
 }
 
-mlsl_status_t mlsl_coll_build_barrier(mlsl_sched* sched)
+iccl_status_t iccl_coll_build_barrier(iccl_sched* sched)
 {
-    mlsl_status_t status;
-    sched->coll_param.ctype = mlsl_coll_barrier;
+    iccl_status_t status;
+    sched->coll_param.ctype = iccl_coll_barrier;
 
     switch (env_data.barrier_algo)
     {
-        case mlsl_barrier_algo_ring:
-            MLSL_CALL(mlsl_coll_build_dissemination_barrier(sched));
+        case iccl_barrier_algo_ring:
+            ICCL_CALL(iccl_coll_build_dissemination_barrier(sched));
             break;
-        case mlsl_barrier_algo_direct:
-            MLSL_CALL(mlsl_coll_build_direct_barrier(sched));
+        case iccl_barrier_algo_direct:
+            ICCL_CALL(iccl_coll_build_direct_barrier(sched));
             break;
         default:
-            MLSL_FATAL("unexpected barrier_algo ",
-                       mlsl_barrier_algo_to_str(env_data.barrier_algo));
-            return mlsl_status_invalid_arguments;
+            ICCL_FATAL("unexpected barrier_algo ",
+                       iccl_barrier_algo_to_str(env_data.barrier_algo));
+            return iccl_status_invalid_arguments;
     }
 
     return status;
 }
 
-mlsl_status_t mlsl_coll_build_bcast(mlsl_sched* sched,
+iccl_status_t iccl_coll_build_bcast(iccl_sched* sched,
                                     void* buf,
                                     size_t count,
-                                    mlsl_datatype_internal_t dtype,
+                                    iccl_datatype_internal_t dtype,
                                     size_t root)
 {
-    mlsl_status_t status;
-    sched->coll_param.ctype = mlsl_coll_bcast;
+    iccl_status_t status;
+    sched->coll_param.ctype = iccl_coll_bcast;
     switch (env_data.bcast_algo)
     {
-        case mlsl_bcast_algo_ring:
-            MLSL_CALL(mlsl_coll_build_scatter_ring_allgather_bcast(sched, buf, count, dtype, root));
+        case iccl_bcast_algo_ring:
+            ICCL_CALL(iccl_coll_build_scatter_ring_allgather_bcast(sched, buf, count, dtype, root));
             break;
-        case mlsl_bcast_algo_double_tree:
-            MLSL_CALL(mlsl_coll_build_double_tree_op(sched, mlsl_coll_bcast, nullptr, buf, count, dtype,
-                                                     mlsl_reduction_custom,
+        case iccl_bcast_algo_double_tree:
+            ICCL_CALL(iccl_coll_build_double_tree_op(sched, iccl_coll_bcast, nullptr, buf, count, dtype,
+                                                     iccl_reduction_custom,
                                                      root == 0 ? sched->coll_param.comm->dtree() :
                                                      sched->coll_param.comm->dtree().copy_with_new_root(root)));
             break;
-        case mlsl_bcast_algo_direct:
-            MLSL_CALL(mlsl_coll_build_direct_bcast(sched, buf, count, dtype, root));
+        case iccl_bcast_algo_direct:
+            ICCL_CALL(iccl_coll_build_direct_bcast(sched, buf, count, dtype, root));
             break;
         default:
-            MLSL_FATAL("unexpected bcast_algo ",
-                       mlsl_bcast_algo_to_str(env_data.bcast_algo));
-            return mlsl_status_invalid_arguments;
+            ICCL_FATAL("unexpected bcast_algo ",
+                       iccl_bcast_algo_to_str(env_data.bcast_algo));
+            return iccl_status_invalid_arguments;
     }
     return status;
 }
 
-mlsl_status_t mlsl_coll_build_reduce(mlsl_sched* sched,
+iccl_status_t iccl_coll_build_reduce(iccl_sched* sched,
                                      const void* send_buf,
                                      void* recv_buf,
                                      size_t count,
-                                     mlsl_datatype_internal_t dtype,
-                                     mlsl_reduction_t reduction,
+                                     iccl_datatype_internal_t dtype,
+                                     iccl_reduction_t reduction,
                                      size_t root)
 {
-    mlsl_status_t status;
-    sched->coll_param.ctype = mlsl_coll_reduce;
+    iccl_status_t status;
+    sched->coll_param.ctype = iccl_coll_reduce;
 
     switch (env_data.reduce_algo)
     {
-        case mlsl_reduce_algo_tree:
+        case iccl_reduce_algo_tree:
             if (count < sched->coll_param.comm->pof2())
-                MLSL_CALL(mlsl_coll_build_binomial_reduce(sched, send_buf, recv_buf, count, dtype, reduction, root));
+                ICCL_CALL(iccl_coll_build_binomial_reduce(sched, send_buf, recv_buf, count, dtype, reduction, root));
             else
-                MLSL_CALL(mlsl_coll_build_rabenseifner_reduce(sched, send_buf, recv_buf, count, dtype, reduction, root));
+                ICCL_CALL(iccl_coll_build_rabenseifner_reduce(sched, send_buf, recv_buf, count, dtype, reduction, root));
             break;
-        case mlsl_reduce_algo_double_tree:
+        case iccl_reduce_algo_double_tree:
             if (count < sched->coll_param.comm->pof2())
-                MLSL_CALL(mlsl_coll_build_binomial_reduce(sched, send_buf, recv_buf, count, dtype, reduction, root));
+                ICCL_CALL(iccl_coll_build_binomial_reduce(sched, send_buf, recv_buf, count, dtype, reduction, root));
             else
-                MLSL_CALL(mlsl_coll_build_double_tree_op(sched, mlsl_coll_reduce, send_buf, recv_buf, count, dtype,
+                ICCL_CALL(iccl_coll_build_double_tree_op(sched, iccl_coll_reduce, send_buf, recv_buf, count, dtype,
                                                          reduction,
                                                          root == 0 ? sched->coll_param.comm->dtree() :
                                                          sched->coll_param.comm->dtree().copy_with_new_root(root)));
             break;
-        case mlsl_reduce_algo_direct:
-            MLSL_CALL(mlsl_coll_build_direct_reduce(sched, send_buf, recv_buf, count, dtype, reduction, root));
+        case iccl_reduce_algo_direct:
+            ICCL_CALL(iccl_coll_build_direct_reduce(sched, send_buf, recv_buf, count, dtype, reduction, root));
             break;
         default:
-            MLSL_FATAL("unexpected reduce_algo ",
-                       mlsl_reduce_algo_to_str(env_data.reduce_algo));
-            return mlsl_status_invalid_arguments;
+            ICCL_FATAL("unexpected reduce_algo ",
+                       iccl_reduce_algo_to_str(env_data.reduce_algo));
+            return iccl_status_invalid_arguments;
     }
 
     return status;
 }
 
-mlsl_status_t mlsl_coll_build_allgatherv(
-    mlsl_sched* sched,
+iccl_status_t iccl_coll_build_allgatherv(
+    iccl_sched* sched,
     const void* send_buf,
     void* recv_buf,
     size_t s_count,
     size_t* r_counts,
-    mlsl_datatype_internal_t dtype)
+    iccl_datatype_internal_t dtype)
 {
-    mlsl_status_t status;
-    sched->coll_param.ctype = mlsl_coll_allgatherv;
+    iccl_status_t status;
+    sched->coll_param.ctype = iccl_coll_allgatherv;
     switch (env_data.allgatherv_algo)
     {
-        case mlsl_allgatherv_algo_naive:
-            MLSL_CALL(mlsl_coll_build_naive_allgatherv(sched, send_buf, s_count, recv_buf, r_counts,
+        case iccl_allgatherv_algo_naive:
+            ICCL_CALL(iccl_coll_build_naive_allgatherv(sched, send_buf, s_count, recv_buf, r_counts,
                                                        dtype));
             break;
-        case mlsl_allgatherv_algo_direct:
-            MLSL_CALL(mlsl_coll_build_direct_allgatherv(sched, send_buf, s_count, recv_buf, r_counts,
+        case iccl_allgatherv_algo_direct:
+            ICCL_CALL(iccl_coll_build_direct_allgatherv(sched, send_buf, s_count, recv_buf, r_counts,
                                                        dtype));
             break;
         default:
-            MLSL_FATAL("unexpected allgatherv_algo ",
-                       mlsl_allgatherv_algo_to_str(env_data.allgatherv_algo));
-            return mlsl_status_invalid_arguments;
+            ICCL_FATAL("unexpected allgatherv_algo ",
+                       iccl_allgatherv_algo_to_str(env_data.allgatherv_algo));
+            return iccl_status_invalid_arguments;
     }
     return status;
 }
 
-mlsl_status_t mlsl_coll_build_allreduce(
-    mlsl_sched* sched,
+iccl_status_t iccl_coll_build_allreduce(
+    iccl_sched* sched,
     const void* send_buf,
     void* recv_buf,
     size_t count,
-    mlsl_datatype_internal_t dtype,
-    mlsl_reduction_t reduction)
+    iccl_datatype_internal_t dtype,
+    iccl_reduction_t reduction)
 {
-    mlsl_status_t status = mlsl_status_success;
-    sched->coll_param.ctype = mlsl_coll_allreduce;
+    iccl_status_t status = iccl_status_success;
+    sched->coll_param.ctype = iccl_coll_allreduce;
 
-    if ((count < sched->coll_param.comm->pof2()) || (count * mlsl_datatype_get_size(dtype) <= 8192))
+    if ((count < sched->coll_param.comm->pof2()) || (count * iccl_datatype_get_size(dtype) <= 8192))
     {
         switch (env_data.allreduce_algo)
         {
-            case mlsl_allreduce_algo_ring:
-                MLSL_CALL(mlsl_coll_build_ring_allreduce(sched, send_buf, recv_buf, count, dtype, reduction));
+            case iccl_allreduce_algo_ring:
+                ICCL_CALL(iccl_coll_build_ring_allreduce(sched, send_buf, recv_buf, count, dtype, reduction));
                 break;
-            case mlsl_allreduce_algo_ring_rma:
+            case iccl_allreduce_algo_ring_rma:
                 if (global_data.executor->is_rma_enabled)
-                    MLSL_CALL(mlsl_coll_build_ring_rma_allreduce(sched, send_buf, recv_buf, count, dtype, reduction));
+                    ICCL_CALL(iccl_coll_build_ring_rma_allreduce(sched, send_buf, recv_buf, count, dtype, reduction));
                 else
-                    MLSL_FATAL("unexpected allreduce_algo ",
-                               mlsl_allreduce_algo_to_str(env_data.allreduce_algo));
+                    ICCL_FATAL("unexpected allreduce_algo ",
+                               iccl_allreduce_algo_to_str(env_data.allreduce_algo));
                 break;
-            case mlsl_allreduce_algo_direct:
-                MLSL_CALL(mlsl_coll_build_direct_allreduce(sched, send_buf, recv_buf, count, dtype, reduction));
+            case iccl_allreduce_algo_direct:
+                ICCL_CALL(iccl_coll_build_direct_allreduce(sched, send_buf, recv_buf, count, dtype, reduction));
                 break;
             default:
-                MLSL_CALL(
-                    mlsl_coll_build_recursive_doubling_allreduce(sched, send_buf, recv_buf, count, dtype, reduction));
+                ICCL_CALL(
+                    iccl_coll_build_recursive_doubling_allreduce(sched, send_buf, recv_buf, count, dtype, reduction));
                 break;
         }
     }
@@ -304,41 +304,41 @@ mlsl_status_t mlsl_coll_build_allreduce(
     {
         switch (env_data.allreduce_algo)
         {
-            case mlsl_allreduce_algo_rabenseifner:
-                MLSL_CALL(mlsl_coll_build_rabenseifner_allreduce(sched, send_buf, recv_buf, count, dtype, reduction));
+            case iccl_allreduce_algo_rabenseifner:
+                ICCL_CALL(iccl_coll_build_rabenseifner_allreduce(sched, send_buf, recv_buf, count, dtype, reduction));
                 break;
-            case mlsl_allreduce_algo_starlike:
-                MLSL_CALL(mlsl_coll_build_starlike_allreduce(sched, send_buf, recv_buf, count, dtype, reduction));
+            case iccl_allreduce_algo_starlike:
+                ICCL_CALL(iccl_coll_build_starlike_allreduce(sched, send_buf, recv_buf, count, dtype, reduction));
                 break;
-            case mlsl_allreduce_algo_ring:
-                MLSL_CALL(mlsl_coll_build_ring_allreduce(sched, send_buf, recv_buf, count, dtype, reduction));
+            case iccl_allreduce_algo_ring:
+                ICCL_CALL(iccl_coll_build_ring_allreduce(sched, send_buf, recv_buf, count, dtype, reduction));
                 break;
-            case mlsl_allreduce_algo_ring_rma:
+            case iccl_allreduce_algo_ring_rma:
                 if (global_data.executor->is_rma_enabled)
                 {
-                    MLSL_CALL(mlsl_coll_build_ring_rma_allreduce(sched, send_buf, recv_buf, count, dtype, reduction));
+                    ICCL_CALL(iccl_coll_build_ring_rma_allreduce(sched, send_buf, recv_buf, count, dtype, reduction));
                     break;
                 }
-            case mlsl_allreduce_algo_double_tree:
-                MLSL_CALL(mlsl_coll_build_double_tree_op(sched, mlsl_coll_allreduce, send_buf, recv_buf, count, dtype,
+            case iccl_allreduce_algo_double_tree:
+                ICCL_CALL(iccl_coll_build_double_tree_op(sched, iccl_coll_allreduce, send_buf, recv_buf, count, dtype,
                                                          reduction,
                                                          sched->coll_param.comm->dtree()));
                 break;
-            case mlsl_allreduce_algo_direct:
-                MLSL_CALL(mlsl_coll_build_direct_allreduce(sched, send_buf, recv_buf, count, dtype, reduction));
+            case iccl_allreduce_algo_direct:
+                ICCL_CALL(iccl_coll_build_direct_allreduce(sched, send_buf, recv_buf, count, dtype, reduction));
                 break;
             default:
-                MLSL_FATAL("unexpected allreduce_algo ",
-                           mlsl_allreduce_algo_to_str(env_data.allreduce_algo));
-                return mlsl_status_invalid_arguments;
+                ICCL_FATAL("unexpected allreduce_algo ",
+                           iccl_allreduce_algo_to_str(env_data.allreduce_algo));
+                return iccl_status_invalid_arguments;
         }
     }
 
     return status;
 }
 
-mlsl_status_t mlsl_coll_build_sparse_allreduce(
-    mlsl_sched* sched,
+iccl_status_t iccl_coll_build_sparse_allreduce(
+    iccl_sched* sched,
     const void* send_ind_buf,
     size_t send_ind_count,
     const void* send_val_buf,
@@ -347,12 +347,12 @@ mlsl_status_t mlsl_coll_build_sparse_allreduce(
     size_t* recv_ind_count,
     void** recv_val_buf,
     size_t* recv_val_count,
-    mlsl_datatype_internal_t index_dtype,
-    mlsl_datatype_internal_t value_dtype,
-    mlsl_reduction_t reduction)
+    iccl_datatype_internal_t index_dtype,
+    iccl_datatype_internal_t value_dtype,
+    iccl_reduction_t reduction)
 {
-    mlsl_status_t status;
-    sched->coll_param.ctype = mlsl_coll_sparse_allreduce;
+    iccl_status_t status;
+    sched->coll_param.ctype = iccl_coll_sparse_allreduce;
     sched->coll_param.sparse_param.snd_val_buf = send_val_buf;
     sched->coll_param.sparse_param.snd_val_count = send_val_count;
     sched->coll_param.sparse_param.rcv_val_buf = recv_val_buf;
@@ -361,21 +361,21 @@ mlsl_status_t mlsl_coll_build_sparse_allreduce(
 
     switch (env_data.sparse_allreduce_algo)
     {
-        case mlsl_sparse_allreduce_algo_basic:
-            MLSL_CALL(mlsl_coll_build_sparse_allreduce_basic(sched, send_ind_buf, send_ind_count, send_val_buf,
+        case iccl_sparse_allreduce_algo_basic:
+            ICCL_CALL(iccl_coll_build_sparse_allreduce_basic(sched, send_ind_buf, send_ind_count, send_val_buf,
                                                              send_val_count,
                                                              recv_ind_buf, recv_ind_count, recv_val_buf, recv_val_count,
                                                              index_dtype, value_dtype, reduction));
             break;
         default:
-            MLSL_FATAL("unexpected sparse_allreduce_algo ", env_data.sparse_allreduce_algo);
-            return mlsl_status_invalid_arguments;
+            ICCL_FATAL("unexpected sparse_allreduce_algo ", env_data.sparse_allreduce_algo);
+            return iccl_status_invalid_arguments;
     }
 
     return status;
 }
 
-mlsl_request* mlsl_sparse_allreduce_impl(const void* send_ind_buf,
+iccl_request* iccl_sparse_allreduce_impl(const void* send_ind_buf,
                                          size_t send_ind_count,
                                          const void* send_val_buf,
                                          size_t send_val_count,
@@ -383,14 +383,14 @@ mlsl_request* mlsl_sparse_allreduce_impl(const void* send_ind_buf,
                                          size_t* recv_ind_count,
                                          void** recv_val_buf,
                                          size_t* recv_val_count,
-                                         mlsl_datatype_t index_dtype,
-                                         mlsl_datatype_t dtype,
-                                         mlsl_reduction_t reduction,
-                                         const mlsl_coll_attr_t* attributes,
-                                         mlsl_comm* communicator)
+                                         iccl_datatype_t index_dtype,
+                                         iccl_datatype_t dtype,
+                                         iccl_reduction_t reduction,
+                                         const iccl_coll_attr_t* attributes,
+                                         iccl_comm* communicator)
 {
-    mlsl_coll_param coll_param{};
-    coll_param.ctype = mlsl_coll_sparse_allreduce;
+    iccl_coll_param coll_param{};
+    coll_param.ctype = iccl_coll_sparse_allreduce;
     coll_param.send_buf = send_ind_buf;
     coll_param.send_count = send_ind_count;
     coll_param.sparse_param.snd_val_buf = send_val_buf;
@@ -399,13 +399,13 @@ mlsl_request* mlsl_sparse_allreduce_impl(const void* send_ind_buf,
     coll_param.recv_counts = recv_ind_count;
     coll_param.sparse_param.rcv_val_buf = recv_val_buf;
     coll_param.sparse_param.rcv_val_count = recv_val_count;
-    coll_param.dtype = mlsl_datatype_get(dtype);
-    coll_param.sparse_param.itype = mlsl_datatype_get(index_dtype);
+    coll_param.dtype = iccl_datatype_get(dtype);
+    coll_param.sparse_param.itype = iccl_datatype_get(index_dtype);
     coll_param.reduction = reduction;
     coll_param.comm = communicator;
 
-    mlsl_sched_key key{};
-    key.ctype = mlsl_coll_sparse_allreduce;
+    iccl_sched_key key{};
+    key.ctype = iccl_coll_sparse_allreduce;
     key.buf1 = (void*) send_ind_buf;
     key.count1 = send_ind_count;
     key.buf2 = (void*) send_val_buf;
@@ -419,60 +419,60 @@ mlsl_request* mlsl_sparse_allreduce_impl(const void* send_ind_buf,
     key.reduction = reduction;
     key.comm = communicator;
 
-    auto req = mlsl_coll_create(attributes, key, coll_param);
-    LOG_DEBUG("coll ", mlsl_coll_type_to_str(coll_param.ctype), " created, req ", req);
+    auto req = iccl_coll_create(attributes, key, coll_param);
+    LOG_DEBUG("coll ", iccl_coll_type_to_str(coll_param.ctype), " created, req ", req);
     return req;
 }
 
-mlsl_request* mlsl_bcast_impl(void* buf,
+iccl_request* iccl_bcast_impl(void* buf,
                               size_t count,
-                              mlsl_datatype_t dtype,
+                              iccl_datatype_t dtype,
                               size_t root,
-                              const mlsl_coll_attr_t* attributes,
-                              mlsl_comm* communicator)
+                              const iccl_coll_attr_t* attributes,
+                              iccl_comm* communicator)
 {
-    mlsl_coll_param coll_param{};
-    coll_param.ctype = mlsl_coll_bcast;
+    iccl_coll_param coll_param{};
+    coll_param.ctype = iccl_coll_bcast;
     coll_param.buf = buf;
     coll_param.count = count;
-    coll_param.dtype = mlsl_datatype_get(dtype);
+    coll_param.dtype = iccl_datatype_get(dtype);
     coll_param.root = root;
     coll_param.comm = communicator;
 
-    mlsl_sched_key key{};
-    key.ctype = mlsl_coll_bcast;
+    iccl_sched_key key{};
+    key.ctype = iccl_coll_bcast;
     key.buf1 = buf;
     key.count1 = count;
     key.dtype = dtype;
     key.root = root;
     key.comm = communicator;
 
-    auto req = mlsl_coll_create(attributes, key, coll_param);
-    LOG_DEBUG("coll ", mlsl_coll_type_to_str(coll_param.ctype), " created, req ", req);
+    auto req = iccl_coll_create(attributes, key, coll_param);
+    LOG_DEBUG("coll ", iccl_coll_type_to_str(coll_param.ctype), " created, req ", req);
     return req;
 }
 
-mlsl_request* mlsl_reduce_impl(const void* send_buf,
+iccl_request* iccl_reduce_impl(const void* send_buf,
                                void* recv_buf,
                                size_t count,
-                               mlsl_datatype_t dtype,
-                               mlsl_reduction_t reduction,
+                               iccl_datatype_t dtype,
+                               iccl_reduction_t reduction,
                                size_t root,
-                               const mlsl_coll_attr_t* attributes,
-                               mlsl_comm* communicator)
+                               const iccl_coll_attr_t* attributes,
+                               iccl_comm* communicator)
 {
-    mlsl_coll_param coll_param{};
-    coll_param.ctype = mlsl_coll_reduce;
+    iccl_coll_param coll_param{};
+    coll_param.ctype = iccl_coll_reduce;
     coll_param.send_buf = send_buf;
     coll_param.recv_buf = recv_buf;
     coll_param.count = count;
-    coll_param.dtype = mlsl_datatype_get(dtype);
+    coll_param.dtype = iccl_datatype_get(dtype);
     coll_param.reduction = reduction;
     coll_param.root = root;
     coll_param.comm = communicator;
 
-    mlsl_sched_key key{};
-    key.ctype = mlsl_coll_reduce;
+    iccl_sched_key key{};
+    key.ctype = iccl_coll_reduce;
     key.buf1 = (void*) send_buf;
     key.buf2 = recv_buf;
     key.count1 = count;
@@ -481,30 +481,30 @@ mlsl_request* mlsl_reduce_impl(const void* send_buf,
     key.root = root;
     key.comm = communicator;
 
-    auto req = mlsl_coll_create(attributes, key, coll_param);
-    LOG_DEBUG("coll ", mlsl_coll_type_to_str(coll_param.ctype), " created, req ", req);
+    auto req = iccl_coll_create(attributes, key, coll_param);
+    LOG_DEBUG("coll ", iccl_coll_type_to_str(coll_param.ctype), " created, req ", req);
     return req;
 }
 
-mlsl_request* mlsl_allreduce_impl(const void* send_buf,
+iccl_request* iccl_allreduce_impl(const void* send_buf,
                                   void* recv_buf,
                                   size_t count,
-                                  mlsl_datatype_t dtype,
-                                  mlsl_reduction_t reduction,
-                                  const mlsl_coll_attr_t* attributes,
-                                  mlsl_comm* communicator)
+                                  iccl_datatype_t dtype,
+                                  iccl_reduction_t reduction,
+                                  const iccl_coll_attr_t* attributes,
+                                  iccl_comm* communicator)
 {
-    mlsl_coll_param coll_param{};
-    coll_param.ctype = mlsl_coll_allreduce;
+    iccl_coll_param coll_param{};
+    coll_param.ctype = iccl_coll_allreduce;
     coll_param.send_buf = send_buf;
     coll_param.recv_buf = recv_buf;
     coll_param.count = count;
-    coll_param.dtype = mlsl_datatype_get(dtype);
+    coll_param.dtype = iccl_datatype_get(dtype);
     coll_param.reduction = reduction;
     coll_param.comm = communicator;
 
-    mlsl_sched_key key{};
-    key.ctype = mlsl_coll_allreduce;
+    iccl_sched_key key{};
+    key.ctype = iccl_coll_allreduce;
     key.buf1 = (void*) send_buf;
     key.buf2 = recv_buf;
     key.count1 = count;
@@ -512,54 +512,54 @@ mlsl_request* mlsl_allreduce_impl(const void* send_buf,
     key.reduction = reduction;
     key.comm = communicator;
 
-    auto req = mlsl_coll_create(attributes, key, coll_param);
-    LOG_DEBUG("coll ", mlsl_coll_type_to_str(coll_param.ctype), " created, req ", req, " count ", count);
+    auto req = iccl_coll_create(attributes, key, coll_param);
+    LOG_DEBUG("coll ", iccl_coll_type_to_str(coll_param.ctype), " created, req ", req, " count ", count);
     return req;
 }
 
-mlsl_request* mlsl_allgatherv_impl(const void* send_buf,
+iccl_request* iccl_allgatherv_impl(const void* send_buf,
                                    size_t send_count,
                                    void* recv_buf,
                                    size_t* recv_counts,
-                                   mlsl_datatype_t dtype,
-                                   const mlsl_coll_attr_t* attributes,
-                                   mlsl_comm* communicator)
+                                   iccl_datatype_t dtype,
+                                   const iccl_coll_attr_t* attributes,
+                                   iccl_comm* communicator)
 {
-    mlsl_coll_param coll_param{};
-    coll_param.ctype = mlsl_coll_allgatherv;
+    iccl_coll_param coll_param{};
+    coll_param.ctype = iccl_coll_allgatherv;
     coll_param.send_buf = send_buf;
     coll_param.recv_buf = recv_buf;
     coll_param.send_count = send_count;
     coll_param.recv_counts = recv_counts;
-    coll_param.dtype = mlsl_datatype_get(dtype);
+    coll_param.dtype = iccl_datatype_get(dtype);
     coll_param.comm = communicator;
 
-    mlsl_sched_key key{};
-    key.ctype = mlsl_coll_allgatherv;
+    iccl_sched_key key{};
+    key.ctype = iccl_coll_allgatherv;
     key.buf1 = (void*) send_buf;
     key.buf2 = recv_buf;
     key.buf3 = recv_counts;
     key.count1 = send_count;
     key.comm = communicator;
 
-    auto req = mlsl_coll_create(attributes, key, coll_param);
-    LOG_DEBUG("coll ", mlsl_coll_type_to_str(coll_param.ctype), " created, req ", req);
+    auto req = iccl_coll_create(attributes, key, coll_param);
+    LOG_DEBUG("coll ", iccl_coll_type_to_str(coll_param.ctype), " created, req ", req);
     return req;
 }
 
-void mlsl_barrier_impl(mlsl_comm* communicator)
+void iccl_barrier_impl(iccl_comm* communicator)
 {
-    mlsl_coll_attr_t attributes{};
+    iccl_coll_attr_t attributes{};
     attributes.synchronous = 1;
 
-    mlsl_coll_param coll_param{};
-    coll_param.ctype = mlsl_coll_barrier;
-    coll_param.dtype = mlsl_dtype_internal_char;
+    iccl_coll_param coll_param{};
+    coll_param.ctype = iccl_coll_barrier;
+    coll_param.dtype = iccl_dtype_internal_char;
     coll_param.comm = communicator;
 
-    mlsl_sched_key key{};
-    key.ctype = mlsl_coll_barrier;
+    iccl_sched_key key{};
+    key.ctype = iccl_coll_barrier;
     key.comm = communicator;
 
-    mlsl_coll_create(&attributes, key, coll_param);
+    iccl_coll_create(&attributes, key, coll_param);
 }

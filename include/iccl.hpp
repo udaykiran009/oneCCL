@@ -1,16 +1,16 @@
 #pragma once
 
-#include "mlsl_types.hpp"
+#include "iccl_types.hpp"
 
 #include <memory>
 
-class mlsl_comm;
+class iccl_comm;
 
-namespace mlsl
+namespace iccl
 {
 
 /**
- * mlsl environemt. The user must guarantee that the only instance of this class exists
+ * iccl environemt. The user must guarantee that the only instance of this class exists
  * during application life time.
  */
 class environment
@@ -52,15 +52,15 @@ class communicator
 {
 public:
     /**
-     * Creates mlsl communicator as a copy of global communicator
+     * Creates iccl communicator as a copy of global communicator
      */
     communicator();
 
     /**
-     * Creates a new communicator according to @c comm_attr parametersmlsl_t
+     * Creates a new communicator according to @c comm_attr parametersiccl_t
      * @param comm_attr
      */
-    explicit communicator(mlsl_comm_attr_t* comm_attr);
+    explicit communicator(iccl_comm_attr_t* comm_attr);
 
     /**
      * Retrieves the rank of the current process in a communicator
@@ -88,13 +88,13 @@ public:
      * @param dtype data type of elements in the buffer @c buf
      * @param root the rank of the process that will transmit @c buf
      * @param attributes optional attributes that customize operation
-     * @return @ref mlsl::request object that can be used to track the progress of the operation
+     * @return @ref iccl::request object that can be used to track the progress of the operation
      */
-    std::shared_ptr<mlsl::request> bcast(void* buf,
+    std::shared_ptr<iccl::request> bcast(void* buf,
                                          size_t count,
-                                         mlsl::data_type dtype,
+                                         iccl::data_type dtype,
                                          size_t root,
-                                         const mlsl_coll_attr_t* attributes = nullptr);
+                                         const iccl_coll_attr_t* attributes = nullptr);
 
     /**
      * Reduces @c buf on all process in the communicator and stores result in @c recv_buf
@@ -107,15 +107,15 @@ public:
      * @param reduction type of reduction operation to be applied
      * @param root the rank of the process that will held result of reduction
      * @param attributes optional attributes that customize operation
-     * @return @ref mlsl::request object that can be used to track the progress of the operation
+     * @return @ref iccl::request object that can be used to track the progress of the operation
      */
-    std::shared_ptr<mlsl::request> reduce(const void* send_buf,
+    std::shared_ptr<iccl::request> reduce(const void* send_buf,
                                           void* recv_buf,
                                           size_t count,
-                                          mlsl::data_type dtype,
-                                          mlsl::reduction reduction,
+                                          iccl::data_type dtype,
+                                          iccl::reduction reduction,
                                           size_t root,
-                                          const mlsl_coll_attr_t* attributes = nullptr);
+                                          const iccl_coll_attr_t* attributes = nullptr);
 
     /**
      * Reduces @c buf on all process in the communicator and stores result in @c recv_buf
@@ -127,14 +127,14 @@ public:
      * @param dtype data type of elements in the buffer @c buf and @c recv_buf
      * @param reduction type of reduction operation to be applied
      * @param attributes optional attributes that customize operation
-     * @return @ref mlsl::request object that can be used to track the progress of the operation
+     * @return @ref iccl::request object that can be used to track the progress of the operation
      */
-    std::shared_ptr<mlsl::request> allreduce(const void* send_buf,
+    std::shared_ptr<iccl::request> allreduce(const void* send_buf,
                                              void* recv_buf,
                                              size_t count,
-                                             mlsl::data_type dtype,
-                                             mlsl::reduction reduction,
-                                             const mlsl_coll_attr_t* attributes = nullptr);
+                                             iccl::data_type dtype,
+                                             iccl::reduction reduction,
+                                             const iccl_coll_attr_t* attributes = nullptr);
 
     /**
      * Gathers @c buf on all process in the communicator and stores result in @c recv_buf
@@ -146,14 +146,14 @@ public:
      * @param recv_counts array with number of elements received by each process
      * @param dtype data type of elements in the buffer @c buf and @c recv_buf
      * @param attributes optional attributes that customize operation
-     * @return @ref mlsl::request object that can be used to track the progress of the operation
+     * @return @ref iccl::request object that can be used to track the progress of the operation
      */
-    std::shared_ptr<mlsl::request> allgatherv(const void* send_buf,
+    std::shared_ptr<iccl::request> allgatherv(const void* send_buf,
                                               size_t send_count,
                                               void* recv_buf,
                                               size_t* recv_counts,
-                                              mlsl::data_type dtype,
-                                              const mlsl_coll_attr_t* attributes = nullptr);
+                                              iccl::data_type dtype,
+                                              const iccl_coll_attr_t* attributes = nullptr);
 
     /**
      * Collective operation that blocks each process until every process have reached it
@@ -175,9 +175,9 @@ public:
      * @param value_dtype data type of elements in the buffer @c send_val_buf and @c recv_val_buf
      * @param reduction type of reduction operation to be applied
      * @param attributes optional attributes that customize operation
-     * @return @ref mlsl::request object that can be used to track the progress of the operation
+     * @return @ref iccl::request object that can be used to track the progress of the operation
      */
-    std::shared_ptr<mlsl::request> sparse_allreduce(const void* send_ind_buf,
+    std::shared_ptr<iccl::request> sparse_allreduce(const void* send_ind_buf,
                                              size_t send_ind_count,
                                              const void* send_val_buf,
                                              size_t send_val_count,
@@ -185,13 +185,13 @@ public:
                                              size_t* recv_ind_count,
                                              void** recv_val_buf,
                                              size_t* recv_val_count,
-                                             mlsl::data_type index_dtype,
-                                             mlsl::data_type value_dtype,
-                                             mlsl::reduction reduction,
-                                             const mlsl_coll_attr_t* attributes = nullptr);
+                                             iccl::data_type index_dtype,
+                                             iccl::data_type value_dtype,
+                                             iccl::reduction reduction,
+                                             const iccl_coll_attr_t* attributes = nullptr);
 
 private:
-    std::shared_ptr<mlsl_comm> comm_impl;
+    std::shared_ptr<iccl_comm> comm_impl;
 };
 
 }

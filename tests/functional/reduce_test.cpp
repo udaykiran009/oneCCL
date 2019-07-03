@@ -1,5 +1,5 @@
-#define TEST_MLSL_REDUCE
-#define Collective_Name "MLSL_REDUCE_ALGO"
+#define TEST_ICCL_REDUCE
+#define Collective_Name "ICCL_REDUCE_ALGO"
 
 #include "base.hpp"
 #include <functional>
@@ -7,8 +7,8 @@
 #include <chrono>
 
 // template <typename T>
-// mlsl_status_t do_reduction_null(const void* in_buf, size_t in_count, void* inout_buf,
-                               // size_t* out_count, const void** ctx, mlsl_datatype_t dtype)
+// iccl_status_t do_reduction_null(const void* in_buf, size_t in_count, void* inout_buf,
+                               // size_t* out_count, const void** ctx, iccl_datatype_t dtype)
 // {
     // size_t idx;
     // if (out_count) *out_count = in_count;
@@ -16,11 +16,11 @@
             // {
                 // ((T*)inout_buf)[idx] = (T)0;
             // }
-    // return mlsl_status_success;
+    // return iccl_status_success;
 // }
 // template <typename T>
-// mlsl_status_t do_reduction_custom(const void* in_buf, size_t in_count, void* inout_buf,
-                               // size_t* out_count, const void** ctx, mlsl_datatype_t dtype)
+// iccl_status_t do_reduction_custom(const void* in_buf, size_t in_count, void* inout_buf,
+                               // size_t* out_count, const void** ctx, iccl_datatype_t dtype)
 // {
     // size_t idx;
     // if (out_count) *out_count = in_count;
@@ -28,7 +28,7 @@
             // {
                 // ((T*)inout_buf)[idx] += ((T*)in_buf)[idx];
             // }
-    // return mlsl_status_success;
+    // return iccl_status_success;
 // }
 // template <typename T>
 // int set_custom_reduction (TypedTestParam <T> &param){
@@ -119,7 +119,7 @@ public:
         SHOW_ALGO(Collective_Name);
         this->FillBuffers (param);
         size_t* Buffers = param.DefineStartOrder();
-        // if (param.GetReductionType() == mlsl_reduction_custom) {
+        // if (param.GetReductionType() == iccl_reduction_custom) {
             // if (set_custom_reduction<T>(param))
                 // return TEST_FAILURE;
         // }
@@ -127,10 +127,10 @@ public:
             this->Init (param);
             param.req[Buffers[idx]] = (param.GetPlaceType() == PT_IN) ?
                     param.global_comm.reduce(param.recvBuf[idx].data(), param.recvBuf[idx].data(), param.elemCount,
-                                            (mlsl::data_type) param.GetDataType(), (mlsl::reduction) param.GetReductionName(),
+                                            (iccl::data_type) param.GetDataType(), (iccl::reduction) param.GetReductionName(),
                                             ROOT_PROCESS_IDX, &param.coll_attr) :
                     param.global_comm.reduce(param.sendBuf[idx].data(), param.recvBuf[idx].data(), param.elemCount,
-                                            (mlsl::data_type) param.GetDataType(), (mlsl::reduction) param.GetReductionName(),
+                                            (iccl::data_type) param.GetDataType(), (iccl::reduction) param.GetReductionName(),
                                             ROOT_PROCESS_IDX, &param.coll_attr);
         }
         param.DefineCompletionOrderAndComplete();

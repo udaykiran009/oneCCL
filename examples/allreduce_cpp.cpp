@@ -1,5 +1,5 @@
 
-#include "mlsl.hpp"
+#include "iccl.hpp"
 
 #include <functional>
 #include <vector>
@@ -14,8 +14,8 @@ const size_t ITERS = 1000;
 void run_collective(const char* cmd_name,
                     const std::vector<float>& send_buf,
                     std::vector<float>& recv_buf,
-                    mlsl::communicator& comm,
-                    mlsl_coll_attr_t& coll_attr)
+                    iccl::communicator& comm,
+                    iccl_coll_attr_t& coll_attr)
 {
     std::chrono::system_clock::duration exec_time{};
     float expected = (comm.size() - 1) * (static_cast<float>(comm.size()) / 2);
@@ -30,8 +30,8 @@ void run_collective(const char* cmd_name,
         comm.allreduce(send_buf.data(),
                        recv_buf.data(),
                        recv_buf.size(),
-                       mlsl::data_type::dtype_float,
-                       mlsl::reduction::sum,
+                       iccl::data_type::dtype_float,
+                       iccl::reduction::sum,
                        &coll_attr)->wait();
 
         exec_time += std::chrono::system_clock::now() - start;
@@ -64,12 +64,12 @@ int main()
         msg_counts[idx] = 1u << (start_msg_size_power + idx);
     }
 
-    mlsl_coll_attr_t coll_attr{};
+    iccl_coll_attr_t coll_attr{};
 
     try
     {
-        mlsl::environment env;
-        mlsl::communicator comm;
+        iccl::environment env;
+        iccl::communicator comm;
 
         for (auto msg_count : msg_counts)
         {
@@ -88,9 +88,9 @@ int main()
             run_collective("regular allreduce", send_buf, recv_buf, comm, coll_attr);
         }
     }
-    catch (mlsl::mlsl_error& e)
+    catch (iccl::iccl_error& e)
     {
-        fprintf(stderr, "mlsl exception:\n%s\n", e.what());
+        fprintf(stderr, "iccl exception:\n%s\n", e.what());
     }
     catch (...)
     {

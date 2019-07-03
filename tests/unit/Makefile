@@ -4,16 +4,16 @@ CXX            ?= g++
 MPIRUN          = mpirun
 BASE_DIR        = $(shell pwd)
 SHELL = bash
-# MLSL root code
-MLSL_SRC_DIR    = $(BASE_DIR)/../..
-ICT_INFRA_DIR   = $(MLSL_SRC_DIR)/ict-infra
+# ICCL root code
+ICCL_SRC_DIR    = $(BASE_DIR)/../..
+ICT_INFRA_DIR   = $(ICCL_SRC_DIR)/ict-infra
 
 # Flags passed to the preprocessor.
 # Set Google Test's header directory as a system directory, such that
 # the compiler doesn't generate warnings in Google Test headers.
 CPPFLAGS += -isystem $(GTEST_DIR)/include
 
-CXXFLAGS += -I$(MLSL_ROOT)/intel64/include -L$(MLSL_ROOT)/intel64/lib -lmlsl -I$(MLSL_SRC_DIR)/src
+CXXFLAGS += -I$(ICCL_ROOT)/intel64/include -L$(ICCL_ROOT)/intel64/lib -liccl -I$(ICCL_SRC_DIR)/src
 CXXFLAGS += $(EXTRA_CFLAGS)
 
 ifeq ($(CODECOV),1)
@@ -66,9 +66,9 @@ run_tests:
 
 dev:
 	for num_servers in 0 1 4; do \
-		echo -n "##################### MLSL_NUM_SERVERS = $$num_servers #####################"; echo -n; \
+		echo -n "##################### ICCL_NUM_SERVERS = $$num_servers #####################"; echo -n; \
 		for test in $(TESTS); do \
-			MLSL_NUM_SERVERS=$$num_servers $(MPIRUN) -n 2 -ppn 1 -l ./$$test --gtest_output="xml:result/$$test.$$num_servers.xml"; \
+			ICCL_NUM_SERVERS=$$num_servers $(MPIRUN) -n 2 -ppn 1 -l ./$$test --gtest_output="xml:result/$$test.$$num_servers.xml"; \
 		done \
 	done
 
@@ -78,7 +78,7 @@ clean:
 
 codecov:
 	profmerge -prof_dpi pgopti.dpi
-	codecov -prj msl_cc -comp $(ICT_INFRA_DIR)/code_coverage/codecov_filter_mlsl.txt -spi ../../pgopti.spi -dpi pgopti.dpi -xmlbcvrgfull codecov.xml
+	codecov -prj msl_cc -comp $(ICT_INFRA_DIR)/code_coverage/codecov_filter_iccl.txt -spi ../../pgopti.spi -dpi pgopti.dpi -xmlbcvrgfull codecov.xml
 
 # Builds gtest.a and gtest_main.a.
 

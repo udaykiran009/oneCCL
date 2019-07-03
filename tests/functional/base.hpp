@@ -6,12 +6,12 @@
 #include <string>
 #include <fstream>
 #include "gtest/gtest.h"
-#include "mlsl.hpp"
+#include "iccl.hpp"
 #include <cstdlib>
 #include <stdlib.h>     /* malloc */
 
 #include <ctime>
-using namespace mlsl;
+using namespace iccl;
 using namespace std;
 
 
@@ -60,7 +60,7 @@ using namespace std;
 #define PATCH_OUTPUT_NAME_ARG(argc, argv)                                                 \
     do                                                                                    \
     {                                                                                     \
-        mlsl::communicator comm;                                                          \
+        iccl::communicator comm;                                                          \
         if (comm.size() > 1)                                                              \
         {                                                                                 \
             for (int idx = 1; idx < argc; idx++)                                          \
@@ -96,7 +96,7 @@ do {   \
 #define SSHOW_ALGO()\
 ( {   \
     std::string algo_name = getenv(Collective_Name);  \
-    std::string transp_name = getenv("MLSL_ATL_TRANSPORT");  \
+    std::string transp_name = getenv("ICCL_ATL_TRANSPORT");  \
     std::string res_str = algo_name + transp_name; \
     res_str;\
 } )
@@ -114,13 +114,13 @@ do {   \
       int result = className.Run(typedParam);                            \
       int result_final = 0;                                              \
       static int glob_idx = 0;                                           \
-      mlsl::communicator comm;                                           \
-      std::shared_ptr <mlsl::request> req;                               \
-      mlsl_coll_attr_t coll_attr {};                                     \
+      iccl::communicator comm;                                           \
+      std::shared_ptr <iccl::request> req;                               \
+      iccl_coll_attr_t coll_attr {};                                     \
       InitCollAttr(&coll_attr);                                          \
       req = comm.allreduce(&result, &result_final, 1,                    \
-                           mlsl::data_type::dtype_int,                   \
-                           mlsl::reduction::sum, &coll_attr);            \
+                           iccl::data_type::dtype_int,                   \
+                           iccl::reduction::sum, &coll_attr);            \
       req->wait();                                                       \
       if (result_final > 0)                                              \
       {                                                                  \
@@ -162,7 +162,7 @@ do {   \
     int main(int argc, char **argv, char* envs[]) \
     {                                             \
         InitTestParams();                         \
-        mlsl::environment env;                    \
+        iccl::environment env;                    \
         PATCH_OUTPUT_NAME_ARG(argc, argv);        \
         testing::InitGoogleTest(&argc, argv);     \
         int res = RUN_ALL_TESTS();                \
@@ -248,7 +248,7 @@ map < int, const char *>completionTypeStr = { {CMPT_WAIT, "CMPT_WAIT"},
                                               {CMPT_TEST, "CMPT_TEST"}};
 
 typedef enum {
-#ifdef TEST_MLSL_CUSTOM_PROLOG
+#ifdef TEST_ICCL_CUSTOM_PROLOG
     PRT_T_TO_2X = 0,
     PRT_T_TO_CHAR = 1,
 #endif
@@ -257,14 +257,14 @@ typedef enum {
 } PrologType;
 PrologType firstPrologType = PRT_NULL;
 map < int, const char *>prologTypeStr = { {PRT_NULL, "PRT_NULL"},
-#ifdef TEST_MLSL_CUSTOM_PROLOG
+#ifdef TEST_ICCL_CUSTOM_PROLOG
                                           {PRT_T_TO_2X, "PRT_T_TO_2X"},
                                           {PRT_T_TO_CHAR, "PRT_T_TO_CHAR"}
 #endif
                                           };
 
 typedef enum {
-#ifdef TEST_MLSL_CUSTOM_EPILOG
+#ifdef TEST_ICCL_CUSTOM_EPILOG
     EPLT_T_TO_2X = 0,
     EPLT_CHAR_TO_T = 1,
 #endif
@@ -273,20 +273,20 @@ typedef enum {
 } EpilogType;
 EpilogType firstEpilogType = EPLT_NULL;
 map < int, const char *>epilogTypeStr = { {EPLT_NULL, "EPLT_NULL"},
-#ifdef TEST_MLSL_CUSTOM_EPILOG
+#ifdef TEST_ICCL_CUSTOM_EPILOG
                                           {EPLT_T_TO_2X, "EPLT_T_TO_2X"},
                                           {EPLT_CHAR_TO_T, "EPLT_CHAR_TO_T"}
 #endif
                                           };
 
 typedef enum {
-    DT_CHAR = mlsl_dtype_char,
-    DT_INT = mlsl_dtype_int,
-    DT_BFP16 = mlsl_dtype_bfp16,
-    DT_FLOAT = mlsl_dtype_float,
-    DT_DOUBLE = mlsl_dtype_double,
-    // DT_INT64 = mlsl_dtype_int64,
-    // DT_UINT64 = mlsl_dtype_uint64,
+    DT_CHAR = iccl_dtype_char,
+    DT_INT = iccl_dtype_int,
+    DT_BFP16 = iccl_dtype_bfp16,
+    DT_FLOAT = iccl_dtype_float,
+    DT_DOUBLE = iccl_dtype_double,
+    // DT_INT64 = iccl_dtype_int64,
+    // DT_UINT64 = iccl_dtype_uint64,
     DT_LAST
 } TestDataType;
 TestDataType firstDataType = DT_CHAR;
@@ -301,11 +301,11 @@ map < int, const char *>dataTypeStr = { {DT_CHAR, "DT_CHAR"},
 
 typedef enum {
     RT_SUM = 0,
-#ifdef TEST_MLSL_REDUCE
+#ifdef TEST_ICCL_REDUCE
     RT_PROD = 1,
     RT_MIN = 2,
     RT_MAX = 3,
-#ifdef TEST_MLSL_CUSTOM_REDUCE
+#ifdef TEST_ICCL_CUSTOM_REDUCE
     RT_CUSTOM = 4,
     RT_CUSTOM_NULL = 5,
 #endif
@@ -314,24 +314,24 @@ typedef enum {
 } TestReductionType;
 TestReductionType firstReductionType = RT_SUM;
 map < int, const char *>reductionTypeStr = { {RT_SUM, "RT_SUM"},
-#ifdef TEST_MLSL_REDUCE
+#ifdef TEST_ICCL_REDUCE
                                              {RT_PROD, "RT_PROD"},
                                              {RT_MIN, "RT_MIN"},
                                              {RT_MAX, "RT_MAX"},
-#ifdef TEST_MLSL_CUSTOM_REDUCE
+#ifdef TEST_ICCL_CUSTOM_REDUCE
                                              {RT_CUSTOM, "RT_CUSTOM"},
                                              {RT_CUSTOM_NULL, "RT_CUSTOM_NULL"}
 #endif
 #endif
                                              };
-map < int, mlsl_reduction_t > reductionTypeValues = { {RT_SUM, mlsl_reduction_sum},
-#ifdef TEST_MLSL_REDUCE
-                                                    {RT_PROD, mlsl_reduction_prod},
-                                                    {RT_MIN, mlsl_reduction_min},
-                                                    {RT_MAX, mlsl_reduction_max},
-#ifdef TEST_MLSL_CUSTOM_REDUCE
-                                                    {RT_CUSTOM, mlsl_reduction_custom},
-                                                    {RT_CUSTOM_NULL, mlsl_reduction_custom}
+map < int, iccl_reduction_t > reductionTypeValues = { {RT_SUM, iccl_reduction_sum},
+#ifdef TEST_ICCL_REDUCE
+                                                    {RT_PROD, iccl_reduction_prod},
+                                                    {RT_MIN, iccl_reduction_min},
+                                                    {RT_MAX, iccl_reduction_max},
+#ifdef TEST_ICCL_CUSTOM_REDUCE
+                                                    {RT_CUSTOM, iccl_reduction_custom},
+                                                    {RT_CUSTOM_NULL, iccl_reduction_custom}
 #endif
 #endif
                                                     };
@@ -395,7 +395,7 @@ POST_AND_PRE_INCREMENTS(BufferCount, BC_LAST);
 POST_AND_PRE_INCREMENTS(PrologType, PRLT_LAST);
 POST_AND_PRE_INCREMENTS(EpilogType, EPLT_LAST);
 
-void InitCollAttr(mlsl_coll_attr_t *coll_attr)
+void InitCollAttr(iccl_coll_attr_t *coll_attr)
 {
     coll_attr->prologue_fn = NULL;
     coll_attr->epilogue_fn = NULL;
@@ -409,9 +409,9 @@ void InitCollAttr(mlsl_coll_attr_t *coll_attr)
 void PrintErrMessage(char* errMessage, std::ostream &output)
 {
     size_t messageLen = strlen(errMessage);
-    mlsl::communicator comm;
-    std::shared_ptr <mlsl::request> req;
-    mlsl_coll_attr_t coll_attr {};
+    iccl::communicator comm;
+    std::shared_ptr <iccl::request> req;
+    iccl_coll_attr_t coll_attr {};
     InitCollAttr(&coll_attr);
     int processCount = comm.size();
     int processIdx = comm.rank();
@@ -421,7 +421,7 @@ void PrintErrMessage(char* errMessage, std::ostream &output)
     displs[0] = 1;
     for (int i = 1; i < processCount; i++)
         displs[i] = 1;
-    req = comm.allgatherv(&messageLen, 1, arrMessageLen_copy, displs, mlsl::data_type::dtype_int, &coll_attr);
+    req = comm.allgatherv(&messageLen, 1, arrMessageLen_copy, displs, iccl::data_type::dtype_int, &coll_attr);
     req->wait();
     for (int i = 0; i < processCount; i++)
         arrMessageLen[i] = arrMessageLen_copy[i];
@@ -435,7 +435,7 @@ void PrintErrMessage(char* errMessage, std::ostream &output)
         return;
     }
     char* arrErrMessage = new char[fullMessageLen];
-    req = comm.allgatherv(errMessage, messageLen, arrErrMessage, arrMessageLen, mlsl::data_type::dtype_char, &coll_attr);
+    req = comm.allgatherv(errMessage, messageLen, arrErrMessage, arrMessageLen, iccl::data_type::dtype_char, &coll_attr);
     req->wait();
     if (processIdx == 0)
     {
@@ -467,18 +467,18 @@ struct TestParam {
 size_t CalculateTestCount ()
 {
     size_t testCount = PRT_LAST * PRT_LAST * CMPT_LAST * SNCT_LAST * (DT_LAST-1) * ST_LAST *  RT_LAST * BC_LAST * CT_LAST * PT_LAST * PRLT_LAST * EPLT_LAST;
-// MLSL_TEST_PROLOG_TYPE=0 MLSL_TEST_PLACE_TYPE=0 MLSL_TEST_CACHE_TYPE=0 MLSL_TEST_BUFFER_COUNT=0 MLSL_TEST_SIZE_TYPE=0 MLSL_TEST_PRIORITY_TYPE=1 MLSL_TEST_COMPLETION_TYPE=0 MLSL_TEST_SYNC_TYPE=0 MLSL_TEST_REDUCTION_TYPE=0 MLSL_TEST_DATA_TYPE=0
-    char* testDatatypeEnabled = getenv("MLSL_TEST_DATA_TYPE");
-    char* testReductionEnabled = getenv("MLSL_TEST_REDUCTION_TYPE");
-    char* testSyncEnabled = getenv("MLSL_TEST_SYNC_TYPE");
-    char* testCompletionEnabled = getenv("MLSL_TEST_COMPLETION_TYPE");
-    char* testPriorityEnabled = getenv("MLSL_TEST_PRIORITY_TYPE");
-    char* testSizeTypeEnabled = getenv("MLSL_TEST_SIZE_TYPE");
-    char* testBufferCountEnabled = getenv("MLSL_TEST_BUFFER_COUNT");
-    char* testCacheEnabled = getenv("MLSL_TEST_CACHE_TYPE");
-    char* testPlaceTypeEnabled = getenv("MLSL_TEST_PLACE_TYPE");
-    char* testPrologEnabled = getenv("MLSL_TEST_PROLOG_TYPE");
-    char* testEpilogEnabled = getenv("MLSL_TEST_EPILOG_TYPE");
+// ICCL_TEST_PROLOG_TYPE=0 ICCL_TEST_PLACE_TYPE=0 ICCL_TEST_CACHE_TYPE=0 ICCL_TEST_BUFFER_COUNT=0 ICCL_TEST_SIZE_TYPE=0 ICCL_TEST_PRIORITY_TYPE=1 ICCL_TEST_COMPLETION_TYPE=0 ICCL_TEST_SYNC_TYPE=0 ICCL_TEST_REDUCTION_TYPE=0 ICCL_TEST_DATA_TYPE=0
+    char* testDatatypeEnabled = getenv("ICCL_TEST_DATA_TYPE");
+    char* testReductionEnabled = getenv("ICCL_TEST_REDUCTION_TYPE");
+    char* testSyncEnabled = getenv("ICCL_TEST_SYNC_TYPE");
+    char* testCompletionEnabled = getenv("ICCL_TEST_COMPLETION_TYPE");
+    char* testPriorityEnabled = getenv("ICCL_TEST_PRIORITY_TYPE");
+    char* testSizeTypeEnabled = getenv("ICCL_TEST_SIZE_TYPE");
+    char* testBufferCountEnabled = getenv("ICCL_TEST_BUFFER_COUNT");
+    char* testCacheEnabled = getenv("ICCL_TEST_CACHE_TYPE");
+    char* testPlaceTypeEnabled = getenv("ICCL_TEST_PLACE_TYPE");
+    char* testPrologEnabled = getenv("ICCL_TEST_PROLOG_TYPE");
+    char* testEpilogEnabled = getenv("ICCL_TEST_EPILOG_TYPE");
     if (testDatatypeEnabled && atoi(testDatatypeEnabled) == 0) {
         firstDataType = static_cast<TestDataType>(DT_LAST - 1);
         testCount /= (DT_LAST-1);
@@ -585,10 +585,10 @@ struct TypedTestParam
     size_t processIdx;
     std::vector<std::vector<T>> sendBuf;
     std::vector<std::vector<T>> recvBuf;
-    mlsl::communicator comm;
-    std::vector<std::shared_ptr<mlsl::request>> req;
-    mlsl_coll_attr_t coll_attr {};
-    mlsl::communicator global_comm;
+    iccl::communicator comm;
+    std::vector<std::shared_ptr<iccl::request>> req;
+    iccl_coll_attr_t coll_attr {};
+    iccl::communicator global_comm;
     size_t *startArr;
 
     TypedTestParam(TestParam tParam):testParam(tParam) {
@@ -605,7 +605,7 @@ struct TypedTestParam
             sendBuf[i].resize(elemCount * processCount * sizeof(T));
     }
 
-    bool CompleteRequest(std::shared_ptr < mlsl::request > req) {
+    bool CompleteRequest(std::shared_ptr < iccl::request > req) {
         if (testParam.completionType == CMPT_TEST) {
             bool isCompleted = false;
             size_t count = 0;
@@ -768,7 +768,7 @@ struct TypedTestParam
     TestReductionType GetReductionName() {
         return testParam.reductionType;
     }
-    mlsl_reduction_t GetReductionType() {
+    iccl_reduction_t GetReductionType() {
         return reductionTypeValues[testParam.reductionType];
     }
     PriorityType GetPriorityType() {
@@ -808,7 +808,7 @@ template <typename T> class BaseTest {
 public:
     size_t globalProcessIdx;
     size_t globalProcessCount;
-    mlsl::communicator comm;
+    iccl::communicator comm;
 
     void SetUp() {
         globalProcessIdx = comm.rank();

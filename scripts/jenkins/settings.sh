@@ -18,7 +18,7 @@ then
     BUILD_TYPE="sanity"
 fi
 
-MLSL_REPO_DIR="/p/pdsd/scratch/jenkins/builds/${BUILD_TYPE}"
+ICCL_REPO_DIR="/p/pdsd/scratch/jenkins/builds/${BUILD_TYPE}"
 
 # Testing
 #N=4

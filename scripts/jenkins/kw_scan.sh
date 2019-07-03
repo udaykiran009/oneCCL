@@ -26,7 +26,7 @@ function Print() {
 
 function PrinUsage() {
     echo "Usage:"
-    echo "$0 -project=[impi|itac|mps|mlsl|spark]"
+    echo "$0 -project=[impi|itac|mps|iccl|spark]"
 }
 
 while [ $# -ne 0 ]
@@ -67,7 +67,7 @@ case "$PROJECT" in
         BUILD_CMD="scons config=release -j1 mps::"
         KW_PROJ_NAME="${PROJECT}"
         ;;
-    "mlsl")
+    "iccl")
         BUILD_DIR="${SRC_DIR}/scripts/jenkins"
         BUILD_CMD="./build.sh"
         KW_PROJ_NAME="dlmsl"

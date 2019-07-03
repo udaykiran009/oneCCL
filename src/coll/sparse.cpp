@@ -2,22 +2,22 @@
 #include "coll/sparse_types.hpp"
 #include "sched/entry_factory.hpp"
 
-mlsl_status_t sparse_before_recv(const void* ctx)
+iccl_status_t sparse_before_recv(const void* ctx)
 {
     /* if our neighbour sent us data more than we ever had before
     we have to alloc more memory for incoming msg*/
-    mlsl_sparse_allreduce_handler *sa_handler = (mlsl_sparse_allreduce_handler*)ctx;
+    iccl_sparse_allreduce_handler *sa_handler = (iccl_sparse_allreduce_handler*)ctx;
     if (*sa_handler->recv_icount > sa_handler->recv_buff_size)
     {
-        *sa_handler->recv_buf = MLSL_REALLOC(*sa_handler->recv_buf, sa_handler->recv_buff_size, *sa_handler->recv_icount, 64, "recv_buf");
+        *sa_handler->recv_buf = ICCL_REALLOC(*sa_handler->recv_buf, sa_handler->recv_buff_size, *sa_handler->recv_icount, 64, "recv_buf");
         sa_handler->recv_buff_size = *sa_handler->recv_icount;
     }
-    return mlsl_status_success;
+    return iccl_status_success;
 }
 
-mlsl_status_t sparse_after_recv(const void* ctx)
+iccl_status_t sparse_after_recv(const void* ctx)
 {
-    mlsl_sparse_allreduce_handler *sa_handler = (mlsl_sparse_allreduce_handler*)ctx;
+    iccl_sparse_allreduce_handler *sa_handler = (iccl_sparse_allreduce_handler*)ctx;
 
     /* having received the msg we should prepare it for further send operation to the next neighbour */
     sa_handler->send_count[0] = *sa_handler->recv_icount / (sa_handler->itype_size + sa_handler->vtype_size * sa_handler->val_dim_cnt);
@@ -35,12 +35,12 @@ mlsl_status_t sparse_after_recv(const void* ctx)
         printf("%s)\n", str);fflush(stdout);
     }*/
 
-    return mlsl_status_success;
+    return iccl_status_success;
 }
 
-mlsl_status_t sparse_reduce(const void* ctx)
+iccl_status_t sparse_reduce(const void* ctx)
 {
-    mlsl_sparse_allreduce_handler *sa_handler = (mlsl_sparse_allreduce_handler*)ctx;
+    iccl_sparse_allreduce_handler *sa_handler = (iccl_sparse_allreduce_handler*)ctx;
 
     int *snd_i = (int*)(sa_handler->dst_buf);
     float *snd_v = (float*)((char*)(sa_handler->dst_buf) + sa_handler->itype_size * sa_handler->dst_count[0]);
@@ -108,7 +108,7 @@ mlsl_status_t sparse_reduce(const void* ctx)
         /* we definitely have to increase the size of dst buffer because
         of the unique indices that came from our neighbour */
         size_t new_dst_size = merge_idx_len * (sa_handler->vtype_size * sa_handler->val_dim_cnt + sa_handler->itype_size);
-        void* ptr = MLSL_REALLOC(sa_handler->dst_buf, sa_handler->dst_count[0] * sa_handler->itype_size + sa_handler->dst_count[1] * sa_handler->vtype_size, new_dst_size, 64, "dst");
+        void* ptr = ICCL_REALLOC(sa_handler->dst_buf, sa_handler->dst_count[0] * sa_handler->itype_size + sa_handler->dst_count[1] * sa_handler->vtype_size, new_dst_size, 64, "dst");
         if (ptr != sa_handler->dst_buf)
         {
             for (auto& x: *sa_handler->buf_list)
@@ -133,7 +133,7 @@ mlsl_status_t sparse_reduce(const void* ctx)
 
     if (*sa_handler->recv_icount > sa_handler->send_buff_size)
     {
-        void* ptr = MLSL_REALLOC(sa_handler->send_tmp_buf, sa_handler->send_buff_size, *sa_handler->recv_icount, 64, "send_tmp_buf");
+        void* ptr = ICCL_REALLOC(sa_handler->send_tmp_buf, sa_handler->send_buff_size, *sa_handler->recv_icount, 64, "send_tmp_buf");
         if (ptr != sa_handler->send_tmp_buf)
         {
             for (auto& x: *sa_handler->buf_list)
@@ -152,19 +152,19 @@ mlsl_status_t sparse_reduce(const void* ctx)
     }
     memcpy(sa_handler->send_tmp_buf, *sa_handler->recv_buf, *sa_handler->recv_icount);
 
-    return mlsl_status_success;
+    return iccl_status_success;
 }
 
-mlsl_status_t sparse_prepare_result(const void* ctx)
+iccl_status_t sparse_prepare_result(const void* ctx)
 {
-    mlsl_sparse_allreduce_handler *sa_handler = (mlsl_sparse_allreduce_handler*)ctx;
+    iccl_sparse_allreduce_handler *sa_handler = (iccl_sparse_allreduce_handler*)ctx;
     *sa_handler->recv_icount = sa_handler->iv_map->size();
     *sa_handler->recv_vcount = *sa_handler->recv_icount * sa_handler->val_dim_cnt;
     size_t total_size = sa_handler->itype_size * (*sa_handler->recv_icount) + sa_handler->vtype_size * (*sa_handler->recv_vcount);
 
     if (sa_handler->recv_buff_size < total_size)
     { 
-        *sa_handler->recv_buf = MLSL_REALLOC(*sa_handler->recv_buf, 0ul, total_size, 64, "recv_buf");
+        *sa_handler->recv_buf = ICCL_REALLOC(*sa_handler->recv_buf, 0ul, total_size, 64, "recv_buf");
     }
 
     sa_handler->iv_map->clear();
@@ -172,58 +172,58 @@ mlsl_status_t sparse_prepare_result(const void* ctx)
 
     memcpy(*sa_handler->recv_buf, sa_handler->dst_buf, total_size);
     *sa_handler->recv_vbuf = ((char*)(*sa_handler->recv_buf) + sa_handler->itype_size * (*sa_handler->recv_icount));
-    return mlsl_status_success;
+    return iccl_status_success;
 }
 
-mlsl_status_t sparse_get_send_cnt(const void* ctx, void* field_ptr)
+iccl_status_t sparse_get_send_cnt(const void* ctx, void* field_ptr)
 {
-    mlsl_sparse_allreduce_handler* sa_handler = (mlsl_sparse_allreduce_handler*)ctx;
+    iccl_sparse_allreduce_handler* sa_handler = (iccl_sparse_allreduce_handler*)ctx;
     size_t* cnt_ptr = (size_t*)field_ptr;
     *cnt_ptr = sa_handler->send_count[0] * (sa_handler->itype_size + sa_handler->val_dim_cnt * sa_handler->vtype_size);
-    return mlsl_status_success;
+    return iccl_status_success;
 }
 
-mlsl_status_t sparse_get_send_buf(const void* ctx, void* field_ptr)
+iccl_status_t sparse_get_send_buf(const void* ctx, void* field_ptr)
 {
-    mlsl_sparse_allreduce_handler* sa_handler = (mlsl_sparse_allreduce_handler*)ctx;
+    iccl_sparse_allreduce_handler* sa_handler = (iccl_sparse_allreduce_handler*)ctx;
     void** buf_ptr = (void**)field_ptr;
     *buf_ptr = sa_handler->send_tmp_buf;
-    return mlsl_status_success;
+    return iccl_status_success;
 }
 
-mlsl_status_t sparse_get_recv_cnt(const void* ctx, void* field_ptr)
+iccl_status_t sparse_get_recv_cnt(const void* ctx, void* field_ptr)
 {
-    mlsl_sparse_allreduce_handler* sa_handler = (mlsl_sparse_allreduce_handler*)ctx;
+    iccl_sparse_allreduce_handler* sa_handler = (iccl_sparse_allreduce_handler*)ctx;
     size_t* cnt_ptr = (size_t*)field_ptr;
     *cnt_ptr = *sa_handler->recv_icount;
-    return mlsl_status_success;
+    return iccl_status_success;
 }
 
-mlsl_status_t sparse_get_recv_buf(const void* ctx, void* field_ptr)
+iccl_status_t sparse_get_recv_buf(const void* ctx, void* field_ptr)
 {
-    mlsl_sparse_allreduce_handler* sa_handler = (mlsl_sparse_allreduce_handler*)ctx;
+    iccl_sparse_allreduce_handler* sa_handler = (iccl_sparse_allreduce_handler*)ctx;
     void** buf_ptr = (void**)field_ptr;
     *buf_ptr = *sa_handler->recv_buf;
-    return mlsl_status_success;
+    return iccl_status_success;
 }
 
-mlsl_status_t mlsl_coll_build_sparse_allreduce_basic(mlsl_sched *sched, const void *send_ind_buf, size_t send_ind_count,
+iccl_status_t iccl_coll_build_sparse_allreduce_basic(iccl_sched *sched, const void *send_ind_buf, size_t send_ind_count,
                                                      const void *send_val_buf, size_t send_val_count, void **recv_ind_buf,
                                                      size_t *recv_ind_count, void **recv_val_buf, size_t *recv_val_count,
-                                                     mlsl_datatype_internal_t index_dtype, mlsl_datatype_internal_t value_dtype, mlsl_reduction_t op)
+                                                     iccl_datatype_internal_t index_dtype, iccl_datatype_internal_t value_dtype, iccl_reduction_t op)
 {
     LOG_DEBUG("build sparse allreduce");
 
-    mlsl_status_t status = mlsl_status_success;
+    iccl_status_t status = iccl_status_success;
     std::shared_ptr<sched_entry> e;
 
-    mlsl_comm *comm = sched->coll_param.comm;
+    iccl_comm *comm = sched->coll_param.comm;
     size_t comm_size = comm->size();
     size_t rank = comm->rank();
 
     /* get data type sizes */
-    size_t vtype_size = mlsl_datatype_get_size(value_dtype);
-    size_t itype_size = mlsl_datatype_get_size(index_dtype);
+    size_t vtype_size = iccl_datatype_get_size(value_dtype);
+    size_t itype_size = iccl_datatype_get_size(index_dtype);
     /* TODO: get rid of hard-coded int and float indices and values definition */
 
     /* get value dimension */
@@ -303,8 +303,8 @@ mlsl_status_t mlsl_coll_build_sparse_allreduce_basic(mlsl_sched *sched, const vo
     size_t send_to = (rank + 1) % comm_size;
 
     /* create handler for sched function callbacks */
-    mlsl_sparse_allreduce_handler *sa_handler;
-    sa_handler = static_cast<mlsl_sparse_allreduce_handler*>(sched->alloc_buffer(sizeof(mlsl_sparse_allreduce_handler)));
+    iccl_sparse_allreduce_handler *sa_handler;
+    sa_handler = static_cast<iccl_sparse_allreduce_handler*>(sched->alloc_buffer(sizeof(iccl_sparse_allreduce_handler)));
 
     /* _count variables needed for sending/receiving */
     sa_handler->send_count[0] = iv_map_cnt; /* index count */
@@ -327,9 +327,9 @@ mlsl_status_t mlsl_coll_build_sparse_allreduce_basic(mlsl_sched *sched, const vo
     for (size_t i = 0; i < comm_size - 1; i++)
     {
         /* send local data to the right neighbour */
-        e = entry_factory::make_send_entry(sched, NULL, 0, mlsl_dtype_internal_char, send_to);
-        e->set_field_fn(mlsl_sched_entry_field_cnt, sparse_get_send_cnt, sa_handler);
-        e->set_field_fn(mlsl_sched_entry_field_buf, sparse_get_send_buf, sa_handler);
+        e = entry_factory::make_send_entry(sched, NULL, 0, iccl_dtype_internal_char, send_to);
+        e->set_field_fn(iccl_sched_entry_field_cnt, sparse_get_send_cnt, sa_handler);
+        e->set_field_fn(iccl_sched_entry_field_buf, sparse_get_send_buf, sa_handler);
         sched->add_barrier();
 
         /* has the left neighbour sent anything? */
@@ -339,9 +339,9 @@ mlsl_status_t mlsl_coll_build_sparse_allreduce_basic(mlsl_sched *sched, const vo
         /* receive data from the left neighbour */
         entry_factory::make_function_entry(sched, sparse_before_recv, sa_handler);
         sched->add_barrier();
-        e = entry_factory::make_recv_entry(sched, NULL, 0, mlsl_dtype_internal_char, recv_from);
-        e->set_field_fn(mlsl_sched_entry_field_buf, sparse_get_recv_buf, sa_handler);
-        e->set_field_fn(mlsl_sched_entry_field_cnt, sparse_get_recv_cnt, sa_handler);
+        e = entry_factory::make_recv_entry(sched, NULL, 0, iccl_dtype_internal_char, recv_from);
+        e->set_field_fn(iccl_sched_entry_field_buf, sparse_get_recv_buf, sa_handler);
+        e->set_field_fn(iccl_sched_entry_field_cnt, sparse_get_recv_cnt, sa_handler);
         sched->add_barrier();
         entry_factory::make_function_entry(sched, sparse_after_recv, sa_handler);
         sched->add_barrier();

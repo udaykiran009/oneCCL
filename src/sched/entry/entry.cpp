@@ -1,8 +1,8 @@
 #include "sched/entry/entry.hpp"
 #include "common/log/log.hpp"
 
-void sched_entry::set_field_fn(mlsl_sched_entry_field_id id,
-                               mlsl_sched_entry_field_function_t fn,
+void sched_entry::set_field_fn(iccl_sched_entry_field_id id,
+                               iccl_sched_entry_field_function_t fn,
                                const void* ctx,
                                bool update_once)
 {
@@ -17,13 +17,13 @@ void sched_entry::start()
 #endif
 
     LOG_DEBUG("starting entry ", name());
-    MLSL_ASSERT(status == mlsl_sched_entry_status_not_started, "bad status ", status);
+    ICCL_ASSERT(status == iccl_sched_entry_status_not_started, "bad status ", status);
 
     pfields.update();
     start_derived();
-    MLSL_ASSERT(status >= mlsl_sched_entry_status_started, "bad status ", status);
+    ICCL_ASSERT(status >= iccl_sched_entry_status_started, "bad status ", status);
 
-    if (status == mlsl_sched_entry_status_complete)
+    if (status == iccl_sched_entry_status_complete)
     {
         LOG_DEBUG("completed entry ", name());
 #ifdef ENABLE_DEBUG
@@ -40,7 +40,7 @@ void sched_entry::start()
 
 void sched_entry::update()
 {
-    if (status != mlsl_sched_entry_status_started)
+    if (status != iccl_sched_entry_status_started)
     {
         return;
     }
@@ -51,9 +51,9 @@ void sched_entry::update()
 
     update_derived();
 
-    MLSL_ASSERT(status >= mlsl_sched_entry_status_started, "bad status ", status);
+    ICCL_ASSERT(status >= iccl_sched_entry_status_started, "bad status ", status);
 
-    if (status == mlsl_sched_entry_status_complete)
+    if (status == iccl_sched_entry_status_complete)
     {
         LOG_DEBUG("completed entry ", name());
 #ifdef ENABLE_DEBUG
@@ -77,11 +77,11 @@ void sched_entry::update_derived()
 
 void sched_entry::reset()
 {
-    if (status == mlsl_sched_entry_status_complete_once)
+    if (status == iccl_sched_entry_status_complete_once)
     {
         return;
     }
-    status = mlsl_sched_entry_status_not_started;
+    status = iccl_sched_entry_status_not_started;
 
 #ifdef ENABLE_DEBUG
     exec_time = timer_type::duration{};
@@ -101,17 +101,17 @@ void sched_entry::dump(std::stringstream& str,
     auto end = from_time_point(complete_time);
     auto life_time = std::chrono::duration_cast<std::chrono::microseconds>(complete_time - start_time);
 
-    mlsl_logger::format(str,
+    iccl_logger::format(str,
                         "[", std::left, std::setw(3), idx, "] ", std::left, std::setw(entry_name_w), name(),
                         " entry, status ", entry_status_to_str(status),
                         " is_barrier ", std::left, std::setw(5), barrier ? "TRUE" : "FALSE",
                         " exec_time[us] ", std::setw(5), std::setbase(10),
                         std::chrono::duration_cast<std::chrono::microseconds>(exec_time).count(),
-                        " life_time[us] ", std::setw(5), std::setbase(10), status == mlsl_sched_entry_status_complete ? life_time.count() : 0,
+                        " life_time[us] ", std::setw(5), std::setbase(10), status == iccl_sched_entry_status_complete ? life_time.count() : 0,
                         " start[us] 0.", std::setw(5), std::setbase(10), start.tv_nsec / 1000,
                         " end[us] 0.", std::setw(5), std::setbase(10), end.tv_nsec / 1000, " ");
 #else
-    mlsl_logger::format(str,
+    iccl_logger::format(str,
                        "[", std::left, std::setw(3), idx, "] ", std::left, std::setw(entry_name_w), name(),
                        " entry, status ", entry_status_to_str(status),
                        " is_barrier ", std::left, std::setw(5), barrier ? "TRUE" : "FALSE", " ");
@@ -120,9 +120,9 @@ void sched_entry::dump(std::stringstream& str,
     dump_detail(str);
 }
 
-void* sched_entry::get_field_ptr(mlsl_sched_entry_field_id id)
+void* sched_entry::get_field_ptr(iccl_sched_entry_field_id id)
 {
-    MLSL_FATAL("not supported");
+    ICCL_FATAL("not supported");
     return nullptr;
 }
 
@@ -134,15 +134,15 @@ bool sched_entry::is_barrier() const
 {
     return barrier;
 }
-mlsl_sched_entry_status sched_entry::get_status() const
+iccl_sched_entry_status sched_entry::get_status() const
 {
     return status;
 }
-void sched_entry::set_status(mlsl_sched_entry_status s)
+void sched_entry::set_status(iccl_sched_entry_status s)
 {
     status = s;
 }
-void sched_entry::set_exec_mode(mlsl_sched_entry_exec_mode mode)
+void sched_entry::set_exec_mode(iccl_sched_entry_exec_mode mode)
 {
     exec_mode = mode;
 }
@@ -152,27 +152,27 @@ void sched_entry::dump_detail(std::stringstream& str) const
 
 void sched_entry::check_exec_mode()
 {
-    if (status == mlsl_sched_entry_status_complete && exec_mode == mlsl_sched_entry_exec_once)
+    if (status == iccl_sched_entry_status_complete && exec_mode == iccl_sched_entry_exec_once)
     {
-        status = mlsl_sched_entry_status_complete_once;
+        status = iccl_sched_entry_status_complete_once;
     }
 }
 
-const char* sched_entry::entry_status_to_str(mlsl_sched_entry_status status) const
+const char* sched_entry::entry_status_to_str(iccl_sched_entry_status status) const
 {
     switch (status)
     {
-        case mlsl_sched_entry_status_not_started:
+        case iccl_sched_entry_status_not_started:
             return "NOT_STARTED";
-        case mlsl_sched_entry_status_started:
+        case iccl_sched_entry_status_started:
             return "STARTED";
-        case mlsl_sched_entry_status_complete:
+        case iccl_sched_entry_status_complete:
             return "COMPLETE";
-        case mlsl_sched_entry_status_complete_once:
+        case iccl_sched_entry_status_complete_once:
             return "COMPLETE_ONCE";
-        case mlsl_sched_entry_status_failed:
+        case iccl_sched_entry_status_failed:
             return "FAILED";
-        case mlsl_sched_entry_status_invalid:
+        case iccl_sched_entry_status_invalid:
             return "INVALID";
         default:
             return "UNKNOWN";

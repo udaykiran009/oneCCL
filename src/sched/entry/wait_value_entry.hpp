@@ -6,10 +6,10 @@ class wait_value_entry : public sched_entry
 {
 public:
     wait_value_entry() = delete;
-    wait_value_entry(mlsl_sched* sched,
+    wait_value_entry(iccl_sched* sched,
                      const volatile uint64_t* ptr,
                      uint64_t expected_value,
-                     mlsl_condition condition) :
+                     iccl_condition condition) :
         sched_entry(sched, true), ptr(ptr),
         expected_value(expected_value), condition(condition)
     {
@@ -19,19 +19,19 @@ public:
     void start_derived()
     {
         LOG_DEBUG("WAIT_VALUE entry current_val ", *ptr, ", expected_val ", expected_value);
-        status = mlsl_sched_entry_status_started;
+        status = iccl_sched_entry_status_started;
         update_derived();
     }
 
     void update_derived()
     {
-        if (condition == mlsl_condition_greater_or_equal && *ptr >= expected_value)
+        if (condition == iccl_condition_greater_or_equal && *ptr >= expected_value)
         {
-            status = mlsl_sched_entry_status_complete;
+            status = iccl_sched_entry_status_complete;
         }
-        else if (condition == mlsl_condition_equal && *ptr == expected_value)
+        else if (condition == iccl_condition_equal && *ptr == expected_value)
         {
-            status = mlsl_sched_entry_status_complete;
+            status = iccl_sched_entry_status_complete;
         }
         else
         {
@@ -48,7 +48,7 @@ public:
 protected:
     void dump_detail(std::stringstream& str) const
     {
-        mlsl_logger::format(str,
+        iccl_logger::format(str,
                             "ptr ", ptr,
                             ", expected_value ", expected_value,
                             ", condition ", condition,
@@ -58,5 +58,5 @@ protected:
 private:
     const volatile uint64_t* ptr;
     uint64_t expected_value;
-    mlsl_condition condition;
+    iccl_condition condition;
 };

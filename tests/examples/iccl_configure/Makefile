@@ -1,10 +1,10 @@
 
 ENABLE_DEBUG ?= 1
 SHELL = bash
-INCLUDES = -I$(MLSL_ROOT)/intel64/include
-LDFLAGS  = -L$(MLSL_ROOT)/intel64/lib -lmlsl -lrt
+INCLUDES = -I$(ICCL_ROOT)/intel64/include
+LDFLAGS  = -L$(ICCL_ROOT)/intel64/lib -liccl -lrt
 CXX     ?= g++
-tests    = mlsl_configure_test
+tests    = iccl_configure_test
 
 ifeq ($(ENABLE_DEBUG),1)
   CFLAGS += -O0 -g
@@ -24,7 +24,7 @@ all: $(tests)
 
 run: all
 	-rm -f *.log
-	echo "running mlsl_configure_test ..." ; \
+	echo "running iccl_configure_test ..." ; \
 	for server_count in 1 2 ; do \
 		for group_count in 1 2 ; do \
 			for group_size in 1 2 3 ; do \
