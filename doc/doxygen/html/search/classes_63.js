@@ -1,4 +1,4 @@
 var searchData=
 [
-  ['commblockinfo',['CommBlockInfo',['../classMLSL_1_1CommBlockInfo.html',1,'MLSL']]]
+  ['communicator',['communicator',['../classiccl_1_1communicator.html',1,'iccl']]]
 ];
