@@ -1,0 +1,3 @@
+DeliveryName	InstallName	FileCheckSum	FileOrigin	Owner	FileFeature	FileInstallCondition	InstalledFilePermission	Redistributable	InstalledFileOwner	SymbolicLink
+<deliverydir>/l_env/vars.sh	<installdir><l_iccl_install_path><l_iccl_platform>/env/vars.sh		external	Ksenya Kochanova		1	755	redistributable	root	<installroot>/intel64/env/vars.sh
+#Intel Confidential

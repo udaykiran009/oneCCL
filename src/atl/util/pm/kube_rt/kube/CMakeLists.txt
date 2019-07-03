@@ -30,6 +30,6 @@ install(TARGETS kube LIBRARY DESTINATION ${ICCL_INSTALL_LIB})
 
 #static lib
 add_library(kube-static STATIC $<TARGET_OBJECTS:kube-objects>)
-set_target_properties(kube-static PROPERTIES OUTPUT_NAME libkube)
+set_target_properties(kube-static PROPERTIES OUTPUT_NAME kube)
 set_target_properties(kube-static PROPERTIES ARCHIVE_OUTPUT_DIRECTORY ${ICCL_BUILD_DIR})
 install(TARGETS kube-static ARCHIVE DESTINATION ${ICCL_INSTALL_LIB})

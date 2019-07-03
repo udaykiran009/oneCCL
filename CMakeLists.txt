@@ -41,6 +41,7 @@ set(ICCL_INSTALL_LIB "${ICCL_COMMON_INSTALL_PREFIX}/${CMAKE_INSTALL_LIBDIR}")
 set(ICCL_INSTALL_INCLUDE "${ICCL_COMMON_INSTALL_PREFIX}/${CMAKE_INSTALL_INCLUDEDIR}")
 set(ICCL_INSTALL_DOC "${ICCL_COMMON_INSTALL_PREFIX}/${CMAKE_INSTALL_DOCDIR}")
 set(ICCL_INSTALL_BIN "${ICCL_COMMON_INSTALL_PREFIX}/${CMAKE_INSTALL_BINDIR}")
+set(ICCL_INSTALL_ENV "${ICCL_COMMON_INSTALL_PREFIX}/env")
 set(ICCL_INSTALL_EXAMPLES "${CMAKE_INSTALL_PREFIX}/examples")
 set(ICCL_INSTALL_TESTS "${CMAKE_INSTALL_PREFIX}/tests/functional")
 
@@ -108,7 +109,9 @@ add_subdirectory(tests/functional)
 
 #generate & install icclvars.sh
 configure_file(cmake/icclvars.sh.in ${CMAKE_CURRENT_BINARY_DIR}/icclvars.sh @ONLY)
+configure_file(cmake/vars.sh.in ${CMAKE_CURRENT_BINARY_DIR}/vars.sh @ONLY)
 install(PROGRAMS ${CMAKE_CURRENT_BINARY_DIR}/icclvars.sh DESTINATION ${ICCL_INSTALL_BIN})
+install(PROGRAMS ${CMAKE_CURRENT_BINARY_DIR}/vars.sh DESTINATION ${ICCL_INSTALL_ENV})
 
 #CPack re-uses generated install rules and puts all targets into archive
 #archive creation, generates a target 'package'

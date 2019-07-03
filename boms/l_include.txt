@@ -1,0 +1,6 @@
+DeliveryName	InstallName	FileCheckSum	FileOrigin	Owner	FileFeature	FileInstallCondition	InstalledFilePermission	Redistributable	InstalledFileOwner	SymbolicLink
+<deliverydir>/l_include/mlsl.h	<installdir><l_iccl_install_path><l_iccl_platform>/include/mlsl.h		external	Ksenya Kochanova		1	644	redistributable	root	<installroot>/intel64/include/mlsl.h
+<deliverydir>/l_include/mlsl.hpp	<installdir><l_iccl_install_path><l_iccl_platform>/include/mlsl.hpp		external	Ksenya Kochanova		1	644	redistributable	root	<installroot>/intel64/include/mlsl.hpp
+<deliverydir>/l_include/mlsl_types.h	<installdir><l_iccl_install_path><l_iccl_platform>/include/mlsl_types.h		external	Ksenya Kochanova		1	644	redistributable	root	<installroot>/intel64/include/mlsl_types.h
+<deliverydir>/l_include/mlsl_types.hpp	<installdir><l_iccl_install_path><l_iccl_platform>/include/mlsl_types.hpp		external	Ksenya Kochanova		1	644	redistributable	root	<installroot>/intel64/include/mlsl_types.hpp
+#Intel Confidential
