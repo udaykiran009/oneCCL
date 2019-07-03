@@ -5,13 +5,13 @@ associated license agreement, the listed third party programs files are subject
 to the corresponding third party licenses that solely and exclusively govern 
 your use of the third party programs.
 
-This third-party-programs.txt file applies to Intel(R) One API Collective 
-Communications Library (Intel(R) One API CCL) 1.0.0.
+This third-party-programs.txt file applies to Intel(R) oneAPI Collective
+Communications Library (Intel(R) oneAPI CCL) 1.0.0.
 
 This third-party-programs.txt file contains a list of licenses and links to the 
-Intel(R) One API CCL components' third-party-programs.txt files.
+Intel(R) oneAPI CCL components' third-party-programs.txt files.
 
-The combination of all these files covers Intel(R) One API CCL 1.0.0.
+The combination of all these files covers Intel(R) oneAPI CCL 1.0.0.
 
 List of Third Party Programs:
     -MPICH*: BSD License

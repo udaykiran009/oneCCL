@@ -1,5 +1,5 @@
 # iccl
-Intel(R) One API Collective Communications Library
+Intel(R) oneAPI Collective Communications Library
 
 ## Installation
 ### General installation scenario
