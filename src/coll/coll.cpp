@@ -67,6 +67,15 @@ static iccl_request* iccl_coll_create(const iccl_coll_attr_t* attributes,
         }
     }
 
+    if (attr->match_id == nullptr || attr->match_id[0] == '\0')
+    {
+        if (attr->to_cache)
+        {
+            LOG_DEBUG("You can't use caching without match_id, cache will be off");
+            (const_cast<iccl_coll_attr_t*>(attr))->to_cache = 0;
+        }
+    }
+
     if (attr->to_cache)
     {
         key.prologue_fn = attr->prologue_fn;
@@ -75,7 +84,7 @@ static iccl_request* iccl_coll_create(const iccl_coll_attr_t* attributes,
         key.priority = attr->priority;
         key.synchronous = attr->synchronous;
         //match_id contains empty string or user-defined match_id
-        key.match_id = match_id;
+        key.match_id = attr->match_id;
         sched = global_data.sched_cache->find(key);
     }
 
@@ -95,6 +104,11 @@ static iccl_request* iccl_coll_create(const iccl_coll_attr_t* attributes,
     }
     else
     {
+        sched->coll_param.buf = coll_param.buf;
+        sched->coll_param.send_buf = coll_param.send_buf;
+        sched->coll_param.recv_buf = coll_param.recv_buf;
+        sched->coll_param.recv_counts = coll_param.recv_counts;
+
         LOG_DEBUG("found sched, reuse ", sched, ", type ",
                   iccl_coll_type_to_str(sched->coll_param.ctype));
     }
@@ -169,7 +183,7 @@ iccl_status_t iccl_coll_build_barrier(iccl_sched* sched)
 }
 
 iccl_status_t iccl_coll_build_bcast(iccl_sched* sched,
-                                    void* buf,
+                                    iccl_buf_placeholder buf,
                                     size_t count,
                                     iccl_datatype_internal_t dtype,
                                     size_t root)
@@ -182,7 +196,7 @@ iccl_status_t iccl_coll_build_bcast(iccl_sched* sched,
             ICCL_CALL(iccl_coll_build_scatter_ring_allgather_bcast(sched, buf, count, dtype, root));
             break;
         case iccl_bcast_algo_double_tree:
-            ICCL_CALL(iccl_coll_build_double_tree_op(sched, iccl_coll_bcast, nullptr, buf, count, dtype,
+            ICCL_CALL(iccl_coll_build_double_tree_op(sched, iccl_coll_bcast, iccl_buf_placeholder(), buf, count, dtype,
                                                      iccl_reduction_custom,
                                                      root == 0 ? sched->coll_param.comm->dtree() :
                                                      sched->coll_param.comm->dtree().copy_with_new_root(root)));
@@ -199,8 +213,8 @@ iccl_status_t iccl_coll_build_bcast(iccl_sched* sched,
 }
 
 iccl_status_t iccl_coll_build_reduce(iccl_sched* sched,
-                                     const void* send_buf,
-                                     void* recv_buf,
+                                     iccl_buf_placeholder send_buf,
+                                     iccl_buf_placeholder recv_buf,
                                      size_t count,
                                      iccl_datatype_internal_t dtype,
                                      iccl_reduction_t reduction,
@@ -240,9 +254,9 @@ iccl_status_t iccl_coll_build_reduce(iccl_sched* sched,
 
 iccl_status_t iccl_coll_build_allgatherv(
     iccl_sched* sched,
-    const void* send_buf,
-    void* recv_buf,
+    iccl_buf_placeholder send_buf,
     size_t s_count,
+    iccl_buf_placeholder recv_buf,
     size_t* r_counts,
     iccl_datatype_internal_t dtype)
 {
@@ -268,8 +282,8 @@ iccl_status_t iccl_coll_build_allgatherv(
 
 iccl_status_t iccl_coll_build_allreduce(
     iccl_sched* sched,
-    const void* send_buf,
-    void* recv_buf,
+    iccl_buf_placeholder send_buf,
+    iccl_buf_placeholder recv_buf,
     size_t count,
     iccl_datatype_internal_t dtype,
     iccl_reduction_t reduction)
@@ -286,7 +300,7 @@ iccl_status_t iccl_coll_build_allreduce(
                 break;
             case iccl_allreduce_algo_ring_rma:
                 if (global_data.executor->is_rma_enabled)
-                    ICCL_CALL(iccl_coll_build_ring_rma_allreduce(sched, send_buf, recv_buf, count, dtype, reduction));
+                    ICCL_CALL(iccl_coll_build_ring_rma_allreduce(sched, send_buf.get_ptr(), recv_buf.get_ptr(), count, dtype, reduction));
                 else
                     ICCL_FATAL("unexpected allreduce_algo ",
                                iccl_allreduce_algo_to_str(env_data.allreduce_algo));
@@ -295,8 +309,7 @@ iccl_status_t iccl_coll_build_allreduce(
                 ICCL_CALL(iccl_coll_build_direct_allreduce(sched, send_buf, recv_buf, count, dtype, reduction));
                 break;
             default:
-                ICCL_CALL(
-                    iccl_coll_build_recursive_doubling_allreduce(sched, send_buf, recv_buf, count, dtype, reduction));
+                ICCL_CALL(iccl_coll_build_recursive_doubling_allreduce(sched, send_buf, recv_buf, count, dtype, reduction));
                 break;
         }
     }
@@ -316,13 +329,13 @@ iccl_status_t iccl_coll_build_allreduce(
             case iccl_allreduce_algo_ring_rma:
                 if (global_data.executor->is_rma_enabled)
                 {
-                    ICCL_CALL(iccl_coll_build_ring_rma_allreduce(sched, send_buf, recv_buf, count, dtype, reduction));
+                    ICCL_CALL(iccl_coll_build_ring_rma_allreduce(sched, (char*)*send_buf.p_to_buf, (char*)*recv_buf.p_to_buf, count, dtype, reduction));
                     break;
                 }
             case iccl_allreduce_algo_double_tree:
-                ICCL_CALL(iccl_coll_build_double_tree_op(sched, iccl_coll_allreduce, send_buf, recv_buf, count, dtype,
-                                                         reduction,
-                                                         sched->coll_param.comm->dtree()));
+                ICCL_CALL(
+                    iccl_coll_build_double_tree_op(sched, iccl_coll_allreduce, send_buf, recv_buf,
+                                                   count, dtype, reduction, sched->coll_param.comm->dtree()));
                 break;
             case iccl_allreduce_algo_direct:
                 ICCL_CALL(iccl_coll_build_direct_allreduce(sched, send_buf, recv_buf, count, dtype, reduction));
@@ -540,6 +553,7 @@ iccl_request* iccl_allgatherv_impl(const void* send_buf,
     key.buf2 = recv_buf;
     key.buf3 = recv_counts;
     key.count1 = send_count;
+    key.dtype = dtype;
     key.comm = communicator;
 
     auto req = iccl_coll_create(attributes, key, coll_param);

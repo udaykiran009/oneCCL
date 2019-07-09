@@ -132,8 +132,8 @@ typedef struct atl_coll_ops {
                               atl_datatype_t dtype, atl_reduction_t op, atl_req_t *req);
     atl_status_t (*reduce)(atl_comm_t *comm, const void *s_buf, void *r_buf, size_t len, size_t root,
                            atl_datatype_t dtype, atl_reduction_t op, atl_req_t *req);
-    atl_status_t (*allgatherv)(atl_comm_t *comm, const void *s_buf, void *r_buf, size_t s_len,
-                               int r_lens[], int  displs[], atl_req_t *req);
+    atl_status_t (*allgatherv)(atl_comm_t *comm, const void *s_buf, size_t s_len,
+                               void *r_buf, int r_lens[], int  displs[], atl_req_t *req);
     atl_status_t (*bcast)(atl_comm_t *comm, void *buf, size_t len, size_t root,
                           atl_req_t *req);
     atl_status_t (*barrier)(atl_comm_t *comm, atl_req_t *req);
@@ -329,10 +329,10 @@ atl_comm_reduce(atl_comm_t *comm, const void *s_buf, void *r_buf, size_t len, si
 }
 
 static inline atl_status_t
-atl_comm_allgatherv(atl_comm_t *comm, const void *s_buf, void *r_buf, size_t s_len,
-                    int r_lens[], int displs[], atl_req_t *req)
+atl_comm_allgatherv(atl_comm_t *comm, const void *s_buf, size_t s_len,
+                    void *r_buf, int r_lens[], int displs[], atl_req_t *req)
 {
-    return comm->coll_ops->allgatherv(comm, s_buf, r_buf, s_len, r_lens, displs, req);
+    return comm->coll_ops->allgatherv(comm, s_buf, s_len, r_buf, r_lens, displs, req);
 }
 
 static inline atl_status_t

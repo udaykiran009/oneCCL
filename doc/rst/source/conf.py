@@ -17,7 +17,7 @@
 
 # -- Project information -----------------------------------------------------
 
-project = 'Intel® MLSL Documentation'
+project = 'Intel® ICCL Documentation'
 copyright = '2019'
 author = 'Intel'
 

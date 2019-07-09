@@ -327,7 +327,8 @@ iccl_status_t iccl_coll_build_sparse_allreduce_basic(iccl_sched *sched, const vo
     for (size_t i = 0; i < comm_size - 1; i++)
     {
         /* send local data to the right neighbour */
-        e = entry_factory::make_send_entry(sched, NULL, 0, iccl_dtype_internal_char, send_to);
+        // TODO: add correct update for send_buf
+        e = entry_factory::make_send_entry(sched, iccl_buf_placeholder(), 0, iccl_dtype_internal_char, send_to);
         e->set_field_fn(iccl_sched_entry_field_cnt, sparse_get_send_cnt, sa_handler);
         e->set_field_fn(iccl_sched_entry_field_buf, sparse_get_send_buf, sa_handler);
         sched->add_barrier();
@@ -339,7 +340,8 @@ iccl_status_t iccl_coll_build_sparse_allreduce_basic(iccl_sched *sched, const vo
         /* receive data from the left neighbour */
         entry_factory::make_function_entry(sched, sparse_before_recv, sa_handler);
         sched->add_barrier();
-        e = entry_factory::make_recv_entry(sched, NULL, 0, iccl_dtype_internal_char, recv_from);
+        // TODO: add correct update for recv_buf
+        e = entry_factory::make_recv_entry(sched, iccl_buf_placeholder(), 0, iccl_dtype_internal_char, recv_from);
         e->set_field_fn(iccl_sched_entry_field_buf, sparse_get_recv_buf, sa_handler);
         e->set_field_fn(iccl_sched_entry_field_cnt, sparse_get_recv_cnt, sa_handler);
         sched->add_barrier();

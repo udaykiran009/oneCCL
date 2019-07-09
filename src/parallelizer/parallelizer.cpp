@@ -64,7 +64,7 @@ iccl_status_t iccl_parallelizer::process(iccl_sched* sched)
     size_t* recv_counts = nullptr;
     std::shared_ptr<sched_entry> e;
 
-    std::vector<char*> ag_recv_bufs;
+    std::vector<iccl_buf_placeholder> ag_recv_bufs;
 
     switch (coll_type)
     {
@@ -168,7 +168,7 @@ iccl_status_t iccl_parallelizer::process(iccl_sched* sched)
             for (idx = 0; idx < part_count; idx++)
             {
                 ICCL_CALL(iccl_coll_build_bcast(part_scheds[idx].get(),
-                                                (char*) coll_param->buf + offsets[idx],
+                                                iccl_buf_placeholder(&(coll_param->buf), offsets[idx]),
                                                 counts[idx],
                                                 dtype,
                                                 coll_param->root));
@@ -178,8 +178,8 @@ iccl_status_t iccl_parallelizer::process(iccl_sched* sched)
             for (idx = 0; idx < part_count; idx++)
             {
                 ICCL_CALL(iccl_coll_build_reduce(part_scheds[idx].get(),
-                                                 (char*) coll_param->send_buf + offsets[idx],
-                                                 (char*) coll_param->recv_buf + offsets[idx],
+                                                 iccl_buf_placeholder(const_cast<void**>(&(coll_param->send_buf)), offsets[idx]),
+                                                 iccl_buf_placeholder(&(coll_param->recv_buf), offsets[idx]),
                                                  counts[idx],
                                                  dtype,
                                                  coll_param->reduction,
@@ -205,6 +205,7 @@ iccl_status_t iccl_parallelizer::process(iccl_sched* sched)
                                                    &(main_ctx->dtype_size));
 
                 sched->sync_partial_scheds();
+                iccl_buf_placeholder pl_main_ctx(&(part_scheds[0]->memory.buf_list.back().ptr));
 
                 for (idx = 0; idx < part_count; idx++)
                 {
@@ -213,22 +214,22 @@ iccl_status_t iccl_parallelizer::process(iccl_sched* sched)
                     part_ctx->part_idx = idx;
                     part_ctx->part_count = part_count;
                     entry_factory::make_copy_entry(part_scheds[idx].get(),
-                                                   main_ctx,
-                                                   part_ctx,
+                                                   pl_main_ctx,
+                                                   &(part_scheds[idx]->memory.buf_list.back().ptr),
                                                    sizeof(void*) + sizeof(size_t) +
                                                    sizeof(iccl_datatype_t) + sizeof(size_t),
                                                    iccl_dtype_internal_char);
                     e = entry_factory::make_coll_entry(part_scheds[idx].get(),
                                                        iccl_coll_allreduce,
-                                                       nullptr, /* send_buf */
-                                                       nullptr, /* recv_buf */
+                                                       iccl_buf_placeholder(const_cast<void**>(&part_ctx->buf), part_ctx->part_idx * (part_ctx->count / part_ctx->part_count) * part_ctx->dtype_size),//nullptr, /* send_buf */
+                                                       iccl_buf_placeholder(const_cast<void**>(&part_ctx->buf), part_ctx->part_idx * (part_ctx->count / part_ctx->part_count) * part_ctx->dtype_size),//nullptr, /* recv_buf */
                                                        0, /* count */
                                                        iccl_dtype_internal_none,
                                                        coll_param->reduction);
-                    e->set_field_fn(iccl_sched_entry_field_send_buf,
-                                    iccl_parallelizer_prologue_get_buf, part_ctx, false);
-                    e->set_field_fn(iccl_sched_entry_field_recv_buf,
-                                    iccl_parallelizer_prologue_get_buf, part_ctx, false); // in-place
+//                    e->set_field_fn(iccl_sched_entry_field_send_buf,
+//                                    iccl_parallelizer_prologue_get_buf, part_ctx, false);
+//                    e->set_field_fn(iccl_sched_entry_field_recv_buf,
+//                                    iccl_parallelizer_prologue_get_buf, part_ctx, false); // in-place
                     e->set_field_fn(iccl_sched_entry_field_cnt,
                                     iccl_parallelizer_prologue_get_count, part_ctx, false);
                     e->set_field_fn(iccl_sched_entry_field_dtype,
@@ -239,12 +240,12 @@ iccl_status_t iccl_parallelizer::process(iccl_sched* sched)
                     sched->sync_partial_scheds();
 
                     e = entry_factory::make_copy_entry(part_scheds[0].get(),
-                                                       nullptr, /* in_buf */
-                                                       coll_param->recv_buf,
+                                                       iccl_buf_placeholder(const_cast<void**>(&main_ctx->buf), main_ctx->part_idx * (main_ctx->count / main_ctx->part_count) * main_ctx->dtype_size),//nullptr, /* send_buf */
+                                                       &coll_param->recv_buf,
                                                        0, /* count */
                                                        iccl_dtype_internal_none);
-                    e->set_field_fn(iccl_sched_entry_field_in_buf,
-                                    iccl_parallelizer_prologue_get_buf, main_ctx, false);
+//                    e->set_field_fn(iccl_sched_entry_field_in_buf,
+//                                    iccl_parallelizer_prologue_get_buf, main_ctx, false);
                     e->set_field_fn(iccl_sched_entry_field_cnt,
                                     iccl_parallelizer_prologue_get_count, main_ctx, false);
                     e->set_field_fn(iccl_sched_entry_field_dtype,
@@ -256,8 +257,8 @@ iccl_status_t iccl_parallelizer::process(iccl_sched* sched)
                 for (idx = 0; idx < part_count; idx++)
                 {
                     ICCL_CALL(iccl_coll_build_allreduce(part_scheds[idx].get(),
-                                                        (char*) coll_param->send_buf + offsets[idx],
-                                                        (char*) coll_param->recv_buf + offsets[idx],
+                                                        iccl_buf_placeholder(const_cast<void**>(&(coll_param->send_buf)), offsets[idx]),
+                                                        iccl_buf_placeholder(&(coll_param->recv_buf), offsets[idx]),
                                                         counts[idx],
                                                         dtype,
                                                         coll_param->reduction));
@@ -287,12 +288,13 @@ iccl_status_t iccl_parallelizer::process(iccl_sched* sched)
             break;
         }
         case iccl_coll_allgatherv:
+        {
             if (env_data.allgatherv_algo == iccl_allgatherv_algo_direct)
             {
                 ICCL_CALL(iccl_coll_build_allgatherv(part_scheds[idx].get(),
-                                                    (char*) coll_param->send_buf,
-                                                    (char*) coll_param->recv_buf,
+                                                    iccl_buf_placeholder((void**)&(coll_param->send_buf), 0),
                                                     coll_param->send_count,
+                                                    iccl_buf_placeholder(&(coll_param->recv_buf), 0),
                                                     coll_param->recv_counts,
                                                     dtype));
             }
@@ -300,9 +302,16 @@ iccl_status_t iccl_parallelizer::process(iccl_sched* sched)
             {
                 for (size_t idx = 0; idx < coll_param->comm->size(); idx++)
                 {
-                    ag_recv_bufs[idx] = (env_data.vector_allgatherv) ?
-                        ((char**)coll_param->recv_buf)[idx] :
-                        (char*)coll_param->recv_buf + offsets[idx];
+                    if (env_data.vector_allgatherv)
+                    {
+                        ag_recv_bufs[idx].p_to_buf = (void**)&(((char**)coll_param->recv_buf)[idx]);
+                        ag_recv_bufs[idx].offset = 0;
+                    }
+                    else
+                    {
+                        ag_recv_bufs[idx].p_to_buf = &(coll_param->recv_buf);
+                        ag_recv_bufs[idx].offset = offsets[idx];
+                    }
                 }
                 if (coll_param->send_buf != coll_param->recv_buf)
                 {
@@ -316,14 +325,12 @@ iccl_status_t iccl_parallelizer::process(iccl_sched* sched)
                     copy_counts[part_count - 1] += counts[coll_param->comm->rank()] % part_count;
                     for (idx = 0; idx < part_count; idx++)
                     {
+                        void** tmp_buf = const_cast<void**>(&(coll_param->send_buf));
                         entry_factory::make_copy_entry(part_scheds[idx].get(),
-                                                       (char*) coll_param->send_buf +
-                                                       copy_offsets[idx],
-                                                       ag_recv_bufs[coll_param->comm->rank()] +
-                                                       copy_offsets[idx],
+                                                       iccl_buf_placeholder(tmp_buf, copy_offsets[idx]),
+                                                       ag_recv_bufs[coll_param->comm->rank()] + copy_offsets[idx],
                                                        copy_counts[idx], dtype);
                     }
-
                     sched->sync_partial_scheds();
                 }
 
@@ -337,7 +344,7 @@ iccl_status_t iccl_parallelizer::process(iccl_sched* sched)
                 }
             }
             break;
-
+        }
         case iccl_coll_sparse_allreduce:
             for (idx = 0; idx < part_count; idx++)
             {

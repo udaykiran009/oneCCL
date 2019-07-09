@@ -1,8 +1,10 @@
 #include "coll/coll_algorithms.hpp"
 #include "sched/entry_factory.hpp"
 
-iccl_status_t iccl_coll_build_direct_allgatherv(iccl_sched* sched, const void* send_buf, size_t s_count,
-                                                void* recv_buf, size_t* r_counts, iccl_datatype_internal_t dtype)
+iccl_status_t iccl_coll_build_direct_allgatherv(iccl_sched* sched,
+                                                iccl_buf_placeholder send_buf, size_t s_count,
+                                                iccl_buf_placeholder recv_buf, size_t* r_counts,
+                                                iccl_datatype_internal_t dtype)
 {
     LOG_DEBUG("build direct allgatherv");
 
@@ -10,8 +12,10 @@ iccl_status_t iccl_coll_build_direct_allgatherv(iccl_sched* sched, const void* s
     return iccl_status_success;
 }
 
-iccl_status_t iccl_coll_build_naive_allgatherv(iccl_sched* sched, const void* send_buf, size_t send_count,
-                                               void* recv_buf, size_t* recv_counts, iccl_datatype_internal_t dtype)
+iccl_status_t iccl_coll_build_naive_allgatherv(iccl_sched* sched,
+                                               iccl_buf_placeholder send_buf, size_t send_count,
+                                               iccl_buf_placeholder recv_buf, size_t* recv_counts,
+                                               iccl_datatype_internal_t dtype)
 {
     LOG_DEBUG("build naive allgatherv");
 
@@ -30,7 +34,7 @@ iccl_status_t iccl_coll_build_naive_allgatherv(iccl_sched* sched, const void* se
     if (send_buf != recv_buf)
     {
         //out-of-place case
-        entry_factory::make_copy_entry(sched, send_buf, static_cast<char*>(recv_buf) + offsets[this_rank],
+        entry_factory::make_copy_entry(sched, send_buf, recv_buf + offsets[this_rank],
                                        send_count, dtype);
     }
 
@@ -39,10 +43,10 @@ iccl_status_t iccl_coll_build_naive_allgatherv(iccl_sched* sched, const void* se
         if (rank_idx != this_rank)
         {
             // send own buffer to other rank
-            entry_factory::make_send_entry(sched, static_cast<char*>(recv_buf) + offsets[this_rank],
+            entry_factory::make_send_entry(sched, recv_buf + offsets[this_rank],
                                            send_count, dtype, rank_idx);
             // recv other's rank buffer
-            entry_factory::make_recv_entry(sched, static_cast<char*>(recv_buf) + offsets[rank_idx],
+            entry_factory::make_recv_entry(sched, recv_buf + offsets[rank_idx],
                                            recv_counts[rank_idx], dtype, rank_idx);
         }
     }

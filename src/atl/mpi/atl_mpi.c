@@ -244,8 +244,8 @@ atl_mpi_comm_barrier(atl_comm_t *comm, atl_req_t *req)
 }
 
 static atl_status_t
-atl_mpi_comm_allgatherv(atl_comm_t *comm, const void *send_buf, void *recv_buf, size_t send_cnt,
-                        int recv_cnts[], int displs[], atl_req_t *req)
+atl_mpi_comm_allgatherv(atl_comm_t *comm, const void *send_buf, size_t send_cnt,
+                        void *recv_buf, int recv_cnts[], int displs[], atl_req_t *req)
 {
     atl_mpi_comm_context_t *comm_context =
         container_of(comm, atl_mpi_comm_context_t, atl_comm);

@@ -788,8 +788,8 @@ atl_ofi_comm_reduce(atl_comm_t *comm, const void *s_buf, void *r_buf, size_t len
 }
 
 static atl_status_t
-atl_ofi_comm_allgatherv(atl_comm_t *comm, const void *s_buf, void *r_buf, size_t s_len,
-                        int r_lens[], int  displs[], atl_req_t *req)
+atl_ofi_comm_allgatherv(atl_comm_t *comm, const void *s_buf, size_t s_len,
+                        void *r_buf, int r_lens[], int  displs[], atl_req_t *req)
 {
     return atl_status_unsupported;
 }

@@ -17,15 +17,15 @@ public:
     iccl_sched_key(const iccl_sched_key& other) = default;
 
     iccl_sched_key& operator= (const iccl_sched_key& other) = delete;
+    void* buf1 = nullptr;
+    void* buf2 = nullptr;
+    void* buf3 = nullptr;
+    void* buf4 = nullptr; /* used in sparse collective to store recv value buf */
 
     iccl_coll_type ctype = iccl_coll_none;
     iccl_datatype_t dtype = iccl_dtype_char;
     iccl_datatype_t itype = iccl_dtype_char; /* used in sparse collective to store index type */
     iccl_reduction_t reduction = iccl_reduction_sum;
-    void* buf1 = nullptr;
-    void* buf2 = nullptr;
-    void* buf3 = nullptr;
-    void* buf4 = nullptr; /* used in sparse collective to store recv value buf */
     size_t count1 = 0;
     size_t count2 = 0;
     size_t* count3 = nullptr; /* used in sparse collective to store recv index count */
@@ -86,7 +86,7 @@ public:
     {
         size_t hash_value = k.ctype + k.dtype + k.itype + k.reduction + k.count1 +
                k.count2 + k.root + k.priority + k.synchronous +
-               (size_t)k.buf1 + (size_t)k.buf2 + (size_t)k.buf3 + (size_t)k.buf4 +
+//               (size_t)k.buf1 + (size_t)k.buf2 + (size_t)k.buf3 + (size_t)k.buf4 +
                (size_t)k.count3 + (size_t)k.count4 + (size_t)k.comm +
                (size_t)k.prologue_fn + (size_t)k.epilogue_fn + (size_t)k.reduction_fn +
                string_hasher(k.match_id);

@@ -7,8 +7,8 @@ class copy_entry : public sched_entry
 public:
     copy_entry() = delete;
     copy_entry(iccl_sched* sched,
-               const void* in_buf,
-               void* out_buf,
+               iccl_buf_placeholder in_buf,
+               iccl_buf_placeholder out_buf,
                size_t cnt,
                iccl_datatype_internal_t dtype) :
         sched_entry(sched), in_buf(in_buf), out_buf(out_buf), cnt(cnt), dtype(dtype)
@@ -21,7 +21,7 @@ public:
 
     void start_derived()
     {
-        auto comp_status = iccl_comp_copy(in_buf, out_buf, cnt, dtype);
+        auto comp_status = iccl_comp_copy(in_buf.get_ptr(), out_buf.get_ptr(), cnt, dtype);
         ICCL_ASSERT(comp_status == iccl_status_success, "bad status ", comp_status);
         status = iccl_sched_entry_status_complete;
     }
@@ -55,8 +55,8 @@ protected:
     }
 
 private:
-    const void* in_buf;
-    void* out_buf;
+    iccl_buf_placeholder in_buf;
+    iccl_buf_placeholder out_buf;
     size_t cnt;
     iccl_datatype_internal_t dtype;
 };

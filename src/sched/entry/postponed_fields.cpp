@@ -30,3 +30,5 @@ void postponed_fields::update()
             it++;
     }
 }
+
+// TODO: add check that we can update many times only buffer fields and 3 fields for prologue entry

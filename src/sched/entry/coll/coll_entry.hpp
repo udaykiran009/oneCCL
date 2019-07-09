@@ -9,8 +9,8 @@ public:
     coll_entry() = delete;
     coll_entry(iccl_sched* sched,
                iccl_coll_type coll_type,
-               const void* send_buf,
-               void* recv_buf,
+               iccl_buf_placeholder send_buf,
+               iccl_buf_placeholder recv_buf,
                size_t cnt,
                iccl_datatype_internal_t dtype,
                iccl_reduction_t reduction_op,
@@ -96,7 +96,8 @@ private:
             {
                 iccl_coll_param coll_param{};
                 coll_param.ctype = iccl_coll_bcast;
-                coll_param.buf = recv_buf;
+                // TODO
+//                coll_param.buf = recv_buf;
                 coll_param.count = cnt;
                 coll_param.dtype = dtype;
                 coll_param.root = root;
@@ -104,7 +105,7 @@ private:
                 coll_sched = new iccl_sched(coll_param);
 
                 auto result = iccl_coll_build_bcast(coll_sched,
-                                                    coll_sched->coll_param.buf,
+                                                    iccl_buf_placeholder(&(coll_sched->coll_param.buf),0),
                                                     coll_sched->coll_param.count,
                                                     coll_sched->coll_param.dtype,
                                                     coll_sched->coll_param.root);
@@ -119,8 +120,8 @@ private:
                 iccl_coll_param coll_param{};
 
                 coll_param.ctype = iccl_coll_allreduce;
-                coll_param.send_buf = send_buf;
-                coll_param.recv_buf = recv_buf;
+//                 coll_param.send_buf = send_buf;
+//                 coll_param.recv_buf = recv_buf;
                 coll_param.count = cnt;
                 coll_param.dtype = dtype;
                 coll_param.reduction = op;
@@ -129,9 +130,13 @@ private:
                 coll_sched = new iccl_sched(coll_param);
 
                 coll_sched->coll_attr.reduction_fn = sched->coll_attr.reduction_fn;
+                printf("Build, type = %d, size = %zu, name = %s\n", dtype->type, dtype->size, dtype->name);
+
                 auto result = iccl_coll_build_allreduce(coll_sched,
-                                                        coll_sched->coll_param.send_buf,
-                                                        coll_sched->coll_param.recv_buf,
+//                                                        iccl_buf_placeholder(const_cast<void**>(&(coll_sched->coll_param.send_buf)), 0),
+//                                                        iccl_buf_placeholder(&(coll_sched->coll_param.recv_buf), 0),
+                                                        send_buf,
+                                                        recv_buf,
                                                         coll_sched->coll_param.count,
                                                         coll_sched->coll_param.dtype,
                                                         coll_sched->coll_param.reduction);
@@ -155,8 +160,10 @@ private:
     }
 
     iccl_coll_type ctype;
-    const void* send_buf;
-    void* recv_buf;
+    iccl_buf_placeholder send_buf;
+    iccl_buf_placeholder recv_buf;
+//    const void* send_buf;
+//    void* recv_buf;
     size_t cnt;
     iccl_datatype_internal_t dtype;
     iccl_reduction_t op;

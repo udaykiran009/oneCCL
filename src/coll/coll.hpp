@@ -2,6 +2,7 @@
 
 #include "common/comm/comm.hpp"
 #include "common/datatype/datatype.hpp"
+#include "common/utils/buf_placeholder.hpp"
 
 #define ICCL_INVALID_PROC_IDX (-1)
 
@@ -23,30 +24,30 @@ enum iccl_coll_type
 iccl_status_t iccl_coll_build_barrier(iccl_sched* sched);
 
 iccl_status_t iccl_coll_build_bcast(iccl_sched* sched,
-                                    void* buf,
+                                    iccl_buf_placeholder buf,
                                     size_t count,
                                     iccl_datatype_internal_t dtype,
                                     size_t root);
 
 iccl_status_t iccl_coll_build_reduce(iccl_sched* sched,
-                                     const void* send_buf,
-                                     void* recv_buf,
+                                     iccl_buf_placeholder send_buf,
+                                     iccl_buf_placeholder recv_buf,
                                      size_t count,
                                      iccl_datatype_internal_t dtype,
                                      iccl_reduction_t reduction,
                                      size_t root);
 
 iccl_status_t iccl_coll_build_allreduce(iccl_sched* sched,
-                                        const void* send_buf,
-                                        void* recv_buf,
+                                        iccl_buf_placeholder send_buf,
+                                        iccl_buf_placeholder recv_buf,
                                         size_t count,
                                         iccl_datatype_internal_t dtype,
                                         iccl_reduction_t reduction);
 
 iccl_status_t iccl_coll_build_allgatherv(iccl_sched* sched,
-                                         const void* send_buf,
-                                         void* recv_buf,
+                                         iccl_buf_placeholder send_buf,
                                          size_t s_count,
+                                         iccl_buf_placeholder recv_buf,
                                          size_t* r_counts,
                                          iccl_datatype_internal_t dtype);
 

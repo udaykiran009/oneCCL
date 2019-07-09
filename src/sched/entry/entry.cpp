@@ -19,6 +19,8 @@ void sched_entry::start()
     LOG_DEBUG("starting entry ", name());
     ICCL_ASSERT(status == iccl_sched_entry_status_not_started, "bad status ", status);
 
+    // TODO: add assert that this entry placeholders corresponds to sched coll_param
+
     pfields.update();
     start_derived();
     ICCL_ASSERT(status >= iccl_sched_entry_status_started, "bad status ", status);

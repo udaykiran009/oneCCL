@@ -6,7 +6,7 @@
 class double_tree;
 
 iccl_status_t iccl_coll_build_scatter_ring_allgather_bcast(iccl_sched *sched,
-                                                           void *buf,
+                                                           iccl_buf_placeholder buf,
                                                            size_t count,
                                                            iccl_datatype_internal_t dtype,
                                                            size_t root);
@@ -14,31 +14,31 @@ iccl_status_t iccl_coll_build_scatter_ring_allgather_bcast(iccl_sched *sched,
 iccl_status_t iccl_coll_build_dissemination_barrier(iccl_sched* sched);
 
 iccl_status_t iccl_coll_build_rabenseifner_reduce(iccl_sched* sched,
-                                                  const void* send_buf,
-                                                  void* recv_buf,
+                                                  iccl_buf_placeholder send_buf,
+                                                  iccl_buf_placeholder recv_buf,
                                                   size_t count,
                                                   iccl_datatype_internal_t dtype,
                                                   iccl_reduction_t reduction,
                                                   size_t root);
 
 iccl_status_t iccl_coll_build_rabenseifner_allreduce(iccl_sched *sched,
-                                                     const void *send_buf,
-                                                     void *recv_buf,
+                                                     iccl_buf_placeholder send_buf,
+                                                     iccl_buf_placeholder recv_buf,
                                                      size_t count,
                                                      iccl_datatype_internal_t dtype,
                                                      iccl_reduction_t op);
 
 iccl_status_t iccl_coll_build_binomial_reduce(iccl_sched* sched,
-                                              const void* send_buf,
-                                              void* recv_buf,
+                                              iccl_buf_placeholder send_buf,
+                                              iccl_buf_placeholder recv_buf,
                                               size_t count,
                                               iccl_datatype_internal_t dtype,
                                               iccl_reduction_t reduction,
                                               size_t root);
 
 iccl_status_t iccl_coll_build_ring_allreduce(iccl_sched* sched,
-                                             const void* send_buf,
-                                             void* recv_buf,
+                                             iccl_buf_placeholder send_buf,
+                                             iccl_buf_placeholder recv_buf,
                                              size_t count,
                                              iccl_datatype_internal_t dtype,
                                              iccl_reduction_t op);
@@ -51,24 +51,23 @@ iccl_status_t iccl_coll_build_ring_rma_allreduce(iccl_sched* sched,
                                                  iccl_reduction_t op);
 
 iccl_status_t iccl_coll_build_recursive_doubling_allreduce(iccl_sched* sched,
-                                                           const void* send_buf,
-                                                           void* recv_buf,
+                                                           iccl_buf_placeholder send_buf,
+                                                           iccl_buf_placeholder recv_buf,
                                                            size_t count,
                                                            iccl_datatype_internal_t dtype,
                                                            iccl_reduction_t op);
 
 iccl_status_t iccl_coll_build_starlike_allreduce(iccl_sched* sched,
-                                                 const void* send_buf,
-                                                 void* recv_buf,
+                                                 iccl_buf_placeholder send_buf,
+                                                 iccl_buf_placeholder recv_buf,
                                                  size_t count,
                                                  iccl_datatype_internal_t dtype,
                                                  iccl_reduction_t op);
 
-
 iccl_status_t iccl_coll_build_naive_allgatherv(iccl_sched* sched,
-                                               const void* send_buf,
+                                               iccl_buf_placeholder send_buf,
                                                size_t send_count,
-                                               void* recv_buf,
+                                               iccl_buf_placeholder recv_buf,
                                                size_t* recv_counts,
                                                iccl_datatype_internal_t dtype);
 
@@ -87,8 +86,8 @@ iccl_status_t iccl_coll_build_sparse_allreduce_basic(iccl_sched* sched,
 
 iccl_status_t iccl_coll_build_double_tree_op(iccl_sched* sched,
                                              iccl_coll_type coll_type,
-                                             const void* send_buf,
-                                             void* recv_buf,
+                                             iccl_buf_placeholder send_buf,
+                                             iccl_buf_placeholder recv_buf,
                                              size_t count,
                                              iccl_datatype_internal_t dtype,
                                              iccl_reduction_t op,
@@ -99,30 +98,30 @@ iccl_status_t iccl_coll_build_double_tree_op(iccl_sched* sched,
 iccl_status_t iccl_coll_build_direct_barrier(iccl_sched *sched);
 
 iccl_status_t iccl_coll_build_direct_reduce(iccl_sched *sched,
-                                            const void *send_buf,
-                                            void *recv_buf,
+                                            iccl_buf_placeholder send_buf,
+                                            iccl_buf_placeholder recv_buf,
                                             size_t count,
                                             iccl_datatype_internal_t dtype,
                                             iccl_reduction_t reduction,
                                             size_t root);
 
 iccl_status_t iccl_coll_build_direct_allgatherv(iccl_sched* sched,
-                                                const void* send_buf,
+                                                iccl_buf_placeholder send_buf,
                                                 size_t s_count,
-                                                void* recv_buf,
+                                                iccl_buf_placeholder recv_buf,
                                                 size_t* r_counts,
                                                 iccl_datatype_internal_t dtype);
 
 
 iccl_status_t iccl_coll_build_direct_allreduce(iccl_sched *sched,
-                                               const void *send_buf,
-                                               void *recv_buf,
+                                               iccl_buf_placeholder send_buf,
+                                               iccl_buf_placeholder recv_buf,
                                                size_t count,
                                                iccl_datatype_internal_t dtype,
                                                iccl_reduction_t op);
 
 iccl_status_t iccl_coll_build_direct_bcast(iccl_sched *sched,
-                                           void *buf,
+                                           iccl_buf_placeholder buf,
                                            size_t count,
                                            iccl_datatype_internal_t dtype,
                                            size_t root);

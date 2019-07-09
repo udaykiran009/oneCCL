@@ -62,6 +62,7 @@ public:
         size_t* Buffers = param.DefineStartOrder();
         for (idx = 0; idx < param.bufferCount; idx++) {
             this->Init (param);
+            param.coll_attr.match_id = std::to_string(idx).c_str();
             param.req[Buffers[idx]] = (param.GetPlaceType() == PT_IN) ?
                 param.global_comm.allreduce(param.recvBuf[idx].data(), param.recvBuf[idx].data(), param.elemCount,
                               (iccl::data_type) param.GetDataType(),(iccl::reduction) param.GetReductionName(), &param.coll_attr) :

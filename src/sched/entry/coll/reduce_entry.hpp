@@ -7,12 +7,12 @@ class reduce_entry : public base_coll_entry
 public:
     reduce_entry() = delete;
     reduce_entry(iccl_sched *sched,
-                     const void *send_buf,
-                     void *recv_buf,
-                     size_t cnt,
-                     iccl_datatype_internal_t dtype,
-                     iccl_reduction_t reduction,
-                     size_t root) :
+                 iccl_buf_placeholder send_buf,
+                 iccl_buf_placeholder recv_buf,
+                 size_t cnt,
+                 iccl_datatype_internal_t dtype,
+                 iccl_reduction_t reduction,
+                 size_t root) :
         base_coll_entry(sched), send_buf(send_buf), recv_buf(recv_buf),
         cnt(cnt), dtype(dtype), op(reduction), root(root)
     {
@@ -22,7 +22,7 @@ public:
     void start_derived()
     {
         LOG_DEBUG("REDUCE entry req ", &req, ", cnt ", cnt);
-        atl_status_t atl_status = atl_comm_reduce(sched->bin->get_comm_ctx(), send_buf, recv_buf,
+        atl_status_t atl_status = atl_comm_reduce(sched->bin->get_comm_ctx(), send_buf.get_ptr(), recv_buf.get_ptr(),
                                                   cnt, root, static_cast<atl_datatype_t>(dtype->type),
                                                   static_cast<atl_reduction_t>(op), &req);
 
@@ -69,8 +69,8 @@ protected:
     }
 
 private:
-    const void* send_buf;
-    void* recv_buf;
+    iccl_buf_placeholder send_buf;
+    iccl_buf_placeholder recv_buf;
     size_t cnt;
     iccl_datatype_internal_t dtype;
     iccl_reduction_t op;

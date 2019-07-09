@@ -128,7 +128,7 @@ void out_of_order::ooo_match::bcast_match_id(const std::string& match_id)
         ctx->reserved_id = comm_ids.acquire_id(true);
         LOG_INFO("root bcasts match_id ", match_id, ", comm id ", ctx->reserved_id);
     }
-
+/*
     entry_factory::make_coll_entry(bcast_sched,
                                    iccl_coll_bcast,
                                    nullptr,
@@ -136,7 +136,7 @@ void out_of_order::ooo_match::bcast_match_id(const std::string& match_id)
                                    sizeof(size_t),
                                    iccl_dtype_internal_char,
                                    iccl_reduction_custom);
-
+*/
     bcast_sched->add_barrier();
 
     //2. broadcast match_id
@@ -179,14 +179,14 @@ void out_of_order::ooo_match::bcast_match_id(const std::string& match_id)
     bcast_sched->add_barrier();
 
     //3. broadcast reserved id
-    entry_factory::make_coll_entry(bcast_sched,
+/*    entry_factory::make_coll_entry(bcast_sched,
                                    iccl_coll_bcast,
                                    nullptr,
                                    &ctx->reserved_id,
                                    sizeof(iccl_comm_id_t),
                                    iccl_dtype_internal_char,
                                    iccl_reduction_custom);
-
+*/
     bcast_sched->add_barrier();
 
     //4. create a communicator

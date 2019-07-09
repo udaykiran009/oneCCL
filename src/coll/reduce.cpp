@@ -29,8 +29,13 @@
            n.(1+(p-1)/p).gamma
 */
 
-iccl_status_t iccl_coll_build_direct_reduce(iccl_sched *sched, const void *send_buf, void *recv_buf,
-                                            size_t count, iccl_datatype_internal_t dtype, iccl_reduction_t reduction, size_t root)
+iccl_status_t iccl_coll_build_direct_reduce(iccl_sched *sched,
+                                            iccl_buf_placeholder send_buf,
+                                            iccl_buf_placeholder recv_buf,
+                                            size_t count,
+                                            iccl_datatype_internal_t dtype,
+                                            iccl_reduction_t reduction,
+                                            size_t root)
 {
     LOG_DEBUG("build direct reduce");
 
@@ -38,8 +43,13 @@ iccl_status_t iccl_coll_build_direct_reduce(iccl_sched *sched, const void *send_
     return iccl_status_success;
 }
 
-iccl_status_t iccl_coll_build_rabenseifner_reduce(iccl_sched *sched, const void *send_buf, void *recv_buf,
-                                                  size_t count, iccl_datatype_internal_t dtype, iccl_reduction_t reduction, size_t root)
+iccl_status_t iccl_coll_build_rabenseifner_reduce(iccl_sched *sched,
+                                                  iccl_buf_placeholder send_buf,
+                                                  iccl_buf_placeholder recv_buf,
+                                                  size_t count,
+                                                  iccl_datatype_internal_t dtype,
+                                                  iccl_reduction_t reduction,
+                                                  size_t root)
 {
     LOG_DEBUG("build Rabenseifner's reduce");
 
@@ -48,7 +58,6 @@ iccl_status_t iccl_coll_build_rabenseifner_reduce(iccl_sched *sched, const void 
     int i, j, comm_size, rank, local_root, pof2;
     int rem, dst, new_rank, new_dst, mask, send_idx, recv_idx, last_idx;
     int send_cnt, recv_cnt, newroot, newdst_tree_root, newroot_tree_root;
-    void *tmp_buf = NULL;
     int *cnts = NULL, *disps = NULL;
     size_t dtype_size = iccl_datatype_get_size(dtype);
     local_root = static_cast<int>(root);
@@ -56,7 +65,9 @@ iccl_status_t iccl_coll_build_rabenseifner_reduce(iccl_sched *sched, const void 
     comm_size = sched->coll_param.comm->size();
     rank = sched->coll_param.comm->rank();
 
-    tmp_buf = sched->alloc_buffer(count * dtype_size);
+    sched->alloc_buffer(count * dtype_size);
+    iccl_buf_placeholder tmp_buf;
+    tmp_buf.p_to_buf = &(sched->memory.buf_list.back().ptr);
 
     /* get nearest power-of-two less than or equal to comm_size */
     pof2 = sched->coll_param.comm->pof2();
@@ -66,7 +77,8 @@ iccl_status_t iccl_coll_build_rabenseifner_reduce(iccl_sched *sched, const void 
     /* If I'm not the root, then my recv_buf may not be valid, therefore
      * I have to allocate a temporary one */
     if (rank != local_root) {
-        recv_buf = sched->alloc_buffer(count * dtype_size);
+        sched->alloc_buffer(count * dtype_size);
+        recv_buf.p_to_buf = &(sched->memory.buf_list.back().ptr);
     }
 
     if ((rank != local_root) || (send_buf != recv_buf))
@@ -160,10 +172,10 @@ iccl_status_t iccl_coll_build_rabenseifner_reduce(iccl_sched *sched, const void 
             }
 
             /* Send data from recv_buf. Recv into tmp_buf */
-            entry_factory::make_send_entry(sched, ((char*) recv_buf + disps[send_idx] * dtype_size),
+            entry_factory::make_send_entry(sched, (recv_buf + disps[send_idx] * dtype_size),
                                            send_cnt, dtype, dst);
             /* sendrecv, no barrier here */
-            entry_factory::make_recv_entry(sched, ((char*) tmp_buf + disps[recv_idx] * dtype_size),
+            entry_factory::make_recv_entry(sched, (tmp_buf + disps[recv_idx] * dtype_size),
                                            recv_cnt, dtype, dst);
             sched->add_barrier();
 
@@ -173,8 +185,8 @@ iccl_status_t iccl_coll_build_rabenseifner_reduce(iccl_sched *sched, const void 
 
             /* This algorithm is used only for predefined ops
              * and predefined ops are always commutative. */
-            entry_factory::make_reduce_local_entry(sched, ((char *) tmp_buf + disps[recv_idx] * dtype_size), recv_cnt,
-                                                   ((char *) recv_buf + disps[recv_idx] * dtype_size), NULL, dtype, reduction);
+            entry_factory::make_reduce_local_entry(sched, (tmp_buf + disps[recv_idx] * dtype_size), recv_cnt,
+                                                   (recv_buf + disps[recv_idx] * dtype_size), NULL, dtype, reduction);
             sched->add_barrier();
 
             /* update send_idx for next iteration */
@@ -277,13 +289,13 @@ iccl_status_t iccl_coll_build_rabenseifner_reduce(iccl_sched *sched, const void 
             if (newdst_tree_root == newroot_tree_root) {
                 /* send and exit */
                 /* Send data from recv_buf. Recv into tmp_buf */
-                entry_factory::make_send_entry(sched, ((char*) recv_buf + disps[send_idx] * dtype_size),
+                entry_factory::make_send_entry(sched, (recv_buf + disps[send_idx] * dtype_size),
                                                send_cnt, dtype, dst);
                 sched->add_barrier();
                 break;
             } else {
                 /* recv and continue */
-                entry_factory::make_recv_entry(sched, ((char*) recv_buf + disps[recv_idx] * dtype_size),
+                entry_factory::make_recv_entry(sched, (recv_buf + disps[recv_idx] * dtype_size),
                                                recv_cnt, dtype, dst);
                 sched->add_barrier();
             }
@@ -303,8 +315,13 @@ iccl_status_t iccl_coll_build_rabenseifner_reduce(iccl_sched *sched, const void 
 }
 
 
-iccl_status_t iccl_coll_build_binomial_reduce(iccl_sched *sched, const void *send_buf, void *recv_buf,
-                                              size_t count, iccl_datatype_internal_t dtype, iccl_reduction_t reduction, size_t root)
+iccl_status_t iccl_coll_build_binomial_reduce(iccl_sched *sched,
+                                              iccl_buf_placeholder send_buf,
+                                              iccl_buf_placeholder recv_buf,
+                                              size_t count,
+                                              iccl_datatype_internal_t dtype,
+                                              iccl_reduction_t reduction,
+                                              size_t root)
 {
     LOG_DEBUG("build binomial reduce");
 
@@ -312,7 +329,6 @@ iccl_status_t iccl_coll_build_binomial_reduce(iccl_sched *sched, const void *sen
 
     int comm_size, rank, local_root;
     int mask, relrank, source, lroot;
-    void *tmp_buf;
 
     if (count == 0)
         return status;
@@ -323,12 +339,15 @@ iccl_status_t iccl_coll_build_binomial_reduce(iccl_sched *sched, const void *sen
 
     /* Create a temporary buffer */
     size_t dtype_size = iccl_datatype_get_size(dtype);
-    tmp_buf = sched->alloc_buffer(count * dtype_size);
+    sched->alloc_buffer(count * dtype_size);
+    iccl_buf_placeholder tmp_buf;
+    tmp_buf.p_to_buf = &(sched->memory.buf_list.back().ptr);
 
     /* If I'm not the root, then my recv_buf may not be valid, therefore
      * I have to allocate a temporary one */
     if (rank != local_root) {
-        recv_buf = sched->alloc_buffer(count * dtype_size);
+        sched->alloc_buffer(count * dtype_size);
+        recv_buf.p_to_buf = &(sched->memory.buf_list.back().ptr);
     }
 
     if ((rank != local_root) || (send_buf != recv_buf)) {

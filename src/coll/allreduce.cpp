@@ -1,8 +1,11 @@
 #include "coll/coll_algorithms.hpp"
 #include "sched/entry_factory.hpp"
 
-iccl_status_t iccl_coll_build_direct_allreduce(iccl_sched *sched, const void *send_buf, void *recv_buf,
-                                               size_t count, iccl_datatype_internal_t dtype, iccl_reduction_t op)
+iccl_status_t iccl_coll_build_direct_allreduce(iccl_sched *sched,
+                                               iccl_buf_placeholder send_buf,
+                                               iccl_buf_placeholder recv_buf,
+                                               size_t count, iccl_datatype_internal_t dtype,
+                                               iccl_reduction_t op)
 {
     LOG_DEBUG("build direct allreduce");
 
@@ -10,8 +13,11 @@ iccl_status_t iccl_coll_build_direct_allreduce(iccl_sched *sched, const void *se
     return iccl_status_success;
 }
 
-iccl_status_t iccl_coll_build_rabenseifner_allreduce(iccl_sched *sched, const void *send_buf, void *recv_buf,
-                                                     size_t count, iccl_datatype_internal_t dtype, iccl_reduction_t op)
+iccl_status_t iccl_coll_build_rabenseifner_allreduce(iccl_sched *sched,
+                                                     iccl_buf_placeholder send_buf,
+                                                     iccl_buf_placeholder recv_buf,
+                                                     size_t count, iccl_datatype_internal_t dtype,
+                                                     iccl_reduction_t op)
 {
     LOG_DEBUG("build Rabenseifner's allreduce");
     ICCL_ASSERT(sched != nullptr, "empty sched");
@@ -19,7 +25,6 @@ iccl_status_t iccl_coll_build_rabenseifner_allreduce(iccl_sched *sched, const vo
     iccl_status_t status = iccl_status_success;
     int comm_size, rank, newrank, pof2, rem;
     int i, send_idx, recv_idx, last_idx, mask, newdst, dst, send_cnt, recv_cnt;
-    void *tmp_buf = NULL;
     int *cnts = NULL, *disps = NULL;
     size_t dtype_size = iccl_datatype_get_size(dtype);
 
@@ -27,10 +32,12 @@ iccl_status_t iccl_coll_build_rabenseifner_allreduce(iccl_sched *sched, const vo
 
     comm_size = comm->size();
     rank = comm->rank();
-
-    tmp_buf = sched->alloc_buffer(count * dtype_size);
+    sched->alloc_buffer(count * dtype_size);
+    iccl_buf_placeholder tmp_buf;
+    tmp_buf.p_to_buf = &(sched->memory.buf_list.back().ptr);
 
     /* copy local data into recv_buf */
+
     if (send_buf != recv_buf) {
         entry_factory::make_copy_entry(sched, send_buf, recv_buf, count, dtype);
         sched->add_barrier();
@@ -115,8 +122,8 @@ iccl_status_t iccl_coll_build_rabenseifner_allreduce(iccl_sched *sched, const vo
             }
 
             int can_use_recv_reduce = 0;
-            char* buf1 = ((char *) recv_buf + disps[send_idx] * dtype_size);
-            char* buf2 = ((char *) recv_buf + disps[recv_idx] * dtype_size);
+            iccl_buf_placeholder buf1 = (recv_buf + disps[send_idx] * dtype_size);
+            iccl_buf_placeholder buf2 = (recv_buf + disps[recv_idx] * dtype_size);
             if (buf1 != buf2 && ((buf1 + send_cnt * dtype_size <= buf2) || (buf2 + recv_cnt * dtype_size <= buf1)))
                 can_use_recv_reduce = 1;
 
@@ -124,17 +131,17 @@ iccl_status_t iccl_coll_build_rabenseifner_allreduce(iccl_sched *sched, const vo
 
             if (can_use_recv_reduce) {
                 entry_factory::make_recv_reduce_entry(sched,
-                                                      ((char*) recv_buf + disps[recv_idx] * dtype_size),
-                                                      recv_cnt, NULL, dtype, op, dst);
-                entry_factory::make_send_entry(sched, ((char*) recv_buf + disps[send_idx] * dtype_size), send_cnt, dtype, dst);
+                                                      (recv_buf + disps[recv_idx] * dtype_size),
+                                                      recv_cnt, NULL, dtype, op, dst, iccl_buf_placeholder());
+                entry_factory::make_send_entry(sched, (recv_buf + disps[send_idx] * dtype_size), send_cnt, dtype, dst);
                 sched->add_barrier();
             }
 
             else {
                 /* Send data from recv_buf. Recv into tmp_buf */
-                entry_factory::make_recv_entry(sched, ((char*) tmp_buf + disps[recv_idx] * dtype_size), recv_cnt, dtype, dst);
+                entry_factory::make_recv_entry(sched, (tmp_buf + disps[recv_idx] * dtype_size), recv_cnt, dtype, dst);
                 /* sendrecv, no barrier here */
-                entry_factory::make_send_entry(sched, ((char*) recv_buf + disps[send_idx] * dtype_size), send_cnt, dtype, dst);
+                entry_factory::make_send_entry(sched, (recv_buf + disps[send_idx] * dtype_size), send_cnt, dtype, dst);
                 sched->add_barrier();
 
                 /* tmp_buf contains data received in this step.
@@ -142,8 +149,8 @@ iccl_status_t iccl_coll_build_rabenseifner_allreduce(iccl_sched *sched, const vo
 
                 /* This algorithm is used only for predefined ops
                  * and predefined ops are always commutative. */
-                entry_factory::make_reduce_local_entry(sched, ((char *) tmp_buf + disps[recv_idx] * dtype_size), recv_cnt,
-                                                       ((char *) recv_buf + disps[recv_idx] * dtype_size), NULL, dtype, op);
+                entry_factory::make_reduce_local_entry(sched, (tmp_buf + disps[recv_idx] * dtype_size), recv_cnt,
+                                                       (recv_buf + disps[recv_idx] * dtype_size), NULL, dtype, op);
                 sched->add_barrier();
             }
 
@@ -185,9 +192,9 @@ iccl_status_t iccl_coll_build_rabenseifner_allreduce(iccl_sched *sched, const vo
                     recv_cnt += cnts[i];
             }
 
-            entry_factory::make_recv_entry(sched, ((char*) recv_buf + disps[recv_idx] * dtype_size), recv_cnt, dtype, dst);
+            entry_factory::make_recv_entry(sched, (recv_buf + disps[recv_idx] * dtype_size), recv_cnt, dtype, dst);
             /* sendrecv, no barrier here */
-            entry_factory::make_send_entry(sched, ((char*) recv_buf + disps[send_idx] * dtype_size), send_cnt, dtype, dst);
+            entry_factory::make_send_entry(sched, (recv_buf + disps[send_idx] * dtype_size), send_cnt, dtype, dst);
             sched->add_barrier();
 
             if (newrank > newdst)
@@ -214,7 +221,9 @@ iccl_status_t iccl_coll_build_rabenseifner_allreduce(iccl_sched *sched, const vo
     return status;
 }
 
-iccl_status_t iccl_coll_build_recursive_doubling_allreduce(iccl_sched *sched, const void *send_buf, void *recv_buf,
+iccl_status_t iccl_coll_build_recursive_doubling_allreduce(iccl_sched *sched,
+                                                           iccl_buf_placeholder send_buf,
+                                                           iccl_buf_placeholder recv_buf,
                                                            size_t count, iccl_datatype_internal_t dtype, iccl_reduction_t op)
 {
     LOG_DEBUG("build recursive_doubling allreduce");
@@ -223,14 +232,16 @@ iccl_status_t iccl_coll_build_recursive_doubling_allreduce(iccl_sched *sched, co
 
     int pof2, rem, comm_size, rank;
     int newrank, mask, newdst, dst;
-    void *tmp_buf = NULL;
 
     iccl_comm *comm = sched->coll_param.comm;
     comm_size = comm->size();
     rank = comm->rank();
 
     size_t dtype_size = iccl_datatype_get_size(dtype);
-    tmp_buf = sched->alloc_buffer(count * dtype_size);
+
+    sched->alloc_buffer(count * dtype_size);
+    iccl_buf_placeholder tmp_buf;
+    tmp_buf.p_to_buf = &(sched->memory.buf_list.back().ptr);
 
     /* copy local data into recv_buf */
     if (send_buf != recv_buf) {
@@ -314,18 +325,18 @@ iccl_status_t iccl_coll_build_recursive_doubling_allreduce(iccl_sched *sched, co
     return status;
 }
 
-iccl_status_t iccl_coll_build_starlike_allreduce(iccl_sched *sched, const void *send_buf, void *recv_buf,
+iccl_status_t iccl_coll_build_starlike_allreduce(iccl_sched *sched,
+                                                 iccl_buf_placeholder send_buf,
+                                                 iccl_buf_placeholder recv_buf,
                                                  size_t count, iccl_datatype_internal_t dtype, iccl_reduction_t op)
 {
     LOG_DEBUG("build starlike allreduce");
-
     iccl_status_t status = iccl_status_success;
     size_t comm_size = sched->coll_param.comm->size();
     size_t this_rank = sched->coll_param.comm->rank();
     size_t* buffer_counts = static_cast<size_t*>(ICCL_MALLOC(comm_size * sizeof(size_t), "buffer_count"));
     size_t* buffer_offsets = static_cast<size_t*>(ICCL_MALLOC(comm_size * sizeof(size_t), "buffer_offsets"));
     size_t dtype_size = iccl_datatype_get_size(dtype);
-    void *tmp_buf = NULL;
 
     // find counts and offsets for each rank
     size_t common_buffer_count = count / comm_size;
@@ -338,7 +349,10 @@ iccl_status_t iccl_coll_build_starlike_allreduce(iccl_sched *sched, const void *
 
     // buffer to receive and reduce parts related to the current rank
     size_t this_rank_buf_size = buffer_counts[this_rank] * dtype_size;
-    tmp_buf = sched->alloc_buffer(this_rank_buf_size * (comm_size - 1));
+
+    sched->alloc_buffer(this_rank_buf_size * (comm_size - 1));
+    iccl_buf_placeholder tmp_buf;
+    tmp_buf.p_to_buf = &(sched->memory.buf_list.back().ptr);
 
     // copy local data into recv_buf
     if (send_buf != recv_buf) {
@@ -352,15 +366,15 @@ iccl_status_t iccl_coll_build_starlike_allreduce(iccl_sched *sched, const void *
         if (rank_idx != this_rank)
         {
             // send buffer to others
-            entry_factory::make_send_entry(sched, static_cast<char*>(recv_buf) + buffer_offsets[rank_idx],
+            entry_factory::make_send_entry(sched, recv_buf + buffer_offsets[rank_idx],
                                            buffer_counts[rank_idx], dtype, rank_idx);
 
             // recv part of buffer from others and perform reduce
             entry_factory::make_recv_reduce_entry(sched,
-                                                  static_cast<char*>(recv_buf) + buffer_offsets[this_rank],
+                                                  recv_buf + buffer_offsets[this_rank],
                                                   buffer_counts[this_rank], NULL,
                                                   dtype, op, rank_idx,
-                                                  static_cast<char*>(tmp_buf) + this_rank_buf_size * tmp_buf_recv_idx);
+                                                  tmp_buf + this_rank_buf_size * tmp_buf_recv_idx);
             ++tmp_buf_recv_idx;
         }
     }
@@ -377,7 +391,9 @@ iccl_status_t iccl_coll_build_starlike_allreduce(iccl_sched *sched, const void *
     return status;
 }
 
-iccl_status_t iccl_coll_build_ring_allreduce(iccl_sched *sched, const void *send_buf, void *recv_buf,
+iccl_status_t iccl_coll_build_ring_allreduce(iccl_sched *sched,
+                                             iccl_buf_placeholder send_buf,
+                                             iccl_buf_placeholder recv_buf,
                                              size_t count, iccl_datatype_internal_t dtype, iccl_reduction_t op)
 {
     int inplace = (send_buf == recv_buf) ? 1 : 0;
@@ -388,7 +404,6 @@ iccl_status_t iccl_coll_build_ring_allreduce(iccl_sched *sched, const void *send
     iccl_comm* comm = sched->coll_param.comm;
     size_t dtype_size = iccl_datatype_get_size(dtype);
     size_t idx = 0;
-    void* tmp_buf = NULL;
     size_t src, dst;
 
     comm_size = comm->size();
@@ -407,8 +422,14 @@ iccl_status_t iccl_coll_build_ring_allreduce(iccl_sched *sched, const void *send
         return iccl_status_success;
     }
 
+    iccl_buf_placeholder tmp_buf;
     if (inplace)
-        tmp_buf = sched->alloc_buffer(count * dtype_size);
+    {
+        sched->alloc_buffer(count * dtype_size);
+        tmp_buf.p_to_buf = &(sched->memory.buf_list.back().ptr);
+    }
+    iccl_buf_placeholder sbuf, rbuf, reduce_inout_buf;
+    iccl_buf_placeholder reduce_in_buf;
 
     src = (comm_size + rank - 1) % comm_size;
     dst = (comm_size + rank + 1) % comm_size;
@@ -419,8 +440,6 @@ iccl_status_t iccl_coll_build_ring_allreduce(iccl_sched *sched, const void *send
     size_t send_block_idx, recv_block_idx;
     size_t send_block_count, recv_block_count;
     size_t send_block_offset, recv_block_offset;
-    void *sbuf, *rbuf, *reduce_inout_buf;
-    const void* reduce_in_buf;
 
     /* reduce-scatter */
     for (idx = 0; idx < (comm_size - 1); idx++)
@@ -440,15 +459,15 @@ iccl_status_t iccl_coll_build_ring_allreduce(iccl_sched *sched, const void *send
         }
         else
         {
-            sbuf = (idx == 0) ? (void*) send_buf : recv_buf;
+            sbuf = (idx == 0) ? send_buf : recv_buf;
             rbuf = recv_buf;
             reduce_in_buf = send_buf;
             reduce_inout_buf = recv_buf;
         }
-        sbuf = (char*) sbuf + send_block_offset;
-        rbuf = (char*) rbuf + recv_block_offset;
-        reduce_in_buf = (char*) reduce_in_buf + recv_block_offset;
-        reduce_inout_buf = (char*) reduce_inout_buf + recv_block_offset;
+        sbuf = sbuf + send_block_offset;
+        rbuf = rbuf + recv_block_offset;
+        reduce_in_buf = reduce_in_buf + recv_block_offset;
+        reduce_inout_buf = reduce_inout_buf + recv_block_offset;
 
         entry_factory::make_send_entry(sched, sbuf, send_block_count,
                                        dtype, dst);
@@ -471,8 +490,8 @@ iccl_status_t iccl_coll_build_ring_allreduce(iccl_sched *sched, const void *send
         recv_block_count = (recv_block_idx == (comm_size - 1)) ? last_block_count : main_block_count;
         send_block_offset = main_block_count * dtype_size * send_block_idx;
         recv_block_offset = main_block_count * dtype_size * recv_block_idx;
-        sbuf = (char*) recv_buf + send_block_offset;
-        rbuf = (char*) recv_buf + recv_block_offset;
+        sbuf = recv_buf + send_block_offset;
+        rbuf = recv_buf + recv_block_offset;
 
         entry_factory::make_send_entry(sched, sbuf, send_block_count,
                                        dtype, dst);

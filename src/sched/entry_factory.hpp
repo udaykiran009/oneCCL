@@ -19,14 +19,14 @@ class entry_factory
 {
 public:
     static std::shared_ptr<sched_entry> make_send_entry(iccl_sched* sched,
-                                                        const void* buf,
+                                                        iccl_buf_placeholder buf,
                                                         size_t cnt,
                                                         iccl_datatype_internal_t dtype,
                                                         size_t dst,
                                                         iccl_op_id_t op_id = 0);
 
     static std::shared_ptr<sched_entry> make_recv_entry(iccl_sched* sched,
-                                                        void* buf,
+                                                        iccl_buf_placeholder buf,
                                                         size_t cnt,
                                                         iccl_datatype_internal_t dtype,
                                                         size_t src,
@@ -42,13 +42,12 @@ public:
                                                          size_t dst_buf_offset);
 
     static std::shared_ptr<sched_entry> make_reduce_local_entry(iccl_sched* sched,
-                                                                const void* in_buf,
+                                                                iccl_buf_placeholder in_buf,
                                                                 size_t in_cnt,
-                                                                void* inout_buf,
+                                                                iccl_buf_placeholder inout_buf,
                                                                 size_t* out_cnt,
                                                                 iccl_datatype_internal_t dtype,
                                                                 iccl_reduction_t reduction_op);
-
     /**
      * Fused recv_reduce operation.
      * @param inout_buf Buffer with local data, will hold result of reduction.
@@ -62,18 +61,18 @@ public:
      * @param op_id local operation id, used to construct atl tag
      */
     static std::shared_ptr<sched_entry> make_recv_reduce_entry(iccl_sched* sched,
-                                                               void* inout_buf,
+                                                               iccl_buf_placeholder inout_buf,
                                                                size_t in_cnt,
                                                                size_t* out_cnt,
                                                                iccl_datatype_internal_t dtype,
                                                                iccl_reduction_t reduction_op,
                                                                size_t src,
-                                                               void* comm_buf = nullptr,
+                                                               iccl_buf_placeholder comm_buf,
                                                                iccl_op_id_t op_id = 0);
 
     static std::shared_ptr<sched_entry> make_copy_entry(iccl_sched* sched,
-                                                        const void* in_buf,
-                                                        void* out_buf,
+                                                        iccl_buf_placeholder in_buf,
+                                                        iccl_buf_placeholder out_buf,
                                                         size_t cnt,
                                                         iccl_datatype_internal_t dtype);
 
@@ -82,8 +81,8 @@ public:
 
     static std::shared_ptr<sched_entry> make_coll_entry(iccl_sched* sched,
                                                         iccl_coll_type coll_type,
-                                                        const void* send_buf,
-                                                        void* recv_buf, //buf for bcast
+                                                        iccl_buf_placeholder send_buf,
+                                                        iccl_buf_placeholder recv_buf, //buf for bcast
                                                         size_t cnt,
                                                         iccl_datatype_internal_t dtype,
                                                         iccl_reduction_t reduction_op,
@@ -131,28 +130,28 @@ public:
                                                          iccl_op_id_t op_id = 0);
 
     static std::shared_ptr<sched_entry> make_allreduce_entry(iccl_sched* sched,
-                                                             const void* send_buf,
-                                                             void* recv_buf,
+                                                             iccl_buf_placeholder send_buf,
+                                                             iccl_buf_placeholder recv_buf,
                                                              size_t cnt,
                                                              iccl_datatype_internal_t dtype,
                                                              iccl_reduction_t reduction_op);
 
     static std::shared_ptr<sched_entry> make_allgatherv_entry(iccl_sched* sched,
-                                                              const void* send_buf,
+                                                              iccl_buf_placeholder send_buf,
                                                               size_t send_cnt,
-                                                              void* recv_buf,
+                                                              iccl_buf_placeholder recv_buf,
                                                               size_t* recv_cnts,
                                                               iccl_datatype_internal_t dtype);
 
     static std::shared_ptr<sched_entry> make_bcast_entry(iccl_sched* sched,
-                                                         void* buf,
+                                                         iccl_buf_placeholder buf,
                                                          size_t cnt,
                                                          iccl_datatype_internal_t dtype,
                                                          size_t root);
 
     static std::shared_ptr<sched_entry> make_reduce_entry(iccl_sched *sched,
-                                                          const void *send_buf,
-                                                          void *recv_buf,
+                                                          iccl_buf_placeholder send_buf,
+                                                          iccl_buf_placeholder recv_buf,
                                                           size_t cnt,
                                                           iccl_datatype_internal_t dtype,
                                                           iccl_reduction_t reduction,

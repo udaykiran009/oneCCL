@@ -25,7 +25,7 @@
 #include "sched/entry/coll/barrier_entry.hpp"
 
 std::shared_ptr<sched_entry> entry_factory::make_send_entry(iccl_sched* sched,
-                                                            const void* buf,
+                                                            iccl_buf_placeholder buf,
                                                             size_t cnt,
                                                             iccl_datatype_internal_t dtype,
                                                             size_t dst,
@@ -39,7 +39,7 @@ std::shared_ptr<sched_entry> entry_factory::make_send_entry(iccl_sched* sched,
 }
 
 std::shared_ptr<sched_entry> entry_factory::make_recv_entry(iccl_sched* sched,
-                                                            void* buf,
+                                                            iccl_buf_placeholder buf,
                                                             size_t cnt,
                                                             iccl_datatype_internal_t dtype,
                                                             size_t src,
@@ -50,6 +50,7 @@ std::shared_ptr<sched_entry> entry_factory::make_recv_entry(iccl_sched* sched,
     return e;
 }
 
+// TODO: add support for rma entries
 std::shared_ptr<sched_entry> entry_factory::make_write_entry(iccl_sched* sched,
                                                              const void* src_buf,
                                                              atl_mr_t* src_mr,
@@ -66,9 +67,9 @@ std::shared_ptr<sched_entry> entry_factory::make_write_entry(iccl_sched* sched,
 }
 
 std::shared_ptr<sched_entry> entry_factory::make_reduce_local_entry(iccl_sched* sched,
-                                                                    const void* in_buf,
+                                                                    iccl_buf_placeholder in_buf,
                                                                     size_t in_cnt,
-                                                                    void* inout_buf,
+                                                                    iccl_buf_placeholder inout_buf,
                                                                     size_t* out_cnt,
                                                                     iccl_datatype_internal_t dtype,
                                                                     iccl_reduction_t reduction_op)
@@ -80,13 +81,13 @@ std::shared_ptr<sched_entry> entry_factory::make_reduce_local_entry(iccl_sched* 
 }
 
 std::shared_ptr<sched_entry> entry_factory::make_recv_reduce_entry(iccl_sched* sched,
-                                                                   void* inout_buf,
+                                                                   iccl_buf_placeholder inout_buf,
                                                                    size_t in_cnt,
                                                                    size_t* out_cnt,
                                                                    iccl_datatype_internal_t dtype,
                                                                    iccl_reduction_t reduction_op,
                                                                    size_t src,
-                                                                   void* comm_buf,
+                                                                   iccl_buf_placeholder comm_buf,
                                                                    iccl_op_id_t op_id)
 {
     auto e = std::make_shared<recv_reduce_entry>(sched, inout_buf, in_cnt, out_cnt, dtype, reduction_op,
@@ -96,8 +97,8 @@ std::shared_ptr<sched_entry> entry_factory::make_recv_reduce_entry(iccl_sched* s
 }
 
 std::shared_ptr<sched_entry> entry_factory::make_copy_entry(iccl_sched* sched,
-                                                            const void* in_buf,
-                                                            void* out_buf,
+                                                            iccl_buf_placeholder in_buf,
+                                                            iccl_buf_placeholder out_buf,
                                                             size_t cnt,
                                                             iccl_datatype_internal_t dtype)
 {
@@ -116,8 +117,8 @@ std::shared_ptr<sched_entry> entry_factory::make_sync_entry(iccl_sched* sched,
 
 std::shared_ptr<sched_entry> entry_factory::make_coll_entry(iccl_sched* sched,
                                                             iccl_coll_type coll_type,
-                                                            const void* send_buf,
-                                                            void* recv_buf,
+                                                            iccl_buf_placeholder send_buf,
+                                                            iccl_buf_placeholder recv_buf,
                                                             size_t cnt,
                                                             iccl_datatype_internal_t dtype,
                                                             iccl_reduction_t reduction_op,
@@ -209,8 +210,8 @@ std::shared_ptr<sched_entry> entry_factory::make_probe_entry(iccl_sched* sched,
 }
 
 std::shared_ptr<sched_entry> entry_factory::make_allreduce_entry(iccl_sched* sched,
-                                                                 const void* send_buf,
-                                                                 void* recv_buf,
+                                                                 iccl_buf_placeholder send_buf,
+                                                                 iccl_buf_placeholder recv_buf,
                                                                  size_t cnt,
                                                                  iccl_datatype_internal_t dtype,
                                                                  iccl_reduction_t reduction_op)
@@ -222,9 +223,9 @@ std::shared_ptr<sched_entry> entry_factory::make_allreduce_entry(iccl_sched* sch
 }
 
 std::shared_ptr<sched_entry> entry_factory::make_allgatherv_entry(iccl_sched* sched,
-                                                                  const void* send_buf,
+                                                                  iccl_buf_placeholder send_buf,
                                                                   size_t send_cnt,
-                                                                  void* recv_buf,
+                                                                  iccl_buf_placeholder recv_buf,
                                                                   size_t* recv_cnts,
                                                                   iccl_datatype_internal_t dtype)
 {
@@ -235,7 +236,7 @@ std::shared_ptr<sched_entry> entry_factory::make_allgatherv_entry(iccl_sched* sc
 }
 
 std::shared_ptr<sched_entry> entry_factory::make_bcast_entry(iccl_sched* sched,
-                                                             void* buf,
+                                                             iccl_buf_placeholder buf,
                                                              size_t cnt,
                                                              iccl_datatype_internal_t dtype,
                                                              size_t root)
@@ -246,8 +247,8 @@ std::shared_ptr<sched_entry> entry_factory::make_bcast_entry(iccl_sched* sched,
 }
 
 std::shared_ptr<sched_entry> entry_factory::make_reduce_entry(iccl_sched *sched,
-                                                              const void *send_buf,
-                                                              void *recv_buf,
+                                                              iccl_buf_placeholder send_buf,
+                                                              iccl_buf_placeholder recv_buf,
                                                               size_t cnt,
                                                               iccl_datatype_internal_t dtype,
                                                               iccl_reduction_t reduction,

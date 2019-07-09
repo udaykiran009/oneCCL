@@ -3,7 +3,7 @@
 
 #define MIN(a,b) std::min(a,b)
 
-iccl_status_t iccl_coll_build_direct_bcast(iccl_sched *sched, void *buf, size_t count,
+iccl_status_t iccl_coll_build_direct_bcast(iccl_sched *sched, iccl_buf_placeholder buf, size_t count,
                                            iccl_datatype_internal_t dtype, size_t root)
 {
     LOG_DEBUG("build direct bcast");
@@ -12,7 +12,10 @@ iccl_status_t iccl_coll_build_direct_bcast(iccl_sched *sched, void *buf, size_t 
     return iccl_status_success;
 }
 
-iccl_status_t iccl_coll_build_scatter_for_bcast(iccl_sched *sched, void *tmp_buf, size_t root, size_t nbytes)
+iccl_status_t iccl_coll_build_scatter_for_bcast(iccl_sched *sched,
+                                                iccl_buf_placeholder tmp_buf,
+                                                size_t root,
+                                                size_t nbytes)
 {
     LOG_DEBUG("build scatter_for_bcast");
 
@@ -56,7 +59,7 @@ iccl_status_t iccl_coll_build_scatter_for_bcast(iccl_sched *sched, void *tmp_buf
             curr_size = recv_size;
 
             if (recv_size > 0) {
-                entry_factory::make_recv_entry(sched, ((char*) tmp_buf + relative_rank * scatter_size),
+                entry_factory::make_recv_entry(sched, (tmp_buf + relative_rank * scatter_size),
                                                recv_size, iccl_dtype_internal_char, src);
                 sched->add_barrier();
             }
@@ -82,7 +85,7 @@ iccl_status_t iccl_coll_build_scatter_for_bcast(iccl_sched *sched, void *tmp_buf
                 if (dst >= comm_size)
                     dst -= comm_size;
 
-                entry_factory::make_send_entry(sched, ((char*) tmp_buf + scatter_size * (relative_rank + mask)),
+                entry_factory::make_send_entry(sched, (tmp_buf + scatter_size * (relative_rank + mask)),
                                                send_size, iccl_dtype_internal_char, dst);
                 sched->add_barrier();
                 curr_size -= send_size;
@@ -94,7 +97,8 @@ iccl_status_t iccl_coll_build_scatter_for_bcast(iccl_sched *sched, void *tmp_buf
     return status;
 }
 
-iccl_status_t iccl_coll_build_scatter_ring_allgather_bcast(iccl_sched *sched, void *buf,
+iccl_status_t iccl_coll_build_scatter_ring_allgather_bcast(iccl_sched *sched,
+                                                           iccl_buf_placeholder buf,
                                                            size_t count, iccl_datatype_internal_t dtype, size_t root)
 {
     LOG_DEBUG("build scatter_ring_allgather bcast");
@@ -104,18 +108,17 @@ iccl_status_t iccl_coll_build_scatter_ring_allgather_bcast(iccl_sched *sched, vo
     int comm_size, rank, nbytes;
     int scatter_size, curr_size;
     int i, j, jnext, left, right;
-    void *tmp_buf = NULL;
     size_t dtype_size = iccl_datatype_get_size(dtype);
 
     comm_size = sched->coll_param.comm->size();
     rank = sched->coll_param.comm->rank();
+    iccl_buf_placeholder tmp_buf(buf);
 
     /* If there is only one process, return */
     if (comm_size == 1)
         goto fn_exit;
 
     nbytes = dtype_size * count;
-    tmp_buf = (char *)buf;
 
     ICCL_CALL(iccl_coll_build_scatter_for_bcast(sched, tmp_buf, root, nbytes));
 
@@ -149,10 +152,10 @@ iccl_status_t iccl_coll_build_scatter_ring_allgather_bcast(iccl_sched *sched, vo
             right_count = 0;
         right_disp = rel_j * scatter_size;
 
-        entry_factory::make_send_entry(sched, ((char*) tmp_buf + right_disp),
+        entry_factory::make_send_entry(sched, (tmp_buf + right_disp),
                                        right_count, iccl_dtype_internal_char, right);
         /* sendrecv, no barrier here */
-        entry_factory::make_recv_entry(sched, ((char*) tmp_buf + left_disp),
+        entry_factory::make_recv_entry(sched, (tmp_buf + left_disp),
                                        left_count, iccl_dtype_internal_char, left);
         sched->add_barrier();
 

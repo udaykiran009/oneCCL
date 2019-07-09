@@ -7,13 +7,13 @@ class allgatherv_entry : public base_coll_entry
 public:
     allgatherv_entry() = delete;
     allgatherv_entry(iccl_sched* sched,
-                     const void* send_buf,
+                     iccl_buf_placeholder send_buf,
                      size_t send_cnt,
-                     void* recv_buf,
+                     iccl_buf_placeholder recv_buf,
                      size_t* recv_cnts,
                      iccl_datatype_internal_t dtype) :
-        base_coll_entry(sched), send_buf(send_buf), recv_buf(recv_buf),
-        send_cnt(send_cnt), recv_cnts(recv_cnts), dtype(dtype)
+        base_coll_entry(sched), send_buf(send_buf), send_cnt(send_cnt),
+        recv_buf(recv_buf), recv_cnts(recv_cnts), dtype(dtype)
     {
         LOG_DEBUG("creating ", name(), " entry");
     }
@@ -23,7 +23,7 @@ public:
         size_t dt_size = iccl_datatype_get_size(dtype);
         size_t send_bytes = send_cnt * dt_size;
         size_t comm_size = sched->coll_param.comm->size();
-        size_t i = 0;
+        size_t i;
 
         recv_bytes = static_cast<int*>(ICCL_MALLOC(comm_size * sizeof(int), "recv_bytes"));
         offsets = static_cast<int*>(ICCL_MALLOC(comm_size * sizeof(int), "offsets"));
@@ -36,8 +36,8 @@ public:
             offsets[i] = offsets[i - 1] + recv_cnts[i - 1];
         }
         LOG_DEBUG("ALLGATHERV entry req ", &req, ", send_bytes ", send_bytes);
-        atl_status_t atl_status = atl_comm_allgatherv(sched->bin->get_comm_ctx(), send_buf, recv_buf, send_bytes,
-                                                      recv_bytes, offsets, &req);
+        atl_status_t atl_status = atl_comm_allgatherv(sched->bin->get_comm_ctx(), send_buf.get_ptr(), send_bytes,
+                                                      recv_buf.get_ptr(), recv_bytes, offsets, &req);
 
         if (unlikely(atl_status != atl_status_success))
         {
@@ -87,9 +87,9 @@ protected:
     }
 
 private:
-    const void* send_buf;
-    void* recv_buf;
+    iccl_buf_placeholder send_buf;
     size_t send_cnt;
+    iccl_buf_placeholder recv_buf;
     size_t* recv_cnts;
     int* recv_bytes;
     int* offsets;

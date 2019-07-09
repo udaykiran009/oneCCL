@@ -4,7 +4,7 @@
 
 static void bcast_tree(const bin_tree& tree,
                        iccl_sched* sched,
-                       void* buffer,
+                       iccl_buf_placeholder buffer,
                        size_t count,
                        iccl_datatype_internal_t dtype,
                        iccl_op_id_t op_id)
@@ -29,7 +29,7 @@ static void bcast_tree(const bin_tree& tree,
 
 static void reduce_tree(const bin_tree& tree,
                         iccl_sched* sched,
-                        void* buffer,
+                        iccl_buf_placeholder buffer,
                         size_t count,
                         iccl_datatype_internal_t dtype,
                         iccl_reduction_t reduction,
@@ -39,13 +39,13 @@ static void reduce_tree(const bin_tree& tree,
     {
         LOG_DEBUG("recv_reduce left ", tree.left());
         entry_factory::make_recv_reduce_entry(sched, buffer, count, nullptr, dtype, reduction,
-                                              static_cast<size_t>(tree.left()), nullptr, op_id);
+                                              static_cast<size_t>(tree.left()), iccl_buf_placeholder(), op_id);
     }
     if (tree.right() != -1)
     {
         LOG_DEBUG("recv_reduce right ", tree.right());
         entry_factory::make_recv_reduce_entry(sched, buffer, count, nullptr, dtype, reduction,
-                                              static_cast<size_t>(tree.right()), nullptr, op_id);
+                                              static_cast<size_t>(tree.right()), iccl_buf_placeholder(), op_id);
     }
     if (tree.parent() != -1)
     {
@@ -60,7 +60,7 @@ static void reduce_tree(const bin_tree& tree,
 
 static void reduce_bcast_tree(const bin_tree& tree,
                               iccl_sched* sched,
-                              void* buffer,
+                              iccl_buf_placeholder buffer,
                               size_t count,
                               iccl_datatype_internal_t dtype,
                               iccl_reduction_t reduction,
@@ -70,13 +70,13 @@ static void reduce_bcast_tree(const bin_tree& tree,
     {
         LOG_DEBUG("recv_reduce left ", tree.left());
         entry_factory::make_recv_reduce_entry(sched, buffer, count, nullptr, dtype, reduction,
-                                              static_cast<size_t>(tree.left()), nullptr, op_id);
+                                              static_cast<size_t>(tree.left()), iccl_buf_placeholder(), op_id);
     }
     if (tree.right() != -1)
     {
         LOG_DEBUG("recv_reduce right ", tree.right());
         entry_factory::make_recv_reduce_entry(sched, buffer, count, nullptr, dtype, reduction,
-                                              static_cast<size_t>(tree.right()), nullptr, op_id);
+                                              static_cast<size_t>(tree.right()), iccl_buf_placeholder(), op_id);
     }
     if (tree.parent() != -1)
     {
@@ -111,8 +111,8 @@ static void reduce_bcast_tree(const bin_tree& tree,
 
 iccl_status_t iccl_coll_build_double_tree_op(iccl_sched* sched,
                                              iccl_coll_type coll_type,
-                                             const void* send_buf,
-                                             void* recv_buf,
+                                             iccl_buf_placeholder send_buf,
+                                             iccl_buf_placeholder recv_buf,
                                              size_t count,
                                              iccl_datatype_internal_t dtype,
                                              iccl_reduction_t op,
@@ -132,11 +132,11 @@ iccl_status_t iccl_coll_build_double_tree_op(iccl_sched* sched,
     size_t t1_count = count / 2;
     size_t t2_count = count - t1_count;
 
-    void* t1_start = recv_buf;
-    void* t1_end = (char*) t1_start + t1_count * dtype->size;
+    iccl_buf_placeholder t1_start = recv_buf;
+    iccl_buf_placeholder t1_end = t1_start + t1_count * dtype->size;
 
-    void* t2_start = t1_end;
-    void* t2_end = (char*) t2_start + t2_count * dtype->size;
+    iccl_buf_placeholder t2_start = t1_end;
+    iccl_buf_placeholder t2_end = t2_start + t2_count * dtype->size;
 
     //todo: evaluate/configure k param;
     size_t parts = 1;
@@ -160,24 +160,24 @@ iccl_status_t iccl_coll_build_double_tree_op(iccl_sched* sched,
     for (size_t iter = 0; iter < parts; ++iter)
     {
         size_t t1_work_count = t1_part_count;
-        if ((char*) t1_start + t1_work_count * iter > t1_end)
+        if (t1_start + t1_work_count * iter > t1_end)
         {
             LOG_DEBUG("iter ", iter, ", t1 size ", t1_work_count, " exceeds ", t1_end, ", align to ",
-                      (char*) t1_end - ((char*) t1_start + t1_work_count * iter));
-            t1_work_count = (char*) t1_end - ((char*) t1_start + t1_work_count * iter);
+                      t1_end - (t1_start + t1_work_count * iter));
+            t1_work_count = t1_end - (t1_start + t1_work_count * iter);
         }
 
-        void* t1_work_buf = (char*) t1_start + t1_work_count * dtype->size * iter;
+        iccl_buf_placeholder t1_work_buf = t1_start + t1_work_count * dtype->size * iter;
 
         size_t t2_work_count = t2_part_count;
-        if ((char*) t2_start + t2_work_count * iter > t2_end)
+        if (t2_start + t2_work_count * iter > t2_end)
         {
             LOG_DEBUG("iter ", iter, ", t2 size ", t2_work_count, " exceeds ", t2_end, ", align to ",
-                      (char*) t2_end - ((char*) t2_start + t2_work_count * iter));
-            t2_work_count = (char*) t2_end - ((char*) t2_start + t2_work_count * iter);
+                      t2_end - (t2_start + t2_work_count * iter));
+            t2_work_count = t2_end - (t2_start + t2_work_count * iter);
         }
 
-        void* t2_work_buf = (char*) t2_start + t2_work_count * dtype->size * iter;
+        iccl_buf_placeholder t2_work_buf = t2_start + t2_work_count * dtype->size * iter;
 
         std::function<void(iccl_sched*)> funcT1;
         std::function<void(iccl_sched*)> funcT2;

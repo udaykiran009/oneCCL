@@ -9,14 +9,14 @@ class send_entry : public sched_entry
 public:
     send_entry() = delete;
     send_entry(iccl_sched* sched,
-               const void* buffer,
-               size_t count,
+               iccl_buf_placeholder buf,
+               size_t cnt,
                iccl_datatype_internal_t dtype,
                size_t dst,
                size_t rank,
                iccl_op_id_t op_id) :
-        sched_entry(sched), buf(buffer),
-        cnt(count), dtype(dtype),
+        sched_entry(sched), buf(buf),
+        cnt(cnt), dtype(dtype),
         dst(dst), rank(rank), op_id(op_id)
     {
         LOG_DEBUG("creating ", name(), " entry");
@@ -29,8 +29,10 @@ public:
         atl_tag = global_data.atl_tag->create(sched->coll_param.comm->id(), rank, sched->sched_id, op_id);
         size_t bytes = cnt * iccl_datatype_get_size(dtype);
         LOG_DEBUG("SEND entry dst, ", dst, ", tag ", atl_tag, ", req ", &req, ", bytes ", bytes);
-        atl_status_t atl_status = atl_comm_send(sched->bin->get_comm_ctx(), buf,
+
+        atl_status_t atl_status = atl_comm_send(sched->bin->get_comm_ctx(), buf.get_ptr(),
                                                 bytes, dst, atl_tag, &req);
+
         if (unlikely(atl_status != atl_status_success))
         {
             ICCL_THROW("SEND entry failed. atl_status: ", atl_status_to_str(atl_status));
@@ -53,6 +55,7 @@ public:
 
         if (req_status)
         {
+            LOG_DEBUG("SEND entry done dst, ", dst);
             status = iccl_sched_entry_status_complete;
         }
     }
@@ -79,7 +82,7 @@ protected:
         iccl_logger::format(str,
                             "dt ", iccl_datatype_get_name(dtype),
                             ", cnt ", cnt,
-                            ", buf ", buf,
+                            ", buf ", buf.get_ptr(),
                             ", dst ", dst,
                             ", atl_tag ", atl_tag,
                             ", comm_id ", sched->coll_param.comm->id(),
@@ -88,12 +91,10 @@ protected:
     }
 
 private:
-    const void* buf;
+    iccl_buf_placeholder buf;
     size_t cnt;
     iccl_datatype_internal_t dtype;
-    //destination in global communicator
     size_t dst;
-    //its rank in global communicator
     size_t rank;
     iccl_op_id_t op_id = 0;
     atl_req_t req{};

@@ -281,8 +281,8 @@ iccl_sched* iccl_fusion_manager::build_sched()
         {
             size_t global_copy_idx = idx * copies_per_part + copy_idx;
             entry_factory::make_copy_entry(part_scheds[idx].get(),
-                                           exec_queue[global_copy_idx]->coll_param.send_buf,
-                                           (char*) fusion_buf + offset,
+                                           const_cast<void**>(&exec_queue[global_copy_idx]->coll_param.send_buf),
+                                           iccl_buf_placeholder(&fusion_buf, offset),
                                            exec_queue[global_copy_idx]->coll_param.count,
                                            dtype);
             offset += exec_queue[global_copy_idx]->coll_param.count * dtype_size;
@@ -305,8 +305,8 @@ iccl_sched* iccl_fusion_manager::build_sched()
         {
             size_t global_copy_idx = idx * copies_per_part + copy_idx;
             entry_factory::make_copy_entry(part_scheds[idx].get(),
-                                           (char*) fusion_buf + offset,
-                                           exec_queue[global_copy_idx]->coll_param.recv_buf,
+                                           iccl_buf_placeholder(&fusion_buf, offset),
+                                           &exec_queue[global_copy_idx]->coll_param.recv_buf,
                                            exec_queue[global_copy_idx]->coll_param.count,
                                            dtype);
             offset += exec_queue[global_copy_idx]->coll_param.count * dtype_size;

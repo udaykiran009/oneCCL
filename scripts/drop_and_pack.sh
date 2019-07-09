@@ -50,7 +50,7 @@ fi
 ICCL_PACKAGE_SUFFIX="_${ICCL_PACKAGE_PHASE}_ww`date +%V`.${DATE}.${TIME}"
 ICCL_PACKAGE_NAME="${ICCL_PACKAGE_PREFIX}${ICCL_VERSION_FORMAT}${ICCL_PACKAGE_SUFFIX}"
 SWF_PRE_DROP_DIR="/p/pdsd/scratch/Drops/ICCL/1.0/`date +%Y-%m-%d`/SWF_Drops"
-#"/p/pdsd/scratch/Drops/MLSL2/${MLSL_VERSION_FORMAT}/Linux/`date +%Y-%m-%d`/SWF_Drops"
+#"/p/pdsd/scratch/Drops/ICCL2/${ICCL_VERSION_FORMAT}/Linux/`date +%Y-%m-%d`/SWF_Drops"
 
 
 #==============================================================================

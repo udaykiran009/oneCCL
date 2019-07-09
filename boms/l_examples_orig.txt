@@ -1,14 +1,14 @@
 DeliveryName	InstallName	FileCheckSum	FileOrigin	Owner	FileFeature	FileInstallCondition	InstalledFilePermission	Redistributable	InstalledFileOwner	SymbolicLink
-<deliverydir>/l_examples/allgatherv	<installdir><l_mlsl_install_path><l_mlsl_platform>/examples/allgatherv		external	Ksenya Kochanova		1	755	redistributable	root	<installroot>/intel64/examples/allgatherv
-<deliverydir>/l_examples/allreduce	<installdir><l_mlsl_install_path><l_mlsl_platform>/examples/allreduce		external	Ksenya Kochanova		1	755	redistributable	root	<installroot>/intel64/examples/allreduce
-<deliverydir>/l_examples/allreduce_cpp	<installdir><l_mlsl_install_path><l_mlsl_platform>/examples/allreduce_cpp		external	Ksenya Kochanova		1	755	redistributable	root	<installroot>/intel64/examples/allreduce_cpp
-<deliverydir>/l_examples/bcast	<installdir><l_mlsl_install_path><l_mlsl_platform>/examples/bcast		external	Ksenya Kochanova		1	755	redistributable	root	<installroot>/intel64/examples/bcast
-<deliverydir>/l_examples/benchmark	<installdir><l_mlsl_install_path><l_mlsl_platform>/examples/benchmark		external	Ksenya Kochanova		1	755	redistributable	root	<installroot>/intel64/examples/benchmark
-<deliverydir>/l_examples/communicator	<installdir><l_mlsl_install_path><l_mlsl_platform>/examples/communicator		external	Ksenya Kochanova		1	755	redistributable	root	<installroot>/intel64/examples/communicator
-<deliverydir>/l_examples/custom_allreduce	<installdir><l_mlsl_install_path><l_mlsl_platform>/examples/custom_allreduce		external	Ksenya Kochanova		1	755	redistributable	root	<installroot>/intel64/examples/custom_allreduce
-<deliverydir>/l_examples/out_of_order_allreduce	<installdir><l_mlsl_install_path><l_mlsl_platform>/examples/out_of_order_allreduce		external	Ksenya Kochanova		1	755	redistributable	root	<installroot>/intel64/examples/out_of_order_allreduce
-<deliverydir>/l_examples/priority_allreduce	<installdir><l_mlsl_install_path><l_mlsl_platform>/examples/priority_allreduce		external	Ksenya Kochanova		1	755	redistributable	root	<installroot>/intel64/examples/priority_allreduce
-<deliverydir>/l_examples/reduce	<installdir><l_mlsl_install_path><l_mlsl_platform>/examples/reduce		external	Ksenya Kochanova		1	755	redistributable	root	<installroot>/intel64/examples/reduce
-<deliverydir>/l_examples/sparse_allreduce	<installdir><l_mlsl_install_path><l_mlsl_platform>/examples/sparse_allreduce		external	Ksenya Kochanova		1	755	redistributable	root	<installroot>/intel64/examples/sparse_allreduce
-<deliverydir>/l_examples/vector_allgatherv	<installdir><l_mlsl_install_path><l_mlsl_platform>/examples/vector_allgatherv		external	Ksenya Kochanova		1	755	redistributable	root	<installroot>/intel64/examples/vector_allgatherv
+<deliverydir>/l_examples/allgatherv	<installdir><l_iccl_install_path><l_iccl_platform>/examples/allgatherv		external	Ksenya Kochanova		1	755	redistributable	root	<installroot>/intel64/examples/allgatherv
+<deliverydir>/l_examples/allreduce	<installdir><l_iccl_install_path><l_iccl_platform>/examples/allreduce		external	Ksenya Kochanova		1	755	redistributable	root	<installroot>/intel64/examples/allreduce
+<deliverydir>/l_examples/allreduce_cpp	<installdir><l_iccl_install_path><l_iccl_platform>/examples/allreduce_cpp		external	Ksenya Kochanova		1	755	redistributable	root	<installroot>/intel64/examples/allreduce_cpp
+<deliverydir>/l_examples/bcast	<installdir><l_iccl_install_path><l_iccl_platform>/examples/bcast		external	Ksenya Kochanova		1	755	redistributable	root	<installroot>/intel64/examples/bcast
+<deliverydir>/l_examples/benchmark	<installdir><l_iccl_install_path><l_iccl_platform>/examples/benchmark		external	Ksenya Kochanova		1	755	redistributable	root	<installroot>/intel64/examples/benchmark
+<deliverydir>/l_examples/communicator	<installdir><l_iccl_install_path><l_iccl_platform>/examples/communicator		external	Ksenya Kochanova		1	755	redistributable	root	<installroot>/intel64/examples/communicator
+<deliverydir>/l_examples/custom_allreduce	<installdir><l_iccl_install_path><l_iccl_platform>/examples/custom_allreduce		external	Ksenya Kochanova		1	755	redistributable	root	<installroot>/intel64/examples/custom_allreduce
+<deliverydir>/l_examples/out_of_order_allreduce	<installdir><l_iccl_install_path><l_iccl_platform>/examples/out_of_order_allreduce		external	Ksenya Kochanova		1	755	redistributable	root	<installroot>/intel64/examples/out_of_order_allreduce
+<deliverydir>/l_examples/priority_allreduce	<installdir><l_iccl_install_path><l_iccl_platform>/examples/priority_allreduce		external	Ksenya Kochanova		1	755	redistributable	root	<installroot>/intel64/examples/priority_allreduce
+<deliverydir>/l_examples/reduce	<installdir><l_iccl_install_path><l_iccl_platform>/examples/reduce		external	Ksenya Kochanova		1	755	redistributable	root	<installroot>/intel64/examples/reduce
+<deliverydir>/l_examples/sparse_allreduce	<installdir><l_iccl_install_path><l_iccl_platform>/examples/sparse_allreduce		external	Ksenya Kochanova		1	755	redistributable	root	<installroot>/intel64/examples/sparse_allreduce
+<deliverydir>/l_examples/vector_allgatherv	<installdir><l_iccl_install_path><l_iccl_platform>/examples/vector_allgatherv		external	Ksenya Kochanova		1	755	redistributable	root	<installroot>/intel64/examples/vector_allgatherv
 #Intel Confidential

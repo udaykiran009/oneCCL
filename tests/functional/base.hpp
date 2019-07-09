@@ -343,7 +343,6 @@ typedef enum {
 } TestCacheType;
 TestCacheType firstCacheType = CT_CACHE_0;
 map < int, const char * >cacheTypeStr = { {CT_CACHE_0, "CT_CACHE_0"},
-//TODO: implement cache types support
 //                                          {CT_CACHE_1, "CT_CACHE_1"}
                                           };
 
