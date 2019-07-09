@@ -261,7 +261,7 @@ static int parse_auto_affinity()
     ICCL_THROW_IF_NOT(env_data.worker_count <= cores.size(), "count of workers ", env_data.worker_count,
                       " exceeds the number of available cores ", cores.size());
 
-    size_t iccl_cores_start = cores.size() - 1 - env_data.worker_count;
+    size_t iccl_cores_start = cores.size() - env_data.worker_count;
 
     std::stringstream str;
     iccl_logger::format(str, "iccl uses cores: ");
