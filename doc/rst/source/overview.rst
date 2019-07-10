@@ -1,8 +1,7 @@
 Overview
 ============================
 
-Intel® oneAPI Collective Communications Library (Intel® CCL) is a library that provides an efficient implementation of
-communication patterns used in deep learning. 
+Intel® oneAPI Collective Communications Library (Intel® CCL) is a scalable and high-performance communication library for Deep Learning (DL) and Machine Learning (ML) workloads. It develops the ideas originated in Intel(R) Machine Learning Scaling Library and expands the design and API to encompass new features and use cases.
 
 Intel(R) CCL features include:
 

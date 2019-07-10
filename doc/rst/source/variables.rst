@@ -22,14 +22,40 @@ ICCL_ALLREDUCE_ALGO
      - reduce_scatter+allgather ring.
    * - ``ring_rma``
      - reduce_scatter+allgather ring using rma communications.
-   * - ``Starlike``
+   * - ``starlike``
      - may be beneficial for imbalanced workloads.
    * - ``tree``
      - Rabenseifner’s algorithm (**default**).
 
 **Description**
 
-Set this environment variable to specify a collective algorithm. The default algorithm for small messages is recursive-doubling, for large messages - Rabenseifner’s.
+Set this environment variable to specify algorithm choice for AllReduce. The default algorithm for small messages is recursive-doubling, for large messages - Rabenseifner’s.
+
+ICCL_ALLGATHERV_ALGO
+####################
+**Syntax**
+
+``ICCL_ALLGATHERV_ALGO=<value>``
+
+**Arguments**
+
+.. list-table:: 
+   :widths: 25 50
+   :header-rows: 1
+   :align: left
+   
+   * - <value> 
+     - Description
+   * - ``bcast`` 
+     - Series of broadcast operations with different roots (**default**).
+   * - ``flat``
+     - Alltoall-based approach.
+   * - ``direct``
+     - Based on MPI_Allgatherv.
+
+**Description**
+
+Set this environment variable to specify algorithm choice for AllReduce. The default algorithm for small messages is recursive-doubling, for large messages - Rabenseifner’s.
 
 ICCL_ENABLE_FUSION
 #########################
@@ -104,6 +130,47 @@ ICCL_KUBE_API_ADDR
 
 ICCL_WORKER_AFFINITY
 ####################
+**Syntax**
+
+``ICCL_WORKER_AFFINITY=<proclist>``
+
+**Arguments**
+
+.. list-table:: 
+   :header-rows: 1
+   :align: left
+   
+   * - <proclist> 
+     - Description
+   * - ``n1,n2,..``
+     - Affinity is explicitly specified by user.
+   * - ``auto``
+     - Workers are pinned to K last cores of pin domain where K is ICCL_WORKER_COUNT (**default**). 
+
+**Description**
+
+Set this environment variable to specify cpu affinity for ICCL worker threads.
+
 
 ICCL_WORKER_COUNT
 ###################
+**Syntax**
+
+``ICCL_WORKER_COUNT=<value>``
+
+**Arguments**
+
+.. list-table:: 
+   :header-rows: 1
+   :align: left
+   
+   * - <value> 
+     - Description
+   * - ``N``
+     - Number of worker threads for MLSL rank. 2 if not specified.
+
+**Description**
+
+Set this environment variable to specify number of ICCL worker threads.
+
+
