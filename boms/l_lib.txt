@@ -1,8 +1,8 @@
 DeliveryName	InstallName	FileCheckSum	FileOrigin	Owner	FileFeature	FileInstallCondition	InstalledFilePermission	Redistributable	InstalledFileOwner	SymbolicLink
 <deliverydir>/l_lib/libkube.so.1	<installdir><l_iccl_install_path><l_iccl_platform>/lib/libkube.so.1		external	Ksenya Kochanova		1	755	redistributable	root	<installroot>/intel64/lib64/libkube.so.1
 <deliverydir>/l_lib/libkube.a	<installdir><l_iccl_install_path><l_iccl_platform>/lib/libkube.a		external	Ksenya Kochanova		1	755	redistributable	root	<installroot>/intel64/lib64/libkube.a
-<deliverydir>/l_lib/libiccl2.a	<installdir><l_iccl_install_path><l_iccl_platform>/lib/libiccl2.a		external	Ksenya Kochanova		1	755	redistributable	root	<installroot>/intel64/lib64/libiccl2.a
-<deliverydir>/l_lib/libiccl2.so	<installdir><l_iccl_install_path><l_iccl_platform>/lib/libiccl2.so		external	Ksenya Kochanova		1	755	redistributable	root	<installroot>/intel64/lib64/libiccl2.so
+<deliverydir>/l_lib/libiccl.a	<installdir><l_iccl_install_path><l_iccl_platform>/lib/libiccl.a		external	Ksenya Kochanova		1	755	redistributable	root	<installroot>/intel64/lib64/libiccl.a
+<deliverydir>/l_lib/libiccl.so	<installdir><l_iccl_install_path><l_iccl_platform>/lib/libiccl.so		external	Ksenya Kochanova		1	755	redistributable	root	<installroot>/intel64/lib64/libiccl.so
 <deliverydir>/l_lib/libiccl_atl_mpi.a	<installdir><l_iccl_install_path><l_iccl_platform>/lib/libiccl_atl_mpi.a		external	Ksenya Kochanova		1	755	redistributable	root	<installroot>/intel64/lib64/libiccl_atl_mpi.a
 <deliverydir>/l_lib/libiccl_atl_mpi.so.1	<installdir><l_iccl_install_path><l_iccl_platform>/lib/libiccl_atl_mpi.so.1		external	Ksenya Kochanova		1	755	redistributable	root	<installroot>/intel64/lib64/libiccl_atl_mpi.so.1
 <deliverydir>/l_lib/libiccl_atl_ofi.a	<installdir><l_iccl_install_path><l_iccl_platform>/lib/libiccl_atl_ofi.a		external	Ksenya Kochanova		1	755	redistributable	root	<installroot>/intel64/lib64/libiccl_atl_ofi.a
