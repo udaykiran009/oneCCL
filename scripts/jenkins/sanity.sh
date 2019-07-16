@@ -71,6 +71,7 @@ echo_debug()
     fi
 }
 
+
 echo_log_separator()
 {
     echo_log "#=============================================================================="
@@ -82,6 +83,7 @@ check_command_exit_code() {
         exit $1
     fi
 }
+
 set_env()
 {
 	if [ -z "${I_MPI_HYDRA_HOST_FILE}" ]

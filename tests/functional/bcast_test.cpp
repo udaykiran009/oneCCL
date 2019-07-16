@@ -30,17 +30,21 @@ public:
         }
     }
     int Run(TypedTestParam <T> &param) {
-        size_t idx = 0;
-        SHOW_ALGO(Collective_Name);
-        this->FillBuffers(param);
-        size_t* Buffers = param.DefineStartOrder();
-        for (idx = 0; idx < param.bufferCount; idx++) {
-            this->Init (param);
-            param.req[Buffers[idx]] = param.global_comm.bcast(param.sendBuf[idx].data(), param.elemCount,
-                              (iccl::data_type) param.GetDataType(), ROOT_PROCESS_IDX, &param.coll_attr);
+        size_t result = 0;
+        for (size_t iter = 0; iter < 2; iter++) {
+            SHOW_ALGO(Collective_Name);
+            this->FillBuffers(param);
+            this->SwapBuffers(param, iter);
+            size_t idx = 0;
+            size_t* Buffers = param.DefineStartOrder();
+            for (idx = 0; idx < param.bufferCount; idx++) {
+                this->Init(param, idx);
+                param.req[Buffers[idx]] = param.global_comm.bcast(param.sendBuf[Buffers[idx]].data(), param.elemCount,
+                                  (iccl::data_type) param.GetDataType(), ROOT_PROCESS_IDX, &param.coll_attr);
+            }
+            param.DefineCompletionOrderAndComplete();
+            result += Check(param);
         }
-        param.DefineCompletionOrderAndComplete();
-        int result = Check(param);
         return result;
     }
 };

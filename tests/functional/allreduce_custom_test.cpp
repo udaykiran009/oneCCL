@@ -155,7 +155,7 @@ public:
                 if (param.GetReductionName() == RT_SUM) {
                     T expected =
                         ((param.processCount * (param.processCount - 1) / 2) +
-                        (i * param.processCount));
+                        ((i + j)  * param.processCount));
                     if (param.GetEpilogType() == EPLT_CHAR_TO_T && param.GetPrologType() == PRT_T_TO_CHAR){
                          expected_fin = ((char)(expected * prolog_coeff * epilog_coeff));
                         tmp1 = param.recvBuf[j][i];
@@ -205,12 +205,12 @@ public:
                     T expected = 0;
                     if (param.GetPrologType() == PRT_T_TO_CHAR)
                     {
-                        expected = get_expected_max<char>(i, param.processCount, prolog_coeff);
+                        expected = get_expected_max<char>(i, j, param.processCount, prolog_coeff);
                         expected_fin = (char)(expected * epilog_coeff);
                     }
                     else
                     {
-                        expected = get_expected_max<T>(i, param.processCount, prolog_coeff);
+                        expected = get_expected_max<T>(i, j, param.processCount, prolog_coeff);
 
                     }
                     expected_fin = expected * epilog_coeff;
@@ -224,15 +224,15 @@ public:
                     T expected = 0;
                     if (param.GetPrologType() == PRT_T_TO_CHAR)
                     {
-                        expected = get_expected_min<char>(i, param.processCount, prolog_coeff);
+                        expected = get_expected_min<char>(i, j, param.processCount, prolog_coeff);
                         expected_fin = (char)(expected * epilog_coeff);
                     }
                     else
                     {
-                        expected = get_expected_min<T>(i, param.processCount, prolog_coeff);
-                        // expected_fin = expected * epilog_coeff;
+                        expected = get_expected_min<T>(i, j, param.processCount, prolog_coeff);
+                        expected_fin = expected * epilog_coeff;
                     }
-                     expected_fin = expected * epilog_coeff;
+                     // expected_fin = expected * epilog_coeff;
                     if (param.recvBuf[j][i] != expected_fin) {
                         sprintf(this->errMessage, "[%zu] sent sendBuf[%zu][%zu] = %f, got recvBuf[%zu][%zu] = %f, but expected = %f\n",
                                                    param.processIdx, j, i, (double) param.sendBuf[j][i], j, i, (double) param.recvBuf[j][i], (double) expected_fin);
@@ -242,7 +242,7 @@ public:
                 else if (param.GetReductionName() == RT_PROD) {
                     T expected = 1;
                     for (size_t k = 0; k < param.processCount; k++) {
-                        expected *= (i + k);
+                        expected *= (i + j + k);
                     }
                     if (param.GetPrologType() == PRT_T_TO_CHAR)
                         expected_fin = ((char)(expected * prolog_coeff_prod * epilog_coeff_prod));
@@ -283,48 +283,52 @@ public:
     }
 
     int Run(TypedTestParam < T > &param) {
-        size_t idx = 0;
-        SHOW_ALGO(Collective_Name);
-        this->FillBuffers (param);
-        size_t* Buffers = param.DefineStartOrder();
-        for (idx = 0; idx < param.bufferCount; idx++) {
-            this->Init (param);
-            if (param.GetPrologType() == PRT_T_TO_2X) {
-                param.coll_attr.prologue_fn = do_prologue_T_2x<T>;
-            }
-            if (param.GetEpilogType() == EPLT_T_TO_2X) {
-                param.coll_attr.epilogue_fn = do_epilogue_T_2x<T>;
-            }
-            else if (param.GetEpilogType() == EPLT_CHAR_TO_T && param.GetPrologType() == PRT_T_TO_CHAR) {
-                param.coll_attr.prologue_fn = do_prologue_T_to_char<T>;
-                param.coll_attr.epilogue_fn = do_epilogue_char_to_T<T>;
-            }
-            //norm
-            else if (param.GetEpilogType() == EPLT_CHAR_TO_T && (param.GetPrologType() == PRT_T_TO_2X || param.GetPrologType() == PRT_NULL)) {
-                return TEST_SUCCESS;
-            }
-            if (param.GetPrologType() == PRT_T_TO_CHAR && param.GetEpilogType() == EPLT_T_TO_2X) {
-                // return TEST_SUCCESS;
-                param.coll_attr.epilogue_fn = do_epilogue_T_2x<T>;
-                param.coll_attr.prologue_fn = do_prologue_T_to_char<T>;
-            }
-            if (param.GetPrologType() == PRT_T_TO_CHAR) {
-                // return TEST_SUCCESS;
+        size_t result = 0;
+        for (size_t iter = 0; iter < 2; iter++) {
+            SHOW_ALGO(Collective_Name);
+            this->FillBuffers (param);
+            this->SwapBuffers(param, iter);
+            size_t idx = 0;
+            size_t* Buffers = param.DefineStartOrder();
+            for (idx = 0; idx < param.bufferCount; idx++) {
+                this->Init (param, idx);
+                if (param.GetPrologType() == PRT_T_TO_2X) {
+                    param.coll_attr.prologue_fn = do_prologue_T_2x<T>;
+                }
+                if (param.GetEpilogType() == EPLT_T_TO_2X) {
+                    param.coll_attr.epilogue_fn = do_epilogue_T_2x<T>;
+                }
+                else if (param.GetEpilogType() == EPLT_CHAR_TO_T && param.GetPrologType() == PRT_T_TO_CHAR) {
+                    param.coll_attr.prologue_fn = do_prologue_T_to_char<T>;
+                    param.coll_attr.epilogue_fn = do_epilogue_char_to_T<T>;
+                }
+                //norm
+                else if (param.GetEpilogType() == EPLT_CHAR_TO_T && (param.GetPrologType() == PRT_T_TO_2X || param.GetPrologType() == PRT_NULL)) {
+                    return TEST_SUCCESS;
+                }
+                if (param.GetPrologType() == PRT_T_TO_CHAR && param.GetEpilogType() == EPLT_T_TO_2X) {
+                    // return TEST_SUCCESS;
+                    param.coll_attr.epilogue_fn = do_epilogue_T_2x<T>;
+                    param.coll_attr.prologue_fn = do_prologue_T_to_char<T>;
+                }
+                if (param.GetPrologType() == PRT_T_TO_CHAR) {
+                    // return TEST_SUCCESS;
 
-                param.coll_attr.prologue_fn = do_prologue_T_to_char<T>;
+                    param.coll_attr.prologue_fn = do_prologue_T_to_char<T>;
+                }
+                if (param.GetReductionType() == iccl_reduction_custom) {
+                    if (set_custom_reduction<T>(param))
+                        return TEST_FAILURE;
+                }
+                param.req[Buffers[idx]] = (param.GetPlaceType() == PT_IN) ?
+                    param.global_comm.allreduce(param.recvBuf[Buffers[idx]].data(), param.recvBuf[Buffers[idx]].data(), param.elemCount,
+                                  (iccl::data_type) param.GetDataType(),(iccl::reduction) param.GetReductionType(), &param.coll_attr) :
+                    param.global_comm.allreduce(param.sendBuf[Buffers[idx]].data(), param.recvBuf[Buffers[idx]].data(), param.elemCount,
+                                  (iccl::data_type) param.GetDataType(),(iccl::reduction) param.GetReductionType(), &param.coll_attr);
             }
-            if (param.GetReductionType() == iccl_reduction_custom) {
-                if (set_custom_reduction<T>(param))
-                    return TEST_FAILURE;
-            }
-            param.req[Buffers[idx]] = (param.GetPlaceType() == PT_IN) ?
-                param.global_comm.allreduce(param.recvBuf[idx].data(), param.recvBuf[idx].data(), param.elemCount,
-                              (iccl::data_type) param.GetDataType(),(iccl::reduction) param.GetReductionType(), &param.coll_attr) :
-                param.global_comm.allreduce(param.sendBuf[idx].data(), param.recvBuf[idx].data(), param.elemCount,
-                              (iccl::data_type) param.GetDataType(),(iccl::reduction) param.GetReductionType(), &param.coll_attr);
+            param.DefineCompletionOrderAndComplete();
+            result += Check(param);
         }
-        param.DefineCompletionOrderAndComplete();
-        int result = Check(param);
         return result;
     }
 };

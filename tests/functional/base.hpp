@@ -217,11 +217,13 @@ typedef enum {
 SizeType firstSizeType = ST_SMALL;
 map < int, const char *>sizeTypeStr = { {ST_SMALL, "ST_SMALL"},
                                         {ST_MEDIUM, "ST_MEDIUM"},
-                                        {ST_LARGE, "ST_LARGE"}};
+                                        {ST_LARGE, "ST_LARGE"}
+                                        };
 
 map < int, size_t > sizeTypeValues = { {ST_SMALL, 16},
                                        {ST_MEDIUM, 32768},
-                                       {ST_LARGE, 524288}};
+                                       {ST_LARGE, 524288}
+                                       };
 
 typedef enum {
     BC_SMALL = 0,
@@ -338,16 +340,16 @@ map < int, iccl_reduction_t > reductionTypeValues = { {RT_SUM, iccl_reduction_su
 
 typedef enum {
     CT_CACHE_0 = 0,
-//    CT_CACHE_1 = 1,
+    CT_CACHE_1 = 1,
     CT_LAST
 } TestCacheType;
 TestCacheType firstCacheType = CT_CACHE_0;
 map < int, const char * >cacheTypeStr = { {CT_CACHE_0, "CT_CACHE_0"},
-//                                          {CT_CACHE_1, "CT_CACHE_1"}
+                                         {CT_CACHE_1, "CT_CACHE_1"}
                                           };
 
 map < int, int > cacheTypeValues = { {CT_CACHE_0, 0},
-//                                     {CT_CACHE_1, 1}
+                                     {CT_CACHE_1, 1}
                                      };
 
 typedef enum {
@@ -374,7 +376,8 @@ PriorityType firstPriorityType = PRT_DISABLE;
 map < int, const char * >priorityTypeStr = { {PRT_DISABLE, "PRT_DISABLE"},
                                              {PRT_DIRECT, "PRT_DIRECT"},
                                              {PRT_INDIRECT, "PRT_INDIRECT"},
-                                             {PRT_RANDOM, "PRT_RANDOM"}};
+                                             {PRT_RANDOM, "PRT_RANDOM"}
+                                             };
 
 map < int, int > priorityTypeValues = { {PRT_DISABLE, 0},
                                         {PRT_DIRECT, 1},
@@ -621,15 +624,33 @@ struct TypedTestParam
     }
     size_t* DefineStartOrder()
     {
-            size_t idx;
-            for (idx = 0; idx < bufferCount; idx++)
+            size_t idx = 0;
             {
                 if (testParam.priorityStartType == PRT_DIRECT || testParam.priorityStartType == PRT_DISABLE)
-                    startArr[idx] = idx;
+                    for (idx = 0; idx < bufferCount; idx++)
+                        startArr[idx] = idx;
                 else if (testParam.priorityStartType == PRT_INDIRECT)
-                    startArr[idx] = (bufferCount - idx - 1);
+                    for (idx = 0; idx < bufferCount; idx++)
+                        startArr[idx] = (bufferCount - idx - 1);
+                // TODO: should be enabled after ICCL_OUT_OF_ORDER_SUPPORT
                 else if (testParam.priorityStartType == PRT_RANDOM){
-                    startArr[idx] = (idx + processIdx) % bufferCount;
+                    char* testDynamicPointer = getenv("ICCL_OUT_OF_ORDER_SUPPORT");
+                    if (testDynamicPointer && atoi(testDynamicPointer) == 1) {
+                        size_t j;
+                        for(int k = bufferCount; k > 1; k--) {
+                           j = (rand() + processIdx) % k;
+                           int t = startArr[k-1];
+                           startArr[k-1] = startArr[j];
+                           startArr[j] = t;
+                        }
+                    for (idx = 0; idx < bufferCount; idx++)
+                    printf("startArr[%zu]=%zu",idx, startArr[idx]);
+                    }
+                    else {
+                    for (idx = 0; idx < bufferCount; idx++)
+                        // startArr[idx] = rand() % bufferCount;
+                         startArr[idx] = idx;
+                    }
                 }
                 else
                     startArr[idx] = idx;
@@ -695,6 +716,7 @@ struct TypedTestParam
                \ndataType %s \
                \ncompletionType %s \
                \nplaceType %s \
+               \npriorityStartType %s \
                \npriorityType %s \
                \nbufferCount %zu \
                \nprologType %s \
@@ -710,6 +732,7 @@ struct TypedTestParam
                GetDataTypeStr(),
                GetCompletionTypeStr(),
                GetPlaceTypeStr(),
+               GetPriorityStartTypeStr(),
                GetPriorityTypeStr(),
                bufferCount,
                GetPrologTypeStr(),
@@ -742,6 +765,9 @@ struct TypedTestParam
     }
     const char *GetPriorityTypeStr() {
         return priorityTypeStr[testParam.priorityType];
+    }
+    const char *GetPriorityStartTypeStr() {
+        return priorityTypeStr[testParam.priorityStartType];
     }
     const char *GetCacheTypeStr() {
         return cacheTypeStr[testParam.cacheType];
@@ -788,18 +814,18 @@ struct TypedTestParam
 };
 
 template <typename T>
-T get_expected_min(size_t i, size_t processCount, size_t coeff = 1)
+T get_expected_min(size_t i, size_t j, size_t processCount, size_t coeff = 1)
 {
-    if ((T)(coeff *(i + processCount - 1)) < T(coeff * i))
-        return (T)(coeff * (i + processCount - 1));
-    return (T)(coeff * i);
+    if ((T)(coeff *(i + j + processCount - 1)) < T(coeff * (i + j)))
+        return (T)(coeff * (i + j + processCount - 1));
+    return (T)(coeff * (i + j));
 }
 template <typename T>
-T get_expected_max(size_t i, size_t processCount, size_t coeff = 1)
+T get_expected_max(size_t i, size_t j, size_t processCount, size_t coeff = 1)
 {
-    if ((T)(coeff *(i + processCount - 1)) > T(coeff * i))
-        return (T)(coeff * (i + processCount - 1));
-    return (T)(coeff * i);
+    if ((T)(coeff *(i + j + processCount - 1)) > T(coeff * (i + j)))
+        return (T)(coeff * (i + j + processCount - 1));
+    return (T)(coeff * (i + j));
 }
 
 template <typename T> class BaseTest {
@@ -822,15 +848,40 @@ public:
     char errMessage[100]{};
 
     BaseTest() { memset(this->errMessage, '\0', 100); }
-    void Init(TypedTestParam <T> &param){
+    void Init(TypedTestParam <T> &param, size_t idx){
         param.coll_attr.priority = (int)param.PriorityRequest();
         param.coll_attr.to_cache = (int)param.GetCacheType();
         param.coll_attr.synchronous = (int)param.GetSyncType();
+        param.coll_attr.match_id = std::to_string(param.startArr[idx]).c_str();
+    }
+    void SwapBuffers(TypedTestParam <T> &param, size_t iter){
+        char* testDynamicPointer = getenv("ICCL_TEST_DYNAMIC_POINTER");
+        if (testDynamicPointer && atoi(testDynamicPointer) == 1) {
+            if (iter == 1) {
+                if (param.processIdx % 2 ) {
+                    std::vector<std::vector<T>> tmpBuf;
+                    tmpBuf.resize(param.bufferCount);
+                    for (size_t i = 0; i < param.bufferCount; i++)
+                        tmpBuf[i].resize(param.elemCount * param.processCount * sizeof(T));
+                    for (size_t j = 0; j < param.bufferCount; j++) {
+                        for (size_t i = 0; i < param.elemCount; i++) {
+                            tmpBuf[j][i] = param.processIdx + i + j;
+                        }
+                    }
+                    if (param.GetPlaceType() == PT_IN) {
+                        tmpBuf.swap(param.recvBuf);
+                    }
+                    else {
+                        tmpBuf.swap(param.sendBuf);
+                    }
+                }
+            }
+        }
     }
     void FillBuffers(TypedTestParam <T> &param){
         for (size_t j = 0; j < param.bufferCount; j++) {
             for (size_t i = 0; i < param.elemCount; i++) {
-                param.sendBuf[j][i] = param.processIdx + i;
+                param.sendBuf[j][i] = param.processIdx + i + j;
             }
         }
         if (param.testParam.placeType == PT_OOP)

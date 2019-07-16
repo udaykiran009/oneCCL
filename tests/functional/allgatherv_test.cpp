@@ -86,20 +86,24 @@ public:
         }
     }
     int Run(TypedTestParam < T > &param) {
-        size_t idx = 0;
-        SHOW_ALGO(Collective_Name);
-        this->FillBuffers(param);
-        size_t* Buffers = param.DefineStartOrder();
-        for (idx = 0; idx < param.bufferCount; idx++) {
-            this->Init(param);
-            param.req[Buffers[idx]] = (param.GetPlaceType() == PT_IN) ?
-                param.global_comm.allgatherv(param.recvBuf[idx].data(), recvCounts[param.processIdx], param.recvBuf[idx].data(),
-                                             recvCounts.data(), (iccl::data_type) param.GetDataType(), &param.coll_attr) :
-                param.global_comm.allgatherv(param.sendBuf[idx].data(), recvCounts[param.processIdx], param.recvBuf[idx].data(),
-                                             recvCounts.data(), (iccl::data_type) param.GetDataType(), &param.coll_attr);
+        size_t result = 0;
+        for (size_t iter = 0; iter < 2; iter++) {
+            SHOW_ALGO(Collective_Name);
+            this->FillBuffers(param);
+            this->SwapBuffers(param, iter);
+            size_t idx = 0;
+            size_t* Buffers = param.DefineStartOrder();
+            for (idx = 0; idx < param.bufferCount; idx++) {
+                this->Init(param, idx);
+                param.req[Buffers[idx]] = (param.GetPlaceType() == PT_IN) ?
+                    param.global_comm.allgatherv(param.recvBuf[Buffers[idx]].data(), recvCounts[param.processIdx], param.recvBuf[Buffers[idx]].data(),
+                                                 recvCounts.data(), (iccl::data_type) param.GetDataType(), &param.coll_attr) :
+                    param.global_comm.allgatherv(param.sendBuf[Buffers[idx]].data(), recvCounts[param.processIdx], param.recvBuf[Buffers[idx]].data(),
+                                                 recvCounts.data(), (iccl::data_type) param.GetDataType(), &param.coll_attr);
+            }
+            param.DefineCompletionOrderAndComplete();
+            result += Check(param);
         }
-        param.DefineCompletionOrderAndComplete();
-        int result = Check(param);
         return result;
     }
 };
