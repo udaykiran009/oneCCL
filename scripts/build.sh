@@ -527,7 +527,7 @@ run_pack()
 #==============================================================================
 run_swf_pre_drop()
 {
-    if [ "${ENABLE_SWF_PRE_DROP}" = "yes" ]
+    if [ "${ENABLE_SWF_PRE_DROP}" == "yes" ]
     then
         echo_log_separator
         echo_log "#\t\t\tSWF pre-drop..."

@@ -637,15 +637,13 @@ struct TypedTestParam
                     char* testDynamicPointer = getenv("ICCL_OUT_OF_ORDER_SUPPORT");
                     if (testDynamicPointer && atoi(testDynamicPointer) == 1) {
                         size_t j;
-                        for(int k = bufferCount; k > 1; k--) {
-                           j = (rand() + processIdx) % k;
-                           int t = startArr[k-1];
-                           startArr[k-1] = startArr[j];
-                           startArr[j] = t;
-                        }
                     for (idx = 0; idx < bufferCount; idx++)
-                    printf("startArr[%zu]=%zu",idx, startArr[idx]);
-                    }
+                        startArr[idx] = idx;
+                    for(int k=bufferCount; k>1; k--) {
+                       j = (rand() + processIdx) % k;
+                       int tmp = startArr[k-1];
+                       startArr[k-1] = startArr[j];
+                       startArr[j] = tmp;
                     else {
                     for (idx = 0; idx < bufferCount; idx++)
                         // startArr[idx] = rand() % bufferCount;

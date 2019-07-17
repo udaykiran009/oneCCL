@@ -258,7 +258,7 @@ public:
                 else if (param.GetReductionName() == RT_CUSTOM) {
                     T expected =
                         ((param.processCount * (param.processCount - 1) / 2) +
-                        (i * param.processCount));
+                        ((i + j) * param.processCount));
                     T expected_fin = expected * prolog_coeff * epilog_coeff;
                     if (param.recvBuf[j][i] != expected_fin) {
                         sprintf(this->errMessage, "[%zu] sent sendBuf[%zu][%zu] = %f, got recvBuf[%zu][%zu] = %f, but expected = %f\n",
