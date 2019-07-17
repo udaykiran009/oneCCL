@@ -625,7 +625,6 @@ struct TypedTestParam
     size_t* DefineStartOrder()
     {
             size_t idx = 0;
-            {
                 if (testParam.priorityStartType == PRT_DIRECT || testParam.priorityStartType == PRT_DISABLE)
                     for (idx = 0; idx < bufferCount; idx++)
                         startArr[idx] = idx;
@@ -637,13 +636,15 @@ struct TypedTestParam
                     char* testDynamicPointer = getenv("ICCL_OUT_OF_ORDER_SUPPORT");
                     if (testDynamicPointer && atoi(testDynamicPointer) == 1) {
                         size_t j;
-                    for (idx = 0; idx < bufferCount; idx++)
-                        startArr[idx] = idx;
-                    for(int k=bufferCount; k>1; k--) {
-                       j = (rand() + processIdx) % k;
-                       int tmp = startArr[k-1];
-                       startArr[k-1] = startArr[j];
-                       startArr[j] = tmp;
+						for (idx = 0; idx < bufferCount; idx++)
+							startArr[idx] = idx;
+						for(int k=bufferCount; k>1; k--) {
+						   j = (rand() + processIdx) % k;
+						   int tmp = startArr[k-1];
+						   startArr[k-1] = startArr[j];
+						   startArr[j] = tmp;
+						}
+					}
                     else {
                     for (idx = 0; idx < bufferCount; idx++)
                         // startArr[idx] = rand() % bufferCount;
@@ -652,7 +653,6 @@ struct TypedTestParam
                 }
                 else
                     startArr[idx] = idx;
-            }
         return startArr;
     }
     bool DefineCompletionOrderAndComplete()
