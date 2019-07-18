@@ -274,7 +274,7 @@ run_tests()
                 export ICCL_TEST_BUFFER_COUNT=1
                 export ICCL_TEST_CACHE_TYPE=1
                 export ICCL_TEST_COMPLETION_TYPE=1
-                export ICCL_TEST_DATA_TYPE=0
+                export ICCL_TEST_DATA_TYPE=1
                 export ICCL_TEST_PLACE_TYPE=1
                 export ICCL_TEST_PRIORITY_TYPE=0
                 export ICCL_TEST_REDUCTION_TYPE=0

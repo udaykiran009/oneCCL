@@ -469,7 +469,7 @@ struct TestParam {
 size_t CalculateTestCount ()
 {
     size_t testCount = PRT_LAST * PRT_LAST * CMPT_LAST * SNCT_LAST * (DT_LAST-1) * ST_LAST *  RT_LAST * BC_LAST * CT_LAST * PT_LAST * PRLT_LAST * EPLT_LAST;
-// ICCL_TEST_PROLOG_TYPE=0 ICCL_TEST_PLACE_TYPE=0 ICCL_TEST_CACHE_TYPE=0 ICCL_TEST_BUFFER_COUNT=0 ICCL_TEST_SIZE_TYPE=0 ICCL_TEST_PRIORITY_TYPE=1 ICCL_TEST_COMPLETION_TYPE=0 ICCL_TEST_SYNC_TYPE=0 ICCL_TEST_REDUCTION_TYPE=0 ICCL_TEST_DATA_TYPE=0
+// ICCL_TEST_EPILOG_TYPE=0 ICCL_TEST_PROLOG_TYPE=0 ICCL_TEST_PLACE_TYPE=0 ICCL_TEST_CACHE_TYPE=0 ICCL_TEST_BUFFER_COUNT=0 ICCL_TEST_SIZE_TYPE=0 ICCL_TEST_PRIORITY_TYPE=1 ICCL_TEST_COMPLETION_TYPE=0 ICCL_TEST_SYNC_TYPE=0 ICCL_TEST_REDUCTION_TYPE=0 ICCL_TEST_DATA_TYPE=0
     char* testDatatypeEnabled = getenv("ICCL_TEST_DATA_TYPE");
     char* testReductionEnabled = getenv("ICCL_TEST_REDUCTION_TYPE");
     char* testSyncEnabled = getenv("ICCL_TEST_SYNC_TYPE");
@@ -606,8 +606,26 @@ struct TypedTestParam
         for (size_t i = 0; i < bufferCount; i++)
             sendBuf[i].resize(elemCount * processCount * sizeof(T));
     }
-
-    bool CompleteRequest(std::shared_ptr < iccl::request > req) {
+	std::string CreateMatchId(size_t idx)
+	{
+		return (std::to_string(startArr[idx]) +
+		       std::to_string(processCount) +
+               std::to_string(elemCount) +
+               std::to_string(GetReductionType()) +
+               std::to_string(GetSyncType()) +
+               std::to_string(GetCacheType()) +
+               std::to_string(GetSizeType()) +
+               std::to_string(GetDataType()) +
+               std::to_string(GetCompletionType()) +
+               std::to_string(GetPlaceType()) +
+               std::to_string(GetPriorityStartType()) +
+               std::to_string(GetPriorityType()) +
+               std::to_string(bufferCount) +
+               std::to_string(GetPrologType()) +
+               std::to_string(GetEpilogType()));
+	}
+    bool CompleteRequest(std::shared_ptr < iccl::request > req)
+	{
         if (testParam.completionType == CMPT_TEST) {
             bool isCompleted = false;
             size_t count = 0;
@@ -779,6 +797,12 @@ struct TypedTestParam
     size_t GetBufferCount() {
         return bufferCountValues[testParam.bufferCount];
     }
+    CompletionType GetCompletionType() {
+        return testParam.completionType;
+    }
+    PriorityType GetPriorityStartType() {
+        return testParam.priorityStartType;
+    }
     PlaceType GetPlaceType() {
         return testParam.placeType;
     }
@@ -849,8 +873,12 @@ public:
     void Init(TypedTestParam <T> &param, size_t idx){
         param.coll_attr.priority = (int)param.PriorityRequest();
         param.coll_attr.to_cache = (int)param.GetCacheType();
-        param.coll_attr.synchronous = (int)param.GetSyncType();
-        param.coll_attr.match_id = std::to_string(param.startArr[idx]).c_str();
+        char* testOutOfOrder = getenv("ICCL_OUT_OF_ORDER_SUPPORT");
+		if (testOutOfOrder && atoi(testOutOfOrder) == 1)
+			param.coll_attr.synchronous = 0;
+		else
+			param.coll_attr.synchronous = (int)param.GetSyncType();
+        param.coll_attr.match_id = param.CreateMatchId(idx).c_str();
     }
     void SwapBuffers(TypedTestParam <T> &param, size_t iter){
         char* testDynamicPointer = getenv("ICCL_TEST_DYNAMIC_POINTER");
