@@ -2,8 +2,8 @@
 #include "sched/entry_factory.hpp"
 
 iccl_status_t iccl_coll_build_direct_allgatherv(iccl_sched* sched,
-                                                iccl_buf_placeholder send_buf, size_t s_count,
-                                                iccl_buf_placeholder recv_buf, size_t* r_counts,
+                                                iccl_buffer send_buf, size_t s_count,
+                                                iccl_buffer recv_buf, size_t* r_counts,
                                                 iccl_datatype_internal_t dtype)
 {
     LOG_DEBUG("build direct allgatherv");
@@ -13,8 +13,8 @@ iccl_status_t iccl_coll_build_direct_allgatherv(iccl_sched* sched,
 }
 
 iccl_status_t iccl_coll_build_naive_allgatherv(iccl_sched* sched,
-                                               iccl_buf_placeholder send_buf, size_t send_count,
-                                               iccl_buf_placeholder recv_buf, size_t* recv_counts,
+                                               iccl_buffer send_buf, size_t send_count,
+                                               iccl_buffer recv_buf, size_t* recv_counts,
                                                iccl_datatype_internal_t dtype)
 {
     LOG_DEBUG("build naive allgatherv");

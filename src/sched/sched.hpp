@@ -32,11 +32,11 @@ enum iccl_sched_add_mode
 
 struct iccl_sched_buffer_handler
 {
-    void *ptr;
+    iccl_buffer buffer;
     size_t size;
 
-    iccl_sched_buffer_handler(void* ptr, size_t size)
-        : ptr(ptr), size(size) {} 
+    iccl_sched_buffer_handler(iccl_buffer buffer, size_t size)
+        : buffer(buffer), size(size) {} 
 };
 
 struct iccl_sched_memory
@@ -58,11 +58,11 @@ struct iccl_coll_attr
 
 struct iccl_coll_sparse_param
 {
-    const void *snd_val_buf;
+    const void* snd_val_buf;
     size_t snd_val_count;
-    void **rcv_ind_buf;
-    void **rcv_val_buf;
-    size_t *rcv_val_count;
+    void** rcv_ind_buf;
+    void** rcv_val_buf;
+    size_t* rcv_val_count;
     iccl_datatype_internal_t itype;
 };
 
@@ -70,8 +70,8 @@ struct iccl_coll_param
 {
     iccl_coll_type ctype;
     void *buf;
-    const void *send_buf;
-    void *recv_buf;
+    const void* send_buf;
+    void* recv_buf;
     size_t count;
     size_t send_count;
     size_t *recv_counts;
@@ -112,12 +112,12 @@ public:
     void do_progress();
 
     void set_coll_attr(const iccl_coll_attr_t* attr,
-                        std::string match_id);
+                       std::string match_id);
 
     void commit(iccl_parallelizer* parallelizer);
 
     iccl_request* start(iccl_executor* exec,
-                            bool reset_sched = true);
+                        bool reset_sched = true);
 
     void complete();
 
@@ -177,7 +177,7 @@ public:
         finalize_fn_ctx = ctx;
     }
 
-    void* alloc_buffer(size_t size);
+    iccl_buffer alloc_buffer(size_t size);
     void free_buffers();
     size_t get_priority();
     iccl_request* start_subsched(iccl_sched* subsched);
@@ -190,15 +190,15 @@ public:
     iccl_coll_param coll_param{};
     iccl_coll_attr coll_attr{};
 
-    iccl_sched_memory memory;
-
     size_t start_idx = 0;  /* index to start */
     std::deque<std::shared_ptr<sched_entry>> entries{};
 
     iccl_sched_id_t sched_id = 0;   /* sequence number of the schedule in the communicator */
-    iccl_request *req = nullptr;
+    iccl_request* req = nullptr;
 
     std::vector<std::shared_ptr<iccl_sched>> partial_scheds{};
+
+    iccl_sched_memory memory;
 
     /* whether sched was created by internal module (fusion_manager/ooo_manager) */
     iccl_sched_internal_type internal_type = iccl_sched_internal_none;

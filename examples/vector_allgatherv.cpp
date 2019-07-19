@@ -27,7 +27,7 @@
                          "expected %f, got %f\n",                          \
                           iter_idx, idx, elem_idx, expected,               \
                           recv_bufs[idx][elem_idx]);                       \
-                  assert(0);                                               \
+                  ASSERT(0, "unexpected value");                           \
               }                                                            \
           }                                                                \
       }                                                                    \

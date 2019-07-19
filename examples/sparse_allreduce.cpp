@@ -43,7 +43,7 @@
               {                                                            \
                   printf("iter %zu, idx %zu is not expected to be found\n",\
                           iter_idx, (size_t)rcv_idx[idx]);                 \
-                  assert(0);                                               \
+                  ASSERT(0, "unexpected value");                           \
               }                                                            \
               else                                                         \
               {                                                            \
@@ -62,7 +62,7 @@
                     str[str.length()-1] = ']';                             \
                     printf("iter %zu, idx %zu, expected %s\n",             \
                             iter_idx, (size_t)rcv_idx[idx], str.c_str());  \
-                    assert(0);                                             \
+                    ASSERT(0, "unexpected value");                         \
                   }                                                        \
               }                                                            \
           }                                                                \

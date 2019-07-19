@@ -8,7 +8,7 @@ public:
     prologue_entry() = delete;
     prologue_entry(iccl_sched* sched,
                    iccl_prologue_fn_t fn,
-                   const void* in_buf,
+                   const iccl_buffer in_buf,
                    size_t in_cnt,
                    iccl_datatype_internal_t in_dtype,
                    void** out_buf,
@@ -25,7 +25,8 @@ public:
 
     void start_derived()
     {
-        fn(in_buf, in_cnt, in_dtype->type, out_buf, out_cnt, out_dtype, out_dtype_size);
+        size_t in_bytes = in_cnt * iccl_datatype_get_size(in_dtype);
+        fn(in_buf.get_ptr(in_bytes), in_cnt, in_dtype->type, out_buf, out_cnt, out_dtype, out_dtype_size);
         status = iccl_sched_entry_status_complete;
     }
 
@@ -51,7 +52,7 @@ protected:
 
 private:
     iccl_prologue_fn_t fn;
-    const void* in_buf;
+    iccl_buffer in_buf;
     size_t in_cnt;
     iccl_datatype_internal_t in_dtype;
     void** out_buf;

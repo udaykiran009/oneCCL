@@ -11,7 +11,6 @@ iccl_status_t iccl_init()
     try
     {
         iccl_env_parse();
-        iccl_env_print();
         iccl_datatype_init();
 
         global_data.sched_cache = std::unique_ptr<iccl_sched_cache>(new iccl_sched_cache());
@@ -24,6 +23,11 @@ iccl_status_t iccl_init()
         }
 
         global_data.executor = std::unique_ptr<iccl_executor>(new iccl_executor(env_data, global_data));
+
+        if (global_data.executor->proc_idx == 0)
+        {
+            iccl_env_print();
+        }
 
         global_data.atl_tag = std::unique_ptr<iccl_atl_tag>(new iccl_atl_tag(global_data.executor->tag_bits,
                                                                              global_data.executor->max_tag));

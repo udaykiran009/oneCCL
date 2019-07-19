@@ -128,8 +128,7 @@ bool iccl_fusion_manager::can_fuse(iccl_sched* sched)
     if (sched->coll_attr.prologue_fn ||
         sched->coll_attr.epilogue_fn ||
         sched->coll_attr.reduction_fn ||
-        sched->coll_attr.synchronous ||
-        sched->coll_attr.match_id.length())
+        sched->coll_attr.synchronous)
     {
         LOG_DEBUG("can't fuse due to unexpected fields in coll_attr");
         return false;
@@ -199,14 +198,13 @@ iccl_sched* iccl_fusion_manager::build_sched()
     if (use_cache)
     {
         key.ctype = iccl_coll_allreduce;
-        key.buf1 = (void*) first_sched;
-        key.buf2 = (void*) first_sched->coll_param.send_buf;
-        key.buf3 = (void*) last_sched->coll_param.send_buf;
         key.count1 = sum_count;
         key.count2 = exec_queue.size();
         key.dtype = dtype->type;
         key.reduction = reduction;
         key.comm = comm;
+        key.match_id = first_sched->coll_attr.match_id + last_sched->coll_attr.match_id;
+        LOG_DEBUG("key.match_id ", key.match_id);
         sched = global_data.sched_cache->find(key);
     }
 
@@ -216,7 +214,7 @@ iccl_sched* iccl_fusion_manager::build_sched()
     if (!sched)
     {
         iccl_coll_param coll_param{};
-        LOG_DEBUG("didn't find allreduce fused_sched in cache");
+        LOG_DEBUG("didn't find fused_sched in cache");
         switch (ctype)
         {
             case iccl_coll_allreduce:
@@ -246,7 +244,7 @@ iccl_sched* iccl_fusion_manager::build_sched()
     }
     else
     {
-        LOG_DEBUG("found allreduce fused_sched in cache");
+        LOG_DEBUG("found fused_sched in cache");
         ICCL_THROW_IF_NOT(sched->req->is_completed(), "non completed sched found in cache");
         clear_exec_queue();
         return sched;
@@ -281,8 +279,10 @@ iccl_sched* iccl_fusion_manager::build_sched()
         {
             size_t global_copy_idx = idx * copies_per_part + copy_idx;
             entry_factory::make_copy_entry(part_scheds[idx].get(),
-                                           const_cast<void**>(&exec_queue[global_copy_idx]->coll_param.send_buf),
-                                           iccl_buf_placeholder(&fusion_buf, offset),
+                                           iccl_buffer(&(exec_queue[global_copy_idx]->coll_param.send_buf),
+                                                       exec_queue[global_copy_idx]->coll_param.count * dtype_size,
+                                                       iccl_buffer_type::INDIRECT),
+                                           iccl_buffer(fusion_buf, buf_cache.get_buf_size(), offset),
                                            exec_queue[global_copy_idx]->coll_param.count,
                                            dtype);
             offset += exec_queue[global_copy_idx]->coll_param.count * dtype_size;
@@ -305,8 +305,10 @@ iccl_sched* iccl_fusion_manager::build_sched()
         {
             size_t global_copy_idx = idx * copies_per_part + copy_idx;
             entry_factory::make_copy_entry(part_scheds[idx].get(),
-                                           iccl_buf_placeholder(&fusion_buf, offset),
-                                           &exec_queue[global_copy_idx]->coll_param.recv_buf,
+                                           iccl_buffer(fusion_buf, buf_cache.get_buf_size(), offset),
+                                           iccl_buffer(&(exec_queue[global_copy_idx]->coll_param.recv_buf),
+                                                       exec_queue[global_copy_idx]->coll_param.count * dtype_size,
+                                                       iccl_buffer_type::INDIRECT),
                                            exec_queue[global_copy_idx]->coll_param.count,
                                            dtype);
             offset += exec_queue[global_copy_idx]->coll_param.count * dtype_size;

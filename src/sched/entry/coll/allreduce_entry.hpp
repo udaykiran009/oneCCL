@@ -7,8 +7,8 @@ class allreduce_entry : public base_coll_entry
 public:
     allreduce_entry() = delete;
     allreduce_entry(iccl_sched* sched,
-                    iccl_buf_placeholder send_buf,
-                    iccl_buf_placeholder recv_buf,
+                    const iccl_buffer send_buf,
+                    iccl_buffer recv_buf,
                     size_t cnt,
                     iccl_datatype_internal_t dtype,
                     iccl_reduction_t op) :
@@ -21,8 +21,9 @@ public:
     void start_derived()
     {
         LOG_DEBUG("ALLREDUCE entry req ", &req, ", cnt ", cnt);
-        atl_status_t atl_status = atl_comm_allreduce(sched->bin->get_comm_ctx(), send_buf.get_ptr(),
-                                                     recv_buf.get_ptr(), cnt,
+        size_t bytes = cnt * iccl_datatype_get_size(dtype);
+        atl_status_t atl_status = atl_comm_allreduce(sched->bin->get_comm_ctx(), send_buf.get_ptr(bytes),
+                                                     recv_buf.get_ptr(bytes), cnt,
                                                      static_cast<atl_datatype_t>(dtype->type),
                                                      static_cast<atl_reduction_t>(op), &req);
         if (unlikely(atl_status != atl_status_success))
@@ -67,8 +68,8 @@ protected:
     }
 
 private:
-    iccl_buf_placeholder send_buf;
-    iccl_buf_placeholder recv_buf;
+    iccl_buffer send_buf;
+    iccl_buffer recv_buf;
     size_t cnt;
     iccl_datatype_internal_t dtype;
     iccl_reduction_t op;

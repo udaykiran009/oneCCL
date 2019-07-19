@@ -8,10 +8,10 @@ public:
     epilogue_entry() = delete;
     epilogue_entry(iccl_sched* sched,
                    iccl_epilogue_fn_t fn,
-                   const void* in_buf,
+                   const iccl_buffer in_buf,
                    size_t in_cnt,
                    iccl_datatype_internal_t in_dtype,
-                   void* out_buf,
+                   iccl_buffer out_buf,
                    size_t expected_out_cnt,
                    iccl_datatype_internal_t out_dtype) :
         sched_entry(sched), fn(fn), in_buf(in_buf),
@@ -27,7 +27,8 @@ public:
 
     void start_derived()
     {
-        fn(in_buf, in_cnt, in_dtype->type, out_buf, &out_cnt, out_dtype->type);
+        size_t in_bytes = in_cnt * iccl_datatype_get_size(in_dtype);
+        fn(in_buf.get_ptr(in_bytes), in_cnt, in_dtype->type, out_buf.get_ptr(), &out_cnt, out_dtype->type);
         ICCL_ASSERT(expected_out_cnt == out_cnt, "incorrect values ", expected_out_cnt, " ", out_cnt);
         status = iccl_sched_entry_status_complete;
     }
@@ -66,10 +67,10 @@ protected:
 
 private:
     iccl_epilogue_fn_t fn;
-    const void* in_buf;
+    iccl_buffer in_buf;
     size_t in_cnt;
     iccl_datatype_internal_t in_dtype;
-    void* out_buf;
+    iccl_buffer out_buf;
     size_t out_cnt;
     size_t expected_out_cnt;
     iccl_datatype_internal_t out_dtype;

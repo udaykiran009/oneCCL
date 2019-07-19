@@ -2,8 +2,8 @@
 #include "sched/entry_factory.hpp"
 
 iccl_status_t iccl_coll_build_direct_allreduce(iccl_sched *sched,
-                                               iccl_buf_placeholder send_buf,
-                                               iccl_buf_placeholder recv_buf,
+                                               iccl_buffer send_buf,
+                                               iccl_buffer recv_buf,
                                                size_t count, iccl_datatype_internal_t dtype,
                                                iccl_reduction_t op)
 {
@@ -14,8 +14,8 @@ iccl_status_t iccl_coll_build_direct_allreduce(iccl_sched *sched,
 }
 
 iccl_status_t iccl_coll_build_rabenseifner_allreduce(iccl_sched *sched,
-                                                     iccl_buf_placeholder send_buf,
-                                                     iccl_buf_placeholder recv_buf,
+                                                     iccl_buffer send_buf,
+                                                     iccl_buffer recv_buf,
                                                      size_t count, iccl_datatype_internal_t dtype,
                                                      iccl_reduction_t op)
 {
@@ -32,9 +32,7 @@ iccl_status_t iccl_coll_build_rabenseifner_allreduce(iccl_sched *sched,
 
     comm_size = comm->size();
     rank = comm->rank();
-    sched->alloc_buffer(count * dtype_size);
-    iccl_buf_placeholder tmp_buf;
-    tmp_buf.p_to_buf = &(sched->memory.buf_list.back().ptr);
+    iccl_buffer tmp_buf = sched->alloc_buffer(count * dtype_size);
 
     /* copy local data into recv_buf */
 
@@ -122,8 +120,8 @@ iccl_status_t iccl_coll_build_rabenseifner_allreduce(iccl_sched *sched,
             }
 
             int can_use_recv_reduce = 0;
-            iccl_buf_placeholder buf1 = (recv_buf + disps[send_idx] * dtype_size);
-            iccl_buf_placeholder buf2 = (recv_buf + disps[recv_idx] * dtype_size);
+            iccl_buffer buf1 = (recv_buf + disps[send_idx] * dtype_size);
+            iccl_buffer buf2 = (recv_buf + disps[recv_idx] * dtype_size);
             if (buf1 != buf2 && ((buf1 + send_cnt * dtype_size <= buf2) || (buf2 + recv_cnt * dtype_size <= buf1)))
                 can_use_recv_reduce = 1;
 
@@ -132,7 +130,7 @@ iccl_status_t iccl_coll_build_rabenseifner_allreduce(iccl_sched *sched,
             if (can_use_recv_reduce) {
                 entry_factory::make_recv_reduce_entry(sched,
                                                       (recv_buf + disps[recv_idx] * dtype_size),
-                                                      recv_cnt, NULL, dtype, op, dst, iccl_buf_placeholder());
+                                                      recv_cnt, NULL, dtype, op, dst, iccl_buffer());
                 entry_factory::make_send_entry(sched, (recv_buf + disps[send_idx] * dtype_size), send_cnt, dtype, dst);
                 sched->add_barrier();
             }
@@ -222,8 +220,8 @@ iccl_status_t iccl_coll_build_rabenseifner_allreduce(iccl_sched *sched,
 }
 
 iccl_status_t iccl_coll_build_recursive_doubling_allreduce(iccl_sched *sched,
-                                                           iccl_buf_placeholder send_buf,
-                                                           iccl_buf_placeholder recv_buf,
+                                                           iccl_buffer send_buf,
+                                                           iccl_buffer recv_buf,
                                                            size_t count, iccl_datatype_internal_t dtype, iccl_reduction_t op)
 {
     LOG_DEBUG("build recursive_doubling allreduce");
@@ -239,9 +237,7 @@ iccl_status_t iccl_coll_build_recursive_doubling_allreduce(iccl_sched *sched,
 
     size_t dtype_size = iccl_datatype_get_size(dtype);
 
-    sched->alloc_buffer(count * dtype_size);
-    iccl_buf_placeholder tmp_buf;
-    tmp_buf.p_to_buf = &(sched->memory.buf_list.back().ptr);
+    iccl_buffer tmp_buf = sched->alloc_buffer(count * dtype_size);
 
     /* copy local data into recv_buf */
     if (send_buf != recv_buf) {
@@ -326,8 +322,8 @@ iccl_status_t iccl_coll_build_recursive_doubling_allreduce(iccl_sched *sched,
 }
 
 iccl_status_t iccl_coll_build_starlike_allreduce(iccl_sched *sched,
-                                                 iccl_buf_placeholder send_buf,
-                                                 iccl_buf_placeholder recv_buf,
+                                                 iccl_buffer send_buf,
+                                                 iccl_buffer recv_buf,
                                                  size_t count, iccl_datatype_internal_t dtype, iccl_reduction_t op)
 {
     LOG_DEBUG("build starlike allreduce");
@@ -350,9 +346,7 @@ iccl_status_t iccl_coll_build_starlike_allreduce(iccl_sched *sched,
     // buffer to receive and reduce parts related to the current rank
     size_t this_rank_buf_size = buffer_counts[this_rank] * dtype_size;
 
-    sched->alloc_buffer(this_rank_buf_size * (comm_size - 1));
-    iccl_buf_placeholder tmp_buf;
-    tmp_buf.p_to_buf = &(sched->memory.buf_list.back().ptr);
+    iccl_buffer tmp_buf = sched->alloc_buffer(this_rank_buf_size * (comm_size - 1));
 
     // copy local data into recv_buf
     if (send_buf != recv_buf) {
@@ -392,8 +386,8 @@ iccl_status_t iccl_coll_build_starlike_allreduce(iccl_sched *sched,
 }
 
 iccl_status_t iccl_coll_build_ring_allreduce(iccl_sched *sched,
-                                             iccl_buf_placeholder send_buf,
-                                             iccl_buf_placeholder recv_buf,
+                                             iccl_buffer send_buf,
+                                             iccl_buffer recv_buf,
                                              size_t count, iccl_datatype_internal_t dtype, iccl_reduction_t op)
 {
     int inplace = (send_buf == recv_buf) ? 1 : 0;
@@ -422,14 +416,13 @@ iccl_status_t iccl_coll_build_ring_allreduce(iccl_sched *sched,
         return iccl_status_success;
     }
 
-    iccl_buf_placeholder tmp_buf;
+    iccl_buffer tmp_buf;
     if (inplace)
     {
-        sched->alloc_buffer(count * dtype_size);
-        tmp_buf.p_to_buf = &(sched->memory.buf_list.back().ptr);
+        tmp_buf = sched->alloc_buffer(count * dtype_size);
     }
-    iccl_buf_placeholder sbuf, rbuf, reduce_inout_buf;
-    iccl_buf_placeholder reduce_in_buf;
+    iccl_buffer sbuf, rbuf, reduce_inout_buf;
+    iccl_buffer reduce_in_buf;
 
     src = (comm_size + rank - 1) % comm_size;
     dst = (comm_size + rank + 1) % comm_size;

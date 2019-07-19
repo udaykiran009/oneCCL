@@ -8,9 +8,9 @@ class reduce_local_entry : public sched_entry
 public:
     reduce_local_entry() = delete;
     reduce_local_entry(iccl_sched* sched,
-                       iccl_buf_placeholder in_buf,
+                       const iccl_buffer in_buf,
                        size_t in_cnt,
-                       iccl_buf_placeholder inout_buf,
+                       iccl_buffer inout_buf,
                        size_t* out_cnt,
                        iccl_datatype_internal_t dtype,
                        iccl_reduction_t reduction_op) :
@@ -26,7 +26,9 @@ public:
 
     void start_derived()
     {
-        iccl_status_t comp_status = iccl_comp_reduce(in_buf.get_ptr(), in_cnt, inout_buf.get_ptr(), out_cnt,
+        size_t bytes = in_cnt * iccl_datatype_get_size(dtype);
+        iccl_status_t comp_status = iccl_comp_reduce(in_buf.get_ptr(bytes), in_cnt,
+                                                     inout_buf.get_ptr(bytes), out_cnt,
                                                      dtype, op, fn);
         ICCL_ASSERT(comp_status == iccl_status_success, "bad status ", comp_status);
         status = iccl_sched_entry_status_complete;
@@ -52,9 +54,9 @@ protected:
     }
 
 private:
-    iccl_buf_placeholder in_buf;
+    iccl_buffer in_buf;
     size_t in_cnt;
-    iccl_buf_placeholder inout_buf;
+    iccl_buffer inout_buf;
     size_t* out_cnt;
     iccl_datatype_internal_t dtype;
     iccl_reduction_t op;

@@ -8,7 +8,7 @@ class write_entry : public sched_entry
 public:
     write_entry() = delete;
     write_entry(iccl_sched* sched,
-                const void* src_buf,
+                iccl_buffer src_buf,
                 atl_mr_t* src_mr,
                 size_t cnt,
                 iccl_datatype_internal_t dtype,
@@ -36,8 +36,9 @@ public:
             return;
         }
 
-        atl_status_t atl_status = atl_comm_write(sched->bin->get_comm_ctx(), src_buf,
-                                                 cnt * iccl_datatype_get_size(dtype), src_mr,
+        size_t bytes = cnt * iccl_datatype_get_size(dtype);
+        atl_status_t atl_status = atl_comm_write(sched->bin->get_comm_ctx(), src_buf.get_ptr(bytes),
+                                                 bytes, src_mr,
                                                  (uint64_t)dst_mr->buf + dst_buf_off,
                                                  dst_mr->r_key, dst, &req);
         if (unlikely(atl_status != atl_status_success))
@@ -95,7 +96,7 @@ protected:
     }
 
 private:
-    const void *src_buf;
+    iccl_buffer src_buf;
     atl_mr_t* src_mr;
     size_t cnt;
     iccl_datatype_internal_t dtype;

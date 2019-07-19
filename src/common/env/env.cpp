@@ -24,7 +24,8 @@ iccl_env_data env_data =
         .fusion_count_threshold = 256,
         .fusion_check_urgent = 1,
         .fusion_cycle_ms = 0.2,
-        .vector_allgatherv = 0
+        .vector_allgatherv = 0,
+        .full_cache_key = 1
     };
 
 const char* iccl_priority_mode_to_str(iccl_priority_mode mode)
@@ -131,6 +132,7 @@ void iccl_env_parse()
     iccl_env_2_int(ICCL_FUSION_CHECK_URGENT, env_data.fusion_check_urgent);
     iccl_env_2_float(ICCL_FUSION_CYCLE_MS, env_data.fusion_cycle_ms);
     iccl_env_2_int(ICCL_VECTOR_ALLGATHERV, env_data.vector_allgatherv);
+    iccl_env_2_int(ICCL_FULL_CACHE_KEY, env_data.full_cache_key);
 
     iccl_env_parse_priority_mode();
     iccl_env_parse_allreduce_algo();
@@ -169,6 +171,8 @@ void iccl_env_print()
     LOG_INFO(ICCL_REDUCE_ALGO, ": ", iccl_reduce_algo_to_str(env_data.reduce_algo));
     LOG_INFO(ICCL_BCAST_ALGO, ": ", iccl_bcast_algo_to_str(env_data.bcast_algo));
     LOG_INFO(ICCL_BARRIER_ALGO, ": ",  iccl_barrier_algo_to_str(env_data.barrier_algo));
+    LOG_INFO(ICCL_VECTOR_ALLGATHERV, ": ", env_data.vector_allgatherv);
+    LOG_INFO(ICCL_FULL_CACHE_KEY, ": ", env_data.full_cache_key);
 
     iccl_env_print_affinity();
 }

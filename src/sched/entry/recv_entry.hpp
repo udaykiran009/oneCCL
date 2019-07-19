@@ -9,7 +9,7 @@ class recv_entry : public sched_entry
 public:
     recv_entry() = delete;
     recv_entry(iccl_sched* sched,
-               iccl_buf_placeholder buf,
+               iccl_buffer buf,
                size_t cnt,
                iccl_datatype_internal_t dtype,
                size_t src,
@@ -27,7 +27,7 @@ public:
         size_t bytes = cnt * iccl_datatype_get_size(dtype);
         LOG_DEBUG("RECV entry src ", src, ", tag ", atl_tag, ", req ", &req, ", bytes ", bytes);
 
-        atl_status_t atl_status = atl_comm_recv(sched->bin->get_comm_ctx(), buf.get_ptr(),
+        atl_status_t atl_status = atl_comm_recv(sched->bin->get_comm_ctx(), buf.get_ptr(bytes),
                                                 bytes, src, atl_tag, &req);
         if (unlikely(atl_status != atl_status_success))
         {
@@ -85,7 +85,7 @@ protected:
     }
 
 private:
-    iccl_buf_placeholder buf;
+    iccl_buffer buf;
     size_t cnt;
     iccl_datatype_internal_t dtype;
     size_t src;

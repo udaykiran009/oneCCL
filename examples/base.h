@@ -76,7 +76,7 @@ void test_init()
     coll_attr.reduction_fn = NULL;
     coll_attr.priority = 0;
     coll_attr.synchronous = 0;
-    coll_attr.match_id = NULL;
+    coll_attr.match_id = "tensor_name";
     coll_attr.to_cache = 0;
 }
 

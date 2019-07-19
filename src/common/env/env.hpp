@@ -21,6 +21,7 @@ constexpr const char* ICCL_BCAST_ALGO = "ICCL_BCAST_ALGO";
 constexpr const char* ICCL_BARRIER_ALGO = "ICCL_BARRIER_ALGO";
 constexpr const char* ICCL_REDUCE_ALGO = "ICCL_REDUCE_ALGO";
 constexpr const char* ICCL_VECTOR_ALLGATHERV = "ICCL_VECTOR_ALLGATHERV";
+constexpr const char* ICCL_FULL_CACHE_KEY = "ICCL_FULL_CACHE_KEY";
 
 enum iccl_priority_mode
 {
@@ -94,6 +95,7 @@ struct alignas(CACHELINE_SIZE) iccl_env_data
     int fusion_check_urgent;
     float fusion_cycle_ms;
     int vector_allgatherv; /* TODO: figure out if there're options better than env var to control this feature */
+    int full_cache_key;
 };
 
 extern iccl_env_data env_data;

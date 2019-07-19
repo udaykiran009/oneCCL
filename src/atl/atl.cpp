@@ -45,7 +45,7 @@ static void atl_ini_dir(int *argc, char ***argv, size_t *proc_idx, size_t *proc_
         dlhandle = dlopen(lib, RTLD_NOW);
         free(liblist[n]);
         if (dlhandle == NULL) {
-            LOG_ERROR("can't open lib ", lib, ", error ", dlerror());
+            LOG_INFO("can't open lib ", lib, ", error ", dlerror());
             free(lib);
             continue;
         }

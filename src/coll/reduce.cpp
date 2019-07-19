@@ -30,8 +30,8 @@
 */
 
 iccl_status_t iccl_coll_build_direct_reduce(iccl_sched *sched,
-                                            iccl_buf_placeholder send_buf,
-                                            iccl_buf_placeholder recv_buf,
+                                            iccl_buffer send_buf,
+                                            iccl_buffer recv_buf,
                                             size_t count,
                                             iccl_datatype_internal_t dtype,
                                             iccl_reduction_t reduction,
@@ -44,8 +44,8 @@ iccl_status_t iccl_coll_build_direct_reduce(iccl_sched *sched,
 }
 
 iccl_status_t iccl_coll_build_rabenseifner_reduce(iccl_sched *sched,
-                                                  iccl_buf_placeholder send_buf,
-                                                  iccl_buf_placeholder recv_buf,
+                                                  iccl_buffer send_buf,
+                                                  iccl_buffer recv_buf,
                                                   size_t count,
                                                   iccl_datatype_internal_t dtype,
                                                   iccl_reduction_t reduction,
@@ -65,9 +65,7 @@ iccl_status_t iccl_coll_build_rabenseifner_reduce(iccl_sched *sched,
     comm_size = sched->coll_param.comm->size();
     rank = sched->coll_param.comm->rank();
 
-    sched->alloc_buffer(count * dtype_size);
-    iccl_buf_placeholder tmp_buf;
-    tmp_buf.p_to_buf = &(sched->memory.buf_list.back().ptr);
+    iccl_buffer tmp_buf = sched->alloc_buffer(count * dtype_size);
 
     /* get nearest power-of-two less than or equal to comm_size */
     pof2 = sched->coll_param.comm->pof2();
@@ -77,8 +75,7 @@ iccl_status_t iccl_coll_build_rabenseifner_reduce(iccl_sched *sched,
     /* If I'm not the root, then my recv_buf may not be valid, therefore
      * I have to allocate a temporary one */
     if (rank != local_root) {
-        sched->alloc_buffer(count * dtype_size);
-        recv_buf.p_to_buf = &(sched->memory.buf_list.back().ptr);
+        recv_buf = sched->alloc_buffer(count * dtype_size);
     }
 
     if ((rank != local_root) || (send_buf != recv_buf))
@@ -316,8 +313,8 @@ iccl_status_t iccl_coll_build_rabenseifner_reduce(iccl_sched *sched,
 
 
 iccl_status_t iccl_coll_build_binomial_reduce(iccl_sched *sched,
-                                              iccl_buf_placeholder send_buf,
-                                              iccl_buf_placeholder recv_buf,
+                                              iccl_buffer send_buf,
+                                              iccl_buffer recv_buf,
                                               size_t count,
                                               iccl_datatype_internal_t dtype,
                                               iccl_reduction_t reduction,
@@ -339,15 +336,12 @@ iccl_status_t iccl_coll_build_binomial_reduce(iccl_sched *sched,
 
     /* Create a temporary buffer */
     size_t dtype_size = iccl_datatype_get_size(dtype);
-    sched->alloc_buffer(count * dtype_size);
-    iccl_buf_placeholder tmp_buf;
-    tmp_buf.p_to_buf = &(sched->memory.buf_list.back().ptr);
+    iccl_buffer tmp_buf = sched->alloc_buffer(count * dtype_size);
 
     /* If I'm not the root, then my recv_buf may not be valid, therefore
      * I have to allocate a temporary one */
     if (rank != local_root) {
-        sched->alloc_buffer(count * dtype_size);
-        recv_buf.p_to_buf = &(sched->memory.buf_list.back().ptr);
+        recv_buf = sched->alloc_buffer(count * dtype_size);
     }
 
     if ((rank != local_root) || (send_buf != recv_buf)) {

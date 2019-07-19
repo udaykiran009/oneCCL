@@ -9,7 +9,7 @@ class send_entry : public sched_entry
 public:
     send_entry() = delete;
     send_entry(iccl_sched* sched,
-               iccl_buf_placeholder buf,
+               const iccl_buffer buf,
                size_t cnt,
                iccl_datatype_internal_t dtype,
                size_t dst,
@@ -30,7 +30,7 @@ public:
         size_t bytes = cnt * iccl_datatype_get_size(dtype);
         LOG_DEBUG("SEND entry dst, ", dst, ", tag ", atl_tag, ", req ", &req, ", bytes ", bytes);
 
-        atl_status_t atl_status = atl_comm_send(sched->bin->get_comm_ctx(), buf.get_ptr(),
+        atl_status_t atl_status = atl_comm_send(sched->bin->get_comm_ctx(), buf.get_ptr(bytes),
                                                 bytes, dst, atl_tag, &req);
 
         if (unlikely(atl_status != atl_status_success))
@@ -82,7 +82,7 @@ protected:
         iccl_logger::format(str,
                             "dt ", iccl_datatype_get_name(dtype),
                             ", cnt ", cnt,
-                            ", buf ", buf.get_ptr(),
+                            ", buf ", buf,
                             ", dst ", dst,
                             ", atl_tag ", atl_tag,
                             ", comm_id ", sched->coll_param.comm->id(),
@@ -91,7 +91,7 @@ protected:
     }
 
 private:
-    iccl_buf_placeholder buf;
+    iccl_buffer buf;
     size_t cnt;
     iccl_datatype_internal_t dtype;
     size_t dst;

@@ -81,6 +81,9 @@ void do_iter(size_t iter_idx)
     }
 
     size_t idx, msg_idx;
+    char match_id[16];
+
+    coll_attr.match_id = match_id;
 
     if (collect_iso)
     {
@@ -89,6 +92,8 @@ void do_iter(size_t iter_idx)
         iter_start = when();
         for (idx = 0; idx < MSG_COUNT; idx++)
         {
+            sprintf(match_id, "%zu", idx);
+
             tmp_start_timer = when();
             ICCL_CALL(iccl_allreduce(msg_buffers[idx], msg_buffers[idx], msg_sizes[idx] / get_dtype_size(iccl_dtype_float),
                                      iccl_dtype_float, iccl_reduction_sum, &coll_attr, NULL, &msg_requests[idx]));
@@ -113,6 +118,8 @@ void do_iter(size_t iter_idx)
         
         /* sequentially increase priority over iterations and messages */
         coll_attr.priority = iter_idx * MSG_COUNT + idx;
+
+        sprintf(match_id, "%zu", idx);
 
         msg_starts[idx] = when();
         tmp_start_timer = when();

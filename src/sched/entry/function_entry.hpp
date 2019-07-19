@@ -29,7 +29,7 @@ protected:
     void dump_detail(std::stringstream& str) const
     {
         iccl_logger::format(str,
-                            "fn ", fn,
+                            "fn ", (void*)(fn),
                             ", ctx ", ctx,
                             "\n");
     }

@@ -10,7 +10,7 @@ public:
     register_entry() = delete;
     register_entry(iccl_sched* sched,
                    size_t size,
-                   void* ptr,
+                   const iccl_buffer ptr,
                    atl_mr_t** mr) :
         sched_entry(sched, true), size(size), ptr(ptr), mr(mr)
     {
@@ -21,7 +21,7 @@ public:
     {
         LOG_DEBUG("REGISTER entry size ", size, ", ptr ", ptr);
         ICCL_THROW_IF_NOT(size > 0 && ptr && mr, "incorrect input, size ", size, ", ptr ", ptr, " mr ", mr);
-        atl_status_t atl_status = atl_mr_reg(global_data.executor->atl_desc, ptr, size, mr);
+        atl_status_t atl_status = atl_mr_reg(global_data.executor->atl_desc, ptr.get_ptr(size), size, mr);
         sched->memory.mr_list.emplace_back(*mr);
         if (unlikely(atl_status != atl_status_success))
         {
@@ -48,6 +48,6 @@ protected:
 
 private:
     size_t size;
-    void* ptr;
+    iccl_buffer ptr;
     atl_mr_t** mr;
 };

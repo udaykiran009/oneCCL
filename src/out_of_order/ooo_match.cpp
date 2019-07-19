@@ -115,7 +115,7 @@ void out_of_order::ooo_match::bcast_match_id(const std::string& match_id)
     LOG_DEBUG("Building service sched ", bcast_sched, ", req ", bcast_sched->req);
 
     //1. broadcast match_id length
-    auto ctx = static_cast<ooo_runtime_info*>(bcast_sched->alloc_buffer(sizeof(ooo_runtime_info)));
+    auto ctx = static_cast<ooo_runtime_info*>(bcast_sched->alloc_buffer(sizeof(ooo_runtime_info)).get_ptr());
     ctx->sched = bcast_sched;
     ctx->ooo_handler = this;
 
@@ -123,28 +123,28 @@ void out_of_order::ooo_match::bcast_match_id(const std::string& match_id)
     {
         ICCL_THROW_IF_NOT(!match_id.empty(), "root rank can't bcast empty match_id");
         ctx->match_id_size_buffer = match_id.length();
-        ctx->match_id_name = bcast_sched->alloc_buffer(ctx->match_id_size_buffer + 1);
+        ctx->match_id_name = bcast_sched->alloc_buffer(ctx->match_id_size_buffer + 1).get_ptr();
         strncpy(static_cast<char*>(ctx->match_id_name), match_id.c_str(), ctx->match_id_size_buffer);
         ctx->reserved_id = comm_ids.acquire_id(true);
         LOG_INFO("root bcasts match_id ", match_id, ", comm id ", ctx->reserved_id);
     }
-/*
+
     entry_factory::make_coll_entry(bcast_sched,
                                    iccl_coll_bcast,
-                                   nullptr,
-                                   &ctx->match_id_size_buffer,
+                                   iccl_buffer(), /* unused */
+                                   iccl_buffer(&ctx->match_id_size_buffer, sizeof(size_t)),
                                    sizeof(size_t),
                                    iccl_dtype_internal_char,
                                    iccl_reduction_custom);
-*/
+
     bcast_sched->add_barrier();
 
     //2. broadcast match_id
     auto bcast_value_entry = entry_factory::make_coll_entry(bcast_sched,
                                                             iccl_coll_bcast,
-                                                            nullptr,
-                                                            nullptr, //postponed
-                                                            0,       //postponed
+                                                            iccl_buffer(), /* unused */
+                                                            iccl_buffer(), /* postponed */
+                                                            0,             /* postponed */
                                                             iccl_dtype_internal_char,
                                                             iccl_reduction_custom);
 
@@ -167,11 +167,12 @@ void out_of_order::ooo_match::bcast_match_id(const std::string& match_id)
         if (rt_info->sched->coll_param.comm->rank() != 0)
         {
             //root rank allocates and fills this buffer during schedule creation
-            rt_info->match_id_name = rt_info->sched->alloc_buffer(rt_info->match_id_size_buffer);
+            rt_info->match_id_name = rt_info->sched->alloc_buffer(rt_info->match_id_size_buffer).get_ptr();
         }
-        //actually this is double ptr
-        void** bcast_buffer = reinterpret_cast<void**>(field);
-        *bcast_buffer = rt_info->match_id_name;
+
+        iccl_buffer* bcast_buffer = (iccl_buffer*)field;
+        bcast_buffer->set(rt_info->match_id_name, rt_info->match_id_size_buffer);
+
         return iccl_status_success;
     },
     ctx);
@@ -179,14 +180,15 @@ void out_of_order::ooo_match::bcast_match_id(const std::string& match_id)
     bcast_sched->add_barrier();
 
     //3. broadcast reserved id
-/*    entry_factory::make_coll_entry(bcast_sched,
+    entry_factory::make_coll_entry(bcast_sched,
                                    iccl_coll_bcast,
-                                   nullptr,
-                                   &ctx->reserved_id,
+                                   iccl_buffer(), /* unused */
+                                   iccl_buffer(&ctx->reserved_id,
+                                               sizeof(iccl_comm_id_t)),
                                    sizeof(iccl_comm_id_t),
                                    iccl_dtype_internal_char,
                                    iccl_reduction_custom);
-*/
+
     bcast_sched->add_barrier();
 
     //4. create a communicator

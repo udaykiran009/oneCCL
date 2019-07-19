@@ -232,9 +232,14 @@ run_tests()
                     do
                         ICCL_REDUCE_ALGO=$reduce ctest -VV -C mpi_reduce_$reduce
                     done
-                for allreduce in "tree" "starlike" "ring" "double_tree"
+                for allreduce in "tree" "starlike" "ring" "ring_rma" "double_tree"
                     do
-                        ICCL_ALLREDUCE_ALGO=$allreduce ctest -VV -C mpi_allreduce_$allreduce
+                        if [ "$allreduce" == "ring_rma" ];
+                        then
+                            ICCL_ENABLE_RMA=1 ICCL_ALLREDUCE_ALGO=$allreduce ctest -VV -C mpi_allreduce_$allreduce
+                        else
+                            ICCL_ALLREDUCE_ALGO=$allreduce ctest -VV -C mpi_allreduce_$allreduce
+                        fi
                     done
                 for allgatherv in "naive"
                     do

@@ -100,7 +100,7 @@ int main()
     DTYPE* single_recv_buf = NULL;
     iccl_request_t reqs[BUF_COUNT];
     double t, t1, t2;
-    int check_values = 0;
+    int check_values = 1;
 
     test_init();
 
@@ -134,7 +134,10 @@ int main()
 
     iccl_barrier(NULL);
 
+    char match_id[16];
     coll_attr.to_cache = 1;
+    coll_attr.match_id = match_id;
+
     for (count = 1; count <= ELEM_COUNT; count *= 2)
     {
         t = 0;
@@ -144,6 +147,7 @@ int main()
             t1 = when();
             for (idx = 0; idx < BUF_COUNT; idx++)
             {
+                sprintf(match_id, "count_%zu_idx_%zu", count, idx);
                 iccl_allreduce(send_bufs[idx], recv_bufs[idx], count, ICCL_DTYPE,
                                iccl_reduction_sum, &coll_attr, NULL, &reqs[idx]);
             }
@@ -167,6 +171,7 @@ int main()
         for (iter_idx = 0; iter_idx < ITERS; iter_idx++)
         {
             t1 = when();
+            sprintf(match_id, "single_count_%zu", count);
             iccl_allreduce(single_send_buf, single_recv_buf, count, ICCL_DTYPE,
                            iccl_reduction_sum, &coll_attr, NULL, &reqs[0]);
             iccl_wait(reqs[0]);

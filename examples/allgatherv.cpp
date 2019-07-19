@@ -23,7 +23,7 @@
           {                                                                \
               printf("iter %zu, idx %zu, expected %f, got %f\n",           \
                       iter_idx, idx, expected, recv_buf[idx]);             \
-              assert(0);                                                   \
+              ASSERT(0, "unexpected value");                               \
           }                                                                \
       }                                                                    \
       printf("[%zu] avg %s time: %8.2lf us\n", rank, name, t / ITERS);     \

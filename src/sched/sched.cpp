@@ -355,7 +355,7 @@ void iccl_sched::sync_partial_scheds()
         return;
 
     auto sync_obj = std::make_shared<sync_object>(partial_scheds.size());
-    for(auto& sched : partial_scheds)
+    for (auto& sched : partial_scheds)
     {
         entry_factory::make_sync_entry(sched.get(), sync_obj);
     }
@@ -420,14 +420,15 @@ void iccl_sched::dump(const char *name) const
     std::cout << msg.str();
 }
 
-void* iccl_sched::alloc_buffer(size_t size)
+iccl_buffer iccl_sched::alloc_buffer(size_t size)
 {
     LOG_DEBUG("size ", size);
     ICCL_THROW_IF_NOT(size > 0, "incorrect buffer size");
 
-    void* p = ICCL_CALLOC(size, "sched_buffer");
-    memory.buf_list.emplace_back(p, size);
-    return p;
+    iccl_buffer buffer = iccl_buffer(ICCL_CALLOC(size, "sched_buffer"),
+                                     size, 0, iccl_buffer_type::DIRECT);
+    memory.buf_list.emplace_back(buffer, size);
+    return buffer;
 }
 
 void iccl_sched::free_buffers()
@@ -435,8 +436,8 @@ void iccl_sched::free_buffers()
     std::list<iccl_sched_buffer_handler>::iterator it;
     for (it = memory.buf_list.begin(); it != memory.buf_list.end(); it++)
     {
-        LOG_DEBUG("free ", it->ptr);
-        ICCL_FREE(it->ptr);
+        LOG_DEBUG("free ", it->buffer.get_ptr());
+        ICCL_FREE(it->buffer.get_ptr());
     }
     memory.buf_list.clear();
 }

@@ -25,8 +25,8 @@ iccl_status_t iccl_coll_build_dissemination_barrier(iccl_sched *sched)
     while (mask < size) {
         dst = (rank + mask) % size;
         src = (rank - mask + size) % size;
-        entry_factory::make_send_entry(sched, iccl_buf_placeholder(), 0, iccl_dtype_internal_char, dst);
-        entry_factory::make_recv_entry(sched, iccl_buf_placeholder(), 0, iccl_dtype_internal_char, src);
+        entry_factory::make_send_entry(sched, iccl_buffer(), 0, iccl_dtype_internal_char, dst);
+        entry_factory::make_recv_entry(sched, iccl_buffer(), 0, iccl_dtype_internal_char, src);
         sched->add_barrier();
         mask <<= 1;
     }

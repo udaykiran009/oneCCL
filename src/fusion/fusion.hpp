@@ -27,6 +27,8 @@ public:
     void* get();
     void release(void* buf);
 
+    size_t get_buf_size() { return buf_size; }
+
 private:
     size_t buf_size;
     fusion_lock_t guard{};

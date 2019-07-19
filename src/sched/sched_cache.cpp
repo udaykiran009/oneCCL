@@ -11,7 +11,37 @@ iccl_sched* iccl_sched_cache::find(iccl_sched_key& key)
     if (it != table.end())
     {
         LOG_DEBUG("found sched in cache, ", it->second);
-        return it->second;
+        iccl_sched* sched = it->second;
+        if (!env_data.full_cache_key)
+        {
+            LOG_DEBUG("do check for found sched");
+            ICCL_ASSERT(sched->coll_attr.prologue_fn == key.prologue_fn, "prologue_fn");
+            ICCL_ASSERT(sched->coll_attr.epilogue_fn == key.epilogue_fn, "epilogue_fn");
+            ICCL_ASSERT(sched->coll_attr.reduction_fn == key.reduction_fn, "reduction_fn");
+            ICCL_ASSERT(sched->coll_attr.priority == key.priority, "priority");
+            ICCL_ASSERT(sched->coll_attr.synchronous == key.synchronous, "synchronous");
+            ICCL_ASSERT(sched->coll_param.ctype == key.ctype, "ctype");
+            ICCL_ASSERT(sched->coll_param.dtype->type == key.dtype, "dtype");
+            ICCL_ASSERT(sched->coll_param.comm == key.comm, "comm");
+
+            if (sched->coll_param.ctype == iccl_coll_allgatherv)
+                ICCL_ASSERT(sched->coll_param.send_count == key.count1, "count");
+            else
+                ICCL_ASSERT(sched->coll_param.count == key.count1, "count");
+
+            if (sched->coll_param.ctype == iccl_coll_bcast || sched->coll_param.ctype == iccl_coll_reduce)
+            {
+                ICCL_ASSERT(sched->coll_param.root == key.root, "root");
+            }
+
+            if (sched->coll_param.ctype == iccl_coll_allreduce ||
+                sched->coll_param.ctype == iccl_coll_reduce ||
+                sched->coll_param.ctype == iccl_coll_sparse_allreduce)
+            {
+                ICCL_ASSERT(sched->coll_param.reduction == key.reduction, "reduction");
+            }
+        }
+        return sched;
     }
     else
     {

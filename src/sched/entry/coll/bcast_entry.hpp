@@ -7,7 +7,7 @@ class bcast_entry : public base_coll_entry
 public:
     bcast_entry() = delete;
     bcast_entry(iccl_sched* sched,
-                iccl_buf_placeholder buf,
+                iccl_buffer buf,
                 size_t cnt,
                 iccl_datatype_internal_t dtype,
                 size_t root) :
@@ -22,7 +22,7 @@ public:
         size_t bytes = cnt * iccl_datatype_get_size(dtype);
         LOG_DEBUG("BCAST entry req ", &req, ", bytes ", bytes);
 
-        atl_status_t atl_status = atl_comm_bcast(sched->bin->get_comm_ctx(), buf.get_ptr(),
+        atl_status_t atl_status = atl_comm_bcast(sched->bin->get_comm_ctx(), buf.get_ptr(bytes),
                                                  bytes, root, &req);
         if (unlikely(atl_status != atl_status_success))
         {
@@ -67,7 +67,7 @@ protected:
     }
 
 private:
-    iccl_buf_placeholder buf;
+    iccl_buffer buf;
     size_t cnt;
     size_t root;
     iccl_datatype_internal_t dtype;

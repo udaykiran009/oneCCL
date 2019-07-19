@@ -55,8 +55,10 @@ foreach(algo tree; starlike; ring; ring_rma; direct; double_tree)
 add_test (NAME allreduce_test_mpi_${algo} CONFIGURATIONS mpi_allreduce_${algo} COMMAND mpiexec.hydra -l -n 2 -ppn 1 ${ICCL_INSTALL_TESTS}/allreduce_test --gtest_output=xml:${ICCL_INSTALL_TESTS}/allreduce_test_mpi_runtime_adjust_${algo}_report.junit.xml)
 endforeach()
 
+if(FALSE)
 foreach(algo naive; direct)
 add_test (NAME allgatherv_test_mpi_${algo} CONFIGURATIONS mpi_allgatherv_${algo} COMMAND mpiexec.hydra -l -n 2 -ppn 1 ${ICCL_INSTALL_TESTS}/allgatherv_test --gtest_output=xml:${ICCL_INSTALL_TESTS}/allgatherv_test_mpi_runtime_adjust_${algo}_report.junit.xml)
 endforeach()
+endif()
 
 add_test (NAME allreduce_custom CONFIGURATIONS Custom COMMAND mpiexec.hydra -l -n 2 -ppn 1 ${ICCL_INSTALL_TESTS}/allreduce_custom_test --gtest_output=xml:${ICCL_INSTALL_TESTS}/allreduce_custom_report.junit.xml)
