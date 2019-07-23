@@ -1,5 +1,7 @@
 #include "base.h"
 
+#include <string>
+
 #define RUN_COLLECTIVE(start_cmd, name, expected)                          \
   do {                                                                     \
       t = 0;                                                               \
@@ -161,14 +163,20 @@ int main()
 
     test_init();
 
+    std::string base_match_id(coll_attr.match_id), match_id;
+
     coll_attr.to_cache = 1;
 
     /* regular sum allreduce */
+    match_id = base_match_id + "_regular";
+    coll_attr.match_id = match_id.c_str();
     RUN_COLLECTIVE(ccl_allreduce(send_buf, recv_buf, COUNT, ccl_dtype_float, ccl_reduction_sum, &coll_attr, NULL, &request),
                    "regular_allreduce",
                    ((size - 1) * ((float)size / 2)));
 
     /* prologue */
+    match_id = base_match_id + "_prologue";
+    coll_attr.match_id = match_id.c_str();
     coll_attr.prologue_fn = do_prologue_float_2x;
     coll_attr.epilogue_fn = NULL;
     coll_attr.reduction_fn = NULL;
@@ -177,6 +185,8 @@ int main()
                    (2 * (size - 1) * ((float)size / 2)));
 
     /* epilogue */
+    match_id = base_match_id + "_epilogue";
+    coll_attr.match_id = match_id.c_str();
     coll_attr.prologue_fn = NULL;
     coll_attr.epilogue_fn = do_epilogue_float_2x;
     coll_attr.reduction_fn = NULL;
@@ -185,6 +195,8 @@ int main()
                    (2 * (size - 1) * ((float)size / 2)));
 
     /* reduction_sum */
+    match_id = base_match_id + "_reduction_sum";
+    coll_attr.match_id = match_id.c_str();
     coll_attr.prologue_fn = NULL;
     coll_attr.epilogue_fn = NULL;
     coll_attr.reduction_fn = do_reduction_sum;
@@ -193,6 +205,8 @@ int main()
                    ((size - 1) * ((float)size / 2)));
 
     /* reduction_null */
+    match_id = base_match_id + "_reduction_null";
+    coll_attr.match_id = match_id.c_str();
     coll_attr.prologue_fn = NULL;
     coll_attr.epilogue_fn = NULL;
     coll_attr.reduction_fn = do_reduction_null;
@@ -201,6 +215,8 @@ int main()
                    (float)0);
 
     /* prologue and epilogue */
+    match_id = base_match_id + "_prologue_and_epilogue";
+    coll_attr.match_id = match_id.c_str();
     coll_attr.prologue_fn = do_prologue_float_2x;
     coll_attr.epilogue_fn = do_epilogue_float_2x;
     coll_attr.reduction_fn = NULL;
@@ -209,6 +225,8 @@ int main()
                    (2 * 2 * (size - 1) * ((float)size / 2)));
 
     /* prologue and reduction_sum */
+    match_id = base_match_id + "_prologue_and_reduction_sum";
+    coll_attr.match_id = match_id.c_str();
     coll_attr.prologue_fn = do_prologue_float_2x;
     coll_attr.epilogue_fn = NULL;
     coll_attr.reduction_fn = do_reduction_sum;
@@ -217,6 +235,8 @@ int main()
                    (2 * (size - 1) * ((float)size / 2)));
 
     /* epilogue and reduction_sum */
+    match_id = base_match_id + "_epilogue_and_reduction_sum";
+    coll_attr.match_id = match_id.c_str();
     coll_attr.prologue_fn = NULL;
     coll_attr.epilogue_fn = do_epilogue_float_2x;
     coll_attr.reduction_fn = do_reduction_sum;
@@ -225,6 +245,8 @@ int main()
                    (2 * (size - 1) * ((float)size / 2)));
 
     /* prologue and epilogue and reduction_sum */
+    match_id = base_match_id + "_prologue_and_epilogue_reduction_sum";
+    coll_attr.match_id = match_id.c_str();
     coll_attr.prologue_fn = do_prologue_float_2x;
     coll_attr.epilogue_fn = do_epilogue_float_2x;
     coll_attr.reduction_fn = do_reduction_sum;
@@ -233,6 +255,8 @@ int main()
                    (2 * 2 * (size - 1) * ((float)size / 2)));
 
     /* prologue and epilogue and reduction_null */
+    match_id = base_match_id + "_prologue_and_epilogue_reduction_null";
+    coll_attr.match_id = match_id.c_str();
     coll_attr.prologue_fn = do_prologue_float_2x;
     coll_attr.epilogue_fn = do_epilogue_float_2x;
     coll_attr.reduction_fn = do_reduction_null;
@@ -241,6 +265,8 @@ int main()
                    (float)0);
 
     /* prologue and epilogue and reduction_sum */
+    match_id = base_match_id + "_prologue_and_epilogue_reduction_sum2";
+    coll_attr.match_id = match_id.c_str();
     coll_attr.prologue_fn = do_prologue_float_to_char;
     coll_attr.epilogue_fn = do_epilogue_char_to_float;
     coll_attr.reduction_fn = do_reduction_sum;

@@ -13,7 +13,6 @@
 class ccl_sched_key
 {
 private:
-    
     size_t hasher_result = 0;
 
 public:
@@ -50,9 +49,6 @@ public:
     ccl_prologue_fn_t prologue_fn = nullptr;
     ccl_epilogue_fn_t epilogue_fn = nullptr;
     ccl_reduction_fn_t reduction_fn = nullptr;
-    size_t priority = 0;
-    int synchronous = 0;
-    int filler = 0; /* to zeroize 4 bytes hole */
 
     std::string match_id{}; /* should always be last field */
 
@@ -70,27 +66,25 @@ public:
         print();
         k.print();
         return is_equal;
-    } 
+    }
 
     void print() const
     {
         LOG_DEBUG( "ctype ", ccl_coll_type_to_str(ctype),
-                  ", dtype ", ccl_datatype_get(dtype)->name,
-                  ", itype ", ccl_datatype_get(itype)->name,
-                  ", reduction ", ccl_reduction_to_str(reduction),
-                  ", buf ", buf,
-                  ", count1 ", count1,
-                  ", count2 ", count2,
-                  ", count3 ", count3,
-                  ", count4 ", count4,
-                  ", root ", root,
-                  ", comm ", comm,
-                  ", prologue_fn ", prologue_fn,
-                  ", epilogue_fn ", epilogue_fn,
-                  ", reduction_fn ", reduction_fn,
-                  ", priority ", priority,
-                  ", sync ", synchronous,
-                  ", match_id ", match_id);
+                   ", dtype ", ccl_datatype_get(dtype)->name,
+                   ", itype ", ccl_datatype_get(itype)->name,
+                   ", reduction ", ccl_reduction_to_str(reduction),
+                   ", buf ", buf,
+                   ", count1 ", count1,
+                   ", count2 ", count2,
+                   ", count3 ", count3,
+                   ", count4 ", count4,
+                   ", root ", root,
+                   ", comm ", comm,
+                   ", prologue_fn ", (void*)prologue_fn,
+                   ", epilogue_fn ", (void*)epilogue_fn,
+                   ", reduction_fn ", (void*)reduction_fn,
+                   ", match_id ", match_id);
     }
 };
 
@@ -105,8 +99,8 @@ public:
         size_t hash_value = string_hasher(k.match_id);
         if (env_data.full_cache_key)
         {
-            hash_value += k.ctype + k.dtype + k.itype + k.reduction + k.count1 +
-                k.count2 + k.root + k.priority + k.synchronous + (size_t)k.buf +
+            hash_value += k.ctype + k.dtype + k.itype + k.reduction +
+                k.count1 + k.count2 + k.root + (size_t)k.buf +
                 (size_t)k.count3 + (size_t)k.count4 + (size_t)k.comm +
                 (size_t)k.prologue_fn + (size_t)k.epilogue_fn + (size_t)k.reduction_fn;
         }

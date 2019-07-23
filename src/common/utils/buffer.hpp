@@ -93,13 +93,13 @@ public:
         return ccl_buffer(src, size, offset - val, type);
     }
 
-    void* get_ptr(ssize_t access_offset = 0) const
+    void* get_ptr(ssize_t access_size = 0) const
     {
         CCL_ASSERT(offset >= 0, "unexpected size");
-        CCL_ASSERT((size == -1) || (offset + access_offset <= size),
-                    "unexpected access: size ", size,
-                    ", offset ", offset,
-                    ", access_offset ", access_offset);
+        CCL_ASSERT((size == -1) || (offset + access_size <= size),
+                   "unexpected access: size ", size,
+                   ", offset ", offset,
+                   ", access_size ", access_size);
 
         if (!src)
             return nullptr;

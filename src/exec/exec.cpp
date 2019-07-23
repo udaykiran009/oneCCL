@@ -20,7 +20,7 @@ ccl_executor::ccl_executor(const ccl_env_data& env_vars,
         .enable_rma = env_vars.enable_rma
     };
 
-    LOG_INFO("atl comm count ", attr.comm_count);
+    LOG_INFO("init ATL, requested comm_count ", attr.comm_count);
 
     atl_status_t atl_status = atl_init(nullptr, nullptr,
                                        &proc_idx, &proc_count,
@@ -56,7 +56,7 @@ ccl_executor::ccl_executor(const ccl_env_data& env_vars,
 
         if (env_vars.enable_fusion && idx == 0)
         {
-            LOG_DEBUG("creating service worker");
+            LOG_DEBUG("create service worker");
             workers.emplace_back(new ccl_service_worker(this, idx,
                 std::move(data_queue), *global_data.fusion_manager));
         }
@@ -85,11 +85,12 @@ ccl_executor::~ccl_executor()
         }
     }
 
-    LOG_DEBUG("finalizing ATL..");
+    LOG_INFO("finalize ATL");
+
     auto result = atl_finalize(atl_desc, atl_comms);
-    if(result != atl_status_success)
+    if (result != atl_status_success)
     {
-        LOG_ERROR("atl_finalize failed, error ", result);
+        LOG_ERROR("ATL finalize failed, error ", result);
     }
 }
 

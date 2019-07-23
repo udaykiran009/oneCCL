@@ -33,23 +33,24 @@ const char* ccl_coll_type_to_str(ccl_coll_type type)
     }
 }
 
-static ccl_request* ccl_coll_create(const ccl_coll_attr_t* attributes,
-                                    ccl_sched_key& key,
-                                    ccl_coll_param& coll_param)
+static ccl_request* ccl_coll_create(ccl_coll_param& coll_param,
+                                    const ccl_coll_attr_t* attributes,
+                                    ccl_sched_key& key)
 {
     ccl_sched* sched = nullptr;
     ccl_comm* match_id_comm = nullptr;
-    bool should_run = true;
-    bool should_commit = false;
-    bool should_cache = false;
-    bool was_fused = false;
-    std::string match_id;
     ccl_request* request = nullptr;
     const ccl_coll_attr_t* attr = attributes ? attributes : global_data.default_coll_attr.get();
 
+    bool should_run = true;
+    bool should_cache = false;
+    bool was_fused = false;
+
+    std::string match_id;
+
     CCL_THROW_IF_NOT(coll_param.ctype == ccl_coll_allreduce ||
-                      !(attr->prologue_fn || attr->epilogue_fn || attr->reduction_fn),
-                      "incorrect input");
+                     !(attr->prologue_fn || attr->epilogue_fn || attr->reduction_fn),
+                     "for now only allreduce supports prologue/epilogue/custom_reduction functionality");
 
     should_cache = attr->to_cache;
 
@@ -63,7 +64,7 @@ static ccl_request* ccl_coll_create(const ccl_coll_attr_t* attributes,
         {
             if (attr->synchronous)
             {
-                CCL_THROW("collective is synchronous and out-of-order is enabled but communicator is not found");
+                CCL_THROW("unsupported case (synchronous && out-of-order && !communicator)");
             }
 
             // user has provided match_id that has not been resolved yet.
@@ -87,8 +88,6 @@ static ccl_request* ccl_coll_create(const ccl_coll_attr_t* attributes,
         key.prologue_fn = attr->prologue_fn;
         key.epilogue_fn = attr->epilogue_fn;
         key.reduction_fn = attr->reduction_fn;
-        key.priority = attr->priority;
-        key.synchronous = attr->synchronous;
         key.match_id = match_id;
         sched = global_data.sched_cache->find(key);
     }
@@ -106,24 +105,13 @@ static ccl_request* ccl_coll_create(const ccl_coll_attr_t* attributes,
 
         sched->set_coll_attr(attr, std::move(match_id));
         sched->coll_attr.to_cache = should_cache;
-        should_commit = true;
     }
     else
     {
-        /* update buffer parameters in existing schedule
+        /* update some parameters and attributes in existing schedule
            as they could be changed since previous call */
-
-        sched->coll_param.buf = coll_param.buf;
-        sched->coll_param.send_buf = coll_param.send_buf;
-        sched->coll_param.recv_buf = coll_param.recv_buf;
-        sched->coll_param.recv_counts = coll_param.recv_counts;
-
-        if (coll_param.ctype == ccl_coll_sparse_allreduce)
-        {
-            sched->coll_param.sparse_param.snd_val_buf = coll_param.sparse_param.snd_val_buf;
-            sched->coll_param.sparse_param.rcv_ind_buf = coll_param.sparse_param.rcv_ind_buf;
-            sched->coll_param.sparse_param.rcv_val_buf = coll_param.sparse_param.rcv_val_buf;
-        }
+        sched->update_coll_param(coll_param);
+        sched->update_coll_attr(attr);
 
         LOG_DEBUG("found sched, reuse ", sched, ", type ",
                   ccl_coll_type_to_str(sched->coll_param.ctype));
@@ -150,10 +138,7 @@ static ccl_request* ccl_coll_create(const ccl_coll_attr_t* attributes,
 
     CCL_ASSERT(!was_fused);
 
-    if (should_commit)
-    {
-        sched->commit(global_data.parallelizer.get());
-    }
+    sched->commit(global_data.parallelizer.get());
 
     if (should_run)
     {
@@ -421,7 +406,7 @@ ccl_request* ccl_bcast_impl(void* buf,
     key.root = root;
     key.comm = communicator;
 
-    auto req = ccl_coll_create(attributes, key, coll_param);
+    auto req = ccl_coll_create(coll_param, attributes, key);
     LOG_DEBUG("coll ", ccl_coll_type_to_str(coll_param.ctype), " created, req ", req);
     return req;
 }
@@ -453,7 +438,7 @@ ccl_request* ccl_reduce_impl(const void* send_buf,
     key.root = root;
     key.comm = communicator;
 
-    auto req = ccl_coll_create(attributes, key, coll_param);
+    auto req = ccl_coll_create(coll_param, attributes, key);
     LOG_DEBUG("coll ", ccl_coll_type_to_str(coll_param.ctype), " created, req ", req);
     return req;
 }
@@ -482,7 +467,7 @@ ccl_request* ccl_allreduce_impl(const void* send_buf,
     key.reduction = reduction;
     key.comm = communicator;
 
-    auto req = ccl_coll_create(attributes, key, coll_param);
+    auto req = ccl_coll_create(coll_param, attributes, key);
     LOG_DEBUG("coll ", ccl_coll_type_to_str(coll_param.ctype), " created, req ", req, " count ", count);
     return req;
 }
@@ -511,26 +496,26 @@ ccl_request* ccl_allgatherv_impl(const void* send_buf,
     key.dtype = dtype;
     key.comm = communicator;
 
-    auto req = ccl_coll_create(attributes, key, coll_param);
+    auto req = ccl_coll_create(coll_param, attributes, key);
     LOG_DEBUG("coll ", ccl_coll_type_to_str(coll_param.ctype), " created, req ", req);
     return req;
 }
 
 void ccl_barrier_impl(ccl_comm* communicator)
 {
-    ccl_coll_attr_t attributes{};
-    attributes.synchronous = 1;
-
     ccl_coll_param coll_param{};
     coll_param.ctype = ccl_coll_barrier;
     coll_param.dtype = ccl_dtype_internal_char;
     coll_param.comm = communicator;
 
+    ccl_coll_attr_t attributes{};
+    attributes.synchronous = 1;
+
     ccl_sched_key key{};
     key.ctype = ccl_coll_barrier;
     key.comm = communicator;
 
-    ccl_coll_create(&attributes, key, coll_param);
+    ccl_coll_create(coll_param, &attributes, key);
 }
 
 ccl_request* ccl_sparse_allreduce_impl(const void* send_ind_buf, size_t send_ind_count,
@@ -569,7 +554,7 @@ ccl_request* ccl_sparse_allreduce_impl(const void* send_ind_buf, size_t send_ind
     key.reduction = reduction;
     key.comm = communicator;
 
-    auto req = ccl_coll_create(attributes, key, coll_param);
+    auto req = ccl_coll_create(coll_param, attributes, key);
     LOG_DEBUG("coll ", ccl_coll_type_to_str(coll_param.ctype), " created, req ", req);
     return req;
 }

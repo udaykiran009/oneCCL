@@ -53,5 +53,4 @@ private:
     const uint64_t sched_id_mask = 0x0000000000FFFF00;
     const uint64_t rank_mask     = 0x0000FFFFFF000000;
     const uint64_t comm_id_mask  = 0xFFFF000000000000;
-    
 };

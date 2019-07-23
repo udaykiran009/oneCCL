@@ -102,7 +102,7 @@ void ccl_sched::do_progress()
         {
             ++start_idx;   /* this is valid even for barrier entries */
             LOG_DEBUG("completed ", entry->name(), entry->is_barrier() ? " barrier" : "",
-                " entry [", i, "/", entries.size(), "] shift start_idx, sched ", this);
+                " entry [", i, "/", entries.size(), "], shift start_idx, sched ", this);
         }
 
         /* watch the indexing, start_idx might have been incremented above, so
@@ -147,7 +147,7 @@ ccl_status_t ccl_bin_progress(ccl_sched_bin* bin,
         if (sched->start_idx == sched->entries.size())
         {
             // the last entry in the schedule has been completed, clean up the schedule and complete its request
-            LOG_DEBUG("completing and dequeuing: sched ", sched,
+            LOG_DEBUG("complete and dequeue: sched ", sched,
                 ", coll ", ccl_coll_type_to_str(sched->coll_param.ctype),
                 ", req ", sched->req,
                 ", entry_count ", sched->entries.size());
@@ -206,7 +206,7 @@ void ccl_sched_progress(ccl_sched* sched)
             // the entry has been completed, increment start_idx
             ++sched->start_idx;
             LOG_DEBUG("completed ", entry->name(), entry->is_barrier() ? " barrier" : "",
-                      " entry [", entry_idx, "/", sched->entries.size(), "] shift start_idx, sched ", sched);
+                      " entry [", entry_idx, "/", sched->entries.size(), "], shift start_idx, sched ", sched);
             if (entry->is_barrier())
             {
                 // that entry was marked as a barrier, run the rest entries (if any) which depend on it
@@ -225,19 +225,31 @@ void ccl_sched_progress(ccl_sched* sched)
 
 void ccl_sched::commit(ccl_parallelizer* parallelizer)
 {
-    update_id();
-
     if (env_data.priority_mode == ccl_priority_lifo)
     {
         coll_attr.priority = lifo_priority;
         lifo_priority++;
     }
 
-    if (parallelizer)
-        parallelizer->process(this);
+    if (partial_scheds.empty())
+    {
+        /* single time operations */
+        update_id();
+        if (parallelizer)
+            parallelizer->process(this);
+    }
+    else
+    {
+        /* repeated operations, should happen each time to reuse schedule */
+        for (size_t idx = 0; idx < partial_scheds.size(); idx++)
+        {
+            partial_scheds[idx]->coll_attr.priority = coll_attr.priority;
+        }
+    }
 
-    LOG_DEBUG("sched ", this, ", num_entries ", entries.size(), ", number ", sched_id, ", req ", req,
-              ", part_count ", partial_scheds.size());
+    LOG_DEBUG("sched ", this, ", num_entries ", entries.size(),
+              ", sched_id ", sched_id, ", req ", req,
+              ", partial_sched_count ", partial_scheds.size());
 }
 
 ccl_request* ccl_sched::start(ccl_executor* exec, bool reset_sched)
@@ -374,9 +386,32 @@ void ccl_sched::set_coll_attr(const ccl_coll_attr_t* attr,
     coll_attr.match_id = std::move(match_id);
 }
 
+void ccl_sched::update_coll_param(ccl_coll_param& param)
+{
+    coll_param.buf = param.buf;
+    coll_param.send_buf = param.send_buf;
+    coll_param.recv_buf = param.recv_buf;
+    coll_param.recv_counts = param.recv_counts;
+
+    if (coll_param.ctype == ccl_coll_sparse_allreduce)
+    {
+        coll_param.sparse_param.snd_val_buf = param.sparse_param.snd_val_buf;
+        coll_param.sparse_param.rcv_ind_buf = param.sparse_param.rcv_ind_buf;
+        coll_param.sparse_param.rcv_val_buf = param.sparse_param.rcv_val_buf;
+    }
+}
+
+void ccl_sched::update_coll_attr(const ccl_coll_attr_t* attr)
+{
+    if (env_data.priority_mode == ccl_priority_direct)
+    {
+        coll_attr.priority = attr->priority;
+    }
+}
+
 void ccl_sched::dump_all() const
 {
-    for(const auto& sched : partial_scheds)
+    for (const auto& sched : partial_scheds)
     {
         sched->dump("worker_sched");
     }
@@ -446,6 +481,7 @@ ccl_request* ccl_sched::start_subsched(ccl_sched* subsched)
 {
     subsched->req->set_counter(1);
     subsched->sched_id = sched_id;
+    subsched->coll_attr.priority = coll_attr.priority;
     subsched->reset();
     queue->add(subsched);
     return subsched->req;

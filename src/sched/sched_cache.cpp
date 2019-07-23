@@ -18,8 +18,6 @@ ccl_sched* ccl_sched_cache::find(ccl_sched_key& key)
             CCL_ASSERT(sched->coll_attr.prologue_fn == key.prologue_fn, "prologue_fn");
             CCL_ASSERT(sched->coll_attr.epilogue_fn == key.epilogue_fn, "epilogue_fn");
             CCL_ASSERT(sched->coll_attr.reduction_fn == key.reduction_fn, "reduction_fn");
-            CCL_ASSERT(sched->coll_attr.priority == key.priority, "priority");
-            CCL_ASSERT(sched->coll_attr.synchronous == key.synchronous, "synchronous");
             CCL_ASSERT(sched->coll_param.ctype == key.ctype, "ctype");
             CCL_ASSERT(sched->coll_param.dtype->type == key.dtype, "dtype");
             CCL_ASSERT(sched->coll_param.comm == key.comm, "comm");
@@ -58,7 +56,9 @@ void ccl_sched_cache::add(ccl_sched_key& key, ccl_sched* sched)
         CCL_ASSERT(emplace_result.second);
     }
 
-    LOG_DEBUG("size ", table.size(), ",  bucket_count", table.bucket_count(), ", load_factor ", table.load_factor(),
+    LOG_DEBUG("size ", table.size(),
+              ", bucket_count ", table.bucket_count(),
+              ", load_factor ", table.load_factor(),
               ", max_load_factor ", table.max_load_factor());
 }
 

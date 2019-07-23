@@ -114,6 +114,9 @@ public:
     void set_coll_attr(const ccl_coll_attr_t* attr,
                        std::string match_id);
 
+    void update_coll_param(ccl_coll_param& param);
+    void update_coll_attr(const ccl_coll_attr_t* attr);
+
     void commit(ccl_parallelizer* parallelizer);
 
     ccl_request* start(ccl_executor* exec,
@@ -121,7 +124,7 @@ public:
 
     void complete();
 
-    void add_partial_sched(ccl_coll_param& coll_param);
+    void add_partial_sched(ccl_coll_param& param);
 
     void set_request(ccl_request* req);
 

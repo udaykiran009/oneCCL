@@ -6,8 +6,8 @@
 
 ccl_status_t complete_user_request(const void* ctx)
 {
-    ccl_sched* sched = (ccl_sched*) ctx;
-    LOG_DEBUG("completing request");
+    ccl_sched* sched = (ccl_sched*)ctx;
+    LOG_DEBUG("complete request");
     sched->req->complete();
     return ccl_status_success;
 }
@@ -41,7 +41,8 @@ ccl_buffer_cache::ccl_buffer_cache(size_t buf_size)
 ccl_buffer_cache::~ccl_buffer_cache()
 {
     std::lock_guard<fusion_lock_t> lock{guard};
-    if(free_buffers.size() != all_buffers.size())
+
+    if (free_buffers.size() != all_buffers.size())
     {
         CCL_FATAL("size mismatch ", free_buffers.size(), " vs ", all_buffers.size());
     }
@@ -50,6 +51,7 @@ ccl_buffer_cache::~ccl_buffer_cache()
     {
         CCL_FREE(all_buffers[idx]);
     }
+
     all_buffers.clear();
     free_buffers.clear();
 }
@@ -141,7 +143,9 @@ bool ccl_fusion_manager::can_fuse(ccl_sched* sched)
 bool ccl_fusion_manager::add(ccl_sched* sched)
 {
     if (!can_fuse(sched))
-    { return false; }
+    {
+        return false;
+    }
 
     CCL_THROW_IF_NOT(!env_data.fusion_check_urgent || !sched->urgent, "incorrect values : ",
                       env_data.fusion_check_urgent, " vs ", sched->urgent);
@@ -163,6 +167,7 @@ ccl_sched* ccl_fusion_manager::build_sched()
     ccl_reduction_t reduction;
     ccl_coll_type ctype;
     void* fusion_buf = nullptr;
+    bool found_sched_in_cache = false;
 
     CCL_THROW_IF_NOT(exec_queue.size(), "empty queue");
 
@@ -206,6 +211,7 @@ ccl_sched* ccl_fusion_manager::build_sched()
         key.match_id = first_sched->coll_attr.match_id + last_sched->coll_attr.match_id;
         LOG_DEBUG("key.match_id ", key.match_id);
         sched = global_data.sched_cache->find(key);
+        found_sched_in_cache = (sched) ? true : false;
     }
 
     stat_fused_bytes += sum_bytes;
@@ -228,24 +234,26 @@ ccl_sched* ccl_fusion_manager::build_sched()
                 coll_param.comm = comm;
                 sched = new ccl_sched(coll_param);
                 sched->internal_type = ccl_sched_internal_fusion;
-                sched->coll_attr.priority = max_priority;
                 break;
             default:
                 CCL_FATAL("not supported");
                 break;
         }
-        sched->commit(global_data.parallelizer.get());
-        sched->coll_attr.to_cache = (use_cache) ? 1 : 0;
 
         if (use_cache)
         {
             global_data.sched_cache->add(key, sched);
         }
     }
-    else
+
+    sched->coll_attr.priority = max_priority;
+    sched->commit(global_data.parallelizer.get());
+
+    if (found_sched_in_cache)
     {
         LOG_DEBUG("found fused_sched in cache");
-        CCL_THROW_IF_NOT(sched->req->is_completed(), "non completed sched found in cache");
+        CCL_THROW_IF_NOT(sched->req->is_completed(),
+                         "non completed fused_sched found in cache");
         clear_exec_queue();
         return sched;
     }
@@ -255,9 +263,9 @@ ccl_sched* ccl_fusion_manager::build_sched()
     std::vector<std::shared_ptr<ccl_sched>>& part_scheds = sched->partial_scheds;
     size_t copies_per_part = exec_queue_size / part_count;
     size_t copies_per_last_part = copies_per_part + exec_queue_size % part_count;
-    std::shared_ptr<sched_entry> e;
 
-    CCL_ASSERT(part_count > 0);
+    CCL_THROW_IF_NOT(part_count > 0, "unexpected part_count");
+
     LOG_DEBUG("part_count ", part_count,
         ", sum_count ", sum_count,
         ", exec_queue_size ", exec_queue_size);
@@ -361,7 +369,7 @@ void ccl_fusion_manager::execute()
         {
             if ((*it)->urgent)
             {
-                LOG_DEBUG("found urgent sched in exec_queue, flush_exec_queue");
+                LOG_DEBUG("found urgent sched in exec_queue, flush exec_queue");
                 flush_exec_queue = true;
                 break;
             }
@@ -400,7 +408,7 @@ void ccl_fusion_manager::execute()
                     size_t size = s->coll_param.count * ccl_datatype_get_size(s->coll_param.dtype);
                     if (exec_queue_sum_bytes + size > CCL_FUSION_BUFFER_SIZE)
                     {
-                        LOG_DEBUG("too much bytes in buffer, flush_exec_queue");
+                        LOG_DEBUG("too much bytes in buffer, flush exec_queue");
                         flush_exec_queue = true;
                         break;
                     }
@@ -408,7 +416,7 @@ void ccl_fusion_manager::execute()
 
                     if (env_data.fusion_check_urgent && !flush_exec_queue && s->urgent)
                     {
-                        LOG_DEBUG("found urgent sched in postponed_queue, flush_exec_queue, postponed_queue size ",
+                        LOG_DEBUG("found urgent sched in postponed_queue, flush exec_queue, postponed_queue size ",
                                  postponed_queue.size());
                         flush_exec_queue = true;
                     }
@@ -418,7 +426,7 @@ void ccl_fusion_manager::execute()
 
                     if (exec_queue.size() == count_threshold)
                     {
-                        LOG_DEBUG("too many scheds, flush_exec_queue");
+                        LOG_DEBUG("too many scheds, flush exec_queue");
                         flush_exec_queue = true;
                         break;
                     }

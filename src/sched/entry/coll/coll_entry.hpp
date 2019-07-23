@@ -144,6 +144,7 @@ private:
                 CCL_FATAL("not supported type ", ctype);
                 break;
         }
+
         if (coll_sched)
         {
             LOG_DEBUG("starting COLL entry");

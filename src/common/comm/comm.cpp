@@ -87,7 +87,7 @@ ccl_comm* ccl_comm::create_with_color(int color,
 
     ccl_comm* comm = new ccl_comm(new_rank, colors_match, std::unique_ptr<comm_id>(new comm_id(*comm_ids)),
                                   std::move(ranks_map));
-    LOG_DEBUG("New comm: color ", color, ", rank ", comm->rank(), ", size ", comm->size(), ", comm_id ", comm->id());
+    LOG_DEBUG("new comm: color ", color, ", rank ", comm->rank(), ", size ", comm->size(), ", comm_id ", comm->id());
 
     return comm;
 }
@@ -103,7 +103,7 @@ size_t ccl_comm::get_global_rank(size_t rank) const
     if (m_ranks_map.empty())
     {
         //global comm and its copies do not have entries in the map
-        LOG_DEBUG("Direct mapping of rank ", rank);
+        LOG_DEBUG("direct mapping of rank ", rank);
         return rank;
     }
 

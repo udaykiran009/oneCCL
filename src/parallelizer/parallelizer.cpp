@@ -106,7 +106,8 @@ ccl_status_t ccl_parallelizer::process(ccl_sched* sched)
             break;
     }
 
-    LOG_DEBUG("sched ", sched, ", num_entries ", sched->entries.size(), ", coll_type ", coll_type, ", part_count ", part_count);
+    LOG_DEBUG("sched ", sched, ", num_entries ", sched->entries.size(),
+              ", coll_type ", ccl_coll_type_to_str(coll_type), ", part_count ", part_count);
 
     counts.resize(part_count, 0);
     offsets.resize(part_count, 0);

@@ -18,10 +18,10 @@ public:
     ~ccl_request()
     {
         auto counter = completion_counter.load(std::memory_order_acquire);
-        LOG_DEBUG("deleting req ", this, " with counter ", counter);
+        LOG_DEBUG("delete req ", this, " with counter ", counter);
         if (counter != 0)
         {
-            LOG_ERROR("deleting request with unexpected completion_counter ", counter);
+            LOG_ERROR("unexpected completion_counter ", counter);
         }
     }
 
