@@ -24,7 +24,7 @@ TODO: Update this file
 To update GitHub Pages:
 1.  got to doc/rst
 2.  remove build folder if exist
-3.  run makefile.bat on Windows or ./Makefile on Linux
+3.  run makefile.bat on Windows or make -f Makefile on Linux
 4.  download gh-pages branch to another directory
 5.  remove content from gh-pages branch
 6.  copy build/html/* to gh-pages branch
