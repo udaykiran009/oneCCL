@@ -1,5 +1,5 @@
-#define Collective_Name "ICCL_ALLGATHERV_ALGO"
-#define TEST_ICCL_ALLGATHERV
+#define Collective_Name "CCL_ALLGATHERV_ALGO"
+#define TEST_CCL_ALLGATHERV
 #include "base.hpp"
 #include <functional>
 #include <vector>
@@ -97,9 +97,9 @@ public:
                 this->Init(param, idx);
                 param.req[Buffers[idx]] = (param.GetPlaceType() == PT_IN) ?
                     param.global_comm.allgatherv(param.recvBuf[Buffers[idx]].data(), recvCounts[param.processIdx], param.recvBuf[Buffers[idx]].data(),
-                                                 recvCounts.data(), (iccl::data_type) param.GetDataType(), &param.coll_attr) :
+                                                 recvCounts.data(), (ccl::data_type) param.GetDataType(), &param.coll_attr) :
                     param.global_comm.allgatherv(param.sendBuf[Buffers[idx]].data(), recvCounts[param.processIdx], param.recvBuf[Buffers[idx]].data(),
-                                                 recvCounts.data(), (iccl::data_type) param.GetDataType(), &param.coll_attr);
+                                                 recvCounts.data(), (ccl::data_type) param.GetDataType(), &param.coll_attr);
             }
             param.DefineCompletionOrderAndComplete();
             result += Check(param);

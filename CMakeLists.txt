@@ -1,12 +1,12 @@
-#common CMakeList.txt to build ICCL, ATL, tests
+#common CMakeList.txt to build CCL, ATL, tests
 
 cmake_minimum_required (VERSION 2.8)
 
 set(CMAKE_DISABLE_SOURCE_CHANGES ON)
 set(CMAKE_DISABLE_IN_SOURCE_BUILD ON)
 
-set(PROJECT_NAME "Intel(R) oneAPI Collective Communications Library")
-set(PROJECT_FULL_NAME "Intel(R) oneAPI Collective Communications Library")
+set(PROJECT_NAME "oneAPI Collective Communications Library")
+set(PROJECT_FULL_NAME "oneAPI Collective Communications Library")
 
 project(${PROJECT_NAME})
 
@@ -36,14 +36,14 @@ if(CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT)
     set(CMAKE_INSTALL_PREFIX "${CMAKE_BINARY_DIR}/_install" CACHE PATH "Default install path" FORCE)
 endif()
 
-set(ICCL_COMMON_INSTALL_PREFIX "intel64")
-set(ICCL_INSTALL_LIB "${ICCL_COMMON_INSTALL_PREFIX}/${CMAKE_INSTALL_LIBDIR}")
-set(ICCL_INSTALL_INCLUDE "${ICCL_COMMON_INSTALL_PREFIX}/${CMAKE_INSTALL_INCLUDEDIR}")
-set(ICCL_INSTALL_DOC "${ICCL_COMMON_INSTALL_PREFIX}/${CMAKE_INSTALL_DOCDIR}")
-set(ICCL_INSTALL_BIN "${ICCL_COMMON_INSTALL_PREFIX}/${CMAKE_INSTALL_BINDIR}")
-set(ICCL_INSTALL_ENV "${ICCL_COMMON_INSTALL_PREFIX}/env")
-set(ICCL_INSTALL_EXAMPLES "${CMAKE_INSTALL_PREFIX}/examples")
-set(ICCL_INSTALL_TESTS "${CMAKE_INSTALL_PREFIX}/tests/functional")
+set(CCL_COMMON_INSTALL_PREFIX "intel64")
+set(CCL_INSTALL_LIB "${CCL_COMMON_INSTALL_PREFIX}/${CMAKE_INSTALL_LIBDIR}")
+set(CCL_INSTALL_INCLUDE "${CCL_COMMON_INSTALL_PREFIX}/${CMAKE_INSTALL_INCLUDEDIR}")
+set(CCL_INSTALL_DOC "${CCL_COMMON_INSTALL_PREFIX}/${CMAKE_INSTALL_DOCDIR}")
+set(CCL_INSTALL_BIN "${CCL_COMMON_INSTALL_PREFIX}/${CMAKE_INSTALL_BINDIR}")
+set(CCL_INSTALL_ENV "${CCL_COMMON_INSTALL_PREFIX}/env")
+set(CCL_INSTALL_EXAMPLES "${CMAKE_INSTALL_PREFIX}/examples")
+set(CCL_INSTALL_TESTS "${CMAKE_INSTALL_PREFIX}/tests/functional")
 
 set(CMAKE_SKIP_INSTALL_RPATH TRUE)
 set(CMAKE_SKIP_RPATH TRUE)
@@ -98,7 +98,7 @@ if(WITH_ASAN AND ${CMAKE_BUILD_TYPE} STREQUAL "Debug")
     set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -lasan")
 endif()
 
-set(ICCL_BUILD_DIR ${CMAKE_CURRENT_BINARY_DIR}/src)
+set(CCL_BUILD_DIR ${CMAKE_CURRENT_BINARY_DIR}/src)
 
 enable_testing()
 
@@ -108,11 +108,11 @@ add_subdirectory(examples)
 add_subdirectory(tests/functional)
 
 
-#generate & install icclvars.sh
-configure_file(cmake/icclvars.sh.in ${CMAKE_CURRENT_BINARY_DIR}/icclvars.sh @ONLY)
+#generate & install cclvars.sh
+configure_file(cmake/cclvars.sh.in ${CMAKE_CURRENT_BINARY_DIR}/cclvars.sh @ONLY)
 configure_file(cmake/vars.sh.in ${CMAKE_CURRENT_BINARY_DIR}/vars.sh @ONLY)
-install(PROGRAMS ${CMAKE_CURRENT_BINARY_DIR}/icclvars.sh DESTINATION ${ICCL_INSTALL_BIN})
-install(PROGRAMS ${CMAKE_CURRENT_BINARY_DIR}/vars.sh DESTINATION ${ICCL_INSTALL_ENV})
+install(PROGRAMS ${CMAKE_CURRENT_BINARY_DIR}/cclvars.sh DESTINATION ${CCL_INSTALL_BIN})
+install(PROGRAMS ${CMAKE_CURRENT_BINARY_DIR}/vars.sh DESTINATION ${CCL_INSTALL_ENV})
 
 #CPack re-uses generated install rules and puts all targets into archive
 #archive creation, generates a target 'package'

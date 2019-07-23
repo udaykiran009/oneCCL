@@ -4,108 +4,108 @@
 #include "common/datatype/datatype.hpp"
 #include "common/utils/buffer.hpp"
 
-#define ICCL_INVALID_PROC_IDX (-1)
+#define CCL_INVALID_PROC_IDX (-1)
 
-class iccl_sched;
-class iccl_request;
+class ccl_sched;
+class ccl_request;
 
-enum iccl_coll_type
+enum ccl_coll_type
 {
-    iccl_coll_barrier =             0,
-    iccl_coll_bcast =               1,
-    iccl_coll_reduce =              2,
-    iccl_coll_allreduce =           3,
-    iccl_coll_allgatherv =          4,
-    iccl_coll_sparse_allreduce =    5,
-    iccl_coll_internal =            6,
-    iccl_coll_none =                7
+    ccl_coll_barrier =             0,
+    ccl_coll_bcast =               1,
+    ccl_coll_reduce =              2,
+    ccl_coll_allreduce =           3,
+    ccl_coll_allgatherv =          4,
+    ccl_coll_sparse_allreduce =    5,
+    ccl_coll_internal =            6,
+    ccl_coll_none =                7
 };
 
-iccl_status_t iccl_coll_build_barrier(iccl_sched* sched);
+ccl_status_t ccl_coll_build_barrier(ccl_sched* sched);
 
-iccl_status_t iccl_coll_build_bcast(iccl_sched* sched,
-                                    iccl_buffer buf,
+ccl_status_t ccl_coll_build_bcast(ccl_sched* sched,
+                                    ccl_buffer buf,
                                     size_t count,
-                                    iccl_datatype_internal_t dtype,
+                                    ccl_datatype_internal_t dtype,
                                     size_t root);
 
-iccl_status_t iccl_coll_build_reduce(iccl_sched* sched,
-                                     iccl_buffer send_buf,
-                                     iccl_buffer recv_buf,
+ccl_status_t ccl_coll_build_reduce(ccl_sched* sched,
+                                     ccl_buffer send_buf,
+                                     ccl_buffer recv_buf,
                                      size_t count,
-                                     iccl_datatype_internal_t dtype,
-                                     iccl_reduction_t reduction,
+                                     ccl_datatype_internal_t dtype,
+                                     ccl_reduction_t reduction,
                                      size_t root);
 
-iccl_status_t iccl_coll_build_allreduce(iccl_sched* sched,
-                                        iccl_buffer send_buf,
-                                        iccl_buffer recv_buf,
+ccl_status_t ccl_coll_build_allreduce(ccl_sched* sched,
+                                        ccl_buffer send_buf,
+                                        ccl_buffer recv_buf,
                                         size_t count,
-                                        iccl_datatype_internal_t dtype,
-                                        iccl_reduction_t reduction);
+                                        ccl_datatype_internal_t dtype,
+                                        ccl_reduction_t reduction);
 
-iccl_status_t iccl_coll_build_allgatherv(iccl_sched* sched,
-                                         iccl_buffer send_buf,
+ccl_status_t ccl_coll_build_allgatherv(ccl_sched* sched,
+                                         ccl_buffer send_buf,
                                          size_t s_count,
-                                         iccl_buffer recv_buf,
+                                         ccl_buffer recv_buf,
                                          size_t* r_counts,
-                                         iccl_datatype_internal_t dtype);
+                                         ccl_datatype_internal_t dtype);
 
-iccl_status_t iccl_coll_build_sparse_allreduce(iccl_sched* sched,
-                                               iccl_buffer send_ind_buf,
+ccl_status_t ccl_coll_build_sparse_allreduce(ccl_sched* sched,
+                                               ccl_buffer send_ind_buf,
                                                size_t send_ind_count,
-                                               iccl_buffer send_val_buf,
+                                               ccl_buffer send_val_buf,
                                                size_t send_val_count,
-                                               iccl_buffer recv_ind_buf,
+                                               ccl_buffer recv_ind_buf,
                                                size_t* recv_ind_count,
-                                               iccl_buffer recv_val_buf,
+                                               ccl_buffer recv_val_buf,
                                                size_t* recv_val_count,
-                                               iccl_datatype_internal_t index_dtype,
-                                               iccl_datatype_internal_t value_dtype,
-                                               iccl_reduction_t reduction);
+                                               ccl_datatype_internal_t index_dtype,
+                                               ccl_datatype_internal_t value_dtype,
+                                               ccl_reduction_t reduction);
 
-const char* iccl_coll_type_to_str(iccl_coll_type type);
+const char* ccl_coll_type_to_str(ccl_coll_type type);
 
-iccl_request* iccl_bcast_impl(void* buf,
+ccl_request* ccl_bcast_impl(void* buf,
                               size_t count,
-                              iccl_datatype_t dtype,
+                              ccl_datatype_t dtype,
                               size_t root,
-                              const iccl_coll_attr_t* attributes,
-                              iccl_comm* communicator);
+                              const ccl_coll_attr_t* attributes,
+                              ccl_comm* communicator);
 
-iccl_request* iccl_reduce_impl(const void* send_buf,
+ccl_request* ccl_reduce_impl(const void* send_buf,
                                void* recv_buf,
                                size_t count,
-                               iccl_datatype_t dtype,
-                               iccl_reduction_t reduction,
+                               ccl_datatype_t dtype,
+                               ccl_reduction_t reduction,
                                size_t root,
-                               const iccl_coll_attr_t* attributes,
-                               iccl_comm* communicator);
+                               const ccl_coll_attr_t* attributes,
+                               ccl_comm* communicator);
 
-iccl_request* iccl_allreduce_impl(const void* send_buf,
+ccl_request* ccl_allreduce_impl(const void* send_buf,
                                   void* recv_buf,
                                   size_t count,
-                                  iccl_datatype_t dtype,
-                                  iccl_reduction_t reduction,
-                                  const iccl_coll_attr_t* attributes,
-                                  iccl_comm* communicator);
+                                  ccl_datatype_t dtype,
+                                  ccl_reduction_t reduction,
+                                  const ccl_coll_attr_t* attributes,
+                                  ccl_comm* communicator);
 
-iccl_request* iccl_allgatherv_impl(const void* send_buf,
+ccl_request* ccl_allgatherv_impl(const void* send_buf,
                                    size_t send_count,
                                    void* recv_buf,
                                    size_t* recv_counts,
-                                   iccl_datatype_t dtype,
-                                   const iccl_coll_attr_t* attributes,
-                                   iccl_comm* communicator);
+                                   ccl_datatype_t dtype,
+                                   const ccl_coll_attr_t* attributes,
+                                   ccl_comm* communicator);
 
-iccl_request* iccl_sparse_allreduce_impl(const void* send_ind_buf, size_t send_ind_count,
+ccl_request* ccl_sparse_allreduce_impl(const void* send_ind_buf, size_t send_ind_count,
                                          const void* send_val_buf, size_t send_val_count,
                                          void** recv_ind_buf, size_t* recv_ind_count,
                                          void** recv_val_buf, size_t* recv_val_count,
-                                         iccl_datatype_t index_dtype,
-                                         iccl_datatype_t dtype,
-                                         iccl_reduction_t reduction,
-                                         const iccl_coll_attr_t* attributes,
-                                         iccl_comm* communicator);
+                                         ccl_datatype_t index_dtype,
+                                         ccl_datatype_t dtype,
+                                         ccl_reduction_t reduction,
+                                         const ccl_coll_attr_t* attributes,
+                                         ccl_comm* communicator);
 
-void iccl_barrier_impl(iccl_comm* communicator);
+void ccl_barrier_impl(ccl_comm* communicator);

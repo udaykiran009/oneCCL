@@ -22,17 +22,17 @@
           }                                                                \
           }                                                                \
           t1 = when();                                                     \
-          ICCL_CALL(start_cmd);                                            \
-          ICCL_CALL(iccl_wait(request));                                   \
+          CCL_CALL(start_cmd);                                             \
+          CCL_CALL(ccl_wait(request));                                     \
           t2 = when();                                                     \
           t += (t2 - t1);                                                  \
-          iccl_barrier(NULL);                                              \
-\
+          ccl_barrier(NULL);                                               \
+                                                                           \
           int* rcv_idx = (int*)recv_ibuf;                                  \
           rcv_val = (float*)recv_vbuf;                                     \
-\
+                                                                           \
           std::vector<float> vb(rcv_val, rcv_val + recv_vcount);           \
-\
+                                                                           \
           std::unordered_map<int, std::vector<float> > expected = {{1,{9.0,14.0}},{2,{3.0,5.0}}, \
           {3,{2.0,4.0}},{4,{2.0,4.0}},{5,{5.0,8.0}},{6,{2.0,3.0}},{7,{1.0,2.0}}, \
           {8,{1.0,2.0}},{9,{5.0,8.0}}};                                    \
@@ -55,7 +55,7 @@
                     for (auto x : key->second)                             \
                         str += std::to_string(x) + ",";                    \
                     str[str.length()-1] = ']';                             \
-\
+                                                                           \
                     str += ", got [";                                      \
                     for (auto x : v)                                       \
                         str += std::to_string(x) + ",";                    \
@@ -97,9 +97,9 @@ int main()
     size_t recv_vcount = 0;
 
     coll_attr.to_cache = 0;
-    RUN_COLLECTIVE(iccl_sparse_allreduce(send_ibuf, COUNT_I, send_vbuf, COUNT_I * VDIM_SIZE,
+    RUN_COLLECTIVE(ccl_sparse_allreduce(send_ibuf, COUNT_I, send_vbuf, COUNT_I * VDIM_SIZE,
                                          &recv_ibuf, &recv_icount, &recv_vbuf, &recv_vcount, 
-                                         iccl_dtype_int, iccl_dtype_float, iccl_reduction_sum,
+                                         ccl_dtype_int, ccl_dtype_float, ccl_reduction_sum,
                                          &coll_attr, NULL, &request),
                    "basic_sparse_allreduce");
 

@@ -1,6 +1,6 @@
 DeliveryName	InstallName	FileCheckSum	FileOrigin	Owner	FileFeature	FileInstallCondition	InstalledFilePermission	Redistributable	InstalledFileOwner	SymbolicLink
-<deliverydir>/l_test/functional/allgatherv_test	<installdir><l_iccl_install_path>/test/functional/allgatherv_test		external	Ksenya Kochanova		1	755	redistributable	root	<installroot>/tests/functional/allgatherv_test
-<deliverydir>/l_test/functional/allreduce_test	<installdir><l_iccl_install_path>/test/functional/allreduce_test		external	Ksenya Kochanova		1	755	redistributable	root	<installroot>/tests/functional/allreduce_test
-<deliverydir>/l_test/functional/bcast_test	<installdir><l_iccl_install_path>/test/functional/bcast_test		external	Ksenya Kochanova		1	755	redistributable	root	<installroot>/tests/functional/bcast_test
-<deliverydir>/l_test/functional/reduce_test	<installdir><l_iccl_install_path>/test/functional/reduce_test		external	Ksenya Kochanova		1	755	redistributable	root	<installroot>/tests/functional/reduce_test
+<deliverydir>/l_test/functional/allgatherv_test	<installdir><l_ccl_install_path>/test/functional/allgatherv_test		external	Ksenya Kochanova		1	755	redistributable	root	<installroot>/tests/functional/allgatherv_test
+<deliverydir>/l_test/functional/allreduce_test	<installdir><l_ccl_install_path>/test/functional/allreduce_test		external	Ksenya Kochanova		1	755	redistributable	root	<installroot>/tests/functional/allreduce_test
+<deliverydir>/l_test/functional/bcast_test	<installdir><l_ccl_install_path>/test/functional/bcast_test		external	Ksenya Kochanova		1	755	redistributable	root	<installroot>/tests/functional/bcast_test
+<deliverydir>/l_test/functional/reduce_test	<installdir><l_ccl_install_path>/test/functional/reduce_test		external	Ksenya Kochanova		1	755	redistributable	root	<installroot>/tests/functional/reduce_test
 #Intel Confidential

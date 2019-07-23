@@ -1,7 +1,7 @@
 Manual selection of collective algorithms
 *****************************************
 
-You can manually select a collective algorithm using :ref:`ICCL_ALLREDUCE_ALGO`:
+You can manually select a collective algorithm using :ref:`CCL_ALLREDUCE_ALGO`:
 
 -	``ring`` – reduce_scatter+allgather ring.
 -	``ring_rma`` - reduce_scatter+allgather ring using rma communications.

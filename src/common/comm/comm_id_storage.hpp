@@ -1,6 +1,6 @@
 #pragma once
 
-#include "iccl_types.h"
+#include "ccl_types.h"
 #include "common/log/log.hpp"
 #include "common/utils/spinlock.hpp"
 
@@ -9,24 +9,24 @@
 #include <iostream>
 #include <mutex>
 
-using iccl_comm_id_t = uint16_t;
+using ccl_comm_id_t = uint16_t;
 
-class iccl_comm_id_storage
+class ccl_comm_id_storage
 {
 public:
-    explicit iccl_comm_id_storage(iccl_comm_id_t max_comm_count) : max_comm(max_comm_count),
+    explicit ccl_comm_id_storage(ccl_comm_id_t max_comm_count) : max_comm(max_comm_count),
                                                                    external_ids_range_start(max_comm >> 1),
                                                                    last_used_id_internal(),
                                                                    last_used_id_external(external_ids_range_start),
                                                                    free_ids(max_comm, true)
     {}
 
-    iccl_comm_id_t acquire_id(bool internal = false)
+    ccl_comm_id_t acquire_id(bool internal = false)
     {
-        std::lock_guard<iccl_spinlock> lock(sync_guard);
-        iccl_comm_id_t& last_used_ref = internal ? last_used_id_internal : last_used_id_external;
-        iccl_comm_id_t lower_bound = internal ? static_cast<iccl_comm_id_t>(0) : external_ids_range_start;
-        iccl_comm_id_t upper_bound = internal ? external_ids_range_start : max_comm;
+        std::lock_guard<ccl_spinlock> lock(sync_guard);
+        ccl_comm_id_t& last_used_ref = internal ? last_used_id_internal : last_used_id_external;
+        ccl_comm_id_t lower_bound = internal ? static_cast<ccl_comm_id_t>(0) : external_ids_range_start;
+        ccl_comm_id_t upper_bound = internal ? external_ids_range_start : max_comm;
 
         LOG_DEBUG("looking for free ", internal ? "internal" : "external", " comm id");
         //overwrite last_used with new value
@@ -37,20 +37,20 @@ public:
     /**
      * Forced way to obtain a specific comm id. Must be used with care
      */
-    void pull_id(iccl_comm_id_t id)
+    void pull_id(ccl_comm_id_t id)
     {
-        ICCL_ASSERT(id > 0 && id < max_comm, "id ", id, " is out of bounds");
-        std::lock_guard<iccl_spinlock> lock(sync_guard);
+        CCL_ASSERT(id > 0 && id < max_comm, "id ", id, " is out of bounds");
+        std::lock_guard<ccl_spinlock> lock(sync_guard);
         if (!free_ids[id])
         {
-            ICCL_THROW("comm id ", id, " is already used");
+            CCL_THROW("comm id ", id, " is already used");
         }
         free_ids[id] = false;
     }
 
-    void release_id(iccl_comm_id_t id)
+    void release_id(ccl_comm_id_t id)
     {
-        std::lock_guard<iccl_spinlock> lock(sync_guard);
+        std::lock_guard<ccl_spinlock> lock(sync_guard);
         if (free_ids[id])
         {
             LOG_ERROR("attempt to release not acquired id ", id);
@@ -62,13 +62,13 @@ public:
     }
 
 private:
-    iccl_comm_id_t acquire_id_impl(iccl_comm_id_t last_used,
-                                   iccl_comm_id_t lower_bound,
-                                   iccl_comm_id_t upper_bound)
+    ccl_comm_id_t acquire_id_impl(ccl_comm_id_t last_used,
+                                  ccl_comm_id_t lower_bound,
+                                  ccl_comm_id_t upper_bound)
     {
         //search from the current position till the end
         LOG_DEBUG("last ", last_used, ", low ", lower_bound, " up ", upper_bound);
-        for (iccl_comm_id_t id = last_used; id < upper_bound; ++id)
+        for (ccl_comm_id_t id = last_used; id < upper_bound; ++id)
         {
             if (free_ids[id])
             {
@@ -80,7 +80,7 @@ private:
 
         //if we didn't exit from the method than there are no free ids in range [last_used:upper_bound)
         //need to repeat from the beginning of the ids space [lower_bound:last_used)
-        for (iccl_comm_id_t id = lower_bound; id < last_used; ++id)
+        for (ccl_comm_id_t id = lower_bound; id < last_used; ++id)
         {
             if (free_ids[id])
             {
@@ -90,16 +90,16 @@ private:
             }
         }
 
-        throw iccl::iccl_error("no free comm id was found");
+        throw ccl::ccl_error("no free comm id was found");
     }
 
     //max_comm space is split into 2 parts - internal and external
-    const iccl_comm_id_t max_comm;
+    const ccl_comm_id_t max_comm;
     //internal ids range [0, external_ids_range_start)
     //external ids range [external_ids_range_start, max_comm)
-    const iccl_comm_id_t external_ids_range_start;
-    iccl_comm_id_t last_used_id_internal{};
-    iccl_comm_id_t last_used_id_external{};
+    const ccl_comm_id_t external_ids_range_start;
+    ccl_comm_id_t last_used_id_internal{};
+    ccl_comm_id_t last_used_id_external{};
     std::vector<bool> free_ids;
-    iccl_spinlock sync_guard;
+    ccl_spinlock sync_guard;
 };

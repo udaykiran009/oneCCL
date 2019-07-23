@@ -1,63 +1,63 @@
 #include "common/datatype/datatype.hpp"
 #include "common/log/log.hpp"
 
-iccl_datatype_internal_t iccl_dtype_internal_none;
-iccl_datatype_internal_t iccl_dtype_internal_char;
-iccl_datatype_internal_t iccl_dtype_internal_int;
-iccl_datatype_internal_t iccl_dtype_internal_bfp16;
-iccl_datatype_internal_t iccl_dtype_internal_float;
-iccl_datatype_internal_t iccl_dtype_internal_double;
-iccl_datatype_internal_t iccl_dtype_internal_int64;
-iccl_datatype_internal_t iccl_dtype_internal_uint64;
+ccl_datatype_internal_t ccl_dtype_internal_none;
+ccl_datatype_internal_t ccl_dtype_internal_char;
+ccl_datatype_internal_t ccl_dtype_internal_int;
+ccl_datatype_internal_t ccl_dtype_internal_bfp16;
+ccl_datatype_internal_t ccl_dtype_internal_float;
+ccl_datatype_internal_t ccl_dtype_internal_double;
+ccl_datatype_internal_t ccl_dtype_internal_int64;
+ccl_datatype_internal_t ccl_dtype_internal_uint64;
 
-const iccl_datatype_internal iccl_dtype_internal_none_value = { .type = iccl_dtype_char, .size = 0, .name = "NONE" };
-const iccl_datatype_internal iccl_dtype_internal_char_value = { .type = iccl_dtype_char, .size = 1, .name = "CHAR" };
-const iccl_datatype_internal iccl_dtype_internal_int_value = { .type = iccl_dtype_int, .size = 4, .name = "INT" };
-const iccl_datatype_internal iccl_dtype_internal_bfp16_value = { .type = iccl_dtype_bfp16, .size = 2, .name = "BFP16" };
-const iccl_datatype_internal iccl_dtype_internal_float_value = { .type = iccl_dtype_float, .size = 4, .name = "FLOAT" };
-const iccl_datatype_internal iccl_dtype_internal_double_value = { .type = iccl_dtype_double, .size = 8, .name = "DOUBLE" };
-const iccl_datatype_internal iccl_dtype_internal_int64_value = { .type = iccl_dtype_int64, .size = 8, .name = "INT64" };
-const iccl_datatype_internal iccl_dtype_internal_uint64_value = { .type = iccl_dtype_uint64, .size = 8, .name = "UINT64" };
+const ccl_datatype_internal ccl_dtype_internal_none_value = { .type = ccl_dtype_char, .size = 0, .name = "NONE" };
+const ccl_datatype_internal ccl_dtype_internal_char_value = { .type = ccl_dtype_char, .size = 1, .name = "CHAR" };
+const ccl_datatype_internal ccl_dtype_internal_int_value = { .type = ccl_dtype_int, .size = 4, .name = "INT" };
+const ccl_datatype_internal ccl_dtype_internal_bfp16_value = { .type = ccl_dtype_bfp16, .size = 2, .name = "BFP16" };
+const ccl_datatype_internal ccl_dtype_internal_float_value = { .type = ccl_dtype_float, .size = 4, .name = "FLOAT" };
+const ccl_datatype_internal ccl_dtype_internal_double_value = { .type = ccl_dtype_double, .size = 8, .name = "DOUBLE" };
+const ccl_datatype_internal ccl_dtype_internal_int64_value = { .type = ccl_dtype_int64, .size = 8, .name = "INT64" };
+const ccl_datatype_internal ccl_dtype_internal_uint64_value = { .type = ccl_dtype_uint64, .size = 8, .name = "UINT64" };
 
-iccl_status_t iccl_datatype_init()
+ccl_status_t ccl_datatype_init()
 {
-    iccl_dtype_internal_none = &iccl_dtype_internal_none_value;
-    iccl_dtype_internal_char = &iccl_dtype_internal_char_value;
-    iccl_dtype_internal_int = &iccl_dtype_internal_int_value;
-    iccl_dtype_internal_bfp16 = &iccl_dtype_internal_bfp16_value;
-    iccl_dtype_internal_float = &iccl_dtype_internal_float_value;
-    iccl_dtype_internal_double = &iccl_dtype_internal_double_value;
-    iccl_dtype_internal_int64 = &iccl_dtype_internal_int64_value;
-    iccl_dtype_internal_uint64 = &iccl_dtype_internal_uint64_value;
-    return iccl_status_success;
+    ccl_dtype_internal_none = &ccl_dtype_internal_none_value;
+    ccl_dtype_internal_char = &ccl_dtype_internal_char_value;
+    ccl_dtype_internal_int = &ccl_dtype_internal_int_value;
+    ccl_dtype_internal_bfp16 = &ccl_dtype_internal_bfp16_value;
+    ccl_dtype_internal_float = &ccl_dtype_internal_float_value;
+    ccl_dtype_internal_double = &ccl_dtype_internal_double_value;
+    ccl_dtype_internal_int64 = &ccl_dtype_internal_int64_value;
+    ccl_dtype_internal_uint64 = &ccl_dtype_internal_uint64_value;
+    return ccl_status_success;
 }
 
-size_t iccl_datatype_get_size(iccl_datatype_internal_t dtype)
+size_t ccl_datatype_get_size(ccl_datatype_internal_t dtype)
 {
-    ICCL_THROW_IF_NOT(dtype, "empty dtype");
-    ICCL_ASSERT(dtype->size > 0);
+    CCL_THROW_IF_NOT(dtype, "empty dtype");
+    CCL_ASSERT(dtype->size > 0);
     return dtype->size;
 }
 
-const char* iccl_datatype_get_name(iccl_datatype_internal_t dtype)
+const char* ccl_datatype_get_name(ccl_datatype_internal_t dtype)
 {
-    ICCL_ASSERT(dtype);
+    CCL_ASSERT(dtype);
     return dtype->name;
 }
 
-iccl_datatype_internal_t iccl_datatype_get(iccl_datatype_t type)
+ccl_datatype_internal_t ccl_datatype_get(ccl_datatype_t type)
 {
-    iccl_datatype_internal_t dtype = NULL;
+    ccl_datatype_internal_t dtype = NULL;
     switch (type)
     {
-        case iccl_dtype_char: { dtype = iccl_dtype_internal_char; break; }
-        case iccl_dtype_int: { dtype = iccl_dtype_internal_int; break; }
-        case iccl_dtype_bfp16: { dtype = iccl_dtype_internal_bfp16; break; }
-        case iccl_dtype_float: { dtype = iccl_dtype_internal_float; break; }
-        case iccl_dtype_double: { dtype = iccl_dtype_internal_double; break; }
-        case iccl_dtype_int64: { dtype = iccl_dtype_internal_int64; break; }
-        case iccl_dtype_uint64: { dtype = iccl_dtype_internal_uint64; break; }
-        default: ICCL_FATAL("unexpected dtype ", type);
+        case ccl_dtype_char: { dtype = ccl_dtype_internal_char; break; }
+        case ccl_dtype_int: { dtype = ccl_dtype_internal_int; break; }
+        case ccl_dtype_bfp16: { dtype = ccl_dtype_internal_bfp16; break; }
+        case ccl_dtype_float: { dtype = ccl_dtype_internal_float; break; }
+        case ccl_dtype_double: { dtype = ccl_dtype_internal_double; break; }
+        case ccl_dtype_int64: { dtype = ccl_dtype_internal_int64; break; }
+        case ccl_dtype_uint64: { dtype = ccl_dtype_internal_uint64; break; }
+        default: CCL_FATAL("unexpected dtype ", type);
     }
     return dtype;
 }

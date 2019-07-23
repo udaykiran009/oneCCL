@@ -9,7 +9,7 @@ class sync_entry : public sched_entry
 {
 public:
     sync_entry() = delete;
-    explicit sync_entry(iccl_sched* sched,
+    explicit sync_entry(ccl_sched* sched,
                         std::shared_ptr<sync_object> sync) :
         sched_entry(sched, true), sync(sync)
     {
@@ -19,7 +19,7 @@ public:
     void start_derived()
     {
         sync->visit();
-        status = iccl_sched_entry_status_started;
+        status = ccl_sched_entry_status_started;
     }
 
     void update_derived()
@@ -27,7 +27,7 @@ public:
         auto counter = sync->value();
         if (counter == 0)
         {
-            status = iccl_sched_entry_status_complete;
+            status = ccl_sched_entry_status_complete;
         }
         else
         {
@@ -50,7 +50,7 @@ public:
 protected:
     void dump_detail(std::stringstream& str) const
     {
-        iccl_logger::format(str,
+        ccl_logger::format(str,
                             "counter ", sync->value(),
                             "\n");
     }

@@ -1,7 +1,7 @@
 System Requirements
 ===================
 
-This page provides information on software system requirements for Intel® CCL.  
+This page provides information on software system requirements for oneAPI CCL.  
 
 Operating Systems
 *****************
@@ -15,7 +15,7 @@ Compilers
 *********
 
 - GNU*: C, C++ 4.8.5 or higher.
-- Intel® C++ Compiler for Linux* OS 19.0 or higher.
+- oneAPI C++ Compiler for Linux* OS 19.0 or higher.
 
 Virtual Environments
 ********************

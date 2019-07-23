@@ -12,7 +12,7 @@
 #include <sys/time.h>
 #include <unistd.h>
 
-#include "iccl.h"
+#include "ccl.h"
 
 #define COUNT     1048576
 #define ITERS     100
@@ -32,16 +32,16 @@ void test_finalize();
       }                                                   \
   } while (0)
 
-#define ICCL_CALL(expr)                                      \
-  do {                                                       \
-        iccl_status_t status = iccl_status_success;          \
-        status = expr;                                       \
-        ASSERT(status == iccl_status_success, "ICCL error"); \
-        (void)status;                                        \
+#define CCL_CALL(expr)                                     \
+  do {                                                     \
+        ccl_status_t status = ccl_status_success;          \
+        status = expr;                                     \
+        ASSERT(status == ccl_status_success, "CCL error"); \
+        (void)status;                                      \
   } while (0)
 
-iccl_coll_attr_t coll_attr;
-iccl_request_t request;
+ccl_coll_attr_t coll_attr;
+ccl_request_t request;
 size_t rank, size;
 double t1, t2, t;
 size_t idx, iter_idx;
@@ -66,10 +66,10 @@ double when(void)
 
 void test_init()
 {
-    ICCL_CALL(iccl_init());
+    CCL_CALL(ccl_init());
 
-    ICCL_CALL(iccl_get_comm_rank(NULL, &rank));
-    ICCL_CALL(iccl_get_comm_size(NULL, &size));
+    CCL_CALL(ccl_get_comm_rank(NULL, &rank));
+    CCL_CALL(ccl_get_comm_size(NULL, &size));
 
     coll_attr.prologue_fn = NULL;
     coll_attr.epilogue_fn = NULL;
@@ -82,7 +82,7 @@ void test_init()
 
 void test_finalize()
 {
-    ICCL_CALL(iccl_finalize());
+    CCL_CALL(ccl_finalize());
 }
 
 #endif /* BASE_H */

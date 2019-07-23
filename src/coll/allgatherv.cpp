@@ -1,29 +1,29 @@
 #include "coll/coll_algorithms.hpp"
 #include "sched/entry_factory.hpp"
 
-iccl_status_t iccl_coll_build_direct_allgatherv(iccl_sched* sched,
-                                                iccl_buffer send_buf, size_t s_count,
-                                                iccl_buffer recv_buf, size_t* r_counts,
-                                                iccl_datatype_internal_t dtype)
+ccl_status_t ccl_coll_build_direct_allgatherv(ccl_sched* sched,
+                                              ccl_buffer send_buf, size_t s_count,
+                                              ccl_buffer recv_buf, size_t* r_counts,
+                                              ccl_datatype_internal_t dtype)
 {
     LOG_DEBUG("build direct allgatherv");
 
     entry_factory::make_allgatherv_entry(sched, send_buf, s_count, recv_buf, r_counts, dtype);
-    return iccl_status_success;
+    return ccl_status_success;
 }
 
-iccl_status_t iccl_coll_build_naive_allgatherv(iccl_sched* sched,
-                                               iccl_buffer send_buf, size_t send_count,
-                                               iccl_buffer recv_buf, size_t* recv_counts,
-                                               iccl_datatype_internal_t dtype)
+ccl_status_t ccl_coll_build_naive_allgatherv(ccl_sched* sched,
+                                             ccl_buffer send_buf, size_t send_count,
+                                             ccl_buffer recv_buf, size_t* recv_counts,
+                                             ccl_datatype_internal_t dtype)
 {
     LOG_DEBUG("build naive allgatherv");
 
     size_t comm_size     = sched->coll_param.comm->size();
     size_t this_rank     = sched->coll_param.comm->rank();
-    size_t dtype_size    = iccl_datatype_get_size(dtype);
-    size_t* offsets      = static_cast<size_t*>(ICCL_MALLOC(comm_size * sizeof(size_t), "offsets"));
-    iccl_status_t status = iccl_status_success;
+    size_t dtype_size    = ccl_datatype_get_size(dtype);
+    size_t* offsets      = static_cast<size_t*>(CCL_MALLOC(comm_size * sizeof(size_t), "offsets"));
+    ccl_status_t status = ccl_status_success;
 
     offsets[0] = 0;
     for (size_t rank_idx = 1; rank_idx < comm_size; ++rank_idx)
@@ -51,6 +51,6 @@ iccl_status_t iccl_coll_build_naive_allgatherv(iccl_sched* sched,
         }
     }
 
-    ICCL_FREE(offsets);
+    CCL_FREE(offsets);
     return status;
 }

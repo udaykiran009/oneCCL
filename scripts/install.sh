@@ -8,9 +8,9 @@ SILENT_MODE=0
 
 if [ "$USERNAME" = "root" ]
 then
-    DEFAULT_INSTALL_PATH="/opt/intel/iccl_ICCL_SUBSTITUTE_FULL_VERSION"
+    DEFAULT_INSTALL_PATH="/opt/intel/CCL_SUBSTITUTE_FULL_VERSION"
 else
-    DEFAULT_INSTALL_PATH="${HOME}/intel/iccl_ICCL_SUBSTITUTE_FULL_VERSION"
+    DEFAULT_INSTALL_PATH="${HOME}/intel/CCL_SUBSTITUTE_FULL_VERSION"
 fi
 
 print_help()
@@ -47,7 +47,7 @@ done
 
 if [ ${SILENT_MODE} -eq 0 ]
 then
-    echo "Intel(R) Machine Learning Scaling Library ICCL_SUBSTITUTE_OFFICIAL_VERSION for Linux* OS will be installed"
+    echo "oneAPI CCL CCL_SUBSTITUTE_OFFICIAL_VERSION for Linux* OS will be installed"
     echo "Type 'y' to continue or 'q' to exit and then press Enter"
     CONFIRMED=0
     while [ $CONFIRMED = 0 ]
@@ -79,7 +79,7 @@ fi
 
 if [ ${SILENT_MODE} -eq 0 ]
 then
-    echo "Intel(R) Machine Learning Scaling Library ICCL_SUBSTITUTE_OFFICIAL_VERSION for Linux* OS will be installed into ${INSTALL_PATH}"
+    echo "oneAPI CCL CCL_SUBSTITUTE_OFFICIAL_VERSION for Linux* OS will be installed into ${INSTALL_PATH}"
 fi
 
 if [ -d ${INSTALL_PATH} ]
@@ -113,5 +113,5 @@ then
     exit 1
 fi
 
-sed -i -e "s|ICCL_SUBSTITUTE_INSTALLDIR|${INSTALL_PATH}|g" ${INSTALL_PATH}/intel64/bin/icclvars.sh
+sed -i -e "s|CCL_SUBSTITUTE_INSTALLDIR|${INSTALL_PATH}|g" ${INSTALL_PATH}/intel64/bin/cclvars.sh
 sed -i -e "s|I_MPI_SUBSTITUTE_INSTALLDIR|${INSTALL_PATH}|g" ${INSTALL_PATH}/intel64/etc/mpiexec.conf  

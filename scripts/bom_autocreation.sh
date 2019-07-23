@@ -19,8 +19,8 @@ else
     # Linux
     BOM_COMPONENT="<deliverydir>/l_doc"
     DEST_BOM_FILE=${INTEL_DIR}/l_doc_auto.txt
-    SRC_PATH="<iccl_root>/doc"
-    INSTALL_PATH="<installdir><l_iccl_install_path><l_iccl_platform>/doc"
+    SRC_PATH="<ccl_root>/doc"
+    INSTALL_PATH="<installdir><l_ccl_install_path><l_ccl_platform>/doc"
     CONTENT=`find ${DOC_DIR} -type f | sort -u`""
 fi
 

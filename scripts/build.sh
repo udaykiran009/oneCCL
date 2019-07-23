@@ -45,19 +45,19 @@ rm -f ${LOG_FILE}
 
 HOSTNAME=`hostname -s`
 
-ICCL_COPYRIGHT_YEAR="2019"
-ICCL_VERSION_FORMAT="1.0"
+CCL_COPYRIGHT_YEAR="2019"
+CCL_VERSION_FORMAT="1.0"
 
-ICCL_PACKAGE_PREFIX="l_iccl_"
+CCL_PACKAGE_PREFIX="l_ccl_"
 
-if [ -z "${ICCL_PACKAGE_PHASE}" ]
+if [ -z "${CCL_PACKAGE_PHASE}" ]
 then
-    ICCL_PACKAGE_PHASE="ENG"
+    CCL_PACKAGE_PHASE="ENG"
 fi
-ICCL_PACKAGE_SUFFIX="_${ICCL_PACKAGE_PHASE}_ww`date +%V`.${DATE}.${TIME}"
-ICCL_PACKAGE_NAME="${ICCL_PACKAGE_PREFIX}${ICCL_VERSION_FORMAT}${ICCL_PACKAGE_SUFFIX}"
-SWF_PRE_DROP_DIR="/p/pdsd/scratch/Drops/ICCL/1.0/`date +%Y-%m-%d`/SWF_Drops"
-#"/p/pdsd/scratch/Drops/MLSL2/${MLSL_VERSION_FORMAT}/Linux/`date +%Y-%m-%d`/SWF_Drops"
+CCL_PACKAGE_SUFFIX="_${CCL_PACKAGE_PHASE}_ww`date +%V`.${DATE}.${TIME}"
+CCL_PACKAGE_NAME="${CCL_PACKAGE_PREFIX}${CCL_VERSION_FORMAT}${CCL_PACKAGE_SUFFIX}"
+SWF_PRE_DROP_DIR="/p/pdsd/scratch/Drops/CCL/1.0/`date +%Y-%m-%d`/SWF_Drops"
+
 
 
 #==============================================================================
@@ -99,11 +99,11 @@ print_help()
     echo_log "<options>:"
     echo_log "   ------------------------------------------------------------"
     echo_log "    -eng-package|--eng-package"
-    echo_log "        [Under construction] Prepare ICCL eng-package (gzipped tar archive)"
+    echo_log "        [Under construction] Prepare CCL eng-package (gzipped tar archive)"
     echo_log "    -build|--build"
     echo_log "        Compile library"
     echo_log "    -pack|--pack"
-    echo_log "        Prepare ICCL package (gzipped tar archive)"
+    echo_log "        Prepare CCL package (gzipped tar archive)"
     echo_log "    -swf-pre-drop|--swf-pre-drop"
     echo_log "        Enable SWF pre-drop procedure"
     echo_log "   ------------------------------------------------------------"
@@ -275,8 +275,8 @@ prepare_staging()
                         else
                             BL_SOURCE=`echo $BL_SOURCE | sed -e "s|<deliverydir>/||"`
                             #
-                            BL_INSTALL=`echo $BL_INSTALL | sed -e "s|<installdir><l_iccl_install_path><l_iccl_platform>||" | \
-                                                        sed -e "s|<installdir><l_iccl_install_path>||"`
+                            BL_INSTALL=`echo $BL_INSTALL | sed -e "s|<installdir><l_ccl_install_path><l_ccl_platform>||" | \
+                                                        sed -e "s|<installdir><l_ccl_install_path>||"`
                             #$(replace_tags $BL_INSTALL)
                             echo_debug "BL_SOURCE = $BL_SOURCE"
                             echo_debug "BL_INSTALL = $BL_INSTALL"
@@ -305,8 +305,8 @@ prepare_staging()
                                     DROP_SRC_FILE="${WORKSPACE}/build/_install/${DROP_SRC_FILE}"
                                     echo_debug "DROP_SRC_FILE = ${DROP_SRC_FILE}"
                                     ;;
-                                "<iccl_root>"*)
-                                    DROP_SRC_FILE=`echo $BL_LINK | sed -e "s|<iccl_root>/||"`
+                                "<ccl_root>"*)
+                                    DROP_SRC_FILE=`echo $BL_LINK | sed -e "s|<ccl_root>/||"`
                                     DROP_SRC_FILE="${WORKSPACE}/${DROP_SRC_FILE}"
                                     echo_debug "DROP_SRC_FILE = ${DROP_SRC_FILE}"
                                     ;;
@@ -336,9 +336,9 @@ prepare_staging()
                         else
                             #TODO packing
                             #echo "packing mode is under construction"
-                            BL_SOURCE=`echo $BL_LINK | sed -e "s|<installdir><l_iccl_install_path><l_iccl_platform>||" `
+                            BL_SOURCE=`echo $BL_LINK | sed -e "s|<installdir><l_ccl_install_path><l_ccl_platform>||" `
                             BL_SOURCE=$(replace_tags $BL_SOURCE)
-                            BL_INSTALL=`echo $BL_INSTALL | sed -e "s|<installdir><l_iccl_install_path><l_iccl_platform>||"`
+                            BL_INSTALL=`echo $BL_INSTALL | sed -e "s|<installdir><l_ccl_install_path><l_ccl_platform>||"`
                             BL_INSTALL=$(replace_tags $BL_INSTALL)
                             if [ -z "${BL_SOURCE}" ]
                             then
@@ -414,13 +414,13 @@ prepare_staging()
 make_package()
 {
         echo_log "Create eng package..."
-        rm -rf ${TMP_DIR}/${ICCL_PACKAGE_NAME}
-        rm -f ${TMP_DIR}/${ICCL_PACKAGE_NAME}.tgz
-        mkdir -p ${TMP_DIR}/${ICCL_PACKAGE_NAME}
-        cp -r ${PACKAGE_ENG_DIR}/* ${TMP_DIR}/${ICCL_PACKAGE_NAME}
+        rm -rf ${TMP_DIR}/${CCL_PACKAGE_NAME}
+        rm -f ${TMP_DIR}/${CCL_PACKAGE_NAME}.tgz
+        mkdir -p ${TMP_DIR}/${CCL_PACKAGE_NAME}
+        cp -r ${PACKAGE_ENG_DIR}/* ${TMP_DIR}/${CCL_PACKAGE_NAME}
 
-        cd ${TMP_DIR} && tar czf ${WORKSPACE}/${ICCL_PACKAGE_NAME}.tgz ${ICCL_PACKAGE_NAME} --owner=root --group=root
-        echo_log "Package: ${WORKSPACE}/${ICCL_PACKAGE_NAME}.tgz"
+        cd ${TMP_DIR} && tar czf ${WORKSPACE}/${CCL_PACKAGE_NAME}.tgz ${CCL_PACKAGE_NAME} --owner=root --group=root
+        echo_log "Package: ${WORKSPACE}/${CCL_PACKAGE_NAME}.tgz"
         echo_log "Create package... DONE"
 }
 

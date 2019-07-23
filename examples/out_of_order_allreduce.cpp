@@ -7,35 +7,35 @@
 #include <thread>
 #include <random>
 
-iccl_request_t start_allreduce_with_tensor_name(const std::string& tensor_name,
+ccl_request_t start_allreduce_with_tensor_name(const std::string& tensor_name,
                                                const float* send_buff,
                                                float* recv_buff)
 {
     coll_attr.to_cache = false;
     coll_attr.match_id = tensor_name.c_str();
 
-    iccl_request_t req = nullptr;
+    ccl_request_t req = nullptr;
 
-    ICCL_CALL(iccl_allreduce(send_buff,
-                             recv_buff,
-                             COUNT,
-                             iccl_dtype_float,
-                             iccl_reduction_sum,
-                             &coll_attr,
-                             nullptr,
-                             &req));
+    CCL_CALL(ccl_allreduce(send_buff,
+                           recv_buff,
+                           COUNT,
+                           ccl_dtype_float,
+                           ccl_reduction_sum,
+                           &coll_attr,
+                           nullptr,
+                           &req));
     return req;
 }
 
 int main()
 {
     printf("Forced out of order support\n");
-    setenv("ICCL_OUT_OF_ORDER_SUPPORT", "1", 1);
+    setenv("CCL_OUT_OF_ORDER_SUPPORT", "1", 1);
 
     const size_t iterations_count = 4;
     std::vector<std::string> tensor_names;
     //request, operation idx (for example purpose)
-    std::list<std::pair<iccl_request_t, size_t>> started_ops;
+    std::list<std::pair<ccl_request_t, size_t>> started_ops;
     std::vector<std::vector<float>> allreduce_send_bufs;
     std::vector<std::vector<float>> allreduce_recv_bufs;
 
@@ -81,7 +81,7 @@ int main()
         {
             for (auto it = started_ops.begin(); it != started_ops.end();)
             {
-                iccl_test(it->first, &test_completed);
+                ccl_test(it->first, &test_completed);
                 if (test_completed)
                 {
                     float expected = (it->second + 1) * size;

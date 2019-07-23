@@ -1,7 +1,7 @@
 #!/bin/bash
 
 echo "DEBUG: GIT_BRANCH = ${GIT_BRANCH}"
-echo "DEBUG: ICCL_BUILD_ID = ${ICCL_BUILD_ID}"
+echo "DEBUG: CCL_BUILD_ID = ${CCL_BUILD_ID}"
 
 SCRIPT_DIR=`cd $(dirname "$BASH_SOURCE") && pwd -P`
 if [ -z ${SCRIPT_DIR} ]
@@ -10,15 +10,15 @@ then
     exit 1
 fi
 
-CURRENT_ICCL_BUILD_DIR="${ICCL_REPO_DIR}/${ICCL_BUILD_ID}"
-ICCL_INSTALL_DIR="${SCRIPT_DIR}/../../build/_install"
+CURRENT_CCL_BUILD_DIR="${CCL_REPO_DIR}/${CCL_BUILD_ID}"
+CCL_INSTALL_DIR="${SCRIPT_DIR}/../../build/_install"
 BASENAME=`basename $0 .sh`
 WORK_DIR=`cd ${SCRIPT_DIR}/../../ && pwd -P`
 HOSTNAME=`hostname -s`
 
 echo "SCRIPT_DIR = $SCRIPT_DIR"
 echo "WORK_DIR = $WORK_DIR"
-echo "ICCL_INSTALL_DIR = $ICCL_INSTALL_DIR"
+echo "CCL_INSTALL_DIR = $CCL_INSTALL_DIR"
 
 
 #==============================================================================
@@ -127,14 +127,14 @@ set_env()
     fi
 
 
-    if [ -z "${ICCL_ROOT}" ]
+    if [ -z "${CCL_ROOT}" ]
     then
-        echo "WARNING: ICCL_ROOT isn't set"
-        if [ -f ${ICCL_INSTALL_DIR}/intel64/bin/icclvars.sh ]
+        echo "WARNING: CCL_ROOT isn't set"
+        if [ -f ${CCL_INSTALL_DIR}/intel64/bin/cclvars.sh ]
         then
-            . ${ICCL_INSTALL_DIR}/intel64/bin/icclvars.sh
+            . ${CCL_INSTALL_DIR}/intel64/bin/cclvars.sh
         else
-            echo "ERROR: ${ICCL_INSTALL_DIR}/intel64/bin/icclvars.sh doesn't exist"
+            echo "ERROR: ${CCL_INSTALL_DIR}/intel64/bin/cclvars.sh doesn't exist"
             exit 1
         fi
     fi
@@ -168,139 +168,139 @@ run_tests()
 
     case "$runtime" in
            mpi )
-                export ICCL_TEST_BUFFER_COUNT=0
-                export ICCL_TEST_CACHE_TYPE=1
-                export ICCL_TEST_COMPLETION_TYPE=1
-                export ICCL_TEST_DATA_TYPE=1
-                export ICCL_TEST_PLACE_TYPE=1
-                export ICCL_TEST_PRIORITY_TYPE=0
-                export ICCL_TEST_REDUCTION_TYPE=1
-                export ICCL_TEST_SIZE_TYPE=0
-                export ICCL_TEST_SYNC_TYPE=0
-				export ICCL_TEST_PROLOG_TYPE=1
-				export ICCL_TEST_PLACE_TYPE=1
-                export ICCL_ATL_TRANSPORT=MPI
+                export CCL_TEST_BUFFER_COUNT=0
+                export CCL_TEST_CACHE_TYPE=1
+                export CCL_TEST_COMPLETION_TYPE=1
+                export CCL_TEST_DATA_TYPE=1
+                export CCL_TEST_PLACE_TYPE=1
+                export CCL_TEST_PRIORITY_TYPE=0
+                export CCL_TEST_REDUCTION_TYPE=1
+                export CCL_TEST_SIZE_TYPE=0
+                export CCL_TEST_SYNC_TYPE=0
+				export CCL_TEST_PROLOG_TYPE=1
+				export CCL_TEST_PLACE_TYPE=1
+                export CCL_ATL_TRANSPORT=MPI
                 ctest -VV -C Mpi
                 ;;
            mpi_adjust )
-                export ICCL_TEST_BUFFER_COUNT=0
-                export ICCL_TEST_CACHE_TYPE=1
-                export ICCL_TEST_COMPLETION_TYPE=1
-                export ICCL_TEST_DATA_TYPE=0
-                export ICCL_TEST_PLACE_TYPE=1
-                export ICCL_TEST_PRIORITY_TYPE=0
-                export ICCL_TEST_REDUCTION_TYPE=1
-                export ICCL_TEST_SIZE_TYPE=0
-                export ICCL_TEST_SYNC_TYPE=0
-				export ICCL_TEST_PROLOG_TYPE=1
-				export ICCL_TEST_PLACE_TYPE=1				
-                export ICCL_ATL_TRANSPORT=MPI
+                export CCL_TEST_BUFFER_COUNT=0
+                export CCL_TEST_CACHE_TYPE=1
+                export CCL_TEST_COMPLETION_TYPE=1
+                export CCL_TEST_DATA_TYPE=0
+                export CCL_TEST_PLACE_TYPE=1
+                export CCL_TEST_PRIORITY_TYPE=0
+                export CCL_TEST_REDUCTION_TYPE=1
+                export CCL_TEST_SIZE_TYPE=0
+                export CCL_TEST_SYNC_TYPE=0
+				export CCL_TEST_PROLOG_TYPE=1
+				export CCL_TEST_PLACE_TYPE=1				
+                export CCL_ATL_TRANSPORT=MPI
                 for bcast in "ring" "double_tree" "direct"
                     do
-                        ICCL_BCAST_ALGO=$bcast ctest -VV -C mpi_bcast_$bcast
+                        CCL_BCAST_ALGO=$bcast ctest -VV -C mpi_bcast_$bcast
                     done
                 for reduce in "tree" "double_tree" "direct"
                     do
-                        ICCL_REDUCE_ALGO=$reduce ctest -VV -C mpi_reduce_$reduce
+                        CCL_REDUCE_ALGO=$reduce ctest -VV -C mpi_reduce_$reduce
                     done
                 for allreduce in "tree" "starlike" "ring" "double_tree" "direct"
                     do
-                        ICCL_ALLREDUCE_ALGO=$allreduce ctest -VV -C mpi_allreduce_$allreduce
+                        CCL_ALLREDUCE_ALGO=$allreduce ctest -VV -C mpi_allreduce_$allreduce
                     done
                 for allgatherv in "naive" "direct"
                     do
-                        ICCL_ALLGATHERV_ALGO=$allgatherv ctest -VV -C mpi_allgatherv_$allgatherv
+                        CCL_ALLGATHERV_ALGO=$allgatherv ctest -VV -C mpi_allgatherv_$allgatherv
                     done
                ;;
            ofi_adjust )
-                export ICCL_TEST_BUFFER_COUNT=0
-                export ICCL_TEST_CACHE_TYPE=1
-                export ICCL_TEST_COMPLETION_TYPE=1
-                export ICCL_TEST_DATA_TYPE=0
-                export ICCL_TEST_PLACE_TYPE=1
-                export ICCL_TEST_PRIORITY_TYPE=0
-                export ICCL_TEST_REDUCTION_TYPE=1
-                export ICCL_TEST_SIZE_TYPE=0
-                export ICCL_TEST_SYNC_TYPE=0
-				export ICCL_TEST_PROLOG_TYPE=1
-				export ICCL_TEST_PLACE_TYPE=1
+                export CCL_TEST_BUFFER_COUNT=0
+                export CCL_TEST_CACHE_TYPE=1
+                export CCL_TEST_COMPLETION_TYPE=1
+                export CCL_TEST_DATA_TYPE=0
+                export CCL_TEST_PLACE_TYPE=1
+                export CCL_TEST_PRIORITY_TYPE=0
+                export CCL_TEST_REDUCTION_TYPE=1
+                export CCL_TEST_SIZE_TYPE=0
+                export CCL_TEST_SYNC_TYPE=0
+				export CCL_TEST_PROLOG_TYPE=1
+				export CCL_TEST_PLACE_TYPE=1
                 for bcast in "ring" "double_tree"
                     do
-                        ICCL_BCAST_ALGO=$bcast ctest -VV -C mpi_bcast_$bcast
+                        CCL_BCAST_ALGO=$bcast ctest -VV -C mpi_bcast_$bcast
                     done
                 for reduce in "tree" "double_tree"
                     do
-                        ICCL_REDUCE_ALGO=$reduce ctest -VV -C mpi_reduce_$reduce
+                        CCL_REDUCE_ALGO=$reduce ctest -VV -C mpi_reduce_$reduce
                     done
                 for allreduce in "tree" "starlike" "ring" "ring_rma" "double_tree"
                     do
                         if [ "$allreduce" == "ring_rma" ];
                         then
-                            ICCL_ENABLE_RMA=1 ICCL_ALLREDUCE_ALGO=$allreduce ctest -VV -C mpi_allreduce_$allreduce
+                            CCL_ENABLE_RMA=1 CCL_ALLREDUCE_ALGO=$allreduce ctest -VV -C mpi_allreduce_$allreduce
                         else
-                            ICCL_ALLREDUCE_ALGO=$allreduce ctest -VV -C mpi_allreduce_$allreduce
+                            CCL_ALLREDUCE_ALGO=$allreduce ctest -VV -C mpi_allreduce_$allreduce
                         fi
                     done
                 for allgatherv in "naive"
                     do
-                        ICCL_ALLGATHERV_ALGO=$allgatherv ctest -VV -C mpi_allgatherv_$allgatherv
+                        CCL_ALLGATHERV_ALGO=$allgatherv ctest -VV -C mpi_allgatherv_$allgatherv
                     done
                ;;
             priority_mode )
-                export ICCL_TEST_BUFFER_COUNT=1
-                export ICCL_TEST_CACHE_TYPE=1
-                export ICCL_TEST_COMPLETION_TYPE=1
-                export ICCL_TEST_DATA_TYPE=0
-                export ICCL_TEST_PLACE_TYPE=1
-                export ICCL_TEST_PRIORITY_TYPE=1
-                export ICCL_TEST_REDUCTION_TYPE=0
-                export ICCL_TEST_SIZE_TYPE=0
-                export ICCL_TEST_SYNC_TYPE=0
-				export ICCL_TEST_PROLOG_TYPE=0
-				export ICCL_TEST_PLACE_TYPE=0
-                ICCL_PRIORITY_MODE=lifo ctest -VV -C Default
-                ICCL_PRIORITY_MODE=direct ctest -VV -C Default
+                export CCL_TEST_BUFFER_COUNT=1
+                export CCL_TEST_CACHE_TYPE=1
+                export CCL_TEST_COMPLETION_TYPE=1
+                export CCL_TEST_DATA_TYPE=0
+                export CCL_TEST_PLACE_TYPE=1
+                export CCL_TEST_PRIORITY_TYPE=1
+                export CCL_TEST_REDUCTION_TYPE=0
+                export CCL_TEST_SIZE_TYPE=0
+                export CCL_TEST_SYNC_TYPE=0
+				export CCL_TEST_PROLOG_TYPE=0
+				export CCL_TEST_PLACE_TYPE=0
+                CCL_PRIORITY_MODE=lifo ctest -VV -C Default
+                CCL_PRIORITY_MODE=direct ctest -VV -C Default
                ;;
             dynamic_pointer_mode )
-                export ICCL_TEST_BUFFER_COUNT=1
-                export ICCL_TEST_CACHE_TYPE=1
-                export ICCL_TEST_COMPLETION_TYPE=1
-                export ICCL_TEST_DATA_TYPE=0
-                export ICCL_TEST_PLACE_TYPE=1
-                export ICCL_TEST_PRIORITY_TYPE=0
-                export ICCL_TEST_REDUCTION_TYPE=0
-                export ICCL_TEST_SIZE_TYPE=0
-                export ICCL_TEST_SYNC_TYPE=0
-				export ICCL_TEST_PROLOG_TYPE=0
-				export ICCL_TEST_PLACE_TYPE=0
-                ICCL_TEST_DYNAMIC_POINTER=1 ctest -VV -C Default
+                export CCL_TEST_BUFFER_COUNT=1
+                export CCL_TEST_CACHE_TYPE=1
+                export CCL_TEST_COMPLETION_TYPE=1
+                export CCL_TEST_DATA_TYPE=0
+                export CCL_TEST_PLACE_TYPE=1
+                export CCL_TEST_PRIORITY_TYPE=0
+                export CCL_TEST_REDUCTION_TYPE=0
+                export CCL_TEST_SIZE_TYPE=0
+                export CCL_TEST_SYNC_TYPE=0
+				export CCL_TEST_PROLOG_TYPE=0
+				export CCL_TEST_PLACE_TYPE=0
+                CCL_TEST_DYNAMIC_POINTER=1 ctest -VV -C Default
                ;;
             out_of_order_mode )
-                export ICCL_TEST_BUFFER_COUNT=1
-                export ICCL_TEST_CACHE_TYPE=1
-                export ICCL_TEST_COMPLETION_TYPE=1
-                export ICCL_TEST_DATA_TYPE=1
-                export ICCL_TEST_PLACE_TYPE=1
-                export ICCL_TEST_PRIORITY_TYPE=0
-                export ICCL_TEST_REDUCTION_TYPE=0
-                export ICCL_TEST_SIZE_TYPE=0
-                export ICCL_TEST_SYNC_TYPE=0
-				export ICCL_TEST_PROLOG_TYPE=0
-				export ICCL_TEST_PLACE_TYPE=0				
-                ICCL_OUT_OF_ORDER_SUPPORT=1 ctest -VV -C Default
+                export CCL_TEST_BUFFER_COUNT=1
+                export CCL_TEST_CACHE_TYPE=1
+                export CCL_TEST_COMPLETION_TYPE=1
+                export CCL_TEST_DATA_TYPE=1
+                export CCL_TEST_PLACE_TYPE=1
+                export CCL_TEST_PRIORITY_TYPE=0
+                export CCL_TEST_REDUCTION_TYPE=0
+                export CCL_TEST_SIZE_TYPE=0
+                export CCL_TEST_SYNC_TYPE=0
+				export CCL_TEST_PROLOG_TYPE=0
+				export CCL_TEST_PLACE_TYPE=0				
+                CCL_OUT_OF_ORDER_SUPPORT=1 ctest -VV -C Default
                ;;
            * )
-                export ICCL_TEST_BUFFER_COUNT=0
-                export ICCL_TEST_CACHE_TYPE=1
-                export ICCL_TEST_COMPLETION_TYPE=1
-                export ICCL_TEST_DATA_TYPE=1
-                export ICCL_TEST_PLACE_TYPE=1
-                export ICCL_TEST_PRIORITY_TYPE=0
-                export ICCL_TEST_REDUCTION_TYPE=1
-                export ICCL_TEST_SIZE_TYPE=0
-                export ICCL_TEST_SYNC_TYPE=0
-				export ICCL_TEST_PROLOG_TYPE=1
-				export ICCL_TEST_PLACE_TYPE=1				
+                export CCL_TEST_BUFFER_COUNT=0
+                export CCL_TEST_CACHE_TYPE=1
+                export CCL_TEST_COMPLETION_TYPE=1
+                export CCL_TEST_DATA_TYPE=1
+                export CCL_TEST_PLACE_TYPE=1
+                export CCL_TEST_PRIORITY_TYPE=0
+                export CCL_TEST_REDUCTION_TYPE=1
+                export CCL_TEST_SIZE_TYPE=0
+                export CCL_TEST_SYNC_TYPE=0
+				export CCL_TEST_PROLOG_TYPE=1
+				export CCL_TEST_PLACE_TYPE=1				
                ctest -VV -C Default
                ;;
     esac
@@ -310,7 +310,7 @@ set_default_values
 set_env
 run
 
-# echo "ICCL_ATL_TRANSPORT is " $ICCL_ATL_TRANSPORT
+# echo "CCL_ATL_TRANSPORT is " $CCL_ATL_TRANSPORT
 
 # FTESTS_DIR=${WORK_DIR}/tests/functional
 # if [ "$coverage" = "true" ] && [ "$compiler" != "gcc" ]
@@ -318,10 +318,10 @@ run
 
     # echo "Code Coverage"
     # cd $(UTESTS_DIR) && profmerge -prof_dpi pgopti_unit.dpi && cp pgopti_unit.dpi $(BASE_DIR)/pgopti_unit.dpi
-    # cd $(FTESTS_DIR) && profmerge -prof_dpi pgopti_func.dpi && cp pgopti_func.dpi $(CURRENT_ICCL_BUILD_DIR)/pgopti_func.dpi
+    # cd $(FTESTS_DIR) && profmerge -prof_dpi pgopti_func.dpi && cp pgopti_func.dpi $(CURRENT_CCL_BUILD_DIR)/pgopti_func.dpi
     # cd $(EXAMPLES_DIR) && profmerge -prof_dpi pgopti_examples.dpi && cp pgopti_examples.dpi $(BASE_DIR)/pgopti_examples.dpi
     # profmerge -prof_dpi pgopti.dpi -a pgopti_unit.dpi pgopti_func.dpi
-    # codecov -prj iccl -comp $(ICT_INFRA_DIR)/code_coverage/codecov_filter_iccl.txt -spi $(TMP_COVERAGE_DIR)/pgopti.spi -dpi pgopti.dpi -xmlbcvrgfull codecov.xml -srcroot $(CODECOV_SRCROOT)
+    # codecov -prj ccl -comp $(ICT_INFRA_DIR)/code_coverage/codecov_filter_ccl.txt -spi $(TMP_COVERAGE_DIR)/pgopti.spi -dpi pgopti.dpi -xmlbcvrgfull codecov.xml -srcroot $(CODECOV_SRCROOT)
     # python $(ICT_INFRA_DIR)/code_coverage/codecov_to_cobertura.py codecov.xml coverage.xml
     # if [ $? -ne 0 ]
     # then

@@ -3,77 +3,77 @@
 #include "common/utils/utils.hpp"
 #include <vector>
 
-constexpr const char* ICCL_LOG_LEVEL = "ICCL_LOG_LEVEL";
-constexpr const char* ICCL_SCHED_DUMP = "ICCL_SCHED_DUMP";
-constexpr const char* ICCL_WORKER_COUNT = "ICCL_WORKER_COUNT";
-constexpr const char* ICCL_WORKER_OFFLOAD = "ICCL_WORKER_OFFLOAD";
-constexpr const char* ICCL_OUT_OF_ORDER_SUPPORT = "ICCL_OUT_OF_ORDER_SUPPORT";
-constexpr const char* ICCL_ENABLE_RMA = "ICCL_ENABLE_RMA";
-constexpr const char* ICCL_ENABLE_FUSION = "ICCL_ENABLE_FUSION";
-constexpr const char* ICCL_FUSION_BYTES_THRESHOLD = "ICCL_FUSION_BYTES_THRESHOLD";
-constexpr const char* ICCL_FUSION_COUNT_THRESHOLD = "ICCL_FUSION_COUNT_THRESHOLD";
-constexpr const char* ICCL_FUSION_CHECK_URGENT = "ICCL_FUSION_CHECK_URGENT";
-constexpr const char* ICCL_FUSION_CYCLE_MS = "ICCL_FUSION_CYCLE_MS";
-constexpr const char* ICCL_PRIORITY_MODE = "ICCL_PRIORITY_MODE";
-constexpr const char* ICCL_WORKER_AFFINITY = "ICCL_WORKER_AFFINITY";
-constexpr const char* ICCL_ALLREDUCE_ALGO = "ICCL_ALLREDUCE_ALGO";
-constexpr const char* ICCL_BCAST_ALGO = "ICCL_BCAST_ALGO";
-constexpr const char* ICCL_BARRIER_ALGO = "ICCL_BARRIER_ALGO";
-constexpr const char* ICCL_REDUCE_ALGO = "ICCL_REDUCE_ALGO";
-constexpr const char* ICCL_VECTOR_ALLGATHERV = "ICCL_VECTOR_ALLGATHERV";
-constexpr const char* ICCL_FULL_CACHE_KEY = "ICCL_FULL_CACHE_KEY";
+constexpr const char* CCL_LOG_LEVEL = "CCL_LOG_LEVEL";
+constexpr const char* CCL_SCHED_DUMP = "CCL_SCHED_DUMP";
+constexpr const char* CCL_WORKER_COUNT = "CCL_WORKER_COUNT";
+constexpr const char* CCL_WORKER_OFFLOAD = "CCL_WORKER_OFFLOAD";
+constexpr const char* CCL_OUT_OF_ORDER_SUPPORT = "CCL_OUT_OF_ORDER_SUPPORT";
+constexpr const char* CCL_ENABLE_RMA = "CCL_ENABLE_RMA";
+constexpr const char* CCL_ENABLE_FUSION = "CCL_ENABLE_FUSION";
+constexpr const char* CCL_FUSION_BYTES_THRESHOLD = "CCL_FUSION_BYTES_THRESHOLD";
+constexpr const char* CCL_FUSION_COUNT_THRESHOLD = "CCL_FUSION_COUNT_THRESHOLD";
+constexpr const char* CCL_FUSION_CHECK_URGENT = "CCL_FUSION_CHECK_URGENT";
+constexpr const char* CCL_FUSION_CYCLE_MS = "CCL_FUSION_CYCLE_MS";
+constexpr const char* CCL_PRIORITY_MODE = "CCL_PRIORITY_MODE";
+constexpr const char* CCL_WORKER_AFFINITY = "CCL_WORKER_AFFINITY";
+constexpr const char* CCL_ALLREDUCE_ALGO = "CCL_ALLREDUCE_ALGO";
+constexpr const char* CCL_BCAST_ALGO = "CCL_BCAST_ALGO";
+constexpr const char* CCL_BARRIER_ALGO = "CCL_BARRIER_ALGO";
+constexpr const char* CCL_REDUCE_ALGO = "CCL_REDUCE_ALGO";
+constexpr const char* CCL_VECTOR_ALLGATHERV = "CCL_VECTOR_ALLGATHERV";
+constexpr const char* CCL_FULL_CACHE_KEY = "CCL_FULL_CACHE_KEY";
 
-enum iccl_priority_mode
+enum ccl_priority_mode
 {
-    iccl_priority_none = 0,
-    iccl_priority_direct = 1,
-    iccl_priority_lifo = 2
+    ccl_priority_none = 0,
+    ccl_priority_direct = 1,
+    ccl_priority_lifo = 2
 };
 
-enum iccl_allreduce_algo
+enum ccl_allreduce_algo
 {
-    iccl_allreduce_algo_rabenseifner = 0,
-    iccl_allreduce_algo_starlike     = 1,
-    iccl_allreduce_algo_ring         = 2,
-    iccl_allreduce_algo_ring_rma     = 3,
-    iccl_allreduce_algo_double_tree  = 4,
-    iccl_allreduce_algo_direct       = 5
+    ccl_allreduce_algo_rabenseifner = 0,
+    ccl_allreduce_algo_starlike     = 1,
+    ccl_allreduce_algo_ring         = 2,
+    ccl_allreduce_algo_ring_rma     = 3,
+    ccl_allreduce_algo_double_tree  = 4,
+    ccl_allreduce_algo_direct       = 5
 };
 
-enum iccl_allgatherv_algo
+enum ccl_allgatherv_algo
 {
-    iccl_allgatherv_algo_naive       = 0,
-    iccl_allgatherv_algo_direct      = 1
+    ccl_allgatherv_algo_naive       = 0,
+    ccl_allgatherv_algo_direct      = 1
 };
 
-enum iccl_bcast_algo
+enum ccl_bcast_algo
 {
-    iccl_bcast_algo_ring             = 0,
-    iccl_bcast_algo_double_tree      = 1,
-    iccl_bcast_algo_direct           = 2
+    ccl_bcast_algo_ring             = 0,
+    ccl_bcast_algo_double_tree      = 1,
+    ccl_bcast_algo_direct           = 2
 };
 
-enum iccl_reduce_algo
+enum ccl_reduce_algo
 {
-    iccl_reduce_algo_tree            = 0,
-    iccl_reduce_algo_double_tree     = 1,
-    iccl_reduce_algo_direct          = 2
+    ccl_reduce_algo_tree            = 0,
+    ccl_reduce_algo_double_tree     = 1,
+    ccl_reduce_algo_direct          = 2
 };
 
-enum iccl_barrier_algo
+enum ccl_barrier_algo
 {
-    iccl_barrier_algo_ring           = 0,
-    iccl_barrier_algo_direct         = 1
+    ccl_barrier_algo_ring           = 0,
+    ccl_barrier_algo_direct         = 1
 };
 
-enum iccl_sparse_allreduce_algo
+enum ccl_sparse_allreduce_algo
 {
-    iccl_sparse_allreduce_algo_basic = 0,
-    iccl_sparse_allreduce_algo_mask  = 1
+    ccl_sparse_allreduce_algo_basic = 0,
+    ccl_sparse_allreduce_algo_mask  = 1
 };
 
 //todo: set/get methods
-struct alignas(CACHELINE_SIZE) iccl_env_data
+struct alignas(CACHELINE_SIZE) ccl_env_data
 {
     int log_level;
     int sched_dump;
@@ -81,13 +81,13 @@ struct alignas(CACHELINE_SIZE) iccl_env_data
     int worker_offload;
     int out_of_order_support;
     std::vector<int> worker_affinity;
-    iccl_priority_mode priority_mode;
-    iccl_allreduce_algo allreduce_algo;
-    iccl_allgatherv_algo allgatherv_algo;
-    iccl_bcast_algo bcast_algo;
-    iccl_reduce_algo reduce_algo;
-    iccl_barrier_algo barrier_algo;
-    iccl_sparse_allreduce_algo sparse_allreduce_algo;
+    ccl_priority_mode priority_mode;
+    ccl_allreduce_algo allreduce_algo;
+    ccl_allgatherv_algo allgatherv_algo;
+    ccl_bcast_algo bcast_algo;
+    ccl_reduce_algo reduce_algo;
+    ccl_barrier_algo barrier_algo;
+    ccl_sparse_allreduce_algo sparse_allreduce_algo;
     int enable_rma;
     int enable_fusion;
     int fusion_bytes_threshold;
@@ -98,26 +98,26 @@ struct alignas(CACHELINE_SIZE) iccl_env_data
     int full_cache_key;
 };
 
-extern iccl_env_data env_data;
+extern ccl_env_data env_data;
 
-void iccl_env_parse();
-void iccl_env_print();
-int iccl_env_2_int(const char* env_name,
+void ccl_env_parse();
+void ccl_env_print();
+int ccl_env_2_int(const char* env_name,
                    int& val);
-int iccl_env_2_size_t(const char* env_name,
+int ccl_env_2_size_t(const char* env_name,
                       size_t& val);
-int iccl_env_2_float(const char* env_name,
+int ccl_env_2_float(const char* env_name,
                      float& val);
-int iccl_env_parse_priority_mode();
-int iccl_env_parse_affinity();
-int iccl_env_print_affinity();
-int iccl_env_parse_allreduce_algo();
-int iccl_env_parse_bcast_algo();
-int iccl_env_parse_reduce_algo();
-int iccl_env_parse_barrier_algo();
-const char *iccl_allreduce_algo_to_str(iccl_allreduce_algo algo);
-const char *iccl_allgatherv_algo_to_str(iccl_allgatherv_algo algo);
-const char *iccl_bcast_algo_to_str(iccl_bcast_algo algo);
-const char *iccl_reduce_algo_to_str(iccl_reduce_algo algo);
-const char *iccl_barrier_algo_to_str(iccl_barrier_algo algo);
+int ccl_env_parse_priority_mode();
+int ccl_env_parse_affinity();
+int ccl_env_print_affinity();
+int ccl_env_parse_allreduce_algo();
+int ccl_env_parse_bcast_algo();
+int ccl_env_parse_reduce_algo();
+int ccl_env_parse_barrier_algo();
+const char *ccl_allreduce_algo_to_str(ccl_allreduce_algo algo);
+const char *ccl_allgatherv_algo_to_str(ccl_allgatherv_algo algo);
+const char *ccl_bcast_algo_to_str(ccl_bcast_algo algo);
+const char *ccl_reduce_algo_to_str(ccl_reduce_algo algo);
+const char *ccl_barrier_algo_to_str(ccl_barrier_algo algo);
 

@@ -17,11 +17,11 @@
 
 /* common */
 
-#define ICCL_CALL(expr)                                \
-  do {                                                 \
+#define CCL_CALL(expr)                                   \
+  do {                                                   \
         status = (expr);                                 \
-        ICCL_ASSERT(status == iccl_status_success,     \
-            "bad status ", status);                    \
+        CCL_ASSERT(status == ccl_status_success,         \
+            "bad status ", status);                      \
   } while (0)
 
 #define unlikely(x_) __builtin_expect(!!(x_), 0)
@@ -38,22 +38,22 @@
 
 /* Single-linked list */
 
-struct iccl_slist_entry_t
+struct ccl_slist_entry_t
 {
-    iccl_slist_entry_t* next;
+    ccl_slist_entry_t* next;
 };
 
-struct iccl_slist_t
+struct ccl_slist_t
 {
-    iccl_slist_entry_t* head;
-    iccl_slist_entry_t* tail;
+    ccl_slist_entry_t* head;
+    ccl_slist_entry_t* tail;
 };
 
 /* malloc/realloc/free */
 
 #if defined(__INTEL_COMPILER) || defined(__ICC)
-#define ICCL_MEMALIGN_IMPL(size, align) _mm_malloc(size, align)
-#define ICCL_REALLOC_IMPL(old_ptr, old_size, new_size, align)           \
+#define CCL_MEMALIGN_IMPL(size, align) _mm_malloc(size, align)
+#define CCL_REALLOC_IMPL(old_ptr, old_size, new_size, align)            \
       ({                                                                \
           void* new_ptr = NULL;                                         \
           if (!old_ptr) new_ptr = _mm_malloc(new_size, align);          \
@@ -66,57 +66,57 @@ struct iccl_slist_t
           }                                                             \
           new_ptr;                                                      \
       })
-#define ICCL_CALLOC_IMPL(size, align)          \
+#define CCL_CALLOC_IMPL(size, align)           \
       ({                                       \
           void* ptr = _mm_malloc(size, align); \
           memset(ptr, 0, size);                \
           ptr;                                 \
       })
-#define ICCL_FREE_IMPL(ptr) _mm_free(ptr)
+#define CCL_FREE_IMPL(ptr) _mm_free(ptr)
 #elif defined(__GNUC__)
-#define ICCL_MEMALIGN_IMPL(size, align)                                                 \
+#define CCL_MEMALIGN_IMPL(size, align)                                                  \
     ({                                                                                  \
       void* ptr = NULL;                                                                 \
       int pm_ret __attribute__((unused)) = posix_memalign((void**)(&ptr), align, size); \
       ptr;                                                                              \
     })
-#define ICCL_REALLOC_IMPL(old_ptr, old_size, new_size, align) realloc(old_ptr, new_size)
-#define ICCL_CALLOC_IMPL(size, align) calloc(size, 1)
-#define ICCL_FREE_IMPL(ptr) free(ptr)
+#define CCL_REALLOC_IMPL(old_ptr, old_size, new_size, align) realloc(old_ptr, new_size)
+#define CCL_CALLOC_IMPL(size, align) calloc(size, 1)
+#define CCL_FREE_IMPL(ptr) free(ptr)
 #else
 # error "this compiler is not supported" 
 #endif
 
-#define ICCL_MEMALIGN_WRAPPER(size, align, name)                \
+#define CCL_MEMALIGN_WRAPPER(size, align, name)                 \
     ({                                                          \
-        void *ptr = ICCL_MEMALIGN_IMPL(size, align);            \
-        ICCL_THROW_IF_NOT(ptr, "ICCL Out of memory, ", name);   \
+        void *ptr = CCL_MEMALIGN_IMPL(size, align);             \
+        CCL_THROW_IF_NOT(ptr, "CCL Out of memory, ", name);     \
         ptr;                                                    \
     })
 
-#define ICCL_REALLOC_WRAPPER(old_ptr, old_size, new_size, align, name)      \
+#define CCL_REALLOC_WRAPPER(old_ptr, old_size, new_size, align, name)       \
     ({                                                                      \
-        void *ptr = ICCL_REALLOC_IMPL(old_ptr, old_size, new_size, align);  \
-        ICCL_THROW_IF_NOT(ptr, "ICCL Out of memory, ", name);               \
+        void *ptr = CCL_REALLOC_IMPL(old_ptr, old_size, new_size, align);   \
+        CCL_THROW_IF_NOT(ptr, "CCL Out of memory, ", name);                 \
         ptr;                                                                \
     })
 
-#define ICCL_CALLOC_WRAPPER(size, align, name)                  \
+#define CCL_CALLOC_WRAPPER(size, align, name)                   \
     ({                                                          \
-        void *ptr = ICCL_CALLOC_IMPL(size, align);              \
-        ICCL_THROW_IF_NOT(ptr, "ICCL Out of memory, ", name);   \
+        void *ptr = CCL_CALLOC_IMPL(size, align);               \
+        CCL_THROW_IF_NOT(ptr, "CCL Out of memory, ", name);     \
         ptr;                                                    \
     })
 
-#define ICCL_MALLOC(size, name)                                ICCL_MEMALIGN_WRAPPER(size, CACHELINE_SIZE, name)
-#define ICCL_MEMALIGN(size, align, name)                       ICCL_MEMALIGN_WRAPPER(size, align, name)
-#define ICCL_CALLOC(size, name)                                ICCL_CALLOC_WRAPPER(size, CACHELINE_SIZE, name)
-#define ICCL_REALLOC(old_ptr, old_size, new_size, align, name) ICCL_REALLOC_WRAPPER(old_ptr, old_size, new_size, align, name)
-#define ICCL_FREE(ptr)                                         ICCL_FREE_IMPL(ptr)
+#define CCL_MALLOC(size, name)                                CCL_MEMALIGN_WRAPPER(size, CACHELINE_SIZE, name)
+#define CCL_MEMALIGN(size, align, name)                       CCL_MEMALIGN_WRAPPER(size, align, name)
+#define CCL_CALLOC(size, name)                                CCL_CALLOC_WRAPPER(size, CACHELINE_SIZE, name)
+#define CCL_REALLOC(old_ptr, old_size, new_size, align, name) CCL_REALLOC_WRAPPER(old_ptr, old_size, new_size, align, name)
+#define CCL_FREE(ptr)                                         CCL_FREE_IMPL(ptr)
 
 /* other */
 
-static inline size_t iccl_pof2(size_t number)
+static inline size_t ccl_pof2(size_t number)
 {
     size_t pof2 = 1;
 
@@ -129,7 +129,7 @@ static inline size_t iccl_pof2(size_t number)
     return pof2;
 }
 
-static inline size_t iccl_aligned_sz(size_t size,
+static inline size_t ccl_aligned_sz(size_t size,
                                      size_t alignment)
 {
     return ((size % alignment) == 0) ?

@@ -35,7 +35,7 @@ int collect_iso = 1;
 void* msg_buffers[MSG_COUNT];
 int msg_priorities[MSG_COUNT];
 int msg_completions[MSG_COUNT];
-iccl_request_t msg_requests[MSG_COUNT];
+ccl_request_t msg_requests[MSG_COUNT];
 
 double tmp_start_timer, tmp_stop_timer;
 double iter_start, iter_stop, iter_timer, iter_iso_timer;
@@ -55,18 +55,18 @@ double msg_timers_stddev[MSG_COUNT];
 
 size_t comp_delay_ms;
 
-size_t get_dtype_size(iccl_datatype_t dtype)
+size_t get_dtype_size(ccl_datatype_t dtype)
 {
     size_t dtype_size = 1;
     switch (dtype)
     {
-        case iccl_dtype_char: { dtype_size = 1; break; }
-        case iccl_dtype_int: { dtype_size = 4; break; }
-        case iccl_dtype_bfp16: { dtype_size = 2; break; }
-        case iccl_dtype_float: { dtype_size = 4; break; }
-        case iccl_dtype_double: { dtype_size = 8; break; }
-        case iccl_dtype_int64: { dtype_size = 8; break; }
-        case iccl_dtype_uint64: { dtype_size = 8; break; }
+        case ccl_dtype_char: { dtype_size = 1; break; }
+        case ccl_dtype_int: { dtype_size = 4; break; }
+        case ccl_dtype_bfp16: { dtype_size = 2; break; }
+        case ccl_dtype_float: { dtype_size = 4; break; }
+        case ccl_dtype_double: { dtype_size = 8; break; }
+        case ccl_dtype_int64: { dtype_size = 8; break; }
+        case ccl_dtype_uint64: { dtype_size = 8; break; }
         default: ASSERT(0, "unexpected dtype %d", dtype);
     }
     return dtype_size;
@@ -87,7 +87,7 @@ void do_iter(size_t iter_idx)
 
     if (collect_iso)
     {
-        iccl_barrier(NULL);
+        ccl_barrier(NULL);
 
         iter_start = when();
         for (idx = 0; idx < MSG_COUNT; idx++)
@@ -95,9 +95,9 @@ void do_iter(size_t iter_idx)
             sprintf(match_id, "%zu", idx);
 
             tmp_start_timer = when();
-            ICCL_CALL(iccl_allreduce(msg_buffers[idx], msg_buffers[idx], msg_sizes[idx] / get_dtype_size(iccl_dtype_float),
-                                     iccl_dtype_float, iccl_reduction_sum, &coll_attr, NULL, &msg_requests[idx]));
-            ICCL_CALL(iccl_wait(msg_requests[idx]));
+            CCL_CALL(ccl_allreduce(msg_buffers[idx], msg_buffers[idx], msg_sizes[idx] / get_dtype_size(ccl_dtype_float),
+                                   ccl_dtype_float, ccl_reduction_sum, &coll_attr, NULL, &msg_requests[idx]));
+            CCL_CALL(ccl_wait(msg_requests[idx]));
             tmp_stop_timer = when();
             msg_iso_timers[idx] += (tmp_stop_timer - tmp_start_timer);
         }
@@ -106,7 +106,7 @@ void do_iter(size_t iter_idx)
         collect_iso = 0;
     }
 
-    iccl_barrier(NULL);
+    ccl_barrier(NULL);
 
     memset(msg_completions, 0, MSG_COUNT * sizeof(int));
     size_t completions = 0;
@@ -123,8 +123,8 @@ void do_iter(size_t iter_idx)
 
         msg_starts[idx] = when();
         tmp_start_timer = when();
-        ICCL_CALL(iccl_allreduce(msg_buffers[idx], msg_buffers[idx], msg_sizes[idx] / get_dtype_size(iccl_dtype_float),
-                                 iccl_dtype_float, iccl_reduction_sum, &coll_attr, NULL, &msg_requests[idx]));
+        CCL_CALL(ccl_allreduce(msg_buffers[idx], msg_buffers[idx], msg_sizes[idx] / get_dtype_size(ccl_dtype_float),
+                               ccl_dtype_float, ccl_reduction_sum, &coll_attr, NULL, &msg_requests[idx]));
         tmp_stop_timer = when();
         msg_pure_start_timers[idx] += (tmp_stop_timer - tmp_start_timer);
     }
@@ -145,8 +145,8 @@ void do_iter(size_t iter_idx)
 
             tmp_start_timer = when();
 
-//            ICCL_CALL(iccl_wait(msg_requests[msg_idx])); is_completed = 1;
-            ICCL_CALL(iccl_test(msg_requests[msg_idx], &is_completed));
+//            CCL_CALL(ccl_wait(msg_requests[msg_idx])); is_completed = 1;
+            CCL_CALL(ccl_test(msg_requests[msg_idx], &is_completed));
             
             tmp_stop_timer = when();
             msg_pure_wait_timers[msg_idx] += (tmp_stop_timer - tmp_start_timer);
@@ -237,7 +237,7 @@ int main()
         msg_pure_wait_timers[idx] /= ITER_COUNT;
     }
 
-    iccl_barrier(NULL);
+    ccl_barrier(NULL);
 
     double* recv_msg_timers = (double*)malloc(size * MSG_COUNT * sizeof(double));
     size_t* recv_msg_timers_counts = (size_t*)malloc(size * sizeof(size_t));
@@ -249,17 +249,17 @@ int main()
     for (idx = 0; idx < size; idx++)
         recv_iter_timers_counts[idx] = 1;
 
-    iccl_request_t timer_req = NULL;
-    iccl_coll_attr_t attr;
-    memset(&attr, 0, sizeof(iccl_coll_attr_t));
+    ccl_request_t timer_req = NULL;
+    ccl_coll_attr_t attr;
+    memset(&attr, 0, sizeof(ccl_coll_attr_t));
 
-    ICCL_CALL(iccl_allgatherv(msg_timers, MSG_COUNT, recv_msg_timers, recv_msg_timers_counts,
-                              iccl_dtype_double, &attr, NULL, &timer_req));
-    ICCL_CALL(iccl_wait(timer_req));
+    CCL_CALL(ccl_allgatherv(msg_timers, MSG_COUNT, recv_msg_timers, recv_msg_timers_counts,
+                              ccl_dtype_double, &attr, NULL, &timer_req));
+    CCL_CALL(ccl_wait(timer_req));
 
-    ICCL_CALL(iccl_allgatherv(&iter_timer, 1, recv_iter_timers, recv_iter_timers_counts,
-                              iccl_dtype_double, &attr, NULL, &timer_req));
-    ICCL_CALL(iccl_wait(timer_req));
+    CCL_CALL(ccl_allgatherv(&iter_timer, 1, recv_iter_timers, recv_iter_timers_counts,
+                              ccl_dtype_double, &attr, NULL, &timer_req));
+    CCL_CALL(ccl_wait(timer_req));
 
     if (rank == 0)
     {
@@ -306,7 +306,7 @@ int main()
         }
         iter_timer_stddev = sqrt(sum / size) / iter_timer_avg * 100;
     }
-    iccl_barrier(NULL);
+    ccl_barrier(NULL);
 
     if (rank == 0) PRINT_HEADER();
 

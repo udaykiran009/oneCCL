@@ -6,22 +6,22 @@
 #include <list>
 #include <pthread.h>
 
-class iccl_executor;
+class ccl_executor;
 
-class iccl_worker
+class ccl_worker
 {
 public:
-    iccl_worker() = delete;
-    iccl_worker(const iccl_worker& other) = delete;
-    iccl_worker& operator= (const iccl_worker& other) = delete;
-    iccl_worker(iccl_executor* executor, size_t idx, std::unique_ptr<iccl_sched_queue> queue);
-    virtual ~iccl_worker() = default;
+    ccl_worker() = delete;
+    ccl_worker(const ccl_worker& other) = delete;
+    ccl_worker& operator= (const ccl_worker& other) = delete;
+    ccl_worker(ccl_executor* executor, size_t idx, std::unique_ptr<ccl_sched_queue> queue);
+    virtual ~ccl_worker() = default;
 
-    iccl_status_t start();
-    iccl_status_t stop();
-    iccl_status_t pin(int proc_id);
+    ccl_status_t start();
+    ccl_status_t stop();
+    ccl_status_t pin(int proc_id);
     
-    void add(iccl_sched* sched);
+    void add(ccl_sched* sched);
 
     virtual size_t do_work();
 
@@ -30,6 +30,6 @@ public:
 private:
     const size_t idx;
     pthread_t thread{};
-    iccl_executor* executor = nullptr;
-    std::unique_ptr<iccl_sched_queue> data_queue;
+    ccl_executor* executor = nullptr;
+    std::unique_ptr<ccl_sched_queue> data_queue;
 };

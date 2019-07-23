@@ -1,11 +1,11 @@
-# iccl
-Intel(R) oneAPI Collective Communications Library
+# ccl
+oneAPI Collective Communications Library
 
 ## Installation
 ### General installation scenario
 
 ```
-cd iccl
+cd ccl
 mkdir build
 cd build
 cmake ..
@@ -21,8 +21,8 @@ Modify `cmake` command as follow:
 cmake .. -DCMAKE_INSTALL_PREFIX=/path/to/installation/directory
 ```
 
-If no `-DCMAKE_INSTALL_PREFIX` is specified then iccl will be installed into `_install` subdirectory of the current
-build directory, e.g. `iccl/build/_install`
+If no `-DCMAKE_INSTALL_PREFIX` is specified then ccl will be installed into `_install` subdirectory of the current
+build directory, e.g. `ccl/build/_install`
 
 ### Specify compiler
 Modify `cmake` command as follow:
@@ -67,28 +67,28 @@ Make sure that libasan.so exists.
 There are two ways to set workers threads affinity - explicit and automatic
 
 #### Setting affinity explicitly
-1. Set environment variable *ICCL_WORKER_COUNT* with desired number of workers threads
-2. Set environment variable *ICCL_WORKER_AFFINITY* with IDs of cores to be bound to
+1. Set environment variable *CCL_WORKER_COUNT* with desired number of workers threads
+2. Set environment variable *CCL_WORKER_AFFINITY* with IDs of cores to be bound to
 
 Example:
 ```
-export ICCL_WORKER_COUNT=4
-export ICCL_WORKER_AFFINITY=3,4,5,6
+export CCL_WORKER_COUNT=4
+export CCL_WORKER_AFFINITY=3,4,5,6
 ```
-With variables above ICCL will create 4 threads and pin them to cores with numbers 3,4,5 and 6 accordingly
+With variables above CCL will create 4 threads and pin them to cores with numbers 3,4,5 and 6 accordingly
 
 #### Setting affinity automatically
-*NOTE:* automatic pinning only works if application has been launched using *mpirun* provided by ICCL distribution package.
+*NOTE:* automatic pinning only works if application has been launched using *mpirun* provided by CCL distribution package.
 
-1. Set environment variable *ICCL_WORKER_COUNT* with desired number of workers threads
-2. Set environment variable *ICCL_WORKER_AFFINITY* with value *auto*
+1. Set environment variable *CCL_WORKER_COUNT* with desired number of workers threads
+2. Set environment variable *CCL_WORKER_AFFINITY* with value *auto*
 
 Example:
 ```
-export ICCL_WORKER_COUNT=4
-export ICCL_WORKER_AFFINITY=auto
+export CCL_WORKER_COUNT=4
+export CCL_WORKER_AFFINITY=auto
 ```
-With variables above ICCL will create 4 threads and pin them to the last 4 cores available for the launched process.
+With variables above CCL will create 4 threads and pin them to the last 4 cores available for the launched process.
 
 The exact IDs of CPU cores depend on parameters passed to *mpirun* 
 
@@ -100,7 +100,7 @@ In the most cases there is no need in removal of the current build directory. Ju
 compile and link changed files. Only if one sees some suspicious build errors after significant 
 change in the code (e.g. after rebase or change of branch) then it is a hint to clean build directory.
 
-### I can't run ICCL examples
+### I can't run CCL examples
 
 It is recommended to use environment values stored in `env/vars.sh` of your current
 installation directory.

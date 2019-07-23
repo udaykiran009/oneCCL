@@ -5,7 +5,7 @@
 #define SINGLE_ELEM_COUNT (BUF_COUNT * ELEM_COUNT)
 #define ALIGNMENT         (2 * 1024 * 1024)
 #define DTYPE             float
-#define ICCL_DTYPE        (iccl_dtype_float)
+#define CCL_DTYPE        (ccl_dtype_float)
 
 void fill_buffers(void** send_bufs, void** recv_bufs, size_t buf_count, size_t elem_count)
 {
@@ -58,11 +58,11 @@ void print_timings(double* timer, size_t elem_count, size_t buf_count)
     for (idx = 0; idx < size; idx++)
         recv_counts[idx] = 1;
 
-    iccl_request_t request = NULL;
-    iccl_coll_attr_t attr;
-    memset(&attr, 0, sizeof(iccl_coll_attr_t));
-    ICCL_CALL(iccl_allgatherv(timer, 1, timers, recv_counts, iccl_dtype_double, &attr, NULL, &request));
-    ICCL_CALL(iccl_wait(request));
+    ccl_request_t request = NULL;
+    ccl_coll_attr_t attr;
+    memset(&attr, 0, sizeof(ccl_coll_attr_t));
+    CCL_CALL(ccl_allgatherv(timer, 1, timers, recv_counts, ccl_dtype_double, &attr, NULL, &request));
+    CCL_CALL(ccl_wait(request));
 
     if (rank == 0)
     {
@@ -86,7 +86,7 @@ void print_timings(double* timer, size_t elem_count, size_t buf_count)
         printf("size %10zu x %5zu bytes, avg %10.2lf us, avg_per_buf %10.2f, stddev %5.1lf %%\n",
                 elem_count * sizeof(DTYPE), buf_count, avg_timer, avg_timer_per_buf, stddev_timer);
     }
-    iccl_barrier(NULL);
+    ccl_barrier(NULL);
     free(timers);
     free(recv_counts);
 }
@@ -98,7 +98,7 @@ int main()
     DTYPE* recv_bufs[BUF_COUNT];
     DTYPE* single_send_buf = NULL;
     DTYPE* single_recv_buf = NULL;
-    iccl_request_t reqs[BUF_COUNT];
+    ccl_request_t reqs[BUF_COUNT];
     double t, t1, t2;
     int check_values = 1;
 
@@ -123,16 +123,16 @@ int main()
     {
         for (idx = 0; idx < BUF_COUNT; idx++)
         {
-            iccl_allreduce(send_bufs[idx], recv_bufs[idx], count, ICCL_DTYPE,
-                           iccl_reduction_sum, &coll_attr, NULL, &reqs[idx]);
+            ccl_allreduce(send_bufs[idx], recv_bufs[idx], count, CCL_DTYPE,
+                           ccl_reduction_sum, &coll_attr, NULL, &reqs[idx]);
         }
         for (idx = 0; idx < BUF_COUNT; idx++)
         {
-            iccl_wait(reqs[idx]);
+            ccl_wait(reqs[idx]);
         }
     }
 
-    iccl_barrier(NULL);
+    ccl_barrier(NULL);
 
     char match_id[16];
     coll_attr.to_cache = 1;
@@ -148,12 +148,12 @@ int main()
             for (idx = 0; idx < BUF_COUNT; idx++)
             {
                 sprintf(match_id, "count_%zu_idx_%zu", count, idx);
-                iccl_allreduce(send_bufs[idx], recv_bufs[idx], count, ICCL_DTYPE,
-                               iccl_reduction_sum, &coll_attr, NULL, &reqs[idx]);
+                ccl_allreduce(send_bufs[idx], recv_bufs[idx], count, CCL_DTYPE,
+                               ccl_reduction_sum, &coll_attr, NULL, &reqs[idx]);
             }
             for (idx = 0; idx < BUF_COUNT; idx++)
             {
-                iccl_wait(reqs[idx]);
+                ccl_wait(reqs[idx]);
             }
             t2 = when();
             t += (t2 - t1);
@@ -162,7 +162,7 @@ int main()
         print_timings(&t, count, BUF_COUNT);
     }
 
-    iccl_barrier(NULL);
+    ccl_barrier(NULL);
 
     coll_attr.to_cache = 1;
     for (count = BUF_COUNT; count <= SINGLE_ELEM_COUNT; count *= 2)
@@ -172,9 +172,9 @@ int main()
         {
             t1 = when();
             sprintf(match_id, "single_count_%zu", count);
-            iccl_allreduce(single_send_buf, single_recv_buf, count, ICCL_DTYPE,
-                           iccl_reduction_sum, &coll_attr, NULL, &reqs[0]);
-            iccl_wait(reqs[0]);
+            ccl_allreduce(single_send_buf, single_recv_buf, count, CCL_DTYPE,
+                           ccl_reduction_sum, &coll_attr, NULL, &reqs[0]);
+            ccl_wait(reqs[0]);
             t2 = when();
             t += (t2 - t1);
         }

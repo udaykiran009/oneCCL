@@ -6,6 +6,6 @@ foreach(src ${sources})
 
     target_link_libraries(${executable} PUBLIC rt)
     target_link_libraries(${executable} PUBLIC m)
-    target_link_libraries(${executable} PRIVATE iccl)
-    install(TARGETS ${executable} RUNTIME DESTINATION ${ICCL_INSTALL_EXAMPLES})
+    target_link_libraries(${executable} PRIVATE ccl)
+    install(TARGETS ${executable} RUNTIME DESTINATION ${CCL_INSTALL_EXAMPLES})
 endforeach()

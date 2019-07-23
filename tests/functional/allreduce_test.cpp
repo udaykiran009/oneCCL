@@ -1,5 +1,5 @@
-#define TEST_ICCL_REDUCE
-#define Collective_Name "ICCL_ALLREDUCE_ALGO"
+#define TEST_CCL_REDUCE
+#define Collective_Name "CCL_ALLREDUCE_ALGO"
 
 #include "base.hpp"
 #include <functional>
@@ -67,9 +67,9 @@ public:
                 this->Init(param, idx);
                 param.req[Buffers[idx]] = (param.GetPlaceType() == PT_IN) ?
                     param.global_comm.allreduce(param.recvBuf[Buffers[idx]].data(), param.recvBuf[Buffers[idx]].data(), param.elemCount,
-                                  (iccl::data_type) param.GetDataType(),(iccl::reduction) param.GetReductionName(), &param.coll_attr) :
+                                  (ccl::data_type) param.GetDataType(),(ccl::reduction) param.GetReductionName(), &param.coll_attr) :
                     param.global_comm.allreduce(param.sendBuf[Buffers[idx]].data(), param.recvBuf[Buffers[idx]].data(), param.elemCount,
-                                  (iccl::data_type) param.GetDataType(),(iccl::reduction) param.GetReductionName(), &param.coll_attr);
+                                  (ccl::data_type) param.GetDataType(),(ccl::reduction) param.GetReductionName(), &param.coll_attr);
             }
             param.DefineCompletionOrderAndComplete();
             result += Check(param);

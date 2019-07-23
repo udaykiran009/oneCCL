@@ -1,5 +1,5 @@
-#define TEST_ICCL_REDUCE
-#define Collective_Name "ICCL_REDUCE_ALGO"
+#define TEST_CCL_REDUCE
+#define Collective_Name "CCL_REDUCE_ALGO"
 
 #include "base.hpp"
 #include <functional>
@@ -7,8 +7,8 @@
 #include <chrono>
 
 // template <typename T>
-// iccl_status_t do_reduction_null(const void* in_buf, size_t in_count, void* inout_buf,
-                               // size_t* out_count, const void** ctx, iccl_datatype_t dtype)
+// ccl_status_t do_reduction_null(const void* in_buf, size_t in_count, void* inout_buf,
+                               // size_t* out_count, const void** ctx, ccl_datatype_t dtype)
 // {
     // size_t idx;
     // if (out_count) *out_count = in_count;
@@ -16,11 +16,11 @@
             // {
                 // ((T*)inout_buf)[idx] = (T)0;
             // }
-    // return iccl_status_success;
+    // return ccl_status_success;
 // }
 // template <typename T>
-// iccl_status_t do_reduction_custom(const void* in_buf, size_t in_count, void* inout_buf,
-                               // size_t* out_count, const void** ctx, iccl_datatype_t dtype)
+// ccl_status_t do_reduction_custom(const void* in_buf, size_t in_count, void* inout_buf,
+                               // size_t* out_count, const void** ctx, ccl_datatype_t dtype)
 // {
     // size_t idx;
     // if (out_count) *out_count = in_count;
@@ -28,7 +28,7 @@
             // {
                 // ((T*)inout_buf)[idx] += ((T*)in_buf)[idx];
             // }
-    // return iccl_status_success;
+    // return ccl_status_success;
 // }
 // template <typename T>
 // int set_custom_reduction (TypedTestParam <T> &param){
@@ -121,7 +121,7 @@ public:
             this->SwapBuffers(param, iter);
             size_t idx = 0;
             size_t* Buffers = param.DefineStartOrder();
-            // if (param.GetReductionType() == iccl_reduction_custom) {
+            // if (param.GetReductionType() == ccl_reduction_custom) {
                 // if (set_custom_reduction<T>(param))
                     // return TEST_FAILURE;
             // }
@@ -129,10 +129,10 @@ public:
                 this->Init(param, idx);
                 param.req[Buffers[idx]] = (param.GetPlaceType() == PT_IN) ?
                         param.global_comm.reduce(param.recvBuf[Buffers[idx]].data(), param.recvBuf[Buffers[idx]].data(), param.elemCount,
-                                                (iccl::data_type) param.GetDataType(), (iccl::reduction) param.GetReductionName(),
+                                                (ccl::data_type) param.GetDataType(), (ccl::reduction) param.GetReductionName(),
                                                 ROOT_PROCESS_IDX, &param.coll_attr) :
                         param.global_comm.reduce(param.sendBuf[Buffers[idx]].data(), param.recvBuf[Buffers[idx]].data(), param.elemCount,
-                                                (iccl::data_type) param.GetDataType(), (iccl::reduction) param.GetReductionName(),
+                                                (ccl::data_type) param.GetDataType(), (ccl::reduction) param.GetReductionName(),
                                                 ROOT_PROCESS_IDX, &param.coll_attr);
             }
             param.DefineCompletionOrderAndComplete();

@@ -6,12 +6,12 @@
 #include <string>
 #include <fstream>
 #include "gtest/gtest.h"
-#include "iccl.hpp"
+#include "ccl.hpp"
 #include <cstdlib>
 #include <stdlib.h>     /* malloc */
 
 #include <ctime>
-using namespace iccl;
+using namespace ccl;
 using namespace std;
 
 
@@ -60,7 +60,7 @@ using namespace std;
 #define PATCH_OUTPUT_NAME_ARG(argc, argv)                                                 \
     do                                                                                    \
     {                                                                                     \
-        iccl::communicator comm;                                                          \
+        ccl::communicator comm;                                                          \
         if (comm.size() > 1)                                                              \
         {                                                                                 \
             for (int idx = 1; idx < argc; idx++)                                          \
@@ -96,7 +96,7 @@ do {   \
 #define SSHOW_ALGO()\
 ( {   \
     std::string algo_name = getenv(Collective_Name);  \
-    std::string transp_name = getenv("ICCL_ATL_TRANSPORT");  \
+    std::string transp_name = getenv("CCL_ATL_TRANSPORT");  \
     std::string res_str = algo_name + transp_name; \
     res_str;\
 } )
@@ -114,13 +114,13 @@ do {   \
       int result = className.Run(typedParam);                            \
       int result_final = 0;                                              \
       static int glob_idx = 0;                                           \
-      iccl::communicator comm;                                           \
-      std::shared_ptr <iccl::request> req;                               \
-      iccl_coll_attr_t coll_attr {};                                     \
+      ccl::communicator comm;                                           \
+      std::shared_ptr <ccl::request> req;                               \
+      ccl_coll_attr_t coll_attr {};                                     \
       InitCollAttr(&coll_attr);                                          \
       req = comm.allreduce(&result, &result_final, 1,                    \
-                           iccl::data_type::dtype_int,                   \
-                           iccl::reduction::sum, &coll_attr);            \
+                           ccl::data_type::dtype_int,                   \
+                           ccl::reduction::sum, &coll_attr);            \
       req->wait();                                                       \
       if (result_final > 0)                                              \
       {                                                                  \
@@ -162,7 +162,7 @@ do {   \
     int main(int argc, char **argv, char* envs[]) \
     {                                             \
         InitTestParams();                         \
-        iccl::environment env;                    \
+        ccl::environment env;                    \
         PATCH_OUTPUT_NAME_ARG(argc, argv);        \
         testing::InitGoogleTest(&argc, argv);     \
         int res = RUN_ALL_TESTS();                \
@@ -250,7 +250,7 @@ map < int, const char *>completionTypeStr = { {CMPT_WAIT, "CMPT_WAIT"},
                                               {CMPT_TEST, "CMPT_TEST"}};
 
 typedef enum {
-#ifdef TEST_ICCL_CUSTOM_PROLOG
+#ifdef TEST_CCL_CUSTOM_PROLOG
     PRT_T_TO_2X = 0,
     PRT_T_TO_CHAR = 1,
 #endif
@@ -259,14 +259,14 @@ typedef enum {
 } PrologType;
 PrologType firstPrologType = PRT_NULL;
 map < int, const char *>prologTypeStr = { {PRT_NULL, "PRT_NULL"},
-#ifdef TEST_ICCL_CUSTOM_PROLOG
+#ifdef TEST_CCL_CUSTOM_PROLOG
                                           {PRT_T_TO_2X, "PRT_T_TO_2X"},
                                           {PRT_T_TO_CHAR, "PRT_T_TO_CHAR"}
 #endif
                                           };
 
 typedef enum {
-#ifdef TEST_ICCL_CUSTOM_EPILOG
+#ifdef TEST_CCL_CUSTOM_EPILOG
     EPLT_T_TO_2X = 0,
     EPLT_CHAR_TO_T = 1,
 #endif
@@ -275,20 +275,20 @@ typedef enum {
 } EpilogType;
 EpilogType firstEpilogType = EPLT_NULL;
 map < int, const char *>epilogTypeStr = { {EPLT_NULL, "EPLT_NULL"},
-#ifdef TEST_ICCL_CUSTOM_EPILOG
+#ifdef TEST_CCL_CUSTOM_EPILOG
                                           {EPLT_T_TO_2X, "EPLT_T_TO_2X"},
                                           {EPLT_CHAR_TO_T, "EPLT_CHAR_TO_T"}
 #endif
                                           };
 
 typedef enum {
-    DT_CHAR = iccl_dtype_char,
-    DT_INT = iccl_dtype_int,
-    DT_BFP16 = iccl_dtype_bfp16,
-    DT_FLOAT = iccl_dtype_float,
-    DT_DOUBLE = iccl_dtype_double,
-    // DT_INT64 = iccl_dtype_int64,
-    // DT_UINT64 = iccl_dtype_uint64,
+    DT_CHAR = ccl_dtype_char,
+    DT_INT = ccl_dtype_int,
+    DT_BFP16 = ccl_dtype_bfp16,
+    DT_FLOAT = ccl_dtype_float,
+    DT_DOUBLE = ccl_dtype_double,
+    // DT_INT64 = ccl_dtype_int64,
+    // DT_UINT64 = ccl_dtype_uint64,
     DT_LAST
 } TestDataType;
 TestDataType firstDataType = DT_CHAR;
@@ -303,11 +303,11 @@ map < int, const char *>dataTypeStr = { {DT_CHAR, "DT_CHAR"},
 
 typedef enum {
     RT_SUM = 0,
-#ifdef TEST_ICCL_REDUCE
+#ifdef TEST_CCL_REDUCE
     RT_PROD = 1,
     RT_MIN = 2,
     RT_MAX = 3,
-#ifdef TEST_ICCL_CUSTOM_REDUCE
+#ifdef TEST_CCL_CUSTOM_REDUCE
     RT_CUSTOM = 4,
     RT_CUSTOM_NULL = 5,
 #endif
@@ -316,24 +316,24 @@ typedef enum {
 } TestReductionType;
 TestReductionType firstReductionType = RT_SUM;
 map < int, const char *>reductionTypeStr = { {RT_SUM, "RT_SUM"},
-#ifdef TEST_ICCL_REDUCE
+#ifdef TEST_CCL_REDUCE
                                              {RT_PROD, "RT_PROD"},
                                              {RT_MIN, "RT_MIN"},
                                              {RT_MAX, "RT_MAX"},
-#ifdef TEST_ICCL_CUSTOM_REDUCE
+#ifdef TEST_CCL_CUSTOM_REDUCE
                                              {RT_CUSTOM, "RT_CUSTOM"},
                                              {RT_CUSTOM_NULL, "RT_CUSTOM_NULL"}
 #endif
 #endif
                                              };
-map < int, iccl_reduction_t > reductionTypeValues = { {RT_SUM, iccl_reduction_sum},
-#ifdef TEST_ICCL_REDUCE
-                                                    {RT_PROD, iccl_reduction_prod},
-                                                    {RT_MIN, iccl_reduction_min},
-                                                    {RT_MAX, iccl_reduction_max},
-#ifdef TEST_ICCL_CUSTOM_REDUCE
-                                                    {RT_CUSTOM, iccl_reduction_custom},
-                                                    {RT_CUSTOM_NULL, iccl_reduction_custom}
+map < int, ccl_reduction_t > reductionTypeValues = { {RT_SUM, ccl_reduction_sum},
+#ifdef TEST_CCL_REDUCE
+                                                    {RT_PROD, ccl_reduction_prod},
+                                                    {RT_MIN, ccl_reduction_min},
+                                                    {RT_MAX, ccl_reduction_max},
+#ifdef TEST_CCL_CUSTOM_REDUCE
+                                                    {RT_CUSTOM, ccl_reduction_custom},
+                                                    {RT_CUSTOM_NULL, ccl_reduction_custom}
 #endif
 #endif
                                                     };
@@ -397,7 +397,7 @@ POST_AND_PRE_INCREMENTS(BufferCount, BC_LAST);
 POST_AND_PRE_INCREMENTS(PrologType, PRLT_LAST);
 POST_AND_PRE_INCREMENTS(EpilogType, EPLT_LAST);
 
-void InitCollAttr(iccl_coll_attr_t *coll_attr)
+void InitCollAttr(ccl_coll_attr_t *coll_attr)
 {
     coll_attr->prologue_fn = NULL;
     coll_attr->epilogue_fn = NULL;
@@ -411,9 +411,9 @@ void InitCollAttr(iccl_coll_attr_t *coll_attr)
 void PrintErrMessage(char* errMessage, std::ostream &output)
 {
     size_t messageLen = strlen(errMessage);
-    iccl::communicator comm;
-    std::shared_ptr <iccl::request> req;
-    iccl_coll_attr_t coll_attr {};
+    ccl::communicator comm;
+    std::shared_ptr <ccl::request> req;
+    ccl_coll_attr_t coll_attr {};
     InitCollAttr(&coll_attr);
     int processCount = comm.size();
     int processIdx = comm.rank();
@@ -423,7 +423,7 @@ void PrintErrMessage(char* errMessage, std::ostream &output)
     displs[0] = 1;
     for (int i = 1; i < processCount; i++)
         displs[i] = 1;
-    req = comm.allgatherv(&messageLen, 1, arrMessageLen_copy, displs, iccl::data_type::dtype_int, &coll_attr);
+    req = comm.allgatherv(&messageLen, 1, arrMessageLen_copy, displs, ccl::data_type::dtype_int, &coll_attr);
     req->wait();
     for (int i = 0; i < processCount; i++)
         arrMessageLen[i] = arrMessageLen_copy[i];
@@ -437,7 +437,7 @@ void PrintErrMessage(char* errMessage, std::ostream &output)
         return;
     }
     char* arrErrMessage = new char[fullMessageLen];
-    req = comm.allgatherv(errMessage, messageLen, arrErrMessage, arrMessageLen, iccl::data_type::dtype_char, &coll_attr);
+    req = comm.allgatherv(errMessage, messageLen, arrErrMessage, arrMessageLen, ccl::data_type::dtype_char, &coll_attr);
     req->wait();
     if (processIdx == 0)
     {
@@ -469,18 +469,18 @@ struct TestParam {
 size_t CalculateTestCount ()
 {
     size_t testCount = PRT_LAST * PRT_LAST * CMPT_LAST * SNCT_LAST * (DT_LAST-1) * ST_LAST *  RT_LAST * BC_LAST * CT_LAST * PT_LAST * PRLT_LAST * EPLT_LAST;
-// ICCL_TEST_EPILOG_TYPE=0 ICCL_TEST_PROLOG_TYPE=0 ICCL_TEST_PLACE_TYPE=0 ICCL_TEST_CACHE_TYPE=0 ICCL_TEST_BUFFER_COUNT=0 ICCL_TEST_SIZE_TYPE=0 ICCL_TEST_PRIORITY_TYPE=1 ICCL_TEST_COMPLETION_TYPE=0 ICCL_TEST_SYNC_TYPE=0 ICCL_TEST_REDUCTION_TYPE=0 ICCL_TEST_DATA_TYPE=0
-    char* testDatatypeEnabled = getenv("ICCL_TEST_DATA_TYPE");
-    char* testReductionEnabled = getenv("ICCL_TEST_REDUCTION_TYPE");
-    char* testSyncEnabled = getenv("ICCL_TEST_SYNC_TYPE");
-    char* testCompletionEnabled = getenv("ICCL_TEST_COMPLETION_TYPE");
-    char* testPriorityEnabled = getenv("ICCL_TEST_PRIORITY_TYPE");
-    char* testSizeTypeEnabled = getenv("ICCL_TEST_SIZE_TYPE");
-    char* testBufferCountEnabled = getenv("ICCL_TEST_BUFFER_COUNT");
-    char* testCacheEnabled = getenv("ICCL_TEST_CACHE_TYPE");
-    char* testPlaceTypeEnabled = getenv("ICCL_TEST_PLACE_TYPE");
-    char* testPrologEnabled = getenv("ICCL_TEST_PROLOG_TYPE");
-    char* testEpilogEnabled = getenv("ICCL_TEST_EPILOG_TYPE");
+// CCL_TEST_EPILOG_TYPE=0 CCL_TEST_PROLOG_TYPE=0 CCL_TEST_PLACE_TYPE=0 CCL_TEST_CACHE_TYPE=0 CCL_TEST_BUFFER_COUNT=0 CCL_TEST_SIZE_TYPE=0 CCL_TEST_PRIORITY_TYPE=1 CCL_TEST_COMPLETION_TYPE=0 CCL_TEST_SYNC_TYPE=0 CCL_TEST_REDUCTION_TYPE=0 CCL_TEST_DATA_TYPE=0
+    char* testDatatypeEnabled = getenv("CCL_TEST_DATA_TYPE");
+    char* testReductionEnabled = getenv("CCL_TEST_REDUCTION_TYPE");
+    char* testSyncEnabled = getenv("CCL_TEST_SYNC_TYPE");
+    char* testCompletionEnabled = getenv("CCL_TEST_COMPLETION_TYPE");
+    char* testPriorityEnabled = getenv("CCL_TEST_PRIORITY_TYPE");
+    char* testSizeTypeEnabled = getenv("CCL_TEST_SIZE_TYPE");
+    char* testBufferCountEnabled = getenv("CCL_TEST_BUFFER_COUNT");
+    char* testCacheEnabled = getenv("CCL_TEST_CACHE_TYPE");
+    char* testPlaceTypeEnabled = getenv("CCL_TEST_PLACE_TYPE");
+    char* testPrologEnabled = getenv("CCL_TEST_PROLOG_TYPE");
+    char* testEpilogEnabled = getenv("CCL_TEST_EPILOG_TYPE");
     if (testDatatypeEnabled && atoi(testDatatypeEnabled) == 0) {
         firstDataType = static_cast<TestDataType>(DT_LAST - 1);
         testCount /= (DT_LAST-1);
@@ -587,10 +587,10 @@ struct TypedTestParam
     size_t processIdx;
     std::vector<std::vector<T>> sendBuf;
     std::vector<std::vector<T>> recvBuf;
-    iccl::communicator comm;
-    std::vector<std::shared_ptr<iccl::request>> req;
-    iccl_coll_attr_t coll_attr {};
-    iccl::communicator global_comm;
+    ccl::communicator comm;
+    std::vector<std::shared_ptr<ccl::request>> req;
+    ccl_coll_attr_t coll_attr {};
+    ccl::communicator global_comm;
     size_t *startArr;
 
     TypedTestParam(TestParam tParam):testParam(tParam) {
@@ -624,7 +624,7 @@ struct TypedTestParam
                std::to_string(GetPrologType()) +
                std::to_string(GetEpilogType()));
 	}
-    bool CompleteRequest(std::shared_ptr < iccl::request > req)
+    bool CompleteRequest(std::shared_ptr < ccl::request > req)
 	{
         if (testParam.completionType == CMPT_TEST) {
             bool isCompleted = false;
@@ -649,9 +649,9 @@ struct TypedTestParam
                 else if (testParam.priorityStartType == PRT_INDIRECT)
                     for (idx = 0; idx < bufferCount; idx++)
                         startArr[idx] = (bufferCount - idx - 1);
-                // TODO: should be enabled after ICCL_OUT_OF_ORDER_SUPPORT
+                // TODO: should be enabled after CCL_OUT_OF_ORDER_SUPPORT
                 else if (testParam.priorityStartType == PRT_RANDOM){
-                    char* testDynamicPointer = getenv("ICCL_OUT_OF_ORDER_SUPPORT");
+                    char* testDynamicPointer = getenv("CCL_OUT_OF_ORDER_SUPPORT");
                     if (testDynamicPointer && atoi(testDynamicPointer) == 1) {
                         size_t j;
 						for (idx = 0; idx < bufferCount; idx++)
@@ -815,7 +815,7 @@ struct TypedTestParam
     TestReductionType GetReductionName() {
         return testParam.reductionType;
     }
-    iccl_reduction_t GetReductionType() {
+    ccl_reduction_t GetReductionType() {
         return reductionTypeValues[testParam.reductionType];
     }
     PriorityType GetPriorityType() {
@@ -855,7 +855,7 @@ template <typename T> class BaseTest {
 public:
     size_t globalProcessIdx;
     size_t globalProcessCount;
-    iccl::communicator comm;
+    ccl::communicator comm;
 
     void SetUp() {
         globalProcessIdx = comm.rank();
@@ -873,7 +873,7 @@ public:
     void Init(TypedTestParam <T> &param, size_t idx){
         param.coll_attr.priority = (int)param.PriorityRequest();
         param.coll_attr.to_cache = (int)param.GetCacheType();
-        char* testOutOfOrder = getenv("ICCL_OUT_OF_ORDER_SUPPORT");
+        char* testOutOfOrder = getenv("CCL_OUT_OF_ORDER_SUPPORT");
 		if (testOutOfOrder && atoi(testOutOfOrder) == 1)
 			param.coll_attr.synchronous = 0;
 		else
@@ -881,7 +881,7 @@ public:
         param.coll_attr.match_id = param.CreateMatchId(idx).c_str();
     }
     void SwapBuffers(TypedTestParam <T> &param, size_t iter){
-        char* testDynamicPointer = getenv("ICCL_TEST_DYNAMIC_POINTER");
+        char* testDynamicPointer = getenv("CCL_TEST_DYNAMIC_POINTER");
         if (testDynamicPointer && atoi(testDynamicPointer) == 1) {
             if (iter == 1) {
                 if (param.processIdx % 2 ) {

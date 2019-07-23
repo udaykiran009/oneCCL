@@ -1,7 +1,7 @@
-Intel® Machine Learning Scaling Library
+oneAPI Collective Communications Library
 =========================================
    
-Intel® oneAPI Collective Communications Library (Intel® CCL) is a library that provides an efficient implementation of
+oneAPI Collective Communications Library (oneAPI CCL) is a library that provides an efficient implementation of
 communication patterns used in deep learning. 
 
 The most popular features are:
@@ -9,17 +9,17 @@ The most popular features are:
 - Built on top of lower-level communication middleware – MPI and libfabrics.
 - Optimized to drive scalability of communication patterns by allowing to easily trade-off compute for communication performance.
 - Enables a set of DL-specific optimizations, such as prioritization, persistent operations, out of order execution, etc.
-- Works across various interconnects: Intel® Omni-Path Architecture, InfiniBand*, and Ethernet.
+- Works across various interconnects: oneAPI Omni-Path Architecture, InfiniBand*, and Ethernet.
 - Common API that supports Deep Learning frameworks (Caffe*, nGraph*, Horovod*, etc.)
 
-Intel® CCL package comprises the Intel CCL Software Development Kit (SDK) and the Intel® MPI Library Runtime components.
+oneAPI CCL package comprises the oneAPI CCL Software Development Kit (SDK) and the oneAPI MPI Library Runtime components.
 
 Contents:
 =========
 
 .. toctree::
    :maxdepth: 1
-   :caption: Get Started with Intel® CCL
+   :caption: Get Started with oneAPI CCL
 
    overview.rst
    prerequisites.rst

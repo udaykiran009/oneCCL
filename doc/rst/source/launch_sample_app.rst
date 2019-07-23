@@ -3,20 +3,20 @@ Launch Sample Application
 
 :guilabel:`Update sample`.
 
-Intel® oneAPI CCL supplies a sample application, ``iccl_test.c`` or ``iccl_test.cpp`` which demonstrates
-the usage of ICCL API.
+oneAPI CCL supplies a sample application, ``ccl_sample.c`` or ``ccl_sample.cpp`` which demonstrates
+the usage of CCL API.
 
 Launching the Sample
 --------------------
 
-1. For the C++ sample, build ``iccl_test.cpp``:
+1. For the C++ sample, build ``ccl_sample.cpp``:
 
 .. code-block::
    $ cd <install_dir>/test
-   $ icpc -O2 –I<install_dir>/intel64/include/ -L<install_dir>/intel64/lib
-   -liccl -ldl -lrt -lpthread -o iccl_test iccl_test.cpp
+   $ icpc -O2 –I<install_dir>/ccl_sample64/include/ -L<install_dir>/ccl_sample64/lib
+   -lccl -ldl -lrt -lpthread -o ccl_sample ccl_sample.cpp
    
-2. Launch the iccl_test binary with mpirun on the desired number of nodes (N).
+2. Launch the ccl_sample binary with mpirun on the desired number of nodes (N).
 
 Sample Description
 ------------------

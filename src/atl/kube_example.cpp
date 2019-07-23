@@ -9,7 +9,7 @@
 
 #include <atl.h>
 
-struct iccl_executor
+struct ccl_executor
 {
     atl_desc_t *atl_desc;
     atl_comm_t **atl_comms;
@@ -19,12 +19,12 @@ struct iccl_executor
     size_t worker_count;
 };
 
-typedef struct iccl_executor iccl_executor;
+typedef struct ccl_executor ccl_executor;
 
 static int cont = 1;
 static int to_up = 0;
 static int print_first_iter = 2;
-static iccl_executor *e;
+static ccl_executor *e;
 struct sigaction old_act,old_act2,old_act3;
 
 #define MAX_KVS_NAME_LENGTH 128
@@ -78,7 +78,7 @@ int main(int argc, char* argv[])
     send[2] = 'c';
     send[3] = 'd';
     send[4] = '\0';
-    e = (iccl_executor *)malloc(sizeof(iccl_executor));
+    e = (ccl_executor *)malloc(sizeof(ccl_executor));
     e->worker_count = 1;
 printf("Init\n");
     atl_status_t atl_status = atl_init(NULL, NULL,  &e->proc_idx, &e->proc_count, &attr, &e->atl_comms, &e->atl_desc);

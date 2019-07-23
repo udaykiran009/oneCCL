@@ -19,10 +19,10 @@ then
     export I_MPI_HYDRA_HOST_FILE=${WORK_DIR}/tests/cfgs/clusters/${HOSTNAME}/mpi.hosts
 fi
 
-if [ -z "${ICCL_ROOT}" ]
+if [ -z "${CCL_ROOT}" ]
 then
-    ICCL_PATH="${WORK_DIR}/_install"
-    . ${ICCL_PATH}/intel64/bin/icclvars.sh
+    CCL_PATH="${WORK_DIR}/_install"
+    . ${CCL_PATH}/intel64/bin/cclvars.sh
 fi
 
 PASS_COUNTER=0
@@ -38,7 +38,7 @@ cd ${WORK_DIR}
 echo "Testing DL_MSL..." | tee -a ${LOG_FILE}
 
 echo "Data parallelism..." | tee -a ${LOG_FILE}
-mpiexec.hydra -ppn ${PPN} -n ${N} ${WORK_DIR}/tests/iccl_test 1 | tee -a ${LOG_FILE} 2>&1
+mpiexec.hydra -ppn ${PPN} -n ${N} ${WORK_DIR}/tests/ccl_test 1 | tee -a ${LOG_FILE} 2>&1
 if [ $? -ne 0 ]
 then
     echo "Data parallelism... NOK" | tee -a ${LOG_FILE}
@@ -50,7 +50,7 @@ fi
 TOTAL_COUNTER=`expr ${TOTAL_COUNTER} + 1`
 
 echo "Model parallelism..." | tee -a ${LOG_FILE}
-mpiexec.hydra -ppn ${PPN} -n ${N} ${WORK_DIR}/tests/iccl_test ${N} | tee -a ${LOG_FILE} 2>&1
+mpiexec.hydra -ppn ${PPN} -n ${N} ${WORK_DIR}/tests/ccl_test ${N} | tee -a ${LOG_FILE} 2>&1
 if [ $? -ne 0 ]
 then
     echo "Model parallelism... NOK" | tee -a ${LOG_FILE}
@@ -62,7 +62,7 @@ fi
 TOTAL_COUNTER=`expr ${TOTAL_COUNTER} + 1`
 
 echo "Hybrid parallelism (N/2) x 2..." | tee -a ${LOG_FILE}
-mpiexec.hydra -ppn ${PPN} -n ${N} ${WORK_DIR}/tests/iccl_test 2 | tee -a ${LOG_FILE} 2>&1
+mpiexec.hydra -ppn ${PPN} -n ${N} ${WORK_DIR}/tests/ccl_test 2 | tee -a ${LOG_FILE} 2>&1
 if [ $? -ne 0 ]
 then
     echo "Hybrid parallelism (N/2) x 2... NOK" | tee -a ${LOG_FILE}

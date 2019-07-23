@@ -1,6 +1,6 @@
 #pragma once
 
-#include "iccl.hpp"
+#include "ccl.hpp"
 #include "common/comm/comm_id.hpp"
 #include "common/comm/atl_tag.hpp"
 #include "common/log/log.hpp"
@@ -13,21 +13,21 @@
 //key = rank, value = global rank
 using rank_to_global_rank_map = std::unordered_map<size_t, size_t>;
 
-class alignas(CACHELINE_SIZE) iccl_comm
+class alignas(CACHELINE_SIZE) ccl_comm
 {
 public:
-    iccl_comm() = delete;
-    iccl_comm(const iccl_comm& other) = delete;
-    iccl_comm& operator=(const iccl_comm& other) = delete;
+    ccl_comm() = delete;
+    ccl_comm(const ccl_comm& other) = delete;
+    ccl_comm& operator=(const ccl_comm& other) = delete;
 
-    iccl_comm(size_t rank, size_t size, std::unique_ptr<comm_id> id);
-    iccl_comm(size_t rank, size_t size, std::unique_ptr<comm_id> id, rank_to_global_rank_map&& ranks);
+    ccl_comm(size_t rank, size_t size, std::unique_ptr<comm_id> id);
+    ccl_comm(size_t rank, size_t size, std::unique_ptr<comm_id> id, rank_to_global_rank_map&& ranks);
 
-    ~iccl_comm() = default;
+    ~ccl_comm() = default;
 
-    static iccl_comm* create_with_color(int color, iccl_comm_id_storage* comm_ids, const iccl_comm* global_comm);
+    static ccl_comm* create_with_color(int color, ccl_comm_id_storage* comm_ids, const ccl_comm* global_comm);
 
-    std::shared_ptr<iccl_comm> clone_with_new_id(std::unique_ptr<comm_id> id);
+    std::shared_ptr<ccl_comm> clone_with_new_id(std::unique_ptr<comm_id> id);
 
     size_t rank() const
     {
@@ -44,18 +44,18 @@ public:
         return m_pof2;
     }
 
-    iccl_comm_id_t id() const
+    ccl_comm_id_t id() const
     {
         return m_id->value();
     }
 
-    iccl_sched_id_t get_sched_id(bool use_internal_space)
+    ccl_sched_id_t get_sched_id(bool use_internal_space)
     {
-        iccl_sched_id_t& next_sched_id = (use_internal_space) ? m_next_sched_id_internal : m_next_sched_id_external;
-        iccl_sched_id_t first_sched_id = (use_internal_space) ? static_cast<iccl_sched_id_t>(0) : iccl_comm::max_sched_count / 2;
-        iccl_sched_id_t max_sched_id = (use_internal_space) ? iccl_comm::max_sched_count / 2 : iccl_comm::max_sched_count ;
+        ccl_sched_id_t& next_sched_id = (use_internal_space) ? m_next_sched_id_internal : m_next_sched_id_external;
+        ccl_sched_id_t first_sched_id = (use_internal_space) ? static_cast<ccl_sched_id_t>(0) : ccl_comm::max_sched_count / 2;
+        ccl_sched_id_t max_sched_id = (use_internal_space) ? ccl_comm::max_sched_count / 2 : ccl_comm::max_sched_count ;
 
-        iccl_sched_id_t id = next_sched_id;
+        ccl_sched_id_t id = next_sched_id;
 
         ++next_sched_id;
 
@@ -89,19 +89,19 @@ public:
     /**
      * Maximum available number of active communicators
      */
-    static constexpr iccl_sched_id_t max_comm_count = std::numeric_limits<iccl_comm_id_t>::max();
+    static constexpr ccl_sched_id_t max_comm_count = std::numeric_limits<ccl_comm_id_t>::max();
     /**
      * Maximum value of schedule id in scope of the current communicator
      */
-    static constexpr iccl_sched_id_t max_sched_count = std::numeric_limits<iccl_sched_id_t>::max();
+    static constexpr ccl_sched_id_t max_sched_count = std::numeric_limits<ccl_sched_id_t>::max();
 
 private:
     size_t m_rank;
     size_t m_size;
     size_t m_pof2;
     std::unique_ptr<comm_id> m_id;
-    iccl_sched_id_t m_next_sched_id_internal = iccl_comm::max_sched_count / 2;
-    iccl_sched_id_t m_next_sched_id_external = 0;
+    ccl_sched_id_t m_next_sched_id_internal = ccl_comm::max_sched_count / 2;
+    ccl_sched_id_t m_next_sched_id_external = 0;
     rank_to_global_rank_map m_ranks_map{};
     double_tree m_dtree;
 };

@@ -5,8 +5,8 @@
 Installation Guide
 ==================
 
-This page explains how to install and configure the Intel® Collective Communications Library (ICCL). 
-Intel(R) CCL supports a number of installation scenarios:
+This page explains how to install and configure the oneAPI Collective Communications Library (CCL). 
+oneAPI CCL supports a number of installation scenarios:
 
 * Installation using CLI 
 * RPM-based installation
@@ -16,13 +16,13 @@ Intel(R) CCL supports a number of installation scenarios:
 Installation Through Command Line Interface (CLI)
 *************************************************
 
-To install Intel® CCL using CLI, follow these steps:
+To install oneAPI CCL using CLI, follow these steps:
 
-#. Go to the ``iccl`` folder:
+#. Go to the ``ccl`` folder:
 
    ::
 
-      cd iccl
+      cd ccl
 
 #. Create a new folder:
 
@@ -64,7 +64,7 @@ Modify the ``cmake`` command:
    
    cmake .. -DCMAKE_INSTALL_PREFIX=/path/to/installation/directory
 
-If no ``-DCMAKE_INSTALL_PREFIX`` is specified, ICCL is installed into the ``_install`` subdirectory of the current build directory. For example, ``iccl/build/_install``
+If no ``-DCMAKE_INSTALL_PREFIX`` is specified, CCL is installed into the ``_install`` subdirectory of the current build directory. For example, ``ccl/build/_install``
 
 
 Specify compiler
@@ -120,22 +120,22 @@ Binary releases are available on our release page.
 Installation using tar.gz
 *************************
 
-To install Intel® CCL using the tar.gz file in a user mode, execute the following commands:
+To install oneAPI CCL using the tar.gz file in a user mode, execute the following commands:
 
 .. code-block::
    
-   $ tar zxf l_iccl-devel-64-<version>.<update>.<package#>.tgz
+   $ tar zxf l_ccl-devel-64-<version>.<update>.<package#>.tgz
 
-   $ cd l_iccl_<version>.<update>.<package#>
+   $ cd l_ccl_<version>.<update>.<package#>
 
    $ ./install.sh
 
-There is no uninstall script. To uninstall Intel® CCL, delete the whole installation directory.
+There is no uninstall script. To uninstall oneAPI CCL, delete the whole installation directory.
 
 Installation using RPM
 **********************
 
-Intel® CCL is available through the RPM Package Manager. To install the library in a root mode using RPM, follow these steps:
+oneAPI CCL is available through the RPM Package Manager. To install the library in a root mode using RPM, follow these steps:
 
 #. Log in as root.
 
@@ -143,12 +143,12 @@ Intel® CCL is available through the RPM Package Manager. To install the library
 
    .. code-block:: 
 
-      $ rpm -i intel-iccl-devel-64-<version>.<update>-<package#>.x86_64.rpm
+      $ rpm -i intel-ccl-devel-64-<version>.<update>-<package#>.x86_64.rpm
    
    where ``<version>.<update>-<package#>`` is a string. For example, ``2017.0-009``.
 
-To uninstall Intel® CCL using the RPM Package Manager, execute this command:
+To uninstall oneAPI CCL using the RPM Package Manager, execute this command:
 
 .. code-block:: 
 
-   $ rpm -e intel-iccl-devel-64-<version>.<update>-<package#>.x86_64
+   $ rpm -e intel-ccl-devel-64-<version>.<update>-<package#>.x86_64

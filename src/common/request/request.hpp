@@ -4,18 +4,18 @@
 
 #include <atomic>
 
-class alignas(CACHELINE_SIZE) iccl_request
+class alignas(CACHELINE_SIZE) ccl_request
 {
 public:
-    iccl_request() = default;
+    ccl_request() = default;
 
-    iccl_request(const iccl_request& other) = default;
-    iccl_request(iccl_request&& other) = default;
+    ccl_request(const ccl_request& other) = default;
+    ccl_request(ccl_request&& other) = default;
 
-    iccl_request& operator=(const iccl_request& other) = default;
-    iccl_request& operator=(iccl_request&& other) = default;
+    ccl_request& operator=(const ccl_request& other) = default;
+    ccl_request& operator=(ccl_request&& other) = default;
 
-    ~iccl_request()
+    ~ccl_request()
     {
         auto counter = completion_counter.load(std::memory_order_acquire);
         LOG_DEBUG("deleting req ", this, " with counter ", counter);
@@ -28,7 +28,7 @@ public:
     void complete()
     {
         int prev_counter = completion_counter.fetch_sub(1, std::memory_order_release);
-        ICCL_THROW_IF_NOT(prev_counter > 0, "unexpected prev_counter ", prev_counter);
+        CCL_THROW_IF_NOT(prev_counter > 0, "unexpected prev_counter ", prev_counter);
         LOG_DEBUG("req ", this, ", counter ", prev_counter - 1);
     }
 
@@ -55,11 +55,11 @@ public:
     void set_counter(int counter)
     {
         int current_counter = completion_counter.load(std::memory_order_acquire);
-        ICCL_THROW_IF_NOT(current_counter == 0, "unexpected counter ", current_counter);
+        CCL_THROW_IF_NOT(current_counter == 0, "unexpected counter ", current_counter);
         completion_counter.store(counter, std::memory_order_release);
     }
 
-    iccl_sched *sched = nullptr;
+    ccl_sched *sched = nullptr;
 
 private:
     std::atomic_int completion_counter { 0 };

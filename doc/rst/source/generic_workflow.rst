@@ -3,19 +3,19 @@ Generic Workflow
 
 :guilabel:`Update instructions`.
 
-Below is a generic flow of using the Intel® CCL in C++:
+Below is a generic flow of using the oneAPI CCL in C++:
 
 #. Initialize the library:
 
    .. code-block::
 
-      iccl::environment env;
+      ccl::environment env;
 
 #. Create a communicator objects:
 
    .. code-block::
   
-     iccl::communicator comm; 
+     ccl::communicator comm; 
 
 #. Execute collective operation of choice on this communicator:
 

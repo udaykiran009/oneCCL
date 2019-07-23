@@ -11,12 +11,12 @@
           for (idx = 0; idx < size; idx++)                                 \
               memset(recv_bufs[idx], 0, COUNT * sizeof(float));            \
           t1 = when();                                                     \
-          ICCL_CALL(start_cmd);                                            \
-          ICCL_CALL(iccl_wait(request));                                   \
+          CCL_CALL(start_cmd);                                             \
+          CCL_CALL(ccl_wait(request));                                     \
           t2 = when();                                                     \
           t += (t2 - t1);                                                  \
       }                                                                    \
-      iccl_barrier(NULL);                                                  \
+      ccl_barrier(NULL);                                                   \
       for (idx = 0; idx < size; idx++)                                     \
       {                                                                    \
           for (size_t elem_idx = 0; elem_idx < COUNT; elem_idx++)          \
@@ -41,7 +41,7 @@ int main()
     float **recv_bufs;
     size_t *recv_counts;
 
-    setenv("ICCL_VECTOR_ALLGATHERV", "1", 1);
+    setenv("CCL_VECTOR_ALLGATHERV", "1", 1);
 
     test_init();
 
@@ -54,11 +54,11 @@ int main()
         recv_counts[idx] = COUNT;
 
     coll_attr.to_cache = 1;
-    RUN_COLLECTIVE(iccl_allgatherv(send_buf, COUNT, recv_bufs, recv_counts, iccl_dtype_float, &coll_attr, NULL, &request),
+    RUN_COLLECTIVE(ccl_allgatherv(send_buf, COUNT, recv_bufs, recv_counts, ccl_dtype_float, &coll_attr, NULL, &request),
                    "persistent_allgatherv");
 
     coll_attr.to_cache = 0;
-    RUN_COLLECTIVE(iccl_allgatherv(send_buf, COUNT, recv_bufs, recv_counts, iccl_dtype_float, &coll_attr, NULL, &request),
+    RUN_COLLECTIVE(ccl_allgatherv(send_buf, COUNT, recv_bufs, recv_counts, ccl_dtype_float, &coll_attr, NULL, &request),
                    "regular_allgatherv");
 
     for (idx = 0; idx < size; idx++)

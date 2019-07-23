@@ -8,34 +8,34 @@ class recv_entry : public sched_entry
 {
 public:
     recv_entry() = delete;
-    recv_entry(iccl_sched* sched,
-               iccl_buffer buf,
+    recv_entry(ccl_sched* sched,
+               ccl_buffer buf,
                size_t cnt,
-               iccl_datatype_internal_t dtype,
+               ccl_datatype_internal_t dtype,
                size_t src,
-               iccl_op_id_t op_id) :
+               ccl_op_id_t op_id) :
         sched_entry(sched), buf(buf), cnt(cnt), dtype(dtype), src(src), op_id(op_id)
     {
         LOG_DEBUG("creating ", name(), " entry");
-        pfields.add_available(iccl_sched_entry_field_buf);
-        pfields.add_available(iccl_sched_entry_field_cnt);
+        pfields.add_available(ccl_sched_entry_field_buf);
+        pfields.add_available(ccl_sched_entry_field_cnt);
     }
 
     void start_derived()
     {
         atl_tag = global_data.atl_tag->create(sched->coll_param.comm->id(), src, sched->sched_id, op_id);
-        size_t bytes = cnt * iccl_datatype_get_size(dtype);
+        size_t bytes = cnt * ccl_datatype_get_size(dtype);
         LOG_DEBUG("RECV entry src ", src, ", tag ", atl_tag, ", req ", &req, ", bytes ", bytes);
 
         atl_status_t atl_status = atl_comm_recv(sched->bin->get_comm_ctx(), buf.get_ptr(bytes),
                                                 bytes, src, atl_tag, &req);
         if (unlikely(atl_status != atl_status_success))
         {
-            ICCL_THROW("RECV entry failed. atl_status: ", atl_status_to_str(atl_status));
+            CCL_THROW("RECV entry failed. atl_status: ", atl_status_to_str(atl_status));
         }
         else
         {
-            status = iccl_sched_entry_status_started;
+            status = ccl_sched_entry_status_started;
         }
     }
 
@@ -46,22 +46,22 @@ public:
 
         if (unlikely(atl_status != atl_status_success))
         {
-            ICCL_THROW("RECV entry failed. atl_status: ", atl_status_to_str(atl_status));
+            CCL_THROW("RECV entry failed. atl_status: ", atl_status_to_str(atl_status));
         }
 
         if (req_status)
         {
-            status = iccl_sched_entry_status_complete;
+            status = ccl_sched_entry_status_complete;
         }
     }
 
-    void* get_field_ptr(iccl_sched_entry_field_id id)
+    void* get_field_ptr(ccl_sched_entry_field_id id)
     {
         switch (id)
         {
-            case iccl_sched_entry_field_buf: return &buf;
-            case iccl_sched_entry_field_cnt: return &cnt;
-            default: ICCL_FATAL("unexpected id ", id);
+            case ccl_sched_entry_field_buf: return &buf;
+            case ccl_sched_entry_field_cnt: return &cnt;
+            default: CCL_FATAL("unexpected id ", id);
         }
     }
 
@@ -73,23 +73,23 @@ public:
 protected:
     void dump_detail(std::stringstream& str) const
     {
-        iccl_logger::format(str,
-                            "dt ", iccl_datatype_get_name(dtype),
-                            ", cnt ", cnt,
-                            ", buf ", buf,
-                            ", src ", src,
-                            ", atl_tag ", atl_tag,
-                            ", comm_id ", sched->coll_param.comm->id(),
-                            ", req ", &req,
-                            "\n");
+        ccl_logger::format(str,
+                           "dt ", ccl_datatype_get_name(dtype),
+                           ", cnt ", cnt,
+                           ", buf ", buf,
+                           ", src ", src,
+                           ", atl_tag ", atl_tag,
+                           ", comm_id ", sched->coll_param.comm->id(),
+                           ", req ", &req,
+                           "\n");
     }
 
 private:
-    iccl_buffer buf;
+    ccl_buffer buf;
     size_t cnt;
-    iccl_datatype_internal_t dtype;
+    ccl_datatype_internal_t dtype;
     size_t src;
-    iccl_op_id_t op_id = 0;
+    ccl_op_id_t op_id = 0;
     uint64_t atl_tag{};
     atl_req_t req{};
 };

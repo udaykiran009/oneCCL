@@ -11,12 +11,12 @@
               else buf[idx] = 0.0;                                         \
           }                                                                \
           t1 = when();                                                     \
-          ICCL_CALL(start_cmd);                                            \
-          ICCL_CALL(iccl_wait(request));                                   \
+          CCL_CALL(start_cmd);                                             \
+          CCL_CALL(ccl_wait(request));                                     \
           t2 = when();                                                     \
           t += (t2 - t1);                                                  \
       }                                                                    \
-      iccl_barrier(NULL);                                                  \
+      ccl_barrier(NULL);                                                   \
       for (idx = 0; idx < COUNT; idx++)                                    \
       {                                                                    \
           if (buf[idx] != idx)                                             \
@@ -37,11 +37,11 @@ int main()
     test_init();
 
     coll_attr.to_cache = 1;
-    RUN_COLLECTIVE(iccl_bcast(buf, COUNT, iccl_dtype_float, COLL_ROOT, &coll_attr, NULL, &request),
+    RUN_COLLECTIVE(ccl_bcast(buf, COUNT, ccl_dtype_float, COLL_ROOT, &coll_attr, NULL, &request),
                    "persistent_bcast");
 
     coll_attr.to_cache = 0;
-    RUN_COLLECTIVE(iccl_bcast(buf, COUNT, iccl_dtype_float, COLL_ROOT, &coll_attr, NULL, &request),
+    RUN_COLLECTIVE(ccl_bcast(buf, COUNT, ccl_dtype_float, COLL_ROOT, &coll_attr, NULL, &request),
                    "regular_bcast");
 
     test_finalize();

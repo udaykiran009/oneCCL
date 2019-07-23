@@ -24,12 +24,12 @@ target_compile_definitions(kube-objects PRIVATE HAVE_UNISTD_H HAVE_STDLIB_H HAVE
 add_library(kube SHARED $<TARGET_OBJECTS:kube-objects>)
 target_include_directories(kube PUBLIC ${COMMON_KUBE_INC_DIRS})
 set_target_properties(kube PROPERTIES VERSION 1 SOVERSION 1.0)
-set_target_properties(kube PROPERTIES LIBRARY_OUTPUT_DIRECTORY ${ICCL_BUILD_DIR})
+set_target_properties(kube PROPERTIES LIBRARY_OUTPUT_DIRECTORY ${CCL_BUILD_DIR})
 
-install(TARGETS kube LIBRARY DESTINATION ${ICCL_INSTALL_LIB})
+install(TARGETS kube LIBRARY DESTINATION ${CCL_INSTALL_LIB})
 
 #static lib
 add_library(kube-static STATIC $<TARGET_OBJECTS:kube-objects>)
 set_target_properties(kube-static PROPERTIES OUTPUT_NAME kube)
-set_target_properties(kube-static PROPERTIES ARCHIVE_OUTPUT_DIRECTORY ${ICCL_BUILD_DIR})
-install(TARGETS kube-static ARCHIVE DESTINATION ${ICCL_INSTALL_LIB})
+set_target_properties(kube-static PROPERTIES ARCHIVE_OUTPUT_DIRECTORY ${CCL_BUILD_DIR})
+install(TARGETS kube-static ARCHIVE DESTINATION ${CCL_INSTALL_LIB})

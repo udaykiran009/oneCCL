@@ -6,8 +6,8 @@ class function_entry : public sched_entry
 {
 public:
     function_entry() = delete;
-    function_entry(iccl_sched* sched,
-                   iccl_sched_entry_function_t fn,
+    function_entry(ccl_sched* sched,
+                   ccl_sched_entry_function_t fn,
                    const void* ctx) :
         sched_entry(sched), fn(fn), ctx(ctx)
     {
@@ -17,7 +17,7 @@ public:
     void start_derived()
     {
         fn(ctx);
-        status = iccl_sched_entry_status_complete;
+        status = ccl_sched_entry_status_complete;
     }
 
     const char* name() const
@@ -28,13 +28,13 @@ public:
 protected:
     void dump_detail(std::stringstream& str) const
     {
-        iccl_logger::format(str,
-                            "fn ", (void*)(fn),
-                            ", ctx ", ctx,
-                            "\n");
+        ccl_logger::format(str,
+                           "fn ", (void*)(fn),
+                           ", ctx ", ctx,
+                           "\n");
     }
 
 private:
-    iccl_sched_entry_function_t fn;
+    ccl_sched_entry_function_t fn;
     const void* ctx;
 };

@@ -1,54 +1,54 @@
 #include "sched/sched_queue.hpp"
 #include "common/env/env.hpp"
 
-void iccl_sched_bin::add(iccl_sched* sched)
+void ccl_sched_bin::add(ccl_sched* sched)
 {
-    if (env_data.priority_mode != iccl_priority_none)
+    if (env_data.priority_mode != ccl_priority_none)
     {
-        ICCL_ASSERT(sched->coll_attr.priority == priority,
+        CCL_ASSERT(sched->coll_attr.priority == priority,
             "unexpected sched priority ", sched->coll_attr.priority,
             " expected ", priority);
     }
-    ICCL_ASSERT(sched);
+    CCL_ASSERT(sched);
     sched_list.add(sched);
 }
 
-size_t iccl_sched_bin::erase(size_t idx)
+size_t ccl_sched_bin::erase(size_t idx)
 {
-    iccl_sched* sched = sched_list.get(idx);
-    ICCL_ASSERT(sched);
+    ccl_sched* sched = sched_list.get(idx);
+    CCL_ASSERT(sched);
     sched->bin = nullptr;
     return sched_list.erase(idx);
 }
 
-iccl_sched_queue::iccl_sched_queue(std::vector<atl_comm_t*> comm_ctxs)
+ccl_sched_queue::ccl_sched_queue(std::vector<atl_comm_t*> comm_ctxs)
     : comm_ctxs(comm_ctxs)
 {
     LOG_DEBUG("created sched_queue, comm_ctxs count ",  comm_ctxs.size(),
               ", comm_ctxs[0] ", comm_ctxs[0]);
 
-    if (env_data.priority_mode != iccl_priority_none)
+    if (env_data.priority_mode != ccl_priority_none)
     {
-        ICCL_ASSERT(comm_ctxs.size() == ICCL_PRIORITY_BUCKET_COUNT,
+        CCL_ASSERT(comm_ctxs.size() == CCL_PRIORITY_BUCKET_COUNT,
             "unexpected comm_cxt count ", comm_ctxs.size(), ", expected ",
-            ICCL_PRIORITY_BUCKET_COUNT);
+            CCL_PRIORITY_BUCKET_COUNT);
     }
     else
-        ICCL_ASSERT(!comm_ctxs.empty());
+        CCL_ASSERT(!comm_ctxs.empty());
 }
 
-iccl_sched_queue::~iccl_sched_queue()
+ccl_sched_queue::~ccl_sched_queue()
 {
-    ICCL_ASSERT(bins.empty(),
+    CCL_ASSERT(bins.empty(),
         "unexpected bins size ", bins.size(), ", expected 0");
 
-    ICCL_ASSERT(max_priority == 0,
+    CCL_ASSERT(max_priority == 0,
         "unexpected max_priority ", max_priority, ", expected 0");
 
-    ICCL_ASSERT(!cached_max_priority_bin);
+    CCL_ASSERT(!cached_max_priority_bin);
 }
 
-void iccl_sched_queue::add(iccl_sched* sched)
+void ccl_sched_queue::add(ccl_sched* sched)
 {
     std::lock_guard<sched_queue_lock_t> lock{guard};
 
@@ -58,22 +58,22 @@ void iccl_sched_queue::add(iccl_sched* sched)
         add_internal(sched);
 }
 
-void iccl_sched_queue::add_internal(iccl_sched* sched)
+void ccl_sched_queue::add_internal(ccl_sched* sched)
 {
     size_t priority = sched->get_priority();
-    if (env_data.priority_mode != iccl_priority_none)
+    if (env_data.priority_mode != ccl_priority_none)
     {
-        if (sched->coll_param.ctype == iccl_coll_barrier)
+        if (sched->coll_param.ctype == ccl_coll_barrier)
         {
             priority = max_priority;
             sched->coll_attr.priority = priority;
         }
     }
-    ICCL_ASSERT(sched);
+    CCL_ASSERT(sched);
 
     LOG_DEBUG("sched ", sched, ", priority ", priority);
 
-    iccl_sched_bin* bin = nullptr;
+    ccl_sched_bin* bin = nullptr;
     sched_bin_list_t::iterator it = bins.find(priority);
     if (it != bins.end())
     {
@@ -84,17 +84,17 @@ void iccl_sched_queue::add_internal(iccl_sched* sched)
     else
     {
         atl_comm_t* comm_ctx = nullptr;
-        if (env_data.priority_mode == iccl_priority_none)
+        if (env_data.priority_mode == ccl_priority_none)
             comm_ctx = comm_ctxs[0];
         else
         {
-            size_t comm_idx = (priority / ICCL_PRIORITY_BUCKET_SIZE) % ICCL_PRIORITY_BUCKET_COUNT;
+            size_t comm_idx = (priority / CCL_PRIORITY_BUCKET_SIZE) % CCL_PRIORITY_BUCKET_COUNT;
             comm_ctx = comm_ctxs[comm_idx];
             LOG_DEBUG("priority ", priority, ", comm_idx ", comm_idx);
         }
 
-        auto emplace_result = bins.emplace(priority, iccl_sched_bin{this, comm_ctx, priority});
-        ICCL_ASSERT(emplace_result.second);
+        auto emplace_result = bins.emplace(priority, ccl_sched_bin{this, comm_ctx, priority});
+        CCL_ASSERT(emplace_result.second);
         bin = &(emplace_result.first->second);
         bin->add(sched);
         if (priority >= max_priority)
@@ -104,17 +104,17 @@ void iccl_sched_queue::add_internal(iccl_sched* sched)
         }
         LOG_DEBUG("didn't find bin, emplaced new one, max_priority ", max_priority);
     }
-    ICCL_ASSERT(bin);
+    CCL_ASSERT(bin);
 
     sched->bin = bin;
     sched->queue = this;
 }
 
-size_t iccl_sched_queue::erase(iccl_sched_bin* bin, size_t idx)
+size_t ccl_sched_queue::erase(ccl_sched_bin* bin, size_t idx)
 {
-    ICCL_ASSERT(bin);
-    iccl_sched* sched = bin->get(idx);
-    ICCL_ASSERT(sched);
+    CCL_ASSERT(bin);
+    ccl_sched* sched = bin->get(idx);
+    CCL_ASSERT(sched);
 
     LOG_DEBUG("queue ", this, ", bin ", bin, ", sched ", sched);
     size_t bin_priority = bin->get_priority();
@@ -148,15 +148,15 @@ size_t iccl_sched_queue::erase(iccl_sched_bin* bin, size_t idx)
     return next_idx;
 }
 
-iccl_sched_bin* iccl_sched_queue::peek(size_t& bin_size)
+ccl_sched_bin* ccl_sched_queue::peek(size_t& bin_size)
 {
     std::lock_guard<sched_queue_lock_t> lock{guard};
 
     while (!postponed_queue.empty())
     {
-        iccl_sched* sched = postponed_queue.front();
+        ccl_sched* sched = postponed_queue.front();
         add_internal(sched);
-        iccl_sched_progress(sched);
+        ccl_sched_progress(sched);
         postponed_queue.pop_front();
     }
     

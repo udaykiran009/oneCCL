@@ -1,10 +1,10 @@
-#builds iccl
+#builds ccl
 
 add_subdirectory(atl)
 
-set(ICCL_SRC
-    iccl.cpp
-    iccl_cpp_api.cpp
+set(CCL_SRC
+    ccl.cpp
+    ccl_cpp_api.cpp
     atl/atl.cpp
     coll/coll.cpp
     coll/allreduce.cpp
@@ -35,7 +35,7 @@ set(ICCL_SRC
     common/global/global.cpp
     common/log/log.cpp)
 
-set(ICCL_INC_DIRS
+set(CCL_INC_DIRS
     ${PROJECT_SOURCE_DIR}/include
     ${PROJECT_SOURCE_DIR}/src)
 
@@ -43,32 +43,32 @@ set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -pthread")
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -pthread")
 
 #special library that holds objects only
-add_library(iccl-objects OBJECT ${ICCL_SRC})
-set_target_properties(iccl-objects PROPERTIES POSITION_INDEPENDENT_CODE 1)
-target_compile_definitions(iccl-objects PRIVATE PT_LOCK_SPIN=1)
-target_compile_definitions(iccl-objects PRIVATE ATL_TRANSPORT_DL_DIR=\"${ICCL_BUILD_DIR}\")
-target_include_directories(iccl-objects PRIVATE ${ICCL_INC_DIRS})
+add_library(ccl-objects OBJECT ${CCL_SRC})
+set_target_properties(ccl-objects PROPERTIES POSITION_INDEPENDENT_CODE 1)
+target_compile_definitions(ccl-objects PRIVATE PT_LOCK_SPIN=1)
+target_compile_definitions(ccl-objects PRIVATE ATL_TRANSPORT_DL_DIR=\"${CCL_BUILD_DIR}\")
+target_include_directories(ccl-objects PRIVATE ${CCL_INC_DIRS})
 
 #shared library
-add_library(iccl SHARED $<TARGET_OBJECTS:iccl-objects>)
-target_include_directories(iccl PUBLIC ${ICCL_INC_DIRS})
-target_link_libraries(iccl PUBLIC dl pthread)
-set_target_properties(iccl PROPERTIES LIBRARY_OUTPUT_DIRECTORY ${ICCL_BUILD_DIR})
-install(TARGETS iccl LIBRARY DESTINATION ${ICCL_INSTALL_LIB})
+add_library(ccl SHARED $<TARGET_OBJECTS:ccl-objects>)
+target_include_directories(ccl PUBLIC ${CCL_INC_DIRS})
+target_link_libraries(ccl PUBLIC dl pthread)
+set_target_properties(ccl PROPERTIES LIBRARY_OUTPUT_DIRECTORY ${CCL_BUILD_DIR})
+install(TARGETS ccl LIBRARY DESTINATION ${CCL_INSTALL_LIB})
 
 #static library
-add_library(iccl-static STATIC $<TARGET_OBJECTS:iccl-objects>)
-set_target_properties(iccl-static PROPERTIES OUTPUT_NAME iccl)
-set_target_properties(iccl-static PROPERTIES ARCHIVE_OUTPUT_DIRECTORY ${ICCL_BUILD_DIR})
-install(TARGETS iccl-static ARCHIVE DESTINATION ${ICCL_INSTALL_LIB})
+add_library(ccl-static STATIC $<TARGET_OBJECTS:ccl-objects>)
+set_target_properties(ccl-static PROPERTIES OUTPUT_NAME ccl)
+set_target_properties(ccl-static PROPERTIES ARCHIVE_OUTPUT_DIRECTORY ${CCL_BUILD_DIR})
+install(TARGETS ccl-static ARCHIVE DESTINATION ${CCL_INSTALL_LIB})
 
 #headers installation
 install(DIRECTORY ${PROJECT_SOURCE_DIR}/include/
-        DESTINATION ${ICCL_INSTALL_INCLUDE})
+        DESTINATION ${CCL_INSTALL_INCLUDE})
 
 #mpi & ofi rt
 file(GLOB mpi_bins "${PROJECT_SOURCE_DIR}/mpirt/bin/*")
-install(PROGRAMS ${mpi_bins} DESTINATION ${ICCL_INSTALL_BIN})
+install(PROGRAMS ${mpi_bins} DESTINATION ${CCL_INSTALL_BIN})
 
 install(DIRECTORY ${PROJECT_SOURCE_DIR}/ofi_rt/lib/
-        DESTINATION ${ICCL_INSTALL_LIB})
+        DESTINATION ${CCL_INSTALL_LIB})

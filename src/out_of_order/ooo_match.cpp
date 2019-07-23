@@ -8,27 +8,27 @@ struct ooo_runtime_info
 {
     size_t match_id_size_buffer;
     //root ranks reserved id and bcasts it to other ranks
-    iccl_comm_id_t reserved_id;
+    ccl_comm_id_t reserved_id;
     //preallocated and filled with actual data on the root rank
     //allocated after the 1st bcast on other ranks
     void* match_id_name;
-    iccl_sched* sched;
+    ccl_sched* sched;
     out_of_order::ooo_match* ooo_handler;
 };
 
-out_of_order::ooo_match::ooo_match(iccl_executor& exec,
-                                   iccl_comm_id_storage& comm_ids)
+out_of_order::ooo_match::ooo_match(ccl_executor& exec,
+                                   ccl_comm_id_storage& comm_ids)
     : executor(exec), comm_ids(comm_ids)
 {
     LOG_INFO("Configuring out-of-order collectives support");
 
     auto id = std::unique_ptr<comm_id>(new comm_id(comm_ids, true));
-    service_comm = std::make_shared<iccl_comm>(executor.proc_idx, executor.proc_count, std::move(id));
+    service_comm = std::make_shared<ccl_comm>(executor.proc_idx, executor.proc_count, std::move(id));
 }
 
-iccl_comm* out_of_order::ooo_match::get_user_comm(const std::string& match_id)
+ccl_comm* out_of_order::ooo_match::get_user_comm(const std::string& match_id)
 {
-    std::lock_guard<iccl_spinlock> lock{postponed_user_scheds_guard};
+    std::lock_guard<ccl_spinlock> lock{postponed_user_scheds_guard};
 
     //return communicator for the first (and may be only) schedule.
     auto first_schedule = postponed_user_scheds.find(match_id);
@@ -39,7 +39,7 @@ iccl_comm* out_of_order::ooo_match::get_user_comm(const std::string& match_id)
     return nullptr;
 }
 
-void out_of_order::ooo_match::postpone(iccl_sched* sched)
+void out_of_order::ooo_match::postpone(ccl_sched* sched)
 {
     const std::string& match_id = sched->coll_attr.match_id;
 
@@ -61,7 +61,7 @@ void out_of_order::ooo_match::postpone(iccl_sched* sched)
     else
     {
         //3. postpone this schedule
-        LOG_INFO("postpone sched ", iccl_coll_type_to_str(sched->coll_param.ctype), " ", sched, " for match_id ",
+        LOG_INFO("postpone sched ", ccl_coll_type_to_str(sched->coll_param.ctype), " ", sched, " for match_id ",
                  match_id);
         postpone_user_sched(sched);
     }
@@ -105,12 +105,12 @@ void out_of_order::ooo_match::bcast_match_id(const std::string& match_id)
         return;
     }
 
-    iccl_coll_param bcast_param{};
-    bcast_param.ctype = iccl_coll_none;
-    bcast_param.dtype = iccl_dtype_internal_char;
+    ccl_coll_param bcast_param{};
+    bcast_param.ctype = ccl_coll_none;
+    bcast_param.dtype = ccl_dtype_internal_char;
     bcast_param.comm = service_comm.get();
-    auto bcast_sched = new iccl_sched(bcast_param);
-    bcast_sched->internal_type = iccl_sched_internal_ooo;
+    auto bcast_sched = new ccl_sched(bcast_param);
+    bcast_sched->internal_type = ccl_sched_internal_ooo;
 
     LOG_DEBUG("Building service sched ", bcast_sched, ", req ", bcast_sched->req);
 
@@ -121,7 +121,7 @@ void out_of_order::ooo_match::bcast_match_id(const std::string& match_id)
 
     if (service_comm->rank() == 0)
     {
-        ICCL_THROW_IF_NOT(!match_id.empty(), "root rank can't bcast empty match_id");
+        CCL_THROW_IF_NOT(!match_id.empty(), "root rank can't bcast empty match_id");
         ctx->match_id_size_buffer = match_id.length();
         ctx->match_id_name = bcast_sched->alloc_buffer(ctx->match_id_size_buffer + 1).get_ptr();
         strncpy(static_cast<char*>(ctx->match_id_name), match_id.c_str(), ctx->match_id_size_buffer);
@@ -130,37 +130,37 @@ void out_of_order::ooo_match::bcast_match_id(const std::string& match_id)
     }
 
     entry_factory::make_coll_entry(bcast_sched,
-                                   iccl_coll_bcast,
-                                   iccl_buffer(), /* unused */
-                                   iccl_buffer(&ctx->match_id_size_buffer, sizeof(size_t)),
+                                   ccl_coll_bcast,
+                                   ccl_buffer(), /* unused */
+                                   ccl_buffer(&ctx->match_id_size_buffer, sizeof(size_t)),
                                    sizeof(size_t),
-                                   iccl_dtype_internal_char,
-                                   iccl_reduction_custom);
+                                   ccl_dtype_internal_char,
+                                   ccl_reduction_custom);
 
     bcast_sched->add_barrier();
 
     //2. broadcast match_id
     auto bcast_value_entry = entry_factory::make_coll_entry(bcast_sched,
-                                                            iccl_coll_bcast,
-                                                            iccl_buffer(), /* unused */
-                                                            iccl_buffer(), /* postponed */
+                                                            ccl_coll_bcast,
+                                                            ccl_buffer(), /* unused */
+                                                            ccl_buffer(), /* postponed */
                                                             0,             /* postponed */
-                                                            iccl_dtype_internal_char,
-                                                            iccl_reduction_custom);
+                                                            ccl_dtype_internal_char,
+                                                            ccl_reduction_custom);
 
     //update count field of match_id bcast entry
-    bcast_value_entry->set_field_fn(iccl_sched_entry_field_cnt, [](const void* ctx,
-                                                                   void* field) -> iccl_status_t
+    bcast_value_entry->set_field_fn(ccl_sched_entry_field_cnt, [](const void* ctx,
+                                                                   void* field) -> ccl_status_t
     {
         auto rt_info = static_cast<ooo_runtime_info*>(const_cast<void*>(ctx));
         auto bcast_size = static_cast<size_t*>(field);
         *bcast_size = rt_info->match_id_size_buffer;
-        return iccl_status_success;
+        return ccl_status_success;
     },
     ctx);
 
     //update buf field of match_id bcast entry
-    bcast_value_entry->set_field_fn(iccl_sched_entry_field_buf, [](const void* ctx,
+    bcast_value_entry->set_field_fn(ccl_sched_entry_field_buf, [](const void* ctx,
                                                                    void* field)
     {
         auto rt_info = static_cast<ooo_runtime_info*>(const_cast<void*>(ctx));
@@ -170,10 +170,10 @@ void out_of_order::ooo_match::bcast_match_id(const std::string& match_id)
             rt_info->match_id_name = rt_info->sched->alloc_buffer(rt_info->match_id_size_buffer).get_ptr();
         }
 
-        iccl_buffer* bcast_buffer = (iccl_buffer*)field;
+        ccl_buffer* bcast_buffer = (ccl_buffer*)field;
         bcast_buffer->set(rt_info->match_id_name, rt_info->match_id_size_buffer);
 
-        return iccl_status_success;
+        return ccl_status_success;
     },
     ctx);
 
@@ -181,22 +181,22 @@ void out_of_order::ooo_match::bcast_match_id(const std::string& match_id)
 
     //3. broadcast reserved id
     entry_factory::make_coll_entry(bcast_sched,
-                                   iccl_coll_bcast,
-                                   iccl_buffer(), /* unused */
-                                   iccl_buffer(&ctx->reserved_id,
-                                               sizeof(iccl_comm_id_t)),
-                                   sizeof(iccl_comm_id_t),
-                                   iccl_dtype_internal_char,
-                                   iccl_reduction_custom);
+                                   ccl_coll_bcast,
+                                   ccl_buffer(), /* unused */
+                                   ccl_buffer(&ctx->reserved_id,
+                                               sizeof(ccl_comm_id_t)),
+                                   sizeof(ccl_comm_id_t),
+                                   ccl_dtype_internal_char,
+                                   ccl_reduction_custom);
 
     bcast_sched->add_barrier();
 
     //4. create a communicator
-    entry_factory::make_function_entry(bcast_sched, [](const void* ctx) -> iccl_status_t
+    entry_factory::make_function_entry(bcast_sched, [](const void* ctx) -> ccl_status_t
     {
         auto ooo_ctx = static_cast<ooo_runtime_info*>(const_cast<void*>(ctx));
         ooo_ctx->ooo_handler->create_comm_and_run_sched(ooo_ctx);
-        return iccl_status_success;
+        return ccl_status_success;
     },
     ctx);
 
@@ -205,8 +205,8 @@ void out_of_order::ooo_match::bcast_match_id(const std::string& match_id)
     bcast_sched->start(&executor);
 }
 
-void out_of_order::ooo_match::update_comm_and_run(iccl_sched* sched,
-                                                  iccl_comm* comm)
+void out_of_order::ooo_match::update_comm_and_run(ccl_sched* sched,
+                                                  ccl_comm* comm)
 {
     sched->coll_param.comm = comm;
     for (size_t part_idx = 0; part_idx < sched->partial_scheds.size(); ++part_idx)
@@ -216,9 +216,9 @@ void out_of_order::ooo_match::update_comm_and_run(iccl_sched* sched,
     sched->start(&executor, false);
 }
 
-iccl_comm* out_of_order::ooo_match::get_comm(const std::string& match_id)
+ccl_comm* out_of_order::ooo_match::get_comm(const std::string& match_id)
 {
-    std::lock_guard<iccl_spinlock> lock(match_id_to_comm_map_guard);
+    std::lock_guard<ccl_spinlock> lock(match_id_to_comm_map_guard);
     auto comm = match_id_to_comm_map.find(match_id);
     if (comm != match_id_to_comm_map.end())
     {
@@ -230,9 +230,9 @@ iccl_comm* out_of_order::ooo_match::get_comm(const std::string& match_id)
 }
 
 void out_of_order::ooo_match::add_comm(std::string match_id,
-                                       std::shared_ptr<iccl_comm> comm)
+                                       std::shared_ptr<ccl_comm> comm)
 {
-    std::lock_guard<iccl_spinlock> lock(match_id_to_comm_map_guard);
+    std::lock_guard<ccl_spinlock> lock(match_id_to_comm_map_guard);
     if (match_id_to_comm_map.find(match_id) != match_id_to_comm_map.end())
     {
         LOG_ERROR("match_id ", match_id, " already exists");
@@ -243,24 +243,24 @@ void out_of_order::ooo_match::add_comm(std::string match_id,
 
 bool out_of_order::ooo_match::is_bcast_in_progress(const std::string& match_id)
 {
-    std::lock_guard<iccl_spinlock> lock{postponed_user_scheds_guard};
+    std::lock_guard<ccl_spinlock> lock{postponed_user_scheds_guard};
     return postponed_user_scheds.count(match_id) != 0;
 }
 
-void out_of_order::ooo_match::postpone_user_sched(iccl_sched* sched)
+void out_of_order::ooo_match::postpone_user_sched(ccl_sched* sched)
 {
-    std::lock_guard<iccl_spinlock> lock{postponed_user_scheds_guard};
+    std::lock_guard<ccl_spinlock> lock{postponed_user_scheds_guard};
     LOG_DEBUG("Storage contains ", postponed_user_scheds.count(sched->coll_attr.match_id), " entries for match_id ",
              sched->coll_attr.match_id);
     postponed_user_scheds.emplace(sched->coll_attr.match_id, sched);
 }
 
 void out_of_order::ooo_match::run_postponed(const std::string& match_id,
-                                            iccl_comm* match_id_comm)
+                                            ccl_comm* match_id_comm)
 {
-    ICCL_THROW_IF_NOT(match_id_comm, "incorrect comm");
+    CCL_THROW_IF_NOT(match_id_comm, "incorrect comm");
 
-    std::lock_guard<iccl_spinlock> lock{postponed_user_scheds_guard};
+    std::lock_guard<ccl_spinlock> lock{postponed_user_scheds_guard};
     auto scheds = postponed_user_scheds.equal_range(match_id);
 
     LOG_DEBUG("Found ", std::distance(scheds.first, scheds.second)," scheds for match_id ",
@@ -271,10 +271,10 @@ void out_of_order::ooo_match::run_postponed(const std::string& match_id,
         for (auto sched_it = scheds.first; sched_it != scheds.second; ++sched_it)
         {
             LOG_INFO("Running sched ", sched_it->second,
-                     ", type ", iccl_coll_type_to_str(sched_it->second->coll_param.ctype),
+                     ", type ", ccl_coll_type_to_str(sched_it->second->coll_param.ctype),
                      ",  for match_id %s", sched_it->first);
             //user who started postponed collective has already had a request object
-            iccl_sched* sched_obj = sched_it->second;
+            ccl_sched* sched_obj = sched_it->second;
             update_comm_and_run(sched_obj, match_id_comm);
         }
 

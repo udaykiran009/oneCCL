@@ -1,6 +1,6 @@
 #pragma once
 
-#include "iccl_types.hpp"
+#include "ccl_types.hpp"
 
 #include <iostream>
 #include <iomanip>
@@ -25,7 +25,7 @@
 
 constexpr size_t LOGGER_BUFFER_SIZE = 2048;
 
-enum class iccl_log_level
+enum class ccl_log_level
 {
     ERROR = 0,
     INFO,
@@ -36,22 +36,22 @@ enum class iccl_log_level
 /**
  * Wrapper over streambuf class to provide presistent buffer
  */
-class iccl_streambuf : public std::streambuf
+class ccl_streambuf : public std::streambuf
 {
 public:
-    explicit iccl_streambuf(size_t s) : size(s), buffer(new char[size])
+    explicit ccl_streambuf(size_t s) : size(s), buffer(new char[size])
     {
         reset();
     }
 
-    iccl_streambuf(const iccl_streambuf& other) = delete;
-    iccl_streambuf(iccl_streambuf&& other) = delete;
+    ccl_streambuf(const ccl_streambuf& other) = delete;
+    ccl_streambuf(ccl_streambuf&& other) = delete;
 
-    iccl_streambuf& operator=(const iccl_streambuf& other) = delete;
-    iccl_streambuf& operator=(iccl_streambuf&& other) = delete;
+    ccl_streambuf& operator=(const ccl_streambuf& other) = delete;
+    ccl_streambuf& operator=(ccl_streambuf&& other) = delete;
 
     friend std::ostream& operator<<(std::ostream& os,
-                                    iccl_streambuf& buf);
+                                    ccl_streambuf& buf);
 
 private:
     size_t size;
@@ -93,23 +93,23 @@ private:
  * To format base of digital values one can use std::dec, std::hex, std::oct as a parameter of logger interface
  * To set justification one can use std::left, std::right, std::internal as a parameter of logger interface
  */
-class iccl_logger
+class ccl_logger
 {
 public:
-    iccl_logger() :
+    ccl_logger() :
         streambuf(LOGGER_BUFFER_SIZE),
         out_stream(&streambuf),
         initial_flags(out_stream.flags())
     {
     }
 
-    iccl_logger(const iccl_logger& other) = delete;
-    iccl_logger(iccl_logger&& other) = delete;
+    ccl_logger(const ccl_logger& other) = delete;
+    ccl_logger(ccl_logger&& other) = delete;
 
-    iccl_logger& operator=(const iccl_logger& other) = delete;
-    iccl_logger& operator=(iccl_logger&& other) = delete;
+    ccl_logger& operator=(const ccl_logger& other) = delete;
+    ccl_logger& operator=(ccl_logger&& other) = delete;
 
-    static void set_log_level(iccl_log_level lvl)
+    static void set_log_level(ccl_log_level lvl)
     {
         level = lvl;
     }
@@ -118,7 +118,7 @@ public:
     void error(T&& first,
                Tpackage&& ... others)
     {
-        if (level >= iccl_log_level::ERROR)
+        if (level >= ccl_log_level::ERROR)
         {
             write_stream_wrapper(out_stream, std::cerr, "ERROR: ",
                                  std::forward<T>(first), std::forward<Tpackage>(others)...);
@@ -135,7 +135,7 @@ public:
     void info(T&& first,
               Tpackage&& ... others)
     {
-        if (level >= iccl_log_level::INFO)
+        if (level >= ccl_log_level::INFO)
         {
             write_stream_wrapper(out_stream, std::cout, std::forward<T>(first),
                                  std::forward<Tpackage>(others)...);
@@ -146,7 +146,7 @@ public:
     void debug(T&& first,
                Tpackage&& ... others)
     {
-        if (level >= iccl_log_level::DEBUG)
+        if (level >= ccl_log_level::DEBUG)
         {
             write_stream_wrapper(out_stream, std::cout, std::forward<T>(first),
                                  std::forward<Tpackage>(others)...);
@@ -157,7 +157,7 @@ public:
     void trace(T&& first,
                Tpackage&& ... others)
     {
-        if (level >= iccl_log_level::TRACE)
+        if (level >= ccl_log_level::TRACE)
         {
             write_stream_wrapper(out_stream, std::cout, std::forward<T>(first),
                                  std::forward<Tpackage>(others)...);
@@ -180,9 +180,9 @@ public:
 
 
 private:
-    static iccl_log_level level;
+    static ccl_log_level level;
 
-    iccl_streambuf streambuf;
+    ccl_streambuf streambuf;
     std::ostream out_stream;
     std::ios::fmtflags initial_flags;
 
@@ -224,7 +224,7 @@ private:
     static void write_backtrace(std::ostream& str);
 };
 
-extern thread_local iccl_logger logger;
+extern thread_local ccl_logger logger;
 
 #define LOG_ERROR(...) logger.error(__FILENAME__,":", __FUNCTION__, ":", __LINE__, " ", ##__VA_ARGS__);
 #define LOG_INFO(...) logger.info( __FUNCTION__, ":", __LINE__, " ", ##__VA_ARGS__);
@@ -234,7 +234,7 @@ extern thread_local iccl_logger logger;
 /**
  * Macro to handle critical unrecoverable error. Can be used in destructors
  */
-#define ICCL_FATAL(...)                                                 \
+#define CCL_FATAL(...)                                                 \
 do                                                                      \
 {                                                                       \
     LOG_ERROR(__VA_ARGS__)                                              \
@@ -243,40 +243,40 @@ do                                                                      \
 
 
 /**
- * Helper macro to throw iccl::iccl_error exception. Must never be used in destructors
+ * Helper macro to throw ccl::ccl_error exception. Must never be used in destructors
  */
-#define ICCL_THROW(...)                                                              \
+#define CCL_THROW(...)                                                              \
 do                                                                                   \
 {                                                                                    \
     std::stringstream throw_msg_ss;                                                  \
-    iccl_logger::format(throw_msg_ss, __FILENAME__, ":", __FUNCTION__, ":", __LINE__,\
+    ccl_logger::format(throw_msg_ss, __FILENAME__, ":", __FUNCTION__, ":", __LINE__,\
         ": EXCEPTION: " , ##__VA_ARGS__);                                            \
-    throw iccl::iccl_error(throw_msg_ss.str());                                      \
+    throw ccl::ccl_error(throw_msg_ss.str());                                      \
 } while(0)
 
 /**
- * Helper macro to throw iccl::iccl_error exception if provided condition is not true.
+ * Helper macro to throw ccl::ccl_error exception if provided condition is not true.
  * Must never be used in destructors
  */
-#define ICCL_THROW_IF_NOT(cond, ...)                                              \
+#define CCL_THROW_IF_NOT(cond, ...)                                              \
 do                                                                                \
 {                                                                                 \
     if (!(cond))                                                                  \
     {                                                                             \
         LOG_ERROR("condition ", #cond, " failed\n", ##__VA_ARGS__);               \
-        ICCL_THROW(__VA_ARGS__);                                                  \
+        CCL_THROW(__VA_ARGS__);                                                  \
     }                                                                             \
 } while(0)
 
 
-#define ICCL_UNUSED(expr) do { (void)sizeof(expr); } while(0)
+#define CCL_UNUSED(expr) do { (void)sizeof(expr); } while(0)
 
 #ifdef ENABLE_DEBUG
 
 /**
  * Raises failed assertion if provided condition is not true. Works in debug build only
  */
-#define ICCL_ASSERT(cond, ...)                                                          \
+#define CCL_ASSERT(cond, ...)                                                          \
 do                                                                                      \
 {                                                                                       \
     if (!(cond))                                                                        \
@@ -291,6 +291,6 @@ do                                                                              
 /**
  * Raises failed assertion if provided condition is not true. Works in debug build only
  */
-#define ICCL_ASSERT(cond, ...) ICCL_UNUSED(cond)
+#define CCL_ASSERT(cond, ...) CCL_UNUSED(cond)
 
 #endif

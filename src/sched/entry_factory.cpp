@@ -24,12 +24,12 @@
 #include "sched/entry/coll/reduce_entry.hpp"
 #include "sched/entry/coll/barrier_entry.hpp"
 
-std::shared_ptr<sched_entry> entry_factory::make_send_entry(iccl_sched* sched,
-                                                            const iccl_buffer buf,
+std::shared_ptr<sched_entry> entry_factory::make_send_entry(ccl_sched* sched,
+                                                            const ccl_buffer buf,
                                                             size_t cnt,
-                                                            iccl_datatype_internal_t dtype,
+                                                            ccl_datatype_internal_t dtype,
                                                             size_t dst,
-                                                            iccl_op_id_t op_id)
+                                                            ccl_op_id_t op_id)
 {
     auto e = std::make_shared<send_entry>(sched, buf, cnt, dtype,
                                           sched->coll_param.comm->get_global_rank(dst), global_data.comm->rank(),
@@ -38,23 +38,23 @@ std::shared_ptr<sched_entry> entry_factory::make_send_entry(iccl_sched* sched,
     return e;
 }
 
-std::shared_ptr<sched_entry> entry_factory::make_recv_entry(iccl_sched* sched,
-                                                            iccl_buffer buf,
+std::shared_ptr<sched_entry> entry_factory::make_recv_entry(ccl_sched* sched,
+                                                            ccl_buffer buf,
                                                             size_t cnt,
-                                                            iccl_datatype_internal_t dtype,
+                                                            ccl_datatype_internal_t dtype,
                                                             size_t src,
-                                                            iccl_op_id_t op_id)
+                                                            ccl_op_id_t op_id)
 {
     auto e = std::make_shared<recv_entry>(sched, buf, cnt, dtype, sched->coll_param.comm->get_global_rank(src), op_id);
     sched->add_entry(e);
     return e;
 }
 
-std::shared_ptr<sched_entry> entry_factory::make_write_entry(iccl_sched* sched,
-                                                             iccl_buffer src_buf,
+std::shared_ptr<sched_entry> entry_factory::make_write_entry(ccl_sched* sched,
+                                                             ccl_buffer src_buf,
                                                              atl_mr_t* src_mr,
                                                              size_t cnt,
-                                                             iccl_datatype_internal_t dtype,
+                                                             ccl_datatype_internal_t dtype,
                                                              size_t dst,
                                                              atl_mr_t* dst_mr,
                                                              size_t dst_buf_offset)
@@ -65,13 +65,13 @@ std::shared_ptr<sched_entry> entry_factory::make_write_entry(iccl_sched* sched,
     return e;
 }
 
-std::shared_ptr<sched_entry> entry_factory::make_reduce_local_entry(iccl_sched* sched,
-                                                                    const iccl_buffer in_buf,
+std::shared_ptr<sched_entry> entry_factory::make_reduce_local_entry(ccl_sched* sched,
+                                                                    const ccl_buffer in_buf,
                                                                     size_t in_cnt,
-                                                                    iccl_buffer inout_buf,
+                                                                    ccl_buffer inout_buf,
                                                                     size_t* out_cnt,
-                                                                    iccl_datatype_internal_t dtype,
-                                                                    iccl_reduction_t reduction_op)
+                                                                    ccl_datatype_internal_t dtype,
+                                                                    ccl_reduction_t reduction_op)
 {
     auto e = std::make_shared<reduce_local_entry>(sched, in_buf, in_cnt, inout_buf,
                                                   out_cnt, dtype, reduction_op);
@@ -79,15 +79,15 @@ std::shared_ptr<sched_entry> entry_factory::make_reduce_local_entry(iccl_sched* 
     return e;
 }
 
-std::shared_ptr<sched_entry> entry_factory::make_recv_reduce_entry(iccl_sched* sched,
-                                                                   iccl_buffer inout_buf,
+std::shared_ptr<sched_entry> entry_factory::make_recv_reduce_entry(ccl_sched* sched,
+                                                                   ccl_buffer inout_buf,
                                                                    size_t in_cnt,
                                                                    size_t* out_cnt,
-                                                                   iccl_datatype_internal_t dtype,
-                                                                   iccl_reduction_t reduction_op,
+                                                                   ccl_datatype_internal_t dtype,
+                                                                   ccl_reduction_t reduction_op,
                                                                    size_t src,
-                                                                   iccl_buffer comm_buf,
-                                                                   iccl_op_id_t op_id)
+                                                                   ccl_buffer comm_buf,
+                                                                   ccl_op_id_t op_id)
 {
     auto e = std::make_shared<recv_reduce_entry>(sched, inout_buf, in_cnt, out_cnt, dtype, reduction_op,
                                                  sched->coll_param.comm->get_global_rank(src), comm_buf, op_id);
@@ -95,18 +95,18 @@ std::shared_ptr<sched_entry> entry_factory::make_recv_reduce_entry(iccl_sched* s
     return e;
 }
 
-std::shared_ptr<sched_entry> entry_factory::make_copy_entry(iccl_sched* sched,
-                                                            const iccl_buffer in_buf,
-                                                            iccl_buffer out_buf,
+std::shared_ptr<sched_entry> entry_factory::make_copy_entry(ccl_sched* sched,
+                                                            const ccl_buffer in_buf,
+                                                            ccl_buffer out_buf,
                                                             size_t cnt,
-                                                            iccl_datatype_internal_t dtype)
+                                                            ccl_datatype_internal_t dtype)
 {
     auto e = std::make_shared<copy_entry>(sched, in_buf, out_buf, cnt, dtype);
     sched->add_entry(e);
     return e;
 }
 
-std::shared_ptr<sched_entry> entry_factory::make_sync_entry(iccl_sched* sched,
+std::shared_ptr<sched_entry> entry_factory::make_sync_entry(ccl_sched* sched,
                                                             std::shared_ptr<sync_object> sync_obj)
 {
     auto e = std::make_shared<sync_entry>(sched, sync_obj);
@@ -114,13 +114,13 @@ std::shared_ptr<sched_entry> entry_factory::make_sync_entry(iccl_sched* sched,
     return e;
 }
 
-std::shared_ptr<sched_entry> entry_factory::make_coll_entry(iccl_sched* sched,
-                                                            iccl_coll_type coll_type,
-                                                            const iccl_buffer send_buf,
-                                                            iccl_buffer recv_buf,
+std::shared_ptr<sched_entry> entry_factory::make_coll_entry(ccl_sched* sched,
+                                                            ccl_coll_type coll_type,
+                                                            const ccl_buffer send_buf,
+                                                            ccl_buffer recv_buf,
                                                             size_t cnt,
-                                                            iccl_datatype_internal_t dtype,
-                                                            iccl_reduction_t reduction_op,
+                                                            ccl_datatype_internal_t dtype,
+                                                            ccl_reduction_t reduction_op,
                                                             size_t root)
 {
     auto e = std::make_shared<coll_entry>(sched, coll_type, send_buf, recv_buf,
@@ -129,14 +129,14 @@ std::shared_ptr<sched_entry> entry_factory::make_coll_entry(iccl_sched* sched,
     return e;
 }
 
-std::shared_ptr<sched_entry> entry_factory::make_prologue_entry(iccl_sched* sched,
-                                                                iccl_prologue_fn_t fn,
-                                                                const iccl_buffer in_buf,
+std::shared_ptr<sched_entry> entry_factory::make_prologue_entry(ccl_sched* sched,
+                                                                ccl_prologue_fn_t fn,
+                                                                const ccl_buffer in_buf,
                                                                 size_t in_cnt,
-                                                                iccl_datatype_internal_t in_dtype,
+                                                                ccl_datatype_internal_t in_dtype,
                                                                 void** out_buf,
                                                                 size_t* out_cnt,
-                                                                iccl_datatype_t* out_dtype,
+                                                                ccl_datatype_t* out_dtype,
                                                                 size_t* out_dtype_size)
 {
     auto e = std::make_shared<prologue_entry>(sched, fn, in_buf, in_cnt, in_dtype,
@@ -145,14 +145,14 @@ std::shared_ptr<sched_entry> entry_factory::make_prologue_entry(iccl_sched* sche
     return e;
 }
 
-std::shared_ptr<sched_entry> entry_factory::make_epilogue_entry(iccl_sched* sched,
-                                                                iccl_epilogue_fn_t fn,
-                                                                const iccl_buffer in_buf,
+std::shared_ptr<sched_entry> entry_factory::make_epilogue_entry(ccl_sched* sched,
+                                                                ccl_epilogue_fn_t fn,
+                                                                const ccl_buffer in_buf,
                                                                 size_t in_cnt,
-                                                                iccl_datatype_internal_t in_dtype,
-                                                                iccl_buffer out_buf,
+                                                                ccl_datatype_internal_t in_dtype,
+                                                                ccl_buffer out_buf,
                                                                 size_t expected_out_cnt,
-                                                                iccl_datatype_internal_t out_dtype)
+                                                                ccl_datatype_internal_t out_dtype)
 {
     auto e = std::make_shared<epilogue_entry>(sched, fn, in_buf, in_cnt, in_dtype, out_buf,
                                               expected_out_cnt, out_dtype);
@@ -160,18 +160,18 @@ std::shared_ptr<sched_entry> entry_factory::make_epilogue_entry(iccl_sched* sche
     return e;
 }
 
-std::shared_ptr<sched_entry> entry_factory::make_wait_value_entry(iccl_sched* sched,
+std::shared_ptr<sched_entry> entry_factory::make_wait_value_entry(ccl_sched* sched,
                                                                   const volatile uint64_t* ptr,
                                                                   uint64_t expected_value,
-                                                                  iccl_condition condition)
+                                                                  ccl_condition condition)
 {
     auto e = std::make_shared<wait_value_entry>(sched, ptr, expected_value, condition);
     sched->add_entry(e);
     return e;
 }
 
-std::shared_ptr<sched_entry> entry_factory::make_function_entry(iccl_sched* sched,
-                                                                iccl_sched_entry_function_t fn,
+std::shared_ptr<sched_entry> entry_factory::make_function_entry(ccl_sched* sched,
+                                                                ccl_sched_entry_function_t fn,
                                                                 const void* ctx)
 {
     auto e = std::make_shared<function_entry>(sched, fn, ctx);
@@ -179,9 +179,9 @@ std::shared_ptr<sched_entry> entry_factory::make_function_entry(iccl_sched* sche
     return e;
 }
 
-std::shared_ptr<sched_entry> entry_factory::make_register_entry(iccl_sched* sched,
+std::shared_ptr<sched_entry> entry_factory::make_register_entry(ccl_sched* sched,
                                                                 size_t size,
-                                                                const iccl_buffer ptr,
+                                                                const ccl_buffer ptr,
                                                                 atl_mr_t** mr)
 {
     auto e = std::make_shared<register_entry>(sched, size, ptr, mr);
@@ -189,7 +189,7 @@ std::shared_ptr<sched_entry> entry_factory::make_register_entry(iccl_sched* sche
     return e;
 }
 
-std::shared_ptr<sched_entry> entry_factory::make_deregister_entry(iccl_sched* sched,
+std::shared_ptr<sched_entry> entry_factory::make_deregister_entry(ccl_sched* sched,
                                                                   std::list<atl_mr_t*>& mr_list)
 {
     auto e = std::make_shared<deregister_entry>(sched, mr_list);
@@ -197,10 +197,10 @@ std::shared_ptr<sched_entry> entry_factory::make_deregister_entry(iccl_sched* sc
     return e;
 }
 
-std::shared_ptr<sched_entry> entry_factory::make_probe_entry(iccl_sched* sched,
+std::shared_ptr<sched_entry> entry_factory::make_probe_entry(ccl_sched* sched,
                                                              size_t src,
                                                              size_t* cnt,
-                                                             iccl_op_id_t op_id)
+                                                             ccl_op_id_t op_id)
 {
     std::shared_ptr<sched_entry> e = std::make_shared<probe_entry>(sched, global_data.comm->get_global_rank(src), cnt,
                                                                    op_id);
@@ -208,12 +208,12 @@ std::shared_ptr<sched_entry> entry_factory::make_probe_entry(iccl_sched* sched,
     return e;
 }
 
-std::shared_ptr<sched_entry> entry_factory::make_allreduce_entry(iccl_sched* sched,
-                                                                 const iccl_buffer send_buf,
-                                                                 iccl_buffer recv_buf,
+std::shared_ptr<sched_entry> entry_factory::make_allreduce_entry(ccl_sched* sched,
+                                                                 const ccl_buffer send_buf,
+                                                                 ccl_buffer recv_buf,
                                                                  size_t cnt,
-                                                                 iccl_datatype_internal_t dtype,
-                                                                 iccl_reduction_t reduction_op)
+                                                                 ccl_datatype_internal_t dtype,
+                                                                 ccl_reduction_t reduction_op)
 {
     std::shared_ptr<sched_entry> e = std::make_shared<allreduce_entry>(sched, send_buf, recv_buf, cnt, dtype,
                                                                        reduction_op);
@@ -221,12 +221,12 @@ std::shared_ptr<sched_entry> entry_factory::make_allreduce_entry(iccl_sched* sch
     return e;
 }
 
-std::shared_ptr<sched_entry> entry_factory::make_allgatherv_entry(iccl_sched* sched,
-                                                                  const iccl_buffer send_buf,
+std::shared_ptr<sched_entry> entry_factory::make_allgatherv_entry(ccl_sched* sched,
+                                                                  const ccl_buffer send_buf,
                                                                   size_t send_cnt,
-                                                                  iccl_buffer recv_buf,
+                                                                  ccl_buffer recv_buf,
                                                                   size_t* recv_cnts,
-                                                                  iccl_datatype_internal_t dtype)
+                                                                  ccl_datatype_internal_t dtype)
 {
     std::shared_ptr<sched_entry> e = std::make_shared<allgatherv_entry>(sched, send_buf, send_cnt, recv_buf,
                                                                         recv_cnts, dtype);
@@ -234,10 +234,10 @@ std::shared_ptr<sched_entry> entry_factory::make_allgatherv_entry(iccl_sched* sc
     return e;
 }
 
-std::shared_ptr<sched_entry> entry_factory::make_bcast_entry(iccl_sched* sched,
-                                                             iccl_buffer buf,
+std::shared_ptr<sched_entry> entry_factory::make_bcast_entry(ccl_sched* sched,
+                                                             ccl_buffer buf,
                                                              size_t cnt,
-                                                             iccl_datatype_internal_t dtype,
+                                                             ccl_datatype_internal_t dtype,
                                                              size_t root)
 {
     std::shared_ptr<sched_entry> e = std::make_shared<bcast_entry>(sched, buf, cnt, dtype, root);
@@ -245,12 +245,12 @@ std::shared_ptr<sched_entry> entry_factory::make_bcast_entry(iccl_sched* sched,
     return e;
 }
 
-std::shared_ptr<sched_entry> entry_factory::make_reduce_entry(iccl_sched *sched,
-                                                              const iccl_buffer send_buf,
-                                                              iccl_buffer recv_buf,
+std::shared_ptr<sched_entry> entry_factory::make_reduce_entry(ccl_sched *sched,
+                                                              const ccl_buffer send_buf,
+                                                              ccl_buffer recv_buf,
                                                               size_t cnt,
-                                                              iccl_datatype_internal_t dtype,
-                                                              iccl_reduction_t reduction,
+                                                              ccl_datatype_internal_t dtype,
+                                                              ccl_reduction_t reduction,
                                                               size_t root)
 {
     std::shared_ptr<sched_entry> e = std::make_shared<reduce_entry>(sched, send_buf, recv_buf,
@@ -259,15 +259,15 @@ std::shared_ptr<sched_entry> entry_factory::make_reduce_entry(iccl_sched *sched,
     return e;
 }
 
-std::shared_ptr<sched_entry> entry_factory::make_barrier_entry(iccl_sched *sched)
+std::shared_ptr<sched_entry> entry_factory::make_barrier_entry(ccl_sched *sched)
 {
     std::shared_ptr<sched_entry> e = std::make_shared<barrier_entry>(sched);
     sched->add_entry(e);
     return e;
 }
 
-std::shared_ptr<sched_entry> entry_factory::make_chain_call_entry(iccl_sched* sched,
-                                                                  std::function<void(iccl_sched*)> sched_fill_function,
+std::shared_ptr<sched_entry> entry_factory::make_chain_call_entry(ccl_sched* sched,
+                                                                  std::function<void(ccl_sched*)> sched_fill_function,
                                                                   const char* entry_name)
 {
     std::shared_ptr<sched_entry> e = std::make_shared<chain_call_entry>(sched, sched_fill_function, entry_name);
@@ -275,7 +275,7 @@ std::shared_ptr<sched_entry> entry_factory::make_chain_call_entry(iccl_sched* sc
     return e;
 }
 
-std::shared_ptr<sched_entry> entry_factory::make_nop_entry(iccl_sched* sched)
+std::shared_ptr<sched_entry> entry_factory::make_nop_entry(ccl_sched* sched)
 {
     auto e = std::make_shared<nop_entry>(sched);
     sched->add_entry(e);

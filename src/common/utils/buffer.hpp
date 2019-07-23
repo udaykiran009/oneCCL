@@ -3,19 +3,19 @@
 #include <iostream>
 #include <stddef.h>
 
-enum class iccl_buffer_type
+enum class ccl_buffer_type
 {
     DIRECT = 0,
     INDIRECT
 };
 
-inline std::ostream& operator << (std::ostream& os, const iccl_buffer_type& type)
+inline std::ostream& operator << (std::ostream& os, const ccl_buffer_type& type)
 {
-   os << static_cast<std::underlying_type<iccl_buffer_type>::type>(type);
+   os << static_cast<std::underlying_type<ccl_buffer_type>::type>(type);
    return os;
 }
 
-class iccl_buffer
+class ccl_buffer
 {
 
 private:
@@ -23,39 +23,39 @@ private:
     void* src;
     ssize_t size;
     int offset;
-    iccl_buffer_type type;
+    ccl_buffer_type type;
 
 public:
 
-    iccl_buffer(void* src, ssize_t size, int offset, iccl_buffer_type type)
+    ccl_buffer(void* src, ssize_t size, int offset, ccl_buffer_type type)
         : src(src), size(size),
           offset(offset), type(type)
     {
-        LOG_DEBUG("create iccl_buffer: src ", src, ", size ", size, ", offset ", offset, ", type ", type);
-        ICCL_ASSERT(offset >= 0, "unexpected offset");
-        ICCL_ASSERT((size == -1) || (offset <= size), "unexpected offset ", offset, ", size ", size);
+        LOG_DEBUG("create ccl_buffer: src ", src, ", size ", size, ", offset ", offset, ", type ", type);
+        CCL_ASSERT(offset >= 0, "unexpected offset");
+        CCL_ASSERT((size == -1) || (offset <= size), "unexpected offset ", offset, ", size ", size);
     }
 
-    iccl_buffer() : iccl_buffer(nullptr, -1, 0, iccl_buffer_type::DIRECT) {}
-    iccl_buffer(void* src, ssize_t size) : iccl_buffer(src, size, 0, iccl_buffer_type::DIRECT) {}
-    iccl_buffer(void* src, ssize_t size, int offset) : iccl_buffer(src, size, offset, iccl_buffer_type::DIRECT) {}
-    iccl_buffer(void* src, ssize_t size, iccl_buffer_type type) : iccl_buffer(src, size, 0, type) {}
+    ccl_buffer() : ccl_buffer(nullptr, -1, 0, ccl_buffer_type::DIRECT) {}
+    ccl_buffer(void* src, ssize_t size) : ccl_buffer(src, size, 0, ccl_buffer_type::DIRECT) {}
+    ccl_buffer(void* src, ssize_t size, int offset) : ccl_buffer(src, size, offset, ccl_buffer_type::DIRECT) {}
+    ccl_buffer(void* src, ssize_t size, ccl_buffer_type type) : ccl_buffer(src, size, 0, type) {}
 
-    iccl_buffer(const iccl_buffer& buf)
+    ccl_buffer(const ccl_buffer& buf)
         : src(buf.src),
           size(buf.size),
           offset(buf.offset),
           type(buf.type)
     {
-        ICCL_ASSERT(offset >= 0, "unexpected offset");
-        ICCL_ASSERT((size == -1) || (offset <= size), "unexpected offset ", offset, ", size ", size);
+        CCL_ASSERT(offset >= 0, "unexpected offset");
+        CCL_ASSERT((size == -1) || (offset <= size), "unexpected offset ", offset, ", size ", size);
     };
 
-    void set(void* src, ssize_t size, int offset, iccl_buffer_type type)
+    void set(void* src, ssize_t size, int offset, ccl_buffer_type type)
     {
-        LOG_DEBUG("set iccl_buffer: src ", src, ", size ", size, ", offset ", offset, ", type ", type);
-        ICCL_ASSERT(src, "new src is null");
-        ICCL_ASSERT(offset >= 0, "unexpected offset");
+        LOG_DEBUG("set ccl_buffer: src ", src, ", size ", size, ", offset ", offset, ", type ", type);
+        CCL_ASSERT(src, "new src is null");
+        CCL_ASSERT(offset >= 0, "unexpected offset");
 
         this->src = src;
         this->size = size;
@@ -63,40 +63,40 @@ public:
         this->type = type;
     }
 
-    void set(void* src) { set(src, -1, 0, iccl_buffer_type::DIRECT); }
-    void set(void* src, ssize_t size) { set(src, size, 0, iccl_buffer_type::DIRECT); }
-    void set(void* src, ssize_t size, iccl_buffer_type type) { set(src, size, 0, type); }
-    void set(void* src, ssize_t size, int offset) { set(src, size, offset, iccl_buffer_type::DIRECT); }
+    void set(void* src) { set(src, -1, 0, ccl_buffer_type::DIRECT); }
+    void set(void* src, ssize_t size) { set(src, size, 0, ccl_buffer_type::DIRECT); }
+    void set(void* src, ssize_t size, ccl_buffer_type type) { set(src, size, 0, type); }
+    void set(void* src, ssize_t size, int offset) { set(src, size, offset, ccl_buffer_type::DIRECT); }
 
     void* get_src() const { return src; }
     ssize_t get_size() const { return size; }
     int get_offset() const { return offset; }
-    iccl_buffer_type get_type() const { return type; }
+    ccl_buffer_type get_type() const { return type; }
 
-    iccl_buffer operator+ (size_t val)
+    ccl_buffer operator+ (size_t val)
     {
-        return iccl_buffer(src, size, offset + val, type);
+        return ccl_buffer(src, size, offset + val, type);
     }
 
-    iccl_buffer operator- (size_t val)
+    ccl_buffer operator- (size_t val)
     {
-        return iccl_buffer(src, size, offset - val, type);
+        return ccl_buffer(src, size, offset - val, type);
     }
 
-    iccl_buffer operator+ (int val)
+    ccl_buffer operator+ (int val)
     {
-        return iccl_buffer(src, size, offset + val, type);
+        return ccl_buffer(src, size, offset + val, type);
     }
 
-    iccl_buffer operator- (int val)
+    ccl_buffer operator- (int val)
     {
-        return iccl_buffer(src, size, offset - val, type);
+        return ccl_buffer(src, size, offset - val, type);
     }
 
     void* get_ptr(ssize_t access_offset = 0) const
     {
-        ICCL_ASSERT(offset >= 0, "unexpected size");
-        ICCL_ASSERT((size == -1) || (offset + access_offset <= size),
+        CCL_ASSERT(offset >= 0, "unexpected size");
+        CCL_ASSERT((size == -1) || (offset + access_offset <= size),
                     "unexpected access: size ", size,
                     ", offset ", offset,
                     ", access_offset ", access_offset);
@@ -104,7 +104,7 @@ public:
         if (!src)
             return nullptr;
 
-        if (type == iccl_buffer_type::DIRECT)
+        if (type == ccl_buffer_type::DIRECT)
             return ((char*)src + offset);
         else
         {
@@ -114,31 +114,31 @@ public:
 
     operator bool() const
     {
-        if (type == iccl_buffer_type::DIRECT)
+        if (type == ccl_buffer_type::DIRECT)
             return src;
         else
             return (src && (*(void**)src));
     }
 
-    bool operator ==(iccl_buffer const& other) const
+    bool operator ==(ccl_buffer const& other) const
     {
         return ((get_ptr() == other.get_ptr()) &&
                 (get_type() == other.get_type() &&
                 (get_size() == other.get_size())));
     }
 
-    bool operator !=(iccl_buffer const& other) const
+    bool operator !=(ccl_buffer const& other) const
     {
         return !(*this == other);
     }
 
-    bool operator >(iccl_buffer const& other) const
+    bool operator >(ccl_buffer const& other) const
     {
-        ICCL_ASSERT(get_type() == other.get_type(), "types should match");
+        CCL_ASSERT(get_type() == other.get_type(), "types should match");
         return (get_ptr() > other.get_ptr());
     }
 
-    friend std::ostream& operator<< (std::ostream& out, const iccl_buffer& buf)
+    friend std::ostream& operator<< (std::ostream& out, const ccl_buffer& buf)
     {
         out << "src: " << buf.get_src()
             << ", size " << buf.get_size()

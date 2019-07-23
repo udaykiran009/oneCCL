@@ -1,8 +1,8 @@
-#define TEST_ICCL_REDUCE
-#define TEST_ICCL_CUSTOM_PROLOG
-#define TEST_ICCL_CUSTOM_EPILOG
-#define TEST_ICCL_CUSTOM_REDUCE
-#define Collective_Name "ICCL_ALLREDUCE_ALGO"
+#define TEST_CCL_REDUCE
+#define TEST_CCL_CUSTOM_PROLOG
+#define TEST_CCL_CUSTOM_EPILOG
+#define TEST_CCL_CUSTOM_REDUCE
+#define Collective_Name "CCL_ALLREDUCE_ALGO"
 
 #include "base.hpp"
 #include <functional>
@@ -10,8 +10,8 @@
 #include <chrono>
 #include <cmath>
 template <typename T>
-iccl_status_t do_prologue_T_2x(const void* in_buf, size_t in_count, iccl_datatype_t in_dtype,
-                                   void** out_buf, size_t* out_count, iccl_datatype_t* out_dtype,
+ccl_status_t do_prologue_T_2x(const void* in_buf, size_t in_count, ccl_datatype_t in_dtype,
+                                   void** out_buf, size_t* out_count, ccl_datatype_t* out_dtype,
                                    size_t* out_dtype_size)
 {
     size_t idx;
@@ -28,11 +28,11 @@ iccl_status_t do_prologue_T_2x(const void* in_buf, size_t in_count, iccl_datatyp
         // printf("do_prologue_T_2x out_buf[%zu]=%f\n",idx, (double)((T*)out_buf)[idx]);
         // printf("do_prologue_T_2x out_buf[%zu]=%f\n",idx, (double)((T*)in_buf)[idx]);
     }
-    return iccl_status_success;
+    return ccl_status_success;
 }
 template <typename T>
-iccl_status_t do_epilogue_T_2x(const void* in_buf, size_t in_count, iccl_datatype_t in_dtype,
-                                   void* out_buf, size_t* out_count, iccl_datatype_t out_dtype)
+ccl_status_t do_epilogue_T_2x(const void* in_buf, size_t in_count, ccl_datatype_t in_dtype,
+                                   void* out_buf, size_t* out_count, ccl_datatype_t out_dtype)
 {
     size_t idx;
     if (out_count) *out_count = in_count;
@@ -44,12 +44,12 @@ iccl_status_t do_epilogue_T_2x(const void* in_buf, size_t in_count, iccl_datatyp
         // printf("do_epilogue_T_2x_________________in_buf[65]=%d\n", ((int*)in_buf)[65]);
         // printf("do_epilogue_T_2x_________________out_buf[65]=%d\n", ((int*)out_buf)[65]);
 
-    return iccl_status_success;
+    return ccl_status_success;
 }
 const char char_max = (char)(((unsigned char) char(-1)) / 2);
 template <typename T>
-iccl_status_t do_prologue_T_to_char(const void* in_buf, size_t in_count, iccl_datatype_t in_dtype,
-                                        void** out_buf, size_t* out_count, iccl_datatype_t* out_dtype,
+ccl_status_t do_prologue_T_to_char(const void* in_buf, size_t in_count, ccl_datatype_t in_dtype,
+                                        void** out_buf, size_t* out_count, ccl_datatype_t* out_dtype,
                                         size_t* out_dtype_size)
 {
     size_t idx;
@@ -57,7 +57,7 @@ iccl_status_t do_prologue_T_to_char(const void* in_buf, size_t in_count, iccl_da
 
     if (out_buf) *out_buf = malloc(in_count);
     if (out_count) *out_count = in_count;
-    if (out_dtype) *out_dtype = iccl_dtype_char;
+    if (out_dtype) *out_dtype = ccl_dtype_char;
     if (out_dtype_size) *out_dtype_size = 1;
 
     for (idx = 0; idx < in_count; idx++)
@@ -76,12 +76,12 @@ iccl_status_t do_prologue_T_to_char(const void* in_buf, size_t in_count, iccl_da
     // printf("prolog_________________in_buf[66]=%d\n",((char*)in_buf)[66]);
     // printf("prolog_________________out_buf[66]=%d\n",((char*)(*out_buf))[66]);
 
-    return iccl_status_success;
+    return ccl_status_success;
 }
 
 template <typename T>
-iccl_status_t do_epilogue_char_to_T(const void* in_buf, size_t in_count, iccl_datatype_t in_dtype,
-                                        void* out_buf, size_t* out_count, iccl_datatype_t out_dtype)
+ccl_status_t do_epilogue_char_to_T(const void* in_buf, size_t in_count, ccl_datatype_t in_dtype,
+                                        void* out_buf, size_t* out_count, ccl_datatype_t out_dtype)
 {
     size_t idx;
     if (out_count) *out_count = in_count;
@@ -90,12 +90,12 @@ iccl_status_t do_epilogue_char_to_T(const void* in_buf, size_t in_count, iccl_da
         ((T*)out_buf)[idx] = (T)(((char*)in_buf)[idx]);
     }
     if (in_buf != out_buf) free((void*)in_buf);
-    return iccl_status_success;
+    return ccl_status_success;
 }
 
 template <typename T>
-iccl_status_t do_reduction_null(const void* in_buf, size_t in_count, void* inout_buf,
-                               size_t* out_count, const void** ctx, iccl_datatype_t dtype)
+ccl_status_t do_reduction_null(const void* in_buf, size_t in_count, void* inout_buf,
+                               size_t* out_count, const void** ctx, ccl_datatype_t dtype)
 {
     size_t idx;
     if (out_count) *out_count = in_count;
@@ -103,11 +103,11 @@ iccl_status_t do_reduction_null(const void* in_buf, size_t in_count, void* inout
             {
                 ((T*)inout_buf)[idx] = (T)0;
             }
-    return iccl_status_success;
+    return ccl_status_success;
 }
 template <typename T>
-iccl_status_t do_reduction_custom(const void* in_buf, size_t in_count, void* inout_buf,
-                               size_t* out_count, const void** ctx, iccl_datatype_t dtype)
+ccl_status_t do_reduction_custom(const void* in_buf, size_t in_count, void* inout_buf,
+                               size_t* out_count, const void** ctx, ccl_datatype_t dtype)
 {
     size_t idx;
     if (out_count) *out_count = in_count;
@@ -115,7 +115,7 @@ iccl_status_t do_reduction_custom(const void* in_buf, size_t in_count, void* ino
             {
                 ((T*)inout_buf)[idx] += ((T*)in_buf)[idx];
             }
-    return iccl_status_success;
+    return ccl_status_success;
 }
 template <typename T>
 int set_custom_reduction (TypedTestParam <T> &param){
@@ -316,15 +316,15 @@ public:
 
                     param.coll_attr.prologue_fn = do_prologue_T_to_char<T>;
                 }
-                if (param.GetReductionType() == iccl_reduction_custom) {
+                if (param.GetReductionType() == ccl_reduction_custom) {
                     if (set_custom_reduction<T>(param))
                         return TEST_FAILURE;
                 }
                 param.req[Buffers[idx]] = (param.GetPlaceType() == PT_IN) ?
                     param.global_comm.allreduce(param.recvBuf[Buffers[idx]].data(), param.recvBuf[Buffers[idx]].data(), param.elemCount,
-                                  (iccl::data_type) param.GetDataType(),(iccl::reduction) param.GetReductionType(), &param.coll_attr) :
+                                  (ccl::data_type) param.GetDataType(),(ccl::reduction) param.GetReductionType(), &param.coll_attr) :
                     param.global_comm.allreduce(param.sendBuf[Buffers[idx]].data(), param.recvBuf[Buffers[idx]].data(), param.elemCount,
-                                  (iccl::data_type) param.GetDataType(),(iccl::reduction) param.GetReductionType(), &param.coll_attr);
+                                  (ccl::data_type) param.GetDataType(),(ccl::reduction) param.GetReductionType(), &param.coll_attr);
             }
             param.DefineCompletionOrderAndComplete();
             result += Check(param);

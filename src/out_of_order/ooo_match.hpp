@@ -23,21 +23,21 @@ public:
     ooo_match(const ooo_match& other) = delete;
     const ooo_match& operator=(const ooo_match& other) = delete;
 
-    ooo_match(iccl_executor& exec,
-              iccl_comm_id_storage& comm_ids);
+    ooo_match(ccl_executor& exec,
+              ccl_comm_id_storage& comm_ids);
 
     /**
      * Searches for already created communicator for specific match_id
      * @param match_id user defined identifier
      * @return pointer to the communicator or null pointer of no communicator has been created for the provided match_id
      */
-    iccl_comm* get_comm(const std::string& match_id);
+    ccl_comm* get_comm(const std::string& match_id);
 
     /**
      * Moves the schedule to the postponed schedules storage
      * @param sched the schedule to be postponed
      */
-    void postpone(iccl_sched* sched);
+    void postpone(ccl_sched* sched);
 
     /**
      * Creates a communicator for specific match_id and runs all schedules postponed for this match_id.
@@ -51,38 +51,38 @@ private:
 
     void bcast_match_id(const std::string& match_id);
 
-    void update_comm_and_run(iccl_sched* sched,
-                             iccl_comm* comm);
+    void update_comm_and_run(ccl_sched* sched,
+                             ccl_comm* comm);
 
-    iccl_executor& executor;
-    iccl_comm_id_storage& comm_ids;
+    ccl_executor& executor;
+    ccl_comm_id_storage& comm_ids;
 
     //dedicated service communicator
-    std::shared_ptr<iccl_comm> service_comm;
+    std::shared_ptr<ccl_comm> service_comm;
 
     //collection of unresolved communicators
     using unresolved_comms_type = std::unordered_map<std::string, std::unique_ptr<comm_id>>;
     unresolved_comms_type unresolved_comms{};
 
     //collection of created communicators
-    using match_id_to_comm_map_type = std::unordered_map<std::string, std::shared_ptr<iccl_comm>>;
+    using match_id_to_comm_map_type = std::unordered_map<std::string, std::shared_ptr<ccl_comm>>;
     match_id_to_comm_map_type match_id_to_comm_map;
-    iccl_spinlock match_id_to_comm_map_guard;
+    ccl_spinlock match_id_to_comm_map_guard;
 
     void add_comm(std::string match_id,
-                  std::shared_ptr<iccl_comm> comm);
+                  std::shared_ptr<ccl_comm> comm);
 
     //collection of postponed schedules
-    using postponed_user_scheds_t = std::unordered_multimap<std::string, iccl_sched*>;
+    using postponed_user_scheds_t = std::unordered_multimap<std::string, ccl_sched*>;
     postponed_user_scheds_t postponed_user_scheds{};
-    iccl_spinlock postponed_user_scheds_guard{};
+    ccl_spinlock postponed_user_scheds_guard{};
 
-    void postpone_user_sched(iccl_sched* sched);
+    void postpone_user_sched(ccl_sched* sched);
 
     void run_postponed(const std::string& match_id,
-                       iccl_comm* comm);
+                       ccl_comm* comm);
 
-    iccl_comm* get_user_comm(const std::string& match_id);
+    ccl_comm* get_user_comm(const std::string& match_id);
 
     bool is_bcast_in_progress(const std::string& match_id);
 };

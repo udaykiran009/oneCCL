@@ -1,4 +1,4 @@
-ICCL uses code from the following 3rd party projects (in alphabet order):
+oneAPI CCL uses code from the following 3rd party projects (in alphabet order):
 
 MPICH - high performance and widely portable implementation of the Message Passing Interface (MPI) standard
 License: BSD
