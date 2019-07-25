@@ -25,6 +25,7 @@ catch (...)                                                 \
 }                                                           \
 
 class ccl_comm;
+class ccl_stream;
 class ccl_atl_tag;
 class ccl_comm_id_storage;
 class ccl_executor;

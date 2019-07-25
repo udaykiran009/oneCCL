@@ -37,6 +37,7 @@ if(CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT)
 endif()
 
 set(CCL_COMMON_INSTALL_PREFIX "intel64")
+set(CMAKE_INSTALL_LIBDIR "lib64")
 set(CCL_INSTALL_LIB "${CCL_COMMON_INSTALL_PREFIX}/${CMAKE_INSTALL_LIBDIR}")
 set(CCL_INSTALL_INCLUDE "${CCL_COMMON_INSTALL_PREFIX}/${CMAKE_INSTALL_INCLUDEDIR}")
 set(CCL_INSTALL_DOC "${CCL_COMMON_INSTALL_PREFIX}/${CMAKE_INSTALL_DOCDIR}")
@@ -51,7 +52,7 @@ set(CMAKE_SKIP_RPATH TRUE)
 if (${CMAKE_VERSION} VERSION_LESS 3.1)
 #cmake version below 3.1 does not support CMAKE_C[XX}_STANDARD flags
 #set manually
-    set(CXX_COMPILER_FLAGS "-std=c++11")
+    set(CXX_COMPILER_FLAGS "-std=gnu++11")
     set(C_COMPILER_FLAGS "-std=gnu99")
 endif()
 
@@ -62,7 +63,7 @@ if(USE_SECURITY_FLAGS)
     set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -z noexecstack -z relro -z now")
 endif()
 
-if(CMAKE_C_COMPILER EQUAL "icc" OR CMAKE_CXX_COMPILER EQUAL "icpc")
+if(${CMAKE_C_COMPILER_ID} STREQUAL "Intel" OR ${CMAKE_CXX_COMPILER_ID} STREQUAL "Intel")
     set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -static-intel")
     set(CMAKE_STATIC_LINKER_FLAGS "${CMAKE_STATIC_LINKER_FLAGS} -static-intel")
 endif()
@@ -84,6 +85,13 @@ set(CMAKE_CXX_FLAGS_RELWITHDEBINFO "${CMAKE_CXX_FLAGS_RELWITHDEBINFO} ${CXX_COMP
 set(CMAKE_CXX_STANDARD 11)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
+if(${CMAKE_C_COMPILER_ID} STREQUAL "Clang" AND ${CMAKE_CXX_COMPILER_ID} STREQUAL "Clang")
+    set(CMAKE_CLANG_FLAGS "-Wno-defaulted-function-deleted -Wno-mismatched-tags -Wno-unused-private-field -Wno-unneeded-internal-declaration -Wno-delete-non-abstract-non-virtual-dtor -Wno-reorder -DENABLE_SYCL=1 -D__STRICT_ANSI__ -fsycl")
+    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${CMAKE_CLANG_FLAGS}")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${CMAKE_CLANG_FLAGS} -std=c++11")
+    set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -lsycl -lc++")
+endif()
+
 if(${CMAKE_C_COMPILER_ID} STREQUAL "GNU")
     if(NOT CMAKE_CXX_COMPILER_VERSION VERSION_LESS 7.0)
         #c++17 introduces algined new operator, use it
@@ -104,7 +112,10 @@ enable_testing()
 
 #include other CMakeLists
 add_subdirectory(src)
-add_subdirectory(examples)
+add_subdirectory(examples/cpu)
+if(${CMAKE_C_COMPILER_ID} STREQUAL "Clang" AND ${CMAKE_CXX_COMPILER_ID} STREQUAL "Clang")
+    add_subdirectory(examples/sycl)
+endif()
 add_subdirectory(tests/functional)
 
 

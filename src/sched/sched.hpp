@@ -4,6 +4,10 @@
 #include "atl/atl.h"
 #include "coll/coll.hpp"
 
+#ifdef ENABLE_SYCL
+#include <CL/sycl.hpp>
+#endif /* ENABLE_SYCL */
+
 #include <memory>
 
 #include <deque>
@@ -78,8 +82,13 @@ struct ccl_coll_param
     ccl_datatype_internal_t dtype;
     ccl_reduction_t reduction;
     size_t root;
+    const ccl_stream* stream;
     ccl_comm *comm;
     ccl_coll_sparse_param sparse_param;
+#ifdef ENABLE_SYCL
+    ccl_sycl_buffer_t* sycl_send_buf;
+    ccl_sycl_buffer_t* sycl_recv_buf;
+#endif /* ENABLE_SYCL */
 };
 
 //todo: sequence diagram
@@ -120,7 +129,7 @@ public:
     void commit(ccl_parallelizer* parallelizer);
 
     ccl_request* start(ccl_executor* exec,
-                        bool reset_sched = true);
+                       bool reset_sched = true);
 
     void complete();
 

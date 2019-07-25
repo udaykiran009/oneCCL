@@ -26,7 +26,7 @@
           CCL_CALL(ccl_wait(request));                                     \
           t2 = when();                                                     \
           t += (t2 - t1);                                                  \
-          ccl_barrier(NULL);                                               \
+          ccl_barrier(NULL, NULL);                                         \
                                                                            \
           int* rcv_idx = (int*)recv_ibuf;                                  \
           rcv_val = (float*)recv_vbuf;                                     \
@@ -97,10 +97,10 @@ int main()
     size_t recv_vcount = 0;
 
     coll_attr.to_cache = 0;
-    RUN_COLLECTIVE(ccl_sparse_allreduce(send_ibuf, COUNT_I, send_vbuf, COUNT_I * VDIM_SIZE,
-                                         &recv_ibuf, &recv_icount, &recv_vbuf, &recv_vcount, 
-                                         ccl_dtype_int, ccl_dtype_float, ccl_reduction_sum,
-                                         &coll_attr, NULL, &request),
+    RUN_COLLECTIVE(ccl_sparse_allreduce(send_ibuf, COUNT_I, send_vbuf, COUNT_I * VDIM_SIZE, 
+                                        &recv_ibuf, &recv_icount, &recv_vbuf, &recv_vcount, 
+                                        ccl_dtype_int, ccl_dtype_float, ccl_reduction_sum,
+                                        &coll_attr, NULL, NULL, &request),
                    "basic_sparse_allreduce");
 
     free(recv_ibuf);

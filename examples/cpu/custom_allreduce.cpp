@@ -18,7 +18,7 @@
           t2 = when();                                                     \
           t += (t2 - t1);                                                  \
       }                                                                    \
-      ccl_barrier(NULL);                                                   \
+      ccl_barrier(NULL, NULL);                                             \
       for (idx = 0; idx < COUNT; idx++)                                    \
       {                                                                    \
           if (recv_buf[idx] != expected)                                   \
@@ -170,7 +170,7 @@ int main()
     /* regular sum allreduce */
     match_id = base_match_id + "_regular";
     coll_attr.match_id = match_id.c_str();
-    RUN_COLLECTIVE(ccl_allreduce(send_buf, recv_buf, COUNT, ccl_dtype_float, ccl_reduction_sum, &coll_attr, NULL, &request),
+    RUN_COLLECTIVE(ccl_allreduce(send_buf, recv_buf, COUNT, ccl_dtype_float, ccl_reduction_sum, &coll_attr, NULL, NULL, &request),
                    "regular_allreduce",
                    ((size - 1) * ((float)size / 2)));
 
@@ -180,7 +180,7 @@ int main()
     coll_attr.prologue_fn = do_prologue_float_2x;
     coll_attr.epilogue_fn = NULL;
     coll_attr.reduction_fn = NULL;
-    RUN_COLLECTIVE(ccl_allreduce(send_buf, recv_buf, COUNT, ccl_dtype_float, ccl_reduction_sum, &coll_attr, NULL, &request),
+    RUN_COLLECTIVE(ccl_allreduce(send_buf, recv_buf, COUNT, ccl_dtype_float, ccl_reduction_sum, &coll_attr, NULL, NULL, &request),
                    "allreduce_with_prologue",
                    (2 * (size - 1) * ((float)size / 2)));
 
@@ -190,7 +190,7 @@ int main()
     coll_attr.prologue_fn = NULL;
     coll_attr.epilogue_fn = do_epilogue_float_2x;
     coll_attr.reduction_fn = NULL;
-    RUN_COLLECTIVE(ccl_allreduce(send_buf, recv_buf, COUNT, ccl_dtype_float, ccl_reduction_sum, &coll_attr, NULL, &request),
+    RUN_COLLECTIVE(ccl_allreduce(send_buf, recv_buf, COUNT, ccl_dtype_float, ccl_reduction_sum, &coll_attr, NULL, NULL, &request),
                    "allreduce_with_epilogue",
                    (2 * (size - 1) * ((float)size / 2)));
 
@@ -200,7 +200,7 @@ int main()
     coll_attr.prologue_fn = NULL;
     coll_attr.epilogue_fn = NULL;
     coll_attr.reduction_fn = do_reduction_sum;
-    RUN_COLLECTIVE(ccl_allreduce(send_buf, recv_buf, COUNT, ccl_dtype_float, ccl_reduction_custom, &coll_attr, NULL, &request),
+    RUN_COLLECTIVE(ccl_allreduce(send_buf, recv_buf, COUNT, ccl_dtype_float, ccl_reduction_custom, &coll_attr, NULL, NULL, &request),
                    "allreduce_with_reduction_sum",
                    ((size - 1) * ((float)size / 2)));
 
@@ -210,7 +210,7 @@ int main()
     coll_attr.prologue_fn = NULL;
     coll_attr.epilogue_fn = NULL;
     coll_attr.reduction_fn = do_reduction_null;
-    RUN_COLLECTIVE(ccl_allreduce(send_buf, recv_buf, COUNT, ccl_dtype_float, ccl_reduction_custom, &coll_attr, NULL, &request),
+    RUN_COLLECTIVE(ccl_allreduce(send_buf, recv_buf, COUNT, ccl_dtype_float, ccl_reduction_custom, &coll_attr, NULL, NULL, &request),
                    "allreduce_with_reduction_null",
                    (float)0);
 
@@ -220,7 +220,7 @@ int main()
     coll_attr.prologue_fn = do_prologue_float_2x;
     coll_attr.epilogue_fn = do_epilogue_float_2x;
     coll_attr.reduction_fn = NULL;
-    RUN_COLLECTIVE(ccl_allreduce(send_buf, recv_buf, COUNT, ccl_dtype_float, ccl_reduction_sum, &coll_attr, NULL, &request),
+    RUN_COLLECTIVE(ccl_allreduce(send_buf, recv_buf, COUNT, ccl_dtype_float, ccl_reduction_sum, &coll_attr, NULL, NULL, &request),
                    "allreduce_with_prologue_and_epilogue",
                    (2 * 2 * (size - 1) * ((float)size / 2)));
 
@@ -230,7 +230,7 @@ int main()
     coll_attr.prologue_fn = do_prologue_float_2x;
     coll_attr.epilogue_fn = NULL;
     coll_attr.reduction_fn = do_reduction_sum;
-    RUN_COLLECTIVE(ccl_allreduce(send_buf, recv_buf, COUNT, ccl_dtype_float, ccl_reduction_custom, &coll_attr, NULL, &request),
+    RUN_COLLECTIVE(ccl_allreduce(send_buf, recv_buf, COUNT, ccl_dtype_float, ccl_reduction_custom, &coll_attr, NULL, NULL, &request),
                    "allreduce_with_prologue_and_reduction_sum",
                    (2 * (size - 1) * ((float)size / 2)));
 
@@ -240,7 +240,7 @@ int main()
     coll_attr.prologue_fn = NULL;
     coll_attr.epilogue_fn = do_epilogue_float_2x;
     coll_attr.reduction_fn = do_reduction_sum;
-    RUN_COLLECTIVE(ccl_allreduce(send_buf, recv_buf, COUNT, ccl_dtype_float, ccl_reduction_custom, &coll_attr, NULL, &request),
+    RUN_COLLECTIVE(ccl_allreduce(send_buf, recv_buf, COUNT, ccl_dtype_float, ccl_reduction_custom, &coll_attr, NULL, NULL, &request),
                    "allreduce_with_epilogue_and_reduction_sum",
                    (2 * (size - 1) * ((float)size / 2)));
 
@@ -250,7 +250,7 @@ int main()
     coll_attr.prologue_fn = do_prologue_float_2x;
     coll_attr.epilogue_fn = do_epilogue_float_2x;
     coll_attr.reduction_fn = do_reduction_sum;
-    RUN_COLLECTIVE(ccl_allreduce(send_buf, recv_buf, COUNT, ccl_dtype_float, ccl_reduction_custom, &coll_attr, NULL, &request),
+    RUN_COLLECTIVE(ccl_allreduce(send_buf, recv_buf, COUNT, ccl_dtype_float, ccl_reduction_custom, &coll_attr, NULL, NULL, &request),
                    "allreduce_with_prologue_and_epilogue_and_reduction_sum",
                    (2 * 2 * (size - 1) * ((float)size / 2)));
 
@@ -260,7 +260,7 @@ int main()
     coll_attr.prologue_fn = do_prologue_float_2x;
     coll_attr.epilogue_fn = do_epilogue_float_2x;
     coll_attr.reduction_fn = do_reduction_null;
-    RUN_COLLECTIVE(ccl_allreduce(send_buf, recv_buf, COUNT, ccl_dtype_float, ccl_reduction_custom, &coll_attr, NULL, &request),
+    RUN_COLLECTIVE(ccl_allreduce(send_buf, recv_buf, COUNT, ccl_dtype_float, ccl_reduction_custom, &coll_attr, NULL, NULL, &request),
                    "allreduce_with_prologue_and_epilogue_and_reduction_null",
                    (float)0);
 
@@ -270,7 +270,7 @@ int main()
     coll_attr.prologue_fn = do_prologue_float_to_char;
     coll_attr.epilogue_fn = do_epilogue_char_to_float;
     coll_attr.reduction_fn = do_reduction_sum;
-    RUN_COLLECTIVE(ccl_allreduce(send_buf, recv_buf, COUNT, ccl_dtype_float, ccl_reduction_custom, &coll_attr, NULL, &request),
+    RUN_COLLECTIVE(ccl_allreduce(send_buf, recv_buf, COUNT, ccl_dtype_float, ccl_reduction_custom, &coll_attr, NULL, NULL, &request),
                    "allreduce_with_prologue_and_epilogue_and_reduction_sum",
                    ((size - 1) * ((float)size / 2)));
 

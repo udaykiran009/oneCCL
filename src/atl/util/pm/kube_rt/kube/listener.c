@@ -11,6 +11,7 @@
 #include <unistd.h>
 #include <fcntl.h>
 #include <semaphore.h>
+#include <assert.h>
 
 #include "kube_def.h"
 #include "listener.h"
@@ -73,7 +74,9 @@ int collect_sock_addr()
     memset(count_listners_str, NULL_CHAR, INT_STR_SIZE);
 
     fp = popen(run_str, READ_ONLY);
-    fgets(count_listners_str, sizeof(count_listners_str)-1, fp);
+    if (fgets(count_listners_str, sizeof(count_listners_str)-1, fp) == NULL) {
+        assert(0);
+    }
     pclose(fp);
 
     count_listners = atoi(count_listners_str);

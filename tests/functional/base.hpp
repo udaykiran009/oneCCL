@@ -76,7 +76,7 @@ using namespace std;
                                 + ".xml";                                                 \
                     PRINT("originArg %s, extPos %zu, argLen %zu, patchedArg %s",          \
                     originArg.c_str(), extPos, argLen, patchedArg.c_str());               \
-                    argv[idx] = '\0';                                                     \
+                    argv[idx][0] = '\0';                                                  \
                     if (comm.rank())                                                      \
                             ::testing::GTEST_FLAG(output) = "";                           \
                         else                                                              \
@@ -115,12 +115,13 @@ do {   \
       int result_final = 0;                                              \
       static int glob_idx = 0;                                           \
       ccl::communicator comm;                                           \
+      ccl::stream stream;                                               \
       std::shared_ptr <ccl::request> req;                               \
       ccl_coll_attr_t coll_attr {};                                     \
       InitCollAttr(&coll_attr);                                          \
       req = comm.allreduce(&result, &result_final, 1,                    \
                            ccl::data_type::dtype_int,                   \
-                           ccl::reduction::sum, &coll_attr);            \
+                           ccl::reduction::sum, &coll_attr, &stream);    \
       req->wait();                                                       \
       if (result_final > 0)                                              \
       {                                                                  \
@@ -412,6 +413,7 @@ void PrintErrMessage(char* errMessage, std::ostream &output)
 {
     size_t messageLen = strlen(errMessage);
     ccl::communicator comm;
+    ccl::stream stream;
     std::shared_ptr <ccl::request> req;
     ccl_coll_attr_t coll_attr {};
     InitCollAttr(&coll_attr);
@@ -423,7 +425,7 @@ void PrintErrMessage(char* errMessage, std::ostream &output)
     displs[0] = 1;
     for (int i = 1; i < processCount; i++)
         displs[i] = 1;
-    req = comm.allgatherv(&messageLen, 1, arrMessageLen_copy, displs, ccl::data_type::dtype_int, &coll_attr);
+    req = comm.allgatherv(&messageLen, 1, arrMessageLen_copy, displs, ccl::data_type::dtype_int, &coll_attr, &stream);
     req->wait();
     for (int i = 0; i < processCount; i++)
         arrMessageLen[i] = arrMessageLen_copy[i];
@@ -437,7 +439,7 @@ void PrintErrMessage(char* errMessage, std::ostream &output)
         return;
     }
     char* arrErrMessage = new char[fullMessageLen];
-    req = comm.allgatherv(errMessage, messageLen, arrErrMessage, arrMessageLen, ccl::data_type::dtype_char, &coll_attr);
+    req = comm.allgatherv(errMessage, messageLen, arrErrMessage, arrMessageLen, ccl::data_type::dtype_char, &coll_attr, &stream);
     req->wait();
     if (processIdx == 0)
     {
@@ -591,6 +593,7 @@ struct TypedTestParam
     std::vector<std::shared_ptr<ccl::request>> req;
     ccl_coll_attr_t coll_attr {};
     ccl::communicator global_comm;
+    ccl::stream stream;
     size_t *startArr;
 
     TypedTestParam(TestParam tParam):testParam(tParam) {
@@ -758,6 +761,9 @@ struct TypedTestParam
        fflush(stdout);
     }
 
+    ccl::stream* GetStream() {
+        return &stream;
+    }
     const char *GetPlaceTypeStr() {
         return placeTypeStr[testParam.placeType];
     }

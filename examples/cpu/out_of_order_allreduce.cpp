@@ -23,6 +23,7 @@ ccl_request_t start_allreduce_with_tensor_name(const std::string& tensor_name,
                            ccl_reduction_sum,
                            &coll_attr,
                            nullptr,
+                           nullptr,
                            &req));
     return req;
 }

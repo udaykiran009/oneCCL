@@ -87,7 +87,7 @@ void do_iter(size_t iter_idx)
 
     if (collect_iso)
     {
-        ccl_barrier(NULL);
+        ccl_barrier(NULL, NULL);
 
         iter_start = when();
         for (idx = 0; idx < MSG_COUNT; idx++)
@@ -96,7 +96,7 @@ void do_iter(size_t iter_idx)
 
             tmp_start_timer = when();
             CCL_CALL(ccl_allreduce(msg_buffers[idx], msg_buffers[idx], msg_sizes[idx] / get_dtype_size(ccl_dtype_float),
-                                   ccl_dtype_float, ccl_reduction_sum, &coll_attr, NULL, &msg_requests[idx]));
+                                   ccl_dtype_float, ccl_reduction_sum, &coll_attr, NULL, NULL, &msg_requests[idx]));
             CCL_CALL(ccl_wait(msg_requests[idx]));
             tmp_stop_timer = when();
             msg_iso_timers[idx] += (tmp_stop_timer - tmp_start_timer);
@@ -106,7 +106,7 @@ void do_iter(size_t iter_idx)
         collect_iso = 0;
     }
 
-    ccl_barrier(NULL);
+    ccl_barrier(NULL, NULL);
 
     memset(msg_completions, 0, MSG_COUNT * sizeof(int));
     size_t completions = 0;
@@ -115,7 +115,7 @@ void do_iter(size_t iter_idx)
     for (idx = 0; idx < MSG_COUNT; idx++)
     {
         if (idx % 2 == 0) usleep(comp_delay_ms * 1000);
-        
+
         /* sequentially increase priority over iterations and messages */
         coll_attr.priority = iter_idx * MSG_COUNT + idx;
 
@@ -124,7 +124,7 @@ void do_iter(size_t iter_idx)
         msg_starts[idx] = when();
         tmp_start_timer = when();
         CCL_CALL(ccl_allreduce(msg_buffers[idx], msg_buffers[idx], msg_sizes[idx] / get_dtype_size(ccl_dtype_float),
-                               ccl_dtype_float, ccl_reduction_sum, &coll_attr, NULL, &msg_requests[idx]));
+                               ccl_dtype_float, ccl_reduction_sum, &coll_attr, NULL, NULL, &msg_requests[idx]));
         tmp_stop_timer = when();
         msg_pure_start_timers[idx] += (tmp_stop_timer - tmp_start_timer);
     }
@@ -147,7 +147,6 @@ void do_iter(size_t iter_idx)
 
 //            CCL_CALL(ccl_wait(msg_requests[msg_idx])); is_completed = 1;
             CCL_CALL(ccl_test(msg_requests[msg_idx], &is_completed));
-            
             tmp_stop_timer = when();
             msg_pure_wait_timers[msg_idx] += (tmp_stop_timer - tmp_start_timer);
 
@@ -237,7 +236,7 @@ int main()
         msg_pure_wait_timers[idx] /= ITER_COUNT;
     }
 
-    ccl_barrier(NULL);
+    ccl_barrier(NULL, NULL);
 
     double* recv_msg_timers = (double*)malloc(size * MSG_COUNT * sizeof(double));
     size_t* recv_msg_timers_counts = (size_t*)malloc(size * sizeof(size_t));
@@ -254,11 +253,11 @@ int main()
     memset(&attr, 0, sizeof(ccl_coll_attr_t));
 
     CCL_CALL(ccl_allgatherv(msg_timers, MSG_COUNT, recv_msg_timers, recv_msg_timers_counts,
-                              ccl_dtype_double, &attr, NULL, &timer_req));
+                              ccl_dtype_double, &attr, NULL, NULL, &timer_req));
     CCL_CALL(ccl_wait(timer_req));
 
     CCL_CALL(ccl_allgatherv(&iter_timer, 1, recv_iter_timers, recv_iter_timers_counts,
-                              ccl_dtype_double, &attr, NULL, &timer_req));
+                              ccl_dtype_double, &attr, NULL, NULL, &timer_req));
     CCL_CALL(ccl_wait(timer_req));
 
     if (rank == 0)
@@ -306,7 +305,7 @@ int main()
         }
         iter_timer_stddev = sqrt(sum / size) / iter_timer_avg * 100;
     }
-    ccl_barrier(NULL);
+    ccl_barrier(NULL, NULL);
 
     if (rank == 0) PRINT_HEADER();
 

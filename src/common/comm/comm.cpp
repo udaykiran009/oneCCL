@@ -34,7 +34,7 @@ static ccl_status_t ccl_comm_exchange_colors(std::vector<int>& colors)
     CCL_CALL(ccl_allgatherv(colors.data(), exchange_count,
                             colors.data(), recv_counts.data(),
                             ccl_dtype_int, &coll_attr,
-                            nullptr, &request));
+                            nullptr, nullptr, &request));
 
     //wait for completion
     CCL_CALL(ccl_wait(request));

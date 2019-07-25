@@ -5,6 +5,7 @@
 #include "sched/sched_cache.hpp"
 #include "common/utils/tree.hpp"
 #include "common/comm/atl_tag.hpp"
+#include "common/stream/stream.hpp"
 
 ccl_status_t ccl_init()
 {
@@ -188,6 +189,33 @@ ccl_status_t CCL_API ccl_get_comm_size(ccl_comm_t comm_t,
     COMMON_CATCH_BLOCK();
 }
 
+ccl_status_t ccl_stream_create(ccl_stream_type_t stream_type,
+                               void* native_stream,
+                               ccl_stream_t* ccl_stream_out)
+{
+    CCL_ASSERT(ccl_stream_out);
+    try
+    {
+        LOG_DEBUG("Create stream");
+        *ccl_stream_out = static_cast<void*>(new ccl_stream(stream_type, native_stream));
+        return ccl_status_success;
+    }
+    COMMON_CATCH_BLOCK();
+}
+
+ccl_status_t ccl_stream_free(ccl_stream_t ccl_stream_in)
+{
+    CCL_ASSERT(ccl_stream_in);
+    LOG_DEBUG("Free stream ", ccl_stream_in);
+    try
+    {
+        delete static_cast<const ccl_stream*>(ccl_stream_in);
+
+        return ccl_status_success;
+    }
+    COMMON_CATCH_BLOCK();
+}
+
 ccl_status_t CCL_API ccl_bcast(
     void* buf,
     size_t count,
@@ -195,6 +223,7 @@ ccl_status_t CCL_API ccl_bcast(
     size_t root,
     const ccl_coll_attr_t* attributes,
     ccl_comm_t communicator,
+    ccl_stream_t stream,
     ccl_request_t* req)
 {
     try
@@ -207,7 +236,9 @@ ccl_status_t CCL_API ccl_bcast(
         auto comm = static_cast<ccl_comm*>(communicator);
         ccl_comm* real_comm = comm ?: global_data.comm.get();
 
-        auto request = ccl_bcast_impl(buf, count, dtype, root, attributes, real_comm);
+        auto real_stream = static_cast<const ccl_stream*>(stream);
+
+        auto request = ccl_bcast_impl(buf, count, dtype, root, attributes, real_comm, real_stream);
         *req = static_cast<ccl_request_t>(request);
 
         return ccl_status_success;
@@ -224,6 +255,7 @@ ccl_status_t CCL_API ccl_reduce(
     size_t root,
     const ccl_coll_attr_t* attributes,
     ccl_comm_t communicator,
+    ccl_stream_t stream,
     ccl_request_t* req)
 {
     try
@@ -236,7 +268,9 @@ ccl_status_t CCL_API ccl_reduce(
         auto comm = static_cast<ccl_comm*>(communicator);
         ccl_comm* real_comm = comm ?: global_data.comm.get();
 
-        auto request = ccl_reduce_impl(send_buf, recv_buf, count, dtype, reduction, root, attributes, real_comm);
+        auto real_stream = static_cast<const ccl_stream*>(stream);
+
+        auto request = ccl_reduce_impl(send_buf, recv_buf, count, dtype, reduction, root, attributes, real_comm, real_stream);
         *req = static_cast<ccl_request_t>(request);
 
         return ccl_status_success;
@@ -252,6 +286,7 @@ ccl_status_t CCL_API ccl_allreduce(
     ccl_reduction_t reduction,
     const ccl_coll_attr_t* attributes,
     ccl_comm_t communicator,
+    ccl_stream_t stream,
     ccl_request_t* req)
 {
     try
@@ -264,7 +299,9 @@ ccl_status_t CCL_API ccl_allreduce(
         auto comm = static_cast<ccl_comm*>(communicator);
         ccl_comm* real_comm = comm ?: global_data.comm.get();
 
-        auto request = ccl_allreduce_impl(send_buf, recv_buf, count, dtype, reduction, attributes, real_comm);
+        auto real_stream = static_cast<const ccl_stream*>(stream);
+
+        auto request = ccl_allreduce_impl(send_buf, recv_buf, count, dtype, reduction, attributes, real_comm, real_stream);
         *req = static_cast<ccl_request_t>(request);
 
         return ccl_status_success;
@@ -280,6 +317,7 @@ ccl_status_t CCL_API ccl_allgatherv(
     ccl_datatype_t dtype,
     const ccl_coll_attr_t* attributes,
     ccl_comm_t communicator,
+    ccl_stream_t stream,
     ccl_request_t* req)
 {
     try
@@ -292,7 +330,9 @@ ccl_status_t CCL_API ccl_allgatherv(
         auto comm = static_cast<ccl_comm*>(communicator);
         ccl_comm* real_comm = comm ?: global_data.comm.get();
 
-        auto request = ccl_allgatherv_impl(send_buf, send_count, recv_buf, recv_counts, dtype, attributes, real_comm);
+        auto real_stream = static_cast<const ccl_stream*>(stream);
+
+        auto request = ccl_allgatherv_impl(send_buf, send_count, recv_buf, recv_counts, dtype, attributes, real_comm, real_stream);
         *req = static_cast<ccl_request_t>(request);
 
         return ccl_status_success;
@@ -313,6 +353,7 @@ ccl_status_t CCL_API ccl_sparse_allreduce(const void* send_ind_buf,
                                           ccl_reduction_t reduction,
                                           const ccl_coll_attr_t* attributes,
                                           ccl_comm_t communicator,
+                                          ccl_stream_t stream,
                                           ccl_request_t* req)
 {
     try
@@ -325,9 +366,11 @@ ccl_status_t CCL_API ccl_sparse_allreduce(const void* send_ind_buf,
         auto comm = static_cast<ccl_comm*>(communicator);
         ccl_comm* real_comm = comm ?: global_data.comm.get();
 
+        auto real_stream = static_cast<const ccl_stream*>(stream);
+
         auto request = ccl_sparse_allreduce_impl(send_ind_buf, send_ind_count, send_val_buf, send_val_count,
                                                  recv_ind_buf, recv_ind_count, recv_val_buf,
-                                                 recv_val_count, index_dtype, dtype, reduction, attributes, real_comm);
+                                                 recv_val_count, index_dtype, dtype, reduction, attributes, real_comm, real_stream);
         *req = static_cast<ccl_request_t>(request);
 
         return ccl_status_success;
@@ -335,14 +378,17 @@ ccl_status_t CCL_API ccl_sparse_allreduce(const void* send_ind_buf,
     COMMON_CATCH_BLOCK();
 }
 
-ccl_status_t CCL_API ccl_barrier(ccl_comm_t communicator)
+ccl_status_t CCL_API ccl_barrier(ccl_comm_t communicator,
+                                 ccl_stream_t stream)
 {
     try
     {
         auto comm = static_cast<ccl_comm*>(communicator);
         ccl_comm* real_comm = comm ?: global_data.comm.get();
 
-        ccl_barrier_impl(real_comm);
+        auto real_stream = static_cast<const ccl_stream*>(stream);
+
+        ccl_barrier_impl(real_comm, real_stream);
 
         return ccl_status_success;
     }

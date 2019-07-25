@@ -3,26 +3,26 @@
 #define RUN_COLLECTIVE(start_cmd, name)                                    \
   do {                                                                     \
       t = 0;                                                               \
-      float expected = 1.0;                                                \
       for (iter_idx = 0; iter_idx < ITERS; iter_idx++)                     \
       {                                                                    \
           for (idx = 0; idx < COUNT; idx++)                                \
-              send_buf[idx] = expected;                                    \
-          for (idx = 0; idx < size * COUNT; idx++)                         \
-              recv_buf[idx] = 0.0;                                         \
+          {                                                                \
+              if (rank == COLL_ROOT) buf[idx] = idx;                       \
+              else buf[idx] = 0.0;                                         \
+          }                                                                \
           t1 = when();                                                     \
           CCL_CALL(start_cmd);                                             \
           CCL_CALL(ccl_wait(request));                                     \
           t2 = when();                                                     \
           t += (t2 - t1);                                                  \
       }                                                                    \
-      ccl_barrier(NULL);                                                   \
-      for (idx = 0; idx < size * COUNT; idx++)                             \
+      ccl_barrier(NULL, NULL);                                             \
+      for (idx = 0; idx < COUNT; idx++)                                    \
       {                                                                    \
-          if (recv_buf[idx] != expected)                                   \
+          if (buf[idx] != idx)                                             \
           {                                                                \
-              printf("iter %zu, idx %zu, expected %f, got %f\n",           \
-                      iter_idx, idx, expected, recv_buf[idx]);             \
+              printf("iter %zu, idx %zu, expected %zu, got %f\n",          \
+                      iter_idx, idx, idx, buf[idx]);                       \
               ASSERT(0, "unexpected value");                               \
           }                                                                \
       }                                                                    \
@@ -32,31 +32,19 @@
 
 int main()
 {
-    float send_buf[COUNT];
-    float *recv_buf;
-    size_t *recv_counts;
+    float buf[COUNT];
 
     test_init();
 
-    recv_buf = static_cast<float*>(malloc(size * COUNT * sizeof(float)));
-    recv_counts = static_cast<size_t*>(malloc(size * sizeof(size_t)));
-
-    for (idx = 0; idx < size; idx++)
-        recv_counts[idx] = COUNT;
-
     coll_attr.to_cache = 1;
-    RUN_COLLECTIVE(ccl_allgatherv(send_buf, COUNT, recv_buf, recv_counts, ccl_dtype_float, &coll_attr, NULL, &request),
-                   "persistent_allgatherv");
+    RUN_COLLECTIVE(ccl_bcast(buf, COUNT, ccl_dtype_float, COLL_ROOT, &coll_attr, NULL, NULL, &request),
+                   "persistent_bcast");
 
     coll_attr.to_cache = 0;
-    RUN_COLLECTIVE(ccl_allgatherv(send_buf, COUNT, recv_buf, recv_counts, ccl_dtype_float, &coll_attr, NULL, &request),
-                   "regular_allgatherv");
-
-    free(recv_counts);
-    free(recv_buf);
+    RUN_COLLECTIVE(ccl_bcast(buf, COUNT, ccl_dtype_float, COLL_ROOT, &coll_attr, NULL, NULL, &request),
+                   "regular_bcast");
 
     test_finalize();
 
     return 0;
 }
-

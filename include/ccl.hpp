@@ -5,6 +5,7 @@
 #include <memory>
 
 class ccl_comm;
+class ccl_stream;
 
 namespace ccl
 {
@@ -43,6 +44,24 @@ public:
     virtual bool test() = 0;
 
     virtual ~request() = default;
+};
+
+/**
+ * A stream object is an abstraction over cpu/gpu streams
+ */
+class stream
+{
+public:
+    stream();
+
+    stream(ccl_stream_type_t stream_type, void* native_stream);
+
+   const ccl_stream* get_stream() const {
+       return stream_impl.get();
+   }
+
+private:
+    std::shared_ptr<ccl_stream> stream_impl;
 };
 
 /**
@@ -94,7 +113,8 @@ public:
                                         size_t count,
                                         ccl::data_type dtype,
                                         size_t root,
-                                        const ccl_coll_attr_t* attributes = nullptr);
+                                        const ccl_coll_attr_t* attributes = nullptr,
+                                        const ccl::stream* stream = nullptr);
 
     /**
      * Reduces @c buf on all process in the communicator and stores result in @c recv_buf
@@ -115,7 +135,8 @@ public:
                                          ccl::data_type dtype,
                                          ccl::reduction reduction,
                                          size_t root,
-                                         const ccl_coll_attr_t* attributes = nullptr);
+                                         const ccl_coll_attr_t* attributes = nullptr,
+                                         const ccl::stream* stream = nullptr);
 
     /**
      * Reduces @c buf on all process in the communicator and stores result in @c recv_buf
@@ -134,7 +155,8 @@ public:
                                             size_t count,
                                             ccl::data_type dtype,
                                             ccl::reduction reduction,
-                                            const ccl_coll_attr_t* attributes = nullptr);
+                                            const ccl_coll_attr_t* attributes = nullptr,
+                                            const ccl::stream* stream = nullptr);
 
     /**
      * Gathers @c buf on all process in the communicator and stores result in @c recv_buf
@@ -153,12 +175,13 @@ public:
                                              void* recv_buf,
                                              size_t* recv_counts,
                                              ccl::data_type dtype,
-                                             const ccl_coll_attr_t* attributes = nullptr);
+                                             const ccl_coll_attr_t* attributes = nullptr,
+                                             const ccl::stream* stream = nullptr);
 
     /**
      * Collective operation that blocks each process until every process have reached it
      */
-    void barrier();
+    void barrier(const ccl::stream* stream = nullptr);
 
     /**
      * Reduces sparse @c buf on all process in the communicator and stores result in @c recv_buf
@@ -188,7 +211,8 @@ public:
                                                    ccl::data_type index_dtype,
                                                    ccl::data_type value_dtype,
                                                    ccl::reduction reduction,
-                                                   const ccl_coll_attr_t* attributes = nullptr);
+                                                   const ccl_coll_attr_t* attributes = nullptr,
+                                                   const ccl::stream* stream = nullptr);
 
 private:
     std::shared_ptr<ccl_comm> comm_impl;

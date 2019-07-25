@@ -7,8 +7,8 @@
       {                                                                    \
           for (idx = 0; idx < COUNT; idx++)                                \
           {                                                                \
-              if (rank == COLL_ROOT) buf[idx] = idx;                       \
-              else buf[idx] = 0.0;                                         \
+              send_buf[idx] = (float)rank;                                 \
+              recv_buf[idx] = 0.0;                                         \
           }                                                                \
           t1 = when();                                                     \
           CCL_CALL(start_cmd);                                             \
@@ -16,13 +16,14 @@
           t2 = when();                                                     \
           t += (t2 - t1);                                                  \
       }                                                                    \
-      ccl_barrier(NULL);                                                   \
+      ccl_barrier(NULL, NULL);                                             \
+      float expected = (size - 1) * ((float)size / 2);                     \
       for (idx = 0; idx < COUNT; idx++)                                    \
       {                                                                    \
-          if (buf[idx] != idx)                                             \
+          if (recv_buf[idx] != expected)                                   \
           {                                                                \
-              printf("iter %zu, idx %zu, expected %zu, got %f\n",          \
-                      iter_idx, idx, idx, buf[idx]);                       \
+              printf("iter %zu, idx %zu, expected %f, got %f\n",           \
+                      iter_idx, idx, expected, recv_buf[idx]);             \
               ASSERT(0, "unexpected value");                               \
           }                                                                \
       }                                                                    \
@@ -32,19 +33,27 @@
 
 int main()
 {
-    float buf[COUNT];
+    float* send_buf = malloc(sizeof(float) * COUNT);
+    float* recv_buf = malloc(sizeof(float) * COUNT);
 
     test_init();
 
+    coll_attr.to_cache = 0;
+    RUN_COLLECTIVE(ccl_allreduce(send_buf, recv_buf, COUNT, ccl_dtype_float, ccl_reduction_sum, &coll_attr, NULL, NULL, &request),
+                   "warmup_allreduce");
+
     coll_attr.to_cache = 1;
-    RUN_COLLECTIVE(ccl_bcast(buf, COUNT, ccl_dtype_float, COLL_ROOT, &coll_attr, NULL, &request),
-                   "persistent_bcast");
+    RUN_COLLECTIVE(ccl_allreduce(send_buf, recv_buf, COUNT, ccl_dtype_float, ccl_reduction_sum, &coll_attr, NULL, NULL, &request),
+                   "persistent_allreduce");
 
     coll_attr.to_cache = 0;
-    RUN_COLLECTIVE(ccl_bcast(buf, COUNT, ccl_dtype_float, COLL_ROOT, &coll_attr, NULL, &request),
-                   "regular_bcast");
+    RUN_COLLECTIVE(ccl_allreduce(send_buf, recv_buf, COUNT, ccl_dtype_float, ccl_reduction_sum, &coll_attr, NULL, NULL, &request),
+                   "regular_allreduce");
 
     test_finalize();
+
+    free(send_buf);
+    free(recv_buf);
 
     return 0;
 }

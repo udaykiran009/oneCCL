@@ -4,6 +4,11 @@
 
 #include <stdexcept>
 
+#ifdef ENABLE_SYCL
+#include <CL/sycl.hpp>
+typedef cl::sycl::buffer<char, 1> ccl_sycl_buffer_t;
+#endif /* ENABLE_SYCL */
+
 namespace ccl
 {
 

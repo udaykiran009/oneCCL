@@ -6,8 +6,8 @@
 extern "C" {
 #endif
 
-ccl_status_t CCL_API ccl_init();
-ccl_status_t CCL_API ccl_finalize();
+ccl_status_t CCL_API ccl_init(void);
+ccl_status_t CCL_API ccl_finalize(void);
 
 ccl_status_t CCL_API ccl_bcast(
     void* buf,
@@ -16,6 +16,7 @@ ccl_status_t CCL_API ccl_bcast(
     size_t root,
     const ccl_coll_attr_t* attributes,
     ccl_comm_t communicator,
+    ccl_stream_t stream,
     ccl_request_t* req);
 
 ccl_status_t CCL_API ccl_reduce(
@@ -27,6 +28,7 @@ ccl_status_t CCL_API ccl_reduce(
     size_t root,
     const ccl_coll_attr_t* attributes,
     ccl_comm_t communicator,
+    ccl_stream_t stream,
     ccl_request_t* req);
 
 ccl_status_t CCL_API ccl_allreduce(
@@ -37,6 +39,7 @@ ccl_status_t CCL_API ccl_allreduce(
     ccl_reduction_t reduction,
     const ccl_coll_attr_t* attributes,
     ccl_comm_t communicator,
+    ccl_stream_t stream,
     ccl_request_t* req);
 
 ccl_status_t CCL_API ccl_allgatherv(
@@ -47,6 +50,7 @@ ccl_status_t CCL_API ccl_allgatherv(
     ccl_datatype_t dtype,
     const ccl_coll_attr_t* attributes,
     ccl_comm_t communicator,
+    ccl_stream_t stream,
     ccl_request_t* req);
 
 ccl_status_t CCL_API ccl_sparse_allreduce(
@@ -63,9 +67,11 @@ ccl_status_t CCL_API ccl_sparse_allreduce(
     ccl_reduction_t reduction,
     const ccl_coll_attr_t* attributes,
     ccl_comm_t communicator,
+    ccl_stream_t stream,
     ccl_request_t* req);
 
-ccl_status_t CCL_API ccl_barrier(ccl_comm_t communicator);
+ccl_status_t CCL_API ccl_barrier(ccl_comm_t communicator,
+                                 ccl_stream_t stream);
 
 ccl_status_t CCL_API ccl_wait(ccl_request_t req);
 
@@ -79,6 +85,11 @@ ccl_status_t CCL_API ccl_get_comm_rank(ccl_comm_t comm, size_t* rank);
 
 ccl_status_t CCL_API ccl_get_comm_size(ccl_comm_t comm, size_t* size);
 
+ccl_status_t CCL_API ccl_stream_create(ccl_stream_type_t stream_type,
+                                       void* native_stream,
+                                       ccl_stream_t* ccl_stream);
+
+ccl_status_t CCL_API ccl_stream_free(ccl_stream_t stream);
 #ifdef __cplusplus
 }   /*extern C */
 #endif

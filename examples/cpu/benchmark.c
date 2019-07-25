@@ -61,7 +61,7 @@ void print_timings(double* timer, size_t elem_count, size_t buf_count)
     ccl_request_t request = NULL;
     ccl_coll_attr_t attr;
     memset(&attr, 0, sizeof(ccl_coll_attr_t));
-    CCL_CALL(ccl_allgatherv(timer, 1, timers, recv_counts, ccl_dtype_double, &attr, NULL, &request));
+    CCL_CALL(ccl_allgatherv(timer, 1, timers, recv_counts, ccl_dtype_double, &attr, NULL, NULL, &request));
     CCL_CALL(ccl_wait(request));
 
     if (rank == 0)
@@ -86,7 +86,7 @@ void print_timings(double* timer, size_t elem_count, size_t buf_count)
         printf("size %10zu x %5zu bytes, avg %10.2lf us, avg_per_buf %10.2f, stddev %5.1lf %%\n",
                 elem_count * sizeof(DTYPE), buf_count, avg_timer, avg_timer_per_buf, stddev_timer);
     }
-    ccl_barrier(NULL);
+    ccl_barrier(NULL, NULL);
     free(timers);
     free(recv_counts);
 }
@@ -124,7 +124,7 @@ int main()
         for (idx = 0; idx < BUF_COUNT; idx++)
         {
             ccl_allreduce(send_bufs[idx], recv_bufs[idx], count, CCL_DTYPE,
-                           ccl_reduction_sum, &coll_attr, NULL, &reqs[idx]);
+                          ccl_reduction_sum, &coll_attr, NULL, NULL, &reqs[idx]);
         }
         for (idx = 0; idx < BUF_COUNT; idx++)
         {
@@ -132,7 +132,7 @@ int main()
         }
     }
 
-    ccl_barrier(NULL);
+    ccl_barrier(NULL, NULL);
 
     char match_id[16];
     coll_attr.to_cache = 1;
@@ -149,7 +149,7 @@ int main()
             {
                 sprintf(match_id, "count_%zu_idx_%zu", count, idx);
                 ccl_allreduce(send_bufs[idx], recv_bufs[idx], count, CCL_DTYPE,
-                               ccl_reduction_sum, &coll_attr, NULL, &reqs[idx]);
+                               ccl_reduction_sum, &coll_attr, NULL, NULL, &reqs[idx]);
             }
             for (idx = 0; idx < BUF_COUNT; idx++)
             {
@@ -162,7 +162,7 @@ int main()
         print_timings(&t, count, BUF_COUNT);
     }
 
-    ccl_barrier(NULL);
+    ccl_barrier(NULL, NULL);
 
     coll_attr.to_cache = 1;
     for (count = BUF_COUNT; count <= SINGLE_ELEM_COUNT; count *= 2)
@@ -173,7 +173,7 @@ int main()
             t1 = when();
             sprintf(match_id, "single_count_%zu", count);
             ccl_allreduce(single_send_buf, single_recv_buf, count, CCL_DTYPE,
-                           ccl_reduction_sum, &coll_attr, NULL, &reqs[0]);
+                           ccl_reduction_sum, &coll_attr, NULL, NULL, &reqs[0]);
             ccl_wait(reqs[0]);
             t2 = when();
             t += (t2 - t1);

@@ -33,8 +33,12 @@ set(CCL_SRC
     common/datatype/datatype.cpp
     common/env/env.cpp
     common/global/global.cpp
-    common/log/log.cpp)
+    common/log/log.cpp
+    common/stream/stream.cpp)
 
+if(${CMAKE_C_COMPILER_ID} STREQUAL "Clang" AND ${CMAKE_CXX_COMPILER_ID} STREQUAL "Clang")
+    set(CCL_INC_DIRS "${CCL_INC_DIRS} ${SYCL_BUNDLE_ROOT}/include")
+endif()
 set(CCL_INC_DIRS
     ${PROJECT_SOURCE_DIR}/include
     ${PROJECT_SOURCE_DIR}/src)
@@ -55,6 +59,14 @@ target_include_directories(ccl PUBLIC ${CCL_INC_DIRS})
 target_link_libraries(ccl PUBLIC dl pthread)
 set_target_properties(ccl PROPERTIES LIBRARY_OUTPUT_DIRECTORY ${CCL_BUILD_DIR})
 install(TARGETS ccl LIBRARY DESTINATION ${CCL_INSTALL_LIB})
+if(${CMAKE_C_COMPILER_ID} STREQUAL "Clang" AND ${CMAKE_CXX_COMPILER_ID} STREQUAL "Clang")
+install(FILES
+    "../cmake/FindOpenCL.cmake"
+    "../cmake/FindSYCL.cmake"
+    "../cmake/FindIntelSYCL.cmake"
+    "../cmake/FindComputeCpp.cmake"
+    DESTINATION ${CCL_INSTALL_LIB})
+endif()
 
 #static library
 add_library(ccl-static STATIC $<TARGET_OBJECTS:ccl-objects>)

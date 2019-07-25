@@ -177,36 +177,48 @@ ccl_status_t ccl_parallelizer::process(ccl_sched* sched)
             for (idx = 0; idx < part_count; idx++)
             {
                 CCL_CALL(ccl_coll_build_bcast(part_scheds[idx].get(),
-                                                ccl_buffer(&(coll_param->buf),
-                                                            coll_param->count * dtype_size,
-                                                            offsets[idx],
-                                                            ccl_buffer_type::INDIRECT),
-                                                counts[idx],
-                                                dtype,
-                                                coll_param->root));
+                                              ccl_buffer(&(coll_param->buf),
+                                                         coll_param->count * dtype_size,
+                                                         offsets[idx],
+                                                         ccl_buffer_type::INDIRECT),
+                                              counts[idx],
+                                              dtype,
+                                              coll_param->root));
             }
             break;
         case ccl_coll_reduce:
             for (idx = 0; idx < part_count; idx++)
             {
                 CCL_CALL(ccl_coll_build_reduce(part_scheds[idx].get(),
-                                                 ccl_buffer(&(coll_param->send_buf),
-                                                             coll_param->count * dtype_size,
-                                                             offsets[idx],
-                                                             ccl_buffer_type::INDIRECT),
-                                                 ccl_buffer(&(coll_param->recv_buf),
-                                                             coll_param->count * dtype_size,
-                                                             offsets[idx],
-                                                             ccl_buffer_type::INDIRECT),
-                                                 counts[idx],
-                                                 dtype,
-                                                 coll_param->reduction,
-                                                 coll_param->root));
+                                               ccl_buffer(&(coll_param->send_buf),
+                                                          coll_param->count * dtype_size,
+                                                          offsets[idx],
+                                                          ccl_buffer_type::INDIRECT),
+                                               ccl_buffer(&(coll_param->recv_buf),
+                                                          coll_param->count * dtype_size,
+                                                          offsets[idx],
+                                                          ccl_buffer_type::INDIRECT),
+                                               counts[idx],
+                                               dtype,
+                                               coll_param->reduction,
+                                               coll_param->root));
             }
             break;
         case ccl_coll_allreduce:
         {
             ccl_parallelizer_prologue_ctx* main_ctx = nullptr;
+#ifdef ENABLE_SYCL
+            /* convert sycl buffer */
+            if(coll_param->stream && (ccl_stream_type_t)(coll_param->stream->get_type()) == ccl_stream_sycl) {
+
+                entry_factory::make_sycl_copy_device_to_host_entry(part_scheds[0].get(),
+                                                                   coll_param->sycl_send_buf,
+                                                                   (void *)coll_param->send_buf,
+                                                                   dtype, coll_param->stream);
+
+                sched->sync_partial_scheds();
+            }
+#endif /* ENABLE_SYCL */
             if (sched->coll_attr.prologue_fn)
             {
                 main_ctx =
@@ -282,17 +294,17 @@ ccl_status_t ccl_parallelizer::process(ccl_sched* sched)
                 for (idx = 0; idx < part_count; idx++)
                 {
                     CCL_CALL(ccl_coll_build_allreduce(part_scheds[idx].get(),
-                                                        ccl_buffer(&(coll_param->send_buf),
-                                                                    coll_param->count * dtype_size,
-                                                                    offsets[idx],
-                                                                    ccl_buffer_type::INDIRECT),
-                                                        ccl_buffer(&(coll_param->recv_buf),
-                                                                    coll_param->count * dtype_size,
-                                                                    offsets[idx],
-                                                                    ccl_buffer_type::INDIRECT),
-                                                        counts[idx],
-                                                        dtype,
-                                                        coll_param->reduction));
+                                                      ccl_buffer(&(coll_param->send_buf),
+                                                                 coll_param->count * dtype_size,
+                                                                 offsets[idx],
+                                                                 ccl_buffer_type::INDIRECT),
+                                                      ccl_buffer(&(coll_param->recv_buf),
+                                                                 coll_param->count * dtype_size,
+                                                                 offsets[idx],
+                                                                 ccl_buffer_type::INDIRECT),
+                                                      counts[idx],
+                                                      dtype,
+                                                      coll_param->reduction));
                 }
             }
             if (sched->coll_attr.epilogue_fn)
@@ -320,6 +332,20 @@ ccl_status_t ccl_parallelizer::process(ccl_sched* sched)
                                     ccl_parallelizer_prologue_get_dtype, main_ctx, false);
                 }
             }
+
+#ifdef ENABLE_SYCL
+            /* convert sycl buffer */
+            if(coll_param->stream && (ccl_stream_type_t)(coll_param->stream->get_type()) == ccl_stream_sycl) {
+
+                sched->sync_partial_scheds();
+
+                entry_factory::make_sycl_copy_host_to_device_entry(part_scheds[0].get(),
+                                                                   coll_param->recv_buf,
+                                                                   coll_param->sycl_recv_buf,
+                                                                   dtype, coll_param->stream);
+            }
+#endif /* ENABLE_SYCL */
+
             break;
         }
         case ccl_coll_allgatherv:
@@ -327,15 +353,15 @@ ccl_status_t ccl_parallelizer::process(ccl_sched* sched)
             if (env_data.allgatherv_algo == ccl_allgatherv_algo_direct)
             {
                 CCL_CALL(ccl_coll_build_allgatherv(part_scheds[idx].get(),
-                                                    ccl_buffer(&(coll_param->send_buf),
-                                                                coll_param->send_count * dtype_size,
-                                                                ccl_buffer_type::INDIRECT),
-                                                    coll_param->send_count,
-                                                    ccl_buffer(&(coll_param->recv_buf),
-                                                                ag_recv_bytes,
-                                                                ccl_buffer_type::INDIRECT),
-                                                    coll_param->recv_counts,
-                                                    dtype));
+                                                   ccl_buffer(&(coll_param->send_buf),
+                                                              coll_param->send_count * dtype_size,
+                                                              ccl_buffer_type::INDIRECT),
+                                                   coll_param->send_count,
+                                                   ccl_buffer(&(coll_param->recv_buf),
+                                                              ag_recv_bytes,
+                                                              ccl_buffer_type::INDIRECT),
+                                                   coll_param->recv_counts,
+                                                   dtype));
             }
             else
             {
@@ -370,9 +396,9 @@ ccl_status_t ccl_parallelizer::process(ccl_sched* sched)
                     {
                         entry_factory::make_copy_entry(part_scheds[idx].get(),
                                                        ccl_buffer(&(coll_param->send_buf),
-                                                                   coll_param->send_count * dtype_size,
-                                                                   copy_offsets[idx],
-                                                                   ccl_buffer_type::INDIRECT),
+                                                                  coll_param->send_count * dtype_size,
+                                                                  copy_offsets[idx],
+                                                                  ccl_buffer_type::INDIRECT),
                                                        ag_recv_bufs[coll_param->comm->rank()] + copy_offsets[idx],
                                                        copy_counts[idx], dtype);
                     }
@@ -396,31 +422,31 @@ ccl_status_t ccl_parallelizer::process(ccl_sched* sched)
             for (idx = 0; idx < part_count; idx++)
             {
                 CCL_CALL(ccl_coll_build_sparse_allreduce(part_scheds[idx].get(),
-                                                           ccl_buffer(&(coll_param->send_buf),
-                                                                       coll_param->send_count * itype_size,
-                                                                       offsets[idx],
-                                                                       ccl_buffer_type::INDIRECT),
-                                                           coll_param->send_count,
-                                                           ccl_buffer(&(coll_param->sparse_param.snd_val_buf),
-                                                                       coll_param->sparse_param.snd_val_count * dtype_size,
-                                                                       offsets[idx],
-                                                                       ccl_buffer_type::INDIRECT),
-                                                           coll_param->sparse_param.snd_val_count,
-                                                           ccl_buffer(&(coll_param->sparse_param.rcv_ind_buf),
-                                                                       //*(coll_param.recv_counts) * itype_size,
-                                                                       -1, /* unknown size */
-                                                                       offsets[idx],
-                                                                       ccl_buffer_type::INDIRECT),
-                                                           coll_param->recv_counts,
-                                                           ccl_buffer(&(coll_param->sparse_param.rcv_val_buf),
-                                                                       //*(coll_param.sparse_param.rcv_val_count) * dtype_size,
-                                                                       -1, /* unknown size */
-                                                                       offsets[idx],
-                                                                       ccl_buffer_type::INDIRECT),
-                                                           coll_param->sparse_param.rcv_val_count,
-                                                           coll_param->sparse_param.itype,
-                                                           dtype,
-                                                           coll_param->reduction));
+                                                         ccl_buffer(&(coll_param->send_buf),
+                                                                    coll_param->send_count * itype_size,
+                                                                    offsets[idx],
+                                                                    ccl_buffer_type::INDIRECT),
+                                                         coll_param->send_count,
+                                                         ccl_buffer(&(coll_param->sparse_param.snd_val_buf),
+                                                                    coll_param->sparse_param.snd_val_count * dtype_size,
+                                                                    offsets[idx],
+                                                                    ccl_buffer_type::INDIRECT),
+                                                         coll_param->sparse_param.snd_val_count,
+                                                         ccl_buffer(&(coll_param->sparse_param.rcv_ind_buf),
+                                                                    //*(coll_param.recv_counts) * itype_size,
+                                                                    -1, /* unknown size */
+                                                                    offsets[idx],
+                                                                    ccl_buffer_type::INDIRECT),
+                                                         coll_param->recv_counts,
+                                                         ccl_buffer(&(coll_param->sparse_param.rcv_val_buf),
+                                                                    //*(coll_param.sparse_param.rcv_val_count) * dtype_size,
+                                                                    -1, /* unknown size */
+                                                                    offsets[idx],
+                                                                    ccl_buffer_type::INDIRECT),
+                                                         coll_param->sparse_param.rcv_val_count,
+                                                         coll_param->sparse_param.itype,
+                                                         dtype,
+                                                         coll_param->reduction));
             }
             break;
 

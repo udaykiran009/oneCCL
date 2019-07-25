@@ -15,12 +15,13 @@ void run_collective(const char* cmd_name,
                     const std::vector<float>& send_buf,
                     std::vector<float>& recv_buf,
                     ccl::communicator& comm,
+                    ccl::stream* stream,
                     ccl_coll_attr_t& coll_attr)
 {
     std::chrono::system_clock::duration exec_time{};
     float expected = (comm.size() - 1) * (static_cast<float>(comm.size()) / 2);
 
-    comm.barrier();
+    comm.barrier(stream);
 
     for (size_t idx = 0; idx < ITERS; ++idx)
     {
@@ -32,7 +33,8 @@ void run_collective(const char* cmd_name,
                        recv_buf.size(),
                        ccl::data_type::dtype_float,
                        ccl::reduction::sum,
-                       &coll_attr)->wait();
+                       &coll_attr,
+                       stream)->wait();
 
         exec_time += std::chrono::system_clock::now() - start;
     }
@@ -47,7 +49,7 @@ void run_collective(const char* cmd_name,
         }
     }
 
-    comm.barrier();
+    comm.barrier(stream);
 
     printf("avg time of %s: %lu us\n", cmd_name,
            std::chrono::duration_cast<std::chrono::microseconds>(exec_time).count() / ITERS);
@@ -70,6 +72,7 @@ int main()
     {
         ccl::environment env;
         ccl::communicator comm;
+        ccl::stream stream;
 
         for (auto msg_count : msg_counts)
         {
@@ -79,13 +82,13 @@ int main()
             std::vector<float> send_buf(msg_count, static_cast<float>(comm.rank()));
 
             coll_attr.to_cache = 0;
-            run_collective("warmup allreduce", send_buf, recv_buf, comm, coll_attr);
+            run_collective("warmup allreduce", send_buf, recv_buf, comm, &stream, coll_attr);
 
             coll_attr.to_cache = 1;
-            run_collective("persistent allreduce", send_buf, recv_buf, comm, coll_attr);
+            run_collective("persistent allreduce", send_buf, recv_buf, comm, &stream, coll_attr);
 
             coll_attr.to_cache = 0;
-            run_collective("regular allreduce", send_buf, recv_buf, comm, coll_attr);
+            run_collective("regular allreduce", send_buf, recv_buf, comm, &stream, coll_attr);
         }
     }
     catch (ccl::ccl_error& e)

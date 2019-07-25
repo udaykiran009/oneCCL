@@ -18,7 +18,7 @@
 #define ITERS     100
 #define COLL_ROOT 0
 
-void test_finalize();
+void test_finalize(void);
 
 #define ASSERT(cond, fmt, ...)                            \
   do                                                      \

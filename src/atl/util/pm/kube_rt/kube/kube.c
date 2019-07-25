@@ -1,5 +1,6 @@
 #include "kube.h"
 #include "helper.h"
+#include <assert.h>
 
 typedef enum framework_answers
 {
@@ -73,7 +74,9 @@ int KUBE_API KUBE_Update()
         size_t is_first_collect = 0;
 
         fp = popen(run_get_up_str, READ_ONLY);
-        fgets(up_idx_str, sizeof(up_idx_str)-1, fp);
+        if (fgets(up_idx_str, sizeof(up_idx_str)-1, fp) == NULL) {
+            assert(0);
+        }
         pclose(fp);
 
         up_idx = atoi(up_idx_str);
@@ -88,7 +91,9 @@ int KUBE_API KUBE_Update()
             do
             {
                 fp = popen(run_get_up_str, READ_ONLY);
-                fgets(up_idx_str, sizeof(up_idx_str)-1, fp);
+                if (fgets(up_idx_str, sizeof(up_idx_str)-1, fp) == NULL) {
+                    assert(0);
+                }
                 pclose(fp);
 
                 up_idx = atoi(up_idx_str);
@@ -414,12 +419,16 @@ int KUBE_API KUBE_Barrier(void)
     SET_STR(run_str, RUN_REQUEST_SIZE, run_v2_template, get_min_barrier_num);
 
     fp = popen(run_str, READ_ONLY);
-    fgets(min_barrier_num, INT_STR_SIZE, fp);
+    if (fgets(min_barrier_num, INT_STR_SIZE, fp) == NULL) {
+        assert(0);
+    }
     while (atoi(min_barrier_num) != barrier_num && finalized != 1)
     {
         pclose(fp);
         fp = popen(run_str, READ_ONLY);
-        fgets(min_barrier_num, INT_STR_SIZE, fp);
+        if (fgets(min_barrier_num, INT_STR_SIZE, fp) == NULL) {
+            assert(0);
+        }
     }
     pclose(fp);
 
@@ -509,12 +518,16 @@ int KUBE_API KUBE_KVS_Get(const char kvsname[], const char key[], char value[], 
     SET_STR(run_str, RUN_REQUEST_SIZE, run_v2_template, get_val);
 
     fp = popen(run_str, READ_ONLY);
-    fgets(kvs_val, MAX_KVS_VAL_LENGTH, fp);
+    if (fgets(kvs_val, MAX_KVS_VAL_LENGTH, fp) == NULL) {
+        assert(0);
+    }
     while (kvs_val[0] ==  NULL_CHAR)
     {
         pclose(fp);
         fp = popen(run_str, READ_ONLY);
-        fgets(kvs_val, MAX_KVS_VAL_LENGTH, fp);
+        if (fgets(kvs_val, MAX_KVS_VAL_LENGTH, fp) == NULL) {
+            assert(0);
+        }
     }
     pclose(fp);
 

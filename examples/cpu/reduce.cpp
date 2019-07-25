@@ -16,7 +16,7 @@
           t2 = when();                                                     \
           t += (t2 - t1);                                                  \
       }                                                                    \
-      ccl_barrier(NULL);                                                   \
+      ccl_barrier(NULL, NULL);                                             \
       float expected = size;                                               \
       for (idx = 0; idx < COUNT; idx++)                                    \
       {                                                                    \
@@ -39,11 +39,11 @@ int main()
     test_init();
 
     coll_attr.to_cache = 1;
-    RUN_COLLECTIVE(ccl_reduce(send_buf, recv_buf, COUNT, ccl_dtype_float, ccl_reduction_sum, COLL_ROOT, &coll_attr, NULL, &request),
+    RUN_COLLECTIVE(ccl_reduce(send_buf, recv_buf, COUNT, ccl_dtype_float, ccl_reduction_sum, COLL_ROOT, &coll_attr, NULL, NULL, &request),
                    "persistent_reduce");
 
     coll_attr.to_cache = 0;
-    RUN_COLLECTIVE(ccl_reduce(send_buf, recv_buf, COUNT, ccl_dtype_float, ccl_reduction_sum, COLL_ROOT, &coll_attr, NULL, &request),
+    RUN_COLLECTIVE(ccl_reduce(send_buf, recv_buf, COUNT, ccl_dtype_float, ccl_reduction_sum, COLL_ROOT, &coll_attr, NULL, NULL, &request),
                    "regular_reduce");
 
     test_finalize();

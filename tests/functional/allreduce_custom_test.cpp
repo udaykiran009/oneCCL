@@ -46,7 +46,6 @@ ccl_status_t do_epilogue_T_2x(const void* in_buf, size_t in_count, ccl_datatype_
 
     return ccl_status_success;
 }
-const char char_max = (char)(((unsigned char) char(-1)) / 2);
 template <typename T>
 ccl_status_t do_prologue_T_to_char(const void* in_buf, size_t in_count, ccl_datatype_t in_dtype,
                                         void** out_buf, size_t* out_count, ccl_datatype_t* out_dtype,
@@ -322,9 +321,9 @@ public:
                 }
                 param.req[Buffers[idx]] = (param.GetPlaceType() == PT_IN) ?
                     param.global_comm.allreduce(param.recvBuf[Buffers[idx]].data(), param.recvBuf[Buffers[idx]].data(), param.elemCount,
-                                  (ccl::data_type) param.GetDataType(),(ccl::reduction) param.GetReductionType(), &param.coll_attr) :
+                                  (ccl::data_type) param.GetDataType(),(ccl::reduction) param.GetReductionType(), &param.coll_attr, param.GetStream()) :
                     param.global_comm.allreduce(param.sendBuf[Buffers[idx]].data(), param.recvBuf[Buffers[idx]].data(), param.elemCount,
-                                  (ccl::data_type) param.GetDataType(),(ccl::reduction) param.GetReductionType(), &param.coll_attr);
+                                  (ccl::data_type) param.GetDataType(),(ccl::reduction) param.GetReductionType(), &param.coll_attr, param.GetStream());
             }
             param.DefineCompletionOrderAndComplete();
             result += Check(param);

@@ -16,7 +16,7 @@
           t2 = when();                                                     \
           t += (t2 - t1);                                                  \
       }                                                                    \
-      ccl_barrier(NULL);                                                   \
+      ccl_barrier(NULL, NULL);                                             \
       for (idx = 0; idx < size; idx++)                                     \
       {                                                                    \
           for (size_t elem_idx = 0; elem_idx < COUNT; elem_idx++)          \
@@ -54,11 +54,11 @@ int main()
         recv_counts[idx] = COUNT;
 
     coll_attr.to_cache = 1;
-    RUN_COLLECTIVE(ccl_allgatherv(send_buf, COUNT, recv_bufs, recv_counts, ccl_dtype_float, &coll_attr, NULL, &request),
+    RUN_COLLECTIVE(ccl_allgatherv(send_buf, COUNT, recv_bufs, recv_counts, ccl_dtype_float, &coll_attr, NULL, NULL, &request),
                    "persistent_allgatherv");
 
     coll_attr.to_cache = 0;
-    RUN_COLLECTIVE(ccl_allgatherv(send_buf, COUNT, recv_bufs, recv_counts, ccl_dtype_float, &coll_attr, NULL, &request),
+    RUN_COLLECTIVE(ccl_allgatherv(send_buf, COUNT, recv_bufs, recv_counts, ccl_dtype_float, &coll_attr, NULL, NULL, &request),
                    "regular_allgatherv");
 
     for (idx = 0; idx < size; idx++)

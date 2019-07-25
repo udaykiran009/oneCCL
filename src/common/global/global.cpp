@@ -2,6 +2,7 @@
 #include "common/comm/atl_tag.hpp"
 #include "common/comm/comm_id_storage.hpp"
 #include "common/utils/tree.hpp"
+#include "common/stream/stream.hpp"
 #include "exec/exec.hpp"
 #include "sched/sched_cache.hpp"
 #include "parallelizer/parallelizer.hpp"

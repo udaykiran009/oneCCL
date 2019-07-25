@@ -9,7 +9,7 @@
 
 typedef ccl_status_t(* ccl_sched_entry_function_t)(const void*);
 
-struct ccl_sched;
+class ccl_sched;
 
 enum ccl_sched_entry_exec_mode
 {

@@ -40,7 +40,7 @@ public:
             for (idx = 0; idx < param.bufferCount; idx++) {
                 this->Init(param, idx);
                 param.req[Buffers[idx]] = param.global_comm.bcast(param.sendBuf[Buffers[idx]].data(), param.elemCount,
-                                  (ccl::data_type) param.GetDataType(), ROOT_PROCESS_IDX, &param.coll_attr);
+                                  (ccl::data_type) param.GetDataType(), ROOT_PROCESS_IDX, &param.coll_attr, param.GetStream());
             }
             param.DefineCompletionOrderAndComplete();
             result += Check(param);

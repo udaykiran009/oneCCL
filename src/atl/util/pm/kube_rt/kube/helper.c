@@ -1,4 +1,5 @@
 #include "helper.h"
+#include <assert.h>
 
 #define MAX_KVS_STR_LENGTH 1024
 #define SHIFT_TO_VAL 3
@@ -145,7 +146,9 @@ void up_pods_count(void)
     SET_STR(run_str, RUN_REQUEST_SIZE, run_v2_template, get_count_str);
 
     fp = popen(run_str, READ_ONLY);
-    fgets(count_pods_str, sizeof(count_pods_str) - 1, fp);
+    if (fgets(count_pods_str, sizeof(count_pods_str) - 1, fp) == NULL) {
+        assert(0);
+    }
     pclose(fp);
 
     count_pods = atoi(count_pods_str);
@@ -174,7 +177,9 @@ void wait_accept()
     while (1)
     {
         fp = popen(run_str, READ_ONLY);
-        fgets(check_accept, INT_STR_SIZE, fp);
+        if (fgets(check_accept, INT_STR_SIZE, fp) == NULL) {
+            assert(0);
+        }
         pclose(fp);
         if (atoi(check_accept) == 1)
         {
@@ -189,7 +194,9 @@ void wait_accept()
             SET_STR(run_str, RUN_REQUEST_SIZE, run_v2_template, get_my_rank_str);
 
             fp = popen(run_str, READ_ONLY);
-            fgets(my_rank_str, INT_STR_SIZE, fp);
+            if (fgets(my_rank_str, INT_STR_SIZE, fp) == NULL) {
+                assert(0);
+            }
             pclose(fp);
 
             my_rank = atoi(my_rank_str);
@@ -261,7 +268,9 @@ void accept_new_ranks(shift_list_t* cur_list)
             SET_STR(run_str, RUN_REQUEST_SIZE, run_v2_template, get_new_pod_name_str);
 
             fp = popen(run_str, READ_ONLY);
-            fgets(new_pod_name_str, sizeof(new_pod_name_str)-1, fp);
+            if (fgets(new_pod_name_str, sizeof(new_pod_name_str)-1, fp) == NULL) {
+                assert(0);
+            }
             pclose(fp);
 
             new_pod_name_str[strlen(new_pod_name_str) - 1] = NULL_CHAR;
@@ -283,12 +292,16 @@ void accept_new_ranks(shift_list_t* cur_list)
     SET_STR(run_str, RUN_REQUEST_SIZE, run_v2_template, grep_count_accept);
 
     fp = popen(run_str, READ_ONLY);
-    fgets(is_accept, sizeof(is_accept)-1, fp);
+    if (fgets(is_accept, sizeof(is_accept)-1, fp) == NULL) {
+        assert(0);
+    }
     while (atoi(is_accept) != 0)
     {
         pclose(fp);
         fp = popen(run_str, READ_ONLY);
-        fgets(is_accept, sizeof(is_accept)-1, fp);
+        if (fgets(is_accept, sizeof(is_accept)-1, fp) == NULL) {
+            assert(0);
+        }
     }
     pclose(fp);
 }
@@ -433,7 +446,9 @@ void post_my_info()
     SET_STR(run_str, RUN_REQUEST_SIZE, run_v2_template, get_min_barrier_num);
 
     fp = popen(run_str, READ_ONLY);
-    fgets(barrier_num_str, INT_STR_SIZE, fp);
+    if (fgets(barrier_num_str, INT_STR_SIZE, fp) == NULL) {
+        assert(0);
+    }
     pclose(fp);
 
     barrier_num_str[strlen(barrier_num_str) - 1] = NULL_CHAR;
@@ -466,7 +481,9 @@ void post_my_info()
     SET_STR(run_str, RUN_REQUEST_SIZE, run_v2_template, get_name_key);
 
     fp = popen(run_str, READ_ONLY);
-    fgets(kvs_name_key, MAX_KVS_NAME_KEY_LENGTH, fp);
+    if (fgets(kvs_name_key, MAX_KVS_NAME_KEY_LENGTH, fp) == NULL) {
+        assert(0);
+    }
     pclose(fp);
     kvs_name_key[strlen(kvs_name_key) - 1] = NULL_CHAR;
 
@@ -525,7 +542,9 @@ size_t get_count_occupied_ranks(char* rank)
     SET_STR(run_str, RUN_REQUEST_SIZE, run_v2_template, check_my_rank);
 
     fp = popen(run_str, READ_ONLY);
-    fgets(count_pod_str, sizeof(count_pod_str) - 1, fp);
+    if (fgets(count_pod_str, sizeof(count_pod_str) - 1, fp) == NULL) {
+        assert(0);
+    }
     pclose(fp);
 
     SET_STR(grep_new_pod, MAX_KVS_NAME_KEY_LENGTH, GREP_TEMPLATE, KVS_NEW_POD);
@@ -536,7 +555,9 @@ size_t get_count_occupied_ranks(char* rank)
     SET_STR(run_str, RUN_REQUEST_SIZE, run_v2_template, get_count_new_pods_by_rank);
 
     fp = popen(run_str, READ_ONLY);
-    fgets(count_new_pod_str, sizeof(count_new_pod_str) - 1, fp);
+    if (fgets(count_new_pod_str, sizeof(count_new_pod_str) - 1, fp) == NULL) {
+        assert(0);
+    }
     pclose(fp);
 
     return atoi(count_new_pod_str) + atoi(count_pod_str);
@@ -559,7 +580,9 @@ size_t get_count_requested_ranks(char* rank)
     SET_STR(run_str, RUN_REQUEST_SIZE, run_v2_template, get_count_requested_pods_by_rank);
 
     fp = popen(run_str, READ_ONLY);
-    fgets(count_pods_with_my_rank, sizeof(count_pods_with_my_rank) - 1, fp);
+    if (fgets(count_pods_with_my_rank, sizeof(count_pods_with_my_rank) - 1, fp) == NULL) {
+        assert(0);
+    }
     pclose(fp);
 
     return atoi(count_pods_with_my_rank);
@@ -581,7 +604,9 @@ void occupied_rank(char* rank)
     SET_STR(run_str, RUN_REQUEST_SIZE, run_v2_template, check_up_idx);
 
     fp = popen(run_str, READ_ONLY);
-    fgets(is_inited, sizeof(is_inited) - 1, fp);
+    if (fgets(is_inited, sizeof(is_inited) - 1, fp) == NULL) {
+        assert(0);
+    }
     pclose(fp);
 
     if ((atoi(is_inited) == 0) && (my_rank == 0))
@@ -653,7 +678,9 @@ void reg_rank(void)
         SET_STR(run_str, RUN_REQUEST_SIZE, run_v2_template, check_my_rank_str);
 
         fp = popen(run_str, READ_ONLY);
-        fgets(my_num_str, sizeof(my_num_str) - 1, fp);
+        if (fgets(my_num_str, sizeof(my_num_str) - 1, fp) == NULL) {
+            assert(0);
+        }
         pclose(fp);
 
         if (atoi(my_num_str) == 1)
@@ -806,7 +833,7 @@ void up_kvs(size_t up_idx, const char* request)
         patch_fp = popen(run_str, READ_ONLY);
         pclose(patch_fp);
 
-        SET_STR(kvs_name_up, MAX_KVS_NAME_KEY_LENGTH, KVS_NAME_TEMPLATE_I, kvs_name, up_idx);
+        SET_STR(kvs_name_up, MAX_KVS_NAME_LENGTH, KVS_NAME_TEMPLATE_I, kvs_name, up_idx);
         SET_STR(kvs_name_key, MAX_KVS_NAME_KEY_LENGTH, KVS_NAME_KEY_TEMPLATE, kvs_name_up, kvs_key);
         SET_STR(patch, REQUEST_POSTFIX_SIZE, PATCH_TEMPLATE, kvs_name_key, kvs_val);
 

@@ -67,9 +67,9 @@ public:
                 this->Init(param, idx);
                 param.req[Buffers[idx]] = (param.GetPlaceType() == PT_IN) ?
                     param.global_comm.allreduce(param.recvBuf[Buffers[idx]].data(), param.recvBuf[Buffers[idx]].data(), param.elemCount,
-                                  (ccl::data_type) param.GetDataType(),(ccl::reduction) param.GetReductionName(), &param.coll_attr) :
+                                  (ccl::data_type) param.GetDataType(),(ccl::reduction) param.GetReductionName(), &param.coll_attr, param.GetStream()) :
                     param.global_comm.allreduce(param.sendBuf[Buffers[idx]].data(), param.recvBuf[Buffers[idx]].data(), param.elemCount,
-                                  (ccl::data_type) param.GetDataType(),(ccl::reduction) param.GetReductionName(), &param.coll_attr);
+                                  (ccl::data_type) param.GetDataType(),(ccl::reduction) param.GetReductionName(), &param.coll_attr, param.GetStream());
             }
             param.DefineCompletionOrderAndComplete();
             result += Check(param);

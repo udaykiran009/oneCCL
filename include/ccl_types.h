@@ -52,6 +52,13 @@ typedef enum
     ccl_reduction_custom = 4
 } ccl_reduction_t;
 
+/** Stream types. */
+typedef enum
+{
+    ccl_stream_cpu  = 0,
+    ccl_stream_sycl = 1
+} ccl_stream_type_t;
+
 /* in_buf, in_count, in_dtype, out_buf, out_count, out_dtype, out_dtype_size */
 typedef ccl_status_t(*ccl_prologue_fn_t) (const void*, size_t, ccl_datatype_t, void**, size_t*, ccl_datatype_t*, size_t*);
 
@@ -98,6 +105,7 @@ typedef void* ccl_comm_t;
 
 typedef void* ccl_request_t;
 
+typedef void* ccl_stream_t;
 
 #ifdef __cplusplus
 }   /*extern C */

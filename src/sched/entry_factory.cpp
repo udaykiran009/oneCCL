@@ -17,6 +17,8 @@
 #include "sched/entry/deregister_entry.hpp"
 #include "sched/entry/chain_call_entry.hpp"
 #include "sched/entry/nop_entry.hpp"
+#include "sched/entry/sycl_copy_device_to_host_entry.hpp"
+#include "sched/entry/sycl_copy_host_to_device_entry.hpp"
 #include "sched/entry/coll/coll_entry.hpp"
 #include "sched/entry/coll/allreduce_entry.hpp"
 #include "sched/entry/coll/allgatherv_entry.hpp"
@@ -281,3 +283,27 @@ std::shared_ptr<sched_entry> entry_factory::make_nop_entry(ccl_sched* sched)
     sched->add_entry(e);
     return e;
 }
+
+#ifdef ENABLE_SYCL
+std::shared_ptr<sched_entry> entry_factory::make_sycl_copy_device_to_host_entry(ccl_sched* sched,
+                                                                                ccl_sycl_buffer_t* in_buf,
+                                                                                void* out_buf,
+                                                                                ccl_datatype_internal_t dtype,
+                                                                                const ccl_stream* stream)
+{
+    auto e = std::make_shared<sycl_copy_device_to_host_entry>(sched, in_buf, out_buf, dtype, stream);
+    sched->add_entry(e);
+    return e;
+}
+
+std::shared_ptr<sched_entry> entry_factory::make_sycl_copy_host_to_device_entry(ccl_sched* sched,
+                                                                                void* in_buf,
+                                                                                ccl_sycl_buffer_t* out_buf,
+                                                                                ccl_datatype_internal_t dtype,
+                                                                                const ccl_stream* stream)
+{
+    auto e = std::make_shared<sycl_copy_host_to_device_entry>(sched, in_buf, out_buf, dtype, stream);
+    sched->add_entry(e);
+    return e;
+}
+#endif /* ENABLE_SYCL */

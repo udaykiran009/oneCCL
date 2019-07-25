@@ -164,4 +164,18 @@ public:
                                                               const char* entry_name = nullptr);
 
     static std::shared_ptr<sched_entry> make_nop_entry(ccl_sched* sched);
+
+#ifdef ENABLE_SYCL
+    static std::shared_ptr<sched_entry> make_sycl_copy_device_to_host_entry(ccl_sched* sched,
+                                                                            ccl_sycl_buffer_t* in_buf,
+                                                                            void* out_buf,
+                                                                            ccl_datatype_internal_t dtype,
+                                                                            const ccl_stream* stream);
+
+    static std::shared_ptr<sched_entry> make_sycl_copy_host_to_device_entry(ccl_sched* sched,
+                                                                            void* in_buf,
+                                                                            ccl_sycl_buffer_t* out_buf,
+                                                                            ccl_datatype_internal_t dtype,
+                                                                            const ccl_stream* stream);
+#endif /* ENABLE_SYCL */
 };

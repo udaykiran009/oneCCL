@@ -20,10 +20,29 @@ DATE=`date +%Y%m%d`
 TIME=`date +%H%M%S`
 ARCH=`uname -m`
 
+
 WORKSPACE=`cd ${SCRIPT_DIR}/../ && pwd -P`
-if [ -z $BUILD_COMPILER ]
+
+if [ -z "${BUILD_COMPILER_TYPE}" ]
 then
-    BUILD_COMPILER=/p/pdsd/opt/EM64T-LIN/compilers/gnu/gcc-4.8.5/bin
+    BUILD_COMPILER_TYPE="clang"
+fi
+
+if [ "${BUILD_COMPILER_TYPE}" == "gnu" ]
+then
+    BUILD_COMPILER=/usr/bin
+    C_COMPILER=${BUILD_COMPILER}/gcc
+    CXX_COMPILER=${BUILD_COMPILER}/g++
+else
+    if [ -z "${SYCL_BUNDLE_ROOT}" ]
+    then
+        echo "WARNING: SYCL_BUNDLE_ROOT is not defined, will be used default: /p/pdsd/scartch/Software/dpc/_install/dpcpp_bundle_1.0_prealpha_u9_023"
+        source /p/pdsd/scratch/Software/dpc/_install/dpcpp_bundle_1.0_prealpha_u9_023/dpc++vars.sh -r sycl
+        #source /opt/intel/dpcpp_bundle_1.0_prealpha_u9_023/dpc++vars.sh -r sycl
+    fi
+    BUILD_COMPILER=${SYCL_BUNDLE_ROOT}/bin
+    C_COMPILER=${BUILD_COMPILER}/clang
+    CXX_COMPILER=${BUILD_COMPILER}/clang++
 fi
 
 
@@ -57,7 +76,6 @@ fi
 CCL_PACKAGE_SUFFIX="_${CCL_PACKAGE_PHASE}_ww`date +%V`.${DATE}.${TIME}"
 CCL_PACKAGE_NAME="${CCL_PACKAGE_PREFIX}${CCL_VERSION_FORMAT}${CCL_PACKAGE_SUFFIX}"
 SWF_PRE_DROP_DIR="/p/pdsd/scratch/Drops/CCL/1.0/`date +%Y-%m-%d`/SWF_Drops"
-
 
 
 #==============================================================================
@@ -135,8 +153,8 @@ CheckCommandExitCode() {
 build()
 {
     log mkdir ${WORKSPACE}/build && cd ${WORKSPACE}/build && echo ${PWD}
-    log cmake .. -DCMAKE_BUILD_TYPE=Release -DCMAKE_C_COMPILER="${BUILD_COMPILER}/gcc" \
-        -DCMAKE_CXX_COMPILER="${BUILD_COMPILER}/g++"
+    log cmake .. -DCMAKE_BUILD_TYPE=Release -DCMAKE_C_COMPILER="${C_COMPILER}" \
+        -DCMAKE_CXX_COMPILER="${CXX_COMPILER}"
     log make -j VERBOSE=1 install
     if [ $? -ne 0 ]
     then
@@ -440,13 +458,13 @@ parse_arguments()
             "-pack"|"--pack")
                 ENABLE_PACK="yes"
                 ;;
-            "-build|--build")
+            "-build"|"--build")
                 ENABLE_BUILD="yes"
                 ;;
             "-swf-pre-drop"|"--swf-pre-drop")
                 ENABLE_SWF_PRE_DROP="yes"
                 ;;
-            "-h")
+            "-help")
                 print_help
                 ;;
             *)
