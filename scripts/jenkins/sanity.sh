@@ -86,6 +86,27 @@ check_command_exit_code() {
 
 set_env()
 {
+if [ -z "${BUILD_COMPILER_TYPE}" ]
+then
+    BUILD_COMPILER_TYPE="clang"
+fi
+
+if [ "${BUILD_COMPILER_TYPE}" == "gnu" ]
+ then
+    BUILD_COMPILER=/usr/bin
+    C_COMPILER=${BUILD_COMPILER}/gcc
+    CXX_COMPILER=${BUILD_COMPILER}/g++
+else
+    if [ -z "${SYCL_BUNDLE_ROOT}" ]
+    then
+        echo "WARNING: SYCL_BUNDLE_ROOT is not defined, will be used default: /p/pdsd/scartch/Software/dpc/_install/dpcpp_bundle_1.0_prealpha_u9_023"
+        source /p/pdsd/scratch/Software/dpc/_install/dpcpp_bundle_1.0_prealpha_u9_023/dpcvars.sh -r sycl
+        #source /opt/intel/dpcpp_bundle_1.0_prealpha_u9_023/dpcvars.sh -r sycl
+    fi
+    BUILD_COMPILER=${SYCL_BUNDLE_ROOT}/bin
+    C_COMPILER=${BUILD_COMPILER}/clang
+    CXX_COMPILER=${BUILD_COMPILER}/clang
+fi
     if [ -z "${I_MPI_HYDRA_HOST_FILE}" ]
     then
         if [ -f ${WORK_DIR}/tests/cfgs/clusters/${HOSTNAME}/mpi.hosts ]
@@ -161,7 +182,9 @@ make_tests()
     cd ${WORK_DIR}/tests/functional
     mkdir -p build
     cd ./build
-    cmake .. && make all
+    cmake .. -DCMAKE_BUILD_TYPE=Release -DCMAKE_C_COMPILER="${C_COMPILER}" \
+        -DCMAKE_CXX_COMPILER="${CXX_COMPILER}"
+    make all
 }
 run_tests()
 {
@@ -177,8 +200,8 @@ run_tests()
                 export CCL_TEST_REDUCTION_TYPE=1
                 export CCL_TEST_SIZE_TYPE=0
                 export CCL_TEST_SYNC_TYPE=0
-				export CCL_TEST_PROLOG_TYPE=1
-				export CCL_TEST_PLACE_TYPE=1
+                export CCL_TEST_PROLOG_TYPE=1
+                export CCL_TEST_PLACE_TYPE=1
                 export CCL_ATL_TRANSPORT=MPI
                 ctest -VV -C Mpi
                 ;;
@@ -192,8 +215,8 @@ run_tests()
                 export CCL_TEST_REDUCTION_TYPE=1
                 export CCL_TEST_SIZE_TYPE=0
                 export CCL_TEST_SYNC_TYPE=0
-				export CCL_TEST_PROLOG_TYPE=1
-				export CCL_TEST_PLACE_TYPE=1				
+                export CCL_TEST_PROLOG_TYPE=1
+                export CCL_TEST_PLACE_TYPE=1                
                 export CCL_ATL_TRANSPORT=MPI
                 for bcast in "ring" "double_tree" "direct"
                     do
@@ -222,8 +245,8 @@ run_tests()
                 export CCL_TEST_REDUCTION_TYPE=1
                 export CCL_TEST_SIZE_TYPE=0
                 export CCL_TEST_SYNC_TYPE=0
-				export CCL_TEST_PROLOG_TYPE=1
-				export CCL_TEST_PLACE_TYPE=1
+                export CCL_TEST_PROLOG_TYPE=1
+                export CCL_TEST_PLACE_TYPE=1
                 for bcast in "ring" "double_tree"
                     do
                         CCL_BCAST_ALGO=$bcast ctest -VV -C mpi_bcast_$bcast
@@ -256,8 +279,8 @@ run_tests()
                 export CCL_TEST_REDUCTION_TYPE=0
                 export CCL_TEST_SIZE_TYPE=0
                 export CCL_TEST_SYNC_TYPE=0
-				export CCL_TEST_PROLOG_TYPE=0
-				export CCL_TEST_PLACE_TYPE=0
+                export CCL_TEST_PROLOG_TYPE=0
+                export CCL_TEST_PLACE_TYPE=0
                 CCL_PRIORITY_MODE=lifo ctest -VV -C Default
                 CCL_PRIORITY_MODE=direct ctest -VV -C Default
                ;;
@@ -271,8 +294,8 @@ run_tests()
                 export CCL_TEST_REDUCTION_TYPE=0
                 export CCL_TEST_SIZE_TYPE=0
                 export CCL_TEST_SYNC_TYPE=0
-				export CCL_TEST_PROLOG_TYPE=0
-				export CCL_TEST_PLACE_TYPE=0
+                export CCL_TEST_PROLOG_TYPE=0
+                export CCL_TEST_PLACE_TYPE=0
                 CCL_TEST_DYNAMIC_POINTER=1 ctest -VV -C Default
                ;;
             out_of_order_mode )
@@ -285,8 +308,8 @@ run_tests()
                 export CCL_TEST_REDUCTION_TYPE=0
                 export CCL_TEST_SIZE_TYPE=0
                 export CCL_TEST_SYNC_TYPE=0
-				export CCL_TEST_PROLOG_TYPE=0
-				export CCL_TEST_PLACE_TYPE=0				
+                export CCL_TEST_PROLOG_TYPE=0
+                export CCL_TEST_PLACE_TYPE=0
                 CCL_OUT_OF_ORDER_SUPPORT=1 ctest -VV -C Default
                ;;
            * )
@@ -299,8 +322,8 @@ run_tests()
                 export CCL_TEST_REDUCTION_TYPE=1
                 export CCL_TEST_SIZE_TYPE=0
                 export CCL_TEST_SYNC_TYPE=0
-				export CCL_TEST_PROLOG_TYPE=1
-				export CCL_TEST_PLACE_TYPE=1				
+                export CCL_TEST_PROLOG_TYPE=1
+                export CCL_TEST_PLACE_TYPE=1
                ctest -VV -C Default
                ;;
     esac
