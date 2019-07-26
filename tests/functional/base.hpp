@@ -23,6 +23,8 @@ using namespace std;
 
 #define TIMEOUT 30
 
+#define ERR_MESSAGE_MAX_LEN (16384) // TODO: refactor errMessage to avoid fixed sized char array
+
 #define GETTID() syscall(SYS_gettid)
 
 #if 0
@@ -873,9 +875,9 @@ public:
     void TearDown() {
     }
 
-    char errMessage[100]{};
+    char errMessage[ERR_MESSAGE_MAX_LEN]{};
 
-    BaseTest() { memset(this->errMessage, '\0', 100); }
+    BaseTest() { memset(this->errMessage, '\0', ERR_MESSAGE_MAX_LEN); }
     void Init(TypedTestParam <T> &param, size_t idx){
         param.coll_attr.priority = (int)param.PriorityRequest();
         param.coll_attr.to_cache = (int)param.GetCacheType();

@@ -442,7 +442,7 @@ int ccl_env_parse_reduce_algo()
 
 int ccl_env_parse_allgatherv_algo()
 {
-    char *mode_env = getenv("CCL_ALLGATHERV_ALGO");
+    char* mode_env = getenv(CCL_ALLGATHERV_ALGO);
     if (mode_env)
     {
         if (strcmp(mode_env, "naive") == 0)
@@ -451,7 +451,7 @@ int ccl_env_parse_allgatherv_algo()
             env_data.allgatherv_algo = ccl_allgatherv_algo_direct;
         else
         {
-            CCL_THROW("incorrect CCL_ALLGATHERV_ALGO ", mode_env);
+            CCL_THROW("incorrect ", CCL_ALLGATHERV_ALGO, " ", mode_env);
             return 0;
         }
     }
@@ -460,7 +460,7 @@ int ccl_env_parse_allgatherv_algo()
 
 int ccl_env_parse_barrier_algo()
 {
-    char *mode_env = getenv("CCL_BARRIER_ALGO");
+    char* mode_env = getenv(CCL_BARRIER_ALGO);
     if (mode_env)
     {
         if (strcmp(mode_env, "ring") == 0)
@@ -469,7 +469,7 @@ int ccl_env_parse_barrier_algo()
             env_data.barrier_algo = ccl_barrier_algo_direct;
         else
         {
-            CCL_THROW("incorrect CCL_BARRIER_ALGO ", mode_env);
+            CCL_THROW("incorrect ", CCL_BARRIER_ALGO, " ", mode_env);
             return 0;
         }
     }

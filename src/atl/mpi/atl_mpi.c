@@ -473,7 +473,7 @@ atl_status_t atl_mpi_init(int *argc, char ***argv, size_t *proc_idx, size_t *pro
         setenv("I_MPI_THREAD_RUNTIME", "generic", 0);
         setenv("I_MPI_THREAD_MAX", comm_count_str, 0);
         setenv("I_MPI_THREAD_ID_KEY", COMM_IDX_KEY, 0);
-        setenv("I_MPI_THREAD_LOCK_LEVEL", "vci", 0);
+        setenv("I_MPI_THREAD_LOCK_LEVEL", "vci", 0); // TODO: reduce lock level to 'nolock'
 
         ret = MPI_Init_thread(argc, argv, required_thread_level, &provided_thread_level);
         if (provided_thread_level < required_thread_level)

@@ -5,7 +5,8 @@
 #define SINGLE_ELEM_COUNT (BUF_COUNT * ELEM_COUNT)
 #define ALIGNMENT         (2 * 1024 * 1024)
 #define DTYPE             float
-#define CCL_DTYPE        (ccl_dtype_float)
+#define CCL_DTYPE         (ccl_dtype_float)
+#define MATCH_ID_SIZE     (64)
 
 void fill_buffers(void** send_bufs, void** recv_bufs, size_t buf_count, size_t elem_count)
 {
@@ -134,7 +135,7 @@ int main()
 
     ccl_barrier(NULL, NULL);
 
-    char match_id[16];
+    char match_id[MATCH_ID_SIZE];
     coll_attr.to_cache = 1;
     coll_attr.match_id = match_id;
 
@@ -147,7 +148,7 @@ int main()
             t1 = when();
             for (idx = 0; idx < BUF_COUNT; idx++)
             {
-                sprintf(match_id, "count_%zu_idx_%zu", count, idx);
+                snprintf(match_id, sizeof(match_id), "count_%zu_idx_%zu", count, idx);
                 ccl_allreduce(send_bufs[idx], recv_bufs[idx], count, CCL_DTYPE,
                                ccl_reduction_sum, &coll_attr, NULL, NULL, &reqs[idx]);
             }
@@ -171,7 +172,7 @@ int main()
         for (iter_idx = 0; iter_idx < ITERS; iter_idx++)
         {
             t1 = when();
-            sprintf(match_id, "single_count_%zu", count);
+            snprintf(match_id, sizeof(match_id), "single_count_%zu", count);
             ccl_allreduce(single_send_buf, single_recv_buf, count, CCL_DTYPE,
                            ccl_reduction_sum, &coll_attr, NULL, NULL, &reqs[0]);
             ccl_wait(reqs[0]);

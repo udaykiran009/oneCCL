@@ -203,8 +203,8 @@ public:
         t1(comm_size, rank, true),
         t2(comm_size, rank, false)
     {
-        LOG_INFO("T1: ", t1);
-        LOG_INFO("T2: ", t2);
+        LOG_DEBUG("T1: ", t1);
+        LOG_DEBUG("T2: ", t2);
     }
 
     /**

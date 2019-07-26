@@ -35,16 +35,17 @@ ccl_executor::ccl_executor(const ccl_env_data& env_vars,
     max_order_waw_size = attr.max_order_waw_size;
 
     LOG_INFO("proc_idx ", proc_idx, ", proc_count ", proc_count,
-        ", worker_count ", worker_count, ", atl_desc ", atl_desc);
+        ", worker_count ", worker_count);
 
     if (proc_idx == 0)
     {
-        LOG_INFO("ATL parameters: comm_count: ", comm_count);
-        LOG_INFO("ATL parameters: is_tagged_coll_enabled: ", is_tagged_coll_enabled);
-        LOG_INFO("ATL parameters: tag_bits: ", tag_bits);
-        LOG_INFO("ATL parameters: max_tag: ", max_tag);
-        LOG_INFO("ATL parameters: is_rma_enabled: ", is_rma_enabled);
-        LOG_INFO("ATL parameters: max_order_waw_size: ", max_order_waw_size);
+        LOG_INFO("\nATL parameters:",
+            "\n  comm_count:             ", comm_count,
+            "\n  is_tagged_coll_enabled: ", is_tagged_coll_enabled,
+            "\n  tag_bits:               ", tag_bits,
+            "\n  max_tag:                ", max_tag,
+            "\n  is_rma_enabled:         ", is_rma_enabled,
+            "\n  max_order_waw_size:     ", max_order_waw_size);
     }
 
     size_t comm_per_worker = comm_count / worker_count;

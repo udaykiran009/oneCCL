@@ -283,7 +283,7 @@ void ccl_sched::complete()
 {
 #ifdef ENABLE_DEBUG
     exec_complete_time = timer_type::now();
-    if(env_data.sched_dump)
+    if (env_data.sched_dump)
     {
         dump("completed_sched");
     }
