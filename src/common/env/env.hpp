@@ -27,7 +27,9 @@ enum ccl_priority_mode
 {
     ccl_priority_none = 0,
     ccl_priority_direct = 1,
-    ccl_priority_lifo = 2
+    ccl_priority_lifo = 2,
+    
+    ccl_priority_last_value
 };
 
 enum ccl_allreduce_algo
@@ -37,39 +39,51 @@ enum ccl_allreduce_algo
     ccl_allreduce_algo_ring         = 2,
     ccl_allreduce_algo_ring_rma     = 3,
     ccl_allreduce_algo_double_tree  = 4,
-    ccl_allreduce_algo_direct       = 5
+    ccl_allreduce_algo_direct       = 5,
+
+    ccl_allreduce_algo_last_value
 };
 
 enum ccl_allgatherv_algo
 {
     ccl_allgatherv_algo_naive       = 0,
-    ccl_allgatherv_algo_direct      = 1
+    ccl_allgatherv_algo_direct      = 1,
+    
+    ccl_allgatherv_algo_last_value
 };
 
 enum ccl_bcast_algo
 {
     ccl_bcast_algo_ring             = 0,
     ccl_bcast_algo_double_tree      = 1,
-    ccl_bcast_algo_direct           = 2
+    ccl_bcast_algo_direct           = 2,
+    
+    ccl_bcast_algo_last_value
 };
 
 enum ccl_reduce_algo
 {
     ccl_reduce_algo_tree            = 0,
     ccl_reduce_algo_double_tree     = 1,
-    ccl_reduce_algo_direct          = 2
+    ccl_reduce_algo_direct          = 2,
+    
+    ccl_reduce_algo_last_value
 };
 
 enum ccl_barrier_algo
 {
     ccl_barrier_algo_ring           = 0,
-    ccl_barrier_algo_direct         = 1
+    ccl_barrier_algo_direct         = 1,
+    
+    ccl_barrier_algo_last_value
 };
 
 enum ccl_sparse_allreduce_algo
 {
     ccl_sparse_allreduce_algo_basic = 0,
-    ccl_sparse_allreduce_algo_mask  = 1
+    ccl_sparse_allreduce_algo_mask  = 1,
+    
+    ccl_sparse_allreduce_algo_last_value
 };
 
 //todo: set/get methods

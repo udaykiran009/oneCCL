@@ -21,7 +21,9 @@ enum class reduction
     prod = ccl_reduction_prod,
     min = ccl_reduction_min,
     max = ccl_reduction_max,
-    custom = ccl_reduction_custom
+    custom = ccl_reduction_custom,
+    
+    last_value = ccl_reduction_last_value
 };
 
 /**

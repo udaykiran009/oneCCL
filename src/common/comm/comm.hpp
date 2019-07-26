@@ -1,7 +1,7 @@
 #pragma once
 
 #include "ccl.hpp"
-#include "common/comm/comm_id.hpp"
+#include "common/comm/comm_id_storage.hpp"
 #include "common/comm/atl_tag.hpp"
 #include "common/log/log.hpp"
 #include "common/utils/utils.hpp"
@@ -20,33 +20,32 @@ public:
     ccl_comm(const ccl_comm& other) = delete;
     ccl_comm& operator=(const ccl_comm& other) = delete;
 
-    ccl_comm(size_t rank, size_t size, std::unique_ptr<comm_id> id);
-    ccl_comm(size_t rank, size_t size, std::unique_ptr<comm_id> id, rank_to_global_rank_map&& ranks);
-
+    ccl_comm(size_t rank, size_t size, ccl_comm_id_storage::comm_id &&id);
+    ccl_comm(size_t rank, size_t size, ccl_comm_id_storage::comm_id &&id, rank_to_global_rank_map&& ranks);
     ~ccl_comm() = default;
 
     static ccl_comm* create_with_color(int color, ccl_comm_id_storage* comm_ids, const ccl_comm* global_comm);
 
-    std::shared_ptr<ccl_comm> clone_with_new_id(std::unique_ptr<comm_id> id);
+    std::shared_ptr<ccl_comm> clone_with_new_id(ccl_comm_id_storage::comm_id &&id);
 
-    size_t rank() const
+    size_t rank() const noexcept
     {
         return m_rank;
     }
 
-    size_t size() const
+    size_t size() const noexcept
     {
         return m_size;
     }
 
-    size_t pof2() const
+    size_t pof2() const noexcept
     {
         return m_pof2;
     }
 
-    ccl_comm_id_t id() const
+    ccl_comm_id_t id() const noexcept
     {
-        return m_id->value();
+        return m_id.value();
     }
 
     ccl_sched_id_t get_sched_id(bool use_internal_space)
@@ -65,7 +64,7 @@ public:
             next_sched_id = first_sched_id;
         }
 
-        LOG_DEBUG("sched_id ", id, ", comm_id ", m_id->value(), ", next sched_id ", next_sched_id);
+        LOG_DEBUG("sched_id ", id, ", comm_id ", m_id.value(), ", next sched_id ", next_sched_id);
 
         return id;
     }
@@ -99,7 +98,7 @@ private:
     size_t m_rank;
     size_t m_size;
     size_t m_pof2;
-    std::unique_ptr<comm_id> m_id;
+    ccl_comm_id_storage::comm_id m_id;
     ccl_sched_id_t m_next_sched_id_internal = ccl_comm::max_sched_count / 2;
     ccl_sched_id_t m_next_sched_id_external = 0;
     rank_to_global_rank_map m_ranks_map{};

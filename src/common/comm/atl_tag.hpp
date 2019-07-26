@@ -1,6 +1,6 @@
 #pragma once
 
-#include "common/comm/comm_id.hpp"
+#include "common/comm/comm_id_storage.hpp"
 
 using ccl_op_id_t = uint8_t;
 using ccl_sched_id_t = uint16_t;

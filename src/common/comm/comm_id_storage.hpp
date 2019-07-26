@@ -4,6 +4,7 @@
 #include "common/log/log.hpp"
 #include "common/utils/spinlock.hpp"
 
+#include <functional>
 #include <vector>
 #include <limits>
 #include <iostream>
@@ -14,13 +15,77 @@ using ccl_comm_id_t = uint16_t;
 class ccl_comm_id_storage
 {
 public:
+    friend class comm_id;
+    //Inner RAII handle for unique id
+    struct comm_id
+    {
+        comm_id() = delete;
+        comm_id(const comm_id &) = delete;
+        comm_id &operator=(const comm_id &) = delete;
+        
+        explicit comm_id(ccl_comm_id_storage& storage, bool internal = false) : 
+            id_storage(storage), id(id_storage.get().acquire_id(internal))
+        {
+            refuse = false;
+        }
+
+        comm_id(ccl_comm_id_storage& storage, ccl_comm_id_t preallocated_id) : 
+            id_storage(storage), id(preallocated_id)
+        {
+            refuse = false;
+        }
+        
+        comm_id(comm_id &&src) noexcept:
+           id_storage(src.id_storage),
+           id(std::move(src.id)),
+           refuse(std::move(src.refuse))
+        {
+            src.refuse = true;
+        }
+        
+        comm_id &operator=(comm_id &&src) noexcept
+        {
+            id_storage = src.id_storage;
+            id = std::move(src.id);
+            refuse = std::move(src.refuse);
+        
+            src.refuse = true;
+            return *this;
+        }
+
+        ~comm_id()
+        {
+            if(!refuse)
+            {
+                id_storage.get().release_id(id);
+            }
+        }
+
+        ccl_comm_id_t value() const noexcept
+        {
+            return id;
+        }
+
+    private:
+        std::reference_wrapper<ccl_comm_id_storage> id_storage;
+        ccl_comm_id_t id;
+        bool refuse;
+    };
+
+
     explicit ccl_comm_id_storage(ccl_comm_id_t max_comm_count) : max_comm(max_comm_count),
-                                                                   external_ids_range_start(max_comm >> 1),
-                                                                   last_used_id_internal(),
-                                                                   last_used_id_external(external_ids_range_start),
-                                                                   free_ids(max_comm, true)
+                                                                 external_ids_range_start(max_comm >> 1),
+                                                                 last_used_id_internal(),
+                                                                 last_used_id_external(external_ids_range_start),
+                                                                 free_ids(max_comm, true)
     {}
 
+    comm_id acquire(bool internal = false)
+    {
+        return comm_id(*this, internal);
+    }
+    
+    //[[deprecated]]
     ccl_comm_id_t acquire_id(bool internal = false)
     {
         std::lock_guard<ccl_spinlock> lock(sync_guard);
@@ -48,20 +113,8 @@ public:
         free_ids[id] = false;
     }
 
-    void release_id(ccl_comm_id_t id)
-    {
-        std::lock_guard<ccl_spinlock> lock(sync_guard);
-        if (free_ids[id])
-        {
-            LOG_ERROR("attempt to release not acquired id ", id);
-            return;
-        }
-        LOG_DEBUG("free comm id ", id);
-        free_ids[id] = true;
-        last_used_id_internal = id;
-    }
-
 private:
+
     ccl_comm_id_t acquire_id_impl(ccl_comm_id_t last_used,
                                   ccl_comm_id_t lower_bound,
                                   ccl_comm_id_t upper_bound)
@@ -91,6 +144,19 @@ private:
         }
 
         throw ccl::ccl_error("no free comm id was found");
+    }
+    
+    void release_id(ccl_comm_id_t id)
+    {
+        std::lock_guard<ccl_spinlock> lock(sync_guard);
+        if (free_ids[id])
+        {
+            LOG_ERROR("attempt to release not acquired id ", id);
+            return;
+        }
+        LOG_DEBUG("free comm id ", id);
+        free_ids[id] = true;
+        last_used_id_internal = id;
     }
 
     //max_comm space is split into 2 parts - internal and external

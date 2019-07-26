@@ -61,7 +61,7 @@ private:
     std::shared_ptr<ccl_comm> service_comm;
 
     //collection of unresolved communicators
-    using unresolved_comms_type = std::unordered_map<std::string, std::unique_ptr<comm_id>>;
+    using unresolved_comms_type = std::unordered_map<std::string, ccl_comm_id_storage::comm_id>;
     unresolved_comms_type unresolved_comms{};
 
     //collection of created communicators

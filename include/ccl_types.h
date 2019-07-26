@@ -26,7 +26,9 @@ typedef enum
     ccl_status_out_of_resource   = 1,
     ccl_status_invalid_arguments = 2,
     ccl_status_unimplemented     = 3,
-    ccl_status_runtime_error     = 4
+    ccl_status_runtime_error     = 4,
+    
+    ccl_status_last_value
 } ccl_status_t;
 
 /** Data type specification */
@@ -39,7 +41,9 @@ typedef enum
     ccl_dtype_double = 4,
     ccl_dtype_int64  = 5,
     ccl_dtype_uint64 = 6,
-    ccl_dtype_custom = 7
+    ccl_dtype_custom = 7,
+    
+    ccl_dtype_last_value
 } ccl_datatype_t;
 
 /** Reduction specification */
@@ -49,7 +53,9 @@ typedef enum
     ccl_reduction_prod   = 1,
     ccl_reduction_min    = 2,
     ccl_reduction_max    = 3,
-    ccl_reduction_custom = 4
+    ccl_reduction_custom = 4,
+    
+    ccl_reduction_last_value
 } ccl_reduction_t;
 
 /** Stream types. */

@@ -6,12 +6,12 @@ std::atomic_size_t ccl_comm::comm_count{};
 
 ccl_comm::ccl_comm(size_t rank,
                    size_t size,
-                   std::unique_ptr<comm_id> id) : ccl_comm(rank, size, std::move(id), rank_to_global_rank_map{})
+                   ccl_comm_id_storage::comm_id &&id) : ccl_comm(rank, size, std::move(id), rank_to_global_rank_map{})
 {}
 
 ccl_comm::ccl_comm(size_t rank,
                    size_t size,
-                   std::unique_ptr<comm_id> id,
+                   ccl_comm_id_storage::comm_id &&id,
                    rank_to_global_rank_map&& ranks) :
     m_rank(rank),
     m_size(size),
@@ -85,14 +85,15 @@ ccl_comm* ccl_comm::create_with_color(int color,
         ranks_map.clear();
     }
 
-    ccl_comm* comm = new ccl_comm(new_rank, colors_match, std::unique_ptr<comm_id>(new comm_id(*comm_ids)),
+    ccl_comm* comm = new ccl_comm(new_rank, colors_match, comm_ids->acquire(),
                                   std::move(ranks_map));
     LOG_DEBUG("new comm: color ", color, ", rank ", comm->rank(), ", size ", comm->size(), ", comm_id ", comm->id());
 
     return comm;
 }
 
-std::shared_ptr<ccl_comm> ccl_comm::clone_with_new_id(std::unique_ptr<comm_id> id)
+
+std::shared_ptr<ccl_comm> ccl_comm::clone_with_new_id(ccl_comm_id_storage::comm_id &&id)
 {
     rank_to_global_rank_map ranks_copy{m_ranks_map};
     return std::make_shared<ccl_comm>(m_rank, m_size, std::move(id), std::move(ranks_copy));
@@ -110,9 +111,9 @@ size_t ccl_comm::get_global_rank(size_t rank) const
     auto result = m_ranks_map.find(rank);
     if (result == m_ranks_map.end())
     {
-        CCL_THROW("no rank ", rank, " was found in comm ", this, ", id ", m_id->value());
+        CCL_THROW("no rank ", rank, " was found in comm ", this, ", id ", m_id.value());
     }
 
-    LOG_DEBUG("comm , ", this, " id ", m_id->value(), ", map rank ", rank, " to global ", result->second);
+    LOG_DEBUG("comm , ", this, " id ", m_id.value(), ", map rank ", rank, " to global ", result->second);
     return result->second;
 }

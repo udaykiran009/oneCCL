@@ -19,7 +19,9 @@ enum ccl_coll_type
     ccl_coll_allgatherv =          4,
     ccl_coll_sparse_allreduce =    5,
     ccl_coll_internal =            6,
-    ccl_coll_none =                7
+    ccl_coll_none =                7,
+
+    ccl_coll_last_value
 };
 
 ccl_status_t ccl_coll_build_barrier(ccl_sched* sched);

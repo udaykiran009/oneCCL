@@ -37,8 +37,7 @@ ccl_status_t ccl_init()
 
         global_data.comm = std::make_shared<ccl_comm>(global_data.executor->proc_idx,
                                                       global_data.executor->proc_count,
-                                                      std::unique_ptr<comm_id>(
-                                                           new comm_id(*global_data.comm_ids, true)));
+                                                      global_data.comm_ids->acquire(true));
 
         global_data.default_coll_attr.reset(new ccl_coll_attr_t{});
         global_data.default_coll_attr->to_cache = 1;
@@ -130,7 +129,7 @@ ccl_status_t ccl_comm_create(ccl_comm_t* comm_t,
         {
             LOG_DEBUG("Duplicating global comm");
             comm = new ccl_comm(global_data.comm->rank(), global_data.comm->size(),
-                                std::unique_ptr<comm_id>(new comm_id(*global_data.comm_ids)));
+                                global_data.comm_ids->acquire());
         }
         else
         {

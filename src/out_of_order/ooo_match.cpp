@@ -22,8 +22,7 @@ out_of_order::ooo_match::ooo_match(ccl_executor& exec,
 {
     LOG_INFO("Configuring out-of-order collectives support");
 
-    auto id = std::unique_ptr<comm_id>(new comm_id(comm_ids, true));
-    service_comm = std::make_shared<ccl_comm>(executor.proc_idx, executor.proc_count, std::move(id));
+    service_comm = std::make_shared<ccl_comm>(executor.proc_idx, executor.proc_count, comm_ids.acquire(true));
 }
 
 ccl_comm* out_of_order::ooo_match::get_user_comm(const std::string& match_id)
@@ -50,7 +49,7 @@ void out_of_order::ooo_match::postpone(ccl_sched* sched)
     auto unresolved = unresolved_comms.find(match_id);
     if (unresolved != unresolved_comms.end())
     {
-        LOG_DEBUG("found postponed comm creation for match_id ", match_id, ", id ", unresolved->second->value());
+        LOG_DEBUG("found postponed comm creation for match_id ", match_id, ", id ", unresolved->second.value());
         //2.2. create new communicator with reserved comm_id
         auto match_id_comm = sched->coll_param.comm->clone_with_new_id(std::move(unresolved->second));
 
@@ -74,11 +73,10 @@ void out_of_order::ooo_match::create_comm_and_run_sched(ooo_runtime_info* ctx)
         //non-root ranks have not allocated comm_id yet
         comm_ids.pull_id(ctx->reserved_id);
     }
-    auto id = std::unique_ptr<comm_id>(new comm_id(comm_ids, ctx->reserved_id));
-
+    ccl_comm_id_storage::comm_id id(comm_ids, ctx->reserved_id);
     std::string match_id{static_cast<const char*>(ctx->match_id_name)};
 
-    LOG_INFO("creating comm id ", id->value(), " for match_id ", match_id);
+    LOG_INFO("creating comm id ", id.value(), " for match_id ", match_id);
     //get user provided communicator from the postponed schedule
     auto original_comm = get_user_comm(match_id);
     if (!original_comm)
@@ -86,7 +84,7 @@ void out_of_order::ooo_match::create_comm_and_run_sched(ooo_runtime_info* ctx)
         //root ranks has broadcasted match_id, but other ranks have not received request
         //from the user yet, so we can't create a communicator. Need to wait for request from the user.
         LOG_DEBUG("Can't find postponed sched for match_id ", match_id, ", postpone comm creation, reserved id ",
-            id->value());
+            id.value());
         unresolved_comms.emplace(std::move(match_id), std::move(id));
         return;
     }
