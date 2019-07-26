@@ -143,8 +143,9 @@ std::shared_ptr<ccl::request> CCL_API communicator::bcast(void* buf,
 {
 
     auto ccl_data_type = static_cast<ccl_datatype_t>(dtype);
+    auto real_stream = (stream) ? stream->get_stream() : NULL;
 
-    ccl_request* ccl_req = ccl_bcast_impl(buf, count, ccl_data_type, root, attributes, comm_impl.get(), stream->get_stream());
+    ccl_request* ccl_req = ccl_bcast_impl(buf, count, ccl_data_type, root, attributes, comm_impl.get(), real_stream);
 
     return std::make_shared<ccl::request_impl>(ccl_req);
 }
@@ -161,9 +162,10 @@ std::shared_ptr<ccl::request> CCL_API communicator::reduce(const void* send_buf,
 
     auto ccl_data_type = static_cast<ccl_datatype_t>(dtype);
     auto ccl_reduction_type = static_cast<ccl_reduction_t>(reduction);
+    auto real_stream = (stream) ? stream->get_stream() : NULL;
 
     ccl_request* ccl_req = ccl_reduce_impl(send_buf, recv_buf, count, ccl_data_type, ccl_reduction_type,
-                                           root, attributes, comm_impl.get(), stream->get_stream());
+                                           root, attributes, comm_impl.get(), real_stream);
 
     return std::make_shared<ccl::request_impl>(ccl_req);
 }
@@ -178,9 +180,10 @@ std::shared_ptr<ccl::request> CCL_API communicator::allreduce(const void* send_b
 {
     auto ccl_data_type = static_cast<ccl_datatype_t>(dtype);
     auto ccl_reduction_type = static_cast<ccl_reduction_t>(reduction);
+    auto real_stream = (stream) ? stream->get_stream() : NULL;
 
     ccl_request* ccl_req = ccl_allreduce_impl(send_buf, recv_buf, count, ccl_data_type, ccl_reduction_type,
-                                              attributes, comm_impl.get(), stream->get_stream());
+                                              attributes, comm_impl.get(), real_stream);
 
     return std::make_shared<ccl::request_impl>(ccl_req);
 }
@@ -194,9 +197,10 @@ std::shared_ptr<ccl::request> CCL_API communicator::allgatherv(const void* send_
                                                                const ccl::stream* stream)
 {
     auto ccl_data_type = static_cast<ccl_datatype_t>(dtype);
+    auto real_stream = (stream) ? stream->get_stream() : NULL;
 
     ccl_request* ccl_req = ccl_allgatherv_impl(send_buf, send_count, recv_buf, recv_counts, ccl_data_type,
-                                               attributes, comm_impl.get(), stream->get_stream());
+                                               attributes, comm_impl.get(), real_stream);
 
     return std::make_shared<ccl::request_impl>(ccl_req);
 }
@@ -218,16 +222,19 @@ std::shared_ptr<ccl::request> CCL_API communicator::sparse_allreduce(const void*
     auto ccl_index_type = static_cast<ccl_datatype_t>(index_dtype);
     auto ccl_data_type = static_cast<ccl_datatype_t>(value_dtype);
     auto ccl_reduction_type = static_cast<ccl_reduction_t>(reduction);
+    auto real_stream = (stream) ? stream->get_stream() : NULL;
 
     ccl_request* ccl_req = ccl_sparse_allreduce_impl(send_ind_buf, send_ind_count, send_val_buf, send_val_count,
                                                      recv_ind_buf, recv_ind_count, recv_val_buf, recv_val_count,
                                                      ccl_index_type, ccl_data_type,
-                                                     ccl_reduction_type, attributes, comm_impl.get(), stream->get_stream());
+                                                     ccl_reduction_type, attributes, comm_impl.get(), real_stream);
 
     return std::make_shared<ccl::request_impl>(ccl_req);
 }
 
 void CCL_API communicator::barrier(const ccl::stream* stream)
 {
-    ccl_barrier_impl(comm_impl.get(), stream->get_stream());
+    auto real_stream = (stream) ? stream->get_stream() : NULL;
+
+    ccl_barrier_impl(comm_impl.get(), real_stream);
 }

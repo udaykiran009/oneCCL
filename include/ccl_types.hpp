@@ -4,11 +4,6 @@
 
 #include <stdexcept>
 
-#ifdef ENABLE_SYCL
-#include <CL/sycl.hpp>
-typedef cl::sycl::buffer<char, 1> ccl_sycl_buffer_t;
-#endif /* ENABLE_SYCL */
-
 namespace ccl
 {
 
@@ -22,7 +17,7 @@ enum class reduction
     min = ccl_reduction_min,
     max = ccl_reduction_max,
     custom = ccl_reduction_custom,
-    
+
     last_value = ccl_reduction_last_value
 };
 
