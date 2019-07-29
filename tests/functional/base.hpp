@@ -594,6 +594,7 @@ struct TypedTestParam
     ccl::communicator comm;
     std::vector<std::shared_ptr<ccl::request>> req;
     ccl_coll_attr_t coll_attr {};
+    std::string match_id;
     ccl::communicator global_comm;
     ccl::stream stream;
     size_t *startArr;
@@ -886,7 +887,8 @@ public:
 			param.coll_attr.synchronous = 0;
 		else
 			param.coll_attr.synchronous = (int)param.GetSyncType();
-        param.coll_attr.match_id = param.CreateMatchId(idx).c_str();
+        param.match_id = param.CreateMatchId(idx).c_str();
+        param.coll_attr.match_id = param.match_id.c_str();
     }
     void SwapBuffers(TypedTestParam <T> &param, size_t iter){
         char* testDynamicPointer = getenv("CCL_TEST_DYNAMIC_POINTER");
