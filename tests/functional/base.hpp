@@ -612,10 +612,10 @@ struct TypedTestParam
         for (size_t i = 0; i < bufferCount; i++)
             sendBuf[i].resize(elemCount * processCount * sizeof(T));
     }
-	std::string CreateMatchId(size_t idx)
-	{
-		return (std::to_string(startArr[idx]) +
-		       std::to_string(processCount) +
+    std::string CreateMatchId(size_t idx)
+    {
+        return (std::to_string(startArr[idx]) +
+               std::to_string(processCount) +
                std::to_string(elemCount) +
                std::to_string(GetReductionType()) +
                std::to_string(GetSyncType()) +
@@ -629,9 +629,9 @@ struct TypedTestParam
                std::to_string(bufferCount) +
                std::to_string(GetPrologType()) +
                std::to_string(GetEpilogType()));
-	}
+    }
     bool CompleteRequest(std::shared_ptr < ccl::request > req)
-	{
+    {
         if (testParam.completionType == CMPT_TEST) {
             bool isCompleted = false;
             size_t count = 0;
@@ -660,15 +660,15 @@ struct TypedTestParam
                     char* testDynamicPointer = getenv("CCL_OUT_OF_ORDER_SUPPORT");
                     if (testDynamicPointer && atoi(testDynamicPointer) == 1) {
                         size_t j;
-						for (idx = 0; idx < bufferCount; idx++)
-							startArr[idx] = idx;
-						for(int k=bufferCount; k>1; k--) {
-						   j = (rand() + processIdx) % k;
-						   int tmp = startArr[k-1];
-						   startArr[k-1] = startArr[j];
-						   startArr[j] = tmp;
-						}
-					}
+                        for (idx = 0; idx < bufferCount; idx++)
+                            startArr[idx] = idx;
+                        for(int k=bufferCount; k>1; k--) {
+                           j = (rand() + processIdx) % k;
+                           int tmp = startArr[k-1];
+                           startArr[k-1] = startArr[j];
+                           startArr[j] = tmp;
+                        }
+                    }
                     else {
                     for (idx = 0; idx < bufferCount; idx++)
                         // startArr[idx] = rand() % bufferCount;
@@ -883,10 +883,10 @@ public:
         param.coll_attr.priority = (int)param.PriorityRequest();
         param.coll_attr.to_cache = (int)param.GetCacheType();
         char* testOutOfOrder = getenv("CCL_OUT_OF_ORDER_SUPPORT");
-		if (testOutOfOrder && atoi(testOutOfOrder) == 1)
-			param.coll_attr.synchronous = 0;
-		else
-			param.coll_attr.synchronous = (int)param.GetSyncType();
+        if (testOutOfOrder && atoi(testOutOfOrder) == 1)
+            param.coll_attr.synchronous = 0;
+        else
+            param.coll_attr.synchronous = (int)param.GetSyncType();
         param.match_id = param.CreateMatchId(idx).c_str();
         param.coll_attr.match_id = param.match_id.c_str();
     }
@@ -901,14 +901,8 @@ public:
                         tmpBuf[i].resize(param.elemCount * param.processCount * sizeof(T));
                     for (size_t j = 0; j < param.bufferCount; j++) {
                         for (size_t i = 0; i < param.elemCount; i++) {
-                            tmpBuf[j][i] = param.processIdx + i + j;
+                            tmpBuf[j][i] = param.sendBuf[j][i];
                         }
-                    }
-                    if (param.GetPlaceType() == PT_IN) {
-                        tmpBuf.swap(param.recvBuf);
-                    }
-                    else {
-                        tmpBuf.swap(param.sendBuf);
                     }
                 }
             }

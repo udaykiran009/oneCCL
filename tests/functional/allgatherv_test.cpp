@@ -16,7 +16,7 @@ public:
                     size_t idx = offset[i] + k;
                     T expected = static_cast<T>(i + k);
                     if ((param.GetPlaceType() != PT_OOP) && (param.recvBuf[j][idx] != expected)) {
-                        sprintf(this->errMessage, "[%zu] got sendBuf[%zu][%zu]  = %f, but expected = %f\n",
+                        sprintf(this->errMessage, "[%zu] got recvBuf[%zu][%zu]  = %f, but expected = %f\n",
                             param.processIdx, j, idx, (double) param.recvBuf[j][idx], (double) expected);
                         return TEST_FAILURE;
                     }
