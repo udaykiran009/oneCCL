@@ -302,6 +302,7 @@ std::shared_ptr<sched_entry> entry_factory::make_sycl_copy_host_to_device_entry(
                                                                                 ccl_datatype_internal_t dtype,
                                                                                 const ccl_stream* stream)
 {
+    sched->add_barrier();
     auto e = std::make_shared<sycl_copy_host_to_device_entry>(sched, in_buf, out_buf, dtype, stream);
     sched->add_entry(e);
     return e;
