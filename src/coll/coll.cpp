@@ -262,9 +262,9 @@ ccl_status_t ccl_coll_build_reduce(ccl_sched* sched,
 ccl_status_t ccl_coll_build_allgatherv(
     ccl_sched* sched,
     ccl_buffer send_buf,
-    size_t s_count,
+    size_t send_count,
     ccl_buffer recv_buf,
-    size_t* r_counts,
+    size_t* recv_counts,
     ccl_datatype_internal_t dtype)
 {
     ccl_status_t status;
@@ -272,16 +272,17 @@ ccl_status_t ccl_coll_build_allgatherv(
     switch (env_data.allgatherv_algo)
     {
         case ccl_allgatherv_algo_naive:
-            CCL_CALL(ccl_coll_build_naive_allgatherv(sched, send_buf, s_count, recv_buf, r_counts,
+            CCL_CALL(ccl_coll_build_naive_allgatherv(sched, send_buf, send_count, recv_buf, recv_counts,
                                                      dtype));
             break;
         case ccl_allgatherv_algo_direct:
-            CCL_CALL(ccl_coll_build_direct_allgatherv(sched, send_buf, s_count, recv_buf, r_counts,
+            CCL_THROW("unexpected allgatherv_algo");
+            CCL_CALL(ccl_coll_build_direct_allgatherv(sched, send_buf, send_count, recv_buf, recv_counts,
                                                       dtype));
             break;
         default:
             CCL_FATAL("unexpected allgatherv_algo ",
-                       ccl_allgatherv_algo_to_str(env_data.allgatherv_algo));
+                      ccl_allgatherv_algo_to_str(env_data.allgatherv_algo));
             return ccl_status_invalid_arguments;
     }
     return status;

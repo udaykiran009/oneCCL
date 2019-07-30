@@ -1,8 +1,13 @@
 #pragma once
 
 #include "common/utils/utils.hpp"
+#include "common/utils/yield.hpp"
+
 #include <vector>
 
+constexpr const char* CCL_SPIN_COUNT = "CCL_SPIN_COUNT";
+constexpr const char* CCL_YIELD_TYPE = "CCL_YIELD_TYPE";
+constexpr const char* CCL_MAX_SHORT_SIZE = "CCL_MAX_SHORT_SIZE";
 constexpr const char* CCL_LOG_LEVEL = "CCL_LOG_LEVEL";
 constexpr const char* CCL_SCHED_DUMP = "CCL_SCHED_DUMP";
 constexpr const char* CCL_WORKER_COUNT = "CCL_WORKER_COUNT";
@@ -16,11 +21,11 @@ constexpr const char* CCL_FUSION_CHECK_URGENT = "CCL_FUSION_CHECK_URGENT";
 constexpr const char* CCL_FUSION_CYCLE_MS = "CCL_FUSION_CYCLE_MS";
 constexpr const char* CCL_PRIORITY_MODE = "CCL_PRIORITY_MODE";
 constexpr const char* CCL_WORKER_AFFINITY = "CCL_WORKER_AFFINITY";
-constexpr const char* CCL_ALLREDUCE_ALGO = "CCL_ALLREDUCE_ALGO";
-constexpr const char* CCL_BCAST_ALGO = "CCL_BCAST_ALGO";
-constexpr const char* CCL_BARRIER_ALGO = "CCL_BARRIER_ALGO";
-constexpr const char* CCL_REDUCE_ALGO = "CCL_REDUCE_ALGO";
 constexpr const char* CCL_ALLGATHERV_ALGO = "CCL_ALLGATHERV_ALGO";
+constexpr const char* CCL_ALLREDUCE_ALGO = "CCL_ALLREDUCE_ALGO";
+constexpr const char* CCL_BARRIER_ALGO = "CCL_BARRIER_ALGO";
+constexpr const char* CCL_BCAST_ALGO = "CCL_BCAST_ALGO";
+constexpr const char* CCL_REDUCE_ALGO = "CCL_REDUCE_ALGO";
 constexpr const char* CCL_VECTOR_ALLGATHERV = "CCL_VECTOR_ALLGATHERV";
 constexpr const char* CCL_FULL_CACHE_KEY = "CCL_FULL_CACHE_KEY";
 
@@ -31,6 +36,15 @@ enum ccl_priority_mode
     ccl_priority_lifo = 2,
 
     ccl_priority_last_value
+};
+
+enum ccl_allgatherv_algo
+{
+    ccl_allgatherv_algo_naive       = 0,
+    ccl_allgatherv_algo_direct      = 1,
+    ccl_allgatherv_algo_multi_bcast = 2,
+
+    ccl_allgatherv_algo_last_value
 };
 
 enum ccl_allreduce_algo
@@ -45,12 +59,12 @@ enum ccl_allreduce_algo
     ccl_allreduce_algo_last_value
 };
 
-enum ccl_allgatherv_algo
+enum ccl_barrier_algo
 {
-    ccl_allgatherv_algo_naive       = 0,
-    ccl_allgatherv_algo_direct      = 1,
+    ccl_barrier_algo_ring           = 0,
+    ccl_barrier_algo_direct         = 1,
 
-    ccl_allgatherv_algo_last_value
+    ccl_barrier_algo_last_value
 };
 
 enum ccl_bcast_algo
@@ -71,14 +85,6 @@ enum ccl_reduce_algo
     ccl_reduce_algo_last_value
 };
 
-enum ccl_barrier_algo
-{
-    ccl_barrier_algo_ring           = 0,
-    ccl_barrier_algo_direct         = 1,
-
-    ccl_barrier_algo_last_value
-};
-
 enum ccl_sparse_allreduce_algo
 {
     ccl_sparse_allreduce_algo_basic = 0,
@@ -87,9 +93,11 @@ enum ccl_sparse_allreduce_algo
     ccl_sparse_allreduce_algo_last_value
 };
 
-//todo: set/get methods
 struct alignas(CACHELINE_SIZE) ccl_env_data
 {
+    size_t spin_count;
+    ccl_yield_type yield_type;
+    size_t max_short_size;
     int log_level;
     int sched_dump;
     size_t worker_count;
@@ -97,11 +105,11 @@ struct alignas(CACHELINE_SIZE) ccl_env_data
     int out_of_order_support;
     std::vector<int> worker_affinity;
     ccl_priority_mode priority_mode;
-    ccl_allreduce_algo allreduce_algo;
     ccl_allgatherv_algo allgatherv_algo;
+    ccl_allreduce_algo allreduce_algo;
+    ccl_barrier_algo barrier_algo;
     ccl_bcast_algo bcast_algo;
     ccl_reduce_algo reduce_algo;
-    ccl_barrier_algo barrier_algo;
     ccl_sparse_allreduce_algo sparse_allreduce_algo;
     int enable_rma;
     int enable_fusion;
@@ -109,7 +117,7 @@ struct alignas(CACHELINE_SIZE) ccl_env_data
     int fusion_count_threshold;
     int fusion_check_urgent;
     float fusion_cycle_ms;
-    int vector_allgatherv; /* TODO: figure out if there're options better than env var to control this feature */
+    int vector_allgatherv;
     int full_cache_key;
 };
 
@@ -123,16 +131,19 @@ int ccl_env_2_size_t(const char* env_name,
                       size_t& val);
 int ccl_env_2_float(const char* env_name,
                      float& val);
+
 int ccl_env_parse_priority_mode();
 int ccl_env_parse_affinity();
-int ccl_env_print_affinity();
+int ccl_env_parse_yield_type();
+
+int ccl_env_parse_allgatherv_algo();
 int ccl_env_parse_allreduce_algo();
+int ccl_env_parse_barrier_algo();
 int ccl_env_parse_bcast_algo();
 int ccl_env_parse_reduce_algo();
-int ccl_env_parse_barrier_algo();
-const char *ccl_allreduce_algo_to_str(ccl_allreduce_algo algo);
+
 const char *ccl_allgatherv_algo_to_str(ccl_allgatherv_algo algo);
+const char *ccl_allreduce_algo_to_str(ccl_allreduce_algo algo);
+const char *ccl_barrier_algo_to_str(ccl_barrier_algo algo);
 const char *ccl_bcast_algo_to_str(ccl_bcast_algo algo);
 const char *ccl_reduce_algo_to_str(ccl_reduce_algo algo);
-const char *ccl_barrier_algo_to_str(ccl_barrier_algo algo);
-

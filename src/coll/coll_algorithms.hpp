@@ -65,11 +65,11 @@ ccl_status_t ccl_coll_build_starlike_allreduce(ccl_sched* sched,
                                                ccl_reduction_t op);
 
 ccl_status_t ccl_coll_build_naive_allgatherv(ccl_sched* sched,
-                                              ccl_buffer send_buf,
-                                              size_t send_count,
-                                              ccl_buffer recv_buf,
-                                              size_t* recv_counts,
-                                              ccl_datatype_internal_t dtype);
+                                             ccl_buffer send_buf,
+                                             size_t send_count,
+                                             ccl_buffer recv_buf,
+                                             size_t* recv_counts,
+                                             ccl_datatype_internal_t dtype);
 
 ccl_status_t ccl_coll_build_sparse_allreduce_basic(ccl_sched* sched,
                                                    ccl_buffer send_ind_buf, size_t send_ind_count,
@@ -103,9 +103,9 @@ ccl_status_t ccl_coll_build_direct_reduce(ccl_sched *sched,
 
 ccl_status_t ccl_coll_build_direct_allgatherv(ccl_sched* sched,
                                               ccl_buffer send_buf,
-                                              size_t s_count,
+                                              size_t send_count,
                                               ccl_buffer recv_buf,
-                                              size_t* r_counts,
+                                              size_t* recv_counts,
                                               ccl_datatype_internal_t dtype);
 
 

@@ -118,7 +118,7 @@ void ccl_executor::wait(ccl_request* req)
     {
         if (env_data.worker_offload)
         {
-            _mm_pause();
+            ccl_yield(env_data.yield_type);
         }
         else
         {
@@ -141,7 +141,7 @@ bool ccl_executor::test(ccl_request* req)
         req->sched->urgent = true;
         if (env_data.worker_offload)
         {
-            _mm_pause();
+            ccl_yield(env_data.yield_type);
         }
         else
         {

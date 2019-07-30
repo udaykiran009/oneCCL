@@ -34,13 +34,14 @@ public:
         for (i = 1; i < comm_size; i++)
         {
             recv_bytes[i] = recv_cnts[i] * dt_size;
-            offsets[i] = offsets[i - 1] + recv_cnts[i - 1];
+            offsets[i] = offsets[i - 1] + recv_bytes[i - 1]; // treat buffers as char buffers
             sum_recv_bytes += recv_bytes[i];
         }
         LOG_DEBUG("ALLGATHERV entry req ", &req, ", send_bytes ", send_bytes);
-        atl_status_t atl_status = atl_comm_allgatherv(sched->bin->get_comm_ctx(), send_buf.get_ptr(send_bytes),
-                                                      send_bytes, recv_buf.get_ptr(sum_recv_bytes),
-                                                      recv_bytes, offsets, &req);
+        atl_status_t atl_status = atl_comm_allgatherv(sched->bin->get_comm_ctx(),
+                                                      send_buf.get_ptr(send_bytes), send_bytes,
+                                                      recv_buf.get_ptr(sum_recv_bytes), recv_bytes,
+                                                      offsets, &req);
 
         if (unlikely(atl_status != atl_status_success))
         {

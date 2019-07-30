@@ -70,7 +70,7 @@ typedef struct atl_mpi_req {
 static MPI_Datatype
 atl2mpi_dtype(atl_datatype_t dtype)
 {
-    switch(dtype)
+    switch (dtype)
     {
         case atl_dtype_char:
             return MPI_CHAR;
@@ -89,7 +89,7 @@ atl2mpi_dtype(atl_datatype_t dtype)
 static MPI_Op
 atl2mpi_op(atl_reduction_t rtype)
 {
-    switch(rtype)
+    switch (rtype)
     {
         case atl_reduction_sum:
             return MPI_SUM;
@@ -211,13 +211,14 @@ atl_mpi_comm_allreduce(atl_comm_t *comm, const void *send_buf, void *recv_buf, s
     return RET2ATL(ret);
 }
 
+static void atl_mpi_proc_idx(atl_desc_t *atl_desc, size_t *proc_idx);
+
 static atl_status_t
 atl_mpi_comm_reduce(atl_comm_t *comm, const void *send_buf, void *recv_buf, size_t cnt, size_t root,
                     atl_datatype_t dtype, atl_reduction_t op, atl_req_t *req)
 {
-    atl_desc_t *atl_desc = comm->atl_desc;
-    atl_mpi_context_t *atl_mpi_context =
-        container_of(atl_desc, atl_mpi_context_t, atl_desc);
+    size_t my_proc_idx;
+    atl_mpi_proc_idx(comm->atl_desc, &my_proc_idx);
     atl_mpi_comm_context_t *comm_context =
         container_of(comm, atl_mpi_comm_context_t, atl_comm);
     atl_mpi_req_t *mpi_req = ((atl_mpi_req_t *)req->internal);
@@ -225,7 +226,7 @@ atl_mpi_comm_reduce(atl_comm_t *comm, const void *send_buf, void *recv_buf, size
 
     MPI_Datatype mpi_dtype = atl2mpi_dtype(dtype);
     MPI_Op mpi_op = atl2mpi_op(op);
-    int ret = MPI_Ireduce(((send_buf == recv_buf) && (root == atl_mpi_context->proc_idx)) ? MPI_IN_PLACE : send_buf,
+    int ret = MPI_Ireduce(((send_buf == recv_buf) && (root == my_proc_idx)) ? MPI_IN_PLACE : send_buf,
                           recv_buf, cnt, mpi_dtype, mpi_op, root,
                           comm_context->mpi_comm, &mpi_req->mpi_context);
     return RET2ATL(ret);
@@ -252,8 +253,9 @@ atl_mpi_comm_allgatherv(atl_comm_t *comm, const void *send_buf, size_t send_cnt,
     atl_mpi_req_t *mpi_req = ((atl_mpi_req_t *)req->internal);
     mpi_req->comp_state = ATL_MPI_COMP_POSTED;
 
-    int ret = MPI_Iallgatherv(send_buf, send_cnt, MPI_CHAR, recv_buf, recv_cnts, displs,
-                              MPI_CHAR, comm_context->mpi_comm, &mpi_req->mpi_context);
+    int ret = MPI_Iallgatherv((send_buf == recv_buf) ? MPI_IN_PLACE : send_buf, send_cnt, MPI_CHAR,
+                              recv_buf, recv_cnts, displs, MPI_CHAR,
+                              comm_context->mpi_comm, &mpi_req->mpi_context);
     return RET2ATL(ret);
 }
 
@@ -267,7 +269,7 @@ atl_mpi_comm_bcast(atl_comm_t *comm, void *buf, size_t cnt, size_t root,
     mpi_req->comp_state = ATL_MPI_COMP_POSTED;
 
     int ret = MPI_Ibcast(buf, cnt, MPI_CHAR, root,
-                             comm_context->mpi_comm, &mpi_req->mpi_context);
+                         comm_context->mpi_comm, &mpi_req->mpi_context);
     return RET2ATL(ret);
 }
 
@@ -414,7 +416,7 @@ static atl_mr_ops_t atl_mpi_mr_ops = {
 };
 
 static atl_status_t
-atl_mpi_comm_init(size_t index, atl_comm_t **comm)
+atl_mpi_comm_init(atl_mpi_context_t *atl_mpi_context, size_t index, atl_comm_t **comm)
 {
     int ret;
     atl_mpi_comm_context_t *atl_mpi_comm_context;
@@ -439,6 +441,7 @@ atl_mpi_comm_init(size_t index, atl_comm_t **comm)
 
     atl_mpi_comm_context->idx = index;
     *comm = &atl_mpi_comm_context->atl_comm;
+    (*comm)->atl_desc = &atl_mpi_context->atl_desc;
     (*comm)->coll_ops = &atl_mpi_comm_coll_ops;
     (*comm)->pt2pt_ops = &atl_mpi_comm_pt2pt_ops;
     (*comm)->rma_ops = &atl_mpi_comm_rma_ops;
@@ -473,7 +476,7 @@ atl_status_t atl_mpi_init(int *argc, char ***argv, size_t *proc_idx, size_t *pro
         setenv("I_MPI_THREAD_RUNTIME", "generic", 0);
         setenv("I_MPI_THREAD_MAX", comm_count_str, 0);
         setenv("I_MPI_THREAD_ID_KEY", COMM_IDX_KEY, 0);
-        setenv("I_MPI_THREAD_LOCK_LEVEL", "vci", 0); // TODO: reduce lock level to 'nolock'
+        setenv("I_MPI_THREAD_LOCK_LEVEL", "vci", 0);
 
         ret = MPI_Init_thread(argc, argv, required_thread_level, &provided_thread_level);
         if (provided_thread_level < required_thread_level)
@@ -498,7 +501,7 @@ atl_status_t atl_mpi_init(int *argc, char ***argv, size_t *proc_idx, size_t *pro
 
     for (i = 0; i < attr->comm_count; i++)
     {
-        ret = atl_mpi_comm_init(i, &(*atl_comms)[i]);
+        ret = atl_mpi_comm_init(atl_mpi_context, i, &(*atl_comms)[i]);
         if (ret)
             goto err_comm_dup;
         atl_mpi_context->comm_ref_count++;

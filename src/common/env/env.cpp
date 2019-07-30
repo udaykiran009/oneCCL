@@ -5,6 +5,9 @@
 
 ccl_env_data env_data =
     {
+        .spin_count = 100,
+        .yield_type = ccl_yield_pause,
+        .max_short_size = 4096,
         .log_level = static_cast<int>(ccl_log_level::ERROR),
         .sched_dump = 0,
         .worker_count = 1,
@@ -12,11 +15,11 @@ ccl_env_data env_data =
         .out_of_order_support = 0,
         .worker_affinity = std::vector<int>(),
         .priority_mode = ccl_priority_none,
-        .allreduce_algo = ccl_allreduce_algo_rabenseifner,
-        .allgatherv_algo = ccl_allgatherv_algo_naive,
-        .bcast_algo = ccl_bcast_algo_ring,
-        .reduce_algo = ccl_reduce_algo_tree,
-        .barrier_algo = ccl_barrier_algo_ring,
+        .allgatherv_algo = ccl_allgatherv_algo_multi_bcast,
+        .allreduce_algo = ccl_allreduce_algo_direct,
+        .barrier_algo = ccl_barrier_algo_direct,
+        .bcast_algo = ccl_bcast_algo_direct,
+        .reduce_algo = ccl_reduce_algo_direct,
         .sparse_allreduce_algo = ccl_sparse_allreduce_algo_basic,
         .enable_rma = 0,
         .enable_fusion = 0,
@@ -25,12 +28,13 @@ ccl_env_data env_data =
         .fusion_check_urgent = 1,
         .fusion_cycle_ms = 0.2,
         .vector_allgatherv = 0,
-        .full_cache_key = 1
+        .full_cache_key = 0
     };
 
 const char* ccl_priority_mode_to_str(ccl_priority_mode mode)
 {
-    switch (mode) {
+    switch (mode)
+    {
         case ccl_priority_none:
             return "none";
         case ccl_priority_direct:
@@ -42,13 +46,16 @@ const char* ccl_priority_mode_to_str(ccl_priority_mode mode)
     }
 }
 
-const char *ccl_allgatherv_algo_to_str(ccl_allgatherv_algo algo)
+const char* ccl_allgatherv_algo_to_str(ccl_allgatherv_algo algo)
 {
-    switch (algo) {
+    switch (algo)
+    {
         case ccl_allgatherv_algo_naive:
             return "naive";
         case ccl_allgatherv_algo_direct:
             return "direct";
+        case ccl_allgatherv_algo_multi_bcast:
+            return "multi_bcast";
         default:
             CCL_FATAL("unexpected allgatherv_algo ", algo);
     }
@@ -75,18 +82,16 @@ const char* ccl_allreduce_algo_to_str(ccl_allreduce_algo algo)
     }
 }
 
-const char* ccl_reduce_algo_to_str(ccl_reduce_algo algo)
+const char* ccl_barrier_algo_to_str(ccl_barrier_algo algo)
 {
     switch (algo)
     {
-        case ccl_reduce_algo_tree:
-            return "tree";
-        case ccl_reduce_algo_double_tree:
-            return "double_tree";
-        case ccl_reduce_algo_direct:
+        case ccl_barrier_algo_ring:
+            return "ring";
+        case ccl_barrier_algo_direct:
             return "direct";
         default:
-            CCL_FATAL("unexpected allreduce_algo ", algo);
+            CCL_FATAL("unexpected barrier_algo ", algo);
     }
 }
 
@@ -105,20 +110,26 @@ const char* ccl_bcast_algo_to_str(ccl_bcast_algo algo)
     }
 }
 
-const char *ccl_barrier_algo_to_str(ccl_barrier_algo algo)
+const char* ccl_reduce_algo_to_str(ccl_reduce_algo algo)
 {
-    switch (algo) {
-        case ccl_barrier_algo_ring:
-            return "ring";
-        case ccl_barrier_algo_direct:
+    switch (algo)
+    {
+        case ccl_reduce_algo_tree:
+            return "tree";
+        case ccl_reduce_algo_double_tree:
+            return "double_tree";
+        case ccl_reduce_algo_direct:
             return "direct";
         default:
-            CCL_FATAL("unexpected barrier_algo ", algo);
+            CCL_FATAL("unexpected allreduce_algo ", algo);
     }
 }
 
 void ccl_env_parse()
 {
+    ccl_env_2_size_t(CCL_SPIN_COUNT, env_data.spin_count);
+    ccl_env_parse_yield_type();
+    ccl_env_2_size_t(CCL_MAX_SHORT_SIZE, env_data.max_short_size);
     ccl_env_2_int(CCL_LOG_LEVEL, env_data.log_level);
     ccl_logger::set_log_level(static_cast<ccl_log_level>(env_data.log_level));
     ccl_env_2_int(CCL_SCHED_DUMP, env_data.sched_dump);
@@ -135,10 +146,11 @@ void ccl_env_parse()
     ccl_env_2_int(CCL_FULL_CACHE_KEY, env_data.full_cache_key);
 
     ccl_env_parse_priority_mode();
+    ccl_env_parse_allgatherv_algo();
     ccl_env_parse_allreduce_algo();
+    ccl_env_parse_barrier_algo();
     ccl_env_parse_bcast_algo();
     ccl_env_parse_reduce_algo();
-    ccl_env_parse_barrier_algo();
 
     auto result = ccl_env_parse_affinity();
     CCL_THROW_IF_NOT(result == 1, "failed to parse ", CCL_WORKER_AFFINITY);
@@ -155,10 +167,17 @@ void ccl_env_parse()
 
 void ccl_env_print()
 {
+    LOG_INFO(CCL_SPIN_COUNT, ": ", env_data.spin_count);
+    LOG_INFO(CCL_YIELD_TYPE, ": ", ccl_yield_type_to_str(env_data.yield_type));
+    LOG_INFO(CCL_MAX_SHORT_SIZE, ": ", env_data.max_short_size);
     LOG_INFO(CCL_LOG_LEVEL, ": ", env_data.log_level);
     LOG_INFO(CCL_SCHED_DUMP, ": ", env_data.sched_dump);
     LOG_INFO(CCL_WORKER_COUNT, ": ", env_data.worker_count);
     LOG_INFO(CCL_WORKER_OFFLOAD, ": ", env_data.worker_offload);
+    for (size_t w_idx = 0; w_idx < env_data.worker_count; w_idx++)
+    {
+        LOG_INFO(CCL_WORKER_AFFINITY, ": worker: ", w_idx, ", processor: ", env_data.worker_affinity[w_idx]);
+    }
     LOG_INFO(CCL_OUT_OF_ORDER_SUPPORT, ": ", env_data.out_of_order_support);
     LOG_INFO(CCL_ENABLE_RMA, ": ", env_data.enable_rma);
     LOG_INFO(CCL_ENABLE_FUSION, ": ", env_data.enable_fusion);
@@ -167,14 +186,13 @@ void ccl_env_print()
     LOG_INFO(CCL_FUSION_CHECK_URGENT, ": ", env_data.fusion_check_urgent);
     LOG_INFO(CCL_FUSION_CYCLE_MS, ": ", env_data.fusion_cycle_ms);
     LOG_INFO(CCL_PRIORITY_MODE, ": ", ccl_priority_mode_to_str(env_data.priority_mode));
+    LOG_INFO(CCL_ALLGATHERV_ALGO, ": ", ccl_allgatherv_algo_to_str(env_data.allgatherv_algo));
     LOG_INFO(CCL_ALLREDUCE_ALGO, ": ", ccl_allreduce_algo_to_str(env_data.allreduce_algo));
-    LOG_INFO(CCL_REDUCE_ALGO, ": ", ccl_reduce_algo_to_str(env_data.reduce_algo));
-    LOG_INFO(CCL_BCAST_ALGO, ": ", ccl_bcast_algo_to_str(env_data.bcast_algo));
     LOG_INFO(CCL_BARRIER_ALGO, ": ",  ccl_barrier_algo_to_str(env_data.barrier_algo));
+    LOG_INFO(CCL_BCAST_ALGO, ": ", ccl_bcast_algo_to_str(env_data.bcast_algo));
+    LOG_INFO(CCL_REDUCE_ALGO, ": ", ccl_reduce_algo_to_str(env_data.reduce_algo));
     LOG_INFO(CCL_VECTOR_ALLGATHERV, ": ", env_data.vector_allgatherv);
     LOG_INFO(CCL_FULL_CACHE_KEY, ": ", env_data.full_cache_key);
-
-    ccl_env_print_affinity();
 }
 
 int ccl_env_2_int(const char* env_name,
@@ -368,7 +386,49 @@ int ccl_env_print_affinity()
     size_t workers_per_node = env_data.worker_count;
     for (w_idx = 0; w_idx < workers_per_node; w_idx++)
     {
-        LOG_INFO("worker: ", w_idx, ", processor: ", env_data.worker_affinity[w_idx]);
+        LOG_INFO(CCL_WORKER_AFFINITY, ": worker: ", w_idx, ", processor: ", env_data.worker_affinity[w_idx]);
+    }
+    return 1;
+}
+
+int ccl_env_parse_yield_type()
+{
+    char* type_env = getenv(CCL_YIELD_TYPE);
+    if (type_env)
+    {
+        if (strcmp(type_env, "none") == 0)
+            env_data.yield_type = ccl_yield_none;
+        else if (strcmp(type_env, "pause") == 0)
+            env_data.yield_type = ccl_yield_pause;
+        else if (strcmp(type_env, "sleep") == 0)
+            env_data.yield_type = ccl_yield_sleep;
+        else if (strcmp(type_env, "sched_yield") == 0)
+            env_data.yield_type = ccl_yield_sched_yield;
+        else
+        {
+            CCL_THROW("incorrect ", CCL_YIELD_TYPE, " ", type_env);
+            return 0;
+        }
+    }
+    return 1; 
+}
+
+int ccl_env_parse_allgatherv_algo()
+{
+    char* mode_env = getenv(CCL_ALLGATHERV_ALGO);
+    if (mode_env)
+    {
+        if (strcmp(mode_env, "naive") == 0)
+            env_data.allgatherv_algo = ccl_allgatherv_algo_naive;
+        else if (strcmp(mode_env, "direct") == 0)
+            env_data.allgatherv_algo = ccl_allgatherv_algo_direct;
+        else if (strcmp(mode_env, "multi_bcast") == 0)
+            env_data.allgatherv_algo = ccl_allgatherv_algo_multi_bcast;
+        else
+        {
+            CCL_THROW("incorrect ", CCL_ALLGATHERV_ALGO, " ", mode_env);
+            return 0;
+        }
     }
     return 1;
 }
@@ -399,6 +459,24 @@ int ccl_env_parse_allreduce_algo()
     return 1;
 }
 
+int ccl_env_parse_barrier_algo()
+{
+    char* mode_env = getenv(CCL_BARRIER_ALGO);
+    if (mode_env)
+    {
+        if (strcmp(mode_env, "ring") == 0)
+            env_data.barrier_algo = ccl_barrier_algo_ring;
+        else if (strcmp(mode_env, "direct") == 0)
+            env_data.barrier_algo = ccl_barrier_algo_direct;
+        else
+        {
+            CCL_THROW("incorrect ", CCL_BARRIER_ALGO, " ", mode_env);
+            return 0;
+        }
+    }
+    return 1;
+}
+
 int ccl_env_parse_bcast_algo()
 {
     char* mode_env = getenv(CCL_BCAST_ALGO);
@@ -419,7 +497,6 @@ int ccl_env_parse_bcast_algo()
     return 1;
 }
 
-
 int ccl_env_parse_reduce_algo()
 {
     char* mode_env = getenv(CCL_REDUCE_ALGO);
@@ -434,42 +511,6 @@ int ccl_env_parse_reduce_algo()
         else
         {
             CCL_THROW("incorrect ", CCL_REDUCE_ALGO, " ", mode_env);
-            return 0;
-        }
-    }
-    return 1;
-}
-
-int ccl_env_parse_allgatherv_algo()
-{
-    char* mode_env = getenv(CCL_ALLGATHERV_ALGO);
-    if (mode_env)
-    {
-        if (strcmp(mode_env, "naive") == 0)
-            env_data.allgatherv_algo = ccl_allgatherv_algo_naive;
-        else if (strcmp(mode_env, "direct") == 0)
-            env_data.allgatherv_algo = ccl_allgatherv_algo_direct;
-        else
-        {
-            CCL_THROW("incorrect ", CCL_ALLGATHERV_ALGO, " ", mode_env);
-            return 0;
-        }
-    }
-    return 1;
-}
-
-int ccl_env_parse_barrier_algo()
-{
-    char* mode_env = getenv(CCL_BARRIER_ALGO);
-    if (mode_env)
-    {
-        if (strcmp(mode_env, "ring") == 0)
-            env_data.barrier_algo = ccl_barrier_algo_ring;
-        else if (strcmp(mode_env, "direct") == 0)
-            env_data.barrier_algo = ccl_barrier_algo_direct;
-        else
-        {
-            CCL_THROW("incorrect ", CCL_BARRIER_ALGO, " ", mode_env);
             return 0;
         }
     }

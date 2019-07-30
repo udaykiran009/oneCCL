@@ -32,7 +32,7 @@ public:
         else
         {
             LOG_TRACE("waiting SYNC entry cnt ", counter);
-            _mm_pause();
+            ccl_yield(env_data.yield_type);
         }
     }
 

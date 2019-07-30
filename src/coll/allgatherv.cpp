@@ -2,13 +2,13 @@
 #include "sched/entry_factory.hpp"
 
 ccl_status_t ccl_coll_build_direct_allgatherv(ccl_sched* sched,
-                                              ccl_buffer send_buf, size_t s_count,
-                                              ccl_buffer recv_buf, size_t* r_counts,
+                                              ccl_buffer send_buf, size_t send_count,
+                                              ccl_buffer recv_buf, size_t* recv_counts,
                                               ccl_datatype_internal_t dtype)
 {
     LOG_DEBUG("build direct allgatherv");
 
-    entry_factory::make_allgatherv_entry(sched, send_buf, s_count, recv_buf, r_counts, dtype);
+    entry_factory::make_allgatherv_entry(sched, send_buf, send_count, recv_buf, recv_counts, dtype);
     return ccl_status_success;
 }
 

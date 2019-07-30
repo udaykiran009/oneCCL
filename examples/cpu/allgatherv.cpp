@@ -33,8 +33,8 @@
 int main()
 {
     float send_buf[COUNT];
-    float *recv_buf;
-    size_t *recv_counts;
+    float* recv_buf;
+    size_t* recv_counts;
 
     test_init();
 

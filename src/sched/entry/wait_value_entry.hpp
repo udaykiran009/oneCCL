@@ -36,7 +36,7 @@ public:
         else
         {
             LOG_TRACE("waiting WAIT_VALUE");
-            //_mm_pause();
+            ccl_yield(env_data.yield_type);
         }
     }
 

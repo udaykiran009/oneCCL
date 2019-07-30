@@ -1,8 +1,8 @@
+#include "common/env/env.hpp"
 #include "common/global/global.hpp"
 #include "exec/worker.hpp"
 
 #define CCL_WORKER_CHECK_CANCEL_ITERS (32768)
-#define CCL_WORKER_YIELD_ITERS        (32768)
 
 static void* ccl_worker_func(void* args);
 
@@ -27,6 +27,7 @@ ccl_status_t ccl_worker::start()
 ccl_status_t ccl_worker::stop()
 {
     LOG_DEBUG("worker # ", idx);
+
     void* exit_code;
     int err = pthread_cancel(thread);
     if (err)
@@ -103,8 +104,9 @@ static void* ccl_worker_func(void* args)
     LOG_DEBUG("worker_idx ", worker->get_idx());
 
     size_t iter_count = 0;
-    size_t yield_spin_count = 0;
     size_t processed_count = 0;
+    size_t spin_count = env_data.spin_count;
+    size_t max_spin_count = env_data.spin_count;
 
     global_data.is_worker_thread = true;
 
@@ -135,16 +137,16 @@ static void* ccl_worker_func(void* args)
 
         if (processed_count == 0)
         {
-            yield_spin_count++;
-            if (yield_spin_count > CCL_WORKER_YIELD_ITERS)
+            spin_count--;
+            if (!spin_count)
             {
-                yield_spin_count = 0;
-                _mm_pause();
+                ccl_yield(env_data.yield_type);
+                spin_count = 1;
             }
         }
         else
         {
-            yield_spin_count = 0;
+            spin_count = max_spin_count;
         }
     } while (true);
 

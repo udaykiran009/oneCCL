@@ -887,7 +887,7 @@ public:
             param.coll_attr.synchronous = 0;
         else
             param.coll_attr.synchronous = (int)param.GetSyncType();
-        param.match_id = param.CreateMatchId(idx).c_str();
+        param.match_id = param.CreateMatchId(idx);
         param.coll_attr.match_id = param.match_id.c_str();
     }
     void SwapBuffers(TypedTestParam <T> &param, size_t iter){

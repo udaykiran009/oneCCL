@@ -168,7 +168,7 @@ atl_status_t atl_init(int *argc, char ***argv, size_t *proc_idx, size_t *proc_co
 
     transport_name = getenv("CCL_ATL_TRANSPORT");
     if (!transport_name)
-        transport_name = "OFI";
+        transport_name = "MPI";
 
     dirs = atl_split_and_alloc(transport_dl_dir, ":", NULL);
     if (dirs) {

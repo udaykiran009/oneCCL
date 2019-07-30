@@ -2,6 +2,9 @@
 
 #include <atomic>
 
+#include "common/env/env.hpp"
+#include "common/utils/yield.hpp"
+
 class ccl_spinlock
 {
 public:
@@ -15,7 +18,16 @@ public:
 
     void lock()
     {
-        while (flag.test_and_set(std::memory_order_acquire));
+        size_t spin_count = env_data.spin_count;
+        while (flag.test_and_set(std::memory_order_acquire))
+        {
+            spin_count--;
+            if (!spin_count)
+            {
+                ccl_yield(env_data.yield_type);
+                spin_count = 1;
+            }
+        }
     }
 
     void unlock()
