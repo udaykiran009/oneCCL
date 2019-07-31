@@ -22,6 +22,7 @@ public:
 
     ccl_comm(size_t rank, size_t size, ccl_comm_id_storage::comm_id &&id);
     ccl_comm(size_t rank, size_t size, ccl_comm_id_storage::comm_id &&id, rank_to_global_rank_map&& ranks);
+
     ~ccl_comm() = default;
 
     static ccl_comm* create_with_color(int color, ccl_comm_id_storage* comm_ids, const ccl_comm* global_comm);
@@ -98,9 +99,11 @@ private:
     size_t m_rank;
     size_t m_size;
     size_t m_pof2;
+
     ccl_comm_id_storage::comm_id m_id;
     ccl_sched_id_t m_next_sched_id_internal = ccl_comm::max_sched_count / 2;
     ccl_sched_id_t m_next_sched_id_external = 0;
+
     rank_to_global_rank_map m_ranks_map{};
     double_tree m_dtree;
 };

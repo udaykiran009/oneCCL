@@ -5,6 +5,11 @@
 class epilogue_entry : public sched_entry
 {
 public:
+    static constexpr const char *entry_class_name() noexcept
+    {
+        return "EPILOGUE";
+    }
+
     epilogue_entry() = delete;
     epilogue_entry(ccl_sched* sched,
                    ccl_epilogue_fn_t fn,
@@ -19,13 +24,12 @@ public:
         out_buf(out_buf), expected_out_cnt(expected_out_cnt),
         out_dtype(out_dtype)
     {
-        LOG_DEBUG("creating ", name(), " entry");
         pfields.add_available(ccl_sched_entry_field_in_buf);
         pfields.add_available(ccl_sched_entry_field_in_cnt);
         pfields.add_available(ccl_sched_entry_field_in_dtype);
     }
 
-    void start_derived()
+    void start_derived() override
     {
         size_t in_bytes = in_cnt * ccl_datatype_get_size(in_dtype);
         fn(in_buf.get_ptr(in_bytes), in_cnt, in_dtype->type, out_buf.get_ptr(), &out_cnt, out_dtype->type);
@@ -33,7 +37,7 @@ public:
         status = ccl_sched_entry_status_complete;
     }
 
-    void* get_field_ptr(ccl_sched_entry_field_id id)
+    void* get_field_ptr(ccl_sched_entry_field_id id) override
     {
         switch (id)
         {
@@ -45,13 +49,13 @@ public:
         return nullptr;
     }
 
-    const char* name() const
+    const char* name() const override
     {
-        return "EPILOGUE";
+        return entry_class_name();
     }
 
 protected:
-    void dump_detail(std::stringstream& str) const
+    void dump_detail(std::stringstream& str) const override
     {
         ccl_logger::format(str,
                            "in_dt ", ccl_datatype_get_name(in_dtype),

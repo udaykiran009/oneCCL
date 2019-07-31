@@ -5,6 +5,11 @@
 class reduce_entry : public base_coll_entry
 {
 public:
+    static constexpr const char *entry_class_name() noexcept
+    {
+        return "REDUCE";
+    }
+
     reduce_entry() = delete;
     reduce_entry(ccl_sched *sched,
                  const ccl_buffer send_buf,
@@ -16,10 +21,9 @@ public:
         base_coll_entry(sched), send_buf(send_buf), recv_buf(recv_buf),
         cnt(cnt), dtype(dtype), op(reduction), root(root)
     {
-        LOG_DEBUG("creating ", name(), " entry");
     }
 
-    void start_derived()
+    void start_derived() override
     {
         LOG_DEBUG("REDUCE entry req ", &req, ", cnt ", cnt);
         size_t bytes = cnt * ccl_datatype_get_size(dtype);
@@ -36,7 +40,7 @@ public:
             status = ccl_sched_entry_status_started;
     }
 
-    void update_derived()
+    void update_derived() override
     {
         int req_status;
         atl_status_t atl_status = atl_comm_check(sched->bin->get_comm_ctx(), &req_status, &req);
@@ -50,13 +54,13 @@ public:
             status = ccl_sched_entry_status_complete;
     }
 
-    const char* name() const
+    const char* name() const override
     {
-        return "REDUCE";
+        return entry_class_name();
     }
 
 protected:
-    void dump_detail(std::stringstream& str) const
+    void dump_detail(std::stringstream& str) const override
     {
         ccl_logger::format(str,
                             "dt ", ccl_datatype_get_name(dtype),

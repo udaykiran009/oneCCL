@@ -9,9 +9,14 @@
 
 //todo: inherit/compose recv & reduce
 
-class recv_reduce_entry : public sched_entry
+class recv_reduce_entry final: public sched_entry
 {
 public:
+    static constexpr const char *entry_class_name() noexcept
+    {
+        return "RECV_REDUCE";
+    }
+
     recv_reduce_entry() = delete;
     recv_reduce_entry(ccl_sched* sched,
                       ccl_buffer inout_buf,
@@ -21,11 +26,10 @@ public:
                       ccl_reduction_t reduction_op,
                       size_t src,
                       ccl_buffer comm_buf,
-                      ccl_op_id_t op_id) :
+                      ccl_op_id_t op_id = 0) :
         sched_entry(sched), inout_buf(inout_buf), in_cnt(cnt), out_cnt(out_cnt), dtype(dtype),
         op(reduction_op), src(src), comm_buf(comm_buf), op_id(op_id), fn(sched->coll_attr.reduction_fn)
     {
-        LOG_DEBUG("creating ", name(), " entry");
         CCL_ASSERT(op != ccl_reduction_custom || fn,
                     "custom reduction requires user provided callback");
 
@@ -37,7 +41,7 @@ public:
         }
     }
 
-    void start_derived()
+    void start_derived() override
     {
         atl_tag = global_data.atl_tag->create(sched->coll_param.comm->id(), src, sched->sched_id, op_id);
         size_t bytes = in_cnt * ccl_datatype_get_size(dtype);
@@ -56,7 +60,7 @@ public:
         }
     }
 
-    void update_derived()
+    void update_derived() override
     {
         int req_status;
         atl_status_t atl_status = atl_comm_check(sched->bin->get_comm_ctx(), &req_status, &req);
@@ -79,12 +83,12 @@ public:
         }
     }
 
-    const char* name() const
+    const char* name() const override
     {
-        return "RECV_REDUCE";
+        return entry_class_name();
     }
 
-    ~recv_reduce_entry()
+    ~recv_reduce_entry() override
     {
          if (own_comm_buff)
          {
@@ -93,7 +97,7 @@ public:
     }
 
 protected:
-    void dump_detail(std::stringstream& str) const
+    void dump_detail(std::stringstream& str) const override
     {
         ccl_logger::format(str,
                            "dt ", ccl_datatype_get_name(dtype),

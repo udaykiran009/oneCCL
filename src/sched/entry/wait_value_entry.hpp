@@ -5,6 +5,11 @@
 class wait_value_entry : public sched_entry
 {
 public:
+    static constexpr const char *entry_class_name() noexcept
+    {
+        return "WAIT_VALUE";
+    }
+
     wait_value_entry() = delete;
     wait_value_entry(ccl_sched* sched,
                      const volatile uint64_t* ptr,
@@ -13,17 +18,16 @@ public:
         sched_entry(sched, true), ptr(ptr),
         expected_value(expected_value), condition(condition)
     {
-        LOG_DEBUG("creating ", name(), " entry");
     }
 
-    void start_derived()
+    void start_derived() override
     {
         LOG_DEBUG("WAIT_VALUE entry current_val ", *ptr, ", expected_val ", expected_value);
         status = ccl_sched_entry_status_started;
         update_derived();
     }
 
-    void update_derived()
+    void update_derived() override
     {
         if (condition == ccl_condition_greater_or_equal && *ptr >= expected_value)
         {
@@ -40,19 +44,19 @@ public:
         }
     }
 
-    const char* name() const
+    const char* name() const override
     {
-        return "WAIT_VALUE";
+        return entry_class_name();
     }
 
 protected:
-    void dump_detail(std::stringstream& str) const
+    void dump_detail(std::stringstream& str) const override
     {
         ccl_logger::format(str,
-                            "ptr ", ptr,
-                            ", expected_value ", expected_value,
-                            ", condition ", condition,
-                            "\n");
+                           "ptr ", ptr,
+                           ", expected_value ", expected_value,
+                           ", condition ", condition,
+                           "\n");
     }
 
 private:

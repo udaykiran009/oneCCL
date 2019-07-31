@@ -5,6 +5,11 @@
 class allgatherv_entry : public base_coll_entry
 {
 public:
+    static constexpr const char *entry_class_name() noexcept
+    {
+        return "ALLGATHERV";
+    }
+
     allgatherv_entry() = delete;
     allgatherv_entry(ccl_sched* sched,
                      const ccl_buffer send_buf,
@@ -15,10 +20,9 @@ public:
         base_coll_entry(sched), send_buf(send_buf), send_cnt(send_cnt),
         recv_buf(recv_buf), recv_cnts(recv_cnts), dtype(dtype)
     {
-        LOG_DEBUG("creating ", name(), " entry");
     }
 
-    void start_derived()
+    void start_derived() override
     {
         size_t dt_size = ccl_datatype_get_size(dtype);
         size_t send_bytes = send_cnt * dt_size;
@@ -51,7 +55,7 @@ public:
             status = ccl_sched_entry_status_started;
     }
 
-    void update_derived()
+    void update_derived() override
     {
         int req_status;
         atl_status_t atl_status = atl_comm_check(sched->bin->get_comm_ctx(), &req_status, &req);
@@ -69,13 +73,13 @@ public:
         }
     }
 
-    const char* name() const
+    const char* name() const override
     {
-        return "ALLGATHERV";
+        return entry_class_name();
     }
 
 protected:
-    void dump_detail(std::stringstream& str) const
+    void dump_detail(std::stringstream& str) const override
     {
         ccl_logger::format(str,
                             "dt ", ccl_datatype_get_name(dtype),

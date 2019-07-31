@@ -6,6 +6,11 @@
 class reduce_local_entry : public sched_entry
 {
 public:
+    static constexpr const char *entry_class_name() noexcept
+    {
+        return "REDUCE_LOCAL";
+    }
+
     reduce_local_entry() = delete;
     reduce_local_entry(ccl_sched* sched,
                        const ccl_buffer in_buf,
@@ -19,12 +24,11 @@ public:
         out_cnt(out_cnt), dtype(dtype), op(reduction_op),
         fn(sched->coll_attr.reduction_fn)
     {
-        LOG_DEBUG("creating ", name(), " entry");
         CCL_THROW_IF_NOT(op != ccl_reduction_custom || fn,
                           "custom reduction requires user provided callback");
     }
 
-    void start_derived()
+    void start_derived() override
     {
         size_t bytes = in_cnt * ccl_datatype_get_size(dtype);
         ccl_status_t comp_status = ccl_comp_reduce(in_buf.get_ptr(bytes), in_cnt,
@@ -34,13 +38,13 @@ public:
         status = ccl_sched_entry_status_complete;
     }
 
-    const char* name() const
+    const char* name() const override
     {
-        return "REDUCE_LOCAL";
+        return entry_class_name();
     }
 
 protected:
-    void dump_detail(std::stringstream& str) const
+    void dump_detail(std::stringstream& str) const override
     {
         ccl_logger::format(str,
                            "dt ", ccl_datatype_get_name(dtype),

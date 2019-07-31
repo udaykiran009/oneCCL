@@ -22,19 +22,19 @@ public:
         comm_id() = delete;
         comm_id(const comm_id &) = delete;
         comm_id &operator=(const comm_id &) = delete;
-        
-        explicit comm_id(ccl_comm_id_storage& storage, bool internal = false) : 
+
+        explicit comm_id(ccl_comm_id_storage& storage, bool internal = false) :
             id_storage(storage), id(id_storage.get().acquire_id(internal))
         {
             refuse = false;
         }
 
-        comm_id(ccl_comm_id_storage& storage, ccl_comm_id_t preallocated_id) : 
+        comm_id(ccl_comm_id_storage& storage, ccl_comm_id_t preallocated_id) :
             id_storage(storage), id(preallocated_id)
         {
             refuse = false;
         }
-        
+
         comm_id(comm_id &&src) noexcept:
            id_storage(src.id_storage),
            id(std::move(src.id)),
@@ -42,13 +42,13 @@ public:
         {
             src.refuse = true;
         }
-        
+
         comm_id &operator=(comm_id &&src) noexcept
         {
             id_storage = src.id_storage;
             id = std::move(src.id);
             refuse = std::move(src.refuse);
-        
+
             src.refuse = true;
             return *this;
         }
@@ -84,7 +84,7 @@ public:
     {
         return comm_id(*this, internal);
     }
-    
+
     //[[deprecated]]
     ccl_comm_id_t acquire_id(bool internal = false)
     {
@@ -145,7 +145,7 @@ private:
 
         throw ccl::ccl_error("no free comm id was found");
     }
-    
+
     void release_id(ccl_comm_id_t id)
     {
         std::lock_guard<ccl_spinlock> lock(sync_guard);

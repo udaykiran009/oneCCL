@@ -7,21 +7,25 @@
 class recv_entry : public sched_entry
 {
 public:
+    static constexpr const char *entry_class_name() noexcept
+    {
+        return "RECV";
+    }
+
     recv_entry() = delete;
     recv_entry(ccl_sched* sched,
                ccl_buffer buf,
                size_t cnt,
                ccl_datatype_internal_t dtype,
                size_t src,
-               ccl_op_id_t op_id) :
+               ccl_op_id_t op_id = 0) :
         sched_entry(sched), buf(buf), cnt(cnt), dtype(dtype), src(src), op_id(op_id)
     {
-        LOG_DEBUG("creating ", name(), " entry");
         pfields.add_available(ccl_sched_entry_field_buf);
         pfields.add_available(ccl_sched_entry_field_cnt);
     }
 
-    void start_derived()
+    void start_derived() override
     {
         atl_tag = global_data.atl_tag->create(sched->coll_param.comm->id(), src, sched->sched_id, op_id);
         size_t bytes = cnt * ccl_datatype_get_size(dtype);
@@ -39,7 +43,7 @@ public:
         }
     }
 
-    void update_derived()
+    void update_derived() override
     {
         int req_status;
         atl_status_t atl_status = atl_comm_check(sched->bin->get_comm_ctx(), &req_status, &req);
@@ -55,7 +59,7 @@ public:
         }
     }
 
-    void* get_field_ptr(ccl_sched_entry_field_id id)
+    void* get_field_ptr(ccl_sched_entry_field_id id) override
     {
         switch (id)
         {
@@ -65,13 +69,13 @@ public:
         }
     }
 
-    const char* name() const
+    const char* name() const override
     {
-        return "RECV";
+        return entry_class_name();
     }
 
 protected:
-    void dump_detail(std::stringstream& str) const
+    void dump_detail(std::stringstream& str) const override
     {
         ccl_logger::format(str,
                            "dt ", ccl_datatype_get_name(dtype),

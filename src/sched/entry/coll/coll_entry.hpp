@@ -6,6 +6,11 @@
 class coll_entry : public sched_entry
 {
 public:
+    static constexpr const char *entry_class_name() noexcept
+    {
+        return "COLL";
+    }
+
     coll_entry() = delete;
     coll_entry(ccl_sched* sched,
                ccl_coll_type coll_type,
@@ -19,7 +24,6 @@ public:
           send_buf(send_buf), recv_buf(recv_buf), cnt(cnt),
           dtype(dtype), op(reduction_op), req(nullptr), root(root)
     {
-        LOG_DEBUG("creating ", name(), " entry");
         pfields.add_available(ccl_sched_entry_field_buf);
         pfields.add_available(ccl_sched_entry_field_send_buf);
         pfields.add_available(ccl_sched_entry_field_recv_buf);
@@ -27,13 +31,13 @@ public:
         pfields.add_available(ccl_sched_entry_field_dtype);
     }
 
-    void start_derived()
+    void start_derived() override
     {
         create_schedule();
         status = ccl_sched_entry_status_started;
     }
 
-    void update_derived()
+    void update_derived() override
     {
         CCL_THROW_IF_NOT(req, "empty request");
         if (req->is_completed())
@@ -44,7 +48,7 @@ public:
         }
     }
 
-    void* get_field_ptr(ccl_sched_entry_field_id id)
+    void* get_field_ptr(ccl_sched_entry_field_id id) override
     {
         switch (id)
         {
@@ -64,13 +68,13 @@ public:
         return nullptr;
     }
 
-    const char* name() const
+    const char* name() const override
     {
-        return "COLL";
+        return entry_class_name();
     }
 
 protected:
-    void dump_detail(std::stringstream& str) const
+    void dump_detail(std::stringstream& str) const override
     {
         ccl_logger::format(str,
                             "dt ", ccl_datatype_get_name(dtype),

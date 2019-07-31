@@ -173,7 +173,7 @@ ccl_status_t sparse_prepare_result(const void* ctx)
     size_t total_size = sa_handler->itype_size * (*sa_handler->recv_icount) + sa_handler->vtype_size * (*sa_handler->recv_vcount);
 
     if (sa_handler->recv_buff_size < total_size)
-    { 
+    {
         *sa_handler->recv_buf = CCL_REALLOC(*sa_handler->recv_buf, 0ul, total_size, CACHELINE_SIZE, "recv_buf");
     }
 
@@ -229,7 +229,7 @@ ccl_status_t ccl_coll_build_sparse_allreduce_basic(ccl_sched* sched,
     LOG_DEBUG("build sparse allreduce");
 
     ccl_status_t status = ccl_status_success;
-    std::shared_ptr<sched_entry> e;
+    sched_entry* e = nullptr;
 
     ccl_comm *comm = sched->coll_param.comm;
     size_t comm_size = comm->size();
@@ -340,33 +340,33 @@ ccl_status_t ccl_coll_build_sparse_allreduce_basic(ccl_sched* sched,
     for (size_t i = 0; i < comm_size - 1; i++)
     {
         /* send local data to the right neighbour */
-        e = entry_factory::make_send_entry(sched, ccl_buffer(), 0, ccl_dtype_internal_char, send_to);
+        e = entry_factory::make_entry<send_entry>(sched, ccl_buffer(), 0, ccl_dtype_internal_char, send_to);
         e->set_field_fn(ccl_sched_entry_field_buf, sparse_get_send_buf, sa_handler);
         e->set_field_fn(ccl_sched_entry_field_cnt, sparse_get_send_cnt, sa_handler);
         sched->add_barrier();
 
         /* has the left neighbour sent anything? */
-        entry_factory::make_probe_entry(sched, recv_from, sa_handler->recv_icount);
+        entry_factory::make_entry<probe_entry>(sched, recv_from, sa_handler->recv_icount);
         sched->add_barrier();
 
         /* receive data from the left neighbour */
-        entry_factory::make_function_entry(sched, sparse_before_recv, sa_handler);
+        entry_factory::make_entry<function_entry>(sched, sparse_before_recv, sa_handler);
         sched->add_barrier();
 
-        e = entry_factory::make_recv_entry(sched, ccl_buffer(), 0, ccl_dtype_internal_char, recv_from);
+        e = entry_factory::make_entry<recv_entry>(sched, ccl_buffer(), 0, ccl_dtype_internal_char, recv_from);
         e->set_field_fn(ccl_sched_entry_field_buf, sparse_get_recv_buf, sa_handler);
         e->set_field_fn(ccl_sched_entry_field_cnt, sparse_get_recv_cnt, sa_handler);
         sched->add_barrier();
-        entry_factory::make_function_entry(sched, sparse_after_recv, sa_handler);
+        entry_factory::make_entry<function_entry>(sched, sparse_after_recv, sa_handler);
         sched->add_barrier();
 
         /* reduce data */
-        entry_factory::make_function_entry(sched, sparse_reduce, sa_handler);
+        entry_factory::make_entry<function_entry>(sched, sparse_reduce, sa_handler);
         sched->add_barrier();
     }
 
     /* copy all reduced data to recv_buf */
-    entry_factory::make_function_entry(sched, sparse_prepare_result, sa_handler);
+    entry_factory::make_entry<function_entry>(sched, sparse_prepare_result, sa_handler);
     sched->add_barrier();
 
     return status;

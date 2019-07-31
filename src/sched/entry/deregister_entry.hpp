@@ -6,15 +6,19 @@
 class deregister_entry : public sched_entry
 {
 public:
+    static constexpr const char *entry_class_name() noexcept
+    {
+        return "DEREGISTER";
+    }
+
     deregister_entry() = delete;
     deregister_entry(ccl_sched* sched,
                      std::list<atl_mr_t*>& mr_list) :
         sched_entry(sched, true), mr_list(mr_list)
     {
-        LOG_DEBUG("creating ", name(), " entry");
     }
 
-    void start_derived()
+    void start_derived() override
     {
         LOG_DEBUG("DEREGISTER entry sched ", sched, " mr_count ", mr_list.size());
         atl_status_t atl_status;
@@ -32,18 +36,18 @@ public:
         status = ccl_sched_entry_status_complete;
     }
 
-    const char* name() const
+    const char* name() const override
     {
-        return "DEREGISTER";
+        return entry_class_name();
     }
 
 protected:
-    void dump_detail(std::stringstream& str) const
+    void dump_detail(std::stringstream& str) const override
     {
         ccl_logger::format(str,
-                            "sched ", sched,
-                            ", mr_count ", sched, mr_list.size(),
-                            "\n");
+                           "sched ", sched,
+                           ", mr_count ", sched, mr_list.size(),
+                           "\n");
 
     }
 

@@ -8,7 +8,7 @@ ccl_status_t ccl_coll_build_direct_bcast(ccl_sched *sched, ccl_buffer buf, size_
 {
     LOG_DEBUG("build direct bcast");
 
-    entry_factory::make_bcast_entry(sched, buf, count, dtype, root);
+    entry_factory::make_entry<bcast_entry>(sched, buf, count, dtype, root);
     return ccl_status_success;
 }
 
@@ -59,8 +59,8 @@ ccl_status_t ccl_coll_build_scatter_for_bcast(ccl_sched *sched,
             curr_size = recv_size;
 
             if (recv_size > 0) {
-                entry_factory::make_recv_entry(sched, tmp_buf + relative_rank * scatter_size,
-                                               recv_size, ccl_dtype_internal_char, src);
+                entry_factory::make_entry<recv_entry>(sched, tmp_buf + relative_rank * scatter_size,
+                                                      recv_size, ccl_dtype_internal_char, src);
                 sched->add_barrier();
             }
             break;
@@ -85,8 +85,8 @@ ccl_status_t ccl_coll_build_scatter_for_bcast(ccl_sched *sched,
                 if (dst >= comm_size)
                     dst -= comm_size;
 
-                entry_factory::make_send_entry(sched, tmp_buf + scatter_size * (relative_rank + mask),
-                                               send_size, ccl_dtype_internal_char, dst);
+                entry_factory::make_entry<send_entry>(sched, tmp_buf + scatter_size * (relative_rank + mask),
+                                                      send_size, ccl_dtype_internal_char, dst);
                 sched->add_barrier();
                 curr_size -= send_size;
             }
@@ -151,11 +151,11 @@ ccl_status_t ccl_coll_build_scatter_ring_allgather_bcast(ccl_sched *sched,
         if (right_count < 0)
             right_count = 0;
         right_disp = rel_j * scatter_size;
-        entry_factory::make_send_entry(sched, tmp_buf + right_disp,
-                                       right_count, ccl_dtype_internal_char, right);
+        entry_factory::make_entry<send_entry>(sched, tmp_buf + right_disp,
+                                              right_count, ccl_dtype_internal_char, right);
         /* sendrecv, no barrier here */
-        entry_factory::make_recv_entry(sched, tmp_buf + left_disp,
-                                       left_count, ccl_dtype_internal_char, left);
+        entry_factory::make_entry<recv_entry>(sched, tmp_buf + left_disp,
+                                              left_count, ccl_dtype_internal_char, left);
         sched->add_barrier();
 
         j = jnext;

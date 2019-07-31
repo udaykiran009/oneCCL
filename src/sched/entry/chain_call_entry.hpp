@@ -7,20 +7,28 @@
 class chain_call_entry : public sched_entry
 {
 public:
+    static constexpr const char *entry_class_name() noexcept
+    {
+        return "CHAIN";
+    }
+
     chain_call_entry() = delete;
     chain_call_entry(ccl_sched* sched,
                      std::function<void(ccl_sched*)> sched_fill_function,
                      const char* name = nullptr) :
-        sched_entry(sched), entry_name(name)
+        sched_entry(sched), entry_special_name(name)
     {
-        LOG_DEBUG("creating ", this->name(), " entry");
+        if(name)
+        {
+            LOG_DEBUG("entry object name: ", name);
+        }
         //do not mix std::shared_ptr<T>.reset() and ccl_sched->reset()
         work_sched.reset(new ccl_sched(sched->coll_param));
         work_sched->coll_param.ctype = ccl_coll_internal;
         sched_fill_function(work_sched.get());
     }
 
-    void start_derived()
+    void start_derived() override
     {
         if (status == ccl_sched_entry_status_not_started)
         {
@@ -40,7 +48,7 @@ public:
         }
     }
 
-    void update_derived()
+    void update_derived() override
     {
         ccl_sched_progress(work_sched.get());
 
@@ -50,13 +58,13 @@ public:
         }
     }
 
-    const char* name() const
+    const char* name() const override
     {
-        return entry_name ? entry_name : "CHAIN";
+        return !entry_special_name.empty() ? entry_special_name.c_str() : entry_class_name();
     }
 
 protected:
-    void dump_detail(std::stringstream& str) const
+    void dump_detail(std::stringstream& str) const override
     {
         ccl_logger::format(str, "content:\n");
 
@@ -69,5 +77,5 @@ protected:
 
 private:
     std::unique_ptr<ccl_sched> work_sched;
-    const char* entry_name;
+    std::string entry_special_name;
 };

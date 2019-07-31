@@ -92,7 +92,6 @@ ccl_comm* ccl_comm::create_with_color(int color,
     return comm;
 }
 
-
 std::shared_ptr<ccl_comm> ccl_comm::clone_with_new_id(ccl_comm_id_storage::comm_id &&id)
 {
     rank_to_global_rank_map ranks_copy{m_ranks_map};

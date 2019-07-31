@@ -19,7 +19,6 @@ set(CCL_SRC
     sched/sched.cpp
     sched/sched_cache.cpp
     sched/sched_queue.cpp
-    sched/entry_factory.cpp
     sched/entry/entry.cpp
     sched/entry/postponed_fields.cpp
     exec/exec.cpp

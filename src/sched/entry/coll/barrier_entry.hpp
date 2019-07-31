@@ -5,14 +5,18 @@
 class barrier_entry : public base_coll_entry
 {
 public:
+    static constexpr const char *entry_class_name() noexcept
+    {
+        return "BARRIER";
+    }
+
     barrier_entry() = delete;
     barrier_entry(ccl_sched* sched) :
         base_coll_entry(sched)
     {
-        LOG_DEBUG("creating ", name(), " entry");
     }
 
-    void start_derived()
+    void start_derived() override
     {
         LOG_DEBUG("BARRIER entry req ", &req);
 
@@ -25,7 +29,7 @@ public:
             status = ccl_sched_entry_status_started;
     }
 
-    void update_derived()
+    void update_derived() override
     {
         int req_status;
         atl_status_t atl_status = atl_comm_check(sched->bin->get_comm_ctx(), &req_status, &req);
@@ -39,13 +43,13 @@ public:
             status = ccl_sched_entry_status_complete;
     }
 
-    const char* name() const
+    const char* name() const override
     {
-        return "BARRIER";
+        return entry_class_name();
     }
 
 protected:
-    void dump_detail(std::stringstream& str) const
+    void dump_detail(std::stringstream& str) const override
     {
         ccl_logger::format(str,
                             "comm_id ", sched->coll_param.comm->id(),

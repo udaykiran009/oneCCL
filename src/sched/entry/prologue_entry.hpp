@@ -5,6 +5,11 @@
 class prologue_entry : public sched_entry
 {
 public:
+    static constexpr const char *entry_class_name() noexcept
+    {
+        return "PROLOGUE";
+    }
+
     prologue_entry() = delete;
     prologue_entry(ccl_sched* sched,
                    ccl_prologue_fn_t fn,
@@ -20,23 +25,22 @@ public:
         out_buf(out_buf), out_cnt(out_cnt),
         out_dtype(out_dtype), out_dtype_size(out_dtype_size)
     {
-        LOG_DEBUG("creating ", name(), " entry");
     }
 
-    void start_derived()
+    void start_derived() override
     {
         size_t in_bytes = in_cnt * ccl_datatype_get_size(in_dtype);
         fn(in_buf.get_ptr(in_bytes), in_cnt, in_dtype->type, out_buf, out_cnt, out_dtype, out_dtype_size);
         status = ccl_sched_entry_status_complete;
     }
 
-    const char* name() const
+    const char* name() const override
     {
-        return "PROLOGUE";
+        return entry_class_name();
     }
 
 protected:
-    void dump_detail(std::stringstream& str) const
+    void dump_detail(std::stringstream& str) const override
     {
         ccl_logger::format(str,
                            "in_dt ", ccl_datatype_get_name(in_dtype),

@@ -7,6 +7,11 @@
 class send_entry : public sched_entry
 {
 public:
+    static constexpr const char *entry_class_name() noexcept
+    {
+        return "SEND";
+    }
+
     send_entry() = delete;
     send_entry(ccl_sched* sched,
                const ccl_buffer buf,
@@ -14,17 +19,33 @@ public:
                ccl_datatype_internal_t dtype,
                size_t dst,
                size_t rank,
-               ccl_op_id_t op_id) :
+               ccl_op_id_t op_id = 0) :
         sched_entry(sched), buf(buf),
         cnt(cnt), dtype(dtype),
         dst(dst), rank(rank), op_id(op_id)
     {
-        LOG_DEBUG("creating ", name(), " entry");
         pfields.add_available(ccl_sched_entry_field_buf);
         pfields.add_available(ccl_sched_entry_field_cnt);
     }
 
-    void start_derived()
+    send_entry(ccl_sched* sched,
+               const ccl_buffer buf,
+               size_t cnt,
+               ccl_datatype_internal_t dtype,
+               size_t dst,
+               ccl_op_id_t op_id = 0) :
+        sched_entry(sched), buf(buf),
+        cnt(cnt), dtype(dtype),
+        dst(dst), rank(0), op_id(op_id)
+    {
+        CCL_ASSERT(global_data.comm, "Cannot create 'send_entry', global_data.com is null");
+
+        rank = global_data.comm->rank();
+        pfields.add_available(ccl_sched_entry_field_buf);
+        pfields.add_available(ccl_sched_entry_field_cnt);
+    }
+
+    void start_derived() override
     {
         atl_tag = global_data.atl_tag->create(sched->coll_param.comm->id(), rank, sched->sched_id, op_id);
         size_t bytes = cnt * ccl_datatype_get_size(dtype);
@@ -43,7 +64,7 @@ public:
         }
     }
 
-    void update_derived()
+    void update_derived() override
     {
         int req_status;
         atl_status_t atl_status = atl_comm_check(sched->bin->get_comm_ctx(), &req_status, &req);
@@ -60,7 +81,7 @@ public:
         }
     }
 
-    void* get_field_ptr(ccl_sched_entry_field_id id)
+    void* get_field_ptr(ccl_sched_entry_field_id id) override
     {
         switch (id)
         {
@@ -71,13 +92,13 @@ public:
         return nullptr;
     }
 
-    const char* name() const
+    const char* name() const override
     {
-        return "SEND";
+        return entry_class_name();
     }
 
 protected:
-    void dump_detail(std::stringstream& str) const
+    void dump_detail(std::stringstream& str) const override
     {
         ccl_logger::format(str,
                            "dt ", ccl_datatype_get_name(dtype),

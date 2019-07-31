@@ -7,6 +7,11 @@
 class register_entry : public sched_entry
 {
 public:
+    static constexpr const char *entry_class_name() noexcept
+    {
+        return "REGISTER";
+    }
+
     register_entry() = delete;
     register_entry(ccl_sched* sched,
                    size_t size,
@@ -14,10 +19,9 @@ public:
                    atl_mr_t** mr) :
         sched_entry(sched, true), size(size), ptr(ptr), mr(mr)
     {
-        LOG_DEBUG("creating ", name(), " entry");
     }
 
-    void start_derived()
+    void start_derived() override
     {
         LOG_DEBUG("REGISTER entry size ", size, ", ptr ", ptr);
         CCL_THROW_IF_NOT(size > 0 && ptr && mr, "incorrect input, size ", size, ", ptr ", ptr, " mr ", mr);
@@ -31,13 +35,13 @@ public:
             status = ccl_sched_entry_status_complete;
     }
 
-    const char* name() const
+    const char* name() const override
     {
-        return "REGISTER";
+        return entry_class_name();
     }
 
 protected:
-    void dump_detail(std::stringstream& str) const
+    void dump_detail(std::stringstream& str) const override
     {
         ccl_logger::format(str,
                            "sz ", size,

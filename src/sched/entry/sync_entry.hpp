@@ -8,12 +8,16 @@
 class sync_entry : public sched_entry
 {
 public:
+    static constexpr const char *entry_class_name() noexcept
+    {
+        return "SYNC";
+    }
+
     sync_entry() = default;
     explicit sync_entry(ccl_sched* sched,
                         std::shared_ptr<sync_object> sync) :
         sched_entry(sched, true), sync(sync)
     {
-        LOG_DEBUG("creating ", name(), " entry");
     }
 
     void start_derived() override
@@ -44,7 +48,7 @@ public:
 
     const char* name() const override
     {
-        return "SYNC";
+        return entry_class_name();
     }
 
 protected:

@@ -8,6 +8,11 @@
 class sycl_copy_device_to_host_entry : public sched_entry
 {
 public:
+    static constexpr const char *entry_class_name() noexcept
+    {
+        return "SYCL COPY DEVICE TO HOST";
+    }
+
     sycl_copy_device_to_host_entry() = delete;
     sycl_copy_device_to_host_entry(ccl_sched* sched,
                                    ccl_sycl_buffer_t* in_buf,
@@ -17,10 +22,9 @@ public:
                                    sched_entry(sched), dtype(dtype),
                                    in_buf(in_buf), out_buf(out_buf), stream(stream)
     {
-        LOG_DEBUG("creating ", name(), " entry");
     }
 
-    void start_derived()
+    void start_derived() override
     {
         //sycl_copy_device_to_host(stream->stream(), in_buf, *out_buf);
 
@@ -32,20 +36,20 @@ public:
         status = ccl_sched_entry_status_complete;
     }
 
-    const char* name() const
+    const char* name() const override
     {
-        return "SYCL COPY DEVICE TO HOST";
+        return entry_class_name();
     }
 
 protected:
-    void dump_detail(std::stringstream& str) const
+    void dump_detail(std::stringstream& str) const override
     {
         ccl_logger::format(str,
-                            "  dtype ", dtype,
-                            ", in_buf ", in_buf,
-                            ", out_buf ", out_buf,
-                            ", native_stream ", stream->get_stream(),
-                            "\n");
+                           "  dtype ", dtype,
+                           ", in_buf ", in_buf,
+                           ", out_buf ", out_buf,
+                           ", native_stream ", stream->get_stream(),
+                           "\n");
     }
 
 private:

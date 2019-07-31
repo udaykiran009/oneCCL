@@ -40,7 +40,7 @@ ccl_sched::~ccl_sched()
         cparam.ctype = ccl_coll_none;
         cparam.comm = coll_param.comm;
         ccl_sched* dereg_sched = new ccl_sched(cparam);
-        entry_factory::make_deregister_entry(dereg_sched, memory.mr_list);
+        entry_factory::make_entry<deregister_entry>(dereg_sched, memory.mr_list);
         if (global_data.is_worker_thread || !env_data.worker_offload)
         {
             dereg_sched->do_progress();
@@ -94,7 +94,6 @@ void ccl_sched::do_progress()
         {
             LOG_DEBUG("starting entry ", entry->name(), "[", i, "/", entries.size(), "]");
             entry->start();
-            entry = entries[i];
         }
 
         /* _start_entry may have completed the operation, but won't update start_idx */
@@ -369,7 +368,7 @@ void ccl_sched::sync_partial_scheds()
     auto sync_obj = std::make_shared<sync_object>(partial_scheds.size());
     for (auto& sched : partial_scheds)
     {
-        entry_factory::make_sync_entry(sched.get(), sync_obj);
+        entry_factory::make_entry<sync_entry>(sched.get(), sync_obj);
     }
 }
 

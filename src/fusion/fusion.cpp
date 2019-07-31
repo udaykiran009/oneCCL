@@ -286,13 +286,13 @@ ccl_sched* ccl_fusion_manager::build_sched()
         for (size_t copy_idx = 0; copy_idx < copies_count; copy_idx++)
         {
             size_t global_copy_idx = idx * copies_per_part + copy_idx;
-            entry_factory::make_copy_entry(part_scheds[idx].get(),
-                                           ccl_buffer(&(exec_queue[global_copy_idx]->coll_param.send_buf),
-                                                       exec_queue[global_copy_idx]->coll_param.count * dtype_size,
-                                                       ccl_buffer_type::INDIRECT),
-                                           ccl_buffer(fusion_buf, buf_cache.get_buf_size(), offset),
-                                           exec_queue[global_copy_idx]->coll_param.count,
-                                           dtype);
+            entry_factory::make_entry<copy_entry>(part_scheds[idx].get(),
+                                                  ccl_buffer(&(exec_queue[global_copy_idx]->coll_param.send_buf),
+                                                             exec_queue[global_copy_idx]->coll_param.count * dtype_size,
+                                                             ccl_buffer_type::INDIRECT),
+                                                  ccl_buffer(fusion_buf, buf_cache.get_buf_size(), offset),
+                                                  exec_queue[global_copy_idx]->coll_param.count,
+                                                  dtype);
             offset += exec_queue[global_copy_idx]->coll_param.count * dtype_size;
         }
     }
@@ -312,17 +312,17 @@ ccl_sched* ccl_fusion_manager::build_sched()
         for (size_t copy_idx = 0; copy_idx < copies_count; copy_idx++)
         {
             size_t global_copy_idx = idx * copies_per_part + copy_idx;
-            entry_factory::make_copy_entry(part_scheds[idx].get(),
-                                           ccl_buffer(fusion_buf, buf_cache.get_buf_size(), offset),
-                                           ccl_buffer(&(exec_queue[global_copy_idx]->coll_param.recv_buf),
-                                                       exec_queue[global_copy_idx]->coll_param.count * dtype_size,
-                                                       ccl_buffer_type::INDIRECT),
-                                           exec_queue[global_copy_idx]->coll_param.count,
-                                           dtype);
+            entry_factory::make_entry<copy_entry>(part_scheds[idx].get(),
+                                                  ccl_buffer(fusion_buf, buf_cache.get_buf_size(), offset),
+                                                  ccl_buffer(&(exec_queue[global_copy_idx]->coll_param.recv_buf),
+                                                             exec_queue[global_copy_idx]->coll_param.count * dtype_size,
+                                                             ccl_buffer_type::INDIRECT),
+                                                  exec_queue[global_copy_idx]->coll_param.count,
+                                                  dtype);
             offset += exec_queue[global_copy_idx]->coll_param.count * dtype_size;
-            entry_factory::make_function_entry(part_scheds[idx].get(),
-                                               complete_user_request,
-                                               exec_queue[global_copy_idx]);
+            entry_factory::make_entry<function_entry>(part_scheds[idx].get(),
+                                                      complete_user_request,
+                                                      exec_queue[global_copy_idx]);
             CCL_THROW_IF_NOT(!exec_queue[global_copy_idx]->req->is_completed(),
                               "incorrect completion counter");
         }
@@ -335,7 +335,7 @@ ccl_sched* ccl_fusion_manager::build_sched()
     else
     {
         sched->sync_partial_scheds();
-        entry_factory::make_function_entry(part_scheds[0].get(), release_fusion_buf, fusion_buf);
+        entry_factory::make_entry<function_entry>(part_scheds[0].get(), release_fusion_buf, fusion_buf);
     }
 
     if (!use_cache)

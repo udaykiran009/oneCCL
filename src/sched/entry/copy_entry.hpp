@@ -5,6 +5,11 @@
 class copy_entry : public sched_entry
 {
 public:
+    static constexpr const char *entry_class_name() noexcept
+    {
+        return "COPY";
+    }
+
     copy_entry() = delete;
     copy_entry(ccl_sched* sched,
                const ccl_buffer in_buf,
@@ -13,13 +18,12 @@ public:
                ccl_datatype_internal_t dtype) :
         sched_entry(sched), in_buf(in_buf), out_buf(out_buf), cnt(cnt), dtype(dtype)
     {
-        LOG_DEBUG("creating ", name(), " entry");
         pfields.add_available(ccl_sched_entry_field_in_buf);
         pfields.add_available(ccl_sched_entry_field_cnt);
         pfields.add_available(ccl_sched_entry_field_dtype);
     }
 
-    void start_derived()
+    void start_derived() override
     {
         size_t bytes = cnt * ccl_datatype_get_size(dtype);
         auto comp_status = ccl_comp_copy(in_buf.get_ptr(bytes), out_buf.get_ptr(bytes), cnt, dtype);
@@ -27,7 +31,7 @@ public:
         status = ccl_sched_entry_status_complete;
     }
 
-    void* get_field_ptr(ccl_sched_entry_field_id id)
+    void* get_field_ptr(ccl_sched_entry_field_id id) override
     {
         switch (id)
         {
@@ -39,13 +43,13 @@ public:
         return nullptr;
     }
 
-    const char* name() const
+    const char* name() const override
     {
-        return "COPY";
+        return entry_class_name();
     }
 
 protected:
-    void dump_detail(std::stringstream& str) const
+    void dump_detail(std::stringstream& str) const override
     {
         ccl_logger::format(str,
                            "dt ", ccl_datatype_get_name(dtype),

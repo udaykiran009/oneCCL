@@ -8,7 +8,7 @@ ccl_status_t ccl_coll_build_direct_allgatherv(ccl_sched* sched,
 {
     LOG_DEBUG("build direct allgatherv");
 
-    entry_factory::make_allgatherv_entry(sched, send_buf, send_count, recv_buf, recv_counts, dtype);
+    entry_factory::make_entry<allgatherv_entry>(sched, send_buf, send_count, recv_buf, recv_counts, dtype);
     return ccl_status_success;
 }
 
@@ -34,8 +34,8 @@ ccl_status_t ccl_coll_build_naive_allgatherv(ccl_sched* sched,
     if (send_buf != recv_buf)
     {
         //out-of-place case
-        entry_factory::make_copy_entry(sched, send_buf, recv_buf + offsets[this_rank],
-                                       send_count, dtype);
+        entry_factory::make_entry<copy_entry>(sched, send_buf, recv_buf + offsets[this_rank],
+                                              send_count, dtype);
     }
 
     for (size_t rank_idx = 0; rank_idx < sched->coll_param.comm->size(); ++rank_idx)
@@ -43,11 +43,11 @@ ccl_status_t ccl_coll_build_naive_allgatherv(ccl_sched* sched,
         if (rank_idx != this_rank)
         {
             // send own buffer to other rank
-            entry_factory::make_send_entry(sched, recv_buf + offsets[this_rank],
-                                           send_count, dtype, rank_idx);
+            entry_factory::make_entry<send_entry>(sched, recv_buf + offsets[this_rank],
+                                                  send_count, dtype, rank_idx);
             // recv other's rank buffer
-            entry_factory::make_recv_entry(sched, recv_buf + offsets[rank_idx],
-                                           recv_counts[rank_idx], dtype, rank_idx);
+            entry_factory::make_entry<recv_entry>(sched, recv_buf + offsets[rank_idx],
+                                                  recv_counts[rank_idx], dtype, rank_idx);
         }
     }
 

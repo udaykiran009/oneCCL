@@ -5,16 +5,20 @@
 class nop_entry : public sched_entry
 {
 public:
-    nop_entry(ccl_sched* sched) : sched_entry(sched)
-    {
-        LOG_DEBUG("creating ", name(), " entry");
-    }
-
-    void start_derived()
-    {}
-
-    const char* name() const
+    static constexpr const char *entry_class_name() noexcept
     {
         return "NOOP";
+    }
+
+    nop_entry(ccl_sched* sched) : sched_entry(sched)
+    {
+    }
+
+    void start_derived() override
+    {}
+
+    const char* name() const override
+    {
+        return entry_class_name();
     }
 };

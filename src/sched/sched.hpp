@@ -40,7 +40,7 @@ struct ccl_sched_buffer_handler
     size_t size;
 
     ccl_sched_buffer_handler(ccl_buffer buffer, size_t size)
-        : buffer(buffer), size(size) {} 
+        : buffer(buffer), size(size) {}
 };
 
 struct ccl_sched_memory
@@ -150,16 +150,19 @@ public:
      */
     ccl_request* reset_request();
 
-    void add_entry(std::shared_ptr<sched_entry> entry)
+    sched_entry* add_entry(std::unique_ptr<sched_entry> &&entry)
     {
         entry->set_exec_mode(exec_mode);
 
+        sched_entry* rawPtr = entry.get();
         if (add_mode == ccl_sched_add_back)
-            entries.push_back(entry);
+            entries.push_back(std::move(entry));
         else if (add_mode == ccl_sched_add_front)
-            entries.push_front(entry);
+            entries.push_front(std::move(entry));
         else
             CCL_FATAL("unexpected mode ", add_mode);
+
+        return rawPtr;
     }
 
     /**
@@ -203,7 +206,9 @@ public:
     ccl_coll_attr coll_attr{};
 
     size_t start_idx = 0;  /* index to start */
-    std::deque<std::shared_ptr<sched_entry>> entries{};
+
+    using sched_entry_ptr = std::unique_ptr<sched_entry>;
+    std::deque<sched_entry_ptr> entries{};
 
     ccl_sched_id_t sched_id = 0;   /* sequence number of the schedule in the communicator */
     ccl_request* req = nullptr;

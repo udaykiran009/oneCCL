@@ -5,6 +5,11 @@
 class bcast_entry : public base_coll_entry
 {
 public:
+    static constexpr const char *entry_class_name() noexcept
+    {
+        return "BCAST";
+    }
+
     bcast_entry() = delete;
     bcast_entry(ccl_sched* sched,
                 ccl_buffer buf,
@@ -14,10 +19,9 @@ public:
         base_coll_entry(sched), buf(buf),
         cnt(cnt), root(root), dtype(dtype)
     {
-        LOG_DEBUG("creating ", name(), " entry");
     }
 
-    void start_derived()
+    void start_derived() override
     {
         size_t bytes = cnt * ccl_datatype_get_size(dtype);
         LOG_DEBUG("BCAST entry req ", &req, ", bytes ", bytes);
@@ -32,7 +36,7 @@ public:
             status = ccl_sched_entry_status_started;
     }
 
-    void update_derived()
+    void update_derived() override
     {
         int req_status;
         atl_status_t atl_status = atl_comm_check(sched->bin->get_comm_ctx(), &req_status, &req);
@@ -48,13 +52,13 @@ public:
         }
     }
 
-    const char* name() const
+    const char* name() const override
     {
-        return "BCAST";
+        return entry_class_name();
     }
 
 protected:
-    void dump_detail(std::stringstream& str) const
+    void dump_detail(std::stringstream& str) const override
     {
         ccl_logger::format(str,
                             "dt ", ccl_datatype_get_name(dtype),

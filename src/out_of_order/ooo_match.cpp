@@ -127,24 +127,24 @@ void out_of_order::ooo_match::bcast_match_id(const std::string& match_id)
         LOG_INFO("root bcasts match_id ", match_id, ", comm id ", ctx->reserved_id);
     }
 
-    entry_factory::make_coll_entry(bcast_sched,
-                                   ccl_coll_bcast,
-                                   ccl_buffer(), /* unused */
-                                   ccl_buffer(&ctx->match_id_size_buffer, sizeof(size_t)),
-                                   sizeof(size_t),
-                                   ccl_dtype_internal_char,
-                                   ccl_reduction_custom);
+    entry_factory::make_entry<coll_entry>(bcast_sched,
+                                          ccl_coll_bcast,
+                                          ccl_buffer(), /* unused */
+                                          ccl_buffer(&ctx->match_id_size_buffer, sizeof(size_t)),
+                                          sizeof(size_t),
+                                          ccl_dtype_internal_char,
+                                          ccl_reduction_custom);
 
     bcast_sched->add_barrier();
 
     //2. broadcast match_id
-    auto bcast_value_entry = entry_factory::make_coll_entry(bcast_sched,
-                                                            ccl_coll_bcast,
-                                                            ccl_buffer(), /* unused */
-                                                            ccl_buffer(), /* postponed */
-                                                            0,             /* postponed */
-                                                            ccl_dtype_internal_char,
-                                                            ccl_reduction_custom);
+    auto bcast_value_entry = entry_factory::make_entry<coll_entry>(bcast_sched,
+                                                                   ccl_coll_bcast,
+                                                                   ccl_buffer(), /* unused */
+                                                                   ccl_buffer(), /* postponed */
+                                                                   0,             /* postponed */
+                                                                   ccl_dtype_internal_char,
+                                                                   ccl_reduction_custom);
 
     //update count field of match_id bcast entry
     bcast_value_entry->set_field_fn(ccl_sched_entry_field_cnt, [](const void* ctx,
@@ -178,19 +178,19 @@ void out_of_order::ooo_match::bcast_match_id(const std::string& match_id)
     bcast_sched->add_barrier();
 
     //3. broadcast reserved id
-    entry_factory::make_coll_entry(bcast_sched,
-                                   ccl_coll_bcast,
-                                   ccl_buffer(), /* unused */
-                                   ccl_buffer(&ctx->reserved_id,
-                                               sizeof(ccl_comm_id_t)),
-                                   sizeof(ccl_comm_id_t),
-                                   ccl_dtype_internal_char,
-                                   ccl_reduction_custom);
+    entry_factory::make_entry<coll_entry>(bcast_sched,
+                                          ccl_coll_bcast,
+                                          ccl_buffer(), /* unused */
+                                          ccl_buffer(&ctx->reserved_id,
+                                                     sizeof(ccl_comm_id_t)),
+                                          sizeof(ccl_comm_id_t),
+                                          ccl_dtype_internal_char,
+                                          ccl_reduction_custom);
 
     bcast_sched->add_barrier();
 
     //4. create a communicator
-    entry_factory::make_function_entry(bcast_sched, [](const void* ctx) -> ccl_status_t
+    entry_factory::make_entry<function_entry>(bcast_sched, [](const void* ctx) -> ccl_status_t
     {
         auto ooo_ctx = static_cast<ooo_runtime_info*>(const_cast<void*>(ctx));
         ooo_ctx->ooo_handler->create_comm_and_run_sched(ooo_ctx);

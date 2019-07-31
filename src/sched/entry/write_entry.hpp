@@ -6,6 +6,11 @@
 class write_entry : public sched_entry
 {
 public:
+    static constexpr const char *entry_class_name() noexcept
+    {
+        return "WRITE";
+    }
+
     write_entry() = delete;
     write_entry(ccl_sched* sched,
                 ccl_buffer src_buf,
@@ -19,12 +24,11 @@ public:
         cnt(cnt), dtype(dtype), dst(dst), dst_mr(dst_mr),
         dst_buf_off(dst_buf_off)
     {
-        LOG_DEBUG("creating ", name(), " entry");
         pfields.add_available(ccl_sched_entry_field_src_mr);
         pfields.add_available(ccl_sched_entry_field_dst_mr);
     }
 
-    void start_derived()
+    void start_derived() override
     {
         LOG_DEBUG("WRITE entry dst ", dst, ", req ", &req);
 
@@ -49,7 +53,7 @@ public:
             status = ccl_sched_entry_status_started;
     }
 
-    void update_derived()
+    void update_derived() override
     {
         int req_status;
         atl_status_t atl_status = atl_comm_check(sched->bin->get_comm_ctx(), &req_status, &req);
@@ -63,7 +67,7 @@ public:
             status = ccl_sched_entry_status_complete;
     }
 
-    void* get_field_ptr(ccl_sched_entry_field_id id)
+    void* get_field_ptr(ccl_sched_entry_field_id id) override
     {
         switch (id)
         {
@@ -74,13 +78,13 @@ public:
         return nullptr;
     }
 
-    const char* name() const
+    const char* name() const override
     {
-        return "WRITE";
+        return entry_class_name();
     }
 
 protected:
-    void dump_detail(std::stringstream& str) const
+    void dump_detail(std::stringstream& str) const override
     {
         ccl_logger::format(str,
                            "dt ", ccl_datatype_get_name(dtype),

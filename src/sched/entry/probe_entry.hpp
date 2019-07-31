@@ -6,17 +6,21 @@
 class probe_entry : public sched_entry
 {
 public:
+    static constexpr const char *entry_class_name() noexcept
+    {
+        return "PROBE";
+    }
+
     probe_entry() = delete;
     probe_entry(ccl_sched* sched,
                 size_t source,
                 size_t* count,
-                ccl_op_id_t op_id) :
+                ccl_op_id_t op_id = 0) :
         sched_entry(sched), src(source), cnt(count), op_id(op_id)
     {
-        LOG_DEBUG("creating ", name(), " entry");
     }
 
-    void start_derived()
+    void start_derived() override
     {
         atl_tag = global_data.atl_tag->create(sched->coll_param.comm->id(), src, sched->sched_id, op_id);
         LOG_DEBUG("PROBE entry src ", src, ", tag ", atl_tag);
@@ -33,7 +37,7 @@ public:
         }
     }
 
-    void update_derived()
+    void update_derived() override
     {
         int req_status;
         atl_status_t atl_status = atl_comm_check(sched->bin->get_comm_ctx(), &req_status, &req);
@@ -52,13 +56,13 @@ public:
         }
     }
 
-    const char* name() const
+    const char* name() const override
     {
-        return "PROBE";
+        return entry_class_name();
     }
 
 protected:
-    void dump_detail(std::stringstream& str) const
+    void dump_detail(std::stringstream& str) const override
     {
         ccl_logger::format(str,
                            "cnt ", *cnt,
