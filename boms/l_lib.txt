@@ -1,14 +1,14 @@
 DeliveryName	InstallName	FileCheckSum	FileOrigin	Owner	FileFeature	FileInstallCondition	InstalledFilePermission	Redistributable	InstalledFileOwner	SymbolicLink
-<deliverydir>/l_lib/libkube.so.1	<installdir><l_ccl_install_path><l_ccl_platform>/lib/libkube.so.1		external	Ksenya Kochanova		1	755	redistributable	root	<installroot>/intel64/lib64/libkube.so.1
-<deliverydir>/l_lib/libkube.a	<installdir><l_ccl_install_path><l_ccl_platform>/lib/libkube.a		external	Ksenya Kochanova		1	755	redistributable	root	<installroot>/intel64/lib64/libkube.a
-<deliverydir>/l_lib/libccl.a	<installdir><l_ccl_install_path><l_ccl_platform>/lib/libccl.a		external	Ksenya Kochanova		1	755	redistributable	root	<installroot>/intel64/lib64/libccl.a
-<deliverydir>/l_lib/libccl.so	<installdir><l_ccl_install_path><l_ccl_platform>/lib/libccl.so		external	Ksenya Kochanova		1	755	redistributable	root	<installroot>/intel64/lib64/libccl.so
-<deliverydir>/l_lib/libccl_atl_mpi.a	<installdir><l_ccl_install_path><l_ccl_platform>/lib/libccl_atl_mpi.a		external	Ksenya Kochanova		1	755	redistributable	root	<installroot>/intel64/lib64/libccl_atl_mpi.a
-<deliverydir>/l_lib/libccl_atl_mpi.so.1	<installdir><l_ccl_install_path><l_ccl_platform>/lib/libccl_atl_mpi.so.1		external	Ksenya Kochanova		1	755	redistributable	root	<installroot>/intel64/lib64/libccl_atl_mpi.so.1
-<deliverydir>/l_lib/libccl_atl_ofi.a	<installdir><l_ccl_install_path><l_ccl_platform>/lib/libccl_atl_ofi.a		external	Ksenya Kochanova		1	755	redistributable	root	<installroot>/intel64/lib64/libccl_atl_ofi.a
-<deliverydir>/l_lib/libccl_atl_ofi.so.1	<installdir><l_ccl_install_path><l_ccl_platform>/lib/libccl_atl_ofi.so.1		external	Ksenya Kochanova		1	755	redistributable	root	<installroot>/intel64/lib64/libccl_atl_ofi.so.1
-<deliverydir>/l_lib/libpmi.a	<installdir><l_ccl_install_path><l_ccl_platform>/lib/libpmi.a		external	Ksenya Kochanova		1	755	redistributable	root	<installroot>/intel64/lib64/libpmi.a
-<deliverydir>/l_lib/libpmi.so.1	<installdir><l_ccl_install_path><l_ccl_platform>/lib/libpmi.so.1		external	Ksenya Kochanova		1	755	redistributable	root	<installroot>/intel64/lib64/libpmi.so.1
+<deliverydir>/l_lib/libkube.so.1	<installdir><l_ccl_install_path><l_ccl_platform>/lib/libkube.so.1		external	Ksenya Kochanova		1	755	redistributable	root	<installroot>/intel64/lib/libkube.so.1
+<deliverydir>/l_lib/libkube.a	<installdir><l_ccl_install_path><l_ccl_platform>/lib/libkube.a		external	Ksenya Kochanova		1	755	redistributable	root	<installroot>/intel64/lib/libkube.a
+<deliverydir>/l_lib/libccl.a	<installdir><l_ccl_install_path><l_ccl_platform>/lib/libccl.a		external	Ksenya Kochanova		1	755	redistributable	root	<installroot>/intel64/lib/libccl.a
+<deliverydir>/l_lib/libccl.so	<installdir><l_ccl_install_path><l_ccl_platform>/lib/libccl.so		external	Ksenya Kochanova		1	755	redistributable	root	<installroot>/intel64/lib/libccl.so
+<deliverydir>/l_lib/libccl_atl_mpi.a	<installdir><l_ccl_install_path><l_ccl_platform>/lib/libccl_atl_mpi.a		external	Ksenya Kochanova		1	755	redistributable	root	<installroot>/intel64/lib/libccl_atl_mpi.a
+<deliverydir>/l_lib/libccl_atl_mpi.so.1	<installdir><l_ccl_install_path><l_ccl_platform>/lib/libccl_atl_mpi.so.1		external	Ksenya Kochanova		1	755	redistributable	root	<installroot>/intel64/lib/libccl_atl_mpi.so.1
+<deliverydir>/l_lib/libccl_atl_ofi.a	<installdir><l_ccl_install_path><l_ccl_platform>/lib/libccl_atl_ofi.a		external	Ksenya Kochanova		1	755	redistributable	root	<installroot>/intel64/lib/libccl_atl_ofi.a
+<deliverydir>/l_lib/libccl_atl_ofi.so.1	<installdir><l_ccl_install_path><l_ccl_platform>/lib/libccl_atl_ofi.so.1		external	Ksenya Kochanova		1	755	redistributable	root	<installroot>/intel64/lib/libccl_atl_ofi.so.1
+<deliverydir>/l_lib/libpmi.a	<installdir><l_ccl_install_path><l_ccl_platform>/lib/libpmi.a		external	Ksenya Kochanova		1	755	redistributable	root	<installroot>/intel64/lib/libpmi.a
+<deliverydir>/l_lib/libpmi.so.1	<installdir><l_ccl_install_path><l_ccl_platform>/lib/libpmi.so.1		external	Ksenya Kochanova		1	755	redistributable	root	<installroot>/intel64/lib/libpmi.so.1
 <N/A>	<installdir><l_ccl_install_path><l_ccl_platform>/lib/libkube.so.1.0		external	Ksenya Kochanova		1	755	redistributable	root	<installdir><l_ccl_install_path><l_ccl_platform>/lib/libkube.so.1
 <N/A>	<installdir><l_ccl_install_path><l_ccl_platform>/lib/libkube.so		external	Ksenya Kochanova		1	755	redistributable	root	<installdir><l_ccl_install_path><l_ccl_platform>/lib/libkube.so.1.0
 <N/A>	<installdir><l_ccl_install_path><l_ccl_platform>/lib/libccl_atl_ofi.so.1.0		external	Ksenya Kochanova		1	755	redistributable	root	<installdir><l_ccl_install_path><l_ccl_platform>/lib/libccl_atl_ofi.so.1
