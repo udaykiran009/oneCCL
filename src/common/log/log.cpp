@@ -17,23 +17,16 @@ std::ostream& operator<<(std::ostream& os,
 
 void ccl_logger::write_prefix(std::ostream& str)
 {
-#if __GNUC__ >= 5
-    std::time_t t = std::time(nullptr);
-    std::tm tm = *std::localtime(&t);
-    str << std::put_time(&tm, "%Y:%m:%d-%H:%M:%S");
-#else
     constexpr size_t time_buf_size = 20;
     time_t timer;
     char time_buf[time_buf_size]{};
-    struct tm* time_info = nullptr;
+    struct tm time_info{};
     time(&timer);
-    time_info = localtime(&timer);
-    if(time_info)
+    if(localtime_r(&timer, &time_info))
     {
-        strftime(time_buf, time_buf_size, "%Y:%m:%d-%H:%M:%S", time_info);
+        strftime(time_buf, time_buf_size, "%Y:%m:%d-%H:%M:%S", &time_info);
         str << time_buf;
     }
-#endif
     str << ":(" << syscall(SYS_gettid) << ") ";
 }
 

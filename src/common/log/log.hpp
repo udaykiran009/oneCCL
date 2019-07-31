@@ -114,54 +114,47 @@ public:
         level = lvl;
     }
 
+    static ccl_log_level get_log_level() noexcept
+    {
+        return level;
+    }
+
     template<typename T, typename ...Tpackage>
     void error(T&& first,
                Tpackage&& ... others)
     {
-        if (level >= ccl_log_level::ERROR)
-        {
-            write_stream_wrapper(out_stream, std::cerr, "ERROR: ",
-                                 std::forward<T>(first), std::forward<Tpackage>(others)...);
+        write_stream_wrapper(out_stream, std::cerr, "ERROR: ",
+                             std::forward<T>(first), std::forward<Tpackage>(others)...);
 
-            write_backtrace(out_stream);
-            std::cerr << streambuf;
-            std::flush(std::cerr);
+        write_backtrace(out_stream);
+        std::cerr << streambuf;
+        std::flush(std::cerr);
 
-            out_stream.flags(initial_flags);
-        }
+        out_stream.flags(initial_flags);
     }
 
     template<typename T, typename ...Tpackage>
     void info(T&& first,
               Tpackage&& ... others)
     {
-        if (level >= ccl_log_level::INFO)
-        {
-            write_stream_wrapper(out_stream, std::cout, std::forward<T>(first),
-                                 std::forward<Tpackage>(others)...);
-        }
+        write_stream_wrapper(out_stream, std::cout, std::forward<T>(first),
+                             std::forward<Tpackage>(others)...);
     }
 
     template<typename T, typename ...Tpackage>
     void debug(T&& first,
                Tpackage&& ... others)
     {
-        if (level >= ccl_log_level::DEBUG)
-        {
-            write_stream_wrapper(out_stream, std::cout, std::forward<T>(first),
-                                 std::forward<Tpackage>(others)...);
-        }
+        write_stream_wrapper(out_stream, std::cout, std::forward<T>(first),
+                             std::forward<Tpackage>(others)...);
     }
 
     template<typename T, typename ...Tpackage>
     void trace(T&& first,
                Tpackage&& ... others)
     {
-        if (level >= ccl_log_level::TRACE)
-        {
-            write_stream_wrapper(out_stream, std::cout, std::forward<T>(first),
-                                 std::forward<Tpackage>(others)...);
-        }
+        write_stream_wrapper(out_stream, std::cout, std::forward<T>(first),
+                             std::forward<Tpackage>(others)...);
     }
 
     /**
@@ -226,10 +219,37 @@ private:
 
 extern thread_local ccl_logger logger;
 
-#define LOG_ERROR(...) logger.error(__FILENAME__,":", __FUNCTION__, ":", __LINE__, " ", ##__VA_ARGS__);
-#define LOG_INFO(...) logger.info( __FUNCTION__, ":", __LINE__, " ", ##__VA_ARGS__);
-#define LOG_DEBUG(...) logger.debug( __FUNCTION__, ":", __LINE__, " ", ##__VA_ARGS__);
-#define LOG_TRACE(...) logger.trace( __FUNCTION__, ":", __LINE__, " ", ##__VA_ARGS__);
+#define LOG_ERROR(...)                                                                      \
+{                                                                                           \
+    if (logger.get_log_level() >= ccl_log_level::ERROR)                                      \
+    {                                                                                       \
+        logger.error(__FILENAME__,":", __FUNCTION__, ":", __LINE__, " ", ##__VA_ARGS__);    \
+    }                                                                                       \
+}
+
+#define LOG_INFO(...)                                                                       \
+{                                                                                           \
+    if (logger.get_log_level() >= ccl_log_level::INFO)                                       \
+    {                                                                                       \
+        logger.info( __FUNCTION__, ":", __LINE__, " ", ##__VA_ARGS__);                      \
+    }                                                                                       \
+}
+
+#define LOG_DEBUG(...)                                                                      \
+{                                                                                           \
+    if (logger.get_log_level() >= ccl_log_level::DEBUG)                                      \
+    {                                                                                       \
+        logger.debug( __FUNCTION__, ":", __LINE__, " ", ##__VA_ARGS__);                     \
+    }                                                                                       \
+}
+
+#define LOG_TRACE(...)                                                                      \
+{                                                                                           \
+    if (logger.get_log_level() >= ccl_log_level::TRACE)                                      \
+    {                                                                                       \
+        logger.trace( __FUNCTION__, ":", __LINE__, " ", ##__VA_ARGS__);                     \
+    }                                                                                       \
+}
 
 /**
  * Macro to handle critical unrecoverable error. Can be used in destructors
