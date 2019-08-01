@@ -139,6 +139,11 @@ public:
 
     void prepare_partial_scheds();
 
+    size_t get_start_idx() const
+    {
+        return start_idx;
+    }
+
     /**
      * Reset runtime parameters and all entries
      */

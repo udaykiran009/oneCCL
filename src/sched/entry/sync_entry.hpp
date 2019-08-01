@@ -22,12 +22,18 @@ public:
 
     void start_derived() override
     {
-        sync->visit();
         status = ccl_sched_entry_status_started;
     }
 
     void update_derived() override
     {
+        if ((sched->get_start_idx() == start_idx) && should_visit)
+        {
+            /* ensure intra-schedule barrier before inter-schedule barrier */
+            sync->visit();
+            should_visit = false;
+        }
+
         auto counter = sync->value();
         if (counter == 0)
         {
@@ -40,10 +46,11 @@ public:
         }
     }
 
-    void reset() override
+    void reset(size_t idx) override
     {
-        sched_entry::reset();
+        sched_entry::reset(idx);
         sync->reset();
+        should_visit = true;
     }
 
     const char* name() const override
@@ -61,4 +68,5 @@ protected:
 
 private:
     std::shared_ptr<sync_object> sync;
+    bool should_visit = true;
 };

@@ -65,7 +65,7 @@ public:
     void update();
     virtual void update_derived();
 
-    virtual void reset();
+    virtual void reset(size_t start_idx);
 
     void dump(std::stringstream& str,
               size_t idx) const;
@@ -88,6 +88,7 @@ protected:
     ccl_sched* sched = nullptr;
     bool barrier = false;
     postponed_fields pfields;
+    size_t start_idx = 0;
     ccl_sched_entry_status status = ccl_sched_entry_status_not_started;
     ccl_sched_entry_exec_mode exec_mode = ccl_sched_entry_exec_regular;
 

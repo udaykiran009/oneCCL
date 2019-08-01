@@ -75,12 +75,13 @@ void sched_entry::update_derived()
     */
 }
 
-void sched_entry::reset()
+void sched_entry::reset(size_t idx)
 {
     if (status == ccl_sched_entry_status_complete_once)
     {
         return;
     }
+    start_idx = idx;
     status = ccl_sched_entry_status_not_started;
 
 #ifdef ENABLE_DEBUG

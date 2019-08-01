@@ -101,7 +101,7 @@ void ccl_sched::do_progress()
         {
             ++start_idx;   /* this is valid even for barrier entries */
             LOG_DEBUG("completed ", entry->name(), entry->is_barrier() ? " barrier" : "",
-                " entry [", i, "/", entries.size(), "], shift start_idx, sched ", this);
+                " entry [", i, "/", entries.size(), "], shift start_idx to ", start_idx, ", sched ", this);
         }
 
         /* watch the indexing, start_idx might have been incremented above, so
@@ -205,7 +205,8 @@ void ccl_sched_progress(ccl_sched* sched)
             // the entry has been completed, increment start_idx
             ++sched->start_idx;
             LOG_DEBUG("completed ", entry->name(), entry->is_barrier() ? " barrier" : "",
-                      " entry [", entry_idx, "/", sched->entries.size(), "], shift start_idx, sched ", sched);
+                      " entry [", entry_idx, "/", sched->entries.size(), "], shift start_idx to ", sched->start_idx,
+                      ", sched ", sched);
             if (entry->is_barrier())
             {
                 // that entry was marked as a barrier, run the rest entries (if any) which depend on it
@@ -324,9 +325,9 @@ void ccl_sched::reset()
 #endif
     start_idx = 0;
     first_progress = true;
-    for (auto& entry : entries)
+    for (size_t idx = 0; idx < entries.size(); idx++)
     {
-        entry->reset();
+        entries[idx].get()->reset(idx);
     }
 }
 
