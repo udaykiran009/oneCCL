@@ -88,6 +88,7 @@ struct ccl_coll_param
 #ifdef ENABLE_SYCL
     ccl_sycl_buffer_t* sycl_send_buf;
     ccl_sycl_buffer_t* sycl_recv_buf;
+    ccl_sycl_buffer_t* sycl_buf;
 #endif /* ENABLE_SYCL */
 };
 

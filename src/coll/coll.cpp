@@ -398,7 +398,17 @@ ccl_request* ccl_bcast_impl(void* buf,
 {
     ccl_coll_param coll_param{};
     coll_param.ctype = ccl_coll_bcast;
-    coll_param.buf = buf;
+#ifdef ENABLE_SYCL
+    if (stream && stream->get_type() == ccl_stream_sycl) {
+         coll_param.sycl_buf = static_cast<ccl_sycl_buffer_t *>(buf);
+         coll_param.buf = new char[coll_param.sycl_buf->get_access<cl::sycl::access::mode::read>().get_count()*ccl_datatype_get_size(ccl_datatype_get(dtype))];
+         CCL_ASSERT(coll_param.buf);
+    } else {
+#endif /* ENABLE_SYCL */
+        coll_param.buf = buf;
+#ifdef ENABLE_SYCL
+    }
+#endif /* ENABLE_SYCL */
     coll_param.count = count;
     coll_param.dtype = ccl_datatype_get(dtype);
     coll_param.root = root;
@@ -429,8 +439,25 @@ ccl_request* ccl_reduce_impl(const void* send_buf,
 {
     ccl_coll_param coll_param{};
     coll_param.ctype = ccl_coll_reduce;
-    coll_param.send_buf = send_buf;
-    coll_param.recv_buf = recv_buf;
+#ifdef ENABLE_SYCL
+    if (stream && stream->get_type() == ccl_stream_sycl) {
+         coll_param.sycl_send_buf = static_cast<ccl_sycl_buffer_t *>((void*)send_buf);
+         coll_param.send_buf = new char[coll_param.sycl_send_buf->get_access<cl::sycl::access::mode::read>().get_count()*ccl_datatype_get_size(ccl_datatype_get(dtype))];
+         CCL_ASSERT(coll_param.send_buf);
+         if(communicator->rank() == root) {
+             coll_param.sycl_recv_buf = static_cast<ccl_sycl_buffer_t *>(recv_buf);
+             coll_param.recv_buf = new char[coll_param.sycl_recv_buf->get_access<cl::sycl::access::mode::read>().get_count()*ccl_datatype_get_size(ccl_datatype_get(dtype))];
+             CCL_ASSERT(coll_param.recv_buf);
+         } else {
+             coll_param.recv_buf = nullptr;
+         }
+    } else {
+#endif /* ENABLE_SYCL */
+        coll_param.send_buf = send_buf;
+        coll_param.recv_buf = recv_buf;
+#ifdef ENABLE_SYCL
+    }
+#endif /* ENABLE_SYCL */
     coll_param.count = count;
     coll_param.dtype = ccl_datatype_get(dtype);
     coll_param.reduction = reduction;
@@ -466,10 +493,10 @@ ccl_request* ccl_allreduce_impl(const void* send_buf,
     if (stream && stream->get_type() == ccl_stream_sycl) {
          coll_param.sycl_send_buf = static_cast<ccl_sycl_buffer_t *>((void*)send_buf);
          coll_param.sycl_recv_buf = static_cast<ccl_sycl_buffer_t *>(recv_buf);
-         CCL_ASSERT(coll_param.send_buf);
          coll_param.send_buf = new char[coll_param.sycl_send_buf->get_access<cl::sycl::access::mode::read>().get_count()*ccl_datatype_get_size(ccl_datatype_get(dtype))];
-         CCL_ASSERT(coll_param.recv_buf);
+         CCL_ASSERT(coll_param.send_buf);
          coll_param.recv_buf = new char[coll_param.sycl_recv_buf->get_access<cl::sycl::access::mode::read>().get_count()*ccl_datatype_get_size(ccl_datatype_get(dtype))];
+         CCL_ASSERT(coll_param.recv_buf);
     } else {
 #endif /* ENABLE_SYCL */
         coll_param.send_buf = send_buf;
@@ -506,8 +533,21 @@ ccl_request* ccl_allgatherv_impl(const void* send_buf,
 {
     ccl_coll_param coll_param{};
     coll_param.ctype = ccl_coll_allgatherv;
-    coll_param.send_buf = send_buf;
-    coll_param.recv_buf = recv_buf;
+#ifdef ENABLE_SYCL
+    if (stream && stream->get_type() == ccl_stream_sycl) {
+         coll_param.sycl_send_buf = static_cast<ccl_sycl_buffer_t *>((void*)send_buf);
+         coll_param.sycl_recv_buf = static_cast<ccl_sycl_buffer_t *>(recv_buf);
+         coll_param.send_buf = new char[coll_param.sycl_send_buf->get_access<cl::sycl::access::mode::read>().get_count()*ccl_datatype_get_size(ccl_datatype_get(dtype))];
+         CCL_ASSERT(coll_param.send_buf);
+         coll_param.recv_buf = new char[coll_param.sycl_recv_buf->get_access<cl::sycl::access::mode::read>().get_count()*ccl_datatype_get_size(ccl_datatype_get(dtype))];
+         CCL_ASSERT(coll_param.recv_buf);
+    } else {
+#endif /* ENABLE_SYCL */
+        coll_param.send_buf = send_buf;
+        coll_param.recv_buf = recv_buf;
+#ifdef ENABLE_SYCL
+    }
+#endif /* ENABLE_SYCL */
     coll_param.send_count = send_count;
     coll_param.recv_counts = recv_counts;
     coll_param.dtype = ccl_datatype_get(dtype);
@@ -552,6 +592,12 @@ ccl_request* ccl_sparse_allreduce_impl(const void* send_ind_buf, size_t send_ind
                                        ccl_reduction_t reduction, const ccl_coll_attr_t* attributes,
                                        ccl_comm* communicator, const ccl_stream* stream)
 {
+#ifdef ENABLE_SYCL
+    if (stream && stream->get_type() == ccl_stream_sycl) {
+        CCL_FATAL("SYCL stream is not yet supported for sparse_allreduce");
+        CCL_ASSERT(0);
+    }
+#endif /* ENABLE_SYCL */
     ccl_coll_param coll_param{};
     coll_param.ctype = ccl_coll_sparse_allreduce;
     coll_param.send_buf = send_ind_buf;

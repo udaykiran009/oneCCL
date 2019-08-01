@@ -153,7 +153,7 @@ CheckCommandExitCode() {
 build()
 {
     log mkdir ${WORKSPACE}/build && cd ${WORKSPACE}/build && echo ${PWD}
-    log cmake .. -DCMAKE_BUILD_TYPE=Release -DCMAKE_C_COMPILER="${C_COMPILER}" \
+    log cmake .. -DCMAKE_BUILD_TYPE=Debug -DCMAKE_C_COMPILER="${C_COMPILER}" \
         -DCMAKE_CXX_COMPILER="${CXX_COMPILER}"
     log make -j4 VERBOSE=1 install
     if [ $? -ne 0 ]

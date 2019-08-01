@@ -31,50 +31,59 @@ int main(int argc, char** argv)
     /* create SYCL stream */
     ccl_stream_create(ccl_stream_sycl, &q, &stream);
 
-    /* open sendbuf and initialize it on the CPU side */
+    // open sendbuf and recvbuf and initialize them on the CPU side
     auto host_acc_sbuf = sendbuf.get_access<mode::write>();
+    auto host_acc_rbuf = recvbuf.get_access<mode::write>();
 
     for (i = 0; i < COUNT; i++) {
         host_acc_sbuf[i] = rank;
+        host_acc_rbuf[i] = 0;
     }
 
-    /* open sendbuf and modify it on the target device side */
-    q.submit([&](cl::sycl::handler& cgh){
+    // open sendbuf and modify it on the target device side
+    q.submit([&](handler& cgh){
        auto dev_acc_sbuf = sendbuf.get_access<mode::write>(cgh);
        cgh.parallel_for<class allreduce_test_sbuf_modify>(range<1>{COUNT}, [=](item<1> id) {
            dev_acc_sbuf[id] += 1;
        });
     });
 
-    /* invoke ccl_allreduce on the CPU side */
-    ccl_allreduce(&sendbuf,
-                  &recvbuf,
-                  COUNT,
-                  ccl_dtype_int,
-                  ccl_reduction_sum,
-                  NULL,
-                  NULL,
-                  stream,
-                  &request);
+    // invoke ccl_allreduce on the CPU side
+    ccl_reduce(&sendbuf,
+               &recvbuf,
+               COUNT,
+               ccl_dtype_int,
+               ccl_reduction_sum,
+               COLL_ROOT,
+               NULL,
+               NULL,
+               stream,
+               &request);
 
     ccl_wait(request);
 
-    /* open recvbuf and check its correctness on the target device side */
+    // open recvbuf and check its correctness on the target device side
     q.submit([&](handler& cgh){
        auto dev_acc_rbuf = recvbuf.get_access<mode::write>(cgh);
        cgh.parallel_for<class allreduce_test_rbuf_check>(range<1>{COUNT}, [=](item<1> id) {
-           if (dev_acc_rbuf[id] != size*(size+1)/2) {
-               dev_acc_rbuf[id] = -1;
+           if (rank == COLL_ROOT) {
+               if (dev_acc_rbuf[id] != size*(size+1)/2) {
+                   dev_acc_rbuf[id] = -1;
+               }
+           } else {
+               if (dev_acc_rbuf[id] != 0) {
+                   dev_acc_rbuf[id] = -1;
+               }
            }
        });
     });
 
-    /* print out the result of the test on the CPU side */
+    // print out the result of the test on the CPU side
+    auto host_acc_rbuf_new = recvbuf.get_access<mode::read>();
     if (rank == COLL_ROOT){
-        auto host_acc_rbuf_new = recvbuf.get_access<mode::read>();
         for (i = 0; i < COUNT; i++) {
             if (host_acc_rbuf_new[i] == -1) {
-                cout<<"FAILED"<<endl;
+                cout<<"FAILED for rank: "<<rank<<endl;
                 break;
             }
         }
