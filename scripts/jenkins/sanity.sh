@@ -152,9 +152,9 @@ fi
 if [ -z "${IMPI_PATH}" ]
 then
     echo "WARNING: I_MPI_ROOT isn't set, last oneAPI pack will be used."
-    source /p/pdsd/scratch/jenkins/artefacts/impi-ch4-build-linux-with-scans/4/oneapi_impi/env/vars.sh
+    source /p/pdsd/scratch/jenkins/artefacts/impi-ch4-build-linux-with-scans/4/oneapi_impi/env/vars.sh release_mt
 else
-    source ${IMPI_PATH}/env/vars.sh
+    source ${IMPI_PATH}/env/vars.sh release_mt
 fi
 
 cd ${WORK_DIR}/../../testspace/$runtime/tests/functional
