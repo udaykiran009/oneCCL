@@ -406,7 +406,7 @@ int ccl_env_parse_yield_type()
             env_data.yield_type = ccl_yield_sched_yield;
         else
         {
-            CCL_THROW("incorrect ", CCL_YIELD_TYPE, " ", type_env);
+            CCL_THROW("unknown ", CCL_YIELD_TYPE, " ", type_env);
             return 0;
         }
     }
@@ -426,7 +426,7 @@ int ccl_env_parse_allgatherv_algo()
             env_data.allgatherv_algo = ccl_allgatherv_algo_multi_bcast;
         else
         {
-            CCL_THROW("incorrect ", CCL_ALLGATHERV_ALGO, " ", mode_env);
+            CCL_THROW("unknown ", CCL_ALLGATHERV_ALGO, " ", mode_env);
             return 0;
         }
     }
@@ -452,7 +452,7 @@ int ccl_env_parse_allreduce_algo()
             env_data.allreduce_algo = ccl_allreduce_algo_double_tree;
         else
         {
-            CCL_THROW("incorrect ", CCL_ALLREDUCE_ALGO, " ", mode_env);
+            CCL_THROW("unknown ", CCL_ALLREDUCE_ALGO, " ", mode_env);
             return 0;
         }
     }
@@ -470,7 +470,7 @@ int ccl_env_parse_barrier_algo()
             env_data.barrier_algo = ccl_barrier_algo_direct;
         else
         {
-            CCL_THROW("incorrect ", CCL_BARRIER_ALGO, " ", mode_env);
+            CCL_THROW("unknown ", CCL_BARRIER_ALGO, " ", mode_env);
             return 0;
         }
     }
@@ -490,7 +490,7 @@ int ccl_env_parse_bcast_algo()
             env_data.bcast_algo = ccl_bcast_algo_direct;
         else
         {
-            CCL_THROW("incorrect ", CCL_BCAST_ALGO, " ", mode_env);
+            CCL_THROW("unknown ", CCL_BCAST_ALGO, " ", mode_env);
             return 0;
         }
     }
@@ -510,7 +510,7 @@ int ccl_env_parse_reduce_algo()
             env_data.reduce_algo = ccl_reduce_algo_direct;
         else
         {
-            CCL_THROW("incorrect ", CCL_REDUCE_ALGO, " ", mode_env);
+            CCL_THROW("unknown ", CCL_REDUCE_ALGO, " ", mode_env);
             return 0;
         }
     }

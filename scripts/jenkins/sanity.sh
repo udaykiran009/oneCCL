@@ -204,7 +204,7 @@ case "$runtime" in
                 do
                     CCL_ALLREDUCE_ALGO=$allreduce ctest -VV -C mpi_allreduce_$allreduce
                 done
-            for allgatherv in "naive" "multi_bcast"
+            for allgatherv in "direct" "naive" "multi_bcast"
                 do
                     CCL_ALLGATHERV_ALGO=$allgatherv ctest -VV -C mpi_allgatherv_$allgatherv
                 done

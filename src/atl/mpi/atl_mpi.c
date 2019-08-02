@@ -16,8 +16,14 @@
 #define gettid() syscall(SYS_gettid)
 #endif
 
+#define SIZEOFARR(arr) (sizeof(arr) / sizeof(arr[0]))
+
 #define COMM_IDX_MAX_STR_LEN 4
 #define COMM_IDX_KEY         "comm_idx"
+
+#define OPTIMIZED_MPI_VERSION_PREFIX "Intel(R) MPI Library"
+
+int optimized_impi_versions[] = { 2019, 2020, 2021 };
 
 #define ATL_MPI_PRINT(s, ...)                             \
     do {                                                  \
@@ -251,11 +257,26 @@ atl_mpi_comm_allgatherv(atl_comm_t *comm, const void *send_buf, size_t send_cnt,
     atl_mpi_comm_context_t *comm_context =
         container_of(comm, atl_mpi_comm_context_t, atl_comm);
     atl_mpi_req_t *mpi_req = ((atl_mpi_req_t *)req->internal);
-    mpi_req->comp_state = ATL_MPI_COMP_POSTED;
+    int ret = MPI_SUCCESS;
 
-    int ret = MPI_Iallgatherv((send_buf == recv_buf) ? MPI_IN_PLACE : send_buf, send_cnt, MPI_CHAR,
+    // atl_mpi_context_t *atl_mpi_context =
+    //     container_of(comm->atl_desc, atl_mpi_context_t, atl_desc);
+
+    if (0) //atl_mpi_context->comm_ref_count > 1)
+    {
+        ret = MPI_Allgatherv((send_buf == recv_buf) ? MPI_IN_PLACE : send_buf, send_cnt, MPI_CHAR,
+                             recv_buf, recv_cnts, displs, MPI_CHAR, comm_context->mpi_comm);
+        mpi_req->mpi_context = MPI_REQUEST_NULL;
+        mpi_req->comp_state = ATL_MPI_COMP_COMPLETED;
+    }
+    else
+    {
+        ret = MPI_Iallgatherv((send_buf == recv_buf) ? MPI_IN_PLACE : send_buf, send_cnt, MPI_CHAR,
                               recv_buf, recv_cnts, displs, MPI_CHAR,
                               comm_context->mpi_comm, &mpi_req->mpi_context);
+        mpi_req->comp_state = ATL_MPI_COMP_POSTED;
+    }
+    
     return RET2ATL(ret);
 }
 
@@ -437,7 +458,7 @@ atl_mpi_comm_init(atl_mpi_context_t *atl_mpi_context, size_t index, atl_comm_t *
     MPI_Comm_set_info(atl_mpi_comm_context->mpi_comm, info);
     MPI_Info_free(&info);
 
-    ATL_MPI_DEBUG_PRINT("atl_mpi_comm_init: idx %zu, comm_id_str %s", index, comm_idx_str);
+    ATL_MPI_DEBUG_PRINT("idx %zu, comm_id_str %s", index, comm_idx_str);
 
     atl_mpi_comm_context->idx = index;
     *comm = &atl_mpi_comm_context->atl_comm;
@@ -453,6 +474,65 @@ err_comm_dup:
     return RET2ATL(ret);
 }
 
+int atl_mpi_use_optimized_mpi(atl_attr_t *attr)
+{
+    int i;
+    int use_optimized_mpi = 0;
+    char mpi_version[MPI_MAX_LIBRARY_VERSION_STRING];
+    int mpi_version_len;
+    char* use_opt_env = NULL;
+
+    MPI_Get_library_version(mpi_version, &mpi_version_len);
+    ATL_MPI_DEBUG_PRINT("initial use_optimized_mpi = %d", use_optimized_mpi);
+    ATL_MPI_DEBUG_PRINT("MPI version %s", mpi_version);
+
+    if (strncmp(mpi_version, OPTIMIZED_MPI_VERSION_PREFIX, strlen(OPTIMIZED_MPI_VERSION_PREFIX)) == 0)
+    {
+        int impi_version = atoi(mpi_version + strlen(OPTIMIZED_MPI_VERSION_PREFIX));
+        ATL_MPI_DEBUG_PRINT("IMPI version %d", impi_version);
+        for (i = 0; i < SIZEOFARR(optimized_impi_versions); i++)
+        {
+            if (impi_version == optimized_impi_versions[i])
+            {
+                ATL_MPI_DEBUG_PRINT("set use_optimized_mpi = 1 because IMPI version matches with expected one");
+                use_optimized_mpi = 1;
+                break;
+            }
+        }
+    }
+
+    if (attr->comm_count == 1)
+    {
+        ATL_MPI_DEBUG_PRINT("set use_optimized_mpi = 0 because single ATL comm is requested");
+        use_optimized_mpi = 0;
+    }
+
+    if ((use_opt_env = getenv("CCL_ATL_MPI_OPT")) != NULL)
+    {
+        use_optimized_mpi = atoi(use_opt_env);
+        ATL_MPI_DEBUG_PRINT("set use_optimized_mpi = %d because optimized MPI environment is requested explicitly",
+            use_optimized_mpi);
+    }
+
+    ATL_MPI_DEBUG_PRINT("final use_optimized_mpi = %d", use_optimized_mpi);
+
+    return use_optimized_mpi;
+}
+
+atl_status_t atl_mpi_set_optimized_mpi_environment(atl_attr_t *attr)
+{
+    char comm_count_str[COMM_IDX_MAX_STR_LEN] = { 0 };
+    snprintf(comm_count_str, COMM_IDX_MAX_STR_LEN, "%zu", attr->comm_count);
+
+    setenv("I_MPI_THREAD_SPLIT", "1", 0);
+    setenv("I_MPI_THREAD_RUNTIME", "generic", 0);
+    setenv("I_MPI_THREAD_MAX", comm_count_str, 0);
+    setenv("I_MPI_THREAD_ID_KEY", COMM_IDX_KEY, 0);
+    setenv("I_MPI_THREAD_LOCK_LEVEL", "vci", 0);
+
+    return atl_status_success;
+}
+
 atl_status_t atl_mpi_init(int *argc, char ***argv, size_t *proc_idx, size_t *proc_count,
                           atl_attr_t *attr, atl_comm_t ***atl_comms, atl_desc_t **atl_desc)
 {
@@ -460,6 +540,7 @@ atl_status_t atl_mpi_init(int *argc, char ***argv, size_t *proc_idx, size_t *pro
 
     int ret;
     size_t i;
+    int comm_attr_flag;
     atl_mpi_context_t *atl_mpi_context;
     int required_thread_level = MPI_THREAD_MULTIPLE, provided_thread_level;
 
@@ -467,23 +548,14 @@ atl_status_t atl_mpi_init(int *argc, char ***argv, size_t *proc_idx, size_t *pro
     if (!atl_mpi_context)
         return atl_status_failure;
 
-    if (attr->comm_count > 1)
+    if (atl_mpi_use_optimized_mpi(attr))
     {
-        char comm_count_str[COMM_IDX_MAX_STR_LEN] = { 0 };
-        snprintf(comm_count_str, COMM_IDX_MAX_STR_LEN, "%zu", attr->comm_count);
-
-        setenv("I_MPI_THREAD_SPLIT", "1", 0);
-        setenv("I_MPI_THREAD_RUNTIME", "generic", 0);
-        setenv("I_MPI_THREAD_MAX", comm_count_str, 0);
-        setenv("I_MPI_THREAD_ID_KEY", COMM_IDX_KEY, 0);
-        setenv("I_MPI_THREAD_LOCK_LEVEL", "vci", 0);
-
-        ret = MPI_Init_thread(argc, argv, required_thread_level, &provided_thread_level);
-        if (provided_thread_level < required_thread_level)
-            goto err_init;
+        atl_mpi_set_optimized_mpi_environment(attr);
     }
-    else
-        ret = MPI_Init(argc, argv);
+
+    ret = MPI_Init_thread(argc, argv, required_thread_level, &provided_thread_level);
+    if (provided_thread_level < required_thread_level)
+            goto err_init;
 
     if (ret)
         goto err_init;
@@ -507,7 +579,6 @@ atl_status_t atl_mpi_init(int *argc, char ***argv, size_t *proc_idx, size_t *pro
         atl_mpi_context->comm_ref_count++;
     }
 
-
     atl_mpi_context->atl_desc.ops = &atl_mpi_ops;
     atl_mpi_context->atl_desc.mr_ops = &atl_mpi_mr_ops;
     *atl_desc = &atl_mpi_context->atl_desc;
@@ -515,8 +586,7 @@ atl_status_t atl_mpi_init(int *argc, char ***argv, size_t *proc_idx, size_t *pro
     attr->is_tagged_coll_enabled = 0;
     attr->tag_bits = 32;
     attr->max_tag = 0;
-    int flag;
-    MPI_Comm_get_attr(MPI_COMM_WORLD, MPI_TAG_UB, &(attr->max_tag), &flag);
+    MPI_Comm_get_attr(MPI_COMM_WORLD, MPI_TAG_UB, &(attr->max_tag), &comm_attr_flag);
 
     return atl_status_success;
 

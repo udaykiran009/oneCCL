@@ -33,6 +33,11 @@ static void atl_ini_dir(int *argc, char ***argv, size_t *proc_idx, size_t *proc_
     init_f init_func;
     size_t transport_name_len = strlen(transport_name);
 
+    if (strcmp(transport_name, "MPI") == 0 && !getenv("I_MPI_ROOT")) {
+        LOG_INFO("ATL MPI transport is requested but seems Intel MPI environment is not set. "
+                 "Please source release_mt version of Intel MPI.");
+    }
+
     n = scandir(dir, &liblist, lib_filter, NULL);
     if (n < 0)
         goto libdl_done;
@@ -45,7 +50,7 @@ static void atl_ini_dir(int *argc, char ***argv, size_t *proc_idx, size_t *proc_
         dlhandle = dlopen(lib, RTLD_NOW);
         free(liblist[n]);
         if (dlhandle == NULL) {
-            LOG_INFO("can't open lib ", lib, ", error ", dlerror());
+            LOG_DEBUG("can't open lib ", lib, ", error ", dlerror());
             free(lib);
             continue;
         }
@@ -55,7 +60,7 @@ static void atl_ini_dir(int *argc, char ***argv, size_t *proc_idx, size_t *proc_
         if (init_func == NULL) {
             dlclose(dlhandle);
         } else {
-            LOG_INFO("lib ", lib, " contains necessary symbol");
+            LOG_DEBUG("lib ", lib, " contains necessary symbol");
             atl_transport_t transport;
             // TODO: propagate atl_status to upper level
             atl_status_t ret;

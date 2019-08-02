@@ -276,7 +276,6 @@ ccl_status_t ccl_coll_build_allgatherv(
                                                      dtype));
             break;
         case ccl_allgatherv_algo_direct:
-            CCL_THROW("unexpected allgatherv_algo");
             CCL_CALL(ccl_coll_build_direct_allgatherv(sched, send_buf, send_count, recv_buf, recv_counts,
                                                       dtype));
             break;
