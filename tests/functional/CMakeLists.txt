@@ -57,7 +57,6 @@ foreach(src ${sources})
     get_filename_component(executable ${src} NAME_WE)
     # FIXME: enable allreduce_custom for non-direct case only
     if(NOT ${executable} STREQUAL "allreduce_custom_test")
-    message("use ${executable}")
     add_executable(${executable} ${src})
     add_dependencies(${executable} gtest)
     add_dependencies(${executable} ccl)

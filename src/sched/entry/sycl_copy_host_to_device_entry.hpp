@@ -27,12 +27,9 @@ public:
 
     void start_derived() override
     {
-        //sycl_copy_host_to_device(stream->stream(), in_buf, out_buf);
-
         auto out_buf_acc = out_buf->get_access<cl::sycl::access::mode::discard_write>();
-
-        memcpy(out_buf_acc.get_pointer(), in_buf, out_buf_acc.get_count()*ccl_datatype_get_size(dtype));
-
+        auto comp_status = ccl_comp_copy(in_buf, out_buf_acc.get_pointer(), out_buf_acc.get_count(), dtype);
+        CCL_ASSERT(comp_status == ccl_status_success, "bad status ", comp_status);
         status = ccl_sched_entry_status_complete;
     }
 
@@ -58,30 +55,4 @@ private:
     ccl_sycl_buffer_t* out_buf;
     const ccl_stream* stream;
 };
-
-
-//Factory method specific implementation
-namespace entry_factory
-{
-    namespace detail
-    {
-        template <>
-        class entry_creator<sycl_copy_host_to_device_entry> //force adding barrier before entry creation
-        {
-        public:
-            static sycl_copy_host_to_device_entry* create(ccl_sched* sched,
-                                                          void* in_buf,
-                                                          ccl_sycl_buffer_t* out_buf,
-                                                          ccl_datatype_internal_t dtype,
-                                                          const ccl_stream* stream)
-            {
-                sched->add_barrier();
-                auto &&new_entry = std::unique_ptr<sycl_copy_host_to_device_entry>(
-                            new sycl_copy_host_to_device_entry(sched, in_buf, out_buf, dtype, stream));
-                return static_cast<sycl_copy_host_to_device_entry*>(sched->add_entry(std::move(new_entry)));
-            }
-        };
-    }
-}
-
 #endif /* ENABLE_SYCL */

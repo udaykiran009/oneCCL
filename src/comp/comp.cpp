@@ -35,6 +35,8 @@
 
 ccl_status_t ccl_comp_copy(const void *in_buf, void *out_buf, size_t count, ccl_datatype_internal_t dtype)
 {
+    CCL_ASSERT(in_buf, "in_buf is null");
+    CCL_ASSERT(out_buf, "out_buf is null");
     memcpy(out_buf, in_buf, count * ccl_datatype_get_size(dtype));
     return ccl_status_success;
 }

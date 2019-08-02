@@ -363,13 +363,19 @@ void ccl_sched::add_barrier()
 
 void ccl_sched::sync_partial_scheds()
 {
-    if (partial_scheds.size() <= 1)
-        return;
+    CCL_THROW_IF_NOT(!partial_scheds.empty(), "no partial schedules");
 
-    auto sync_obj = std::make_shared<sync_object>(partial_scheds.size());
-    for (auto& sched : partial_scheds)
+    if (partial_scheds.size() == 1)
     {
-        entry_factory::make_entry<sync_entry>(sched.get(), sync_obj);
+        add_barrier();
+    }
+    else
+    {
+        auto sync_obj = std::make_shared<sync_object>(partial_scheds.size());
+        for (auto& sched : partial_scheds)
+        {
+            entry_factory::make_entry<sync_entry>(sched.get(), sync_obj);
+        }
     }
 }
 

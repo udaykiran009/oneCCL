@@ -26,13 +26,9 @@ public:
 
     void start_derived() override
     {
-        //sycl_copy_device_to_host(stream->stream(), in_buf, *out_buf);
-
         auto in_buf_acc = in_buf->get_access<cl::sycl::access::mode::read>();
-
-        assert(out_buf);
-        memcpy(out_buf, in_buf_acc.get_pointer(), in_buf_acc.get_count()*ccl_datatype_get_size(dtype));
-
+        auto comp_status = ccl_comp_copy(in_buf_acc.get_pointer(), out_buf, in_buf_acc.get_count(), dtype);
+        CCL_ASSERT(comp_status == ccl_status_success, "bad status ", comp_status);
         status = ccl_sched_entry_status_complete;
     }
 
