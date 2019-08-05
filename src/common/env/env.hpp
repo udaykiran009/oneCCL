@@ -43,6 +43,7 @@ enum ccl_allgatherv_algo
     ccl_allgatherv_algo_naive       = 0,
     ccl_allgatherv_algo_direct      = 1,
     ccl_allgatherv_algo_multi_bcast = 2,
+    ccl_allgatherv_algo_flat        = 3,
 
     ccl_allgatherv_algo_last_value
 };

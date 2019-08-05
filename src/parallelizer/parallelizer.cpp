@@ -93,7 +93,7 @@ ccl_status_t ccl_parallelizer::process(ccl_sched* sched)
             {
                 part_count = 1;
             }
-            else if (env_data.allgatherv_algo == ccl_allgatherv_algo_multi_bcast)
+            else if ((env_data.allgatherv_algo == ccl_allgatherv_algo_multi_bcast) || (env_data.allgatherv_algo == ccl_allgatherv_algo_flat))
             {
                 part_count = coll_param->comm->size();
                 ag_recv_bufs.resize(part_count);
@@ -465,36 +465,76 @@ ccl_status_t ccl_parallelizer::process(ccl_sched* sched)
                     }
                 }
 
-                if (coll_param->send_buf != coll_param->recv_buf)
+                if (env_data.allgatherv_algo == ccl_allgatherv_algo_flat)
                 {
-                    std::vector<size_t> copy_counts(part_count);
-                    std::vector<size_t> copy_offsets(part_count);
-                    for (idx = 0; idx < part_count; idx++)
+                    auto send_seg = ccl_buffer(&(coll_param->send_buf), coll_param->send_count * dtype_size, ccl_buffer_type::INDIRECT);
+                    size_t my_rank = coll_param->comm->rank();
+                    if (coll_param->send_buf != coll_param->recv_buf)
                     {
-                        copy_counts[idx] = counts[coll_param->comm->rank()] / part_count;
-                        copy_offsets[idx] = idx * copy_counts[idx] * dtype_size;
-                    }
-                    copy_counts[part_count - 1] += counts[coll_param->comm->rank()] % part_count;
-                    for (idx = 0; idx < part_count; idx++)
-                    {
-                        entry_factory::make_entry<copy_entry>(part_scheds[idx].get(),
+                        entry_factory::make_entry<copy_entry>(part_scheds[2 * my_rank % part_count].get(),
                                                               ccl_buffer(&(coll_param->send_buf),
                                                                          coll_param->send_count * dtype_size,
-                                                                         copy_offsets[idx],
                                                                          ccl_buffer_type::INDIRECT),
-                                                              ag_recv_bufs[coll_param->comm->rank()] + copy_offsets[idx],
-                                                              copy_counts[idx], dtype);
+                                                              ag_recv_bufs[my_rank],
+                                                              counts[my_rank], dtype);
+
+                    }
+                    else
+                    {
+                        send_seg = ccl_buffer(&(coll_param->send_buf), coll_param->send_count * dtype_size, offsets[my_rank], ccl_buffer_type::INDIRECT);
+                    }
+
+                    for (idx = 0; idx < part_count; idx++)
+                    {
+                         if (idx == my_rank) continue;
+
+                         entry_factory::make_entry<recv_entry>(part_scheds[(my_rank+idx) % part_count].get(),
+                                                               ag_recv_bufs[idx],
+                                                               counts[idx],
+                                                               dtype, 
+                                                               idx);
+                         entry_factory::make_entry<send_entry>(part_scheds[(my_rank+idx) % part_count].get(),
+                                                               send_seg,
+                                                               counts[my_rank],
+                                                               dtype,
+                                                               idx);
                     }
                     sched->sync_partial_scheds();
-                }
 
-                for (idx = 0; idx < part_count; idx++)
+                }
+                else
                 {
-                    CCL_CALL(ccl_coll_build_bcast(part_scheds[idx].get(),
-                                                  ag_recv_bufs[idx],
-                                                  counts[idx],
-                                                  dtype,
-                                                  idx));
+                    if (coll_param->send_buf != coll_param->recv_buf)
+                    {
+                        std::vector<size_t> copy_counts(part_count);
+                        std::vector<size_t> copy_offsets(part_count);
+                        for (idx = 0; idx < part_count; idx++)
+                        {
+                            copy_counts[idx] = counts[coll_param->comm->rank()] / part_count;
+                            copy_offsets[idx] = idx * copy_counts[idx] * dtype_size;
+                        }
+                        copy_counts[part_count - 1] += counts[coll_param->comm->rank()] % part_count;
+                        for (idx = 0; idx < part_count; idx++)
+                        {
+                            entry_factory::make_entry<copy_entry>(part_scheds[idx].get(),
+                                                                  ccl_buffer(&(coll_param->send_buf),
+                                                                             coll_param->send_count * dtype_size,
+                                                                             copy_offsets[idx],
+                                                                             ccl_buffer_type::INDIRECT),
+                                                                  ag_recv_bufs[coll_param->comm->rank()] + copy_offsets[idx],
+                                                                  copy_counts[idx], dtype);
+                        }
+                        sched->sync_partial_scheds();
+                    }
+
+                    for (idx = 0; idx < part_count; idx++)
+                    {
+                        CCL_CALL(ccl_coll_build_bcast(part_scheds[idx].get(),
+                                                      ag_recv_bufs[idx],
+                                                      counts[idx],
+                                                      dtype,
+                                                      idx));
+                    }
                 }
             }
 #ifdef ENABLE_SYCL

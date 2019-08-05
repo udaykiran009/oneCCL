@@ -56,6 +56,8 @@ const char* ccl_allgatherv_algo_to_str(ccl_allgatherv_algo algo)
             return "direct";
         case ccl_allgatherv_algo_multi_bcast:
             return "multi_bcast";
+        case ccl_allgatherv_algo_flat:
+            return "flat";
         default:
             CCL_FATAL("unexpected allgatherv_algo ", algo);
     }
@@ -424,6 +426,8 @@ int ccl_env_parse_allgatherv_algo()
             env_data.allgatherv_algo = ccl_allgatherv_algo_direct;
         else if (strcmp(mode_env, "multi_bcast") == 0)
             env_data.allgatherv_algo = ccl_allgatherv_algo_multi_bcast;
+        else if (strcmp(mode_env, "flat") == 0)
+            env_data.allgatherv_algo = ccl_allgatherv_algo_flat;
         else
         {
             CCL_THROW("unknown ", CCL_ALLGATHERV_ALGO, " ", mode_env);
