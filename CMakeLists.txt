@@ -28,6 +28,7 @@ message(STATUS "CXX compiler : ${CMAKE_CXX_COMPILER}")
 
 #predefined options
 option(USE_SECURITY_FLAGS "Use security flags" FALSE)
+option(USE_CODECOV_FLAGS "Calculate code coverage" FALSE)
 option(WITH_ASAN "Use address sanitizer, can only be used in Debug build" FALSE)
 
 #installation path variables
@@ -64,8 +65,10 @@ if(USE_SECURITY_FLAGS)
 endif()
 
 if(${CMAKE_C_COMPILER_ID} STREQUAL "Intel" OR ${CMAKE_CXX_COMPILER_ID} STREQUAL "Intel")
-    set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -static-intel")
-    set(CMAKE_STATIC_LINKER_FLAGS "${CMAKE_STATIC_LINKER_FLAGS} -static-intel")
+	if (USE_CODECOV_FLAGS)
+		set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -prof-gen=srcpos -prof-src-root-cwd")
+		set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -prof-gen=srcpos -prof-src-root-cwd")
+	endif()
 endif()
 
 #TODO: add -Wextra to c/cxx flags

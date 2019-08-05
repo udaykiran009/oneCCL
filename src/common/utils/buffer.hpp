@@ -91,6 +91,12 @@ public:
         return ccl_buffer(src, size, offset - val, type);
     }
 
+    size_t get_difference(ccl_buffer buf)
+    {
+        CCL_ASSERT((get_ptr() >= buf.get_ptr()), "difference between pointers < 0");
+        return (static_cast<char*>(get_ptr()) - static_cast<char*>(buf.get_ptr()));
+    }
+
     void* get_ptr(ssize_t access_size = 0) const
     {
         CCL_ASSERT(offset >= 0, "unexpected size");

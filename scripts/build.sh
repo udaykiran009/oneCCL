@@ -28,11 +28,16 @@ then
     BUILD_COMPILER_TYPE="clang"
 fi
 
-if [ "${BUILD_COMPILER_TYPE}" == "gnu" ]
+if [ "${BUILD_COMPILER_TYPE}" = "gnu" ]
 then
     BUILD_COMPILER=/usr/bin
     C_COMPILER=${BUILD_COMPILER}/gcc
     CXX_COMPILER=${BUILD_COMPILER}/g++
+elif [ "${BUILD_COMPILER_TYPE}" = "intel" ]
+then
+	BUILD_COMPILER=/nfs/inn/proj/mpi/pdsd/opt/EM64T-LIN/intel/compilers_and_libraries_2019.4.243/linux/bin/intel64/
+    C_COMPILER=${BUILD_COMPILER}/icc
+    CXX_COMPILER=${BUILD_COMPILER}/icpc
 else
     if [ -z "${SYCL_BUNDLE_ROOT}" ]
     then
@@ -44,7 +49,12 @@ else
     C_COMPILER=${BUILD_COMPILER}/clang
     CXX_COMPILER=${BUILD_COMPILER}/clang++
 fi
-
+if [ "${ENABLE_CODECOV}" = "yes" ]
+then
+	CODECOV_FLAGS="TRUE"
+else
+	CODECOV_FLAGS=""
+fi
 
 
 BOM_DIR="${WORKSPACE}/boms"
@@ -152,9 +162,10 @@ CheckCommandExitCode() {
 
 build()
 {
+
     log mkdir ${WORKSPACE}/build && cd ${WORKSPACE}/build && echo ${PWD}
-    log cmake .. -DCMAKE_BUILD_TYPE=Release -DCMAKE_C_COMPILER="${C_COMPILER}" \
-        -DCMAKE_CXX_COMPILER="${CXX_COMPILER}"
+    log cmake ..  -DCMAKE_BUILD_TYPE=Release \
+	-DCMAKE_C_COMPILER="${C_COMPILER}" -DCMAKE_CXX_COMPILER="${CXX_COMPILER}" -DUSE_CODECOV_FLAGS="${CODECOV_FLAGS}"
     log make -j4 VERBOSE=1 install
     if [ $? -ne 0 ]
     then

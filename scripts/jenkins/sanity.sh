@@ -96,6 +96,11 @@ if [ "${BUILD_COMPILER_TYPE}" == "gnu" ]
     BUILD_COMPILER=/usr/bin
     C_COMPILER=${BUILD_COMPILER}/gcc
     CXX_COMPILER=${BUILD_COMPILER}/g++
+elif [ "${BUILD_COMPILER_TYPE}" = "intel" ]
+then
+	BUILD_COMPILER=/nfs/inn/proj/mpi/pdsd/opt/EM64T-LIN/intel/compilers_and_libraries_2019.4.243/linux/bin/intel64/
+    C_COMPILER=${BUILD_COMPILER}/icc
+    CXX_COMPILER=${BUILD_COMPILER}/icpc
 else
     if [ -z "${SYCL_BUNDLE_ROOT}" ]
     then
@@ -116,6 +121,12 @@ then
         echo "WARNING: hostfile (${WORK_DIR}/tests/cfgs/clusters/${HOSTNAME}/mpi.hosts) isn't available"
         echo "WARNING: I_MPI_HYDRA_HOST_FILE isn't set"
     fi
+fi
+if [ "${ENABLE_CODECOV}" = "yes" ]
+then
+	CODECOV_FLAGS="TRUE"
+else
+	CODECOV_FLAGS=""
 fi
 
 #export I_MPI_JOB_TIMEOUT=400
@@ -139,8 +150,8 @@ then
 fi
 
 
-# if [ -z "${CCL_ROOT}" ]
-# then
+if [ -z "${CCL_ROOT}" ]
+then
 if [ -f ${MLSL_PATH}/vars.sh ]
 then
     source ${MLSL_PATH}/vars.sh
@@ -148,7 +159,7 @@ else
     echo "ERROR: ${CCL_INSTALL_DIR}/intel64/bin/cclvars.sh doesn't exist"
     exit 1
 fi
-
+fi
 if [ -z "${IMPI_PATH}" ]
 then
     echo "WARNING: I_MPI_ROOT isn't set, last oneAPI pack will be used."
@@ -161,7 +172,7 @@ cd ${WORK_DIR}/../../testspace/$runtime/tests/functional
 mkdir -p build
 cd ./build
 cmake .. -DCMAKE_BUILD_TYPE=Release -DCMAKE_C_COMPILER="${C_COMPILER}" \
-    -DCMAKE_CXX_COMPILER="${CXX_COMPILER}"
+    -DCMAKE_CXX_COMPILER="${CXX_COMPILER}" -DUSE_CODECOV_FLAGS="${CODECOV_FLAGS}"
 make all
 case "$runtime" in
        mpi )

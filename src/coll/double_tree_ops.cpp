@@ -164,8 +164,8 @@ ccl_status_t ccl_coll_build_double_tree_op(ccl_sched* sched,
         if (t1_start + t1_work_count * iter > t1_end)
         {
             LOG_DEBUG("iter ", iter, ", t1 size ", t1_work_count, " exceeds ", t1_end, ", align to ",
-                      t1_end - (t1_start + t1_work_count * iter));
-            t1_work_count = t1_end - (t1_start + t1_work_count * iter);
+                      t1_end.get_difference(t1_start + t1_work_count * iter));
+            t1_work_count = t1_end.get_difference(t1_start + t1_work_count * iter);
         }
 
         ccl_buffer t1_work_buf = t1_start + t1_work_count * dtype->size * iter;
@@ -174,8 +174,8 @@ ccl_status_t ccl_coll_build_double_tree_op(ccl_sched* sched,
         if (t2_start + t2_work_count * iter > t2_end)
         {
             LOG_DEBUG("iter ", iter, ", t2 size ", t2_work_count, " exceeds ", t2_end, ", align to ",
-                      t2_end - (t2_start + t2_work_count * iter));
-            t2_work_count = t2_end - (t2_start + t2_work_count * iter);
+                      t2_end.get_difference(t2_start + t2_work_count * iter));
+            t2_work_count = t2_end.get_difference(t2_start + t2_work_count * iter);
         }
 
         ccl_buffer t2_work_buf = t2_start + t2_work_count * dtype->size * iter;

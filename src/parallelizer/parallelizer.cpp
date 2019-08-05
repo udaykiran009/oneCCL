@@ -448,7 +448,7 @@ ccl_status_t ccl_parallelizer::process(ccl_sched* sched)
             }
             else
             {
-                for (size_t idx = 0; idx < coll_param->comm->size(); idx++)
+                for (idx = 0; idx < coll_param->comm->size(); idx++)
                 {
                     if (env_data.enable_allgatherv_iov)
                     {
