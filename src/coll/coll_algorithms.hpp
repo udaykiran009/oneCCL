@@ -5,6 +5,12 @@
 
 class double_tree;
 
+ccl_status_t ccl_coll_build_naive_bcast(ccl_sched* sched,
+                                        ccl_buffer buf,
+                                        size_t count,
+                                        ccl_datatype_internal_t dtype,
+                                        size_t root);
+
 ccl_status_t ccl_coll_build_scatter_ring_allgather_bcast(ccl_sched* sched,
                                                          ccl_buffer buf,
                                                          size_t count,

@@ -58,7 +58,7 @@ public:
         char* last_field1 = (char*)&match_id;
         void* first_field2 = (char*)&k.ctype;
         size_t bytes_to_compare = last_field1 - first_field1;
-        bool is_fields_equal = (env_data.full_cache_key) ?
+        bool is_fields_equal = (env_data.cache_key == ccl_cache_key_full) ?
             !memcmp(first_field1, first_field2, bytes_to_compare) : 1;
 
         bool is_equal = is_fields_equal && !match_id.compare(k.match_id);
@@ -97,7 +97,7 @@ public:
             return k.get_hasher_result();
 
         size_t hash_value = string_hasher(k.match_id);
-        if (env_data.full_cache_key)
+        if (env_data.cache_key == ccl_cache_key_full)
         {
             hash_value += k.ctype + k.dtype + k.itype + k.reduction +
                 k.count1 + k.count2 + k.root + (size_t)k.buf +

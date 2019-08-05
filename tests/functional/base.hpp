@@ -655,9 +655,9 @@ struct TypedTestParam
                 else if (testParam.priorityStartType == PRT_INDIRECT)
                     for (idx = 0; idx < bufferCount; idx++)
                         startArr[idx] = (bufferCount - idx - 1);
-                // TODO: should be enabled after CCL_OUT_OF_ORDER_SUPPORT
+                // TODO: should be enabled after CCL_UNORDERED_COLL
                 else if (testParam.priorityStartType == PRT_RANDOM){
-                    char* testDynamicPointer = getenv("CCL_OUT_OF_ORDER_SUPPORT");
+                    char* testDynamicPointer = getenv("CCL_UNORDERED_COLL");
                     if (testDynamicPointer && atoi(testDynamicPointer) == 1) {
                         size_t j;
                         for (idx = 0; idx < bufferCount; idx++)
@@ -882,8 +882,8 @@ public:
     void Init(TypedTestParam <T> &param, size_t idx){
         param.coll_attr.priority = (int)param.PriorityRequest();
         param.coll_attr.to_cache = (int)param.GetCacheType();
-        char* testOutOfOrder = getenv("CCL_OUT_OF_ORDER_SUPPORT");
-        if (testOutOfOrder && atoi(testOutOfOrder) == 1)
+        char* testUnorderedColl = getenv("CCL_UNORDERED_COLL");
+        if (testUnorderedColl && atoi(testUnorderedColl) == 1)
             param.coll_attr.synchronous = 0;
         else
             param.coll_attr.synchronous = (int)param.GetSyncType();

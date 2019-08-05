@@ -10,4 +10,4 @@ There are two prioritization modes:
 -	Direct - priority is explicitly specified by users using ``coll_attr.priority``.
 -	LIFO (Last In, First Out) - priority is implicitly increased on each collective calls. User do not specify a priority.
 
-To control the mode, pass ``none``, ``direct``, ``lifo`` to the :ref:`CCL_PRIORITY_MODE` environment variable. By default, prioritization is disabled (``none``). 
+To control the mode, pass ``none``, ``direct``, ``lifo`` to the :ref:`CCL_PRIORITY` environment variable. By default, prioritization is disabled (``none``). 

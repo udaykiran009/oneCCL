@@ -1,5 +1,9 @@
 oneAPI CCL uses code from the following 3rd party projects (in alphabet order):
 
+Horovod - Distributed training framework for TensorFlow, Keras, PyTorch, and Apache MXNet
+License: Apache 2.0
+Reference: https://github.com/horovod/horovod/blob/master/LICENSE
+
 MPICH - high performance and widely portable implementation of the Message Passing Interface (MPI) standard
 License: BSD
 Reference: https://github.com/pmodels/mpich/blob/master/COPYRIGHT

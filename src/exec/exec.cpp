@@ -2,14 +2,13 @@
 #include "exec/worker.hpp"
 #include "exec/service_worker.hpp"
 
-ccl_executor::ccl_executor(const ccl_env_data& env_vars,
-                             const ccl_global_data& global_data)
+ccl_executor::ccl_executor()
 {
-    auto worker_count = env_vars.worker_count;
+    auto worker_count = env_data.worker_count;
     workers.reserve(worker_count);
     auto comm_count = worker_count;
 
-    if (env_vars.priority_mode != ccl_priority_none)
+    if (env_data.priority_mode != ccl_priority_none)
     {
         comm_count *= CCL_PRIORITY_BUCKET_COUNT;
     }
@@ -17,7 +16,7 @@ ccl_executor::ccl_executor(const ccl_env_data& env_vars,
     atl_attr_t attr =
     {
         .comm_count = comm_count,
-        .enable_rma = env_vars.enable_rma
+        .enable_rma = env_data.enable_rma
     };
 
     LOG_INFO("init ATL, requested comm_count ", attr.comm_count);
@@ -26,7 +25,7 @@ ccl_executor::ccl_executor(const ccl_env_data& env_vars,
                                        &proc_idx, &proc_count,
                                        &attr, &atl_comms, &atl_desc);
     CCL_THROW_IF_NOT(atl_status == atl_status_success && atl_desc && atl_comms,
-                      "ATL init failed, res ", atl_status, ", desc ", atl_desc, ", comm ",atl_comms);
+                     "ATL init failed, res ", atl_status, ", desc ", atl_desc, ", comm ",atl_comms);
 
     is_tagged_coll_enabled = attr.is_tagged_coll_enabled;
     tag_bits = attr.tag_bits;
@@ -55,21 +54,21 @@ ccl_executor::ccl_executor(const ccl_env_data& env_vars,
                                           atl_comms + (idx + 1) * comm_per_worker);
         std::unique_ptr<ccl_sched_queue> data_queue{new ccl_sched_queue(comm_vec)};
 
-        if (env_vars.enable_fusion && idx == 0)
+        if (env_data.enable_fusion && idx == 0)
         {
             LOG_DEBUG("create service worker");
-            workers.emplace_back(new ccl_service_worker(this, idx,
-                std::move(data_queue), *global_data.fusion_manager));
+            workers.emplace_back(new ccl_service_worker(this, idx, std::move(data_queue),
+                                                        *global_data.fusion_manager));
         }
         else
         {
             workers.emplace_back(new ccl_worker(this, idx, std::move(data_queue)));
         }
 
-        if (env_vars.worker_offload)
+        if (env_data.worker_offload)
         {
             workers.back()->start();
-            workers.back()->pin(env_vars.worker_affinity[idx]);
+            workers.back()->pin(env_data.worker_affinity[idx]);
             LOG_DEBUG("started worker # ", idx);
         }
     }
@@ -97,9 +96,9 @@ ccl_executor::~ccl_executor()
 
 void ccl_executor::start(ccl_sched* sched)
 {
-    if (sched->internal_type == ccl_sched_internal_ooo)
+    if (sched->internal_type == ccl_sched_internal_unordered_coll)
     {
-        CCL_ASSERT(sched->partial_scheds.empty(), "internal ooo sched should not have partial scheds");
+        CCL_ASSERT(sched->partial_scheds.empty(), "unordered_coll internal sched should not have partial scheds");
         workers[0]->add(sched);
     }
     else

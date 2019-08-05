@@ -12,7 +12,7 @@ ccl_sched* ccl_sched_cache::find(ccl_sched_key& key)
     {
         LOG_DEBUG("found sched in cache, ", it->second);
         ccl_sched* sched = it->second;
-        if (!env_data.full_cache_key)
+        if (env_data.cache_key != ccl_cache_key_full)
         {
             LOG_DEBUG("do check for found sched");
             CCL_ASSERT(sched->coll_attr.prologue_fn == key.prologue_fn, "prologue_fn");

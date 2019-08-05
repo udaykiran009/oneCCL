@@ -38,7 +38,7 @@ public:
         cnt(cnt), dtype(dtype),
         dst(dst), rank(0), op_id(op_id)
     {
-        CCL_ASSERT(global_data.comm, "Cannot create 'send_entry', global_data.com is null");
+        CCL_ASSERT(global_data.comm, "cannot create send_entry, global_data.com is null");
 
         rank = global_data.comm->rank();
         pfields.add_available(ccl_sched_entry_field_buf);

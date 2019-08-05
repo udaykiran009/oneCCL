@@ -35,6 +35,7 @@ public:
             work_sched->reset();
             work_sched->bin = sched->bin;
             work_sched->queue = sched->queue;
+            work_sched->sched_id = sched->sched_id;
             ccl_sched_progress(work_sched.get());
 
             if (work_sched->start_idx == work_sched->entries.size())

@@ -41,7 +41,7 @@ int main()
     float **recv_bufs;
     size_t *recv_counts;
 
-    setenv("CCL_VECTOR_ALLGATHERV", "1", 1);
+    setenv("CCL_ALLGATHERV_IOV", "1", 1);
 
     test_init();
 

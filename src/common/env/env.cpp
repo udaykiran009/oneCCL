@@ -4,201 +4,38 @@
 #include <unistd.h>
 
 ccl_env_data env_data =
-    {
-        .spin_count = 100,
-        .yield_type = ccl_yield_pause,
-        .max_short_size = 4096,
-        .log_level = static_cast<int>(ccl_log_level::ERROR),
-        .sched_dump = 0,
-        .worker_count = 1,
-        .worker_offload = 1,
-        .out_of_order_support = 0,
-        .worker_affinity = std::vector<int>(),
-        .priority_mode = ccl_priority_none,
-        .allgatherv_algo = ccl_allgatherv_algo_multi_bcast,
-        .allreduce_algo = ccl_allreduce_algo_direct,
-        .barrier_algo = ccl_barrier_algo_direct,
-        .bcast_algo = ccl_bcast_algo_direct,
-        .reduce_algo = ccl_reduce_algo_direct,
-        .sparse_allreduce_algo = ccl_sparse_allreduce_algo_basic,
-        .enable_rma = 0,
-        .enable_fusion = 0,
-        .fusion_bytes_threshold = 16384,
-        .fusion_count_threshold = 256,
-        .fusion_check_urgent = 1,
-        .fusion_cycle_ms = 0.2,
-        .vector_allgatherv = 0,
-        .full_cache_key = 0
-    };
-
-const char* ccl_priority_mode_to_str(ccl_priority_mode mode)
 {
-    switch (mode)
-    {
-        case ccl_priority_none:
-            return "none";
-        case ccl_priority_direct:
-            return "direct";
-        case ccl_priority_lifo:
-            return "lifo";
-        default:
-            CCL_FATAL("unexpected prio_mode ", mode);
-    }
-}
+    .log_level = static_cast<int>(ccl_log_level::ERROR),
+    .sched_dump = 0,
 
-const char* ccl_allgatherv_algo_to_str(ccl_allgatherv_algo algo)
-{
-    switch (algo)
-    {
-        case ccl_allgatherv_algo_naive:
-            return "naive";
-        case ccl_allgatherv_algo_direct:
-            return "direct";
-        case ccl_allgatherv_algo_multi_bcast:
-            return "multi_bcast";
-        case ccl_allgatherv_algo_flat:
-            return "flat";
-        default:
-            CCL_FATAL("unexpected allgatherv_algo ", algo);
-    }
-}
+    .worker_count = 1,
+    .worker_offload = 1,
+    .worker_affinity = std::vector<size_t>(),
 
-const char* ccl_allreduce_algo_to_str(ccl_allreduce_algo algo)
-{
-    switch (algo)
-    {
-        case ccl_allreduce_algo_rabenseifner:
-            return "tree";
-        case ccl_allreduce_algo_starlike:
-            return "starlike";
-        case ccl_allreduce_algo_ring:
-            return "ring";
-        case ccl_allreduce_algo_ring_rma:
-            return "ring_rma";
-        case ccl_allreduce_algo_double_tree:
-            return "double_tree";
-        case ccl_allreduce_algo_direct:
-            return "direct";
-        default:
-            CCL_FATAL("unexpected allreduce_algo ", algo);
-    }
-}
+    .allgatherv_algo = ccl_allgatherv_algo_multi_bcast,
+    .allreduce_algo = ccl_allreduce_algo_direct,
+    .barrier_algo = ccl_barrier_algo_direct,
+    .bcast_algo = ccl_bcast_algo_direct,
+    .reduce_algo = ccl_reduce_algo_direct,
+    .sparse_allreduce_algo = ccl_sparse_allreduce_algo_basic,
+    .enable_unordered_coll = 0,
+    .enable_allgatherv_iov = 0,
 
-const char* ccl_barrier_algo_to_str(ccl_barrier_algo algo)
-{
-    switch (algo)
-    {
-        case ccl_barrier_algo_ring:
-            return "ring";
-        case ccl_barrier_algo_direct:
-            return "direct";
-        default:
-            CCL_FATAL("unexpected barrier_algo ", algo);
-    }
-}
+    .enable_fusion = 0,
+    .fusion_bytes_threshold = 16384,
+    .fusion_count_threshold = 256,
+    .fusion_check_urgent = 1,
+    .fusion_cycle_ms = 0.2,
+        
+    .enable_rma = 0,
+    .priority_mode = ccl_priority_none,
+    .spin_count = 100,
+    .yield_type = ccl_yield_pause,
+    .max_short_size = 4096,
+    .cache_key = ccl_cache_key_match_id
+};
 
-const char* ccl_bcast_algo_to_str(ccl_bcast_algo algo)
-{
-    switch (algo)
-    {
-        case ccl_bcast_algo_ring:
-            return "ring";
-        case ccl_bcast_algo_double_tree:
-            return "double_tree";
-        case ccl_bcast_algo_direct:
-            return "direct";
-        default:
-            CCL_FATAL("unexpected allreduce_algo ", algo);
-    }
-}
-
-const char* ccl_reduce_algo_to_str(ccl_reduce_algo algo)
-{
-    switch (algo)
-    {
-        case ccl_reduce_algo_tree:
-            return "tree";
-        case ccl_reduce_algo_double_tree:
-            return "double_tree";
-        case ccl_reduce_algo_direct:
-            return "direct";
-        default:
-            CCL_FATAL("unexpected allreduce_algo ", algo);
-    }
-}
-
-void ccl_env_parse()
-{
-    ccl_env_2_size_t(CCL_SPIN_COUNT, env_data.spin_count);
-    ccl_env_parse_yield_type();
-    ccl_env_2_size_t(CCL_MAX_SHORT_SIZE, env_data.max_short_size);
-    ccl_env_2_int(CCL_LOG_LEVEL, env_data.log_level);
-    ccl_logger::set_log_level(static_cast<ccl_log_level>(env_data.log_level));
-    ccl_env_2_int(CCL_SCHED_DUMP, env_data.sched_dump);
-    ccl_env_2_size_t(CCL_WORKER_COUNT, env_data.worker_count);
-    ccl_env_2_int(CCL_WORKER_OFFLOAD, env_data.worker_offload);
-    ccl_env_2_int(CCL_OUT_OF_ORDER_SUPPORT, env_data.out_of_order_support);
-    ccl_env_2_int(CCL_ENABLE_RMA, env_data.enable_rma);
-    ccl_env_2_int(CCL_ENABLE_FUSION, env_data.enable_fusion);
-    ccl_env_2_int(CCL_FUSION_BYTES_THRESHOLD, env_data.fusion_bytes_threshold);
-    ccl_env_2_int(CCL_FUSION_COUNT_THRESHOLD, env_data.fusion_count_threshold);
-    ccl_env_2_int(CCL_FUSION_CHECK_URGENT, env_data.fusion_check_urgent);
-    ccl_env_2_float(CCL_FUSION_CYCLE_MS, env_data.fusion_cycle_ms);
-    ccl_env_2_int(CCL_VECTOR_ALLGATHERV, env_data.vector_allgatherv);
-    ccl_env_2_int(CCL_FULL_CACHE_KEY, env_data.full_cache_key);
-
-    ccl_env_parse_priority_mode();
-    ccl_env_parse_allgatherv_algo();
-    ccl_env_parse_allreduce_algo();
-    ccl_env_parse_barrier_algo();
-    ccl_env_parse_bcast_algo();
-    ccl_env_parse_reduce_algo();
-
-    auto result = ccl_env_parse_affinity();
-    CCL_THROW_IF_NOT(result == 1, "failed to parse ", CCL_WORKER_AFFINITY);
-
-    CCL_THROW_IF_NOT(env_data.worker_count >= 1, "incorrect %s %d", CCL_WORKER_COUNT, env_data.worker_count);
-    if (env_data.enable_fusion)
-    {
-        CCL_THROW_IF_NOT(env_data.fusion_bytes_threshold >= 1, "incorrect ",
-                          CCL_FUSION_BYTES_THRESHOLD, " ", env_data.fusion_bytes_threshold);
-        CCL_THROW_IF_NOT(env_data.fusion_count_threshold >= 1, "incorrect ",
-                          CCL_FUSION_COUNT_THRESHOLD, " ", env_data.fusion_count_threshold);
-    }
-}
-
-void ccl_env_print()
-{
-    LOG_INFO(CCL_SPIN_COUNT, ": ", env_data.spin_count);
-    LOG_INFO(CCL_YIELD_TYPE, ": ", ccl_yield_type_to_str(env_data.yield_type));
-    LOG_INFO(CCL_MAX_SHORT_SIZE, ": ", env_data.max_short_size);
-    LOG_INFO(CCL_LOG_LEVEL, ": ", env_data.log_level);
-    LOG_INFO(CCL_SCHED_DUMP, ": ", env_data.sched_dump);
-    LOG_INFO(CCL_WORKER_COUNT, ": ", env_data.worker_count);
-    LOG_INFO(CCL_WORKER_OFFLOAD, ": ", env_data.worker_offload);
-    for (size_t w_idx = 0; w_idx < env_data.worker_count; w_idx++)
-    {
-        LOG_INFO(CCL_WORKER_AFFINITY, ": worker: ", w_idx, ", processor: ", env_data.worker_affinity[w_idx]);
-    }
-    LOG_INFO(CCL_OUT_OF_ORDER_SUPPORT, ": ", env_data.out_of_order_support);
-    LOG_INFO(CCL_ENABLE_RMA, ": ", env_data.enable_rma);
-    LOG_INFO(CCL_ENABLE_FUSION, ": ", env_data.enable_fusion);
-    LOG_INFO(CCL_FUSION_BYTES_THRESHOLD, ": ", env_data.fusion_bytes_threshold);
-    LOG_INFO(CCL_FUSION_COUNT_THRESHOLD, ": ", env_data.fusion_count_threshold);
-    LOG_INFO(CCL_FUSION_CHECK_URGENT, ": ", env_data.fusion_check_urgent);
-    LOG_INFO(CCL_FUSION_CYCLE_MS, ": ", env_data.fusion_cycle_ms);
-    LOG_INFO(CCL_PRIORITY_MODE, ": ", ccl_priority_mode_to_str(env_data.priority_mode));
-    LOG_INFO(CCL_ALLGATHERV_ALGO, ": ", ccl_allgatherv_algo_to_str(env_data.allgatherv_algo));
-    LOG_INFO(CCL_ALLREDUCE_ALGO, ": ", ccl_allreduce_algo_to_str(env_data.allreduce_algo));
-    LOG_INFO(CCL_BARRIER_ALGO, ": ",  ccl_barrier_algo_to_str(env_data.barrier_algo));
-    LOG_INFO(CCL_BCAST_ALGO, ": ", ccl_bcast_algo_to_str(env_data.bcast_algo));
-    LOG_INFO(CCL_REDUCE_ALGO, ": ", ccl_reduce_algo_to_str(env_data.reduce_algo));
-    LOG_INFO(CCL_VECTOR_ALLGATHERV, ": ", env_data.vector_allgatherv);
-    LOG_INFO(CCL_FULL_CACHE_KEY, ": ", env_data.full_cache_key);
-}
-
-int ccl_env_2_int(const char* env_name,
-                   int& val)
+int ccl_env_2_int(const char* env_name, int& val)
 {
     const char* val_ptr;
     val_ptr = getenv(env_name);
@@ -210,8 +47,7 @@ int ccl_env_2_int(const char* env_name,
     return 0;
 }
 
-int ccl_env_2_size_t(const char* env_name,
-                      size_t& val)
+int ccl_env_2_size_t(const char* env_name, size_t& val)
 {
     const char* val_ptr;
     val_ptr = getenv(env_name);
@@ -223,8 +59,7 @@ int ccl_env_2_size_t(const char* env_name,
     return 0;
 }
 
-int ccl_env_2_float(const char* env_name,
-                     float& val)
+int ccl_env_2_float(const char* env_name, float& val)
 {
     const char* val_ptr;
     val_ptr = getenv(env_name);
@@ -236,34 +71,13 @@ int ccl_env_2_float(const char* env_name,
     return 0;
 }
 
-int ccl_env_parse_priority_mode()
-{
-    char* mode_env = getenv(CCL_PRIORITY_MODE);
-    if (mode_env)
-    {
-        if (strcmp(mode_env, "none") == 0)
-            env_data.priority_mode = ccl_priority_none;
-        else if (strcmp(mode_env, "direct") == 0)
-            env_data.priority_mode = ccl_priority_direct;
-        else if (strcmp(mode_env, "lifo") == 0)
-            env_data.priority_mode = ccl_priority_lifo;
-        else
-            CCL_FATAL("unexpected priority_mode ", mode_env);
-    }
-    return 1;
-}
-
-constexpr const char* AVAILABLE_CORES_ENV = "I_MPI_PIN_INFO";
-
 template<typename T>
 void str_to_array(const char* input,
                   std::vector<T>& output,
                   char delimiter)
 {
     std::stringstream ss(input);
-
     T temp{};
-
     while (ss >> temp)
     {
         output.push_back(temp);
@@ -274,32 +88,102 @@ void str_to_array(const char* input,
     }
 }
 
-static int parse_auto_affinity()
+void ccl_env_parse()
+{
+    ccl_env_2_int(CCL_LOG_LEVEL, env_data.log_level);
+    ccl_logger::set_log_level(static_cast<ccl_log_level>(env_data.log_level));
+    ccl_env_2_int(CCL_SCHED_DUMP, env_data.sched_dump);
+    
+    ccl_env_2_size_t(CCL_WORKER_COUNT, env_data.worker_count);
+    CCL_THROW_IF_NOT(env_data.worker_count >= 1, "incorrect ", CCL_WORKER_COUNT, " ", env_data.worker_count);
+    ccl_env_2_int(CCL_WORKER_OFFLOAD, env_data.worker_offload);
+    ccl_env_parse_worker_affinity();
+
+    ccl_env_parse_allgatherv_algo();
+    ccl_env_parse_allreduce_algo();
+    ccl_env_parse_barrier_algo();
+    ccl_env_parse_bcast_algo();
+    ccl_env_parse_reduce_algo();
+    ccl_env_2_int(CCL_UNORDERED_COLL, env_data.enable_unordered_coll);
+    ccl_env_2_int(CCL_ALLGATHERV_IOV, env_data.enable_allgatherv_iov);
+    
+    ccl_env_2_int(CCL_FUSION, env_data.enable_fusion);
+    ccl_env_2_int(CCL_FUSION_BYTES_THRESHOLD, env_data.fusion_bytes_threshold);
+    ccl_env_2_int(CCL_FUSION_COUNT_THRESHOLD, env_data.fusion_count_threshold);
+    ccl_env_2_int(CCL_FUSION_CHECK_URGENT, env_data.fusion_check_urgent);
+    ccl_env_2_float(CCL_FUSION_CYCLE_MS, env_data.fusion_cycle_ms);
+    if (env_data.enable_fusion)
+    {
+        CCL_THROW_IF_NOT(env_data.fusion_bytes_threshold >= 1, "incorrect ",
+                         CCL_FUSION_BYTES_THRESHOLD, " ", env_data.fusion_bytes_threshold);
+        CCL_THROW_IF_NOT(env_data.fusion_count_threshold >= 1, "incorrect ",
+                         CCL_FUSION_COUNT_THRESHOLD, " ", env_data.fusion_count_threshold);
+    }
+
+    ccl_env_2_int(CCL_RMA, env_data.enable_rma);
+    ccl_env_parse_priority_mode();
+    ccl_env_2_size_t(CCL_SPIN_COUNT, env_data.spin_count);
+    ccl_env_parse_yield_type();
+    ccl_env_2_size_t(CCL_MAX_SHORT_SIZE, env_data.max_short_size);
+    ccl_env_parse_cache_key();
+}
+
+void ccl_env_print()
+{
+    LOG_INFO(CCL_LOG_LEVEL, ": ", env_data.log_level);
+    LOG_INFO(CCL_SCHED_DUMP, ": ", env_data.sched_dump);
+    
+    LOG_INFO(CCL_WORKER_COUNT, ": ", env_data.worker_count);
+    LOG_INFO(CCL_WORKER_OFFLOAD, ": ", env_data.worker_offload);
+    for (size_t w_idx = 0; w_idx < env_data.worker_count; w_idx++)
+    {
+        LOG_INFO(CCL_WORKER_AFFINITY, ": worker: ", w_idx, ", processor: ", env_data.worker_affinity[w_idx]);
+    }
+
+    LOG_INFO(CCL_ALLGATHERV, ": ", ccl_allgatherv_algo_to_str(env_data.allgatherv_algo));
+    LOG_INFO(CCL_ALLREDUCE, ": ", ccl_allreduce_algo_to_str(env_data.allreduce_algo));
+    LOG_INFO(CCL_BARRIER, ": ",  ccl_barrier_algo_to_str(env_data.barrier_algo));
+    LOG_INFO(CCL_BCAST, ": ", ccl_bcast_algo_to_str(env_data.bcast_algo));
+    LOG_INFO(CCL_REDUCE, ": ", ccl_reduce_algo_to_str(env_data.reduce_algo));
+    LOG_INFO(CCL_UNORDERED_COLL, ": ", env_data.enable_unordered_coll);
+    LOG_INFO(CCL_ALLGATHERV_IOV, ": ", env_data.enable_allgatherv_iov);
+
+    LOG_INFO(CCL_FUSION, ": ", env_data.enable_fusion);
+    LOG_INFO(CCL_FUSION_BYTES_THRESHOLD, ": ", env_data.fusion_bytes_threshold);
+    LOG_INFO(CCL_FUSION_COUNT_THRESHOLD, ": ", env_data.fusion_count_threshold);
+    LOG_INFO(CCL_FUSION_CHECK_URGENT, ": ", env_data.fusion_check_urgent);
+    LOG_INFO(CCL_FUSION_CYCLE_MS, ": ", env_data.fusion_cycle_ms);
+
+    LOG_INFO(CCL_RMA, ": ", env_data.enable_rma);
+    LOG_INFO(CCL_PRIORITY, ": ", ccl_priority_mode_to_str(env_data.priority_mode));
+    LOG_INFO(CCL_SPIN_COUNT, ": ", env_data.spin_count);
+    LOG_INFO(CCL_YIELD, ": ", ccl_yield_type_to_str(env_data.yield_type));
+    LOG_INFO(CCL_MAX_SHORT_SIZE, ": ", env_data.max_short_size);
+    LOG_INFO(CCL_CACHE_KEY, ": ", ccl_cache_key_to_str(env_data.cache_key));
+}
+
+constexpr const char* AVAILABLE_CORES_ENV = "I_MPI_PIN_INFO";
+
+static int ccl_env_parse_auto_worker_affinity()
 {
     char* available_cores = std::getenv(AVAILABLE_CORES_ENV);
     CCL_THROW_IF_NOT(available_cores && strlen(available_cores) != 0, "auto pinning requires ",
                       AVAILABLE_CORES_ENV, " env variable to be set");
-    std::vector<int> cores;
+    std::vector<size_t> cores;
     str_to_array(available_cores + 1, cores, ',');
 
     CCL_THROW_IF_NOT(env_data.worker_count <= cores.size(), "count of workers ", env_data.worker_count,
-                      " exceeds the number of available cores ", cores.size());
+                     " exceeds the number of available cores ", cores.size());
 
     size_t ccl_cores_start = cores.size() - env_data.worker_count;
-
-    std::stringstream str;
-    ccl_logger::format(str, "ccl uses cores: ");
-    for(size_t idx = 0; idx < env_data.worker_count; ++idx)
+    for (size_t idx = 0; idx < env_data.worker_count; ++idx)
     {
         env_data.worker_affinity[idx] = cores[ccl_cores_start + idx];
-        ccl_logger::format(str, env_data.worker_affinity[idx], " ");
     }
-    LOG_INFO(str.str());
-
     return 1;
 }
 
-int ccl_env_parse_affinity()
+int ccl_env_parse_worker_affinity()
 {
     int read_env = 0;
     size_t workers_per_node = env_data.worker_count;
@@ -310,11 +194,11 @@ int ccl_env_parse_affinity()
     char* tmp;
     size_t proc_count;
 
-    env_data.worker_affinity.reserve(workers_per_node);
+    env_data.worker_affinity.resize(workers_per_node);
 
     if (affinity_to_parse && strcmp(affinity_to_parse, "auto") == 0)
     {
-        return parse_auto_affinity();
+        return ccl_env_parse_auto_worker_affinity();
     }
 
     if (!affinity_to_parse || strlen(affinity_to_parse) == 0)
@@ -355,7 +239,7 @@ int ccl_env_parse_affinity()
                 CCL_FREE(affinity_copy);
                 return read_env;
             }
-            env_data.worker_affinity[w_idx] = atoi(proc_id_str);
+            env_data.worker_affinity[w_idx] = std::strtoul(proc_id_str, nullptr, 10);
             read_count++;
         }
         else
@@ -382,55 +266,22 @@ int ccl_env_parse_affinity()
     return read_env;
 }
 
-int ccl_env_print_affinity()
-{
-    size_t w_idx;
-    size_t workers_per_node = env_data.worker_count;
-    for (w_idx = 0; w_idx < workers_per_node; w_idx++)
-    {
-        LOG_INFO(CCL_WORKER_AFFINITY, ": worker: ", w_idx, ", processor: ", env_data.worker_affinity[w_idx]);
-    }
-    return 1;
-}
-
-int ccl_env_parse_yield_type()
-{
-    char* type_env = getenv(CCL_YIELD_TYPE);
-    if (type_env)
-    {
-        if (strcmp(type_env, "none") == 0)
-            env_data.yield_type = ccl_yield_none;
-        else if (strcmp(type_env, "pause") == 0)
-            env_data.yield_type = ccl_yield_pause;
-        else if (strcmp(type_env, "sleep") == 0)
-            env_data.yield_type = ccl_yield_sleep;
-        else if (strcmp(type_env, "sched_yield") == 0)
-            env_data.yield_type = ccl_yield_sched_yield;
-        else
-        {
-            CCL_THROW("unknown ", CCL_YIELD_TYPE, " ", type_env);
-            return 0;
-        }
-    }
-    return 1; 
-}
-
 int ccl_env_parse_allgatherv_algo()
 {
-    char* mode_env = getenv(CCL_ALLGATHERV_ALGO);
-    if (mode_env)
+    char* env = getenv(CCL_ALLGATHERV);
+    if (env)
     {
-        if (strcmp(mode_env, "naive") == 0)
+        if (strcmp(env, "naive") == 0)
             env_data.allgatherv_algo = ccl_allgatherv_algo_naive;
-        else if (strcmp(mode_env, "direct") == 0)
-            env_data.allgatherv_algo = ccl_allgatherv_algo_direct;
-        else if (strcmp(mode_env, "multi_bcast") == 0)
-            env_data.allgatherv_algo = ccl_allgatherv_algo_multi_bcast;
-        else if (strcmp(mode_env, "flat") == 0)
+        else if (strcmp(env, "flat") == 0)
             env_data.allgatherv_algo = ccl_allgatherv_algo_flat;
+        else if (strcmp(env, "multi_bcast") == 0)
+            env_data.allgatherv_algo = ccl_allgatherv_algo_multi_bcast;
+        else if (strcmp(env, "direct") == 0)
+            env_data.allgatherv_algo = ccl_allgatherv_algo_direct;
         else
         {
-            CCL_THROW("unknown ", CCL_ALLGATHERV_ALGO, " ", mode_env);
+            CCL_THROW("unknown ", CCL_ALLGATHERV, " ", env);
             return 0;
         }
     }
@@ -439,24 +290,24 @@ int ccl_env_parse_allgatherv_algo()
 
 int ccl_env_parse_allreduce_algo()
 {
-    char* mode_env = getenv(CCL_ALLREDUCE_ALGO);
-    if (mode_env)
+    char* env = getenv(CCL_ALLREDUCE);
+    if (env)
     {
-        if (strcmp(mode_env, "tree") == 0)
+        if (strcmp(env, "tree") == 0)
             env_data.allreduce_algo = ccl_allreduce_algo_rabenseifner;
-        else if (strcmp(mode_env, "starlike") == 0)
+        else if (strcmp(env, "starlike") == 0)
             env_data.allreduce_algo = ccl_allreduce_algo_starlike;
-        else if (strcmp(mode_env, "ring") == 0)
+        else if (strcmp(env, "ring") == 0)
             env_data.allreduce_algo = ccl_allreduce_algo_ring;
-        else if (strcmp(mode_env, "ring_rma") == 0)
+        else if (strcmp(env, "ring_rma") == 0)
             env_data.allreduce_algo = ccl_allreduce_algo_ring_rma;
-        else if (strcmp(mode_env, "direct") == 0)
-            env_data.allreduce_algo = ccl_allreduce_algo_direct;
-        else if (strcmp(mode_env, "double_tree") == 0)
+        else if (strcmp(env, "double_tree") == 0)
             env_data.allreduce_algo = ccl_allreduce_algo_double_tree;
+        else if (strcmp(env, "direct") == 0)
+            env_data.allreduce_algo = ccl_allreduce_algo_direct;
         else
         {
-            CCL_THROW("unknown ", CCL_ALLREDUCE_ALGO, " ", mode_env);
+            CCL_THROW("unknown ", CCL_ALLREDUCE, " ", env);
             return 0;
         }
     }
@@ -465,16 +316,16 @@ int ccl_env_parse_allreduce_algo()
 
 int ccl_env_parse_barrier_algo()
 {
-    char* mode_env = getenv(CCL_BARRIER_ALGO);
-    if (mode_env)
+    char* env = getenv(CCL_BARRIER);
+    if (env)
     {
-        if (strcmp(mode_env, "ring") == 0)
+        if (strcmp(env, "ring") == 0)
             env_data.barrier_algo = ccl_barrier_algo_ring;
-        else if (strcmp(mode_env, "direct") == 0)
+        else if (strcmp(env, "direct") == 0)
             env_data.barrier_algo = ccl_barrier_algo_direct;
         else
         {
-            CCL_THROW("unknown ", CCL_BARRIER_ALGO, " ", mode_env);
+            CCL_THROW("unknown ", CCL_BARRIER, " ", env);
             return 0;
         }
     }
@@ -483,18 +334,20 @@ int ccl_env_parse_barrier_algo()
 
 int ccl_env_parse_bcast_algo()
 {
-    char* mode_env = getenv(CCL_BCAST_ALGO);
-    if (mode_env)
+    char* env = getenv(CCL_BCAST);
+    if (env)
     {
-        if (strcmp(mode_env, "ring") == 0)
+        if (strcmp(env, "ring") == 0)
             env_data.bcast_algo = ccl_bcast_algo_ring;
-        else if (strcmp(mode_env, "double_tree") == 0)
+        else if (strcmp(env, "double_tree") == 0)
             env_data.bcast_algo = ccl_bcast_algo_double_tree;
-        else if (strcmp(mode_env, "direct") == 0)
+        else if (strcmp(env, "naive") == 0)
+            env_data.bcast_algo = ccl_bcast_algo_naive;
+        else if (strcmp(env, "direct") == 0)
             env_data.bcast_algo = ccl_bcast_algo_direct;
         else
         {
-            CCL_THROW("unknown ", CCL_BCAST_ALGO, " ", mode_env);
+            CCL_THROW("unknown ", CCL_BCAST, " ", env);
             return 0;
         }
     }
@@ -503,20 +356,236 @@ int ccl_env_parse_bcast_algo()
 
 int ccl_env_parse_reduce_algo()
 {
-    char* mode_env = getenv(CCL_REDUCE_ALGO);
-    if (mode_env)
+    char* env = getenv(CCL_REDUCE);
+    if (env)
     {
-        if (strcmp(mode_env, "tree") == 0)
+        if (strcmp(env, "tree") == 0)
             env_data.reduce_algo = ccl_reduce_algo_tree;
-        else if (strcmp(mode_env, "double_tree") == 0)
+        else if (strcmp(env, "double_tree") == 0)
             env_data.reduce_algo = ccl_reduce_algo_double_tree;
-        else if (strcmp(mode_env, "direct") == 0)
+        else if (strcmp(env, "direct") == 0)
             env_data.reduce_algo = ccl_reduce_algo_direct;
         else
         {
-            CCL_THROW("unknown ", CCL_REDUCE_ALGO, " ", mode_env);
+            CCL_THROW("unknown ", CCL_REDUCE, " ", env);
             return 0;
         }
     }
     return 1;
+}
+
+int ccl_env_parse_sparse_allreduce_algo()
+{
+    char* env = getenv(CCL_SPARSE_ALLREDUCE);
+    if (env)
+    {
+        if (strcmp(env, "basic") == 0)
+            env_data.sparse_allreduce_algo = ccl_sparse_allreduce_algo_basic;
+        else if (strcmp(env, "mask") == 0)
+            env_data.sparse_allreduce_algo = ccl_sparse_allreduce_algo_mask;
+        else
+        {
+            CCL_THROW("unknown ", CCL_SPARSE_ALLREDUCE, " ", env);
+            return 0;
+        }
+    }
+    return 1;
+}
+
+int ccl_env_parse_priority_mode()
+{
+    char* env = getenv(CCL_PRIORITY);
+    if (env)
+    {
+        if (strcmp(env, "none") == 0)
+            env_data.priority_mode = ccl_priority_none;
+        else if (strcmp(env, "direct") == 0)
+            env_data.priority_mode = ccl_priority_direct;
+        else if (strcmp(env, "lifo") == 0)
+            env_data.priority_mode = ccl_priority_lifo;
+        else
+            CCL_FATAL("unexpected priority_mode ", env);
+    }
+    return 1;
+}
+
+int ccl_env_parse_yield_type()
+{
+    char* env = getenv(CCL_YIELD);
+    if (env)
+    {
+        if (strcmp(env, "none") == 0)
+            env_data.yield_type = ccl_yield_none;
+        else if (strcmp(env, "pause") == 0)
+            env_data.yield_type = ccl_yield_pause;
+        else if (strcmp(env, "sleep") == 0)
+            env_data.yield_type = ccl_yield_sleep;
+        else if (strcmp(env, "sched_yield") == 0)
+            env_data.yield_type = ccl_yield_sched_yield;
+        else
+        {
+            CCL_THROW("unknown ", CCL_YIELD, " ", env);
+            return 0;
+        }
+    }
+    return 1; 
+}
+
+int ccl_env_parse_cache_key()
+{
+    char* env = getenv(CCL_CACHE_KEY);
+    if (env)
+    {
+        if (strcmp(env, "full") == 0)
+            env_data.cache_key = ccl_cache_key_full;
+        else if (strcmp(env, "match_id") == 0)
+            env_data.cache_key = ccl_cache_key_match_id;
+        else
+        {
+            CCL_THROW("unknown ", CCL_CACHE_KEY, " ", env);
+            return 0;
+        }
+    }
+    return 1; 
+}
+
+const char* ccl_allgatherv_algo_to_str(ccl_allgatherv_algo algo)
+{
+    switch (algo)
+    {
+        case ccl_allgatherv_algo_naive:
+            return "naive";
+        case ccl_allgatherv_algo_flat:
+            return "flat";
+        case ccl_allgatherv_algo_multi_bcast:
+            return "multi_bcast";
+        case ccl_allgatherv_algo_direct:
+            return "direct";
+        default:
+            CCL_FATAL("unknown allgatherv_algo ", algo);
+    }
+}
+
+const char* ccl_allreduce_algo_to_str(ccl_allreduce_algo algo)
+{
+    switch (algo)
+    {
+        case ccl_allreduce_algo_rabenseifner:
+            return "tree";
+        case ccl_allreduce_algo_starlike:
+            return "starlike";
+        case ccl_allreduce_algo_ring:
+            return "ring";
+        case ccl_allreduce_algo_ring_rma:
+            return "ring_rma";
+        case ccl_allreduce_algo_double_tree:
+            return "double_tree";
+        case ccl_allreduce_algo_direct:
+            return "direct";
+        default:
+            CCL_FATAL("unknown allreduce_algo ", algo);
+    }
+}
+
+const char* ccl_barrier_algo_to_str(ccl_barrier_algo algo)
+{
+    switch (algo)
+    {
+        case ccl_barrier_algo_ring:
+            return "ring";
+        case ccl_barrier_algo_direct:
+            return "direct";
+        default:
+            CCL_FATAL("unknown barrier_algo ", algo);
+    }
+}
+
+const char* ccl_bcast_algo_to_str(ccl_bcast_algo algo)
+{
+    switch (algo)
+    {
+        case ccl_bcast_algo_ring:
+            return "ring";
+        case ccl_bcast_algo_double_tree:
+            return "double_tree";
+        case ccl_bcast_algo_naive:
+            return "naive";
+        case ccl_bcast_algo_direct:
+            return "direct";
+        default:
+            CCL_FATAL("unknown bcast_algo ", algo);
+    }
+}
+
+const char* ccl_reduce_algo_to_str(ccl_reduce_algo algo)
+{
+    switch (algo)
+    {
+        case ccl_reduce_algo_tree:
+            return "tree";
+        case ccl_reduce_algo_double_tree:
+            return "double_tree";
+        case ccl_reduce_algo_direct:
+            return "direct";
+        default:
+            CCL_FATAL("unknown reduce_algo ", algo);
+    }
+}
+
+const char* ccl_sparse_allreduce_algo_to_str(ccl_sparse_allreduce_algo algo)
+{
+    switch (algo)
+    {
+        case ccl_sparse_allreduce_algo_basic:
+            return "basic";
+        case ccl_sparse_allreduce_algo_mask:
+            return "mask";
+        default:
+            CCL_FATAL("unknown sparse_alleduce_algo ", algo);
+    }
+}
+
+const char* ccl_priority_mode_to_str(ccl_priority_mode mode)
+{
+    switch (mode)
+    {
+        case ccl_priority_none:
+            return "none";
+        case ccl_priority_direct:
+            return "direct";
+        case ccl_priority_lifo:
+            return "lifo";
+        default:
+            CCL_FATAL("unknown priority_mode ", mode);
+    }
+}
+
+const char* ccl_yield_type_to_str(ccl_yield_type type)
+{
+    switch (type)
+    {
+        case ccl_yield_none:
+            return "none";
+        case ccl_yield_pause:
+            return "pause";
+        case ccl_yield_sleep:
+            return "sleep";
+        case ccl_yield_sched_yield:
+            return "sched_yield";
+        default:
+            CCL_FATAL("unknown yield_type ", type);
+    }
+}
+
+const char* ccl_cache_key_to_str(ccl_cache_key key)
+{
+    switch (key)
+    {
+        case ccl_cache_key_full:
+            return "full";
+        case ccl_cache_key_match_id:
+            return "match_id";
+        default:
+            CCL_FATAL("unknown cache_key ", key);
+    }
 }

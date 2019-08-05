@@ -1,4 +1,4 @@
-#define Collective_Name "CCL_ALLGATHERV_ALGO"
+#define Collective_Name "CCL_ALLGATHERV"
 #define TEST_CCL_ALLGATHERV
 #include "base.hpp"
 #include <functional>

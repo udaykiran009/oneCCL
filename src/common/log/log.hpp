@@ -221,7 +221,7 @@ extern thread_local ccl_logger logger;
 
 #define LOG_ERROR(...)                                                                      \
 {                                                                                           \
-    if (logger.get_log_level() >= ccl_log_level::ERROR)                                      \
+    if (logger.get_log_level() >= ccl_log_level::ERROR)                                     \
     {                                                                                       \
         logger.error(__FILENAME__,":", __FUNCTION__, ":", __LINE__, " ", ##__VA_ARGS__);    \
     }                                                                                       \
@@ -229,7 +229,7 @@ extern thread_local ccl_logger logger;
 
 #define LOG_INFO(...)                                                                       \
 {                                                                                           \
-    if (logger.get_log_level() >= ccl_log_level::INFO)                                       \
+    if (logger.get_log_level() >= ccl_log_level::INFO)                                      \
     {                                                                                       \
         logger.info( __FUNCTION__, ":", __LINE__, " ", ##__VA_ARGS__);                      \
     }                                                                                       \
@@ -237,7 +237,7 @@ extern thread_local ccl_logger logger;
 
 #define LOG_DEBUG(...)                                                                      \
 {                                                                                           \
-    if (logger.get_log_level() >= ccl_log_level::DEBUG)                                      \
+    if (logger.get_log_level() >= ccl_log_level::DEBUG)                                     \
     {                                                                                       \
         logger.debug( __FUNCTION__, ":", __LINE__, " ", ##__VA_ARGS__);                     \
     }                                                                                       \
@@ -245,7 +245,7 @@ extern thread_local ccl_logger logger;
 
 #define LOG_TRACE(...)                                                                      \
 {                                                                                           \
-    if (logger.get_log_level() >= ccl_log_level::TRACE)                                      \
+    if (logger.get_log_level() >= ccl_log_level::TRACE)                                     \
     {                                                                                       \
         logger.trace( __FUNCTION__, ":", __LINE__, " ", ##__VA_ARGS__);                     \
     }                                                                                       \
@@ -254,7 +254,7 @@ extern thread_local ccl_logger logger;
 /**
  * Macro to handle critical unrecoverable error. Can be used in destructors
  */
-#define CCL_FATAL(...)                                                 \
+#define CCL_FATAL(...)                                                  \
 do                                                                      \
 {                                                                       \
     LOG_ERROR(__VA_ARGS__)                                              \
@@ -265,26 +265,26 @@ do                                                                      \
 /**
  * Helper macro to throw ccl::ccl_error exception. Must never be used in destructors
  */
-#define CCL_THROW(...)                                                              \
+#define CCL_THROW(...)                                                               \
 do                                                                                   \
 {                                                                                    \
     std::stringstream throw_msg_ss;                                                  \
-    ccl_logger::format(throw_msg_ss, __FILENAME__, ":", __FUNCTION__, ":", __LINE__,\
+    ccl_logger::format(throw_msg_ss, __FILENAME__, ":", __FUNCTION__, ":", __LINE__, \
         ": EXCEPTION: " , ##__VA_ARGS__);                                            \
-    throw ccl::ccl_error(throw_msg_ss.str());                                      \
+    throw ccl::ccl_error(throw_msg_ss.str());                                        \
 } while(0)
 
 /**
  * Helper macro to throw ccl::ccl_error exception if provided condition is not true.
  * Must never be used in destructors
  */
-#define CCL_THROW_IF_NOT(cond, ...)                                              \
+#define CCL_THROW_IF_NOT(cond, ...)                                               \
 do                                                                                \
 {                                                                                 \
     if (!(cond))                                                                  \
     {                                                                             \
         LOG_ERROR("condition ", #cond, " failed\n", ##__VA_ARGS__);               \
-        CCL_THROW(__VA_ARGS__);                                                  \
+        CCL_THROW(__VA_ARGS__);                                                   \
     }                                                                             \
 } while(0)
 
@@ -296,7 +296,7 @@ do                                                                              
 /**
  * Raises failed assertion if provided condition is not true. Works in debug build only
  */
-#define CCL_ASSERT(cond, ...)                                                          \
+#define CCL_ASSERT(cond, ...)                                                           \
 do                                                                                      \
 {                                                                                       \
     if (!(cond))                                                                        \

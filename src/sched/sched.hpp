@@ -23,14 +23,14 @@ class ccl_executor;
 
 enum ccl_sched_internal_type
 {
-    ccl_sched_internal_none = 0,
+    ccl_sched_internal_none,
     ccl_sched_internal_fusion,
-    ccl_sched_internal_ooo
+    ccl_sched_internal_unordered_coll
 };
 
 enum ccl_sched_add_mode
 {
-    ccl_sched_add_front = 0,
+    ccl_sched_add_front,
     ccl_sched_add_back
 };
 
@@ -127,7 +127,7 @@ public:
     void update_coll_param(ccl_coll_param& param);
     void update_coll_attr(const ccl_coll_attr_t* attr);
 
-    void commit(ccl_parallelizer* parallelizer);
+    void commit(ccl_parallelizer* parallelizer = nullptr);
 
     ccl_request* start(ccl_executor* exec,
                        bool reset_sched = true);
@@ -223,7 +223,7 @@ public:
 
     ccl_sched_memory memory;
 
-    /* whether sched was created by internal module (fusion_manager/ooo_manager) */
+    /* whether sched was created by internal module (fusion_manager/unordered_coll_manager) */
     ccl_sched_internal_type internal_type = ccl_sched_internal_none;
 
     /* whether sched was once checked for completion from user level (by wait/test) */

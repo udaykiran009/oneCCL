@@ -2,7 +2,7 @@
 #define TEST_CCL_CUSTOM_PROLOG
 #define TEST_CCL_CUSTOM_EPILOG
 #define TEST_CCL_CUSTOM_REDUCE
-#define Collective_Name "CCL_ALLREDUCE_ALGO"
+#define Collective_Name "CCL_ALLREDUCE"
 
 #include "base.hpp"
 #include <functional>

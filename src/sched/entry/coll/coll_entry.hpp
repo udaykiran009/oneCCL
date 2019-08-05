@@ -97,6 +97,7 @@ private:
         switch (ctype)
         {
             case ccl_coll_barrier:
+                break;
             case ccl_coll_bcast:
             {
                 ccl_coll_param coll_param{};
@@ -109,10 +110,10 @@ private:
                 coll_sched = new ccl_sched(coll_param);
 
                 auto result = ccl_coll_build_bcast(coll_sched,
-                                                    recv_buf,
-                                                    coll_sched->coll_param.count,
-                                                    coll_sched->coll_param.dtype,
-                                                    coll_sched->coll_param.root);
+                                                   recv_buf,
+                                                   coll_sched->coll_param.count,
+                                                   coll_sched->coll_param.dtype,
+                                                   coll_sched->coll_param.root);
 
                 CCL_ASSERT(result == ccl_status_success, "bad result ", result);
 
@@ -133,17 +134,18 @@ private:
                 coll_sched->coll_attr.reduction_fn = sched->coll_attr.reduction_fn;
 
                 auto result = ccl_coll_build_allreduce(coll_sched,
-                                                        send_buf,
-                                                        recv_buf,
-                                                        coll_sched->coll_param.count,
-                                                        coll_sched->coll_param.dtype,
-                                                        coll_sched->coll_param.reduction);
+                                                       send_buf,
+                                                       recv_buf,
+                                                       coll_sched->coll_param.count,
+                                                       coll_sched->coll_param.dtype,
+                                                       coll_sched->coll_param.reduction);
 
                 CCL_ASSERT(result == ccl_status_success, "bad result ", result);
 
                 break;
             }
             case ccl_coll_allgatherv:
+                break;
             default:
                 CCL_FATAL("not supported type ", ctype);
                 break;

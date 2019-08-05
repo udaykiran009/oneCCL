@@ -20,16 +20,16 @@ oneAPI CCL supports 2 prioritization modes:
 -	Direct - Priority is explicitly specified by users using coll_attr.priority.
 -	LIFO - Priority is implicitly increased on each collective calls. User do not specify a priority.
 
-To control the mode, pass ``none``, ``direct``, ``lifo`` to the CCL_PRIORITY_MODE environment variable. By default, prioritization is disabled (``none``).
+To control the mode, pass ``none``, ``direct``, ``lifo`` to the CCL_PRIORITY environment variable. By default, prioritization is disabled (``none``).
 
 Manual selection of collective algorithms
 *****************************************
 
-You can manually select collective algorithm using ``CCL_ALLREDUCE_ALGO``.
+You can manually select collective algorithm using ``CCL_ALLREDUCE``.
 
 -	ring – reduce_scatter+allgather ring
 -	ring_rma - reduce_scatter+allgather ring using rma communications
--	Starlike – may be beneficial for imbalanced workloads
+-	starlike – may be beneficial for imbalanced workloads
 -	tree – Rabenseifner’s algorithm (default)
 
 

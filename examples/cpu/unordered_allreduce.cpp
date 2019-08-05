@@ -30,8 +30,7 @@ ccl_request_t start_allreduce_with_tensor_name(const std::string& tensor_name,
 
 int main()
 {
-    printf("Forced out of order support\n");
-    setenv("CCL_OUT_OF_ORDER_SUPPORT", "1", 1);
+    setenv("CCL_UNORDERED_COLL", "1", 1);
 
     const size_t iterations_count = 4;
     std::vector<std::string> tensor_names;

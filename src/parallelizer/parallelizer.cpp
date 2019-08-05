@@ -450,7 +450,7 @@ ccl_status_t ccl_parallelizer::process(ccl_sched* sched)
             {
                 for (size_t idx = 0; idx < coll_param->comm->size(); idx++)
                 {
-                    if (env_data.vector_allgatherv)
+                    if (env_data.enable_allgatherv_iov)
                     {
                         ag_recv_bufs[idx].set(&(((char**)coll_param->recv_buf)[idx]),
                                               counts[idx] * dtype_size,

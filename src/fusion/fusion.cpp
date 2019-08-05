@@ -1,3 +1,4 @@
+#include "exec/exec.hpp"
 #include "fusion/fusion.hpp"
 #include "sched/entry_factory.hpp"
 #include "sched/sched_cache.hpp"
@@ -88,28 +89,28 @@ ccl_fusion_manager::ccl_fusion_manager()
       buf_cache(env_data.fusion_bytes_threshold * env_data.fusion_count_threshold)
 {
     CCL_ASSERT(bytes_threshold >= 1, "unexpected fusion_bytes_threshold ",
-                    bytes_threshold);
+               bytes_threshold);
     CCL_ASSERT(count_threshold >= 1, "unexpected fusion_count_threshold ",
-                    count_threshold);
+               count_threshold);
 
     long cycle_usec = long(env_data.fusion_cycle_ms * 1000.0);
     cycle = std::chrono::microseconds(cycle_usec);
     last_exec_time = std::chrono::steady_clock::now();
 
-    LOG_INFO("created fusion_manager manager, cycle_usec ", cycle_usec, ", bytes_threshold ", bytes_threshold,
-        ", count_threshold ", count_threshold);
+    LOG_INFO("created fusion manager, cycle_usec ", cycle_usec, ", bytes_threshold ", bytes_threshold,
+             ", count_threshold ", count_threshold);
 }
 
 ccl_fusion_manager::~ccl_fusion_manager()
 {
     LOG_INFO("fused_bytes ", stat_fused_bytes, ", fused_ops ", stat_fused_ops,
-        ", empty_exec_calls ", stat_empty_exec_calls);
+             ", empty_exec_calls ", stat_empty_exec_calls);
 
     check_tracked_scheds();
 
     CCL_ASSERT(postponed_queue.empty() && exec_queue.empty() && tracked_scheds.empty(),
-                    "queues are not empty, ", postponed_queue.size(), " ",
-                    exec_queue.size(), " ", tracked_scheds.size());
+               "queues are not empty, ", postponed_queue.size(), " ",
+               exec_queue.size(), " ", tracked_scheds.size());
 }
 
 bool ccl_fusion_manager::can_fuse(ccl_sched* sched)
@@ -148,7 +149,7 @@ bool ccl_fusion_manager::add(ccl_sched* sched)
     }
 
     CCL_THROW_IF_NOT(!env_data.fusion_check_urgent || !sched->urgent, "incorrect values : ",
-                      env_data.fusion_check_urgent, " vs ", sched->urgent);
+                     env_data.fusion_check_urgent, " vs ", sched->urgent);
     CCL_THROW_IF_NOT(sched->req->is_completed(), "incorrect completion counter");
     sched->req->set_counter(1);
 
@@ -196,7 +197,7 @@ ccl_sched* ccl_fusion_manager::build_sched()
     sum_bytes = sum_count * dtype_size;
 
     LOG_DEBUG("build fused_sched for sum_count ", sum_count, ", sum_bytes ", sum_bytes,
-        ", sched_count ", exec_queue.size());
+              ", sched_count ", exec_queue.size());
 
     ccl_sched* sched = nullptr;
     ccl_sched_key key{};
@@ -267,8 +268,8 @@ ccl_sched* ccl_fusion_manager::build_sched()
     CCL_THROW_IF_NOT(part_count > 0, "unexpected part_count");
 
     LOG_DEBUG("part_count ", part_count,
-        ", sum_count ", sum_count,
-        ", exec_queue_size ", exec_queue_size);
+              ", sum_count ", sum_count,
+              ", exec_queue_size ", exec_queue_size);
 
     for (size_t idx = 0; idx < part_count; idx++)
     {
@@ -324,7 +325,7 @@ ccl_sched* ccl_fusion_manager::build_sched()
                                                       complete_user_request,
                                                       exec_queue[global_copy_idx]);
             CCL_THROW_IF_NOT(!exec_queue[global_copy_idx]->req->is_completed(),
-                              "incorrect completion counter");
+                             "incorrect completion counter");
         }
     }
 
@@ -417,7 +418,7 @@ void ccl_fusion_manager::execute()
                     if (env_data.fusion_check_urgent && !flush_exec_queue && s->urgent)
                     {
                         LOG_DEBUG("found urgent sched in postponed_queue, flush exec_queue, postponed_queue size ",
-                                 postponed_queue.size());
+                                  postponed_queue.size());
                         flush_exec_queue = true;
                     }
 

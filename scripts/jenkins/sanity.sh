@@ -194,19 +194,19 @@ case "$runtime" in
             export CCL_ATL_TRANSPORT=MPI
             for bcast in "ring" "double_tree" "direct"
                 do
-                    CCL_BCAST_ALGO=$bcast ctest -VV -C mpi_bcast_$bcast
+                    CCL_BCAST=$bcast ctest -VV -C mpi_bcast_$bcast
                 done
             for reduce in "tree" "double_tree" "direct"
                 do
-                    CCL_REDUCE_ALGO=$reduce ctest -VV -C mpi_reduce_$reduce
+                    CCL_REDUCE=$reduce ctest -VV -C mpi_reduce_$reduce
                 done
             for allreduce in "tree" "starlike" "ring" "double_tree" "direct"
                 do
-                    CCL_ALLREDUCE_ALGO=$allreduce ctest -VV -C mpi_allreduce_$allreduce
+                    CCL_ALLREDUCE=$allreduce ctest -VV -C mpi_allreduce_$allreduce
                 done
             for allgatherv in "direct" "naive" "multi_bcast" "flat"
                 do
-                    CCL_ALLGATHERV_ALGO=$allgatherv ctest -VV -C mpi_allgatherv_$allgatherv
+                    CCL_ALLGATHERV=$allgatherv ctest -VV -C mpi_allgatherv_$allgatherv
                 done
            ;;
        ofi_adjust )
@@ -223,24 +223,24 @@ case "$runtime" in
             export CCL_TEST_PLACE_TYPE=1
             for bcast in "ring" "double_tree"
                 do
-                    CCL_BCAST_ALGO=$bcast ctest -VV -C mpi_bcast_$bcast
+                    CCL_BCAST=$bcast ctest -VV -C mpi_bcast_$bcast
                 done
             for reduce in "tree" "double_tree"
                 do
-                    CCL_REDUCE_ALGO=$reduce ctest -VV -C mpi_reduce_$reduce
+                    CCL_REDUCE=$reduce ctest -VV -C mpi_reduce_$reduce
                 done
             for allreduce in "tree" "starlike" "ring" "ring_rma" "double_tree"
                 do
                     if [ "$allreduce" == "ring_rma" ];
                     then
-                        CCL_ENABLE_RMA=1 CCL_ALLREDUCE_ALGO=$allreduce ctest -VV -C mpi_allreduce_$allreduce
+                        CCL_RMA=1 CCL_ALLREDUCE=$allreduce ctest -VV -C mpi_allreduce_$allreduce
                     else
-                        CCL_ALLREDUCE_ALGO=$allreduce ctest -VV -C mpi_allreduce_$allreduce
+                        CCL_ALLREDUCE=$allreduce ctest -VV -C mpi_allreduce_$allreduce
                     fi
                 done
             for allgatherv in "naive" "multi_bcast" "flat"
                 do
-                    CCL_ALLGATHERV_ALGO=$allgatherv ctest -VV -C mpi_allgatherv_$allgatherv
+                    CCL_ALLGATHERV=$allgatherv ctest -VV -C mpi_allgatherv_$allgatherv
                 done
            ;;
         priority_mode )
@@ -255,8 +255,8 @@ case "$runtime" in
             export CCL_TEST_SYNC_TYPE=0
             export CCL_TEST_PROLOG_TYPE=0
             export CCL_TEST_PLACE_TYPE=0
-            CCL_PRIORITY_MODE=lifo ctest -VV -C Default
-            CCL_PRIORITY_MODE=direct ctest -VV -C Default
+            CCL_PRIORITY=lifo ctest -VV -C Default
+            CCL_PRIORITY=direct ctest -VV -C Default
            ;;
         dynamic_pointer_mode )
             export CCL_TEST_BUFFER_COUNT=1
@@ -284,7 +284,7 @@ case "$runtime" in
             export CCL_TEST_SYNC_TYPE=0
             export CCL_TEST_PROLOG_TYPE=0
             export CCL_TEST_PLACE_TYPE=0
-            CCL_OUT_OF_ORDER_SUPPORT=1 ctest -VV -C Default
+            CCL_UNORDERED_COLL=1 ctest -VV -C Default
            ;;
        * )
             export CCL_TEST_BUFFER_COUNT=0

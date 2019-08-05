@@ -1,11 +1,12 @@
 #include "ccl.hpp"
 #include "coll/coll.hpp"
 #include "coll/coll_algorithms.hpp"
-#include "sched/sched_cache.hpp"
+#include "common/global/global.hpp"
 #include "common/request/request.hpp"
-#include "common/utils/tree.hpp"
-#include "out_of_order/ooo_match.hpp"
+#include "exec/exec.hpp"
 #include "fusion/fusion.hpp"
+#include "sched/sched_cache.hpp"
+#include "unordered_coll/unordered_coll.hpp"
 
 #ifdef ENABLE_SYCL
 #include <CL/sycl.hpp>
@@ -58,17 +59,17 @@ static ccl_request* ccl_coll_create(ccl_coll_param& coll_param,
 
     should_cache = attr->to_cache;
 
-    if (attr->match_id && (env_data.out_of_order_support || should_cache))
+    if (attr->match_id && (env_data.enable_unordered_coll || should_cache))
         match_id.assign(attr->match_id);
 
-    if (!match_id.empty() && env_data.out_of_order_support)
+    if (!match_id.empty() && env_data.enable_unordered_coll)
     {
-        match_id_comm = global_data.ooo_manager->get_comm(match_id);
+        match_id_comm = global_data.unordered_coll_manager->get_comm(match_id).get();
         if (!match_id_comm)
         {
             if (attr->synchronous)
             {
-                CCL_THROW("unsupported case (synchronous && out-of-order && !communicator)");
+                CCL_THROW("unsupported collective (synchronous && unordered && !communicator)");
             }
 
             // user has provided match_id that has not been resolved yet.
@@ -133,7 +134,8 @@ static ccl_request* ccl_coll_create(ccl_coll_param& coll_param,
             was_fused = global_data.fusion_manager->add(sched);
             if (was_fused)
             {
-                LOG_DEBUG("sched ", sched, ", ctype ", ccl_coll_type_to_str(sched->coll_param.ctype), "will be fused");
+                LOG_DEBUG("sched ", sched, ", ctype ",
+                          ccl_coll_type_to_str(sched->coll_param.ctype), "will be fused");
                 request = sched->req;
                 return request;
             }
@@ -156,11 +158,7 @@ static ccl_request* ccl_coll_create(ccl_coll_param& coll_param,
     }
     else
     {
-        CCL_ASSERT(!sched->coll_attr.match_id.empty(), "invalid match_id");
-
-        request = sched->reset_request();
-        LOG_INFO("sched ", sched, ", postponed for match_id resolution");
-        global_data.ooo_manager->postpone(sched);
+        request = global_data.unordered_coll_manager->postpone(sched);
     }
 
     return request;
@@ -181,7 +179,7 @@ ccl_status_t ccl_coll_build_barrier(ccl_sched* sched)
             break;
         default:
             CCL_FATAL("unexpected barrier_algo ",
-                       ccl_barrier_algo_to_str(env_data.barrier_algo));
+                      ccl_barrier_algo_to_str(env_data.barrier_algo));
             return ccl_status_invalid_arguments;
     }
 
@@ -199,6 +197,9 @@ ccl_status_t ccl_coll_build_bcast(ccl_sched* sched,
 
     switch (env_data.bcast_algo)
     {
+        case ccl_bcast_algo_naive:
+            CCL_CALL(ccl_coll_build_naive_bcast(sched, buf, count, dtype, root));
+            break;
         case ccl_bcast_algo_ring:
             CCL_CALL(ccl_coll_build_scatter_ring_allgather_bcast(sched, buf, count, dtype, root));
             break;
@@ -213,7 +214,7 @@ ccl_status_t ccl_coll_build_bcast(ccl_sched* sched,
             break;
         default:
             CCL_FATAL("unexpected bcast_algo ",
-                       ccl_bcast_algo_to_str(env_data.bcast_algo));
+                      ccl_bcast_algo_to_str(env_data.bcast_algo));
             return ccl_status_invalid_arguments;
     }
     return status;
@@ -252,7 +253,7 @@ ccl_status_t ccl_coll_build_reduce(ccl_sched* sched,
             break;
         default:
             CCL_FATAL("unexpected reduce_algo ",
-                       ccl_reduce_algo_to_str(env_data.reduce_algo));
+                      ccl_reduce_algo_to_str(env_data.reduce_algo));
             return ccl_status_invalid_arguments;
     }
 
@@ -348,7 +349,7 @@ ccl_status_t ccl_coll_build_allreduce(
                 break;
             default:
                 CCL_FATAL("unexpected allreduce_algo ",
-                           ccl_allreduce_algo_to_str(env_data.allreduce_algo));
+                          ccl_allreduce_algo_to_str(env_data.allreduce_algo));
                 return ccl_status_invalid_arguments;
         }
     }

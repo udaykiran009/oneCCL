@@ -3,11 +3,11 @@ Environment Variables
 
 :guilabel:`Add information about variables`.
 
-CCL_ALLREDUCE_ALGO
+CCL_ALLREDUCE
 ###################
 **Syntax**
 
-``CCL_ALLREDUCE_ALGO=<value>``
+``CCL_ALLREDUCE=<value>``
 
 **Arguments**
 
@@ -31,11 +31,11 @@ CCL_ALLREDUCE_ALGO
 
 Set this environment variable to specify algorithm choice for AllReduce. The default algorithm for small messages is recursive-doubling, for large messages - Rabenseifner’s.
 
-CCL_ALLGATHERV_ALGO
+CCL_ALLGATHERV
 ####################
 **Syntax**
 
-``CCL_ALLGATHERV_ALGO=<value>``
+``CCL_ALLGATHERV=<value>``
 
 **Arguments**
 
@@ -57,7 +57,7 @@ CCL_ALLGATHERV_ALGO
 
 Set this environment variable to specify algorithm choice for AllReduce. The default algorithm for small messages is recursive-doubling, for large messages - Rabenseifner’s.
 
-CCL_ENABLE_FUSION
+CCL_FUSION
 #########################
 
 CCL_FUSION_BYTES_THRESHOLD
@@ -69,11 +69,11 @@ CCL_FUSION_COUNT_THRESHOLD
 CCL_FUSION_CYCLE_MS
 ####################
 
-CCL_OUT_OF_ORDER_SUPPORT
+CCL_UNORDERED_COLL
 #########################
 **Syntax**
 
-``CCL_OUT_OF_ORDER_SUPPORT=<value>``
+``CCL_UNORDERED_COLL=<value>``
 
 **Arguments**
 
@@ -92,11 +92,11 @@ CCL_OUT_OF_ORDER_SUPPORT
 
 Set this environment variable to enable out of order execution of collective operations on different nodes. 
 
-CCL_PRIORITY_MODE
+CCL_PRIORITY
 ###################
 **Syntax**
 
-``CCL_PRIORITY_MODE=<value>``
+``CCL_PRIORITY=<value>``
 
 **Arguments**
 

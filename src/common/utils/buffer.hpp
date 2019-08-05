@@ -5,7 +5,7 @@
 
 enum class ccl_buffer_type
 {
-    DIRECT = 0,
+    DIRECT,
     INDIRECT
 };
 
@@ -19,19 +19,17 @@ class ccl_buffer
 {
 
 private:
-
     void* src;
     ssize_t size;
     int offset;
     ccl_buffer_type type;
 
 public:
-
     ccl_buffer(void* src, ssize_t size, int offset, ccl_buffer_type type)
         : src(src), size(size),
           offset(offset), type(type)
     {
-        LOG_DEBUG("create ccl_buffer: src ", src, ", size ", size, ", offset ", offset, ", type ", type);
+        LOG_DEBUG("create: src ", src, ", size ", size, ", offset ", offset, ", type ", type);
         CCL_ASSERT(offset >= 0, "unexpected offset");
         CCL_ASSERT((size == -1) || (offset <= size), "unexpected offset ", offset, ", size ", size);
     }
@@ -53,7 +51,7 @@ public:
 
     void set(void* src, ssize_t size, int offset, ccl_buffer_type type)
     {
-        LOG_DEBUG("set ccl_buffer: src ", src, ", size ", size, ", offset ", offset, ", type ", type);
+        LOG_DEBUG("set: src ", src, ", size ", size, ", offset ", offset, ", type ", type);
         CCL_ASSERT(src, "new src is null");
         CCL_ASSERT(offset >= 0, "unexpected offset");
 

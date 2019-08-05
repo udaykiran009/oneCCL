@@ -56,22 +56,22 @@ oneAPI CCL supports 2 prioritization modes:
 -	Direct - Priority is explicitly specified by users using coll_attr.priority.
 -	LIFO - Priority is implicitly increased on each collective calls. User do not specify a priority.
 
-To control the mode, pass ``none``, ``direct``, ``lifo`` to the CCL_PRIORITY_MODE environment variable. By default, prioritization is disabled (``none``).
+To control the mode, pass ``none``, ``direct``, ``lifo`` to the CCL_PRIORITY environment variable. By default, prioritization is disabled (``none``).
 
 Manual selection of collective algorithms
 *****************************************
 
-You can manually select collective algorithm using ``CCL_ALLREDUCE_ALGO``.
+You can manually select collective algorithm using ``CCL_ALLREDUCE``.
 
 -	ring – reduce_scatter+allgather ring
 -	ring_rma - reduce_scatter+allgather ring using rma communications
--	Starlike – may be beneficial for imbalanced workloads
+-	starlike – may be beneficial for imbalanced workloads
 -	tree – Rabenseifner’s algorithm (default)
 
 
 The default algorithm for small messages is recursive-doubling, for large messages - Rabenseifner’s.
 
-Out of order execution
+Unordered collectives support
 **********************
 
 Collective operations may be executed out of order on different nodes due to network or hardware-specific reasons.
@@ -79,7 +79,7 @@ Collective operations may be executed out of order on different nodes due to net
 In some implementations, such as out of order execution, a hang or data corruption may occur.
 oneAPI CCL provides a mechanism to arrange collective operations execution in accordance with the user-defined identifier.
 
-To control this, use the environment variable ``CCL_OUT_OF_ORDER_SUPPORT``
+To control this, use the environment variable ``CCL_UNORDERED_COLL``
 
 	The user can set an identifier using ccl_coll_attr_t. match_id  field which is a pointer to a null terminated C-style string
 	Out of order execution is controlled by the rank with id zero, i.e. by the root rank.

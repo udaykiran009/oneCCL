@@ -1,5 +1,5 @@
 #define TEST_CCL_REDUCE
-#define Collective_Name "CCL_ALLREDUCE_ALGO"
+#define Collective_Name "CCL_ALLREDUCE"
 
 #include "base.hpp"
 #include <functional>

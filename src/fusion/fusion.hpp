@@ -1,7 +1,6 @@
 #pragma once
 
 #include "common/utils/spinlock.hpp"
-#include "exec/exec.hpp"
 #include "sched/sched.hpp"
 
 #include <chrono>

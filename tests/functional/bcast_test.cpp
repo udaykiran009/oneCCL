@@ -3,7 +3,7 @@
 #include <vector>
 #include <chrono>
 
-#define Collective_Name "CCL_BCAST_ALGO"
+#define Collective_Name "CCL_BCAST"
 
 template <typename T> class BcastTest:public BaseTest <T> {
 public:

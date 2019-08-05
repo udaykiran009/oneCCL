@@ -12,6 +12,37 @@ ccl_status_t ccl_coll_build_direct_bcast(ccl_sched *sched, ccl_buffer buf, size_
     return ccl_status_success;
 }
 
+ccl_status_t ccl_coll_build_naive_bcast(ccl_sched *sched, ccl_buffer buf, size_t count,
+                                        ccl_datatype_internal_t dtype, size_t root)
+{
+    LOG_DEBUG("build naive bcast");
+
+    ccl_status_t status = ccl_status_success;
+
+    size_t rank = sched->coll_param.comm->rank();
+    size_t comm_size = sched->coll_param.comm->size();
+    size_t idx;
+
+    if (comm_size == 1)
+        goto fn_exit;
+
+    if (rank == root)
+    {
+        for (idx = 0; idx < comm_size; idx++)
+        {
+            if (idx != rank)
+                entry_factory::make_entry<send_entry>(sched, buf, count, dtype, idx);
+        }
+    }
+    else
+    {
+        entry_factory::make_entry<recv_entry>(sched, buf, count, dtype, root);
+    }
+
+  fn_exit:
+    return status;
+}
+
 ccl_status_t ccl_coll_build_scatter_for_bcast(ccl_sched *sched,
                                               ccl_buffer tmp_buf,
                                               size_t root,

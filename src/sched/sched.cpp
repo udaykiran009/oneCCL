@@ -3,7 +3,6 @@
 #include "sched/sync_object.hpp"
 #include "sched/entry_factory.hpp"
 #include "common/global/global.hpp"
-#include "out_of_order/ooo_match.hpp"
 #include "parallelizer/parallelizer.hpp"
 
 static size_t lifo_priority = 0;
@@ -63,6 +62,7 @@ ccl_sched::~ccl_sched()
 size_t ccl_sched::get_priority()
 {
     size_t priority = 0;
+
     switch (env_data.priority_mode)
     {
         case ccl_priority_none:
@@ -77,7 +77,8 @@ size_t ccl_sched::get_priority()
             break;
     }
 
-    LOG_DEBUG("sched, ", this, ", prio ", priority);
+    LOG_DEBUG("sched, ", this, ", priority ", priority);
+
     return priority;
 }
 
@@ -92,7 +93,7 @@ void ccl_sched::do_progress()
 
         if (entry->get_status() == ccl_sched_entry_status_not_started)
         {
-            LOG_DEBUG("starting entry ", entry->name(), "[", i, "/", entries.size(), "]");
+            LOG_DEBUG("starting entry ", entry->name(), " [", i, "/", entries.size(), "]");
             entry->start();
         }
 
@@ -357,7 +358,7 @@ void ccl_sched::add_barrier()
         else if (add_mode == ccl_sched_add_front)
             entries.front()->make_barrier();
         else
-            CCL_FATAL("unexpected mode ", add_mode);
+            CCL_FATAL("unexpected add_mode ", add_mode);
     }
 }
 
@@ -490,5 +491,6 @@ ccl_request* ccl_sched::start_subsched(ccl_sched* subsched)
     subsched->coll_attr.priority = coll_attr.priority;
     subsched->reset();
     queue->add(subsched);
+    subsched->dump("subsched");
     return subsched->req;
 }

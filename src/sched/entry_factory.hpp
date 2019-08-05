@@ -22,15 +22,15 @@
 #include "sched/entry/chain_call_entry.hpp"
 #include "sched/entry/nop_entry.hpp"
 #include "sched/entry/coll/coll_entry.hpp"
-#include "sched/entry/coll/allreduce_entry.hpp"
 #include "sched/entry/coll/allgatherv_entry.hpp"
+#include "sched/entry/coll/allreduce_entry.hpp"
+#include "sched/entry/coll/barrier_entry.hpp"
 #include "sched/entry/coll/bcast_entry.hpp"
 #include "sched/entry/coll/reduce_entry.hpp"
-#include "sched/entry/coll/barrier_entry.hpp"
 
 namespace entry_factory
 {
-    //generic interface for entry creation
+    // generic interface for entry creation
     template<class EntryType, class ...Arguments>
     EntryType* make_entry(ccl_sched* sched, Arguments &&...args)
     {

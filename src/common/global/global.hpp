@@ -7,22 +7,22 @@
 #include <memory>
 #include <thread>
 
-#define COMMON_CATCH_BLOCK()                                \
-catch (ccl::ccl_error& ccl_e)                               \
-{                                                           \
-    LOG_ERROR("ccl intrenal error: ", ccl_e.what());        \
-    return ccl_status_invalid_arguments;                    \
-}                                                           \
-catch (std::exception& e)                                   \
-{                                                           \
-    LOG_ERROR("error: ", e.what());                         \
-    return ccl_status_runtime_error;                        \
-}                                                           \
-catch (...)                                                 \
-{                                                           \
-    LOG_ERROR("general error");                             \
-    return ccl_status_runtime_error;                        \
-}                                                           \
+#define COMMON_CATCH_BLOCK()                             \
+    catch (ccl::ccl_error& ccl_e)                        \
+    {                                                    \
+        LOG_ERROR("ccl intrenal error: ", ccl_e.what()); \
+        return ccl_status_invalid_arguments;             \
+    }                                                    \
+    catch (std::exception& e)                            \
+    {                                                    \
+        LOG_ERROR("error: ", e.what());                  \
+        return ccl_status_runtime_error;                 \
+    }                                                    \
+    catch (...)                                          \
+    {                                                    \
+        LOG_ERROR("general error");                      \
+        return ccl_status_runtime_error;                 \
+    }                                                    \
 
 class ccl_comm;
 class ccl_stream;
@@ -32,12 +32,8 @@ class ccl_executor;
 class ccl_sched_cache;
 class ccl_parallelizer;
 class double_tree;
-
-namespace out_of_order
-{
-    class ooo_match;
-}
 class ccl_fusion_manager;
+class ccl_unordered_coll_manager;
 
 struct alignas(CACHELINE_SIZE) ccl_global_data
 {
@@ -48,8 +44,8 @@ struct alignas(CACHELINE_SIZE) ccl_global_data
     std::unique_ptr<ccl_coll_attr_t> default_coll_attr;
     std::unique_ptr<ccl_sched_cache> sched_cache;
     std::unique_ptr<ccl_parallelizer> parallelizer;
-    std::unique_ptr<out_of_order::ooo_match> ooo_manager;
     std::unique_ptr<ccl_fusion_manager> fusion_manager;
+    std::unique_ptr<ccl_unordered_coll_manager> unordered_coll_manager;
     static thread_local bool is_worker_thread;
 };
 

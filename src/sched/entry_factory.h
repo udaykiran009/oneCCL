@@ -1,19 +1,17 @@
 #pragma once
 
 #include "sched/entry/entry.hpp"
-#include "coll/coll.hpp"
+#include "sched/sched.hpp"
 
-#include <memory>
-#include <list>
 #include <functional>
+#include <list>
+#include <memory>
 
-
-//declares interface for all entries creations
+// declares interface for all entries creations
 namespace entry_factory
 {
     template<class EntryType, class ...Arguments>
     EntryType* make_entry(ccl_sched* sched, Arguments &&...args);
-
 
     namespace detail
     {
