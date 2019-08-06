@@ -83,232 +83,253 @@ check_command_exit_code() {
         exit $1
     fi
 }
-
-set_default_values()
-
-if [ -z "${BUILD_COMPILER_TYPE}" ]
-then
-    BUILD_COMPILER_TYPE="clang"
-fi
-
-if [ "${BUILD_COMPILER_TYPE}" == "gnu" ]
- then
-    BUILD_COMPILER=/usr/bin
-    C_COMPILER=${BUILD_COMPILER}/gcc
-    CXX_COMPILER=${BUILD_COMPILER}/g++
-elif [ "${BUILD_COMPILER_TYPE}" = "intel" ]
-then
-	BUILD_COMPILER=/nfs/inn/proj/mpi/pdsd/opt/EM64T-LIN/intel/compilers_and_libraries_2019.4.243/linux/bin/intel64/
-    C_COMPILER=${BUILD_COMPILER}/icc
-    CXX_COMPILER=${BUILD_COMPILER}/icpc
-else
-    if [ -z "${SYCL_BUNDLE_ROOT}" ]
+set_external_env(){
+    if [ -n "${TESTING_ENVIRONMENT}" ]
     then
-        echo "WARNING: SYCL_BUNDLE_ROOT is not defined, will be used default: /p/pdsd/scartch/Software/dpc/_install/dpcpp_bundle_1.0_prealpha_u9_023"
-        source /p/pdsd/scratch/Software/dpc/_install/dpcpp_bundle_1.0_prealpha_u9_023/dpc++vars.sh -r sycl
-        #source /opt/intel/dpcpp_bundle_1.0_prealpha_u9_023/dpcvars.sh -r sycl
+        echo "TESTING_ENVIRONMENT is " ${TESTING_ENVIRONMENT}
+        for line in ${TESTING_ENVIRONMENT}
+        do
+            export "$line"
+        done
     fi
-    BUILD_COMPILER=${SYCL_BUNDLE_ROOT}/bin
-    C_COMPILER=${BUILD_COMPILER}/clang
-    CXX_COMPILER=${BUILD_COMPILER}/clang++
-fi
-if [ -z "${I_MPI_HYDRA_HOST_FILE}" ]
-then
-    if [ -f ${WORK_DIR}/tests/cfgs/clusters/${HOSTNAME}/mpi.hosts ]
+}
+
+enable_part_test_scope()
+{
+    export CCL_TEST_BUFFER_COUNT=0
+    export CCL_TEST_CACHE_TYPE=1
+    export CCL_TEST_COMPLETION_TYPE=1
+    export CCL_TEST_DATA_TYPE=1
+    export CCL_TEST_PLACE_TYPE=1
+    export CCL_TEST_PRIORITY_TYPE=0
+    export CCL_TEST_REDUCTION_TYPE=0
+    export CCL_TEST_SIZE_TYPE=0
+    export CCL_TEST_SYNC_TYPE=0
+    export CCL_TEST_PROLOG_TYPE=1
+    export CCL_TEST_PLACE_TYPE=1
+}
+
+enable_ooo_part_test_scope()
+{
+    export CCL_TEST_BUFFER_COUNT=0
+    export CCL_TEST_CACHE_TYPE=1
+    export CCL_TEST_COMPLETION_TYPE=1
+    export CCL_TEST_DATA_TYPE=1
+    export CCL_TEST_PLACE_TYPE=1
+    export CCL_TEST_PRIORITY_TYPE=0
+    export CCL_TEST_REDUCTION_TYPE=1
+    export CCL_TEST_SIZE_TYPE=0
+    export CCL_TEST_SYNC_TYPE=0
+    export CCL_TEST_PROLOG_TYPE=1
+    export CCL_TEST_PLACE_TYPE=1
+}
+
+set_environment() 
+{
+    if [ -z "${BUILD_COMPILER_TYPE}" ]
     then
-        export I_MPI_HYDRA_HOST_FILE=${WORK_DIR}/tests/cfgs/clusters/${HOSTNAME}/mpi.hosts
+        BUILD_COMPILER_TYPE="clang"
+    fi
+
+    if [ "${BUILD_COMPILER_TYPE}" == "gnu" ]
+     then
+        BUILD_COMPILER=/usr/bin
+        C_COMPILER=${BUILD_COMPILER}/gcc
+        CXX_COMPILER=${BUILD_COMPILER}/g++
+    elif [ "${BUILD_COMPILER_TYPE}" = "intel" ]
+    then
+        BUILD_COMPILER=/nfs/inn/proj/mpi/pdsd/opt/EM64T-LIN/intel/compilers_and_libraries_2019.4.243/linux/bin/intel64/
+        C_COMPILER=${BUILD_COMPILER}/icc
+        CXX_COMPILER=${BUILD_COMPILER}/icpc
+    else        
+        if [ -z "${SYCL_BUNDLE_ROOT}" ]
+        then
+            echo "WARNING: SYCL_BUNDLE_ROOT is not defined, will be used default: /p/pdsd/scartch/Software/dpc/_install/dpcpp_bundle_1.0_prealpha_u9_023"
+            source /p/pdsd/scratch/Software/dpc/_install/dpcpp_bundle_1.0_prealpha_u9_023/dpc++vars.sh sycl
+        fi
+        BUILD_COMPILER=${SYCL_BUNDLE_ROOT}/bin
+        C_COMPILER=${BUILD_COMPILER}/clang
+        CXX_COMPILER=${BUILD_COMPILER}/clang++
+    fi
+    if [ -z "${I_MPI_HYDRA_HOST_FILE}" ]
+    then
+        if [ -f ${WORK_DIR}/tests/cfgs/clusters/${HOSTNAME}/mpi.hosts ]
+        then
+            export I_MPI_HYDRA_HOST_FILE=${WORK_DIR}/tests/cfgs/clusters/${HOSTNAME}/mpi.hosts
+        else
+            echo "WARNING: hostfile (${WORK_DIR}/tests/cfgs/clusters/${HOSTNAME}/mpi.hosts) isn't available"
+            echo "WARNING: I_MPI_HYDRA_HOST_FILE isn't set"
+        fi
+    fi
+
+    if [ -z "$runtime" ]
+    then
+        runtime="ofi"
+    fi
+
+    if [ -z "${CCL_ROOT}" ]
+    then
+        if [ -f ${MLSL_PATH}/vars.sh ]
+        then
+            source ${MLSL_PATH}/vars.sh
+        else
+            echo "ERROR: ${CCL_INSTALL_DIR}/intel64/bin/cclvars.sh doesn't exist"
+            exit 1
+        fi
+    fi
+    if [ -z "${IMPI_PATH}" ]
+    then
+        echo "WARNING: I_MPI_ROOT isn't set, last oneAPI pack will be used."
+        source /nfs/inn/disks/nn-ssg_tcar_mpi_2Tb_unix/Uploads/IMPI/linux/functional_testing/impi/ww31_20190802_oneapi/env/vars.sh release_mt
     else
-        echo "WARNING: hostfile (${WORK_DIR}/tests/cfgs/clusters/${HOSTNAME}/mpi.hosts) isn't available"
-        echo "WARNING: I_MPI_HYDRA_HOST_FILE isn't set"
+        source ${IMPI_PATH}/env/vars.sh release_mt
     fi
-fi
-if [ "${ENABLE_CODECOV}" = "yes" ]
-then
-	CODECOV_FLAGS="TRUE"
-else
-	CODECOV_FLAGS=""
-fi
 
-#export I_MPI_JOB_TIMEOUT=400
+    if [ "${ENABLE_CODECOV}" = "yes" ]
+    then
+        CODECOV_FLAGS="TRUE"
+    else
+        CODECOV_FLAGS=""
+    fi
+}
 
-if [ -n "${TESTING_ENVIRONMENT}" ]
-then
-    echo "TESTING_ENVIRONMENT is " ${TESTING_ENVIRONMENT}
-    for line in ${TESTING_ENVIRONMENT}
+make_tests() 
+{
+    cd ${WORK_DIR}/../../testspace/$runtime/tests/functional
+    mkdir -p build
+    cd ./build
+    cmake .. -DCMAKE_BUILD_TYPE=Release -DCMAKE_C_COMPILER="${C_COMPILER}" \
+        -DCMAKE_CXX_COMPILER="${CXX_COMPILER}"
+    make all
+}
+
+run_examples()
+{
+    for test in `ls ${WORK_DIR}/../build/_install/examples/`
     do
-        export "$line"
+        mpiexec.hydra -n 2 -ppn 1 -l ${WORK_DIR}/../build/_install/examples/$test &> ${WORK_DIR}/../build/_install/examples/$test.log
     done
-fi
+    grep -r 'FAILED' ${WORK_DIR}/../build/_install/examples/$test.log > /dev/null 2>&1
+    log_status_fail=${PIPESTATUS[0]}
+    if [ "$log_status_fail" -ne 0 ]
+    then
+        echo "example testing ... OK"
+        exit 0
+    else
+        echo "example testing ... NOK"
+        exit 1
+    fi
+}
 
-pwd
-rm -rf ${WORK_DIR}/_log
-mkdir -p ${WORK_DIR}/_log
-
-if [ -z "$runtime" ]
-then
-    runtime="ofi"
-fi
-
-
-if [ -z "${CCL_ROOT}" ]
-then
-if [ -f ${MLSL_PATH}/vars.sh ]
-then
-    source ${MLSL_PATH}/vars.sh
-else
-    echo "ERROR: ${CCL_INSTALL_DIR}/intel64/bin/cclvars.sh doesn't exist"
-    exit 1
-fi
-fi
-if [ -z "${IMPI_PATH}" ]
-then
-    echo "WARNING: I_MPI_ROOT isn't set, last oneAPI pack will be used."
-    source /p/pdsd/scratch/jenkins/artefacts/impi-ch4-build-linux-with-scans/4/oneapi_impi/env/vars.sh release_mt
-else
-    source ${IMPI_PATH}/env/vars.sh release_mt
-fi
-
-cd ${WORK_DIR}/../../testspace/$runtime/tests/functional
-mkdir -p build
-cd ./build
-cmake .. -DCMAKE_BUILD_TYPE=Release -DCMAKE_C_COMPILER="${C_COMPILER}" \
-    -DCMAKE_CXX_COMPILER="${CXX_COMPILER}" -DUSE_CODECOV_FLAGS="${CODECOV_FLAGS}"
-make all
-case "$runtime" in
-       mpi )
-            export CCL_TEST_BUFFER_COUNT=0
-            export CCL_TEST_CACHE_TYPE=1
-            export CCL_TEST_COMPLETION_TYPE=1
-            export CCL_TEST_DATA_TYPE=1
-            export CCL_TEST_PLACE_TYPE=1
-            export CCL_TEST_PRIORITY_TYPE=0
-            export CCL_TEST_REDUCTION_TYPE=1
-            export CCL_TEST_SIZE_TYPE=0
-            export CCL_TEST_SYNC_TYPE=0
-            export CCL_TEST_PROLOG_TYPE=1
-            export CCL_TEST_PLACE_TYPE=1
-            export CCL_ATL_TRANSPORT=MPI
-            ctest -VV -C Mpi
-            ;;
-       mpi_adjust )
-            export CCL_TEST_BUFFER_COUNT=0
-            export CCL_TEST_CACHE_TYPE=1
-            export CCL_TEST_COMPLETION_TYPE=1
-            export CCL_TEST_DATA_TYPE=0
-            export CCL_TEST_PLACE_TYPE=1
-            export CCL_TEST_PRIORITY_TYPE=0
-            export CCL_TEST_REDUCTION_TYPE=1
-            export CCL_TEST_SIZE_TYPE=0
-            export CCL_TEST_SYNC_TYPE=0
-            export CCL_TEST_PROLOG_TYPE=1
-            export CCL_TEST_PLACE_TYPE=1                
-            export CCL_ATL_TRANSPORT=MPI
-            for bcast in "ring" "double_tree" "direct"
-                do
-                    CCL_BCAST=$bcast ctest -VV -C mpi_bcast_$bcast
-                done
-            for reduce in "tree" "double_tree" "direct"
-                do
-                    CCL_REDUCE=$reduce ctest -VV -C mpi_reduce_$reduce
-                done
-            for allreduce in "tree" "starlike" "ring" "double_tree" "direct"
-                do
-                    CCL_ALLREDUCE=$allreduce ctest -VV -C mpi_allreduce_$allreduce
-                done
-            for allgatherv in "direct" "naive" "multi_bcast" "flat"
-                do
-                    CCL_ALLGATHERV=$allgatherv ctest -VV -C mpi_allgatherv_$allgatherv
-                done
-           ;;
-       ofi_adjust )
-            export CCL_TEST_BUFFER_COUNT=0
-            export CCL_TEST_CACHE_TYPE=1
-            export CCL_TEST_COMPLETION_TYPE=1
-            export CCL_TEST_DATA_TYPE=0
-            export CCL_TEST_PLACE_TYPE=1
-            export CCL_TEST_PRIORITY_TYPE=0
-            export CCL_TEST_REDUCTION_TYPE=1
-            export CCL_TEST_SIZE_TYPE=0
-            export CCL_TEST_SYNC_TYPE=0
-            export CCL_TEST_PROLOG_TYPE=1
-            export CCL_TEST_PLACE_TYPE=1
-            for bcast in "ring" "double_tree"
-                do
-                    CCL_BCAST=$bcast ctest -VV -C mpi_bcast_$bcast
-                done
-            for reduce in "tree" "double_tree"
-                do
-                    CCL_REDUCE=$reduce ctest -VV -C mpi_reduce_$reduce
-                done
-            for allreduce in "tree" "starlike" "ring" "ring_rma" "double_tree"
-                do
-                    if [ "$allreduce" == "ring_rma" ];
-                    then
-                        CCL_RMA=1 CCL_ALLREDUCE=$allreduce ctest -VV -C mpi_allreduce_$allreduce
-                    else
+run_tests()
+{
+    export CCL_WORKER_COUNT=2
+    enable_part_test_scope
+    set_external_env
+    case "$runtime" in
+           ofi )
+               export CCL_ATL_TRANSPORT=OFI
+               ctest -VV -C Default
+               ctest -VV -C Custom
+               ;;
+           mpi )
+                export CCL_ATL_TRANSPORT=MPI
+                ctest -VV -C Default
+                ;;
+           mpi_adjust )
+                export CCL_ATL_TRANSPORT=MPI
+                for bcast in "ring" "double_tree" "direct"
+                    do
+                        CCL_BCAST=$bcast ctest -VV -C mpi_bcast_$bcast
+                    done
+                for reduce in "tree" "double_tree" "direct"
+                    do
+                        CCL_REDUCE=$reduce ctest -VV -C mpi_reduce_$reduce
+                    done
+                for allreduce in "tree" "starlike" "ring" "double_tree" "direct"
+                    do
                         CCL_ALLREDUCE=$allreduce ctest -VV -C mpi_allreduce_$allreduce
-                    fi
-                done
-            for allgatherv in "naive" "multi_bcast" "flat"
-                do
-                    CCL_ALLGATHERV=$allgatherv ctest -VV -C mpi_allgatherv_$allgatherv
-                done
-           ;;
-        priority_mode )
-            export CCL_TEST_BUFFER_COUNT=1
-            export CCL_TEST_CACHE_TYPE=1
-            export CCL_TEST_COMPLETION_TYPE=1
-            export CCL_TEST_DATA_TYPE=0
-            export CCL_TEST_PLACE_TYPE=1
-            export CCL_TEST_PRIORITY_TYPE=1
-            export CCL_TEST_REDUCTION_TYPE=0
-            export CCL_TEST_SIZE_TYPE=0
-            export CCL_TEST_SYNC_TYPE=0
-            export CCL_TEST_PROLOG_TYPE=0
-            export CCL_TEST_PLACE_TYPE=0
-            CCL_PRIORITY=lifo ctest -VV -C Default
-            CCL_PRIORITY=direct ctest -VV -C Default
-           ;;
-        dynamic_pointer_mode )
-            export CCL_TEST_BUFFER_COUNT=1
-            export CCL_TEST_CACHE_TYPE=1
-            export CCL_TEST_COMPLETION_TYPE=1
-            export CCL_TEST_DATA_TYPE=0
-            export CCL_TEST_PLACE_TYPE=1
-            export CCL_TEST_PRIORITY_TYPE=0
-            export CCL_TEST_REDUCTION_TYPE=0
-            export CCL_TEST_SIZE_TYPE=0
-            export CCL_TEST_SYNC_TYPE=0
-            export CCL_TEST_PROLOG_TYPE=0
-            export CCL_TEST_PLACE_TYPE=0
-            CCL_TEST_DYNAMIC_POINTER=1 ctest -VV -C Default
-           ;;
-        out_of_order_mode )
-            export CCL_TEST_BUFFER_COUNT=1
-            export CCL_TEST_CACHE_TYPE=1
-            export CCL_TEST_COMPLETION_TYPE=1
-            export CCL_TEST_DATA_TYPE=1
-            export CCL_TEST_PLACE_TYPE=1
-            export CCL_TEST_PRIORITY_TYPE=0
-            export CCL_TEST_REDUCTION_TYPE=0
-            export CCL_TEST_SIZE_TYPE=0
-            export CCL_TEST_SYNC_TYPE=0
-            export CCL_TEST_PROLOG_TYPE=0
-            export CCL_TEST_PLACE_TYPE=0
-            CCL_UNORDERED_COLL=1 ctest -VV -C Default
-           ;;
-       * )
-            export CCL_TEST_BUFFER_COUNT=0
-            export CCL_TEST_CACHE_TYPE=1
-            export CCL_TEST_COMPLETION_TYPE=1
-            export CCL_TEST_DATA_TYPE=1
-            export CCL_TEST_PLACE_TYPE=1
-            export CCL_TEST_PRIORITY_TYPE=0
-            export CCL_TEST_REDUCTION_TYPE=1
-            export CCL_TEST_SIZE_TYPE=0
-            export CCL_TEST_SYNC_TYPE=0
-            export CCL_TEST_PROLOG_TYPE=1
-            export CCL_TEST_PLACE_TYPE=1
-            ctest -VV -C Default
-            ;;
-esac
+                    done
+                for allgatherv in "naive" "direct"
+                    do
+                        CCL_ALLGATHERV=$allgatherv ctest -VV -C mpi_allgatherv_$allgatherv
+                    done
+               ;;
+           ofi_adjust )
+                export CCL_ATL_TRANSPORT=OFI
+                for bcast in "ring" "double_tree"
+                    do
+                        CCL_BCAST=$bcast ctest -VV -C mpi_bcast_$bcast
+                    done
+                for reduce in "tree" "double_tree"
+                    do
+                        CCL_REDUCE=$reduce ctest -VV -C mpi_reduce_$reduce
+                    done
+                for allreduce in "tree" "starlike" "ring" "ring_rma" "double_tree"
+                    do
+                        if [ "$allreduce" == "ring_rma" ];
+                        then
+                            CCL_RMA=1 CCL_ALLREDUCE=$allreduce ctest -VV -C mpi_allreduce_$allreduce
+                        else
+                            CCL_ALLREDUCE=$allreduce ctest -VV -C mpi_allreduce_$allreduce
+                        fi
+                    done
+                for allgatherv in "naive"
+                    do
+                        CCL_ALLGATHERV=$allgatherv ctest -VV -C mpi_allgatherv_$allgatherv
+                    done
+               ;;
+            priority_mode )
+                CCL_PRIORITY=lifo ctest -VV -C Default
+                CCL_PRIORITY=direct ctest -VV -C Default
+               ;;
+            dynamic_pointer_mode )
+                CCL_TEST_DYNAMIC_POINTER=1 ctest -VV -C Default
+               ;;
+            unordered_coll )
+                enable_ooo_part_test_scope
+                export CCL_ATL_TRANSPORT=OFI
+                CCL_UNORDERED_COLL=1 ctest -VV -C Default
+               ;;
+           * )
+                ctest -VV -C Default
+                ;;
+    esac
+}
+
+run_examples()
+{
+    for test in `ls ${WORK_DIR}/../build/_install/examples/`
+    do
+        mpiexec.hydra -n 2 -ppn 1 -l ${WORK_DIR}/../build/_install/examples/$test | tee ${WORK_DIR}/../build/_install/examples/$test.log
+        grep -r 'FAILED' ${WORK_DIR}/../build/_install/examples/$test.log > /dev/null 2>&1
+        log_status_fail=${PIPESTATUS[0]}
+        if [ "$log_status_fail" -ne 0 ]
+        then
+            echo "example testing ... OK"
+        else
+            echo "example testing ... NOK"
+            exit 1
+        fi
+    done
+	exit 0
+}
+
+set_default_values
+set_environment
+while [ $# -ne 0 ]
+do
+    case $1 in
+    "-example" )
+        run_examples
+        shift
+        ;;
+    *)
+        echo "WARNING: example testing not started"
+        exit 0
+        shift
+        ;;
+    esac
+done
+make_tests
+run_tests

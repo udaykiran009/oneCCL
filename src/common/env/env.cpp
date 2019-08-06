@@ -99,6 +99,7 @@ void ccl_env_parse()
     ccl_env_2_int(CCL_WORKER_OFFLOAD, env_data.worker_offload);
     ccl_env_parse_worker_affinity();
 
+    ccl_env_parse_atl_transport();  
     ccl_env_parse_allgatherv_algo();
     ccl_env_parse_allreduce_algo();
     ccl_env_parse_barrier_algo();
@@ -429,6 +430,24 @@ int ccl_env_parse_yield_type()
         }
     }
     return 1; 
+}
+
+int ccl_env_parse_atl_transport()
+{
+    char* atl_transport = getenv(CCL_ATL_TRANSPORT);
+    if (atl_transport)
+    {
+        if (strcmp(atl_transport, "OFI") == 0)
+        {
+            env_data.allgatherv_algo = ccl_allgatherv_algo_naive;
+            env_data.allreduce_algo = ccl_allreduce_algo_rabenseifner;
+            env_data.barrier_algo = ccl_barrier_algo_ring;
+            env_data.bcast_algo = ccl_bcast_algo_ring;
+            env_data.reduce_algo = ccl_reduce_algo_tree;
+            env_data.sparse_allreduce_algo = ccl_sparse_allreduce_algo_basic;
+        }
+    }
+    return 0;
 }
 
 int ccl_env_parse_cache_key()

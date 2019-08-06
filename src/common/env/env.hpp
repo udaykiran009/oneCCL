@@ -33,6 +33,7 @@ constexpr const char* CCL_SPIN_COUNT = "CCL_SPIN_COUNT";
 constexpr const char* CCL_YIELD = "CCL_YIELD";
 constexpr const char* CCL_MAX_SHORT_SIZE = "CCL_MAX_SHORT_SIZE";
 constexpr const char* CCL_CACHE_KEY = "CCL_CACHE_KEY";
+constexpr const char* CCL_ATL_TRANSPORT = "CCL_ATL_TRANSPORT";
 
 enum ccl_allgatherv_algo
 {
@@ -159,6 +160,7 @@ int ccl_env_2_float(const char* env_name, float& val);
 void ccl_env_parse();
 void ccl_env_print();
 
+int ccl_env_parse_atl_transport();  
 int ccl_env_parse_worker_affinity();
 int ccl_env_parse_allgatherv_algo();
 int ccl_env_parse_allreduce_algo();

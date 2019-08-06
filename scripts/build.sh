@@ -94,7 +94,7 @@ SWF_PRE_DROP_DIR="/p/pdsd/scratch/Drops/CCL/1.0/`date +%Y-%m-%d`/SWF_Drops"
 set_default_values()
 {
     ENABLE_PACK="no"
-    if [ $ENABLE_PRE_DROP ]
+    if [ -z "${ENABLE_PRE_DROP}" ]
     then
         ENABLE_SWF_PRE_DROP="yes"
     else

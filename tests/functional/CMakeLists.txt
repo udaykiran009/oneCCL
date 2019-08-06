@@ -57,8 +57,6 @@ endif()
 
 foreach(src ${sources})
     get_filename_component(executable ${src} NAME_WE)
-    # FIXME: enable allreduce_custom for non-direct case only
-    if(NOT ${executable} STREQUAL "allreduce_custom_test")
     add_executable(${executable} ${src})
     add_dependencies(${executable} gtest)
     add_dependencies(${executable} ccl)
@@ -68,8 +66,9 @@ foreach(src ${sources})
     target_link_libraries(${executable} PUBLIC m)
     target_link_libraries(${executable} PRIVATE ccl)
     install(TARGETS ${executable} RUNTIME DESTINATION ${CCL_INSTALL_TESTS})
-    add_test (NAME ${executable} CONFIGURATIONS Default COMMAND mpiexec.hydra -l -n 2 -ppn 1 ${CCL_INSTALL_TESTS}/${executable} --gtest_output=xml:${CCL_INSTALL_TESTS}/${executable}_default_report.junit.xml)
-    add_test (NAME ${executable}_mpi CONFIGURATIONS Mpi COMMAND mpiexec.hydra -l -n 2 -ppn 1 ${CCL_INSTALL_TESTS}/${executable} --gtest_output=xml:${CCL_INSTALL_TESTS}/${executable}_mpi_runtime_report.junit.xml)
+	# FIXME: enable allreduce_custom for non-direct case only
+	if(NOT ${executable} STREQUAL "allreduce_custom_test")
+		add_test (NAME ${executable} CONFIGURATIONS Default COMMAND mpiexec.hydra -l -n 2 -ppn 1 ${CCL_INSTALL_TESTS}/${executable} --gtest_output=xml:${CCL_INSTALL_TESTS}/${executable}_default_report.junit.xml)
     endif()
 endforeach()
 foreach(algo ring; double_tree; direct)
@@ -88,7 +87,5 @@ foreach(algo naive; direct; multi_bcast; flat)
 add_test (NAME allgatherv_test_mpi_${algo} CONFIGURATIONS mpi_allgatherv_${algo} COMMAND mpiexec.hydra -l -n 2 -ppn 1 ${CCL_INSTALL_TESTS}/allgatherv_test --gtest_output=xml:${CCL_INSTALL_TESTS}/allgatherv_test_mpi_runtime_adjust_${algo}_report.junit.xml)
 endforeach()
 
-# FIXME: enable allreduce_custom for non-direct case only
-if(FALSE)
 add_test (NAME allreduce_custom CONFIGURATIONS Custom COMMAND mpiexec.hydra -l -n 2 -ppn 1 ${CCL_INSTALL_TESTS}/allreduce_custom_test --gtest_output=xml:${CCL_INSTALL_TESTS}/allreduce_custom_report.junit.xml)
-endif()
+
