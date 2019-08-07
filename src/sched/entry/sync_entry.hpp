@@ -1,5 +1,7 @@
 #pragma once
 
+#include "common/env/env.hpp"
+#include "common/utils/yield.hpp"
 #include "sched/entry/entry.hpp"
 #include "sched/sync_object.hpp"
 

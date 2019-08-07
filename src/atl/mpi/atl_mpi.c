@@ -47,7 +47,7 @@ int optimized_impi_versions[] = { 2019, 2020, 2021 };
 
 #define RET2ATL(ret) (ret != MPI_SUCCESS) ? atl_status_failure : atl_status_success
 
-static const char *atl_mpi_name = "MPI";
+static const char *atl_mpi_name = "mpi";
 
 typedef struct atl_mpi_context {
     atl_desc_t atl_desc;
@@ -156,7 +156,7 @@ atl_mpi_comm_recvv(atl_comm_t *comm, struct iovec *iov, size_t count,
 
 /* Non-blocking pt2pt ops */
 static atl_status_t
-atl_mpi_comm_send(atl_comm_t *comm, const void *buf, size_t cnt,
+atl_mpi_comm_send(atl_comm_t *comm, const void *buf, size_t len,
                   size_t dest_proc_idx, uint64_t tag, atl_req_t *req)
 {
     atl_mpi_comm_context_t *comm_context =
@@ -164,13 +164,13 @@ atl_mpi_comm_send(atl_comm_t *comm, const void *buf, size_t cnt,
     atl_mpi_req_t *mpi_req = ((atl_mpi_req_t *)req->internal);
     mpi_req->comp_state = ATL_MPI_COMP_POSTED;
 
-    int ret = MPI_Isend(buf, cnt, MPI_CHAR, dest_proc_idx,
+    int ret = MPI_Isend(buf, len, MPI_CHAR, dest_proc_idx,
                         (int)tag, comm_context->mpi_comm, &mpi_req->mpi_context);
     return RET2ATL(ret);
 }
 
 static atl_status_t
-atl_mpi_comm_recv(atl_comm_t *comm, void *buf, size_t cnt,
+atl_mpi_comm_recv(atl_comm_t *comm, void *buf, size_t len,
                   size_t src_proc_idx, uint64_t tag, atl_req_t *req)
 {
     atl_mpi_comm_context_t *comm_context =
@@ -178,13 +178,30 @@ atl_mpi_comm_recv(atl_comm_t *comm, void *buf, size_t cnt,
     atl_mpi_req_t *mpi_req = ((atl_mpi_req_t *)req->internal);
     mpi_req->comp_state = ATL_MPI_COMP_POSTED;
 
-    int ret = MPI_Irecv(buf, cnt, MPI_CHAR, src_proc_idx,
+    int ret = MPI_Irecv(buf, len, MPI_CHAR, src_proc_idx,
                         (int)tag, comm_context->mpi_comm, &mpi_req->mpi_context);
     return RET2ATL(ret);
 }
 
 static atl_status_t
-atl_mpi_comm_allreduce(atl_comm_t *comm, const void *send_buf, void *recv_buf, size_t cnt,
+atl_mpi_comm_allgatherv(atl_comm_t *comm, const void *send_buf, size_t send_len,
+                        void *recv_buf, const int recv_lens[], int displs[], atl_req_t *req)
+{
+    atl_mpi_comm_context_t *comm_context =
+        container_of(comm, atl_mpi_comm_context_t, atl_comm);
+    atl_mpi_req_t *mpi_req = ((atl_mpi_req_t *)req->internal);
+    int ret = MPI_SUCCESS;
+
+    ret = MPI_Iallgatherv((send_buf == recv_buf) ? MPI_IN_PLACE : send_buf, send_len, MPI_CHAR,
+                          recv_buf, recv_lens, displs, MPI_CHAR,
+                          comm_context->mpi_comm, &mpi_req->mpi_context);
+    mpi_req->comp_state = ATL_MPI_COMP_POSTED;
+    
+    return RET2ATL(ret);
+}
+
+static atl_status_t
+atl_mpi_comm_allreduce(atl_comm_t *comm, const void *send_buf, void *recv_buf, size_t count,
                        atl_datatype_t dtype, atl_reduction_t op, atl_req_t *req)
 {
     atl_mpi_comm_context_t *comm_context =
@@ -195,7 +212,7 @@ atl_mpi_comm_allreduce(atl_comm_t *comm, const void *send_buf, void *recv_buf, s
     MPI_Datatype mpi_dtype = atl2mpi_dtype(dtype);
     MPI_Op mpi_op = atl2mpi_op(op);
     int ret = MPI_Iallreduce((send_buf == recv_buf) ? MPI_IN_PLACE : send_buf,
-                             recv_buf, cnt, mpi_dtype, mpi_op,
+                             recv_buf, count, mpi_dtype, mpi_op,
                              comm_context->mpi_comm, &mpi_req->mpi_context);
 
 #ifdef ENABLE_DEBUG
@@ -217,27 +234,6 @@ atl_mpi_comm_allreduce(atl_comm_t *comm, const void *send_buf, void *recv_buf, s
     return RET2ATL(ret);
 }
 
-static void atl_mpi_proc_idx(atl_desc_t *atl_desc, size_t *proc_idx);
-
-static atl_status_t
-atl_mpi_comm_reduce(atl_comm_t *comm, const void *send_buf, void *recv_buf, size_t cnt, size_t root,
-                    atl_datatype_t dtype, atl_reduction_t op, atl_req_t *req)
-{
-    size_t my_proc_idx;
-    atl_mpi_proc_idx(comm->atl_desc, &my_proc_idx);
-    atl_mpi_comm_context_t *comm_context =
-        container_of(comm, atl_mpi_comm_context_t, atl_comm);
-    atl_mpi_req_t *mpi_req = ((atl_mpi_req_t *)req->internal);
-    mpi_req->comp_state = ATL_MPI_COMP_POSTED;
-
-    MPI_Datatype mpi_dtype = atl2mpi_dtype(dtype);
-    MPI_Op mpi_op = atl2mpi_op(op);
-    int ret = MPI_Ireduce(((send_buf == recv_buf) && (root == my_proc_idx)) ? MPI_IN_PLACE : send_buf,
-                          recv_buf, cnt, mpi_dtype, mpi_op, root,
-                          comm_context->mpi_comm, &mpi_req->mpi_context);
-    return RET2ATL(ret);
-}
-
 static atl_status_t
 atl_mpi_comm_barrier(atl_comm_t *comm, atl_req_t *req)
 {
@@ -251,37 +247,7 @@ atl_mpi_comm_barrier(atl_comm_t *comm, atl_req_t *req)
 }
 
 static atl_status_t
-atl_mpi_comm_allgatherv(atl_comm_t *comm, const void *send_buf, size_t send_cnt,
-                        void *recv_buf, int recv_cnts[], int displs[], atl_req_t *req)
-{
-    atl_mpi_comm_context_t *comm_context =
-        container_of(comm, atl_mpi_comm_context_t, atl_comm);
-    atl_mpi_req_t *mpi_req = ((atl_mpi_req_t *)req->internal);
-    int ret = MPI_SUCCESS;
-
-    // atl_mpi_context_t *atl_mpi_context =
-    //     container_of(comm->atl_desc, atl_mpi_context_t, atl_desc);
-
-    if (0) //atl_mpi_context->comm_ref_count > 1)
-    {
-        ret = MPI_Allgatherv((send_buf == recv_buf) ? MPI_IN_PLACE : send_buf, send_cnt, MPI_CHAR,
-                             recv_buf, recv_cnts, displs, MPI_CHAR, comm_context->mpi_comm);
-        mpi_req->mpi_context = MPI_REQUEST_NULL;
-        mpi_req->comp_state = ATL_MPI_COMP_COMPLETED;
-    }
-    else
-    {
-        ret = MPI_Iallgatherv((send_buf == recv_buf) ? MPI_IN_PLACE : send_buf, send_cnt, MPI_CHAR,
-                              recv_buf, recv_cnts, displs, MPI_CHAR,
-                              comm_context->mpi_comm, &mpi_req->mpi_context);
-        mpi_req->comp_state = ATL_MPI_COMP_POSTED;
-    }
-    
-    return RET2ATL(ret);
-}
-
-static atl_status_t
-atl_mpi_comm_bcast(atl_comm_t *comm, void *buf, size_t cnt, size_t root,
+atl_mpi_comm_bcast(atl_comm_t *comm, void *buf, size_t len, size_t root,
                    atl_req_t *req)
 {
     atl_mpi_comm_context_t *comm_context =
@@ -289,20 +255,41 @@ atl_mpi_comm_bcast(atl_comm_t *comm, void *buf, size_t cnt, size_t root,
     atl_mpi_req_t *mpi_req = ((atl_mpi_req_t *)req->internal);
     mpi_req->comp_state = ATL_MPI_COMP_POSTED;
 
-    int ret = MPI_Ibcast(buf, cnt, MPI_CHAR, root,
+    int ret = MPI_Ibcast(buf, len, MPI_CHAR, root,
                          comm_context->mpi_comm, &mpi_req->mpi_context);
     return RET2ATL(ret);
 }
 
+static void atl_mpi_proc_idx(atl_desc_t *atl_desc, size_t *proc_idx);
+
 static atl_status_t
-atl_mpi_comm_read(atl_comm_t *comm, void *buf, size_t cnt, atl_mr_t *atl_mr,
+atl_mpi_comm_reduce(atl_comm_t *comm, const void *send_buf, void *recv_buf, size_t count, size_t root,
+                    atl_datatype_t dtype, atl_reduction_t op, atl_req_t *req)
+{
+    size_t my_proc_idx;
+    atl_mpi_proc_idx(comm->atl_desc, &my_proc_idx);
+    atl_mpi_comm_context_t *comm_context =
+        container_of(comm, atl_mpi_comm_context_t, atl_comm);
+    atl_mpi_req_t *mpi_req = ((atl_mpi_req_t *)req->internal);
+    mpi_req->comp_state = ATL_MPI_COMP_POSTED;
+
+    MPI_Datatype mpi_dtype = atl2mpi_dtype(dtype);
+    MPI_Op mpi_op = atl2mpi_op(op);
+    int ret = MPI_Ireduce(((send_buf == recv_buf) && (root == my_proc_idx)) ? MPI_IN_PLACE : send_buf,
+                          recv_buf, count, mpi_dtype, mpi_op, root,
+                          comm_context->mpi_comm, &mpi_req->mpi_context);
+    return RET2ATL(ret);
+}
+
+static atl_status_t
+atl_mpi_comm_read(atl_comm_t *comm, void *buf, size_t len, atl_mr_t *atl_mr,
                   uint64_t addr, uintptr_t r_key, size_t dest_proc_idx, atl_req_t *req)
 {
     return atl_status_unsupported;
 }
 
 static atl_status_t
-atl_mpi_comm_write(atl_comm_t *comm, const void *buf, size_t cnt, atl_mr_t *atl_mr,
+atl_mpi_comm_write(atl_comm_t *comm, const void *buf, size_t len, atl_mr_t *atl_mr,
                    uint64_t addr, uintptr_t r_key, size_t dest_proc_idx, atl_req_t *req)
 {
     return atl_status_unsupported;
@@ -407,7 +394,7 @@ atl_mpi_update(size_t *proc_idx, size_t *proc_count, atl_desc_t *atl_desc)
     return atl_status_unsupported;
 }
 
-static atl_status_t atl_mpi_mr_reg(atl_desc_t *atl_desc, const void *buf, size_t cnt,
+static atl_status_t atl_mpi_mr_reg(atl_desc_t *atl_desc, const void *buf, size_t len,
                                    atl_mr_t **atl_mr)
 {
     return atl_status_unsupported;

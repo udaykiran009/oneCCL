@@ -1,4 +1,4 @@
-Out of Order Execution
+Unordered collectives support
 **********************
 
 Collective operations may be executed out of order on different nodes due to network or hardware-specific reasons.
@@ -17,5 +17,5 @@ it postpones operation execution until it receives a message from the root rank.
 Once the message is received, the rank creates an internal CCL identifier
 that will be used for all following operations with the same ``match_id``.
 
-.. image:: images/out_of_order.png
+.. image:: images/unordered_coll.png
    :width: 800

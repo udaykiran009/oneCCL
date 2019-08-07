@@ -1,5 +1,7 @@
 #pragma once
 
+#include "common/env/env.hpp"
+#include "common/utils/yield.hpp"
 #include "sched/entry/entry.hpp"
 
 class wait_value_entry : public sched_entry

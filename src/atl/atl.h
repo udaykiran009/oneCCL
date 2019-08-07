@@ -17,8 +17,7 @@
 #endif
 
 #define ATL_CACHELINE_LEN 64
-
-#define ATL_REQ_SIZE 8
+#define ATL_REQ_SIZE      8
 
 typedef enum framework_answers
 {
@@ -127,16 +126,20 @@ typedef struct atl_req {
     void *internal[ATL_REQ_SIZE];
 } atl_req_t __attribute__ ((aligned (ATL_CACHELINE_LEN)));
 
+
+/* len - for bytes */
+/* count - for iov and for dtype-arrays like in reduce/allreduce */
+
 typedef struct atl_coll_ops {
-    atl_status_t (*allreduce)(atl_comm_t *comm, const void *s_buf, void *r_buf, size_t len,
+    atl_status_t (*allgatherv)(atl_comm_t *comm, const void *send_buf, size_t send_len,
+                               void *recv_buf, const int recv_lens[], int  displs[], atl_req_t *req);
+    atl_status_t (*allreduce)(atl_comm_t *comm, const void *send_buf, void *recv_buf, size_t count,
                               atl_datatype_t dtype, atl_reduction_t op, atl_req_t *req);
-    atl_status_t (*reduce)(atl_comm_t *comm, const void *s_buf, void *r_buf, size_t len, size_t root,
-                           atl_datatype_t dtype, atl_reduction_t op, atl_req_t *req);
-    atl_status_t (*allgatherv)(atl_comm_t *comm, const void *s_buf, size_t s_len,
-                               void *r_buf, int r_lens[], int  displs[], atl_req_t *req);
+    atl_status_t (*barrier)(atl_comm_t *comm, atl_req_t *req);
     atl_status_t (*bcast)(atl_comm_t *comm, void *buf, size_t len, size_t root,
                           atl_req_t *req);
-    atl_status_t (*barrier)(atl_comm_t *comm, atl_req_t *req);
+    atl_status_t (*reduce)(atl_comm_t *comm, const void *send_buf, void *recv_buf, size_t count, size_t root,
+                           atl_datatype_t dtype, atl_reduction_t op, atl_req_t *req);
 } atl_coll_ops_t;
 
 typedef struct atl_pt2pt_ops {

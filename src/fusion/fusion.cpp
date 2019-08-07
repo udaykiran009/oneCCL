@@ -26,11 +26,11 @@ ccl_status_t release_fusion_buf_for_cached_sched(ccl_sched* sched,
     return release_fusion_buf(ctx);
 }
 
-ccl_buffer_cache::ccl_buffer_cache(size_t buf_size)
+ccl_fusion_buffer_cache::ccl_fusion_buffer_cache(size_t buf_size)
     : buf_size(buf_size)
 {
     void* buf;
-    for (size_t idx = 0; idx < CCL_BUFFER_CACHE_PREALLOC; idx++)
+    for (size_t idx = 0; idx < CCL_FUSION_BUFFER_CACHE_PREALLOC; idx++)
     {
         buf = CCL_MALLOC(buf_size, "buffer");
         free_buffers.push_back(buf);
@@ -39,9 +39,9 @@ ccl_buffer_cache::ccl_buffer_cache(size_t buf_size)
     LOG_INFO("created buffer_cache: buf_size ", buf_size);
 }
 
-ccl_buffer_cache::~ccl_buffer_cache()
+ccl_fusion_buffer_cache::~ccl_fusion_buffer_cache()
 {
-    std::lock_guard<fusion_lock_t> lock{guard};
+    std::lock_guard<ccl_fusion_lock_t> lock{guard};
 
     if (free_buffers.size() != all_buffers.size())
     {
@@ -57,9 +57,9 @@ ccl_buffer_cache::~ccl_buffer_cache()
     free_buffers.clear();
 }
 
-void* ccl_buffer_cache::get()
+void* ccl_fusion_buffer_cache::get()
 {
-    std::lock_guard<fusion_lock_t> lock{guard};
+    std::lock_guard<ccl_fusion_lock_t> lock{guard};
     void* buf;
     if (!free_buffers.empty())
     {
@@ -76,9 +76,9 @@ void* ccl_buffer_cache::get()
     return buf;
 }
 
-void ccl_buffer_cache::release(void* buf)
+void ccl_fusion_buffer_cache::release(void* buf)
 {
-    std::lock_guard<fusion_lock_t> lock{guard};
+    std::lock_guard<ccl_fusion_lock_t> lock{guard};
     CCL_THROW_IF_NOT(buf, "empty buf");
     free_buffers.push_back(buf);
 }
@@ -153,7 +153,7 @@ bool ccl_fusion_manager::add(ccl_sched* sched)
     CCL_THROW_IF_NOT(sched->req->is_completed(), "incorrect completion counter");
     sched->req->set_counter(1);
 
-    std::lock_guard<fusion_lock_t> lock{guard};
+    std::lock_guard<ccl_fusion_lock_t> lock{guard};
     postponed_queue.push_back(sched);
     return true;
 }
@@ -379,7 +379,7 @@ void ccl_fusion_manager::execute()
 
     /* separate block to reduce lock scope */
     {
-        std::lock_guard<fusion_lock_t> lock{guard};
+        std::lock_guard<ccl_fusion_lock_t> lock{guard};
         if (!postponed_queue.empty())
         {
             LOG_DEBUG("postponed_queue size ", postponed_queue.size());

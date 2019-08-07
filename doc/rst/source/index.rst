@@ -53,7 +53,7 @@ Contents:
    prioritization_collectives.rst
    manual_selection_collectives.rst
    kubernetes.rst
-   out_of_order.rst
+   unordered_coll.rst
 
 .. toctree::
    :maxdepth: 1

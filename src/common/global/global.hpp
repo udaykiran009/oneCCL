@@ -34,6 +34,7 @@ class ccl_parallelizer;
 class double_tree;
 class ccl_fusion_manager;
 class ccl_unordered_coll_manager;
+class ccl_coll_algorithm_selector;
 
 struct alignas(CACHELINE_SIZE) ccl_global_data
 {
@@ -46,6 +47,7 @@ struct alignas(CACHELINE_SIZE) ccl_global_data
     std::unique_ptr<ccl_parallelizer> parallelizer;
     std::unique_ptr<ccl_fusion_manager> fusion_manager;
     std::unique_ptr<ccl_unordered_coll_manager> unordered_coll_manager;
+    std::unique_ptr<ccl_coll_algorithm_selector> algorithm_selector;
     static thread_local bool is_worker_thread;
 };
 

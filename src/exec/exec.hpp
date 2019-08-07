@@ -1,5 +1,6 @@
 #pragma once
 
+#include "coll/coll.hpp"
 #include "common/env/env.hpp"
 #include "common/global/global.hpp"
 #include "common/request/request.hpp"
@@ -48,7 +49,7 @@ inline void ccl_wait_impl(ccl_executor* exec, ccl_request* request)
     CCL_ASSERT(request->sched);
 
     LOG_DEBUG("req ", request, " completed, sched ",
-        ccl_coll_type_to_str(request->sched->coll_param.ctype));
+              ccl_coll_type_to_str(request->sched->coll_param.ctype));
 
     if (!request->sched->coll_attr.to_cache)
     {
@@ -64,7 +65,7 @@ inline bool ccl_test_impl(ccl_executor* exec, ccl_request* request)
     {
         CCL_ASSERT(request->sched);
         LOG_DEBUG("req ", request, " completed, sched ",
-            ccl_coll_type_to_str(request->sched->coll_param.ctype));
+                  ccl_coll_type_to_str(request->sched->coll_param.ctype));
 
         if (!request->sched->coll_attr.to_cache)
         {

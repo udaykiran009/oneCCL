@@ -56,7 +56,8 @@ public:
 
     stream(ccl_stream_type_t stream_type, void* native_stream);
 
-   const ccl_stream* get_stream() const {
+   const ccl_stream* get_stream() const
+   {
        return stream_impl.get();
    }
 
@@ -94,10 +95,49 @@ public:
     size_t size();
 
     /**
-     * Retrieves minimum and maximum priorities to be used for collective operation parametrization
-     * @return a pair where @c pair.first is minimum priority and @c pair.second is maximum priority
+     * Gathers @c buf on all process in the communicator and stores result in @c recv_buf
+     * on each process
+     * @param send_buf the buffer with @c count elements of @c dtype that stores local data to be gathered
+     * @param send_count number of elements of type @c dtype in @c send_buf
+     * @param recv_buf [out] the buffer to store gathered result on the @c each process, must have the same dimension
+     * as @c buf. Used by the @c root process only, ignored by other processes
+     * @param recv_counts array with number of elements received by each process
+     * @param dtype data type of elements in the buffer @c buf and @c recv_buf
+     * @param attributes optional attributes that customize operation
+     * @return @ref ccl::request object that can be used to track the progress of the operation
      */
-    static std::pair<size_t, size_t> priority_range();
+    std::shared_ptr<ccl::request> allgatherv(const void* send_buf,
+                                             size_t send_count,
+                                             void* recv_buf,
+                                             const size_t* recv_counts,
+                                             ccl::data_type dtype,
+                                             const ccl_coll_attr_t* attributes = nullptr,
+                                             const ccl::stream* stream = nullptr);
+
+    /**
+     * Reduces @c buf on all process in the communicator and stores result in @c recv_buf
+     * on each process
+     * @param send_buf the buffer with @c count elements of @c dtype that stores local data to be reduced
+     * @param recv_buf [out] - the buffer to store reduced result , must have the same dimension
+     * as @c buf.
+     * @param count number of elements of type @c dtype in @c buf
+     * @param dtype data type of elements in the buffer @c buf and @c recv_buf
+     * @param reduction type of reduction operation to be applied
+     * @param attributes optional attributes that customize operation
+     * @return @ref ccl::request object that can be used to track the progress of the operation
+     */
+    std::shared_ptr<ccl::request> allreduce(const void* send_buf,
+                                            void* recv_buf,
+                                            size_t count,
+                                            ccl::data_type dtype,
+                                            ccl::reduction reduction,
+                                            const ccl_coll_attr_t* attributes = nullptr,
+                                            const ccl::stream* stream = nullptr);
+
+    /**
+     * Collective operation that blocks each process until every process have reached it
+     */
+    void barrier(const ccl::stream* stream = nullptr);
 
     /**
      * Broadcasts @c buf from the @c root process to other processes in a communicator
@@ -139,51 +179,6 @@ public:
                                          const ccl::stream* stream = nullptr);
 
     /**
-     * Reduces @c buf on all process in the communicator and stores result in @c recv_buf
-     * on each process
-     * @param send_buf the buffer with @c count elements of @c dtype that stores local data to be reduced
-     * @param recv_buf [out] - the buffer to store reduced result , must have the same dimension
-     * as @c buf.
-     * @param count number of elements of type @c dtype in @c buf
-     * @param dtype data type of elements in the buffer @c buf and @c recv_buf
-     * @param reduction type of reduction operation to be applied
-     * @param attributes optional attributes that customize operation
-     * @return @ref ccl::request object that can be used to track the progress of the operation
-     */
-    std::shared_ptr<ccl::request> allreduce(const void* send_buf,
-                                            void* recv_buf,
-                                            size_t count,
-                                            ccl::data_type dtype,
-                                            ccl::reduction reduction,
-                                            const ccl_coll_attr_t* attributes = nullptr,
-                                            const ccl::stream* stream = nullptr);
-
-    /**
-     * Gathers @c buf on all process in the communicator and stores result in @c recv_buf
-     * on each process
-     * @param send_buf the buffer with @c count elements of @c dtype that stores local data to be gathered
-     * @param send_count number of elements of type @c dtype in @c send_buf
-     * @param recv_buf [out] the buffer to store gathered result on the @c each process, must have the same dimension
-     * as @c buf. Used by the @c root process only, ignored by other processes
-     * @param recv_counts array with number of elements received by each process
-     * @param dtype data type of elements in the buffer @c buf and @c recv_buf
-     * @param attributes optional attributes that customize operation
-     * @return @ref ccl::request object that can be used to track the progress of the operation
-     */
-    std::shared_ptr<ccl::request> allgatherv(const void* send_buf,
-                                             size_t send_count,
-                                             void* recv_buf,
-                                             size_t* recv_counts,
-                                             ccl::data_type dtype,
-                                             const ccl_coll_attr_t* attributes = nullptr,
-                                             const ccl::stream* stream = nullptr);
-
-    /**
-     * Collective operation that blocks each process until every process have reached it
-     */
-    void barrier(const ccl::stream* stream = nullptr);
-
-    /**
      * Reduces sparse @c buf on all process in the communicator and stores result in @c recv_buf
      * on each process
      * @param send_ind_buf the buffer of indices with @c send_ind_count elements of @c index_dtype
@@ -200,14 +195,10 @@ public:
      * @param attributes optional attributes that customize operation
      * @return @ref ccl::request object that can be used to track the progress of the operation
      */
-    std::shared_ptr<ccl::request> sparse_allreduce(const void* send_ind_buf,
-                                                   size_t send_ind_count,
-                                                   const void* send_val_buf,
-                                                   size_t send_val_count,
-                                                   void** recv_ind_buf,
-                                                   size_t* recv_ind_count,
-                                                   void** recv_val_buf,
-                                                   size_t* recv_val_count,
+    std::shared_ptr<ccl::request> sparse_allreduce(const void* send_ind_buf, size_t send_ind_count,
+                                                   const void* send_val_buf, size_t send_val_count,
+                                                   void** recv_ind_buf, size_t* recv_ind_count,
+                                                   void** recv_val_buf, size_t* recv_val_count,
                                                    ccl::data_type index_dtype,
                                                    ccl::data_type value_dtype,
                                                    ccl::reduction reduction,

@@ -58,6 +58,7 @@ print_help()
     echo_log "        Print help information"
     echo_log ""
 }
+
 # Echo with logging. Always echo and always log
 echo_log()
 {
@@ -71,7 +72,6 @@ echo_debug()
     fi
 }
 
-
 echo_log_separator()
 {
     echo_log "#=============================================================================="
@@ -83,6 +83,7 @@ check_command_exit_code() {
         exit $1
     fi
 }
+
 set_external_env(){
     if [ -n "${TESTING_ENVIRONMENT}" ]
     then
@@ -109,7 +110,7 @@ enable_part_test_scope()
     export CCL_TEST_PLACE_TYPE=1
 }
 
-enable_ooo_part_test_scope()
+enable_unordered_coll_test_scope()
 {
     export CCL_TEST_BUFFER_COUNT=0
     export CCL_TEST_CACHE_TYPE=1
@@ -207,100 +208,6 @@ run_examples()
 {
     for test in `ls ${WORK_DIR}/../build/_install/examples/`
     do
-        mpiexec.hydra -n 2 -ppn 1 -l ${WORK_DIR}/../build/_install/examples/$test &> ${WORK_DIR}/../build/_install/examples/$test.log
-    done
-    grep -r 'FAILED' ${WORK_DIR}/../build/_install/examples/$test.log > /dev/null 2>&1
-    log_status_fail=${PIPESTATUS[0]}
-    if [ "$log_status_fail" -ne 0 ]
-    then
-        echo "example testing ... OK"
-        exit 0
-    else
-        echo "example testing ... NOK"
-        exit 1
-    fi
-}
-
-run_tests()
-{
-    export CCL_WORKER_COUNT=2
-    enable_part_test_scope
-    set_external_env
-    case "$runtime" in
-           ofi )
-               export CCL_ATL_TRANSPORT=OFI
-               ctest -VV -C Default
-               ctest -VV -C Custom
-               ;;
-           mpi )
-                export CCL_ATL_TRANSPORT=MPI
-                ctest -VV -C Default
-                ;;
-           mpi_adjust )
-                export CCL_ATL_TRANSPORT=MPI
-                for bcast in "ring" "double_tree" "direct"
-                    do
-                        CCL_BCAST=$bcast ctest -VV -C mpi_bcast_$bcast
-                    done
-                for reduce in "tree" "double_tree" "direct"
-                    do
-                        CCL_REDUCE=$reduce ctest -VV -C mpi_reduce_$reduce
-                    done
-                for allreduce in "tree" "starlike" "ring" "double_tree" "direct"
-                    do
-                        CCL_ALLREDUCE=$allreduce ctest -VV -C mpi_allreduce_$allreduce
-                    done
-                for allgatherv in "naive" "direct"
-                    do
-                        CCL_ALLGATHERV=$allgatherv ctest -VV -C mpi_allgatherv_$allgatherv
-                    done
-               ;;
-           ofi_adjust )
-                export CCL_ATL_TRANSPORT=OFI
-                for bcast in "ring" "double_tree"
-                    do
-                        CCL_BCAST=$bcast ctest -VV -C mpi_bcast_$bcast
-                    done
-                for reduce in "tree" "double_tree"
-                    do
-                        CCL_REDUCE=$reduce ctest -VV -C mpi_reduce_$reduce
-                    done
-                for allreduce in "tree" "starlike" "ring" "ring_rma" "double_tree"
-                    do
-                        if [ "$allreduce" == "ring_rma" ];
-                        then
-                            CCL_RMA=1 CCL_ALLREDUCE=$allreduce ctest -VV -C mpi_allreduce_$allreduce
-                        else
-                            CCL_ALLREDUCE=$allreduce ctest -VV -C mpi_allreduce_$allreduce
-                        fi
-                    done
-                for allgatherv in "naive"
-                    do
-                        CCL_ALLGATHERV=$allgatherv ctest -VV -C mpi_allgatherv_$allgatherv
-                    done
-               ;;
-            priority_mode )
-                CCL_PRIORITY=lifo ctest -VV -C Default
-                CCL_PRIORITY=direct ctest -VV -C Default
-               ;;
-            dynamic_pointer_mode )
-                CCL_TEST_DYNAMIC_POINTER=1 ctest -VV -C Default
-               ;;
-            unordered_coll )
-                enable_ooo_part_test_scope
-                export CCL_ATL_TRANSPORT=OFI
-                CCL_UNORDERED_COLL=1 ctest -VV -C Default
-               ;;
-           * )
-                ctest -VV -C Default
-                ;;
-    esac
-}
-
-run_examples()
-{
-    for test in `ls ${WORK_DIR}/../build/_install/examples/`
-    do
         mpiexec.hydra -n 2 -ppn 1 -l ${WORK_DIR}/../build/_install/examples/$test | tee ${WORK_DIR}/../build/_install/examples/$test.log
         grep -r 'FAILED' ${WORK_DIR}/../build/_install/examples/$test.log > /dev/null 2>&1
         log_status_fail=${PIPESTATUS[0]}
@@ -312,7 +219,82 @@ run_examples()
             exit 1
         fi
     done
-	exit 0
+    exit 0
+}
+
+run_tests()
+{
+    export CCL_WORKER_COUNT=2
+    enable_part_test_scope
+    set_external_env
+    case "$runtime" in
+           ofi )
+               export CCL_ATL_TRANSPORT=ofi
+               ctest -VV -C Default
+               ctest -VV -C Custom
+               ;;
+           mpi )
+                export CCL_ATL_TRANSPORT=mpi
+                ctest -VV -C Default
+                ;;
+           mpi_adjust )
+                export CCL_ATL_TRANSPORT=mpi
+                for allgatherv in "direct" "naive" "flat" "multi_bcast"
+                    do
+                        CCL_ALLGATHERV=$allgatherv ctest -VV -C mpi_allgatherv_$allgatherv
+                    done
+                for allreduce in "direct" "tree" "starlike" "ring" "double_tree" "recursive_doubling"
+                    do
+                        CCL_ALLREDUCE=$allreduce ctest -VV -C mpi_allreduce_$allreduce
+                    done
+                for bcast in "direct" "ring" "double_tree" "naive"
+                    do
+                        CCL_BCAST=$bcast ctest -VV -C mpi_bcast_$bcast
+                    done
+                for reduce in "direct" "tree" "double_tree"
+                    do
+                        CCL_REDUCE=$reduce ctest -VV -C mpi_reduce_$reduce
+                    done
+               ;;
+           ofi_adjust )
+                export CCL_ATL_TRANSPORT=ofi
+                for allgatherv in "naive" "flat" "multi_bcast"
+                    do
+                        CCL_ALLGATHERV=$allgatherv ctest -VV -C mpi_allgatherv_$allgatherv
+                    done
+                for allreduce in "tree" "starlike" "ring" "ring_rma" "double_tree" "recursive_doubling"
+                    do
+                        if [ "$allreduce" == "ring_rma" ];
+                        then
+                            CCL_RMA=1 CCL_ALLREDUCE=$allreduce ctest -VV -C mpi_allreduce_$allreduce
+                        else
+                            CCL_ALLREDUCE=$allreduce ctest -VV -C mpi_allreduce_$allreduce
+                        fi
+                done
+                for bcast in "ring" "double_tree" "naive"
+                    do
+                        CCL_BCAST=$bcast ctest -VV -C mpi_bcast_$bcast
+                    done
+                for reduce in "tree" "double_tree"
+                    do
+                        CCL_REDUCE=$reduce ctest -VV -C mpi_reduce_$reduce
+                    done
+               ;;
+            priority_mode )
+                CCL_PRIORITY=lifo ctest -VV -C Default
+                CCL_PRIORITY=direct ctest -VV -C Default
+               ;;
+            dynamic_pointer_mode )
+                CCL_TEST_DYNAMIC_POINTER=1 ctest -VV -C Default
+               ;;
+            unordered_coll_mode )
+                enable_unordered_coll_test_scope
+                CCL_ATL_TRANSPORT=ofi CCL_UNORDERED_COLL=1 ctest -VV -C Default
+               ;;
+           * )
+                ctest -VV -C Default
+                ;;
+    esac
 }
 
 set_default_values
@@ -321,7 +303,8 @@ while [ $# -ne 0 ]
 do
     case $1 in
     "-example" )
-        run_examples
+        # TODO:
+        # run_examples
         shift
         ;;
     *)

@@ -213,9 +213,7 @@ void ccl_sched_progress(ccl_sched* sched)
             break;
         }
     }
-
 }
-
 
 void ccl_sched::commit(ccl_parallelizer* parallelizer)
 {
@@ -395,9 +393,10 @@ void ccl_sched::update_coll_param(ccl_coll_param& param)
 
     if (coll_param.ctype == ccl_coll_sparse_allreduce)
     {
-        coll_param.sparse_param.snd_val_buf = param.sparse_param.snd_val_buf;
-        coll_param.sparse_param.rcv_ind_buf = param.sparse_param.rcv_ind_buf;
-        coll_param.sparse_param.rcv_val_buf = param.sparse_param.rcv_val_buf;
+        coll_param.sparse_param.send_ind_buf = param.sparse_param.send_ind_buf;
+        coll_param.sparse_param.send_val_buf = param.sparse_param.send_val_buf;
+        coll_param.sparse_param.recv_ind_buf = param.sparse_param.recv_ind_buf;
+        coll_param.sparse_param.recv_val_buf = param.sparse_param.recv_val_buf;
     }
 }
 

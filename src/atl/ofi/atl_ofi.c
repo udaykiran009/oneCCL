@@ -58,7 +58,7 @@
 /* OFI returns 0 or -errno */
 #define RET2ATL(ret) (ret) ? atl_status_failure : atl_status_success
 
-static const char *atl_ofi_name = "OFI";
+static const char *atl_ofi_name = "ofi";
 
 typedef struct atl_ofi_context {
     atl_desc_t atl_desc;
@@ -774,22 +774,21 @@ atl_ofi_comm_check(atl_comm_t *comm, int *status, atl_req_t *req)
 }
 
 static atl_status_t
-atl_ofi_comm_allreduce(atl_comm_t *comm, const void *s_buf, void *r_buf, size_t len,
+atl_ofi_comm_allgatherv(atl_comm_t *comm, const void *send_buf, size_t send_len,
+                        void *recv_buf, const int recv_lens[], int displs[], atl_req_t *req)
+{
+    return atl_status_unsupported;
+}
+
+static atl_status_t
+atl_ofi_comm_allreduce(atl_comm_t *comm, const void *send_buf, void *recv_buf, size_t count,
                        atl_datatype_t dtype, atl_reduction_t op, atl_req_t *req)
 {
     return atl_status_unsupported;
 }
 
 static atl_status_t
-atl_ofi_comm_reduce(atl_comm_t *comm, const void *s_buf, void *r_buf, size_t len, size_t root,
-                    atl_datatype_t dtype, atl_reduction_t op, atl_req_t *req)
-{
-    return atl_status_unsupported;
-}
-
-static atl_status_t
-atl_ofi_comm_allgatherv(atl_comm_t *comm, const void *s_buf, size_t s_len,
-                        void *r_buf, int r_lens[], int  displs[], atl_req_t *req)
+atl_ofi_comm_barrier(atl_comm_t *comm, atl_req_t *req)
 {
     return atl_status_unsupported;
 }
@@ -802,17 +801,18 @@ atl_ofi_comm_bcast(atl_comm_t *comm, void *buf, size_t len, size_t root,
 }
 
 static atl_status_t
-atl_ofi_comm_barrier(atl_comm_t *comm, atl_req_t *req)
+atl_ofi_comm_reduce(atl_comm_t *comm, const void *send_buf, void *recv_buf, size_t count, size_t root,
+                    atl_datatype_t dtype, atl_reduction_t op, atl_req_t *req)
 {
     return atl_status_unsupported;
 }
 
 static atl_coll_ops_t atl_ofi_comm_coll_ops = {
-    .allreduce = atl_ofi_comm_allreduce,
-    .reduce = atl_ofi_comm_reduce,
     .allgatherv = atl_ofi_comm_allgatherv,
-    .bcast = atl_ofi_comm_bcast,
+    .allreduce = atl_ofi_comm_allreduce,
     .barrier = atl_ofi_comm_barrier,
+    .bcast = atl_ofi_comm_bcast,
+    .reduce = atl_ofi_comm_reduce,
 };
 
 static atl_pt2pt_ops_t atl_ofi_comm_pt2pt_ops = {

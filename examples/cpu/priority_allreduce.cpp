@@ -27,8 +27,8 @@ size_t comp_iter_time_ms = 0;
 #define CACHELINE_SIZE      64
 
 #define MSG_COUNT         sizeofa(msg_sizes)
-#define ITER_COUNT        20
-#define WARMUP_ITER_COUNT 4
+#define ITER_COUNT        4
+#define WARMUP_ITER_COUNT 1
 
 int collect_iso = 1;
 
@@ -171,6 +171,8 @@ void do_iter(size_t iter_idx)
 
 int main()
 {
+    setenv("CCL_PRIORITY", "direct", 1);
+
     test_init();
 
     coll_attr.to_cache = 1;

@@ -33,7 +33,7 @@ static void atl_ini_dir(int *argc, char ***argv, size_t *proc_idx, size_t *proc_
     init_f init_func;
     size_t transport_name_len = strlen(transport_name);
 
-    if (strcmp(transport_name, "MPI") == 0 && !getenv("I_MPI_ROOT")) {
+    if (strcmp(transport_name, "mpi") == 0 && !getenv("I_MPI_ROOT")) {
         LOG_INFO("ATL MPI transport is requested but seems Intel MPI environment is not set. "
                  "Please source release_mt version of Intel MPI.");
     }
@@ -64,7 +64,6 @@ static void atl_ini_dir(int *argc, char ***argv, size_t *proc_idx, size_t *proc_
             atl_transport_t transport;
             // TODO: propagate atl_status to upper level
             atl_status_t ret;
-
 
             if ((init_func)(&transport) != atl_status_success)
                 continue;
@@ -173,7 +172,7 @@ atl_status_t atl_init(int *argc, char ***argv, size_t *proc_idx, size_t *proc_co
 
     transport_name = getenv("CCL_ATL_TRANSPORT");
     if (!transport_name)
-        transport_name = "MPI";
+        transport_name = "mpi";
 
     dirs = atl_split_and_alloc(transport_dl_dir, ":", NULL);
     if (dirs) {

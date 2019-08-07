@@ -4,13 +4,8 @@
 #include "common/utils/utils.hpp"
 #include "sched/entry/postponed_fields.hpp"
 
-#include <memory>
 #include <chrono>
-
-#ifdef ENABLE_SYCL
-#include <CL/sycl.hpp>
-typedef cl::sycl::buffer<char, 1> ccl_sycl_buffer_t;
-#endif /* ENABLE_SYCL */
+#include <memory>
 
 typedef ccl_status_t(* ccl_sched_entry_function_t)(const void*);
 

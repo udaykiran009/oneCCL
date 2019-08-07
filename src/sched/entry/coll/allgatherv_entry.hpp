@@ -15,7 +15,7 @@ public:
                      const ccl_buffer send_buf,
                      size_t send_cnt,
                      ccl_buffer recv_buf,
-                     size_t* recv_cnts,
+                     const size_t* recv_cnts,
                      ccl_datatype_internal_t dtype) :
         base_coll_entry(sched), send_buf(send_buf), send_cnt(send_cnt),
         recv_buf(recv_buf), recv_cnts(recv_cnts), dtype(dtype)
@@ -98,7 +98,7 @@ private:
     ccl_buffer send_buf;
     size_t send_cnt;
     ccl_buffer recv_buf;
-    size_t* recv_cnts;
+    const size_t* recv_cnts;
     int* recv_bytes;
     int* offsets;
     ccl_datatype_internal_t dtype;

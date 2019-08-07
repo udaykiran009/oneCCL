@@ -7,13 +7,13 @@ set(CCL_SRC
     ccl_cpp_api.cpp
     atl/atl.cpp
     coll/coll.cpp
+    coll/allgatherv.cpp
     coll/allreduce.cpp
     coll/allreduce_rma.cpp
     coll/barrier.cpp
     coll/bcast.cpp
     coll/double_tree_ops.cpp
     coll/reduce.cpp
-    coll/allgatherv.cpp
     coll/sparse.cpp
     comp/comp.cpp
     sched/sched.cpp
@@ -33,7 +33,9 @@ set(CCL_SRC
     common/env/env.cpp
     common/global/global.cpp
     common/log/log.cpp
-    common/stream/stream.cpp)
+    common/stream/stream.cpp
+    common/utils/spinlock.cpp
+    common/utils/yield.cpp)
 
 if(${CMAKE_C_COMPILER_ID} STREQUAL "Clang" AND ${CMAKE_CXX_COMPILER_ID} STREQUAL "Clang")
     set(CCL_INC_DIRS "${CCL_INC_DIRS} ${SYCL_BUNDLE_ROOT}/include")

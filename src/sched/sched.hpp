@@ -1,17 +1,12 @@
 #pragma once
 
-#include "sched/entry/entry.hpp"
 #include "atl/atl.h"
 #include "coll/coll.hpp"
-
-#ifdef ENABLE_SYCL
-#include <CL/sycl.hpp>
-#endif /* ENABLE_SYCL */
-
-#include <memory>
+#include "sched/entry/entry.hpp"
 
 #include <deque>
 #include <list>
+#include <memory>
 
 typedef ccl_status_t(*ccl_sched_finalize_fn_t) (ccl_sched*, const void*);
 
@@ -47,49 +42,6 @@ struct ccl_sched_memory
 {
     std::list<ccl_sched_buffer_handler> buf_list;
     std::list<atl_mr_t*> mr_list;
-};
-
-struct ccl_coll_attr
-{
-    ccl_prologue_fn_t prologue_fn;
-    ccl_epilogue_fn_t epilogue_fn;
-    ccl_reduction_fn_t reduction_fn;
-    size_t priority;
-    int synchronous;
-    int to_cache;
-    std::string match_id;
-};
-
-struct ccl_coll_sparse_param
-{
-    const void* snd_val_buf;
-    size_t snd_val_count;
-    void** rcv_ind_buf;
-    void** rcv_val_buf;
-    size_t* rcv_val_count;
-    ccl_datatype_internal_t itype;
-};
-
-struct ccl_coll_param
-{
-    ccl_coll_type ctype;
-    void *buf;
-    const void* send_buf;
-    void* recv_buf;
-    size_t count;
-    size_t send_count;
-    size_t *recv_counts;
-    ccl_datatype_internal_t dtype;
-    ccl_reduction_t reduction;
-    size_t root;
-    const ccl_stream* stream;
-    ccl_comm *comm;
-    ccl_coll_sparse_param sparse_param;
-#ifdef ENABLE_SYCL
-    ccl_sycl_buffer_t* sycl_send_buf;
-    ccl_sycl_buffer_t* sycl_recv_buf;
-    ccl_sycl_buffer_t* sycl_buf;
-#endif /* ENABLE_SYCL */
 };
 
 //todo: sequence diagram
@@ -160,7 +112,7 @@ public:
     {
         entry->set_exec_mode(exec_mode);
 
-        sched_entry* rawPtr = entry.get();
+        sched_entry* raw_ptr = entry.get();
         if (add_mode == ccl_sched_add_back)
             entries.push_back(std::move(entry));
         else if (add_mode == ccl_sched_add_front)
@@ -168,7 +120,7 @@ public:
         else
             CCL_FATAL("unexpected mode ", add_mode);
 
-        return rawPtr;
+        return raw_ptr;
     }
 
     /**

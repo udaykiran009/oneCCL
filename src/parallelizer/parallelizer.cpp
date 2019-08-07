@@ -62,7 +62,7 @@ ccl_status_t ccl_parallelizer::process(ccl_sched* sched)
     std::vector<size_t> counts;
     std::vector<size_t> offsets;
     auto& part_scheds = sched->partial_scheds;
-    size_t* recv_counts = nullptr;
+    const size_t* recv_counts = nullptr;
     sched_entry* e = nullptr;
 
     std::vector<ccl_buffer> ag_recv_bufs;
@@ -88,12 +88,13 @@ ccl_status_t ccl_parallelizer::process(ccl_sched* sched)
             }
             break;
         case ccl_coll_allgatherv:
-            if (env_data.allgatherv_algo == ccl_allgatherv_algo_direct ||
-                env_data.allgatherv_algo == ccl_allgatherv_algo_naive)
+            if (env_data.allgatherv_algo == ccl_coll_allgatherv_direct ||
+                env_data.allgatherv_algo == ccl_coll_allgatherv_naive)
             {
                 part_count = 1;
             }
-            else if ((env_data.allgatherv_algo == ccl_allgatherv_algo_multi_bcast) || (env_data.allgatherv_algo == ccl_allgatherv_algo_flat))
+            else if (env_data.allgatherv_algo == ccl_coll_allgatherv_multi_bcast ||
+                     env_data.allgatherv_algo == ccl_coll_allgatherv_flat)
             {
                 part_count = coll_param->comm->size();
                 ag_recv_bufs.resize(part_count);
@@ -157,8 +158,8 @@ ccl_status_t ccl_parallelizer::process(ccl_sched* sched)
             CCL_ASSERT(recv_counts);
             counts[0] = recv_counts[0];
             offsets[0] = 0;
-            if (env_data.allgatherv_algo == ccl_allgatherv_algo_direct ||
-                env_data.allgatherv_algo == ccl_allgatherv_algo_naive)
+            if (env_data.allgatherv_algo == ccl_coll_allgatherv_direct ||
+                env_data.allgatherv_algo == ccl_coll_allgatherv_naive)
             {
                 for (idx = 0; idx < coll_param->comm->size(); idx++)
                     ag_recv_bytes += recv_counts[idx] * dtype_size;
@@ -432,8 +433,8 @@ ccl_status_t ccl_parallelizer::process(ccl_sched* sched)
                 sched->sync_partial_scheds();
             }
 #endif /* ENABLE_SYCL */
-            if (env_data.allgatherv_algo == ccl_allgatherv_algo_direct ||
-                env_data.allgatherv_algo == ccl_allgatherv_algo_naive)
+            if (env_data.allgatherv_algo == ccl_coll_allgatherv_direct ||
+                env_data.allgatherv_algo == ccl_coll_allgatherv_naive)
             {
                 CCL_CALL(ccl_coll_build_allgatherv(part_scheds[0].get(),
                                                    ccl_buffer(&(coll_param->send_buf),
@@ -465,7 +466,7 @@ ccl_status_t ccl_parallelizer::process(ccl_sched* sched)
                     }
                 }
 
-                if (env_data.allgatherv_algo == ccl_allgatherv_algo_flat)
+                if (env_data.allgatherv_algo == ccl_coll_allgatherv_flat)
                 {
                     auto send_seg = ccl_buffer(&(coll_param->send_buf), coll_param->send_count * dtype_size, ccl_buffer_type::INDIRECT);
                     size_t my_rank = coll_param->comm->rank();
@@ -556,28 +557,26 @@ ccl_status_t ccl_parallelizer::process(ccl_sched* sched)
             for (idx = 0; idx < part_count; idx++)
             {
                 CCL_CALL(ccl_coll_build_sparse_allreduce(part_scheds[idx].get(),
-                                                         ccl_buffer(&(coll_param->send_buf),
-                                                                    coll_param->send_count * itype_size,
+                                                         ccl_buffer(&(coll_param->sparse_param.send_ind_buf),
+                                                                    coll_param->sparse_param.send_ind_count * itype_size,
                                                                     offsets[idx],
                                                                     ccl_buffer_type::INDIRECT),
-                                                         coll_param->send_count,
-                                                         ccl_buffer(&(coll_param->sparse_param.snd_val_buf),
-                                                                    coll_param->sparse_param.snd_val_count * dtype_size,
+                                                         coll_param->sparse_param.send_ind_count,
+                                                         ccl_buffer(&(coll_param->sparse_param.send_val_buf),
+                                                                    coll_param->sparse_param.send_val_count * dtype_size,
                                                                     offsets[idx],
                                                                     ccl_buffer_type::INDIRECT),
-                                                         coll_param->sparse_param.snd_val_count,
-                                                         ccl_buffer(&(coll_param->sparse_param.rcv_ind_buf),
-                                                                    //*(coll_param.recv_counts) * itype_size,
+                                                         coll_param->sparse_param.send_val_count,
+                                                         ccl_buffer(&(coll_param->sparse_param.recv_ind_buf),
                                                                     -1, /* unknown size */
                                                                     offsets[idx],
                                                                     ccl_buffer_type::INDIRECT),
-                                                         coll_param->recv_counts,
-                                                         ccl_buffer(&(coll_param->sparse_param.rcv_val_buf),
-                                                                    //*(coll_param.sparse_param.rcv_val_count) * dtype_size,
+                                                         coll_param->sparse_param.recv_ind_count,
+                                                         ccl_buffer(&(coll_param->sparse_param.recv_val_buf),
                                                                     -1, /* unknown size */
                                                                     offsets[idx],
                                                                     ccl_buffer_type::INDIRECT),
-                                                         coll_param->sparse_param.rcv_val_count,
+                                                         coll_param->sparse_param.recv_val_count,
                                                          coll_param->sparse_param.itype,
                                                          dtype,
                                                          coll_param->reduction));

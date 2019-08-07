@@ -7,21 +7,21 @@
 #include <mutex>
 #include <deque>
 
-#define CCL_FUSION_BYTES_THRESHOLD (8 * 8192)
-#define CCL_FUSION_COUNT_THRESHOLD (256)
-#define CCL_FUSION_BUFFER_SIZE     (CCL_FUSION_BYTES_THRESHOLD * CCL_FUSION_COUNT_THRESHOLD)
-#define CCL_BUFFER_CACHE_PREALLOC  (4)
+#define CCL_FUSION_BYTES_THRESHOLD       (8 * 8192)
+#define CCL_FUSION_COUNT_THRESHOLD       (256)
+#define CCL_FUSION_BUFFER_SIZE           (CCL_FUSION_BYTES_THRESHOLD * CCL_FUSION_COUNT_THRESHOLD)
+#define CCL_FUSION_BUFFER_CACHE_PREALLOC (4)
 
-using fusion_lock_t = ccl_spinlock;
+using ccl_fusion_lock_t = ccl_spinlock;
 
-class ccl_buffer_cache
+class ccl_fusion_buffer_cache
 {
 public:
-    ccl_buffer_cache(size_t buf_size);
-    ~ccl_buffer_cache();
+    ccl_fusion_buffer_cache(size_t buf_size);
+    ~ccl_fusion_buffer_cache();
 
-    ccl_buffer_cache(const ccl_buffer_cache& other) = delete;
-    ccl_buffer_cache& operator= (const ccl_buffer_cache& other) = delete;
+    ccl_fusion_buffer_cache(const ccl_fusion_buffer_cache& other) = delete;
+    ccl_fusion_buffer_cache& operator= (const ccl_fusion_buffer_cache& other) = delete;
 
     void* get();
     void release(void* buf);
@@ -30,7 +30,7 @@ public:
 
 private:
     size_t buf_size;
-    fusion_lock_t guard{};
+    ccl_fusion_lock_t guard{};
     std::deque<void*> free_buffers;
     std::deque<void*> all_buffers;
 };
@@ -57,12 +57,12 @@ private:
     size_t bytes_threshold;
     size_t count_threshold;
 
-    fusion_lock_t guard{};
+    ccl_fusion_lock_t guard{};
     using sched_queue_t = std::deque<ccl_sched*>;
     sched_queue_t postponed_queue{};
     sched_queue_t exec_queue{};
     size_t exec_queue_sum_bytes = 0;
-    ccl_buffer_cache buf_cache;
+    ccl_fusion_buffer_cache buf_cache;
     std::list<ccl_sched*> tracked_scheds{};
 
     std::chrono::steady_clock::duration cycle;

@@ -3,7 +3,7 @@
 
 ccl_status_t ccl_coll_build_direct_allgatherv(ccl_sched* sched,
                                               ccl_buffer send_buf, size_t send_count,
-                                              ccl_buffer recv_buf, size_t* recv_counts,
+                                              ccl_buffer recv_buf, const size_t* recv_counts,
                                               ccl_datatype_internal_t dtype)
 {
     LOG_DEBUG("build direct allgatherv");
@@ -14,7 +14,7 @@ ccl_status_t ccl_coll_build_direct_allgatherv(ccl_sched* sched,
 
 ccl_status_t ccl_coll_build_naive_allgatherv(ccl_sched* sched,
                                              ccl_buffer send_buf, size_t send_count,
-                                             ccl_buffer recv_buf, size_t* recv_counts,
+                                             ccl_buffer recv_buf, const size_t* recv_counts,
                                              ccl_datatype_internal_t dtype)
 {
     LOG_DEBUG("build naive allgatherv");

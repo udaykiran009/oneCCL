@@ -5,7 +5,7 @@
 #include <vector>
 #include <chrono>
 
-const size_t ITERS = 1000;
+const size_t ITERS = 20;
 
 #define PRINT_BY_ROOT(fmt, ...)             \
     if(comm.rank() == 0) {                  \
@@ -57,8 +57,8 @@ void run_collective(const char* cmd_name,
 
 int main()
 {
-    size_t start_msg_size_power = 10;
-    const size_t msg_size_count = 11;
+    size_t start_msg_size_power = 5;
+    const size_t msg_size_count = 4;
     std::vector<size_t> msg_counts(msg_size_count);
 
     for (size_t idx = 0; idx < msg_size_count; ++idx)
