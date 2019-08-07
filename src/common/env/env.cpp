@@ -99,7 +99,7 @@ void ccl_env_parse()
     ccl_env_2_int(CCL_WORKER_OFFLOAD, env_data.worker_offload);
     ccl_env_parse_worker_affinity();
 
-    ccl_env_parse_atl_transport();  
+    ccl_env_parse_atl_transport();
     ccl_env_parse_allgatherv_algo();
     ccl_env_parse_allreduce_algo();
     ccl_env_parse_barrier_algo();

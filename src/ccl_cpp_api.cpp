@@ -85,11 +85,11 @@ CCL_API environment::~environment()
     if (is_initialized)
     {
         auto result = ccl_finalize();
-        if (result == ccl_status_success)
+        if (result != ccl_status_success)
         {
-            is_initialized = false;
+            abort();
         }
-        CCL_CHECK_AND_THROW(result, "failed to finalize ccl");
+        is_initialized = false;
     }
 }
 

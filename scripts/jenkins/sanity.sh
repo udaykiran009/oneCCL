@@ -125,7 +125,7 @@ enable_unordered_coll_test_scope()
     export CCL_TEST_PLACE_TYPE=1
 }
 
-set_environment() 
+set_environment()
 {
     if [ -z "${BUILD_COMPILER_TYPE}" ]
     then
@@ -194,7 +194,7 @@ set_environment()
     fi
 }
 
-make_tests() 
+make_tests()
 {
     cd ${WORK_DIR}/../../testspace/$runtime/tests/functional
     mkdir -p build
@@ -206,7 +206,7 @@ make_tests()
 
 run_examples()
 {
-    for test in `ls ${WORK_DIR}/../build/_install/examples/`
+    for test in `ls ${WORK_DIR}/../build/_install/examples/ | grep -v 'allreduce_cpp' | grep -v 'custom_allreduce'`
     do
         mpiexec.hydra -n 2 -ppn 1 -l ${WORK_DIR}/../build/_install/examples/$test | tee ${WORK_DIR}/../build/_install/examples/$test.log
         grep -r 'FAILED' ${WORK_DIR}/../build/_install/examples/$test.log > /dev/null 2>&1
@@ -303,8 +303,7 @@ while [ $# -ne 0 ]
 do
     case $1 in
     "-example" )
-        # TODO:
-        # run_examples
+        run_examples
         shift
         ;;
     *)
