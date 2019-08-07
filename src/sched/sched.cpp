@@ -359,7 +359,7 @@ void ccl_sched::sync_partial_scheds()
 
     if (partial_scheds.size() == 1)
     {
-        add_barrier();
+        partial_scheds[0]->add_barrier();
     }
     else
     {
