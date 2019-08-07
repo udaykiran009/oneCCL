@@ -259,7 +259,6 @@ private:
 };
 
 ccl_status_t ccl_bin_progress(ccl_sched_bin* bin,
-                                size_t max_sched_count,
-                                size_t& completed_sched_count);
+                              size_t& completed_sched_count);
 
 void ccl_sched_progress(ccl_sched* sched);

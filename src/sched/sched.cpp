@@ -117,8 +117,7 @@ void ccl_sched::do_progress()
 }
 
 ccl_status_t ccl_bin_progress(ccl_sched_bin* bin,
-                                size_t max_sched_count,
-                                size_t& completed_sched_count)
+                              size_t& completed_sched_count)
 {
     CCL_ASSERT(bin);
 
@@ -126,9 +125,9 @@ ccl_status_t ccl_bin_progress(ccl_sched_bin* bin,
     size_t sched_count = 0;
     auto sched_queue = bin->get_queue();
     size_t bin_size = bin->size();
-    CCL_ASSERT(bin_size > 0 && bin_size >= max_sched_count);
+    CCL_ASSERT(bin_size > 0 );
 
-    LOG_TRACE("bin ", bin, ", sched_count ", bin->size(), ", max_scheds ", max_sched_count);
+    LOG_TRACE("bin ", bin, ", sched_count ", bin_size);
 
     /* ensure communication progress */
     atl_status_t atl_status __attribute__ ((unused));
@@ -153,8 +152,8 @@ ccl_status_t ccl_bin_progress(ccl_sched_bin* bin,
                 ", entry_count ", sched->entries.size());
 
             // remove completed schedule from the bin
-            sched_idx = sched_queue->erase(bin, sched_idx);
-            bin_size = bin->size();
+            sched_queue->erase(bin, sched_idx);
+            bin_size--;
             LOG_DEBUG("completing request ", sched->req);
             sched->complete();
             ++completed_sched_count;
@@ -166,12 +165,6 @@ ccl_status_t ccl_bin_progress(ccl_sched_bin* bin,
             ++sched_idx;
         }
         sched_count++;
-
-        if (sched_count == max_sched_count)
-        {
-            // desired number of processed scheds is reached, exit
-            break;
-        }
     }
 
     return status;

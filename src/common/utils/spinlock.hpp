@@ -1,6 +1,7 @@
 #pragma once
 
 #include <atomic>
+#include <immintrin.h>
 
 #include "common/env/env.hpp"
 #include "common/utils/yield.hpp"

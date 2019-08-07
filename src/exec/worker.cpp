@@ -84,15 +84,11 @@ void ccl_worker::add(ccl_sched* sched)
 
 size_t ccl_worker::do_work()
 {
-    size_t peek_count;
     size_t processed_count = 0;
-    ccl_sched_bin* bin = data_queue->peek(peek_count);
-
-    if (peek_count)
+    ccl_sched_bin* bin = data_queue->peek();
+    if (bin)
     {
-        CCL_ASSERT(bin);
-        ccl_bin_progress(bin, peek_count, processed_count);
-        CCL_ASSERT(processed_count <= peek_count, "incorrect values ", processed_count, " ", peek_count);
+        ccl_bin_progress(bin, processed_count);
     }
 
     return processed_count;
