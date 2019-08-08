@@ -36,7 +36,7 @@ void check_buffers(void** send_bufs, void** recv_bufs, size_t buf_count, size_t 
             {
                 printf("send_bufs: buf_idx %zu, elem_idx %zu, expected %f, got %f\n",
                        b_idx, e_idx, sbuf_expected, value);
-                ASSERT(0, "unexpected value"); 
+                ASSERT(0, "unexpected value");
             }
 
             value = ((DTYPE*)recv_bufs[b_idx])[e_idx];
@@ -44,7 +44,7 @@ void check_buffers(void** send_bufs, void** recv_bufs, size_t buf_count, size_t 
             {
                 printf("recv_bufs: buf_idx %zu, elem_idx %zu, expected %f, got %f\n",
                        b_idx, e_idx, rbuf_expected, value);
-                ASSERT(0, "unexpected value"); 
+                ASSERT(0, "unexpected value");
             }
         }
     }
@@ -191,6 +191,9 @@ int main()
     free(single_recv_buf);
 
     test_finalize();
+
+    if (rank == 0)
+        printf("PASSED\n");
 
     return 0;
 }

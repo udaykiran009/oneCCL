@@ -34,7 +34,7 @@ int main()
 
     const size_t iterations_count = 4;
     std::vector<std::string> tensor_names;
-    //request, operation idx (for example purpose)
+    // request, operation idx (for example purpose)
     std::list<std::pair<ccl_request_t, size_t>> started_ops;
     std::vector<std::vector<float>> allreduce_send_bufs;
     std::vector<std::vector<float>> allreduce_recv_bufs;
@@ -53,13 +53,13 @@ int main()
 
     if (rank != 0)
     {
-        //delay non-root ranks to check that delayed comm creation works
+        // delay non-root ranks to check that delayed comm creation works
         std::this_thread::sleep_for(std::chrono::milliseconds(500));
     }
 
     for (size_t iteration = 0; iteration < iterations_count; ++iteration)
     {
-        printf("## Starting iteration #%zu\n", iteration);
+        printf("## starting iteration #%zu\n", iteration);
 
         size_t start_idx = distribution(rand_dev);
         size_t rank_idx = start_idx;
@@ -67,8 +67,8 @@ int main()
 
         for (; operations_count < size; ++operations_count, rank_idx = (rank_idx + 1) % size)
         {
-            //start allreduce with shift in tensor names
-            printf("   Submit allreduce #%zu for tensor %s\n", rank_idx, tensor_names[rank_idx].c_str());
+            // start allreduce with shift in tensor names
+            printf("   submit allreduce #%zu for tensor %s\n", rank_idx, tensor_names[rank_idx].c_str());
             started_ops.emplace_back(start_allreduce_with_tensor_name(tensor_names[rank_idx],
                                                                       allreduce_send_bufs[rank_idx].data(),
                                                                       allreduce_recv_bufs[rank_idx].data()),
@@ -85,7 +85,7 @@ int main()
                 if (test_completed)
                 {
                     float expected = (it->second + 1) * size;
-                    printf("   Completed allreduce #%zu for tensor %s. Actual %3.2f, expected %3.2f\n",
+                    printf("   completed allreduce #%zu for tensor %s. Actual %3.2f, expected %3.2f\n",
                            it->second, tensor_names[it->second].c_str(),
                            allreduce_recv_bufs[it->second][0],
                            expected);
@@ -93,11 +93,12 @@ int main()
                     {
                         if (allreduce_recv_bufs[it->second][idx] != expected)
                         {
-                            fprintf(stderr, "!! Wrong result, rank %zu, result %3.2f, intitial %3.2f, exp %3.f\n",
+                            fprintf(stderr, "!! wrong result, rank %zu, result %3.2f, intitial %3.2f, exp %3.f\n",
                                     it->second,
                                     allreduce_recv_bufs[it->second][idx],
                                     allreduce_send_bufs[it->second][idx],
                                     expected);
+                            printf("FAILED\n");
                             exit(1);
                         }
                     }
@@ -111,8 +112,11 @@ int main()
             }
         }
 
-        printf("## Iteration #%zu has been finished\n", iteration);
+        printf("## iteration #%zu has been finished\n", iteration);
     }
 
     test_finalize();
+
+    if (rank == 0)
+        printf("PASSED\n");
 }

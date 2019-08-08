@@ -9,9 +9,9 @@
 
 using namespace std;
 
-#define PRINT_BY_ROOT(fmt, ...)             \
-    if(::rank == 0) {                       \
-        printf(fmt"\n", ##__VA_ARGS__); }   \
+#define PRINT_BY_ROOT(fmt, ...)           \
+    if (::rank == 0) {                    \
+        printf(fmt"\n", ##__VA_ARGS__); } \
 
 void check_allreduce_on_comm(ccl_comm_t comm)
 {
@@ -22,7 +22,7 @@ void check_allreduce_on_comm(ccl_comm_t comm)
     vector<float> send_buf(COUNT, cur_comm_rank);
     vector<float> recv_buf(COUNT, 0.0f);
 
-    PRINT_BY_ROOT("Allreduce on %zu ranks", cur_comm_size);
+    PRINT_BY_ROOT("allreduce on %zu ranks", cur_comm_size);
 
     coll_attr.to_cache = 0;
 
@@ -43,6 +43,7 @@ void check_allreduce_on_comm(ccl_comm_t comm)
     {
         if (recv_buf[i] != expected)
         {
+            printf("FAILED\n");
             throw runtime_error("Recv[ " + to_string(i) + "]= " + to_string(recv_buf[i]) +
                     ", expected " + to_string(expected));
         }
@@ -51,23 +52,20 @@ void check_allreduce_on_comm(ccl_comm_t comm)
 
 void check_allreduce()
 {
-    PRINT_BY_ROOT("Create new communicator as a copy of the global one and check that allreduce works");
+    PRINT_BY_ROOT("create new communicator as a copy of the global one and check that allreduce works");
 
     ccl_comm_t comm;
     CCL_CALL(ccl_comm_create(&comm, nullptr));
-
     check_allreduce_on_comm(comm);
-
     CCL_CALL(ccl_comm_free(comm));
 }
 
 void check_max_comm_number()
 {
+    PRINT_BY_ROOT("create max number of communicators");
+
     size_t user_comms = 0;
-
-    PRINT_BY_ROOT("Create max number of communicators");
     std::vector<ccl_comm_t> communicators;
-
     ccl_status_t status = ccl_status_success;
 
     do
@@ -83,33 +81,36 @@ void check_max_comm_number()
 
         communicators.push_back(new_comm);
 
-    } while(status == ccl_status_success);
+    } while (status == ccl_status_success);
 
     PRINT_BY_ROOT("created %zu communicators\n", user_comms);
 
-    PRINT_BY_ROOT("Try to create one more communicator, it should fail");
+    PRINT_BY_ROOT("try to create one more communicator, it should fail");
     ccl_comm_t comm;
     status = ccl_comm_create(&comm, nullptr);
     if (status == ccl_status_success)
     {
-        throw runtime_error("Extra communicator has been created");
+        printf("FAILED\n");
+        throw runtime_error("extra communicator has been created");
     }
 
-    PRINT_BY_ROOT("Free one comm, try to create again");
+    PRINT_BY_ROOT("free one comm, try to create again");
     size_t comm_idx = user_comms / 2;
     status = ccl_comm_free(communicators[comm_idx]);
     if (status != ccl_status_success)
     {
-        throw runtime_error("Can't to free communicator");
+        printf("FAILED\n");
+        throw runtime_error("can't to free communicator");
     }
 
     status = ccl_comm_create(&communicators[comm_idx], nullptr);
     if (status != ccl_status_success)
     {
-        throw runtime_error("Can't create communicator after free");
+        printf("FAILED\n");
+        throw runtime_error("can't create communicator after free");
     }
 
-    for(auto& comm_elem: communicators)
+    for (auto& comm_elem: communicators)
     {
         CCL_CALL(ccl_comm_free(comm_elem));
     }
@@ -117,7 +118,7 @@ void check_max_comm_number()
 
 void check_comm_create_colored()
 {
-    PRINT_BY_ROOT("Create comm with color, ranks_count should be a power of 2 for test purpose");
+    PRINT_BY_ROOT("create comm with color, ranks_count should be a power of 2 for test purpose");
 
     for (size_t split_by = 2; split_by <= size; split_by *= 2)
     {
@@ -127,7 +128,7 @@ void check_comm_create_colored()
         size_t comm_size{};
         size_t comm_rank{};
 
-        PRINT_BY_ROOT("Splitting global comm into %zu parts", split_by);
+        PRINT_BY_ROOT("splitting global comm into %zu parts", split_by);
         CCL_CALL(ccl_comm_create(&comm, &comm_attr));
 
         CCL_CALL(ccl_get_comm_size(comm, &comm_size));
@@ -136,12 +137,13 @@ void check_comm_create_colored()
         size_t expected_ranks_count = size / split_by;
         if (comm_size != expected_ranks_count)
         {
-            throw runtime_error("Mismatch in size, expected " +
+            printf("FAILED\n");
+            throw runtime_error("mismatch in size, expected " +
                                 to_string(expected_ranks_count) +
                                 " received " + to_string(comm_size));
         }
 
-        PRINT_BY_ROOT("Global comm: idx=%zu, count=%zu; new comm: rank=%zu, size=%zu", ::rank,
+        PRINT_BY_ROOT("global comm: idx=%zu, count=%zu; new comm: rank=%zu, size=%zu", ::rank,
                       size, comm_rank, comm_size);
 
         check_allreduce_on_comm(comm);
@@ -158,7 +160,7 @@ void check_comm_create_identical_color()
     size_t comm_size{};
     size_t comm_rank{};
 
-    PRINT_BY_ROOT("Create comm as a copy of the global one by settings identical colors");
+    PRINT_BY_ROOT("create comm as a copy of the global one by settings identical colors");
 
     CCL_CALL(ccl_comm_create(&comm, &comm_attr));
     CCL_CALL(ccl_get_comm_size(comm, &comm_size));
@@ -166,19 +168,21 @@ void check_comm_create_identical_color()
 
     if (comm_size != size)
     {
-        throw runtime_error("Mismatch in size, expected " +
+        printf("FAILED\n");
+        throw runtime_error("mismatch in size, expected " +
                             to_string(size) +
                             " received " + to_string(comm_size));
     }
 
     if (comm_rank != ::rank)
     {
-        throw runtime_error("Mismatch in rank, expected " +
+        printf("FAILED\n");
+        throw runtime_error("mismatch in rank, expected " +
                             to_string(::rank) +
                             " received " + to_string(comm_rank));
     }
 
-    PRINT_BY_ROOT("Global comm: rank=%zu, size=%zu; new comm: rank=%zu, size=%zu", ::rank,
+    PRINT_BY_ROOT("global comm: rank=%zu, size=%zu; new comm: rank=%zu, size=%zu", ::rank,
                   size, comm_rank, comm_size);
 
     check_allreduce_on_comm(comm);
@@ -193,14 +197,13 @@ int main()
     PRINT_BY_ROOT("Running communicators on %zu ranks", size);
 
     check_allreduce();
-
     check_max_comm_number();
-
     check_comm_create_colored();
-
     check_comm_create_identical_color();
 
     test_finalize();
+
+    PRINT_BY_ROOT("PASSED");
 
     return 0;
 }

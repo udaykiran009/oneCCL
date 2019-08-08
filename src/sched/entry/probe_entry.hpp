@@ -6,7 +6,7 @@
 class probe_entry : public sched_entry
 {
 public:
-    static constexpr const char *entry_class_name() noexcept
+    static constexpr const char* entry_class_name() noexcept
     {
         return "PROBE";
     }
@@ -76,7 +76,7 @@ protected:
 private:
     size_t src;
     size_t* cnt;
-    ccl_op_id_t op_id;
-    uint64_t atl_tag{};
+    ccl_op_id_t op_id = 0;
+    uint64_t atl_tag = 0;
     atl_req_t req{};
 };

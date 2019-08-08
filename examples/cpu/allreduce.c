@@ -55,5 +55,8 @@ int main()
     free(send_buf);
     free(recv_buf);
 
+    if (rank == 0)
+        printf("PASSED\n");
+
     return 0;
 }

@@ -7,7 +7,7 @@
 class chain_call_entry : public sched_entry
 {
 public:
-    static constexpr const char *entry_class_name() noexcept
+    static constexpr const char* entry_class_name() noexcept
     {
         return "CHAIN";
     }
@@ -18,7 +18,7 @@ public:
                      const char* name = nullptr) :
         sched_entry(sched), entry_special_name(name)
     {
-        if(name)
+        if (name)
         {
             LOG_DEBUG("entry object name: ", name);
         }

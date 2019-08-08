@@ -7,27 +7,12 @@
 class send_entry : public sched_entry
 {
 public:
-    static constexpr const char *entry_class_name() noexcept
+    static constexpr const char* entry_class_name() noexcept
     {
         return "SEND";
     }
 
     send_entry() = delete;
-    send_entry(ccl_sched* sched,
-               const ccl_buffer buf,
-               size_t cnt,
-               ccl_datatype_internal_t dtype,
-               size_t dst,
-               size_t rank,
-               ccl_op_id_t op_id = 0) :
-        sched_entry(sched), buf(buf),
-        cnt(cnt), dtype(dtype),
-        dst(dst), rank(rank), op_id(op_id)
-    {
-        pfields.add_available(ccl_sched_entry_field_buf);
-        pfields.add_available(ccl_sched_entry_field_cnt);
-    }
-
     send_entry(ccl_sched* sched,
                const ccl_buffer buf,
                size_t cnt,
@@ -49,7 +34,7 @@ public:
     {
         atl_tag = global_data.atl_tag->create(sched->coll_param.comm->id(), rank, sched->sched_id, op_id);
         size_t bytes = cnt * ccl_datatype_get_size(dtype);
-        LOG_DEBUG("SEND entry dst, ", dst, ", tag ", atl_tag, ", req ", &req, ", bytes ", bytes);
+        LOG_DEBUG("SEND entry dst ", dst, ", tag ", atl_tag, ", req ", &req, ", bytes ", bytes);
 
         atl_status_t atl_status = atl_comm_send(sched->bin->get_comm_ctx(), buf.get_ptr(bytes),
                                                 bytes, dst, atl_tag, &req);
@@ -76,7 +61,7 @@ public:
 
         if (req_status)
         {
-            LOG_DEBUG("SEND entry done dst, ", dst);
+            LOG_DEBUG("SEND entry done dst ", dst, ", rank ", rank);
             status = ccl_sched_entry_status_complete;
         }
     }
@@ -118,6 +103,6 @@ private:
     size_t dst;
     size_t rank;
     ccl_op_id_t op_id = 0;
+    uint64_t atl_tag = 0;
     atl_req_t req{};
-    uint64_t atl_tag{};
 };

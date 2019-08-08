@@ -20,7 +20,7 @@ class ccl_buffer
 
 private:
     void* src;
-    ssize_t size;
+    ssize_t size; /* max available size, for sanity checks */
     int offset;
     ccl_buffer_type type;
 
@@ -127,8 +127,7 @@ public:
     bool operator ==(ccl_buffer const& other) const
     {
         return ((get_ptr() == other.get_ptr()) &&
-                (get_type() == other.get_type() &&
-                (get_size() == other.get_size())));
+                (get_type() == other.get_type()));
     }
 
     bool operator !=(ccl_buffer const& other) const
@@ -144,10 +143,11 @@ public:
 
     friend std::ostream& operator<< (std::ostream& out, const ccl_buffer& buf)
     {
-        out << "src: " << buf.get_src()
+        out << "(src: " << buf.get_src()
             << ", size " << buf.get_size()
             << ", off " << buf.get_offset()
-            << ", type: " << buf.get_type();
+            << ", type: " << buf.get_type()
+            << ")";
         return out;
     }
 };

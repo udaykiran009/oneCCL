@@ -6,7 +6,8 @@
 
 using namespace std;
 
-int main(int argc, char** argv) {
+int main(int argc, char** argv)
+{
     int i = 0;
     int size = 0;
     int rank = 0;
@@ -43,21 +44,21 @@ int main(int argc, char** argv) {
 
     /* check correctness of recvbuf */
     for (i = 0; i < COUNT; i++) {
-       if (recvbuf[i] != size*(size+1)/2) {
+        if (recvbuf[i] != size * (size + 1) / 2) {
            recvbuf[i] = -1;
-       }
+        }
     }
 
     /* print out the result of the test */
-    if (rank == 0){
+    if (rank == 0) {
         for (i = 0; i < COUNT; i++) {
             if (recvbuf[i] == -1) {
-                cout<<"FAILED"<<endl;
+                cout << "FAILED" << endl;
                 break;
             }
         }
         if (i == COUNT) {
-            cout<<"PASSED"<<endl;
+            cout << "PASSED" << endl;
         }
     }
 

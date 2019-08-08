@@ -5,7 +5,7 @@
 class function_entry : public sched_entry
 {
 public:
-    static constexpr const char *entry_class_name() noexcept
+    static constexpr const char* entry_class_name() noexcept
     {
         return "FUNCTION";
     }

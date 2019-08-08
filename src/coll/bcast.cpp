@@ -31,7 +31,9 @@ ccl_status_t ccl_coll_build_naive_bcast(ccl_sched *sched, ccl_buffer buf, size_t
         for (idx = 0; idx < comm_size; idx++)
         {
             if (idx != rank)
+            {
                 entry_factory::make_entry<send_entry>(sched, buf, count, dtype, idx);
+            }
         }
     }
     else

@@ -206,25 +206,35 @@ make_tests()
 
 run_examples()
 {
-    for test in `ls ${WORK_DIR}/../build/_install/examples/ | grep -v 'allreduce_cpp' | grep -v 'custom_allreduce'`
+    for transport in "ofi" "mpi";
     do
-        mpiexec.hydra -n 2 -ppn 1 -l ${WORK_DIR}/../build/_install/examples/$test | tee ${WORK_DIR}/../build/_install/examples/$test.log
-        grep -r 'FAILED' ${WORK_DIR}/../build/_install/examples/$test.log > /dev/null 2>&1
-        log_status_fail=${PIPESTATUS[0]}
-        if [ "$log_status_fail" -ne 0 ]
+        examples_to_run=`ls ${WORK_DIR}/../build/_install/examples/`
+        if [ "$transport" == "mpi" ];
         then
-            echo "example testing ... OK"
+            examples_to_run=`ls ${WORK_DIR}/../build/_install/examples/ | grep -v '.log' | grep -v 'unordered_allreduce' | grep -v 'custom_allreduce' | grep -v 'sparse_allreduce' `
         else
-            echo "example testing ... NOK"
-            exit 1
+            examples_to_run=`ls ${WORK_DIR}/../build/_install/examples/ | grep -v '.log' | grep -v 'sparse_allreduce' `
         fi
+        echo "run examples with $transport transport (${examples_to_run})"
+        for example in $examples_to_run
+        do
+            CCL_ATL_TRANSPORT=${transport} mpiexec.hydra -n 2 -ppn 1 -l ${WORK_DIR}/../build/_install/examples/$example | tee ${WORK_DIR}/../build/_install/examples/$example.log
+            grep -r 'FAILED' ${WORK_DIR}/../build/_install/examples/$example.log > /dev/null 2>&1
+            log_status_fail=${PIPESTATUS[0]}
+            if [ "$log_status_fail" -ne 0 ]
+            then
+                echo "example testing ... OK"
+            else
+                echo "example testing ... NOK"
+                exit 1
+            fi
+        done
     done
     exit 0
 }
 
 run_tests()
 {
-    export CCL_WORKER_COUNT=2
     enable_part_test_scope
     set_external_env
     case "$runtime" in
@@ -281,11 +291,14 @@ run_tests()
                     done
                ;;
             priority_mode )
-                CCL_PRIORITY=lifo ctest -VV -C Default
-                CCL_PRIORITY=direct ctest -VV -C Default
+                CCL_ATL_TRANSPORT=mpi CCL_PRIORITY=lifo ctest -VV -C Default
+                CCL_ATL_TRANSPORT=mpi CCL_PRIORITY=direct ctest -VV -C Default
+                CCL_ATL_TRANSPORT=ofi CCL_PRIORITY=lifo ctest -VV -C Default
+                CCL_ATL_TRANSPORT=ofi CCL_PRIORITY=direct ctest -VV -C Default
                ;;
             dynamic_pointer_mode )
-                CCL_TEST_DYNAMIC_POINTER=1 ctest -VV -C Default
+                CCL_ATL_TRANSPORT=mpi CCL_TEST_DYNAMIC_POINTER=1 ctest -VV -C Default
+                CCL_ATL_TRANSPORT=ofi CCL_TEST_DYNAMIC_POINTER=1 ctest -VV -C Default
                ;;
             unordered_coll_mode )
                 enable_unordered_coll_test_scope
@@ -299,6 +312,9 @@ run_tests()
 
 set_default_values
 set_environment
+
+export CCL_WORKER_COUNT=2
+
 while [ $# -ne 0 ]
 do
     case $1 in

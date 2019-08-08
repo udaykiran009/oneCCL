@@ -107,6 +107,14 @@ void ccl_env_parse()
     ccl_env_parse_reduce_algo();
     ccl_env_2_int(CCL_UNORDERED_COLL, env_data.enable_unordered_coll);
     ccl_env_2_int(CCL_ALLGATHERV_IOV, env_data.enable_allgatherv_iov);
+    if (env_data.enable_allgatherv_iov && 
+        env_data.allgatherv_algo != ccl_coll_allgatherv_flat &&
+        env_data.allgatherv_algo != ccl_coll_allgatherv_multi_bcast)
+    {
+        env_data.allgatherv_algo = ccl_coll_allgatherv_flat;
+        LOG_INFO("allgatherv_iov functionality is requested and unsupported algorithm is selected"
+                 ", switch to flat algorithm");
+    }
 
     ccl_env_2_int(CCL_FUSION, env_data.enable_fusion);
     ccl_env_2_int(CCL_FUSION_BYTES_THRESHOLD, env_data.fusion_bytes_threshold);
@@ -281,7 +289,7 @@ int ccl_env_parse_allgatherv_algo()
     {
         if (strcmp(env, "direct") == 0)
             env_data.allgatherv_algo = ccl_coll_allgatherv_direct;
-        if (strcmp(env, "naive") == 0)
+        else if (strcmp(env, "naive") == 0)
             env_data.allgatherv_algo = ccl_coll_allgatherv_naive;
         else if (strcmp(env, "flat") == 0)
             env_data.allgatherv_algo = ccl_coll_allgatherv_flat;
@@ -349,7 +357,7 @@ int ccl_env_parse_bcast_algo()
     {
         if (strcmp(env, "direct") == 0)
             env_data.bcast_algo = ccl_coll_bcast_direct;
-        if (strcmp(env, "ring") == 0)
+        else if (strcmp(env, "ring") == 0)
             env_data.bcast_algo = ccl_coll_bcast_ring;
         else if (strcmp(env, "double_tree") == 0)
             env_data.bcast_algo = ccl_coll_bcast_double_tree;
@@ -371,7 +379,7 @@ int ccl_env_parse_reduce_algo()
     {
         if (strcmp(env, "direct") == 0)
             env_data.reduce_algo = ccl_coll_reduce_direct;
-        if (strcmp(env, "tree") == 0)
+        else if (strcmp(env, "tree") == 0)
             env_data.reduce_algo = ccl_coll_reduce_tree;
         else if (strcmp(env, "double_tree") == 0)
             env_data.reduce_algo = ccl_coll_reduce_double_tree;
@@ -451,7 +459,7 @@ int ccl_env_parse_atl_transport()
             env_data.allgatherv_algo = ccl_coll_allgatherv_naive;
             env_data.allreduce_algo = ccl_coll_allreduce_rabenseifner;
             env_data.barrier_algo = ccl_coll_barrier_ring;
-            env_data.bcast_algo = ccl_coll_bcast_ring;
+            env_data.bcast_algo = ccl_coll_bcast_naive;
             env_data.reduce_algo = ccl_coll_reduce_tree;
             env_data.sparse_allreduce_algo = ccl_coll_sparse_allreduce_basic;
         }

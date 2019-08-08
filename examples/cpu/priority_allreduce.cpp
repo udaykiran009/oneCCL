@@ -1,10 +1,12 @@
 #include "base.h"
 
-/* mg sizes in bytes in backprop order */
+/* msg sizes in bytes in backprop order */
 
 size_t msg_sizes_vgg16[] = { 16384000, 4000, 67108864, 16384, 411041792, 16384, 9437184, 2048, 9437184, 2048, 9437184, 2048,
                              9437184, 2048, 9437184, 2048, 4718592, 2048, 2359296, 1024, 2359296, 1024, 1179648, 1024, 589824,
                              512, 294912, 512, 147456, 256, 6912, 256 };
+
+size_t msg_sizes_test[] = { 9437184, 2048, 4718592, 2048, 2359296, 1024, 589824, 512, 147456, 256, 6912, 256 };
 
 #define DELIMETER "---------------------------------------------------------------------------------------------------------------------------------------------\n"
 
@@ -18,7 +20,7 @@ size_t msg_sizes_vgg16[] = { 16384000, 4000, 67108864, 16384, 411041792, 16384, 
       printf(DELIMETER);                                    \
   } while (0)
 
-#define msg_sizes msg_sizes_vgg16
+#define msg_sizes msg_sizes_test
 
 size_t comp_iter_time_ms = 0;
 
@@ -343,6 +345,9 @@ int main()
     free(recv_msg_timers_counts);
     free(recv_iter_timers);
     free(recv_iter_timers_counts);
+
+    if (rank == 0)
+        printf("PASSED\n");
 
     return 0;
 }

@@ -57,6 +57,9 @@ int main()
 
     test_finalize();
 
+    if (rank == 0)
+        printf("PASSED\n");
+
     return 0;
 }
 

@@ -195,7 +195,7 @@ private:
     /* whether req is owned by this schedule or was set externally */
     bool is_own_req = true;
 
-#ifdef ENABLE_DEBUG
+#ifdef ENABLE_TIMERS
     using timer_type = std::chrono::system_clock;
     timer_type::time_point exec_start_time{};
     timer_type::time_point exec_complete_time{};

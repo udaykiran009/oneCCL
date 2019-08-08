@@ -4,7 +4,7 @@
 #include <CL/sycl.hpp>
 #include "ccl.hpp"
 
-#define COUNT (10*1024*1024)
+#define COUNT     (10 * 1024 * 1024)
 #define COLL_ROOT (0)
 
 using namespace std;
@@ -21,22 +21,23 @@ int main(int argc, char** argv)
     cl::sycl::queue q;
     cl::sycl::buffer<int, 1> sendbuf(COUNT);
     cl::sycl::buffer<int, 1> recvbuf(COUNT);
-
     ccl::environment env;
     ccl::communicator comm;
-    ccl::stream stream(ccl_stream_sycl, &q);
 
     rank = comm.rank();
     size = comm.size();
 
-    // open sendbuf and initialize it on the CPU side
+    /* create SYCL stream */
+    ccl::stream stream(ccl_stream_sycl, &q);
+
+    /* open sendbuf and initialize it on the CPU side */
     auto host_acc_sbuf = sendbuf.get_access<mode::write>();
 
     for (i = 0; i < COUNT; i++) {
         host_acc_sbuf[i] = rank;
     }
 
-    // open sendbuf and modify it on the target device side
+    /* open sendbuf and modify it on the target device side */
     q.submit([&](handler& cgh){
        auto dev_acc_sbuf = sendbuf.get_access<mode::write>(cgh);
        cgh.parallel_for<class allreduce_test_sbuf_modify>(range<1>{COUNT}, [=](item<1> id) {
@@ -44,7 +45,7 @@ int main(int argc, char** argv)
        });
     });
 
-    // invoke ccl_allreduce on the CPU side
+    /* invoke ccl_allreduce on the CPU side */
     comm.allreduce(&sendbuf,
                    &recvbuf,
                    COUNT,
@@ -53,7 +54,7 @@ int main(int argc, char** argv)
                    &coll_attr,
                    &stream)->wait();
 
-    // open recvbuf and check its correctness on the target device side
+    /* open recvbuf and check its correctness on the target device side */
     q.submit([&](handler& cgh){
        auto dev_acc_rbuf = recvbuf.get_access<mode::write>(cgh);
        cgh.parallel_for<class allreduce_test_rbuf_check>(range<1>{COUNT}, [=](item<1> id) {
@@ -63,7 +64,7 @@ int main(int argc, char** argv)
        });
     });
 
-    // print out the result of the test on the CPU side
+    /* print out the result of the test on the CPU side */
     if (rank == COLL_ROOT){
         auto host_acc_rbuf_new = recvbuf.get_access<mode::read>();
         for (i = 0; i < COUNT; i++) {

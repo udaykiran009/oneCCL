@@ -106,5 +106,9 @@ int main()
     free(recv_ibuf);
 
     test_finalize();
+
+    if (rank == 0)
+        printf("PASSED\n");
+
     return 0;
 }

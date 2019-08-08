@@ -273,7 +273,7 @@ ccl_request* ccl_sched::start(ccl_executor* exec, bool reset_sched)
 
 void ccl_sched::complete()
 {
-#ifdef ENABLE_DEBUG
+#ifdef ENABLE_TIMERS
     exec_complete_time = timer_type::now();
     if (env_data.sched_dump)
     {
@@ -311,7 +311,7 @@ void ccl_sched::prepare_partial_scheds()
 
 void ccl_sched::reset()
 {
-#ifdef ENABLE_DEBUG
+#ifdef ENABLE_TIMERS
     exec_start_time = timer_type::now();
     exec_complete_time = exec_start_time;
 #endif
@@ -445,7 +445,7 @@ void ccl_sched::dump(const char *name) const
         entries[i]->dump(msg, i);
     }
 
-#ifdef ENABLE_DEBUG
+#ifdef ENABLE_TIMERS
     ccl_logger::format(msg, "life time [us] ", std::setw(5), std::setbase(10),
         std::chrono::duration_cast<std::chrono::microseconds>(exec_complete_time - exec_start_time).count(),
         "\n");

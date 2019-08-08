@@ -4,8 +4,8 @@
 #include <CL/sycl.hpp>
 #include "ccl.hpp"
 
-#define COUNT (10*1024*1024)
-#define COLL_ROOT 0
+#define COUNT     (10 * 1024 * 1024)
+#define COLL_ROOT (0)
 
 using namespace std;
 using namespace cl::sycl;
@@ -19,18 +19,19 @@ int main(int argc, char** argv)
     ccl_coll_attr_t coll_attr{};
 
     cl::sycl::queue q;
-    cl::sycl::buffer<int, 1> sendbuf(COUNT);
-    // cl::sycl::buffer<int, 1> recvbuf(COUNT);
-
     ccl::environment env;
     ccl::communicator comm;
-    ccl::stream stream(ccl_stream_sycl, &q);
 
     rank = comm.rank();
     size = comm.size();
 
-    // open sendbuf and initialize it on the CPU side
-    auto host_acc_sbuf = sendbuf.get_access<mode::write>();
+    /* create SYCL stream */
+    ccl::stream stream(ccl_stream_sycl, &q);
+
+    cl::sycl::buffer<int, 1> buf(COUNT);
+
+    /* open buf and initialize it on the CPU side */
+    auto host_acc_sbuf = buf.get_access<mode::write>();
     for (i = 0; i < COUNT; i++) {
         if (rank == COLL_ROOT)
             host_acc_sbuf[i] = rank;
@@ -38,43 +39,43 @@ int main(int argc, char** argv)
             host_acc_sbuf[i] = 0;
     }
 
-    // open sendbuf and modify it on the target device side
-    q.submit([&](handler& cgh){
-       auto dev_acc_sbuf = sendbuf.get_access<mode::write>(cgh);
-       cgh.parallel_for<class bcast_test_sbuf_modify>(range<1>{COUNT}, [=](item<1> id) {
-           dev_acc_sbuf[id] += 1;
-       });
+    /* open buf and modify it on the target device side */
+    q.submit([&](handler& cgh) {
+        auto dev_acc_sbuf = buf.get_access<mode::write>(cgh);
+        cgh.parallel_for<class bcast_test_sbuf_modify>(range<1>{COUNT}, [=](item<1> id) {
+            dev_acc_sbuf[id] += 1;
+        });
     });
 
-    // invoke ccl_bcast on the CPU side
-    comm.bcast(&sendbuf,
-                   COUNT,
-                   ccl::data_type::dtype_int,
-                   COLL_ROOT,
-                   &coll_attr,
-                   &stream)->wait();
+    /* invoke ccl_bcast on the CPU side */
+    comm.bcast(&buf,
+               COUNT,
+               ccl::data_type::dtype_int,
+               COLL_ROOT,
+               &coll_attr,
+               &stream)->wait();
 
-    // open recvbuf and check its correctness on the target device side
-    q.submit([&](handler& cgh){
-       auto dev_acc_rbuf = sendbuf.get_access<mode::write>(cgh);
-       cgh.parallel_for<class bcast_test_rbuf_check>(range<1>{COUNT}, [=](item<1> id) {
-           if (dev_acc_rbuf[id] != COLL_ROOT + 1) {
-               dev_acc_rbuf[id] = -1;
+    /* open buf and check its correctness on the target device side */
+    q.submit([&](handler& cgh) {
+        auto dev_acc_rbuf = buf.get_access<mode::write>(cgh);
+        cgh.parallel_for<class bcast_test_rbuf_check>(range<1>{COUNT}, [=](item<1> id) {
+            if (dev_acc_rbuf[id] != COLL_ROOT + 1) {
+                dev_acc_rbuf[id] = -1;
            }
        });
     });
 
-    // print out the result of the test on the CPU side
-    if (rank == COLL_ROOT){
-        auto host_acc_rbuf_new = sendbuf.get_access<mode::read>();
+    /* print out the result of the test on the CPU side */
+    if (rank == COLL_ROOT) {
+        auto host_acc_rbuf_new = buf.get_access<mode::read>();
         for (i = 0; i < COUNT; i++) {
             if (host_acc_rbuf_new[i] == -1) {
-                cout<<"FAILED"<<endl;
+                cout << "FAILED" << endl;
                 break;
             }
         }
         if (i == COUNT) {
-            cout<<"PASSED"<<endl;
+            cout << "PASSED" << endl;
         }
     }
 

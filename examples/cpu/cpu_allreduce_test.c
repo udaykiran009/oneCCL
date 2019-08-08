@@ -3,14 +3,17 @@
 
 #define COUNT 128
 
-int main(int argc, char** argv) {
+int main(int argc, char** argv)
+{
     int i = 0;
     size_t size = 0;
     size_t rank = 0;
-    ccl_request_t request;
-    ccl_stream_t stream;
+
     int sendbuf[COUNT];
     int recvbuf[COUNT];
+
+    ccl_request_t request;
+    ccl_stream_t stream;
 
     ccl_init();
 
@@ -45,13 +48,13 @@ int main(int argc, char** argv) {
 
     /* check correctness of recvbuf */
     for (i = 0; i < COUNT; i++) {
-       if (recvbuf[i] != size*(size+1)/2) {
+       if (recvbuf[i] != size * (size + 1) / 2) {
            recvbuf[i] = -1;
        }
     }
 
     /* print out the result of the test */
-    if (rank == 0){
+    if (rank == 0) {
         for (i = 0; i < COUNT; i++) {
             if (recvbuf[i] == -1) {
                 printf("FAILED\n");

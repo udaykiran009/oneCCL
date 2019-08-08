@@ -25,6 +25,7 @@ void test_finalize(void);
   {                                                       \
       if (!(cond))                                        \
       {                                                   \
+          printf("FAILED\n");                             \
           fprintf(stderr, "ASSERT '%s' FAILED " fmt "\n", \
               #cond, ##__VA_ARGS__);                      \
           test_finalize();                                \

@@ -270,8 +270,9 @@ ccl_status_t ccl_coll_build_allgatherv(
     const size_t* recv_counts,
     ccl_datatype_internal_t dtype)
 {
-    ccl_status_t status;
+    ccl_status_t status = ccl_status_success;
     sched->coll_param.ctype = ccl_coll_allgatherv;
+
     switch (env_data.allgatherv_algo)
     {
         case ccl_coll_allgatherv_direct:
@@ -367,7 +368,7 @@ ccl_status_t ccl_coll_build_allreduce(
 
 ccl_status_t ccl_coll_build_barrier(ccl_sched* sched)
 {
-    ccl_status_t status;
+    ccl_status_t status = ccl_status_success;
     sched->coll_param.ctype = ccl_coll_barrier;
 
     switch (env_data.barrier_algo)
@@ -393,7 +394,7 @@ ccl_status_t ccl_coll_build_bcast(ccl_sched* sched,
                                   ccl_datatype_internal_t dtype,
                                   size_t root)
 {
-    ccl_status_t status;
+    ccl_status_t status = ccl_status_success;
     sched->coll_param.ctype = ccl_coll_bcast;
 
     switch (env_data.bcast_algo)
@@ -429,7 +430,7 @@ ccl_status_t ccl_coll_build_reduce(ccl_sched* sched,
                                    ccl_reduction_t reduction,
                                    size_t root)
 {
-    ccl_status_t status;
+    ccl_status_t status = ccl_status_success;
     sched->coll_param.ctype = ccl_coll_reduce;
 
     switch (env_data.reduce_algo)
@@ -471,7 +472,7 @@ ccl_status_t ccl_coll_build_sparse_allreduce(
     ccl_datatype_internal_t value_dtype,
     ccl_reduction_t reduction)
 {
-    ccl_status_t status;
+    ccl_status_t status = ccl_status_success;
     sched->coll_param.ctype = ccl_coll_sparse_allreduce;
 
     switch (env_data.sparse_allreduce_algo)

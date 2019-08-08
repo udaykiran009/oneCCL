@@ -11,7 +11,7 @@ void sched_entry::set_field_fn(ccl_sched_entry_field_id id,
 
 void sched_entry::start()
 {
-#ifdef ENABLE_DEBUG
+#ifdef ENABLE_TIMERS
     auto start = timer_type::now();
     start_time = start;
 #endif
@@ -26,14 +26,14 @@ void sched_entry::start()
     if (status == ccl_sched_entry_status_complete)
     {
         LOG_DEBUG("completed entry ", name());
-#ifdef ENABLE_DEBUG
+#ifdef ENABLE_TIMERS
         complete_time = timer_type::now();
 #endif
     }
 
     check_exec_mode();
 
-#ifdef ENABLE_DEBUG
+#ifdef ENABLE_TIMERS
     exec_time += timer_type::now() - start;
 #endif
 }
@@ -45,7 +45,7 @@ void sched_entry::update()
         return;
     }
 
-#ifdef ENABLE_DEBUG
+#ifdef ENABLE_TIMERS
     auto start = timer_type::now();
 #endif
 
@@ -56,14 +56,14 @@ void sched_entry::update()
     if (status == ccl_sched_entry_status_complete)
     {
         LOG_DEBUG("completed entry ", name());
-#ifdef ENABLE_DEBUG
+#ifdef ENABLE_TIMERS
         complete_time = timer_type::now();
 #endif
     }
 
     check_exec_mode();
 
-#ifdef ENABLE_DEBUG
+#ifdef ENABLE_TIMERS
     exec_time += timer_type::now() - start;
 #endif
 }
@@ -84,7 +84,7 @@ void sched_entry::reset(size_t idx)
     start_idx = idx;
     status = ccl_sched_entry_status_not_started;
 
-#ifdef ENABLE_DEBUG
+#ifdef ENABLE_TIMERS
     exec_time = timer_type::duration{};
     start_time = timer_type::time_point{};
     complete_time = start_time;
@@ -94,10 +94,10 @@ void sched_entry::reset(size_t idx)
 void sched_entry::dump(std::stringstream& str,
                        size_t idx) const
 {
-    //update with the longest name
+    // update with the longest name
     const int entry_name_w = 12;
 
-#ifdef ENABLE_DEBUG
+#ifdef ENABLE_TIMERS
     auto start = from_time_point(start_time);
     auto end = from_time_point(complete_time);
     auto life_time = std::chrono::duration_cast<std::chrono::microseconds>(complete_time - start_time);

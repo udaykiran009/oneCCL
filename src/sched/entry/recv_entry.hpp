@@ -7,7 +7,7 @@
 class recv_entry : public sched_entry
 {
 public:
-    static constexpr const char *entry_class_name() noexcept
+    static constexpr const char* entry_class_name() noexcept
     {
         return "RECV";
     }
@@ -55,6 +55,7 @@ public:
 
         if (req_status)
         {
+            LOG_DEBUG("RECV entry done src, ", src);
             status = ccl_sched_entry_status_complete;
         }
     }
@@ -94,6 +95,6 @@ private:
     ccl_datatype_internal_t dtype;
     size_t src;
     ccl_op_id_t op_id = 0;
-    uint64_t atl_tag{};
+    uint64_t atl_tag = 0;
     atl_req_t req{};
 };

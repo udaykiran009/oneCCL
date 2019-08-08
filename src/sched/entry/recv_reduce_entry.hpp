@@ -7,12 +7,10 @@
 
 #include <utility>
 
-//todo: inherit/compose recv & reduce
-
 class recv_reduce_entry final: public sched_entry
 {
 public:
-    static constexpr const char *entry_class_name() noexcept
+    static constexpr const char* entry_class_name() noexcept
     {
         return "RECV_REDUCE";
     }
@@ -124,7 +122,7 @@ private:
     ccl_buffer comm_buf;
     bool own_comm_buff = false;
     ccl_op_id_t op_id = 0;
-    atl_req_t req{};
-    uint64_t atl_tag{};
+    uint64_t atl_tag = 0;
     ccl_reduction_fn_t fn;
+    atl_req_t req{};
 };

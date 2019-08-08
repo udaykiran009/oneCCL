@@ -31,12 +31,14 @@ static ccl_status_t ccl_comm_exchange_colors(std::vector<int>& colors)
     ccl_request_t request;
 
     ccl_status_t status;
+
     CCL_CALL(ccl_allgatherv(colors.data(), exchange_count,
                             colors.data(), recv_counts.data(),
                             ccl_dtype_int, &coll_attr,
-                            nullptr, nullptr, &request));
+                            nullptr, /* comm */
+                            nullptr, /* stream */
+                            &request));
 
-    //wait for completion
     CCL_CALL(ccl_wait(request));
 
     return status;

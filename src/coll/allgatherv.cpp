@@ -33,7 +33,7 @@ ccl_status_t ccl_coll_build_naive_allgatherv(ccl_sched* sched,
 
     if (send_buf != recv_buf)
     {
-        //out-of-place case
+        // out-of-place case
         entry_factory::make_entry<copy_entry>(sched, send_buf, recv_buf + offsets[this_rank],
                                               send_count, dtype);
     }
@@ -42,7 +42,7 @@ ccl_status_t ccl_coll_build_naive_allgatherv(ccl_sched* sched,
     {
         if (rank_idx != this_rank)
         {
-            // send own buffer to other rank
+            // send own buffer to other ranks
             entry_factory::make_entry<send_entry>(sched, recv_buf + offsets[this_rank],
                                                   send_count, dtype, rank_idx);
             // recv other's rank buffer

@@ -8,9 +8,9 @@
 class sycl_copy_device_to_host_entry : public sched_entry
 {
 public:
-    static constexpr const char *entry_class_name() noexcept
+    static constexpr const char* entry_class_name() noexcept
     {
-        return "SYCL COPY DEVICE TO HOST";
+        return "SYCL_COPY_DEVICE_TO_HOST";
     }
 
     sycl_copy_device_to_host_entry() = delete;

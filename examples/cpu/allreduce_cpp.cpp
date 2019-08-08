@@ -8,7 +8,7 @@
 const size_t ITERS = 20;
 
 #define PRINT_BY_ROOT(fmt, ...)             \
-    if(comm.rank() == 0) {                  \
+    if (comm.rank() == 0) {                 \
         printf(fmt"\n", ##__VA_ARGS__); }   \
 
 void run_collective(const char* cmd_name,
@@ -45,6 +45,7 @@ void run_collective(const char* cmd_name,
         {
             fprintf(stderr, "idx %zu, expected %4.4f, got %4.4f\n",
                     recv_idx, expected, recv_buf[recv_idx]);
+            printf("FAILED\n");
             std::terminate();
         }
     }
@@ -89,6 +90,8 @@ int main()
 
             coll_attr.to_cache = 0;
             run_collective("regular allreduce", send_buf, recv_buf, comm, &stream, coll_attr);
+
+            PRINT_BY_ROOT("PASSED");
         }
     }
     catch (ccl::ccl_error& e)

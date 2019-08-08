@@ -10,7 +10,7 @@
 class sync_entry : public sched_entry
 {
 public:
-    static constexpr const char *entry_class_name() noexcept
+    static constexpr const char* entry_class_name() noexcept
     {
         return "SYNC";
     }

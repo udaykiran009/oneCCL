@@ -87,7 +87,7 @@ protected:
     ccl_sched_entry_status status = ccl_sched_entry_status_not_started;
     ccl_sched_entry_exec_mode exec_mode = ccl_sched_entry_exec_regular;
 
-#ifdef ENABLE_DEBUG
+#ifdef ENABLE_TIMERS
     using timer_type = std::chrono::system_clock;
     timer_type::duration exec_time{};
     timer_type::time_point start_time{};

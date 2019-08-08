@@ -2,16 +2,15 @@
 #pragma once
 
 #include "sched/entry/entry.hpp"
-#include "sched/entry_factory.h"
 
 #include <CL/sycl.hpp>
 
 class sycl_copy_host_to_device_entry : public sched_entry
 {
 public:
-    static constexpr const char *entry_class_name() noexcept
+    static constexpr const char* entry_class_name() noexcept
     {
-        return "SYCL COPY HOST TO DEVICE";
+        return "SYCL_COPY_HOST_TO_DEVICE";
     }
 
     sycl_copy_host_to_device_entry() = delete;

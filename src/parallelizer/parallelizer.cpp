@@ -449,6 +449,10 @@ ccl_status_t ccl_parallelizer::process(ccl_sched* sched)
             }
             else
             {
+                CCL_ASSERT(env_data.allgatherv_algo == ccl_coll_allgatherv_flat ||
+                           env_data.allgatherv_algo == ccl_coll_allgatherv_multi_bcast,
+                           "unexpected allgatherv algorithm");
+
                 for (idx = 0; idx < coll_param->comm->size(); idx++)
                 {
                     if (env_data.enable_allgatherv_iov)
@@ -468,7 +472,10 @@ ccl_status_t ccl_parallelizer::process(ccl_sched* sched)
 
                 if (env_data.allgatherv_algo == ccl_coll_allgatherv_flat)
                 {
-                    auto send_seg = ccl_buffer(&(coll_param->send_buf), coll_param->send_count * dtype_size, ccl_buffer_type::INDIRECT);
+                    auto send_seg = ccl_buffer(&(coll_param->send_buf),
+                                               coll_param->send_count * dtype_size,
+                                               ccl_buffer_type::INDIRECT);
+
                     size_t my_rank = coll_param->comm->rank();
                     if (coll_param->send_buf != coll_param->recv_buf)
                     {
@@ -482,7 +489,10 @@ ccl_status_t ccl_parallelizer::process(ccl_sched* sched)
                     }
                     else
                     {
-                        send_seg = ccl_buffer(&(coll_param->send_buf), coll_param->send_count * dtype_size, offsets[my_rank], ccl_buffer_type::INDIRECT);
+                        send_seg = ccl_buffer(&(coll_param->send_buf),
+                                              ag_recv_bytes,
+                                              offsets[my_rank],
+                                              ccl_buffer_type::INDIRECT);
                     }
 
                     for (idx = 0; idx < part_count; idx++)
