@@ -163,6 +163,11 @@ set_environment()
         fi
     fi
 
+    if [ -z "$worker_count" ]
+    then
+        worker_count="2"
+    fi
+    export CCL_WORKER_COUNT=$worker_count
     if [ -z "$runtime" ]
     then
         runtime="ofi"
@@ -196,7 +201,7 @@ set_environment()
 
 make_tests()
 {
-    cd ${WORK_DIR}/../../testspace/$runtime/tests/functional
+    cd ${WORK_DIR}/tests/functional
     mkdir -p build
     cd ./build
     cmake .. -DCMAKE_BUILD_TYPE=Release -DCMAKE_C_COMPILER="${C_COMPILER}" \
@@ -204,33 +209,21 @@ make_tests()
     make all
 }
 
-run_examples()
+
+
+run_compatibitily_tests()
 {
-    for transport in "ofi" "mpi";
-    do
-        examples_to_run=`ls ${WORK_DIR}/../build/_install/examples/`
-        if [ "$transport" == "mpi" ];
-        then
-            examples_to_run=`ls ${WORK_DIR}/../build/_install/examples/ | grep -v '.log' | grep -v 'unordered_allreduce' | grep -v 'custom_allreduce' | grep -v 'sparse_allreduce' `
-        else
-            examples_to_run=`ls ${WORK_DIR}/../build/_install/examples/ | grep -v '.log' | grep -v 'sparse_allreduce' `
-        fi
-        echo "run examples with $transport transport (${examples_to_run})"
-        for example in $examples_to_run
-        do
-            CCL_ATL_TRANSPORT=${transport} mpiexec.hydra -n 2 -ppn 1 -l ${WORK_DIR}/../build/_install/examples/$example | tee ${WORK_DIR}/../build/_install/examples/$example.log
-            grep -r 'FAILED' ${WORK_DIR}/../build/_install/examples/$example.log > /dev/null 2>&1
-            log_status_fail=${PIPESTATUS[0]}
-            if [ "$log_status_fail" -ne 0 ]
-            then
-                echo "example testing ... OK"
-            else
-                echo "example testing ... NOK"
-                exit 1
-            fi
-        done
-    done
-    exit 0
+	cd ${WORK_DIR}/examples
+	./run.sh 
+	log_status_fail=${PIPESTATUS[0]}
+	if [ "$log_status_fail" -eq 0 ]
+	then
+		echo "compatibitily testing ... OK"
+		exit 0
+	else
+		echo "compatibitily testing ... NOK"
+		exit 1
+	fi
 }
 
 run_tests()
@@ -313,13 +306,12 @@ run_tests()
 set_default_values
 set_environment
 
-export CCL_WORKER_COUNT=2
 
 while [ $# -ne 0 ]
 do
     case $1 in
-    "-example" )
-        run_examples
+    "-compatibility_tests" )
+		run_compatibitily_tests
         shift
         ;;
     *)
