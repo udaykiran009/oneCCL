@@ -7,13 +7,10 @@
 #include <vector>
 #include <chrono>
 
-#define COUNT     (1048576 / 256)
-#define ITERS     10
-#define COLL_ROOT 0
-
-#define START_MSG_SIZE_POWER 10
-#define MSG_SIZE_COUNT 11
-
+#define ITERS                (100)
+#define MSG_SIZE_COUNT       (6)
+#define START_MSG_SIZE_POWER (10)
+#define COLL_ROOT            (0)
 
 #define PRINT_BY_ROOT(fmt, ...)             \
     if (comm.rank() == 0) {                 \
@@ -32,9 +29,37 @@
       }                                                   \
   } while (0)
 
+#define MSG_LOOP(per_msg_code)                                  \
+  do                                                            \
+  {                                                             \
+      PRINT_BY_ROOT("iters=%d, msg_size_count=%d, "             \
+                    "start_msg_size_power=%d, coll_root=%d",    \
+                    ITERS, MSG_SIZE_COUNT,                      \
+                    START_MSG_SIZE_POWER, COLL_ROOT);           \
+      std::vector<size_t> msg_counts(MSG_SIZE_COUNT);           \
+      for (size_t idx = 0; idx < MSG_SIZE_COUNT; ++idx)         \
+      {                                                         \
+          msg_counts[idx] = 1u << (START_MSG_SIZE_POWER + idx); \
+      }                                                         \
+      try                                                       \
+      {                                                         \
+          for (auto msg_count : msg_counts)                     \
+          {                                                     \
+              PRINT_BY_ROOT("msg_count=%zu", msg_count);        \
+              per_msg_code;                                     \
+          }                                                     \
+      }                                                         \
+      catch (ccl::ccl_error& e)                                 \
+      {                                                         \
+          printf("FAILED\n");                                   \
+          fprintf(stderr, "ccl exception:\n%s\n", e.what());    \
+      }                                                         \
+      catch (...)                                               \
+      {                                                         \
+          printf("FAILED\n");                                   \
+          fprintf(stderr, "other exception\n");                 \
+      }                                                         \
+      PRINT_BY_ROOT("PASSED");                                  \
+  } while (0)
 
 #endif /* BASE_HPP */
-
-ccl::environment env;
-ccl::communicator comm;
-ccl::stream stream;

@@ -226,7 +226,18 @@ ccl_status_t ccl_coll_build_sparse_allreduce_basic(ccl_sched* sched,
                                                    ccl_datatype_internal_t value_dtype,
                                                    ccl_reduction_t op)
 {
-    LOG_DEBUG("build sparse allreduce");
+    LOG_DEBUG("build sparse allreduce, param:",
+              " send_ind_buf ", send_ind_buf,
+              ", send_ind_count ", send_ind_count,
+              ", send_val_buf ", send_val_buf,
+              ", send_val_count ", send_val_count,
+              ", recv_ind_buf ", recv_ind_buf,
+              ", recv_ind_count ", recv_ind_count,
+              ", recv_val_buf ", recv_val_buf,
+              ", recv_val_count ", recv_val_count,
+              ", index_dtype ", ccl_datatype_get_name(index_dtype),
+              ", value_dtype ", ccl_datatype_get_name(value_dtype),
+              ", op ", ccl_reduction_to_str(op));
 
     ccl_status_t status = ccl_status_success;
     sched_entry* e = nullptr;
@@ -357,6 +368,7 @@ ccl_status_t ccl_coll_build_sparse_allreduce_basic(ccl_sched* sched,
         e->set_field_fn(ccl_sched_entry_field_buf, sparse_get_recv_buf, sa_handler);
         e->set_field_fn(ccl_sched_entry_field_cnt, sparse_get_recv_cnt, sa_handler);
         sched->add_barrier();
+
         entry_factory::make_entry<function_entry>(sched, sparse_after_recv, sa_handler);
         sched->add_barrier();
 

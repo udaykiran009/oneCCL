@@ -233,7 +233,7 @@ static ccl_request* ccl_coll_create(ccl_coll_param& coll_param,
             if (was_fused)
             {
                 LOG_DEBUG("sched ", sched, ", ctype ",
-                          ccl_coll_type_to_str(sched->coll_param.ctype), "will be fused");
+                          ccl_coll_type_to_str(sched->coll_param.ctype), " will be fused");
                 request = sched->req;
                 return request;
             }

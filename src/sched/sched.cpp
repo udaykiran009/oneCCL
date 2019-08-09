@@ -130,8 +130,7 @@ ccl_status_t ccl_bin_progress(ccl_sched_bin* bin,
     LOG_TRACE("bin ", bin, ", sched_count ", bin_size);
 
     /* ensure communication progress */
-    atl_status_t atl_status __attribute__ ((unused));
-    atl_status = atl_comm_poll(bin->get_comm_ctx());
+    atl_status_t atl_status = atl_comm_poll(bin->get_comm_ctx());
     CCL_THROW_IF_NOT(atl_status == atl_status_success, "bad status ", atl_status);
 
     // iterate through the scheds store in the bin
@@ -357,17 +356,10 @@ void ccl_sched::sync_partial_scheds()
 {
     CCL_THROW_IF_NOT(!partial_scheds.empty(), "no partial schedules");
 
-    if (partial_scheds.size() == 1)
+    auto sync_obj = std::make_shared<sync_object>(partial_scheds.size());
+    for (auto& sched : partial_scheds)
     {
-        partial_scheds[0]->add_barrier();
-    }
-    else
-    {
-        auto sync_obj = std::make_shared<sync_object>(partial_scheds.size());
-        for (auto& sched : partial_scheds)
-        {
-            entry_factory::make_entry<sync_entry>(sched.get(), sync_obj);
-        }
+        entry_factory::make_entry<sync_entry>(sched.get(), sync_obj);
     }
 }
 

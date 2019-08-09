@@ -53,6 +53,10 @@ int main()
     for (idx = 0; idx < size; idx++)
         recv_counts[idx] = COUNT;
 
+    coll_attr.to_cache = 0;
+    RUN_COLLECTIVE(ccl_allgatherv(send_buf, COUNT, recv_bufs, recv_counts, ccl_dtype_float, &coll_attr, NULL, NULL, &request),
+                   "warmup_allgatherv");
+
     coll_attr.to_cache = 1;
     RUN_COLLECTIVE(ccl_allgatherv(send_buf, COUNT, recv_bufs, recv_counts, ccl_dtype_float, &coll_attr, NULL, NULL, &request),
                    "persistent_allgatherv");

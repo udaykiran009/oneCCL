@@ -3,6 +3,7 @@
 #include "coll/coll.hpp"
 #include "common/utils/utils.hpp"
 #include "common/utils/yield.hpp"
+#include "sched/sched_cache.hpp"
 
 #include <vector>
 
@@ -13,6 +14,8 @@ constexpr const char* CCL_SCHED_DUMP = "CCL_SCHED_DUMP";
 constexpr const char* CCL_WORKER_COUNT = "CCL_WORKER_COUNT";
 constexpr const char* CCL_WORKER_AFFINITY = "CCL_WORKER_AFFINITY";
 constexpr const char* CCL_WORKER_OFFLOAD = "CCL_WORKER_OFFLOAD";
+
+constexpr const char* CCL_ATL_TRANSPORT = "CCL_ATL_TRANSPORT";
 
 constexpr const char* CCL_ALLGATHERV = "CCL_ALLGATHERV";
 constexpr const char* CCL_ALLREDUCE = "CCL_ALLREDUCE";
@@ -35,7 +38,6 @@ constexpr const char* CCL_SPIN_COUNT = "CCL_SPIN_COUNT";
 constexpr const char* CCL_YIELD = "CCL_YIELD";
 constexpr const char* CCL_MAX_SHORT_SIZE = "CCL_MAX_SHORT_SIZE";
 constexpr const char* CCL_CACHE_KEY = "CCL_CACHE_KEY";
-constexpr const char* CCL_ATL_TRANSPORT = "CCL_ATL_TRANSPORT";
 
 enum ccl_priority_mode
 {
@@ -46,12 +48,12 @@ enum ccl_priority_mode
     ccl_priority_last_value
 };
 
-enum ccl_cache_key
+enum ccl_atl_transport
 {
-    ccl_cache_key_full,
-    ccl_cache_key_match_id,
+    ccl_atl_ofi,
+    ccl_atl_mpi,
 
-    ccl_cache_key_last_value
+    ccl_atl_last_value
 };
 
 struct alignas(CACHELINE_SIZE) ccl_env_data
@@ -62,6 +64,8 @@ struct alignas(CACHELINE_SIZE) ccl_env_data
     size_t worker_count;
     int worker_offload;
     std::vector<size_t> worker_affinity;
+
+    ccl_atl_transport atl_transport;
 
     ccl_coll_allgatherv_algo allgatherv_algo;
     ccl_coll_allreduce_algo allreduce_algo;
@@ -96,8 +100,10 @@ int ccl_env_2_float(const char* env_name, float& val);
 void ccl_env_parse();
 void ccl_env_print();
 
-int ccl_env_parse_atl_transport();
 int ccl_env_parse_worker_affinity();
+
+int ccl_env_parse_atl_transport();
+
 int ccl_env_parse_allgatherv_algo();
 int ccl_env_parse_allreduce_algo();
 int ccl_env_parse_barrier_algo();
@@ -108,4 +114,4 @@ int ccl_env_parse_yield_type();
 int ccl_env_parse_cache_key();
 
 const char* ccl_priority_mode_to_str(ccl_priority_mode type);
-const char* ccl_cache_key_to_str(ccl_cache_key key);
+const char* ccl_atl_transport_to_str(ccl_atl_transport transport);

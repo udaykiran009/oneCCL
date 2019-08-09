@@ -12,6 +12,8 @@ CheckCommandExitCode() {
 }
 
 export FI_PROVIDER=tcp
+export I_MPI_ADJUST_IBCAST=3 # TODO: fix multi-threaded MPI_Ibcast in IMPI
+
 run_examples()
 {
     for dir_name in "cpu" "sycl"
@@ -30,9 +32,9 @@ run_examples()
 			fi
 			if [ "$transport" == "mpi" ];
 			then
-				examples_to_run=`ls . | grep '.out' | grep -v '.log' | grep -v 'unordered_allreduce' | grep -v 'custom_allreduce' | grep -v 'sparse_allreduce' | grep -v 'allgatherv_cpp'`
+				examples_to_run=`ls . | grep '.out' | grep -v '.log' | grep -v 'unordered_allreduce' | grep -v 'custom_allreduce'`
 			else
-				examples_to_run=`ls . | grep '.out' | grep -v '.log' | grep -v 'sparse_allreduce' | grep -v 'allgatherv_cpp'`
+				examples_to_run=`ls . | grep '.out' | grep -v '.log'`
 			fi
 			for example in $examples_to_run
 			do

@@ -74,7 +74,7 @@ void ccl_sched_queue::add(ccl_sched* sched)
 {
     if (sched->strict_start_order)
     {
-        //use postponed queue here
+        // use postponed queue here
         std::lock_guard<sched_queue_lock_t> lock{postponed_queue_guard};
         postponed_queue.push_back(sched);
         postponed_queue_empty.clear();
@@ -85,7 +85,7 @@ void ccl_sched_queue::add(ccl_sched* sched)
     }
 }
 
-void ccl_sched_queue::add_internal(ccl_sched* sched, bool needToLock/* = true*/)
+void ccl_sched_queue::add_internal(ccl_sched* sched, bool need_to_lock /* = true*/)
 {
     size_t priority = sched->get_priority();
     if (env_data.priority_mode != ccl_priority_none)
@@ -102,11 +102,11 @@ void ccl_sched_queue::add_internal(ccl_sched* sched, bool needToLock/* = true*/)
 
     ccl_sched_bin* bin = nullptr;
 
-    //lock it, if requested
-    std::unique_lock<sched_queue_lock_t> ulock(bins_guard, std::defer_lock);
-    if (needToLock)
+    // lock it, if requested
+    std::unique_lock<sched_queue_lock_t> bins_lock(bins_guard, std::defer_lock);
+    if (need_to_lock)
     {
-        ulock.lock();
+        bins_lock.lock();
     }
 
     sched_bin_list_t::iterator it = bins.find(priority);
@@ -128,7 +128,7 @@ void ccl_sched_queue::add_internal(ccl_sched* sched, bool needToLock/* = true*/)
             LOG_DEBUG("priority ", priority, ", comm_idx ", comm_idx);
         }
 
-        //in-place construct priority bin with added sched
+        // in-place construct priority bin with added sched
         auto emplace_result = bins.emplace(std::piecewise_construct,
                                            std::forward_as_tuple(priority),
                                            std::forward_as_tuple(this, comm_ctx, priority, sched));
@@ -152,20 +152,20 @@ size_t ccl_sched_queue::erase(ccl_sched_bin* bin, size_t idx)
     LOG_DEBUG("queue ", this, ", bin ", bin);
     size_t next_idx = 0;
 
-    //erase sched and check bin size after
-    //no need to lock whole `bins` for single erase
+    // erase sched and check bin size after
+    // no need to lock whole `bins` for single erase
     if (!bin->erase(idx, next_idx))
     {
-        //'bin 'looks like empty, we can erase it from 'bins'.
-        //double check on bin.empty(), before remove it from whole table
+        // 'bin 'looks like empty, we can erase it from 'bins'.
+        // double check on bin.empty(), before remove it from whole table
         std::lock_guard<sched_queue_lock_t> lock{bins_guard};
         {
-            //no need to lock 'bin' here, because all adding are under bins_guard protection
+            // no need to lock 'bin' here, because all adding are under bins_guard protection
             if (bin->sched_list.elems.empty())
             {
                 bins.erase(bin_priority);
 
-                //change priority
+                // change priority
                 if (bins.empty())
                 {
                     max_priority = 0;
@@ -181,7 +181,7 @@ size_t ccl_sched_queue::erase(ccl_sched_bin* bin, size_t idx)
                     }
                     cached_max_priority_bin = &(it->second);
                 }
-            } //or do nothing, because somebody added new element in bin why we getting a lock
+            } // or do nothing, because somebody added new element in bin why we getting a lock
         }
     }
 
@@ -190,15 +190,15 @@ size_t ccl_sched_queue::erase(ccl_sched_bin* bin, size_t idx)
 
 ccl_sched_bin* ccl_sched_queue::peek()
 {
-    //Check postponed queue emptyflag at first
-    //no need to lock whole `postponed_queue_guard` here
+    // check postponed queue emptyflag at first
+    // no need to lock whole `postponed_queue_guard` here
     if (postponed_queue_empty.test_and_set())
     {
-        //no need to to iterates over postponed, just return max bin
+        // no need to to iterates over postponed, just return max bin
         return cached_max_priority_bin;
     }
 
-    //postponed queue is not empty in this case, process it at first
+    // postponed queue is not empty in this case, process it at first
     std::vector<ccl_sched*> current_processing_queue;
     {
         std::lock_guard<sched_queue_lock_t> lock{postponed_queue_guard};
@@ -208,23 +208,23 @@ ccl_sched_bin* ccl_sched_queue::peek()
         }
     }
 
-    //queue into priority bins
-    ccl_sched_bin* returnMaxBin = nullptr;
+    // queue into priority bins
+    ccl_sched_bin* result = nullptr;
     {
         std::lock_guard<sched_queue_lock_t> lock{bins_guard};
         for (auto sched : current_processing_queue)
         {
             add_internal(sched, false);
         }
-
-        returnMaxBin = cached_max_priority_bin;
+        result = cached_max_priority_bin;
     }
 
-    //process scheds without locks
+    // process scheds without locks
     for (auto sched : current_processing_queue)
     {
         ccl_sched_progress(sched);
     }
     current_processing_queue.clear();
-    return returnMaxBin;
+
+    return result;
 }

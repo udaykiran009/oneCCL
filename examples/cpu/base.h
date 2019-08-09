@@ -15,8 +15,8 @@
 #include "ccl.h"
 
 #define COUNT     (1048576 / 256)
-#define ITERS     10
-#define COLL_ROOT 0
+#define ITERS     (100)
+#define COLL_ROOT (0)
 
 void test_finalize(void);
 

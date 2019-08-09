@@ -3,10 +3,8 @@ SHELL = bash
 INCLUDES = -I$(CCL_ROOT)/include
 LDFLAGS  = -L$(CCL_ROOT)/lib/ -lccl -lOpenCL  -lsycl
 
-CXX     = clang++
-tests    =  $(patsubst %.cpp, %.out, $(wildcard *.cpp))
-# exclude_tests = unordered_allreduce.out allgatherv_iov.out sparse_allreduce.out custom_allreduce.out
-# filtered_tests    = $(filter-out $(exclude_tests), $(tests))
+CXX         = clang++
+tests       =  $(patsubst %.cpp, %.out, $(wildcard *.cpp))
 ENABLE_SYCL = 1
 
 ifeq ($(ENABLE_DEBUG),1)

@@ -21,7 +21,8 @@ ccl_executor::ccl_executor()
 
     LOG_INFO("init ATL, requested comm_count ", attr.comm_count);
 
-    atl_status_t atl_status = atl_init(nullptr, nullptr,
+    atl_status_t atl_status = atl_init(ccl_atl_transport_to_str(env_data.atl_transport),
+                                       nullptr, nullptr,
                                        &proc_idx, &proc_count,
                                        &attr, &atl_comms, &atl_desc);
     CCL_THROW_IF_NOT(atl_status == atl_status_success && atl_desc && atl_comms,
@@ -85,9 +86,14 @@ ccl_executor::~ccl_executor()
         }
     }
 
-    LOG_INFO("finalize ATL");
+    if (proc_idx == 0)
+        LOG_INFO("finalizing ATL");
 
     auto result = atl_finalize(atl_desc, atl_comms);
+
+    if (proc_idx == 0)
+        LOG_INFO("finalized ATL");
+
     if (result != atl_status_success)
     {
         LOG_ERROR("ATL finalize failed, error ", result);
@@ -103,9 +109,20 @@ void ccl_executor::start(ccl_sched* sched)
     }
     else
     {
+        size_t worker_idx;
         for (size_t idx = 0; idx < sched->partial_scheds.size(); idx++)
         {
-            workers[sched->partial_scheds[idx]->sched_id % workers.size()]->add(sched->partial_scheds[idx].get());
+            if (env_data.atl_transport == ccl_atl_mpi && sched->coll_param.ctype == ccl_coll_sparse_allreduce)
+            {
+                /* to workaround issue with multi-threaded MPI_Iprobe support in IMPI */
+                worker_idx = 0;
+            }
+            else
+            {
+                worker_idx = sched->partial_scheds[idx]->sched_id % workers.size();
+            }
+
+            workers[worker_idx]->add(sched->partial_scheds[idx].get());
         }
     }
 }

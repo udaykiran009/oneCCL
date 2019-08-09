@@ -1,4 +1,56 @@
+#include "common/env/env.hpp"
 #include "sched/sched_cache.hpp"
+
+const char* ccl_cache_key_to_str(ccl_cache_key key)
+{
+    switch (key)
+    {
+        case ccl_cache_key_full:
+            return "full";
+        case ccl_cache_key_match_id:
+            return "match_id";
+        default:
+            CCL_FATAL("unknown cache_key ", key);
+    }
+}
+
+bool ccl_sched_key::operator== (const ccl_sched_key& k) const
+{
+    char* first_field1 = (char*)&ctype;
+    char* last_field1 = (char*)&match_id;
+    void* first_field2 = (char*)&k.ctype;
+    size_t bytes_to_compare = last_field1 - first_field1;
+    bool is_fields_equal = (env_data.cache_key == ccl_cache_key_full) ?
+        !memcmp(first_field1, first_field2, bytes_to_compare) : 1;
+
+    bool is_equal = is_fields_equal && !match_id.compare(k.match_id);
+    LOG_DEBUG("is_equal ", is_equal);
+    print();
+    k.print();
+    return is_equal;
+}
+
+size_t ccl_sched_key_hasher::operator()(const ccl_sched_key& k) const
+{
+    if (k.has_hasher_result)
+        return k.get_hasher_result();
+
+    size_t hash_value = string_hasher(k.match_id);
+    if (env_data.cache_key == ccl_cache_key_full)
+    {
+        hash_value += k.ctype + k.dtype + k.itype + k.reduction +
+            k.count1 + k.count2 + k.root + (size_t)k.buf +
+            (size_t)k.count3 + (size_t)k.count4 + (size_t)k.comm +
+            (size_t)k.prologue_fn + (size_t)k.epilogue_fn + (size_t)k.reduction_fn;
+    }
+
+    const_cast<ccl_sched_key&>(k).set_hasher_result(hash_value);
+
+    LOG_DEBUG("hash_value ", hash_value);
+    k.print();
+
+    return hash_value;
+}
 
 ccl_sched* ccl_sched_cache::find(ccl_sched_key& key)
 {

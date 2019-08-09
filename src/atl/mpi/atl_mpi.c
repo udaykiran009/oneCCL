@@ -64,7 +64,6 @@ typedef struct atl_mpi_comm_context {
 
 typedef enum atl_mpi_comp_state {
     ATL_MPI_COMP_POSTED,
-    ATL_MPI_COMP_PROBE_COMPLETED,
     ATL_MPI_COMP_COMPLETED
 } atl_mpi_comp_state_t;
 
@@ -296,16 +295,22 @@ atl_mpi_comm_write(atl_comm_t *comm, const void *buf, size_t len, atl_mr_t *atl_
 }
 
 static atl_status_t
-atl_mpi_comm_probe(atl_comm_t *comm, size_t src_proc_idx, uint64_t tag, atl_req_t *req)
+atl_mpi_comm_probe(atl_comm_t *comm, size_t src_proc_idx, uint64_t tag, int *found, size_t *recv_len)
 {
-    MPI_Status status;
     atl_mpi_comm_context_t *comm_context =
         container_of(comm, atl_mpi_comm_context_t, atl_comm);
-    int ret = MPI_Probe(src_proc_idx, (int)tag, comm_context->mpi_comm, &status);
-    req->recv_len = 0;
-    MPI_Get_count(&status, MPI_BYTE, (int*)&req->recv_len);
-    atl_mpi_req_t *mpi_req = ((atl_mpi_req_t *)req->internal);
-    mpi_req->comp_state = ATL_MPI_COMP_PROBE_COMPLETED;
+    int flag = 0, len = 0, ret;
+    MPI_Status status;
+
+    ret = MPI_Iprobe(src_proc_idx, tag, comm_context->mpi_comm, &flag, &status);
+    if (flag)
+    {
+        MPI_Get_count(&status, MPI_BYTE, &len);
+    }
+
+    if (found) *found = flag;
+    if (recv_len) *recv_len = len;
+
     return RET2ATL(ret);
 }
 
@@ -329,20 +334,22 @@ static atl_status_t
 atl_mpi_comm_check(atl_comm_t *comm, int *status, atl_req_t *req)
 {
     atl_mpi_req_t *mpi_req = ((atl_mpi_req_t *)req->internal);
-    if (mpi_req->comp_state == ATL_MPI_COMP_PROBE_COMPLETED)
+    if (mpi_req->comp_state == ATL_MPI_COMP_COMPLETED)
     {
         *status = 1;
         return atl_status_success;
     }
 
+    int flag = 0;
     MPI_Status mpi_status;
-    int ret;
-    ret = MPI_Test(&mpi_req->mpi_context, status, &mpi_status);
-
-    if (*status)
+    int ret = MPI_Test(&mpi_req->mpi_context, &flag, &mpi_status);
+    if (flag)
     {
         mpi_req->comp_state = ATL_MPI_COMP_COMPLETED;
     }
+
+    if (status) *status = flag;
+
     return RET2ATL(ret);
 }
 

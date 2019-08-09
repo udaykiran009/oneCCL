@@ -149,10 +149,9 @@ void atl_free_string_array(char **s) {
     free(s);
 }
 
-atl_status_t atl_init(int *argc, char ***argv, size_t *proc_idx, size_t *proc_count,
+atl_status_t atl_init(const char *transport_name, int *argc, char ***argv, size_t *proc_idx, size_t *proc_count,
                       atl_attr_t *attr, atl_comm_t ***atl_comms, atl_desc_t **atl_desc) {
     const char *transport_dl_dir = NULL;
-    const char *transport_name = NULL;
     int n = 0;
     char **dirs;
     void *dlhandle;
@@ -170,10 +169,6 @@ atl_status_t atl_init(int *argc, char ***argv, size_t *proc_idx, size_t *proc_co
     if (!transport_dl_dir)
         transport_dl_dir = ATL_TRANSPORT_DL_DIR;
 
-    transport_name = getenv("CCL_ATL_TRANSPORT");
-    if (!transport_name)
-        transport_name = "mpi";
-
     dirs = atl_split_and_alloc(transport_dl_dir, ":", NULL);
     if (dirs) {
         for (n = 0; dirs[n]; ++n) {
@@ -182,8 +177,6 @@ atl_status_t atl_init(int *argc, char ***argv, size_t *proc_idx, size_t *proc_co
         }
         atl_free_string_array(dirs);
     }
-
-    LOG_INFO("use ", transport_name, " transport");
 
     return atl_status_success;
 

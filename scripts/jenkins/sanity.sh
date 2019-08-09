@@ -209,21 +209,19 @@ make_tests()
     make all
 }
 
-
-
 run_compatibitily_tests()
 {
-	cd ${WORK_DIR}/examples
-	./run.sh 
-	log_status_fail=${PIPESTATUS[0]}
-	if [ "$log_status_fail" -eq 0 ]
-	then
-		echo "compatibitily testing ... OK"
-		exit 0
-	else
-		echo "compatibitily testing ... NOK"
-		exit 1
-	fi
+    cd ${WORK_DIR}/examples
+    ./run.sh 
+    log_status_fail=${PIPESTATUS[0]}
+    if [ "$log_status_fail" -eq 0 ]
+    then
+        echo "compatibitily testing ... OK"
+        exit 0
+    else
+        echo "compatibitily testing ... NOK"
+        exit 1
+    fi
 }
 
 run_tests()

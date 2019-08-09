@@ -17,6 +17,14 @@ ccl_status_t ccl_init()
         global_data.algorithm_selector = std::unique_ptr<ccl_coll_algorithm_selector>(new ccl_coll_algorithm_selector());
         global_data.sched_cache = std::unique_ptr<ccl_sched_cache>(new ccl_sched_cache());
         global_data.parallelizer = std::unique_ptr<ccl_parallelizer>(new ccl_parallelizer(env_data.worker_count));
+
+        if (env_data.enable_fusion)
+        {
+            /* create fusion_manager before executor because service_worker uses fusion_manager */
+            global_data.fusion_manager =
+                std::unique_ptr<ccl_fusion_manager>(new ccl_fusion_manager());
+        }
+
         global_data.executor = std::unique_ptr<ccl_executor>(new ccl_executor());
 
         if (global_data.executor->proc_idx == 0)
@@ -32,12 +40,6 @@ ccl_status_t ccl_init()
         global_data.comm = std::make_shared<ccl_comm>(global_data.executor->proc_idx,
                                                       global_data.executor->proc_count,
                                                       global_data.comm_ids->acquire(true));
-
-        if (env_data.enable_fusion)
-        {
-            global_data.fusion_manager =
-                std::unique_ptr<ccl_fusion_manager>(new ccl_fusion_manager());
-        }
 
         if (env_data.enable_unordered_coll)
         {
@@ -57,13 +59,14 @@ ccl_status_t ccl_finalize()
 {
     try
     {
+        /* keep reverse order of initialization */
         global_data.unordered_coll_manager.reset();
-        global_data.fusion_manager.reset();
         global_data.sched_cache.reset();
-        global_data.executor.reset();
         global_data.comm.reset();
         global_data.comm_ids.reset();
         global_data.atl_tag.reset();
+        global_data.executor.reset();
+        global_data.fusion_manager.reset();
         global_data.parallelizer.reset();
         global_data.default_coll_attr.reset();
         global_data.algorithm_selector.reset();

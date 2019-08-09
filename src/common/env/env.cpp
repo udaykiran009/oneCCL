@@ -12,6 +12,8 @@ ccl_env_data env_data =
     .worker_offload = 1,
     .worker_affinity = std::vector<size_t>(),
 
+    .atl_transport = ccl_atl_mpi,
+
     .allgatherv_algo = ccl_coll_allgatherv_multi_bcast,
     .allreduce_algo = ccl_coll_allreduce_direct,
     .barrier_algo = ccl_coll_barrier_direct,
@@ -100,6 +102,27 @@ void ccl_env_parse()
     ccl_env_parse_worker_affinity();
 
     ccl_env_parse_atl_transport();
+
+    /* set default algorithms */
+    if (env_data.atl_transport == ccl_atl_ofi)
+    {
+        env_data.allgatherv_algo = ccl_coll_allgatherv_naive;
+        env_data.allreduce_algo = ccl_coll_allreduce_rabenseifner;
+        env_data.barrier_algo = ccl_coll_barrier_ring;
+        env_data.bcast_algo = ccl_coll_bcast_naive;
+        env_data.reduce_algo = ccl_coll_reduce_tree;
+        env_data.sparse_allreduce_algo = ccl_coll_sparse_allreduce_basic;
+    }
+    else if (env_data.atl_transport == ccl_atl_mpi)
+    {
+        env_data.allgatherv_algo = ccl_coll_allgatherv_multi_bcast;
+        env_data.allreduce_algo = ccl_coll_allreduce_direct;
+        env_data.barrier_algo = ccl_coll_barrier_direct;
+        env_data.bcast_algo = ccl_coll_bcast_direct;
+        env_data.reduce_algo = ccl_coll_reduce_direct;
+        env_data.sparse_allreduce_algo = ccl_coll_sparse_allreduce_basic;
+    }
+
     ccl_env_parse_allgatherv_algo();
     ccl_env_parse_allreduce_algo();
     ccl_env_parse_barrier_algo();
@@ -107,6 +130,7 @@ void ccl_env_parse()
     ccl_env_parse_reduce_algo();
     ccl_env_2_int(CCL_UNORDERED_COLL, env_data.enable_unordered_coll);
     ccl_env_2_int(CCL_ALLGATHERV_IOV, env_data.enable_allgatherv_iov);
+
     if (env_data.enable_allgatherv_iov && 
         env_data.allgatherv_algo != ccl_coll_allgatherv_flat &&
         env_data.allgatherv_algo != ccl_coll_allgatherv_multi_bcast)
@@ -176,6 +200,7 @@ void ccl_env_print()
     LOG_INFO(CCL_YIELD, ": ", ccl_yield_type_to_str(env_data.yield_type));
     LOG_INFO(CCL_MAX_SHORT_SIZE, ": ", env_data.max_short_size);
     LOG_INFO(CCL_CACHE_KEY, ": ", ccl_cache_key_to_str(env_data.cache_key));
+    LOG_INFO(CCL_ATL_TRANSPORT, ": ", ccl_atl_transport_to_str(env_data.atl_transport));
 }
 
 constexpr const char* AVAILABLE_CORES_ENV = "I_MPI_PIN_INFO";
@@ -280,6 +305,24 @@ int ccl_env_parse_worker_affinity()
 
     CCL_FREE(affinity_copy);
     return read_env;
+}
+
+int ccl_env_parse_atl_transport()
+{
+    char* env = getenv(CCL_ATL_TRANSPORT);
+    if (env)
+    {
+        if (strcmp(env, "ofi") == 0)
+            env_data.atl_transport = ccl_atl_ofi;
+        else if (strcmp(env, "mpi") == 0)
+            env_data.atl_transport = ccl_atl_mpi;
+        else
+        {
+            CCL_THROW("unknown ", CCL_ATL_TRANSPORT, " ", env);
+            return 0;
+        }
+    }
+    return 1;
 }
 
 int ccl_env_parse_allgatherv_algo()
@@ -449,24 +492,6 @@ int ccl_env_parse_yield_type()
     return 1;
 }
 
-int ccl_env_parse_atl_transport()
-{
-    char* env = getenv(CCL_ATL_TRANSPORT);
-    if (env)
-    {
-        if (strcmp(env, "ofi") == 0)
-        {
-            env_data.allgatherv_algo = ccl_coll_allgatherv_naive;
-            env_data.allreduce_algo = ccl_coll_allreduce_rabenseifner;
-            env_data.barrier_algo = ccl_coll_barrier_ring;
-            env_data.bcast_algo = ccl_coll_bcast_naive;
-            env_data.reduce_algo = ccl_coll_reduce_tree;
-            env_data.sparse_allreduce_algo = ccl_coll_sparse_allreduce_basic;
-        }
-    }
-    return 0;
-}
-
 int ccl_env_parse_cache_key()
 {
     char* env = getenv(CCL_CACHE_KEY);
@@ -485,6 +510,19 @@ int ccl_env_parse_cache_key()
     return 1; 
 }
 
+const char* ccl_atl_transport_to_str(ccl_atl_transport transport)
+{
+    switch (transport)
+    {
+        case ccl_atl_ofi:
+            return "ofi";
+        case ccl_atl_mpi:
+            return "mpi";
+        default:
+            CCL_FATAL("unknown transport ", transport);
+    }
+}
+
 const char* ccl_priority_mode_to_str(ccl_priority_mode mode)
 {
     switch (mode)
@@ -497,18 +535,5 @@ const char* ccl_priority_mode_to_str(ccl_priority_mode mode)
             return "lifo";
         default:
             CCL_FATAL("unknown priority_mode ", mode);
-    }
-}
-
-const char* ccl_cache_key_to_str(ccl_cache_key key)
-{
-    switch (key)
-    {
-        case ccl_cache_key_full:
-            return "full";
-        case ccl_cache_key_match_id:
-            return "match_id";
-        default:
-            CCL_FATAL("unknown cache_key ", key);
     }
 }

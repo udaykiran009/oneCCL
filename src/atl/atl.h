@@ -121,7 +121,6 @@ typedef struct atl_transport {
 typedef struct atl_req {
     uint64_t tag;
     size_t remote_proc_idx;
-    size_t recv_len;
 
     void *internal[ATL_REQ_SIZE];
 } atl_req_t __attribute__ ((aligned (ATL_CACHELINE_LEN)));
@@ -154,7 +153,7 @@ typedef struct atl_pt2pt_ops {
     atl_status_t (*recv)(atl_comm_t *comm, void *buf, size_t len,
                          size_t src_proc_idx, uint64_t tag, atl_req_t *req);
     atl_status_t (*probe)(atl_comm_t *comm, size_t src_proc_idx, uint64_t tag,
-                          atl_req_t *req);
+                          int *found, size_t *recv_len);
 } atl_pt2pt_ops_t;
 
 typedef struct atl_rma_ops {
@@ -216,7 +215,8 @@ static inline INI_SIG(atl_noop_init)
     return atl_status_success;
 }
 
-atl_status_t atl_init(int *argc, char ***argv, size_t *proc_idx, size_t *proc_count,
+/* FIXME: use ccl_atl_transport enum instead of char* after better integration of CCL core and ATL codes */
+atl_status_t atl_init(const char *transport_name, int *argc, char ***argv, size_t *proc_idx, size_t *proc_count,
                       atl_attr_t *attr, atl_comm_t ***atl_comms, atl_desc_t **atl_desc);
 
 static inline void atl_proc_idx(atl_desc_t *desc, size_t *proc_idx)
@@ -292,9 +292,9 @@ static inline atl_status_t atl_comm_write(atl_comm_t *comm, const void *buf, siz
 }
 
 static inline atl_status_t atl_comm_probe(atl_comm_t *comm, size_t src_proc_idx,
-                                          uint64_t tag, atl_req_t *req)
+                                          uint64_t tag, int *found, size_t *recv_len)
 {
-    return comm->pt2pt_ops->probe(comm, src_proc_idx, tag, req);
+    return comm->pt2pt_ops->probe(comm, src_proc_idx, tag, found, recv_len);
 }
 
 static inline atl_status_t atl_comm_wait(atl_comm_t *comm, atl_req_t *req)

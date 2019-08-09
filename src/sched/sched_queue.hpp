@@ -9,7 +9,7 @@
 #define CCL_SCHED_QUEUE_INITIAL_BIN_COUNT (1024)
 
 using sched_container_t = std::vector<ccl_sched*>;
-using sched_bin_list_t = std::unordered_map<size_t, ccl_sched_bin>;
+using sched_bin_list_t = std::unordered_map<size_t, ccl_sched_bin>; // key - priority
 using sched_queue_lock_t = ccl_spinlock;
 
 /* ATL comm is limited resource, each priority bucket consumes single ATL comm and uses it for all bins in bucket */
@@ -144,9 +144,9 @@ public:
 
 private:
     ccl_sched_queue* queue = nullptr; //!< pointer to the queue which owns the bin
-    atl_comm_t* comm_ctx = nullptr;    //!< ATL communication context
-    ccl_sched_list sched_list;      //!< list of schedules
-    size_t priority{};                 //!< the single priority for all elems
+    atl_comm_t* comm_ctx = nullptr;   //!< ATL communication context
+    ccl_sched_list sched_list;        //!< list of schedules
+    size_t priority{};                //!< the single priority for all elems
 };
 
 class ccl_sched_queue
@@ -174,7 +174,7 @@ private:
     void add_internal(ccl_sched* sched, bool needToLock = true);
 
     sched_queue_lock_t postponed_queue_guard{};
-    //added padding, to make sure that 'postponed_queue_guard' and 'bins_guard'
+    // added padding, to make sure that 'postponed_queue_guard' and 'bins_guard'
     // takes different cache lines (eliminates 'false sharing')
     char padding_queue[CACHELINE_SIZE];
     sched_queue_lock_t bins_guard{};
