@@ -74,6 +74,7 @@ ccl_status_t ccl_parallelizer::process(ccl_sched* sched)
     switch (coll_type)
     {
         case ccl_coll_barrier:
+            part_count = max_data_partition_count;
             break;
         case ccl_coll_bcast:
         case ccl_coll_reduce:
@@ -183,10 +184,12 @@ ccl_status_t ccl_parallelizer::process(ccl_sched* sched)
     switch (coll_type)
     {
         case ccl_coll_barrier:
+            sched->sync_partial_scheds();
             for (idx = 0; idx < part_count; idx++)
             {
                 CCL_CALL(ccl_coll_build_barrier(part_scheds[idx].get()));
             }
+            sched->sync_partial_scheds();
             break;
         case ccl_coll_bcast:
 #ifdef ENABLE_SYCL

@@ -12,7 +12,6 @@ CheckCommandExitCode() {
 }
 
 export FI_PROVIDER=tcp
-export I_MPI_ADJUST_IBCAST=3 # TODO: fix multi-threaded MPI_Ibcast in IMPI
 
 run_examples()
 {
