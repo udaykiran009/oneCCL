@@ -119,10 +119,10 @@ do {   \
       ccl::communicator comm;                                           \
       ccl::stream stream;                                               \
       std::shared_ptr <ccl::request> req;                               \
-      ccl_coll_attr_t coll_attr {};                                     \
+      ccl::coll_attr coll_attr{};                                        \
       InitCollAttr(&coll_attr);                                          \
       req = comm.allreduce(&result, &result_final, 1,                    \
-                           ccl::data_type::dtype_int,                   \
+                           ccl::data_type::dt_int,                       \
                            ccl::reduction::sum, &coll_attr, &stream);    \
       req->wait();                                                       \
       if (result_final > 0)                                              \
@@ -400,7 +400,7 @@ POST_AND_PRE_INCREMENTS(BufferCount, BC_LAST);
 POST_AND_PRE_INCREMENTS(PrologType, PRLT_LAST);
 POST_AND_PRE_INCREMENTS(EpilogType, EPLT_LAST);
 
-void InitCollAttr(ccl_coll_attr_t *coll_attr)
+void InitCollAttr(ccl::coll_attr* coll_attr)
 {
     coll_attr->prologue_fn = NULL;
     coll_attr->epilogue_fn = NULL;
@@ -417,7 +417,7 @@ void PrintErrMessage(char* errMessage, std::ostream &output)
     ccl::communicator comm;
     ccl::stream stream;
     std::shared_ptr <ccl::request> req;
-    ccl_coll_attr_t coll_attr {};
+    ccl::coll_attr coll_attr{};
     InitCollAttr(&coll_attr);
     int processCount = comm.size();
     int processIdx = comm.rank();
@@ -427,7 +427,7 @@ void PrintErrMessage(char* errMessage, std::ostream &output)
     displs[0] = 1;
     for (int i = 1; i < processCount; i++)
         displs[i] = 1;
-    req = comm.allgatherv(&messageLen, 1, arrMessageLen_copy, displs, ccl::data_type::dtype_int, &coll_attr, &stream);
+    req = comm.allgatherv(&messageLen, 1, arrMessageLen_copy, displs, ccl::data_type::dt_int, &coll_attr, &stream);
     req->wait();
     for (int i = 0; i < processCount; i++)
         arrMessageLen[i] = arrMessageLen_copy[i];
@@ -441,7 +441,7 @@ void PrintErrMessage(char* errMessage, std::ostream &output)
         return;
     }
     char* arrErrMessage = new char[fullMessageLen];
-    req = comm.allgatherv(errMessage, messageLen, arrErrMessage, arrMessageLen, ccl::data_type::dtype_char, &coll_attr, &stream);
+    req = comm.allgatherv(errMessage, messageLen, arrErrMessage, arrMessageLen, ccl::data_type::dt_char, &coll_attr, &stream);
     req->wait();
     if (processIdx == 0)
     {
@@ -593,7 +593,7 @@ struct TypedTestParam
     std::vector<std::vector<T>> recvBuf;
     ccl::communicator comm;
     std::vector<std::shared_ptr<ccl::request>> req;
-    ccl_coll_attr_t coll_attr {};
+    ccl::coll_attr coll_attr{};
     std::string match_id;
     ccl::communicator global_comm;
     ccl::stream stream;

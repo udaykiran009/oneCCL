@@ -16,7 +16,7 @@ int main(int argc, char** argv)
     int i = 0;
     size_t size = 0;
     size_t rank = 0;
-    ccl_coll_attr_t coll_attr{};
+    ccl::coll_attr coll_attr{};
 
     cl::sycl::queue q;
     cl::sycl::buffer<int, 1> sendbuf(COUNT);
@@ -28,7 +28,7 @@ int main(int argc, char** argv)
     size = comm.size();
 
     /* create SYCL stream */
-    ccl::stream stream(ccl_stream_sycl, &q);
+    ccl::stream stream(ccl::stream_type::sycl, &q);
 
     /* open sendbuf and initialize it on the CPU side */
     auto host_acc_sbuf = sendbuf.get_access<mode::write>();
@@ -49,7 +49,7 @@ int main(int argc, char** argv)
     comm.allreduce(&sendbuf,
                    &recvbuf,
                    COUNT,
-                   ccl::data_type::dtype_int,
+                   ccl::data_type::dt_int,
                    ccl::reduction::sum,
                    &coll_attr,
                    &stream)->wait();

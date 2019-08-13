@@ -4,7 +4,7 @@ void run_collective(const char* cmd_name,
                     std::vector<float>& buf,
                     ccl::communicator& comm,
                     ccl::stream& stream,
-                    ccl_coll_attr_t& coll_attr)
+                    ccl::coll_attr& coll_attr)
 {
     std::chrono::system_clock::duration exec_time{};
 
@@ -22,9 +22,9 @@ void run_collective(const char* cmd_name,
         auto start = std::chrono::system_clock::now();
         comm.bcast(buf.data(),
                    buf.size(),
-                   ccl::data_type::dtype_float,
+                   ccl::data_type::dt_float,
                    COLL_ROOT,
-                   &coll_attr, 
+                   &coll_attr,
                    &stream)->wait();
         exec_time += std::chrono::system_clock::now() - start;
     }
@@ -51,7 +51,7 @@ int main()
     ccl::environment env;
     ccl::communicator comm;
     ccl::stream stream;
-    ccl_coll_attr_t coll_attr{};
+    ccl::coll_attr coll_attr{};
 
     MSG_LOOP(
         std::vector<float> buf(msg_count);

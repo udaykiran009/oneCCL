@@ -1,8 +1,8 @@
 #include "common/stream/stream.hpp"
 
-ccl_stream::ccl_stream(ccl_stream_type_t stream_type,
-                         void* native_stream):
-    stream_type(stream_type),
+ccl_stream::ccl_stream(ccl_stream_type_t type,
+	                   void* native_stream) :
+    type(type),
     native_stream(native_stream)
 {}
 

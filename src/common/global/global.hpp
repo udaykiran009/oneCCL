@@ -1,7 +1,6 @@
 #pragma once
 
 #include "ccl.h"
-#include "ccl_types.hpp"
 #include "common/utils/utils.hpp"
 
 #include <memory>

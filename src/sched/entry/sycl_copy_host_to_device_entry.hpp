@@ -44,7 +44,7 @@ protected:
                            "  dtype ", dtype,
                            ", in_buf ", in_buf,
                            ", out_buf ", out_buf,
-                           ", native_stream ", stream->get_stream(),
+                           ", native_stream ", stream->get_native_stream(),
                            "\n");
     }
 

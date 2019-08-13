@@ -185,8 +185,8 @@ ccl_request* ccl_allgatherv_impl(const void* send_buf,
                                  void* recv_buf,
                                  const size_t* recv_counts,
                                  ccl_datatype_t dtype,
-                                 const ccl_coll_attr_t* attributes,
-                                 ccl_comm* communicator,
+                                 const ccl_coll_attr_t* attr,
+                                 ccl_comm* comm,
                                  const ccl_stream* stream);
 
 ccl_request* ccl_allreduce_impl(const void* send_buf,
@@ -194,19 +194,19 @@ ccl_request* ccl_allreduce_impl(const void* send_buf,
                                 size_t count,
                                 ccl_datatype_t dtype,
                                 ccl_reduction_t reduction,
-                                const ccl_coll_attr_t* attributes,
-                                ccl_comm* communicator,
+                                const ccl_coll_attr_t* attr,
+                                ccl_comm* comm,
                                 const ccl_stream* stream);
 
-void ccl_barrier_impl(ccl_comm* communicator,
+void ccl_barrier_impl(ccl_comm* comm,
                       const ccl_stream* stream);
 
 ccl_request* ccl_bcast_impl(void* buf,
                             size_t count,
                             ccl_datatype_t dtype,
                             size_t root,
-                            const ccl_coll_attr_t* attributes,
-                            ccl_comm* communicator,
+                            const ccl_coll_attr_t* attr,
+                            ccl_comm* comm,
                             const ccl_stream* stream);
 
 ccl_request* ccl_reduce_impl(const void* send_buf,
@@ -215,8 +215,8 @@ ccl_request* ccl_reduce_impl(const void* send_buf,
                              ccl_datatype_t dtype,
                              ccl_reduction_t reduction,
                              size_t root,
-                             const ccl_coll_attr_t* attributes,
-                             ccl_comm* communicator,
+                             const ccl_coll_attr_t* attr,
+                             ccl_comm* comm,
                              const ccl_stream* stream);
 
 ccl_request* ccl_sparse_allreduce_impl(const void* send_ind_buf, size_t send_ind_count,
@@ -224,5 +224,5 @@ ccl_request* ccl_sparse_allreduce_impl(const void* send_ind_buf, size_t send_ind
                                        void** recv_ind_buf, size_t* recv_ind_count,
                                        void** recv_val_buf, size_t* recv_val_count,
                                        ccl_datatype_t index_dtype, ccl_datatype_t dtype,
-                                       ccl_reduction_t reduction, const ccl_coll_attr_t* attributes,
-                                       ccl_comm* communicator, const ccl_stream* stream);
+                                       ccl_reduction_t reduction, const ccl_coll_attr_t* attr,
+                                       ccl_comm* comm, const ccl_stream* stream);

@@ -5,7 +5,7 @@ void run_collective(const char* cmd_name,
                     std::vector<float>& recv_buf,
                     ccl::communicator& comm,
                     ccl::stream& stream,
-                    ccl_coll_attr_t& coll_attr)
+                    ccl::coll_attr& coll_attr)
 {
     std::chrono::system_clock::duration exec_time{};
     float expected = (comm.size() - 1) * (static_cast<float>(comm.size()) / 2);
@@ -18,7 +18,7 @@ void run_collective(const char* cmd_name,
         comm.reduce(send_buf.data(),
                     recv_buf.data(),
                     recv_buf.size(),
-                    ccl::data_type::dtype_float,
+                    ccl::data_type::dt_float,
                     ccl::reduction::sum,
                     COLL_ROOT,
                     &coll_attr,
@@ -48,7 +48,7 @@ int main()
     ccl::environment env;
     ccl::communicator comm;
     ccl::stream stream;
-    ccl_coll_attr_t coll_attr{};
+    ccl::coll_attr coll_attr{};
 
     MSG_LOOP(
         std::vector<float> send_buf(msg_count, static_cast<float>(comm.rank()));

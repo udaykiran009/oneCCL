@@ -137,13 +137,13 @@ const char* ccl_coll_sparse_allreduce_algo_to_str(ccl_coll_sparse_allreduce_algo
 }
 
 static ccl_request* ccl_coll_create(ccl_coll_param& coll_param,
-                                    const ccl_coll_attr_t* attributes,
+                                    const ccl_coll_attr_t* coll_attr,
                                     ccl_sched_key& key)
 {
     ccl_sched* sched = nullptr;
     ccl_comm* match_id_comm = nullptr;
     ccl_request* request = nullptr;
-    const ccl_coll_attr_t* attr = attributes ? attributes : global_data.default_coll_attr.get();
+    const ccl_coll_attr_t* attr = coll_attr ? coll_attr : global_data.default_coll_attr.get();
 
     bool should_run = true;
     bool should_cache = false;
@@ -182,7 +182,7 @@ static ccl_request* ccl_coll_create(ccl_coll_param& coll_param,
 
     if (should_cache && match_id.empty())
     {
-        LOG_DEBUG("no match_id provided, disabling collective caching");
+        LOG_ERROR("collective caching is requested but no match_id is provided");
         should_cache = false;
     }
 
@@ -499,8 +499,8 @@ ccl_request* ccl_allgatherv_impl(const void* send_buf,
                                  void* recv_buf,
                                  const size_t* recv_counts,
                                  ccl_datatype_t dtype,
-                                 const ccl_coll_attr_t* attributes,
-                                 ccl_comm* communicator,
+                                 const ccl_coll_attr_t* attr,
+                                 ccl_comm* comm,
                                  const ccl_stream* stream)
 {
     ccl_coll_param coll_param{};
@@ -524,16 +524,16 @@ ccl_request* ccl_allgatherv_impl(const void* send_buf,
     coll_param.recv_counts = recv_counts;
     coll_param.dtype = ccl_datatype_get(dtype);
     coll_param.stream = stream;
-    coll_param.comm = communicator;
+    coll_param.comm = comm;
 
     ccl_sched_key key{};
     key.ctype = ccl_coll_allgatherv;
     key.buf = (void*)recv_counts;
     key.count1 = send_count;
     key.dtype = dtype;
-    key.comm = communicator;
+    key.comm = comm;
 
-    auto req = ccl_coll_create(coll_param, attributes, key);
+    auto req = ccl_coll_create(coll_param, attr, key);
     LOG_DEBUG("coll ", ccl_coll_type_to_str(coll_param.ctype), " created, req ", req);
     return req;
 }
@@ -543,8 +543,8 @@ ccl_request* ccl_allreduce_impl(const void* send_buf,
                                 size_t count,
                                 ccl_datatype_t dtype,
                                 ccl_reduction_t reduction,
-                                const ccl_coll_attr_t* attributes,
-                                ccl_comm* communicator,
+                                const ccl_coll_attr_t* attr,
+                                ccl_comm* comm,
                                 const ccl_stream* stream)
 {
     ccl_coll_param coll_param{};
@@ -568,34 +568,34 @@ ccl_request* ccl_allreduce_impl(const void* send_buf,
     coll_param.dtype = ccl_datatype_get(dtype);
     coll_param.reduction = reduction;
     coll_param.stream = stream;
-    coll_param.comm = communicator;
+    coll_param.comm = comm;
 
     ccl_sched_key key{};
     key.ctype = ccl_coll_allreduce;
     key.count1 = count;
     key.dtype = dtype;
     key.reduction = reduction;
-    key.comm = communicator;
+    key.comm = comm;
 
-    auto req = ccl_coll_create(coll_param, attributes, key);
+    auto req = ccl_coll_create(coll_param, attr, key);
     LOG_DEBUG("coll ", ccl_coll_type_to_str(coll_param.ctype), " created, req ", req, " count ", count);
     return req;
 }
 
-void ccl_barrier_impl(ccl_comm* communicator, const ccl_stream* stream)
+void ccl_barrier_impl(ccl_comm* comm, const ccl_stream* stream)
 {
     ccl_coll_param coll_param{};
     coll_param.ctype = ccl_coll_barrier;
     coll_param.dtype = ccl_dtype_internal_char;
     coll_param.stream = stream;
-    coll_param.comm = communicator;
+    coll_param.comm = comm;
 
     ccl_coll_attr_t attributes{};
     attributes.synchronous = 1;
 
     ccl_sched_key key{};
     key.ctype = ccl_coll_barrier;
-    key.comm = communicator;
+    key.comm = comm;
 
     ccl_coll_create(coll_param, &attributes, key);
 }
@@ -604,8 +604,8 @@ ccl_request* ccl_bcast_impl(void* buf,
                             size_t count,
                             ccl_datatype_t dtype,
                             size_t root,
-                            const ccl_coll_attr_t* attributes,
-                            ccl_comm* communicator,
+                            const ccl_coll_attr_t* attr,
+                            ccl_comm* comm,
                             const ccl_stream* stream)
 {
     ccl_coll_param coll_param{};
@@ -625,16 +625,16 @@ ccl_request* ccl_bcast_impl(void* buf,
     coll_param.dtype = ccl_datatype_get(dtype);
     coll_param.root = root;
     coll_param.stream = stream;
-    coll_param.comm = communicator;
+    coll_param.comm = comm;
 
     ccl_sched_key key{};
     key.ctype = ccl_coll_bcast;
     key.count1 = count;
     key.dtype = dtype;
     key.root = root;
-    key.comm = communicator;
+    key.comm = comm;
 
-    auto req = ccl_coll_create(coll_param, attributes, key);
+    auto req = ccl_coll_create(coll_param, attr, key);
     LOG_DEBUG("coll ", ccl_coll_type_to_str(coll_param.ctype), " created, req ", req);
     return req;
 }
@@ -645,8 +645,8 @@ ccl_request* ccl_reduce_impl(const void* send_buf,
                              ccl_datatype_t dtype,
                              ccl_reduction_t reduction,
                              size_t root,
-                             const ccl_coll_attr_t* attributes,
-                             ccl_comm* communicator,
+                             const ccl_coll_attr_t* attr,
+                             ccl_comm* comm,
                              const ccl_stream* stream)
 {
     ccl_coll_param coll_param{};
@@ -656,7 +656,7 @@ ccl_request* ccl_reduce_impl(const void* send_buf,
          coll_param.sycl_send_buf = static_cast<ccl_sycl_buffer_t *>((void*)send_buf);
          coll_param.send_buf = new char[coll_param.sycl_send_buf->get_access<cl::sycl::access::mode::read>().get_count()*ccl_datatype_get_size(ccl_datatype_get(dtype))];
          CCL_ASSERT(coll_param.send_buf);
-         if(communicator->rank() == root) {
+         if (comm->rank() == root) {
              coll_param.sycl_recv_buf = static_cast<ccl_sycl_buffer_t *>(recv_buf);
              coll_param.recv_buf = new char[coll_param.sycl_recv_buf->get_access<cl::sycl::access::mode::read>().get_count()*ccl_datatype_get_size(ccl_datatype_get(dtype))];
              CCL_ASSERT(coll_param.recv_buf);
@@ -675,7 +675,7 @@ ccl_request* ccl_reduce_impl(const void* send_buf,
     coll_param.reduction = reduction;
     coll_param.root = root;
     coll_param.stream = stream;
-    coll_param.comm = communicator;
+    coll_param.comm = comm;
 
     ccl_sched_key key{};
     key.ctype = ccl_coll_reduce;
@@ -683,9 +683,9 @@ ccl_request* ccl_reduce_impl(const void* send_buf,
     key.dtype = dtype;
     key.reduction = reduction;
     key.root = root;
-    key.comm = communicator;
+    key.comm = comm;
 
-    auto req = ccl_coll_create(coll_param, attributes, key);
+    auto req = ccl_coll_create(coll_param, attr, key);
     LOG_DEBUG("coll ", ccl_coll_type_to_str(coll_param.ctype), " created, req ", req);
     return req;
 }
@@ -695,8 +695,8 @@ ccl_request* ccl_sparse_allreduce_impl(const void* send_ind_buf, size_t send_ind
                                        void** recv_ind_buf, size_t* recv_ind_count,
                                        void** recv_val_buf, size_t* recv_val_count,
                                        ccl_datatype_t index_dtype, ccl_datatype_t dtype,
-                                       ccl_reduction_t reduction, const ccl_coll_attr_t* attributes,
-                                       ccl_comm* communicator, const ccl_stream* stream)
+                                       ccl_reduction_t reduction, const ccl_coll_attr_t* attr,
+                                       ccl_comm* comm, const ccl_stream* stream)
 {
 #ifdef ENABLE_SYCL
     if (stream && stream->get_type() == ccl_stream_sycl) {
@@ -718,7 +718,7 @@ ccl_request* ccl_sparse_allreduce_impl(const void* send_ind_buf, size_t send_ind
     coll_param.sparse_param.itype = ccl_datatype_get(index_dtype);
     coll_param.reduction = reduction;
     coll_param.stream = stream;
-    coll_param.comm = communicator;
+    coll_param.comm = comm;
 
     ccl_sched_key key{};
     key.ctype = ccl_coll_sparse_allreduce;
@@ -729,9 +729,9 @@ ccl_request* ccl_sparse_allreduce_impl(const void* send_ind_buf, size_t send_ind
     key.itype = index_dtype;
     key.dtype = dtype;
     key.reduction = reduction;
-    key.comm = communicator;
+    key.comm = comm;
 
-    auto req = ccl_coll_create(coll_param, attributes, key);
+    auto req = ccl_coll_create(coll_param, attr, key);
     LOG_DEBUG("coll ", ccl_coll_type_to_str(coll_param.ctype), " created, req ", req);
     return req;
 }

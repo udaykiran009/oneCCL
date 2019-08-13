@@ -26,14 +26,31 @@ enum class reduction
  */
 enum class data_type
 {
-    dtype_char = ccl_dtype_char,
-    dtype_int = ccl_dtype_int,
-    dtype_bfp16 = ccl_dtype_bfp16,
-    dtype_float = ccl_dtype_float,
-    dtype_double = ccl_dtype_double,
-    dtype_int64 = ccl_dtype_int64,
-    dtype_uint64 = ccl_dtype_uint64
+    dt_char = ccl_dtype_char,
+    dt_int = ccl_dtype_int,
+    dt_bfp16 = ccl_dtype_bfp16,
+    dt_float = ccl_dtype_float,
+    dt_double = ccl_dtype_double,
+    dt_int64 = ccl_dtype_int64,
+    dt_uint64 = ccl_dtype_uint64,
+
+    dt_last_value = ccl_dtype_last_value
 };
+
+/**
+ * Supported ccl stream types
+ */
+enum class stream_type
+{
+    cpu = ccl_stream_cpu,
+    sycl = ccl_stream_sycl,
+
+    last_value = ccl_stream_last_value
+};
+
+typedef ccl_coll_attr_t coll_attr;
+
+typedef ccl_comm_attr_t comm_attr;
 
 /**
  * Exception type that may be thrown by ccl API

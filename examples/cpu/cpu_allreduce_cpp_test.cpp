@@ -11,7 +11,7 @@ int main(int argc, char** argv)
     int i = 0;
     int size = 0;
     int rank = 0;
-    ccl_coll_attr_t coll_attr{};
+    ccl::coll_attr coll_attr{};
 
     auto sendbuf = new int[COUNT];
     auto recvbuf = new int[COUNT];
@@ -37,7 +37,7 @@ int main(int argc, char** argv)
     comm.allreduce(sendbuf,
                    recvbuf,
                    COUNT,
-                   ccl::data_type::dtype_int,
+                   ccl::data_type::dt_int,
                    ccl::reduction::sum,
                    &coll_attr,
                    &stream)->wait();

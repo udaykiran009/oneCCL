@@ -37,15 +37,20 @@
                     ITERS, MSG_SIZE_COUNT,                      \
                     START_MSG_SIZE_POWER, COLL_ROOT);           \
       std::vector<size_t> msg_counts(MSG_SIZE_COUNT);           \
+      std::vector<std::string> msg_match_ids(MSG_SIZE_COUNT);   \
       for (size_t idx = 0; idx < MSG_SIZE_COUNT; ++idx)         \
       {                                                         \
           msg_counts[idx] = 1u << (START_MSG_SIZE_POWER + idx); \
+          msg_match_ids[idx] = std::to_string(msg_counts[idx]); \
       }                                                         \
       try                                                       \
       {                                                         \
-          for (auto msg_count : msg_counts)                     \
+          for (size_t idx = 0; idx < MSG_SIZE_COUNT; ++idx)     \
           {                                                     \
-              PRINT_BY_ROOT("msg_count=%zu", msg_count);        \
+              size_t msg_count = msg_counts[idx];               \
+              coll_attr.match_id = msg_match_ids[idx].c_str();  \
+              PRINT_BY_ROOT("msg_count=%zu, match_id=%s",       \
+                            msg_count, coll_attr.match_id);     \
               per_msg_code;                                     \
           }                                                     \
       }                                                         \

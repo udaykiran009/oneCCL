@@ -15,8 +15,8 @@ ccl_status_t CCL_API ccl_allgatherv(
     void* recv_buf,
     const size_t* recv_counts,
     ccl_datatype_t dtype,
-    const ccl_coll_attr_t* attributes,
-    ccl_comm_t communicator,
+    const ccl_coll_attr_t* attr,
+    ccl_comm_t comm,
     ccl_stream_t stream,
     ccl_request_t* req);
 
@@ -26,12 +26,12 @@ ccl_status_t CCL_API ccl_allreduce(
     size_t count,
     ccl_datatype_t dtype,
     ccl_reduction_t reduction,
-    const ccl_coll_attr_t* attributes,
-    ccl_comm_t communicator,
+    const ccl_coll_attr_t* attr,
+    ccl_comm_t comm,
     ccl_stream_t stream,
     ccl_request_t* req);
 
-ccl_status_t CCL_API ccl_barrier(ccl_comm_t communicator,
+ccl_status_t CCL_API ccl_barrier(ccl_comm_t comm,
                                  ccl_stream_t stream);
 
 ccl_status_t CCL_API ccl_bcast(
@@ -39,8 +39,8 @@ ccl_status_t CCL_API ccl_bcast(
     size_t count,
     ccl_datatype_t dtype,
     size_t root,
-    const ccl_coll_attr_t* attributes,
-    ccl_comm_t communicator,
+    const ccl_coll_attr_t* attr,
+    ccl_comm_t comm,
     ccl_stream_t stream,
     ccl_request_t* req);
 
@@ -51,8 +51,8 @@ ccl_status_t CCL_API ccl_reduce(
     ccl_datatype_t dtype,
     ccl_reduction_t reduction,
     size_t root,
-    const ccl_coll_attr_t* attributes,
-    ccl_comm_t communicator,
+    const ccl_coll_attr_t* attr,
+    ccl_comm_t comm,
     ccl_stream_t stream,
     ccl_request_t* req);
 
@@ -64,21 +64,21 @@ ccl_status_t CCL_API ccl_sparse_allreduce(
     ccl_datatype_t index_dtype,
     ccl_datatype_t dtype,
     ccl_reduction_t reduction,
-    const ccl_coll_attr_t* attributes,
-    ccl_comm_t communicator,
+    const ccl_coll_attr_t* attr,
+    ccl_comm_t comm,
     ccl_stream_t stream,
     ccl_request_t* req);
 
 ccl_status_t CCL_API ccl_wait(ccl_request_t req);
 ccl_status_t CCL_API ccl_test(ccl_request_t req, int* is_completed);
 
-ccl_status_t CCL_API ccl_comm_create(ccl_comm_t* comm, ccl_comm_attr_t* comm_attr);
+ccl_status_t CCL_API ccl_comm_create(ccl_comm_t* comm, ccl_comm_attr_t* attr);
 ccl_status_t CCL_API ccl_comm_free(ccl_comm_t comm);
 
 ccl_status_t CCL_API ccl_get_comm_rank(ccl_comm_t comm, size_t* rank);
 ccl_status_t CCL_API ccl_get_comm_size(ccl_comm_t comm, size_t* size);
 
-ccl_status_t CCL_API ccl_stream_create(ccl_stream_type_t stream_type,
+ccl_status_t CCL_API ccl_stream_create(ccl_stream_type_t type,
                                        void* native_stream,
                                        ccl_stream_t* ccl_stream);
 ccl_status_t CCL_API ccl_stream_free(ccl_stream_t stream);

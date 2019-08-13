@@ -115,13 +115,13 @@ ccl_status_t CCL_API ccl_test(ccl_request_t req, int* is_completed)
     COMMON_CATCH_BLOCK();
 }
 
-ccl_status_t ccl_comm_create(ccl_comm_t* comm, ccl_comm_attr_t* comm_attr)
+ccl_status_t ccl_comm_create(ccl_comm_t* comm, ccl_comm_attr_t* attr)
 {
     CCL_ASSERT(comm);
     try
     {
         ccl_comm* comm_ptr = nullptr;
-        if (!comm_attr)
+        if (!attr)
         {
             LOG_DEBUG("create communicator as copy of global communicator");
             comm_ptr = new ccl_comm(global_data.comm->rank(),
@@ -131,7 +131,7 @@ ccl_status_t ccl_comm_create(ccl_comm_t* comm, ccl_comm_attr_t* comm_attr)
         else
         {
             LOG_DEBUG("create communicator with coll_attr");
-            comm_ptr = ccl_comm::create_with_color(comm_attr->color,
+            comm_ptr = ccl_comm::create_with_color(attr->color,
                                                    global_data.comm_ids.get(),
                                                    global_data.comm.get());
         }
@@ -182,7 +182,7 @@ ccl_status_t CCL_API ccl_get_comm_size(ccl_comm_t comm, size_t* size)
     COMMON_CATCH_BLOCK();
 }
 
-ccl_status_t ccl_stream_create(ccl_stream_type_t stream_type,
+ccl_status_t ccl_stream_create(ccl_stream_type_t type,
                                void* native_stream,
                                ccl_stream_t* stream)
 {
@@ -190,7 +190,7 @@ ccl_status_t ccl_stream_create(ccl_stream_type_t stream_type,
     try
     {
         LOG_DEBUG("create stream");
-        *stream = static_cast<void*>(new ccl_stream(stream_type, native_stream));
+        *stream = static_cast<void*>(new ccl_stream(type, native_stream));
         return ccl_status_success;
     }
     COMMON_CATCH_BLOCK();
@@ -214,7 +214,7 @@ ccl_status_t CCL_API ccl_allgatherv(
     void* recv_buf,
     const size_t* recv_counts,
     ccl_datatype_t dtype,
-    const ccl_coll_attr_t* attributes,
+    const ccl_coll_attr_t* attr,
     ccl_comm_t comm,
     ccl_stream_t stream,
     ccl_request_t* req)
@@ -225,7 +225,7 @@ ccl_status_t CCL_API ccl_allgatherv(
         {
             return ccl_status_invalid_arguments;
         }
-        auto request = ccl_allgatherv_impl(send_buf, send_count, recv_buf, recv_counts, dtype, attributes,
+        auto request = ccl_allgatherv_impl(send_buf, send_count, recv_buf, recv_counts, dtype, attr,
                                            (comm) ? static_cast<ccl_comm*>(comm) : global_data.comm.get(),
                                            static_cast<const ccl_stream*>(stream));
         *req = static_cast<ccl_request_t>(request);
@@ -240,7 +240,7 @@ ccl_status_t CCL_API ccl_allreduce(
     size_t count,
     ccl_datatype_t dtype,
     ccl_reduction_t reduction,
-    const ccl_coll_attr_t* attributes,
+    const ccl_coll_attr_t* attr,
     ccl_comm_t comm,
     ccl_stream_t stream,
     ccl_request_t* req)
@@ -251,7 +251,7 @@ ccl_status_t CCL_API ccl_allreduce(
         {
             return ccl_status_invalid_arguments;
         }
-        auto request = ccl_allreduce_impl(send_buf, recv_buf, count, dtype, reduction, attributes,
+        auto request = ccl_allreduce_impl(send_buf, recv_buf, count, dtype, reduction, attr,
                                           (comm) ? static_cast<ccl_comm*>(comm) : global_data.comm.get(),
                                           static_cast<const ccl_stream*>(stream));
         *req = static_cast<ccl_request_t>(request);
@@ -276,7 +276,7 @@ ccl_status_t CCL_API ccl_bcast(
     size_t count,
     ccl_datatype_t dtype,
     size_t root,
-    const ccl_coll_attr_t* attributes,
+    const ccl_coll_attr_t* attr,
     ccl_comm_t comm,
     ccl_stream_t stream,
     ccl_request_t* req)
@@ -287,7 +287,7 @@ ccl_status_t CCL_API ccl_bcast(
         {
             return ccl_status_invalid_arguments;
         }
-        auto request = ccl_bcast_impl(buf, count, dtype, root, attributes,
+        auto request = ccl_bcast_impl(buf, count, dtype, root, attr,
                                       (comm) ? static_cast<ccl_comm*>(comm) : global_data.comm.get(),
                                       static_cast<const ccl_stream*>(stream));
         *req = static_cast<ccl_request_t>(request);
@@ -303,7 +303,7 @@ ccl_status_t CCL_API ccl_reduce(
     ccl_datatype_t dtype,
     ccl_reduction_t reduction,
     size_t root,
-    const ccl_coll_attr_t* attributes,
+    const ccl_coll_attr_t* attr,
     ccl_comm_t comm,
     ccl_stream_t stream,
     ccl_request_t* req)
@@ -314,7 +314,7 @@ ccl_status_t CCL_API ccl_reduce(
         {
             return ccl_status_invalid_arguments;
         }
-        auto request = ccl_reduce_impl(send_buf, recv_buf, count, dtype, reduction, root, attributes,
+        auto request = ccl_reduce_impl(send_buf, recv_buf, count, dtype, reduction, root, attr,
                                        (comm) ? static_cast<ccl_comm*>(comm) : global_data.comm.get(),
                                        static_cast<const ccl_stream*>(stream));
         *req = static_cast<ccl_request_t>(request);
@@ -329,7 +329,7 @@ ccl_status_t CCL_API ccl_sparse_allreduce(const void* send_ind_buf, size_t send_
                                           void** recv_val_buf, size_t* recv_val_count,
                                           ccl_datatype_t index_dtype, ccl_datatype_t dtype,
                                           ccl_reduction_t reduction,
-                                          const ccl_coll_attr_t* attributes,
+                                          const ccl_coll_attr_t* attr,
                                           ccl_comm_t comm,
                                           ccl_stream_t stream,
                                           ccl_request_t* req)
@@ -342,7 +342,7 @@ ccl_status_t CCL_API ccl_sparse_allreduce(const void* send_ind_buf, size_t send_
         }
         auto request = ccl_sparse_allreduce_impl(send_ind_buf, send_ind_count, send_val_buf, send_val_count,
                                                  recv_ind_buf, recv_ind_count, recv_val_buf, recv_val_count,
-                                                 index_dtype, dtype, reduction, attributes,
+                                                 index_dtype, dtype, reduction, attr,
                                                  (comm) ? static_cast<ccl_comm*>(comm) : global_data.comm.get(),
                                                  static_cast<const ccl_stream*>(stream));
         *req = static_cast<ccl_request_t>(request);

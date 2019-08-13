@@ -47,22 +47,19 @@ public:
 };
 
 /**
- * A stream object is an abstraction over cpu/gpu streams
+ * A stream object is an abstraction over CPU/GPU streams
  */
 class stream
 {
 public:
     stream();
 
-    stream(ccl_stream_type_t stream_type, void* native_stream);
-
-   const ccl_stream* get_stream() const
-   {
-       return stream_impl.get();
-   }
+    stream(ccl::stream_type type, void* native_stream);
 
 private:
     std::shared_ptr<ccl_stream> stream_impl;
+
+    friend class communicator;
 };
 
 /**
@@ -77,10 +74,10 @@ public:
     communicator();
 
     /**
-     * Creates a new communicator according to @c comm_attr parametersccl_t
-     * @param comm_attr
+     * Creates a new communicator according to @c attr parameters
+     * @param attr
      */
-    explicit communicator(ccl_comm_attr_t* comm_attr);
+    explicit communicator(ccl::comm_attr* attr);
 
     /**
      * Retrieves the rank of the current process in a communicator
@@ -103,7 +100,7 @@ public:
      * as @c buf. Used by the @c root process only, ignored by other processes
      * @param recv_counts array with number of elements received by each process
      * @param dtype data type of elements in the buffer @c buf and @c recv_buf
-     * @param attributes optional attributes that customize operation
+     * @param attr optional attributes that customize operation
      * @return @ref ccl::request object that can be used to track the progress of the operation
      */
     std::shared_ptr<ccl::request> allgatherv(const void* send_buf,
@@ -111,7 +108,7 @@ public:
                                              void* recv_buf,
                                              const size_t* recv_counts,
                                              ccl::data_type dtype,
-                                             const ccl_coll_attr_t* attributes = nullptr,
+                                             const ccl::coll_attr* attr = nullptr,
                                              const ccl::stream* stream = nullptr);
 
     /**
@@ -123,7 +120,7 @@ public:
      * @param count number of elements of type @c dtype in @c buf
      * @param dtype data type of elements in the buffer @c buf and @c recv_buf
      * @param reduction type of reduction operation to be applied
-     * @param attributes optional attributes that customize operation
+     * @param attr optional attributes that customize operation
      * @return @ref ccl::request object that can be used to track the progress of the operation
      */
     std::shared_ptr<ccl::request> allreduce(const void* send_buf,
@@ -131,7 +128,7 @@ public:
                                             size_t count,
                                             ccl::data_type dtype,
                                             ccl::reduction reduction,
-                                            const ccl_coll_attr_t* attributes = nullptr,
+                                            const ccl::coll_attr* attr = nullptr,
                                             const ccl::stream* stream = nullptr);
 
     /**
@@ -146,14 +143,14 @@ public:
      * @param count number of elements of type @c dtype in @c buf
      * @param dtype data type of elements in the buffer @c buf
      * @param root the rank of the process that will transmit @c buf
-     * @param attributes optional attributes that customize operation
+     * @param attr optional attributes that customize operation
      * @return @ref ccl::request object that can be used to track the progress of the operation
      */
     std::shared_ptr<ccl::request> bcast(void* buf,
                                         size_t count,
                                         ccl::data_type dtype,
                                         size_t root,
-                                        const ccl_coll_attr_t* attributes = nullptr,
+                                        const ccl::coll_attr* attr = nullptr,
                                         const ccl::stream* stream = nullptr);
 
     /**
@@ -166,7 +163,7 @@ public:
      * @param dtype data type of elements in the buffer @c buf and @c recv_buf
      * @param reduction type of reduction operation to be applied
      * @param root the rank of the process that will held result of reduction
-     * @param attributes optional attributes that customize operation
+     * @param attr optional attributes that customize operation
      * @return @ref ccl::request object that can be used to track the progress of the operation
      */
     std::shared_ptr<ccl::request> reduce(const void* send_buf,
@@ -175,7 +172,7 @@ public:
                                          ccl::data_type dtype,
                                          ccl::reduction reduction,
                                          size_t root,
-                                         const ccl_coll_attr_t* attributes = nullptr,
+                                         const ccl::coll_attr* attr = nullptr,
                                          const ccl::stream* stream = nullptr);
 
     /**
@@ -192,7 +189,7 @@ public:
      * @param index_dtype index type of elements in the buffer @c send_ind_buf and @c recv_ind_buf
      * @param value_dtype data type of elements in the buffer @c send_val_buf and @c recv_val_buf
      * @param reduction type of reduction operation to be applied
-     * @param attributes optional attributes that customize operation
+     * @param attr optional attributes that customize operation
      * @return @ref ccl::request object that can be used to track the progress of the operation
      */
     std::shared_ptr<ccl::request> sparse_allreduce(const void* send_ind_buf, size_t send_ind_count,
@@ -202,7 +199,7 @@ public:
                                                    ccl::data_type index_dtype,
                                                    ccl::data_type value_dtype,
                                                    ccl::reduction reduction,
-                                                   const ccl_coll_attr_t* attributes = nullptr,
+                                                   const ccl::coll_attr* attr = nullptr,
                                                    const ccl::stream* stream = nullptr);
 
 private:

@@ -31,7 +31,7 @@ typedef enum
     ccl_status_last_value
 } ccl_status_t;
 
-/** Data type specification */
+/** Datatypes. */
 typedef enum
 {
     ccl_dtype_char   = 0,
@@ -46,7 +46,7 @@ typedef enum
     ccl_dtype_last_value
 } ccl_datatype_t;
 
-/** Reduction specification */
+/** Reduction operations. */
 typedef enum
 {
     ccl_reduction_sum    = 0,
@@ -62,7 +62,9 @@ typedef enum
 typedef enum
 {
     ccl_stream_cpu  = 0,
-    ccl_stream_sycl = 1
+    ccl_stream_sycl = 1,
+
+    ccl_stream_last_value
 } ccl_stream_type_t;
 
 /* in_buf, in_count, in_dtype, out_buf, out_count, out_dtype, out_dtype_size */

@@ -18,7 +18,7 @@ int main(int argc, char** argv)
     size_t size = 0;
     size_t rank = 0;
     size_t* recv_counts;
-    ccl_coll_attr_t coll_attr{};
+    ccl::coll_attr coll_attr{};
 
     cl::sycl::queue q;
     ccl::environment env;
@@ -28,7 +28,7 @@ int main(int argc, char** argv)
     size = comm.size();
 
     /* create SYCL stream */
-    ccl::stream stream(ccl_stream_sycl, &q);
+    ccl::stream stream(ccl::stream_type::sycl, &q);
 
     cl::sycl::buffer<int, 1> sendbuf(COUNT);
     cl::sycl::buffer<int, 1> expected_buf(COUNT * size);  
@@ -65,7 +65,7 @@ int main(int argc, char** argv)
                     COUNT,
                     &recvbuf,
                     recv_counts,
-                    ccl::data_type::dtype_int,
+                    ccl::data_type::dt_int,
                     &coll_attr,
                     &stream)->wait();
 

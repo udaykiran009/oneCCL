@@ -12,19 +12,19 @@ public:
 
     ~ccl_stream() = default;
 
-    ccl_stream(ccl_stream_type_t stream_type, void *native_stream);
+    ccl_stream(ccl_stream_type_t type, void* native_stream);
 
     ccl_stream_type_t get_type() const
     {
-        return stream_type;
+        return type;
     }
 
-    ccl_stream_t get_stream() const
+    void* get_native_stream() const
     {
         return native_stream;
     }
 
 private:
-    ccl_stream_type_t stream_type;
-    void *native_stream;
+    ccl_stream_type_t type;
+    void* native_stream;
 };
