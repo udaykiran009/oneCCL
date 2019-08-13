@@ -56,8 +56,8 @@ int main(int argc, char** argv)
                ccl_dtype_int,
                ccl_reduction_sum,
                COLL_ROOT,
-               NULL,
-               NULL,
+               NULL, /* attr */
+               NULL, /* comm */
                stream,
                &request);
 

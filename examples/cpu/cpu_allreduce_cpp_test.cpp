@@ -11,7 +11,6 @@ int main(int argc, char** argv)
     int i = 0;
     int size = 0;
     int rank = 0;
-    ccl::coll_attr coll_attr{};
 
     auto sendbuf = new int[COUNT];
     auto recvbuf = new int[COUNT];
@@ -39,7 +38,7 @@ int main(int argc, char** argv)
                    COUNT,
                    ccl::data_type::dt_int,
                    ccl::reduction::sum,
-                   &coll_attr,
+                   nullptr, /* attr */
                    &stream)->wait();
 
     /* check correctness of recvbuf */

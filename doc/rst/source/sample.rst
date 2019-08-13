@@ -1,7 +1,9 @@
-Launch Sample Application
+Sample application
 =========================
 
-:guilabel:`Update sample`.
+:guilabel:`To be added`.
+
+:guilabel:`Write sample and add to <install_dir>/examples`.
 
 oneAPI CCL supplies a sample application, ``ccl_sample.c`` or ``ccl_sample.cpp`` which demonstrates
 the usage of CCL API.
@@ -11,15 +13,18 @@ Launching the Sample
 
 1. For the C++ sample, build ``ccl_sample.cpp``:
 
-.. code-block::
+::
+
    $ cd <install_dir>/test
-   $ icpc -O2 –I<install_dir>/ccl_sample64/include/ -L<install_dir>/ccl_sample64/lib
-   -lccl -ldl -lrt -lpthread -o ccl_sample ccl_sample.cpp
+   $ icpc -O2 –I<install_dir>/include/ -L<install_dir>/lib -lccl -ldl -lrt -lpthread -o ccl_sample ccl_sample.cpp
    
 2. Launch the ccl_sample binary with mpirun on the desired number of nodes (N).
 
 Sample Description
 ------------------
+
+:guilabel:`Update description`.
+
 The application is set up to run a test for two layers. It sets output on the 1st layer and checks input for
 the 2nd layer in an fprop() call. Similarly, for the bprop() call, it sets a gradient with respect to input
 for the 2nd layer and checks the gradient with respect to output for the 1

@@ -1,8 +1,6 @@
-   .. highlight:: bash
+.. highlight:: bash
 
-.. highlight:: bash 
-
-Installation Guide
+Installation guide
 ==================
 
 This page explains how to install and configure the oneAPI Collective Communications Library (CCL). 
@@ -61,7 +59,7 @@ Specify Installation Directory
 Modify the ``cmake`` command:
 
 ::
-   
+
    cmake .. -DCMAKE_INSTALL_PREFIX=/path/to/installation/directory
 
 If no ``-DCMAKE_INSTALL_PREFIX`` is specified, CCL is installed into the ``_install`` subdirectory of the current build directory. For example, ``ccl/build/_install``
@@ -72,8 +70,8 @@ Specify compiler
 
 Modify the ``cmake`` command:
 
-.. code-block::
-   
+::
+
    cmake .. -DCMAKE_C_COMPILER=your_c_compiler -DCMAKE_CXX_COMPILER=your_cxx_compiler
 
 Specify Build Type
@@ -81,8 +79,8 @@ Specify Build Type
 
 Modify the ``cmake`` command:
 
-.. code-block::        
-   
+::
+
    cmake .. -DCMAKE_BUILD_TYPE=[Debug|Release|RelWithDebInfo|MinSizeRel]
 
 Enable ``make`` Verbose Output
@@ -90,14 +88,14 @@ Enable ``make`` Verbose Output
 
 Modify the ``make`` command as follows to see all parameters used by ``make`` during compilation and linkage:
 
-.. code-block::      
+::
 
    make -j VERBOSE=1
 
 Archive Installed Files
 #######################
 
-.. code-block::    
+::
 
    make -j install
    make archive
@@ -107,7 +105,7 @@ Build with Address Sanitizer
 
 Modify the ``cmake`` command as follow:
 
-.. code-block::        
+::
 
    cmake .. -DCMAKE_BUILD_TYPE=Debug -DWITH_ASAN=true
 
@@ -122,12 +120,10 @@ Installation using tar.gz
 
 To install oneAPI CCL using the tar.gz file in a user mode, execute the following commands:
 
-.. code-block::
-   
+::
+
    $ tar zxf l_ccl-devel-64-<version>.<update>.<package#>.tgz
-
    $ cd l_ccl_<version>.<update>.<package#>
-
    $ ./install.sh
 
 There is no uninstall script. To uninstall oneAPI CCL, delete the whole installation directory.
@@ -141,14 +137,14 @@ oneAPI CCL is available through the RPM Package Manager. To install the library 
 
 #. Install the following package:
 
-   .. code-block:: 
+::
 
-      $ rpm -i intel-ccl-devel-64-<version>.<update>-<package#>.x86_64.rpm
+   $ rpm -i intel-ccl-devel-64-<version>.<update>-<package#>.x86_64.rpm
    
    where ``<version>.<update>-<package#>`` is a string. For example, ``2017.0-009``.
 
 To uninstall oneAPI CCL using the RPM Package Manager, execute this command:
 
-.. code-block:: 
+::
 
    $ rpm -e intel-ccl-devel-64-<version>.<update>-<package#>.x86_64

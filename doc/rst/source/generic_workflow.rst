@@ -1,25 +1,25 @@
-Generic Workflow
+Generic workflow
 =================
 
-:guilabel:`Update instructions`.
+:guilabel:`To be added`.
 
 Below is a generic flow of using the oneAPI CCL in C++:
 
-#. Initialize the library:
+1. Initialize the library:
 
-   .. code-block::
+::
 
-      ccl::environment env;
+        ccl::environment env;
 
-#. Create a communicator objects:
+2. Create a communicator objects:
 
-   .. code-block::
-  
-     ccl::communicator comm; 
+::  
 
-#. Execute collective operation of choice on this communicator:
+        ccl::communicator comm; 
 
-   .. code-block::
+3. Execute collective operation of choice on this communicator:
 
-      auto request = comm.allreduce(...);
-      request->wait();
+::
+
+        auto request = comm.allreduce(...);
+        request->wait();

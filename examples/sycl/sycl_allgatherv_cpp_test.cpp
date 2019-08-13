@@ -18,7 +18,6 @@ int main(int argc, char** argv)
     size_t size = 0;
     size_t rank = 0;
     size_t* recv_counts;
-    ccl::coll_attr coll_attr{};
 
     cl::sycl::queue q;
     ccl::environment env;
@@ -66,7 +65,7 @@ int main(int argc, char** argv)
                     &recvbuf,
                     recv_counts,
                     ccl::data_type::dt_int,
-                    &coll_attr,
+                    nullptr, /* attr */
                     &stream)->wait();
 
     /* open recvbuf and check its correctness on the target device side */

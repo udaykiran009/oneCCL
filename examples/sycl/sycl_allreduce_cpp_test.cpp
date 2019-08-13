@@ -16,7 +16,6 @@ int main(int argc, char** argv)
     int i = 0;
     size_t size = 0;
     size_t rank = 0;
-    ccl::coll_attr coll_attr{};
 
     cl::sycl::queue q;
     cl::sycl::buffer<int, 1> sendbuf(COUNT);
@@ -51,7 +50,7 @@ int main(int argc, char** argv)
                    COUNT,
                    ccl::data_type::dt_int,
                    ccl::reduction::sum,
-                   &coll_attr,
+                   nullptr, /* attr */
                    &stream)->wait();
 
     /* open recvbuf and check its correctness on the target device side */

@@ -1,4 +1,4 @@
-System Requirements
+System requirements
 ===================
 
 This page provides information on software system requirements for oneAPI CCL.  

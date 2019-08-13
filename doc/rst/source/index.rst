@@ -23,18 +23,17 @@ Contents:
 
    overview.rst
    prerequisites.rst
-   launch_sample_app.rst
+   sample.rst
    installation.rst
    sys_requirements.rst
    legal.rst
-
 
 .. toctree::
    :maxdepth: 1
    :caption: Programming Model
 
    generic_workflow.rst
-   dl_frameworks-support.rst
+   dl_frameworks_support.rst
    gpu_support.rst
    cpu_support.rst
 
@@ -42,23 +41,24 @@ Contents:
    :maxdepth: 1
    :caption: General Configuration
 
-   affinity.rst
-   persistent_collectives.rst
-   fabric_selection.rst
+   collectives_execution.rst
+   transport_selection.rst
    
 .. toctree::
    :maxdepth: 1
    :caption: Advanced Configuration
 
-   prioritization_collectives.rst
-   manual_selection_collectives.rst
+   collective_algorithms_selection.rst
+   collectives_caching.rst
+   collectives_prioritization.rst
+   collectives_fusion.rst
+   sparse_collectives.rst
+   unordered_collectives.rst
    kubernetes.rst
-   unordered_coll.rst
 
 .. toctree::
    :maxdepth: 1
    :caption: Reference Materials
 
-   variables.rst
+   env_variables.rst
    api_reference.rst   
-

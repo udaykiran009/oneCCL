@@ -16,7 +16,6 @@ int main(int argc, char** argv)
     int i = 0;
     size_t size = 0;
     size_t rank = 0;
-    ccl::coll_attr coll_attr{};
 
     cl::sycl::queue q;
     ccl::environment env;
@@ -52,7 +51,7 @@ int main(int argc, char** argv)
                COUNT,
                ccl::data_type::dt_int,
                COLL_ROOT,
-               &coll_attr,
+               nullptr, /* attr */
                &stream)->wait();
 
     /* open buf and check its correctness on the target device side */

@@ -68,8 +68,8 @@ int main(int argc, char** argv)
                    &recvbuf,
                    recv_counts,
                    ccl_dtype_int,
-                   NULL,
-                   NULL,
+                   NULL, /* attr */
+                   NULL, /* comm */
                    stream,
                    &request);
 

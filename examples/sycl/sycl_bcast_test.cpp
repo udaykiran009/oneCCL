@@ -51,8 +51,8 @@ int main(int argc, char** argv)
               COUNT,
               ccl_dtype_int,
               COLL_ROOT,
-              NULL,
-              NULL,
+              NULL, /* attr */
+              NULL, /* comm */
               stream,
               &request);
 

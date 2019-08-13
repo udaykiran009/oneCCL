@@ -1,4 +1,4 @@
-Legal Information
+Legal information
 =================
 No license (express or implied, by estoppel or otherwise) to any intellectual property rights is granted by this document.
 
