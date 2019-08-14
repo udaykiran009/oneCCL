@@ -1,7 +1,7 @@
 Caching of collective operations
 ********************************
 
-Collective operations may have expensive initialization phase (like allocation of internal structures/buffers, registration of memory buffers, handshake with peers, etc.). oneAPI CCL amortizes these overheads by caching collective internal representation and reusing them on subsequent calls.
+Collective operations may have expensive initialization phase (like allocation of internal structures/buffers, registration of memory buffers, handshake with peers, etc.). oneCCL amortizes these overheads by caching collective internal representation and reusing them on subsequent calls.
 
 To control, set ``coll_attr.to_cache = 1`` and ``coll_attr.match_id = <match_id>``.
 ``<match_id>`` is unique string, for example tensor name, which should be the same for specific collective operation across all ranks.

@@ -5,8 +5,8 @@ Sample application
 
 :guilabel:`Write sample and add to <install_dir>/examples`.
 
-oneAPI CCL supplies a sample application, ``ccl_sample.c`` or ``ccl_sample.cpp`` which demonstrates
-the usage of CCL API.
+oneCCL supplies a sample application, ``ccl_sample.c`` or ``ccl_sample.cpp`` which demonstrates
+the usage of oneCCL API.
 
 Launching the Sample
 --------------------

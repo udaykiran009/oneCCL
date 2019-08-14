@@ -1,25 +1,25 @@
 oneAPI Collective Communications Library
 =========================================
    
-oneAPI Collective Communications Library (oneAPI CCL) is a library that provides an efficient implementation of
+oneAPI Collective Communications Library (oneCCL) is a library that provides an efficient implementation of
 communication patterns used in deep learning. 
 
-The most popular features are:
+oneCCL features include:
 
 - Built on top of lower-level communication middleware – MPI and libfabrics.
 - Optimized to drive scalability of communication patterns by allowing to easily trade-off compute for communication performance.
 - Enables a set of DL-specific optimizations, such as prioritization, persistent operations, out of order execution, etc.
-- Works across various interconnects: oneAPI Omni-Path Architecture, InfiniBand*, and Ethernet.
-- Common API that supports Deep Learning frameworks (Caffe*, nGraph*, Horovod*, etc.)
+- Works across various interconnects: Intel(R) Omni-Path Architecture, InfiniBand*, and Ethernet.
+- Common API sufficient to support communication workflows within Deep Learning frameworks (Caffe*, nGraph*, Horovod*, etc.)
 
-oneAPI CCL package comprises the oneAPI CCL Software Development Kit (SDK) and the oneAPI MPI Library Runtime components.
+oneCCL package comprises the oneCCL Software Development Kit (SDK) and the Intel(R) MPI Library Runtime components.
 
 Contents:
 =========
 
 .. toctree::
    :maxdepth: 1
-   :caption: Get Started with oneAPI CCL
+   :caption: Get Started with oneCCL
 
    overview.rst
    prerequisites.rst

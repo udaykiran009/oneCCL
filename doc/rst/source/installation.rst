@@ -3,8 +3,8 @@
 Installation guide
 ==================
 
-This page explains how to install and configure the oneAPI Collective Communications Library (CCL). 
-oneAPI CCL supports a number of installation scenarios:
+This page explains how to install and configure the oneAPI Collective Communications Library (oneCCL). 
+oneCCL supports a number of installation scenarios:
 
 * Installation using CLI 
 * RPM-based installation
@@ -14,7 +14,7 @@ oneAPI CCL supports a number of installation scenarios:
 Installation Through Command Line Interface (CLI)
 *************************************************
 
-To install oneAPI CCL using CLI, follow these steps:
+To install oneCCL using CLI, follow these steps:
 
 #. Go to the ``ccl`` folder:
 
@@ -118,7 +118,7 @@ Binary releases are available on our release page.
 Installation using tar.gz
 *************************
 
-To install oneAPI CCL using the tar.gz file in a user mode, execute the following commands:
+To install oneCCL using the tar.gz file in a user mode, execute the following commands:
 
 ::
 
@@ -126,12 +126,12 @@ To install oneAPI CCL using the tar.gz file in a user mode, execute the followin
    $ cd l_ccl_<version>.<update>.<package#>
    $ ./install.sh
 
-There is no uninstall script. To uninstall oneAPI CCL, delete the whole installation directory.
+There is no uninstall script. To uninstall oneCCL, delete the whole installation directory.
 
 Installation using RPM
 **********************
 
-oneAPI CCL is available through the RPM Package Manager. To install the library in a root mode using RPM, follow these steps:
+oneCCL is available through the RPM Package Manager. To install the library in a root mode using RPM, follow these steps:
 
 #. Log in as root.
 
@@ -143,7 +143,7 @@ oneAPI CCL is available through the RPM Package Manager. To install the library 
    
    where ``<version>.<update>-<package#>`` is a string. For example, ``2017.0-009``.
 
-To uninstall oneAPI CCL using the RPM Package Manager, execute this command:
+To uninstall oneCCL using the RPM Package Manager, execute this command:
 
 ::
 

@@ -5,7 +5,7 @@ Language models typically feature huge embedding tables within their topology, w
 
 Latest research paves the way to handling such communication in more optimal manner but each of these approaches has it's own area of applicability. Our ultimate goal is to provide a common API for sparse collective operations which would allow implementing different approaches under the hood and thus simplify framework design.
 
-oneAPI CCL can work with sparse tensors represented by two tensors: one for indices and one for values.
+oneCCL can work with sparse tensors represented by two tensors: one for indices and one for values.
 
 ``sparse_allreduce`` function has following parameters:
 

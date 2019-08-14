@@ -1,7 +1,7 @@
 Prioritization of collective operations
 ****************************************
 
-oneAPI CCL supports prioritization of collective operations. Prioritization allows to change the order of operations execution and may help to postpone execution of non-urgent operations to complete urgent operations early.
+oneCCL supports prioritization of collective operations, which controls the order in which individual collective operations are executed. This allows to postpone execution of non-urgent operations to complete urgent operations early which may be beneficial for many use cases.
 
 The collective prioritization is controlled by priority value. Note that the priority must be a non-negative number where a higher number stands for a higher priority.
 

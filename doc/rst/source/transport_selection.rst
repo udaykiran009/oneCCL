@@ -1,7 +1,7 @@
 Transport selection
 ===================
 
-oneAPI CCL supports two transports for inter-node communication - MPI and libfabrics.
+oneCCL supports two transports for inter-node communication - MPI and libfabrics.
 
 The transport selection is controlled by :ref:`CCL_ATL_TRANSPORT`.
 
