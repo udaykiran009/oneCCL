@@ -1,35 +1,100 @@
 Sample application
 =========================
 
-:guilabel:`To be added`.
-
-:guilabel:`Write sample and add to <install_dir>/examples`.
-
-oneCCL supplies a sample application, ``ccl_sample.c`` or ``ccl_sample.cpp`` which demonstrates
-the usage of oneCCL API.
-
-Launching the Sample
---------------------
-
-1. For the C++ sample, build ``ccl_sample.cpp``:
+Here comes the complete sample which shows how CCL API can be used to perform allreduce communication for SyCL buffers: 
 
 ::
 
-   $ cd <install_dir>/test
-   $ icpc -O2 –I<install_dir>/include/ -L<install_dir>/lib -lccl -ldl -lrt -lpthread -o ccl_sample ccl_sample.cpp
-   
-2. Launch the ccl_sample binary with mpirun on the desired number of nodes (N).
+    #include <iostream>
+    #include <stdio.h>
 
-Sample Description
-------------------
+    #include <CL/sycl.hpp>
+    #include "ccl.h"
 
-:guilabel:`Update description`.
+    #define COUNT     (10 * 1024 * 1024)
+    #define COLL_ROOT (0)
 
-The application is set up to run a test for two layers. It sets output on the 1st layer and checks input for
-the 2nd layer in an fprop() call. Similarly, for the bprop() call, it sets a gradient with respect to input
-for the 2nd layer and checks the gradient with respect to output for the 1
-st layer. For weights, it sets gradients with respect to weights, checks the gradients accumulation, modifies weights in a wtinc()
-call, and then verifies the expected values in an fprop() call for both layers.
-The application prints parameters for input and output feature maps and weights, whether the
-communication is required, and what type of communication is required. The test status is printed as
-PASSED or FAILED. You can grep for FAILED to see if a test failed.
+    using namespace std;
+    using namespace cl::sycl;
+    using namespace cl::sycl::access;
+
+    int main(int argc, char** argv)
+    {
+        int i = 0;
+        size_t size = 0;
+        size_t rank = 0;
+
+        cl::sycl::queue q;
+        cl::sycl::buffer<int, 1> sendbuf(COUNT);
+        cl::sycl::buffer<int, 1> recvbuf(COUNT);
+        ccl_request_t request;
+        ccl_stream_t stream;
+
+        ccl_init();
+
+        ccl_get_comm_rank(NULL, &rank);
+        ccl_get_comm_size(NULL, &size);
+
+        // create CCL stream based on SyCL command queue
+        ccl_stream_create(ccl_stream_sycl, &q, &stream);
+
+        /* open sendbuf and initialize it on the CPU side */
+        auto host_acc_sbuf = sendbuf.get_access<mode::write>();
+
+        for (i = 0; i < COUNT; i++) {
+            host_acc_sbuf[i] = rank;
+        }
+
+        /* open sendbuf and modify it on the target device side */
+        q.submit([&](cl::sycl::handler& cgh) {
+           auto dev_acc_sbuf = sendbuf.get_access<mode::write>(cgh);
+           cgh.parallel_for<class allreduce_test_sbuf_modify>(range<1>{COUNT}, [=](item<1> id) {
+               dev_acc_sbuf[id] += 1;
+           });
+        });
+
+        /* invoke ccl_allreduce on the CPU side */
+        ccl_allreduce(&sendbuf,
+                      &recvbuf,
+                      COUNT,
+                      ccl_dtype_int,
+                      ccl_reduction_sum,
+                      NULL,
+                      NULL,
+                      stream,
+                      &request);
+
+        ccl_wait(request);
+
+        /* open recvbuf and check its correctness on the target device side */
+        q.submit([&](handler& cgh) {
+           auto dev_acc_rbuf = recvbuf.get_access<mode::write>(cgh);
+           cgh.parallel_for<class allreduce_test_rbuf_check>(range<1>{COUNT}, [=](item<1> id) {
+               if (dev_acc_rbuf[id] != size * (size + 1) / 2) {
+                   dev_acc_rbuf[id] = -1;
+               }
+           });
+        });
+
+        /* print out the result of the test on the CPU side */
+        if (rank == COLL_ROOT) {
+            auto host_acc_rbuf_new = recvbuf.get_access<mode::read>();
+            for (i = 0; i < COUNT; i++) {
+                if (host_acc_rbuf_new[i] == -1) {
+                    cout << "FAILED" << endl;
+                    break;
+                }
+            }
+            if (i == COUNT) {
+                cout << "PASSED" << endl;
+            }
+        }
+
+        ccl_stream_free(stream);
+
+        ccl_finalize();
+
+        return 0;
+    }
+
+-:guilabel:`Build details to be added`.
