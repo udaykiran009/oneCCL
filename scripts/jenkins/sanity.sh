@@ -244,7 +244,7 @@ run_tests()
                     do
                         CCL_ALLGATHERV=$allgatherv ctest -VV -C mpi_allgatherv_$allgatherv
                     done
-                for allreduce in "direct" "tree" "starlike" "ring" "double_tree" "recursive_doubling"
+                for allreduce in "direct" "rabenseifner" "starlike" "ring" "double_tree" "recursive_doubling"
                     do
                         CCL_ALLREDUCE=$allreduce ctest -VV -C mpi_allreduce_$allreduce
                     done
@@ -252,7 +252,7 @@ run_tests()
                     do
                         CCL_BCAST=$bcast ctest -VV -C mpi_bcast_$bcast
                     done
-                for reduce in "direct" "tree" "double_tree"
+                for reduce in "direct" "rabenseifner" "double_tree"
                     do
                         CCL_REDUCE=$reduce ctest -VV -C mpi_reduce_$reduce
                     done
@@ -263,7 +263,7 @@ run_tests()
                     do
                         CCL_ALLGATHERV=$allgatherv ctest -VV -C mpi_allgatherv_$allgatherv
                     done
-                for allreduce in "tree" "starlike" "ring" "ring_rma" "double_tree" "recursive_doubling"
+                for allreduce in "rabenseifner" "starlike" "ring" "ring_rma" "double_tree" "recursive_doubling"
                     do
                         if [ "$allreduce" == "ring_rma" ];
                         then
@@ -276,7 +276,7 @@ run_tests()
                     do
                         CCL_BCAST=$bcast ctest -VV -C mpi_bcast_$bcast
                     done
-                for reduce in "tree" "double_tree"
+                for reduce in "rabenseifner" "double_tree"
                     do
                         CCL_REDUCE=$reduce ctest -VV -C mpi_reduce_$reduce
                     done

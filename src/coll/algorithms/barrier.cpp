@@ -1,4 +1,4 @@
-#include "coll/coll_algorithms.hpp"
+#include "coll/algorithms/algorithms.hpp"
 #include "sched/entry_factory.hpp"
 
 ccl_status_t ccl_coll_build_direct_barrier(ccl_sched *sched)

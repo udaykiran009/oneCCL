@@ -45,7 +45,7 @@ public:
     bool has_hasher_result = false;
 
     void* buf = nullptr; /* non-data buffer which can be used for caching */
-    ccl_coll_type ctype = ccl_coll_none;
+    ccl_coll_type ctype = ccl_coll_internal;
     ccl_datatype_t dtype = ccl_dtype_char;
     ccl_datatype_t itype = ccl_dtype_char; /* used in sparse collective to store index type */
     ccl_reduction_t reduction = ccl_reduction_sum;

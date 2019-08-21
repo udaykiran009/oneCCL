@@ -77,8 +77,9 @@ public:
      */
     size_t get_global_rank(size_t rank) const;
 
-    const double_tree& dtree() const
+    const ccl_double_tree& dtree() const
     {
+        /* TODO: why we need double tree in communicator class? */
         return m_dtree;
     }
 
@@ -105,5 +106,5 @@ private:
     ccl_sched_id_t m_next_sched_id_external = 0;
 
     rank_to_global_rank_map m_ranks_map{};
-    double_tree m_dtree;
+    ccl_double_tree m_dtree;
 };

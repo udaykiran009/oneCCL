@@ -1,6 +1,6 @@
+#include "ccl.h"
 #include "common/comm/comm.hpp"
 #include "sched/sched.hpp"
-#include "coll/coll_algorithms.hpp"
 
 std::atomic_size_t ccl_comm::comm_count{};
 

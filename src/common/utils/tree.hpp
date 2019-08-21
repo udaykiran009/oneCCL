@@ -195,11 +195,11 @@ private:
     static const ssize_t default_root = 0;
 };
 
-class double_tree
+class ccl_double_tree
 {
 public:
-    double_tree(size_t comm_size,
-                size_t rank) :
+    ccl_double_tree(size_t comm_size,
+                    size_t rank) :
         t1(comm_size, rank, true),
         t2(comm_size, rank, false)
     {
@@ -227,15 +227,15 @@ public:
         return t2;
     }
 
-    double_tree copy_with_new_root(size_t new_root) const
+    ccl_double_tree copy_with_new_root(size_t new_root) const
     {
-        return double_tree(t1.copy_with_new_root(new_root), t2.copy_with_new_root(new_root));
+        return ccl_double_tree(t1.copy_with_new_root(new_root), t2.copy_with_new_root(new_root));
     }
 
 private:
 
-    double_tree(bin_tree t1,
-                bin_tree t2) : t1(t1), t2(t2)
+    ccl_double_tree(bin_tree t1,
+                    bin_tree t2) : t1(t1), t2(t2)
     {
     }
 

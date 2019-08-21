@@ -6,15 +6,21 @@ set(CCL_SRC
     ccl.cpp
     ccl_cpp_api.cpp
     atl/atl.cpp
+    coll/algorithms/allgatherv.cpp
+    coll/algorithms/allreduce.cpp
+    coll/algorithms/allreduce_rma.cpp
+    coll/algorithms/barrier.cpp
+    coll/algorithms/bcast.cpp
+    coll/algorithms/double_tree_ops.cpp
+    coll/algorithms/reduce.cpp
+    coll/algorithms/sparse.cpp
     coll/coll.cpp
-    coll/allgatherv.cpp
-    coll/allreduce.cpp
-    coll/allreduce_rma.cpp
-    coll/barrier.cpp
-    coll/bcast.cpp
-    coll/double_tree_ops.cpp
-    coll/reduce.cpp
-    coll/sparse.cpp
+    coll/selection/coll/allgatherv.cpp
+    coll/selection/coll/allreduce.cpp
+    coll/selection/coll/barrier.cpp
+    coll/selection/coll/bcast.cpp
+    coll/selection/coll/reduce.cpp
+    coll/selection/coll/sparse_allreduce.cpp
     comp/comp.cpp
     sched/sched.cpp
     sched/sched_cache.cpp

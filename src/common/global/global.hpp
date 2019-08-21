@@ -2,6 +2,7 @@
 
 #include "ccl.h"
 #include "common/utils/utils.hpp"
+#include "coll/algorithms/algorithms.hpp"
 
 #include <memory>
 #include <thread>
@@ -30,10 +31,11 @@ class ccl_comm_id_storage;
 class ccl_executor;
 class ccl_sched_cache;
 class ccl_parallelizer;
-class double_tree;
 class ccl_fusion_manager;
 class ccl_unordered_coll_manager;
-class ccl_coll_algorithm_selector;
+
+template<ccl_coll_type... registered_types_id>
+struct ccl_algorithm_selector_wrapper;
 
 struct alignas(CACHELINE_SIZE) ccl_global_data
 {
@@ -46,7 +48,7 @@ struct alignas(CACHELINE_SIZE) ccl_global_data
     std::unique_ptr<ccl_parallelizer> parallelizer;
     std::unique_ptr<ccl_fusion_manager> fusion_manager;
     std::unique_ptr<ccl_unordered_coll_manager> unordered_coll_manager;
-    std::unique_ptr<ccl_coll_algorithm_selector> algorithm_selector;
+    std::unique_ptr<ccl_algorithm_selector_wrapper<CCL_COLL_LIST>> algorithm_selector;
     static thread_local bool is_worker_thread;
 };
 

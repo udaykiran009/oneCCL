@@ -91,7 +91,7 @@ void ccl_unordered_coll_manager::start_coordination(const std::string& match_id)
     }
 
     ccl_coll_param coll_param{};
-    coll_param.ctype = ccl_coll_none;
+    coll_param.ctype = ccl_coll_internal;
     coll_param.dtype = ccl_dtype_internal_char;
     coll_param.comm = coordination_comm.get();
 

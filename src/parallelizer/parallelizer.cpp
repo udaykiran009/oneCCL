@@ -1,8 +1,7 @@
+#include "coll/selection/selection.hpp"
+#include "common/env/env.hpp"
 #include "parallelizer/parallelizer.hpp"
 #include "sched/entry_factory.hpp"
-#include "sched/entry/sycl_copy_device_to_host_entry.hpp"
-#include "sched/entry/sycl_copy_host_to_device_entry.hpp"
-#include "common/env/env.hpp"
 
 typedef struct
 {
@@ -71,6 +70,8 @@ ccl_status_t ccl_parallelizer::process(ccl_sched* sched)
     ccl_datatype_internal_t itype = ccl_dtype_internal_none;
     size_t itype_size = 0;
 
+    ccl_coll_allgatherv_algo ag_algo = ccl_coll_allgatherv_naive;
+
     switch (coll_type)
     {
         case ccl_coll_barrier:
@@ -89,20 +90,21 @@ ccl_status_t ccl_parallelizer::process(ccl_sched* sched)
             }
             break;
         case ccl_coll_allgatherv:
-            if (env_data.allgatherv_algo == ccl_coll_allgatherv_direct ||
-                env_data.allgatherv_algo == ccl_coll_allgatherv_naive)
+            ag_algo = global_data.algorithm_selector->get<ccl_coll_allgatherv>(sched->coll_param);
+            if (ag_algo == ccl_coll_allgatherv_direct ||
+                ag_algo == ccl_coll_allgatherv_naive)
             {
                 part_count = 1;
             }
-            else if (env_data.allgatherv_algo == ccl_coll_allgatherv_multi_bcast ||
-                     env_data.allgatherv_algo == ccl_coll_allgatherv_flat)
+            else if (ag_algo == ccl_coll_allgatherv_multi_bcast ||
+                     ag_algo == ccl_coll_allgatherv_flat)
             {
                 part_count = coll_param->comm->size();
                 ag_recv_bufs.resize(part_count);
             }
             else
             {
-                CCL_FATAL("unexpected allgatherv_algo ", env_data.allgatherv_algo);
+                CCL_FATAL("unexpected allgatherv_algo ", ag_algo);
             }
             break;
         case ccl_coll_sparse_allreduce:
@@ -159,8 +161,8 @@ ccl_status_t ccl_parallelizer::process(ccl_sched* sched)
             CCL_ASSERT(recv_counts);
             counts[0] = recv_counts[0];
             offsets[0] = 0;
-            if (env_data.allgatherv_algo == ccl_coll_allgatherv_direct ||
-                env_data.allgatherv_algo == ccl_coll_allgatherv_naive)
+            if (ag_algo == ccl_coll_allgatherv_direct ||
+                ag_algo == ccl_coll_allgatherv_naive)
             {
                 for (idx = 0; idx < coll_param->comm->size(); idx++)
                     ag_recv_bytes += recv_counts[idx] * dtype_size;
@@ -436,8 +438,8 @@ ccl_status_t ccl_parallelizer::process(ccl_sched* sched)
                 sched->sync_partial_scheds();
             }
 #endif /* ENABLE_SYCL */
-            if (env_data.allgatherv_algo == ccl_coll_allgatherv_direct ||
-                env_data.allgatherv_algo == ccl_coll_allgatherv_naive)
+            if (ag_algo == ccl_coll_allgatherv_direct ||
+                ag_algo == ccl_coll_allgatherv_naive)
             {
                 CCL_CALL(ccl_coll_build_allgatherv(part_scheds[0].get(),
                                                    ccl_buffer(&(coll_param->send_buf),
@@ -452,8 +454,8 @@ ccl_status_t ccl_parallelizer::process(ccl_sched* sched)
             }
             else
             {
-                CCL_ASSERT(env_data.allgatherv_algo == ccl_coll_allgatherv_flat ||
-                           env_data.allgatherv_algo == ccl_coll_allgatherv_multi_bcast,
+                CCL_ASSERT(ag_algo == ccl_coll_allgatherv_flat ||
+                           ag_algo == ccl_coll_allgatherv_multi_bcast,
                            "unexpected allgatherv algorithm");
 
                 for (idx = 0; idx < coll_param->comm->size(); idx++)
@@ -473,7 +475,7 @@ ccl_status_t ccl_parallelizer::process(ccl_sched* sched)
                     }
                 }
 
-                if (env_data.allgatherv_algo == ccl_coll_allgatherv_flat)
+                if (ag_algo == ccl_coll_allgatherv_flat)
                 {
                     auto send_seg = ccl_buffer(&(coll_param->send_buf),
                                                coll_param->send_count * dtype_size,

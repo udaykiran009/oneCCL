@@ -5,7 +5,10 @@
 #include "common/utils/yield.hpp"
 #include "sched/sched_cache.hpp"
 
+#include <string>
 #include <vector>
+
+constexpr const char* CCL_ENV_NOT_SPECIFIED = "<not specified>";
 
 /* TODO: rework logging code */
 constexpr const char* CCL_LOG_LEVEL = "CCL_LOG_LEVEL";
@@ -67,13 +70,16 @@ struct alignas(CACHELINE_SIZE) ccl_env_data
 
     ccl_atl_transport atl_transport;
 
-    ccl_coll_allgatherv_algo allgatherv_algo;
-    ccl_coll_allreduce_algo allreduce_algo;
-    ccl_coll_barrier_algo barrier_algo;
-    ccl_coll_bcast_algo bcast_algo;
-    ccl_coll_reduce_algo reduce_algo;
-    ccl_coll_sparse_allreduce_algo sparse_allreduce_algo;
-
+    /* 
+       parsing logic can be quite complex so hide it inside algorithm_selector module
+       and store only raw strings in env_data
+    */
+    std::string allgatherv_algo_raw;
+    std::string allreduce_algo_raw;
+    std::string barrier_algo_raw;
+    std::string bcast_algo_raw;
+    std::string reduce_algo_raw;
+    std::string sparse_allreduce_algo_raw;
     int enable_unordered_coll;
     int enable_allgatherv_iov;
 
@@ -96,19 +102,13 @@ extern ccl_env_data env_data;
 int ccl_env_2_int(const char* env_name, int& val);
 int ccl_env_2_size_t(const char* env_name, size_t& val);
 int ccl_env_2_float(const char* env_name, float& val);
+int ccl_env_2_string(const char* env_name, std::string& str);
 
 void ccl_env_parse();
 void ccl_env_print();
 
 int ccl_env_parse_worker_affinity();
-
 int ccl_env_parse_atl_transport();
-
-int ccl_env_parse_allgatherv_algo();
-int ccl_env_parse_allreduce_algo();
-int ccl_env_parse_barrier_algo();
-int ccl_env_parse_bcast_algo();
-int ccl_env_parse_reduce_algo();
 int ccl_env_parse_priority_mode();
 int ccl_env_parse_yield_type();
 int ccl_env_parse_cache_key();

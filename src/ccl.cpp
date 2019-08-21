@@ -1,5 +1,6 @@
-#include "coll/selector/selector.hpp"
+#include "coll/selection/selection.hpp"
 #include "common/comm/atl_tag.hpp"
+#include "common/global/global.hpp"
 #include "common/stream/stream.hpp"
 #include "exec/exec.hpp"
 #include "fusion/fusion.hpp"
@@ -14,7 +15,10 @@ ccl_status_t ccl_init()
         ccl_env_parse();
         ccl_datatype_init();
 
-        global_data.algorithm_selector = std::unique_ptr<ccl_coll_algorithm_selector>(new ccl_coll_algorithm_selector());
+        global_data.algorithm_selector =
+            std::unique_ptr<ccl_algorithm_selector_wrapper<CCL_COLL_LIST>>(
+                new ccl_algorithm_selector_wrapper<CCL_COLL_LIST>());
+
         global_data.sched_cache = std::unique_ptr<ccl_sched_cache>(new ccl_sched_cache());
         global_data.parallelizer = std::unique_ptr<ccl_parallelizer>(new ccl_parallelizer(env_data.worker_count));
 
@@ -49,6 +53,10 @@ ccl_status_t ccl_init()
 
         global_data.default_coll_attr.reset(new ccl_coll_attr_t{});
         global_data.default_coll_attr->to_cache = 1;
+
+        global_data.algorithm_selector->init();
+        if (global_data.executor->proc_idx == 0)
+            global_data.algorithm_selector->print();
 
         return ccl_status_success;
     }

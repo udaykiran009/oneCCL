@@ -1,6 +1,7 @@
 #include "ccl.hpp"
+#include "coll/algorithms/algorithms.hpp"
 #include "coll/coll.hpp"
-#include "coll/coll_algorithms.hpp"
+#include "coll/selection/selection.hpp"
 #include "common/global/global.hpp"
 #include "common/request/request.hpp"
 #include "exec/exec.hpp"
@@ -30,109 +31,9 @@ const char* ccl_coll_type_to_str(ccl_coll_type type)
             return "sparse_allreduce";
         case ccl_coll_internal:
             return "internal";
-        case ccl_coll_none:
-            return "none";
         default:
             CCL_FATAL("unexpected coll_type ", type);
             return "unknown";
-    }
-}
-
-const char* ccl_coll_allgatherv_algo_to_str(ccl_coll_allgatherv_algo algo)
-{
-    switch (algo)
-    {
-        case ccl_coll_allgatherv_direct:
-            return "direct";
-        case ccl_coll_allgatherv_naive:
-            return "naive";
-        case ccl_coll_allgatherv_flat:
-            return "flat";
-        case ccl_coll_allgatherv_multi_bcast:
-            return "multi_bcast";
-        default:
-            CCL_FATAL("unknown allgatherv_algo ", algo);
-    }
-}
-
-const char* ccl_coll_allreduce_algo_to_str(ccl_coll_allreduce_algo algo)
-{
-    switch (algo)
-    {
-        case ccl_coll_allreduce_direct:
-            return "direct";
-        case ccl_coll_allreduce_rabenseifner:
-            return "tree";
-        case ccl_coll_allreduce_starlike:
-            return "starlike";
-        case ccl_coll_allreduce_ring:
-            return "ring";
-        case ccl_coll_allreduce_ring_rma:
-            return "ring_rma";
-        case ccl_coll_allreduce_double_tree:
-            return "double_tree";
-        case ccl_coll_allreduce_recursive_doubling:
-            return "recursive_doubling";
-        default:
-            CCL_FATAL("unknown allreduce_algo ", algo);
-    }
-}
-
-const char* ccl_coll_barrier_algo_to_str(ccl_coll_barrier_algo algo)
-{
-    switch (algo)
-    {
-        case ccl_coll_barrier_direct:
-            return "direct";
-        case ccl_coll_barrier_ring:
-            return "ring";
-        default:
-            CCL_FATAL("unknown barrier_algo ", algo);
-    }
-}
-
-const char* ccl_coll_bcast_algo_to_str(ccl_coll_bcast_algo algo)
-{
-    switch (algo)
-    {
-        case ccl_coll_bcast_direct:
-            return "direct";
-        case ccl_coll_bcast_ring:
-            return "ring";
-        case ccl_coll_bcast_double_tree:
-            return "double_tree";
-        case ccl_coll_bcast_naive:
-            return "naive";
-        default:
-            CCL_FATAL("unknown bcast_algo ", algo);
-    }
-}
-
-const char* ccl_coll_reduce_algo_to_str(ccl_coll_reduce_algo algo)
-{
-    switch (algo)
-    {
-        case ccl_coll_reduce_direct:
-            return "direct";
-        case ccl_coll_reduce_tree:
-            return "tree";
-        case ccl_coll_reduce_double_tree:
-            return "double_tree";
-        default:
-            CCL_FATAL("unknown reduce_algo ", algo);
-    }
-}
-
-const char* ccl_coll_sparse_allreduce_algo_to_str(ccl_coll_sparse_allreduce_algo algo)
-{
-    switch (algo)
-    {
-        case ccl_coll_sparse_allreduce_basic:
-            return "basic";
-        case ccl_coll_sparse_allreduce_mask:
-            return "mask";
-        default:
-            CCL_FATAL("unknown sparse_alleduce_algo ", algo);
     }
 }
 
@@ -271,9 +172,14 @@ ccl_status_t ccl_coll_build_allgatherv(
     ccl_datatype_internal_t dtype)
 {
     ccl_status_t status = ccl_status_success;
-    sched->coll_param.ctype = ccl_coll_allgatherv;
 
-    switch (env_data.allgatherv_algo)
+    sched->coll_param.ctype = ccl_coll_allgatherv;
+    sched->coll_param.send_count = send_count;
+    sched->coll_param.recv_counts = recv_counts;
+
+    auto algo = global_data.algorithm_selector->get<ccl_coll_allgatherv>(sched->coll_param);
+
+    switch (algo)
     {
         case ccl_coll_allgatherv_direct:
             CCL_CALL(ccl_coll_build_direct_allgatherv(sched, send_buf, send_count, recv_buf, recv_counts,
@@ -284,8 +190,7 @@ ccl_status_t ccl_coll_build_allgatherv(
                                                      dtype));
             break;
         default:
-            CCL_FATAL("unexpected allgatherv_algo ",
-                      ccl_coll_allgatherv_algo_to_str(env_data.allgatherv_algo));
+            CCL_FATAL("unexpected allgatherv_algo ", ccl_coll_algorithm_to_str(algo));
             return ccl_status_invalid_arguments;
     }
     return status;
@@ -300,67 +205,40 @@ ccl_status_t ccl_coll_build_allreduce(
     ccl_reduction_t reduction)
 {
     ccl_status_t status = ccl_status_success;
-    sched->coll_param.ctype = ccl_coll_allreduce;
 
-    if ((count < sched->coll_param.comm->pof2()) || (count * ccl_datatype_get_size(dtype) <= 8192))
+    sched->coll_param.ctype = ccl_coll_allreduce;
+    sched->coll_param.count = count;
+
+    auto algo = global_data.algorithm_selector->get<ccl_coll_allreduce>(sched->coll_param);
+
+    switch (algo)
     {
-        switch (env_data.allreduce_algo)
-        {
-            case ccl_coll_allreduce_direct:
-                CCL_CALL(ccl_coll_build_direct_allreduce(sched, send_buf, recv_buf, count, dtype, reduction));
-                break;
-            case ccl_coll_allreduce_ring:
-                CCL_CALL(ccl_coll_build_ring_allreduce(sched, send_buf, recv_buf, count, dtype, reduction));
-                break;
-            case ccl_coll_allreduce_ring_rma:
-                if (global_data.executor->is_rma_enabled)
-                    CCL_CALL(ccl_coll_build_ring_rma_allreduce(sched, send_buf, recv_buf, count, dtype, reduction));
-                else
-                    CCL_CALL(ccl_coll_build_ring_allreduce(sched, send_buf, recv_buf, count, dtype, reduction));
-                break;
-            case ccl_coll_allreduce_recursive_doubling:
-                CCL_CALL(ccl_coll_build_recursive_doubling_allreduce(sched, send_buf, recv_buf, count, dtype, reduction));
-                break;
-            default:
-                CCL_CALL(ccl_coll_build_recursive_doubling_allreduce(sched, send_buf, recv_buf, count, dtype, reduction));
-                break;
-        }
-    }
-    else
-    {
-        switch (env_data.allreduce_algo)
-        {
-            case ccl_coll_allreduce_direct:
-                CCL_CALL(ccl_coll_build_direct_allreduce(sched, send_buf, recv_buf, count, dtype, reduction));
-                break;
-            case ccl_coll_allreduce_rabenseifner:
-                CCL_CALL(ccl_coll_build_rabenseifner_allreduce(sched, send_buf, recv_buf, count, dtype, reduction));
-                break;
-            case ccl_coll_allreduce_starlike:
-                CCL_CALL(ccl_coll_build_starlike_allreduce(sched, send_buf, recv_buf, count, dtype, reduction));
-                break;
-            case ccl_coll_allreduce_ring:
-                CCL_CALL(ccl_coll_build_ring_allreduce(sched, send_buf, recv_buf, count, dtype, reduction));
-                break;
-            case ccl_coll_allreduce_ring_rma:
-                if (global_data.executor->is_rma_enabled)
-                    CCL_CALL(ccl_coll_build_ring_rma_allreduce(sched, send_buf, recv_buf, count, dtype, reduction));
-                else
-                    CCL_CALL(ccl_coll_build_ring_allreduce(sched, send_buf, recv_buf, count, dtype, reduction));
-                break;
-            case ccl_coll_allreduce_double_tree:
-                CCL_CALL(
-                    ccl_coll_build_double_tree_op(sched, ccl_coll_allreduce, send_buf, recv_buf,
-                                                  count, dtype, reduction, sched->coll_param.comm->dtree()));
-                break;
-            case ccl_coll_allreduce_recursive_doubling:
-                CCL_CALL(ccl_coll_build_recursive_doubling_allreduce(sched, send_buf, recv_buf, count, dtype, reduction));
-                break;
-            default:
-                CCL_FATAL("unexpected allreduce_algo ",
-                          ccl_coll_allreduce_algo_to_str(env_data.allreduce_algo));
-                return ccl_status_invalid_arguments;
-        }
+        case ccl_coll_allreduce_direct:
+            CCL_CALL(ccl_coll_build_direct_allreduce(sched, send_buf, recv_buf, count, dtype, reduction));
+            break;
+        case ccl_coll_allreduce_rabenseifner:
+            CCL_CALL(ccl_coll_build_rabenseifner_allreduce(sched, send_buf, recv_buf, count, dtype, reduction));
+            break;
+        case ccl_coll_allreduce_starlike:
+            CCL_CALL(ccl_coll_build_starlike_allreduce(sched, send_buf, recv_buf, count, dtype, reduction));
+            break;
+        case ccl_coll_allreduce_ring:
+            CCL_CALL(ccl_coll_build_ring_allreduce(sched, send_buf, recv_buf, count, dtype, reduction));
+            break;
+        case ccl_coll_allreduce_ring_rma:
+            CCL_CALL(ccl_coll_build_ring_rma_allreduce(sched, send_buf, recv_buf, count, dtype, reduction));
+            break;
+        case ccl_coll_allreduce_double_tree:
+            CCL_CALL(
+                ccl_coll_build_double_tree_op(sched, ccl_coll_allreduce, send_buf, recv_buf,
+                                              count, dtype, reduction, sched->coll_param.comm->dtree()));
+            break;
+        case ccl_coll_allreduce_recursive_doubling:
+            CCL_CALL(ccl_coll_build_recursive_doubling_allreduce(sched, send_buf, recv_buf, count, dtype, reduction));
+            break;
+        default:
+            CCL_FATAL("unexpected allreduce_algo ", ccl_coll_algorithm_to_str(algo));
+            return ccl_status_invalid_arguments;
     }
 
     return status;
@@ -369,9 +247,12 @@ ccl_status_t ccl_coll_build_allreduce(
 ccl_status_t ccl_coll_build_barrier(ccl_sched* sched)
 {
     ccl_status_t status = ccl_status_success;
+
     sched->coll_param.ctype = ccl_coll_barrier;
 
-    switch (env_data.barrier_algo)
+    auto algo = global_data.algorithm_selector->get<ccl_coll_barrier>(sched->coll_param);
+
+    switch (algo)
     {
         case ccl_coll_barrier_direct:
             CCL_CALL(ccl_coll_build_direct_barrier(sched));
@@ -380,8 +261,7 @@ ccl_status_t ccl_coll_build_barrier(ccl_sched* sched)
             CCL_CALL(ccl_coll_build_dissemination_barrier(sched));
             break;
         default:
-            CCL_FATAL("unexpected barrier_algo ",
-                      ccl_coll_barrier_algo_to_str(env_data.barrier_algo));
+            CCL_FATAL("unexpected barrier_algo ", ccl_coll_algorithm_to_str(algo));
             return ccl_status_invalid_arguments;
     }
 
@@ -395,9 +275,13 @@ ccl_status_t ccl_coll_build_bcast(ccl_sched* sched,
                                   size_t root)
 {
     ccl_status_t status = ccl_status_success;
-    sched->coll_param.ctype = ccl_coll_bcast;
 
-    switch (env_data.bcast_algo)
+    sched->coll_param.ctype = ccl_coll_bcast;
+    sched->coll_param.count = count;
+
+    auto algo = global_data.algorithm_selector->get<ccl_coll_bcast>(sched->coll_param);
+
+    switch (algo)
     {
         case ccl_coll_bcast_direct:
             CCL_CALL(ccl_coll_build_direct_bcast(sched, buf, count, dtype, root));
@@ -415,8 +299,7 @@ ccl_status_t ccl_coll_build_bcast(ccl_sched* sched,
             CCL_CALL(ccl_coll_build_naive_bcast(sched, buf, count, dtype, root));
             break;
         default:
-            CCL_FATAL("unexpected bcast_algo ",
-                      ccl_coll_bcast_algo_to_str(env_data.bcast_algo));
+            CCL_FATAL("unexpected bcast_algo ", ccl_coll_algorithm_to_str(algo));
             return ccl_status_invalid_arguments;
     }
     return status;
@@ -431,31 +314,31 @@ ccl_status_t ccl_coll_build_reduce(ccl_sched* sched,
                                    size_t root)
 {
     ccl_status_t status = ccl_status_success;
-    sched->coll_param.ctype = ccl_coll_reduce;
 
-    switch (env_data.reduce_algo)
+    sched->coll_param.ctype = ccl_coll_reduce;
+    sched->coll_param.count = count;
+
+    auto algo = global_data.algorithm_selector->get<ccl_coll_reduce>(sched->coll_param);
+
+    switch (algo)
     {
         case ccl_coll_reduce_direct:
             CCL_CALL(ccl_coll_build_direct_reduce(sched, send_buf, recv_buf, count, dtype, reduction, root));
             break;
+        case ccl_coll_reduce_rabenseifner:
+            CCL_CALL(ccl_coll_build_rabenseifner_reduce(sched, send_buf, recv_buf, count, dtype, reduction, root));
+            break;
         case ccl_coll_reduce_tree:
-            if (count < sched->coll_param.comm->pof2())
-                CCL_CALL(ccl_coll_build_binomial_reduce(sched, send_buf, recv_buf, count, dtype, reduction, root));
-            else
-                CCL_CALL(ccl_coll_build_rabenseifner_reduce(sched, send_buf, recv_buf, count, dtype, reduction, root));
+            CCL_CALL(ccl_coll_build_binomial_reduce(sched, send_buf, recv_buf, count, dtype, reduction, root));
             break;
         case ccl_coll_reduce_double_tree:
-            if (count < sched->coll_param.comm->pof2())
-                CCL_CALL(ccl_coll_build_binomial_reduce(sched, send_buf, recv_buf, count, dtype, reduction, root));
-            else
-                CCL_CALL(ccl_coll_build_double_tree_op(sched, ccl_coll_reduce, send_buf, recv_buf, count, dtype,
-                                                       reduction,
-                                                       root == 0 ? sched->coll_param.comm->dtree() :
-                                                       sched->coll_param.comm->dtree().copy_with_new_root(root)));
+            CCL_CALL(ccl_coll_build_double_tree_op(sched, ccl_coll_reduce, send_buf, recv_buf, count, dtype,
+                                                   reduction,
+                                                   root == 0 ? sched->coll_param.comm->dtree() :
+                                                   sched->coll_param.comm->dtree().copy_with_new_root(root)));
             break;
         default:
-            CCL_FATAL("unexpected reduce_algo ",
-                      ccl_coll_reduce_algo_to_str(env_data.reduce_algo));
+            CCL_FATAL("unexpected reduce_algo ", ccl_coll_algorithm_to_str(algo));
             return ccl_status_invalid_arguments;
     }
 
@@ -473,9 +356,13 @@ ccl_status_t ccl_coll_build_sparse_allreduce(
     ccl_reduction_t reduction)
 {
     ccl_status_t status = ccl_status_success;
-    sched->coll_param.ctype = ccl_coll_sparse_allreduce;
 
-    switch (env_data.sparse_allreduce_algo)
+    sched->coll_param.ctype = ccl_coll_sparse_allreduce;
+    sched->coll_param.sparse_param.send_val_count = send_val_count;
+
+    auto algo = global_data.algorithm_selector->get<ccl_coll_sparse_allreduce>(sched->coll_param);
+
+    switch (algo)
     {
         case ccl_coll_sparse_allreduce_basic:
             CCL_CALL(ccl_coll_build_sparse_allreduce_basic(sched,
@@ -486,8 +373,7 @@ ccl_status_t ccl_coll_build_sparse_allreduce(
                                                            index_dtype, value_dtype, reduction));
             break;
         default:
-            CCL_FATAL("unexpected sparse_allreduce_algo ",
-                      ccl_coll_sparse_allreduce_algo_to_str(env_data.sparse_allreduce_algo));
+            CCL_FATAL("unexpected sparse_allreduce_algo ", ccl_coll_algorithm_to_str(algo));
             return ccl_status_invalid_arguments;
     }
 
@@ -505,21 +391,26 @@ ccl_request* ccl_allgatherv_impl(const void* send_buf,
 {
     ccl_coll_param coll_param{};
     coll_param.ctype = ccl_coll_allgatherv;
+
 #ifdef ENABLE_SYCL
-    if (stream && stream->get_type() == ccl_stream_sycl) {
+    if (stream && stream->get_type() == ccl_stream_sycl)
+    {
          coll_param.sycl_send_buf = static_cast<ccl_sycl_buffer_t *>((void*)send_buf);
          coll_param.sycl_recv_buf = static_cast<ccl_sycl_buffer_t *>(recv_buf);
          coll_param.send_buf = new char[coll_param.sycl_send_buf->get_access<cl::sycl::access::mode::read>().get_count()*ccl_datatype_get_size(ccl_datatype_get(dtype))];
          CCL_ASSERT(coll_param.send_buf);
          coll_param.recv_buf = new char[coll_param.sycl_recv_buf->get_access<cl::sycl::access::mode::read>().get_count()*ccl_datatype_get_size(ccl_datatype_get(dtype))];
          CCL_ASSERT(coll_param.recv_buf);
-    } else {
+    }
+    else
+    {
 #endif /* ENABLE_SYCL */
         coll_param.send_buf = send_buf;
         coll_param.recv_buf = recv_buf;
 #ifdef ENABLE_SYCL
     }
 #endif /* ENABLE_SYCL */
+
     coll_param.send_count = send_count;
     coll_param.recv_counts = recv_counts;
     coll_param.dtype = ccl_datatype_get(dtype);
@@ -549,21 +440,26 @@ ccl_request* ccl_allreduce_impl(const void* send_buf,
 {
     ccl_coll_param coll_param{};
     coll_param.ctype = ccl_coll_allreduce;
+
 #ifdef ENABLE_SYCL
-    if (stream && stream->get_type() == ccl_stream_sycl) {
+    if (stream && stream->get_type() == ccl_stream_sycl)
+    {
          coll_param.sycl_send_buf = static_cast<ccl_sycl_buffer_t *>((void*)send_buf);
          coll_param.sycl_recv_buf = static_cast<ccl_sycl_buffer_t *>(recv_buf);
          coll_param.send_buf = new char[coll_param.sycl_send_buf->get_access<cl::sycl::access::mode::read>().get_count()*ccl_datatype_get_size(ccl_datatype_get(dtype))];
          CCL_ASSERT(coll_param.send_buf);
          coll_param.recv_buf = new char[coll_param.sycl_recv_buf->get_access<cl::sycl::access::mode::read>().get_count()*ccl_datatype_get_size(ccl_datatype_get(dtype))];
          CCL_ASSERT(coll_param.recv_buf);
-    } else {
+    }
+    else
+    {
 #endif /* ENABLE_SYCL */
         coll_param.send_buf = send_buf;
         coll_param.recv_buf = recv_buf;
 #ifdef ENABLE_SYCL
     }
 #endif /* ENABLE_SYCL */
+
     coll_param.count = count;
     coll_param.dtype = ccl_datatype_get(dtype);
     coll_param.reduction = reduction;
@@ -610,17 +506,22 @@ ccl_request* ccl_bcast_impl(void* buf,
 {
     ccl_coll_param coll_param{};
     coll_param.ctype = ccl_coll_bcast;
+
 #ifdef ENABLE_SYCL
-    if (stream && stream->get_type() == ccl_stream_sycl) {
+    if (stream && stream->get_type() == ccl_stream_sycl)
+    {
          coll_param.sycl_buf = static_cast<ccl_sycl_buffer_t *>(buf);
          coll_param.buf = new char[coll_param.sycl_buf->get_access<cl::sycl::access::mode::read>().get_count()*ccl_datatype_get_size(ccl_datatype_get(dtype))];
          CCL_ASSERT(coll_param.buf);
-    } else {
+    }
+    else
+    {
 #endif /* ENABLE_SYCL */
         coll_param.buf = buf;
 #ifdef ENABLE_SYCL
     }
 #endif /* ENABLE_SYCL */
+
     coll_param.count = count;
     coll_param.dtype = ccl_datatype_get(dtype);
     coll_param.root = root;
@@ -651,25 +552,33 @@ ccl_request* ccl_reduce_impl(const void* send_buf,
 {
     ccl_coll_param coll_param{};
     coll_param.ctype = ccl_coll_reduce;
+
 #ifdef ENABLE_SYCL
-    if (stream && stream->get_type() == ccl_stream_sycl) {
+    if (stream && stream->get_type() == ccl_stream_sycl)
+    {
          coll_param.sycl_send_buf = static_cast<ccl_sycl_buffer_t *>((void*)send_buf);
          coll_param.send_buf = new char[coll_param.sycl_send_buf->get_access<cl::sycl::access::mode::read>().get_count()*ccl_datatype_get_size(ccl_datatype_get(dtype))];
          CCL_ASSERT(coll_param.send_buf);
-         if (comm->rank() == root) {
+         if (comm->rank() == root)
+         {
              coll_param.sycl_recv_buf = static_cast<ccl_sycl_buffer_t *>(recv_buf);
              coll_param.recv_buf = new char[coll_param.sycl_recv_buf->get_access<cl::sycl::access::mode::read>().get_count()*ccl_datatype_get_size(ccl_datatype_get(dtype))];
              CCL_ASSERT(coll_param.recv_buf);
-         } else {
+         }
+         else
+         {
              coll_param.recv_buf = nullptr;
          }
-    } else {
+    }
+    else
+    {
 #endif /* ENABLE_SYCL */
         coll_param.send_buf = send_buf;
         coll_param.recv_buf = recv_buf;
 #ifdef ENABLE_SYCL
     }
 #endif /* ENABLE_SYCL */
+
     coll_param.count = count;
     coll_param.dtype = ccl_datatype_get(dtype);
     coll_param.reduction = reduction;
@@ -699,11 +608,13 @@ ccl_request* ccl_sparse_allreduce_impl(const void* send_ind_buf, size_t send_ind
                                        ccl_comm* comm, const ccl_stream* stream)
 {
 #ifdef ENABLE_SYCL
-    if (stream && stream->get_type() == ccl_stream_sycl) {
+    if (stream && stream->get_type() == ccl_stream_sycl)
+    {
         CCL_FATAL("SYCL stream is not yet supported for sparse_allreduce");
         CCL_ASSERT(0);
     }
 #endif /* ENABLE_SYCL */
+
     ccl_coll_param coll_param{};
     coll_param.ctype = ccl_coll_sparse_allreduce;
     coll_param.sparse_param.send_ind_buf = send_ind_buf;

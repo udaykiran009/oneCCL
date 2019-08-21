@@ -1,5 +1,5 @@
-#include "coll/coll_algorithms.hpp"
-#include "coll/sparse_types.hpp"
+#include "coll/algorithms/algorithms.hpp"
+#include "coll/algorithms/sparse.hpp"
 #include "sched/entry_factory.hpp"
 
 ccl_status_t sparse_before_recv(const void* ctx)
@@ -227,17 +227,17 @@ ccl_status_t ccl_coll_build_sparse_allreduce_basic(ccl_sched* sched,
                                                    ccl_reduction_t op)
 {
     LOG_DEBUG("build sparse allreduce, param:",
-              " send_ind_buf ", send_ind_buf,
-              ", send_ind_count ", send_ind_count,
-              ", send_val_buf ", send_val_buf,
-              ", send_val_count ", send_val_count,
-              ", recv_ind_buf ", recv_ind_buf,
-              ", recv_ind_count ", recv_ind_count,
-              ", recv_val_buf ", recv_val_buf,
-              ", recv_val_count ", recv_val_count,
-              ", index_dtype ", ccl_datatype_get_name(index_dtype),
-              ", value_dtype ", ccl_datatype_get_name(value_dtype),
-              ", op ", ccl_reduction_to_str(op));
+              "\nsend_ind_buf ", send_ind_buf,
+              "\nsend_ind_count ", send_ind_count,
+              "\nsend_val_buf ", send_val_buf,
+              "\nsend_val_count ", send_val_count,
+              "\nrecv_ind_buf ", recv_ind_buf,
+              "\nrecv_ind_count ", recv_ind_count,
+              "\nrecv_val_buf ", recv_val_buf,
+              "\nrecv_val_count ", recv_val_count,
+              "\nindex_dtype ", ccl_datatype_get_name(index_dtype),
+              "\nvalue_dtype ", ccl_datatype_get_name(value_dtype),
+              "\nop ", ccl_reduction_to_str(op));
 
     ccl_status_t status = ccl_status_success;
     sched_entry* e = nullptr;
@@ -247,8 +247,27 @@ ccl_status_t ccl_coll_build_sparse_allreduce_basic(ccl_sched* sched,
     size_t rank = comm->rank();
 
     /* get data type sizes */
-    size_t vtype_size = ccl_datatype_get_size(value_dtype);
     size_t itype_size = ccl_datatype_get_size(index_dtype);
+    size_t vtype_size = ccl_datatype_get_size(value_dtype);
+
+    if (comm_size == 1)
+    {
+        void* r_ind_buf = *((void**)(recv_ind_buf.get_ptr()));
+        void* r_val_buf = *((void**)(recv_val_buf.get_ptr()));
+
+        if (send_ind_buf.get_ptr() != r_ind_buf)
+            entry_factory::make_entry<copy_entry>(sched, send_ind_buf,
+                                                  ccl_buffer(r_ind_buf, send_ind_count * itype_size),
+                                                  send_ind_count, index_dtype);
+
+        if (send_val_buf.get_ptr() != r_val_buf)
+            entry_factory::make_entry<copy_entry>(sched, send_val_buf,
+                                                  ccl_buffer(r_val_buf, send_val_count * vtype_size),
+                                                  send_val_count, value_dtype);
+
+        return status;
+    }
+
     /* TODO: get rid of hard-coded int and float indices and values definition */
 
     /* get value dimension */

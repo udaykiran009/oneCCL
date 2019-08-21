@@ -27,6 +27,8 @@
 #include "sched/entry/coll/barrier_entry.hpp"
 #include "sched/entry/coll/bcast_entry.hpp"
 #include "sched/entry/coll/reduce_entry.hpp"
+#include "sched/entry/sycl_copy_device_to_host_entry.hpp"   
+#include "sched/entry/sycl_copy_host_to_device_entry.hpp"
 
 namespace entry_factory
 {

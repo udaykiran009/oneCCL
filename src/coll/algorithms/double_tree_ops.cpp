@@ -117,7 +117,7 @@ ccl_status_t ccl_coll_build_double_tree_op(ccl_sched* sched,
                                            size_t count,
                                            ccl_datatype_internal_t dtype,
                                            ccl_reduction_t op,
-                                           const double_tree& dtree)
+                                           const ccl_double_tree& dtree)
 {
     ccl_status_t status = ccl_status_success;
 

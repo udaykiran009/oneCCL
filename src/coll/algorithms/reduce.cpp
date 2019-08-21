@@ -1,4 +1,4 @@
-#include "coll/coll_algorithms.hpp"
+#include "coll/algorithms/algorithms.hpp"
 #include "sched/entry_factory.hpp"
 
 /* An implementation of Rabenseifner's reduce algorithm (see

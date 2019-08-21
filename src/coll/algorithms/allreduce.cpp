@@ -1,4 +1,4 @@
-#include "coll/coll_algorithms.hpp"
+#include "coll/algorithms/algorithms.hpp"
 #include "sched/entry_factory.hpp"
 
 ccl_status_t ccl_coll_build_direct_allreduce(ccl_sched *sched,
@@ -327,6 +327,7 @@ ccl_status_t ccl_coll_build_starlike_allreduce(ccl_sched *sched,
                                                size_t count, ccl_datatype_internal_t dtype, ccl_reduction_t op)
 {
     LOG_DEBUG("build starlike allreduce");
+
     ccl_status_t status = ccl_status_success;
     size_t comm_size = sched->coll_param.comm->size();
     size_t this_rank = sched->coll_param.comm->rank();
@@ -334,7 +335,16 @@ ccl_status_t ccl_coll_build_starlike_allreduce(ccl_sched *sched,
     size_t* buffer_offsets = static_cast<size_t*>(CCL_MALLOC(comm_size * sizeof(size_t), "buffer_offsets"));
     size_t dtype_size = ccl_datatype_get_size(dtype);
 
-    // find counts and offsets for each rank
+    // copy local data into recv_buf
+    if (send_buf != recv_buf) {
+        entry_factory::make_entry<copy_entry>(sched, send_buf, recv_buf, count, dtype);
+        sched->add_barrier();
+    }
+
+    if (comm_size == 1)
+        return status;
+
+    // calculate counts and offsets for each rank
     size_t common_buffer_count = count / comm_size;
     for (size_t rank_idx = 0; rank_idx < comm_size; ++ rank_idx)
     {
@@ -343,16 +353,9 @@ ccl_status_t ccl_coll_build_starlike_allreduce(ccl_sched *sched,
     }
     buffer_counts[comm_size - 1] += count % comm_size;
 
-    // buffer to receive and reduce parts related to the current rank
+    // recv_reduce buffer for current rank
     size_t this_rank_buf_size = buffer_counts[this_rank] * dtype_size;
-
     ccl_buffer tmp_buf = sched->alloc_buffer(this_rank_buf_size * (comm_size - 1));
-
-    // copy local data into recv_buf
-    if (send_buf != recv_buf) {
-        entry_factory::make_entry<copy_entry>(sched, send_buf, recv_buf, count, dtype);
-        sched->add_barrier();
-    }
 
     size_t tmp_buf_recv_idx = 0;
     for (size_t rank_idx = 0; rank_idx < comm_size; ++rank_idx)

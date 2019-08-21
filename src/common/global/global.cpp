@@ -3,7 +3,7 @@
 #include "common/global/global.hpp"
 #include "common/utils/tree.hpp"
 #include "common/stream/stream.hpp"
-#include "coll/selector/selector.hpp"
+#include "coll/selection/selection.hpp"
 #include "exec/exec.hpp"
 #include "fusion/fusion.hpp"
 #include "parallelizer/parallelizer.hpp"

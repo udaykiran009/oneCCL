@@ -150,7 +150,7 @@ public:
         finalize_fn_ctx = ctx;
     }
 
-    ccl_buffer alloc_buffer(size_t size);
+    ccl_buffer alloc_buffer(size_t bytes);
     void free_buffers();
     size_t get_priority();
     ccl_request* start_subsched(ccl_sched* subsched);

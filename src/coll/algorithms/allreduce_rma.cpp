@@ -1,5 +1,5 @@
-#include "coll/allreduce_rma.hpp"
-#include "coll/coll_algorithms.hpp"
+#include "coll/algorithms/algorithms.hpp"
+#include "coll/algorithms/allreduce_rma.hpp"
 #include "sched/entry_factory.hpp"
 #include "exec/exec.hpp"
 

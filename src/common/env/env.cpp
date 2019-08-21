@@ -14,12 +14,12 @@ ccl_env_data env_data =
 
     .atl_transport = ccl_atl_mpi,
 
-    .allgatherv_algo = ccl_coll_allgatherv_multi_bcast,
-    .allreduce_algo = ccl_coll_allreduce_direct,
-    .barrier_algo = ccl_coll_barrier_direct,
-    .bcast_algo = ccl_coll_bcast_direct,
-    .reduce_algo = ccl_coll_reduce_direct,
-    .sparse_allreduce_algo = ccl_coll_sparse_allreduce_basic,
+    .allgatherv_algo_raw = std::string(),
+    .allreduce_algo_raw = std::string(),
+    .barrier_algo_raw = std::string(),
+    .bcast_algo_raw = std::string(),
+    .reduce_algo_raw = std::string(),
+    .sparse_allreduce_algo_raw = std::string(),
     .enable_unordered_coll = 0,
     .enable_allgatherv_iov = 0,
 
@@ -73,6 +73,18 @@ int ccl_env_2_float(const char* env_name, float& val)
     return 0;
 }
 
+int ccl_env_2_string(const char* env_name, std::string& str)
+{
+    const char* val_ptr;
+    val_ptr = getenv(env_name);
+    if (val_ptr)
+    {
+        str.assign(val_ptr);
+        return 1;
+    }
+    return 0;
+}
+
 template<typename T>
 void str_to_array(const char* input,
                   std::vector<T>& output,
@@ -103,42 +115,14 @@ void ccl_env_parse()
 
     ccl_env_parse_atl_transport();
 
-    /* set default algorithms */
-    if (env_data.atl_transport == ccl_atl_ofi)
-    {
-        env_data.allgatherv_algo = ccl_coll_allgatherv_naive;
-        env_data.allreduce_algo = ccl_coll_allreduce_rabenseifner;
-        env_data.barrier_algo = ccl_coll_barrier_ring;
-        env_data.bcast_algo = ccl_coll_bcast_naive;
-        env_data.reduce_algo = ccl_coll_reduce_tree;
-        env_data.sparse_allreduce_algo = ccl_coll_sparse_allreduce_basic;
-    }
-    else if (env_data.atl_transport == ccl_atl_mpi)
-    {
-        env_data.allgatherv_algo = ccl_coll_allgatherv_multi_bcast;
-        env_data.allreduce_algo = ccl_coll_allreduce_direct;
-        env_data.barrier_algo = ccl_coll_barrier_direct;
-        env_data.bcast_algo = ccl_coll_bcast_direct;
-        env_data.reduce_algo = ccl_coll_reduce_direct;
-        env_data.sparse_allreduce_algo = ccl_coll_sparse_allreduce_basic;
-    }
-
-    ccl_env_parse_allgatherv_algo();
-    ccl_env_parse_allreduce_algo();
-    ccl_env_parse_barrier_algo();
-    ccl_env_parse_bcast_algo();
-    ccl_env_parse_reduce_algo();
+    ccl_env_2_string(CCL_ALLGATHERV, env_data.allgatherv_algo_raw);
+    ccl_env_2_string(CCL_ALLREDUCE, env_data.allreduce_algo_raw);
+    ccl_env_2_string(CCL_BARRIER, env_data.barrier_algo_raw);
+    ccl_env_2_string(CCL_BCAST, env_data.bcast_algo_raw);
+    ccl_env_2_string(CCL_REDUCE, env_data.reduce_algo_raw);
+    ccl_env_2_string(CCL_SPARSE_ALLREDUCE, env_data.sparse_allreduce_algo_raw);
     ccl_env_2_int(CCL_UNORDERED_COLL, env_data.enable_unordered_coll);
     ccl_env_2_int(CCL_ALLGATHERV_IOV, env_data.enable_allgatherv_iov);
-
-    if (env_data.enable_allgatherv_iov && 
-        env_data.allgatherv_algo != ccl_coll_allgatherv_flat &&
-        env_data.allgatherv_algo != ccl_coll_allgatherv_multi_bcast)
-    {
-        env_data.allgatherv_algo = ccl_coll_allgatherv_flat;
-        LOG_INFO("allgatherv_iov functionality is requested and unsupported algorithm is selected"
-                 ", switch to flat algorithm");
-    }
 
     ccl_env_2_int(CCL_FUSION, env_data.enable_fusion);
     ccl_env_2_int(CCL_FUSION_BYTES_THRESHOLD, env_data.fusion_bytes_threshold);
@@ -180,11 +164,18 @@ void ccl_env_print()
         LOG_INFO(CCL_WORKER_AFFINITY, ": worker: ", w_idx, ", processor: ", env_data.worker_affinity[w_idx]);
     }
 
-    LOG_INFO(CCL_ALLGATHERV, ": ", ccl_coll_allgatherv_algo_to_str(env_data.allgatherv_algo));
-    LOG_INFO(CCL_ALLREDUCE, ": ", ccl_coll_allreduce_algo_to_str(env_data.allreduce_algo));
-    LOG_INFO(CCL_BARRIER, ": ",  ccl_coll_barrier_algo_to_str(env_data.barrier_algo));
-    LOG_INFO(CCL_BCAST, ": ", ccl_coll_bcast_algo_to_str(env_data.bcast_algo));
-    LOG_INFO(CCL_REDUCE, ": ", ccl_coll_reduce_algo_to_str(env_data.reduce_algo));
+    LOG_INFO(CCL_ALLGATHERV, ": ", (env_data.allgatherv_algo_raw.length()) ?
+        env_data.allgatherv_algo_raw : CCL_ENV_NOT_SPECIFIED);
+    LOG_INFO(CCL_ALLREDUCE, ": ", (env_data.allreduce_algo_raw.length()) ?
+        env_data.allreduce_algo_raw : CCL_ENV_NOT_SPECIFIED);
+    LOG_INFO(CCL_BARRIER, ": ", (env_data.barrier_algo_raw.length()) ?
+        env_data.barrier_algo_raw : CCL_ENV_NOT_SPECIFIED);
+    LOG_INFO(CCL_BCAST, ": ", (env_data.bcast_algo_raw.length()) ?
+        env_data.bcast_algo_raw : CCL_ENV_NOT_SPECIFIED);
+    LOG_INFO(CCL_REDUCE, ": ", (env_data.reduce_algo_raw.length()) ?
+        env_data.reduce_algo_raw : CCL_ENV_NOT_SPECIFIED);
+    LOG_INFO(CCL_SPARSE_ALLREDUCE, ": ", (env_data.sparse_allreduce_algo_raw.length()) ?
+        env_data.sparse_allreduce_algo_raw : CCL_ENV_NOT_SPECIFIED);
     LOG_INFO(CCL_UNORDERED_COLL, ": ", env_data.enable_unordered_coll);
     LOG_INFO(CCL_ALLGATHERV_IOV, ": ", env_data.enable_allgatherv_iov);
 
@@ -319,134 +310,6 @@ int ccl_env_parse_atl_transport()
         else
         {
             CCL_THROW("unknown ", CCL_ATL_TRANSPORT, " ", env);
-            return 0;
-        }
-    }
-    return 1;
-}
-
-int ccl_env_parse_allgatherv_algo()
-{
-    char* env = getenv(CCL_ALLGATHERV);
-    if (env)
-    {
-        if (strcmp(env, "direct") == 0)
-            env_data.allgatherv_algo = ccl_coll_allgatherv_direct;
-        else if (strcmp(env, "naive") == 0)
-            env_data.allgatherv_algo = ccl_coll_allgatherv_naive;
-        else if (strcmp(env, "flat") == 0)
-            env_data.allgatherv_algo = ccl_coll_allgatherv_flat;
-        else if (strcmp(env, "multi_bcast") == 0)
-            env_data.allgatherv_algo = ccl_coll_allgatherv_multi_bcast;
-        else
-        {
-            CCL_THROW("unknown ", CCL_ALLGATHERV, " ", env);
-            return 0;
-        }
-    }
-    return 1;
-}
-
-int ccl_env_parse_allreduce_algo()
-{
-    char* env = getenv(CCL_ALLREDUCE);
-    if (env)
-    {
-        if (strcmp(env, "direct") == 0)
-            env_data.allreduce_algo = ccl_coll_allreduce_direct;
-        else if (strcmp(env, "tree") == 0)
-            env_data.allreduce_algo = ccl_coll_allreduce_rabenseifner;
-        else if (strcmp(env, "starlike") == 0)
-            env_data.allreduce_algo = ccl_coll_allreduce_starlike;
-        else if (strcmp(env, "ring") == 0)
-            env_data.allreduce_algo = ccl_coll_allreduce_ring;
-        else if (strcmp(env, "ring_rma") == 0)
-            env_data.allreduce_algo = ccl_coll_allreduce_ring_rma;
-        else if (strcmp(env, "double_tree") == 0)
-            env_data.allreduce_algo = ccl_coll_allreduce_double_tree;
-        else if (strcmp(env, "recursive_doubling") == 0)
-            env_data.allreduce_algo = ccl_coll_allreduce_recursive_doubling;
-        else
-        {
-            CCL_THROW("unknown ", CCL_ALLREDUCE, " ", env);
-            return 0;
-        }
-    }
-    return 1;
-}
-
-int ccl_env_parse_barrier_algo()
-{
-    char* env = getenv(CCL_BARRIER);
-    if (env)
-    {
-        if (strcmp(env, "direct") == 0)
-            env_data.barrier_algo = ccl_coll_barrier_direct;
-        else if (strcmp(env, "ring") == 0)
-            env_data.barrier_algo = ccl_coll_barrier_ring;
-        else
-        {
-            CCL_THROW("unknown ", CCL_BARRIER, " ", env);
-            return 0;
-        }
-    }
-    return 1;
-}
-
-int ccl_env_parse_bcast_algo()
-{
-    char* env = getenv(CCL_BCAST);
-    if (env)
-    {
-        if (strcmp(env, "direct") == 0)
-            env_data.bcast_algo = ccl_coll_bcast_direct;
-        else if (strcmp(env, "ring") == 0)
-            env_data.bcast_algo = ccl_coll_bcast_ring;
-        else if (strcmp(env, "double_tree") == 0)
-            env_data.bcast_algo = ccl_coll_bcast_double_tree;
-        else if (strcmp(env, "naive") == 0)
-            env_data.bcast_algo = ccl_coll_bcast_naive;
-        else
-        {
-            CCL_THROW("unknown ", CCL_BCAST, " ", env);
-            return 0;
-        }
-    }
-    return 1;
-}
-
-int ccl_env_parse_reduce_algo()
-{
-    char* env = getenv(CCL_REDUCE);
-    if (env)
-    {
-        if (strcmp(env, "direct") == 0)
-            env_data.reduce_algo = ccl_coll_reduce_direct;
-        else if (strcmp(env, "tree") == 0)
-            env_data.reduce_algo = ccl_coll_reduce_tree;
-        else if (strcmp(env, "double_tree") == 0)
-            env_data.reduce_algo = ccl_coll_reduce_double_tree;
-        else
-        {
-            CCL_THROW("unknown ", CCL_REDUCE, " ", env);
-            return 0;
-        }
-    }
-    return 1;
-}
-
-int ccl_env_parse_sparse_allreduce_algo()
-{
-    char* env = getenv(CCL_SPARSE_ALLREDUCE);
-    if (env)
-    {
-        if (strcmp(env, "basic") == 0)
-            env_data.sparse_allreduce_algo = ccl_coll_sparse_allreduce_basic;
-        else if (strcmp(env, "mask") == 0)
-            env_data.sparse_allreduce_algo = ccl_coll_sparse_allreduce_mask;
-        else
-        {
-            CCL_THROW("unknown ", CCL_SPARSE_ALLREDUCE, " ", env);
             return 0;
         }
     }

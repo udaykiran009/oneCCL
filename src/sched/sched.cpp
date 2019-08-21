@@ -36,7 +36,7 @@ ccl_sched::~ccl_sched()
     {
         /* perform deregistration in worker thread */
         ccl_coll_param cparam{};
-        cparam.ctype = ccl_coll_none;
+        cparam.ctype = ccl_coll_internal;
         cparam.comm = coll_param.comm;
         ccl_sched* dereg_sched = new ccl_sched(cparam);
         entry_factory::make_entry<deregister_entry>(dereg_sched, memory.mr_list);
@@ -415,11 +415,6 @@ void ccl_sched::dump(const char *name) const
     if (!env_data.sched_dump)
         return;
 
-    if(coll_param.ctype == ccl_coll_internal)
-    {
-        return;
-    }
-
     std::stringstream msg;
     ccl_logger::format(msg, "\n--------------------------------\n");
     ccl_logger::format(msg,
@@ -446,14 +441,15 @@ void ccl_sched::dump(const char *name) const
     std::cout << msg.str();
 }
 
-ccl_buffer ccl_sched::alloc_buffer(size_t size)
+ccl_buffer ccl_sched::alloc_buffer(size_t bytes)
 {
-    LOG_DEBUG("size ", size);
-    CCL_THROW_IF_NOT(size > 0, "incorrect buffer size");
+    LOG_DEBUG("bytes ", bytes);
 
-    ccl_buffer buffer = ccl_buffer(CCL_CALLOC(size, "sched_buffer"),
-                                     size, 0, ccl_buffer_type::DIRECT);
-    memory.buf_list.emplace_back(buffer, size);
+    CCL_THROW_IF_NOT(bytes > 0, "unexpected bytes ", bytes);
+
+    ccl_buffer buffer = ccl_buffer(CCL_CALLOC(bytes, "sched_buffer"),
+                                   bytes, 0, ccl_buffer_type::DIRECT);
+    memory.buf_list.emplace_back(buffer, bytes);
     return buffer;
 }
 
