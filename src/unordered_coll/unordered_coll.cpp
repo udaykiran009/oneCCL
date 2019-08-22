@@ -241,11 +241,14 @@ void ccl_unordered_coll_manager::run_postponed_scheds(const std::string& match_i
     std::vector<ccl_sched*> scheds_to_run;
     std::unique_lock<ccl_spinlock> lock{postponed_scheds_guard};
     auto scheds = postponed_scheds.equal_range(match_id);
-    LOG_DEBUG("found ", std::distance(scheds.first, scheds.second),
+    size_t scheds_count = std::distance(scheds.first, scheds.second);
+    LOG_DEBUG("found ", scheds_count,
               " scheds for match_id ", match_id);
+
+    scheds_to_run.reserve(scheds_count);
     transform(scheds.first, scheds.second,
               back_inserter(scheds_to_run),
-              [](std::pair<std::string, ccl_sched*> element) { return element.second; } );
+              [](const std::pair<std::string, ccl_sched*> &element) { return element.second; } );
     postponed_scheds.erase(scheds.first, scheds.second);
     lock.unlock();
 
