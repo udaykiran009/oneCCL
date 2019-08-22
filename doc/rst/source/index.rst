@@ -54,7 +54,7 @@ Contents:
    collectives_fusion.rst
    sparse_collectives.rst
    unordered_collectives.rst
-   kubernetes.rst
+   elasticity.rst
 
 .. toctree::
    :maxdepth: 1

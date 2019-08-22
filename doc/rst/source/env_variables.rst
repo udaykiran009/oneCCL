@@ -272,11 +272,141 @@ CCL_WORKER_COUNT
 
 Set this environment variable to specify number of CCL worker threads.
 
-CCL_RANK_COUNT
+
+CCL_PM_TYPE
+###########
+**Syntax**
+
+``CCL_PM_TYPE=<value>``
+
+**Arguments**
+
+.. list-table::
+   :header-rows: 1
+   :align: left
+
+   * - <value>
+     - Description
+   * - ``0``
+     - Use PMI (process manager interface) with mpirun (**default**).
+   * - ``1``
+     - Use internal KVS (key-value storage) without mpirun.
+
+**Description**
+
+Set this environment variable to specify process manager type.
+
+
+CCL_KVS_IP_EXCHANGE
+###################
+**Syntax**
+
+``CCL_KVS_IP_EXCHANGE=<value>``
+
+**Arguments**
+
+.. list-table::
+   :header-rows: 1
+   :align: left
+
+   * - <value>
+     - Description
+   * - ``0``
+     - Use K8S for ip exchange (**default**).
+   * - ``1``
+     - Use specific environment to get master ip.
+
+**Description**
+
+Set this environment variable to specify the way to IP addresses of ran processes are exchanged.
+
+
+CCL_K8S_API_ADDR
+################
+**Syntax**
+
+``CCL_K8S_API_ADDR =<value>``
+
+**Arguments**
+
+.. list-table::
+   :header-rows: 1
+   :align: left
+
+   * - <value>
+     - Description
+   * - ``IP:PORT``
+     - Set address and port of k8s kvs.
+
+**Description**
+
+Set this environment variable to specify k8s kvs address.
+
+
+CCL_K8S_MANAGER_TYPE
+####################
+**Syntax**
+
+``CCL_K8S_MANAGER_TYPE=<value>``
+
+**Arguments**
+
+.. list-table::
+   :header-rows: 1
+   :align: left
+
+   * - <value>
+     - Description
+   * - ``none``
+     - Use Pods labels for ip exchange (**default**).
+   * - ``k8s``
+     - Use Statefulset\Deployment labels for ip exchange.
+
+**Description**
+
+Set this environment variable to specify way to ip exchange.
+
+
+CCL_KVS_IP_PORT
+###############
+**Syntax**
+
+``CCL_KVS_IP_PORT=<value>``
+
+**Arguments**
+
+.. list-table::
+   :header-rows: 1
+   :align: left
+
+   * - <value>
+     - Description
+   * - ``IP:PORT``
+     - Set address and port of master kvs server.
+
+**Description**
+
+Set this environment variable to specify master kvs address.
+
+
+CCL_WORLD_SIZE
 ##############
+**Syntax**
 
-CCL_ASK_FRAMEWORK
-#################
+``CCL_WORLD_SIZE=<value>``
 
-CCL_KUBE_API_ADDR
-#################
+**Arguments**
+
+.. list-table::
+   :header-rows: 1
+   :align: left
+
+   * - <value>
+     - Description
+   * - ``N``
+     - Number of processes to start execution.
+
+**Description**
+
+Set this environment variable to specify number of CCL processes.
+
