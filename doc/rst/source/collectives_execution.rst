@@ -5,6 +5,8 @@ Execution of collective operations
 
 Collective operations are executed by CCL worker threads (workers). The number of workers is controlled by :ref:`CCL_WORKER_COUNT` environment variable.
 
+Workers affinity is controlled by :ref:`CCL_WORKER_AFFINITY`.
+
 By setting workers affinity you can specify which CPU cores are used to host CCL workers. The general rule of thumb is to use different CPU cores for compute (e.g. by specifying KMP_AFFINITY) and for communication.
 
 There are two ways to set workers affinity: explicit and automatic.

@@ -30,7 +30,7 @@ Collective algorithms selection
 ###############################
 
 CCL_<coll_name>
-###############
+***************
 **Syntax**
 
 ``CCL_<coll_name>=<algo_name>``
@@ -51,11 +51,14 @@ The list of semicolon separated blocks where each block sets the specific algori
 CCL internally fills algorithm selection table with sensible defaults. User input complements the selection table. To see the actual table values set CCL_LOG_LEVEL=1.
 
 Example
-#######
+*******
 
-``CCL_ALLREDUCE="recursive_doubling:0-8192;rabenseifner:8193-‭1048576;ring:‬‭1048577-max"``
+``CCL_ALLREDUCE="recursive_doubling:0-8192;rabenseifner:8193-1048576;ring:1048577-max"``
 
-List of available ``<coll_name>``
+Available collectives
+*********************
+
+``<coll_name>``
 
 -   ``ALLGATHER``
 -   ``ALLREDUCE``
@@ -65,8 +68,13 @@ List of available ``<coll_name>``
 -   ``SPARSE_ALLREDUCE``
 
 
-List of available ``ALLGATHERV`` algorithms
-###########################################
+Available algorithms
+********************
+
+``<algo_name>``
+
+``ALLGATHERV`` algorithms
++++++++++++++++++++++++++
 
 .. list-table:: 
    :widths: 25 50
@@ -82,8 +90,8 @@ List of available ``ALLGATHERV`` algorithms
      - Series of broadcast operations with different root ranks.
 
 
-List of available ``ALLREDUCE`` algorithms
-##########################################
+``ALLREDUCE`` algorithms
+++++++++++++++++++++++++
 
 .. list-table:: 
    :widths: 25 50
@@ -105,8 +113,8 @@ List of available ``ALLREDUCE`` algorithms
      - Recursive doubling algorithm.
 
 
-List of available ``BARRIER`` algorithms
-########################################
+``BARRIER`` algorithms
+++++++++++++++++++++++
 
 .. list-table:: 
    :widths: 25 50
@@ -118,8 +126,8 @@ List of available ``BARRIER`` algorithms
      - Ring-based allgorithm.
 
 
-List of available ``BCAST`` algorithms
-######################################
+``BCAST`` algorithms
+++++++++++++++++++++
 
 .. list-table:: 
    :widths: 25 50
@@ -135,8 +143,8 @@ List of available ``BCAST`` algorithms
      - Send to all from root rank.
 
 
-List of available ``REDUCE`` algorithms
-#######################################
+``REDUCE`` algorithms
++++++++++++++++++++++
 
 .. list-table:: 
    :widths: 25 50
@@ -152,8 +160,8 @@ List of available ``REDUCE`` algorithms
      - Double-tree algorithm.
 
 
-List of available ``SPARSE_ALLREDUCE`` algorithms
-#################################################
+``SPARSE_ALLREDUCE`` algorithms
++++++++++++++++++++++++++++++++
 
 .. list-table:: 
    :widths: 25 50
@@ -167,15 +175,97 @@ List of available ``SPARSE_ALLREDUCE`` algorithms
 
 CCL_FUSION
 ##########
+**Syntax**
+
+``CCL_FUSION=<value>``
+
+**Arguments**
+
+.. list-table:: 
+   :header-rows: 1
+   :align: left
+   
+   * - <value> 
+     - Description
+   * - ``1``
+     - Enable fusion of collective operations.
+   * - ``0``
+     - Disable fusion of collective operations (**default**).
+
+**Description**
+
+Set this environment variable to control fusion of collective operations. CCL  The real fusion will depend on additional settings described below.
+
 
 CCL_FUSION_BYTES_THRESHOLD
 ##########################
+**Syntax**
+
+``CCL_FUSION_BYTES_THRESHOLD=<value>``
+
+**Arguments**
+
+.. list-table:: 
+   :header-rows: 1
+   :align: left
+   
+   * - <value> 
+     - Description
+   * - ``SIZE``
+     - Bytes threshold for collective operation. If the size of communication buffer in bytes is less or equal
+       to ``SIZE`` then CCL will fuse this operation with other ones.
+
+**Description**
+
+Set this environment variable to specify bytes threshold for collective operation to be fused.
+
 
 CCL_FUSION_COUNT_THRESHOLD
 ##########################
+**Syntax**
+
+``CCL_FUSION_COUNT_THRESHOLD=<value>``
+
+**Arguments**
+
+.. list-table:: 
+   :header-rows: 1
+   :align: left
+   
+   * - <value> 
+     - Description
+   * - ``COUNT``
+     - Count threshold for collective operations.
+       CCL can fuse together no more than ``COUNT`` operations at a time.
+
+**Description**
+
+Set this environment variable to specify count threshold for collective operation to be fused.
+
 
 CCL_FUSION_CYCLE_MS
 ###################
+**Syntax**
+
+``CCL_FUSION_CYCLE_MS=<value>``
+
+**Arguments**
+
+.. list-table:: 
+   :header-rows: 1
+   :align: left
+   
+   * - <value> 
+     - Description
+   * - ``MS``
+     - Frequency of checking for collectives operations to be fused, in milliseconds.
+       Small ``MS`` value can improve latency. Large value can help
+       to fuse larger number of operations at a time.
+
+**Description**
+
+Set this environment variable to specify frequency of checking for collectives operations to be fused.
+
 
 CCL_UNORDERED_COLL
 ##################
@@ -192,13 +282,15 @@ CCL_UNORDERED_COLL
    * - <value> 
      - Description
    * - ``1``
-     - Enable out of order execution.
+     - Enable execution of unordered collectives.
+       Additionally user has to specify ``coll_attr.match_id``.
    * - ``0``
-     - Disable out of order execution (**default**).
+     - Disable execution of unordered collectives (**default**).
 
 **Description**
 
-Set this environment variable to enable out of order execution of collective operations on different nodes. 
+Set this environment variable to enable execution of unordered collective operations on different nodes. 
+
 
 CCL_PRIORITY
 ############
@@ -217,15 +309,36 @@ CCL_PRIORITY
    * - ``direct``
      - Priority is explicitly specified by users using coll_attr.priority.
    * - ``lifo``
-     - Priority is implicitly increased on each collective calls. 
-
-       Users do not specify a priority.
+     - Priority is implicitly increased on each collective calls. Users do not specify a priority.
    * - ``none``
      - Disable prioritization (**default**).
 
 **Description**
 
-Set this environment variable to be able to control priority for collective operations. 
+Set this environment variable to control priority mode of collective operations. 
+
+
+CCL_WORKER_COUNT
+################
+**Syntax**
+
+``CCL_WORKER_COUNT=<value>``
+
+**Arguments**
+
+.. list-table:: 
+   :header-rows: 1
+   :align: left
+   
+   * - <value> 
+     - Description
+   * - ``N``
+     - Number of worker threads for CCL rank. 1 if not specified.
+
+**Description**
+
+Set this environment variable to specify number of CCL worker threads.
+
 
 CCL_WORKER_AFFINITY
 ###################
@@ -250,27 +363,6 @@ CCL_WORKER_AFFINITY
 
 Set this environment variable to specify cpu affinity for CCL worker threads.
 
-
-CCL_WORKER_COUNT
-################
-**Syntax**
-
-``CCL_WORKER_COUNT=<value>``
-
-**Arguments**
-
-.. list-table:: 
-   :header-rows: 1
-   :align: left
-   
-   * - <value> 
-     - Description
-   * - ``N``
-     - Number of worker threads for CCL rank. 2 if not specified.
-
-**Description**
-
-Set this environment variable to specify number of CCL worker threads.
 
 
 CCL_PM_TYPE
