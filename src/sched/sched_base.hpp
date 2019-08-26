@@ -55,6 +55,7 @@ struct ccl_sched_base
     size_t get_priority() const;
     ccl_buffer alloc_buffer(size_t bytes);
     void free_buffers();
+    void free_sycl_buffers();
     void set_entry_exec_mode(ccl_sched_entry_exec_mode mode)
     {
         exec_mode = mode;

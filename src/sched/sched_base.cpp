@@ -18,6 +18,7 @@ void ccl_sched_base::set_coll_attr(const ccl_coll_attr_t* attr,
 
 void ccl_sched_base::update_coll_param(ccl_coll_param& param)
 {
+    free_sycl_buffers();
     coll_param.buf = param.buf;
     coll_param.send_buf = param.send_buf;
     coll_param.recv_buf = param.recv_buf;
@@ -85,6 +86,46 @@ void ccl_sched_base::free_buffers()
     memory.buf_list.clear();
 }
 
+void ccl_sched_base::free_sycl_buffers()
+{
+#ifdef ENABLE_SYCL
+    switch(coll_param.ctype)
+    {
+        case ccl_coll_allgatherv:
+            if (coll_param.stream && coll_param.stream->get_type() == ccl_stream_sycl)
+            {
+                delete[] (char*)coll_param.send_buf;
+                delete[] (char*)coll_param.recv_buf;
+            }
+            break;
+        case ccl_coll_allreduce:
+            if (coll_param.stream && coll_param.stream->get_type() == ccl_stream_sycl)
+            {
+                delete[] (char*)coll_param.send_buf;
+                delete[] (char*)coll_param.recv_buf;
+            }
+            break;
+        case ccl_coll_bcast:
+            if (coll_param.stream && coll_param.stream->get_type() == ccl_stream_sycl)
+            {
+                delete[] (char*)coll_param.buf;
+            }
+            break;
+        case ccl_coll_reduce:
+            if (coll_param.stream && coll_param.stream->get_type() == ccl_stream_sycl)
+            {
+                delete[] (char*)coll_param.send_buf;
+                if (coll_param.comm->rank() == coll_param.root)
+                {
+                    delete[] (char*)coll_param.recv_buf;
+                }
+            }
+            break;
+        default:
+            break;
+    }
+#endif /* ENABLE_SYCL */
+}
 
 void ccl_sched_base::dump(std::ostream& out, const char *name) const
 {    
