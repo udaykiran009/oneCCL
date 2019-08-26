@@ -6,12 +6,12 @@ to the corresponding third party licenses that solely and exclusively govern
 your use of the third party programs.
 
 This third-party-programs.txt file applies to oneAPI Collective
-Communications Library (oneAPI CCL) 2021.1-alpha01.
+Communications Library (oneAPI CCL) 2021.1-alpha02.
 
 This third-party-programs.txt file contains a list of licenses and links to the 
 oneAPI CCL components' third-party-programs.txt files.
 
-The combination of all these files covers oneAPI CCL 2021.1-alpha01.
+The combination of all these files covers oneAPI CCL 2021.1-alpha02.
 
 List of Third Party Programs:
     -MPICH*: BSD License
