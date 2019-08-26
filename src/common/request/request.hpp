@@ -1,19 +1,20 @@
 #pragma once
 
-#include "sched/sched.hpp"
-
 #include <atomic>
+
+#include "common/log/log.hpp"
+
 
 class alignas(CACHELINE_SIZE) ccl_request
 {
 public:
-    ccl_request() = default;
-
-    ccl_request(const ccl_request& other) = default;
-    ccl_request(ccl_request&& other) = default;
-
-    ccl_request& operator=(const ccl_request& other) = default;
-    ccl_request& operator=(ccl_request&& other) = default;
+    using notifier_func = std::function<void(std::ostream &)>;
+#ifdef ENABLE_DEBUG    
+    void set_dump_callback(notifier_func &&callback)
+    {
+        notifier = std::move(callback);
+    }
+#endif
 
     ~ccl_request()
     {
@@ -25,14 +26,15 @@ public:
         }
     }
 
-    void complete()
+    bool complete()
     {
         int prev_counter = completion_counter.fetch_sub(1, std::memory_order_release);
         CCL_THROW_IF_NOT(prev_counter > 0, "unexpected prev_counter ", prev_counter);
         LOG_DEBUG("req ", this, ", counter ", prev_counter - 1);
+        return (prev_counter == 1);
     }
 
-    bool is_completed()
+    bool is_completed() const
     {
         auto counter = completion_counter.load(std::memory_order_acquire);
 
@@ -43,29 +45,29 @@ public:
             if (complete_checks_count >= CHECK_COUNT_BEFORE_DUMP)
             {
                 complete_checks_count = 0;
-                sched->dump_all();
+                notifier(std::cout);
             }
         }
 #endif
-        LOG_TRACE("req ", this, ", counter ", counter);
+        LOG_TRACE("req: ", this, ", counter ", counter);
 
         return counter == 0;
     }
 
     void set_counter(int counter)
     {
+        LOG_DEBUG("req: ", this, ", set count ", counter);
         int current_counter = completion_counter.load(std::memory_order_acquire);
         CCL_THROW_IF_NOT(current_counter == 0, "unexpected counter ", current_counter);
         completion_counter.store(counter, std::memory_order_release);
     }
 
-    ccl_sched *sched = nullptr;
-
 private:
     std::atomic_int completion_counter { 0 };
 
 #ifdef ENABLE_DEBUG
-    size_t complete_checks_count = 0;
+    notifier_func notifier;
+    mutable size_t complete_checks_count = 0;
     static constexpr const size_t CHECK_COUNT_BEFORE_DUMP = 10000000;
 #endif
 };

@@ -47,7 +47,7 @@ ccl_status_t ccl_parallelizer_prologue_get_dtype(const void* ctx, void* field_pt
     return ccl_status_success;
 }
 
-ccl_status_t ccl_parallelizer::process(ccl_sched* sched)
+ccl_status_t ccl_parallelizer::process(ccl_master_sched* sched)
 {
     CCL_ASSERT(sched);
 
@@ -115,8 +115,7 @@ ccl_status_t ccl_parallelizer::process(ccl_sched* sched)
             break;
     }
 
-    LOG_DEBUG("sched ", sched, ", num_entries ", sched->entries.size(),
-              ", coll_type ", ccl_coll_type_to_str(coll_type), ", part_count ", part_count);
+    LOG_DEBUG("sched ", sched, ", coll_type ", ccl_coll_type_to_str(coll_type), ", part_count ", part_count);
 
     counts.resize(part_count, 0);
     offsets.resize(part_count, 0);

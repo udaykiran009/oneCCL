@@ -23,6 +23,8 @@ set(CCL_SRC
     coll/selection/coll/sparse_allreduce.cpp
     comp/comp.cpp
     sched/sched.cpp
+    sched/master_sched.cpp
+    sched/sched_base.cpp
     sched/sched_cache.cpp
     sched/sched_queue.cpp
     sched/entry/entry.cpp

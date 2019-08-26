@@ -52,7 +52,7 @@ size_t ccl_sched_key_hasher::operator()(const ccl_sched_key& k) const
     return hash_value;
 }
 
-ccl_sched* ccl_sched_cache::find(ccl_sched_key& key)
+ccl_master_sched* ccl_sched_cache::find(ccl_sched_key& key)
 {
     sched_table_t::iterator it;
     {
@@ -63,7 +63,7 @@ ccl_sched* ccl_sched_cache::find(ccl_sched_key& key)
     if (it != table.end())
     {
         LOG_DEBUG("found sched in cache, ", it->second);
-        ccl_sched* sched = it->second;
+        ccl_master_sched* sched = it->second;
         if (env_data.cache_key != ccl_cache_key_full)
         {
             LOG_DEBUG("do check for found sched");
@@ -100,7 +100,7 @@ ccl_sched* ccl_sched_cache::find(ccl_sched_key& key)
     }
 }
 
-void ccl_sched_cache::add(ccl_sched_key& key, ccl_sched* sched)
+void ccl_sched_cache::add(ccl_sched_key& key, ccl_master_sched* sched)
 {
     {
         std::lock_guard<sched_cache_lock_t> lock{guard};
@@ -119,7 +119,7 @@ void ccl_sched_cache::remove_all()
     std::lock_guard<sched_cache_lock_t> lock{guard};
     for (auto it = table.begin(); it != table.end(); ++it)
     {
-        ccl_sched* sched = it->second;
+        ccl_master_sched* sched = it->second;
         CCL_ASSERT(sched);
         LOG_DEBUG("remove sched ", sched, " from cache");
         delete sched;

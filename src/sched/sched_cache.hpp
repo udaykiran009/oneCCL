@@ -2,7 +2,7 @@
 
 #include "common/utils/spinlock.hpp"
 #include "comp/comp.hpp"
-#include "sched/sched.hpp"
+#include "sched/master_sched.hpp"
 
 #include <cstring>
 #include <unordered_map>
@@ -104,14 +104,13 @@ public:
     ccl_sched_cache(const ccl_sched_cache& other) = delete;
     ccl_sched_cache& operator= (const ccl_sched_cache& other) = delete;
 
-    ccl_sched* find(ccl_sched_key& key);
-    void add(ccl_sched_key& key, ccl_sched* sched);
+    ccl_master_sched* find(ccl_sched_key& key);
+    void add(ccl_sched_key& key, ccl_master_sched* sched);
 
 private:
     void remove_all();
-
     using sched_cache_lock_t = ccl_spinlock;
     sched_cache_lock_t guard{};
-    using sched_table_t = std::unordered_map<ccl_sched_key, ccl_sched*, ccl_sched_key_hasher>;
+    using sched_table_t = std::unordered_map<ccl_sched_key, ccl_master_sched *, ccl_sched_key_hasher>;
     sched_table_t table { CCL_SCHED_CACHE_INITIAL_BUCKET_COUNT };
 };

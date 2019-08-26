@@ -1,7 +1,7 @@
 #pragma once
 
 #include "common/utils/spinlock.hpp"
-#include "sched/sched.hpp"
+#include "sched/master_sched.hpp"
 
 #include <chrono>
 #include <mutex>
@@ -44,26 +44,28 @@ public:
     ccl_fusion_manager(const ccl_fusion_manager& other) = delete;
     ccl_fusion_manager& operator= (const ccl_fusion_manager& other) = delete;
 
-    bool can_fuse(ccl_sched* sched);
-    bool add(ccl_sched* sched);
+    bool can_fuse(ccl_master_sched* sched);
+    bool add(ccl_master_sched* sched);
     void execute();
     void release_buffer(void* buf);
 
+    void flush();
 private:
-    ccl_sched* build_sched();
+    ccl_master_sched* build_sched();
     void clear_exec_queue();
     void check_tracked_scheds();
+    void flush_exec_queue_if_needed(bool force = false);
 
     size_t bytes_threshold;
     size_t count_threshold;
 
     ccl_fusion_lock_t guard{};
-    using sched_queue_t = std::deque<ccl_sched*>;
+    using sched_queue_t = std::deque<ccl_master_sched*>;
     sched_queue_t postponed_queue{};
     sched_queue_t exec_queue{};
     size_t exec_queue_sum_bytes = 0;
     ccl_fusion_buffer_cache buf_cache;
-    std::list<ccl_sched*> tracked_scheds{};
+    std::list<ccl_master_sched*> tracked_scheds{};
 
     std::chrono::steady_clock::duration cycle;
     std::chrono::steady_clock::time_point last_exec_time;
@@ -71,4 +73,6 @@ private:
     size_t stat_fused_ops = 0;
     size_t stat_fused_bytes = 0;
     size_t stat_empty_exec_calls = 0;
+        
+    std::atomic<bool> force_flush_exec_queue{};
 };

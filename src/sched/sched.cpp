@@ -1,17 +1,10 @@
 #include "sched/sched.hpp"
+#include "sched/extra_sched.hpp"
 #include "sched/sched_queue.hpp"
 #include "sched/sync_object.hpp"
 #include "sched/entry_factory.hpp"
 #include "common/global/global.hpp"
 #include "parallelizer/parallelizer.hpp"
-
-static size_t lifo_priority = 0;
-
-void ccl_sched::alloc_req()
-{
-    req = new ccl_request();
-    req->sched = this;
-}
 
 ccl_sched::~ccl_sched()
 {
@@ -20,34 +13,24 @@ ccl_sched::~ccl_sched()
         finalize_fn(this, finalize_fn_ctx);
     }
 
-    for (auto& part_sched: partial_scheds)
-    {
-        part_sched.reset();
-    }
-
-    if (is_own_req)
-    {
-        LOG_DEBUG("delete own req");
-        delete req;
-        req = nullptr;
-    }
-
     if (!memory.mr_list.empty())
     {
         /* perform deregistration in worker thread */
-        ccl_coll_param cparam{};
-        cparam.ctype = ccl_coll_internal;
-        cparam.comm = coll_param.comm;
-        ccl_sched* dereg_sched = new ccl_sched(cparam);
-        entry_factory::make_entry<deregister_entry>(dereg_sched, memory.mr_list);
-        if (global_data.is_worker_thread || !env_data.worker_offload)
         {
-            dereg_sched->do_progress();
-            delete dereg_sched;
-        }
-        else
-        {
-            ccl_wait(start_subsched(dereg_sched));
+            ccl_coll_param cparam{};
+            cparam.ctype = ccl_coll_internal;
+            cparam.comm = coll_param.comm;
+            std::unique_ptr<ccl_extra_sched> dereg_sched(new ccl_extra_sched(cparam, sched_id));
+            entry_factory::make_entry<deregister_entry>(dereg_sched.get(), memory.mr_list);
+            if (global_data.is_worker_thread || !env_data.worker_offload)
+            {
+                dereg_sched->do_progress();
+            }
+            else
+            {
+                //release ownership, because ccl_wait_impl use delete inside
+                ccl_wait_impl<ccl_extra_sched>(global_data.executor.get(), start_subsched(dereg_sched.release()));
+            }
         }
         if(!memory.mr_list.empty())
         {
@@ -57,29 +40,6 @@ ccl_sched::~ccl_sched()
     }
 
     free_buffers();
-}
-
-size_t ccl_sched::get_priority()
-{
-    size_t priority = 0;
-
-    switch (env_data.priority_mode)
-    {
-        case ccl_priority_none:
-            priority = 0;
-            break;
-        case ccl_priority_direct:
-        case ccl_priority_lifo:
-            priority = coll_attr.priority;
-            break;
-        default:
-            CCL_FATAL("unexpected priority_mode ", env_data.priority_mode);
-            break;
-    }
-
-    LOG_DEBUG("sched, ", this, ", priority ", priority);
-
-    return priority;
 }
 
 /* Posts or performs any NOT_STARTED operations in the given schedule that are
@@ -214,61 +174,6 @@ void ccl_sched_progress(ccl_sched* sched)
     }
 }
 
-void ccl_sched::commit(ccl_parallelizer* parallelizer)
-{
-    if (env_data.priority_mode == ccl_priority_lifo)
-    {
-        coll_attr.priority = lifo_priority;
-        lifo_priority++;
-    }
-
-    if (partial_scheds.empty())
-    {
-        /* single time operations */
-        update_id();
-        if (parallelizer)
-            parallelizer->process(this);
-    }
-    else
-    {
-        /* repeated operations, should happen each time to reuse schedule */
-        for (size_t idx = 0; idx < partial_scheds.size(); idx++)
-        {
-            partial_scheds[idx]->coll_attr.priority = coll_attr.priority;
-        }
-    }
-
-    LOG_DEBUG("sched ", this, ", num_entries ", entries.size(),
-              ", sched_id ", sched_id, ", req ", req,
-              ", partial_sched_count ", partial_scheds.size());
-}
-
-ccl_request* ccl_sched::start(ccl_executor* exec, bool reset_sched)
-{
-    /* sanity check the schedule */
-    CCL_ASSERT(start_idx == 0);
-    CCL_ASSERT(req);
-    CCL_ASSERT(coll_param.comm);
-
-    LOG_DEBUG("starting schedule ", this, ", type ", ccl_coll_type_to_str(coll_param.ctype));
-
-    reset();
-    prepare_partial_scheds();
-
-    if (reset_sched)
-    {
-        reset_request();
-    }
-
-    if (env_data.sched_dump)
-    {
-        dump_all();
-    }
-
-    exec->start(this);
-
-    return req;
-}
 
 void ccl_sched::complete()
 {
@@ -276,40 +181,19 @@ void ccl_sched::complete()
     exec_complete_time = timer_type::now();
     if (env_data.sched_dump)
     {
-        dump("completed_sched");
+        dump(std::cout);
     }
 #endif
-
+    CCL_ASSERT(req, "ccl_sched must have req");
     req->complete();
 }
 
-void ccl_sched::add_partial_sched(ccl_coll_param& coll_param)
+void ccl_sched::renew(bool need_update_id/* = false*/)
 {
-    partial_scheds.emplace_back(std::make_shared<ccl_sched>(coll_param));
-    partial_scheds.back()->internal_type = internal_type;
-    partial_scheds.back()->set_request(req);
-}
-
-void ccl_sched::set_request(ccl_request* req)
-{
-    if (this->req)
-        delete this->req;
-
-    this->req = req;
-    is_own_req = false;
-}
-
-void ccl_sched::prepare_partial_scheds()
-{
-    for (auto& sched: partial_scheds)
+    if (need_update_id)
     {
-        sched->update_id();
-        sched->reset();
+        update_id();
     }
-}
-
-void ccl_sched::reset()
-{
 #ifdef ENABLE_TIMERS
     exec_start_time = timer_type::now();
     exec_complete_time = exec_start_time;
@@ -320,23 +204,6 @@ void ccl_sched::reset()
     {
         entries[idx].get()->reset(idx);
     }
-}
-
-ccl_request* ccl_sched::reset_request()
-{
-    int completion_counter = 0;
-    if (partial_scheds.empty())
-    {
-        completion_counter = 1;
-    }
-    else
-    {
-        completion_counter = static_cast<int>(partial_scheds.size());
-    }
-    LOG_DEBUG("req ", req, ", set count ", completion_counter);
-
-    req->set_counter(completion_counter);
-    return req;
 }
 
 void ccl_sched::add_barrier()
@@ -352,125 +219,33 @@ void ccl_sched::add_barrier()
     }
 }
 
-void ccl_sched::sync_partial_scheds()
+ccl_request* ccl_sched::start_subsched(ccl_extra_sched* subsched)
 {
-    CCL_THROW_IF_NOT(!partial_scheds.empty(), "no partial schedules");
-
-    auto sync_obj = std::make_shared<sync_object>(partial_scheds.size());
-    for (auto& sched : partial_scheds)
-    {
-        entry_factory::make_entry<sync_entry>(sched.get(), sync_obj);
-    }
+    subsched->set_counter(1);
+    subsched->coll_attr.priority = coll_attr.priority;
+    subsched->renew();
+    queue->add(subsched);
+    subsched->dump(std::cout);
+    return subsched->req;
 }
 
-void ccl_sched::set_coll_attr(const ccl_coll_attr_t* attr,
-                              std::string match_id)
-{
-    CCL_ASSERT(attr);
-    coll_attr.prologue_fn = attr->prologue_fn;
-    coll_attr.epilogue_fn = attr->epilogue_fn;
-    coll_attr.reduction_fn = attr->reduction_fn;
-    coll_attr.priority = attr->priority;
-    coll_attr.synchronous = attr->synchronous;
-    coll_attr.to_cache = attr->to_cache;
-    coll_attr.match_id = std::move(match_id);
-}
-
-void ccl_sched::update_coll_param(ccl_coll_param& param)
-{
-    coll_param.buf = param.buf;
-    coll_param.send_buf = param.send_buf;
-    coll_param.recv_buf = param.recv_buf;
-    coll_param.recv_counts = param.recv_counts;
-
-    if (coll_param.ctype == ccl_coll_sparse_allreduce)
-    {
-        coll_param.sparse_param.send_ind_buf = param.sparse_param.send_ind_buf;
-        coll_param.sparse_param.send_val_buf = param.sparse_param.send_val_buf;
-        coll_param.sparse_param.recv_ind_buf = param.sparse_param.recv_ind_buf;
-        coll_param.sparse_param.recv_val_buf = param.sparse_param.recv_val_buf;
-    }
-}
-
-void ccl_sched::update_coll_attr(const ccl_coll_attr_t* attr)
-{
-    if (env_data.priority_mode == ccl_priority_direct)
-    {
-        coll_attr.priority = attr->priority;
-    }
-}
-
-void ccl_sched::dump_all() const
-{
-    for (const auto& sched : partial_scheds)
-    {
-        sched->dump("worker_sched");
-    }
-
-    dump("origin_sched");
-}
-
-void ccl_sched::dump(const char *name) const
+void ccl_sched::dump(std::ostream &out) const
 {
     if (!env_data.sched_dump)
+    {
         return;
+    }
+
+    ccl_sched_base::dump(out, class_name());
+    ccl_logger::format(out, ", start_idx: ", start_idx,
+                       ", num_entries: ", entries.size(),
+                       "\n");
 
     std::stringstream msg;
-    ccl_logger::format(msg, "\n--------------------------------\n");
-    ccl_logger::format(msg,
-                        "sched: ", name, " ", this,
-                        ", coll ", ccl_coll_type_to_str(coll_param.ctype),
-                        ", start_idx, ", start_idx,
-                        ", num_entries ", entries.size(),
-                        ", comm_id ", coll_param.comm->id(),
-                        ", sched_id ", sched_id,
-                        ", req ", req,
-                        "\n");
-
     for (size_t i = 0; i < entries.size(); ++i)
     {
         entries[i]->dump(msg, i);
     }
-
-#ifdef ENABLE_TIMERS
-    ccl_logger::format(msg, "life time [us] ", std::setw(5), std::setbase(10),
-        std::chrono::duration_cast<std::chrono::microseconds>(exec_complete_time - exec_start_time).count(),
-        "\n");
-#endif
-    ccl_logger::format(msg, "--------------------------------\n");
-    std::cout << msg.str();
-}
-
-ccl_buffer ccl_sched::alloc_buffer(size_t bytes)
-{
-    LOG_DEBUG("bytes ", bytes);
-
-    CCL_THROW_IF_NOT(bytes > 0, "unexpected bytes ", bytes);
-
-    ccl_buffer buffer = ccl_buffer(CCL_CALLOC(bytes, "sched_buffer"),
-                                   bytes, 0, ccl_buffer_type::DIRECT);
-    memory.buf_list.emplace_back(buffer, bytes);
-    return buffer;
-}
-
-void ccl_sched::free_buffers()
-{
-    std::list<ccl_sched_buffer_handler>::iterator it;
-    for (it = memory.buf_list.begin(); it != memory.buf_list.end(); it++)
-    {
-        LOG_DEBUG("free ", it->buffer.get_ptr());
-        CCL_FREE(it->buffer.get_ptr());
-    }
-    memory.buf_list.clear();
-}
-
-ccl_request* ccl_sched::start_subsched(ccl_sched* subsched)
-{
-    subsched->req->set_counter(1);
-    subsched->sched_id = sched_id;
-    subsched->coll_attr.priority = coll_attr.priority;
-    subsched->reset();
-    queue->add(subsched);
-    subsched->dump("subsched");
-    return subsched->req;
+    out << msg.str();
+    ccl_logger::format(out, "--------------------------------\n");
 }

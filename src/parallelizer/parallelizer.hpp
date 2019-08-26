@@ -1,6 +1,6 @@
 #pragma once
 
-#include "sched/sched.hpp"
+#include "sched/master_sched.hpp"
 
 class ccl_parallelizer
 {
@@ -17,7 +17,7 @@ public:
     ccl_parallelizer(ccl_parallelizer&& other) = delete;
     ccl_parallelizer& operator= (ccl_parallelizer&& other) = delete;
 
-    ccl_status_t process(ccl_sched* sched);
+    ccl_status_t process(ccl_master_sched* sched);
 
 private:
     size_t max_data_partition_count;

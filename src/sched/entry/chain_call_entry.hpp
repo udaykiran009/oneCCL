@@ -2,6 +2,7 @@
 
 #include "sched/entry/entry.hpp"
 #include "sched/sched_queue.hpp"
+#include "sched/extra_sched.hpp"
 #include <memory>
 
 class chain_call_entry : public sched_entry
@@ -22,8 +23,7 @@ public:
         {
             LOG_DEBUG("entry object name: ", name);
         }
-        //do not mix std::shared_ptr<T>.reset() and ccl_sched->reset()
-        work_sched.reset(new ccl_sched(sched->coll_param));
+        work_sched.reset(new ccl_extra_sched(sched->coll_param, sched->sched_id));
         work_sched->coll_param.ctype = ccl_coll_internal;
         sched_fill_function(work_sched.get());
     }
@@ -32,10 +32,9 @@ public:
     {
         if (status == ccl_sched_entry_status_not_started)
         {
-            work_sched->reset();
+            work_sched->renew();
             work_sched->bin = sched->bin;
             work_sched->queue = sched->queue;
-            work_sched->sched_id = sched->sched_id;
             ccl_sched_progress(work_sched.get());
 
             if (work_sched->start_idx == work_sched->entries.size())
@@ -77,6 +76,6 @@ protected:
     }
 
 private:
-    std::unique_ptr<ccl_sched> work_sched;
+    std::unique_ptr<ccl_extra_sched> work_sched;
     std::string entry_special_name;
 };

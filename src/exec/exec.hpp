@@ -11,7 +11,9 @@
 
 class ccl_worker;
 class ccl_service_worker;
-class ccl_sched;
+class ccl_master_sched;
+class ccl_extra_sched;
+
 
 class alignas(CACHELINE_SIZE) ccl_executor
 {
@@ -24,9 +26,10 @@ public:
     ccl_executor();
     ~ccl_executor();
 
-    void start(ccl_sched* sched);
-    void wait(ccl_request* req);
-    bool test(ccl_request* req);
+    void start(ccl_extra_sched* extra_sched);
+    void start(ccl_master_sched* sched);
+    void wait(const ccl_request* req);
+    bool test(const ccl_request* req);
 
     size_t proc_idx{};
     size_t proc_count{};
@@ -39,37 +42,40 @@ public:
     size_t max_order_waw_size = 0;
 
 private:
+    void do_work(); 
     atl_comm_t** atl_comms = nullptr;
     std::vector<std::unique_ptr<ccl_worker>> workers;
 };
 
+template<class sched_type = ccl_master_sched>
 inline void ccl_wait_impl(ccl_executor* exec, ccl_request* request)
 {
     exec->wait(request);
-    CCL_ASSERT(request->sched);
 
+    sched_type* sched = static_cast<sched_type*>(request);
     LOG_DEBUG("req ", request, " completed, sched ",
-              ccl_coll_type_to_str(request->sched->coll_param.ctype));
-
-    if (!request->sched->coll_attr.to_cache)
+              ccl_coll_type_to_str(sched->coll_param.ctype));
+    if (!sched->coll_attr.to_cache)
     {
-        delete request->sched;
+        delete sched;
     }
+    //*request = nullptr;
 }
 
+template<class sched_type = ccl_master_sched>
 inline bool ccl_test_impl(ccl_executor* exec, ccl_request* request)
 {
     bool completed = exec->test(request);
 
     if (completed)
     {
-        CCL_ASSERT(request->sched);
+        sched_type* sched = static_cast<sched_type*>(request);
         LOG_DEBUG("req ", request, " completed, sched ",
-                  ccl_coll_type_to_str(request->sched->coll_param.ctype));
+                  ccl_coll_type_to_str(sched->coll_param.ctype));
 
-        if (!request->sched->coll_attr.to_cache)
+        if (!sched->coll_attr.to_cache)
         {
-            delete request->sched;
+            delete sched;
         }
     }
 

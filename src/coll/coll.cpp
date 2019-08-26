@@ -41,7 +41,7 @@ static ccl_request* ccl_coll_create(ccl_coll_param& coll_param,
                                     const ccl_coll_attr_t* coll_attr,
                                     ccl_sched_key& key)
 {
-    ccl_sched* sched = nullptr;
+    ccl_master_sched* sched = nullptr;
     ccl_comm* match_id_comm = nullptr;
     ccl_request* request = nullptr;
     const ccl_coll_attr_t* attr = coll_attr ? coll_attr : global_data.default_coll_attr.get();
@@ -98,7 +98,7 @@ static ccl_request* ccl_coll_create(ccl_coll_param& coll_param,
 
     if (!sched)
     {
-        sched = new ccl_sched(coll_param);
+        sched = new ccl_master_sched(coll_param);
         LOG_DEBUG("didn't find sched, create new one ", sched, ", type ",
                   ccl_coll_type_to_str(sched->coll_param.ctype));
 
@@ -135,8 +135,7 @@ static ccl_request* ccl_coll_create(ccl_coll_param& coll_param,
             {
                 LOG_DEBUG("sched ", sched, ", ctype ",
                           ccl_coll_type_to_str(sched->coll_param.ctype), " will be fused");
-                request = sched->req;
-                return request;
+                return sched;
             }
         }
     }
@@ -151,7 +150,7 @@ static ccl_request* ccl_coll_create(ccl_coll_param& coll_param,
         request = sched->start(global_data.executor.get());
         if (attr->synchronous)
         {
-            ccl_wait(request);
+            ccl_wait_impl<ccl_master_sched>(global_data.executor.get(), request);
             request = nullptr;
         }
     }
