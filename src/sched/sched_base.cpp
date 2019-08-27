@@ -19,7 +19,7 @@ void ccl_sched_base::set_coll_attr(const ccl_coll_attr_t* attr,
 void ccl_sched_base::update_coll_param(ccl_coll_param& param)
 {
 #ifdef ENABLE_SYCL
-    if (param.stream->get_type() == ccl_stream_sycl)
+    if (param.stream && (param.stream->get_type() == ccl_stream_sycl))
     {
         coll_param.sycl_buf = static_cast<ccl_sycl_buffer_t*>(param.buf);
         coll_param.sycl_send_buf = static_cast<ccl_sycl_buffer_t*>((void*)param.send_buf);
