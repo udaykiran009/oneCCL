@@ -1,6 +1,6 @@
 ENABLE_DEBUG ?= 0
 SHELL = bash
-INCLUDES = -I$(CCL_ROOT)/include
+INCLUDES = -I$(CCL_ROOT)/include -I./../include
 LDFLAGS  = -L$(CCL_ROOT)/lib/ -lccl -lOpenCL  -lsycl
 
 CXX         = clang++
