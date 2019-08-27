@@ -62,7 +62,8 @@ double when(void)
         tv_base = tv;
         is_first = 0;
     }
-    return (double)(tv.tv_sec - tv_base.tv_sec) * 1.0e6 + (double)(tv.tv_usec - tv_base.tv_usec);
+    return (double)(tv.tv_sec - tv_base.tv_sec) * 1.0e6 +
+           (double)(tv.tv_usec - tv_base.tv_usec);
 }
 
 void test_init()

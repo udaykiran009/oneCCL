@@ -1,13 +1,13 @@
 #pragma once
 
+#include "atl/atl.h"
 #include "coll/coll.hpp"
 #include "common/env/env.hpp"
 #include "common/global/global.hpp"
 #include "common/request/request.hpp"
-#include "atl/atl.h"
 
-#include <vector>
 #include <memory>
+#include <vector>
 
 class ccl_worker;
 class ccl_service_worker;
@@ -59,7 +59,6 @@ inline void ccl_wait_impl(ccl_executor* exec, ccl_request* request)
     {
         delete sched;
     }
-    //*request = nullptr;
 }
 
 template<class sched_type = ccl_master_sched>

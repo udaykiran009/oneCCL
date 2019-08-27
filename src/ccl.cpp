@@ -52,7 +52,7 @@ ccl_status_t ccl_init()
         }
 
         global_data.default_coll_attr.reset(new ccl_coll_attr_t{});
-        global_data.default_coll_attr->to_cache = 1;
+        global_data.default_coll_attr->to_cache = 0;
 
         global_data.algorithm_selector->init();
         if (global_data.executor->proc_idx == 0)
@@ -123,7 +123,7 @@ ccl_status_t CCL_API ccl_test(ccl_request_t req, int* is_completed)
     COMMON_CATCH_BLOCK();
 }
 
-ccl_status_t ccl_comm_create(ccl_comm_t* comm, ccl_comm_attr_t* attr)
+ccl_status_t ccl_comm_create(ccl_comm_t* comm, const ccl_comm_attr_t* attr)
 {
     CCL_ASSERT(comm);
     try

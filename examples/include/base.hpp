@@ -3,18 +3,39 @@
 
 #include "ccl.hpp"
 
-#include <functional>
-#include <vector>
 #include <chrono>
+#include <cstring>
+#include <functional>
+#include <math.h>
+#include <stdexcept>
+#include <stdio.h>
+#include <sys/time.h>
+#include <vector>
 
-#define ITERS                (100)
+#ifdef ENABLE_SYCL
+#include <CL/sycl.hpp>
+using namespace cl::sycl;
+using namespace cl::sycl::access;
+#endif
+
+typedef enum
+{
+    BACKEND_CPU,
+    BACKEND_SYCL
+} backend_type_t;
+
+#define DEFAULT_BACKEND "cpu"
+
+#define ITERS                (32)
+#define COLL_ROOT            (0)
 #define MSG_SIZE_COUNT       (6)
 #define START_MSG_SIZE_POWER (10)
-#define COLL_ROOT            (0)
 
-#define PRINT_BY_ROOT(fmt, ...)             \
-    if (comm.rank() == 0) {                 \
-        printf(fmt"\n", ##__VA_ARGS__); }   \
+#define PRINT_BY_ROOT(fmt, ...)         \
+    if (comm.rank() == 0)               \
+    {                                   \
+        printf(fmt"\n", ##__VA_ARGS__); \
+    }
 
 #define ASSERT(cond, fmt, ...)                            \
   do                                                      \
@@ -23,9 +44,8 @@
       {                                                   \
           printf("FAILED\n");                             \
           fprintf(stderr, "ASSERT '%s' FAILED " fmt "\n", \
-              #cond, ##__VA_ARGS__);                      \
-          test_finalize();                                \
-          exit(1);                                        \
+                  #cond, ##__VA_ARGS__);                  \
+          throw std::runtime_error("ASSERT FAILED");      \
       }                                                   \
   } while (0)
 
@@ -66,5 +86,75 @@
       }                                                         \
       PRINT_BY_ROOT("PASSED");                                  \
   } while (0)
+
+double when(void)
+{
+    struct timeval tv;
+    static struct timeval tv_base;
+    static int is_first = 1;
+
+    if (gettimeofday(&tv, NULL)) {
+        perror("gettimeofday");
+        return 0;
+    }
+
+    if (is_first) {
+        tv_base = tv;
+        is_first = 0;
+    }
+    return (double)(tv.tv_sec - tv_base.tv_sec) * 1.0e6 +
+           (double)(tv.tv_usec - tv_base.tv_usec);
+}
+
+void print_timings(ccl::communicator& comm,
+                  double* timer, size_t elem_count,
+                  size_t elem_size, size_t buf_count,
+                  size_t rank, size_t size)
+{
+    double* timers = (double*)malloc(size * sizeof(double));
+    size_t* recv_counts = (size_t*)malloc(size * sizeof(size_t));
+
+    size_t idx;
+    for (idx = 0; idx < size; idx++)
+        recv_counts[idx] = 1;
+
+    ccl::coll_attr attr;
+    memset(&attr, 0, sizeof(ccl_coll_attr_t));
+
+    comm.allgatherv(timer,
+                    1,
+                    timers,
+                    recv_counts,
+                    ccl::data_type::dt_double,
+                    &attr,
+                    nullptr)->wait();
+
+    if (rank == 0)
+    {
+        double avg_timer = 0;
+        double avg_timer_per_buf = 0;
+        for (idx = 0; idx < size; idx++)
+        {
+            avg_timer += timers[idx];
+        }
+        avg_timer /= (ITERS * size);
+        avg_timer_per_buf = avg_timer / buf_count;
+
+        double stddev_timer = 0;
+        double sum = 0;
+        for (idx = 0; idx < size; idx++)
+        {
+            double val = timers[idx] / ITERS;
+            sum += (val - avg_timer) * (val - avg_timer);
+        }
+        stddev_timer = sqrt(sum / size) / avg_timer * 100;
+        printf("size %10zu x %5zu bytes, avg %10.2lf us, avg_per_buf %10.2f, stddev %5.1lf %%\n",
+                elem_count * elem_size, buf_count, avg_timer, avg_timer_per_buf, stddev_timer);
+    }
+    comm.barrier();
+
+    free(timers);
+    free(recv_counts);
+}
 
 #endif /* BASE_HPP */

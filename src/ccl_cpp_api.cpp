@@ -108,7 +108,7 @@ CCL_API ccl::communicator::communicator()
     comm_impl = global_data.comm;
 }
 
-CCL_API ccl::communicator::communicator(ccl::comm_attr* attr)
+CCL_API ccl::communicator::communicator(const ccl::comm_attr* attr)
 {
     if (!attr)
     {

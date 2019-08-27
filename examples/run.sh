@@ -15,7 +15,7 @@ export FI_PROVIDER=tcp
 
 run_examples()
 {
-    for dir_name in "cpu" "sycl"
+    for dir_name in "cpu" "sycl" "common"
     do
 		cd $dir_name
         make clean -f ./../Makefile > /dev/null 2>&1
@@ -38,7 +38,15 @@ run_examples()
 			for example in $examples_to_run
 			do
 				echo "run examples with $transport transport (${example})" >> ./run_${dir_name}_${transport}_ouput.log
-				CCL_ATL_TRANSPORT=${transport} mpiexec.hydra -n 2 -ppn 1 -l ./$example &>> ./run_${dir_name}_${transport}_ouput.log
+				if [ "$dir_name" == "common" ];
+				then
+					for backend in "cpu" "sycl"
+					do
+					    CCL_ATL_TRANSPORT=${transport} mpiexec.hydra -n 2 -ppn 1 -l ./$example $backend &>> ./run_${dir_name}_${transport}_ouput.log
+				    done
+				else
+				    CCL_ATL_TRANSPORT=${transport} mpiexec.hydra -n 2 -ppn 1 -l ./$example &>> ./run_${dir_name}_${transport}_ouput.log
+			    fi
 				grep -r 'PASSED' ./run_${dir_name}_${transport}_ouput.log > /dev/null 2>&1
 				log_status=${PIPESTATUS[0]}
 				if [ "$log_status" -ne 0 ]

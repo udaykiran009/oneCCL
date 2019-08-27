@@ -14,10 +14,8 @@ ccl_master_sched::~ccl_master_sched()
     }
 
     CCL_ASSERT (memory.mr_list.empty(), "memory list is not empty");
-    free_sycl_buffers();
     free_buffers();
 }
-
 
 void ccl_master_sched::commit(ccl_parallelizer* parallelizer)
 {

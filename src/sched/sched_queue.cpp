@@ -15,12 +15,12 @@ void ccl_sched_bin::add(ccl_sched* sched)
     sched_list.add(sched);
 
 }
-size_t ccl_sched_bin::erase(size_t idx, size_t &nextIdx)
+size_t ccl_sched_bin::erase(size_t idx, size_t& next_idx)
 {
     ccl_sched* ret = nullptr;
     size_t size = 0;
     {
-        std::lock_guard<sched_queue_lock_t> lock(sched_list.elemGuard);
+        std::lock_guard<sched_queue_lock_t> lock(sched_list.elem_guard);
         size_t size = sched_list.elems.size();
         CCL_ASSERT(idx < size);
         ret = sched_list.elems[idx];
@@ -29,18 +29,18 @@ size_t ccl_sched_bin::erase(size_t idx, size_t &nextIdx)
         std::swap(sched_list.elems[size], sched_list.elems[idx]);
         sched_list.elems.resize(size);
         CCL_ASSERT(sched_list.elems.size() == (size));
-        nextIdx = idx;
+        next_idx = idx;
     }
     return size;
 }
 
 size_t ccl_sched_bin::erase(size_t idx)
 {
-    size_t nextId = 0;
-    ccl_sched* sched = sched_list.remove(idx, nextId);
+    size_t next_idx = 0;
+    ccl_sched* sched = sched_list.remove(idx, next_idx);
     CCL_ASSERT(sched);
     sched->bin = nullptr;
-    return nextId;
+    return next_idx;
 }
 
 ccl_sched_queue::ccl_sched_queue(std::vector<atl_comm_t*> comm_ctxs)
@@ -74,10 +74,9 @@ void ccl_sched_queue::add(ccl_sched* sched)
 {
     if (sched->strict_start_order)
     {
-        // use postponed queue here
-        std::lock_guard<sched_queue_lock_t> lock{postponed_queue_guard};
-        postponed_queue.push_back(sched);
-        postponed_queue_empty.clear();
+        std::lock_guard<sched_queue_lock_t> lock{strict_order_queue_guard};
+        strict_order_queue.push_back(sched);
+        strict_order_queue_empty.clear();
     }
     else
     {
@@ -188,43 +187,65 @@ size_t ccl_sched_queue::erase(ccl_sched_bin* bin, size_t idx)
     return next_idx;
 }
 
+void ccl_sched_queue::handle_strict_order_queue()
+{
+    if (!active_strict_order_queue.empty())
+    {
+        /* try to finish previous postponed operations */
+        for (auto sched_it = active_strict_order_queue.begin();
+             sched_it != active_strict_order_queue.end();
+             sched_it++)
+        {
+            ccl_sched* sched = *sched_it;
+
+            if (sched->is_executed())
+                continue;
+
+            if (!sched->bin)
+            {
+                std::lock_guard<sched_queue_lock_t> lock{bins_guard};
+                add_internal(sched, false);
+            }
+
+            sched->do_progress();
+
+            if (!sched->is_strict_order_satisfied())
+            {
+                /*
+                  we can't state that current operation is started with strict order
+                  remove all previous operations from queue, as they were successfully started with strict order
+                  and return to strict starting for current operation on the next call
+                */
+                std::vector<ccl_sched*> unhandled_scheds =
+                    std::vector<ccl_sched*>(sched_it, active_strict_order_queue.end());
+                active_strict_order_queue.swap(unhandled_scheds);
+                return;
+            }
+        }
+        active_strict_order_queue.clear();
+    }
+    else
+    {
+        if (!strict_order_queue_empty.test_and_set())
+        {
+            {
+                std::lock_guard<sched_queue_lock_t> lock{strict_order_queue_guard};
+                if (!strict_order_queue.empty())
+                {
+                    active_strict_order_queue.swap(strict_order_queue);
+                }
+                else
+                {
+                    CCL_ASSERT("unexpected path");
+                }
+            }
+            handle_strict_order_queue();
+        }
+    }
+}
+
 ccl_sched_bin* ccl_sched_queue::peek()
 {
-    // check postponed queue emptyflag at first
-    // no need to lock whole `postponed_queue_guard` here
-    if (postponed_queue_empty.test_and_set())
-    {
-        // no need to to iterates over postponed, just return max bin
-        return cached_max_priority_bin;
-    }
-
-    // postponed queue is not empty in this case, process it at first
-    std::vector<ccl_sched*> current_processing_queue;
-    {
-        std::lock_guard<sched_queue_lock_t> lock{postponed_queue_guard};
-        if (!postponed_queue.empty())
-        {
-            current_processing_queue.swap(postponed_queue);
-        }
-    }
-
-    // queue into priority bins
-    ccl_sched_bin* result = nullptr;
-    {
-        std::lock_guard<sched_queue_lock_t> lock{bins_guard};
-        for (auto sched : current_processing_queue)
-        {
-            add_internal(sched, false);
-        }
-        result = cached_max_priority_bin;
-    }
-
-    // process scheds without locks
-    for (auto sched : current_processing_queue)
-    {
-        ccl_sched_progress(sched);
-    }
-    current_processing_queue.clear();
-
-    return result;
+    handle_strict_order_queue();
+    return cached_max_priority_bin;
 }

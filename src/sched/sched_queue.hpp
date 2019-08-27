@@ -48,28 +48,28 @@ public:
     void add(ccl_sched* sched)
     {
         {
-            std::lock_guard<sched_queue_lock_t> lock(elemGuard);
+            std::lock_guard<sched_queue_lock_t> lock(elem_guard);
             elems.emplace_back(sched);
         }
     }
     size_t size()
     {
         {
-            std::lock_guard<sched_queue_lock_t> lock(elemGuard);
+            std::lock_guard<sched_queue_lock_t> lock(elem_guard);
             return elems.size();
         }
     }
     bool empty()
     {
         {
-            std::lock_guard<sched_queue_lock_t> lock(elemGuard);
+            std::lock_guard<sched_queue_lock_t> lock(elem_guard);
             return elems.empty();
         }
     }
     ccl_sched* get(size_t idx)
     {
         {
-            std::lock_guard<sched_queue_lock_t> lock(elemGuard);
+            std::lock_guard<sched_queue_lock_t> lock(elem_guard);
             CCL_ASSERT(idx < elems.size());
             return elems[idx];
         }
@@ -79,7 +79,7 @@ public:
     {
         ccl_sched* ret = nullptr;
         {
-            std::lock_guard<sched_queue_lock_t> lock(elemGuard);
+            std::lock_guard<sched_queue_lock_t> lock(elem_guard);
             size_t size = elems.size();
             CCL_ASSERT(idx < size);
             ret = elems[idx];
@@ -93,7 +93,7 @@ public:
     size_t erase(size_t idx)
     {
         {
-            std::lock_guard<sched_queue_lock_t> lock(elemGuard);
+            std::lock_guard<sched_queue_lock_t> lock(elem_guard);
             size_t size = elems.size();
             CCL_ASSERT(idx < size);
             std::swap(elems[size - 1], elems[idx]);
@@ -104,7 +104,7 @@ public:
     }
 
 private:
-    sched_queue_lock_t elemGuard{};
+    sched_queue_lock_t elem_guard{};
     sched_container_t elems;
     char padding_queue[CACHELINE_SIZE];
 };
@@ -173,8 +173,10 @@ private:
 
     void add_internal(ccl_sched* sched, bool needToLock = true);
 
-    sched_queue_lock_t postponed_queue_guard{};
-    // added padding, to make sure that 'postponed_queue_guard' and 'bins_guard'
+    void handle_strict_order_queue();
+
+    sched_queue_lock_t strict_order_queue_guard{};
+    // added padding, to make sure that 'strict_order_queue_guard' and 'bins_guard'
     // takes different cache lines (eliminates 'false sharing')
     char padding_queue[CACHELINE_SIZE];
     sched_queue_lock_t bins_guard{};
@@ -185,6 +187,14 @@ private:
     std::atomic<ccl_sched_bin*> cached_max_priority_bin{};
 
     /* used to get strict start ordering for transports w/o tagging support for collectives */
-    std::atomic_flag postponed_queue_empty = ATOMIC_FLAG_INIT;
-    std::vector<ccl_sched*> postponed_queue{};
+    std::atomic_flag strict_order_queue_empty = ATOMIC_FLAG_INIT;
+
+    /* used to keep schedules which require strict start ordering */
+    std::vector<ccl_sched*> strict_order_queue{};
+
+    /*
+      but real strict starting will happen from this queue
+      to reduce locking of master thread in queue->add()
+    */
+    std::vector<ccl_sched*> active_strict_order_queue{};
 };

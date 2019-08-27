@@ -72,7 +72,8 @@ ccl_status_t CCL_API ccl_sparse_allreduce(
 ccl_status_t CCL_API ccl_wait(ccl_request_t req);
 ccl_status_t CCL_API ccl_test(ccl_request_t req, int* is_completed);
 
-ccl_status_t CCL_API ccl_comm_create(ccl_comm_t* comm, ccl_comm_attr_t* attr);
+ccl_status_t CCL_API ccl_comm_create(ccl_comm_t* comm,
+                                     const ccl_comm_attr_t* attr);
 ccl_status_t CCL_API ccl_comm_free(ccl_comm_t comm);
 
 ccl_status_t CCL_API ccl_get_comm_rank(ccl_comm_t comm, size_t* rank);

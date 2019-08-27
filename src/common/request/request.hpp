@@ -29,7 +29,7 @@ public:
     bool complete()
     {
         int prev_counter = completion_counter.fetch_sub(1, std::memory_order_release);
-        CCL_THROW_IF_NOT(prev_counter > 0, "unexpected prev_counter ", prev_counter);
+        CCL_THROW_IF_NOT(prev_counter > 0, "unexpected prev_counter ", prev_counter, ", req ", this);
         LOG_DEBUG("req ", this, ", counter ", prev_counter - 1);
         return (prev_counter == 1);
     }

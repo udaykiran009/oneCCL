@@ -3,6 +3,8 @@
 #include <iostream>
 #include <stddef.h>
 
+#include "common/log/log.hpp"
+
 enum class ccl_buffer_type
 {
     DIRECT,

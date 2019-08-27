@@ -62,6 +62,8 @@ public:
 
     virtual void reset(size_t start_idx);
 
+    virtual bool is_strict_order_satisfied();
+
     void dump(std::stringstream& str,
               size_t idx) const;
     virtual void* get_field_ptr(ccl_sched_entry_field_id id);
@@ -74,11 +76,12 @@ public:
 
     virtual const char* name() const = 0;
 
+    static const char* status_to_str(ccl_sched_entry_status status);
+
 protected:
 
     virtual void dump_detail(std::stringstream& str) const;
     void check_exec_mode();
-    const char* entry_status_to_str(ccl_sched_entry_status status) const;
 
     ccl_sched* sched = nullptr;
     bool barrier = false;

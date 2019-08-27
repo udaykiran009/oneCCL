@@ -5,7 +5,7 @@
 class reduce_entry : public base_coll_entry
 {
 public:
-    static constexpr const char *entry_class_name() noexcept
+    static constexpr const char* class_name() noexcept
     {
         return "REDUCE";
     }
@@ -56,7 +56,7 @@ public:
 
     const char* name() const override
     {
-        return entry_class_name();
+        return class_name();
     }
 
 protected:

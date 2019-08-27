@@ -7,7 +7,7 @@
 class wait_value_entry : public sched_entry
 {
 public:
-    static constexpr const char* entry_class_name() noexcept
+    static constexpr const char* class_name() noexcept
     {
         return "WAIT_VALUE";
     }
@@ -48,7 +48,7 @@ public:
 
     const char* name() const override
     {
-        return entry_class_name();
+        return class_name();
     }
 
 protected:

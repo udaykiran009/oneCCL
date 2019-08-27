@@ -27,8 +27,11 @@
 #include "sched/entry/coll/barrier_entry.hpp"
 #include "sched/entry/coll/bcast_entry.hpp"
 #include "sched/entry/coll/reduce_entry.hpp"
+
+#ifdef ENABLE_SYCL
 #include "sched/entry/sycl_copy_device_to_host_entry.hpp"   
 #include "sched/entry/sycl_copy_host_to_device_entry.hpp"
+#endif /* ENABLE_SYCL */
 
 namespace entry_factory
 {
@@ -36,7 +39,7 @@ namespace entry_factory
     template<class EntryType, class ...Arguments>
     EntryType* make_entry(ccl_sched* sched, Arguments &&...args)
     {
-        LOG_DEBUG("creating ", EntryType::entry_class_name(), " entry");
+        LOG_DEBUG("creating ", EntryType::class_name(), " entry");
         return detail::entry_creator<EntryType>::create(sched, std::forward<Arguments>(args)...);
     }
 

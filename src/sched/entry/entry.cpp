@@ -91,11 +91,16 @@ void sched_entry::reset(size_t idx)
 #endif
 }
 
+bool sched_entry::is_strict_order_satisfied()
+{
+    return (status > ccl_sched_entry_status_not_started);
+}
+
 void sched_entry::dump(std::stringstream& str,
                        size_t idx) const
 {
     // update with the longest name
-    const int entry_name_w = 12;
+    const int entry_name_w = 14;
 
 #ifdef ENABLE_TIMERS
     auto start = from_time_point(start_time);
@@ -104,7 +109,7 @@ void sched_entry::dump(std::stringstream& str,
 
     ccl_logger::format(str,
                        "[", std::left, std::setw(3), idx, "] ", std::left, std::setw(entry_name_w), name(),
-                       " entry, status ", entry_status_to_str(status),
+                       " entry, status ", status_to_str(status),
                        " is_barrier ", std::left, std::setw(5), barrier ? "TRUE" : "FALSE",
                        " exec_time[us] ", std::setw(5), std::setbase(10),
                        std::chrono::duration_cast<std::chrono::microseconds>(exec_time).count(),
@@ -114,7 +119,7 @@ void sched_entry::dump(std::stringstream& str,
 #else
     ccl_logger::format(str,
                        "[", std::left, std::setw(3), idx, "] ", std::left, std::setw(entry_name_w), name(),
-                       " entry, status ", entry_status_to_str(status),
+                       " entry, status ", status_to_str(status),
                        " is_barrier ", std::left, std::setw(5), barrier ? "TRUE" : "FALSE", " ");
 
 #endif
@@ -131,25 +136,29 @@ void sched_entry::make_barrier()
 {
     barrier = true;
 }
+
 bool sched_entry::is_barrier() const
 {
     return barrier;
 }
+
 ccl_sched_entry_status sched_entry::get_status() const
 {
     return status;
 }
+
 void sched_entry::set_status(ccl_sched_entry_status s)
 {
     status = s;
 }
+
 void sched_entry::set_exec_mode(ccl_sched_entry_exec_mode mode)
 {
     exec_mode = mode;
 }
+
 void sched_entry::dump_detail(std::stringstream& str) const
-{
-}
+{}
 
 void sched_entry::check_exec_mode()
 {
@@ -159,7 +168,7 @@ void sched_entry::check_exec_mode()
     }
 }
 
-const char* sched_entry::entry_status_to_str(ccl_sched_entry_status status) const
+const char* sched_entry::status_to_str(ccl_sched_entry_status status)
 {
     switch (status)
     {

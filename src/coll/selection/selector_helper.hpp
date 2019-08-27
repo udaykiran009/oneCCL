@@ -1,5 +1,8 @@
 #pragma once
 
+#include <iterator>
+#include <sstream>
+
 #include "coll/algorithms/algorithms.hpp"
 
 template<typename algo_group_type>
@@ -49,7 +52,12 @@ const std::string& ccl_coll_algorithm_to_str(algo_group_type algo)
                 return name.first;                                                                \
             }                                                                                     \
         }                                                                                         \
-        CCL_THROW("unknown algorithm name '", str, "'");                                          \
+        std::stringstream sstream;                                                                \
+        std::for_each(algo_names.begin(), algo_names.end(),                                       \
+            [&](const std::pair<algo_group_type, std::string>& p)                                 \
+            { sstream << p.second << "\n"; });                                                    \
+        CCL_THROW("unknown algorithm name '", str, "'\n",                                         \
+                  "supported algorithms:\n", sstream.str());                                      \
     }                                                                                             \
     template<> const std::string&                                                                 \
     ccl_algorithm_selector_helper<algo_group_type>::algo_to_str(algo_group_type algo)             \

@@ -8,7 +8,7 @@
 class chain_call_entry : public sched_entry
 {
 public:
-    static constexpr const char* entry_class_name() noexcept
+    static constexpr const char* class_name() noexcept
     {
         return "CHAIN";
     }
@@ -35,7 +35,8 @@ public:
             work_sched->renew();
             work_sched->bin = sched->bin;
             work_sched->queue = sched->queue;
-            ccl_sched_progress(work_sched.get());
+            work_sched->sched_id = sched->sched_id;
+            work_sched->do_progress();
 
             if (work_sched->start_idx == work_sched->entries.size())
             {
@@ -50,8 +51,7 @@ public:
 
     void update_derived() override
     {
-        ccl_sched_progress(work_sched.get());
-
+        work_sched->do_progress();
         if (work_sched->start_idx == work_sched->entries.size())
         {
             status = ccl_sched_entry_status_complete;
@@ -60,7 +60,7 @@ public:
 
     const char* name() const override
     {
-        return !entry_special_name.empty() ? entry_special_name.c_str() : entry_class_name();
+        return !entry_special_name.empty() ? entry_special_name.c_str() : class_name();
     }
 
 protected:

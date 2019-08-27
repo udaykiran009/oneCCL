@@ -15,6 +15,7 @@
 typedef ccl_status_t(*ccl_sched_finalize_fn_t) (ccl_sched*, const void*);
 
 class ccl_extra_sched;
+
 class alignas(CACHELINE_SIZE) ccl_sched : public ccl_sched_base
 {
 public:
@@ -35,8 +36,17 @@ public:
 
     ~ccl_sched();
 
+    bool is_strict_order_satisfied();
+
+    /* check that all entries were executed */
+    bool is_executed();
+
+    void start_entries();
+
     void do_progress();
+
     void complete();
+
     size_t get_start_idx() const
     {
         return start_idx;
@@ -79,9 +89,9 @@ public:
     using sched_entry_ptr = std::unique_ptr<sched_entry>;
     std::deque<sched_entry_ptr> entries{};
 
-
     /* whether sched should be started in the same order as in user code */
     bool strict_start_order = false;
+
     void set_finalize_fn(ccl_sched_finalize_fn_t fn, void* ctx)
     {
         finalize_fn = fn;
@@ -103,5 +113,3 @@ private:
 
 ccl_status_t ccl_bin_progress(ccl_sched_bin* bin,
                               size_t& completed_sched_count);
-
-void ccl_sched_progress(ccl_sched* sched);

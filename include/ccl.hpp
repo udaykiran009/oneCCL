@@ -77,7 +77,7 @@ public:
      * Creates a new communicator according to @c attr parameters
      * @param attr
      */
-    explicit communicator(ccl::comm_attr* attr);
+    explicit communicator(const ccl::comm_attr* attr);
 
     /**
      * Retrieves the rank of the current process in a communicator

@@ -1,4 +1,3 @@
-#ifdef ENABLE_SYCL
 #pragma once
 
 #include "sched/entry/entry.hpp"
@@ -8,33 +7,36 @@
 class sycl_copy_device_to_host_entry : public sched_entry
 {
 public:
-    static constexpr const char* entry_class_name() noexcept
+    static constexpr const char* class_name() noexcept
     {
-        return "SYCL_COPY_DEVICE_TO_HOST";
+        return "SYCL_COPY_D2H";
     }
 
     sycl_copy_device_to_host_entry() = delete;
     sycl_copy_device_to_host_entry(ccl_sched* sched,
-                                   ccl_sycl_buffer_t* in_buf,
-                                   void* out_buf,
+                                   ccl_buffer in_buf,
+                                   ccl_buffer out_buf,
+                                   size_t cnt,
                                    ccl_datatype_internal_t dtype,
-                                   const ccl_stream* stream):
-                                   sched_entry(sched), dtype(dtype),
-                                   in_buf(in_buf), out_buf(out_buf), stream(stream)
+                                   const ccl_stream* stream) :
+                                   sched_entry(sched), in_buf(in_buf), out_buf(out_buf),
+                                   cnt(cnt), dtype(dtype), stream(stream)
     {
     }
 
     void start_derived() override
     {
-        auto in_buf_acc = in_buf->get_access<cl::sycl::access::mode::read>();
-        auto comp_status = ccl_comp_copy(in_buf_acc.get_pointer(), out_buf, in_buf_acc.get_count(), dtype);
+        size_t bytes = cnt * ccl_datatype_get_size(dtype);
+        auto in_buf_acc = static_cast<ccl_sycl_buffer_t*>(in_buf.get_ptr(bytes))->get_access<cl::sycl::access::mode::read>();
+        CCL_ASSERT(cnt <= in_buf_acc.get_count());
+        auto comp_status = ccl_comp_copy(in_buf_acc.get_pointer(), out_buf.get_ptr(bytes), cnt, dtype);
         CCL_ASSERT(comp_status == ccl_status_success, "bad status ", comp_status);
         status = ccl_sched_entry_status_complete;
     }
 
     const char* name() const override
     {
-        return entry_class_name();
+        return class_name();
     }
 
 protected:
@@ -42,6 +44,7 @@ protected:
     {
         ccl_logger::format(str,
                            "  dtype ", dtype,
+                           ", cnt ", cnt,
                            ", in_buf ", in_buf,
                            ", out_buf ", out_buf,
                            ", native_stream ", stream->get_native_stream(),
@@ -49,9 +52,9 @@ protected:
     }
 
 private:
+    ccl_buffer in_buf;
+    ccl_buffer out_buf;
+    size_t cnt;
     ccl_datatype_internal_t dtype;
-    ccl_sycl_buffer_t* in_buf;
-    void* out_buf;
     const ccl_stream* stream;
 };
-#endif /* ENABLE_SYCL */

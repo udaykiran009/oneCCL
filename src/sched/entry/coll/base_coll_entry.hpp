@@ -11,4 +11,11 @@ public:
     {
         sched->strict_start_order = true;
     }
+
+    bool is_strict_order_satisfied() override
+    {
+        return (status == ccl_sched_entry_status_started ||
+                status == ccl_sched_entry_status_complete ||
+                status == ccl_sched_entry_status_complete_once);
+    }
 };

@@ -225,7 +225,7 @@ atl_mpi_comm_allreduce(atl_comm_t *comm, const void *send_buf, void *recv_buf, s
         return atl_status_failure;
     }
     else {
-        //ATL_MPI_DEBUG_PRINT("count %zu, comm_key %s", cnt, buf);
+        //ATL_MPI_DEBUG_PRINT("allreduce: count %zu, comm_key %s, comm %p", count, buf, comm);
     }
     MPI_Info_free(&info_out);
 #endif

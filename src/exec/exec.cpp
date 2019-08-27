@@ -103,9 +103,10 @@ ccl_executor::~ccl_executor()
 
 void ccl_executor::start(ccl_extra_sched* extra_sched)
 {
-    CCL_ASSERT(extra_sched->internal_type == ccl_sched_internal_unordered_coll, "should be unordered_coll at now");
+    CCL_ASSERT(extra_sched->internal_type == ccl_sched_internal_unordered_coll,
+               "should be unordered_coll at now");
     
-    // single time operations
+    /* single time operations */
     if (env_data.priority_mode == ccl_priority_lifo)
     {
         extra_sched->coll_attr.priority = ccl_sched_base::get_lifo_priority();
@@ -136,12 +137,13 @@ void ccl_executor::start(ccl_master_sched* sched)
 
 void ccl_executor::wait(const ccl_request* req)
 {
-    // set urgent state for fusion manager
-    if(global_data.fusion_manager && !req->is_completed())
+    /* set urgent state for fusion manager */
+    if (global_data.fusion_manager && !req->is_completed())
     {
         global_data.fusion_manager->flush();
     }
-    // wait completion
+
+    /* wait completion */
     while (!req->is_completed())
     {
         do_work();
@@ -152,8 +154,8 @@ bool ccl_executor::test(const ccl_request* req)
 {
     if (!req->is_completed())
     {
-        // set urgent state for fusion manager
-        if(global_data.fusion_manager)
+        /* set urgent state for fusion manager */
+        if (global_data.fusion_manager)
         {
             global_data.fusion_manager->flush();
         }

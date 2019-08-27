@@ -7,7 +7,7 @@
 class coll_entry : public sched_entry
 {
 public:
-    static constexpr const char *entry_class_name() noexcept
+    static constexpr const char* class_name() noexcept
     {
         return "COLL";
     }
@@ -21,7 +21,7 @@ public:
                ccl_datatype_internal_t dtype,
                ccl_reduction_t reduction_op,
                size_t root = 0)
-        : sched_entry(sched, true), ctype(coll_type),
+        : sched_entry(sched), ctype(coll_type),
           send_buf(send_buf), recv_buf(recv_buf), cnt(cnt),
           dtype(dtype), op(reduction_op), coll_sched(), root(root)
     {
@@ -49,6 +49,12 @@ public:
         }
     }
 
+    bool is_strict_order_satisfied() override
+    {
+        return (status == ccl_sched_entry_status_complete ||
+                status == ccl_sched_entry_status_complete_once);
+    }
+
     void* get_field_ptr(ccl_sched_entry_field_id id) override
     {
         switch (id)
@@ -71,7 +77,7 @@ public:
 
     const char* name() const override
     {
-        return entry_class_name();
+        return class_name();
     }
 
 protected:

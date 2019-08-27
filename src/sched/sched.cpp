@@ -24,7 +24,7 @@ ccl_sched::~ccl_sched()
             entry_factory::make_entry<deregister_entry>(dereg_sched.get(), memory.mr_list);
             if (global_data.is_worker_thread || !env_data.worker_offload)
             {
-                dereg_sched->do_progress();
+                dereg_sched->start_entries();
             }
             else
             {
@@ -45,7 +45,7 @@ ccl_sched::~ccl_sched()
 /* Posts or performs any NOT_STARTED operations in the given schedule that are
  * permitted to be started.  That is, this routine will respect schedule
  * barriers appropriately. */
-void ccl_sched::do_progress()
+void ccl_sched::start_entries()
 {
     for (size_t i = start_idx; i < entries.size(); ++i)
     {
@@ -100,7 +100,7 @@ ccl_status_t ccl_bin_progress(ccl_sched_bin* bin,
         ccl_sched* sched = bin->get(sched_idx);
         CCL_ASSERT(sched && bin == sched->bin);
 
-        ccl_sched_progress(sched);
+        sched->do_progress();
 
         if (sched->start_idx == sched->entries.size())
         {
@@ -129,9 +129,9 @@ ccl_status_t ccl_bin_progress(ccl_sched_bin* bin,
     return status;
 }
 
-void ccl_sched_progress(ccl_sched* sched)
+void ccl_sched::do_progress()
 {
-    if (sched->first_progress)
+    if (first_progress)
     {
         // perform initial progress, iterate through schedule entries
         // some entries are running in 'synchronous' way, they are completed right after execution
@@ -140,30 +140,30 @@ void ccl_sched_progress(ccl_sched* sched)
         // if entry N+1 (and all subsequent entries) depends on entry N, then entry N is marked as a barrier and
         //     entry N+1 (and all subsequent) won't be started until entry N is completed
         /* TODO: do we need special handling for first_progress ? */
-        LOG_DEBUG("initial do_progress for sched ", sched);
-        sched->do_progress();
-        sched->first_progress = false;
+        LOG_DEBUG("initial start_entries for sched ", this);
+        start_entries();
+        first_progress = false;
     }
 
     // continue iteration of already started schedule. @b start_idx is an index of the first non-started entry
-    for (auto entry_idx = sched->start_idx; entry_idx < sched->entries.size(); ++entry_idx)
+    for (auto entry_idx = start_idx; entry_idx < entries.size(); ++entry_idx)
     {
-        auto& entry = sched->entries[entry_idx];
+        auto& entry = entries[entry_idx];
 
         // check for completion of 'asynchronous' entries
         entry->update();
 
-        if (entry_idx == sched->start_idx && entry->get_status() >= ccl_sched_entry_status_complete)
+        if (entry_idx == start_idx && entry->get_status() >= ccl_sched_entry_status_complete)
         {
             // the entry has been completed, increment start_idx
-            ++sched->start_idx;
+            ++start_idx;
             LOG_DEBUG("completed ", entry->name(), entry->is_barrier() ? " barrier" : "",
-                      " entry [", entry_idx, "/", sched->entries.size(), "], shift start_idx to ", sched->start_idx,
-                      ", sched ", sched);
+                      " entry [", entry_idx, "/", entries.size(), "], shift start_idx to ", start_idx,
+                      ", sched ", this);
             if (entry->is_barrier())
             {
                 // that entry was marked as a barrier, run the rest entries (if any) which depend on it
-                sched->do_progress();
+                start_entries();
             }
         }
         else if (entry->is_barrier() && entry->get_status() < ccl_sched_entry_status_complete)
@@ -174,6 +174,19 @@ void ccl_sched_progress(ccl_sched* sched)
     }
 }
 
+bool ccl_sched::is_strict_order_satisfied()
+{
+    CCL_ASSERT(strict_start_order);
+    return std::all_of(entries.begin(), entries.end(), [](const sched_entry_ptr& e)
+        {
+            return e->is_strict_order_satisfied();
+        });
+}
+
+bool ccl_sched::is_executed()
+{
+    return (start_idx == entries.size());
+}
 
 void ccl_sched::complete()
 {
