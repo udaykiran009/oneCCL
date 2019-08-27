@@ -138,30 +138,27 @@ void ccl_executor::start(ccl_master_sched* sched)
 void ccl_executor::wait(const ccl_request* req)
 {
     /* set urgent state for fusion manager */
-    if (global_data.fusion_manager && !req->is_completed())
-    {
-        global_data.fusion_manager->flush();
-    }
+    req->urgent = true;
 
     /* wait completion */
     while (!req->is_completed())
     {
         do_work();
     }
+
+    req->urgent = false;
 }
 
 bool ccl_executor::test(const ccl_request* req)
 {
     if (!req->is_completed())
     {
-        /* set urgent state for fusion manager */
-        if (global_data.fusion_manager)
-        {
-            global_data.fusion_manager->flush();
-        }
+        req->urgent = true;
         do_work();
         return false;
     }
+
+    req->urgent = false;
     return true;
 }
 
@@ -179,3 +176,4 @@ void ccl_executor::do_work()
         }
     }
 }
+

@@ -102,3 +102,4 @@ protected:
     void dump(std::ostream& out, const char *name) const;
 
 };
+

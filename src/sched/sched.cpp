@@ -262,3 +262,4 @@ void ccl_sched::dump(std::ostream &out) const
     out << msg.str();
     ccl_logger::format(out, "--------------------------------\n");
 }
+

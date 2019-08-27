@@ -127,3 +127,4 @@ void ccl_master_sched::dump(std::ostream &out) const
     
     ccl_logger::format(out, "--------------------------------\n");
 }
+

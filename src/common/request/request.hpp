@@ -4,15 +4,14 @@
 
 #include "common/log/log.hpp"
 
-
 class alignas(CACHELINE_SIZE) ccl_request
 {
 public:
-    using notifier_func = std::function<void(std::ostream &)>;
+    using dump_func = std::function<void(std::ostream &)>;
 #ifdef ENABLE_DEBUG    
-    void set_dump_callback(notifier_func &&callback)
+    void set_dump_callback(dump_func &&callback)
     {
-        notifier = std::move(callback);
+        dump_callback = std::move(callback);
     }
 #endif
 
@@ -45,7 +44,7 @@ public:
             if (complete_checks_count >= CHECK_COUNT_BEFORE_DUMP)
             {
                 complete_checks_count = 0;
-                notifier(std::cout);
+                dump_callback(std::cout);
             }
         }
 #endif
@@ -62,11 +61,12 @@ public:
         completion_counter.store(counter, std::memory_order_release);
     }
 
+    mutable bool urgent = false;
 private:
     std::atomic_int completion_counter { 0 };
 
 #ifdef ENABLE_DEBUG
-    notifier_func notifier;
+    dump_func dump_callback;
     mutable size_t complete_checks_count = 0;
     static constexpr const size_t CHECK_COUNT_BEFORE_DUMP = 10000000;
 #endif

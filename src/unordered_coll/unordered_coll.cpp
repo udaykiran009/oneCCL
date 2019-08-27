@@ -9,7 +9,7 @@ struct ccl_unordered_coll_ctx
     ccl_comm_id_t reserved_comm_id;
     size_t match_id_size;
     void* match_id_value;
-    ccl_sched* service_sched;
+    ccl_extra_sched* service_sched;
     ccl_unordered_coll_manager* manager;
 };
 
@@ -220,18 +220,18 @@ void ccl_unordered_coll_manager::start_post_coordination_actions(ccl_unordered_c
         // but other ranks don't have collectives with the same match_id yet
         LOG_DEBUG("can't find postponed sched for match_id ", match_id,
                   ", postpone comm creation, reserved comm_id ", id.value());
-        unresolved_comms.emplace(std::move(match_id), std::move(id));
+        unresolved_comms.emplace(match_id, std::move(id));
     }
     else
     {
         auto new_comm = original_comm->clone_with_new_id(std::move(id));
         add_comm(match_id, new_comm);
-        run_postponed_scheds(std::move(match_id), new_comm.get());
+        run_postponed_scheds(match_id, new_comm.get());
     }
 
     std::lock_guard<ccl_spinlock> lock{service_scheds_guard};
     CCL_ASSERT(ctx->service_sched, "service_sched is null");
-    auto emplace_result = service_scheds.emplace(match_id, ctx->service_sched);
+    auto emplace_result = service_scheds.emplace(std::move(match_id), ctx->service_sched);
     CCL_ASSERT(emplace_result.second);
 }
 
@@ -293,7 +293,7 @@ void ccl_unordered_coll_manager::remove_service_scheds()
     std::lock_guard<ccl_spinlock> lock{service_scheds_guard};
     for (auto it = service_scheds.begin(); it != service_scheds.end();)
     {
-        ccl_sched* sched = it->second;
+        ccl_extra_sched* sched = it->second;
         if (sched->req->is_completed())
         {
             LOG_DEBUG("sched ", sched, ", match_id ", it->first);

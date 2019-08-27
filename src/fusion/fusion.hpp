@@ -49,12 +49,10 @@ public:
     void execute();
     void release_buffer(void* buf);
 
-    void flush();
 private:
     ccl_master_sched* build_sched();
     void clear_exec_queue();
     void check_tracked_scheds();
-    void flush_exec_queue_if_needed(bool force = false);
 
     size_t bytes_threshold;
     size_t count_threshold;
@@ -73,6 +71,4 @@ private:
     size_t stat_fused_ops = 0;
     size_t stat_fused_bytes = 0;
     size_t stat_empty_exec_calls = 0;
-        
-    std::atomic<bool> force_flush_exec_queue{};
 };

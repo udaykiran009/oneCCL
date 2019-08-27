@@ -43,7 +43,21 @@ run_examples()
 					for backend in "cpu" "sycl"
 					do
 					    CCL_ATL_TRANSPORT=${transport} mpiexec.hydra -n 2 -ppn 1 -l ./$example $backend &>> ./run_${dir_name}_${transport}_ouput.log
-				    done
+
+                                            #run extended version of benchmark
+                                            if [[ "${example}" == *"benchmark"* ]]
+                                            then
+                                                echo "run benchmark with fusion: $transport transport (${example})" >> ./run_${dir_name}_${transport}_ouput.log
+                                                CCL_FUSION=1 CCL_ATL_TRANSPORT=${transport} mpiexec.hydra -n 2 -ppn 1 -l ./$example $backend allreduce &>> ./run_${dir_name}_${transport}_ouput.log
+                                                grep -r 'PASSED' ./run_${dir_name}_${transport}_ouput.log > /dev/null 2>&1
+                                                log_status=${PIPESTATUS[0]}
+                                                if [ "$log_status" -ne 0 ]
+                                                then
+                                                    echo "benchmark with fusion ${example} testing ... NOK"
+                                                    exit 1
+                                                fi
+                                            fi
+                                        done
 				else
 				    CCL_ATL_TRANSPORT=${transport} mpiexec.hydra -n 2 -ppn 1 -l ./$example &>> ./run_${dir_name}_${transport}_ouput.log
 			    fi
@@ -54,6 +68,8 @@ run_examples()
 					echo "example ${example} testing ... NOK"
 					exit 1
 				fi
+
+                                
 			done
 		done
 		cd - > /dev/null 2>&1

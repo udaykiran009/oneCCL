@@ -43,7 +43,7 @@ private:
     postponed_scheds_t postponed_scheds{};
     ccl_spinlock postponed_scheds_guard{};
 
-    using service_scheds_t = std::map<std::string, ccl_sched*>;
+    using service_scheds_t = std::map<std::string, ccl_extra_sched*>;
     service_scheds_t service_scheds{};
     ccl_spinlock service_scheds_guard{};
 };

@@ -96,7 +96,6 @@ ccl_fusion_manager::ccl_fusion_manager()
     long cycle_usec = long(env_data.fusion_cycle_ms * 1000.0);
     cycle = std::chrono::microseconds(cycle_usec);
     last_exec_time = std::chrono::steady_clock::now();
-    force_flush_exec_queue.store(false);
     
     LOG_INFO("created fusion manager, cycle_usec ", cycle_usec, ", bytes_threshold ", bytes_threshold,
              ", count_threshold ", count_threshold);
@@ -358,7 +357,19 @@ void ccl_fusion_manager::execute()
     last_exec_time = std::chrono::steady_clock::now();
 
     bool flush_exec_queue = false;
-
+    if (env_data.fusion_check_urgent && !exec_queue.empty())	
+    {	
+        /* recheck scheds from exec_queue, maybe some of them were marked as urgent since previous call */	
+        for (auto it = exec_queue.begin(); it != exec_queue.end(); ++it)	
+        {	
+            if ((*it)->urgent)	
+            {	
+                LOG_DEBUG("found urgent sched in exec_queue, flush exec_queue");	
+                flush_exec_queue = true;	
+                break;	
+            }	
+        }	
+    }
     /* separate block to reduce lock scope */
     {
         std::lock_guard<ccl_fusion_lock_t> lock{guard};
@@ -397,6 +408,13 @@ void ccl_fusion_manager::execute()
                     }
                     exec_queue_sum_bytes += size;
    
+                    if (env_data.fusion_check_urgent && !flush_exec_queue && s->urgent)	
+                    {	
+                        LOG_DEBUG("found urgent sched in postponed_queue, flush exec_queue, postponed_queue size ",	
+                                  postponed_queue.size());	
+                        flush_exec_queue = true;	
+                    }
+
                     exec_queue.push_back(s);
                     it = postponed_queue.erase(it);
 
@@ -415,7 +433,12 @@ void ccl_fusion_manager::execute()
         }
     }
 
-    flush_exec_queue_if_needed(flush_exec_queue);
+    if (flush_exec_queue)
+    {	
+        LOG_DEBUG("exec_queue size ", exec_queue.size(), ", bytes ", exec_queue_sum_bytes);	
+        ccl_master_sched* sched = build_sched();	
+        sched->start(global_data.executor.get());	
+    }
 
     if (stat_fused_ops % CCL_FUSION_CHECK_SCHEDS_ITERS == 0)
     {
@@ -447,50 +470,6 @@ void ccl_fusion_manager::check_tracked_scheds()
         else
         {
             ++it;
-        }
-    }
-}
-
-void ccl_fusion_manager::flush()
-{
-    if (env_data.fusion_check_urgent)
-    {
-        force_flush_exec_queue.store(true, std::memory_order_relaxed);
-    }
-}
-
-void ccl_fusion_manager::flush_exec_queue_if_needed(bool force/* = false*/)
-{
-    if (force)
-    {
-        //requested by ccl_fusion_manager execution condition
-        LOG_DEBUG("flush exec_queue by fusion conditions, size: ", exec_queue.size(),
-                  ", bytes: ", exec_queue_sum_bytes);
-        
-        ccl_master_sched* sched = build_sched();
-        sched->start(global_data.executor.get());
-        
-        //clear urgent state
-        if (env_data.fusion_check_urgent)
-        {
-            force_flush_exec_queue.store(false, std::memory_order_relaxed); 
-        }
-    }
-    else
-    {
-        //flush by executor request
-        if (env_data.fusion_check_urgent && 
-            force_flush_exec_queue.exchange(false, std::memory_order_relaxed))
-        {
-            if (exec_queue.empty())
-            {
-                return;// nothing flush
-            }
-            LOG_DEBUG("flush exec_queue by request, size: ", exec_queue.size(),
-                      ", bytes: ", exec_queue_sum_bytes);
-            
-            ccl_master_sched* sched = build_sched();
-            sched->start(global_data.executor.get());
         }
     }
 }
