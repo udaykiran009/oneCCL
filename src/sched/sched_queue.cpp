@@ -84,7 +84,7 @@ void ccl_sched_queue::add(ccl_sched* sched)
     }
 }
 
-void ccl_sched_queue::add_internal(ccl_sched* sched, bool need_to_lock /* = true*/)
+void ccl_sched_queue::add_internal(ccl_sched* sched, bool need_to_lock /* = true */)
 {
     size_t priority = sched->get_priority();
     if (env_data.priority_mode != ccl_priority_none)
@@ -199,7 +199,10 @@ void ccl_sched_queue::handle_strict_order_queue()
             ccl_sched* sched = *sched_it;
 
             if (sched->is_executed())
+            {
+                CCL_ASSERT(sched->is_strict_order_satisfied());
                 continue;
+            }
 
             if (!sched->bin)
             {

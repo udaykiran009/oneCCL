@@ -15,9 +15,9 @@ ccl_algorithm_selector<ccl_coll_allgatherv>::ccl_algorithm_selector()
     if (env_data.atl_transport == ccl_atl_ofi)
         insert(main_table, 0, CCL_SELECTION_MAX_COLL_SIZE, ccl_coll_allgatherv_naive);
     else if (env_data.atl_transport == ccl_atl_mpi)
-        insert(main_table, 0, CCL_SELECTION_MAX_COLL_SIZE, ccl_coll_allgatherv_multi_bcast);
+        insert(main_table, 0, CCL_SELECTION_MAX_COLL_SIZE, ccl_coll_allgatherv_direct);
 
-    insert(fallback_table, 0, CCL_SELECTION_MAX_COLL_SIZE, ccl_coll_allgatherv_multi_bcast);
+    insert(fallback_table, 0, CCL_SELECTION_MAX_COLL_SIZE, ccl_coll_allgatherv_flat);
 }
 
 template<>
@@ -30,6 +30,9 @@ bool ccl_algorithm_selector_helper<ccl_coll_allgatherv_algo>::can_use(ccl_coll_a
     if (env_data.enable_allgatherv_iov &&
         algo != ccl_coll_allgatherv_flat &&
         algo != ccl_coll_allgatherv_multi_bcast)
+        can_use = false;
+    else if (env_data.atl_transport == ccl_atl_mpi &&
+             algo == ccl_coll_allgatherv_multi_bcast)
         can_use = false;
 
     return can_use;

@@ -252,6 +252,7 @@ void ccl_sched::dump(std::ostream &out) const
     ccl_sched_base::dump(out, class_name());
     ccl_logger::format(out, ", start_idx: ", start_idx,
                        ", num_entries: ", entries.size(),
+                       ", priority: ", get_priority(),
                        "\n");
 
     std::stringstream msg;

@@ -171,7 +171,7 @@ public:
 
 private:
 
-    void add_internal(ccl_sched* sched, bool needToLock = true);
+    void add_internal(ccl_sched* sched, bool need_to_lock = true);
 
     void handle_strict_order_queue();
 

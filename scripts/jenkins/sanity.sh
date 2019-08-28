@@ -240,7 +240,7 @@ run_tests()
                 ;;
            mpi_adjust )
                 export CCL_ATL_TRANSPORT=mpi
-                for allgatherv in "direct" "naive" "flat" "multi_bcast"
+                for allgatherv in "direct" "naive" "flat"
                     do
                         CCL_ALLGATHERV=$allgatherv ctest -VV -C mpi_allgatherv_$allgatherv
                     done

@@ -112,6 +112,10 @@ ccl_status_t ccl_parallelizer::process(ccl_master_sched* sched)
                     ag_mbcast_algo = global_data.algorithm_selector->get<ccl_coll_bcast>(bcast_param);
                     if (ag_mbcast_algo == ccl_coll_bcast_direct)
                     {
+                        /*
+                            group all direct bcasts for specific worker together into single schedule w/o
+                            any barriers to get all required MPI level tags by single do_progress call
+                        */
                         part_count = max_data_partition_count;
                         LOG_DEBUG("allgatherv over direct multi_bcast, set part_count ", part_count);
                     }
@@ -132,8 +136,19 @@ ccl_status_t ccl_parallelizer::process(ccl_master_sched* sched)
 
     LOG_DEBUG("sched ", sched, ", coll_type ", ccl_coll_type_to_str(coll_type), ", part_count ", part_count);
 
-    counts.resize(part_count, 0);
-    offsets.resize(part_count, 0);
+    if (coll_type == ccl_coll_allgatherv &&
+        ag_algo == ccl_coll_allgatherv_multi_bcast && 
+        ag_mbcast_algo == ccl_coll_bcast_direct)
+    {
+        counts.resize(coll_param->comm->size(), 0);
+        offsets.resize(coll_param->comm->size(), 0);
+    }
+    else
+    {
+        counts.resize(part_count, 0);
+        offsets.resize(part_count, 0);
+    }
+
     for (idx = 0; idx < part_count; idx++)
     {
         ccl_coll_param part_coll_param{};
@@ -566,6 +581,8 @@ ccl_status_t ccl_parallelizer::process(ccl_master_sched* sched)
                 }
                 else
                 {
+                    CCL_ASSERT(ag_algo == ccl_coll_allgatherv_multi_bcast);
+
                     if (coll_param->send_buf != coll_param->recv_buf)
                     {
                         std::vector<size_t> copy_counts(max_data_partition_count);

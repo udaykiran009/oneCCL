@@ -165,7 +165,7 @@ ccl_master_sched* ccl_fusion_manager::build_sched()
     ccl_datatype_internal_t dtype;
     ccl_reduction_t reduction;
     ccl_coll_type ctype;
-    const ccl_stream* stream = nullptr;
+    const ccl_stream* stream __attribute__((unused)) = nullptr;
     void* fusion_buf = nullptr;
     bool found_sched_in_cache = false;
 
