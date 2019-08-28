@@ -1,4 +1,4 @@
-oneAPI CCL uses code from the following 3rd party projects (in alphabet order):
+oneCCL uses code from the following 3rd party projects (in alphabet order):
 
 Horovod - Distributed training framework for TensorFlow, Keras, PyTorch, and Apache MXNet
 License: Apache 2.0

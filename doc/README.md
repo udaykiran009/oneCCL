@@ -3,7 +3,7 @@
 
 TODO: Should be updated!!!
 
-Intel(R) oneAPI Collective Communications Library (Intel(R) CCL) is a library providing
+oneAPI Collective Communications Library (oneCCL) is a library providing
 an efficient implementation of communication patterns used in deep learning.
 
     - Built on top of MPI, allows for use of other communication libraries
@@ -13,7 +13,7 @@ an efficient implementation of communication patterns used in deep learning.
     - Common API to support Deep Learning frameworks (Caffe*, Theano*,
       Torch*, etc.)
 
-Intel(R) CCL package comprises the Intel CCL Software Development Kit (SDK)
+oneCCL package comprises the oneCCL Software Development Kit (SDK)
 and the Intel(R) MPI Library Runtime components.
 ## SOFTWARE SYSTEM REQUIREMENTS ##
 This section describes the required software.
@@ -33,28 +33,28 @@ Virtual Environments:
     - Docker*
     - KVM*
 ## Installing Intel(R) oneAPI Collective Communications Library ##
-Installing the Intel(R) CCL using RPM Package Manager (root mode):
+Installing the oneCCL using RPM Package Manager (root mode):
 
     1. Log in as root
 
     2. Install the package:
 
-        $ rpm -i intel-iccl-devel-64-<version>.<update>-<package#>.x86_64.rpm
+        $ rpm -i intel-ccl-devel-64-<version>.<update>-<package#>.x86_64.rpm
 
         where <version>.<update>-<package#> is a string, such as: 2017.0-009
 
-    3. Uninstalling the Intel(R) CCL using the RPM Package Manager
+    3. Uninstalling the oneCCL using the RPM Package Manager
 
-        $ rpm -e intel-iccl-devel-64-<version>.<update>-<package#>.x86_64
+        $ rpm -e intel-ccl-devel-64-<version>.<update>-<package#>.x86_64
 
-Installing the Intel(R) CCL using install.sh (user mode):
+Installing the oneCCL using install.sh (user mode):
 
     1. Run install.sh and follow the instructions.
 
-    There is no uninstall script. To uninstall the Intel(R) CCL, delete the
+    There is no uninstall script. To uninstall the oneCCL, delete the
     full directory you have installed the package into.
 ## License ##
-Intel CCL is licensed under [Intel Simplified Software License](https://github.com/01org/ICCL/blob/master/LICENSE).
+oneCCL is licensed under [Intel Simplified Software License](https://github.com/01org/ICCL/blob/master/LICENSE).
 ## Optimization Notice ##
 Intel's compilers may or may not optimize to the same degree for non-Intel
 microprocessors for optimizations that are not unique to Intel microprocessors.

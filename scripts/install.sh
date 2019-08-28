@@ -47,7 +47,7 @@ done
 
 if [ ${SILENT_MODE} -eq 0 ]
 then
-    echo "oneAPI CCL CCL_SUBSTITUTE_OFFICIAL_VERSION for Linux* OS will be installed"
+    echo "oneCCL CCL_SUBSTITUTE_OFFICIAL_VERSION for Linux* OS will be installed"
     echo "Type 'y' to continue or 'q' to exit and then press Enter"
     CONFIRMED=0
     while [ $CONFIRMED = 0 ]
@@ -79,7 +79,7 @@ fi
 
 if [ ${SILENT_MODE} -eq 0 ]
 then
-    echo "oneAPI CCL CCL_SUBSTITUTE_OFFICIAL_VERSION for Linux* OS will be installed into ${INSTALL_PATH}"
+    echo "oneCCL CCL_SUBSTITUTE_OFFICIAL_VERSION for Linux* OS will be installed into ${INSTALL_PATH}"
 fi
 
 if [ -d ${INSTALL_PATH} ]

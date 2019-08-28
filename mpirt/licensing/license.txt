@@ -2,7 +2,7 @@ Intel Simplified Software License (Version January 2018)
 
 For: Intel(R) Math Kernel Library (Intel(R) MKL)
      Intel(R) Integrated Performance Primitives (Intel(R) IPP)
-     Intel(R) oneAPI Collective Communications Library (Intel(R) CCL)
+     Intel(R) oneAPI Collective Communications Library (oneCCL)
      Intel(R) Data Analytics Acceleration Library (Intel(R) DAAL)
      Intel(R) Threading Building Blocks (Intel(R) TBB)
      Intel(R) Distribution for Python*
