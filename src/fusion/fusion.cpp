@@ -83,6 +83,13 @@ void ccl_fusion_buffer_cache::release(void* buf)
     free_buffers.push_back(buf);
 }
 
+void ccl_fusion_buffer_cache::clear()
+{
+    buf_size = 0;
+    free_buffers.clear();
+    all_buffers.clear();
+}
+
 ccl_fusion_manager::ccl_fusion_manager()
     : bytes_threshold(env_data.fusion_bytes_threshold),
       count_threshold(env_data.fusion_count_threshold),
@@ -479,6 +486,20 @@ void ccl_fusion_manager::execute()
 void ccl_fusion_manager::release_buffer(void* buf)
 {
     buf_cache.release(buf);
+}
+
+void ccl_fusion_manager::clear()
+{
+    if (global_data.is_ft_support)
+    {
+        tracked_scheds.clear();
+        clear_exec_queue();
+        postponed_queue.clear();
+        buf_cache.clear();
+        stat_fused_ops = 0;
+        stat_fused_bytes = 0;
+        stat_empty_exec_calls = 0;
+    }
 }
 
 void ccl_fusion_manager::clear_exec_queue()

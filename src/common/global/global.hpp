@@ -2,7 +2,7 @@
 
 #include "ccl.h"
 #include "common/utils/utils.hpp"
-#include "coll/algorithms/algorithms.hpp"
+#include "coll/algorithms/algorithms_enum.hpp"
 
 #include <memory>
 #include <thread>
@@ -50,6 +50,22 @@ struct alignas(CACHELINE_SIZE) ccl_global_data
     std::unique_ptr<ccl_unordered_coll_manager> unordered_coll_manager;
     std::unique_ptr<ccl_algorithm_selector_wrapper<CCL_COLL_LIST>> algorithm_selector;
     static thread_local bool is_worker_thread;
+    bool is_ft_support;
 };
 
 extern ccl_global_data global_data;
+
+#define CCL_CHECK_IS_BLOCKED()                         \
+  {                                                    \
+    do                                                 \
+    {                                                  \
+        if (unlikely(global_data.executor->is_locked)) \
+        {                                              \
+            return ccl_status_blocked_due_to_resize;   \
+        }                                              \
+    } while (0);                                       \
+  }
+
+void reset_for_size_update(ccl_global_data* gl_data);
+
+void ccl_init_global_objects(ccl_global_data& gl_data);

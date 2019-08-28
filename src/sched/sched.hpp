@@ -1,5 +1,4 @@
 #pragma once
-
 #include "sched/sched_base.hpp"
 
 //todo: sequence diagram
@@ -46,6 +45,11 @@ public:
     void do_progress();
 
     void complete();
+
+    void clear()
+    {
+        entries.clear();
+    }
 
     size_t get_start_idx() const
     {

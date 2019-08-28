@@ -31,6 +31,8 @@ set(CCL_SRC
     sched/entry/postponed_fields.cpp
     exec/exec.cpp
     exec/worker.cpp
+    exec/ccl_thread.cpp
+    exec/ccl_listener.cpp
     exec/service_worker.cpp
     fusion/fusion.cpp
     parallelizer/parallelizer.cpp

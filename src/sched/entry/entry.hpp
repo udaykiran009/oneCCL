@@ -1,5 +1,6 @@
 #pragma once
 
+#include "atl/atl.h"
 #include "common/datatype/datatype.hpp"
 #include "common/utils/utils.hpp"
 #include "sched/entry/postponed_fields.hpp"
@@ -19,12 +20,13 @@ enum ccl_sched_entry_exec_mode
 
 enum ccl_sched_entry_status
 {
-    ccl_sched_entry_status_not_started = 0,
-    ccl_sched_entry_status_started = 1,
-    ccl_sched_entry_status_complete = 2,
-    ccl_sched_entry_status_complete_once = 3, // should has higher value than 'complete'
-    ccl_sched_entry_status_failed = 4,
-    ccl_sched_entry_status_invalid = 5
+    ccl_sched_entry_status_not_started,
+    ccl_sched_entry_status_again,
+    ccl_sched_entry_status_started,
+    ccl_sched_entry_status_complete,
+    ccl_sched_entry_status_complete_once, // should has higher value than 'complete'
+    ccl_sched_entry_status_failed,
+    ccl_sched_entry_status_invalid
 };
 
 enum ccl_condition
@@ -82,6 +84,8 @@ protected:
 
     virtual void dump_detail(std::stringstream& str) const;
     void check_exec_mode();
+    const char* entry_status_to_str(ccl_sched_entry_status status) const;
+    void update_status(atl_status_t atl_status);
 
     ccl_sched* sched = nullptr;
     bool barrier = false;

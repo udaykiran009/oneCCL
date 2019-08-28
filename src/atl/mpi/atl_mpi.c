@@ -396,7 +396,7 @@ static void atl_mpi_proc_count(atl_desc_t *atl_desc, size_t *proc_count)
 }
 
 static atl_status_t
-atl_mpi_update(size_t *proc_idx, size_t *proc_count, atl_desc_t *atl_desc)
+atl_mpi_update(size_t *proc_idx, size_t *proc_count, atl_desc_t *atl_desc, atl_comm_t** atl_comms)
 {
     return atl_status_unsupported;
 }
@@ -412,7 +412,7 @@ static atl_status_t atl_mpi_mr_dereg(atl_desc_t *atl_desc, atl_mr_t *atl_mr)
     return atl_status_unsupported;
 }
 
-static atl_status_t atl_mpi_set_framework_function(update_checker_f user_checker)
+static atl_status_t atl_mpi_set_resize_function(atl_resize_fn_t resize_fn)
 {
     return atl_status_unsupported;
 }
@@ -422,7 +422,7 @@ atl_ops_t atl_mpi_ops = {
     .proc_count             = atl_mpi_proc_count,
     .finalize               = atl_mpi_finalize,
     .update                 = atl_mpi_update,
-    .set_framework_function = atl_mpi_set_framework_function,
+    .set_resize_function = atl_mpi_set_resize_function,
 };
 
 static atl_mr_ops_t atl_mpi_mr_ops = {
@@ -574,6 +574,7 @@ atl_status_t atl_mpi_init(int *argc, char ***argv, size_t *proc_idx, size_t *pro
     }
 
     atl_mpi_context->atl_desc.ops = &atl_mpi_ops;
+    atl_mpi_context->atl_desc.ops->is_ft_enabled = 0;
     atl_mpi_context->atl_desc.mr_ops = &atl_mpi_mr_ops;
     *atl_desc = &atl_mpi_context->atl_desc;
 

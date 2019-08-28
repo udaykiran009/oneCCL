@@ -3,24 +3,29 @@
 
 #include "atl.h"
 
-#include <pmi.h>
-
+#define PM_TYPE "CCL_PM_TYPE"
 typedef struct pm_rt_desc pm_rt_desc_t;
 
 /* PMI RT */
 atl_status_t pmirt_init(size_t *proc_idx, size_t *procs_num, pm_rt_desc_t **pmrt_desc);
-atl_status_t kube_init(size_t *proc_idx, size_t *procs_num, pm_rt_desc_t **pmrt_desc);
-atl_status_t kube_set_framework_function(update_checker_f user_checker);
+atl_status_t resizable_pmirt_init(size_t *proc_idx, size_t *proc_count, pm_rt_desc_t **pmrt_desc);
+atl_status_t resizable_pmirt_set_resize_function(atl_resize_fn_t resize_fn);
+
+#define PM_RT_VAL_SIMPLE "simple"
+#define PM_RT_VAL_RESIZABLE "resizable"
 
 typedef enum pm_rt_type {
-    PM_RT_PMI,
-    PM_RT_KUBE,
+    PM_RT_SIMPLE   = 0,
+    PM_RT_RESIZABLE  = 1,
 } pm_rt_type_t;
+
+static pm_rt_type_t type = PM_RT_SIMPLE;
 
 typedef struct pm_rt_ops {
     void (*finalize)(pm_rt_desc_t *pmrt_desc);
     void (*barrier)(pm_rt_desc_t *pmrt_desc);
     atl_status_t (*update)(size_t *proc_idx, size_t *proc_count);
+    atl_status_t (*wait_notification)(void);
 } pm_rt_ops_t;
 
 typedef struct pm_rt_kvs_ops {
@@ -35,27 +40,53 @@ struct pm_rt_desc {
     pm_rt_kvs_ops_t *kvs_ops;
 };
 
-//TODO: Add customize
-static pm_rt_type_t type = PM_RT_PMI;
-//static pm_rt_type_t type = PM_RT_KUBE;
+static inline atl_status_t
+is_ft_support()
+{
+
+    if (type == PM_RT_RESIZABLE)
+        return 1;
+    return 0;
+}
 
 static inline atl_status_t
 pmrt_init(size_t *proc_idx, size_t *procs_num, pm_rt_desc_t **pmrt_desc)
 {
-    switch (type) {
-    case PM_RT_PMI:
-        return pmirt_init(proc_idx, procs_num, pmrt_desc);
-    case PM_RT_KUBE:
-        return kube_init(proc_idx, procs_num, pmrt_desc);
+    char* type_str = getenv(PM_TYPE);
+
+    if(type_str)
+    {
+        if (strstr(type_str, PM_RT_VAL_SIMPLE))
+        {
+            type = PM_RT_SIMPLE;
+        }
+        else if (strstr(type_str, PM_RT_VAL_RESIZABLE))
+        {
+            type = PM_RT_RESIZABLE;
+        }
+        else
+        {
+            printf("Unknown %s: %s\n", PM_TYPE, type_str);
+            return atl_status_failure;
+        }
     }
-    return atl_status_failure;
+
+    switch (type) {
+    case PM_RT_SIMPLE:
+        return pmirt_init(proc_idx, procs_num, pmrt_desc);
+    case PM_RT_RESIZABLE:
+        return resizable_pmirt_init(proc_idx, procs_num, pmrt_desc);
+    default:
+        printf("Wrong CCL_PM_TYPE: %s", type_str);
+        return atl_status_failure;
+    }
 }
 static inline atl_status_t
-pmrt_set_framework_function(update_checker_f user_checker)
+pmrt_set_resize_function(atl_resize_fn_t user_checker)
 {
     switch (type) {
-    case PM_RT_KUBE:
-        return kube_set_framework_function(user_checker);
+    case PM_RT_RESIZABLE:
+        return resizable_pmirt_set_resize_function(user_checker);
     default:
         return atl_status_success;
     }
@@ -63,6 +94,10 @@ pmrt_set_framework_function(update_checker_f user_checker)
 static inline atl_status_t pmrt_update(size_t *proc_idx, size_t *proc_count, pm_rt_desc_t *pmrt_desc)
 {
     return pmrt_desc->ops->update(proc_idx, proc_count);
+}
+static inline atl_status_t pmrt_wait_notification(pm_rt_desc_t *pmrt_desc)
+{
+    return pmrt_desc->ops->wait_notification();
 }
 static inline void pmrt_finalize(pm_rt_desc_t *pmrt_desc)
 {

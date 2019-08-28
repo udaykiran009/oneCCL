@@ -25,6 +25,16 @@ public:
         pfields.add_available(ccl_sched_entry_field_cnt);
     }
 
+    ~recv_entry()
+    {
+        if (status == ccl_sched_entry_status_started)
+        {
+            size_t bytes = cnt * ccl_datatype_get_size(dtype);
+            LOG_DEBUG("cancel RECV entry src ", src, ", req ", &req, ", bytes ", bytes);
+            atl_comm_cancel(sched->bin->get_comm_ctx(), &req);
+        }
+    }
+
     void start_derived() override
     {
         atl_tag = global_data.atl_tag->create(sched->coll_param.comm->id(), src, sched->sched_id, op_id);
@@ -33,14 +43,7 @@ public:
 
         atl_status_t atl_status = atl_comm_recv(sched->bin->get_comm_ctx(), buf.get_ptr(bytes),
                                                 bytes, src, atl_tag, &req);
-        if (unlikely(atl_status != atl_status_success))
-        {
-            CCL_THROW("RECV entry failed. atl_status: ", atl_status_to_str(atl_status));
-        }
-        else
-        {
-            status = ccl_sched_entry_status_started;
-        }
+        update_status(atl_status);
     }
 
     void update_derived() override

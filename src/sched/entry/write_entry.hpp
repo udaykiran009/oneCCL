@@ -28,6 +28,15 @@ public:
         pfields.add_available(ccl_sched_entry_field_dst_mr);
     }
 
+    ~write_entry()
+    {
+        if (status == ccl_sched_entry_status_started)
+        {
+            LOG_DEBUG("cancel WRITE entry dst ", dst, ", req ", &req);
+            atl_comm_cancel(sched->bin->get_comm_ctx(), &req);
+        }
+    }
+
     void start_derived() override
     {
         LOG_DEBUG("WRITE entry dst ", dst, ", req ", &req);
@@ -45,12 +54,7 @@ public:
                                                  bytes, src_mr,
                                                  (uint64_t)dst_mr->buf + dst_buf_off,
                                                  dst_mr->r_key, dst, &req);
-        if (unlikely(atl_status != atl_status_success))
-        {
-            CCL_THROW("WRITE entry failed. atl_status: ", atl_status_to_str(atl_status));
-        }
-        else
-            status = ccl_sched_entry_status_started;
+        update_status(atl_status);
     }
 
     void update_derived() override

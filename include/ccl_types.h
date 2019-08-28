@@ -22,12 +22,13 @@ extern "C" {
 /** Status values returned by CCL functions. */
 typedef enum
 {
-    ccl_status_success           = 0,
-    ccl_status_out_of_resource   = 1,
-    ccl_status_invalid_arguments = 2,
-    ccl_status_unimplemented     = 3,
-    ccl_status_runtime_error     = 4,
-    
+    ccl_status_success               = 0,
+    ccl_status_out_of_resource       = 1,
+    ccl_status_invalid_arguments     = 2,
+    ccl_status_unimplemented         = 3,
+    ccl_status_runtime_error         = 4,
+    ccl_status_blocked_due_to_resize = 5,
+
     ccl_status_last_value
 } ccl_status_t;
 
@@ -66,6 +67,20 @@ typedef enum
 
     ccl_stream_last_value
 } ccl_stream_type_t;
+
+/** Resize action types. */
+typedef enum ccl_resize_action
+{
+    // Wait additional changes for number of ranks
+    ccl_ra_wait     = 0,
+    // Run with current number of ranks
+    ccl_ra_run      = 1,
+    // Finalize work
+    ccl_ra_finalize = 2,
+} ccl_resize_action_t;
+
+/* comm_size */
+typedef ccl_resize_action_t(*ccl_resize_fn_t)(size_t comm_size);
 
 /* in_buf, in_count, in_dtype, out_buf, out_count, out_dtype, out_dtype_size */
 typedef ccl_status_t(*ccl_prologue_fn_t) (const void*, size_t, ccl_datatype_t, void**, size_t*, ccl_datatype_t*, size_t*);

@@ -9,8 +9,8 @@ ccl_service_worker::ccl_service_worker(ccl_executor* executor, size_t idx,
 {}
 
 
-size_t ccl_service_worker::do_work()
+ccl_status_t ccl_service_worker::do_work(size_t& processed_count)
 {
     fusion_manager.execute();
-    return ccl_worker::do_work();
+    return ccl_worker::do_work(processed_count);
 }

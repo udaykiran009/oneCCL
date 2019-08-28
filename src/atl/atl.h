@@ -19,19 +19,21 @@
 #define ATL_CACHELINE_LEN 64
 #define ATL_REQ_SIZE      8
 
-typedef enum framework_answers
+typedef enum atl_resize_action
 {
-    FA_WAIT     = 0,
-    FA_USE      = 1,
-    FA_FINALIZE = 2,
-}framework_answers_t;
+    ATL_RA_WAIT     = 0,
+    ATL_RA_RUN      = 1,
+    ATL_RA_FINALIZE = 2,
+} atl_resize_action_t;
 
-typedef framework_answers_t (*update_checker_f)(size_t comm_size);
+typedef atl_resize_action_t (*atl_resize_fn_t)(size_t comm_size);
 
 typedef enum {
-    atl_status_success     = 0,
-    atl_status_failure     = 1,
-    atl_status_unsupported = 2,
+    atl_status_success,
+    atl_status_failure,
+    atl_status_again,
+
+    atl_status_unsupported,
 } atl_status_t;
 
 inline const char* atl_status_to_str(atl_status_t status)
@@ -97,8 +99,10 @@ typedef struct atl_ops {
     void (*proc_idx)(atl_desc_t *desc, size_t *proc_idx);
     void (*proc_count)(atl_desc_t *desc, size_t *proc_count);
     atl_status_t (*finalize)(atl_desc_t *desc, atl_comm_t **comms);
-    atl_status_t (*update)(size_t *proc_idx, size_t *proc_count, atl_desc_t *desc);
-    atl_status_t (*set_framework_function)(update_checker_f user_checker);
+    atl_status_t (*update)(size_t *proc_idx, size_t *proc_count, atl_desc_t *desc, atl_comm_t** atl_comms);
+    atl_status_t (*wait_notification)(atl_desc_t *desc);
+    atl_status_t (*set_resize_function)(atl_resize_fn_t user_checker);
+    size_t is_ft_enabled;
 } atl_ops_t;
 
 typedef struct atl_mr_ops {
@@ -166,6 +170,7 @@ typedef struct atl_rma_ops {
 typedef struct atl_comp_ops {
     atl_status_t (*wait)(atl_comm_t *comm, atl_req_t *req);
     atl_status_t (*wait_all)(atl_comm_t *comm, atl_req_t *reqs, size_t count);
+    atl_status_t (*cancel)(atl_comm_t *comm, atl_req_t *req);
     atl_status_t (*poll)(atl_comm_t *comm);
     atl_status_t (*check)(atl_comm_t *comm, int *status, atl_req_t *req);
 } atl_comp_ops_t;
@@ -219,6 +224,11 @@ static inline INI_SIG(atl_noop_init)
 atl_status_t atl_init(const char *transport_name, int *argc, char ***argv, size_t *proc_idx, size_t *proc_count,
                       atl_attr_t *attr, atl_comm_t ***atl_comms, atl_desc_t **atl_desc);
 
+static inline size_t is_ft_enabled(atl_desc_t *desc)
+{
+    return desc->ops->is_ft_enabled;
+}
+
 static inline void atl_proc_idx(atl_desc_t *desc, size_t *proc_idx)
 {
     return desc->ops->proc_idx(desc, proc_idx);
@@ -229,9 +239,14 @@ static inline void atl_proc_count(atl_desc_t *desc, size_t *proc_count)
     return desc->ops->proc_count(desc, proc_count);
 }
 
-static inline atl_status_t atl_update(size_t *proc_idx, size_t *proc_count, atl_desc_t *desc)
+static inline atl_status_t atl_update(size_t *proc_idx, size_t *proc_count, atl_desc_t *desc, atl_comm_t** atl_comms)
 {
-    return desc->ops->update(proc_idx, proc_count, desc);
+    return desc->ops->update(proc_idx, proc_count, desc, atl_comms);
+}
+
+static inline atl_status_t atl_wait_notification(atl_desc_t *desc)
+{
+    return desc->ops->wait_notification(desc);
 }
 
 static inline atl_status_t atl_finalize(atl_desc_t *desc, atl_comm_t **comms)
@@ -239,9 +254,9 @@ static inline atl_status_t atl_finalize(atl_desc_t *desc, atl_comm_t **comms)
     return desc->ops->finalize(desc, comms);
 }
 
-static inline atl_status_t atl_set_framework_function(atl_desc_t *desc, update_checker_f user_checker)
+static inline atl_status_t atl_set_resize_function(atl_desc_t *desc, atl_resize_fn_t user_checker)
 {
-    return desc->ops->set_framework_function(user_checker);
+    return desc->ops->set_resize_function(user_checker);
 }
 
 static inline atl_status_t atl_comm_send(atl_comm_t *comm, const void *buf, size_t len,
@@ -295,6 +310,11 @@ static inline atl_status_t atl_comm_probe(atl_comm_t *comm, size_t src_proc_idx,
                                           uint64_t tag, int *found, size_t *recv_len)
 {
     return comm->pt2pt_ops->probe(comm, src_proc_idx, tag, found, recv_len);
+}
+
+static inline atl_status_t atl_comm_cancel(atl_comm_t *comm, atl_req_t *req)
+{
+    return comm->comp_ops->cancel(comm, req);
 }
 
 static inline atl_status_t atl_comm_wait(atl_comm_t *comm, atl_req_t *req)

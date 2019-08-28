@@ -9,6 +9,8 @@ extern "C" {
 ccl_status_t CCL_API ccl_init(void);
 ccl_status_t CCL_API ccl_finalize(void);
 
+ccl_status_t CCL_API ccl_set_resize_fn(ccl_resize_fn_t callback);
+
 ccl_status_t CCL_API ccl_allgatherv(
     const void* send_buf,
     size_t send_count,

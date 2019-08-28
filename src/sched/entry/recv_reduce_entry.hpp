@@ -48,14 +48,7 @@ public:
         atl_status_t atl_status = atl_comm_recv(sched->bin->get_comm_ctx(), comm_buf.get_ptr(bytes),
                                                 bytes, src, atl_tag, &req);
 
-        if (unlikely(atl_status != atl_status_success))
-        {
-            CCL_THROW("RECV_REDUCE entry failed. atl_status: ", atl_status_to_str(atl_status));
-        }
-        else
-        {
-            status = ccl_sched_entry_status_started;
-        }
+        update_status(atl_status);
     }
 
     void update_derived() override
@@ -88,10 +81,16 @@ public:
 
     ~recv_reduce_entry() override
     {
-         if (own_comm_buff)
-         {
-             CCL_FREE(comm_buf.get_ptr());
-         }
+        if (status == ccl_sched_entry_status_started)
+        {
+            size_t bytes = in_cnt * ccl_datatype_get_size(dtype);
+            LOG_DEBUG("cancel RECV in RECV_REDUCE entry, src ", src, ", req ", &req, ", bytes", bytes);
+            atl_comm_cancel(sched->bin->get_comm_ctx(), &req);
+        }
+        if (own_comm_buff)
+        {
+            CCL_FREE(comm_buf.get_ptr());
+        }
     }
 
 protected:

@@ -4,6 +4,7 @@
 #include "common/stream/stream.hpp"
 #include "common/datatype/datatype.hpp"
 #include "common/utils/buffer.hpp"
+#include "common/global/global.hpp"
 
 #ifdef ENABLE_SYCL
 #include <CL/sycl.hpp>
@@ -12,26 +13,9 @@ typedef cl::sycl::buffer<char, 1> ccl_sycl_buffer_t;
 
 #define CCL_INVALID_PROC_IDX (-1)
 
-#define CCL_COLL_LIST \
-  ccl_coll_allgatherv, ccl_coll_allreduce, \
-  ccl_coll_barrier, ccl_coll_bcast, ccl_coll_reduce, \
-  ccl_coll_sparse_allreduce
-
 class ccl_sched;
 class ccl_request;
 
-enum ccl_coll_type
-{
-    ccl_coll_allgatherv,
-    ccl_coll_allreduce,
-    ccl_coll_barrier,
-    ccl_coll_bcast,
-    ccl_coll_reduce,
-    ccl_coll_sparse_allreduce,
-    ccl_coll_internal,
-
-    ccl_coll_last_value
-};
 
 struct ccl_coll_attr
 {

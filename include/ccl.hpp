@@ -21,6 +21,8 @@ public:
 
     ~environment();
 
+    void set_resize_fn(ccl_resize_fn_t callback);
+
 private:
     static bool is_initialized;
 };

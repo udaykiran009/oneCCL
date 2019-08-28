@@ -37,26 +37,43 @@
 #define ATL_OFI_DEBUG_PRINT(s, ...)
 #endif
 
-#define ATL_OFI_RETRY(func, comm, ret_val)                         \
-    do {                                                           \
-        ret_val = func;                                            \
-        if (ret_val == FI_SUCCESS)                                 \
-            break;                                                 \
-        if (ret_val != -FI_EAGAIN) {                               \
-            ATL_OFI_PRINT(#func "\n fails with ret %"PRId64", %s", \
-                                ret_val, fi_strerror(ret_val));    \
-            assert(0);                                             \
-            break;                                                 \
-        }                                                          \
-        (void) atl_ofi_comm_poll(comm);                            \
-    } while (ret_val == -FI_EAGAIN)
+#define ATL_OFI_MAX_RETRY_COUNT 10000000
+
+#define ATL_OFI_RETRY(func, comm, ret_val)                             \
+    do {                                                               \
+        size_t i = 0;                                                  \
+        do {                                                           \
+            ret_val = func;                                            \
+            if (ret_val == FI_SUCCESS)                                 \
+                break;                                                 \
+            if (ret_val != -FI_EAGAIN) {                               \
+                ATL_OFI_PRINT(#func "\n fails with ret %"PRId64", %s", \
+                                    ret_val, fi_strerror(ret_val));    \
+                assert(0);                                             \
+                break;                                                 \
+            }                                                          \
+            (void) atl_ofi_comm_poll(comm);                            \
+            i++;                                                       \
+        } while (ret_val == -FI_EAGAIN && i < ATL_OFI_MAX_RETRY_COUNT);   \
+    } while(0)
 
 #define ATL_OFI_PM_KEY "atl-ofi"
 
 #define ATL_OFI_CQ_BUNCH_SIZE (8)
 
 /* OFI returns 0 or -errno */
-#define RET2ATL(ret) (ret) ? atl_status_failure : atl_status_success
+#define RET2ATL(ret)                                                \
+    ({                                                              \
+        atl_status_t res;                                           \
+        if (ret == -FI_EAGAIN)                                      \
+            res = atl_status_again;                                 \
+        else                                                        \
+            res = (ret) ? atl_status_failure : atl_status_success;  \
+        res;                                                        \
+    })
+
+#define ATL_OFI_WAIT_SEC 10
+#define ATL_OFI_CQ_READ_ITERS 10000
 
 static const char *atl_ofi_name = "ofi";
 
@@ -107,6 +124,7 @@ typedef struct atl_ofi_req {
     struct fi_context ofi_context;
 
     atl_ofi_comm_context_t *comm;
+    struct fid_ep *last_ctx;
     atl_ofi_comp_state_t comp_state;
     size_t recv_len;
 } atl_ofi_req_t;
@@ -284,8 +302,8 @@ static void atl_ofi_comms_set_epname(atl_comm_t **comms, size_t comm_count,
     }
 }
 
-static void ofi_comm_ep_destroy(atl_ofi_context_t *atl_ofi_context,
-                                atl_ofi_comm_context_t *atl_ofi_comm_context)
+static void atl_ofi_comm_ep_destroy(atl_ofi_context_t *atl_ofi_context,
+                                    atl_ofi_comm_context_t *atl_ofi_comm_context)
 {
     if (atl_ofi_context->sep) {
         if (atl_ofi_comm_context->rx_ctx)
@@ -305,7 +323,7 @@ static void atl_ofi_comm_conn_destroy(atl_ofi_context_t *atl_ofi_context,
     atl_ofi_comm_context_t *atl_ofi_comm_context =
         container_of(comm, atl_ofi_comm_context_t, atl_comm);
 
-    ofi_comm_ep_destroy(atl_ofi_context, atl_ofi_comm_context);
+    atl_ofi_comm_ep_destroy(atl_ofi_context, atl_ofi_comm_context);
     if (atl_ofi_comm_context->name) {
         free(atl_ofi_comm_context->name->addr);
         atl_ofi_comm_context->name->addr = NULL;
@@ -366,9 +384,9 @@ static atl_status_t atl_ofi_finalize(atl_desc_t *atl_desc, atl_comm_t **atl_comm
 }
 
 static atl_status_t
-ofi_comm_ep_create(atl_ofi_context_t *atl_ofi_context,
-                   atl_ofi_comm_context_t *atl_ofi_comm_context,
-                   size_t index)
+atl_ofi_comm_ep_create(atl_ofi_context_t *atl_ofi_context,
+                       atl_ofi_comm_context_t *atl_ofi_comm_context,
+                       size_t index)
 {
     int ret;
     struct fi_cq_attr cq_attr = {
@@ -433,7 +451,7 @@ ofi_comm_ep_create(atl_ofi_context_t *atl_ofi_context,
 
     return atl_status_success;
 err:
-    ofi_comm_ep_destroy(atl_ofi_context, atl_ofi_comm_context);
+    atl_ofi_comm_ep_destroy(atl_ofi_context, atl_ofi_comm_context);
     return RET2ATL(ret);
 }
 
@@ -448,13 +466,16 @@ static atl_status_t atl_ofi_comm_handle_cq_err(atl_ofi_comm_context_t *comm_cont
         return atl_status_failure;
     } else {
         ofi_req = container_of(err_entry.op_context, atl_ofi_req_t, ofi_context);
+        if (err_entry.err == FI_ECANCELED) {
+            return atl_status_success;
+        }
         if (err_entry.err == FI_ENOMSG &&
             ofi_req->comp_state == ATL_OFI_COMP_PEEK_STARTED) {
             ofi_req->comp_state = ATL_OFI_COMP_PEEK_NOT_FOUND;
         }
         else {
             ATL_OFI_PRINT("fi_cq_readerr: err: %d, prov_err: %s (%d)\n",
-                          err_entry.err, 
+                          err_entry.err,
                           fi_cq_strerror(comm_context->cq,
                                          err_entry.prov_errno,
                                          err_entry.err_data,
@@ -528,6 +549,9 @@ atl_ofi_comm_sendv(atl_comm_t *comm, const struct iovec *iov, size_t count,
     req->tag = tag;
     ofi_req->comp_state = ATL_OFI_COMP_POSTED;
 
+    ofi_req->last_ctx = comm_context->tx_ctx;
+    ofi_req->comm = comm_context;
+
     ATL_OFI_RETRY(fi_tsendv(comm_context->tx_ctx, iov, NULL, count,
                              atl_ofi_comm_atl_addr_2_fi_addr(
                              container_of(comm->atl_desc,
@@ -551,6 +575,9 @@ atl_ofi_comm_recvv(atl_comm_t *comm, struct iovec *iov, size_t count,
     req->remote_proc_idx = src_proc_idx;
     req->tag = tag;
     ofi_req->comp_state = ATL_OFI_COMP_POSTED;
+
+    ofi_req->last_ctx = comm_context->rx_ctx;
+    ofi_req->comm = comm_context;
 
     ATL_OFI_RETRY(fi_trecvv(comm_context->rx_ctx, iov, NULL, count,
                             atl_ofi_comm_atl_addr_2_fi_addr(
@@ -577,6 +604,9 @@ atl_ofi_comm_send(atl_comm_t *comm, const void *buf, size_t len,
     req->tag = tag;
     ofi_req->comp_state = ATL_OFI_COMP_POSTED;
 
+    ofi_req->last_ctx = comm_context->tx_ctx;
+    ofi_req->comm = comm_context;
+
     ATL_OFI_RETRY(fi_tsend(comm_context->tx_ctx, buf, len, NULL,
                            atl_ofi_comm_atl_addr_2_fi_addr(
                                 container_of(comm->atl_desc,
@@ -600,6 +630,9 @@ atl_ofi_comm_recv(atl_comm_t *comm, void *buf, size_t len,
     req->remote_proc_idx = src_proc_idx;
     req->tag = tag;
     ofi_req->comp_state = ATL_OFI_COMP_POSTED;
+
+    ofi_req->last_ctx = comm_context->rx_ctx;
+    ofi_req->comm = comm_context;
 
     ATL_OFI_RETRY(fi_trecv(comm_context->rx_ctx, buf, len, NULL,
                            atl_ofi_comm_atl_addr_2_fi_addr(
@@ -625,6 +658,9 @@ atl_ofi_comm_read(atl_comm_t *comm, void *buf, size_t len, atl_mr_t *atl_mr,
     req->tag = 0;
     ofi_req->comp_state = ATL_OFI_COMP_POSTED;
 
+    ofi_req->last_ctx = comm_context->tx_ctx;
+    ofi_req->comm = comm_context;
+
     ATL_OFI_RETRY(fi_read(comm_context->tx_ctx, buf, len, (void*)atl_mr->l_key,
                           atl_ofi_comm_atl_addr_2_fi_addr(
                               container_of(comm->atl_desc,
@@ -648,6 +684,9 @@ atl_ofi_comm_write(atl_comm_t *comm, const void *buf, size_t len, atl_mr_t *atl_
     req->remote_proc_idx = dest_proc_idx;
     req->tag = 0;
     ofi_req->comp_state = ATL_OFI_COMP_POSTED;
+
+    ofi_req->last_ctx = comm_context->tx_ctx;
+    ofi_req->comm = comm_context;
 
     ATL_OFI_RETRY(fi_write(comm_context->tx_ctx, buf, len, (void*)atl_mr->l_key,
                            atl_ofi_comm_atl_addr_2_fi_addr(
@@ -713,6 +752,62 @@ atl_ofi_comm_probe(atl_comm_t *comm, size_t src_proc_idx, uint64_t tag,
     if (recv_len) *recv_len = len;
 
     return RET2ATL(ofi_ret);
+}
+
+static int
+atl_ofi_wait_cancel_cq(struct fid_cq *cq)
+{
+    struct fi_cq_err_entry err_entry;
+    int ret, i;
+    struct fi_cq_tagged_entry entries[ATL_OFI_CQ_BUNCH_SIZE];
+
+    double time = 0;
+    clock_t start, end;
+
+    while (time < ATL_OFI_WAIT_SEC)
+    {
+        for (i = 0; i < ATL_OFI_CQ_READ_ITERS; i++)
+        {
+            start = clock();
+            ret = fi_cq_read(cq, entries, ATL_OFI_CQ_BUNCH_SIZE);
+
+            if (ret < 0 && ret != -FI_EAGAIN)
+            {
+                ret = fi_cq_readerr(cq, &err_entry, 0);
+
+                if (err_entry.err != FI_ECANCELED)
+                {
+                    ATL_OFI_PRINT("fi_cq_readerr: err: %d, prov_err: %s (%d)\n",
+                                  err_entry.err, fi_cq_strerror(cq,
+                                                                err_entry.prov_errno,
+                                                                err_entry.err_data,
+                                                                NULL, 0),
+                                  err_entry.prov_errno);
+                    return atl_status_failure;
+                }
+                return atl_status_success;
+            }
+        }
+        end = clock();
+        time += (double) (end - start) / CLOCKS_PER_SEC;
+    }
+    ATL_OFI_PRINT("Too long for cancel\n");
+    return atl_status_failure;
+}
+
+
+static atl_status_t atl_ofi_comm_cancel(atl_comm_t *comm, atl_req_t *req)
+{
+    atl_status_t ret = atl_status_success;
+    atl_ofi_req_t *ofi_req = ((atl_ofi_req_t *)req->internal);
+
+    ret = fi_cancel(&ofi_req->last_ctx->fid, &ofi_req->ofi_context);
+    if (ret == 0)
+    {
+        return atl_ofi_wait_cancel_cq(ofi_req->comm->cq);
+    }
+
+    return atl_status_success;
 }
 
 static atl_status_t atl_ofi_comm_wait(atl_comm_t *comm, atl_req_t *req)
@@ -807,6 +902,7 @@ static atl_rma_ops_t atl_ofi_comm_rma_ops = {
 static atl_comp_ops_t atl_ofi_comm_comp_ops = {
     .wait = atl_ofi_comm_wait,
     .wait_all = atl_ofi_comm_wait_all,
+    .cancel = atl_ofi_comm_cancel,
     .poll = atl_ofi_comm_poll,
     .check = atl_ofi_comm_check
 };
@@ -822,7 +918,7 @@ atl_ofi_comm_init(atl_ofi_context_t *atl_ofi_context, atl_comm_attr_t *attr,
     if (!atl_ofi_context)
         return atl_status_failure;
 
-    ret = ofi_comm_ep_create(atl_ofi_context, atl_ofi_comm_context, index);
+    ret = atl_ofi_comm_ep_create(atl_ofi_context, atl_ofi_comm_context, index);
     if (ret)
         goto err_ep;
 
@@ -916,13 +1012,113 @@ static void atl_ofi_proc_count(atl_desc_t *atl_desc, size_t *proc_count)
     *proc_count = atl_ofi_context->proc_count;
 }
 
+static atl_status_t atl_ofi_try_to_drain_cq_err(struct fid_cq *cq)
+{
+    struct fi_cq_err_entry err_entry;
+    int ret = fi_cq_readerr(cq, &err_entry, 0);
+    if (ret != 1) {
+        ATL_OFI_DEBUG_PRINT("Unable to fi_cq_readerr");
+        return atl_status_failure;
+    } else {
+        if (err_entry.err != FI_ENOMSG
+            && err_entry.err != FI_ECANCELED
+            && err_entry.err != FI_ETRUNC) {
+            ATL_OFI_PRINT("fi_cq_readerr: err: %d, prov_err: %s (%d)\n",
+                          err_entry.err, fi_cq_strerror(cq,
+                                                        err_entry.prov_errno,
+                                                        err_entry.err_data,
+                                                        NULL, 0),
+                          err_entry.prov_errno);
+            return atl_status_failure;
+        }
+        return atl_status_success;
+    }
+}
+
+static int
+atl_ofi_try_to_drain_cq(struct fid_cq *cq)
+{
+    int ret, i;
+    double time = 0;
+    clock_t start, end;
+    struct fi_cq_tagged_entry entries[ATL_OFI_CQ_BUNCH_SIZE];
+
+    while (time < ATL_OFI_WAIT_SEC)
+    {
+        start = clock();
+        for (i = 0; i < ATL_OFI_CQ_READ_ITERS; i++)
+        {
+            ret = fi_cq_read(cq, entries, ATL_OFI_CQ_BUNCH_SIZE);
+
+            if (ret < 0 && ret != -FI_EAGAIN)
+            {
+                atl_ofi_try_to_drain_cq_err(cq);
+                return ret;
+            }
+
+            if (ret > 0)
+                return ret;
+        }
+        end = clock();
+        time += (double) (end - start) / CLOCKS_PER_SEC;
+    }
+
+    return ret;
+}
+
+static void
+atl_ofi_reset(size_t comm_ref_count, atl_comm_t** atl_comms)
+{
+    int again = 1, i;
+    int recv_buf_len = sizeof(char);
+    char* recv_buf = malloc(recv_buf_len);
+    struct fi_context ofi_context;
+
+    for (i = 0; i < comm_ref_count; i++)
+    {
+        atl_ofi_comm_context_t *comm_context =
+            container_of(atl_comms[i], atl_ofi_comm_context_t, atl_comm);
+        // complete active sends and receives
+        while (atl_ofi_try_to_drain_cq(comm_context->cq) != -FI_EAGAIN) {}
+
+        // try to complete active incoming sends
+        while (again)
+        {
+            again = 0;
+            // post recv to complete incoming send
+            while (fi_trecv(comm_context->rx_ctx, recv_buf, recv_buf_len, NULL,
+                            FI_ADDR_UNSPEC, 0, UINTMAX_MAX, &ofi_context) ==
+                   -FI_EAGAIN)
+            {}
+
+            // wait until recv will be completed or finished by timeout
+            while (atl_ofi_try_to_drain_cq(comm_context->cq) != -FI_EAGAIN)
+            {
+                // Something is completed -> send queue not empty
+                again = 1;
+            }
+        }
+
+        // Nothing to recv -> cancel last recv
+        fi_cancel(&comm_context->rx_ctx->fid, &ofi_context);
+
+        atl_ofi_wait_cancel_cq(comm_context->cq);
+    }
+
+    free(recv_buf);
+}
+
 static atl_status_t
-atl_ofi_update(size_t *proc_idx, size_t *proc_count, atl_desc_t *atl_desc)
+atl_ofi_update(size_t *proc_idx, size_t *proc_count, atl_desc_t *atl_desc, atl_comm_t** atl_comms)
 {
     int ret;
 
     atl_ofi_context_t *atl_ofi_context =
         container_of(atl_desc, atl_ofi_context_t, atl_desc);
+
+    pmrt_barrier(atl_ofi_context->pm_rt);
+
+    atl_ofi_reset(atl_ofi_context->comm_ref_count, atl_comms);
 
     ret = pmrt_update(&atl_ofi_context->proc_idx, &atl_ofi_context->proc_count, atl_ofi_context->pm_rt);
     if (ret)
@@ -940,6 +1136,19 @@ atl_ofi_update(size_t *proc_idx, size_t *proc_count, atl_desc_t *atl_desc)
 
     /*Abnormal end of execution */
 err_pmrt_update:
+    return RET2ATL(ret);
+}
+
+static atl_status_t
+atl_ofi_wait_notification(atl_desc_t *atl_desc)
+{
+    int ret;
+
+    atl_ofi_context_t *atl_ofi_context =
+        container_of(atl_desc, atl_ofi_context_t, atl_desc);
+
+    ret = pmrt_wait_notification(atl_ofi_context->pm_rt);
+
     return RET2ATL(ret);
 }
 
@@ -982,9 +1191,9 @@ static atl_status_t atl_ofi_mr_dereg(atl_desc_t *atl_desc, atl_mr_t *atl_mr)
 }
 
 
-static atl_status_t atl_ofi_set_framework_function(update_checker_f user_checker)
+static atl_status_t atl_ofi_set_resize_function(atl_resize_fn_t resize_fn)
 {
-    return pmrt_set_framework_function(user_checker);
+    return pmrt_set_resize_function(resize_fn);
 }
 
 atl_ops_t atl_ofi_ops = {
@@ -992,7 +1201,8 @@ atl_ops_t atl_ofi_ops = {
     .proc_count             = atl_ofi_proc_count,
     .finalize               = atl_ofi_finalize,
     .update                 = atl_ofi_update,
-    .set_framework_function = atl_ofi_set_framework_function,
+    .wait_notification      = atl_ofi_wait_notification,
+    .set_resize_function = atl_ofi_set_resize_function,
 };
 
 static atl_mr_ops_t atl_ofi_mr_ops = {
@@ -1031,6 +1241,7 @@ atl_status_t atl_ofi_init(int *argc, char ***argv, size_t *proc_idx, size_t *pro
 
     ret = pmrt_init(&atl_ofi_context->proc_idx, &atl_ofi_context->proc_count,
                     &atl_ofi_context->pm_rt);
+
     if (ret)
         goto err_pmrt_init;
 
@@ -1129,6 +1340,7 @@ atl_status_t atl_ofi_init(int *argc, char ***argv, size_t *proc_idx, size_t *pro
         goto err_comms_init;
 
     atl_ofi_context->atl_desc.ops = &atl_ofi_ops;
+    atl_ofi_context->atl_desc.ops->is_ft_enabled = is_ft_support();
     atl_ofi_context->atl_desc.mr_ops = &atl_ofi_mr_ops;
     *atl_desc = &atl_ofi_context->atl_desc;
 

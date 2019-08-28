@@ -5,6 +5,7 @@
 
 #include <deque>
 #include <unordered_map>
+#include <exec/exec.hpp>
 
 #define CCL_SCHED_QUEUE_INITIAL_BIN_COUNT (1024)
 
@@ -35,9 +36,16 @@ public:
     }
     ~ccl_sched_list()
     {
-        CCL_ASSERT(elems.empty(),
-                   "unexpected elem_count %zu, expected 0",
-                   elems.size());
+        if (elems.size() != 0 && !global_data.is_ft_support)
+        {
+            LOG_ERROR("unexpected elem_count ", elems.size(), "expected 0");
+        }
+
+        for (size_t i = 0; i < elems.size(); i++)
+        {
+            elems[i]->clear();
+        }
+        elems.clear();
     }
 
     ccl_sched_list& operator= (const ccl_sched_list& other) = delete;
@@ -153,14 +161,15 @@ class ccl_sched_queue
 {
 public:
     ccl_sched_queue(std::vector<atl_comm_t*> comm_ctxs);
-    ~ccl_sched_queue();
 
     ccl_sched_queue() = delete;
     ccl_sched_queue(const ccl_sched_queue& other) = delete;
     ccl_sched_queue& operator= (const ccl_sched_queue& other) = delete;
+    ~ccl_sched_queue();
 
     void add(ccl_sched* sched);
     size_t erase(ccl_sched_bin* bin, size_t idx);
+    void clear();
 
     /**
      * Retrieve a pointer to the bin with the highest priority and number of its elements

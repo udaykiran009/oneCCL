@@ -5,8 +5,31 @@
 #include "exec/exec.hpp"
 #include "fusion/fusion.hpp"
 #include "parallelizer/parallelizer.hpp"
-#include "sched/sched_cache.hpp"
 #include "unordered_coll/unordered_coll.hpp"
+
+
+void ccl_init_global_objects(ccl_global_data& gl_data)
+{
+    gl_data.sched_cache = std::unique_ptr<ccl_sched_cache>(new ccl_sched_cache());
+
+
+    gl_data.comm_ids = std::unique_ptr<ccl_comm_id_storage>(new ccl_comm_id_storage(ccl_comm::max_comm_count));
+
+    gl_data.comm = std::make_shared<ccl_comm>(gl_data.executor->proc_idx,
+                                              gl_data.executor->proc_count,
+                                              gl_data.comm_ids->acquire(true));
+
+    if (env_data.enable_unordered_coll)
+    {
+        gl_data.unordered_coll_manager =
+            std::unique_ptr<ccl_unordered_coll_manager>(new ccl_unordered_coll_manager());
+    }
+
+    gl_data.default_coll_attr.reset(new ccl_coll_attr_t{});
+    gl_data.default_coll_attr->to_cache = 0;
+
+    gl_data.default_coll_attr.reset(new ccl_coll_attr_t{});
+}
 
 ccl_status_t ccl_init()
 {
@@ -15,11 +38,6 @@ ccl_status_t ccl_init()
         ccl_env_parse();
         ccl_datatype_init();
 
-        global_data.algorithm_selector =
-            std::unique_ptr<ccl_algorithm_selector_wrapper<CCL_COLL_LIST>>(
-                new ccl_algorithm_selector_wrapper<CCL_COLL_LIST>());
-
-        global_data.sched_cache = std::unique_ptr<ccl_sched_cache>(new ccl_sched_cache());
         global_data.parallelizer = std::unique_ptr<ccl_parallelizer>(new ccl_parallelizer(env_data.worker_count));
 
         if (env_data.enable_fusion)
@@ -31,28 +49,13 @@ ccl_status_t ccl_init()
 
         global_data.executor = std::unique_ptr<ccl_executor>(new ccl_executor());
 
-        if (global_data.executor->proc_idx == 0)
-        {
-            ccl_env_print();
-        }
-
         global_data.atl_tag = std::unique_ptr<ccl_atl_tag>(new ccl_atl_tag(global_data.executor->tag_bits,
                                                                            global_data.executor->max_tag));
+        global_data.algorithm_selector =
+            std::unique_ptr<ccl_algorithm_selector_wrapper<CCL_COLL_LIST>>(
+                new ccl_algorithm_selector_wrapper<CCL_COLL_LIST>());
 
-        global_data.comm_ids = std::unique_ptr<ccl_comm_id_storage>(new ccl_comm_id_storage(ccl_comm::max_comm_count));
-
-        global_data.comm = std::make_shared<ccl_comm>(global_data.executor->proc_idx,
-                                                      global_data.executor->proc_count,
-                                                      global_data.comm_ids->acquire(true));
-
-        if (env_data.enable_unordered_coll)
-        {
-            global_data.unordered_coll_manager =
-                std::unique_ptr<ccl_unordered_coll_manager>(new ccl_unordered_coll_manager());
-        }
-
-        global_data.default_coll_attr.reset(new ccl_coll_attr_t{});
-        global_data.default_coll_attr->to_cache = 0;
+        ccl_init_global_objects(global_data);
 
         global_data.algorithm_selector->init();
         if (global_data.executor->proc_idx == 0)
@@ -63,19 +66,32 @@ ccl_status_t ccl_init()
     COMMON_CATCH_BLOCK();
 }
 
+void reset_for_size_update(ccl_global_data* gl_data)
+{
+    gl_data->unordered_coll_manager.reset();
+    gl_data->sched_cache.reset();
+    gl_data->comm.reset();
+    gl_data->comm->comm_count = 0;
+
+    if (env_data.enable_fusion)
+    {
+        gl_data->fusion_manager->clear();
+    }
+
+    gl_data->comm_ids.reset();
+}
+
 ccl_status_t ccl_finalize()
 {
     try
     {
         /* keep reverse order of initialization */
-        global_data.unordered_coll_manager.reset();
-        global_data.sched_cache.reset();
-        global_data.comm.reset();
+        reset_for_size_update(&global_data);
         global_data.comm_ids.reset();
         global_data.atl_tag.reset();
         global_data.executor.reset();
-        global_data.fusion_manager.reset();
         global_data.parallelizer.reset();
+        global_data.fusion_manager.reset();
         global_data.default_coll_attr.reset();
         global_data.algorithm_selector.reset();
 
@@ -84,8 +100,19 @@ ccl_status_t ccl_finalize()
     COMMON_CATCH_BLOCK();
 }
 
+ccl_status_t ccl_set_resize_fn(ccl_resize_fn_t callback)
+{
+    CCL_CHECK_IS_BLOCKED();
+    try
+    {
+        return global_data.executor->create_listener(callback);
+    }
+    COMMON_CATCH_BLOCK();
+}
+
 ccl_status_t CCL_API ccl_wait(ccl_request_t req)
 {
+    CCL_CHECK_IS_BLOCKED();
     try
     {
         if (!req)
@@ -103,6 +130,7 @@ ccl_status_t CCL_API ccl_wait(ccl_request_t req)
 
 ccl_status_t CCL_API ccl_test(ccl_request_t req, int* is_completed)
 {
+    CCL_CHECK_IS_BLOCKED();
     try
     {
         if (!req)
@@ -125,6 +153,7 @@ ccl_status_t CCL_API ccl_test(ccl_request_t req, int* is_completed)
 
 ccl_status_t ccl_comm_create(ccl_comm_t* comm, const ccl_comm_attr_t* attr)
 {
+    CCL_CHECK_IS_BLOCKED();
     CCL_ASSERT(comm);
     try
     {
@@ -152,6 +181,7 @@ ccl_status_t ccl_comm_create(ccl_comm_t* comm, const ccl_comm_attr_t* attr)
 
 ccl_status_t ccl_comm_free(ccl_comm_t comm)
 {
+    CCL_CHECK_IS_BLOCKED();
     CCL_ASSERT(comm);
     LOG_DEBUG("free communicator ", comm);
     try
@@ -164,6 +194,7 @@ ccl_status_t ccl_comm_free(ccl_comm_t comm)
 
 ccl_status_t CCL_API ccl_get_comm_rank(ccl_comm_t comm, size_t* rank)
 {
+    CCL_CHECK_IS_BLOCKED();
     if (!rank)
         return ccl_status_success;
 
@@ -178,6 +209,7 @@ ccl_status_t CCL_API ccl_get_comm_rank(ccl_comm_t comm, size_t* rank)
 
 ccl_status_t CCL_API ccl_get_comm_size(ccl_comm_t comm, size_t* size)
 {
+    CCL_CHECK_IS_BLOCKED();
     if (!size)
         return ccl_status_success;
 
@@ -194,6 +226,7 @@ ccl_status_t ccl_stream_create(ccl_stream_type_t type,
                                void* native_stream,
                                ccl_stream_t* stream)
 {
+    CCL_CHECK_IS_BLOCKED();
     CCL_ASSERT(stream);
     try
     {
@@ -206,6 +239,7 @@ ccl_status_t ccl_stream_create(ccl_stream_type_t type,
 
 ccl_status_t ccl_stream_free(ccl_stream_t stream)
 {
+    CCL_CHECK_IS_BLOCKED();
     CCL_ASSERT(stream);
     LOG_DEBUG("free stream ", stream);
     try
@@ -227,6 +261,7 @@ ccl_status_t CCL_API ccl_allgatherv(
     ccl_stream_t stream,
     ccl_request_t* req)
 {
+    CCL_CHECK_IS_BLOCKED();
     try
     {
         if (!req)
@@ -253,6 +288,7 @@ ccl_status_t CCL_API ccl_allreduce(
     ccl_stream_t stream,
     ccl_request_t* req)
 {
+    CCL_CHECK_IS_BLOCKED();
     try
     {
         if (!req)
@@ -289,6 +325,7 @@ ccl_status_t CCL_API ccl_bcast(
     ccl_stream_t stream,
     ccl_request_t* req)
 {
+    CCL_CHECK_IS_BLOCKED();
     try
     {
         if (!req)
@@ -316,6 +353,7 @@ ccl_status_t CCL_API ccl_reduce(
     ccl_stream_t stream,
     ccl_request_t* req)
 {
+    CCL_CHECK_IS_BLOCKED();
     try
     {
         if (!req)
@@ -342,6 +380,7 @@ ccl_status_t CCL_API ccl_sparse_allreduce(const void* send_ind_buf, size_t send_
                                           ccl_stream_t stream,
                                           ccl_request_t* req)
 {
+    CCL_CHECK_IS_BLOCKED();
     try
     {
         if (!req)

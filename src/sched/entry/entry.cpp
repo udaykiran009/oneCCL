@@ -21,7 +21,6 @@ void sched_entry::start()
 
     pfields.update();
     start_derived();
-    CCL_ASSERT(status >= ccl_sched_entry_status_started, "bad status ", status);
 
     if (status == ccl_sched_entry_status_complete)
     {
@@ -42,6 +41,10 @@ void sched_entry::update()
 {
     if (status != ccl_sched_entry_status_started)
     {
+        if (status == ccl_sched_entry_status_again)
+        {
+            start_derived();
+        }
         return;
     }
 
@@ -167,6 +170,25 @@ void sched_entry::check_exec_mode()
         status = ccl_sched_entry_status_complete_once;
     }
 }
+
+void sched_entry::update_status(atl_status_t atl_status)
+{
+    if (unlikely(atl_status != atl_status_success))
+    {
+        if (atl_status == atl_status_again)
+        {
+            status = ccl_sched_entry_status_again;
+            return;
+        }
+
+        CCL_THROW("%s entry failed. atl_status: ", name(), atl_status_to_str(atl_status));
+    }
+    else
+    {
+        status = ccl_sched_entry_status_started;
+    }
+}
+
 
 const char* sched_entry::status_to_str(ccl_sched_entry_status status)
 {

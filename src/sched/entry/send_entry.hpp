@@ -39,14 +39,7 @@ public:
         atl_status_t atl_status = atl_comm_send(sched->bin->get_comm_ctx(), buf.get_ptr(bytes),
                                                 bytes, dst, atl_tag, &req);
 
-        if (unlikely(atl_status != atl_status_success))
-        {
-            CCL_THROW("SEND entry failed. atl_status: ", atl_status_to_str(atl_status));
-        }
-        else
-        {
-            status = ccl_sched_entry_status_started;
-        }
+        update_status(atl_status);
     }
 
     void update_derived() override

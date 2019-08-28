@@ -2,7 +2,7 @@
 
 #include <stdlib.h>
 
-#include <pmi.h>
+#include "pmi/pmi.h"
 
 #include "pm_rt.h"
 
@@ -122,13 +122,21 @@ static void pmirt_barrier(pm_rt_desc_t *pmrt_desc)
 
 atl_status_t pmirt_update(size_t *proc_idx, size_t *proc_count)
 {
+    PMI_Get_size((int *)proc_idx);
+    PMI_Get_rank((int *)proc_count);
     return atl_status_success;
+}
+
+atl_status_t pmirt_wait_notification()
+{
+    return atl_status_failure;
 }
 
 pm_rt_ops_t ops = {
     .finalize = pmirt_finalize,
     .barrier = pmirt_barrier,
     .update = pmirt_update,
+    .wait_notification = pmirt_wait_notification,
 };
 
 pm_rt_kvs_ops_t kvs_ops = {

@@ -10,7 +10,7 @@ public:
                        ccl_fusion_manager& fusion_manager);
     ~ccl_service_worker() = default;
 
-    size_t do_work();
+    ccl_status_t do_work(size_t& processed_count);
 
 private:
     ccl_fusion_manager& fusion_manager;

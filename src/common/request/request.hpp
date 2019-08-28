@@ -1,7 +1,7 @@
 #pragma once
 
 #include <atomic>
-
+#include "common/global/global.hpp"
 #include "common/log/log.hpp"
 
 class alignas(CACHELINE_SIZE) ccl_request
@@ -19,7 +19,7 @@ public:
     {
         auto counter = completion_counter.load(std::memory_order_acquire);
         LOG_DEBUG("delete req ", this, " with counter ", counter);
-        if (counter != 0)
+        if (counter != 0 && !global_data.is_ft_support)
         {
             LOG_ERROR("unexpected completion_counter ", counter);
         }

@@ -62,10 +62,10 @@ ccl_sched_queue::ccl_sched_queue(std::vector<atl_comm_t*> comm_ctxs)
 ccl_sched_queue::~ccl_sched_queue()
 {
     CCL_ASSERT(bins.empty(),
-        "unexpected bins size ", bins.size(), ", expected 0");
+               "unexpected bins size ", bins.size(), ", expected 0");
 
     CCL_ASSERT(max_priority == 0,
-        "unexpected max_priority ", max_priority, ", expected 0");
+               "unexpected max_priority ", max_priority, ", expected 0");
 
     CCL_ASSERT(!cached_max_priority_bin);
 }
@@ -251,4 +251,11 @@ ccl_sched_bin* ccl_sched_queue::peek()
 {
     handle_strict_order_queue();
     return cached_max_priority_bin;
+}
+
+void ccl_sched_queue::clear()
+{
+    cached_max_priority_bin = nullptr;
+    bins.clear();
+    max_priority = 0;
 }

@@ -1,18 +1,34 @@
 #include "exec/exec.hpp"
 #include "exec/worker.hpp"
 #include "exec/service_worker.hpp"
+#include "unordered_coll/unordered_coll.hpp"
 #include "sched/extra_sched.hpp"
 
-ccl_executor::ccl_executor()
+size_t ccl_executor::get_atl_comm_count(size_t worker_count)
 {
-    auto worker_count = env_data.worker_count;
-    workers.reserve(worker_count);
-    auto comm_count = worker_count;
+    size_t comm_count = worker_count;
 
     if (env_data.priority_mode != ccl_priority_none)
     {
         comm_count *= CCL_PRIORITY_BUCKET_COUNT;
     }
+
+    return comm_count;
+}
+
+std::unique_ptr<ccl_sched_queue> ccl_executor::get_data_queue(size_t idx, size_t comm_per_worker)
+{
+    std::vector<atl_comm_t*> comm_vec(atl_comms + idx * comm_per_worker,
+                                      atl_comms + (idx + 1) * comm_per_worker);
+     std::unique_ptr<ccl_sched_queue> data_queue{new ccl_sched_queue(comm_vec)};
+    return data_queue;
+}
+
+ccl_executor::ccl_executor()
+{
+    auto worker_count = env_data.worker_count;
+    workers.reserve(worker_count);
+    auto comm_count = get_atl_comm_count(worker_count);
 
     atl_attr_t attr =
     {
@@ -29,6 +45,8 @@ ccl_executor::ccl_executor()
     CCL_THROW_IF_NOT(atl_status == atl_status_success && atl_desc && atl_comms,
                      "ATL init failed, res ", atl_status, ", desc ", atl_desc, ", comm ",atl_comms);
 
+    global_data.is_ft_support = is_ft_enabled(atl_desc);
+
     is_tagged_coll_enabled = attr.is_tagged_coll_enabled;
     tag_bits = attr.tag_bits;
     max_tag = attr.max_tag;
@@ -36,35 +54,31 @@ ccl_executor::ccl_executor()
     max_order_waw_size = attr.max_order_waw_size;
 
     LOG_INFO("proc_idx ", proc_idx, ", proc_count ", proc_count,
-        ", worker_count ", worker_count);
+             ", worker_count ", worker_count);
 
     if (proc_idx == 0)
     {
         LOG_INFO("\nATL parameters:",
-            "\n  comm_count:             ", comm_count,
-            "\n  is_tagged_coll_enabled: ", is_tagged_coll_enabled,
-            "\n  tag_bits:               ", tag_bits,
-            "\n  max_tag:                ", max_tag,
-            "\n  is_rma_enabled:         ", is_rma_enabled,
-            "\n  max_order_waw_size:     ", max_order_waw_size);
+                 "\n  comm_count:             ", comm_count,
+                 "\n  is_tagged_coll_enabled: ", is_tagged_coll_enabled,
+                 "\n  tag_bits:               ", tag_bits,
+                 "\n  max_tag:                ", max_tag,
+                 "\n  is_rma_enabled:         ", is_rma_enabled,
+                 "\n  max_order_waw_size:     ", max_order_waw_size);
     }
 
     size_t comm_per_worker = comm_count / worker_count;
     for (size_t idx = 0; idx < worker_count; idx++)
     {
-        std::vector<atl_comm_t*> comm_vec(atl_comms + idx * comm_per_worker,
-                                          atl_comms + (idx + 1) * comm_per_worker);
-        std::unique_ptr<ccl_sched_queue> data_queue{new ccl_sched_queue(comm_vec)};
-
         if (env_data.enable_fusion && idx == 0)
         {
             LOG_DEBUG("create service worker");
-            workers.emplace_back(new ccl_service_worker(this, idx, std::move(data_queue),
+            workers.emplace_back(new ccl_service_worker(this, idx, get_data_queue(idx, comm_per_worker),
                                                         *global_data.fusion_manager));
         }
         else
         {
-            workers.emplace_back(new ccl_worker(this, idx, std::move(data_queue)));
+            workers.emplace_back(new ccl_worker(this, idx, get_data_queue(idx, comm_per_worker)));
         }
 
         if (env_data.worker_offload)
@@ -78,6 +92,15 @@ ccl_executor::ccl_executor()
 
 ccl_executor::~ccl_executor()
 {
+    if (listener)
+    {
+        listener->stop();
+        LOG_DEBUG("stopped listener");
+
+        lock_workers();
+        unlock_workers();
+    }
+
     for (size_t idx = 0; idx < workers.size(); idx++)
     {
         if (env_data.worker_offload)
@@ -99,6 +122,78 @@ ccl_executor::~ccl_executor()
     {
         LOG_ERROR("ATL finalize failed, error ", result);
     }
+}
+
+void ccl_executor::lock_workers()
+{
+    size_t idx;
+    for (idx = 0; idx < workers.size(); idx++)
+    {
+        workers[idx]->should_lock = true;
+    }
+
+    idx = 0;
+    while (idx < workers.size())
+    {
+        if (workers[idx]->is_locked.load(std::memory_order_relaxed))
+        {
+            idx++;
+        }
+        else
+        {
+            ccl_yield(env_data.yield_type);
+        }
+    }
+}
+
+void ccl_executor::unlock_workers()
+{
+    size_t idx;
+    for (idx = 0; idx < workers.size(); idx++)
+    {
+        workers[idx]->should_lock = false;
+    }
+    idx = 0;
+    while (idx < workers.size())
+    {
+        if (!workers[idx]->is_locked.load(std::memory_order_relaxed))
+        {
+            idx++;
+        }
+    }
+}
+
+
+void ccl_executor::update_workers()
+{
+    size_t comm_count = get_atl_comm_count(workers.size());
+    size_t comm_per_worker = comm_count / workers.size();
+
+    LOG_INFO("atl comm count ", comm_count);
+
+    for (size_t idx = 0; idx < workers.size(); idx++)
+    {
+        workers[idx]->reset_data_queue(get_data_queue(idx, comm_per_worker));
+    }
+}
+
+ccl_status_t ccl_executor::create_listener(ccl_resize_fn_t resize_func)
+{
+    if (listener)
+    {
+        LOG_ERROR("attempt to twice create listener");
+        return ccl_status_runtime_error;
+    }
+
+    if (resize_func != NULL)
+        atl_set_resize_function(global_data.executor->atl_desc, (atl_resize_fn_t) resize_func);
+
+    listener = std::unique_ptr<ccl_listener>(new ccl_listener(&global_data));
+    listener->start();
+    listener->pin(0);
+    LOG_DEBUG("started listener");
+
+    return ccl_status_success;
 }
 
 void ccl_executor::start(ccl_extra_sched* extra_sched)
@@ -164,6 +259,7 @@ bool ccl_executor::test(const ccl_request* req)
 
 void ccl_executor::do_work()
 {
+    size_t processed_count;
     if (env_data.worker_offload)
     {
         ccl_yield(env_data.yield_type);
@@ -172,7 +268,7 @@ void ccl_executor::do_work()
     {
         for (auto& worker : workers)
         {
-            worker->do_work();
+            worker->do_work(processed_count);
         }
     }
 }

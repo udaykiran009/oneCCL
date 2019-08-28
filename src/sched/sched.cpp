@@ -91,7 +91,15 @@ ccl_status_t ccl_bin_progress(ccl_sched_bin* bin,
 
     /* ensure communication progress */
     atl_status_t atl_status = atl_comm_poll(bin->get_comm_ctx());
-    CCL_THROW_IF_NOT(atl_status == atl_status_success, "bad status ", atl_status);
+    if (global_data.is_ft_support)
+    {
+        if (atl_status != atl_status_success)
+            return ccl_status_blocked_due_to_resize;
+    }
+    else
+    {
+        CCL_THROW_IF_NOT(atl_status == atl_status_success, "bad status ", atl_status);
+    }
 
     // iterate through the scheds store in the bin
     completed_sched_count = 0;

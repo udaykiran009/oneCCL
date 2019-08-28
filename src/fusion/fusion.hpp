@@ -25,6 +25,7 @@ public:
 
     void* get();
     void release(void* buf);
+    void clear();
 
     size_t get_buf_size() { return buf_size; }
 
@@ -48,14 +49,15 @@ public:
     bool add(ccl_master_sched* sched);
     void execute();
     void release_buffer(void* buf);
+    void clear();
 
 private:
     ccl_master_sched* build_sched();
     void clear_exec_queue();
     void check_tracked_scheds();
 
-    size_t bytes_threshold;
-    size_t count_threshold;
+    const size_t bytes_threshold;
+    const size_t count_threshold;
 
     ccl_fusion_lock_t guard{};
     using sched_queue_t = std::deque<ccl_master_sched*>;

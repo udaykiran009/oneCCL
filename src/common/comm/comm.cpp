@@ -13,13 +13,11 @@ ccl_comm::ccl_comm(size_t rank,
                    size_t size,
                    ccl_comm_id_storage::comm_id &&id,
                    rank_to_global_rank_map&& ranks) :
-    m_rank(rank),
-    m_size(size),
-    m_pof2(ccl_pof2(m_size)),
     m_id(std::move(id)),
     m_ranks_map(std::move(ranks)),
     m_dtree(size, rank)
 {
+    reset(rank, size);
 }
 
 static ccl_status_t ccl_comm_exchange_colors(std::vector<int>& colors)

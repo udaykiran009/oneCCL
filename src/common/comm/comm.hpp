@@ -70,6 +70,16 @@ public:
         return id;
     }
 
+    void reset(size_t rank, size_t size)
+    {
+        m_rank = rank;
+        m_size = size;
+        m_pof2 = ccl_pof2(m_size);
+
+        m_next_sched_id_internal = ccl_comm::max_sched_count / 2;
+        m_next_sched_id_external = 0;
+    }
+
     /**
      * Returns the number of @c rank in the global communicator
      * @param rank a rank which is part of the current communicator
@@ -102,8 +112,8 @@ private:
     size_t m_pof2;
 
     ccl_comm_id_storage::comm_id m_id;
-    ccl_sched_id_t m_next_sched_id_internal = ccl_comm::max_sched_count / 2;
-    ccl_sched_id_t m_next_sched_id_external = 0;
+    ccl_sched_id_t m_next_sched_id_internal;
+    ccl_sched_id_t m_next_sched_id_external;
 
     rank_to_global_rank_map m_ranks_map{};
     ccl_double_tree m_dtree;

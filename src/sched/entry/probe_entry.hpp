@@ -33,20 +33,13 @@ public:
         size_t len = 0;
         atl_status_t atl_status = atl_comm_probe(sched->bin->get_comm_ctx(), src, atl_tag, &found, &len);
 
-        if (unlikely(atl_status != atl_status_success))
+        update_status(atl_status);
+        if (status == ccl_sched_entry_status_started && found)
         {
-            status = ccl_sched_entry_status_failed;
-            LOG_ERROR("PROBE entry failed. atl_status: ", atl_status_to_str(atl_status));
-        }
-        else
-        {
-            if (found)
-            {
-                LOG_DEBUG("PROBE entry done src ", src, ", tag ", atl_tag, " recv_len ", len);
-                if (recv_len)
-                    *recv_len = len;
-                status = ccl_sched_entry_status_complete;
-            }
+            LOG_DEBUG("PROBE entry done src ", src, ", tag ", atl_tag, " recv_len ", len);
+            if (recv_len)
+                *recv_len = len;
+            status = ccl_sched_entry_status_complete;
         }
     }
 

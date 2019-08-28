@@ -1,6 +1,5 @@
 #include "ccl.hpp"
 #include "common/global/global.hpp"
-#include "common/request/request.hpp"
 #include "exec/exec.hpp"
 
 #define CCL_CHECK_AND_THROW(result, diagnostic)   \
@@ -75,6 +74,19 @@ CCL_API ccl::environment::environment()
     else
     {
         throw ccl::ccl_error("already initialized");
+    }
+}
+
+CCL_API void ccl::environment::set_resize_fn(ccl_resize_fn_t callback)
+{
+    if (is_initialized)
+    {
+        ccl_status_t result = ccl_set_resize_fn(callback);
+        CCL_CHECK_AND_THROW(result, "failed to set callback");
+    }
+    else
+    {
+        throw ccl::ccl_error("not initialized");
     }
 }
 
