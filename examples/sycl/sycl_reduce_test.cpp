@@ -84,12 +84,12 @@ int main(int argc, char** argv)
     if (rank == COLL_ROOT) {
         for (i = 0; i < COUNT; i++) {
             if (host_acc_rbuf_new[i] == -1) {
-                cout << "FAILED for rank: " << rank << endl;
+                cout << "FAILED for rank: " << rank << std::endl;
                 break;
             }
         }
         if (i == COUNT) {
-            cout << "PASSED" << endl;
+            cout << "PASSED" << std::endl;
         }
     }
 

@@ -69,12 +69,12 @@ int main(int argc, char** argv)
         auto host_acc_rbuf_new = buf.get_access<mode::read>();
         for (i = 0; i < COUNT; i++) {
             if (host_acc_rbuf_new[i] == -1) {
-                cout << "FAILED" << endl;
+                cout << "FAILED"<< std::endl;
                 break;
             }
         }
         if (i == COUNT) {
-            cout << "PASSED" << endl;
+            cout << "PASSED"<< std::endl;
         }
     }
 

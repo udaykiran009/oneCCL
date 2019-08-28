@@ -28,7 +28,7 @@ int main(int argc, char** argv)
     ccl_get_comm_rank(NULL, &rank);
     ccl_get_comm_size(NULL, &size);
 
-    // create SYCL stream
+    /* create SYCL stream */
     ccl_stream_create(ccl_stream_sycl, &q, &stream);
 
     /* open sendbuf and initialize it on the CPU side */
@@ -74,12 +74,12 @@ int main(int argc, char** argv)
         auto host_acc_rbuf_new = recvbuf.get_access<mode::read>();
         for (i = 0; i < COUNT; i++) {
             if (host_acc_rbuf_new[i] == -1) {
-                cout << "FAILED" << endl;
+                cout << "FAILED"<< std::endl;
                 break;
             }
         }
         if (i == COUNT) {
-            cout << "PASSED" << endl;
+            cout << "PASSED"<< std::endl;
         }
     }
 

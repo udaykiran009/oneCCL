@@ -145,8 +145,8 @@ set_environment()
     else        
         if [ -z "${SYCL_BUNDLE_ROOT}" ]
         then
-            echo "WARNING: SYCL_BUNDLE_ROOT is not defined, will be used default: /p/pdsd/scartch/Software/dpc/_install/dpcpp_bundle_1.0_prealpha_u9_023"
-            source /p/pdsd/scratch/Software/dpc/_install/dpcpp_bundle_1.0_prealpha_u9_023/dpc++vars.sh sycl
+        source /p/pdsd/scratch/Software/oneAPI/inteloneapi_31/compiler/inteloneapi/dpcpp_compiler/latest/env/vars.sh
+        SYCL_BUNDLE_ROOT="/p/pdsd/scratch/Software/oneAPI/inteloneapi_31/compiler/inteloneapi/dpcpp_compiler/latest"
         fi
         BUILD_COMPILER=${SYCL_BUNDLE_ROOT}/bin
         C_COMPILER=${BUILD_COMPILER}/clang

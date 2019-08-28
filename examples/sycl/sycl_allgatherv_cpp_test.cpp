@@ -84,12 +84,12 @@ int main(int argc, char** argv)
         auto host_acc_rbuf_new = recvbuf.get_access<mode::read>();
         for (i = 0; i < size * COUNT; i++) {
             if (host_acc_rbuf_new[i] == -1) {
-                cout << "FAILED" << endl;
+                cout << "FAILED" ;
                 break;
             }
         }
         if (i == size * COUNT) {
-            cout << "PASSED" << endl;
+            cout << "PASSED" << std::endl;
         }
     }
 
