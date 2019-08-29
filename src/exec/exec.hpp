@@ -56,12 +56,14 @@ public:
     void start(ccl_master_sched* sched);
     void wait(const ccl_request* req);
     bool test(const ccl_request* req);
+    size_t get_worker_count() const;
 
     ccl_status_t create_listener(ccl_resize_fn_t resize_func);
     void update_workers();
     void lock_workers();
     void unlock_workers();
     bool is_locked = false;
+
     size_t proc_idx{};
     size_t proc_count{};
     atl_desc_t* atl_desc = nullptr;

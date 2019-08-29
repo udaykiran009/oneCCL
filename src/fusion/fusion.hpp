@@ -73,4 +73,5 @@ private:
     size_t stat_fused_ops = 0;
     size_t stat_fused_bytes = 0;
     size_t stat_empty_exec_calls = 0;
+    size_t stat_overlapped_exec_calls = 0;
 };

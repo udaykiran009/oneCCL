@@ -200,7 +200,7 @@ void ccl_executor::start(ccl_extra_sched* extra_sched)
 {
     CCL_ASSERT(extra_sched->internal_type == ccl_sched_internal_unordered_coll,
                "should be unordered_coll at now");
-    
+
     /* single time operations */
     if (env_data.priority_mode == ccl_priority_lifo)
     {
@@ -210,7 +210,7 @@ void ccl_executor::start(ccl_extra_sched* extra_sched)
     extra_sched->set_counter(1);
     workers[0]->add(extra_sched);
 }
-    
+
 void ccl_executor::start(ccl_master_sched* sched)
 {
     size_t worker_idx;
@@ -273,3 +273,7 @@ void ccl_executor::do_work()
     }
 }
 
+size_t ccl_executor::get_worker_count() const
+{
+    return workers.size();
+}

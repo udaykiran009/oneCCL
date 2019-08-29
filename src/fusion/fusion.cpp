@@ -103,7 +103,7 @@ ccl_fusion_manager::ccl_fusion_manager()
     long cycle_usec = long(env_data.fusion_cycle_ms * 1000.0);
     cycle = std::chrono::microseconds(cycle_usec);
     last_exec_time = std::chrono::steady_clock::now();
-    
+
     LOG_INFO("created fusion manager, cycle_usec ", cycle_usec, ", bytes_threshold ", bytes_threshold,
              ", count_threshold ", count_threshold);
 }
@@ -111,7 +111,8 @@ ccl_fusion_manager::ccl_fusion_manager()
 ccl_fusion_manager::~ccl_fusion_manager()
 {
     LOG_INFO("fused_bytes ", stat_fused_bytes, ", fused_ops ", stat_fused_ops,
-             ", empty_exec_calls ", stat_empty_exec_calls);
+             ", empty_exec_calls ", stat_empty_exec_calls,
+             ", overlapped_exec_calls ", stat_overlapped_exec_calls);
 
     check_tracked_scheds();
 
@@ -256,8 +257,20 @@ ccl_master_sched* ccl_fusion_manager::build_sched()
     if (found_sched_in_cache)
     {
         LOG_DEBUG("found fused_sched in cache");
-        CCL_THROW_IF_NOT(sched->is_completed(),
-                         "non completed fused_sched found in cache");
+        if (!sched->is_completed())
+        {
+            stat_overlapped_exec_calls++;
+            if(global_data.executor->get_worker_count() > 1)
+            {
+                LOG_DEBUG("found fused_sched in cache, which is not completed yet");
+                global_data.executor->wait(sched);
+            }
+            else
+            {
+                CCL_THROW_IF_NOT(sched->is_completed(),
+                                "non completed fused_sched found in cache");
+            }
+        }
         clear_exec_queue();
         return sched;
     }
@@ -393,18 +406,18 @@ void ccl_fusion_manager::execute()
     last_exec_time = std::chrono::steady_clock::now();
 
     bool flush_exec_queue = false;
-    if (env_data.fusion_check_urgent && !exec_queue.empty())	
-    {	
-        /* recheck scheds from exec_queue, maybe some of them were marked as urgent since previous call */	
-        for (auto it = exec_queue.begin(); it != exec_queue.end(); ++it)	
-        {	
-            if ((*it)->urgent)	
-            {	
-                LOG_DEBUG("found urgent sched in exec_queue, flush exec_queue");	
-                flush_exec_queue = true;	
-                break;	
-            }	
-        }	
+    if (env_data.fusion_check_urgent && !exec_queue.empty())
+    {
+        /* recheck scheds from exec_queue, maybe some of them were marked as urgent since previous call */
+        for (auto it = exec_queue.begin(); it != exec_queue.end(); ++it)
+        {
+            if ((*it)->urgent)
+            {
+                LOG_DEBUG("found urgent sched in exec_queue, flush exec_queue");
+                flush_exec_queue = true;
+                break;
+            }
+        }
     }
     /* separate block to reduce lock scope */
     {
@@ -444,12 +457,12 @@ void ccl_fusion_manager::execute()
                         break;
                     }
                     exec_queue_sum_bytes += size;
-   
-                    if (env_data.fusion_check_urgent && !flush_exec_queue && s->urgent)	
-                    {	
-                        LOG_DEBUG("found urgent sched in postponed_queue, flush exec_queue, postponed_queue size ",	
-                                  postponed_queue.size());	
-                        flush_exec_queue = true;	
+
+                    if (env_data.fusion_check_urgent && !flush_exec_queue && s->urgent)
+                    {
+                        LOG_DEBUG("found urgent sched in postponed_queue, flush exec_queue, postponed_queue size ",
+                                  postponed_queue.size());
+                        flush_exec_queue = true;
                     }
 
                     exec_queue.push_back(s);
@@ -471,10 +484,10 @@ void ccl_fusion_manager::execute()
     }
 
     if (flush_exec_queue)
-    {	
-        LOG_DEBUG("exec_queue size ", exec_queue.size(), ", bytes ", exec_queue_sum_bytes);	
-        ccl_master_sched* sched = build_sched();	
-        sched->start(global_data.executor.get());	
+    {
+        LOG_DEBUG("exec_queue size ", exec_queue.size(), ", bytes ", exec_queue_sum_bytes);
+        ccl_master_sched* sched = build_sched();
+        sched->start(global_data.executor.get());
     }
 
     if (stat_fused_ops % CCL_FUSION_CHECK_SCHEDS_ITERS == 0)
