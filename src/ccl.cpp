@@ -27,8 +27,6 @@ void ccl_init_global_objects(ccl_global_data& gl_data)
 
     gl_data.default_coll_attr.reset(new ccl_coll_attr_t{});
     gl_data.default_coll_attr->to_cache = 0;
-
-    gl_data.default_coll_attr.reset(new ccl_coll_attr_t{});
 }
 
 ccl_status_t ccl_init()
@@ -48,6 +46,9 @@ ccl_status_t ccl_init()
         }
 
         global_data.executor = std::unique_ptr<ccl_executor>(new ccl_executor());
+
+        if (global_data.executor->proc_idx == 0)
+            ccl_env_print();
 
         global_data.atl_tag = std::unique_ptr<ccl_atl_tag>(new ccl_atl_tag(global_data.executor->tag_bits,
                                                                            global_data.executor->max_tag));
