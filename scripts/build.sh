@@ -85,8 +85,8 @@ then
 fi
 CCL_PACKAGE_SUFFIX="_${CCL_PACKAGE_PHASE}_ww`date +%V`.${DATE}.${TIME}"
 CCL_PACKAGE_NAME="${CCL_PACKAGE_PREFIX}${CCL_VERSION_FORMAT}${CCL_PACKAGE_SUFFIX}"
-SWF_PRE_DROP_DIR="/p/pdsd/scratch/Drops/CCL/1.0/`date +%Y-%m-%d`/SWF_Drops"
-
+SWF_PRE_DROP_DIR="/p/pdsd/scratch/Drops/CCL/1.0/"
+PRE_DROP_DIR="${WORKSPACE}/_predrop/`date +%Y-%m-%d`/SWF_Drops"
 
 #==============================================================================
 #                                Defaults
@@ -96,9 +96,7 @@ set_default_values()
     ENABLE_PACK="no"
     if [ -z "${ENABLE_PRE_DROP}" ]
     then
-        ENABLE_SWF_PRE_DROP="yes"
-    else
-        ENABLE_SWF_PRE_DROP="no"
+	ENABLE_PRE_DROP="no"
     fi
     ENABLE_DEBUG="no"
     ENABLE_VERBOSE="yes"
@@ -200,7 +198,7 @@ prepare_staging()
             TARGET_DIR="${PACKAGE_ENG_DIR}"
             ;;
         "swf_pre_drop")
-            TARGET_DIR="${SWF_PRE_DROP_DIR}"
+            TARGET_DIR="${PRE_DROP_DIR}"
             ;;
         *)
             echo_log "ERROR: unsupported or empty MODE ($MODE) for prepare_staging() function"
@@ -208,7 +206,7 @@ prepare_staging()
             ;;
     esac
 
-    echo_debug "SWF_PRE_DROP_DIR = ${SWF_PRE_DROP_DIR}"
+    echo_debug "PRE_DROP_DIR = ${SWF_PRE_DROP_DIR}"
 
     rm -rf ${TMP_DIR} ${TARGET_DIR}
     mkdir -p ${TMP_DIR}
@@ -430,13 +428,6 @@ prepare_staging()
         echo_log "ERROR: packaging failed"
         exit 1
     fi
-
-    if [ "$MODE" = "swf_pre_drop" ]
-    then
-        rm -rf ${SWF_PRE_DROP_DIR}/../../SWF_Drops
-        cp -R ${SWF_PRE_DROP_DIR} ${SWF_PRE_DROP_DIR}/../../
-    fi
-
 }
 
 # Make archive package
@@ -473,7 +464,7 @@ parse_arguments()
                 ENABLE_BUILD="yes"
                 ;;
             "-swf-pre-drop"|"--swf-pre-drop")
-                ENABLE_SWF_PRE_DROP="yes"
+                ENABLE_PRE_DROP="yes"
                 ;;
             "-help")
                 print_help
@@ -492,7 +483,7 @@ parse_arguments()
     echo_log "-----------------------------------------------------------"
     echo_log "ENABLE_BUILD              = ${ENABLE_BUILD}"
     echo_log "ENABLE_PACK               = ${ENABLE_PACK}"
-    echo_log "ENABLE_SWF_PRE_DROP       = ${ENABLE_SWF_PRE_DROP}"
+    echo_log "ENABLE_PRE_DROP           = ${ENABLE_PRE_DROP}"
     echo_log "-----------------------------------------------------------"
 
     TIMESTAMP_START=`date +%s`
@@ -552,20 +543,35 @@ run_pack()
 }
 
 #==============================================================================
+#                              Performing pre-drop
+#==============================================================================
+run_pre_drop()
+{
+	echo_log_separator
+	echo_log "#\t\t\tPerforming pre-drop..."
+	echo_log_separator
+	prepare_staging swf_pre_drop
+	echo_log_separator
+	echo_log "#\t\t\tPerforming pre-drop... DONE"
+	echo_log_separator
+}
+
+#==============================================================================
 #                              SWF pre-drop
 #==============================================================================
 run_swf_pre_drop()
-{
-    if [ "${ENABLE_SWF_PRE_DROP}" == "yes" ]
+{	
+    if [ "${ENABLE_PRE_DROP}" == "yes" ]
     then
-        echo_log_separator
-        echo_log "#\t\t\tSWF pre-drop..."
-        echo_log_separator
-        echo_log "DEBUG: PREDROP=${ENABLE_SWF_PRE_DROP}" 
-        prepare_staging swf_pre_drop
-        echo_log_separator
-        echo_log "#\t\t\tSWF pre-drop... DONE"
-        echo_log_separator
+		echo_log_separator
+		echo_log "#\t\t\tSWF pre-drop..."
+		echo_log_separator
+        cp -r ${PRE_DROP_DIR}/../../ ${SWF_PRE_DROP_DIR}
+        rm -rf ${SWF_PRE_DROP_DIR}/SWF_Drops
+        cp -R ${PRE_DROP_DIR}/../ ${SWF_PRE_DROP_DIR}
+		echo_log_separator
+		echo_log "#\t\t\tSWF pre-drop... DONE"
+		echo_log_separator
     fi
 }
 
@@ -578,4 +584,5 @@ set_default_values
 parse_arguments $@
 run_build
 run_pack
+run_pre_drop
 run_swf_pre_drop
