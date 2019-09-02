@@ -86,7 +86,7 @@ fi
 CCL_PACKAGE_SUFFIX="_${CCL_PACKAGE_PHASE}_ww`date +%V`.${DATE}.${TIME}"
 CCL_PACKAGE_NAME="${CCL_PACKAGE_PREFIX}${CCL_VERSION_FORMAT}${CCL_PACKAGE_SUFFIX}"
 SWF_PRE_DROP_DIR="/p/pdsd/scratch/Drops/CCL/1.0/"
-PRE_DROP_DIR="${WORKSPACE}/_predrop/`date +%Y-%m-%d`/SWF_Drops"
+PRE_DROP_DIR="${WORKSPACE}/_predrop/"
 
 #==============================================================================
 #                                Defaults
@@ -563,15 +563,17 @@ run_swf_pre_drop()
 {	
     if [ "${ENABLE_PRE_DROP}" == "yes" ]
     then
-		echo_log_separator
-		echo_log "#\t\t\tSWF pre-drop..."
-		echo_log_separator
-        cp -r ${PRE_DROP_DIR}/../../ ${SWF_PRE_DROP_DIR}
-        rm -rf ${SWF_PRE_DROP_DIR}/SWF_Drops
-        cp -R ${PRE_DROP_DIR}/../ ${SWF_PRE_DROP_DIR}
-		echo_log_separator
-		echo_log "#\t\t\tSWF pre-drop... DONE"
-		echo_log_separator
+	echo_log_separator
+	echo_log "#\t\t\tSWF pre-drop..."
+	echo_log_separator
+	mkdir -p ${SWF_PRE_DROP_DIR}/`date +%Y-%m-%d`/SWF_Drops/
+	cp -R ${PRE_DROP_DIR}/* ${SWF_PRE_DROP_DIR}/`date +%Y-%m-%d`/SWF_Drops/
+	rm -rf ${SWF_PRE_DROP_DIR}/SWF_Drops
+	mkdir -p ${SWF_PRE_DROP_DIR}/SWF_Drops/
+	cp -R ${PRE_DROP_DIR}/* ${SWF_PRE_DROP_DIR}/SWF_Drops/
+	echo_log_separator
+	echo_log "#\t\t\tSWF pre-drop... DONE"
+	echo_log_separator
     fi
 }
 
