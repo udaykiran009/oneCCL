@@ -2,7 +2,7 @@
 
 #include "common/global/global.hpp"
 #include "sched/entry/entry.hpp"
-#include "sched/sched_queue.hpp"
+#include "sched/queue/queue.hpp"
 
 class recv_entry : public sched_entry
 {

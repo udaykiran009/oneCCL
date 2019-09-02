@@ -1,5 +1,5 @@
 #include "common/global/global.hpp"
-#include "exec/service_worker.hpp"
+#include "exec/thread/service_worker.hpp"
 
 ccl_service_worker::ccl_service_worker(ccl_executor* executor, size_t idx,
                                        std::unique_ptr<ccl_sched_queue> data_queue,

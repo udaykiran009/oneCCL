@@ -1,9 +1,9 @@
-#include "exec.hpp"
-#include "ccl_listener.hpp"
+#include "exec/exec.hpp"
+#include "exec/thread/listener.hpp"
 
 void* ccl_update_comm_world_info(void* args);
 
-ccl_listener::ccl_listener(ccl_global_data *gl_data) : ccl_thread(0, ccl_update_comm_world_info), gl_data(gl_data)
+ccl_listener::ccl_listener(ccl_global_data *gl_data) : ccl_base_thread(0, ccl_update_comm_world_info), gl_data(gl_data)
 { }
 
 atl_comm_t** ccl_listener::get_comms()

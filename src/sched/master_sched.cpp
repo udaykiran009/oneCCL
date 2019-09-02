@@ -1,9 +1,9 @@
+#include "common/global/global.hpp"
+#include "sched/entry_factory.hpp"
 #include "sched/extra_sched.hpp"
 #include "sched/master_sched.hpp"
-#include "sched/sched_queue.hpp"
 #include "sched/sync_object.hpp"
-#include "sched/entry_factory.hpp"
-#include "common/global/global.hpp"
+#include "sched/queue/queue.hpp"
 #include "parallelizer/parallelizer.hpp"
 
 ccl_master_sched::~ccl_master_sched()

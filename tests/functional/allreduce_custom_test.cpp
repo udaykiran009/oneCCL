@@ -118,7 +118,7 @@ ccl_status_t do_reduction_custom(const void* in_buf, size_t in_count, void* inou
 }
 template <typename T>
 int set_custom_reduction (TypedTestParam <T> &param){
-    TestReductionType customFuncName = param.GetReductionName();
+    TestReductionType customFuncName = param.GetReductionType();
     switch (customFuncName) {
         case RT_CUSTOM:
             param.coll_attr.reduction_fn = do_reduction_custom<T>;
@@ -151,7 +151,7 @@ public:
         T tmp1;
         for (size_t j = 0; j < param.bufferCount; j++) {
             for (size_t i = 0; i < param.elemCount; i++) {
-                if (param.GetReductionName() == RT_SUM) {
+                if (param.GetReductionType() == RT_SUM) {
                     T expected =
                         ((param.processCount * (param.processCount - 1) / 2) +
                         ((i + j)  * param.processCount));
@@ -200,7 +200,7 @@ public:
                     }
                 }
 
-                else if (param.GetReductionName() == RT_MAX) {
+                else if (param.GetReductionType() == RT_MAX) {
                     T expected = 0;
                     if (param.GetPrologType() == PRT_T_TO_CHAR)
                     {
@@ -219,7 +219,7 @@ public:
                         return TEST_FAILURE;
                     }
                 }
-                else if (param.GetReductionName()== RT_MIN) {
+                else if (param.GetReductionType()== RT_MIN) {
                     T expected = 0;
                     if (param.GetPrologType() == PRT_T_TO_CHAR)
                     {
@@ -238,7 +238,7 @@ public:
                         return TEST_FAILURE;
                     }
                 }
-                else if (param.GetReductionName() == RT_PROD) {
+                else if (param.GetReductionType() == RT_PROD) {
                     T expected = 1;
                     for (size_t k = 0; k < param.processCount; k++) {
                         expected *= (i + j + k);
@@ -254,7 +254,7 @@ public:
                         return TEST_FAILURE;
                     }
                 }
-                else if (param.GetReductionName() == RT_CUSTOM) {
+                else if (param.GetReductionType() == RT_CUSTOM) {
                     T expected =
                         ((param.processCount * (param.processCount - 1) / 2) +
                         ((i + j) * param.processCount));
@@ -265,7 +265,7 @@ public:
                         return TEST_FAILURE;
                     }
                 }
-                else if (param.GetReductionName() == RT_CUSTOM_NULL) {
+                else if (param.GetReductionType() == RT_CUSTOM_NULL) {
                     T expected = 0;
                     T expected_fin = expected * prolog_coeff * epilog_coeff;
                     if (param.recvBuf[j][i] != expected_fin) {
@@ -315,15 +315,15 @@ public:
 
                     param.coll_attr.prologue_fn = do_prologue_T_to_char<T>;
                 }
-                if (param.GetReductionType() == ccl_reduction_custom) {
+                if (param.GetCCLReductionType() == ccl_reduction_custom) {
                     if (set_custom_reduction<T>(param))
                         return TEST_FAILURE;
                 }
                 param.req[Buffers[idx]] = (param.GetPlaceType() == PT_IN) ?
                     param.global_comm.allreduce(param.recvBuf[Buffers[idx]].data(), param.recvBuf[Buffers[idx]].data(), param.elemCount,
-                                  (ccl::data_type) param.GetDataType(),(ccl::reduction) param.GetReductionType(), &param.coll_attr, param.GetStream()) :
+                                  (ccl::data_type) param.GetDataType(),(ccl::reduction) param.GetCCLReductionType(), &param.coll_attr, param.GetStream()) :
                     param.global_comm.allreduce(param.sendBuf[Buffers[idx]].data(), param.recvBuf[Buffers[idx]].data(), param.elemCount,
-                                  (ccl::data_type) param.GetDataType(),(ccl::reduction) param.GetReductionType(), &param.coll_attr, param.GetStream());
+                                  (ccl::data_type) param.GetDataType(),(ccl::reduction) param.GetCCLReductionType(), &param.coll_attr, param.GetStream());
             }
             param.DefineCompletionOrderAndComplete();
             result += Check(param);

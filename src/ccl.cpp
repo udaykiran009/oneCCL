@@ -84,6 +84,8 @@ void reset_for_size_update(ccl_global_data* gl_data)
 
 ccl_status_t ccl_finalize()
 {
+    ccl_barrier(nullptr, nullptr);
+
     try
     {
         /* keep reverse order of initialization */

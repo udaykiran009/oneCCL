@@ -26,14 +26,15 @@ set(CCL_SRC
     sched/master_sched.cpp
     sched/sched_base.cpp
     sched/sched_cache.cpp
-    sched/sched_queue.cpp
+    sched/queue/strict_queue.cpp
+    sched/queue/queue.cpp
     sched/entry/entry.cpp
     sched/entry/postponed_fields.cpp
     exec/exec.cpp
-    exec/worker.cpp
-    exec/ccl_thread.cpp
-    exec/ccl_listener.cpp
-    exec/service_worker.cpp
+    exec/thread/base_thread.cpp
+    exec/thread/listener.cpp
+    exec/thread/service_worker.cpp
+    exec/thread/worker.cpp
     fusion/fusion.cpp
     parallelizer/parallelizer.cpp
     unordered_coll/unordered_coll.cpp

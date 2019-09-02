@@ -107,7 +107,6 @@ enable_part_test_scope()
     export CCL_TEST_SIZE_TYPE=0
     export CCL_TEST_SYNC_TYPE=0
     export CCL_TEST_PROLOG_TYPE=1
-    export CCL_TEST_PLACE_TYPE=1
 }
 
 enable_unordered_coll_test_scope()
@@ -122,7 +121,6 @@ enable_unordered_coll_test_scope()
     export CCL_TEST_SIZE_TYPE=0
     export CCL_TEST_SYNC_TYPE=0
     export CCL_TEST_PROLOG_TYPE=1
-    export CCL_TEST_PLACE_TYPE=1
 }
 
 set_environment()
@@ -252,7 +250,7 @@ run_tests()
                     do
                         CCL_BCAST=$bcast ctest -VV -C mpi_bcast_$bcast
                     done
-                for reduce in "direct" "rabenseifner" "double_tree"
+                for reduce in "direct" "rabenseifner" "tree"
                     do
                         CCL_REDUCE=$reduce ctest -VV -C mpi_reduce_$reduce
                     done
@@ -276,7 +274,7 @@ run_tests()
                     do
                         CCL_BCAST=$bcast ctest -VV -C mpi_bcast_$bcast
                     done
-                for reduce in "rabenseifner" "double_tree"
+                for reduce in "rabenseifner" "tree" "double_tree"
                     do
                         CCL_REDUCE=$reduce ctest -VV -C mpi_reduce_$reduce
                     done

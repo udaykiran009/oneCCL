@@ -41,9 +41,8 @@ struct pm_rt_desc {
 };
 
 static inline atl_status_t
-is_ft_support()
+is_pm_ft_enabled()
 {
-
     if (type == PM_RT_RESIZABLE)
         return 1;
     return 0;

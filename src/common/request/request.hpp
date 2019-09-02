@@ -19,7 +19,7 @@ public:
     {
         auto counter = completion_counter.load(std::memory_order_acquire);
         LOG_DEBUG("delete req ", this, " with counter ", counter);
-        if (counter != 0 && !global_data.is_ft_support)
+        if (counter != 0 && !global_data.is_ft_enabled)
         {
             LOG_ERROR("unexpected completion_counter ", counter);
         }

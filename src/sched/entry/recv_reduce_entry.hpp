@@ -3,7 +3,7 @@
 #include "common/global/global.hpp"
 #include "comp/comp.hpp"
 #include "sched/entry/entry.hpp"
-#include "sched/sched_queue.hpp"
+#include "sched/queue/queue.hpp"
 
 #include <utility>
 

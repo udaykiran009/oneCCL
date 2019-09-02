@@ -1,6 +1,6 @@
 #include "exec/exec.hpp"
-#include "exec/worker.hpp"
-#include "exec/service_worker.hpp"
+#include "exec/thread/service_worker.hpp"
+#include "exec/thread/worker.hpp"
 #include "unordered_coll/unordered_coll.hpp"
 #include "sched/extra_sched.hpp"
 
@@ -16,12 +16,12 @@ size_t ccl_executor::get_atl_comm_count(size_t worker_count)
     return comm_count;
 }
 
-std::unique_ptr<ccl_sched_queue> ccl_executor::get_data_queue(size_t idx, size_t comm_per_worker)
+std::unique_ptr<ccl_sched_queue> ccl_executor::create_sched_queue(size_t idx, size_t comm_per_worker)
 {
     std::vector<atl_comm_t*> comm_vec(atl_comms + idx * comm_per_worker,
                                       atl_comms + (idx + 1) * comm_per_worker);
-     std::unique_ptr<ccl_sched_queue> data_queue{new ccl_sched_queue(comm_vec)};
-    return data_queue;
+    std::unique_ptr<ccl_sched_queue> sched_queue{new ccl_sched_queue(comm_vec)};
+    return sched_queue;
 }
 
 ccl_executor::ccl_executor()
@@ -45,7 +45,7 @@ ccl_executor::ccl_executor()
     CCL_THROW_IF_NOT(atl_status == atl_status_success && atl_desc && atl_comms,
                      "ATL init failed, res ", atl_status, ", desc ", atl_desc, ", comm ",atl_comms);
 
-    global_data.is_ft_support = is_ft_enabled(atl_desc);
+    global_data.is_ft_enabled = is_ft_enabled(atl_desc);
 
     is_tagged_coll_enabled = attr.is_tagged_coll_enabled;
     tag_bits = attr.tag_bits;
@@ -73,12 +73,12 @@ ccl_executor::ccl_executor()
         if (env_data.enable_fusion && idx == 0)
         {
             LOG_DEBUG("create service worker");
-            workers.emplace_back(new ccl_service_worker(this, idx, get_data_queue(idx, comm_per_worker),
+            workers.emplace_back(new ccl_service_worker(this, idx, create_sched_queue(idx, comm_per_worker),
                                                         *global_data.fusion_manager));
         }
         else
         {
-            workers.emplace_back(new ccl_worker(this, idx, get_data_queue(idx, comm_per_worker)));
+            workers.emplace_back(new ccl_worker(this, idx, create_sched_queue(idx, comm_per_worker)));
         }
 
         if (env_data.worker_offload)
@@ -163,7 +163,6 @@ void ccl_executor::unlock_workers()
     }
 }
 
-
 void ccl_executor::update_workers()
 {
     size_t comm_count = get_atl_comm_count(workers.size());
@@ -173,7 +172,7 @@ void ccl_executor::update_workers()
 
     for (size_t idx = 0; idx < workers.size(); idx++)
     {
-        workers[idx]->reset_data_queue(get_data_queue(idx, comm_per_worker));
+        workers[idx]->reset_queue(create_sched_queue(idx, comm_per_worker));
     }
 }
 

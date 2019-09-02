@@ -1,7 +1,6 @@
-#include "ccl_thread.hpp"
+#include "exec/thread/base_thread.hpp"
 
-
-ccl_status_t ccl_thread::start()
+ccl_status_t ccl_base_thread::start()
 {
     LOG_DEBUG(name(), " ", idx);
     int err = pthread_create(&thread, nullptr, progress_function, get_this());
@@ -13,7 +12,7 @@ ccl_status_t ccl_thread::start()
     return ccl_status_success;
 }
 
-ccl_status_t ccl_thread::stop()
+ccl_status_t ccl_base_thread::stop()
 {
     LOG_DEBUG(name(), " # ", idx);
 
@@ -35,7 +34,7 @@ ccl_status_t ccl_thread::stop()
     return ccl_status_success;
 }
 
-ccl_status_t ccl_thread::pin(int proc_id)
+ccl_status_t ccl_base_thread::pin(int proc_id)
 {
     LOG_DEBUG(name(), " # ", idx, ", proc_id ", proc_id);
     int pthread_err;

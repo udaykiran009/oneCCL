@@ -1,7 +1,7 @@
 #pragma once
 
 #include "sched/entry/entry.hpp"
-#include "sched/sched_queue.hpp"
+#include "sched/queue/queue.hpp"
 #include "sched/extra_sched.hpp"
 #include <memory>
 

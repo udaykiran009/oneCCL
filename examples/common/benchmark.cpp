@@ -1099,10 +1099,13 @@ int main(int argc, char *argv[])
     coll_attr.to_cache = 0;
     for (size_t count = 1; count < ELEM_COUNT; count *= 2)
     {
-        for (auto& coll : colls)
+        for (size_t coll_idx = 0; coll_idx < colls.size(); coll_idx++)
         {
+            auto& coll = colls[coll_idx];
             for (size_t buf_idx = 0; buf_idx < BUF_COUNT; buf_idx++)
             {
+                // snprintf(match_id, sizeof(match_id), "coll_%s_%zu_count_%zu_buf_%zu",
+                //          coll->name(), coll_idx, count, buf_idx);
                 // PRINT_BY_ROOT("start_coll: %s, count %zu, buf_idx %zu", coll->name(), count, buf_idx);
                 coll->start(count, buf_idx, coll_attr, reqs);
             }

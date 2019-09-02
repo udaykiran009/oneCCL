@@ -5,7 +5,7 @@
 #include "common/env/env.hpp"
 #include "common/global/global.hpp"
 #include "common/request/request.hpp"
-#include "ccl_listener.hpp"
+#include "exec/thread/listener.hpp"
 
 #include <memory>
 #include <vector>
@@ -76,7 +76,7 @@ public:
 
 private:
     size_t get_atl_comm_count(size_t worker_count);
-    std::unique_ptr<ccl_sched_queue> get_data_queue(size_t idx, size_t comm_per_worker);
+    std::unique_ptr<ccl_sched_queue> create_sched_queue(size_t idx, size_t comm_per_worker);
 
     void do_work(); 
     atl_comm_t** atl_comms = nullptr;

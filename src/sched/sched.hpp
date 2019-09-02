@@ -37,9 +37,6 @@ public:
 
     bool is_strict_order_satisfied();
 
-    /* check that all entries were executed */
-    bool is_executed();
-
     void start_entries();
 
     void do_progress();

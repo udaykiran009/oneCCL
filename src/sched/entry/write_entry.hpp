@@ -1,7 +1,7 @@
 #pragma once
 
 #include "sched/entry/entry.hpp"
-#include "sched/sched_queue.hpp"
+#include "sched/queue/queue.hpp"
 
 class write_entry : public sched_entry
 {

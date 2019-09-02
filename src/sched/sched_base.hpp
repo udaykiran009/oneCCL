@@ -28,6 +28,13 @@ enum ccl_sched_add_mode
     ccl_sched_add_back
 };
 
+enum ccl_sched_in_bin_status
+{
+    ccl_sched_in_bin_none,
+    ccl_sched_in_bin_added,
+    ccl_sched_in_bin_erased
+};
+
 struct ccl_sched_buffer_handler
 {
     ccl_buffer buffer;
@@ -68,16 +75,31 @@ struct ccl_sched_base
         add_mode = mode;
     }
 
+    void set_in_bin_status(ccl_sched_in_bin_status status)
+    {
+        in_bin_status = status;
+    }
+
+    ccl_sched_in_bin_status get_in_bin_status()
+    {
+        return in_bin_status;
+    }
+
     ccl_coll_param coll_param{};
+
     ccl_coll_attr coll_attr{};
-    ccl_sched_id_t sched_id = 0;   /* sequence number of the schedule in the communicator */
-    
-    
-    // TODO: memory should be hidden from public access
-    ccl_sched_memory memory;
+
+    /* sequence number of the schedule in the communicator */
+    ccl_sched_id_t sched_id = 0;
+
+    /* to track status of schedule wrt execution bin, updated by worker thread only */
+    ccl_sched_in_bin_status in_bin_status = ccl_sched_in_bin_none;
 
     /* whether sched was created by internal module (fusion_manager/unordered_coll_manager) */
     ccl_sched_internal_type internal_type = ccl_sched_internal_none;
+
+    // TODO: memory should be hidden from public access
+    ccl_sched_memory memory;
     
     static size_t get_lifo_priority() noexcept
     {
@@ -100,6 +122,4 @@ protected:
     }
     
     void dump(std::ostream& out, const char *name) const;
-
 };
-

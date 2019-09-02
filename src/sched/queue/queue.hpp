@@ -36,7 +36,7 @@ public:
     }
     ~ccl_sched_list()
     {
-        if (elems.size() != 0 && !global_data.is_ft_support)
+        if (elems.size() != 0 && !global_data.is_ft_enabled)
         {
             LOG_ERROR("unexpected elem_count ", elems.size(), "expected 0");
         }
@@ -98,6 +98,7 @@ public:
         }
         return ret;
     }
+
     size_t erase(size_t idx)
     {
         {
@@ -182,28 +183,10 @@ private:
 
     void add_internal(ccl_sched* sched, bool need_to_lock = true);
 
-    void handle_strict_order_queue();
-
-    sched_queue_lock_t strict_order_queue_guard{};
-    // added padding, to make sure that 'strict_order_queue_guard' and 'bins_guard'
-    // takes different cache lines (eliminates 'false sharing')
-    char padding_queue[CACHELINE_SIZE];
     sched_queue_lock_t bins_guard{};
-    char padding_table[CACHELINE_SIZE];
+
     std::vector<atl_comm_t*> comm_ctxs;
     sched_bin_list_t bins { CCL_SCHED_QUEUE_INITIAL_BIN_COUNT };
     size_t max_priority = 0;
     std::atomic<ccl_sched_bin*> cached_max_priority_bin{};
-
-    /* used to get strict start ordering for transports w/o tagging support for collectives */
-    std::atomic_flag strict_order_queue_empty = ATOMIC_FLAG_INIT;
-
-    /* used to keep schedules which require strict start ordering */
-    std::vector<ccl_sched*> strict_order_queue{};
-
-    /*
-      but real strict starting will happen from this queue
-      to reduce locking of master thread in queue->add()
-    */
-    std::vector<ccl_sched*> active_strict_order_queue{};
 };

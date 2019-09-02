@@ -1,13 +1,15 @@
-#include "sched/sched.hpp"
-#include "sched/extra_sched.hpp"
-#include "sched/sched_queue.hpp"
-#include "sched/sync_object.hpp"
-#include "sched/entry_factory.hpp"
 #include "common/global/global.hpp"
 #include "parallelizer/parallelizer.hpp"
+#include "sched/entry_factory.hpp"
+#include "sched/extra_sched.hpp"
+#include "sched/queue/queue.hpp"
+#include "sched/sched.hpp"
+#include "sched/sync_object.hpp"
 
 ccl_sched::~ccl_sched()
 {
+    CCL_ASSERT(in_bin_status != ccl_sched_in_bin_added);
+
     if (finalize_fn)
     {
         finalize_fn(this, finalize_fn_ctx);
@@ -76,67 +78,6 @@ void ccl_sched::start_entries()
     }
 }
 
-ccl_status_t ccl_bin_progress(ccl_sched_bin* bin,
-                              size_t& completed_sched_count)
-{
-    CCL_ASSERT(bin);
-
-    ccl_status_t status = ccl_status_success;
-    size_t sched_count = 0;
-    auto sched_queue = bin->get_queue();
-    size_t bin_size = bin->size();
-    CCL_ASSERT(bin_size > 0 );
-
-    LOG_TRACE("bin ", bin, ", sched_count ", bin_size);
-
-    /* ensure communication progress */
-    atl_status_t atl_status = atl_comm_poll(bin->get_comm_ctx());
-    if (global_data.is_ft_support)
-    {
-        if (atl_status != atl_status_success)
-            return ccl_status_blocked_due_to_resize;
-    }
-    else
-    {
-        CCL_THROW_IF_NOT(atl_status == atl_status_success, "bad status ", atl_status);
-    }
-
-    // iterate through the scheds store in the bin
-    completed_sched_count = 0;
-    for (size_t sched_idx = 0; sched_idx < bin_size; )
-    {
-        ccl_sched* sched = bin->get(sched_idx);
-        CCL_ASSERT(sched && bin == sched->bin);
-
-        sched->do_progress();
-
-        if (sched->start_idx == sched->entries.size())
-        {
-            // the last entry in the schedule has been completed, clean up the schedule and complete its request
-            LOG_DEBUG("complete and dequeue: sched ", sched,
-                ", coll ", ccl_coll_type_to_str(sched->coll_param.ctype),
-                ", req ", sched->req,
-                ", entry_count ", sched->entries.size());
-
-            // remove completed schedule from the bin
-            sched_queue->erase(bin, sched_idx);
-            bin_size--;
-            LOG_DEBUG("completing request ", sched->req);
-            sched->complete();
-            ++completed_sched_count;
-        }
-        else
-        {
-            // this schedule is not completed yet, switch to the next sched in bin scheds list
-            // progression of unfinished schedules will be continued in the next call of @ref ccl_bin_progress
-            ++sched_idx;
-        }
-        sched_count++;
-    }
-
-    return status;
-}
-
 void ccl_sched::do_progress()
 {
     if (first_progress)
@@ -189,11 +130,6 @@ bool ccl_sched::is_strict_order_satisfied()
         {
             return e->is_strict_order_satisfied();
         });
-}
-
-bool ccl_sched::is_executed()
-{
-    return (start_idx == entries.size());
 }
 
 void ccl_sched::complete()

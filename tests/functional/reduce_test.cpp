@@ -32,7 +32,7 @@
 // }
 // template <typename T>
 // int set_custom_reduction (TypedTestParam <T> &param){
-    // TestReductionType customFuncName = param.GetReductionName();
+    // TestReductionType customFuncName = param.GetReductionType();
     // switch (customFuncName) {
         // case RT_CUSTOM:
             // param.coll_attr.reduction_fn = do_reduction_custom<T>;
@@ -52,7 +52,7 @@ public:
         if (param.processIdx == ROOT_PROCESS_IDX) {
             for (size_t j = 0; j < param.bufferCount; j++) {
                 for (size_t i = 0; i < param.elemCount; i++) {
-                    if (param.GetReductionName() == RT_SUM) {
+                    if (param.GetReductionType() == RT_SUM) {
                         T expected =
                             ((param.processCount * (param.processCount - 1) / 2) +
                             ((i + j) * param.processCount));
@@ -62,7 +62,7 @@ public:
                             return TEST_FAILURE;
                         }
                     }
-                    if (param.GetReductionName() == RT_MAX) {
+                    if (param.GetReductionType() == RT_MAX) {
                         T expected = get_expected_max<T>(i, j, param.processCount);
                         if (param.recvBuf[j][i] != expected) {
                             sprintf(this->errMessage, "[%zu] sent sendBuf[%zu][%zu] = %f, got recvBuf[%zu][%zu] = %f, but expected = %f\n",
@@ -70,7 +70,7 @@ public:
                             return TEST_FAILURE;
                         }
                     }
-                    if (param.GetReductionName() == RT_MIN) {
+                    if (param.GetReductionType() == RT_MIN) {
                         T expected = get_expected_min<T>(i, j, param.processCount);
                         if (param.recvBuf[j][i] != expected) {
                             sprintf(this->errMessage, "[%zu] sent sendBuf[%zu][%zu] = %f, got recvBuf[%zu][%zu] = %f, but expected = %f\n",
@@ -78,7 +78,7 @@ public:
                             return TEST_FAILURE;
                         }
                     }
-                    if (param.GetReductionName() == RT_PROD) {
+                    if (param.GetReductionType() == RT_PROD) {
                         T expected = 1;
                         for (size_t k = 0; k < param.processCount; k++) {
                             expected *= i + j + k;
@@ -89,7 +89,7 @@ public:
                             return TEST_FAILURE;
                         }
                     }
-                    // if (param.GetReductionName() == RT_CUSTOM) {
+                    // if (param.GetReductionType() == RT_CUSTOM) {
                         // T expected =
                             // ((param.processCount * (param.processCount - 1) / 2) +
                             // (i * param.processCount));
@@ -99,7 +99,7 @@ public:
                             // return TEST_FAILURE;
                         // }
                     // }
-                    // else if (param.GetReductionName() == RT_CUSTOM_NULL) {
+                    // else if (param.GetReductionType() == RT_CUSTOM_NULL) {
                         // T expected = 0;
                         // if (param.recvBuf[j][i] != expected) {
                             // sprintf(this->errMessage, "[%zu] sent sendBuf[%zu][%zu] = %f, got recvBuf[%zu][%zu] = %f, but expected = %f\n",
@@ -121,7 +121,7 @@ public:
             this->SwapBuffers(param, iter);
             size_t idx = 0;
             size_t* Buffers = param.DefineStartOrder();
-            // if (param.GetReductionType() == ccl_reduction_custom) {
+            // if (param.GetCCLReductionType() == ccl_reduction_custom) {
                 // if (set_custom_reduction<T>(param))
                     // return TEST_FAILURE;
             // }
@@ -129,10 +129,10 @@ public:
                 this->Init(param, idx);
                 param.req[Buffers[idx]] = (param.GetPlaceType() == PT_IN) ?
                         param.global_comm.reduce(param.recvBuf[Buffers[idx]].data(), param.recvBuf[Buffers[idx]].data(), param.elemCount,
-                                                (ccl::data_type) param.GetDataType(), (ccl::reduction) param.GetReductionName(),
+                                                (ccl::data_type) param.GetDataType(), (ccl::reduction) param.GetReductionType(),
                                                 ROOT_PROCESS_IDX, &param.coll_attr, param.GetStream()) :
                         param.global_comm.reduce(param.sendBuf[Buffers[idx]].data(), param.recvBuf[Buffers[idx]].data(), param.elemCount,
-                                                (ccl::data_type) param.GetDataType(), (ccl::reduction) param.GetReductionName(),
+                                                (ccl::data_type) param.GetDataType(), (ccl::reduction) param.GetReductionType(),
                                                 ROOT_PROCESS_IDX, &param.coll_attr, param.GetStream());
             }
             param.DefineCompletionOrderAndComplete();

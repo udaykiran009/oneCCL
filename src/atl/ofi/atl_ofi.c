@@ -1340,7 +1340,7 @@ atl_status_t atl_ofi_init(int *argc, char ***argv, size_t *proc_idx, size_t *pro
         goto err_comms_init;
 
     atl_ofi_context->atl_desc.ops = &atl_ofi_ops;
-    atl_ofi_context->atl_desc.ops->is_ft_enabled = is_ft_support();
+    atl_ofi_context->atl_desc.ops->is_ft_enabled = is_pm_ft_enabled();
     atl_ofi_context->atl_desc.mr_ops = &atl_ofi_mr_ops;
     *atl_desc = &atl_ofi_context->atl_desc;
 

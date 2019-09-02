@@ -503,7 +503,7 @@ void ccl_fusion_manager::release_buffer(void* buf)
 
 void ccl_fusion_manager::clear()
 {
-    if (global_data.is_ft_support)
+    if (global_data.is_ft_enabled)
     {
         tracked_scheds.clear();
         clear_exec_queue();

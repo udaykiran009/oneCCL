@@ -50,7 +50,7 @@ struct alignas(CACHELINE_SIZE) ccl_global_data
     std::unique_ptr<ccl_unordered_coll_manager> unordered_coll_manager;
     std::unique_ptr<ccl_algorithm_selector_wrapper<CCL_COLL_LIST>> algorithm_selector;
     static thread_local bool is_worker_thread;
-    bool is_ft_support;
+    bool is_ft_enabled;
 };
 
 extern ccl_global_data global_data;

@@ -843,10 +843,10 @@ struct TypedTestParam
     TestDataType GetDataType() {
         return testParam.dataType;
     }
-    TestReductionType GetReductionName() {
+    TestReductionType GetReductionType() {
         return testParam.reductionType;
     }
-    ccl_reduction_t GetReductionType() {
+    ccl_reduction_t GetCCLReductionType() {
         return reductionTypeValues[testParam.reductionType];
     }
     PriorityType GetPriorityType() {

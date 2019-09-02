@@ -229,7 +229,6 @@ ccl_status_t ccl_parallelizer::process(ccl_master_sched* sched)
             /* convert sycl buffer */
             if (coll_param->stream && (ccl_stream_type_t)(coll_param->stream->get_type()) == ccl_stream_sycl)
             {
-
                 if (coll_param->comm->rank() == coll_param->root)
                 {
                     entry_factory::make_entry<sycl_copy_device_to_host_entry>(part_scheds[0].get(),
@@ -241,7 +240,6 @@ ccl_status_t ccl_parallelizer::process(ccl_master_sched* sched)
                                                                               coll_param->count,
                                                                               dtype, coll_param->stream);
                 }
-
                 sched->sync_partial_scheds();
             }
 #endif /* ENABLE_SYCL */
@@ -279,7 +277,6 @@ ccl_status_t ccl_parallelizer::process(ccl_master_sched* sched)
             /* convert sycl buffer */
             if (coll_param->stream && (ccl_stream_type_t)(coll_param->stream->get_type()) == ccl_stream_sycl)
             {
-
                 entry_factory::make_entry<sycl_copy_device_to_host_entry>(part_scheds[0].get(),
                                                                           ccl_buffer(&(coll_param->sycl_send_buf),
                                                                                      coll_param->count * dtype_size,
@@ -333,7 +330,6 @@ ccl_status_t ccl_parallelizer::process(ccl_master_sched* sched)
             /* convert sycl buffer */
             if (coll_param->stream && (ccl_stream_type_t)(coll_param->stream->get_type()) == ccl_stream_sycl)
             {
-
                 entry_factory::make_entry<sycl_copy_device_to_host_entry>(part_scheds[0].get(),
                                                                           ccl_buffer(&(coll_param->sycl_send_buf),
                                                                                      coll_param->count * dtype_size,
@@ -577,7 +573,6 @@ ccl_status_t ccl_parallelizer::process(ccl_master_sched* sched)
                                                                idx);
                     }
                     sched->sync_partial_scheds();
-
                 }
                 else
                 {
