@@ -207,6 +207,7 @@ typedef enum {
     PT_LAST
 } PlaceType;
 PlaceType firstPlaceType = PT_OOP;
+PlaceType lastPlaceType = PT_LAST;
 map <int, const char *>placeTypeStr = { {PT_OOP, "PT_OOP"},
                                         {PT_IN, "PT_IN"}
                                         };
@@ -218,6 +219,7 @@ typedef enum {
     ST_LAST
 } SizeType;
 SizeType firstSizeType = ST_SMALL;
+SizeType lastSizeType = ST_LAST;
 map < int, const char *>sizeTypeStr = { {ST_SMALL, "ST_SMALL"},
                                         {ST_MEDIUM, "ST_MEDIUM"},
                                         {ST_LARGE, "ST_LARGE"}
@@ -235,6 +237,7 @@ typedef enum {
     BC_LAST
 } BufferCount;
 BufferCount firstBufferCount = BC_SMALL;
+BufferCount lastBufferCount = BC_LAST;
 map < int, const char *>bufferCountStr = { {BC_SMALL, "BC_SMALL"},
                                            {BC_MEDIUM, "BC_MEDIUM"},
                                            {BC_LARGE, "BC_LARGE"}};
@@ -249,6 +252,7 @@ typedef enum {
     CMPT_LAST
 } CompletionType;
 CompletionType firstCompletionType = CMPT_WAIT;
+CompletionType lastCompletionType = CMPT_LAST;
 map < int, const char *>completionTypeStr = { {CMPT_WAIT, "CMPT_WAIT"},
                                               {CMPT_TEST, "CMPT_TEST"}};
 
@@ -261,6 +265,7 @@ typedef enum {
     PRLT_LAST
 } PrologType;
 PrologType firstPrologType = PRT_NULL;
+PrologType lastPrologType = PRLT_LAST;
 map < int, const char *>prologTypeStr = { {PRT_NULL, "PRT_NULL"},
 #ifdef TEST_CCL_CUSTOM_PROLOG
                                           {PRT_T_TO_2X, "PRT_T_TO_2X"},
@@ -277,6 +282,7 @@ typedef enum {
     EPLT_LAST
 } EpilogType;
 EpilogType firstEpilogType = EPLT_NULL;
+EpilogType lastEpilogType = EPLT_LAST;
 map < int, const char *>epilogTypeStr = { {EPLT_NULL, "EPLT_NULL"},
 #ifdef TEST_CCL_CUSTOM_EPILOG
                                           {EPLT_T_TO_2X, "EPLT_T_TO_2X"},
@@ -295,6 +301,7 @@ typedef enum {
     DT_LAST
 } TestDataType;
 TestDataType firstDataType = DT_CHAR;
+TestDataType lastDataType = DT_LAST;
 map < int, const char *>dataTypeStr = { {DT_CHAR, "DT_CHAR"},
                                         {DT_INT, "DT_INT"},
                                         {DT_BFP16, "DT_BFP16"},
@@ -318,6 +325,7 @@ typedef enum {
     RT_LAST
 } TestReductionType;
 TestReductionType firstReductionType = RT_SUM;
+TestReductionType lastReductionType = RT_LAST;
 map < int, const char *>reductionTypeStr = { {RT_SUM, "RT_SUM"},
 #ifdef TEST_CCL_REDUCE
                                              {RT_PROD, "RT_PROD"},
@@ -347,6 +355,7 @@ typedef enum {
     CT_LAST
 } TestCacheType;
 TestCacheType firstCacheType = CT_CACHE_0;
+TestCacheType lastCacheType = CT_LAST;
 map < int, const char * >cacheTypeStr = { {CT_CACHE_0, "CT_CACHE_0"},
                                           {CT_CACHE_1, "CT_CACHE_1"}
                                           };
@@ -361,6 +370,7 @@ typedef enum {
     SNCT_LAST
 } TestSyncType;
 TestSyncType firstSyncType = SNCT_SYNC_0;
+TestSyncType lastSyncType = SNCT_LAST;
 map < int, const char * >syncTypeStr = { {SNCT_SYNC_0, "SNCT_SYNC_0"},
                                          {SNCT_SYNC_1, "SNCT_SYNC_1"}};
 
@@ -376,6 +386,7 @@ typedef enum {
     PRT_LAST
 } PriorityType;
 PriorityType firstPriorityType = PRT_DISABLE;
+PriorityType lastPriorityType = PRT_LAST;
 map < int, const char * >priorityTypeStr = { {PRT_DISABLE, "PRT_DISABLE"},
                                              {PRT_DIRECT, "PRT_DIRECT"},
                                              {PRT_INDIRECT, "PRT_INDIRECT"},
@@ -474,7 +485,7 @@ size_t CalculateTestCount ()
 {
     size_t testCount = PRT_LAST * PRT_LAST * CMPT_LAST * SNCT_LAST * (DT_LAST-1) * ST_LAST *  RT_LAST * BC_LAST * CT_LAST * PT_LAST * PRLT_LAST * EPLT_LAST;
 // CCL_TEST_EPILOG_TYPE=0 CCL_TEST_PROLOG_TYPE=0 CCL_TEST_PLACE_TYPE=0 CCL_TEST_CACHE_TYPE=0 CCL_TEST_BUFFER_COUNT=0 CCL_TEST_SIZE_TYPE=0 CCL_TEST_PRIORITY_TYPE=1 CCL_TEST_COMPLETION_TYPE=0 CCL_TEST_SYNC_TYPE=0 CCL_TEST_REDUCTION_TYPE=0 CCL_TEST_DATA_TYPE=0
-    char* testDatatypeEnabled = getenv("CCL_TEST_DATA_TYPE");
+    char* testDataTypeEnabled = getenv("CCL_TEST_DATA_TYPE");
     char* testReductionEnabled = getenv("CCL_TEST_REDUCTION_TYPE");
     char* testSyncEnabled = getenv("CCL_TEST_SYNC_TYPE");
     char* testCompletionEnabled = getenv("CCL_TEST_COMPLETION_TYPE");
@@ -485,49 +496,60 @@ size_t CalculateTestCount ()
     char* testPlaceTypeEnabled = getenv("CCL_TEST_PLACE_TYPE");
     char* testPrologEnabled = getenv("CCL_TEST_PROLOG_TYPE");
     char* testEpilogEnabled = getenv("CCL_TEST_EPILOG_TYPE");
-    if (testDatatypeEnabled && atoi(testDatatypeEnabled) == 0) {
-        firstDataType = static_cast<TestDataType>(DT_LAST - 1);
-        testCount /= (DT_LAST-1);
+    if (testDataTypeEnabled && atoi(testDataTypeEnabled) == 0) {
+        testCount /= (lastDataType - 1);
+        firstDataType = static_cast<TestDataType>(DT_FLOAT);
+        lastDataType = static_cast<TestDataType>(firstDataType + 1);
         }
     if (testReductionEnabled && atoi(testReductionEnabled) == 0) {
-        firstReductionType = static_cast<TestReductionType>(RT_LAST - 1);
-        testCount /= RT_LAST;
+        testCount /= lastReductionType;
+        firstReductionType = static_cast<TestReductionType>(RT_SUM);
+        lastReductionType = static_cast<TestReductionType>(firstReductionType + 1);
         }
     if (testSyncEnabled && atoi(testSyncEnabled) == 0) {
-        firstSyncType = static_cast<TestSyncType>(SNCT_LAST - 1);;
-        testCount /= SNCT_LAST;
+        testCount /= lastSyncType;
+        firstSyncType = static_cast<TestSyncType>(SNCT_SYNC_1);
+        lastSyncType = static_cast<TestSyncType>(firstSyncType + 1);
         }
     if (testCompletionEnabled && atoi(testCompletionEnabled) == 0) {
-        firstCompletionType = static_cast<CompletionType>(CMPT_LAST - 1);
-        testCount /= CMPT_LAST;
+        testCount /= lastCompletionType;
+        firstCompletionType = static_cast<CompletionType>(CMPT_WAIT);
+        lastCompletionType = static_cast<CompletionType>(firstCompletionType + 1);
         }
     if (testPriorityEnabled && atoi(testPriorityEnabled) == 0) {
-        firstPriorityType = static_cast<PriorityType>(PRT_LAST - 1);
-        testCount /= (PRT_LAST * PRT_LAST);
+        testCount /= (lastPriorityType * lastPriorityType);
+        firstPriorityType = static_cast<PriorityType>(PRT_DISABLE);
+        lastPriorityType = static_cast<PriorityType>(firstPriorityType + 1);
         }
     if (testSizeTypeEnabled && atoi(testSizeTypeEnabled) == 0) {
-        firstSizeType = static_cast<SizeType>(ST_LAST - 1);
-        testCount /= ST_LAST;
+        testCount /= lastSizeType;
+        firstSizeType = static_cast<SizeType>(ST_MEDIUM);
+        lastSizeType = static_cast<SizeType>(firstSizeType + 1);
         }
     if (testBufferCountEnabled && atoi(testBufferCountEnabled) == 0) {
-        firstBufferCount = static_cast<BufferCount>(BC_LAST - 1);
-        testCount /= BC_LAST;
+        testCount /= lastBufferCount;
+        firstBufferCount = static_cast<BufferCount>(BC_MEDIUM);
+        lastBufferCount = static_cast<BufferCount>(firstBufferCount + 1);
         }
     if (testCacheEnabled && atoi(testCacheEnabled) == 0) {
-        firstCacheType = static_cast<TestCacheType>(CT_LAST - 1);
-        testCount /= CT_LAST;
+        testCount /= lastCacheType;
+        firstCacheType = static_cast<TestCacheType>(CT_CACHE_1);
+        lastCacheType = static_cast<TestCacheType>(firstCacheType + 1);
         }
     if (testPlaceTypeEnabled && atoi(testPlaceTypeEnabled) == 0) {
-        firstPlaceType = static_cast<PlaceType>(PT_LAST - 1);
-        testCount /= PT_LAST;
+        testCount /= lastPlaceType;
+        firstPlaceType = static_cast<PlaceType>(PT_IN);
+        lastPlaceType = static_cast<PlaceType>(firstPlaceType + 1);
         }
     if (testPrologEnabled && atoi(testPrologEnabled) == 0) {
-        firstPrologType = static_cast<PrologType>(PRLT_LAST - 1);
-        testCount /= PRLT_LAST;
+        testCount /= lastPrologType;
+        firstPrologType = static_cast<PrologType>(PRT_NULL);
+        lastPrologType = static_cast<PrologType>(firstPrologType + 1);
         }
     if (testEpilogEnabled && atoi(testEpilogEnabled) == 0) {
-        firstEpilogType = static_cast<EpilogType>(EPLT_LAST - 1);
-        testCount /= EPLT_LAST;
+        testCount /= lastEpilogType;
+        firstEpilogType = static_cast<EpilogType>(EPLT_NULL);
+        lastEpilogType = static_cast<EpilogType>(firstEpilogType + 1);
         }       
     return testCount;
 }
@@ -537,21 +559,21 @@ std::vector<TestParam> testParams(CalculateTestCount());
 void InitTestParams()
 {
     size_t idx = 0;
-    for (PrologType prologType = firstPrologType; prologType < PRLT_LAST; prologType++) {
-        for (EpilogType epilogType = firstEpilogType; epilogType < EPLT_LAST; epilogType++) {
-            for (TestReductionType reductionType = firstReductionType; reductionType < RT_LAST; reductionType++) {
-                for (TestSyncType syncType = firstSyncType; syncType < SNCT_LAST; syncType++) {
-                    for (TestCacheType cacheType = firstCacheType; cacheType < CT_LAST; cacheType++) {
-                        for (SizeType sizeType = firstSizeType; sizeType < ST_LAST; sizeType++) {
-                            for (TestDataType dataType = firstDataType; dataType < DT_LAST; dataType++) {
+    for (PrologType prologType = firstPrologType; prologType < lastPrologType; prologType++) {
+        for (EpilogType epilogType = firstEpilogType; epilogType < lastEpilogType; epilogType++) {
+            for (TestReductionType reductionType = firstReductionType; reductionType < lastReductionType; reductionType++) {
+                for (TestSyncType syncType = firstSyncType; syncType < lastSyncType; syncType++) {
+                    for (TestCacheType cacheType = firstCacheType; cacheType < lastCacheType; cacheType++) {
+                        for (SizeType sizeType = firstSizeType; sizeType < lastSizeType; sizeType++) {
+                            for (TestDataType dataType = firstDataType; dataType < lastDataType; dataType++) {
                                 if (dataType == DT_BFP16)
                                     // TODO: remove skipped data type
                                     continue;
-                                for (CompletionType completionType = firstCompletionType; completionType < CMPT_LAST; completionType++) {
-                                    for (PlaceType placeType = firstPlaceType; placeType < PT_LAST; placeType++) {
-                                        for (PriorityType priorityType = firstPriorityType; priorityType < PRT_LAST; priorityType++) {
-                                            for (PriorityType priorityStartType = firstPriorityType; priorityStartType < PRT_LAST; priorityStartType++) {
-                                                for (BufferCount bufferCount = firstBufferCount; bufferCount < BC_LAST; bufferCount++) {
+                                for (CompletionType completionType = firstCompletionType; completionType < lastCompletionType; completionType++) {
+                                    for (PlaceType placeType = firstPlaceType; placeType < lastPlaceType; placeType++) {
+                                        for (PriorityType priorityType = firstPriorityType; priorityType < lastPriorityType; priorityType++) {
+                                            for (PriorityType priorityStartType = firstPriorityType; priorityStartType < lastPriorityType; priorityStartType++) {
+                                                for (BufferCount bufferCount = firstBufferCount; bufferCount < lastBufferCount; bufferCount++) {
                                                     testParams[idx].placeType = placeType;
                                                     testParams[idx].sizeType = sizeType;
                                                     testParams[idx].dataType = dataType;
