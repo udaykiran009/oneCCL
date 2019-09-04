@@ -53,12 +53,11 @@ struct ccl_sched_memory
 static size_t lifo_priority = 0;
 struct ccl_sched_base
 {
-    void set_coll_attr(const ccl_coll_attr_t* attr,
-                              std::string match_id);
+    void set_coll_attr(const ccl_coll_attr_t& attr);
 
     void update_coll_param(ccl_coll_param& param);
     void update_coll_attr(const ccl_coll_attr_t* attr);
-    
+
     size_t get_priority() const;
     ccl_buffer alloc_buffer(size_t bytes);
     void free_buffers();
@@ -94,13 +93,13 @@ struct ccl_sched_base
 
     /* to track status of schedule wrt execution bin, updated by worker thread only */
     ccl_sched_in_bin_status in_bin_status = ccl_sched_in_bin_none;
+    
+    // TODO: memory should be hidden from public access
+    ccl_sched_memory memory;
 
     /* whether sched was created by internal module (fusion_manager/unordered_coll_manager) */
     ccl_sched_internal_type internal_type = ccl_sched_internal_none;
 
-    // TODO: memory should be hidden from public access
-    ccl_sched_memory memory;
-    
     static size_t get_lifo_priority() noexcept
     {
         return lifo_priority++;
@@ -108,18 +107,18 @@ struct ccl_sched_base
 
 protected:
 
-    ccl_sched_base(const ccl_coll_param& coll_param) : 
+    ccl_sched_base(const ccl_coll_param& coll_param) :
         coll_param(coll_param)
     {
     }
-    
+
     ccl_sched_entry_exec_mode exec_mode = ccl_sched_entry_exec_regular;
     ccl_sched_add_mode add_mode = ccl_sched_add_back;
-    
+
     void update_id()
     {
         sched_id = coll_param.comm->get_sched_id(internal_type != ccl_sched_internal_none);
     }
-    
+
     void dump(std::ostream& out, const char *name) const;
 };

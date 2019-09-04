@@ -6,8 +6,36 @@
 #include "common/request/request.hpp"
 #include "exec/exec.hpp"
 #include "fusion/fusion.hpp"
-#include "sched/sched_cache.hpp"
 #include "unordered_coll/unordered_coll.hpp"
+
+bool is_attr_cached(const ccl_coll_attr_t& c_attr) noexcept
+{
+    return (c_attr.to_cache and c_attr.match_id and c_attr.match_id[0]);
+}
+
+ccl_coll_attr::ccl_coll_attr(const ccl_coll_attr_t& c_attr) :
+  prologue_fn(c_attr.prologue_fn),
+  epilogue_fn(c_attr.epilogue_fn),
+  reduction_fn(c_attr.reduction_fn),
+  priority(c_attr.priority),
+  synchronous(c_attr.synchronous),
+  to_cache(c_attr.to_cache),
+  match_id(c_attr.match_id ? c_attr.match_id : "")
+{
+    to_cache = is_attr_cached(c_attr);
+}
+
+ccl_coll_attr& ccl_coll_attr::operator= (const ccl_coll_attr_t& c_attr)
+{
+  prologue_fn = c_attr.prologue_fn;
+  epilogue_fn = c_attr.epilogue_fn;
+  reduction_fn = c_attr.reduction_fn;
+  priority = c_attr.priority;
+  synchronous = c_attr.synchronous;
+  to_cache = is_attr_cached(c_attr);
+  match_id = (c_attr.match_id ? c_attr.match_id : "");
+  return *this;
+}
 
 const char* ccl_coll_type_to_str(ccl_coll_type type)
 {
@@ -35,87 +63,36 @@ const char* ccl_coll_type_to_str(ccl_coll_type type)
 
 static ccl_request* ccl_coll_create(ccl_coll_param& coll_param,
                                     const ccl_coll_attr_t* coll_attr,
-                                    ccl_sched_key& key)
+                                    ccl_sched_key&& key)
 {
-    ccl_master_sched* sched = nullptr;
+    // get particular schedule: create new or take from cache
+    ccl_master_sched* sched = ccl_master_sched::create(coll_param, coll_attr, std::move(key));
+    // no use 'key' anymore, because it's moved
+
+    // TODO move following pipeline into executor->start
+
+    // 1. Check unordered first
     ccl_comm* match_id_comm = nullptr;
-    ccl_request* request = nullptr;
-    const ccl_coll_attr_t* attr = coll_attr ? coll_attr : global_data.default_coll_attr.get();
-
-    bool should_run = true;
-    bool should_cache = false;
-    bool was_fused = false;
-
-    std::string match_id;
-
-    CCL_THROW_IF_NOT(coll_param.ctype == ccl_coll_allreduce ||
-                     !(attr->prologue_fn || attr->epilogue_fn || attr->reduction_fn),
-                     "for now only allreduce supports prologue/epilogue/custom_reduction functionality");
-
-    should_cache = attr->to_cache;
-
-    if (attr->match_id && (env_data.enable_unordered_coll || should_cache))
-        match_id.assign(attr->match_id);
-
-    if (!match_id.empty() && env_data.enable_unordered_coll)
+    if (!sched->coll_attr.match_id.empty() && env_data.enable_unordered_coll)
     {
-        match_id_comm = global_data.unordered_coll_manager->get_comm(match_id).get();
+        match_id_comm = global_data.unordered_coll_manager->get_comm(sched->coll_attr.match_id).get();
         if (!match_id_comm)
         {
-            if (attr->synchronous)
+            if (sched->coll_attr.synchronous)
             {
                 CCL_THROW("unsupported collective (synchronous && unordered && !communicator)");
             }
 
             // user has provided match_id that has not been resolved yet.
             // schedule will be postponed until comm resolution
-            should_run = false;
+            // parallelize schedule
+            sched->commit(global_data.parallelizer.get());
+            return global_data.unordered_coll_manager->postpone(sched);
         }
         else
         {
-            LOG_DEBUG("found comm id ", match_id_comm->id(), " for match_id ", match_id.c_str());
+            LOG_DEBUG("found comm id ", match_id_comm->id(), " for match_id ", sched->coll_attr.match_id);
         }
-    }
-
-    if (should_cache && match_id.empty())
-    {
-        LOG_ERROR("collective caching is requested but no match_id is provided");
-        should_cache = false;
-    }
-
-    if (should_cache)
-    {
-        key.prologue_fn = attr->prologue_fn;
-        key.epilogue_fn = attr->epilogue_fn;
-        key.reduction_fn = attr->reduction_fn;
-        key.match_id = match_id;
-        sched = global_data.sched_cache->find(key);
-    }
-
-    if (!sched)
-    {
-        sched = new ccl_master_sched(coll_param);
-        LOG_DEBUG("didn't find sched, create new one ", sched, ", type ",
-                  ccl_coll_type_to_str(sched->coll_param.ctype));
-
-        if (should_cache)
-        {
-            global_data.sched_cache->add(key, sched);
-        }
-
-        sched->set_coll_attr(attr, std::move(match_id));
-        sched->alloc_buffers_for_sycl_copy();
-        sched->coll_attr.to_cache = should_cache;
-    }
-    else
-    {
-        /* update some parameters and attributes in existing schedule
-           as they could be changed since previous call */
-        sched->update_coll_param(coll_param);
-        sched->update_coll_attr(attr);
-
-        LOG_DEBUG("found sched, reuse ", sched, ", type ",
-                  ccl_coll_type_to_str(sched->coll_param.ctype));
     }
 
     if (match_id_comm)
@@ -123,37 +100,27 @@ static ccl_request* ccl_coll_create(ccl_coll_param& coll_param,
         sched->coll_param.comm = match_id_comm;
     }
 
-    if (should_run)
+    // 2. then check fusion
+    if (env_data.enable_fusion)
     {
-        if (env_data.enable_fusion)
+        if (global_data.fusion_manager->add(sched))
         {
-            was_fused = global_data.fusion_manager->add(sched);
-            if (was_fused)
-            {
-                LOG_DEBUG("sched ", sched, ", ctype ",
-                          ccl_coll_type_to_str(sched->coll_param.ctype), " will be fused");
-                return sched;
-            }
+            LOG_DEBUG("sched ", sched, ", ctype ",
+                      ccl_coll_type_to_str(sched->coll_param.ctype), " will be fused");
+            return sched;
         }
     }
 
-    CCL_ASSERT(!was_fused);
 
+    // parallelize schedule
     sched->commit(global_data.parallelizer.get());
 
-    if (should_run)
+    // 3. regular schedule execution - either with user-defined or match_id specific communicator
+    ccl_request* request = sched->start(global_data.executor.get());
+    if (sched->coll_attr.synchronous)
     {
-        // normal schedule execution - either with user-defined or match_id specific communicator
-        request = sched->start(global_data.executor.get());
-        if (attr->synchronous)
-        {
-            ccl_wait_impl<ccl_master_sched>(global_data.executor.get(), request);
-            request = nullptr;
-        }
-    }
-    else
-    {
-        request = global_data.unordered_coll_manager->postpone(sched);
+        ccl_wait_impl<ccl_master_sched>(global_data.executor.get(), request);
+        request = nullptr;
     }
 
     return request;
@@ -402,7 +369,7 @@ ccl_request* ccl_allgatherv_impl(const void* send_buf,
     key.dtype = dtype;
     key.comm = comm;
 
-    auto req = ccl_coll_create(coll_param, attr, key);
+    auto req = ccl_coll_create(coll_param, attr, std::move(key));
     LOG_DEBUG("coll ", ccl_coll_type_to_str(coll_param.ctype), " created, req ", req);
     return req;
 }
@@ -433,7 +400,7 @@ ccl_request* ccl_allreduce_impl(const void* send_buf,
     key.reduction = reduction;
     key.comm = comm;
 
-    auto req = ccl_coll_create(coll_param, attr, key);
+    auto req = ccl_coll_create(coll_param, attr, std::move(key));
     LOG_DEBUG("coll ", ccl_coll_type_to_str(coll_param.ctype), " created, req ", req, " count ", count);
     return req;
 }
@@ -453,7 +420,7 @@ void ccl_barrier_impl(ccl_comm* comm, const ccl_stream* stream)
     key.ctype = ccl_coll_barrier;
     key.comm = comm;
 
-    ccl_coll_create(coll_param, &attributes, key);
+    ccl_coll_create(coll_param, &attributes, std::move(key));
 }
 
 ccl_request* ccl_bcast_impl(void* buf,
@@ -480,7 +447,7 @@ ccl_request* ccl_bcast_impl(void* buf,
     key.root = root;
     key.comm = comm;
 
-    auto req = ccl_coll_create(coll_param, attr, key);
+    auto req = ccl_coll_create(coll_param, attr, std::move(key));
     LOG_DEBUG("coll ", ccl_coll_type_to_str(coll_param.ctype), " created, req ", req);
     return req;
 }
@@ -514,7 +481,7 @@ ccl_request* ccl_reduce_impl(const void* send_buf,
     key.root = root;
     key.comm = comm;
 
-    auto req = ccl_coll_create(coll_param, attr, key);
+    auto req = ccl_coll_create(coll_param, attr, std::move(key));
     LOG_DEBUG("coll ", ccl_coll_type_to_str(coll_param.ctype), " created, req ", req);
     return req;
 }
@@ -554,7 +521,7 @@ ccl_request* ccl_sparse_allreduce_impl(const void* send_ind_buf, size_t send_ind
     key.reduction = reduction;
     key.comm = comm;
 
-    auto req = ccl_coll_create(coll_param, attr, key);
+    auto req = ccl_coll_create(coll_param, attr, std::move(key));
     LOG_DEBUG("coll ", ccl_coll_type_to_str(coll_param.ctype), " created, req ", req);
     return req;
 }

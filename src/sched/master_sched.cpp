@@ -5,6 +5,7 @@
 #include "sched/sync_object.hpp"
 #include "sched/queue/queue.hpp"
 #include "parallelizer/parallelizer.hpp"
+#include "sched/sched_cache.hpp"
 
 ccl_master_sched::~ccl_master_sched()
 {
@@ -124,7 +125,63 @@ void ccl_master_sched::dump(std::ostream &out) const
         std::chrono::duration_cast<std::chrono::microseconds>(exec_complete_time - exec_start_time).count(),
         "\n");
 #endif
-    
+
     ccl_logger::format(out, "--------------------------------\n");
 }
 
+
+ccl_master_sched::ccl_master_sched_ptr ccl_master_sched::create(ccl_coll_param& coll_param,
+                                                                const ccl_coll_attr_t* coll_attr,
+                                                                ccl_sched_key&& key)
+{
+    //Check contract at first
+    const ccl_coll_attr_t* attr = coll_attr ? coll_attr : global_data.default_coll_attr.get();
+    CCL_THROW_IF_NOT(coll_param.ctype == ccl_coll_allreduce ||
+                     !(attr->prologue_fn || attr->epilogue_fn || attr->reduction_fn),
+                     "for now only allreduce supports prologue/epilogue/custom_reduction functionality");
+
+    if (attr->to_cache && (!attr->match_id || !attr->match_id[0]))
+    {
+        LOG_ERROR("collective caching is requested but no match_id is provided");
+    }
+
+    bool use_cache = is_attr_cached(*attr);
+    ccl_master_sched_ptr sched = nullptr;
+    if (use_cache)
+    {
+        key.prologue_fn = attr->prologue_fn;
+        key.epilogue_fn = attr->epilogue_fn;
+        key.reduction_fn = attr->reduction_fn;
+        key.match_id = attr->match_id;
+        sched = global_data.sched_cache->find(key);
+        if(sched)
+        {
+            /* update some parameters and attributes in existing schedule
+               as they could be changed since previous call */
+            sched->update_coll_param(coll_param);
+            sched->update_coll_attr(attr);
+
+            LOG_DEBUG("found sched, reuse ", sched, ", type ",
+                  ccl_coll_type_to_str(sched->coll_param.ctype));
+        }
+    }
+
+    if (!sched)
+    {
+        std::unique_ptr<ccl_master_sched> new_sched(new ccl_master_sched(coll_param));
+        LOG_DEBUG("didn't find sched, create new one ", new_sched.get(), ", type ",
+                  ccl_coll_type_to_str(new_sched->coll_param.ctype));
+
+        new_sched->set_coll_attr(*attr);
+        new_sched->alloc_buffers_for_sycl_copy();
+
+        if (new_sched->coll_attr.to_cache)
+        {
+            global_data.sched_cache->add(std::move(key), new_sched.get());
+            //no use 'key' anymore, because it's moved
+        }
+
+        sched = new_sched.release();
+    }
+    return sched;
+}

@@ -204,53 +204,54 @@ ccl_master_sched* ccl_fusion_manager::build_sched()
               ", sched_count ", exec_queue.size());
 
     ccl_master_sched* sched = nullptr;
-    ccl_sched_key key{};
-    if (use_cache)
     {
-        key.ctype = ccl_coll_allreduce;
-        key.count1 = sum_count;
-        key.count2 = exec_queue.size();
-        key.dtype = dtype->type;
-        key.reduction = reduction;
-        key.comm = comm;
-        key.match_id = first_sched->coll_attr.match_id + last_sched->coll_attr.match_id;
-        LOG_DEBUG("key.match_id ", key.match_id);
-        sched = global_data.sched_cache->find(key);
-        found_sched_in_cache = (sched) ? true : false;
-    }
-
-    stat_fused_bytes += sum_bytes;
-    stat_fused_ops += exec_queue.size();
-
-    if (!sched)
-    {
-        ccl_coll_param coll_param{};
-        LOG_DEBUG("didn't find fused_sched in cache");
-        switch (ctype)
-        {
-            case ccl_coll_allreduce:
-                fusion_buf = buf_cache.get();
-                coll_param.ctype = ccl_coll_allreduce;
-                coll_param.send_buf = fusion_buf;
-                coll_param.recv_buf = fusion_buf;
-                coll_param.count = sum_count;
-                coll_param.dtype = dtype;
-                coll_param.reduction = reduction;
-                coll_param.comm = comm;
-                sched = new ccl_master_sched(coll_param);
-                sched->internal_type = ccl_sched_internal_fusion;
-                break;
-            default:
-                CCL_FATAL("not supported");
-                break;
-        }
-
+        ccl_sched_key key{};
         if (use_cache)
         {
-            global_data.sched_cache->add(key, sched);
+            key.ctype = ccl_coll_allreduce;
+            key.count1 = sum_count;
+            key.count2 = exec_queue.size();
+            key.dtype = dtype->type;
+            key.reduction = reduction;
+            key.comm = comm;
+            key.match_id = first_sched->coll_attr.match_id + last_sched->coll_attr.match_id;
+            LOG_DEBUG("key.match_id ", key.match_id);
+            sched = global_data.sched_cache->find(key);
+            found_sched_in_cache = (sched) ? true : false;
+        }
+
+        stat_fused_bytes += sum_bytes;
+        stat_fused_ops += exec_queue.size();
+
+        if (!sched)
+        {
+            ccl_coll_param coll_param{};
+            LOG_DEBUG("didn't find fused_sched in cache");
+            switch (ctype)
+            {
+                case ccl_coll_allreduce:
+                    fusion_buf = buf_cache.get();
+                    coll_param.ctype = ccl_coll_allreduce;
+                    coll_param.send_buf = fusion_buf;
+                    coll_param.recv_buf = fusion_buf;
+                    coll_param.count = sum_count;
+                    coll_param.dtype = dtype;
+                    coll_param.reduction = reduction;
+                    coll_param.comm = comm;
+                    sched = new ccl_master_sched(coll_param);
+                    sched->internal_type = ccl_sched_internal_fusion;
+                    break;
+                default:
+                    CCL_FATAL("not supported");
+                    break;
+            }
+
+            if (use_cache)
+            {
+                global_data.sched_cache->add(std::move(key), sched);
+            }
         }
     }
-
     sched->coll_attr.priority = max_priority;
     sched->commit(global_data.parallelizer.get());
 

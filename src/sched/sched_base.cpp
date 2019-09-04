@@ -3,17 +3,9 @@
 #include "common/env/env.hpp"
 
 
-void ccl_sched_base::set_coll_attr(const ccl_coll_attr_t* attr,
-                              std::string match_id)
+void ccl_sched_base::set_coll_attr(const ccl_coll_attr_t& attr)
 {
-    CCL_ASSERT(attr);
-    coll_attr.prologue_fn = attr->prologue_fn;
-    coll_attr.epilogue_fn = attr->epilogue_fn;
-    coll_attr.reduction_fn = attr->reduction_fn;
-    coll_attr.priority = attr->priority;
-    coll_attr.synchronous = attr->synchronous;
-    coll_attr.to_cache = attr->to_cache;
-    coll_attr.match_id = std::move(match_id);
+    coll_attr = attr;
 }
 
 void ccl_sched_base::update_coll_param(ccl_coll_param& param)
@@ -156,7 +148,7 @@ void ccl_sched_base::alloc_buffers_for_sycl_copy()
 }
 
 void ccl_sched_base::dump(std::ostream& out, const char *name) const
-{    
+{
     ccl_logger::format(out, "\n-----------------", name, "---------------\n");
     ccl_logger::format(out,
                         "sched: ", this,

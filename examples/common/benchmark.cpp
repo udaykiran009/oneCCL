@@ -1077,7 +1077,7 @@ int main(int argc, char *argv[])
 
     comm.barrier();
 
-    char match_id[MATCH_ID_SIZE];
+    char match_id[MATCH_ID_SIZE] {'\0'};
     coll_attr.match_id = match_id;
     std::copy(coll_names.begin(), coll_names.end(),
               std::ostream_iterator<std::string>(sstream, " "));

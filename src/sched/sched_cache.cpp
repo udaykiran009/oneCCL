@@ -54,16 +54,19 @@ size_t ccl_sched_key_hasher::operator()(const ccl_sched_key& k) const
 
 ccl_master_sched* ccl_sched_cache::find(ccl_sched_key& key)
 {
-    sched_table_t::iterator it;
+    ccl_master_sched* sched = nullptr;
     {
         std::lock_guard<sched_cache_lock_t> lock{guard};
-        it = table.find(key);
+        sched_table_t::iterator it = table.find(key);
+        if (it != table.end())
+        {
+            sched = it->second;
+        }
     }
 
-    if (it != table.end())
+    if (sched)
     {
-        LOG_DEBUG("found sched in cache, ", it->second);
-        ccl_master_sched* sched = it->second;
+        LOG_DEBUG("found sched in cache, ",sched);
         if (env_data.cache_key != ccl_cache_key_full)
         {
             LOG_DEBUG("do check for found sched");
@@ -100,11 +103,11 @@ ccl_master_sched* ccl_sched_cache::find(ccl_sched_key& key)
     }
 }
 
-void ccl_sched_cache::add(ccl_sched_key& key, ccl_master_sched* sched)
+void ccl_sched_cache::add(ccl_sched_key&& key, ccl_master_sched* sched)
 {
     {
         std::lock_guard<sched_cache_lock_t> lock{guard};
-        auto emplace_result = table.emplace(key, sched);
+        auto emplace_result = table.emplace(std::move(key), sched);
         CCL_ASSERT(emplace_result.second);
     }
 

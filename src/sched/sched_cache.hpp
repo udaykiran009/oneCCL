@@ -27,9 +27,8 @@ private:
 public:
     ccl_sched_key() = default;
     ~ccl_sched_key() = default;
-    ccl_sched_key(const ccl_sched_key& other) = default;
-
-    ccl_sched_key& operator= (const ccl_sched_key& other) = delete;
+    ccl_sched_key(ccl_sched_key&& other) = default;
+    ccl_sched_key& operator= (ccl_sched_key&& other) = default;
 
     size_t get_hasher_result() const
     {
@@ -105,12 +104,13 @@ public:
     ccl_sched_cache& operator= (const ccl_sched_cache& other) = delete;
 
     ccl_master_sched* find(ccl_sched_key& key);
-    void add(ccl_sched_key& key, ccl_master_sched* sched);
+    void add(ccl_sched_key&& key, ccl_master_sched* sched);
 
 private:
     void remove_all();
     using sched_cache_lock_t = ccl_spinlock;
     sched_cache_lock_t guard{};
-    using sched_table_t = std::unordered_map<ccl_sched_key, ccl_master_sched *, ccl_sched_key_hasher>;
+    //TODO use smart ptr for ccl_master_sched in table
+    using sched_table_t = std::unordered_map<ccl_sched_key, ccl_master_sched* , ccl_sched_key_hasher>;
     sched_table_t table { CCL_SCHED_CACHE_INITIAL_BUCKET_COUNT };
 };

@@ -39,8 +39,8 @@ struct ccl_algorithm_selector_wrapper;
 
 struct alignas(CACHELINE_SIZE) ccl_global_data
 {
-    std::shared_ptr<ccl_comm> comm;
     std::unique_ptr<ccl_comm_id_storage> comm_ids;
+    std::shared_ptr<ccl_comm> comm;
     std::unique_ptr<ccl_atl_tag> atl_tag;
     std::unique_ptr<ccl_executor> executor;
     std::unique_ptr<ccl_coll_attr_t> default_coll_attr;
