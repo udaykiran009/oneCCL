@@ -1,14 +1,6 @@
 #include "sched/entry/entry.hpp"
 #include "common/log/log.hpp"
 
-void sched_entry::set_field_fn(ccl_sched_entry_field_id id,
-                               ccl_sched_entry_field_function_t fn,
-                               const void* ctx,
-                               bool update_once)
-{
-    pfields.add(id, fn, ctx, update_once);
-}
-
 void sched_entry::start()
 {
 #ifdef ENABLE_TIMERS
@@ -19,7 +11,6 @@ void sched_entry::start()
     LOG_DEBUG("starting entry ", name());
     CCL_ASSERT(status == ccl_sched_entry_status_not_started, "bad status ", status);
 
-    pfields.update();
     start_derived();
 
     if (status == ccl_sched_entry_status_complete)
@@ -127,12 +118,6 @@ void sched_entry::dump(std::stringstream& str,
 
 #endif
     dump_detail(str);
-}
-
-void* sched_entry::get_field_ptr(ccl_sched_entry_field_id id)
-{
-    CCL_FATAL("not supported");
-    return nullptr;
 }
 
 void sched_entry::make_barrier()

@@ -128,7 +128,6 @@ ccl_status_t ccl_coll_build_ring_rma_allreduce(ccl_sched* sched, ccl_buffer send
     size_t dtype_size = ccl_datatype_get_size(dtype);
     size_t idx = 0;
     ccl_buffer tmp_buf;
-    sched_entry* e = nullptr;
     comm_size = comm->size();
     rank = comm->rank();
 
@@ -189,31 +188,27 @@ ccl_status_t ccl_coll_build_ring_rma_allreduce(ccl_sched* sched, ccl_buffer send
 
     if (inplace)
     {
-        e = entry_factory::make_entry<send_entry>(sched, ccl_buffer(&ar_handler->tmp_buf_mr, sizeof(atl_mr_t)),
-                                                  sizeof(atl_mr_t), ccl_dtype_internal_char, ar_handler->src_peer);
-        e->set_field_fn(ccl_sched_entry_field_buf,
-                    rma_ring_allreduce_get_tmp_buf_mr,
-                    ar_handler);
+        send_entry *e = entry_factory::make_entry<send_entry>(sched, ccl_buffer(&ar_handler->tmp_buf_mr, sizeof(atl_mr_t)),
+                                                              sizeof(atl_mr_t), ccl_dtype_internal_char, ar_handler->src_peer);
+        e->set_field_fn<ccl_sched_entry_field_buf>(rma_ring_allreduce_get_tmp_buf_mr,
+                                                   ar_handler);
     }
     else
     {
-        e = entry_factory::make_entry<send_entry>(sched, ccl_buffer(&ar_handler->recv_buf_mr, sizeof(atl_mr_t)),
-                                                  sizeof(atl_mr_t), ccl_dtype_internal_char, ar_handler->src_peer);
-        e->set_field_fn(ccl_sched_entry_field_buf,
-                    rma_ring_allreduce_get_recv_buf_mr,
-                    ar_handler);
+        send_entry *e = entry_factory::make_entry<send_entry>(sched, ccl_buffer(&ar_handler->recv_buf_mr, sizeof(atl_mr_t)),
+                                                              sizeof(atl_mr_t), ccl_dtype_internal_char, ar_handler->src_peer);
+        e->set_field_fn<ccl_sched_entry_field_buf>(rma_ring_allreduce_get_recv_buf_mr,
+                                                   ar_handler);
     }
-    e = entry_factory::make_entry<send_entry>(sched, ccl_buffer(&ar_handler->recv_buf_mr, sizeof(atl_mr_t)),
-                                              sizeof(atl_mr_t), ccl_dtype_internal_char, ar_handler->src_peer);
-    e->set_field_fn(ccl_sched_entry_field_buf,
-                    rma_ring_allreduce_get_recv_buf_mr,
-                    ar_handler);
+    send_entry *e = entry_factory::make_entry<send_entry>(sched, ccl_buffer(&ar_handler->recv_buf_mr, sizeof(atl_mr_t)),
+                                                          sizeof(atl_mr_t), ccl_dtype_internal_char, ar_handler->src_peer);
+    e->set_field_fn<ccl_sched_entry_field_buf>(rma_ring_allreduce_get_recv_buf_mr,
+                                               ar_handler);
 
     e = entry_factory::make_entry<send_entry>(sched, ccl_buffer(&ar_handler->sync_flag_mr, sizeof(atl_mr_t)),
                                               sizeof(atl_mr_t), ccl_dtype_internal_char, ar_handler->src_peer);
-    e->set_field_fn(ccl_sched_entry_field_buf,
-                    rma_ring_allreduce_get_sync_flag_mr,
-                    ar_handler);
+    e->set_field_fn<ccl_sched_entry_field_buf>(rma_ring_allreduce_get_sync_flag_mr,
+                                               ar_handler);
 
     entry_factory::make_entry<recv_entry>(sched, ccl_buffer(&ar_handler->remote_rs_dst_buf_mr, sizeof(atl_mr_t)),
                                           sizeof(atl_mr_t), ccl_dtype_internal_char, ar_handler->dst_peer);
@@ -224,11 +219,10 @@ ccl_status_t ccl_coll_build_ring_rma_allreduce(ccl_sched* sched, ccl_buffer send
 
     if (ar_handler->wait_dst)
     {
-        e = entry_factory::make_entry<send_entry>(sched, ccl_buffer(ar_handler->dst_ready_flag_mr, sizeof(atl_mr_t)),
-                                                  sizeof(atl_mr_t), ccl_dtype_internal_char, ar_handler->dst_peer);
-        e->set_field_fn(ccl_sched_entry_field_buf,
-                    rma_ring_allreduce_get_dst_ready_flag_mr,
-                    ar_handler);
+        send_entry *e = entry_factory::make_entry<send_entry>(sched, ccl_buffer(ar_handler->dst_ready_flag_mr, sizeof(atl_mr_t)),
+                                                              sizeof(atl_mr_t), ccl_dtype_internal_char, ar_handler->dst_peer);
+        e->set_field_fn<ccl_sched_entry_field_buf>(rma_ring_allreduce_get_dst_ready_flag_mr,
+                                                   ar_handler);
         entry_factory::make_entry<recv_entry>(sched, ccl_buffer(&ar_handler->remote_dst_ready_flag_mr, sizeof(atl_mr_t)),
                                               sizeof(atl_mr_t), ccl_dtype_internal_char, ar_handler->src_peer);
     }
@@ -240,21 +234,19 @@ ccl_status_t ccl_coll_build_ring_rma_allreduce(ccl_sched* sched, ccl_buffer send
     {
         /* let src side to know that this rank (i.e. dst for src rank) is ready for write ops */
         ar_handler->dst_ready_value = 1;
-        e = entry_factory::make_entry<write_entry>(sched,
-                                                   ccl_buffer(&ar_handler->dst_ready_value,
-                                                              sizeof(uint64_t)),
-                                                   (atl_mr_t*)nullptr, /* src_mr */
-                                                   sizeof(uint64_t),
-                                                   ccl_dtype_internal_char,
-                                                   ar_handler->src_peer,
-                                                   (atl_mr_t*)nullptr, /* dst_mr */
-                                                   0 /* dst_buf_offset */);
-        e->set_field_fn(ccl_sched_entry_field_src_mr,
-                        rma_ring_allreduce_get_dst_ready_value_mr,
-                        ar_handler);
-        e->set_field_fn(ccl_sched_entry_field_dst_mr,
-                        rma_ring_allreduce_get_remote_dst_ready_flag_mr,
-                        ar_handler);
+        write_entry* entry = entry_factory::make_entry<write_entry>(sched,
+                                                                    ccl_buffer(&ar_handler->dst_ready_value,
+                                                                               sizeof(uint64_t)),
+                                                                    (atl_mr_t*)nullptr, /* src_mr */
+                                                                    sizeof(uint64_t),
+                                                                    ccl_dtype_internal_char,
+                                                                    ar_handler->src_peer,
+                                                                    (atl_mr_t*)nullptr, /* dst_mr */
+                                                                    0 /* dst_buf_offset */);
+        entry->set_field_fn<ccl_sched_entry_field_src_mr>(rma_ring_allreduce_get_dst_ready_value_mr,
+                                                          ar_handler);
+        entry->set_field_fn<ccl_sched_entry_field_dst_mr>(rma_ring_allreduce_get_remote_dst_ready_flag_mr,
+                                                          ar_handler);
 
         /* wait when dst side will be ready for write ops */
         entry_factory::make_entry<wait_value_entry>(sched, &(ar_handler->dst_ready_flag), 1,
@@ -282,41 +274,37 @@ ccl_status_t ccl_coll_build_ring_rma_allreduce(ccl_sched* sched, ccl_buffer send
         else
             src_buf = (idx == 0) ? send_buf : recv_buf;
 
-        e = entry_factory::make_entry<write_entry>(sched,
-                                                   src_buf + buf_offset,
-                                                   (atl_mr_t*)nullptr, /* src_mr */
-                                                   block_count,
-                                                   dtype,
-                                                   ar_handler->dst_peer,
-                                                   (atl_mr_t*)nullptr, /* dst_mr */
-                                                   buf_offset);
-        e->set_field_fn(ccl_sched_entry_field_src_mr,
-                        (inplace) ?
-                            rma_ring_allreduce_get_recv_buf_mr :
-                            ((idx == 0) ? rma_ring_allreduce_get_send_buf_mr : rma_ring_allreduce_get_recv_buf_mr),
-                        ar_handler);
-        e->set_field_fn(ccl_sched_entry_field_dst_mr,
-                        rma_ring_allreduce_get_remote_rs_dst_buf_mr,
-                        ar_handler);
+        write_entry* entry = entry_factory::make_entry<write_entry>(sched,
+                                                                    src_buf + buf_offset,
+                                                                    (atl_mr_t*)nullptr, /* src_mr */
+                                                                    block_count,
+                                                                    dtype,
+                                                                    ar_handler->dst_peer,
+                                                                    (atl_mr_t*)nullptr, /* dst_mr */
+                                                                    buf_offset);
+        entry->set_field_fn<ccl_sched_entry_field_src_mr>((inplace) ?
+                                                            rma_ring_allreduce_get_recv_buf_mr :
+                                                            ((idx == 0) ? rma_ring_allreduce_get_send_buf_mr : rma_ring_allreduce_get_recv_buf_mr),
+                                                          ar_handler);
+        entry->set_field_fn<ccl_sched_entry_field_dst_mr>(rma_ring_allreduce_get_remote_rs_dst_buf_mr,
+                                                          ar_handler);
 
         if (block_count * ccl_datatype_get_size(dtype) > global_data.executor->max_order_waw_size)
             sched->add_barrier();
 
-        e = entry_factory::make_entry<write_entry>(sched,
-                                                   ccl_buffer(&ar_handler->sync_flags[idx],
-                                                              sizeof(uint64_t)),
-                                                   (atl_mr_t*)nullptr,  /* src_mr */
-                                                   sizeof(uint64_t),
-                                                   ccl_dtype_internal_char,
-                                                   ar_handler->dst_peer,
-                                                   (atl_mr_t*)nullptr, /* dst_mr */
-                                                   0 /* dst_buf_offset */);
-        e->set_field_fn(ccl_sched_entry_field_src_mr,
-                        rma_ring_allreduce_get_sync_flags_mr,
-                        ar_handler);
-        e->set_field_fn(ccl_sched_entry_field_dst_mr,
-                        rma_ring_allreduce_get_remote_sync_flag_mr,
-                        ar_handler);
+        entry = entry_factory::make_entry<write_entry>(sched,
+                                                       ccl_buffer(&ar_handler->sync_flags[idx],
+                                                                  sizeof(uint64_t)),
+                                                       (atl_mr_t*)nullptr,  /* src_mr */
+                                                       sizeof(uint64_t),
+                                                       ccl_dtype_internal_char,
+                                                       ar_handler->dst_peer,
+                                                       (atl_mr_t*)nullptr, /* dst_mr */
+                                                       0 /* dst_buf_offset */);
+        entry->set_field_fn<ccl_sched_entry_field_src_mr>(rma_ring_allreduce_get_sync_flags_mr,
+                                                          ar_handler);
+        entry->set_field_fn<ccl_sched_entry_field_dst_mr>(rma_ring_allreduce_get_remote_sync_flag_mr,
+                                                          ar_handler);
 
         block_idx = (block_idx + comm_size - 1) % comm_size;
         block_count = main_block_count;
@@ -343,39 +331,35 @@ ccl_status_t ccl_coll_build_ring_rma_allreduce(ccl_sched* sched, ccl_buffer send
         buf_offset = main_block_count * dtype_size * block_idx;
 
         ccl_buffer src_buf = recv_buf;
-        e = entry_factory::make_entry<write_entry>(sched,
-                                                   src_buf + buf_offset,
-                                                   (atl_mr_t*)nullptr, /* src_mr */
-                                                   block_count,
-                                                   dtype,
-                                                   ar_handler->dst_peer,
-                                                   (atl_mr_t*)nullptr, /* dst_mr */
-                                                   buf_offset);
-        e->set_field_fn(ccl_sched_entry_field_src_mr,
-                        rma_ring_allreduce_get_recv_buf_mr,
-                        ar_handler);
-        e->set_field_fn(ccl_sched_entry_field_dst_mr,
-                        rma_ring_allreduce_get_remote_recv_buf_mr,
-                        ar_handler);
+        write_entry* entry = entry_factory::make_entry<write_entry>(sched,
+                                                                    src_buf + buf_offset,
+                                                                    (atl_mr_t*)nullptr, /* src_mr */
+                                                                    block_count,
+                                                                    dtype,
+                                                                    ar_handler->dst_peer,
+                                                                    (atl_mr_t*)nullptr, /* dst_mr */
+                                                                    buf_offset);
+        entry->set_field_fn<ccl_sched_entry_field_src_mr>(rma_ring_allreduce_get_recv_buf_mr,
+                                                          ar_handler);
+        entry->set_field_fn<ccl_sched_entry_field_dst_mr>(rma_ring_allreduce_get_remote_recv_buf_mr,
+                                                          ar_handler);
 
         if (block_count * ccl_datatype_get_size(dtype) > global_data.executor->max_order_waw_size)
             sched->add_barrier();
 
-        e = entry_factory::make_entry<write_entry>(sched,
-                                                   ccl_buffer(&ar_handler->sync_flags[flag_idx_offset + idx],
-                                                              sizeof(uint64_t)),
-                                                   (atl_mr_t*)nullptr, /* src_mr */
-                                                   sizeof(uint64_t),
-                                                   ccl_dtype_internal_char,
-                                                   ar_handler->dst_peer,
-                                                   (atl_mr_t*)nullptr, /* dst_mr */
-                                                   0 /* dst_buf_offset */);
-        e->set_field_fn(ccl_sched_entry_field_src_mr,
-                        rma_ring_allreduce_get_sync_flags_mr,
-                        ar_handler);
-        e->set_field_fn(ccl_sched_entry_field_dst_mr,
-                        rma_ring_allreduce_get_remote_sync_flag_mr,
-                        ar_handler);
+        entry = entry_factory::make_entry<write_entry>(sched,
+                                                       ccl_buffer(&ar_handler->sync_flags[flag_idx_offset + idx],
+                                                                  sizeof(uint64_t)),
+                                                       (atl_mr_t*)nullptr, /* src_mr */
+                                                       sizeof(uint64_t),
+                                                       ccl_dtype_internal_char,
+                                                       ar_handler->dst_peer,
+                                                       (atl_mr_t*)nullptr, /* dst_mr */
+                                                       0 /* dst_buf_offset */);
+        entry->set_field_fn<ccl_sched_entry_field_src_mr>(rma_ring_allreduce_get_sync_flags_mr,
+                                                          ar_handler);
+        entry->set_field_fn<ccl_sched_entry_field_dst_mr>(rma_ring_allreduce_get_remote_sync_flag_mr,
+                                                          ar_handler);
 
         block_idx = (block_idx + comm_size - 1) % comm_size;
 

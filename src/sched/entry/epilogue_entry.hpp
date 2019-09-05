@@ -2,7 +2,11 @@
 
 #include "sched/entry/entry.hpp"
 
-class epilogue_entry : public sched_entry
+class epilogue_entry : public sched_entry,
+                       public postponed_fields<epilogue_entry,
+                                               ccl_sched_entry_field_in_buf,
+                                               ccl_sched_entry_field_in_cnt,
+                                               ccl_sched_entry_field_in_dtype>
 {
 public:
     static constexpr const char* class_name() noexcept
@@ -24,34 +28,36 @@ public:
         out_buf(out_buf), expected_out_cnt(expected_out_cnt),
         out_dtype(out_dtype)
     {
-        pfields.add_available(ccl_sched_entry_field_in_buf);
-        pfields.add_available(ccl_sched_entry_field_in_cnt);
-        pfields.add_available(ccl_sched_entry_field_in_dtype);
     }
 
     void start_derived() override
     {
+        update_fields();
+
         size_t in_bytes = in_cnt * ccl_datatype_get_size(in_dtype);
         fn(in_buf.get_ptr(in_bytes), in_cnt, in_dtype->type, out_buf.get_ptr(), &out_cnt, out_dtype->type);
         CCL_ASSERT(expected_out_cnt == out_cnt, "incorrect values ", expected_out_cnt, " ", out_cnt);
         status = ccl_sched_entry_status_complete;
     }
 
-    void* get_field_ptr(ccl_sched_entry_field_id id) override
-    {
-        switch (id)
-        {
-            case ccl_sched_entry_field_in_buf: return &in_buf;
-            case ccl_sched_entry_field_in_cnt: return &in_cnt;
-            case ccl_sched_entry_field_in_dtype: return &in_dtype;
-            default: CCL_FATAL("unexpected id ", id);
-        }
-        return nullptr;
-    }
-
     const char* name() const override
     {
         return class_name();
+    }
+
+    ccl_buffer& get_field_ref(field_id_t<ccl_sched_entry_field_in_buf> id)
+    {
+        return in_buf;
+    }
+
+    size_t& get_field_ref(field_id_t<ccl_sched_entry_field_in_cnt> id)
+    {
+        return in_cnt;
+    }
+
+    ccl_datatype_internal_t& get_field_ref(field_id_t<ccl_sched_entry_field_in_dtype> id)
+    {
+        return in_dtype;
     }
 
 protected:

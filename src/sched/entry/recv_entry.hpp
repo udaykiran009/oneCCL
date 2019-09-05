@@ -4,7 +4,10 @@
 #include "sched/entry/entry.hpp"
 #include "sched/queue/queue.hpp"
 
-class recv_entry : public sched_entry
+class recv_entry : public sched_entry,
+                   public postponed_fields<recv_entry,
+                                           ccl_sched_entry_field_buf,
+                                           ccl_sched_entry_field_cnt>
 {
 public:
     static constexpr const char* class_name() noexcept
@@ -21,8 +24,6 @@ public:
                ccl_op_id_t op_id = 0) :
         sched_entry(sched), buf(buf), cnt(cnt), dtype(dtype), src(src), op_id(op_id)
     {
-        pfields.add_available(ccl_sched_entry_field_buf);
-        pfields.add_available(ccl_sched_entry_field_cnt);
     }
 
     ~recv_entry()
@@ -37,6 +38,8 @@ public:
 
     void start_derived() override
     {
+        update_fields();
+
         atl_tag = global_data.atl_tag->create(sched->coll_param.comm->id(), src, sched->sched_id, op_id);
         size_t bytes = cnt * ccl_datatype_get_size(dtype);
         LOG_DEBUG("RECV entry src ", src, ", tag ", atl_tag, ", req ", &req, ", bytes ", bytes);
@@ -63,21 +66,20 @@ public:
         }
     }
 
-    void* get_field_ptr(ccl_sched_entry_field_id id) override
-    {
-        switch (id)
-        {
-            case ccl_sched_entry_field_buf: return &buf;
-            case ccl_sched_entry_field_cnt: return &cnt;
-            default: CCL_FATAL("unexpected id ", id);
-        }
-    }
-
     const char* name() const override
     {
         return class_name();
     }
 
+    ccl_buffer& get_field_ref(field_id_t<ccl_sched_entry_field_buf> id)
+    {
+        return buf;
+    }
+
+    size_t& get_field_ref(field_id_t<ccl_sched_entry_field_cnt> id)
+    {
+        return cnt;
+    }
 protected:
     void dump_detail(std::stringstream& str) const override
     {

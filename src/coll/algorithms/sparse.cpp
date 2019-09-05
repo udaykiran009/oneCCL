@@ -240,7 +240,6 @@ ccl_status_t ccl_coll_build_sparse_allreduce_basic(ccl_sched* sched,
               "\nop ", ccl_reduction_to_str(op));
 
     ccl_status_t status = ccl_status_success;
-    sched_entry* e = nullptr;
 
     ccl_comm *comm = sched->coll_param.comm;
     size_t comm_size = comm->size();
@@ -370,9 +369,9 @@ ccl_status_t ccl_coll_build_sparse_allreduce_basic(ccl_sched* sched,
     for (size_t i = 0; i < comm_size - 1; i++)
     {
         /* send local data to the right neighbour */
-        e = entry_factory::make_entry<send_entry>(sched, ccl_buffer(), 0, ccl_dtype_internal_char, send_to);
-        e->set_field_fn(ccl_sched_entry_field_buf, sparse_get_send_buf, sa_handler);
-        e->set_field_fn(ccl_sched_entry_field_cnt, sparse_get_send_cnt, sa_handler);
+        send_entry* s_entry = entry_factory::make_entry<send_entry>(sched, ccl_buffer(), 0, ccl_dtype_internal_char, send_to);
+        s_entry->set_field_fn<ccl_sched_entry_field_buf>(sparse_get_send_buf, sa_handler);
+        s_entry->set_field_fn<ccl_sched_entry_field_cnt>(sparse_get_send_cnt, sa_handler);
         sched->add_barrier();
 
         /* has the left neighbour sent anything? */
@@ -383,9 +382,9 @@ ccl_status_t ccl_coll_build_sparse_allreduce_basic(ccl_sched* sched,
         entry_factory::make_entry<function_entry>(sched, sparse_before_recv, sa_handler);
         sched->add_barrier();
 
-        e = entry_factory::make_entry<recv_entry>(sched, ccl_buffer(), 0, ccl_dtype_internal_char, recv_from);
-        e->set_field_fn(ccl_sched_entry_field_buf, sparse_get_recv_buf, sa_handler);
-        e->set_field_fn(ccl_sched_entry_field_cnt, sparse_get_recv_cnt, sa_handler);
+        recv_entry* r_entry = entry_factory::make_entry<recv_entry>(sched, ccl_buffer(), 0, ccl_dtype_internal_char, recv_from);
+        r_entry->set_field_fn<ccl_sched_entry_field_buf>( sparse_get_recv_buf, sa_handler);
+        r_entry->set_field_fn<ccl_sched_entry_field_cnt>( sparse_get_recv_cnt, sa_handler);
         sched->add_barrier();
 
         entry_factory::make_entry<function_entry>(sched, sparse_after_recv, sa_handler);

@@ -140,7 +140,7 @@ void ccl_unordered_coll_manager::start_coordination(const std::string& match_id)
                                                        ccl_reduction_custom,
                                                        CCL_UNORDERED_COLL_COORDINATOR);
 
-    entry->set_field_fn(ccl_sched_entry_field_buf, [](const void* fn_ctx, void* field_ptr)
+    entry->set_field_fn<ccl_sched_entry_field_buf>([](const void* fn_ctx, void* field_ptr)
     {
         auto ctx = static_cast<ccl_unordered_coll_ctx*>(const_cast<void*>(fn_ctx));
         if (ctx->service_sched->coll_param.comm->rank() != CCL_UNORDERED_COLL_COORDINATOR)
@@ -153,7 +153,7 @@ void ccl_unordered_coll_manager::start_coordination(const std::string& match_id)
         return ccl_status_success;
     }, ctx);
 
-    entry->set_field_fn(ccl_sched_entry_field_cnt, [](const void* fn_ctx, void* field_ptr) -> ccl_status_t
+    entry->set_field_fn<ccl_sched_entry_field_cnt>([](const void* fn_ctx, void* field_ptr) -> ccl_status_t
     {
         auto ctx = static_cast<ccl_unordered_coll_ctx*>(const_cast<void*>(fn_ctx));
         auto count_ptr = static_cast<size_t*>(field_ptr);

@@ -62,7 +62,6 @@ ccl_status_t ccl_parallelizer::process(ccl_master_sched* sched)
     std::vector<size_t> offsets;
     auto& part_scheds = sched->partial_scheds;
     const size_t* recv_counts = nullptr;
-    sched_entry* e = nullptr;
 
     std::vector<ccl_buffer> ag_recv_bufs;
     size_t ag_recv_bytes = 0, ag_recv_count = 0;
@@ -137,7 +136,7 @@ ccl_status_t ccl_parallelizer::process(ccl_master_sched* sched)
     LOG_DEBUG("sched ", sched, ", coll_type ", ccl_coll_type_to_str(coll_type), ", part_count ", part_count);
 
     if (coll_type == ccl_coll_allgatherv &&
-        ag_algo == ccl_coll_allgatherv_multi_bcast && 
+        ag_algo == ccl_coll_allgatherv_multi_bcast &&
         ag_mbcast_algo == ccl_coll_bcast_direct)
     {
         counts.resize(coll_param->comm->size(), 0);
@@ -376,41 +375,41 @@ ccl_status_t ccl_parallelizer::process(ccl_master_sched* sched)
                                                           sizeof(ccl_datatype_t) + sizeof(size_t),
                                                           ccl_dtype_internal_char);
 
-                    e = entry_factory::make_entry<coll_entry>(part_scheds[idx].get(),
-                                                              ccl_coll_allreduce,
-                                                              ccl_buffer(), /* send_buf */
-                                                              ccl_buffer(), /* recv_buf */
-                                                              0, /* count */
-                                                              ccl_dtype_internal_none,
-                                                              coll_param->reduction);
+                    coll_entry* entry = entry_factory::make_entry<coll_entry>(part_scheds[idx].get(),
+                                                                              ccl_coll_allreduce,
+                                                                              ccl_buffer(), /* send_buf */
+                                                                              ccl_buffer(), /* recv_buf */
+                                                                              0, /* count */
+                                                                              ccl_dtype_internal_none,
+                                                                              coll_param->reduction);
 
-                   e->set_field_fn(ccl_sched_entry_field_send_buf,
-                                   ccl_parallelizer_prologue_get_buf, part_ctx, false);
-                   e->set_field_fn(ccl_sched_entry_field_recv_buf,
-                                   ccl_parallelizer_prologue_get_buf, part_ctx, false); // in-place
-                   e->set_field_fn(ccl_sched_entry_field_cnt,
-                                   ccl_parallelizer_prologue_get_count, part_ctx, false);
-                   e->set_field_fn(ccl_sched_entry_field_dtype,
-                                   ccl_parallelizer_prologue_get_dtype, part_ctx, false);
+                    entry->set_field_fn<ccl_sched_entry_field_send_buf>(ccl_parallelizer_prologue_get_buf,
+                                                                        part_ctx, false);
+                    entry->set_field_fn<ccl_sched_entry_field_recv_buf>(ccl_parallelizer_prologue_get_buf,
+                                                                        part_ctx, false); // in-place
+                    entry->set_field_fn<ccl_sched_entry_field_cnt>(ccl_parallelizer_prologue_get_count,
+                                                                   part_ctx, false);
+                    entry->set_field_fn<ccl_sched_entry_field_dtype>(ccl_parallelizer_prologue_get_dtype,
+                                                                     part_ctx, false);
                 }
 
                 if (!sched->coll_attr.epilogue_fn)
                 {
                     sched->sync_partial_scheds();
 
-                    e = entry_factory::make_entry<copy_entry>(part_scheds[0].get(),
-                                                              ccl_buffer(), /* in_buf */
-                                                              ccl_buffer(&(coll_param->recv_buf),
-                                                                         coll_param->count * dtype_size,
-                                                                         ccl_buffer_type::INDIRECT),
-                                                       0, /* count */
-                                                       ccl_dtype_internal_none);
-                    e->set_field_fn(ccl_sched_entry_field_in_buf,
-                                    ccl_parallelizer_prologue_get_buf, main_ctx, false);
-                    e->set_field_fn(ccl_sched_entry_field_cnt,
-                                    ccl_parallelizer_prologue_get_count, main_ctx, false);
-                    e->set_field_fn(ccl_sched_entry_field_dtype,
-                                    ccl_parallelizer_prologue_get_dtype, main_ctx, false);
+                    copy_entry* entry = entry_factory::make_entry<copy_entry>(part_scheds[0].get(),
+                                                                              ccl_buffer(), /* in_buf */
+                                                                              ccl_buffer(&(coll_param->recv_buf),
+                                                                                         coll_param->count * dtype_size,
+                                                                                         ccl_buffer_type::INDIRECT),
+                                                                              0, /* count */
+                                                                              ccl_dtype_internal_none);
+                    entry->set_field_fn<ccl_sched_entry_field_in_buf>(ccl_parallelizer_prologue_get_buf,
+                                                                      main_ctx, false);
+                    entry->set_field_fn<ccl_sched_entry_field_cnt>(ccl_parallelizer_prologue_get_count,
+                                                                   main_ctx, false);
+                    entry->set_field_fn<ccl_sched_entry_field_dtype>(ccl_parallelizer_prologue_get_dtype,
+                                                                     main_ctx, false);
                 }
             }
             else
@@ -435,7 +434,7 @@ ccl_status_t ccl_parallelizer::process(ccl_master_sched* sched)
             if (sched->coll_attr.epilogue_fn)
             {
                 sched->sync_partial_scheds();
-                e = entry_factory::make_entry<epilogue_entry>(part_scheds[0].get(),
+                epilogue_entry* entry = entry_factory::make_entry<epilogue_entry>(part_scheds[0].get(),
                                                               sched->coll_attr.epilogue_fn,
                                                               ccl_buffer(&(coll_param->recv_buf),
                                                                          coll_param->count * dtype_size,
@@ -449,12 +448,12 @@ ccl_status_t ccl_parallelizer::process(ccl_master_sched* sched)
                                                               dtype);
                 if (sched->coll_attr.prologue_fn)
                 {
-                    e->set_field_fn(ccl_sched_entry_field_in_buf,
-                                    ccl_parallelizer_prologue_get_buf, main_ctx, false);
-                    e->set_field_fn(ccl_sched_entry_field_in_cnt,
-                                    ccl_parallelizer_prologue_get_count, main_ctx, false);
-                    e->set_field_fn(ccl_sched_entry_field_in_dtype,
-                                    ccl_parallelizer_prologue_get_dtype, main_ctx, false);
+                    entry->set_field_fn<ccl_sched_entry_field_in_buf>(ccl_parallelizer_prologue_get_buf,
+                                                                      main_ctx, false);
+                    entry->set_field_fn<ccl_sched_entry_field_in_cnt>(ccl_parallelizer_prologue_get_count,
+                                                                      main_ctx, false);
+                    entry->set_field_fn<ccl_sched_entry_field_in_dtype>(ccl_parallelizer_prologue_get_dtype,
+                                                                        main_ctx, false);
                 }
             }
 
@@ -564,7 +563,7 @@ ccl_status_t ccl_parallelizer::process(ccl_master_sched* sched)
                          entry_factory::make_entry<recv_entry>(part_scheds[(my_rank+idx) % part_count].get(),
                                                                ag_recv_bufs[idx],
                                                                counts[idx],
-                                                               dtype, 
+                                                               dtype,
                                                                idx);
                          entry_factory::make_entry<send_entry>(part_scheds[(my_rank+idx) % part_count].get(),
                                                                send_seg,

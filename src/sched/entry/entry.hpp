@@ -4,7 +4,6 @@
 #include "common/datatype/datatype.hpp"
 #include "common/utils/utils.hpp"
 #include "sched/entry/postponed_fields.hpp"
-
 #include <chrono>
 #include <memory>
 
@@ -46,16 +45,10 @@ public:
     explicit sched_entry(ccl_sched* sched,
                          bool is_barrier = false) :
         sched(sched),
-        barrier(is_barrier),
-        pfields(this)
+        barrier(is_barrier)
     {}
 
     virtual ~sched_entry() {}
-
-    void set_field_fn(ccl_sched_entry_field_id id,
-                      ccl_sched_entry_field_function_t fn,
-                      const void* ctx,
-                      bool update_once = true);
     void start();
     virtual void start_derived() = 0;
 
@@ -68,7 +61,6 @@ public:
 
     void dump(std::stringstream& str,
               size_t idx) const;
-    virtual void* get_field_ptr(ccl_sched_entry_field_id id);
 
     void make_barrier();
     bool is_barrier() const;
@@ -89,7 +81,6 @@ protected:
 
     ccl_sched* sched = nullptr;
     bool barrier = false;
-    postponed_fields pfields;
     size_t start_idx = 0;
     ccl_sched_entry_status status = ccl_sched_entry_status_not_started;
     ccl_sched_entry_exec_mode exec_mode = ccl_sched_entry_exec_regular;

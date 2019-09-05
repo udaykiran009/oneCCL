@@ -29,7 +29,6 @@ set(CCL_SRC
     sched/queue/strict_queue.cpp
     sched/queue/queue.cpp
     sched/entry/entry.cpp
-    sched/entry/postponed_fields.cpp
     exec/exec.cpp
     exec/thread/base_thread.cpp
     exec/thread/listener.cpp

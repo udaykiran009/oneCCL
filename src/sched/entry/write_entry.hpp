@@ -3,7 +3,10 @@
 #include "sched/entry/entry.hpp"
 #include "sched/queue/queue.hpp"
 
-class write_entry : public sched_entry
+class write_entry : public sched_entry,
+                    public postponed_fields<write_entry,
+                                            ccl_sched_entry_field_src_mr,
+                                            ccl_sched_entry_field_dst_mr>
 {
 public:
     static constexpr const char* class_name() noexcept
@@ -24,8 +27,6 @@ public:
         cnt(cnt), dtype(dtype), dst(dst), dst_mr(dst_mr),
         dst_buf_off(dst_buf_off)
     {
-        pfields.add_available(ccl_sched_entry_field_src_mr);
-        pfields.add_available(ccl_sched_entry_field_dst_mr);
     }
 
     ~write_entry()
@@ -39,6 +40,8 @@ public:
 
     void start_derived() override
     {
+        update_fields();
+
         LOG_DEBUG("WRITE entry dst ", dst, ", req ", &req);
 
         CCL_THROW_IF_NOT(src_buf && src_mr && dst_mr, "incorrect values");
@@ -71,22 +74,20 @@ public:
             status = ccl_sched_entry_status_complete;
     }
 
-    void* get_field_ptr(ccl_sched_entry_field_id id) override
-    {
-        switch (id)
-        {
-            case ccl_sched_entry_field_src_mr: return &src_mr;
-            case ccl_sched_entry_field_dst_mr: return &dst_mr;
-            default: CCL_FATAL("unexpected id ", id);
-        }
-        return nullptr;
-    }
-
     const char* name() const override
     {
         return class_name();
     }
 
+    atl_mr_t*& get_field_ref(field_id_t<ccl_sched_entry_field_src_mr> id)
+    {
+        return src_mr;
+    }
+
+    atl_mr_t*& get_field_ref(field_id_t<ccl_sched_entry_field_dst_mr> id)
+    {
+        return dst_mr;
+    }
 protected:
     void dump_detail(std::stringstream& str) const override
     {

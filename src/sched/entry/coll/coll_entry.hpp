@@ -4,7 +4,13 @@
 #include "common/request/request.hpp"
 #include "sched/extra_sched.hpp"
 
-class coll_entry : public sched_entry
+class coll_entry : public sched_entry,
+                   public postponed_fields<coll_entry,
+                                           ccl_sched_entry_field_buf,
+                                           ccl_sched_entry_field_send_buf,
+                                           ccl_sched_entry_field_recv_buf,
+                                           ccl_sched_entry_field_cnt,
+                                           ccl_sched_entry_field_dtype>
 {
 public:
     static constexpr const char* class_name() noexcept
@@ -25,15 +31,12 @@ public:
           send_buf(send_buf), recv_buf(recv_buf), cnt(cnt),
           dtype(dtype), op(reduction_op), coll_sched(), root(root)
     {
-        pfields.add_available(ccl_sched_entry_field_buf);
-        pfields.add_available(ccl_sched_entry_field_send_buf);
-        pfields.add_available(ccl_sched_entry_field_recv_buf);
-        pfields.add_available(ccl_sched_entry_field_cnt);
-        pfields.add_available(ccl_sched_entry_field_dtype);
     }
 
     void start_derived() override
     {
+        update_fields();
+
         create_schedule();
         status = ccl_sched_entry_status_started;
     }
@@ -55,31 +58,35 @@ public:
                 status == ccl_sched_entry_status_complete_once);
     }
 
-    void* get_field_ptr(ccl_sched_entry_field_id id) override
-    {
-        switch (id)
-        {
-            case ccl_sched_entry_field_buf:
-                return &recv_buf;
-            case ccl_sched_entry_field_send_buf:
-                return &send_buf;
-            case ccl_sched_entry_field_recv_buf:
-                return &recv_buf;
-            case ccl_sched_entry_field_cnt:
-                return &cnt;
-            case ccl_sched_entry_field_dtype:
-                return &dtype;
-            default:
-                CCL_FATAL("unexpected id ", id);
-        }
-        return nullptr;
-    }
-
     const char* name() const override
     {
         return class_name();
     }
 
+    ccl_buffer& get_field_ref(field_id_t<ccl_sched_entry_field_buf> id)
+    {
+        return recv_buf;
+    }
+
+    ccl_buffer& get_field_ref(field_id_t<ccl_sched_entry_field_send_buf> id)
+    {
+        return send_buf;
+    }
+
+    ccl_buffer& get_field_ref(field_id_t<ccl_sched_entry_field_recv_buf> id)
+    {
+        return recv_buf;
+    }
+
+    size_t& get_field_ref(field_id_t<ccl_sched_entry_field_cnt> id)
+    {
+        return cnt;
+    }
+
+    ccl_datatype_internal_t& get_field_ref(field_id_t<ccl_sched_entry_field_dtype> id)
+    {
+        return dtype;
+    }
 protected:
     void dump_detail(std::stringstream& str) const override
     {
