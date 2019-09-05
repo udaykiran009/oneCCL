@@ -1,0 +1,16 @@
+#%Module1.0#####################################################################
+##
+## oneAPI Collective Communications Library modulefile
+##
+
+module-whatis	"Sets up the oneAPI Collective Communications Library environment"
+
+set                topdir                               %INSTALL_PATH%
+set                licence                              %LICENSE_PATH%
+
+setenv             CCL_ROOT                             $topdir
+setenv             CCL_ATL_TRANSPORT_PATH               $topdir/lib
+
+
+prepend-path       INTEL_LICENSE_FILE                   $licence
+prepend-path       LD_LIBRARY_PATH                      $topdir/lib

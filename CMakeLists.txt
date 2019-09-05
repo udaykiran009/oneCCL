@@ -44,6 +44,7 @@ set(CCL_INSTALL_INCLUDE "${CCL_COMMON_INSTALL_PREFIX}/${CMAKE_INSTALL_INCLUDEDIR
 set(CCL_INSTALL_DOC "${CCL_COMMON_INSTALL_PREFIX}/${CMAKE_INSTALL_DOCDIR}")
 set(CCL_INSTALL_BIN "${CCL_COMMON_INSTALL_PREFIX}/${CMAKE_INSTALL_BINDIR}")
 set(CCL_INSTALL_ENV "${CCL_COMMON_INSTALL_PREFIX}/env")
+set(CCL_INSTALL_MODULE "${CCL_COMMON_INSTALL_PREFIX}/env/modulefiles")
 set(CCL_INSTALL_EXAMPLES "${CMAKE_INSTALL_PREFIX}/examples")
 set(CCL_INSTALL_TESTS "${CMAKE_INSTALL_PREFIX}/tests/functional")
 
@@ -128,8 +129,10 @@ add_subdirectory(tests/functional)
 #generate & install cclvars.sh
 configure_file(cmake/cclvars.sh.in ${CMAKE_CURRENT_BINARY_DIR}/cclvars.sh @ONLY)
 configure_file(cmake/vars.sh.in ${CMAKE_CURRENT_BINARY_DIR}/vars.sh @ONLY)
+configure_file(cmake/ccl ${CMAKE_CURRENT_BINARY_DIR}/ccl @ONLY)
 install(PROGRAMS ${CMAKE_CURRENT_BINARY_DIR}/cclvars.sh DESTINATION ${CCL_INSTALL_BIN})
 install(PROGRAMS ${CMAKE_CURRENT_BINARY_DIR}/vars.sh DESTINATION ${CCL_INSTALL_ENV})
+install(PROGRAMS ${CMAKE_CURRENT_BINARY_DIR}/ccl DESTINATION ${CCL_INSTALL_MODULE})
 
 #CPack re-uses generated install rules and puts all targets into archive
 #archive creation, generates a target 'package'
