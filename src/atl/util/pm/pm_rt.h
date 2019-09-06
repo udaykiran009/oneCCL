@@ -40,8 +40,8 @@ struct pm_rt_desc {
     pm_rt_kvs_ops_t *kvs_ops;
 };
 
-static inline atl_status_t
-is_pm_ft_enabled()
+static inline int
+is_pm_resize_enabled()
 {
     if (type == PM_RT_RESIZABLE)
         return 1;

@@ -3,6 +3,7 @@
 #include <stdio.h>
 #include <assert.h>
 #include <math.h>
+#include <time.h>
 
 #include <unistd.h>
 #include <sys/syscall.h>
@@ -37,25 +38,49 @@
 #define ATL_OFI_DEBUG_PRINT(s, ...)
 #endif
 
-#define ATL_OFI_MAX_RETRY_COUNT 10000000
+#define ATL_OFI_TIMEOUT_SEC_ENV "ATL_OFI_TIMEOUT_SEC"
+#define ATL_OFI_DEFAULT_TIMEOUT_SEC 60
+#define ATL_OFI_MAX_RETRY_COUNT 10000
+typedef struct
+{
+    size_t timeout_sec;
+    int is_resize_enabled;
+} atl_ofi_glob_timeout_t;
 
-#define ATL_OFI_RETRY(func, comm, ret_val)                             \
-    do {                                                               \
-        size_t i = 0;                                                  \
-        do {                                                           \
-            ret_val = func;                                            \
-            if (ret_val == FI_SUCCESS)                                 \
-                break;                                                 \
-            if (ret_val != -FI_EAGAIN) {                               \
-                ATL_OFI_PRINT(#func "\n fails with ret %"PRId64", %s", \
-                                    ret_val, fi_strerror(ret_val));    \
-                assert(0);                                             \
-                break;                                                 \
-            }                                                          \
-            (void) atl_ofi_comm_poll(comm);                            \
-            i++;                                                       \
-        } while (ret_val == -FI_EAGAIN && i < ATL_OFI_MAX_RETRY_COUNT);   \
-    } while(0)
+static atl_ofi_glob_timeout_t glob_timeout;
+
+#define ATL_OFI_RETRY(func, comm, ret_val)                                 \
+    do {                                                                   \
+        time_t start = 0,                                                  \
+               end = 0;                                                    \
+        size_t inc = (glob_timeout.is_resize_enabled) ? 1 : 0;             \
+        do {                                                               \
+            size_t retry_count = 0;                                        \
+            if (glob_timeout.is_resize_enabled)                            \
+            {                                                              \
+                start = time(NULL);                                        \
+            }                                                              \
+            do {                                                           \
+                ret_val = func;                                            \
+                if (ret_val == FI_SUCCESS)                                 \
+                    break;                                                 \
+                if (ret_val != -FI_EAGAIN) {                               \
+                    ATL_OFI_PRINT(#func "\n fails with ret %"PRId64", %s", \
+                                        ret_val, fi_strerror(ret_val));    \
+                    assert(0);                                             \
+                    break;                                                 \
+                }                                                          \
+                (void) atl_ofi_comm_poll(comm);                            \
+                retry_count += inc;                                        \
+            } while (ret_val == -FI_EAGAIN &&                              \
+                     retry_count < ATL_OFI_MAX_RETRY_COUNT);               \
+            if (glob_timeout.is_resize_enabled)                            \
+            {                                                              \
+                end = time(NULL);                                          \
+            }                                                              \
+        } while (ret_val == -FI_EAGAIN &&                                  \
+                (end - start) < glob_timeout.timeout_sec);                 \
+    } while (0)
 
 #define ATL_OFI_PM_KEY "atl-ofi"
 
@@ -1340,7 +1365,17 @@ atl_status_t atl_ofi_init(int *argc, char ***argv, size_t *proc_idx, size_t *pro
         goto err_comms_init;
 
     atl_ofi_context->atl_desc.ops = &atl_ofi_ops;
-    atl_ofi_context->atl_desc.ops->is_ft_enabled = is_pm_ft_enabled();
+    glob_timeout.is_resize_enabled = is_pm_resize_enabled();
+    atl_ofi_context->atl_desc.ops->is_resize_enabled = glob_timeout.is_resize_enabled;
+    glob_timeout.timeout_sec = ATL_OFI_DEFAULT_TIMEOUT_SEC;
+    if (glob_timeout.is_resize_enabled)
+    {
+        char* ofi_timeout_sec_str = getenv(ATL_OFI_TIMEOUT_SEC_ENV);
+        if (ofi_timeout_sec_str)
+        {
+            glob_timeout.timeout_sec = strtol(ofi_timeout_sec_str, NULL, 10);
+        }
+    }
     atl_ofi_context->atl_desc.mr_ops = &atl_ofi_mr_ops;
     *atl_desc = &atl_ofi_context->atl_desc;
 

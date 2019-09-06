@@ -574,7 +574,7 @@ atl_status_t atl_mpi_init(int *argc, char ***argv, size_t *proc_idx, size_t *pro
     }
 
     atl_mpi_context->atl_desc.ops = &atl_mpi_ops;
-    atl_mpi_context->atl_desc.ops->is_ft_enabled = 0;
+    atl_mpi_context->atl_desc.ops->is_resize_enabled = 0;
     atl_mpi_context->atl_desc.mr_ops = &atl_mpi_mr_ops;
     *atl_desc = &atl_mpi_context->atl_desc;
 

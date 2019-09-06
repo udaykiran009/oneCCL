@@ -102,7 +102,7 @@ typedef struct atl_ops {
     atl_status_t (*update)(size_t *proc_idx, size_t *proc_count, atl_desc_t *desc, atl_comm_t** atl_comms);
     atl_status_t (*wait_notification)(atl_desc_t *desc);
     atl_status_t (*set_resize_function)(atl_resize_fn_t user_checker);
-    size_t is_ft_enabled;
+    size_t is_resize_enabled;
 } atl_ops_t;
 
 typedef struct atl_mr_ops {
@@ -226,7 +226,7 @@ atl_status_t atl_init(const char *transport_name, int *argc, char ***argv, size_
 
 static inline size_t is_ft_enabled(atl_desc_t *desc)
 {
-    return desc->ops->is_ft_enabled;
+    return desc->ops->is_resize_enabled;
 }
 
 static inline void atl_proc_idx(atl_desc_t *desc, size_t *proc_idx)
