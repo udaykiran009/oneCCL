@@ -1,4 +1,4 @@
 DeliveryName	InstallName	FileCheckSum	FileOrigin	Owner	FileFeature	FileInstallCondition	InstalledFilePermission	Redistributable	InstalledFileOwner	SymbolicLink
-<deliverydir>/l_license/LICENSE	<installdir><l_ccl_install_path>/license/LICENSE		external	Ksenya Kochanova		1	644	redistributable	root	<ccl_root>/LICENSE
-<deliverydir>/l_license/third-party-programs.txt	<installdir><l_ccl_install_path>/license/third-party-programs.txt		external	Ksenya Kochanova		1	644	redistributable	root	<ccl_root>/third-party-programs.txt
+<deliverydir>/l_license/license.txt	<installdir><l_ccl_install_path>/licensing/license.txt		external	Ksenya Kochanova		1	644	redistributable	root	<ccl_root>/LICENSE
+<deliverydir>/l_license/third-party-programs.txt	<installdir><l_ccl_install_path>/licensing/third-party-programs.txt		external	Ksenya Kochanova		1	644	redistributable	root	<ccl_root>/third-party-programs.txt
 #Intel Confidential
