@@ -11,6 +11,14 @@
 //      4.1.1 update_id()
 //      4.1.2 renew()
 //  4.2 reset_request()
+
+enum ccl_sched_in_bin_status
+{
+    ccl_sched_in_bin_none,
+    ccl_sched_in_bin_added,
+    ccl_sched_in_bin_erased
+};
+
 typedef ccl_status_t(*ccl_sched_finalize_fn_t) (ccl_sched*, const void*);
 
 class ccl_extra_sched;
@@ -53,6 +61,16 @@ public:
         return start_idx;
     }
 
+    void set_in_bin_status(ccl_sched_in_bin_status status)
+    {
+        in_bin_status = status;
+    }
+
+    ccl_sched_in_bin_status get_in_bin_status() const
+    {
+        return in_bin_status;
+    }
+
     /**
      * Reset runtime parameters and all entries
      */
@@ -86,6 +104,9 @@ public:
     ccl_sched_bin* bin = nullptr; /* valid only during execution */
     ccl_sched_queue* queue = nullptr; /* cached pointer to queue, valid even after execution */
     size_t start_idx = 0;  /* index to start */
+
+    /* to track status of schedule wrt execution bin, not atomic as updated by single thread in time */
+    ccl_sched_in_bin_status in_bin_status = ccl_sched_in_bin_none;
 
     using sched_entry_ptr = std::unique_ptr<sched_entry>;
     std::deque<sched_entry_ptr> entries{};

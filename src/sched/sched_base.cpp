@@ -2,7 +2,6 @@
 #include "common/global/global.hpp"
 #include "common/env/env.hpp"
 
-
 void ccl_sched_base::set_coll_attr(const ccl_coll_attr_t& attr)
 {
     coll_attr = attr;

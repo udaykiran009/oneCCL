@@ -1,11 +1,11 @@
 #pragma once
 
 #include "common/utils/spinlock.hpp"
+#include "exec/exec.hpp"
 #include "sched/sched.hpp"
 
 #include <deque>
 #include <unordered_map>
-#include <exec/exec.hpp>
 
 #define CCL_SCHED_QUEUE_INITIAL_BIN_COUNT (1024)
 
@@ -60,6 +60,7 @@ public:
             elems.emplace_back(sched);
         }
     }
+
     size_t size()
     {
         {
@@ -67,6 +68,7 @@ public:
             return elems.size();
         }
     }
+
     bool empty()
     {
         {
@@ -74,6 +76,7 @@ public:
             return elems.empty();
         }
     }
+
     ccl_sched* get(size_t idx)
     {
         {
@@ -83,7 +86,7 @@ public:
         }
     }
 
-    ccl_sched* remove(size_t idx, size_t &nextIdx)
+    ccl_sched* remove(size_t idx, size_t &next_idx)
     {
         ccl_sched* ret = nullptr;
         {
@@ -94,22 +97,9 @@ public:
             std::swap(elems[size - 1], elems[idx]);
             elems.resize(size - 1);
             CCL_ASSERT(elems.size() == (size - 1));
-            nextIdx = idx;
+            next_idx = idx;
         }
         return ret;
-    }
-
-    size_t erase(size_t idx)
-    {
-        {
-            std::lock_guard<sched_queue_lock_t> lock(elem_guard);
-            size_t size = elems.size();
-            CCL_ASSERT(idx < size);
-            std::swap(elems[size - 1], elems[idx]);
-            elems.resize(size - 1);
-            CCL_ASSERT(elems.size() == (size - 1));
-        }
-        return idx;
     }
 
 private:
@@ -147,7 +137,6 @@ public:
     ccl_sched_queue* get_queue() { return queue; }
 
     void add(ccl_sched* sched);
-    size_t erase(size_t idx);
     size_t erase(size_t idx, size_t &next);
     ccl_sched* get(size_t idx) { return sched_list.get(idx); }
 

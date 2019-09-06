@@ -35,15 +35,6 @@ size_t ccl_sched_bin::erase(size_t idx, size_t& next_idx)
     return size;
 }
 
-size_t ccl_sched_bin::erase(size_t idx)
-{
-    size_t next_idx = 0;
-    ccl_sched* sched = sched_list.remove(idx, next_idx);
-    CCL_ASSERT(sched);
-    sched->bin = nullptr;
-    return next_idx;
-}
-
 ccl_sched_queue::ccl_sched_queue(std::vector<atl_comm_t*> comm_ctxs)
     : comm_ctxs(comm_ctxs)
 {
@@ -90,6 +81,8 @@ void ccl_sched_queue::add_internal(ccl_sched* sched, bool need_to_lock /* = true
     }
     CCL_ASSERT(sched);
 
+    sched->set_in_bin_status(ccl_sched_in_bin_added);
+
     LOG_DEBUG("sched ", sched, ", priority ", priority);
 
     ccl_sched_bin* bin = nullptr;
@@ -134,8 +127,6 @@ void ccl_sched_queue::add_internal(ccl_sched* sched, bool need_to_lock /* = true
         LOG_DEBUG("didn't find bin, emplaced new one, max_priority ", max_priority);
     }
 
-    sched->set_in_bin_status(ccl_sched_in_bin_added);
-
     CCL_ASSERT(bin);
 }
 
@@ -176,7 +167,7 @@ size_t ccl_sched_queue::erase(ccl_sched_bin* bin, size_t idx)
                     }
                     cached_max_priority_bin = &(it->second);
                 }
-            } // or do nothing, because somebody added new element in bin why we getting a lock
+            } // or do nothing, because somebody added new element in bin while we getting a lock
         }
     }
 

@@ -28,13 +28,6 @@ enum ccl_sched_add_mode
     ccl_sched_add_back
 };
 
-enum ccl_sched_in_bin_status
-{
-    ccl_sched_in_bin_none,
-    ccl_sched_in_bin_added,
-    ccl_sched_in_bin_erased
-};
-
 struct ccl_sched_buffer_handler
 {
     ccl_buffer buffer;
@@ -74,25 +67,12 @@ struct ccl_sched_base
         add_mode = mode;
     }
 
-    void set_in_bin_status(ccl_sched_in_bin_status status)
-    {
-        in_bin_status = status;
-    }
-
-    ccl_sched_in_bin_status get_in_bin_status()
-    {
-        return in_bin_status;
-    }
-
     ccl_coll_param coll_param{};
 
     ccl_coll_attr coll_attr{};
 
     /* sequence number of the schedule in the communicator */
     ccl_sched_id_t sched_id = 0;
-
-    /* to track status of schedule wrt execution bin, updated by worker thread only */
-    ccl_sched_in_bin_status in_bin_status = ccl_sched_in_bin_none;
     
     // TODO: memory should be hidden from public access
     ccl_sched_memory memory;

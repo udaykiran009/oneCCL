@@ -75,7 +75,9 @@ ccl_master_sched* ccl_sched_cache::find(ccl_sched_key& key)
             CCL_ASSERT(sched->coll_attr.reduction_fn == key.reduction_fn, "reduction_fn");
             CCL_ASSERT(sched->coll_param.ctype == key.ctype, "ctype");
             CCL_ASSERT(sched->coll_param.dtype->type == key.dtype, "dtype");
-            CCL_ASSERT(sched->coll_param.comm == key.comm, "comm");
+            
+            /* TODO: postpone caching for unordered colls to have consistent coll_param.comm and key.comm */
+            //CCL_ASSERT(sched->coll_param.comm == key.comm, "comm");
 
             if (sched->coll_param.ctype == ccl_coll_allgatherv)
                 CCL_ASSERT(sched->coll_param.send_count == key.count1, "count");
