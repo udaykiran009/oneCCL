@@ -38,25 +38,25 @@
 #define ATL_OFI_DEBUG_PRINT(s, ...)
 #endif
 
-#define ATL_OFI_TIMEOUT_SEC_ENV "ATL_OFI_TIMEOUT_SEC"
+#define ATL_OFI_TIMEOUT_SEC_ENV     "ATL_OFI_TIMEOUT_SEC"
+
 #define ATL_OFI_DEFAULT_TIMEOUT_SEC 60
-#define ATL_OFI_MAX_RETRY_COUNT 10000
+#define ATL_OFI_MAX_RETRY_COUNT     10000
+
 typedef struct
 {
     size_t timeout_sec;
     int is_resize_enabled;
-} atl_ofi_glob_timeout_t;
+} atl_ofi_global_data_t;
 
-static atl_ofi_glob_timeout_t glob_timeout;
+static atl_ofi_global_data_t global_data;
 
 #define ATL_OFI_RETRY(func, comm, ret_val)                                 \
     do {                                                                   \
-        time_t start = 0,                                                  \
-               end = 0;                                                    \
-        size_t inc = (glob_timeout.is_resize_enabled) ? 1 : 0;             \
+        time_t start = 0, end = 0;                                         \
         do {                                                               \
             size_t retry_count = 0;                                        \
-            if (glob_timeout.is_resize_enabled)                            \
+            if (global_data.is_resize_enabled)                             \
             {                                                              \
                 start = time(NULL);                                        \
             }                                                              \
@@ -71,15 +71,15 @@ static atl_ofi_glob_timeout_t glob_timeout;
                     break;                                                 \
                 }                                                          \
                 (void) atl_ofi_comm_poll(comm);                            \
-                retry_count += inc;                                        \
+                retry_count += 1;                                          \
             } while (ret_val == -FI_EAGAIN &&                              \
                      retry_count < ATL_OFI_MAX_RETRY_COUNT);               \
-            if (glob_timeout.is_resize_enabled)                            \
+            if (global_data.is_resize_enabled)                             \
             {                                                              \
                 end = time(NULL);                                          \
             }                                                              \
         } while (ret_val == -FI_EAGAIN &&                                  \
-                (end - start) < glob_timeout.timeout_sec);                 \
+                (end - start) < global_data.timeout_sec);                  \
     } while (0)
 
 #define ATL_OFI_PM_KEY "atl-ofi"
@@ -1365,17 +1365,25 @@ atl_status_t atl_ofi_init(int *argc, char ***argv, size_t *proc_idx, size_t *pro
         goto err_comms_init;
 
     atl_ofi_context->atl_desc.ops = &atl_ofi_ops;
-    glob_timeout.is_resize_enabled = is_pm_resize_enabled();
-    atl_ofi_context->atl_desc.ops->is_resize_enabled = glob_timeout.is_resize_enabled;
-    glob_timeout.timeout_sec = ATL_OFI_DEFAULT_TIMEOUT_SEC;
-    if (glob_timeout.is_resize_enabled)
+    global_data.is_resize_enabled = is_pm_resize_enabled();
+    atl_ofi_context->atl_desc.ops->is_resize_enabled = global_data.is_resize_enabled;
+
+    /* by default don't use timeout for retry operations and just break by retry_count */
+    global_data.timeout_sec = 0;
+
+    if (global_data.is_resize_enabled)
     {
-        char* ofi_timeout_sec_str = getenv(ATL_OFI_TIMEOUT_SEC_ENV);
-        if (ofi_timeout_sec_str)
+        char* timeout_sec_env = getenv(ATL_OFI_TIMEOUT_SEC_ENV);
+        if (timeout_sec_env)
         {
-            glob_timeout.timeout_sec = strtol(ofi_timeout_sec_str, NULL, 10);
+            global_data.timeout_sec = strtol(timeout_sec_env, NULL, 10);
+        }
+        else
+        {
+            global_data.timeout_sec = ATL_OFI_DEFAULT_TIMEOUT_SEC;
         }
     }
+
     atl_ofi_context->atl_desc.mr_ops = &atl_ofi_mr_ops;
     *atl_desc = &atl_ofi_context->atl_desc;
 

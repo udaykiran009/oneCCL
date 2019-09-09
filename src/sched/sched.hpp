@@ -45,8 +45,6 @@ public:
 
     bool is_strict_order_satisfied();
 
-    void start_entries();
-
     void do_progress();
 
     void complete();
@@ -99,8 +97,6 @@ public:
 
     ccl_request* start_subsched(ccl_extra_sched* subsched);
 
-
-    bool first_progress = true;
     ccl_sched_bin* bin = nullptr; /* valid only during execution */
     ccl_sched_queue* queue = nullptr; /* cached pointer to queue, valid even after execution */
     size_t start_idx = 0;  /* index to start */

@@ -13,8 +13,8 @@ class ccl_sched;
 
 enum ccl_sched_entry_exec_mode
 {
-    ccl_sched_entry_exec_regular = 0,
-    ccl_sched_entry_exec_once = 1
+    ccl_sched_entry_exec_regular,
+    ccl_sched_entry_exec_once
 };
 
 enum ccl_sched_entry_status
@@ -30,12 +30,12 @@ enum ccl_sched_entry_status
 
 enum ccl_condition
 {
-    ccl_condition_equal = 0,
-    ccl_condition_not_equal = 1,
-    ccl_condition_less = 2,
-    ccl_condition_greater = 3,
-    ccl_condition_less_or_equal = 4,
-    ccl_condition_greater_or_equal = 5
+    ccl_condition_equal,
+    ccl_condition_not_equal,
+    ccl_condition_less,
+    ccl_condition_greater,
+    ccl_condition_less_or_equal,
+    ccl_condition_greater_or_equal
 };
 
 class alignas(CACHELINE_SIZE) sched_entry
@@ -49,11 +49,9 @@ public:
     {}
 
     virtual ~sched_entry() {}
-    void start();
-    virtual void start_derived() = 0;
 
-    void update();
-    virtual void update_derived();
+    void do_progress();
+    bool is_completed();
 
     virtual void reset(size_t start_idx);
 
@@ -74,8 +72,10 @@ public:
 
 protected:
 
+    virtual void start() = 0;
+    virtual void update();
+
     virtual void dump_detail(std::stringstream& str) const;
-    void check_exec_mode();
     const char* entry_status_to_str(ccl_sched_entry_status status) const;
     void update_status(atl_status_t atl_status);
 
@@ -84,11 +84,4 @@ protected:
     size_t start_idx = 0;
     ccl_sched_entry_status status = ccl_sched_entry_status_not_started;
     ccl_sched_entry_exec_mode exec_mode = ccl_sched_entry_exec_regular;
-
-#ifdef ENABLE_TIMERS
-    using timer_type = std::chrono::system_clock;
-    timer_type::duration exec_time{};
-    timer_type::time_point start_time{};
-    timer_type::time_point complete_time{};
-#endif
 };

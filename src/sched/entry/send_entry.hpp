@@ -28,11 +28,10 @@ public:
         dst(dst), rank(0), op_id(op_id)
     {
         CCL_ASSERT(global_data.comm, "cannot create send_entry, global_data.com is null");
-
         rank = global_data.comm->rank();
     }
 
-    void start_derived() override
+    void start() override
     {
         update_fields();
 
@@ -46,7 +45,7 @@ public:
         update_status(atl_status);
     }
 
-    void update_derived() override
+    void update() override
     {
         int req_status;
         atl_status_t atl_status = atl_comm_check(sched->bin->get_comm_ctx(), &req_status, &req);
@@ -58,7 +57,7 @@ public:
 
         if (req_status)
         {
-            LOG_DEBUG("SEND entry done dst ", dst, ", rank ", rank);
+            LOG_DEBUG("SEND entry done, dst ", dst, ", rank ", rank);
             status = ccl_sched_entry_status_complete;
         }
     }
@@ -77,6 +76,7 @@ public:
     {
         return cnt;
     }
+
 protected:
     void dump_detail(std::stringstream& str) const override
     {

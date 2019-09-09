@@ -30,7 +30,7 @@ public:
     {
     }
 
-    void start_derived() override
+    void start() override
     {
         update_fields();
 

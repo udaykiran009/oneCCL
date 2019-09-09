@@ -1,6 +1,6 @@
 #include "coll/algorithms/algorithms.hpp"
 #include "coll/algorithms/sparse.hpp"
-#include "sched/entry_factory.hpp"
+#include "sched/entry/factory/entry_factory.hpp"
 
 ccl_status_t sparse_before_recv(const void* ctx)
 {

@@ -18,7 +18,7 @@ public:
     {
     }
 
-    void start_derived() override
+    void start() override
     {
         fn(ctx);
         status = ccl_sched_entry_status_complete;

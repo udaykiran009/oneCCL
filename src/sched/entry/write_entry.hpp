@@ -38,7 +38,7 @@ public:
         }
     }
 
-    void start_derived() override
+    void start() override
     {
         update_fields();
 
@@ -60,7 +60,7 @@ public:
         update_status(atl_status);
     }
 
-    void update_derived() override
+    void update() override
     {
         int req_status;
         atl_status_t atl_status = atl_comm_check(sched->bin->get_comm_ctx(), &req_status, &req);
@@ -71,7 +71,10 @@ public:
         }
 
         if (req_status)
+        {
+            LOG_DEBUG("WRITE entry done, dst ", dst);
             status = ccl_sched_entry_status_complete;
+        }
     }
 
     const char* name() const override
@@ -88,6 +91,7 @@ public:
     {
         return dst_mr;
     }
+
 protected:
     void dump_detail(std::stringstream& str) const override
     {

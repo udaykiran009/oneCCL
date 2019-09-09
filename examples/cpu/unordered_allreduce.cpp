@@ -11,7 +11,7 @@ ccl_request_t start_allreduce_with_tensor_name(const std::string& tensor_name,
                                                const float* send_buff,
                                                float* recv_buff)
 {
-    coll_attr.to_cache = false;
+    coll_attr.to_cache = true;
     coll_attr.match_id = tensor_name.c_str();
 
     ccl_request_t req = nullptr;

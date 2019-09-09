@@ -1,5 +1,5 @@
 #include "coll/algorithms/algorithms.hpp"
-#include "sched/entry_factory.hpp"
+#include "sched/entry/factory/entry_factory.hpp"
 
 ccl_status_t ccl_coll_build_direct_allreduce(ccl_sched *sched,
                                              ccl_buffer send_buf,

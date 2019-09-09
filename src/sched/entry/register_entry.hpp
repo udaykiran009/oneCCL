@@ -21,7 +21,7 @@ public:
     {
     }
 
-    void start_derived() override
+    void start() override
     {
         LOG_DEBUG("REGISTER entry size ", size, ", ptr ", ptr);
         CCL_THROW_IF_NOT(size > 0 && ptr && mr, "incorrect input, size ", size, ", ptr ", ptr, " mr ", mr);

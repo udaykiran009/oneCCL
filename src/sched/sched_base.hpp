@@ -46,10 +46,10 @@ struct ccl_sched_memory
 static size_t lifo_priority = 0;
 struct ccl_sched_base
 {
-    void set_coll_attr(const ccl_coll_attr_t& attr);
+    void set_coll_attr(const ccl_coll_attr& attr);
 
-    void update_coll_param(ccl_coll_param& param);
-    void update_coll_attr(const ccl_coll_attr_t* attr);
+    void update_coll_param(const ccl_coll_param& param);
+    void update_coll_attr(const ccl_coll_attr& attr);
 
     size_t get_priority() const;
     ccl_buffer alloc_buffer(size_t bytes);

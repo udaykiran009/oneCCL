@@ -1,11 +1,12 @@
 #include "common/global/global.hpp"
-#include "sched/entry_factory.hpp"
+#include "common/utils/sync_object.hpp"
+#include "parallelizer/parallelizer.hpp"
+#include "sched/cache/cache.hpp"
+#include "sched/cache/key.hpp"
+#include "sched/entry/factory/entry_factory.hpp"
 #include "sched/extra_sched.hpp"
 #include "sched/master_sched.hpp"
-#include "sched/sync_object.hpp"
 #include "sched/queue/queue.hpp"
-#include "parallelizer/parallelizer.hpp"
-#include "sched/sched_cache.hpp"
 
 ccl_master_sched::~ccl_master_sched()
 {
@@ -130,55 +131,50 @@ void ccl_master_sched::dump(std::ostream &out) const
 }
 
 
-ccl_master_sched::ccl_master_sched_ptr ccl_master_sched::create(ccl_coll_param& coll_param,
-                                                                const ccl_coll_attr_t* coll_attr,
-                                                                ccl_sched_key&& key)
+ccl_master_sched::ccl_master_sched_ptr ccl_master_sched::create(const ccl_coll_param& param,
+                                                                const ccl_coll_attr& attr,
+                                                                bool postpone_caching)
 {
-    //Check contract at first
-    const ccl_coll_attr_t* attr = coll_attr ? coll_attr : global_data.default_coll_attr.get();
-    CCL_THROW_IF_NOT(coll_param.ctype == ccl_coll_allreduce ||
-                     !(attr->prologue_fn || attr->epilogue_fn || attr->reduction_fn),
+    /* check contract at first */
+    CCL_THROW_IF_NOT(param.ctype == ccl_coll_allreduce ||
+                     !(attr.prologue_fn || attr.epilogue_fn || attr.reduction_fn),
                      "for now only allreduce supports prologue/epilogue/custom_reduction functionality");
 
-    if (attr->to_cache && (!attr->match_id || !attr->match_id[0]))
-    {
-        LOG_ERROR("collective caching is requested but no match_id is provided");
-    }
+    CCL_THROW_IF_NOT(env_data.atl_transport == ccl_atl_ofi || !(attr.reduction_fn),
+                     "for now only OFI transport supports custom_reduction functionality");
 
-    bool use_cache = is_attr_cached(*attr);
+    ccl_sched_key key;
     ccl_master_sched_ptr sched = nullptr;
-    if (use_cache)
+
+    if (attr.to_cache)
     {
-        key.prologue_fn = attr->prologue_fn;
-        key.epilogue_fn = attr->epilogue_fn;
-        key.reduction_fn = attr->reduction_fn;
-        key.match_id = attr->match_id;
+        key.set(param, attr);
         sched = global_data.sched_cache->find(key);
-        if(sched)
+        if (sched)
         {
             /* update some parameters and attributes in existing schedule
                as they could be changed since previous call */
-            sched->update_coll_param(coll_param);
+            sched->update_coll_param(param);
             sched->update_coll_attr(attr);
 
             LOG_DEBUG("found sched, reuse ", sched, ", type ",
-                  ccl_coll_type_to_str(sched->coll_param.ctype));
+                      ccl_coll_type_to_str(sched->coll_param.ctype));
         }
     }
 
     if (!sched)
     {
-        std::unique_ptr<ccl_master_sched> new_sched(new ccl_master_sched(coll_param));
+        std::unique_ptr<ccl_master_sched> new_sched(new ccl_master_sched(param));
         LOG_DEBUG("didn't find sched, create new one ", new_sched.get(), ", type ",
                   ccl_coll_type_to_str(new_sched->coll_param.ctype));
 
-        new_sched->set_coll_attr(*attr);
+        new_sched->set_coll_attr(attr);
         new_sched->alloc_buffers_for_sycl_copy();
 
-        if (new_sched->coll_attr.to_cache)
+        if (attr.to_cache && !postpone_caching)
         {
             global_data.sched_cache->add(std::move(key), new_sched.get());
-            //no use 'key' anymore, because it's moved
+            // no use 'key' anymore, because it's moved
         }
 
         sched = new_sched.release();

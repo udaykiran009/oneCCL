@@ -1,15 +1,10 @@
 #pragma once
 
-#include "common/utils/spinlock.hpp"
 #include "comp/comp.hpp"
-#include "sched/master_sched.hpp"
 
-#include <cstring>
 #include <unordered_map>
 
-#define CCL_SCHED_CACHE_INITIAL_BUCKET_COUNT (4096)
-
-enum ccl_cache_key
+enum ccl_cache_key_type
 {
     ccl_cache_key_full,
     ccl_cache_key_match_id,
@@ -17,7 +12,7 @@ enum ccl_cache_key
     ccl_cache_key_last_value
 };
 
-const char* ccl_cache_key_to_str(ccl_cache_key key);
+const char* ccl_cache_key_type_to_str(ccl_cache_key_type type);
 
 class ccl_sched_key
 {
@@ -29,6 +24,10 @@ public:
     ~ccl_sched_key() = default;
     ccl_sched_key(ccl_sched_key&& other) = default;
     ccl_sched_key& operator= (ccl_sched_key&& other) = default;
+
+    ccl_sched_key(const ccl_coll_param& param, const ccl_coll_attr& attr);
+    void set(const ccl_coll_param& param, const ccl_coll_attr& attr);
+    bool check(const ccl_coll_param& param, const ccl_coll_attr& attr);
 
     size_t get_hasher_result() const
     {
@@ -89,28 +88,4 @@ public:
 
 private:
     std::hash<std::string> string_hasher{};
-};
-
-class ccl_sched_cache
-{
-public:
-    ccl_sched_cache() = default;
-    ~ccl_sched_cache()
-    {
-        remove_all();
-    }
-
-    ccl_sched_cache(const ccl_sched_cache& other) = delete;
-    ccl_sched_cache& operator= (const ccl_sched_cache& other) = delete;
-
-    ccl_master_sched* find(ccl_sched_key& key);
-    void add(ccl_sched_key&& key, ccl_master_sched* sched);
-
-private:
-    void remove_all();
-    using sched_cache_lock_t = ccl_spinlock;
-    sched_cache_lock_t guard{};
-    //TODO use smart ptr for ccl_master_sched in table
-    using sched_table_t = std::unordered_map<ccl_sched_key, ccl_master_sched* , ccl_sched_key_hasher>;
-    sched_table_t table { CCL_SCHED_CACHE_INITIAL_BUCKET_COUNT };
 };

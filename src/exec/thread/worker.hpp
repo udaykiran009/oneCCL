@@ -30,9 +30,6 @@ public:
 
     virtual ccl_status_t do_work(size_t& processed_count);
 
-    std::atomic<bool> should_lock;
-    std::atomic<bool> is_locked;
-
     void clear_queue();
 
     void reset_queue(std::unique_ptr<ccl_sched_queue>&& queue)
@@ -41,11 +38,18 @@ public:
         sched_queue = std::move(queue);
     }
 
-    ccl_status_t process_strict_sched_queue();
-    ccl_status_t process_sched_queue(size_t& processed_count);
+    std::atomic<bool> should_lock;
+    std::atomic<bool> is_locked;
 
 private:
+
+    ccl_status_t process_strict_sched_queue();
+    ccl_status_t process_sched_queue(size_t& processed_count, bool process_all);
+    ccl_status_t process_sched_bin(ccl_sched_bin* bin, size_t& processed_count);
+
     ccl_executor* executor = nullptr;
+
+    size_t do_work_counter = 0;
 
     std::unique_ptr<ccl_strict_sched_queue> strict_sched_queue;
     std::unique_ptr<ccl_sched_queue> sched_queue;

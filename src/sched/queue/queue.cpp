@@ -119,6 +119,7 @@ void ccl_sched_queue::add_internal(ccl_sched* sched, bool need_to_lock /* = true
                                            std::forward_as_tuple(this, comm_ctx, priority, sched));
         CCL_ASSERT(emplace_result.second);
         bin = &(emplace_result.first->second);
+
         if (priority >= max_priority)
         {
             max_priority = priority;
@@ -177,6 +178,18 @@ size_t ccl_sched_queue::erase(ccl_sched_bin* bin, size_t idx)
 ccl_sched_bin* ccl_sched_queue::peek()
 {
     return cached_max_priority_bin;
+}
+
+std::vector<ccl_sched_bin*> ccl_sched_queue::peek_all()
+{
+    std::lock_guard<sched_queue_lock_t> lock{bins_guard};
+    std::vector<ccl_sched_bin*> result;
+    result.reserve(bins.size());
+    for (auto& bin : bins)
+    {
+        result.emplace_back(&(bin.second));
+    }
+    return result;
 }
 
 void ccl_sched_queue::clear()

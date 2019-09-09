@@ -18,7 +18,7 @@ public:
     {
     }
 
-    void start_derived() override
+    void start() override
     {
         LOG_DEBUG("DEREGISTER entry sched ", sched, " mr_count ", mr_list.size());
         atl_status_t atl_status;

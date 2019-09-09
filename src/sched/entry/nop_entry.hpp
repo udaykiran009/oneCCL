@@ -14,7 +14,7 @@ public:
     {
     }
 
-    void start_derived() override
+    void start() override
     {}
 
     const char* name() const override

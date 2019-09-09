@@ -1,8 +1,8 @@
-#include "sched/sched.hpp"
-#include "sched/entry_factory.hpp"
 #include "common/utils/tree.hpp"
+#include "sched/entry/factory/entry_factory.hpp"
+#include "sched/sched.hpp"
 
-static void bcast_tree(const bin_tree& tree,
+static void bcast_tree(const ccl_bin_tree& tree,
                        ccl_sched* sched,
                        ccl_buffer buffer,
                        size_t count,
@@ -27,7 +27,7 @@ static void bcast_tree(const bin_tree& tree,
     }
 }
 
-static void reduce_tree(const bin_tree& tree,
+static void reduce_tree(const ccl_bin_tree& tree,
                         ccl_sched* sched,
                         ccl_buffer buffer,
                         size_t count,
@@ -44,7 +44,6 @@ static void reduce_tree(const bin_tree& tree,
     if (tree.right() != -1)
     {
         LOG_DEBUG("recv_reduce right ", tree.right());
-
         entry_factory::make_entry<recv_reduce_entry>(sched, buffer, count, nullptr, dtype, reduction,
                                                      static_cast<size_t>(tree.right()), ccl_buffer(), op_id);
     }
@@ -59,7 +58,7 @@ static void reduce_tree(const bin_tree& tree,
     }
 }
 
-static void reduce_bcast_tree(const bin_tree& tree,
+static void reduce_bcast_tree(const ccl_bin_tree& tree,
                               ccl_sched* sched,
                               ccl_buffer buffer,
                               size_t count,

@@ -12,7 +12,7 @@ public:
         return "master_sched";
     }
 
-    ccl_master_sched(ccl_coll_param& coll_param)
+    ccl_master_sched(const ccl_coll_param& coll_param)
         : ccl_sched_base(coll_param),
           ccl_request(),
           partial_scheds()
@@ -50,9 +50,9 @@ public:
 
     //factory method (TODO: wrap into smart-pointer)
     using ccl_master_sched_ptr = ccl_master_sched*;
-    static ccl_master_sched_ptr create(ccl_coll_param& coll_param,
-                                       const ccl_coll_attr_t* coll_attr,
-                                       ccl_sched_key&& key);
+    static ccl_master_sched_ptr create(const ccl_coll_param& param,
+                                       const ccl_coll_attr& attr,
+                                       bool postpone_caching);
 private:
     void prepare_partial_scheds();
 };

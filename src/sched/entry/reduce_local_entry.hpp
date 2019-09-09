@@ -28,7 +28,7 @@ public:
                           "custom reduction requires user provided callback");
     }
 
-    void start_derived() override
+    void start() override
     {
         size_t bytes = in_cnt * ccl_datatype_get_size(dtype);
         ccl_status_t comp_status = ccl_comp_reduce(in_buf.get_ptr(bytes), in_cnt,

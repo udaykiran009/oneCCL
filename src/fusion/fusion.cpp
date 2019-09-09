@@ -1,7 +1,7 @@
 #include "exec/exec.hpp"
 #include "fusion/fusion.hpp"
-#include "sched/entry_factory.hpp"
-#include "sched/sched_cache.hpp"
+#include "sched/cache/cache.hpp"
+#include "sched/entry/factory/entry_factory.hpp"
 
 #define CCL_FUSION_CHECK_SCHEDS_ITERS (1024)
 

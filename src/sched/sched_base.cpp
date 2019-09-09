@@ -2,12 +2,12 @@
 #include "common/global/global.hpp"
 #include "common/env/env.hpp"
 
-void ccl_sched_base::set_coll_attr(const ccl_coll_attr_t& attr)
+void ccl_sched_base::set_coll_attr(const ccl_coll_attr& attr)
 {
     coll_attr = attr;
 }
 
-void ccl_sched_base::update_coll_param(ccl_coll_param& param)
+void ccl_sched_base::update_coll_param(const ccl_coll_param& param)
 {
 #ifdef ENABLE_SYCL
     if (param.stream && (param.stream->get_type() == ccl_stream_sycl))
@@ -37,11 +37,11 @@ void ccl_sched_base::update_coll_param(ccl_coll_param& param)
     }
 }
 
-void ccl_sched_base::update_coll_attr(const ccl_coll_attr_t* attr)
+void ccl_sched_base::update_coll_attr(const ccl_coll_attr& attr)
 {
     if (env_data.priority_mode == ccl_priority_direct)
     {
-        coll_attr.priority = attr->priority;
+        coll_attr.priority = attr.priority;
     }
 }
 

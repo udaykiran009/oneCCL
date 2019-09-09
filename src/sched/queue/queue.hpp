@@ -25,20 +25,23 @@ class ccl_sched_list
 public:
     friend class ccl_sched_bin;
     friend class ccl_sched_queue;
+
     ccl_sched_list()
     {
         elems.reserve(CCL_BUCKET_INITIAL_ELEMS_COUNT);
     }
+
     ccl_sched_list(ccl_sched* sched)
     {
         elems.reserve(CCL_BUCKET_INITIAL_ELEMS_COUNT);
         elems.push_back(sched);
     }
+
     ~ccl_sched_list()
     {
         if (elems.size() != 0 && !global_data.is_ft_enabled)
         {
-            LOG_ERROR("unexpected elem_count ", elems.size(), "expected 0");
+            LOG_ERROR("unexpected elem_count ", elems.size(), ", expected 0");
         }
 
         for (size_t i = 0; i < elems.size(); i++)
@@ -167,6 +170,8 @@ public:
      * @return a pointer to the bin with the highest priority or nullptr if there is no bins with content
      */
     ccl_sched_bin* peek();
+
+    std::vector<ccl_sched_bin*> peek_all();
 
 private:
 

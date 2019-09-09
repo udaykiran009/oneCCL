@@ -5,6 +5,7 @@
 
 #define CCL_WORKER_CHECK_CANCEL_ITERS (32768)
 #define CCL_WORKER_CHECK_UPDATE_ITERS (16384)
+#define CCL_WORKER_PROCESS_ALL_ITERS  (32768)
 
 static void* ccl_worker_func(void* args);
 
@@ -34,11 +35,14 @@ void ccl_worker::add(ccl_sched* sched)
 
 ccl_status_t ccl_worker::do_work(size_t& processed_count)
 {
+    do_work_counter++;
+
     auto ret = process_strict_sched_queue();
     if (ret != ccl_status_success)
         return ret;
 
-    ret = process_sched_queue(processed_count);
+    ret = process_sched_queue(processed_count,
+                              (do_work_counter % CCL_WORKER_PROCESS_ALL_ITERS) ? false : true);
     if (ret != ccl_status_success)
         return ret;
 
@@ -88,13 +92,33 @@ ccl_status_t ccl_worker::process_strict_sched_queue()
     return ccl_status_success;
 }
 
-ccl_status_t ccl_worker::process_sched_queue(size_t& completed_sched_count)
+ccl_status_t ccl_worker::process_sched_queue(size_t& completed_sched_count, bool process_all)
 {
     completed_sched_count = 0;
-
-    ccl_sched_bin* bin = sched_queue->peek();
-    if (!bin)
+    if (process_all)
+    {
+        auto bins = sched_queue->peek_all();
+        size_t completed_sched_count_local = 0;
+        for (auto& bin : bins)
+        {
+            process_sched_bin(bin, completed_sched_count_local);
+            completed_sched_count += completed_sched_count_local;
+        }
+        LOG_DEBUG("process_all, completed_sched_count ", completed_sched_count);
         return ccl_status_success;
+    }
+    else
+    {
+        ccl_sched_bin* bin = sched_queue->peek();
+        if (!bin)
+            return ccl_status_success;
+        return process_sched_bin(bin, completed_sched_count);
+    }
+}
+
+ccl_status_t ccl_worker::process_sched_bin(ccl_sched_bin* bin, size_t& completed_sched_count)
+{
+    completed_sched_count = 0;
 
     size_t sched_count = 0;
     size_t bin_size = bin->size();
@@ -115,7 +139,6 @@ ccl_status_t ccl_worker::process_sched_queue(size_t& completed_sched_count)
     }
 
     // iterate through the scheds store in the bin
-    completed_sched_count = 0;
     for (size_t sched_idx = 0; sched_idx < bin_size; )
     {
         ccl_sched* sched = bin->get(sched_idx);
@@ -174,6 +197,7 @@ static void* ccl_worker_func(void* args)
         try
         {
             ret = worker->do_work(processed_count);
+
             if (global_data.is_ft_enabled &&
                 unlikely(ret == ccl_status_blocked_due_to_resize || iter_count % CCL_WORKER_CHECK_UPDATE_ITERS == 0))
             {

@@ -27,7 +27,7 @@ public:
     {
     }
 
-    void start_derived() override
+    void start() override
     {
         size_t in_bytes = in_cnt * ccl_datatype_get_size(in_dtype);
         fn(in_buf.get_ptr(in_bytes), in_cnt, in_dtype->type, out_buf, out_cnt, out_dtype, out_dtype_size);

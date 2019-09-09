@@ -24,7 +24,7 @@ public:
     {
     }
 
-    void start_derived() override
+    void start() override
     {
         size_t bytes = cnt * ccl_datatype_get_size(dtype);
         auto out_buf_acc = static_cast<ccl_sycl_buffer_t*>(out_buf.get_ptr(bytes))->get_access<cl::sycl::access::mode::discard_write>();

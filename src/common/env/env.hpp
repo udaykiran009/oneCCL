@@ -3,7 +3,7 @@
 #include "coll/coll.hpp"
 #include "common/utils/utils.hpp"
 #include "common/utils/yield.hpp"
-#include "sched/sched_cache.hpp"
+#include "sched/cache/cache.hpp"
 
 #include <string>
 #include <vector>
@@ -94,7 +94,7 @@ struct alignas(CACHELINE_SIZE) ccl_env_data
     size_t spin_count;
     ccl_yield_type yield_type;
     size_t max_short_size;
-    ccl_cache_key cache_key;
+    ccl_cache_key_type cache_key_type;
 };
 
 extern ccl_env_data env_data;

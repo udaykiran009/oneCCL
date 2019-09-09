@@ -16,18 +16,17 @@ typedef cl::sycl::buffer<char, 1> ccl_sycl_buffer_t;
 class ccl_sched;
 class ccl_request;
 
-bool is_attr_cached(const ccl_coll_attr_t& c_attr) noexcept;
-
 struct ccl_coll_attr
 {
     ccl_coll_attr() = default;
     ccl_coll_attr(const ccl_coll_attr&) = default;
     ccl_coll_attr& operator= (const ccl_coll_attr&) = default;
-    ccl_coll_attr(ccl_coll_attr&&) = default;
-    ccl_coll_attr& operator= (ccl_coll_attr&&) = default;
+    ccl_coll_attr(const ccl_coll_attr_t* attr);
+    ccl_coll_attr& operator= (const ccl_coll_attr_t* attr);
 
-    ccl_coll_attr(const ccl_coll_attr_t& c_attr);
-    ccl_coll_attr& operator= (const ccl_coll_attr_t& c_attr);
+    ccl_coll_attr(ccl_coll_attr&&) = delete;
+    ccl_coll_attr& operator= (ccl_coll_attr&&) = delete;
+
     ccl_prologue_fn_t prologue_fn;
     ccl_epilogue_fn_t epilogue_fn;
     ccl_reduction_fn_t reduction_fn;

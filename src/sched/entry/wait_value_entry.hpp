@@ -22,14 +22,14 @@ public:
     {
     }
 
-    void start_derived() override
+    void start() override
     {
         LOG_DEBUG("WAIT_VALUE entry current_val ", *ptr, ", expected_val ", expected_value);
         status = ccl_sched_entry_status_started;
-        update_derived();
+        update();
     }
 
-    void update_derived() override
+    void update() override
     {
         if (condition == ccl_condition_greater_or_equal && *ptr >= expected_value)
         {

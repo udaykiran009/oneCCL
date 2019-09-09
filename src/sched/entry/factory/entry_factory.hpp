@@ -1,10 +1,7 @@
 #pragma once
 
-#include "entry_factory.h"
+#include "sched/entry/factory/entry_factory.h"
 
-#include "sched/sched.hpp"
-#include "sched/entry_factory.hpp"
-#include "sched/sync_object.hpp"
 #include "sched/entry/send_entry.hpp"
 #include "sched/entry/recv_entry.hpp"
 #include "sched/entry/write_entry.hpp"
@@ -32,6 +29,8 @@
 #include "sched/entry/sycl_copy_device_to_host_entry.hpp"   
 #include "sched/entry/sycl_copy_host_to_device_entry.hpp"
 #endif /* ENABLE_SYCL */
+
+#include "sched/sched.hpp"
 
 namespace entry_factory
 {

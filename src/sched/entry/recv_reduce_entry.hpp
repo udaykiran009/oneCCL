@@ -39,7 +39,7 @@ public:
         }
     }
 
-    void start_derived() override
+    void start() override
     {
         atl_tag = global_data.atl_tag->create(sched->coll_param.comm->id(), src, sched->sched_id, op_id);
         size_t bytes = in_cnt * ccl_datatype_get_size(dtype);
@@ -51,7 +51,7 @@ public:
         update_status(atl_status);
     }
 
-    void update_derived() override
+    void update() override
     {
         int req_status;
         atl_status_t atl_status = atl_comm_check(sched->bin->get_comm_ctx(), &req_status, &req);

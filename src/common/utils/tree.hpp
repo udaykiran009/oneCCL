@@ -1,12 +1,16 @@
 #pragma once
 
-class bin_tree
+#include <ostream>
+#include <stddef.h>
+#include <sys/types.h>
+
+class ccl_bin_tree
 {
 public:
 
-    bin_tree(size_t comm_size,
-             size_t rank,
-             bool is_main = true) : comm_size(comm_size), rank(rank), is_main(is_main)
+    ccl_bin_tree(size_t comm_size,
+                 size_t rank,
+                 bool is_main = true) : comm_size(comm_size), rank(rank), is_main(is_main)
     {
         calc_height(is_main);
 
@@ -40,8 +44,8 @@ public:
         }
     }
 
-    bin_tree(const bin_tree& other) = default;
-    bin_tree& operator=(const bin_tree& other) = default;
+    ccl_bin_tree(const ccl_bin_tree& other) = default;
+    ccl_bin_tree& operator=(const ccl_bin_tree& other) = default;
 
     ssize_t left() const
     {
@@ -58,16 +62,16 @@ public:
         return p;
     }
 
-    bin_tree copy_with_new_root(size_t new_root) const
+    ccl_bin_tree copy_with_new_root(size_t new_root) const
     {
-        bin_tree copy(*this);
+        ccl_bin_tree copy(*this);
         ssize_t root = static_cast<ssize_t>(new_root);
 
         //if current node will become a new root or node was a default root - the tree must be reconstruced
         if (copy.rank == root || copy.rank == default_root)
         {
             //create part of tree with the default root
-            copy = bin_tree(static_cast<size_t>(comm_size), copy.rank == default_root ? root : default_root, is_main);
+            copy = ccl_bin_tree(static_cast<size_t>(comm_size), copy.rank == default_root ? root : default_root, is_main);
             copy.rank = root;
         }
 
@@ -78,7 +82,7 @@ public:
     }
 
     friend std::ostream& operator<<(std::ostream& str,
-                                    const bin_tree& tree)
+                                    const ccl_bin_tree& tree)
     {
         str << "parent " << tree.p <<
             " -> rank " << tree.rank <<
@@ -212,7 +216,7 @@ public:
      * Even ranks numbers are always inner nodes, odd rank numbers are always leaves
      * @return binary tree t1
      */
-    const bin_tree& T1() const
+    const ccl_bin_tree& T1() const
     {
         return t1;
     }
@@ -222,7 +226,7 @@ public:
      * Even ranks numbers are always leaves, odd rank numbers are always inner nodes
      * @return binary tree t2
      */
-    const bin_tree& T2() const
+    const ccl_bin_tree& T2() const
     {
         return t2;
     }
@@ -234,11 +238,11 @@ public:
 
 private:
 
-    ccl_double_tree(bin_tree t1,
-                    bin_tree t2) : t1(t1), t2(t2)
+    ccl_double_tree(ccl_bin_tree t1,
+                    ccl_bin_tree t2) : t1(t1), t2(t2)
     {
     }
 
-    bin_tree t1;
-    bin_tree t2;
+    ccl_bin_tree t1;
+    ccl_bin_tree t2;
 };

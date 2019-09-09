@@ -1,9 +1,9 @@
 #pragma once
 
 #include "common/env/env.hpp"
+#include "common/utils/sync_object.hpp"
 #include "common/utils/yield.hpp"
 #include "sched/entry/entry.hpp"
-#include "sched/sync_object.hpp"
 
 #include <memory>
 
@@ -22,12 +22,12 @@ public:
     {
     }
 
-    void start_derived() override
+    void start() override
     {
         status = ccl_sched_entry_status_started;
     }
 
-    void update_derived() override
+    void update() override
     {
         if ((sched->get_start_idx() == start_idx) && should_visit)
         {

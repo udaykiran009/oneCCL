@@ -25,7 +25,8 @@ set(CCL_SRC
     sched/sched.cpp
     sched/master_sched.cpp
     sched/sched_base.cpp
-    sched/sched_cache.cpp
+    sched/cache/cache.cpp
+    sched/cache/key.cpp
     sched/queue/strict_queue.cpp
     sched/queue/queue.cpp
     sched/entry/entry.cpp

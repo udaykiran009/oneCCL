@@ -1,5 +1,5 @@
 #include "common/global/global.hpp"
-#include "sched/entry_factory.hpp"
+#include "sched/entry/factory/entry_factory.hpp"
 #include "unordered_coll/unordered_coll.hpp"
 
 #include <cstring>
@@ -264,7 +264,16 @@ void ccl_unordered_coll_manager::run_postponed_scheds(const std::string& match_i
 
 void ccl_unordered_coll_manager::run_sched(ccl_master_sched* sched, ccl_comm* comm) const
 {
+    /* caching and starting were postponed, now it is time to make them */
+
     sched->coll_param.comm = comm;
+
+    if (sched->coll_attr.to_cache)
+    {
+        ccl_sched_key key(sched->coll_param, sched->coll_attr);
+        global_data.sched_cache->add(std::move(key), sched);
+    }
+
     for (size_t part_idx = 0; part_idx < sched->partial_scheds.size(); ++part_idx)
     {
         sched->partial_scheds[part_idx]->coll_param.comm = comm;

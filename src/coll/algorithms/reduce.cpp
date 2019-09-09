@@ -1,5 +1,5 @@
 #include "coll/algorithms/algorithms.hpp"
-#include "sched/entry_factory.hpp"
+#include "sched/entry/factory/entry_factory.hpp"
 
 /* An implementation of Rabenseifner's reduce algorithm (see
    http://www.hlrs.de/mpi/myreduce.html).

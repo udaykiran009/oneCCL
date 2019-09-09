@@ -81,11 +81,11 @@ struct postponed_fields
 
     template<ccl_sched_entry_field_id new_id>
     void set_field_fn(ccl_sched_entry_field_function_t fn,
-             const void* ctx,
-             bool update_once = true)
+                      const void* ctx,
+                      bool update_once = true)
     {
         auto &field = ccl_tuple_get<postponed_field<new_id>>(fields);
-        CCL_ASSERT(!field.empty(),
+        CCL_ASSERT(field.empty(),
                    "duplicated field_id %d", new_id);
         field.fn = fn;
         field.ctx = ctx;
@@ -96,7 +96,7 @@ struct postponed_fields
 
     void update_fields()
     {
-        if(!empty_fields)
+        if (!empty_fields)
         {
             ccl_tuple_for_each(fields, field_functor<Entry* >(static_cast<Entry*>(this)));
         }

@@ -34,7 +34,7 @@ ccl_env_data env_data =
     .spin_count = 100,
     .yield_type = ccl_yield_pause,
     .max_short_size = 4096,
-    .cache_key = ccl_cache_key_match_id
+    .cache_key_type = ccl_cache_key_match_id
 };
 
 int ccl_env_2_int(const char* env_name, int& val)
@@ -143,6 +143,11 @@ void ccl_env_parse()
     ccl_env_parse_yield_type();
     ccl_env_2_size_t(CCL_MAX_SHORT_SIZE, env_data.max_short_size);
     ccl_env_parse_cache_key();
+
+    if (env_data.enable_unordered_coll && env_data.atl_transport != ccl_atl_ofi)
+    {
+        CCL_THROW("unordered collectives are supported for OFI transport only");
+    }
 }
 
 void ccl_env_print()
@@ -190,7 +195,7 @@ void ccl_env_print()
     LOG_INFO(CCL_SPIN_COUNT, ": ", env_data.spin_count);
     LOG_INFO(CCL_YIELD, ": ", ccl_yield_type_to_str(env_data.yield_type));
     LOG_INFO(CCL_MAX_SHORT_SIZE, ": ", env_data.max_short_size);
-    LOG_INFO(CCL_CACHE_KEY, ": ", ccl_cache_key_to_str(env_data.cache_key));
+    LOG_INFO(CCL_CACHE_KEY, ": ", ccl_cache_key_type_to_str(env_data.cache_key_type));
     LOG_INFO(CCL_ATL_TRANSPORT, ": ", ccl_atl_transport_to_str(env_data.atl_transport));
 }
 
@@ -361,9 +366,9 @@ int ccl_env_parse_cache_key()
     if (env)
     {
         if (strcmp(env, "full") == 0)
-            env_data.cache_key = ccl_cache_key_full;
+            env_data.cache_key_type = ccl_cache_key_full;
         else if (strcmp(env, "match_id") == 0)
-            env_data.cache_key = ccl_cache_key_match_id;
+            env_data.cache_key_type = ccl_cache_key_match_id;
         else
         {
             CCL_THROW("unknown ", CCL_CACHE_KEY, " ", env);

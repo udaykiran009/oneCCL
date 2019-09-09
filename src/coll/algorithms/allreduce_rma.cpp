@@ -1,6 +1,6 @@
 #include "coll/algorithms/algorithms.hpp"
 #include "coll/algorithms/allreduce_rma.hpp"
-#include "sched/entry_factory.hpp"
+#include "sched/entry/factory/entry_factory.hpp"
 #include "exec/exec.hpp"
 
 ccl_status_t rma_ring_allreduce_reset_sync_flag(const void* ctx)

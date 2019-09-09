@@ -33,7 +33,7 @@ public:
     {
     }
 
-    void start_derived() override
+    void start() override
     {
         update_fields();
 
@@ -41,7 +41,7 @@ public:
         status = ccl_sched_entry_status_started;
     }
 
-    void update_derived() override
+    void update() override
     {
         CCL_THROW_IF_NOT(coll_sched, "empty request");
         if (coll_sched->is_completed())
@@ -54,8 +54,7 @@ public:
 
     bool is_strict_order_satisfied() override
     {
-        return (status == ccl_sched_entry_status_complete ||
-                status == ccl_sched_entry_status_complete_once);
+        return is_completed();
     }
 
     const char* name() const override

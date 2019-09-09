@@ -28,7 +28,7 @@ public:
         sched_fill_function(work_sched.get());
     }
 
-    void start_derived() override
+    void start() override
     {
         if (status == ccl_sched_entry_status_not_started)
         {
@@ -49,7 +49,7 @@ public:
         }
     }
 
-    void update_derived() override
+    void update() override
     {
         work_sched->do_progress();
         if (work_sched->start_idx == work_sched->entries.size())

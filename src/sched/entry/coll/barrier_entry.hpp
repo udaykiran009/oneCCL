@@ -16,7 +16,7 @@ public:
     {
     }
 
-    void start_derived() override
+    void start() override
     {
         LOG_DEBUG("BARRIER entry req ", &req);
 
@@ -29,7 +29,7 @@ public:
             status = ccl_sched_entry_status_started;
     }
 
-    void update_derived() override
+    void update() override
     {
         int req_status;
         atl_status_t atl_status = atl_comm_check(sched->bin->get_comm_ctx(), &req_status, &req);

@@ -20,20 +20,21 @@ public:
     {
     }
 
-    void start_derived() override
+    void start() override
     {
         atl_tag = global_data.atl_tag->create(sched->coll_param.comm->id(), src, sched->sched_id, op_id);
         LOG_DEBUG("PROBE entry src ", src, ", tag ", atl_tag);
         status = ccl_sched_entry_status_started;
     }
 
-    void update_derived() override
+    void update() override
     {
         int found = 0;
         size_t len = 0;
         atl_status_t atl_status = atl_comm_probe(sched->bin->get_comm_ctx(), src, atl_tag, &found, &len);
 
         update_status(atl_status);
+
         if (status == ccl_sched_entry_status_started && found)
         {
             LOG_DEBUG("PROBE entry done src ", src, ", tag ", atl_tag, " recv_len ", len);

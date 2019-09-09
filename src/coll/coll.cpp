@@ -8,33 +8,28 @@
 #include "fusion/fusion.hpp"
 #include "unordered_coll/unordered_coll.hpp"
 
-bool is_attr_cached(const ccl_coll_attr_t& c_attr) noexcept
+ccl_coll_attr::ccl_coll_attr(const ccl_coll_attr_t* attr)
 {
-    return (c_attr.to_cache and c_attr.match_id and c_attr.match_id[0]);
+    if (!attr)
+        *this = global_data.default_coll_attr.get();
+    else
+        *this = attr;
 }
 
-ccl_coll_attr::ccl_coll_attr(const ccl_coll_attr_t& c_attr) :
-  prologue_fn(c_attr.prologue_fn),
-  epilogue_fn(c_attr.epilogue_fn),
-  reduction_fn(c_attr.reduction_fn),
-  priority(c_attr.priority),
-  synchronous(c_attr.synchronous),
-  to_cache(c_attr.to_cache),
-  match_id(c_attr.match_id ? c_attr.match_id : "")
+ccl_coll_attr& ccl_coll_attr::operator= (const ccl_coll_attr_t* attr)
 {
-    to_cache = is_attr_cached(c_attr);
-}
+    prologue_fn = attr->prologue_fn;
+    epilogue_fn = attr->epilogue_fn;
+    reduction_fn = attr->reduction_fn;
+    priority = attr->priority;
+    synchronous = attr->synchronous;
+    to_cache = attr->to_cache && attr->match_id && attr->match_id[0];
+    match_id = (attr->match_id ? attr->match_id : "");
 
-ccl_coll_attr& ccl_coll_attr::operator= (const ccl_coll_attr_t& c_attr)
-{
-  prologue_fn = c_attr.prologue_fn;
-  epilogue_fn = c_attr.epilogue_fn;
-  reduction_fn = c_attr.reduction_fn;
-  priority = c_attr.priority;
-  synchronous = c_attr.synchronous;
-  to_cache = is_attr_cached(c_attr);
-  match_id = (c_attr.match_id ? c_attr.match_id : "");
-  return *this;
+    if (to_cache != attr->to_cache)
+        LOG_INFO("collective caching is requested but no match_id is provided, disable caching");
+
+    return *this;
 }
 
 const char* ccl_coll_type_to_str(ccl_coll_type type)
@@ -61,47 +56,43 @@ const char* ccl_coll_type_to_str(ccl_coll_type type)
     }
 }
 
-static ccl_request* ccl_coll_create(ccl_coll_param& coll_param,
-                                    const ccl_coll_attr_t* coll_attr,
-                                    ccl_sched_key&& key)
+/* param is not const because param.comm can be updated for unordered colls */
+static ccl_request* ccl_coll_create(ccl_coll_param& param,
+                                    const ccl_coll_attr& attr)
 {
-    // get particular schedule: create new or take from cache
-    ccl_master_sched* sched = ccl_master_sched::create(coll_param, coll_attr, std::move(key));
-    // no use 'key' anymore, because it's moved
-
-    // TODO move following pipeline into executor->start
-
-    // 1. Check unordered first
-    ccl_comm* match_id_comm = nullptr;
-    if (!sched->coll_attr.match_id.empty() && env_data.enable_unordered_coll)
+    /* 1. decide whether schedule should be postponed (this includes caching and staring) */
+    bool postpone_schedule = false;
+    if (env_data.enable_unordered_coll)
     {
-        match_id_comm = global_data.unordered_coll_manager->get_comm(sched->coll_attr.match_id).get();
-        if (!match_id_comm)
+        if (!attr.match_id.empty())
         {
-            if (sched->coll_attr.synchronous)
+            auto comm = global_data.unordered_coll_manager->get_comm(std::string(attr.match_id)).get();
+            if (!comm)
             {
-                CCL_THROW("unsupported collective (synchronous && unordered && !communicator)");
+                if (attr.synchronous)
+                {
+                    CCL_THROW("unsupported collective (synchronous && unordered && !communicator)");
+                }
+                LOG_DEBUG("didn't find comm for match_id ", attr.match_id, ", postpone schedule");
+                postpone_schedule = true;
             }
-
-            // user has provided match_id that has not been resolved yet.
-            // schedule will be postponed until comm resolution
-            // parallelize schedule
-            sched->commit(global_data.parallelizer.get());
-            return global_data.unordered_coll_manager->postpone(sched);
+            else
+            {
+                LOG_DEBUG("found comm ", comm->id(), " for match_id ", attr.match_id);
+                param.comm = comm;
+            }
         }
         else
         {
-            LOG_DEBUG("found comm id ", match_id_comm->id(), " for match_id ", sched->coll_attr.match_id);
+            /* use comm provided by user, it is ordered collective */
         }
     }
 
-    if (match_id_comm)
-    {
-        sched->coll_param.comm = match_id_comm;
-    }
+    /* 2. create or get schedule */
+    ccl_master_sched* sched = ccl_master_sched::create(param, attr, postpone_schedule);
 
-    // 2. then check fusion
-    if (env_data.enable_fusion)
+    /* 3. fuse schedule */
+    if (!postpone_schedule && env_data.enable_fusion)
     {
         if (global_data.fusion_manager->add(sched))
         {
@@ -111,11 +102,20 @@ static ccl_request* ccl_coll_create(ccl_coll_param& coll_param,
         }
     }
 
-
-    // parallelize schedule
+    /* 4. parallelize schedule */
     sched->commit(global_data.parallelizer.get());
 
-    // 3. regular schedule execution - either with user-defined or match_id specific communicator
+    /* 5. postponed unordered coll schedule */
+    if (postpone_schedule)
+    {
+        /* 
+            user has provided match_id that has not been resolved yet.
+            schedule will be postponed until comm resolution
+        */
+        return global_data.unordered_coll_manager->postpone(sched);
+    }
+
+    /* 6. regular schedule execution */
     ccl_request* request = sched->start(global_data.executor.get());
     if (sched->coll_attr.synchronous)
     {
@@ -352,25 +352,19 @@ ccl_request* ccl_allgatherv_impl(const void* send_buf,
                                  ccl_comm* comm,
                                  const ccl_stream* stream)
 {
-    ccl_coll_param coll_param{};
-    coll_param.ctype = ccl_coll_allgatherv;
-    coll_param.send_buf = send_buf;
-    coll_param.recv_buf = recv_buf;
-    coll_param.send_count = send_count;
-    coll_param.recv_counts = recv_counts;
-    coll_param.dtype = ccl_datatype_get(dtype);
-    coll_param.stream = stream;
-    coll_param.comm = comm;
+    ccl_coll_param param{};
 
-    ccl_sched_key key{};
-    key.ctype = ccl_coll_allgatherv;
-    key.buf = (void*)recv_counts;
-    key.count1 = send_count;
-    key.dtype = dtype;
-    key.comm = comm;
+    param.ctype = ccl_coll_allgatherv;
+    param.send_buf = send_buf;
+    param.recv_buf = recv_buf;
+    param.send_count = send_count;
+    param.recv_counts = recv_counts;
+    param.dtype = ccl_datatype_get(dtype);
+    param.stream = stream;
+    param.comm = comm;
 
-    auto req = ccl_coll_create(coll_param, attr, std::move(key));
-    LOG_DEBUG("coll ", ccl_coll_type_to_str(coll_param.ctype), " created, req ", req);
+    auto req = ccl_coll_create(param, ccl_coll_attr(attr));
+    LOG_DEBUG("coll ", ccl_coll_type_to_str(param.ctype), " created, req ", req);
     return req;
 }
 
@@ -383,44 +377,35 @@ ccl_request* ccl_allreduce_impl(const void* send_buf,
                                 ccl_comm* comm,
                                 const ccl_stream* stream)
 {
-    ccl_coll_param coll_param{};
-    coll_param.ctype = ccl_coll_allreduce;
-    coll_param.send_buf = send_buf;
-    coll_param.recv_buf = recv_buf;
-    coll_param.count = count;
-    coll_param.dtype = ccl_datatype_get(dtype);
-    coll_param.reduction = reduction;
-    coll_param.stream = stream;
-    coll_param.comm = comm;
+    ccl_coll_param param{};
 
-    ccl_sched_key key{};
-    key.ctype = ccl_coll_allreduce;
-    key.count1 = count;
-    key.dtype = dtype;
-    key.reduction = reduction;
-    key.comm = comm;
+    param.ctype = ccl_coll_allreduce;
+    param.send_buf = send_buf;
+    param.recv_buf = recv_buf;
+    param.count = count;
+    param.dtype = ccl_datatype_get(dtype);
+    param.reduction = reduction;
+    param.stream = stream;
+    param.comm = comm;
 
-    auto req = ccl_coll_create(coll_param, attr, std::move(key));
-    LOG_DEBUG("coll ", ccl_coll_type_to_str(coll_param.ctype), " created, req ", req, " count ", count);
+    auto req = ccl_coll_create(param, ccl_coll_attr(attr));
+    LOG_DEBUG("coll ", ccl_coll_type_to_str(param.ctype), " created, req ", req, " count ", count);
     return req;
 }
 
 void ccl_barrier_impl(ccl_comm* comm, const ccl_stream* stream)
 {
-    ccl_coll_param coll_param{};
-    coll_param.ctype = ccl_coll_barrier;
-    coll_param.dtype = ccl_dtype_internal_char;
-    coll_param.stream = stream;
-    coll_param.comm = comm;
+    ccl_coll_param param{};
 
-    ccl_coll_attr_t attributes{};
-    attributes.synchronous = 1;
+    param.ctype = ccl_coll_barrier;
+    param.dtype = ccl_dtype_internal_char;
+    param.stream = stream;
+    param.comm = comm;
 
-    ccl_sched_key key{};
-    key.ctype = ccl_coll_barrier;
-    key.comm = comm;
+    ccl_coll_attr_t attr{};
+    attr.synchronous = 1;
 
-    ccl_coll_create(coll_param, &attributes, std::move(key));
+    ccl_coll_create(param, ccl_coll_attr(&attr));
 }
 
 ccl_request* ccl_bcast_impl(void* buf,
@@ -431,24 +416,18 @@ ccl_request* ccl_bcast_impl(void* buf,
                             ccl_comm* comm,
                             const ccl_stream* stream)
 {
-    ccl_coll_param coll_param{};
-    coll_param.ctype = ccl_coll_bcast;
-    coll_param.buf = buf;
-    coll_param.count = count;
-    coll_param.dtype = ccl_datatype_get(dtype);
-    coll_param.root = root;
-    coll_param.stream = stream;
-    coll_param.comm = comm;
+    ccl_coll_param param{};
 
-    ccl_sched_key key{};
-    key.ctype = ccl_coll_bcast;
-    key.count1 = count;
-    key.dtype = dtype;
-    key.root = root;
-    key.comm = comm;
+    param.ctype = ccl_coll_bcast;
+    param.buf = buf;
+    param.count = count;
+    param.dtype = ccl_datatype_get(dtype);
+    param.root = root;
+    param.stream = stream;
+    param.comm = comm;
 
-    auto req = ccl_coll_create(coll_param, attr, std::move(key));
-    LOG_DEBUG("coll ", ccl_coll_type_to_str(coll_param.ctype), " created, req ", req);
+    auto req = ccl_coll_create(param, ccl_coll_attr(attr));
+    LOG_DEBUG("coll ", ccl_coll_type_to_str(param.ctype), " created, req ", req);
     return req;
 }
 
@@ -462,27 +441,20 @@ ccl_request* ccl_reduce_impl(const void* send_buf,
                              ccl_comm* comm,
                              const ccl_stream* stream)
 {
-    ccl_coll_param coll_param{};
-    coll_param.ctype = ccl_coll_reduce;
-    coll_param.send_buf = send_buf;
-    coll_param.recv_buf = recv_buf;
-    coll_param.count = count;
-    coll_param.dtype = ccl_datatype_get(dtype);
-    coll_param.reduction = reduction;
-    coll_param.root = root;
-    coll_param.stream = stream;
-    coll_param.comm = comm;
+    ccl_coll_param param{};
 
-    ccl_sched_key key{};
-    key.ctype = ccl_coll_reduce;
-    key.count1 = count;
-    key.dtype = dtype;
-    key.reduction = reduction;
-    key.root = root;
-    key.comm = comm;
+    param.ctype = ccl_coll_reduce;
+    param.send_buf = send_buf;
+    param.recv_buf = recv_buf;
+    param.count = count;
+    param.dtype = ccl_datatype_get(dtype);
+    param.reduction = reduction;
+    param.root = root;
+    param.stream = stream;
+    param.comm = comm;
 
-    auto req = ccl_coll_create(coll_param, attr, std::move(key));
-    LOG_DEBUG("coll ", ccl_coll_type_to_str(coll_param.ctype), " created, req ", req);
+    auto req = ccl_coll_create(param, ccl_coll_attr(attr));
+    LOG_DEBUG("coll ", ccl_coll_type_to_str(param.ctype), " created, req ", req);
     return req;
 }
 
@@ -494,34 +466,24 @@ ccl_request* ccl_sparse_allreduce_impl(const void* send_ind_buf, size_t send_ind
                                        ccl_reduction_t reduction, const ccl_coll_attr_t* attr,
                                        ccl_comm* comm, const ccl_stream* stream)
 {
-    ccl_coll_param coll_param{};
-    coll_param.ctype = ccl_coll_sparse_allreduce;
-    coll_param.sparse_param.send_ind_buf = send_ind_buf;
-    coll_param.sparse_param.send_ind_count = send_ind_count;
-    coll_param.sparse_param.send_val_buf = send_val_buf;
-    coll_param.sparse_param.send_val_count = send_val_count;
-    coll_param.sparse_param.recv_ind_buf = recv_ind_buf;
-    coll_param.sparse_param.recv_ind_count = recv_ind_count;
-    coll_param.sparse_param.recv_val_buf = recv_val_buf;
-    coll_param.sparse_param.recv_val_count = recv_val_count;
-    coll_param.dtype = ccl_datatype_get(dtype);
-    coll_param.sparse_param.itype = ccl_datatype_get(index_dtype);
-    coll_param.reduction = reduction;
-    coll_param.stream = stream;
-    coll_param.comm = comm;
+    ccl_coll_param param{};
 
-    ccl_sched_key key{};
-    key.ctype = ccl_coll_sparse_allreduce;
-    key.count1 = send_ind_count;
-    key.count2 = send_val_count;
-    key.count3 = recv_ind_count;
-    key.count4 = recv_val_count;
-    key.itype = index_dtype;
-    key.dtype = dtype;
-    key.reduction = reduction;
-    key.comm = comm;
+    param.ctype = ccl_coll_sparse_allreduce;
+    param.sparse_param.send_ind_buf = send_ind_buf;
+    param.sparse_param.send_ind_count = send_ind_count;
+    param.sparse_param.send_val_buf = send_val_buf;
+    param.sparse_param.send_val_count = send_val_count;
+    param.sparse_param.recv_ind_buf = recv_ind_buf;
+    param.sparse_param.recv_ind_count = recv_ind_count;
+    param.sparse_param.recv_val_buf = recv_val_buf;
+    param.sparse_param.recv_val_count = recv_val_count;
+    param.dtype = ccl_datatype_get(dtype);
+    param.sparse_param.itype = ccl_datatype_get(index_dtype);
+    param.reduction = reduction;
+    param.stream = stream;
+    param.comm = comm;
 
-    auto req = ccl_coll_create(coll_param, attr, std::move(key));
-    LOG_DEBUG("coll ", ccl_coll_type_to_str(coll_param.ctype), " created, req ", req);
+    auto req = ccl_coll_create(param, ccl_coll_attr(attr));
+    LOG_DEBUG("coll ", ccl_coll_type_to_str(param.ctype), " created, req ", req);
     return req;
 }

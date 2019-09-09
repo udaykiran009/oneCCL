@@ -1,7 +1,7 @@
 #include "coll/selection/selection.hpp"
 #include "common/env/env.hpp"
 #include "parallelizer/parallelizer.hpp"
-#include "sched/entry_factory.hpp"
+#include "sched/entry/factory/entry_factory.hpp"
 
 typedef struct
 {
