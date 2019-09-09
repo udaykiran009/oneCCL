@@ -35,7 +35,7 @@ then
     CXX_COMPILER=${BUILD_COMPILER}/g++
 elif [ "${BUILD_COMPILER_TYPE}" = "intel" ]
 then
-	BUILD_COMPILER=/nfs/inn/proj/mpi/pdsd/opt/EM64T-LIN/intel/compilers_and_libraries_2019.4.243/linux/bin/intel64/
+    BUILD_COMPILER=/nfs/inn/proj/mpi/pdsd/opt/EM64T-LIN/intel/compilers_and_libraries_2019.4.243/linux/bin/intel64/
     C_COMPILER=${BUILD_COMPILER}/icc
     CXX_COMPILER=${BUILD_COMPILER}/icpc
 else
@@ -51,9 +51,9 @@ else
 fi
 if [ "${ENABLE_CODECOV}" = "yes" ]
 then
-	CODECOV_FLAGS="TRUE"
+    CODECOV_FLAGS="true"
 else
-	CODECOV_FLAGS=""
+    CODECOV_FLAGS=""
 fi
 
 
@@ -75,9 +75,13 @@ rm -f ${LOG_FILE}
 HOSTNAME=`hostname -s`
 
 CCL_COPYRIGHT_YEAR="2019"
+
 CCL_VERSION_FORMAT="2021.1-alpha02"
 
-CCL_PACKAGE_PREFIX="l_ccl_"
+if [ -z "${CCL_PACKAGE_PREFIX}" ]
+then
+    CCL_PACKAGE_PREFIX="l_ccl_"
+fi
 
 if [ -z "${CCL_PACKAGE_PHASE}" ]
 then
@@ -93,10 +97,17 @@ PRE_DROP_DIR="${WORKSPACE}/_predrop/"
 #==============================================================================
 set_default_values()
 {
+
     ENABLE_PACK="no"
     if [ -z "${ENABLE_PRE_DROP}" ]
     then
-	ENABLE_PRE_DROP="no"
+        ENABLE_PRE_DROP="no"
+    fi
+    if [ ! -z "${ENABLE_DEBUG_BUILD}" ]
+    then
+        BUILD_TYPE="Debug"
+    else
+        BUILD_TYPE="Release"
     fi
     ENABLE_DEBUG="no"
     ENABLE_VERBOSE="yes"
@@ -122,6 +133,8 @@ print_help()
     echo_log "Usage:"
     echo_log "    ./${BASENAME}.sh <options>"
     echo_log ""
+    echo_log "Please set BUILD_COMPILER_TYPE=gnu|intel|clang. Clang will be used by default."
+    echo_log ""
     echo_log "<options>:"
     echo_log "   ------------------------------------------------------------"
     echo_log "    -eng-package|--eng-package"
@@ -132,6 +145,8 @@ print_help()
     echo_log "        Prepare CCL package (gzipped tar archive)"
     echo_log "    -swf-pre-drop|--swf-pre-drop"
     echo_log "        Enable SWF pre-drop procedure"
+    echo_log "    -build-deb-conf|--build-deb-conf"
+    echo_log "        Build debug configuration"
     echo_log "   ------------------------------------------------------------"
     echo_log "    -h|-H|-help|--help"
     echo_log "        Print help information"
@@ -162,8 +177,8 @@ build()
 {
 
     log mkdir ${WORKSPACE}/build && cd ${WORKSPACE}/build && echo ${PWD}
-    log cmake ..  -DCMAKE_BUILD_TYPE=Release \
-	-DCMAKE_C_COMPILER="${C_COMPILER}" -DCMAKE_CXX_COMPILER="${CXX_COMPILER}" -DUSE_CODECOV_FLAGS="${CODECOV_FLAGS}"
+    log cmake ..  -DCMAKE_BUILD_TYPE=${BUILD_TYPE} \
+    -DCMAKE_C_COMPILER="${C_COMPILER}" -DCMAKE_CXX_COMPILER="${CXX_COMPILER}" -DUSE_CODECOV_FLAGS="${CODECOV_FLAGS}"
     log make -j4 VERBOSE=1 install
     if [ $? -ne 0 ]
     then
@@ -385,7 +400,6 @@ prepare_staging()
                             echo_log -en "\t${BL_SOURCE}..." >> ${PACKAGE_LOG}
 
                             DROP_DEST_FILE="${BL_INSTALL}"
-#
                             case "${BL_LINK}" in
                                 "<installdir"*)
                                     PATH_TO_RM=`dirname ${BL_INSTALL}`
@@ -444,7 +458,6 @@ make_package()
         echo_log "Create package... DONE"
 }
 
-
 #==============================================================================
 #                              Parse arguments
 #==============================================================================
@@ -466,6 +479,10 @@ parse_arguments()
             "-swf-pre-drop"|"--swf-pre-drop")
                 ENABLE_PRE_DROP="yes"
                 ;;
+            "-build-deb-conf"| "--build-deb-conf")
+                ENABLE_DEBUG_BUILD="yes"
+                BUILD_TYPE="Debug"
+                ;;
             "-help")
                 print_help
                 ;;
@@ -483,6 +500,7 @@ parse_arguments()
     echo_log "-----------------------------------------------------------"
     echo_log "ENABLE_BUILD              = ${ENABLE_BUILD}"
     echo_log "ENABLE_PACK               = ${ENABLE_PACK}"
+    echo_log "ENABLE_DEBUG_BUILD        = ${ENABLE_DEBUG_BUILD}"
     echo_log "ENABLE_PRE_DROP           = ${ENABLE_PRE_DROP}"
     echo_log "-----------------------------------------------------------"
 
@@ -547,33 +565,33 @@ run_pack()
 #==============================================================================
 run_pre_drop()
 {
-	echo_log_separator
-	echo_log "#\t\t\tPerforming pre-drop..."
-	echo_log_separator
-	prepare_staging swf_pre_drop
-	echo_log_separator
-	echo_log "#\t\t\tPerforming pre-drop... DONE"
-	echo_log_separator
+    echo_log_separator
+    echo_log "#\t\t\tPerforming pre-drop..."
+    echo_log_separator
+    prepare_staging swf_pre_drop
+    echo_log_separator
+    echo_log "#\t\t\tPerforming pre-drop... DONE"
+    echo_log_separator
 }
 
 #==============================================================================
 #                              SWF pre-drop
 #==============================================================================
 run_swf_pre_drop()
-{	
+{
     if [ "${ENABLE_PRE_DROP}" == "yes" ]
     then
-	echo_log_separator
-	echo_log "#\t\t\tSWF pre-drop..."
-	echo_log_separator
-	mkdir -p ${SWF_PRE_DROP_DIR}/`date +%Y-%m-%d`/SWF_Drops/
-	cp -R ${PRE_DROP_DIR}/* ${SWF_PRE_DROP_DIR}/`date +%Y-%m-%d`/SWF_Drops/
-	rm -rf ${SWF_PRE_DROP_DIR}/SWF_Drops
-	mkdir -p ${SWF_PRE_DROP_DIR}/SWF_Drops/
-	cp -R ${PRE_DROP_DIR}/* ${SWF_PRE_DROP_DIR}/SWF_Drops/
-	echo_log_separator
-	echo_log "#\t\t\tSWF pre-drop... DONE"
-	echo_log_separator
+    echo_log_separator
+    echo_log "#\t\t\tSWF pre-drop..."
+    echo_log_separator
+    mkdir -p ${SWF_PRE_DROP_DIR}/`date +%Y-%m-%d`/SWF_Drops/
+    cp -R ${PRE_DROP_DIR}/* ${SWF_PRE_DROP_DIR}/`date +%Y-%m-%d`/SWF_Drops/
+    rm -rf ${SWF_PRE_DROP_DIR}/SWF_Drops
+    mkdir -p ${SWF_PRE_DROP_DIR}/SWF_Drops/
+    cp -R ${PRE_DROP_DIR}/* ${SWF_PRE_DROP_DIR}/SWF_Drops/
+    echo_log_separator
+    echo_log "#\t\t\tSWF pre-drop... DONE"
+    echo_log_separator
     fi
 }
 
@@ -583,6 +601,7 @@ run_swf_pre_drop()
 #                              MAIN
 #==============================================================================
 set_default_values
+echo "BUILD_TYPE=" $BUILD_TYPE
 parse_arguments $@
 run_build
 run_pack

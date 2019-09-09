@@ -11,15 +11,18 @@ then
 fi
 
 CURRENT_CCL_BUILD_DIR="${CCL_REPO_DIR}/${CCL_BUILD_ID}"
-CCL_INSTALL_DIR="${SCRIPT_DIR}/../../build/_install"
 BASENAME=`basename $0 .sh`
-WORK_DIR=`cd ${SCRIPT_DIR}/../../ && pwd -P`
+CURRENT_WORK_DIR=`cd ${SCRIPT_DIR}/../../ && pwd -P`
+if [ -z $CCL_INSTALL_DIR ]
+then
+    CCL_INSTALL_DIR=`cd ${SCRIPT_DIR}/../../build/_install/ && pwd -P`
+fi
 HOSTNAME=`hostname -s`
 
 echo "SCRIPT_DIR = $SCRIPT_DIR"
-echo "WORK_DIR = $WORK_DIR"
-echo "CCL_INSTALL_DIR = $CCL_INSTALL_DIR"
+echo "CURRENT_WORK_DIR = $CURRENT_WORK_DIR"
 
+export ICCL_WORKER_AFFINITY=auto
 
 #==============================================================================
 #                                Defaults
@@ -85,6 +88,21 @@ check_command_exit_code() {
 }
 
 set_external_env(){
+    if [ $TEST_CONFIGURATIONS == "test:nightly" ]
+    then
+        echo "Nightly test scope will be started."
+        export TESTING_ENVIRONMENT="CCL_TEST_BUFFER_COUNT=0 \
+        CCL_TEST_CACHE_TYPE=1 \
+        CCL_TEST_COMPLETION_TYPE=1 \
+        CCL_TEST_DATA_TYPE=1 \
+        CCL_TEST_PLACE_TYPE=1 \
+        CCL_TEST_PRIORITY_TYPE=0 \
+        CCL_TEST_REDUCTION_TYPE=1 \
+        CCL_TEST_SIZE_TYPE=0 \
+        CCL_TEST_SYNC_TYPE=1 \
+        CCL_TEST_EPILOG_TYPE=1 \
+        CCL_TEST_PROLOG_TYPE=1" 
+    fi
     if [ -n "${TESTING_ENVIRONMENT}" ]
     then
         echo "TESTING_ENVIRONMENT is " ${TESTING_ENVIRONMENT}
@@ -97,30 +115,34 @@ set_external_env(){
 
 enable_part_test_scope()
 {
+    echo "Partly test scope will be started."
     export CCL_TEST_BUFFER_COUNT=0
-    export CCL_TEST_CACHE_TYPE=1
-    export CCL_TEST_COMPLETION_TYPE=1
+    export CCL_TEST_CACHE_TYPE=0
+    export CCL_TEST_COMPLETION_TYPE=0
     export CCL_TEST_DATA_TYPE=1
     export CCL_TEST_PLACE_TYPE=1
-    export CCL_TEST_PRIORITY_TYPE=0
+    export CCL_TEST_PRIORITY_TYPE=1
     export CCL_TEST_REDUCTION_TYPE=0
-    export CCL_TEST_SIZE_TYPE=0
-    export CCL_TEST_SYNC_TYPE=0
+    export CCL_TEST_SIZE_TYPE=1
+    export CCL_TEST_SYNC_TYPE=1
+    export CCL_TEST_EPILOG_TYPE=1
     export CCL_TEST_PROLOG_TYPE=1
 }
 
 enable_unordered_coll_test_scope()
 {
+    echo "Unordered coll test scope will be started."
     export CCL_TEST_BUFFER_COUNT=0
     export CCL_TEST_CACHE_TYPE=1
     export CCL_TEST_COMPLETION_TYPE=1
     export CCL_TEST_DATA_TYPE=1
     export CCL_TEST_PLACE_TYPE=1
-    export CCL_TEST_PRIORITY_TYPE=0
+    export CCL_TEST_PRIORITY_TYPE=1
     export CCL_TEST_REDUCTION_TYPE=1
     export CCL_TEST_SIZE_TYPE=0
     export CCL_TEST_SYNC_TYPE=0
-    export CCL_TEST_PROLOG_TYPE=1
+    export CCL_TEST_PROLOG_TYPE=0
+    export CCL_TEST_EPILOG_TYPE=0
 }
 
 set_environment()
@@ -152,15 +174,21 @@ set_environment()
     fi
     if [ -z "${I_MPI_HYDRA_HOST_FILE}" ]
     then
-        if [ -f ${WORK_DIR}/tests/cfgs/clusters/${HOSTNAME}/mpi.hosts ]
+        if [ -f ${CURRENT_WORK_DIR}/tests/cfgs/clusters/${HOSTNAME}/mpi.hosts ]
         then
-            export I_MPI_HYDRA_HOST_FILE=${WORK_DIR}/tests/cfgs/clusters/${HOSTNAME}/mpi.hosts
+            export I_MPI_HYDRA_HOST_FILE=${CURRENT_WORK_DIR}/tests/cfgs/clusters/${HOSTNAME}/mpi.hosts
         else
-            echo "WARNING: hostfile (${WORK_DIR}/tests/cfgs/clusters/${HOSTNAME}/mpi.hosts) isn't available"
+            echo "WARNING: hostfile (${CURRENT_WORK_DIR}/tests/cfgs/clusters/${HOSTNAME}/mpi.hosts) isn't available"
             echo "WARNING: I_MPI_HYDRA_HOST_FILE isn't set"
         fi
     fi
-
+    if [ -z "${IMPI_PATH}" ]
+    then
+        echo "WARNING: I_MPI_ROOT isn't set, last oneAPI pack will be used."
+        source /nfs/inn/disks/nn-ssg_tcar_mpi_2Tb_unix/Uploads/IMPI/linux/functional_testing/impi/oneAPI/impi_2021.1-alpha02/env/vars.sh release_mt
+    else
+        source ${IMPI_PATH}/env/vars.sh release_mt
+    fi
     if [ -z "$worker_count" ]
     then
         worker_count="2"
@@ -170,25 +198,17 @@ set_environment()
     then
         runtime="ofi"
     fi
-
-    if [ -z "${CCL_ROOT}" ]
+    if [ -z "$build_type" ]
     then
-        if [ -f ${MLSL_PATH}/vars.sh ]
-        then
-            source ${MLSL_PATH}/vars.sh
-        else
-            echo "ERROR: ${CCL_INSTALL_DIR}/intel64/bin/cclvars.sh doesn't exist"
-            exit 1
-        fi
+        build_type="release"
     fi
-    if [ -z "${IMPI_PATH}" ]
+    if [ "$build_type" == "release" ]
     then
-        echo "WARNING: I_MPI_ROOT isn't set, last oneAPI pack will be used."
-        source /nfs/inn/disks/nn-ssg_tcar_mpi_2Tb_unix/Uploads/IMPI/linux/functional_testing/impi/ww31_20190802_oneapi/env/vars.sh release_mt
-    else
-        source ${IMPI_PATH}/env/vars.sh release_mt
+        source ${CCL_INSTALL_DIR}/l_ccl*/env/vars.sh
+    elif [ "$build_type" == "debug" ]
+    then
+        source ${CCL_INSTALL_DIR}/deb_l_ccl*/env/vars.sh
     fi
-
     if [ "${ENABLE_CODECOV}" = "yes" ]
     then
         CODECOV_FLAGS="TRUE"
@@ -199,7 +219,7 @@ set_environment()
 
 make_tests()
 {
-    cd ${WORK_DIR}/tests/functional
+    cd ${CURRENT_WORK_DIR}/tests/functional
     mkdir -p build
     cd ./build
     cmake .. -DCMAKE_BUILD_TYPE=Release -DCMAKE_C_COMPILER="${C_COMPILER}" \
@@ -209,7 +229,7 @@ make_tests()
 
 run_compatibitily_tests()
 {
-    cd ${WORK_DIR}/examples
+    cd ${CURRENT_WORK_DIR}/examples
     ./run.sh 
     log_status_fail=${PIPESTATUS[0]}
     if [ "$log_status_fail" -eq 0 ]
@@ -293,21 +313,58 @@ run_tests()
                 enable_unordered_coll_test_scope
                 CCL_ATL_TRANSPORT=ofi CCL_UNORDERED_COLL=1 ctest -VV -C Default
                ;;
+            fusion_mode )
+                CCL_ATL_TRANSPORT=ofi CCL_FUSION=1 ctest -VV -C Default
+                CCL_ATL_TRANSPORT=mpi CCL_FUSION=1 ctest -VV -C Default
+               ;;
            * )
-                ctest -VV -C Default
-                ;;
+                echo "Please specify runtime mode: runtime=ofi|mpi|ofi_adjust|mpi_adjust|priority_mode|unordered_coll_mode|dynamic_pointer_mode|fusion_mode|"
+                exit 1
+               ;;
     esac
 }
 
+clean_nodes() {
+    echo "Start cleaning nodes..."
+    if [ -z "${I_MPI_HYDRA_HOST_FILE}" ]
+    then
+        echo "WARNING: I_MPI_HYDRA_HOST_FILE isn't set, only current node will be cleaned."
+        using_nodes=`hostname`
+    else
+        using_nodes=`cat ${I_MPI_HYDRA_HOST_FILE}`
+    fi
+    user='sys_ctl'
+    exceptions='java\|awk\|bash\|grep\|intelremotemond\|sshd\|grep\|ps\|mc'
+    for host_name in ${using_nodes}; do
+     ssh  "$host_name" "bash -s $user $exceptions " <<'EOF'
+       echo "Host: $(hostname)"
+       User=$1
+       Exceptions=$2
+       ps -aux | grep PID | grep -v 'grep'
+       for pid in $(ps aux | grep -e "^${User}" \
+                   | grep -E -v "\b(${Exceptions})\b" \
+                   | awk '{print $2}'); do
+           echo "Killed:" &&  ps -aux | grep -v 'grep' | grep ${pid}
+           echo "-------------------------------------------------"
+           kill -6 ${pid}
+       done
+EOF
+    done
+    echo "Cleaning was finished"
+}
+
+#==============================================================================
+#                              MAIN
+#==============================================================================
+
 set_default_values
 set_environment
-
-
+# clean_nodes
 while [ $# -ne 0 ]
 do
     case $1 in
     "-compatibility_tests" )
-		run_compatibitily_tests
+        run_compatibitily_tests
         shift
         ;;
     *)
@@ -319,3 +376,5 @@ do
 done
 make_tests
 run_tests
+clean_nodes
+
