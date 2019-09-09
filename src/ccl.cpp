@@ -235,6 +235,13 @@ ccl_status_t ccl_stream_create(ccl_stream_type_t type,
     {
         LOG_DEBUG("create stream");
         *stream = static_cast<void*>(new ccl_stream(type, native_stream));
+
+#ifdef ENABLE_SYCL
+        if (native_stream && (type == ccl_stream_sycl))
+            LOG_INFO("SYCL queue's device is ",
+                     static_cast<cl::sycl::queue*>(native_stream)->get_device().get_info<cl::sycl::info::device::name>());
+#endif /* ENABLE_SYCL */
+
         return ccl_status_success;
     }
     COMMON_CATCH_BLOCK();
