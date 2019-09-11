@@ -14,3 +14,6 @@ _staging/
 _deb/
 *.tgz
 *.tar.gz
+doc/doxygen/xml
+doc/rst/build/
+doc/rst/source/api

@@ -27,6 +27,7 @@ Contents:
    installation.rst
    sys_requirements.rst
    legal.rst
+   optimization_notice.rst
 
 .. toctree::
    :maxdepth: 1
@@ -61,4 +62,4 @@ Contents:
    :caption: Reference Materials
 
    env_variables.rst
-   api_reference.rst   
+   api/library_root.rst

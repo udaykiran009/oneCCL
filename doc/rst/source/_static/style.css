@@ -38,6 +38,19 @@
   font-weight: 700;
   font-family: "Roboto Slab","ff-tisa-web-pro","Georgia",Arial,sans-serif;
 }
+
+code.sig-name.descname {
+   white-space: initial;
+}
+
+table.optimization-notice td {
+   white-space: initial;
+}
+
+table.optimization-notice td p:last-child {
+   text-align: right;
+}
+
 /*
 .rst-content tt.literal, .rst-content code.literal, .highlight {
    background: #f0f0f0;

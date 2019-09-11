@@ -69,7 +69,32 @@ import os
 # on_rtd is whether we are on readthedocs.org, this line of code grabbed from docs.readthedocs.org
 on_rtd = os.environ.get('READTHEDOCS', None) == 'True'
 
-extensions = ['sphinx.ext.autosectionlabel']
+extensions = [
+    'sphinx.ext.autosectionlabel',
+    'breathe',
+    'exhale'
+]
+
+breathe_projects = {
+    project:"../../doxygen/xml"
+}
+breathe_default_project = project
+
+# Setup the exhale extension
+exhale_args = {
+    # These arguments are required
+    "containmentFolder":     "./api",
+    "rootFileName":          "library_root.rst",
+    "rootFileTitle":         "Library API",
+    "doxygenStripFromPath":  "..",
+    "fullApiSubSectionTitle": 'Full API'
+}
+
+# Tell sphinx what the primary language being documented is.
+primary_domain = 'cpp'
+
+# Tell sphinx what the pygments highlight language should be.
+highlight_language = 'cpp'
 
 import sphinx_rtd_theme
 html_theme = 'sphinx_rtd_theme'
