@@ -33,6 +33,7 @@ public:
 
     ccl_sched_list(ccl_sched* sched)
     {
+        CCL_ASSERT(sched);
         elems.reserve(CCL_BUCKET_INITIAL_ELEMS_COUNT);
         elems.push_back(sched);
     }
@@ -105,8 +106,19 @@ public:
         return ret;
     }
 
+    void dump(std::ostream& out) const
+    {
+        {
+            std::lock_guard<sched_queue_lock_t> lock(elem_guard);
+            for (auto& e: elems)
+            {
+                e->dump(out);
+            }
+        }
+    }
+
 private:
-    sched_queue_lock_t elem_guard{};
+    mutable sched_queue_lock_t elem_guard{};
     sched_container_t elems;
     char padding_queue[CACHELINE_SIZE];
 };
@@ -123,6 +135,7 @@ public:
     {
         CCL_ASSERT(queue);
         CCL_ASSERT(comm_ctx);
+        CCL_ASSERT(sched);
         sched->bin = this;
         sched->queue = queue;
     }
@@ -142,6 +155,11 @@ public:
     void add(ccl_sched* sched);
     size_t erase(size_t idx, size_t &next);
     ccl_sched* get(size_t idx) { return sched_list.get(idx); }
+
+    void dump(std::ostream& out) const
+    {
+        sched_list.dump(out);
+    }
 
 private:
     ccl_sched_queue* queue = nullptr; //!< pointer to the queue which owns the bin
@@ -173,11 +191,29 @@ public:
 
     std::vector<ccl_sched_bin*> peek_all();
 
+    void dump(std::ostream& out) const
+    {
+        {
+            std::lock_guard<sched_queue_lock_t> lock(bins_guard);
+            if (bins.empty())
+            {
+                out << "empty sched_queue";
+            }
+            else
+            {
+                for (auto& b: bins)
+                {
+                    b.second.dump(out);
+                }
+            }
+        }
+    }
+
 private:
 
     void add_internal(ccl_sched* sched, bool need_to_lock = true);
 
-    sched_queue_lock_t bins_guard{};
+    mutable sched_queue_lock_t bins_guard{};
 
     std::vector<atl_comm_t*> comm_ctxs;
     sched_bin_list_t bins { CCL_SCHED_QUEUE_INITIAL_BIN_COUNT };

@@ -25,7 +25,7 @@ struct ccl_extra_sched : public ccl_request, public ccl_sched
     
     ~ccl_extra_sched() = default;
     
-    void dump(std::ostream &out) const
+    void dump(std::ostream& out) const
     {
         if (!env_data.sched_dump)
         {

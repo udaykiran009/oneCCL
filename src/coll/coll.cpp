@@ -10,10 +10,7 @@
 
 ccl_coll_attr::ccl_coll_attr(const ccl_coll_attr_t* attr)
 {
-    if (!attr)
-        *this = global_data.default_coll_attr.get();
-    else
-        *this = attr;
+    *this = attr ?: global_data.default_coll_attr.get();
 }
 
 ccl_coll_attr& ccl_coll_attr::operator= (const ccl_coll_attr_t* attr)
@@ -105,7 +102,7 @@ static ccl_request* ccl_coll_create(ccl_coll_param& param,
     /* 4. parallelize schedule */
     sched->commit(global_data.parallelizer.get());
 
-    /* 5. postponed unordered coll schedule */
+    /* 5. postpone unordered coll schedule */
     if (postpone_schedule)
     {
         /* 

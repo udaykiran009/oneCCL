@@ -152,7 +152,7 @@ void ccl_sched_base::dump(std::ostream& out, const char *name) const
     ccl_logger::format(out,
                         "sched: ", this,
                         ", coll ", ccl_coll_type_to_str(coll_param.ctype),
-                        ", comm_id ", coll_param.comm->id(),
+                        ", comm_id ", std::dec, coll_param.comm->id(),
                         ", sched_id ", sched_id);
 }
 

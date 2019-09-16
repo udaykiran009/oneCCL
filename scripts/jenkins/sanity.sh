@@ -359,7 +359,7 @@ EOF
 
 set_default_values
 set_environment
-# clean_nodes
+clean_nodes
 while [ $# -ne 0 ]
 do
     case $1 in

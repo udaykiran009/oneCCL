@@ -32,7 +32,7 @@ int main()
 {
     setenv("CCL_UNORDERED_COLL", "1", 1);
 
-    const size_t iterations_count = 4;
+    const size_t iterations_count = 64;
     std::vector<std::string> tensor_names;
     // request, operation idx (for example purpose)
     std::list<std::pair<ccl_request_t, size_t>> started_ops;

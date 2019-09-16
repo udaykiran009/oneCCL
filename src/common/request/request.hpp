@@ -68,6 +68,6 @@ private:
 #ifdef ENABLE_DEBUG
     dump_func dump_callback;
     mutable size_t complete_checks_count = 0;
-    static constexpr const size_t CHECK_COUNT_BEFORE_DUMP = 10000000;
+    static constexpr const size_t CHECK_COUNT_BEFORE_DUMP = 40000000;
 #endif
 };

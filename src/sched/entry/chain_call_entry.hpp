@@ -30,23 +30,11 @@ public:
 
     void start() override
     {
-        if (status == ccl_sched_entry_status_not_started)
-        {
-            work_sched->renew();
-            work_sched->bin = sched->bin;
-            work_sched->queue = sched->queue;
-            work_sched->sched_id = sched->sched_id;
-            work_sched->do_progress();
-
-            if (work_sched->start_idx == work_sched->entries.size())
-            {
-                status = ccl_sched_entry_status_complete;
-            }
-            else
-            {
-                status = ccl_sched_entry_status_started;
-            }
-        }
+        work_sched->renew();
+        work_sched->bin = sched->bin;
+        work_sched->queue = sched->queue;
+        work_sched->sched_id = sched->sched_id;
+        status = ccl_sched_entry_status_started;
     }
 
     void update() override

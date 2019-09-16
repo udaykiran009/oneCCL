@@ -5,7 +5,7 @@
 
 #define CCL_WORKER_CHECK_CANCEL_ITERS (32768)
 #define CCL_WORKER_CHECK_UPDATE_ITERS (16384)
-#define CCL_WORKER_PROCESS_ALL_ITERS  (32768)
+#define CCL_WORKER_PROCESS_ALL_ITERS  (4096)
 
 static void* ccl_worker_func(void* args);
 
@@ -46,6 +46,13 @@ ccl_status_t ccl_worker::do_work(size_t& processed_count)
     if (ret != ccl_status_success)
         return ret;
 
+#ifdef ENABLE_DEBUG
+    if (processed_count == 0 && (do_work_counter % CCL_WORKER_PROCESS_ALL_ITERS * 1024) == 0)
+    {
+        //sched_queue->dump(std::cout);
+    }
+#endif
+
     return ccl_status_success;
 }
 
@@ -67,12 +74,13 @@ ccl_status_t ccl_worker::process_strict_sched_queue()
 
         if (sched->get_in_bin_status() == ccl_sched_in_bin_none)
         {
-            CCL_ASSERT(!sched->bin);
+            CCL_ASSERT(!sched->bin, "unexpected bin ", sched->bin);
             /* here we add sched from strict_queue to regular queue for real execution */
             sched_queue->add(sched);
         }
 
-        CCL_ASSERT(sched->get_in_bin_status() == ccl_sched_in_bin_added);
+        CCL_ASSERT(sched->get_in_bin_status() == ccl_sched_in_bin_added,
+                   "unexpected in_bin_status ", sched->get_in_bin_status());
 
         sched->do_progress();
 
@@ -98,6 +106,10 @@ ccl_status_t ccl_worker::process_sched_queue(size_t& completed_sched_count, bool
     if (process_all)
     {
         auto bins = sched_queue->peek_all();
+
+        if (bins.empty())
+            return ccl_status_success;
+
         size_t completed_sched_count_local = 0;
         for (auto& bin : bins)
         {
@@ -192,10 +204,14 @@ static void* ccl_worker_func(void* args)
 
     global_data.is_worker_thread = true;
 
+    int old_cancelation_state = 0;
+    pthread_setcancelstate(PTHREAD_CANCEL_DISABLE, &old_cancelation_state);
+
     do
     {
         try
         {
+            // thread is non-interruptible from this point
             ret = worker->do_work(processed_count);
 
             if (global_data.is_ft_enabled &&
@@ -229,7 +245,13 @@ static void* ccl_worker_func(void* args)
         iter_count++;
         if ((iter_count % CCL_WORKER_CHECK_CANCEL_ITERS) == 0)
         {
+            // make thread interruptible and check cancelation point
+            pthread_setcancelstate(PTHREAD_CANCEL_ENABLE, &old_cancelation_state);
+
             pthread_testcancel();
+
+            // thread is non-interruptible again
+            pthread_setcancelstate(PTHREAD_CANCEL_DISABLE, &old_cancelation_state);
         }
 
         if (processed_count == 0)

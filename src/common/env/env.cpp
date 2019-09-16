@@ -111,7 +111,7 @@ void ccl_env_parse()
     ccl_env_2_size_t(CCL_WORKER_COUNT, env_data.worker_count);
     CCL_THROW_IF_NOT(env_data.worker_count >= 1, "incorrect ", CCL_WORKER_COUNT, " ", env_data.worker_count);
     ccl_env_2_int(CCL_WORKER_OFFLOAD, env_data.worker_offload);
-    ccl_env_parse_worker_affinity();
+    CCL_THROW_IF_NOT(ccl_env_parse_worker_affinity());
 
     ccl_env_parse_atl_transport();
 

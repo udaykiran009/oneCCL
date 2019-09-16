@@ -59,6 +59,9 @@ fi
 
 run_examples()
 {
+    ppn=1
+    EXTRA_ENV="CCL_YIELD=sleep"
+
     for dir_name in "cpu" "sycl" "common"
     do
         cd $dir_name
@@ -93,22 +96,34 @@ run_examples()
                     do
                         test_log="./run_${dir_name}_${transport}_${example}_${backend}_output.log"
                         echo "run examples with $transport transport (${example})" 2>&1 | tee ${test_log}
-                        CCL_ATL_TRANSPORT=${transport} mpiexec.hydra -n 2 -ppn 1 -l ./$example $backend 2>&1 | tee ${test_log}
+                        CCL_ATL_TRANSPORT=${transport} mpiexec.hydra -genv $EXTRA_ENV -n 2 -ppn $ppn -l ./$example $backend 2>&1 | tee ${test_log}
                         CheckTest ${test_log} ${example}
 
                         #run extended version of benchmark
                         if [[ "${example}" == *"benchmark"* ]]
                         then
+                            for loop in "regular" "unordered"
+                            do
+                                if [ "$transport" == "mpi" ] && [ "$loop" == "unordered" ];
+                                then
+                                    continue
+                                fi
+                                test_log="./run_${dir_name}_${transport}_${example}_${backend}_${loop}_output.log"
+                                echo "run benchmark: transport $transport, backend $backend, loop $loop " 2>&1 | tee ${test_log}
+                                CCL_PRIORITY=lifo CCL_ATL_TRANSPORT=${transport} mpiexec.hydra -genv $EXTRA_ENV -n 2 -ppn $ppn -l ./$example $backend $loop 2>&1 | tee ${test_log}
+                                CheckTest ${test_log} ${example}
+                            done
+
                             test_log="./run_${dir_name}_${transport}_${example}_allreduce_output.log"
                             echo "run benchmark with fusion: $transport transport (${example})" 2>&1 | tee ${test_log}
-                            CCL_FUSION=1 CCL_ATL_TRANSPORT=${transport} mpiexec.hydra -n 2 -ppn 1 -l ./$example $backend allreduce 2>&1 | tee ${test_log}
+                            CCL_FUSION=1 CCL_ATL_TRANSPORT=${transport} mpiexec.hydra -genv $EXTRA_ENV -n 2 -ppn $ppn -l ./$example $backend regular allreduce 2>&1 | tee ${test_log}
                             CheckTest ${test_log} ${example}
                         fi
                     done
                 else
                     test_log="./run_${dir_name}_${transport}_${example}_output.log"
                     echo "run examples with $transport transport (${example})" 2>&1 | tee ${test_log}
-                    CCL_ATL_TRANSPORT=${transport} mpiexec.hydra -n 2 -ppn 1 -l ./$example 2>&1 | tee ${test_log}
+                    CCL_ATL_TRANSPORT=${transport} mpiexec.hydra -genv $EXTRA_ENV -n 2 -ppn $ppn -l ./$example 2>&1 | tee ${test_log}
                     CheckTest ${test_log} ${example}
                 fi
             done

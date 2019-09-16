@@ -129,6 +129,7 @@ private:
 
                 CCL_ASSERT(result == ccl_status_success, "bad result ", result);
 
+                break;
             }
             case ccl_coll_reduce:
                 break;
@@ -169,6 +170,10 @@ private:
             auto req = sched->start_subsched(coll_sched.get());
             LOG_DEBUG("COLL entry: sched ", coll_sched.get(), ", req ", req);
             // TODO: insert into per-worker sched cache
+        }
+        else
+        {
+            CCL_ASSERT(0);
         }
     }
 

@@ -144,7 +144,7 @@ ccl_request* ccl_sched::start_subsched(ccl_extra_sched* subsched)
     return subsched->req;
 }
 
-void ccl_sched::dump(std::ostream &out) const
+void ccl_sched::dump(std::ostream& out) const
 {
     if (!env_data.sched_dump)
     {
@@ -165,4 +165,3 @@ void ccl_sched::dump(std::ostream &out) const
     out << msg.str();
     ccl_logger::format(out, "--------------------------------\n");
 }
-

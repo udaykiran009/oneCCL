@@ -43,7 +43,7 @@ public:
      * Synchronizes partial schedules on local barrier
      */
     void sync_partial_scheds();
-    void dump(std::ostream &out) const;
+    void dump(std::ostream& out) const;
 
     //TODO encapsulate it in private.
     std::vector<std::shared_ptr<ccl_sched>> partial_scheds;

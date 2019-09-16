@@ -125,8 +125,9 @@ public:
                 // if (set_custom_reduction<T>(param))
                     // return TEST_FAILURE;
             // }
+
             for (idx = 0; idx < param.bufferCount; idx++) {
-                this->Init(param, idx);
+                this->Init(param, Buffers[idx]);
                 param.req[Buffers[idx]] = (param.GetPlaceType() == PT_IN) ?
                         param.global_comm.reduce(param.recvBuf[Buffers[idx]].data(), param.recvBuf[Buffers[idx]].data(), param.elemCount,
                                                 (ccl::data_type) param.GetDataType(), (ccl::reduction) param.GetReductionType(),

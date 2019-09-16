@@ -2,6 +2,7 @@
 #include <iostream>
 #include <iterator>
 #include <list>
+#include <math.h>
 #include <memory>
 #include <set>
 #include <sstream>
@@ -12,15 +13,23 @@
 #include "base.hpp"
 
 #define BUF_COUNT         (16)
-#define ELEM_COUNT        (256)
+#define ELEM_COUNT        (512)
 #define SINGLE_ELEM_COUNT (BUF_COUNT * ELEM_COUNT)
 #define ALIGNMENT         (2 * 1024 * 1024)
 #define DTYPE             float
 #define CCL_DTYPE         ccl::data_type::dt_float
-#define MATCH_ID_SIZE     (64)
+#define MATCH_ID_SIZE     (256)
 
 /* different collectives with duplications */
 #define DEFAULT_COLL_LIST "allgatherv,allreduce,bcast,reduce,allgatherv,allreduce,bcast,reduce"
+
+typedef enum
+{
+    LOOP_REGULAR,
+    LOOP_UNORDERED
+} loop_type_t;
+
+#define DEFAULT_LOOP "regular"
 
 class base_coll;
 
@@ -43,9 +52,9 @@ using sycl_buffer_t = cl::sycl::buffer<Dtype, 1>;
 cl::sycl::queue sycl_queue;
 #endif /* ENABLE_SYCL */
 
-constexpr const char* help_message = "\nplease specify backend and comma-separated list of collective names\n\n"
-                                     "example:\n\tcpu allgatherv,allreduce\n"
-                                     "example:\n\tsycl bcast,reduce\n";
+constexpr const char* help_message = "\nplease specify backend, loop type and comma-separated list of collective names\n\n"
+                                     "example:\n\tcpu regular allgatherv,allreduce\n"
+                                     "example:\n\tsycl unordered bcast,reduce\n";
 
 std::list<std::string> tokenize(const std::string& input, char delimeter)
 {
@@ -1001,96 +1010,12 @@ void create_colls(const std::list<std::string>& names, backend_type_t backend_ty
     }
 }
 
-int main(int argc, char *argv[])
+void do_regular(ccl::communicator& comm,
+                ccl::coll_attr& coll_attr,
+                coll_list_t& colls,
+                req_list_t& reqs)
 {
-    ccl::environment env;
-    ccl::communicator comm;
-    ccl::stream* stream;
-    ccl::coll_attr coll_attr{};
-
-    std::list<std::string> coll_names;
-    coll_list_t colls;
-    req_list_t reqs;
-
-    if (argc > 3)
-    {
-        PRINT_BY_ROOT("%s", help_message);
-        return -1;
-    }
-
-    std::string backend_str = (argc > 1) ? std::string(argv[1]) : DEFAULT_BACKEND;
-    std::set<std::string> suppored_backends { "cpu" };
-#ifdef ENABLE_SYCL
-    suppored_backends.insert("sycl");
-#endif
-
-    std::stringstream sstream;
-    if (suppored_backends.find(backend_str) == suppored_backends.end())
-    {
-        PRINT_BY_ROOT("unsupported backend: %s", backend_str.c_str());
-
-        std::copy(suppored_backends.begin(), suppored_backends.end(),
-                  std::ostream_iterator<std::string>(sstream, " "));
-        PRINT_BY_ROOT("supported backends: %s", sstream.str().c_str());
-        PRINT_BY_ROOT("%s", help_message);
-        return -1;
-    }
-
-    backend_type_t backend_type = BACKEND_CPU;
-    if (backend_str == "sycl")
-        backend_type = BACKEND_SYCL;
-
-    switch (backend_type)
-    {
-        case BACKEND_CPU:
-            stream = new ccl::stream(ccl::stream_type::cpu, nullptr);
-            break;
-        case BACKEND_SYCL:
-#ifdef ENABLE_SYCL
-            stream = new ccl::stream(ccl::stream_type::sycl, &sycl_queue);
-#else
-            ASSERT(0, "sycl backend is requested but ENABLE_SYCL is not defined");
-#endif
-            break;
-        default:
-            ASSERT(0, "unknown backend %d", backend_type);
-            break;
-    }
-
-    try
-    {
-        coll_names = tokenize((argc == 3) ? argv[2] : DEFAULT_COLL_LIST, ',');
-        create_colls<DTYPE>(coll_names, backend_type, colls);
-    }
-    catch (const std::runtime_error& e)
-    {
-        ASSERT(0, "cannot create coll objects: %s\n%s", e.what(), help_message);
-    }
-
-    if (colls.empty())
-    {
-        PRINT_BY_ROOT("%s", help_message);
-        ASSERT(0, "unexpected coll list");
-    }
-
-    int check_values = 1;
-
-    comm.barrier();
-
-    char match_id[MATCH_ID_SIZE] {'\0'};
-    coll_attr.match_id = match_id;
-    std::copy(coll_names.begin(), coll_names.end(),
-              std::ostream_iterator<std::string>(sstream, " "));
-
-    PRINT_BY_ROOT("start colls: %s, iters: %d, buf_count: %d, ranks %zu, check_values %d, backend %s",
-                  sstream.str().c_str(), ITERS, BUF_COUNT, comm.size(), check_values, backend_str.c_str());
-
-    for (auto& coll : colls)
-    {
-        coll->check_values = check_values;
-        coll->comm = comm;
-        coll->stream = stream;
-    }
+    char* match_id = (char*)coll_attr.match_id;
 
     reqs.reserve(colls.size() * BUF_COUNT);
 
@@ -1104,7 +1029,7 @@ int main(int argc, char *argv[])
             auto& coll = colls[coll_idx];
             for (size_t buf_idx = 0; buf_idx < BUF_COUNT; buf_idx++)
             {
-                // snprintf(match_id, sizeof(match_id), "coll_%s_%zu_count_%zu_buf_%zu",
+                // snprintf(match_id, MATCH_ID_SIZE, "coll_%s_%zu_count_%zu_buf_%zu",
                 //          coll->name(), coll_idx, count, buf_idx);
                 // PRINT_BY_ROOT("start_coll: %s, count %zu, buf_idx %zu", coll->name(), count, buf_idx);
                 coll->start(count, buf_idx, coll_attr, reqs);
@@ -1138,7 +1063,7 @@ int main(int argc, char *argv[])
                     auto& coll = colls[coll_idx];
                     for (size_t buf_idx = 0; buf_idx < BUF_COUNT; buf_idx++)
                     {
-                        snprintf(match_id, sizeof(match_id), "coll_%s_%zu_count_%zu_buf_%zu",
+                        snprintf(match_id, MATCH_ID_SIZE, "coll_%s_%zu_count_%zu_buf_%zu",
                                  coll->name(), coll_idx, count, buf_idx);
                         coll->start(count, buf_idx, coll_attr, reqs);
                     }
@@ -1183,7 +1108,7 @@ int main(int argc, char *argv[])
                 for (size_t coll_idx = 0; coll_idx < colls.size(); coll_idx++)
                 {
                     auto& coll = colls[coll_idx];
-                    snprintf(match_id, sizeof(match_id), "coll_%s_%zu_single_count_%zu",
+                    snprintf(match_id, MATCH_ID_SIZE, "coll_%s_%zu_single_count_%zu",
                              coll->name(), coll_idx, count);
                     coll->start_single(count, coll_attr, reqs);
                 }
@@ -1206,6 +1131,209 @@ int main(int argc, char *argv[])
     }
 
     PRINT_BY_ROOT("PASSED\n");
+}
+
+void do_unordered(ccl::communicator& comm,
+                  ccl::coll_attr& coll_attr,
+                  coll_list_t& colls,
+                  req_list_t& reqs)
+{
+    std::set<std::string> match_ids;
+    char* match_id = (char*)coll_attr.match_id;
+    size_t rank = comm.rank();
+
+    reqs.reserve(colls.size() * BUF_COUNT * (log2(ELEM_COUNT) + 1));
+
+    PRINT_BY_ROOT("do unordered test");
+    coll_attr.to_cache = 1;
+
+    for (size_t count = 1; count <= ELEM_COUNT; count *= 2)
+    {
+        try
+        {
+            if (rank % 2)
+            {
+                for (size_t coll_idx = 0; coll_idx < colls.size(); coll_idx++)
+                {
+                    auto& coll = colls[coll_idx];
+                    for (size_t buf_idx = 0; buf_idx < BUF_COUNT; buf_idx++)
+                    {
+                        snprintf(match_id, MATCH_ID_SIZE, "coll_%s_%zu_count_%zu_buf_%zu",
+                                 coll->name(), coll_idx, count, buf_idx);
+                        coll->start(count, buf_idx, coll_attr, reqs);
+                        match_ids.emplace(match_id);
+                    }
+                }
+            }
+            else
+            {
+                for (size_t coll_idx = 0; coll_idx < colls.size(); coll_idx++)
+                {
+                    size_t real_coll_idx = colls.size() - coll_idx - 1;
+                    auto& coll = colls[real_coll_idx];
+                    for (size_t buf_idx = 0; buf_idx < BUF_COUNT; buf_idx++)
+                    {
+                        size_t real_buf_idx = BUF_COUNT - buf_idx - 1;
+                        snprintf(match_id, MATCH_ID_SIZE, "coll_%s_%zu_count_%zu_buf_%zu",
+                                 coll->name(), real_coll_idx, count, real_buf_idx);
+                        coll->start(count, real_buf_idx, coll_attr, reqs);
+                        match_ids.insert(std::string(match_id));
+                    }
+                }
+            }
+        }
+        catch (...)
+        {
+            ASSERT(0, "error on count %zu", count);
+        }
+    }
+
+    ASSERT(match_ids.size() == reqs.size(),
+           "unexpected match_ids.size %zu, expected %zu",
+           match_ids.size(), reqs.size());
+
+    try
+    {
+        for (auto &req : reqs)
+        {
+            req->wait();
+        }
+    }
+    catch (...)
+    {
+        ASSERT(0, "error on coll completion");
+    }
+
+
+    PRINT_BY_ROOT("PASSED\n");
+}
+
+
+int main(int argc, char *argv[])
+{
+    if (argc > 4)
+    {
+        PRINT("%s", help_message);
+        return -1;
+    }
+
+    std::string backend_str = (argc > 1) ? std::string(argv[1]) : DEFAULT_BACKEND;
+    std::set<std::string> suppored_backends { "cpu" };
+#ifdef ENABLE_SYCL
+    suppored_backends.insert("sycl");
+#endif
+
+    std::stringstream sstream;
+    if (suppored_backends.find(backend_str) == suppored_backends.end())
+    {
+        PRINT("unsupported backend: %s", backend_str.c_str());
+
+        std::copy(suppored_backends.begin(), suppored_backends.end(),
+                  std::ostream_iterator<std::string>(sstream, " "));
+        PRINT("supported backends: %s", sstream.str().c_str());
+        PRINT("%s", help_message);
+        return -1;
+    }
+
+    backend_type_t backend_type = BACKEND_CPU;
+    if (backend_str == "sycl")
+        backend_type = BACKEND_SYCL;
+
+    std::string loop_str = (argc > 2) ? std::string(argv[2]) : DEFAULT_LOOP;
+    std::set<std::string> suppored_loops { "regular", "unordered" };
+    if (suppored_loops.find(loop_str) == suppored_loops.end())
+    {
+        PRINT("unsupported loop: %s", loop_str.c_str());
+
+        std::copy(suppored_loops.begin(), suppored_loops.end(),
+                  std::ostream_iterator<std::string>(sstream, " "));
+        PRINT("supported loops: %s", sstream.str().c_str());
+        PRINT("%s", help_message);
+        return -1;
+    }
+
+    loop_type_t loop = LOOP_REGULAR;
+    if (loop_str == "unordered")
+    {
+        loop = LOOP_UNORDERED;
+        setenv("CCL_UNORDERED_COLL", "1", 1);
+    }
+
+    ccl::environment env;
+    ccl::communicator comm;
+    ccl::stream* stream;
+    ccl::coll_attr coll_attr{};
+
+    std::list<std::string> coll_names;
+    coll_list_t colls;
+    req_list_t reqs;
+
+    char match_id[MATCH_ID_SIZE] {'\0'};
+    coll_attr.match_id = match_id;
+
+    switch (backend_type)
+    {
+        case BACKEND_CPU:
+            stream = new ccl::stream(ccl::stream_type::cpu, nullptr);
+            break;
+        case BACKEND_SYCL:
+#ifdef ENABLE_SYCL
+            stream = new ccl::stream(ccl::stream_type::sycl, &sycl_queue);
+#else
+            ASSERT(0, "sycl backend is requested but ENABLE_SYCL is not defined");
+#endif
+            break;
+        default:
+            ASSERT(0, "unknown backend %d", backend_type);
+            break;
+    }
+
+    try
+    {
+        coll_names = tokenize((argc == 4) ? argv[3] : DEFAULT_COLL_LIST, ',');
+        create_colls<DTYPE>(coll_names, backend_type, colls);
+    }
+    catch (const std::runtime_error& e)
+    {
+        ASSERT(0, "cannot create coll objects: %s\n%s", e.what(), help_message);
+    }
+
+    if (colls.empty())
+    {
+        PRINT_BY_ROOT("%s", help_message);
+        ASSERT(0, "unexpected coll list");
+    }
+
+    int check_values = 1;
+
+    comm.barrier();
+
+    std::copy(coll_names.begin(), coll_names.end(),
+              std::ostream_iterator<std::string>(sstream, " "));
+
+    PRINT_BY_ROOT("start colls: %s, iters: %d, buf_count: %d, ranks %zu, check_values %d, backend %s, loop %s",
+                  sstream.str().c_str(), ITERS, BUF_COUNT, comm.size(), check_values,
+                  backend_str.c_str(), loop_str.c_str());
+
+    for (auto& coll : colls)
+    {
+        coll->check_values = check_values;
+        coll->comm = comm;
+        coll->stream = stream;
+    }
+
+    switch (loop)
+    {
+        case LOOP_REGULAR:
+            do_regular(comm, coll_attr, colls, reqs);
+            break;
+        case LOOP_UNORDERED:
+            do_unordered(comm, coll_attr, colls, reqs);
+            break;
+        default:
+            ASSERT(0, "unknown loop %d", loop);
+            break;
+    }
 
     return 0;
 }

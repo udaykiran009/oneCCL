@@ -13,8 +13,8 @@ void ccl_sched_bin::add(ccl_sched* sched)
     sched->bin = this;
     sched->queue = queue;
     sched_list.add(sched);
-
 }
+
 size_t ccl_sched_bin::erase(size_t idx, size_t& next_idx)
 {
     ccl_sched* sched = nullptr;
@@ -64,6 +64,7 @@ ccl_sched_queue::~ccl_sched_queue()
 
 void ccl_sched_queue::add(ccl_sched* sched)
 {
+    CCL_ASSERT(sched && !sched->bin);
     sched->set_in_bin_status(ccl_sched_in_bin_none);
     add_internal(sched);
 }
@@ -83,7 +84,7 @@ void ccl_sched_queue::add_internal(ccl_sched* sched, bool need_to_lock /* = true
 
     sched->set_in_bin_status(ccl_sched_in_bin_added);
 
-    LOG_DEBUG("sched ", sched, ", priority ", priority);
+    LOG_DEBUG("add to bin: sched ", sched, ", priority ", priority);
 
     ccl_sched_bin* bin = nullptr;
 

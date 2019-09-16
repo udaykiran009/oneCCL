@@ -21,7 +21,7 @@ private:
 
     sched_queue_lock_t queue_guard{};
 
-    std::atomic_flag is_queue_empty = ATOMIC_FLAG_INIT;
+    std::atomic_bool is_queue_empty { true };
 
     /* used to buffer schedules which require strict start ordering */
     sched_queue_t queue{};

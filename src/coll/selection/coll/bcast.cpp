@@ -28,7 +28,16 @@ bool ccl_algorithm_selector_helper<ccl_coll_bcast_algo>::can_use(ccl_coll_bcast_
                                                           const ccl_coll_param& param,
                                                           const ccl_selection_table_t<ccl_coll_bcast_algo>& table)
 {
-    return true;
+    bool can_use = true;
+
+    if (env_data.enable_unordered_coll &&
+        algo == ccl_coll_bcast_double_tree)
+    {
+        /* TODO: stabilize double_tree bcast for unordered_coll case */ 
+        can_use = false;
+    }
+
+    return can_use;
 }
 
 CCL_SELECTION_DEFINE_HELPER_METHODS(ccl_coll_bcast_algo, ccl_coll_bcast,

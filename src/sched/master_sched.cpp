@@ -104,7 +104,7 @@ void ccl_master_sched::sync_partial_scheds()
     }
 }
 
-void ccl_master_sched::dump(std::ostream &out) const
+void ccl_master_sched::dump(std::ostream& out) const
 {
     if (!env_data.sched_dump)
     {
@@ -129,7 +129,6 @@ void ccl_master_sched::dump(std::ostream &out) const
 
     ccl_logger::format(out, "--------------------------------\n");
 }
-
 
 ccl_master_sched::ccl_master_sched_ptr ccl_master_sched::create(const ccl_coll_param& param,
                                                                 const ccl_coll_attr& attr,

@@ -116,7 +116,7 @@ public:
         finalize_fn_ctx = ctx;
     }
     ccl_request* req = nullptr;
-    void dump(std::ostream &out) const;
+    void dump(std::ostream& out) const;
 private:
     ccl_sched_finalize_fn_t finalize_fn = nullptr;
     void* finalize_fn_ctx;

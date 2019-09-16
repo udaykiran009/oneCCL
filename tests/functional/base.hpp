@@ -103,7 +103,6 @@ do {   \
     res_str;\
 } )
 
-
 #define RUN_METHOD_DEFINITION(ClassName)                                 \
     template <typename T>                                                \
     int MainTest::Run(TestParam tParam)                                  \
@@ -165,7 +164,7 @@ do {   \
     int main(int argc, char **argv, char* envs[]) \
     {                                             \
         InitTestParams();                         \
-        ccl::environment env;                    \
+        ccl::environment env;                     \
         PATCH_OUTPUT_NAME_ARG(argc, argv);        \
         testing::InitGoogleTest(&argc, argv);     \
         int res = RUN_ALL_TESTS();                \
@@ -634,40 +633,44 @@ struct TypedTestParam
         for (size_t i = 0; i < bufferCount; i++)
             sendBuf[i].resize(elemCount * processCount * sizeof(T));
     }
+
     std::string CreateMatchId(size_t idx)
     {
-        return (std::to_string(startArr[idx]) +
-               std::to_string(processCount) +
-               std::to_string(elemCount) +
-               std::to_string(GetReductionType()) +
-               std::to_string(GetSyncType()) +
-               std::to_string(GetCacheType()) +
-               std::to_string(GetSizeType()) +
-               std::to_string(GetDataType()) +
-               std::to_string(GetCompletionType()) +
-               std::to_string(GetPlaceType()) +
-               std::to_string(GetPriorityStartType()) +
-               std::to_string(GetPriorityType()) +
-               std::to_string(bufferCount) +
-               std::to_string(GetPrologType()) +
-               std::to_string(GetEpilogType()));
+        return (std::to_string(idx) +
+                std::to_string(processCount) +
+                std::to_string(elemCount) +
+                std::to_string(GetReductionType()) +
+                std::to_string(GetSyncType()) +
+                std::to_string(GetCacheType()) +
+                std::to_string(GetSizeType()) +
+                std::to_string(GetDataType()) +
+                std::to_string(GetCompletionType()) +
+                std::to_string(GetPlaceType()) +
+                std::to_string(GetPriorityStartType()) +
+                std::to_string(GetPriorityType()) +
+                std::to_string(bufferCount) +
+                std::to_string(GetPrologType()) +
+                std::to_string(GetEpilogType()));
     }
+
     bool CompleteRequest(std::shared_ptr < ccl::request > req)
     {
-        if (testParam.completionType == CMPT_TEST) {
-            bool isCompleted = false;
-            size_t count = 0;
-            do {
-                isCompleted = req->test();
-                count++;
-            } while (!isCompleted);
+        if (testParam.completionType == CMPT_TEST)
+        {
+            return req->test();
         }
         else if (testParam.completionType == CMPT_WAIT)
+        {
             req->wait();
+            return true;
+        }
         else
+        {
             ASSERT(0, "unexpected completion type %d", testParam.completionType);
-        return TEST_SUCCESS;
+            return false;
+        }
     }
+
     size_t* DefineStartOrder()
     {
             size_t idx = 0;
@@ -679,21 +682,20 @@ struct TypedTestParam
                         startArr[idx] = (bufferCount - idx - 1);
                 // TODO: should be enabled after CCL_UNORDERED_COLL
                 else if (testParam.priorityStartType == PRT_RANDOM){
-                    char* testDynamicPointer = getenv("CCL_UNORDERED_COLL");
-                    if (testDynamicPointer && atoi(testDynamicPointer) == 1) {
-                        size_t j;
+                    char* testUnorderedColl = getenv("CCL_UNORDERED_COLL");
+                    if (testUnorderedColl && atoi(testUnorderedColl) == 1) {
+                        //size_t j;
                         for (idx = 0; idx < bufferCount; idx++)
                             startArr[idx] = idx;
-                        for(int k=bufferCount; k>1; k--) {
-                           j = (rand() + processIdx) % k;
-                           int tmp = startArr[k-1];
-                           startArr[k-1] = startArr[j];
-                           startArr[j] = tmp;
-                        }
+                        // for(int k=bufferCount; k>1; k--) {
+                        //    j = (rand() + processIdx) % k;
+                        //    int tmp = startArr[k-1];
+                        //    startArr[k-1] = startArr[j];
+                        //    startArr[j] = tmp;
+                        // }
                     }
                     else {
                     for (idx = 0; idx < bufferCount; idx++)
-                        // startArr[idx] = rand() % bufferCount;
                          startArr[idx] = idx;
                     }
                 }
@@ -703,27 +705,34 @@ struct TypedTestParam
     }
     bool DefineCompletionOrderAndComplete()
     {
-            size_t idx, msg_idx, is_completed;
+            size_t idx, msg_idx;
             size_t completions = 0;
             int msg_completions[bufferCount];
+
             memset(msg_completions, 0, bufferCount * sizeof(int));
+
             while (completions < bufferCount)
             {
                 for (idx = 0; idx < bufferCount; idx++)
                 {
                     if (testParam.priorityType == PRT_DIRECT || testParam.priorityType == PRT_DISABLE)
+                    {
                         msg_idx = idx;
+                    }
                     else if (testParam.priorityType == PRT_INDIRECT)
+                    {
                         msg_idx = (bufferCount - idx - 1);
-                    else if (testParam.priorityType == PRT_RANDOM){
+                    }
+                    else if (testParam.priorityType == PRT_RANDOM)
+                    {
                         msg_idx = rand() % bufferCount;
                     }
                     else 
                         msg_idx = idx;
+
                     if (msg_completions[msg_idx]) continue;
-                    is_completed = -1;
-                    is_completed = CompleteRequest(req[msg_idx]);
-                    if (is_completed == 0)
+
+                    if (CompleteRequest(req[msg_idx]))
                     {
                         completions++;
                         msg_completions[msg_idx] = 1;
@@ -732,18 +741,10 @@ struct TypedTestParam
             }
         return TEST_SUCCESS;
     }
-    size_t PriorityRequest() {
-        size_t min_priority = 0, max_priority = bufferCount, priority = 0, idx = 0;
-        if (testParam.priorityType != PRT_DISABLE) {
-            for (idx = 0; idx < bufferCount; idx++) {
-                priority = min_priority + idx;
-                if (priority > max_priority)
-                    priority = max_priority;
-            }
-        }
-        else
-            priority = 0;
-        return priority;
+
+    size_t CreatePriorityValue(size_t idx)
+    {
+        return (testParam.priorityType != PRT_DISABLE) ? idx : 0;
     }
 
     void Print(std::ostream &output) {
@@ -765,6 +766,7 @@ struct TypedTestParam
                \nbufferCount %zu \
                \nprologType %s \
                \nepilogType %s \
+               \nmatch_id %s \
                \n-------------\n",
                processCount,
                processIdx,
@@ -780,7 +782,8 @@ struct TypedTestParam
                GetPriorityTypeStr(),
                bufferCount,
                GetPrologTypeStr(),
-               GetEpilogTypeStr()
+               GetEpilogTypeStr(),
+               match_id.c_str()
                );
        output << strParameters;
        fflush(stdout);
@@ -902,7 +905,7 @@ public:
 
     BaseTest() { memset(this->errMessage, '\0', ERR_MESSAGE_MAX_LEN); }
     void Init(TypedTestParam <T> &param, size_t idx){
-        param.coll_attr.priority = (int)param.PriorityRequest();
+        param.coll_attr.priority = param.CreatePriorityValue(idx);
         param.coll_attr.to_cache = (int)param.GetCacheType();
         char* testUnorderedColl = getenv("CCL_UNORDERED_COLL");
         if (testUnorderedColl && atoi(testUnorderedColl) == 1)
@@ -926,6 +929,7 @@ public:
                             tmpBuf[j][i] = param.sendBuf[j][i];
                         }
                     }
+                    param.sendBuf.swap(tmpBuf);
                 }
             }
         }
