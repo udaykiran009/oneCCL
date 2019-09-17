@@ -68,7 +68,7 @@ void json_get_val(FILE* fp, const char** keys, size_t keys_count, char* val)
         res[strlen(res) - 1] = '\0';
         last_char = res[strlen(res) - 1];
     }
-    strncpy(val, res, MAX_KVS_VAL_LENGTH);
+    STR_COPY(val, res, MAX_KVS_VAL_LENGTH);
     while (fgets(cur_kvs_str, MAX_KVS_STR_LENGTH, fp))
     {}
 }
@@ -100,7 +100,11 @@ size_t k8s_init_with_manager()
     SET_STR(run_str, RUN_REQUEST_SIZE, AUTHORIZATION_TEMPLATE, connect_api_template, my_hostname, "");
 
     memset(kind_type, NULL_CHAR, MAX_KVS_NAME_LENGTH);
-    fp_name = popen(run_str, READ_ONLY);
+    if ((fp_name = popen(run_str, READ_ONLY)) == NULL)
+    {
+        printf("Can't get kind_type\n");
+        exit(1);
+    }
     json_get_val(fp_name, kind_type_key, 3, kind_type);
 
     /*we must use the plural to access to statefulset/deployment KVS*/
@@ -111,7 +115,11 @@ size_t k8s_init_with_manager()
         kind_type[i] = (char)tolower(kind_type[i]);
 
     memset(kind_name, NULL_CHAR, MAX_KVS_NAME_LENGTH);
-    fp_type = popen(run_str, READ_ONLY);
+    if ((fp_type = popen(run_str, READ_ONLY)) == NULL)
+    {
+        printf("Can't get kind_name\n");
+        exit(1);
+    }
     json_get_val(fp_type, kind_name_key, 3, kind_name);
 
     SET_STR(kind_path, MAX_KVS_NAME_LENGTH, "%s/%s", kind_type, kind_name);
@@ -197,7 +205,11 @@ size_t get_by_template(char*** kvs_entry, const char* request, const char* templ
 
     SET_STR(get_val, REQUEST_POSTFIX_SIZE, CONCAT_TWO_COMMAND_TEMPLATE, request, template);
     SET_STR(run_str, RUN_REQUEST_SIZE, run_get_template, get_val);
-    fp = popen(run_str, READ_ONLY);
+    if ((fp = popen(run_str, READ_ONLY)) == NULL)
+    {
+        printf("Can't get by template\n");
+        exit(1);
+    }
     while ((fgets((*kvs_entry)[i], max_count, fp) != NULL) &&
            (i < count))
     {
@@ -224,7 +236,11 @@ size_t request_k8s_get_keys_values_by_name(const char* kvs_name, char*** kvs_key
     /*get dead/new rank*/
     SET_STR(run_str, RUN_REQUEST_SIZE, run_get_template, get_name_count);
 
-    fp = popen(run_str, READ_ONLY);
+    if ((fp = popen(run_str, READ_ONLY)) == NULL)
+    {
+        printf("Can't get keys-values by name: %s\n", kvs_name);
+        exit(1);
+    }
     fgets(values_count_str, INT_STR_SIZE, fp);
     pclose(fp);
 
@@ -256,7 +272,11 @@ size_t request_k8s_get_count_names(const char* kvs_name)
     /*get count accepted pods (like comm_world size)*/
     SET_STR(run_str, RUN_REQUEST_SIZE, run_get_template, get_count_str);
 
-    fp = popen(run_str, READ_ONLY);
+    if ((fp = popen(run_str, READ_ONLY)) == NULL)
+    {
+        printf("Can't get names count: %s\n", kvs_name);
+        exit(1);
+    }
     fgets(count_names, INT_STR_SIZE, fp);
     pclose(fp);
 
@@ -279,7 +299,11 @@ size_t request_k8s_get_val_by_name_key(const char* kvs_name, const char* kvs_key
     /*check: is me accepted*/
     SET_STR(run_str, RUN_REQUEST_SIZE, run_get_template, get_kvs_val);
 
-    fp = popen(run_str, READ_ONLY);
+    if ((fp = popen(run_str, READ_ONLY)) == NULL)
+    {
+        printf("Can't get value by name-key: %s\n", kvs_name_key);
+        exit(1);
+    }
     fgets(kvs_val, MAX_KVS_VAL_LENGTH, fp);
     pclose(fp);
     kvs_val[strlen(kvs_val) - 1] = NULL_CHAR;
@@ -299,7 +323,11 @@ size_t request_k8s_remove_name_key(const char* kvs_name, const char* kvs_key)
     /*remove old entry*/
     SET_STR(run_str, RUN_REQUEST_SIZE, run_set_template, patch);
 
-    fp = popen(run_str, READ_ONLY);
+    if ((fp = popen(run_str, READ_ONLY)) == NULL)
+    {
+        printf("Can't remove name-key: %s\n", kvs_name_key);
+        exit(1);
+    }
     pclose(fp);
     return 0;
 }
@@ -317,7 +345,11 @@ size_t request_k8s_set_val(const char* kvs_name, const char* kvs_key, const char
     /*insert new entry*/
     SET_STR(run_str, RUN_REQUEST_SIZE, run_set_template, patch);
 
-    fp = popen(run_str, READ_ONLY);
+    if ((fp = popen(run_str, READ_ONLY)) == NULL)
+    {
+        printf("Can't set name-key-val: %s-%s\n", kvs_name_key, kvs_val);
+        exit(1);
+    }
     pclose(fp);
     return 0;
 }
@@ -326,7 +358,7 @@ size_t request_k8s_get_replica_size(void)
 {
     FILE* fp;
     char run_str[RUN_REQUEST_SIZE];
-    char replica_size_str[INT_STR_SIZE];
+    char replica_size_str[MAX_KVS_VAL_LENGTH];
     const char* replica_keys[] = {"spec", "replicas"};
 
     switch (manager)
@@ -337,7 +369,11 @@ size_t request_k8s_get_replica_size(void)
         /*get full output*/
         SET_STR(run_str, RUN_REQUEST_SIZE, run_get_template, "");
 
-        fp = popen(run_str, READ_ONLY);
+        if ((fp = popen(run_str, READ_ONLY)) == NULL)
+        {
+            printf("Can't get replica size\n");
+            exit(1);
+        }
         json_get_val(fp, replica_keys, 2, replica_size_str);
         pclose(fp);
         return strtol(replica_size_str, NULL, 10);

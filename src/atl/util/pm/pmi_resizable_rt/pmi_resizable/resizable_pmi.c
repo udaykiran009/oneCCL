@@ -216,14 +216,18 @@ int PMIR_API PMIR_Init(void)
     struct sigaction act;
     FILE* fp;
     memset(my_hostname, '\0', MAX_KVS_VAL_LENGTH);
-    fp = popen("hostname", READ_ONLY);
+    if ((fp = popen("hostname", READ_ONLY)) == NULL)
+    {
+        printf("Can't get hostname\n");
+        exit(1);
+    }
     fgets(my_hostname, MAX_KVS_VAL_LENGTH, fp);
     pclose(fp);
     while (my_hostname[strlen(my_hostname)-1] == '\n' ||
            my_hostname[strlen(my_hostname)-1] == ' ')
         my_hostname[strlen(my_hostname)-1] = '\0';
 
-    SET_STR(&(my_hostname[strlen(my_hostname)-1]), MAX_KVS_VAL_LENGTH, "-%d", getpid());
+    SET_STR(&(my_hostname[strlen(my_hostname)-1]), MAX_KVS_VAL_LENGTH - (int)strlen(my_hostname) - 1, "-%d", getpid());
 
     if (kvs_init())
     {
@@ -313,7 +317,7 @@ int PMIR_API PMIR_Get_rank(size_t* rank)
 
 int PMIR_API PMIR_KVS_Get_my_name(char * kvs_name, size_t length)
 {
-    strncpy(kvs_name, KVS_NAME, length);
+    STR_COPY(kvs_name, KVS_NAME, length);
     return 0;
 }
 

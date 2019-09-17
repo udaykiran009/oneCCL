@@ -59,9 +59,9 @@ size_t kvs_set_value(const char* kvs_name, const char* kvs_key, const char* kvs_
 {
     kvs_request_t request;
     request.mode = AM_PUT;
-    strncpy(request.name, kvs_name, MAX_KVS_NAME_LENGTH);
-    strncpy(request.key, kvs_key, MAX_KVS_KEY_LENGTH);
-    strncpy(request.val, kvs_val, MAX_KVS_VAL_LENGTH);
+    STR_COPY(request.name, kvs_name, MAX_KVS_NAME_LENGTH);
+    STR_COPY(request.key, kvs_key, MAX_KVS_KEY_LENGTH);
+    STR_COPY(request.val, kvs_val, MAX_KVS_VAL_LENGTH);
 
     write(sock_sender, &request, sizeof(kvs_request_t));
 
@@ -72,8 +72,8 @@ size_t kvs_remove_name_key(const char* kvs_name, const char* kvs_key)
 {
     kvs_request_t request;
     request.mode = AM_REMOVE;
-    strncpy(request.name, kvs_name, MAX_KVS_NAME_LENGTH);
-    strncpy(request.key, kvs_key, MAX_KVS_KEY_LENGTH);
+    STR_COPY(request.name, kvs_name, MAX_KVS_NAME_LENGTH);
+    STR_COPY(request.key, kvs_key, MAX_KVS_KEY_LENGTH);
 
     write(sock_sender, &request, sizeof(kvs_request_t));
 
@@ -85,8 +85,9 @@ size_t kvs_get_value_by_name_key(const char* kvs_name, const char* kvs_key, char
     kvs_request_t request;
     request.mode = AM_GET_VAL;
     size_t is_exist = 0;
-    strncpy(request.name, kvs_name, MAX_KVS_NAME_LENGTH);
-    strncpy(request.key, kvs_key, MAX_KVS_KEY_LENGTH);
+    STR_COPY(request.name, kvs_name, MAX_KVS_NAME_LENGTH);
+    STR_COPY(request.key, kvs_key, MAX_KVS_KEY_LENGTH);
+    memset(kvs_val, 0, MAX_KVS_VAL_LENGTH);
 
     write(sock_sender, &request, sizeof(kvs_request_t));
 
@@ -94,11 +95,7 @@ size_t kvs_get_value_by_name_key(const char* kvs_name, const char* kvs_key, char
     if (is_exist)
     {
         read(sock_sender, &request, sizeof(kvs_request_t));
-        strncpy(kvs_val, request.val, MAX_KVS_VAL_LENGTH);
-    }
-    else
-    {
-        memset(kvs_val, 0, MAX_KVS_VAL_LENGTH);
+        STR_COPY(kvs_val, request.val, MAX_KVS_VAL_LENGTH);
     }
 
     return strlen(kvs_val);
@@ -109,7 +106,7 @@ size_t kvs_get_count_names(const char* kvs_name)
     size_t count_names = 0;
     kvs_request_t request;
     request.mode = AM_GET_COUNT;
-    strncpy(request.name, kvs_name, MAX_KVS_NAME_LENGTH);
+    STR_COPY(request.name, kvs_name, MAX_KVS_NAME_LENGTH);
 
     write(sock_sender, &request, sizeof(kvs_request_t));
 
@@ -125,7 +122,7 @@ size_t kvs_get_keys_values_by_name(const char* kvs_name, char*** kvs_keys, char*
     kvs_request_t request;
     kvs_request_t* answers;
     request.mode = AM_GET_KEYS_VALUES;
-    strncpy(request.name, kvs_name, MAX_KVS_NAME_LENGTH);
+    STR_COPY(request.name, kvs_name, MAX_KVS_NAME_LENGTH);
 
     write(sock_sender, &request, sizeof(kvs_request_t));
 
@@ -145,7 +142,7 @@ size_t kvs_get_keys_values_by_name(const char* kvs_name, char*** kvs_keys, char*
         for (i = 0; i < count; i++)
         {
             (*kvs_keys)[i] = (char*) malloc(sizeof(char) * MAX_KVS_KEY_LENGTH);
-            strncpy((*kvs_keys)[i], answers[i].key, MAX_KVS_KEY_LENGTH);
+            STR_COPY((*kvs_keys)[i], answers[i].key, MAX_KVS_KEY_LENGTH);
         }
     }
     if (kvs_values != NULL)
@@ -157,9 +154,11 @@ size_t kvs_get_keys_values_by_name(const char* kvs_name, char*** kvs_keys, char*
         for (i = 0; i < count; i++)
         {
             (*kvs_values)[i] = (char*) malloc(sizeof(char) * MAX_KVS_VAL_LENGTH);
-            strncpy((*kvs_values)[i], answers[i].val, MAX_KVS_VAL_LENGTH);
+            STR_COPY((*kvs_values)[i], answers[i].val, MAX_KVS_VAL_LENGTH);
         }
     }
+
+    free(answers);
 
     return count;
 }
@@ -263,6 +262,11 @@ void* kvs_server_init(void* args)
                     break;
                 }
             }
+            if (i >= MAX_CLIENT_COUNT)
+            {
+                printf("server: Not enough free sockets\n");
+                exit(1);
+            }
             continue;
         }
         if (FD_ISSET(local_sock, &read_fds))
@@ -271,6 +275,11 @@ void* kvs_server_init(void* args)
             {
                 close(local_sock);
                 local_sock = 0;
+            }
+            if (request.mode != AM_FINALIZE)
+            {
+                printf("server: Wrong access mode for local socket.\n");
+                exit(1);
             }
         }
         else
@@ -354,9 +363,9 @@ void* kvs_server_init(void* args)
                 answers = (kvs_request_t*) malloc(sizeof(kvs_request_t) * count);
                 for (j = 0; j < count; j++)
                 {
-                    strncpy(answers[j].name, request.name, MAX_KVS_NAME_LENGTH);
-                    strncpy(answers[j].key, kvs_keys[j], MAX_KVS_KEY_LENGTH);
-                    strncpy(answers[j].val, kvs_values[j], MAX_KVS_VAL_LENGTH);
+                    STR_COPY(answers[j].name, request.name, MAX_KVS_NAME_LENGTH);
+                    STR_COPY(answers[j].key, kvs_keys[j], MAX_KVS_KEY_LENGTH);
+                    STR_COPY(answers[j].val, kvs_values[j], MAX_KVS_VAL_LENGTH);
                 }
 
                 write(client_socket[i], answers, sizeof(kvs_request_t) * count);
@@ -404,9 +413,11 @@ void* kvs_server_init(void* args)
 
 size_t init_main_server_by_k8s(void)
 {
-    char port_str[INT_STR_SIZE];
+    char port_str[MAX_KVS_VAL_LENGTH];
     char** kvs_values = NULL;
     char** kvs_keys = NULL;
+    size_t i;
+    size_t name_count = 0;
     request_k8s_kvs_init();
 
     SET_STR(port_str, INT_STR_SIZE, "%d", local_server_address.sin_port);
@@ -416,13 +427,19 @@ size_t init_main_server_by_k8s(void)
 
     if (!request_k8s_get_count_names(MASTER_ADDR))
     {
-        request_k8s_get_keys_values_by_name(CCL_KVS_IP, &kvs_keys, &kvs_values);
+        name_count = request_k8s_get_keys_values_by_name(CCL_KVS_IP, &kvs_keys, &kvs_values);
         if (strstr(kvs_keys[0], my_hostname))
         {
+            for (i = 0; i < name_count; i++)
+            {
+                free(kvs_keys[i]);
+                free(kvs_values[i]);
+            }
             request_k8s_set_val(REQ_KVS_IP, my_hostname, local_host_ip);
             while (!request_k8s_get_count_names(MASTER_ADDR))
             {
-                if (request_k8s_get_keys_values_by_name(REQ_KVS_IP, &kvs_keys, &kvs_values) > 1)
+                name_count = request_k8s_get_keys_values_by_name(REQ_KVS_IP, &kvs_keys, &kvs_values);
+                if (name_count > 1)
                 {
                     if (!strstr(kvs_keys[0], my_hostname))
                     {
@@ -434,10 +451,25 @@ size_t init_main_server_by_k8s(void)
                     request_k8s_set_val(MASTER_ADDR, KVS_IP, local_host_ip);
                     request_k8s_set_val(MASTER_ADDR, KVS_PORT, port_str);
                 }
+                for (i = 0; i < name_count; i++)
+                {
+                    free(kvs_keys[i]);
+                    free(kvs_values[i]);
+                }
+                name_count = 0;
             }
             request_k8s_remove_name_key(REQ_KVS_IP, my_hostname);
         }
     }
+    for (i = 0; i < name_count; i++)
+    {
+        free(kvs_keys[i]);
+        free(kvs_values[i]);
+    }
+    if (kvs_keys)
+        free(kvs_keys);
+    if (kvs_values)
+        free(kvs_values);
     while (!request_k8s_get_count_names(MASTER_ADDR))
     {
         sleep(1);
@@ -477,7 +509,7 @@ size_t init_main_server_by_env(void)
     port++;
 
     memset(main_host_ip, 0, CCL_IP_LEN);
-    strncpy(main_host_ip, tmp_host_ip, CCL_IP_LEN);
+    STR_COPY(main_host_ip, tmp_host_ip, CCL_IP_LEN);
 
     main_port = strtol(port, NULL, 10);
     main_server_address.sin_port = main_port;
@@ -496,7 +528,11 @@ size_t init_main_server_address(void)
     FILE* fp;
     char* point_to_space;
 
-    fp = popen(CHECKER_IP, READ_ONLY);
+    if ((fp = popen(CHECKER_IP, READ_ONLY)) == NULL)
+    {
+        printf("Can't get host IP\n");
+        exit(1);
+    }
     fgets(local_host_ip, CCL_IP_LEN, fp);
     pclose(fp);
 

@@ -54,16 +54,17 @@ static void atl_ini_dir(int *argc, char ***argv, size_t *proc_idx, size_t *proc_
             free(lib);
             continue;
         }
-        free(lib);
 
         init_func = reinterpret_cast<init_f >(dlsym(dlhandle, "atl_ini"));
         if (init_func == NULL) {
             dlclose(dlhandle);
+            free(lib);
         } else {
             LOG_DEBUG("lib ", lib, " contains necessary symbol");
             atl_transport_t transport;
             // TODO: propagate atl_status to upper level
             atl_status_t ret;
+            free(lib);
 
             if ((init_func)(&transport) != atl_status_success)
                 continue;

@@ -6,7 +6,8 @@ void run_collective(const char* cmd_name,
                     ccl::stream& stream,
                     ccl::coll_attr& coll_attr)
 {
-    std::chrono::system_clock::duration exec_time{};
+    std::chrono::system_clock::duration exec_time{0};
+    float received;
 
     if (comm.rank() == COLL_ROOT)
     {
@@ -31,10 +32,11 @@ void run_collective(const char* cmd_name,
 
     for (size_t idx = 0; idx < buf.size(); idx++)
     {
-        if (buf[idx] != idx)
+        received = buf[idx];
+        if (received != idx)
         {
             fprintf(stderr, "idx %zu, expected %4.4f, got %4.4f\n",
-                    idx, static_cast<float>(idx), buf[idx]);
+                    idx, static_cast<float>(idx), received);
             printf("FAILED\n");
             std::terminate();
         }

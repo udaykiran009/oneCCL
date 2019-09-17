@@ -90,6 +90,7 @@ void check_max_comm_number()
     status = ccl_comm_create(&comm, nullptr);
     if (status == ccl_status_success)
     {
+        ccl_comm_free(comm);
         printf("FAILED\n");
         throw runtime_error("extra communicator has been created");
     }
@@ -137,6 +138,9 @@ void check_comm_create_colored()
         size_t expected_ranks_count = size / split_by;
         if (comm_size != expected_ranks_count)
         {
+            if (comm != nullptr)
+                CCL_CALL(ccl_comm_free(comm));
+
             printf("FAILED\n");
             throw runtime_error("mismatch in size, expected " +
                                 to_string(expected_ranks_count) +
@@ -168,6 +172,9 @@ void check_comm_create_identical_color()
 
     if (comm_size != size)
     {
+        if (comm != nullptr)
+            CCL_CALL(ccl_comm_free(comm));
+
         printf("FAILED\n");
         throw runtime_error("mismatch in size, expected " +
                             to_string(size) +
@@ -176,6 +183,9 @@ void check_comm_create_identical_color()
 
     if (comm_rank != ::rank)
     {
+        if (comm != nullptr)
+            CCL_CALL(ccl_comm_free(comm));
+
         printf("FAILED\n");
         throw runtime_error("mismatch in rank, expected " +
                             to_string(::rank) +

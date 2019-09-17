@@ -12,7 +12,7 @@ size_t killed_ranks_count = 0;
 rank_list_t* new_ranks = NULL;
 size_t new_ranks_count = 0;
 
-void replace_str(char* str, size_t old, size_t new)
+size_t replace_str(char* str, size_t old, size_t new)
 {
     char old_str[INT_STR_SIZE];
     char new_str[INT_STR_SIZE];
@@ -25,6 +25,8 @@ void replace_str(char* str, size_t old, size_t new)
     SET_STR(new_str, INT_STR_SIZE, SIZE_T_TEMPLATE, new);
 
     point_to_replace = strstr(str, old_str);
+    if (point_to_replace == NULL)
+        return 1;
     old_str_size     = strlen(old_str);
     new_str_size     = strlen(new_str);
 
@@ -33,7 +35,8 @@ void replace_str(char* str, size_t old, size_t new)
         size_t rest_len = strlen(point_to_replace);
         memmove(point_to_replace + new_str_size, point_to_replace + old_str_size, rest_len);
     }
-    strncpy(point_to_replace, new_str, new_str_size);
+    STR_COPY(point_to_replace, new_str, new_str_size);
+    return 0;
 }
 
 void update_ranks(size_t* old_count, rank_list_t** origin_list, const char* kvs_name)

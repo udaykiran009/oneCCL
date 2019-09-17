@@ -119,7 +119,7 @@ public:
     void dump(std::ostream& out) const;
 private:
     ccl_sched_finalize_fn_t finalize_fn = nullptr;
-    void* finalize_fn_ctx;
+    void* finalize_fn_ctx = nullptr;
 
 
 #ifdef ENABLE_TIMERS

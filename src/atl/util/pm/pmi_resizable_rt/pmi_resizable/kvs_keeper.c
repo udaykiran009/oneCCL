@@ -48,7 +48,7 @@ size_t get_val(const char kvs_name[], const char kvs_key[], char* kvs_val, stora
         if (COMPARE_STR(new_key_ptr->kvs.name, kvs_name, kvs_name_len) &&
             COMPARE_STR(new_key_ptr->kvs.key,  kvs_key, kvs_key_len))
         {
-            strncpy(kvs_val, new_key_ptr->kvs.val, MAX_KVS_VAL_LENGTH);
+            STR_COPY(kvs_val, new_key_ptr->kvs.val, MAX_KVS_VAL_LENGTH);
             return 1;
         }
         new_key_ptr = new_key_ptr->next;
@@ -98,8 +98,8 @@ size_t get_keys_values(const char *kvs_name, char ***kvs_keys, char ***kvs_value
     {
         if (COMPARE_STR(new_key_ptr->kvs.name, kvs_name, kvs_name_len))
         {
-            strncpy((*kvs_keys)[i], new_key_ptr->kvs.key, MAX_KVS_KEY_LENGTH);
-            strncpy((*kvs_values)[i], new_key_ptr->kvs.val, MAX_KVS_VAL_LENGTH);
+            STR_COPY((*kvs_keys)[i], new_key_ptr->kvs.key, MAX_KVS_KEY_LENGTH);
+            STR_COPY((*kvs_values)[i], new_key_ptr->kvs.val, MAX_KVS_VAL_LENGTH);
             i++;
         }
         new_key_ptr = new_key_ptr->next;
@@ -171,9 +171,9 @@ void put_key(const char kvs_name[], const char kvs_key[], const char kvs_val[], 
     }
     kvs_list_size[st_type]++;
 copy:
-    strncpy(tmp_key_ptr->kvs.name, kvs_name, MAX_KVS_NAME_LENGTH);
-    strncpy(tmp_key_ptr->kvs.key, kvs_key, MAX_KVS_KEY_LENGTH);
-    strncpy(tmp_key_ptr->kvs.val, kvs_val, MAX_KVS_VAL_LENGTH);
+    STR_COPY(tmp_key_ptr->kvs.name, kvs_name, MAX_KVS_NAME_LENGTH);
+    STR_COPY(tmp_key_ptr->kvs.key, kvs_key, MAX_KVS_KEY_LENGTH);
+    STR_COPY(tmp_key_ptr->kvs.val, kvs_val, MAX_KVS_VAL_LENGTH);
 
     if (strlen(kvs_name) > MAX_KVS_NAME_LENGTH)
     {
@@ -211,9 +211,12 @@ size_t cut_head(char* kvs_name, char* kvs_key, char* kvs_val, storage_type_t st_
     {
         head[st_type] = head[st_type]->next;
 
-        strncpy(kvs_name, key_ptr->kvs.name, MAX_KVS_NAME_LENGTH);
-        strncpy(kvs_key, key_ptr->kvs.key, MAX_KVS_KEY_LENGTH);
-        strncpy(kvs_val, key_ptr->kvs.val, MAX_KVS_VAL_LENGTH);
+        memset(kvs_name, 0, MAX_KVS_NAME_LENGTH);
+        memset(kvs_key, 0, MAX_KVS_KEY_LENGTH);
+        memset(kvs_val, 0, MAX_KVS_VAL_LENGTH);
+        STR_COPY(kvs_name, key_ptr->kvs.name, MAX_KVS_NAME_LENGTH);
+        STR_COPY(kvs_key, key_ptr->kvs.key, MAX_KVS_KEY_LENGTH);
+        STR_COPY(kvs_val, key_ptr->kvs.val, MAX_KVS_VAL_LENGTH);
 
         free(key_ptr);
         kvs_list_size[st_type]--;

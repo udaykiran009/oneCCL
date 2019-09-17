@@ -122,6 +122,9 @@ ccl_status_t ccl_coll_build_ring_rma_allreduce(ccl_sched* sched, ccl_buffer send
     int inplace = (send_buf == recv_buf) ? 1 : 0;
     LOG_DEBUG("build ring rma allreduce (", (inplace) ? "in-place" : "out-of-place", ")");
 
+    CCL_THROW_IF_NOT(sched && send_buf && recv_buf, "incorrect values, sched ", sched,
+                     ", send ", send_buf, ", recv ", recv_buf);
+
     ccl_status_t status = ccl_status_success;
     size_t comm_size, rank;
     ccl_comm *comm = sched->coll_param.comm;
@@ -130,9 +133,6 @@ ccl_status_t ccl_coll_build_ring_rma_allreduce(ccl_sched* sched, ccl_buffer send
     ccl_buffer tmp_buf;
     comm_size = comm->size();
     rank = comm->rank();
-
-    CCL_THROW_IF_NOT(sched && send_buf && recv_buf, "incorrect values, sched ", sched,
-                    ", send ", send_buf, ", recv ", recv_buf);
 
     if (comm_size == 1)
     {

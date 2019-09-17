@@ -8,8 +8,9 @@ void run_collective(const char* cmd_name,
                     ccl::stream& stream,
                     ccl::coll_attr& coll_attr)
 {
-    std::chrono::system_clock::duration exec_time{};
+    std::chrono::system_clock::duration exec_time{0};
     float expected = send_buf.size();
+    float received;
 
     comm.barrier(&stream);
 
@@ -28,10 +29,11 @@ void run_collective(const char* cmd_name,
 
     for (size_t idx = 0; idx < recv_buf.size(); idx++)
     {
-        if (recv_buf[idx] != expected)
+        received = recv_buf[idx];
+        if (received != expected)
         {
             fprintf(stderr, "idx %zu, expected %4.4f, got %4.4f\n",
-                    idx, expected, recv_buf[idx]);
+                    idx, expected, received);
             printf("FAILED\n");
             std::terminate();
         }

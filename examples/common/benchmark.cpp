@@ -261,7 +261,9 @@ struct cpu_allgatherv_coll : cpu_base_coll<Dtype>, allgatherv_base_coll<Dtype>
                 if (value != sbuf_expected)
                 {
                     printf("%s: send_bufs: buf_idx %zu, elem_idx %zu, expected %f, got %f\n",
-                           this->name(), b_idx, e_idx, sbuf_expected, value);
+                           this->name(), b_idx, e_idx,
+                           static_cast<float>(sbuf_expected),
+                           static_cast<float>(value));
                     ASSERT(0, "unexpected value");
                 }
             }
@@ -275,7 +277,9 @@ struct cpu_allgatherv_coll : cpu_base_coll<Dtype>, allgatherv_base_coll<Dtype>
                     if (value != rbuf_expected)
                     {
                         printf("%s: recv_bufs: buf_idx %zu, elem_idx %zu, expected %f, got %f\n",
-                               this->name(), b_idx, e_idx, rbuf_expected, value);
+                               this->name(), b_idx, e_idx,
+                               static_cast<float>(rbuf_expected),
+                               static_cast<float>(value));
                         ASSERT(0, "unexpected value");
                     }
                 }
@@ -482,7 +486,9 @@ struct cpu_allreduce_coll : cpu_base_coll<Dtype>, allreduce_base_coll<Dtype>
                 if (value != sbuf_expected)
                 {
                     printf("%s: send_bufs: buf_idx %zu, elem_idx %zu, expected %f, got %f\n",
-                           this->name(), b_idx, e_idx, sbuf_expected, value);
+                           this->name(), b_idx, e_idx,
+                           static_cast<float>(sbuf_expected),
+                           static_cast<float>(value));
                     ASSERT(0, "unexpected value");
                 }
 
@@ -490,7 +496,9 @@ struct cpu_allreduce_coll : cpu_base_coll<Dtype>, allreduce_base_coll<Dtype>
                 if (value != rbuf_expected)
                 {
                     printf("%s: recv_bufs: buf_idx %zu, elem_idx %zu, expected %f, got %f\n",
-                           this->name(), b_idx, e_idx, rbuf_expected, value);
+                           this->name(), b_idx, e_idx,
+                           static_cast<float>(rbuf_expected),
+                           static_cast<float>(value));
                     ASSERT(0, "unexpected value");
                 }
             }
@@ -673,7 +681,9 @@ struct cpu_bcast_coll : cpu_base_coll<Dtype>, bcast_base_coll<Dtype>
                 if (value != e_idx)
                 {
                     printf("%s: recv_bufs: buf_idx %zu, elem_idx %zu, expected %f, got %f\n",
-                           this->name(), b_idx, e_idx, (Dtype)e_idx, value);
+                           this->name(), b_idx, e_idx,
+                           static_cast<float>(e_idx),
+                           static_cast<float>(value));
                     ASSERT(0, "unexpected value");
                 }
             }
@@ -839,7 +849,9 @@ struct cpu_reduce_coll : cpu_base_coll<Dtype>, reduce_base_coll<Dtype>
                 if (value != sbuf_expected)
                 {
                     printf("%s: send_bufs: buf_idx %zu, elem_idx %zu, expected %f, got %f\n",
-                           this->name(), b_idx, e_idx, sbuf_expected, value);
+                           this->name(), b_idx, e_idx,
+                           static_cast<float>(sbuf_expected),
+                           static_cast<float>(value));
                     ASSERT(0, "unexpected value");
                 }
 
@@ -850,7 +862,9 @@ struct cpu_reduce_coll : cpu_base_coll<Dtype>, reduce_base_coll<Dtype>
                 if (value != rbuf_expected)
                 {
                     printf("%s: recv_bufs: buf_idx %zu, elem_idx %zu, expected %f, got %f\n",
-                           this->name(), b_idx, e_idx, rbuf_expected, value);
+                           this->name(), b_idx, e_idx,
+                           static_cast<float>(rbuf_expected),
+                           static_cast<float>(value));
                     ASSERT(0, "unexpected value");
                 }
             }

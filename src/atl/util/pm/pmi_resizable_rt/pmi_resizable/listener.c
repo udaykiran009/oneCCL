@@ -10,7 +10,7 @@
 #include "kvs.h"
 
 static int sock_sender;
-static int num_listeners;
+static size_t num_listeners;
 static int sock_listener = -1;
 static struct sockaddr_in* server_addresses = NULL;
 static struct sockaddr_in addr;
@@ -26,13 +26,17 @@ int collect_sock_addr(void)
     FILE *fp;
     int i, j;
     int res = 0;
-    int glob_num_listeners;
+    size_t glob_num_listeners;
     char** sock_addr_str = NULL;
     char** hosts_names_str = NULL;
     char my_ip[MAX_KVS_VAL_LENGTH];
     char* point_to_space;
 
-    fp = popen(CHECKER_IP, READ_ONLY);
+    if ((fp = popen(CHECKER_IP, READ_ONLY)) == NULL)
+    {
+        printf("Can't get host IP\n");
+        exit(1);
+    }
     fgets(my_ip, MAX_KVS_VAL_LENGTH, fp);
     pclose(fp);
     while (my_ip[strlen(my_ip) - 1] == '\n' ||
@@ -77,6 +81,12 @@ int collect_sock_addr(void)
     for (i = 0, j = 0; i < num_listeners; i++, j++)
     {
         char* point_to_port = strstr(sock_addr_str[j], "_");
+        if(point_to_port == NULL)
+        {
+            printf("\nlistener: Wrong address_port record: %s\n", sock_addr_str[j]);
+            res = -1;
+            goto exit;
+        }
         point_to_port[0] = NULL_CHAR;
         point_to_port++;
         if (strstr(hosts_names_str[j], my_hostname))
@@ -141,7 +151,11 @@ int run_listener(void)
         char my_ip[MAX_KVS_VAL_LENGTH];
         char* point_to_space;
 
-        fp = popen(CHECKER_IP, READ_ONLY);
+        if ((fp = popen(CHECKER_IP, READ_ONLY)) == NULL)
+        {
+            printf("Can't get host IP\n");
+            exit(1);
+        }
         fgets(my_ip, MAX_KVS_VAL_LENGTH, fp);
         pclose(fp);
         while (my_ip[strlen(my_ip) - 1] == '\n' ||

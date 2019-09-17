@@ -7,7 +7,7 @@ void run_collective(const char* cmd_name,
                     ccl::stream& stream,
                     ccl::coll_attr& coll_attr)
 {
-    std::chrono::system_clock::duration exec_time{};
+    std::chrono::system_clock::duration exec_time{0};
     float expected = (comm.size() - 1) * (static_cast<float>(comm.size()) / 2);
 
     comm.barrier(&stream);

@@ -70,7 +70,7 @@ resizable_pmirt_kvs_put(pm_rt_desc_t *pmrt_desc, char *kvs_key, size_t proc_idx,
     if (kvs_val_len > ctx->resizablert_main.max_vallen)
         return atl_status_failure;
 
-    ret = snprintf(ctx->resizablert_main.key_storage, ctx->resizablert_main.max_keylen,
+    ret = snprintf(ctx->resizablert_main.key_storage, ctx->resizablert_main.max_keylen - 1,
                    RESIZABLE_PMI_RT_KEY_FORMAT, kvs_key, proc_idx, ep_idx);
     if (ret < 0)
         return atl_status_failure;
@@ -104,7 +104,7 @@ resizable_pmirt_kvs_get(pm_rt_desc_t *pmrt_desc, char *kvs_key, size_t proc_idx,
     if (!ctx->resizablert_main.initialized)
         return atl_status_failure;
 
-    ret = snprintf(ctx->resizablert_main.key_storage, ctx->resizablert_main.max_keylen,
+    ret = snprintf(ctx->resizablert_main.key_storage, ctx->resizablert_main.max_keylen - 1,
                    RESIZABLE_PMI_RT_KEY_FORMAT, kvs_key, proc_idx, ep_idx);
     if (ret < 0)
         return atl_status_failure;

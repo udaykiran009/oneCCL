@@ -79,6 +79,8 @@
 #define INITIAL_RANK_NUM "0"
 #define MAX_CLEAN_CHECKS 3
 
+#define STR_COPY(dst, src, len) strncpy((dst), (src), (len) - 1)
+
 extern char my_hostname[MAX_KVS_VAL_LENGTH];
 
 #endif

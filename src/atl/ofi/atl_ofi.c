@@ -181,9 +181,17 @@ atl_ofi_update_addr_table(atl_ofi_context_t *atl_ofi_context)
     epnames_table_len = atl_ofi_context->addr_len *
                         atl_ofi_context->addr_table.ep_num *
                         atl_ofi_context->proc_count;
-    epnames_table = (char *)calloc(1, epnames_table_len);
-    if (!epnames_table)
+
+    if (epnames_table_len == 0) {
+        ATL_OFI_PRINT("epnames_table_len == 0\n");
         return atl_status_failure;
+    }
+
+    epnames_table = (char *)calloc(1, epnames_table_len);
+    if (!epnames_table) {
+        ATL_OFI_PRINT("Can't allocate epnames_table\n");
+        return atl_status_failure;
+    }
     pmrt_barrier(atl_ofi_context->pm_rt);
 
     /* Retrieve all the OFI EP names in order */
@@ -257,8 +265,10 @@ atl_ofi_comms_connect(atl_ofi_context_t *atl_ofi_context,
                            atl_ofi_context->proc_idx, i,
                            comm_context->name->addr,
                            comm_context->name->len);
-        if (ret)
+        if (ret) {
+            ATL_OFI_PRINT("pmrt_kvs_put: ret: %d\n", ret);
             return atl_status_failure;
+        }
     }
 
     ret = atl_ofi_update_addr_table(atl_ofi_context);
@@ -271,12 +281,12 @@ static atl_status_t atl_ofi_comms_destroy_conns(atl_ofi_context_t *atl_ofi_conte
     int ret = atl_status_success;
 
     /* disabled as it leads to unstable fails */
-    // ret = fi_av_remove(atl_ofi_context->av, atl_ofi_context->addr_table.table,
-    //                    atl_ofi_context->addr_table.ep_num *
-    //                    atl_ofi_context->proc_count, 0);
-
-    if (ret)
-        ATL_OFI_DEBUG_PRINT("AV remove failed (%d)", ret);
+//     ret = fi_av_remove(atl_ofi_context->av, atl_ofi_context->addr_table.table,
+//                        atl_ofi_context->addr_table.ep_num *
+//                        atl_ofi_context->proc_count, 0);
+//
+//    if (ret)
+//        ATL_OFI_DEBUG_PRINT("AV remove failed (%d)", ret);
 
     free(atl_ofi_context->addr_table.table);
     atl_ofi_context->addr_table.ep_num = 0;
@@ -290,16 +300,21 @@ atl_ofi_comm_get_epname(struct fid_ep *ep, atl_ofi_comm_name_t **name)
     int ret;
 
     *name = calloc(1, sizeof(atl_ofi_comm_name_t));
-    if (!*name)
+    if (!*name) {
+        ATL_OFI_PRINT("Can't allocate name\n");
         return atl_status_failure;
+    }
 
     ret = fi_getname(&ep->fid, (*name)->addr, &(*name)->len);
     if ((ret != -FI_ETOOSMALL) || ((*name)->len <= 0))
         (*name)->len = FI_NAME_MAX;
 
     (*name)->addr = calloc(1, (*name)->len);
-    if (!(*name)->addr)
+    if (!(*name)->addr) {
+        ATL_OFI_PRINT("Can't allocate addr\n");
+        ret = atl_status_failure;
         goto err_addr;
+    }
 
     ret = fi_getname(&ep->fid, (*name)->addr, &(*name)->len);
     if (ret)
@@ -940,7 +955,7 @@ atl_ofi_comm_init(atl_ofi_context_t *atl_ofi_context, atl_comm_attr_t *attr,
     atl_ofi_comm_context_t *atl_ofi_comm_context;
 
     atl_ofi_comm_context = calloc(1, sizeof(*atl_ofi_comm_context));
-    if (!atl_ofi_context)
+    if (!atl_ofi_comm_context)
         return atl_status_failure;
 
     ret = atl_ofi_comm_ep_create(atl_ofi_context, atl_ofi_comm_context, index);
@@ -996,7 +1011,9 @@ atl_ofi_comms_init(atl_ofi_context_t *atl_ofi_context, size_t comm_count,
 
         fi_enable(atl_ofi_context->sep);
 
-        atl_ofi_comm_get_epname(atl_ofi_context->sep, &name);
+        ret = atl_ofi_comm_get_epname(atl_ofi_context->sep, &name);
+        if (ret)
+            goto err_comm;
         atl_ofi_comms_set_epname(*comms, comm_count, name);
         atl_ofi_context->addr_len = name->len;
     }

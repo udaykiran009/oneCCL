@@ -261,7 +261,7 @@ int ccl_env_parse_worker_affinity()
     /* create copy of original buffer cause it will be modified in strsep */
     size_t affinity_len = strlen(affinity_to_parse);
     affinity_copy = static_cast<char*>(CCL_MALLOC(affinity_len, "affinity_copy"));
-    memcpy(affinity_copy, affinity_to_parse, affinity_len);
+    CCL_MEMCPY(affinity_copy, affinity_to_parse, affinity_len);
     tmp = affinity_copy;
 
     for (w_idx = 0; w_idx < workers_per_node; w_idx++)

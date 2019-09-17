@@ -36,6 +36,9 @@
 #define ONE_MB         1048576
 #define TWO_MB         2097152
 
+#define CCL_MEMCPY(dest, src, n)                                \
+    std::copy((char*)(src), (char*)(src) + (n), (char*)(dest))
+
 /* Single-linked list */
 
 struct ccl_slist_entry_t

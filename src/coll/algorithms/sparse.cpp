@@ -49,7 +49,7 @@ ccl_status_t sparse_reduce(const void* ctx)
     /* copy data from recv_buf so that it would be easier to identify unique indices */
     size_t idx_size = sa_handler->itype_size * sa_handler->send_count[0];
     std::vector<int> rcv_i(sa_handler->send_count[0]);
-    memcpy(rcv_i.data(), (int*)(*sa_handler->recv_buf), idx_size);
+    CCL_MEMCPY(rcv_i.data(), (int*)(*sa_handler->recv_buf), idx_size);
     float *rcv_v = (float*)((char*)(*sa_handler->recv_buf) + idx_size);
 
     /* Look at received indices and the ones we already have. Check if there are equal
@@ -85,8 +85,8 @@ ccl_status_t sparse_reduce(const void* ctx)
         std::vector<float> buf_v(merge_idx_len * sa_handler->val_dim_cnt);
 
         /* copy what we already have reduced*/
-        memcpy(buf_i.data(), snd_i, sa_handler->itype_size * sa_handler->dst_count[0]);
-        memcpy(buf_v.data(), snd_v, sa_handler->vtype_size * sa_handler->dst_count[1]);
+        CCL_MEMCPY(buf_i.data(), snd_i, sa_handler->itype_size * sa_handler->dst_count[0]);
+        CCL_MEMCPY(buf_v.data(), snd_v, sa_handler->vtype_size * sa_handler->dst_count[1]);
 
         size_t idx_offset = 0;
         for (size_t num = 0; num < sa_handler->send_count[0]; num++)
@@ -128,8 +128,8 @@ ccl_status_t sparse_reduce(const void* ctx)
             sa_handler->dst_buf = ptr;
         }
 
-        memcpy((int*)(sa_handler->dst_buf), buf_i.data(), sa_handler->itype_size * merge_idx_len);
-        memcpy((float*)((char*)(sa_handler->dst_buf) + sa_handler->itype_size * merge_idx_len), buf_v.data(), sa_handler->vtype_size * merge_idx_len * sa_handler->val_dim_cnt);
+        CCL_MEMCPY((int*)(sa_handler->dst_buf), buf_i.data(), sa_handler->itype_size * merge_idx_len);
+        CCL_MEMCPY((float*)((char*)(sa_handler->dst_buf) + sa_handler->itype_size * merge_idx_len), buf_v.data(), sa_handler->vtype_size * merge_idx_len * sa_handler->val_dim_cnt);
 
         sa_handler->dst_count[0] = merge_idx_len;
         sa_handler->dst_count[1] = merge_idx_len * sa_handler->val_dim_cnt;
@@ -160,7 +160,7 @@ ccl_status_t sparse_reduce(const void* ctx)
         sa_handler->send_buff_size = *sa_handler->recv_icount;
 
     }
-    memcpy(sa_handler->send_tmp_buf, *sa_handler->recv_buf, *sa_handler->recv_icount);
+    CCL_MEMCPY(sa_handler->send_tmp_buf, *sa_handler->recv_buf, *sa_handler->recv_icount);
 
     return ccl_status_success;
 }
@@ -180,7 +180,7 @@ ccl_status_t sparse_prepare_result(const void* ctx)
     sa_handler->iv_map->clear();
     delete sa_handler->iv_map;
 
-    memcpy(*sa_handler->recv_buf, sa_handler->dst_buf, total_size);
+    CCL_MEMCPY(*sa_handler->recv_buf, sa_handler->dst_buf, total_size);
     *sa_handler->recv_vbuf = ((char*)(*sa_handler->recv_buf) + sa_handler->itype_size * (*sa_handler->recv_icount));
     return ccl_status_success;
 }
@@ -327,14 +327,14 @@ ccl_status_t ccl_coll_build_sparse_allreduce_basic(ccl_sched* sched,
     {
         dst_i[idx_offset] = it.first;
         val_offset = idx_offset * val_dim_cnt;
-        memcpy(dst_v + val_offset, src_v + it.second, vtype_size * val_dim_cnt);
+        CCL_MEMCPY(dst_v + val_offset, src_v + it.second, vtype_size * val_dim_cnt);
         it.second = val_offset;
         idx_offset++;
     }
 
     /* copy data to the temp send buffer for send operation */
     void* send_tmp_buf = sched->alloc_buffer(nodup_size).get_ptr();
-    memcpy(send_tmp_buf, dst, nodup_size);
+    CCL_MEMCPY(send_tmp_buf, dst, nodup_size);
 
     /* send from left to right (ring)*/
 
@@ -351,7 +351,7 @@ ccl_status_t ccl_coll_build_sparse_allreduce_basic(ccl_sched* sched,
     /* _count variables needed for sending/receiving */
     sa_handler->send_count[0] = iv_map_cnt; /* index count */
     sa_handler->send_count[1] = iv_map_cnt * val_dim_cnt; /* value count */
-    memcpy(&sa_handler->dst_count, &sa_handler->send_count, sizeof(size_t) * 2);
+    CCL_MEMCPY(&sa_handler->dst_count, &sa_handler->send_count, sizeof(size_t) * 2);
     sa_handler->recv_buff_size = nodup_size;
     sa_handler->send_buff_size = nodup_size;
     sa_handler->val_dim_cnt = val_dim_cnt;
