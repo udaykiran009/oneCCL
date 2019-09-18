@@ -211,8 +211,6 @@ public:
 
 private:
 
-    void add_internal(ccl_sched* sched, bool need_to_lock = true);
-
     mutable sched_queue_lock_t bins_guard{};
 
     std::vector<atl_comm_t*> comm_ctxs;

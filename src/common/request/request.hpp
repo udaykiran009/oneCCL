@@ -61,6 +61,14 @@ public:
         completion_counter.store(counter, std::memory_order_release);
     }
 
+    void increase_counter(int increment)
+    {
+        LOG_DEBUG("req: ", this, ", increment ", increment);
+        int prev_counter = completion_counter.fetch_add(increment, std::memory_order_release);
+        CCL_THROW_IF_NOT(prev_counter > 0, "unexpected prev_counter ", prev_counter, ", req ", this);
+        LOG_DEBUG("req ", this, ", counter ", prev_counter + increment);
+    }
+
     mutable bool urgent = false;
 private:
     std::atomic_int completion_counter { 0 };

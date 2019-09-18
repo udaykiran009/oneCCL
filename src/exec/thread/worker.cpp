@@ -23,8 +23,14 @@ void ccl_worker::add(ccl_sched* sched)
     LOG_DEBUG("add sched ", sched, ", type ",
                ccl_coll_type_to_str(sched->coll_param.ctype));
 
+    CCL_ASSERT(sched);
+    CCL_ASSERT(!sched->bin);
+    CCL_ASSERT(sched->get_in_bin_status() != ccl_sched_in_bin_added);
+
     if (sched->strict_start_order)
     {
+        /* to keep valid non-completed req until safe releasing */
+        sched->req->increase_counter(1);
         strict_sched_queue->add(sched);
     }
     else
@@ -62,6 +68,8 @@ ccl_status_t ccl_worker::process_strict_sched_queue()
     if (queue.empty())
         return ccl_status_success;
 
+    size_t erased_scheds = 0;
+
     /* try to finish previous postponed operations */
     for (auto sched_it = queue.begin(); sched_it != queue.end(); sched_it++)
     {
@@ -69,6 +77,14 @@ ccl_status_t ccl_worker::process_strict_sched_queue()
 
         if (sched->get_in_bin_status() == ccl_sched_in_bin_erased)
         {
+            CCL_ASSERT(!sched->bin);
+            erased_scheds++;
+
+            /* only single sched in active strict queue can be erased since previous call */
+            CCL_ASSERT(erased_scheds == 1);
+
+            /* now it is safe to release this sched */
+            sched->req->complete();
             continue;
         }
 
@@ -76,11 +92,12 @@ ccl_status_t ccl_worker::process_strict_sched_queue()
         {
             CCL_ASSERT(!sched->bin, "unexpected bin ", sched->bin);
             /* here we add sched from strict_queue to regular queue for real execution */
+            LOG_DEBUG("add sched ", sched, " from strict_queue to exec_queue, req ", sched->req);
             sched_queue->add(sched);
         }
 
         CCL_ASSERT(sched->get_in_bin_status() == ccl_sched_in_bin_added,
-                   "unexpected in_bin_status ", sched->get_in_bin_status());
+                   "sched ", sched, " unexpected in_bin_status ", sched->get_in_bin_status());
 
         sched->do_progress();
 
@@ -94,7 +111,13 @@ ccl_status_t ccl_worker::process_strict_sched_queue()
             std::vector<ccl_sched*>(sched_it, queue.end()).swap(queue);
             return ccl_status_success;
         }
+        else
+        {
+            /* now it is safe to release this sched */
+            sched->req->complete();
+        }
     }
+
     queue.clear();
 
     return ccl_status_success;
@@ -116,7 +139,10 @@ ccl_status_t ccl_worker::process_sched_queue(size_t& completed_sched_count, bool
             process_sched_bin(bin, completed_sched_count_local);
             completed_sched_count += completed_sched_count_local;
         }
-        LOG_DEBUG("process_all, completed_sched_count ", completed_sched_count);
+
+        if (completed_sched_count)
+            LOG_INFO("process_all, completed_sched_count ", completed_sched_count);
+
         return ccl_status_success;
     }
     else
@@ -130,9 +156,9 @@ ccl_status_t ccl_worker::process_sched_queue(size_t& completed_sched_count, bool
 
 ccl_status_t ccl_worker::process_sched_bin(ccl_sched_bin* bin, size_t& completed_sched_count)
 {
+    CCL_ASSERT(bin);
     completed_sched_count = 0;
 
-    size_t sched_count = 0;
     size_t bin_size = bin->size();
     CCL_ASSERT(bin_size > 0 );
 
@@ -150,7 +176,7 @@ ccl_status_t ccl_worker::process_sched_bin(ccl_sched_bin* bin, size_t& completed
         CCL_THROW_IF_NOT(atl_status == atl_status_success, "bad status ", atl_status);
     }
 
-    // iterate through the scheds store in the bin
+    // iterate through the scheds stored in the bin
     for (size_t sched_idx = 0; sched_idx < bin_size; )
     {
         ccl_sched* sched = bin->get(sched_idx);
@@ -168,6 +194,7 @@ ccl_status_t ccl_worker::process_sched_bin(ccl_sched_bin* bin, size_t& completed
 
             // remove completed schedule from the bin
             sched_queue->erase(bin, sched_idx);
+            CCL_ASSERT(!sched->bin);
             bin_size--;
             LOG_DEBUG("completing request ", sched->req);
             sched->complete();
@@ -179,7 +206,6 @@ ccl_status_t ccl_worker::process_sched_bin(ccl_sched_bin* bin, size_t& completed
             // progression of unfinished schedules will be continued in the next call of @ref ccl_bin_progress
             ++sched_idx;
         }
-        sched_count++;
     }
 
     return ccl_status_success;

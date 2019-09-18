@@ -10,6 +10,7 @@ void ccl_sched_bin::add(ccl_sched* sched)
             " expected ", priority);
     }
     CCL_ASSERT(sched);
+    CCL_ASSERT(!sched->bin);
     sched->bin = this;
     sched->queue = queue;
     sched_list.add(sched);
@@ -64,13 +65,9 @@ ccl_sched_queue::~ccl_sched_queue()
 
 void ccl_sched_queue::add(ccl_sched* sched)
 {
-    CCL_ASSERT(sched && !sched->bin);
-    sched->set_in_bin_status(ccl_sched_in_bin_none);
-    add_internal(sched);
-}
+    CCL_ASSERT(sched);
+    CCL_ASSERT(!sched->bin);
 
-void ccl_sched_queue::add_internal(ccl_sched* sched, bool need_to_lock /* = true */)
-{
     size_t priority = sched->get_priority();
     if (env_data.priority_mode != ccl_priority_none)
     {
@@ -80,7 +77,6 @@ void ccl_sched_queue::add_internal(ccl_sched* sched, bool need_to_lock /* = true
             sched->coll_attr.priority = priority;
         }
     }
-    CCL_ASSERT(sched);
 
     sched->set_in_bin_status(ccl_sched_in_bin_added);
 
@@ -88,18 +84,14 @@ void ccl_sched_queue::add_internal(ccl_sched* sched, bool need_to_lock /* = true
 
     ccl_sched_bin* bin = nullptr;
 
-    // lock it, if requested
-    std::unique_lock<sched_queue_lock_t> bins_lock(bins_guard, std::defer_lock);
-    if (need_to_lock)
-    {
-        bins_lock.lock();
-    }
+    std::lock_guard<sched_queue_lock_t> lock(bins_guard);
 
     sched_bin_list_t::iterator it = bins.find(priority);
     if (it != bins.end())
     {
         bin = &(it->second);
         LOG_DEBUG("found bin ", bin);
+        CCL_ASSERT(bin->priority == priority);
         bin->add(sched);
     }
     else
@@ -126,7 +118,7 @@ void ccl_sched_queue::add_internal(ccl_sched* sched, bool need_to_lock /* = true
             max_priority = priority;
             cached_max_priority_bin = bin;
         }
-        LOG_DEBUG("didn't find bin, emplaced new one, max_priority ", max_priority);
+        LOG_DEBUG("didn't find bin, emplaced new one ", bin, " , max_priority ", max_priority);
     }
 
     CCL_ASSERT(bin);

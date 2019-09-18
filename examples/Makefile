@@ -29,7 +29,7 @@ CXX_LINK = $(CXX) $(CXXFLAGS) $(LDFLAGS)
 run: all 
 	for test in $(tests); do \
 		echo "running $$test test ..." ; \
-		mpiexec.hydra -n 2 -ppn 1 -l ./$$test &> ./$$test.log; \
+		mpiexec.hydra -n 2 -ppn 1 -l ./$$test | tee ./$$test.log; \
 		grep -r 'PASSED' ./$$test.log; \
 		if [ "$${PIPESTATUS[0]}" -ne 0 ]; then \
 			echo "$$test FAILED." ; \

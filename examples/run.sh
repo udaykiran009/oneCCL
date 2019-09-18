@@ -2,7 +2,7 @@
 
 touch main_ouput.txt
 exec | tee ./main_ouput.txt
-
+SCRIPT_DIR=`cd $(dirname "$BASH_SOURCE") && pwd -P`
 
 CheckCommandExitCode() {
     if [ $1 -ne 0 ]; then
@@ -69,12 +69,12 @@ run_examples()
         make clean -f ./../Makefile > /dev/null 2>&1
         make clean_logs -f ./../Makefile > /dev/null 2>&1
         echo "Building"
-        make all -f ./../Makefile &> build_${dir_name}_${transport}_output.log
-        error_count=`grep -c 'error:'  build_${dir_name}_${transport}_output.log` > /dev/null 2>&1
+        make all -f ./../Makefile &> $SCRIPT_DIR/$dir_name/build_${dir_name}_${transport}_output.log
+        error_count=`grep -c 'error:'  $SCRIPT_DIR/$dir_name/build_${dir_name}_${transport}_output.log` > /dev/null 2>&1
         if [ "${error_count}" != "0" ]
         then
             echo "building ... NOK"
-            echo "See logs ./${dir_name}/build_${dir_name}_${transport}_output.log"
+            echo "See logs $SCRIPT_DIR/$dir_name/${dir_name}/build_${dir_name}_${transport}_output.log"
             exit 1
         else
             echo "OK"
@@ -94,7 +94,7 @@ run_examples()
                 then
                     for backend in "cpu" "sycl"
                     do
-                        test_log="./run_${dir_name}_${transport}_${example}_${backend}_output.log"
+                        test_log="$SCRIPT_DIR/$dir_name/run_${dir_name}_${transport}_${example}_${backend}_output.log"
                         echo "run examples with $transport transport (${example})" 2>&1 | tee ${test_log}
                         CCL_ATL_TRANSPORT=${transport} mpiexec.hydra -genv $EXTRA_ENV -n 2 -ppn $ppn -l ./$example $backend 2>&1 | tee ${test_log}
                         CheckTest ${test_log} ${example}
@@ -108,20 +108,30 @@ run_examples()
                                 then
                                     continue
                                 fi
-                                test_log="./run_${dir_name}_${transport}_${example}_${backend}_${loop}_output.log"
+                                test_log="$SCRIPT_DIR/$dir_name/run_${dir_name}_${transport}_${example}_${backend}_${loop}_output.log"
                                 echo "run benchmark: transport $transport, backend $backend, loop $loop " 2>&1 | tee ${test_log}
                                 CCL_PRIORITY=lifo CCL_ATL_TRANSPORT=${transport} mpiexec.hydra -genv $EXTRA_ENV -n 2 -ppn $ppn -l ./$example $backend $loop 2>&1 | tee ${test_log}
                                 CheckTest ${test_log} ${example}
+
+                                test_log="$SCRIPT_DIR/$dir_name/run_${dir_name}_${transport}_${example}_allreduce_wo_workers_output.log"
+                                echo "run benchmark: transport $transport, backend $backend, loop $loop without workers" 2>&1 | tee ${test_log}
+                                CCL_WORKER_OFFLOAD=0 CCL_ATL_TRANSPORT=${transport} mpiexec.hydra -genv $EXTRA_ENV -n 2 -ppn $ppn -l ./$example $backend $loop allreduce 2>&1 | tee ${test_log}
+                                CheckTest ${test_log} ${example}
                             done
 
-                            test_log="./run_${dir_name}_${transport}_${example}_allreduce_output.log"
+                            test_log="$SCRIPT_DIR/$dir_name/run_${dir_name}_${transport}_${example}_allreduce_fusion_output.log"
                             echo "run benchmark with fusion: $transport transport (${example})" 2>&1 | tee ${test_log}
                             CCL_FUSION=1 CCL_ATL_TRANSPORT=${transport} mpiexec.hydra -genv $EXTRA_ENV -n 2 -ppn $ppn -l ./$example $backend regular allreduce 2>&1 | tee ${test_log}
+                            CheckTest ${test_log} ${example}
+
+                            test_log="$SCRIPT_DIR/$dir_name/run_${dir_name}_${transport}_${example}_allreduce_log_level_2_output.log"
+                            echo "run benchmark with log_level=2: $transport transport (${example})" 2>&1 | tee ${test_log}
+                            CCL_LOG_LEVEL=2 CCL_ATL_TRANSPORT=${transport} mpiexec.hydra -genv $EXTRA_ENV -n 2 -ppn $ppn -l ./$example $backend regular allreduce 2>&1 | tee ${test_log}
                             CheckTest ${test_log} ${example}
                         fi
                     done
                 else
-                    test_log="./run_${dir_name}_${transport}_${example}_output.log"
+                    test_log="$SCRIPT_DIR/$dir_name/run_${dir_name}_${transport}_${example}_output.log"
                     echo "run examples with $transport transport (${example})" 2>&1 | tee ${test_log}
                     CCL_ATL_TRANSPORT=${transport} mpiexec.hydra -genv $EXTRA_ENV -n 2 -ppn $ppn -l ./$example 2>&1 | tee ${test_log}
                     CheckTest ${test_log} ${example}

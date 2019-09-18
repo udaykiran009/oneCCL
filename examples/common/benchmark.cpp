@@ -13,7 +13,7 @@
 #include "base.hpp"
 
 #define BUF_COUNT         (16)
-#define ELEM_COUNT        (512)
+#define ELEM_COUNT        (128)
 #define SINGLE_ELEM_COUNT (BUF_COUNT * ELEM_COUNT)
 #define ALIGNMENT         (2 * 1024 * 1024)
 #define DTYPE             float
