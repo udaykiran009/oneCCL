@@ -1,6 +1,7 @@
 #pragma once
 
 #include "sched/entry/entry.hpp"
+#include "sched/entry/sycl_entry_helper.hpp"
 
 #include <CL/sycl.hpp>
 
@@ -26,11 +27,15 @@ public:
 
     void start() override
     {
-        size_t bytes = cnt * ccl_datatype_get_size(dtype);
-        auto in_buf_acc = static_cast<ccl_sycl_buffer_t*>(in_buf.get_ptr(bytes))->get_access<cl::sycl::access::mode::read>();
-        CCL_ASSERT(cnt <= in_buf_acc.get_count());
-        auto comp_status = ccl_comp_copy(in_buf_acc.get_pointer(), out_buf.get_ptr(bytes), cnt, dtype);
-        CCL_ASSERT(comp_status == ccl_status_success, "bad status ", comp_status);
+        //fill visitor with actual ccl_buffer data
+        auto visitor = make_visitor<cl::sycl::access::mode::read>(dtype, cnt, in_buf, [this](void* sycl_pointer, size_t bytes)
+        {
+            auto comp_status = ccl_comp_copy(sycl_pointer, out_buf.get_ptr(bytes), cnt, dtype);
+            CCL_ASSERT(comp_status == ccl_status_success, "bad status ", comp_status);
+
+        });
+
+        ccl_tuple_for_each_indexed<ccl_sycle_buffer_one_dim_types>(visitor);
         status = ccl_sched_entry_status_complete;
     }
 

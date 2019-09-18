@@ -232,7 +232,6 @@ static void* ccl_worker_func(void* args)
 
     int old_cancelation_state = 0;
     pthread_setcancelstate(PTHREAD_CANCEL_DISABLE, &old_cancelation_state);
-
     do
     {
         try
@@ -254,6 +253,7 @@ static void* ccl_worker_func(void* args)
                     worker->is_locked = false;
                 }
             }
+
         }
         catch (ccl::ccl_error& ccl_e)
         {

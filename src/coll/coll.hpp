@@ -9,6 +9,17 @@
 #ifdef ENABLE_SYCL
 #include <CL/sycl.hpp>
 typedef cl::sycl::buffer<char, 1> ccl_sycl_buffer_t;
+
+template<class native_type>
+using ccl_sycl_typed_buffer_t = cl::sycl::buffer<native_type, 1>;
+using ccl_sycle_buffer_one_dim_types =
+      std::tuple<ccl_sycl_typed_buffer_t<char>,
+                 ccl_sycl_typed_buffer_t<int>,
+                 ccl_sycl_typed_buffer_t<float>,
+                 ccl_sycl_typed_buffer_t<float>,
+                 ccl_sycl_typed_buffer_t<double>,
+                 ccl_sycl_typed_buffer_t<int64_t>,
+                 ccl_sycl_typed_buffer_t<uint64_t>>;
 #endif /* ENABLE_SYCL */
 
 #define CCL_INVALID_PROC_IDX (-1)

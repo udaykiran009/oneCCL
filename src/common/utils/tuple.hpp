@@ -42,3 +42,22 @@ void ccl_tuple_for_each(TupleType&& t, FunctionType f)
 {
     ccl_tuple_for_each(std::forward<TupleType>(t), f, std::integral_constant<size_t, 0>());
 }
+
+template<typename TupleType, typename FunctionType>
+void ccl_tuple_for_each_indexed(FunctionType,
+                        std::integral_constant<size_t, std::tuple_size<typename std::remove_reference<TupleType>::type >::value>)
+{}
+
+template<typename TupleType, typename FunctionType, std::size_t I,
+       typename = typename std::enable_if<I!=std::tuple_size<typename std::remove_reference<TupleType>::type>::value>::type >
+void ccl_tuple_for_each_indexed(FunctionType f, std::integral_constant<size_t, I>)
+{
+    f.template invoke<I, typename std::tuple_element<I, TupleType>::type>();
+    ccl_tuple_for_each_indexed<TupleType, FunctionType>(f, std::integral_constant<size_t, I + 1>());
+}
+
+template<typename TupleType, typename FunctionType>
+void ccl_tuple_for_each_indexed(FunctionType f)
+{
+    ccl_tuple_for_each_indexed<TupleType, FunctionType, 0>(f, std::integral_constant<size_t, 0>());
+}
