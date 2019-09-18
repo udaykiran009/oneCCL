@@ -65,9 +65,11 @@ public:
         {
             LOG_DEBUG("completed RECV in RECV_REDUCE entry, req=", &req, ", starting REDUCE");
             size_t bytes = in_cnt * ccl_datatype_get_size(dtype);
+            size_t offset = inout_buf.get_offset();
+            const ccl_fn_context_t context = {sched->coll_attr.match_id.c_str(), offset};
             ccl_status_t comp_status = ccl_comp_reduce(comm_buf.get_ptr(bytes), in_cnt,
                                                          inout_buf.get_ptr(bytes),
-                                                         out_cnt, dtype, op, fn);
+                                                         out_cnt, dtype, op, fn, &context);
             CCL_ASSERT(comp_status == ccl_status_success, "bad status ", comp_status);
             status = ccl_sched_entry_status_complete;
             LOG_DEBUG("completed REDUCE in RECV_REDUCE entry");

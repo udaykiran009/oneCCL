@@ -2,9 +2,12 @@
 
 #include <string>
 
+static std::string glob_match_id;
+
 #define RUN_COLLECTIVE(start_cmd, name, expected)                          \
   do {                                                                     \
       t = 0;                                                               \
+      glob_match_id = match_id;                                            \
       for (iter_idx = 0; iter_idx < ITERS; iter_idx++)                     \
       {                                                                    \
           for (idx = 0; idx < COUNT; idx++)                                \
@@ -32,13 +35,32 @@
       fflush(stdout);                                                      \
   } while (0)
 
-ccl_status_t do_prologue_float_2x(const void* in_buf, size_t in_count, ccl_datatype_t in_dtype,
-                                  void** out_buf, size_t* out_count, ccl_datatype_t* out_dtype,
-                                  size_t* out_dtype_size)
+size_t get_dtype_size(ccl_datatype_t dtype)
 {
-    size_t idx;
+    size_t dtype_size = 1;
+    switch (dtype)
+    {
+        case ccl_dtype_char: { dtype_size = 1; break; }
+        case ccl_dtype_int: { dtype_size = 4; break; }
+        case ccl_dtype_bfp16: { dtype_size = 2; break; }
+        case ccl_dtype_float: { dtype_size = 4; break; }
+        case ccl_dtype_double: { dtype_size = 8; break; }
+        case ccl_dtype_int64: { dtype_size = 8; break; }
+        case ccl_dtype_uint64: { dtype_size = 8; break; }
+        default: ASSERT(0, "unexpected dtype %d", dtype);
+    }
+    return dtype_size;
+}
+
+ccl_status_t do_prologue_float_2x(const void* in_buf, size_t in_count, ccl_datatype_t in_dtype,
+                                  void** out_buf, size_t* out_count, const ccl_fn_context_t* context,
+                                  ccl_datatype_t* out_dtype, size_t* out_dtype_size)
+{
     ASSERT(in_dtype == ccl_dtype_float, "unexpected dtype %d", in_dtype);
     ASSERT(out_buf, "null ptr");
+    //TODO: this assert works only for single prologue.
+    ASSERT(context->offset == 0, "wrong offset for prologue func, should be 0");
+    ASSERT(!strcmp(context->match_id, glob_match_id.c_str()), "wrong match_id");
 
     if (out_buf) *out_buf = (void*)in_buf;
     if (out_count) *out_count = in_count;
@@ -53,11 +75,14 @@ ccl_status_t do_prologue_float_2x(const void* in_buf, size_t in_count, ccl_datat
 }
 
 ccl_status_t do_epilogue_float_2x(const void* in_buf, size_t in_count, ccl_datatype_t in_dtype,
-                                  void* out_buf, size_t* out_count, ccl_datatype_t out_dtype)
+                                  void* out_buf, size_t* out_count, const ccl_fn_context_t* context,
+                                  ccl_datatype_t out_dtype)
 {
-    size_t idx;
     ASSERT(in_dtype == ccl_dtype_float, "unexpected dtype %d", in_dtype);
     ASSERT(out_dtype == ccl_dtype_float, "unexpected dtype %d", out_dtype);
+    //TODO: this assert works only for single epilogue.
+    ASSERT(context->offset == 0, "wrong offset for epilogue func, should be 0");
+    ASSERT(!strcmp(context->match_id, glob_match_id.c_str()), "wrong match_id");
     if (out_count) *out_count = in_count;
     for (idx = 0; idx < in_count; idx++)
     {
@@ -67,12 +92,14 @@ ccl_status_t do_epilogue_float_2x(const void* in_buf, size_t in_count, ccl_datat
 }
 
 ccl_status_t do_prologue_float_to_char(const void* in_buf, size_t in_count, ccl_datatype_t in_dtype,
-                                       void** out_buf, size_t* out_count, ccl_datatype_t* out_dtype,
-                                       size_t* out_dtype_size)
+                                       void** out_buf, size_t* out_count, const ccl_fn_context_t* context,
+                                       ccl_datatype_t* out_dtype, size_t* out_dtype_size)
 {
-    size_t idx;
     ASSERT(in_dtype == ccl_dtype_float, "unexpected dtype %d", in_dtype);
     ASSERT(out_buf, "null ptr");
+    //TODO: this assert works only for single prologue.
+    ASSERT(context->offset == 0, "wrong offset for prologue func, should be 0");
+    ASSERT(!strcmp(context->match_id, glob_match_id.c_str()), "wrong match_id");
 
     if (out_buf) *out_buf = malloc(in_count);
     if (out_count) *out_count = in_count;
@@ -90,11 +117,14 @@ ccl_status_t do_prologue_float_to_char(const void* in_buf, size_t in_count, ccl_
 }
 
 ccl_status_t do_epilogue_char_to_float(const void* in_buf, size_t in_count, ccl_datatype_t in_dtype,
-                                       void* out_buf, size_t* out_count, ccl_datatype_t out_dtype)
+                                       void* out_buf, size_t* out_count, const ccl_fn_context_t* context,
+                                       ccl_datatype_t out_dtype)
 {
-    size_t idx;
     ASSERT(in_dtype == ccl_dtype_char, "unexpected dtype %d", in_dtype);
     ASSERT(out_dtype == ccl_dtype_float, "unexpected dtype %d", out_dtype);
+    //TODO: this assert works only for single epilogue.
+    ASSERT(context->offset == 0, "wrong offset for epilogue func, should be 0");
+    ASSERT(!strcmp(context->match_id, glob_match_id.c_str()), "wrong match_id");
     if (out_count) *out_count = in_count;
     for (idx = 0; idx < in_count; idx++)
     {
@@ -105,10 +135,12 @@ ccl_status_t do_epilogue_char_to_float(const void* in_buf, size_t in_count, ccl_
 }
 
 ccl_status_t do_reduction_sum(const void* in_buf, size_t in_count, void* inout_buf,
-                              size_t* out_count, const void** ctx, ccl_datatype_t dtype)
+                              size_t* out_count, const ccl_fn_context_t* ctx, ccl_datatype_t dtype)
 {
-    size_t idx;
     if (out_count) *out_count = in_count;
+    ASSERT(ctx->offset < COUNT * get_dtype_size(dtype),
+           "wrong offset for reduction_sum func, should be less than COUNT");
+    ASSERT(!strcmp(ctx->match_id, glob_match_id.c_str()), "wrong match_id");
     switch (dtype)
     {
         case ccl_dtype_char:
@@ -131,10 +163,12 @@ ccl_status_t do_reduction_sum(const void* in_buf, size_t in_count, void* inout_b
 }
 
 ccl_status_t do_reduction_null(const void* in_buf, size_t in_count, void* inout_buf,
-                               size_t* out_count, const void** ctx, ccl_datatype_t dtype)
+                               size_t* out_count, const ccl_fn_context_t* ctx, ccl_datatype_t dtype)
 {
-    size_t idx;
     if (out_count) *out_count = in_count;
+    ASSERT(ctx->offset < COUNT * get_dtype_size(dtype),
+           "wrong offset for reduction_null func, should be less than COUNT");
+    ASSERT(!strcmp(ctx->match_id, glob_match_id.c_str()), "wrong match_id");
     switch (dtype)
     {
         case ccl_dtype_char:

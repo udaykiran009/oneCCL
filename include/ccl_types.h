@@ -79,17 +79,23 @@ typedef enum ccl_resize_action
     ccl_ra_finalize = 2,
 } ccl_resize_action_t;
 
+typedef struct
+{
+    const char* match_id;
+    const size_t offset;
+} ccl_fn_context_t;
+
 /* comm_size */
 typedef ccl_resize_action_t(*ccl_resize_fn_t)(size_t comm_size);
 
 /* in_buf, in_count, in_dtype, out_buf, out_count, out_dtype, out_dtype_size */
-typedef ccl_status_t(*ccl_prologue_fn_t) (const void*, size_t, ccl_datatype_t, void**, size_t*, ccl_datatype_t*, size_t*);
+typedef ccl_status_t(*ccl_prologue_fn_t) (const void*, size_t, ccl_datatype_t, void**, size_t*, const ccl_fn_context_t*, ccl_datatype_t*, size_t*);
 
 /* in_buf, in_count, in_dtype, out_buf, out_count, out_dtype */
-typedef ccl_status_t(*ccl_epilogue_fn_t) (const void*, size_t, ccl_datatype_t, void*, size_t*, ccl_datatype_t);
+typedef ccl_status_t(*ccl_epilogue_fn_t) (const void*, size_t, ccl_datatype_t, void*, size_t*, const ccl_fn_context_t*, ccl_datatype_t);
 
 /* in_buf, in_count, inout_buf, out_count, context, datatype */
-typedef ccl_status_t(*ccl_reduction_fn_t) (const void*, size_t, void*, size_t*, const void**, ccl_datatype_t);
+typedef ccl_status_t(*ccl_reduction_fn_t) (const void*, size_t, void*, size_t*, const ccl_fn_context_t*, ccl_datatype_t);
 
 /* Extendable list of collective attributes */
 typedef struct

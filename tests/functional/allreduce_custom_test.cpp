@@ -9,13 +9,47 @@
 #include <vector>
 #include <chrono>
 #include <cmath>
+#include <mutex>
+
+static size_t COUNT;
+static std::vector<std::pair<std::string, int>> glob_match_id;
+std::mutex inc_mutex;
+
+size_t get_dtype_size(ccl_datatype_t dtype)
+{
+    size_t dtype_size = 1;
+    switch (dtype)
+    {
+        case ccl_dtype_char: { dtype_size = 1; break; }
+        case ccl_dtype_int: { dtype_size = 4; break; }
+        case ccl_dtype_bfp16: { dtype_size = 2; break; }
+        case ccl_dtype_float: { dtype_size = 4; break; }
+        case ccl_dtype_double: { dtype_size = 8; break; }
+        case ccl_dtype_int64: { dtype_size = 8; break; }
+        case ccl_dtype_uint64: { dtype_size = 8; break; }
+        default: ASSERT(0, "unexpected dtype %d", dtype);
+    }
+    return dtype_size;
+}
+
 template <typename T>
 ccl_status_t do_prologue_T_2x(const void* in_buf, size_t in_count, ccl_datatype_t in_dtype,
-                                   void** out_buf, size_t* out_count, ccl_datatype_t* out_dtype,
-                                   size_t* out_dtype_size)
+                              void** out_buf, size_t* out_count, const ccl_fn_context_t* ctx,
+                              ccl_datatype_t* out_dtype, size_t* out_dtype_size)
 {
+
     size_t idx;
     ASSERT(out_buf, "null ptr");
+    //TODO: this assert works only for single prologue.
+    ASSERT(ctx->offset == 0, "wrong offset for prologue func, should be 0");
+    {
+        std::lock_guard<std::mutex> guard(inc_mutex);
+        auto match = std::find_if(glob_match_id.begin(), glob_match_id.end(),
+                               [&ctx](std::pair<std::string, int>& element)
+                               { return !strcmp(element.first.c_str(), ctx->match_id);} );
+        ASSERT(match != glob_match_id.end(), "wrong match_id");
+        match->second++;
+    }
 
     if (out_buf) *out_buf = (void*)in_buf;
     if (out_count) *out_count = in_count;
@@ -32,10 +66,21 @@ ccl_status_t do_prologue_T_2x(const void* in_buf, size_t in_count, ccl_datatype_
 }
 template <typename T>
 ccl_status_t do_epilogue_T_2x(const void* in_buf, size_t in_count, ccl_datatype_t in_dtype,
-                                   void* out_buf, size_t* out_count, ccl_datatype_t out_dtype)
+                              void* out_buf, size_t* out_count, const ccl_fn_context_t* ctx,
+                              ccl_datatype_t out_dtype)
 {
     size_t idx;
     if (out_count) *out_count = in_count;
+    //TODO: this assert works only for single epilogue.
+    ASSERT(ctx->offset == 0, "wrong offset for epilogue func, should be 0");
+    {
+        std::lock_guard<std::mutex> guard(inc_mutex);
+        auto match = std::find_if(glob_match_id.begin(), glob_match_id.end(),
+                                  [&ctx](std::pair<std::string, int>& element)
+                                  { return !strcmp(element.first.c_str(), ctx->match_id);} );
+        ASSERT(match != glob_match_id.end(), "wrong match_id");
+        match->second++;
+    }
     for (idx = 0; idx < in_count; idx++)
     {
         ((T*)out_buf)[idx] = ((T*)in_buf)[idx] * 2;
@@ -48,11 +93,21 @@ ccl_status_t do_epilogue_T_2x(const void* in_buf, size_t in_count, ccl_datatype_
 }
 template <typename T>
 ccl_status_t do_prologue_T_to_char(const void* in_buf, size_t in_count, ccl_datatype_t in_dtype,
-                                        void** out_buf, size_t* out_count, ccl_datatype_t* out_dtype,
-                                        size_t* out_dtype_size)
+                                   void** out_buf, size_t* out_count, const ccl_fn_context_t* ctx,
+                                   ccl_datatype_t* out_dtype, size_t* out_dtype_size)
 {
     size_t idx;
     ASSERT(out_buf, "null ptr");
+    //TODO: this assert works only for single prologue.
+    ASSERT(ctx->offset == 0, "wrong offset for prologue func, should be 0");
+    {
+        std::lock_guard<std::mutex> guard(inc_mutex);
+        auto match = std::find_if(glob_match_id.begin(), glob_match_id.end(),
+                                  [&ctx](std::pair<std::string, int>& element)
+                                  { return !strcmp(element.first.c_str(), ctx->match_id);} );
+        ASSERT(match != glob_match_id.end(), "wrong match_id");
+        match->second++;
+    }
 
     if (out_buf) *out_buf = malloc(in_count);
     if (out_count) *out_count = in_count;
@@ -80,10 +135,21 @@ ccl_status_t do_prologue_T_to_char(const void* in_buf, size_t in_count, ccl_data
 
 template <typename T>
 ccl_status_t do_epilogue_char_to_T(const void* in_buf, size_t in_count, ccl_datatype_t in_dtype,
-                                        void* out_buf, size_t* out_count, ccl_datatype_t out_dtype)
+                                   void* out_buf, size_t* out_count, const ccl_fn_context_t* ctx,
+                                   ccl_datatype_t out_dtype)
 {
     size_t idx;
     if (out_count) *out_count = in_count;
+    //TODO: this assert works only for single epilogue.
+    ASSERT(ctx->offset == 0, "wrong offset for epilogue func, should be 0");
+    {
+        std::lock_guard<std::mutex> guard(inc_mutex);
+        auto match = std::find_if(glob_match_id.begin(), glob_match_id.end(),
+                                  [&ctx](std::pair<std::string, int>& element)
+                                  { return !strcmp(element.first.c_str(), ctx->match_id);} );
+        ASSERT(match != glob_match_id.end(), "wrong match_id");
+        match->second++;
+    }
     for (idx = 0; idx < in_count; idx++)
     {
         ((T*)out_buf)[idx] = (T)(((char*)in_buf)[idx]);
@@ -94,9 +160,19 @@ ccl_status_t do_epilogue_char_to_T(const void* in_buf, size_t in_count, ccl_data
 
 template <typename T>
 ccl_status_t do_reduction_null(const void* in_buf, size_t in_count, void* inout_buf,
-                               size_t* out_count, const void** ctx, ccl_datatype_t dtype)
+                               size_t* out_count, const ccl_fn_context_t* ctx, ccl_datatype_t dtype)
 {
     size_t idx;
+    ASSERT(ctx->offset < COUNT * get_dtype_size(dtype),
+           "wrong offset for reduction_null func, should be less than COUNT");
+    {
+        std::lock_guard<std::mutex> guard(inc_mutex);
+        auto match = std::find_if(glob_match_id.begin(), glob_match_id.end(),
+                                  [&ctx](std::pair<std::string, int>& element)
+                                  { return !strcmp(element.first.c_str(), ctx->match_id);} );
+        ASSERT(match != glob_match_id.end(), "wrong match_id");
+        match->second++;
+    }
     if (out_count) *out_count = in_count;
             for (idx = 0; idx < in_count; idx++)
             {
@@ -106,9 +182,19 @@ ccl_status_t do_reduction_null(const void* in_buf, size_t in_count, void* inout_
 }
 template <typename T>
 ccl_status_t do_reduction_custom(const void* in_buf, size_t in_count, void* inout_buf,
-                               size_t* out_count, const void** ctx, ccl_datatype_t dtype)
+                                 size_t* out_count, const ccl_fn_context_t* ctx, ccl_datatype_t dtype)
 {
     size_t idx;
+    ASSERT(ctx->offset < COUNT * get_dtype_size(dtype),
+           "wrong offset for reduction_custom func, should be less than COUNT");
+    {
+        std::lock_guard<std::mutex> guard(inc_mutex);
+        auto match = std::find_if(glob_match_id.begin(), glob_match_id.end(),
+                                  [&ctx](std::pair<std::string, int>& element)
+                                  { return !strcmp(element.first.c_str(), ctx->match_id);} );
+        ASSERT(match != glob_match_id.end(), "wrong match_id");
+        match->second++;
+    }
     if (out_count) *out_count = in_count;
             for (idx = 0; idx < in_count; idx++)
             {
@@ -258,7 +344,7 @@ public:
                     T expected =
                         ((param.processCount * (param.processCount - 1) / 2) +
                         ((i + j) * param.processCount));
-                    T expected_fin = expected * prolog_coeff * epilog_coeff;
+                    expected_fin = expected * prolog_coeff * epilog_coeff;
                     if (param.recvBuf[j][i] != expected_fin) {
                         sprintf(this->errMessage, "[%zu] sent sendBuf[%zu][%zu] = %f, got recvBuf[%zu][%zu] = %f, but expected = %f\n",
                             param.processIdx, j, i, (double) param.sendBuf[j][i], j, i, (double) param.recvBuf[j][i], (double) expected_fin);
@@ -267,7 +353,7 @@ public:
                 }
                 else if (param.GetReductionType() == RT_CUSTOM_NULL) {
                     T expected = 0;
-                    T expected_fin = expected * prolog_coeff * epilog_coeff;
+                    expected_fin = expected * prolog_coeff * epilog_coeff;
                     if (param.recvBuf[j][i] != expected_fin) {
                         sprintf(this->errMessage, "[%zu] sent sendBuf[%zu][%zu] = %f, got recvBuf[%zu][%zu] = %f, but expected = %f\n",
                             param.processIdx, j, i, (double) param.sendBuf[j][i], j, i, (double) param.recvBuf[j][i], (double) expected_fin);
@@ -283,6 +369,7 @@ public:
 
     int Run(TypedTestParam < T > &param) {
         size_t result = 0;
+        glob_match_id.resize(param.bufferCount);
         for (size_t iter = 0; iter < 2; iter++) {
             SHOW_ALGO(Collective_Name);
             this->FillBuffers (param);
@@ -291,6 +378,8 @@ public:
             size_t* Buffers = param.DefineStartOrder();
             for (idx = 0; idx < param.bufferCount; idx++) {
                 this->Init (param, idx);
+                glob_match_id[idx].first = param.match_id;
+                glob_match_id[idx].second = 0;
                 if (param.GetPrologType() == PRT_T_TO_2X) {
                     param.coll_attr.prologue_fn = do_prologue_T_2x<T>;
                 }
@@ -319,6 +408,7 @@ public:
                     if (set_custom_reduction<T>(param))
                         return TEST_FAILURE;
                 }
+                COUNT = param.elemCount;
                 param.req[Buffers[idx]] = (param.GetPlaceType() == PT_IN) ?
                     param.global_comm.allreduce(param.recvBuf[Buffers[idx]].data(), param.recvBuf[Buffers[idx]].data(), param.elemCount,
                                   (ccl::data_type) param.GetDataType(),(ccl::reduction) param.GetCCLReductionType(), &param.coll_attr, param.GetStream()) :
@@ -327,7 +417,23 @@ public:
             }
             param.DefineCompletionOrderAndComplete();
             result += Check(param);
+            if (param.GetCCLReductionType() == ccl_reduction_custom ||
+                param.GetPrologType() != PRT_NULL ||
+                param.GetEpilogType() != EPLT_NULL )
+            {
+                for (auto it : glob_match_id)
+                {
+                    if(it.second == 0)
+                    {
+                        sprintf(this->errMessage, "[%zu] Wrong count match_id %s %d\n",
+                                param.processIdx, it.first.c_str(), it.second);
+                        result = TEST_FAILURE;
+                        break;
+                    }
+                }
+            }
         }
+        glob_match_id.clear();
         return result;
     }
 };

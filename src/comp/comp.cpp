@@ -43,12 +43,13 @@ ccl_status_t ccl_comp_copy(const void *in_buf, void *out_buf, size_t count, ccl_
 }
 
 ccl_status_t ccl_comp_reduce(const void *in_buf, size_t in_count, void *inout_buf, size_t *out_count,
-                             ccl_datatype_internal_t dtype, ccl_reduction_t reduction, ccl_reduction_fn_t reduction_fn)
+                             ccl_datatype_internal_t dtype, ccl_reduction_t reduction,
+                             ccl_reduction_fn_t reduction_fn, const ccl_fn_context_t* context)
 {
     if (reduction == ccl_reduction_custom)
     {
         CCL_THROW_IF_NOT(reduction_fn, "custom reduction requires user callback");
-        reduction_fn(in_buf, in_count, inout_buf, out_count, NULL /* context */, dtype->type);
+        reduction_fn(in_buf, in_count, inout_buf, out_count, context, dtype->type);
         return ccl_status_success;
     }
 

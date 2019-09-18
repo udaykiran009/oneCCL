@@ -145,6 +145,7 @@ private:
                 coll_param.comm = sched->coll_param.comm;
                 coll_sched.reset(new ccl_extra_sched(coll_param, sched->sched_id));
                 coll_sched->coll_attr.reduction_fn = sched->coll_attr.reduction_fn;
+                coll_sched->coll_attr.match_id = sched->coll_attr.match_id;
 
                 auto result = ccl_coll_build_allreduce(coll_sched.get(),
                                                        send_buf,

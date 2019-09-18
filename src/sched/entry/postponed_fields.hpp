@@ -86,7 +86,7 @@ struct postponed_fields
     {
         auto &field = ccl_tuple_get<postponed_field<new_id>>(fields);
         CCL_ASSERT(field.empty(),
-                   "duplicated field_id %d", new_id);
+                   "duplicated field_id ", new_id);
         field.fn = fn;
         field.ctx = ctx;
         field.update_once = update_once;
