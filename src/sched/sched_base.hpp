@@ -53,6 +53,7 @@ struct ccl_sched_base
 
     size_t get_priority() const;
     ccl_buffer alloc_buffer(size_t bytes);
+    ccl_buffer update_buffer(ccl_buffer buffer, size_t new_size);
     void free_buffers();
 
     void alloc_buffers_for_sycl_copy();

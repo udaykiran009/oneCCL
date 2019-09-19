@@ -59,7 +59,9 @@ enum ccl_coll_reduce_algo
 enum ccl_coll_sparse_allreduce_algo
 {
     ccl_coll_sparse_allreduce_basic,
+    ccl_coll_sparse_allreduce_size,
     ccl_coll_sparse_allreduce_mask,
+    ccl_coll_sparse_allreduce_3_allgatherv,
 
     ccl_coll_sparse_allreduce_last_value
 };

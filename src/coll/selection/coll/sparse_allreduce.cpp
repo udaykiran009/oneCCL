@@ -5,7 +5,9 @@ std::map<ccl_coll_sparse_allreduce_algo,
          std::string> ccl_algorithm_selector_helper<ccl_coll_sparse_allreduce_algo>::algo_names =
   { 
     std::make_pair(ccl_coll_sparse_allreduce_basic, "basic"),
-    std::make_pair(ccl_coll_sparse_allreduce_mask, "mask")
+    std::make_pair(ccl_coll_sparse_allreduce_size, "size"),
+    std::make_pair(ccl_coll_sparse_allreduce_mask, "mask"),
+    std::make_pair(ccl_coll_sparse_allreduce_3_allgatherv, "allgather")
   };
 
 ccl_algorithm_selector<ccl_coll_sparse_allreduce>::ccl_algorithm_selector()

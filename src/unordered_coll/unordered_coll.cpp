@@ -184,27 +184,29 @@ void ccl_unordered_coll_manager::start_coordination(const std::string& match_id)
                   ", ctx->match_id_size ", ctx->match_id_size);
     }
 
-    entry_factory::make_entry<coll_entry>(service_sched.get(),
-                                          ccl_coll_bcast,
-                                          ccl_buffer(), /* unused */
-                                          ccl_buffer(&ctx->match_id_size,
-                                                     sizeof(size_t)),
-                                          sizeof(size_t),
-                                          ccl_dtype_internal_char,
-                                          ccl_reduction_custom,
-                                          CCL_UNORDERED_COLL_COORDINATOR);
+    ccl_coll_entry_param match_id_size_param{};
+    match_id_size_param.ctype = ccl_coll_bcast;
+    match_id_size_param.send_buf = ccl_buffer();
+    match_id_size_param.recv_buf = ccl_buffer(&ctx->match_id_size,
+                                      sizeof(size_t));
+    match_id_size_param.count = sizeof(size_t);
+    match_id_size_param.dtype = ccl_dtype_internal_char;
+    match_id_size_param.root = CCL_UNORDERED_COLL_COORDINATOR;
+    match_id_size_param.comm = coll_param.comm;
+    entry_factory::make_entry<coll_entry>(service_sched.get(), match_id_size_param);
 
     service_sched->add_barrier();
 
-    /* 2. broadcast match_id_value */
-    auto entry = entry_factory::make_entry<coll_entry>(service_sched.get(),
-                                                       ccl_coll_bcast,
-                                                       ccl_buffer(), /* unused */
-                                                       ccl_buffer(), /* postponed */
-                                                       0,            /* postponed */
-                                                       ccl_dtype_internal_char,
-                                                       ccl_reduction_custom,
-                                                       CCL_UNORDERED_COLL_COORDINATOR);
+    // 2. broadcast match_id_value
+    ccl_coll_entry_param match_id_val_param{};
+    match_id_val_param.ctype = ccl_coll_bcast;
+    match_id_val_param.send_buf = ccl_buffer();
+    match_id_val_param.recv_buf = ccl_buffer();
+    match_id_val_param.count = 0;
+    match_id_val_param.dtype = ccl_dtype_internal_char;
+    match_id_val_param.root = CCL_UNORDERED_COLL_COORDINATOR;
+    match_id_val_param.comm = coll_param.comm;
+    auto entry = entry_factory::make_entry<coll_entry>(service_sched.get(), match_id_val_param);
 
     entry->set_field_fn<ccl_sched_entry_field_buf>([](const void* fn_ctx, void* field_ptr)
     {
@@ -229,16 +231,17 @@ void ccl_unordered_coll_manager::start_coordination(const std::string& match_id)
 
     service_sched->add_barrier();
 
-    /* 3. broadcast reserved comm_id */
-    entry_factory::make_entry<coll_entry>(service_sched.get(),
-                                          ccl_coll_bcast,
-                                          ccl_buffer(), /* unused */
-                                          ccl_buffer(&ctx->reserved_comm_id,
-                                                     sizeof(ccl_comm_id_t)),
-                                          sizeof(ccl_comm_id_t),
-                                          ccl_dtype_internal_char,
-                                          ccl_reduction_custom,
-                                          CCL_UNORDERED_COLL_COORDINATOR);
+    // 3. broadcast reserved comm_id
+    ccl_coll_entry_param reserved_comm_id_param{};
+    reserved_comm_id_param.ctype = ccl_coll_bcast;
+    reserved_comm_id_param.send_buf = ccl_buffer();
+    reserved_comm_id_param.recv_buf = ccl_buffer(&ctx->reserved_comm_id,
+                                               sizeof(ccl_comm_id_t));
+    reserved_comm_id_param.count = sizeof(ccl_comm_id_t);
+    reserved_comm_id_param.dtype = ccl_dtype_internal_char;
+    reserved_comm_id_param.root = CCL_UNORDERED_COLL_COORDINATOR;
+    reserved_comm_id_param.comm = coll_param.comm;
+    entry_factory::make_entry<coll_entry>(service_sched.get(), reserved_comm_id_param);
 
     service_sched->add_barrier();
 

@@ -1,5 +1,6 @@
 #include "ccl.hpp"
 #include "coll/algorithms/algorithms.hpp"
+#include "coll/algorithms/sparse.hpp"
 #include "coll/coll.hpp"
 #include "coll/selection/selection.hpp"
 #include "common/global/global.hpp"
@@ -305,6 +306,7 @@ ccl_status_t ccl_coll_build_reduce(ccl_sched* sched,
     return status;
 }
 
+
 ccl_status_t ccl_coll_build_sparse_allreduce(
     ccl_sched* sched,
     ccl_buffer send_ind_buf, size_t send_ind_count,
@@ -322,18 +324,35 @@ ccl_status_t ccl_coll_build_sparse_allreduce(
 
     auto algo = global_data.algorithm_selector->get<ccl_coll_sparse_allreduce>(sched->coll_param);
 
-    switch (algo)
+    LOG_DEBUG("build sparse allreduce, param:",
+              "\nsend_ind_buf ", send_ind_buf,
+              "\nsend_ind_count ", send_ind_count,
+              "\nsend_val_buf ", send_val_buf,
+              "\nsend_val_count ", send_val_count,
+              "\nrecv_ind_buf ", recv_ind_buf,
+              "\nrecv_ind_count ", recv_ind_count,
+              "\nrecv_val_buf ", recv_val_buf,
+              "\nrecv_val_count ", recv_val_count,
+              "\nindex_dtype ", ccl_datatype_get_name(index_dtype),
+              "\nvalue_dtype ", ccl_datatype_get_name(value_dtype),
+              "\nop ", ccl_reduction_to_str(reduction));
+
+    switch (index_dtype->type)
     {
-        case ccl_coll_sparse_allreduce_basic:
-            CCL_CALL(ccl_coll_build_sparse_allreduce_basic(sched,
-                                                           send_ind_buf, send_ind_count,
-                                                           send_val_buf, send_val_count,
-                                                           recv_ind_buf, recv_ind_count,
-                                                           recv_val_buf, recv_val_count,
-                                                           index_dtype, value_dtype, reduction));
+        case ccl_dtype_char:
+            CCL_DEFINE_VALUE(char);
+            break;
+        case ccl_dtype_int:
+            CCL_DEFINE_VALUE(int);
+            break;
+        case ccl_dtype_int64:
+            CCL_DEFINE_VALUE(int64_t);
+            break;
+        case ccl_dtype_uint64:
+            CCL_DEFINE_VALUE(uint64_t);
             break;
         default:
-            CCL_FATAL("unexpected sparse_allreduce_algo ", ccl_coll_algorithm_to_str(algo));
+            CCL_FATAL("index data type ", ccl_datatype_get_name(index_dtype), " is not supported yet");
             return ccl_status_invalid_arguments;
     }
 

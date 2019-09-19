@@ -3,4 +3,5 @@ DeliveryName	InstallName	FileCheckSum	FileOrigin	Owner	FileFeature	FileInstallCo
 <deliverydir>/l_include/ccl.hpp	<installdir><l_ccl_install_path><l_ccl_platform>/include/ccl.hpp		external	Ksenya Kochanova		1	644	redistributable	root	<installroot>/intel64/include/ccl.hpp
 <deliverydir>/l_include/ccl_types.h	<installdir><l_ccl_install_path><l_ccl_platform>/include/ccl_types.h		external	Ksenya Kochanova		1	644	redistributable	root	<installroot>/intel64/include/ccl_types.h
 <deliverydir>/l_include/ccl_types.hpp	<installdir><l_ccl_install_path><l_ccl_platform>/include/ccl_types.hpp		external	Ksenya Kochanova		1	644	redistributable	root	<installroot>/intel64/include/ccl_types.hpp
+<deliverydir>/l_include/ccl_type_traits.hpp	<installdir><l_ccl_install_path><l_ccl_platform>/include/ccl_type_traits.hpp		external	Ksenya Kochanova		1	644	redistributable	root	<installroot>/intel64/include/ccl_type_traits.hpp
 #Intel Confidential

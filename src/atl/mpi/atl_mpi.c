@@ -85,6 +85,10 @@ atl2mpi_dtype(atl_datatype_t dtype)
             return MPI_FLOAT;
         case atl_dtype_double:
             return MPI_DOUBLE;
+        case atl_dtype_int64:
+            return MPI_LONG_LONG;
+        case atl_dtype_uint64:
+            return MPI_UNSIGNED_LONG_LONG;
         default:
             printf("Unknown datatype: %d\n", dtype);
             exit(1);

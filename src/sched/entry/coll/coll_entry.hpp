@@ -20,16 +20,8 @@ public:
 
     coll_entry() = delete;
     coll_entry(ccl_sched* sched,
-               ccl_coll_type coll_type,
-               const ccl_buffer send_buf,
-               ccl_buffer recv_buf,
-               size_t cnt,
-               ccl_datatype_internal_t dtype,
-               ccl_reduction_t reduction_op,
-               size_t root = 0)
-        : sched_entry(sched), ctype(coll_type),
-          send_buf(send_buf), recv_buf(recv_buf), cnt(cnt),
-          dtype(dtype), op(reduction_op), coll_sched(), root(root)
+               ccl_coll_entry_param& param)
+        : sched_entry(sched), param(param), coll_sched()
     {
     }
 
@@ -64,38 +56,38 @@ public:
 
     ccl_buffer& get_field_ref(field_id_t<ccl_sched_entry_field_buf> id)
     {
-        return recv_buf;
+        return param.recv_buf;
     }
 
     ccl_buffer& get_field_ref(field_id_t<ccl_sched_entry_field_send_buf> id)
     {
-        return send_buf;
+        return param.send_buf;
     }
 
     ccl_buffer& get_field_ref(field_id_t<ccl_sched_entry_field_recv_buf> id)
     {
-        return recv_buf;
+        return param.recv_buf;
     }
 
     size_t& get_field_ref(field_id_t<ccl_sched_entry_field_cnt> id)
     {
-        return cnt;
+        return param.count;
     }
 
     ccl_datatype_internal_t& get_field_ref(field_id_t<ccl_sched_entry_field_dtype> id)
     {
-        return dtype;
+        return param.dtype;
     }
 protected:
     void dump_detail(std::stringstream& str) const override
     {
         ccl_logger::format(str,
-                            "dt ", ccl_datatype_get_name(dtype),
-                            ", coll_type ", ccl_coll_type_to_str(ctype),
-                            ", send_buf ", send_buf,
-                            ", recv_buf ", recv_buf,
-                            ", cnt ", cnt,
-                            ", op ", ccl_reduction_to_str(op),
+                            "dt ", ccl_datatype_get_name(param.dtype),
+                            ", coll_type ", ccl_coll_type_to_str(param.ctype),
+                            ", send_buf ", param.send_buf,
+                            ", recv_buf ", param.recv_buf,
+                            ", cnt ", param.count,
+                            ", op ", ccl_reduction_to_str(param.reduction),
                             ", comm ", sched->coll_param.comm,
                             ", coll sched ", coll_sched.get(),
                             "\n");
@@ -105,8 +97,8 @@ private:
 
     void create_schedule()
     {
-        size_t bytes = cnt * ccl_datatype_get_size(dtype);
-        switch (ctype)
+        size_t bytes = param.count * ccl_datatype_get_size(param.dtype);
+        switch (param.ctype)
         {
             case ccl_coll_barrier:
                 break;
@@ -114,15 +106,15 @@ private:
             {
                 ccl_coll_param coll_param{};
                 coll_param.ctype = ccl_coll_bcast;
-                coll_param.buf = recv_buf.get_ptr(bytes);
-                coll_param.count = cnt;
-                coll_param.dtype = dtype;
-                coll_param.root = root;
+                coll_param.buf = param.recv_buf.get_ptr(bytes);
+                coll_param.count = param.count;
+                coll_param.dtype = param.dtype;
+                coll_param.root = param.root;
                 coll_param.comm = sched->coll_param.comm;
                 coll_sched.reset(new ccl_extra_sched(coll_param, sched->sched_id));
 
                 auto result = ccl_coll_build_bcast(coll_sched.get(),
-                                                   recv_buf,
+                                                   param.recv_buf,
                                                    coll_sched->coll_param.count,
                                                    coll_sched->coll_param.dtype,
                                                    coll_sched->coll_param.root);
@@ -137,19 +129,19 @@ private:
             {
                 ccl_coll_param coll_param{};
                 coll_param.ctype = ccl_coll_allreduce;
-                coll_param.send_buf = send_buf.get_ptr(bytes);
-                coll_param.recv_buf = recv_buf.get_ptr(bytes);
-                coll_param.count = cnt;
-                coll_param.dtype = dtype;
-                coll_param.reduction = op;
+                coll_param.send_buf = param.send_buf.get_ptr(bytes);
+                coll_param.recv_buf = param.recv_buf.get_ptr(bytes);
+                coll_param.count = param.count;
+                coll_param.dtype = param.dtype;
+                coll_param.reduction = param.reduction;
                 coll_param.comm = sched->coll_param.comm;
                 coll_sched.reset(new ccl_extra_sched(coll_param, sched->sched_id));
                 coll_sched->coll_attr.reduction_fn = sched->coll_attr.reduction_fn;
                 coll_sched->coll_attr.match_id = sched->coll_attr.match_id;
 
                 auto result = ccl_coll_build_allreduce(coll_sched.get(),
-                                                       send_buf,
-                                                       recv_buf,
+                                                       param.send_buf,
+                                                       param.recv_buf,
                                                        coll_sched->coll_param.count,
                                                        coll_sched->coll_param.dtype,
                                                        coll_sched->coll_param.reduction);
@@ -159,9 +151,35 @@ private:
                 break;
             }
             case ccl_coll_allgatherv:
+            {
+                ccl_coll_param coll_param{};
+                coll_param.ctype = ccl_coll_allgatherv;
+                coll_param.send_buf = param.send_buf.get_ptr(bytes);
+                coll_param.recv_counts = static_cast<size_t*>(param.recv_counts.get_ptr(sizeof(size_t) * sched->coll_param.comm->size()));
+                size_t recv_bytes = 0;
+                for (size_t i = 0; i < sched->coll_param.comm->size(); i++)
+                {
+                    recv_bytes += coll_param.recv_counts[i];
+                }
+                coll_param.recv_buf = param.recv_buf.get_ptr(recv_bytes);
+                coll_param.count = param.count;
+                coll_param.dtype = param.dtype;
+                coll_param.comm = sched->coll_param.comm;
+                coll_sched.reset(new ccl_extra_sched(coll_param, sched->sched_id));
+
+                auto result = ccl_coll_build_allgatherv(coll_sched.get(),
+                                                       param.send_buf,
+                                                       coll_sched->coll_param.count,
+                                                       param.recv_buf,
+                                                       coll_sched->coll_param.recv_counts,
+                                                       coll_sched->coll_param.dtype);
+
+                CCL_ASSERT(result == ccl_status_success, "bad result ", result);
+
                 break;
+            }
             default:
-                CCL_FATAL("not supported type ", ctype);
+                CCL_FATAL("not supported type ", param.ctype);
                 break;
         }
 
@@ -178,13 +196,6 @@ private:
         }
     }
 
-    ccl_coll_type ctype;
-    ccl_buffer send_buf;
-    ccl_buffer recv_buf;
-    size_t cnt;
-    ccl_datatype_internal_t dtype;
-    ccl_reduction_t op;
+    ccl_coll_entry_param param;
     std::unique_ptr<ccl_extra_sched> coll_sched;
-    //for bcast
-    size_t root;
 };

@@ -79,6 +79,32 @@ ccl_buffer ccl_sched_base::alloc_buffer(size_t bytes)
     return buffer;
 }
 
+ccl_buffer ccl_sched_base::update_buffer(ccl_buffer buffer, size_t new_size)
+{
+    LOG_DEBUG("bytes ", new_size);
+    CCL_THROW_IF_NOT(new_size > 0, "incorrect buffer size: ", new_size);
+
+    /* in case old_ptr will be freed */
+    void* aux_ptr = buffer.get_ptr();
+
+    ccl_buffer new_buf = ccl_buffer(CCL_REALLOC(buffer.get_ptr(), buffer.get_size(), new_size, CACHELINE_SIZE, "sched_buffer"),
+                                    new_size, 0, ccl_buffer_type::DIRECT);
+
+    for (auto& it : memory.buf_list)
+    {
+        if (it.buffer.get_ptr() == aux_ptr)
+        {
+            if (aux_ptr != new_buf.get_ptr())
+                it.buffer = new_buf;
+            it.size = new_size;
+            break;
+        }
+    }
+
+    return new_buf;
+}
+
+
 void ccl_sched_base::free_buffers()
 {
     std::list<ccl_sched_buffer_handler>::iterator it;

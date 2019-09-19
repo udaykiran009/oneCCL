@@ -13,7 +13,6 @@ set(CCL_SRC
     coll/algorithms/bcast.cpp
     coll/algorithms/double_tree_ops.cpp
     coll/algorithms/reduce.cpp
-    coll/algorithms/sparse.cpp
     coll/coll.cpp
     coll/selection/coll/allgatherv.cpp
     coll/selection/coll/allreduce.cpp

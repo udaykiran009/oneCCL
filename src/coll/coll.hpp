@@ -47,6 +47,28 @@ struct ccl_coll_attr
     std::string match_id;
 };
 
+struct ccl_coll_entry_param
+{
+    ccl_coll_type ctype;
+    ccl_buffer buf;
+    ccl_buffer send_buf;
+    ccl_buffer recv_buf;
+    size_t count;
+    size_t send_count;
+    ccl_buffer recv_counts;
+    ccl_datatype_internal_t dtype;
+    ccl_reduction_t reduction;
+    size_t root;
+    const ccl_stream* stream;
+    ccl_comm* comm;
+
+#ifdef ENABLE_SYCL
+    ccl_sycl_buffer_t* sycl_send_buf;
+    ccl_sycl_buffer_t* sycl_recv_buf;
+    ccl_sycl_buffer_t* sycl_buf;
+#endif /* ENABLE_SYCL */
+};
+
 struct ccl_coll_sparse_param
 {
     const void* send_ind_buf;
@@ -83,6 +105,8 @@ struct ccl_coll_param
 #endif /* ENABLE_SYCL */
 
 };
+
+//ccl_coll_param create_coll_param_from_entry_param(ccl_coll_entry_param& prm);
 
 const char* ccl_coll_type_to_str(ccl_coll_type type);
 

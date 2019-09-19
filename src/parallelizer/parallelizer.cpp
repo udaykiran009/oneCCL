@@ -375,13 +375,14 @@ ccl_status_t ccl_parallelizer::process(ccl_master_sched* sched)
                                                           sizeof(ccl_datatype_t) + sizeof(size_t),
                                                           ccl_dtype_internal_char);
 
-                    coll_entry* entry = entry_factory::make_entry<coll_entry>(part_scheds[idx].get(),
-                                                                              ccl_coll_allreduce,
-                                                                              ccl_buffer(), /* send_buf */
-                                                                              ccl_buffer(), /* recv_buf */
-                                                                              0, /* count */
-                                                                              ccl_dtype_internal_none,
-                                                                              coll_param->reduction);
+                    ccl_coll_entry_param param{};
+                    param.ctype = ccl_coll_allreduce;
+                    param.send_buf = ccl_buffer();
+                    param.recv_buf = ccl_buffer();
+                    param.count = 0;
+                    param.dtype = ccl_dtype_internal_none;
+                    param.reduction = coll_param->reduction;
+                    coll_entry* entry = entry_factory::make_entry<coll_entry>(part_scheds[idx].get(), param);
 
                     entry->set_field_fn<ccl_sched_entry_field_send_buf>(ccl_parallelizer_prologue_get_buf,
                                                                         part_ctx, false);

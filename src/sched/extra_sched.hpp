@@ -4,25 +4,25 @@
 
 
 struct ccl_extra_sched : public ccl_request, public ccl_sched
-{   
+{
     static constexpr const char* class_name()
     {
         return "extra_sched";
     }
-    
+
     ccl_extra_sched(ccl_coll_param& coll_param, ccl_sched_id_t id)
         : ccl_request(),
           ccl_sched(coll_param, this)
     {
         sched_id = id;
-#ifdef ENABLE_DEBUG    
+#ifdef ENABLE_DEBUG
         set_dump_callback([this](std::ostream &out)
                           {
                                 dump(out);
                           });
 #endif
     }
-    
+
     ~ccl_extra_sched() = default;
     
     void dump(std::ostream& out) const
@@ -48,7 +48,7 @@ struct ccl_extra_sched : public ccl_request, public ccl_sched
             std::chrono::duration_cast<std::chrono::microseconds>(exec_complete_time - exec_start_time).count(),
             "\n");
 #endif
-    
+
         ccl_logger::format(out, "--------------------------------\n");
     }
 };
