@@ -12,6 +12,7 @@ CCL_ATL_TRANSPORT
 **Arguments**
 
 .. list-table:: 
+   :widths: 25 50
    :header-rows: 1
    :align: left
    
@@ -24,7 +25,7 @@ CCL_ATL_TRANSPORT
 
 **Description**
 
-Set this environment variable to be select transport for inter-node communications.
+Set this environment variable to select transport for inter-node communications.
 
 Collective algorithms selection
 ###############################
@@ -33,22 +34,16 @@ CCL_<coll_name>
 ***************
 **Syntax**
 
-``CCL_<coll_name>=<algo_name>``
-
-Sets the specific algorithm for the whole message size range.
-
-or
-
-``CCL_<coll_name>="<algo_name_1>[:<size_range_1>][;<algo_name_2><size_range_2>][;...]"``
-
-The list of semicolon separated blocks where each block sets the specific algorithm for specific message size range.
+- ``CCL_<coll_name>=<algo_name>`` sets the specific algorithm for the whole message size range.
+- ``CCL_<coll_name>="<algo_name_1>[:<size_range_1>][;<algo_name_2><size_range_2>][;...]"`` 
+  the list of semicolon separated blocks where each block sets the specific algorithm for specific message size range.
 
 
-``<coll_name>`` is selected from list of available collective operations and ``<algo_name>`` is selected from list of available algorithms for specific collective operation (listed below).
+``<coll_name>`` is selected from a list of available collective operations and ``<algo_name>`` is selected from a list of available algorithms for a specific collective operation (listed below).
 
 ``<size_range>`` is described by left and right size borders in format ``<left>-<right>``. Size is specified in bytes. Reserved word ``max`` can be used to specify the maximum message size.
 
-CCL internally fills algorithm selection table with sensible defaults. User input complements the selection table. To see the actual table values set CCL_LOG_LEVEL=1.
+oneCCL internally fills algorithm selection table with sensible defaults. User input complements the selection table. To see the actual table values set CCL_LOG_LEVEL=1.
 
 Example
 *******
@@ -81,13 +76,13 @@ Available algorithms
    :align: left
    
    * - ``direct``
-     - Based on MPI_Iallgatherv.
+     - Based on MPI_Iallgatherv
    * - ``naive``
-     - Send to all, receive from all.
+     - Send to all, receive from all
    * - ``flat``
-     - Alltoall-based allgorithm.
+     - Alltoall-based allgorithm
    * - ``multi_bcast``
-     - Series of broadcast operations with different root ranks.
+     - Series of broadcast operations with different root ranks
 
 
 ``ALLREDUCE`` algorithms
@@ -98,19 +93,19 @@ Available algorithms
    :align: left
 
    * - ``direct``
-     - Based on MPI_Iallreduce.
+     - Based on MPI_Iallreduce
    * - ``rabenseifner``
      - Rabenseifner’s algorithm
    * - ``starlike``
-     - May be beneficial for imbalanced workloads.
+     - May be beneficial for imbalanced workloads
    * - ``ring`` 
-     - reduce_scatter+allgather ring.
+     - reduce_scatter+allgather ring
    * - ``ring_rma``
-     - reduce_scatter+allgather ring using RMA communications.
+     - reduce_scatter+allgather ring using RMA communications
    * - ``double_tree``
-     - Double-tree algorithm.
+     - Double-tree algorithm
    * - ``recursive_doubling``
-     - Recursive doubling algorithm.
+     - Recursive doubling algorithm
 
 
 ``BARRIER`` algorithms
@@ -121,9 +116,9 @@ Available algorithms
    :align: left
    
    * - ``direct``
-     - Based on MPI_Ibarrier.
+     - Based on MPI_Ibarrier
    * - ``ring``
-     - Ring-based allgorithm.
+     - Ring-based allgorithm
 
 
 ``BCAST`` algorithms
@@ -134,13 +129,13 @@ Available algorithms
    :align: left
 
    * - ``direct``
-     - Based on MPI_Ibcast.
+     - Based on MPI_Ibcast
    * - ``ring`` 
      - Ring.
    * - ``double_tree``
-     - Double-tree algorithm.
+     - Double-tree algorithm
    * - ``naive``
-     - Send to all from root rank.
+     - Send to all from root rank
 
 
 ``REDUCE`` algorithms
@@ -151,13 +146,13 @@ Available algorithms
    :align: left
 
    * - ``direct``
-     - Based on MPI_Ireduce.
+     - Based on MPI_Ireduce
    * - ``rabenseifner``
-     - Rabenseifner’s algorithm.
+     - Rabenseifner’s algorithm
    * - ``tree``
-     - Tree algorithm.
+     - Tree algorithm
    * - ``double_tree``
-     - Double-tree algorithm.
+     - Double-tree algorithm
 
 
 ``SPARSE_ALLREDUCE`` algorithms
@@ -168,9 +163,9 @@ Available algorithms
    :align: left
 
    * - ``basic``
-     - Basic allgorithm.
+     - Basic allgorithm
    * - ``mask``
-     - Mask-based allgorithm.
+     - Mask-based allgorithm
 
 
 CCL_FUSION
@@ -182,19 +177,20 @@ CCL_FUSION
 **Arguments**
 
 .. list-table:: 
+   :widths: 25 50
    :header-rows: 1
    :align: left
    
    * - <value> 
      - Description
    * - ``1``
-     - Enable fusion of collective operations.
+     - Enable fusion of collective operations
    * - ``0``
-     - Disable fusion of collective operations (**default**).
+     - Disable fusion of collective operations (**default**)
 
 **Description**
 
-Set this environment variable to control fusion of collective operations. CCL  The real fusion will depend on additional settings described below.
+Set this environment variable to control fusion of collective operations. The real fusion will depend on additional settings described below.
 
 
 CCL_FUSION_BYTES_THRESHOLD
@@ -206,6 +202,7 @@ CCL_FUSION_BYTES_THRESHOLD
 **Arguments**
 
 .. list-table:: 
+   :widths: 25 50
    :header-rows: 1
    :align: left
    
@@ -213,7 +210,7 @@ CCL_FUSION_BYTES_THRESHOLD
      - Description
    * - ``SIZE``
      - Bytes threshold for collective operation. If the size of communication buffer in bytes is less or equal
-       to ``SIZE`` then CCL will fuse this operation with other ones.
+       to ``SIZE`` then oneCCL will fuse this operation with other ones.
 
 **Description**
 
@@ -229,6 +226,7 @@ CCL_FUSION_COUNT_THRESHOLD
 **Arguments**
 
 .. list-table:: 
+   :widths: 25 50
    :header-rows: 1
    :align: left
    
@@ -236,7 +234,7 @@ CCL_FUSION_COUNT_THRESHOLD
      - Description
    * - ``COUNT``
      - Count threshold for collective operations.
-       CCL can fuse together no more than ``COUNT`` operations at a time.
+       oneCCL can fuse together no more than ``COUNT`` operations at a time.
 
 **Description**
 
@@ -252,6 +250,7 @@ CCL_FUSION_CYCLE_MS
 **Arguments**
 
 .. list-table:: 
+   :widths: 25 50
    :header-rows: 1
    :align: left
    
@@ -276,6 +275,7 @@ CCL_UNORDERED_COLL
 **Arguments**
 
 .. list-table:: 
+   :widths: 25 50
    :header-rows: 1
    :align: left
    
@@ -301,6 +301,7 @@ CCL_PRIORITY
 **Arguments**
 
 .. list-table:: 
+   :widths: 25 50
    :header-rows: 1
    :align: left
    
@@ -327,13 +328,14 @@ CCL_WORKER_COUNT
 **Arguments**
 
 .. list-table:: 
+   :widths: 25 50
    :header-rows: 1
    :align: left
    
    * - <value> 
      - Description
    * - ``N``
-     - Number of worker threads for CCL rank. 1 if not specified.
+     - Number of worker threads for oneCCL rank. 1 if not specified.
 
 **Description**
 
@@ -349,6 +351,7 @@ CCL_WORKER_AFFINITY
 **Arguments**
 
 .. list-table:: 
+   :widths: 25 50
    :header-rows: 1
    :align: left
    
@@ -374,6 +377,7 @@ CCL_PM_TYPE
 **Arguments**
 
 .. list-table::
+   :widths: 25 50
    :header-rows: 1
    :align: left
 
@@ -398,6 +402,7 @@ CCL_KVS_IP_EXCHANGE
 **Arguments**
 
 .. list-table::
+   :widths: 25 50
    :header-rows: 1
    :align: left
 
@@ -422,6 +427,7 @@ CCL_K8S_API_ADDR
 **Arguments**
 
 .. list-table::
+   :widths: 25 50
    :header-rows: 1
    :align: left
 
@@ -444,6 +450,7 @@ CCL_K8S_MANAGER_TYPE
 **Arguments**
 
 .. list-table::
+   :widths: 25 50
    :header-rows: 1
    :align: left
 
@@ -468,6 +475,7 @@ CCL_KVS_IP_PORT
 **Arguments**
 
 .. list-table::
+   :widths: 25 50
    :header-rows: 1
    :align: left
 
@@ -490,6 +498,7 @@ CCL_WORLD_SIZE
 **Arguments**
 
 .. list-table::
+   :widths: 25 50
    :header-rows: 1
    :align: left
 
@@ -500,5 +509,5 @@ CCL_WORLD_SIZE
 
 **Description**
 
-Set this environment variable to specify number of CCL processes.
+Set this environment variable to specify number of oneCCL processes.
 

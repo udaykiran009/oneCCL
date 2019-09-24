@@ -1,7 +1,7 @@
 Sample application
 =========================
 
-Here comes the complete sample which shows how CCL API can be used to perform allreduce communication for SyCL buffers: 
+Below is a complete sample that shows how oneCCL API can be used to perform allreduce communication for SYCL* buffers: 
 
 ::
 
@@ -35,7 +35,7 @@ Here comes the complete sample which shows how CCL API can be used to perform al
         ccl_get_comm_rank(NULL, &rank);
         ccl_get_comm_size(NULL, &size);
 
-        // create CCL stream based on SyCL command queue
+        // create CCL stream based on SYCL* command queue
         ccl_stream_create(ccl_stream_sycl, &q, &stream);
 
         /* open sendbuf and initialize it on the CPU side */

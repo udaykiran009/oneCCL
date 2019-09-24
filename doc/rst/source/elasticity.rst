@@ -6,10 +6,15 @@ Fault tolerance / elasticity
 Main instructions
 +++++++++++++++++
 
-Before ranks launch user can specify :ref:`CCL_WORLD_SIZE` = N, where N - number of ranks to start.
-If k8s with k8s manager support is used then N = replicasize by default.
+Before ranks launch user can specify :ref:`CCL_WORLD_SIZE` = N, where N is the number of ranks to start.
+If k8s with k8s manager support is used, then N is equal to replicasize by default.
 
-User can specify own function which will decide what CCL should do on "world" resize event - wait / use current "world" information / finalize.
+User can specify their own function that decides what oneCCL should do on "world" resize event: 
+
+- wait
+- use current "world" information 
+- finalize
+
 ::
 
   typedef enum ccl_resize_action
@@ -29,35 +34,39 @@ User can specify own function which will decide what CCL should do on "world" re
 
   ccl_set_resize_callback(ccl_on_resize_fn_t callback);
 
-This function will be called on CCL level in case of changes in number of ranks. Application level (e.g. framework) should return action which CCL should perform.
+In case the number of ranks is changed, this function is called on oneCCL level. Application level (e.g. framework) should return action that oneCCL should perform.
 
-Setting this function to NULL (default value) means that CCL will work exactly with :ref:`CCL_WORLD_SIZE` or replicasize ranks without fault tolerant / elasticity.
+Setting this function to NULL (default value) means that oneCCL will work exactly with :ref:`CCL_WORLD_SIZE` or replicasize ranks without fault tolerant / elasticity.
 
 
 Examples
 ++++++++
 
-To run ranks in k8s without k8s manager, like set of pods
-*********************************************************
+Without k8s manager
+*******************
+
+To run ranks in k8s without k8s manager, e.g. set of pods:
 
 -   :ref:`CCL_PM_TYPE` = 1
--   :ref:`CCL_K8S_API_ADDR` = k8s server address and port, like IP:PORT
--   run your example
+-   :ref:`CCL_K8S_API_ADDR` = k8s server address and port (in a format of IP:PORT)
+-   Run your example
 
+Using k8s manager
+*****************
 
-To run ranks in k8s use statefulset / deployment as manager
-***********************************************************
+To run ranks in k8s use statefulset / deployment as a manager:
 
 -   :ref:`CCL_PM_TYPE` = 1
 -   :ref:`CCL_K8S_API_ADDR` = k8s server address
 -   :ref:`CCL_K8S_MANAGER_TYPE` = k8s
--   run your example
+-   Run your example
 
+Without mpirun
+**************
 
-To run ranks without mpirun
-***************************
+To run ranks without mpirun:
 
 -   :ref:`CCL_PM_TYPE` = 1
 -   :ref:`CCL_KVS_IP_EXCHANGE` = 1
--   :ref:`CCL_KVS_IP_PORT` = ip_port of one of your node where you run example
--   run your example
+-   :ref:`CCL_KVS_IP_PORT` = ip_port of one of your nodes where you run the example
+-   Run your example

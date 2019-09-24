@@ -1,16 +1,22 @@
 GPU support
 ===========
 
-The choice between CPU and GPU backends is performed by specifying ``ccl_stream_type`` value when creating ccl stream object. For GPU backend one should specify ``ccl_stream_sycl`` as the first argument. For collective operations which operate on SyCL stream, CCL expects communication buffers to be ``sycl::buffer`` objects casted to ``void*``.
-To demonstrate these concepts let us concider the allreduce sample. As a first step GPU ccl stream object is created:
+The choice between CPU and GPU backends is performed by specifying ``ccl_stream_type`` value at the moment of creating ccl stream object. 
+For GPU backend one should specify ``ccl_stream_sycl`` as the first argument. For collective operations, which operate on SYCL* stream, oneCCL expects communication buffers to be ``sycl::buffer`` objects casted to ``void*``.
 
-C version of CCL API
+The example below demonstrates these concepts.
+
+.. rubric:: Example
+
+Conisider simple allreduce example for GPU. As a first step, GPU ccl stream object is created:
+
+**C version of oneCCL API:**
 
 ::
 
     ccl_stream_create(ccl_stream_sycl, &q, &stream);
 
-C++ version of CCL API
+**C++ version of oneCCL API:**
 
 ::
 
@@ -18,7 +24,7 @@ C++ version of CCL API
 
 ``q`` is an object of type ``sycl::queue``.
 
-To illustrate the ``ccl_allreduce`` execution we need to initialize ``sendbuf`` (in real scenario it is provided by application):
+To illustrate the ``ccl_allreduce`` execution, initialize ``sendbuf`` (in real scenario it is provided by application):
 
 ::
 
@@ -27,7 +33,7 @@ To illustrate the ``ccl_allreduce`` execution we need to initialize ``sendbuf`` 
         host_acc_sbuf[i] = rank;
     }
 
-Then on the GPU side we modify the ``sendbuf``. This is for demostration purposes only.
+For demostration purposes only, modify the ``sendbuf`` on the GPU side:
 
 ::
 
@@ -38,9 +44,11 @@ Then on the GPU side we modify the ``sendbuf``. This is for demostration purpose
         });
     });
 
-``ccl_allreduce`` invocation performs reduction of values from all processes and distributes the result to all processes. For this case the result is an array of #processes size with all elements equal to #processes*(#processes+1)/2) since it represents the sum of arithmetical progression.
+``ccl_allreduce`` invocation performs reduction of values from all processes and distributes the result to all processes. 
+For this case, the result is an array with the size equal to the number of processes (#processes), 
+where all elements are equal to (#processes * (#processes - 1) / 2) since it represents the sum of arithmetical progression.
 
-C version of CCL API
+**C version of oneCCL API:**
 
 ::
 
@@ -55,7 +63,7 @@ C version of CCL API
                   &request);
     ccl_wait(request);
 
-C++ version of CCL API
+**C++ version of oneCCL API:**
 
 ::
 
@@ -95,10 +103,10 @@ Check the correctness of ``ccl_allreduce`` on the GPU:
         }
     }
 
-When using C version of CCL API it is required to explicitly free the created GPU ccl stream object:
+When using C version of oneCCL API, it is required to explicitly free the created GPU ccl stream object:
 
 ::
 
     ccl_stream_free(stream);
 
-For C++ version of CCL API this will be performed implicitly.
+For C++ version of oneCCL API this will be performed implicitly.

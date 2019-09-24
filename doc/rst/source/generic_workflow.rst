@@ -3,7 +3,7 @@ Generic workflow
 
 :guilabel:`To be added`.
 
-Below is a generic flow of using C++ API of oneCCL:
+Below is a generic flow for using C++ API of oneCCL:
 
 1. Initialize the library:
 
@@ -11,7 +11,7 @@ Below is a generic flow of using C++ API of oneCCL:
 
         ccl::environment env;
 
-2. Create a communicator objects:
+2. Create communicator objects:
 
 ::  
 

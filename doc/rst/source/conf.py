@@ -17,7 +17,7 @@
 
 # -- Project information -----------------------------------------------------
 
-project = 'Intel® CCL Documentation'
+project = 'oneCCL Documentation'
 copyright = '2019'
 author = 'Intel'
 
@@ -72,7 +72,8 @@ on_rtd = os.environ.get('READTHEDOCS', None) == 'True'
 extensions = [
     'sphinx.ext.autosectionlabel',
     'breathe',
-    'exhale'
+    'exhale',
+    'sphinx-prompt'
 ]
 
 breathe_projects = {

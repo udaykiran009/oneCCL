@@ -8,7 +8,7 @@ oneCCL supports a number of installation scenarios:
 
 * Installation using CLI 
 * RPM-based installation
-* Installation using tar.gz.
+* Installation using tar.gz
 
 
 Installation Through Command Line Interface (CLI)
@@ -62,7 +62,7 @@ Modify the ``cmake`` command:
 
    cmake .. -DCMAKE_INSTALL_PREFIX=/path/to/installation/directory
 
-If no ``-DCMAKE_INSTALL_PREFIX`` is specified, CCL is installed into the ``_install`` subdirectory of the current build directory. For example, ``ccl/build/_install``
+If no ``-DCMAKE_INSTALL_PREFIX`` is specified, oneCCL is installed into the ``_install`` subdirectory of the current build directory. For example, ``ccl/build/_install``
 
 
 Specify compiler
@@ -86,7 +86,7 @@ Modify the ``cmake`` command:
 Enable ``make`` Verbose Output
 ##############################
 
-Modify the ``make`` command as follows to see all parameters used by ``make`` during compilation and linkage:
+To see all parameters used by ``make`` during compilation and linkage, modify the ``make`` command as follows:
 
 ::
 
@@ -109,7 +109,9 @@ Modify the ``cmake`` command as follow:
 
    cmake .. -DCMAKE_BUILD_TYPE=Debug -DWITH_ASAN=true
 
-**Note:** Address sanitizer only works in the debug build.
+..note:: 
+
+  Address sanitizer only works in the debug build.
 
 Make sure that libasan.so exists. :guilabel:`Add to prerequisites`.
 
@@ -120,11 +122,11 @@ Installation using tar.gz
 
 To install oneCCL using the tar.gz file in a user mode, execute the following commands:
 
-::
+.. prompt:: bash
 
-   $ tar zxf l_ccl-devel-64-<version>.<update>.<package#>.tgz
-   $ cd l_ccl_<version>.<update>.<package#>
-   $ ./install.sh
+   tar zxf l_ccl-devel-64-<version>.<update>.<package#>.tgz
+   cd l_ccl_<version>.<update>.<package#>
+   ./install.sh
 
 There is no uninstall script. To uninstall oneCCL, delete the whole installation directory.
 
@@ -137,14 +139,14 @@ oneCCL is available through the RPM Package Manager. To install the library in a
 
 #. Install the following package:
 
-::
+.. prompt:: bash
 
-   $ rpm -i intel-ccl-devel-64-<version>.<update>-<package#>.x86_64.rpm
+   rpm -i intel-ccl-devel-64-<version>.<update>-<package#>.x86_64.rpm
    
    where ``<version>.<update>-<package#>`` is a string. For example, ``2017.0-009``.
 
 To uninstall oneCCL using the RPM Package Manager, execute this command:
 
-::
+.. prompt:: bash
 
-   $ rpm -e intel-ccl-devel-64-<version>.<update>-<package#>.x86_64
+   rpm -e intel-ccl-devel-64-<version>.<update>-<package#>.x86_64

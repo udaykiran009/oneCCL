@@ -7,7 +7,7 @@ Collective operations are executed by CCL worker threads (workers). The number o
 
 Workers affinity is controlled by :ref:`CCL_WORKER_AFFINITY`.
 
-By setting workers affinity you can specify which CPU cores are used to host CCL workers. The general rule of thumb is to use different CPU cores for compute (e.g. by specifying KMP_AFFINITY) and for communication.
+By setting workers affinity you can specify which CPU cores are used to host CCL workers. The general rule of thumb is to use different CPU cores for compute (e.g. by specifying ``KMP_AFFINITY``) and for communication.
 
 There are two ways to set workers affinity: explicit and automatic.
 
@@ -19,7 +19,7 @@ To set affinity explicitly, pass ID of the cores to be bound to to  the ``CCL_WO
 Example
 +++++++
 
-In the example below, CCL creates 4 threads and pins them to cores with numbers 3, 4, 5, and 6, respectively:
+In the example below, oneCCL creates 4 threads and pins them to cores with numbers 3, 4, 5, and 6, respectively:
 ::
 
    export CCL_WORKER_COUNT=4
@@ -28,14 +28,14 @@ In the example below, CCL creates 4 threads and pins them to cores with numbers 
 Automatic setup
 ###############
 
-.. note:: Automatic pinning only works if application is launched using ``mpirun`` provided by the CCL distribution package.
+.. note:: Automatic pinning only works if application is launched using ``mpirun`` provided by the oneCCL distribution package.
 
 To set affinity automatically, set ``CCL_WORKER_AFFINITY`` to ``auto``. 
 
 Example
 +++++++
 
-In the example below, CCL creates 4 threads and pins them to the last 4 cores available for the process launched:
+In the example below, oneCCL creates 4 threads and pins them to the last 4 cores available for the process launched:
 ::
 
    export CCL_WORKER_COUNT=4
