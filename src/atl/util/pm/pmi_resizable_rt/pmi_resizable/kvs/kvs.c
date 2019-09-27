@@ -13,6 +13,10 @@
 #include "kvs_keeper.h"
 #include "request_wrappers_k8s.h"
 
+#define CCL_KVS_IP_PORT_ENV "CCL_KVS_IP_PORT"
+#define CCL_KVS_IP_EXCHANGE_ENV "CCL_KVS_IP_EXCHANGE"
+#define CCL_KVS_IP_EXCHANGE_VAL_ENV "env"
+#define CCL_KVS_IP_EXCHANGE_VAL_K8S "k8s"
 
 #define MAX_CLIENT_COUNT 300
 
@@ -22,6 +26,7 @@ char local_host_ip[CCL_IP_LEN];
 static int sock_listener;
 static size_t main_port;
 static size_t local_port;
+static size_t is_master = 0;
 
 typedef enum ip_getting_type {
     IGT_K8S = 0,
@@ -39,8 +44,7 @@ typedef enum kvs_access_mode {
     AM_GET_VAL = 5,
     AM_GET_KEYS_VALUES = 6,
     AM_GET_REPLICA = 7,
-    AM_SET_MASTER = 8,
-    AM_FINALIZE = 9,
+    AM_FINALIZE = 8,
 } kvs_access_mode_t;
 
 typedef struct kvs_request {
@@ -192,7 +196,6 @@ void* kvs_server_init(void* args)
     int is_stop = 0;
     fd_set read_fds;
     int i, client_socket[MAX_CLIENT_COUNT], max_sd, sd;
-    size_t is_master = 0;
 
     for (i = 0; i < MAX_CLIENT_COUNT; i++)
     {
@@ -380,20 +383,10 @@ void* kvs_server_init(void* args)
                 free(kvs_values);
                 break;
             }
-            case AM_SET_MASTER:
-            {
-                is_master = 1;
-                break;
-            }
             case AM_FINALIZE:
             {
                 is_stop = 1;
                 kvs_keeper_clear(ST_SERVER);
-                if (ip_getting_mode == IGT_K8S && is_master)
-                {
-                    request_k8s_remove_name_key(MASTER_ADDR, KVS_IP);
-                    request_k8s_remove_name_key(MASTER_ADDR, KVS_PORT);
-                }
                 break;
             }
             default:
@@ -414,68 +407,11 @@ void* kvs_server_init(void* args)
 size_t init_main_server_by_k8s(void)
 {
     char port_str[MAX_KVS_VAL_LENGTH];
-    char** kvs_values = NULL;
-    char** kvs_keys = NULL;
-    size_t i;
-    size_t name_count = 0;
     request_k8s_kvs_init();
 
     SET_STR(port_str, INT_STR_SIZE, "%d", local_server_address.sin_port);
 
-    request_k8s_set_val(CCL_KVS_IP, my_hostname, local_host_ip);
-    request_k8s_set_val(CCL_KVS_PORT, my_hostname, port_str);
-
-    if (!request_k8s_get_count_names(MASTER_ADDR))
-    {
-        name_count = request_k8s_get_keys_values_by_name(CCL_KVS_IP, &kvs_keys, &kvs_values);
-        if (strstr(kvs_keys[0], my_hostname))
-        {
-            for (i = 0; i < name_count; i++)
-            {
-                free(kvs_keys[i]);
-                free(kvs_values[i]);
-            }
-            request_k8s_set_val(REQ_KVS_IP, my_hostname, local_host_ip);
-            while (!request_k8s_get_count_names(MASTER_ADDR))
-            {
-                name_count = request_k8s_get_keys_values_by_name(REQ_KVS_IP, &kvs_keys, &kvs_values);
-                if (name_count > 1)
-                {
-                    if (!strstr(kvs_keys[0], my_hostname))
-                    {
-                        break;
-                    }
-                }
-                else
-                {
-                    request_k8s_set_val(MASTER_ADDR, KVS_IP, local_host_ip);
-                    request_k8s_set_val(MASTER_ADDR, KVS_PORT, port_str);
-                }
-                for (i = 0; i < name_count; i++)
-                {
-                    free(kvs_keys[i]);
-                    free(kvs_values[i]);
-                }
-                name_count = 0;
-            }
-            request_k8s_remove_name_key(REQ_KVS_IP, my_hostname);
-        }
-    }
-    for (i = 0; i < name_count; i++)
-    {
-        free(kvs_keys[i]);
-        free(kvs_values[i]);
-    }
-    if (kvs_keys)
-        free(kvs_keys);
-    if (kvs_values)
-        free(kvs_values);
-    while (!request_k8s_get_count_names(MASTER_ADDR))
-    {
-        sleep(1);
-    }
-    request_k8s_get_val_by_name_key(MASTER_ADDR, KVS_IP, main_host_ip);
-    request_k8s_get_val_by_name_key(MASTER_ADDR, KVS_PORT, port_str);
+    request_k8s_kvs_get_master(local_host_ip, main_host_ip, port_str);
 
     main_port = strtol(port_str, NULL, 10);
     main_server_address.sin_port = main_port;
@@ -688,8 +624,7 @@ size_t kvs_init(void)
     if (strstr(main_host_ip, local_host_ip) &&
         local_port == main_port)
     {
-        request.mode = AM_SET_MASTER;
-        write(sock_sender, &request, sizeof(kvs_request_t));
+        is_master = 1;
     }
 
     return 0;
@@ -729,7 +664,7 @@ size_t kvs_finalize(void)
     close(sock_sender);
 
     if (ip_getting_mode == IGT_K8S)
-        request_k8s_kvs_finalize();
+        request_k8s_kvs_finalize(is_master);
 
     return 0;
 }

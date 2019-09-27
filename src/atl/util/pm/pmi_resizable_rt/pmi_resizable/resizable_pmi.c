@@ -227,7 +227,7 @@ int PMIR_API PMIR_Init(void)
            my_hostname[strlen(my_hostname)-1] == ' ')
         my_hostname[strlen(my_hostname)-1] = '\0';
 
-    SET_STR(&(my_hostname[strlen(my_hostname)-1]), MAX_KVS_VAL_LENGTH - (int)strlen(my_hostname) - 1, "-%d", getpid());
+    SET_STR(&(my_hostname[strlen(my_hostname)]), MAX_KVS_VAL_LENGTH - (int)strlen(my_hostname) - 1, "-%d", getpid());
 
     if (kvs_init())
     {

@@ -2,17 +2,43 @@
 #include <string.h>
 #include <stdlib.h>
 #include <ctype.h>
+#include <unistd.h>
 
 #include "request_wrappers_k8s.h"
 #include "def.h"
+
+#define JOB_NAME "CCL_JOB_NAME"
+
+#define ADDR_STR_V1_TEMPLATE "https://%s/api/v1/namespaces/default/pods/"
+#define ADDR_STR_V2_TEMPLATE "https://%s/apis/apps/v1/namespaces/default/"
+
+#define PATCH_TEMPLATE "-X PATCH -d {\\\"metadata\\\":{\\\"labels\\\":{\\\"%s\\\":\\\"%s\\\"}}} -H \"Content-Type: application/merge-patch+json\""
+#define PATCH_NULL_TEMPLATE "-X PATCH -d {\\\"metadata\\\":{\\\"labels\\\":{\\\"%s\\\":null}}} -H \"Content-Type: application/merge-patch+json\""
+#define AUTHORIZATION_TEMPLATE "curl -s -H \"Authorization: Bearer `cat /var/run/secrets/kubernetes.io/serviceaccount/token`\" --cacert /var/run/secrets/kubernetes.io/serviceaccount/ca.crt %s%s %s"
 
 #define MAX_KVS_STR_LENGTH 1024
 #define CCL_K8S_MANAGER_TYPE_ENV "CCL_K8S_MANAGER_TYPE"
 #define CCL_K8S_API_ADDR_ENV "CCL_K8S_API_ADDR"
 
+#define CCL_KVS_IP "CCL_KVS_IP"
+#define CCL_KVS_PORT "CCL_KVS_PORT"
+#define REQ_KVS_IP "CCL_REQ_KVS_IP"
+#define MASTER_ADDR "CCL_MASTER"
+
+char ccl_kvs_ip[MAX_KVS_NAME_LENGTH];
+char ccl_kvs_port[MAX_KVS_NAME_LENGTH];
+char req_kvs_ip[MAX_KVS_NAME_LENGTH];
+char master_addr[MAX_KVS_NAME_LENGTH];
+
+#define KVS_IP "KVS_IP"
+#define KVS_PORT "KVS_PORT"
+
+#define GET_KEY "| sed -r 's/\"[a-zA-Z0-9_]*-|: \"[a-zA-Z0-9_-]*|,|\"| |//g'"
+#define GET_VAL "| sed -r 's/[a-zA-Z0-9_-]*\":|,|\"| |//g'"
 
 char run_get_template[RUN_TEMPLATE_SIZE];
 char run_set_template[RUN_TEMPLATE_SIZE];
+char job_name[MAX_KVS_NAME_LENGTH];
 
 typedef enum manager_type
 {
@@ -21,6 +47,16 @@ typedef enum manager_type
 } manager_type_t;
 
 manager_type_t manager;
+
+size_t request_k8s_get_keys_values_by_name(const char* kvs_name, char*** kvs_key, char*** kvs_values);
+
+size_t request_k8s_get_count_names(const char* kvs_name);
+
+size_t request_k8s_get_val_by_name_key(const char* kvs_name, const char* kvs_key, char* kvs_val);
+
+size_t request_k8s_remove_name_key(const char* kvs_name, const char* kvs_key);
+
+size_t request_k8s_set_val(const char* kvs_name, const char* kvs_key, const char* kvs_val);
 
 void json_get_val(FILE* fp, const char** keys, size_t keys_count, char* val)
 {
@@ -75,6 +111,7 @@ void json_get_val(FILE* fp, const char** keys, size_t keys_count, char* val)
 
 size_t k8s_init_with_manager()
 {
+    FILE* fp;
     FILE* fp_name;
     FILE* fp_type;
     size_t i;
@@ -87,7 +124,18 @@ size_t k8s_init_with_manager()
     char* kube_api_addr = getenv(CCL_K8S_API_ADDR_ENV);
     const char* kind_type_key[] = {"metadata", "ownerReferences", "kind"};
     const char* kind_name_key[] = {"metadata", "ownerReferences", "name"};
-
+    char pod_name[MAX_KVS_VAL_LENGTH];
+    memset(pod_name, '\0', MAX_KVS_VAL_LENGTH);
+    if ((fp = popen("hostname", READ_ONLY)) == NULL)
+    {
+        printf("Can't get hostname\n");
+        exit(1);
+    }
+    fgets(pod_name, MAX_KVS_VAL_LENGTH, fp);
+    pclose(fp);
+    while (pod_name[strlen(pod_name)-1] == '\n' ||
+        pod_name[strlen(pod_name)-1] == ' ')
+        pod_name[strlen(pod_name)-1] = '\0';
     if (kube_api_addr == NULL)
     {
         printf("%s not set\n", CCL_K8S_API_ADDR_ENV);
@@ -97,7 +145,7 @@ size_t k8s_init_with_manager()
     SET_STR(connect_api_template, RUN_TEMPLATE_SIZE, ADDR_STR_V1_TEMPLATE, kube_api_addr);
 
     /*get full pod info*/
-    SET_STR(run_str, RUN_REQUEST_SIZE, AUTHORIZATION_TEMPLATE, connect_api_template, my_hostname, "");
+    SET_STR(run_str, RUN_REQUEST_SIZE, AUTHORIZATION_TEMPLATE, connect_api_template, pod_name, "");
 
     memset(kind_type, NULL_CHAR, MAX_KVS_NAME_LENGTH);
     if ((fp_name = popen(run_str, READ_ONLY)) == NULL)
@@ -133,10 +181,61 @@ size_t k8s_init_with_manager()
     return 0;
 }
 
+void get_my_job_name(const char* connect_api_template)
+{
+    FILE* fp;
+    char run_str[RUN_REQUEST_SIZE];
+    char grep_kvs_name_key[REQUEST_POSTFIX_SIZE];
+    char get_kvs_val[REQUEST_POSTFIX_SIZE];
+    char pod_name[MAX_KVS_VAL_LENGTH];
+    memset(pod_name, '\0', MAX_KVS_VAL_LENGTH);
+    if ((fp = popen("hostname", READ_ONLY)) == NULL)
+    {
+        printf("Can't get hostname\n");
+        exit(1);
+    }
+    fgets(pod_name, MAX_KVS_VAL_LENGTH, fp);
+    pclose(fp);
+    while (pod_name[strlen(pod_name)-1] == '\n' ||
+           pod_name[strlen(pod_name)-1] == ' ')
+        pod_name[strlen(pod_name)-1] = '\0';
+
+    SET_STR(grep_kvs_name_key, REQUEST_POSTFIX_SIZE, GREP_TEMPLATE, JOB_NAME);
+    SET_STR(get_kvs_val, REQUEST_POSTFIX_SIZE, CONCAT_TWO_COMMAND_TEMPLATE, grep_kvs_name_key, GET_VAL);
+
+    SET_STR(run_str, RUN_TEMPLATE_SIZE, AUTHORIZATION_TEMPLATE, connect_api_template, pod_name, get_kvs_val);
+
+    fp = popen(run_str, READ_ONLY);
+    fgets(job_name, MAX_KVS_NAME_LENGTH, fp);
+    pclose(fp);
+    if (job_name[0] == NULL_CHAR)
+    {
+        job_name[0] = '0';
+        job_name[1] = '_';
+    }
+    else
+    {
+        job_name[strlen(job_name) - 1] = '_';
+    }
+}
+
 size_t k8s_init_without_manager()
 {
+    FILE* fp;
     char* kube_api_addr = getenv(CCL_K8S_API_ADDR_ENV);
     char connect_api_template[RUN_TEMPLATE_SIZE];
+    char pod_name[MAX_KVS_VAL_LENGTH];
+    memset(pod_name, '\0', MAX_KVS_VAL_LENGTH);
+    if ((fp = popen("hostname", READ_ONLY)) == NULL)
+    {
+        printf("Can't get hostname\n");
+        exit(1);
+    }
+    fgets(pod_name, MAX_KVS_VAL_LENGTH, fp);
+    pclose(fp);
+    while (pod_name[strlen(pod_name)-1] == '\n' ||
+           pod_name[strlen(pod_name)-1] == ' ')
+        pod_name[strlen(pod_name)-1] = '\0';
 
     if (kube_api_addr == NULL)
     {
@@ -146,12 +245,16 @@ size_t k8s_init_without_manager()
 
     SET_STR(connect_api_template, RUN_TEMPLATE_SIZE, ADDR_STR_V1_TEMPLATE, kube_api_addr);
     SET_STR(run_get_template, RUN_TEMPLATE_SIZE, AUTHORIZATION_TEMPLATE, connect_api_template, " | sort ", "%s");
-    SET_STR(run_set_template, RUN_TEMPLATE_SIZE, AUTHORIZATION_TEMPLATE, connect_api_template, my_hostname, "%s");
+    SET_STR(run_set_template, RUN_TEMPLATE_SIZE, AUTHORIZATION_TEMPLATE, connect_api_template, pod_name, "%s");
+    
+    get_my_job_name(connect_api_template);
+    
     return 0;
 }
 
 size_t request_k8s_kvs_init()
 {
+    size_t res = 1;
     char* manager_type_env = getenv(CCL_K8S_MANAGER_TYPE_ENV);
 
     if (!manager_type_env || strstr(manager_type_env, "none"))
@@ -169,21 +272,83 @@ size_t request_k8s_kvs_init()
         manager = MT_NONE;
     }
 
+    memset(job_name, NULL_CHAR, MAX_KVS_NAME_LENGTH);
+
     switch (manager)
     {
     case MT_NONE:
-        return k8s_init_without_manager();
+        res = k8s_init_without_manager();
+        break;
     case MT_K8S:
-        return k8s_init_with_manager();
+        res = k8s_init_with_manager();
+        break;
     }
-    return 1;
+
+    memset(ccl_kvs_ip, NULL_CHAR, MAX_KVS_NAME_LENGTH);
+    memset(ccl_kvs_port, NULL_CHAR, MAX_KVS_NAME_LENGTH);
+    memset(req_kvs_ip, NULL_CHAR, MAX_KVS_NAME_LENGTH);
+    memset(master_addr, NULL_CHAR, MAX_KVS_NAME_LENGTH);
+
+    SET_STR(ccl_kvs_ip, MAX_KVS_NAME_LENGTH, KVS_NAME_TEMPLATE_S, job_name, CCL_KVS_IP);
+    SET_STR(ccl_kvs_port, MAX_KVS_NAME_LENGTH, KVS_NAME_TEMPLATE_S, job_name, CCL_KVS_PORT);
+    SET_STR(req_kvs_ip, MAX_KVS_NAME_LENGTH, KVS_NAME_TEMPLATE_S, job_name, REQ_KVS_IP);
+    SET_STR(master_addr, MAX_KVS_NAME_LENGTH, KVS_NAME_TEMPLATE_S, job_name, MASTER_ADDR);
+
+    return res;
 }
 
-size_t request_k8s_kvs_finalize(void)
+size_t request_k8s_kvs_get_master(const char* local_host_ip, char* main_host_ip, char* port_str)
+{
+    char** kvs_values = NULL;
+    char** kvs_keys = NULL;
+
+    request_k8s_set_val(ccl_kvs_ip, my_hostname, local_host_ip);
+    request_k8s_set_val(ccl_kvs_port, my_hostname, port_str);
+
+    if (!request_k8s_get_count_names(master_addr))
+    {
+        request_k8s_get_keys_values_by_name(ccl_kvs_ip, &kvs_keys, &kvs_values);
+        if (strstr(kvs_keys[0], my_hostname))
+        {
+            request_k8s_set_val(req_kvs_ip, my_hostname, local_host_ip);
+            while (!request_k8s_get_count_names(master_addr))
+            {
+                if (request_k8s_get_keys_values_by_name(req_kvs_ip, &kvs_keys, &kvs_values) > 1)
+                {
+                    if (!strstr(kvs_keys[0], my_hostname))
+                    {
+                        break;
+                    }
+                }
+                else
+                {
+                    request_k8s_set_val(master_addr, KVS_IP, local_host_ip);
+                    request_k8s_set_val(master_addr, KVS_PORT, port_str);
+                }
+            }
+            request_k8s_remove_name_key(req_kvs_ip, my_hostname);
+        }
+    }
+    while (!request_k8s_get_count_names(master_addr))
+    {
+        sleep(1);
+    }
+    request_k8s_get_val_by_name_key(master_addr, KVS_IP, main_host_ip);
+    request_k8s_get_val_by_name_key(master_addr, KVS_PORT, port_str);
+
+    return 0;
+}
+
+size_t request_k8s_kvs_finalize(size_t is_master)
 {
 
-    request_k8s_remove_name_key(CCL_KVS_IP, my_hostname);
-    request_k8s_remove_name_key(CCL_KVS_PORT, my_hostname);
+    request_k8s_remove_name_key(ccl_kvs_ip, my_hostname);
+    request_k8s_remove_name_key(ccl_kvs_port, my_hostname);
+    if (is_master)
+    {
+        request_k8s_remove_name_key(master_addr, KVS_IP);
+        request_k8s_remove_name_key(master_addr, KVS_PORT);
+    }
     return 0;
 }
 
@@ -364,7 +529,7 @@ size_t request_k8s_get_replica_size(void)
     switch (manager)
     {
     case MT_NONE:
-        return request_k8s_get_count_names(CCL_KVS_IP);
+        return request_k8s_get_count_names(ccl_kvs_ip);
     case MT_K8S:
         /*get full output*/
         SET_STR(run_str, RUN_REQUEST_SIZE, run_get_template, "");

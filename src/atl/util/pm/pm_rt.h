@@ -4,15 +4,16 @@
 #include "atl.h"
 
 #define PM_TYPE "CCL_PM_TYPE"
+
+#define PM_RT_VAL_SIMPLE "simple"
+#define PM_RT_VAL_RESIZABLE "resizable"
+
 typedef struct pm_rt_desc pm_rt_desc_t;
 
 /* PMI RT */
 atl_status_t pmirt_init(size_t *proc_idx, size_t *procs_num, pm_rt_desc_t **pmrt_desc);
 atl_status_t resizable_pmirt_init(size_t *proc_idx, size_t *proc_count, pm_rt_desc_t **pmrt_desc);
 atl_status_t resizable_pmirt_set_resize_function(atl_resize_fn_t resize_fn);
-
-#define PM_RT_VAL_SIMPLE "simple"
-#define PM_RT_VAL_RESIZABLE "resizable"
 
 typedef enum pm_rt_type {
     PM_RT_SIMPLE   = 0,

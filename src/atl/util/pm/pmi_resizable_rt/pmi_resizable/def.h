@@ -24,21 +24,10 @@
 #define REQUEST_POSTFIX_SIZE 1024
 #define RUN_REQUEST_SIZE     2048
 
-#define CCL_KVS_IP_PORT_ENV "CCL_KVS_IP_PORT"
-#define CCL_KVS_IP_EXCHANGE_ENV "CCL_KVS_IP_EXCHANGE"
 #define CCL_WORLD_SIZE_ENV "CCL_WORLD_SIZE"
 
-#define CCL_KVS_IP_EXCHANGE_VAL_ENV "env"
-#define CCL_KVS_IP_EXCHANGE_VAL_K8S "k8s"
-
-#define ADDR_STR_V1_TEMPLATE "https://%s/api/v1/namespaces/default/pods/"
-#define ADDR_STR_V2_TEMPLATE "https://%s/apis/apps/v1/namespaces/default/"
-
-#define PATCH_TEMPLATE "-X PATCH -d {\\\"metadata\\\":{\\\"labels\\\":{\\\"%s\\\":\\\"%s\\\"}}} -H \"Content-Type: application/merge-patch+json\""
-#define PATCH_NULL_TEMPLATE "-X PATCH -d {\\\"metadata\\\":{\\\"labels\\\":{\\\"%s\\\":null}}} -H \"Content-Type: application/merge-patch+json\""
-#define AUTHORIZATION_TEMPLATE "curl -s -H \"Authorization: Bearer `cat /var/run/secrets/kubernetes.io/serviceaccount/token`\" --cacert /var/run/secrets/kubernetes.io/serviceaccount/ca.crt %s%s %s"
-
 #define KVS_NAME_TEMPLATE_I "%s_%zu"
+#define KVS_NAME_TEMPLATE_S "%s%s"
 #define KVS_NAME_KEY_TEMPLATE "%s-%s"
 #define GREP_TEMPLATE "| grep \"%s\""
 #define GREP_COUNT_TEMPLATE "| grep -c \"%s\""
@@ -57,21 +46,12 @@
 #define KVS_DEAD_POD "CCL_DEAD_POD"
 #define KVS_APPROVED_NEW_POD "CCL_APPROVED_NEW_POD"
 #define KVS_APPROVED_DEAD_POD "CCL_APPROVED_DEAD_POD"
-#define KVS_LISTENER "CCL_LISTENER"
 #define KVS_ACCEPT "CCL_ACCEPT"
 
-#define CCL_KVS_IP "CCL_KVS_IP"
-#define CCL_KVS_PORT "CCL_KVS_PORT"
-#define MASTER_ADDR "CCL_MASTER"
-#define REQ_KVS_IP "CCL_REQ_KVS_IP"
-#define KVS_IP "KVS_IP"
-#define KVS_PORT "KVS_PORT"
 
 #define CCL_IP_LEN 128
 
 #define CHECKER_IP "hostname -I"
-#define GET_KEY "| sed -r 's/\"[a-zA-Z0-9_]*-|: \"[a-zA-Z0-9_-]*|,|\"| |//g'"
-#define GET_VAL "| sed -r 's/[a-zA-Z0-9_-]*\":|,|\"| |//g'"
 #define READ_ONLY "r"
 #define NULL_CHAR '\0'
 #define MAX_UP_IDX 2048

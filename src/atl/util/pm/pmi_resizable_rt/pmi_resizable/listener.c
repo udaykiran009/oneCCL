@@ -8,6 +8,7 @@
 
 #include "def.h"
 #include "kvs.h"
+#define KVS_LISTENER "CCL_LISTENER"
 
 static int sock_sender;
 static size_t num_listeners;
