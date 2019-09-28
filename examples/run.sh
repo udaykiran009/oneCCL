@@ -21,7 +21,6 @@ function CheckTest(){
         echo "Error: example $2 testing failed"
         echo "See log ${test_log} for details"
         total_fails=${total_fails}+1
-#        exit 1
     fi
 }
 
@@ -56,8 +55,66 @@ then
     echo "Error: CCL_ROOT wasn't found"
     exit 1
 fi
+run_benchmark()
+{
+    echo "================ENVIRONMENT=================="
+    local ccl_extra_env="$1"
+    echo "ccl_extra_env: " "$ccl_extra_env"
+    local dir_name=$2
+    echo "dir_name: " $dir_name
+    local transport=$3
+    echo "transport: "$transport
+    local example=$4
+    echo "example: "$example
+    local backend=$5
+    echo "backend: "$backend
+    local loop=$6
+    echo "loop: "$loop
+    local coll=$7
+    echo "coll: " $coll
+    echo "================ENVIRONMENT=================="
+    test_log="$SCRIPT_DIR/$dir_name/run_${transport}_${example}_${backend}_${loop}_output.log"
+    echo "run ${example}: ccl_extra_env  "$ccl_extra_env" transport $transport, backend $backend, loop $loop " 2>&1 | tee ${test_log}
+    eval `echo $ccl_extra_env mpiexec.hydra -genv $EXTRA_ENV -n 2 -ppn $ppn -l ./$example $backend $loop $coll` 2>&1 | tee ${test_log}
+    CheckTest ${test_log} ${example}
+}
+run_example()
+{
+    echo "================ENVIRONMENT=================="
+    local ccl_extra_env="$1"
+    echo "ccl_extra_env: " "$ccl_extra_env"
+    local dir_name=$2
+    echo "dir_name: " $dir_name
+    local transport=$3
+    echo "transport: "$transport
+    local example=$4
+    echo "example: "$example
+    echo "================ENVIRONMENT=================="
+    test_log="$SCRIPT_DIR/$dir_name/run_${dir_name}_${transport}_${example}_output.log"
+    echo "run ${example}: ccl_extra_env "$ccl_extra_env" transport $transport" 2>&1 | tee ${test_log}
+    eval `echo $ccl_extra_env mpiexec.hydra -genv $EXTRA_ENV -n 2 -ppn $ppn -l ./$example` 2>&1 | tee ${test_log}
+    CheckTest ${test_log} ${example}
+}
 
-run_examples()
+build()
+{
+    local dir_name="$1"
+    echo "make clean"
+    make clean -f ./../Makefile > /dev/null 2>&1
+    make clean_logs -f ./../Makefile > /dev/null 2>&1
+    echo "Building"
+    make all -f ./../Makefile &> $SCRIPT_DIR/$dir_name/build_${dir_name}_output.log
+    error_count=`grep -c 'error:'  $SCRIPT_DIR/$dir_name/build_${dir_name}_output.log` > /dev/null 2>&1
+    if [ "${error_count}" != "0" ]
+    then
+        echo "building ... NOK"
+        echo "See logs $SCRIPT_DIR/$dir_name/build_${dir_name}_output.log"
+        exit 1
+    else
+        echo "OK"
+    fi
+}
+run()
 {
     ppn=1
     EXTRA_ENV="CCL_YIELD=sleep"
@@ -65,20 +122,7 @@ run_examples()
     for dir_name in "cpu" "sycl" "common"
     do
         cd $dir_name
-        echo "make clean"
-        make clean -f ./../Makefile > /dev/null 2>&1
-        make clean_logs -f ./../Makefile > /dev/null 2>&1
-        echo "Building"
-        make all -f ./../Makefile &> $SCRIPT_DIR/$dir_name/build_${dir_name}_${transport}_output.log
-        error_count=`grep -c 'error:'  $SCRIPT_DIR/$dir_name/build_${dir_name}_${transport}_output.log` > /dev/null 2>&1
-        if [ "${error_count}" != "0" ]
-        then
-            echo "building ... NOK"
-            echo "See logs $SCRIPT_DIR/$dir_name/${dir_name}/build_${dir_name}_${transport}_output.log"
-            exit 1
-        else
-            echo "OK"
-        fi
+        build $dir_name
         for transport in "ofi" "mpi";
         do
             if [ "$transport" == "mpi" ];
@@ -94,11 +138,8 @@ run_examples()
                 then
                     for backend in "cpu" "sycl"
                     do
-                        test_log="$SCRIPT_DIR/$dir_name/run_${dir_name}_${transport}_${example}_${backend}_output.log"
-                        echo "run examples with $transport transport (${example})" 2>&1 | tee ${test_log}
-                        CCL_ATL_TRANSPORT=${transport} mpiexec.hydra -genv $EXTRA_ENV -n 2 -ppn $ppn -l ./$example $backend 2>&1 | tee ${test_log}
-                        CheckTest ${test_log} ${example}
-
+                        ccl_extra_env="CCL_ATL_TRANSPORT=${transport}"
+                        run_benchmark ${ccl_extra_env} ${dir_name} ${transport} ${example} ${backend} 
                         #run extended version of benchmark
                         if [[ "${example}" == *"benchmark"* ]]
                         then
@@ -108,33 +149,30 @@ run_examples()
                                 then
                                     continue
                                 fi
-                                test_log="$SCRIPT_DIR/$dir_name/run_${dir_name}_${transport}_${example}_${backend}_${loop}_output.log"
-                                echo "run benchmark: transport $transport, backend $backend, loop $loop " 2>&1 | tee ${test_log}
-                                CCL_PRIORITY=lifo CCL_ATL_TRANSPORT=${transport} mpiexec.hydra -genv $EXTRA_ENV -n 2 -ppn $ppn -l ./$example $backend $loop 2>&1 | tee ${test_log}
-                                CheckTest ${test_log} ${example}
-
-                                test_log="$SCRIPT_DIR/$dir_name/run_${dir_name}_${transport}_${example}_allreduce_wo_workers_output.log"
-                                echo "run benchmark: transport $transport, backend $backend, loop $loop without workers" 2>&1 | tee ${test_log}
-                                CCL_WORKER_OFFLOAD=0 CCL_ATL_TRANSPORT=${transport} mpiexec.hydra -genv $EXTRA_ENV -n 2 -ppn $ppn -l ./$example $backend $loop allreduce 2>&1 | tee ${test_log}
-                                CheckTest ${test_log} ${example}
+                                ccl_extra_env="CCL_PRIORITY=lifo;CCL_ATL_TRANSPORT=${transport}"
+                                run_benchmark ${ccl_extra_env} ${dir_name} ${transport} ${example} ${backend} ${loop}
+                                ccl_extra_env="CCL_WORKER_OFFLOAD=0;CCL_ATL_TRANSPORT=${transport}"
+                                run_benchmark ${ccl_extra_env} ${dir_name} ${transport} ${example} ${backend} ${loop}
                             done
-
-                            test_log="$SCRIPT_DIR/$dir_name/run_${dir_name}_${transport}_${example}_allreduce_fusion_output.log"
-                            echo "run benchmark with fusion: $transport transport (${example})" 2>&1 | tee ${test_log}
-                            CCL_FUSION=1 CCL_ATL_TRANSPORT=${transport} mpiexec.hydra -genv $EXTRA_ENV -n 2 -ppn $ppn -l ./$example $backend regular allreduce 2>&1 | tee ${test_log}
-                            CheckTest ${test_log} ${example}
-
-                            test_log="$SCRIPT_DIR/$dir_name/run_${dir_name}_${transport}_${example}_allreduce_log_level_2_output.log"
-                            echo "run benchmark with log_level=2: $transport transport (${example})" 2>&1 | tee ${test_log}
-                            CCL_LOG_LEVEL=2 CCL_ATL_TRANSPORT=${transport} mpiexec.hydra -genv $EXTRA_ENV -n 2 -ppn $ppn -l ./$example $backend regular allreduce 2>&1 | tee ${test_log}
-                            CheckTest ${test_log} ${example}
+                            ccl_extra_env="CCL_FUSION=1;CCL_ATL_TRANSPORT=${transport}"
+                            run_benchmark ${ccl_extra_env} ${dir_name} ${transport} ${example} ${backend} regular allreduce
+                            ccl_extra_env="CCL_LOG_LEVEL=2;CCL_ATL_TRANSPORT=${transport}"
+                            run_benchmark ${ccl_extra_env} ${dir_name} ${transport} ${example} ${backend} regular allreduce
                         fi
                     done
                 else
-                    test_log="$SCRIPT_DIR/$dir_name/run_${dir_name}_${transport}_${example}_output.log"
                     echo "run examples with $transport transport (${example})" 2>&1 | tee ${test_log}
-                    CCL_ATL_TRANSPORT=${transport} mpiexec.hydra -genv $EXTRA_ENV -n 2 -ppn $ppn -l ./$example 2>&1 | tee ${test_log}
-                    CheckTest ${test_log} ${example}
+                    if [[ "${example}" == *"sparse_allreduce"* ]]
+                    then
+                        for sparse_algo in "basic" "mask" "allgather" "size";
+                        do
+                            ccl_extra_env="CCL_SPARSE_ALLREDUCE=$sparse_algo;CCL_ATL_TRANSPORT=${transport}"
+                            run_example ${ccl_extra_env} ${dir_name} ${transport} ${example}
+                        done
+                    else
+                        ccl_extra_env="CCL_ATL_TRANSPORT=${transport}"
+                        run_example ${ccl_extra_env} ${dir_name} ${transport} ${example}
+                    fi
                 fi
             done
         done
@@ -150,4 +188,4 @@ run_examples()
     fi
 }
 
-run_examples
+run
