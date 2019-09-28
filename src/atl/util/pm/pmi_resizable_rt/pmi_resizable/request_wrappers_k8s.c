@@ -131,7 +131,7 @@ size_t k8s_init_with_manager()
         printf("Can't get hostname\n");
         exit(1);
     }
-    fgets(pod_name, MAX_KVS_VAL_LENGTH, fp);
+    CHECK_FGETS(fgets(pod_name, MAX_KVS_VAL_LENGTH, fp), pod_name);
     pclose(fp);
     while (pod_name[strlen(pod_name)-1] == '\n' ||
         pod_name[strlen(pod_name)-1] == ' ')
@@ -194,7 +194,7 @@ void get_my_job_name(const char* connect_api_template)
         printf("Can't get hostname\n");
         exit(1);
     }
-    fgets(pod_name, MAX_KVS_VAL_LENGTH, fp);
+    CHECK_FGETS(fgets(pod_name, MAX_KVS_VAL_LENGTH, fp), pod_name);
     pclose(fp);
     while (pod_name[strlen(pod_name)-1] == '\n' ||
            pod_name[strlen(pod_name)-1] == ' ')
@@ -206,7 +206,7 @@ void get_my_job_name(const char* connect_api_template)
     SET_STR(run_str, RUN_TEMPLATE_SIZE, AUTHORIZATION_TEMPLATE, connect_api_template, pod_name, get_kvs_val);
 
     fp = popen(run_str, READ_ONLY);
-    fgets(job_name, MAX_KVS_NAME_LENGTH, fp);
+    CHECK_FGETS(fgets(job_name, MAX_KVS_NAME_LENGTH, fp), job_name);
     pclose(fp);
     if (job_name[0] == NULL_CHAR)
     {
@@ -231,7 +231,7 @@ size_t k8s_init_without_manager()
         printf("Can't get hostname\n");
         exit(1);
     }
-    fgets(pod_name, MAX_KVS_VAL_LENGTH, fp);
+    CHECK_FGETS(fgets(pod_name, MAX_KVS_VAL_LENGTH, fp), pod_name);
     pclose(fp);
     while (pod_name[strlen(pod_name)-1] == '\n' ||
            pod_name[strlen(pod_name)-1] == ' ')
@@ -406,7 +406,7 @@ size_t request_k8s_get_keys_values_by_name(const char* kvs_name, char*** kvs_key
         printf("Can't get keys-values by name: %s\n", kvs_name);
         exit(1);
     }
-    fgets(values_count_str, INT_STR_SIZE, fp);
+    CHECK_FGETS(fgets(values_count_str, INT_STR_SIZE, fp), values_count_str);
     pclose(fp);
 
     values_count = strtol(values_count_str, NULL, 10);
@@ -442,7 +442,7 @@ size_t request_k8s_get_count_names(const char* kvs_name)
         printf("Can't get names count: %s\n", kvs_name);
         exit(1);
     }
-    fgets(count_names, INT_STR_SIZE, fp);
+    CHECK_FGETS(fgets(count_names, INT_STR_SIZE, fp), count_names);
     pclose(fp);
 
     return strtol(count_names, NULL, 10);
@@ -469,7 +469,7 @@ size_t request_k8s_get_val_by_name_key(const char* kvs_name, const char* kvs_key
         printf("Can't get value by name-key: %s\n", kvs_name_key);
         exit(1);
     }
-    fgets(kvs_val, MAX_KVS_VAL_LENGTH, fp);
+    CHECK_FGETS(fgets(kvs_val, MAX_KVS_VAL_LENGTH, fp), kvs_val);
     pclose(fp);
     kvs_val[strlen(kvs_val) - 1] = NULL_CHAR;
     return strlen(kvs_val);

@@ -87,7 +87,8 @@ ccl_buffer ccl_sched_base::update_buffer(ccl_buffer buffer, size_t new_size)
     /* in case old_ptr will be freed */
     void* aux_ptr = buffer.get_ptr();
 
-    ccl_buffer new_buf = ccl_buffer(CCL_REALLOC(buffer.get_ptr(), buffer.get_size(), new_size, CACHELINE_SIZE, "sched_buffer"),
+    ccl_buffer new_buf = ccl_buffer(CCL_REALLOC(buffer.get_ptr(), (size_t)buffer.get_size(),
+                                                new_size, CACHELINE_SIZE, "sched_buffer"),
                                     new_size, 0, ccl_buffer_type::DIRECT);
 
     for (auto& it : memory.buf_list)

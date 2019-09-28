@@ -156,7 +156,7 @@ ccl_status_t sparse_reduce(const void* ctx)
         size_t idx_offset = 0;
         for (size_t num = 0; num < sa_handler->send_count[0]; num++)
         {
-            if (rcv_i[num] != -1)
+            if (rcv_i[num] != (i_type)(-1))
             {
                 buf_i[sa_handler->dst_count[0] + idx_offset] = rcv_i[num];
 

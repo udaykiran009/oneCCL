@@ -38,7 +38,7 @@ int collect_sock_addr(void)
         printf("Can't get host IP\n");
         exit(1);
     }
-    fgets(my_ip, MAX_KVS_VAL_LENGTH, fp);
+    CHECK_FGETS(fgets(my_ip, MAX_KVS_VAL_LENGTH, fp), my_ip);
     pclose(fp);
     while (my_ip[strlen(my_ip) - 1] == '\n' ||
            my_ip[strlen(my_ip) - 1] == ' ')
@@ -157,7 +157,7 @@ int run_listener(void)
             printf("Can't get host IP\n");
             exit(1);
         }
-        fgets(my_ip, MAX_KVS_VAL_LENGTH, fp);
+        CHECK_FGETS(fgets(my_ip, MAX_KVS_VAL_LENGTH, fp), my_ip);
         pclose(fp);
         while (my_ip[strlen(my_ip) - 1] == '\n' ||
                my_ip[strlen(my_ip) - 1] == ' ')

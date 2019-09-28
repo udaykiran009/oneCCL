@@ -221,7 +221,7 @@ int PMIR_API PMIR_Init(void)
         printf("Can't get hostname\n");
         exit(1);
     }
-    fgets(my_hostname, MAX_KVS_VAL_LENGTH, fp);
+    CHECK_FGETS(fgets(my_hostname, MAX_KVS_VAL_LENGTH, fp), my_hostname);
     pclose(fp);
     while (my_hostname[strlen(my_hostname)-1] == '\n' ||
            my_hostname[strlen(my_hostname)-1] == ' ')

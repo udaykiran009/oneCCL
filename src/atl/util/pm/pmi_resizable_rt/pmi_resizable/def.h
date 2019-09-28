@@ -14,6 +14,28 @@
      }                                                  \
   } while(0)
 
+#define CHECK_FGETS(expr, str)     \
+  do                               \
+  {                                \
+      char* res = expr;            \
+      if (!res || res != str)      \
+      {                            \
+          printf("fgets error\n"); \
+          exit(EXIT_FAILURE);      \
+      }                            \
+  } while (0)
+
+#define CHECK_RW_OP(expr, size)         \
+  do                                    \
+  {                                     \
+      ssize_t res = expr;               \
+      if ((res == -1) || (res != size)) \
+      {                                 \
+          printf("read/write error\n"); \
+          exit(EXIT_FAILURE);           \
+      }                                 \
+  } while (0)
+
 #define BARRIER_NUM_MAX      1024
 #define MAX_KVS_KEY_LENGTH   64
 #define MAX_KVS_VAL_LENGTH   64
