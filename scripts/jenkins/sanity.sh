@@ -185,7 +185,7 @@ set_environment()
     if [ -z "${IMPI_PATH}" ]
     then
         echo "WARNING: I_MPI_ROOT isn't set, last oneAPI pack will be used."
-        source /nfs/inn/disks/nn-ssg_tcar_mpi_2Tb_unix/Uploads/IMPI/linux/functional_testing/impi/oneAPI/impi_2021.1-alpha02/env/vars.sh release_mt
+        source /nfs/inn/disks/nn-ssg_tcar_mpi_2Tb_unix/Uploads/IMPI/linux/functional_testing/impi/oneAPI/impi_2021.1-beta01/env/vars.sh release_mt
     else
         source ${IMPI_PATH}/env/vars.sh release_mt
     fi
@@ -229,6 +229,7 @@ make_tests()
 
 run_compatibitily_tests()
 {
+    set_external_env
     cd ${CURRENT_WORK_DIR}/examples
     ./run.sh 
     log_status_fail=${PIPESTATUS[0]}

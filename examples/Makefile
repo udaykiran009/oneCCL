@@ -10,7 +10,7 @@ CMAKE_CLANG_FLAGS = -Wno-pessimizing-move -Wno-dangling-field -Wno-return-type -
 ifeq ($(ENABLE_DEBUG),1)
   CXXFLAGS += -O0 -g
 else
-  CXXFLAGS +=  -rdynamic -std=c++11 -O3 -DNDEBUG  -O3   -std=gnu++11 $(CMAKE_CLANG_FLAGS)
+  CXXFLAGS += -std=c++11 -O3 -DNDEBUG  -O3   -std=gnu++11 $(CMAKE_CLANG_FLAGS)
 endif
 
 
@@ -25,19 +25,6 @@ CXX_LINK = $(CXX) $(CXXFLAGS) $(LDFLAGS)
 
 %.out: %.o 
 	$(CXX_LINK) $(CXXFLAGS) $^ -o $@; \
-
-run: all 
-	for test in $(tests); do \
-		echo "running $$test test ..." ; \
-		mpiexec.hydra -n 2 -ppn 1 -l ./$$test | tee ./$$test.log; \
-		grep -r 'PASSED' ./$$test.log; \
-		if [ "$${PIPESTATUS[0]}" -ne 0 ]; then \
-			echo "$$test FAILED." ; \
-			exit -1 ; \
-		else \
-			echo "$$test test ... PASSED." ; \
-		fi ; \
-	done
 
 all: $(tests)
 

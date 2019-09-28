@@ -180,11 +180,7 @@ build()
     log cmake ..  -DCMAKE_BUILD_TYPE=${BUILD_TYPE} \
     -DCMAKE_C_COMPILER="${C_COMPILER}" -DCMAKE_CXX_COMPILER="${CXX_COMPILER}" -DUSE_CODECOV_FLAGS="${CODECOV_FLAGS}"
     log make -j4 VERBOSE=1 install
-    if [ $? -ne 0 ]
-    then
-        echo "ERROR: build failed"
-        exit 1
-    fi
+    CheckCommandExitCode $? "build failed"
 }
 
 replace_tags()
@@ -202,7 +198,6 @@ replace_tags()
 # Prepare staging according to the BOM-files
 prepare_staging()
 {
-
     # Supported modes: package, swf_pre_drop
     MODE="$1"
 
@@ -454,6 +449,7 @@ make_package()
         cp -r ${PACKAGE_ENG_DIR}/* ${TMP_DIR}/${CCL_PACKAGE_NAME}
 
         cd ${TMP_DIR} && tar czf ${WORKSPACE}/${CCL_PACKAGE_NAME}.tgz ${CCL_PACKAGE_NAME} --owner=root --group=root
+        CheckCommandExitCode $? "package failed"
         echo_log "Package: ${WORKSPACE}/${CCL_PACKAGE_NAME}.tgz"
         echo_log "Create package... DONE"
 }
@@ -506,24 +502,6 @@ parse_arguments()
 
     TIMESTAMP_START=`date +%s`
 
-}
-#==============================================================================
-#                             Preparing eng-package
-#==============================================================================
-run_build()
-{
-    if [ "${ENABLE_BUILD}" = "yes" ]
-    then
-        echo_log_separator
-        echo_log "#\t\t\tPreparing eng-package..."
-        echo_log_separator
-        build
-        prepare_staging package
-        make_package
-        echo_log_separator
-        echo_log "#\t\t\teng-package... DONE"
-        echo_log_separator
-    fi
 }
 
 #==============================================================================
@@ -589,6 +567,7 @@ run_swf_pre_drop()
     rm -rf ${SWF_PRE_DROP_DIR}/SWF_Drops
     mkdir -p ${SWF_PRE_DROP_DIR}/SWF_Drops/
     cp -R ${PRE_DROP_DIR}/* ${SWF_PRE_DROP_DIR}/SWF_Drops/
+    CheckCommandExitCode $? "predrop failed"
     echo_log_separator
     echo_log "#\t\t\tSWF pre-drop... DONE"
     echo_log_separator

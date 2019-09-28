@@ -225,7 +225,7 @@ map < int, const char *>sizeTypeStr = { {ST_SMALL, "ST_SMALL"},
                                         };
 
 map < int, size_t > sizeTypeValues = { {ST_SMALL, 16},
-                                       {ST_MEDIUM, 32768},
+                                       {ST_MEDIUM, 32769},
                                        {ST_LARGE, 524288}
                                        };
 
