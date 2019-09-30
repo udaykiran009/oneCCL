@@ -1,10 +1,20 @@
 Prerequisites
 =============
 
-Before you start using oneCCL, make sure to set up the library environment. Use the command:
+Before you start using oneCCL, make sure to set up the library environment. There are two ways:
 
-.. prompt:: bash
+- Using standalone oneCCL package:
 
-   source <installdir>/env/vars.sh
+    .. prompt:: bash
 
-Here and below, ``<installdir>`` is the oneCCL installation directory (``/opt/intel/inteloneapi`` by default).
+        source <installdir>/bin/cclvars.sh
+
+    Here ``<installdir>`` is the oneCCL installation directory.
+
+- Using oneCCL from Intel® oneAPI Base Toolkit:
+
+    .. prompt:: bash
+
+        sourse <installdir>/setvars.sh
+
+    Here ``<installdir>`` is the oneCCL installation directory (``/opt/intel/inteloneapi`` by default).

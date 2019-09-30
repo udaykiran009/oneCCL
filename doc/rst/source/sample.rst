@@ -97,4 +97,34 @@ Below is a complete sample that shows how oneCCL API can be used to perform allr
         return 0;
     }
 
--:guilabel:`Build details to be added`.
+
+
+Build details
+*************
+
+#. oneCCL should be built with SYCL* support
+
+#. Set up the library environment (see `Prerequisites`)
+
+#. Use ``clang++`` compiler to build the sample:
+
+    ::
+
+        clang++ -I${CCL_ROOT}/include -L${CCL_ROOT}/lib/ -lsycl -lccl -o ccl_sample ccl_sample.cpp
+
+
+Run the sample
+**************
+
+Intel® MPI library is required for running the sample. Make sure that MPI environment is set up.
+
+To run the sample, use the following command:
+
+::
+
+    mpiexec <parameters> ./ccl_sample
+
+``<parameters>`` is optional mpiexec parameters such as node count, processes per node, hosts, etc.
+
+
+

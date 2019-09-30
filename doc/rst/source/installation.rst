@@ -98,7 +98,6 @@ Archive Installed Files
 ::
 
    make -j install
-   make archive
 
 Build with Address Sanitizer
 ############################
