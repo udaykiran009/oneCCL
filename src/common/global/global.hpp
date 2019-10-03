@@ -10,7 +10,7 @@
 #define COMMON_CATCH_BLOCK()                             \
     catch (ccl::ccl_error& ccl_e)                        \
     {                                                    \
-        LOG_ERROR("ccl intrenal error: ", ccl_e.what()); \
+        LOG_ERROR("ccl internal error: ", ccl_e.what()); \
         return ccl_status_invalid_arguments;             \
     }                                                    \
     catch (std::exception& e)                            \

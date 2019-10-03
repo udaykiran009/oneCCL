@@ -97,10 +97,10 @@ public:
             for (idx = 0; idx < param.bufferCount; idx++) {
                 this->Init(param, idx);
                 param.req[Buffers[idx]] = (param.GetPlaceType() == PT_IN) ?
-                    param.global_comm.allgatherv(param.recvBuf[Buffers[idx]].data(), recvCounts[param.processIdx], param.recvBuf[Buffers[idx]].data(),
-                                                 recvCounts.data(), (ccl::data_type) param.GetDataType(), &param.coll_attr, param.GetStream()) :
-                    param.global_comm.allgatherv(param.sendBuf[Buffers[idx]].data(), recvCounts[param.processIdx], param.recvBuf[Buffers[idx]].data(),
-                                                 recvCounts.data(), (ccl::data_type) param.GetDataType(), &param.coll_attr, param.GetStream());
+                    param.global_comm->allgatherv(param.recvBuf[Buffers[idx]].data(), recvCounts[param.processIdx], param.recvBuf[Buffers[idx]].data(),
+                                                  recvCounts.data(), &param.coll_attr, param.GetStream()) :
+                    param.global_comm->allgatherv(param.sendBuf[Buffers[idx]].data(), recvCounts[param.processIdx], param.recvBuf[Buffers[idx]].data(),
+                                                  recvCounts.data(), &param.coll_attr, param.GetStream());
             }
             param.DefineCompletionOrderAndComplete();
             result += Check(param);

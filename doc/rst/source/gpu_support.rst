@@ -1,7 +1,7 @@
 GPU support
 ===========
 
-The choice between CPU and GPU backends is performed by specifying ``ccl_stream_type`` value at the moment of creating ccl stream object. 
+The choice between CPU and GPU backends is performed by specifying ``ccl_stream_type`` value at the moment of creating ccl stream object.
 For GPU backend one should specify ``ccl_stream_sycl`` as the first argument. For collective operations, which operate on SYCL* stream, oneCCL expects communication buffers to be ``sycl::buffer`` objects casted to ``void*``.
 
 The example below demonstrates these concepts.
@@ -20,7 +20,7 @@ Conisider simple allreduce example for GPU. As a first step, GPU ccl stream obje
 
 ::
 
-    ccl::stream stream(cc::stream_type::sycl, &q);
+    ccl::stream_t stream = ccl::environment::instance().create_stream(cc::stream_type::sycl, &q);
 
 ``q`` is an object of type ``sycl::queue``.
 
@@ -44,8 +44,8 @@ For demostration purposes only, modify the ``sendbuf`` on the GPU side:
         });
     });
 
-``ccl_allreduce`` invocation performs reduction of values from all processes and distributes the result to all processes. 
-For this case, the result is an array with the size equal to the number of processes (#processes), 
+``ccl_allreduce`` invocation performs reduction of values from all processes and distributes the result to all processes.
+For this case, the result is an array with the size equal to the number of processes (#processes),
 where all elements are equal to (#processes * (#processes - 1) / 2) since it represents the sum of arithmetical progression.
 
 **C version of oneCCL API:**
@@ -67,13 +67,13 @@ where all elements are equal to (#processes * (#processes - 1) / 2) since it rep
 
 ::
 
-    comm.allreduce(&sendbuf,
-                   &recvbuf,
+    comm.allreduce(sendbuf,
+                   recvbuf,
                    COUNT,
                    ccl::data_type::dt_int,
                    ccl::reduction::sum,
                    nullptr, /* attr */
-                   &stream)->wait();
+                   stream)->wait();
 
 Check the correctness of ``ccl_allreduce`` on the GPU:
 

@@ -546,7 +546,7 @@ ccl_status_t ccl_coll_build_sparse_allreduce_size(ccl_sched* sched,
     size_t send_to = (rank + 1) % comm_size;
 
     /* create handler for sched function callbacks */
-    ccl_sparse_allreduce_handler *sa_handler = 
+    ccl_sparse_allreduce_handler *sa_handler =
         static_cast<ccl_sparse_allreduce_handler*>(sched->alloc_buffer(sizeof(ccl_sparse_allreduce_handler)).get_ptr());
 
     /* _count variables needed for sending/receiving */
@@ -1037,7 +1037,7 @@ ccl_status_t ccl_coll_build_sparse_allreduce_3_allgatherv(ccl_sched *sched,
     delete iv_map;
 
     /* create handler for sched function callbacks */
-    ccl_sparse_allreduce_handler *sa_handler = 
+    ccl_sparse_allreduce_handler *sa_handler =
         static_cast<ccl_sparse_allreduce_handler*>(sched->alloc_buffer(sizeof(ccl_sparse_allreduce_handler)).get_ptr());
 
     /* _count variables needed for sending/receiving */

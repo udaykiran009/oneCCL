@@ -9,13 +9,13 @@ Below is a generic flow for using C++ API of oneCCL:
 
 ::
 
-        ccl::environment env;
+        ccl::environment::instance();
 
-2. Create communicator objects:
+2. or just Create communicator objects:
 
-::  
+::
 
-        ccl::communicator comm; 
+        ccl::communicator_t comm = ccl::environment::instance().create_communicator();
 
 3. Execute collective operation of choice on this communicator:
 

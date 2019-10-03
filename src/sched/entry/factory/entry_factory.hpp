@@ -25,10 +25,10 @@
 #include "sched/entry/coll/bcast_entry.hpp"
 #include "sched/entry/coll/reduce_entry.hpp"
 
-#ifdef ENABLE_SYCL
-#include "sched/entry/sycl_copy_device_to_host_entry.hpp"   
+#ifdef CCL_ENABLE_SYCL
+#include "sched/entry/sycl_copy_device_to_host_entry.hpp"
 #include "sched/entry/sycl_copy_host_to_device_entry.hpp"
-#endif /* ENABLE_SYCL */
+#endif /* CCL_ENABLE_SYCL */
 
 #include "sched/sched.hpp"
 

@@ -7,7 +7,6 @@
 #include "parallelizer/parallelizer.hpp"
 #include "unordered_coll/unordered_coll.hpp"
 
-
 void ccl_init_global_objects(ccl_global_data& gl_data)
 {
     gl_data.sched_cache = std::unique_ptr<ccl_sched_cache>(new ccl_sched_cache());
@@ -65,6 +64,21 @@ ccl_status_t ccl_init()
         return ccl_status_success;
     }
     COMMON_CATCH_BLOCK();
+}
+
+CCL_API ccl_status_t ccl_get_version(ccl_version_t* version)
+{
+    if (!version)
+    {
+        return ccl_status_invalid_arguments;
+    }
+    version->major = CCL_MAJOR_VERSION;
+    version->minor = CCL_MINOR_VERSION;
+    version->update = CCL_UPDATE_VERSION;
+    version->product_status = CCL_PRODUCT_STATUS;
+    version->build_date = CCL_PRODUCT_BUILD_DATE;
+    version->full = CCL_PRODUCT_FULL;
+    return ccl_status_success;
 }
 
 void reset_for_size_update(ccl_global_data* gl_data)

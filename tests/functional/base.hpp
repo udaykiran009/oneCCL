@@ -62,8 +62,8 @@ using namespace std;
 #define PATCH_OUTPUT_NAME_ARG(argc, argv)                                                 \
     do                                                                                    \
     {                                                                                     \
-        ccl::communicator comm;                                                          \
-        if (comm.size() > 1)                                                              \
+        auto comm = ccl::environment::instance().create_communicator();                   \
+        if (comm->size() > 1)                                                             \
         {                                                                                 \
             for (int idx = 1; idx < argc; idx++)                                          \
             {                                                                             \
@@ -74,12 +74,12 @@ using namespace std;
                     size_t extPos = originArg.find(".xml");                               \
                     size_t argLen = strlen(OUTPUT_NAME_ARG);                              \
                     patchedArg = originArg.substr(argLen, extPos - argLen) + "_"          \
-                                + std::to_string(comm.rank())                             \
+                                + std::to_string(comm->rank())                            \
                                 + ".xml";                                                 \
                     PRINT("originArg %s, extPos %zu, argLen %zu, patchedArg %s",          \
                     originArg.c_str(), extPos, argLen, patchedArg.c_str());               \
                     argv[idx][0] = '\0';                                                  \
-                    if (comm.rank())                                                      \
+                    if (comm->rank())                                                     \
                             ::testing::GTEST_FLAG(output) = "";                           \
                         else                                                              \
                             ::testing::GTEST_FLAG(output) = patchedArg.c_str();           \
@@ -115,14 +115,13 @@ do {   \
       int result = className.Run(typedParam);                            \
       int result_final = 0;                                              \
       static int glob_idx = 0;                                           \
-      ccl::communicator comm;                                           \
-      ccl::stream stream;                                               \
-      std::shared_ptr <ccl::request> req;                               \
+      auto comm = ccl::environment::instance().create_communicator();    \
+      auto stream = ccl::environment::instance().create_stream();        \
+      std::shared_ptr <ccl::request> req;                                \
       ccl::coll_attr coll_attr{};                                        \
       InitCollAttr(&coll_attr);                                          \
-      req = comm.allreduce(&result, &result_final, 1,                    \
-                           ccl::data_type::dt_int,                       \
-                           ccl::reduction::sum, &coll_attr, &stream);    \
+      req = comm->allreduce(&result, &result_final, 1,                   \
+                         ccl::reduction::sum, &coll_attr, stream); \
       req->wait();                                                       \
       if (result_final > 0)                                              \
       {                                                                  \
@@ -164,11 +163,10 @@ do {   \
     int main(int argc, char **argv, char* envs[]) \
     {                                             \
         InitTestParams();                         \
-        ccl::environment env;                     \
+        ccl::environment::instance();             \
         PATCH_OUTPUT_NAME_ARG(argc, argv);        \
         testing::InitGoogleTest(&argc, argv);     \
         int res = RUN_ALL_TESTS();                \
-        env.~environment();                       \
         return res;                               \
     }
 
@@ -423,21 +421,21 @@ void InitCollAttr(ccl::coll_attr* coll_attr)
 
 void PrintErrMessage(char* errMessage, std::ostream &output)
 {
-    size_t messageLen = strlen(errMessage);
-    ccl::communicator comm;
-    ccl::stream stream;
+    int messageLen = strlen(errMessage);
+    auto comm = ccl::environment::instance().create_communicator();
+    auto stream = ccl::environment::instance().create_stream();
     std::shared_ptr <ccl::request> req;
     ccl::coll_attr coll_attr{};
     InitCollAttr(&coll_attr);
-    int processCount = comm.size();
-    int processIdx = comm.rank();
+    int processCount = comm->size();
+    int processIdx = comm->rank();
     size_t* arrMessageLen = new size_t[processCount];
     int* arrMessageLen_copy = new int[processCount];
     size_t* displs = new size_t[processCount];
     displs[0] = 1;
     for (int i = 1; i < processCount; i++)
         displs[i] = 1;
-    req = comm.allgatherv(&messageLen, 1, arrMessageLen_copy, displs, ccl::data_type::dt_int, &coll_attr, &stream);
+    req = comm->allgatherv(&messageLen, 1, arrMessageLen_copy, displs, &coll_attr, stream);
     req->wait();
     for (int i = 0; i < processCount; i++)
         arrMessageLen[i] = arrMessageLen_copy[i];
@@ -451,7 +449,7 @@ void PrintErrMessage(char* errMessage, std::ostream &output)
         return;
     }
     char* arrErrMessage = new char[fullMessageLen];
-    req = comm.allgatherv(errMessage, messageLen, arrErrMessage, arrMessageLen, ccl::data_type::dt_char, &coll_attr, &stream);
+    req = comm->allgatherv(errMessage, messageLen, arrErrMessage, arrMessageLen, &coll_attr, stream);
     req->wait();
     if (processIdx == 0)
     {
@@ -549,7 +547,7 @@ size_t CalculateTestCount ()
         testCount /= lastEpilogType;
         firstEpilogType = static_cast<EpilogType>(EPLT_NULL);
         lastEpilogType = static_cast<EpilogType>(firstEpilogType + 1);
-        }       
+        }
     return testCount;
 }
 
@@ -612,20 +610,22 @@ struct TypedTestParam
     size_t processIdx;
     std::vector<std::vector<T>> sendBuf;
     std::vector<std::vector<T>> recvBuf;
-    ccl::communicator comm;
+    ccl::communicator_t comm;
     std::vector<std::shared_ptr<ccl::request>> req;
     ccl::coll_attr coll_attr{};
     std::string match_id;
-    ccl::communicator global_comm;
-    ccl::stream stream;
+    ccl::communicator_t global_comm;
+    ccl::stream_t stream;
     size_t *startArr;
 
     TypedTestParam(TestParam tParam):testParam(tParam) {
         InitCollAttr(&coll_attr);
         elemCount = GetElemCount();
         bufferCount = GetBufferCount();
-        processCount = comm.size();
-        processIdx = comm.rank();
+        comm = ccl::environment::instance().create_communicator();
+        global_comm = ccl::environment::instance().create_communicator();
+        processCount = comm->size();
+        processIdx = comm->rank();
         sendBuf.resize(bufferCount);
         recvBuf.resize(bufferCount);
         startArr = (size_t*) malloc(bufferCount * sizeof(size_t));
@@ -727,7 +727,7 @@ struct TypedTestParam
                     {
                         msg_idx = rand() % bufferCount;
                     }
-                    else 
+                    else
                         msg_idx = idx;
 
                     if (msg_completions[msg_idx]) continue;
@@ -789,8 +789,8 @@ struct TypedTestParam
        fflush(stdout);
     }
 
-    ccl::stream* GetStream() {
-        return &stream;
+    ccl::stream_t& GetStream() {
+        return stream;
     }
     const char *GetPlaceTypeStr() {
         return placeTypeStr[testParam.placeType];
@@ -889,11 +889,11 @@ template <typename T> class BaseTest {
 public:
     size_t globalProcessIdx;
     size_t globalProcessCount;
-    ccl::communicator comm;
+    ccl::communicator_t comm;
 
     void SetUp() {
-        globalProcessIdx = comm.rank();
-        globalProcessCount = comm.size();
+        globalProcessIdx = comm->rank();
+        globalProcessCount = comm->size();
     }
     char *GetErrMessage() {
         return errMessage;
@@ -903,7 +903,11 @@ public:
 
     char errMessage[ERR_MESSAGE_MAX_LEN]{};
 
-    BaseTest() { memset(this->errMessage, '\0', ERR_MESSAGE_MAX_LEN); }
+    BaseTest()
+    {
+        comm = ccl::environment::instance().create_communicator();
+        memset(this->errMessage, '\0', ERR_MESSAGE_MAX_LEN);
+    }
     void Init(TypedTestParam <T> &param, size_t idx){
         param.coll_attr.priority = param.CreatePriorityValue(idx);
         param.coll_attr.to_cache = (int)param.GetCacheType();

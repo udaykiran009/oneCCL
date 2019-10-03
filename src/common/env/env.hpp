@@ -11,6 +11,7 @@
 constexpr const char* CCL_ENV_NOT_SPECIFIED = "<not specified>";
 
 /* TODO: rework logging code */
+constexpr const char* CCL_VERSION = "CCL_VERSION";
 constexpr const char* CCL_LOG_LEVEL = "CCL_LOG_LEVEL";
 constexpr const char* CCL_SCHED_DUMP = "CCL_SCHED_DUMP";
 
@@ -70,7 +71,7 @@ struct alignas(CACHELINE_SIZE) ccl_env_data
 
     ccl_atl_transport atl_transport;
 
-    /* 
+    /*
        parsing logic can be quite complex so hide it inside algorithm_selector module
        and store only raw strings in env_data
     */

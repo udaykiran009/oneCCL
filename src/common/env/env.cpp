@@ -159,6 +159,14 @@ void ccl_env_print()
 #endif
     LOG_INFO("CCL library is built in ", build_mode, " mode");
 
+    ccl_version_t version;
+    if(ccl_get_version(&version) != ccl_status_success)
+    {
+        throw std::runtime_error("Cannot determine CCL version!");
+    }
+
+    LOG_INFO(CCL_VERSION, ": ", version.full);
+
     LOG_INFO(CCL_LOG_LEVEL, ": ", env_data.log_level);
     LOG_INFO(CCL_SCHED_DUMP, ": ", env_data.sched_dump);
 
@@ -375,7 +383,7 @@ int ccl_env_parse_cache_key()
             return 0;
         }
     }
-    return 1; 
+    return 1;
 }
 
 const char* ccl_atl_transport_to_str(ccl_atl_transport transport)

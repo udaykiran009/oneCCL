@@ -305,7 +305,7 @@ ccl_master_sched* ccl_fusion_manager::build_sched()
         {
             size_t global_copy_idx = idx * copies_per_part + copy_idx;
 
-#ifdef ENABLE_SYCL
+#ifdef CCL_ENABLE_SYCL
             if (stream && stream->get_type() == ccl_stream_sycl)
                 entry_factory::make_entry<sycl_copy_device_to_host_entry>(
                                                       part_scheds[idx].get(),
@@ -316,7 +316,7 @@ ccl_master_sched* ccl_fusion_manager::build_sched()
                                                       exec_queue[global_copy_idx]->coll_param.count,
                                                       dtype, stream);
             else
-#endif /* ENABLE_SYCL */
+#endif /* CCL_ENABLE_SYCL */
             entry_factory::make_entry<copy_entry>(part_scheds[idx].get(),
                                                   ccl_buffer(&(exec_queue[global_copy_idx]->coll_param.send_buf),
                                                              exec_queue[global_copy_idx]->coll_param.count * dtype_size,
@@ -345,7 +345,7 @@ ccl_master_sched* ccl_fusion_manager::build_sched()
         {
             size_t global_copy_idx = idx * copies_per_part + copy_idx;
 
-#ifdef ENABLE_SYCL
+#ifdef CCL_ENABLE_SYCL
             if (stream && stream->get_type() == ccl_stream_sycl)
                 entry_factory::make_entry<sycl_copy_host_to_device_entry>(
                                                   part_scheds[idx].get(),
@@ -356,7 +356,7 @@ ccl_master_sched* ccl_fusion_manager::build_sched()
                                                   exec_queue[global_copy_idx]->coll_param.count,
                                                   dtype, stream);
             else
-#endif /* ENABLE_SYCL */
+#endif /* CCL_ENABLE_SYCL */
             entry_factory::make_entry<copy_entry>(part_scheds[idx].get(),
                                                   ccl_buffer(fusion_buf, buf_cache.get_buf_size(), offset),
                                                   ccl_buffer(&(exec_queue[global_copy_idx]->coll_param.recv_buf),

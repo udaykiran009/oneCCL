@@ -224,7 +224,7 @@ ccl_status_t ccl_parallelizer::process(ccl_master_sched* sched)
             sched->sync_partial_scheds();
             break;
         case ccl_coll_bcast:
-#ifdef ENABLE_SYCL
+#ifdef CCL_ENABLE_SYCL
             /* convert sycl buffer */
             if (coll_param->stream && (ccl_stream_type_t)(coll_param->stream->get_type()) == ccl_stream_sycl)
             {
@@ -241,7 +241,7 @@ ccl_status_t ccl_parallelizer::process(ccl_master_sched* sched)
                 }
                 sched->sync_partial_scheds();
             }
-#endif /* ENABLE_SYCL */
+#endif /* CCL_ENABLE_SYCL */
             for (idx = 0; idx < part_count; idx++)
             {
                 CCL_CALL(ccl_coll_build_bcast(part_scheds[idx].get(),
@@ -253,7 +253,7 @@ ccl_status_t ccl_parallelizer::process(ccl_master_sched* sched)
                                               dtype,
                                               coll_param->root));
             }
-#ifdef ENABLE_SYCL
+#ifdef CCL_ENABLE_SYCL
             /* convert sycl buffer */
             if (coll_param->stream && (ccl_stream_type_t)(coll_param->stream->get_type()) == ccl_stream_sycl)
             {
@@ -267,12 +267,12 @@ ccl_status_t ccl_parallelizer::process(ccl_master_sched* sched)
                                                                           coll_param->count,
                                                                           dtype, coll_param->stream);
             }
-#endif /* ENABLE_SYCL */
+#endif /* CCL_ENABLE_SYCL */
             break;
         case ccl_coll_reduce:
             for (idx = 0; idx < part_count; idx++)
             {
-#ifdef ENABLE_SYCL
+#ifdef CCL_ENABLE_SYCL
             /* convert sycl buffer */
             if (coll_param->stream && (ccl_stream_type_t)(coll_param->stream->get_type()) == ccl_stream_sycl)
             {
@@ -286,7 +286,7 @@ ccl_status_t ccl_parallelizer::process(ccl_master_sched* sched)
                                                                           dtype, coll_param->stream);
                 sched->sync_partial_scheds();
             }
-#endif /* ENABLE_SYCL */
+#endif /* CCL_ENABLE_SYCL */
                 CCL_CALL(ccl_coll_build_reduce(part_scheds[idx].get(),
                                                ccl_buffer(&(coll_param->send_buf),
                                                           coll_param->count * dtype_size,
@@ -301,7 +301,7 @@ ccl_status_t ccl_parallelizer::process(ccl_master_sched* sched)
                                                coll_param->reduction,
                                                coll_param->root));
             }
-#ifdef ENABLE_SYCL
+#ifdef CCL_ENABLE_SYCL
             /* convert sycl buffer */
             if (coll_param->stream && (ccl_stream_type_t)(coll_param->stream->get_type()) == ccl_stream_sycl)
             {
@@ -318,14 +318,14 @@ ccl_status_t ccl_parallelizer::process(ccl_master_sched* sched)
                                                                               dtype, coll_param->stream);
                 }
             }
-#endif /* ENABLE_SYCL */
+#endif /* CCL_ENABLE_SYCL */
 
             break;
         case ccl_coll_allreduce:
         {
             ccl_parallelizer_prologue_ctx* main_ctx = nullptr;
 
-#ifdef ENABLE_SYCL
+#ifdef CCL_ENABLE_SYCL
             /* convert sycl buffer */
             if (coll_param->stream && (ccl_stream_type_t)(coll_param->stream->get_type()) == ccl_stream_sycl)
             {
@@ -339,7 +339,7 @@ ccl_status_t ccl_parallelizer::process(ccl_master_sched* sched)
                                                                           dtype, coll_param->stream);
                 sched->sync_partial_scheds();
             }
-#endif /* ENABLE_SYCL */
+#endif /* CCL_ENABLE_SYCL */
 
             if (sched->coll_attr.prologue_fn)
             {
@@ -458,7 +458,7 @@ ccl_status_t ccl_parallelizer::process(ccl_master_sched* sched)
                 }
             }
 
-#ifdef ENABLE_SYCL
+#ifdef CCL_ENABLE_SYCL
             /* convert sycl buffer */
             if (coll_param->stream && (ccl_stream_type_t)(coll_param->stream->get_type()) == ccl_stream_sycl)
             {
@@ -472,13 +472,13 @@ ccl_status_t ccl_parallelizer::process(ccl_master_sched* sched)
                                                                           coll_param->count,
                                                                           dtype, coll_param->stream);
             }
-#endif /* ENABLE_SYCL */
+#endif /* CCL_ENABLE_SYCL */
 
             break;
         }
         case ccl_coll_allgatherv:
         {
-#ifdef ENABLE_SYCL
+#ifdef CCL_ENABLE_SYCL
             /* convert sycl buffer */
             if (coll_param->stream && (ccl_stream_type_t)(coll_param->stream->get_type()) == ccl_stream_sycl)
             {
@@ -492,7 +492,7 @@ ccl_status_t ccl_parallelizer::process(ccl_master_sched* sched)
                                                                           dtype, coll_param->stream);
                 sched->sync_partial_scheds();
             }
-#endif /* ENABLE_SYCL */
+#endif /* CCL_ENABLE_SYCL */
             if (ag_algo == ccl_coll_allgatherv_direct ||
                 ag_algo == ccl_coll_allgatherv_naive)
             {
@@ -615,7 +615,7 @@ ccl_status_t ccl_parallelizer::process(ccl_master_sched* sched)
                     }
                 }
             }
-#ifdef ENABLE_SYCL
+#ifdef CCL_ENABLE_SYCL
             /* convert sycl buffer */
             if (coll_param->stream && (ccl_stream_type_t)(coll_param->stream->get_type()) == ccl_stream_sycl)
             {
@@ -629,7 +629,7 @@ ccl_status_t ccl_parallelizer::process(ccl_master_sched* sched)
                                                                           ag_recv_count,
                                                                           dtype, coll_param->stream);
             }
-#endif /* ENABLE_SYCL */
+#endif /* CCL_ENABLE_SYCL */
             break;
         }
         case ccl_coll_sparse_allreduce:

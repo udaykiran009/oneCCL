@@ -1,23 +1,11 @@
 #pragma once
 
 #include "stdlib.h"
+#include "ccl_config.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
-
-/* All symbols shall be internal unless marked as CCL_API */
-#ifdef __linux__
-#   if __GNUC__ >= 4
-#       define CCL_HELPER_DLL_EXPORT __attribute__ ((visibility ("default")))
-#   else
-#       define CCL_HELPER_DLL_EXPORT
-#   endif
-#else
-#error "unexpected OS"
-#endif
-
-#define CCL_API CCL_HELPER_DLL_EXPORT
 
 /** Status values returned by CCL functions. */
 typedef enum
@@ -32,6 +20,17 @@ typedef enum
     ccl_status_last_value
 } ccl_status_t;
 
+/** API version description. */
+typedef struct
+{
+    unsigned int major;
+    unsigned int minor;
+    unsigned int update;
+    const char* product_status;
+    const char* build_date;
+    const char* full;
+} ccl_version_t;
+
 /** Datatypes. */
 typedef enum
 {
@@ -43,7 +42,7 @@ typedef enum
     ccl_dtype_int64  = 5,
     ccl_dtype_uint64 = 6,
     ccl_dtype_custom = 7,
-    
+
     ccl_dtype_last_value
 } ccl_datatype_t;
 
@@ -55,7 +54,7 @@ typedef enum
     ccl_reduction_min    = 2,
     ccl_reduction_max    = 3,
     ccl_reduction_custom = 4,
-    
+
     ccl_reduction_last_value
 } ccl_reduction_t;
 

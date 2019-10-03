@@ -9,7 +9,7 @@ void ccl_sched_base::set_coll_attr(const ccl_coll_attr& attr)
 
 void ccl_sched_base::update_coll_param(const ccl_coll_param& param)
 {
-#ifdef ENABLE_SYCL
+#ifdef CCL_ENABLE_SYCL
     if (param.stream && (param.stream->get_type() == ccl_stream_sycl))
     {
         coll_param.sycl_buf = static_cast<ccl_sycl_buffer_t*>(param.buf);
@@ -18,13 +18,13 @@ void ccl_sched_base::update_coll_param(const ccl_coll_param& param)
     }
     else
     {
-#endif /* ENABLE_SYCL */
+#endif /* CCL_ENABLE_SYCL */
     coll_param.buf = param.buf;
     coll_param.send_buf = param.send_buf;
     coll_param.recv_buf = param.recv_buf;
-#ifdef ENABLE_SYCL
+#ifdef CCL_ENABLE_SYCL
     }
-#endif /* ENABLE_SYCL */
+#endif /* CCL_ENABLE_SYCL */
 
     coll_param.recv_counts = param.recv_counts;
 
@@ -119,7 +119,7 @@ void ccl_sched_base::free_buffers()
 
 void ccl_sched_base::alloc_buffers_for_sycl_copy()
 {
-#ifdef ENABLE_SYCL
+#ifdef CCL_ENABLE_SYCL
 
     ccl_coll_param& param = coll_param;
 
@@ -170,7 +170,7 @@ void ccl_sched_base::alloc_buffers_for_sycl_copy()
         default:
             break;
     }
-#endif /* ENABLE_SYCL */
+#endif /* CCL_ENABLE_SYCL */
 }
 
 void ccl_sched_base::dump(std::ostream& out, const char *name) const

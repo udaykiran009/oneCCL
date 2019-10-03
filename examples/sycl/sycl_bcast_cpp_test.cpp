@@ -18,14 +18,13 @@ int main(int argc, char** argv)
     size_t rank = 0;
 
     cl::sycl::queue q;
-    ccl::environment env;
-    ccl::communicator comm;
+    auto comm = ccl::environment::instance().create_communicator();
 
-    rank = comm.rank();
-    size = comm.size();
+    rank = comm->rank();
+    size = comm->size();
 
     /* create SYCL stream */
-    ccl::stream stream(ccl::stream_type::sycl, &q);
+    auto stream = ccl::environment::instance().create_stream(ccl::stream_type::sycl, &q);
 
     cl::sycl::buffer<int, 1> buf(COUNT);
 
@@ -47,12 +46,11 @@ int main(int argc, char** argv)
     });
 
     /* invoke ccl_bcast on the CPU side */
-    comm.bcast(&buf,
+    comm->bcast(buf,
                COUNT,
-               ccl::data_type::dt_int,
                COLL_ROOT,
                nullptr, /* attr */
-               &stream)->wait();
+               stream)->wait();
 
     /* open buf and check its correctness on the target device side */
     q.submit([&](handler& cgh) {

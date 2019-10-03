@@ -7,6 +7,7 @@ extern "C" {
 #endif
 
 ccl_status_t CCL_API ccl_init(void);
+ccl_status_t CCL_API ccl_get_version(ccl_version_t* version);
 ccl_status_t CCL_API ccl_finalize(void);
 
 ccl_status_t CCL_API ccl_set_resize_fn(ccl_resize_fn_t callback);

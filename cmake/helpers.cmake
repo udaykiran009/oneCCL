@@ -18,3 +18,25 @@ function(check_compiler_version)
     endif()
 
 endfunction(check_compiler_version)
+
+
+function(get_vcs_properties VCS)
+
+    if(${VCS} STREQUAL "git")
+        # Get the current working branch
+        execute_process(COMMAND git rev-parse --abbrev-ref HEAD
+                        WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
+                        OUTPUT_VARIABLE GIT_BRANCH
+                        OUTPUT_STRIP_TRAILING_WHITESPACE
+                        )
+
+        # Get the latest abbreviated commit hash of the working branch
+        execute_process(COMMAND git log -1 --format=%h
+                        WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
+                        OUTPUT_VARIABLE GIT_COMMIT_HASH
+                        OUTPUT_STRIP_TRAILING_WHITESPACE
+                        )
+        message("-- Git branch: ${GIT_BRANCH}, commit: ${GIT_COMMIT_HASH}")
+        set(VCS_INFO "(${GIT_BRANCH}/${GIT_COMMIT_HASH})" PARENT_SCOPE)
+    endif()
+endfunction(get_vcs_properties)

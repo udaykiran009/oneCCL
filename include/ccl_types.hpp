@@ -65,4 +65,18 @@ public:
     {}
 };
 
+/**
+ * Type traits, which describes how-to types would be interpretered by ccl API
+ */
+template<class ntype_t, size_t size_of_type, ccl_datatype_t ccl_type_v, bool iclass = false, bool supported = false>
+struct ccl_type_info_export
+{
+    using native_type = ntype_t;
+    using ccl_type = std::integral_constant<ccl_datatype_t, ccl_type_v>;
+    static constexpr size_t size = size_of_type;
+    static constexpr ccl_datatype_t ccl_type_value = ccl_type::value;
+    static constexpr data_type ccl_datatype_value = static_cast<data_type>(ccl_type_value);
+    static constexpr bool is_class = iclass;
+    static constexpr bool is_supported = supported;
+};
 }

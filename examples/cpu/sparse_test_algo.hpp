@@ -66,10 +66,10 @@
   } while (0)
 
 template<ccl_datatype_t i_type, ccl_datatype_t v_type>
-std::unordered_map<typename type_info<i_type>::native_type, std::vector<typename type_info<v_type>::native_type> > prep_data(void* ibuffer, void* vbuffer)
+std::unordered_map<typename ccl::type_info<i_type>::native_type, std::vector<typename ccl::type_info<v_type>::native_type> > prep_data(void* ibuffer, void* vbuffer)
 {
-    using i_t = typename type_info<i_type>::native_type;
-    using v_t = typename type_info<v_type>::native_type;
+    using i_t = typename ccl::type_info<i_type>::native_type;
+    using v_t = typename ccl::type_info<v_type>::native_type;
 
     i_t* ibuf = static_cast<i_t*>(ibuffer);
     v_t* vbuf = static_cast<v_t*>(vbuffer);
@@ -133,8 +133,8 @@ std::unordered_map<typename type_info<i_type>::native_type, std::vector<typename
 template<ccl_datatype_t i_type, ccl_datatype_t v_type>
 void sparse_test_run(const std::string& algo)
 {
-    using i_t = typename type_info<i_type>::native_type;
-    using v_t = typename type_info<v_type>::native_type;
+    using i_t = typename ccl::type_info<i_type>::native_type;
+    using v_t = typename ccl::type_info<v_type>::native_type;
     i_t* send_ibuf = (i_t*)malloc(sizeof(i_t) * COUNT_I);
     v_t* send_vbuf = (v_t*)malloc(sizeof(v_t) * COUNT_I * VDIM_SIZE);
     void* recv_ibuf = malloc(COUNT_I * sizeof(i_t) + COUNT_I * VDIM_SIZE * sizeof(v_t));
@@ -166,7 +166,7 @@ void sparse_test_run(const std::string& algo)
                                         &recv_ibuf, &recv_icount, &recv_vbuf, &recv_vcount,
                                         i_type, v_type, ccl_reduction_sum,
                                         &coll_attr, NULL, NULL, &request),
-                   (algo + "_sparse_allreduce").c_str(), type_info<i_type>::name(), type_info<v_type>::name());
+                   (algo + "_sparse_allreduce").c_str(), ccl::type_info<i_type>::name(), ccl::type_info<v_type>::name());
 
     free(send_ibuf);
     free(send_vbuf);
@@ -190,4 +190,24 @@ template<typename TupleType, typename FunctionType>
 void ccl_tuple_for_each(TupleType&& t, FunctionType f)
 {
     ccl_tuple_for_each(std::forward<TupleType>(t), f, std::integral_constant<size_t, 0>());
+}
+
+
+template<typename TupleType, typename FunctionType, class ...FunctionArgs>
+void ccl_tuple_for_each_indexed(FunctionType,
+                        std::integral_constant<size_t, std::tuple_size<typename std::remove_reference<TupleType>::type >::value>, const FunctionArgs&...args)
+{}
+
+template<typename TupleType, typename FunctionType, std::size_t I, class ...FunctionArgs,
+       typename = typename std::enable_if<I!=std::tuple_size<typename std::remove_reference<TupleType>::type>::value>::type >
+void ccl_tuple_for_each_indexed(FunctionType f, std::integral_constant<size_t, I>, const FunctionArgs& ...args)
+{
+    f.template invoke<I, typename std::tuple_element<I, TupleType>::type>(args...);
+    ccl_tuple_for_each_indexed<TupleType, FunctionType>(f, std::integral_constant<size_t, I + 1>(), args...);
+}
+
+template<typename TupleType, typename FunctionType, class ...FunctionArgs>
+void ccl_tuple_for_each_indexed(FunctionType f, const FunctionArgs& ...args)
+{
+    ccl_tuple_for_each_indexed<TupleType, FunctionType, 0, FunctionArgs...>(f, std::integral_constant<size_t, 0>(), args...);
 }

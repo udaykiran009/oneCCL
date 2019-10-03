@@ -12,17 +12,11 @@
 #include <sys/time.h>
 #include <vector>
 
-#ifdef ENABLE_SYCL
+#ifdef CCL_ENABLE_SYCL
 #include <CL/sycl.hpp>
 using namespace cl::sycl;
 using namespace cl::sycl::access;
 #endif
-
-typedef enum
-{
-    BACKEND_CPU,
-    BACKEND_SYCL
-} backend_type_t;
 
 #define DEFAULT_BACKEND "cpu"
 
@@ -35,7 +29,7 @@ typedef enum
     printf(fmt"\n", ##__VA_ARGS__); \
 
 #define PRINT_BY_ROOT(fmt, ...)         \
-    if (comm.rank() == 0)               \
+    if (comm->rank() == 0)               \
     {                                   \
         printf(fmt"\n", ##__VA_ARGS__); \
     }
@@ -128,7 +122,6 @@ void print_timings(ccl::communicator& comm,
                     1,
                     timers,
                     recv_counts,
-                    ccl::data_type::dt_double,
                     &attr,
                     nullptr)->wait();
 

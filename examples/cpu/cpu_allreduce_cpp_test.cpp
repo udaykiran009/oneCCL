@@ -15,12 +15,11 @@ int main(int argc, char** argv)
     auto sendbuf = new int[COUNT];
     auto recvbuf = new int[COUNT];
 
-    ccl::environment env;
-    ccl::communicator comm;
-    ccl::stream stream;
+    auto comm = ccl::environment::instance().create_communicator();
+    auto stream = ccl::environment::instance().create_stream();
 
-    rank = comm.rank();
-    size = comm.size();
+    rank = comm->rank();
+    size = comm->size();
 
     /* initialize sendbuf */
     for (i = 0; i < COUNT; i++) {
@@ -33,13 +32,12 @@ int main(int argc, char** argv)
     }
 
     /* invoke ccl_allreduce */
-    comm.allreduce(sendbuf,
+    comm->allreduce(sendbuf,
                    recvbuf,
                    COUNT,
-                   ccl::data_type::dt_int,
                    ccl::reduction::sum,
                    nullptr, /* attr */
-                   &stream)->wait();
+                   stream)->wait();
 
     /* check correctness of recvbuf */
     for (i = 0; i < COUNT; i++) {

@@ -90,7 +90,7 @@ set(CMAKE_CXX_STANDARD 11)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 if(${CMAKE_C_COMPILER_ID} STREQUAL "Clang" AND ${CMAKE_CXX_COMPILER_ID} STREQUAL "Clang")
-    set(CMAKE_CLANG_FLAGS "-Wno-pessimizing-move -Wno-dangling-field -Wno-return-type -Wno-defaulted-function-deleted -Wno-mismatched-tags -Wno-unused-private-field -Wno-unneeded-internal-declaration -Wno-delete-non-abstract-non-virtual-dtor -Wno-reorder -DENABLE_SYCL=1 -D__STRICT_ANSI__ -fsycl")
+    set(CMAKE_CLANG_FLAGS "-Wno-pessimizing-move -Wno-dangling-field -Wno-return-type -Wno-defaulted-function-deleted -Wno-mismatched-tags -Wno-unused-private-field -Wno-unneeded-internal-declaration -Wno-delete-non-abstract-non-virtual-dtor -Wno-reorder -D__STRICT_ANSI__ -fsycl")
     set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${CMAKE_CLANG_FLAGS}")
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${CMAKE_CLANG_FLAGS} -std=c++11")
     set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -lsycl -lstdc++")
@@ -119,9 +119,13 @@ set(EXAMPLES_INC_DIRS ${PROJECT_SOURCE_DIR}/include ${PROJECT_SOURCE_DIR}/exampl
 #include other CMakeLists
 add_subdirectory(src)
 add_subdirectory(examples/cpu)
+
 if(${CMAKE_C_COMPILER_ID} STREQUAL "Clang" AND ${CMAKE_CXX_COMPILER_ID} STREQUAL "Clang")
+    option (CCL_ENABLE_SYCL "Enable CCL SYCL runtime" ON)
+    message(STATUS "Enable CCL SYCL runtime")
     add_subdirectory(examples/sycl)
 endif()
+
 add_subdirectory(examples/common)
 add_subdirectory(tests/functional)
 
@@ -145,6 +149,16 @@ set(CPACK_PACKAGE_VENDOR "Intel(R)")
 set(CPACK_PACKAGE_DESCRIPTION_SUMMARY "${PROJECT_FULL_NAME}")
 set(CPACK_PACKAGE_FILE_NAME "${CPACK_PACKAGE_NAME}-${CPACK_PACKAGE_VERSION}")
 set(CPACK_ERROR_ON_ABSOLUTE_INSTALL_DESTINATION 1)
+
+set(CCL_MAJOR_VERSION     "0")
+set(CCL_MINOR_VERSION     "2")
+set(CCL_UPDATE_VERSION    "0")
+set(CCL_PRODUCT_STATUS    "beta")
+string(TIMESTAMP CCL_PRODUCT_BUILD_DATE "%Y-%m-%dT%H:%M:%SZ")
+get_vcs_properties("git")
+set(CCL_PRODUCT_FULL "${CCL_PRODUCT_STATUS}-${CCL_MAJOR_VERSION}.${CCL_MINOR_VERSION}.${CCL_UPDATE_VERSION} ${CCL_PRODUCT_BUILD_DATE}${VCS_INFO}")
+configure_file(${PROJECT_SOURCE_DIR}/include/ccl_config.h.in ../include/ccl_config.h @ONLY)
+
 
 include(CPack)
 

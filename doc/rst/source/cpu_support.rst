@@ -1,8 +1,8 @@
 CPU support
 ===========
 
-The choice between CPU and GPU backends is performed by specifying ``ccl_stream_type`` value at the moment of creating ccl stream object. 
-For CPU backend one should specify ``ccl_stream_cpu`` there. For collective operations performed using CPU stream, oneCCL expects communication buffers to reside in the host memory. 
+The choice between CPU and GPU backends is performed by specifying ``ccl_stream_type`` value at the moment of creating ccl stream object.
+For CPU backend one should specify ``ccl_stream_cpu`` there. For collective operations performed using CPU stream, oneCCL expects communication buffers to reside in the host memory.
 
 The example below demonstrates these concepts.
 
@@ -22,7 +22,7 @@ Conisider simple allreduce example for CPU. As a first step, CPU ccl stream obje
 ::
 
     /* For CPU, NULL is passed instead of native stream pointer */
-    ccl::stream stream(cc::stream_type::cpu, NULL);
+    ccl::stream_t stream = ccl::environment::instance().create_stream(cc::stream_type::cpu, NULL);
 
 or just
 
@@ -40,8 +40,8 @@ To illustrate the ``ccl_allreduce`` execution, initialize ``sendbuf`` (in real s
     }
 
 
-``ccl_allreduce`` invocation performs reduction of values from all processes and distributes the result to all processes. 
-For this case, the result is an array with the size equal to the number of processes (#processes), 
+``ccl_allreduce`` invocation performs reduction of values from all processes and distributes the result to all processes.
+For this case, the result is an array with the size equal to the number of processes (#processes),
 where all elements are equal to (#processes * (#processes - 1) / 2) since it represents the sum of arithmetical progression.
 
 **C version of oneCCL API:**

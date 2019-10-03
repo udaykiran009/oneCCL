@@ -9,3 +9,4 @@ foreach(src ${sources})
     target_link_libraries(${executable} PRIVATE ccl)
     install(TARGETS ${executable} RUNTIME DESTINATION ${CCL_INSTALL_EXAMPLES})
 endforeach()
+

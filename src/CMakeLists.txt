@@ -87,7 +87,7 @@ install(TARGETS ccl-static ARCHIVE DESTINATION ${CCL_INSTALL_LIB})
 
 #headers installation
 install(DIRECTORY ${PROJECT_SOURCE_DIR}/include/
-        DESTINATION ${CCL_INSTALL_INCLUDE})
+        DESTINATION ${CCL_INSTALL_INCLUDE} FILES_MATCHING REGEX ".*\\.(h|hpp)$")
 
 #mpi & ofi rt
 file(GLOB mpi_bins "${PROJECT_SOURCE_DIR}/mpirt/bin/*")
