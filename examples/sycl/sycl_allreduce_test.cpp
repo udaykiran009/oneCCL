@@ -1,17 +1,7 @@
-#include <iostream>
-#include <stdio.h>
-
-#include <CL/sycl.hpp>
 #include "ccl.h"
+#include "sycl_base.hpp"
 
-#define COUNT     (10 * 1024 * 1024)
-#define COLL_ROOT (0)
-
-using namespace std;
-using namespace cl::sycl;
-using namespace cl::sycl::access;
-
-int main(int argc, char** argv)
+int main(int argc, char **argv)
 {
     int i = 0;
     size_t size = 0;
@@ -20,14 +10,17 @@ int main(int argc, char** argv)
     cl::sycl::queue q;
     cl::sycl::buffer<int, 1> sendbuf(COUNT);
     cl::sycl::buffer<int, 1> recvbuf(COUNT);
+
     ccl_request_t request;
     ccl_stream_t stream;
 
     ccl_init();
-
     ccl_get_comm_rank(NULL, &rank);
     ccl_get_comm_size(NULL, &size);
-
+    
+    if (create_sycl_queue(argc, argv, q) != 0) {
+        return -1;
+    }
     /* create SYCL stream */
     ccl_stream_create(ccl_stream_sycl, &q, &stream);
 

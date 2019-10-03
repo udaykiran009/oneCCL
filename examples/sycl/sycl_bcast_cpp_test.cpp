@@ -1,32 +1,25 @@
-#include <iostream>
-#include <stdio.h>
 
-#include <CL/sycl.hpp>
-#include "ccl.hpp"
+#include "sycl_base.hpp"
 
-#define COUNT     (10 * 1024 * 1024)
-#define COLL_ROOT (0)
-
-using namespace std;
-using namespace cl::sycl;
-using namespace cl::sycl::access;
-
-int main(int argc, char** argv)
+int main(int argc, char **argv)
 {
     int i = 0;
     size_t size = 0;
     size_t rank = 0;
 
     cl::sycl::queue q;
+    cl::sycl::buffer<int, 1> buf(COUNT);
+
     auto comm = ccl::environment::instance().create_communicator();
 
     rank = comm->rank();
     size = comm->size();
 
+    if (create_sycl_queue(argc, argv, q) != 0) {
+        return -1;
+    }
     /* create SYCL stream */
     auto stream = ccl::environment::instance().create_stream(ccl::stream_type::sycl, &q);
-
-    cl::sycl::buffer<int, 1> buf(COUNT);
 
     /* open buf and initialize it on the CPU side */
     auto host_acc_sbuf = buf.get_access<mode::write>();
