@@ -53,6 +53,9 @@ Installing the oneCCL using install.sh (user mode):
 
     There is no uninstall script. To uninstall the oneCCL, delete the
     full directory you have installed the package into.
+## Documentation ##
+Please refer to [Documentation Generation](doc_build.md) for instructions on how to generate documentation on your computer.
+
 ## License ##
 oneCCL is licensed under [Intel Simplified Software License](https://github.com/01org/ICCL/blob/master/LICENSE).
 ## Optimization Notice ##
