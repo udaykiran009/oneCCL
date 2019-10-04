@@ -157,8 +157,8 @@ set(CCL_PRODUCT_STATUS    "beta")
 string(TIMESTAMP CCL_PRODUCT_BUILD_DATE "%Y-%m-%dT%H:%M:%SZ")
 get_vcs_properties("git")
 set(CCL_PRODUCT_FULL "${CCL_PRODUCT_STATUS}-${CCL_MAJOR_VERSION}.${CCL_MINOR_VERSION}.${CCL_UPDATE_VERSION} ${CCL_PRODUCT_BUILD_DATE}${VCS_INFO}")
-configure_file(${PROJECT_SOURCE_DIR}/include/ccl_config.h.in ../include/ccl_config.h @ONLY)
-
+configure_file(${PROJECT_SOURCE_DIR}/include/ccl_config.h.in "${CMAKE_CURRENT_BINARY_DIR}/include/ccl_config.h")
+file(COPY "${CMAKE_CURRENT_BINARY_DIR}/include/ccl_config.h" DESTINATION ${PROJECT_SOURCE_DIR}/include/)
 
 include(CPack)
 
