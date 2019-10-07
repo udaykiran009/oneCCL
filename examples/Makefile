@@ -29,8 +29,5 @@ CXX_LINK = $(CXX) $(CXXFLAGS) $(LDFLAGS)
 all: $(tests)
 
 clean:
-	-rm -f $(tests).o $(tests).out 
-
-
-clean_logs: 
+	-rm -f $(tests).o $(tests).out
 	-rm -f  *.log

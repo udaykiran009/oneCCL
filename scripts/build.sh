@@ -41,9 +41,9 @@ then
 else
     if [ -z "${SYCL_BUNDLE_ROOT}" ]
     then
-        echo "WARNING: SYCL_BUNDLE_ROOT is not defined, will be used default: /p/pdsd/scratch/Software/oneAPI/inteloneapi_38/inteloneapi/compiler/latest/env/vars.sh intel64"
-        source /p/pdsd/scratch/Software/oneAPI/inteloneapi_38/inteloneapi/compiler/latest/env/vars.sh intel64
-        SYCL_BUNDLE_ROOT="/p/pdsd/scratch/Software/oneAPI/inteloneapi_38/inteloneapi/compiler/latest/linux/"
+        echo "WARNING: SYCL_BUNDLE_ROOT is not defined, will be used default: /nfs/inn/disks/nn-ssg_tcar_mpi_2Tb_unix/users/ksenyako/inteloneapi/compiler/latest/env/vars.sh intel64"
+        source /nfs/inn/disks/nn-ssg_tcar_mpi_2Tb_unix/users/ksenyako/inteloneapi/compiler/latest/env/vars.sh intel64
+        SYCL_BUNDLE_ROOT="/nfs/inn/disks/nn-ssg_tcar_mpi_2Tb_unix/users/ksenyako/inteloneapi/compiler/latest/linux"
     fi
     BUILD_COMPILER=${SYCL_BUNDLE_ROOT}/bin
     C_COMPILER=${BUILD_COMPILER}/clang
