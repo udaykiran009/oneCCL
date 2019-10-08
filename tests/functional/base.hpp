@@ -746,7 +746,6 @@ struct TypedTestParam
     {
         return (testParam.priorityType != PRT_DISABLE) ? idx : 0;
     }
-
     void Print(std::ostream &output) {
         char strParameters[1000];
         memset(strParameters, '\0', 1000);
@@ -869,6 +868,21 @@ struct TypedTestParam
     }
 };
 
+std::ostream& operator<<(std::ostream& stream, TestParam const& testParam)
+{
+    return stream <<
+                    "dataType = " << dataTypeStr[testParam.dataType] <<
+                    " placeType = " << placeTypeStr[testParam.placeType] <<
+                    " cacheType = " << cacheTypeStr[testParam.cacheType] <<
+                    " sizeType = " << sizeTypeStr[testParam.sizeType] <<
+                    " completionType = " << completionTypeStr[testParam.completionType] <<
+                    " reductionType = " << reductionTypeStr[testParam.reductionType] <<
+                    " priorityType = " << priorityTypeStr[testParam.priorityType] <<
+                    " priorityStartType = " << priorityTypeStr[testParam.priorityStartType] <<
+                    " bufferCount = " << bufferCountStr[testParam.bufferCount] <<
+                    " prologType = " << prologTypeStr[testParam.prologType] <<
+                    " epilogType = " << epilogTypeStr[testParam.epilogType] << std::endl;
+}
 template <typename T>
 T get_expected_min(size_t i, size_t j, size_t processCount, size_t coeff = 1)
 {

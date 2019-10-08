@@ -66,8 +66,8 @@ fi
 run_benchmark()
 {
     echo "================ENVIRONMENT=================="
-    local ccl_extra_env="$1"
-    echo "ccl_extra_env: " "$ccl_extra_env"
+    local ccl_extra_env=$1
+    echo "ccl_extra_env: " $ccl_extra_env
     local dir_name=$2
     echo "dir_name: " $dir_name
     local transport=$3
@@ -147,7 +147,7 @@ run()
                     for backend in "cpu" "sycl"
                     do
                         ccl_extra_env="CCL_ATL_TRANSPORT=${transport}"
-                        run_benchmark ${ccl_extra_env} ${dir_name} ${transport} ${example} ${backend} 
+                        run_benchmark "${ccl_extra_env}" ${dir_name} ${transport} ${example} ${backend} 
                         #run extended version of benchmark
                         if [[ "${example}" == *"benchmark"* ]]
                         then
@@ -157,15 +157,15 @@ run()
                                 then
                                     continue
                                 fi
-                                ccl_extra_env="CCL_PRIORITY=lifo;CCL_ATL_TRANSPORT=${transport}"
-                                run_benchmark ${ccl_extra_env} ${dir_name} ${transport} ${example} ${backend} ${loop}
-                                ccl_extra_env="CCL_WORKER_OFFLOAD=0;CCL_ATL_TRANSPORT=${transport}"
-                                run_benchmark ${ccl_extra_env} ${dir_name} ${transport} ${example} ${backend} ${loop}
+                                ccl_extra_env="CCL_PRIORITY=lifo CCL_ATL_TRANSPORT=${transport}"
+                                run_benchmark "${ccl_extra_env}" ${dir_name} ${transport} ${example} ${backend} ${loop}
+                                ccl_extra_env="CCL_WORKER_OFFLOAD=0 CCL_ATL_TRANSPORT=${transport}"
+                                run_benchmark "${ccl_extra_env}" ${dir_name} ${transport} ${example} ${backend} ${loop}
                             done
-                            ccl_extra_env="CCL_FUSION=1;CCL_ATL_TRANSPORT=${transport}"
-                            run_benchmark ${ccl_extra_env} ${dir_name} ${transport} ${example} ${backend} regular allreduce
-                            ccl_extra_env="CCL_LOG_LEVEL=2;CCL_ATL_TRANSPORT=${transport}"
-                            run_benchmark ${ccl_extra_env} ${dir_name} ${transport} ${example} ${backend} regular allreduce
+                            ccl_extra_env="CCL_FUSION=1 CCL_ATL_TRANSPORT=${transport}"
+                            run_benchmark "${ccl_extra_env}" ${dir_name} ${transport} ${example} ${backend} regular allreduce
+                            ccl_extra_env="CCL_LOG_LEVEL=2 CCL_ATL_TRANSPORT=${transport}"
+                            run_benchmark "${ccl_extra_env}" ${dir_name} ${transport} ${example} ${backend} regular allreduce
                         fi
                     done
                 elif [ "$dir_name" == "sycl" ];
@@ -183,12 +183,12 @@ run()
                     then
                         for sparse_algo in "basic" "mask" "allgather" "size";
                         do
-                            ccl_extra_env="CCL_SPARSE_ALLREDUCE=$sparse_algo;CCL_ATL_TRANSPORT=${transport}"
-                            run_example ${ccl_extra_env} ${dir_name} ${transport} ${example}
+                            ccl_extra_env="CCL_SPARSE_ALLREDUCE=$sparse_algo CCL_ATL_TRANSPORT=${transport}"
+                            run_example "${ccl_extra_env}" ${dir_name} ${transport} ${example}
                         done
                     else
                         ccl_extra_env="CCL_ATL_TRANSPORT=${transport}"
-                        run_example ${ccl_extra_env} ${dir_name} ${transport} ${example}
+                        run_example "${ccl_extra_env}" ${dir_name} ${transport} ${example}
                     fi
                 fi
             done
