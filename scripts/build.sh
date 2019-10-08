@@ -4,6 +4,7 @@ set -o pipefail
 BASENAME=`basename $0 .sh`
 
 SCRIPT_DIR=`cd $(dirname "$BASH_SOURCE") && pwd -P`
+RELEASED_BUILD_DIR="/p/pdsd/scratch/Uploads/RegularTesting/CCL/"
 if [ -z "${SCRIPT_DIR}" ]
 then
     echo "ERROR: unable to define SCRIPT_DIR"
@@ -523,6 +524,19 @@ run_build()
 #==============================================================================
 #                             Packaging
 #==============================================================================
+run_copy_package_to_common_folder()
+{
+    if [ "${ENABLE_PRE_DROP}" == "yes" ]
+    then
+        echo_log_separator
+        echo_log "#\t\t\tCopy package ${WORKSPACE}/${CCL_PACKAGE_NAME}.tgz to ${RELEASED_BUILD_DIR}..."
+        echo_log_separator
+        cp ${WORKSPACE}/${CCL_PACKAGE_NAME}.tgz ${RELEASED_BUILD_DIR}
+        echo_log_separator
+        echo_log "#\t\t\tCopy package to ${RELEASED_BUILD_DIR}... DONE"
+        echo_log_separator
+    fi
+}
 run_pack()
 {
     if [ "${ENABLE_PACK}" = "yes" ]
@@ -532,6 +546,7 @@ run_pack()
         echo_log_separator
         prepare_staging package
         make_package
+        run_copy_package_to_common_folder
         echo_log_separator
         echo_log "#\t\t\tPackaging... DONE"
         echo_log_separator
@@ -559,18 +574,18 @@ run_swf_pre_drop()
 {
     if [ "${ENABLE_PRE_DROP}" == "yes" ]
     then
-    echo_log_separator
-    echo_log "#\t\t\tSWF pre-drop..."
-    echo_log_separator
-    mkdir -p ${SWF_PRE_DROP_DIR}/`date +%Y-%m-%d`/SWF_Drops/
-    cp -R ${PRE_DROP_DIR}/* ${SWF_PRE_DROP_DIR}/`date +%Y-%m-%d`/SWF_Drops/
-    rm -rf ${SWF_PRE_DROP_DIR}/SWF_Drops
-    mkdir -p ${SWF_PRE_DROP_DIR}/SWF_Drops/
-    cp -R ${PRE_DROP_DIR}/* ${SWF_PRE_DROP_DIR}/SWF_Drops/
-    CheckCommandExitCode $? "predrop failed"
-    echo_log_separator
-    echo_log "#\t\t\tSWF pre-drop... DONE"
-    echo_log_separator
+        echo_log_separator
+        echo_log "#\t\t\tSWF pre-drop..."
+        echo_log_separator
+        mkdir -p ${SWF_PRE_DROP_DIR}/`date +%Y-%m-%d`/SWF_Drops/
+        cp -R ${PRE_DROP_DIR}/* ${SWF_PRE_DROP_DIR}/`date +%Y-%m-%d`/SWF_Drops/
+        rm -rf ${SWF_PRE_DROP_DIR}/SWF_Drops
+        mkdir -p ${SWF_PRE_DROP_DIR}/SWF_Drops/
+        cp -R ${PRE_DROP_DIR}/* ${SWF_PRE_DROP_DIR}/SWF_Drops/
+        CheckCommandExitCode $? "predrop failed"
+        echo_log_separator
+        echo_log "#\t\t\tSWF pre-drop... DONE"
+        echo_log_separator
     fi
 }
 
