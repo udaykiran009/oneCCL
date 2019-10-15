@@ -22,7 +22,7 @@ static int lib_filter(const struct dirent *entry) {
     }
 }
 
-static void atl_ini_dir(int *argc, char ***argv, size_t *proc_idx, size_t *proc_count,
+static void atl_ini_dir(int *argc, char ***argv, atl_proc_coord_t *proc_coord,
                         atl_attr_t *attr, atl_comm_t ***atl_comms, atl_desc_t **atl_desc,
                         const char *dir, const char *transport_name) {
     int n = 0;
@@ -35,7 +35,7 @@ static void atl_ini_dir(int *argc, char ***argv, size_t *proc_idx, size_t *proc_
 
     if (strcmp(transport_name, "mpi") == 0 && !getenv("I_MPI_ROOT")) {
         LOG_INFO("ATL MPI transport is requested but seems Intel MPI environment is not set. "
-                 "Please source release_mt version of Intel MPI.");
+                 "Please source release_mt version of Intel MPI (2019 or higher version).");
     }
 
     n = scandir(dir, &liblist, lib_filter, NULL);
@@ -73,7 +73,8 @@ static void atl_ini_dir(int *argc, char ***argv, size_t *proc_idx, size_t *proc_
                         std::min(transport_name_len, strlen(transport.name))))
                 continue;
 
-            ret = transport.init(argc, argv, proc_idx, proc_count, attr, atl_comms, atl_desc);
+            ret = transport.init(argc, argv, proc_coord,
+                                 attr, atl_comms, atl_desc);
             if (ret != atl_status_success)
                 continue;
 
@@ -150,7 +151,7 @@ void atl_free_string_array(char **s) {
     free(s);
 }
 
-atl_status_t atl_init(const char *transport_name, int *argc, char ***argv, size_t *proc_idx, size_t *proc_count,
+atl_status_t atl_init(const char *transport_name, int *argc, char ***argv, atl_proc_coord_t *proc_coord,
                       atl_attr_t *attr, atl_comm_t ***atl_comms, atl_desc_t **atl_desc) {
     const char *transport_dl_dir = NULL;
     int n = 0;
@@ -173,7 +174,8 @@ atl_status_t atl_init(const char *transport_name, int *argc, char ***argv, size_
     dirs = atl_split_and_alloc(transport_dl_dir, ":", NULL);
     if (dirs) {
         for (n = 0; dirs[n]; ++n) {
-            atl_ini_dir(argc, argv, proc_idx, proc_count, attr, atl_comms, atl_desc,
+            atl_ini_dir(argc, argv, proc_coord,
+                        attr, atl_comms, atl_desc,
                         dirs[n], transport_name);
         }
         atl_free_string_array(dirs);

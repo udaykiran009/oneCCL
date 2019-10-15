@@ -13,6 +13,7 @@ ccl_env_data env_data =
     .worker_affinity = std::vector<size_t>(),
 
     .atl_transport = ccl_atl_mpi,
+    .enable_shm = 1,
 
     .allgatherv_algo_raw = std::string(),
     .allreduce_algo_raw = std::string(),
@@ -111,9 +112,9 @@ void ccl_env_parse()
     ccl_env_2_size_t(CCL_WORKER_COUNT, env_data.worker_count);
     CCL_THROW_IF_NOT(env_data.worker_count >= 1, "incorrect ", CCL_WORKER_COUNT, " ", env_data.worker_count);
     ccl_env_2_int(CCL_WORKER_OFFLOAD, env_data.worker_offload);
-    CCL_THROW_IF_NOT(ccl_env_parse_worker_affinity());
 
     ccl_env_parse_atl_transport();
+    ccl_env_2_int(CCL_ATL_SHM, env_data.enable_shm);
 
     ccl_env_2_string(CCL_ALLGATHERV, env_data.allgatherv_algo_raw);
     ccl_env_2_string(CCL_ALLREDUCE, env_data.allreduce_algo_raw);
@@ -172,10 +173,13 @@ void ccl_env_print()
 
     LOG_INFO(CCL_WORKER_COUNT, ": ", env_data.worker_count);
     LOG_INFO(CCL_WORKER_OFFLOAD, ": ", env_data.worker_offload);
-    for (size_t w_idx = 0; w_idx < env_data.worker_count; w_idx++)
+    for (size_t w_idx = 0; w_idx < env_data.worker_affinity.size(); w_idx++)
     {
         LOG_INFO(CCL_WORKER_AFFINITY, ": worker: ", w_idx, ", processor: ", env_data.worker_affinity[w_idx]);
     }
+
+    LOG_INFO(CCL_ATL_TRANSPORT, ": ", ccl_atl_transport_to_str(env_data.atl_transport));
+    LOG_INFO(CCL_ATL_SHM, ": ", env_data.enable_shm);
 
     LOG_INFO(CCL_ALLGATHERV, ": ", (env_data.allgatherv_algo_raw.length()) ?
         env_data.allgatherv_algo_raw : CCL_ENV_NOT_SPECIFIED);
@@ -204,61 +208,67 @@ void ccl_env_print()
     LOG_INFO(CCL_YIELD, ": ", ccl_yield_type_to_str(env_data.yield_type));
     LOG_INFO(CCL_MAX_SHORT_SIZE, ": ", env_data.max_short_size);
     LOG_INFO(CCL_CACHE_KEY, ": ", ccl_cache_key_type_to_str(env_data.cache_key_type));
-    LOG_INFO(CCL_ATL_TRANSPORT, ": ", ccl_atl_transport_to_str(env_data.atl_transport));
 }
 
 constexpr const char* AVAILABLE_CORES_ENV = "I_MPI_PIN_INFO";
 
-static int ccl_env_parse_auto_worker_affinity()
+static int ccl_env_parse_auto_worker_affinity(size_t local_proc_idx, size_t workers_per_process)
 {
     char* available_cores = std::getenv(AVAILABLE_CORES_ENV);
-    CCL_THROW_IF_NOT(available_cores && strlen(available_cores) != 0, "auto pinning requires ",
-                      AVAILABLE_CORES_ENV, " env variable to be set");
+    CCL_THROW_IF_NOT(available_cores && strlen(available_cores) != 0,
+                     "auto pinning requires ", AVAILABLE_CORES_ENV, " env variable to be set");
     std::vector<size_t> cores;
     str_to_array(available_cores + 1, cores, ',');
 
-    CCL_THROW_IF_NOT(env_data.worker_count <= cores.size(), "count of workers ", env_data.worker_count,
+    LOG_DEBUG("available_cores ", available_cores);
+
+    CCL_THROW_IF_NOT(env_data.worker_count <= cores.size(),
+                     "count of workers ", env_data.worker_count,
                      " exceeds the number of available cores ", cores.size());
 
     size_t ccl_cores_start = cores.size() - env_data.worker_count;
     for (size_t idx = 0; idx < env_data.worker_count; ++idx)
     {
-        env_data.worker_affinity[idx] = cores[ccl_cores_start + idx];
+        env_data.worker_affinity[local_proc_idx * workers_per_process + idx]
+            = cores[ccl_cores_start + idx];
     }
     return 1;
 }
 
-int ccl_env_parse_worker_affinity()
+int ccl_env_parse_worker_affinity(size_t local_proc_idx, size_t local_proc_count)
 {
+    CCL_THROW_IF_NOT(local_proc_count > 0);
+
     int read_env = 0;
-    size_t workers_per_node = env_data.worker_count;
+    size_t workers_per_process = env_data.worker_count;
     size_t w_idx, read_count = 0;
     char* affinity_copy = nullptr;
     char* affinity_to_parse = getenv(CCL_WORKER_AFFINITY);
     char* proc_id_str;
     char* tmp;
-    size_t proc_count;
+    size_t proccessor_count;
 
-    env_data.worker_affinity.resize(workers_per_node);
+    size_t affinity_size = local_proc_count * workers_per_process;
+    env_data.worker_affinity.assign(affinity_size, 0);
 
     if (affinity_to_parse && strcmp(affinity_to_parse, "auto") == 0)
     {
-        return ccl_env_parse_auto_worker_affinity();
+        return ccl_env_parse_auto_worker_affinity(local_proc_idx, workers_per_process);
     }
 
     if (!affinity_to_parse || strlen(affinity_to_parse) == 0)
     {
         /* generate default affinity */
-        proc_count = sysconf(_SC_NPROCESSORS_ONLN);
-        for (w_idx = 0; w_idx < workers_per_node; w_idx++)
+        proccessor_count = sysconf(_SC_NPROCESSORS_ONLN);
+        for (w_idx = 0; w_idx < affinity_size; w_idx++)
         {
-            if (w_idx < proc_count)
+            if (w_idx < proccessor_count)
             {
-                env_data.worker_affinity[w_idx] = proc_count - w_idx - 1;
+                env_data.worker_affinity[w_idx] = proccessor_count - w_idx - 1;
             }
             else
             {
-                env_data.worker_affinity[w_idx] = env_data.worker_affinity[w_idx % proc_count];
+                env_data.worker_affinity[w_idx] = env_data.worker_affinity[w_idx % proccessor_count];
             }
         }
         read_env = 1;
@@ -272,7 +282,7 @@ int ccl_env_parse_worker_affinity()
     CCL_MEMCPY(affinity_copy, affinity_to_parse, affinity_len);
     tmp = affinity_copy;
 
-    for (w_idx = 0; w_idx < workers_per_node; w_idx++)
+    for (w_idx = 0; w_idx < affinity_size; w_idx++)
     {
         proc_id_str = strsep(&tmp, ",");
         if (proc_id_str != NULL)
@@ -289,14 +299,14 @@ int ccl_env_parse_worker_affinity()
         }
         else
         {
-            LOG_ERROR("unexpected end of affinity string, expected ", workers_per_node, " numbers, read ", read_count,
+            LOG_ERROR("unexpected end of affinity string, expected ", affinity_size, " numbers, read ", read_count,
                       ", affinity string ", affinity_to_parse);
             read_env = 0;
             CCL_FREE(affinity_copy);
             return read_env;
         }
     }
-    if (read_count < workers_per_node)
+    if (read_count < affinity_size)
     {
         LOG_ERROR(
             "unexpected number of processors (specify 1 logical processor per 1 progress thread), affinity string ",

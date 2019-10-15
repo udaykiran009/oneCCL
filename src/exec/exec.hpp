@@ -56,6 +56,8 @@ public:
     void start(ccl_master_sched* sched);
     void wait(const ccl_request* req);
     bool test(const ccl_request* req);
+
+    void start_workers();
     size_t get_worker_count() const;
 
     ccl_status_t create_listener(ccl_resize_fn_t resize_func);
@@ -64,15 +66,23 @@ public:
     void unlock_workers();
     bool is_locked = false;
 
-    size_t proc_idx{};
-    size_t proc_count{};
+    size_t get_global_proc_idx() const { return atl_proc_coord.global_idx; }
+    size_t get_global_proc_count() const { return atl_proc_coord.global_count; }
+    size_t get_local_proc_idx() const { return atl_proc_coord.local_idx; }
+    size_t get_local_proc_count() const { return atl_proc_coord.local_count; }
+    atl_proc_coord_t* get_proc_coord() { return &atl_proc_coord; }
+
     atl_desc_t* atl_desc = nullptr;
 
-    bool is_tagged_coll_enabled = false;
-    size_t tag_bits = 64;
-    uint64_t max_tag = 0xFFFFFFFFFFFFFFFF;
-    bool is_rma_enabled = false;
-    size_t max_order_waw_size = 0;
+    atl_attr_t atl_attr =
+    {
+        0, /* enable_shm */
+        0, /* is_tagged_coll_enabled */
+        64, /* tag_bits */
+        0xFFFFFFFFFFFFFFFF, /* max_tag */
+        0, /* enable_rma */
+        0 /* max_order_waw_size */
+    };
 
 private:
     size_t get_atl_comm_count(size_t worker_count);
@@ -80,6 +90,7 @@ private:
 
     void do_work(); 
     atl_comm_t** atl_comms = nullptr;
+    atl_proc_coord_t atl_proc_coord;
     std::vector<std::unique_ptr<ccl_worker>> workers;
     std::unique_ptr<ccl_listener> listener;
 };

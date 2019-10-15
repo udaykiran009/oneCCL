@@ -31,9 +31,9 @@ typedef struct pm_rt_ops {
 
 typedef struct pm_rt_kvs_ops {
     atl_status_t (*put)(pm_rt_desc_t *pmrt_desc, char *kvs_key, size_t proc_idx,
-                         size_t ep_idx, const void *kvs_val, size_t kvs_val_len);
+                        const void *kvs_val, size_t kvs_val_len);
     atl_status_t (*get)(pm_rt_desc_t *pmrt_desc, char *kvs_key, size_t proc_idx,
-                         size_t ep_idx, void *kvs_val, size_t kvs_val_len);
+                        void *kvs_val, size_t kvs_val_len);
 } pm_rt_kvs_ops_t;
 
 struct pm_rt_desc {
@@ -107,20 +107,21 @@ static inline void pmrt_barrier(pm_rt_desc_t *pmrt_desc)
 {
     pmrt_desc->ops->barrier(pmrt_desc);
 }
+
 static inline atl_status_t
 pmrt_kvs_put(pm_rt_desc_t *pmrt_desc, char *kvs_key, size_t proc_idx,
-             size_t ep_idx, const void *kvs_val, size_t kvs_val_len)
+             const void *kvs_val, size_t kvs_val_len)
 {
     return pmrt_desc->kvs_ops->put(pmrt_desc, kvs_key, proc_idx,
-                                   ep_idx, kvs_val, kvs_val_len);
+                                   kvs_val, kvs_val_len);
 }
 
 static inline atl_status_t
 pmrt_kvs_get(pm_rt_desc_t *pmrt_desc, char *kvs_key, size_t proc_idx,
-             size_t ep_idx, void *kvs_val, size_t kvs_val_len)
+             void *kvs_val, size_t kvs_val_len)
 {
     return pmrt_desc->kvs_ops->get(pmrt_desc, kvs_key, proc_idx,
-                                   ep_idx, kvs_val, kvs_val_len);
+                                   kvs_val, kvs_val_len);
 }
 
 #endif /* PM_RT_H */

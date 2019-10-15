@@ -20,6 +20,7 @@ constexpr const char* CCL_WORKER_AFFINITY = "CCL_WORKER_AFFINITY";
 constexpr const char* CCL_WORKER_OFFLOAD = "CCL_WORKER_OFFLOAD";
 
 constexpr const char* CCL_ATL_TRANSPORT = "CCL_ATL_TRANSPORT";
+constexpr const char* CCL_ATL_SHM = "CCL_ATL_SHM";
 
 constexpr const char* CCL_ALLGATHERV = "CCL_ALLGATHERV";
 constexpr const char* CCL_ALLREDUCE = "CCL_ALLREDUCE";
@@ -70,6 +71,7 @@ struct alignas(CACHELINE_SIZE) ccl_env_data
     std::vector<size_t> worker_affinity;
 
     ccl_atl_transport atl_transport;
+    int enable_shm;
 
     /*
        parsing logic can be quite complex so hide it inside algorithm_selector module
@@ -108,7 +110,7 @@ int ccl_env_2_string(const char* env_name, std::string& str);
 void ccl_env_parse();
 void ccl_env_print();
 
-int ccl_env_parse_worker_affinity();
+int ccl_env_parse_worker_affinity(size_t local_proc_idx, size_t local_proc_count);
 int ccl_env_parse_atl_transport();
 int ccl_env_parse_priority_mode();
 int ccl_env_parse_yield_type();

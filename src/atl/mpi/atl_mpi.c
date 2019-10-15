@@ -51,8 +51,7 @@ static const char *atl_mpi_name = "mpi";
 
 typedef struct atl_mpi_context {
     atl_desc_t atl_desc;
-    size_t proc_idx;
-    size_t proc_count;
+    atl_proc_coord_t proc_coord;
     size_t comm_ref_count;
 } atl_mpi_context_t;
 
@@ -263,14 +262,14 @@ atl_mpi_comm_bcast(atl_comm_t *comm, void *buf, size_t len, size_t root,
     return RET2ATL(ret);
 }
 
-static void atl_mpi_proc_idx(atl_desc_t *atl_desc, size_t *proc_idx);
+static void atl_mpi_global_proc_idx(atl_desc_t *atl_desc, size_t *global_proc_idx);
 
 static atl_status_t
 atl_mpi_comm_reduce(atl_comm_t *comm, const void *send_buf, void *recv_buf, size_t count, size_t root,
                     atl_datatype_t dtype, atl_reduction_t op, atl_req_t *req)
 {
     size_t my_proc_idx;
-    atl_mpi_proc_idx(comm->atl_desc, &my_proc_idx);
+    atl_mpi_global_proc_idx(comm->atl_desc, &my_proc_idx);
     atl_mpi_comm_context_t *comm_context =
         container_of(comm, atl_mpi_comm_context_t, atl_comm);
     atl_mpi_req_t *mpi_req = ((atl_mpi_req_t *)req->internal);
@@ -385,22 +384,22 @@ static atl_comp_ops_t atl_mpi_comm_comp_ops = {
     .check = atl_mpi_comm_check
 };
 
-static void atl_mpi_proc_idx(atl_desc_t *atl_desc, size_t *proc_idx)
+static void atl_mpi_global_proc_idx(atl_desc_t *atl_desc, size_t *global_proc_idx)
 {
     atl_mpi_context_t *atl_mpi_context =
         container_of(atl_desc, atl_mpi_context_t, atl_desc);
-    *proc_idx = atl_mpi_context->proc_idx;
+    *global_proc_idx = atl_mpi_context->proc_coord.global_idx;
 }
 
-static void atl_mpi_proc_count(atl_desc_t *atl_desc, size_t *proc_count)
+static void atl_mpi_global_proc_count(atl_desc_t *atl_desc, size_t *global_proc_count)
 {
     atl_mpi_context_t *atl_mpi_context =
         container_of(atl_desc, atl_mpi_context_t, atl_desc);
-    *proc_count = atl_mpi_context->proc_count;
+    *global_proc_count = atl_mpi_context->proc_coord.global_count;
 }
 
 static atl_status_t
-atl_mpi_update(size_t *proc_idx, size_t *proc_count, atl_desc_t *atl_desc, atl_comm_t** atl_comms)
+atl_mpi_update(atl_proc_coord_t *proc_coord, atl_desc_t *atl_desc, atl_comm_t** atl_comms)
 {
     return atl_status_unsupported;
 }
@@ -422,8 +421,8 @@ static atl_status_t atl_mpi_set_resize_function(atl_resize_fn_t resize_fn)
 }
 
 atl_ops_t atl_mpi_ops = {
-    .proc_idx               = atl_mpi_proc_idx,
-    .proc_count             = atl_mpi_proc_count,
+    .global_proc_idx        = atl_mpi_global_proc_idx,
+    .global_proc_count      = atl_mpi_global_proc_count,
     .finalize               = atl_mpi_finalize,
     .update                 = atl_mpi_update,
     .set_resize_function = atl_mpi_set_resize_function,
@@ -531,7 +530,7 @@ atl_status_t atl_mpi_set_optimized_mpi_environment(atl_attr_t *attr)
     return atl_status_success;
 }
 
-atl_status_t atl_mpi_init(int *argc, char ***argv, size_t *proc_idx, size_t *proc_count,
+atl_status_t atl_mpi_init(int *argc, char ***argv, atl_proc_coord_t *proc_coord,
                           atl_attr_t *attr, atl_comm_t ***atl_comms, atl_desc_t **atl_desc)
 {
     assert(sizeof(atl_mpi_req_t) <= sizeof(atl_req_t) - offsetof(atl_req_t, internal));
@@ -558,11 +557,19 @@ atl_status_t atl_mpi_init(int *argc, char ***argv, size_t *proc_idx, size_t *pro
     if (ret)
         goto err_init;
 
-    MPI_Comm_rank(MPI_COMM_WORLD, (int*)proc_idx);
-    MPI_Comm_size(MPI_COMM_WORLD, (int*)proc_count);
+    memset(proc_coord, 0, sizeof(atl_proc_coord_t));
+    
+    MPI_Comm_rank(MPI_COMM_WORLD, (int*)&(proc_coord->global_idx));
+    MPI_Comm_size(MPI_COMM_WORLD, (int*)&(proc_coord->global_count));
 
-    atl_mpi_context->proc_count = *proc_count;
-    atl_mpi_context->proc_idx = *proc_idx;
+    MPI_Comm local_comm;
+    MPI_Comm_split_type(MPI_COMM_WORLD, MPI_COMM_TYPE_SHARED,
+                        proc_coord->global_count, MPI_INFO_NULL, &local_comm);
+    MPI_Comm_rank(local_comm, (int*)&(proc_coord->local_idx));
+    MPI_Comm_size(local_comm, (int*)&(proc_coord->local_count));
+    MPI_Comm_free(&local_comm);
+
+    atl_mpi_context->proc_coord = *proc_coord;
     atl_mpi_context->comm_ref_count = 0;
 
     *atl_comms = calloc(1, sizeof(atl_comm_t**) * attr->comm_count);

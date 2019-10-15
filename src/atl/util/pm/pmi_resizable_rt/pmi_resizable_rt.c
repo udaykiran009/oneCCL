@@ -8,7 +8,7 @@
 
 #include "pm_rt.h"
 
-#define RESIZABLE_PMI_RT_KEY_FORMAT "%s-%zu-%zu"
+#define RESIZABLE_PMI_RT_KEY_FORMAT "%s-%zu"
 
 typedef struct resizable_pm_rt_context {
     pm_rt_desc_t pmrt_desc;
@@ -58,7 +58,7 @@ static void resizable_pmirt_barrier(pm_rt_desc_t *pmrt_desc)
 
 static atl_status_t
 resizable_pmirt_kvs_put(pm_rt_desc_t *pmrt_desc, char *kvs_key, size_t proc_idx,
-                        size_t ep_idx, const void *kvs_val, size_t kvs_val_len)
+                        const void *kvs_val, size_t kvs_val_len)
 {
     int ret;
     resizable_pm_context_t *ctx =
@@ -71,7 +71,7 @@ resizable_pmirt_kvs_put(pm_rt_desc_t *pmrt_desc, char *kvs_key, size_t proc_idx,
         return atl_status_failure;
 
     ret = snprintf(ctx->resizablert_main.key_storage, ctx->resizablert_main.max_keylen - 1,
-                   RESIZABLE_PMI_RT_KEY_FORMAT, kvs_key, proc_idx, ep_idx);
+                   RESIZABLE_PMI_RT_KEY_FORMAT, kvs_key, proc_idx);
     if (ret < 0)
         return atl_status_failure;
 
@@ -95,7 +95,7 @@ resizable_pmirt_kvs_put(pm_rt_desc_t *pmrt_desc, char *kvs_key, size_t proc_idx,
 
 static atl_status_t
 resizable_pmirt_kvs_get(pm_rt_desc_t *pmrt_desc, char *kvs_key, size_t proc_idx,
-                        size_t ep_idx, void *kvs_val, size_t kvs_val_len)
+                        void *kvs_val, size_t kvs_val_len)
 {
     int ret;
     resizable_pm_context_t *ctx =
@@ -105,7 +105,7 @@ resizable_pmirt_kvs_get(pm_rt_desc_t *pmrt_desc, char *kvs_key, size_t proc_idx,
         return atl_status_failure;
 
     ret = snprintf(ctx->resizablert_main.key_storage, ctx->resizablert_main.max_keylen - 1,
-                   RESIZABLE_PMI_RT_KEY_FORMAT, kvs_key, proc_idx, ep_idx);
+                   RESIZABLE_PMI_RT_KEY_FORMAT, kvs_key, proc_idx);
     if (ret < 0)
         return atl_status_failure;
 

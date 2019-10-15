@@ -30,41 +30,49 @@ ccl_executor::ccl_executor()
     workers.reserve(worker_count);
     auto comm_count = get_atl_comm_count(worker_count);
 
-    atl_attr_t attr =
-    {
-        .comm_count = comm_count,
-        .enable_rma = env_data.enable_rma
-    };
+    atl_attr.comm_count = comm_count;
+    atl_attr.enable_shm = env_data.enable_shm;
+    atl_attr.enable_rma = env_data.enable_rma;
 
-    LOG_INFO("init ATL, requested comm_count ", attr.comm_count);
+    LOG_INFO("init ATL, requested comm_count ", atl_attr.comm_count);
 
     atl_status_t atl_status = atl_init(ccl_atl_transport_to_str(env_data.atl_transport),
-                                       nullptr, nullptr,
-                                       &proc_idx, &proc_count,
-                                       &attr, &atl_comms, &atl_desc);
+                                       nullptr, nullptr, &atl_proc_coord,
+                                       &atl_attr, &atl_comms, &atl_desc);
     CCL_THROW_IF_NOT(atl_status == atl_status_success && atl_desc && atl_comms,
                      "ATL init failed, res ", atl_status, ", desc ", atl_desc, ", comm ",atl_comms);
 
     global_data.is_ft_enabled = is_ft_enabled(atl_desc);
 
-    is_tagged_coll_enabled = attr.is_tagged_coll_enabled;
-    tag_bits = attr.tag_bits;
-    max_tag = attr.max_tag;
-    is_rma_enabled = attr.enable_rma;
-    max_order_waw_size = attr.max_order_waw_size;
-
-    LOG_INFO("proc_idx ", proc_idx, ", proc_count ", proc_count,
+    LOG_INFO("global_proc_idx ", atl_proc_coord.global_idx,
+             ", global_proc_count ", atl_proc_coord.global_count,
+             ", local_proc_idx ", atl_proc_coord.local_idx,
+             ", local_proc_count ", atl_proc_coord.local_count,
              ", worker_count ", worker_count);
 
-    if (proc_idx == 0)
+    if (get_global_proc_idx() == 0)
     {
         LOG_INFO("\nATL parameters:",
-                 "\n  comm_count:             ", comm_count,
-                 "\n  is_tagged_coll_enabled: ", is_tagged_coll_enabled,
-                 "\n  tag_bits:               ", tag_bits,
-                 "\n  max_tag:                ", max_tag,
-                 "\n  is_rma_enabled:         ", is_rma_enabled,
-                 "\n  max_order_waw_size:     ", max_order_waw_size);
+                 "\n  comm_count:             ", atl_attr.comm_count,
+                 "\n  enable_shm:             ", atl_attr.enable_shm,
+                 "\n  is_tagged_coll_enabled: ", atl_attr.is_tagged_coll_enabled,
+                 "\n  tag_bits:               ", atl_attr.tag_bits,
+                 "\n  max_tag:                ", atl_attr.max_tag,
+                 "\n  enable_rma:             ", atl_attr.enable_rma,
+                 "\n  max_order_waw_size:     ", atl_attr.max_order_waw_size);
+    }
+}
+
+void ccl_executor::start_workers()
+{
+    auto worker_count = env_data.worker_count;
+    auto comm_count = get_atl_comm_count(worker_count);
+
+    if (env_data.worker_offload)
+    {
+        CCL_THROW_IF_NOT(env_data.worker_affinity.size() >= get_local_proc_count() * worker_count,
+                         "unexpected worker affinity length ", env_data.worker_affinity.size(),
+                         ", should be ", get_local_proc_count() * worker_count);
     }
 
     size_t comm_per_worker = comm_count / worker_count;
@@ -83,9 +91,13 @@ ccl_executor::ccl_executor()
 
         if (env_data.worker_offload)
         {
+            size_t affinity = env_data.worker_affinity[get_local_proc_idx() * worker_count + idx];
             workers.back()->start();
-            workers.back()->pin(env_data.worker_affinity[idx]);
-            LOG_DEBUG("started worker # ", idx);
+            workers.back()->pin(affinity);
+            LOG_INFO("started worker: global_proc_idx ", get_global_proc_idx(),
+                     ", local_proc_idx ", get_local_proc_idx(),
+                     ", worker_idx ", idx,
+                     ", affinity ", affinity);
         }
     }
 }
@@ -110,12 +122,12 @@ ccl_executor::~ccl_executor()
         }
     }
 
-    if (proc_idx == 0)
+    if (get_global_proc_idx() == 0)
         LOG_INFO("finalizing ATL");
 
     auto result = atl_finalize(atl_desc, atl_comms);
 
-    if (proc_idx == 0)
+    if (get_global_proc_idx() == 0)
         LOG_INFO("finalized ATL");
 
     if (result != atl_status_success)
@@ -189,7 +201,10 @@ ccl_status_t ccl_executor::create_listener(ccl_resize_fn_t resize_func)
 
     listener = std::unique_ptr<ccl_listener>(new ccl_listener(&global_data));
     listener->start();
-    listener->pin(0);
+
+    /* pin listener thread together with first worker thread */
+    size_t affinity = env_data.worker_affinity[get_local_proc_idx() * env_data.worker_count];
+    listener->pin(affinity);
     LOG_DEBUG("started listener");
 
     return ccl_status_success;

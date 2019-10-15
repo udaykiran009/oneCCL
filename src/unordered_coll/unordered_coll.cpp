@@ -15,12 +15,12 @@ struct ccl_unordered_coll_ctx
 
 ccl_unordered_coll_manager::ccl_unordered_coll_manager()
 {
-    coordination_comm = std::unique_ptr<ccl_comm>(new ccl_comm(global_data.executor->proc_idx,
-                                                               global_data.executor->proc_count,
+    coordination_comm = std::unique_ptr<ccl_comm>(new ccl_comm(global_data.executor->get_global_proc_idx(),
+                                                               global_data.executor->get_global_proc_count(),
                                                                global_data.comm_ids->acquire(true)));
     CCL_ASSERT(coordination_comm.get(), "coordination_comm is null");
 
-    if (global_data.executor->proc_idx == 0)
+    if (global_data.executor->get_global_proc_idx() == 0)
         LOG_INFO("created unordered collectives manager");
 }
 
@@ -187,8 +187,7 @@ void ccl_unordered_coll_manager::start_coordination(const std::string& match_id)
     ccl_coll_entry_param match_id_size_param{};
     match_id_size_param.ctype = ccl_coll_bcast;
     match_id_size_param.send_buf = ccl_buffer();
-    match_id_size_param.recv_buf = ccl_buffer(&ctx->match_id_size,
-                                      sizeof(size_t));
+    match_id_size_param.recv_buf = ccl_buffer(&ctx->match_id_size, sizeof(size_t));
     match_id_size_param.count = sizeof(size_t);
     match_id_size_param.dtype = ccl_dtype_internal_char;
     match_id_size_param.root = CCL_UNORDERED_COLL_COORDINATOR;
@@ -197,7 +196,7 @@ void ccl_unordered_coll_manager::start_coordination(const std::string& match_id)
 
     service_sched->add_barrier();
 
-    // 2. broadcast match_id_value
+    /* 2. broadcast match_id_value */
     ccl_coll_entry_param match_id_val_param{};
     match_id_val_param.ctype = ccl_coll_bcast;
     match_id_val_param.send_buf = ccl_buffer();
@@ -231,7 +230,7 @@ void ccl_unordered_coll_manager::start_coordination(const std::string& match_id)
 
     service_sched->add_barrier();
 
-    // 3. broadcast reserved comm_id
+    /* 3. broadcast reserved comm_id */
     ccl_coll_entry_param reserved_comm_id_param{};
     reserved_comm_id_param.ctype = ccl_coll_bcast;
     reserved_comm_id_param.send_buf = ccl_buffer();

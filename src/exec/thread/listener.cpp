@@ -23,8 +23,9 @@ void* ccl_update_comm_world_info(void* args)
 
         reset_for_size_update(gl_data);
 
-        atl_update(&(gl_data->executor->proc_idx), &(gl_data->executor->proc_count),
-                   gl_data->executor->atl_desc, listener->get_comms());
+        atl_update(gl_data->executor->get_proc_coord(),
+                   gl_data->executor->atl_desc,
+                   listener->get_comms());
         ccl_init_global_objects(*gl_data);
 
         gl_data->executor->update_workers();

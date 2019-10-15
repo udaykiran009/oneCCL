@@ -80,11 +80,12 @@ typedef struct atl_comm_attr {
 
 typedef struct atl_attr {
     size_t comm_count;
-    int enable_rma;
-    size_t max_order_waw_size;
+    int enable_shm;
     int is_tagged_coll_enabled;
     size_t tag_bits;
     uint64_t max_tag;
+    int enable_rma;
+    size_t max_order_waw_size;
     atl_comm_attr_t comm_attr;
 } atl_attr_t;
 
@@ -95,11 +96,19 @@ typedef struct atl_mr {
     uintptr_t r_key;
 } atl_mr_t;
 
+typedef struct atl_proc_coord {
+    size_t global_idx;
+    size_t global_count;
+    size_t local_idx;
+    size_t local_count;
+} atl_proc_coord_t;
+
 typedef struct atl_ops {
-    void (*proc_idx)(atl_desc_t *desc, size_t *proc_idx);
-    void (*proc_count)(atl_desc_t *desc, size_t *proc_count);
+    void (*global_proc_idx)(atl_desc_t *desc, size_t *global_proc_idx);
+    void (*global_proc_count)(atl_desc_t *desc, size_t *global_proc_count);
     atl_status_t (*finalize)(atl_desc_t *desc, atl_comm_t **comms);
-    atl_status_t (*update)(size_t *proc_idx, size_t *proc_count, atl_desc_t *desc, atl_comm_t** atl_comms);
+    atl_status_t (*update)(atl_proc_coord_t *proc_coord,
+                           atl_desc_t *desc, atl_comm_t** atl_comms);
     atl_status_t (*wait_notification)(atl_desc_t *desc);
     atl_status_t (*set_resize_function)(atl_resize_fn_t user_checker);
     size_t is_resize_enabled;
@@ -118,7 +127,7 @@ struct atl_desc {
 
 typedef struct atl_transport {
     const char *name;
-    atl_status_t (*init)(int *argc, char ***argv, size_t *proc_idx, size_t *proc_count,
+    atl_status_t (*init)(int *argc, char ***argv, atl_proc_coord_t *proc_coord,
                          atl_attr_t *attr, atl_comm_t ***atl_comms, atl_desc_t **atl_desc);
 } atl_transport_t;
 
@@ -221,7 +230,7 @@ static inline INI_SIG(atl_noop_init)
 }
 
 /* FIXME: use ccl_atl_transport enum instead of char* after better integration of CCL core and ATL codes */
-atl_status_t atl_init(const char *transport_name, int *argc, char ***argv, size_t *proc_idx, size_t *proc_count,
+atl_status_t atl_init(const char *transport_name, int *argc, char ***argv, atl_proc_coord_t *proc_coord,
                       atl_attr_t *attr, atl_comm_t ***atl_comms, atl_desc_t **atl_desc);
 
 static inline size_t is_ft_enabled(atl_desc_t *desc)
@@ -229,19 +238,20 @@ static inline size_t is_ft_enabled(atl_desc_t *desc)
     return desc->ops->is_resize_enabled;
 }
 
-static inline void atl_proc_idx(atl_desc_t *desc, size_t *proc_idx)
+static inline void atl_global_proc_idx(atl_desc_t *desc, size_t *global_proc_idx)
 {
-    return desc->ops->proc_idx(desc, proc_idx);
+    return desc->ops->global_proc_idx(desc, global_proc_idx);
 }
 
-static inline void atl_proc_count(atl_desc_t *desc, size_t *proc_count)
+static inline void atl_global_proc_count(atl_desc_t *desc, size_t *global_proc_count)
 {
-    return desc->ops->proc_count(desc, proc_count);
+    return desc->ops->global_proc_count(desc, global_proc_count);
 }
 
-static inline atl_status_t atl_update(size_t *proc_idx, size_t *proc_count, atl_desc_t *desc, atl_comm_t** atl_comms)
+static inline atl_status_t atl_update(atl_proc_coord_t *proc_coord,
+                                      atl_desc_t *desc, atl_comm_t** atl_comms)
 {
-    return desc->ops->update(proc_idx, proc_count, desc, atl_comms);
+    return desc->ops->update(proc_coord, desc, atl_comms);
 }
 
 static inline atl_status_t atl_wait_notification(atl_desc_t *desc)

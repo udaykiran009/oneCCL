@@ -14,8 +14,8 @@ void ccl_init_global_objects(ccl_global_data& gl_data)
 
     gl_data.comm_ids = std::unique_ptr<ccl_comm_id_storage>(new ccl_comm_id_storage(ccl_comm::max_comm_count));
 
-    gl_data.comm = std::make_shared<ccl_comm>(gl_data.executor->proc_idx,
-                                              gl_data.executor->proc_count,
+    gl_data.comm = std::make_shared<ccl_comm>(gl_data.executor->get_global_proc_idx(),
+                                              gl_data.executor->get_global_proc_count(),
                                               gl_data.comm_ids->acquire(true));
 
     if (env_data.enable_unordered_coll)
@@ -46,11 +46,16 @@ ccl_status_t ccl_init()
 
         global_data.executor = std::unique_ptr<ccl_executor>(new ccl_executor());
 
-        if (global_data.executor->proc_idx == 0)
+        /* worker affinity parsing become possible only after atl_init, i.e. when local idx/count are available */
+        CCL_THROW_IF_NOT(ccl_env_parse_worker_affinity(global_data.executor->get_local_proc_idx(),
+                                                       global_data.executor->get_local_proc_count()));
+        global_data.executor->start_workers();
+
+        if (global_data.executor->get_global_proc_idx() == 0)
             ccl_env_print();
 
-        global_data.atl_tag = std::unique_ptr<ccl_atl_tag>(new ccl_atl_tag(global_data.executor->tag_bits,
-                                                                           global_data.executor->max_tag));
+        global_data.atl_tag = std::unique_ptr<ccl_atl_tag>(new ccl_atl_tag(global_data.executor->atl_attr.tag_bits,
+                                                                           global_data.executor->atl_attr.max_tag));
         global_data.algorithm_selector =
             std::unique_ptr<ccl_algorithm_selector_wrapper<CCL_COLL_LIST>>(
                 new ccl_algorithm_selector_wrapper<CCL_COLL_LIST>());
@@ -58,7 +63,7 @@ ccl_status_t ccl_init()
         ccl_init_global_objects(global_data);
 
         global_data.algorithm_selector->init();
-        if (global_data.executor->proc_idx == 0)
+        if (global_data.executor->get_global_proc_idx() == 0)
             global_data.algorithm_selector->print();
 
         return ccl_status_success;
