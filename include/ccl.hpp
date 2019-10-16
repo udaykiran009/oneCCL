@@ -130,7 +130,7 @@ public:
     /**
      * Type allows to operate request interface in RAII manner
      */
-    using col_request_t = std::unique_ptr<request>;
+    using coll_request_t = std::unique_ptr<request>;
 
     /**
      * Retrieves the rank of the current process in a communicator
@@ -154,13 +154,13 @@ public:
      * @param recv_counts array with number of elements received by each process
      * @param dtype data type of elements in the buffer @c buf and @c recv_buf
      * @param attr optional attributes that customize operation
-     * @return @ref ccl::communicator::col_request_t object that can be used to track the progress of the operation
+     * @return @ref ccl::communicator::coll_request_t object that can be used to track the progress of the operation
      */
-    col_request_t allgatherv(const void* send_buf, size_t send_count,
-                             void* recv_buf, const size_t* recv_counts,
-                             ccl::data_type dtype,
-                             const ccl::coll_attr* attr = nullptr,
-                             const ccl::stream_t& stream = ccl::stream_t());
+    coll_request_t allgatherv(const void* send_buf, size_t send_count,
+                              void* recv_buf, const size_t* recv_counts,
+                              ccl::data_type dtype,
+                              const ccl::coll_attr* attr = nullptr,
+                              const ccl::stream_t& stream = ccl::stream_t());
 
     /**
      * Type safety version:
@@ -172,14 +172,14 @@ public:
      * as @c buf. Used by the @c root process only, ignored by other processes
      * @param recv_counts array with number of elements received by each process
      * @param attr optional attributes that customize operation
-     * @return @ref ccl::communicator::col_request_t object that can be used to track the progress of the operation
+     * @return @ref ccl::communicator::coll_request_t object that can be used to track the progress of the operation
      */
     template<class buffer_type,
              class = typename std::enable_if<ccl::is_native_type_supported<buffer_type>()>::type>
-    col_request_t allgatherv(const buffer_type* send_buf, size_t send_count,
-                             buffer_type* recv_buf, const size_t* recv_counts,
-                             const ccl::coll_attr* attr = nullptr,
-                             const ccl::stream_t& stream = ccl::stream_t());
+    coll_request_t allgatherv(const buffer_type* send_buf, size_t send_count,
+                              buffer_type* recv_buf, const size_t* recv_counts,
+                              const ccl::coll_attr* attr = nullptr,
+                              const ccl::stream_t& stream = ccl::stream_t());
     /**
      * Type safety version:
      * Gathers @c buf on all process in the communicator and stores result in @c recv_buf
@@ -194,10 +194,10 @@ public:
      */
     template<class buffer_container_type,
              class = typename std::enable_if<ccl::is_class_supported<buffer_container_type>()>::type>
-    col_request_t allgatherv(const buffer_container_type& send_buf, size_t send_count,
-                             buffer_container_type& recv_buf, const size_t* recv_counts,
-                             const ccl::coll_attr* attr = nullptr,
-                             const ccl::stream_t& stream = ccl::stream_t());
+    coll_request_t allgatherv(const buffer_container_type& send_buf, size_t send_count,
+                              buffer_container_type& recv_buf, const size_t* recv_counts,
+                              const ccl::coll_attr* attr = nullptr,
+                              const ccl::stream_t& stream = ccl::stream_t());
 
     /**
      * Reduces @c buf on all process in the communicator and stores result in @c recv_buf
@@ -209,13 +209,13 @@ public:
      * @param dtype data type of elements in the buffer @c buf and @c recv_buf
      * @param reduction type of reduction operation to be applied
      * @param attr optional attributes that customize operation
-     * @return @ref ccl::communicator::col_request_t object that can be used to track the progress of the operation
+     * @return @ref ccl::communicator::coll_request_t object that can be used to track the progress of the operation
      */
-    col_request_t allreduce(const void* send_buf, void* recv_buf,
-                            size_t count, ccl::data_type dtype,
-                            ccl::reduction reduction,
-                            const ccl::coll_attr* attr = nullptr,
-                            const ccl::stream_t& stream = ccl::stream_t());
+    coll_request_t allreduce(const void* send_buf, void* recv_buf,
+                             size_t count, ccl::data_type dtype,
+                             ccl::reduction reduction,
+                             const ccl::coll_attr* attr = nullptr,
+                             const ccl::stream_t& stream = ccl::stream_t());
 
     /**
      * Type safety version:
@@ -227,16 +227,16 @@ public:
      * @param count number of elements of type @c buffer_type in @c buf
      * @param reduction type of reduction operation to be applied
      * @param attr optional attributes that customize operation
-     * @return @ref ccl::communicator::col_request_t object that can be used to track the progress of the operation
+     * @return @ref ccl::communicator::coll_request_t object that can be used to track the progress of the operation
      */
     template<class buffer_type,
              class = typename std::enable_if<ccl::is_native_type_supported<buffer_type>()>::type>
-    col_request_t allreduce(const buffer_type* send_buf,
-                            buffer_type* recv_buf,
-                            size_t count,
-                            ccl::reduction reduction,
-                            const ccl::coll_attr* attr = nullptr,
-                            const ccl::stream_t& stream = ccl::stream_t());
+    coll_request_t allreduce(const buffer_type* send_buf,
+                             buffer_type* recv_buf,
+                             size_t count,
+                             ccl::reduction reduction,
+                             const ccl::coll_attr* attr = nullptr,
+                             const ccl::stream_t& stream = ccl::stream_t());
 
     /**
      * Type safety version:
@@ -248,16 +248,16 @@ public:
      * @param count number of elements in @c send_buf
      * @param reduction type of reduction operation to be applied
      * @param attr optional attributes that customize operation
-     * @return @ref ccl::communicator::col_request_t object that can be used to track the progress of the operation
+     * @return @ref ccl::communicator::coll_request_t object that can be used to track the progress of the operation
      */
     template<class buffer_container_type,
              class = typename std::enable_if<ccl::is_class_supported<buffer_container_type>()>::type>
-    col_request_t allreduce(const buffer_container_type& send_buf,
-                            buffer_container_type& recv_buf,
-                            size_t count,
-                            ccl::reduction reduction,
-                            const ccl::coll_attr* attr = nullptr,
-                            const ccl::stream_t& stream = ccl::stream_t());
+    coll_request_t allreduce(const buffer_container_type& send_buf,
+                             buffer_container_type& recv_buf,
+                             size_t count,
+                             ccl::reduction reduction,
+                             const ccl::coll_attr* attr = nullptr,
+                             const ccl::stream_t& stream = ccl::stream_t());
     /**
      * Collective operation that blocks each process until every process have reached it
      */
@@ -271,13 +271,13 @@ public:
      * @param dtype data type of elements in the buffer @c buf
      * @param root the rank of the process that will transmit @c buf
      * @param attr optional attributes that customize operation
-     * @return @ref ccl::communicator::col_request_t object that can be used to track the progress of the operation
+     * @return @ref ccl::communicator::coll_request_t object that can be used to track the progress of the operation
      */
-    col_request_t bcast(void* buf, size_t count,
-                        ccl::data_type dtype,
-                        size_t root,
-                        const ccl::coll_attr* attr = nullptr,
-                        const ccl::stream_t& stream = ccl::stream_t());
+    coll_request_t bcast(void* buf, size_t count,
+                         ccl::data_type dtype,
+                         size_t root,
+                         const ccl::coll_attr* attr = nullptr,
+                         const ccl::stream_t& stream = ccl::stream_t());
 
     /**
      * Type safety version:
@@ -287,14 +287,14 @@ public:
      * @param count number of elements of type @c buffer_type in @c buf
      * @param root the rank of the process that will transmit @c buf
      * @param attr optional attributes that customize operation
-     * @return @ref col_request_t object that can be used to track the progress of the operation
+     * @return @ref coll_request_t object that can be used to track the progress of the operation
      */
     template<class buffer_type,
              class = typename std::enable_if<ccl::is_native_type_supported<buffer_type>()>::type>
-    col_request_t bcast(buffer_type* buf, size_t count,
-                        size_t root,
-                        const ccl::coll_attr* attr = nullptr,
-                        const ccl::stream_t& stream = ccl::stream_t());
+    coll_request_t bcast(buffer_type* buf, size_t count,
+                         size_t root,
+                         const ccl::coll_attr* attr = nullptr,
+                         const ccl::stream_t& stream = ccl::stream_t());
 
     /**
      * Type safety version:
@@ -304,14 +304,14 @@ public:
      * @param count number of elements in @c buf
      * @param root the rank of the process that will transmit @c buf
      * @param attr optional attributes that customize operation
-     * @return @ref col_request_t object that can be used to track the progress of the operation
+     * @return @ref coll_request_t object that can be used to track the progress of the operation
      */
     template<class buffer_container_type,
              class = typename std::enable_if<ccl::is_class_supported<buffer_container_type>()>::type>
-    col_request_t bcast(buffer_container_type& buf, size_t count,
-                        size_t root,
-                        const ccl::coll_attr* attr = nullptr,
-                        const ccl::stream_t& stream = ccl::stream_t());
+    coll_request_t bcast(buffer_container_type& buf, size_t count,
+                         size_t root,
+                         const ccl::coll_attr* attr = nullptr,
+                         const ccl::stream_t& stream = ccl::stream_t());
 
 
     /**
@@ -325,15 +325,15 @@ public:
      * @param reduction type of reduction operation to be applied
      * @param root the rank of the process that will held result of reduction
      * @param attr optional attributes that customize operation
-     * @return @ref col_request_t object that can be used to track the progress of the operation
+     * @return @ref coll_request_t object that can be used to track the progress of the operation
      */
-    col_request_t reduce(const void* send_buf, void* recv_buf,
-                         size_t count,
-                         ccl::data_type dtype,
-                         ccl::reduction reduction,
-                         size_t root,
-                         const ccl::coll_attr* attr = nullptr,
-                         const ccl::stream_t& stream = ccl::stream_t());
+    coll_request_t reduce(const void* send_buf, void* recv_buf,
+                          size_t count,
+                          ccl::data_type dtype,
+                          ccl::reduction reduction,
+                          size_t root,
+                          const ccl::coll_attr* attr = nullptr,
+                          const ccl::stream_t& stream = ccl::stream_t());
 
     /**
      * Type safety version:
@@ -346,16 +346,16 @@ public:
      * @param reduction type of reduction operation to be applied
      * @param root the rank of the process that will held result of reduction
      * @param attr optional attributes that customize operation
-     * @return @ref ccl::communicator::col_request_t object that can be used to track the progress of the operation
+     * @return @ref ccl::communicator::coll_request_t object that can be used to track the progress of the operation
      */
     template<class buffer_type,
              class = typename std::enable_if<ccl::is_native_type_supported<buffer_type>()>::type>
-    col_request_t reduce(const buffer_type* send_buf, buffer_type* recv_buf,
-                         size_t count,
-                         ccl::reduction reduction,
-                         size_t root,
-                         const ccl::coll_attr* attr = nullptr,
-                         const ccl::stream_t& stream = ccl::stream_t());
+    coll_request_t reduce(const buffer_type* send_buf, buffer_type* recv_buf,
+                          size_t count,
+                          ccl::reduction reduction,
+                          size_t root,
+                          const ccl::coll_attr* attr = nullptr,
+                          const ccl::stream_t& stream = ccl::stream_t());
 
     /**
      * Type safety version:
@@ -368,16 +368,16 @@ public:
      * @param reduction type of reduction operation to be applied
      * @param root the rank of the process that will held result of reduction
      * @param attr optional attributes that customize operation
-     * @return @ref ccl::communicator::col_request_t object that can be used to track the progress of the operation
+     * @return @ref ccl::communicator::coll_request_t object that can be used to track the progress of the operation
      */
     template<class buffer_container_type,
              class = typename std::enable_if<ccl::is_class_supported<buffer_container_type>()>::type>
-    col_request_t reduce(const buffer_container_type& send_buf, buffer_container_type& recv_buf,
-                         size_t count,
-                         ccl::reduction reduction,
-                         size_t root,
-                         const ccl::coll_attr* attr = nullptr,
-                         const ccl::stream_t& stream = ccl::stream_t());
+    coll_request_t reduce(const buffer_container_type& send_buf, buffer_container_type& recv_buf,
+                          size_t count,
+                          ccl::reduction reduction,
+                          size_t root,
+                          const ccl::coll_attr* attr = nullptr,
+                          const ccl::stream_t& stream = ccl::stream_t());
 
 
     /**
@@ -395,17 +395,17 @@ public:
      * @param value_dtype data type of elements in the buffer @c send_val_buf and @c recv_val_buf
      * @param reduction type of reduction operation to be applied
      * @param attr optional attributes that customize operation
-     * @return @ref ccl::communicator::col_request_t object that can be used to track the progress of the operation
+     * @return @ref ccl::communicator::coll_request_t object that can be used to track the progress of the operation
      */
-    col_request_t sparse_allreduce(const void* send_ind_buf, size_t send_ind_count,
-                                   const void* send_val_buf, size_t send_val_count,
-                                   void** recv_ind_buf, size_t* recv_ind_count,
-                                   void** recv_val_buf, size_t* recv_val_count,
-                                   ccl::data_type index_dtype,
-                                   ccl::data_type value_dtype,
-                                   ccl::reduction reduction,
-                                   const ccl::coll_attr* attr = nullptr,
-                                   const ccl::stream_t& stream = ccl::stream_t());
+    coll_request_t sparse_allreduce(const void* send_ind_buf, size_t send_ind_count,
+                                    const void* send_val_buf, size_t send_val_count,
+                                    void** recv_ind_buf, size_t* recv_ind_count,
+                                    void** recv_val_buf, size_t* recv_val_count,
+                                    ccl::data_type index_dtype,
+                                    ccl::data_type value_dtype,
+                                    ccl::reduction reduction,
+                                    const ccl::coll_attr* attr = nullptr,
+                                    const ccl::stream_t& stream = ccl::stream_t());
 
     /**
      * Type safety version:
@@ -426,13 +426,13 @@ public:
     template<class index_buffer_type,
              class value_buffer_type,
              class = typename std::enable_if<ccl::is_native_type_supported<value_buffer_type>()>::type>
-    col_request_t sparse_allreduce(const index_buffer_type* send_ind_buf, size_t send_ind_count,
-                                   const value_buffer_type* send_val_buf, size_t send_val_count,
-                                   index_buffer_type** recv_ind_buf, size_t* recv_ind_count,
-                                   value_buffer_type** recv_val_buf, size_t* recv_val_count,
-                                   ccl::reduction reduction,
-                                   const ccl::coll_attr* attr = nullptr,
-                                   const ccl::stream_t& stream = ccl::stream_t());
+    coll_request_t sparse_allreduce(const index_buffer_type* send_ind_buf, size_t send_ind_count,
+                                    const value_buffer_type* send_val_buf, size_t send_val_count,
+                                    index_buffer_type** recv_ind_buf, size_t* recv_ind_count,
+                                    value_buffer_type** recv_val_buf, size_t* recv_val_count,
+                                    ccl::reduction reduction,
+                                    const ccl::coll_attr* attr = nullptr,
+                                    const ccl::stream_t& stream = ccl::stream_t());
 
     /**
      * Type safety version:
@@ -453,13 +453,13 @@ public:
     template<class index_buffer_container_type,
              class value_buffer_container_type,
              class = typename std::enable_if<ccl::is_class_supported<value_buffer_container_type>()>::type>
-    col_request_t sparse_allreduce(const index_buffer_container_type& send_ind_buf, size_t send_ind_count,
-                                   const value_buffer_container_type& send_val_buf, size_t send_val_count,
-                                   index_buffer_container_type** recv_ind_buf, size_t* recv_ind_count,
-                                   value_buffer_container_type** recv_val_buf, size_t* recv_val_count,
-                                   ccl::reduction reduction,
-                                   const ccl::coll_attr* attr = nullptr,
-                                   const ccl::stream_t& stream = ccl::stream_t());
+    coll_request_t sparse_allreduce(const index_buffer_container_type& send_ind_buf, size_t send_ind_count,
+                                    const value_buffer_container_type& send_val_buf, size_t send_val_count,
+                                    index_buffer_container_type** recv_ind_buf, size_t* recv_ind_count,
+                                    value_buffer_container_type** recv_val_buf, size_t* recv_val_count,
+                                    ccl::reduction reduction,
+                                    const ccl::coll_attr* attr = nullptr,
+                                    const ccl::stream_t& stream = ccl::stream_t());
 
 private:
     friend class environment;

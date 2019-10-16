@@ -66,10 +66,9 @@ where all elements are equal to (#processes * (#processes - 1) / 2) since it rep
     comm.allreduce(&sendbuf,
                    &recvbuf,
                    COUNT,
-                   ccl::data_type::dt_int,
                    ccl::reduction::sum,
                    nullptr, /* attr */
-                   &stream)->wait();
+                   stream)->wait();
 
 
 

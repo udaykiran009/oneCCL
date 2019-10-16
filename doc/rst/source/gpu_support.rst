@@ -2,7 +2,7 @@ GPU support
 ===========
 
 The choice between CPU and GPU backends is performed by specifying ``ccl_stream_type`` value at the moment of creating ccl stream object.
-For GPU backend one should specify ``ccl_stream_sycl`` as the first argument. For collective operations, which operate on SYCL* stream, oneCCL expects communication buffers to be ``sycl::buffer`` objects casted to ``void*``.
+For GPU backend one should specify ``ccl_stream_sycl`` as the first argument. For collective operations, which operate on SYCL* stream, C version of oneCCL API expects communication buffers to be ``sycl::buffer*`` objects casted to ``void*``.
 
 The example below demonstrates these concepts.
 
@@ -70,7 +70,6 @@ where all elements are equal to (#processes * (#processes - 1) / 2) since it rep
     comm.allreduce(sendbuf,
                    recvbuf,
                    COUNT,
-                   ccl::data_type::dt_int,
                    ccl::reduction::sum,
                    nullptr, /* attr */
                    stream)->wait();
