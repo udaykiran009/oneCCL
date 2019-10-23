@@ -17,3 +17,5 @@ _deb/
 doc/doxygen/xml
 doc/rst/build/
 doc/rst/source/api
+doc/spec/build/
+doc/spec/source/spec

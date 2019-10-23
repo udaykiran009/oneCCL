@@ -11,7 +11,7 @@ The documentation is written using the restructured text markup language (also r
 
 Once you have the software requirements set up, go to the `doc` directory and run the commmands described in the next section.
 
-## Building ##
+## Building Documentation ##
 
 1. Install the required Python* libraries using `pip`:
   ```bash
@@ -19,7 +19,17 @@ Once you have the software requirements set up, go to the `doc` directory and ru
   ```
 2. Run `build_docs.sh` to generate documentation.
 
-  The `build_docs.sh` script generates the Doxygen XML tree from the source code, parses the generated output, converts it into reST format, and then generates the HTML output from all the `.rst` files in the `docs/rst/sources` directory.
+  The `build_docs.sh` script generates the Doxygen XML tree from the source code, parses the generated output, converts it into reST format, and then generates the HTML output from all the `.rst` files in the `doc/rst/sources` directory.
+
+## Building Specifications ##
+
+1. Install the required Python* libraries using `pip`: 
+  ```bash
+  pip install -r requirements.txt
+  ```
+2. Run `build_spec.sh` to generate oneCCL specifications. 
+
+  The `build_spec.sh` script copies the relevant topics from `doc/rst/source` and then generates the HTML output from the source files in `doc/spec/source` folder. 
 
 ## Configure Doxygen ##
 

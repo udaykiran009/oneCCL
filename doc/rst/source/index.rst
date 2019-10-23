@@ -33,10 +33,14 @@ Contents:
    :maxdepth: 1
    :caption: Programming Model
 
-   generic_workflow.rst
-   dl_frameworks_support.rst
-   gpu_support.rst
-   cpu_support.rst
+   spec/generic_workflow.rst
+   spec/main_objects.rst
+   spec/communication_primitives.rst
+   spec/completion.rst
+   spec/error_handling.rst
+   spec/ccl_datatypes.rst
+   spec/gpu_support.rst
+   spec/cpu_support.rst
 
 .. toctree::
    :maxdepth: 1
