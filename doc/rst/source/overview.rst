@@ -1,7 +1,7 @@
 Overview
 ============================
 
-oneAPI Collective Communications Library (oneCCL) is a scalable and high-performance communication library for Deep Learning (DL) and Machine Learning (ML) workloads. It develops the ideas originated in Intel(R) Machine Learning Scaling Library and expands the design and API to encompass new features and use cases.
+Intel® oneAPI Collective Communications Library (oneCCL) is a scalable and high-performance communication library for Deep Learning (DL) and Machine Learning (ML) workloads. It develops the ideas originated in Intel(R) Machine Learning Scaling Library and expands the design and API to encompass new features and use cases.
 
 oneCCL features include:
 
