@@ -1,5 +1,5 @@
 ------------------------------------------------------------------------------
-Intel(R) oneAPI oneAPI Collective Communications Library for Linux* OS
+Intel(R) oneAPI Collective Communications Library for Linux* OS
 Release Notes
 ------------------------------------------------------------------------------
 

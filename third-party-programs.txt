@@ -5,13 +5,13 @@ associated license agreement, the listed third party programs files are subject
 to the corresponding third party licenses that solely and exclusively govern 
 your use of the third party programs.
 
-This third-party-programs.txt file applies to oneAPI Collective
-Communications Library (oneCCL) 2021.1-beta02.
+This third-party-programs.txt file applies to Intel(R) oneAPI Collective
+Communications Library (oneCCL) 2021.1-beta03.
 
 This third-party-programs.txt file contains a list of licenses and links to the 
 oneCCL components' third-party-programs.txt files.
 
-The combination of all these files covers oneCCL 2021.1-beta02.
+The combination of all these files covers oneCCL 2021.1-beta03.
 
 List of Third Party Programs:
     -MPICH*: BSD License

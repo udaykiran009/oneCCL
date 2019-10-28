@@ -1,9 +1,9 @@
 #%Module1.0#####################################################################
 ##
-## oneAPI Collective Communications Library modulefile
+## Intel(R) oneAPI Collective Communications Library modulefile
 ##
 
-module-whatis	"Sets up the oneAPI Collective Communications Library environment"
+module-whatis	"Sets up the Intel(R) oneAPI Collective Communications Library environment"
 
 set                topdir                               %INSTALL_PATH%
 
