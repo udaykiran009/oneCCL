@@ -146,6 +146,12 @@ void ccl_sched_base::alloc_buffers_for_sycl_copy()
             param.send_buf = alloc_buffer(param.count * ccl_datatype_get_size(param.dtype)).get_ptr();
             param.recv_buf = alloc_buffer(param.count * ccl_datatype_get_size(param.dtype)).get_ptr();
             break;
+        case ccl_coll_alltoall:
+            param.sycl_send_buf = static_cast<ccl_sycl_buffer_t*>((void*)param.send_buf);
+            param.sycl_recv_buf = static_cast<ccl_sycl_buffer_t*>(param.recv_buf);
+            param.send_buf = alloc_buffer(param.count * ccl_datatype_get_size(param.dtype) * param.comm->size()).get_ptr();
+            param.recv_buf = alloc_buffer(param.count * ccl_datatype_get_size(param.dtype) * param.comm->size()).get_ptr();
+            break;
         case ccl_coll_bcast:
             param.sycl_buf = static_cast<ccl_sycl_buffer_t*>(param.buf);
             param.buf = alloc_buffer(param.count * ccl_datatype_get_size(param.dtype)).get_ptr();

@@ -237,6 +237,23 @@ atl_mpi_comm_allreduce(atl_comm_t *comm, const void *send_buf, void *recv_buf, s
 }
 
 static atl_status_t
+atl_mpi_comm_alltoall(atl_comm_t *comm, const void *send_buf, void *recv_buf,
+                      size_t len, atl_req_t *req)
+{
+    atl_mpi_comm_context_t *comm_context =
+        container_of(comm, atl_mpi_comm_context_t, atl_comm);
+    atl_mpi_req_t *mpi_req = ((atl_mpi_req_t *)req->internal);
+    int ret = MPI_SUCCESS;
+
+    ret = MPI_Ialltoall((send_buf == recv_buf) ? MPI_IN_PLACE : send_buf, len,  MPI_CHAR,
+                        recv_buf, len, MPI_CHAR,
+                        comm_context->mpi_comm, &mpi_req->mpi_context);
+    mpi_req->comp_state = ATL_MPI_COMP_POSTED;
+
+    return RET2ATL(ret);
+}
+
+static atl_status_t
 atl_mpi_comm_barrier(atl_comm_t *comm, atl_req_t *req)
 {
     atl_mpi_comm_context_t *comm_context =
@@ -360,6 +377,7 @@ static atl_coll_ops_t atl_mpi_comm_coll_ops = {
     .allreduce = atl_mpi_comm_allreduce,
     .reduce = atl_mpi_comm_reduce,
     .allgatherv = atl_mpi_comm_allgatherv,
+    .alltoall = atl_mpi_comm_alltoall,
     .bcast = atl_mpi_comm_bcast,
     .barrier = atl_mpi_comm_barrier,
 };

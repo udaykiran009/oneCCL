@@ -326,6 +326,32 @@ ccl_status_t CCL_API ccl_allreduce(
     COMMON_CATCH_BLOCK();
 }
 
+ccl_status_t CCL_API ccl_alltoall(
+    const void* send_buf,
+    void* recv_buf,
+    size_t count,
+    ccl_datatype_t dtype,
+    const ccl_coll_attr_t* attr,
+    ccl_comm_t comm,
+    ccl_stream_t stream,
+    ccl_request_t* req)
+{
+    CCL_CHECK_IS_BLOCKED();
+    try
+    {
+        if (!req)
+        {
+            return ccl_status_invalid_arguments;
+        }
+        auto request = ccl_alltoall_impl(send_buf, recv_buf, count, dtype, attr,
+                                         (comm) ? static_cast<ccl_comm*>(comm) : global_data.comm.get(),
+                                         static_cast<const ccl_stream*>(stream));
+        *req = static_cast<ccl_request_t>(request);
+        return ccl_status_success;
+    }
+    COMMON_CATCH_BLOCK();
+}
+
 ccl_status_t CCL_API ccl_barrier(ccl_comm_t comm, ccl_stream_t stream)
 {
     try

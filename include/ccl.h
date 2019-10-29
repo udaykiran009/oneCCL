@@ -34,6 +34,16 @@ ccl_status_t CCL_API ccl_allreduce(
     ccl_stream_t stream,
     ccl_request_t* req);
 
+ccl_status_t CCL_API ccl_alltoall(
+    const void* send_buf,
+    void* recv_buf,
+    size_t count,
+    ccl_datatype_t dtype,
+    const ccl_coll_attr_t* attr,
+    ccl_comm_t comm,
+    ccl_stream_t stream,
+    ccl_request_t* req);
+
 ccl_status_t CCL_API ccl_barrier(ccl_comm_t comm,
                                  ccl_stream_t stream);
 

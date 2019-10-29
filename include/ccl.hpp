@@ -258,6 +258,61 @@ public:
                              ccl::reduction reduction,
                              const ccl::coll_attr* attr = nullptr,
                              const ccl::stream_t& stream = ccl::stream_t());
+
+    /**
+     * Each process sends distinct data to each of the receivers. The j-th block sent from process i is received
+     * by process j and is placed in the i-th block of recvbuf.
+     * @param send_buf the buffer with @c count elements of @c dtype that stores local data
+     * @param recv_buf [out] - the buffer to store received result , must have the N * dimension
+     * of @c buf, where N - communicator size.
+     * @param count number of elements to send / receive from each process
+     * @param dtype data type of elements in the buffer @c buf and @c recv_buf
+     * @param attr optional attributes that customize operation
+     * @return @ref ccl::request object that can be used to track the progress of the operation
+     */
+    coll_request_t alltoall(const void* send_buf, void* recv_buf,
+                            size_t count, ccl::data_type dtype,
+                            const ccl::coll_attr* attr = nullptr,
+                            const ccl::stream_t& stream = ccl::stream_t());
+
+    /**
+     * Each process sends distinct data to each of the receivers. The j-th block sent from process i is received
+     * by process j and is placed in the i-th block of recvbuf.
+     * @param send_buf the buffer with @c count elements of @c dtype that stores local data
+     * @param recv_buf [out] - the buffer to store received result , must have the N * dimension
+     * of @c buf, where N - communicator size.
+     * @param count number of elements to send / receive from each process
+     * @param dtype data type of elements in the buffer @c buf and @c recv_buf
+     * @param attr optional attributes that customize operation
+     * @return @ref ccl::request object that can be used to track the progress of the operation
+     */
+    template<class buffer_type,
+        class = typename std::enable_if<ccl::is_native_type_supported<buffer_type>()>::type>
+    coll_request_t alltoall(const buffer_type* send_buf,
+                            buffer_type* recv_buf,
+                            size_t count,
+                            const ccl::coll_attr* attr = nullptr,
+                            const ccl::stream_t& stream = ccl::stream_t());
+
+    /**
+     * Each process sends distinct data to each of the receivers. The j-th block sent from process i is received
+     * by process j and is placed in the i-th block of recvbuf.
+     * @param send_buf the buffer with @c count elements of @c dtype that stores local data
+     * @param recv_buf [out] - the buffer to store received result , must have the N * dimension
+     * of @c buf, where N - communicator size.
+     * @param count number of elements to send / receive from each process
+     * @param dtype data type of elements in the buffer @c buf and @c recv_buf
+     * @param attr optional attributes that customize operation
+     * @return @ref ccl::request object that can be used to track the progress of the operation
+     */
+    template<class buffer_container_type,
+        class = typename std::enable_if<ccl::is_class_supported<buffer_container_type>()>::type>
+    coll_request_t alltoall(const buffer_container_type& send_buf,
+                            buffer_container_type& recv_buf,
+                            size_t count,
+                            const ccl::coll_attr* attr = nullptr,
+                            const ccl::stream_t& stream = ccl::stream_t());
+
     /**
      * Collective operation that blocks each process until every process have reached it
      */

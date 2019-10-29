@@ -31,6 +31,9 @@ void ccl_sched_key::set(const ccl_coll_param& param,
             count1 = param.count;
             reduction = param.reduction;
             break;
+        case ccl_coll_alltoall:
+            count1 = param.count;
+            break;
         case ccl_coll_barrier:
             break;
         case ccl_coll_bcast:
@@ -75,6 +78,9 @@ bool ccl_sched_key::check(const ccl_coll_param& param, const ccl_coll_attr& attr
         case ccl_coll_allreduce:
             result &= (param.count == count1 &&
                        param.reduction == reduction);
+            break;
+        case ccl_coll_alltoall:
+            result &= (param.count == count1);
             break;
         case ccl_coll_barrier:
             break;

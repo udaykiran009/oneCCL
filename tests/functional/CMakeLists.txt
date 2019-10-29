@@ -89,3 +89,7 @@ endforeach()
 foreach(algo direct; rabenseifner; tree; double_tree)
 add_test (NAME reduce_test_mpi_${algo} CONFIGURATIONS mpi_reduce_${algo} COMMAND mpiexec.hydra -l -n 2 -ppn 1 ${CCL_INSTALL_TESTS}/reduce_test --gtest_output=xml:${CCL_INSTALL_TESTS}/reduce_test_mpi_runtime_adjust_${algo}_report.junit.xml)
 endforeach()
+
+foreach(algo direct; scatter; scatter_message)
+add_test (NAME alltoall_test_mpi_${algo} CONFIGURATIONS mpi_alltoall_${algo} COMMAND mpiexec.hydra -l -n 2 -ppn 1 ${CCL_INSTALL_TESTS}/alltoall_test --gtest_output=xml:${CCL_INSTALL_TESTS}/alltoall_test_mpi_runtime_adjust_${algo}_report.junit.xml)
+endforeach()

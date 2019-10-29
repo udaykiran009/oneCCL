@@ -24,6 +24,7 @@ constexpr const char* CCL_ATL_SHM = "CCL_ATL_SHM";
 
 constexpr const char* CCL_ALLGATHERV = "CCL_ALLGATHERV";
 constexpr const char* CCL_ALLREDUCE = "CCL_ALLREDUCE";
+constexpr const char* CCL_ALLTOALL = "CCL_ALLTOALL";
 constexpr const char* CCL_BARRIER = "CCL_BARRIER";
 constexpr const char* CCL_BCAST = "CCL_BCAST";
 constexpr const char* CCL_REDUCE = "CCL_REDUCE";
@@ -79,6 +80,7 @@ struct alignas(CACHELINE_SIZE) ccl_env_data
     */
     std::string allgatherv_algo_raw;
     std::string allreduce_algo_raw;
+    std::string alltoall_algo_raw;
     std::string barrier_algo_raw;
     std::string bcast_algo_raw;
     std::string reduce_algo_raw;

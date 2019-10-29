@@ -21,6 +21,7 @@
 #include "sched/entry/coll/coll_entry.hpp"
 #include "sched/entry/coll/allgatherv_entry.hpp"
 #include "sched/entry/coll/allreduce_entry.hpp"
+#include "sched/entry/coll/alltoall_entry.hpp"
 #include "sched/entry/coll/barrier_entry.hpp"
 #include "sched/entry/coll/bcast_entry.hpp"
 #include "sched/entry/coll/reduce_entry.hpp"

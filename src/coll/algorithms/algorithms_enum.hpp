@@ -1,7 +1,7 @@
 #pragma once
 
 #define CCL_COLL_LIST \
-  ccl_coll_allgatherv, ccl_coll_allreduce, \
+  ccl_coll_allgatherv, ccl_coll_allreduce, ccl_coll_alltoall, \
   ccl_coll_barrier, ccl_coll_bcast, ccl_coll_reduce, \
   ccl_coll_sparse_allreduce
 
@@ -28,6 +28,14 @@ enum ccl_coll_allreduce_algo
     ccl_coll_allreduce_last_value
 };
 
+enum ccl_coll_alltoall_algo
+{
+    ccl_coll_alltoall_direct,
+    ccl_coll_alltoall_scatter,
+    ccl_coll_alltoall_scatter_message,
+
+    ccl_coll_alltoall_last_value
+};
 enum ccl_coll_barrier_algo
 {
     ccl_coll_barrier_direct,
@@ -70,6 +78,7 @@ enum ccl_coll_type
 {
     ccl_coll_allgatherv,
     ccl_coll_allreduce,
+    ccl_coll_alltoall,
     ccl_coll_barrier,
     ccl_coll_bcast,
     ccl_coll_reduce,

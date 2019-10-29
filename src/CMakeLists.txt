@@ -9,6 +9,7 @@ set(CCL_SRC
     coll/algorithms/allgatherv.cpp
     coll/algorithms/allreduce.cpp
     coll/algorithms/allreduce_rma.cpp
+    coll/algorithms/alltoall.cpp
     coll/algorithms/barrier.cpp
     coll/algorithms/bcast.cpp
     coll/algorithms/double_tree_ops.cpp
@@ -16,6 +17,7 @@ set(CCL_SRC
     coll/coll.cpp
     coll/selection/coll/allgatherv.cpp
     coll/selection/coll/allreduce.cpp
+    coll/selection/coll/alltoall.cpp
     coll/selection/coll/barrier.cpp
     coll/selection/coll/bcast.cpp
     coll/selection/coll/reduce.cpp

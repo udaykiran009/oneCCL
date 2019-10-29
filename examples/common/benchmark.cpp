@@ -21,7 +21,7 @@
 #define MATCH_ID_SIZE     (256)
 
 /* different collectives with duplications */
-#define DEFAULT_COLL_LIST "allgatherv,allreduce,bcast,reduce,allgatherv,allreduce,bcast,reduce"
+#define DEFAULT_COLL_LIST "allgatherv,allreduce,alltoall,bcast,reduce,allgatherv,allreduce,bcast,reduce"
 
 typedef enum
 {
@@ -268,6 +268,19 @@ struct allreduce_strategy_impl
     {
         reqs.push_back(comm.allreduce(send_buf, recv_buf, count, ccl::reduction::sum,
                                       &coll_attr, stream));
+    }
+};
+
+struct alltoall_strategy_impl
+{
+    static constexpr const char* class_name() { return "alltoall"; }
+
+    template<class Dtype>
+    void start_internal(ccl::communicator &comm, size_t count, const Dtype send_buf, Dtype recv_buf,
+                        const ccl_coll_attr_t& coll_attr, ccl::stream_t& stream,
+                        req_list_t& reqs)
+    {
+        reqs.push_back(comm.alltoall(send_buf, recv_buf, count, &coll_attr, stream));
     }
 };
 
@@ -656,6 +669,175 @@ struct sycl_allreduce_coll : sycl_base_coll<Dtype, allreduce_strategy_impl>
 #endif /* CCL_ENABLE_SYCL */
 
 template<class Dtype>
+struct cpu_alltoall_coll : cpu_base_coll<Dtype, alltoall_strategy_impl>
+{
+    using coll_base = cpu_base_coll<Dtype, alltoall_strategy_impl>;
+    using coll_base::send_bufs;
+    using coll_base::recv_bufs;
+    using coll_base::stream;
+    using coll_base::single_send_buf;
+    using coll_base::single_recv_buf;
+    using coll_base::check_values;
+    using coll_base::comm;
+
+    cpu_alltoall_coll() : coll_base(base_coll::comm->size(), base_coll::comm->size()) {}
+
+    virtual void prepare(size_t elem_count) override
+    {
+        if (!check_values)
+            return;
+
+        for (size_t b_idx = 0; b_idx < BUF_COUNT; b_idx++)
+        {
+            for (size_t idx = 0; idx < comm->size(); idx++)
+            {
+                for (size_t e_idx = 0; e_idx < elem_count; e_idx++)
+                {
+                    ((Dtype*)send_bufs[b_idx])[idx * elem_count + e_idx] = comm->rank();
+                    ((Dtype*)recv_bufs[b_idx])[idx * elem_count + e_idx] = 0;
+                }
+            }
+        }
+    }
+
+    virtual void finalize(size_t elem_count) override
+    {
+        if (!check_values)
+            return;
+
+        Dtype sbuf_expected = comm->rank();
+        Dtype rbuf_expected;
+        Dtype value;
+        size_t comm_size = comm->size();
+        for (size_t b_idx = 0; b_idx < BUF_COUNT; b_idx++)
+        {
+
+            for (size_t e_idx = 0; e_idx < elem_count * comm_size; e_idx++)
+            {
+                value = ((Dtype*)send_bufs[b_idx])[e_idx];
+                rbuf_expected = e_idx / elem_count;
+                if (value != sbuf_expected)
+                {
+                    printf("%s: send_bufs: buf_idx %zu, elem_idx %zu, expected %f, got %f\n",
+                           this->name(), b_idx, e_idx, sbuf_expected, value);
+                    ASSERT(0, "unexpected value");
+                }
+
+                value = ((Dtype*)recv_bufs[b_idx])[e_idx];
+                if (value != rbuf_expected)
+                {
+                    printf("%s: recv_bufs: buf_idx %zu, elem_idx %zu, expected %f, got %f\n",
+                           this->name(), b_idx, e_idx, rbuf_expected, value);
+                    ASSERT(0, "unexpected value");
+                }
+            }
+        }
+    }
+};
+
+#ifdef CCL_ENABLE_SYCL
+template<class Dtype>
+struct sycl_alltoall_coll : sycl_base_coll<Dtype, alltoall_strategy_impl>
+{
+    using coll_base = sycl_base_coll<Dtype, alltoall_strategy_impl>;
+    using coll_base::send_bufs;
+    using coll_base::recv_bufs;
+    using coll_base::single_send_buf;
+    using coll_base::single_recv_buf;
+    using coll_base::check_values;
+    using coll_base::comm;
+
+    sycl_alltoall_coll() : coll_base(base_coll::comm->size(), base_coll::comm->size()) {}
+
+    virtual void prepare(size_t elem_count) override
+    {
+        if (!check_values)
+            return;
+
+        size_t local_rank = comm->rank();
+        for (size_t b_idx = 0; b_idx < BUF_COUNT; b_idx++)
+        {
+            sycl_queue.submit([&](handler& cgh)
+            {
+                auto send_buf = (static_cast<sycl_buffer_t<Dtype>*>(send_bufs[b_idx]));
+                auto recv_buf = (static_cast<sycl_buffer_t<Dtype>*>(recv_bufs[b_idx]));
+                auto send_buf_acc = send_buf->template get_access<mode::write>(cgh);
+                auto recv_buf_acc = recv_buf->template get_access<mode::write>(cgh);
+                cgh.parallel_for<class alltoall_buf_fill>(range<1>{elem_count*comm->size()}, [=](item<1> e_idx)
+                {
+                    send_buf_acc[e_idx] = local_rank;
+                    recv_buf_acc[e_idx] = 0;
+                });
+            });
+        }
+    }
+
+    virtual void finalize(size_t elem_count) override
+    {
+        if (!check_values)
+            return;
+
+        bool unexpected_device_value = false;
+        Dtype sbuf_expected = comm->rank();
+        size_t comm_size = comm->size();
+
+        for (size_t b_idx = 0; b_idx < BUF_COUNT; b_idx++)
+        {
+            sycl_queue.submit([&](handler& cgh)
+            {
+                auto send_buf = (static_cast<sycl_buffer_t<Dtype>*>(send_bufs[b_idx]));
+                auto recv_buf = (static_cast<sycl_buffer_t<Dtype>*>(recv_bufs[b_idx]));
+                auto send_buf_acc = send_buf->template get_access<mode::write>(cgh);
+                auto recv_buf_acc = recv_buf->template get_access<mode::write>(cgh);
+                cgh.parallel_for<class alltoall_buf_check>(range<1>{elem_count * comm_size}, [=](item<1> e_idx) mutable
+                {
+                    Dtype value = send_buf_acc[e_idx];
+                    Dtype rbuf_expected = static_cast<Dtype>(e_idx.get_id(0) / elem_count);
+                    if (value != sbuf_expected)
+                        unexpected_device_value = true;
+
+                    value = recv_buf_acc[e_idx];
+                    if (value != rbuf_expected)
+                        unexpected_device_value = true;
+                });
+            });
+        }
+
+        for (size_t b_idx = 0; b_idx < BUF_COUNT; b_idx++)
+        {
+            auto send_buf = (static_cast<sycl_buffer_t<Dtype>*>(send_bufs[b_idx]));
+            auto recv_buf = (static_cast<sycl_buffer_t<Dtype>*>(recv_bufs[b_idx]));
+            auto send_buf_acc = send_buf->template get_access<mode::read>();
+            auto recv_buf_acc = recv_buf->template get_access<mode::read>();
+
+            for (size_t e_idx = 0; e_idx < elem_count * comm_size; e_idx++)
+            {
+                Dtype value = send_buf_acc[e_idx];
+                Dtype rbuf_expected = e_idx / elem_count;
+                if (value != sbuf_expected)
+                {
+                    printf("%s: send_bufs: buf_idx %zu, elem_idx %zu, expected %f, got %f\n",
+                           this->name(), b_idx, e_idx, sbuf_expected, value);
+                    ASSERT(0, "unexpected value");
+                }
+
+                value = recv_buf_acc[e_idx];
+                if (value != rbuf_expected)
+                {
+                    printf("%s: recv_bufs: buf_idx %zu, elem_idx %zu, expected %f, got %f\n",
+                           this->name(), b_idx, e_idx, rbuf_expected, value);
+                    ASSERT(0, "unexpected value");
+                }
+            }
+        }
+
+        if (unexpected_device_value)
+            ASSERT(0, "unexpected value on device");
+    }
+};
+#endif /* CCL_ENABLE_SYCL */
+
+template<class Dtype>
 struct cpu_bcast_coll : cpu_base_coll<Dtype, bcast_strategy_impl>
 {
     using coll_base = cpu_base_coll<Dtype, bcast_strategy_impl>;
@@ -975,6 +1157,10 @@ void create_cpu_colls(const std::list<std::string>& names, coll_list_t& colls)
         {
             colls.emplace_back(new cpu_reduce_coll<Dtype>());
         }
+        else if (name == alltoall_strategy_impl::class_name())
+        {
+            colls.emplace_back(new cpu_alltoall_coll<Dtype>);
+        }
         else
         {
             ASSERT(0, "create_colls error, unknown coll name: %s", name.c_str());
@@ -997,6 +1183,10 @@ void create_sycl_colls(const std::list<std::string>& names, coll_list_t& colls)
         else if (name == allreduce_strategy_impl::class_name())
         {
             colls.emplace_back(new sycl_allreduce_coll<Dtype>());
+        }
+        else if (name == alltoall_strategy_impl::class_name())
+        {
+            colls.emplace_back(new sycl_alltoall_coll<Dtype>());
         }
         else if (name == bcast_strategy_impl::class_name())
         {

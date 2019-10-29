@@ -17,6 +17,7 @@ ccl_env_data env_data =
 
     .allgatherv_algo_raw = std::string(),
     .allreduce_algo_raw = std::string(),
+    .alltoall_algo_raw = std::string(),
     .barrier_algo_raw = std::string(),
     .bcast_algo_raw = std::string(),
     .reduce_algo_raw = std::string(),
@@ -118,6 +119,7 @@ void ccl_env_parse()
 
     ccl_env_2_string(CCL_ALLGATHERV, env_data.allgatherv_algo_raw);
     ccl_env_2_string(CCL_ALLREDUCE, env_data.allreduce_algo_raw);
+    ccl_env_2_string(CCL_ALLTOALL, env_data.alltoall_algo_raw);
     ccl_env_2_string(CCL_BARRIER, env_data.barrier_algo_raw);
     ccl_env_2_string(CCL_BCAST, env_data.bcast_algo_raw);
     ccl_env_2_string(CCL_REDUCE, env_data.reduce_algo_raw);
@@ -185,6 +187,8 @@ void ccl_env_print()
         env_data.allgatherv_algo_raw : CCL_ENV_NOT_SPECIFIED);
     LOG_INFO(CCL_ALLREDUCE, ": ", (env_data.allreduce_algo_raw.length()) ?
         env_data.allreduce_algo_raw : CCL_ENV_NOT_SPECIFIED);
+    LOG_INFO(CCL_ALLTOALL, ": ", (env_data.alltoall_algo_raw.length()) ?
+        env_data.alltoall_algo_raw : CCL_ENV_NOT_SPECIFIED);
     LOG_INFO(CCL_BARRIER, ": ", (env_data.barrier_algo_raw.length()) ?
         env_data.barrier_algo_raw : CCL_ENV_NOT_SPECIFIED);
     LOG_INFO(CCL_BCAST, ": ", (env_data.bcast_algo_raw.length()) ?

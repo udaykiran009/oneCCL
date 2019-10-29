@@ -275,6 +275,10 @@ run_tests()
                     do
                         CCL_REDUCE=$reduce ctest -VV -C mpi_reduce_$reduce
                     done
+                for alltoall in "direct" "scatter" "scatter_message"
+                    do
+                        CCL_ALLTOALL=$alltoall ctest -VV -C mpi_alltoall_$alltoall
+                    done
                ;;
            ofi_adjust )
                 export CCL_ATL_TRANSPORT=ofi
@@ -298,6 +302,10 @@ run_tests()
                 for reduce in "rabenseifner" "tree" "double_tree"
                     do
                         CCL_REDUCE=$reduce ctest -VV -C mpi_reduce_$reduce
+                    done
+                for alltoall in "scatter" "scatter_message"
+                    do
+                        CCL_ALLTOALL=$alltoall ctest -VV -C mpi_alltoall_$alltoall
                     done
                ;;
             priority_mode )

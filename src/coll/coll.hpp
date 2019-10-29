@@ -124,6 +124,12 @@ ccl_status_t ccl_coll_build_allreduce(ccl_sched* sched,
                                       ccl_datatype_internal_t dtype,
                                       ccl_reduction_t reduction);
 
+ccl_status_t ccl_coll_build_alltoall(ccl_sched* sched,
+                                     ccl_buffer send_buf,
+                                     ccl_buffer recv_buf,
+                                     size_t count,
+                                     ccl_datatype_internal_t dtype);
+
 ccl_status_t ccl_coll_build_barrier(ccl_sched* sched);
 
 ccl_status_t ccl_coll_build_bcast(ccl_sched* sched,
@@ -166,6 +172,14 @@ ccl_request* ccl_allreduce_impl(const void* send_buf,
                                 const ccl_coll_attr_t* attr,
                                 ccl_comm* comm,
                                 const ccl_stream* stream);
+
+ccl_request* ccl_alltoall_impl(const void* send_buf,
+                               void* recv_buf,
+                               size_t count,
+                               ccl_datatype_t dtype,
+                               const ccl_coll_attr_t* attr,
+                               ccl_comm* comm,
+                               const ccl_stream* stream);
 
 void ccl_barrier_impl(ccl_comm* comm,
                       const ccl_stream* stream);

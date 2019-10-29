@@ -684,15 +684,19 @@ struct TypedTestParam
                 else if (testParam.priorityStartType == PRT_RANDOM){
                     char* testUnorderedColl = getenv("CCL_UNORDERED_COLL");
                     if (testUnorderedColl && atoi(testUnorderedColl) == 1) {
-                        //size_t j;
-                        for (idx = 0; idx < bufferCount; idx++)
-                            startArr[idx] = idx;
-                        // for(int k=bufferCount; k>1; k--) {
-                        //    j = (rand() + processIdx) % k;
-                        //    int tmp = startArr[k-1];
-                        //    startArr[k-1] = startArr[j];
-                        //    startArr[j] = tmp;
-                        // }
+                        size_t buf_idx;
+                        srand(processIdx);
+                        for (buf_idx = 0; buf_idx < bufferCount; buf_idx++)
+                        {
+                            startArr[buf_idx] = buf_idx;
+                        }
+                        for(int idx=bufferCount; idx > 1; idx--)
+                        {
+                            buf_idx = rand() % idx;
+                            int tmp = startArr[idx-1];
+                            startArr[idx-1] = startArr[buf_idx];
+                            startArr[buf_idx] = tmp;
+                        }
                     }
                     else {
                     for (idx = 0; idx < bufferCount; idx++)
@@ -940,10 +944,10 @@ public:
                 if (param.processIdx % 2 ) {
                     std::vector<std::vector<T>> tmpBuf;
                     tmpBuf.resize(param.bufferCount);
-                    for (size_t i = 0; i < param.bufferCount; i++)
-                        tmpBuf[i].resize(param.elemCount * param.processCount * sizeof(T));
+                    for (size_t j = 0; j < param.bufferCount; j++)
+                        tmpBuf[j].resize(param.sendBuf[j].size());
                     for (size_t j = 0; j < param.bufferCount; j++) {
-                        for (size_t i = 0; i < param.elemCount; i++) {
+                        for (size_t i = 0; i < param.sendBuf[j].size(); i++) {
                             tmpBuf[j][i] = param.sendBuf[j][i];
                         }
                     }
