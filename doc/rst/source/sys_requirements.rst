@@ -6,9 +6,7 @@ This page provides information on software system requirements for oneCCL.
 Operating Systems
 *****************
 
-- Red Hat* Enterprise Linux* 7 or 8.
-- SuSE* Linux* Enterprise Server 12 or 15.
-- Ubuntu* 16.
+- Ubuntu* 18.
 
 
 Compilers
