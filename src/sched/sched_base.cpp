@@ -35,6 +35,12 @@ void ccl_sched_base::update_coll_param(const ccl_coll_param& param)
         coll_param.sparse_param.recv_ind_buf = param.sparse_param.recv_ind_buf;
         coll_param.sparse_param.recv_val_buf = param.sparse_param.recv_val_buf;
     }
+
+    if (coll_param.ctype == ccl_coll_allgatherv && env_data.enable_allgatherv_iov)
+    {
+        CCL_THROW_IF_NOT(coll_param.ag_recv_bufs.size() == coll_param.comm->size());
+        coll_param.ag_recv_bufs.assign((void**)param.recv_buf, (void**)param.recv_buf + coll_param.comm->size());
+    }
 }
 
 void ccl_sched_base::update_coll_attr(const ccl_coll_attr& attr)

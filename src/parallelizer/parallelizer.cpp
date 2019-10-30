@@ -125,6 +125,12 @@ ccl_status_t ccl_parallelizer::process(ccl_master_sched* sched)
                 part_count = coll_param->comm->size();
                 ag_recv_bufs.resize(coll_param->comm->size());
 
+                if (env_data.enable_allgatherv_iov)
+                {
+                    coll_param->ag_recv_bufs.assign((void**)coll_param->recv_buf,
+                                                    (void**)coll_param->recv_buf + coll_param->comm->size());
+                }
+
                 if (ag_algo == ccl_coll_allgatherv_multi_bcast)
                 {
                     ccl_coll_param bcast_param;
@@ -552,7 +558,7 @@ ccl_status_t ccl_parallelizer::process(ccl_master_sched* sched)
                 {
                     if (env_data.enable_allgatherv_iov)
                     {
-                        ag_recv_bufs[idx].set(&(((char**)coll_param->recv_buf)[idx]),
+                        ag_recv_bufs[idx].set(&(coll_param->ag_recv_bufs[idx]),
                                               counts[idx] * dtype_size,
                                               ccl_buffer_type::INDIRECT);
                     }

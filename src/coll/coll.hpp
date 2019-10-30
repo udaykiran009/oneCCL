@@ -97,6 +97,7 @@ struct ccl_coll_param
     const ccl_stream* stream;
     ccl_comm* comm;
     ccl_coll_sparse_param sparse_param;
+    std::vector<void*> ag_recv_bufs;
 
 #ifdef CCL_ENABLE_SYCL
     ccl_sycl_buffer_t* sycl_send_buf;
