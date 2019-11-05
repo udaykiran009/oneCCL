@@ -165,8 +165,8 @@ set_environment()
     else        
         if [ -z "${SYCL_BUNDLE_ROOT}" ]
         then
-        source  /nfs/inn/disks/nn-ssg_tcar_mpi_2Tb_unix/users/ksenyako/inteloneapi/compiler/latest/env/vars.sh intel64
-        SYCL_BUNDLE_ROOT="/nfs/inn/disks/nn-ssg_tcar_mpi_2Tb_unix/users/ksenyako/inteloneapi/compiler/latest/linux/"
+        source  /nfs/inn/disks/nn-ssg_tcar_mpi_2Tb_unix/users/ksenyako/inteloneapi/compiler/latest_beta02/env/vars.sh intel64
+        SYCL_BUNDLE_ROOT="/nfs/inn/disks/nn-ssg_tcar_mpi_2Tb_unix/users/ksenyako/inteloneapi/compiler/latest_beta02/linux/"
         fi
         BUILD_COMPILER=${SYCL_BUNDLE_ROOT}/bin
         C_COMPILER=${BUILD_COMPILER}/clang
@@ -185,7 +185,7 @@ set_environment()
     if [ -z "${IMPI_PATH}" ]
     then
         echo "WARNING: I_MPI_ROOT isn't set, last oneAPI pack will be used."
-        source /nfs/inn/disks/nn-ssg_tcar_mpi_2Tb_unix/Uploads/IMPI/linux/functional_testing/impi/oneAPI/impi_2021.1-beta01/env/vars.sh release_mt
+        source /nfs/inn/disks/nn-ssg_tcar_mpi_2Tb_unix/Uploads/IMPI/linux/functional_testing/impi/oneAPI/impi_2021.1-beta03/env/vars.sh release_mt
     else
         source ${IMPI_PATH}/env/vars.sh release_mt
     fi

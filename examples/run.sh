@@ -112,7 +112,7 @@ build()
     make clean_logs -f ./../Makefile > /dev/null 2>&1
     echo "Building"
     make all -f ./../Makefile &> $SCRIPT_DIR/$dir_name/build_${dir_name}_output.log
-    error_count=`grep -c 'error:'  $SCRIPT_DIR/$dir_name/build_${dir_name}_output.log` > /dev/null 2>&1
+    error_count=`grep -E -c 'error:|Aborted|failed'  $SCRIPT_DIR/$dir_name/build_${dir_name}_output.log` > /dev/null 2>&1
     if [ "${error_count}" != "0" ]
     then
         echo "building ... NOK"
