@@ -165,8 +165,8 @@ set_environment()
     else        
         if [ -z "${SYCL_BUNDLE_ROOT}" ]
         then
-        source  /nfs/inn/disks/nn-ssg_tcar_mpi_2Tb_unix/users/ksenyako/inteloneapi/compiler/latest_beta02/env/vars.sh intel64
-        SYCL_BUNDLE_ROOT="/nfs/inn/disks/nn-ssg_tcar_mpi_2Tb_unix/users/ksenyako/inteloneapi/compiler/latest_beta02/linux/"
+        source  /p/pdsd/Users/sys_ctlab/beta02/inteloneapi/compiler/2021.1-beta03/env/vars.sh intel64
+        SYCL_BUNDLE_ROOT="/nfs/inn/disks/nn-ssg_tcar_mpi_2Tb_unix/users/ksenyako/inteloneapi/compiler/latest/linux/"
         fi
         BUILD_COMPILER=${SYCL_BUNDLE_ROOT}/bin
         C_COMPILER=${BUILD_COMPILER}/clang

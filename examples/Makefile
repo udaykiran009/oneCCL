@@ -1,7 +1,7 @@
 ENABLE_DEBUG ?= 0
 SHELL = bash
 INCLUDES = -I$(CCL_ROOT)/include -I./../include
-LDFLAGS  = -L$(CCL_ROOT)/lib/ -lOpenCL -ldl -lpthread -lccl -lsycl -lstdc++ -lrt
+LDFLAGS  = -L$(CCL_ROOT)/lib/ -lOpenCL -ldl -lpthread -lccl -lsycl -lrt
 
 CXX         = clang++
 tests       =  $(patsubst %.cpp, %.out, $(wildcard *.cpp))
