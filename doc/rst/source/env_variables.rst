@@ -383,9 +383,9 @@ CCL_PM_TYPE
 
    * - <value>
      - Description
-   * - ``0``
+   * - ``simple``
      - Use PMI (process manager interface) with mpirun (**default**).
-   * - ``1``
+   * - ``resizable``
      - Use internal KVS (key-value storage) without mpirun.
 
 **Description**
@@ -408,9 +408,9 @@ CCL_KVS_IP_EXCHANGE
 
    * - <value>
      - Description
-   * - ``0``
+   * - ``k8s``
      - Use K8S for ip exchange (**default**).
-   * - ``1``
+   * - ``env``
      - Use specific environment to get master ip.
 
 **Description**
@@ -510,4 +510,27 @@ CCL_WORLD_SIZE
 **Description**
 
 Set this environment variable to specify number of oneCCL processes.
+
+
+CCL_JOB_NAME
+############
+**Syntax**
+
+``CCL_JOB_NAME=<value>``
+
+**Arguments**
+
+.. list-table::
+   :widths: 25 50
+   :header-rows: 1
+   :align: left
+
+   * - <value>
+     - Description
+   * - ``job_name``
+     - The name of the job.
+
+**Description**
+
+Set this label on the pods that should be connected with each other.
 

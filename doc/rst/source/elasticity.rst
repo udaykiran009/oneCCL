@@ -47,8 +47,9 @@ Without k8s manager
 
 To run ranks in k8s without k8s manager, e.g. set of pods:
 
--   :ref:`CCL_PM_TYPE` = 1
+-   :ref:`CCL_PM_TYPE` = resizable
 -   :ref:`CCL_K8S_API_ADDR` = k8s server address and port (in a format of IP:PORT)
+-   Set same label :ref:`CCL_JOB_NAME` = job_name on each pod
 -   Run your example
 
 Using k8s manager
@@ -56,7 +57,7 @@ Using k8s manager
 
 To run ranks in k8s use statefulset / deployment as a manager:
 
--   :ref:`CCL_PM_TYPE` = 1
+-   :ref:`CCL_PM_TYPE` = resizable
 -   :ref:`CCL_K8S_API_ADDR` = k8s server address
 -   :ref:`CCL_K8S_MANAGER_TYPE` = k8s
 -   Run your example
@@ -66,7 +67,7 @@ Without mpirun
 
 To run ranks without mpirun:
 
--   :ref:`CCL_PM_TYPE` = 1
--   :ref:`CCL_KVS_IP_EXCHANGE` = 1
+-   :ref:`CCL_PM_TYPE` = resizable
+-   :ref:`CCL_KVS_IP_EXCHANGE` = env
 -   :ref:`CCL_KVS_IP_PORT` = ip_port of one of your nodes where you run the example
 -   Run your example
