@@ -1,10 +1,10 @@
-Intel® oneAPI Collective Communications Library
-=========================================
+|product_full|
+=======================================================
    
-Intel® oneAPI Collective Communications Library (oneCCL) is a library that provides an efficient implementation of
+|product_full| (|product_short|) is a library that provides an efficient implementation of
 communication patterns used in deep learning. 
 
-oneCCL features include:
+|product_short| features include:
 
 - Built on top of lower-level communication middleware – MPI and libfabrics.
 - Optimized to drive scalability of communication patterns by allowing to easily trade-off compute for communication performance.
@@ -12,7 +12,7 @@ oneCCL features include:
 - Works across various interconnects: Intel(R) Omni-Path Architecture, InfiniBand*, and Ethernet.
 - Common API sufficient to support communication workflows within Deep Learning frameworks (Caffe*, nGraph*, Horovod*, etc.)
 
-oneCCL package comprises the oneCCL Software Development Kit (SDK) and the Intel(R) MPI Library Runtime components.
+|product_short| package comprises the |product_short| Software Development Kit (SDK) and the Intel(R) MPI Library Runtime components.
 
 Contents:
 =========
@@ -36,6 +36,7 @@ Contents:
    spec/generic_workflow.rst
    spec/main_objects.rst
    spec/communication_primitives.rst
+   spec/collective_call_attributes.rst
    spec/completion.rst
    spec/error_handling.rst
    spec/ccl_datatypes.rst

@@ -1,4 +1,4 @@
-oneCCL Data Types
+Data Types
 =================
 
 oneCCL specification defines the following data types that can be used for collective communication operations:

@@ -1,7 +1,47 @@
-Tracking Communication Progress
+Track Communication Progress
 ===============================
 
-The progress for any of the collective operations provided by oneCCL can be tracked using two functions: `Test`_  and `Wait`_
+The progress for any of the collective operations provided by oneCCL can be tracked using `Test`_ or `Wait`_ function for `Request`_ object. 
+
+Request
+*******
+
+Each collective communication operation of oneCCL returns a request that can be used
+to query completion of this operation or to block the execution while the operation is in progress.
+oneCCL request is an opaque handle that is managed by corresponding APIs.
+
+**C version of oneCCL API:**
+
+::
+
+    typedef void* ccl_request_t;
+
+**C++ version of oneCCL API:**
+
+::
+
+    /**
+    * A request interface that allows the user to track collective operation progress
+    */
+    class request
+    {
+    public:
+        /**
+        * Blocking wait for collective operation completion
+        */
+        virtual void wait() = 0;
+
+        /**
+        * Non-blocking check for collective operation completion
+        * @retval true if the operations has been completed
+        * @retval false if the operations has not been completed
+        */
+        virtual bool test() = 0;
+
+        virtual ~request() = default;
+    };
+
+
 
 Test
 ****
@@ -17,7 +57,10 @@ Non-blocking operation that returns the completion status.
 req
     requests the handle for communication operation being tracked
 is_completed
-    indicates the status: 0 - operation is in progress; otherwise, the operation is completed
+    indicates the status: 
+    
+      - 0 - operation is in progress 
+      - otherwise, the operation is completed
 
 **C++ version of oneCCL API:**
 
@@ -25,7 +68,10 @@ is_completed
 
     bool request::test();
 
-Returnes the value that indicates the status: 0 - operation is in progress; otherwise, the operation is completed.
+Returnes the value that indicates the status: 
+
+- 0 - operation is in progress 
+- otherwise, the operation is completed.
 
 Wait
 ****

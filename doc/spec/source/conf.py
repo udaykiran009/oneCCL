@@ -25,6 +25,14 @@ copyright = '2019'
 release = '2.0'
 
 
+
+rst_prolog = """
+.. |product_full| replace:: oneAPI Collective Communication Library
+.. |product_short| replace:: oneCCL
+.. |reg| unicode:: U+000AE
+.. |copy| unicode:: U+000A9
+"""
+
 # -- General configuration ---------------------------------------------------
 
 # Add any Sphinx extension module names here, as strings. They can be

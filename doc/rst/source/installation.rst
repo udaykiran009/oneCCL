@@ -3,7 +3,7 @@
 Installation guide
 ==================
 
-This page explains how to install and configure the Intel® oneAPI Collective Communications Library (oneCCL). 
+This page explains how to install and configure the |product_full| (|product_short|). 
 oneCCL supports a number of installation scenarios:
 
 * Installation using CLI 

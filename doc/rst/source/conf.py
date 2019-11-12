@@ -24,6 +24,13 @@ author = 'Intel'
 # The full version, including alpha/beta/rc tags
 release = '2.0'
 
+rst_prolog = """
+.. |product_full| replace:: Intel\ |reg|\  oneAPI Collective Communication Library
+.. |product_short| replace:: oneCCL
+.. |reg| unicode:: U+000AE
+.. |copy| unicode:: U+000A9
+.. |base_tk| replace:: Intel\ |reg|\  oneAPI Base Toolkit 
+"""
 
 # -- General configuration ---------------------------------------------------
 

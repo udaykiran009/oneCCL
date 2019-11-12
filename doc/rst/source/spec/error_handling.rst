@@ -1,4 +1,4 @@
-Error handling
+Error Handling
 ==============
 
 Error handling in oneCCL is implemented differently in C and C++ versions of API. 

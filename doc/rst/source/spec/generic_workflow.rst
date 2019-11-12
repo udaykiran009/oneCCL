@@ -3,21 +3,21 @@ Generic Workflow
 
 Below is a generic flow for using C++ API of oneCCL:
 
-1. Initialize the library:
+#. Initialize the library:
 
-::
+        ::
 
-        ccl::environment::instance();
+                ccl::environment::instance();
 
-2. or just Create communicator objects:
+   Alternatively, you can create communicator objects:
 
-::
+        ::
 
-        ccl::communicator_t comm = ccl::environment::instance().create_communicator();
+                ccl::communicator_t comm = ccl::environment::instance().create_communicator();
 
-3. Execute collective operation of choice on this communicator:
+#. Execute collective operation of choice on this communicator:
 
-::
+        ::
 
-        auto request = comm.allreduce(...);
-        request->wait();
+                auto request = comm.allreduce(...);
+                request->wait();

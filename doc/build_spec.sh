@@ -25,3 +25,8 @@ fi
 
 echo "Generating HTML using Sphinx..."
 sphinx-build -b html $SPEC_SOURCE_DIR $SPEC_RST_HTML_BUILD_DIR
+
+echo "Removing files from build/html"
+
+rm -r $SPEC_RST_HTML_BUILD_DIR/.doctrees
+rm -r $SPEC_RST_HTML_BUILD_DIR/.buildinfo
