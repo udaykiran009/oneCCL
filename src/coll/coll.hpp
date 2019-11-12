@@ -47,28 +47,6 @@ struct ccl_coll_attr
     std::string match_id;
 };
 
-struct ccl_coll_entry_param
-{
-    ccl_coll_type ctype;
-    ccl_buffer buf;
-    ccl_buffer send_buf;
-    ccl_buffer recv_buf;
-    size_t count;
-    size_t send_count;
-    ccl_buffer recv_counts;
-    ccl_datatype_internal_t dtype;
-    ccl_reduction_t reduction;
-    size_t root;
-    const ccl_stream* stream;
-    ccl_comm* comm;
-
-#ifdef CCL_ENABLE_SYCL
-    ccl_sycl_buffer_t* sycl_send_buf;
-    ccl_sycl_buffer_t* sycl_recv_buf;
-    ccl_sycl_buffer_t* sycl_buf;
-#endif /* CCL_ENABLE_SYCL */
-};
-
 struct ccl_coll_sparse_param
 {
     const void* send_ind_buf;
@@ -97,17 +75,25 @@ struct ccl_coll_param
     const ccl_stream* stream;
     ccl_comm* comm;
     ccl_coll_sparse_param sparse_param;
-    std::vector<void*> ag_recv_bufs;
 
 #ifdef CCL_ENABLE_SYCL
     ccl_sycl_buffer_t* sycl_send_buf;
     ccl_sycl_buffer_t* sycl_recv_buf;
     ccl_sycl_buffer_t* sycl_buf;
 #endif /* CCL_ENABLE_SYCL */
-
 };
 
-//ccl_coll_param create_coll_param_from_entry_param(ccl_coll_entry_param& prm);
+/*
+    explicitly split coll_param and coll_param_copy
+    to separate coll_param structure which is used for interaction between different modules
+    and coll_param_copy which is used as storage for user options
+*/
+struct ccl_coll_param_copy
+{
+    /* keep copy of user options which can be invalidated after collective call */
+    std::vector<void*> ag_recv_bufs;
+    std::vector<size_t> ag_recv_counts;
+};
 
 const char* ccl_coll_type_to_str(ccl_coll_type type);
 

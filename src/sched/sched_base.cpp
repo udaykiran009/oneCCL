@@ -26,7 +26,20 @@ void ccl_sched_base::update_coll_param(const ccl_coll_param& param)
     }
 #endif /* CCL_ENABLE_SYCL */
 
-    coll_param.recv_counts = param.recv_counts;
+    if (coll_param.ctype == ccl_coll_allgatherv)
+    {
+        coll_param.recv_counts = param.recv_counts;
+        CCL_THROW_IF_NOT(coll_param_copy.ag_recv_counts.size() == coll_param.comm->size());
+        coll_param_copy.ag_recv_counts.assign((size_t*)param.recv_counts,
+                                              (size_t*)param.recv_counts + coll_param.comm->size());
+
+        if (env_data.enable_allgatherv_iov)
+        {
+            CCL_THROW_IF_NOT(coll_param_copy.ag_recv_bufs.size() == coll_param.comm->size());
+            coll_param_copy.ag_recv_bufs.assign((void**)param.recv_buf,
+                                                (void**)param.recv_buf + coll_param.comm->size());
+        }
+    }
 
     if (coll_param.ctype == ccl_coll_sparse_allreduce)
     {
@@ -34,12 +47,6 @@ void ccl_sched_base::update_coll_param(const ccl_coll_param& param)
         coll_param.sparse_param.send_val_buf = param.sparse_param.send_val_buf;
         coll_param.sparse_param.recv_ind_buf = param.sparse_param.recv_ind_buf;
         coll_param.sparse_param.recv_val_buf = param.sparse_param.recv_val_buf;
-    }
-
-    if (coll_param.ctype == ccl_coll_allgatherv && env_data.enable_allgatherv_iov)
-    {
-        CCL_THROW_IF_NOT(coll_param.ag_recv_bufs.size() == coll_param.comm->size());
-        coll_param.ag_recv_bufs.assign((void**)param.recv_buf, (void**)param.recv_buf + coll_param.comm->size());
     }
 }
 

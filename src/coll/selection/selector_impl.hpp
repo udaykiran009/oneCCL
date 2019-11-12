@@ -63,7 +63,7 @@ void ccl_algorithm_selector_base<algo_group_type>::init()
             if (!std::getline(block_stream, algo_name_str, CCL_SELECTION_ALGO_DELIMETER))
                 CCL_THROW("can't parse algorithm name from string: ", str_to_parse, ", block: ", block);
         }
-        catch (std::istream::failure e)
+        catch (const std::istream::failure& e)
         {
             LOG_ERROR("exception happened: ", e.what(),
                       "\nerror bits are:\nfailbit: ", block_stream.fail(),
@@ -217,6 +217,12 @@ void ccl_algorithm_selector_base<algo_group_type>::print() const
         }
     }
     LOG_INFO(str.str());
+}
+
+template<typename algo_group_type>
+bool ccl_algorithm_selector_base<algo_group_type>::is_direct(const ccl_coll_param& param) const
+{
+    return ccl_algorithm_selector_helper<algo_group_type>::is_direct(get(param));
 }
 
 template<typename algo_group_type>

@@ -10,6 +10,7 @@ struct ccl_algorithm_selector_helper
 {
     static bool can_use(algo_group_type algo, const ccl_coll_param& param,
                         const ccl_selection_table_t<algo_group_type>& table);
+    static bool is_direct(algo_group_type algo);
     static const std::string& get_str_to_parse();
     static ccl_coll_type get_coll_id();
     static size_t get_count(const ccl_coll_param& param);

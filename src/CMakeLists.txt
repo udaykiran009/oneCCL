@@ -30,6 +30,8 @@ set(CCL_SRC
     sched/cache/key.cpp
     sched/queue/strict_queue.cpp
     sched/queue/queue.cpp
+    sched/entry/coll/coll_entry.cpp
+    sched/entry/coll/coll_entry_helper.cpp
     sched/entry/entry.cpp
     exec/exec.cpp
     exec/thread/base_thread.cpp

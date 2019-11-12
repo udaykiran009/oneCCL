@@ -19,12 +19,12 @@
 #include "sched/entry/chain_call_entry.hpp"
 #include "sched/entry/nop_entry.hpp"
 #include "sched/entry/coll/coll_entry.hpp"
-#include "sched/entry/coll/allgatherv_entry.hpp"
-#include "sched/entry/coll/allreduce_entry.hpp"
-#include "sched/entry/coll/alltoall_entry.hpp"
-#include "sched/entry/coll/barrier_entry.hpp"
-#include "sched/entry/coll/bcast_entry.hpp"
-#include "sched/entry/coll/reduce_entry.hpp"
+#include "sched/entry/coll/direct/allgatherv_entry.hpp"
+#include "sched/entry/coll/direct/allreduce_entry.hpp"
+#include "sched/entry/coll/direct/alltoall_entry.hpp"
+#include "sched/entry/coll/direct/barrier_entry.hpp"
+#include "sched/entry/coll/direct/bcast_entry.hpp"
+#include "sched/entry/coll/direct/reduce_entry.hpp"
 
 #ifdef CCL_ENABLE_SYCL
 #include "sched/entry/sycl_copy_device_to_host_entry.hpp"

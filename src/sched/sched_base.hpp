@@ -72,6 +72,8 @@ struct ccl_sched_base
 
     ccl_coll_attr coll_attr{};
 
+    ccl_coll_param_copy coll_param_copy{};
+
     /* sequence number of the schedule in the communicator */
     ccl_sched_id_t sched_id = 0;
     

@@ -192,6 +192,8 @@ ccl_status_t do_reduction_null(const void* in_buf, size_t in_count, void* inout_
 
 int main()
 {
+    /* TODO: enable prologue/epilogue testing for MPI backend */
+
     float send_buf[COUNT];
     float recv_buf[COUNT];
 

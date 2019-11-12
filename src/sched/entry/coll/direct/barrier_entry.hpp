@@ -1,6 +1,6 @@
 #pragma once
 
-#include "sched/entry/coll/base_coll_entry.hpp"
+#include "sched/entry/coll/direct/base_coll_entry.hpp"
 
 class barrier_entry : public base_coll_entry
 {

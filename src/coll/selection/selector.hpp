@@ -42,6 +42,7 @@ using ccl_selection_table_iter_t = typename ccl_selection_table_t<algo_group_typ
         void insert(ccl_selection_table_t<algo_group_type>& table, \
                     size_t left, size_t right,                     \
                     algo_group_type algo_id);                      \
+        bool is_direct(const ccl_coll_param& param) const;         \
     };                                                             \
 
 #define CCL_SELECTION_DECLARE_ALGO_SELECTOR(coll_id, algo_group_type) \

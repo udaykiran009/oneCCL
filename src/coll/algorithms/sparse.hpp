@@ -577,8 +577,8 @@ ccl_status_t ccl_coll_build_sparse_allreduce_size(ccl_sched* sched,
     param.ctype = ccl_coll_allgatherv;
     param.send_buf = ccl_buffer(&sa_handler->send_count, sizeof(size_t));
     param.recv_buf = ccl_buffer(sa_handler->recv_sizes, sizeof(size_t) * comm_size);
-    param.count = sizeof(size_t);
-    param.recv_counts = ccl_buffer(sa_handler->size_per_rank, sizeof(size_t) * comm_size);
+    param.send_count = sizeof(size_t);
+    param.recv_counts = sa_handler->size_per_rank;
     param.dtype = ccl_dtype_internal_char;
     param.comm = sched->coll_param.comm;
 
@@ -818,8 +818,8 @@ ccl_status_t ccl_coll_build_sparse_allreduce_mask(ccl_sched *sched,
     param_allgatherv.ctype = ccl_coll_allgatherv;
     param_allgatherv.send_buf = ccl_buffer(src_i, send_ind_count * itype_size);
     param_allgatherv.recv_buf = ccl_buffer(*sa_handler->recv_buf, itype_size * sa_handler->recv_count);
-    param_allgatherv.count = send_ind_count;
-    param_allgatherv.recv_counts = ccl_buffer(recv_counts, sizeof(size_t) * comm_size);
+    param_allgatherv.send_count = send_ind_count;
+    param_allgatherv.recv_counts = recv_counts;
     param_allgatherv.dtype = index_dtype;
     param_allgatherv.comm = sched->coll_param.comm;
 
@@ -1064,8 +1064,8 @@ ccl_status_t ccl_coll_build_sparse_allreduce_3_allgatherv(ccl_sched *sched,
     param.ctype = ccl_coll_allgatherv;
     param.send_buf = ccl_buffer(&sa_handler->send_count, sizeof(size_t));
     param.recv_buf = ccl_buffer(sa_handler->recv_counts, sizeof(size_t) * comm_size);
-    param.count = sizeof(size_t);
-    param.recv_counts = ccl_buffer(sa_handler->size_per_rank, sizeof(size_t) * comm_size);
+    param.send_count = sizeof(size_t);
+    param.recv_counts = sa_handler->size_per_rank;
     param.dtype = ccl_dtype_internal_char;
     param.comm = sched->coll_param.comm;
 
@@ -1079,8 +1079,8 @@ ccl_status_t ccl_coll_build_sparse_allreduce_3_allgatherv(ccl_sched *sched,
     param_i.ctype = ccl_coll_allgatherv;
     param_i.send_buf = ccl_buffer(dst_i, sa_handler->send_count[0] * itype_size);
     param_i.recv_buf = ccl_buffer();
-    param_i.count = sa_handler->send_count[0];
-    param_i.recv_counts = ccl_buffer(sa_handler->recv_counts, sizeof(size_t) * comm_size);
+    param_i.send_count = sa_handler->send_count[0];
+    param_i.recv_counts = sa_handler->recv_counts;
     param_i.dtype = index_dtype;
     param_i.comm = sched->coll_param.comm;
 
@@ -1095,8 +1095,8 @@ ccl_status_t ccl_coll_build_sparse_allreduce_3_allgatherv(ccl_sched *sched,
     param_v.ctype = ccl_coll_allgatherv;
     param_v.send_buf = ccl_buffer(dst_v, sa_handler->send_count[1] * vtype_size);
     param_v.recv_buf = ccl_buffer();
-    param_v.count = sa_handler->send_count[1];
-    param_v.recv_counts = ccl_buffer(sa_handler->recv_counts, sizeof(size_t) * comm_size);
+    param_v.send_count = sa_handler->send_count[1];
+    param_v.recv_counts = sa_handler->recv_counts;
     param_v.dtype = value_dtype;
     param_v.comm = sched->coll_param.comm;
 

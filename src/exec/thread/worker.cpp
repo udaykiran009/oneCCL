@@ -141,7 +141,7 @@ ccl_status_t ccl_worker::process_sched_queue(size_t& completed_sched_count, bool
         }
 
         if (completed_sched_count)
-            LOG_INFO("process_all, completed_sched_count ", completed_sched_count);
+            LOG_DEBUG("process_all, completed_sched_count ", completed_sched_count);
 
         return ccl_status_success;
     }

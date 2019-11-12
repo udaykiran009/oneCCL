@@ -139,6 +139,7 @@ ccl_status_t ccl_coll_build_allgatherv(
     sched->coll_param.ctype = ccl_coll_allgatherv;
     sched->coll_param.send_count = send_count;
     sched->coll_param.recv_counts = recv_counts;
+    sched->coll_param.dtype = dtype;
 
     auto algo = global_data.algorithm_selector->get<ccl_coll_allgatherv>(sched->coll_param);
 
@@ -171,6 +172,7 @@ ccl_status_t ccl_coll_build_allreduce(
 
     sched->coll_param.ctype = ccl_coll_allreduce;
     sched->coll_param.count = count;
+    sched->coll_param.dtype = dtype;
 
     auto algo = global_data.algorithm_selector->get<ccl_coll_allreduce>(sched->coll_param);
 
@@ -218,6 +220,7 @@ ccl_status_t ccl_coll_build_alltoall(
 
     sched->coll_param.ctype = ccl_coll_alltoall;
     sched->coll_param.count = count;
+    sched->coll_param.dtype = dtype;
 
     auto algo = global_data.algorithm_selector->get<ccl_coll_alltoall>(sched->coll_param);
 
@@ -244,6 +247,7 @@ ccl_status_t ccl_coll_build_barrier(ccl_sched* sched)
     ccl_status_t status = ccl_status_success;
 
     sched->coll_param.ctype = ccl_coll_barrier;
+    sched->coll_param.dtype = ccl_dtype_internal_char;
 
     auto algo = global_data.algorithm_selector->get<ccl_coll_barrier>(sched->coll_param);
 
@@ -273,6 +277,7 @@ ccl_status_t ccl_coll_build_bcast(ccl_sched* sched,
 
     sched->coll_param.ctype = ccl_coll_bcast;
     sched->coll_param.count = count;
+    sched->coll_param.dtype = dtype;
 
     auto algo = global_data.algorithm_selector->get<ccl_coll_bcast>(sched->coll_param);
 
@@ -312,6 +317,7 @@ ccl_status_t ccl_coll_build_reduce(ccl_sched* sched,
 
     sched->coll_param.ctype = ccl_coll_reduce;
     sched->coll_param.count = count;
+    sched->coll_param.dtype = dtype;
 
     auto algo = global_data.algorithm_selector->get<ccl_coll_reduce>(sched->coll_param);
 
@@ -355,6 +361,7 @@ ccl_status_t ccl_coll_build_sparse_allreduce(
 
     sched->coll_param.ctype = ccl_coll_sparse_allreduce;
     sched->coll_param.sparse_param.send_val_count = send_val_count;
+    sched->coll_param.dtype = value_dtype;
 
     auto algo = global_data.algorithm_selector->get<ccl_coll_sparse_allreduce>(sched->coll_param);
 
