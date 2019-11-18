@@ -1,20 +1,21 @@
 .. highlight:: bash
 
-Installation guide
-==================
+Installation
+=============
 
 This page explains how to install and configure the |product_full| (|product_short|). 
-oneCCL supports a number of installation scenarios:
 
-* Installation using CLI 
-* RPM-based installation
-* Installation using tar.gz
+oneCCL supports different installation scenarios:
+
+* `Installation using CLI`_
+* `Installation using tar.gz`_
+* `Installation using RPM`_
 
 
-Installation Through Command Line Interface (CLI)
-*************************************************
+Installation using CLI
+***********************
 
-To install oneCCL using CLI, follow these steps:
+To install oneCCL using Command Line Interface (CLI), follow these steps:
 
 #. Go to the ``ccl`` folder:
 
@@ -51,68 +52,51 @@ In order to have a clear build, create a new ``build`` directory and invoke ``cm
 Custom Installation
 ^^^^^^^^^^^^^^^^^^^
 
-You may customize CLI-based installation and specify, for example, directory, compiler, and build type.
+You can customize CLI-based installation (e.g. specify directory, compiler, and build type):
 
-Specify Installation Directory
-##############################
+* To speciify **installation directory**, modify the ``cmake`` command:
 
-Modify the ``cmake`` command:
+  ::
 
-::
+    cmake .. -DCMAKE_INSTALL_PREFIX=/path/to/installation/directory
 
-   cmake .. -DCMAKE_INSTALL_PREFIX=/path/to/installation/directory
+  If no ``-DCMAKE_INSTALL_PREFIX`` is specified, oneCCL is installed into the ``_install`` subdirectory of the current build directory. For example, ``ccl/build/_install``
 
-If no ``-DCMAKE_INSTALL_PREFIX`` is specified, oneCCL is installed into the ``_install`` subdirectory of the current build directory. For example, ``ccl/build/_install``
+* To specify **compiler**, modify the ``cmake`` command:
 
+  ::
 
-Specify compiler
-################
+     cmake .. -DCMAKE_C_COMPILER=your_c_compiler -DCMAKE_CXX_COMPILER=your_cxx_compiler
 
-Modify the ``cmake`` command:
+* To specify the **build type**, modify the ``cmake`` command:
 
-::
+  ::
 
-   cmake .. -DCMAKE_C_COMPILER=your_c_compiler -DCMAKE_CXX_COMPILER=your_cxx_compiler
+     cmake .. -DCMAKE_BUILD_TYPE=[Debug|Release|RelWithDebInfo|MinSizeRel]
 
-Specify Build Type
-##################
+* To enable ``make`` verbose output to see all parameters used by ``make`` during compilation and linkage, modify the ``make`` command as follows:
 
-Modify the ``cmake`` command:
+  ::
 
-::
+     make -j VERBOSE=1
 
-   cmake .. -DCMAKE_BUILD_TYPE=[Debug|Release|RelWithDebInfo|MinSizeRel]
+* To archive installed files:
 
-Enable ``make`` Verbose Output
-##############################
+  ::
 
-To see all parameters used by ``make`` during compilation and linkage, modify the ``make`` command as follows:
+     make -j install
 
-::
+* To build with Address Sanitizer, modify the ``cmake`` command as follow:
 
-   make -j VERBOSE=1
+  ::
 
-Archive Installed Files
-#######################
+     cmake .. -DCMAKE_BUILD_TYPE=Debug -DWITH_ASAN=true
 
-::
+  Make sure that ``libasan.so`` exists.
+  
+  .. note:: 
 
-   make -j install
-
-Build with Address Sanitizer
-############################
-
-Modify the ``cmake`` command as follow:
-
-::
-
-   cmake .. -DCMAKE_BUILD_TYPE=Debug -DWITH_ASAN=true
-
-..note:: 
-
-  Address sanitizer only works in the debug build.
-
-Make sure that libasan.so exists. :guilabel:`Add to prerequisites`.
+     Address sanitizer only works in the debug build.
 
 Binary releases are available on our release page.
 
@@ -138,14 +122,14 @@ oneCCL is available through the RPM Package Manager. To install the library in a
 
 #. Install the following package:
 
-.. prompt:: bash
+  .. prompt:: bash
 
-   rpm -i intel-ccl-devel-64-<version>.<update>-<package#>.x86_64.rpm
+     rpm -i intel-ccl-devel-64-<version>.<update>-<package#>.x86_64.rpm
    
-   where ``<version>.<update>-<package#>`` is a string. For example, ``2017.0-009``.
+     where ``<version>.<update>-<package#>`` is a string. For example, ``2017.0-009``.
 
 To uninstall oneCCL using the RPM Package Manager, execute this command:
 
-.. prompt:: bash
+  .. prompt:: bash
 
-   rpm -e intel-ccl-devel-64-<version>.<update>-<package#>.x86_64
+     rpm -e intel-ccl-devel-64-<version>.<update>-<package#>.x86_64

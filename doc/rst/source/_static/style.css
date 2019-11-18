@@ -7,12 +7,12 @@
          
       white-space: normal !important;
    }
-/*
-   .wy-table-responsive {
-      overflow: visible !important;
+
+   .wy-table-responsive table{
+      width: 100%;
    }
 }
-*/
+
 
 /* make the page width fill the window */
 /*.wy-nav-content {

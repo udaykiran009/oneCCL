@@ -17,7 +17,7 @@
 
 # -- Project information -----------------------------------------------------
 
-project = 'oneCCL Documentation'
+project = 'oneCCL Documentation (Beta)'
 copyright = '2019'
 author = 'Intel'
 
@@ -25,7 +25,7 @@ author = 'Intel'
 release = '2.0'
 
 rst_prolog = """
-.. |product_full| replace:: Intel\ |reg|\  oneAPI Collective Communication Library
+.. |product_full| replace:: Intel\ |reg|\  oneAPI Collective Communications Library
 .. |product_short| replace:: oneCCL
 .. |reg| unicode:: U+000AE
 .. |copy| unicode:: U+000A9

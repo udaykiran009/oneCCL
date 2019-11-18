@@ -14,6 +14,7 @@
 # import sys
 # sys.path.insert(0, os.path.abspath('.'))
 
+# import datetime
 
 # -- Project information -----------------------------------------------------
 
@@ -21,8 +22,10 @@ project = 'oneCCL Specifications'
 copyright = '2019'
 
 
+# The short X.Y version
+# version = u'0.61 <' + str(datetime.date.today()) + '>'
 # The full version, including alpha/beta/rc tags
-release = '2.0'
+# release = version
 
 
 

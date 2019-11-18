@@ -1,13 +1,13 @@
 Environment variables
 =====================
 
-:guilabel:`Add description for algorithms`.
-
 CCL_ATL_TRANSPORT
 #################
 **Syntax**
 
-``CCL_ATL_TRANSPORT=<value>``
+:: 
+
+  CCL_ATL_TRANSPORT=<value>
 
 **Arguments**
 
@@ -25,7 +25,7 @@ CCL_ATL_TRANSPORT
 
 **Description**
 
-Set this environment variable to select transport for inter-node communications.
+Set this environment variable to select the transport for inter-node communications.
 
 Collective algorithms selection
 ###############################
@@ -34,26 +34,39 @@ CCL_<coll_name>
 ***************
 **Syntax**
 
-- ``CCL_<coll_name>=<algo_name>`` sets the specific algorithm for the whole message size range.
-- ``CCL_<coll_name>="<algo_name_1>[:<size_range_1>][;<algo_name_2><size_range_2>][;...]"`` 
-  the list of semicolon separated blocks where each block sets the specific algorithm for specific message size range.
+To set a specific algorithm for the whole message size range:
 
+::
 
-``<coll_name>`` is selected from a list of available collective operations and ``<algo_name>`` is selected from a list of available algorithms for a specific collective operation (listed below).
+  CCL_<coll_name>=<algo_name>
 
-``<size_range>`` is described by left and right size borders in format ``<left>-<right>``. Size is specified in bytes. Reserved word ``max`` can be used to specify the maximum message size.
+To set a specific algorithm for a specific message size range:
 
-oneCCL internally fills algorithm selection table with sensible defaults. User input complements the selection table. To see the actual table values set CCL_LOG_LEVEL=1.
+::
+
+  CCL_<coll_name>="<algo_name_1>[:<size_range_1>][;<algo_name_2><size_range_2>][;...]"
+
+Where:
+
+- ``<coll_name>`` is selected from a list of available collective operations (`Available collectives`_)
+- ``<algo_name>`` is selected from a list of available algorithms for a specific collective operation (`Available algorithms`_).
+- ``<size_range>`` is described by the left and the right size borders in a format ``<left>-<right>``. 
+  Size is specified in bytes. Reserved word ``max`` can be used to specify the maximum message size.
+
+oneCCL internally fills algorithm selection table with sensible defaults. User input complements the selection table. 
+To see the actual table values set ``CCL_LOG_LEVEL=1``.
 
 Example
-*******
++++++++
 
-``CCL_ALLREDUCE="recursive_doubling:0-8192;rabenseifner:8193-1048576;ring:1048577-max"``
+:: 
+
+  CCL_ALLREDUCE="recursive_doubling:0-8192;rabenseifner:8193-1048576;ring:1048577-max"
 
 Available collectives
 *********************
 
-``<coll_name>``
+Available collective operations (``<coll_name>``):
 
 -   ``ALLGATHER``
 -   ``ALLREDUCE``
@@ -66,7 +79,7 @@ Available collectives
 Available algorithms
 ********************
 
-``<algo_name>``
+Available algirithms for each collective operation (``<algo_name>``):
 
 ``ALLGATHERV`` algorithms
 +++++++++++++++++++++++++
@@ -76,7 +89,7 @@ Available algorithms
    :align: left
    
    * - ``direct``
-     - Based on MPI_Iallgatherv
+     - Based on ``MPI_Iallgatherv``
    * - ``naive``
      - Send to all, receive from all
    * - ``flat``
@@ -93,7 +106,7 @@ Available algorithms
    :align: left
 
    * - ``direct``
-     - Based on MPI_Iallreduce
+     - Based on ``MPI_Iallreduce``
    * - ``rabenseifner``
      - Rabenseifner’s algorithm
    * - ``starlike``
@@ -116,7 +129,7 @@ Available algorithms
    :align: left
    
    * - ``direct``
-     - Based on MPI_Ibarrier
+     - Based on ``MPI_Ibarrier``
    * - ``ring``
      - Ring-based allgorithm
 
@@ -129,9 +142,9 @@ Available algorithms
    :align: left
 
    * - ``direct``
-     - Based on MPI_Ibcast
+     - Based on ``MPI_Ibcast``
    * - ``ring`` 
-     - Ring.
+     - Ring
    * - ``double_tree``
      - Double-tree algorithm
    * - ``naive``
@@ -146,7 +159,7 @@ Available algorithms
    :align: left
 
    * - ``direct``
-     - Based on MPI_Ireduce
+     - Based on ``MPI_Ireduce``
    * - ``rabenseifner``
      - Rabenseifner’s algorithm
    * - ``tree``
@@ -172,7 +185,9 @@ CCL_FUSION
 ##########
 **Syntax**
 
-``CCL_FUSION=<value>``
+:: 
+
+  CCL_FUSION=<value>
 
 **Arguments**
 
@@ -194,10 +209,12 @@ Set this environment variable to control fusion of collective operations. The re
 
 
 CCL_FUSION_BYTES_THRESHOLD
-##########################
+**************************
 **Syntax**
 
-``CCL_FUSION_BYTES_THRESHOLD=<value>``
+:: 
+
+  CCL_FUSION_BYTES_THRESHOLD=<value>
 
 **Arguments**
 
@@ -209,19 +226,21 @@ CCL_FUSION_BYTES_THRESHOLD
    * - <value> 
      - Description
    * - ``SIZE``
-     - Bytes threshold for collective operation. If the size of communication buffer in bytes is less or equal
-       to ``SIZE`` then oneCCL will fuse this operation with other ones.
+     - Bytes threshold for a collective operation. If the size of a communication buffer in bytes is less or equal
+       to ``SIZE``, then oneCCL fuses this operation with the other ones.
 
 **Description**
 
-Set this environment variable to specify bytes threshold for collective operation to be fused.
+Set this environment variable to specify the threshold of the number of bytes for a collective operation to be fused.
 
 
 CCL_FUSION_COUNT_THRESHOLD
-##########################
+**************************
 **Syntax**
 
-``CCL_FUSION_COUNT_THRESHOLD=<value>``
+:: 
+
+  CCL_FUSION_COUNT_THRESHOLD=<value>
 
 **Arguments**
 
@@ -233,19 +252,21 @@ CCL_FUSION_COUNT_THRESHOLD
    * - <value> 
      - Description
    * - ``COUNT``
-     - Count threshold for collective operations.
+     - The threshold for the number of collective operations.
        oneCCL can fuse together no more than ``COUNT`` operations at a time.
 
 **Description**
 
-Set this environment variable to specify count threshold for collective operation to be fused.
+Set this environment variable to specify count threshold for a collective operation to be fused.
 
 
 CCL_FUSION_CYCLE_MS
-###################
+*******************
 **Syntax**
 
-``CCL_FUSION_CYCLE_MS=<value>``
+:: 
+
+  CCL_FUSION_CYCLE_MS=<value>
 
 **Arguments**
 
@@ -257,20 +278,23 @@ CCL_FUSION_CYCLE_MS
    * - <value> 
      - Description
    * - ``MS``
-     - Frequency of checking for collectives operations to be fused, in milliseconds.
-       Small ``MS`` value can improve latency. Large value can help
-       to fuse larger number of operations at a time.
+     - The frequency of checking for collectives operations to be fused, in milliseconds:
+       
+       - Small ``MS`` value can improve latency. 
+       - Large ``MS`` value can help to fuse larger number of operations at a time.
 
 **Description**
 
-Set this environment variable to specify frequency of checking for collectives operations to be fused.
+Set this environment variable to specify the frequency of checking for collectives operations to be fused.
 
 
 CCL_UNORDERED_COLL
 ##################
 **Syntax**
 
-``CCL_UNORDERED_COLL=<value>``
+:: 
+
+  CCL_UNORDERED_COLL=<value>
 
 **Arguments**
 
@@ -283,7 +307,7 @@ CCL_UNORDERED_COLL
      - Description
    * - ``1``
      - Enable execution of unordered collectives.
-       Additionally user has to specify ``coll_attr.match_id``.
+       It requires for a user to additionally specify ``coll_attr.match_id``.
    * - ``0``
      - Disable execution of unordered collectives (**default**).
 
@@ -296,7 +320,9 @@ CCL_PRIORITY
 ############
 **Syntax**
 
-``CCL_PRIORITY=<value>``
+:: 
+
+  CCL_PRIORITY=<value>
 
 **Arguments**
 
@@ -308,9 +334,9 @@ CCL_PRIORITY
    * - <value> 
      - Description
    * - ``direct``
-     - Priority is explicitly specified by users using coll_attr.priority.
+     - Priority is explicitly specified by users using ``coll_attr.priority``.
    * - ``lifo``
-     - Priority is implicitly increased on each collective calls. Users do not specify a priority.
+     - Priority is implicitly increased on each collective call. Users do not specify a priority.
    * - ``none``
      - Disable prioritization (**default**).
 
@@ -323,7 +349,9 @@ CCL_WORKER_COUNT
 ################
 **Syntax**
 
-``CCL_WORKER_COUNT=<value>``
+:: 
+
+  CCL_WORKER_COUNT=<value>
 
 **Arguments**
 
@@ -335,18 +363,20 @@ CCL_WORKER_COUNT
    * - <value> 
      - Description
    * - ``N``
-     - Number of worker threads for oneCCL rank. 1 if not specified.
+     - The number of worker threads for oneCCL rank (``1`` if not specified).
 
 **Description**
 
-Set this environment variable to specify number of CCL worker threads.
+Set this environment variable to specify the number of oneCCL worker threads.
 
 
 CCL_WORKER_AFFINITY
 ###################
 **Syntax**
 
-``CCL_WORKER_AFFINITY=<proclist>``
+:: 
+
+  CCL_WORKER_AFFINITY=<proclist>
 
 **Arguments**
 
@@ -358,13 +388,13 @@ CCL_WORKER_AFFINITY
    * - <proclist> 
      - Description
    * - ``n1,n2,..``
-     - Affinity is explicitly specified by user.
+     - Affinity is explicitly specified by a user.
    * - ``auto``
-     - Workers are pinned to K last cores of pin domain where K is CCL_WORKER_COUNT (**default**). 
+     - Workers are pinned to K last cores of pin domain, where K is ``CCL_WORKER_COUNT`` (**default**). 
 
 **Description**
 
-Set this environment variable to specify cpu affinity for CCL worker threads.
+Set this environment variable to specify cpu affinity for oneCCL worker threads.
 
 
 
@@ -372,7 +402,9 @@ CCL_PM_TYPE
 ###########
 **Syntax**
 
-``CCL_PM_TYPE=<value>``
+:: 
+
+  CCL_PM_TYPE=<value>
 
 **Arguments**
 
@@ -384,20 +416,22 @@ CCL_PM_TYPE
    * - <value>
      - Description
    * - ``simple``
-     - Use PMI (process manager interface) with mpirun (**default**).
+     - Use PMI (process manager interface) with ``mpirun`` (**default**).
    * - ``resizable``
-     - Use internal KVS (key-value storage) without mpirun.
+     - Use internal KVS (key-value storage) without ``mpirun``.
 
 **Description**
 
-Set this environment variable to specify process manager type.
+Set this environment variable to specify the process manager type.
 
 
 CCL_KVS_IP_EXCHANGE
 ###################
 **Syntax**
 
-``CCL_KVS_IP_EXCHANGE=<value>``
+:: 
+
+  CCL_KVS_IP_EXCHANGE=<value>
 
 **Arguments**
 
@@ -409,9 +443,9 @@ CCL_KVS_IP_EXCHANGE
    * - <value>
      - Description
    * - ``k8s``
-     - Use K8S for ip exchange (**default**).
+     - Use K8S for IP exchange (**default**).
    * - ``env``
-     - Use specific environment to get master ip.
+     - Use a specific environment to get the master IP.
 
 **Description**
 
@@ -422,7 +456,9 @@ CCL_K8S_API_ADDR
 ################
 **Syntax**
 
-``CCL_K8S_API_ADDR =<value>``
+:: 
+
+  CCL_K8S_API_ADDR =<value>
 
 **Arguments**
 
@@ -434,7 +470,7 @@ CCL_K8S_API_ADDR
    * - <value>
      - Description
    * - ``IP:PORT``
-     - Set address and port of k8s kvs.
+     - Set the address and the port of k8s kvs.
 
 **Description**
 
@@ -445,7 +481,9 @@ CCL_K8S_MANAGER_TYPE
 ####################
 **Syntax**
 
-``CCL_K8S_MANAGER_TYPE=<value>``
+:: 
+
+  CCL_K8S_MANAGER_TYPE=<value>
 
 **Arguments**
 
@@ -457,20 +495,22 @@ CCL_K8S_MANAGER_TYPE
    * - <value>
      - Description
    * - ``none``
-     - Use Pods labels for ip exchange (**default**).
+     - Use Pods labels for IP exchange (**default**).
    * - ``k8s``
-     - Use Statefulset\Deployment labels for ip exchange.
+     - Use Statefulset\Deployment labels for IP exchange.
 
 **Description**
 
-Set this environment variable to specify way to ip exchange.
+Set this environment variable to specify the way of IP exchange.
 
 
 CCL_KVS_IP_PORT
 ###############
 **Syntax**
 
-``CCL_KVS_IP_PORT=<value>``
+:: 
+
+  CCL_KVS_IP_PORT=<value>
 
 **Arguments**
 
@@ -482,18 +522,20 @@ CCL_KVS_IP_PORT
    * - <value>
      - Description
    * - ``IP:PORT``
-     - Set address and port of master kvs server.
+     - Set the address and the port of the master kvs server.
 
 **Description**
 
-Set this environment variable to specify master kvs address.
+Set this environment variable to specify the master kvs address.
 
 
 CCL_WORLD_SIZE
 ##############
 **Syntax**
 
-``CCL_WORLD_SIZE=<value>``
+:: 
+
+  CCL_WORLD_SIZE=<value>
 
 **Arguments**
 
@@ -505,18 +547,20 @@ CCL_WORLD_SIZE
    * - <value>
      - Description
    * - ``N``
-     - Number of processes to start execution.
+     - The number of processes to start execution.
 
 **Description**
 
-Set this environment variable to specify number of oneCCL processes.
+Set this environment variable to specify the number of oneCCL processes.
 
 
 CCL_JOB_NAME
 ############
 **Syntax**
 
-``CCL_JOB_NAME=<value>``
+:: 
+
+  CCL_JOB_NAME=<value>
 
 **Arguments**
 

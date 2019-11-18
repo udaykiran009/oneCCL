@@ -47,3 +47,8 @@ popd
 
 echo "Generating HTML using Sphinx..."
 sphinx-build -b html $RST_SOURCE_DIR $RST_HTML_BUILD_DIR
+
+echo "Removing files from build/html"
+
+rm -r $RST_HTML_BUILD_DIR/.doctrees
+rm -r $RST_HTML_BUILD_DIR/.buildinfo

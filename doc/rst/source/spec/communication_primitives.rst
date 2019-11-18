@@ -65,6 +65,7 @@ req
     object that can be used to track the progress of the operation (returned value for C++ API)
 
 
+.. _allreduce:
 
 Allreduce
 *********

@@ -6,10 +6,10 @@ Fault tolerance / elasticity
 Main instructions
 +++++++++++++++++
 
-Before ranks launch user can specify :ref:`CCL_WORLD_SIZE` = N, where N is the number of ranks to start.
-If k8s with k8s manager support is used, then N is equal to replicasize by default.
+Before ranks launch, user can specify :ref:`CCL_WORLD_SIZE` = N, where N is the number of ranks to start.
+If k8s with k8s manager support is used, then N is equal to ``replicasize`` by default.
 
-User can specify their own function that decides what oneCCL should do on "world" resize event: 
+Users can specify their own function that decides what oneCCL should do on the "world" resize event: 
 
 - wait
 - use current "world" information 
@@ -34,9 +34,11 @@ User can specify their own function that decides what oneCCL should do on "world
 
   ccl_set_resize_callback(ccl_on_resize_fn_t callback);
 
-In case the number of ranks is changed, this function is called on oneCCL level. Application level (e.g. framework) should return action that oneCCL should perform.
+In case the number of ranks is changed, this function is called on oneCCL level. 
+Application level (e.g. framework) should return the action that oneCCL should perform.
 
-Setting this function to NULL (default value) means that oneCCL will work exactly with :ref:`CCL_WORLD_SIZE` or replicasize ranks without fault tolerant / elasticity.
+Setting this function to ``NULL`` (default value) means that oneCCL will work with exactly
+:ref:`CCL_WORLD_SIZE` or ``replicasize`` ranks without fault tolerant / elasticity.
 
 
 Examples
@@ -65,7 +67,7 @@ To run ranks in k8s use statefulset / deployment as a manager:
 Without mpirun
 **************
 
-To run ranks without mpirun:
+To run ranks without ``mpirun``:
 
 -   :ref:`CCL_PM_TYPE` = resizable
 -   :ref:`CCL_KVS_IP_EXCHANGE` = env

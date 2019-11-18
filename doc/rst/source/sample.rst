@@ -102,9 +102,9 @@ Below is a complete sample that shows how oneCCL API can be used to perform allr
 Build details
 *************
 
-#. oneCCL should be built with SYCL* support
+#. oneCCL should be built with SYCL* support.
 
-#. Set up the library environment (see `Prerequisites`)
+#. Set up the library environment (see :ref:`|prerequisites|`).
 
 #. Use ``clang++`` compiler to build the sample:
 
@@ -116,7 +116,7 @@ Build details
 Run the sample
 **************
 
-Intel® MPI library is required for running the sample. Make sure that MPI environment is set up.
+Intel\ |reg|\  MPI Library is required for running the sample. Make sure that MPI environment is set up.
 
 To run the sample, use the following command:
 

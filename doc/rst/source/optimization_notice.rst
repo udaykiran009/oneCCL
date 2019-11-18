@@ -1,5 +1,5 @@
 Optimization Notice
-===================
+-------------------
 
 .. list-table:: 
    :header-rows: 1 

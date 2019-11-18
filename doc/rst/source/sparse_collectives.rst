@@ -2,9 +2,12 @@ Sparse collective operations
 ============================
 
 Language models typically feature huge embedding tables within their topology. 
-This makes straight forward gradient computation followed by allreduce for the whole set of weights not feasible in practice due to both performance and memory footprint reasons. 
-Thus, gradients for such layers are usually computed for a smaller sub-tensor on each iteration, and communication pattern, which is required to average the gradients across processes, doesn't map well to allreduce API. 
-To address these scenarios, frameworks usually utilize allgather primitive, which may be suboptimal if there is a lot of intersection between sub-tensors from different processes.
+This makes straight-forward gradient computation followed by ``allreduce`` for the whole set of weights not feasible in practice
+due to both performance and memory footprint reasons. 
+Thus, gradients for such layers are usually computed for a smaller sub-tensor on each iteration, and communication pattern,
+which is required to average the gradients across processes, doesn't map well to allreduce API. 
+
+To address these scenarios, frameworks usually utilize ``allgather`` primitive, which may be suboptimal if there is a lot of intersection between sub-tensors from different processes.
 
 Latest research paves the way to handling such communication in a more optimal manner, but each of these approaches has its own area of applicability. 
 Our ultimate goal is to provide a common API for sparse collective operations that would simplify framework design by allowing under-the-hood implementation of different approaches.

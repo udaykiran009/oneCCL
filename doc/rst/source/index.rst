@@ -10,7 +10,7 @@ communication patterns used in deep learning.
 - Optimized to drive scalability of communication patterns by allowing to easily trade-off compute for communication performance.
 - Enables a set of DL-specific optimizations, such as prioritization, persistent operations, out of order execution, etc.
 - Works across various interconnects: Intel(R) Omni-Path Architecture, InfiniBand*, and Ethernet.
-- Common API sufficient to support communication workflows within Deep Learning frameworks (Caffe*, nGraph*, Horovod*, etc.)
+- Provides common API sufficient to support communication workflows within Deep Learning frameworks (Caffe*, nGraph*, Horovod*, etc.)
 
 |product_short| package comprises the |product_short| Software Development Kit (SDK) and the Intel(R) MPI Library Runtime components.
 
@@ -19,27 +19,22 @@ Contents:
 
 .. toctree::
    :maxdepth: 1
-   :caption: Get Started with oneCCL
+   :caption: Get Started
 
-   overview.rst
    prerequisites.rst
-   sample.rst
    installation.rst
    sys_requirements.rst
-   legal.rst
-   optimization_notice.rst
+   sample.rst   
 
 .. toctree::
    :maxdepth: 1
    :caption: Programming Model
 
-   spec/generic_workflow.rst
    spec/main_objects.rst
-   spec/communication_primitives.rst
-   spec/collective_call_attributes.rst
-   spec/completion.rst
+   spec/collective_communication.rst
    spec/error_handling.rst
-   spec/ccl_datatypes.rst
+
+   spec/generic_workflow.rst
    spec/gpu_support.rst
    spec/cpu_support.rst
 
@@ -68,3 +63,10 @@ Contents:
 
    env_variables.rst
    api/library_root.rst
+
+.. toctree::
+   :hidden: 
+   :caption: Notices and Disclaimers
+
+   legal.rst   
+   optimization_notice.rst   

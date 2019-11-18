@@ -1,7 +1,10 @@
+.. _prerequisites:
+
 Prerequisites
 =============
 
-Before you start using oneCCL, make sure to set up the library environment. There are two ways:
+Before you start using oneCCL, make sure to set up the library environment. 
+With oneCCL being installed into ``<installdir>``, there are two ways to set up the environment:
 
 - Using standalone oneCCL package:
 
@@ -9,7 +12,6 @@ Before you start using oneCCL, make sure to set up the library environment. Ther
 
         source <installdir>/bin/cclvars.sh
 
-    Here ``<installdir>`` is the oneCCL installation directory.
 
 - Using |product_short| from |base_tk|:
 
@@ -17,4 +19,4 @@ Before you start using oneCCL, make sure to set up the library environment. Ther
 
         sourse <installdir>/setvars.sh
 
-    Here ``<installdir>`` is the |product_short| installation directory (``/opt/intel/inteloneapi`` by default).
+    By default, ``<installdir>`` is ``/opt/intel/inteloneapi``.
