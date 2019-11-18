@@ -28,7 +28,6 @@ if [ -z "${BUILD_COMPILER_TYPE}" ]
 then
     BUILD_COMPILER_TYPE="clang"
 fi
-
 if [ "${BUILD_COMPILER_TYPE}" = "gnu" ]
 then
     BUILD_COMPILER=/usr/bin
@@ -55,6 +54,12 @@ then
     CODECOV_FLAGS="true"
 else
     CODECOV_FLAGS=""
+fi
+if [ "$BUILD_TYPE" == "debug" ]
+then
+    ENABLE_DEBUG_BUILD="yes"
+else
+    ENABLE_DEBUG_BUILD="no"
 fi
 
 
@@ -89,7 +94,7 @@ then
     CCL_PACKAGE_PHASE="ENG"
 fi
 CCL_PACKAGE_SUFFIX="_${CCL_PACKAGE_PHASE}_ww`date +%V`.${DATE}.${TIME}"
-CCL_PACKAGE_NAME="${CCL_PACKAGE_PREFIX}${CCL_VERSION_FORMAT}${CCL_PACKAGE_SUFFIX}"
+CCL_PACKAGE_NAME="${CCL_PACKAGE_PREFIX}_${CCL_VERSION_FORMAT}${CCL_PACKAGE_SUFFIX}"
 SWF_PRE_DROP_DIR="/p/pdsd/scratch/Drops/CCL/1.0/"
 PRE_DROP_DIR="${WORKSPACE}/_predrop/"
 
@@ -104,7 +109,7 @@ set_default_values()
     then
         ENABLE_PRE_DROP="no"
     fi
-    if [ ! -z "${ENABLE_DEBUG_BUILD}" ]
+    if [ "${ENABLE_DEBUG_BUILD}" == "yes" ]
     then
         BUILD_TYPE="Debug"
     else
@@ -176,9 +181,18 @@ CheckCommandExitCode() {
 
 build()
 {
-
+    if [ -z "$compiler" ]
+    then
+        compiler="sycl"
+        DISABLE_SYCL=0
+    elif [ $compiler == "sycl" ]
+    then
+        DISABLE_SYCL=0
+    else
+        DISABLE_SYCL=1
+    fi
     log mkdir ${WORKSPACE}/build && cd ${WORKSPACE}/build && echo ${PWD}
-    log cmake ..  -DCMAKE_BUILD_TYPE=${BUILD_TYPE} \
+    log cmake .. -DCMAKE_DISABLE_SYCL=${DISABLE_SYCL} -DCMAKE_BUILD_TYPE=${BUILD_TYPE} \
     -DCMAKE_C_COMPILER="${C_COMPILER}" -DCMAKE_CXX_COMPILER="${CXX_COMPILER}" -DUSE_CODECOV_FLAGS="${CODECOV_FLAGS}"
     log make -j4 VERBOSE=1 install
     CheckCommandExitCode $? "build failed"

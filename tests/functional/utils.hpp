@@ -16,7 +16,7 @@
 #define CACHELINE_SIZE      64
 
 #define ITER_COUNT          2
-#define ERR_MESSAGE_MAX_LEN 80
+#define ERR_MESSAGE_MAX_LEN 180
 
 #define TIMEOUT 30
 

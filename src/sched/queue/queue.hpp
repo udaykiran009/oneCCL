@@ -54,8 +54,25 @@ public:
 
     ccl_sched_list& operator= (const ccl_sched_list& other) = delete;
 
-    ccl_sched_list(ccl_sched_list &&src) = default;
-    ccl_sched_list& operator= (ccl_sched_list&& other) = default;
+    ccl_sched_list(ccl_sched_list &&src)
+    {
+        {
+            std::lock_guard<sched_queue_lock_t> lock(src.elem_guard);
+            elems = std::move(src.elems);
+        }
+    }
+    ccl_sched_list& operator= (ccl_sched_list&& other)
+    {
+        if(this != &other)
+        {
+            std::lock (this->elem_guard, other.elem_guard);
+            elems = std::move(other.elems);
+            // make sure both already-locked mutexes are unlocked at the end of scope
+            std::lock_guard<ccl_spinlock> own_lock(this->elem_guard, std::adopt_lock);
+            std::lock_guard<ccl_spinlock> other_lock(other.elem_guard, std::adopt_lock);
+        }
+        return *this;
+    }
 
     void add(ccl_sched* sched)
     {

@@ -35,7 +35,7 @@ class ccl_fusion_manager;
 class ccl_unordered_coll_manager;
 
 template<ccl_coll_type... registered_types_id>
-struct ccl_algorithm_selector_wrapper;
+class ccl_algorithm_selector_wrapper;
 
 struct alignas(CACHELINE_SIZE) ccl_global_data
 {

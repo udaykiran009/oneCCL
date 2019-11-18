@@ -11,6 +11,7 @@ public:
     ~ccl_spinlock() = default;
 
     void lock();
+    bool try_lock();
     void unlock();
 
 private:

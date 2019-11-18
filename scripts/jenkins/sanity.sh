@@ -202,13 +202,13 @@ set_environment()
     then
         build_type="release"
     fi
-    if [ "$build_type" == "release" ]
+    if [ -z "$build_compiler" ]
     then
-        source ${CCL_INSTALL_DIR}/l_ccl*/env/vars.sh
-    elif [ "$build_type" == "debug" ]
-    then
-        source ${CCL_INSTALL_DIR}/deb_l_ccl*/env/vars.sh
+        build_compiler="sycl"
     fi
+
+    source ${CCL_INSTALL_DIR}/l_ccl_${build_compiler}_${build_type}_*/env/vars.sh
+
     if [ "${ENABLE_CODECOV}" = "yes" ]
     then
         CODECOV_FLAGS="TRUE"
@@ -222,7 +222,7 @@ make_tests()
     cd ${CURRENT_WORK_DIR}/tests/functional
     mkdir -p build
     cd ./build
-    cmake .. -DCMAKE_BUILD_TYPE=Release -DCMAKE_C_COMPILER="${C_COMPILER}" \
+    cmake .. -DCMAKE_DISABLE_SYCL=${DISABLE_SYCL} -DCMAKE_BUILD_TYPE=Release -DCMAKE_C_COMPILER="${C_COMPILER}" \
         -DCMAKE_CXX_COMPILER="${CXX_COMPILER}"
     make all
 }
