@@ -1,114 +1,115 @@
 #define Collective_Name "CCL_ALLGATHERV"
 #define TEST_CCL_ALLGATHERV
-#include "base.hpp"
+
+#include <chrono>
 #include <functional>
 #include <vector>
-#include <chrono>
 
-template < typename T > class AllGathervTest:public BaseTest < T > {
+#include "base_impl.hpp"
+
+template <typename T> class allgatherv_test : public base_test <T>
+{
 public:
-    std::vector<size_t> recvCounts;
-    std::vector<size_t> offset;
-    int Check(TypedTestParam < T > &param) {
-        for (size_t j = 0; j < param.bufferCount; j++) {
-            for (size_t i = 0; i < param.processCount; i++) {
-                for (size_t k = 0; k < recvCounts[i]; k++) {
-                    size_t idx = offset[i] + k;
-                    T expected = static_cast<T>(i + k);
-                    if ((param.GetPlaceType() != PT_OOP) && (param.recvBuf[j][idx] != expected)) {
-                        sprintf(this->errMessage, "[%zu] got recvBuf[%zu][%zu]  = %f, but expected = %f\n",
-                            param.processIdx, j, idx, (double) param.recvBuf[j][idx], (double) expected);
+    std::vector<size_t> recv_counts;
+    std::vector<size_t> offsets;
+    int check(typed_test_param<T>& param)
+    {
+        for (size_t buf_idx = 0; buf_idx < param.buffer_count; buf_idx++)
+        {
+            for (size_t elem_idx = 0; elem_idx < param.process_count; elem_idx++)
+            {
+                for (size_t recv_count_idx = 0; recv_count_idx < recv_counts[elem_idx]; recv_count_idx++)
+                {
+                    size_t idx = offsets[elem_idx] + recv_count_idx;
+                    T expected = static_cast<T>(elem_idx + recv_count_idx);
+                    if ((param.test_conf.place_type != PT_OOP) && (param.recv_buf[buf_idx][idx] != expected))
+                    {
+                        snprintf(allgatherv_test::get_err_message(), ERR_MESSAGE_MAX_LEN, "[%zu] got recv_buf[%zu][%zu]  = %f, but expected = %f\n",
+                                 param.process_idx, buf_idx, idx, (double) param.recv_buf[buf_idx][idx], (double) expected);
                         return TEST_FAILURE;
                     }
-                    else if (param.recvBuf[j][idx] != expected) {
-                        sprintf(this->errMessage, "[%zu] got recvBuf[%zu][%zu]  = %f, but expected = %f\n",
-                            param.processIdx, j, idx, (double) param.recvBuf[j][idx], (double) expected);
+                    else if (param.recv_buf[buf_idx][idx] != expected)
+                    {
+                        snprintf(allgatherv_test::get_err_message(), ERR_MESSAGE_MAX_LEN, "[%zu] got recv_buf[%zu][%zu]  = %f, but expected = %f\n",
+                                 param.process_idx, buf_idx, idx, (double) param.recv_buf[buf_idx][idx], (double) expected);
                         return TEST_FAILURE;
                     }
                 }
             }
-
-            //TODO: check for dynamic pointer
-            // if (param.GetPlaceType() == PT_OOP) {
-            //     for (size_t i = 0; i < param.processCount; i++) {
-            //         for (size_t k = 0; k < recvCounts[i]; k++) {
-            //             T expected = (param.processIdx + i + k);
-            //             if (param.sendBuf[j][offset[i] + k] != expected) {
-            //                 sprintf(this->errMessage,
-            //                     "[%zu] got sendBuf[%zu][%zu] = %f, but expected = %f\n",
-            //                     param.processIdx, j, i, (double) param.sendBuf[j][i], (double) expected);
-            //                 return TEST_FAILURE;
-            //             }
-            //         }
-            //     }
-            // }
         }
         return TEST_SUCCESS;
     }
-    void FillBuffers(TypedTestParam <T> &param){
-        recvCounts.resize(param.processCount);
-        offset.resize(param.processCount);
-        offset[0] = 0;
-        recvCounts[0] = param.elemCount;
-        if (param.testParam.placeType == PT_OOP)
+    void alloc_buffers(typed_test_param<T>& param)
+    {
+        base_test<T>::alloc_buffers(param);
+        recv_counts.resize(param.process_count);
+        offsets.resize(param.process_count);
+        offsets[0] = 0;
+        recv_counts[0] = param.elem_count;
+        if (param.test_conf.place_type == PT_OOP)
         {
-            for (size_t i = 0; i < param.bufferCount; i++)
-                param.recvBuf[i].resize(param.elemCount * param.processCount * sizeof(T));
+            for (size_t elem_idx = 0; elem_idx < param.buffer_count; elem_idx++)
+            {
+                /* each buffer is different size */
+                param.recv_buf[elem_idx].resize(param.elem_count * param.process_count * sizeof(T));
+            }
         }
-        for (size_t i = 1; i < param.processCount; i++) {
-            if (param.elemCount > i)
-                recvCounts[i] = param.elemCount - i;
-            else
-                recvCounts[i] = param.elemCount;
-
-            offset[i] = recvCounts[i - 1] + offset[i - 1];
+    }
+    void fill_buffers(typed_test_param<T>& param)
+    {
+        for (size_t proc_idx = 1; proc_idx < param.process_count; proc_idx++)
+        {
+            recv_counts[proc_idx] = (param.elem_count > proc_idx) ? param.elem_count - proc_idx : param.elem_count;
+            offsets[proc_idx] = recv_counts[proc_idx - 1] + offsets[proc_idx - 1];
         }
-        for (size_t j = 0; j < param.bufferCount; j++) {
-            for (size_t i = 0; i < param.processCount; i++) {
-                for (size_t k = 0; k < recvCounts[i]; k++) {
-                    param.sendBuf[j][offset[i] + k] = param.processIdx + i + k;
-                    if (param.GetPlaceType() == PT_OOP)
-                        param.recvBuf[j][offset[i] + k] = static_cast<T>SOME_VALUE;
+        for (size_t buf_idx = 0; buf_idx < param.buffer_count; buf_idx++)
+        {
+            for (size_t elem_idx = 0; elem_idx < param.process_count; elem_idx++)
+            {
+                for (size_t recv_count_idx = 0; recv_count_idx < recv_counts[elem_idx]; recv_count_idx++)
+                {
+                    param.send_buf[buf_idx][offsets[elem_idx] + recv_count_idx] = param.process_idx + elem_idx + recv_count_idx;
+                    if (param.test_conf.place_type == PT_OOP)
+                    {
+                        param.recv_buf[buf_idx][offsets[elem_idx] + recv_count_idx] = static_cast<T>SOME_VALUE;
+                    }
                 }
             }
             /* in case of in-place i-th process already has result in i-th block of send buffer */
-            if (param.GetPlaceType() != PT_OOP) {
-                for (size_t i = 0; i < recvCounts[param.processIdx]; i++) {
-                    param.sendBuf[j][offset[param.processIdx] + i] = param.processIdx + i;
+            if (param.test_conf.place_type != PT_OOP)
+            {
+                param.recv_buf[buf_idx] = param.send_buf[buf_idx];
+                for (size_t recv_count_idx = 0; recv_count_idx < recv_counts[param.process_idx]; recv_count_idx++)
+                {
+                    param.send_buf[buf_idx][offsets[param.process_idx] + recv_count_idx] = param.process_idx + recv_count_idx;
                 }
             }
         }
-        if (param.GetPlaceType() != PT_OOP)
+        if (param.test_conf.place_type != PT_OOP)
         {
-            for (size_t i = 0; i < param.bufferCount; i++)
-            {
-                param.recvBuf[i] = param.sendBuf[i];
-            }
+            param.recv_buf = param.send_buf;
         }
     }
-    int Run(TypedTestParam < T > &param) {
-        size_t result = 0;
-        for (size_t iter = 0; iter < 2; iter++) {
-            SHOW_ALGO(Collective_Name);
-            this->FillBuffers(param);
-            this->SwapBuffers(param, iter);
-            size_t idx = 0;
-            size_t* Buffers = param.DefineStartOrder();
-            for (idx = 0; idx < param.bufferCount; idx++) {
-                this->Init(param, idx);
-                param.req[Buffers[idx]] = (param.GetPlaceType() == PT_IN) ?
-                    param.global_comm->allgatherv(param.recvBuf[Buffers[idx]].data(), recvCounts[param.processIdx], param.recvBuf[Buffers[idx]].data(),
-                                                  recvCounts.data(), &param.coll_attr, param.GetStream()) :
-                    param.global_comm->allgatherv(param.sendBuf[Buffers[idx]].data(), recvCounts[param.processIdx], param.recvBuf[Buffers[idx]].data(),
-                                                  recvCounts.data(), &param.coll_attr, param.GetStream());
-            }
-            param.DefineCompletionOrderAndComplete();
-            result += Check(param);
+
+    void run_derived(typed_test_param<T>& param)
+    {
+        const ccl_test_conf& test_conf = param.get_conf();
+        size_t count = recv_counts[param.process_idx];
+        size_t* recv_count = recv_counts.data();
+        ccl::coll_attr* attr = &param.coll_attr;
+        ccl::stream_t& stream = param.get_stream();
+        for (size_t buf_idx = 0; buf_idx < param.buffer_count; buf_idx++)
+        {
+            param.prepare_coll_attr(param.buf_indexes[buf_idx]);
+            T* send_buf = param.send_buf[param.buf_indexes[buf_idx]].data();
+            T* recv_buf = param.recv_buf[param.buf_indexes[buf_idx]].data();
+            param.reqs[buf_idx] =
+                param.global_comm->allgatherv((test_conf.place_type == PT_IN) ? recv_buf : send_buf,
+                count, recv_buf, recv_count, attr, stream);
         }
-        return result;
     }
 };
 
-RUN_METHOD_DEFINITION(AllGathervTest);
-TEST_CASES_DEFINITION(AllGathervTest);
+RUN_METHOD_DEFINITION(allgatherv_test);
+TEST_CASES_DEFINITION(allgatherv_test);
 MAIN_FUNCTION();

@@ -4,12 +4,13 @@
 #define TEST_CCL_CUSTOM_REDUCE
 #define Collective_Name "CCL_ALLREDUCE"
 
-#include "base.hpp"
-#include <functional>
-#include <vector>
 #include <chrono>
 #include <cmath>
+#include <functional>
 #include <mutex>
+#include <vector>
+
+#include "base_impl.hpp"
 
 static size_t COUNT;
 static std::vector<std::pair<std::string, int>> glob_match_id;
@@ -37,8 +38,7 @@ ccl_status_t do_prologue_T_2x(const void* in_buf, size_t in_count, ccl_datatype_
                               void** out_buf, size_t* out_count, const ccl_fn_context_t* ctx,
                               ccl_datatype_t* out_dtype, size_t* out_dtype_size)
 {
-
-    size_t idx;
+    size_t buf_idx;
     ASSERT(out_buf, "null ptr");
     //TODO: this assert works only for single prologue.
     ASSERT(ctx->offset == 0, "wrong offset for prologue func, should be 0");
@@ -56,11 +56,9 @@ ccl_status_t do_prologue_T_2x(const void* in_buf, size_t in_count, ccl_datatype_
     if (out_dtype) *out_dtype = in_dtype;
     if (out_dtype_size) *out_dtype_size = sizeof(T);
 
-    for (idx = 0; idx < in_count; idx++)
+    for (buf_idx = 0; buf_idx < in_count; buf_idx++)
     {
-        ((T*)(*out_buf))[idx] = ((T*)in_buf)[idx] * 2;
-        // printf("do_prologue_T_2x out_buf[%zu]=%f\n",idx, (double)((T*)out_buf)[idx]);
-        // printf("do_prologue_T_2x out_buf[%zu]=%f\n",idx, (double)((T*)in_buf)[idx]);
+        ((T*)(*out_buf))[buf_idx] = ((T*)in_buf)[buf_idx] * 2;
     }
     return ccl_status_success;
 }
@@ -69,8 +67,8 @@ ccl_status_t do_epilogue_T_2x(const void* in_buf, size_t in_count, ccl_datatype_
                               void* out_buf, size_t* out_count, const ccl_fn_context_t* ctx,
                               ccl_datatype_t out_dtype)
 {
-    size_t idx;
-    if (out_count) *out_count = in_count;
+    size_t buf_idx;
+    if (out_count)* out_count = in_count;
     //TODO: this assert works only for single epilogue.
     ASSERT(ctx->offset == 0, "wrong offset for epilogue func, should be 0");
     {
@@ -81,14 +79,11 @@ ccl_status_t do_epilogue_T_2x(const void* in_buf, size_t in_count, ccl_datatype_
         ASSERT(match != glob_match_id.end(), "wrong match_id");
         match->second++;
     }
-    for (idx = 0; idx < in_count; idx++)
+    for (buf_idx = 0; buf_idx < in_count; buf_idx++)
     {
-        ((T*)out_buf)[idx] = ((T*)in_buf)[idx] * 2;
+        ((T*)out_buf)[buf_idx] = ((T*)in_buf)[buf_idx] * 2;
 
     }
-        // printf("do_epilogue_T_2x_________________in_buf[65]=%d\n", ((int*)in_buf)[65]);
-        // printf("do_epilogue_T_2x_________________out_buf[65]=%d\n", ((int*)out_buf)[65]);
-
     return ccl_status_success;
 }
 template <typename T>
@@ -96,7 +91,7 @@ ccl_status_t do_prologue_T_to_char(const void* in_buf, size_t in_count, ccl_data
                                    void** out_buf, size_t* out_count, const ccl_fn_context_t* ctx,
                                    ccl_datatype_t* out_dtype, size_t* out_dtype_size)
 {
-    size_t idx;
+    size_t buf_idx;
     ASSERT(out_buf, "null ptr");
     //TODO: this assert works only for single prologue.
     ASSERT(ctx->offset == 0, "wrong offset for prologue func, should be 0");
@@ -109,27 +104,17 @@ ccl_status_t do_prologue_T_to_char(const void* in_buf, size_t in_count, ccl_data
         match->second++;
     }
 
-    if (out_buf) *out_buf = malloc(in_count);
-    if (out_count) *out_count = in_count;
-    if (out_dtype) *out_dtype = ccl_dtype_char;
-    if (out_dtype_size) *out_dtype_size = 1;
+    if (out_buf)* out_buf = malloc(in_count);
+    if (out_count)* out_count = in_count;
+    if (out_dtype)* out_dtype = ccl_dtype_char;
+    if (out_dtype_size)* out_dtype_size = 1;
 
-    for (idx = 0; idx < in_count; idx++)
+    for (buf_idx = 0; buf_idx < in_count; buf_idx++)
     {
-        T fval = ((T*)in_buf)[idx];
+        T fval = ((T*)in_buf)[buf_idx];
         int ival = (int)fval;
-        ((char*)(*out_buf))[idx] = (char)(ival % 256);
-        // printf("fval=%f, %zu\n",(double)fval, idx);
-        // printf("ival=%f, %zu\n",(double)ival, idx);
-        // int new_ival = (int)((char*)(*out_buf))[idx];
-        // printf("new_ival=%d, %zu\n",new_ival, idx);
-        // printf("out_buf[%zu]=%d\n",idx, ((char*)(*out_buf))[idx]);
+        ((char*)(*out_buf))[buf_idx] = (char)(ival % 256);
     }
-    // printf("prolog_________________in_buf[65]=%d\n",((char*)in_buf)[65]);
-    // printf("prolog_________________out_buf[65]=%d\n",((char*)(*out_buf))[65]);
-    // printf("prolog_________________in_buf[66]=%d\n",((char*)in_buf)[66]);
-    // printf("prolog_________________out_buf[66]=%d\n",((char*)(*out_buf))[66]);
-
     return ccl_status_success;
 }
 
@@ -138,8 +123,8 @@ ccl_status_t do_epilogue_char_to_T(const void* in_buf, size_t in_count, ccl_data
                                    void* out_buf, size_t* out_count, const ccl_fn_context_t* ctx,
                                    ccl_datatype_t out_dtype)
 {
-    size_t idx;
-    if (out_count) *out_count = in_count;
+    size_t buf_idx;
+    if (out_count)* out_count = in_count;
     //TODO: this assert works only for single epilogue.
     ASSERT(ctx->offset == 0, "wrong offset for epilogue func, should be 0");
     {
@@ -150,11 +135,14 @@ ccl_status_t do_epilogue_char_to_T(const void* in_buf, size_t in_count, ccl_data
         ASSERT(match != glob_match_id.end(), "wrong match_id");
         match->second++;
     }
-    for (idx = 0; idx < in_count; idx++)
+    for (buf_idx = 0; buf_idx < in_count; buf_idx++)
     {
-        ((T*)out_buf)[idx] = (T)(((char*)in_buf)[idx]);
+        ((T*)out_buf)[buf_idx] = (T)(((char*)in_buf)[buf_idx]);
     }
-    if (in_buf != out_buf) free((void*)in_buf);
+    if (in_buf != out_buf)
+    {
+        free((void*)in_buf);
+    }
     return ccl_status_success;
 }
 
@@ -162,7 +150,7 @@ template <typename T>
 ccl_status_t do_reduction_null(const void* in_buf, size_t in_count, void* inout_buf,
                                size_t* out_count, const ccl_fn_context_t* ctx, ccl_datatype_t dtype)
 {
-    size_t idx;
+    size_t buf_idx;
     ASSERT(ctx->offset < COUNT * get_dtype_size(dtype),
            "wrong offset for reduction_null func, should be less than COUNT");
     {
@@ -173,10 +161,10 @@ ccl_status_t do_reduction_null(const void* in_buf, size_t in_count, void* inout_
         ASSERT(match != glob_match_id.end(), "wrong match_id");
         match->second++;
     }
-    if (out_count) *out_count = in_count;
-            for (idx = 0; idx < in_count; idx++)
+    if (out_count)* out_count = in_count;
+            for (buf_idx = 0; buf_idx < in_count; buf_idx++)
             {
-                ((T*)inout_buf)[idx] = (T)0;
+                ((T*)inout_buf)[buf_idx] = (T)0;
             }
     return ccl_status_success;
 }
@@ -184,7 +172,7 @@ template <typename T>
 ccl_status_t do_reduction_custom(const void* in_buf, size_t in_count, void* inout_buf,
                                  size_t* out_count, const ccl_fn_context_t* ctx, ccl_datatype_t dtype)
 {
-    size_t idx;
+    size_t buf_idx;
     ASSERT(ctx->offset < COUNT * get_dtype_size(dtype),
            "wrong offset for reduction_custom func, should be less than COUNT");
     {
@@ -195,16 +183,17 @@ ccl_status_t do_reduction_custom(const void* in_buf, size_t in_count, void* inou
         ASSERT(match != glob_match_id.end(), "wrong match_id");
         match->second++;
     }
-    if (out_count) *out_count = in_count;
-            for (idx = 0; idx < in_count; idx++)
+    if (out_count)* out_count = in_count;
+            for (buf_idx = 0; buf_idx < in_count; buf_idx++)
             {
-                ((T*)inout_buf)[idx] += ((T*)in_buf)[idx];
+                ((T*)inout_buf)[buf_idx] += ((T*)in_buf)[buf_idx];
             }
     return ccl_status_success;
 }
 template <typename T>
-int set_custom_reduction (TypedTestParam <T> &param){
-    TestReductionType customFuncName = param.GetReductionType();
+int set_custom_reduction (typed_test_param<T>& param)
+{
+    ccl_reduction_type customFuncName = param.test_conf.reduction_type;
     switch (customFuncName) {
         case RT_CUSTOM:
             param.coll_attr.reduction_fn = do_reduction_custom<T>;
@@ -218,145 +207,148 @@ int set_custom_reduction (TypedTestParam <T> &param){
     }
     return TEST_SUCCESS;
 }
-template < typename T > class AllReduceCustomTest:public BaseTest < T > {
+template <typename T> class allreduce_custom_test : public base_test <T>
+{
 public:
-    int Check(TypedTestParam < T > &param) {
+    int check(typed_test_param<T>& param)
+    {
         size_t epilog_coeff = 1;
         size_t prolog_coeff = 1;
         size_t prolog_coeff_prod = 1;
         size_t epilog_coeff_prod = 1;
         T expected_fin = 0;
-        if (param.GetPrologType() == PRT_T_TO_2X) {
+        if (param.test_conf.prolog_type == PTYPE_T_TO_2X)
+        {
             prolog_coeff = 2;
-            prolog_coeff_prod = pow(2,param.processCount);
+            prolog_coeff_prod = pow(2,param.process_count);
         }
-        if (param.GetEpilogType() == EPLT_T_TO_2X) {
+        if (param.test_conf.epilog_type == ETYPE_T_TO_2X)
+        {
             epilog_coeff = 2;
             epilog_coeff_prod = epilog_coeff;
         }
-        T tmp1;
-        for (size_t j = 0; j < param.bufferCount; j++) {
-            for (size_t i = 0; i < param.elemCount; i++) {
-                if (param.GetReductionType() == RT_SUM) {
+        T expected_tmp;
+        for (size_t buf_idx = 0; buf_idx < param.buffer_count; buf_idx++)
+        {
+            for (size_t elem_idx = 0; elem_idx < param.elem_count; elem_idx++)
+            {
+                if (param.test_conf.reduction_type == RT_SUM)
+                {
                     T expected =
-                        ((param.processCount * (param.processCount - 1) / 2) +
-                        ((i + j)  * param.processCount));
-                    if (param.GetEpilogType() == EPLT_CHAR_TO_T && param.GetPrologType() == PRT_T_TO_CHAR){
-                         expected_fin = ((char)(expected * prolog_coeff * epilog_coeff));
-                        tmp1 = param.recvBuf[j][i];
-                    }
-                    else if (param.GetEpilogType() == EPLT_T_TO_2X && param.GetPrologType() == PRT_T_TO_CHAR){
+                        ((param.process_count * (param.process_count - 1) / 2) +
+                        ((elem_idx + buf_idx)  * param.process_count));
+                    if (param.test_conf.epilog_type == ETYPE_CHAR_TO_T && param.test_conf.prolog_type == PTYPE_T_TO_CHAR){
                         expected_fin = ((char)(expected * prolog_coeff * epilog_coeff));
-                        tmp1 = ((char*)param.recvBuf[j].data())[i];
-                        // printf("PRT_T_TO_CHAR expected_fin=%f\n",(double)expected_fin);
+                        expected_tmp = param.recv_buf[buf_idx][elem_idx];
                     }
-                    else if (param.GetEpilogType() == EPLT_CHAR_TO_T || param.GetPrologType() == PRT_T_TO_CHAR){
+                    else if (param.test_conf.epilog_type == ETYPE_T_TO_2X && param.test_conf.prolog_type == PTYPE_T_TO_CHAR){
                         expected_fin = ((char)(expected * prolog_coeff * epilog_coeff));
-                        tmp1 = ((char*)param.recvBuf[j].data())[i];
-                        // printf("PRT_T_TO_CHAR expected_fin=%f\n",(double)expected_fin);
+                        expected_tmp = ((char*)param.recv_buf[buf_idx].data())[elem_idx];
+                    }
+                    else if (param.test_conf.epilog_type == ETYPE_CHAR_TO_T || param.test_conf.prolog_type == PTYPE_T_TO_CHAR){
+                        expected_fin = ((char)(expected * prolog_coeff * epilog_coeff));
+                        expected_tmp = ((char*)param.recv_buf[buf_idx].data())[elem_idx];
                     }
                     else {
-                        // expected_fin = expected;
                         expected_fin = expected *  prolog_coeff * epilog_coeff;
-                        tmp1 = param.recvBuf[j][i];
-                        // printf("NO PRT_T_TO_CHAR expected_fin=%f\n",(double)expected_fin);
+                        expected_tmp = param.recv_buf[buf_idx][elem_idx];
                     }
-                    // expected_fin = expected *  prolog_coeff * epilog_coeff;
-                    // T tmp1 = ((char*)param.recvBuf[j].data())[i];
-                    // char tmp2 = (char)(tmp1 & 0x000000FF);
-                    // printf("!!!!!!!!!tmp2 =%d\n",(int)tmp2);
-                    // if (param.recvBuf[j][i] != expected_fin) {
-                    // int int_size = sizeof(int)*4;
-                    // int shift = 1;
-                    // char* byte_buf = new char[int_size];
-                    // for (int k = 0; k < int_size; k++) {
-                        // if ((int)(param.recvBuf[j][i]) & shift)
-                            // byte_buf[int_size -k-1] = '1';
-                        // else
-                            // byte_buf[int_size -k-1] = '0';
-                        // shift <<= 1;
-                    // }
-                    // printf("byte = %s\n", byte_buf);
-                    // delete[] byte_buf;
-                    if (tmp1 != expected_fin) {
-                        // printf("!!!!!!!!!tmp2_2 =%d\n",(int)tmp2);
-                        sprintf(this->errMessage, "[%zu] sent sendBuf[%zu][%zu] = %f, got recvBuf[%zu][%zu] = %f, but expected = %f, tmp1 = %f\n",
-                            param.processIdx, j, i, (double) param.sendBuf[j][i], j, i, (double) param.recvBuf[j][i], (double) expected_fin, (double) tmp1);
+                    if (expected_tmp != expected_fin) {
+                        snprintf(allreduce_custom_test::get_err_message(), ERR_MESSAGE_MAX_LEN, "[%zu] sent send_buf[%zu][%zu] = %f, got recv_buf[%zu][%zu] = %f, but expected = %f, expected_tmp = %f\n",
+                                 param.process_idx, buf_idx, elem_idx, (double) param.send_buf[buf_idx][elem_idx], buf_idx,
+                                 elem_idx, (double) param.recv_buf[buf_idx][elem_idx], (double) expected_fin, (double) expected_tmp);
                         return TEST_FAILURE;
                     }
                 }
 
-                else if (param.GetReductionType() == RT_MAX) {
+                else if (param.test_conf.reduction_type == RT_MAX)
+                {
                     T expected = 0;
-                    if (param.GetPrologType() == PRT_T_TO_CHAR)
+                    if (param.test_conf.prolog_type == PTYPE_T_TO_CHAR)
                     {
-                        expected = get_expected_max<char>(i, j, param.processCount, prolog_coeff);
+                        expected = get_expected_max<char>(elem_idx, buf_idx, param.process_count, prolog_coeff);
                         expected_fin = (char)(expected * epilog_coeff);
                     }
                     else
                     {
-                        expected = get_expected_max<T>(i, j, param.processCount, prolog_coeff);
-
+                        expected = get_expected_max<T>(elem_idx, buf_idx, param.process_count, prolog_coeff);
                     }
                     expected_fin = expected * epilog_coeff;
-                    if (param.recvBuf[j][i] != expected_fin) {
-                        sprintf(this->errMessage, "[%zu] sent sendBuf[%zu][%zu] = %f, got recvBuf[%zu][%zu] = %f, but expected = %f\n",
-                                                  param.processIdx, j, i, (double) param.sendBuf[j][i], j, i, (double) param.recvBuf[j][i], (double) expected_fin);
+                    if (param.recv_buf[buf_idx][elem_idx] != expected_fin)
+                    {
+                        snprintf(allreduce_custom_test::get_err_message(), ERR_MESSAGE_MAX_LEN, "[%zu] sent send_buf[%zu][%zu] = %f, got recv_buf[%zu][%zu] = %f, but expected = %f\n",
+                                 param.process_idx, buf_idx, elem_idx, (double) param.send_buf[buf_idx][elem_idx], buf_idx,
+                                 elem_idx, (double) param.recv_buf[buf_idx][elem_idx], (double) expected_fin);
                         return TEST_FAILURE;
                     }
                 }
-                else if (param.GetReductionType()== RT_MIN) {
+                else if (param.test_conf.reduction_type == RT_MIN)
+                {
                     T expected = 0;
-                    if (param.GetPrologType() == PRT_T_TO_CHAR)
+                    if (param.test_conf.prolog_type == PTYPE_T_TO_CHAR)
                     {
-                        expected = get_expected_min<char>(i, j, param.processCount, prolog_coeff);
+                        expected = get_expected_min<char>(elem_idx, buf_idx, param.process_count, prolog_coeff);
                         expected_fin = (char)(expected * epilog_coeff);
                     }
                     else
                     {
-                        expected = get_expected_min<T>(i, j, param.processCount, prolog_coeff);
+                        expected = get_expected_min<T>(elem_idx, buf_idx, param.process_count, prolog_coeff);
                         expected_fin = expected * epilog_coeff;
                     }
-                     // expected_fin = expected * epilog_coeff;
-                    if (param.recvBuf[j][i] != expected_fin) {
-                        sprintf(this->errMessage, "[%zu] sent sendBuf[%zu][%zu] = %f, got recvBuf[%zu][%zu] = %f, but expected = %f\n",
-                                                   param.processIdx, j, i, (double) param.sendBuf[j][i], j, i, (double) param.recvBuf[j][i], (double) expected_fin);
+                    if (param.recv_buf[buf_idx][elem_idx] != expected_fin)
+                    {
+                        snprintf(allreduce_custom_test::get_err_message(), ERR_MESSAGE_MAX_LEN, "[%zu] sent send_buf[%zu][%zu] = %f, got recv_buf[%zu][%zu] = %f, but expected = %f\n",
+                                 param.process_idx, buf_idx, elem_idx, (double) param.send_buf[buf_idx][elem_idx],
+                                 buf_idx, elem_idx, (double) param.recv_buf[buf_idx][elem_idx], (double) expected_fin);
                         return TEST_FAILURE;
                     }
                 }
-                else if (param.GetReductionType() == RT_PROD) {
+                else if (param.test_conf.reduction_type == RT_PROD)
+                {
                     T expected = 1;
-                    for (size_t k = 0; k < param.processCount; k++) {
-                        expected *= (i + j + k);
+                    for (size_t proc_idx = 0; proc_idx < param.process_count; proc_idx++)
+                    {
+                        expected *= (elem_idx + buf_idx + proc_idx);
                     }
-                    if (param.GetPrologType() == PRT_T_TO_CHAR)
+                    if (param.test_conf.prolog_type == PTYPE_T_TO_CHAR)
+                    {
                         expected_fin = ((char)(expected * prolog_coeff_prod * epilog_coeff_prod));
+                    }
                     else
+                    {
                         expected_fin = expected * prolog_coeff_prod * epilog_coeff_prod;
-                    if (param.recvBuf[j][i] != expected_fin) {
-
-                        sprintf(this->errMessage, "[%zu] sent sendBuf[%zu][%zu] = %f, got recvBuf[%zu][%zu] = %f, but expected = %f\n",
-                            param.processIdx, j, i, (double) param.sendBuf[j][i], j, i, (double) param.recvBuf[j][i], (double) expected_fin);
+                    }
+                    if (param.recv_buf[buf_idx][elem_idx] != expected_fin)
+                    {
+                        snprintf(allreduce_custom_test::get_err_message(), ERR_MESSAGE_MAX_LEN, "[%zu] sent send_buf[%zu][%zu] = %f, got recv_buf[%zu][%zu] = %f, but expected = %f\n",
+                                 param.process_idx, buf_idx, elem_idx, (double) param.send_buf[buf_idx][elem_idx], buf_idx,
+                                 elem_idx, (double) param.recv_buf[buf_idx][elem_idx], (double) expected_fin);
                         return TEST_FAILURE;
                     }
                 }
-                else if (param.GetReductionType() == RT_CUSTOM) {
+                else if (param.test_conf.reduction_type == RT_CUSTOM)
+                {
                     T expected =
-                        ((param.processCount * (param.processCount - 1) / 2) +
-                        ((i + j) * param.processCount));
+                        ((param.process_count * (param.process_count - 1) / 2) +
+                        ((elem_idx + buf_idx) * param.process_count));
                     expected_fin = expected * prolog_coeff * epilog_coeff;
-                    if (param.recvBuf[j][i] != expected_fin) {
-                        sprintf(this->errMessage, "[%zu] sent sendBuf[%zu][%zu] = %f, got recvBuf[%zu][%zu] = %f, but expected = %f\n",
-                            param.processIdx, j, i, (double) param.sendBuf[j][i], j, i, (double) param.recvBuf[j][i], (double) expected_fin);
+                    if (param.recv_buf[buf_idx][elem_idx] != expected_fin)
+                    {
+                        snprintf(allreduce_custom_test::get_err_message(), ERR_MESSAGE_MAX_LEN, "[%zu] sent send_buf[%zu][%zu] = %f, got recv_buf[%zu][%zu] = %f, but expected = %f\n",
+                                 param.process_idx, buf_idx, elem_idx, (double) param.send_buf[buf_idx][elem_idx], buf_idx,
+                                 elem_idx, (double) param.recv_buf[buf_idx][elem_idx], (double) expected_fin);
                         return TEST_FAILURE;
                     }
                 }
-                else if (param.GetReductionType() == RT_CUSTOM_NULL) {
+                else if (param.test_conf.reduction_type == RT_CUSTOM_NULL)
+                {
                     T expected = 0;
                     expected_fin = expected * prolog_coeff * epilog_coeff;
-                    if (param.recvBuf[j][i] != expected_fin) {
-                        sprintf(this->errMessage, "[%zu] sent sendBuf[%zu][%zu] = %f, got recvBuf[%zu][%zu] = %f, but expected = %f\n",
-                            param.processIdx, j, i, (double) param.sendBuf[j][i], j, i, (double) param.recvBuf[j][i], (double) expected_fin);
+                    if (param.recv_buf[buf_idx][elem_idx] != expected_fin)
+                    {
+                        snprintf(allreduce_custom_test::get_err_message(), ERR_MESSAGE_MAX_LEN, "[%zu] sent send_buf[%zu][%zu] = %f, got recv_buf[%zu][%zu] = %f, but expected = %f\n",
+                                 param.process_idx, buf_idx, elem_idx, (double) param.send_buf[buf_idx][elem_idx], buf_idx,
+                                 elem_idx, (double) param.recv_buf[buf_idx][elem_idx], (double) expected_fin);
                         return TEST_FAILURE;
                     }
                 }
@@ -367,70 +359,96 @@ public:
         return TEST_SUCCESS;
     }
 
-    int Run(TypedTestParam < T > &param) {
-        size_t result = 0;
-        glob_match_id.resize(param.bufferCount);
-        for (size_t iter = 0; iter < 2; iter++) {
-            SHOW_ALGO(Collective_Name);
-            this->FillBuffers (param);
-            this->SwapBuffers(param, iter);
-            size_t idx = 0;
-            size_t* Buffers = param.DefineStartOrder();
-            for (idx = 0; idx < param.bufferCount; idx++) {
-                this->Init (param, idx);
-                glob_match_id[idx].first = param.match_id;
-                glob_match_id[idx].second = 0;
-                if (param.GetPrologType() == PRT_T_TO_2X) {
-                    param.coll_attr.prologue_fn = do_prologue_T_2x<T>;
-                }
-                if (param.GetEpilogType() == EPLT_T_TO_2X) {
-                    param.coll_attr.epilogue_fn = do_epilogue_T_2x<T>;
-                }
-                else if (param.GetEpilogType() == EPLT_CHAR_TO_T && param.GetPrologType() == PRT_T_TO_CHAR) {
-                    param.coll_attr.prologue_fn = do_prologue_T_to_char<T>;
-                    param.coll_attr.epilogue_fn = do_epilogue_char_to_T<T>;
-                }
-                //norm
-                else if (param.GetEpilogType() == EPLT_CHAR_TO_T && (param.GetPrologType() == PRT_T_TO_2X || param.GetPrologType() == PRT_NULL)) {
-                    return TEST_SUCCESS;
-                }
-                if (param.GetPrologType() == PRT_T_TO_CHAR && param.GetEpilogType() == EPLT_T_TO_2X) {
-                    // return TEST_SUCCESS;
-                    param.coll_attr.epilogue_fn = do_epilogue_T_2x<T>;
-                    param.coll_attr.prologue_fn = do_prologue_T_to_char<T>;
-                }
-                if (param.GetPrologType() == PRT_T_TO_CHAR) {
-                    // return TEST_SUCCESS;
-
-                    param.coll_attr.prologue_fn = do_prologue_T_to_char<T>;
-                }
-                if (param.GetCCLReductionType() == ccl_reduction_custom) {
-                    if (set_custom_reduction<T>(param))
-                        return TEST_FAILURE;
-                }
-                COUNT = param.elemCount;
-                param.req[Buffers[idx]] = (param.GetPlaceType() == PT_IN) ?
-                    param.global_comm->allreduce(param.recvBuf[Buffers[idx]].data(), param.recvBuf[Buffers[idx]].data(), param.elemCount,
-                                  (ccl::reduction) param.GetCCLReductionType(), &param.coll_attr, param.GetStream()) :
-                    param.global_comm->allreduce(param.sendBuf[Buffers[idx]].data(), param.recvBuf[Buffers[idx]].data(), param.elemCount,
-                                  (ccl::reduction) param.GetCCLReductionType(), &param.coll_attr, param.GetStream());
-            }
-            param.DefineCompletionOrderAndComplete();
-            result += Check(param);
-            if (param.GetCCLReductionType() == ccl_reduction_custom ||
-                param.GetPrologType() != PRT_NULL ||
-                param.GetEpilogType() != EPLT_NULL )
+    void run_derived(typed_test_param<T>& param)
+    {
+        const ccl_test_conf& test_conf = param.get_conf();
+        size_t count = param.elem_count;
+        ccl::reduction reduction = (ccl::reduction) get_ccl_lib_reduction_type(test_conf);
+        ccl::coll_attr* attr = &param.coll_attr;
+        ccl::stream_t& stream = param.get_stream();
+        for (size_t buf_idx = 0; buf_idx < param.buffer_count; buf_idx++)
+        {
+            param.prepare_coll_attr(param.buf_indexes[buf_idx]);
+            T* send_buf = param.send_buf[param.buf_indexes[buf_idx]].data();
+            T* recv_buf = param.recv_buf[param.buf_indexes[buf_idx]].data();
+            glob_match_id[buf_idx].first = param.match_id;
+            glob_match_id[buf_idx].second = 0;
+            if (param.test_conf.prolog_type == PTYPE_T_TO_2X)
             {
-                for (auto it : glob_match_id)
-                {
-                    if(it.second == 0)
+                param.coll_attr.prologue_fn = do_prologue_T_2x<T>;
+            }
+            if (param.test_conf.epilog_type == ETYPE_T_TO_2X)
+            {
+                param.coll_attr.epilogue_fn = do_epilogue_T_2x<T>;
+            }
+            else if (param.test_conf.epilog_type == ETYPE_CHAR_TO_T && param.test_conf.prolog_type == PTYPE_T_TO_CHAR)
+            {
+                param.coll_attr.prologue_fn = do_prologue_T_to_char<T>;
+                param.coll_attr.epilogue_fn = do_epilogue_char_to_T<T>;
+            }
+            else if (param.test_conf.epilog_type == ETYPE_CHAR_TO_T &&
+                    (param.test_conf.prolog_type == PTYPE_T_TO_2X || param.test_conf.prolog_type == PTYPE_NULL))
+            {
+                                param.coll_attr.epilogue_fn = do_epilogue_T_2x<T>;
+                param.coll_attr.prologue_fn = do_prologue_T_to_char<T>;
+            }
+            if (param.test_conf.prolog_type == PTYPE_T_TO_CHAR && param.test_conf.epilog_type == ETYPE_T_TO_2X)
+            {
+                param.coll_attr.epilogue_fn = do_epilogue_T_2x<T>;
+                param.coll_attr.prologue_fn = do_prologue_T_to_char<T>;
+            }
+            if (param.test_conf.prolog_type == PTYPE_T_TO_CHAR)
+            {
+                param.coll_attr.prologue_fn = do_prologue_T_to_char<T>;
+            }
+            if (reduction == ccl::reduction::custom)
+            {
+                if (set_custom_reduction<T>(param))
+                    param.coll_attr.epilogue_fn = do_epilogue_T_2x<T>;
+                param.coll_attr.prologue_fn = do_prologue_T_to_char<T>;
+            }
+            COUNT = param.elem_count;
+            param.reqs[buf_idx] =
+                param.global_comm->allreduce((test_conf.place_type == PT_IN) ? recv_buf : send_buf,
+                recv_buf, count, reduction, attr, stream);
+        }
+    }
+    int run(typed_test_param<T>& param)
+    {
+        size_t result = 0;
+        SHOW_ALGO(Collective_Name);
+        const ccl_test_conf& test_conf = param.get_conf();
+        glob_match_id.resize(param.buffer_count);
+        for (size_t iter = 0; iter < ITER_COUNT; iter++)
+        {
+            try
+            {
+                this->alloc_buffers(param);
+                this->fill_buffers(param);
+                param.swap_buffers(iter);
+                param.define_start_order();
+                this->run_derived(param);
+                param.complete();
+                result += check(param);
+                if ( get_ccl_lib_reduction_type(test_conf) == ccl_reduction_custom ||
+                    param.test_conf.prolog_type != PTYPE_NULL ||
+                    param.test_conf.epilog_type != ETYPE_NULL )
                     {
-                        sprintf(this->errMessage, "[%zu] Wrong count match_id %s %d\n",
-                                param.processIdx, it.first.c_str(), it.second);
-                        result = TEST_FAILURE;
-                        break;
+                        for (auto it : glob_match_id)
+                        {
+                            if(it.second == 0)
+                            {
+                                snprintf(allreduce_custom_test::get_err_message(), ERR_MESSAGE_MAX_LEN, "[%zu] Wrong count match_id %s %d\n",
+                                         param.process_idx, it.first.c_str(), it.second);
+                                throw std::runtime_error(this->err_message);
+                            }
+                        }
                     }
-                }
+            }
+            catch (const std::exception& ex)
+            {
+                result += TEST_FAILURE;
+                printf("WARNING! %s iter number: %zu", ex.what(), iter);
             }
         }
         glob_match_id.clear();
@@ -438,6 +456,6 @@ public:
     }
 };
 
-RUN_METHOD_DEFINITION(AllReduceCustomTest);
-TEST_CASES_DEFINITION(AllReduceCustomTest);
+RUN_METHOD_DEFINITION(allreduce_custom_test);
+TEST_CASES_DEFINITION(allreduce_custom_test);
 MAIN_FUNCTION();

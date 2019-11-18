@@ -1,148 +1,98 @@
 #define TEST_CCL_REDUCE
 #define Collective_Name "CCL_REDUCE"
 
-#include "base.hpp"
+#include <chrono>
 #include <functional>
 #include <vector>
-#include <chrono>
 
-// template <typename T>
-// ccl_status_t do_reduction_null(const void* in_buf, size_t in_count, void* inout_buf,
-                               // size_t* out_count, const void** ctx, ccl_datatype_t dtype)
-// {
-    // size_t idx;
-    // if (out_count) *out_count = in_count;
-            // for (idx = 0; idx < in_count; idx++)
-            // {
-                // ((T*)inout_buf)[idx] = (T)0;
-            // }
-    // return ccl_status_success;
-// }
-// template <typename T>
-// ccl_status_t do_reduction_custom(const void* in_buf, size_t in_count, void* inout_buf,
-                               // size_t* out_count, const void** ctx, ccl_datatype_t dtype)
-// {
-    // size_t idx;
-    // if (out_count) *out_count = in_count;
-            // for (idx = 0; idx < in_count; idx++)
-            // {
-                // ((T*)inout_buf)[idx] += ((T*)in_buf)[idx];
-            // }
-    // return ccl_status_success;
-// }
-// template <typename T>
-// int set_custom_reduction (TypedTestParam <T> &param){
-    // TestReductionType customFuncName = param.GetReductionType();
-    // switch (customFuncName) {
-        // case RT_CUSTOM:
-            // param.coll_attr.reduction_fn = do_reduction_custom<T>;
-            // break;
-        // case RT_CUSTOM_NULL:
-            // param.coll_attr.reduction_fn = do_reduction_null<T>;
-            // break;
-        // default:
-            // return TEST_FAILURE;
+#include "base_impl.hpp"
 
-    // }
-    // return TEST_SUCCESS;
-// }
-template < typename T > class ReduceTest:public BaseTest < T > {
+template <typename T> class reduce_test : public base_test <T>
+{
 public:
-    int Check(TypedTestParam < T > &param) {
-        if (param.processIdx == ROOT_PROCESS_IDX) {
-            for (size_t j = 0; j < param.bufferCount; j++) {
-                for (size_t i = 0; i < param.elemCount; i++) {
-                    if (param.GetReductionType() == RT_SUM) {
+    int check(typed_test_param<T>& param)
+    {
+        if (param.process_idx == ROOT_PROCESS_IDX)
+        {
+            for (size_t buf_idx = 0; buf_idx < param.buffer_count; buf_idx++)
+            {
+                for (size_t elem_idx = 0; elem_idx < param.elem_count; elem_idx++)
+                {
+                    if (param.test_conf.reduction_type == RT_SUM)
+                    {
                         T expected =
-                            ((param.processCount * (param.processCount - 1) / 2) +
-                            ((i + j) * param.processCount));
-                        if (param.recvBuf[j][i] != expected) {
-                            sprintf(this->errMessage, "[%zu] sent sendBuf[%zu][%zu] = %f, got recvBuf[%zu][%zu] = %f, but expected = %f\n",
-                                param.processIdx, j, i, (double) param.sendBuf[j][i], j, i, (double) param.recvBuf[j][i], (double) expected);
+                            ((param.process_count * (param.process_count - 1) / 2) +
+                            ((elem_idx + buf_idx) * param.process_count));
+                        if (param.recv_buf[buf_idx][elem_idx] != expected)
+                        {
+                            snprintf(reduce_test::get_err_message(), ERR_MESSAGE_MAX_LEN, "[%zu] sent send_buf[%zu][%zu] = %f, got recv_buf[%zu][%zu] = %f, but expected = %f\n",
+                                     param.process_idx, buf_idx, elem_idx, (double) param.send_buf[buf_idx][elem_idx], buf_idx,
+                                     elem_idx,(double) param.recv_buf[buf_idx][elem_idx], (double) expected);
                             return TEST_FAILURE;
                         }
                     }
-                    if (param.GetReductionType() == RT_MAX) {
-                        T expected = get_expected_max<T>(i, j, param.processCount);
-                        if (param.recvBuf[j][i] != expected) {
-                            sprintf(this->errMessage, "[%zu] sent sendBuf[%zu][%zu] = %f, got recvBuf[%zu][%zu] = %f, but expected = %f\n",
-                                param.processIdx, j, i, (double) param.sendBuf[j][i], j, i, (double) param.recvBuf[j][i], (double) expected);
+                    if (param.test_conf.reduction_type == RT_MAX)
+                    {
+                        T expected = get_expected_max<T>(elem_idx, buf_idx, param.process_count);
+                        if (param.recv_buf[buf_idx][elem_idx] != expected)
+                        {
+                            snprintf(reduce_test::get_err_message(), ERR_MESSAGE_MAX_LEN, "[%zu] sent send_buf[%zu][%zu] = %f, got recv_buf[%zu][%zu] = %f, but expected = %f\n",
+                                     param.process_idx, buf_idx, elem_idx, (double) param.send_buf[buf_idx][elem_idx], buf_idx,
+                                     elem_idx, (double) param.recv_buf[buf_idx][elem_idx], (double) expected);
                             return TEST_FAILURE;
                         }
                     }
-                    if (param.GetReductionType() == RT_MIN) {
-                        T expected = get_expected_min<T>(i, j, param.processCount);
-                        if (param.recvBuf[j][i] != expected) {
-                            sprintf(this->errMessage, "[%zu] sent sendBuf[%zu][%zu] = %f, got recvBuf[%zu][%zu] = %f, but expected = %f\n",
-                                param.processIdx, j, i, (double) param.sendBuf[j][i], j, i, (double) param.recvBuf[j][i], (double) expected);
+                    if (param.test_conf.reduction_type == RT_MIN)
+                    {
+                        T expected = get_expected_min<T>(elem_idx, buf_idx, param.process_count);
+                        if (param.recv_buf[buf_idx][elem_idx] != expected)
+                        {
+                            snprintf(reduce_test::get_err_message(), ERR_MESSAGE_MAX_LEN, "[%zu] sent send_buf[%zu][%zu] = %f, got recv_buf[%zu][%zu] = %f, but expected = %f\n",
+                                     param.process_idx, buf_idx, elem_idx, (double) param.send_buf[buf_idx][elem_idx], buf_idx,
+                                     elem_idx, (double) param.recv_buf[buf_idx][elem_idx], (double) expected);
                             return TEST_FAILURE;
                         }
                     }
-                    if (param.GetReductionType() == RT_PROD) {
+                    if (param.test_conf.reduction_type == RT_PROD)
+                    {
                         T expected = 1;
-                        for (size_t k = 0; k < param.processCount; k++) {
-                            expected *= i + j + k;
+                        for (size_t proc_idx = 0; proc_idx < param.process_count; proc_idx++)
+                        {
+                            expected *= elem_idx + buf_idx + proc_idx;
                         }
-                        if (param.recvBuf[j][i] != expected) {
-                            sprintf(this->errMessage, "[%zu] sent sendBuf[%zu][%zu] = %f, got recvBuf[%zu][%zu] = %f, but expected = %f\n",
-                                param.processIdx, j, i, (double) param.sendBuf[j][i], j, i, (double) param.recvBuf[j][i], (double) expected);
+                        if (param.recv_buf[buf_idx][elem_idx] != expected)
+                        {
+                            snprintf(reduce_test::get_err_message(), ERR_MESSAGE_MAX_LEN, "[%zu] sent send_buf[%zu][%zu] = %f, got recv_buf[%zu][%zu] = %f, but expected = %f\n",
+                                     param.process_idx, buf_idx, elem_idx, (double) param.send_buf[buf_idx][elem_idx], buf_idx,
+                                     elem_idx, (double) param.recv_buf[buf_idx][elem_idx], (double) expected);
                             return TEST_FAILURE;
                         }
                     }
-                    // if (param.GetReductionType() == RT_CUSTOM) {
-                        // T expected =
-                            // ((param.processCount * (param.processCount - 1) / 2) +
-                            // (i * param.processCount));
-                        // if (param.recvBuf[j][i] != expected) {
-                            // sprintf(this->errMessage, "[%zu] sent sendBuf[%zu][%zu] = %f, got recvBuf[%zu][%zu] = %f, but expected = %f\n",
-                                // param.processIdx, j, i, (double) param.sendBuf[j][i], j, i, (double) param.recvBuf[j][i], (double) expected);
-                            // return TEST_FAILURE;
-                        // }
-                    // }
-                    // else if (param.GetReductionType() == RT_CUSTOM_NULL) {
-                        // T expected = 0;
-                        // if (param.recvBuf[j][i] != expected) {
-                            // sprintf(this->errMessage, "[%zu] sent sendBuf[%zu][%zu] = %f, got recvBuf[%zu][%zu] = %f, but expected = %f\n",
-                                // param.processIdx, j, i, (double) param.sendBuf[j][i], j, i, (double) param.recvBuf[j][i], (double) expected);
-                            // return TEST_FAILURE;
-                        // }
-                    // }
                 }
             }
         }
         return TEST_SUCCESS;
     }
 
-    int Run(TypedTestParam < T > &param) {
-        size_t result = 0;
-        for (size_t iter = 0; iter < 2; iter++) {
-            SHOW_ALGO(Collective_Name);
-            this->FillBuffers (param);
-            this->SwapBuffers(param, iter);
-            size_t idx = 0;
-            size_t* Buffers = param.DefineStartOrder();
-            // if (param.GetCCLReductionType() == ccl_reduction_custom) {
-                // if (set_custom_reduction<T>(param))
-                    // return TEST_FAILURE;
-            // }
-
-            for (idx = 0; idx < param.bufferCount; idx++) {
-                this->Init(param, Buffers[idx]);
-                param.req[Buffers[idx]] = (param.GetPlaceType() == PT_IN) ?
-                        param.global_comm->reduce(param.recvBuf[Buffers[idx]].data(), param.recvBuf[Buffers[idx]].data(), param.elemCount,
-                                                 (ccl::reduction) param.GetReductionType(),
-                                                 ROOT_PROCESS_IDX, &param.coll_attr, param.GetStream()) :
-                        param.global_comm->reduce(param.sendBuf[Buffers[idx]].data(), param.recvBuf[Buffers[idx]].data(), param.elemCount,
-                                                 (ccl::reduction) param.GetReductionType(),
-                                                 ROOT_PROCESS_IDX, &param.coll_attr, param.GetStream());
-            }
-            param.DefineCompletionOrderAndComplete();
-            result += Check(param);
+    void run_derived(typed_test_param<T>& param)
+    {
+        const ccl_test_conf& test_conf = param.get_conf();
+        size_t count = param.elem_count;
+        ccl::reduction reduction = (ccl::reduction) test_conf.reduction_type;
+        ccl::coll_attr* attr = &param.coll_attr;
+        ccl::stream_t& stream = param.get_stream();
+        for (size_t buf_idx = 0; buf_idx < param.buffer_count; buf_idx++)
+        {
+            param.prepare_coll_attr(param.buf_indexes[buf_idx]);
+            T* send_buf = param.send_buf[param.buf_indexes[buf_idx]].data();
+            T* recv_buf = param.recv_buf[param.buf_indexes[buf_idx]].data();
+            param.reqs[buf_idx] =
+                param.global_comm->reduce((test_conf.place_type == PT_IN) ? recv_buf : send_buf,
+                recv_buf, count, reduction, ROOT_PROCESS_IDX, attr, stream);
         }
-        return result;
     }
 };
 
-RUN_METHOD_DEFINITION(ReduceTest);
-TEST_CASES_DEFINITION(ReduceTest);
+RUN_METHOD_DEFINITION(reduce_test);
+TEST_CASES_DEFINITION(reduce_test);
 MAIN_FUNCTION();
