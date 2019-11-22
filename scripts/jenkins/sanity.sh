@@ -147,11 +147,26 @@ enable_unordered_coll_test_scope()
 
 set_environment()
 {
+    # $build_compiler set up by jenkins: gnu/sycl/nosycl (sycl/nosycl means clang with or w/o sycl support)
+    if [ -z "${build_compiler}" ]
+    then
+        build_compiler="sycl"
+    fi
+    if [ $build_compiler == "gnu" ]
+    then
+        BUILD_COMPILER_TYPE="gnu"
+    elif [ $build_compiler == "sycl" && $build_compiler == "nosycl" ]
+    then
+        BUILD_COMPILER_TYPE="clang"
+    elif [ $build_compiler == "intel" ]
+    then
+        BUILD_COMPILER_TYPE="intel"
+    fi
+    # $BUILD_COMPILER_TYPE may be set up by user: clang/gnu/intel
     if [ -z "${BUILD_COMPILER_TYPE}" ]
     then
         BUILD_COMPILER_TYPE="clang"
     fi
-
     if [ "${BUILD_COMPILER_TYPE}" == "gnu" ]
      then
         BUILD_COMPILER=/usr/bin
@@ -159,6 +174,7 @@ set_environment()
         CXX_COMPILER=${BUILD_COMPILER}/g++
     elif [ "${BUILD_COMPILER_TYPE}" = "intel" ]
     then
+        source /nfs/inn/proj/mpi/pdsd/opt/EM64T-LIN/intel/compilers_and_libraries_2019.4.243/linux/bin/compilervars.sh intel64
         BUILD_COMPILER=/nfs/inn/proj/mpi/pdsd/opt/EM64T-LIN/intel/compilers_and_libraries_2019.4.243/linux/bin/intel64/
         C_COMPILER=${BUILD_COMPILER}/icc
         CXX_COMPILER=${BUILD_COMPILER}/icpc
@@ -202,10 +218,6 @@ set_environment()
     then
         build_type="release"
     fi
-    if [ -z "$build_compiler" ]
-    then
-        build_compiler="sycl"
-    fi
 
     source ${CCL_INSTALL_DIR}/l_ccl_${build_compiler}_${build_type}_*/env/vars.sh
 
@@ -219,6 +231,12 @@ set_environment()
 
 make_tests()
 {
+    if [ $build_compiler == "sycl" ]
+    then
+        DISABLE_SYCL=0
+    else
+        DISABLE_SYCL=1
+    fi
     cd ${CURRENT_WORK_DIR}/tests/functional
     mkdir -p build
     cd ./build

@@ -35,6 +35,7 @@ then
     CXX_COMPILER=${BUILD_COMPILER}/g++
 elif [ "${BUILD_COMPILER_TYPE}" = "intel" ]
 then
+    source /nfs/inn/proj/mpi/pdsd/opt/EM64T-LIN/intel/compilers_and_libraries_2019.4.243/linux/bin/compilervars.sh intel64
     BUILD_COMPILER=/nfs/inn/proj/mpi/pdsd/opt/EM64T-LIN/intel/compilers_and_libraries_2019.4.243/linux/bin/intel64/
     C_COMPILER=${BUILD_COMPILER}/icc
     CXX_COMPILER=${BUILD_COMPILER}/icpc
@@ -107,7 +108,7 @@ set_default_values()
     ENABLE_PACK="no"
     if [ -z "${ENABLE_PRE_DROP}" ]
     then
-        ENABLE_PRE_DROP="no"
+        ENABLE_PRE_DROP="false"
     fi
     if [ "${ENABLE_DEBUG_BUILD}" == "yes" ]
     then
@@ -488,7 +489,7 @@ parse_arguments()
                 ENABLE_BUILD="yes"
                 ;;
             "-swf-pre-drop"|"--swf-pre-drop")
-                ENABLE_PRE_DROP="yes"
+                ENABLE_PRE_DROP="true"
                 ;;
             "-build-deb-conf"| "--build-deb-conf")
                 ENABLE_DEBUG_BUILD="yes"
@@ -540,7 +541,7 @@ run_build()
 #==============================================================================
 run_copy_package_to_common_folder()
 {
-    if [ "${ENABLE_PRE_DROP}" == "yes" ]
+    if [ "${ENABLE_PRE_DROP}" == "true" ]
     then
         echo_log_separator
         echo_log "#\t\t\tCopy package ${WORKSPACE}/${CCL_PACKAGE_NAME}.tgz to ${RELEASED_BUILD_DIR}..."
@@ -586,7 +587,7 @@ run_pre_drop()
 #==============================================================================
 run_swf_pre_drop()
 {
-    if [ "${ENABLE_PRE_DROP}" == "yes" ]
+    if [ "${ENABLE_PRE_DROP}" == "true" ]
     then
         echo_log_separator
         echo_log "#\t\t\tSWF pre-drop..."
