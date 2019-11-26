@@ -64,8 +64,8 @@
             {                                                                             \
                 if (strstr(argv[idx], OUTPUT_NAME_ARG))                                   \
                 {                                                                         \
-                    string patchedArg;                                                    \
-                    string originArg = string(argv[idx]);                                 \
+                    std::string patchedArg;                                               \
+                    std::string originArg = std::string(argv[idx]);                       \
                     size_t extPos = originArg.find(".xml");                               \
                     size_t argLen = strlen(OUTPUT_NAME_ARG);                              \
                     patchedArg = originArg.substr(argLen, extPos - argLen) + "_"          \

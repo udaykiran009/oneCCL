@@ -123,6 +123,7 @@ set(EXAMPLES_INC_DIRS ${PROJECT_SOURCE_DIR}/include ${PROJECT_SOURCE_DIR}/exampl
 add_subdirectory(src)
 add_subdirectory(examples/cpu)
 
+set (CCL_ENABLCE_SYCL_CHECK_CONTRACT "#if !defined(__clang__) || __clang_major__ < 9 || !defined(CL_SYCL_LANGUAGE_VERSION)\n#error This version of CCL configured only for DPC++ compiler\n#endif")
 if(NOT ${CMAKE_DISABLE_SYCL} AND ${CMAKE_C_COMPILER_ID} STREQUAL "Clang" AND ${CMAKE_CXX_COMPILER_ID} STREQUAL "Clang")
     option (CCL_ENABLE_SYCL "Enable CCL SYCL runtime" ON)
     message(STATUS "Enable CCL SYCL runtime")

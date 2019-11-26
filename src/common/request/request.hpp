@@ -1,6 +1,7 @@
 #pragma once
 
 #include <atomic>
+#include <functional>
 #include "common/global/global.hpp"
 #include "common/log/log.hpp"
 
@@ -8,7 +9,7 @@ class alignas(CACHELINE_SIZE) ccl_request
 {
 public:
     using dump_func = std::function<void(std::ostream &)>;
-#ifdef ENABLE_DEBUG    
+#ifdef ENABLE_DEBUG
     void set_dump_callback(dump_func &&callback)
     {
         dump_callback = std::move(callback);

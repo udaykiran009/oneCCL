@@ -16,6 +16,17 @@ include_directories(${PROJECT_SOURCE_DIR}/tests/googletest-release-1.8.1/googlet
 include_directories($ENV{CCL_ROOT}/include)
 link_directories($ENV{CCL_ROOT}/lib)
 
+# Check SYCL support
+if( ${CMAKE_C_COMPILER_ID} STREQUAL "Clang" AND ${CMAKE_CXX_COMPILER_ID} STREQUAL "Clang")
+    if (NOT ${CMAKE_DISABLE_SYCL})
+        set(CMAKE_CLANG_FLAGS "-fsycl")
+        set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -lsycl")
+    endif()
+    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${CMAKE_CLANG_FLAGS}")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${CMAKE_CLANG_FLAGS}")
+endif()
+
+
 foreach(src ${sources})
     get_filename_component(executable ${src} NAME_WE)
     add_executable(${executable} ${src})
