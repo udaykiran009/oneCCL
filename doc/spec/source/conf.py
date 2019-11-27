@@ -19,7 +19,7 @@
 # -- Project information -----------------------------------------------------
 
 project = 'oneCCL Specifications'
-copyright = '2019'
+copyright = '2019, Intel Corporation'
 
 
 # The short X.Y version
@@ -30,7 +30,7 @@ copyright = '2019'
 
 
 rst_prolog = """
-.. |product_full| replace:: oneAPI Collective Communication Library
+.. |product_full| replace:: oneAPI Collective Communications Library
 .. |product_short| replace:: oneCCL
 .. |reg| unicode:: U+000AE
 .. |copy| unicode:: U+000A9
@@ -64,7 +64,7 @@ exclude_patterns = []
 # relative to this directory. They are copied after the builtin static files,
 # so a file named "default.css" will overwrite the builtin "default.css".
 html_static_path = ['_static']
-
+html_js_files = ['custom.js']
 html_context = {
     'css_files': [
         '_static/style.css',  # override wide tables in RTD theme
