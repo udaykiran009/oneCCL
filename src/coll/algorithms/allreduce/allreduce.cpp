@@ -5,11 +5,12 @@ ccl_status_t ccl_coll_build_direct_allreduce(ccl_sched *sched,
                                              ccl_buffer send_buf,
                                              ccl_buffer recv_buf,
                                              size_t count, ccl_datatype_internal_t dtype,
-                                             ccl_reduction_t op)
+                                             ccl_reduction_t op,
+                                             ccl_comm* comm)
 {
     LOG_DEBUG("build direct allreduce");
 
-    entry_factory::make_entry<allreduce_entry>(sched, send_buf, recv_buf, count, dtype, op);
+    entry_factory::make_entry<allreduce_entry>(sched, send_buf, recv_buf, count, dtype, op, comm);
     return ccl_status_success;
 }
 
@@ -17,7 +18,8 @@ ccl_status_t ccl_coll_build_rabenseifner_allreduce(ccl_sched *sched,
                                                    ccl_buffer send_buf,
                                                    ccl_buffer recv_buf,
                                                    size_t count, ccl_datatype_internal_t dtype,
-                                                   ccl_reduction_t op)
+                                                   ccl_reduction_t op,
+                                                   ccl_comm* comm)
 {
     LOG_DEBUG("build Rabenseifner's allreduce");
     CCL_ASSERT(sched != nullptr, "empty sched");
@@ -27,8 +29,6 @@ ccl_status_t ccl_coll_build_rabenseifner_allreduce(ccl_sched *sched,
     int i, send_idx, recv_idx, last_idx, mask, newdst, dst, send_cnt, recv_cnt;
     int *cnts = NULL, *disps = NULL;
     size_t dtype_size = ccl_datatype_get_size(dtype);
-
-    ccl_comm *comm = sched->coll_param.comm;
 
     comm_size = comm->size();
     rank = comm->rank();
@@ -40,6 +40,9 @@ ccl_status_t ccl_coll_build_rabenseifner_allreduce(ccl_sched *sched,
         entry_factory::make_entry<copy_entry>(sched, send_buf, recv_buf, count, dtype);
         sched->add_barrier();
     }
+
+    if (comm_size == 1)
+        return status;
 
     /* get nearest power-of-two less than or equal to comm_size */
     pof2 = comm->pof2();
@@ -54,7 +57,7 @@ ccl_status_t ccl_coll_build_rabenseifner_allreduce(ccl_sched *sched,
 
     if (rank < 2 * rem) {
         if (rank % 2 == 0) {    /* even */
-            entry_factory::make_entry<send_entry>(sched, recv_buf, count, dtype, rank + 1);
+            entry_factory::make_entry<send_entry>(sched, recv_buf, count, dtype, rank + 1, comm);
             sched->add_barrier();
 
             /* temporarily set the rank to -1 so that this
@@ -62,7 +65,7 @@ ccl_status_t ccl_coll_build_rabenseifner_allreduce(ccl_sched *sched,
              * doubling */
             newrank = CCL_INVALID_PROC_IDX;
         } else {        /* odd */
-            entry_factory::make_entry<recv_entry>(sched, tmp_buf, count, dtype, rank - 1);
+            entry_factory::make_entry<recv_entry>(sched, tmp_buf, count, dtype, rank - 1, comm);
             sched->add_barrier();
 
             /* do the reduction on received data. since the
@@ -130,16 +133,20 @@ ccl_status_t ccl_coll_build_rabenseifner_allreduce(ccl_sched *sched,
             if (can_use_recv_reduce) {
                 entry_factory::make_entry<recv_reduce_entry>(sched,
                                                              (recv_buf + disps[recv_idx] * dtype_size),
-                                                             recv_cnt, nullptr, dtype, op, dst, ccl_buffer());
-                entry_factory::make_entry<send_entry>(sched, (recv_buf + disps[send_idx] * dtype_size), send_cnt, dtype, dst);
+                                                             recv_cnt, nullptr, dtype, op, dst,
+                                                             ccl_buffer(), comm);
+                entry_factory::make_entry<send_entry>(sched, (recv_buf + disps[send_idx] * dtype_size),
+                                                      send_cnt, dtype, dst, comm);
                 sched->add_barrier();
             }
 
             else {
                 /* Send data from recv_buf. Recv into tmp_buf */
-                entry_factory::make_entry<recv_entry>(sched, (tmp_buf + disps[recv_idx] * dtype_size), recv_cnt, dtype, dst);
+                entry_factory::make_entry<recv_entry>(sched, (tmp_buf + disps[recv_idx] * dtype_size),
+                                                      recv_cnt, dtype, dst, comm);
                 /* sendrecv, no barrier here */
-                entry_factory::make_entry<send_entry>(sched, (recv_buf + disps[send_idx] * dtype_size), send_cnt, dtype, dst);
+                entry_factory::make_entry<send_entry>(sched, (recv_buf + disps[send_idx] * dtype_size),
+                                                      send_cnt, dtype, dst, comm);
                 sched->add_barrier();
 
                 /* tmp_buf contains data received in this step.
@@ -190,9 +197,11 @@ ccl_status_t ccl_coll_build_rabenseifner_allreduce(ccl_sched *sched,
                     recv_cnt += cnts[i];
             }
 
-            entry_factory::make_entry<recv_entry>(sched, (recv_buf + disps[recv_idx] * dtype_size), recv_cnt, dtype, dst);
+            entry_factory::make_entry<recv_entry>(sched, (recv_buf + disps[recv_idx] * dtype_size),
+                                                  recv_cnt, dtype, dst, comm);
             /* sendrecv, no barrier here */
-            entry_factory::make_entry<send_entry>(sched, (recv_buf + disps[send_idx] * dtype_size), send_cnt, dtype, dst);
+            entry_factory::make_entry<send_entry>(sched, (recv_buf + disps[send_idx] * dtype_size),
+                                                  send_cnt, dtype, dst, comm);
             sched->add_barrier();
 
             if (newrank > newdst)
@@ -207,9 +216,9 @@ ccl_status_t ccl_coll_build_rabenseifner_allreduce(ccl_sched *sched,
      * (rank-1), the ranks who didn't participate above. */
     if (rank < 2 * rem) {
         if (rank % 2) { /* odd */
-            entry_factory::make_entry<send_entry>(sched, recv_buf, count, dtype, rank - 1);
+            entry_factory::make_entry<send_entry>(sched, recv_buf, count, dtype, rank - 1, comm);
         } else {        /* even */
-            entry_factory::make_entry<recv_entry>(sched, recv_buf, count, dtype, rank + 1);
+            entry_factory::make_entry<recv_entry>(sched, recv_buf, count, dtype, rank + 1, comm);
         }
     }
 
@@ -222,7 +231,10 @@ ccl_status_t ccl_coll_build_rabenseifner_allreduce(ccl_sched *sched,
 ccl_status_t ccl_coll_build_recursive_doubling_allreduce(ccl_sched *sched,
                                                          ccl_buffer send_buf,
                                                          ccl_buffer recv_buf,
-                                                         size_t count, ccl_datatype_internal_t dtype, ccl_reduction_t op)
+                                                         size_t count,
+                                                         ccl_datatype_internal_t dtype,
+                                                         ccl_reduction_t op,
+                                                         ccl_comm* comm)
 {
     LOG_DEBUG("build recursive_doubling allreduce");
 
@@ -231,7 +243,6 @@ ccl_status_t ccl_coll_build_recursive_doubling_allreduce(ccl_sched *sched,
     int pof2, rem, comm_size, rank;
     int newrank, mask, newdst, dst;
 
-    ccl_comm *comm = sched->coll_param.comm;
     comm_size = comm->size();
     rank = comm->rank();
 
@@ -245,6 +256,9 @@ ccl_status_t ccl_coll_build_recursive_doubling_allreduce(ccl_sched *sched,
         sched->add_barrier();
     }
 
+    if (comm_size == 1)
+        return status;
+
     /* get nearest power-of-two less than or equal to comm_size */
     pof2 = comm->pof2();
     rem = comm_size - pof2;
@@ -257,7 +271,7 @@ ccl_status_t ccl_coll_build_recursive_doubling_allreduce(ccl_sched *sched,
 
     if (rank < 2 * rem) {
         if (rank % 2 == 0) {    /* even */
-            entry_factory::make_entry<send_entry>(sched, recv_buf, count, dtype, rank + 1);
+            entry_factory::make_entry<send_entry>(sched, recv_buf, count, dtype, rank + 1, comm);
             sched->add_barrier();
 
             /* temporarily set the rank to -1 so that this
@@ -265,7 +279,7 @@ ccl_status_t ccl_coll_build_recursive_doubling_allreduce(ccl_sched *sched,
              * doubling */
             newrank = -1;
         } else {        /* odd */
-            entry_factory::make_entry<recv_entry>(sched, tmp_buf, count, dtype, rank - 1);
+            entry_factory::make_entry<recv_entry>(sched, tmp_buf, count, dtype, rank - 1, comm);
             sched->add_barrier();
 
             /* do the reduction on received data. since the
@@ -291,9 +305,9 @@ ccl_status_t ccl_coll_build_recursive_doubling_allreduce(ccl_sched *sched,
 
             /* Send the most current data, which is in recv_buf. Recv
              * into tmp_buf */
-            entry_factory::make_entry<recv_entry>(sched, tmp_buf, count, dtype, dst);
+            entry_factory::make_entry<recv_entry>(sched, tmp_buf, count, dtype, dst, comm);
             /* sendrecv, no barrier here */
-            entry_factory::make_entry<send_entry>(sched, recv_buf, count, dtype, dst);
+            entry_factory::make_entry<send_entry>(sched, recv_buf, count, dtype, dst, comm);
             sched->add_barrier();
 
             /* tmp_buf contains data received in this step.
@@ -311,9 +325,9 @@ ccl_status_t ccl_coll_build_recursive_doubling_allreduce(ccl_sched *sched,
      * (rank-1), the ranks who didn't participate above. */
     if (rank < 2 * rem) {
         if (rank % 2) { /* odd */
-            entry_factory::make_entry<send_entry>(sched, recv_buf, count, dtype, rank - 1);
+            entry_factory::make_entry<send_entry>(sched, recv_buf, count, dtype, rank - 1, comm);
         } else {        /* even */
-            entry_factory::make_entry<recv_entry>(sched, recv_buf, count, dtype, rank + 1);
+            entry_factory::make_entry<recv_entry>(sched, recv_buf, count, dtype, rank + 1, comm);
         }
         sched->add_barrier();
     }
@@ -324,19 +338,23 @@ ccl_status_t ccl_coll_build_recursive_doubling_allreduce(ccl_sched *sched,
 ccl_status_t ccl_coll_build_starlike_allreduce(ccl_sched *sched,
                                                ccl_buffer send_buf,
                                                ccl_buffer recv_buf,
-                                               size_t count, ccl_datatype_internal_t dtype, ccl_reduction_t op)
+                                               size_t count,
+                                               ccl_datatype_internal_t dtype,
+                                               ccl_reduction_t op,
+                                               ccl_comm* comm)
 {
     LOG_DEBUG("build starlike allreduce");
 
     ccl_status_t status = ccl_status_success;
-    size_t comm_size = sched->coll_param.comm->size();
-    size_t this_rank = sched->coll_param.comm->rank();
+    size_t comm_size = comm->size();
+    size_t this_rank = comm->rank();
     size_t* buffer_counts = static_cast<size_t*>(CCL_MALLOC(comm_size * sizeof(size_t), "buffer_count"));
     size_t* buffer_offsets = static_cast<size_t*>(CCL_MALLOC(comm_size * sizeof(size_t), "buffer_offsets"));
     size_t dtype_size = ccl_datatype_get_size(dtype);
 
     // copy local data into recv_buf
-    if (send_buf != recv_buf) {
+    if (send_buf != recv_buf)
+    {
         entry_factory::make_entry<copy_entry>(sched, send_buf, recv_buf, count, dtype);
         sched->add_barrier();
     }
@@ -355,7 +373,10 @@ ccl_status_t ccl_coll_build_starlike_allreduce(ccl_sched *sched,
 
     // recv_reduce buffer for current rank
     size_t this_rank_buf_size = buffer_counts[this_rank] * dtype_size;
-    ccl_buffer tmp_buf = sched->alloc_buffer(this_rank_buf_size * (comm_size - 1));
+
+    ccl_buffer tmp_buf;
+    if (this_rank_buf_size)
+          tmp_buf = sched->alloc_buffer(this_rank_buf_size * (comm_size - 1));
 
     size_t tmp_buf_recv_idx = 0;
     for (size_t rank_idx = 0; rank_idx < comm_size; ++rank_idx)
@@ -364,14 +385,15 @@ ccl_status_t ccl_coll_build_starlike_allreduce(ccl_sched *sched,
         {
             // send buffer to others
             entry_factory::make_entry<send_entry>(sched, recv_buf + buffer_offsets[rank_idx],
-                                                  buffer_counts[rank_idx], dtype, rank_idx);
+                                                  buffer_counts[rank_idx], dtype, rank_idx, comm);
 
             // recv part of buffer from others and perform reduce
             entry_factory::make_entry<recv_reduce_entry>(sched,
                                                          recv_buf + buffer_offsets[this_rank],
                                                          buffer_counts[this_rank], nullptr,
                                                          dtype, op, rank_idx,
-                                                         tmp_buf + this_rank_buf_size * tmp_buf_recv_idx);
+                                                         tmp_buf + this_rank_buf_size * tmp_buf_recv_idx,
+                                                         comm);
             ++tmp_buf_recv_idx;
         }
     }
@@ -380,7 +402,7 @@ ccl_status_t ccl_coll_build_starlike_allreduce(ccl_sched *sched,
 
     // allgatherv
     CCL_CALL(ccl_coll_build_naive_allgatherv(sched, recv_buf, buffer_counts[this_rank],
-                                               recv_buf, buffer_counts, dtype));
+                                             recv_buf, buffer_counts, dtype, comm));
 
     CCL_FREE(buffer_counts);
     CCL_FREE(buffer_offsets);
@@ -391,7 +413,10 @@ ccl_status_t ccl_coll_build_starlike_allreduce(ccl_sched *sched,
 ccl_status_t ccl_coll_build_ring_allreduce(ccl_sched *sched,
                                            ccl_buffer send_buf,
                                            ccl_buffer recv_buf,
-                                           size_t count, ccl_datatype_internal_t dtype, ccl_reduction_t op)
+                                           size_t count,
+                                           ccl_datatype_internal_t dtype,
+                                           ccl_reduction_t op,
+                                           ccl_comm* comm)
 {
     int inplace = (send_buf == recv_buf) ? 1 : 0;
     LOG_DEBUG("build ring allreduce ", inplace ? "in-place" : "out-of-place");
@@ -401,7 +426,6 @@ ccl_status_t ccl_coll_build_ring_allreduce(ccl_sched *sched,
 
     ccl_status_t status = ccl_status_success;
     size_t comm_size, rank;
-    ccl_comm* comm = sched->coll_param.comm;
     size_t dtype_size = ccl_datatype_get_size(dtype);
     size_t idx = 0;
     size_t src, dst;
@@ -466,9 +490,9 @@ ccl_status_t ccl_coll_build_ring_allreduce(ccl_sched *sched,
         reduce_inout_buf = reduce_inout_buf + recv_block_offset;
 
         entry_factory::make_entry<send_entry>(sched, sbuf, send_block_count,
-                                              dtype, dst);
+                                              dtype, dst, comm);
         entry_factory::make_entry<recv_entry>(sched, rbuf, recv_block_count,
-                                              dtype, src);
+                                              dtype, src, comm);
         sched->add_barrier();
         entry_factory::make_entry<reduce_local_entry>(sched, reduce_in_buf, recv_block_count,
                                                       reduce_inout_buf, nullptr, dtype, op);
@@ -490,9 +514,9 @@ ccl_status_t ccl_coll_build_ring_allreduce(ccl_sched *sched,
         rbuf = recv_buf + recv_block_offset;
 
         entry_factory::make_entry<send_entry>(sched, sbuf, send_block_count,
-                                              dtype, dst);
+                                              dtype, dst, comm);
         entry_factory::make_entry<recv_entry>(sched, rbuf, recv_block_count,
-                                              dtype, src);
+                                              dtype, src, comm);
         sched->add_barrier();
 
         block_idx = (comm_size + block_idx - 1) % comm_size; // move left

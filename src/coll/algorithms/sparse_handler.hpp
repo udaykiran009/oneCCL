@@ -34,5 +34,6 @@ struct ccl_sparse_allreduce_handler
 
    idx_offset_map *iv_map;
    ccl_sched* sched;
+   ccl_comm* comm;
 };
 

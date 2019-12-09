@@ -16,9 +16,10 @@ public:
                      size_t send_cnt,
                      ccl_buffer recv_buf,
                      const size_t* recv_cnts,
-                     ccl_datatype_internal_t dtype) :
+                     ccl_datatype_internal_t dtype,
+                     ccl_comm* comm) :
         base_coll_entry(sched), send_buf(send_buf), send_cnt(send_cnt),
-        recv_buf(recv_buf), recv_cnts(recv_cnts), dtype(dtype)
+        recv_buf(recv_buf), recv_cnts(recv_cnts), dtype(dtype), comm(comm)
     {
     }
 
@@ -102,5 +103,6 @@ private:
     int* recv_bytes;
     int* offsets;
     ccl_datatype_internal_t dtype;
+    ccl_comm* comm;
     atl_req_t req{};
 };

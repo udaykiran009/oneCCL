@@ -15,9 +15,11 @@ public:
                 ccl_buffer buf,
                 size_t cnt,
                 ccl_datatype_internal_t dtype,
-                size_t root) :
+                size_t root,
+                ccl_comm* comm) :
         base_coll_entry(sched), buf(buf),
-        cnt(cnt), root(root), dtype(dtype)
+        cnt(cnt), root(root), dtype(dtype),
+        comm(comm)
     {
     }
 
@@ -75,5 +77,6 @@ private:
     size_t cnt;
     size_t root;
     ccl_datatype_internal_t dtype;
+    ccl_comm* comm;
     atl_req_t req{};
 };

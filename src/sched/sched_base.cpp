@@ -7,7 +7,8 @@ void ccl_sched_base::set_coll_attr(const ccl_coll_attr& attr)
     coll_attr = attr;
 }
 
-void ccl_sched_base::update_coll_param(const ccl_coll_param& param)
+void ccl_sched_base::update_coll_param_and_attr(const ccl_coll_param& param,
+                                                const ccl_coll_attr& attr)
 {
 #ifdef CCL_ENABLE_SYCL
     if (param.stream && (param.stream->get_type() == ccl_stream_sycl))
@@ -48,10 +49,7 @@ void ccl_sched_base::update_coll_param(const ccl_coll_param& param)
         coll_param.sparse_param.recv_ind_buf = param.sparse_param.recv_ind_buf;
         coll_param.sparse_param.recv_val_buf = param.sparse_param.recv_val_buf;
     }
-}
 
-void ccl_sched_base::update_coll_attr(const ccl_coll_attr& attr)
-{
     if (env_data.priority_mode == ccl_priority_direct)
     {
         coll_attr.priority = attr.priority;

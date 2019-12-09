@@ -37,7 +37,7 @@ bool ccl_algorithm_selector_helper<ccl_coll_allreduce_algo>::is_direct(ccl_coll_
 
 template<>
 bool ccl_algorithm_selector_helper<ccl_coll_allreduce_algo>::can_use(ccl_coll_allreduce_algo algo,
-                                                              const ccl_coll_param& param,
+                                                              const ccl_selector_param& param,
                                                               const ccl_selection_table_t<ccl_coll_allreduce_algo>& table)
 {
     bool can_use = true;

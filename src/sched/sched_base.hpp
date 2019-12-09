@@ -48,8 +48,8 @@ struct ccl_sched_base
 {
     void set_coll_attr(const ccl_coll_attr& attr);
 
-    void update_coll_param(const ccl_coll_param& param);
-    void update_coll_attr(const ccl_coll_attr& attr);
+    void update_coll_param_and_attr(const ccl_coll_param& param,
+                                    const ccl_coll_attr& attr);
 
     size_t get_priority() const;
     ccl_buffer alloc_buffer(size_t bytes);

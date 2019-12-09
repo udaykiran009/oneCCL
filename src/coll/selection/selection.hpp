@@ -39,14 +39,14 @@ public:
     }
 
     template<ccl_coll_type coll_id>
-    typename ccl_algorithm_selector<coll_id>::type get(const ccl_coll_param& param) const
+    typename ccl_algorithm_selector<coll_id>::type get(const ccl_selector_param& param) const
     {
         CCL_THROW_IF_NOT(coll_id == param.ctype);
         return std::get<coll_id>(selectors).get(param);
     }
 
     template<ccl_coll_type coll_id>
-    bool is_direct(const ccl_coll_param& param) const
+    bool is_direct(const ccl_selector_param& param) const
     {
         CCL_THROW_IF_NOT(coll_id == param.ctype);
         return std::get<coll_id>(selectors).is_direct(param);

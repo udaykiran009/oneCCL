@@ -15,14 +15,18 @@ public:
     probe_entry(ccl_sched* sched,
                 size_t src,
                 size_t* recv_len,
-                ccl_op_id_t op_id = 0) :
-        sched_entry(sched), src(src), recv_len(recv_len), op_id(op_id)
+                ccl_comm* comm) :
+        sched_entry(sched), src(src),
+        recv_len(recv_len),
+        comm(comm)
     {
     }
 
     void start() override
     {
-        atl_tag = global_data.atl_tag->create(sched->coll_param.comm->id(), src, sched->sched_id, op_id);
+        size_t global_src = global_data.comm->get_global_rank(src);
+        atl_tag = global_data.atl_tag->create(sched->get_comm_id(), global_src,
+                                              sched->sched_id, sched->get_op_id());
         LOG_DEBUG("PROBE entry src ", src, ", tag ", atl_tag);
         status = ccl_sched_entry_status_started;
     }
@@ -55,7 +59,7 @@ protected:
         ccl_logger::format(str,
                            "recv_len ", ((recv_len) ? *recv_len : 0),
                            ", src ", src,
-                           ", comm ", sched->coll_param.comm,
+                           ", comm_id ", sched->get_comm_id(),
                            ", atl_tag ", atl_tag,
                            "\n");
     }
@@ -63,6 +67,6 @@ protected:
 private:
     size_t src;
     size_t* recv_len;
-    ccl_op_id_t op_id = 0;
+    ccl_comm* comm;
     uint64_t atl_tag = 0;
 };

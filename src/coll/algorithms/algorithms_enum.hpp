@@ -36,6 +36,7 @@ enum ccl_coll_alltoall_algo
 
     ccl_coll_alltoall_last_value
 };
+
 enum ccl_coll_barrier_algo
 {
     ccl_coll_barrier_direct,

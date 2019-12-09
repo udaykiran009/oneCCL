@@ -13,12 +13,12 @@ void coll_entry::start()
     {
         ccl_coll_param coll_param{};
         coll_param.comm = sched->coll_param.comm;
+        coll_param.ctype = param.ctype;
         coll_sched.reset(new ccl_extra_sched(coll_param, sched->sched_id));
         auto res = coll_entry_helper::build_schedule(coll_sched.get(), sched, param);
         CCL_ASSERT(res == ccl_status_success, "error during build_schedule, res ", res);
     }
 
-    CCL_THROW_IF_NOT(coll_sched);
     LOG_DEBUG("starting COLL entry");
     auto req = sched->start_subsched(coll_sched.get());
     LOG_DEBUG("COLL entry: sched ", coll_sched.get(), ", req ", req);

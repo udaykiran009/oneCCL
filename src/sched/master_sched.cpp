@@ -153,8 +153,7 @@ ccl_master_sched::ccl_master_sched_ptr ccl_master_sched::create(const ccl_coll_p
         {
             /* update some parameters and attributes in existing schedule
                as they could be changed since previous call */
-            sched->update_coll_param(param);
-            sched->update_coll_attr(attr);
+            sched->update_coll_param_and_attr(param, attr);
 
             LOG_DEBUG("found sched, reuse ", sched, ", type ",
                       ccl_coll_type_to_str(sched->coll_param.ctype));
@@ -173,7 +172,7 @@ ccl_master_sched::ccl_master_sched_ptr ccl_master_sched::create(const ccl_coll_p
         if (attr.to_cache && !postpone_caching)
         {
             global_data.sched_cache->add(std::move(key), new_sched.get());
-            // no use 'key' anymore, because it's moved
+            // don't use 'key' anymore, because it was moved
         }
 
         sched = new_sched.release();

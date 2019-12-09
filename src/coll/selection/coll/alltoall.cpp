@@ -27,12 +27,10 @@ bool ccl_algorithm_selector_helper<ccl_coll_alltoall_algo>::is_direct(ccl_coll_a
 
 template<>
 bool ccl_algorithm_selector_helper<ccl_coll_alltoall_algo>::can_use(ccl_coll_alltoall_algo algo,
-                                                                    const ccl_coll_param& param,
+                                                                    const ccl_selector_param& param,
                                                                     const ccl_selection_table_t<ccl_coll_alltoall_algo>& table)
 {
-    bool can_use = true;
-
-    return can_use;
+    return true;
 }
 
 CCL_SELECTION_DEFINE_HELPER_METHODS(ccl_coll_alltoall_algo, ccl_coll_alltoall, env_data.alltoall_algo_raw, param.count);

@@ -31,7 +31,7 @@ public:
     {
         size_t in_bytes = in_cnt * ccl_datatype_get_size(in_dtype);
         size_t offset = in_buf.get_offset();
-        const ccl_fn_context_t context = {sched->coll_attr.match_id.c_str(), offset};
+        const ccl_fn_context_t context = { sched->coll_attr.match_id.c_str(), offset };
         fn(in_buf.get_ptr(in_bytes), in_cnt, in_dtype->type, out_buf, out_cnt, &context, out_dtype, out_dtype_size);
         status = ccl_sched_entry_status_complete;
     }

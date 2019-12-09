@@ -13,7 +13,9 @@ std::map<ccl_coll_allgatherv_algo,
 ccl_algorithm_selector<ccl_coll_allgatherv>::ccl_algorithm_selector()
 {
     if (env_data.atl_transport == ccl_atl_ofi)
+    {
         insert(main_table, 0, CCL_SELECTION_MAX_COLL_SIZE, ccl_coll_allgatherv_naive);
+    }
     else if (env_data.atl_transport == ccl_atl_mpi)
         insert(main_table, 0, CCL_SELECTION_MAX_COLL_SIZE, ccl_coll_allgatherv_direct);
 
@@ -28,7 +30,7 @@ bool ccl_algorithm_selector_helper<ccl_coll_allgatherv_algo>::is_direct(ccl_coll
 
 template<>
 bool ccl_algorithm_selector_helper<ccl_coll_allgatherv_algo>::can_use(ccl_coll_allgatherv_algo algo,
-                                                               const ccl_coll_param& param,
+                                                               const ccl_selector_param& param,
                                                                const ccl_selection_table_t<ccl_coll_allgatherv_algo>& table)
 {
     bool can_use = true;

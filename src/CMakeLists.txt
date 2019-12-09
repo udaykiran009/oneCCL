@@ -7,8 +7,8 @@ set(CCL_SRC
     ccl_cpp_api.cpp
     atl/atl.cpp
     coll/algorithms/allgatherv.cpp
-    coll/algorithms/allreduce.cpp
-    coll/algorithms/allreduce_rma.cpp
+    coll/algorithms/allreduce/allreduce.cpp
+    coll/algorithms/allreduce/allreduce_rma.cpp
     coll/algorithms/alltoall.cpp
     coll/algorithms/barrier.cpp
     coll/algorithms/bcast.cpp

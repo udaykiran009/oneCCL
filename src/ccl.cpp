@@ -25,7 +25,7 @@ void ccl_init_global_objects(ccl_global_data& gl_data)
     }
 
     gl_data.default_coll_attr.reset(new ccl_coll_attr_t{});
-    gl_data.default_coll_attr->to_cache = 0;
+    memset(gl_data.default_coll_attr.get(), 0, sizeof(ccl_coll_attr_t));
 }
 
 ccl_status_t ccl_init()
@@ -86,7 +86,7 @@ CCL_API ccl_status_t ccl_get_version(ccl_version_t* version)
     return ccl_status_success;
 }
 
-void reset_for_size_update(ccl_global_data* gl_data)
+void ccl_reset_for_size_update(ccl_global_data* gl_data)
 {
     gl_data->unordered_coll_manager.reset();
     gl_data->sched_cache.reset();
@@ -108,7 +108,7 @@ ccl_status_t ccl_finalize()
     try
     {
         /* keep reverse order of initialization */
-        reset_for_size_update(&global_data);
+        ccl_reset_for_size_update(&global_data);
         global_data.comm_ids.reset();
         global_data.atl_tag.reset();
         global_data.executor.reset();

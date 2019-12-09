@@ -26,14 +26,35 @@ private:
     int offset;
     ccl_buffer_type type;
 
+    bool check_offset(ssize_t access_size = 0) const
+    {
+        bool result = true;
+
+        if (offset < 0)
+        {
+            result = false;
+            LOG_ERROR("unexpected offset ", offset);
+        }
+
+        if ((size != -1) && (offset + access_size > size))
+        {
+            result = false;
+            LOG_ERROR("unexpected (offset + access_size): ",
+                      "size ", size,
+                      ", offset ", offset,
+                      ", access_size ", access_size);
+        }
+
+        return result;
+    }
+
 public:
     ccl_buffer(void* src, ssize_t size, int offset, ccl_buffer_type type)
         : src(src), size(size),
           offset(offset), type(type)
     {
         LOG_DEBUG("create: src ", src, ", size ", size, ", offset ", offset, ", type ", type);
-        CCL_ASSERT(offset >= 0, "unexpected offset");
-        CCL_ASSERT((size == -1) || (offset <= size), "unexpected offset ", offset, ", size ", size);
+        CCL_ASSERT(check_offset());
     }
 
     ccl_buffer() : ccl_buffer(nullptr, -1, 0, ccl_buffer_type::DIRECT) {}
@@ -47,20 +68,20 @@ public:
           offset(buf.offset),
           type(buf.type)
     {
-        CCL_ASSERT(offset >= 0, "unexpected offset");
-        CCL_ASSERT((size == -1) || (offset <= size), "unexpected offset ", offset, ", size ", size);
+        CCL_ASSERT(check_offset());
     };
 
     void set(void* src, ssize_t size, int offset, ccl_buffer_type type)
     {
         LOG_DEBUG("set: src ", src, ", size ", size, ", offset ", offset, ", type ", type);
         CCL_ASSERT(src, "new src is null");
-        CCL_ASSERT(offset >= 0, "unexpected offset");
 
         this->src = src;
         this->size = size;
         this->offset = offset;
         this->type = type;
+
+        CCL_ASSERT(check_offset());
     }
 
     void set(void* src) { set(src, -1, 0, ccl_buffer_type::DIRECT); }
@@ -74,6 +95,11 @@ public:
     ccl_buffer_type get_type() const { return type; }
 
     ccl_buffer operator+ (size_t val)
+    {
+        return ccl_buffer(src, size, offset + val, type);
+    }
+
+    ccl_buffer operator+ (size_t val) const
     {
         return ccl_buffer(src, size, offset + val, type);
     }
@@ -93,6 +119,13 @@ public:
         return ccl_buffer(src, size, offset - val, type);
     }
 
+    ccl_buffer& operator+= (size_t val)
+    {
+        offset += val;
+        CCL_ASSERT(check_offset());
+        return *this;
+    }
+
     size_t get_difference(ccl_buffer buf)
     {
         CCL_ASSERT((get_ptr() >= buf.get_ptr()), "difference between pointers < 0");
@@ -101,11 +134,7 @@ public:
 
     void* get_ptr(ssize_t access_size = 0) const
     {
-        CCL_ASSERT(offset >= 0, "unexpected size");
-        CCL_ASSERT((size == -1) || (offset + access_size <= size),
-                   "unexpected access: size ", size,
-                   ", offset ", offset,
-                   ", access_size ", access_size);
+        CCL_ASSERT(check_offset(access_size));
 
         if (!src)
             return nullptr;

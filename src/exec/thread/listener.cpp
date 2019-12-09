@@ -21,7 +21,7 @@ void* ccl_update_comm_world_info(void* args)
         gl_data->executor->is_locked = true;
         ccl_executor::worker_guard guard = gl_data->executor->get_worker_lock();
 
-        reset_for_size_update(gl_data);
+        ccl_reset_for_size_update(gl_data);
 
         atl_update(gl_data->executor->get_proc_coord(),
                    gl_data->executor->atl_desc,

@@ -17,9 +17,10 @@ public:
                  size_t cnt,
                  ccl_datatype_internal_t dtype,
                  ccl_reduction_t reduction,
-                 size_t root) :
+                 size_t root,
+                 ccl_comm* comm) :
         base_coll_entry(sched), send_buf(send_buf), recv_buf(recv_buf),
-        cnt(cnt), dtype(dtype), op(reduction), root(root)
+        cnt(cnt), dtype(dtype), op(reduction), root(root), comm(comm)
     {
     }
 
@@ -81,5 +82,6 @@ private:
     ccl_datatype_internal_t dtype;
     ccl_reduction_t op;
     size_t root;
+    ccl_comm* comm;
     atl_req_t req{};
 };

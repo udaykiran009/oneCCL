@@ -17,8 +17,17 @@ public:
         CCL_THROW_IF_NOT(coll_id == param.ctype);
         if (env_data.atl_transport == ccl_atl_mpi)
         {
-            ccl_coll_param coll_param = param.to_coll_param();
-            bool is_direct_algo = global_data.algorithm_selector->is_direct<coll_id>(coll_param);
+            ccl_selector_param selector_param;
+            selector_param.ctype = param.ctype;
+            selector_param.count = param.count;
+            selector_param.recv_counts = param.recv_counts;
+            selector_param.dtype = param.dtype;
+            selector_param.comm = param.comm;
+            if (param.ctype == ccl_coll_allgatherv)
+            {
+                selector_param.count = param.send_count;
+            }
+            bool is_direct_algo = global_data.algorithm_selector->is_direct<coll_id>(selector_param);
 
             if (is_direct_algo)
             {

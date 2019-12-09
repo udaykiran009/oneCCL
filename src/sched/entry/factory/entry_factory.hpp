@@ -16,8 +16,7 @@
 #include "sched/entry/probe_entry.hpp"
 #include "sched/entry/register_entry.hpp"
 #include "sched/entry/deregister_entry.hpp"
-#include "sched/entry/chain_call_entry.hpp"
-#include "sched/entry/nop_entry.hpp"
+#include "sched/entry/subsched_entry.hpp"
 #include "sched/entry/coll/coll_entry.hpp"
 #include "sched/entry/coll/direct/allgatherv_entry.hpp"
 #include "sched/entry/coll/direct/allreduce_entry.hpp"
@@ -35,14 +34,13 @@
 
 namespace entry_factory
 {
-    // generic interface for entry creation
+    /* generic interface for entry creation */
     template<class EntryType, class ...Arguments>
     EntryType* make_entry(ccl_sched* sched, Arguments &&...args)
     {
         LOG_DEBUG("creating ", EntryType::class_name(), " entry");
         return detail::entry_creator<EntryType>::create(sched, std::forward<Arguments>(args)...);
     }
-
 
     /* Example for non-standard entry 'my_non_standard_entry' creation
     namespace detail

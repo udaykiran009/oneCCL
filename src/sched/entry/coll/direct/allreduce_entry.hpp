@@ -16,9 +16,10 @@ public:
                     ccl_buffer recv_buf,
                     size_t cnt,
                     ccl_datatype_internal_t dtype,
-                    ccl_reduction_t op) :
+                    ccl_reduction_t op,
+                    ccl_comm* comm) :
         base_coll_entry(sched), send_buf(send_buf), recv_buf(recv_buf),
-        cnt(cnt), dtype(dtype), op(op)
+        cnt(cnt), dtype(dtype), op(op), comm(comm)
     {
     }
 
@@ -77,5 +78,6 @@ private:
     size_t cnt;
     ccl_datatype_internal_t dtype;
     ccl_reduction_t op;
+    ccl_comm* comm;
     atl_req_t req{};
 };

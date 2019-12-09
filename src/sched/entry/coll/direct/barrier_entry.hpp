@@ -11,8 +11,8 @@ public:
     }
 
     barrier_entry() = delete;
-    barrier_entry(ccl_sched* sched) :
-        base_coll_entry(sched)
+    barrier_entry(ccl_sched* sched, ccl_comm* comm) :
+        base_coll_entry(sched), comm(comm)
     {
     }
 
@@ -58,5 +58,6 @@ protected:
     }
 
 private:
+    ccl_comm* comm;
     atl_req_t req{};
 };

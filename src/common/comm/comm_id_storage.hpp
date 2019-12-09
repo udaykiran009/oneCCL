@@ -126,7 +126,7 @@ private:
             if (free_ids[id])
             {
                 free_ids[id] = false;
-                LOG_DEBUG("Found free comm id ", id);
+                LOG_DEBUG("found free comm id ", id);
                 return id;
             }
         }
@@ -138,7 +138,7 @@ private:
             if (free_ids[id])
             {
                 free_ids[id] = false;
-                LOG_DEBUG("Found free comm id ", id);
+                LOG_DEBUG("found free comm id ", id);
                 return id;
             }
         }

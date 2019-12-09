@@ -6,6 +6,17 @@ ccl_status_t coll_entry_helper::build_schedule(ccl_sched* sched,
 {
     ccl_status_t res = ccl_status_success;
 
+    if (param.ctype == ccl_coll_allreduce ||
+        param.ctype == ccl_coll_reduce)
+    {
+        if (sched != parent_sched)
+        {
+            sched->coll_attr.reduction_fn = parent_sched->coll_attr.reduction_fn;
+            /* required to create ccl_fn_context in reduce/recv_reduce entries */
+            sched->coll_attr.match_id = parent_sched->coll_attr.match_id;
+        }
+    }
+
     switch (param.ctype)
     {
         case ccl_coll_allgatherv:
@@ -15,24 +26,19 @@ ccl_status_t coll_entry_helper::build_schedule(ccl_sched* sched,
                                             param.send_count,
                                             param.recv_buf,
                                             param.recv_counts,
-                                            param.dtype);
+                                            param.dtype,
+                                            param.comm);
             break;
         }
         case ccl_coll_allreduce:
         {
-            if (sched != parent_sched)
-            {
-                sched->coll_attr.reduction_fn = parent_sched->coll_attr.reduction_fn;
-                /* required to create ccl_fn_context in reduce/recv_reduce entries */
-                sched->coll_attr.match_id = parent_sched->coll_attr.match_id;
-            }
-
             res = ccl_coll_build_allreduce(sched,
                                            param.send_buf,
                                            param.recv_buf,
                                            param.count,
                                            param.dtype,
-                                           param.reduction);
+                                           param.reduction,
+                                           param.comm);
             break;
         }
         case ccl_coll_alltoall:
@@ -41,12 +47,14 @@ ccl_status_t coll_entry_helper::build_schedule(ccl_sched* sched,
                                           param.send_buf,
                                           param.recv_buf,
                                           param.count,
-                                          param.dtype);
+                                          param.dtype,
+                                          param.comm);
             break;
         }
         case ccl_coll_barrier:
         {
-            res = ccl_coll_build_barrier(sched);
+            res = ccl_coll_build_barrier(sched,
+                                         param.comm);
             break;
         }
         case ccl_coll_bcast:
@@ -55,25 +63,20 @@ ccl_status_t coll_entry_helper::build_schedule(ccl_sched* sched,
                                        param.buf,
                                        param.count,
                                        param.dtype,
-                                       param.root);
+                                       param.root,
+                                       param.comm);
             break;
         }
         case ccl_coll_reduce:
         {
-            if (sched != parent_sched)
-            {
-                sched->coll_attr.reduction_fn = parent_sched->coll_attr.reduction_fn;
-                /* required to create ccl_fn_context in reduce/recv_reduce entries */
-                sched->coll_attr.match_id = parent_sched->coll_attr.match_id;
-            }
-
             res = ccl_coll_build_reduce(sched,
                                         param.send_buf,
                                         param.recv_buf,
                                         param.count,
                                         param.dtype,
                                         param.reduction,
-                                        param.root);
+                                        param.root,
+                                        param.comm);
             break;
         }
         default:
