@@ -92,12 +92,15 @@ void ccl_executor::start_workers()
         if (env_data.worker_offload)
         {
             size_t affinity = env_data.worker_affinity[get_local_proc_idx() * worker_count + idx];
-            workers.back()->start();
-            workers.back()->pin(affinity);
-            LOG_INFO("started worker: global_proc_idx ", get_global_proc_idx(),
-                     ", local_proc_idx ", get_local_proc_idx(),
-                     ", worker_idx ", idx,
-                     ", affinity ", affinity);
+            CCL_THROW_IF_NOT(workers.back()->start() == ccl_status_success,
+                             "failed to start worker # ", idx);
+            CCL_THROW_IF_NOT(workers.back()->pin(affinity) == ccl_status_success,
+                             "failed to pin worker # ", idx, " on processor ", affinity);
+
+            LOG_DEBUG("started worker: global_proc_idx ", get_global_proc_idx(),
+                      ", local_proc_idx ", get_local_proc_idx(),
+                      ", worker_idx ", idx,
+                      ", affinity ", affinity);
         }
     }
 }
@@ -117,8 +120,12 @@ ccl_executor::~ccl_executor()
     {
         if (env_data.worker_offload)
         {
-            workers[idx]->stop();
-            LOG_DEBUG("stopped worker # ", idx);
+            if (workers[idx]->stop() != ccl_status_success)
+            {
+                LOG_ERROR("failed to stop worker # ", idx);
+            }
+            else
+                LOG_DEBUG("stopped worker # ", idx);
         }
     }
 

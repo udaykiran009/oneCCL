@@ -208,12 +208,12 @@ ccl_master_sched* ccl_fusion_manager::build_sched()
         ccl_sched_key key{};
         if (use_cache)
         {
-            key.ctype = ccl_coll_allreduce;
-            key.count1 = sum_count;
-            key.count2 = exec_queue.size();
-            key.dtype = dtype->type;
-            key.reduction = reduction;
-            key.comm = comm;
+            key.f.ctype = ccl_coll_allreduce;
+            key.f.count1 = sum_count;
+            key.f.count2 = exec_queue.size();
+            key.f.dtype = dtype->type;
+            key.f.reduction = reduction;
+            key.f.comm = comm;
             key.match_id = first_sched->coll_attr.match_id + last_sched->coll_attr.match_id;
             LOG_DEBUG("key.match_id ", key.match_id);
             sched = global_data.sched_cache->find(key);

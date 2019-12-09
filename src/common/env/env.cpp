@@ -280,9 +280,9 @@ int ccl_env_parse_worker_affinity(size_t local_proc_idx, size_t local_proc_count
         return read_env;
     }
 
-    /* create copy of original buffer cause it will be modified in strsep */
+    /* create copy of original buffer because it will be modified in strsep */
     size_t affinity_len = strlen(affinity_to_parse);
-    affinity_copy = static_cast<char*>(CCL_MALLOC(affinity_len, "affinity_copy"));
+    affinity_copy = static_cast<char*>(CCL_CALLOC(affinity_len + 1, "affinity_copy"));
     CCL_MEMCPY(affinity_copy, affinity_to_parse, affinity_len);
     tmp = affinity_copy;
 

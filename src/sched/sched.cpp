@@ -139,6 +139,7 @@ ccl_request* ccl_sched::start_subsched(ccl_extra_sched* subsched)
     subsched->set_counter(1);
     subsched->coll_attr.priority = coll_attr.priority;
     subsched->renew();
+    subsched->sched_id = sched_id;
     queue->add(subsched);
     subsched->dump(std::cout);
     return subsched->req;
