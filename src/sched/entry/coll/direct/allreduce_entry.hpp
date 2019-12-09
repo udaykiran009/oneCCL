@@ -67,7 +67,7 @@ protected:
                             ", send_buf ", send_buf,
                             ", recv_buf ", recv_buf,
                             ", op ", ccl_reduction_to_str(op),
-                            ", comm_id ", sched->coll_param.comm->id(),
+                            ", comm_id ", sched->get_comm_id(),
                             ", req ",&req,
                             "\n");
     }

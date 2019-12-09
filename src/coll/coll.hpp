@@ -44,6 +44,7 @@ struct ccl_coll_attr
     size_t priority = 0;
     int synchronous = 0;
     int to_cache = 0;
+    int vector_buf = 0;
     std::string match_id{};
 };
 

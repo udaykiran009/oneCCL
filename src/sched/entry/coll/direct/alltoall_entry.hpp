@@ -73,7 +73,7 @@ protected:
                            ", recv_buf ", recv_buf,
                            ", cnt ", cnt,
                            ", recv_bytes ", bytes,
-                           ", comm_id ", sched->coll_param.comm->id(),
+                           ", comm_id ", sched->get_comm_id(),
                            ", req ",&req,
                            "\n");
     }

@@ -27,7 +27,7 @@ public:
     {
         size_t dt_size = ccl_datatype_get_size(dtype);
         size_t send_bytes = send_cnt * dt_size;
-        size_t comm_size = sched->coll_param.comm->size();
+        size_t comm_size = comm->size();
         size_t i, sum_recv_bytes = 0;
 
         recv_bytes = static_cast<int*>(CCL_MALLOC(comm_size * sizeof(int), "recv_bytes"));
@@ -90,7 +90,7 @@ protected:
                             ", recv_buf ", recv_buf,
                             ", recv_bytes ", recv_bytes,
                             ", offsets ", offsets,
-                            ", comm_id ", sched->coll_param.comm->id(),
+                            ", comm_id ", sched->get_comm_id(),
                             ", req ",&req,
                             "\n");
     }

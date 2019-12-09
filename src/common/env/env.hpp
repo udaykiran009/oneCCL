@@ -30,7 +30,6 @@ constexpr const char* CCL_BCAST = "CCL_BCAST";
 constexpr const char* CCL_REDUCE = "CCL_REDUCE";
 constexpr const char* CCL_SPARSE_ALLREDUCE = "CCL_SPARSE_ALLREDUCE";
 constexpr const char* CCL_UNORDERED_COLL = "CCL_UNORDERED_COLL";
-constexpr const char* CCL_ALLGATHERV_IOV = "CCL_ALLGATHERV_IOV";
 
 constexpr const char* CCL_FUSION = "CCL_FUSION";
 constexpr const char* CCL_FUSION_BYTES_THRESHOLD = "CCL_FUSION_BYTES_THRESHOLD";
@@ -86,7 +85,6 @@ struct alignas(CACHELINE_SIZE) ccl_env_data
     std::string reduce_algo_raw;
     std::string sparse_allreduce_algo_raw;
     int enable_unordered_coll;
-    int enable_allgatherv_iov;
 
     int enable_fusion;
     int fusion_bytes_threshold;

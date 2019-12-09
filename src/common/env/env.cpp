@@ -23,7 +23,6 @@ ccl_env_data env_data =
     .reduce_algo_raw = std::string(),
     .sparse_allreduce_algo_raw = std::string(),
     .enable_unordered_coll = 0,
-    .enable_allgatherv_iov = 0,
 
     .enable_fusion = 0,
     .fusion_bytes_threshold = 16384,
@@ -125,7 +124,6 @@ void ccl_env_parse()
     ccl_env_2_string(CCL_REDUCE, env_data.reduce_algo_raw);
     ccl_env_2_string(CCL_SPARSE_ALLREDUCE, env_data.sparse_allreduce_algo_raw);
     ccl_env_2_int(CCL_UNORDERED_COLL, env_data.enable_unordered_coll);
-    ccl_env_2_int(CCL_ALLGATHERV_IOV, env_data.enable_allgatherv_iov);
 
     ccl_env_2_int(CCL_FUSION, env_data.enable_fusion);
     ccl_env_2_int(CCL_FUSION_BYTES_THRESHOLD, env_data.fusion_bytes_threshold);
@@ -198,7 +196,6 @@ void ccl_env_print()
     LOG_INFO(CCL_SPARSE_ALLREDUCE, ": ", (env_data.sparse_allreduce_algo_raw.length()) ?
         env_data.sparse_allreduce_algo_raw : CCL_ENV_NOT_SPECIFIED);
     LOG_INFO(CCL_UNORDERED_COLL, ": ", env_data.enable_unordered_coll);
-    LOG_INFO(CCL_ALLGATHERV_IOV, ": ", env_data.enable_allgatherv_iov);
 
     LOG_INFO(CCL_FUSION, ": ", env_data.enable_fusion);
     LOG_INFO(CCL_FUSION_BYTES_THRESHOLD, ": ", env_data.fusion_bytes_threshold);

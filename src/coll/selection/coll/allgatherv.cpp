@@ -35,7 +35,7 @@ bool ccl_algorithm_selector_helper<ccl_coll_allgatherv_algo>::can_use(ccl_coll_a
 {
     bool can_use = true;
 
-    if (env_data.enable_allgatherv_iov &&
+    if (param.vector_buf &&
         algo != ccl_coll_allgatherv_flat &&
         algo != ccl_coll_allgatherv_multi_bcast)
         can_use = false;

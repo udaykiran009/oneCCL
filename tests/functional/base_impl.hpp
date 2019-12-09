@@ -5,6 +5,7 @@ void typed_test_param<T>::prepare_coll_attr(size_t idx)
 {
     coll_attr.priority = generate_priority_value(idx);
     coll_attr.to_cache = test_conf.cache_type;
+    coll_attr.vector_buf = 0;
     char* test_unordered_coll = getenv("CCL_UNORDERED_COLL");
     if (test_unordered_coll && atoi(test_unordered_coll) == 1)
     {

@@ -26,6 +26,7 @@ public:
             if (param.ctype == ccl_coll_allgatherv)
             {
                 selector_param.count = param.send_count;
+                selector_param.vector_buf = sched->coll_attr.vector_buf;
             }
             bool is_direct_algo = global_data.algorithm_selector->is_direct<coll_id>(selector_param);
 

@@ -27,6 +27,7 @@ struct ccl_selector_param
     const size_t* recv_counts;
     ccl_comm* comm;
     ccl_datatype_internal_t dtype;
+    int vector_buf;
 };
 
 template<ccl_coll_type coll_id>

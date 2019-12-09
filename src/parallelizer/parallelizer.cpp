@@ -130,6 +130,7 @@ ccl_status_t ccl_parallelizer::process(ccl_master_sched* sched)
             }
             break;
         case ccl_coll_allgatherv:
+            selector_param.vector_buf = coll_attr->vector_buf;
             ag_algo = global_data.algorithm_selector->get<ccl_coll_allgatherv>(selector_param);
             coll_param_copy->ag_recv_counts.assign((size_t*)coll_param->recv_counts,
                                                    (size_t*)coll_param->recv_counts + comm->size());
@@ -145,7 +146,7 @@ ccl_status_t ccl_parallelizer::process(ccl_master_sched* sched)
                 part_count = comm->size();
                 ag_recv_bufs.resize(comm->size());
 
-                if (env_data.enable_allgatherv_iov)
+                if (coll_attr->vector_buf)
                 {
                     coll_param_copy->ag_recv_bufs.assign((void**)coll_param->recv_buf,
                                                          (void**)coll_param->recv_buf + comm->size());
@@ -602,7 +603,7 @@ ccl_status_t ccl_parallelizer::process(ccl_master_sched* sched)
 
                 for (idx = 0; idx < comm->size(); idx++)
                 {
-                    if (env_data.enable_allgatherv_iov)
+                    if (coll_attr->vector_buf)
                     {
                         ag_recv_bufs[idx].set(&(coll_param_copy->ag_recv_bufs[idx]),
                                               counts[idx] * dtype_size,

@@ -67,7 +67,7 @@ protected:
                             ", cnt ", cnt,
                             ", root ", root,
                             ", buf ", buf,
-                            ", comm_id ", sched->coll_param.comm->id(),
+                            ", comm_id ", sched->get_comm_id(),
                             ", req ",&req,
                             "\n");
     }

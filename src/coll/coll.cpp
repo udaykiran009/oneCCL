@@ -22,6 +22,7 @@ ccl_coll_attr& ccl_coll_attr::operator= (const ccl_coll_attr_t* attr)
     priority = attr->priority;
     synchronous = attr->synchronous;
     to_cache = attr->to_cache && attr->match_id && attr->match_id[0];
+    vector_buf = attr->vector_buf;
     match_id = (attr->match_id ? attr->match_id : "");
 
     if (to_cache != attr->to_cache)
@@ -142,6 +143,7 @@ ccl_status_t ccl_coll_build_allgatherv(
     param.recv_counts = recv_counts;
     param.dtype = dtype;
     param.comm = comm;
+    param.vector_buf = sched->coll_attr.vector_buf;
 
     auto algo = global_data.algorithm_selector->get<ccl_coll_allgatherv>(param);
 

@@ -142,6 +142,9 @@ ccl_master_sched::ccl_master_sched_ptr ccl_master_sched::create(const ccl_coll_p
     CCL_THROW_IF_NOT(env_data.atl_transport == ccl_atl_ofi || !(attr.reduction_fn),
                      "for now only OFI transport supports custom_reduction functionality");
 
+    CCL_THROW_IF_NOT(param.ctype == ccl_coll_allgatherv || !(attr.vector_buf),
+                     "for now only allgatherv supports vector buffer functionality");
+
     ccl_sched_key key;
     ccl_master_sched_ptr sched = nullptr;
 

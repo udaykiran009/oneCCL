@@ -52,7 +52,7 @@ protected:
     void dump_detail(std::stringstream& str) const override
     {
         ccl_logger::format(str,
-                            "comm_id ", sched->coll_param.comm->id(),
+                            "comm_id ", sched->get_comm_id(),
                             ", req ",&req,
                             "\n");
     }

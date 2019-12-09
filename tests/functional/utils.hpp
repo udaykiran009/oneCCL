@@ -189,6 +189,7 @@ void init_coll_attr(ccl::coll_attr* coll_attr)
     coll_attr->synchronous = 0;
     coll_attr->match_id = NULL;
     coll_attr->to_cache = 0;
+    coll_attr->vector_buf = 0;
 }
 
 void print_err_message(char* err_message, std::ostream& output)

@@ -34,7 +34,7 @@ void ccl_sched_base::update_coll_param_and_attr(const ccl_coll_param& param,
         coll_param_copy.ag_recv_counts.assign((size_t*)param.recv_counts,
                                               (size_t*)param.recv_counts + coll_param.comm->size());
 
-        if (env_data.enable_allgatherv_iov)
+        if (coll_attr.vector_buf)
         {
             CCL_THROW_IF_NOT(coll_param_copy.ag_recv_bufs.size() == coll_param.comm->size());
             coll_param_copy.ag_recv_bufs.assign((void**)param.recv_buf,

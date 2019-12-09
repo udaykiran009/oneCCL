@@ -80,6 +80,7 @@ void test_init()
     coll_attr.synchronous = 0;
     coll_attr.match_id = "tensor_name";
     coll_attr.to_cache = 0;
+    coll_attr.vector_buf = 0;
 }
 
 void test_finalize()
