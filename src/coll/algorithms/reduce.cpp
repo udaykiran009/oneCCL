@@ -71,7 +71,7 @@ ccl_status_t ccl_coll_build_rabenseifner_reduce(ccl_sched *sched,
     ccl_buffer tmp_buf = sched->alloc_buffer(count * dtype_size);
 
     /* get nearest power-of-two less than or equal to comm_size */
-    pof2 = sched->coll_param.comm->pof2();
+    pof2 = comm->pof2();
     CCL_THROW_IF_NOT(count >= static_cast<size_t>(pof2), "count ", count, ", pof2 ", pof2);
     rem = comm_size - pof2;
 

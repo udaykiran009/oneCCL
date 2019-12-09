@@ -21,6 +21,7 @@ ccl_env_data env_data =
     .barrier_algo_raw = std::string(),
     .bcast_algo_raw = std::string(),
     .reduce_algo_raw = std::string(),
+    .reduce_scatter_algo_raw = std::string(),
     .sparse_allreduce_algo_raw = std::string(),
     .enable_unordered_coll = 0,
 
@@ -35,7 +36,14 @@ ccl_env_data env_data =
     .spin_count = 100,
     .yield_type = ccl_yield_pause,
     .max_short_size = 4096,
-    .cache_key_type = ccl_cache_key_match_id
+    .cache_key_type = ccl_cache_key_match_id,
+
+    .chunk_count = 1,
+    .min_chunk_size = 65536,
+    .rs_chunk_count = 1,
+    .rs_min_chunk_size = 65536,
+    .ar2d_chunk_count = 1,
+    .ar2d_min_chunk_size = 65536,
 };
 
 int ccl_env_2_int(const char* env_name, int& val)
@@ -145,6 +153,13 @@ void ccl_env_parse()
     ccl_env_2_size_t(CCL_MAX_SHORT_SIZE, env_data.max_short_size);
     ccl_env_parse_cache_key();
 
+    ccl_env_2_size_t(CCL_CHUNK_COUNT, env_data.chunk_count);
+    ccl_env_2_size_t(CCL_MIN_CHUNK_SIZE, env_data.min_chunk_size);
+    ccl_env_2_size_t(CCL_RS_CHUNK_COUNT, env_data.rs_chunk_count);
+    ccl_env_2_size_t(CCL_RS_MIN_CHUNK_SIZE, env_data.rs_min_chunk_size);
+    ccl_env_2_size_t(CCL_AR2D_CHUNK_COUNT, env_data.ar2d_chunk_count);
+    ccl_env_2_size_t(CCL_AR2D_MIN_CHUNK_SIZE, env_data.ar2d_min_chunk_size);
+
     if (env_data.enable_unordered_coll && env_data.atl_transport != ccl_atl_ofi)
     {
         CCL_THROW("unordered collectives are supported for OFI transport only");
@@ -209,6 +224,13 @@ void ccl_env_print()
     LOG_INFO(CCL_YIELD, ": ", ccl_yield_type_to_str(env_data.yield_type));
     LOG_INFO(CCL_MAX_SHORT_SIZE, ": ", env_data.max_short_size);
     LOG_INFO(CCL_CACHE_KEY, ": ", ccl_cache_key_type_to_str(env_data.cache_key_type));
+
+    LOG_INFO(CCL_CHUNK_COUNT, ": ", env_data.chunk_count);
+    LOG_INFO(CCL_MIN_CHUNK_SIZE, ": ", env_data.min_chunk_size);
+    LOG_INFO(CCL_RS_CHUNK_COUNT, ": ", env_data.rs_chunk_count);
+    LOG_INFO(CCL_RS_MIN_CHUNK_SIZE, ": ", env_data.rs_min_chunk_size);
+    LOG_INFO(CCL_AR2D_CHUNK_COUNT, ": ", env_data.ar2d_chunk_count);
+    LOG_INFO(CCL_AR2D_MIN_CHUNK_SIZE, ": ", env_data.ar2d_min_chunk_size);
 }
 
 constexpr const char* AVAILABLE_CORES_ENV = "I_MPI_PIN_INFO";

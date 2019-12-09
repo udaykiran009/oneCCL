@@ -136,7 +136,8 @@ ccl_status_t ccl_parallelizer::process(ccl_master_sched* sched)
                                                    (size_t*)coll_param->recv_counts + comm->size());
 
             if (ag_algo == ccl_coll_allgatherv_direct ||
-                ag_algo == ccl_coll_allgatherv_naive)
+                ag_algo == ccl_coll_allgatherv_naive ||
+                ag_algo == ccl_coll_allgatherv_ring)
             {
                 part_count = 1;
             }
@@ -251,7 +252,8 @@ ccl_status_t ccl_parallelizer::process(ccl_master_sched* sched)
             counts[0] = recv_counts[0];
             offsets[0] = 0;
             if (ag_algo == ccl_coll_allgatherv_direct ||
-                ag_algo == ccl_coll_allgatherv_naive)
+                ag_algo == ccl_coll_allgatherv_naive ||
+                ag_algo == ccl_coll_allgatherv_ring)
             {
                 for (idx = 0; idx < comm->size(); idx++)
                     ag_recv_count += recv_counts[idx];
@@ -579,7 +581,8 @@ ccl_status_t ccl_parallelizer::process(ccl_master_sched* sched)
             }
 #endif /* CCL_ENABLE_SYCL */
             if (ag_algo == ccl_coll_allgatherv_direct ||
-                ag_algo == ccl_coll_allgatherv_naive)
+                ag_algo == ccl_coll_allgatherv_naive ||
+                ag_algo == ccl_coll_allgatherv_ring)
             {
                 ccl_coll_entry_param param{};
                 param.ctype = ccl_coll_allgatherv;

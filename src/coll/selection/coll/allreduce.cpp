@@ -11,7 +11,8 @@ std::map<ccl_coll_allreduce_algo,
     std::make_pair(ccl_coll_allreduce_ring, "ring"),
     std::make_pair(ccl_coll_allreduce_ring_rma, "ring_rma"),
     std::make_pair(ccl_coll_allreduce_double_tree, "double_tree"),
-    std::make_pair(ccl_coll_allreduce_recursive_doubling, "recursive_doubling")
+    std::make_pair(ccl_coll_allreduce_recursive_doubling, "recursive_doubling"),
+    std::make_pair(ccl_coll_allreduce_2d, "2d")
   };
 
 ccl_algorithm_selector<ccl_coll_allreduce>::ccl_algorithm_selector()
@@ -50,6 +51,10 @@ bool ccl_algorithm_selector_helper<ccl_coll_allreduce_algo>::can_use(ccl_coll_al
         can_use = false;
     else if (algo == ccl_coll_allreduce_starlike &&
         !(param.count / param.comm->size()))
+        can_use = false;
+    else if (algo == ccl_coll_allreduce_2d &&
+        (env_data.atl_transport == ccl_atl_mpi ||
+         param.comm->size() != global_data.comm->size()))
         can_use = false;
 
     return can_use;

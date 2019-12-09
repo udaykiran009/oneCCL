@@ -33,6 +33,7 @@ class ccl_sched_cache;
 class ccl_parallelizer;
 class ccl_fusion_manager;
 class ccl_unordered_coll_manager;
+class ccl_allreduce_2d_builder;
 
 template<ccl_coll_type... registered_types_id>
 class ccl_algorithm_selector_wrapper;
@@ -49,6 +50,7 @@ struct alignas(CACHELINE_SIZE) ccl_global_data
     std::unique_ptr<ccl_fusion_manager> fusion_manager;
     std::unique_ptr<ccl_unordered_coll_manager> unordered_coll_manager;
     std::unique_ptr<ccl_algorithm_selector_wrapper<CCL_COLL_LIST>> algorithm_selector;
+    std::unique_ptr<ccl_allreduce_2d_builder> allreduce_2d_builder;
     static thread_local bool is_worker_thread;
     bool is_ft_enabled;
 };

@@ -223,7 +223,7 @@ ccl_status_t ccl_coll_build_double_tree_op(ccl_sched* sched,
                 break;
             case ccl_coll_reduce:
             {
-                if (sched->coll_param.comm->rank() % 2 == 0)
+                if (comm->rank() % 2 == 0)
                 {
                     //even ranks are leaves in T2, start schedule with T2
                     entry_factory::make_entry<subsched_entry>(sched, t2_op_id,
@@ -257,7 +257,7 @@ ccl_status_t ccl_coll_build_double_tree_op(ccl_sched* sched,
             }
             case ccl_coll_allreduce:
             {
-                if (sched->coll_param.comm->rank() % 2 == 0)
+                if (comm->rank() % 2 == 0)
                 {
                     //even ranks are leaves in T2, start schedule with T2
                     entry_factory::make_entry<subsched_entry>(sched, t2_op_id,

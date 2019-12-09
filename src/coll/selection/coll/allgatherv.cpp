@@ -6,6 +6,7 @@ std::map<ccl_coll_allgatherv_algo,
   {
     std::make_pair(ccl_coll_allgatherv_direct, "direct"),
     std::make_pair(ccl_coll_allgatherv_naive, "naive"),
+    std::make_pair(ccl_coll_allgatherv_ring, "ring"),
     std::make_pair(ccl_coll_allgatherv_flat, "flat"),
     std::make_pair(ccl_coll_allgatherv_multi_bcast, "multi_bcast")
   };
@@ -14,7 +15,8 @@ ccl_algorithm_selector<ccl_coll_allgatherv>::ccl_algorithm_selector()
 {
     if (env_data.atl_transport == ccl_atl_ofi)
     {
-        insert(main_table, 0, CCL_SELECTION_MAX_COLL_SIZE, ccl_coll_allgatherv_naive);
+        insert(main_table, 0, CCL_ALLGATHERV_SHORT_MSG_SIZE, ccl_coll_allgatherv_naive);
+        insert(main_table, CCL_ALLGATHERV_SHORT_MSG_SIZE + 1, CCL_SELECTION_MAX_COLL_SIZE, ccl_coll_allgatherv_ring);
     }
     else if (env_data.atl_transport == ccl_atl_mpi)
         insert(main_table, 0, CCL_SELECTION_MAX_COLL_SIZE, ccl_coll_allgatherv_direct);

@@ -277,12 +277,19 @@ run_tests()
                 ;;
            mpi_adjust )
                 export CCL_ATL_TRANSPORT=mpi
-                for allgatherv in "direct" "naive" "flat"
+                for allgatherv in "direct" "naive" "flat" "ring"
                     do
                         CCL_ALLGATHERV=$allgatherv ctest -VV -C mpi_allgatherv_$allgatherv
                     done
                 for allreduce in "direct" "rabenseifner" "starlike" "ring" "double_tree" "recursive_doubling"
                     do
+                        if [ "$allreduce" == "ring" ];
+                        then
+                            CCL_RS_CHUNK_COUNT=2 CCL_ALLREDUCE=$allreduce ctest -VV -C mpi_allreduce_"$allreduce"_chunked
+                        elif [ "$allreduce" == "starlike" ];
+                        then
+                            CCL_CHUNK_COUNT=2 CCL_ALLREDUCE=$allreduce ctest -VV -C mpi_allreduce_"$allreduce"_chunked
+                        fi
                         CCL_ALLREDUCE=$allreduce ctest -VV -C mpi_allreduce_$allreduce
                     done
                 for bcast in "direct" "ring" "double_tree" "naive"
@@ -300,16 +307,26 @@ run_tests()
                ;;
            ofi_adjust )
                 export CCL_ATL_TRANSPORT=ofi
-                for allgatherv in "naive" "flat" "multi_bcast"
+                for allgatherv in "naive" "flat" "multi_bcast" "ring"
                     do
                         CCL_ALLGATHERV=$allgatherv ctest -VV -C mpi_allgatherv_$allgatherv
                     done
-                for allreduce in "rabenseifner" "starlike" "ring" "ring_rma" "double_tree" "recursive_doubling"
+                for allreduce in "rabenseifner" "starlike" "ring" "ring_rma" "double_tree" "recursive_doubling" "2d"
                     do
                         if [ "$allreduce" == "ring_rma" ];
                         then
                             CCL_RMA=1 CCL_ALLREDUCE=$allreduce ctest -VV -C mpi_allreduce_$allreduce
                         else
+                            if [ "$allreduce" == "starlike" ];
+                            then
+                                CCL_CHUNK_COUNT=2 CCL_ALLREDUCE=$allreduce ctest -VV -C mpi_allreduce_"$allreduce"_chunked
+                            elif [ "$allreduce" == "ring" ];
+                            then
+                                CCL_RS_CHUNK_COUNT=2 CCL_ALLREDUCE=$allreduce ctest -VV -C mpi_allreduce_"$allreduce"_chunked
+                            elif [ "$allreduce" == "2d" ];
+                            then
+                                CCL_AR2D_CHUNK_COUNT=2 CCL_ALLREDUCE=$allreduce ctest -VV -C mpi_allreduce_"$allreduce"_chunked
+                            fi
                             CCL_ALLREDUCE=$allreduce ctest -VV -C mpi_allreduce_$allreduce
                         fi
                 done

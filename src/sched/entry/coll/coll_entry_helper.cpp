@@ -7,7 +7,8 @@ ccl_status_t coll_entry_helper::build_schedule(ccl_sched* sched,
     ccl_status_t res = ccl_status_success;
 
     if (param.ctype == ccl_coll_allreduce ||
-        param.ctype == ccl_coll_reduce)
+        param.ctype == ccl_coll_reduce ||
+        param.ctype == ccl_coll_reduce_scatter)
     {
         if (sched != parent_sched)
         {
@@ -77,6 +78,17 @@ ccl_status_t coll_entry_helper::build_schedule(ccl_sched* sched,
                                         param.reduction,
                                         param.root,
                                         param.comm);
+            break;
+        }
+        case ccl_coll_reduce_scatter:
+        {
+            res = ccl_coll_build_reduce_scatter(sched,
+                                                param.send_buf,
+                                                param.recv_buf,
+                                                param.send_count,
+                                                param.dtype,
+                                                param.reduction,
+                                                param.comm);
             break;
         }
         default:

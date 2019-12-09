@@ -1,5 +1,6 @@
 #include "ccl.hpp"
 #include "coll/algorithms/algorithms.hpp"
+#include "coll/algorithms/allreduce/allreduce_2d.hpp"
 #include "coll/algorithms/sparse.hpp"
 #include "coll/coll.hpp"
 #include "coll/selection/selection.hpp"
@@ -47,6 +48,8 @@ const char* ccl_coll_type_to_str(ccl_coll_type type)
             return "bcast";
         case ccl_coll_reduce:
             return "reduce";
+        case ccl_coll_reduce_scatter:
+            return "reduce_scatter";
         case ccl_coll_sparse_allreduce:
             return "sparse_allreduce";
         case ccl_coll_internal:
@@ -157,6 +160,10 @@ ccl_status_t ccl_coll_build_allgatherv(
             CCL_CALL(ccl_coll_build_naive_allgatherv(sched, send_buf, send_count, recv_buf, recv_counts,
                                                      dtype, comm));
             break;
+        case ccl_coll_allgatherv_ring:
+            CCL_CALL(ccl_coll_build_ring_allgatherv(sched, send_buf, send_count, recv_buf, recv_counts,
+                                                    dtype, comm));
+            break;
         default:
             CCL_FATAL("unexpected allgatherv_algo ", ccl_coll_algorithm_to_str(algo));
             return ccl_status_invalid_arguments;
@@ -208,11 +215,15 @@ ccl_status_t ccl_coll_build_allreduce(
         case ccl_coll_allreduce_double_tree:
             CCL_CALL(
                 ccl_coll_build_double_tree_op(sched, ccl_coll_allreduce, send_buf, recv_buf,
-                                              count, dtype, reduction, sched->coll_param.comm->dtree(), comm));
+                                              count, dtype, reduction, comm->dtree(), comm));
             break;
         case ccl_coll_allreduce_recursive_doubling:
             CCL_CALL(ccl_coll_build_recursive_doubling_allreduce(sched, send_buf, recv_buf, count,
                                                                  dtype, reduction, comm));
+            break;
+        case ccl_coll_allreduce_2d:
+            CCL_CALL(global_data.allreduce_2d_builder->build(sched, send_buf, recv_buf, count,
+                                                             dtype, reduction, comm));
             break;
         default:
             CCL_FATAL("unexpected allreduce_algo ", ccl_coll_algorithm_to_str(algo));
@@ -314,8 +325,8 @@ ccl_status_t ccl_coll_build_bcast(ccl_sched* sched,
         case ccl_coll_bcast_double_tree:
             CCL_CALL(ccl_coll_build_double_tree_op(sched, ccl_coll_bcast, ccl_buffer(), buf, count, dtype,
                                                    ccl_reduction_custom,
-                                                   root == 0 ? sched->coll_param.comm->dtree() :
-                                                   sched->coll_param.comm->dtree().copy_with_new_root(root), comm));
+                                                   root == 0 ? comm->dtree() :
+                                                   comm->dtree().copy_with_new_root(root), comm));
             break;
         case ccl_coll_bcast_naive:
             CCL_CALL(ccl_coll_build_naive_bcast(sched, buf, count, dtype, root, comm));
@@ -362,11 +373,43 @@ ccl_status_t ccl_coll_build_reduce(ccl_sched* sched,
             break;
         case ccl_coll_reduce_double_tree:
             CCL_CALL(ccl_coll_build_double_tree_op(sched, ccl_coll_reduce, send_buf, recv_buf, count, dtype,
-                                                   reduction, root == 0 ? sched->coll_param.comm->dtree() :
-                                                   sched->coll_param.comm->dtree().copy_with_new_root(root), comm));
+                                                   reduction, root == 0 ? comm->dtree() :
+                                                   comm->dtree().copy_with_new_root(root), comm));
             break;
         default:
             CCL_FATAL("unexpected reduce_algo ", ccl_coll_algorithm_to_str(algo));
+            return ccl_status_invalid_arguments;
+    }
+
+    return status;
+}
+
+ccl_status_t ccl_coll_build_reduce_scatter(ccl_sched* sched,
+                                           ccl_buffer send_buf,
+                                           ccl_buffer recv_buf,
+                                           size_t send_count,
+                                           ccl_datatype_internal_t dtype,
+                                           ccl_reduction_t reduction,
+                                           ccl_comm* comm)
+{
+    ccl_status_t status = ccl_status_success;
+
+    ccl_selector_param param;
+    param.ctype = ccl_coll_reduce_scatter;
+    param.count = send_count;
+    param.dtype = dtype;
+    param.comm = comm;
+
+    auto algo = global_data.algorithm_selector->get<ccl_coll_reduce_scatter>(param);
+
+    switch (algo)
+    {
+        case ccl_coll_reduce_scatter_ring:
+            CCL_CALL(ccl_coll_build_ring_reduce_scatter(sched, send_buf, recv_buf, send_count,
+                                                        dtype, reduction, comm));
+            break;
+        default:
+            CCL_FATAL("unexpected reduce_scatter_algo ", ccl_coll_algorithm_to_str(algo));
             return ccl_status_invalid_arguments;
     }
 

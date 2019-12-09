@@ -8,12 +8,14 @@ set(CCL_SRC
     atl/atl.cpp
     coll/algorithms/allgatherv.cpp
     coll/algorithms/allreduce/allreduce.cpp
+    coll/algorithms/allreduce/allreduce_2d.cpp
     coll/algorithms/allreduce/allreduce_rma.cpp
     coll/algorithms/alltoall.cpp
     coll/algorithms/barrier.cpp
     coll/algorithms/bcast.cpp
     coll/algorithms/double_tree_ops.cpp
     coll/algorithms/reduce.cpp
+    coll/algorithms/reduce_scatter.cpp
     coll/coll.cpp
     coll/selection/coll/allgatherv.cpp
     coll/selection/coll/allreduce.cpp
@@ -21,6 +23,7 @@ set(CCL_SRC
     coll/selection/coll/barrier.cpp
     coll/selection/coll/bcast.cpp
     coll/selection/coll/reduce.cpp
+    coll/selection/coll/reduce_scatter.cpp
     coll/selection/coll/sparse_allreduce.cpp
     comp/comp.cpp
     sched/sched.cpp
@@ -33,6 +36,7 @@ set(CCL_SRC
     sched/entry/coll/coll_entry.cpp
     sched/entry/coll/coll_entry_helper.cpp
     sched/entry/entry.cpp
+    sched/entry/factory/chunked_entry_factory.cpp
     exec/exec.cpp
     exec/thread/base_thread.cpp
     exec/thread/listener.cpp

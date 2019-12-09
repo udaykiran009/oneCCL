@@ -1,3 +1,4 @@
+#include "coll/algorithms/allreduce/allreduce_2d.hpp"
 #include "coll/selection/selection.hpp"
 #include "common/comm/atl_tag.hpp"
 #include "common/global/global.hpp"
@@ -66,6 +67,9 @@ ccl_status_t ccl_init()
         if (global_data.executor->get_global_proc_idx() == 0)
             global_data.algorithm_selector->print();
 
+        global_data.allreduce_2d_builder =
+            std::unique_ptr<ccl_allreduce_2d_builder>(new ccl_allreduce_2d_builder());
+
         return ccl_status_success;
     }
     COMMON_CATCH_BLOCK();
@@ -88,6 +92,7 @@ CCL_API ccl_status_t ccl_get_version(ccl_version_t* version)
 
 void ccl_reset_for_size_update(ccl_global_data* gl_data)
 {
+    gl_data->allreduce_2d_builder.reset();
     gl_data->unordered_coll_manager.reset();
     gl_data->sched_cache.reset();
     gl_data->comm.reset();

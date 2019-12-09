@@ -144,6 +144,22 @@ ccl_status_t ccl_coll_build_double_tree_op(ccl_sched* sched,
                                            const ccl_double_tree& dtree,
                                            ccl_comm* comm);
 
+ccl_status_t ccl_coll_build_ring_reduce_scatter(ccl_sched* sched,
+                                                ccl_buffer send_buf,
+                                                ccl_buffer recv_buf,
+                                                size_t send_count,
+                                                ccl_datatype_internal_t dtype,
+                                                ccl_reduction_t reduction,
+                                                ccl_comm* comm);
+
+ccl_status_t ccl_coll_build_ring_allgatherv(ccl_sched* sched,
+                                            ccl_buffer send_buf,
+                                            size_t send_count,
+                                            ccl_buffer recv_buf,
+                                            const size_t* recv_counts,
+                                            ccl_datatype_internal_t dtype,
+                                            ccl_comm* comm);
+
 /* direct algorithms - i.e. direct mapping on collective API from transport level */
 
 ccl_status_t ccl_coll_build_direct_barrier(ccl_sched *sched, ccl_comm* comm);

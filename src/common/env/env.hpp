@@ -44,6 +44,13 @@ constexpr const char* CCL_YIELD = "CCL_YIELD";
 constexpr const char* CCL_MAX_SHORT_SIZE = "CCL_MAX_SHORT_SIZE";
 constexpr const char* CCL_CACHE_KEY = "CCL_CACHE_KEY";
 
+constexpr const char* CCL_CHUNK_COUNT = "CCL_CHUNK_COUNT";
+constexpr const char* CCL_MIN_CHUNK_SIZE = "CCL_MIN_CHUNK_SIZE";
+constexpr const char* CCL_RS_CHUNK_COUNT = "CCL_RS_CHUNK_COUNT";
+constexpr const char* CCL_RS_MIN_CHUNK_SIZE = "CCL_RS_MIN_CHUNK_SIZE";
+constexpr const char* CCL_AR2D_CHUNK_COUNT = "CCL_AR2D_CHUNK_COUNT";
+constexpr const char* CCL_AR2D_MIN_CHUNK_SIZE = "CCL_AR2D_MIN_CHUNK_SIZE";
+
 enum ccl_priority_mode
 {
     ccl_priority_none,
@@ -83,6 +90,7 @@ struct alignas(CACHELINE_SIZE) ccl_env_data
     std::string barrier_algo_raw;
     std::string bcast_algo_raw;
     std::string reduce_algo_raw;
+    std::string reduce_scatter_algo_raw;
     std::string sparse_allreduce_algo_raw;
     int enable_unordered_coll;
 
@@ -98,6 +106,13 @@ struct alignas(CACHELINE_SIZE) ccl_env_data
     ccl_yield_type yield_type;
     size_t max_short_size;
     ccl_cache_key_type cache_key_type;
+
+    size_t chunk_count;
+    size_t min_chunk_size;
+    size_t rs_chunk_count;
+    size_t rs_min_chunk_size;
+    size_t ar2d_chunk_count;
+    size_t ar2d_min_chunk_size;
 };
 
 extern ccl_env_data env_data;

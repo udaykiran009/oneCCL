@@ -139,6 +139,15 @@ ccl_status_t ccl_coll_build_reduce(ccl_sched* sched,
                                    size_t root,
                                    ccl_comm* comm);
 
+
+ccl_status_t ccl_coll_build_reduce_scatter(ccl_sched* sched,
+                                           ccl_buffer send_buf,
+                                           ccl_buffer recv_buf,
+                                           size_t send_count,
+                                           ccl_datatype_internal_t dtype,
+                                           ccl_reduction_t reduction,
+                                           ccl_comm* comm);
+
 ccl_status_t ccl_coll_build_sparse_allreduce(ccl_sched* sched,
                                              ccl_buffer send_ind_buf, size_t send_ind_count,
                                              ccl_buffer send_val_buf, size_t send_val_count,

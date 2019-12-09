@@ -1,3 +1,4 @@
+#include "coll/algorithms/allreduce/allreduce_2d.hpp"
 #include "coll/selection/selection.hpp"
 #include "common/comm/atl_tag.hpp"
 #include "common/comm/comm_id_storage.hpp"

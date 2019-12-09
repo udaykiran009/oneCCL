@@ -1,4 +1,5 @@
 #include "coll/algorithms/algorithms.hpp"
+#include "sched/entry/factory/chunked_entry_factory.hpp"
 #include "sched/entry/factory/entry_factory.hpp"
 
 ccl_status_t ccl_coll_build_direct_allreduce(ccl_sched *sched,
@@ -384,16 +385,16 @@ ccl_status_t ccl_coll_build_starlike_allreduce(ccl_sched *sched,
         if (rank_idx != this_rank)
         {
             // send buffer to others
-            entry_factory::make_entry<send_entry>(sched, recv_buf + buffer_offsets[rank_idx],
-                                                  buffer_counts[rank_idx], dtype, rank_idx, comm);
+            entry_factory::make_chunked_send_entry(sched, recv_buf + buffer_offsets[rank_idx],
+                                                   buffer_counts[rank_idx], dtype, rank_idx, comm);
 
             // recv part of buffer from others and perform reduce
-            entry_factory::make_entry<recv_reduce_entry>(sched,
-                                                         recv_buf + buffer_offsets[this_rank],
-                                                         buffer_counts[this_rank], nullptr,
-                                                         dtype, op, rank_idx,
-                                                         tmp_buf + this_rank_buf_size * tmp_buf_recv_idx,
-                                                         comm);
+            entry_factory::make_chunked_recv_reduce_entry(sched,
+                                                          recv_buf + buffer_offsets[this_rank],
+                                                          buffer_counts[this_rank], nullptr,
+                                                          dtype, op, rank_idx,
+                                                          tmp_buf + this_rank_buf_size * tmp_buf_recv_idx,
+                                                          comm);
             ++tmp_buf_recv_idx;
         }
     }
@@ -425,102 +426,24 @@ ccl_status_t ccl_coll_build_ring_allreduce(ccl_sched *sched,
                      " recv ", recv_buf);
 
     ccl_status_t status = ccl_status_success;
-    size_t comm_size, rank;
-    size_t dtype_size = ccl_datatype_get_size(dtype);
-    size_t idx = 0;
-    size_t src, dst;
 
-    comm_size = comm->size();
-    rank = comm->rank();
+    ccl_coll_build_ring_reduce_scatter(sched, send_buf, recv_buf, count, dtype, op, comm);
 
-    if (comm_size == 1)
-    {
-        if (!inplace)
-        {
-            entry_factory::make_entry<copy_entry>(sched, send_buf, recv_buf, count, dtype);
-            sched->add_barrier();
-        }
-        return ccl_status_success;
-    }
+    sched->add_barrier();
 
-    ccl_buffer tmp_buf;
-    if (inplace)
-    {
-        tmp_buf = sched->alloc_buffer(count * dtype_size);
-    }
-    ccl_buffer sbuf, rbuf, reduce_inout_buf;
-    ccl_buffer reduce_in_buf;
-
-    src = (comm_size + rank - 1) % comm_size;
-    dst = (comm_size + rank + 1) % comm_size;
-
-    size_t block_idx = rank; // start send with 'rank' block and recv with 'rank-1' block and move blocks left
+    size_t comm_size = comm->size();
     size_t main_block_count = count / comm_size;
     size_t last_block_count = main_block_count + count % comm_size;
-    size_t send_block_idx, recv_block_idx;
-    size_t send_block_count, recv_block_count;
-    size_t send_block_offset, recv_block_offset;
-
-    /* reduce-scatter */
-    for (idx = 0; idx < (comm_size - 1); idx++)
+    std::vector<size_t> recv_counts(comm_size, main_block_count);
+    if (count % comm_size)
     {
-        send_block_idx = block_idx;
-        recv_block_idx = (comm_size + block_idx - 1) % comm_size;
-        send_block_count = (send_block_idx == (comm_size - 1)) ? last_block_count : main_block_count;
-        recv_block_count = (recv_block_idx == (comm_size - 1)) ? last_block_count : main_block_count;
-        send_block_offset = main_block_count * dtype_size * send_block_idx;
-        recv_block_offset = main_block_count * dtype_size * recv_block_idx;
-        if (inplace)
-        {
-            sbuf = recv_buf;
-            rbuf = tmp_buf;
-            reduce_in_buf = tmp_buf;
-            reduce_inout_buf = recv_buf;
-        }
-        else
-        {
-            sbuf = (idx == 0) ? send_buf : recv_buf;
-            rbuf = recv_buf;
-            reduce_in_buf = send_buf;
-            reduce_inout_buf = recv_buf;
-        }
-        sbuf = sbuf + send_block_offset;
-        rbuf = rbuf + recv_block_offset;
-        reduce_in_buf = reduce_in_buf + recv_block_offset;
-        reduce_inout_buf = reduce_inout_buf + recv_block_offset;
-
-        entry_factory::make_entry<send_entry>(sched, sbuf, send_block_count,
-                                              dtype, dst, comm);
-        entry_factory::make_entry<recv_entry>(sched, rbuf, recv_block_count,
-                                              dtype, src, comm);
-        sched->add_barrier();
-        entry_factory::make_entry<reduce_local_entry>(sched, reduce_in_buf, recv_block_count,
-                                                      reduce_inout_buf, nullptr, dtype, op);
-        sched->add_barrier();
-
-        block_idx = (comm_size + block_idx - 1) % comm_size; // move left
+        recv_counts[comm_size - 1] = last_block_count;
     }
 
-    /* allgather */
-    for (idx = 0; idx < (comm_size - 1); idx++)
-    {
-        send_block_idx = block_idx;
-        recv_block_idx = (comm_size + block_idx - 1) % comm_size;
-        send_block_count = (send_block_idx == (comm_size - 1)) ? last_block_count : main_block_count;
-        recv_block_count = (recv_block_idx == (comm_size - 1)) ? last_block_count : main_block_count;
-        send_block_offset = main_block_count * dtype_size * send_block_idx;
-        recv_block_offset = main_block_count * dtype_size * recv_block_idx;
-        sbuf = recv_buf + send_block_offset;
-        rbuf = recv_buf + recv_block_offset;
+    ccl_coll_build_ring_allgatherv(sched, recv_buf, recv_counts[comm->rank()],
+                                   recv_buf, recv_counts.data(), dtype, comm);
 
-        entry_factory::make_entry<send_entry>(sched, sbuf, send_block_count,
-                                              dtype, dst, comm);
-        entry_factory::make_entry<recv_entry>(sched, rbuf, recv_block_count,
-                                              dtype, src, comm);
-        sched->add_barrier();
-
-        block_idx = (comm_size + block_idx - 1) % comm_size; // move left
-    }
+    sched->add_barrier();
 
     return status;
 }

@@ -78,7 +78,7 @@ protected:
                             ", recv_buf ", param.recv_buf,
                             ", cnt ", param.count,
                             ", op ", ccl_reduction_to_str(param.reduction),
-                            ", comm ", sched->coll_param.comm,
+                            ", comm ", param.comm,
                             ", coll sched ", coll_sched.get(),
                             "\n");
     }
