@@ -1381,8 +1381,7 @@ atl_status_t atl_ofi_init(int *argc, char ***argv, atl_proc_coord_t *proc_coord,
     atl_ofi_context_t *atl_ofi_context;
 
     ATL_OFI_ASSERT((sizeof(atl_ofi_req_t) <= sizeof(atl_req_t) - offsetof(atl_req_t, internal)),
-                   "unexpected atl_ofi_request offset inside atl_request "
-                   "(atl_ofi_request size %zu, atl_request size %zu, expected offset %zu)",
+                   "unexpected offset: atl_ofi_request size %zu, atl_request size %zu, expected offset %zu",
                    sizeof(atl_ofi_req_t), sizeof(atl_req_t), offsetof(atl_req_t, internal));
 
     atl_ofi_tune();

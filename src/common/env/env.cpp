@@ -430,6 +430,7 @@ const char* ccl_atl_transport_to_str(ccl_atl_transport transport)
         default:
             CCL_FATAL("unknown transport ", transport);
     }
+    return "unknown";
 }
 
 const char* ccl_priority_mode_to_str(ccl_priority_mode mode)
@@ -445,4 +446,5 @@ const char* ccl_priority_mode_to_str(ccl_priority_mode mode)
         default:
             CCL_FATAL("unknown priority_mode ", mode);
     }
+    return "unknown";
 }

@@ -6,6 +6,7 @@
 #include <chrono>
 #include <cstring>
 #include <functional>
+#include <iostream>
 #include <math.h>
 #include <stdexcept>
 #include <stdio.h>

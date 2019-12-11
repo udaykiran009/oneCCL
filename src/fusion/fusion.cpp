@@ -252,6 +252,9 @@ ccl_master_sched* ccl_fusion_manager::build_sched()
             }
         }
     }
+
+    CCL_THROW_IF_NOT(sched);
+
     sched->coll_attr.priority = max_priority;
     sched->commit(global_data.parallelizer.get());
 

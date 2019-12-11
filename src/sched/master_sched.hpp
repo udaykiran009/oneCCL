@@ -26,7 +26,8 @@ public:
     }
 
     ccl_master_sched(const ccl_master_sched &src) = delete;
-    ~ccl_master_sched();
+
+    ~ccl_master_sched() override;
 
 
     void add_partial_sched(ccl_coll_param& param);

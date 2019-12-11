@@ -14,8 +14,8 @@ public:
 
     void visit()
     {
-        auto value = sync.fetch_sub(1, std::memory_order_release);
-        CCL_ASSERT(value >= 0 && value <= initial_cnt, "invalid count ", value);
+        auto cnt = sync.fetch_sub(1, std::memory_order_release);
+        CCL_ASSERT(cnt >= 0 && cnt <= initial_cnt, "invalid count ", cnt);
     }
 
     void reset()

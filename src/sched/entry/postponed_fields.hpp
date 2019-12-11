@@ -105,6 +105,9 @@ struct postponed_fields
         return updated;
     }
 
+protected:
+    ~postponed_fields() = default;
+
 private:
     registered_postponed_fields fields;
     bool empty_fields = true;

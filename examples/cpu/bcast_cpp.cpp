@@ -36,15 +36,17 @@ void run_collective(const char* cmd_name,
         {
             fprintf(stderr, "idx %zu, expected %4.4f, got %4.4f\n",
                     idx, static_cast<float>(idx), received);
-            printf("FAILED\n");
+
+            std::cout << "FAILED" << std::endl;
             std::terminate();
         }
     }
 
     comm->barrier(stream);
 
-    printf("avg time of %s: %lu us\n", cmd_name,
-           std::chrono::duration_cast<std::chrono::microseconds>(exec_time).count() / ITERS);
+    std::cout << "avg time of " << cmd_name << ": "
+              << std::chrono::duration_cast<std::chrono::microseconds>(exec_time).count() / ITERS
+              << ", us" << std::endl;
 }
 
 int main()

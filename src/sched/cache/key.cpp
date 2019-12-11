@@ -126,6 +126,7 @@ const char* ccl_cache_key_type_to_str(ccl_cache_key_type type)
         default:
             CCL_FATAL("unknown cache_key_type ", type);
     }
+    return "unknown";
 }
 
 bool ccl_sched_key::operator== (const ccl_sched_key& k) const

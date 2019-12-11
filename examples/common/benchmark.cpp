@@ -235,6 +235,9 @@ struct allgatherv_strategy_impl
         (void)result;
     }
 
+    allgatherv_strategy_impl(const allgatherv_strategy_impl&) = delete;
+    allgatherv_strategy_impl& operator=(const allgatherv_strategy_impl&) = delete;
+
     ~allgatherv_strategy_impl()
     {
         free(recv_counts);

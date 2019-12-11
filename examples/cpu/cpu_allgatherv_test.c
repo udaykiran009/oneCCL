@@ -72,6 +72,9 @@ int main(int argc, char** argv)
         }
     }
 
+    free(recvbuf);
+    free(recv_counts);
+
     ccl_stream_free(stream);
 
     ccl_finalize();

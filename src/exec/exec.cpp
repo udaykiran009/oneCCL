@@ -115,6 +115,7 @@ ccl_executor::~ccl_executor()
         lock_workers();
         unlock_workers();
     }
+    listener.reset();
 
     for (size_t idx = 0; idx < workers.size(); idx++)
     {
@@ -126,6 +127,8 @@ ccl_executor::~ccl_executor()
             }
             else
                 LOG_DEBUG("stopped worker # ", idx);
+
+            workers[idx].reset();
         }
     }
 
@@ -199,7 +202,7 @@ ccl_status_t ccl_executor::create_listener(ccl_resize_fn_t resize_func)
 {
     if (listener)
     {
-        LOG_ERROR("attempt to twice create listener");
+        LOG_ERROR("attempt to create listener twice");
         return ccl_status_runtime_error;
     }
 

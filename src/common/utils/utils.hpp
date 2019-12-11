@@ -139,10 +139,12 @@ static inline size_t ccl_aligned_sz(size_t size,
            size : ((size / alignment) + 1) * alignment;
 }
 
-static inline timespec from_time_point(const std::chrono::time_point<std::chrono::system_clock, std::chrono::nanoseconds> point)
+static inline timespec ccl_from_time_point(const std::chrono::time_point<std::chrono::system_clock,
+                                           std::chrono::nanoseconds> point)
 {
     auto sec = std::chrono::time_point_cast<std::chrono::seconds>(point);
-    auto ns = std::chrono::time_point_cast<std::chrono::nanoseconds>(point) - std::chrono::time_point_cast<std::chrono::nanoseconds>(sec);
+    auto ns = std::chrono::time_point_cast<std::chrono::nanoseconds>(point) -
+        std::chrono::time_point_cast<std::chrono::nanoseconds>(sec);
 
     return timespec { .tv_sec = sec.time_since_epoch().count(), .tv_nsec = ns.count() };
 }

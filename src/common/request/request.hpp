@@ -16,7 +16,7 @@ public:
     }
 #endif
 
-    ~ccl_request()
+    virtual ~ccl_request()
     {
         auto counter = completion_counter.load(std::memory_order_acquire);
         LOG_DEBUG("delete req ", this, " with counter ", counter);

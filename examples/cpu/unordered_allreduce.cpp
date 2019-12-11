@@ -119,4 +119,6 @@ int main()
 
     if (rank == 0)
         printf("PASSED\n");
+
+    return 0;
 }

@@ -44,6 +44,7 @@ struct ccl_sched_memory
 };
 
 static size_t lifo_priority = 0;
+
 struct ccl_sched_base
 {
     void set_coll_attr(const ccl_coll_attr& attr);
@@ -55,6 +56,8 @@ struct ccl_sched_base
     ccl_buffer alloc_buffer(size_t bytes);
     ccl_buffer update_buffer(ccl_buffer buffer, size_t new_size);
     void free_buffers();
+
+    void add_memory_region(atl_mr_t* mr);
 
     void alloc_buffers_for_sycl_copy();
 
@@ -76,9 +79,6 @@ struct ccl_sched_base
 
     /* sequence number of the schedule in the communicator */
     ccl_sched_id_t sched_id = 0;
-    
-    // TODO: memory should be hidden from public access
-    ccl_sched_memory memory;
 
     /* whether sched was created by internal module (fusion_manager/unordered_coll_manager) */
     ccl_sched_internal_type internal_type = ccl_sched_internal_none;
@@ -90,13 +90,11 @@ struct ccl_sched_base
 
 protected:
 
+    ~ccl_sched_base() = default;
+
     ccl_sched_base(const ccl_coll_param& coll_param) :
         coll_param(coll_param)
-    {
-    }
-
-    ccl_sched_entry_exec_mode exec_mode = ccl_sched_entry_exec_regular;
-    ccl_sched_add_mode add_mode = ccl_sched_add_back;
+    {}
 
     void update_id()
     {
@@ -104,4 +102,8 @@ protected:
     }
 
     void dump(std::ostream& out, const char *name) const;
+
+    ccl_sched_memory memory;
+    ccl_sched_entry_exec_mode exec_mode = ccl_sched_entry_exec_regular;
+    ccl_sched_add_mode add_mode = ccl_sched_add_back;
 };

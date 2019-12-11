@@ -36,6 +36,11 @@ void ccl_selection_unpack_elem(size_t& size, algo_group_type& algo,
 template<typename algo_group_type>
 void ccl_algorithm_selector_base<algo_group_type>::init()
 {
+    const std::string& str_to_parse = ccl_algorithm_selector_helper<algo_group_type>::get_str_to_parse();
+
+    if (!str_to_parse.length())
+        return;
+
     size_t elem_size;
     algo_group_type elem_algo;
     ccl_selection_border_type elem_border;
@@ -46,11 +51,6 @@ void ccl_algorithm_selector_base<algo_group_type>::init()
     std::stringstream full_stream;
     std::stringstream block_stream;
     size_t left_size, right_size;
-
-    const std::string& str_to_parse = ccl_algorithm_selector_helper<algo_group_type>::get_str_to_parse();
-
-    if (!str_to_parse.length())
-        return;
 
     /* format: <algo>:<size1-size2>;<algo>:<size1-size2>; ... */
 

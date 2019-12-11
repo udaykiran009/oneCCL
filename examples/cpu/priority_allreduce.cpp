@@ -30,7 +30,7 @@ size_t msg_sizes_test[] = { 589824, 512, 147456, 256, 6912, 256,
 
 #define msg_sizes msg_sizes_test
 
-size_t comp_iter_time_ms = 0;
+int comp_iter_time_ms = 0;
 
 #define sizeofa(arr)        (sizeof(arr) / sizeof(*arr))
 #define DTYPE               float
@@ -192,7 +192,12 @@ int main()
     {
         comp_iter_time_ms = atoi(comp_iter_time_ms_env);
     }
-    comp_delay_ms = 2 * comp_iter_time_ms / MSG_COUNT;
+
+    if (comp_iter_time_ms < 0)
+        comp_iter_time_ms = 0;
+
+    if (comp_iter_time_ms)
+        comp_delay_ms = 2 * comp_iter_time_ms / MSG_COUNT;
 
     size_t total_msg_size = 0;
     size_t idx;
@@ -203,7 +208,8 @@ int main()
     {
         printf("iter_count: %d, warmup_iter_count: %d\n", ITER_COUNT, WARMUP_ITER_COUNT);
         printf("msg_count: %zu, total_msg_size: %zu bytes\n", MSG_COUNT, total_msg_size);
-        printf("comp_iter_time_ms: %zu, comp_delay_ms: %zu (between each pair of messages)\n", comp_iter_time_ms, comp_delay_ms);
+        printf("comp_iter_time_ms: %d, comp_delay_ms: %zu (between each pair of messages)\n",
+               comp_iter_time_ms, comp_delay_ms);
         printf("messages are started in direct order and completed in reverse order\n");
         fflush(stdout);
     }

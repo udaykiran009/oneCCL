@@ -41,7 +41,7 @@ public:
     ccl_sched(const ccl_sched& other) = delete;
     ccl_sched& operator= (const ccl_sched& other) = delete;
 
-    ~ccl_sched();
+    virtual ~ccl_sched();
 
     bool is_strict_order_satisfied();
 

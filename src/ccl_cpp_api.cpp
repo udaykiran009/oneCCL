@@ -32,7 +32,7 @@ public:
         }
     }
 
-    ~request_impl()
+    ~request_impl() override
     {
         if (!completed)
         {
@@ -76,13 +76,14 @@ CCL_API ccl::environment& ccl::environment::instance()
     return env;
 }
 
-CCL_API void ccl::environment::set_resize_fn(ccl_resize_fn_t callback)
+void CCL_API ccl::environment::set_resize_fn(ccl_resize_fn_t callback)
 {
     ccl_status_t result = ccl_set_resize_fn(callback);
-    CCL_CHECK_AND_THROW(result, "failed to set callback");
+    CCL_CHECK_AND_THROW(result, "failed to set resize callback");
+    return;
 }
 
-CCL_API ccl_version_t ccl::environment::get_version() const
+ccl_version_t CCL_API ccl::environment::get_version() const
 {
     ccl_version_t ret;
     ccl_status_t result = ccl_get_version(&ret);
@@ -90,12 +91,12 @@ CCL_API ccl_version_t ccl::environment::get_version() const
     return ret;
 }
 
-CCL_API  ccl::communicator_t ccl::environment::create_communicator(const ccl::comm_attr* attr/* = nullptr*/) const
+ccl::communicator_t CCL_API ccl::environment::create_communicator(const ccl::comm_attr* attr/* = nullptr*/) const
 {
     return communicator_t(new ccl::communicator(attr));
 }
 
-CCL_API ccl::stream_t ccl::environment::create_stream(ccl::stream_type type/* = ccl::stream_type::cpu*/,
+ccl::stream_t CCL_API ccl::environment::create_stream(ccl::stream_type type/* = ccl::stream_type::cpu*/,
                                                                     void* native_stream/* = nullptr*/) const
 {
 #ifndef CCL_ENABLE_SYCL
@@ -148,12 +149,12 @@ CCL_API ccl::communicator::communicator(const ccl::comm_attr* attr)
     }
 }
 
-CCL_API size_t ccl::communicator::rank()
+size_t CCL_API ccl::communicator::rank()
 {
     return comm_impl->rank();
 }
 
-CCL_API size_t ccl::communicator::size()
+size_t CCL_API ccl::communicator::size()
 {
     return comm_impl->size();
 }
@@ -195,7 +196,7 @@ ccl::communicator::allgatherv(const buffer_type* send_buf,
 
 template<class buffer_container_type,
          typename T>
-CCL_API ccl::communicator::coll_request_t
+ccl::communicator::coll_request_t CCL_API
 ccl::communicator::allgatherv(const buffer_container_type& send_buf,
                               size_t send_count,
                               buffer_container_type& recv_buf,
@@ -229,7 +230,7 @@ ccl::communicator::allreduce(const void* send_buf,
 
 template<class buffer_type,
          typename T>
-CCL_API ccl::communicator::coll_request_t
+ccl::communicator::coll_request_t CCL_API
 ccl::communicator::allreduce(const buffer_type* send_buf,
                              buffer_type* recv_buf,
                              size_t count,
@@ -244,7 +245,7 @@ ccl::communicator::allreduce(const buffer_type* send_buf,
 
 template<class buffer_container_type,
          typename T>
-CCL_API ccl::communicator::coll_request_t
+ccl::communicator::coll_request_t CCL_API
 ccl::communicator::allreduce(const buffer_container_type& send_buf,
                              buffer_container_type& recv_buf,
                              size_t count,
@@ -275,7 +276,7 @@ ccl::communicator::alltoall(const void* send_buf,
 }
 
 template<class buffer_type, typename T>
-CCL_API ccl::communicator::coll_request_t
+ccl::communicator::coll_request_t CCL_API
 ccl::communicator::alltoall(const buffer_type* send_buf,
                             buffer_type* recv_buf,
                             size_t count,
@@ -288,7 +289,7 @@ ccl::communicator::alltoall(const buffer_type* send_buf,
 }
 
 template<class buffer_container_type, typename T>
-CCL_API ccl::communicator::coll_request_t
+ccl::communicator::coll_request_t CCL_API
 ccl::communicator::alltoall(const buffer_container_type& send_buf,
                             buffer_container_type& recv_buf,
                             size_t count,
@@ -319,7 +320,7 @@ ccl::communicator::bcast(void* buf,
 
 template<class buffer_type,
          typename T>
-CCL_API ccl::communicator::coll_request_t
+ccl::communicator::coll_request_t CCL_API
 ccl::communicator::bcast(buffer_type* buf,
                          size_t count,
                          size_t root,
@@ -334,7 +335,7 @@ ccl::communicator::bcast(buffer_type* buf,
 
 template<class buffer_container_type,
          typename T>
-CCL_API ccl::communicator::coll_request_t
+ccl::communicator::coll_request_t CCL_API
 ccl::communicator::bcast(buffer_container_type& buf,
                          size_t count,
                          size_t root,
@@ -368,7 +369,7 @@ ccl::communicator::reduce(const void* send_buf,
 
 template<class buffer_type,
          typename T>
-CCL_API ccl::communicator::coll_request_t
+ccl::communicator::coll_request_t CCL_API
 ccl::communicator::reduce(const buffer_type* send_buf,
                           buffer_type* recv_buf,
                           size_t count,
@@ -384,7 +385,7 @@ ccl::communicator::reduce(const buffer_type* send_buf,
 
 template<class buffer_container_type,
          typename T>
-CCL_API ccl::communicator::coll_request_t
+ccl::communicator::coll_request_t CCL_API
 ccl::communicator::reduce(const buffer_container_type& send_buf,
                           buffer_container_type& recv_buf,
                           size_t count,
@@ -427,7 +428,7 @@ ccl::communicator::sparse_allreduce(const void* send_ind_buf, size_t send_ind_co
 template<class index_buffer_type,
          class value_buffer_type,
          typename T>
-CCL_API ccl::communicator::coll_request_t
+ccl::communicator::coll_request_t CCL_API
 ccl::communicator::sparse_allreduce(const index_buffer_type* send_ind_buf, size_t send_ind_count,
                                     const value_buffer_type* send_val_buf, size_t send_val_count,
                                     index_buffer_type** recv_ind_buf, size_t* recv_ind_count,
@@ -448,7 +449,7 @@ ccl::communicator::sparse_allreduce(const index_buffer_type* send_ind_buf, size_
 template<class index_buffer_container_type,
          class value_buffer_container_type,
          typename T>
-CCL_API ccl::communicator::coll_request_t
+ccl::communicator::coll_request_t CCL_API
 ccl::communicator::sparse_allreduce(const index_buffer_container_type& send_ind_buf, size_t send_ind_count,
                                     const value_buffer_container_type& send_val_buf, size_t send_val_count,
                                     index_buffer_container_type** recv_ind_buf, size_t* recv_ind_count,
@@ -470,6 +471,7 @@ void CCL_API ccl::communicator::barrier(const ccl::stream_t& stream)
 {
     ccl_barrier_impl(comm_impl.get(),
                      (stream) ? stream->stream_impl.get() : nullptr);
+    return;
 }
 /***********************************************************************/
 

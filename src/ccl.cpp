@@ -75,7 +75,7 @@ ccl_status_t ccl_init()
     COMMON_CATCH_BLOCK();
 }
 
-CCL_API ccl_status_t ccl_get_version(ccl_version_t* version)
+ccl_status_t CCL_API ccl_get_version(ccl_version_t* version)
 {
     if (!version)
     {

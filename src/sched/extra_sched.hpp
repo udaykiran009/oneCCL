@@ -23,7 +23,7 @@ struct ccl_extra_sched : public ccl_request, public ccl_sched
 #endif
     }
 
-    ~ccl_extra_sched() = default;
+    ~ccl_extra_sched() override = default;
     
     void dump(std::ostream& out) const
     {

@@ -13,7 +13,7 @@ enum ccl_recv_reduce_result_buf_type
     ccl_recv_reduce_comm_buf
 };
 
-class recv_reduce_entry final: public sched_entry
+class recv_reduce_entry final : public sched_entry
 {
 public:
     static constexpr const char* class_name() noexcept
@@ -52,6 +52,21 @@ public:
             size_t comm_buf_size = in_cnt * ccl_datatype_get_size(dtype);
             this->comm_buf.set(CCL_MALLOC(comm_buf_size, "recv_reduce.comm_buf"), comm_buf_size);
             own_comm_buff = true;
+        }
+    }
+
+    ~recv_reduce_entry() override
+    {
+        if (status == ccl_sched_entry_status_started)
+        {
+            size_t bytes = in_cnt * ccl_datatype_get_size(dtype);
+            LOG_DEBUG("cancel RECV in RECV_REDUCE entry, src ", src, ", req ", &req, ", bytes", bytes);
+            atl_comm_cancel(sched->bin->get_comm_ctx(), &req);
+        }
+
+        if (own_comm_buff)
+        {
+            CCL_FREE(comm_buf.get_ptr());
         }
     }
 
@@ -106,21 +121,6 @@ public:
     const char* name() const override
     {
         return class_name();
-    }
-
-    ~recv_reduce_entry() override
-    {
-        if (status == ccl_sched_entry_status_started)
-        {
-            size_t bytes = in_cnt * ccl_datatype_get_size(dtype);
-            LOG_DEBUG("cancel RECV in RECV_REDUCE entry, src ", src, ", req ", &req, ", bytes", bytes);
-            atl_comm_cancel(sched->bin->get_comm_ctx(), &req);
-        }
-
-        if (own_comm_buff)
-        {
-            CCL_FREE(comm_buf.get_ptr());
-        }
     }
 
 protected:

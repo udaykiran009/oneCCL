@@ -85,8 +85,9 @@ ccl_buffer ccl_sched_base::alloc_buffer(size_t bytes)
     CCL_THROW_IF_NOT(bytes > 0, "incorrect buffer size: ", bytes);
 
     ccl_buffer buffer = ccl_buffer(CCL_CALLOC(bytes, "sched_buffer"),
-                                     bytes, 0, ccl_buffer_type::DIRECT);
+                                   bytes, 0, ccl_buffer_type::DIRECT);
     memory.buf_list.emplace_back(buffer, bytes);
+    CCL_THROW_IF_NOT(buffer.get_ptr(), "null ptr");
     return buffer;
 }
 
@@ -116,7 +117,6 @@ ccl_buffer ccl_sched_base::update_buffer(ccl_buffer buffer, size_t new_size)
     return new_buf;
 }
 
-
 void ccl_sched_base::free_buffers()
 {
     std::list<ccl_sched_buffer_handler>::iterator it;
@@ -126,6 +126,12 @@ void ccl_sched_base::free_buffers()
         CCL_FREE(it->buffer.get_ptr());
     }
     memory.buf_list.clear();
+}
+
+void ccl_sched_base::add_memory_region(atl_mr_t* mr)
+{
+    CCL_THROW_IF_NOT(mr);
+    memory.mr_list.emplace_back(mr);
 }
 
 void ccl_sched_base::alloc_buffers_for_sycl_copy()
