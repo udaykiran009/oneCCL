@@ -16,17 +16,24 @@ declare -i total_skipped=0
 
 function CheckTest(){
     test_log=$1
-    test_result=`grep -c "PASSED" ${test_log}`
-    test_skipped=`grep -c "GPU is unavailable" ${test_log}`
-    if [ ${test_result} -ne 1 ]
+    test_file=$2
+    test_passed=`grep -c "PASSED" ${test_log}`
+    if [ $test_file != "communicator.out" ]
     then
-        echo "Error: example $2 testing failed"
+        test_failed=`grep -E -c -i 'error|Aborted|failed|^BAD$|KILLED|^fault$|cl::sycl::runtime_error|terminate' ${test_log}`
+    else
+        test_failed=`grep -E -c -i 'Aborted|failed|^BAD$|KILLED|^fault$|cl::sycl::runtime_error|terminate' ${test_log}`
+    fi
+    test_skipped=`grep -c "Accelerator is unavailable" ${test_log}`
+    if [ ${test_passed} -ne 1 ] || [ ${test_failed} -ne 0 ]
+    then
+        echo "Error: example $test_file testing failed"
         echo "See log ${test_log} for details"
         total_fails=${total_fails}+1
     fi
     if [ ${test_skipped} -ne 0 ]
     then
-        echo "GPU test for example  $2 has been skipped, default selector used instead."
+        echo "GPU test for example  $test_file has been skipped, default selector used instead."
         echo "See log ${test_log} for details"
         total_skipped=${total_skipped}+1
     fi

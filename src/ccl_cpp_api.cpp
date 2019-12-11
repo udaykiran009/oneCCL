@@ -1,3 +1,4 @@
+
 #include "ccl.hpp"
 #include "ccl_type_traits.hpp"
 #include "common/global/global.hpp"
@@ -18,6 +19,9 @@
 
 namespace ccl
 {
+
+static std::atomic<size_t> env_ref_counter;
+
 class request_impl final : public request
 {
 public:
@@ -66,14 +70,25 @@ private:
 
 CCL_API ccl::environment::environment()
 {
-    ccl_status_t result = ccl_init();
+    static auto result = ccl_init();
+    env_ref_counter.fetch_add(1);
     CCL_CHECK_AND_THROW(result, "failed to initialize ccl");
 }
 
 CCL_API ccl::environment& ccl::environment::instance()
 {
-    static environment env;
-    return env;
+    static thread_local bool created = false;
+    if (!created)
+    {
+        /* 
+            environment destructor uses logger for ccl_finalize and it should be destroyed before logger,
+            therefore construct thread_local logger at first follows to global/static initialization rules
+        */
+        LOG_INFO("created environment");
+        created = true;
+    }
+    static thread_local std::unique_ptr<ccl::environment> env(new environment);
+    return *env;
 }
 
 void CCL_API ccl::environment::set_resize_fn(ccl_resize_fn_t callback)
@@ -100,7 +115,7 @@ ccl::stream_t CCL_API ccl::environment::create_stream(ccl::stream_type type/* = 
                                                                     void* native_stream/* = nullptr*/) const
 {
 #ifndef CCL_ENABLE_SYCL
-    if(type == ccl::stream_type::sycl)
+    if (type == ccl::stream_type::sycl)
     {
         throw ccl_error("SYCL stream is not supported in current ccl version");
     }
@@ -110,10 +125,13 @@ ccl::stream_t CCL_API ccl::environment::create_stream(ccl::stream_type type/* = 
 
 CCL_API ccl::environment::~environment()
 {
-    auto result = ccl_finalize();
-    if (result != ccl_status_success)
+    if (env_ref_counter.fetch_sub(1) == 1)
     {
-        abort();
+        auto result = ccl_finalize();
+        if (result != ccl_status_success)
+        {
+            abort();
+        }
     }
 }
 

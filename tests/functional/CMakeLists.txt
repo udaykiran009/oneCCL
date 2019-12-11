@@ -17,8 +17,12 @@ include_directories($ENV{CCL_ROOT}/include)
 link_directories($ENV{CCL_ROOT}/lib)
 
 # Check SYCL support
+if (NOT CMAKE_DISABLE_SYCL)
+    set(CMAKE_DISABLE_SYCL 0)
+endif()
+
 if( ${CMAKE_C_COMPILER_ID} STREQUAL "Clang" AND ${CMAKE_CXX_COMPILER_ID} STREQUAL "Clang")
-    if (NOT ${CMAKE_DISABLE_SYCL})
+    if (${CMAKE_DISABLE_SYCL} EQUAL 0)
         set(CMAKE_CLANG_FLAGS "-fsycl")
         set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -lsycl")
     endif()
