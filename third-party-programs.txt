@@ -6,14 +6,15 @@ to the corresponding third party licenses that solely and exclusively govern
 your use of the third party programs.
 
 This third-party-programs.txt file applies to Intel(R) oneAPI Collective
-Communications Library (oneCCL) 2021.1-beta04.
+Communications Library (oneCCL).
 
 This third-party-programs.txt file contains a list of licenses and links to the 
 oneCCL components' third-party-programs.txt files.
 
-The combination of all these files covers oneCCL 2021.1-beta04.
+The combination of all these files covers oneCCL.
 
 List of Third Party Programs:
+    -Intel(R) MPI Library: Intel Simplified Software License located in <install_dir>/licensing/mpi/license.txt
     -MPICH*: BSD License
     -Libfabric* and OpenFabrics Interfaces* (OFI*): BSD License
     -Horovod*: Apache 2.0

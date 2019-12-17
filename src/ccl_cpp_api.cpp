@@ -1,4 +1,3 @@
-
 #include "ccl.hpp"
 #include "ccl_type_traits.hpp"
 #include "common/global/global.hpp"

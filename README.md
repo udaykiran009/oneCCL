@@ -1,11 +1,15 @@
-# ccl
-oneAPI Collective Communications Library
+# oneccl
+Intel(R) oneAPI Collective Communications Library
+## Prerequisites
+
+Ubuntu* 18
+GNU*: C, C++ 4.8.5 or higher.
 
 ## Installation
 ### General installation scenario
 
 ```
-cd ccl
+cd oneccl
 mkdir build
 cd build
 cmake ..
@@ -46,12 +50,6 @@ and linkage:
 make -j VERBOSE=1
 ```
 
-### Generate archive with installed files
-```
-make -j install
-make archive
-```
-
 ### Build with address sanitizer
 Modify `cmake` command as follow:
 ```
@@ -63,6 +61,13 @@ Make sure that libasan.so exists.
 
 ## Usage
 
+### Launching Example Application
+Use the command:
+```
+$ source <install_dir>/env/setvars.sh
+$ cd <install_dir>/examples
+$ mpirun -n 2 ./common/benchmark
+```
 ### Setting workers affinity
 There are two ways to set workers threads affinity - explicit and automatic
 
@@ -100,7 +105,5 @@ In the most cases there is no need in removal of the current build directory. Ju
 compile and link changed files. Only if one sees some suspicious build errors after significant 
 change in the code (e.g. after rebase or change of branch) then it is a hint to clean build directory.
 
-### I can't run CCL examples
+Release notes available by link: https://software.intel.com/en-us/articles/oneapi-collective-communication-library-ccl-release-notes
 
-It is recommended to use environment values stored in `env/vars.sh` of your current
-installation directory.

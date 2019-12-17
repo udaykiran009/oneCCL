@@ -1,4 +1,4 @@
 DeliveryName	InstallName	FileCheckSum	FileOrigin	Owner	FileFeature	FileInstallCondition	InstalledFilePermission	Redistributable	InstalledFileOwner	SymbolicLink
-<deliverydir>/l_env/vars.sh	<installdir><l_ccl_install_path><l_ccl_platform>/env/vars.sh		external	Ksenya Kochanova		1	755	redistributable	root	<installroot>/intel64/env/vars.sh
-<deliverydir>/l_env/modulefiles/ccl	<installdir><l_ccl_install_path><l_ccl_platform>/env/modulefiles/ccl		external	Ksenya Kochanova		1	755	redistributable	root	<installroot>/intel64/env/modulefiles/ccl
+<deliverydir>/l_env/vars.sh	<installdir><l_ccl_install_path><l_ccl_platform>/env/vars.sh		external	Ksenya Kochanova		1	755	redistributable	root	<installroot>/env/vars.sh
+<deliverydir>/l_env/modulefiles/ccl	<installdir><l_ccl_install_path><l_ccl_platform>/env/modulefiles/ccl		external	Ksenya Kochanova		1	755	redistributable	root	<installroot>/env/modulefiles/ccl
 #Intel Confidential

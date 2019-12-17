@@ -1,0 +1,18 @@
+#!/bin/bash
+
+WORK_DIR="$(cd "$( dirname "${BASH_SOURCE[0]}" )" > /dev/null && pwd)"
+export CCL_ROOT="$(cd ${WORK_DIR}/../; pwd -P)"
+if [ -z "${I_MPI_ROOT}" ]
+then
+    export I_MPI_ROOT="${CCL_ROOT}"
+fi
+source ${CCL_ROOT}/env/vars.sh
+
+if [ -z "${PATH}" ]
+then
+    PATH="${CCL_ROOT}/bin"; export PATH
+else
+    PATH="${CCL_ROOT}/bin:${PATH}"; export PATH
+fi
+
+FI_PROVIDER_PATH="${CCL_ROOT}/@CMAKE_INSTALL_LIBDIR@/prov"; export FI_PROVIDER_PATH

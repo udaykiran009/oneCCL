@@ -1,16 +1,8 @@
 cmake_minimum_required (VERSION 2.8)
 file(GLOB sources "*.c" "*.cpp")
-################################
-# GTest
-################################
-#show build info
-message(STATUS "Installation directory: ${CMAKE_INSTALL_PREFIX}")
-message(STATUS "Build type: ${CMAKE_BUILD_TYPE}")
-message(STATUS "C compiler : ${CMAKE_C_COMPILER}")
-message(STATUS "CXX compiler : ${CMAKE_CXX_COMPILER}")
 
-enable_testing()
 set(CCL_INSTALL_TESTS "$ENV{PWD}")
+enable_testing()
 ADD_SUBDIRECTORY (googletest-release-1.8.1/googletest/)
 include_directories(${PROJECT_SOURCE_DIR}/tests/googletest-release-1.8.1/googletest/include ${PROJECT_SOURCE_DIR}/tests/googletest-release-1.8.1/googletest/src)
 include_directories($ENV{CCL_ROOT}/include)
