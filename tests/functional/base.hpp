@@ -38,6 +38,7 @@ struct typed_test_param
         process_idx = comm->rank();
         buf_indexes.resize(buffer_count);
     }
+
     void prepare_coll_attr(size_t idx);
     std::string create_match_id(size_t buf_idx);
     bool complete_request(std::shared_ptr < ccl::request > reqs);

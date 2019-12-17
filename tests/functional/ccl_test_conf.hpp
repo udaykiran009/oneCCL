@@ -74,11 +74,11 @@ std::map < int, const char *> ccl_completion_type_str = {{CMPT_WAIT, "CMPT_WAIT"
                                                         };
 
 typedef enum {
+    PTYPE_NULL = 0,
 #ifdef TEST_CCL_CUSTOM_PROLOG
-    PTYPE_T_TO_2X = 0,
-    PTYPE_T_TO_CHAR = 1,
+    PTYPE_T_TO_2X = 1,
+    PTYPE_T_TO_CHAR = 2,
 #endif
-    PTYPE_NULL = 2,
     PTYPE_LAST
 } ccl_prolog_type;
 ccl_prolog_type first_ccl_prolog_type = PTYPE_NULL;
@@ -91,11 +91,11 @@ std::map < int, const char *> ccl_prolog_type_str = {{PTYPE_NULL, "PTYPE_NULL"},
                                                };
 
 typedef enum {
+    ETYPE_NULL = 0,
 #ifdef TEST_CCL_CUSTOM_EPILOG
-    ETYPE_T_TO_2X = 0,
-    ETYPE_CHAR_TO_T = 1,
+    ETYPE_T_TO_2X = 1,
+    ETYPE_CHAR_TO_T = 2,
 #endif
-    ETYPE_NULL = 2,
     ETYPE_LAST
 } ccl_epilog_type;
 ccl_epilog_type first_ccl_epilog_type = ETYPE_NULL;
@@ -349,6 +349,9 @@ void init_test_params()
     {
         for (ccl_epilog_type epilog_type = first_ccl_epilog_type; epilog_type < last_ccl_epilog_type; epilog_type++)
         {
+        // if ((epilog_type != ETYPE_CHAR_TO_T && prolog_type == PTYPE_T_TO_CHAR)||(epilog_type == ETYPE_CHAR_TO_T && prolog_type != PTYPE_T_TO_CHAR))
+        //      // TODO: remove skipped data type
+        //      continue;
             for (ccl_reduction_type reduction_type = first_ccl_reduction_type; reduction_type < last_ccl_reduction_type; reduction_type++)
             {
                 for (ccl_sync_type sync_type = first_ccl_sync_type; sync_type < last_ccl_sync_type; sync_type++)

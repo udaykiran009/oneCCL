@@ -86,7 +86,6 @@ void typed_test_param<T>::define_start_order()
                 buf_indexes[idx-1] = buf_indexes[buf_idx];
                 buf_indexes[buf_idx] = tmp_idx;
             }
-                    
         }
         else {
             std::iota(buf_indexes.begin(), buf_indexes.end(), 0);
@@ -208,6 +207,7 @@ void base_test<T>::fill_buffers(typed_test_param<T>& param)
         }
     }
 }
+
 template <typename T>
 int base_test<T>::run(typed_test_param<T>& param)
 {
