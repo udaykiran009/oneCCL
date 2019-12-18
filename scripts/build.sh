@@ -98,7 +98,6 @@ CCL_PACKAGE_SUFFIX="_${CCL_PACKAGE_PHASE}_ww`date +%V`.${DATE}.${TIME}"
 CCL_PACKAGE_NAME="${CCL_PACKAGE_PREFIX}_${CCL_VERSION_FORMAT}${CCL_PACKAGE_SUFFIX}"
 SWF_PRE_DROP_DIR="/p/pdsd/scratch/Drops/CCL/1.0/"
 PRE_DROP_DIR="${WORKSPACE}/_predrop/"
-ENABLE_NIGHTLY_DROP="false"
 
 #==============================================================================
 #                                Defaults
@@ -110,6 +109,10 @@ set_default_values()
     if [ -z "${ENABLE_PRE_DROP}" ]
     then
         ENABLE_PRE_DROP="false"
+    fi
+    if [ -z "${ENABLE_NIGHTLY_DROP}" ]
+    then
+        ENABLE_NIGHTLY_DROP="false"
     fi
     if [ "${ENABLE_DEBUG_BUILD}" == "yes" ]
     then
