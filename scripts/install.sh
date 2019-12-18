@@ -113,5 +113,3 @@ then
     exit 1
 fi
 
-sed -i -e "s|CCL_SUBSTITUTE_INSTALLDIR|${INSTALL_PATH}|g" ${INSTALL_PATH}/intel64/bin/cclvars.sh
-sed -i -e "s|I_MPI_SUBSTITUTE_INSTALLDIR|${INSTALL_PATH}|g" ${INSTALL_PATH}/intel64/etc/mpiexec.conf  

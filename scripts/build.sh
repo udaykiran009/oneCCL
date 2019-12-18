@@ -120,6 +120,7 @@ set_default_values()
     ENABLE_DEBUG="no"
     ENABLE_VERBOSE="yes"
     ENABLE_BUILD="no"
+    ENABLE_INSTALL="no"
 }
 #==============================================================================
 #                                Functions
@@ -155,6 +156,8 @@ print_help()
     echo_log "        Enable SWF pre-drop procedure"
     echo_log "    -build-deb-conf|--build-deb-conf"
     echo_log "        Build debug configuration"
+    echo_log "    -install|--install"
+    echo_log "        Install package"
     echo_log "   ------------------------------------------------------------"
     echo_log "    -h|-H|-help|--help"
     echo_log "        Print help information"
@@ -464,8 +467,15 @@ make_package()
         echo_log "Create eng package..."
         rm -rf ${TMP_DIR}/${CCL_PACKAGE_NAME}
         rm -f ${TMP_DIR}/${CCL_PACKAGE_NAME}.tgz
-        mkdir -p ${TMP_DIR}/${CCL_PACKAGE_NAME}
-        cp -r ${PACKAGE_ENG_DIR}/* ${TMP_DIR}/${CCL_PACKAGE_NAME}
+        mkdir -p ${TMP_DIR}/${CCL_PACKAGE_NAME}/package
+        cp -r ${PACKAGE_ENG_DIR}/* ${TMP_DIR}/${CCL_PACKAGE_NAME}/package
+
+        cd ${TMP_DIR}/${CCL_PACKAGE_NAME}/package && tar czf ${TMP_DIR}/${CCL_PACKAGE_NAME}/files.tar.gz * --owner=root --group=root
+        rm -rf ${TMP_DIR}/${CCL_PACKAGE_NAME}/package
+        cp ${WORKSPACE}/scripts/install.sh ${TMP_DIR}/${CCL_PACKAGE_NAME}
+        cd ${TMP_DIR}/${CCL_PACKAGE_NAME} && zip -0 -r -m -P accept ${TMP_DIR}/${CCL_PACKAGE_NAME}/package.zip *
+        cp ${WORKSPACE}/doc/cclEULA.txt ${TMP_DIR}/${CCL_PACKAGE_NAME}
+        cp ${WORKSPACE}/doc/README.txt ${TMP_DIR}/${CCL_PACKAGE_NAME}
 
         cd ${TMP_DIR} && tar czf ${WORKSPACE}/${CCL_PACKAGE_NAME}.tgz ${CCL_PACKAGE_NAME} --owner=root --group=root
         CheckCommandExitCode $? "package failed"
@@ -484,6 +494,7 @@ parse_arguments()
             "--eng-package"|"-eng-package")
                 ENABLE_BUILD="yes"
                 ENABLE_PACK="yes"
+                ENABLE_INSTALL="yes"
                 ;;
             "-pack"|"--pack")
                 ENABLE_PACK="yes"
@@ -498,8 +509,12 @@ parse_arguments()
                 ENABLE_DEBUG_BUILD="yes"
                 BUILD_TYPE="Debug"
                 ;;
+            "-install"| "--install")
+                ENABLE_INSTALL="yes"
+                ;;
             "-help")
                 print_help
+                exit 0
                 ;;
             *)
                 echo_log "ERROR: unknown option ($1)"
@@ -517,6 +532,7 @@ parse_arguments()
     echo_log "ENABLE_PACK               = ${ENABLE_PACK}"
     echo_log "ENABLE_DEBUG_BUILD        = ${ENABLE_DEBUG_BUILD}"
     echo_log "ENABLE_PRE_DROP           = ${ENABLE_PRE_DROP}"
+    echo_log "ENABLE_INSTALL            = ${ENABLE_INSTALL}"
     echo_log "-----------------------------------------------------------"
 
     TIMESTAMP_START=`date +%s`
@@ -567,6 +583,28 @@ run_pack()
         run_copy_package_to_common_folder
         echo_log_separator
         echo_log "#\t\t\tPackaging... DONE"
+        echo_log_separator
+    fi
+}
+
+#==============================================================================
+#                              Installation
+#==============================================================================
+install_package()
+{
+    if  [ "${ENABLE_INSTALL}" == "yes" ]
+    then
+        echo_log_separator
+        echo_log "#\t\t\tPackage installation..."
+        echo_log_separator
+        tar xfz ${WORKSPACE}/${CCL_PACKAGE_NAME}.tgz --directory ${WORKSPACE}
+        unzip -P accept ${WORKSPACE}/${CCL_PACKAGE_NAME}/package.zip -d ${WORKSPACE}/${CCL_PACKAGE_NAME}
+        ${WORKSPACE}/${CCL_PACKAGE_NAME}/install.sh -s -d ${WORKSPACE}/${CCL_PACKAGE_NAME}/tmp/
+        find ${WORKSPACE}/${CCL_PACKAGE_NAME} -mindepth 1 -maxdepth 1 -not -name tmp -exec rm -rf {} \;
+        cp -r ${WORKSPACE}/${CCL_PACKAGE_NAME}/tmp/* ${WORKSPACE}/${CCL_PACKAGE_NAME}
+        rm -rf ${WORKSPACE}/${CCL_PACKAGE_NAME}/tmp
+        echo_log_separator
+        echo_log "#\t\t\tPackage installation...DONE"
         echo_log_separator
     fi
 }
@@ -623,5 +661,6 @@ echo "BUILD_TYPE=" $BUILD_TYPE
 parse_arguments $@
 run_build
 run_pack
+install_package
 run_pre_drop
 run_swf_pre_drop
