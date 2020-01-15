@@ -81,7 +81,7 @@ rm -f ${LOG_FILE}
 
 HOSTNAME=`hostname -s`
 
-CCL_COPYRIGHT_YEAR="2019"
+CCL_COPYRIGHT_YEAR="2020"
 
 CCL_VERSION_FORMAT="2021.1-beta04"
 
@@ -471,6 +471,7 @@ make_package()
         rm -rf ${TMP_DIR}/${CCL_PACKAGE_NAME}
         rm -f ${TMP_DIR}/${CCL_PACKAGE_NAME}.tgz
         mkdir -p ${TMP_DIR}/${CCL_PACKAGE_NAME}/package
+        add_copyrights
         cp -r ${PACKAGE_ENG_DIR}/* ${TMP_DIR}/${CCL_PACKAGE_NAME}/package
 
         cd ${TMP_DIR}/${CCL_PACKAGE_NAME}/package && tar czf ${TMP_DIR}/${CCL_PACKAGE_NAME}/files.tar.gz * --owner=root --group=root
@@ -610,6 +611,56 @@ install_package()
         echo_log "#\t\t\tPackage installation...DONE"
         echo_log_separator
     fi
+}
+
+#==============================================================================
+#                              Creating copyright
+#==============================================================================
+
+add_copyrights()
+{
+    echo_log_separator
+    echo_log "#\t\t\tAdd copyrights..."
+    echo_log_separator
+
+    mkdir ${WORKSPACE}/copyright_tmp
+    TMP_COPYRIGHT_DIR="${WORKSPACE}/copyright_tmp"
+
+    COPYRIGHT_TEMPLATE_INTEL="${WORKSPACE}/scripts/copyright/copyright_template_intel.txt"
+    COPYRIGHT_INTEL_SH="${TMP_COPYRIGHT_DIR}/copyright_intel.sh"
+    COPYRIGHT_INTEL_C="${TMP_COPYRIGHT_DIR}/copyright_intel.c"
+
+    echo "Generate ${COPYRIGHT_INTEL_SH}..."
+    echo "1a" > ${COPYRIGHT_INTEL_SH}
+    echo "#" >> ${COPYRIGHT_INTEL_SH}
+    sed -e "s|^|# |" ${COPYRIGHT_TEMPLATE_INTEL} >> ${COPYRIGHT_INTEL_SH}
+    echo "#" >> ${COPYRIGHT_INTEL_SH}
+    echo "." >> ${COPYRIGHT_INTEL_SH}
+    echo "w" >> ${COPYRIGHT_INTEL_SH}
+    sed -i -e "s|CCL_SUBSTITUTE_COPYRIGHT_YEAR|${CCL_COPYRIGHT_YEAR}|g" ${COPYRIGHT_INTEL_SH}
+    echo "Generate ${COPYRIGHT_INTEL_SH}... DONE"
+
+    echo "Generate ${COPYRIGHT_INTEL_C}..."
+    echo "1i" > ${COPYRIGHT_INTEL_C}
+    echo "/*" >> ${COPYRIGHT_INTEL_C}
+    sed -e "s|^|    |" ${COPYRIGHT_TEMPLATE_INTEL} >> ${COPYRIGHT_INTEL_C}
+    echo "*/" >> ${COPYRIGHT_INTEL_C}
+    echo "." >> ${COPYRIGHT_INTEL_C}
+    echo "w" >> ${COPYRIGHT_INTEL_C}
+    sed -i -e "s|CCL_SUBSTITUTE_COPYRIGHT_YEAR|${CCL_COPYRIGHT_YEAR}|g" ${COPYRIGHT_INTEL_C}
+    echo "Generate ${COPYRIGHT_INTEL_C}... DONE"
+
+    for CUR_FILE in ccl.h ccl.hpp ccl_config.h ccl_type_traits.h ccl_types.h ccl_types.hpp ccl_type_traits.hpp
+    do
+        ed ${PACKAGE_ENG_DIR}/include/${CUR_FILE} < ${COPYRIGHT_INTEL_C} >/dev/null 2>&1
+    done
+
+    ed ${PACKAGE_ENG_DIR}/env/vars.sh < ${COPYRIGHT_INTEL_SH} >/dev/null 2>&1
+
+    rm -rf ${TMP_COPYRIGHT_DIR}
+    echo_log_separator
+    echo_log "#\t\t\tAdd copyrights...DONE"
+    echo_log_separator
 }
 
 #==============================================================================
