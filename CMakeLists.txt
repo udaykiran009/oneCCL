@@ -30,7 +30,7 @@ message(STATUS "C compiler : ${CMAKE_C_COMPILER}")
 message(STATUS "CXX compiler : ${CMAKE_CXX_COMPILER}")
 
 #predefined options
-option(USE_SECURITY_FLAGS "Use security flags" FALSE)
+option(USE_SECURITY_FLAGS "Use security flags" TRUE)
 option(USE_CODECOV_FLAGS "Calculate code coverage" FALSE)
 option(WITH_ASAN "Use address sanitizer, can only be used in Debug build" FALSE)
 
@@ -66,7 +66,13 @@ endif()
 if(USE_SECURITY_FLAGS)
     set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wformat -Wformat-security -D_FORTIFY_SOURCE=2 -fstack-protector")
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wformat -Wformat-security -D_FORTIFY_SOURCE=2 -fstack-protector")
-    set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -z noexecstack -z relro -z now")
+    set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -fPIE -fPIC -z noexecstack -z relro -z now")
+    if(${CMAKE_C_COMPILER_ID} STREQUAL "GNU" AND ${CMAKE_CXX_COMPILER_ID} STREQUAL "GNU")
+        if(NOT CMAKE_CXX_COMPILER_VERSION VERSION_LESS 4.9)
+            set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fstack-protector-strong")
+            set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fstack-protector-strong")
+        endif()
+    endif()
 endif()
 
 if(${CMAKE_C_COMPILER_ID} STREQUAL "Intel" OR ${CMAKE_CXX_COMPILER_ID} STREQUAL "Intel")
