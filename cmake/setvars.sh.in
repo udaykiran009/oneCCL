@@ -6,7 +6,8 @@ if [ -z "${I_MPI_ROOT}" ]
 then
     export I_MPI_ROOT="${CCL_ROOT}"
 fi
-source ${CCL_ROOT}/env/vars.sh
+
+source ${CCL_ROOT}/env/vars.sh $1
 
 if [ -z "${PATH}" ]
 then

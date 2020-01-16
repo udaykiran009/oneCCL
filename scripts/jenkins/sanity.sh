@@ -147,7 +147,7 @@ enable_unordered_coll_test_scope()
 
 set_environment()
 {
-    # $build_compiler set up by jenkins: gnu/sycl/nosycl (sycl/nosycl means clang with or w/o sycl support)
+    # $build_compiler set up by jenkins: gnu/cpu_gpu_dpcpp/cpu_icc (sycl/cpu_icc means clang with or w/o sycl support)
     if [ -z "${build_compiler}" ]
     then
         build_compiler="sycl"
@@ -155,7 +155,7 @@ set_environment()
     if [ $build_compiler == "gnu" ]
     then
         BUILD_COMPILER_TYPE="gnu"
-    elif [ $build_compiler == "sycl" && $build_compiler == "nosycl" ]
+    elif [ $build_compiler == "sycl" ] || [ $build_compiler == "nosycl" ]
     then
         BUILD_COMPILER_TYPE="clang"
     elif [ $build_compiler == "intel" ]
@@ -174,8 +174,8 @@ set_environment()
         CXX_COMPILER=${BUILD_COMPILER}/g++
     elif [ "${BUILD_COMPILER_TYPE}" = "intel" ]
     then
-        source /nfs/inn/proj/mpi/pdsd/opt/EM64T-LIN/intel/compilers_and_libraries_2019.4.243/linux/bin/compilervars.sh intel64
-        BUILD_COMPILER=/nfs/inn/proj/mpi/pdsd/opt/EM64T-LIN/intel/compilers_and_libraries_2019.4.243/linux/bin/intel64/
+        source /nfs/inn/proj/mpi/pdsd/opt/EM64T-LIN/parallel_studio/parallel_studio_xe_2020.0.088/compilers_and_libraries_2020/linux/bin/compilervars.sh intel64
+        BUILD_COMPILER=/nfs/inn/proj/mpi/pdsd/opt/EM64T-LIN/parallel_studio/parallel_studio_xe_2020.0.088/compilers_and_libraries_2020/linux/bin/intel64/
         C_COMPILER=${BUILD_COMPILER}/icc
         CXX_COMPILER=${BUILD_COMPILER}/icpc
     else        
@@ -219,7 +219,15 @@ set_environment()
         build_type="release"
     fi
 
-    source ${CCL_INSTALL_DIR}/l_ccl_${build_compiler}_${build_type}_*/env/vars.sh
+    if [ -z  "${node_label}" ]
+    then
+        source ${CCL_INSTALL_DIR}/l_ccl_release*/env/vars.sh --ccl-configuration=cpu_icc
+    elif [ $node_label == "mlsl2_test_gpu" ]
+    then
+        source ${CCL_INSTALL_DIR}/l_ccl_release*/env/vars.sh --ccl-configuration=cpu_gpu_dpcpp
+    else
+        source ${CCL_INSTALL_DIR}/l_ccl_release*/env/vars.sh --ccl-configuration=cpu_icc
+    fi
 
     if [ "${ENABLE_CODECOV}" = "yes" ]
     then
@@ -249,7 +257,16 @@ run_compatibitily_tests()
 {
     set_external_env
     cd ${CURRENT_WORK_DIR}/examples
-    ./run.sh 
+    if [ -z  "${node_label}" ]
+    then
+        node_label="mlsl2_test_gpu"
+    fi
+    if [ $node_label == "mlsl2_test_gpu" ]
+    then
+        ./run.sh gpu
+    else
+        ./run.sh cpu
+    fi
     log_status_fail=${PIPESTATUS[0]}
     if [ "$log_status_fail" -eq 0 ]
     then

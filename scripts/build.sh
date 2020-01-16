@@ -24,32 +24,6 @@ ARCH=`uname -m`
 
 WORKSPACE=`cd ${SCRIPT_DIR}/../ && pwd -P`
 
-if [ -z "${BUILD_COMPILER_TYPE}" ]
-then
-    BUILD_COMPILER_TYPE="clang"
-fi
-if [ "${BUILD_COMPILER_TYPE}" = "gnu" ]
-then
-    BUILD_COMPILER=/usr/bin
-    C_COMPILER=${BUILD_COMPILER}/gcc
-    CXX_COMPILER=${BUILD_COMPILER}/g++
-elif [ "${BUILD_COMPILER_TYPE}" = "intel" ]
-then
-    source /nfs/inn/proj/mpi/pdsd/opt/EM64T-LIN/intel/compilers_and_libraries_2019.4.243/linux/bin/compilervars.sh intel64
-    BUILD_COMPILER=/nfs/inn/proj/mpi/pdsd/opt/EM64T-LIN/intel/compilers_and_libraries_2019.4.243/linux/bin/intel64/
-    C_COMPILER=${BUILD_COMPILER}/icc
-    CXX_COMPILER=${BUILD_COMPILER}/icpc
-else
-    if [ -z "${SYCL_BUNDLE_ROOT}" ]
-    then
-        echo "WARNING: SYCL_BUNDLE_ROOT is not defined, will be used default: /nfs/inn/disks/nn-ssg_tcar_mpi_2Tb_unix/users/ksenyako/inteloneapi/compiler/latest/env/vars.sh intel64"
-        source /p/pdsd/Users/sys_ctlab/beta02/inteloneapi/compiler/2021.1-beta03/env/vars.sh intel64
-        SYCL_BUNDLE_ROOT="/p/pdsd/Users/sys_ctlab/beta02/inteloneapi/compiler/2021.1-beta03/linux/"
-    fi
-    BUILD_COMPILER=${SYCL_BUNDLE_ROOT}/bin
-    C_COMPILER=${BUILD_COMPILER}/clang
-    CXX_COMPILER=${BUILD_COMPILER}/clang++
-fi
 if [ "${ENABLE_CODECOV}" = "yes" ]
 then
     CODECOV_FLAGS="true"
@@ -122,7 +96,8 @@ set_default_values()
     fi
     ENABLE_DEBUG="no"
     ENABLE_VERBOSE="yes"
-    ENABLE_BUILD="no"
+    ENABLE_BUILD_CPU="no"
+    ENABLE_BUILD_GPU="no"
     ENABLE_INSTALL="no"
 }
 #==============================================================================
@@ -186,24 +161,144 @@ CheckCommandExitCode() {
         exit $1
     fi
 }
-
-build()
+check_clang_path()
 {
-    if [ -z "$compiler" ]
+    if [ -z "${SYCL_BUNDLE_ROOT}" ]
     then
-        compiler="sycl"
-        DISABLE_SYCL=0
-    elif [ $compiler == "sycl" ]
-    then
-        DISABLE_SYCL=0
-    else
-        DISABLE_SYCL=1
+        echo "WARNING: SYCL_BUNDLE_ROOT is not defined, will be used default: /nfs/inn/disks/nn-ssg_tcar_mpi_2Tb_unix/users/ksenyako/inteloneapi/compiler/latest/env/vars.sh intel64"
+        SYCL_BUNDLE_ROOT="/p/pdsd/Users/sys_ctlab/beta02/inteloneapi/compiler/2021.1-beta03/linux/"
+        source ${SYCL_BUNDLE_ROOT}/../env/vars.sh intel64
     fi
+}
+check_gcc_path()
+{
+    if [ -z "${GNU_BUNDLE_ROOT}" ]
+    then
+        echo "WARNING: GNU_BUNDLE_ROOT is not defined, will be used default: /usr/bin/"
+        GNU_BUNDLE_ROOT="/usr/bin/"
+    fi
+}
+check_icc_path()
+{
+    if [ -z "${ICC_BUNDLE_ROOT}" ]
+    then
+        echo "WARNING: ICC_BUNDLE_ROOT is not defined, will be used default: /nfs/inn/proj/mpi/pdsd/opt/EM64T-LIN/parallel_studio/parallel_studio_xe_2020.0.088/compilers_and_libraries_2020/linux/"
+        ICC_BUNDLE_ROOT=/nfs/inn/proj/mpi/pdsd/opt/EM64T-LIN/parallel_studio/parallel_studio_xe_2020.0.088/compilers_and_libraries_2020/linux/
+        source ${ICC_BUNDLE_ROOT}/bin/compilervars.sh intel64
+    fi
+}
+define_cpu_compiler()
+{
+    if [ -z "${compiler}" ]
+    then
+        compiler="intel"
+    fi
+    if [ "${compiler}" = "gnu" ]
+    then
+        check_gcc_path
+        C_COMPILER_CPU=${GNU_BUNDLE_ROOT}/gcc
+        CXX_COMPILER_CPU=${GNU_BUNDLE_ROOT}/g++
+    elif [ "${compiler}" = "intel" ]
+    then
+        check_icc_path
+        C_COMPILER_CPU=${ICC_BUNDLE_ROOT}/bin/intel64/icc
+        CXX_COMPILER_CPU=${ICC_BUNDLE_ROOT}/bin/intel64/icpc
+    elif [ "${compiler}" = "clang" ]
+    then
+        check_clang_path
+        C_COMPILER_CPU=${SYCL_BUNDLE_ROOT}/bin/clang
+        CXX_COMPILER_CPU=${SYCL_BUNDLE_ROOT}/bin/clang++
+    fi
+}
+define_gpu_compiler()
+{
+    check_clang_path
+    C_COMPILER_GPU=${SYCL_BUNDLE_ROOT}/bin/clang
+    CXX_COMPILER_GPU=${SYCL_BUNDLE_ROOT}/bin/clang++
+}
+
+build_cpu()
+{
+    define_cpu_compiler
     log mkdir ${WORKSPACE}/build && cd ${WORKSPACE}/build && echo ${PWD}
-    log cmake .. -DCMAKE_DISABLE_SYCL=${DISABLE_SYCL} -DCMAKE_BUILD_TYPE=${BUILD_TYPE} \
-    -DCMAKE_C_COMPILER="${C_COMPILER}" -DCMAKE_CXX_COMPILER="${CXX_COMPILER}" -DUSE_CODECOV_FLAGS="${CODECOV_FLAGS}"
+    log cmake .. -DCMAKE_DISABLE_SYCL=1 -DCMAKE_BUILD_TYPE=${BUILD_TYPE} \
+    -DCMAKE_C_COMPILER="${C_COMPILER_CPU}" -DCMAKE_CXX_COMPILER="${CXX_COMPILER_CPU}" -DUSE_CODECOV_FLAGS="${CODECOV_FLAGS}"
     log make -j4 VERBOSE=1 install
-    CheckCommandExitCode $? "build failed"
+    CheckCommandExitCode $? "cpu build failed"
+}
+
+build_gpu()
+{
+    define_gpu_compiler
+    rm -rf ${WORKSPACE}/build_gpu
+    log mkdir ${WORKSPACE}/build_gpu && cd ${WORKSPACE}/build_gpu && echo ${PWD}
+    log cmake .. -DCMAKE_DISABLE_SYCL=0 -DCMAKE_BUILD_TYPE=${BUILD_TYPE} \
+    -DCMAKE_C_COMPILER="${C_COMPILER_GPU}" -DCMAKE_CXX_COMPILER="${CXX_COMPILER_GPU}" -DUSE_CODECOV_FLAGS="${CODECOV_FLAGS}"
+    log make -j4 VERBOSE=1 install
+    CheckCommandExitCode $? "gpu build failed"
+}
+
+post_build()
+{
+    define_cpu_compiler
+    rm -rf ${TMP_DIR}/lib
+    mkdir -p ${TMP_DIR}/lib
+    cd ${TMP_DIR}/lib
+    # libccl.so
+    cp ${ICC_BUNDLE_ROOT}/compiler/lib/intel64/libirc.a ./
+    cp ${ICC_BUNDLE_ROOT}/compiler/lib/intel64/libsvml.a ./
+    cp ${WORKSPACE}/build/_install/lib/libccl.a ./
+    ar x libccl.a
+    ar x libirc.a
+    ar x libsvml.a svml_i_div4_iface_la.o svml_d_feature_flag_.o \
+        svml_i_div4_core_e7la.o svml_i_div4_core_exla.o svml_i_div4_core_h9la.o \
+        svml_i_div4_core_y8la.o
+    gcc -shared -fPIE -fPIC -Wl,-z,now -Wl,-z,relro -Wl,-z,noexecstack -Xlinker -x -Xlinker -soname=libccl.so -o libccl.so *.o
+    CheckCommandExitCode $? "post build failed"
+    rm -rf *.o
+    # libpmi.so libresizable_pmi.so
+    lib_list="libpmi libresizable_pmi"
+    for lib in $lib_list
+    do
+        cp ${WORKSPACE}/build/_install/lib/$lib.a ./
+        ar x $lib.a
+        ar x libirc.a
+        ar x libsvml.a svml_i_div4_iface_la.o svml_d_feature_flag_.o \
+            svml_i_div4_core_e7la.o svml_i_div4_core_exla.o svml_i_div4_core_h9la.o \
+            svml_i_div4_core_y8la.o
+        gcc -shared -fPIE -fPIC -Wl,-z,now -Wl,-z,relro -Wl,-z,noexecstack -Xlinker -x -Xlinker -soname=$lib.so.1 -o $lib.so.1 *.o 
+        CheckCommandExitCode $? "post build failed"
+        rm -rf *.o
+    done
+    # libccl_atl_mpi.so libccl_atl_ofi.so
+    cp ${WORKSPACE}/build/_install/lib/libccl_atl_mpi.a ./
+    ar x libccl_atl_mpi.a
+    ar x libirc.a
+    ar x libsvml.a svml_i_div4_iface_la.o svml_d_feature_flag_.o \
+        svml_i_div4_core_e7la.o svml_i_div4_core_exla.o svml_i_div4_core_h9la.o \
+        svml_i_div4_core_y8la.o
+    gcc -fPIE -fPIC -Wl,-z,now -Wl,-z,relro -Wl,-z,noexecstack -std=gnu99 -Wall -Werror -D_GNU_SOURCE -fvisibility=internal -O3 -DNDEBUG -std=gnu99 -O3   -shared -Wl,-soname,libccl_atl_mpi.so.1.0 -o libccl_atl_mpi.so.1 *.o -L${WORKSPACE}/build/_install/lib/ -lmpi
+    CheckCommandExitCode $? "post build failed"
+    rm -rf *.o
+    cp ${WORKSPACE}/build/_install/lib/libccl_atl_ofi.a ./
+    ar x libccl_atl_ofi.a
+    ar x libirc.a
+    ar x libsvml.a svml_i_div4_iface_la.o svml_d_feature_flag_.o \
+        svml_i_div4_core_e7la.o svml_i_div4_core_exla.o svml_i_div4_core_h9la.o \
+        svml_i_div4_core_y8la.o
+    gcc -fPIE -fPIC -Wl,-z,now -Wl,-z,relro -Wl,-z,noexecstack -std=gnu99 -Wall -Werror -D_GNU_SOURCE -fvisibility=internal -O3 -DNDEBUG -std=gnu99 -O3   -shared -Wl,-soname,libccl_atl_ofi.so.1.0  -o libccl_atl_ofi.so.1 *.o -L${WORKSPACE}/build/_install/lib/ ${WORKSPACE}/build/_install/lib/libpmi.so.1 ${WORKSPACE}/build/_install/lib/libresizable_pmi.so.1 -lfabric -lm
+    CheckCommandExitCode $? "post build failed"
+    rm -rf *.o
+    mkdir -p ${WORKSPACE}/build/_install/lib/cpu_gpu_dpcpp
+    mkdir -p ${WORKSPACE}/build/_install/lib/cpu_icc
+    mkdir -p ${WORKSPACE}/build/_install/include/cpu_gpu_dpcpp
+    mkdir -p ${WORKSPACE}/build/_install/include/cpu_icc
+    mv `find ${WORKSPACE}/build/_install/include/* -type f` ${WORKSPACE}/build/_install/include/cpu_icc
+    mv ${TMP_DIR}/lib/lib* ${WORKSPACE}/build/_install/lib/cpu_icc
+    mv ${WORKSPACE}/build/_install/lib/prov ${WORKSPACE}/build/_install/lib/cpu_icc
+    cp -r  ${WORKSPACE}/build_gpu/_install/lib/* ${WORKSPACE}/build/_install/lib/cpu_gpu_dpcpp
+    cp -r  ${WORKSPACE}/build_gpu/_install/include/* ${WORKSPACE}/build/_install/include/cpu_gpu_dpcpp
+
 }
 
 replace_tags()
@@ -496,15 +591,26 @@ parse_arguments()
     do
         case $1 in
             "--eng-package"|"-eng-package")
-                ENABLE_BUILD="yes"
+                ENABLE_BUILD_CPU="yes"
+                ENABLE_BUILD_GPU="yes"
+                ENABLE_POST_BUILD="yes"
                 ENABLE_PACK="yes"
                 ENABLE_INSTALL="yes"
                 ;;
             "-pack"|"--pack")
                 ENABLE_PACK="yes"
                 ;;
-            "-build"|"--build")
-                ENABLE_BUILD="yes"
+            "-build-cpu"|"--build-cpu")
+                ENABLE_BUILD_CPU="yes"
+                ;;
+            "-build-gpu"|"--build-gpu")
+                ENABLE_BUILD_GPU="yes"
+                ;;
+            "-post-build"|"--post-build")
+                ENABLE_POST_BUILD="yes"
+                ;;
+            "-test-pre-drop"|"--test-pre-drop")
+                ENABLE_TEST_PRE_DROP="yes"
                 ;;
             "-swf-pre-drop"|"--swf-pre-drop")
                 ENABLE_PRE_DROP="true"
@@ -532,7 +638,9 @@ parse_arguments()
     echo_log "-----------------------------------------------------------"
     echo_log "PARAMETERS"
     echo_log "-----------------------------------------------------------"
-    echo_log "ENABLE_BUILD              = ${ENABLE_BUILD}"
+    echo_log "ENABLE_BUILD_CPU              = ${ENABLE_BUILD_CPU}"
+    echo_log "ENABLE_BUILD_GPU              = ${ENABLE_BUILD_GPU}"
+    echo_log "ENABLE_POST_BUILD              = ${ENABLE_POST_BUILD}"
     echo_log "ENABLE_PACK               = ${ENABLE_PACK}"
     echo_log "ENABLE_DEBUG_BUILD        = ${ENABLE_DEBUG_BUILD}"
     echo_log "ENABLE_PRE_DROP           = ${ENABLE_PRE_DROP}"
@@ -546,16 +654,43 @@ parse_arguments()
 #==============================================================================
 #                             Building
 #==============================================================================
-run_build()
+run_build_cpu()
 {
-    if [ "${ENABLE_BUILD}" = "yes" ]
+    if [ "${ENABLE_BUILD_CPU}" = "yes" ]
     then
         echo_log_separator
-        echo_log "#\t\t\tBuilding..."
+        echo_log "#\t\t\tBuilding cpu..."
         echo_log_separator
-        build
+        build_cpu
         echo_log_separator
-        echo_log "#\t\t\tBuilding... DONE"
+        echo_log "#\t\t\tBuilding cpu... DONE"
+        echo_log_separator
+    fi
+}
+run_build_gpu()
+{
+    if [ "${ENABLE_BUILD_GPU}" = "yes" ]
+    then
+        echo_log_separator
+        echo_log "#\t\t\tBuilding gpu..."
+        echo_log_separator
+        build_gpu
+        echo_log_separator
+        echo_log "#\t\t\tBuilding gpu... DONE"
+        echo_log_separator
+    fi
+}
+
+run_post_build()
+{
+    if [ "${ENABLE_POST_BUILD}" = "yes" ]
+        then
+        echo_log_separator
+        echo_log "#\t\t\tPost build..."
+        echo_log_separator
+        post_build
+        echo_log_separator
+        echo_log "#\t\t\tPost build... DONE"
         echo_log_separator
     fi
 }
@@ -577,7 +712,7 @@ run_copy_package_to_common_folder()
 }
 run_pack()
 {
-    if [ "${ENABLE_PACK}" = "yes" ]
+    if [ "${ENABLE_PACK}" == "yes" ]
     then
         echo_log_separator
         echo_log "#\t\t\tPackaging..."
@@ -668,13 +803,16 @@ add_copyrights()
 #==============================================================================
 run_pre_drop()
 {
-    echo_log_separator
-    echo_log "#\t\t\tPerforming pre-drop..."
-    echo_log_separator
-    prepare_staging swf_pre_drop
-    echo_log_separator
-    echo_log "#\t\t\tPerforming pre-drop... DONE"
-    echo_log_separator
+    if  [ "${ENABLE_TEST_PRE_DROP}" == "yes" ]
+    then
+        echo_log_separator
+        echo_log "#\t\t\tPerforming pre-drop..."
+        echo_log_separator
+        prepare_staging swf_pre_drop
+        echo_log_separator
+        echo_log "#\t\t\tPerforming pre-drop... DONE"
+        echo_log_separator
+    fi
 }
 
 #==============================================================================
@@ -713,7 +851,9 @@ run_swf_pre_drop()
 set_default_values
 echo "BUILD_TYPE=" $BUILD_TYPE
 parse_arguments $@
-run_build
+run_build_cpu
+run_build_gpu
+run_post_build
 run_pack
 install_package
 run_pre_drop

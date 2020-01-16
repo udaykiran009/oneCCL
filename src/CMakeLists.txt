@@ -17,14 +17,14 @@ set(CCL_SRC
     coll/algorithms/reduce.cpp
     coll/algorithms/reduce_scatter.cpp
     coll/coll.cpp
-    coll/selection/coll/allgatherv.cpp
-    coll/selection/coll/allreduce.cpp
-    coll/selection/coll/alltoall.cpp
-    coll/selection/coll/barrier.cpp
-    coll/selection/coll/bcast.cpp
-    coll/selection/coll/reduce.cpp
-    coll/selection/coll/reduce_scatter.cpp
-    coll/selection/coll/sparse_allreduce.cpp
+    coll/selection/selector_allgatherv.cpp
+    coll/selection/selector_allreduce.cpp
+    coll/selection/selector_alltoall.cpp
+    coll/selection/selector_barrier.cpp
+    coll/selection/selector_bcast.cpp
+    coll/selection/selector_reduce.cpp
+    coll/selection/selector_reduce_scatter.cpp
+    coll/selection/selector_sparse_allreduce.cpp
     comp/comp.cpp
     sched/sched.cpp
     sched/master_sched.cpp

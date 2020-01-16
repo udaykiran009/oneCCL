@@ -41,14 +41,16 @@ function CheckTest(){
 
 export FI_PROVIDER=tcp
 
-which clang++
-COMPILER_INSTALL_CHECK=$?
-if [ "$COMPILER_INSTALL_CHECK" != "0" ]
-then
-    echo "Error: Need to source clang++ compiler"
-    exit 1
-fi
-
+check_clang()
+{
+    which clang++
+    COMPILER_INSTALL_CHECK=$?
+    if [ "$COMPILER_INSTALL_CHECK" != "0" ]
+    then
+        echo "Error: Need to source clang++ compiler"
+        exit 1
+    fi
+}
 which mpiexec
 MPI_INSTALL_CHECK=$?
 if [ "$MPI_INSTALL_CHECK" != "0" ]
@@ -89,7 +91,6 @@ run_benchmark()
     echo "coll: " $coll
     echo "================ENVIRONMENT=================="
     test_log="$SCRIPT_DIR/$dir_name/run_${transport}_${example}_${backend}_${loop}_output.log"
-    echo "run ${example}: ccl_extra_env  "$ccl_extra_env" transport $transport, backend $backend, loop $loop " 2>&1 | tee ${test_log}
     eval `echo $ccl_extra_env mpiexec.hydra -genv $EXTRA_ENV -n 2 -ppn $ppn -l ./$example $backend $loop $coll` 2>&1 | tee ${test_log}
     CheckTest ${test_log} ${example}
 }
@@ -106,7 +107,6 @@ run_example()
     echo "example: "$example
     echo "================ENVIRONMENT=================="
     test_log="$SCRIPT_DIR/$dir_name/run_${dir_name}_${transport}_${example}_output.log"
-    echo "run ${example}: ccl_extra_env "$ccl_extra_env" transport $transport" 2>&1 | tee ${test_log}
     eval `echo $ccl_extra_env mpiexec.hydra -genv $EXTRA_ENV -n 2 -ppn $ppn -l ./$example` 2>&1 | tee ${test_log}
     CheckTest ${test_log} ${example}
 }
@@ -115,10 +115,9 @@ build()
 {
     local dir_name="$1"
     echo "make clean"
-    make clean -f ./../Makefile > /dev/null 2>&1
-    make clean_logs -f ./../Makefile > /dev/null 2>&1
+    make clean -f ./../Makefile
     echo "Building"
-    make all -f ./../Makefile &> $SCRIPT_DIR/$dir_name/build_${dir_name}_output.log
+    ENABLE_SYCL=$is_sycl make all -f ./../Makefile  2>&1 | tee $SCRIPT_DIR/$dir_name/build_${dir_name}_output.log
     error_count=`grep -E -c 'error:|Aborted|failed'  $SCRIPT_DIR/$dir_name/build_${dir_name}_output.log` > /dev/null 2>&1
     if [ "${error_count}" != "0" ]
     then
@@ -133,8 +132,14 @@ run()
 {
     ppn=1
     EXTRA_ENV="CCL_YIELD=sleep"
-
-    for dir_name in "cpu" "sycl" "common"
+    if [[ $is_sycl ==  1 ]];
+    then
+        dir_list="cpu sycl common"
+    else
+        dir_list="cpu"
+    fi
+    echo "is_sycl =" $is_sycl "dir_list =" $dir_list
+    for dir_name in $dir_list
     do
         cd $dir_name
         build $dir_name
@@ -185,10 +190,11 @@ run()
                         CheckTest ${test_log} ${example}
                     done
                 else
-                    echo "run examples with $transport transport (${example})" 2>&1 | tee ${test_log}
                     if [[ "${example}" == *"sparse_allreduce"* ]]
                     then
-                        for sparse_algo in "basic" "mask" "allgather" "size";
+                        # should be returned back
+                        # for sparse_algo in "basic" "mask" "allgather" "size";
+                        for sparse_algo in "mask";
                         do
                             ccl_extra_env="CCL_SPARSE_ALLREDUCE=$sparse_algo CCL_ATL_TRANSPORT=${transport}"
                             run_example "${ccl_extra_env}" ${dir_name} ${transport} ${example}
@@ -215,5 +221,23 @@ run()
         exit 0
     fi
 }
+
+case $1 in
+"gpu" )
+    check_clang
+    is_sycl=1
+    shift
+    ;;
+"cpu" )
+    is_sycl=0
+    shift
+    ;;
+* )
+    check_clang
+    is_sycl=1
+    echo "WARNING: example testing will be running with DPC++"
+    shift
+    ;;
+esac
 
 run

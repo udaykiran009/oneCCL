@@ -3,11 +3,29 @@
 WORK_DIR="$(cd "$( dirname "${BASH_SOURCE[0]}" )" > /dev/null && pwd)"
 export CCL_ROOT="$(cd ${WORK_DIR}/../; pwd -P)"
 
+args=$*
+for arg in $args
+do
+    case "$arg" in
+        --ccl-configuration=*)
+            oneccl_library_type="${arg#*=}"
+            ;;
+    esac
+done
+
+case "$oneccl_library_type" in
+    cpu_gpu_dpcpp|cpu_icc)
+        ;;
+    *)
+        oneccl_library_type="cpu_gpu_dpcpp"
+        ;;
+esac
+
 if [ -z "${LD_LIBRARY_PATH}" ]
 then
-    LD_LIBRARY_PATH="${CCL_ROOT}/lib"; export LD_LIBRARY_PATH
+    LD_LIBRARY_PATH="${CCL_ROOT}/lib/${oneccl_library_type}"; export LD_LIBRARY_PATH
 else
-    LD_LIBRARY_PATH="${CCL_ROOT}/lib:${LD_LIBRARY_PATH}"; export LD_LIBRARY_PATH
+    LD_LIBRARY_PATH="${CCL_ROOT}/lib/${oneccl_library_type}:${LD_LIBRARY_PATH}"; export LD_LIBRARY_PATH
 fi
 
-CCL_ATL_TRANSPORT_PATH="${CCL_ROOT}/lib"; export CCL_ATL_TRANSPORT_PATH
+CCL_ATL_TRANSPORT_PATH="${CCL_ROOT}/lib/${oneccl_library_type}"; export CCL_ATL_TRANSPORT_PATH

@@ -5,3 +5,4 @@ l_doc.txt
 l_license.txt
 l_examples.txt
 l_tags.txt
+l_modulefiles.txt

@@ -30,7 +30,11 @@ message(STATUS "C compiler : ${CMAKE_C_COMPILER}")
 message(STATUS "CXX compiler : ${CMAKE_CXX_COMPILER}")
 
 #predefined options
-option(USE_SECURITY_FLAGS "Use security flags" TRUE)
+option(USE_SECURITY_FLAGS "Use security flags" FALSE)
+if (${CMAKE_BUILD_TYPE} STREQUAL "Release")
+    set(USE_SECURITY_FLAGS TRUE)
+endif()
+
 option(USE_CODECOV_FLAGS "Calculate code coverage" FALSE)
 option(WITH_ASAN "Use address sanitizer, can only be used in Debug build" FALSE)
 
@@ -48,7 +52,7 @@ set(CCL_INSTALL_BIN "${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_BINDIR}")
 set(CCL_INSTALL_ENV "${CMAKE_INSTALL_PREFIX}/env")
 set(CCL_INSTALL_ETC "${CMAKE_INSTALL_PREFIX}/etc")
 set(CCL_INSTALL_LICENSE "${CMAKE_INSTALL_PREFIX}/licensing")
-set(CCL_INSTALL_MODULE "${CMAKE_INSTALL_PREFIX}/env/modulefiles")
+set(CCL_INSTALL_MODULE "${CMAKE_INSTALL_PREFIX}/modulefiles")
 set(CCL_INSTALL_EXAMPLES "${CMAKE_INSTALL_PREFIX}/examples")
 set(CCL_INSTALL_TESTS "${CMAKE_INSTALL_PREFIX}/tests")
 
