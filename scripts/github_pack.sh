@@ -15,7 +15,6 @@ excluded=".git
 ./doc/copyright
 ./doc/build_spec.sh
 ./doc/spec
-./cmake/cclvars.sh.in
 ./examples/run.sh
 ./examples/Makefile"
 
