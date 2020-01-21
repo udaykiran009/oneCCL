@@ -785,9 +785,9 @@ add_copyrights()
     sed -i -e "s|CCL_SUBSTITUTE_COPYRIGHT_YEAR|${CCL_COPYRIGHT_YEAR}|g" ${COPYRIGHT_INTEL_C}
     echo "Generate ${COPYRIGHT_INTEL_C}... DONE"
 
-    for CUR_FILE in ccl.h ccl.hpp ccl_config.h ccl_type_traits.h ccl_types.h ccl_types.hpp ccl_type_traits.hpp
+    for CUR_FILE in `find ${PACKAGE_ENG_DIR}/include/ \( -name "*.h" -or -name "*.hpp" \) -type f`
     do
-        ed ${PACKAGE_ENG_DIR}/include/${CUR_FILE} < ${COPYRIGHT_INTEL_C} >/dev/null 2>&1
+        ed `realpath ${CUR_FILE}` < ${COPYRIGHT_INTEL_C} >/dev/null 2>&1
     done
 
     ed ${PACKAGE_ENG_DIR}/env/vars.sh < ${COPYRIGHT_INTEL_SH} >/dev/null 2>&1
