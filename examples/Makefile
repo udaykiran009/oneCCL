@@ -5,7 +5,7 @@ tests               = $(patsubst %.cpp, %.out, $(wildcard *.cpp))
 CXX                ?= g++
 ENABLE_SYCL        ?= 1
 INCLUDES            = -I./../include
-LDFLAGS             = -ldl -lpthread -lccl -lrt
+LDFLAGS             = -lccl -ldl -lpthread -lrt
 CXXFLAGS            = -D__STRICT_ANSI__
 
 ifeq ($(ENABLE_SYCL),1)
@@ -25,7 +25,7 @@ else
 endif
 
 CXX_COMPILE = $(CXX) $(CXXFLAGS) $(INCLUDES)
-CXX_LINK = $(CXX) $(CXXFLAGS) $(LDFLAGS)
+CXX_LINK = $(CXX) $(CXXFLAGS)
 
 .SUFFIXES:
 .SUFFIXES: .cpp
@@ -34,7 +34,7 @@ CXX_LINK = $(CXX) $(CXXFLAGS) $(LDFLAGS)
 	$(CXX_COMPILE) -o $@ -c $<
 
 %.out: %.o 
-	$(CXX_LINK) $^ -o $@; \
+	$(CXX_LINK) $^ $(LDFLAGS) -o $@; \
 
 all: $(tests)
 

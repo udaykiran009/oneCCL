@@ -8,24 +8,24 @@ for arg in $args
 do
     case "$arg" in
         --ccl-configuration=*)
-            oneccl_library_type="${arg#*=}"
+            ccl_configuration="${arg#*=}"
             ;;
     esac
 done
 
-case "$oneccl_library_type" in
+case "$ccl_configuration" in
     cpu_gpu_dpcpp|cpu_icc)
         ;;
     *)
-        oneccl_library_type="cpu_gpu_dpcpp"
+        ccl_configuration="cpu_gpu_dpcpp"
         ;;
 esac
 
 if [ -z "${LD_LIBRARY_PATH}" ]
 then
-    LD_LIBRARY_PATH="${CCL_ROOT}/lib/${oneccl_library_type}"; export LD_LIBRARY_PATH
+    LD_LIBRARY_PATH="${CCL_ROOT}/lib/${ccl_configuration}"; export LD_LIBRARY_PATH
 else
-    LD_LIBRARY_PATH="${CCL_ROOT}/lib/${oneccl_library_type}:${LD_LIBRARY_PATH}"; export LD_LIBRARY_PATH
+    LD_LIBRARY_PATH="${CCL_ROOT}/lib/${ccl_configuration}:${LD_LIBRARY_PATH}"; export LD_LIBRARY_PATH
 fi
 
-CCL_ATL_TRANSPORT_PATH="${CCL_ROOT}/lib/${oneccl_library_type}"; export CCL_ATL_TRANSPORT_PATH
+CCL_ATL_TRANSPORT_PATH="${CCL_ROOT}/lib/${ccl_configuration}"; export CCL_ATL_TRANSPORT_PATH

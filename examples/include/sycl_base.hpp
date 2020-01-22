@@ -52,7 +52,7 @@ inline int create_sycl_queue(int argc, char **argv, cl::sycl::queue &queue)
             else if (has_accelerator()) 
             {
                 selector.reset(new cl::sycl::host_selector());
-                std::cout << "Accelerator is unavailable for multiprocessing, host_selector has been created instead of default_selector." << std::endl;
+                std::cout << "Accelerator is the first in device list, but unavailable for multiprocessing, host_selector has been created instead of default_selector." << std::endl;
             }
             else
             {
@@ -73,7 +73,7 @@ inline int create_sycl_queue(int argc, char **argv, cl::sycl::queue &queue)
             else
             {
                 selector.reset(new cl::sycl::host_selector());
-                std::cout << "Accelerator is unavailable for multiprocessing, host_selector has been created instead of default_selector." << std::endl;
+                std::cout << "Accelerator is the first in device list, but unavailable for multiprocessing, host_selector has been created instead of default_selector." << std::endl;
             }
         }
         else

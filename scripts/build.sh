@@ -167,8 +167,8 @@ check_clang_path()
     then
         echo "WARNING: SYCL_BUNDLE_ROOT is not defined, will be used default: /nfs/inn/disks/nn-ssg_tcar_mpi_2Tb_unix/users/ksenyako/inteloneapi/compiler/latest/env/vars.sh intel64"
         SYCL_BUNDLE_ROOT="/p/pdsd/Users/sys_ctlab/beta02/inteloneapi/compiler/2021.1-beta03/linux/"
-        source ${SYCL_BUNDLE_ROOT}/../env/vars.sh intel64
     fi
+    source ${SYCL_BUNDLE_ROOT}/../env/vars.sh intel64
 }
 check_gcc_path()
 {
@@ -184,8 +184,8 @@ check_icc_path()
     then
         echo "WARNING: ICC_BUNDLE_ROOT is not defined, will be used default: /nfs/inn/proj/mpi/pdsd/opt/EM64T-LIN/parallel_studio/parallel_studio_xe_2020.0.088/compilers_and_libraries_2020/linux/"
         ICC_BUNDLE_ROOT=/nfs/inn/proj/mpi/pdsd/opt/EM64T-LIN/parallel_studio/parallel_studio_xe_2020.0.088/compilers_and_libraries_2020/linux/
-        source ${ICC_BUNDLE_ROOT}/bin/compilervars.sh intel64
     fi
+    source ${ICC_BUNDLE_ROOT}/bin/compilervars.sh intel64
 }
 define_cpu_compiler()
 {

@@ -147,7 +147,7 @@ enable_unordered_coll_test_scope()
 
 set_environment()
 {
-    # $build_compiler set up by jenkins: gnu/cpu_gpu_dpcpp/cpu_icc (sycl/cpu_icc means clang with or w/o sycl support)
+    # $build_compiler set up by jenkins: gnu/cpu_gpu_dpcpp/cpu_icc (cpu_gpu_dpcpp/cpu_icc means clang with or w/o sycl support)
     if [ -z "${build_compiler}" ]
     then
         build_compiler="sycl"
@@ -181,9 +181,9 @@ set_environment()
     else        
         if [ -z "${SYCL_BUNDLE_ROOT}" ]
         then
-        source  /p/pdsd/Users/sys_ctlab/beta02/inteloneapi/compiler/2021.1-beta03/env/vars.sh intel64
-        SYCL_BUNDLE_ROOT="/nfs/inn/disks/nn-ssg_tcar_mpi_2Tb_unix/users/ksenyako/inteloneapi/compiler/latest/linux/"
+        SYCL_BUNDLE_ROOT="/p/pdsd/Users/sys_ctlab/beta02/inteloneapi/compiler/2021.1-beta03/linux/"
         fi
+        source  ${SYCL_BUNDLE_ROOT}/../env/vars.sh intel64
         BUILD_COMPILER=${SYCL_BUNDLE_ROOT}/bin
         C_COMPILER=${BUILD_COMPILER}/clang
         CXX_COMPILER=${BUILD_COMPILER}/clang++
@@ -221,12 +221,12 @@ set_environment()
 
     if [ -z  "${node_label}" ]
     then
-        source ${CCL_INSTALL_DIR}/l_ccl_release*/env/vars.sh --ccl-configuration=cpu_icc
+        source ${CCL_INSTALL_DIR}/l_ccl_$build_type*/env/vars.sh --ccl-configuration=cpu_icc
     elif [ $node_label == "mlsl2_test_gpu" ]
     then
-        source ${CCL_INSTALL_DIR}/l_ccl_release*/env/vars.sh --ccl-configuration=cpu_gpu_dpcpp
+        source ${CCL_INSTALL_DIR}/l_ccl_$build_type*/env/vars.sh --ccl-configuration=cpu_gpu_dpcpp
     else
-        source ${CCL_INSTALL_DIR}/l_ccl_release*/env/vars.sh --ccl-configuration=cpu_icc
+        source ${CCL_INSTALL_DIR}/l_ccl_$build_type*/env/vars.sh --ccl-configuration=cpu_icc
     fi
 
     if [ "${ENABLE_CODECOV}" = "yes" ]

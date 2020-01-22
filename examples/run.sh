@@ -24,7 +24,7 @@ function CheckTest(){
     else
         test_failed=`grep -E -c -i 'Aborted|failed|^BAD$|KILLED|^fault$|cl::sycl::runtime_error|terminate' ${test_log}`
     fi
-    test_skipped=`grep -c "Accelerator is unavailable" ${test_log}`
+    test_skipped=`grep -c "Accelerator is the first in device list, but unavailable" ${test_log}`
     if [ ${test_passed} -ne 1 ] || [ ${test_failed} -ne 0 ]
     then
         echo "Error: example $test_file testing failed"
@@ -135,8 +135,10 @@ run()
     if [[ $is_sycl ==  1 ]];
     then
         dir_list="cpu sycl common"
+        backend_list="cpu sycl"
     else
-        dir_list="cpu"
+        dir_list="cpu common"
+        backend_list="cpu"
     fi
     echo "is_sycl =" $is_sycl "dir_list =" $dir_list
     for dir_name in $dir_list
@@ -156,7 +158,7 @@ run()
             do
                 if [ "$dir_name" == "common" ];
                 then
-                    for backend in "cpu" "sycl"
+                    for backend in $backend_list
                     do
                         ccl_extra_env="CCL_ATL_TRANSPORT=${transport}"
                         run_benchmark "${ccl_extra_env}" ${dir_name} ${transport} ${example} ${backend} 
@@ -214,7 +216,7 @@ run()
         exit 1
     elif [ ${total_skipped} != 0 ]
     then
-        echo "Tests passed, except ${total_skipped} GPU skipped tests"
+        echo "Tests passed, except ${total_skipped} skipped tests"
         exit 0
     else
         echo "All tests passed!"

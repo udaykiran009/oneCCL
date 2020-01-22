@@ -30,9 +30,9 @@ message(STATUS "C compiler : ${CMAKE_C_COMPILER}")
 message(STATUS "CXX compiler : ${CMAKE_CXX_COMPILER}")
 
 #predefined options
-option(USE_SECURITY_FLAGS "Use security flags" FALSE)
-if (${CMAKE_BUILD_TYPE} STREQUAL "Release")
-    set(USE_SECURITY_FLAGS TRUE)
+option(USE_SECURITY_FLAGS "Use security flags" TRUE)
+if (${CMAKE_BUILD_TYPE} STREQUAL "Debug")
+    set(USE_SECURITY_FLAGS FALSE)
 endif()
 
 option(USE_CODECOV_FLAGS "Calculate code coverage" FALSE)
