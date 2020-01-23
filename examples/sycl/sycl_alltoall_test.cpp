@@ -24,14 +24,16 @@ int main(int argc, char **argv)
     /* create SYCL stream */
     ccl_stream_create(ccl_stream_sycl, &q, &stream);
 
-    /* open buffers and initialize them on the CPU side */
-    auto host_acc_sbuf = sendbuf.get_access<mode::write>();
-    auto host_acc_rbuf = recvbuf.get_access<mode::write>();
+    {
+        /* open buffers and initialize them on the CPU side */
+        auto host_acc_sbuf = sendbuf.get_access<mode::write>();
+        auto host_acc_rbuf = recvbuf.get_access<mode::write>();
 
-    for (int i = 0; i < size; i++) {
-        for (int j = 0; j < COUNT; j++) {
-            host_acc_sbuf[(i * COUNT) + j] = i;
-            host_acc_rbuf[(i * COUNT) + j] = -1;
+        for (int i = 0; i < size; i++) {
+            for (int j = 0; j < COUNT; j++) {
+                host_acc_sbuf[(i * COUNT) + j] = i;
+                host_acc_rbuf[(i * COUNT) + j] = -1;
+            }
         }
     }
 

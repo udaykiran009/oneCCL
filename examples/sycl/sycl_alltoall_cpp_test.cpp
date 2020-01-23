@@ -22,14 +22,16 @@ int main(int argc, char **argv)
     /* create SYCL stream */
     auto stream = ccl::environment::instance().create_stream(ccl::stream_type::sycl, &q);
 
-    /* open buffers and initialize them on the CPU side */
-    auto host_acc_sbuf = sendbuf.get_access<mode::write>();
-    auto host_acc_rbuf = recvbuf.get_access<mode::write>();
+    {
+        /* open buffers and initialize them on the CPU side */
+        auto host_acc_sbuf = sendbuf.get_access<mode::write>();
+        auto host_acc_rbuf = recvbuf.get_access<mode::write>();
 
-    for (int i = 0; i < size; i++) {
-        for (int j = 0; j < COUNT; j++) {
-            host_acc_sbuf[(i * COUNT) + j] = i;
-            host_acc_rbuf[(i * COUNT) + j] = -1;
+        for (int i = 0; i < size; i++) {
+            for (int j = 0; j < COUNT; j++) {
+                host_acc_sbuf[(i * COUNT) + j] = i;
+                host_acc_rbuf[(i * COUNT) + j] = -1;
+            }
         }
     }
 
