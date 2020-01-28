@@ -791,6 +791,7 @@ add_copyrights()
     done
 
     ed ${PACKAGE_ENG_DIR}/env/vars.sh < ${COPYRIGHT_INTEL_SH} >/dev/null 2>&1
+    ed ${PACKAGE_ENG_DIR}/modulefiles/ccl < ${COPYRIGHT_INTEL_SH} >/dev/null 2>&1
 
     rm -rf ${TMP_COPYRIGHT_DIR}
     echo_log_separator
