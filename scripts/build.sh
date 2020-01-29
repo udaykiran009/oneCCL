@@ -785,10 +785,26 @@ add_copyrights()
     sed -i -e "s|CCL_SUBSTITUTE_COPYRIGHT_YEAR|${CCL_COPYRIGHT_YEAR}|g" ${COPYRIGHT_INTEL_C}
     echo "Generate ${COPYRIGHT_INTEL_C}... DONE"
 
+    for CUR_FILE in `find ${WORKSPACE}/build/_install \( -name "*.h" -or -name "*.hpp" \) -type f`
+    do
+        ed `realpath ${CUR_FILE}` < ${COPYRIGHT_INTEL_C} >/dev/null 2>&1
+    done
+
+    for CUR_FILE in `find ${WORKSPACE}/build_gpu/_install \( -name "*.h" -or -name "*.hpp" \) -type f`
+    do
+        ed `realpath ${CUR_FILE}` < ${COPYRIGHT_INTEL_C} >/dev/null 2>&1
+    done
+
     for CUR_FILE in `find ${PACKAGE_ENG_DIR}/include/ \( -name "*.h" -or -name "*.hpp" \) -type f`
     do
         ed `realpath ${CUR_FILE}` < ${COPYRIGHT_INTEL_C} >/dev/null 2>&1
     done
+
+    ed ${WORKSPACE}/build/_install/env/vars.sh < ${COPYRIGHT_INTEL_SH} >/dev/null 2>&1
+    ed ${WORKSPACE}/build_gpu/_install/env/vars.sh < ${COPYRIGHT_INTEL_SH} >/dev/null 2>&1
+
+    ed ${WORKSPACE}/build/_install/modulefiles/ccl < ${COPYRIGHT_INTEL_SH} >/dev/null 2>&1
+    ed ${WORKSPACE}/build_gpu/_install/modulefiles/ccl < ${COPYRIGHT_INTEL_SH} >/dev/null 2>&1
 
     ed ${PACKAGE_ENG_DIR}/env/vars.sh < ${COPYRIGHT_INTEL_SH} >/dev/null 2>&1
     ed ${PACKAGE_ENG_DIR}/modulefiles/ccl < ${COPYRIGHT_INTEL_SH} >/dev/null 2>&1
