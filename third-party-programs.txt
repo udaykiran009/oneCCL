@@ -4,7 +4,7 @@ third party programs and their corresponding required notices and/or license
 terms are listed below.
 
 This third-party-programs.txt file applies to Intel(R) oneAPI Collective
-Communications Library (oneCCL) 2021.1-beta04.
+Communications Library (oneCCL) 2021.1-beta05.
 
 1. Intel(R) MPI Library: Intel Simplified Software License (Version April 2018)
 
