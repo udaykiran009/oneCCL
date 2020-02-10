@@ -181,7 +181,7 @@ set_environment()
     else        
         if [ -z "${SYCL_BUNDLE_ROOT}" ]
         then
-        SYCL_BUNDLE_ROOT="/p/pdsd/scratch/jenkins/artefacts//ccl-nightly/212/inteloneapi/compiler/latest/linux"
+        SYCL_BUNDLE_ROOT="/nfs/inn/proj/mpi/pdsd/opt/EM64T-LIN/compilers/clang/2021.1-beta04/linux"
         fi
         source  ${SYCL_BUNDLE_ROOT}/../env/vars.sh intel64
         BUILD_COMPILER=${SYCL_BUNDLE_ROOT}/bin
