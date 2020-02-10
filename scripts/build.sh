@@ -70,7 +70,8 @@ then
 fi
 CCL_PACKAGE_SUFFIX="_${CCL_PACKAGE_PHASE}_ww`date +%V`.${DATE}.${TIME}"
 CCL_PACKAGE_NAME="${CCL_PACKAGE_PREFIX}_${CCL_VERSION_FORMAT}${CCL_PACKAGE_SUFFIX}"
-SWF_PRE_DROP_DIR="/p/pdsd/scratch/Drops/CCL/1.0/"
+SWF_PRE_DROP_ROOT_DIR="/p/pdsd/scratch/Drops/CCL/"
+SWF_PRE_DROP_DIR="${SWF_PRE_DROP_ROOT_DIR}/${CCL_VERSION_FORMAT}"
 PRE_DROP_DIR="${WORKSPACE}/_predrop/"
 
 #==============================================================================
@@ -638,9 +639,9 @@ parse_arguments()
     echo_log "-----------------------------------------------------------"
     echo_log "PARAMETERS"
     echo_log "-----------------------------------------------------------"
-    echo_log "ENABLE_BUILD_CPU              = ${ENABLE_BUILD_CPU}"
-    echo_log "ENABLE_BUILD_GPU              = ${ENABLE_BUILD_GPU}"
-    echo_log "ENABLE_POST_BUILD              = ${ENABLE_POST_BUILD}"
+    echo_log "ENABLE_BUILD_CPU          = ${ENABLE_BUILD_CPU}"
+    echo_log "ENABLE_BUILD_GPU          = ${ENABLE_BUILD_GPU}"
+    echo_log "ENABLE_POST_BUILD         = ${ENABLE_POST_BUILD}"
     echo_log "ENABLE_PACK               = ${ENABLE_PACK}"
     echo_log "ENABLE_DEBUG_BUILD        = ${ENABLE_DEBUG_BUILD}"
     echo_log "ENABLE_PRE_DROP           = ${ENABLE_PRE_DROP}"
@@ -842,6 +843,7 @@ run_swf_pre_drop()
         echo_log_separator
         echo_log "#\t\t\tSWF pre-drop..."
         echo_log_separator
+        mkdir -p ${SWF_PRE_DROP_DIR}
         if [ "${ENABLE_NIGHTLY_DROP}" == "true" ]
         then
             mkdir -p ${SWF_PRE_DROP_DIR}/nightly_`date +%Y-%m-%d`/SWF_Drops/
