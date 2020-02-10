@@ -1,5 +1,5 @@
 /*
-    Copyright 2003-2019 Intel Corporation.
+    Copyright 2003-2020 Intel Corporation.
     
     This software and the related documents are Intel copyrighted materials, and
     your use of them is governed by the express license under which they were
@@ -502,7 +502,7 @@ typedef int MPI_Errhandler;
 #define MPI_TYPE_NULL_DELETE_FN ((MPI_Type_delete_attr_function*)0)
 #define MPI_TYPE_DUP_FN ((MPI_Type_copy_attr_function*)MPI_DUP_FN)
 
-/* MPI request opjects */
+/* MPI request objects */
 typedef int MPI_Request;
 
 /* MPI message objects for Mprobe and related functions */
@@ -580,8 +580,8 @@ typedef int (MPI_Delete_function) ( MPI_Comm, int, void *, void * );
  * digits for REV, 1 digit for EXT and 2 digits for EXT_NUMBER. So,
  * 2019.0.0b0 will have the numeric version 20190000100.
  */
-#define I_MPI_VERSION "2019.0.6"
-#define I_MPI_NUMVERSION 20190006300
+#define I_MPI_VERSION "2021.1.0b4"
+#define I_MPI_NUMVERSION 20210100104
 
 /* for the datatype decoders */
 enum MPIR_Combiner_enum {

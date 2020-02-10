@@ -13,10 +13,11 @@ excluded=".git
 ./doc/README.md
 ./doc/archive
 ./doc/copyright
-./doc/build_spec.sh
 ./doc/spec
 ./examples/run.sh
-./examples/Makefile"
+./examples/Makefile
+./ofi/ofi_update.sh
+./cmake/vars.sh.in"
 
 count=0
 mkdir -p $dstdir
@@ -46,7 +47,7 @@ cd $dstdir
 for CUR_FILE in `find .  -type f | grep -e "\.hpp$" -e "\.cpp$" -e "\.h$" -e "\.c$" | grep -v "googletest"`; do
 	ed $CUR_FILE < ../scripts/copyright/copyright.c ; \
 done
-for CUR_FILE in `find .  -type f | grep  -e "\.sh$"| grep -v "doc" | grep -v "googletest"` ; do
+for CUR_FILE in `find .  -type f | grep  -e "\.sh$" -e "\.sh.in$" | grep -v "googletest"` ; do
 	ed $CUR_FILE < ../scripts/copyright/copyright.sh > /dev/null 2>&1; \
 done
 for CUR_FILE in `find .  -type f | grep -e "\.py$"| grep -v "doc" | grep -v "googletest"` ; do

@@ -1,5 +1,5 @@
 # oneccl
-Intel(R) oneAPI Collective Communications Library
+Intel(R) oneAPI Collective Communications Library (oneCCL)
 ## Prerequisites
 
 Ubuntu* 18
