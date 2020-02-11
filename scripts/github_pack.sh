@@ -17,7 +17,8 @@ excluded=".git
 ./examples/run.sh
 ./examples/Makefile
 ./ofi/ofi_update.sh
-./cmake/vars.sh.in"
+./cmake/vars.sh.in
+./doc/third_party_programs/third_party_programs.txt"
 
 count=0
 mkdir -p $dstdir
