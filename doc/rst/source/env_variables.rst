@@ -44,7 +44,7 @@ To set a specific algorithm for a specific message size range:
 
 ::
 
-  CCL_<coll_name>="<algo_name_1>[:<size_range_1>][;<algo_name_2><size_range_2>][;...]"
+  CCL_<coll_name>="<algo_name_1>[:<size_range_1>][;<algo_name_2>:<size_range_2>][;...]"
 
 Where:
 
@@ -80,7 +80,7 @@ Available collective operations (``<coll_name>``):
 Available algorithms
 ********************
 
-Available algirithms for each collective operation (``<algo_name>``):
+Available algorithms for each collective operation (``<algo_name>``):
 
 ``ALLGATHERV`` algorithms
 +++++++++++++++++++++++++
@@ -94,7 +94,7 @@ Available algirithms for each collective operation (``<algo_name>``):
    * - ``naive``
      - Send to all, receive from all
    * - ``flat``
-     - Alltoall-based allgorithm
+     - Alltoall-based algorithm
    * - ``multi_bcast``
      - Series of broadcast operations with different root ranks
 
@@ -123,7 +123,7 @@ Available algirithms for each collective operation (``<algo_name>``):
    * - ``recursive_doubling``
      - Recursive doubling algorithm
    * - ``2d``
-     - 2-dimensional allgorithm (reduce_scatter+allreduce+allgather)
+     - 2-dimensional algorithm (reduce_scatter+allreduce+allgather)
 
 
 ``ALLTOALL`` algorithms
@@ -149,7 +149,7 @@ Available algirithms for each collective operation (``<algo_name>``):
    * - ``direct``
      - Based on ``MPI_Ibarrier``
    * - ``ring``
-     - Ring-based allgorithm
+     - Ring-based algorithm
 
 
 ``BCAST`` algorithms
@@ -194,9 +194,9 @@ Available algirithms for each collective operation (``<algo_name>``):
    :align: left
 
    * - ``basic``
-     - Basic allgorithm
+     - Basic algorithm
    * - ``mask``
-     - Mask-based allgorithm
+     - Mask-based algorithm
 
 
 CCL_RS_CHUNK_COUNT

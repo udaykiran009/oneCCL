@@ -18,6 +18,5 @@ public:
         return name;
     };
 
-    atl_comm_t** get_comms();
     ccl_global_data* gl_data;
 };

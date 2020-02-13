@@ -121,14 +121,18 @@ struct ccl_slist_t
 
 static inline size_t ccl_pof2(size_t number)
 {
-    size_t pof2 = 1;
+    size_t last_bit_mask = ((size_t)1 << (8 * sizeof(size_t) - 1));
+    if (number & last_bit_mask)
+    {
+        return last_bit_mask;
+    }
 
+    size_t pof2 = 1;
     while (pof2 <= number)
     {
         pof2 <<= 1;
     }
     pof2 >>= 1;
-
     return pof2;
 }
 

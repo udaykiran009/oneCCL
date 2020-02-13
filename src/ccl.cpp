@@ -55,8 +55,8 @@ ccl_status_t ccl_init()
         if (global_data.executor->get_global_proc_idx() == 0)
             ccl_env_print();
 
-        global_data.atl_tag = std::unique_ptr<ccl_atl_tag>(new ccl_atl_tag(global_data.executor->atl_attr.tag_bits,
-                                                                           global_data.executor->atl_attr.max_tag));
+        global_data.atl_tag = std::unique_ptr<ccl_atl_tag>(new ccl_atl_tag(global_data.executor->get_atl_attr().tag_bits,
+                                                                           global_data.executor->get_atl_attr().max_tag));
         global_data.algorithm_selector =
             std::unique_ptr<ccl_algorithm_selector_wrapper<CCL_COLL_LIST>>(
                 new ccl_algorithm_selector_wrapper<CCL_COLL_LIST>());
@@ -108,8 +108,6 @@ void ccl_reset_for_size_update(ccl_global_data* gl_data)
 
 ccl_status_t ccl_finalize()
 {
-    ccl_barrier(nullptr, nullptr);
-
     try
     {
         /* keep reverse order of initialization */

@@ -537,7 +537,7 @@ ccl_status_t ccl_coll_build_sparse_allreduce_size(ccl_sched* sched,
     }
 
     /* copy data to the temp send buffer for send operation */
-    void *send_tmp_buf = sched->alloc_buffer(nodup_size).get_ptr();
+    void* send_tmp_buf = sched->alloc_buffer(nodup_size).get_ptr();
     CCL_MEMCPY(send_tmp_buf, dst, nodup_size);
 
     /* send from left to right (ring)*/

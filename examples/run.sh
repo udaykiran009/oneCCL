@@ -39,7 +39,8 @@ function CheckTest(){
     fi
 }
 
-export FI_PROVIDER=tcp
+# export FI_PROVIDER=tcp - don't use OFI knob till fix of issue with OFI_GETINFO_HIDDEN on IMPI/libfabric level
+export CCL_ATL_OFI_PROVIDER=tcp
 
 check_clang()
 {
