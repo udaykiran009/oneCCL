@@ -27,8 +27,6 @@
 #define ATL_OFI_CQ_BUNCH_SIZE       8
 #define ATL_OFI_PMI_PROC_MULTIPLIER 100
 #define ATL_OFI_MAX_PROV_COUNT      2 /* NW and SHM providers */
-#define ATL_OFI_NW_SLOT_IDX         0
-#define ATL_OFI_SHM_SLOT_IDX        1
 
 #define MAX(a, b)            \
 ({                           \
@@ -168,29 +166,37 @@ typedef struct
     struct fid_domain* domain;
     struct fid_av* av;
     atl_ofi_prov_ep_t* eps;
+
+    int is_shm;
+    size_t max_msg_size;
+
     /* used only in case of SEP supported */
     struct fid_ep* sep;
     int rx_ctx_bits;
+
     /* table[0..proc_count][0..ep_count] */
     fi_addr_t* addr_table;
     size_t addr_len;
+    size_t first_proc_idx;
+
 } atl_ofi_prov_t;
 
 typedef struct
 {
     atl_ep_t ep;
-    atl_ofi_prov_ep_t* prov_eps[ATL_OFI_MAX_PROV_COUNT];
 } atl_ofi_ep_t;
 
 typedef struct
 {
     atl_ctx_t ctx;
     pm_rt_desc_t* pm_rt;
-    size_t prov_count;
-    atl_ofi_prov_t provs[ATL_OFI_MAX_PROV_COUNT];
-    fi_addr_t* addr_table;
-    size_t timeout_sec;
 
+    atl_ofi_prov_t provs[ATL_OFI_MAX_PROV_COUNT];
+    size_t prov_count;
+    size_t shm_prov_idx;
+    size_t nw_prov_idx;
+
+    size_t timeout_sec;
 } atl_ofi_ctx_t;
 
 typedef struct
@@ -202,31 +208,42 @@ typedef struct
     size_t recv_len;
 } atl_ofi_req_t;
 
-static inline atl_ofi_prov_ep_t*
-atl_ofi_get_prov_ep(atl_ep_t* ep, size_t peer_proc_idx)
+static inline atl_ofi_prov_t*
+atl_ofi_get_prov(atl_ep_t* ep, size_t peer_proc_idx, size_t msg_size)
 {
+    size_t prov_idx;
     atl_ofi_ctx_t* ofi_ctx = container_of(ep->ctx, atl_ofi_ctx_t, ctx);
-    atl_ofi_ep_t* ofi_ep = container_of(ep, atl_ofi_ep_t, ep);
-    atl_proc_coord_t* coord = &(ep->ctx->coord);
 
     if (ofi_ctx->prov_count == 1)
-        return ofi_ep->prov_eps[0];
+    {
+        prov_idx = 0;
+    }
+    else
+    {
+        ATL_OFI_ASSERT(ofi_ctx->prov_count == 2, "unexpected prov_count %zu", ofi_ctx->prov_count);
 
-    ATL_OFI_ASSERT(ofi_ctx->prov_count == 2, "unexpected prov_count %zu", ofi_ctx->prov_count);
+        atl_proc_coord_t* coord = &(ep->ctx->coord);
+        size_t my_node_idx = coord->global_idx / coord->local_count;
+        size_t peer_node_idx = peer_proc_idx / coord->local_count;
 
-    size_t my_node_idx = coord->global_idx / coord->local_count;
-    size_t peer_node_idx = peer_proc_idx / coord->local_count;
+        if ((my_node_idx == peer_node_idx) &&
+            (msg_size <= ofi_ctx->provs[ofi_ctx->shm_prov_idx].max_msg_size))
+            prov_idx = ofi_ctx->shm_prov_idx;
+        else
+            prov_idx = ofi_ctx->nw_prov_idx;
+    }
 
-    return (my_node_idx == peer_node_idx) ?
-        ofi_ep->prov_eps[ATL_OFI_SHM_SLOT_IDX] :
-        ofi_ep->prov_eps[ATL_OFI_NW_SLOT_IDX];
+    ATL_OFI_ASSERT(msg_size <= ofi_ctx->provs[prov_idx].max_msg_size,
+        "msg_size (%zu) is greater than max_msg_size (%zu), prov_idx %zu",
+        msg_size, ofi_ctx->provs[prov_idx].max_msg_size, prov_idx);
+
+    return &(ofi_ctx->provs[prov_idx]);
 }
 
 static inline fi_addr_t
-atl_ofi_get_addr(atl_ctx_t* ctx, size_t proc_idx, size_t ep_idx)
+atl_ofi_get_addr(atl_ctx_t* ctx, atl_ofi_prov_t* prov, size_t proc_idx, size_t ep_idx)
 {
-    atl_ofi_ctx_t* ofi_ctx = container_of(ctx, atl_ofi_ctx_t, ctx);
-    return *(ofi_ctx->addr_table + ((ctx->ep_count * proc_idx) + ep_idx));
+    return *(prov->addr_table + ((ctx->ep_count * (proc_idx - prov->first_proc_idx)) + ep_idx));
 }
 
 static atl_status_t
@@ -336,7 +353,6 @@ atl_ofi_prov_update_addr_table(atl_ofi_ctx_t* ofi_ctx, atl_ofi_prov_t* prov)
     size_t epnames_table_len;
 
     size_t named_ep_count = (prov->sep ? 1 : ctx->ep_count);
-    int is_shm_prov = !strcmp(prov->info->fabric_attr->prov_name, "shm") ? 1 : 0;
 
     size_t local_count = ctx->coord.local_count;
     size_t node_idx = ctx->coord.global_idx / local_count;
@@ -346,16 +362,14 @@ atl_ofi_prov_update_addr_table(atl_ofi_ctx_t* ofi_ctx, atl_ofi_prov_t* prov)
     ATL_OFI_DEBUG_PRINT("shm_start_idx %zu, shm_end_idx %zu",
         shm_start_idx, shm_end_idx);
 
-    size_t proc_count = is_shm_prov ?
-                            ctx->coord.local_count :
-                            (ofi_ctx->prov_count == 2) ?
-                                ctx->coord.global_count - ctx->coord.local_count :
-                                ctx->coord.global_count;
+    size_t proc_count = prov->is_shm ?
+        ctx->coord.local_count : ctx->coord.global_count;
+
     if (proc_count == 0)
         return ATL_STATUS_SUCCESS;
 
     ATL_OFI_DEBUG_PRINT("name %s, is_shm %d, addr_len %zu, local_count %zu, global_count %zu, proc_count %zu",
-        prov->info->fabric_attr->prov_name, is_shm_prov,
+        prov->info->fabric_attr->prov_name, prov->is_shm,
         prov->addr_len, ctx->coord.local_count,
         ctx->coord.global_count, proc_count);
 
@@ -385,14 +399,9 @@ atl_ofi_prov_update_addr_table(atl_ofi_ctx_t* ofi_ctx, atl_ofi_prov_t* prov)
     /* retrieve all the OFI EP names in order */
     for (i = 0; i < ctx->coord.global_count; i++)
     {
-        if (is_shm_prov)
+        if (prov->is_shm)
         {
             if (!(i >= shm_start_idx && i < shm_end_idx))
-                continue;
-        }
-        else if (ofi_ctx->prov_count == 2)
-        {
-            if (i >= shm_start_idx && i < shm_end_idx)
                 continue;
         }
 
@@ -430,7 +439,6 @@ atl_ofi_prov_update_addr_table(atl_ofi_ctx_t* ofi_ctx, atl_ofi_prov_t* prov)
         free(prov->addr_table);
 
     prov->addr_table = calloc(1, ctx->ep_count * proc_count * sizeof(fi_addr_t));
-
 
     if (!prov->addr_table)
         goto err_ep_names;
@@ -471,6 +479,7 @@ atl_ofi_prov_update_addr_table(atl_ofi_ctx_t* ofi_ctx, atl_ofi_prov_t* prov)
                     fi_rx_addr(table[i], j, prov->rx_ctx_bits);
             }
         }
+        free(table);
     }
 
     /* normal end of execution */
@@ -911,6 +920,9 @@ atl_ofi_tune(void)
     setenv("FI_OFI_RXM_TX_SIZE", "8192", 0);
     setenv("FI_OFI_RXM_MSG_RX_SIZE", "128", 0);
     setenv("FI_OFI_RXM_MSG_TX_SIZE", "128", 0);
+
+    /* IMPI/libfabric internal knob */
+    setenv("FI_INFO_UTIL", "1", 0);
 }
 
 static atl_status_t
@@ -938,7 +950,6 @@ atl_ofi_finalize(atl_ctx_t* ctx)
     if (ofi_ctx->pm_rt)
         pmrt_finalize(ofi_ctx->pm_rt);
 
-    free(ofi_ctx->addr_table);
     free(ofi_ctx);
 
     return RET2ATL(ret);
@@ -1049,7 +1060,8 @@ atl_ofi_ep_send(atl_ep_t* ep, const void* buf, size_t len,
 {
     ssize_t ret;
 
-    atl_ofi_prov_ep_t* prov_ep = atl_ofi_get_prov_ep(ep, dst_proc_idx);
+    atl_ofi_prov_t* prov = atl_ofi_get_prov(ep, dst_proc_idx, len);
+    atl_ofi_prov_ep_t* prov_ep = &(prov->eps[ep->idx]);
     atl_ofi_req_t* ofi_req = ((atl_ofi_req_t*)req->internal);
 
     req->tag = tag;
@@ -1060,7 +1072,7 @@ atl_ofi_ep_send(atl_ep_t* ep, const void* buf, size_t len,
     ofi_req->fi_ep = prov_ep->tx;
 
     ATL_OFI_RETRY(fi_tsend(prov_ep->tx, buf, len, NULL,
-                           atl_ofi_get_addr(ep->ctx, dst_proc_idx, ep->idx),
+                           atl_ofi_get_addr(ep->ctx, prov, dst_proc_idx, ep->idx),
                            tag, &ofi_req->fi_ctx),
                   ep, ret);
     return RET2ATL(ret);
@@ -1072,7 +1084,8 @@ atl_ofi_ep_recv(atl_ep_t* ep, void* buf, size_t len,
 {
     ssize_t ret;
 
-    atl_ofi_prov_ep_t* prov_ep = atl_ofi_get_prov_ep(ep, src_proc_idx);
+    atl_ofi_prov_t* prov = atl_ofi_get_prov(ep, src_proc_idx, len);
+    atl_ofi_prov_ep_t* prov_ep = &(prov->eps[ep->idx]);
     atl_ofi_req_t* ofi_req = ((atl_ofi_req_t*)req->internal);
 
     req->tag = tag;
@@ -1083,7 +1096,7 @@ atl_ofi_ep_recv(atl_ep_t* ep, void* buf, size_t len,
     ofi_req->fi_ep = prov_ep->rx;
 
     ATL_OFI_RETRY(fi_trecv(prov_ep->rx, buf, len, NULL,
-                           atl_ofi_get_addr(ep->ctx, src_proc_idx, ep->idx),
+                           atl_ofi_get_addr(ep->ctx, prov, src_proc_idx, ep->idx),
                            tag, 0, &ofi_req->fi_ctx),
                   ep, ret);
     return RET2ATL(ret);
@@ -1094,45 +1107,96 @@ atl_ofi_ep_probe(atl_ep_t* ep, size_t src_proc_idx, uint64_t tag,
                  int* found, size_t* recv_len)
 {
     atl_status_t ret = ATL_STATUS_SUCCESS;
-    ssize_t ofi_ret;
-
-    atl_ofi_prov_ep_t* prov_ep = atl_ofi_get_prov_ep(ep, src_proc_idx);
-
-    atl_ofi_req_t req;
+    atl_ofi_req_t reqs[ATL_OFI_MAX_PROV_COUNT];
+    struct fi_msg_tagged msgs[ATL_OFI_MAX_PROV_COUNT];
     int flag = 0, len = 0;
+    ssize_t ofi_ret = FI_SUCCESS;
+    size_t idx;
+    int do_poll = 1;
 
-    struct fi_msg_tagged msg =
+    atl_ofi_ctx_t* ofi_ctx = container_of(ep->ctx, atl_ofi_ctx_t, ctx);
+
+    for (idx = 0; idx < ofi_ctx->prov_count; idx++)
     {
-        .msg_iov = NULL,
-        .desc = NULL,
-        .iov_count = 0,
-        .addr = atl_ofi_get_addr(ep->ctx, src_proc_idx, ep->idx),
-        .tag = tag,
-        .ignore = 0,
-        .context = &(req.fi_ctx),
-        .data = 0,
-    };
+        atl_ofi_prov_t* prov = &(ofi_ctx->provs[idx]);
+        atl_ofi_prov_ep_t* prov_ep = &(prov->eps[ep->idx]);
+        atl_ofi_req_t* req = &(reqs[idx]);
+        struct fi_msg_tagged* msg = &(msgs[idx]);
 
-    req.comp_state = ATL_OFI_COMP_PEEK_STARTED;
-    ATL_OFI_RETRY(fi_trecvmsg(prov_ep->rx, &msg,
-                              FI_PEEK | FI_COMPLETION),
-                  ep, ofi_ret);
+        if (prov->is_shm &&
+            ((src_proc_idx < prov->first_proc_idx) ||
+             (src_proc_idx >= (prov->first_proc_idx + ep->ctx->coord.local_count))))
+        {
+            req->prov_ep = NULL;
+            continue;
+        }
 
-    while (req.comp_state == ATL_OFI_COMP_PEEK_STARTED)
+        req->comp_state = ATL_OFI_COMP_PEEK_STARTED;
+        req->prov_ep = prov_ep;
+        req->fi_ep = prov_ep->rx;
+
+        msg->msg_iov = NULL;
+        msg->desc = NULL;
+        msg->iov_count = 0;
+        msg->addr = atl_ofi_get_addr(ep->ctx, prov, src_proc_idx, ep->idx);
+        msg->tag = tag;
+        msg->ignore = 0;
+        msg->context = &(req->fi_ctx);
+        msg->data = 0;
+
+        ATL_OFI_RETRY(fi_trecvmsg(prov_ep->rx, msg,
+                                  FI_PEEK | FI_COMPLETION),
+                      ep, ofi_ret);
+    }
+
+    do
     {
         ret = atl_ofi_ep_poll(ep);
         if (ret != ATL_STATUS_SUCCESS)
             return ret;
-    }
 
-    if (req.comp_state == ATL_OFI_COMP_PEEK_FOUND)
+        for (idx = 0; idx < ofi_ctx->prov_count; idx++)
+        {
+            atl_ofi_req_t* req = &(reqs[idx]);
+
+            if (!req->prov_ep)
+                continue;
+
+            if (req->comp_state != ATL_OFI_COMP_PEEK_STARTED)
+            {
+                do_poll = 0;
+
+                if (req->comp_state == ATL_OFI_COMP_PEEK_FOUND)
+                {
+                    flag = 1;
+                    len = req->recv_len;
+                    req->prov_ep = NULL;
+                }
+                else if (req->comp_state == ATL_OFI_COMP_PEEK_NOT_FOUND)
+                {
+                    req->prov_ep = NULL;
+                }
+                else
+                {
+                    ATL_OFI_ASSERT(0, "unexpected completion state %d", req->comp_state);
+                }
+
+                break;
+            }
+        }
+    } while (do_poll);
+
+    for (idx = 0; idx < ofi_ctx->prov_count; idx++)
     {
-        flag = 1;
-        len = req.recv_len;
-    }
-    else if (req.comp_state != ATL_OFI_COMP_PEEK_NOT_FOUND)
-    {
-        ATL_OFI_ASSERT(0, "unexpected completion state %d", req.comp_state);
+        atl_ofi_req_t* req = &(reqs[idx]);
+
+        if (!req->prov_ep)
+            continue;
+
+        if (fi_cancel(&req->fi_ep->fid, &req->fi_ctx) == 0)
+        {
+            atl_ofi_wait_cancel_cq(req->prov_ep->cq);
+        }
     }
 
     if (found) *found = flag;
@@ -1187,7 +1251,8 @@ atl_ofi_ep_read(atl_ep_t* ep, void* buf, size_t len, atl_mr_t* mr,
 {
     ssize_t ret;
 
-    atl_ofi_prov_ep_t* prov_ep = atl_ofi_get_prov_ep(ep, dst_proc_idx);
+    atl_ofi_prov_t* prov = atl_ofi_get_prov(ep, dst_proc_idx, len);
+    atl_ofi_prov_ep_t* prov_ep = &(prov->eps[ep->idx]);
     atl_ofi_req_t* ofi_req = ((atl_ofi_req_t*)req->internal);
 
     req->tag = 0;
@@ -1198,7 +1263,7 @@ atl_ofi_ep_read(atl_ep_t* ep, void* buf, size_t len, atl_mr_t* mr,
     ofi_req->fi_ep = prov_ep->tx;
 
     ATL_OFI_RETRY(fi_read(prov_ep->tx, buf, len, (void*)mr->local_key,
-                          atl_ofi_get_addr(ep->ctx, dst_proc_idx, ep->idx),
+                          atl_ofi_get_addr(ep->ctx, prov, dst_proc_idx, ep->idx),
                           addr, remote_key, &ofi_req->fi_ctx),
                   ep, ret);
     return RET2ATL(ret);
@@ -1210,7 +1275,8 @@ atl_ofi_ep_write(atl_ep_t* ep, const void* buf, size_t len, atl_mr_t* mr,
 {
     ssize_t ret;
 
-    atl_ofi_prov_ep_t* prov_ep = atl_ofi_get_prov_ep(ep, dst_proc_idx);
+    atl_ofi_prov_t* prov = atl_ofi_get_prov(ep, dst_proc_idx, len);
+    atl_ofi_prov_ep_t* prov_ep = &(prov->eps[ep->idx]);
     atl_ofi_req_t* ofi_req = ((atl_ofi_req_t*)req->internal);
 
     req->tag = 0;
@@ -1221,7 +1287,7 @@ atl_ofi_ep_write(atl_ep_t* ep, const void* buf, size_t len, atl_mr_t* mr,
     ofi_req->fi_ep = prov_ep->tx;
 
     ATL_OFI_RETRY(fi_write(prov_ep->tx, buf, len, (void*)mr->local_key,
-                           atl_ofi_get_addr(ep->ctx, dst_proc_idx, ep->idx),
+                           atl_ofi_get_addr(ep->ctx, prov, dst_proc_idx, ep->idx),
                            addr, remote_key, &ofi_req->fi_ctx),
                   ep, ret);
     return RET2ATL(ret);
@@ -1277,21 +1343,22 @@ atl_ofi_ep_poll(atl_ep_t* ep)
     size_t idx;
     struct fi_cq_tagged_entry entries[ATL_OFI_CQ_BUNCH_SIZE];
 
-    atl_ofi_ep_t* ofi_ep = container_of(ep, atl_ofi_ep_t, ep);
     atl_ofi_ctx_t* ofi_ctx = container_of(ep->ctx, atl_ofi_ctx_t, ctx);
+    size_t ep_idx = ep->idx;
 
     /* ensure progress for all providers */
     for (idx = 0; idx < ofi_ctx->prov_count; idx++)
     {
+        atl_ofi_prov_ep_t* prov_ep = &(ofi_ctx->provs[idx].eps[ep_idx]);
         do
         {
-            ret = fi_cq_read(ofi_ep->prov_eps[idx]->cq, entries, ATL_OFI_CQ_BUNCH_SIZE);
+            ret = fi_cq_read(prov_ep->cq, entries, ATL_OFI_CQ_BUNCH_SIZE);
             if (ret > 0)
                 atl_ofi_process_comps(entries, ret);
             else if (ret == -FI_EAGAIN)
                 break;
             else
-                return atl_ofi_prov_ep_handle_cq_err(ofi_ep->prov_eps[idx]);
+                return atl_ofi_prov_ep_handle_cq_err(prov_ep);
         } while (ret > 0);
     }
 
@@ -1398,6 +1465,8 @@ atl_ofi_init(int* argc, char*** argv,
         goto err;
     }
 
+    atl_proc_coord_t* coord = &(ctx->coord);
+
     ctx->is_resize_enabled = is_pm_resize_enabled();
 
     base_hints = fi_allocinfo();
@@ -1416,15 +1485,23 @@ atl_ofi_init(int* argc, char*** argv,
 
     fi_version = FI_VERSION(1, 0);
 
-    if (ctx->coord.global_idx == 0)
+    if (coord->global_idx == 0)
     {
         ATL_OFI_DEBUG_PRINT("libfabric version: %s", fi_tostr("1" /* ignored */, FI_TYPE_VERSION));
     }
 
-    if (attr->enable_rma && attr->enable_shm)
+    /* don't use FI_PROVIDER for now because it will hide shm provider */
+    char* prov_env = getenv("CCL_ATL_OFI_PROVIDER");
+    if (prov_env && !strcmp(prov_env, "shm"))
     {
-        ATL_OFI_DEBUG_PRINT("rma and shm requested both, disable shm");
-        attr->enable_shm = 0;
+        ATL_OFI_ASSERT(coord->global_count == coord->local_count,
+            "shm provider is requested as primary provider but global_count (%zu) != local_count (%zu)",
+            coord->global_count, coord->local_count);
+
+        ATL_OFI_ASSERT(attr->enable_shm,
+            "shm provider is requested through CCL_ATL_OFI_PROVIDER but not requested from CCL level");
+
+        ATL_OFI_DEBUG_PRINT("shm provider is requested through CCL_ATL_OFI_PROVIDER");
     }
 
     if (attr->enable_shm)
@@ -1435,11 +1512,11 @@ atl_ofi_init(int* argc, char*** argv,
         if (ret || !providers)
         {
             attr->enable_shm = 0;
-            ATL_OFI_DEBUG_PRINT("shm provider is requested but not available, fallback to network provider");
+            ATL_OFI_DEBUG_PRINT("shm provider is requested but not available");
         }
         else
         {
-            ATL_OFI_DEBUG_PRINT("shm provider is available");
+            ATL_OFI_DEBUG_PRINT("shm provider is requested and available");
         }
 
         fi_freeinfo(providers);
@@ -1488,32 +1565,44 @@ atl_ofi_init(int* argc, char*** argv,
     attr->tag_bits = 64;
     attr->max_tag = 0xFFFFFFFFFFFFFFFF;
 
-    /* IMPI/libfabric internal knob */
-    setenv("FI_INFO_UTIL", "1", 0);
-
-    /* don't use FI_PROVIDER for now because it will hide shm provider */
-    char* nw_prov_env = getenv("CCL_ATL_OFI_PROVIDER");
-    if (nw_prov_env && !strcmp(nw_prov_env, "shm"))
+    if (coord->global_count == coord->local_count)
     {
-        ATL_OFI_ASSERT(ctx->coord.global_count == ctx->coord.local_count,
-            "shm provider is requested as primary network provider but global_count (%zu) != local_count (%zu)",
-            ctx->coord.global_count, ctx->coord.local_count);
-
-        ATL_OFI_DEBUG_PRINT("shm provider is requested as primary network provider");
-        attr->enable_shm = 0;
+        ofi_ctx->prov_count = 1;
+        ofi_ctx->provs[0].is_shm = (attr->enable_shm) ? 1 : 0;
+    }
+    else
+    {
+        if (attr->enable_shm)
+        {
+            ofi_ctx->prov_count = 2;
+            ofi_ctx->shm_prov_idx = 0;
+            ofi_ctx->nw_prov_idx = 1;
+            ofi_ctx->provs[ofi_ctx->shm_prov_idx].is_shm = 1;
+            ofi_ctx->provs[ofi_ctx->nw_prov_idx].is_shm = 0;
+        }
+        else
+        {
+            ofi_ctx->prov_count = 1;
+            ofi_ctx->provs[0].is_shm = 0;
+        }
     }
 
-    ofi_ctx->prov_count = 1;
-    if (attr->enable_shm)
-        ofi_ctx->prov_count++;
+    if (attr->enable_rma && (ofi_ctx->prov_count > 1))
+    {
+        ATL_OFI_DEBUG_PRINT("RMA and multiple providers requested both, disable RMA");
+        attr->enable_rma = 0;
+    }
+
+    ATL_OFI_DEBUG_PRINT("prov_count %zu", ofi_ctx->prov_count);
 
     for (idx = 0; idx < ofi_ctx->prov_count; idx++)
     {
-        prov_hints = fi_dupinfo(base_hints);
+        atl_ofi_prov_t* prov = &ofi_ctx->provs[idx];
 
-        prov_hints->fabric_attr->prov_name = (idx == ATL_OFI_SHM_SLOT_IDX) ?
+        prov_hints = fi_dupinfo(base_hints);
+        prov_hints->fabric_attr->prov_name = (prov->is_shm) ?
             strdup("shm") :
-            nw_prov_env ? strdup(nw_prov_env) : NULL;
+            prov_env ? strdup(prov_env) : NULL;
 
         ret = fi_getinfo(fi_version, NULL, NULL, 0ULL, prov_hints, &providers);
 
@@ -1569,8 +1658,6 @@ atl_ofi_init(int* argc, char*** argv,
             }
         }
 
-        atl_ofi_prov_t* prov = &ofi_ctx->provs[idx];
-
         /* use first provider from the list of providers */
         prov->info = fi_dupinfo(providers);
         struct fi_info* prov_info = prov->info;
@@ -1587,11 +1674,14 @@ atl_ofi_init(int* argc, char*** argv,
             prov_info->ep_attr->max_order_waw_size :
             MIN(attr->max_order_waw_size, prov_info->ep_attr->max_order_waw_size);
 
+        prov->max_msg_size = prov_info->ep_attr->max_msg_size;
+
         ATL_OFI_DEBUG_PRINT("provider %s", prov_info->fabric_attr->prov_name);
         ATL_OFI_DEBUG_PRINT("mr_mode %d", prov_info->domain_attr->mr_mode);
         ATL_OFI_DEBUG_PRINT("threading %d", prov_info->domain_attr->threading);
         ATL_OFI_DEBUG_PRINT("tx_ctx_cnt %zu", prov_info->domain_attr->tx_ctx_cnt);
         ATL_OFI_DEBUG_PRINT("max_ep_tx_ctx %zu", prov_info->domain_attr->max_ep_tx_ctx);
+        ATL_OFI_DEBUG_PRINT("max_msg_size %zu", prov_info->ep_attr->max_msg_size);
 
         ATL_OFI_CALL(fi_fabric(prov_info->fabric_attr,
                                &prov->fabric, NULL),
@@ -1643,6 +1733,9 @@ atl_ofi_init(int* argc, char*** argv,
         }
 
         prov->addr_len = 0;
+        prov->first_proc_idx = (prov->is_shm) ?
+            ((coord->global_idx / coord->local_count) * coord->local_count) :
+            0;
 
         for (ep_idx = 0; ep_idx < attr->ep_count; ep_idx++)
         {
@@ -1664,8 +1757,6 @@ atl_ofi_init(int* argc, char*** argv,
         fi_freeinfo(prov_hints);
     }
 
-    /* construct convenient view of provider endpoints
-       single atl_ofi endpoint wraps comm endpoints from different providers */
     for (ep_idx = 0; ep_idx < attr->ep_count; ep_idx++)
     {
         atl_ofi_ep_t* ofi_ep = calloc(1, sizeof(atl_ofi_ep_t));
@@ -1683,53 +1774,7 @@ atl_ofi_init(int* argc, char*** argv,
         ep->rma_ops = &atl_ofi_ep_rma_ops;
         ep->comp_ops = &atl_ofi_ep_comp_ops;
 
-        for (idx = 0; idx < ofi_ctx->prov_count; idx++)
-        {
-            ofi_ep->prov_eps[idx] = &(ofi_ctx->provs[idx].eps[ep_idx]);
-        }
-
         ctx->eps[ep_idx] = ep;
-    }
-
-    /* construct convenient address table
-       single table on ofi_ctx level contains OFI addresses
-       for all endpoints regardless of provider type */
-    ofi_ctx->addr_table = calloc(1, sizeof(fi_addr_t) *
-                                    ctx->ep_count *
-                                    ctx->coord.global_count);
-    if (!ofi_ctx->addr_table)
-    {
-        ATL_OFI_PRINT("can't alloc ofi_ctx->addr_table");
-        goto err;
-    }
-
-    if (ofi_ctx->prov_count == 1)
-    {
-        memcpy(ofi_ctx->addr_table,
-               ofi_ctx->provs[0].addr_table,
-               sizeof(fi_addr_t) * ctx->ep_count * ctx->coord.global_count);
-    }
-    else if (ofi_ctx->prov_count == 2)
-    {
-        size_t my_node_idx = ctx->coord.global_idx / ctx->coord.local_count;
-        size_t nw_proc_count_left = my_node_idx * ctx->coord.local_count;
-        size_t nw_proc_count_right = ctx->coord.global_count - nw_proc_count_left - ctx->coord.local_count;
-
-        memcpy(ofi_ctx->addr_table,
-               ofi_ctx->provs[ATL_OFI_NW_SLOT_IDX].addr_table,
-               sizeof(fi_addr_t) * ctx->ep_count * nw_proc_count_left);
-
-        memcpy(ofi_ctx->addr_table + ctx->ep_count * nw_proc_count_left,
-               ofi_ctx->provs[ATL_OFI_SHM_SLOT_IDX].addr_table,
-               sizeof(fi_addr_t) * ctx->ep_count * ctx->coord.local_count);
-
-        memcpy(ofi_ctx->addr_table + ctx->ep_count * (nw_proc_count_left + ctx->coord.local_count),
-               ofi_ctx->provs[ATL_OFI_NW_SLOT_IDX].addr_table + ctx->ep_count * nw_proc_count_left,
-               sizeof(fi_addr_t) * ctx->ep_count * nw_proc_count_right);
-    }
-    else
-    {
-        ATL_OFI_ASSERT(0, "unexpected number of providers %zu", ofi_ctx->prov_count);
     }
 
     /* by default don't use timeout for retry operations and just break by retry_count */

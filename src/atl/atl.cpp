@@ -58,7 +58,7 @@ atl_ini_dir(const char* transport_name,
         free(liblist[n]);
         if (dlhandle == NULL)
         {
-            LOG_ERROR("can't open lib ", lib, ", error ", dlerror());
+            LOG_INFO("can't open lib ", lib, ", error ", dlerror());
             free(lib);
             continue;
         }
