@@ -299,7 +299,8 @@ post_build()
     mv ${WORKSPACE}/build/_install/lib/prov ${WORKSPACE}/build/_install/lib/cpu_icc
     cp -r  ${WORKSPACE}/build_gpu/_install/lib/* ${WORKSPACE}/build/_install/lib/cpu_gpu_dpcpp
     cp -r  ${WORKSPACE}/build_gpu/_install/include/* ${WORKSPACE}/build/_install/include/cpu_gpu_dpcpp
-
+    #temporary copy special vars.sh 
+    cp ${WORKSPACE}/scripts/vars.sh ${WORKSPACE}/build/_install/env/
 }
 
 replace_tags()
