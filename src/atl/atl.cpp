@@ -7,18 +7,28 @@
 #include "atl/atl.h"
 #include "common/log/log.hpp"
 
-#define LIB_SUFFIX ".so"
+#define LIB_SUFFIX     ".so"
+#define ATL_LIB_PREFIX "libccl_atl_"
 
 static int initialized = 0;
 
 static int
 atl_lib_filter(const struct dirent* entry)
 {
-    size_t l = strlen(entry->d_name);
-    size_t sfx = sizeof(LIB_SUFFIX) - 1;
+    size_t entry_len = strlen(entry->d_name);
+    size_t sfx_len = strlen(LIB_SUFFIX);
+    const char* sfx_ptr;
 
-    if (l > sfx)
-        return strstr((entry->d_name), LIB_SUFFIX) ? 1 : 0;
+    if (entry_len > sfx_len)
+    {
+        sfx_ptr = strstr((entry->d_name), LIB_SUFFIX);
+
+        if (strstr((entry->d_name), ATL_LIB_PREFIX) &&
+            sfx_ptr && (strlen(sfx_ptr) == sfx_len))
+            return 1;
+        else
+            return 0;
+    }
     else
         return 0;
 }
@@ -58,7 +68,7 @@ atl_ini_dir(const char* transport_name,
         free(liblist[n]);
         if (dlhandle == NULL)
         {
-            LOG_INFO("can't open lib ", lib, ", error ", dlerror());
+            LOG_ERROR("can't open lib ", lib, ", error ", dlerror());
             free(lib);
             continue;
         }

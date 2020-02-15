@@ -304,7 +304,7 @@ atl_mpi_ep_probe(atl_ep_t* ep, size_t src_proc_idx,
 
 static atl_status_t
 atl_mpi_ep_allgatherv(atl_ep_t* ep, const void* send_buf, size_t send_len,
-                      void* recv_buf, const int recv_lens[], int displs[], atl_req_t* req)
+                      void* recv_buf, const int* recv_lens, const int* offsets, atl_req_t* req)
 {
     atl_mpi_ep_t* mpi_ep =
         container_of(ep, atl_mpi_ep_t, ep);
@@ -313,7 +313,7 @@ atl_mpi_ep_allgatherv(atl_ep_t* ep, const void* send_buf, size_t send_len,
     int ret = MPI_SUCCESS;
 
     ret = MPI_Iallgatherv((send_buf == recv_buf) ? MPI_IN_PLACE : send_buf, send_len, MPI_CHAR,
-                          recv_buf, recv_lens, displs, MPI_CHAR,
+                          recv_buf, recv_lens, offsets, MPI_CHAR,
                           mpi_ep->mpi_comm, &mpi_req->native_req);
     mpi_req->comp_state = ATL_MPI_COMP_POSTED;
     
@@ -373,6 +373,24 @@ atl_mpi_ep_alltoall(atl_ep_t* ep, const void* send_buf, void* recv_buf,
     ret = MPI_Ialltoall((send_buf == recv_buf) ? MPI_IN_PLACE : send_buf, len,  MPI_CHAR,
                         recv_buf, len, MPI_CHAR,
                         mpi_ep->mpi_comm, &mpi_req->native_req);
+    mpi_req->comp_state = ATL_MPI_COMP_POSTED;
+
+    return RET2ATL(ret);
+}
+
+static atl_status_t
+atl_mpi_ep_alltoallv(atl_ep_t* ep, const void* send_buf, const int* send_lens, const int* send_offsets,
+                     void* recv_buf, const int* recv_lens, const int* recv_offsets, atl_req_t* req)
+{
+    atl_mpi_ep_t* mpi_ep =
+        container_of(ep, atl_mpi_ep_t, ep);
+
+    atl_mpi_req_t* mpi_req = ((atl_mpi_req_t*)req->internal);
+    int ret = MPI_SUCCESS;
+
+    ret = MPI_Ialltoallv((send_buf == recv_buf) ? MPI_IN_PLACE : send_buf, send_lens, send_offsets, MPI_CHAR,
+                         recv_buf, recv_lens, recv_offsets, MPI_CHAR,
+                         mpi_ep->mpi_comm, &mpi_req->native_req);
     mpi_req->comp_state = ATL_MPI_COMP_POSTED;
 
     return RET2ATL(ret);
@@ -514,6 +532,7 @@ static atl_coll_ops_t atl_mpi_ep_coll_ops =
     .allgatherv = atl_mpi_ep_allgatherv,
     .allreduce  = atl_mpi_ep_allreduce,
     .alltoall   = atl_mpi_ep_alltoall,
+    .alltoallv  = atl_mpi_ep_alltoallv,
     .barrier    = atl_mpi_ep_barrier,
     .bcast      = atl_mpi_ep_bcast,
     .reduce     = atl_mpi_ep_reduce

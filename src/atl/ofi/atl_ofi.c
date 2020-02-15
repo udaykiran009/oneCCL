@@ -54,6 +54,10 @@
         fflush(stdout);                                   \
     } while (0)
 
+#define ATL_OFI_PRINT_ROOT(s, ...)       \
+    if (coord->global_idx == 0)          \
+        ATL_OFI_PRINT(s, ##__VA_ARGS__); \
+
 #define ATL_OFI_ASSERT(cond, ...)                 \
     do {                                          \
         if (!(cond))                              \
@@ -66,8 +70,10 @@
 
 #ifdef ENABLE_DEBUG
 #define ATL_OFI_DEBUG_PRINT(s, ...) ATL_OFI_PRINT(s, ##__VA_ARGS__)
+#define ATL_OFI_DEBUG_PRINT_ROOT(s, ...) ATL_OFI_PRINT_ROOT(s, ##__VA_ARGS__)
 #else
 #define ATL_OFI_DEBUG_PRINT(s, ...)
+#define ATL_OFI_DEBUG_PRINT_ROOT(s, ...)
 #endif
 
 static inline atl_status_t atl_ofi_ep_poll(atl_ep_t* ep);
@@ -220,7 +226,8 @@ atl_ofi_get_prov(atl_ep_t* ep, size_t peer_proc_idx, size_t msg_size)
     }
     else
     {
-        ATL_OFI_ASSERT(ofi_ctx->prov_count == 2, "unexpected prov_count %zu", ofi_ctx->prov_count);
+        ATL_OFI_ASSERT(ofi_ctx->prov_count == ATL_OFI_MAX_PROV_COUNT,
+            "unexpected prov_count %zu", ofi_ctx->prov_count);
 
         atl_proc_coord_t* coord = &(ep->ctx->coord);
         size_t my_node_idx = coord->global_idx / coord->local_count;
@@ -1207,7 +1214,7 @@ atl_ofi_ep_probe(atl_ep_t* ep, size_t src_proc_idx, uint64_t tag,
 
 static atl_status_t
 atl_ofi_ep_allgatherv(atl_ep_t* ep, const void* send_buf, size_t send_len,
-                      void* recv_buf, const int recv_lens[], int displs[], atl_req_t* req)
+                      void* recv_buf, const int* recv_lens, const int* offsets, atl_req_t* req)
 {
     return ATL_STATUS_UNSUPPORTED;
 }
@@ -1222,6 +1229,13 @@ atl_ofi_ep_allreduce(atl_ep_t* ep, const void* send_buf, void* recv_buf, size_t 
 static atl_status_t
 atl_ofi_ep_alltoall(atl_ep_t* ep, const void* send_buf, void* recv_buf,
                     size_t len, atl_req_t* req)
+{
+    return ATL_STATUS_UNSUPPORTED;
+}
+
+static atl_status_t
+atl_ofi_ep_alltoallv(atl_ep_t* ep, const void* send_buf, const int* send_lens, const int* send_offsets,
+                     void* recv_buf, const int* recv_lens, const int* recv_offsets, atl_req_t* req)
 {
     return ATL_STATUS_UNSUPPORTED;
 }
@@ -1399,6 +1413,7 @@ static atl_coll_ops_t atl_ofi_ep_coll_ops =
     .allgatherv = atl_ofi_ep_allgatherv,
     .allreduce  = atl_ofi_ep_allreduce,
     .alltoall   = atl_ofi_ep_alltoall,
+    .alltoallv  = atl_ofi_ep_alltoallv,
     .barrier    = atl_ofi_ep_barrier,
     .bcast      = atl_ofi_ep_bcast,
     .reduce     = atl_ofi_ep_reduce,
@@ -1485,10 +1500,7 @@ atl_ofi_init(int* argc, char*** argv,
 
     fi_version = FI_VERSION(1, 0);
 
-    if (coord->global_idx == 0)
-    {
-        ATL_OFI_DEBUG_PRINT("libfabric version: %s", fi_tostr("1" /* ignored */, FI_TYPE_VERSION));
-    }
+    ATL_OFI_DEBUG_PRINT_ROOT("libfabric version: %s", fi_tostr("1" /* ignored */, FI_TYPE_VERSION));
 
     /* don't use FI_PROVIDER for now because it will hide shm provider */
     char* prov_env = getenv("CCL_ATL_OFI_PROVIDER");
@@ -1501,7 +1513,7 @@ atl_ofi_init(int* argc, char*** argv,
         ATL_OFI_ASSERT(attr->enable_shm,
             "shm provider is requested through CCL_ATL_OFI_PROVIDER but not requested from CCL level");
 
-        ATL_OFI_DEBUG_PRINT("shm provider is requested through CCL_ATL_OFI_PROVIDER");
+        ATL_OFI_DEBUG_PRINT_ROOT("shm provider is requested through CCL_ATL_OFI_PROVIDER");
     }
 
     if (attr->enable_shm)
@@ -1589,11 +1601,11 @@ atl_ofi_init(int* argc, char*** argv,
 
     if (attr->enable_rma && (ofi_ctx->prov_count > 1))
     {
-        ATL_OFI_DEBUG_PRINT("RMA and multiple providers requested both, disable RMA");
+        ATL_OFI_PRINT_ROOT("RMA and multiple providers requested both, disable RMA");
         attr->enable_rma = 0;
     }
 
-    ATL_OFI_DEBUG_PRINT("prov_count %zu", ofi_ctx->prov_count);
+    ATL_OFI_DEBUG_PRINT_ROOT("prov_count %zu", ofi_ctx->prov_count);
 
     for (idx = 0; idx < ofi_ctx->prov_count; idx++)
     {
@@ -1676,12 +1688,12 @@ atl_ofi_init(int* argc, char*** argv,
 
         prov->max_msg_size = prov_info->ep_attr->max_msg_size;
 
-        ATL_OFI_DEBUG_PRINT("provider %s", prov_info->fabric_attr->prov_name);
-        ATL_OFI_DEBUG_PRINT("mr_mode %d", prov_info->domain_attr->mr_mode);
-        ATL_OFI_DEBUG_PRINT("threading %d", prov_info->domain_attr->threading);
-        ATL_OFI_DEBUG_PRINT("tx_ctx_cnt %zu", prov_info->domain_attr->tx_ctx_cnt);
-        ATL_OFI_DEBUG_PRINT("max_ep_tx_ctx %zu", prov_info->domain_attr->max_ep_tx_ctx);
-        ATL_OFI_DEBUG_PRINT("max_msg_size %zu", prov_info->ep_attr->max_msg_size);
+        ATL_OFI_DEBUG_PRINT_ROOT("provider %s", prov_info->fabric_attr->prov_name);
+        ATL_OFI_DEBUG_PRINT_ROOT("mr_mode %d", prov_info->domain_attr->mr_mode);
+        ATL_OFI_DEBUG_PRINT_ROOT("threading %d", prov_info->domain_attr->threading);
+        ATL_OFI_DEBUG_PRINT_ROOT("tx_ctx_cnt %zu", prov_info->domain_attr->tx_ctx_cnt);
+        ATL_OFI_DEBUG_PRINT_ROOT("max_ep_tx_ctx %zu", prov_info->domain_attr->max_ep_tx_ctx);
+        ATL_OFI_DEBUG_PRINT_ROOT("max_msg_size %zu", prov_info->ep_attr->max_msg_size);
 
         ATL_OFI_CALL(fi_fabric(prov_info->fabric_attr,
                                &prov->fabric, NULL),

@@ -69,16 +69,20 @@ ccl_status_t ccl_parallelizer::process(ccl_master_sched* sched)
     std::vector<size_t> counts;
     std::vector<size_t> offsets;
     auto& part_scheds = sched->partial_scheds;
+    const size_t* send_counts = nullptr;
     const size_t* recv_counts = nullptr;
 
     std::vector<ccl_buffer> ag_recv_bufs;
     size_t ag_recv_bytes = 0, ag_recv_count = 0;
+    size_t a2av_send_bytes = 0, a2av_recv_bytes = 0;
+    size_t a2av_send_count = 0, a2av_recv_count = 0;
 
     ccl_datatype_internal_t itype = ccl_dtype_internal_none;
     size_t itype_size = 0;
 
     ccl_coll_allgatherv_algo ag_algo = ccl_coll_allgatherv_naive;
     ccl_coll_alltoall_algo a2a_algo = ccl_coll_alltoall_direct;
+    ccl_coll_alltoallv_algo a2av_algo = ccl_coll_alltoallv_direct;
     ccl_coll_bcast_algo ag_mbcast_algo = ccl_coll_bcast_naive;
 
     std::vector<ccl_parallelizer_prologue_ctx*> part_ctxs;
@@ -125,6 +129,18 @@ ccl_status_t ccl_parallelizer::process(ccl_master_sched* sched)
                 }
             }
             else
+            {
+                part_count = 1;
+            }
+            break;
+        case ccl_coll_alltoallv:
+            a2av_algo = global_data.algorithm_selector->get<ccl_coll_alltoallv>(selector_param);
+            coll_param_copy->a2av_send_counts.assign((size_t*)coll_param->send_counts,
+                                                     (size_t*)coll_param->send_counts + comm->size());
+            coll_param_copy->a2av_recv_counts.assign((size_t*)coll_param->recv_counts,
+                                                     (size_t*)coll_param->recv_counts + comm->size());
+
+            if (a2av_algo == ccl_coll_alltoallv_direct)
             {
                 part_count = 1;
             }
@@ -244,6 +260,22 @@ ccl_status_t ccl_parallelizer::process(ccl_master_sched* sched)
             for (idx = 0; idx < part_count; idx++)
             {
                 part_scheds[idx]->coll_param.count = counts[idx];
+            }
+            break;
+        case ccl_coll_alltoallv:
+            send_counts = coll_param->send_counts;
+            recv_counts = coll_param->recv_counts;
+            CCL_ASSERT(send_counts);
+            CCL_ASSERT(recv_counts);
+            if (a2av_algo == ccl_coll_alltoallv_direct)
+            {
+                for (idx = 0; idx < comm->size(); idx++)
+                {
+                    a2av_send_count += send_counts[idx];
+                    a2av_recv_count += recv_counts[idx];
+                }     
+                a2av_send_bytes = a2av_send_count * dtype_size;
+                a2av_recv_bytes = a2av_recv_count * dtype_size;
             }
             break;
         case ccl_coll_allgatherv:
@@ -735,10 +767,10 @@ ccl_status_t ccl_parallelizer::process(ccl_master_sched* sched)
             {
                 entry_factory::make_entry<sycl_copy_device_to_host_entry>(part_scheds[0].get(),
                                                                           ccl_buffer(&(coll_param->sycl_send_buf),
-                                                                                     coll_param->count * dtype_size * coll_param->comm->size(),
+                                                                                     a2av_send_bytes,
                                                                                      ccl_buffer_type::INDIRECT),
                                                                           ccl_buffer((void*)coll_param->send_buf,
-                                                                                     coll_param->count * dtype_size * coll_param->comm->size()),
+                                                                                     a2av_send_bytes),
                                                                           coll_param->count * comm->size(),
                                                                           dtype, coll_param->stream);
                 sched->sync_partial_scheds();
@@ -852,15 +884,63 @@ ccl_status_t ccl_parallelizer::process(ccl_master_sched* sched)
                 sched->sync_partial_scheds();
                 entry_factory::make_entry<sycl_copy_host_to_device_entry>(part_scheds[0].get(),
                                                                           ccl_buffer(coll_param->recv_buf,
-                                                                                     coll_param->count * dtype_size * coll_param->comm->size()),
+                                                                                     a2av_recv_bytes),
                                                                           ccl_buffer(&(coll_param->sycl_recv_buf),
-                                                                                     coll_param->count * dtype_size * coll_param->comm->size(),
+                                                                                     a2av_recv_bytes,
                                                                                      ccl_buffer_type::INDIRECT),
                                                                           coll_param->count * comm->size(),
                                                                           dtype, coll_param->stream);
             }
 #endif /* CCL_ENABLE_SYCL */
 
+            break;
+        case ccl_coll_alltoallv:
+#ifdef CCL_ENABLE_SYCL
+            /* convert sycl buffer */
+            if (coll_param->stream && (ccl_stream_type_t)(coll_param->stream->get_type()) == ccl_stream_sycl)
+            {
+                entry_factory::make_entry<sycl_copy_device_to_host_entry>(part_scheds[0].get(),
+                                                                          ccl_buffer(&(coll_param->sycl_send_buf),
+                                                                                     a2av_send_bytes,
+                                                                                     ccl_buffer_type::INDIRECT),
+                                                                          ccl_buffer((void*)coll_param->send_buf,
+                                                                                     a2av_send_bytes),
+                                                                          a2av_send_count,
+                                                                          dtype, coll_param->stream);
+                sched->sync_partial_scheds();
+            }
+#endif /* CCL_ENABLE_SYCL */
+            if (a2av_algo == ccl_coll_alltoallv_direct)
+            {
+                ccl_coll_entry_param param{};
+                param.ctype = ccl_coll_alltoallv;
+                param.send_buf = ccl_buffer(&(coll_param->send_buf),
+                                            a2av_send_bytes,
+                                            ccl_buffer_type::INDIRECT);
+                param.recv_buf = ccl_buffer(&(coll_param->recv_buf),
+                                            a2av_recv_bytes,
+                                            ccl_buffer_type::INDIRECT);
+                param.send_counts = coll_param_copy->a2av_send_counts.data();
+                param.recv_counts = coll_param_copy->a2av_recv_counts.data();
+                param.dtype = dtype;
+                param.comm = comm;
+                coll_entry_helper::add_coll_entry<ccl_coll_alltoallv>(part_scheds[0].get(), param);
+            }
+#ifdef CCL_ENABLE_SYCL
+            /* convert sycl buffer */
+            if (coll_param->stream && (ccl_stream_type_t)(coll_param->stream->get_type()) == ccl_stream_sycl)
+            {
+                sched->sync_partial_scheds();
+                entry_factory::make_entry<sycl_copy_host_to_device_entry>(part_scheds[0].get(),
+                                                                          ccl_buffer(coll_param->recv_buf,
+                                                                                     a2av_recv_bytes),
+                                                                          ccl_buffer(&(coll_param->sycl_recv_buf),
+                                                                                     a2av_recv_bytes,
+                                                                                     ccl_buffer_type::INDIRECT),
+                                                                          a2av_recv_count,
+                                                                          dtype, coll_param->stream);
+            }
+#endif /* CCL_ENABLE_SYCL */
             break;
         case ccl_coll_sparse_allreduce:
             itype = coll_param->sparse_param.itype;

@@ -170,10 +170,12 @@ typedef struct
 {
     /* order convention - keep alphabetical order */
     atl_status_t (*allgatherv)(atl_ep_t* ep, const void* send_buf, size_t send_len,
-                               void* recv_buf, const int recv_lens[], int  displs[], atl_req_t* req);
+                               void* recv_buf, const int* recv_lens, const int* offsets, atl_req_t* req);
     atl_status_t (*allreduce)(atl_ep_t* ep, const void* send_buf, void* recv_buf, size_t count,
                               atl_datatype_t dtype, atl_reduction_t op, atl_req_t* req);
     atl_status_t (*alltoall)(atl_ep_t* ep, const void* send_buf, void* recv_buf, size_t len, atl_req_t* req);
+    atl_status_t (*alltoallv)(atl_ep_t* ep, const void* send_buf, const int* send_lens, const int* send_offsets,
+                              void* recv_buf, const int* recv_lens, const int* recv_offsets, atl_req_t* req);
     atl_status_t (*barrier)(atl_ep_t* ep, atl_req_t* req);
     atl_status_t (*bcast)(atl_ep_t* ep, void* buf, size_t len, size_t root, atl_req_t* req);
     atl_status_t (*reduce)(atl_ep_t* ep, const void* send_buf, void* recv_buf, size_t count, size_t root,
@@ -293,9 +295,9 @@ atl_ep_probe(atl_ep_t* ep, size_t src_proc_idx,
 
 static inline atl_status_t
 atl_ep_allgatherv(atl_ep_t* ep, const void* send_buf, size_t send_len,
-                  void* recv_buf, int recv_lens[], int displs[], atl_req_t* req)
+                  void* recv_buf, const int* recv_lens, const int* offsets, atl_req_t* req)
 {
-    return ep->coll_ops->allgatherv(ep, send_buf, send_len, recv_buf, recv_lens, displs, req);
+    return ep->coll_ops->allgatherv(ep, send_buf, send_len, recv_buf, recv_lens, offsets, req);
 }
 
 static inline atl_status_t
@@ -310,6 +312,14 @@ atl_ep_alltoall(atl_ep_t* ep, const void* send_buf, void* recv_buf,
                 int len, atl_req_t* req)
 {
     return ep->coll_ops->alltoall(ep, send_buf, recv_buf, len, req);
+}
+
+static inline atl_status_t
+atl_ep_alltoallv(atl_ep_t* ep, const void* send_buf, const int* send_lens, const int* send_offsets,
+                 void* recv_buf, const int* recv_lens, const int* recv_offsets, atl_req_t* req)
+{
+    return ep->coll_ops->alltoallv(ep, send_buf, send_lens, send_offsets,
+                                   recv_buf, recv_lens, recv_offsets, req);
 }
 
 static inline atl_status_t

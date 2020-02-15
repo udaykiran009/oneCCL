@@ -11,6 +11,7 @@ set(CCL_SRC
     coll/algorithms/allreduce/allreduce_2d.cpp
     coll/algorithms/allreduce/allreduce_rma.cpp
     coll/algorithms/alltoall.cpp
+    coll/algorithms/alltoallv.cpp
     coll/algorithms/barrier.cpp
     coll/algorithms/bcast.cpp
     coll/algorithms/double_tree_ops.cpp
@@ -20,6 +21,7 @@ set(CCL_SRC
     coll/selection/selector_allgatherv.cpp
     coll/selection/selector_allreduce.cpp
     coll/selection/selector_alltoall.cpp
+    coll/selection/selector_alltoallv.cpp
     coll/selection/selector_barrier.cpp
     coll/selection/selector_bcast.cpp
     coll/selection/selector_reduce.cpp

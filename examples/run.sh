@@ -152,7 +152,7 @@ run()
             then
                 examples_to_run=`ls . | grep '.out' | grep -v '.log' | grep -v 'unordered_allreduce' | grep -v 'custom_allreduce'`
             else
-                examples_to_run=`ls . | grep '.out' | grep -v '.log'`
+                examples_to_run=`ls . | grep '.out' | grep -v '.log' | grep -v 'alltoallv'`
                 # | grep -v 'allgatherv_iov' | grep -v 'allgatherv'`
             fi
             for example in $examples_to_run

@@ -18,6 +18,7 @@ ccl_env_data env_data =
     .allgatherv_algo_raw = std::string(),
     .allreduce_algo_raw = std::string(),
     .alltoall_algo_raw = std::string(),
+    .alltoallv_algo_raw = std::string(),
     .barrier_algo_raw = std::string(),
     .bcast_algo_raw = std::string(),
     .reduce_algo_raw = std::string(),
