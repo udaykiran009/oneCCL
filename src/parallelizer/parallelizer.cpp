@@ -767,10 +767,10 @@ ccl_status_t ccl_parallelizer::process(ccl_master_sched* sched)
             {
                 entry_factory::make_entry<sycl_copy_device_to_host_entry>(part_scheds[0].get(),
                                                                           ccl_buffer(&(coll_param->sycl_send_buf),
-                                                                                     a2av_send_bytes,
+                                                                                     coll_param->count * dtype_size * coll_param->comm->size(),
                                                                                      ccl_buffer_type::INDIRECT),
                                                                           ccl_buffer((void*)coll_param->send_buf,
-                                                                                     a2av_send_bytes),
+                                                                                     coll_param->count * dtype_size * coll_param->comm->size()),
                                                                           coll_param->count * comm->size(),
                                                                           dtype, coll_param->stream);
                 sched->sync_partial_scheds();
@@ -884,9 +884,9 @@ ccl_status_t ccl_parallelizer::process(ccl_master_sched* sched)
                 sched->sync_partial_scheds();
                 entry_factory::make_entry<sycl_copy_host_to_device_entry>(part_scheds[0].get(),
                                                                           ccl_buffer(coll_param->recv_buf,
-                                                                                     a2av_recv_bytes),
+                                                                                     coll_param->count * dtype_size * coll_param->comm->size()),
                                                                           ccl_buffer(&(coll_param->sycl_recv_buf),
-                                                                                     a2av_recv_bytes,
+                                                                                     coll_param->count * dtype_size * coll_param->comm->size(),
                                                                                      ccl_buffer_type::INDIRECT),
                                                                           coll_param->count * comm->size(),
                                                                           dtype, coll_param->stream);
