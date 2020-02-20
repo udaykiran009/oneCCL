@@ -847,8 +847,8 @@ run_swf_pre_drop()
         mkdir -p ${SWF_PRE_DROP_DIR}
         if [ "${ENABLE_NIGHTLY_DROP}" == "true" ]
         then
-            mkdir -p ${SWF_PRE_DROP_DIR}/nightly_`date +%Y-%m-%d`/SWF_Drops/
-            cp -R ${PRE_DROP_DIR}/* ${SWF_PRE_DROP_DIR}/nightly_`date +%Y-%m-%d`/SWF_Drops/
+            mkdir -p ${SWF_PRE_DROP_DIR}/0000_`date +%Y-%m-%d`/SWF_Drops/
+            cp -R ${PRE_DROP_DIR}/* ${SWF_PRE_DROP_DIR}/0000_`date +%Y-%m-%d`/SWF_Drops/
         else
             mkdir -p ${SWF_PRE_DROP_DIR}/`date +%Y-%m-%d`/SWF_Drops/
             cp -R ${PRE_DROP_DIR}/* ${SWF_PRE_DROP_DIR}/`date +%Y-%m-%d`/SWF_Drops/
