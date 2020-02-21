@@ -22,7 +22,8 @@ size_t ccl_sched_bin::erase(size_t idx, size_t& next_idx)
     size_t size = 0;
     {
         std::lock_guard<sched_queue_lock_t> lock(sched_list.elem_guard);
-        size_t size = sched_list.elems.size();
+        size = sched_list.elems.size();
+        CCL_THROW_IF_NOT(size > 0, "unexpected sched_list size ", size);
         CCL_ASSERT(idx < size);
         sched = sched_list.elems[idx];
         sched->set_in_bin_status(ccl_sched_in_bin_erased);

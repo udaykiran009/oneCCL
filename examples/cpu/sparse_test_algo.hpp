@@ -6,9 +6,9 @@
 #include "base.h"
 #include "ccl_type_traits.hpp"
 
-#define COUNT_I 10
-#define VDIM_SIZE 2
-#define RANGE 10
+#define COUNT_I 1024
+#define VDIM_SIZE 15
+#define RANGE 100
 
 #define RUN_COLLECTIVE(start_cmd, name, itype_name, vtype_name)            \
   do {                                                                     \
@@ -147,8 +147,8 @@ void sparse_test_run(const std::string& algo)
 
     std::random_device seed;
     std::default_random_engine gen(seed());
-    std::uniform_int_distribution<i_t> dist(0, RANGE - 1);
-    for (int i = 0; i < 10; i++)
+    std::uniform_int_distribution<> dist(RANGE - 1);
+    for (int i = 0; i < COUNT_I; i++)
     {
         send_ibuf[i] = dist(gen);
         for (unsigned int j = 0; j < VDIM_SIZE; j++)

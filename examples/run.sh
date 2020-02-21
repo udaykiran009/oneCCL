@@ -197,7 +197,7 @@ run()
                     then
                         # should be returned back
                         # for sparse_algo in "basic" "mask" "allgather" "size";
-                        for sparse_algo in "mask";
+                        for sparse_algo in "mask" "allgather";
                         do
                             ccl_extra_env="CCL_SPARSE_ALLREDUCE=$sparse_algo CCL_ATL_TRANSPORT=${transport}"
                             run_example "${ccl_extra_env}" ${dir_name} ${transport} ${example}

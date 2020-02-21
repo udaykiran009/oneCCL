@@ -1,18 +1,14 @@
 #pragma once
 
 #if defined(__INTEL_COMPILER) || defined(__ICC)
-#include <malloc.h>
-#else
-
-#include <mm_malloc.h>
-
+#include <immintrin.h>
 #endif
 
-#include <immintrin.h>
-#include <stdlib.h>
-#include <stddef.h>
 #include <algorithm>
 #include <chrono>
+#include <malloc.h>
+#include <stddef.h>
+#include <stdlib.h>
 #include <time.h>
 
 /* common */
@@ -39,22 +35,9 @@
 #define CCL_MEMCPY(dest, src, n)                                \
     std::copy((char*)(src), (char*)(src) + (n), (char*)(dest))
 
-/* Single-linked list */
-
-struct ccl_slist_entry_t
-{
-    ccl_slist_entry_t* next;
-};
-
-struct ccl_slist_t
-{
-    ccl_slist_entry_t* head;
-    ccl_slist_entry_t* tail;
-};
-
 /* malloc/realloc/free */
 
-#if defined(__INTEL_COMPILER) || defined(__ICC)
+#if 0 // defined(__INTEL_COMPILER) || defined(__ICC)
 #define CCL_MEMALIGN_IMPL(size, align) _mm_malloc(size, align)
 #define CCL_REALLOC_IMPL(old_ptr, old_size, new_size, align)            \
       ({                                                                \
@@ -92,22 +75,22 @@ struct ccl_slist_t
 
 #define CCL_MEMALIGN_WRAPPER(size, align, name)                 \
     ({                                                          \
-        void *ptr = CCL_MEMALIGN_IMPL(size, align);             \
-        CCL_THROW_IF_NOT(ptr, "CCL Out of memory, ", name);     \
+        void* ptr = CCL_MEMALIGN_IMPL(size, align);             \
+        CCL_THROW_IF_NOT(ptr, "CCL out of memory, ", name);     \
         ptr;                                                    \
     })
 
 #define CCL_REALLOC_WRAPPER(old_ptr, old_size, new_size, align, name)       \
     ({                                                                      \
-        void *ptr = CCL_REALLOC_IMPL(old_ptr, old_size, new_size, align);   \
-        CCL_THROW_IF_NOT(ptr, "CCL Out of memory, ", name);                 \
+        void* ptr = CCL_REALLOC_IMPL(old_ptr, old_size, new_size, align);   \
+        CCL_THROW_IF_NOT(ptr, "CCL out of memory, ", name);                 \
         ptr;                                                                \
     })
 
 #define CCL_CALLOC_WRAPPER(size, align, name)                   \
     ({                                                          \
-        void *ptr = CCL_CALLOC_IMPL(size, align);               \
-        CCL_THROW_IF_NOT(ptr, "CCL Out of memory, ", name);     \
+        void* ptr = CCL_CALLOC_IMPL(size, align);               \
+        CCL_THROW_IF_NOT(ptr, "CCL out of memory, ", name);     \
         ptr;                                                    \
     })
 

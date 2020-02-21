@@ -917,7 +917,7 @@ ccl_status_t sparse_reduce_gathered(const void* ctx)
 
     if (total > sa_handler->recv_buf_size)
     {
-        *sa_handler->recv_buf = CCL_REALLOC(*sa_handler->recv_buf, 0ul, total, CACHELINE_SIZE, "recv_buf");
+        *sa_handler->recv_buf = CCL_REALLOC(*sa_handler->recv_buf, sa_handler->recv_buf_size, total, CACHELINE_SIZE, "recv_buf");
     }
 
     *sa_handler->recv_vbuf = ((char*)(*sa_handler->recv_buf) + sa_handler->itype_size * (*sa_handler->recv_icount));
