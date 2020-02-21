@@ -193,7 +193,11 @@ run()
                         CheckTest ${test_log} ${example}
                     done
                 else
-                    if [[ "${example}" == *"sparse_allreduce"* ]]
+                    if [[ "${example}" == *"bfp16"* ]]
+                    then
+                        ccl_extra_env="CCL_ATL_TRANSPORT=ofi"
+                        run_example "${ccl_extra_env}" ${dir_name} ${transport} ${example}
+                    elif [[ "${example}" == *"sparse_allreduce"* ]]
                     then
                         # should be returned back
                         # for sparse_algo in "basic" "mask" "allgather" "size";

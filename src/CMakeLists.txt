@@ -27,6 +27,7 @@ set(CCL_SRC
     coll/selection/selector_reduce.cpp
     coll/selection/selector_reduce_scatter.cpp
     coll/selection/selector_sparse_allreduce.cpp
+    comp/bfloat16.cpp
     comp/comp.cpp
     sched/sched.cpp
     sched/master_sched.cpp

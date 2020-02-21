@@ -166,8 +166,8 @@ check_clang_path()
 {
     if [ -z "${SYCL_BUNDLE_ROOT}" ]
     then
-        echo "WARNING: SYCL_BUNDLE_ROOT is not defined, will be used default: /nfs/inn/proj/mpi/pdsd/opt/EM64T-LIN/compilers/clang/2021.1-beta04/linux"
         SYCL_BUNDLE_ROOT="/nfs/inn/proj/mpi/pdsd/opt/EM64T-LIN/compilers/clang/2021.1-beta04/linux"
+        echo "WARNING: SYCL_BUNDLE_ROOT is not defined, will be used default: $SYCL_BUNDLE_ROOT"
     fi
     source ${SYCL_BUNDLE_ROOT}/../env/vars.sh intel64
 }
@@ -175,16 +175,16 @@ check_gcc_path()
 {
     if [ -z "${GNU_BUNDLE_ROOT}" ]
     then
-        echo "WARNING: GNU_BUNDLE_ROOT is not defined, will be used default: /usr/bin/"
         GNU_BUNDLE_ROOT="/usr/bin/"
+        echo "WARNING: GNU_BUNDLE_ROOT is not defined, will be used default: $GNU_BUNDLE_ROOT"
     fi
 }
 check_icc_path()
 {
     if [ -z "${ICC_BUNDLE_ROOT}" ]
     then
-        echo "WARNING: ICC_BUNDLE_ROOT is not defined, will be used default: /nfs/inn/proj/mpi/pdsd/opt/EM64T-LIN/parallel_studio/parallel_studio_xe_2020.0.088/compilers_and_libraries_2020/linux/"
         ICC_BUNDLE_ROOT=/nfs/inn/proj/mpi/pdsd/opt/EM64T-LIN/parallel_studio/parallel_studio_xe_2020.0.088/compilers_and_libraries_2020/linux/
+        echo "WARNING: ICC_BUNDLE_ROOT is not defined, will be used default: $ICC_BUNDLE_ROOT"
     fi
     source ${ICC_BUNDLE_ROOT}/bin/compilervars.sh intel64
 }

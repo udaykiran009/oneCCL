@@ -1,5 +1,7 @@
+#include "comp/bfloat16.hpp"
 #include "comp/comp.hpp"
 #include "common/log/log.hpp"
+#include "common/env/env.hpp"
 #include "common/utils/utils.hpp"
 
 #define CCL_REDUCE(type)                                                \
@@ -63,7 +65,9 @@ ccl_status_t ccl_comp_reduce(const void* in_buf, size_t in_count, void* inout_bu
             CCL_REDUCE(int);
             break;
         case ccl_dtype_bfp16:
-            // TODO:
+            if (env_data.enable_avx512f == 0)
+                CCL_FATAL("oneCCL doesn't support reductions in bfloat16 on this CPU");
+            ccl_bf16_reduce(in_buf, in_count, inout_buf, out_count, reduction);
             break;
         case ccl_dtype_float:
             CCL_REDUCE(float);

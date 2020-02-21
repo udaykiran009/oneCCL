@@ -11,7 +11,7 @@ CXXFLAGS            = -D__STRICT_ANSI__
 ifeq ($(ENABLE_SYCL),1)
     CXX      = clang++
     INCLUDES += -I$(CCL_ROOT)/include/cpu_gpu_dpcpp
-    LDFLAGS  += -L$(CCL_ROOT)/lib/cpu_gpu_dpcpp -lOpenCL -lsycl
+    LDFLAGS  += -L$(CCL_ROOT)/lib/cpu_gpu_dpcpp -lsycl
     CXXFLAGS += -fsycl -Wno-pessimizing-move -Wno-dangling-field -Wno-return-type -Wno-defaulted-function-deleted -Wno-mismatched-tags -Wno-unused-private-field -Wno-unneeded-internal-declaration -Wno-delete-non-abstract-non-virtual-dtor -Wno-reorder
 else
     INCLUDES += -I$(CCL_ROOT)/include/cpu_icc
