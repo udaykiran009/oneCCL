@@ -93,6 +93,7 @@ run_benchmark()
     echo "================ENVIRONMENT=================="
     test_log="$SCRIPT_DIR/$dir_name/run_${transport}_${example}_${backend}_${loop}_output.log"
     eval `echo $ccl_extra_env mpiexec.hydra -genv $EXTRA_ENV -n 2 -ppn $ppn -l ./$example $backend $loop $coll` 2>&1 | tee ${test_log}
+
     CheckTest ${test_log} ${example}
 }
 run_example()
@@ -132,6 +133,7 @@ build()
 run()
 {
     ppn=1
+    n=2
     EXTRA_ENV="CCL_YIELD=sleep"
     if [[ $is_sycl ==  1 ]];
     then
@@ -197,6 +199,11 @@ run()
                     then
                         ccl_extra_env="CCL_ATL_TRANSPORT=ofi"
                         run_example "${ccl_extra_env}" ${dir_name} ${transport} ${example}
+                    elif [[ "${example}" == *"communicator"* ]]
+                    then
+                        n=8
+                        ccl_extra_env="CCL_ALLREDUCE=recursive_doubling CCL_ATL_TRANSPORT=${transport}"
+                        run_example "${ccl_extra_env}" ${dir_name} ${transport} ${example}                       
                     elif [[ "${example}" == *"sparse_allreduce"* ]]
                     then
                         for sparse_algo in "mask" "allgatherv";
