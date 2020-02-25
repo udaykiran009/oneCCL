@@ -193,10 +193,10 @@ Available algorithms for each collective operation (``<algo_name>``):
    :widths: 25 50
    :align: left
 
-   * - ``basic``
-     - Basic algorithm
    * - ``mask``
-     - Mask-based algorithm
+     - Mask matrix based algorithm
+   * - ``allgatherv``
+     - 3-allgatherv based algorithm
 
 
 CCL_RS_CHUNK_COUNT

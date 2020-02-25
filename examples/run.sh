@@ -199,9 +199,7 @@ run()
                         run_example "${ccl_extra_env}" ${dir_name} ${transport} ${example}
                     elif [[ "${example}" == *"sparse_allreduce"* ]]
                     then
-                        # should be returned back
-                        # for sparse_algo in "basic" "mask" "allgather" "size";
-                        for sparse_algo in "mask" "allgather";
+                        for sparse_algo in "mask" "allgatherv";
                         do
                             ccl_extra_env="CCL_SPARSE_ALLREDUCE=$sparse_algo CCL_ATL_TRANSPORT=${transport}"
                             run_example "${ccl_extra_env}" ${dir_name} ${transport} ${example}

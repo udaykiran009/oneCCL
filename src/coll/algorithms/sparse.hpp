@@ -82,7 +82,7 @@ ccl_status_t sparse_define_recv_size(const void* ctx)
 {
     /* if our neighbour sent us data more than we ever had before
     we have to alloc more memory for incoming msg*/
-    ccl_sparse_allreduce_handler *sa_handler = (ccl_sparse_allreduce_handler*)ctx;
+    ccl_sparse_allreduce_handler* sa_handler = (ccl_sparse_allreduce_handler*)ctx;
     if (*sa_handler->recv_icount > sa_handler->recv_buf_size)
     {
         *sa_handler->recv_buf = CCL_REALLOC(*sa_handler->recv_buf, sa_handler->recv_buf_size,
@@ -94,7 +94,7 @@ ccl_status_t sparse_define_recv_size(const void* ctx)
 
 ccl_status_t sparse_set_send_count(const void* ctx)
 {
-    ccl_sparse_allreduce_handler *sa_handler = (ccl_sparse_allreduce_handler*)ctx;
+    ccl_sparse_allreduce_handler* sa_handler = (ccl_sparse_allreduce_handler*)ctx;
 
     /* having received the msg we should prepare it for further send operation to the next neighbour */
     sa_handler->send_count[0] = *sa_handler->recv_icount / (sa_handler->itype_size + sa_handler->vtype_size * sa_handler->val_dim_cnt);
@@ -106,16 +106,16 @@ ccl_status_t sparse_set_send_count(const void* ctx)
 template<typename i_type, typename v_type>
 ccl_status_t sparse_reduce(const void* ctx)
 {
-    ccl_sparse_allreduce_handler *sa_handler = (ccl_sparse_allreduce_handler*)ctx;
+    ccl_sparse_allreduce_handler* sa_handler = (ccl_sparse_allreduce_handler*)ctx;
 
-    i_type *snd_i = (i_type*)(sa_handler->dst_buf);
-    v_type *snd_v = (v_type*)((char*)(sa_handler->dst_buf) + sa_handler->itype_size * sa_handler->dst_count[0]);
+    i_type* snd_i = (i_type*)(sa_handler->dst_buf);
+    v_type* snd_v = (v_type*)((char*)(sa_handler->dst_buf) + sa_handler->itype_size * sa_handler->dst_count[0]);
 
     /* copy data from recv_buf so that it would be easier to identify unique indices */
     size_t idx_size = sa_handler->itype_size * sa_handler->send_count[0];
     std::vector<i_type> rcv_i(sa_handler->send_count[0]);
     ccl_comp_copy((i_type*)(*sa_handler->recv_buf), rcv_i.data(), idx_size, ccl_dtype_internal_char);
-    v_type *rcv_v = (v_type*)((char*)(*sa_handler->recv_buf) + idx_size);
+    v_type* rcv_v = (v_type*)((char*)(*sa_handler->recv_buf) + idx_size);
 
     /* Look at received indices and the ones we already have. Check if there are equal
     ones, then the values could be reduced right away. The indices left will be copied
@@ -201,7 +201,7 @@ ccl_status_t sparse_reduce(const void* ctx)
 
 ccl_status_t sparse_prepare_result(const void* ctx)
 {
-    ccl_sparse_allreduce_handler *sa_handler = (ccl_sparse_allreduce_handler*)ctx;
+    ccl_sparse_allreduce_handler* sa_handler = (ccl_sparse_allreduce_handler*)ctx;
     *sa_handler->recv_icount = sa_handler->iv_map->size();
     *sa_handler->recv_vcount = *sa_handler->recv_icount * sa_handler->val_dim_cnt;
     size_t total_size = sa_handler->itype_size * (*sa_handler->recv_icount) + sa_handler->vtype_size * (*sa_handler->recv_vcount);
@@ -311,7 +311,7 @@ ccl_status_t ccl_coll_build_sparse_allreduce_basic(ccl_sched* sched,
     }
 
     /* fill in the <index:value_offset> map */
-    idx_offset_map *iv_map = new idx_offset_map();
+    idx_offset_map* iv_map = new idx_offset_map();
     for (size_t i = 0; i < send_ind_count; i++)
     {
         auto it = iv_map->find(src_i[i]);
@@ -714,7 +714,7 @@ ccl_status_t sparse_get_allreduce_bufcount(const void* ctx, void* field_ptr)
 }
 
 template<typename i_type, typename v_type>
-ccl_status_t ccl_coll_build_sparse_allreduce_mask(ccl_sched *sched,
+ccl_status_t ccl_coll_build_sparse_allreduce_mask(ccl_sched* sched,
                                                   ccl_buffer send_ind_buf, size_t send_ind_count,
                                                   ccl_buffer send_val_buf, size_t send_val_count,
                                                   ccl_buffer recv_ind_buf, size_t* recv_ind_count,
@@ -754,7 +754,7 @@ ccl_status_t ccl_coll_build_sparse_allreduce_mask(ccl_sched *sched,
     }
 
     /* fill in the <index:value_offset> map */
-    idx_offset_map *iv_map = new idx_offset_map();
+    idx_offset_map* iv_map = new idx_offset_map();
     for (size_t i = 0; i < send_ind_count; i++)
     {
         auto it = iv_map->find(src_i[i]);
@@ -766,11 +766,7 @@ ccl_status_t ccl_coll_build_sparse_allreduce_mask(ccl_sched *sched,
         else
         {
             /* reduce values locally from duplicate indices */
-            /* TODO: use operation instead of hard-coded sum */
-            for (size_t k = 0; k < val_dim_cnt; k++)
-            {
-                src_v[it->second + k] += src_v[i * val_dim_cnt + k];
-            }
+            ccl_comp_reduce((void*)(src_v + i * val_dim_cnt), val_dim_cnt, (void*)(src_v + it->second), nullptr, value_dtype, op, nullptr, nullptr);
         }
     }
 
@@ -793,10 +789,11 @@ ccl_status_t ccl_coll_build_sparse_allreduce_mask(ccl_sched *sched,
         CCL_MEMCPY(dst_v + val_offset, src_v + it.second, vtype_size * val_dim_cnt);
         it.second = val_offset;
         idx_offset++;
+        
     }
 
     /* create handler for sched function callbacks */
-    ccl_sparse_allreduce_handler *sa_handler =
+    ccl_sparse_allreduce_handler* sa_handler = 
         static_cast<ccl_sparse_allreduce_handler*>(sched->alloc_buffer(sizeof(ccl_sparse_allreduce_handler)).get_ptr());
     sa_handler->buf_size = send_ind_count * itype_size + send_val_count * vtype_size;
     sa_handler->recv_count = send_ind_count * comm_size;
@@ -903,10 +900,7 @@ ccl_status_t sparse_reduce_gathered(const void* ctx)
         }
         else
         {
-            for (size_t k = 0; k < sa_handler->val_dim_cnt; k++)
-            {
-                values[it->second + k] += values[i * sa_handler->val_dim_cnt + k];
-            }
+            ccl_comp_reduce((void*)(values + i * sa_handler->val_dim_cnt), sa_handler->val_dim_cnt, (void*)(values + it->second), nullptr, sa_handler->value_dtype, sa_handler->op, nullptr, nullptr);
         }
     }
 
@@ -1011,11 +1005,7 @@ ccl_status_t ccl_coll_build_sparse_allreduce_3_allgatherv(ccl_sched *sched,
         else
         {
             /* reduce values locally from duplicate indices */
-            /* TODO: use operation instead of hard-coded sum */
-            for (size_t k = 0; k < val_dim_cnt; k++)
-            {
-                src_v[it->second + k] += src_v[i * val_dim_cnt + k];
-            }
+            ccl_comp_reduce((void*)(src_v + i * val_dim_cnt), val_dim_cnt, (void*)(src_v + it->second), nullptr, value_dtype, op, nullptr, nullptr);
         }
     }
 
@@ -1051,6 +1041,8 @@ ccl_status_t ccl_coll_build_sparse_allreduce_3_allgatherv(ccl_sched *sched,
     sa_handler->send_count[0] = iv_map_cnt; /* index count */
     sa_handler->send_count[1] = iv_map_cnt * val_dim_cnt; /* value count */
     CCL_MEMCPY(&sa_handler->dst_count, &sa_handler->send_count, sizeof(size_t) * 2);
+    sa_handler->op = op;
+    sa_handler->value_dtype = value_dtype;
     sa_handler->val_dim_cnt = val_dim_cnt;
     sa_handler->itype_size = itype_size;
     sa_handler->vtype_size = vtype_size;

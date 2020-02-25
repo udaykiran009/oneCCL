@@ -146,8 +146,8 @@ void sparse_test_run(const std::string& algo)
     v_t* rcv_val = static_cast<v_t*>(recv_vbuf);
 
     std::random_device seed;
-    std::default_random_engine gen(seed());
-    std::uniform_int_distribution<> dist(RANGE - 1);
+    std::mt19937 gen(seed());
+    std::uniform_int_distribution<> dist(0, RANGE);
     for (int i = 0; i < COUNT_I; i++)
     {
         send_ibuf[i] = dist(gen);
