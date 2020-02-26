@@ -4,13 +4,18 @@ template<>
 std::map<ccl_coll_alltoallv_algo,
          std::string> ccl_algorithm_selector_helper<ccl_coll_alltoallv_algo>::algo_names =
   {
-    std::make_pair(ccl_coll_alltoallv_direct, "direct")
+    std::make_pair(ccl_coll_alltoallv_direct, "direct"),
+    std::make_pair(ccl_coll_alltoallv_naive, "naive")
   };
 
 ccl_algorithm_selector<ccl_coll_alltoallv>::ccl_algorithm_selector()
 {
-    insert(main_table, 0, CCL_SELECTION_MAX_COLL_SIZE, ccl_coll_alltoallv_direct);
-    insert(fallback_table, 0, CCL_SELECTION_MAX_COLL_SIZE, ccl_coll_alltoallv_direct);
+    if (env_data.atl_transport == ccl_atl_ofi)
+        insert(main_table, 0, CCL_SELECTION_MAX_COLL_SIZE, ccl_coll_alltoallv_naive);
+    else if (env_data.atl_transport == ccl_atl_mpi)
+        insert(main_table, 0, CCL_SELECTION_MAX_COLL_SIZE, ccl_coll_alltoallv_direct);
+
+    insert(fallback_table, 0, CCL_SELECTION_MAX_COLL_SIZE, ccl_coll_alltoallv_naive);
 }
 
 template<>

@@ -1,11 +1,15 @@
 #ifndef BASE_HPP
 #define BASE_HPP
 
+#include <chrono>
+#include <functional>
+#include <vector>
+
 #include "ccl.hpp"
 #include "ccl_test_conf.hpp"
 #include "utils.hpp"
 
-#define SEED_STEP            10
+#define SEED_STEP 10
 
 template <typename T>
 struct typed_test_param

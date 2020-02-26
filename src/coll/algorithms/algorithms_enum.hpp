@@ -35,8 +35,7 @@ enum ccl_coll_allreduce_algo
 enum ccl_coll_alltoall_algo
 {
     ccl_coll_alltoall_direct,
-    ccl_coll_alltoall_scatter,
-    ccl_coll_alltoall_scatter_message,
+    ccl_coll_alltoall_naive,
 
     ccl_coll_alltoall_last_value
 };
@@ -44,6 +43,7 @@ enum ccl_coll_alltoall_algo
 enum ccl_coll_alltoallv_algo
 {
     ccl_coll_alltoallv_direct,
+    ccl_coll_alltoallv_naive,
 
     ccl_coll_alltoallv_last_value
 };

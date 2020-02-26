@@ -1,13 +1,11 @@
 #define Collective_Name "CCL_ALLTOALL"
 
-#include <chrono>
-#include <functional>
-#include <vector>
-
 #include "base_impl.hpp"
 
-template <typename T> class alltoall_test : public base_test <T> {
+template <typename T> class alltoall_test : public base_test <T>
+{
 public:
+
      int check(typed_test_param<T>& param)
      {
         for (size_t buf_idx = 0; buf_idx < param.buffer_count; buf_idx++)
@@ -19,8 +17,11 @@ public:
                     T expected = static_cast<T>(proc_idx);
                     if (param.recv_buf[buf_idx][(param.elem_count * proc_idx) + elem_idx] != expected)
                     {
-                        sprintf(alltoall_test::get_err_message(), "[%zu] got recv_buf[%zu][%zu]  = %f, but expected = %f\n",
-                                param.process_idx, buf_idx, (param.elem_count * proc_idx) + elem_idx, (double) param.recv_buf[buf_idx][(param.elem_count * proc_idx) + elem_idx], (double) expected);
+                        sprintf(alltoall_test::get_err_message(),
+                                "[%zu] got recv_buf[%zu][%zu]  = %f, but expected = %f\n",
+                                param.process_idx, buf_idx, (param.elem_count * proc_idx) + elem_idx,
+                                (double)param.recv_buf[buf_idx][(param.elem_count * proc_idx) + elem_idx],
+                                (double)expected);
                         return TEST_FAILURE;
                     }
                 }
@@ -28,27 +29,31 @@ public:
         }
         return TEST_SUCCESS;
     }
+
     void fill_buffers(typed_test_param<T>& param)
     {
         for (size_t buf_idx = 0; buf_idx < param.buffer_count; buf_idx++)
         {
-            param.recv_buf[buf_idx].resize(param.elem_count * param.process_count * sizeof(T));
-            param.send_buf[buf_idx].resize(param.elem_count * param.process_count * sizeof(T));
+            param.recv_buf[buf_idx].resize(param.elem_count * param.process_count);
+            param.send_buf[buf_idx].resize(param.elem_count * param.process_count);
         }
+
         for (size_t buf_idx = 0; buf_idx < param.buffer_count; buf_idx++)
         {
-            for (size_t proc_idx = 0; proc_idx < param.process_count * param.elem_count; proc_idx++)
+            for (size_t elem_idx = 0; elem_idx < param.process_count * param.elem_count; elem_idx++)
             {
-                param.send_buf[buf_idx][proc_idx] = param.process_idx;
+                param.send_buf[buf_idx][elem_idx] = param.process_idx;
                 if (param.test_conf.place_type == PT_OOP)
                 {
-                    param.recv_buf[buf_idx][proc_idx] = static_cast<T>SOME_VALUE;
+                    param.recv_buf[buf_idx][elem_idx] = static_cast<T>SOME_VALUE;
                 }
             }
         }
-        if (param.test_conf.place_type != PT_OOP)
+
+        if (param.test_conf.place_type == PT_IN)
             param.recv_buf = param.send_buf;
     }
+
     void run_derived(typed_test_param<T>& param)
     {
         const ccl_test_conf& test_conf = param.get_conf();
@@ -62,7 +67,7 @@ public:
             T* recv_buf = param.recv_buf[param.buf_indexes[buf_idx]].data();
             param.reqs[buf_idx] =
                 param.global_comm->alltoall((test_conf.place_type == PT_IN) ? recv_buf : send_buf,
-                 recv_buf, count, attr, stream);
+                                            recv_buf, count, attr, stream);
         }
     }
 };

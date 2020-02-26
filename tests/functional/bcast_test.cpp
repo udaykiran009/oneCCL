@@ -1,9 +1,4 @@
-
 #define Collective_Name "CCL_BCAST"
-
-#include <chrono>
-#include <functional>
-#include <vector>
 
 #include "base_impl.hpp"
 

@@ -100,6 +100,8 @@ int main(int argc, char **argv)
 
     ccl_stream_free(stream);
 
+    free(recv_counts);
+
     ccl_finalize();
 
     return 0;

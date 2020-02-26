@@ -1,4 +1,4 @@
-#include "ccl.h"
+
 #include "sycl_base.hpp"
 
 int main(int argc, char **argv)
@@ -6,23 +6,31 @@ int main(int argc, char **argv)
     int i = 0;
     size_t size = 0;
     size_t rank = 0;
+    size_t* send_counts;
+    size_t* recv_counts;
 
-    ccl_init();
-    ccl_get_comm_rank(NULL, &rank);
-    ccl_get_comm_size(NULL, &size);
+    auto comm = ccl::environment::instance().create_communicator();
+
+    rank = comm->rank();
+    size = comm->size();
 
     cl::sycl::queue q;
     cl::sycl::buffer<int, 1> sendbuf(COUNT * size);
     cl::sycl::buffer<int, 1> recvbuf(COUNT * size);
 
-    ccl_request_t request;
-    ccl_stream_t stream;
-
     if (create_sycl_queue(argc, argv, q) != 0) {
         return -1;
     }
     /* create SYCL stream */
-    ccl_stream_create(ccl_stream_sycl, &q, &stream);
+    auto stream = ccl::environment::instance().create_stream(ccl::stream_type::sycl, &q);
+
+    send_counts = static_cast<size_t*>(malloc(size * sizeof(size_t)));
+    recv_counts = static_cast<size_t*>(malloc(size * sizeof(size_t)));
+
+    for (size_t idx = 0; idx < size; idx++) {
+        send_counts[idx] = COUNT;
+        recv_counts[idx] = COUNT;
+    }
 
     {
         /* open buffers and initialize them on the CPU side */
@@ -38,29 +46,25 @@ int main(int argc, char **argv)
     }
 
     /* open sendbuf and modify it on the target device side */
-    q.submit([&](cl::sycl::handler& cgh) {
+    q.submit([&](handler& cgh){
        auto dev_acc_sbuf = sendbuf.get_access<mode::write>(cgh);
-       cgh.parallel_for<class alltoall_test_sbuf_modify>(range<1>{COUNT * size}, [=](item<1> id) {
+       cgh.parallel_for<class alltoallv_test_sbuf_modify>(range<1>{COUNT * size}, [=](item<1> id) {
            dev_acc_sbuf[id] += 1;
        });
     });
 
     /* invoke ccl_alltoall on the CPU side */
-    ccl_alltoall(&sendbuf,
-                 &recvbuf,
-                 COUNT,
-                 ccl_dtype_int,
-                 NULL, /* attr */
-                 NULL, /* comm */
-                 stream,
-                 &request);
-
-    ccl_wait(request);
+    comm->alltoallv(sendbuf,
+                    send_counts,
+                    recvbuf,
+                    recv_counts,
+                    nullptr, /* attr */
+                    stream)->wait();
 
     /* open recvbuf and check its correctness on the target device side */
-    q.submit([&](handler& cgh) {
+    q.submit([&](handler& cgh){
        auto dev_acc_rbuf = recvbuf.get_access<mode::write>(cgh);
-       cgh.parallel_for<class alltoall_test_rbuf_check>(range<1>{COUNT * size}, [=](item<1> id) {
+       cgh.parallel_for<class alltoallv_test_rbuf_check>(range<1>{COUNT * size}, [=](item<1> id) {
            if (dev_acc_rbuf[id] != rank + 1) {
                dev_acc_rbuf[id] = -1;
            }
@@ -68,22 +72,21 @@ int main(int argc, char **argv)
     });
 
     /* print out the result of the test on the CPU side */
-    if (rank == COLL_ROOT) {
+    if (rank == COLL_ROOT){
         auto host_acc_rbuf_new = recvbuf.get_access<mode::read>();
         for (i = 0; i < COUNT * size; i++) {
             if (host_acc_rbuf_new[i] == -1) {
-                cout << "FAILED"<< std::endl;
+                cout<<"FAILED"<< std::endl;
                 break;
             }
         }
         if (i == COUNT * size) {
-            cout << "PASSED"<< std::endl;
+            cout<<"PASSED"<< std::endl;
         }
     }
 
-    ccl_stream_free(stream);
-
-    ccl_finalize();
+    free(send_counts);
+    free(recv_counts);
 
     return 0;
 }

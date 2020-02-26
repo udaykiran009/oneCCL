@@ -71,6 +71,7 @@ Available collective operations (``<coll_name>``):
 -   ``ALLGATHER``
 -   ``ALLREDUCE``
 -   ``ALLTOALL``
+-   ``ALLTOALLV``
 -   ``BARRIER``
 -   ``BCAST``
 -   ``REDUCE``
@@ -135,7 +136,20 @@ Available algorithms for each collective operation (``<algo_name>``):
 
    * - ``direct``
      - Based on ``MPI_Ialltoall``
-   * - ``scatter``
+   * - ``naive``
+     - Send to all, receive from all
+
+
+``ALLTOALLV`` algorithms
+++++++++++++++++++++++++
+
+.. list-table:: 
+   :widths: 25 50
+   :align: left
+
+   * - ``direct``
+     - Based on ``MPI_Ialltoallv``
+   * - ``naive``
      - Send to all, receive from all
 
 

@@ -1,10 +1,6 @@
 #define TEST_CCL_REDUCE
 #define Collective_Name "CCL_REDUCE"
 
-#include <chrono>
-#include <functional>
-#include <vector>
-
 #include "base_impl.hpp"
 
 template <typename T> class reduce_test : public base_test <T>

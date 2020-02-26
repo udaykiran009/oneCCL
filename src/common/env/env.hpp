@@ -25,6 +25,7 @@ constexpr const char* CCL_ATL_SHM = "CCL_ATL_SHM";
 constexpr const char* CCL_ALLGATHERV = "CCL_ALLGATHERV";
 constexpr const char* CCL_ALLREDUCE = "CCL_ALLREDUCE";
 constexpr const char* CCL_ALLTOALL = "CCL_ALLTOALL";
+constexpr const char* CCL_ALLTOALLV = "CCL_ALLTOALLV";
 constexpr const char* CCL_BARRIER = "CCL_BARRIER";
 constexpr const char* CCL_BCAST = "CCL_BCAST";
 constexpr const char* CCL_REDUCE = "CCL_REDUCE";

@@ -1,7 +1,6 @@
 #include <map>
 #include <vector>
 
-
 #define POST_AND_PRE_INCREMENTS(EnumName, LAST_ELEM)                                                                     \
     EnumName& operator++(EnumName& orig) { if (orig != LAST_ELEM) orig = static_cast<EnumName>(orig + 1); return orig; } \
     EnumName operator++(EnumName& orig, int) { EnumName rVal = orig; ++orig; return rVal; }

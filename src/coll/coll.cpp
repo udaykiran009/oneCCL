@@ -256,13 +256,9 @@ ccl_status_t ccl_coll_build_alltoall(
     switch (algo)
     {
         case ccl_coll_alltoall_direct:
-            CCL_CALL(ccl_coll_build_direct_alltoall(sched, send_buf, recv_buf, count, dtype, comm));
+            CCL_CALL(ccl_coll_build_direct_alltoall(sched, send_buf, recv_buf,
+                                                    count, dtype, comm));
             break;
-#if 0
-        case ccl_coll_alltoall_scatter:
-            CCL_CALL(ccl_coll_build_scatter_alltoall(sched, send_buf, recv_buf, count, dtype, comm));
-            break;
-#endif
         default:
             CCL_FATAL("unexpected alltoall_algo ", ccl_coll_algorithm_to_str(algo));
             return ccl_status_invalid_arguments;
@@ -292,7 +288,8 @@ ccl_status_t ccl_coll_build_alltoallv(
     switch (algo)
     {
         case ccl_coll_alltoallv_direct:
-            CCL_CALL(ccl_coll_build_direct_alltoallv(sched, send_buf, send_counts, recv_buf, recv_counts, dtype, comm));
+            CCL_CALL(ccl_coll_build_direct_alltoallv(sched, send_buf, send_counts,
+                                                     recv_buf, recv_counts, dtype, comm));
             break;
         default:
             CCL_FATAL("unexpected alltoallv_algo ", ccl_coll_algorithm_to_str(algo));

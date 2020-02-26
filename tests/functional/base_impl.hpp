@@ -18,6 +18,7 @@ void typed_test_param<T>::prepare_coll_attr(size_t idx)
     match_id = create_match_id(idx);
     coll_attr.match_id = match_id.c_str();
 }
+
 template <typename T>
 std::string typed_test_param<T>::create_match_id(size_t buf_idx)
 {
@@ -37,6 +38,7 @@ std::string typed_test_param<T>::create_match_id(size_t buf_idx)
             std::to_string(test_conf.prolog_type) +
             std::to_string(test_conf.epilog_type));
 }
+
 template <typename T>
 bool typed_test_param<T>::complete_request(std::shared_ptr < ccl::request > reqs)
 {
@@ -55,6 +57,7 @@ bool typed_test_param<T>::complete_request(std::shared_ptr < ccl::request > reqs
         return false;
     }
 }
+
 template <typename T>
 void typed_test_param<T>::define_start_order()
 {
@@ -96,6 +99,7 @@ void typed_test_param<T>::define_start_order()
         std::iota(buf_indexes.begin(), buf_indexes.end(), 0);
     }
 }
+
 template <typename T>
 bool typed_test_param<T>::complete()
 {
@@ -133,6 +137,7 @@ bool typed_test_param<T>::complete()
     }
     return TEST_SUCCESS;
 }
+
 template <typename T>
 void typed_test_param<T>::swap_buffers(size_t iter)
 {
@@ -148,11 +153,13 @@ void typed_test_param<T>::swap_buffers(size_t iter)
         }
     }
 }
+
 template <typename T>
 size_t typed_test_param<T>::generate_priority_value(size_t buf_idx)
 {
     return buf_idx++;
 }
+
 template <typename T>
 void typed_test_param<T>::print(std::ostream &output)
 {
@@ -165,6 +172,7 @@ void typed_test_param<T>::print(std::ostream &output)
             "\nmatch_id: " << match_id <<
             "\n-------------\n" << std::endl;
 }
+
 template <typename T>
 base_test<T>::base_test()
 {
@@ -173,17 +181,20 @@ base_test<T>::base_test()
     global_process_count = comm->size();
     memset(err_message, '\0', ERR_MESSAGE_MAX_LEN);
 }
+
 template <typename T>
 void base_test<T>::alloc_buffers(typed_test_param<T>& param)
 {
     param.send_buf.resize(param.buffer_count);
     param.recv_buf.resize(param.buffer_count);
     param.reqs.resize(param.buffer_count);
-    for (size_t elem_idx = 0; elem_idx < param.buffer_count; elem_idx++)
+
+    for (size_t buf_idx = 0; buf_idx < param.buffer_count; buf_idx++)
     {
-        param.send_buf[elem_idx].resize(param.elem_count * param.process_count);
+        param.send_buf[buf_idx].resize(param.elem_count * param.process_count);
     }
 }
+
 template <typename T>
 void base_test<T>::fill_buffers(typed_test_param<T>& param)
 {
@@ -191,19 +202,20 @@ void base_test<T>::fill_buffers(typed_test_param<T>& param)
     {
         std::iota(param.send_buf[buf_idx].begin(), param.send_buf[buf_idx].end(), param.process_idx + buf_idx);
     }
+
     if (param.test_conf.place_type == PT_OOP)
     {
-        for (size_t elem_idx = 0; elem_idx < param.buffer_count; elem_idx++)
+        for (size_t buf_idx = 0; buf_idx < param.buffer_count; buf_idx++)
         {
             // TODO: add parameter resize to SOME_VALUE
-            param.recv_buf[elem_idx].resize(param.elem_count * param.process_count);
+            param.recv_buf[buf_idx].resize(param.elem_count * param.process_count);
         }
     }
     else
     {
         for (size_t buf_idx = 0; buf_idx < param.buffer_count; buf_idx++)
         {
-                param.recv_buf[buf_idx] = param.send_buf[buf_idx];
+            param.recv_buf[buf_idx] = param.send_buf[buf_idx];
         }
     }
 }

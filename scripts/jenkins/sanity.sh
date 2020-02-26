@@ -22,7 +22,7 @@ HOSTNAME=`hostname -s`
 echo "SCRIPT_DIR = $SCRIPT_DIR"
 echo "CURRENT_WORK_DIR = $CURRENT_WORK_DIR"
 
-export ICCL_WORKER_AFFINITY=auto
+export CCL_WORKER_AFFINITY=auto
 
 #==============================================================================
 #                                Defaults
@@ -309,6 +309,14 @@ run_tests()
                         fi
                         CCL_ALLREDUCE=$allreduce ctest -VV -C mpi_allreduce_$allreduce
                     done
+                for alltoall in "direct" "naive"
+                    do
+                        CCL_ALLTOALL=$alltoall ctest -VV -C mpi_alltoall_$alltoall
+                    done
+                for alltoallv in "direct" "naive"
+                    do
+                        CCL_ALLTOALLV=$alltoallv ctest -VV -C mpi_alltoallv_$alltoallv
+                    done
                 for bcast in "direct" "ring" "double_tree" "naive"
                     do
                         CCL_BCAST=$bcast ctest -VV -C mpi_bcast_$bcast
@@ -316,10 +324,6 @@ run_tests()
                 for reduce in "direct" "rabenseifner" "tree"
                     do
                         CCL_REDUCE=$reduce ctest -VV -C mpi_reduce_$reduce
-                    done
-                for alltoall in "direct" "scatter" "scatter_message"
-                    do
-                        CCL_ALLTOALL=$alltoall ctest -VV -C mpi_alltoall_$alltoall
                     done
                ;;
            ofi_adjust )
@@ -347,6 +351,14 @@ run_tests()
                             CCL_ALLREDUCE=$allreduce ctest -VV -C mpi_allreduce_$allreduce
                         fi
                 done
+                for alltoall in "naive"
+                    do
+                        CCL_ALLTOALL=$alltoall ctest -VV -C mpi_alltoall_$alltoall
+                    done
+                for alltoallv in "naive"
+                    do
+                        CCL_ALLTOALLV=$alltoallv ctest -VV -C mpi_alltoallv_$alltoallv
+                    done
                 for bcast in "ring" "double_tree" "naive"
                     do
                         CCL_BCAST=$bcast ctest -VV -C mpi_bcast_$bcast
@@ -354,10 +366,6 @@ run_tests()
                 for reduce in "rabenseifner" "tree" "double_tree"
                     do
                         CCL_REDUCE=$reduce ctest -VV -C mpi_reduce_$reduce
-                    done
-                for alltoall in "scatter" "scatter_message"
-                    do
-                        CCL_ALLTOALL=$alltoall ctest -VV -C mpi_alltoall_$alltoall
                     done
                ;;
             priority_mode )

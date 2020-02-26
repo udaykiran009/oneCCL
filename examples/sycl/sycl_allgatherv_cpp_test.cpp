@@ -91,5 +91,7 @@ int main(int argc, char **argv)
         }
     }
 
+    free(recv_counts);
+
     return 0;
 }

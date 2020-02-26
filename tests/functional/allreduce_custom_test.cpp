@@ -4,11 +4,8 @@
 #define TEST_CCL_CUSTOM_REDUCE
 #define Collective_Name "CCL_ALLREDUCE"
 
-#include <chrono>
 #include <cmath>
-#include <functional>
 #include <mutex>
-#include <vector>
 
 #include "base_impl.hpp"
 

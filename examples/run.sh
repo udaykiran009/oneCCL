@@ -154,8 +154,7 @@ run()
             then
                 examples_to_run=`ls . | grep '.out' | grep -v '.log' | grep -v 'unordered_allreduce' | grep -v 'custom_allreduce'`
             else
-                examples_to_run=`ls . | grep '.out' | grep -v '.log' | grep -v 'alltoallv'`
-                # | grep -v 'allgatherv_iov' | grep -v 'allgatherv'`
+                examples_to_run=`ls . | grep '.out' | grep -v '.log'`
             fi
             for example in $examples_to_run
             do
@@ -165,7 +164,7 @@ run()
                     do
                         ccl_extra_env="CCL_ATL_TRANSPORT=${transport}"
                         run_benchmark "${ccl_extra_env}" ${dir_name} ${transport} ${example} ${backend} 
-                        #run extended version of benchmark
+                        # run extended version of benchmark
                         if [[ "${example}" == *"benchmark"* ]]
                         then
                             for loop in "regular" "unordered"

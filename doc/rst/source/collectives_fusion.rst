@@ -13,4 +13,4 @@ oneCCL provides several knobs to enable and control such optimization:
   * :ref:`CCL_FUSION_COUNT_THRESHOLD`
   * :ref:`CCL_FUSION_CYCLE_MS`
 
-For now this functionality is supported for :ref:`allreaduce <allreduce>` operations only.
+For now this functionality is supported for :ref:`allreduce <allreduce>` operations only.
