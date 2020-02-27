@@ -145,6 +145,9 @@ ccl_master_sched::ccl_master_sched_ptr ccl_master_sched::create(const ccl_coll_p
     CCL_THROW_IF_NOT(param.ctype == ccl_coll_allgatherv || !(attr.vector_buf),
                      "vector buffer is supported for allgatherv only");
 
+    CCL_THROW_IF_NOT(param.ctype != ccl_coll_sparse_allreduce || env_data.sparse_allreduce_algo_raw != "mask" || !(attr.reduction_fn), 
+                     "mask algorithm for sparse_allreduce does not support custom reduction");
+
     ccl_sched_key key;
     ccl_master_sched_ptr sched = nullptr;
 

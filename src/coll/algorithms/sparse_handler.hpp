@@ -35,7 +35,7 @@ struct ccl_sparse_allreduce_handler
    ccl_datatype_internal_t value_dtype;
    ccl_reduction_t op;
 
-   idx_offset_map *iv_map;
+   std::unique_ptr<idx_offset_map> iv_map;
    ccl_sched* sched;
    ccl_comm* comm;
 };

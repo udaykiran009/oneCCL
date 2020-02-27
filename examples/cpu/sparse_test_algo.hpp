@@ -137,10 +137,10 @@ void sparse_test_run(const std::string& algo)
     using v_t = typename ccl::type_info<v_type>::native_type;
     i_t* send_ibuf = (i_t*)malloc(sizeof(i_t) * COUNT_I);
     v_t* send_vbuf = (v_t*)malloc(sizeof(v_t) * COUNT_I * VDIM_SIZE);
-    void* recv_ibuf = malloc(COUNT_I * sizeof(i_t) + COUNT_I * VDIM_SIZE * sizeof(v_t));
-    void* recv_vbuf = (char*)recv_ibuf + COUNT_I * sizeof(i_t);
-    size_t recv_icount = 0;
-    size_t recv_vcount = 0;
+    void* recv_ibuf = malloc(COUNT_I * sizeof(i_t));
+    void* recv_vbuf = malloc(COUNT_I * VDIM_SIZE * sizeof(v_t));
+    size_t recv_icount = COUNT_I;
+    size_t recv_vcount = COUNT_I * VDIM_SIZE;
 
     /*generate pseudo-random indices and calculate values*/
     v_t* rcv_val = static_cast<v_t*>(recv_vbuf);
@@ -171,6 +171,7 @@ void sparse_test_run(const std::string& algo)
     free(send_ibuf);
     free(send_vbuf);
     free(recv_ibuf);
+    free(recv_vbuf);
 }
 
 template<typename TupleType, typename FunctionType>
