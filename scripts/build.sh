@@ -573,6 +573,7 @@ make_package()
 
         cd ${TMP_DIR}/${CCL_PACKAGE_NAME}/package && tar czf ${TMP_DIR}/${CCL_PACKAGE_NAME}/files.tar.gz * --owner=root --group=root
         rm -rf ${TMP_DIR}/${CCL_PACKAGE_NAME}/package
+        sed -i -e "s|CCL_SUBSTITUTE_OFFICIAL_VERSION|${CCL_VERSION_FORMAT}|g" ${WORKSPACE}/scripts/install.sh
         cp ${WORKSPACE}/scripts/install.sh ${TMP_DIR}/${CCL_PACKAGE_NAME}
         cd ${TMP_DIR}/${CCL_PACKAGE_NAME} && zip -0 -r -m -P accept ${TMP_DIR}/${CCL_PACKAGE_NAME}/package.zip *
         cp ${WORKSPACE}/doc/cclEULA.txt ${TMP_DIR}/${CCL_PACKAGE_NAME}

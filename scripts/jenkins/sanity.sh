@@ -225,6 +225,7 @@ set_environment()
     elif [ $node_label == "mlsl2_test_gpu" ]
     then
         source ${CCL_INSTALL_DIR}/l_ccl_$build_type*/env/vars.sh --ccl-configuration=cpu_gpu_dpcpp
+        export DASHBOARD_GPU_DEVICE_PRESENT="yes"
     else
         source ${CCL_INSTALL_DIR}/l_ccl_$build_type*/env/vars.sh --ccl-configuration=cpu_icc
     fi
@@ -257,10 +258,6 @@ run_compatibitily_tests()
 {
     set_external_env
     cd ${CURRENT_WORK_DIR}/examples
-    if [ -z  "${node_label}" ]
-    then
-        node_label="mlsl2_test_gpu"
-    fi
     if [ $node_label == "mlsl2_test_gpu" ]
     then
         ./run.sh gpu

@@ -143,7 +143,14 @@ run()
         dir_list="cpu common"
         backend_list="cpu"
     fi
-    echo "is_sycl =" $is_sycl "dir_list =" $dir_list
+    if ! [[ -n "${DASHBOARD_GPU_DEVICE_PRESENT}" ]]
+    then
+        echo "WARNING: DASHBOARD_GPU_DEVICE_PRESENT was not set"
+        selectors_list="cpu host default"
+    else
+        selectors_list="cpu gpu host default"
+    fi
+    echo "is_sycl =" $is_sycl "; dir_list =" $dir_list "; selectors_list =" $selectors_list
     for dir_name in $dir_list
     do
         cd $dir_name
@@ -186,7 +193,7 @@ run()
                     done
                 elif [ "$dir_name" == "sycl" ];
                 then
-                    for selector in "cpu" "gpu" "host" "default"
+                    for selector in $selectors_list
                     do
                         test_log="$SCRIPT_DIR/$dir_name/run_${dir_name}_${transport}_${selector}_${example}_output.log"
                         echo "run sycl examples with $transport transport and selector $selector (${example})" 2>&1 | tee ${test_log}
@@ -218,13 +225,16 @@ run()
     if [ ${total_fails} != 0 ]
     then
         echo "There are ${total_fails} failed tests"
+        sleep 20
         exit 1
     elif [ ${total_skipped} != 0 ]
     then
         echo "Tests passed, except ${total_skipped} skipped tests"
+        sleep 20
         exit 0
     else
         echo "All tests passed!"
+        sleep 20
         exit 0
     fi
 }
