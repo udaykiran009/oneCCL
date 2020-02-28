@@ -257,7 +257,7 @@ ccl_reduction_t get_ccl_lib_reduction_type(const ccl_test_conf &test_conf)
 }
 size_t calculate_test_count ()
 {
-    size_t test_count = ORDER_LAST * ORDER_LAST * CMPT_LAST * SNCT_LAST * (DT_LAST-1) * ST_LAST *  RT_LAST * BC_LAST * CT_LAST * PT_LAST * PTYPE_LAST * ETYPE_LAST;
+    size_t test_count = ORDER_LAST * ORDER_LAST * CMPT_LAST * SNCT_LAST * DT_LAST * ST_LAST *  RT_LAST * BC_LAST * CT_LAST * PT_LAST * PTYPE_LAST * ETYPE_LAST;
 // CCL_TEST_EPILOG_TYPE=0 CCL_TEST_PROLOG_TYPE=0 CCL_TEST_PLACE_TYPE=0 CCL_TEST_CACHE_TYPE=0 CCL_TEST_BUFFER_COUNT=0 CCL_TEST_SIZE_TYPE=0 CCL_TEST_PRIORITY_TYPE=1 CCL_TEST_COMPLETION_TYPE=0 CCL_TEST_SYNC_TYPE=0 CCL_TEST_REDUCTION_TYPE=0 CCL_TEST_DATA_TYPE=0
     char* test_data_type_enabled = getenv("CCL_TEST_DATA_TYPE");
     char* test_reduction_enabled = getenv("CCL_TEST_REDUCTION_TYPE");
@@ -272,7 +272,7 @@ size_t calculate_test_count ()
     char* test_epilog_enabled = getenv("CCL_TEST_EPILOG_TYPE");
     if (test_data_type_enabled && atoi(test_data_type_enabled) == 0)
     {
-        test_count /= (last_ccl_data_type - 1);
+        test_count /= last_ccl_data_type;
         first_ccl_data_type = static_cast<ccl_data_type>(DT_FLOAT);
         last_ccl_data_type = static_cast<ccl_data_type>(first_ccl_data_type + 1);
     }
@@ -361,9 +361,6 @@ void init_test_params()
                         {
                             for (ccl_data_type data_type = first_ccl_data_type; data_type < last_ccl_data_type; data_type++)
                             {
-                                if (data_type == DT_BFP16)
-                                    // TODO: remove skipped data type
-                                    continue;
                                 for (ccl_completion_type completion_type = first_ccl_completion_type; completion_type < last_ccl_completion_type; completion_type++)
                                 {
                                     for (ccl_place_type place_type = first_ccl_place_type; place_type < last_ccl_place_type; place_type++)

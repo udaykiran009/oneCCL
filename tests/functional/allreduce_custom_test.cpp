@@ -474,6 +474,11 @@ public:
         SHOW_ALGO(Collective_Name);
         const ccl_test_conf& test_conf = param.get_conf();
         glob_match_id.resize(param.buffer_count);
+        if (test_conf.data_type == DT_BFP16)
+        {
+            printf("WARNING! BFP16 is not supported for custom reduction, test skipped");
+            return result;
+        }
         for (size_t iter = 0; iter < ITER_COUNT; iter++)
         {
             try

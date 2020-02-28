@@ -1,4 +1,7 @@
+#include <math.h>
 #include "base.hpp"
+
+#define bfp16_precision 0.0390625 // 2^-8
 
 template <typename T>
 void typed_test_param<T>::prepare_coll_attr(size_t idx)
@@ -183,15 +186,43 @@ base_test<T>::base_test()
 }
 
 template <typename T>
+int base_test<T>::check_error(typed_test_param<T>& param, T& expected, size_t& buf_idx, size_t& elem_idx)
+{
+    // sources https://www.mcs.anl.gov/papers/P4093-0713_1.pdf
+
+    double log_base2 = log(param.process_count)/log(2);
+    double precision = 0;
+    precision = bfp16_precision;
+    double g = (log_base2 * precision)/(1 - (log_base2 * precision));
+    double max_error = g * expected;
+    if (fabs(max_error) < fabs((double)expected - (double)param.recv_buf[buf_idx][elem_idx]))
+    {
+        printf("[%zu] got param.recvBuf[%zu][%zu] = %0.7f, but expected = %0.7f, max_error = %0.16f\n",
+            param.process_idx, buf_idx, elem_idx, (double)param.recv_buf[buf_idx][elem_idx], (double)expected, (double) max_error);
+        return TEST_FAILURE;
+    }
+    return TEST_SUCCESS;
+}
+template <typename T>
 void base_test<T>::alloc_buffers(typed_test_param<T>& param)
 {
     param.send_buf.resize(param.buffer_count);
     param.recv_buf.resize(param.buffer_count);
     param.reqs.resize(param.buffer_count);
-
     for (size_t buf_idx = 0; buf_idx < param.buffer_count; buf_idx++)
     {
         param.send_buf[buf_idx].resize(param.elem_count * param.process_count);
+        param.recv_buf[buf_idx].resize(param.elem_count * param.process_count);
+    }
+    if (param.test_conf.data_type == DT_BFP16)
+    {
+        param.send_buf_bfp16.resize(param.buffer_count);
+        param.recv_buf_bfp16.resize(param.buffer_count);
+        for (size_t buf_idx = 0; buf_idx < param.buffer_count; buf_idx++)
+        {
+            param.send_buf_bfp16[buf_idx].resize(param.elem_count * param.process_count);
+            param.recv_buf_bfp16[buf_idx].resize(param.elem_count * param.process_count);
+        }
     }
 }
 
@@ -202,16 +233,7 @@ void base_test<T>::fill_buffers(typed_test_param<T>& param)
     {
         std::iota(param.send_buf[buf_idx].begin(), param.send_buf[buf_idx].end(), param.process_idx + buf_idx);
     }
-
-    if (param.test_conf.place_type == PT_OOP)
-    {
-        for (size_t buf_idx = 0; buf_idx < param.buffer_count; buf_idx++)
-        {
-            // TODO: add parameter resize to SOME_VALUE
-            param.recv_buf[buf_idx].resize(param.elem_count * param.process_count);
-        }
-    }
-    else
+    if (param.test_conf.place_type != PT_OOP)
     {
         for (size_t buf_idx = 0; buf_idx < param.buffer_count; buf_idx++)
         {
@@ -234,7 +256,7 @@ int base_test<T>::run(typed_test_param<T>& param)
             param.swap_buffers(iter);
             param.define_start_order();
             this->run_derived(param);
-            param.complete();
+            // param.complete();
             result += check(param);
         }
         catch (const std::exception& ex)

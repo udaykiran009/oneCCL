@@ -1,5 +1,6 @@
 #define Collective_Name "CCL_ALLTOALLV"
 
+#include "base_bfp16.hpp"
 #include "base_impl.hpp"
 
 template <typename T> class alltoallv_test : public base_test <T>
@@ -107,19 +108,50 @@ public:
 
     void run_derived(typed_test_param<T>& param)
     {
+        void* send_buf;
+        void* recv_buf;
+        size_t size =  param.elem_count * param.process_count;
         const ccl_test_conf& test_conf = param.get_conf();
         ccl::coll_attr* attr = &param.coll_attr;
         ccl::stream_t& stream = param.get_stream();
+        ccl::data_type data_type = static_cast<ccl::data_type>(test_conf.data_type);
         for (size_t buf_idx = 0; buf_idx < param.buffer_count; buf_idx++)
         {
+            size_t new_idx = param.buf_indexes[buf_idx];
             param.prepare_coll_attr(param.buf_indexes[buf_idx]);
-            T* send_buf = param.send_buf[param.buf_indexes[buf_idx]].data();
-            T* recv_buf = param.recv_buf[param.buf_indexes[buf_idx]].data();
+            if (test_conf.data_type == DT_BFP16)
+            {
+                send_buf = static_cast<void*>(param.send_buf_bfp16[new_idx].data());
+                recv_buf = static_cast<void*>(param.recv_buf_bfp16[new_idx].data());
+                prepare_bfp16_buffers(param, send_buf, recv_buf, new_idx, size);
+            }
+            else
+            {
+                send_buf = static_cast<void*>(param.send_buf[new_idx].data());
+                recv_buf = static_cast<void*>(param.recv_buf[new_idx].data());
+            }
             param.reqs[buf_idx] =
-                param.global_comm->alltoallv((test_conf.place_type == PT_IN) ? recv_buf : send_buf, send_counts.data(),
-                                             recv_buf, recv_counts.data(),
-                                             attr, stream);
+                param.global_comm->alltoallv((test_conf.place_type == PT_IN) ? recv_buf : send_buf, 
+                                              send_counts.data(), recv_buf, recv_counts.data(), data_type, attr, stream);    
         }
+        param.complete();
+        if (test_conf.data_type == DT_BFP16)
+        {
+            copy_to_recv_buf(param, size);
+        }
+        // const ccl_test_conf& test_conf = param.get_conf();
+        // ccl::coll_attr* attr = &param.coll_attr;
+        // ccl::stream_t& stream = param.get_stream();
+        // for (size_t buf_idx = 0; buf_idx < param.buffer_count; buf_idx++)
+        // {
+        //     param.prepare_coll_attr(param.buf_indexes[buf_idx]);
+        //     T* send_buf = param.send_buf[param.buf_indexes[buf_idx]].data();
+        //     T* recv_buf = param.recv_buf[param.buf_indexes[buf_idx]].data();
+        //     param.reqs[buf_idx] =
+        //         param.global_comm->alltoallv((test_conf.place_type == PT_IN) ? recv_buf : send_buf, send_counts.data(),
+        //                                      recv_buf, recv_counts.data(),
+        //                                      attr, stream);
+        // }
     }
 };
 

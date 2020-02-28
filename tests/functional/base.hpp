@@ -20,10 +20,12 @@ struct typed_test_param
     size_t process_count;
     size_t process_idx;
     static size_t priority;
-    // rename to vector
     std::vector<size_t> buf_indexes;
     std::vector<std::vector<T>> send_buf;
     std::vector<std::vector<T>> recv_buf;
+    // buffers for bfp16
+    std::vector<std::vector<short>> send_buf_bfp16;
+    std::vector<std::vector<short>> recv_buf_bfp16;
     std::vector<std::shared_ptr<ccl::request>> reqs;
     std::string match_id;
     ccl::communicator_t comm;
@@ -77,6 +79,7 @@ public:
     }
 
     base_test();
+    virtual int check_error(typed_test_param<T>& param, T& expected, size_t& buf_idx, size_t& elem_idx);
     virtual void alloc_buffers(typed_test_param<T>& param);
     virtual void fill_buffers(typed_test_param<T>& param);
     virtual void run_derived(typed_test_param<T>& param) = 0;
@@ -99,8 +102,8 @@ public:
             case DT_INT:
                 return run <int>(param);
             //TODO: add additional type to testing
-            // case DT_BFP16:
-            // return run <>(param);
+            case DT_BFP16:
+                return run <float>(param);
             case DT_FLOAT:
                 return run <float>(param);
             case DT_DOUBLE:

@@ -166,13 +166,10 @@ do                                                         \
         ccl::environment::instance();                                               \
         PATCH_OUTPUT_NAME_ARG(argc, argv);                                          \
         testing::InitGoogleTest(&argc, argv);                                       \
-        ::testing::TestEventListeners& listeners =                                  \
-        ::testing::UnitTest::GetInstance()->listeners();                            \
-        delete listeners.Release(listeners.default_result_printer());               \
-        listeners.Append(new CustomPrinter);                                        \
         int res = RUN_ALL_TESTS();                                                  \
         return res;                                                                 \
     }
+
 
 #define TEST_CASES_DEFINITION(FuncName)                               \
     TEST_P(MainTest, FuncName) {                                      \
@@ -244,6 +241,7 @@ std::ostream& operator<<(std::ostream& stream, ccl_test_conf const& test_conf)
                     "\n" << ccl_cache_type_str[test_conf.cache_type] <<
                     "\n" << ccl_size_type_str[test_conf.size_type] <<
                     "\n" << ccl_completion_type_str[test_conf.completion_type] <<
+                    "\n" << ccl_sync_type_str[test_conf.sync_type] <<
                     "\n" << ccl_reduction_type_str[test_conf.reduction_type] <<
                     "\n" << ccl_order_type_str[test_conf.complete_order_type] <<
                     "\n" << ccl_order_type_str[test_conf.start_order_type] <<
