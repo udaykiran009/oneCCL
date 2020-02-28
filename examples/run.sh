@@ -194,11 +194,7 @@ run()
                         CheckTest ${test_log} ${example}
                     done
                 else
-                    if [[ "${example}" == *"bfp16"* ]]
-                    then
-                        ccl_extra_env="CCL_ATL_TRANSPORT=ofi"
-                        run_example "${ccl_extra_env}" ${dir_name} ${transport} ${example}
-                    elif [[ "${example}" == *"communicator"* ]]
+                    if [[ "${example}" == *"communicator"* ]]
                     then
                         n=8
                         ccl_extra_env="CCL_ALLREDUCE=recursive_doubling CCL_ATL_TRANSPORT=${transport}"

@@ -1,4 +1,4 @@
-#include "comp/bfloat16.hpp"
+#include "comp/bfp16/bfp16.hpp"
 #include "comp/comp.hpp"
 #include "common/log/log.hpp"
 #include "common/env/env.hpp"

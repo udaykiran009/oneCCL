@@ -4,7 +4,8 @@ set(MPI_SRC
 
 set(COMMON_MPI_INC_DIRS
     ${CMAKE_CURRENT_SOURCE_DIR}/../
-    ${PROJECT_SOURCE_DIR}/mpi/include/)
+    ${PROJECT_SOURCE_DIR}/mpi/include/
+    ${PROJECT_SOURCE_DIR}/src/)
 
 # special library that holds objects only
 add_library(ccl_atl_mpi-objects OBJECT ${MPI_SRC})
