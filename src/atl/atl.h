@@ -121,7 +121,8 @@ typedef struct
 typedef struct
 {
     const char* name;
-    atl_status_t (*init)(int* argc, char*** argv, atl_attr_t* attr, atl_ctx_t** ctx);
+    atl_status_t (*init)(int* argc, char*** argv, atl_attr_t* attr, atl_ctx_t** ctx, const char * main_addr);
+    atl_status_t (*main_addr_reserv)(char * main_addr);
 } atl_transport_t;
 
 typedef struct
@@ -215,7 +216,10 @@ atl_status_t
 atl_init(const char* transport_name,
          int* argc, char*** argv,
          atl_attr_t* att,
-         atl_ctx_t** ctx);
+         atl_ctx_t** ctx,
+         const char* main_addr);
+
+void atl_main_addr_reserv(char* main_addr);
 
 static inline atl_status_t
 atl_finalize(atl_ctx_t* ctx)

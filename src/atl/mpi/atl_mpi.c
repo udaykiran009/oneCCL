@@ -845,7 +845,8 @@ err_ep_dup:
 static atl_status_t
 atl_mpi_init(int* argc, char*** argv,
              atl_attr_t* attr,
-             atl_ctx_t** out_ctx)
+             atl_ctx_t** out_ctx,
+             const char* main_addr)
 {
     ATL_MPI_ASSERT((sizeof(atl_mpi_req_t) <= sizeof(atl_req_t) - offsetof(atl_req_t, internal)),
                    "unexpected offset: atl_mpi_request size %zu, atl_request size %zu, expected offset %zu",
@@ -961,9 +962,15 @@ err_init:
     return ATL_STATUS_FAILURE;
 }
 
+atl_status_t atl_mpi_main_addr_reserv(char* main_addr)
+{
+    return ATL_STATUS_UNSUPPORTED;
+}
+
 ATL_MPI_INI
 {
     atl_transport->name = "mpi";
     atl_transport->init = atl_mpi_init;
+    atl_transport->main_addr_reserv = atl_mpi_main_addr_reserv;
     return ATL_STATUS_SUCCESS;
 }

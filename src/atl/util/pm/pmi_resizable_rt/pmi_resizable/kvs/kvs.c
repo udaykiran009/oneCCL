@@ -23,7 +23,7 @@
 static pthread_t thread = 0;
 static char main_host_ip[CCL_IP_LEN];
 char local_host_ip[CCL_IP_LEN];
-static int sock_listener;
+static int sock_listener = 0;
 static size_t main_port;
 static size_t local_port;
 static size_t is_master = 0;
@@ -57,11 +57,12 @@ typedef struct kvs_request {
 
 static struct sockaddr_in main_server_address;
 static struct sockaddr_in local_server_address;
-static int sock_sender, local_sock_sender, local_sock_sender_;
+static int sock_sender, local_sock, accepted_local_sock;
 
 size_t kvs_set_value(const char* kvs_name, const char* kvs_key, const char* kvs_val)
 {
     kvs_request_t request;
+    memset(&request, 0, sizeof(kvs_request_t));
     request.mode = AM_PUT;
     STR_COPY(request.name, kvs_name, MAX_KVS_NAME_LENGTH);
     STR_COPY(request.key, kvs_key, MAX_KVS_KEY_LENGTH);
@@ -75,6 +76,7 @@ size_t kvs_set_value(const char* kvs_name, const char* kvs_key, const char* kvs_
 size_t kvs_remove_name_key(const char* kvs_name, const char* kvs_key)
 {
     kvs_request_t request;
+    memset(&request, 0, sizeof(kvs_request_t));
     request.mode = AM_REMOVE;
     STR_COPY(request.name, kvs_name, MAX_KVS_NAME_LENGTH);
     STR_COPY(request.key, kvs_key, MAX_KVS_KEY_LENGTH);
@@ -87,6 +89,7 @@ size_t kvs_remove_name_key(const char* kvs_name, const char* kvs_key)
 size_t kvs_get_value_by_name_key(const char* kvs_name, const char* kvs_key, char* kvs_val)
 {
     kvs_request_t request;
+    memset(&request, 0, sizeof(kvs_request_t));
     request.mode = AM_GET_VAL;
     size_t is_exist = 0;
     STR_COPY(request.name, kvs_name, MAX_KVS_NAME_LENGTH);
@@ -109,6 +112,7 @@ size_t kvs_get_count_names(const char* kvs_name)
 {
     size_t count_names = 0;
     kvs_request_t request;
+    memset(&request, 0, sizeof(kvs_request_t));
     request.mode = AM_GET_COUNT;
     STR_COPY(request.name, kvs_name, MAX_KVS_NAME_LENGTH);
 
@@ -125,6 +129,7 @@ size_t kvs_get_keys_values_by_name(const char* kvs_name, char*** kvs_keys, char*
     size_t i;
     kvs_request_t request;
     kvs_request_t* answers;
+    memset(&request, 0, sizeof(kvs_request_t));
     request.mode = AM_GET_KEYS_VALUES;
     STR_COPY(request.name, kvs_name, MAX_KVS_NAME_LENGTH);
 
@@ -178,6 +183,7 @@ size_t kvs_get_replica_size(void)
     else
     {
         kvs_request_t request;
+        memset(&request, 0, sizeof(kvs_request_t));
         request.mode = AM_GET_REPLICA;
 
         CHECK_RW_OP(write(sock_sender, &request, sizeof(kvs_request_t)), sizeof(kvs_request_t));
@@ -364,7 +370,7 @@ void* kvs_server_init(void* args)
                 if (count == 0)
                     break;
 
-                answers = (kvs_request_t*) malloc(sizeof(kvs_request_t) * count);
+                answers = (kvs_request_t*)calloc(count, sizeof(kvs_request_t));
                 for (j = 0; j < count; j++)
                 {
                     STR_COPY(answers[j].name, request.name, MAX_KVS_NAME_LENGTH);
@@ -460,7 +466,87 @@ size_t init_main_server_by_env(void)
     return 0;
 }
 
-size_t init_main_server_address(void)
+size_t init_main_server_by_string(const char* main_addr)
+{
+    char* port = NULL;
+    local_server_address.sin_family = AF_INET;
+    local_server_address.sin_addr.s_addr = inet_addr(local_host_ip);
+    local_server_address.sin_port = 1;
+
+    main_server_address.sin_family = AF_INET;
+
+    if ((sock_listener = socket(AF_INET, SOCK_STREAM, 0)) < 0)
+    {
+        printf("Server: socket init failed - %s\n", strerror(errno));
+        exit(1);
+    }
+
+    while (bind(sock_listener, (const struct sockaddr*) &local_server_address, sizeof(local_server_address)) < 0)
+    {
+        local_server_address.sin_port++;
+    }
+
+    memset(main_host_ip, 0, CCL_IP_LEN);
+    STR_COPY(main_host_ip, main_addr, CCL_IP_LEN);
+
+    if ((port = strstr(main_host_ip, "_")) == NULL)
+    {
+        printf("You must set %s like IP_PORT\n", CCL_KVS_IP_PORT_ENV);
+        return 1;
+    }
+    port[0] = '\0';
+    port++;
+
+    main_port = strtol(port, NULL, 10);
+    main_server_address.sin_port = main_port;
+
+    if (inet_pton(AF_INET, main_host_ip, &(main_server_address.sin_addr)) <= 0)
+    {
+        printf("\nInvalid address/ Address not supported: %s(%s)\n", main_host_ip, strerror(errno));
+        return 1;
+    }
+    return 0;
+}
+
+size_t main_server_address_reserve(char* main_address)
+{
+    FILE* fp;
+    if ((fp = popen(CHECKER_IP, READ_ONLY)) == NULL)
+    {
+        printf("Can't get host IP - %s\n", strerror(errno));
+        exit(1);
+    }
+    CHECK_FGETS(fgets(local_host_ip, CCL_IP_LEN, fp), local_host_ip);
+    pclose(fp);
+    while (local_host_ip[strlen(local_host_ip) - 1] == '\n' ||
+        local_host_ip[strlen(local_host_ip) - 1] == ' ')
+        local_host_ip[strlen(local_host_ip) - 1] = '\0';
+
+    if ((sock_listener = socket(AF_INET, SOCK_STREAM, 0)) < 0)
+    {
+        printf("Server: socket init failed - %s\n", strerror(errno));
+        exit(1);
+    }
+    main_server_address.sin_family = AF_INET;
+    main_server_address.sin_addr.s_addr = inet_addr(local_host_ip);
+    main_server_address.sin_port = 1;
+    local_server_address.sin_family = AF_INET;
+    local_server_address.sin_addr.s_addr = inet_addr(local_host_ip);
+
+    while (bind(sock_listener, (const struct sockaddr*) &main_server_address,
+                sizeof(main_server_address)) < 0)
+    {
+        main_server_address.sin_port++;
+    }
+    local_server_address.sin_port = main_server_address.sin_port;
+
+    memset(main_address, '\0', CCL_IP_LEN);
+    snprintf(main_address, CCL_IP_LEN, "%s_%d", local_host_ip, main_server_address.sin_port);
+
+    return 0;
+}
+
+size_t init_main_server_address(const char* main_addr)
 {
     char* ip_getting_type = getenv(CCL_KVS_IP_EXCHANGE_ENV);
     FILE* fp;
@@ -480,12 +566,6 @@ size_t init_main_server_address(void)
     if ((point_to_space = strstr(local_host_ip, " ")) != NULL)
         point_to_space[0] = NULL_CHAR;
 
-    local_server_address.sin_family = AF_INET;
-    local_server_address.sin_addr.s_addr = inet_addr(local_host_ip);
-    local_server_address.sin_port = 1;
-
-    main_server_address.sin_family = AF_INET;
-
     if (ip_getting_type)
     {
         if (strstr(ip_getting_type, CCL_KVS_IP_EXCHANGE_VAL_ENV))
@@ -502,6 +582,20 @@ size_t init_main_server_address(void)
             return 1;
         }
     }
+
+    if (main_addr != NULL)
+    {
+        ip_getting_mode = IGT_ENV;
+        if (sock_listener == 0)
+            init_main_server_by_string(main_addr);
+        return 0;
+    }
+
+    local_server_address.sin_family = AF_INET;
+    local_server_address.sin_addr.s_addr = inet_addr(local_host_ip);
+    local_server_address.sin_port = 1;
+
+    main_server_address.sin_family = AF_INET;
 
     if ((sock_listener = socket(AF_INET, SOCK_STREAM, 0)) < 0)
     {
@@ -566,12 +660,14 @@ size_t init_main_server_address(void)
     }
 }
 
-size_t kvs_init(void)
+size_t kvs_init(const char* main_addr)
 {
     int err;
-    socklen_t len;
+    socklen_t len = 0;
     struct sockaddr_in addr;
     kvs_request_t request;
+    memset(&request, 0, sizeof(kvs_request_t));
+    memset(&addr, 0, sizeof(struct sockaddr_in));
 
     addr.sin_family = AF_INET;
     addr.sin_addr.s_addr = inet_addr("127.0.0.1");
@@ -582,27 +678,29 @@ size_t kvs_init(void)
         printf("\n Socket creation error \n");
         return 1;
     }
-    if ((local_sock_sender = socket(AF_INET, SOCK_STREAM, 0)) < 0)
+    if ((local_sock = socket(AF_INET, SOCK_STREAM, 0)) < 0)
     {
-        printf("\n Socket creation error \n");
+        printf("\n Socket creation error: %s\n", strerror(errno));
         return 1;
     }
-    if (init_main_server_address())
+    if (init_main_server_address(main_addr))
     {
         printf("Init main server address error\n");
+        close(sock_sender);
+        close(local_sock);
         return 1;
     }
-    while (bind(local_sock_sender, (const struct sockaddr*) &addr, sizeof(addr)) < 0)
+    while (bind(local_sock, (const struct sockaddr*) &addr, sizeof(addr)) < 0)
     {
         addr.sin_port++;
     }
 
-    if (listen(local_sock_sender, 1) < 0)
+    if (listen(local_sock, 1) < 0)
     {
-        perror("listen");
+        printf("listener error: %s\n", strerror(errno));
         exit(EXIT_FAILURE);
     }
-    getsockname(local_sock_sender, (struct sockaddr*) &addr, &len);
+    getsockname(local_sock, (struct sockaddr*) &addr, &len);
     err = pthread_create(&thread, NULL, kvs_server_init, &addr);
     if (err)
     {
@@ -610,9 +708,9 @@ size_t kvs_init(void)
         return 1;
     }
 
-    if ((local_sock_sender_ = accept(local_sock_sender, NULL, NULL)) < 0)
+    if ((accepted_local_sock  = accept(local_sock, NULL, NULL)) < 0)
     {
-        perror("Client: accept");
+        printf("Client: accept error: %s\n", strerror(errno));
         exit(EXIT_FAILURE);
     }
 
@@ -635,6 +733,7 @@ size_t kvs_init(void)
 size_t kvs_finalize(void)
 {
     kvs_request_t request;
+    memset(&request, 0, sizeof(kvs_request_t));
     request.mode = AM_DISCONNECT;
 
     CHECK_RW_OP(write(sock_sender, &request, sizeof(kvs_request_t)), sizeof(kvs_request_t));
@@ -644,9 +743,9 @@ size_t kvs_finalize(void)
         int err;
         request.mode = AM_FINALIZE;
 
-        CHECK_RW_OP(write(local_sock_sender_, &request, sizeof(kvs_request_t)), sizeof(kvs_request_t));
+        CHECK_RW_OP(write(accepted_local_sock, &request, sizeof(kvs_request_t)), sizeof(kvs_request_t));
 
-        CHECK_RW_OP(read(local_sock_sender, &err, sizeof(int)), sizeof(int));
+        CHECK_RW_OP(read(accepted_local_sock, &err, sizeof(int)), sizeof(int));
 
         err = pthread_cancel(thread);
 
@@ -660,8 +759,8 @@ size_t kvs_finalize(void)
         {
             printf("error while joining progress listener, pthread_join returns %d\n", err);
         }
-        close(local_sock_sender_);
-        close(local_sock_sender);
+        close(accepted_local_sock);
+        close(local_sock);
     }
     close(sock_sender);
 

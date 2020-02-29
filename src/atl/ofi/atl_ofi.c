@@ -21,7 +21,7 @@
 #define ATL_OFI_TIMEOUT_SEC_ENV     "ATL_OFI_TIMEOUT_SEC"
 #define ATL_OFI_DEFAULT_TIMEOUT_SEC 60
 #define ATL_OFI_MAX_RETRY_COUNT     10000
-#define ATL_OFI_MAX_HOSTNAME_LEN    30
+#define ATL_OFI_MAX_HOSTNAME_LEN    64
 #define ATL_OFI_WAIT_SEC            10
 #define ATL_OFI_CQ_READ_ITERS       10000
 #define ATL_OFI_CQ_BUNCH_SIZE       8
@@ -312,7 +312,7 @@ atl_ofi_get_local_proc_coord(atl_ofi_ctx_t* ofi_ctx)
                            ATL_OFI_MAX_HOSTNAME_LEN);
         if (ret)
         {
-            ATL_OFI_PRINT("pmrt_kvs_put: ret: %d", ret);
+            ATL_OFI_PRINT("pmrt_kvs_get: ret: %d", ret);
             goto fn_err;
         }
     }
@@ -1437,7 +1437,8 @@ static atl_comp_ops_t atl_ofi_ep_comp_ops =
 static atl_status_t
 atl_ofi_init(int* argc, char*** argv,
              atl_attr_t* attr,
-             atl_ctx_t** out_ctx)
+             atl_ctx_t** out_ctx,
+             const char* main_addr)
 {
     struct fi_info* providers = NULL, *base_hints = NULL, *prov_hints = NULL;
     struct fi_av_attr av_attr = { (enum fi_av_type)0 };
@@ -1466,7 +1467,8 @@ atl_ofi_init(int* argc, char*** argv,
 
     ret = pmrt_init(&ctx->coord.global_idx,
                     &ctx->coord.global_count,
-                    &ofi_ctx->pm_rt);
+                    &ofi_ctx->pm_rt,
+                    main_addr);
     if (ret)
     {
         ATL_OFI_PRINT("pmrt_init error");
@@ -1835,9 +1837,15 @@ err:
     return RET2ATL(ret);
 }
 
+atl_status_t atl_ofi_main_addr_reserv(char* main_addr)
+{
+    return pmrt_main_addr_reserv(main_addr);
+}
+
 ATL_OFI_INI
 {
     atl_transport->name = "ofi";
     atl_transport->init = atl_ofi_init;
+    atl_transport->main_addr_reserv = atl_ofi_main_addr_reserv;
     return ATL_STATUS_SUCCESS;
 }

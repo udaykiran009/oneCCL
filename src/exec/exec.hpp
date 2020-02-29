@@ -25,7 +25,7 @@ public:
     ccl_executor(ccl_executor&& other) = delete;
     ccl_executor& operator=(ccl_executor&& other) = delete;
 
-    ccl_executor();
+    ccl_executor(const char* main_addr = NULL);
     ~ccl_executor();
 
     struct worker_guard

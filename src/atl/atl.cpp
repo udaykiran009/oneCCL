@@ -11,6 +11,7 @@
 #define ATL_LIB_PREFIX "libccl_atl_"
 
 static int initialized = 0;
+static int is_main_addr_reserv = 0;
 
 static int
 atl_lib_filter(const struct dirent* entry)
@@ -38,7 +39,8 @@ atl_ini_dir(const char* transport_name,
             int* argc, char*** argv,
             atl_attr_t* attr,
             atl_ctx_t** ctx,
-            const char* dir)
+            const char* dir,
+            const char* main_addr)
 {
     int n = 0;
     char* lib;
@@ -93,8 +95,14 @@ atl_ini_dir(const char* transport_name,
             if (strncmp(transport.name, transport_name,
                         std::min(transport_name_len, strlen(transport.name))))
                 continue;
-
-            ret = transport.init(argc, argv, attr, ctx);
+            if (is_main_addr_reserv)
+            {
+                ret = transport.main_addr_reserv(const_cast<char*>(main_addr));
+            }
+            else
+            {
+                ret = transport.init(argc, argv, attr, ctx, main_addr);
+            }
             if (ret != ATL_STATUS_SUCCESS)
                 continue;
 
@@ -181,7 +189,8 @@ atl_free_string_array(char** s)
 atl_status_t atl_init(const char* transport_name,
                       int* argc, char*** argv,
                       atl_attr_t* attr,
-                      atl_ctx_t** ctx)
+                      atl_ctx_t** ctx,
+                      const char* main_addr)
 {
     const char* transport_dl_dir = NULL;
     int n = 0;
@@ -209,7 +218,8 @@ atl_status_t atl_init(const char* transport_name,
             atl_ini_dir(transport_name,
                         argc, argv,
                         attr, ctx,
-                        dirs[n]);
+                        dirs[n],
+                        main_addr);
         }
         atl_free_string_array(dirs);
     }
@@ -218,4 +228,11 @@ atl_status_t atl_init(const char* transport_name,
 
 err_dlopen:
     return ATL_STATUS_FAILURE;
+}
+
+void atl_main_addr_reserv(char* main_addr)
+{
+    is_main_addr_reserv = 1;
+    atl_init("ofi", NULL, NULL, NULL, NULL, main_addr);
+    is_main_addr_reserv = 0;
 }

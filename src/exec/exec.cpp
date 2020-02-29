@@ -24,7 +24,7 @@ std::unique_ptr<ccl_sched_queue> ccl_executor::create_sched_queue(size_t idx, si
     return sched_queue;
 }
 
-ccl_executor::ccl_executor()
+ccl_executor::ccl_executor(const char* main_addr)
 {
     auto worker_count = env_data.worker_count;
     workers.reserve(worker_count);
@@ -38,7 +38,7 @@ ccl_executor::ccl_executor()
 
     atl_status_t atl_status = atl_init(ccl_atl_transport_to_str(env_data.atl_transport),
                                        nullptr, nullptr,
-                                       &atl_attr, &atl_ctx);
+                                       &atl_attr, &atl_ctx, main_addr);
 
     CCL_THROW_IF_NOT(atl_status == ATL_STATUS_SUCCESS && atl_ctx,
                      "ATL init failed, res ", atl_status, ", ctx ", atl_ctx);

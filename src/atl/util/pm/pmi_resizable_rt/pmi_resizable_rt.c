@@ -169,7 +169,7 @@ pm_rt_kvs_ops_t resizable_kvs_ops = {
     .get = resizable_pmirt_kvs_get,
 };
 
-atl_status_t resizable_pmirt_init(size_t *proc_idx, size_t *proc_count, pm_rt_desc_t **pmrt_desc)
+atl_status_t resizable_pmirt_init(size_t *proc_idx, size_t *proc_count, pm_rt_desc_t **pmrt_desc, const char* main_addr)
 {
     int ret;
     size_t max_kvsnamelen;
@@ -182,7 +182,7 @@ atl_status_t resizable_pmirt_init(size_t *proc_idx, size_t *proc_count, pm_rt_de
         return ATL_STATUS_SUCCESS;
     }
 
-    ret = PMIR_Init();
+    ret = PMIR_Init(main_addr);
     if (ret != PMIR_SUCCESS)
         return ATL_STATUS_FAILURE;
 
@@ -242,6 +242,16 @@ err_alloc_key:
 err_resizable:
     PMIR_Finalize();
     return ATL_STATUS_FAILURE;
+}
+
+atl_status_t resizable_pmirt_main_addr_reserv(char* main_addr)
+{
+    int ret = PMIR_Main_Addr_Reserv(main_addr);
+
+    if (ret)
+        return ATL_STATUS_FAILURE;
+
+    return ATL_STATUS_SUCCESS;
 }
 
 atl_status_t resizable_pmirt_set_resize_function(atl_resize_fn_t resize_fn)

@@ -300,13 +300,15 @@ size_t get_barrier_idx(void)
     if (count_kvs_values == 0)
         return 0;
 
-    min_barrier_num = strtol(kvs_values[i], NULL, 10);
+    min_barrier_num = strtol(kvs_values[0], NULL, 10);
     for (i = 1; i < count_kvs_values; i++)
     {
         tmp_barrier_num = strtol(kvs_values[i], NULL, 10);
         if (min_barrier_num > tmp_barrier_num)
             min_barrier_num = tmp_barrier_num;
-
+    }
+    for (i = 0; i < count_kvs_values; i++)
+    {
         free(kvs_values[i]);
     }
     free(kvs_values);
