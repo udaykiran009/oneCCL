@@ -1,18 +1,16 @@
-#define Collective_Name "CCL_ALLGATHERV"
 #define TEST_CCL_ALLGATHERV
 
-#include <chrono>
-#include <functional>
-#include <vector>
+#define COLL_NAME "CCL_ALLGATHERV"
 
 #include "base_impl.hpp"
-#include "base_bfp16.hpp"
 
 template <typename T> class allgatherv_test : public base_test <T>
 {
 public:
+
     std::vector<size_t> recv_counts;
     std::vector<size_t> offsets;
+
     int check(typed_test_param<T>& param)
     {
         for (size_t buf_idx = 0; buf_idx < param.buffer_count; buf_idx++)
@@ -23,7 +21,7 @@ public:
                 {
                     size_t idx = offsets[elem_idx] + recv_count_idx;
                     T expected = static_cast<T>(elem_idx + recv_count_idx);
-                    if (this->check_error(param, expected, buf_idx, idx))
+                    if (base_test<T>::check_error(param, expected, buf_idx, idx))
                     {
                         return TEST_FAILURE;
                     }
@@ -40,6 +38,7 @@ public:
         offsets.resize(param.process_count);
         offsets[0] = 0;
         recv_counts[0] = param.elem_count;
+
         if (param.test_conf.place_type == PT_OOP)
         {
             for (size_t elem_idx = 0; elem_idx < param.buffer_count; elem_idx++)
@@ -61,6 +60,7 @@ public:
             recv_counts[proc_idx] = (param.elem_count > proc_idx) ? param.elem_count - proc_idx : param.elem_count;
             offsets[proc_idx] = recv_counts[proc_idx - 1] + offsets[proc_idx - 1];
         }
+
         for (size_t buf_idx = 0; buf_idx < param.buffer_count; buf_idx++)
         {
             for (size_t elem_idx = 0; elem_idx < param.process_count; elem_idx++)
@@ -78,6 +78,7 @@ public:
                     }
                 }
             }
+
             /* in case of in-place i-th process already has result in i-th block of send buffer */
             if (param.test_conf.place_type != PT_OOP)
             {
@@ -88,10 +89,16 @@ public:
                 }
             }
         }
+
         if (param.test_conf.place_type != PT_OOP)
         {
             param.recv_buf = param.send_buf;
         }
+    }
+
+    size_t get_recv_buf_size(typed_test_param<T>& param)
+    {
+        return param.elem_count * param.process_count;
     }
 
     void run_derived(typed_test_param<T>& param)
@@ -100,34 +107,22 @@ public:
         void* recv_buf;
         size_t count = recv_counts[param.process_idx];
         size_t* recv_count = recv_counts.data();
-        size_t size = param.elem_count * param.process_count;
         const ccl_test_conf& test_conf = param.get_conf();
         ccl::coll_attr* attr = &param.coll_attr;
         ccl::stream_t& stream = param.get_stream();
         ccl::data_type data_type = static_cast<ccl::data_type>(test_conf.data_type);
+
         for (size_t buf_idx = 0; buf_idx < param.buffer_count; buf_idx++)
         {
             size_t new_idx = param.buf_indexes[buf_idx];
             param.prepare_coll_attr(param.buf_indexes[buf_idx]);
-            if (test_conf.data_type == DT_BFP16)
-            {
-                send_buf = static_cast<void*>(param.send_buf_bfp16[new_idx].data());
-                recv_buf = static_cast<void*>(param.recv_buf_bfp16[new_idx].data());
-                prepare_bfp16_buffers(param, send_buf, recv_buf, new_idx, size);
-            }
-            else
-            {
-                send_buf = static_cast<void*>(param.send_buf[new_idx].data());
-                recv_buf = static_cast<void*>(param.recv_buf[new_idx].data());
-            }
+
+            send_buf = param.get_send_buf(new_idx);
+            recv_buf = param.get_recv_buf(new_idx);
+
             param.reqs[buf_idx] =
                 param.global_comm->allgatherv((test_conf.place_type == PT_IN) ? recv_buf : send_buf, 
-                                               count, recv_buf, recv_count, data_type, attr, stream);
-        }
-        param.complete();
-        if (test_conf.data_type == DT_BFP16)
-        {
-            copy_to_recv_buf(param, size);
+                                              count, recv_buf, recv_count, data_type, attr, stream);
         }
     }
 };

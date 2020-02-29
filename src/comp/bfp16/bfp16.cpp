@@ -1,19 +1,21 @@
+#include "common/log/log.hpp"
 #include "comp/bfp16/bfp16.hpp"
 #include "comp/bfp16/bfp16_intrisics.h"
-#include "common/log/log.hpp"
 
-void ccl_bf16_reduce(const void* in_buf, size_t in_cnt,
-                     void* inout_buf, size_t* out_cnt,
-                     ccl_reduction_t reduction_op)
+#ifdef CCL_BFP16_COMPILER
+
+void ccl_bfp16_reduce(const void* in_buf, size_t in_cnt,
+                      void* inout_buf, size_t* out_cnt,
+                      ccl_reduction_t reduction_op)
 {
-    LOG_DEBUG("bf16 reduction for %zu elements\n", in_cnt);
+    LOG_DEBUG("BFP16 reduction for %zu elements\n", in_cnt);
 
     if (out_cnt != nullptr)
     {
         *out_cnt = in_cnt;
     }
 
-    bf16_reduction_func_ptr reduction_op_func = nullptr;
+    bfp16_reduction_func_ptr reduction_op_func = nullptr;
     switch (reduction_op)
     {
         case ccl_reduction_sum:
@@ -33,9 +35,20 @@ void ccl_bf16_reduce(const void* in_buf, size_t in_cnt,
     }
     
     int i = 0;
-    for (i = 0; i <= (int) in_cnt - 16; i+=16)
+    for (i = 0; i <= (int)in_cnt - 16; i += 16)
     {
-        ccl_bf16_reduce_256((uint16_t*)in_buf + i, (uint16_t*)inout_buf + i, reduction_op_func);
+        ccl_bfp16_reduce_256((uint16_t*)in_buf + i, (uint16_t*)inout_buf + i, reduction_op_func);
     }
-    ccl_bf16_reduce_masked((uint16_t*)in_buf + i, (uint16_t*)inout_buf + i, (uint8_t)(in_cnt - i), reduction_op_func);
+    ccl_bfp16_reduce_masked((uint16_t*)in_buf + i, (uint16_t*)inout_buf + i, (uint8_t)(in_cnt - i), reduction_op_func);
 }
+
+#else /* CCL_BFP16_COMPILER */
+
+void ccl_bfp16_reduce(const void* in_buf, size_t in_cnt,
+                      void* inout_buf, size_t* out_cnt,
+                      ccl_reduction_t reduction_op)
+{
+    CCL_FATAL("BFP16 reduction is requested but CCL was compiled w/o BFP16 support");
+}
+
+#endif /* CCL_BFP16_COMPILER */

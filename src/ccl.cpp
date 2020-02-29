@@ -1,5 +1,6 @@
 #include "coll/algorithms/allreduce/allreduce_2d.hpp"
 #include "coll/selection/selection.hpp"
+#include "comp/bfp16/bfp16_utils.h"
 #include "common/comm/atl_tag.hpp"
 #include "common/global/global.hpp"
 #include "common/stream/stream.hpp"
@@ -70,6 +71,21 @@ ccl_status_t ccl_init()
         global_data.allreduce_2d_builder =
             std::unique_ptr<ccl_allreduce_2d_builder>(new ccl_allreduce_2d_builder());
 
+        global_data.is_bfp16_enabled = ccl_bfp16_is_enabled();
+
+        if (global_data.is_bfp16_enabled)
+        {
+            LOG_INFO("BFP16 is enabled");
+        }
+        else
+        {
+#ifdef CCL_BFP16_COMPILER
+            LOG_INFO("BFP16 is disabled on HW level");
+#else
+            LOG_INFO("BFP16 is disabled on compiler level");
+#endif
+        }
+
         return ccl_status_success;
     }
     COMMON_CATCH_BLOCK();
@@ -81,12 +97,14 @@ ccl_status_t CCL_API ccl_get_version(ccl_version_t* version)
     {
         return ccl_status_invalid_arguments;
     }
+
     version->major = CCL_MAJOR_VERSION;
     version->minor = CCL_MINOR_VERSION;
     version->update = CCL_UPDATE_VERSION;
     version->product_status = CCL_PRODUCT_STATUS;
     version->build_date = CCL_PRODUCT_BUILD_DATE;
     version->full = CCL_PRODUCT_FULL;
+
     return ccl_status_success;
 }
 

@@ -115,8 +115,6 @@ struct alignas(CACHELINE_SIZE) ccl_env_data
     size_t rs_min_chunk_size;
     size_t ar2d_chunk_count;
     size_t ar2d_min_chunk_size;
-    int enable_avx512bf;
-    int enable_avx512f;
 };
 
 extern ccl_env_data env_data;

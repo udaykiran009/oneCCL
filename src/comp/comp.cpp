@@ -65,9 +65,9 @@ ccl_status_t ccl_comp_reduce(const void* in_buf, size_t in_count, void* inout_bu
             CCL_REDUCE(int);
             break;
         case ccl_dtype_bfp16:
-            if (env_data.enable_avx512f == 0)
-                CCL_FATAL("oneCCL doesn't support reductions in bfloat16 on this CPU");
-            ccl_bf16_reduce(in_buf, in_count, inout_buf, out_count, reduction);
+            if (global_data.is_bfp16_enabled == 0)
+                CCL_FATAL("CCL doesn't support reductions in BFP16 on this CPU");
+            ccl_bfp16_reduce(in_buf, in_count, inout_buf, out_count, reduction);
             break;
         case ccl_dtype_float:
             CCL_REDUCE(float);

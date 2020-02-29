@@ -127,6 +127,26 @@ if(WITH_ASAN AND ${CMAKE_BUILD_TYPE} STREQUAL "Debug")
     set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -lasan")
 endif()
 
+set(GCC_BFP16_MIN_SUPPORTED "4.9.0")
+
+if (${CMAKE_C_COMPILER_ID} STREQUAL "Intel" OR ${CMAKE_C_COMPILER_ID} STREQUAL "Clang" OR (${CMAKE_C_COMPILER_ID} STREQUAL "GNU" AND NOT ${CMAKE_C_COMPILER_VERSION} VERSION_LESS ${GCC_BFP16_MIN_SUPPORTED}))
+    add_definitions(-DCCL_BFP16_COMPILER)
+    set(CCL_BFP16_COMPILER ON)
+    message(STATUS "BFP16 compiler: yes")
+else()
+    set(CCL_BFP16_COMPILER OFF)
+    message(STATUS "BFP16 compiler: no")
+endif()
+
+if (CCL_BFP16_COMPILER)
+    if ((${CMAKE_C_COMPILER_ID} STREQUAL "Clang" OR ${CMAKE_C_COMPILER_ID} STREQUAL "GNU"))
+        add_definitions(-DCCL_BFP16_TARGET_ATTRIBUTES)
+        message(STATUS "BFP16 target attributes: yes")
+    else()
+        message(STATUS "BFP16 target attributes: no")
+    endif()
+endif()
+
 set(CCL_BUILD_DIR ${CMAKE_CURRENT_BINARY_DIR}/src)
 
 enable_testing()

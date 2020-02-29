@@ -44,9 +44,7 @@ ccl_env_data env_data =
     .rs_chunk_count = 1,
     .rs_min_chunk_size = 65536,
     .ar2d_chunk_count = 1,
-    .ar2d_min_chunk_size = 65536,
-    .enable_avx512bf = 0,
-    .enable_avx512f = 0
+    .ar2d_min_chunk_size = 65536
 };
 
 int ccl_env_2_int(const char* env_name, int& val)
@@ -182,7 +180,6 @@ void ccl_env_parse()
     {
         CCL_THROW("unordered collectives are supported for OFI transport only");
     }
-    ccl_detect_iset();
 }
 
 void ccl_env_print()
@@ -252,9 +249,6 @@ void ccl_env_print()
     LOG_INFO(CCL_RS_MIN_CHUNK_SIZE, ": ", env_data.rs_min_chunk_size);
     LOG_INFO(CCL_AR2D_CHUNK_COUNT, ": ", env_data.ar2d_chunk_count);
     LOG_INFO(CCL_AR2D_MIN_CHUNK_SIZE, ": ", env_data.ar2d_min_chunk_size);
-    LOG_INFO("oneCCL supports bfloat16 on this CPU  : ", env_data.enable_avx512f != 0 ? "yes" : "no");
-    LOG_INFO("AVX512BF : ", env_data.enable_avx512bf != 0 ? "supported" : "not supported");
-
 }
 
 constexpr const char* AVAILABLE_CORES_ENV = "I_MPI_PIN_INFO";
@@ -471,23 +465,4 @@ const char* ccl_priority_mode_to_str(ccl_priority_mode mode)
             CCL_FATAL("unknown priority_mode ", mode);
     }
     return "unknown";
-}
-
-void ccl_detect_iset()
-{
-  uint32_t reg[4];
-
-  /* Capabilities for optimized bf16/fp32 conversions */
-  /* CPUID.(EAX=07H, ECX=1):EAX[bit 05] */
-
-  __asm__ __volatile__ ("cpuid" : "=a" (reg[0]), "=b" (reg[1]), "=c" (reg[2]), "=d" (reg[3])  : "a" (7), "c" (1));
-  env_data.enable_avx512bf = ( reg[0] & (1 << 5) ) >> 5;
-
-  /* Baseline AVX512 capabilities used for oneCCL/bf16 implementation*/
-  /* CPUID.(EAX=07H, ECX=0):EBX.AVX512F  [bit 16] */
-  /* CPUID.(EAX=07H, ECX=0):EBX.AVX512BW [bit 30] */
-  /* CPUID.(EAX=07H, ECX=0):EBX.AVX512VL [bit 31] */
-
-  __asm__ __volatile__ ("cpuid" : "=a" (reg[0]), "=b" (reg[1]), "=c" (reg[2]), "=d" (reg[3])  : "a" (7), "c" (0));
-  env_data.enable_avx512f = (( reg[1] & (1 << 16) ) >> 16) & (( reg[1] & (1 << 30) ) >> 30) & (( reg[1] & (1 << 31) ) >> 31);
 }
