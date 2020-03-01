@@ -189,15 +189,15 @@ void ccl_env_print()
 #else
     const char* build_mode = "release";
 #endif
-    LOG_INFO("CCL library is built in ", build_mode, " mode");
+    LOG_INFO("build mode : ", build_mode);
 
     ccl_version_t version;
-    if(ccl_get_version(&version) != ccl_status_success)
+    if (ccl_get_version(&version) != ccl_status_success)
     {
-        throw std::runtime_error("Cannot determine CCL version!");
+        throw std::runtime_error("cannot determine CCL version!");
     }
 
-    LOG_INFO(CCL_VERSION, ": ", version.full);
+    LOG_INFO("version : ", version.full);
 
     LOG_INFO(CCL_LOG_LEVEL, ": ", env_data.log_level);
     LOG_INFO(CCL_SCHED_DUMP, ": ", env_data.sched_dump);

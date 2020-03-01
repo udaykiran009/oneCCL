@@ -21,7 +21,7 @@ public:
 
         LOG_INFO("tag_bits ", tag_bits,
                  ", max_tag ", max_tag,
-                 ", ccl_pof2(max_tag) ", ccl_pof2(max_tag),
+                 ", pof2(max_tag) ", ccl_pof2(max_tag),
                  ", max_tag_mask ", max_tag_mask);
     }
 

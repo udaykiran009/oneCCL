@@ -129,6 +129,7 @@ size_t kvs_get_keys_values_by_name(const char* kvs_name, char*** kvs_keys, char*
     size_t i;
     kvs_request_t request;
     kvs_request_t* answers;
+
     memset(&request, 0, sizeof(kvs_request_t));
     request.mode = AM_GET_KEYS_VALUES;
     STR_COPY(request.name, kvs_name, MAX_KVS_NAME_LENGTH);
@@ -140,7 +141,8 @@ size_t kvs_get_keys_values_by_name(const char* kvs_name, char*** kvs_keys, char*
     if (count == 0)
         return count;
 
-    answers = (kvs_request_t*) malloc(sizeof(kvs_request_t) * count);
+    answers = (kvs_request_t*)calloc(count, sizeof(kvs_request_t));
+
     CHECK_RW_OP(read(sock_sender, answers, sizeof(kvs_request_t) * count),
                 sizeof(kvs_request_t) * count);
     if (kvs_keys != NULL)
@@ -148,10 +150,10 @@ size_t kvs_get_keys_values_by_name(const char* kvs_name, char*** kvs_keys, char*
         if (*kvs_keys != NULL)
             free(*kvs_keys);
 
-        *kvs_keys = (char**) malloc(sizeof(char*) * count);
+        *kvs_keys = (char**)calloc(count, sizeof(char*));
         for (i = 0; i < count; i++)
         {
-            (*kvs_keys)[i] = (char*) malloc(sizeof(char) * MAX_KVS_KEY_LENGTH);
+            (*kvs_keys)[i] = (char*)calloc(MAX_KVS_KEY_LENGTH, sizeof(char));
             STR_COPY((*kvs_keys)[i], answers[i].key, MAX_KVS_KEY_LENGTH);
         }
     }
@@ -160,10 +162,10 @@ size_t kvs_get_keys_values_by_name(const char* kvs_name, char*** kvs_keys, char*
         if (*kvs_values != NULL)
             free(*kvs_values);
 
-        *kvs_values = (char**) malloc(sizeof(char*) * count);
+        *kvs_values = (char**)calloc(count, sizeof(char*));
         for (i = 0; i < count; i++)
         {
-            (*kvs_values)[i] = (char*) malloc(sizeof(char) * MAX_KVS_VAL_LENGTH);
+            (*kvs_values)[i] = (char*)calloc(MAX_KVS_VAL_LENGTH, sizeof(char));
             STR_COPY((*kvs_values)[i], answers[i].val, MAX_KVS_VAL_LENGTH);
         }
     }
@@ -401,6 +403,7 @@ void* kvs_server_init(void* args)
                 exit(1);
         }
     }
+
     CHECK_RW_OP(write(local_sock, &is_stop, sizeof(int)), sizeof(int));
     close(local_sock);
     for (i = 0; i < MAX_CLIENT_COUNT; i++)
