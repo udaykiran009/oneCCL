@@ -181,7 +181,7 @@ set_environment()
     else        
         if [ -z "${SYCL_BUNDLE_ROOT}" ]
         then
-        SYCL_BUNDLE_ROOT="/nfs/inn/proj/mpi/pdsd/opt/EM64T-LIN/compilers/clang/2021.1-beta04/linux"
+        SYCL_BUNDLE_ROOT="/nfs/inn/proj/mpi/pdsd/opt/EM64T-LIN/compilers/clang/2021.1-beta05/linux"
         fi
         source  ${SYCL_BUNDLE_ROOT}/../env/vars.sh intel64
         BUILD_COMPILER=${SYCL_BUNDLE_ROOT}/bin
@@ -260,6 +260,7 @@ run_compatibitily_tests()
     cd ${CURRENT_WORK_DIR}/examples
     if [ $node_label == "mlsl2_test_gpu" ]
     then
+        export FI_TCP_IFACE=eno1
         ./run.sh gpu
     else
         ./run.sh cpu
