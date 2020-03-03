@@ -30,13 +30,6 @@ then
 else
     CODECOV_FLAGS=""
 fi
-if [ "$BUILD_TYPE" == "debug" ]
-then
-    ENABLE_DEBUG_BUILD="yes"
-else
-    ENABLE_DEBUG_BUILD="no"
-fi
-
 
 BOM_DIR="${WORKSPACE}/boms"
 BOM_LIST_NAME="bom_list.txt"
@@ -95,8 +88,8 @@ set_default_values()
     else
         BUILD_TYPE="Release"
     fi
-    ENABLE_DEBUG="no"
-    ENABLE_VERBOSE="yes"
+    ENABLE_VERBOSE="no"
+    ENABLE_SILENT_INSTALLATION="no"
     ENABLE_BUILD_CPU="no"
     ENABLE_BUILD_GPU="no"
     ENABLE_INSTALL="no"
@@ -105,10 +98,10 @@ set_default_values()
 #                                Functions
 #==============================================================================
 
-# Logging. Always log. Echo if ENABLE_VERBOSE is "yes".
+# Logging. Always log. Echo if ENABLE_SILENT_INSTALLATION is "yes".
 log()
 {
-    if [ "${ENABLE_VERBOSE}" = "yes" ]; then
+    if [ "${ENABLE_SILENT_INSTALLATION}" = "no" ]; then
         eval $* 2>&1 | tee -a ${LOG_FILE}
     else
         eval $* >> ${LOG_FILE} 2>&1
@@ -120,15 +113,20 @@ print_help()
 {
     echo_log "Usage:"
     echo_log "    ./${BASENAME}.sh <options>"
+    echo_log "The most appropriate scenario is running on nnlmpinuc0*: ./build.sh -eng-package"
+    echo_log "If you want to build separate CPU and GPU, "
+    echo_log "recommended nodes for building CPU part is nnlmpibldl10, for GPU part - nnlmpinuc05"
     echo_log ""
     echo_log "Please set BUILD_COMPILER_TYPE=gnu|intel|clang. Clang will be used by default."
     echo_log ""
     echo_log "<options>:"
     echo_log "   ------------------------------------------------------------"
     echo_log "    -eng-package|--eng-package"
-    echo_log "        [Under construction] Prepare CCL eng-package (gzipped tar archive)"
-    echo_log "    -build|--build"
-    echo_log "        Compile library"
+    echo_log "        Prepare CCL eng-package (gzipped tar archive)"
+    echo_log "    -build_cpu|--build_cpu"
+    echo_log "        Prepare CCL build with icc/icpc"
+    echo_log "    -build_gpu|--build_gpu"
+    echo_log "        Prepare CCL build with clang/clang++ with SYCL"
     echo_log "    -pack|--pack"
     echo_log "        Prepare CCL package (gzipped tar archive)"
     echo_log "    -swf-pre-drop|--swf-pre-drop"
@@ -137,6 +135,8 @@ print_help()
     echo_log "        Build debug configuration"
     echo_log "    -install|--install"
     echo_log "        Install package"
+    echo_log "    -verbose|--verbose"
+    echo_log "        Enable verbose output"
     echo_log "   ------------------------------------------------------------"
     echo_log "    -h|-H|-help|--help"
     echo_log "        Print help information"
@@ -146,7 +146,7 @@ print_help()
 # echo the debug information
 echo_debug()
 {
-    if [ ${ENABLE_DEBUG} = "yes" ]; then
+    if [ ${ENABLE_VERBOSE} = "yes" ]; then
         echo_log "DEBUG: $*"
     fi
 }
@@ -461,7 +461,12 @@ prepare_staging()
                             case "${BL_LINK}" in
                                 "<installroot>"*)
                                     DROP_SRC_FILE=`echo $BL_LINK | sed -e "s|<installroot>/||"`
-                                    DROP_SRC_FILE="${WORKSPACE}/build/_install/${DROP_SRC_FILE}"
+                                    if [ "$MODE" = "swf_pre_drop" ]
+                                    then
+                                        DROP_SRC_FILE="${PACKAGE_ENG_DIR}/${DROP_SRC_FILE}"
+                                    else
+                                        DROP_SRC_FILE="${WORKSPACE}/build/_install/${DROP_SRC_FILE}"
+                                    fi
                                     echo_debug "DROP_SRC_FILE = ${DROP_SRC_FILE}"
                                     ;;
                                 "<ccl_root>"*)
@@ -618,9 +623,11 @@ parse_arguments()
             "-swf-pre-drop"|"--swf-pre-drop")
                 ENABLE_PRE_DROP="true"
                 ;;
-            "-build-deb-conf"| "--build-deb-conf")
+            "-build-deb-conf"|"--build-deb-conf")
                 ENABLE_DEBUG_BUILD="yes"
-                BUILD_TYPE="Debug"
+                ;;
+            "--verbose"|"--verbose")
+                ENABLE_VERBOSE="yes"
                 ;;
             "-install"| "--install")
                 ENABLE_INSTALL="yes"
@@ -788,26 +795,10 @@ add_copyrights()
     sed -i -e "s|CCL_SUBSTITUTE_COPYRIGHT_YEAR|${CCL_COPYRIGHT_YEAR}|g" ${COPYRIGHT_INTEL_C}
     echo "Generate ${COPYRIGHT_INTEL_C}... DONE"
 
-    for CUR_FILE in `find ${WORKSPACE}/build/_install \( -name "*.h" -or -name "*.hpp" \) -type f`
-    do
-        ed `realpath ${CUR_FILE}` < ${COPYRIGHT_INTEL_C} >/dev/null 2>&1
-    done
-
-    for CUR_FILE in `find ${WORKSPACE}/build_gpu/_install \( -name "*.h" -or -name "*.hpp" \) -type f`
-    do
-        ed `realpath ${CUR_FILE}` < ${COPYRIGHT_INTEL_C} >/dev/null 2>&1
-    done
-
     for CUR_FILE in `find ${PACKAGE_ENG_DIR}/include/ \( -name "*.h" -or -name "*.hpp" \) -type f`
     do
         ed `realpath ${CUR_FILE}` < ${COPYRIGHT_INTEL_C} >/dev/null 2>&1
     done
-
-    ed ${WORKSPACE}/build/_install/env/vars.sh < ${COPYRIGHT_INTEL_SH} >/dev/null 2>&1
-    ed ${WORKSPACE}/build_gpu/_install/env/vars.sh < ${COPYRIGHT_INTEL_SH} >/dev/null 2>&1
-
-    ed ${WORKSPACE}/build/_install/modulefiles/ccl < ${COPYRIGHT_INTEL_SH} >/dev/null 2>&1
-    ed ${WORKSPACE}/build_gpu/_install/modulefiles/ccl < ${COPYRIGHT_INTEL_SH} >/dev/null 2>&1
 
     ed ${PACKAGE_ENG_DIR}/env/vars.sh < ${COPYRIGHT_INTEL_SH} >/dev/null 2>&1
     ed ${PACKAGE_ENG_DIR}/modulefiles/ccl < ${COPYRIGHT_INTEL_SH} >/dev/null 2>&1
