@@ -17,7 +17,7 @@ declare -i total_skipped=0
 function CheckTest(){
     test_log=$1
     test_file=$2
-    test_passed=`grep -c "PASSED" ${test_log}`
+    test_passed=`grep -E -c -i 'PASSED|skipped' ${test_log}`
     if [ $test_file != "communicator.out" ]
     then
         test_failed=`grep -E -c -i 'error|Aborted|failed|^BAD$|KILLED|^fault$|cl::sycl::runtime_error|terminate' ${test_log}`
