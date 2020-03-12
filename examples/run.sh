@@ -14,7 +14,7 @@ CheckCommandExitCode() {
 declare -i total_fails=0
 declare -i total_skipped=0
 
-function CheckTest(){
+function check_test(){
     test_log=$1
     test_file=$2
     test_passed=`grep -E -c -i 'PASSED|skipped' ${test_log}`
@@ -92,9 +92,14 @@ run_benchmark()
     echo "coll: " $coll
     echo "================ENVIRONMENT=================="
     test_log="$SCRIPT_DIR/$dir_name/run_${transport}_${example}_${backend}_${loop}_output.log"
-    eval `echo $ccl_extra_env mpiexec.hydra -genv $EXTRA_ENV -n 2 -ppn $ppn -l ./$example $backend $loop $coll` 2>&1 | tee ${test_log}
-
-    CheckTest ${test_log} ${example}
+	if [ `echo $ccl_extra_env | grep -c CCL_LOG_LEVEL` -ne 1 ]
+	then
+		eval `echo $ccl_extra_env mpiexec.hydra -genv $EXTRA_ENV -n 2 -ppn $ppn -l ./$example $backend $loop $coll` 2>&1 | tee ${test_log}
+	else
+		echo Output for run with CCL_LOG_LEVEL=2 has been redirected to log file ${test_log}
+		eval `echo $ccl_extra_env mpiexec.hydra -genv $EXTRA_ENV -n 2 -ppn $ppn -l ./$example $backend $loop $coll` > ${test_log} 2>&1
+	fi
+    check_test ${test_log} ${example}
 }
 run_example()
 {
@@ -107,10 +112,12 @@ run_example()
     echo "transport: "$transport
     local example=$4
     echo "example: "$example
+    local arg=$5
+    echo "arg: "$arg
     echo "================ENVIRONMENT=================="
-    test_log="$SCRIPT_DIR/$dir_name/run_${dir_name}_${transport}_${example}_output.log"
-    eval `echo $ccl_extra_env mpiexec.hydra -genv $EXTRA_ENV -n 2 -ppn $ppn -l ./$example` 2>&1 | tee ${test_log}
-    CheckTest ${test_log} ${example}
+    test_log="$SCRIPT_DIR/$dir_name/run_${dir_name}_${transport}_${example}_${arg}_output.log"
+    eval `echo $ccl_extra_env mpiexec.hydra -genv $EXTRA_ENV -n 2 -ppn $ppn -l ./$example $arg` 2>&1 | tee ${test_log}
+    check_test ${test_log} ${example}
 }
 
 build()
@@ -195,10 +202,13 @@ run()
                 then
                     for selector in $selectors_list
                     do
-                        test_log="$SCRIPT_DIR/$dir_name/run_${dir_name}_${transport}_${selector}_${example}_output.log"
-                        echo "run sycl examples with $transport transport and selector $selector (${example})" 2>&1 | tee ${test_log}
-                        CCL_ATL_TRANSPORT=${transport} mpiexec.hydra -genv $EXTRA_ENV -n 2 -ppn $ppn -l ./$example $selector 2>&1 | tee ${test_log}
-                        CheckTest ${test_log} ${example}
+                        if [ "$selector" == "gpu" ];
+                        then
+                            ccl_extra_env="SYCL_DEVICE_WHITE_LIST=\"\" SYCL_BE=PI_OTHER CCL_ATL_TRANSPORT=${transport}"
+                            run_example "${ccl_extra_env}" ${dir_name} ${transport} ${example} ${selector}
+                        fi
+                        ccl_extra_env="SYCL_BE=OpenCL CCL_ATL_TRANSPORT=${transport}"
+                        run_example "${ccl_extra_env}" ${dir_name} ${transport} ${example} ${selector}
                     done
                 else
                     if [[ "${example}" == *"communicator"* ]]
