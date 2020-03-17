@@ -201,9 +201,9 @@ set_environment()
     if [ -z "${IMPI_PATH}" ]
     then
         echo "WARNING: I_MPI_ROOT isn't set, last oneAPI pack will be used."
-        source /nfs/inn/disks/nn-ssg_tcar_mpi_2Tb_unix/Uploads/IMPI/linux/functional_testing/impi/oneAPI/impi_2021.1-beta04-oneccl/env/vars.sh release_mt
+        source /nfs/inn/disks/nn-ssg_tcar_mpi_2Tb_unix/Uploads/IMPI/linux/functional_testing/impi/oneAPI/latest/env/vars.sh -i_mpi_library_kind=release_mt
     else
-        source ${IMPI_PATH}/env/vars.sh release_mt
+        source ${IMPI_PATH}/env/vars.sh -i_mpi_library_kind=release_mt
     fi
     if [ -z "$worker_count" ]
     then
