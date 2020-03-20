@@ -52,15 +52,24 @@ struct native_type_info
 
 #define COMMA ,
 
+/*struct bfp16_impl
+{
+    uint16_t data;
+} __attribute__((packed));*/
+
+using bfp16 = uint16_t;
+
 /**
  * Enumeration of supported CCL API data types
  */
 CCL_TYPE_TRAITS(ccl_dtype_char,   char,      sizeof(char))
 CCL_TYPE_TRAITS(ccl_dtype_int,    int,       sizeof(int))
-CCL_TYPE_TRAITS(ccl_dtype_int64,  int64_t,   sizeof(int64_t))
-CCL_TYPE_TRAITS(ccl_dtype_uint64, uint64_t,  sizeof(uint64_t))
+CCL_TYPE_TRAITS(ccl_dtype_bfp16,  bfp16,     sizeof(bfp16))
 CCL_TYPE_TRAITS(ccl_dtype_float,  float,     sizeof(float))
 CCL_TYPE_TRAITS(ccl_dtype_double, double,    sizeof(double))
+CCL_TYPE_TRAITS(ccl_dtype_int64,  int64_t,   sizeof(int64_t))
+CCL_TYPE_TRAITS(ccl_dtype_uint64, uint64_t,  sizeof(uint64_t))
+
 
 #ifdef CCL_ENABLE_SYCL
     CCL_CLASS_TYPE_TRAITS(ccl_dtype_char,    cl::sycl::buffer<char COMMA 1>,     sizeof(char))

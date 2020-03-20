@@ -2,32 +2,9 @@
 #include "coll/algorithms/sparse_handler.hpp"
 #include "sched/entry/factory/entry_factory.hpp"
 
-#define MASK(op, vtype)                           \
-({                                                \
-    vtype value;                                  \
-    switch (op)                                   \
-    {                                             \
-    case ccl_reduction_sum:                       \
-        value = 0;                                \
-        break;                                    \
-    case ccl_reduction_prod:                      \
-        value = 1;                                \
-        break;                                    \
-    case ccl_reduction_min:                       \
-        value = std::numeric_limits<vtype>::max();\
-        break;                                    \
-    case ccl_reduction_max:                       \
-        value = std::numeric_limits<vtype>::min();\
-        break;                                    \
-    case ccl_reduction_custom:                    \
-        CCL_FATAL("ccl_reduction_custom is not supported for sparse allreduce based on mask algorithm");\
-        return ccl_status_invalid_arguments;      \
-    default:                                      \
-        value = 0;                                \
-        break;                                    \
-    }                                             \
-    value;                                        \
-})
+#define BFP16_ONE 0x3f80
+#define BFP16_MAX 0x7f7f
+#define BFP16_MIN 0xff7f
 
 #define CCL_DEFINE_ALGO(itype, vtype)                                                     \
     do {                                                                                  \
@@ -99,11 +76,58 @@
               case ccl_dtype_uint64:                                    \
                   CCL_DEFINE_ALGO(itype, uint64_t);                     \
                   break;                                                \
+              case ccl_dtype_bfp16:                                     \
+                  CCL_DEFINE_ALGO(itype, ccl::bfp16);                   \
+                  break;                                                \
               default:                                                  \
                   CCL_FATAL("value data type ", ccl_datatype_get_name(value_dtype), " is not supported yet");\
                   return ccl_status_invalid_arguments;                  \
          }                                                              \
     } while (0)
+
+template<typename vtype>
+typename std::enable_if<!std::is_same<vtype, ccl::bfp16>::value, vtype>::type
+get_mask(ccl_reduction_t op)
+{
+    switch (op)
+    {
+    case ccl_reduction_sum:
+        return 0;
+    case ccl_reduction_prod:
+        return 1;
+    case ccl_reduction_min:
+        return std::numeric_limits<vtype>::max();
+    case ccl_reduction_max:
+        return std::numeric_limits<vtype>::min(); 
+    case ccl_reduction_custom:
+        CCL_FATAL("ccl_reduction_custom is not supported for sparse allreduce based on mask algorithm");
+        return ccl_status_invalid_arguments;
+    default:
+        return 0;
+    }
+}
+
+template <typename vtype>
+typename std::enable_if<std::is_same<vtype, ccl::bfp16>::value, vtype>::type
+get_mask(ccl_reduction_t op)
+{
+    switch (op)
+    {
+    case ccl_reduction_sum:
+        return 0;
+    case ccl_reduction_prod:
+        return BFP16_ONE;
+    case ccl_reduction_min:
+        return BFP16_MAX;
+    case ccl_reduction_max:
+        return BFP16_MIN; 
+    case ccl_reduction_custom:
+        CCL_FATAL("ccl_reduction_custom is not supported for sparse allreduce based on mask algorithm");
+        return ccl_status_invalid_arguments;
+    default:
+        return 0;
+    }
+}
 
 ccl_status_t sparse_define_recv_size(const void* ctx)
 {
@@ -669,7 +693,7 @@ ccl_status_t sparse_create_matrix(const void* ctx)
     v_type* matrix = static_cast<v_type*>(CCL_MALLOC(matrix_size, "matrix"));
     v_type* values = (v_type*)((char*)(sa_handler->dst_buf) + sa_handler->itype_size * sa_handler->dst_count[0]);
 
-    v_type mask_value = MASK(sa_handler->op, v_type);
+    v_type mask_value = get_mask<v_type>(sa_handler->op);
     size_t idx_offset = 0;
     for (typename std::set<i_type>::iterator it = idx_set.begin(); it != idx_set.end(); ++it)
     {
@@ -696,8 +720,8 @@ ccl_status_t sparse_create_matrix(const void* ctx)
     }
     ccl_comp_copy(matrix, sa_handler->dst_buf, matrix_size, ccl_dtype_internal_char);
     CCL_FREE(matrix);
+     
     size_t idx_cnt = idx_set.size();
-
     sa_handler->dst_count[1] = idx_cnt * sa_handler->val_dim_cnt;
     size_t i_new_size = sa_handler->itype_size * idx_cnt;
     size_t v_new_size = sa_handler->vtype_size * sa_handler->dst_count[1];
@@ -718,7 +742,6 @@ ccl_status_t sparse_create_matrix(const void* ctx)
 ccl_status_t sparse_post_reduce_result(const void* ctx)
 {
     ccl_sparse_allreduce_handler* sa_handler = (ccl_sparse_allreduce_handler*)ctx;
-
     ccl_comp_copy(sa_handler->dst_buf, *sa_handler->recv_vbuf, sa_handler->vtype_size * (*sa_handler->recv_vcount), ccl_dtype_internal_char);
 
     sa_handler->iv_map->clear();
@@ -817,8 +840,7 @@ ccl_status_t ccl_coll_build_sparse_allreduce_mask(ccl_sched* sched,
         val_offset = idx_offset * val_dim_cnt;
         CCL_MEMCPY(dst_v + val_offset, src_v + it.second, vtype_size * val_dim_cnt);
         it.second = val_offset;
-        idx_offset++;
-        
+        idx_offset++;  
     }
 
     /* create handler for sched function callbacks */
@@ -839,6 +861,8 @@ ccl_status_t ccl_coll_build_sparse_allreduce_mask(ccl_sched* sched,
     sa_handler->recv_vbuf = (void**)recv_val_buf.get_ptr();
     sa_handler->recv_icount = recv_ind_count;
     sa_handler->recv_vcount = recv_val_count;
+    sa_handler->op = op;
+    sa_handler->value_dtype = value_dtype;
 
     void* recv_buf = sched->alloc_buffer(itype_size * sa_handler->recv_count).get_ptr();
     sa_handler->recv_buf = &recv_buf;
