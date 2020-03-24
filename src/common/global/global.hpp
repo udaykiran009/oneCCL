@@ -3,6 +3,7 @@
 #include "ccl.h"
 #include "common/utils/utils.hpp"
 #include "coll/algorithms/algorithms_enum.hpp"
+#include "comp/bfp16/bfp16_utils.h"
 
 #include <memory>
 #include <thread>
@@ -53,7 +54,7 @@ struct alignas(CACHELINE_SIZE) ccl_global_data
     std::unique_ptr<ccl_allreduce_2d_builder> allreduce_2d_builder;
     static thread_local bool is_worker_thread;
     bool is_ft_enabled;
-    bool is_bfp16_enabled;
+    ccl_bfp16_impl_type bfp16_impl_type;
 };
 
 extern ccl_global_data global_data;

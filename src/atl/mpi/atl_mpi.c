@@ -72,6 +72,8 @@ typedef struct
     // custom MPI dtype for BFP16
     MPI_Datatype dtype;
 
+    ccl_bfp16_impl_type impl_type;
+
 } atl_mpi_bfp16_data_t;
 
 typedef struct
@@ -127,17 +129,13 @@ atl_mpi_check_op_params(void* in_buf, void* inout_buf, int* length,
 
 static void INLINE_TARGET_ATTRIBUTE_ALL
 atl_mpi_bfp16_base_op(void* in, void* inout, int* length, 
-                      bfp16_reduction_func_ptr reduction_op_func)
+                      ccl_bfp16_reduction_func_ptr op)
 {
     unsigned short* in_buf = (unsigned short*)in;
     unsigned short* inout_buf = (unsigned short*)inout;
 
-    int i = 0;
-    for (i = 0; i <= (int)*length - 16; i += 16)
-    {
-        ccl_bfp16_reduce_256((uint16_t*)in_buf + i, (uint16_t*)inout_buf + i, reduction_op_func);
-    }
-    ccl_bfp16_reduce_masked((uint16_t*)in_buf + i, (uint16_t*)inout_buf + i, (uint8_t)(*length - i), reduction_op_func);
+    size_t len = *length;
+    ccl_bfp16_reduce_impl(in_buf, inout_buf, len, op, global_data.bfp16.impl_type);
 }
     
 // MPI BFP16 operation definitions
@@ -204,8 +202,10 @@ atl_mpi_bfp16_init()
     global_data.bfp16.prod_op = MPI_OP_NULL;
     global_data.bfp16.min_op = MPI_OP_NULL;
     global_data.bfp16.max_op = MPI_OP_NULL;
+
+    global_data.bfp16.impl_type = ccl_bfp16_get_impl_type();
     
-    if (ccl_bfp16_is_enabled() == 0)
+    if (global_data.bfp16.impl_type == ccl_bfp16_none)
     {
         ATL_MPI_DEBUG_PRINT("%s: success - BFP16 is not supported on current arch",
                             __FUNCTION__);

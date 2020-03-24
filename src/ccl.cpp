@@ -71,11 +71,12 @@ ccl_status_t ccl_init()
         global_data.allreduce_2d_builder =
             std::unique_ptr<ccl_allreduce_2d_builder>(new ccl_allreduce_2d_builder());
 
-        global_data.is_bfp16_enabled = ccl_bfp16_is_enabled();
+        global_data.bfp16_impl_type = ccl_bfp16_get_impl_type();
 
-        if (global_data.is_bfp16_enabled)
+        if (global_data.bfp16_impl_type != ccl_bfp16_none)
         {
-            LOG_INFO("BFP16 is enabled");
+            LOG_INFO("BFP16 is enabled through ",
+                (global_data.bfp16_impl_type == ccl_bfp16_avx512bf) ? "AVX512-BF" : "AVX512-F");
         }
         else
         {
