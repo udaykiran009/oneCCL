@@ -23,15 +23,18 @@ if (NOT CMAKE_DISABLE_SYCL)
     set(CMAKE_DISABLE_SYCL 0)
 endif()
 
+#make build variable case insensitive
+string( TOLOWER "${CMAKE_BUILD_TYPE}" CMAKE_BUILD_TYPE_CASE_INSENSITIVE)
+
 #show build info
 message(STATUS "Installation directory: ${CMAKE_INSTALL_PREFIX}")
-message(STATUS "Build type: ${CMAKE_BUILD_TYPE}")
+message(STATUS "Build type: ${CMAKE_BUILD_TYPE_CASE_INSENSITIVE}")
 message(STATUS "C compiler : ${CMAKE_C_COMPILER}")
 message(STATUS "CXX compiler : ${CMAKE_CXX_COMPILER}")
 
 #predefined options
 option(USE_SECURITY_FLAGS "Use security flags" TRUE)
-if (${CMAKE_BUILD_TYPE} STREQUAL "Debug")
+if (${CMAKE_BUILD_TYPE_CASE_INSENSITIVE} STREQUAL "debug")
     set(USE_SECURITY_FLAGS FALSE)
 endif()
 
@@ -120,7 +123,7 @@ if(${CMAKE_C_COMPILER_ID} STREQUAL "GNU" AND ${CMAKE_CXX_COMPILER_ID} STREQUAL "
     endif()
 endif()
 
-if(WITH_ASAN AND ${CMAKE_BUILD_TYPE} STREQUAL "Debug")
+if(WITH_ASAN AND ${CMAKE_BUILD_TYPE_CASE_INSENSITIVE} STREQUAL "debug")
     message(STATUS "Compiling with address sanitizer")
     set(CMAKE_CXX_FLAGS_DEBUG  "${CMAKE_CXX_FLAGS_DEBUG} -fsanitize=address -fno-omit-frame-pointer")
     set(CMAKE_C_FLAGS_DEBUG  "${CMAKE_C_FLAGS_DEBUG} -fsanitize=address -fno-omit-frame-pointer")
@@ -195,4 +198,3 @@ get_vcs_properties("git")
 set(CCL_PRODUCT_FULL "${CCL_PRODUCT_STATUS}-${CCL_MAJOR_VERSION}.${CCL_MINOR_VERSION}.${CCL_UPDATE_VERSION} ${CCL_PRODUCT_BUILD_DATE} ${VCS_INFO}")
 configure_file(${PROJECT_SOURCE_DIR}/include/ccl_config.h.in "${CMAKE_CURRENT_BINARY_DIR}/include/ccl_config.h")
 file(COPY "${CMAKE_CURRENT_BINARY_DIR}/include/ccl_config.h" DESTINATION ${PROJECT_SOURCE_DIR}/include/)
-

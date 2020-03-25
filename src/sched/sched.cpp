@@ -55,7 +55,7 @@ void ccl_sched::do_progress()
 
         if (entry->get_status() == ccl_sched_entry_status_not_started)
         {
-            LOG_DEBUG("starting entry ", entry->name(), " [", entry_idx, "/", entries.size(), "]");
+            LOG_DEBUG("starting entry: ", entry.get(), ", name: ", entry->name(), " [", entry_idx, "/", entries.size(), "]");
         }
 
         entry->do_progress();
@@ -71,7 +71,8 @@ void ccl_sched::do_progress()
         {
             /* the entry has been completed, increment start_idx */
             ++start_idx;
-            LOG_DEBUG("completed ", entry->name(), entry->is_barrier() ? " barrier" : "",
+            LOG_DEBUG("completed entry: ", entry.get(), ", name: ", entry->name(), 
+                      entry->is_barrier() ? " barrier" : "",
                       " entry [", entry_idx, "/", entries.size(), "], shift start_idx to ", start_idx,
                       ", sched ", this);
         }

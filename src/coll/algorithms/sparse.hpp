@@ -680,11 +680,14 @@ template<typename i_type, typename v_type>
 ccl_status_t sparse_create_matrix(const void* ctx)
 {
     ccl_sparse_allreduce_handler* sa_handler = (ccl_sparse_allreduce_handler*)ctx;
+    LOG_TRACE("sa_handler: ", sa_handler, ", sa_handler->recv_count: ", sa_handler->recv_count,
+              ", sa_handler->recv_buf: ", sa_handler->recv_buf,
+              ", *sa_handler->recv_buf: ", *sa_handler->recv_buf);
 
     /* get rid of the duplicates in allgathered indices list */
-    std::set<i_type> idx_set;
-    for (size_t i = 0; i < sa_handler->recv_count; i++)
-        idx_set.insert(((i_type*)(*sa_handler->recv_buf))[i]);
+    std::set<i_type> idx_set(static_cast<i_type*>(*sa_handler->recv_buf), 
+                             static_cast<i_type*>(*sa_handler->recv_buf) + 
+                                                  sa_handler->recv_count);
 
     /* create a matrix expanded with zeros for indices that are not
     present in the unique indices list specified for this very process*/
@@ -714,10 +717,8 @@ ccl_status_t sparse_create_matrix(const void* ctx)
     }
 
     size_t cur_dst_size = sa_handler->dst_count[0] * sa_handler->itype_size + sa_handler->dst_count[1] * sa_handler->vtype_size;
-    if (matrix_size > cur_dst_size)
-    {
-        sa_handler->dst_buf = (sa_handler->sched->update_buffer(ccl_buffer(sa_handler->dst_buf, cur_dst_size), matrix_size)).get_ptr();
-    }
+    sa_handler->dst_buf = sa_handler->sched->find_and_realloc_buffer(sa_handler->dst_buf, matrix_size, cur_dst_size).get_ptr();
+
     ccl_comp_copy(matrix, sa_handler->dst_buf, matrix_size, ccl_dtype_internal_char);
     CCL_FREE(matrix);
      
@@ -728,8 +729,13 @@ ccl_status_t sparse_create_matrix(const void* ctx)
 
     if (idx_cnt > *sa_handler->recv_icount)
     {
+        void* old_ibuf = *sa_handler->recv_ibuf;
+        void* old_vbuf = *sa_handler->recv_vbuf;
         *sa_handler->recv_ibuf = CCL_REALLOC(*sa_handler->recv_ibuf, *sa_handler->recv_icount * sa_handler->itype_size, i_new_size, CACHELINE_SIZE, "recv_ibuf");
         *sa_handler->recv_vbuf = CCL_REALLOC(*sa_handler->recv_vbuf, *sa_handler->recv_vcount * sa_handler->vtype_size, v_new_size, CACHELINE_SIZE, "recv_vbuf");
+        LOG_DEBUG("realloc for user buffers happened - "
+                  "ibuf {from: ", old_ibuf, ", to: ", *sa_handler->recv_ibuf, "}, "
+                  "vbuf {from: ", old_vbuf, ", to: ", *sa_handler->recv_vbuf, "}");
     }
     *sa_handler->recv_icount = idx_cnt;
     *sa_handler->recv_vcount = sa_handler->dst_count[1];
@@ -798,11 +804,13 @@ ccl_status_t ccl_coll_build_sparse_allreduce_mask(ccl_sched* sched,
     {
         src_i = (i_type*)send_ind_buf.get_ptr();
         src_v = (v_type*)send_val_buf.get_ptr();
+        LOG_TRACE("doesn't use inplace buffers - src_i: ", src_i, ", src_v: ", src_v);
     }
     else
     {
         src_i = (i_type*)*((void**)(recv_ind_buf.get_ptr()));
         src_v = (v_type*)*((void**)(recv_val_buf.get_ptr()));
+        LOG_TRACE("use inplace buffers - src_i: ", src_i, ", src_v: ", src_v);
     }
 
     /* fill in the <index:value_offset> map */
@@ -864,12 +872,15 @@ ccl_status_t ccl_coll_build_sparse_allreduce_mask(ccl_sched* sched,
     sa_handler->op = op;
     sa_handler->value_dtype = value_dtype;
 
-    void* recv_buf = sched->alloc_buffer(itype_size * sa_handler->recv_count).get_ptr();
-    sa_handler->recv_buf = &recv_buf;
+    sched->alloc_buffer_ptr(sa_handler->recv_buf, itype_size * sa_handler->recv_count);
 
     size_t* recv_counts = static_cast<size_t*>(sched->alloc_buffer(sizeof(size_t) * comm_size).get_ptr());
     for (size_t i = 0; i < comm_size; i++)
         recv_counts[i] = send_ind_count;
+
+    LOG_TRACE("sa_handler: ", sa_handler, ", sa_handler->recv_count: ", sa_handler->recv_count,
+              ", sa_handler->recv_buf: ", sa_handler->recv_buf,
+              ", *sa_handler->recv_buf: ", *sa_handler->recv_buf);
 
     ccl_coll_entry_param param_allgatherv{};
     param_allgatherv.ctype = ccl_coll_allgatherv;
@@ -964,8 +975,13 @@ ccl_status_t sparse_reduce_gathered(const void* ctx)
 
     if (idx_cnt > (*sa_handler->recv_icount))
     {
+        void* old_ibuf = *sa_handler->recv_ibuf;
+        void* old_vbuf = *sa_handler->recv_vbuf;
         *sa_handler->recv_ibuf = CCL_REALLOC(*sa_handler->recv_ibuf, sa_handler->itype_size * (*sa_handler->recv_icount), i_new_size, CACHELINE_SIZE, "recv_ibuf");
         *sa_handler->recv_vbuf = CCL_REALLOC(*sa_handler->recv_vbuf, sa_handler->vtype_size * (*sa_handler->recv_vcount), v_new_size, CACHELINE_SIZE, "recv_vbuf");
+        LOG_DEBUG("realloc for user buffers happened - "
+                  "ibuf {from: ", old_ibuf, ", to: ", *sa_handler->recv_ibuf, "}, "
+                  "vbuf {from: ", old_vbuf, ", to: ", *sa_handler->recv_vbuf, "}");
     }
     *sa_handler->recv_icount = idx_cnt;
     *sa_handler->recv_vcount = idx_cnt * sa_handler->val_dim_cnt;
