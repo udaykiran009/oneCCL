@@ -465,6 +465,24 @@ ccl_status_t ccl_coll_build_sparse_allreduce(
     param.dtype = ccl_dtype_internal_char;
     param.comm = comm;
 
+    if (!send_ind_count || !send_val_count)
+    {
+        LOG_ERROR("sparse tensor indices count should be greater than zero, but got " \
+                  "indices count = ", send_ind_count, ", values count = ", send_val_count);
+        assert(send_ind_count && send_val_count);
+        throw ccl::ccl_error(std::string(__FUNCTION__) + "sparse tensor indices count should be \
+                        greater than zero, but got indices count = " + std::to_string(send_ind_count) +
+                        ", values count = " + std::to_string(send_val_count));
+    }
+    
+    if (send_ind_count > send_val_count)
+    {
+        CCL_FATAL("sparse collective algorithms now support only 1-D indices and \
+                  multi-dimensional values format\n got indices count = ", send_ind_count,
+                  ", values count = ", send_val_count);
+        return ccl_status_invalid_arguments;
+    }
+
     auto algo = global_data.algorithm_selector->get<ccl_coll_sparse_allreduce>(param);
 
     LOG_DEBUG("build sparse allreduce, param:",

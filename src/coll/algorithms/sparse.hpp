@@ -800,17 +800,43 @@ ccl_status_t ccl_coll_build_sparse_allreduce_mask(ccl_sched* sched,
     i_type* src_i = nullptr;
     v_type* src_v = nullptr;
 
-    if (send_ind_buf.get_ptr() != *((void**)(recv_ind_buf.get_ptr())))
+    void* r_ind_buf = *((void**)(recv_ind_buf.get_ptr()));
+    void* r_val_buf = *((void**)(recv_val_buf.get_ptr()));
+
+    if (comm_size == 1)
+    {
+        if (send_ind_buf.get_ptr() != r_ind_buf)
+            entry_factory::make_entry<copy_entry>(sched, send_ind_buf,
+                                                  ccl_buffer(r_ind_buf, send_ind_count * itype_size),
+                                                  send_ind_count, index_dtype);
+
+        if (send_val_buf.get_ptr() != r_val_buf)
+            entry_factory::make_entry<copy_entry>(sched, send_val_buf,
+                                                  ccl_buffer(r_val_buf, send_val_count * vtype_size),
+                                                  send_val_count, value_dtype);
+        return status;
+    }
+
+    if (send_ind_buf.get_ptr() != r_ind_buf)
     {
         src_i = (i_type*)send_ind_buf.get_ptr();
-        src_v = (v_type*)send_val_buf.get_ptr();
-        LOG_TRACE("doesn't use inplace buffers - src_i: ", src_i, ", src_v: ", src_v);
+        LOG_TRACE("doesn't use inplace buffers - src_i: ", src_i);
     }
     else
     {
-        src_i = (i_type*)*((void**)(recv_ind_buf.get_ptr()));
-        src_v = (v_type*)*((void**)(recv_val_buf.get_ptr()));
-        LOG_TRACE("use inplace buffers - src_i: ", src_i, ", src_v: ", src_v);
+        src_i = (i_type*)r_ind_buf;
+        LOG_TRACE("use inplace buffers - src_i: ", src_i);
+    }
+
+    if (send_val_buf.get_ptr() != r_val_buf)
+    {
+        src_v = (v_type*)send_val_buf.get_ptr();
+        LOG_TRACE("doesn't use inplace buffers - src_v: ", src_v);
+    }
+    else
+    {
+        src_v = (v_type*)r_val_buf;
+        LOG_TRACE("use inplace buffers - src_v: ", src_v);
     }
 
     /* fill in the <index:value_offset> map */
@@ -1050,15 +1076,43 @@ ccl_status_t ccl_coll_build_sparse_allreduce_3_allgatherv(ccl_sched *sched,
     i_type* src_i = nullptr;
     v_type* src_v = nullptr;
 
-    if (send_ind_buf.get_ptr() != *((void**)(recv_ind_buf.get_ptr())))
+    void* r_ind_buf = *((void**)(recv_ind_buf.get_ptr()));
+    void* r_val_buf = *((void**)(recv_val_buf.get_ptr()));
+
+    if (comm_size == 1)
+    {
+        if (send_ind_buf.get_ptr() != r_ind_buf)
+            entry_factory::make_entry<copy_entry>(sched, send_ind_buf,
+                                                  ccl_buffer(r_ind_buf, send_ind_count * itype_size),
+                                                  send_ind_count, index_dtype);
+
+        if (send_val_buf.get_ptr() != r_val_buf)
+            entry_factory::make_entry<copy_entry>(sched, send_val_buf,
+                                                  ccl_buffer(r_val_buf, send_val_count * vtype_size),
+                                                  send_val_count, value_dtype);
+        return status;
+    }
+
+    if (send_ind_buf.get_ptr() != r_ind_buf)
     {
         src_i = (i_type*)send_ind_buf.get_ptr();
-        src_v = (v_type*)send_val_buf.get_ptr();
+        LOG_TRACE("doesn't use inplace buffers - src_i: ", src_i);
     }
     else
     {
-        src_i = (i_type*)*((void**)(recv_ind_buf.get_ptr()));
-        src_v = (v_type*)*((void**)(recv_val_buf.get_ptr()));
+        src_i = (i_type*)r_ind_buf;
+        LOG_TRACE("use inplace buffers - src_i: ", src_i);
+    }
+
+    if (send_val_buf.get_ptr() != r_val_buf)
+    {
+        src_v = (v_type*)send_val_buf.get_ptr();
+        LOG_TRACE("doesn't use inplace buffers - src_v: ", src_v);
+    }
+    else
+    {
+        src_v = (v_type*)r_val_buf;
+        LOG_TRACE("use inplace buffers - src_v: ", src_v);
     }
 
     /* fill in the <index:value_offset> map */
