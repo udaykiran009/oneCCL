@@ -24,8 +24,8 @@ function check_test(){
     else
         test_failed=`grep -E -c -i 'Aborted|failed|^BAD$|KILLED|^fault$|cl::sycl::runtime_error|terminate' ${test_log}`
     fi
-    test_skipped=`grep -c "Accelerator is the first in device list, but unavailable" ${test_log}`
-    if [ ${test_passed} -ne 1 ] || [ ${test_failed} -ne 0 ]
+    test_skipped=`grep -E -c -i 'unavailable|skipped' ${test_log}`
+    if ([ ${test_passed} -eq 0 ] || [ ${test_skipped} -eq 0 ]) && [ ${test_failed} -ne 0 ]
     then
         echo "Error: example $test_file testing failed"
         echo "See log ${test_log} for details"
@@ -165,9 +165,9 @@ run()
         do
             if [ "$transport" == "mpi" ];
             then
-                examples_to_run=`ls . | grep '.out' | grep -v '.log' | grep -v 'unordered_allreduce' | grep -v 'custom_allreduce'`
+                examples_to_run=`find . -type f -executable -printf '%P\n' | grep -v 'unordered_allreduce' | grep -v 'custom_allreduce' | grep -v 'allreduce_rs'`
             else
-                examples_to_run=`ls . | grep '.out' | grep -v '.log'`
+                examples_to_run=`find . -type f -executable -printf '%P\n' | grep -v 'allreduce_rs'`
             fi
             
            
