@@ -223,7 +223,8 @@ build_cpu()
     define_cpu_compiler
     log mkdir ${WORKSPACE}/build && cd ${WORKSPACE}/build && echo ${PWD}
     log cmake .. -DCMAKE_DISABLE_SYCL=1 -DCMAKE_BUILD_TYPE=${BUILD_TYPE} \
-    -DCMAKE_C_COMPILER="${C_COMPILER_CPU}" -DCMAKE_CXX_COMPILER="${CXX_COMPILER_CPU}" -DUSE_CODECOV_FLAGS="${CODECOV_FLAGS}"
+    -DCMAKE_C_COMPILER="${C_COMPILER_CPU}" -DCMAKE_CXX_COMPILER="${CXX_COMPILER_CPU}" -DUSE_CODECOV_FLAGS="${CODECOV_FLAGS}" \
+    -DLIBFABRIC_DIR="${LIBFABRIC_INSTALL_DIR}"
     log make -j4 VERBOSE=1 install
     CheckCommandExitCode $? "cpu build failed"
 }
@@ -234,7 +235,8 @@ build_gpu()
     rm -rf ${WORKSPACE}/build_gpu
     log mkdir ${WORKSPACE}/build_gpu && cd ${WORKSPACE}/build_gpu && echo ${PWD}
     log cmake .. -DCMAKE_DISABLE_SYCL=0 -DCMAKE_BUILD_TYPE=${BUILD_TYPE} \
-    -DCMAKE_C_COMPILER="${C_COMPILER_GPU}" -DCMAKE_CXX_COMPILER="${CXX_COMPILER_GPU}" -DUSE_CODECOV_FLAGS="${CODECOV_FLAGS}"
+    -DCMAKE_C_COMPILER="${C_COMPILER_GPU}" -DCMAKE_CXX_COMPILER="${CXX_COMPILER_GPU}" -DUSE_CODECOV_FLAGS="${CODECOV_FLAGS}" \
+    -DLIBFABRIC_DIR="${LIBFABRIC_INSTALL_DIR}"
     log make -j4 VERBOSE=1 install
     CheckCommandExitCode $? "gpu build failed"
 }
@@ -278,7 +280,7 @@ post_build()
     ar x libsvml.a svml_i_div4_iface_la.o svml_d_feature_flag_.o \
         svml_i_div4_core_e7la.o svml_i_div4_core_exla.o svml_i_div4_core_h9la.o \
         svml_i_div4_core_y8la.o
-    gcc -fPIE -fPIC -Wl,-z,now -Wl,-z,relro -Wl,-z,noexecstack -std=gnu99 -Wall -Werror -D_GNU_SOURCE -fvisibility=internal -O3 -DNDEBUG -std=gnu99 -O3   -shared -Wl,-soname,libccl_atl_mpi.so.1.0 -o libccl_atl_mpi.so.1 *.o -L${WORKSPACE}/build/_install/lib/ -lmpi
+    gcc -fPIE -fPIC -Wl,-z,now -Wl,-z,relro -Wl,-z,noexecstack -std=gnu99 -Wall -Werror -D_GNU_SOURCE -fvisibility=internal -O3 -DNDEBUG -std=gnu99 -O3 -shared -Wl,-soname,libccl_atl_mpi.so.1.0 -o libccl_atl_mpi.so.1 *.o -L${WORKSPACE}/build/_install/lib/ -lmpi
     CheckCommandExitCode $? "post build failed"
     rm -rf *.o
     cp ${WORKSPACE}/build/_install/lib/libccl_atl_ofi.a ./
@@ -287,7 +289,14 @@ post_build()
     ar x libsvml.a svml_i_div4_iface_la.o svml_d_feature_flag_.o \
         svml_i_div4_core_e7la.o svml_i_div4_core_exla.o svml_i_div4_core_h9la.o \
         svml_i_div4_core_y8la.o
-    gcc -fPIE -fPIC -Wl,-z,now -Wl,-z,relro -Wl,-z,noexecstack -std=gnu99 -Wall -Werror -D_GNU_SOURCE -fvisibility=internal -O3 -DNDEBUG -std=gnu99 -O3   -shared -Wl,-soname,libccl_atl_ofi.so.1.0  -o libccl_atl_ofi.so.1 *.o -L${WORKSPACE}/build/_install/lib/ ${WORKSPACE}/build/_install/lib/libpmi.so.1 ${WORKSPACE}/build/_install/lib/libresizable_pmi.so.1 -lfabric -lm
+    LDFLAGS="-L${WORKSPACE}/build/_install/lib/ ${WORKSPACE}/build/_install/lib/libpmi.so.1 ${WORKSPACE}/build/_install/lib/libresizable_pmi.so.1 -lm"
+    if [ ! -z "${LIBFABRIC_INSTALL_DIR}" ]
+    then
+        LDFLAGS="${LDFLAGS} -L${LIBFABRIC_INSTALL_DIR} -lfabric"
+    else
+        LDFLAGS="${LDFLAGS} -lfabric"
+    fi
+    gcc -fPIE -fPIC -Wl,-z,now -Wl,-z,relro -Wl,-z,noexecstack -std=gnu99 -Wall -Werror -D_GNU_SOURCE -fvisibility=internal -O3 -DNDEBUG -std=gnu99 -O3 -shared -Wl,-soname,libccl_atl_ofi.so.1.0  -o libccl_atl_ofi.so.1 *.o ${LDFLAGS}
     CheckCommandExitCode $? "post build failed"
     rm -rf *.o
     mkdir -p ${WORKSPACE}/build/_install/lib/cpu_gpu_dpcpp
