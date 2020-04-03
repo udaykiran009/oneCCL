@@ -528,6 +528,11 @@ size_t main_server_address_reserve(char* main_address)
     if ((additional_local_host_ips = strstr(local_host_ip, " ")) != NULL)
         additional_local_host_ips[0] = NULL_CHAR;
 
+    if (strlen(local_host_ip) >= CCL_IP_LEN - INT_STR_SIZE - 1)
+    {
+        printf("Error: Local host IP is too bigger: %zu, expected: %d\n", strlen(local_host_ip), CCL_IP_LEN - INT_STR_SIZE - 1);
+        exit(1);
+    }
     if ((sock_listener = socket(AF_INET, SOCK_STREAM, 0)) < 0)
     {
         printf("Server: socket init failed - %s\n", strerror(errno));
@@ -547,7 +552,8 @@ size_t main_server_address_reserve(char* main_address)
     local_server_address.sin_port = main_server_address.sin_port;
 
     memset(main_address, '\0', CCL_IP_LEN);
-    snprintf(main_address, CCL_IP_LEN, "%s_%d", local_host_ip, main_server_address.sin_port);
+    snprintf(main_address, CCL_IP_LEN, "%s", local_host_ip);
+    snprintf(main_address + strlen(local_host_ip), INT_STR_SIZE + 1, "_%d", main_server_address.sin_port);
 
     return 0;
 }

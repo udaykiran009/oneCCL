@@ -91,12 +91,12 @@ void convert_fp32_to_bfp16_arrays(T* send_buf, void* send_buf_bfp16, size_t coun
 {
     int int_val = 0, int_val_shifted = 0;
 
-    for (int i = 0; i < (count / FLOATS_IN_M512) * FLOATS_IN_M512; i += FLOATS_IN_M512)
+    for (size_t i = 0; i < (count / FLOATS_IN_M512) * FLOATS_IN_M512; i += FLOATS_IN_M512)
     {
         convert_fp32_to_bfp16(send_buf + i, ((char*)send_buf_bfp16)+(2 * i));
     }
 
-    for (int i = (count / FLOATS_IN_M512) * FLOATS_IN_M512; i < count; i ++)
+    for (size_t i = (count / FLOATS_IN_M512) * FLOATS_IN_M512; i < count; i ++)
     {
         int* send_bfp_tail = (int*)(((char*)send_buf_bfp16) + (2 * i));
         memcpy(&int_val,&send_buf[i], 4);
@@ -110,12 +110,12 @@ void convert_bfp16_to_fp32_arrays(void* recv_buf_bfp16, T* recv_buf, size_t coun
 {
     int int_val = 0, int_val_shifted = 0;
 
-    for (int i = 0; i < (count / FLOATS_IN_M512) * FLOATS_IN_M512; i += FLOATS_IN_M512)
+    for (size_t i = 0; i < (count / FLOATS_IN_M512) * FLOATS_IN_M512; i += FLOATS_IN_M512)
     {
         convert_bfp16_to_fp32((char*)recv_buf_bfp16 + (2 * i), recv_buf + i);
     }
 
-    for (int i = (count / FLOATS_IN_M512) * FLOATS_IN_M512; i < count; i ++)
+    for (size_t i = (count / FLOATS_IN_M512) * FLOATS_IN_M512; i < count; i ++)
     {
         float recv_bfp_tail = *(float*)((char*)recv_buf_bfp16 + (2 * i));
         memcpy(&int_val,&recv_bfp_tail,4);
