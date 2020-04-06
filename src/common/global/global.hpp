@@ -70,6 +70,5 @@ extern ccl_global_data global_data;
     } while (0);                                       \
   }
 
-void ccl_reset_for_size_update(ccl_global_data* gl_data);
-
-void ccl_init_global_objects(ccl_global_data& gl_data);
+void ccl_init_resize_dependent_objects(ccl_global_data& gl_data);
+void ccl_reset_resize_dependent_objects(ccl_global_data& gl_data);

@@ -171,8 +171,7 @@ run()
             fi
             
            
-            colls_list=""        # use empty coll list means default benchmarking collectives set
-            offload="1"          #default value of CCL_WORKER_OFFLOAD
+            coll_list="" # empty coll_list means default benchmarking collectives set
             for example in $examples_to_run
             do
                 if [ "$dir_name" == "common" ];
@@ -180,18 +179,14 @@ run()
                     for backend in $backend_list
                     do
                         ccl_extra_env="CCL_ATL_TRANSPORT=${transport}"
-                        base_benchmark_extra_env="${ccl_extra_env}"
                         
-                        # MPI provide a limited sparse functionality:
-                        # Limitations: CCL_WORKER_OFFLOAD=0 and no sparse duplicates in coll_list
+                        # MPI doesn't support sparse functionality, remove sparse_allreduce from coll_list
                         if [ "${transport}" == "mpi" ];
                         then
-                            # override environment values due to limitations
-                            offload="0"
-                            base_benchmark_extra_env="CCL_WORKER_OFFLOAD=${offload} ${base_benchmark_extra_env}"
-                            colls_list="allgatherv,allreduce,alltoall,alltoallv,bcast,reduce,sparse_bfp16_allreduce,allgatherv,allreduce,alltoall,alltoallv,bcast,reduce,sparse_bfp16_allreduce"
+                            coll_list="allgatherv,allreduce,alltoall,alltoallv,bcast,reduce,allgatherv,allreduce,alltoall,alltoallv,bcast,reduce"
                         fi
-                        run_benchmark "${base_benchmark_extra_env}" ${dir_name} ${transport} ${example} ${backend} "regular" ${colls_list}
+
+                        run_benchmark "${ccl_extra_env}" ${dir_name} ${transport} ${example} ${backend} regular ${coll_list}
                         
                         # run extended version of benchmark
                         if [[ "${example}" == *"benchmark"* ]]
@@ -202,14 +197,14 @@ run()
                                 then
                                     continue
                                 fi
-                                ccl_extra_env="CCL_WORKER_OFFLOAD=${offload} CCL_PRIORITY=lifo CCL_ATL_TRANSPORT=${transport}"
-                                run_benchmark "${ccl_extra_env}" ${dir_name} ${transport} ${example} ${backend} ${loop} ${colls_list}
+                                ccl_extra_env="CCL_PRIORITY=lifo CCL_ATL_TRANSPORT=${transport}"
+                                run_benchmark "${ccl_extra_env}" ${dir_name} ${transport} ${example} ${backend} ${loop} ${coll_list}
                                 ccl_extra_env="CCL_WORKER_OFFLOAD=0 CCL_ATL_TRANSPORT=${transport}"
-                                run_benchmark "${ccl_extra_env}" ${dir_name} ${transport} ${example} ${backend} ${loop} ${colls_list}
+                                run_benchmark "${ccl_extra_env}" ${dir_name} ${transport} ${example} ${backend} ${loop} ${coll_list}
                             done
-                            ccl_extra_env="CCL_WORKER_OFFLOAD=${offload} CCL_FUSION=1 CCL_ATL_TRANSPORT=${transport}"
+                            ccl_extra_env="CCL_FUSION=1 CCL_ATL_TRANSPORT=${transport}"
                             run_benchmark "${ccl_extra_env}" ${dir_name} ${transport} ${example} ${backend} regular allreduce
-                            ccl_extra_env="CCL_WORKER_OFFLOAD=${offload} CCL_LOG_LEVEL=2 CCL_ATL_TRANSPORT=${transport}"
+                            ccl_extra_env="CCL_LOG_LEVEL=2 CCL_ATL_TRANSPORT=${transport}"
                             run_benchmark "${ccl_extra_env}" ${dir_name} ${transport} ${example} ${backend} regular allreduce
                         fi
                     done

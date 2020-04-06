@@ -131,8 +131,7 @@ void ccl_master_sched::dump(std::ostream& out) const
 }
 
 ccl_master_sched::ccl_master_sched_ptr ccl_master_sched::create(const ccl_coll_param& param,
-                                                                const ccl_coll_attr& attr,
-                                                                bool postpone_caching)
+                                                                const ccl_coll_attr& attr)
 {
     /* check contract at first */
     CCL_THROW_IF_NOT(param.ctype == ccl_coll_allreduce ||
@@ -152,39 +151,37 @@ ccl_master_sched::ccl_master_sched_ptr ccl_master_sched::create(const ccl_coll_p
                      "BFP16 datatype is requested but not supported");
 
     ccl_sched_key key;
-    ccl_master_sched_ptr sched = nullptr;
+    std::pair<ccl_master_sched_ptr, bool> result;
+    ccl_master_sched_ptr sched;
+    bool is_created = false;
+    auto create_fn = [param]() -> ccl_master_sched_ptr { return new ccl_master_sched(param); };
 
     if (attr.to_cache)
     {
         key.set(param, attr);
-        sched = global_data.sched_cache->find(key);
-        if (sched)
-        {
-            /* update some parameters and attributes in existing schedule
-               as they could be changed since previous call */
-            sched->update_coll_param_and_attr(param, attr);
-
-            LOG_DEBUG("found sched, reuse ", sched, ", type ",
-                      ccl_coll_type_to_str(sched->coll_param.ctype));
-        }
+        std::tie(sched, is_created) = global_data.sched_cache->find_or_create(std::move(key), create_fn);
     }
-
-    if (!sched)
+    else
     {
-        std::unique_ptr<ccl_master_sched> new_sched(new ccl_master_sched(param));
-        LOG_DEBUG("didn't find sched, create new one ", new_sched.get(), ", type ",
-                  ccl_coll_type_to_str(new_sched->coll_param.ctype));
-
-        new_sched->set_coll_attr(attr);
-        new_sched->alloc_buffers_for_sycl_copy();
-
-        if (attr.to_cache && !postpone_caching)
-        {
-            global_data.sched_cache->add(std::move(key), new_sched.get());
-            // don't use 'key' anymore, because it was moved
-        }
-
-        sched = new_sched.release();
+        sched = create_fn();
+        is_created = true;
     }
+
+    if (is_created)
+    {
+        sched->set_coll_attr(attr);
+        sched->alloc_buffers_for_sycl_copy();
+        LOG_DEBUG("didn't find sched, create new one ", sched, ", type ",
+                  ccl_coll_type_to_str(sched->coll_param.ctype));
+    }
+    else
+    {
+        /* update some parameters and attributes in existing schedule
+           as they could be changed since previous call */
+        sched->update_coll_param_and_attr(param, attr);
+        LOG_DEBUG("found sched, reuse ", sched, ", type ",
+                    ccl_coll_type_to_str(sched->coll_param.ctype));
+    }
+
     return sched;
 }

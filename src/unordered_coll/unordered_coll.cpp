@@ -333,14 +333,14 @@ void ccl_unordered_coll_manager::run_postponed_scheds(const std::string& match_i
 
 void ccl_unordered_coll_manager::run_sched(ccl_master_sched* sched, ccl_comm* comm) const
 {
-    /* caching and starting were postponed, now it is time to make them */
-
+    ccl_sched_key old_key, new_key;
+    old_key.set(sched->coll_param, sched->coll_attr);
     sched->coll_param.comm = comm;
+    new_key.set(sched->coll_param, sched->coll_attr);
 
     if (sched->coll_attr.to_cache)
     {
-        ccl_sched_key key(sched->coll_param, sched->coll_attr);
-        global_data.sched_cache->add(std::move(key), sched);
+        global_data.sched_cache->recache(old_key, std::move(new_key));
     }
 
     for (size_t part_idx = 0; part_idx < sched->partial_scheds.size(); ++part_idx)

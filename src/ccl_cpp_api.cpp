@@ -70,7 +70,7 @@ private:
 CCL_API ccl::environment::environment()
 {
     static auto result = ccl_init();
-    env_ref_counter.fetch_add(1);
+    env_ref_counter++;
     CCL_CHECK_AND_THROW(result, "failed to initialize ccl");
 }
 
@@ -124,7 +124,7 @@ ccl::stream_t CCL_API ccl::environment::create_stream(ccl::stream_type type/* = 
 
 CCL_API ccl::environment::~environment()
 {
-    if (env_ref_counter.fetch_sub(1) == 1)
+    if (env_ref_counter-- == 1)
     {
         auto result = ccl_finalize();
         if (result != ccl_status_success)

@@ -27,7 +27,7 @@ public:
 
     ccl_sched_key(const ccl_coll_param& param, const ccl_coll_attr& attr);
     void set(const ccl_coll_param& param, const ccl_coll_attr& attr);
-    bool check(const ccl_coll_param& param, const ccl_coll_attr& attr);
+    bool check(const ccl_coll_param& param, const ccl_coll_attr& attr) const;
 
     size_t get_hasher_result() const
     {

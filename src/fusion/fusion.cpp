@@ -16,12 +16,15 @@ ccl_status_t complete_user_request(const void* ctx)
 ccl_status_t release_fusion_buf(const void* ctx)
 {
     void* buf = (void*) ctx;
-    global_data.fusion_manager->release_buffer(buf);
+
+    if (global_data.fusion_manager)
+        global_data.fusion_manager->release_buffer(buf);
+
     return ccl_status_success;
 }
 
 ccl_status_t release_fusion_buf_for_cached_sched(ccl_sched* sched,
-                                                  const void* ctx)
+                                                 const void* ctx)
 {
     return release_fusion_buf(ctx);
 }
@@ -43,9 +46,10 @@ ccl_fusion_buffer_cache::~ccl_fusion_buffer_cache()
 {
     std::lock_guard<ccl_fusion_lock_t> lock{guard};
 
-    if (free_buffers.size() != all_buffers.size())
+    if (free_buffers.size() > all_buffers.size())
     {
-        CCL_FATAL("size mismatch ", free_buffers.size(), " vs ", all_buffers.size());
+        CCL_FATAL("unexpected buffer count - free_buffers: ", free_buffers.size(),
+                  ", all_buffers: ", all_buffers.size());
     }
 
     for (size_t idx = 0; idx < all_buffers.size(); idx++)
@@ -60,6 +64,7 @@ ccl_fusion_buffer_cache::~ccl_fusion_buffer_cache()
 void* ccl_fusion_buffer_cache::get()
 {
     std::lock_guard<ccl_fusion_lock_t> lock{guard};
+
     void* buf;
     if (!free_buffers.empty())
     {
@@ -73,6 +78,7 @@ void* ccl_fusion_buffer_cache::get()
         all_buffers.push_back(buf);
     }
     CCL_THROW_IF_NOT(buf, "empty buf");
+
     return buf;
 }
 
@@ -81,13 +87,6 @@ void ccl_fusion_buffer_cache::release(void* buf)
     std::lock_guard<ccl_fusion_lock_t> lock{guard};
     CCL_THROW_IF_NOT(buf, "empty buf");
     free_buffers.push_back(buf);
-}
-
-void ccl_fusion_buffer_cache::clear()
-{
-    buf_size = 0;
-    free_buffers.clear();
-    all_buffers.clear();
 }
 
 ccl_fusion_manager::ccl_fusion_manager()
@@ -114,7 +113,8 @@ ccl_fusion_manager::~ccl_fusion_manager()
              ", empty_exec_calls ", stat_empty_exec_calls,
              ", overlapped_exec_calls ", stat_overlapped_exec_calls);
 
-    check_tracked_scheds();
+    while (!tracked_scheds.empty())
+        check_tracked_scheds(true);
 
     CCL_ASSERT(postponed_queue.empty() && exec_queue.empty() && tracked_scheds.empty(),
                "queues are not empty, ", postponed_queue.size(), " ",
@@ -175,7 +175,7 @@ ccl_master_sched* ccl_fusion_manager::build_sched()
     ccl_coll_type ctype;
     const ccl_stream* stream __attribute__((unused)) = nullptr;
     void* fusion_buf = nullptr;
-    bool found_sched_in_cache = false;
+    bool fill_sched = true;
 
     CCL_THROW_IF_NOT(exec_queue.size(), "empty queue");
 
@@ -204,34 +204,16 @@ ccl_master_sched* ccl_fusion_manager::build_sched()
               ", sched_count ", exec_queue.size());
 
     ccl_master_sched* sched = nullptr;
-    {
-        ccl_sched_key key{};
-        if (use_cache)
+    std::pair<ccl_master_sched*, bool> result;
+    auto create_fn = [this, ctype, &fusion_buf, sum_count, dtype, reduction, comm] () {
+        ccl_master_sched* sched = nullptr;
+        switch (ctype)
         {
-            key.f.ctype = ccl_coll_allreduce;
-            key.f.count1 = sum_count;
-            key.f.count2 = exec_queue.size();
-            key.f.dtype = dtype->type;
-            key.f.reduction = reduction;
-            key.f.comm = comm;
-            key.match_id = first_sched->coll_attr.match_id + last_sched->coll_attr.match_id;
-            LOG_DEBUG("key.match_id ", key.match_id);
-            sched = global_data.sched_cache->find(key);
-            found_sched_in_cache = (sched) ? true : false;
-        }
-
-        stat_fused_bytes += sum_bytes;
-        stat_fused_ops += exec_queue.size();
-
-        if (!sched)
-        {
-            ccl_coll_param coll_param{};
-            LOG_DEBUG("didn't find fused_sched in cache");
-            switch (ctype)
-            {
-                case ccl_coll_allreduce:
-                    fusion_buf = buf_cache.get();
-                    coll_param.ctype = ccl_coll_allreduce;
+            case ccl_coll_allreduce:
+                {
+                    ccl_coll_param coll_param{};
+                    fusion_buf = this->buf_cache.get();
+                    coll_param.ctype = ctype;
                     coll_param.send_buf = fusion_buf;
                     coll_param.recv_buf = fusion_buf;
                     coll_param.count = sum_count;
@@ -240,44 +222,72 @@ ccl_master_sched* ccl_fusion_manager::build_sched()
                     coll_param.comm = comm;
                     sched = new ccl_master_sched(coll_param);
                     sched->internal_type = ccl_sched_internal_fusion;
-                    break;
-                default:
-                    CCL_FATAL("not supported");
-                    break;
-            }
+                }
+                break;
+            default:
+                CCL_FATAL("not supported");
+                break;
+        }
+        return sched;
+    };
+    
+    if (use_cache)
+    {
+        ccl_sched_key key{};
+        key.f.ctype = ctype;
+        key.f.count1 = sum_count;
+        key.f.count2 = exec_queue.size();
+        key.f.dtype = dtype->type;
+        key.f.reduction = reduction;
+        key.f.comm = comm;
+        key.match_id = first_sched->coll_attr.match_id + last_sched->coll_attr.match_id;
+        LOG_DEBUG("key.match_id ", key.match_id);
+        bool is_created = false;
+        std::tie(sched, is_created) = global_data.sched_cache->find_or_create(std::move(key), create_fn);
 
-            if (use_cache)
+        fill_sched = is_created;
+        
+        if (!is_created)
+        {
+            LOG_DEBUG("found fused_sched in cache");
+            if (!sched->is_completed())
             {
-                global_data.sched_cache->add(std::move(key), sched);
+                LOG_DEBUG("it is not completed sched");
+                stat_overlapped_exec_calls++;
+                if (global_data.executor->get_worker_count() > 1)
+                {
+                    LOG_DEBUG("found fused_sched in cache, which is not completed yet");
+                    global_data.executor->wait(sched);
+                }
+                else
+                {
+                    CCL_THROW_IF_NOT(sched->is_completed(),
+                                    "non completed fused_sched found in cache");
+                }
             }
         }
+    }
+    else
+    {
+        sched = create_fn();
     }
 
     CCL_THROW_IF_NOT(sched);
 
+    tracked_scheds.push_back(sched);
     sched->coll_attr.priority = max_priority;
-    sched->commit(global_data.parallelizer.get());
+    sched->coll_attr.to_cache = use_cache;
 
-    if (found_sched_in_cache)
+    stat_fused_bytes += sum_bytes;
+    stat_fused_ops += exec_queue.size();
+
+    if (!fill_sched)
     {
-        LOG_DEBUG("found fused_sched in cache");
-        if (!sched->is_completed())
-        {
-            stat_overlapped_exec_calls++;
-            if(global_data.executor->get_worker_count() > 1)
-            {
-                LOG_DEBUG("found fused_sched in cache, which is not completed yet");
-                global_data.executor->wait(sched);
-            }
-            else
-            {
-                CCL_THROW_IF_NOT(sched->is_completed(),
-                                "non completed fused_sched found in cache");
-            }
-        }
         clear_exec_queue();
         return sched;
     }
+
+    sched->commit(global_data.parallelizer.get());
 
     size_t exec_queue_size = exec_queue.size();
     size_t part_count = sched->partial_scheds.size();
@@ -385,11 +395,6 @@ ccl_master_sched* ccl_fusion_manager::build_sched()
     {
         sched->sync_partial_scheds();
         entry_factory::make_entry<function_entry>(part_scheds[0].get(), release_fusion_buf, fusion_buf);
-    }
-
-    if (!use_cache)
-    {
-        tracked_scheds.push_back(sched);
     }
 
     clear_exec_queue();
@@ -505,34 +510,21 @@ void ccl_fusion_manager::release_buffer(void* buf)
     buf_cache.release(buf);
 }
 
-void ccl_fusion_manager::clear()
-{
-    if (global_data.is_ft_enabled)
-    {
-        tracked_scheds.clear();
-        clear_exec_queue();
-        postponed_queue.clear();
-        buf_cache.clear();
-        stat_fused_ops = 0;
-        stat_fused_bytes = 0;
-        stat_empty_exec_calls = 0;
-    }
-}
-
 void ccl_fusion_manager::clear_exec_queue()
 {
     exec_queue.clear();
     exec_queue_sum_bytes = 0;
 }
 
-void ccl_fusion_manager::check_tracked_scheds()
+void ccl_fusion_manager::check_tracked_scheds(bool force_release)
 {
     for (auto it = tracked_scheds.begin(); it != tracked_scheds.end();)
     {
         ccl_master_sched* sched = *it;
-        if (sched->is_completed())
+        if (sched->is_completed() &&
+            (!sched->coll_attr.to_cache || force_release))
         {
-            delete sched;
+            ccl_release_sched(sched);
             it = tracked_scheds.erase(it);
         }
         else

@@ -95,7 +95,7 @@ static ccl_request* ccl_coll_create(ccl_coll_param& param,
     }
 
     /* 2. create or get schedule */
-    ccl_master_sched* sched = ccl_master_sched::create(param, attr, postpone_schedule);
+    ccl_master_sched* sched = ccl_master_sched::create(param, attr);
 
     /* 3. fuse schedule */
     if (!postpone_schedule && env_data.enable_fusion)
@@ -631,6 +631,15 @@ void ccl_barrier_impl(ccl_comm* comm, const ccl_stream* stream)
     attr.synchronous = 1;
 
     ccl_coll_create(param, attr);
+
+    if (global_data.sched_cache->try_flush())
+    {
+        LOG_DEBUG("flushed cache in barrier");
+    }
+    else
+    {
+        LOG_DEBUG("didn't flush cache in barrier");
+    }
 }
 
 ccl_request* ccl_bcast_impl(void* buf,

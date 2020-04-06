@@ -69,7 +69,7 @@ void ccl_sched_key::set(const ccl_coll_param& param,
 }
 
 bool ccl_sched_key::check(const ccl_coll_param& param, 
-                          const ccl_coll_attr& attr)
+                          const ccl_coll_attr& attr) const
 {
     bool result = true;
 

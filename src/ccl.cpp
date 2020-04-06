@@ -9,10 +9,18 @@
 #include "parallelizer/parallelizer.hpp"
 #include "unordered_coll/unordered_coll.hpp"
 
-void ccl_init_global_objects(ccl_global_data& gl_data)
+void ccl_init_resize_dependent_objects(ccl_global_data& gl_data)
 {
     gl_data.sched_cache = std::unique_ptr<ccl_sched_cache>(new ccl_sched_cache());
 
+    if (env_data.enable_fusion)
+    {
+        /* create fusion_manager before executor because service_worker uses fusion_manager */
+        gl_data.fusion_manager =
+            std::unique_ptr<ccl_fusion_manager>(new ccl_fusion_manager());
+    }
+
+    global_data.executor = std::unique_ptr<ccl_executor>(new ccl_executor());
 
     gl_data.comm_ids = std::unique_ptr<ccl_comm_id_storage>(new ccl_comm_id_storage(ccl_comm::max_comm_count));
 
@@ -26,8 +34,63 @@ void ccl_init_global_objects(ccl_global_data& gl_data)
             std::unique_ptr<ccl_unordered_coll_manager>(new ccl_unordered_coll_manager());
     }
 
+    gl_data.allreduce_2d_builder =
+            std::unique_ptr<ccl_allreduce_2d_builder>(new ccl_allreduce_2d_builder());
+
+    gl_data.atl_tag =
+        std::unique_ptr<ccl_atl_tag>(new ccl_atl_tag(gl_data.executor->get_atl_attr().tag_bits,
+                                                     gl_data.executor->get_atl_attr().max_tag));
+}
+
+void ccl_init_resize_independent_objects(ccl_global_data& gl_data)
+{
+    gl_data.parallelizer = std::unique_ptr<ccl_parallelizer>(new ccl_parallelizer(env_data.worker_count));
+
+    gl_data.algorithm_selector =
+        std::unique_ptr<ccl_algorithm_selector_wrapper<CCL_COLL_LIST>>(
+                new ccl_algorithm_selector_wrapper<CCL_COLL_LIST>());
+
+    gl_data.algorithm_selector->init();
+
+    if (gl_data.executor->get_global_proc_idx() == 0)
+        gl_data.algorithm_selector->print();
+
     gl_data.default_coll_attr.reset(new ccl_coll_attr_t{});
     memset(gl_data.default_coll_attr.get(), 0, sizeof(ccl_coll_attr_t));
+
+    gl_data.bfp16_impl_type = ccl_bfp16_get_impl_type();
+
+    if (gl_data.bfp16_impl_type != ccl_bfp16_none)
+    {
+        LOG_INFO("BFP16 is enabled through ",
+            (gl_data.bfp16_impl_type == ccl_bfp16_avx512bf) ? "AVX512-BF" : "AVX512-F");
+    }
+    else
+    {
+#ifdef CCL_BFP16_COMPILER
+        LOG_INFO("BFP16 is disabled on HW level");
+#else
+        LOG_INFO("BFP16 is disabled on compiler level");
+#endif
+    }
+}
+
+void ccl_reset_resize_dependent_objects(ccl_global_data& gl_data)
+{
+    gl_data.allreduce_2d_builder.reset();
+    gl_data.unordered_coll_manager.reset();
+    gl_data.comm.reset();
+    gl_data.comm_ids.reset();
+    gl_data.fusion_manager.reset();
+    gl_data.sched_cache.reset();
+    gl_data.atl_tag.reset();
+}
+
+void ccl_reset_resize_independent_objects(ccl_global_data& gl_data)
+{
+    gl_data.parallelizer.reset();
+    gl_data.algorithm_selector.reset();
+    gl_data.default_coll_attr.reset();
 }
 
 ccl_status_t ccl_init()
@@ -37,58 +100,33 @@ ccl_status_t ccl_init()
         ccl_env_parse();
         ccl_datatype_init();
 
-        global_data.parallelizer = std::unique_ptr<ccl_parallelizer>(new ccl_parallelizer(env_data.worker_count));
-
-        if (env_data.enable_fusion)
-        {
-            /* create fusion_manager before executor because service_worker uses fusion_manager */
-            global_data.fusion_manager =
-                std::unique_ptr<ccl_fusion_manager>(new ccl_fusion_manager());
-        }
-
-        global_data.executor = std::unique_ptr<ccl_executor>(new ccl_executor());
-
-        /* worker affinity parsing become possible only after atl_init, i.e. when local idx/count are available */
-        CCL_THROW_IF_NOT(ccl_env_parse_worker_affinity(global_data.executor->get_local_proc_idx(),
-                                                       global_data.executor->get_local_proc_count()));
-        global_data.executor->start_workers();
+        ccl_init_resize_dependent_objects(global_data);
+        ccl_init_resize_independent_objects(global_data);
 
         if (global_data.executor->get_global_proc_idx() == 0)
             ccl_env_print();
 
-        global_data.atl_tag = std::unique_ptr<ccl_atl_tag>(new ccl_atl_tag(global_data.executor->get_atl_attr().tag_bits,
-                                                                           global_data.executor->get_atl_attr().max_tag));
-        global_data.algorithm_selector =
-            std::unique_ptr<ccl_algorithm_selector_wrapper<CCL_COLL_LIST>>(
-                new ccl_algorithm_selector_wrapper<CCL_COLL_LIST>());
+        return ccl_status_success;
+    }
+    COMMON_CATCH_BLOCK();
+}
 
-        ccl_init_global_objects(global_data);
+ccl_status_t ccl_finalize()
+{
+    try
+    {
+        /*
+            executor is resize_dependent object but out of regular reset procedure
+            exector is responsible for resize logic and has own multi-step reset
+        */
+        global_data.executor.reset();
 
-        global_data.algorithm_selector->init();
-        if (global_data.executor->get_global_proc_idx() == 0)
-            global_data.algorithm_selector->print();
-
-        global_data.allreduce_2d_builder =
-            std::unique_ptr<ccl_allreduce_2d_builder>(new ccl_allreduce_2d_builder());
-
-        global_data.bfp16_impl_type = ccl_bfp16_get_impl_type();
-
-        if (global_data.bfp16_impl_type != ccl_bfp16_none)
-        {
-            LOG_INFO("BFP16 is enabled through ",
-                (global_data.bfp16_impl_type == ccl_bfp16_avx512bf) ? "AVX512-BF" : "AVX512-F");
-        }
-        else
-        {
-#ifdef CCL_BFP16_COMPILER
-            LOG_INFO("BFP16 is disabled on HW level");
-#else
-            LOG_INFO("BFP16 is disabled on compiler level");
-#endif
-        }
+        ccl_reset_resize_dependent_objects(global_data);
+        ccl_reset_resize_independent_objects(global_data);
 
         return ccl_status_success;
     }
+
     COMMON_CATCH_BLOCK();
 }
 
@@ -107,41 +145,6 @@ ccl_status_t CCL_API ccl_get_version(ccl_version_t* version)
     version->full = CCL_PRODUCT_FULL;
 
     return ccl_status_success;
-}
-
-void ccl_reset_for_size_update(ccl_global_data* gl_data)
-{
-    gl_data->allreduce_2d_builder.reset();
-    gl_data->unordered_coll_manager.reset();
-    gl_data->sched_cache.reset();
-    gl_data->comm.reset();
-    gl_data->comm->comm_count = 0;
-
-    if (env_data.enable_fusion)
-    {
-        gl_data->fusion_manager->clear();
-    }
-
-    gl_data->comm_ids.reset();
-}
-
-ccl_status_t ccl_finalize()
-{
-    try
-    {
-        /* keep reverse order of initialization */
-        ccl_reset_for_size_update(&global_data);
-        global_data.comm_ids.reset();
-        global_data.atl_tag.reset();
-        global_data.executor.reset();
-        global_data.parallelizer.reset();
-        global_data.fusion_manager.reset();
-        global_data.default_coll_attr.reset();
-        global_data.algorithm_selector.reset();
-
-        return ccl_status_success;
-    }
-    COMMON_CATCH_BLOCK();
 }
 
 ccl_status_t ccl_set_resize_fn(ccl_resize_fn_t callback)

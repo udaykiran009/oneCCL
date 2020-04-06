@@ -38,6 +38,7 @@ ccl_env_data env_data =
     .yield_type = ccl_yield_pause,
     .max_short_size = 4096,
     .cache_key_type = ccl_cache_key_match_id,
+    .enable_cache_flush = 1,
 
     .chunk_count = 1,
     .min_chunk_size = 65536,
@@ -154,6 +155,7 @@ void ccl_env_parse()
     ccl_env_parse_yield_type();
     ccl_env_2_size_t(CCL_MAX_SHORT_SIZE, env_data.max_short_size);
     ccl_env_parse_cache_key();
+    ccl_env_2_int(CCL_CACHE_FLUSH, env_data.enable_cache_flush);
 
     ccl_env_2_size_t(CCL_CHUNK_COUNT, env_data.chunk_count);
     CCL_THROW_IF_NOT(env_data.chunk_count >= 1, "incorrect ",
@@ -242,6 +244,7 @@ void ccl_env_print()
     LOG_INFO(CCL_YIELD, ": ", ccl_yield_type_to_str(env_data.yield_type));
     LOG_INFO(CCL_MAX_SHORT_SIZE, ": ", env_data.max_short_size);
     LOG_INFO(CCL_CACHE_KEY, ": ", ccl_cache_key_type_to_str(env_data.cache_key_type));
+    LOG_INFO(CCL_CACHE_FLUSH, ": ", env_data.enable_cache_flush);
 
     LOG_INFO(CCL_CHUNK_COUNT, ": ", env_data.chunk_count);
     LOG_INFO(CCL_MIN_CHUNK_SIZE, ": ", env_data.min_chunk_size);
