@@ -788,12 +788,15 @@ ccl_status_t ccl_parallelizer::process(ccl_master_sched* sched)
                 {
                     size_t sched_idx = (my_rank + idx) % part_count;
 
-                    ccl_buffer recv_buf = (coll_param->send_buf == coll_param->recv_buf) ?
-                                           part_scheds[sched_idx].get()->alloc_buffer(counts[idx] * dtype_size) :
-                                           ccl_buffer(&(coll_param->recv_buf),
-                                                      counts[idx] * dtype_size * comm_size,
-                                                      offsets[idx],
-                                                      ccl_buffer_type::INDIRECT);
+                    ccl_buffer recv_buf;
+
+                    if (coll_param->send_buf && (coll_param->send_buf == coll_param->recv_buf))
+                        recv_buf = part_scheds[sched_idx].get()->alloc_buffer(counts[idx] * dtype_size);
+                    else
+                        recv_buf = ccl_buffer(&(coll_param->recv_buf),
+                                              counts[idx] * dtype_size * comm_size,
+                                              offsets[idx],
+                                              ccl_buffer_type::INDIRECT);
 
                     entry_factory::make_entry<recv_entry>(part_scheds[sched_idx].get(),
                                                           recv_buf,
@@ -812,7 +815,7 @@ ccl_status_t ccl_parallelizer::process(ccl_master_sched* sched)
                                                           idx,
                                                           comm);
 
-                    if (coll_param->send_buf == coll_param->recv_buf)
+                    if (coll_param->send_buf && (coll_param->send_buf == coll_param->recv_buf))
                     {
                         part_scheds[sched_idx].get()->add_barrier();
                         entry_factory::make_entry<copy_entry>(part_scheds[sched_idx].get(),
@@ -882,12 +885,15 @@ ccl_status_t ccl_parallelizer::process(ccl_master_sched* sched)
                 {
                     size_t sched_idx = (my_rank + idx) % part_count;
 
-                    ccl_buffer recv_buf = (coll_param->send_buf == coll_param->recv_buf) ?
-                                           part_scheds[sched_idx].get()->alloc_buffer(recv_counts[idx] * dtype_size) :
-                                           ccl_buffer(&(coll_param->recv_buf),
-                                                      a2av_recv_bytes,
-                                                      recv_offsets[idx],
-                                                      ccl_buffer_type::INDIRECT);
+                    ccl_buffer recv_buf;
+
+                    if (coll_param->send_buf && (coll_param->send_buf == coll_param->recv_buf))
+                        recv_buf = part_scheds[sched_idx].get()->alloc_buffer(recv_counts[idx] * dtype_size);
+                    else
+                        recv_buf = ccl_buffer(&(coll_param->recv_buf),
+                                              a2av_recv_bytes,
+                                              recv_offsets[idx],
+                                              ccl_buffer_type::INDIRECT);
 
                     entry_factory::make_entry<recv_entry>(part_scheds[sched_idx].get(),
                                                           recv_buf,
@@ -906,7 +912,7 @@ ccl_status_t ccl_parallelizer::process(ccl_master_sched* sched)
                                                           idx,
                                                           comm);
 
-                    if (coll_param->send_buf == coll_param->recv_buf)
+                    if (coll_param->send_buf && (coll_param->send_buf == coll_param->recv_buf))
                     {
                         part_scheds[sched_idx].get()->add_barrier();
                         entry_factory::make_entry<copy_entry>(part_scheds[sched_idx].get(),

@@ -62,4 +62,3 @@ bool ccl_sched_cache::try_flush()
         return false;
     }
 }
-

@@ -565,7 +565,7 @@ atl_mpi_ep_allgatherv(atl_ep_t* ep, const void* send_buf, size_t send_len,
     atl_mpi_req_t* mpi_req = ((atl_mpi_req_t*)req->internal);
     int ret = MPI_SUCCESS;
 
-    ret = MPI_Iallgatherv((send_buf == recv_buf) ? MPI_IN_PLACE : send_buf, send_len, MPI_CHAR,
+    ret = MPI_Iallgatherv((send_buf && (send_buf == recv_buf)) ? MPI_IN_PLACE : send_buf, send_len, MPI_CHAR,
                           recv_buf, recv_lens, offsets, MPI_CHAR,
                           mpi_ep->mpi_comm, &mpi_req->native_req);
     mpi_req->comp_state = ATL_MPI_COMP_POSTED;
@@ -585,7 +585,7 @@ atl_mpi_ep_allreduce(atl_ep_t* ep, const void* send_buf, void* recv_buf, size_t 
 
     MPI_Datatype mpi_dtype = atl2mpi_dtype(dtype);
     MPI_Op mpi_op = atl2mpi_op(op, mpi_dtype);
-    int ret = MPI_Iallreduce((send_buf == recv_buf) ? MPI_IN_PLACE : send_buf,
+    int ret = MPI_Iallreduce((send_buf && (send_buf == recv_buf)) ? MPI_IN_PLACE : send_buf,
                              recv_buf, count, mpi_dtype, mpi_op,
                              mpi_ep->mpi_comm, &mpi_req->native_req);
 
@@ -623,7 +623,7 @@ atl_mpi_ep_alltoall(atl_ep_t* ep, const void* send_buf, void* recv_buf,
     atl_mpi_req_t* mpi_req = ((atl_mpi_req_t*)req->internal);
     int ret = MPI_SUCCESS;
 
-    ret = MPI_Ialltoall((send_buf == recv_buf) ? MPI_IN_PLACE : send_buf, len,  MPI_CHAR,
+    ret = MPI_Ialltoall((send_buf && (send_buf == recv_buf)) ? MPI_IN_PLACE : send_buf, len, MPI_CHAR,
                         recv_buf, len, MPI_CHAR,
                         mpi_ep->mpi_comm, &mpi_req->native_req);
     mpi_req->comp_state = ATL_MPI_COMP_POSTED;
@@ -641,7 +641,8 @@ atl_mpi_ep_alltoallv(atl_ep_t* ep, const void* send_buf, const int* send_lens, c
     atl_mpi_req_t* mpi_req = ((atl_mpi_req_t*)req->internal);
     int ret = MPI_SUCCESS;
 
-    ret = MPI_Ialltoallv((send_buf == recv_buf) ? MPI_IN_PLACE : send_buf, send_lens, send_offsets, MPI_CHAR,
+    ret = MPI_Ialltoallv((send_buf && (send_buf == recv_buf)) ? MPI_IN_PLACE : send_buf,
+                         send_lens, send_offsets, MPI_CHAR,
                          recv_buf, recv_lens, recv_offsets, MPI_CHAR,
                          mpi_ep->mpi_comm, &mpi_req->native_req);
     mpi_req->comp_state = ATL_MPI_COMP_POSTED;
@@ -692,7 +693,7 @@ atl_mpi_ep_reduce(atl_ep_t* ep, const void* send_buf, void* recv_buf, size_t cou
 
     MPI_Datatype mpi_dtype = atl2mpi_dtype(dtype);
     MPI_Op mpi_op = atl2mpi_op(op, mpi_dtype);
-    int ret = MPI_Ireduce(((send_buf == recv_buf) && (root == my_proc_idx)) ? MPI_IN_PLACE : send_buf,
+    int ret = MPI_Ireduce((send_buf && (send_buf == recv_buf) && (root == my_proc_idx)) ? MPI_IN_PLACE : send_buf,
                           recv_buf, count, mpi_dtype, mpi_op, root,
                           mpi_ep->mpi_comm, &mpi_req->native_req);
 
