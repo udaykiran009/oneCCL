@@ -7,18 +7,20 @@ rm -rf $dstdir
 rm -rf $dstdir.tgz
 excluded=".git
 .gitignore
+./oneccl_license.txt
 ./boms
 ./scripts
 ./tests/cfgs
 ./doc/README.md
+./doc/README.txt
+./doc/cclEULA.txt
 ./doc/archive
+./doc/third_party_programs
 ./doc/copyright
 ./doc/spec
 ./examples/run.sh
 ./examples/Makefile
-./ofi/ofi_update.sh
-./cmake/vars.sh.in
-./doc/third_party_programs/third_party_programs.txt"
+./ofi/ofi_update.sh"
 
 count=0
 mkdir -p $dstdir
@@ -54,7 +56,7 @@ done
 for CUR_FILE in `find .  -type f | grep -e "\.py$"| grep -v "doc" | grep -v "googletest"` ; do
 	ed $CUR_FILE < ../scripts/copyright/copyright.m > /dev/null 2>&1; \
 done
-for CUR_FILE in `find .  -type f | grep -e "Makefile$"| grep -v "doc" | grep -v "googletest"` ; do
+for CUR_FILE in `find .  -type f | grep -e "Makefile$" -e "CMakeLists.txt"| grep -v "doc" | grep -v "googletest"` ; do
 	ed $CUR_FILE < ../scripts/copyright/copyright.m > /dev/null 2>&1; \
 done
 # tar -czf ../$dstdir.tgz .
