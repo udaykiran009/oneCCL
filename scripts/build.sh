@@ -308,8 +308,6 @@ post_build()
     mv ${WORKSPACE}/build/_install/lib/prov ${WORKSPACE}/build/_install/lib/cpu_icc
     cp -r  ${WORKSPACE}/build_gpu/_install/lib/* ${WORKSPACE}/build/_install/lib/cpu_gpu_dpcpp
     cp -r  ${WORKSPACE}/build_gpu/_install/include/* ${WORKSPACE}/build/_install/include/cpu_gpu_dpcpp
-    #temporary copy special vars.sh 
-    cp ${WORKSPACE}/scripts/vars.sh ${WORKSPACE}/build/_install/env/
 }
 
 replace_tags()
@@ -671,6 +669,21 @@ parse_arguments()
 }
 
 #==============================================================================
+#                             Preparing
+#==============================================================================
+preparing_files()
+{
+    echo_log_separator
+    echo_log "#\t\t\tPreparing files..."
+    echo_log_separator
+    ${SCRIPT_DIR}/preparing_files.sh ccl_oneapi
+    CheckCommandExitCode $? "ERROR: preparing files failed"
+    echo_log_separator
+    echo_log "#\t\t\tPreparing files...DONE"
+    echo_log_separator
+}
+
+#==============================================================================
 #                             Building
 #==============================================================================
 run_build_cpu()
@@ -872,6 +885,7 @@ run_swf_pre_drop()
 set_default_values
 echo "BUILD_TYPE=" $BUILD_TYPE
 parse_arguments $@
+preparing_files
 run_build_cpu
 run_build_gpu
 run_post_build

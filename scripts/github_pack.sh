@@ -20,11 +20,17 @@ excluded=".git
 ./doc/spec
 ./examples/run.sh
 ./examples/Makefile
-./ofi/ofi_update.sh"
+./ofi/ofi_update.sh
+./ccl_public
+./ccl_oneapi"
 
 count=0
 mkdir -p $dstdir
 cd ./../mlsl2
+
+#preparing files
+./scripts/preparing_files.sh ccl_public
+
 ls -al
 
 for srcfile in `find .`
