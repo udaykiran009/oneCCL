@@ -29,9 +29,9 @@ constexpr size_t default_vdim_size = ELEM_COUNT / 3;
 
 /* different collectives with duplications */
 #define DEFAULT_COLL_LIST "allgatherv,allreduce,alltoall,alltoallv,bcast,reduce," \
-                          "sparse_allreduce,sparse_bfp16_allreduce," \
+                          "sparse_allreduce,sparse_allreduce_bfp16," \
                           "allgatherv,allreduce,alltoall,alltoallv,bcast,reduce," \
-                          "sparse_allreduce,sparse_bfp16_allreduce"
+                          "sparse_allreduce,sparse_allreduce_bfp16"
 
 typedef enum
 {
@@ -54,14 +54,14 @@ cl::sycl::queue sycl_queue;
 #endif /* CCL_ENABLE_SYCL */
 
 constexpr const char* help_message = "\nplease specify backend, loop type and comma-separated list of collective names\n\n"
-                                     "example:\n\tcpu regular allgatherv,allreduce,sparse_allreduce,sparse_bfp16_allreduce\n"
+                                     "example:\n\tcpu regular allgatherv,allreduce,sparse_allreduce,sparse_allreduce_bfp16\n"
                                      "example:\n\tsycl unordered bcast,reduce\n"
                                      "\n\n\tThe collectives \"sparse_*\" support additional configuration parameters:\n"
                                      "\n\t\t\"indices_to_value_ratio\" - to produce indices count not more than 'elem_count/indices_to_value_ratio\n"
                                      "\t\t\t(default value is 3)\n"
                                      "\n\t\t\"vdim_count\" - maximum value counts for index\n"
                                      "\t\t\t(default values determines all elapsed elements after \"indices_to_value_ratio\" recalculation application)\n"
-                                     "\n\tUse can set this additional parameters to sparse collective in the way:\n"
+                                     "\n\tUser can set this additional parameters to sparse collective in the way:\n"
                                      "\n\t\tsparse_allreduce[4:99]\n"
                                      "\t\t\t - to set \"indices_to_value_ratio\" in 4 and \"vdim_cout\" in 99\n"
                                      "\t\tsparse_allreduce[6]\n"
@@ -425,7 +425,7 @@ struct type_printer
 template<>
 struct type_printer<ccl::bfp16>
 {
-    static constexpr const char* sparse_class_name() { return "sparse_bfp16_allreduce"; }
+    static constexpr const char* sparse_class_name() { return "sparse_allreduce_bfp16"; }
 };
 
 template<class IType, template<class> class IndicesDistributorType>
@@ -2287,30 +2287,33 @@ void create_cpu_colls(std::list<std::string>& names, coll_list_t& colls)
         }
         else if (name.find(incremental_index_int_sparse_strategy::class_name()) != std::string::npos)
         {
-            const std::string args = name.substr(name.find(incremental_index_int_sparse_strategy::class_name()) +
-                                                 std::strlen(incremental_index_int_sparse_strategy::class_name()));
-            colls.emplace_back(new cpu_sparse_allreduce_coll<Dtype, int>(args));
-        }
-        else if (name.find(incremental_index_bfp16_sparse_strategy::class_name()) != std::string::npos)
-        {
-            if (is_bfp16_enabled() == 0)
+            if (name.find(incremental_index_bfp16_sparse_strategy::class_name()) != std::string::npos)
             {
-                error_messages_stream << "BFP16 is not supported capability for current CPU, coll: " << name << " is skipping.\n";
+                if (is_bfp16_enabled() == 0)
+                {
+                    error_messages_stream << "BFP16 is not supported for current CPU, skipping " << name << ".\n";
+                    names_it = names.erase(names_it);
+                    continue;
+                }
+#ifdef CCL_BFP16_COMPILER
+                const std::string args = name.substr(name.find(incremental_index_bfp16_sparse_strategy::class_name()) +
+                                                     std::strlen(incremental_index_bfp16_sparse_strategy::class_name()));
+                colls.emplace_back(new cpu_sparse_allreduce_coll<ccl::bfp16, int64_t,
+                                                                 sparse_detail::incremental_indices_distributor>(args,
+                                                                                  sizeof(float) / sizeof(ccl::bfp16),
+                                                                                  sizeof(float) / sizeof(ccl::bfp16)));
+#else
+                error_messages_stream << "BFP16 is not supported by current compiler, skipping " << name << ".\n";
                 names_it = names.erase(names_it);
                 continue;
-            }
-#ifdef CCL_BFP16_COMPILER
-            const std::string args = name.substr(name.find(incremental_index_bfp16_sparse_strategy::class_name()) +
-                                                 std::strlen(incremental_index_bfp16_sparse_strategy::class_name()));
-            colls.emplace_back(new cpu_sparse_allreduce_coll<ccl::bfp16, int64_t,
-                                                             sparse_detail::incremental_indices_distributor>(args,
-                                                                              sizeof(float) / sizeof(ccl::bfp16),
-                                                                              sizeof(float) / sizeof(ccl::bfp16)));
-#else
-            error_messages_stream << "BFP16 is not supported by current compiler, coll: " << name << "  is skipping.\n";
-            names_it = names.erase(names_it);
-            continue;
 #endif
+            }
+            else
+            {
+                const std::string args = name.substr(name.find(incremental_index_int_sparse_strategy::class_name()) +
+                                                     std::strlen(incremental_index_int_sparse_strategy::class_name()));
+                colls.emplace_back(new cpu_sparse_allreduce_coll<Dtype, int>(args));
+            }
         }
         else
         {
@@ -2380,7 +2383,7 @@ void create_sycl_colls(std::list<std::string>& names, coll_list_t& colls)
             // TODO case is not supported yet
             if (true)
             {
-                error_messages_stream << "SYCL coll: " << name << "  is skipping, because is not supported yet.\n";
+                error_messages_stream << "SYCL coll: skipping " << name << ", because it is not supported yet.\n";
                 names_it = names.erase(names_it);
                 continue;
             }
@@ -2394,14 +2397,14 @@ void create_sycl_colls(std::list<std::string>& names, coll_list_t& colls)
             // TODO case is not supported yet
             if (true)
             {
-                error_messages_stream << "SYCL coll: " << name << "  is skipping, because is not supported yet.\n";
+                error_messages_stream << "SYCL coll: skipping " << name << ", because it is not supported yet.\n";
                 names_it = names.erase(names_it);
                 continue;
             }
             
             if (is_bfp16_enabled() == 0)
             {
-                error_messages_stream << "SYCL BFP16 is not supported capability for current CPU, coll: " << name << "  is skipping.\n";
+                error_messages_stream << "SYCL BFP16 is not supported for current CPU, skipping " << name << ".\n";
                 names_it = names.erase(names_it);
                 continue;
             }
@@ -2413,7 +2416,7 @@ void create_sycl_colls(std::list<std::string>& names, coll_list_t& colls)
                                                                                sizeof(float) / sizeof(ccl::bfp16),
                                                                                sizeof(float) / sizeof(ccl::bfp16)));
 #else
-            error_messages_stream << "SYCL BFP16 is not supported by current compiler, coll: " << name << "  is skipping.\n";
+            error_messages_stream << "SYCL BFP16 is not supported by current compiler, skipping " << name << ".\n";
             names_it = names.erase(names_it);
             continue;
 #endif
@@ -2452,7 +2455,7 @@ void create_colls(std::list<std::string>& names, ccl::stream_type backend_type, 
 #ifdef CCL_ENABLE_SYCL
             create_sycl_colls<Dtype>(names, colls);
 #else
-            ASSERT(0, "sycl backend is requested but CCL_ENABLE_SYCL is not defined");
+            ASSERT(0, "SYCL backend is requested but CCL_ENABLE_SYCL is not defined");
 #endif
             break;
         default:

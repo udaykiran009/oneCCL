@@ -134,6 +134,25 @@ CCL_API ccl::environment::~environment()
     }
 }
 
+ccl::datatype CCL_API ccl::datatype_create(const ccl::datatype_attr* attr)
+{
+    ccl_datatype_t dtype;
+    ccl_datatype_create(&dtype, attr);
+    return static_cast<ccl::datatype>(dtype);
+}
+
+void CCL_API ccl::datatype_free(ccl::datatype dtype)
+{
+    ccl_datatype_free(dtype);
+}
+
+size_t CCL_API ccl::datatype_get_size(ccl::datatype dtype)
+{
+    size_t size;
+    ccl_get_datatype_size(dtype, &size);
+    return size;
+}
+
 CCL_API ccl::stream::stream()
 {
     this->stream_impl = std::make_shared<ccl_stream>(static_cast<ccl_stream_type_t>(ccl::stream_type::cpu),
@@ -183,7 +202,7 @@ ccl::communicator::allgatherv(const void* send_buf,
                               size_t send_count,
                               void* recv_buf,
                               const size_t* recv_counts,
-                              ccl::data_type dtype,
+                              ccl::datatype dtype,
                               const ccl::coll_attr* attr,
                               const ccl::stream_t& stream)
 {
@@ -232,7 +251,7 @@ ccl::communicator::coll_request_t CCL_API
 ccl::communicator::allreduce(const void* send_buf,
                              void* recv_buf,
                              size_t count,
-                             ccl::data_type dtype,
+                             ccl::datatype dtype,
                              ccl::reduction reduction,
                              const ccl::coll_attr* attr,
                              const ccl::stream_t& stream)
@@ -281,7 +300,7 @@ ccl::communicator::coll_request_t CCL_API
 ccl::communicator::alltoall(const void* send_buf,
                             void* recv_buf,
                             size_t count,
-                            ccl::data_type dtype,
+                            ccl::datatype dtype,
                             const ccl::coll_attr* attr,
                             const ccl::stream_t& stream)
 {
@@ -325,7 +344,7 @@ ccl::communicator::alltoallv(const void* send_buf,
                              const size_t* send_counts,
                              void* recv_buf,
                              const size_t* recv_counts,
-                             ccl::data_type dtype,
+                             ccl::datatype dtype,
                              const ccl::coll_attr* attr,
                              const ccl::stream_t& stream)
 {
@@ -378,7 +397,7 @@ ccl::communicator::barrier(const ccl::stream_t& stream)
 ccl::communicator::coll_request_t CCL_API
 ccl::communicator::bcast(void* buf,
                          size_t count,
-                         ccl::data_type dtype,
+                         ccl::datatype dtype,
                          size_t root,
                          const ccl::coll_attr* attr,
                          const ccl::stream_t& stream)
@@ -425,7 +444,7 @@ ccl::communicator::coll_request_t CCL_API
 ccl::communicator::reduce(const void* send_buf,
                           void* recv_buf,
                           size_t count,
-                          ccl::data_type dtype,
+                          ccl::datatype dtype,
                           ccl::reduction reduction,
                           size_t root,
                           const ccl::coll_attr* attr,
@@ -479,8 +498,8 @@ ccl::communicator::sparse_allreduce(const void* send_ind_buf, size_t send_ind_co
                                     const void* send_val_buf, size_t send_val_count,
                                     void** recv_ind_buf, size_t* recv_ind_count,
                                     void** recv_val_buf, size_t* recv_val_count,
-                                    ccl::data_type index_dtype,
-                                    ccl::data_type value_dtype,
+                                    ccl::datatype index_dtype,
+                                    ccl::datatype value_dtype,
                                     ccl::reduction reduction,
                                     const ccl::coll_attr* attr,
                                     const ccl::stream_t& stream)

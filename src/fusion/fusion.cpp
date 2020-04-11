@@ -123,7 +123,7 @@ ccl_fusion_manager::~ccl_fusion_manager()
 
 bool ccl_fusion_manager::can_fuse(ccl_master_sched* sched)
 {
-    size_t bytes = sched->coll_param.count * ccl_datatype_get_size(sched->coll_param.dtype);
+    size_t bytes = sched->coll_param.count * sched->coll_param.dtype.size();
     if (bytes >= bytes_threshold)
     {
         LOG_DEBUG("can't fuse due to size ", bytes , ", max ", bytes_threshold);
@@ -170,7 +170,6 @@ ccl_master_sched* ccl_fusion_manager::build_sched()
     size_t max_priority = 0;
     bool use_cache = true;
     ccl_comm* comm;
-    ccl_datatype_internal_t dtype;
     ccl_reduction_t reduction;
     ccl_coll_type ctype;
     const ccl_stream* stream __attribute__((unused)) = nullptr;
@@ -181,8 +180,8 @@ ccl_master_sched* ccl_fusion_manager::build_sched()
 
     auto first_sched = exec_queue.front();
     auto last_sched = exec_queue.back();
-    dtype = first_sched->coll_param.dtype;
-    dtype_size = ccl_datatype_get_size(dtype);
+    const ccl_datatype& dtype = first_sched->coll_param.dtype;
+    dtype_size = dtype.size();
     reduction = first_sched->coll_param.reduction;
     comm = first_sched->coll_param.comm;
     ctype = first_sched->coll_param.ctype;
@@ -230,14 +229,14 @@ ccl_master_sched* ccl_fusion_manager::build_sched()
         }
         return sched;
     };
-    
+
     if (use_cache)
     {
         ccl_sched_key key{};
         key.f.ctype = ctype;
         key.f.count1 = sum_count;
         key.f.count2 = exec_queue.size();
-        key.f.dtype = dtype->type;
+        key.f.dtype = dtype.idx();
         key.f.reduction = reduction;
         key.f.comm = comm;
         key.match_id = first_sched->coll_attr.match_id + last_sched->coll_attr.match_id;
@@ -246,7 +245,7 @@ ccl_master_sched* ccl_fusion_manager::build_sched()
         std::tie(sched, is_created) = global_data.sched_cache->find_or_create(std::move(key), create_fn);
 
         fill_sched = is_created;
-        
+
         if (!is_created)
         {
             LOG_DEBUG("found fused_sched in cache");
@@ -446,19 +445,19 @@ void ccl_fusion_manager::execute()
                 exec_queue.push_back(first_sched);
                 postponed_queue.pop_front();
                 exec_queue_sum_bytes = first_sched->coll_param.count *
-                                       ccl_datatype_get_size(first_sched->coll_param.dtype);
+                                       first_sched->coll_param.dtype.size();
             }
 
             for (auto it = postponed_queue.begin(); it != postponed_queue.end();)
             {
                 auto s = *it;
-                if (s->coll_param.dtype == first_sched->coll_param.dtype &&
+                if (s->coll_param.dtype.idx() == first_sched->coll_param.dtype.idx() &&
                     s->coll_param.comm == first_sched->coll_param.comm &&
                     s->coll_param.ctype == first_sched->coll_param.ctype &&
                     s->coll_param.reduction == first_sched->coll_param.reduction &&
                     s->coll_param.stream == first_sched->coll_param.stream)
                 {
-                    size_t size = s->coll_param.count * ccl_datatype_get_size(s->coll_param.dtype);
+                    size_t size = s->coll_param.count * s->coll_param.dtype.size();
                     if (exec_queue_sum_bytes + size > CCL_FUSION_BUFFER_SIZE)
                     {
                         LOG_DEBUG("too much bytes in buffer, flush exec_queue");

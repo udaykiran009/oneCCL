@@ -18,7 +18,7 @@ function check_test(){
     test_log=$1
     test_file=$2
     test_passed=`grep -E -c -i 'PASSED|skipped' ${test_log}`
-    if [ $test_file != "communicator.out" ]
+    if [ $test_file != "communicator.out" ] && [ $test_file != "datatype.out" ];
     then
         test_failed=`grep -E -c -i 'error|Aborted|failed|^BAD$|KILLED|^fault$|cl::sycl::runtime_error|terminate' ${test_log}`
     else
@@ -165,7 +165,7 @@ run()
         do
             if [ "$transport" == "mpi" ];
             then
-                examples_to_run=`find . -type f -executable -printf '%P\n' | grep -v 'unordered_allreduce' | grep -v 'custom_allreduce' | grep -v 'allreduce_rs'`
+                examples_to_run=`find . -type f -executable -printf '%P\n' | grep -v 'unordered_allreduce' | grep -v 'custom_allreduce' | grep -v 'datatype' | grep -v 'allreduce_rs'`
             else
                 examples_to_run=`find . -type f -executable -printf '%P\n' | grep -v 'allreduce_rs'`
             fi
@@ -214,10 +214,10 @@ run()
                     do
                         if [ "$selector" == "gpu" ];
                         then
-                            ccl_extra_env="SYCL_DEVICE_WHITE_LIST=\"\" SYCL_BE=PI_LEVEL0 CCL_ATL_TRANSPORT=${transport}"
+                            ccl_extra_env="SYCL_DEVICE_WHITE_LIST=\"\" SYCL_BE=PI_OTHER CCL_ATL_TRANSPORT=${transport}"
                             run_example "${ccl_extra_env}" ${dir_name} ${transport} ${example} ${selector}
                         fi
-                        ccl_extra_env="SYCL_BE=PI_OPENCL CCL_ATL_TRANSPORT=${transport}"
+                        ccl_extra_env="SYCL_BE=OpenCL CCL_ATL_TRANSPORT=${transport}"
                         run_example "${ccl_extra_env}" ${dir_name} ${transport} ${example} ${selector}
                     done
                 else

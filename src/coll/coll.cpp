@@ -66,7 +66,7 @@ const char* ccl_coll_type_to_str(ccl_coll_type type)
 static ccl_request* ccl_coll_create(ccl_coll_param& param,
                                     const ccl_coll_attr& attr)
 {
-    /* 1. decide whether schedule should be postponed (this includes caching and staring) */
+    /* 1. decide whether schedule should be postponed */
     bool postpone_schedule = false;
     if (env_data.enable_unordered_coll)
     {
@@ -138,7 +138,7 @@ ccl_status_t ccl_coll_build_allgatherv(
     size_t send_count,
     ccl_buffer recv_buf,
     const size_t* recv_counts,
-    ccl_datatype_internal_t dtype,
+    const ccl_datatype& dtype,
     ccl_comm* comm)
 {
     ccl_status_t status = ccl_status_success;
@@ -178,7 +178,7 @@ ccl_status_t ccl_coll_build_allreduce(
     ccl_buffer send_buf,
     ccl_buffer recv_buf,
     size_t count,
-    ccl_datatype_internal_t dtype,
+    const ccl_datatype& dtype,
     ccl_reduction_t reduction,
     ccl_comm* comm)
 {
@@ -240,7 +240,7 @@ ccl_status_t ccl_coll_build_alltoall(
     ccl_buffer send_buf,
     ccl_buffer recv_buf,
     size_t count,
-    ccl_datatype_internal_t dtype,
+    const ccl_datatype& dtype,
     ccl_comm* comm)
 {
     ccl_status_t status = ccl_status_success;
@@ -273,7 +273,7 @@ ccl_status_t ccl_coll_build_alltoallv(
     const size_t* send_counts,
     ccl_buffer recv_buf,
     const size_t* recv_counts,
-    ccl_datatype_internal_t dtype,
+    const ccl_datatype& dtype,
     ccl_comm* comm)
 {
     ccl_status_t status = ccl_status_success;
@@ -306,7 +306,7 @@ ccl_status_t ccl_coll_build_barrier(ccl_sched* sched, ccl_comm* comm)
     ccl_selector_param param;
     param.ctype = ccl_coll_barrier;
     param.count = 0;
-    param.dtype = ccl_dtype_internal_char;
+    param.dtype = ccl_datatype_char;
     param.comm = comm;
 
     auto algo = global_data.algorithm_selector->get<ccl_coll_barrier>(param);
@@ -330,7 +330,7 @@ ccl_status_t ccl_coll_build_barrier(ccl_sched* sched, ccl_comm* comm)
 ccl_status_t ccl_coll_build_bcast(ccl_sched* sched,
                                   ccl_buffer buf,
                                   size_t count,
-                                  ccl_datatype_internal_t dtype,
+                                  const ccl_datatype& dtype,
                                   size_t root,
                                   ccl_comm* comm)
 {
@@ -372,7 +372,7 @@ ccl_status_t ccl_coll_build_reduce(ccl_sched* sched,
                                    ccl_buffer send_buf,
                                    ccl_buffer recv_buf,
                                    size_t count,
-                                   ccl_datatype_internal_t dtype,
+                                   const ccl_datatype& dtype,
                                    ccl_reduction_t reduction,
                                    size_t root,
                                    ccl_comm* comm)
@@ -418,7 +418,7 @@ ccl_status_t ccl_coll_build_reduce_scatter(ccl_sched* sched,
                                            ccl_buffer send_buf,
                                            ccl_buffer recv_buf,
                                            size_t send_count,
-                                           ccl_datatype_internal_t dtype,
+                                           const ccl_datatype& dtype,
                                            ccl_reduction_t reduction,
                                            ccl_comm* comm)
 {
@@ -452,8 +452,8 @@ ccl_status_t ccl_coll_build_sparse_allreduce(
     ccl_buffer send_val_buf, size_t send_val_count,
     ccl_buffer recv_ind_buf, size_t* recv_ind_count,
     ccl_buffer recv_val_buf, size_t* recv_val_count,
-    ccl_datatype_internal_t index_dtype,
-    ccl_datatype_internal_t value_dtype,
+    const ccl_datatype& index_dtype,
+    const ccl_datatype& value_dtype,
     ccl_reduction_t reduction,
     ccl_comm* comm)
 {
@@ -462,7 +462,7 @@ ccl_status_t ccl_coll_build_sparse_allreduce(
     ccl_selector_param param;
     param.ctype = ccl_coll_sparse_allreduce;
     param.count = 0;
-    param.dtype = ccl_dtype_internal_char;
+    param.dtype = ccl_datatype_char;
     param.comm = comm;
 
     if (!send_ind_count || !send_val_count)
@@ -494,11 +494,11 @@ ccl_status_t ccl_coll_build_sparse_allreduce(
               "\nrecv_ind_count ", recv_ind_count,
               "\nrecv_val_buf ", recv_val_buf,
               "\nrecv_val_count ", recv_val_count,
-              "\nindex_dtype ", ccl_datatype_get_name(index_dtype),
-              "\nvalue_dtype ", ccl_datatype_get_name(value_dtype),
+              "\nindex_dtype ", global_data.dtypes->name(index_dtype),
+              "\nvalue_dtype ", global_data.dtypes->name(value_dtype),
               "\nop ", ccl_reduction_to_str(reduction));
 
-    switch (index_dtype->type)
+    switch (index_dtype.idx())
     {
         case ccl_dtype_char:
             CCL_DEFINE_VALUE(char);
@@ -513,7 +513,7 @@ ccl_status_t ccl_coll_build_sparse_allreduce(
             CCL_DEFINE_VALUE(uint64_t);
             break;
         default:
-            CCL_FATAL("index data type ", ccl_datatype_get_name(index_dtype), " is not supported yet");
+            CCL_FATAL("index datatype ", global_data.dtypes->name(index_dtype), " is not supported yet");
             return ccl_status_invalid_arguments;
     }
 
@@ -536,10 +536,10 @@ ccl_request* ccl_allgatherv_impl(const void* send_buf,
     param.recv_buf = recv_buf;
     param.send_count = send_count;
     param.recv_counts = recv_counts;
-    param.dtype = ccl_datatype_get(dtype);
+    param.dtype = global_data.dtypes->get(dtype);
     param.stream = stream;
     param.comm = comm;
-
+    
     auto req = ccl_coll_create(param, ccl_coll_attr(attr));
     LOG_DEBUG("coll ", ccl_coll_type_to_str(param.ctype), " created, req ", req);
     return req;
@@ -560,7 +560,7 @@ ccl_request* ccl_allreduce_impl(const void* send_buf,
     param.send_buf = send_buf;
     param.recv_buf = recv_buf;
     param.count = count;
-    param.dtype = ccl_datatype_get(dtype);
+    param.dtype = global_data.dtypes->get(dtype);
     param.reduction = reduction;
     param.stream = stream;
     param.comm = comm;
@@ -584,7 +584,7 @@ ccl_request* ccl_alltoall_impl(const void* send_buf,
     param.send_buf = send_buf;
     param.recv_buf = recv_buf;
     param.count = count;
-    param.dtype = ccl_datatype_get(dtype);
+    param.dtype = global_data.dtypes->get(dtype);
     param.stream = stream;
     param.comm = comm;
 
@@ -609,7 +609,7 @@ ccl_request* ccl_alltoallv_impl(const void* send_buf,
     param.send_counts = send_counts;
     param.recv_buf = recv_buf;
     param.recv_counts = recv_counts;
-    param.dtype = ccl_datatype_get(dtype);
+    param.dtype = global_data.dtypes->get(dtype);
     param.stream = stream;
     param.comm = comm;
 
@@ -623,7 +623,7 @@ void ccl_barrier_impl(ccl_comm* comm, const ccl_stream* stream)
     ccl_coll_param param{};
 
     param.ctype = ccl_coll_barrier;
-    param.dtype = ccl_dtype_internal_char;
+    param.dtype = ccl_datatype_char;
     param.stream = stream;
     param.comm = comm;
 
@@ -655,7 +655,7 @@ ccl_request* ccl_bcast_impl(void* buf,
     param.ctype = ccl_coll_bcast;
     param.buf = buf;
     param.count = count;
-    param.dtype = ccl_datatype_get(dtype);
+    param.dtype = global_data.dtypes->get(dtype);
     param.root = root;
     param.stream = stream;
     param.comm = comm;
@@ -681,7 +681,7 @@ ccl_request* ccl_reduce_impl(const void* send_buf,
     param.send_buf = send_buf;
     param.recv_buf = recv_buf;
     param.count = count;
-    param.dtype = ccl_datatype_get(dtype);
+    param.dtype = global_data.dtypes->get(dtype);
     param.reduction = reduction;
     param.root = root;
     param.stream = stream;
@@ -696,7 +696,7 @@ ccl_request* ccl_sparse_allreduce_impl(const void* send_ind_buf, size_t send_ind
                                        const void* send_val_buf, size_t send_val_count,
                                        void** recv_ind_buf, size_t* recv_ind_count,
                                        void** recv_val_buf, size_t* recv_val_count,
-                                       ccl_datatype_t index_dtype, ccl_datatype_t dtype,
+                                       ccl_datatype_t index_dtype, ccl_datatype_t value_dtype,
                                        ccl_reduction_t reduction, const ccl_coll_attr_t* attr,
                                        ccl_comm* comm, const ccl_stream* stream)
 {
@@ -711,8 +711,8 @@ ccl_request* ccl_sparse_allreduce_impl(const void* send_ind_buf, size_t send_ind
     param.sparse_param.recv_ind_count = recv_ind_count;
     param.sparse_param.recv_val_buf = recv_val_buf;
     param.sparse_param.recv_val_count = recv_val_count;
-    param.dtype = ccl_datatype_get(dtype);
-    param.sparse_param.itype = ccl_datatype_get(index_dtype);
+    param.dtype = global_data.dtypes->get(value_dtype);
+    param.sparse_param.itype = global_data.dtypes->get(index_dtype);
     param.reduction = reduction;
     param.stream = stream;
     param.comm = comm;

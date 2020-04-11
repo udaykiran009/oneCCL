@@ -29,6 +29,7 @@ class ccl_comm;
 class ccl_stream;
 class ccl_atl_tag;
 class ccl_comm_id_storage;
+class ccl_datatype_storage;
 class ccl_executor;
 class ccl_sched_cache;
 class ccl_parallelizer;
@@ -43,6 +44,7 @@ struct alignas(CACHELINE_SIZE) ccl_global_data
 {
     std::unique_ptr<ccl_comm_id_storage> comm_ids;
     std::shared_ptr<ccl_comm> comm;
+    std::unique_ptr<ccl_datatype_storage> dtypes;
     std::unique_ptr<ccl_atl_tag> atl_tag;
     std::unique_ptr<ccl_executor> executor;
     std::unique_ptr<ccl_coll_attr_t> default_coll_attr;

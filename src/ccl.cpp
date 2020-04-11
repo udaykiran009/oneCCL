@@ -11,6 +11,8 @@
 
 void ccl_init_resize_dependent_objects(ccl_global_data& gl_data)
 {
+    global_data.dtypes = std::unique_ptr<ccl_datatype_storage>(new ccl_datatype_storage());
+
     gl_data.sched_cache = std::unique_ptr<ccl_sched_cache>(new ccl_sched_cache());
 
     if (env_data.enable_fusion)
@@ -77,13 +79,14 @@ void ccl_init_resize_independent_objects(ccl_global_data& gl_data)
 
 void ccl_reset_resize_dependent_objects(ccl_global_data& gl_data)
 {
+    gl_data.atl_tag.reset();
     gl_data.allreduce_2d_builder.reset();
     gl_data.unordered_coll_manager.reset();
     gl_data.comm.reset();
     gl_data.comm_ids.reset();
     gl_data.fusion_manager.reset();
     gl_data.sched_cache.reset();
-    gl_data.atl_tag.reset();
+    gl_data.dtypes.reset();
 }
 
 void ccl_reset_resize_independent_objects(ccl_global_data& gl_data)
@@ -98,7 +101,6 @@ ccl_status_t ccl_init()
     try
     {
         ccl_env_parse();
-        ccl_datatype_init();
 
         ccl_init_resize_dependent_objects(global_data);
         ccl_init_resize_independent_objects(global_data);
@@ -243,7 +245,7 @@ ccl_status_t CCL_API ccl_get_comm_rank(ccl_comm_t comm, size_t* rank)
 {
     CCL_CHECK_IS_BLOCKED();
     if (!rank)
-        return ccl_status_success;
+        return ccl_status_invalid_arguments;
 
     try
     {
@@ -258,12 +260,51 @@ ccl_status_t CCL_API ccl_get_comm_size(ccl_comm_t comm, size_t* size)
 {
     CCL_CHECK_IS_BLOCKED();
     if (!size)
-        return ccl_status_success;
+        return ccl_status_invalid_arguments;
 
     try
     {
         auto comm_ptr = (comm) ? static_cast<ccl_comm*>(comm) : global_data.comm.get();
         *size = comm_ptr->size();
+        return ccl_status_success;
+    }
+    COMMON_CATCH_BLOCK();
+}
+
+ccl_status_t ccl_datatype_create(ccl_datatype_t* dtype, const ccl_datatype_attr_t* attr)
+{
+    CCL_CHECK_IS_BLOCKED();
+    CCL_ASSERT(dtype);
+    LOG_DEBUG("create datatype");
+    try
+    {
+        *dtype = global_data.dtypes->create(attr);
+        return ccl_status_success;
+    }
+    COMMON_CATCH_BLOCK();
+}
+
+ccl_status_t CCL_API ccl_get_datatype_size(ccl_datatype_t dtype, size_t* size)
+{
+    CCL_CHECK_IS_BLOCKED();
+    if (!size)
+        return ccl_status_invalid_arguments;
+
+    try
+    {
+        *size = global_data.dtypes->get(dtype).size();
+        return ccl_status_success;
+    }
+    COMMON_CATCH_BLOCK();
+}
+
+ccl_status_t CCL_API ccl_datatype_free(ccl_datatype_t dtype)
+{
+    CCL_CHECK_IS_BLOCKED();
+    LOG_DEBUG("free datatype ", dtype);
+    try
+    {
+        global_data.dtypes->free(dtype);
         return ccl_status_success;
     }
     COMMON_CATCH_BLOCK();

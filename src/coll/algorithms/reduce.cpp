@@ -40,7 +40,7 @@ ccl_status_t ccl_coll_build_direct_reduce(ccl_sched *sched,
                                           ccl_buffer send_buf,
                                           ccl_buffer recv_buf,
                                           size_t count,
-                                          ccl_datatype_internal_t dtype,
+                                          const ccl_datatype& dtype,
                                           ccl_reduction_t reduction,
                                           size_t root,
                                           ccl_comm* comm)
@@ -56,7 +56,7 @@ ccl_status_t ccl_coll_build_rabenseifner_reduce(ccl_sched *sched,
                                                 ccl_buffer send_buf,
                                                 ccl_buffer recv_buf,
                                                 size_t count,
-                                                ccl_datatype_internal_t dtype,
+                                                const ccl_datatype& dtype,
                                                 ccl_reduction_t reduction,
                                                 size_t root,
                                                 ccl_comm* comm)
@@ -69,7 +69,7 @@ ccl_status_t ccl_coll_build_rabenseifner_reduce(ccl_sched *sched,
     int rem, dst, new_rank, new_dst, mask, send_idx, recv_idx, last_idx;
     int send_cnt, recv_cnt, newroot, newdst_tree_root, newroot_tree_root;
     int *cnts = NULL, *disps = NULL;
-    size_t dtype_size = ccl_datatype_get_size(dtype);
+    size_t dtype_size = dtype.size();
     local_root = static_cast<int>(root);
 
     comm_size = comm->size();
@@ -326,7 +326,7 @@ ccl_status_t ccl_coll_build_binomial_reduce(ccl_sched *sched,
                                             ccl_buffer send_buf,
                                             ccl_buffer recv_buf,
                                             size_t count,
-                                            ccl_datatype_internal_t dtype,
+                                            const ccl_datatype& dtype,
                                             ccl_reduction_t reduction,
                                             size_t root,
                                             ccl_comm* comm)
@@ -346,7 +346,7 @@ ccl_status_t ccl_coll_build_binomial_reduce(ccl_sched *sched,
     local_root = static_cast<int>(root);
 
     /* Create a temporary buffer */
-    size_t dtype_size = ccl_datatype_get_size(dtype);
+    size_t dtype_size = dtype.size();
     ccl_buffer tmp_buf = sched->alloc_buffer(count * dtype_size);
 
     /* If I'm not the root, then my recv_buf may not be valid, therefore

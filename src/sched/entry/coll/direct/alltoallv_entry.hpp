@@ -16,7 +16,7 @@ public:
                     const size_t* send_cnts,
                     ccl_buffer recv_buf,
                     const size_t* recv_cnts,
-                    ccl_datatype_internal_t dtype,
+                    const ccl_datatype& dtype,
                     ccl_comm* comm) :
         base_coll_entry(sched),
         send_buf(send_buf), send_cnts(send_cnts),
@@ -30,7 +30,7 @@ public:
 
     void start() override
     {
-        size_t dt_size = ccl_datatype_get_size(dtype);
+        size_t dt_size = dtype.size();
         size_t comm_size = comm->size();
         size_t i, sum_recv_bytes = 0, sum_send_bytes = 0;
 
@@ -107,7 +107,7 @@ protected:
     void dump_detail(std::stringstream& str) const override
     {
         ccl_logger::format(str,
-                            "dt ", ccl_datatype_get_name(dtype),
+                            "dt ", global_data.dtypes->name(dtype),
                             ", send_cnts ", send_cnts,
                             ", send_buf ", send_buf,
                             ", send_bytes ", send_bytes,
@@ -126,7 +126,7 @@ private:
     const size_t* send_cnts;
     ccl_buffer recv_buf;
     const size_t* recv_cnts;
-    ccl_datatype_internal_t dtype;
+    ccl_datatype dtype;
     ccl_comm* comm;
     atl_req_t req{};
 

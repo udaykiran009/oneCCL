@@ -90,6 +90,13 @@ public:
 };
 
 /**
+ * Helper functions to create custom datatype.
+ */
+ccl::datatype datatype_create(const ccl::datatype_attr* attr);
+void datatype_free(ccl::datatype dtype);
+size_t datatype_get_size(ccl::datatype dtype);
+
+/**
  * A stream object is an abstraction over CPU/GPU streams
  * Has no defined public constructor. Use ccl::environment::create_stream
  * for stream objects creation
@@ -158,7 +165,7 @@ public:
      */
     coll_request_t allgatherv(const void* send_buf, size_t send_count,
                               void* recv_buf, const size_t* recv_counts,
-                              ccl::data_type dtype,
+                              ccl::datatype dtype,
                               const ccl::coll_attr* attr = nullptr,
                               const ccl::stream_t& stream = ccl::stream_t());
 
@@ -212,7 +219,7 @@ public:
      * @return @ref ccl::communicator::coll_request_t object that can be used to track the progress of the operation
      */
     coll_request_t allreduce(const void* send_buf, void* recv_buf,
-                             size_t count, ccl::data_type dtype,
+                             size_t count, ccl::datatype dtype,
                              ccl::reduction reduction,
                              const ccl::coll_attr* attr = nullptr,
                              const ccl::stream_t& stream = ccl::stream_t());
@@ -271,7 +278,7 @@ public:
      * @return @ref ccl::request object that can be used to track the progress of the operation
      */
     coll_request_t alltoall(const void* send_buf, void* recv_buf,
-                            size_t count, ccl::data_type dtype,
+                            size_t count, ccl::datatype dtype,
                             const ccl::coll_attr* attr = nullptr,
                             const ccl::stream_t& stream = ccl::stream_t());
 
@@ -326,7 +333,7 @@ public:
      */
     coll_request_t alltoallv(const void* send_buf, const size_t* send_counts,
                              void* recv_buf, const size_t* recv_counts,
-                             ccl::data_type dtype,
+                             ccl::datatype dtype,
                              const ccl::coll_attr* attr = nullptr,
                              const ccl::stream_t& stream = ccl::stream_t());
 
@@ -381,7 +388,7 @@ public:
      * @return @ref ccl::communicator::coll_request_t object that can be used to track the progress of the operation
      */
     coll_request_t bcast(void* buf, size_t count,
-                         ccl::data_type dtype,
+                         ccl::datatype dtype,
                          size_t root,
                          const ccl::coll_attr* attr = nullptr,
                          const ccl::stream_t& stream = ccl::stream_t());
@@ -436,7 +443,7 @@ public:
      */
     coll_request_t reduce(const void* send_buf, void* recv_buf,
                           size_t count,
-                          ccl::data_type dtype,
+                          ccl::datatype dtype,
                           ccl::reduction reduction,
                           size_t root,
                           const ccl::coll_attr* attr = nullptr,
@@ -508,8 +515,8 @@ public:
                                     const void* send_val_buf, size_t send_val_count,
                                     void** recv_ind_buf, size_t* recv_ind_count,
                                     void** recv_val_buf, size_t* recv_val_count,
-                                    ccl::data_type index_dtype,
-                                    ccl::data_type value_dtype,
+                                    ccl::datatype index_dtype,
+                                    ccl::datatype value_dtype,
                                     ccl::reduction reduction,
                                     const ccl::coll_attr* attr = nullptr,
                                     const ccl::stream_t& stream = ccl::stream_t());

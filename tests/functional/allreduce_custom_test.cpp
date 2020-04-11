@@ -33,8 +33,8 @@ size_t get_dtype_size(ccl_datatype_t dtype)
 
 template <typename T>
 ccl_status_t do_prologue_T_2x(const void* in_buf, size_t in_count, ccl_datatype_t in_dtype,
-                              void** out_buf, size_t* out_count, const ccl_fn_context_t* ctx,
-                              ccl_datatype_t* out_dtype, size_t* out_dtype_size)
+                              void** out_buf, size_t* out_count, ccl_datatype_t* out_dtype,
+                              const ccl_fn_context_t* ctx)
 {
     size_t buf_idx;
     ASSERT(out_buf, "null ptr");
@@ -52,7 +52,6 @@ ccl_status_t do_prologue_T_2x(const void* in_buf, size_t in_count, ccl_datatype_
     if (out_buf) *out_buf = (void*)in_buf;
     if (out_count) *out_count = in_count;
     if (out_dtype) *out_dtype = in_dtype;
-    if (out_dtype_size) *out_dtype_size = sizeof(T);
 
     for (buf_idx = 0; buf_idx < in_count; buf_idx++)
     {
@@ -63,8 +62,8 @@ ccl_status_t do_prologue_T_2x(const void* in_buf, size_t in_count, ccl_datatype_
 
 template <typename T>
 ccl_status_t do_epilogue_T_2x(const void* in_buf, size_t in_count, ccl_datatype_t in_dtype,
-                              void* out_buf, size_t* out_count, const ccl_fn_context_t* ctx,
-                              ccl_datatype_t out_dtype)
+                              void* out_buf, size_t* out_count, ccl_datatype_t out_dtype,
+                              const ccl_fn_context_t* ctx)
 {
     size_t buf_idx;
     if (out_count)* out_count = in_count;
@@ -88,8 +87,8 @@ ccl_status_t do_epilogue_T_2x(const void* in_buf, size_t in_count, ccl_datatype_
 
 template <typename T>
 ccl_status_t do_prologue_T_to_char(const void* in_buf, size_t in_count, ccl_datatype_t in_dtype,
-                                   void** out_buf, size_t* out_count, const ccl_fn_context_t* ctx,
-                                   ccl_datatype_t* out_dtype, size_t* out_dtype_size)
+                                   void** out_buf, size_t* out_count, ccl_datatype_t* out_dtype,
+                                   const ccl_fn_context_t* ctx)
 {
     size_t buf_idx;
     ASSERT(out_buf, "null ptr");
@@ -107,7 +106,6 @@ ccl_status_t do_prologue_T_to_char(const void* in_buf, size_t in_count, ccl_data
     if (out_buf)* out_buf = malloc(in_count);
     if (out_count)* out_count = in_count;
     if (out_dtype)* out_dtype = ccl_dtype_char;
-    if (out_dtype_size)* out_dtype_size = 1;
 
     for (buf_idx = 0; buf_idx < in_count; buf_idx++)
     {
@@ -120,8 +118,8 @@ ccl_status_t do_prologue_T_to_char(const void* in_buf, size_t in_count, ccl_data
 
 template <typename T>
 ccl_status_t do_epilogue_char_to_T(const void* in_buf, size_t in_count, ccl_datatype_t in_dtype,
-                                   void* out_buf, size_t* out_count, const ccl_fn_context_t* ctx,
-                                   ccl_datatype_t out_dtype)
+                                   void* out_buf, size_t* out_count, ccl_datatype_t out_dtype,
+                                   const ccl_fn_context_t* ctx)
 {
     size_t buf_idx;
     if (out_count)
@@ -150,7 +148,7 @@ ccl_status_t do_epilogue_char_to_T(const void* in_buf, size_t in_count, ccl_data
 
 template <typename T>
 ccl_status_t do_reduction_null(const void* in_buf, size_t in_count, void* inout_buf,
-                               size_t* out_count, const ccl_fn_context_t* ctx, ccl_datatype_t dtype)
+                               size_t* out_count, ccl_datatype_t dtype, const ccl_fn_context_t* ctx)
 {
     size_t buf_idx;
     ASSERT(ctx->offset < COUNT * get_dtype_size(dtype),
@@ -200,7 +198,7 @@ ccl_status_t do_reduction_null(const void* in_buf, size_t in_count, void* inout_
 
 template <typename T>
 ccl_status_t do_reduction_custom(const void* in_buf, size_t in_count, void* inout_buf,
-                                 size_t* out_count, const ccl_fn_context_t* ctx, ccl_datatype_t dtype)
+                                 size_t* out_count, ccl_datatype_t dtype, const ccl_fn_context_t* ctx)
 {
     size_t buf_idx;
     ASSERT(ctx->offset < COUNT * get_dtype_size(dtype),

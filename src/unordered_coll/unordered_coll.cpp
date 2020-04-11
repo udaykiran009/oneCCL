@@ -153,7 +153,7 @@ void ccl_unordered_coll_manager::start_coordination(const std::string& match_id)
 
     ccl_coll_param coll_param{};
     coll_param.ctype = ccl_coll_internal;
-    coll_param.dtype = ccl_dtype_internal_char;
+    coll_param.dtype = ccl_datatype_char;
     coll_param.comm = coordination_comm.get();
 
     std::unique_ptr<ccl_extra_sched> service_sched(new ccl_extra_sched(coll_param,
@@ -188,7 +188,7 @@ void ccl_unordered_coll_manager::start_coordination(const std::string& match_id)
     match_id_size_param.ctype = ccl_coll_bcast;
     match_id_size_param.buf = ccl_buffer(&ctx->match_id_size, sizeof(size_t));
     match_id_size_param.count = sizeof(size_t);
-    match_id_size_param.dtype = ccl_dtype_internal_char;
+    match_id_size_param.dtype = ccl_datatype_char;
     match_id_size_param.root = CCL_UNORDERED_COLL_COORDINATOR;
     match_id_size_param.comm = coll_param.comm;
     entry_factory::make_entry<coll_entry>(service_sched.get(), match_id_size_param);
@@ -200,7 +200,7 @@ void ccl_unordered_coll_manager::start_coordination(const std::string& match_id)
     match_id_val_param.ctype = ccl_coll_bcast;
     match_id_val_param.buf = ccl_buffer();
     match_id_val_param.count = 0;
-    match_id_val_param.dtype = ccl_dtype_internal_char;
+    match_id_val_param.dtype = ccl_datatype_char;
     match_id_val_param.root = CCL_UNORDERED_COLL_COORDINATOR;
     match_id_val_param.comm = coll_param.comm;
     auto entry = entry_factory::make_entry<coll_entry>(service_sched.get(), match_id_val_param);
@@ -234,7 +234,7 @@ void ccl_unordered_coll_manager::start_coordination(const std::string& match_id)
     reserved_comm_id_param.buf = ccl_buffer(&ctx->reserved_comm_id,
                                             sizeof(ccl_comm_id_t));
     reserved_comm_id_param.count = sizeof(ccl_comm_id_t);
-    reserved_comm_id_param.dtype = ccl_dtype_internal_char;
+    reserved_comm_id_param.dtype = ccl_datatype_char;
     reserved_comm_id_param.root = CCL_UNORDERED_COLL_COORDINATOR;
     reserved_comm_id_param.comm = coll_param.comm;
     entry_factory::make_entry<coll_entry>(service_sched.get(), reserved_comm_id_param);
