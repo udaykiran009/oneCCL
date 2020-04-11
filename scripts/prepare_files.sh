@@ -1,5 +1,7 @@
 #!/bin/bash
 
+RELEASE="ccl_public"
+
 CheckCommandExitCode() {
     if [ ${1} -ne 0 ]; then
         echo_log "ERROR: ${2}" 1>&2
@@ -7,13 +9,17 @@ CheckCommandExitCode() {
     fi
 }
 
-if [ ${1} != "ccl_oneapi" ] && [ ${1} != "ccl_public" ]
+if [ ! -z "${1}" ]
 then
-    echo "Incorrect argument (expected 'inteloneapi' or 'ccl_public')"
-    exit 1
+    if [ "${1}" = "ccl_oneapi" ] || [ "${1}" = "ccl_public" ]
+    then
+        RELEASE=${1}
+    else
+        echo "Incorrect argument (expected 'ccl_oneapi' or 'ccl_public')"
+        exit 1 
+    fi
 fi
 
-RELEASE=${1}
 SCRIPT_DIR=`cd $(dirname "$BASH_SOURCE") && pwd -P`
 WORKSPACE=`cd ${SCRIPT_DIR}/../ && pwd -P`
 
@@ -27,7 +33,7 @@ for item in "${files[@]}"
 do
     FILE=`echo "${item}" | cut -f 1 -d " "`
     MOVE_PATH=`echo "${item}" | cut -f 2 -d " "`
-    echo "copy $FILE to $MOVE_PATH"
-    cp ${WORKSPACE}/${RELEASE}/${FILE} ${MOVE_PATH}
-    CheckCommandExitCode $? "ERROR: copying failed"
+    echo "Copy ${RELEASE}/${FILE} to ${MOVE_PATH}"
+    cd ${MOVE_PATH} && rm -r ${FILE} && cp ${WORKSPACE}/${RELEASE}/${FILE} .
+    CheckCommandExitCode $? "ERROR: copy failed"
 done

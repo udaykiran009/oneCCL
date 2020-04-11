@@ -676,7 +676,7 @@ preparing_files()
     echo_log_separator
     echo_log "#\t\t\tPreparing files..."
     echo_log_separator
-    ${SCRIPT_DIR}/preparing_files.sh ccl_oneapi
+    ${SCRIPT_DIR}/prepare_files.sh ccl_oneapi
     CheckCommandExitCode $? "ERROR: preparing files failed"
     echo_log_separator
     echo_log "#\t\t\tPreparing files...DONE"
