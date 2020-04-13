@@ -214,10 +214,10 @@ run()
                     do
                         if [ "$selector" == "gpu" ];
                         then
-                            ccl_extra_env="SYCL_DEVICE_WHITE_LIST=\"\" SYCL_BE=PI_OTHER CCL_ATL_TRANSPORT=${transport}"
+                            ccl_extra_env="SYCL_DEVICE_WHITE_LIST=\"\" SYCL_BE=PI_LEVEL0 CCL_ATL_TRANSPORT=${transport}"
                             run_example "${ccl_extra_env}" ${dir_name} ${transport} ${example} ${selector}
                         fi
-                        ccl_extra_env="SYCL_BE=OpenCL CCL_ATL_TRANSPORT=${transport}"
+                        ccl_extra_env="SYCL_BE=PI_OPENCL CCL_ATL_TRANSPORT=${transport}"
                         run_example "${ccl_extra_env}" ${dir_name} ${transport} ${example} ${selector}
                     done
                 else
