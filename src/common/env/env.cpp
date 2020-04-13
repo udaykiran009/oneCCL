@@ -13,7 +13,7 @@ ccl_env_data env_data =
     .worker_affinity = std::vector<size_t>(),
 
     .atl_transport = ccl_atl_mpi,
-    .enable_shm = 1,
+    .enable_shm = 0,
 
     .allgatherv_algo_raw = std::string(),
     .allreduce_algo_raw = std::string(),

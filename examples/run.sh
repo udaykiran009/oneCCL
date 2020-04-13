@@ -93,10 +93,10 @@ run_benchmark()
     test_log="$SCRIPT_DIR/$dir_name/run_${transport}_${example}_${backend}_${loop}_output.log"
 	if [ `echo $ccl_extra_env | grep -c CCL_LOG_LEVEL` -ne 1 ]
 	then
-		eval `echo $ccl_extra_env mpiexec.hydra -genv $EXTRA_ENV -n 2 -ppn $ppn -l ./$example $backend $loop $coll` 2>&1 | tee ${test_log}
+		eval `echo $ccl_extra_env mpiexec.hydra -n 2 -ppn $ppn -l ./$example $backend $loop $coll` 2>&1 | tee ${test_log}
 	else
 		echo Output for run with CCL_LOG_LEVEL=2 has been redirected to log file ${test_log}
-		eval `echo $ccl_extra_env mpiexec.hydra -genv $EXTRA_ENV -n 2 -ppn $ppn -l ./$example $backend $loop $coll` > ${test_log} 2>&1
+		eval `echo $ccl_extra_env mpiexec.hydra -n 2 -ppn $ppn -l ./$example $backend $loop $coll` > ${test_log} 2>&1
 	fi
     check_test ${test_log} ${example}
 }
@@ -115,7 +115,7 @@ run_example()
     echo "arg: "$arg
     echo "================ENVIRONMENT=================="
     test_log="$SCRIPT_DIR/$dir_name/run_${dir_name}_${transport}_${example}_${arg}_output.log"
-    eval `echo $ccl_extra_env mpiexec.hydra -genv $EXTRA_ENV -n 2 -ppn $ppn -l ./$example $arg` 2>&1 | tee ${test_log}
+    eval `echo $ccl_extra_env mpiexec.hydra -n 2 -ppn $ppn -l ./$example $arg` 2>&1 | tee ${test_log}
     check_test ${test_log} ${example}
 }
 
@@ -140,7 +140,7 @@ run()
 {
     ppn=1
     n=2
-    EXTRA_ENV="CCL_YIELD=sleep"
+    ccl_base_env="CCL_YIELD=sleep CCL_ATL_SHM=1"
     if [[ $is_sycl ==  1 ]];
     then
         dir_list="cpu sycl common"
@@ -163,6 +163,8 @@ run()
         build $dir_name
         for transport in "ofi" "mpi";
         do
+            ccl_transport_env="CCL_ATL_TRANSPORT=${transport} ${ccl_base_env}"
+
             if [ "$transport" == "mpi" ];
             then
                 examples_to_run=`find . -type f -executable -printf '%P\n' | grep -v 'unordered_allreduce' | grep -v 'custom_allreduce' | grep -v 'datatype' | grep -v 'allreduce_rs'`
@@ -177,14 +179,14 @@ run()
                 if [ "$dir_name" == "common" ];
                 then
                     for backend in $backend_list
-                    do
-                        ccl_extra_env="CCL_ATL_TRANSPORT=${transport}"
-                        
+                    do                        
                         # MPI doesn't support sparse functionality, remove sparse_allreduce from coll_list
                         if [ "${transport}" == "mpi" ];
                         then
                             coll_list="allgatherv,allreduce,alltoall,alltoallv,bcast,reduce,allgatherv,allreduce,alltoall,alltoallv,bcast,reduce"
                         fi
+
+                        ccl_extra_env="${ccl_transport_env}"
 
                         run_benchmark "${ccl_extra_env}" ${dir_name} ${transport} ${example} ${backend} regular ${coll_list}
                         
@@ -197,14 +199,14 @@ run()
                                 then
                                     continue
                                 fi
-                                ccl_extra_env="CCL_PRIORITY=lifo CCL_ATL_TRANSPORT=${transport}"
+                                ccl_extra_env="CCL_PRIORITY=lifo ${ccl_transport_env}"
                                 run_benchmark "${ccl_extra_env}" ${dir_name} ${transport} ${example} ${backend} ${loop} ${coll_list}
-                                ccl_extra_env="CCL_WORKER_OFFLOAD=0 CCL_ATL_TRANSPORT=${transport}"
+                                ccl_extra_env="CCL_WORKER_OFFLOAD=0 ${ccl_transport_env}"
                                 run_benchmark "${ccl_extra_env}" ${dir_name} ${transport} ${example} ${backend} ${loop} ${coll_list}
                             done
-                            ccl_extra_env="CCL_FUSION=1 CCL_ATL_TRANSPORT=${transport}"
+                            ccl_extra_env="CCL_FUSION=1 ${ccl_transport_env}"
                             run_benchmark "${ccl_extra_env}" ${dir_name} ${transport} ${example} ${backend} regular allreduce
-                            ccl_extra_env="CCL_LOG_LEVEL=2 CCL_ATL_TRANSPORT=${transport}"
+                            ccl_extra_env="CCL_LOG_LEVEL=2 ${ccl_transport_env}"
                             run_benchmark "${ccl_extra_env}" ${dir_name} ${transport} ${example} ${backend} regular allreduce
                         fi
                     done
@@ -214,27 +216,27 @@ run()
                     do
                         if [ "$selector" == "gpu" ];
                         then
-                            ccl_extra_env="SYCL_DEVICE_WHITE_LIST=\"\" SYCL_BE=PI_LEVEL0 CCL_ATL_TRANSPORT=${transport}"
+                            ccl_extra_env="SYCL_DEVICE_WHITE_LIST=\"\" SYCL_BE=PI_LEVEL0 ${ccl_transport_env}"
                             run_example "${ccl_extra_env}" ${dir_name} ${transport} ${example} ${selector}
                         fi
-                        ccl_extra_env="SYCL_BE=PI_OPENCL CCL_ATL_TRANSPORT=${transport}"
+                        ccl_extra_env="SYCL_BE=PI_OPENCL ${ccl_transport_env}"
                         run_example "${ccl_extra_env}" ${dir_name} ${transport} ${example} ${selector}
                     done
                 else
                     if [[ "${example}" == *"communicator"* ]]
                     then
                         n=8
-                        ccl_extra_env="CCL_ALLREDUCE=recursive_doubling CCL_ATL_TRANSPORT=${transport}"
+                        ccl_extra_env="CCL_ALLREDUCE=recursive_doubling ${ccl_transport_env}"
                         run_example "${ccl_extra_env}" ${dir_name} ${transport} ${example}                       
                     elif [[ "${example}" == *"sparse_allreduce"* ]]
                     then
                         for sparse_algo in "mask" "allgatherv";
                         do
-                            ccl_extra_env="CCL_SPARSE_ALLREDUCE=$sparse_algo CCL_ATL_TRANSPORT=${transport}"
+                            ccl_extra_env="CCL_SPARSE_ALLREDUCE=$sparse_algo ${ccl_transport_env}"
                             run_example "${ccl_extra_env}" ${dir_name} ${transport} ${example}
                         done
                     else
-                        ccl_extra_env="CCL_ATL_TRANSPORT=${transport}"
+                        ccl_extra_env="${ccl_transport_env}"
                         run_example "${ccl_extra_env}" ${dir_name} ${transport} ${example}
                     fi
                 fi
