@@ -147,7 +147,24 @@ enable_unordered_coll_test_scope()
 
 set_environment()
 {
-    # $build_compiler set up by jenkins: gnu/cpu_gpu_dpcpp/cpu_icc (cpu_gpu_dpcpp/cpu_icc means clang with or w/o sycl support)
+    if [ -z "$build_type" ]
+    then
+        build_type="release"
+    fi
+
+    if [ -z  "${node_label}" ]
+    then
+        build_compiler="gnu"
+        source ${CCL_INSTALL_DIR}/l_ccl_$build_type*/env/vars.sh --ccl-configuration=cpu_icc
+    elif [ $node_label == "mlsl2_test_gpu" ]
+    then
+        build_compiler="sycl"
+        source ${CCL_INSTALL_DIR}/l_ccl_$build_type*/env/vars.sh --ccl-configuration=cpu_gpu_dpcpp
+    else
+        build_compiler="gnu"
+        source ${CCL_INSTALL_DIR}/l_ccl_$build_type*/env/vars.sh --ccl-configuration=cpu_icc
+    fi
+
     if [ -z "${build_compiler}" ]
     then
         build_compiler="sycl"
@@ -214,6 +231,7 @@ set_environment()
     then
         runtime="ofi"
     fi
+
     if [ -z "$build_type" ]
     then
         build_type="release"
