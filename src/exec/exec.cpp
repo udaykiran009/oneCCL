@@ -32,7 +32,14 @@ ccl_executor::ccl_executor(const char* main_addr)
 
     atl_attr.ep_count = ep_count;
     atl_attr.enable_shm = env_data.enable_shm;
-    atl_attr.enable_rma = env_data.enable_rma;
+
+    /*
+        TODO:
+        executor may be destroyed before cached rma-based schedule made memory deregistration
+        need to refactor global objects dependencies
+        don't use ring_rma till that
+    */
+    atl_attr.enable_rma = 0; // env_data.enable_rma;
 
     LOG_INFO("init ATL, requested ep_count ", atl_attr.ep_count);
 
