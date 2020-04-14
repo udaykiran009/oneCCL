@@ -16,8 +16,6 @@
 #define EP_IDX_MAX_STR_LEN           4
 #define EP_IDX_KEY                   "ep_idx"
 
-#define MPI_LIB_INFO_MAX_COUNT 2
-
 #define ATL_MPI_PRINT(s, ...)                             \
     do {                                                  \
         pid_t tid = gettid();                             \
@@ -51,8 +49,7 @@
 typedef enum
 {
     ATL_MPI_LIB_NONE,
-    ATL_MPI_LIB_IMPI,
-    ATL_MPI_LIB_MPICH
+    ATL_MPI_LIB_IMPI
 } atl_mpi_lib_kind_t;
 
 typedef struct
@@ -64,9 +61,10 @@ typedef struct
     int version_numerical_part;
 } atl_mpi_lib_info_t;
 
+#define MPI_LIB_INFO_MAX_COUNT 1
+
 static atl_mpi_lib_info_t mpi_lib_infos[MPI_LIB_INFO_MAX_COUNT]
-  = { { ATL_MPI_LIB_IMPI,  "impi",  "Intel(R) MPI Library",      "",     2019 },
-      { ATL_MPI_LIB_MPICH, "mpich", "MPICH Custom Information:", "drop", 34   } };
+  = { { ATL_MPI_LIB_IMPI,  "impi",  "Intel(R) MPI Library",      "",     2019 } };
 
 typedef struct
 {
@@ -477,12 +475,6 @@ atl_mpi_set_lib_environment(const atl_attr_t* attr)
             setenv("I_MPI_FABRICS", "shm:ofi", 0);
         else
             setenv("I_MPI_FABRICS", "ofi", 0);
-    }
-    else if (global_data.mpi_lib_kind == ATL_MPI_LIB_MPICH)
-    {
-        setenv("MPIR_CVAR_CH4_MT_MODEL", "direct", 0);
-        setenv("MPIR_CVAR_CH4_OFI_MAX_VCIS", ep_count_str, 0);
-        setenv("MPIR_COMM_HINT_ASYNC_PROG_ID", EP_IDX_KEY, 0);
     }
 
     return ATL_STATUS_SUCCESS;
