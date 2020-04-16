@@ -9,6 +9,16 @@
 #include "parallelizer/parallelizer.hpp"
 #include "unordered_coll/unordered_coll.hpp"
 
+ccl_status_t ccl_set_resize_fn(ccl_resize_fn_t callback)
+{
+    CCL_CHECK_IS_BLOCKED();
+    try
+    {
+        return global_data.executor->create_listener(callback);
+    }
+    COMMON_CATCH_BLOCK();
+}
+
 void ccl_init_resize_dependent_objects(ccl_global_data& gl_data)
 {
     global_data.dtypes = std::unique_ptr<ccl_datatype_storage>(new ccl_datatype_storage());
@@ -42,6 +52,8 @@ void ccl_init_resize_dependent_objects(ccl_global_data& gl_data)
     gl_data.atl_tag =
         std::unique_ptr<ccl_atl_tag>(new ccl_atl_tag(gl_data.executor->get_atl_attr().tag_bits,
                                                      gl_data.executor->get_atl_attr().max_tag));
+    if (env_data.default_resizable)
+        ccl_set_resize_fn(nullptr);
 }
 
 void ccl_init_resize_independent_objects(ccl_global_data& gl_data)
@@ -147,16 +159,6 @@ ccl_status_t CCL_API ccl_get_version(ccl_version_t* version)
     version->full = CCL_PRODUCT_FULL;
 
     return ccl_status_success;
-}
-
-ccl_status_t ccl_set_resize_fn(ccl_resize_fn_t callback)
-{
-    CCL_CHECK_IS_BLOCKED();
-    try
-    {
-        return global_data.executor->create_listener(callback);
-    }
-    COMMON_CATCH_BLOCK();
 }
 
 ccl_status_t CCL_API ccl_wait(ccl_request_t req)

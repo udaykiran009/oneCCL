@@ -3,7 +3,7 @@
 #include "exec/exec.hpp"
 #include "exec/thread/worker.hpp"
 
-#define CCL_WORKER_CHECK_CANCEL_ITERS (32768)
+#define CCL_WORKER_CHECK_STOP_ITERS (32768)
 #define CCL_WORKER_CHECK_UPDATE_ITERS (16384)
 #define CCL_WORKER_PROCESS_ALL_ITERS  (4096)
 
@@ -229,9 +229,8 @@ static void* ccl_worker_func(void* args)
     ccl_status_t ret;
 
     global_data.is_worker_thread = true;
+    worker->started = true;
 
-    int old_cancelation_state = 0;
-    pthread_setcancelstate(PTHREAD_CANCEL_DISABLE, &old_cancelation_state);
     do
     {
         try
@@ -269,15 +268,10 @@ static void* ccl_worker_func(void* args)
         }
 
         iter_count++;
-        if ((iter_count % CCL_WORKER_CHECK_CANCEL_ITERS) == 0)
+        if ((iter_count % CCL_WORKER_CHECK_STOP_ITERS) == 0)
         {
-            // make thread interruptible and check cancelation point
-            pthread_setcancelstate(PTHREAD_CANCEL_ENABLE, &old_cancelation_state);
-
-            pthread_testcancel();
-
-            // thread is non-interruptible again
-            pthread_setcancelstate(PTHREAD_CANCEL_DISABLE, &old_cancelation_state);
+            if (worker->should_stop.load(std::memory_order_acquire))
+                break;
         }
 
         if (processed_count == 0)
@@ -294,6 +288,8 @@ static void* ccl_worker_func(void* args)
             spin_count = max_spin_count;
         }
     } while (true);
+
+    worker->started = false;
 
     return nullptr;
 }

@@ -205,6 +205,8 @@ void* kvs_server_init(void* args)
     int is_stop = 0;
     fd_set read_fds;
     int i, client_socket[MAX_CLIENT_COUNT], max_sd, sd;
+    int so_reuse = 1;
+    setsockopt(sock_listener, SOL_SOCKET, SO_REUSEPORT, &so_reuse, sizeof(so_reuse));
 
     for (i = 0; i < MAX_CLIENT_COUNT; i++)
     {

@@ -45,7 +45,9 @@ ccl_env_data env_data =
     .rs_chunk_count = 1,
     .rs_min_chunk_size = 65536,
     .ar2d_chunk_count = 1,
-    .ar2d_min_chunk_size = 65536
+    .ar2d_min_chunk_size = 65536,
+
+    .default_resizable = 0
 };
 
 int ccl_env_2_int(const char* env_name, int& val)
@@ -182,6 +184,10 @@ void ccl_env_parse()
     {
         CCL_THROW("unordered collectives are supported for OFI transport only");
     }
+
+    ccl_env_2_size_t(CCL_DEFAULT_RESIZABLE, env_data.default_resizable);
+    CCL_THROW_IF_NOT(env_data.default_resizable <= 2, "incorrect ",
+                     CCL_DEFAULT_RESIZABLE, " ", env_data.default_resizable);
 }
 
 void ccl_env_print()
