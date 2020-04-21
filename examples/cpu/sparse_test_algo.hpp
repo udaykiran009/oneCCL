@@ -31,7 +31,6 @@
 #define CHECK_BFP16(itype_name, vtype_name)                          \
 {                                                                    \
     /* https://www.mcs.anl.gov/papers/P4093-0713_1.pdf */            \
-    double max_error = 0;                                            \
     double log_base2 = log(size) / log(2);                           \
     double g = (log_base2 * BFP16_PRECISION)/(1 - (log_base2 * BFP16_PRECISION));\
                                                                      \
@@ -156,7 +155,6 @@ std::unordered_map<typename ccl::type_info<i_type>::native_type, std::vector<typ
     i_t* idx_buf = (i_t*)recv_buf;
     v_t* val_buf = (v_t*)((char*)recv_buf + sizeof(i_t) * sum_nnz);
     std::vector<v_t> tmp(VDIM_SIZE);
-    size_t out_cnt = 0;
     for (unsigned int idx = 0; idx < sum_nnz; idx++)
     {
         auto it = exp_vals.find(idx_buf[idx]);

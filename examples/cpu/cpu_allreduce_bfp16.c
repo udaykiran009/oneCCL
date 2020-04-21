@@ -12,7 +12,6 @@
   {                                                                                                \
       /* https://www.mcs.anl.gov/papers/P4093-0713_1.pdf */                                        \
                                                                                                    \
-      double max_error = 0;                                                                        \
       double log_base2 = log(size) / log(2);                                                       \
       double g = (log_base2 * BFP16_PRECISION) / (1 - (log_base2 * BFP16_PRECISION));              \
       for (size_t i = 0; i < COUNT; i++)                                                           \
@@ -71,7 +70,7 @@ int main()
                       ccl_reduction_sum,
                       NULL, /* attr */
                       NULL, /* comm */
-                      NULL, /*stream,*/
+                      NULL, /* stream */
                       &request);
         ccl_wait(request);
 #ifdef CCL_BFP16_COMPILER

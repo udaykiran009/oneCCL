@@ -2,7 +2,14 @@
 
 touch main_ouput.txt
 exec | tee ./main_ouput.txt
-SCRIPT_DIR=`cd $(dirname "$BASH_SOURCE") && pwd -P`
+
+function create_work_dir(){
+    SCRIPT_DIR=`cd $(dirname "$BASH_SOURCE") && pwd -P`
+    export WORK_DIR=${SCRIPT_DIR}/build
+    rm -r ${WORK_DIR}
+    mkdir -p ${WORK_DIR}
+    echo "WORK_DIR =" ${WORK_DIR}
+}
 
 CheckCommandExitCode() {
     if [ $1 -ne 0 ]; then
@@ -17,8 +24,8 @@ declare -i total_skipped=0
 function check_test(){
     test_log=$1
     test_file=$2
-    test_passed=`grep -E -c -i 'PASSED|skipped' ${test_log}`
-    if [ $test_file != "communicator.out" ] && [ $test_file != "datatype.out" ];
+    test_passed=`grep -E -c -i 'PASSED' ${test_log}`
+    if [ $test_file != "communicator" ] && [ $test_file != "datatype" ];
     then
         test_failed=`grep -E -c -i 'error|Aborted|failed|^BAD$|KILLED|^fault$|cl::sycl::runtime_error|terminate' ${test_log}`
     else
@@ -33,7 +40,7 @@ function check_test(){
     fi
     if [ ${test_skipped} -ne 0 ]
     then
-        echo "GPU test for example  $test_file has been skipped, default selector used instead."
+        echo "Test $test_file has been skipped."
         echo "See log ${test_log} for details"
         total_skipped=${total_skipped}+1
     fi
@@ -121,16 +128,17 @@ run_example()
 
 build()
 {
-    local dir_name="$1"
-    echo "make clean"
-    make clean -f ./../Makefile
+    cd ${WORK_DIR}
     echo "Building"
-    ENABLE_SYCL=$is_sycl make all -f ./../Makefile  2>&1 | tee $SCRIPT_DIR/$dir_name/build_${dir_name}_output.log
-    error_count=`grep -E -c 'error:|Aborted|failed'  $SCRIPT_DIR/$dir_name/build_${dir_name}_output.log` > /dev/null 2>&1
+    cmake .. -DCMAKE_DISABLE_SYCL=${DISABLE_SYCL} \
+             -DCMAKE_C_COMPILER=${C_COMPILER} \
+             -DCMAKE_CXX_COMPILER=${CXX_COMPILER}  2>&1 | tee ${WORK_DIR}/build_output.log
+    make -j 2>&1 | tee -a ${WORK_DIR}/build_output.log
+    error_count=`grep -E -c 'error:|Aborted|failed'  ${WORK_DIR}/build_output.log` > /dev/null 2>&1
     if [ "${error_count}" != "0" ]
     then
         echo "building ... NOK"
-        echo "See logs $SCRIPT_DIR/$dir_name/build_${dir_name}_output.log"
+        echo "See logs ${WORK_DIR}/build_output.log"
         exit 1
     else
         echo "OK"
@@ -138,6 +146,8 @@ build()
 }
 run()
 {
+    cd ${WORK_DIR}/
+    pwd
     ppn=1
     n=2
     ccl_base_env="CCL_YIELD=sleep CCL_ATL_SHM=1"
@@ -156,11 +166,11 @@ run()
     else
         selectors_list="cpu gpu host default"
     fi
-    echo "is_sycl =" $is_sycl "; dir_list =" $dir_list "; selectors_list =" $selectors_list
+    echo "DISABLE_SYCL =" $DISABLE_SYCL "; dir_list =" $dir_list "; selectors_list =" $selectors_list
     for dir_name in $dir_list
     do
         cd $dir_name
-        build $dir_name
+        pwd
         for transport in "ofi" "mpi";
         do
             ccl_transport_env="CCL_ATL_TRANSPORT=${transport} ${ccl_base_env}"
@@ -261,22 +271,58 @@ run()
     fi
 }
 
+print_help()
+{
+    echo_log "Usage:"
+    echo_log "    ./${BASENAME}.sh <options>"
+    echo_log "Example:"
+    echo_log "    ./${BASENAME}.sh "
+    echo_log "    ./${BASENAME}.sh cpu"
+    echo_log "    ./${BASENAME}.sh gpu"
+    echo_log ""
+    echo_log "Available knobs:"
+    echo_log "DISABLE_SYCL = 0|1, default is 0"
+    echo_log "C_COMPILER = clang|icc|gcc|<full path to compiler>, default is clang"
+    echo_log "CXX_COMPILER = clang++|icpc|g++|<full path to compiler>, default is clang++"
+    echo_log ""
+    echo_log "<options>:"
+    echo_log "    -h|-H|-help|--help"
+    echo_log "        Print help information"
+    echo_log ""
+}
+
 case $1 in
-"gpu" )
-    check_clang
-    is_sycl=1
-    shift
-    ;;
 "cpu" )
-    is_sycl=0
+    if [ -z "${C_COMPILER}"]
+    then
+        C_COMPILER=gcc
+    fi
+    if [ -z "${CXX_COMPILER}"]
+    then
+        CXX_COMPILER=g++
+    fi
+    DISABLE_SYCL=1
     shift
     ;;
-* )
+"--help|-help|-h" )
+    print_help
+    shift
+    ;;
+"gpu"|* )
     check_clang
-    is_sycl=1
-    echo "WARNING: example testing will be running with DPC++"
+    if [ -z "${C_COMPILER}"]
+    then
+        C_COMPILER=clang
+    fi
+    if [ -z "${CXX_COMPILER}"]
+    then
+        CXX_COMPILER=clang++
+    fi
+    DISABLE_SYCL=0
     shift
     ;;
 esac
 
+create_work_dir
+build
 run

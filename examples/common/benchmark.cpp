@@ -41,7 +41,7 @@ typedef enum
 
 #define DEFAULT_LOOP "regular"
 
-class base_coll;
+struct base_coll;
 
 using coll_list_t = std::vector<std::unique_ptr<base_coll>>;
 using req_list_t = std::vector<std::shared_ptr<ccl::request>>;
@@ -469,7 +469,7 @@ struct sparse_allreduce_strategy_impl
             std::string arg_copy;
             arg_copy.reserve(args.size());
             std::remove_copy_if(args.begin(), args.end(),
-                                std::back_inserter(arg_copy), [masks](char sym)
+                                std::back_inserter(arg_copy), [](char sym)
                                 {
                                     return std::strchr(masks, sym);
                                 });
@@ -791,7 +791,7 @@ void check_sparse_result(const std::tuple<size_t, size_t>& expected_recv_counts,
     
     /* https://www.mcs.anl.gov/papers/P4093-0713_1.pdf */
     /* added conversion error float->bfp16 for comm_size == 1*/
-    constexpr double max_error = 0;
+
     double log_base2 = log(comm_size != 1 ? comm_size : 2 ) / log(2);
     double g = (log_base2 * BFP16_PRECISION)/(1 - (log_base2 * BFP16_PRECISION));
   
@@ -808,7 +808,7 @@ void check_sparse_result(const std::tuple<size_t, size_t>& expected_recv_counts,
         const float* from = recv_buf_float.data() + index_pos * vdim_count;
         const float* to = from + vdim_count;
         const values_array& expected_values = expected_it->second;
-        if (std::distance(from, to) != expected_values.size())
+        if (vdim_count != expected_values.size())
         {
             throw std::runtime_error(std::string(__FUNCTION__) + "_bfp16 - incorrect recv_buf count, got: " + 
                                      std::to_string(std::distance(from, to)) + ", expected: " +
@@ -1904,6 +1904,7 @@ struct base_sparse_allreduce_coll :
 
         memset(recv_icount, 1, BUF_COUNT * sizeof(size_t) * base_coll::comm->size());
         memset(recv_vcount, 1, BUF_COUNT * sizeof(size_t) * base_coll::comm->size());
+        (void)result;
     }
 
     virtual ~base_sparse_allreduce_coll()
@@ -2131,7 +2132,6 @@ struct sycl_sparse_allreduce_coll :
                                size_t sbuf_size_modifier = 1,
                                size_t rbuf_size_modifier = 1) : coll_base(args)
     {
-        int result = 0;
         for (size_t idx = 0; idx < BUF_COUNT; idx++)
         {
             send_bufs[idx] = new sycl_values_t(ELEM_COUNT * sbuf_size_modifier);
@@ -2147,13 +2147,12 @@ struct sycl_sparse_allreduce_coll :
                 auto send_ibuf = (static_cast<sycl_indices_t*>(send_ibufs[idx]));
 
                 auto recv_buf = (static_cast<sycl_values_t*>(recv_bufs[idx]));
-                auto recv_ibuf = (static_cast<sycl_indices_t*>(recv_ibufs[idx]));
 
                 auto send_buf_acc = send_buf->template get_access<mode::write>(cgh);
                 auto send_ibuf_acc = send_ibuf->template get_access<mode::write>(cgh);
                 auto recv_buf_acc = recv_buf->template get_access<mode::write>(cgh);
                 auto recv_ibuf_acc = recv_buf->template get_access<mode::write>(cgh);
-                cgh.parallel_for<class sparse_allreduce_kernel_name_bufs<Dtype,IType>>
+                cgh.parallel_for<struct sparse_allreduce_kernel_name_bufs<Dtype,IType>>
                         (range<1>{ELEM_COUNT*base_coll::comm->size()}, [=](item<1> e_idx)
                 {
                     if(e_idx.get_linear_id() < ELEM_COUNT)
@@ -2180,14 +2179,13 @@ struct sycl_sparse_allreduce_coll :
             auto send_ibuf = (static_cast<sycl_indices_t*>(single_send_ibuf));
 
             auto recv_buf = (static_cast<sycl_values_t*>(single_recv_buf));
-            auto recv_ibuf = (static_cast<sycl_indices_t*>(single_recv_ibuf));
 
             auto send_buf_acc = send_buf->template get_access<mode::write>(cgh);
             auto send_ibuf_acc = send_ibuf->template get_access<mode::write>(cgh);
 
             auto recv_buf_acc = recv_buf->template get_access<mode::write>(cgh);
             auto recv_ibuf_acc = recv_buf->template get_access<mode::write>(cgh);
-            cgh.parallel_for<class sparse_allreduce_kernel_name_single_bufs<Dtype, IType>>
+            cgh.parallel_for<struct sparse_allreduce_kernel_name_single_bufs<Dtype, IType>>
                     (range<1>{SINGLE_ELEM_COUNT*base_coll::comm->size()}, [=](item<1> e_idx)
             {
                 if(e_idx.get_linear_id() < SINGLE_ELEM_COUNT)

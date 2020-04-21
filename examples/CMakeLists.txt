@@ -1,0 +1,90 @@
+cmake_minimum_required (VERSION 2.8)
+
+if(DEFINED ENV{CCL_ROOT})
+    set(CCL_ROOT "$ENV{CCL_ROOT}" CACHE STRING "")
+else()
+    message(FATAL_ERROR "Please define CCL_ROOT environment variable")
+endif()
+
+message(STATUS "CCL_ROOT: ${CCL_ROOT}")
+
+if(NOT DEFINED ${CCL_INSTALL_EXAMPLES})
+    set(CCL_INSTALL_EXAMPLES "$ENV{PWD}")
+endif()
+
+# Check SYCL support
+if (NOT CMAKE_DISABLE_SYCL)
+    set(CMAKE_DISABLE_SYCL 0)
+endif()
+
+if (${CMAKE_VERSION} VERSION_LESS 3.1)
+#cmake version below 3.1 does not support CMAKE_C[XX}_STANDARD flags
+#set manually
+    set(CXX_COMPILER_FLAGS "-std=gnu++11")
+    set(C_COMPILER_FLAGS "-std=gnu99")
+endif()
+
+#common release/debug compilation settings
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${C_COMPILER_FLAGS} -Wall -Werror -D_GNU_SOURCE -fvisibility=internal")
+set(CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG} ${C_COMPILER_FLAGS} -O0 -g -DENABLE_DEBUG")
+set(CMAKE_C_FLAGS_RELEASE "${CMAKE_C_FLAGS_RELEASE} ${C_COMPILER_FLAGS} -O3")
+set(CMAKE_C_FLAGS_RELWITHDEBINFO "${CMAKE_C_FLAGS_RELWITHDEBINFO} ${C_COMPILER_FLAGS} -O2 -g")
+set(CMAKE_C_STANDARD 99)
+set(CMAKE_C_STANDARD_REQUIRED ON)
+
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${CXX_COMPILER_FLAGS} -Wall -Werror -D_GNU_SOURCE -fvisibility=internal")
+set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} ${CXX_COMPILER_FLAGS} -O0 -g -DENABLE_DEBUG")
+set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} ${CXX_COMPILER_FLAGS} -O3")
+set(CMAKE_CXX_FLAGS_RELWITHDEBINFO "${CMAKE_CXX_FLAGS_RELWITHDEBINFO} ${CXX_COMPILER_FLAGS} -O2 -g")
+set(CMAKE_CXX_STANDARD 11)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+
+if( ${CMAKE_C_COMPILER_ID} STREQUAL "Clang" AND ${CMAKE_CXX_COMPILER_ID} STREQUAL "Clang")
+    if (${CMAKE_DISABLE_SYCL} EQUAL 0)
+        set(CMAKE_CLANG_FLAGS "-fsycl")
+        set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -lsycl")
+    endif()
+    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${CMAKE_CLANG_FLAGS}")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${CMAKE_CLANG_FLAGS}")
+endif()
+
+set(GCC_BFP16_MIN_SUPPORTED "4.9.0")
+
+if (${CMAKE_C_COMPILER_ID} STREQUAL "Intel" OR ${CMAKE_C_COMPILER_ID} STREQUAL "Clang" OR (${CMAKE_C_COMPILER_ID} STREQUAL "GNU" AND NOT ${CMAKE_C_COMPILER_VERSION} VERSION_LESS ${GCC_BFP16_MIN_SUPPORTED}))
+    add_definitions(-DCCL_BFP16_COMPILER)
+    set(CCL_BFP16_COMPILER ON)
+    message(STATUS "BFP16 compiler: yes")
+else()
+    set(CCL_BFP16_COMPILER OFF)
+    message(STATUS "BFP16 compiler: no")
+endif()
+
+if (CCL_BFP16_COMPILER)
+    if ((${CMAKE_C_COMPILER_ID} STREQUAL "Clang" OR ${CMAKE_C_COMPILER_ID} STREQUAL "GNU"))
+        add_definitions(-DCCL_BFP16_TARGET_ATTRIBUTES)
+        message(STATUS "BFP16 target attributes: yes")
+    else()
+        message(STATUS "BFP16 target attributes: no")
+    endif()
+endif()
+
+if(EXISTS ${CCL_ROOT}/lib/cpu_icc AND EXISTS ${CCL_ROOT}/lib/cpu_gpu_dpcpp)
+    if (CMAKE_DISABLE_SYCL)
+        include_directories(${CCL_ROOT}/include/cpu_icc)
+        link_directories(${CCL_ROOT}/lib/cpu_icc)
+    else()
+        include_directories(${CCL_ROOT}/include/cpu_gpu_dpcpp)
+        link_directories(${CCL_ROOT}/lib/cpu_gpu_dpcpp)
+    endif()
+else()
+        include_directories(${CCL_ROOT}/include)
+        link_directories(${CCL_ROOT}/lib)
+endif()
+
+include_directories(include)
+
+add_subdirectory(cpu)
+if (${CMAKE_DISABLE_SYCL} EQUAL 0)
+    add_subdirectory(sycl)
+endif()    
+add_subdirectory(common)
