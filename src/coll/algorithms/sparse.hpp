@@ -960,19 +960,22 @@ ccl_status_t sparse_alloc_result_buf(const void* ctx)
         sa_handler->recv_buf_size += sa_handler->recv_counts[i];
     }
 
+    LOG_TRACE("sa_handle: ", sa_handler, ",allocate all buffers - indices size: ", sa_handler->recv_buf_size * sa_handler->itype_size,
+              ", values size: ", sa_handler->recv_buf_size * sa_handler->vtype_size * sa_handler->val_dim_cnt,
+              ", sa_handler->recv_counts: ", sa_handler->recv_counts);
     sa_handler->all_idx_buf = sa_handler->sched->alloc_buffer(sa_handler->recv_buf_size * sa_handler->itype_size).get_ptr();
     sa_handler->all_val_buf = sa_handler->sched->alloc_buffer(sa_handler->recv_buf_size * sa_handler->vtype_size * sa_handler->val_dim_cnt).get_ptr();
-
     return ccl_status_success;
 }
 
+template<size_t stride_per_comm>
 ccl_status_t sparse_set_v_counts(const void* ctx)
 {
     ccl_sparse_allreduce_handler* sa_handler = (ccl_sparse_allreduce_handler*)ctx;
-
+    size_t stride = stride_per_comm * sa_handler->comm->size();
     for (size_t i = 0; i < sa_handler->comm->size(); i++)
     {
-        sa_handler->recv_counts[i] *= sa_handler->val_dim_cnt;
+        sa_handler->recv_counts[i + stride] = sa_handler->recv_counts[i] * sa_handler->val_dim_cnt;
     }
 
     return ccl_status_success;
@@ -1011,7 +1014,7 @@ ccl_status_t sparse_reduce_gathered(const void* ctx)
         void* old_vbuf = *sa_handler->recv_vbuf;
         *sa_handler->recv_ibuf = CCL_REALLOC(*sa_handler->recv_ibuf, sa_handler->itype_size * (*sa_handler->recv_icount), i_new_size, CACHELINE_SIZE, "recv_ibuf");
         *sa_handler->recv_vbuf = CCL_REALLOC(*sa_handler->recv_vbuf, sa_handler->vtype_size * (*sa_handler->recv_vcount), v_new_size, CACHELINE_SIZE, "recv_vbuf");
-        LOG_DEBUG("realloc for user buffers happened - "
+        LOG_DEBUG("sa_handler: ", sa_handler, ", realloc for user buffers happened - "
                   "ibuf {from: ", old_ibuf, ", to: ", *sa_handler->recv_ibuf, "}, "
                   "vbuf {from: ", old_vbuf, ", to: ", *sa_handler->recv_vbuf, "}");
     }
@@ -1182,12 +1185,20 @@ ccl_status_t ccl_coll_build_sparse_allreduce_3_allgatherv(ccl_sched *sched,
     sa_handler->comm_size = comm_size;
     sa_handler->recv_vcount = recv_val_count;
     sa_handler->recv_icount = recv_ind_count;
-    sa_handler->recv_counts = static_cast<size_t*>(sched->alloc_buffer(sizeof(size_t) * comm_size).get_ptr());
+    
+    constexpr size_t parallel_requests_count = 2; //indices + values
+    sa_handler->recv_counts = 
+        static_cast<size_t*>(sched->alloc_buffer(sizeof(size_t) *comm_size * parallel_requests_count).get_ptr());
 
     sa_handler->size_per_rank = static_cast<size_t*>(sched->alloc_buffer(sizeof(size_t) * comm_size).get_ptr());
     for (size_t i = 0; i < comm_size; i++)
         sa_handler->size_per_rank[i] = sizeof(size_t);
 
+    LOG_TRACE("sa_handler: ", sa_handler, ", sa_handler->recv_ibuf: ", sa_handler->recv_ibuf,
+              ", sa_handler->recv_vbuf: ", sa_handler->recv_vbuf,
+              ", sa_handler->val_dim_cnt: ", sa_handler->val_dim_cnt,
+              ", sa_handler->recv_counts: ", sa_handler->recv_counts);
+        
     ccl_coll_entry_param param{};
     param.ctype = ccl_coll_allgatherv;
     param.send_buf = ccl_buffer(&sa_handler->send_count, sizeof(size_t));
@@ -1203,28 +1214,29 @@ ccl_status_t ccl_coll_build_sparse_allreduce_3_allgatherv(ccl_sched *sched,
     entry_factory::make_entry<function_entry>(sched, sparse_alloc_result_buf, sa_handler);
     sched->add_barrier();
 
+    // allgather indices
+    size_t parallel_request_index = 0;
     ccl_coll_entry_param param_i{};
     param_i.ctype = ccl_coll_allgatherv;
-    param_i.send_buf = ccl_buffer(dst_i, sa_handler->send_count[0] * itype_size);
+    param_i.send_buf = ccl_buffer(dst_i, sa_handler->send_count[parallel_request_index] * itype_size);
     param_i.recv_buf = ccl_buffer();
-    param_i.send_count = sa_handler->send_count[0];
-    param_i.recv_counts = sa_handler->recv_counts;
+    param_i.send_count = sa_handler->send_count[parallel_request_index];
+    param_i.recv_counts = &sa_handler->recv_counts[parallel_request_index * comm_size];
     param_i.dtype = index_dtype;
     param_i.comm = comm;
 
     coll_entry* ce = entry_factory::make_entry<coll_entry>(sched, param_i);
     ce->set_field_fn<ccl_sched_entry_field_recv_buf>(sparse_get_i_recv, sa_handler);
-    sched->add_barrier();
-
-    entry_factory::make_entry<function_entry>(sched, sparse_set_v_counts, sa_handler);
-    sched->add_barrier();
-
+    entry_factory::make_entry<function_entry>(sched, sparse_set_v_counts<1>, sa_handler);
+    
+    // allgather values
+    parallel_request_index ++;
     ccl_coll_entry_param param_v{};
     param_v.ctype = ccl_coll_allgatherv;
-    param_v.send_buf = ccl_buffer(dst_v, sa_handler->send_count[1] * vtype_size);
+    param_v.send_buf = ccl_buffer(dst_v, sa_handler->send_count[parallel_request_index] * vtype_size);
     param_v.recv_buf = ccl_buffer();
-    param_v.send_count = sa_handler->send_count[1];
-    param_v.recv_counts = sa_handler->recv_counts;
+    param_v.send_count = sa_handler->send_count[parallel_request_index];
+    param_v.recv_counts = &sa_handler->recv_counts[parallel_request_index * comm_size];
     param_v.dtype = value_dtype;
     param_v.comm = comm;
 

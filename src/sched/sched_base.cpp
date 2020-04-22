@@ -96,6 +96,7 @@ size_t ccl_sched_base::get_priority() const
 ccl_buffer ccl_sched_base::alloc_buffer(size_t bytes)
 {
 
+    LOG_TRACE("try to allocate buffer size: ", bytes);
     CCL_THROW_IF_NOT(bytes > 0, "incorrect buffer size: ", bytes);
 
     ccl_buffer buffer = ccl_buffer(CCL_CALLOC(bytes, "sched_buffer"),

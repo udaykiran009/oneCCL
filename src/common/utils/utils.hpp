@@ -76,21 +76,24 @@
 #define CCL_MEMALIGN_WRAPPER(size, align, name)                 \
     ({                                                          \
         void* ptr = CCL_MEMALIGN_IMPL(size, align);             \
-        CCL_THROW_IF_NOT(ptr, "CCL out of memory, ", name);     \
+        CCL_THROW_IF_NOT(ptr, "CCL cannot allocate bytes: ",    \
+                         size, ", out of memory, ", name);      \
         ptr;                                                    \
     })
 
 #define CCL_REALLOC_WRAPPER(old_ptr, old_size, new_size, align, name)       \
     ({                                                                      \
         void* ptr = CCL_REALLOC_IMPL(old_ptr, old_size, new_size, align);   \
-        CCL_THROW_IF_NOT(ptr, "CCL out of memory, ", name);                 \
+        CCL_THROW_IF_NOT(ptr, "CCL cannot allocate bytes: ", new_size,      \
+                         ", out of memory, ", name);                        \
         ptr;                                                                \
     })
 
 #define CCL_CALLOC_WRAPPER(size, align, name)                   \
     ({                                                          \
         void* ptr = CCL_CALLOC_IMPL(size, align);               \
-        CCL_THROW_IF_NOT(ptr, "CCL out of memory, ", name);     \
+        CCL_THROW_IF_NOT(ptr, "CCL cannot allocate bytes: ",    \
+                         size,", out of memory, ", name);       \
         ptr;                                                    \
     })
 
