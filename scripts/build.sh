@@ -221,7 +221,11 @@ define_gpu_compiler()
 build_cpu()
 {
     define_cpu_compiler
-    log mkdir ${WORKSPACE}/build && cd ${WORKSPACE}/build && echo ${PWD}
+    if [ -z ${BUILD_FOLDER} ]
+    then
+        BUILD_FOLDER="build"
+    fi
+    log mkdir ${WORKSPACE}/${BUILD_FOLDER} && cd ${WORKSPACE}/${BUILD_FOLDER} && echo ${PWD}
     log cmake .. -DCMAKE_DISABLE_SYCL=1 -DCMAKE_BUILD_TYPE=${BUILD_TYPE} \
     -DCMAKE_C_COMPILER="${C_COMPILER_CPU}" -DCMAKE_CXX_COMPILER="${CXX_COMPILER_CPU}" -DUSE_CODECOV_FLAGS="${CODECOV_FLAGS}" \
     -DLIBFABRIC_DIR="${LIBFABRIC_INSTALL_DIR}"
