@@ -1,0 +1,18 @@
+#include "base.hpp"
+#include "fixture.hpp"
+#include "kernels/allreduce_multi_tile_case.hpp"
+
+int main(int ac, char* av[])
+{
+#ifndef STANDALONE_UT
+  testing::InitGoogleTest(&ac, av);
+  return RUN_ALL_TESTS();
+#else
+{
+    using namespace multi_tile_single_device_case;
+    Test_allreduce_multi_tile_one_device_kernel t;
+    t.start();
+}
+
+#endif
+}

@@ -2,6 +2,49 @@
 
 add_subdirectory(atl)
 
+set (EXTENSIONS_SRC)
+
+if(MULTI_GPU_SUPPORT)
+    list (APPEND EXTENSIONS_SRC
+                    ccl_cpp_gpu_api.cpp
+                    ccl_gpu_modules.cpp
+
+                    native_device_api/l0/base.cpp
+                    native_device_api/l0/device.cpp
+                    native_device_api/l0/subdevice.cpp
+                    native_device_api/l0/driver.cpp
+                    native_device_api/l0/platform.cpp
+                    native_device_api/l0/primitives.cpp
+                    sched/gpu_sched.cpp
+                    sched/gpu_concurrent_sched.cpp
+
+                    common/comm/l0/devices/ccl_gpu_comm.cpp
+                    common/comm/l0/devices/ccl_virtual_gpu_comm.cpp
+                    common/comm/l0/devices/ccl_ipc_gpu_comm.cpp
+
+                    common/comm/l0/communicator/device_group/device_ring_communicator.cpp
+                    common/comm/l0/communicator/device_group/device_a2a_communicator.cpp
+                    common/comm/l0/communicator/thread_group/thread_ring_communicator.cpp
+                    common/comm/l0/communicator/thread_group/thread_a2a_communicator.cpp
+                    common/comm/l0/communicator/process_group/process_ring_communicator.cpp
+                    common/comm/l0/communicator/process_group/process_a2a_communicator.cpp
+                    common/comm/l0/communicator/communicator_interface.cpp
+
+                    common/comm/l0/context/process_group_ctx.cpp
+                    common/comm/l0/context/thread_group_ctx.cpp
+                    common/comm/l0/context/device_group_ctx.cpp
+                    common/comm/l0/context/device_storage.cpp
+
+                    common/comm/l0/topology/ring/device_group_ring_creator.cpp
+                    common/comm/l0/topology/ring/thread_group_ring_creator.cpp
+                    common/comm/l0/topology/ring/process_group_ring_creator.cpp
+                    common/comm/l0/topology/topology_construction_utils.cpp
+
+                    common/comm/l0/gpu_comm_attr.cpp
+                    common/comm/l0/modules/base_entry_module.cpp
+                    common/comm/l0/modules/modules_source_data.cpp)
+endif(MULTI_GPU_SUPPORT)
+
 set(CCL_SRC
     ccl.cpp
     ccl_cpp_api.cpp
@@ -56,15 +99,16 @@ set(CCL_SRC
     common/log/log.cpp
     common/stream/stream.cpp
     common/utils/spinlock.cpp
-    common/utils/yield.cpp)
+    common/utils/yield.cpp
+    ${EXTENSIONS_SRC})
 
 if(${CMAKE_C_COMPILER_ID} STREQUAL "Clang" AND ${CMAKE_CXX_COMPILER_ID} STREQUAL "Clang")
-    set(CCL_INC_DIRS "${CCL_INC_DIRS} ${SYCL_BUNDLE_ROOT}/include")
+    list(APPEND CCL_INC_DIRS "${SYCL_BUNDLE_ROOT}/include")
 endif()
-set(CCL_INC_DIRS
-    ${PROJECT_SOURCE_DIR}/include
-    ${PROJECT_SOURCE_DIR}/src)
-
+list(APPEND CCL_INC_DIRS
+                 ${PROJECT_SOURCE_DIR}/include
+                 ${PROJECT_SOURCE_DIR}/src)
+message("CCL_INC_DIRS: ${CCL_INC_DIRS}")
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -pthread")
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -pthread")
 
@@ -78,7 +122,7 @@ target_include_directories(ccl-objects PRIVATE ${CCL_INC_DIRS})
 #shared library
 add_library(ccl SHARED $<TARGET_OBJECTS:ccl-objects>)
 target_include_directories(ccl PUBLIC ${CCL_INC_DIRS})
-target_link_libraries(ccl PUBLIC dl pthread)
+target_link_libraries(ccl PUBLIC dl pthread ${EXTERNAL_LIBS})
 set_target_properties(ccl PROPERTIES LIBRARY_OUTPUT_DIRECTORY ${CCL_BUILD_DIR})
 install(TARGETS ccl LIBRARY DESTINATION ${CCL_INSTALL_LIB})
 if(${CMAKE_C_COMPILER_ID} STREQUAL "Clang" AND ${CMAKE_CXX_COMPILER_ID} STREQUAL "Clang")
@@ -95,6 +139,13 @@ add_library(ccl-static STATIC $<TARGET_OBJECTS:ccl-objects>)
 set_target_properties(ccl-static PROPERTIES OUTPUT_NAME ccl)
 set_target_properties(ccl-static PROPERTIES ARCHIVE_OUTPUT_DIRECTORY ${CCL_BUILD_DIR})
 install(TARGETS ccl-static ARCHIVE DESTINATION ${CCL_INSTALL_LIB})
+
+if(MULTI_GPU_SUPPORT)
+    add_library(ccl-ut-static STATIC $<TARGET_OBJECTS:ccl-objects>)
+    set_target_properties(ccl-ut-static PROPERTIES COMPILE_FLAGS "-fvisibility=default")
+    set_target_properties(ccl-ut-static PROPERTIES OUTPUT_NAME cclut)
+    set_target_properties(ccl-ut-static PROPERTIES ARCHIVE_OUTPUT_DIRECTORY ${CCL_BUILD_DIR})
+endif(MULTI_GPU_SUPPORT)
 
 #headers installation
 install(DIRECTORY ${PROJECT_SOURCE_DIR}/include/

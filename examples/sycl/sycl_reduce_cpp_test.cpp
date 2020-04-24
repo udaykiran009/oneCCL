@@ -20,7 +20,7 @@ int main(int argc, char **argv)
         return -1;
     }
     /* create SYCL stream */
-    auto stream = ccl::environment::instance().create_stream(ccl::stream_type::sycl, &q);
+    auto stream = ccl::environment::instance().create_stream(ccl::stream_type::device, &q);
 
     {
         /* open sendbuf and recvbuf and initialize them on the CPU side */

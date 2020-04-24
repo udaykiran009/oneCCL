@@ -47,6 +47,9 @@ if(CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT)
     set(CMAKE_INSTALL_PREFIX "${CMAKE_BINARY_DIR}/_install" CACHE PATH "Default install path" FORCE)
 endif()
 
+SET(MULTI_GPU_SUPPORT OFF CACHE BOOL "Enable Multi GPU extension support")
+
+set(CCL_COMMON_INSTALL_PREFIX "intel64")
 set(CMAKE_INSTALL_LIBDIR "lib")
 set(CCL_INSTALL_LIB "${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_LIBDIR}")
 set(CCL_INSTALL_INCLUDE "${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_INCLUDEDIR}")
@@ -65,7 +68,7 @@ else()
     set(LIBFABRIC_INCLUDE_DIR "${LIBFABRIC_DIR}/include/")
     set(LIBFABRIC_LIB_DIR "${LIBFABRIC_DIR}/lib")
 endif()
-
+set(CCL_INSTALL_UNIT_TESTS "${CMAKE_INSTALL_PREFIX}/tests/unit")
 
 set(CMAKE_SKIP_INSTALL_RPATH TRUE)
 set(CMAKE_SKIP_RPATH TRUE)
@@ -171,7 +174,42 @@ set(CCL_BUILD_DIR ${CMAKE_CURRENT_BINARY_DIR}/src)
 
 enable_testing()
 
+set (EXTERNAL_LIBS "")
 set(EXAMPLES_INC_DIRS ${PROJECT_SOURCE_DIR}/include ${PROJECT_SOURCE_DIR}/examples/include)
+
+# allow `deprecated`
+set(CMAKE_CLANG_FLAGS "${CMAKE_CLANG_FLAGS} -Wno-deprecated-declarations")
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wno-deprecated-declarations")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-deprecated-declarations")
+if (MULTI_GPU_SUPPORT)
+    #TODO use `find_package(LevelZero CONFIG REQUIRED PATHS ${CMAKE_MODULE_PATH})`
+    set(NATIVE_API_ROOT "/usr/")
+
+    set(CMAKE_CLANG_FLAGS "${CMAKE_CLANG_FLAGS} -Wno-deprecated-declarations")
+    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wno-deprecated-declarations")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-deprecated-declarations")
+
+    LIST(APPEND CMAKE_MODULE_PATH "${NATIVE_API_ROOT}/lib/cmake/level_zero"
+                                  "${NATIVE_API_ROOT}/lib/cmake/level_zero")
+
+    message("Level0 examples, path: ${CMAKE_MODULE_PATH}")
+    list(APPEND CCL_INC_DIRS "${NATIVE_API_ROOT}/include/level_zero")
+    list(APPEND CCL_INC_DIRS "/opt/intel/opencl/include/")
+    list(APPEND CCL_INC_DIRS "/p/pdsd/scratch/sivanov/opencl")
+    #"/p/pdsd/scratch/sivanov/dpcpp/build/linux_prod/compiler/linux/lib/clang/10.0.0/include")
+
+    link_directories("/usr/local/lib/level_zero/")
+    #list(APPEND CMAKE_SHARED_LINKER_FLAGS "-L${L0_ROOT}/lib/level_zero/")# -lxe_loader")
+    list(APPEND EXTERNAL_LIBS "-llevel_zero")
+    #list(APPEND CMAKE_STATIC_LINKER_FLAGS "-llevel_zero")
+
+    option(CCL_GPU_DEVICES_AFFINITY_ENABLE "Enable L0" ON)
+    if(CCL_GPU_DEVICES_AFFINITY_ENABLE)
+        set(CCL_GPU_DEVICES_AFFINITY_MASK_SIZE 4)
+        message ("Set L0 device mask affinity size: ${CCL_GPU_DEVICES_AFFINITY_MASK_SIZE}")
+    endif()
+
+endif(MULTI_GPU_SUPPORT)
 
 #include other CMakeLists
 add_subdirectory(src)
@@ -180,12 +218,19 @@ add_subdirectory(examples/cpu)
 set (CCL_ENABLCE_SYCL_CHECK_CONTRACT "#if !defined(__clang__) || __clang_major__ < 9 || !defined(CL_SYCL_LANGUAGE_VERSION)\n#error This version of CCL configured only for DPC++ compiler\n#endif")
 if(${CMAKE_DISABLE_SYCL} EQUAL 0 AND ${CMAKE_C_COMPILER_ID} STREQUAL "Clang" AND ${CMAKE_CXX_COMPILER_ID} STREQUAL "Clang")
     option (CCL_ENABLE_SYCL "Enable CCL SYCL runtime" ON)
+    set(CCL_ENABLE_SYCL_V 1)
     message(STATUS "Enable CCL SYCL runtime")
     add_subdirectory(examples/sycl)
+else()
+        set(CCL_ENABLE_SYCL_V 0)
 endif()
 
 add_subdirectory(examples/common)
 add_subdirectory(tests/functional)
+if(MULTI_GPU_SUPPORT)
+    add_subdirectory(examples/level_zero)
+    add_subdirectory(tests/unit)
+endif()
 
 #generate & install vars.sh
 configure_file(cmake/vars.sh.in ${CMAKE_CURRENT_BINARY_DIR}/vars.sh @ONLY)

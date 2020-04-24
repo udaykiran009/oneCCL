@@ -24,7 +24,7 @@ int main(int argc, char **argv)
         return -1;
     }
     /* create SYCL stream */
-    auto stream = ccl::environment::instance().create_stream(ccl::stream_type::sycl, &q);
+    auto stream = ccl::environment::instance().create_stream(ccl::stream_type::device, &q);
 
     recv_counts = static_cast<size_t*>(malloc(size * sizeof(size_t)));
 

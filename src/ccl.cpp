@@ -144,6 +144,19 @@ ccl_status_t ccl_finalize()
     COMMON_CATCH_BLOCK();
 }
 
+#ifdef MULTI_GPU_SUPPORT
+ccl_status_t ccl_set_device_comm_attr(ccl_comm_device_attr_t* comm_attr, unsigned long attribute, ...)
+{
+    if (!comm_attr)
+    {
+        return ccl_status_invalid_arguments;
+    }
+
+    //TODO
+    return ccl_status_invalid_arguments;
+}
+#endif //MULTI_GPU_SUPPORT
+
 ccl_status_t CCL_API ccl_get_version(ccl_version_t* version)
 {
     if (!version)
@@ -320,8 +333,26 @@ ccl_status_t ccl_stream_create(ccl_stream_type_t type,
     CCL_ASSERT(stream);
     try
     {
-        LOG_DEBUG("create stream");
-        *stream = static_cast<void*>(new ccl_stream(type, native_stream));
+        LOG_DEBUG("create stream by type: ", type);
+#ifdef MULTI_GPU_SUPPORT
+    #ifdef CCL_ENABLE_SYCL
+            *stream = static_cast<void*>(stream_provider_dispatcher::create(*static_cast<cl::sycl::queue*>(native_stream)).release());
+    #else
+            *stream = static_cast<void*>(stream_provider_dispatcher::create(*static_cast<ze_command_queue_handle_t*>(native_stream)).release());
+    #endif
+#else
+    #ifdef CCL_ENABLE_SYCL
+        if( type == ccl_stream_sycl)
+        {
+            *stream = static_cast<void*>(stream_provider_dispatcher::create(*static_cast<cl::sycl::queue*>(native_stream)).release());
+        }
+        else
+    #endif
+            *stream = static_cast<void*>(stream_provider_dispatcher::create(native_stream).release());
+
+            //for legacy stream: override type for 'host' related queue
+            static_cast<ccl_stream*>(*stream)->type = type;
+#endif
         return ccl_status_success;
     }
     COMMON_CATCH_BLOCK();

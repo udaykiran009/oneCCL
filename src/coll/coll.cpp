@@ -32,38 +32,80 @@ ccl_coll_attr& ccl_coll_attr::operator= (const ccl_coll_attr_t* attr)
     return *this;
 }
 
-const char* ccl_coll_type_to_str(ccl_coll_type type)
-{
-    switch (type)
-    {
-        case ccl_coll_allgatherv:
-            return "allgatherv";
-        case ccl_coll_allreduce:
-            return "allreduce";
-        case ccl_coll_alltoall:
-            return "alltoall";
-        case ccl_coll_alltoallv:
-            return "alltoallv";
-        case ccl_coll_barrier:
-            return "barrier";
-        case ccl_coll_bcast:
-            return "bcast";
-        case ccl_coll_reduce:
-            return "reduce";
-        case ccl_coll_reduce_scatter:
-            return "reduce_scatter";
-        case ccl_coll_sparse_allreduce:
-            return "sparse_allreduce";
-        case ccl_coll_internal:
-            return "internal";
-        default:
-            CCL_FATAL("unexpected coll_type ", type);
-            return "unknown";
-    }
-}
-
 /* param is not const because param.comm can be updated for unordered colls */
 static ccl_request* ccl_coll_create(ccl_coll_param& param,
+                                    const ccl_coll_attr& attr)
+{
+    /* 1. decide whether schedule should be postponed (this includes caching and staring) */
+    bool postpone_schedule = false;
+    if (env_data.enable_unordered_coll)
+    {
+        if (!attr.match_id.empty())
+        {
+            auto comm = global_data.unordered_coll_manager->get_comm(std::string(attr.match_id)).get();
+            if (!comm)
+            {
+                if (attr.synchronous)
+                {
+                    CCL_THROW("unsupported collective (synchronous && unordered && !communicator)");
+                }
+                LOG_DEBUG("didn't find comm for match_id ", attr.match_id, ", postpone schedule");
+                postpone_schedule = true;
+            }
+            else
+            {
+                LOG_DEBUG("found comm ", comm->id(), " for match_id ", attr.match_id);
+                param.comm = comm;
+            }
+        }
+        else
+        {
+            /* use comm provided by user, it is ordered collective */
+        }
+    }
+
+    /* 2. create or get schedule */
+    ccl_master_sched* sched = ccl_master_sched::create(param, attr);
+
+    /* 3. fuse schedule */
+    if (!postpone_schedule && env_data.enable_fusion)
+    {
+        if (global_data.fusion_manager->add(sched))
+        {
+            LOG_DEBUG("sched ", sched, ", ctype ",
+                      ccl_coll_type_to_str(sched->coll_param.ctype), " will be fused");
+            return sched;
+        }
+    }
+
+    /* 4. parallelize schedule */
+    sched->commit(global_data.parallelizer.get());
+
+    /* 5. postpone unordered coll schedule */
+    if (postpone_schedule)
+    {
+        /*
+            user has provided match_id that has not been resolved yet.
+            schedule will be postponed until comm resolution
+        */
+        return global_data.unordered_coll_manager->postpone(sched);
+    }
+
+    /* 6. regular schedule execution */
+    ccl_request* request = sched->start(global_data.executor.get());
+    if (sched->coll_attr.synchronous)
+    {
+        ccl_wait_impl<ccl_master_sched>(global_data.executor.get(), request);
+        request = nullptr;
+    }
+
+    return request;
+}
+
+
+
+//TODO duplicated code - make `ccl_coll_create` templated
+static ccl_request* ccl_gpu_coll_create(ccl_coll_param& param,
                                     const ccl_coll_attr& attr)
 {
     /* 1. decide whether schedule should be postponed */
@@ -114,7 +156,7 @@ static ccl_request* ccl_coll_create(ccl_coll_param& param,
     /* 5. postpone unordered coll schedule */
     if (postpone_schedule)
     {
-        /* 
+        /*
             user has provided match_id that has not been resolved yet.
             schedule will be postponed until comm resolution
         */
@@ -474,7 +516,7 @@ ccl_status_t ccl_coll_build_sparse_allreduce(
                         greater than zero, but got indices count = " + std::to_string(send_ind_count) +
                         ", values count = " + std::to_string(send_val_count));
     }
-    
+
     if (send_ind_count > send_val_count)
     {
         CCL_FATAL("sparse collective algorithms now support only 1-D indices and \
@@ -539,7 +581,7 @@ ccl_request* ccl_allgatherv_impl(const void* send_buf,
     param.dtype = global_data.dtypes->get(dtype);
     param.stream = stream;
     param.comm = comm;
-    
+
     auto req = ccl_coll_create(param, ccl_coll_attr(attr));
     LOG_DEBUG("coll ", ccl_coll_type_to_str(param.ctype), " created, req ", req);
     return req;
@@ -615,6 +657,31 @@ ccl_request* ccl_alltoallv_impl(const void* send_buf,
 
     auto req = ccl_coll_create(param, ccl_coll_attr(attr));
     LOG_DEBUG("coll ", ccl_coll_type_to_str(param.ctype), " created, req ", req);
+    return req;
+}
+
+ccl_request* ccl_allreduce_gpu_impl(const void* send_buf,
+                                void* recv_buf,
+                                size_t count,
+                                ccl_datatype_t dtype,
+                                ccl_reduction_t reduction,
+                                const ccl_coll_attr_t* attr,
+                                ccl_comm* comm,
+                                const ccl_stream* stream)
+{
+    ccl_coll_param param{};
+
+    param.ctype = ccl_coll_allreduce;
+    param.send_buf = send_buf;
+    param.recv_buf = recv_buf;
+    param.count = count;
+    param.dtype = global_data.dtypes->get(dtype);
+    param.reduction = reduction;
+    param.stream = stream;
+    param.comm = comm;
+
+    auto req = ccl_gpu_coll_create(param, ccl_coll_attr(attr));
+    LOG_DEBUG("GPU coll ", ccl_coll_type_to_str(param.ctype), " created, req ", req, " count ", count);
     return req;
 }
 

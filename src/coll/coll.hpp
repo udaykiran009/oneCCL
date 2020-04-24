@@ -104,8 +104,6 @@ struct ccl_coll_param_copy
     std::vector<size_t> a2av_recv_counts;
 };
 
-const char* ccl_coll_type_to_str(ccl_coll_type type);
-
 ccl_status_t ccl_coll_build_allgatherv(ccl_sched* sched,
                                        ccl_buffer send_buf,
                                        size_t send_count,
@@ -184,6 +182,15 @@ ccl_request* ccl_allgatherv_impl(const void* send_buf,
                                  const ccl_stream* stream);
 
 ccl_request* ccl_allreduce_impl(const void* send_buf,
+                                void* recv_buf,
+                                size_t count,
+                                ccl_datatype_t dtype,
+                                ccl_reduction_t reduction,
+                                const ccl_coll_attr_t* attr,
+                                ccl_comm* comm,
+                                const ccl_stream* stream);
+template<class gpu_device_type>
+ccl_request* ccl_allreduce_gpu_impl(const void* send_buf,
                                 void* recv_buf,
                                 size_t count,
                                 ccl_datatype_t dtype,

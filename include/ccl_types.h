@@ -149,7 +149,6 @@ typedef struct
     int local;
 } ccl_comm_attr_t;
 
-/** List of datatype attributes. */
 typedef struct
 {
     /* Size of single element */
@@ -162,6 +161,9 @@ typedef void* ccl_request_t;
 
 typedef void* ccl_stream_t;
 
+#ifdef MULTI_GPU_SUPPORT
+    #include "ccl_device_types.h"
+#endif
 #ifdef __cplusplus
 }   /*extern C */
 #endif

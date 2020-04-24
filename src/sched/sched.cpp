@@ -173,3 +173,8 @@ void ccl_sched::dump(std::ostream& out) const
     out << msg.str();
     ccl_logger::format(out, "--------------------------------\n");
 }
+
+size_t ccl_sched::entries_count() const
+{
+    return entries.size();
+}

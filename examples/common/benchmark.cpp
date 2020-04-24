@@ -452,7 +452,7 @@ struct sparse_allreduce_strategy_impl
     {
         size_t indices_count = std::get<0>(get_expected_recv_counts(elem_range.second));
 
-        indices_distributor_impl.reset( new IndicesDistributor(elem_range.first, 
+        indices_distributor_impl.reset( new IndicesDistributor(elem_range.first,
                                                                indices_count));
     }
 
@@ -566,11 +566,11 @@ void fill_sparse_data(const std::tuple<size_t, size_t>& expected_recv_counts,
     recv_icount = std::get<0>(expected_recv_counts);
     recv_vcount = std::get<1>(expected_recv_counts);
     size_t vdim_count = recv_vcount / recv_icount;
-    
+
     using from_type = float;
     std::vector<from_type> send_buf_from(elem_count);
 
-    
+
     for (size_t i_idx = 0; i_idx < recv_icount; i_idx++)
     {
         send_ibuf[i_idx] = generator();
@@ -647,7 +647,7 @@ void check_sparse_result(const std::tuple<size_t, size_t>& expected_recv_counts,
         else
         {
             std::transform(candidate_it->second.begin(), candidate_it->second.end(),
-                           from, candidate_it->second.begin(), 
+                           from, candidate_it->second.begin(),
                            std::plus<ValueType>());
         }
     }
@@ -676,7 +676,7 @@ void check_sparse_result(const std::tuple<size_t, size_t>& expected_recv_counts,
             if (!val_ptr or !strcmp(val_ptr, "mpi"))
             {
                 ss << "Environment value CCL_ATL_TRANSPORT=" << (val_ptr ? val_ptr : "<default>")
-                   << ". MPI has a limited support of sparse allreduce. " 
+                   << ". MPI has a limited support of sparse allreduce. "
                    << "Make sure, that the following conditions are satisfied: \n"
                    << "\tCCL_WORKER_OFFLOAD=0\n"
                    << "\tYou have only one non-repeated sparse collective in colls list.\n\n"
@@ -788,13 +788,13 @@ void check_sparse_result(const std::tuple<size_t, size_t>& expected_recv_counts,
     // check received values
     std::vector<float> recv_buf_float(recv_vcount, float{0});
     convert_bfp16_to_fp32_arrays(reinterpret_cast<void*>(const_cast<ccl::bfp16*>(recv_buf)), recv_buf_float.data(), recv_vcount);
-    
+
     /* https://www.mcs.anl.gov/papers/P4093-0713_1.pdf */
     /* added conversion error float->bfp16 for comm_size == 1*/
 
     double log_base2 = log(comm_size != 1 ? comm_size : 2 ) / log(2);
     double g = (log_base2 * BFP16_PRECISION)/(1 - (log_base2 * BFP16_PRECISION));
-  
+
     for (size_t index_pos = 0; index_pos < recv_icount; index_pos++)
     {
         IndexType recv_index_value = recv_ibuf[index_pos];
@@ -810,11 +810,11 @@ void check_sparse_result(const std::tuple<size_t, size_t>& expected_recv_counts,
         const values_array& expected_values = expected_it->second;
         if (vdim_count != expected_values.size())
         {
-            throw std::runtime_error(std::string(__FUNCTION__) + "_bfp16 - incorrect recv_buf count, got: " + 
+            throw std::runtime_error(std::string(__FUNCTION__) + "_bfp16 - incorrect recv_buf count, got: " +
                                      std::to_string(std::distance(from, to)) + ", expected: " +
                                      std::to_string(expected_values.size()));
         }
-        
+
         for(size_t i = 0; i < expected_values.size(); i++)
         {
             double compare_max_error = g * expected_values[i] * 2;
@@ -831,7 +831,7 @@ void check_sparse_result(const std::tuple<size_t, size_t>& expected_recv_counts,
                        << "\tYou have only one non-repeated sparse collective in colls list.\n\n"
                        << "Failed scenario settings:\n";
                 }
-                
+
                 ss << "elem_count: " << elem_count
                    << ", indices_count: " << indices_count
                    << ", vdim_count:" <<  vdim_count
@@ -1921,7 +1921,7 @@ struct base_sparse_allreduce_coll :
 
 template<class Dtype, class IType,
          template<class> class IndicesDistributorType = sparse_detail::incremental_indices_distributor>
-struct cpu_sparse_allreduce_coll : 
+struct cpu_sparse_allreduce_coll :
         base_sparse_allreduce_coll<Dtype *, IType *, IndicesDistributorType>
 {
     using coll_base = base_sparse_allreduce_coll<Dtype *, IType *, IndicesDistributorType>;
@@ -1944,7 +1944,7 @@ struct cpu_sparse_allreduce_coll :
     using coll_base::recv_icount;
     using coll_base::recv_vcount;
 
-    cpu_sparse_allreduce_coll(const std::string& args, 
+    cpu_sparse_allreduce_coll(const std::string& args,
                               size_t sbuf_size_modifier = 1,
                               size_t rbuf_size_modifier = 1) : coll_base(args)
     {
@@ -1979,7 +1979,7 @@ struct cpu_sparse_allreduce_coll :
         result = posix_memalign((void**)&single_send_buf, ALIGNMENT,
                                 SINGLE_ELEM_COUNT * sizeof(Dtype) * sbuf_size_modifier);
         result = posix_memalign((void**)&single_recv_buf, ALIGNMENT,
-                                SINGLE_ELEM_COUNT * sizeof(Dtype) * rbuf_size_modifier * 
+                                SINGLE_ELEM_COUNT * sizeof(Dtype) * rbuf_size_modifier *
                                 base_coll::comm->size());
 
         result = posix_memalign((void**)&single_send_ibuf, ALIGNMENT,
@@ -1991,7 +1991,7 @@ struct cpu_sparse_allreduce_coll :
         for( size_t idx = 0; idx < BUF_COUNT; idx++)
         {
             memset(send_bufs[idx], 0, ELEM_COUNT * sizeof(Dtype) * sbuf_size_modifier);
-            memset(recv_bufs[idx], 0, ELEM_COUNT * sizeof(Dtype) * rbuf_size_modifier * 
+            memset(recv_bufs[idx], 0, ELEM_COUNT * sizeof(Dtype) * rbuf_size_modifier *
                                       base_coll::comm->size());
             memset(recv_ibufs[idx], 0, ELEM_COUNT * sizeof(IType) * base_coll::comm->size());
             memset(send_ibufs[idx], 0, ELEM_COUNT * sizeof(IType));
@@ -1999,7 +1999,7 @@ struct cpu_sparse_allreduce_coll :
         }
 
         memset(single_send_buf, 0, SINGLE_ELEM_COUNT * sizeof(Dtype) * sbuf_size_modifier);
-        memset(single_recv_buf, 0, SINGLE_ELEM_COUNT * sizeof(Dtype) * rbuf_size_modifier * 
+        memset(single_recv_buf, 0, SINGLE_ELEM_COUNT * sizeof(Dtype) * rbuf_size_modifier *
                                    base_coll::comm->size());
         memset(single_send_ibuf, 0, SINGLE_ELEM_COUNT * sizeof(IType) * sbuf_size_modifier);
         memset(single_recv_ibuf, 0, SINGLE_ELEM_COUNT * sizeof(IType) * rbuf_size_modifier *
@@ -2097,17 +2097,17 @@ template<class kernel_value_type, class kernel_index_type>
 struct sparse_allreduce_kernel_name_bufs {};
 template<class kernel_value_type, class kernel_index_type>
 struct sparse_allreduce_kernel_name_single_bufs {};
-    
+
 template<class Dtype, class IType,
           template<class> class IndicesDistributorType = sparse_detail::incremental_indices_distributor>
 struct sycl_sparse_allreduce_coll :
-        base_sparse_allreduce_coll<cl::sycl::buffer<Dtype, 1>, 
+        base_sparse_allreduce_coll<cl::sycl::buffer<Dtype, 1>,
                                    cl::sycl::buffer<IType, 1>,
                                    IndicesDistributorType>
 {
     using sycl_indices_t = cl::sycl::buffer<IType, 1>;
     using sycl_values_t = cl::sycl::buffer<Dtype, 1>;
-    using coll_base = base_sparse_allreduce_coll<sycl_values_t, 
+    using coll_base = base_sparse_allreduce_coll<sycl_values_t,
                                                  sycl_indices_t,
                                                  IndicesDistributorType>;
     using coll_strategy = typename coll_base::coll_strategy;
@@ -2128,7 +2128,7 @@ struct sycl_sparse_allreduce_coll :
     using coll_base::recv_icount;
     using coll_base::recv_vcount;
 
-    sycl_sparse_allreduce_coll(const std::string& args, 
+    sycl_sparse_allreduce_coll(const std::string& args,
                                size_t sbuf_size_modifier = 1,
                                size_t rbuf_size_modifier = 1) : coll_base(args)
     {
@@ -2138,7 +2138,7 @@ struct sycl_sparse_allreduce_coll :
             send_ibufs[idx] = new sycl_indices_t(ELEM_COUNT * sbuf_size_modifier);
             recv_bufs[idx] = new sycl_values_t(ELEM_COUNT * rbuf_size_modifier *
                                                base_coll::comm->size());
-            recv_ibufs[idx] = new sycl_indices_t(ELEM_COUNT * rbuf_size_modifier * 
+            recv_ibufs[idx] = new sycl_indices_t(ELEM_COUNT * rbuf_size_modifier *
                                                  base_coll::comm->size());
 
             sycl_queue.submit([&](handler& cgh)
@@ -2246,16 +2246,16 @@ template<class Dtype>
 void create_cpu_colls(std::list<std::string>& names, coll_list_t& colls)
 {
     using namespace sparse_detail;
-    using incremental_index_int_sparse_strategy = 
-            sparse_detail::sparse_allreduce_strategy_impl<int, 
+    using incremental_index_int_sparse_strategy =
+            sparse_detail::sparse_allreduce_strategy_impl<int,
                                 sparse_detail::incremental_indices_distributor>;
-    using incremental_index_bfp16_sparse_strategy = 
-            sparse_detail::sparse_allreduce_strategy_impl<ccl::bfp16, 
+    using incremental_index_bfp16_sparse_strategy =
+            sparse_detail::sparse_allreduce_strategy_impl<ccl::bfp16,
                                 sparse_detail::incremental_indices_distributor>;
-                                
+
     std::stringstream error_messages_stream;
     base_coll::comm = ccl::environment::instance().create_communicator();
-    base_coll::stream = ccl::environment::instance().create_stream(ccl::stream_type::cpu, nullptr);
+    base_coll::stream = ccl::environment::instance().create_stream(ccl::stream_type::host, nullptr);
     for (auto names_it = names.begin(); names_it != names.end(); )
     {
         const std::string& name = *names_it;
@@ -2325,10 +2325,10 @@ void create_cpu_colls(std::list<std::string>& names, coll_list_t& colls)
     {
         std::cerr << "WARNING:\n" << coll_processing_log << std::endl;
     }
-    
+
     if (colls.empty())
     {
-        throw std::logic_error(std::string(__FUNCTION__) + 
+        throw std::logic_error(std::string(__FUNCTION__) +
                                " - empty colls, reason: " + coll_processing_log);
     }
 }
@@ -2338,20 +2338,20 @@ template<class Dtype>
 void create_sycl_colls(std::list<std::string>& names, coll_list_t& colls)
 {
 
-    using incremental_index_int_sparse_strategy = 
-            sparse_detail::sparse_allreduce_strategy_impl<int, 
+    using incremental_index_int_sparse_strategy =
+            sparse_detail::sparse_allreduce_strategy_impl<int,
                                 sparse_detail::incremental_indices_distributor>;
-    using incremental_index_bfp16_sparse_strategy = 
-            sparse_detail::sparse_allreduce_strategy_impl<ccl::bfp16, 
+    using incremental_index_bfp16_sparse_strategy =
+            sparse_detail::sparse_allreduce_strategy_impl<ccl::bfp16,
                                 sparse_detail::incremental_indices_distributor>;
-            
+
     std::stringstream error_messages_stream;
     base_coll::comm = ccl::environment::instance().create_communicator();
-    base_coll::stream = ccl::environment::instance().create_stream(ccl::stream_type::sycl, &sycl_queue);
+    base_coll::stream = ccl::environment::instance().create_stream(ccl::stream_type::device, &sycl_queue);
     for (auto names_it = names.begin(); names_it != names.end(); )
     {
         const std::string& name = *names_it;
-        
+
         if (name == allgatherv_strategy_impl::class_name())
         {
             colls.emplace_back(new sycl_allgatherv_coll<Dtype>());
@@ -2385,7 +2385,7 @@ void create_sycl_colls(std::list<std::string>& names, coll_list_t& colls)
                 names_it = names.erase(names_it);
                 continue;
             }
-            
+
             const std::string args = name.substr(name.find(incremental_index_int_sparse_strategy::class_name()) +
                                                  std::strlen(incremental_index_int_sparse_strategy::class_name()));
             colls.emplace_back(new sycl_sparse_allreduce_coll<Dtype, int>(args));
@@ -2399,7 +2399,7 @@ void create_sycl_colls(std::list<std::string>& names, coll_list_t& colls)
                 names_it = names.erase(names_it);
                 continue;
             }
-            
+
             if (is_bfp16_enabled() == 0)
             {
                 error_messages_stream << "SYCL BFP16 is not supported for current CPU, skipping " << name << ".\n";
@@ -2423,19 +2423,19 @@ void create_sycl_colls(std::list<std::string>& names, coll_list_t& colls)
         {
             ASSERT(0, "create_colls error, unknown coll name: %s", name.c_str());
         }
-        
+
         ++names_it;
     }
-    
+
     const std::string& coll_processing_log = error_messages_stream.str();
     if (!coll_processing_log.empty())
     {
         std::cerr << "WARNING: " << coll_processing_log << std::endl;
     }
-    
+
     if (colls.empty())
     {
-        throw std::logic_error(std::string(__FUNCTION__) + 
+        throw std::logic_error(std::string(__FUNCTION__) +
                                " - empty colls, reason: " + coll_processing_log);
     }
 }
@@ -2446,10 +2446,10 @@ void create_colls(std::list<std::string>& names, ccl::stream_type backend_type, 
 {
     switch (backend_type)
     {
-        case ccl::stream_type::cpu:
+        case ccl::stream_type::host:
             create_cpu_colls<Dtype>(names, colls);
             break;
-        case ccl::stream_type::sycl:
+        case ccl::stream_type::device:
 #ifdef CCL_ENABLE_SYCL
             create_sycl_colls<Dtype>(names, colls);
 #else
@@ -2688,9 +2688,9 @@ int main(int argc, char *argv[])
         return -1;
     }
 
-    ccl::stream_type backend_type = ccl::stream_type::cpu;
+    ccl::stream_type backend_type = ccl::stream_type::host;
     if (backend_str == "sycl")
-        backend_type = ccl::stream_type::sycl;
+        backend_type = ccl::stream_type::device;
 
     std::string loop_str = (argc > 2) ? std::string(argv[2]) : DEFAULT_LOOP;
     std::set<std::string> suppored_loops { "regular", "unordered" };

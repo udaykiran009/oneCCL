@@ -65,7 +65,7 @@ struct postponed_fields
     {
         field_functor(Arg arg, bool& updated) : arg(arg), updated(updated) {}
         template<typename T>
-        void operator()(T& t)
+        void operator () (T& t) const
         {
             if (!t.empty())
             {

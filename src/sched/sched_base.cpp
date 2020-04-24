@@ -2,6 +2,20 @@
 #include "common/global/global.hpp"
 #include "common/env/env.hpp"
 
+std::string to_string(ccl_sched_add_mode mode)
+{
+    switch(mode)
+    {
+        case ccl_sched_add_front:
+            return "FRONT";
+        case ccl_sched_add_back:
+            return "BACK";
+        default:
+            return "DEFAULT";
+    }
+    return "DEFAULT";
+}
+
 void ccl_sched_base::set_coll_attr(const ccl_coll_attr& attr)
 {
     coll_attr = attr;

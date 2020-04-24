@@ -2,7 +2,13 @@
 
 #include "ccl_types.h"
 
+#include <bitset>
+#include <limits>
+#include <map>
+#include <memory>
+#include <set>
 #include <stdexcept>
+#include <vector>
 
 namespace ccl
 {
@@ -42,8 +48,8 @@ enum datatype: int
  */
 enum class stream_type
 {
-    cpu = ccl_stream_cpu,
-    sycl = ccl_stream_sycl,
+    host = ccl_stream_cpu,
+    device = ccl_stream_sycl,
 
     last_value = ccl_stream_last_value
 };
@@ -81,4 +87,8 @@ struct ccl_type_info_export
     static constexpr bool is_class = iclass;
     static constexpr bool is_supported = supported;
 };
+
 }
+#ifdef MULTI_GPU_SUPPORT
+    #include "ccl_device_types.hpp"
+#endif

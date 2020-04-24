@@ -13,7 +13,7 @@ public:
     struct selector_init_functor
     {
         template<typename T>
-        void operator () (T& t)
+        void operator () (T& t) const
         {
             t.init();
         }
@@ -22,7 +22,7 @@ public:
     struct selector_print_functor
     {
         template<typename T>
-        void operator () (T& t)
+        void operator () (T& t) const
         {
             t.print();
         }

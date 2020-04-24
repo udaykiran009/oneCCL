@@ -9,7 +9,9 @@ extern "C" {
 ccl_status_t CCL_API ccl_init(void);
 ccl_status_t CCL_API ccl_get_version(ccl_version_t* version);
 ccl_status_t CCL_API ccl_finalize(void);
-
+#ifdef MULTI_GPU_SUPPORT
+ccl_status_t CCL_API ccl_set_device_comm_attr(ccl_comm_device_attr_t* comm_attr, unsigned long attribute, ...);
+#endif
 ccl_status_t CCL_API ccl_set_resize_fn(ccl_resize_fn_t callback);
 
 /* Collective API */

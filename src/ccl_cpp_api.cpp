@@ -79,7 +79,7 @@ CCL_API ccl::environment& ccl::environment::instance()
     static thread_local bool created = false;
     if (!created)
     {
-        /* 
+        /*
             environment destructor uses logger for ccl_finalize and it should be destroyed before logger,
             therefore construct thread_local logger at first follows to global/static initialization rules
         */
@@ -110,16 +110,38 @@ ccl::communicator_t CCL_API ccl::environment::create_communicator(const ccl::com
     return communicator_t(new ccl::communicator(attr));
 }
 
-ccl::stream_t CCL_API ccl::environment::create_stream(ccl::stream_type type/* = ccl::stream_type::cpu*/,
-                                                                    void* native_stream/* = nullptr*/) const
+CCL_API ccl::stream_t ccl::environment::create_stream(ccl::stream_type type/* = ccl::stream_type::cpu*/,
+                                                      void* native_stream/* = nullptr*/) const
 {
+
+/*
 #ifndef CCL_ENABLE_SYCL
     if (type == ccl::stream_type::sycl)
     {
         throw ccl_error("SYCL stream is not supported in current ccl version");
     }
+*/
+#ifdef MULTI_GPU_SUPPORT
+    #ifdef CCL_ENABLE_SYCL
+        return stream_t(new ccl::stream(stream_provider_dispatcher::create(*static_cast<cl::sycl::queue*>(native_stream))));
+    #else
+        return stream_t(new ccl::stream(stream_provider_dispatcher::create(*static_cast<ze_command_queue_handle_t*>(native_stream))));
+    #endif
+#else
+    std::unique_ptr<ccl_stream> inner_stream;
+    #ifdef CCL_ENABLE_SYCL
+        if( type == ccl::stream_type::device)
+        {
+            inner_stream = stream_provider_dispatcher::create(*static_cast<cl::sycl::queue*>(native_stream));
+        }
+        else
+    #endif
+            inner_stream = stream_provider_dispatcher::create(native_stream);
+
+    //for legacy stream: override type for 'host' related queue
+    inner_stream->type = static_cast<ccl_stream_type_t>(type);
+    return stream_t(new ccl::stream(std::move(inner_stream)));
 #endif
-    return stream_t( new ccl::stream(type, native_stream));
 }
 
 CCL_API ccl::environment::~environment()
@@ -152,17 +174,16 @@ size_t CCL_API ccl::datatype_get_size(ccl::datatype dtype)
     ccl_get_datatype_size(dtype, &size);
     return size;
 }
-
+/*
 CCL_API ccl::stream::stream()
 {
     this->stream_impl = std::make_shared<ccl_stream>(static_cast<ccl_stream_type_t>(ccl::stream_type::cpu),
-                                                     nullptr /* native_stream */);
+                                                     nullptr / * native_stream * /);
 }
-
-CCL_API ccl::stream::stream(ccl::stream_type type, void* native_stream)
+*/
+CCL_API ccl::stream::stream(std::shared_ptr<ccl_stream>&& impl) :
+ stream_impl(std::move(impl))
 {
-    this->stream_impl = std::make_shared<ccl_stream>(static_cast<ccl_stream_type_t>(type),
-                                                     native_stream);
 }
 
 CCL_API ccl::communicator::communicator()
