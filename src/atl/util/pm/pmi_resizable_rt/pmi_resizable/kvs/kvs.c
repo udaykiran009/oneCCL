@@ -1,15 +1,16 @@
-#include <stdio.h>
-#include <string.h>
-#include <stdlib.h>
-#include <pthread.h>
-#include <errno.h>
 #include <arpa/inet.h>
-#include <sys/socket.h>
+#include <errno.h>
 #include <netinet/in.h>
+#include <pthread.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <sys/socket.h>
+#include <time.h>
 #include <unistd.h>
 
-#include "kvs.h"
 #include "def.h"
+#include "kvs.h"
 #include "kvs_keeper.h"
 #include "request_wrappers_k8s.h"
 
@@ -19,6 +20,7 @@
 #define CCL_KVS_IP_EXCHANGE_VAL_K8S "k8s"
 
 #define MAX_CLIENT_COUNT 300
+#define CONNECTION_TIMEOUT 120
 
 static pthread_t thread = 0;
 static char main_host_ip[CCL_IP_LEN];
@@ -697,6 +699,8 @@ size_t kvs_init(const char* main_addr)
     socklen_t len = 0;
     struct sockaddr_in addr;
     kvs_request_t request;
+    time_t start_time;
+    time_t connection_time = 0;
     memset(&request, 0, sizeof(kvs_request_t));
     memset(&addr, 0, sizeof(struct sockaddr_in));
 
@@ -746,9 +750,22 @@ size_t kvs_init(const char* main_addr)
     }
     /* Wait connection to master */
     errno = 0;
-    while ((err = connect(sock_sender, (struct sockaddr*) &main_server_address, sizeof(main_server_address))) < 0 ||
-            errno != 0)
-    {}
+    start_time = time(NULL);
+    connection_time = 0;
+    while (((err = connect(sock_sender, (struct sockaddr*) &main_server_address, sizeof(main_server_address))) < 0 ||
+            errno != 0) &&
+            (connection_time < CONNECTION_TIMEOUT))
+    {
+        connection_time = time(NULL) - start_time;
+    }
+
+    if (connection_time >= CONNECTION_TIMEOUT)
+    {
+        printf("Connection error: timeout limit (%ld > %d)\n",
+               connection_time,
+               CONNECTION_TIMEOUT);
+        exit(1);
+    }
 
     request.mode = AM_CONNECT;
 
