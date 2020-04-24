@@ -19,13 +19,15 @@
 #define ATL_OFI_FI_ADDR_PM_KEY      ATL_OFI_BASE_PM_KEY"-fiaddr"
 #define ATL_OFI_HOSTNAME_PM_KEY     ATL_OFI_BASE_PM_KEY"-hostname"
 #define ATL_OFI_TIMEOUT_SEC_ENV     "ATL_OFI_TIMEOUT_SEC"
+#define ATL_OFI_MAX_RETRY_COUNT_ENV "ATL_OFI_MAX_RETRY_COUNT"
 #define ATL_OFI_DEFAULT_TIMEOUT_SEC 60
 #define ATL_OFI_MAX_RETRY_COUNT     10000
 #define ATL_OFI_MAX_HOSTNAME_LEN    64
 #define ATL_OFI_WAIT_SEC            10
 #define ATL_OFI_CQ_READ_ITERS       10000
 #define ATL_OFI_CQ_BUNCH_SIZE       8
-#define ATL_OFI_PMI_PROC_MULTIPLIER 100
+#define ATL_OFI_PMI_PROV_MULTIPLIER 100
+#define ATL_OFI_PMI_PROC_MULTIPLIER (ATL_OFI_PMI_PROV_MULTIPLIER * 10)
 #define ATL_OFI_MAX_PROV_COUNT      2 /* NW and SHM providers */
 #define ATL_OFI_SHM_PROV_NAME       "shm"
 
@@ -96,6 +98,7 @@ static inline atl_status_t atl_ofi_ep_poll(atl_ep_t* ep);
         atl_ofi_ctx_t* ofi_ctx =                                           \
             container_of(ctx, atl_ofi_ctx_t, ctx);                         \
         size_t timeout_sec = ofi_ctx->timeout_sec;                         \
+        size_t max_retry_count = ofi_ctx->max_retry_count;                 \
         int is_resize_enabled = ctx->is_resize_enabled;                    \
         time_t start = 0, end = 0;                                         \
         do {                                                               \
@@ -117,7 +120,7 @@ static inline atl_status_t atl_ofi_ep_poll(atl_ep_t* ep);
                 (void)atl_ofi_ep_poll(ep);                                 \
                 retry_count += 1;                                          \
             } while (ret_val == -FI_EAGAIN &&                              \
-                     retry_count < ATL_OFI_MAX_RETRY_COUNT);               \
+                     retry_count < max_retry_count);                       \
             if (is_resize_enabled)                                         \
             {                                                              \
                 end = time(NULL);                                          \
@@ -206,6 +209,7 @@ typedef struct
     char* prov_env_copy;
 
     size_t timeout_sec;
+    size_t max_retry_count;
 } atl_ofi_ctx_t;
 
 typedef struct
@@ -357,11 +361,12 @@ fn_err:
 }
 
 static atl_status_t
-atl_ofi_prov_update_addr_table(atl_ofi_ctx_t* ofi_ctx, atl_ofi_prov_t* prov)
+atl_ofi_prov_update_addr_table(atl_ofi_ctx_t* ofi_ctx, size_t prov_idx)
 {
     ATL_OFI_ASSERT(ofi_ctx, "ofi_ctx is null");
 
     atl_ctx_t* ctx = &(ofi_ctx->ctx);
+    atl_ofi_prov_t* prov = &(ofi_ctx->provs[prov_idx]);
 
     int ret;
     size_t i, j;
@@ -428,7 +433,8 @@ atl_ofi_prov_update_addr_table(atl_ofi_ctx_t* ofi_ctx, atl_ofi_prov_t* prov)
         for (j = 0; j < named_ep_count; j++)
         {
             ret = pmrt_kvs_get(ofi_ctx->pm_rt, ATL_OFI_FI_ADDR_PM_KEY,
-                               i * ATL_OFI_PMI_PROC_MULTIPLIER + j,
+                               i * ATL_OFI_PMI_PROC_MULTIPLIER +
+                               prov_idx * ATL_OFI_PMI_PROV_MULTIPLIER + j,
                                epnames_table + addr_idx * prov->addr_len,
                                prov->addr_len);
 
@@ -592,7 +598,8 @@ atl_ofi_prov_eps_connect(atl_ofi_ctx_t* ofi_ctx,
     {
         atl_ofi_prov_ep_t* ep = &(prov->eps[ep_idx]);
         ret = pmrt_kvs_put(ofi_ctx->pm_rt, ATL_OFI_FI_ADDR_PM_KEY,
-                           coord->global_idx * ATL_OFI_PMI_PROC_MULTIPLIER + ep_idx,
+                           coord->global_idx * ATL_OFI_PMI_PROC_MULTIPLIER +
+                           prov_idx * ATL_OFI_PMI_PROV_MULTIPLIER + ep_idx,
                            ep->name.addr,
                            ep->name.len);
         if (ret)
@@ -602,7 +609,7 @@ atl_ofi_prov_eps_connect(atl_ofi_ctx_t* ofi_ctx,
         }
     }
 
-    ret = atl_ofi_prov_update_addr_table(ofi_ctx, prov);
+    ret = atl_ofi_prov_update_addr_table(ofi_ctx, prov_idx);
 
     return ret;
 }
@@ -1879,16 +1886,23 @@ atl_ofi_init(int* argc, char*** argv,
 
     if (ctx->is_resize_enabled)
     {
+        ofi_ctx->timeout_sec = ATL_OFI_DEFAULT_TIMEOUT_SEC;
         char* timeout_sec_env = getenv(ATL_OFI_TIMEOUT_SEC_ENV);
         if (timeout_sec_env)
         {
             ofi_ctx->timeout_sec = strtol(timeout_sec_env, NULL, 10);
         }
-        else
-        {
-            ofi_ctx->timeout_sec = ATL_OFI_DEFAULT_TIMEOUT_SEC;
-        }
     }
+
+    ofi_ctx->max_retry_count = ATL_OFI_MAX_RETRY_COUNT;
+    char* max_retry_count_env = getenv(ATL_OFI_MAX_RETRY_COUNT_ENV);
+    if (max_retry_count_env)
+    {
+        ofi_ctx->max_retry_count = strtol(max_retry_count_env, NULL, 10);
+    }
+
+    ATL_OFI_DEBUG_PRINT_ROOT("timeout_sec %zu", ofi_ctx->timeout_sec);
+    ATL_OFI_DEBUG_PRINT_ROOT("max_retry_count %zu", ofi_ctx->max_retry_count);
 
     *out_ctx = ctx;
 
