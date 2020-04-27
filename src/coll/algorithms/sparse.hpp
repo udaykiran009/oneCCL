@@ -1225,7 +1225,7 @@ ccl_status_t ccl_coll_build_sparse_allreduce_3_allgatherv(ccl_sched *sched,
     param_i.dtype = index_dtype;
     param_i.comm = comm;
 
-    coll_entry* ce = entry_factory::make_entry<coll_entry>(sched, param_i);
+    coll_entry* ce = entry_factory::make_entry<coll_entry>(sched, param_i, parallel_request_index);
     ce->set_field_fn<ccl_sched_entry_field_recv_buf>(sparse_get_i_recv, sa_handler);
     entry_factory::make_entry<function_entry>(sched, sparse_set_v_counts<1>, sa_handler);
     
@@ -1240,7 +1240,7 @@ ccl_status_t ccl_coll_build_sparse_allreduce_3_allgatherv(ccl_sched *sched,
     param_v.dtype = value_dtype;
     param_v.comm = comm;
 
-    ce = entry_factory::make_entry<coll_entry>(sched, param_v);
+    ce = entry_factory::make_entry<coll_entry>(sched, param_v, parallel_request_index);
     ce->set_field_fn<ccl_sched_entry_field_recv_buf>(sparse_get_v_recv, sa_handler);
     sched->add_barrier();
 
