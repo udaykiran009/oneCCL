@@ -40,6 +40,8 @@ int main(int argc, char **argv)
         });
     });
 
+    handle_exception(q);
+
     /* invoke ccl_bcast on the CPU side */
     comm->bcast(buf,
                COUNT,
@@ -56,6 +58,8 @@ int main(int argc, char **argv)
            }
        });
     });
+
+    handle_exception(q);
 
     /* print out the result of the test on the CPU side */
     if (rank == COLL_ROOT) {

@@ -41,6 +41,8 @@ int main(int argc, char **argv)
         });
     });
 
+    handle_exception(q);
+
     /* invoke ccl_reduce on the CPU side */
     comm->reduce(sendbuf,
                 recvbuf,
@@ -65,6 +67,8 @@ int main(int argc, char **argv)
             }
         });
     });
+
+    handle_exception(q);
 
     /* print out the result of the test on the CPU side */
     auto host_acc_rbuf_new = recvbuf.get_access<mode::read>();

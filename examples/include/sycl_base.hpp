@@ -36,6 +36,17 @@ inline bool has_accelerator()
 }
 inline int create_sycl_queue(int argc, char **argv, cl::sycl::queue &queue)
 {
+   auto exception_handler = [&](cl::sycl::exception_list elist) {
+      for (std::exception_ptr const& e : elist) {
+        try {
+          std::rethrow_exception(e);
+        } catch (cl::sycl::exception const& e) {
+          std::cout << "failure" << std::endl;
+          std::terminate();
+        }
+      }
+    };
+
     std::unique_ptr<cl::sycl::device_selector> selector;
     if (argc == 2)
     {
@@ -81,7 +92,7 @@ inline int create_sycl_queue(int argc, char **argv, cl::sycl::queue &queue)
             std::cerr << "Please provide device type: cpu | gpu | host | default " << std::endl;
             return -1;
         }
-        queue = cl::sycl::queue(*selector);
+        queue = cl::sycl::queue(*selector, exception_handler);
         std::cout << "Provided device type " << argv[1] << "\nRunning on "
                   << queue.get_device().get_info<cl::sycl::info::device::name>()
                   << "\n";
@@ -92,4 +103,17 @@ inline int create_sycl_queue(int argc, char **argv, cl::sycl::queue &queue)
         return -1;
     }
     return 0;
+}
+
+void handle_exception(cl::sycl::queue &q)
+{
+    try
+    {
+        q.wait_and_throw();
+    }
+    catch (cl::sycl::exception const& e)
+    {
+        std::cout << "Caught synchronous SYCL exception:\n"
+          << e.what() << std::endl;
+    }
 }

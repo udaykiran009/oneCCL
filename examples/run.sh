@@ -4,11 +4,14 @@ touch main_ouput.txt
 exec | tee ./main_ouput.txt
 
 function create_work_dir(){
-    SCRIPT_DIR=`cd $(dirname "$BASH_SOURCE") && pwd -P`
-    export WORK_DIR=${SCRIPT_DIR}/build
-    rm -r ${WORK_DIR}
-    mkdir -p ${WORK_DIR}
-    echo "WORK_DIR =" ${WORK_DIR}
+    if [ -z ${EXAMPLE_WORK_DIR} ]
+    then
+        SCRIPT_DIR=`cd $(dirname "$BASH_SOURCE") && pwd -P`
+        export EXAMPLE_WORK_DIR=${SCRIPT_DIR}/build
+        rm -r ${EXAMPLE_WORK_DIR}
+        mkdir -p ${EXAMPLE_WORK_DIR}
+    fi
+    echo "EXAMPLE_WORK_DIR =" ${EXAMPLE_WORK_DIR}
 }
 
 CheckCommandExitCode() {
@@ -97,7 +100,7 @@ run_benchmark()
     local coll=$7
     echo "coll: " $coll
     echo "================ENVIRONMENT=================="
-    test_log="$SCRIPT_DIR/$dir_name/run_${transport}_${example}_${backend}_${loop}_output.log"
+    test_log="$EXAMPLE_WORK_DIR/$dir_name/run_${transport}_${example}_${backend}_${loop}_output.log"
 	if [ `echo $ccl_extra_env | grep -c CCL_LOG_LEVEL` -ne 1 ]
 	then
 		eval `echo $ccl_extra_env mpiexec.hydra -n 2 -ppn $ppn -l ./$example $backend $loop $coll` 2>&1 | tee ${test_log}
@@ -121,24 +124,24 @@ run_example()
     local arg=$5
     echo "arg: "$arg
     echo "================ENVIRONMENT=================="
-    test_log="$SCRIPT_DIR/$dir_name/run_${dir_name}_${transport}_${example}_${arg}_output.log"
+    test_log="$EXAMPLE_WORK_DIR/$dir_name/run_${dir_name}_${transport}_${example}_${arg}_output.log"
     eval `echo $ccl_extra_env mpiexec.hydra -n 2 -ppn $ppn -l ./$example $arg` 2>&1 | tee ${test_log}
     check_test ${test_log} ${example}
 }
 
 build()
 {
-    cd ${WORK_DIR}
+    cd ${EXAMPLE_WORK_DIR}
     echo "Building"
     cmake .. -DCMAKE_DISABLE_SYCL=${DISABLE_SYCL} \
              -DCMAKE_C_COMPILER=${C_COMPILER} \
-             -DCMAKE_CXX_COMPILER=${CXX_COMPILER}  2>&1 | tee ${WORK_DIR}/build_output.log
-    make -j 2>&1 | tee -a ${WORK_DIR}/build_output.log
-    error_count=`grep -E -c 'error:|Aborted|failed'  ${WORK_DIR}/build_output.log` > /dev/null 2>&1
+             -DCMAKE_CXX_COMPILER=${CXX_COMPILER}  2>&1 | tee ${EXAMPLE_WORK_DIR}/build_output.log
+    make -j 2>&1 | tee -a ${EXAMPLE_WORK_DIR}/build_output.log
+    error_count=`grep -E -c 'error:|Aborted|failed'  ${EXAMPLE_WORK_DIR}/build_output.log` > /dev/null 2>&1
     if [ "${error_count}" != "0" ]
     then
         echo "building ... NOK"
-        echo "See logs ${WORK_DIR}/build_output.log"
+        echo "See logs ${EXAMPLE_WORK_DIR}/build_output.log"
         exit 1
     else
         echo "OK"
@@ -146,7 +149,7 @@ build()
 }
 run()
 {
-    cd ${WORK_DIR}/
+    cd ${EXAMPLE_WORK_DIR}/
     pwd
     ppn=1
     n=2

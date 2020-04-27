@@ -88,7 +88,7 @@ check_command_exit_code() {
 }
 
 set_external_env(){
-    if [ $TEST_CONFIGURATIONS == "test:nightly" ]
+    if [ ${TEST_CONFIGURATIONS} == "test:nightly" ]
     then
         echo "Nightly test scope will be started."
         export TESTING_ENVIRONMENT="CCL_TEST_BUFFER_COUNT=0 \
@@ -155,14 +155,14 @@ set_environment()
     if [ -z  "${node_label}" ]
     then
         build_compiler="gnu"
-        source ${CCL_INSTALL_DIR}/l_ccl_$build_type*/env/vars.sh --ccl-configuration=cpu_icc
+        source ${CCL_INSTALL_DIR}/l_ccl_${build_type}*/env/vars.sh --ccl-configuration=cpu_icc
     elif [ $node_label == "mlsl2_test_gpu" ]
     then
         build_compiler="sycl"
-        source ${CCL_INSTALL_DIR}/l_ccl_$build_type*/env/vars.sh --ccl-configuration=cpu_gpu_dpcpp
+        source ${CCL_INSTALL_DIR}/l_ccl_${build_type}*/env/vars.sh --ccl-configuration=cpu_gpu_dpcpp
     else
         build_compiler="gnu"
-        source ${CCL_INSTALL_DIR}/l_ccl_$build_type*/env/vars.sh --ccl-configuration=cpu_icc
+        source ${CCL_INSTALL_DIR}/l_ccl_${build_type}*/env/vars.sh --ccl-configuration=cpu_icc
     fi
 
     if [ -z "${build_compiler}" ]
@@ -235,16 +235,18 @@ set_environment()
     then
         build_type="release"
     fi
-
-    if [ -z  "${node_label}" ]
-    then
-        source ${CCL_INSTALL_DIR}/l_ccl_$build_type*/env/vars.sh --ccl-configuration=cpu_icc
-    elif [ $node_label == "mlsl2_test_gpu" ]
-    then
-        source ${CCL_INSTALL_DIR}/l_ccl_$build_type*/env/vars.sh --ccl-configuration=cpu_gpu_dpcpp
-        export DASHBOARD_GPU_DEVICE_PRESENT="yes"
-    else
-        source ${CCL_INSTALL_DIR}/l_ccl_$build_type*/env/vars.sh --ccl-configuration=cpu_icc
+    if [ -z ${CCL_ROOT} ]
+    then 
+        if [ -z  "${node_label}" ]
+        then
+            source ${CCL_INSTALL_DIR}/l_ccl_$build_type*/env/vars.sh --ccl-configuration=cpu_icc
+        elif [ $node_label == "mlsl2_test_gpu" ]
+        then
+            source ${CCL_INSTALL_DIR}/l_ccl_$build_type*/env/vars.sh --ccl-configuration=cpu_gpu_dpcpp
+            export DASHBOARD_GPU_DEVICE_PRESENT="yes"
+        else
+            source ${CCL_INSTALL_DIR}/l_ccl_$build_type*/env/vars.sh --ccl-configuration=cpu_icc
+        fi
     fi
 
     if [ "${ENABLE_CODECOV}" = "yes" ]
@@ -273,14 +275,17 @@ make_tests()
 
 run_compatibitily_tests()
 {
+    export EXAMPLE_WORK_DIR="${CCL_ROOT}/examples/build"
+    mkdir -p ${EXAMPLE_WORK_DIR}
+    echo "EXAMPLE_WORK_DIR =" $EXAMPLE_WORK_DIR
     set_external_env
-    cd ${CURRENT_WORK_DIR}/examples
+    cd ${EXAMPLE_WORK_DIR}
     if [ $node_label == "mlsl2_test_gpu" ]
     then
         export FI_TCP_IFACE=eno1
-        ./run.sh gpu
+        ${CURRENT_WORK_DIR}/examples/run.sh gpu
     else
-        ./run.sh cpu
+        ${CURRENT_WORK_DIR}/examples/run.sh cpu
     fi
     log_status_fail=${PIPESTATUS[0]}
     if [ "$log_status_fail" -eq 0 ]

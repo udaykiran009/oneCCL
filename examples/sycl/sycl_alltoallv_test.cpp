@@ -55,6 +55,8 @@ int main(int argc, char **argv)
        });
     });
 
+    handle_exception(q);
+
     /* invoke ccl_alltoall on the CPU side */
     ccl_alltoallv(&sendbuf,
                   send_counts,
@@ -77,6 +79,8 @@ int main(int argc, char **argv)
            }
        });
     });
+
+    handle_exception(q);
 
     /* print out the result of the test on the CPU side */
     if (rank == COLL_ROOT) {
