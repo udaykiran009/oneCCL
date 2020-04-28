@@ -187,7 +187,6 @@ atl_mpi_bfp16_max_op(void* in, void* inout, int* length,
     atl_mpi_check_op_params(in, inout, length, datatype, __FUNCTION__);
     atl_mpi_bfp16_base_op(in, inout, length, &max_wrap);
 }
-#endif /* ATL_MPI_BFP16 */
 
 static void
 atl_mpi_print_error(int error)
@@ -205,6 +204,7 @@ atl_mpi_print_error(int error)
 
     ATL_MPI_PRINT("MPI error: %s(%d)", str_error, error);
 }
+#endif /* ATL_MPI_BFP16 */
 
 static int
 atl_mpi_bfp16_init()

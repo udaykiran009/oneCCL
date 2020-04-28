@@ -9,8 +9,9 @@
 
 class ccl_stream;
 
-struct stream_provider_dispatcher
+class stream_provider_dispatcher
 {
+public:
 #ifdef MULTI_GPU_SUPPORT
     #ifdef CCL_ENABLE_SYCL
         using stream_native_t = cl::sycl::queue;

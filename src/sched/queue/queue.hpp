@@ -28,6 +28,7 @@ public:
 
     ccl_sched_list()
     {
+        CCL_UNUSED(padding_queue);
         elems.reserve(CCL_BUCKET_INITIAL_ELEMS_COUNT);
     }
 

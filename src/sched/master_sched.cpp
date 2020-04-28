@@ -165,7 +165,6 @@ ccl_master_sched::ccl_master_sched_ptr ccl_master_sched::create(const ccl_coll_p
                      "BFP16 datatype is requested but not supported");
 
     ccl_sched_key key;
-    std::pair<ccl_master_sched_ptr, bool> result;
     ccl_master_sched_ptr sched;
     bool is_created = false;
     auto create_fn = [param]() -> ccl_master_sched_ptr { return new ccl_master_sched(param); };

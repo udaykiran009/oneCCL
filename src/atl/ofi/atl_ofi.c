@@ -224,9 +224,9 @@ typedef struct
 static void
 atl_ofi_print_coord(atl_proc_coord_t* coord)
 {
-    ATL_OFI_PRINT("coord: global [idx %zu, cnt %zu], local [idx %zu, cnt %zu]",
-        coord->global_idx, coord->global_count,
-        coord->local_idx, coord->local_count);
+    ATL_OFI_DEBUG_PRINT("coord: global [idx %zu, cnt %zu], local [idx %zu, cnt %zu]",
+                        coord->global_idx, coord->global_count,
+                        coord->local_idx, coord->local_count);
 }
 
 static inline atl_ofi_prov_t*
@@ -1075,6 +1075,7 @@ atl_ofi_update(atl_ctx_t* ctx)
             coord->global_count, coord->local_count);
         /* TODO: recreate providers */
     }
+    atl_ofi_print_coord(coord);
 
     for (prov_idx = 0; prov_idx < ofi_ctx->prov_count; prov_idx++)
     {
@@ -1606,6 +1607,7 @@ atl_ofi_init(int* argc, char*** argv,
         ATL_OFI_ASSERT(attr->enable_shm,
             "shm provider is requested through FI_PROVIDER but not requested from CCL level");
     }
+    atl_ofi_print_coord(coord);
 
     if (attr->enable_shm)
     {

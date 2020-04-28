@@ -187,7 +187,8 @@ ccl_buffer ccl_sched_base::find_and_realloc_buffer(void* in_ptr, size_t new_size
                 CCL_THROW_IF_NOT(false, "Cannot fin buffer by ptr: ", in_ptr, ", available buffers: ", ss.str() );
             }
 #endif //ENABLE_DEBUG_SPARSE
-            if (it.buffer.get_size() < new_size)
+            if ((it.buffer.get_size() < 0) ||
+                (static_cast<size_t>(it.buffer.get_size()) < new_size))
             {
                 LOG_DEBUG("try to realloc buffer by pointer: ", in_ptr, 
                           ", from: ", it.buffer.get_size(), ", to: ", new_size, 

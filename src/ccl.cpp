@@ -348,10 +348,12 @@ ccl_status_t ccl_stream_create(ccl_stream_type_t type,
         }
         else
     #endif
+        {
             *stream = static_cast<void*>(stream_provider_dispatcher::create(native_stream).release());
+        }
 
-            //for legacy stream: override type for 'host' related queue
-            static_cast<ccl_stream*>(*stream)->type = type;
+        //for legacy stream: override type for 'host' related queue
+        static_cast<ccl_stream*>(*stream)->type = type;
 #endif
         return ccl_status_success;
     }

@@ -95,12 +95,12 @@ void ccl_executor::start_workers()
         if (env_data.enable_fusion && idx == 0)
         {
             LOG_DEBUG("create service worker");
-            workers.emplace_back(new ccl_service_worker(this, idx, create_sched_queue(idx, ep_per_worker),
+            workers.emplace_back(new ccl_service_worker(idx, create_sched_queue(idx, ep_per_worker),
                                                         *global_data.fusion_manager));
         }
         else
         {
-            workers.emplace_back(new ccl_worker(this, idx, create_sched_queue(idx, ep_per_worker)));
+            workers.emplace_back(new ccl_worker(idx, create_sched_queue(idx, ep_per_worker)));
         }
 
         if (env_data.worker_offload)

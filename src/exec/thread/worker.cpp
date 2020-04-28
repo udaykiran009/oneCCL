@@ -9,11 +9,10 @@
 
 static void* ccl_worker_func(void* args);
 
-ccl_worker::ccl_worker(ccl_executor* executor,
-                       size_t idx,
+ccl_worker::ccl_worker(size_t idx,
                        std::unique_ptr<ccl_sched_queue> queue)
     : ccl_base_thread(idx, ccl_worker_func),
-      should_lock(false), is_locked(false), executor(executor),
+      should_lock(false), is_locked(false),
       strict_sched_queue(std::unique_ptr<ccl_strict_sched_queue>(new ccl_strict_sched_queue())),
       sched_queue(std::move(queue))
 { }

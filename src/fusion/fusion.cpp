@@ -203,7 +203,6 @@ ccl_master_sched* ccl_fusion_manager::build_sched()
               ", sched_count ", exec_queue.size());
 
     ccl_master_sched* sched = nullptr;
-    std::pair<ccl_master_sched*, bool> result;
     auto create_fn = [this, ctype, &fusion_buf, sum_count, dtype, reduction, comm] () {
         ccl_master_sched* sched = nullptr;
         switch (ctype)

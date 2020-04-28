@@ -65,15 +65,12 @@ public:
                    const details::adjacency_matrix& matrix,
                    details::p2p_rating_function ping = default_property_p2p_rating_calculator);
 private:
-    [[deprecated]]
     bool build_specific(std::ostream& out,
                         const ccl::process_device_indices_t& per_thread_device_indices,
                         const details::plain_graph& graph);
-    [[deprecated]]
     bool build_specific(std::ostream& out,
                         const ccl::process_device_indices_t& per_thread_device_indices,
                         const details::plain_graph_list& graph_list);
-    [[deprecated]]
     bool build_specific(std::ostream& out,
                         const ccl::process_device_indices_t& per_thread_device_indices,
                         const ccl::device_indices_t& scaleout_device_indices,
