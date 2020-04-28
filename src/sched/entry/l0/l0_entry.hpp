@@ -1,6 +1,7 @@
 #pragma once
 #include "ccl_types.hpp"
 #include "common/datatype/datatype.hpp"
+#include "ccl_type_traits.hpp"
 #include "comp/comp.hpp"
 #include "common/comm/l0/devices/devices_declaration.hpp"
 #include "sched/entry/coll/direct/base_coll_entry.hpp"
@@ -46,7 +47,7 @@ public:
                    const ccl_buffer send_buf,
                    ccl_buffer recv_buf,
                    size_t cnt,
-                   const ccl_datatype_t& dtype_in,
+                   ccl_datatype_t dtype_in,
                    ccl_reduction_t op,
                    std::shared_ptr<ccl_stream>& stream) :
         sched_entry(sched),

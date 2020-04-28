@@ -1,7 +1,7 @@
 #pragma once
 
-#ifdef MULTI_GPU_SUPPORT
 #include "ccl_types.h"
+#ifdef MULTI_GPU_SUPPORT
 
 #ifdef __cplusplus
 extern "C" {

@@ -1,8 +1,5 @@
 #include "common/env/env.hpp"
 #include "common/log/log.hpp"
-#ifdef MULTI_GPU_SUPPORT
-#include "native_device_api/export_api.hpp"
-#endif
 #include <iterator>
 #include <sstream>
 #include <unistd.h>
@@ -15,9 +12,7 @@ ccl_env_data env_data =
     .worker_count = 1,
     .worker_offload = 1,
     .worker_affinity = std::vector<size_t>(),
-#ifdef MULTI_GPU_SUPPORT
-    .gpu_cluster_affinity = std::vector<ccl::device_mask_t>(),
-#endif
+
     .atl_transport = ccl_atl_mpi,
     .enable_shm = 0,
 
@@ -167,12 +162,6 @@ void ccl_env_parse()
     CCL_THROW_IF_NOT(env_data.worker_count >= 1, "incorrect ", CCL_WORKER_COUNT, " ", env_data.worker_count);
     ccl_env_2_int(CCL_WORKER_OFFLOAD, env_data.worker_offload);
 
-    std::string gpu_cluster_affinity;
-    if (ccl_env_get(CCL_L0_CLUSTER_AFFINITY_MASK, gpu_cluster_affinity))
-    {
-        ccl_parse_l0_cluster_affinity(gpu_cluster_affinity);
-    }
-
     ccl_env_parse_atl_transport();
     ccl_env_2_int(CCL_ATL_SHM, env_data.enable_shm);
 
@@ -267,14 +256,6 @@ void ccl_env_print()
 
     LOG_INFO(CCL_ATL_TRANSPORT, ": ", ccl_atl_transport_to_str(env_data.atl_transport));
     LOG_INFO(CCL_ATL_SHM, ": ", env_data.enable_shm);
-    {
-        #ifdef MULTI_GPU_SUPPORT
-        std::stringstream ss;
-        std::copy(env_data.gpu_cluster_affinity.begin(), env_data.gpu_cluster_affinity.end(),
-                  std::ostream_iterator<ccl::device_mask_t>(ss, ","));
-        LOG_INFO(CCL_L0_CLUSTER_AFFINITY_MASK, ": ", ss.str());
-        #endif
-    }
 
     LOG_INFO(CCL_ALLGATHERV, ": ", (env_data.allgatherv_algo_raw.length()) ?
         env_data.allgatherv_algo_raw : CCL_ENV_NOT_SPECIFIED);
@@ -431,16 +412,6 @@ void ccl_parse_l0_cluster_affinity(const std::string& l0_node_affinity)
 {
     std::vector<std::string> array;
     str_to_array<std::string>(l0_node_affinity.c_str(), array, ',');
-#ifdef MULTI_GPU_SUPPORT
-    env_data.gpu_cluster_affinity.clear();
-    env_data.gpu_cluster_affinity.reserve(array.size());
-    std::transform(array.begin(), array.end(),
-                   std::back_inserter(env_data.gpu_cluster_affinity),
-                   [](const std::string& mask) -> ccl::device_mask_t
-                   {
-                       return native::ccl_device_driver::create_device_mask(mask);
-                   });
-#endif
 }
 
 int ccl_env_parse_atl_transport()

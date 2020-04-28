@@ -18,9 +18,6 @@ constexpr const char* CCL_WORKER_COUNT = "CCL_WORKER_COUNT";
 constexpr const char* CCL_WORKER_AFFINITY = "CCL_WORKER_AFFINITY";
 constexpr const char* CCL_WORKER_OFFLOAD = "CCL_WORKER_OFFLOAD";
 
-constexpr const char* CCL_L0_CLUSTER_AFFINITY_MASK = "L0_CLUSTER_AFFINITY_MASK";
-constexpr const char* TO_DELETE_L0_GPU_RING_TYPE = "TO_DELETE_L0_GPU_RING_TYPE";
-
 constexpr const char* CCL_ATL_TRANSPORT = "CCL_ATL_TRANSPORT";
 constexpr const char* CCL_ATL_SHM = "CCL_ATL_SHM";
 
@@ -82,9 +79,6 @@ struct alignas(CACHELINE_SIZE) ccl_env_data
     size_t worker_count;
     int worker_offload;
     std::vector<size_t> worker_affinity;
-#ifdef MULTI_GPU_SUPPORT
-    std::vector<ccl::device_mask_t> gpu_cluster_affinity;
-#endif
 
     ccl_atl_transport atl_transport;
     int enable_shm;

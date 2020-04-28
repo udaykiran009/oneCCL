@@ -2,6 +2,8 @@
 #include <unistd.h>
 
 #include "ccl_gpu_modules.h"
+
+#ifdef MULTI_GPU_SUPPORT
 #include "common/comm/l0/modules/specific_modules_source_data.hpp"
 #include "common/comm/l0/device_group_routing_schema.hpp"
 
@@ -34,3 +36,4 @@ ccl_status_t CCL_API register_allreduce_gpu_module_source(const char* path, ccl_
               "\", topology class: \"", to_string(t_class), "\" loaded succesfully");
     return ccl_status_success;
 }
+#endif //MULTI_GPU_SUPPORT
