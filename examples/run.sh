@@ -156,10 +156,10 @@ run()
     ccl_base_env="CCL_YIELD=sleep CCL_ATL_SHM=1"
     if [[ $is_sycl ==  1 ]];
     then
-        dir_list="cpu sycl common"
+        dir_list="cpu sycl common benchmark"
         backend_list="cpu sycl"
     else
-        dir_list="cpu common"
+        dir_list="cpu common benchmark"
         backend_list="cpu"
     fi
     if ! [[ -n "${DASHBOARD_GPU_DEVICE_PRESENT}" ]]
@@ -189,7 +189,7 @@ run()
             coll_list="" # empty coll_list means default benchmarking collectives set
             for example in $examples_to_run
             do
-                if [ "$dir_name" == "common" ];
+                if [ "$dir_name" == "benchmark" ];
                 then
                     for backend in $backend_list
                     do                        

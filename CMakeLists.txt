@@ -225,6 +225,7 @@ else()
         set(CCL_ENABLE_SYCL_V 0)
 endif()
 
+add_subdirectory(examples/benchmark)
 add_subdirectory(examples/common)
 add_subdirectory(tests/functional)
 if(MULTI_GPU_SUPPORT)

@@ -17,7 +17,7 @@
 #include <CL/sycl.hpp>
 using namespace cl::sycl;
 using namespace cl::sycl::access;
-#endif
+#endif /* CCL_ENABLE_SYCL */
 
 #define DEFAULT_BACKEND "cpu"
 

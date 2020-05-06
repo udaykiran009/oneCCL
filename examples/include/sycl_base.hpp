@@ -1,8 +1,11 @@
-#include <iostream>
-#include <stdio.h>
+#ifndef SYCL_BASE_HPP
+#define SYCL_BASE_HPP
+
+/* sycl-specific base implementation and its help functions */
+#include <string>
+
 #include <CL/sycl.hpp>
 #include "ccl.hpp"
-
 
 #define COUNT     (10 * 1024 * 1024)
 #define COLL_ROOT (0)
@@ -10,6 +13,8 @@
 using namespace std;
 using namespace cl::sycl;
 using namespace cl::sycl::access;
+
+/* help functions for sycl-specific base implementation */
 inline bool has_gpu()
 {
     std::vector<cl::sycl::device> devices = cl::sycl::device::get_devices();
@@ -22,6 +27,7 @@ inline bool has_gpu()
     }
     return false;
 }
+
 inline bool has_accelerator()
 {
     std::vector<cl::sycl::device> devices = cl::sycl::device::get_devices();
@@ -34,6 +40,7 @@ inline bool has_accelerator()
     }
     return false;
 }
+
 inline int create_sycl_queue(int argc, char **argv, cl::sycl::queue &queue)
 {
    auto exception_handler = [&](cl::sycl::exception_list elist) {
@@ -117,3 +124,6 @@ void handle_exception(cl::sycl::queue &q)
           << e.what() << std::endl;
     }
 }
+
+#endif /* SYCL_BASE_HPP */
+
