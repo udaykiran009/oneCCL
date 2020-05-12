@@ -259,16 +259,10 @@ set_environment()
 
 make_tests()
 {
-    if [ $build_compiler == "sycl" ]
-    then
-        DISABLE_SYCL=0
-    else
-        DISABLE_SYCL=1
-    fi
     cd ${CURRENT_WORK_DIR}/tests/functional
     mkdir -p build
     cd ./build
-    cmake .. -DCMAKE_DISABLE_SYCL=${DISABLE_SYCL} -DCMAKE_BUILD_TYPE=Release -DCMAKE_C_COMPILER="${C_COMPILER}" \
+    cmake .. -DCMAKE_BUILD_TYPE=Release -DCMAKE_C_COMPILER="${C_COMPILER}" \
         -DCMAKE_CXX_COMPILER="${CXX_COMPILER}"
     make all
 }
@@ -280,7 +274,7 @@ run_compatibitily_tests()
     echo "EXAMPLE_WORK_DIR =" $EXAMPLE_WORK_DIR
     set_external_env
     cd ${EXAMPLE_WORK_DIR}
-    if [ $node_label == "mlsl2_test_gpu" ]
+    if [ ${node_label} == "mlsl2_test_gpu" ]
     then
         export FI_TCP_IFACE=eno1
         ${CURRENT_WORK_DIR}/examples/run.sh gpu

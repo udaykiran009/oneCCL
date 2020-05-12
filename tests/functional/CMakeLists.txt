@@ -1,18 +1,23 @@
 cmake_minimum_required (VERSION 2.8)
 file(GLOB sources "*.c" "*.cpp")
 
+if (DEFINED ENV{CCL_CONFIGURATION})
+    set(CCL_CONFIGURATION "$ENV{CCL_CONFIGURATION}")
+endif()
+
+if (DEFINED ENV{CCL_ROOT})
+    set(CCL_ROOT "$ENV{CCL_ROOT}")
+endif()
+
+message(STATUS "CCL_ROOT: ${CCL_ROOT}")
+message(STATUS "CCL_CONFIGURATION: ${CCL_CONFIGURATION}")
+
 set(CCL_INSTALL_TESTS "$ENV{PWD}")
 enable_testing()
 ADD_SUBDIRECTORY (googletest-release-1.8.1/googletest/)
 include_directories(${PROJECT_SOURCE_DIR}/tests/googletest-release-1.8.1/googletest/include ${PROJECT_SOURCE_DIR}/tests/googletest-release-1.8.1/googletest/src)
-include_directories($ENV{CCL_ROOT}/include/cpu_icc)
-link_directories($ENV{CCL_ROOT}/lib/cpu_icc)
-
-# Check SYCL support
-if (NOT CMAKE_DISABLE_SYCL)
-    set(CMAKE_DISABLE_SYCL 0)
-endif()
-
+include_directories(${CCL_ROOT}/include/${CCL_CONFIGURATION})
+link_directories(${CCL_ROOT}/lib/${CCL_CONFIGURATION})
 
 if (${CMAKE_VERSION} VERSION_LESS 3.1)
 #cmake version below 3.1 does not support CMAKE_C[XX}_STANDARD flags
@@ -35,11 +40,9 @@ set(CMAKE_CXX_FLAGS_RELWITHDEBINFO "${CMAKE_CXX_FLAGS_RELWITHDEBINFO} ${CXX_COMP
 set(CMAKE_CXX_STANDARD 11)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-if( ${CMAKE_C_COMPILER_ID} STREQUAL "Clang" AND ${CMAKE_CXX_COMPILER_ID} STREQUAL "Clang")
-    if (${CMAKE_DISABLE_SYCL} EQUAL 0)
-        set(CMAKE_CLANG_FLAGS "-fsycl")
-        set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -lsycl")
-    endif()
+if (${CMAKE_C_COMPILER_ID} STREQUAL "Clang" AND ${CMAKE_CXX_COMPILER_ID} STREQUAL "Clang")
+    set(CMAKE_CLANG_FLAGS "-fsycl")
+    set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -lsycl")
     set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${CMAKE_CLANG_FLAGS}")
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${CMAKE_CLANG_FLAGS}")
 endif()

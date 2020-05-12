@@ -133,8 +133,7 @@ build()
 {
     cd ${EXAMPLE_WORK_DIR}
     echo "Building"
-    cmake .. -DCMAKE_DISABLE_SYCL=${DISABLE_SYCL} \
-             -DCMAKE_C_COMPILER=${C_COMPILER} \
+    cmake .. -DCMAKE_C_COMPILER=${C_COMPILER} \
              -DCMAKE_CXX_COMPILER=${CXX_COMPILER}  2>&1 | tee ${EXAMPLE_WORK_DIR}/build_output.log
     make -j 2>&1 | tee -a ${EXAMPLE_WORK_DIR}/build_output.log
     error_count=`grep -E -c 'error:|Aborted|failed'  ${EXAMPLE_WORK_DIR}/build_output.log` > /dev/null 2>&1
@@ -154,22 +153,19 @@ run()
     ppn=1
     n=2
     ccl_base_env="CCL_YIELD=sleep CCL_ATL_SHM=1"
-    if [[ $is_sycl ==  1 ]];
-    then
-        dir_list="cpu sycl common benchmark"
-        backend_list="cpu sycl"
-    else
-        dir_list="cpu common benchmark"
-        backend_list="cpu"
-    fi
     if ! [[ -n "${DASHBOARD_GPU_DEVICE_PRESENT}" ]]
     then
         echo "WARNING: DASHBOARD_GPU_DEVICE_PRESENT was not set"
+        dir_list="cpu common benchmark"
+        backend_list="cpu"
         selectors_list="cpu host default"
     else
+        dir_list="cpu sycl common benchmark"
+        backend_list="cpu sycl"
         selectors_list="cpu gpu host default"
     fi
-    echo "DISABLE_SYCL =" $DISABLE_SYCL "; dir_list =" $dir_list "; selectors_list =" $selectors_list
+
+    echo "dir_list =" $dir_list "; selectors_list =" $selectors_list
     for dir_name in $dir_list
     do
         cd $dir_name
@@ -284,7 +280,6 @@ print_help()
     echo_log "    ./${BASENAME}.sh gpu"
     echo_log ""
     echo_log "Available knobs:"
-    echo_log "DISABLE_SYCL = 0|1, default is 0"
     echo_log "C_COMPILER = clang|icc|gcc|<full path to compiler>, default is clang"
     echo_log "CXX_COMPILER = clang++|icpc|g++|<full path to compiler>, default is clang++"
     echo_log ""
@@ -304,7 +299,6 @@ case $1 in
     then
         CXX_COMPILER=g++
     fi
-    DISABLE_SYCL=1
     shift
     ;;
 "--help|-help|-h" )
@@ -319,9 +313,8 @@ case $1 in
     fi
     if [ -z "${CXX_COMPILER}"]
     then
-        CXX_COMPILER=clang++
+        CXX_COMPILER=dpcpp
     fi
-    DISABLE_SYCL=0
     shift
     ;;
 esac

@@ -1,7 +1,25 @@
 #!/bin/bash
 
+print_help()
+{
+    echo ""
+    echo "Usage: vars.sh [--ccl-configuration[=cpu_icc|cpu_gpu_dpcpp]]"
+    echo ""
+    echo "By default, --ccl-configuration=cpu_gpu_dpcpp"
+    echo "The arguments to the sourced script might be ignored"
+    echo "(consult the documentation for the shell you are using)." 
+    echo "The alternative way to pass the value of ccl-configuration"
+    echo "to the script is through CCL_CONFIGURATION environment variable."
+    echo ""
+}
+
 WORK_DIR="$(cd "$( dirname "${BASH_SOURCE[0]}" )" > /dev/null && pwd)"
 export CCL_ROOT="$(cd ${WORK_DIR}/../; pwd -P)"
+
+if [ -z ${CCL_CONFIGURATION} ]
+then
+    CCL_CONFIGURATION=cpu_gpu_dpcpp
+fi
 
 args=$*
 for arg in $args
@@ -20,6 +38,7 @@ case "$ccl_configuration" in
         ccl_configuration="cpu_gpu_dpcpp"
         ;;
 esac
+export CCL_CONFIGURATION=${ccl_configuration}
 
 if [ -z "${LD_LIBRARY_PATH}" ]
 then

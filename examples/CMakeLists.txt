@@ -1,20 +1,28 @@
 cmake_minimum_required (VERSION 2.8)
 
-if(DEFINED ENV{CCL_ROOT})
-    set(CCL_ROOT "$ENV{CCL_ROOT}" CACHE STRING "")
+if (DEFINED ENV{CCL_CONFIGURATION})
+    set(CCL_CONFIGURATION "$ENV{CCL_CONFIGURATION}")
+endif()
+
+if (DEFINED ENV{CCL_ROOT})
+    set(CCL_ROOT "$ENV{CCL_ROOT}")
 else()
     message(FATAL_ERROR "Please define CCL_ROOT environment variable")
 endif()
 
-message(STATUS "CCL_ROOT: ${CCL_ROOT}")
-
-if(NOT DEFINED ${CCL_INSTALL_EXAMPLES})
-    set(CCL_INSTALL_EXAMPLES "$ENV{PWD}")
+if (${CCL_CONFIGURATION} STREQUAL "cpu_gpu_dpcpp" AND NOT
+   ${CMAKE_C_COMPILER_ID} STREQUAL "Clang" AND NOT ${CMAKE_CXX_COMPILER_ID} STREQUAL "Clang")
+    message(FATAL_ERROR "Provided CCL_CONFIGURATION=${CCL_CONFIGURATION} requires DPC++ compiler.
+Please clean up build folder and run one of the following command:
+1. cmake -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=dpcpp ..
+2. CCL_CONFIGURATION=cpu_icc cmake ..")
 endif()
 
-# Check SYCL support
-if (NOT CMAKE_DISABLE_SYCL)
-    set(CMAKE_DISABLE_SYCL 0)
+message(STATUS "CCL_ROOT: ${CCL_ROOT}")
+message(STATUS "CCL_CONFIGURATION: ${CCL_CONFIGURATION}")
+
+if (NOT DEFINED ${CCL_INSTALL_EXAMPLES})
+    set(CCL_INSTALL_EXAMPLES "$ENV{PWD}")
 endif()
 
 if (${CMAKE_VERSION} VERSION_LESS 3.1)
@@ -39,11 +47,9 @@ set(CMAKE_CXX_FLAGS_RELWITHDEBINFO "${CMAKE_CXX_FLAGS_RELWITHDEBINFO} ${CXX_COMP
 set(CMAKE_CXX_STANDARD 11)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-if( ${CMAKE_C_COMPILER_ID} STREQUAL "Clang" AND ${CMAKE_CXX_COMPILER_ID} STREQUAL "Clang")
-    if (${CMAKE_DISABLE_SYCL} EQUAL 0)
-        set(CMAKE_CLANG_FLAGS "-fsycl")
-        set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -lsycl")
-    endif()
+if (${CMAKE_C_COMPILER_ID} STREQUAL "Clang" AND ${CMAKE_CXX_COMPILER_ID} STREQUAL "Clang")
+    set(CMAKE_CLANG_FLAGS "-fsycl")
+    set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -lsycl")
     set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${CMAKE_CLANG_FLAGS}")
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${CMAKE_CLANG_FLAGS}")
 endif()
@@ -68,23 +74,14 @@ if (CCL_BFP16_COMPILER)
     endif()
 endif()
 
-if(EXISTS ${CCL_ROOT}/lib/cpu_icc AND EXISTS ${CCL_ROOT}/lib/cpu_gpu_dpcpp)
-    if (CMAKE_DISABLE_SYCL)
-        include_directories(${CCL_ROOT}/include/cpu_icc)
-        link_directories(${CCL_ROOT}/lib/cpu_icc)
-    else()
-        include_directories(${CCL_ROOT}/include/cpu_gpu_dpcpp)
-        link_directories(${CCL_ROOT}/lib/cpu_gpu_dpcpp)
-    endif()
-else()
-        include_directories(${CCL_ROOT}/include)
-        link_directories(${CCL_ROOT}/lib)
-endif()
+
+include_directories(${CCL_ROOT}/include/${CCL_CONFIGURATION})
+link_directories(${CCL_ROOT}/lib/${CCL_CONFIGURATION})
 
 include_directories(include)
 
 add_subdirectory(cpu)
-if (${CMAKE_DISABLE_SYCL} EQUAL 0)
+if(${CCL_CONFIGURATION} STREQUAL "cpu_gpu_dpcpp")
     add_subdirectory(sycl)
 endif()    
 add_subdirectory(common)
