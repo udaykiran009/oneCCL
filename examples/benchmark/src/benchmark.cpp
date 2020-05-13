@@ -316,6 +316,7 @@ void create_sycl_colls(std::list<std::string>& names, coll_list_t& colls)
     std::stringstream error_messages_stream;
     base_coll::comm = ccl::environment::instance().create_communicator();
     base_coll::stream = ccl::environment::instance().create_stream(ccl::stream_type::device, &sycl_queue);
+
     for (auto names_it = names.begin(); names_it != names.end(); )
     {
         const std::string& name = *names_it;
@@ -410,22 +411,23 @@ void create_sycl_colls(std::list<std::string>& names, coll_list_t& colls)
 #endif /* CCL_ENABLE_SYCL */
 
 template<class Dtype>
-void create_colls(std::list<std::string>& names, ccl::stream_type backend_type, coll_list_t& colls)
+void create_colls(std::list<std::string>& coll_names, ccl::stream_type backend,
+                  coll_list_t& colls)
 {
-    switch (backend_type)
+    switch (backend)
     {
         case ccl::stream_type::host:
-            create_cpu_colls<Dtype>(names, colls);
+            create_cpu_colls<Dtype>(coll_names, colls);
             break;
         case ccl::stream_type::device:
 #ifdef CCL_ENABLE_SYCL
-            create_sycl_colls<Dtype>(names, colls);
+            create_sycl_colls<Dtype>(coll_names, colls);
 #else
             ASSERT(0, "SYCL backend is requested but CCL_ENABLE_SYCL is not defined");
 #endif
             break;
         default:
-            ASSERT(0, "unknown backend %d", (int)backend_type);
+            ASSERT(0, "unknown backend %d", (int)backend);
             break;
     }
 
@@ -433,68 +435,23 @@ void create_colls(std::list<std::string>& names, ccl::stream_type backend_type, 
 
 int main(int argc, char *argv[])
 {
-    if (argc > 4)
-    {
-        PRINT("%s", help_message);
-        return -1;
-    }
-
-    std::string backend_str = (argc > 1) ? std::string(argv[1]) : DEFAULT_BACKEND;
-    std::set<std::string> suppored_backends { "cpu" };
-#ifdef CCL_ENABLE_SYCL
-    suppored_backends.insert("sycl");
-#endif
-
-    std::stringstream sstream;
-    if (suppored_backends.find(backend_str) == suppored_backends.end())
-    {
-        PRINT("unsupported backend: %s", backend_str.c_str());
-
-        std::copy(suppored_backends.begin(), suppored_backends.end(),
-                  std::ostream_iterator<std::string>(sstream, " "));
-        PRINT("supported backends: %s", sstream.str().c_str());
-        PRINT("%s", help_message);
-        return -1;
-    }
-
-    ccl::stream_type backend_type = ccl::stream_type::host;
-    if (backend_str == "sycl")
-        backend_type = ccl::stream_type::device;
-
-    std::string loop_str = (argc > 2) ? std::string(argv[2]) : DEFAULT_LOOP;
-    std::set<std::string> suppored_loops { "regular", "unordered" };
-    if (suppored_loops.find(loop_str) == suppored_loops.end())
-    {
-        PRINT("unsupported loop: %s", loop_str.c_str());
-
-        std::copy(suppored_loops.begin(), suppored_loops.end(),
-                  std::ostream_iterator<std::string>(sstream, " "));
-        PRINT("supported loops: %s", sstream.str().c_str());
-        PRINT("%s", help_message);
-        return -1;
-    }
-
-    loop_type_t loop = LOOP_REGULAR;
-    if (loop_str == "unordered")
-    {
-        loop = LOOP_UNORDERED;
-        setenv("CCL_UNORDERED_COLL", "1", 1);
-    }
-
-    ccl::coll_attr coll_attr{};
-
-    std::list<std::string> coll_names;
+    user_options_t options;
     coll_list_t colls;
     req_list_t reqs;
 
+    ccl::coll_attr coll_attr{};
     char match_id[MATCH_ID_SIZE] {'\0'};
     coll_attr.match_id = match_id;
 
+    if (parse_user_options(argc, argv, options))
+    {
+        PRINT("%s", help_message);
+        return -1;
+    }
 
     try
     {
-        coll_names = tokenize((argc == 4) ? argv[3] : DEFAULT_COLL_LIST, ',');
-        create_colls<DTYPE>(coll_names, backend_type, colls);
+        create_colls<DTYPE>(options.coll_names, options.backend, colls);
     }
     catch (const std::runtime_error& e)
     {
@@ -507,29 +464,24 @@ int main(int argc, char *argv[])
     }
 
     ccl::communicator* comm = base_coll::comm.get();
-    if (colls.empty())
-    {
-        PRINT_BY_ROOT("%s", help_message);
-        ASSERT(0, "unexpected coll list");
-    }
 
-    int check_values = 1;
+    print_user_options(options, comm);
+
+    if (options.coll_names.empty())
+    {
+        PRINT_BY_ROOT("empty coll list");
+        PRINT_BY_ROOT("%s", help_message);
+        return -1;
+    }
 
     comm->barrier();
 
-    std::copy(coll_names.begin(), coll_names.end(),
-              std::ostream_iterator<std::string>(sstream, " "));
-
-    PRINT_BY_ROOT("start colls: %s, iters: %d, buf_count: %d, ranks %zu, check_values %d, backend %s, loop %s",
-                  sstream.str().c_str(), ITERS, BUF_COUNT, comm->size(), check_values,
-                  backend_str.c_str(), loop_str.c_str());
-
     for (auto& coll : colls)
     {
-        coll->check_values = check_values;
+        coll->check_values = options.check_values;
     }
 
-    switch (loop)
+    switch (options.loop)
     {
         case LOOP_REGULAR:
             do_regular(comm, coll_attr, colls, reqs);
@@ -538,11 +490,12 @@ int main(int argc, char *argv[])
             do_unordered(comm, coll_attr, colls, reqs);
             break;
         default:
-            ASSERT(0, "unknown loop %d", loop);
+            ASSERT(0, "unknown loop %d", options.loop);
             break;
     }
 
     base_coll::comm.reset();
     base_coll::stream.reset();
+
     return 0;
 }

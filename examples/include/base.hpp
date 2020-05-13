@@ -19,8 +19,6 @@ using namespace cl::sycl;
 using namespace cl::sycl::access;
 #endif /* CCL_ENABLE_SYCL */
 
-#define DEFAULT_BACKEND "cpu"
-
 #define ITERS                (16)
 #define COLL_ROOT            (0)
 #define MSG_SIZE_COUNT       (6)

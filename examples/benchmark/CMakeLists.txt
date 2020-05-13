@@ -1,4 +1,4 @@
-file(GLOB sources "*.c" "*.cpp")
+file(GLOB sources "./src/*.c" "./src/*.cpp")
 include_directories(include)
 include_directories(src)
 foreach(src ${sources})

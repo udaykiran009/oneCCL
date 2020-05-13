@@ -101,12 +101,27 @@ run_benchmark()
     echo "coll: " $coll
     echo "================ENVIRONMENT=================="
     test_log="$EXAMPLE_WORK_DIR/$dir_name/run_${transport}_${example}_${backend}_${loop}_output.log"
+
+    options=""
+    if [ "${backend}" != "" ];
+    then
+        options="${options} --backend ${backend}"
+    fi
+    if [ "${loop}" != "" ];
+    then
+        options="${options} --loop ${loop}"
+    fi
+    if [ "${coll}" != "" ];
+    then
+        options="${options} --coll ${coll}"
+    fi
+
 	if [ `echo $ccl_extra_env | grep -c CCL_LOG_LEVEL` -ne 1 ]
 	then
-		eval `echo $ccl_extra_env mpiexec.hydra -n 2 -ppn $ppn -l ./$example $backend $loop $coll` 2>&1 | tee ${test_log}
+		eval `echo $ccl_extra_env mpiexec.hydra -n 2 -ppn $ppn -l ./$example ${options}` 2>&1 | tee ${test_log}
 	else
 		echo Output for run with CCL_LOG_LEVEL=2 has been redirected to log file ${test_log}
-		eval `echo $ccl_extra_env mpiexec.hydra -n 2 -ppn $ppn -l ./$example $backend $loop $coll` > ${test_log} 2>&1
+		eval `echo $ccl_extra_env mpiexec.hydra -n 2 -ppn $ppn -l ./$example ${options}` > ${test_log} 2>&1
 	fi
     check_test ${test_log} ${example}
 }
