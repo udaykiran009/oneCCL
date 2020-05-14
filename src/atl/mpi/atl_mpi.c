@@ -1,4 +1,5 @@
 #include <assert.h>
+#include <ctype.h>
 #include <inttypes.h>
 #include <math.h>
 #include <mpi.h>
@@ -50,21 +51,33 @@ typedef enum
 {
     ATL_MPI_LIB_NONE,
     ATL_MPI_LIB_IMPI
-} atl_mpi_lib_kind_t;
+} atl_mpi_lib_type_t;
 
 typedef struct
 {
-    atl_mpi_lib_kind_t kind;
+    atl_mpi_lib_type_t type;
     const char* name;
-    const char* version_prefix;
-    const char* version_string_part;
-    int version_numerical_part;
+
+    /* string prefix before numerical version of library, mandatory */
+    const char* version_prefix_1;
+
+    /* string prefix before numerical version of library, following prefix_1, optional */
+    const char* version_prefix_2;
+
+    /* minimal expected version of library, mandatory */
+    int min_version_value;
+
+    /* string prefix before library kind, optional */
+    const char* kind_prefix;
+
+    /* library kind, optional */
+    const char* kind_value;
 } atl_mpi_lib_info_t;
 
 #define MPI_LIB_INFO_MAX_COUNT 1
 
 static atl_mpi_lib_info_t mpi_lib_infos[MPI_LIB_INFO_MAX_COUNT]
-  = { { ATL_MPI_LIB_IMPI,  "impi",  "Intel(R) MPI Library",      "",     2019 } };
+  = { { ATL_MPI_LIB_IMPI,  "impi",  "Intel(R) MPI Library",      "",     2019, "library kind:", "release_mt" } };
 
 typedef struct
 {
@@ -94,7 +107,7 @@ typedef struct
 
 typedef struct
 {
-    atl_mpi_lib_kind_t mpi_lib_kind;
+    atl_mpi_lib_type_t mpi_lib_type;
     atl_mpi_bfp16_data_t bfp16;
 } atl_mpi_global_data_t;
 
@@ -386,58 +399,129 @@ atl2mpi_op(atl_reduction_t rtype, MPI_Datatype dtype)
 #endif /* ATL_MPI_BFP16 */
 }
 
-atl_mpi_lib_kind_t
-atl_mpi_get_lib_kind()
+atl_mpi_lib_type_t
+atl_mpi_get_lib_type()
 {
-    atl_mpi_lib_kind_t lib_kind = ATL_MPI_LIB_NONE;
-    char mpi_version[MPI_MAX_LIBRARY_VERSION_STRING];
-    int mpi_version_len, i;
+    atl_mpi_lib_type_t lib_type = ATL_MPI_LIB_NONE;
+    char mpi_version[MPI_MAX_LIBRARY_VERSION_STRING] = { 0 };
+    int mpi_version_len = -1, i;
     atl_mpi_lib_info_t* final_info = NULL;
 
-    MPI_Get_library_version(mpi_version, &mpi_version_len);
-    ATL_MPI_DEBUG_PRINT("MPI version %s", mpi_version);
+    /* request IMPI level append library kind into MPI_Get_library_version output */
+    setenv("I_MPI_INFO_LIBRARY_KIND", "1", 0);
+
+    int ret = MPI_Get_library_version(mpi_version, &mpi_version_len);
+    if ((ret != MPI_SUCCESS) ||
+        (mpi_version_len < 0) ||
+        (mpi_version_len > MPI_MAX_LIBRARY_VERSION_STRING))
+    {
+        ATL_MPI_PRINT("can't retrieve MPI version, mpi_version_len %d, ret %d",
+            mpi_version_len, ret);
+        return ATL_MPI_LIB_NONE;
+    }
+
+    /* remove trailing spaces at the end for more compact log */
+    while (strlen(mpi_version) && isspace(mpi_version[strlen(mpi_version) - 1]))
+        mpi_version[strlen(mpi_version) - 1] = '\0';
+
+    ATL_MPI_DEBUG_PRINT("\nMPI version:\n%s\n", mpi_version);
 
     for (i = 0; i < MPI_LIB_INFO_MAX_COUNT; i++)
     {
         atl_mpi_lib_info_t* info = &(mpi_lib_infos[i]);
 
-        const char* mpi_version_substr = NULL;
-        if ((mpi_version_substr = strstr(mpi_version, info->version_prefix)))
+        ATL_MPI_ASSERT(info->version_prefix_1, "empty version_prefix_1");
+        ATL_MPI_ASSERT(info->min_version_value >= 0, "unexpected minimal version");
+
+        const char* version_substr = NULL;
+        if ((version_substr = strstr(mpi_version, info->version_prefix_1)))
         {
-            mpi_version_substr += strlen(info->version_prefix);
-            ATL_MPI_DEBUG_PRINT("mpi_version_substr %s", mpi_version_substr);
+            version_substr += strlen(info->version_prefix_1);
+            ATL_MPI_DEBUG_PRINT("\nversion_substr:\n%s\n", version_substr);
 
-            mpi_version_substr = strstr(mpi_version_substr, info->version_string_part);
-            mpi_version_substr += strlen(info->version_string_part);
-            ATL_MPI_DEBUG_PRINT("mpi_version_substr %s", mpi_version_substr);
-
-            int numerical_version = atoi(mpi_version_substr);
-            ATL_MPI_DEBUG_PRINT("MPI numerical version %d", numerical_version);
-
-            if (numerical_version >= info->version_numerical_part)
+            if (info->version_prefix_2)
             {
+                version_substr = strstr(version_substr, info->version_prefix_2);
+                if (!version_substr)
+                {
+                    ATL_MPI_DEBUG_PRINT("can't find version_prefix_2 %s\n",
+                        info->version_prefix_2);
+                    continue;
+                }
+                version_substr += strlen(info->version_prefix_2);
+                ATL_MPI_DEBUG_PRINT("\nversion_substr:\n%s\n", version_substr);
+            }
+
+            int version_value = (version_substr) ? atoi(version_substr) : -1;
+            ATL_MPI_DEBUG_PRINT("\nMPI numerical version:\n%d\n", version_value);
+
+            if (version_value < info->min_version_value)
+            {
+                ATL_MPI_PRINT("\n\nWARNING !!!\n\n"
+                    "Loaded MPI doesn't match with expected version, "
+                    "consider to switch to %s %s%d (min) %s\n",
+                    info->version_prefix_1,
+                    (info->version_prefix_2 ? info->version_prefix_2 : ""),
+                    info->min_version_value,
+                    (info->kind_value ? info->kind_value : ""));
+                continue;
+            }
+            else if (info->kind_prefix && info->kind_value)
+            {
+                const char* kind_substr = mpi_version;
+
+                /* skip WARNING for IMPI which has high enough version but doesn't support library kind yet */
+                if ((kind_substr = strstr(kind_substr, info->kind_prefix)))
+                {
+                    kind_substr += strlen(info->kind_prefix);
+                    while ((isspace(*kind_substr)) && (kind_substr < (mpi_version + mpi_version_len)))
+                        kind_substr++;
+
+                    ATL_MPI_DEBUG_PRINT("\nkind_substr:\n%s\n", kind_substr);
+
+                    if (strncmp(kind_substr, info->kind_value, strlen(info->kind_value)))
+                    {
+                        ATL_MPI_PRINT("\n\nWARNING !!!\n\n"
+                            "Loaded MPI version (%d) "
+                            "is higher or equal to minimal expected version (%d) "
+                            "but kind (%s) doesn't match with expected kind (%s), "
+                            "consider to switch to %s %s%d (min version) %s\n",
+                            version_value,
+                            info->min_version_value,
+                            kind_substr,
+                            info->kind_value,
+                            info->version_prefix_1,
+                            (info->version_prefix_2 ? info->version_prefix_2 : ""),
+                            info->min_version_value,
+                            (info->kind_value ? info->kind_value : ""));
+                        continue;
+                    }
+                }
+
                 final_info = info;
-                ATL_MPI_DEBUG_PRINT("set lib_kind = %s because version is greater than expected one",
-                    info->name);
+                ATL_MPI_DEBUG_PRINT("set lib_type = %s because "
+                    "version (%d) is higher or equal to minimal expected version (%d) "
+                    "and kind matches with expected kind",
+                    info->name, version_value, info->min_version_value);
                 break;
             }
         }
     }
 
     /* user input has higher priority */
-    char* lib_kind_env = NULL;
-    if ((lib_kind_env = getenv("CCL_ATL_MPI_LIB_KIND")) != NULL)
+    char* lib_type_env = NULL;
+    if ((lib_type_env = getenv("CCL_ATL_MPI_LIB_TYPE")) != NULL)
     {
         final_info = NULL;
         for (i = 0; i < MPI_LIB_INFO_MAX_COUNT; i++)
         {
             atl_mpi_lib_info_t* info = &(mpi_lib_infos[i]);
 
-            if (!strcmp(lib_kind_env, info->name))
+            if (!strcmp(lib_type_env, info->name))
             {
                 final_info = info;
-                ATL_MPI_DEBUG_PRINT("set lib_kind = %s because it is requested explicitly",
-                    lib_kind_env);
+                ATL_MPI_DEBUG_PRINT("set lib_type = %s because it is requested explicitly",
+                    lib_type_env);
                 break;
             }
         }
@@ -445,16 +529,16 @@ atl_mpi_get_lib_kind()
 
     if (final_info)
     {
-        ATL_MPI_DEBUG_PRINT("use lib_kind = %s", final_info->name);
-        lib_kind = final_info->kind;
+        ATL_MPI_DEBUG_PRINT("use lib_type = %s", final_info->name);
+        lib_type = final_info->type;
     }
     else
     {
-        ATL_MPI_DEBUG_PRINT("use lib_kind none");
-        lib_kind = ATL_MPI_LIB_NONE;
+        ATL_MPI_DEBUG_PRINT("use lib_type none");
+        lib_type = ATL_MPI_LIB_NONE;
     }
 
-    return lib_kind;
+    return lib_type;
 }
 
 atl_status_t
@@ -463,7 +547,7 @@ atl_mpi_set_lib_environment(const atl_attr_t* attr)
     char ep_count_str[EP_IDX_MAX_STR_LEN] = { 0 };
     snprintf(ep_count_str, EP_IDX_MAX_STR_LEN, "%zu", attr->ep_count);
 
-    if (global_data.mpi_lib_kind == ATL_MPI_LIB_IMPI)
+    if (global_data.mpi_lib_type == ATL_MPI_LIB_IMPI)
     {
         setenv("I_MPI_THREAD_SPLIT", "1", 0);
         setenv("I_MPI_THREAD_RUNTIME", "generic", 0);
@@ -640,7 +724,7 @@ atl_mpi_ep_allreduce(atl_ep_t* ep, const void* send_buf, void* recv_buf, size_t 
                              mpi_ep->mpi_comm, &mpi_req->native_req);
 
 #ifdef ENABLE_DEBUG
-    if (global_data.mpi_lib_kind != ATL_MPI_LIB_NONE)
+    if (global_data.mpi_lib_type != ATL_MPI_LIB_NONE)
     {
         MPI_Info info_out;
         char buf[MPI_MAX_INFO_VAL];
@@ -915,9 +999,9 @@ atl_mpi_init(int* argc, char*** argv,
 
     atl_ctx_t* ctx = &(mpi_ctx->ctx);
 
-    global_data.mpi_lib_kind = atl_mpi_get_lib_kind();
+    global_data.mpi_lib_type = atl_mpi_get_lib_type();
 
-    if (global_data.mpi_lib_kind != ATL_MPI_LIB_NONE)
+    if (global_data.mpi_lib_type != ATL_MPI_LIB_NONE)
     {
         atl_mpi_set_lib_environment(attr);
     }
