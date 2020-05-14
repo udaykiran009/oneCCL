@@ -16,11 +16,12 @@
 void do_regular(ccl::communicator* comm,
                 ccl::coll_attr& coll_attr,
                 coll_list_t& colls,
-                req_list_t& reqs)
+                req_list_t& reqs,
+                const user_options_t& options)
 {
     char* match_id = (char*)coll_attr.match_id;
 
-    reqs.reserve(colls.size() * BUF_COUNT);
+    reqs.reserve(colls.size() * options.buf_count);
 
     /* warm up */
     PRINT_BY_ROOT("do warm up");
@@ -30,7 +31,7 @@ void do_regular(ccl::communicator* comm,
         for (size_t coll_idx = 0; coll_idx < colls.size(); coll_idx++)
         {
             auto& coll = colls[coll_idx];
-            for (size_t buf_idx = 0; buf_idx < BUF_COUNT; buf_idx++)
+            for (size_t buf_idx = 0; buf_idx < options.buf_count; buf_idx++)
             {
                 // snprintf(match_id, MATCH_ID_SIZE, "coll_%s_%zu_count_%zu_buf_%zu",
                 //          coll->name(), coll_idx, count, buf_idx);
@@ -53,7 +54,7 @@ void do_regular(ccl::communicator* comm,
         try
         {
             double t = 0;
-            for (size_t iter_idx = 0; iter_idx < ITERS; iter_idx++)
+            for (size_t iter_idx = 0; iter_idx < options.iters; iter_idx++)
             {
                 for (auto& coll : colls)
                 {
@@ -64,7 +65,7 @@ void do_regular(ccl::communicator* comm,
                 for (size_t coll_idx = 0; coll_idx < colls.size(); coll_idx++)
                 {
                     auto& coll = colls[coll_idx];
-                    for (size_t buf_idx = 0; buf_idx < BUF_COUNT; buf_idx++)
+                    for (size_t buf_idx = 0; buf_idx < options.buf_count; buf_idx++)
                     {
                         snprintf(match_id, MATCH_ID_SIZE, "coll_%s_%zu_count_%zu_buf_%zu",
                                  coll->name(), coll_idx, count, buf_idx);
@@ -86,7 +87,7 @@ void do_regular(ccl::communicator* comm,
                 coll->finalize(count);
             }
             print_timings(*comm, &t, count,
-                          sizeof(DTYPE), BUF_COUNT,
+                          sizeof(DTYPE), options.buf_count,
                           comm->rank(), comm->size());
         }
         catch(const std::exception& ex)
@@ -100,12 +101,12 @@ void do_regular(ccl::communicator* comm,
     /* benchmark with single buffer per collective */
     PRINT_BY_ROOT("do single-buffer benchmark");
     coll_attr.to_cache = 1;
-    for (size_t count = BUF_COUNT; count <= SINGLE_ELEM_COUNT; count *= 2)
+    for (size_t count = options.buf_count; count <= SINGLE_ELEM_COUNT; count *= 2)
     {
         try
         {
             double t = 0;
-            for (size_t iter_idx = 0; iter_idx < ITERS; iter_idx++)
+            for (size_t iter_idx = 0; iter_idx < options.iters; iter_idx++)
             {
                 double t1 = when();
                 for (size_t coll_idx = 0; coll_idx < colls.size(); coll_idx++)
@@ -139,13 +140,14 @@ void do_regular(ccl::communicator* comm,
 void do_unordered(ccl::communicator* comm,
                   ccl::coll_attr& coll_attr,
                   coll_list_t& colls,
-                  req_list_t& reqs)
+                  req_list_t& reqs,
+                  const user_options_t& options)
 {
     std::set<std::string> match_ids;
     char* match_id = (char*)coll_attr.match_id;
     size_t rank = comm->rank();
 
-    reqs.reserve(colls.size() * BUF_COUNT * (log2(ELEM_COUNT) + 1));
+    reqs.reserve(colls.size() * options.buf_count * (log2(ELEM_COUNT) + 1));
 
     PRINT_BY_ROOT("do unordered test");
     coll_attr.to_cache = 1;
@@ -159,7 +161,7 @@ void do_unordered(ccl::communicator* comm,
                 for (size_t coll_idx = 0; coll_idx < colls.size(); coll_idx++)
                 {
                     auto& coll = colls[coll_idx];
-                    for (size_t buf_idx = 0; buf_idx < BUF_COUNT; buf_idx++)
+                    for (size_t buf_idx = 0; buf_idx < options.buf_count; buf_idx++)
                     {
                         snprintf(match_id, MATCH_ID_SIZE, "coll_%s_%zu_count_%zu_buf_%zu",
                                  coll->name(), coll_idx, count, buf_idx);
@@ -174,9 +176,9 @@ void do_unordered(ccl::communicator* comm,
                 {
                     size_t real_coll_idx = colls.size() - coll_idx - 1;
                     auto& coll = colls[real_coll_idx];
-                    for (size_t buf_idx = 0; buf_idx < BUF_COUNT; buf_idx++)
+                    for (size_t buf_idx = 0; buf_idx < options.buf_count; buf_idx++)
                     {
-                        size_t real_buf_idx = BUF_COUNT - buf_idx - 1;
+                        size_t real_buf_idx = options.buf_count - buf_idx - 1;
                         snprintf(match_id, MATCH_ID_SIZE, "coll_%s_%zu_count_%zu_buf_%zu",
                                  coll->name(), real_coll_idx, count, real_buf_idx);
                         coll->start(count, real_buf_idx, coll_attr, reqs);
@@ -444,10 +446,7 @@ int main(int argc, char *argv[])
     coll_attr.match_id = match_id;
 
     if (parse_user_options(argc, argv, options))
-    {
-        PRINT("%s", help_message);
         return -1;
-    }
 
     try
     {
@@ -455,7 +454,7 @@ int main(int argc, char *argv[])
     }
     catch (const std::runtime_error& e)
     {
-        ASSERT(0, "cannot create coll objects: %s\n%s", e.what(), help_message);
+        ASSERT(0, "cannot create coll objects: %s\n", e.what());
     }
     catch (const std::logic_error& e)
     {
@@ -470,7 +469,7 @@ int main(int argc, char *argv[])
     if (options.coll_names.empty())
     {
         PRINT_BY_ROOT("empty coll list");
-        PRINT_BY_ROOT("%s", help_message);
+        print_help_usage(argv[0]);
         return -1;
     }
 
@@ -484,10 +483,10 @@ int main(int argc, char *argv[])
     switch (options.loop)
     {
         case LOOP_REGULAR:
-            do_regular(comm, coll_attr, colls, reqs);
+            do_regular(comm, coll_attr, colls, reqs, options);
             break;
         case LOOP_UNORDERED:
-            do_unordered(comm, coll_attr, colls, reqs);
+            do_unordered(comm, coll_attr, colls, reqs, options);
             break;
         default:
             ASSERT(0, "unknown loop %d", options.loop);

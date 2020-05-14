@@ -41,22 +41,33 @@ std::map<loop_type_t, std::string> loop_names =
     std::make_pair(LOOP_UNORDERED, "unordered")
   };
 
-constexpr const char* help_message = "\nspecify backend, loop type and comma-separated list of collective names\n\n"
-                                     "example:\n\t--coll allgatherv,allreduce,sparse_allreduce,sparse_allreduce_bfp16 --backend cpu --loop regular\n"
-                                     "example:\n\t--coll bcast,reduce --backend sycl --loop unordered \n"
-                                     "\n\n\tThe collectives \"sparse_*\" support additional configuration parameters:\n"
-                                     "\n\t\t\"indices_to_value_ratio\" - to produce indices count not more than 'elem_count/indices_to_value_ratio\n"
-                                     "\t\t\t(default value is 3)\n"
-                                     "\n\t\t\"vdim_count\" - maximum value counts for index\n"
-                                     "\t\t\t(default values determines all elapsed elements after \"indices_to_value_ratio\" recalculation application)\n"
-                                     "\n\tUser can set this additional parameters to sparse collective in the way:\n"
-                                     "\n\t\tsparse_allreduce[4:99]\n"
-                                     "\t\t\t - to set \"indices_to_value_ratio\" in 4 and \"vdim_cout\" in 99\n"
-                                     "\t\tsparse_allreduce[6]\n"
-                                     "\t\t\t - to set \"indices_to_value_ratio\" in 6 and \"vdim_cout\" in default\n"
-                                     "\n\tPlease use default configuration in most cases! You do not need to change it in general benchmark case\n";
-
 /* specific benchmark functions */
+void print_help_usage(const char* app)
+{
+    PRINT("USAGE: %s [OPTIONS]\n\n\t"
+          "[-b,--backend <backend>]\n\t"
+          "[-e,--loop <execution loop>]\n\t"
+          "[-l,--coll <collectives list>]\n\t"
+          "[-i,--iters <iteration count>]\n\t"
+          "[-p,--buf_count <number of parallel operations within single collective>]\n\t"
+          "[-c,--check <check result correctness>]\n\t"
+          "[-h,--help]\n\n"
+          "example:\n\t--coll allgatherv,allreduce,sparse_allreduce,sparse_allreduce_bfp16 --backend cpu --loop regular\n"
+          "example:\n\t--coll bcast,reduce --backend sycl --loop unordered \n"
+          "\n\n\tThe collectives \"sparse_*\" support additional configuration parameters:\n"
+          "\n\t\t\"indices_to_value_ratio\" - to produce indices count not more than 'elem_count/indices_to_value_ratio\n"
+          "\t\t\t(default value is 3)\n"
+          "\n\t\t\"vdim_count\" - maximum value counts for index\n"
+          "\t\t\t(default values determines all elapsed elements after \"indices_to_value_ratio\" recalculation application)\n"
+          "\n\tUser can set this additional parameters to sparse collective in the way:\n"
+          "\n\t\tsparse_allreduce[4:99]\n"
+          "\t\t\t - to set \"indices_to_value_ratio\" in 4 and \"vdim_cout\" in 99\n"
+          "\t\tsparse_allreduce[6]\n"
+          "\t\t\t - to set \"indices_to_value_ratio\" in 6 and \"vdim_cout\" in default\n"
+          "\n\tPlease use default configuration in most cases! You do not need to change it in general benchmark case\n",
+          app);
+}
+
 std::list<std::string> tokenize(const std::string& input, char delimeter)
 {
     std::stringstream ss(input);
@@ -140,54 +151,82 @@ typedef struct user_options_t
     ccl::stream_type backend;
     loop_type_t loop;
     std::list<std::string> coll_names;
-    int check_values;
+    size_t iters;
+    size_t buf_count;
+    size_t check_values;
 } user_options_t;
 
 int parse_user_options(int& argc, char** (&argv), user_options_t& options)
 {
+    int ch;
     int errors = 0;
-    int ch, index;
 
     // set values by default
     options.backend = ccl::stream_type::host;
     options.loop = LOOP_REGULAR;
     options.coll_names = tokenize(DEFAULT_COLL_LIST, ',');
+    options.iters = ITERS;
+    options.buf_count = BUF_COUNT;
     options.check_values = 1;
 
+    // values needed by getopt
+    const char* const short_options = "b:e:l:i:p:c:h:";
     struct option getopt_options[] =
     {
-        { "backend", required_argument, NULL, 'B' },
-        { "loop", required_argument, NULL, 'L' },
-        { "coll", required_argument, NULL, 'C' }
+        { "backend",      required_argument, 0, 'b' },
+        { "loop",         required_argument, 0, 'e' },
+        { "coll",         required_argument, 0, 'l' },
+        { "iters",        required_argument, 0, 'i' },
+        { "buf_count",    required_argument, 0, 'p' },
+        { "check",        required_argument, 0, 'c' },
+        { "help",         no_argument,       0, 'h' },
+        {  0,             0,                 0,  0 } // required at end of array.
     };
 
-    while ((ch = getopt_long(argc, argv, "C:B:L:", getopt_options, NULL)) != -1)
+    while ((ch = getopt_long(argc, argv, short_options,
+                             getopt_options, NULL)) != -1)
     {
         switch (ch)
         {
-            case 'B':
+            case 'b':
                 if (set_backend(optarg, options.backend))
                     errors++;
                 break;
-            case 'L':
+            case 'e':
                 if (set_loop(optarg, options.loop))
                     errors++;
                 break;
-            case 'C':
+            case 'l':
                 options.coll_names = tokenize(optarg, ',');
                 break;
+            case 'i':
+                options.iters = atoi(optarg);
+                break;
+            case 'p':
+                options.buf_count = atoi(optarg);
+                break;
+            case 'c':
+                options.check_values = atoi(optarg);
+                break;
+            case 'h':
+                print_help_usage(argv[0]);
+                return -1;
             default:
                 errors++;
                 break;
         }
     }
 
-    for (index = optind; index < argc; index++)
+    if (optind < argc)
+    {
+        PRINT("non-option ARGV-elements given");
         errors++;
+    }
 
     if (errors > 0)
     {
         PRINT("failed to parse user options, errors %d", errors);
+        print_help_usage(argv[0]);
         return -1;
     }
 
@@ -203,9 +242,9 @@ void print_user_options(const user_options_t& options, ccl::communicator* comm)
     std::copy(options.coll_names.begin(), options.coll_names.end(),
               std::ostream_iterator<std::string>(sstream, " "));
 
-    PRINT_BY_ROOT("start colls: %s, iters: %d, buf_count: %d, ranks %zu, check_values %d, backend %s, loop %s",
-                  sstream.str().c_str(), ITERS, BUF_COUNT, comm->size(), options.check_values, backend_str.c_str(),
-                  loop_str.c_str());
+    PRINT_BY_ROOT("start colls: %s, iters: %zu, buf_count: %zu, ranks: %zu, check_values: %zu, backend: %s, loop: %s",
+                  sstream.str().c_str(), options.iters, options.buf_count, comm->size(), options.check_values,
+                  backend_str.c_str(), loop_str.c_str());
 }
 
 #endif /* BENCHMARK_HPP */
