@@ -45,6 +45,8 @@ public:
                                       int>::type = 0>
     static std::unique_ptr<ccl_stream> create(NativeStream& native_stream);
 
+    static std::unique_ptr<ccl_stream> create();
+
 protected:
     template <class NativeStream,
               typename std::enable_if<std::is_class<typename std::remove_cv<NativeStream>::type>::value,

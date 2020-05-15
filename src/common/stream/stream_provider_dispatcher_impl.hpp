@@ -29,19 +29,21 @@ stream_provider_dispatcher::stream_provider_dispatcher(NativeStream stream)
     native_stream_set = false;      //not set cl::sycl::queue
     native_stream_handle = stream;
 #else
-    native_stream = stream;
-    native_stream_set = true;
+    native_stream = static_cast<stream_native_t>(stream);
+    if (native_stream)
+        native_stream_set = true;
+    else
+        native_stream_set = false;
 #endif
 }
 
 stream_provider_dispatcher::stream_native_t stream_provider_dispatcher::get_native_stream() const
 {
-#ifdef CCL_ENABLE_SYCL
     if (!native_stream_set)
     {
-        abort();
+        throw  ccl::ccl_error("native stream is not set");
     }
-#endif
+
     return native_stream;
 }
 
@@ -50,6 +52,10 @@ stream_provider_dispatcher::stream_native_handle_t stream_provider_dispatcher::g
 #ifdef CCL_ENABLE_SYCL
     return native_stream_handle;
 #else
+    if (!native_stream_set)
+    {
+        throw ccl::ccl_error("native stream is not set");
+    }
     return native_stream;
 #endif
 }
@@ -79,11 +85,8 @@ std::unique_ptr<ccl_stream> stream_provider_dispatcher::create(NativeStream& nat
 {
     ccl_stream_type_t type = ccl_stream_cpu;
 #ifdef CCL_ENABLE_SYCL
-    type = native_stream.get_device().is_host() ? ccl_stream_cpu : ccl_stream_sycl;
-    if (type == ccl_stream_sycl)
-    {
-        LOG_INFO("SYCL queue's device is ", native_stream.get_device().template get_info<cl::sycl::info::device::name>());
-    }
+    type = native_stream.get_device().is_host() ? ccl_stream_cpu : ccl_stream_gpu;
+    LOG_INFO("SYCL queue's device is ", native_stream.get_device().template get_info<cl::sycl::info::device::name>());
 #endif /* CCL_ENABLE_SYCL */
 
     return std::unique_ptr<ccl_stream>(new ccl_stream(type, native_stream));
@@ -95,7 +98,13 @@ template <class NativeStream,
 std::unique_ptr<ccl_stream> stream_provider_dispatcher::create(NativeStream& native_stream)
 {
     static_assert(std::is_same<NativeStream, stream_native_handle_t>::value, "Unsupported 'NativeStream'");
-    return std::unique_ptr<ccl_stream>(new ccl_stream(ccl_stream_sycl, native_stream));
+    return std::unique_ptr<ccl_stream>(new ccl_stream(ccl_stream_gpu, native_stream));
+}
+
+std::unique_ptr<ccl_stream> stream_provider_dispatcher::create()
+{
+    void* ptr = nullptr;
+    return std::unique_ptr<ccl_stream>(new ccl_stream(ccl_stream_host, ptr));
 }
 
 stream_provider_dispatcher::stream_native_handle_t

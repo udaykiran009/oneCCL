@@ -41,9 +41,10 @@ inline bool has_accelerator()
     return false;
 }
 
-inline int create_sycl_queue(int argc, char **argv, cl::sycl::queue &queue)
+inline int create_sycl_queue(int argc, char **argv, cl::sycl::queue &queue, ccl_stream_type_t& stream_type)
 {
-   auto exception_handler = [&](cl::sycl::exception_list elist) {
+    stream_type = ccl_stream_cpu;
+    auto exception_handler = [&](cl::sycl::exception_list elist) {
       for (std::exception_ptr const& e : elist) {
         try {
           std::rethrow_exception(e);
@@ -60,9 +61,11 @@ inline int create_sycl_queue(int argc, char **argv, cl::sycl::queue &queue)
         if (strcmp(argv[1], "cpu") == 0)
         {
             selector.reset(new cl::sycl::cpu_selector());
+            stream_type = ccl_stream_cpu;
         }
         else if (strcmp(argv[1], "gpu") == 0)
         {
+            stream_type = ccl_stream_gpu;
             if (has_gpu()) 
             {
                 selector.reset(new cl::sycl::gpu_selector());
@@ -80,10 +83,12 @@ inline int create_sycl_queue(int argc, char **argv, cl::sycl::queue &queue)
         }
         else if (strcmp(argv[1], "host") == 0)
         {
+            stream_type = ccl_stream_cpu;
             selector.reset(new cl::sycl::host_selector());
         }
         else if (strcmp(argv[1], "default") == 0)
         {
+            stream_type = ccl_stream_cpu;
             if (!has_accelerator())
             {
                 selector.reset(new cl::sycl::default_selector());

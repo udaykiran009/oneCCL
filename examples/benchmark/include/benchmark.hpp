@@ -32,7 +32,7 @@ typedef enum
 std::map<ccl::stream_type, std::string> backend_names =
   {
     std::make_pair(ccl::stream_type::host, "cpu"),
-    std::make_pair(ccl::stream_type::device, "sycl") /* TODO: align names */
+    std::make_pair(ccl::stream_type::gpu, "sycl") /* TODO: align names */
   };
 
 std::map<loop_type_t, std::string> loop_names =
@@ -114,14 +114,14 @@ int set_backend(const std::string& option_value, ccl::stream_type& backend)
     std::set<std::string> supported_option_values { backend_names[ccl::stream_type::host] };
 
 #ifdef CCL_ENABLE_SYCL
-    supported_option_values.insert(backend_names[ccl::stream_type::device]);
+    supported_option_values.insert(backend_names[ccl::stream_type::gpu]);
 #endif
 
     if (check_supported_options(option_name, option_value, supported_option_values))
         return -1;
 
-    backend = (option_value == backend_names[ccl::stream_type::device]) ?
-        ccl::stream_type::device : ccl::stream_type::host;
+    backend = (option_value == backend_names[ccl::stream_type::gpu]) ?
+        ccl::stream_type::gpu : ccl::stream_type::host;
 
     return 0;
 }

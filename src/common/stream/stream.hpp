@@ -36,11 +36,25 @@ public:
     {
         return type;
     }
+    bool is_sycl_device_stream() const
+    {
+        return (type == ccl_stream_cpu || type == ccl_stream_gpu);
+    }
 
     static std::unique_ptr<ccl_stream> create(stream_native_t& native_stream);
 private:
-    template<class NativeStream>
+    template<class NativeStream,
+             typename std::enable_if<std::is_class<typename std::remove_cv<NativeStream>::type>::value,
+                                     int>::type = 0>
     ccl_stream(ccl_stream_type_t stream_type, NativeStream& native_stream) :
+        stream_provider_dispatcher(native_stream),
+        type(stream_type)
+    {
+    }
+    template<class NativeStream,
+             typename std::enable_if<not std::is_class<typename std::remove_cv<NativeStream>::type>::value,
+                                     int>::type = 0>
+    ccl_stream(ccl_stream_type_t stream_type, NativeStream native_stream) :
         stream_provider_dispatcher(native_stream),
         type(stream_type)
     {

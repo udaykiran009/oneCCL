@@ -110,38 +110,22 @@ ccl::communicator_t CCL_API ccl::environment::create_communicator(const ccl::com
     return communicator_t(new ccl::communicator(attr));
 }
 
-CCL_API ccl::stream_t ccl::environment::create_stream(ccl::stream_type type/* = ccl::stream_type::cpu*/,
-                                                      void* native_stream/* = nullptr*/) const
+template<class stream_native_type, typename T>
+CCL_API ccl::stream_t ccl::environment::create_stream(stream_native_type& s)
 {
+    return stream_t(new ccl::stream(stream_provider_dispatcher::create(s)));
+}
 
-/*
-#ifndef CCL_ENABLE_SYCL
-    if (type == ccl::stream_type::sycl)
-    {
-        throw ccl_error("SYCL stream is not supported in current ccl version");
-    }
-*/
-#ifdef MULTI_GPU_SUPPORT
-    #ifdef CCL_ENABLE_SYCL
-        return stream_t(new ccl::stream(stream_provider_dispatcher::create(*static_cast<cl::sycl::queue*>(native_stream))));
-    #else
-        return stream_t(new ccl::stream(stream_provider_dispatcher::create(*static_cast<ze_command_queue_handle_t*>(native_stream))));
-    #endif
-#else
-    std::unique_ptr<ccl_stream> inner_stream;
-    #ifdef CCL_ENABLE_SYCL
-        if( type == ccl::stream_type::device)
-        {
-            inner_stream = stream_provider_dispatcher::create(*static_cast<cl::sycl::queue*>(native_stream));
-        }
-        else
-    #endif
-            inner_stream = stream_provider_dispatcher::create(native_stream);
+#define STREAM_CREATOR_INSTANTIATION(type)                                                                                                           \
+template ccl::stream_t CCL_API ccl::environment::create_stream(type& stream);
 
-    //for legacy stream: override type for 'host' related queue
-    inner_stream->type = static_cast<ccl_stream_type_t>(type);
-    return stream_t(new ccl::stream(std::move(inner_stream)));
+#ifdef CCL_ENABLE_SYCL
+STREAM_CREATOR_INSTANTIATION(cl::sycl::queue)
 #endif
+
+CCL_API ccl::stream_t ccl::environment::create_stream() const
+{
+    return stream_t(new ccl::stream(stream_provider_dispatcher::create()));
 }
 
 CCL_API ccl::environment::~environment()

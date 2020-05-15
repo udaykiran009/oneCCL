@@ -6,6 +6,7 @@ int main(int argc, char **argv)
     int i = 0;
     size_t size = 0;
     size_t rank = 0;
+    ccl_stream_type_t stream_type;
 
     cl::sycl::queue q;
     cl::sycl::buffer<int, 1> buf(COUNT);
@@ -15,11 +16,11 @@ int main(int argc, char **argv)
     rank = comm->rank();
     size = comm->size();
 
-    if (create_sycl_queue(argc, argv, q) != 0) {
+    if (create_sycl_queue(argc, argv, q, stream_type) != 0) {
         return -1;
     }
     /* create SYCL stream */
-    auto stream = ccl::environment::instance().create_stream(ccl::stream_type::device, &q);
+    auto stream = ccl::environment::instance().create_stream(q);
 
     {
         /* open buf and initialize it on the CPU side */

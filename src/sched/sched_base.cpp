@@ -25,7 +25,7 @@ void ccl_sched_base::update_coll_param_and_attr(const ccl_coll_param& param,
                                                 const ccl_coll_attr& attr)
 {
 #ifdef CCL_ENABLE_SYCL
-    if (param.stream && (param.stream->get_type() == ccl_stream_sycl))
+    if (param.stream && param.stream->is_sycl_device_stream())
     {
         coll_param.sycl_buf = static_cast<ccl_sycl_buffer_t*>(param.buf);
         coll_param.sycl_send_buf = static_cast<ccl_sycl_buffer_t*>((void*)param.send_buf);
@@ -235,8 +235,7 @@ void ccl_sched_base::alloc_buffers_for_sycl_copy()
 #ifdef CCL_ENABLE_SYCL
 
     ccl_coll_param& param = coll_param;
-
-    if (!param.stream || param.stream->get_type() != ccl_stream_sycl)
+    if (!param.stream || (!param.stream->is_sycl_device_stream()))
         return;
 
     LOG_DEBUG("alloc tmp buffers for D2H and H2D copies, coll_type ", ccl_coll_type_to_str(param.ctype));

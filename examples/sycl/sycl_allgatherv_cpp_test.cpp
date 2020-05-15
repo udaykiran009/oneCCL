@@ -8,6 +8,7 @@ int main(int argc, char **argv)
     size_t size = 0;
     size_t rank = 0;
     size_t* recv_counts;
+    ccl_stream_type_t stream_type;
 
     cl::sycl::queue q;
 
@@ -20,11 +21,11 @@ int main(int argc, char **argv)
     cl::sycl::buffer<int, 1> expected_buf(COUNT * size);
     cl::sycl::buffer<int, 1> recvbuf(size * COUNT);
 
-    if (create_sycl_queue(argc, argv, q) != 0) {
+    if (create_sycl_queue(argc, argv, q, stream_type) != 0) {
         return -1;
     }
     /* create SYCL stream */
-    auto stream = ccl::environment::instance().create_stream(ccl::stream_type::device, &q);
+    auto stream = ccl::environment::instance().create_stream(q);
 
     recv_counts = static_cast<size_t*>(malloc(size * sizeof(size_t)));
 

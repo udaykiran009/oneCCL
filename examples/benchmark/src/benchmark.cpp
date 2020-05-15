@@ -225,7 +225,7 @@ void create_cpu_colls(std::list<std::string>& names, coll_list_t& colls)
 
     std::stringstream error_messages_stream;
     base_coll::comm = ccl::environment::instance().create_communicator();
-    base_coll::stream = ccl::environment::instance().create_stream(ccl::stream_type::host, nullptr);
+    base_coll::stream = ccl::environment::instance().create_stream();
     for (auto names_it = names.begin(); names_it != names.end(); )
     {
         const std::string& name = *names_it;
@@ -317,7 +317,7 @@ void create_sycl_colls(std::list<std::string>& names, coll_list_t& colls)
             
     std::stringstream error_messages_stream;
     base_coll::comm = ccl::environment::instance().create_communicator();
-    base_coll::stream = ccl::environment::instance().create_stream(ccl::stream_type::device, &sycl_queue);
+    base_coll::stream = ccl::environment::instance().create_stream(sycl_queue);
 
     for (auto names_it = names.begin(); names_it != names.end(); )
     {
@@ -421,7 +421,7 @@ void create_colls(std::list<std::string>& coll_names, ccl::stream_type backend,
         case ccl::stream_type::host:
             create_cpu_colls<Dtype>(coll_names, colls);
             break;
-        case ccl::stream_type::device:
+        case ccl::stream_type::gpu:
 #ifdef CCL_ENABLE_SYCL
             create_sycl_colls<Dtype>(coll_names, colls);
 #else

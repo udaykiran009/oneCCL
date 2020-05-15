@@ -69,13 +69,14 @@ public:
     communicator_t create_communicator(const ccl::comm_attr* attr = nullptr) const;
 
     /**
-     * DEPRECATED:
-     * Creates a new ccl stream of @c type with @c native stream
-     * @param type the @c ccl::stream_type and may be @c cpu or @c sycl (if configured)
+     * Creates a new ccl stream from @stream_native_type
      * @param native_stream the existing handle of stream
-     *
      */
-    stream_t create_stream(ccl::stream_type type = ccl::stream_type::host, void* native_stream = nullptr) const;
+    template<class stream_native_type,
+             class = typename std::enable_if<is_stream_supported<stream_native_type>()>::type>
+    stream_t create_stream(stream_native_type& native_stream);
+
+    stream_t create_stream() const;
 
     /**
      * Retrieves the current version
@@ -89,13 +90,6 @@ public:
     comm_group_t create_comm_group(size_t current_device_group_size,
                                    size_t process_device_group_size,
                                    ccl::shared_communicator_t parent_comm = ccl::shared_communicator_t());
-
-    /**
-     * Creates a new ccl stream from @stream_native_type
-     */
-    template<class stream_native_type,
-             class = typename std::enable_if<is_stream_supported<stream_native_type>()>::type>
-    stream_t create_stream(stream_native_type& s);
 
     /**
      * Created @shared_comm_device_attr_t, which used to create device_communicators from @comm_group_t

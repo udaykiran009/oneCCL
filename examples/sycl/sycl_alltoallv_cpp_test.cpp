@@ -8,6 +8,7 @@ int main(int argc, char **argv)
     size_t rank = 0;
     size_t* send_counts;
     size_t* recv_counts;
+    ccl_stream_type_t stream_type;
 
     auto comm = ccl::environment::instance().create_communicator();
 
@@ -18,11 +19,11 @@ int main(int argc, char **argv)
     cl::sycl::buffer<int, 1> sendbuf(COUNT * size);
     cl::sycl::buffer<int, 1> recvbuf(COUNT * size);
 
-    if (create_sycl_queue(argc, argv, q) != 0) {
+    if (create_sycl_queue(argc, argv, q, stream_type) != 0) {
         return -1;
     }
     /* create SYCL stream */
-    auto stream = ccl::environment::instance().create_stream(ccl::stream_type::device, &q);
+    auto stream = ccl::environment::instance().create_stream(q);
 
     send_counts = static_cast<size_t*>(malloc(size * sizeof(size_t)));
     recv_counts = static_cast<size_t*>(malloc(size * sizeof(size_t)));

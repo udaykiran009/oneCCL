@@ -323,7 +323,7 @@ ccl_status_t ccl_parallelizer::process(ccl_master_sched* sched)
         case ccl_coll_bcast:
 #ifdef CCL_ENABLE_SYCL
             /* convert sycl buffer */
-            if (coll_param.stream && (ccl_stream_type_t)(coll_param.stream->get_type()) == ccl_stream_sycl)
+            if (coll_param.stream && coll_param.stream->is_sycl_device_stream())
             {
                 if (comm->rank() == coll_param.root)
                 {
@@ -355,7 +355,7 @@ ccl_status_t ccl_parallelizer::process(ccl_master_sched* sched)
             }
 #ifdef CCL_ENABLE_SYCL
             /* convert sycl buffer */
-            if (coll_param.stream && (ccl_stream_type_t)(coll_param.stream->get_type()) == ccl_stream_sycl)
+            if (coll_param.stream && coll_param.stream->is_sycl_device_stream())
             {
                 sched->sync_partial_scheds();
                 entry_factory::make_entry<sycl_copy_host_to_device_entry>(part_scheds[0].get(),
@@ -374,7 +374,7 @@ ccl_status_t ccl_parallelizer::process(ccl_master_sched* sched)
             {
 #ifdef CCL_ENABLE_SYCL
                 /* convert sycl buffer */
-                if (coll_param.stream && (ccl_stream_type_t)(coll_param.stream->get_type()) == ccl_stream_sycl)
+                if (coll_param.stream && coll_param.stream->is_sycl_device_stream())
                 {
                     entry_factory::make_entry<sycl_copy_device_to_host_entry>(part_scheds[0].get(),
                                                                               ccl_buffer(&(coll_param.sycl_send_buf),
@@ -408,7 +408,7 @@ ccl_status_t ccl_parallelizer::process(ccl_master_sched* sched)
             }
 #ifdef CCL_ENABLE_SYCL
             /* convert sycl buffer */
-            if (coll_param.stream && (ccl_stream_type_t)(coll_param.stream->get_type()) == ccl_stream_sycl)
+            if (coll_param.stream && coll_param.stream->is_sycl_device_stream())
             {
                 sched->sync_partial_scheds();
                 if (comm->rank() == coll_param.root)
@@ -432,7 +432,7 @@ ccl_status_t ccl_parallelizer::process(ccl_master_sched* sched)
 
 #ifdef CCL_ENABLE_SYCL
             /* convert sycl buffer */
-            if (coll_param.stream && (ccl_stream_type_t)(coll_param.stream->get_type()) == ccl_stream_sycl)
+            if (coll_param.stream && coll_param.stream->is_sycl_device_stream())
             {
                 entry_factory::make_entry<sycl_copy_device_to_host_entry>(part_scheds[0].get(),
                                                                           ccl_buffer(&(coll_param.sycl_send_buf),
@@ -576,7 +576,7 @@ ccl_status_t ccl_parallelizer::process(ccl_master_sched* sched)
 
 #ifdef CCL_ENABLE_SYCL
             /* convert sycl buffer */
-            if (coll_param.stream && (ccl_stream_type_t)(coll_param.stream->get_type()) == ccl_stream_sycl)
+            if (coll_param.stream && coll_param.stream->is_sycl_device_stream())
             {
                 sched->sync_partial_scheds();
                 entry_factory::make_entry<sycl_copy_host_to_device_entry>(part_scheds[0].get(),
@@ -596,7 +596,7 @@ ccl_status_t ccl_parallelizer::process(ccl_master_sched* sched)
         {
 #ifdef CCL_ENABLE_SYCL
             /* convert sycl buffer */
-            if (coll_param.stream && (ccl_stream_type_t)(coll_param.stream->get_type()) == ccl_stream_sycl)
+            if (coll_param.stream && coll_param.stream->is_sycl_device_stream())
             {
                 entry_factory::make_entry<sycl_copy_device_to_host_entry>(part_scheds[0].get(),
                                                                           ccl_buffer(&(coll_param.sycl_send_buf),
@@ -742,7 +742,7 @@ ccl_status_t ccl_parallelizer::process(ccl_master_sched* sched)
             }
 #ifdef CCL_ENABLE_SYCL
             /* convert sycl buffer */
-            if (coll_param.stream && (ccl_stream_type_t)(coll_param.stream->get_type()) == ccl_stream_sycl)
+            if (coll_param.stream && coll_param.stream->is_sycl_device_stream())
             {
                 sched->sync_partial_scheds();
                 entry_factory::make_entry<sycl_copy_host_to_device_entry>(part_scheds[0].get(),
@@ -760,7 +760,7 @@ ccl_status_t ccl_parallelizer::process(ccl_master_sched* sched)
         case ccl_coll_alltoall:
 #ifdef CCL_ENABLE_SYCL
             /* convert sycl buffer */
-            if (coll_param.stream && (ccl_stream_type_t)(coll_param.stream->get_type()) == ccl_stream_sycl)
+            if (coll_param.stream && coll_param.stream->is_sycl_device_stream())
             {
                 entry_factory::make_entry<sycl_copy_device_to_host_entry>(part_scheds[0].get(),
                                                                           ccl_buffer(&(coll_param.sycl_send_buf),
@@ -839,7 +839,7 @@ ccl_status_t ccl_parallelizer::process(ccl_master_sched* sched)
             }
 #ifdef CCL_ENABLE_SYCL
         /* convert sycl buffer */
-            if (coll_param.stream && (ccl_stream_type_t)(coll_param.stream->get_type()) == ccl_stream_sycl)
+            if (coll_param.stream && coll_param.stream->is_sycl_device_stream())
             {
                 sched->sync_partial_scheds();
                 entry_factory::make_entry<sycl_copy_host_to_device_entry>(part_scheds[0].get(),
@@ -857,7 +857,7 @@ ccl_status_t ccl_parallelizer::process(ccl_master_sched* sched)
         case ccl_coll_alltoallv:
 #ifdef CCL_ENABLE_SYCL
             /* convert sycl buffer */
-            if (coll_param.stream && (ccl_stream_type_t)(coll_param.stream->get_type()) == ccl_stream_sycl)
+            if (coll_param.stream && coll_param.stream->is_sycl_device_stream())
             {
                 entry_factory::make_entry<sycl_copy_device_to_host_entry>(part_scheds[0].get(),
                                                                           ccl_buffer(&(coll_param.sycl_send_buf),
@@ -937,7 +937,7 @@ ccl_status_t ccl_parallelizer::process(ccl_master_sched* sched)
             }
 #ifdef CCL_ENABLE_SYCL
             /* convert sycl buffer */
-            if (coll_param.stream && (ccl_stream_type_t)(coll_param.stream->get_type()) == ccl_stream_sycl)
+            if (coll_param.stream && coll_param.stream->is_sycl_device_stream())
             {
                 sched->sync_partial_scheds();
                 entry_factory::make_entry<sycl_copy_host_to_device_entry>(part_scheds[0].get(),

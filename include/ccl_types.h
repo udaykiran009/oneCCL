@@ -58,8 +58,9 @@ typedef enum
 /** Stream types. */
 typedef enum
 {
-    ccl_stream_cpu  = 0,
-    ccl_stream_sycl = 1,
+    ccl_stream_host  = 0,
+    ccl_stream_cpu   = 1,
+    ccl_stream_gpu   = 2,
 
     ccl_stream_last_value
 } ccl_stream_type_t;

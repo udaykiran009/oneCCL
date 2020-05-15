@@ -8,6 +8,7 @@ int main(int argc, char **argv)
     size_t rank = 0;
     size_t* send_counts;
     size_t* recv_counts;
+    ccl_stream_type_t stream_type;
 
     ccl_init();
     ccl_get_comm_rank(NULL, &rank);
@@ -20,11 +21,11 @@ int main(int argc, char **argv)
     ccl_request_t request;
     ccl_stream_t stream;
 
-    if (create_sycl_queue(argc, argv, q) != 0) {
+    if (create_sycl_queue(argc, argv, q, stream_type) != 0) {
         return -1;
     }
     /* create SYCL stream */
-    ccl_stream_create(ccl_stream_sycl, &q, &stream);
+    ccl_stream_create(stream_type, &q, &stream);
 
     send_counts = static_cast<size_t*>(malloc(size * sizeof(size_t)));
     recv_counts = static_cast<size_t*>(malloc(size * sizeof(size_t)));

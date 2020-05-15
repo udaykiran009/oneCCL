@@ -1,11 +1,12 @@
-#ifdef MULTI_GPU_SUPPORT
 #pragma once
 
 #ifndef CCL_PRODUCT_FULL
     #error "Do not include this file directly. Please include 'ccl_type_traits.hpp'"
 #endif
 
-#include <ze_api.h>
+#ifdef MULTI_GPU_SUPPORT
+    #include <ze_api.h>
+#endif
 namespace ccl
 {
 
@@ -25,11 +26,18 @@ struct api_type_info
         static constexpr bool is_class()     { return std::is_class<api_type>::value; }                         \
     };
 
-API_CLASS_TYPE_INFO(ze_command_queue_handle_t);
+    template <class native_stream>
+    constexpr bool is_stream_supported()
+    {
+        return api_type_info</*typename std::remove_pointer<typename std::remove_cv<*/native_stream/*>::type>::type*/>::is_supported();
+    }
 
 #ifdef CCL_ENABLE_SYCL
     API_CLASS_TYPE_INFO(cl::sycl::queue);
 #endif
+
+#ifdef MULTI_GPU_SUPPORT
+    API_CLASS_TYPE_INFO(ze_command_queue_handle_t);
 
 template<>
 struct ccl_device_attributes_traits<ccl_device_preferred_topology_class>
@@ -43,11 +51,6 @@ struct ccl_device_attributes_traits<ccl_device_preferred_group>
     using type = device_topology_group;
 };
 
-template <class native_stream>
-constexpr bool is_stream_supported()
-{
-    return api_type_info</*typename std::remove_pointer<typename std::remove_cv<*/native_stream/*>::type>::type*/>::is_supported();
-}
 
 #ifdef CCL_ENABLE_SYCL
 template<>
@@ -127,5 +130,5 @@ unified_device_type create_from_index(Args&& ...args)
 {
     return unified_device_type(std::forward<Args>(args)...);
 }
+#endif /* MULTI_GPU_SUPPORT */
 }
-#endif //MULTI_GPU_SUPPORT

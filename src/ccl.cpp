@@ -342,7 +342,7 @@ ccl_status_t ccl_stream_create(ccl_stream_type_t type,
     #endif
 #else
     #ifdef CCL_ENABLE_SYCL
-        if( type == ccl_stream_sycl)
+        if( type != ccl_stream_host)
         {
             *stream = static_cast<void*>(stream_provider_dispatcher::create(*static_cast<cl::sycl::queue*>(native_stream)).release());
         }

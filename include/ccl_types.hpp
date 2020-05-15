@@ -48,8 +48,9 @@ enum datatype: int
  */
 enum class stream_type
 {
-    host = ccl_stream_cpu,
-    device = ccl_stream_sycl,
+    host = ccl_stream_host,
+    cpu = ccl_stream_cpu,
+    gpu = ccl_stream_gpu,
 
     last_value = ccl_stream_last_value
 };

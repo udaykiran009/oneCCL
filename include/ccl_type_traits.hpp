@@ -119,7 +119,5 @@ constexpr bool is_class_supported()
     return (is_class<type>() and is_supported<type>());
 }
 }
-#ifdef MULTI_GPU_SUPPORT
-    #include "ccl_device_type_traits.hpp"
-#endif
+#include "ccl_device_type_traits.hpp"
 #endif //TRAITS_H_
