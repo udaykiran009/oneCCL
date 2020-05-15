@@ -191,7 +191,7 @@ run()
 
             if [ "$transport" == "mpi" ];
             then
-                examples_to_run=`find . -type f -executable -printf '%P\n' | grep -v 'unordered_allreduce' | grep -v 'custom_allreduce' | grep -v 'datatype' | grep -v 'allreduce_rs'`
+                examples_to_run=`find . -type f -executable -printf '%P\n' | grep -v 'unordered_allreduce' | grep -v 'custom_allreduce' | grep -v 'datatype' | grep -v 'allreduce_rs' | grep -v 'communicator'`
             else
                 examples_to_run=`find . -type f -executable -printf '%P\n' | grep -v 'allreduce_rs'`
             fi
