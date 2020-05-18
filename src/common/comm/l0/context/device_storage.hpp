@@ -49,7 +49,6 @@ struct device_storage
         {
         }
         accessor(accessor&&src) = default;
-        accessor& operator=(accessor&&src) = default;
 
         specific_indexed_device_storage& get()
         {

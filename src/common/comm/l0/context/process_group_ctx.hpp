@@ -4,12 +4,12 @@
 
 namespace native
 {
-class device_storage;
+struct device_storage;
 
 template<ccl::device_topology_type>
-class device_community;
+struct device_community;
 
-class allied_process_group_scheduler;
+struct allied_process_group_scheduler;
 //TODO separate class on two: context & process device requestor
 struct process_group_context :
         scale_up_ctx_specific<process_group_context>

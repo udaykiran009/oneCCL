@@ -3,7 +3,7 @@
 
 namespace native
 {
-    class process_group_context;
+    struct process_group_context;
 }
 
 class process_a2a_communicator :

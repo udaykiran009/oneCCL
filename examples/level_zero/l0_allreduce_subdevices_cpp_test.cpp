@@ -106,7 +106,14 @@ void str_to_mset(const char* input,
 
 using processing_type = float;
 using processing_type_ptr = float*;
-
+#ifdef CCL_ENABLE_SYCL
+void user_thread_idx(size_t thread_idx, ccl::device_indices_t thread_device_idx, size_t total_devices_in_process) 
+{
+    (void)thread_idx;                                                                                          
+    (void)thread_device_idx;                                                                                   
+    (void)total_devices_in_process; 
+}
+#else
 void user_thread_idx(size_t thread_idx, ccl::device_indices_t thread_device_idx, size_t total_devices_in_process)
 {
     using namespace ::native;
@@ -248,6 +255,7 @@ void user_thread_idx(size_t thread_idx, ccl::device_indices_t thread_device_idx,
         }
     }
 }
+#endif
 
 int main(int argc, char** argv)
 {

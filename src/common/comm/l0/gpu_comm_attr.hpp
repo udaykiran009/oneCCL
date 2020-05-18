@@ -10,14 +10,14 @@
 
 namespace native
 {
-    class process_group_context;
-    class thread_group_context;
+    struct process_group_context;
+    struct thread_group_context;
 }
 
 namespace ccl
 {
 class communicator;
-class communicator_interface;
+struct communicator_interface;
 struct context_comm_addr
 {
     size_t thread_idx = 0;
@@ -28,7 +28,7 @@ struct context_comm_addr
     std::string to_string() const;
 };
 
-class gpu_comm_attr
+struct gpu_comm_attr
 {
 public:
     friend class device_group_ring_communicator;

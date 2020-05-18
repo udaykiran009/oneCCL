@@ -16,6 +16,7 @@ template <class ctx_impl_t,
           class ...devices>
 class scaleup_ctx_base
 {
+public:
     using own_t = scaleup_ctx_base<ctx_impl_t, devices...>;
 
     template<class device_t>
@@ -40,7 +41,6 @@ class scaleup_ctx_base
         return static_cast<const ctx_impl_t*>(this);
     }
 
-public:
     template<ccl::device_topology_type topology_type, class device_t>
     void attach(proxy_observer_ptr<device_t> obj)
     {

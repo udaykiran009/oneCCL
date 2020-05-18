@@ -4,12 +4,12 @@
 
 namespace native
 {
-    class ccl_device;
+    struct ccl_device;
 }
 
 namespace ccl
 {
-class gpu_comm_attr;
+struct gpu_comm_attr;
 struct communicator_interface : public communicator_interface_dispatcher
 {
     using native_device_type     = typename ccl::unified_device_type::native_t;

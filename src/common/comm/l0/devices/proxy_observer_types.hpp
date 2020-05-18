@@ -4,9 +4,9 @@
 
 namespace native
 {
-class device_group_context;
-class thread_group_context;
-class process_group_context;
+struct device_group_context;
+struct thread_group_context;
+struct process_group_context;
 
 
 template<class impl, class ...context_t>

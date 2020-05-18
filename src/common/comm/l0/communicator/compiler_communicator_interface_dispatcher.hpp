@@ -7,12 +7,12 @@
 
 namespace native
 {
-    class ccl_device;
+    struct ccl_device;
 }
 namespace ccl
 {
 
-class communicator_interface;
+struct communicator_interface;
 using communicator_interface_ptr = std::shared_ptr<communicator_interface>;
 
 struct communicator_interface_dispatcher

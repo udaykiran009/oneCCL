@@ -28,7 +28,6 @@ struct allied_process_group_scheduler : public thread_group_scheduler
                                    std::shared_ptr<ccl::communicator> communicator,
                                    device_storage& node_devices) :
       base(threads_count),
-      process_group_size(process_count),
       ccl_communicator(communicator),
       node_total_devices(node_devices)
     {
@@ -141,7 +140,6 @@ struct allied_process_group_scheduler : public thread_group_scheduler
         return req;
     }
 private:
-    size_t process_group_size;
     std::shared_ptr<ccl::communicator> ccl_communicator;
     device_storage& node_total_devices;
 };

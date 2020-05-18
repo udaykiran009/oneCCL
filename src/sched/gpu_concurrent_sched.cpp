@@ -5,8 +5,7 @@ ccl_gpu_concurrent_sched::ccl_gpu_concurrent_sched(size_t expected_threads_count
                                                    const ccl_coll_param& coll_param/* = ccl_coll_param()*/)
  : ccl_sched_base(coll_param),
    ccl_request(),
-   partial_scheds(expected_threads_count),
-   thread_count(expected_threads_count)
+   partial_scheds(expected_threads_count)
 {
 #ifdef ENABLE_DEBUG
     set_dump_callback([this](std::ostream &out)

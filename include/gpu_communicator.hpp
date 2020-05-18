@@ -7,9 +7,9 @@
 
 namespace ccl
 {
-class gpu_comm_attr;
-class communicator_interface;
-class device_attr_impl;
+struct gpu_comm_attr;
+struct communicator_interface;
+struct device_attr_impl;
 
 /**
  * Used to create device communicator with specific attributes,
@@ -19,7 +19,7 @@ class ccl_device_attr : public ccl_comm_device_attr_t::device_core_attr
 {
 public:
     friend class environment;
-    friend class communicator_interface_dispatcher;
+    friend struct communicator_interface_dispatcher;
     ~ccl_device_attr() noexcept;
 
     /**

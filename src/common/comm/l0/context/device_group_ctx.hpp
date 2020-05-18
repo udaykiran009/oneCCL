@@ -11,10 +11,10 @@
 class device_group_router;
 namespace native
 {
-class device_storage;
+struct device_storage;
 
 template<ccl::device_topology_type>
-class device_community;
+struct device_community;
 
 template<ccl::device_topology_type type>
 using device_community_ptr = std::shared_ptr<device_community<type>>;
@@ -22,7 +22,7 @@ using device_community_ptr = std::shared_ptr<device_community<type>>;
 template<ccl::device_topology_type ...types>
 using device_community_tuple_t = std::tuple<device_community_ptr<types>...>;
 
-class device_group_scheduler;
+struct device_group_scheduler;
 
 
 struct device_group_context :

@@ -141,7 +141,7 @@ CCL_API generic_device_type<CCL_ENABLE_SYCL_TRUE>::generic_device_type(device_in
         LOG_DEBUG("SYCL Platform id: ", (platform.is_host() ? nullptr : platform.get()), " found devices: ", devices.size());
         auto it = std::find_if(devices.begin(), devices.end(), [id] (const cl::sycl::device& dev)
         {
-            return id == native::get_runtime_device(0, dev)->get_device_id();
+            return id == native::get_runtime_device(dev)->get_device_path();
         });
 
         if(it != devices.end())
@@ -151,7 +151,7 @@ CCL_API generic_device_type<CCL_ENABLE_SYCL_TRUE>::generic_device_type(device_in
         }
     }
 
-    throw std::runtime_error(std::string("Cannot find device by id: ") + std::to_string(id));
+    throw std::runtime_error(std::string("Cannot find device by id: ") + ccl::to_string(id));
 }
 
 generic_device_type<CCL_ENABLE_SYCL_TRUE>::generic_device_type(const cl::sycl::device &in_device)
@@ -161,7 +161,7 @@ generic_device_type<CCL_ENABLE_SYCL_TRUE>::generic_device_type(const cl::sycl::d
 
 device_index_type generic_device_type<CCL_ENABLE_SYCL_TRUE>::get_id() const noexcept
 {
-    return native::get_runtime_device(0, device)->get_device_id();
+    return native::get_runtime_device(device)->get_device_path();
 }
 
 typename generic_device_type<CCL_ENABLE_SYCL_TRUE>::native_reference_t

@@ -15,7 +15,7 @@ class communicator;
 class stream;
 #ifdef MULTI_GPU_SUPPORT
 class device_communicator;
-class gpu_comm_attr;
+struct gpu_comm_attr;
 class comm_group;
 class ccl_device_attr;
 #endif

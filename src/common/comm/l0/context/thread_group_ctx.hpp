@@ -4,12 +4,12 @@
 
 namespace native
 {
-class device_storage;
+struct device_storage;
 
 template<ccl::device_topology_type>
-class device_community;
+struct device_community;
 
-class thread_group_scheduler;
+struct thread_group_scheduler;
 struct thread_group_context :
         scale_up_ctx_specific<thread_group_context>
 {

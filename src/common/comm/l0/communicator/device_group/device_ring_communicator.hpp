@@ -3,7 +3,7 @@
 
 namespace native
 {
-    class device_group_context;
+    struct device_group_context;
 }
 
 class device_group_ring_communicator :

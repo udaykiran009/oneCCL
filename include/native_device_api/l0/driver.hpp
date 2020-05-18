@@ -6,8 +6,8 @@
 
 namespace native
 {
-class ccl_device_platform;
-class ccl_device;
+struct ccl_device_platform;
+struct ccl_device;
 
 struct ccl_device_driver : public cl_base<ze_driver_handle_t, ccl_device_platform>,
                            std::enable_shared_from_this<ccl_device_driver>

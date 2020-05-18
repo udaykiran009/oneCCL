@@ -48,7 +48,6 @@ public:
 
 private:
     std::shared_ptr<ccl_gpu_sched> gpu_sched;
-    bool completed = false;
 };
 
 

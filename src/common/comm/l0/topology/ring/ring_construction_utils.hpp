@@ -286,7 +286,7 @@ inline void separate_ipc_devices(const ccl::process_device_indices_t& ipc_indice
         // calc IPC process Index
         size_t ipc_process_index_to_find = process_idx + 1;
         size_t actual_ipc_process_index = ipc_process_index_to_find;
-        if ((process_idx == process_num - 1))
+        if (process_idx == process_num - 1)
         {
             //replace terminator as index for right
             actual_ipc_process_index = 0;
@@ -338,7 +338,7 @@ inline void separate_ipc_devices(const ccl::process_device_indices_t& ipc_indice
         // calc IPC process Index
         size_t ipc_process_index_to_find = process_idx - 1;
         size_t actual_ipc_process_index = ipc_process_index_to_find;
-        if ((process_idx == 0))
+        if (process_idx == 0)
         {
             //replace terminator as index for left
             ipc_process_index_to_find = process_num;
@@ -858,7 +858,7 @@ std::tuple<size_t, device_t_ptr<device_t>>
             break;
         }
     }
-    return { idx, dev };
+    return std::tuple<size_t, device_t_ptr<device_t>> {idx, dev };
 }
 
 template<class device_t, ccl::device_topology_type topology>
@@ -887,7 +887,7 @@ std::tuple<size_t, device_t_ptr<device_t>>
             break;
         }
     }
-    return { idx, dev };
+    return std::tuple<size_t, device_t_ptr<device_t>>{ idx, dev };
 }
 
 
@@ -912,7 +912,7 @@ std::tuple<size_t, device_t_ptr<device_t>>
             break;
         }
     }
-    return { idx, dev };
+    return std::tuple<size_t, device_t_ptr<device_t>>{ idx, dev };
 }
 
 template<class device_t, ccl::device_topology_type topology>
@@ -940,7 +940,7 @@ std::tuple<size_t, device_t_ptr<device_t>>
             break;
         }
     }
-    return { idx, dev };
+    return std::tuple<size_t, device_t_ptr<device_t>>{ idx, dev };
 }
 
 template<class device_t, ccl::device_topology_type topology>

@@ -10,7 +10,7 @@ namespace native
 #define TEMPLATE_DECL_ARG         class elem_t, class resource_owner
 #define TEMPLATE_DEF_ARG          elem_t, resource_owner
 
-class ccl_device;
+struct ccl_device;
 namespace detail
 {
     void copy_memory_to_device_sync_unsafe(void* dst, const void* src, size_t size, std::weak_ptr<ccl_device> device_weak);

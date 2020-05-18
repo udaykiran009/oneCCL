@@ -3,8 +3,8 @@
 
 namespace native
 {
-class ccl_device_driver;
-class ccl_device;
+struct ccl_device_driver;
+struct ccl_device;
 
 // TODO not thread-safe!!!
 struct ccl_subdevice : public ccl_device

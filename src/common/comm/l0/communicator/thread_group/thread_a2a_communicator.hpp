@@ -3,7 +3,7 @@
 
 namespace native
 {
-    class thread_group_context;
+    struct thread_group_context;
 }
 
 class thread_device_group_a2a_communicator :

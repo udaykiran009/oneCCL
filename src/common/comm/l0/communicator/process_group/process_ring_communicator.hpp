@@ -4,7 +4,7 @@
 
 namespace native
 {
-    class process_group_context;
+    struct process_group_context;
 }
 
 class process_ring_communicator :

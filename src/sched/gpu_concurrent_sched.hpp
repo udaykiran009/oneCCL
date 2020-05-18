@@ -28,5 +28,4 @@ public:
     static ccl_gpu_concurrent_sched_ptr create(size_t thread_count, const ccl_coll_param& param = ccl_coll_param());
 private:
     std::vector<std::shared_ptr<ccl_gpu_sched>> partial_scheds;
-    size_t thread_count;
 };

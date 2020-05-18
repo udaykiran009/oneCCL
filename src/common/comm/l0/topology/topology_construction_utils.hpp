@@ -12,11 +12,11 @@ class device_group_router;
 
 namespace native
 {
-class process_group_context;
-class thread_group_context;
-class device_group_context;
-class device_storage;
-class ccl_device;
+struct process_group_context;
+struct thread_group_context;
+struct device_group_context;
+struct device_storage;
+struct ccl_device;
 
 namespace details
 {

@@ -330,7 +330,7 @@ CCL_API ze_fence_handle_t ccl_device::create_or_get_fence(const device_queue& qu
             throw std::runtime_error(std::string("cannot allocate fence, error: ") + native::to_string(ret));
         }
         device_queue_fence f(h, get_ptr());
-        fence_it = queue_fences.insert({queue.handle, std::move(f)}).first;
+        fence_it = queue_fences.emplace(queue.handle, std::move(f)).first;
     }
     return fence_it->second.handle;
 }
@@ -514,7 +514,7 @@ CCL_API ccl_device::device_queue& ccl_device::get_cmd_queue(const ze_command_que
     auto it = cmd_queus.find(properties);
     if(it == cmd_queus.end())
     {
-        it = cmd_queus.insert({properties, create_cmd_queue(properties)}).first;
+        it = cmd_queus.emplace(properties, create_cmd_queue(properties)).first;
     }
     return it->second;
 }
@@ -536,7 +536,7 @@ CCL_API ccl_device::device_cmd_list& ccl_device::get_cmd_list(const ze_command_l
     auto it = cmd_lists.find(properties);
     if(it == cmd_lists.end())
     {
-        it = cmd_lists.insert({properties, create_cmd_list(properties)}).first;
+        it = cmd_lists.emplace(properties, create_cmd_list(properties)).first;
     }
     return it->second;
 }

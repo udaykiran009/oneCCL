@@ -5,16 +5,16 @@
 
 namespace native
 {
-class ccl_device_platform;
-class ccl_device_driver;
-class ccl_subdevice;
+struct ccl_device_platform;
+struct ccl_device_driver;
+struct ccl_subdevice;
 
 // TODO not thread-safe!!!
 struct ccl_device : public cl_base<ze_device_handle_t, ccl_device_driver>,
                     std::enable_shared_from_this<ccl_device>
 {
     friend std::ostream& operator<<(std::ostream&, const ccl_device&);
-    friend class ccl_subdevice;
+    friend struct ccl_subdevice;
     using base = cl_base<ze_device_handle_t, ccl_device_driver>;
     using handle_t = base::handle_t;
     using base::handle;

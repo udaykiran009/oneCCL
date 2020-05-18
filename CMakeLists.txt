@@ -194,8 +194,10 @@ if (MULTI_GPU_SUPPORT)
 
     message("Level0 examples, path: ${CMAKE_MODULE_PATH}")
     list(APPEND CCL_INC_DIRS "${NATIVE_API_ROOT}/include/level_zero")
-    list(APPEND CCL_INC_DIRS "/opt/intel/opencl/include/")
-    list(APPEND CCL_INC_DIRS "/p/pdsd/scratch/sivanov/opencl")
+    if( NOT ${CMAKE_C_COMPILER_ID} STREQUAL "Clang" AND NOT ${CMAKE_CXX_COMPILER_ID} STREQUAL "Clang")
+        list(APPEND CCL_INC_DIRS "/opt/intel/opencl/include/")
+        list(APPEND CCL_INC_DIRS "/p/pdsd/scratch/sivanov/opencl")
+    endif()
     #"/p/pdsd/scratch/sivanov/dpcpp/build/linux_prod/compiler/linux/lib/clang/10.0.0/include")
 
     link_directories("/usr/local/lib/level_zero/")
