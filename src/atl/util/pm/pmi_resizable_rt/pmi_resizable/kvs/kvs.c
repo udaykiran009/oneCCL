@@ -749,15 +749,12 @@ size_t kvs_init(const char* main_addr)
         exit(EXIT_FAILURE);
     }
     /* Wait connection to master */
-    errno = 0;
     start_time = time(NULL);
-    connection_time = 0;
-    while (((err = connect(sock_sender, (struct sockaddr*) &main_server_address, sizeof(main_server_address))) < 0 ||
-            errno != 0) &&
-            (connection_time < CONNECTION_TIMEOUT))
+    do
     {
+        err = connect(sock_sender, (struct sockaddr*) &main_server_address, sizeof(main_server_address));
         connection_time = time(NULL) - start_time;
-    }
+    } while ((err < 0 ) && (connection_time < CONNECTION_TIMEOUT));
 
     if (connection_time >= CONNECTION_TIMEOUT)
     {
