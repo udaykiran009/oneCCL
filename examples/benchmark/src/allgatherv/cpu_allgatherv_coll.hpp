@@ -53,10 +53,9 @@ struct cpu_allgatherv_coll : cpu_base_coll<Dtype, allgatherv_strategy_impl>
                 value = ((Dtype*)send_bufs[b_idx])[e_idx];
                 if (value != sbuf_expected)
                 {
-                    printf("%s: send_bufs: buf_idx %zu, elem_idx %zu, expected %f, got %f\n",
-                           this->name(), b_idx, e_idx,
-                           static_cast<float>(sbuf_expected),
-                           static_cast<float>(value));
+                    std::cout << this->name() << " send_bufs: buf_idx "
+                              << b_idx << ", elem_idx " << e_idx << ", expected "
+                              << sbuf_expected << ", got " << value << std::endl;
                     ASSERT(0, "unexpected value");
                 }
             }
@@ -69,10 +68,9 @@ struct cpu_allgatherv_coll : cpu_base_coll<Dtype, allgatherv_strategy_impl>
                     value = ((Dtype*)recv_bufs[b_idx])[idx * elem_count + e_idx];
                     if (value != rbuf_expected)
                     {
-                        printf("%s: recv_bufs: buf_idx %zu, elem_idx %zu, expected %f, got %f\n",
-                               this->name(), b_idx, e_idx,
-                               static_cast<float>(rbuf_expected),
-                               static_cast<float>(value));
+                        std::cout << this->name() << " recv_bufs: buf_idx "
+                                  << b_idx << ", elem_idx " << e_idx << ", expected "
+                                  << rbuf_expected << ", got " << value << std::endl;
                         ASSERT(0, "unexpected value");
                     }
                 }

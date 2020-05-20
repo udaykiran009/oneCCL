@@ -7,9 +7,15 @@
 #include <map>
 
 #include "base.hpp"
+#include "base_utils.hpp"
 #include "bfp16.h"
 #include "coll.hpp"
 #include "sparse_detail.hpp"
+
+/* required declarations */
+  template<class Dtype>
+void create_colls(std::list<std::string>& coll_names, ccl::stream_type backend,
+                  coll_list_t& colls);
 
 /* specific benchmark defines */
 //different collectives with duplications
@@ -28,7 +34,6 @@ typedef enum
 #define DEFAULT_BACKEND ccl::stream_type::host
 #define DEFAULT_LOOP    LOOP_REGULAR
 
-
 std::map<ccl::stream_type, std::string> backend_names =
   {
     std::make_pair(ccl::stream_type::host, "cpu"),
@@ -40,6 +45,43 @@ std::map<loop_type_t, std::string> loop_names =
     std::make_pair(LOOP_REGULAR, "regular"),
     std::make_pair(LOOP_UNORDERED, "unordered")
   };
+
+/* temporary comment:
+ * This tuple is for run a benchmark with different data types.
+ * By default it runs by 'float'. Next steps:
+ * 1. Expand the tuple for other data types
+ * 2. Add --dtype option for chosing dtypes by argument */
+
+/* 'dtype_indices' tuple stores indices of chosen to use or not dtypes(<int, float, ...>).
+ * Index '1' relates to chosen dtype, that means 'create_colls_func()'
+ * is called by type with index '1'. */
+std::tuple<int, float>  dtype_indices {0, 1};
+
+/* specific benchmark functors */
+class create_colls_func
+{
+  private:
+      std::list<std::string>& coll_names;
+      ccl::stream_type backend;
+      coll_list_t& colls;
+  public:
+      create_colls_func(std::list<std::string>& coll_names, ccl::stream_type backend,
+                        coll_list_t& colls)
+                        : coll_names(coll_names), backend(backend), colls(colls)
+      { }
+
+      template<class Dtype>
+       void operator() (Dtype& types_val)
+      {
+          /* 'Dtype& types_val' stores the values of indices from tuple.
+           * 'create_colls<T>()' is called with the type, which index in the tuple
+           * > '0'(chosen). */
+          if (types_val > 0)
+          {
+              create_colls<Dtype>(coll_names, backend, colls);
+          }
+      }
+};
 
 /* specific benchmark functions */
 void print_help_usage(const char* app)

@@ -6,7 +6,7 @@
 
 struct base_coll;
 
-using coll_list_t = std::vector<std::unique_ptr<base_coll>>;
+using coll_list_t = std::vector<std::shared_ptr<base_coll>>;
 using req_list_t = std::vector<std::unique_ptr<ccl::request>>;
 
 /* base polymorph collective wrapper class */

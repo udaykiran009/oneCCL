@@ -450,7 +450,9 @@ int main(int argc, char *argv[])
 
     try
     {
-        create_colls<DTYPE>(options.coll_names, options.backend, colls);
+        ccl_tuple_for_each(dtype_indices,
+                           create_colls_func(options.coll_names,
+                                             options.backend, colls));
     }
     catch (const std::runtime_error& e)
     {
@@ -498,3 +500,10 @@ int main(int argc, char *argv[])
 
     return 0;
 }
+
+template
+void create_colls<int>(std::list<std::string>& coll_names, ccl::stream_type backend,
+                  coll_list_t& colls);
+template
+void create_colls<float>(std::list<std::string>& coll_names, ccl::stream_type backend,
+                  coll_list_t& colls);

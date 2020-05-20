@@ -41,12 +41,11 @@ struct cpu_bcast_coll : cpu_base_coll<Dtype, bcast_strategy_impl>
             for (size_t e_idx = 0; e_idx < elem_count; e_idx++)
             {
                 value = ((Dtype*)recv_bufs[b_idx])[e_idx];
-                if (value != e_idx)
+                if (static_cast<size_t>(value) != e_idx)
                 {
-                    printf("%s: recv_bufs: buf_idx %zu, elem_idx %zu, expected %f, got %f\n",
-                           this->name(), b_idx, e_idx,
-                           static_cast<float>(e_idx),
-                           static_cast<float>(value));
+                    std::cout << this->name() << " recv_bufs: buf_idx "
+                              << b_idx << ", elem_idx " << e_idx << ", expected "
+                              << e_idx << ", got " << value << std::endl;
                     ASSERT(0, "unexpected value");
                 }
             }

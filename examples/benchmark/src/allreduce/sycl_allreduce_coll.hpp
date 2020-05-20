@@ -7,6 +7,12 @@
 #include "sycl_coll.hpp"
 
 template<class Dtype>
+class allreduce_buf_check {};
+
+template<class Dtype>
+class allreduce_buf_fill {};
+
+template<class Dtype>
 struct sycl_allreduce_coll : sycl_base_coll<Dtype, allreduce_strategy_impl>
 {
     using coll_base = sycl_base_coll<Dtype, allreduce_strategy_impl>;
@@ -31,7 +37,7 @@ struct sycl_allreduce_coll : sycl_base_coll<Dtype, allreduce_strategy_impl>
                 auto recv_buf = (static_cast<sycl_buffer_t<Dtype>*>(recv_bufs[b_idx]));
                 auto send_buf_acc = send_buf->template get_access<mode::write>(cgh);
                 auto recv_buf_acc = recv_buf->template get_access<mode::write>(cgh);
-                cgh.parallel_for<class allreduce_buf_fill>(range<1>{elem_count}, [=](item<1> e_idx)
+                cgh.parallel_for<class allreduce_buf_fill<Dtype>>(range<1>{elem_count}, [=](item<1> e_idx)
                 {
                     send_buf_acc[e_idx] = local_rank;
                     recv_buf_acc[e_idx] = 0;
@@ -57,7 +63,7 @@ struct sycl_allreduce_coll : sycl_base_coll<Dtype, allreduce_strategy_impl>
                 auto recv_buf = (static_cast<sycl_buffer_t<Dtype>*>(recv_bufs[b_idx]));
                 auto send_buf_acc = send_buf->template get_access<mode::write>(cgh);
                 auto recv_buf_acc = recv_buf->template get_access<mode::write>(cgh);
-                cgh.parallel_for<class allreduce_buf_check>(range<1>{elem_count}, [=](item<1> e_idx) mutable
+                cgh.parallel_for<class allreduce_buf_check<Dtype>>(range<1>{elem_count}, [=](item<1> e_idx) mutable
                 {
                     Dtype value = send_buf_acc[e_idx];
                     if (value != sbuf_expected)
@@ -82,16 +88,18 @@ struct sycl_allreduce_coll : sycl_base_coll<Dtype, allreduce_strategy_impl>
                 Dtype value = send_buf_acc[e_idx];
                 if (value != sbuf_expected)
                 {
-                    printf("%s: send_bufs: buf_idx %zu, elem_idx %zu, expected %f, got %f\n",
-                           this->name(), b_idx, e_idx, sbuf_expected, value);
+                    std::cout << this->name() << " send_bufs: buf_idx "
+                              << b_idx << ", elem_idx " << e_idx << ", expected "
+                              << sbuf_expected << ", got " << value << std::endl;
                     ASSERT(0, "unexpected value");
                 }
 
                 value = recv_buf_acc[e_idx];
                 if (value != rbuf_expected)
                 {
-                    printf("%s: recv_bufs: buf_idx %zu, elem_idx %zu, expected %f, got %f\n",
-                           this->name(), b_idx, e_idx, rbuf_expected, value);
+                    std::cout << this->name() << " recv_bufs: buf_idx "
+                              << b_idx << ", elem_idx " << e_idx << ", expected "
+                              << rbuf_expected << ", got " << value << std::endl;
                     ASSERT(0, "unexpected value");
                 }
             }

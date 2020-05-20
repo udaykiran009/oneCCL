@@ -53,16 +53,18 @@ struct cpu_alltoall_coll : cpu_base_coll<Dtype, alltoall_strategy_impl>
                 rbuf_expected = e_idx / elem_count;
                 if (value != sbuf_expected)
                 {
-                    printf("%s: send_bufs: buf_idx %zu, elem_idx %zu, expected %f, got %f\n",
-                           this->name(), b_idx, e_idx, sbuf_expected, value);
+                    std::cout << this->name() << " send_bufs: buf_idx "
+                              << b_idx << ", elem_idx " << e_idx << ", expected "
+                              << sbuf_expected << ", got " << value << std::endl;
                     ASSERT(0, "unexpected value");
                 }
 
                 value = ((Dtype*)recv_bufs[b_idx])[e_idx];
                 if (value != rbuf_expected)
                 {
-                    printf("%s: recv_bufs: buf_idx %zu, elem_idx %zu, expected %f, got %f\n",
-                           this->name(), b_idx, e_idx, rbuf_expected, value);
+                    std::cout << this->name() << " recv_bufs: buf_idx "
+                              << b_idx << ", elem_idx " << e_idx << ", expected "
+                              << rbuf_expected << ", got " << value << std::endl;
                     ASSERT(0, "unexpected value");
                 }
             }
