@@ -17,6 +17,7 @@ struct api_type_info
     static constexpr bool is_class()     { return false; }
 };
 
+#define SUPPORTED_KERNEL_NATIVE_DATA_TYPES      char, int, float, ccl::bfp16, double, int64_t, uint64_t
 
 #define API_CLASS_TYPE_INFO(api_type)                                                                           \
     template<>                                                                                                  \

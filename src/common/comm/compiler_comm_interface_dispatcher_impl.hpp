@@ -1,17 +1,27 @@
 #pragma once
-#include "common/comm/l0/communicator/compiler_communicator_interface_dispatcher.hpp"
+#include "common/comm/comm_attributes.hpp"
 
-#include "common/comm/l0/communicator/communicator_interface.hpp"
+#include "common/comm/compiler_comm_interface_dispatcher.hpp"
+
+#include "common/comm/comm_interface.hpp"
+#ifdef MULTI_GPU_SUPPORT
 #include "common/comm/l0/communicator/device_group/device_ring_communicator.hpp"
 #include "common/comm/l0/communicator/device_group/device_a2a_communicator.hpp"
 #include "common/comm/l0/communicator/thread_group/thread_ring_communicator.hpp"
 #include "common/comm/l0/communicator/thread_group/thread_a2a_communicator.hpp"
 #include "common/comm/l0/communicator/process_group/process_ring_communicator.hpp"
 #include "common/comm/l0/communicator/process_group/process_a2a_communicator.hpp"
+#endif
+#include "common/comm/host_communicator/host_communicator_impl.hpp"
 
 namespace ccl
 {
+communicator_interface_ptr communicator_interface_dispatcher::create_communicator_impl(const comm_attr_t& attr)
+{
+    return communicator_interface_ptr(new host_communicator(attr));
+}
 
+#ifdef MULTI_GPU_SUPPORT
 template <class DeviceType,
           typename std::enable_if<not std::is_same<typename std::remove_cv<DeviceType>::type,
                                                    ccl::device_index_type>::value,
@@ -20,14 +30,13 @@ communicator_interface_ptr
 communicator_interface_dispatcher::create_communicator_impl(const DeviceType& device,
                                                             size_t thread_idx,
                                                             size_t process_idx,
-                                                            const ccl::shared_comm_device_attr_t& attr)
+                                                            const ccl::device_comm_attr_t& attr)
 {
     static_assert(std::is_same<typename unified_device_type::device_t, DeviceType>::value, "Unsupported 'DeviceType'");
 
-    return communicator_interface_dispatcher::create_communicator_from_unified_device(unified_device_type(device),
-                                                                                      thread_idx,
-                                                                                      process_idx,
-                                                                                      attr);
+    return communicator_interface_dispatcher::create_communicator_from_unified_device(
+                        unified_device_type(device),
+                        thread_idx, process_idx, attr);
 }
 
 
@@ -39,20 +48,18 @@ communicator_interface_ptr
 communicator_interface_dispatcher::create_communicator_impl(DeviceType device_id,
                                                             size_t thread_idx,
                                                             size_t process_idx,
-                                                            const ccl::shared_comm_device_attr_t& attr)
+                                                            const ccl::device_comm_attr_t& attr)
 {
 
 #ifdef CCL_ENABLE_SYCL
-    return communicator_interface_dispatcher::create_communicator_from_unified_device(unified_device_type(device_id, cl::sycl::info::device_type::gpu),
-                                                                                                          thread_idx,
-                                                                                                          process_idx,
-                                                                                                          attr);
+    return communicator_interface_dispatcher::create_communicator_from_unified_device(
+                            unified_device_type(device_id, cl::sycl::info::device_type::gpu),
+                            thread_idx, process_idx, attr);
 #else
     static_assert(std::is_same<typename unified_device_type::device_t, DeviceType>::value, "Unsupported 'DeviceType'");
-    return communicator_interface_dispatcher::create_communicator_from_unified_device(unified_device_type(device_id),
-                                                                                                          thread_idx,
-                                                                                                          process_idx,
-                                                                                                          attr);
+    return communicator_interface_dispatcher::create_communicator_from_unified_device(
+                            unified_device_type(device_id),
+                            thread_idx, process_idx, attr);
 #endif
 }
 
@@ -60,7 +67,7 @@ communicator_interface_ptr
 communicator_interface_dispatcher::create_communicator_from_unified_device(ccl::unified_device_type&& device_id,
                                                                            size_t thread_idx,
                                                                            size_t process_idx,
-                                                                           const ccl::shared_comm_device_attr_t& attr)
+                                                                           const ccl::device_comm_attr_t& attr)
 {
     ccl::device_topology_class preferred_topology_class;
     ccl::device_topology_group preferred_topology_group;
@@ -71,9 +78,8 @@ communicator_interface_dispatcher::create_communicator_from_unified_device(ccl::
     }
     else
     {
-        static const ccl_device_attr default_attr;
-        preferred_topology_class = default_attr.get_value<ccl_device_preferred_topology_class>();
-        preferred_topology_group = default_attr.get_value<ccl_device_preferred_group>();
+        preferred_topology_class = device_attr_impl::class_default();
+        preferred_topology_group = device_attr_impl::group_default();
     }
 
     //TODO check device_id or sycl device validity before communicator creation
@@ -102,7 +108,6 @@ communicator_interface_dispatcher::create_communicator_from_unified_device(ccl::
     }
     return std::unique_ptr<communicator_interface>();
 }
-}
 
 
 #define COMMUNICATOR_INTERFACE_DISPATCHER_CLASS_EXPLICIT_INSTANTIATION(DeviceType)                      \
@@ -110,11 +115,14 @@ template ccl::communicator_interface_ptr                                        
 ccl::communicator_interface_dispatcher::create_communicator_impl(const DeviceType& device,              \
                                                                  size_t thread_idx,                     \
                                                                  size_t process_idx,                    \
-                                                                 const ccl::shared_comm_device_attr_t& attr);
+                                                                 const ccl::device_comm_attr_t& attr);
 
 #define COMMUNICATOR_INTERFACE_DISPATCHER_NON_CLASS_EXPLICIT_INSTANTIATION(DeviceType)                  \
 template ccl::communicator_interface_ptr                                                                \
 ccl::communicator_interface_dispatcher::create_communicator_impl(DeviceType device_id,                  \
                                                                  size_t thread_idx,                     \
                                                                  size_t process_idx,                    \
-                                                                 const ccl::shared_comm_device_attr_t& attr);
+                                                                 const ccl::device_comm_attr_t& attr);
+
+#endif //MULTI_GPU_SUPPORT
+}

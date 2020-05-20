@@ -128,7 +128,7 @@ void user_thread_sycl(size_t thread_idx, const cl::sycl::vector_class<cl::sycl::
                                                                              global_communicator);
 
     // create device communicator attributes
-    ccl::shared_comm_device_attr_t my_device_comm_attr = ccl::environment::instance().create_device_comm_attr(ccl::comm_attr{});
+    ccl::device_comm_attr_t my_device_comm_attr = group->create_device_comm_attr();
 
     // set preferred device topology (OPTIONAL)
     my_device_comm_attr->set_value<ccl_device_preferred_topology_class>
@@ -138,13 +138,13 @@ void user_thread_sycl(size_t thread_idx, const cl::sycl::vector_class<cl::sycl::
             << my_device_comm_attr->get_value<ccl_device_preferred_topology_class>() << std::endl;
 
     // Create communicators (auto rank balancing, based on ids): container based API
-    std::vector<ccl::device_communicator_t> comms = group->create_communicators(devices,
+    std::vector<ccl::communicator_t> comms = group->create_communicators(devices,
                                                                                 my_device_comm_attr);
 
     // alloc memory specific to devices
     for(auto &comm : comms)
     {
-        ccl::device_communicator::device_native_reference_t dev = comm->get_device();
+        ccl::communicator::device_native_reference_t dev = comm->get_device();
         size_t rank = comm->rank();
 
         // create stream
@@ -254,15 +254,14 @@ void user_thread_idx(size_t thread_idx, ccl::device_indices_t thread_device_idx,
                                                                global_communicator);
 
     // create device communicator attributes
-    ccl::shared_comm_device_attr_t my_device_comm_attr =
-                ccl::environment::instance().create_device_comm_attr(ccl::comm_attr{});
+    ccl::device_comm_attr_t my_device_comm_attr = group->create_device_comm_attr();
 
     // set preferred device topology (OPTIONAL)
     my_device_comm_attr->set_value<ccl_device_preferred_topology_class>
                            (ccl::device_topology_class::ring_class);
 
     // Create communicators (auto rank balancing, based on ids): range based API
-    std::vector<ccl::device_communicator_t> comms =
+    std::vector<ccl::communicator_t> comms =
                 group->create_communicators(thread_device_idx.begin(),
                                             thread_device_idx.end(),
                                             my_device_comm_attr);
@@ -277,7 +276,7 @@ void user_thread_idx(size_t thread_idx, ccl::device_indices_t thread_device_idx,
     for(auto &comm : comms)
     {
         // get native l0* /
-        ccl::device_communicator::device_native_reference_t dev = comm->get_device();
+        ccl::communicator::device_native_reference_t dev = comm->get_device();
         size_t rank = comm->rank();
 
         // wrapped L0-native API for devices: create native buffers

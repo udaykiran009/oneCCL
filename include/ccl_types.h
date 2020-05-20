@@ -132,7 +132,7 @@ typedef struct
     const char* match_id;
 } ccl_coll_attr_t;
 
-/** List of communicator attributes. */
+/** List of host communicator attributes. */
 typedef struct
 {
     /**
@@ -149,6 +149,24 @@ typedef struct
     /* Hint that operation is local to process. Unused */
     int local;
 } ccl_comm_attr_t;
+
+typedef struct
+{
+    ccl_comm_attr_t comm_attr;
+    int version;
+} ccl_comm_attr_versioned_t;
+
+/** Host attributes
+ *
+ */
+typedef enum
+{
+    ccl_host_color,
+    ccl_host_version
+
+} ccl_host_attributes;
+
+typedef ccl_comm_attr_versioned_t ccl_host_comm_attr_t;
 
 typedef struct
 {

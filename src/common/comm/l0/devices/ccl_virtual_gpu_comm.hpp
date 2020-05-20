@@ -54,8 +54,11 @@ public:
     {
         auto& ptr = base::template get_gpu_module_unsafe<module_type, topology_type>(registered_modules);
         assert(ptr);
-        static_assert(std::is_same<native_data_type, float>::value, "Only float is supported");
-        return ptr->main_function_args;
+        if (not std::is_same<native_data_type, float>::value)
+        {
+            throw std::runtime_error(std::string(__PRETTY_FUNCTION__) + "Only float is supported");
+        }
+        return ptr->template get_main_function<native_data_type>();
     }
 
     template<class native_data_type, ccl::device_topology_type topology_type, class gpu_entry>

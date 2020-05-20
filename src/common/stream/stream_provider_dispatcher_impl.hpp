@@ -27,7 +27,7 @@ stream_provider_dispatcher::stream_provider_dispatcher(NativeStream stream)
 #ifdef CCL_ENABLE_SYCL
     (void)native_stream;
     native_stream_set = false;      //not set cl::sycl::queue
-    native_stream_handle = stream;
+    native_stream_handle = static_cast<stream_native_handle_t>(stream);
 #else
     native_stream = static_cast<stream_native_t>(stream);
     if (native_stream)

@@ -6,18 +6,22 @@
 #include "common/comm/l0/context/thread_group_ctx.hpp"
 #include "common/comm/l0/context/process_group_ctx.hpp"
 
-template<ccl::device_topology_type topology>
-typed_base_communicator<topology>::typed_base_communicator(ccl::unified_device_type&& owned_device,
+#define TEMPLATE_DECL_ARG              class comm_impl, ccl::device_topology_type topology, class communicator_traits
+#define TEMPLATE_DEF_ARG               comm_impl, topology, communicator_traits
+
+
+template<TEMPLATE_DECL_ARG>
+typed_base_communicator<TEMPLATE_DEF_ARG>::typed_base_communicator(ccl::unified_device_type&& owned_device,
                                                            size_t thread_idx, size_t process_idx,
-                                                           const ccl::shared_comm_device_attr_t& attr) :
+                                                           const ccl::device_comm_attr_t& attr) :
  base_communicator(std::move(owned_device),
                    thread_idx, process_idx/*, comm_attr*/, attr)
 {
     LOG_INFO("sheduled for create, device id: ", device.get_id(), ", thread_id: ",thread_idx, ", process id:", process_idx);
 }
 
-template<ccl::device_topology_type topology>
-void typed_base_communicator<topology>::initialize_comm_addr(const ccl::device_index_type& device_id,
+template<TEMPLATE_DECL_ARG>
+void typed_base_communicator<TEMPLATE_DEF_ARG>::initialize_comm_addr(const ccl::device_index_type& device_id,
                                                              std::shared_ptr<native::device_community<topology>> new_community)
 {
     native::details::rank_getter<topology> initializer(device_id,
@@ -53,8 +57,8 @@ void typed_base_communicator<topology>::initialize_comm_addr(const ccl::device_i
              ") on {dev: ", device_id, ", thr: ",thread_id, ", proc: ", process_id, "}");
 }
 
-template<ccl::device_topology_type topology>
-bool typed_base_communicator<topology>::is_ready() const
+template<TEMPLATE_DECL_ARG>
+bool typed_base_communicator<TEMPLATE_DEF_ARG>::is_ready() const
 {
     if(!device_community_impl.get())
     {
@@ -64,31 +68,34 @@ bool typed_base_communicator<topology>::is_ready() const
     return true;
 }
 
-template<ccl::device_topology_type topology>
-ccl::device_topology_type typed_base_communicator<topology>::get_topology_type() const
+template<TEMPLATE_DECL_ARG>
+ccl::device_topology_type typed_base_communicator<TEMPLATE_DEF_ARG>::get_topology_type() const
 {
     return self_t::topology_type();
 }
 
-template<ccl::device_topology_type topology>
+template<TEMPLATE_DECL_ARG>
 template<class device_t>
-size_t typed_base_communicator<topology>::get_device_count() const
+size_t typed_base_communicator<TEMPLATE_DEF_ARG>::get_device_count() const
 {
     return ccl_tuple_get<native::indexed_device_container<device_t>>(device_community_impl->get_device_storage()).size();
 }
 
-template<ccl::device_topology_type topology>
+template<TEMPLATE_DECL_ARG>
 template<class device_t>
-native::indexed_device_container<device_t>& typed_base_communicator<topology>::get_devices()
+native::indexed_device_container<device_t>& typed_base_communicator<TEMPLATE_DEF_ARG>::get_devices()
 {
     return std::get<device_t::type_idx()>(device_community_impl->get_device_storage());
 }
 
-template<ccl::device_topology_type topology>
-std::string typed_base_communicator<topology>::to_string() const
+template<TEMPLATE_DECL_ARG>
+std::string typed_base_communicator<TEMPLATE_DEF_ARG>::to_string() const
 {
     native::details::printer<self_t::topology_type()> p;
     ccl_tuple_for_each(device_community_impl->get_device_storage(), p);
     return std::string("Rank (") + std::to_string(rank()) + "/" + std::to_string(size()) +
             "\nTopology: " + ::to_string(self_t::get_topology_type()) + ":\n" + p.to_string();
 }
+
+#undef TEMPLATE_DECL_ARG
+#undef TEMPLATE_DEF_ARG

@@ -5,7 +5,9 @@
 #include "common/global/global.hpp"
 #include "exec/exec.hpp"
 
-#include "common/comm/l0/communicator/communicator_interface.hpp"
+#include "common/comm/comm_attributes.hpp"
+#include "common/comm/comm_interface.hpp"
+#include "common/comm/host_communicator/host_communicator.hpp"
 #include "common/comm/l0/gpu_comm_attr.hpp"
 #include "common/comm/l0/device_community.hpp"
 
@@ -226,55 +228,13 @@ struct group_context
     ccl_spinlock mutex;
 };
 
-struct device_attr_impl
-{
-    constexpr static device_topology_class class_default()
-    {
-        return device_topology_class::ring_class;
-    }
-    constexpr static device_topology_group group_default()
-    {
-        return device_topology_group::thread_dev_group;
-    }
-
-    device_topology_class set_attribute_value(device_topology_class preferred_topology)
-    {
-        device_topology_class old = current_preferred_topology_class;
-        current_preferred_topology_class = preferred_topology;
-        return old;
-    }
-
-    device_topology_group set_attribute_value(device_topology_group preferred_topology)
-    {
-        device_topology_group old = current_preferred_topology_group;
-        current_preferred_topology_group = preferred_topology;
-        return old;
-    }
-
-    //TODO
-    const device_topology_class&
-        get_attribute_value(std::integral_constant<ccl_device_attributes,
-                                                   ccl_device_attributes::ccl_device_preferred_topology_class> stub) const
-    {
-        return current_preferred_topology_class;
-    }
-    const device_topology_group&
-        get_attribute_value(std::integral_constant<ccl_device_attributes,
-                                                   ccl_device_attributes::ccl_device_preferred_group> stub) const
-    {
-        return current_preferred_topology_group;
-    }
-private:
-    device_topology_class current_preferred_topology_class = class_default();
-    device_topology_group current_preferred_topology_group = group_default();
-};
-
 group_context global_ctx;
 }
 
 /* GPU communicator attributes
  */
-CCL_API ccl::ccl_device_attr::ccl_device_attr() :
+CCL_API ccl::ccl_device_attr::ccl_device_attr(const ccl::ccl_host_attr& src) :
+ base_t(src),
  pimpl(new ccl::device_attr_impl())
 {
 }
@@ -305,13 +265,6 @@ CCL_API ccl::stream_t ccl::environment::create_stream(stream_native_type& s)
     return ccl::stream_t(new ccl::stream(stream_provider_dispatcher::create(s)));
 }
 
-CCL_API ccl::shared_comm_device_attr_t ccl::environment::create_device_comm_attr(const ccl_comm_attr_t& comm_attr)
-{
-    // TODO
-    (void) comm_attr;
-    return ccl::shared_comm_device_attr_t{new ccl::ccl_device_attr()};
-}
-
 CCL_API ccl::comm_group_t ccl::environment::create_comm_group(size_t current_device_group_size, size_t process_device_group_size,
                                                               ccl::shared_communicator_t parent_comm /* = ccl::shared_communicator_t()*/)
 {
@@ -324,15 +277,27 @@ CCL_API ccl::comm_group_t ccl::environment::create_comm_group(size_t current_dev
     ccl::comm_group_t group;
     {
         // register group slot in global context table, based on communicator id
+        auto host_comm_impl = std::dynamic_pointer_cast<host_communicator>(parent_comm->pimpl);
+        if (!host_comm_impl)
+        {
+            throw ccl::ccl_error(std::string(__FUNCTION__) + " - failed, invalid host communicator type");
+        }
+
+        group_context::group_unique_key unique_id = host_comm_impl->comm_impl;
+        if (!unique_id)
+        {
+            throw ccl::ccl_error(std::string(__FUNCTION__) + " - failed, host communicator is empty");
+        }
+
         std::unique_lock<ccl_spinlock> lock(global_ctx.mutex);
-        auto ctx_it = global_ctx.communicator_group_map.find(parent_comm->comm_impl);
+        auto ctx_it = global_ctx.communicator_group_map.find(unique_id);
         if(ctx_it == global_ctx.communicator_group_map.end())
         {
             group.reset(new ccl::comm_group(parent_comm,
                                             current_device_group_size,
                                             process_device_group_size));
             global_ctx.communicator_group_map.insert({
-                                                        parent_comm->comm_impl,
+                                                        unique_id,
                                                         group
                                                      });
         }
@@ -356,30 +321,37 @@ CCL_API ccl::comm_group::comm_group(ccl::shared_communicator_t parent_comm,
 /**
  *  Create communicator API:
  */
+CCL_API ccl::device_comm_attr_t ccl::comm_group::create_device_comm_attr()
+{
+    // TODO
+    const auto& host_comm = pimpl->get_host_communicator();
+    return ccl::device_comm_attr_t{new ccl::ccl_device_attr(*(host_comm->get_host_attr()))};
+}
 /*
- *  Single communicator creation
+ *  Single device communicator creation
  */
 template <class DeviceType,
           typename std::enable_if<std::is_class<typename std::remove_cv<DeviceType>::type>::value,
                                       int>::type>
-CCL_API ccl::device_communicator_t ccl::comm_group::create_communicator(const DeviceType& device,
-                                                                     ccl::shared_comm_device_attr_t attr/* = comm_device_attr_t()*/)
+CCL_API ccl::communicator_t ccl::comm_group::create_communicator(const DeviceType& device,
+                                                                     ccl::device_comm_attr_t attr/* = comm_device_attr_t()*/)
 {
     LOG_TRACE("Create communicator from device");
-    ccl::communicator_interface_ptr impl = ccl::communicator_interface::create_communicator_impl(device,
-                                                                                                 pimpl->thread_id,
-                                                                                                 pimpl->ccl_communicator->rank(),
-                                                                                                 attr);
+    ccl::communicator_interface_ptr impl =
+            ccl::communicator_interface::create_communicator_impl(device,
+                                                                  pimpl->thread_id,
+                                                                  pimpl->ccl_communicator->rank(),
+                                                                  attr);
     // registering device in group - is non blocking operation, until it is not the last device
     pimpl->sync_register_communicator(impl);
-    return ccl::device_communicator_t(new ccl::device_communicator(impl));
+    return ccl::communicator_t(new ccl::communicator(impl));
 }
 
 template <class DeviceType,
           typename std::enable_if<not std::is_class<typename std::remove_cv<DeviceType>::type>::value,
                                       int>::type>
-CCL_API ccl::device_communicator_t ccl::comm_group::create_communicator(DeviceType device_id,
-                                                                    ccl::shared_comm_device_attr_t attr/* = nullptr*/)
+CCL_API ccl::communicator_t ccl::comm_group::create_communicator(DeviceType device_id,
+                                                                    ccl::device_comm_attr_t attr/* = nullptr*/)
 {
     LOG_TRACE("Create communicator from id: ", device_id);
 
@@ -389,15 +361,15 @@ CCL_API ccl::device_communicator_t ccl::comm_group::create_communicator(DeviceTy
                                                                                                  attr);
     // registering device in group - is non blocking operation, until it is not the last device
     pimpl->sync_register_communicator(impl);
-    return ccl::device_communicator_t(new ccl::device_communicator(impl));
+    return ccl::communicator_t(new ccl::communicator(impl));
 }
 
-/*
- *  Multiple communicators creation - iterator-based version
+/**
+ *  Multiple device communicators creation vectorized API implementation
  */
 template<class InputIt>
-CCL_API std::vector<ccl::device_communicator_t> ccl::comm_group::create_communicators(InputIt first, InputIt last,
-                                                                                   ccl::shared_comm_device_attr_t attr/* = nullptr*/)
+CCL_API std::vector<ccl::communicator_t> ccl::comm_group::create_communicators(InputIt first, InputIt last,
+                                                                                   ccl::device_comm_attr_t attr/* = nullptr*/)
 {
 
     using iterator_value_type = typename std::iterator_traits<InputIt>::value_type;
@@ -407,9 +379,9 @@ CCL_API std::vector<ccl::device_communicator_t> ccl::comm_group::create_communic
                   "Not valid InputIt in create_communicators");
 */
     size_t indices_count = std::distance(first, last);
-    LOG_TRACE("Create communicators from index iterators type, count: ", indices_count);
+    LOG_TRACE("Create device communicators from index iterators type, count: ", indices_count);
 
-    std::vector<ccl::device_communicator_t> comms;
+    std::vector<ccl::communicator_t> comms;
     comms.reserve(indices_count);
     std::transform(first, last, std::back_inserter(comms), [this, attr](const iterator_value_type& device_id)
     {
@@ -418,15 +390,13 @@ CCL_API std::vector<ccl::device_communicator_t> ccl::comm_group::create_communic
     return comms;
 }
 
-/*
- *  Multiple communicators creation - continer-based version
- */
 template<template<class...> class Container, class Type>
-CCL_API std::vector<ccl::device_communicator_t> ccl::comm_group::create_communicators(const Container<Type>& device_ids,
-                                                                                   ccl::shared_comm_device_attr_t attr/* = nullptr*/)
+CCL_API std::vector<ccl::communicator_t> ccl::comm_group::create_communicators(const Container<Type>& device_ids,
+                                                                                   ccl::device_comm_attr_t attr/* = nullptr*/)
 {
     //static_assert(std::is_same<Type, ccl::device_index_type>::value, "Invalid Type in create_communicators");
-    LOG_TRACE("Create communicators from index type, count: ", device_ids.size(), ". Redirect to iterators version");
+    LOG_TRACE("Create device communicators from index type, count: ", device_ids.size(),
+              ". Redirect to iterators version");
     return create_communicators(device_ids.begin(), device_ids.end(), attr);
 }
 
@@ -437,81 +407,23 @@ CCL_API ccl::comm_group::device_context_native_const_reference_t ccl::comm_group
     return context.get();
 }
 
-//API gpu communicator
-CCL_API ccl::device_communicator::device_communicator(std::shared_ptr<communicator_interface> impl):
-    pimpl(std::move(impl))
-{
-}
-
-CCL_API ccl::device_communicator::~device_communicator()
-{
-}
-
-CCL_API size_t ccl::device_communicator::rank() const
-{
-    return pimpl->rank();
-}
-
-CCL_API size_t ccl::device_communicator::size() const
-{
-    return pimpl->size();
-}
-
-CCL_API ccl::device_topology_type ccl::device_communicator::get_topology_type() const
-{
-    return pimpl->get_topology_type();
-}
-
-CCL_API ccl::device_communicator::device_native_reference_t ccl::device_communicator::get_device()
-{
-    return pimpl->get_device();
-}
-
-CCL_API bool ccl::device_communicator::is_ready() const
-{
-    return pimpl->is_ready();
-}
-
-/**
- * Collective communication definitions
- */
-template<class buffer_type,
-         typename T>
-CCL_API ccl::device_communicator::coll_request_t
-ccl::device_communicator::allreduce(const buffer_type* send_buf,
-                             buffer_type* recv_buf,
-                             size_t count,
-                             ccl::reduction reduction,
-                             const ccl::coll_attr* attr,
-                             const ccl::stream_t& stream)
-{
-    return pimpl->allreduce(send_buf, recv_buf, count, reduction, attr, stream ? stream->stream_impl : ccl::stream::impl_t());
-}
-
 
 /***********************************************************************/
-#define DEVICE_ATTRIBUTE_INSTANTIATION(ATTR_ID, VALUE_TYPE)                                                                             \
-template                                                                                                                                \
-VALUE_TYPE CCL_API ccl::ccl_device_attr::set_value<ATTR_ID, VALUE_TYPE>(VALUE_TYPE&& v);                                                \
-template                                                                                                                                \
+#define DEVICE_ATTRIBUTE_INSTANTIATION(ATTR_ID, VALUE_TYPE)                                        \
+template                                                                                           \
+VALUE_TYPE CCL_API ccl::ccl_device_attr::set_value<ATTR_ID, VALUE_TYPE>(VALUE_TYPE&& v);           \
+template                                                                                           \
 CCL_API const VALUE_TYPE& ccl::ccl_device_attr::get_value<ATTR_ID>() const;
 
 
-#define STREAM_CREATOR_INSTANTIATION(type)                                                                                                           \
+#define STREAM_CREATOR_INSTANTIATION(type)                                                         \
 template ccl::stream_t CCL_API ccl::environment::create_stream(type& stream);
 
-#define COMM_CREATOR_INDEXED_INSTANTIATION_CONTAINER(type)                                                                              \
-template std::vector<ccl::device_communicator_t>                                                                                           \
-CCL_API ccl::comm_group::create_communicators(const type& device_ids,                                                                   \
-                                              ccl::shared_comm_device_attr_t attr);
+#define COMM_CREATOR_INDEXED_INSTANTIATION_CONTAINER(type)                                         \
+template std::vector<ccl::communicator_t>                                                          \
+CCL_API ccl::comm_group::create_communicators(const type& device_ids,                              \
+                                              ccl::device_comm_attr_t attr);
 
-#define COLL_EXPLICIT_INSTANTIATION(type)                                                                                              \
-template ccl::device_communicator::coll_request_t CCL_API ccl::device_communicator::allreduce(const type* send_buf,                          \
-                                                                            type* recv_buf,                                            \
-                                                                            size_t count,                                              \
-                                                                            ccl::reduction reduction,                                  \
-                                                                            const ccl::coll_attr* attr,                                \
-                                                                            const ccl::stream_t& stream);
 // device attribute instantiations
 DEVICE_ATTRIBUTE_INSTANTIATION(ccl_device_preferred_topology_class,
                                typename ccl::ccl_device_attributes_traits<ccl_device_preferred_topology_class>::type);
@@ -532,10 +444,3 @@ COMM_CREATOR_INDEXED_INSTANTIATION_CONTAINER(ccl::device_indices_t);
 #ifdef CCL_ENABLE_SYCL
     COMM_CREATOR_INDEXED_INSTANTIATION_CONTAINER(cl::sycl::vector_class<cl::sycl::device>);
 #endif
-
-//COLL_EXPLICIT_INSTANTIATION(char);
-//COLL_EXPLICIT_INSTANTIATION(int);
-//COLL_EXPLICIT_INSTANTIATION(int64_t);
-//COLL_EXPLICIT_INSTANTIATION(uint64_t);
-COLL_EXPLICIT_INSTANTIATION(float);
-//COLL_EXPLICIT_INSTANTIATION(double);

@@ -61,6 +61,9 @@ typedef ccl_comm_attr_t comm_attr;
 
 typedef ccl_datatype_attr_t datatype_attr;
 
+template<ccl_host_attributes attrId>
+struct ccl_host_attributes_traits {};
+
 /**
  * Exception type that may be thrown by ccl API
  */

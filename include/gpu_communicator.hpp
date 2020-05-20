@@ -9,39 +9,6 @@ namespace ccl
 {
 struct gpu_comm_attr;
 struct communicator_interface;
-struct device_attr_impl;
-
-/**
- * Used to create device communicator with specific attributes,
- * which is differ from just 'communicator' attributes in common way
- */
-class ccl_device_attr : public ccl_comm_device_attr_t::device_core_attr
-{
-public:
-    friend class environment;
-    friend struct communicator_interface_dispatcher;
-    ~ccl_device_attr() noexcept;
-
-    /**
-     * Set specific value for attribute by @attrId.
-     * Previous attibute value would be returned
-     */
-    template<ccl_device_attributes attrId,
-             class Value,
-             class = typename std::enable_if<std::is_same<typename ccl_device_attributes_traits<attrId>::type, Value>::value>::type>
-    Value set_value(Value&& v);
-
-    /**
-     * Get specific attribute value by @attrId
-     */
-    template<ccl_device_attributes attrId>
-    const typename ccl_device_attributes_traits<attrId>::type& get_value() const;
-
-private:
-    ccl_device_attr();
-    std::unique_ptr<device_attr_impl> pimpl;
-};
-
 
 class comm_group
 {
@@ -51,36 +18,43 @@ public:
     using device_context_native_reference_t = typename unified_device_context_type::native_reference_t;
     using device_context_native_const_reference_t = typename unified_device_context_type::native_const_reference_t;
     /**
-     * Communicator creation API: single communicator creation, based on @device
+     * Device Communicator creation API: single communicator creation, based on @device
      */
     template <class DeviceType,
               typename std::enable_if<std::is_class<typename std::remove_cv<DeviceType>::type>::value,
                                       int>::type = 0>
-    device_communicator_t create_communicator(const DeviceType& device,
-                                           shared_comm_device_attr_t attr = shared_comm_device_attr_t());
+    communicator_t create_communicator(const DeviceType& device,
+                                       device_comm_attr_t attr = device_comm_attr_t());
 
     /**
-     * Communicator creation API: single communicator creation, based on index @device_id
+     * Created @device_comm_attr_t, which used to create device_communicators from @comm_group_t
+     */
+    device_comm_attr_t create_device_comm_attr();
+
+    /**
+     * Device Communicator creation API: single communicator creation, based on index @device_id
      */
     template <class DeviceType,
               typename std::enable_if<not std::is_class<typename std::remove_cv<DeviceType>::type>::value,
                                       int>::type = 0>
-    device_communicator_t create_communicator(DeviceType device_id,
-                                           shared_comm_device_attr_t attr = shared_comm_device_attr_t());
+    communicator_t create_communicator(DeviceType device_id,
+                                       device_comm_attr_t attr = device_comm_attr_t());
 
     /**
-     * Communicator creation API: multiple communicator creation, based on devices of @Type, packed into container @Container
+     * Device Communicator creation vectorized API:
+     * multiple communicator creation, based on devices of @Type, packed into container @Container
      */
     template<template<class...> class Container, class Type>
-    std::vector<device_communicator_t> create_communicators(const Container<Type>& device_ids,
-                                                         shared_comm_device_attr_t attr = shared_comm_device_attr_t());
+    std::vector<communicator_t> create_communicators(const Container<Type>& device_ids,
+                                                     device_comm_attr_t attr = device_comm_attr_t());
 
     /**
-     * Communicator creation API: multiple communicator creation, based on devices iterator @InputIt
+     * Device Communicator creation vectorized API:
+     * multiple communicator creation, based on devices iterator @InputIt
      */
     template<class InputIt>
-    std::vector<device_communicator_t> create_communicators(InputIt first, InputIt last,
-                                                         shared_comm_device_attr_t attr = shared_comm_device_attr_t());
+    std::vector<communicator_t> create_communicators(InputIt first, InputIt last,
+                                                     device_comm_attr_t attr = device_comm_attr_t());
 
     /**
      * Return device context allocated during group creation
@@ -92,8 +66,8 @@ private:
     std::unique_ptr<gpu_comm_attr> pimpl;
 };
 
-
-class device_communicator final
+#if DEPRECATED
+class communicator final
 {
 public:
 
@@ -103,7 +77,7 @@ public:
      */
     using device_native_reference_t = typename unified_device_type::native_reference_t;
 
-    ~device_communicator();
+    ~communicator();
 
     /**
      * Type allows to operate request interface in RAII manner
@@ -166,7 +140,7 @@ private:
     friend class environment;
     friend class comm_group;
 
-    explicit device_communicator(std::shared_ptr<communicator_interface> impl);
+    explicit communicator(std::shared_ptr<communicator_interface> impl);
 
     /**
      * Holds specific-implementation details of communicator
@@ -174,7 +148,7 @@ private:
     std::shared_ptr<communicator_interface> pimpl;
 
 };
-
+#endif //DEPRECATED
 }
 
 #endif //MULTI_GPU_SUPPORT

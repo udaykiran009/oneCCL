@@ -1,6 +1,6 @@
 #include "common/comm/l0/gpu_comm_attr.hpp"
 #include "common/comm/l0/device_community.hpp"
-#include "common/comm/l0/communicator/communicator_interface.hpp"
+#include "common/comm/comm_interface.hpp"
 #include "common/comm/l0/context/process_group_ctx.hpp"
 
 
@@ -20,12 +20,17 @@ std::string context_comm_addr::to_string() const
 
 thread_local size_t gpu_comm_attr::thread_id = 0;
 
-gpu_comm_attr::gpu_comm_attr(std::shared_ptr<ccl::communicator> parent_comm, size_t thread_group_size, size_t process_device_size)
+gpu_comm_attr::gpu_comm_attr(std::shared_ptr<communicator> parent_comm, size_t thread_group_size, size_t process_device_size)
  :ccl_communicator(parent_comm),
   expected_threads_count(process_device_size/ thread_group_size),
   expected_process_device_size(process_device_size)
 {
     ctx = std::make_shared<native::process_group_context>(ccl_communicator);
+}
+
+std::shared_ptr<communicator> gpu_comm_attr::get_host_communicator()
+{
+    return ccl_communicator;
 }
 
 bool gpu_comm_attr::sync_group_size(size_t device_group_size)

@@ -47,6 +47,8 @@ public:
     std::shared_ptr<::native::process_group_context> get_process_context();
     bool sync_group_size(size_t device_group_size);
     bool sync_register_communicator(std::shared_ptr<communicator_interface> comm);
+
+    std::shared_ptr<ccl::communicator> get_host_communicator();
 private:
     bool delegate_sync_register_communicator(std::shared_ptr<communicator_interface>& comm);
 

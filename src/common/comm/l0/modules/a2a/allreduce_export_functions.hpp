@@ -84,6 +84,8 @@ struct a2a_allreduce_ipc : public ipc_kernel<a2a_allreduce_ipc<native_type>,
                                          stub_arg<main_kernel_args::args_start_index + 8>,
                                          stub_arg<main_kernel_args::args_start_index + 9>>
 {
+    using processing_type = native_type;
+
     static constexpr const char* specific_name()
     {
         return "a2a_allreduce_ipc";

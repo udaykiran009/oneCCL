@@ -35,13 +35,9 @@ typedef enum
 
 typedef struct
 {
-    struct device_core_attr
-    {
-        ccl_comm_attr_t comm_attr;
-        int version;
-    } core;
+    ccl_host_comm_attr_t core;
 
     unsigned char data[];
-} ccl_comm_device_attr_t;
+} ccl_device_comm_attr_t;
 
 #endif //MULTI_GPU_SUPPORT

@@ -1,6 +1,7 @@
 #pragma once
 #include <memory>
 #include "common/comm/l0/modules/base_entry_module.hpp"
+#include "common/comm/l0/modules/modules_utils.hpp"
 
 namespace native
 {
@@ -11,14 +12,21 @@ struct real_gpu_typed_module : private gpu_module_base
 {
     template<class native_data_type>
     using kernel = kernel_function_impl<native_data_type>;
+
+    template<class ...native_data_types>
+    using kernels = std::tuple<kernel<native_data_types>...>;
+
     using handle = gpu_module_base::handle;
 
     real_gpu_typed_module(handle module_handle):
         gpu_module_base(module_handle)
     {
         LOG_DEBUG("Real gpu module created:", ccl_coll_type_to_str(type));
-        main_function_args.handle = import_kernel(kernel<float>::name());
-        main_function_args_int.handle = import_kernel(std::string(kernel<int>::name())+ "_int");//TODO just example
+        ccl_tuple_for_each(kernel_main_functions,
+                           detail::kernel_entry_initializer([this](const std::string& name) -> gpu_module_base::kernel_handle
+                           {
+                               return this->import_kernel(name);
+                           }));
         LOG_DEBUG("Imported functions count: ", functions.size());
     }
 
@@ -27,12 +35,22 @@ struct real_gpu_typed_module : private gpu_module_base
         return module;
     }
 
-    //TODO - use std::tuple  for multiple types support
-    kernel<float> main_function_args;
-    kernel<int> main_function_args_int;
+    template<class native_data_type>
+    kernel<native_data_type>& get_main_function()
+    {
+        return const_cast<kernel<native_data_type>&>(
+                        static_cast<const real_gpu_typed_module*>(this)->get_main_function<native_data_type>());
+    }
+
+    template<class native_data_type>
+    const kernel<native_data_type>& get_main_function() const
+    {
+        return ccl_tuple_get<kernel<native_data_type>>(kernel_main_functions);
+    }
 
 protected:
     ~real_gpu_typed_module() = default;
+    kernels<SUPPORTED_KERNEL_NATIVE_DATA_TYPES> kernel_main_functions;
 };
 
 
@@ -42,23 +60,39 @@ struct ipc_gpu_typed_module : private gpu_module_base
 {
     template<class native_data_type>
     using kernel = kernel_function_impl<native_data_type>;
+
+    template<class ...native_data_types>
+    using kernels = std::tuple<kernel<native_data_types>...>;
+
     using handle = gpu_module_base::handle;
 
     ipc_gpu_typed_module(handle module_handle) :
      gpu_module_base(nullptr)
     {
         LOG_DEBUG("Remote gpu module created: ", ccl_coll_type_to_str(type));
-        main_function_args.handle = nullptr; //no handle
-        main_function_args_int.handle = nullptr; //no handle
+        ccl_tuple_for_each(kernel_main_functions,
+                           detail::kernel_entry_initializer([](const std::string& name) -> gpu_module_base::kernel_handle
+                           {
+                               return nullptr;
+                           }));
         LOG_DEBUG("No need to import functions");
     }
 
-    //TODO - use std::tuple  for multiple types support
-    kernel<float> main_function_args;
-    kernel<int> main_function_args_int;
+    template<class native_data_type>
+    kernel<native_data_type>& get_main_function()
+    {
+        return const_cast<kernel<native_data_type>&>(
+                        static_cast<const ipc_gpu_typed_module*>(this)->get_main_function<native_data_type>());
+    }
 
+    template<class native_data_type>
+    const kernel<native_data_type>& get_main_function() const
+    {
+        return ccl_tuple_get<kernel<native_data_type>>(kernel_main_functions);
+    }
 protected:
     ~ipc_gpu_typed_module() = default;
+    kernels<SUPPORTED_KERNEL_NATIVE_DATA_TYPES> kernel_main_functions;
 };
 
 
@@ -71,6 +105,10 @@ struct virtual_gpu_typed_module : private gpu_module_base
 
     template<class native_data_type>
     using kernel = typename real_referenced_module::template kernel<native_data_type>;   //The same as real
+
+    template<class ...native_data_types>
+    using kernels = std::tuple<kernel<native_data_types>...>;
+
     using handle = typename real_referenced_module::handle;
 
     virtual_gpu_typed_module(std::shared_ptr<real_referenced_module> real_module) :
@@ -78,13 +116,26 @@ struct virtual_gpu_typed_module : private gpu_module_base
         real_module_ref(real_module)
     {
         LOG_DEBUG("Virtual gpu module created:", ccl_coll_type_to_str(type));
-        main_function_args.handle = import_kernel(kernel<float>::name());
-        main_function_args_int.handle = import_kernel(kernel<int>::name());
+        ccl_tuple_for_each(kernel_main_functions,
+                           detail::kernel_entry_initializer([this](const std::string& name) -> gpu_module_base::kernel_handle
+                           {
+                               return this->import_kernel(name);
+                           }));
         LOG_DEBUG("Linked functions count: ", functions.size());
     }
 
-    kernel<float> main_function_args;
-    kernel<int> main_function_args_int;
+    template<class native_data_type>
+    kernel<native_data_type>& get_main_function()
+    {
+        return const_cast<kernel<native_data_type>&>(
+                        static_cast<const virtual_gpu_typed_module*>(this)->get_main_function<native_data_type>());
+    }
+
+    template<class native_data_type>
+    const kernel<native_data_type>& get_main_function() const
+    {
+        return ccl_tuple_get<kernel<native_data_type>>(kernel_main_functions);
+    }
 
     std::shared_ptr<real_referenced_module> real_module_ref;
 
@@ -94,6 +145,7 @@ protected:
         module = nullptr;   //real module owner will destroy it
         release();
     }
+    kernels<SUPPORTED_KERNEL_NATIVE_DATA_TYPES> kernel_main_functions;
 };
 
 

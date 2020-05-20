@@ -17,6 +17,7 @@ if(MULTI_GPU_SUPPORT)
                     native_device_api/l0/primitives.cpp
                     sched/gpu_sched.cpp
                     sched/gpu_concurrent_sched.cpp
+                    common/request/gpu_request.cpp
 
                     common/comm/l0/devices/ccl_gpu_comm.cpp
                     common/comm/l0/devices/ccl_virtual_gpu_comm.cpp
@@ -28,7 +29,6 @@ if(MULTI_GPU_SUPPORT)
                     common/comm/l0/communicator/thread_group/thread_a2a_communicator.cpp
                     common/comm/l0/communicator/process_group/process_ring_communicator.cpp
                     common/comm/l0/communicator/process_group/process_a2a_communicator.cpp
-                    common/comm/l0/communicator/communicator_interface.cpp
 
                     common/comm/l0/context/process_group_ctx.cpp
                     common/comm/l0/context/thread_group_ctx.cpp
@@ -93,10 +93,14 @@ set(CCL_SRC
     unordered_coll/unordered_coll.cpp
     common/comm/atl_tag.cpp
     common/comm/comm.cpp
+    common/comm/comm_attributes.cpp
+    common/comm/host_communicator/host_communicator.cpp
+    common/comm/comm_interface.cpp
     common/datatype/datatype.cpp
     common/env/env.cpp
     common/global/global.cpp
     common/log/log.cpp
+    common/request/host_request.cpp
     common/stream/stream.cpp
     common/utils/spinlock.cpp
     common/utils/yield.cpp

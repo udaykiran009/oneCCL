@@ -1,32 +1,17 @@
 #pragma once
+#include "common/comm/comm_interface.hpp"
 
-#include "common/comm/l0/communicator/base_communicator.hpp"
-
-namespace native
-{
-    template<ccl::device_topology_type schema_id>
-    struct device_community;
-}
-
-template<class comm_impl, ccl::device_topology_type topology, class communicator_traits>
-class typed_base_communicator : public base_communicator
+class host_communicator :
+        public ccl::communicator_interface
 {
 public:
-    using base_t = base_communicator;
-    using impl_t = comm_impl;
-    using self_t = typed_base_communicator<comm_impl, topology, communicator_traits>;
-    using traits = communicator_traits;
+    friend class ccl::environment;
+    using base_t = ccl::communicator_interface;
+    using traits = ccl::host_communicator_traits;
 
-    // Topologies
-    static constexpr ccl::device_topology_type topology_type()
-    {
-        return topology;
-    }
+    host_communicator(const ccl::comm_attr_t& attr);
 
-    static constexpr ccl::device_topology_class topology_class()
-    {
-        return ccl::topology_to_class<topology>();
-    }
+    bool is_ready() const override;
 
     // traits
     bool is_host() const noexcept override
@@ -49,18 +34,22 @@ public:
         return traits::is_accelerator();
     }
 
-    typed_base_communicator(ccl::unified_device_type&& device,
-                            size_t thread_idx, size_t process_idx,
-                            const ccl::device_comm_attr_t& attr);
-
-    ccl::device_topology_type get_topology_type() const override;
-
-    void initialize_comm_addr(const ccl::device_index_type& device_id,
-                              std::shared_ptr<native::device_community<topology>> community);
-
-    bool is_ready() const override;
-
     // communicator interfaces implementation
+    size_t rank() const override;
+    size_t size() const override;
+
+    ccl::comm_attr_t get_host_attr() const override;
+
+#ifdef MULTI_GPU_SUPPORT
+    void visit(ccl::gpu_comm_attr& comm_attr) override;
+    ccl::device_topology_type get_topology_type() const override;
+    ccl::device_index_type get_device_path() const override;
+    ccl::communicator_interface::native_device_type_ref get_device() override;
+    ccl::device_comm_attr_t get_device_attr() const override;
+#endif
+
+    // collectives algo implementation
+    void barrier(ccl::stream::impl_t& stream) override;
     COMM_INTERFACE_COLL_DEFINITION__VOID;
     COMM_INTERFACE_COLL_DEFINITION(char);
     COMM_INTERFACE_COLL_DEFINITION(int);
@@ -119,21 +108,18 @@ public:
     COMM_INTERFACE_SPARSE_CLASS_DEFINITION(cl::sycl::buffer<int64_t COMMA 1>,
                                            cl::sycl::buffer<ccl::bfp16 COMMA 1>);
 #endif //CCL_ENABLE_SYCL
-
-    // Device community interface
-    template<class device_t>
-    size_t get_device_count() const;
-
-    template<class device_t>
-    native::indexed_device_container<device_t>& get_devices();
-
-    // troubleshooting
-    std::string to_string() const;
-
-    std::shared_ptr<native::device_community<topology>> device_community_impl;
-
-    impl_t* get_impl()
+private:
+    host_communicator* get_impl()
     {
-        return static_cast<impl_t*>(this);
+        return this;
     }
+    COMM_IMPL_DECLARATION
+    COMM_IMPL_CLASS_DECLARATION
+    COMM_IMPL_SPARSE_DECLARATION
+    COMM_IMPL_SPARSE_CLASS_DECLARATION
+
+    ccl::comm_attr_t comm_attr;
+    std::shared_ptr<ccl_comm> comm_impl;
+    size_t comm_rank;
+    size_t comm_size;
 };

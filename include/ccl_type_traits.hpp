@@ -80,6 +80,18 @@ CCL_TYPE_TRAITS(ccl_dtype_uint64, uint64_t,  sizeof(uint64_t))
     CCL_CLASS_TYPE_TRAITS(ccl_dtype_char,    cl::sycl::buffer<double COMMA 1>,   sizeof(double))
 #endif //CCL_ENABLE_SYCL
 
+template<>
+struct ccl_host_attributes_traits<ccl_host_color>
+{
+    using type = int;
+};
+
+template<>
+struct ccl_host_attributes_traits<ccl_host_version>
+{
+    using type = ccl_version_t;
+};
+
 /**
  * Checks for supporting @c type in ccl API
  */
