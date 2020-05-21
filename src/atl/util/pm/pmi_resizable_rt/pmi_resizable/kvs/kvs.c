@@ -261,6 +261,126 @@ void* kvs_server_init(void* args)
             exit(EXIT_FAILURE);
         }
 
+
+        if (FD_ISSET(local_sock, &read_fds))
+        {
+            if ((read(local_sock, &request, sizeof(kvs_request_t))) == 0)
+            {
+                close(local_sock);
+                local_sock = 0;
+            }
+            if (request.mode != AM_FINALIZE)
+            {
+                printf("server: Wrong access mode for local socket.\n");
+                exit(1);
+            }
+            is_stop = 1;
+            kvs_keeper_clear(ST_SERVER);
+            break;
+        }
+        else
+        {
+            for (i = 0; i < MAX_CLIENT_COUNT; i++)
+            {
+                sd = client_socket[i];
+                if (sd == 0)
+                    continue;
+
+                if (FD_ISSET(sd, &read_fds))
+                {
+                    if ((read(sd, &request, sizeof(kvs_request_t))) == 0)
+                    {
+                        close(sd);
+                        client_socket[i] = 0;
+                        continue;
+                    }
+
+                    switch (request.mode)
+                    {
+                        case AM_CONNECT:
+                        {
+                            clients_count++;
+                            break;
+                        }
+                        case AM_DISCONNECT:
+                        {
+                            clients_count--;
+                            break;
+                        }
+                        case AM_PUT:
+                        {
+                            put_key(request.name, request.key, request.val, ST_SERVER);
+                            break;
+                        }
+                        case AM_REMOVE:
+                        {
+                            remove_val(request.name, request.key, ST_SERVER);
+                            break;
+                        }
+                        case AM_GET_VAL:
+                        {
+                            count = get_val(request.name, request.key, request.val, ST_SERVER);
+                            CHECK_RW_OP(write(client_socket[i], &count, sizeof(size_t)), sizeof(size_t));
+                            if (count != 0)
+                                CHECK_RW_OP(write(client_socket[i], &request, sizeof(kvs_request_t)), sizeof(kvs_request_t));
+                            break;
+                        }
+                        case AM_GET_COUNT:
+                        {
+                            count = get_count(request.name, ST_SERVER);
+                            CHECK_RW_OP(write(client_socket[i], &count, sizeof(size_t)), sizeof(size_t));
+                            break;
+                        }
+                        case AM_GET_REPLICA:
+                        {
+                            char* replica_size_str = getenv(CCL_WORLD_SIZE_ENV);
+                            count = (replica_size_str != NULL) ? strtol(replica_size_str, NULL, 10) : clients_count;
+                            CHECK_RW_OP(write(client_socket[i], &count, sizeof(size_t)), sizeof(size_t));
+                            break;
+                        }
+                        case AM_GET_KEYS_VALUES:
+                        {
+                            char** kvs_keys = NULL;
+                            char** kvs_values = NULL;
+                            size_t j;
+                            kvs_request_t* answers = NULL;
+
+                            count = get_keys_values(request.name, &kvs_keys, &kvs_values, ST_SERVER);
+
+                            CHECK_RW_OP(write(client_socket[i], &count, sizeof(size_t)), sizeof(size_t));
+                            if (count == 0)
+                                break;
+
+                            answers = (kvs_request_t*)calloc(count, sizeof(kvs_request_t));
+                            for (j = 0; j < count; j++)
+                            {
+                                STR_COPY(answers[j].name, request.name, MAX_KVS_NAME_LENGTH);
+                                STR_COPY(answers[j].key, kvs_keys[j], MAX_KVS_KEY_LENGTH);
+                                STR_COPY(answers[j].val, kvs_values[j], MAX_KVS_VAL_LENGTH);
+                            }
+
+                            CHECK_RW_OP(write(client_socket[i], answers, sizeof(kvs_request_t) * count),
+                                        sizeof(kvs_request_t) * count);
+
+                            free(answers);
+                            for (j = 0; j < count; j++)
+                            {
+                                free(kvs_keys[j]);
+                                free(kvs_values[j]);
+                            }
+                            free(kvs_keys);
+                            free(kvs_values);
+                            break;
+                        }
+                        default:
+                        {
+                            printf("server: Unknown request mode - %d.\n", request.mode);
+                            exit(1);
+                        }
+                    }
+                }
+            }
+        }
         if (FD_ISSET(sock_listener, &read_fds))
         {
             int new_socket;
@@ -283,128 +403,6 @@ void* kvs_server_init(void* args)
                 printf("server: Not enough free sockets\n");
                 exit(1);
             }
-            continue;
-        }
-        if (FD_ISSET(local_sock, &read_fds))
-        {
-            if ((read(local_sock, &request, sizeof(kvs_request_t))) == 0)
-            {
-                close(local_sock);
-                local_sock = 0;
-            }
-            if (request.mode != AM_FINALIZE)
-            {
-                printf("server: Wrong access mode for local socket.\n");
-                exit(1);
-            }
-        }
-        else
-        {
-            for (i = 0; i < MAX_CLIENT_COUNT; i++)
-            {
-                sd = client_socket[i];
-
-                if (FD_ISSET(sd, &read_fds))
-                {
-                    if ((read(sd, &request, sizeof(kvs_request_t))) == 0)
-                    {
-                        close(sd);
-                        client_socket[i] = 0;
-                    }
-                    break;
-                }
-            }
-            if (i >= MAX_CLIENT_COUNT || client_socket[i] == 0)
-            {
-                continue;
-            }
-        }
-
-        switch (request.mode)
-        {
-            case AM_CONNECT:
-            {
-                clients_count++;
-                break;
-            }
-            case AM_DISCONNECT:
-            {
-                clients_count--;
-                break;
-            }
-            case AM_PUT:
-            {
-                put_key(request.name, request.key, request.val, ST_SERVER);
-                break;
-            }
-            case AM_REMOVE:
-            {
-                remove_val(request.name, request.key, ST_SERVER);
-                break;
-            }
-            case AM_GET_VAL:
-            {
-                count = get_val(request.name, request.key, request.val, ST_SERVER);
-                CHECK_RW_OP(write(client_socket[i], &count, sizeof(size_t)), sizeof(size_t));
-                if (count != 0)
-                    CHECK_RW_OP(write(client_socket[i], &request, sizeof(kvs_request_t)), sizeof(kvs_request_t));
-                break;
-            }
-            case AM_GET_COUNT:
-            {
-                count = get_count(request.name, ST_SERVER);
-                CHECK_RW_OP(write(client_socket[i], &count, sizeof(size_t)), sizeof(size_t));
-                break;
-            }
-            case AM_GET_REPLICA:
-            {
-                char* replica_size_str = getenv(CCL_WORLD_SIZE_ENV);
-                count = (replica_size_str != NULL) ? strtol(replica_size_str, NULL, 10) : clients_count;
-                CHECK_RW_OP(write(client_socket[i], &count, sizeof(size_t)), sizeof(size_t));
-                break;
-            }
-            case AM_GET_KEYS_VALUES:
-            {
-                char** kvs_keys = NULL;
-                char** kvs_values = NULL;
-                size_t j;
-                kvs_request_t* answers = NULL;
-
-                count = get_keys_values(request.name, &kvs_keys, &kvs_values, ST_SERVER);
-
-                CHECK_RW_OP(write(client_socket[i], &count, sizeof(size_t)), sizeof(size_t));
-                if (count == 0)
-                    break;
-
-                answers = (kvs_request_t*)calloc(count, sizeof(kvs_request_t));
-                for (j = 0; j < count; j++)
-                {
-                    STR_COPY(answers[j].name, request.name, MAX_KVS_NAME_LENGTH);
-                    STR_COPY(answers[j].key, kvs_keys[j], MAX_KVS_KEY_LENGTH);
-                    STR_COPY(answers[j].val, kvs_values[j], MAX_KVS_VAL_LENGTH);
-                }
-
-                CHECK_RW_OP(write(client_socket[i], answers, sizeof(kvs_request_t) * count),
-                            sizeof(kvs_request_t) * count);
-
-                free(answers);
-                for (j = 0; j < count; j++)
-                {
-                    free(kvs_keys[j]);
-                    free(kvs_values[j]);
-                }
-                free(kvs_keys);
-                free(kvs_values);
-                break;
-            }
-            case AM_FINALIZE:
-            {
-                is_stop = 1;
-                kvs_keeper_clear(ST_SERVER);
-                break;
-            }
-            default:
-                exit(1);
         }
     }
 
@@ -580,9 +578,12 @@ size_t init_main_server_address(const char* main_addr)
     while (local_host_ip[strlen(local_host_ip) - 1] == '\n' ||
            local_host_ip[strlen(local_host_ip) - 1] == ' ')
         local_host_ip[strlen(local_host_ip) - 1] = NULL_CHAR;
+
     if ((additional_local_host_ips = strstr(local_host_ip, " ")) != NULL)
+    {
         additional_local_host_ips[0] = NULL_CHAR;
-    additional_local_host_ips++;
+        additional_local_host_ips++;
+    }
 
     if (ip_getting_type)
     {
