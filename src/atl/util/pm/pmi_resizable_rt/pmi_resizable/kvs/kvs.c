@@ -70,7 +70,7 @@ size_t kvs_set_value(const char* kvs_name, const char* kvs_key, const char* kvs_
     STR_COPY(request.key, kvs_key, MAX_KVS_KEY_LENGTH);
     STR_COPY(request.val, kvs_val, MAX_KVS_VAL_LENGTH);
 
-    CHECK_RW_OP(write(sock_sender, &request, sizeof(kvs_request_t)), sizeof(kvs_request_t));
+    DO_RW_OP(write, sock_sender, &request, sizeof(kvs_request_t));
 
     return 0;
 }
@@ -83,7 +83,7 @@ size_t kvs_remove_name_key(const char* kvs_name, const char* kvs_key)
     STR_COPY(request.name, kvs_name, MAX_KVS_NAME_LENGTH);
     STR_COPY(request.key, kvs_key, MAX_KVS_KEY_LENGTH);
 
-    CHECK_RW_OP(write(sock_sender, &request, sizeof(kvs_request_t)), sizeof(kvs_request_t));
+    DO_RW_OP(write, sock_sender, &request, sizeof(kvs_request_t));
 
     return 0;
 }
@@ -98,12 +98,12 @@ size_t kvs_get_value_by_name_key(const char* kvs_name, const char* kvs_key, char
     STR_COPY(request.key, kvs_key, MAX_KVS_KEY_LENGTH);
     memset(kvs_val, 0, MAX_KVS_VAL_LENGTH);
 
-    CHECK_RW_OP(write(sock_sender, &request, sizeof(kvs_request_t)), sizeof(kvs_request_t));
+    DO_RW_OP(write, sock_sender, &request, sizeof(kvs_request_t));
 
-    CHECK_RW_OP(read(sock_sender, &is_exist, sizeof(size_t)), sizeof(size_t));
+    DO_RW_OP(read, sock_sender, &is_exist, sizeof(size_t));
     if (is_exist)
     {
-        CHECK_RW_OP(read(sock_sender, &request, sizeof(kvs_request_t)), sizeof(kvs_request_t));
+        DO_RW_OP(read, sock_sender, &request, sizeof(kvs_request_t));
         STR_COPY(kvs_val, request.val, MAX_KVS_VAL_LENGTH);
     }
 
@@ -118,9 +118,9 @@ size_t kvs_get_count_names(const char* kvs_name)
     request.mode = AM_GET_COUNT;
     STR_COPY(request.name, kvs_name, MAX_KVS_NAME_LENGTH);
 
-    CHECK_RW_OP(write(sock_sender, &request, sizeof(kvs_request_t)), sizeof(kvs_request_t));
+    DO_RW_OP(write, sock_sender, &request, sizeof(kvs_request_t));
 
-    CHECK_RW_OP(read(sock_sender, &count_names, sizeof(size_t)), sizeof(size_t));
+    DO_RW_OP(read, sock_sender, &count_names, sizeof(size_t));
 
     return count_names;
 }
@@ -136,17 +136,16 @@ size_t kvs_get_keys_values_by_name(const char* kvs_name, char*** kvs_keys, char*
     request.mode = AM_GET_KEYS_VALUES;
     STR_COPY(request.name, kvs_name, MAX_KVS_NAME_LENGTH);
 
-    CHECK_RW_OP(write(sock_sender, &request, sizeof(kvs_request_t)), sizeof(kvs_request_t));
+    DO_RW_OP(write, sock_sender, &request, sizeof(kvs_request_t));
 
-    CHECK_RW_OP(read(sock_sender, &count, sizeof(size_t)), sizeof(size_t));
+    DO_RW_OP(read, sock_sender, &count, sizeof(size_t));
 
     if (count == 0)
         return count;
 
     answers = (kvs_request_t*)calloc(count, sizeof(kvs_request_t));
 
-    CHECK_RW_OP(read(sock_sender, answers, sizeof(kvs_request_t) * count),
-                sizeof(kvs_request_t) * count);
+    DO_RW_OP(read, sock_sender, answers, sizeof(kvs_request_t) * count);
     if (kvs_keys != NULL)
     {
         if (*kvs_keys != NULL)
@@ -190,9 +189,9 @@ size_t kvs_get_replica_size(void)
         memset(&request, 0, sizeof(kvs_request_t));
         request.mode = AM_GET_REPLICA;
 
-        CHECK_RW_OP(write(sock_sender, &request, sizeof(kvs_request_t)), sizeof(kvs_request_t));
+        DO_RW_OP(write, sock_sender, &request, sizeof(kvs_request_t));
 
-        CHECK_RW_OP(read(sock_sender, &replica_size, sizeof(size_t)), sizeof(size_t));
+        DO_RW_OP(read, sock_sender, &replica_size, sizeof(size_t));
     }
     return replica_size;
 }
@@ -320,22 +319,22 @@ void* kvs_server_init(void* args)
                         case AM_GET_VAL:
                         {
                             count = get_val(request.name, request.key, request.val, ST_SERVER);
-                            CHECK_RW_OP(write(client_socket[i], &count, sizeof(size_t)), sizeof(size_t));
+                            DO_RW_OP(write, client_socket[i], &count, sizeof(size_t));
                             if (count != 0)
-                                CHECK_RW_OP(write(client_socket[i], &request, sizeof(kvs_request_t)), sizeof(kvs_request_t));
+                                DO_RW_OP(write, client_socket[i], &request, sizeof(kvs_request_t));
                             break;
                         }
                         case AM_GET_COUNT:
                         {
                             count = get_count(request.name, ST_SERVER);
-                            CHECK_RW_OP(write(client_socket[i], &count, sizeof(size_t)), sizeof(size_t));
+                            DO_RW_OP(write, client_socket[i], &count, sizeof(size_t));
                             break;
                         }
                         case AM_GET_REPLICA:
                         {
                             char* replica_size_str = getenv(CCL_WORLD_SIZE_ENV);
                             count = (replica_size_str != NULL) ? strtol(replica_size_str, NULL, 10) : clients_count;
-                            CHECK_RW_OP(write(client_socket[i], &count, sizeof(size_t)), sizeof(size_t));
+                            DO_RW_OP(write, client_socket[i], &count, sizeof(size_t));
                             break;
                         }
                         case AM_GET_KEYS_VALUES:
@@ -347,7 +346,7 @@ void* kvs_server_init(void* args)
 
                             count = get_keys_values(request.name, &kvs_keys, &kvs_values, ST_SERVER);
 
-                            CHECK_RW_OP(write(client_socket[i], &count, sizeof(size_t)), sizeof(size_t));
+                            DO_RW_OP(write, client_socket[i], &count, sizeof(size_t));
                             if (count == 0)
                                 break;
 
@@ -359,8 +358,8 @@ void* kvs_server_init(void* args)
                                 STR_COPY(answers[j].val, kvs_values[j], MAX_KVS_VAL_LENGTH);
                             }
 
-                            CHECK_RW_OP(write(client_socket[i], answers, sizeof(kvs_request_t) * count),
-                                        sizeof(kvs_request_t) * count);
+                            DO_RW_OP(write, client_socket[i], answers, sizeof(kvs_request_t) * count);
+
 
                             free(answers);
                             for (j = 0; j < count; j++)
@@ -406,7 +405,7 @@ void* kvs_server_init(void* args)
         }
     }
 
-    CHECK_RW_OP(write(local_sock, &is_stop, sizeof(int)), sizeof(int));
+    DO_RW_OP(write, local_sock, &is_stop, sizeof(int));
     close(local_sock);
     for (i = 0; i < MAX_CLIENT_COUNT; i++)
     {
@@ -767,7 +766,7 @@ size_t kvs_init(const char* main_addr)
 
     request.mode = AM_CONNECT;
 
-    CHECK_RW_OP(write(sock_sender, &request, sizeof(kvs_request_t)), sizeof(kvs_request_t));
+    DO_RW_OP(write, sock_sender, &request, sizeof(kvs_request_t));
 
     if (strstr(main_host_ip, local_host_ip) &&
         local_port == main_port)
@@ -784,16 +783,16 @@ size_t kvs_finalize(void)
     memset(&request, 0, sizeof(kvs_request_t));
     request.mode = AM_DISCONNECT;
 
-    CHECK_RW_OP(write(sock_sender, &request, sizeof(kvs_request_t)), sizeof(kvs_request_t));
+    DO_RW_OP(write, sock_sender, &request, sizeof(kvs_request_t));
     if (thread != 0)
     {
         void* exit_code;
         int err;
         request.mode = AM_FINALIZE;
 
-        CHECK_RW_OP(write(accepted_local_sock, &request, sizeof(kvs_request_t)), sizeof(kvs_request_t));
+        DO_RW_OP(write, accepted_local_sock, &request, sizeof(kvs_request_t));
 
-        CHECK_RW_OP(read(accepted_local_sock, &err, sizeof(int)), sizeof(int));
+        DO_RW_OP(read, accepted_local_sock, &err, sizeof(int));
 
         err = pthread_join(thread, &exit_code);
         if (err)
