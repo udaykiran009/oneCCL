@@ -1,7 +1,7 @@
 #include "ccl.hpp"
 #include "coll/algorithms/algorithms.hpp"
 #include "coll/algorithms/allreduce/allreduce_2d.hpp"
-#include "coll/algorithms/sparse.hpp"
+#include "coll/algorithms/sparse_allreduce/sparse_allreduce.hpp"
 #include "coll/coll.hpp"
 #include "coll/selection/selection.hpp"
 #include "common/global/global.hpp"
@@ -20,6 +20,8 @@ ccl_coll_attr& ccl_coll_attr::operator= (const ccl_coll_attr_t* attr)
     prologue_fn = attr->prologue_fn;
     epilogue_fn = attr->epilogue_fn;
     reduction_fn = attr->reduction_fn;
+    sparse_allreduce_completion_fn = attr->sparse_allreduce_completion_fn;
+    sparse_allreduce_completion_ctx = attr->sparse_allreduce_completion_ctx;
     priority = attr->priority;
     synchronous = attr->synchronous;
     to_cache = attr->to_cache && attr->match_id && attr->match_id[0];
@@ -492,8 +494,8 @@ ccl_status_t ccl_coll_build_sparse_allreduce(
     ccl_sched* sched,
     ccl_buffer send_ind_buf, size_t send_ind_count,
     ccl_buffer send_val_buf, size_t send_val_count,
-    ccl_buffer recv_ind_buf, size_t* recv_ind_count,
-    ccl_buffer recv_val_buf, size_t* recv_val_count,
+    void** recv_ind_buf, size_t* recv_ind_count,
+    void** recv_val_buf, size_t* recv_val_count,
     const ccl_datatype& index_dtype,
     const ccl_datatype& value_dtype,
     ccl_reduction_t reduction,
@@ -507,12 +509,22 @@ ccl_status_t ccl_coll_build_sparse_allreduce(
     param.dtype = ccl_datatype_char;
     param.comm = comm;
 
+    if (!send_ind_buf.get_ptr() || !send_val_buf.get_ptr())
+    {
+        LOG_ERROR("sparse_allreduce send buffers for indices and values should not be NULL, but got " \
+                  "indices buffer = ", send_ind_buf.get_ptr(), ", values buffer = ", send_val_buf.get_ptr());
+        assert(send_ind_buf.get_ptr() && send_val_buf.get_ptr());
+        throw ccl::ccl_error(std::string(__FUNCTION__) + "sparse_allreduce send buffers for indices and values \
+                        should not be NULL, but got indices buffer = " + std::to_string((uintptr_t)send_ind_buf.get_ptr()) +
+                        ", values buffer = " + std::to_string((uintptr_t)send_val_buf.get_ptr()));
+    }
+
     if (!send_ind_count || !send_val_count)
     {
-        LOG_ERROR("sparse tensor indices count should be greater than zero, but got " \
+        LOG_ERROR("sparse_allreduce send buffer count should be greater than zero, but got " \
                   "indices count = ", send_ind_count, ", values count = ", send_val_count);
         assert(send_ind_count && send_val_count);
-        throw ccl::ccl_error(std::string(__FUNCTION__) + "sparse tensor indices count should be \
+        throw ccl::ccl_error(std::string(__FUNCTION__) + "sparse_allreduce send buffer count should be \
                         greater than zero, but got indices count = " + std::to_string(send_ind_count) +
                         ", values count = " + std::to_string(send_val_count));
     }
@@ -523,6 +535,16 @@ ccl_status_t ccl_coll_build_sparse_allreduce(
                   multi-dimensional values format\n got indices count = ", send_ind_count,
                   ", values count = ", send_val_count);
         return ccl_status_invalid_arguments;
+    }
+
+    if (env_data.atl_transport == ccl_atl_mpi)
+    {
+        /*
+            for now all sparse_allreduce algorithms
+            may contains direct collective entries (allreduce/allgatherv)
+            which should be executed in strict_start_order mode
+        */
+        sched->strict_start_order = true;
     }
 
     auto algo = global_data.algorithm_selector->get<ccl_coll_sparse_allreduce>(param);
@@ -761,8 +783,8 @@ ccl_request* ccl_reduce_impl(const void* send_buf,
 
 ccl_request* ccl_sparse_allreduce_impl(const void* send_ind_buf, size_t send_ind_count,
                                        const void* send_val_buf, size_t send_val_count,
-                                       void** recv_ind_buf, size_t* recv_ind_count,
-                                       void** recv_val_buf, size_t* recv_val_count,
+                                       void* recv_ind_buf, size_t recv_ind_count,
+                                       void* recv_val_buf, size_t recv_val_count,
                                        ccl_datatype_t index_dtype, ccl_datatype_t value_dtype,
                                        ccl_reduction_t reduction, const ccl_coll_attr_t* attr,
                                        ccl_comm* comm, const ccl_stream* stream)
@@ -784,7 +806,10 @@ ccl_request* ccl_sparse_allreduce_impl(const void* send_ind_buf, size_t send_ind
     param.stream = stream;
     param.comm = comm;
 
-    auto req = ccl_coll_create(param, ccl_coll_attr(attr));
+    ccl_coll_attr internal_attr(attr);
+    internal_attr.to_cache = 0; /* skip to_cache flag, unsupported yet */
+
+    auto req = ccl_coll_create(param, internal_attr);
     LOG_DEBUG("coll ", ccl_coll_type_to_str(param.ctype), " created, req ", req);
     return req;
 }

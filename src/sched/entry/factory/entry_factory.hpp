@@ -11,6 +11,7 @@
 #include "sched/entry/sync_entry.hpp"
 #include "sched/entry/prologue_entry.hpp"
 #include "sched/entry/epilogue_entry.hpp"
+#include "sched/entry/sparse_callback_entry.hpp"
 #include "sched/entry/wait_value_entry.hpp"
 #include "sched/entry/function_entry.hpp"
 #include "sched/entry/probe_entry.hpp"

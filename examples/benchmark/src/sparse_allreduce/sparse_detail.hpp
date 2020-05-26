@@ -27,7 +27,7 @@ namespace sparse_detail
           size_t unique_indices_count = (to - from) / step;
           if (unique_indices_count == 0)
           {
-              throw std::runtime_error(std::string("Invalid range! from: ") + std::to_string(from) +
+              throw std::runtime_error(std::string("invalid range! from: ") + std::to_string(from) +
                                        ", to: " + std::to_string(to) +
                                        ", step: " + std::to_string(step));
           }
@@ -57,14 +57,16 @@ namespace sparse_detail
   template<class ValueType, class IndexType, class IndicesDistributorType>
   void fill_sparse_data(const std::tuple<size_t, size_t>& expected_recv_counts,
                         IndicesDistributorType& generator,
-                        size_t elem_count, IndexType* send_ibuf, ValueType* send_buf,
-                        ValueType* recv_buf, size_t& recv_icount, size_t& recv_vcount,
+                        size_t elem_count,
+                        IndexType* send_ibuf, ValueType* send_vbuf,
+                        ValueType* recv_vbuf, size_t recv_vbuf_count,
+                        size_t& recv_icount, size_t& recv_vcount,
                         size_t rank)
   {
-
       recv_icount = std::get<0>(expected_recv_counts);
       recv_vcount = std::get<1>(expected_recv_counts);
       size_t vdim_count = recv_vcount / recv_icount;
+
       for (size_t i_idx = 0; i_idx < recv_icount; i_idx++)
       {
           send_ibuf[i_idx] = generator();
@@ -72,31 +74,31 @@ namespace sparse_detail
           {
               if (i_idx * vdim_count + e_idx < elem_count)
               {
-                  send_buf[i_idx * vdim_count + e_idx] = (rank + 1 + e_idx);
+                  send_vbuf[i_idx * vdim_count + e_idx] = (rank + 1 + e_idx);
               }
           }
       }
 
-      std::fill(recv_buf, recv_buf + elem_count, ValueType{0});
+      std::fill(recv_vbuf, recv_vbuf + recv_vbuf_count, ValueType{0});
   }
 
   // override for ccl::bfp16
   template<class IndexType, class IndicesDistributorType>
   void fill_sparse_data(const std::tuple<size_t, size_t>& expected_recv_counts,
                         IndicesDistributorType& generator,
-                        size_t elem_count, IndexType* send_ibuf, ccl::bfp16* send_buf,
-                        ccl::bfp16* recv_buf, size_t& recv_icount, size_t& recv_vcount,
+                        size_t elem_count,
+                        IndexType* send_ibuf, ccl::bfp16* send_vbuf,
+                        ccl::bfp16* recv_vbuf, size_t recv_vbuf_count,
+                        size_t& recv_icount, size_t& recv_vcount,
                         size_t rank)
   {
-
       recv_icount = std::get<0>(expected_recv_counts);
       recv_vcount = std::get<1>(expected_recv_counts);
       size_t vdim_count = recv_vcount / recv_icount;
       
       using from_type = float;
-      std::vector<from_type> send_buf_from(elem_count);
+      std::vector<from_type> send_vbuf_from(elem_count);
 
-      
       for (size_t i_idx = 0; i_idx < recv_icount; i_idx++)
       {
           send_ibuf[i_idx] = generator();
@@ -104,21 +106,22 @@ namespace sparse_detail
           {
               if (i_idx * vdim_count + e_idx < elem_count)
               {
-                  send_buf_from[i_idx * vdim_count + e_idx] = 1.0f / (rank + 1 + e_idx);
+                  send_vbuf_from[i_idx * vdim_count + e_idx] = 1.0f / (rank + 1 + e_idx);
               }
           }
       }
 
-      std::fill(recv_buf, recv_buf + elem_count, ccl::bfp16{0});
-      // convert send_buf from float to send_buf ib bfp16
-      convert_fp32_to_bfp16_arrays(send_buf_from.data(), send_buf, elem_count);
+      std::fill(recv_vbuf, recv_vbuf + recv_vbuf_count, ccl::bfp16{0});
+
+      // convert send_vbuf from float to send_vbuf in bfp16
+      convert_fp32_to_bfp16_arrays(send_vbuf_from.data(), send_vbuf, elem_count);
   }
 
   template<class ValueType, class IndexType>
   void check_sparse_result(const std::tuple<size_t, size_t>& expected_recv_counts,
                            size_t elem_count,
-                           const IndexType* send_ibuf, const ValueType* send_buf,
-                           const IndexType* recv_ibuf, const ValueType* recv_buf,
+                           const IndexType* send_ibuf, const ValueType* send_vbuf,
+                           const IndexType* recv_ibuf, const ValueType* recv_vbuf,
                            size_t recv_icount, size_t recv_vcount,
                            size_t comm_size, size_t comm_rank)
   {
@@ -132,13 +135,13 @@ namespace sparse_detail
       std::vector<ValueType> aggregated_values;
       aggregated_values.reserve(indices_count * vdim_count * comm_size);
 
-      std::vector<ValueType> base_send_data(send_buf, send_buf + indices_count * vdim_count);
+      std::vector<ValueType> base_send_data(send_vbuf, send_vbuf + indices_count * vdim_count);
       std::transform(base_send_data.begin(), base_send_data.end(),
                      base_send_data.begin(),
                      std::bind(std::minus<ValueType>(),
                                std::placeholders::_1, comm_rank));
 
-      for(size_t rank_index = 0; rank_index < comm_size; rank_index++)
+      for (size_t rank_index = 0; rank_index < comm_size; rank_index++)
       {
           std::copy(send_ibuf, send_ibuf + indices_count,
                     std::back_inserter(aggregated_indices));
@@ -191,58 +194,50 @@ namespace sparse_detail
 
           const values_array& expected_values = expected_it->second;
 
-          const ValueType* from = recv_buf + index_pos * vdim_count;
+          const ValueType* from = recv_vbuf + index_pos * vdim_count;
           const ValueType* to = from + vdim_count;
 
           values_array got_values(from, to);
           if (got_values != expected_values)
           {
               std::stringstream ss;
-              const char* val_ptr = getenv("CCL_ATL_TRANSPORT");
-              if (!val_ptr or !strcmp(val_ptr, "mpi"))
-              {
-                  ss << "Environment value CCL_ATL_TRANSPORT=" << (val_ptr ? val_ptr : "<default>")
-                     << ". MPI has a limited support of sparse allreduce. " 
-                     << "Make sure, that the following conditions are satisfied: \n"
-                     << "\tCCL_WORKER_OFFLOAD=0\n"
-                     << "\tYou have only one non-repeated sparse collective in colls list.\n\n"
-                     << "Failed scenario settings:\n";
-              }
+
               ss << "elem_count: " << elem_count
                  << ", indices_count: " << indices_count
                  << ", vdim_count:" <<  vdim_count
                  << ", recv_icount: " << recv_icount
                  << ", recv_vcount: " << recv_vcount;
 
-              ss << "\nValues got:\n";
+              ss << "\nvalues got:\n";
               std::copy(got_values.begin(), got_values.end(),
                         std::ostream_iterator<ValueType>(ss, ","));
-              ss << "\nValues expected:\n";
+              ss << "\nvalues expected:\n";
               std::copy(expected_values.begin(), expected_values.end(),
                         std::ostream_iterator<ValueType>(ss, ","));
 
-              ss << "\nRank: " << comm_rank << ", send_bufs:\n";
-              std::copy(send_buf, send_buf + indices_count * vdim_count,
+              ss << "\nrank: " << comm_rank << ", send_vbufs:\n";
+              std::copy(send_vbuf, send_vbuf + indices_count * vdim_count,
                         std::ostream_iterator<ValueType>(ss, ","));
-              ss << "\nRank: " << comm_rank << ", send_ibufs:\n";
+              ss << "\nrank: " << comm_rank << ", send_ibufs:\n";
               std::copy(send_ibuf, send_ibuf + indices_count,
                         std::ostream_iterator<IndexType>(ss, ","));
 
-              ss << "\nRank: " << comm_rank << ", recv_bufs:\n";
-              std::copy(recv_buf, recv_buf + indices_count * vdim_count,
+              ss << "\nrank: " << comm_rank << ", recv_vbufs:\n";
+              std::copy(recv_vbuf, recv_vbuf + indices_count * vdim_count,
                         std::ostream_iterator<ValueType>(ss, ","));
-              ss << "\nRank: " << comm_rank << ", recv_ibufs:\n";
+              ss << "\nrank: " << comm_rank << ", recv_ibufs:\n";
               std::copy(recv_ibuf, recv_ibuf + indices_count,
                         std::ostream_iterator<IndexType>(ss, ","));
 
-              ss << "\nAggregated indices:\n";
+              ss << "\naggregated indices:\n";
               std::copy(aggregated_indices.begin(), aggregated_indices.end(),
                         std::ostream_iterator<IndexType>(ss, ","));
-              ss << "\nAggregated values:\n";
+              ss << "\naggregated values:\n";
               std::copy(aggregated_values.begin(), aggregated_values.end(),
                         std::ostream_iterator<ValueType>(ss, ","));
 
-              throw std::runtime_error(std::string(__FUNCTION__) + " - incorrect values received!\n" + ss.str());
+              throw std::runtime_error(std::string(__FUNCTION__) +
+                " - incorrect values received!\n" + ss.str());
           }
       }
   }
@@ -251,8 +246,8 @@ namespace sparse_detail
   template<class IndexType>
   void check_sparse_result(const std::tuple<size_t, size_t>& expected_recv_counts,
                            size_t elem_count,
-                           const IndexType* send_ibuf, const ccl::bfp16* send_buf,
-                           const IndexType* recv_ibuf, const ccl::bfp16* recv_buf,
+                           const IndexType* send_ibuf, const ccl::bfp16* send_vbuf,
+                           const IndexType* recv_ibuf, const ccl::bfp16* recv_vbuf,
                            size_t recv_icount, size_t recv_vcount,
                            size_t comm_size, size_t comm_rank)
   {
@@ -266,7 +261,7 @@ namespace sparse_detail
       std::vector<float> aggregated_values;
       aggregated_values.reserve(indices_count * vdim_count * comm_size);
 
-      for(size_t rank_index = 0; rank_index < comm_size; rank_index++)
+      for (size_t rank_index = 0; rank_index < comm_size; rank_index++)
       {
           std::copy(send_ibuf, send_ibuf + indices_count,
                     std::back_inserter(aggregated_indices));
@@ -312,8 +307,9 @@ namespace sparse_detail
       }
 
       // check received values
-      std::vector<float> recv_buf_float(recv_vcount, float{0});
-      convert_bfp16_to_fp32_arrays(reinterpret_cast<void*>(const_cast<ccl::bfp16*>(recv_buf)), recv_buf_float.data(), recv_vcount);
+      std::vector<float> recv_vbuf_float(recv_vcount, float{0});
+      convert_bfp16_to_fp32_arrays(reinterpret_cast<void*>(const_cast<ccl::bfp16*>(recv_vbuf)),
+                                   recv_vbuf_float.data(), recv_vcount);
       
       /* https://www.mcs.anl.gov/papers/P4093-0713_1.pdf */
       /* added conversion error float->bfp16 for comm_size == 1*/
@@ -330,33 +326,23 @@ namespace sparse_detail
                                        std::to_string(recv_index_value));
           }
 
-          const float* from = recv_buf_float.data() + index_pos * vdim_count;
+          const float* from = recv_vbuf_float.data() + index_pos * vdim_count;
           const float* to = from + vdim_count;
           const values_array& expected_values = expected_it->second;
           if (vdim_count != expected_values.size())
           {
-              throw std::runtime_error(std::string(__FUNCTION__) + "_bfp16 - incorrect recv_buf count, got: " + 
+              throw std::runtime_error(std::string(__FUNCTION__) + "_bfp16 - incorrect recv_vbuf count, got: " +
                                        std::to_string(std::distance(from, to)) + ", expected: " +
                                        std::to_string(expected_values.size()));
           }
           
-          for(size_t i = 0; i < expected_values.size(); i++)
+          for (size_t i = 0; i < expected_values.size(); i++)
           {
               double compare_max_error = g * expected_values[i] * 2;
               if (fabs(compare_max_error) < fabs(expected_values[i] - from[i]))
               {
                   std::stringstream ss;
-                  const char* val_ptr = getenv("CCL_ATL_TRANSPORT");
-                  if (!val_ptr or !strcmp(val_ptr, "mpi"))
-                  {
-                      ss << "Environment value CCL_ATL_TRANSPORT=" << (val_ptr ? val_ptr : "<default>")
-                         << ". MPI has a limited support of sparse allreduce. "
-                         << "Make sure, that the following conditions are satisfied: \n\n"
-                         << "\tCCL_WORKER_OFFLOAD=0\n"
-                         << "\tYou have only one non-repeated sparse collective in colls list.\n\n"
-                         << "Failed scenario settings:\n";
-                  }
-                  
+
                   ss << "elem_count: " << elem_count
                      << ", indices_count: " << indices_count
                      << ", vdim_count:" <<  vdim_count
@@ -364,38 +350,37 @@ namespace sparse_detail
                      << ", recv_vcount: " << recv_vcount
                      << ", absolute_max_error: " << compare_max_error;
 
-                  ss << "\nValues got:\n";
+                  ss << "\nvalues got:\n";
                   std::copy(from, to,
                             std::ostream_iterator<float>(ss, ","));
-                  ss << "\nValues expected:\n";
+                  ss << "\nvalues expected:\n";
                   std::copy(expected_values.begin(), expected_values.end(),
                             std::ostream_iterator<float>(ss, ","));
 
-                  ss << "\nRank: " << comm_rank << ", send_ibufs:\n";
+                  ss << "\nrank: " << comm_rank << ", send_ibufs:\n";
                   std::copy(send_ibuf, send_ibuf + indices_count,
                             std::ostream_iterator<IndexType>(ss, ","));
 
-                  ss << "\nRank: " << comm_rank << ", recv_bufs:\n";
-                  std::copy(recv_buf_float.begin(), recv_buf_float.end(),
+                  ss << "\nrank: " << comm_rank << ", recv_vbufs:\n";
+                  std::copy(recv_vbuf_float.begin(), recv_vbuf_float.end(),
                             std::ostream_iterator<float>(ss, ","));
-                  ss << "\nRank: " << comm_rank << ", recv_ibufs:\n";
+                  ss << "\nrank: " << comm_rank << ", recv_ibufs:\n";
                   std::copy(recv_ibuf, recv_ibuf + indices_count,
                             std::ostream_iterator<IndexType>(ss, ","));
 
-                  ss << "\nAggregated indices:\n";
+                  ss << "\naggregated indices:\n";
                   std::copy(aggregated_indices.begin(), aggregated_indices.end(),
                             std::ostream_iterator<IndexType>(ss, ","));
-                  ss << "\nAggregated values:\n";
+                  ss << "\naggregated values:\n";
                   std::copy(aggregated_values.begin(), aggregated_values.end(),
                             std::ostream_iterator<float>(ss, ","));
 
-                  throw std::runtime_error(std::string(__FUNCTION__) + "_bfp16 - incorrect values received!\n" + ss.str());
+                  throw std::runtime_error(std::string(__FUNCTION__) +
+                    "_bfp16 - incorrect values received!\n" + ss.str());
               }
           }
       }
   }
-} /* End sparse detail content */
-
-
+} /* namespace sparse_detail */
 
 #endif /* SPARSE_COLL_HPP */

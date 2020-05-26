@@ -203,13 +203,7 @@ run()
                 if [ "$dir_name" == "benchmark" ];
                 then
                     for backend in $backend_list
-                    do                        
-                        # MPI doesn't support sparse functionality, remove sparse_allreduce from coll_list
-                        if [ "${transport}" == "mpi" ];
-                        then
-                            coll_list="allgatherv,allreduce,alltoall,alltoallv,bcast,reduce,allgatherv,allreduce,alltoall,alltoallv,bcast,reduce"
-                        fi
-
+                    do
                         ccl_extra_env="${ccl_transport_env}"
 
                         run_benchmark "${ccl_extra_env}" ${dir_name} ${transport} ${example} ${backend} regular ${coll_list}
@@ -254,7 +248,16 @@ run()
                         run_example "${ccl_extra_env}" ${dir_name} ${transport} ${example}                       
                     elif [[ "${example}" == *"sparse_allreduce"* ]]
                     then
-                        for sparse_algo in "mask" "allgatherv";
+                        # TODO: fix ring algo
+                        if [ "$transport" == "mpi" ];
+                        then
+                            #sparse_algo_set="ring"
+                            sparse_algo_set=""
+                        else
+                            #sparse_algo_set="ring mask allgatherv"
+                            sparse_algo_set="mask allgatherv"
+                        fi
+                        for sparse_algo in ${sparse_algo_set};
                         do
                             ccl_extra_env="CCL_SPARSE_ALLREDUCE=$sparse_algo ${ccl_transport_env}"
                             run_example "${ccl_extra_env}" ${dir_name} ${transport} ${example}

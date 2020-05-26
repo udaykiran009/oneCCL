@@ -20,16 +20,12 @@ struct sycl_allgatherv_coll : sycl_base_coll<Dtype, allgatherv_strategy_impl>
     using coll_base::recv_bufs;
     using coll_base::single_send_buf;
     using coll_base::single_recv_buf;
-    using coll_base::check_values;
     using coll_base::comm;
 
     sycl_allgatherv_coll() : coll_base(1, base_coll::comm->size(), base_coll::comm->size()) {}
 
     virtual void prepare(size_t elem_count) override
     {
-        if (!check_values)
-            return;
-
         size_t local_rank = comm->rank();
         size_t local_size = comm->size();
         for (size_t b_idx = 0; b_idx < BUF_COUNT; b_idx++)
@@ -54,9 +50,6 @@ struct sycl_allgatherv_coll : sycl_base_coll<Dtype, allgatherv_strategy_impl>
 
     virtual void finalize(size_t elem_count) override
     {
-        if (!check_values)
-            return;
-
         bool unexpected_device_value = false;
         size_t local_size = comm->size();
         Dtype sbuf_expected = comm->rank();

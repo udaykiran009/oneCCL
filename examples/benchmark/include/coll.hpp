@@ -16,15 +16,15 @@ struct base_coll
 
     virtual const char* name() const noexcept { return nullptr; };
 
-    virtual void prepare(size_t count) {};
-    virtual void finalize(size_t count) {};
+    virtual void prepare(size_t elem_count) {};
+    virtual void finalize(size_t elem_count) {};
 
     virtual void start(size_t count, size_t buf_idx,
-                       const ccl_coll_attr_t& coll_attr,
+                       const ccl::coll_attr& attr,
                        req_list_t& reqs) = 0;
 
     virtual void start_single(size_t count,
-                              const ccl_coll_attr_t& coll_attr,
+                              const ccl::coll_attr& attr,
                               req_list_t& reqs) = 0;
 
     void* send_bufs[BUF_COUNT] = { nullptr };
@@ -32,9 +32,7 @@ struct base_coll
     void* single_send_buf = nullptr;
     void* single_recv_buf = nullptr;
 
-    bool check_values = false;
-
-    //the global communicator & stream for all collectives 
+    /* global communicator & stream for all collectives */
     static ccl::communicator_t comm;
     static ccl::stream_t stream;
 };

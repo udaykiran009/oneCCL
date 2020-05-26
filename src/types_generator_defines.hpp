@@ -107,8 +107,8 @@ ccl::communicator::reduce(const type* send_buf,             \
 template ccl::communicator::coll_request_t CCL_API                                         \
 ccl::communicator::sparse_allreduce(const index_type* send_ind_buf, size_t send_ind_count, \
                                     const value_type* send_val_buf, size_t send_val_count, \
-                                    index_type** recv_ind_buf, size_t* recv_ind_count,     \
-                                    value_type** recv_val_buf, size_t* recv_val_count,     \
+                                    index_type* recv_ind_buf, size_t recv_ind_count,       \
+                                    value_type* recv_val_buf, size_t recv_val_count,       \
                                     ccl::reduction reduction,                              \
                                     const ccl::coll_attr* attr,                            \
                                     const ccl::stream_t& stream);
@@ -117,8 +117,8 @@ ccl::communicator::sparse_allreduce(const index_type* send_ind_buf, size_t send_
 template ccl::communicator::coll_request_t CCL_API                                         \
 ccl::communicator::sparse_allreduce(const index_type& send_ind_buf, size_t send_ind_count, \
                                     const value_type& send_val_buf, size_t send_val_count, \
-                                    index_type** recv_ind_buf, size_t* recv_ind_count,     \
-                                    value_type** recv_val_buf, size_t* recv_val_count,     \
+                                    index_type& recv_ind_buf, size_t recv_ind_count,       \
+                                    value_type& recv_val_buf, size_t recv_val_count,       \
                                     ccl::reduction reduction,                              \
                                     const ccl::coll_attr* attr,                            \
                                     const ccl::stream_t& stream);
@@ -181,8 +181,8 @@ virtual ccl::communicator::coll_request_t reduce(const void* send_buf,          
 virtual ccl::communicator::coll_request_t                                                  \
 sparse_allreduce(const void* send_ind_buf, size_t send_ind_count,                          \
                  const void* send_val_buf, size_t send_val_count,                          \
-                 void** recv_ind_buf, size_t* recv_ind_count,                              \
-                 void** recv_val_buf, size_t* recv_val_count,                              \
+                 void* recv_ind_buf, size_t recv_ind_count,                                \
+                 void* recv_val_buf, size_t recv_val_count,                                \
                  ccl_datatype_t index_dtype,                                               \
                  ccl_datatype_t value_dtype,                                               \
                  ccl::reduction reduction,                                                 \
@@ -238,8 +238,8 @@ virtual ccl::communicator::coll_request_t reduce(const type* send_buf,          
 virtual ccl::communicator::coll_request_t                                                  \
 sparse_allreduce(const index_type* send_ind_buf, size_t send_ind_count,                    \
                  const value_type* send_val_buf, size_t send_val_count,                    \
-                 index_type** recv_ind_buf, size_t* recv_ind_count,                        \
-                 value_type** recv_val_buf, size_t* recv_val_count,                        \
+                 index_type* recv_ind_buf, size_t recv_ind_count,                          \
+                 value_type* recv_val_buf, size_t recv_val_count,                          \
                  ccl::reduction reduction,                                                 \
                  const ccl::coll_attr* attr,                                               \
                  ccl::stream::impl_t& stream) = 0;
@@ -293,8 +293,8 @@ virtual ccl::communicator::coll_request_t reduce(const type& send_buf,          
 virtual ccl::communicator::coll_request_t                                                  \
 sparse_allreduce(const index_type& send_ind_buf, size_t send_ind_count,                    \
                  const value_type& send_val_buf, size_t send_val_count,                    \
-                 index_type** recv_ind_buf, size_t* recv_ind_count,                        \
-                 value_type** recv_val_buf, size_t* recv_val_count,                        \
+                 index_type& recv_ind_buf, size_t recv_ind_count,                          \
+                 value_type& recv_val_buf, size_t recv_val_count,                          \
                  ccl::reduction reduction,                                                 \
                  const ccl::coll_attr* attr,                                               \
                  ccl::stream::impl_t& stream) = 0;
@@ -379,8 +379,8 @@ ccl::communicator::coll_request_t reduce(const void* send_buf,                  
 ccl::communicator::coll_request_t                                                          \
 sparse_allreduce(const void* send_ind_buf, size_t send_ind_count,                          \
                  const void* send_val_buf, size_t send_val_count,                          \
-                 void** recv_ind_buf, size_t* recv_ind_count,                              \
-                 void** recv_val_buf, size_t* recv_val_count,                              \
+                 void* recv_ind_buf, size_t recv_ind_count,                                \
+                 void* recv_val_buf, size_t recv_val_count,                                \
                  ccl_datatype_t index_dtype,                                               \
                  ccl_datatype_t value_dtype,                                               \
                  ccl::reduction reduction,                                                 \
@@ -465,8 +465,8 @@ ccl::communicator::coll_request_t reduce(const type* send_buf,                  
 ccl::communicator::coll_request_t                                                          \
 sparse_allreduce(const index_type* send_ind_buf, size_t send_ind_count,                    \
                  const value_type* send_val_buf, size_t send_val_count,                    \
-                 index_type** recv_ind_buf, size_t* recv_ind_count,                        \
-                 value_type** recv_val_buf, size_t* recv_val_count,                        \
+                 index_type* recv_ind_buf, size_t recv_ind_count,                          \
+                 value_type* recv_val_buf, size_t recv_val_count,                          \
                  ccl::reduction reduction,                                                 \
                  const ccl::coll_attr* attr,                                               \
                  ccl::stream::impl_t& stream) override                                     \
@@ -550,8 +550,8 @@ ccl::communicator::coll_request_t reduce(const type& send_buf,                  
 ccl::communicator::coll_request_t                                                          \
 sparse_allreduce(const index_type& send_ind_buf, size_t send_ind_count,                    \
                  const value_type& send_val_buf, size_t send_val_count,                    \
-                 index_type** recv_ind_buf, size_t* recv_ind_count,                        \
-                 value_type** recv_val_buf, size_t* recv_val_count,                        \
+                 index_type& recv_ind_buf, size_t recv_ind_count,                          \
+                 value_type& recv_val_buf, size_t recv_val_count,                          \
                  ccl::reduction reduction,                                                 \
                  const ccl::coll_attr* attr,                                               \
                  ccl::stream::impl_t& stream) override                                     \
@@ -666,8 +666,8 @@ ccl::communicator::coll_request_t reduce_impl(const buffer_type* send_buf,      
 ccl::communicator::coll_request_t                                                               \
 sparse_allreduce_impl(const void* send_ind_buf, size_t send_ind_count,                          \
                       const void* send_val_buf, size_t send_val_count,                          \
-                      void** recv_ind_buf, size_t* recv_ind_count,                              \
-                      void** recv_val_buf, size_t* recv_val_count,                              \
+                      void* recv_ind_buf, size_t recv_ind_count,                                \
+                      void* recv_val_buf, size_t recv_val_count,                                \
                       ccl_datatype_t index_dtype,                                               \
                       ccl_datatype_t value_dtype,                                               \
                       ccl::reduction reduction,                                                 \
@@ -677,8 +677,8 @@ template<class index_type, class value_type>                                    
 ccl::communicator::coll_request_t                                                               \
 sparse_allreduce_impl(const index_type* send_ind_buf, size_t send_ind_count,                    \
                       const value_type* send_val_buf, size_t send_val_count,                    \
-                      index_type** recv_ind_buf, size_t* recv_ind_count,                        \
-                      value_type** recv_val_buf, size_t* recv_val_count,                        \
+                      index_type* recv_ind_buf, size_t recv_ind_count,                          \
+                      value_type* recv_val_buf, size_t recv_val_count,                          \
                       ccl::reduction reduction,                                                 \
                       const ccl::coll_attr* attr,                                               \
                       ccl::stream::impl_t& stream);
@@ -734,8 +734,8 @@ template<class index_type, class value_type>                                    
 ccl::communicator::coll_request_t                                                               \
 sparse_allreduce_impl(const index_type& send_ind_buf, size_t send_ind_count,                    \
                       const value_type& send_val_buf, size_t send_val_count,                    \
-                      index_type** recv_ind_buf, size_t* recv_ind_count,                        \
-                      value_type** recv_val_buf, size_t* recv_val_count,                        \
+                      index_type& recv_ind_buf, size_t recv_ind_count,                          \
+                      value_type& recv_val_buf, size_t recv_val_count,                          \
                       ccl::reduction reduction,                                                 \
                       const ccl::coll_attr* attr,                                               \
                       ccl::stream::impl_t& stream);
@@ -843,22 +843,22 @@ comm_class::reduce_impl(const type* send_buf,                               \
                           ccl::stream::impl_t& stream);
 
 
-#define COMM_INTERFACE_SPARSE_ALLREDUCE_EXPLICIT_INSTANTIATION(comm_class, index_type, value_type)          \
-template ccl::communicator::coll_request_t                                                                  \
-comm_class::sparse_allreduce_impl(const index_type* send_ind_buf, size_t send_ind_count,                    \
-                                    const value_type* send_val_buf, size_t send_val_count,                  \
-                                    index_type** recv_ind_buf, size_t* recv_ind_count,                      \
-                                    value_type** recv_val_buf, size_t* recv_val_count,                      \
-                                    ccl::reduction reduction,                                               \
-                                    const ccl::coll_attr* attr,                                             \
-                                    ccl::stream::impl_t& stream);
+#define COMM_INTERFACE_SPARSE_ALLREDUCE_EXPLICIT_INSTANTIATION(comm_class, index_type, value_type)      \
+template ccl::communicator::coll_request_t                                                              \
+comm_class::sparse_allreduce_impl(const index_type* send_ind_buf, size_t send_ind_count,                \
+                                  const value_type* send_val_buf, size_t send_val_count,                \
+                                  index_type* recv_ind_buf, size_t recv_ind_count,                      \
+                                  value_type* recv_val_buf, size_t recv_val_count,                      \
+                                  ccl::reduction reduction,                                             \
+                                  const ccl::coll_attr* attr,                                           \
+                                  ccl::stream::impl_t& stream);
 
-#define COMM_INTERFACE_SPARSE_ALLREDUCE_EXPLICIT_CLASS_INSTANTIATION(comm_class, index_type, value_type)    \
-template ccl::communicator::coll_request_t                                                                  \
-comm_class::sparse_allreduce_impl(const index_type& send_ind_buf, size_t send_ind_count,                    \
-                                    const value_type& send_val_buf, size_t send_val_count,                  \
-                                    index_type** recv_ind_buf, size_t* recv_ind_count,                      \
-                                    value_type** recv_val_buf, size_t* recv_val_count,                      \
-                                    ccl::reduction reduction,                                               \
-                                    const ccl::coll_attr* attr,                                             \
-                                    ccl::stream::impl_t& stream);
+#define COMM_INTERFACE_SPARSE_ALLREDUCE_EXPLICIT_CLASS_INSTANTIATION(comm_class, index_type, value_type) \
+template ccl::communicator::coll_request_t                                                               \
+comm_class::sparse_allreduce_impl(const index_type& send_ind_buf, size_t send_ind_count,                 \
+                                  const value_type& send_val_buf, size_t send_val_count,                 \
+                                  index_type& recv_ind_buf, size_t recv_ind_count,                       \
+                                  value_type& recv_val_buf, size_t recv_val_count,                       \
+                                  ccl::reduction reduction,                                              \
+                                  const ccl::coll_attr* attr,                                            \
+                                  ccl::stream::impl_t& stream);

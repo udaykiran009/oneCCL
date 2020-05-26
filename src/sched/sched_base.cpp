@@ -122,17 +122,6 @@ ccl_buffer ccl_sched_base::alloc_buffer(size_t bytes)
               ", size: ", buffer.get_size());
     return buffer;
 }
-void ccl_sched_base::alloc_buffer_ptr(void **&out_ptr_to_allocated_ptr, size_t bytes)
-{
-    ccl_buffer buffer = ccl_buffer(CCL_CALLOC(bytes, "sched_buffer"),
-                                   bytes, 0, ccl_buffer_type::DIRECT);
-    memory.buf_list.emplace_back(buffer, bytes);
-    CCL_THROW_IF_NOT(buffer.get_ptr(), "null ptr");
-    
-    LOG_DEBUG("allocated buffer ptr: ", buffer.get_ptr(), 
-              ", size: ", buffer.get_size());
-    memory.buf_list.back().buffer.get_ptr_addr(out_ptr_to_allocated_ptr);
-}
 
 ccl_buffer ccl_sched_base::update_buffer(ccl_buffer buffer, size_t new_size)
 {
@@ -151,7 +140,7 @@ ccl_buffer ccl_sched_base::update_buffer(ccl_buffer buffer, size_t new_size)
     {
         if (it.buffer.get_ptr() == aux_ptr)
         {
-            //assign ptr unconditionally, because realloc can return the same pointer
+            /* assign ptr unconditionally, because realloc can return the same pointer */
             it.buffer = new_buf;
             it.size = new_size;
             updated = true;
@@ -171,7 +160,7 @@ ccl_buffer ccl_sched_base::find_and_realloc_buffer(void* in_ptr, size_t new_size
         if (it.buffer.get_ptr() == in_ptr)
         {
 #ifdef ENABLE_DEBUG_SPARSE
-            if(expected_size != 0 && (it.buffer.get_size() < expected_size))
+            if (expected_size != 0 && (it.buffer.get_size() < expected_size))
             {
                 std::stringstream ss;
                 ss << "Unexpected realloc buffer by pointer: " << in_ptr
@@ -203,7 +192,7 @@ ccl_buffer ccl_sched_base::find_and_realloc_buffer(void* in_ptr, size_t new_size
         }
     }
 
-    //Throw expection
+    /* throw expection */
     std::stringstream ss;
     for (const auto& it : memory.buf_list)
     {

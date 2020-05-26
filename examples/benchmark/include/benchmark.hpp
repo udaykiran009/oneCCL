@@ -10,10 +10,10 @@
 #include "base_utils.hpp"
 #include "bfp16.h"
 #include "coll.hpp"
-#include "sparse_detail.hpp"
+#include "sparse_allreduce/sparse_detail.hpp"
 
 /* required declarations */
-  template<class Dtype>
+template<class Dtype>
 void create_colls(std::list<std::string>& coll_names, ccl::stream_type backend,
                   coll_list_t& colls);
 
@@ -48,9 +48,10 @@ std::map<loop_type_t, std::string> loop_names =
 
 /* temporary comment:
  * This tuple is for run a benchmark with different data types.
- * By default it runs by 'float'. Next steps:
+ * By default it runs with 'float'.
+ * Next steps:
  * 1. Expand the tuple for other data types
- * 2. Add --dtype option for chosing dtypes by argument */
+ * 2. Add --dtype option for choosing dtypes by option */
 
 /* 'dtype_indices' tuple stores indices of chosen to use or not dtypes(<int, float, ...>).
  * Index '1' relates to chosen dtype, that means 'create_colls_func()'
@@ -284,9 +285,21 @@ void print_user_options(const user_options_t& options, ccl::communicator* comm)
     std::copy(options.coll_names.begin(), options.coll_names.end(),
               std::ostream_iterator<std::string>(sstream, " "));
 
-    PRINT_BY_ROOT("start colls: %s, iters: %zu, buf_count: %zu, ranks: %zu, check_values: %zu, backend: %s, loop: %s",
-                  sstream.str().c_str(), options.iters, options.buf_count, comm->size(), options.check_values,
-                  backend_str.c_str(), loop_str.c_str());
+    PRINT_BY_ROOT("options:"
+                  "\n  iters:     %zu"
+                  "\n  buf_count: %zu"
+                  "\n  ranks:     %zu"
+                  "\n  check:     %zu"
+                  "\n  backend:   %s"
+                  "\n  loop:      %s"
+                  "\n  colls:     %s",
+                  options.iters,
+                  options.buf_count,
+                  comm->size(),
+                  options.check_values,
+                  backend_str.c_str(),
+                  loop_str.c_str(),
+                  sstream.str().c_str());
 }
 
 #endif /* BENCHMARK_HPP */

@@ -84,11 +84,12 @@ ccl_status_t CCL_API ccl_reduce(
     ccl_stream_t stream,
     ccl_request_t* req);
 
+/* WARNING: ccl_sparse_allreduce is currently considered experimental, so the API may change! */
 ccl_status_t CCL_API ccl_sparse_allreduce(
     const void* send_ind_buf, size_t send_ind_count,
     const void* send_val_buf, size_t send_val_count,
-    void** recv_ind_buf, size_t* recv_ind_count,
-    void** recv_val_buf, size_t* recv_val_count,
+    void* recv_ind_buf, size_t recv_ind_count,
+    void* recv_val_buf, size_t recv_val_count,
     ccl_datatype_t index_dtype,
     ccl_datatype_t dtype,
     ccl_reduction_t reduction,

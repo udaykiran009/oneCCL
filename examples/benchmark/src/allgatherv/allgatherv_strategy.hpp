@@ -23,7 +23,7 @@ struct allgatherv_strategy_impl
 
     template<class Dtype>
     void start_internal(ccl::communicator& comm, size_t count, const Dtype send_buf, Dtype recv_buf,
-                        const ccl_coll_attr_t& coll_attr, ccl::stream_t& stream,
+                        const ccl::coll_attr& attr, ccl::stream_t& stream,
                         req_list_t& reqs)
     {
         for (size_t idx = 0; idx < comm_size; idx++)
@@ -32,7 +32,7 @@ struct allgatherv_strategy_impl
         }
         reqs.push_back(comm.allgatherv(send_buf, count,
                                        recv_buf, recv_counts,
-                                       &coll_attr, stream));
+                                       &attr, stream));
     }
 };
 

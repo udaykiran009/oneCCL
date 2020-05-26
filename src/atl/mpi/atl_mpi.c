@@ -24,7 +24,7 @@
         gethostname(hoststr, sizeof(hoststr));            \
         fprintf(stdout, "(%d): %s: @ %s:%d:%s() " s "\n", \
                 tid, hoststr,                             \
-                __FILE__, __LINE__,                       \
+                FILENAME, __LINE__,                       \
                 __func__, ##__VA_ARGS__);                 \
         fflush(stdout);                                   \
     } while (0)
@@ -559,6 +559,9 @@ atl_mpi_set_lib_environment(const atl_attr_t* attr)
             setenv("I_MPI_FABRICS", "shm:ofi", 0);
         else
             setenv("I_MPI_FABRICS", "ofi", 0);
+
+        if (attr->ep_count)
+            setenv("I_MPI_OFI_ISEND_INJECT_THRESHOLD", "0", 0);
     }
 
     return ATL_STATUS_SUCCESS;
@@ -650,6 +653,34 @@ atl_mpi_ep_send(atl_ep_t* ep, const void* buf, size_t len,
 
     int ret = MPI_Isend(buf, len, MPI_CHAR, dest_proc_idx,
                         (int)tag, mpi_ep->mpi_comm, &mpi_req->native_req);
+
+#if 0
+//#ifdef ENABLE_DEBUG
+    if (global_data.mpi_lib_type != ATL_MPI_LIB_NONE)
+    {
+        MPI_Info info_out;
+        char buf[MPI_MAX_INFO_VAL];
+        int flag;
+        MPI_Comm_get_info(mpi_ep->mpi_comm, &info_out);
+        MPI_Info_get(info_out, EP_IDX_KEY, MPI_MAX_INFO_VAL, buf, &flag);
+        
+        if (!flag)
+        {
+            ATL_MPI_PRINT("unexpected ep_idx_key %s", EP_IDX_KEY);
+            return ATL_STATUS_FAILURE;
+        }
+
+        if (ep->idx != atoi(buf))
+        {
+            ATL_MPI_PRINT("unexpected ep_idx: expected %zu, got %d\n", ep->idx, atoi(buf));
+        }
+
+        ATL_MPI_DEBUG_PRINT("len %zu, comm_key %s, comm %p", len, buf, &(mpi_ep->mpi_comm));
+
+        MPI_Info_free(&info_out);
+    }
+#endif
+
     return RET2ATL(ret);
 }
 
@@ -664,6 +695,34 @@ atl_mpi_ep_recv(atl_ep_t* ep, void* buf, size_t len,
 
     int ret = MPI_Irecv(buf, len, MPI_CHAR, src_proc_idx,
                         (int)tag, mpi_ep->mpi_comm, &mpi_req->native_req);
+
+#if 0
+//#ifdef ENABLE_DEBUG
+    if (global_data.mpi_lib_type != ATL_MPI_LIB_NONE)
+    {
+        MPI_Info info_out;
+        char buf[MPI_MAX_INFO_VAL];
+        int flag;
+        MPI_Comm_get_info(mpi_ep->mpi_comm, &info_out);
+        MPI_Info_get(info_out, EP_IDX_KEY, MPI_MAX_INFO_VAL, buf, &flag);
+        
+        if (!flag)
+        {
+            ATL_MPI_PRINT("unexpected ep_idx_key %s", EP_IDX_KEY);
+            return ATL_STATUS_FAILURE;
+        }
+
+        if (ep->idx != atoi(buf))
+        {
+            ATL_MPI_PRINT("unexpected ep_idx: expected %zu, got %d\n", ep->idx, atoi(buf));
+        }
+
+        ATL_MPI_DEBUG_PRINT("len %zu, comm_key %s, comm %p", len, buf, &(mpi_ep->mpi_comm));
+
+        MPI_Info_free(&info_out);
+    }
+#endif
+
     return RET2ATL(ret);
 }
 
@@ -723,7 +782,8 @@ atl_mpi_ep_allreduce(atl_ep_t* ep, const void* send_buf, void* recv_buf, size_t 
                              recv_buf, count, mpi_dtype, mpi_op,
                              mpi_ep->mpi_comm, &mpi_req->native_req);
 
-#ifdef ENABLE_DEBUG
+#if 0
+//#ifdef ENABLE_DEBUG
     if (global_data.mpi_lib_type != ATL_MPI_LIB_NONE)
     {
         MPI_Info info_out;
@@ -731,15 +791,20 @@ atl_mpi_ep_allreduce(atl_ep_t* ep, const void* send_buf, void* recv_buf, size_t 
         int flag;
         MPI_Comm_get_info(mpi_ep->mpi_comm, &info_out);
         MPI_Info_get(info_out, EP_IDX_KEY, MPI_MAX_INFO_VAL, buf, &flag);
+        
         if (!flag)
         {
-            printf("unexpected key %s\n", EP_IDX_KEY);
+            ATL_MPI_PRINT("unexpected ep_idx_key %s", EP_IDX_KEY);
             return ATL_STATUS_FAILURE;
         }
-        else
+
+        if (ep->idx != atoi(buf))
         {
-            //ATL_MPI_DEBUG_PRINT("allreduce: count %zu, comm_key %s, comm %p", count, buf, comm);
+            ATL_MPI_PRINT("unexpected ep_idx: expected %zu, got %d\n", ep->idx, atoi(buf));
         }
+
+        ATL_MPI_DEBUG_PRINT("count %zu, comm_key %s, comm %p", count, buf, &(mpi_ep->mpi_comm));
+
         MPI_Info_free(&info_out);
     }
 #endif

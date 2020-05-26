@@ -17,6 +17,9 @@
 #define ATL_CACHELINE_LEN 64
 #define ATL_REQ_SIZE      8
 
+#define DIR_SEP '/'
+#define FILENAME (strrchr(__FILE__, DIR_SEP) ? strrchr(__FILE__, DIR_SEP) + 1 : __FILE__)
+
 /*
  * Dynamically loaded transports must export the following entry point.
  * This is invoked by the ATL framework when the transport library is loaded.

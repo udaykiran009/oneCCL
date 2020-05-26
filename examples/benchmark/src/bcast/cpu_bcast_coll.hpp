@@ -10,14 +10,10 @@ struct cpu_bcast_coll : cpu_base_coll<Dtype, bcast_strategy_impl>
     using coll_base = cpu_base_coll<Dtype, bcast_strategy_impl>;
     using coll_base::recv_bufs;
     using coll_base::single_recv_buf;
-    using coll_base::check_values;
     using coll_base::comm;
 
     virtual void prepare(size_t elem_count) override
     {
-        if (!check_values)
-            return;
-
         for (size_t b_idx = 0; b_idx < BUF_COUNT; b_idx++)
         {
             for (size_t e_idx = 0; e_idx < elem_count; e_idx++)
@@ -32,9 +28,6 @@ struct cpu_bcast_coll : cpu_base_coll<Dtype, bcast_strategy_impl>
 
     virtual void finalize(size_t elem_count) override
     {
-        if (!check_values)
-            return;
-
         Dtype value;
         for (size_t b_idx = 0; b_idx < BUF_COUNT; b_idx++)
         {

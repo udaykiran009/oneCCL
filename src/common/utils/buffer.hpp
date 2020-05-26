@@ -49,6 +49,9 @@ private:
     }
 
 public:
+    
+    ccl_buffer(void* src) = delete;
+
     ccl_buffer(void* src, ssize_t size, int offset, ccl_buffer_type type)
         : src(src), size(size),
           offset(offset), type(type)
@@ -69,7 +72,7 @@ public:
           type(buf.type)
     {
         CCL_ASSERT(check_offset());
-    };
+    }
 
     void set(void* src, ssize_t size, int offset, ccl_buffer_type type)
     {
@@ -145,24 +148,6 @@ public:
         else
         {
             return (*((char**)src)) ? (*((char**)src) + offset) : nullptr;
-        }
-    }
-
-    void get_ptr_addr(void**& to_addr, ssize_t access_size = 0) 
-    {
-        CCL_ASSERT(check_offset(access_size));
-
-        if (!src)
-            return;
-
-        if (type == ccl_buffer_type::DIRECT)
-        {
-            to_addr = &src;
-            *to_addr = (char*)*to_addr + offset;
-        }
-        else
-        {
-            CCL_ASSERT(false, "Not implemented");
         }
     }
     

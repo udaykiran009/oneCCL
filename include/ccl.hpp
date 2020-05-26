@@ -656,8 +656,8 @@ public:
      */
     coll_request_t sparse_allreduce(const void* send_ind_buf, size_t send_ind_count,
                                     const void* send_val_buf, size_t send_val_count,
-                                    void** recv_ind_buf, size_t* recv_ind_count,
-                                    void** recv_val_buf, size_t* recv_val_count,
+                                    void* recv_ind_buf, size_t recv_ind_count,
+                                    void* recv_val_buf, size_t recv_val_count,
                                     ccl::datatype index_dtype,
                                     ccl::datatype value_dtype,
                                     ccl::reduction reduction,
@@ -685,8 +685,8 @@ public:
              class = typename std::enable_if<ccl::is_native_type_supported<value_buffer_type>()>::type>
     coll_request_t sparse_allreduce(const index_buffer_type* send_ind_buf, size_t send_ind_count,
                                     const value_buffer_type* send_val_buf, size_t send_val_count,
-                                    index_buffer_type** recv_ind_buf, size_t* recv_ind_count,
-                                    value_buffer_type** recv_val_buf, size_t* recv_val_count,
+                                    index_buffer_type* recv_ind_buf, size_t recv_ind_count,
+                                    value_buffer_type* recv_val_buf, size_t recv_val_count,
                                     ccl::reduction reduction,
                                     const ccl::coll_attr* attr = nullptr,
                                     const ccl::stream_t& stream = ccl::stream_t());
@@ -712,8 +712,8 @@ public:
              class = typename std::enable_if<ccl::is_class_supported<value_buffer_container_type>()>::type>
     coll_request_t sparse_allreduce(const index_buffer_container_type& send_ind_buf, size_t send_ind_count,
                                     const value_buffer_container_type& send_val_buf, size_t send_val_count,
-                                    index_buffer_container_type** recv_ind_buf, size_t* recv_ind_count,
-                                    value_buffer_container_type** recv_val_buf, size_t* recv_val_count,
+                                    index_buffer_container_type& recv_ind_buf, size_t recv_ind_count,
+                                    value_buffer_container_type& recv_val_buf, size_t recv_val_count,
                                     ccl::reduction reduction,
                                     const ccl::coll_attr* attr = nullptr,
                                     const ccl::stream_t& stream = ccl::stream_t());

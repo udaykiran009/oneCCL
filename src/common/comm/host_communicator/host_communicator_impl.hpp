@@ -19,7 +19,9 @@ host_communicator::allgatherv_impl(const buffer_type* send_buf,
 {
     // c-api require null stream for host-stream for backward compatibility
     const ccl_stream* stream_ptr =
-                (stream->get_type() != static_cast<ccl_stream_type_t>(ccl::stream_type::host)) ? stream.get() : nullptr;
+        (stream->get_type() != static_cast<ccl_stream_type_t>(ccl::stream_type::host)) ?
+        stream.get() : nullptr;
+
     ccl_request* req = ccl_allgatherv_impl(reinterpret_cast<const void*>(send_buf),
                                            send_count,
                                            reinterpret_cast<void*>(recv_buf),
@@ -41,7 +43,9 @@ host_communicator::allgatherv_impl(const buffer_type& send_buf,
 {
     // c-api require null stream for host-stream for backward compatibility
     const ccl_stream* stream_ptr =
-                (stream->get_type() != static_cast<ccl_stream_type_t>(ccl::stream_type::host)) ? stream.get() : nullptr;
+        (stream->get_type() != static_cast<ccl_stream_type_t>(ccl::stream_type::host)) ?
+        stream.get() : nullptr;
+
     ccl_request* req = ccl_allgatherv_impl(reinterpret_cast<const void*>(&send_buf),
                                            send_count,
                                            reinterpret_cast<void*>(&recv_buf),
@@ -64,7 +68,9 @@ host_communicator::allreduce_impl(const buffer_type* send_buf,
                                   ccl::stream::impl_t& stream)
 {
     const ccl_stream* stream_ptr =
-                (stream->get_type() != static_cast<ccl_stream_type_t>(ccl::stream_type::host)) ? stream.get() : nullptr;
+        (stream->get_type() != static_cast<ccl_stream_type_t>(ccl::stream_type::host)) ?
+        stream.get() : nullptr;
+
     ccl_request* req = ccl_allreduce_impl(reinterpret_cast<const void*>(send_buf),
                                           reinterpret_cast<void*>(recv_buf),
                                           count,
@@ -85,7 +91,9 @@ host_communicator::allreduce_impl(const buffer_type& send_buf,
                                   ccl::stream::impl_t& stream)
 {
     const ccl_stream* stream_ptr =
-                (stream->get_type() != static_cast<ccl_stream_type_t>(ccl::stream_type::host)) ? stream.get() : nullptr;
+        (stream->get_type() != static_cast<ccl_stream_type_t>(ccl::stream_type::host)) ?
+        stream.get() : nullptr;
+
     ccl_request* req = ccl_allreduce_impl(reinterpret_cast<const void*>(&send_buf),
                                           reinterpret_cast<void*>(&recv_buf),
                                           count,
@@ -107,7 +115,9 @@ host_communicator::alltoall_impl(const buffer_type* send_buf,
                                  ccl::stream::impl_t& stream)
 {
     const ccl_stream* stream_ptr =
-                (stream->get_type() != static_cast<ccl_stream_type_t>(ccl::stream_type::host)) ? stream.get() : nullptr;
+        (stream->get_type() != static_cast<ccl_stream_type_t>(ccl::stream_type::host)) ?
+        stream.get() : nullptr;
+
     ccl_request* req = ccl_alltoall_impl(reinterpret_cast<const void*>(send_buf),
                                          reinterpret_cast<void*>(recv_buf),
                                          count,
@@ -126,7 +136,9 @@ host_communicator::alltoall_impl(const buffer_type& send_buf,
                                  ccl::stream::impl_t& stream)
 {
     const ccl_stream* stream_ptr =
-                (stream->get_type() != static_cast<ccl_stream_type_t>(ccl::stream_type::host)) ? stream.get() : nullptr;
+        (stream->get_type() != static_cast<ccl_stream_type_t>(ccl::stream_type::host)) ?
+        stream.get() : nullptr;
+
     ccl_request* req = ccl_alltoall_impl(reinterpret_cast<const void*>(&send_buf),
                                          reinterpret_cast<void*>(&recv_buf),
                                          count,
@@ -148,7 +160,9 @@ host_communicator::alltoallv_impl(const buffer_type* send_buf,
                                   ccl::stream::impl_t& stream)
 {
     const ccl_stream* stream_ptr =
-                (stream->get_type() != static_cast<ccl_stream_type_t>(ccl::stream_type::host)) ? stream.get() : nullptr;
+        (stream->get_type() != static_cast<ccl_stream_type_t>(ccl::stream_type::host)) ?
+        stream.get() : nullptr;
+
     ccl_request* req = ccl_alltoallv_impl(reinterpret_cast<const void*>(send_buf),
                                           send_counts,
                                           reinterpret_cast<void*>(recv_buf),
@@ -169,7 +183,9 @@ host_communicator::alltoallv_impl(const buffer_type& send_buf,
                                   ccl::stream::impl_t& stream)
 {
     const ccl_stream* stream_ptr =
-                (stream->get_type() != static_cast<ccl_stream_type_t>(ccl::stream_type::host)) ? stream.get() : nullptr;
+        (stream->get_type() != static_cast<ccl_stream_type_t>(ccl::stream_type::host)) ?
+        stream.get() : nullptr;
+
     ccl_request* req = ccl_alltoallv_impl(reinterpret_cast<const void*>(&send_buf),
                                           send_counts,
                                           reinterpret_cast<void*>(&recv_buf),
@@ -190,7 +206,9 @@ ccl::communicator::coll_request_t host_communicator::bcast_impl(buffer_type* buf
                                                                 ccl::stream::impl_t& stream)
 {
     const ccl_stream* stream_ptr =
-                (stream->get_type() != static_cast<ccl_stream_type_t>(ccl::stream_type::host)) ? stream.get() : nullptr;
+        (stream->get_type() != static_cast<ccl_stream_type_t>(ccl::stream_type::host)) ?
+        stream.get() : nullptr;
+
     ccl_request* req = ccl_bcast_impl(reinterpret_cast<void*>(buf), count,
                                       ccl::native_type_info<buffer_type>::ccl_datatype_value,
                                       root, attr, comm_impl.get(),
@@ -206,7 +224,9 @@ ccl::communicator::coll_request_t host_communicator::bcast_impl(buffer_type& buf
                                                                 ccl::stream::impl_t& stream)
 {
     const ccl_stream* stream_ptr =
-                (stream->get_type() != static_cast<ccl_stream_type_t>(ccl::stream_type::host)) ? stream.get() : nullptr;
+        (stream->get_type() != static_cast<ccl_stream_type_t>(ccl::stream_type::host)) ?
+        stream.get() : nullptr;
+
     ccl_request* req = ccl_bcast_impl(reinterpret_cast<void*>(&buf), count,
                                       ccl::native_type_info<buffer_type>::ccl_datatype_value,
                                       root, attr, comm_impl.get(),
@@ -227,7 +247,9 @@ host_communicator::reduce_impl(const buffer_type* send_buf,
                                ccl::stream::impl_t& stream)
 {
     const ccl_stream* stream_ptr =
-                (stream->get_type() != static_cast<ccl_stream_type_t>(ccl::stream_type::host)) ? stream.get() : nullptr;
+        (stream->get_type() != static_cast<ccl_stream_type_t>(ccl::stream_type::host)) ?
+        stream.get() : nullptr;
+
     ccl_request* req = ccl_reduce_impl(reinterpret_cast<const void*>(send_buf),
                                        reinterpret_cast<void*>(recv_buf),
                                        count,
@@ -249,7 +271,9 @@ host_communicator::reduce_impl(const buffer_type& send_buf,
                                ccl::stream::impl_t& stream)
 {
     const ccl_stream* stream_ptr =
-                (stream->get_type() != static_cast<ccl_stream_type_t>(ccl::stream_type::host)) ? stream.get() : nullptr;
+        (stream->get_type() != static_cast<ccl_stream_type_t>(ccl::stream_type::host)) ?
+        stream.get() : nullptr;
+
     ccl_request* req = ccl_reduce_impl(reinterpret_cast<const void*>(&send_buf),
                                        reinterpret_cast<void*>(&recv_buf),
                                        count,
@@ -266,19 +290,21 @@ ccl::communicator::coll_request_t
 host_communicator::sparse_allreduce_impl(
                                     const index_buffer_type* send_ind_buf, size_t send_ind_count,
                                     const value_buffer_type* send_val_buf, size_t send_val_count,
-                                    index_buffer_type** recv_ind_buf, size_t* recv_ind_count,
-                                    value_buffer_type** recv_val_buf, size_t* recv_val_count,
+                                    index_buffer_type* recv_ind_buf, size_t recv_ind_count,
+                                    value_buffer_type* recv_val_buf, size_t recv_val_count,
                                     ccl::reduction reduction,
                                     const ccl::coll_attr* attr,
                                     ccl::stream::impl_t& stream)
 {
     const ccl_stream* stream_ptr =
-                (stream->get_type() != static_cast<ccl_stream_type_t>(ccl::stream_type::host)) ? stream.get() : nullptr;
+        (stream->get_type() != static_cast<ccl_stream_type_t>(ccl::stream_type::host)) ?
+        stream.get() : nullptr;
+
     ccl_request* req = ccl_sparse_allreduce_impl(
                             (const void*)send_ind_buf, send_ind_count,
                             (const void*)send_val_buf, send_val_count,
-                            (void**)recv_ind_buf, recv_ind_count,
-                            (void**)recv_val_buf, recv_val_count,
+                            (void*)recv_ind_buf, recv_ind_count,
+                            (void*)recv_val_buf, recv_val_count,
                             ccl::native_type_info<index_buffer_type>::ccl_datatype_value,
                             ccl::native_type_info<value_buffer_type>::ccl_datatype_value,
                             static_cast<ccl_reduction_t>(reduction), attr, comm_impl.get(),
@@ -292,19 +318,21 @@ ccl::communicator::coll_request_t
 host_communicator::sparse_allreduce_impl(
                                     const index_buffer_container_type& send_ind_buf, size_t send_ind_count,
                                     const value_buffer_container_type& send_val_buf, size_t send_val_count,
-                                    index_buffer_container_type** recv_ind_buf, size_t* recv_ind_count,
-                                    value_buffer_container_type** recv_val_buf, size_t* recv_val_count,
+                                    index_buffer_container_type& recv_ind_buf, size_t recv_ind_count,
+                                    value_buffer_container_type& recv_val_buf, size_t recv_val_count,
                                     ccl::reduction reduction,
                                     const ccl::coll_attr* attr,
                                     ccl::stream::impl_t& stream)
 {
     const ccl_stream* stream_ptr =
-                (stream->get_type() != static_cast<ccl_stream_type_t>(ccl::stream_type::host)) ? stream.get() : nullptr;
+        (stream->get_type() != static_cast<ccl_stream_type_t>(ccl::stream_type::host)) ?
+        stream.get() : nullptr;
+
     ccl_request* req = ccl_sparse_allreduce_impl(
                             reinterpret_cast<const void*>(&send_ind_buf), send_ind_count,
                             reinterpret_cast<const void*>(&send_val_buf), send_val_count,
-                            reinterpret_cast<void**>(recv_ind_buf), recv_ind_count,
-                            reinterpret_cast<void**>(recv_val_buf), recv_val_count,
+                            reinterpret_cast<void*>(&recv_ind_buf), recv_ind_count,
+                            reinterpret_cast<void*>(&recv_val_buf), recv_val_count,
                             ccl::native_type_info<index_buffer_container_type>::ccl_datatype_value,
                             ccl::native_type_info<value_buffer_container_type>::ccl_datatype_value,
                             static_cast<ccl_reduction_t>(reduction), attr, comm_impl.get(),

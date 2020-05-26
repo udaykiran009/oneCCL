@@ -547,9 +547,10 @@ ccl_status_t CCL_API ccl_reduce(
 
 ccl_status_t CCL_API ccl_sparse_allreduce(const void* send_ind_buf, size_t send_ind_count,
                                           const void* send_val_buf, size_t send_val_count,
-                                          void** recv_ind_buf, size_t* recv_ind_count,
-                                          void** recv_val_buf, size_t* recv_val_count,
-                                          ccl_datatype_t index_dtype, ccl_datatype_t dtype,
+                                          void* recv_ind_buf, size_t recv_ind_count,
+                                          void* recv_val_buf, size_t recv_val_count,
+                                          ccl_datatype_t index_dtype,
+                                          ccl_datatype_t value_dtype,
                                           ccl_reduction_t reduction,
                                           const ccl_coll_attr_t* attr,
                                           ccl_comm_t comm,
@@ -563,9 +564,12 @@ ccl_status_t CCL_API ccl_sparse_allreduce(const void* send_ind_buf, size_t send_
         {
             return ccl_status_invalid_arguments;
         }
-        auto request = ccl_sparse_allreduce_impl(send_ind_buf, send_ind_count, send_val_buf, send_val_count,
-                                                 recv_ind_buf, recv_ind_count, recv_val_buf, recv_val_count,
-                                                 index_dtype, dtype, reduction, attr,
+        auto request = ccl_sparse_allreduce_impl(send_ind_buf, send_ind_count,
+                                                 send_val_buf, send_val_count,
+                                                 recv_ind_buf, recv_ind_count,
+                                                 recv_val_buf, recv_val_count,
+                                                 index_dtype, value_dtype,
+                                                 reduction, attr,
                                                  (comm) ? static_cast<ccl_comm*>(comm) : global_data.comm.get(),
                                                  static_cast<const ccl_stream*>(stream));
         *req = static_cast<ccl_request_t>(request);

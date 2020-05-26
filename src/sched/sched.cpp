@@ -86,7 +86,6 @@ void ccl_sched::do_progress()
 
 bool ccl_sched::is_strict_order_satisfied()
 {
-    CCL_ASSERT(strict_start_order);
     return std::all_of(entries.begin(), entries.end(), [](const sched_entry_ptr& e)
         {
             return e->is_strict_order_satisfied();

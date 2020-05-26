@@ -52,7 +52,7 @@
         gethostname(hoststr, sizeof(hoststr));            \
         fprintf(stdout, "(%d): %s: @ %s:%d:%s() " s "\n", \
                 tid, hoststr,                             \
-                __FILE__, __LINE__,                       \
+                FILENAME, __LINE__,                       \
                 __func__, ##__VA_ARGS__);                 \
         fflush(stdout);                                   \
     } while (0)

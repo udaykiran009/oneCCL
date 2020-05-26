@@ -3,59 +3,63 @@
 
 #include "sparse_allreduce_strategy.hpp"
 
-template<class Dtype, class IType, template<class> class IndicesDistributorType>
+template<class VType, class IType, template<class> class IndicesDistributorType>
 struct base_sparse_allreduce_coll :
         virtual base_coll,
         protected sparse_allreduce_strategy_impl<IType,
                                                  IndicesDistributorType>
 {
     using ITypeNonMod = typename std::remove_pointer<IType>::type;
+    using VTypeNonMod = typename std::remove_pointer<VType>::type;
 
     using coll_base = base_coll;
     using coll_strategy = sparse_allreduce_strategy_impl<IType,
                                                          IndicesDistributorType>;
 
-    using coll_base::send_bufs;
-    using coll_base::recv_bufs;
     using coll_base::stream;
-    using coll_base::single_send_buf;
-    using coll_base::single_recv_buf;
-    using coll_base::check_values;
     using coll_base::comm;
-
 
     using coll_strategy::value_to_indices_ratio;
     using coll_strategy::vdim_size;
-    using coll_strategy::minimal_indices_cout;
+    using coll_strategy::minimal_indices_count;
 
-    ITypeNonMod* recv_ibufs[BUF_COUNT] = { nullptr };
     ITypeNonMod* send_ibufs[BUF_COUNT] = { nullptr };
-    ITypeNonMod* single_send_ibuf = nullptr;
-    ITypeNonMod* single_recv_ibuf = nullptr;
+    VTypeNonMod* send_vbufs[BUF_COUNT] = { nullptr };
+
+    /* buffers from these arrays will be reallocated inside completion callback */
+    ITypeNonMod* recv_ibufs[BUF_COUNT] = { nullptr };
+    VTypeNonMod* recv_vbufs[BUF_COUNT] = { nullptr };
 
     size_t* recv_icount = nullptr;
     size_t* recv_vcount = nullptr;
+    sparse_allreduce_user_ctx_t user_ctxs[BUF_COUNT];
+
+    ITypeNonMod* single_send_ibuf = nullptr;
+    VTypeNonMod* single_send_vbuf = nullptr;
+    ITypeNonMod* single_recv_ibuf = nullptr;
+    VTypeNonMod* single_recv_vbuf = nullptr;
     size_t single_recv_icount {};
     size_t single_recv_vcount {};
+    sparse_allreduce_user_ctx_t single_user_ctx;
 
     base_sparse_allreduce_coll(const std::string& args) :
      coll_strategy(args, base_coll::comm->size())
     {
         int result = 0;
         result = posix_memalign((void**)&recv_icount, ALIGNMENT,
-                                BUF_COUNT * sizeof(size_t) * base_coll::comm->size());
+                                BUF_COUNT * sizeof(size_t));
         result = posix_memalign((void**)&recv_vcount, ALIGNMENT,
-                                BUF_COUNT * sizeof(size_t) * base_coll::comm->size());
+                                BUF_COUNT * sizeof(size_t));
 
-        memset(recv_icount, 1, BUF_COUNT * sizeof(size_t) * base_coll::comm->size());
-        memset(recv_vcount, 1, BUF_COUNT * sizeof(size_t) * base_coll::comm->size());
+        memset(recv_icount, 0, BUF_COUNT * sizeof(size_t));
+        memset(recv_vcount, 0, BUF_COUNT * sizeof(size_t));
         (void)result;
     }
 
     virtual ~base_sparse_allreduce_coll()
     {
-        free (recv_icount);
-        free (recv_vcount);
+        free(recv_icount);
+        free(recv_vcount);
     }
 
     const char* name() const noexcept override

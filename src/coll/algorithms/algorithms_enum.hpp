@@ -85,8 +85,7 @@ enum ccl_coll_reduce_scatter_algo
 
 enum ccl_coll_sparse_allreduce_algo
 {
-    ccl_coll_sparse_allreduce_basic,
-    ccl_coll_sparse_allreduce_size,
+    ccl_coll_sparse_allreduce_ring,
     ccl_coll_sparse_allreduce_mask,
     ccl_coll_sparse_allreduce_3_allgatherv,
 
@@ -117,6 +116,10 @@ inline const char* ccl_coll_type_to_str(ccl_coll_type type)
             return "allgatherv";
         case ccl_coll_allreduce:
             return "allreduce";
+        case ccl_coll_alltoall:
+            return "alltoall";
+        case ccl_coll_alltoallv:
+            return "alltoallv";
         case ccl_coll_barrier:
             return "barrier";
         case ccl_coll_bcast:

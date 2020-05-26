@@ -84,7 +84,9 @@ ccl::device_comm_attr_t host_communicator::get_device_attr() const
 void host_communicator::barrier(ccl::stream::impl_t& stream/* = ccl::stream_t()*/)
 {
     const ccl_stream* stream_ptr =
-                (stream->get_type() != static_cast<ccl_stream_type_t>(ccl::stream_type::host)) ? stream.get() : nullptr;
+        (stream->get_type() != static_cast<ccl_stream_type_t>(ccl::stream_type::host)) ?
+        stream.get() : nullptr;
+
     ccl_barrier_impl(comm_impl.get(), stream_ptr);
 }
 
@@ -100,7 +102,9 @@ host_communicator::allgatherv_impl(const void* send_buf,
 {
     // c-api require null stream for host-stream for backward compatibility
     const ccl_stream* stream_ptr =
-                (stream->get_type() != static_cast<ccl_stream_type_t>(ccl::stream_type::host)) ? stream.get() : nullptr;
+        (stream->get_type() != static_cast<ccl_stream_type_t>(ccl::stream_type::host)) ?
+        stream.get() : nullptr;
+
     ccl_request* req = ccl_allgatherv_impl(send_buf,
                                            send_count,
                                            recv_buf,
@@ -122,7 +126,9 @@ host_communicator::allreduce_impl(const void* send_buf,
                                   ccl::stream::impl_t& stream)
 {
     const ccl_stream* stream_ptr =
-                (stream->get_type() != static_cast<ccl_stream_type_t>(ccl::stream_type::host)) ? stream.get() : nullptr;
+        (stream->get_type() != static_cast<ccl_stream_type_t>(ccl::stream_type::host)) ?
+        stream.get() : nullptr;
+
     ccl_request* req = ccl_allreduce_impl(send_buf,
                                           recv_buf,
                                           count,
@@ -144,7 +150,9 @@ host_communicator::alltoall_impl(const void* send_buf,
                                  ccl::stream::impl_t& stream)
 {
     const ccl_stream* stream_ptr =
-                (stream->get_type() != static_cast<ccl_stream_type_t>(ccl::stream_type::host)) ? stream.get() : nullptr;
+        (stream->get_type() != static_cast<ccl_stream_type_t>(ccl::stream_type::host)) ?
+        stream.get() : nullptr;
+
     ccl_request* req = ccl_alltoall_impl(send_buf,
                                          recv_buf,
                                          count,
@@ -166,7 +174,9 @@ host_communicator::alltoallv_impl(const void* send_buf,
                                   ccl::stream::impl_t& stream)
 {
     const ccl_stream* stream_ptr =
-                (stream->get_type() != static_cast<ccl_stream_type_t>(ccl::stream_type::host)) ? stream.get() : nullptr;
+        (stream->get_type() != static_cast<ccl_stream_type_t>(ccl::stream_type::host)) ?
+        stream.get() : nullptr;
+
     ccl_request* req = ccl_alltoallv_impl(send_buf,
                                           send_counts,
                                           recv_buf,
@@ -188,7 +198,9 @@ host_communicator::bcast_impl(void* buf,
                               ccl::stream::impl_t& stream)
 {
     const ccl_stream* stream_ptr =
-                (stream->get_type() != static_cast<ccl_stream_type_t>(ccl::stream_type::host)) ? stream.get() : nullptr;
+        (stream->get_type() != static_cast<ccl_stream_type_t>(ccl::stream_type::host)) ?
+        stream.get() : nullptr;
+
     ccl_request* req = ccl_bcast_impl(buf, count,
                                       dtype,
                                       root, attr, comm_impl.get(),
@@ -208,7 +220,9 @@ host_communicator::reduce_impl(const void* send_buf,
                                ccl::stream::impl_t& stream)
 {
     const ccl_stream* stream_ptr =
-                (stream->get_type() != static_cast<ccl_stream_type_t>(ccl::stream_type::host)) ? stream.get() : nullptr;
+        (stream->get_type() != static_cast<ccl_stream_type_t>(ccl::stream_type::host)) ?
+        stream.get() : nullptr;
+
     ccl_request* req = ccl_reduce_impl(send_buf,
                                        recv_buf,
                                        count,
@@ -224,8 +238,8 @@ host_communicator::reduce_impl(const void* send_buf,
 ccl::communicator::coll_request_t
 host_communicator::sparse_allreduce_impl(const void* send_ind_buf, size_t send_ind_count,
                                          const void* send_val_buf, size_t send_val_count,
-                                         void** recv_ind_buf, size_t* recv_ind_count,
-                                         void** recv_val_buf, size_t* recv_val_count,
+                                         void* recv_ind_buf, size_t recv_ind_count,
+                                         void* recv_val_buf, size_t recv_val_count,
                                          ccl_datatype_t index_dtype,
                                          ccl_datatype_t value_dtype,
                                          ccl::reduction reduction,
@@ -233,14 +247,16 @@ host_communicator::sparse_allreduce_impl(const void* send_ind_buf, size_t send_i
                                          ccl::stream::impl_t& stream)
 {
     const ccl_stream* stream_ptr =
-                (stream->get_type() != static_cast<ccl_stream_type_t>(ccl::stream_type::host)) ? stream.get() : nullptr;
+        (stream->get_type() != static_cast<ccl_stream_type_t>(ccl::stream_type::host)) ?
+        stream.get() : nullptr;
+
     ccl_request* req = ccl_sparse_allreduce_impl(send_ind_buf, send_ind_count,
                                                  send_val_buf, send_val_count,
                                                  recv_ind_buf, recv_ind_count,
                                                  recv_val_buf, recv_val_count,
-                                                 index_dtype,
-                                                 value_dtype,
-                                                 static_cast<ccl_reduction_t>(reduction), attr, comm_impl.get(),
+                                                 index_dtype, value_dtype,
+                                                 static_cast<ccl_reduction_t>(reduction),
+                                                 attr, comm_impl.get(),
                                                  stream_ptr);
     return std::unique_ptr<ccl::host_request_impl>(new ccl::host_request_impl(req));
 }

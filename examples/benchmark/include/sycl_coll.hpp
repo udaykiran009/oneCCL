@@ -51,25 +51,25 @@ struct sycl_base_coll : virtual base_coll, private strategy
     }
 
     virtual void start(size_t count, size_t buf_idx,
-                       const ccl_coll_attr_t& coll_attr,
+                       const ccl::coll_attr& attr,
                        req_list_t& reqs) override
     {
         sycl_buffer_t<Dtype> &send_buf = *(static_cast<sycl_buffer_t<Dtype>*>(send_bufs[buf_idx]));
         sycl_buffer_t<Dtype> &recv_buf = *(static_cast<sycl_buffer_t<Dtype>*>(recv_bufs[buf_idx]));
         coll_strategy::template start_internal<sycl_buffer_t<Dtype> &>(*comm, count,
                                                                        send_buf, recv_buf,
-                                                                       coll_attr, stream, reqs);
+                                                                       attr, stream, reqs);
     }
 
     virtual void start_single(size_t count,
-                              const ccl_coll_attr_t& coll_attr,
+                              const ccl::coll_attr& attr,
                               req_list_t& reqs) override
     {
         sycl_buffer_t<Dtype> &send_buf = *(static_cast<sycl_buffer_t<Dtype>*>(single_send_buf));
         sycl_buffer_t<Dtype> &recv_buf = *(static_cast<sycl_buffer_t<Dtype>*>(single_recv_buf));
         coll_strategy::template start_internal<sycl_buffer_t<Dtype> &>(*comm, count,
                                                                        send_buf, recv_buf,
-                                                                       coll_attr, stream, reqs);
+                                                                       attr, stream, reqs);
     }
 };
 #endif /* CCL_ENABLE_SYCL */

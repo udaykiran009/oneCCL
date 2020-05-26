@@ -50,23 +50,23 @@ struct cpu_base_coll : virtual base_coll, protected strategy
     }
 
     virtual void start(size_t count, size_t buf_idx,
-                       const ccl_coll_attr_t& coll_attr,
+                       const ccl::coll_attr& attr,
                        req_list_t& reqs) override
     {
         coll_strategy::start_internal(*comm, count,
                                       static_cast<Dtype*>(send_bufs[buf_idx]),
                                       static_cast<Dtype*>(recv_bufs[buf_idx]),
-                                      coll_attr, stream, reqs);
+                                      attr, stream, reqs);
     }
 
     virtual void start_single(size_t count,
-                              const ccl_coll_attr_t& coll_attr,
+                              const ccl::coll_attr& attr,
                               req_list_t& reqs) override
     {
         coll_strategy::start_internal(*comm, count,
                                       static_cast<Dtype*>(single_send_buf),
                                       static_cast<Dtype*>(single_recv_buf),
-                                      coll_attr, stream, reqs);
+                                      attr, stream, reqs);
     }
 };
 

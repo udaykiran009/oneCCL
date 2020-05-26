@@ -242,8 +242,8 @@ ccl::communicator::coll_request_t
 device_group_a2a_communicator::sparse_allreduce_impl(
                                     const index_buffer_type* send_ind_buf, size_t send_ind_count,
                                     const value_buffer_type* send_val_buf, size_t send_val_count,
-                                    index_buffer_type** recv_ind_buf, size_t* recv_ind_count,
-                                    value_buffer_type** recv_val_buf, size_t* recv_val_count,
+                                    index_buffer_type* recv_ind_buf, size_t recv_ind_count,
+                                    value_buffer_type* recv_val_buf, size_t recv_val_count,
                                     ccl::reduction reduction,
                                     const ccl::coll_attr* attr,
                                     ccl::stream::impl_t& stream)
@@ -258,8 +258,8 @@ ccl::communicator::coll_request_t
 device_group_a2a_communicator::sparse_allreduce_impl(
                                     const index_buffer_container_type& send_ind_buf, size_t send_ind_count,
                                     const value_buffer_container_type& send_val_buf, size_t send_val_count,
-                                    index_buffer_container_type** recv_ind_buf, size_t* recv_ind_count,
-                                    value_buffer_container_type** recv_val_buf, size_t* recv_val_count,
+                                    index_buffer_container_type& recv_ind_buf, size_t recv_ind_count,
+                                    value_buffer_container_type& recv_val_buf, size_t recv_val_count,
                                     ccl::reduction reduction,
                                     const ccl::coll_attr* attr,
                                     ccl::stream::impl_t& stream)

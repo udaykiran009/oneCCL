@@ -56,9 +56,12 @@ void do_regular(ccl::communicator* comm,
             double t = 0;
             for (size_t iter_idx = 0; iter_idx < options.iters; iter_idx++)
             {
-                for (auto& coll : colls)
+                if (options.check_values)
                 {
-                    coll->prepare(count);
+                    for (auto& coll : colls)
+                    {
+                        coll->prepare(count);
+                    }
                 }
 
                 double t1 = when();
@@ -82,10 +85,14 @@ void do_regular(ccl::communicator* comm,
 
             reqs.clear();
 
-            for (auto& coll : colls)
+            if (options.check_values)
             {
-                coll->finalize(count);
+                for (auto& coll : colls)
+                {
+                    coll->finalize(count);
+                }
             }
+
             print_timings(*comm, &t, count,
                           sizeof(DTYPE), options.buf_count,
                           comm->rank(), comm->size());
@@ -257,7 +264,8 @@ void create_cpu_colls(std::list<std::string>& names, coll_list_t& colls)
         {
             if (name.find(incremental_index_bfp16_sparse_strategy::class_name()) != std::string::npos)
             {
-                if (is_bfp16_enabled() == 0)
+                /* TODO: fix bfp16 support fot ring algo */
+                if (1) //is_bfp16_enabled() == 0)
                 {
                     error_messages_stream << "BFP16 is not supported for current CPU, skipping " << name << ".\n";
                     names_it = names.erase(names_it);
@@ -476,11 +484,6 @@ int main(int argc, char *argv[])
     }
 
     comm->barrier();
-
-    for (auto& coll : colls)
-    {
-        coll->check_values = options.check_values;
-    }
 
     switch (options.loop)
     {
