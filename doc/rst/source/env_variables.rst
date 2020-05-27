@@ -474,7 +474,7 @@ CCL_KVS_IP_PORT
 
    * - <value>
      - Description
-   * - ``IP:PORT``
+   * - ``IP_PORT``
      - Set the address and the port of the master kvs server.
 
 **Description**
