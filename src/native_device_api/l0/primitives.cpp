@@ -1,4 +1,5 @@
 #include <algorithm>
+#include <cstring>
 #include <sstream>
 
 #include "native_device_api/l0/primitives_impl.hpp"

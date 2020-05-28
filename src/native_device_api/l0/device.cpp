@@ -1,4 +1,6 @@
 #include <cassert>
+#include <cstring>
+#include <functional>
 
 #include "native_device_api/l0/base_impl.hpp"
 #include "native_device_api/l0/device.hpp"
@@ -8,6 +10,20 @@
 
 namespace native
 {
+    
+uint32_t get_device_properties_from_handle(ccl_device::handle_t handle)
+{
+    ze_device_properties_t device_properties;
+    device_properties.version = ZE_DEVICE_PROPERTIES_VERSION_CURRENT;
+    ze_result_t ret = zeDeviceGetProperties(handle, &device_properties);
+    if(ret != ZE_RESULT_SUCCESS )
+    {
+        throw std::runtime_error(std::string("zeDeviceGetProperties failed, error: ") + native::to_string(ret));
+    }
+    
+    return device_properties.deviceId;
+}
+    
 CCL_API
 std::shared_ptr<ccl_device> ccl_device::create(handle_t handle, owner_ptr_t&& driver,
                                                const ccl::device_indices_t& indexes/* = ccl::device_indices_t()*/)
@@ -109,7 +125,21 @@ ccl_device::indexed_handles ccl_device::get_handles(const ccl_device_driver& dri
     indexed_handles ret;
     try
     {
-        ret = detail::collect_indexed_data<ccl::device_index_enum::device_index_id>(filtered_ids, handles);
+        ret = 
+            detail::collect_indexed_data<ccl::device_index_enum::device_index_id>(
+                                        filtered_ids,
+                                        handles,
+                                        std::bind(get_device_properties_from_handle,
+                                                   std::placeholders::_1));
+        
+        // set parent_index forcibly
+        /*
+        std::transform(ret.begin(), ret.end(), ret.begin(),
+                       [parent_id](typename indexed_handles::value_type &val)
+                       {
+                           std::get<ccl::device_index_enum::driver_index_id>(val.first) = parent_id;
+                       });
+        */
     }
     catch(const std::exception& ex)
     {

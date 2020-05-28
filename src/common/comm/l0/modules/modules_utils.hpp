@@ -20,7 +20,7 @@ struct kernel_entry_initializer
     template<class typed_kernel>
     void operator() (typed_kernel& kernel)
     {
-        kernel.handle = functor(std::string(typed_kernel::name()) +
+        kernel.handle = functor(std::string(typed_kernel::name()) + "_" +
                                 ccl::native_type_info<typename typed_kernel::processing_type>::name());
     }
 private:

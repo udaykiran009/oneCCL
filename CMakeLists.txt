@@ -117,14 +117,14 @@ set(CMAKE_CXX_FLAGS_RELWITHDEBINFO "${CMAKE_CXX_FLAGS_RELWITHDEBINFO} ${CXX_COMP
 set(CMAKE_CXX_STANDARD 11)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-if( ${CMAKE_C_COMPILER_ID} STREQUAL "Clang" AND ${CMAKE_CXX_COMPILER_ID} STREQUAL "Clang")
-    if (${CMAKE_DISABLE_SYCL} EQUAL 0)
-        set(CMAKE_CLANG_FLAGS "-fsycl")
-        set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -lsycl")
+if (COMPUTE_RUNTIME)
+    activate_compute_runtime("${CMAKE_CURRENT_LIST_DIR}/cmake" ${COMPUTE_RUNTIME})
+
+    if (${CCL_ENABLE_SYCL_V} STREQUAL 1)
+        option (CCL_ENABLE_SYCL "Enable CCL SYCL runtime" ON)
+        message(STATUS "Enable CCL SYCL runtime")
     endif()
-    set(CMAKE_CLANG_FLAGS "${CMAKE_CLANG_FLAGS} -D__STRICT_ANSI__ ")
-    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${CMAKE_CLANG_FLAGS}")
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${CMAKE_CLANG_FLAGS} -std=c++11")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${COMPUTE_RUNTIME_FLAGS}")
 endif()
 
 if(${CMAKE_C_COMPILER_ID} STREQUAL "GNU" AND ${CMAKE_CXX_COMPILER_ID} STREQUAL "GNU")
@@ -144,8 +144,15 @@ endif()
 set(GCC_BFP16_MIN_SUPPORTED "4.9.0")
 set(GCC_BFP16_AVX512BF_MIN_SUPPORTED "10.0.0")
 set(ICC_BFP16_AVX512BF_MIN_SUPPORTED "19.1.0")
+set(CLANG_BFP16_MIN_SUPPORTED "9.0.0")
+set(CLANG_BFP16_AVX512BF_MIN_SUPPORTED "10.0.0")
 
-if (${CMAKE_C_COMPILER_ID} STREQUAL "Intel" OR ${CMAKE_C_COMPILER_ID} STREQUAL "Clang" OR (${CMAKE_C_COMPILER_ID} STREQUAL "GNU" AND NOT ${CMAKE_C_COMPILER_VERSION} VERSION_LESS ${GCC_BFP16_MIN_SUPPORTED}))
+if (${CMAKE_C_COMPILER_ID} STREQUAL "Intel" 
+    OR (${CMAKE_C_COMPILER_ID} STREQUAL "Clang" 
+        AND NOT ${CMAKE_C_COMPILER_VERSION} VERSION_LESS ${CLANG_BFP16_MIN_SUPPORTED})
+    OR (${CMAKE_C_COMPILER_ID} STREQUAL "GNU" 
+        AND NOT ${CMAKE_C_COMPILER_VERSION} VERSION_LESS ${GCC_BFP16_MIN_SUPPORTED})
+    )
     add_definitions(-DCCL_BFP16_COMPILER)
     set(CCL_BFP16_COMPILER ON)
     message(STATUS "BFP16 compiler: yes")
@@ -154,7 +161,13 @@ else()
     message(STATUS "BFP16 compiler: no")
 endif()
 
-if ((${CMAKE_C_COMPILER_ID} STREQUAL "Intel" AND NOT ${CMAKE_C_COMPILER_VERSION} VERSION_LESS ${ICC_BFP16_AVX512BF_MIN_SUPPORTED}) OR ${CMAKE_C_COMPILER_ID} STREQUAL "Clang" OR (${CMAKE_C_COMPILER_ID} STREQUAL "GNU" AND NOT ${CMAKE_C_COMPILER_VERSION} VERSION_LESS ${GCC_BFP16_AVX512BF_MIN_SUPPORTED}))
+if ((${CMAKE_C_COMPILER_ID} STREQUAL "Intel" 
+        AND NOT ${CMAKE_C_COMPILER_VERSION} VERSION_LESS ${ICC_BFP16_AVX512BF_MIN_SUPPORTED})
+    OR (${CMAKE_C_COMPILER_ID} STREQUAL "Clang" 
+        AND NOT ${CMAKE_C_COMPILER_VERSION} VERSION_LESS ${CLANG_BFP16_AVX512BF_MIN_SUPPORTED})
+    OR (${CMAKE_C_COMPILER_ID} STREQUAL "GNU" 
+        AND NOT ${CMAKE_C_COMPILER_VERSION} VERSION_LESS ${GCC_BFP16_AVX512BF_MIN_SUPPORTED})
+    )
     add_definitions(-DCCL_BFP16_AVX512BF_COMPILER)
     message(STATUS "BFP16 AVX512BF compiler: yes")
 else()
@@ -181,30 +194,13 @@ set(EXAMPLES_INC_DIRS ${PROJECT_SOURCE_DIR}/include ${PROJECT_SOURCE_DIR}/exampl
 set(CMAKE_CLANG_FLAGS "${CMAKE_CLANG_FLAGS}")
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS}")
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}")
+
 if (MULTI_GPU_SUPPORT)
-    #TODO use `find_package(LevelZero CONFIG REQUIRED PATHS ${CMAKE_MODULE_PATH})`
-    set(NATIVE_API_ROOT "/usr/")
-
-    set(CMAKE_CLANG_FLAGS "${CMAKE_CLANG_FLAGS}")
-    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS}")
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}")
-
-    LIST(APPEND CMAKE_MODULE_PATH "${NATIVE_API_ROOT}/lib/cmake/level_zero"
-                                  "${NATIVE_API_ROOT}/lib/cmake/level_zero")
-
-    message("Level0 examples, path: ${CMAKE_MODULE_PATH}")
-    list(APPEND CCL_INC_DIRS "${NATIVE_API_ROOT}/include/level_zero")
-    if( NOT ${CMAKE_C_COMPILER_ID} STREQUAL "Clang" AND NOT ${CMAKE_CXX_COMPILER_ID} STREQUAL "Clang")
-        list(APPEND CCL_INC_DIRS "/opt/intel/opencl/include/")
-        list(APPEND CCL_INC_DIRS "/p/pdsd/scratch/sivanov/opencl")
+    if (NOT ((${COMPUTE_RUNTIME_TARGET_NAME} STREQUAL "ze_loader")
+             OR (${COMPUTE_RUNTIME_TARGET_NAME} STREQUAL "Intel::SYCL")))
+        message( FATAL_ERROR "MULTI_GPU_SUPPORT required COMPUTE_RUNTIME=L0 or DPC++")
     endif()
-    #"/p/pdsd/scratch/sivanov/dpcpp/build/linux_prod/compiler/linux/lib/clang/10.0.0/include")
-
-    link_directories("/usr/local/lib/level_zero/")
-    #list(APPEND CMAKE_SHARED_LINKER_FLAGS "-L${L0_ROOT}/lib/level_zero/")# -lxe_loader")
-    list(APPEND EXTERNAL_LIBS "-llevel_zero")
-    #list(APPEND CMAKE_STATIC_LINKER_FLAGS "-llevel_zero")
-
+    
     option(CCL_GPU_DEVICES_AFFINITY_ENABLE "Enable L0" ON)
     if(CCL_GPU_DEVICES_AFFINITY_ENABLE)
         set(CCL_GPU_DEVICES_AFFINITY_MASK_SIZE 4)
@@ -217,14 +213,13 @@ endif(MULTI_GPU_SUPPORT)
 add_subdirectory(src)
 add_subdirectory(examples/cpu)
 
-set (CCL_ENABLCE_SYCL_CHECK_CONTRACT "#if !defined(__clang__) || __clang_major__ < 9 || !defined(CL_SYCL_LANGUAGE_VERSION)\n#error This version of CCL configured only for DPC++ compiler\n#endif")
-if(${CMAKE_DISABLE_SYCL} EQUAL 0 AND ${CMAKE_C_COMPILER_ID} STREQUAL "Clang" AND ${CMAKE_CXX_COMPILER_ID} STREQUAL "Clang")
-    option (CCL_ENABLE_SYCL "Enable CCL SYCL runtime" ON)
-    set(CCL_ENABLE_SYCL_V 1)
-    message(STATUS "Enable CCL SYCL runtime")
+if (CCL_ENABLE_SYCL)
+    if (${COMPUTE_RUNTIME_TARGET_NAME} STREQUAL "Intel::SYCL")
+        set (CCL_ENABLCE_SYCL_CHECK_CONTRACT "#if defined(__cplusplus)\n#if !defined(__clang__) || __clang_major__ < 9 || !defined(CL_SYCL_LANGUAGE_VERSION)\n#error This version of CCL configured only for DPC++ compiler\n#endif\n#endif")
+    else(${COMPUTE_RUNTIME_TARGET_NAME} STREQUAL "Codeplay::ComputeCpp")
+        set (CCL_ENABLCE_SYCL_CHECK_CONTRACT "#if defined(__cplusplus)\n#if !defined(__clang__) || __clang_major__ < 6\n#error This version of CCL configured only for DPC++ compiler\n#endif\n#endif")
+    endif()
     add_subdirectory(examples/sycl)
-else()
-        set(CCL_ENABLE_SYCL_V 0)
 endif()
 
 add_subdirectory(examples/benchmark)

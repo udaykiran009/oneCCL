@@ -3,6 +3,7 @@
 #include "common/comm/comm.hpp"
 
 #ifdef MULTI_GPU_SUPPORT
+#include "native_device_api/export_api.hpp"
 #include "common/comm/l0/gpu_comm_attr.hpp"
 #endif
 
@@ -64,14 +65,20 @@ ccl::device_topology_type host_communicator::get_topology_type() const
 
 ccl::device_index_type host_communicator::get_device_path() const
 {
-    return {ccl::unused_index_value, ccl::unused_index_value, ccl::unused_index_value};
+    return ccl::device_index_type{ccl::unused_index_value, 
+                                  ccl::unused_index_value,
+                                  ccl::unused_index_value};
 }
 
 ccl::communicator_interface::native_device_type_ref host_communicator::get_device()
 {
     throw ccl::ccl_error(std::string(__FUNCTION__) + " is not applicable for " +
                              traits::name());
+#ifdef CCL_ENABLE_SYCL
     static ccl::communicator_interface::native_device_type empty;
+#else
+    static ccl::communicator_interface::native_device_type_ref empty;
+#endif
     return empty;
 }
 

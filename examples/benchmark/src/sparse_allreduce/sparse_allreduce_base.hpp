@@ -51,8 +51,8 @@ struct base_sparse_allreduce_coll :
         result = posix_memalign((void**)&recv_vcount, ALIGNMENT,
                                 BUF_COUNT * sizeof(size_t));
 
-        memset(recv_icount, 0, BUF_COUNT * sizeof(size_t));
-        memset(recv_vcount, 0, BUF_COUNT * sizeof(size_t));
+        std::memset(recv_icount, 0, BUF_COUNT * sizeof(size_t));
+        std::memset(recv_vcount, 0, BUF_COUNT * sizeof(size_t));
         (void)result;
     }
 

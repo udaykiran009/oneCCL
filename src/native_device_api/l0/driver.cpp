@@ -1,5 +1,6 @@
 #include <algorithm>
 #include <cassert>
+#include <functional>
 #include <iterator>
 #include <sstream>
 
@@ -13,6 +14,19 @@
 
 namespace native
 {
+uint32_t get_driver_properties(ccl_device_driver::handle_t handle)
+{
+    ze_driver_properties_t driver_properties{};
+    driver_properties.version = ZE_DRIVER_PROPERTIES_VERSION_CURRENT;
+    ze_result_t ret =  zeDriverGetProperties(handle, &driver_properties);
+    if(ret != ZE_RESULT_SUCCESS )
+    {
+        throw std::runtime_error(std::string("zeDriverGetProperties, error: ") + native::to_string(ret));
+    }
+    //TODO only 0 index in implemented in L0
+    return 0;
+}
+ 
 ccl_device_driver::indexed_driver_handles ccl_device_driver::get_handles(const ccl::device_indices_t& requested_driver_indexes/* = indices()*/)
 {
     uint32_t driver_count = 0;
@@ -35,7 +49,12 @@ ccl_device_driver::indexed_driver_handles ccl_device_driver::get_handles(const c
     indexed_driver_handles ret;
     try
     {
-        ret = detail::collect_indexed_data<ccl::device_index_enum::driver_index_id>(requested_driver_indexes, handles);
+        ret = 
+            detail::collect_indexed_data<ccl::device_index_enum::driver_index_id>(
+                                        requested_driver_indexes, 
+                                        handles,
+                                        std::bind(get_driver_properties,
+                                                   std::placeholders::_1));
     }
     catch(const std::exception& ex)
     {
@@ -121,6 +140,19 @@ CCL_API ccl_device_driver::ccl_device_driver(ccl_device_driver::handle_t h,
 {
 }
 
+CCL_API
+ze_driver_properties_t ccl_device_driver::get_properties() const
+{
+    ze_driver_properties_t driver_properties{};
+    driver_properties.version = ZE_DRIVER_PROPERTIES_VERSION_CURRENT;
+    ze_result_t ret =  zeDriverGetProperties(handle, &driver_properties);
+    if(ret != ZE_RESULT_SUCCESS )
+    {
+        throw std::runtime_error(std::string("zeDriverGetProperties, error: ") + native::to_string(ret));
+    }
+    return driver_properties;
+}
+ 
 CCL_API
 const ccl_device_driver::devices_storage_type& ccl_device_driver::get_devices() const noexcept
 {

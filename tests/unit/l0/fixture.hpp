@@ -4,7 +4,7 @@ class allreduce_one_device_local_fixture : public common_fixture
 {
 protected:
     allreduce_one_device_local_fixture() :
-        common_fixture("[0:0]")
+        common_fixture(get_global_device_indices()/*"[0:0]"*/)
     {}
 
     ~allreduce_one_device_local_fixture()
@@ -29,7 +29,7 @@ class allreduce_multi_device_local_fixture : public common_fixture
 {
 protected:
     allreduce_multi_device_local_fixture() :
-        common_fixture("[0:0],[0:1]")
+        common_fixture(get_global_device_indices()/*"[0:0],[0:1]"*/)
     {}
 
     ~allreduce_multi_device_local_fixture()
@@ -53,7 +53,7 @@ class allreduce_one_device_multi_tile_local_fixture : public common_fixture
 {
 protected:
     allreduce_one_device_multi_tile_local_fixture() :
-        common_fixture("[0:0:0],[0:0:1]")
+        common_fixture(get_global_device_indices()/*"[0:0:0],[0:0:1]"*/)
     {}
 
     ~allreduce_one_device_multi_tile_local_fixture()

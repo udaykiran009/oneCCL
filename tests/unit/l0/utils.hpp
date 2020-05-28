@@ -20,6 +20,7 @@
 
 #define private public
 #define protected public
+#define MULTI_GPU_SUPPORT
 #include "native_device_api/export_api.hpp"
 #undef protected
 #undef private

@@ -106,9 +106,6 @@ set(CCL_SRC
     common/utils/yield.cpp
     ${EXTENSIONS_SRC})
 
-if(${CMAKE_C_COMPILER_ID} STREQUAL "Clang" AND ${CMAKE_CXX_COMPILER_ID} STREQUAL "Clang")
-    list(APPEND CCL_INC_DIRS "${SYCL_BUNDLE_ROOT}/include")
-endif()
 list(APPEND CCL_INC_DIRS
                  ${PROJECT_SOURCE_DIR}/include
                  ${PROJECT_SOURCE_DIR}/src)
@@ -123,20 +120,24 @@ target_compile_definitions(ccl-objects PRIVATE PT_LOCK_SPIN=1)
 target_compile_definitions(ccl-objects PRIVATE ATL_TRANSPORT_DL_DIR=\"${CCL_BUILD_DIR}\")
 target_include_directories(ccl-objects PRIVATE ${CCL_INC_DIRS})
 
+if(COMPUTE_RUNTIME_TARGET_NAME)
+    target_include_directories(ccl-objects PRIVATE $<TARGET_PROPERTY:${COMPUTE_RUNTIME_TARGET_NAME},INTERFACE_INCLUDE_DIRECTORIES>)
+endif()
+
 #shared library
 add_library(ccl SHARED $<TARGET_OBJECTS:ccl-objects>)
 target_include_directories(ccl PUBLIC ${CCL_INC_DIRS})
-target_link_libraries(ccl PUBLIC dl pthread ${EXTERNAL_LIBS})
+target_link_libraries(ccl PUBLIC dl pthread ${EXTERNAL_LIBS} ${COMPUTE_RUNTIME_TARGET_NAME})
 set_target_properties(ccl PROPERTIES LIBRARY_OUTPUT_DIRECTORY ${CCL_BUILD_DIR})
 install(TARGETS ccl LIBRARY DESTINATION ${CCL_INSTALL_LIB})
-if(${CMAKE_C_COMPILER_ID} STREQUAL "Clang" AND ${CMAKE_CXX_COMPILER_ID} STREQUAL "Clang")
 install(FILES
     "../cmake/FindOpenCL.cmake"
+    "../cmake/FindL0.cmake"
     "../cmake/FindSYCL.cmake"
     "../cmake/FindIntelSYCL.cmake"
     "../cmake/FindComputeCpp.cmake"
     DESTINATION ${CCL_INSTALL_LIB})
-endif()
+
 
 #static library
 add_library(ccl-static STATIC $<TARGET_OBJECTS:ccl-objects>)
@@ -145,10 +146,12 @@ set_target_properties(ccl-static PROPERTIES ARCHIVE_OUTPUT_DIRECTORY ${CCL_BUILD
 install(TARGETS ccl-static ARCHIVE DESTINATION ${CCL_INSTALL_LIB})
 
 if(MULTI_GPU_SUPPORT)
+    message("Turn on L0 multi-gpu unit tests")
     add_library(ccl-ut-static STATIC $<TARGET_OBJECTS:ccl-objects>)
     set_target_properties(ccl-ut-static PROPERTIES COMPILE_FLAGS "-fvisibility=default")
     set_target_properties(ccl-ut-static PROPERTIES OUTPUT_NAME cclut)
     set_target_properties(ccl-ut-static PROPERTIES ARCHIVE_OUTPUT_DIRECTORY ${CCL_BUILD_DIR})
+    set_target_properties(ccl-ut-static PROPERTIES INTERFACE_INCLUDE_DIRECTORIES  $<TARGET_PROPERTY:${COMPUTE_RUNTIME_TARGET_NAME},INTERFACE_INCLUDE_DIRECTORIES>)
 endif(MULTI_GPU_SUPPORT)
 
 #headers installation

@@ -7,7 +7,6 @@
 #include <vector>
 
 #include "coll/algorithms/algorithms_enum.hpp"
-#include "native_device_api/export_api.hpp"
 
 #include "common/comm/l0/device_group_routing_schema.hpp"
 #include "common/comm/l0/gpu_device_types.hpp"

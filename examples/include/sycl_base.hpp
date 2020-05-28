@@ -2,6 +2,7 @@
 #define SYCL_BASE_HPP
 
 /* sycl-specific base implementation and its help functions */
+#include <iostream>
 #include <string>
 
 #include <CL/sycl.hpp>
@@ -131,4 +132,3 @@ void handle_exception(cl::sycl::queue &q)
 }
 
 #endif /* SYCL_BASE_HPP */
-

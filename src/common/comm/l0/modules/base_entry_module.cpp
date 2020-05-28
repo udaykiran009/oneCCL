@@ -25,7 +25,11 @@ void gpu_module_base::release()
     {
         zeKernelDestroy(f.second);
     }
-    zeModuleDestroy(module);
+    
+    if (module)
+    {
+        zeModuleDestroy(module);
+    }
     functions.clear();
 }
 

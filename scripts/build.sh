@@ -240,6 +240,7 @@ build_gpu()
     log mkdir ${WORKSPACE}/build_gpu && cd ${WORKSPACE}/build_gpu && echo ${PWD}
     log cmake .. -DCMAKE_DISABLE_SYCL=0 -DCMAKE_BUILD_TYPE=${BUILD_TYPE} \
     -DCMAKE_C_COMPILER="${C_COMPILER_GPU}" -DCMAKE_CXX_COMPILER="${CXX_COMPILER_GPU}" -DUSE_CODECOV_FLAGS="${CODECOV_FLAGS}" \
+    -DCOMPUTE_RUNTIME="dpcpp" \ 
     -DLIBFABRIC_DIR="${LIBFABRIC_INSTALL_DIR}"
     log make -j4 VERBOSE=1 install
     CheckCommandExitCode $? "gpu build failed"

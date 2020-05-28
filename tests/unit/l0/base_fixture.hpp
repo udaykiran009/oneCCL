@@ -18,6 +18,21 @@
     std::ostream& global_output = global_ss;
 #endif
 
+static std::string device_indices{"[0:6459]"};
+
+void set_test_device_indices(const char *indices_csv)
+{
+    if (!indices_csv)
+    {
+        device_indices = indices_csv;
+    }
+}
+
+const std::string& get_global_device_indices()
+{
+    return device_indices;
+}
+
 struct tracer
 {
     tracer():
@@ -181,7 +196,7 @@ public:
     }
 
 protected:
-    ipc_fixture(const std::string& node_affinity = std::string("[0:0],[0:1]"),
+    ipc_fixture(const std::string& node_affinity = device_indices/*"[0:0],[0:1]"*/,
                 const std::string& module = std::string("kernels/ipc_test.spv")) :
         common_fixture(node_affinity),
         module_path(module)

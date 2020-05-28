@@ -41,7 +41,7 @@ set (DEPENDENCIES gtest ccl-ut-static)
 
 foreach(libs ${DEPENDENCIES})
     get_target_property(CCL_STATIC_PATH ccl-ut-static ARCHIVE_OUTPUT_DIRECTORY)
-    get_target_property(UNIT_TEST_INCLUDE ccl INCLUDE_DIRECTORIES)
+    get_target_property(UNIT_TEST_INCLUDE ccl-ut-static INTERFACE_INCLUDE_DIRECTORIES)
 
     link_directories($ENV{CCL_ROOT}/lib ${CCL_STATIC_PATH})
     include_directories(${UNIT_TEST_INCLUDE})
@@ -50,19 +50,13 @@ endforeach()
 set(ADD_LIBS gtest_main
              gtest
              rt
-             m
-             libcclut.a
-             level_zero
-             dl)
+             m)
+
 foreach(src ${sources})
     get_filename_component(executable ${src} NAME_WE)
     add_executable(${executable} ${src})
     add_dependencies(${executable} ${DEPENDENCIES})
-    link_directories("/usr/lib/level_zero/")
-    target_link_libraries(${executable} ${ADD_LIBS})
-#    install(TARGETS ${executable} RUNTIME DESTINATION ${CCL_INSTALL_UNIT_TESTS})
-    #add_test (NAME ${executable} CONFIGURATIONS Default COMMAND mpiexec.hydra -l -n 2 -ppn 1 ${CCL_INSTALL_UNIT_TESTS}/${executable} --gtest_output=xml:${CCL_INSTALL_UNIT_TESTS}/${executable}_default_report.junit.xml)
-    #add_test (NAME ${executable}_mpi CONFIGURATIONS Mpi COMMAND mpiexec.hydra -l -n 2 -ppn 1 ${CCL_INSTALL_UNIT_TESTS}/${executable} --gtest_output=xml:${CCL_INSTALL_UNIT_TESTS}/${executable}_mpi_runtime_report.junit.xml)
+    target_link_libraries(${executable} PUBLIC ${ADD_LIBS} ccl-ut-static 
+                                               ${COMPUTE_RUNTIME_TARGET_NAME}
+                                               dl)
 endforeach()
-
-#add_test (NAME test_l0 CONFIGURATIONS Custom COMMAND mpiexec.hydra -l -n 2 -ppn 1 ${CCL_INSTALL_UNIT_TESTS}/test_l0 --gtest_output=xml:${CCL_INSTALL_UNIT_TESTS}/test_sched.junit.xml)

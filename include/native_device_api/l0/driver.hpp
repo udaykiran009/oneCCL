@@ -44,6 +44,7 @@ struct ccl_device_driver : public cl_base<ze_driver_handle_t, ccl_device_platfor
 
     uint32_t get_driver_id() const noexcept;
 
+    ze_driver_properties_t get_properties() const;
     const devices_storage_type& get_devices() const noexcept;
     device_ptr get_device(const ccl::device_index_type& path);
     const_device_ptr get_device(const ccl::device_index_type& path) const;

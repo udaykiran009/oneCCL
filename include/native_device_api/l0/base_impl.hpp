@@ -165,19 +165,42 @@ std::shared_ptr<type> cl_base<TEMPLATE_DEF_ARG>::deserialize(const uint8_t** dat
 namespace detail
 {
 
-template<ccl::device_index_enum index_id, class IndexedContainer, class value_type>
+template<ccl::device_index_enum index_id,
+         class IndexedContainer,
+         class value_type,
+         class value_type_index_extractor>
 indexed_storage<value_type> merge_indexed_values(const IndexedContainer& indexes,
-                                                 std::vector<value_type>& values)
+                                                 std::vector<value_type>& values,
+                                                 value_type_index_extractor functor)
 {
     indexed_storage<value_type> ret;
     try
     {
+        // set indices to values at first
+        indexed_storage<value_type> indexed_values;
+        std::transform(values.begin(), values.end(),
+                       std::inserter(indexed_values, indexed_values.end()),
+                       [functor](value_type& handle) -> typename indexed_storage<value_type>::value_type
+                       {
+                           auto index  = functor(handle);
+                           return std::make_pair(index, handle);
+                       });
+
+        // find requested device index in indexed values
         std::transform(indexes.begin(), indexes.end(),
                        std::inserter(ret, ret.end()),
-                       [&values](const typename IndexedContainer::value_type& index) -> typename indexed_storage<value_type>::value_type
+                       [&indexed_values](const typename IndexedContainer::value_type& index) -> typename indexed_storage<value_type>::value_type
                        {
-                            return std::make_pair(std::get<index_id>(index),
-                                                  values.at(std::get<index_id>(index)));
+                           auto values_it = indexed_values.find(std::get<index_id>(index));
+                           if (values_it == indexed_values.end())
+                           {
+                               throw std::runtime_error(std::string(__PRETTY_FUNCTION__) +
+                                                        "Cannot find index: " +
+                                                        ccl::to_string(index) +
+                                                        ", from collected devices");
+                           }
+                           return std::make_pair(std::get<index_id>(index),
+                                                 values_it->second);
                        });
     }
     catch(const std::exception& ex)
@@ -198,29 +221,25 @@ indexed_storage<value_type> merge_indexed_values(const IndexedContainer& indexes
     return ret;
 }
 
-template<ccl::device_index_enum index_id, class value_type>
+template<ccl::device_index_enum index_id, class value_type, class value_type_index_extractor>
 indexed_storage<value_type> collect_indexed_data(const ccl::device_indices_t& indexes,
-                                                 std::vector<value_type>& collected_values)
+                                                 std::vector<value_type>& collected_values,
+                                                 value_type_index_extractor functor)
 {
     indexed_storage<value_type> ret;
     if(!indexes.empty())   //only requested indexes
     {
-        ret = merge_indexed_values<index_id>(indexes, collected_values);
+        ret = merge_indexed_values<index_id>(indexes, collected_values, functor);
     }
     else //all
     {
-        using index_type_by_id = typename std::tuple_element<index_id, ccl::device_index_type>::type;
-        std::vector<index_type_by_id> ind(collected_values.size());
-        std::iota(ind.begin(), ind.end(), 0);
-
-        std::transform(ind.begin(), ind.end(),
+        std::transform(collected_values.begin(), collected_values.end(),
                        std::inserter(ret, ret.end()),
-                       [&collected_values](index_type_by_id index) -> typename indexed_storage<value_type>::value_type
+                       [&functor](value_type handle) -> typename indexed_storage<value_type>::value_type
                        {
-                            return std::make_pair(index, collected_values.at(index));
+                           auto index = functor(handle);
+                           return std::make_pair(index, handle);
                        });
-
-        //ret = merge_indexed_values(ind, collected_values);
     }
     return ret;
 }

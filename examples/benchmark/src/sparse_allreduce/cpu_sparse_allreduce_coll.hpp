@@ -68,22 +68,22 @@ struct cpu_sparse_allreduce_coll :
 
         for (size_t idx = 0; idx < BUF_COUNT; idx++)
         {
-            memset(send_ibufs[idx], 0, ELEM_COUNT * sizeof(IType));
-            memset(send_vbufs[idx], 0, ELEM_COUNT * sizeof(VType) * sbuf_size_modifier);
+            std::memset(send_ibufs[idx], 0, ELEM_COUNT * sizeof(IType));
+            std::memset(send_vbufs[idx], 0, ELEM_COUNT * sizeof(VType) * sbuf_size_modifier);
 
-            memset(recv_ibufs[idx], 0, ELEM_COUNT * sizeof(IType) * rbuf_size_modifier *
-                   base_coll::comm->size());
-            memset(recv_vbufs[idx], 0, ELEM_COUNT * sizeof(VType) * rbuf_size_modifier *
-                   base_coll::comm->size());
+            std::memset(recv_ibufs[idx], 0, ELEM_COUNT * sizeof(IType) * rbuf_size_modifier *
+                                            base_coll::comm->size());
+            std::memset(recv_vbufs[idx], 0, ELEM_COUNT * sizeof(VType) * rbuf_size_modifier *
+                                            base_coll::comm->size());
         }
 
-        memset(single_send_ibuf, 0, SINGLE_ELEM_COUNT * sizeof(IType) * sbuf_size_modifier);
-        memset(single_send_vbuf, 0, SINGLE_ELEM_COUNT * sizeof(VType) * sbuf_size_modifier);
+        std::memset(single_send_ibuf, 0, SINGLE_ELEM_COUNT * sizeof(IType) * sbuf_size_modifier);
+        std::memset(single_send_vbuf, 0, SINGLE_ELEM_COUNT * sizeof(VType) * sbuf_size_modifier);
 
-        memset(single_recv_ibuf, 0, SINGLE_ELEM_COUNT * sizeof(IType) * rbuf_size_modifier *
-                                    base_coll::comm->size());
-        memset(single_recv_vbuf, 0, SINGLE_ELEM_COUNT * sizeof(VType) * rbuf_size_modifier *
-                                   base_coll::comm->size());
+        std::memset(single_recv_ibuf, 0, SINGLE_ELEM_COUNT * sizeof(IType) * rbuf_size_modifier *
+                                         base_coll::comm->size());
+        std::memset(single_recv_vbuf, 0, SINGLE_ELEM_COUNT * sizeof(VType) * rbuf_size_modifier *
+                                         base_coll::comm->size());
 
         for (size_t idx = 0; idx < BUF_COUNT; idx++)
         {

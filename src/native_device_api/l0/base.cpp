@@ -133,8 +133,7 @@ std::string CCL_API to_string(const ze_device_properties_t &device_properties)
        << "\nphysicalEUSimdWidth: " << device_properties.physicalEUSimdWidth
        << "\nnumEUsPerSubslice: " << device_properties.numEUsPerSubslice
        << "\nnumSubslicesPerSlice: " << device_properties.numSubslicesPerSlice
-       << "\nnumSlicesPerTile: " << device_properties.numSlicesPerTile
-       << "\ntiles count: " << device_properties.numTiles;
+       << "\numSlices: " << device_properties.numSlices;
     return ss.str();
 }
 

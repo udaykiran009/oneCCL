@@ -155,22 +155,22 @@ size_t get_left_rank(size_t rank, size_t comm_size)
  * @param i_send_to_right_flag - located in the memory of the right kernel. Used by current kernel to notify right kernel that he has sent some data
  * @param right_ready_to_recv_flag - located in the memory of the current kernel. Used by right kernel to notify us it's ready to receive
  */
-__kernel void allreduce_execution(size_t my_rank,
-                                  size_t comm_size,
-                                  size_t elems_count,
-                                  const __global float4* input_buffer,
-                                  __global float4* output_buffer,
+__kernel void allreduce_execution_float(size_t my_rank,
+                                        size_t comm_size,
+                                        size_t elems_count,
+                                        const __global float4* input_buffer,
+                                        __global float4* output_buffer,
 
-                                  __global float4* tmp_buffer,
-                                  __global volatile int* left_wrote_to_me_flag,
-                                  __global volatile int* i_ready_to_receive_flag,
+                                        __global float4* tmp_buffer,
+                                        __global volatile int* left_wrote_to_me_flag,
+                                        __global volatile int* i_ready_to_receive_flag,
 
-                                  __global volatile int* local_barrier_flag,
+                                        __global volatile int* local_barrier_flag,
 
-                                  __global float4* right_temp_buffer,
-                                  __global volatile int* i_send_to_right_flag,
-                                  __global volatile int* right_ready_to_recv_flag
-                                  )
+                                        __global float4* right_temp_buffer,
+                                        __global volatile int* i_send_to_right_flag,
+                                        __global volatile int* right_ready_to_recv_flag
+                                        )
 {
     //Known limitation
     //1) MUST: elems_count >= get_global_size(0) * 4 (vector size) * comm_size
@@ -336,30 +336,119 @@ __kernel void allreduce_execution(size_t my_rank,
 #endif
 }
 
+__kernel void allreduce_execution_char(size_t my_rank,
+                                       size_t comm_size,
+                                       size_t elems_count,
+                                       const __global char4* input_buffer,
+                                       __global char4* output_buffer,
 
+                                       __global char4* tmp_buffer,
+                                       __global volatile int* left_wrote_to_me_flag,
+                                       __global volatile int* i_ready_to_receive_flag,
 
-/**
- * @param left_wrote_to_me_flag  - located in the memory of the current kernel, left rank uses a pointer to it to notify that he has sent some data.
- * @param i_ready_to_receive_flag - located in the memory of the current kernel, left rank uses a pointer to it to check if he can send some data
- * @param i_send_to_right_flag - located in the memory of the right kernel. Used by current kernel to notify right kernel that he has sent some data
- * @param right_ready_to_recv_flag - located in the memory of the right kernel. Used by current kernel to check if he can send some data to right kernel
- */
+                                       __global volatile int* local_barrier_flag,
+
+                                       __global char4* right_temp_buffer,
+                                       __global volatile int* i_send_to_right_flag,
+                                       __global volatile int* right_ready_to_recv_flag)
+{
+    return;
+}
+
 __kernel void allreduce_execution_int(size_t my_rank,
-                                  size_t comm_size,
-                                  size_t elems_count,
-                                  const __global int4* input_buffer,
-                                  __global int4* output_buffer,
+                                      size_t comm_size,
+                                      size_t elems_count,
+                                      const __global int4* input_buffer,
+                                      __global int4* output_buffer,
 
-                                  __global int4* tmp_buffer,
-                                  __global volatile int* left_wrote_to_me_flag,
-                                  __global volatile int* i_ready_to_receive_flag,
+                                      __global int4* tmp_buffer,
+                                      __global volatile int* left_wrote_to_me_flag,
+                                      __global volatile int* i_ready_to_receive_flag,
 
-                                  __global volatile int* local_barrier_flag,
+                                      __global volatile int* local_barrier_flag,
 
-                                  __global int4* right_temp_buffer,
-                                  __global volatile int* i_send_to_right_flag,
-                                  __global volatile int* right_ready_to_recv_flag
-                                  )
+                                      __global int4* right_temp_buffer,
+                                      __global volatile int* i_send_to_right_flag,
+                                      __global volatile int* right_ready_to_recv_flag)
+{
+    return;
+}
+
+//TODO
+typedef ushort bfp16;
+__kernel void allreduce_execution_bfp16(size_t my_rank,
+                                        size_t comm_size,
+                                        size_t elems_count,
+                                        const __global bfp16* input_buffer,
+                                        __global bfp16* output_buffer,
+
+                                        __global bfp16* tmp_buffer,
+                                        __global volatile int* left_wrote_to_me_flag,
+                                        __global volatile int* i_ready_to_receive_flag,
+
+                                        __global volatile int* local_barrier_flag,
+
+                                        __global bfp16* right_temp_buffer,
+                                        __global volatile int* i_send_to_right_flag,
+                                        __global volatile int* right_ready_to_recv_flag)
+{
+    return;
+}
+
+__kernel void allreduce_execution_double(size_t my_rank,
+                                         size_t comm_size,
+                                         size_t elems_count,
+                                         const __global double4* input_buffer,
+                                         __global double4* output_buffer,
+
+                                         __global double4* tmp_buffer,
+                                         __global volatile int* left_wrote_to_me_flag,
+                                         __global volatile int* i_ready_to_receive_flag,
+
+                                         __global volatile int* local_barrier_flag,
+
+                                         __global double4* right_temp_buffer,
+                                         __global volatile int* i_send_to_right_flag,
+                                         __global volatile int* right_ready_to_recv_flag)
+{
+    return;
+}
+
+
+__kernel void allreduce_execution_int64_t(size_t my_rank,
+                                          size_t comm_size,
+                                          size_t elems_count,
+                                          const __global long4* input_buffer,
+                                          __global long4* output_buffer,
+
+                                          __global long4* tmp_buffer,
+                                          __global volatile int* left_wrote_to_me_flag,
+                                          __global volatile int* i_ready_to_receive_flag,
+
+                                          __global volatile int* local_barrier_flag,
+
+                                          __global long4* right_temp_buffer,
+                                          __global volatile int* i_send_to_right_flag,
+                                          __global volatile int* right_ready_to_recv_flag)
+{
+    return;
+}
+
+__kernel void allreduce_execution_uint64_t(size_t my_rank,
+                                           size_t comm_size,
+                                           size_t elems_count,
+                                           const __global ulong4* input_buffer,
+                                           __global ulong4* output_buffer,
+
+                                           __global ulong4* tmp_buffer,
+                                           __global volatile int* left_wrote_to_me_flag,
+                                           __global volatile int* i_ready_to_receive_flag,
+
+                                           __global volatile int* local_barrier_flag,
+
+                                           __global ulong4* right_temp_buffer,
+                                           __global volatile int* i_send_to_right_flag,
+                                           __global volatile int* right_ready_to_recv_flag)
 {
     return;
 }

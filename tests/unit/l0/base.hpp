@@ -1,3 +1,6 @@
+
+void set_test_device_indices(const char *indices_csv);
+
 #ifndef STANDALONE_UT
     #include <gtest/gtest.h>
 #else

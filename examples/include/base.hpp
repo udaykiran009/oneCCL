@@ -115,7 +115,7 @@ void print_timings(ccl::communicator& comm,
         recv_counts[idx] = 1;
 
     ccl::coll_attr attr;
-    memset(&attr, 0, sizeof(ccl_coll_attr_t));
+    std::memset(&attr, 0, sizeof(ccl_coll_attr_t));
 
     comm.allgatherv(timer,
                     1,

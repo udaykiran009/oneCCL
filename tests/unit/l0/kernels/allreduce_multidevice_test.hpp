@@ -96,7 +96,7 @@ TEST_F(allreduce_multi_device_local_fixture, allreduce_multi_device_multithread_
     //prepare kernels
     ze_kernel_desc_t desc = { ZE_KERNEL_DESC_VERSION_CURRENT,
                               ZE_KERNEL_FLAG_NONE   };
-    desc.pKernelName = "allreduce_execution";
+    desc.pKernelName = "allreduce_execution_float";
     std::map<size_t, ze_kernel_handle_t> thread_kernels;
     std::map<size_t, ccl_device::device_queue> thread_queue;
     std::map<size_t, ccl_device::device_cmd_list> thread_cmd_list;

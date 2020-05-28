@@ -253,6 +253,8 @@ void user_thread_idx(size_t thread_idx, ccl::device_indices_t thread_device_idx,
                                                                total_devices_in_process,
                                                                global_communicator);
 
+    std::cout << "Platform info: " << group->get_context().to_string() << std::endl;
+    
     // create device communicator attributes
     ccl::device_comm_attr_t my_device_comm_attr = group->create_device_comm_attr();
 
@@ -266,8 +268,6 @@ void user_thread_idx(size_t thread_idx, ccl::device_indices_t thread_device_idx,
                                             thread_device_idx.end(),
                                             my_device_comm_attr);
 
-
-    std::cout << "Platform info: " << group->get_context().to_string() << std::endl;
     std::cout << "Create device communicators, expected count: " << thread_device_idx.size()
               << ", preferred topology: "
               << my_device_comm_attr->get_value<ccl_device_preferred_topology_class>() << std::endl;
