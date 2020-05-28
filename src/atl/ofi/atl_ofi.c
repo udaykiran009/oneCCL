@@ -210,6 +210,7 @@ typedef struct
 
     size_t timeout_sec;
     size_t max_retry_count;
+    atl_progress_mode_t progress_mode;
 } atl_ofi_ctx_t;
 
 typedef struct
@@ -961,7 +962,6 @@ atl_ofi_reset(atl_ctx_t* ctx)
 static void
 atl_ofi_adjust_env(atl_ofi_ctx_t* ofi_ctx, const atl_attr_t* attr)
 {
-    setenv("FI_PSM2_TIMEOUT", "1", 0);
     setenv("FI_PSM2_DELAY", "0", 0);
     setenv("FI_PSM2_LOCK_LEVEL", "1", 0);
     setenv("HFI_NO_CPUAFFINITY", "1", 0);
@@ -970,6 +970,9 @@ atl_ofi_adjust_env(atl_ofi_ctx_t* ofi_ctx, const atl_attr_t* attr)
     setenv("FI_OFI_RXM_TX_SIZE", "8192", 0);
     setenv("FI_OFI_RXM_MSG_RX_SIZE", "128", 0);
     setenv("FI_OFI_RXM_MSG_TX_SIZE", "128", 0);
+
+    setenv("FI_SHM_TX_SIZE", "8192", 0);
+    setenv("FI_SHM_RX_SIZE", "8192", 0);
 
     char* prov_env = getenv("FI_PROVIDER");
 
@@ -1153,6 +1156,9 @@ atl_ofi_mr_dereg(atl_ctx_t* ctx, atl_mr_t* mr)
     free(ofi_mr);
     return RET2ATL(ret);
 }
+
+static atl_status_t
+atl_ofi_ep_wait(atl_ep_t* ep, atl_req_t* req);
 
 static atl_status_t
 atl_ofi_ep_send(atl_ep_t* ep, const void* buf, size_t len,
@@ -1444,7 +1450,7 @@ atl_ofi_ep_cancel(atl_ep_t* ep, atl_req_t* req)
 }
 
 static inline atl_status_t
-atl_ofi_ep_poll(atl_ep_t* ep)
+atl_ofi_ep_progress(atl_ep_t* ep, atl_ofi_req_t* req /* unused */)
 {
     ssize_t ret;
     size_t idx;
@@ -1472,12 +1478,41 @@ atl_ofi_ep_poll(atl_ep_t* ep)
     return ATL_STATUS_SUCCESS;
 }
 
-static atl_status_t
-atl_ofi_ep_check(atl_ep_t* ep, int* status, atl_req_t* req)
+static inline atl_status_t
+atl_ofi_ep_poll(atl_ep_t* ep)
 {
-    atl_ofi_req_t* ofi_req = ((atl_ofi_req_t*)req->internal);
-    *status = (ofi_req->comp_state == ATL_OFI_COMP_COMPLETED);
+    atl_ofi_ctx_t* ofi_ctx = container_of(ep->ctx, atl_ofi_ctx_t, ctx);
+    if (ofi_ctx->progress_mode == ATL_PROGRESS_POLL)
+    {
+        atl_ofi_ep_progress(ep, NULL /* ofi_req */);
+    }
+
     return ATL_STATUS_SUCCESS;
+}
+
+static atl_status_t
+atl_ofi_ep_check(atl_ep_t* ep, int* is_completed, atl_req_t* req)
+{
+    ATL_OFI_ASSERT(is_completed);
+
+    atl_status_t status = ATL_STATUS_SUCCESS;
+
+    atl_ofi_req_t* ofi_req = ((atl_ofi_req_t*)req->internal);
+    atl_ofi_ctx_t* ofi_ctx = container_of(ep->ctx, atl_ofi_ctx_t, ctx);
+
+    *is_completed = (ofi_req->comp_state == ATL_OFI_COMP_COMPLETED);
+    if (*is_completed)
+    {
+        return ATL_STATUS_SUCCESS;
+    }
+
+    if (ofi_ctx->progress_mode == ATL_PROGRESS_CHECK)
+    {
+        status = atl_ofi_ep_progress(ep, ofi_req);
+        *is_completed = (ofi_req->comp_state == ATL_OFI_COMP_COMPLETED);
+    }
+
+    return status;
 }
 
 static atl_ops_t atl_ofi_ops =
@@ -1592,8 +1627,9 @@ atl_ofi_init(int* argc, char*** argv,
     base_hints->domain_attr->control_progress = FI_PROGRESS_MANUAL;
     base_hints->domain_attr->data_progress = FI_PROGRESS_MANUAL;
     base_hints->caps = FI_TAGGED;
+    base_hints->caps |= FI_DIRECTED_RECV;
 
-    fi_version = FI_VERSION(1, 0);
+    fi_version = FI_VERSION(FI_MAJOR_VERSION, FI_MINOR_VERSION);
 
     ATL_OFI_DEBUG_PRINT_ROOT("libfabric version: %s", fi_tostr("1" /* ignored */, FI_TYPE_VERSION));
 
@@ -1903,8 +1939,16 @@ atl_ofi_init(int* argc, char*** argv,
         ofi_ctx->max_retry_count = strtol(max_retry_count_env, NULL, 10);
     }
 
+    ofi_ctx->progress_mode = ATL_PROGRESS_CHECK;
+    char* progress_mode_env = getenv(ATL_PROGRESS_MODE_ENV);
+    if (progress_mode_env)
+    {
+        ofi_ctx->progress_mode = atoi(progress_mode_env);
+    }
+
     ATL_OFI_DEBUG_PRINT_ROOT("timeout_sec %zu", ofi_ctx->timeout_sec);
     ATL_OFI_DEBUG_PRINT_ROOT("max_retry_count %zu", ofi_ctx->max_retry_count);
+    ATL_OFI_DEBUG_PRINT_ROOT("progress_mode %d", ofi_ctx->progress_mode);
 
     *out_ctx = ctx;
 

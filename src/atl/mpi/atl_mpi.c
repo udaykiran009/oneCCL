@@ -39,10 +39,16 @@
         }                                         \
     } while(0)
 
+#define ATL_MPI_PRINT_ROOT(s, ...)       \
+    if (coord->global_idx == 0)          \
+        ATL_MPI_PRINT(s, ##__VA_ARGS__); \
+
 #ifdef ENABLE_DEBUG
 #define ATL_MPI_DEBUG_PRINT(s, ...) ATL_MPI_PRINT(s, ##__VA_ARGS__)
+#define ATL_MPI_DEBUG_PRINT_ROOT(s, ...) ATL_MPI_PRINT_ROOT(s, ##__VA_ARGS__)
 #else
 #define ATL_MPI_DEBUG_PRINT(s, ...)
+#define ATL_MPI_DEBUG_PRINT_ROOT(s, ...)
 #endif
 
 #define RET2ATL(ret) (ret != MPI_SUCCESS) ? ATL_STATUS_FAILURE : ATL_STATUS_SUCCESS
@@ -114,17 +120,6 @@ typedef struct
 static atl_mpi_global_data_t global_data;
 static int is_external_init = 0;
 
-typedef struct
-{
-    atl_ctx_t ctx;
-} atl_mpi_ctx_t;
-
-typedef struct
-{
-    atl_ep_t ep;
-    MPI_Comm mpi_comm;
-} atl_mpi_ep_t;
-
 typedef enum
 {
     ATL_MPI_COMP_POSTED,
@@ -136,6 +131,22 @@ typedef struct
     MPI_Request native_req;
     atl_mpi_comp_state_t comp_state;
 } atl_mpi_req_t;
+
+typedef struct
+{
+    atl_ctx_t ctx;
+    atl_progress_mode_t progress_mode;
+} atl_mpi_ctx_t;
+
+typedef struct
+{
+    atl_ep_t ep;
+    MPI_Comm mpi_comm;
+
+    /* dummy recv operation to ensure progress in atl_poll */
+    atl_mpi_req_t dummy_req;
+    MPI_Comm dummy_comm;
+} atl_mpi_ep_t;
 
 #define MPI_BFP16                                                \
 ({                                                               \
@@ -589,6 +600,11 @@ atl_mpi_finalize(atl_ctx_t* ctx)
 
             if (mpi_ep)
             {
+                if (mpi_ctx->progress_mode == ATL_PROGRESS_POLL)
+                {
+                    MPI_Cancel(&(mpi_ep->dummy_req.native_req));
+                    MPI_Comm_free(&mpi_ep->dummy_comm);
+                }
                 MPI_Comm_free(&mpi_ep->mpi_comm);
                 free(mpi_ep);
             }
@@ -931,32 +947,51 @@ atl_mpi_ep_wait_all(atl_ep_t* ep, atl_req_t* reqs, size_t count)
 }
 
 static inline atl_status_t
+atl_mpi_ep_progress(atl_ep_t* ep, atl_mpi_req_t* req)
+{
+    int flag = 0;
+    int ret = MPI_Test(&req->native_req, &flag, MPI_STATUS_IGNORE);
+
+    if (flag)
+    {
+        req->comp_state = ATL_MPI_COMP_COMPLETED;
+    }
+
+    return RET2ATL(ret);
+}
+
+static inline atl_status_t
 atl_mpi_ep_poll(atl_ep_t* ep)
 {
+    atl_mpi_ctx_t* mpi_ctx = container_of(ep->ctx, atl_mpi_ctx_t, ctx);
+    if (mpi_ctx->progress_mode == ATL_PROGRESS_POLL)
+    {
+        atl_mpi_ep_t* mpi_ep = container_of(ep, atl_mpi_ep_t, ep);
+        atl_mpi_ep_progress(ep, &(mpi_ep->dummy_req));
+    }
+
     return ATL_STATUS_SUCCESS;
 }
 
 static atl_status_t
-atl_mpi_ep_check(atl_ep_t* ep, int* status, atl_req_t* req)
+atl_mpi_ep_check(atl_ep_t* ep, int* is_completed, atl_req_t* req)
 {
+    ATL_MPI_ASSERT(is_completed);
+
+    atl_status_t status = ATL_STATUS_SUCCESS;
+
     atl_mpi_req_t* mpi_req = ((atl_mpi_req_t*)req->internal);
-    if (mpi_req->comp_state == ATL_MPI_COMP_COMPLETED)
+
+    *is_completed = (mpi_req->comp_state == ATL_MPI_COMP_COMPLETED);
+    if (*is_completed)
     {
-        *status = 1;
         return ATL_STATUS_SUCCESS;
     }
+    
+    status = atl_mpi_ep_progress(ep, mpi_req);
+    *is_completed = (mpi_req->comp_state == ATL_MPI_COMP_COMPLETED);
 
-    int flag = 0;
-    MPI_Status mpi_status;
-    int ret = MPI_Test(&mpi_req->native_req, &flag, &mpi_status);
-    if (flag)
-    {
-        mpi_req->comp_state = ATL_MPI_COMP_COMPLETED;
-    }
-
-    if (status) *status = flag;
-
-    return RET2ATL(ret);
+    return status;
 }
 
 static atl_ops_t atl_mpi_ops =
@@ -1023,6 +1058,17 @@ atl_mpi_ep_init(atl_mpi_ctx_t* mpi_ctx, size_t idx, atl_ep_t** ep)
     snprintf(ep_idx_str, EP_IDX_MAX_STR_LEN, "%zu", idx);
     MPI_Info_set(info, EP_IDX_KEY, ep_idx_str);
     MPI_Comm_set_info(mpi_ep->mpi_comm, info);
+
+    if (mpi_ctx->progress_mode == ATL_PROGRESS_POLL)
+    {
+        ret = MPI_Comm_dup(MPI_COMM_WORLD, &mpi_ep->dummy_comm);
+        if (ret)
+            goto err_ep_dup;
+        MPI_Comm_set_info(mpi_ep->dummy_comm, info);
+        MPI_Irecv(NULL, 0, MPI_CHAR, 0, 0, mpi_ep->dummy_comm,
+                  &(mpi_ep->dummy_req.native_req));
+    }
+    
     MPI_Info_free(&info);
 
     ATL_MPI_DEBUG_PRINT("idx %zu, ep_idx_str %s", idx, ep_idx_str);
@@ -1115,6 +1161,14 @@ atl_mpi_init(int* argc, char*** argv,
         goto err_after_init;
     ctx->is_resize_enabled = 0;
 
+    mpi_ctx->progress_mode = ATL_PROGRESS_CHECK;
+    char* progress_mode_env = getenv(ATL_PROGRESS_MODE_ENV);
+    if (progress_mode_env)
+    {
+        mpi_ctx->progress_mode = atoi(progress_mode_env);
+    }
+    ATL_MPI_DEBUG_PRINT_ROOT("progress_mode %d", mpi_ctx->progress_mode);
+
     for (i = 0; i < attr->ep_count; i++)
     {
         ret = atl_mpi_ep_init(mpi_ctx, i, &(ctx->eps[i]));
@@ -1141,7 +1195,14 @@ err_ep_dup:
             container_of(ctx->eps[i], atl_mpi_ep_t, ep);
 
         if (ctx->eps[i] && mpi_ep)
+        {
+            if (mpi_ctx->progress_mode == ATL_PROGRESS_POLL)
+            {
+                MPI_Cancel(&(mpi_ep->dummy_req.native_req));
+                MPI_Comm_free(&mpi_ep->dummy_comm);
+            }
             MPI_Comm_free(&mpi_ep->mpi_comm);
+        }
     }
     free(ctx->eps);
 
