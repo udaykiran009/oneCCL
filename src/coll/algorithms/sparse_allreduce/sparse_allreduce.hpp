@@ -78,9 +78,55 @@
          }                                                              \
     } while (0)
 
+#define REMOVE_DUPS()                                                             \
+    do {                                                                          \
+        /* fill in the <index:value_offset> map */                                \
+        for (size_t i = 0; i < send_ind_count; i++)                               \
+        {                                                                         \
+            auto it = iv_map->find(src_i[i]);                                     \
+            if (it == iv_map->end())                                              \
+            {                                                                     \
+                /* save index and starting addr of values */                      \
+                /* set according to that index */                                 \
+                iv_map->emplace(src_i[i], i * val_dim_cnt);                       \
+            }                                                                     \
+            else                                                                  \
+            {                                                                     \
+                /* reduce values from duplicate indices */                        \
+                ccl_comp_reduce((void*)(src_v + i * val_dim_cnt), val_dim_cnt,    \
+                                (void*)(src_v + it->second), nullptr, value_dtype,\
+                                op, nullptr, nullptr);                            \
+            }                                                                     \
+        }                                                                         \
+                                                                                  \
+        /* create buffer w/o duplicates */                                        \
+        iv_map_cnt = iv_map->size();                                              \
+        no_dup_size = iv_map_cnt * (itype_size + val_dim_cnt * vtype_size);       \
+        dst = sched->alloc_buffer(no_dup_size).get_ptr();                         \
+                                                                                  \
+        dst_i = (i_type*)dst;                                                     \
+        dst_v = (v_type*)((char*)dst + itype_size * iv_map_cnt);                  \
+                                                                                  \
+        size_t idx_offset = 0;                                                    \
+        size_t val_offset = 0;                                                    \
+                                                                                  \
+        /* update value offsets in the map, because */                            \
+        /* we copy data to dst buffer from source buffer */                       \
+        for (auto& it : *iv_map)                                                  \
+        {                                                                         \
+            dst_i[idx_offset] = it.first;                                         \
+            val_offset = idx_offset * val_dim_cnt;                                \
+            CCL_MEMCPY(dst_v + val_offset,                                        \
+                       src_v + it.second,                                         \
+                       vtype_size * val_dim_cnt);                                 \
+            it.second = val_offset;                                               \
+            idx_offset++;                                                         \
+        }                                                                         \
+    } while (0)
+
+
 #define IF_COMM_SIZE_IS_ONE()                          \
-    do                                                 \
-    {                                                  \
+    do {                                               \
         if (comm_size == 1)                            \
         {                                              \
             *recv_ind_count = iv_map_cnt;              \
@@ -91,6 +137,49 @@
         }                                              \
     } while (0)
 
+#define SET_SPARSE_HANDLER_COMMON_FIELDS()                                                  \
+    do {                                                                                    \
+        sa_handler =                                                                        \
+            static_cast<ccl_sparse_allreduce_handler*>(                                     \
+            sched->alloc_buffer(sizeof(ccl_sparse_allreduce_handler)).get_ptr());           \
+                                                                                            \
+        sa_handler->comm = comm;                                                            \
+        sa_handler->comm_size = comm_size;                                                  \
+        sa_handler->val_dim_cnt = val_dim_cnt;                                              \
+        sa_handler->itype_size = itype_size;                                                \
+        sa_handler->vtype_size = vtype_size;                                                \
+        sa_handler->value_dtype = value_dtype;                                              \
+        sa_handler->op = op;                                                                \
+        sa_handler->recv_ibuf = r_ind_buf;                                                  \
+        sa_handler->recv_vbuf = r_val_buf;                                                  \
+        sa_handler->recv_vcount = recv_val_count;                                           \
+        sa_handler->recv_icount = recv_ind_count;                                           \
+        sa_handler->sched = sched;                                                          \
+                                                                                            \
+        sa_handler->size_per_rank =                                                         \
+            static_cast<size_t*>(sched->alloc_buffer(sizeof(size_t) * comm_size).get_ptr());\
+                                                                                            \
+        for (size_t i = 0; i < comm_size; i++)                                              \
+            sa_handler->size_per_rank[i] = sizeof(size_t);                                  \
+    } while (0)
+
+#define GET_NNZ()                                                   \
+    do {                                                            \
+        ccl_coll_entry_param param_nnz{};                           \
+        param_nnz.ctype = ccl_coll_allgatherv;                      \
+        param_nnz.send_buf = ccl_buffer(&sa_handler->send_count,    \
+                                        sizeof(size_t));            \
+        param_nnz.recv_buf = ccl_buffer(sa_handler->recv_counts,    \
+                                        sizeof(size_t) * comm_size);\
+        param_nnz.send_count = sizeof(size_t);                      \
+        param_nnz.recv_counts = sa_handler->size_per_rank;          \
+        param_nnz.dtype = ccl_datatype_char;                        \
+        param_nnz.comm = comm;                                      \
+                                                                    \
+        entry_factory::make_entry<coll_entry>(sched, param_nnz);    \
+        sched->add_barrier();                                       \
+    } while (0)
+    
 template<typename vtype>
 typename std::enable_if<!std::is_same<vtype, ccl::bfp16>::value, vtype>::type
 get_mask(ccl_reduction_t op)
@@ -170,38 +259,34 @@ ccl_status_t sparse_reduce(const void* ctx)
 
     /* copy data from recv_buf so that it would be easier to identify unique indices */
     size_t idx_size = sa_handler->itype_size * sa_handler->send_count[0];
-    std::vector<i_type> rcv_i(sa_handler->send_count[0]);
-    ccl_comp_copy((i_type*)(sa_handler->recv_buf), rcv_i.data(), idx_size, ccl_datatype_char);
+    i_type* rcv_i = (i_type*)sa_handler->recv_buf;
     v_type* rcv_v = (v_type*)((char*)(sa_handler->recv_buf) + idx_size);
+    std::vector<size_t> unique_indices_ids;
 
     /* look at received indices and the ones we already have. Check if there are equal
     ones, then the values could be reduced right away. The indices left will be copied
     along with correspoinding values*/
-    size_t unique_indices = 0;
-    for (size_t num = 0; num < sa_handler->send_count[0]; num++)
+    for (size_t idx = 0; idx < sa_handler->send_count[0]; idx++)
     {
-        auto it = sa_handler->iv_map->find(rcv_i[num]);
+        auto it = sa_handler->iv_map->find(rcv_i[idx]);
         if (it != sa_handler->iv_map->end())
         {
-            for (size_t k = 0; k < sa_handler->val_dim_cnt; k++)
-            {
-                snd_v[it->second + k] += rcv_v[num * sa_handler->val_dim_cnt + k];
-                /* we're done with this idx, it's not unique */
-                rcv_i[num] = -1;
-            }
+            ccl_comp_reduce((void*)(rcv_v + idx * sa_handler->val_dim_cnt), sa_handler->val_dim_cnt,
+                            (void*)(snd_v + it->second), nullptr,
+                            sa_handler->value_dtype, sa_handler->op, nullptr, nullptr);
         }
         else
         {
             /* we'll run through these unique indices later */
-            unique_indices++;
+            unique_indices_ids.push_back(idx);
         }
     }
 
     /* were there any unique indices? */
-    if (unique_indices > 0)
+    if (unique_indices_ids.size() > 0)
     {
         /* prepare buf for combined data */
-        size_t merge_idx_len = sa_handler->iv_map->size() + unique_indices;
+        size_t merge_idx_len = sa_handler->iv_map->size() + unique_indices_ids.size();
 
         std::vector<i_type> buf_i(merge_idx_len);
         std::vector<v_type> buf_v(merge_idx_len * sa_handler->val_dim_cnt);
@@ -211,23 +296,20 @@ ccl_status_t sparse_reduce(const void* ctx)
         ccl_comp_copy(snd_v, buf_v.data(), sa_handler->vtype_size * sa_handler->dst_count[1], ccl_datatype_char);
 
         size_t idx_offset = 0;
-        for (size_t num = 0; num < sa_handler->send_count[0]; num++)
+        for (auto id : unique_indices_ids)
         {
-            if (rcv_i[num] != (i_type)(-1))
+            buf_i[sa_handler->dst_count[0] + idx_offset] = rcv_i[id];
+
+            for (size_t k = 0; k < sa_handler->val_dim_cnt; k++)
             {
-                buf_i[sa_handler->dst_count[0] + idx_offset] = rcv_i[num];
-
-                for (size_t k = 0; k < sa_handler->val_dim_cnt; k++)
-                {
-                    buf_v[sa_handler->dst_count[1] + idx_offset * sa_handler->val_dim_cnt + k] =
-                        rcv_v[num * sa_handler->val_dim_cnt + k];
-                }
-
-                /* upd the map */
-                sa_handler->iv_map->emplace(rcv_i[num], sa_handler->dst_count[1] +
-                                                        idx_offset * sa_handler->val_dim_cnt);
-                idx_offset++;
+                buf_v[sa_handler->dst_count[1] + idx_offset * sa_handler->val_dim_cnt + k] =
+                    rcv_v[id * sa_handler->val_dim_cnt + k];
             }
+
+            /* upd the map */
+            sa_handler->iv_map->emplace(rcv_i[id], sa_handler->dst_count[1] +
+                                                    idx_offset * sa_handler->val_dim_cnt);
+            idx_offset++;
         }
 
         /* we definitely have to increase the size of dst buffer because
@@ -360,9 +442,6 @@ ccl_status_t ccl_coll_build_sparse_allreduce_ring(ccl_sched* sched,
     /* get value dimension */
     size_t val_dim_cnt = send_val_count / send_ind_count;
 
-    /* the accumulated result will be kept here */
-    void* dst = nullptr;
-
     /* buffers for in_data */
     i_type* src_i = (i_type*)send_ind_buf.get_ptr();
     v_type* src_v = (v_type*)send_val_buf.get_ptr();
@@ -373,45 +452,15 @@ ccl_status_t ccl_coll_build_sparse_allreduce_ring(ccl_sched* sched,
     void** r_ind_buf = recv_ind_buf;
     void** r_val_buf = recv_val_buf;
 
-    /* fill in the <index:value_offset> map */
     std::unique_ptr<idx_offset_map> iv_map(new idx_offset_map);
-    for (size_t i = 0; i < send_ind_count; i++)
-    {
-        auto it = iv_map->find(src_i[i]);
-        if (it == iv_map->end())
-        {
-            /* save index and starting addr of values set according to that index */
-            iv_map->emplace(src_i[i], i * val_dim_cnt);
-        }
-        else
-        {
-            /* reduce values from duplicate indices */
-            ccl_comp_reduce((void*)(src_v + i * val_dim_cnt), val_dim_cnt,
-                            (void*)(src_v + it->second), nullptr, value_dtype,
-                            op, nullptr, nullptr);
-        }
-    }
+    size_t iv_map_cnt, no_dup_size;
+    
+    /* the accumulated result will be kept here */
+    void* dst = nullptr;
+    i_type* dst_i;
+    v_type* dst_v;
 
-    /* create buffer w/o duplicates */
-    size_t iv_map_cnt = iv_map->size();
-    size_t no_dup_size = iv_map_cnt * (itype_size + val_dim_cnt * vtype_size);
-    dst = sched->alloc_buffer(no_dup_size).get_ptr();
-
-    i_type* dst_i = (i_type*)dst;
-    v_type* dst_v = (v_type*)((char*)dst + itype_size * iv_map_cnt);
-
-    size_t idx_offset = 0;
-    size_t val_offset = 0;
-
-    /* update value offsets in the map, because we copy data to dst buffer from source buffer */
-    for (auto& it : *iv_map)
-    {
-        dst_i[idx_offset] = it.first;
-        val_offset = idx_offset * val_dim_cnt;
-        CCL_MEMCPY(dst_v + val_offset, src_v + it.second, vtype_size * val_dim_cnt);
-        it.second = val_offset;
-        idx_offset++;
-    }
+    REMOVE_DUPS();
 
     IF_COMM_SIZE_IS_ONE();
 
@@ -424,50 +473,23 @@ ccl_status_t ccl_coll_build_sparse_allreduce_ring(ccl_sched* sched,
     size_t send_to = (rank + 1) % comm_size;
 
     /* create handler for sched function callbacks */
-    ccl_sparse_allreduce_handler *sa_handler =
-        static_cast<ccl_sparse_allreduce_handler*>(
-          sched->alloc_buffer(sizeof(ccl_sparse_allreduce_handler)).get_ptr());
+    ccl_sparse_allreduce_handler *sa_handler;
+
+    SET_SPARSE_HANDLER_COMMON_FIELDS();
 
     /* _count variables needed for sending/receiving */
     sa_handler->send_count[0] = iv_map_cnt; /* index count */
     sa_handler->send_count[1] = iv_map_cnt * val_dim_cnt; /* value count */
-    sa_handler->dst_count[0] = sa_handler->send_count[0];
-    sa_handler->dst_count[1] = sa_handler->send_count[1];
-    sa_handler->val_dim_cnt = val_dim_cnt;
-    sa_handler->itype_size = itype_size;
-    sa_handler->vtype_size = vtype_size;
+    CCL_MEMCPY(&sa_handler->dst_count, &sa_handler->send_count, sizeof(size_t) * 2);
     sa_handler->dst_buf = dst;
-    sa_handler->recv_ibuf = r_ind_buf;
-    sa_handler->recv_vbuf = r_val_buf;
     sa_handler->iv_map = std::move(iv_map);
-    sa_handler->sched = sched;
-    sa_handler->comm = comm;
-    sa_handler->comm_size = comm_size;
-    sa_handler->recv_vcount = recv_val_count;
-    sa_handler->recv_icount = recv_ind_count;
     sa_handler->recv_from = recv_from;
     sa_handler->iter = 0;
-
-    sa_handler->size_per_rank =
-        static_cast<size_t*>(sched->alloc_buffer(sizeof(size_t) * comm_size).get_ptr());
-
-    for (size_t i = 0; i < comm_size; i++)
-        sa_handler->size_per_rank[i] = sizeof(size_t);
 
     sa_handler->recv_counts =
         static_cast<size_t*>(sched->alloc_buffer(sizeof(size_t) * comm_size).get_ptr());
 
-    ccl_coll_entry_param param_nnz{};
-    param_nnz.ctype = ccl_coll_allgatherv;
-    param_nnz.send_buf = ccl_buffer(&sa_handler->send_count, sizeof(size_t));
-    param_nnz.recv_buf = ccl_buffer(sa_handler->recv_counts, sizeof(size_t) * comm_size);
-    param_nnz.send_count = sizeof(size_t);
-    param_nnz.recv_counts = sa_handler->size_per_rank;
-    param_nnz.dtype = ccl_datatype_char;
-    param_nnz.comm = comm;
-
-    entry_factory::make_entry<coll_entry>(sched, param_nnz);
-    sched->add_barrier();
+    GET_NNZ();
 
     entry_factory::make_entry<function_entry>(sched, sparse_set_max_buf_size, sa_handler);
     sched->add_barrier();
@@ -628,9 +650,6 @@ ccl_status_t ccl_coll_build_sparse_allreduce_mask(ccl_sched* sched,
     /* get value dimension */
     size_t val_dim_cnt = send_val_count / send_ind_count;
 
-    /* the accumulated result will be kept here */
-    void* dst = nullptr;
-
     /* buffers for in_data */
     i_type* src_i = (i_type*)send_ind_buf.get_ptr();
     v_type* src_v = (v_type*)send_val_buf.get_ptr();
@@ -641,92 +660,34 @@ ccl_status_t ccl_coll_build_sparse_allreduce_mask(ccl_sched* sched,
     void** r_ind_buf = recv_ind_buf;
     void** r_val_buf = recv_val_buf;
 
-    /* fill in the <index:value_offset> map */
     std::unique_ptr<idx_offset_map> iv_map(new idx_offset_map);
-    for (size_t i = 0; i < send_ind_count; i++)
-    {
-        auto it = iv_map->find(src_i[i]);
-        if (it == iv_map->end())
-        {
-            /* save index and starting addr of values set according to that index */
-            iv_map->emplace(src_i[i], i * val_dim_cnt);
-        }
-        else
-        {
-            /* reduce values locally from duplicate indices */
-            ccl_comp_reduce((void*)(src_v + i * val_dim_cnt), val_dim_cnt,
-                            (void*)(src_v + it->second), nullptr, value_dtype,
-                            op, nullptr, nullptr);
-        }
-    }
+    size_t iv_map_cnt, no_dup_size;
+   
+    /* the accumulated result will be kept here */
+    void* dst = nullptr;
+    i_type* dst_i;
+    v_type* dst_v;
 
-    /* create buffer w/o duplicates */
-    size_t iv_map_cnt = iv_map->size();
-    size_t no_dup_size = iv_map_cnt * (itype_size + val_dim_cnt * vtype_size);
-    dst = sched->alloc_buffer(no_dup_size).get_ptr();
-
-    i_type* dst_i = (i_type*)dst;
-    v_type* dst_v = (v_type*)((char*)dst + itype_size * iv_map_cnt);
-
-    size_t idx_offset = 0;
-    size_t val_offset = 0;
-
-    /* update value offsets in the map, because we copy data to dst buffer from source buffer */
-    for (auto& it : *iv_map)
-    {
-        dst_i[idx_offset] = it.first;
-        val_offset = idx_offset * val_dim_cnt;
-        CCL_MEMCPY(dst_v + val_offset, src_v + it.second, vtype_size * val_dim_cnt);
-        it.second = val_offset;
-        idx_offset++;  
-    }
+    REMOVE_DUPS();
 
     IF_COMM_SIZE_IS_ONE();
 
     /* create handler for sched function callbacks */
-    ccl_sparse_allreduce_handler* sa_handler = 
-        static_cast<ccl_sparse_allreduce_handler*>(
-          sched->alloc_buffer(sizeof(ccl_sparse_allreduce_handler)).get_ptr());
+    ccl_sparse_allreduce_handler* sa_handler;
 
-    sa_handler->itype_size = itype_size;
-    sa_handler->vtype_size = vtype_size;
+    SET_SPARSE_HANDLER_COMMON_FIELDS();
+
     sa_handler->iv_map = std::move(iv_map);
     sa_handler->dst_buf = dst;
     sa_handler->dst_count[0] = iv_map_cnt;
     sa_handler->dst_count[1] = iv_map_cnt * val_dim_cnt;
     sa_handler->send_count[0] = send_ind_count;
     sa_handler->send_count[1] = send_val_count;
-    sa_handler->val_dim_cnt = val_dim_cnt;
-    sa_handler->sched = sched;
-    sa_handler->comm = comm;
-    sa_handler->comm_size = comm_size;
-    sa_handler->recv_ibuf = r_ind_buf;
-    sa_handler->recv_vbuf = r_val_buf;
-    sa_handler->recv_icount = recv_ind_count;
-    sa_handler->recv_vcount = recv_val_count;
-    sa_handler->op = op;
-    sa_handler->value_dtype = value_dtype;
-
-    sa_handler->size_per_rank =
-        static_cast<size_t*>(sched->alloc_buffer(sizeof(size_t) * comm_size).get_ptr());
-
-    for (size_t i = 0; i < comm_size; i++)
-        sa_handler->size_per_rank[i] = sizeof(size_t);
 
     sa_handler->recv_counts = 
         static_cast<size_t*>(sched->alloc_buffer(sizeof(size_t) * comm_size).get_ptr());
         
-    ccl_coll_entry_param param_nnz{};
-    param_nnz.ctype = ccl_coll_allgatherv;
-    param_nnz.send_buf = ccl_buffer(&sa_handler->send_count, sizeof(size_t));
-    param_nnz.recv_buf = ccl_buffer(sa_handler->recv_counts, sizeof(size_t) * comm_size);
-    param_nnz.send_count = sizeof(size_t);
-    param_nnz.recv_counts = sa_handler->size_per_rank;
-    param_nnz.dtype = ccl_datatype_char;
-    param_nnz.comm = comm;
-
-    entry_factory::make_entry<coll_entry>(sched, param_nnz);
-    sched->add_barrier();
+    GET_NNZ();
 
     entry_factory::make_entry<function_entry>(sched, sparse_nnz_per_rank, sa_handler);
     sched->add_barrier();   
@@ -910,74 +871,28 @@ ccl_coll_build_sparse_allreduce_3_allgatherv(ccl_sched *sched,
     void** r_ind_buf = recv_ind_buf;
     void** r_val_buf = recv_val_buf;
 
+    std::unique_ptr<idx_offset_map> iv_map(new idx_offset_map);
+    size_t iv_map_cnt, no_dup_size;
+
     /* the accumulated result will be kept here */
     void* dst = nullptr;
+    i_type* dst_i;
+    v_type* dst_v;
 
-    /* fill in the <index:value_offset> map */
-    std::unique_ptr<idx_offset_map> iv_map(new idx_offset_map);
-    for (size_t i = 0; i < send_ind_count; i++)
-    {
-        auto it = iv_map->find(src_i[i]);
-        if (it == iv_map->end())
-        {
-            /* save index and starting addr of values set according to that index */
-            iv_map->emplace(src_i[i], i * val_dim_cnt);
-        }
-        else
-        {
-            /* reduce values locally from duplicate indices */
-            ccl_comp_reduce((void*)(src_v + i * val_dim_cnt), val_dim_cnt,
-                            (void*)(src_v + it->second), nullptr,
-                            value_dtype, op, nullptr, nullptr);
-        }
-    }
-
-    size_t iv_map_cnt = iv_map->size();
-
-    /* create buffer w/o duplicates */
-    size_t no_dup_size = iv_map_cnt * (itype_size + val_dim_cnt * vtype_size);
-    dst = sched->alloc_buffer(no_dup_size).get_ptr();
-
-    i_type* dst_i = (i_type*)dst;
-    v_type* dst_v = (v_type*)((char*)dst + itype_size * iv_map_cnt);
-
-    size_t idx_offset = 0;
-    size_t val_offset = 0;
-
-    /* update value offsets in the map, because we copy data to dst buffer from source buffer */
-    for (auto& it : *iv_map)
-    {
-        dst_i[idx_offset] = it.first;
-        val_offset = idx_offset * val_dim_cnt;
-        CCL_MEMCPY(dst_v + val_offset, src_v + it.second, vtype_size * val_dim_cnt);
-        it.second = val_offset;
-        idx_offset++;
-    }
+    REMOVE_DUPS();
     
     iv_map->clear();
 
     IF_COMM_SIZE_IS_ONE();
 
     /* create handler for sched function callbacks */
-    ccl_sparse_allreduce_handler* sa_handler =
-        static_cast<ccl_sparse_allreduce_handler*>(
-          sched->alloc_buffer(sizeof(ccl_sparse_allreduce_handler)).get_ptr());
+    ccl_sparse_allreduce_handler* sa_handler;
+
+    SET_SPARSE_HANDLER_COMMON_FIELDS();
 
     /* _count variables needed for sending/receiving */
     sa_handler->send_count[0] = iv_map_cnt; /* index count */
     sa_handler->send_count[1] = iv_map_cnt * val_dim_cnt; /* value count */
-    sa_handler->op = op;
-    sa_handler->value_dtype = value_dtype;
-    sa_handler->val_dim_cnt = val_dim_cnt;
-    sa_handler->itype_size = itype_size;
-    sa_handler->vtype_size = vtype_size;
-    sa_handler->recv_ibuf = r_ind_buf;
-    sa_handler->recv_vbuf = r_val_buf;
-    sa_handler->sched = sched;
-    sa_handler->comm = comm;
-    sa_handler->comm_size = comm_size;
-    sa_handler->recv_vcount = recv_val_count;
-    sa_handler->recv_icount = recv_ind_count;
 
     constexpr size_t parallel_requests_count = 2; //indices + values
     sa_handler->recv_counts = 
@@ -985,29 +900,13 @@ ccl_coll_build_sparse_allreduce_3_allgatherv(ccl_sched *sched,
                                                  comm_size *
                                                  parallel_requests_count).get_ptr());
 
-    sa_handler->size_per_rank =
-        static_cast<size_t*>(sched->alloc_buffer(sizeof(size_t) * comm_size).get_ptr());
-
-    for (size_t i = 0; i < comm_size; i++)
-        sa_handler->size_per_rank[i] = sizeof(size_t);
-
     LOG_TRACE("sa_handler: ", sa_handler,
               ", sa_handler->recv_ibuf: ", sa_handler->recv_ibuf,
               ", sa_handler->recv_vbuf: ", sa_handler->recv_vbuf,
               ", sa_handler->val_dim_cnt: ", sa_handler->val_dim_cnt,
               ", sa_handler->recv_counts: ", sa_handler->recv_counts);
         
-    ccl_coll_entry_param param{};
-    param.ctype = ccl_coll_allgatherv;
-    param.send_buf = ccl_buffer(&sa_handler->send_count, sizeof(size_t));
-    param.recv_buf = ccl_buffer(sa_handler->recv_counts, sizeof(size_t) * comm_size);
-    param.send_count = sizeof(size_t);
-    param.recv_counts = sa_handler->size_per_rank;
-    param.dtype = ccl_datatype_char;
-    param.comm = comm;
-
-    entry_factory::make_entry<coll_entry>(sched, param);
-    sched->add_barrier();
+    GET_NNZ();
 
     entry_factory::make_entry<function_entry>(sched, sparse_alloc_result_buf, sa_handler);
     sched->add_barrier();

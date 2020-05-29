@@ -265,8 +265,7 @@ void create_cpu_colls(std::list<std::string>& names, coll_list_t& colls)
         {
             if (name.find(incremental_index_bfp16_sparse_strategy::class_name()) != std::string::npos)
             {
-                /* TODO: fix bfp16 support fot ring algo */
-                if (1) //is_bfp16_enabled() == 0)
+                if (is_bfp16_enabled() == 0)
                 {
                     error_messages_stream << "BFP16 is not supported for current CPU, skipping " << name << ".\n";
                     names_it = names.erase(names_it);

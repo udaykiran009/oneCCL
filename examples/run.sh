@@ -260,14 +260,11 @@ run()
                         run_example "${ccl_extra_env}" ${dir_name} ${transport} ${example}                       
                     elif [[ "${example}" == *"sparse_allreduce"* ]]
                     then
-                        # TODO: fix ring algo
                         if [ "$transport" == "mpi" ];
                         then
-                            #sparse_algo_set="ring"
-                            sparse_algo_set=""
+                            sparse_algo_set="ring"
                         else
-                            #sparse_algo_set="ring mask allgatherv"
-                            sparse_algo_set="mask allgatherv"
+                            sparse_algo_set="ring mask allgatherv"
                         fi
                         for sparse_algo in ${sparse_algo_set};
                         do
