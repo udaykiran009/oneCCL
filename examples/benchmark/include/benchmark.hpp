@@ -285,7 +285,8 @@ void print_user_options(const user_options_t& options, ccl::communicator* comm)
     std::copy(options.coll_names.begin(), options.coll_names.end(),
               std::ostream_iterator<std::string>(sstream, " "));
 
-    PRINT_BY_ROOT("options:"
+    PRINT_BY_ROOT(comm,
+                  "options:"
                   "\n  iters:     %zu"
                   "\n  buf_count: %zu"
                   "\n  ranks:     %zu"

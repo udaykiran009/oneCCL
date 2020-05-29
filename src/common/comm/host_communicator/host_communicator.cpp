@@ -16,7 +16,10 @@ host_communicator::host_communicator(const ccl::comm_attr_t& attr) :
     // legacy implementation
     if (!attr)
     {
-        comm_impl = global_data.comm;
+        comm_impl = std::shared_ptr<ccl_comm>(
+              new ccl_comm(global_data.comm->rank(),
+                           global_data.comm->size(),
+                           global_data.comm_ids->acquire()));
         comm_attr = ccl::environment::instance().create_host_comm_attr();
     }
     else

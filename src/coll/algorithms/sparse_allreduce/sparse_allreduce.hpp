@@ -367,8 +367,7 @@ ccl_status_t ccl_coll_build_sparse_allreduce_ring(ccl_sched* sched,
     i_type* src_i = (i_type*)send_ind_buf.get_ptr();
     v_type* src_v = (v_type*)send_val_buf.get_ptr();
 
-    CCL_ASSERT(recv_ind_buf && recv_ind_buf &&
-               *recv_ind_buf && *recv_ind_buf, "recv buffers are null");
+    CCL_ASSERT(recv_ind_buf && recv_ind_buf, "recv buffers are null");
     CCL_ASSERT(recv_ind_count && recv_val_count, "recv counts are null");
 
     void** r_ind_buf = recv_ind_buf;
@@ -432,7 +431,8 @@ ccl_status_t ccl_coll_build_sparse_allreduce_ring(ccl_sched* sched,
     /* _count variables needed for sending/receiving */
     sa_handler->send_count[0] = iv_map_cnt; /* index count */
     sa_handler->send_count[1] = iv_map_cnt * val_dim_cnt; /* value count */
-    CCL_MEMCPY(&sa_handler->dst_count, &sa_handler->send_count, sizeof(size_t) * 2);
+    sa_handler->dst_count[0] = sa_handler->send_count[0];
+    sa_handler->dst_count[1] = sa_handler->send_count[1];
     sa_handler->val_dim_cnt = val_dim_cnt;
     sa_handler->itype_size = itype_size;
     sa_handler->vtype_size = vtype_size;
@@ -635,8 +635,7 @@ ccl_status_t ccl_coll_build_sparse_allreduce_mask(ccl_sched* sched,
     i_type* src_i = (i_type*)send_ind_buf.get_ptr();
     v_type* src_v = (v_type*)send_val_buf.get_ptr();
 
-    CCL_ASSERT(recv_ind_buf && recv_ind_buf &&
-               *recv_ind_buf && *recv_ind_buf, "recv buffers are null");
+    CCL_ASSERT(recv_ind_buf && recv_ind_buf, "recv buffers are null");
     CCL_ASSERT(recv_ind_count && recv_val_count, "recv counts are null");
 
     void** r_ind_buf = recv_ind_buf;
@@ -905,8 +904,7 @@ ccl_coll_build_sparse_allreduce_3_allgatherv(ccl_sched *sched,
     i_type* src_i = (i_type*)send_ind_buf.get_ptr();
     v_type* src_v = (v_type*)send_val_buf.get_ptr();
 
-    CCL_ASSERT(recv_ind_buf && recv_ind_buf &&
-               *recv_ind_buf && *recv_ind_buf, "recv buffers are null");
+    CCL_ASSERT(recv_ind_buf && recv_ind_buf, "recv buffers are null");
     CCL_ASSERT(recv_ind_count && recv_val_count, "recv counts are null");
 
     void** r_ind_buf = recv_ind_buf;

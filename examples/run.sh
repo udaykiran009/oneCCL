@@ -28,7 +28,7 @@ function check_test(){
     test_log=$1
     test_file=$2
     test_passed=`grep -E -c -i 'PASSED' ${test_log}`
-    if [ $test_file != "communicator" ] && [ $test_file != "datatype" ];
+    if [[ "${test_file}" != *"communicator"* ]] && [[ "${test_file}" != *"datatype"* ]];
     then
         test_failed=`grep -E -c -i 'error|Aborted|failed|^BAD$|KILLED|^fault$|cl::sycl::runtime_error|terminate' ${test_log}`
     else
@@ -198,7 +198,12 @@ run()
 
             if [ "$transport" == "mpi" ];
             then
-                examples_to_run=`find . -type f -executable -printf '%P\n' | grep -v 'unordered_allreduce' | grep -v 'custom_allreduce' | grep -v 'datatype' | grep -v 'allreduce_rs' | grep -v 'communicator'`
+                examples_to_run=`find . -type f -executable -printf '%P\n' |
+                    grep -v 'unordered_allreduce' |
+                    grep -v 'custom_allreduce' |
+                    grep -v 'datatype' |
+                    grep -v 'allreduce_rs' |
+                    grep -v 'communicator'`
             else
                 examples_to_run=`find . -type f -executable -printf '%P\n' | grep -v 'allreduce_rs'`
             fi
@@ -232,7 +237,7 @@ run()
                             ccl_extra_env="CCL_FUSION=1 ${ccl_transport_env}"
                             run_benchmark "${ccl_extra_env}" ${dir_name} ${transport} ${example} ${backend} regular allreduce
                             ccl_extra_env="CCL_LOG_LEVEL=2 ${ccl_transport_env}"
-                            run_benchmark "${ccl_extra_env}" ${dir_name} ${transport} ${example} ${backend} regular allreduce
+                            run_benchmark "${ccl_extra_env}" ${dir_name} ${transport} ${example} ${backend} regular
                         fi
                     done
                 elif [ "$dir_name" == "sycl" ];
@@ -251,7 +256,7 @@ run()
                     if [[ "${example}" == *"communicator"* ]]
                     then
                         n=8
-                        ccl_extra_env="CCL_ALLREDUCE=recursive_doubling ${ccl_transport_env}"
+                        ccl_extra_env="${ccl_transport_env}"
                         run_example "${ccl_extra_env}" ${dir_name} ${transport} ${example}                       
                     elif [[ "${example}" == *"sparse_allreduce"* ]]
                     then

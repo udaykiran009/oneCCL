@@ -53,8 +53,8 @@ public:
      */
     template<ccl_host_attributes attrId,
              class Value,
-             class = typename std::enable_if<std::is_same<typename ccl_host_attributes_traits<attrId>::type, Value>::value>::type>
-    Value set_value(Value&& v);
+             class = typename std::enable_if<is_attribute_value_supported<attrId, Value>()>::type>
+    Value set_value(const Value& v);
 
     /**
      * Get specific attribute value by @attrId

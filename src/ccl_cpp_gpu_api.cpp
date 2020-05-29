@@ -246,9 +246,9 @@ CCL_API ccl::ccl_device_attr::~ccl_device_attr() noexcept
 template<ccl_device_attributes attrId,
              class Value,
              typename T>
-CCL_API Value ccl::ccl_device_attr::set_value(Value&& v)
+CCL_API Value ccl::ccl_device_attr::set_value(const Value& v)
 {
-    return pimpl->set_attribute_value(std::forward<Value>(v));
+    return pimpl->set_attribute_value(v);
 }
 
 template<ccl_device_attributes attrId>

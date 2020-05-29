@@ -59,9 +59,9 @@ CCL_API ccl_host_attr::~ccl_host_attr() noexcept
 template<ccl_host_attributes attrId,
              class Value,
              typename T>
-CCL_API Value ccl_host_attr::set_value(Value&& v)
+CCL_API Value ccl_host_attr::set_value(const Value& v)
 {
-    return pimpl->set_attribute_value(std::forward<Value>(v));
+    return pimpl->set_attribute_value(v);
 }
 
 template<ccl_host_attributes attrId>
@@ -73,7 +73,7 @@ CCL_API const typename ccl_host_attributes_traits<attrId>::type& ccl_host_attr::
 
 #define HOST_ATTRIBUTE_INSTANTIATION(ATTR_ID, VALUE_TYPE)                                          \
 template                                                                                           \
-CCL_API VALUE_TYPE ccl::ccl_host_attr::set_value<ATTR_ID, VALUE_TYPE>(VALUE_TYPE&& v);             \
+CCL_API VALUE_TYPE ccl::ccl_host_attr::set_value<ATTR_ID, VALUE_TYPE>(const VALUE_TYPE& v);        \
 template                                                                                           \
 CCL_API const VALUE_TYPE& ccl::ccl_host_attr::get_value<ATTR_ID>() const;
 }
@@ -125,8 +125,9 @@ ccl::comm_attr_t CCL_API ccl::environment::create_host_comm_attr(const ccl_host_
 ccl::communicator_t CCL_API ccl::environment::create_communicator(const ccl::comm_attr_t& attr) const
 {
     LOG_TRACE("Create host communicator");
+
     ccl::communicator_interface_ptr impl =
-            ccl::communicator_interface::create_communicator_impl(attr ? create_host_comm_attr() : attr);
+            ccl::communicator_interface::create_communicator_impl(attr);
     return ccl::communicator_t(new ccl::communicator(impl));
 }
 

@@ -24,7 +24,7 @@ void do_regular(ccl::communicator* comm,
     reqs.reserve(colls.size() * options.buf_count);
 
     /* warm up */
-    PRINT_BY_ROOT("do warm up");
+    PRINT_BY_ROOT(comm, "do warm up");
     coll_attr.to_cache = 0;
     for (size_t count = 1; count < ELEM_COUNT; count *= 2)
     {
@@ -35,7 +35,7 @@ void do_regular(ccl::communicator* comm,
             {
                 // snprintf(match_id, MATCH_ID_SIZE, "coll_%s_%zu_count_%zu_buf_%zu",
                 //          coll->name(), coll_idx, count, buf_idx);
-                // PRINT_BY_ROOT("start_coll: %s, count %zu, buf_idx %zu", coll->name(), count, buf_idx);
+                // PRINT_BY_ROOT(comm, "start_coll: %s, count %zu, buf_idx %zu", coll->name(), count, buf_idx);
                 coll->start(count, buf_idx, coll_attr, reqs);
             }
         }
@@ -47,7 +47,7 @@ void do_regular(ccl::communicator* comm,
     }
 
     /* benchmark with multiple equal sized buffer per collective */
-    PRINT_BY_ROOT("do multi-buffers benchmark");
+    PRINT_BY_ROOT(comm, "do multi-buffers benchmark");
     coll_attr.to_cache = 1;
     for (size_t count = 1; count <= ELEM_COUNT; count *= 2)
     {
@@ -106,7 +106,7 @@ void do_regular(ccl::communicator* comm,
     comm->barrier();
 
     /* benchmark with single buffer per collective */
-    PRINT_BY_ROOT("do single-buffer benchmark");
+    PRINT_BY_ROOT(comm, "do single-buffer benchmark");
     coll_attr.to_cache = 1;
     for (size_t count = options.buf_count; count <= SINGLE_ELEM_COUNT; count *= 2)
     {
@@ -135,13 +135,14 @@ void do_regular(ccl::communicator* comm,
             print_timings(*comm, &t, count,
                           sizeof(DTYPE), 1,
                           comm->rank(), comm->size());
-        } catch (...)
+        }
+        catch (...)
         {
             ASSERT(0, "error on count %zu", count);
         }
     }
 
-    PRINT_BY_ROOT("PASSED\n");
+    PRINT_BY_ROOT(comm, "PASSED\n");
 }
 
 void do_unordered(ccl::communicator* comm,
@@ -156,7 +157,7 @@ void do_unordered(ccl::communicator* comm,
 
     reqs.reserve(colls.size() * options.buf_count * (log2(ELEM_COUNT) + 1));
 
-    PRINT_BY_ROOT("do unordered test");
+    PRINT_BY_ROOT(comm, "do unordered test");
     coll_attr.to_cache = 1;
 
     for (size_t count = 1; count <= ELEM_COUNT; count *= 2)
@@ -216,7 +217,7 @@ void do_unordered(ccl::communicator* comm,
         ASSERT(0, "error on coll completion");
     }
 
-    PRINT_BY_ROOT("PASSED\n");
+    PRINT_BY_ROOT(comm, "PASSED\n");
 }
 
 template<class Dtype>
@@ -478,7 +479,7 @@ int main(int argc, char *argv[])
 
     if (options.coll_names.empty())
     {
-        PRINT_BY_ROOT("empty coll list");
+        PRINT_BY_ROOT(comm, "empty coll list");
         print_help_usage(argv[0]);
         return -1;
     }
