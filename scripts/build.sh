@@ -67,6 +67,11 @@ SWF_PRE_DROP_ROOT_DIR="/p/pdsd/scratch/Drops/CCL/"
 SWF_PRE_DROP_DIR="${SWF_PRE_DROP_ROOT_DIR}/${CCL_VERSION_FORMAT}"
 PRE_DROP_DIR="${WORKSPACE}/_predrop/"
 
+if [ -z "${LIBFABRIC_INSTALL_DIR}" ]
+then
+    LIBFABRIC_INSTALL_DIR="/p/pdsd/scratch/jenkins/artefacts/libfabric-1.5.3"
+fi
+
 #==============================================================================
 #                                Defaults
 #==============================================================================
@@ -240,8 +245,7 @@ build_gpu()
     log mkdir ${WORKSPACE}/build_gpu && cd ${WORKSPACE}/build_gpu && echo ${PWD}
     log cmake .. -DCMAKE_DISABLE_SYCL=0 -DCMAKE_BUILD_TYPE=${BUILD_TYPE} \
     -DCMAKE_C_COMPILER="${C_COMPILER_GPU}" -DCMAKE_CXX_COMPILER="${CXX_COMPILER_GPU}" -DUSE_CODECOV_FLAGS="${CODECOV_FLAGS}" \
-    -DCOMPUTE_RUNTIME="dpcpp" \ 
-    -DLIBFABRIC_DIR="${LIBFABRIC_INSTALL_DIR}"
+    -DCOMPUTE_RUNTIME="dpcpp" -DLIBFABRIC_DIR="${LIBFABRIC_INSTALL_DIR}"
     log make -j4 VERBOSE=1 install
     CheckCommandExitCode $? "gpu build failed"
 }
@@ -294,13 +298,13 @@ post_build()
     ar x libsvml.a svml_i_div4_iface_la.o svml_d_feature_flag_.o \
         svml_i_div4_core_e7la.o svml_i_div4_core_exla.o svml_i_div4_core_h9la.o \
         svml_i_div4_core_y8la.o
-    LDFLAGS="-L${WORKSPACE}/build/_install/lib/ ${WORKSPACE}/build/_install/lib/libpmi.so.1 ${WORKSPACE}/build/_install/lib/libresizable_pmi.so.1 -lm"
+    
     if [ ! -z "${LIBFABRIC_INSTALL_DIR}" ]
     then
-        LDFLAGS="${LDFLAGS} -L${LIBFABRIC_INSTALL_DIR} -lfabric"
-    else
-        LDFLAGS="${LDFLAGS} -lfabric"
+        LDFLAGS="-L${LIBFABRIC_INSTALL_DIR}/lib/"
     fi
+    LDFLAGS="${LDFLAGS} -L${WORKSPACE}/build/_install/lib/ ${WORKSPACE}/build/_install/lib/libpmi.so.1 ${WORKSPACE}/build/_install/lib/libresizable_pmi.so.1 -lm -lfabric"
+
     gcc -fPIE -fPIC -Wl,-z,now -Wl,-z,relro -Wl,-z,noexecstack -std=gnu99 -Wall -Werror -D_GNU_SOURCE -fvisibility=internal -O3 -DNDEBUG -std=gnu99 -O3 -shared -Wl,-soname,libccl_atl_ofi.so.1.0  -o libccl_atl_ofi.so.1 *.o ${LDFLAGS}
     CheckCommandExitCode $? "post build failed"
     rm -rf *.o
