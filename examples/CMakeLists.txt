@@ -13,15 +13,6 @@ else()
     message(FATAL_ERROR "Please define CCL_ROOT environment variable")
 endif()
 
-# TODO redundant check?
-if (${CCL_CONFIGURATION} STREQUAL "cpu_gpu_dpcpp" AND NOT
-   ${CMAKE_C_COMPILER_ID} STREQUAL "Clang" AND NOT ${CMAKE_CXX_COMPILER_ID} STREQUAL "Clang")
-    message(FATAL_ERROR "Provided CCL_CONFIGURATION=${CCL_CONFIGURATION} requires DPC++ compiler.
-Please clean up build folder and run one of the following command:
-1. cmake -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=dpcpp ..
-2. CCL_CONFIGURATION=cpu_icc cmake ..")
-endif()
-
 message(STATUS "CCL_ROOT: ${CCL_ROOT}")
 message(STATUS "CCL_CONFIGURATION: ${CCL_CONFIGURATION}")
 
@@ -51,11 +42,11 @@ set(CMAKE_CXX_FLAGS_RELWITHDEBINFO "${CMAKE_CXX_FLAGS_RELWITHDEBINFO} ${CXX_COMP
 set(CMAKE_CXX_STANDARD 11)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-if (COMPUTE_RUNTIME)
-    activate_compute_runtime("${CCL_ROOT}/lib;${PROJECT_SOURCE_DIR}/cmake" ${COMPUTE_RUNTIME})
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${COMPUTE_RUNTIME_FLAGS}")
-    list(APPEND CCL_INC_DIRS ${COMPUTE_RUNTIME_INCLUDE_DIRS})
-    list(APPEND EXTERNAL_LIBS ${COMPUTE_RUNTIME_LIBRARIES})
+if (${CMAKE_C_COMPILER_ID} STREQUAL "Clang" AND ${CMAKE_CXX_COMPILER_ID} STREQUAL "Clang")
+    set(CMAKE_CLANG_FLAGS "-fsycl")
+    set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -lsycl")
+    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${CMAKE_CLANG_FLAGS}")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${CMAKE_CLANG_FLAGS}")
 endif()
 
 set(GCC_BFP16_MIN_SUPPORTED "4.9.0")
@@ -85,8 +76,8 @@ link_directories(${CCL_ROOT}/lib/${CCL_CONFIGURATION})
 include_directories(include)
 
 add_subdirectory(cpu)
-if(${CCL_CONFIGURATION} STREQUAL "cpu_gpu_dpcpp")
+if (${CMAKE_CXX_COMPILER_ID} STREQUAL "Clang")
     add_subdirectory(sycl)
-endif()    
+endif()
 add_subdirectory(common)
 add_subdirectory(benchmark)

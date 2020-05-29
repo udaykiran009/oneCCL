@@ -154,15 +154,8 @@ build()
 {
     cd ${EXAMPLE_WORK_DIR}
     echo "Building"
-    if [ -z "${COMPUTE_RUNTIME}"]
-    then
-        cmake .. -DCMAKE_C_COMPILER=${C_COMPILER} \
-                 -DCMAKE_CXX_COMPILER=${CXX_COMPILER} 2>&1 | tee ${EXAMPLE_WORK_DIR}/build_output.log
-    else
-        cmake .. -DCMAKE_C_COMPILER=${C_COMPILER} \
-                 -DCMAKE_CXX_COMPILER=${CXX_COMPILER} \
-                 -DCOMPUTE_RUNTIME=${COMPUTE_RUNTIME}  2>&1 | tee ${EXAMPLE_WORK_DIR}/build_output.log
-    fi
+    cmake .. -DCMAKE_C_COMPILER=${C_COMPILER} \
+             -DCMAKE_CXX_COMPILER=${CXX_COMPILER} 2>&1 | tee ${EXAMPLE_WORK_DIR}/build_output.log
     make -j 2>&1 | tee -a ${EXAMPLE_WORK_DIR}/build_output.log
     error_count=`grep -E -c 'error:|Aborted|failed'  ${EXAMPLE_WORK_DIR}/build_output.log` > /dev/null 2>&1
     if [ "${error_count}" != "0" ]
