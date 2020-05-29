@@ -68,6 +68,11 @@ struct cpu_base_coll : virtual base_coll, protected strategy
                                       static_cast<Dtype*>(single_recv_buf),
                                       attr, stream, reqs);
     }
+
+    ccl::datatype get_dtype() const override final
+    {
+        return ccl::native_type_info<typename std::remove_pointer<Dtype>::type>::ccl_datatype_value;
+    }
 };
 
 #endif /* CPU_COLL_HPP */

@@ -99,6 +99,8 @@ run_benchmark()
     echo "loop: "$loop
     local coll=$7
     echo "coll: " $coll
+    local dtype=$8
+    echo "dtype: " $dtype
     echo "================ENVIRONMENT=================="
     test_log="$EXAMPLE_WORK_DIR/$dir_name/run_${transport}_${example}_${backend}_${loop}_output.log"
 
@@ -114,6 +116,10 @@ run_benchmark()
     if [ "${coll}" != "" ];
     then
         options="${options} --coll ${coll}"
+    fi
+    if [ "${dtype}" != "" ];
+    then
+        options="${options} --dtype ${dtype}"
     fi
 
 	if [ `echo $ccl_extra_env | grep -c CCL_LOG_LEVEL` -ne 1 ]
@@ -174,6 +180,7 @@ run()
     pwd
     ppn=1
     n=2
+    dtype_list="char,int,float"
     ccl_base_env="CCL_YIELD=sleep CCL_ATL_SHM=1"
     if ! [[ -n "${DASHBOARD_GPU_DEVICE_PRESENT}" ]]
     then
@@ -234,11 +241,16 @@ run()
                                 ccl_extra_env="CCL_WORKER_OFFLOAD=0 ${ccl_transport_env}"
                                 run_benchmark "${ccl_extra_env}" ${dir_name} ${transport} ${example} ${backend} ${loop} ${coll_list}
                             done
+
                             ccl_extra_env="CCL_FUSION=1 ${ccl_transport_env}"
                             run_benchmark "${ccl_extra_env}" ${dir_name} ${transport} ${example} ${backend} regular allreduce
+                            
                             ccl_extra_env="CCL_LOG_LEVEL=2 ${ccl_transport_env}"
                             run_benchmark "${ccl_extra_env}" ${dir_name} ${transport} ${example} ${backend} regular
-                        fi
+                            
+                            # run a benchmark with the specific data types list
+                            run_benchmark "${ccl_extra_env}" ${dir_name} ${transport} ${example} ${backend} regular allreduce ${dtype_list}
+		        fi
                     done
                 elif [ "$dir_name" == "sycl" ];
                 then

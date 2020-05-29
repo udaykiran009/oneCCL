@@ -19,6 +19,8 @@ struct base_coll
     virtual void prepare(size_t elem_count) {};
     virtual void finalize(size_t elem_count) {};
 
+    virtual ccl::datatype get_dtype() const = 0;
+
     virtual void start(size_t count, size_t buf_idx,
                        const ccl::coll_attr& attr,
                        req_list_t& reqs) = 0;

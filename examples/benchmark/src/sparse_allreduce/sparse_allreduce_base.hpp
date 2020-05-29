@@ -66,6 +66,11 @@ struct base_sparse_allreduce_coll :
     {
         return coll_strategy::class_name();
     }
+
+    ccl::datatype get_dtype() const override final
+    {
+        return ccl::native_type_info<typename std::remove_pointer<VType>::type>::ccl_datatype_value;
+    }
 };
 
 #endif /* SPARSE_ALLREDUCE_BASE_HPP */

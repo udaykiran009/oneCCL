@@ -71,6 +71,11 @@ struct sycl_base_coll : virtual base_coll, private strategy
                                                                        send_buf, recv_buf,
                                                                        attr, stream, reqs);
     }
+
+    ccl::datatype get_dtype() const override final
+    {
+        return ccl::native_type_info<typename std::remove_pointer<Dtype>::type>::ccl_datatype_value;
+    }
 };
 #endif /* CCL_ENABLE_SYCL */
 

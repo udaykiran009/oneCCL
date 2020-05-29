@@ -15,130 +15,146 @@
 
 void do_regular(ccl::communicator* comm,
                 ccl::coll_attr& coll_attr,
-                coll_list_t& colls,
+                coll_list_t& all_colls,
                 req_list_t& reqs,
                 const user_options_t& options)
 {
     char* match_id = (char*)coll_attr.match_id;
-
-    reqs.reserve(colls.size() * options.buf_count);
-
-    /* warm up */
-    PRINT_BY_ROOT(comm, "do warm up");
-    coll_attr.to_cache = 0;
-    for (size_t count = 1; count < ELEM_COUNT; count *= 2)
+    for (auto dtype : all_dtypes)
     {
-        for (size_t coll_idx = 0; coll_idx < colls.size(); coll_idx++)
+        coll_list_t colls;
+        std::string dtype_name;
+
+        std::copy_if(all_colls.begin(), all_colls.end(), std::back_inserter(colls),
+                    [dtype](const typename coll_list_t::value_type coll)
+                    {  return dtype == coll->get_dtype(); });
+        if (colls.empty())
+            continue;
+
+        dtype_name = find_str_val(dtype_names, dtype);
+
+        PRINT_BY_ROOT(comm, "\ndtype: %s", dtype_name.c_str());
+
+        reqs.reserve(colls.size() * options.buf_count);
+
+        /* warm up */
+        PRINT_BY_ROOT(comm, "do warm up");
+
+        coll_attr.to_cache = 0;
+        for (size_t count = 1; count < ELEM_COUNT; count *= 2)
         {
-            auto& coll = colls[coll_idx];
-            for (size_t buf_idx = 0; buf_idx < options.buf_count; buf_idx++)
+            for (size_t coll_idx = 0; coll_idx < colls.size(); coll_idx++)
             {
-                // snprintf(match_id, MATCH_ID_SIZE, "coll_%s_%zu_count_%zu_buf_%zu",
-                //          coll->name(), coll_idx, count, buf_idx);
-                // PRINT_BY_ROOT(comm, "start_coll: %s, count %zu, buf_idx %zu", coll->name(), count, buf_idx);
-                coll->start(count, buf_idx, coll_attr, reqs);
+                auto& coll = colls[coll_idx];
+                for (size_t buf_idx = 0; buf_idx < options.buf_count; buf_idx++)
+                {
+                    // snprintf(match_id, MATCH_ID_SIZE, "coll_%s_%zu_count_%zu_buf_%zu",
+                    //          coll->name(), coll_idx, count, buf_idx);
+                    // PRINT_BY_ROOT(comm, "start_coll: %s, count %zu, buf_idx %zu", coll->name(), count, buf_idx);
+                    coll->start(count, buf_idx, coll_attr, reqs);
+                }
             }
-        }
-        for (auto &req : reqs)
-        {
-            req->wait();
-        }
-        reqs.clear();
-    }
-
-    /* benchmark with multiple equal sized buffer per collective */
-    PRINT_BY_ROOT(comm, "do multi-buffers benchmark");
-    coll_attr.to_cache = 1;
-    for (size_t count = 1; count <= ELEM_COUNT; count *= 2)
-    {
-        try
-        {
-            double t = 0;
-            for (size_t iter_idx = 0; iter_idx < options.iters; iter_idx++)
+            for (auto &req : reqs)
             {
+                req->wait();
+            }
+            reqs.clear();
+        }
+
+        /* benchmark with multiple equal sized buffer per collective */
+        PRINT_BY_ROOT(comm, "do multi-buffers benchmark");
+        coll_attr.to_cache = 1;
+        for (size_t count = 1; count <= ELEM_COUNT; count *= 2)
+        {
+            try
+            {
+                double t = 0;
+                for (size_t iter_idx = 0; iter_idx < options.iters; iter_idx++)
+                {
+                    if (options.check_values)
+                    {
+                        for (auto& coll : colls)
+                        {
+                            coll->prepare(count);
+                        }
+                    }
+
+                    double t1 = when();
+                    for (size_t coll_idx = 0; coll_idx < colls.size(); coll_idx++)
+                    {
+                        auto& coll = colls[coll_idx];
+                        for (size_t buf_idx = 0; buf_idx < options.buf_count; buf_idx++)
+                        {
+                            snprintf(match_id, MATCH_ID_SIZE, "coll_%s_%zu_count_%zu_buf_%zu",
+                                     coll->name(), coll_idx, count, buf_idx);
+                            coll->start(count, buf_idx, coll_attr, reqs);
+                        }
+                    }
+                    for (auto &req : reqs)
+                    {
+                        req->wait();
+                    }
+                    double t2 = when();
+                    t += (t2 - t1);
+                }
+
+                reqs.clear();
+
                 if (options.check_values)
                 {
                     for (auto& coll : colls)
                     {
-                        coll->prepare(count);
+                        coll->finalize(count);
                     }
                 }
 
-                double t1 = when();
-                for (size_t coll_idx = 0; coll_idx < colls.size(); coll_idx++)
+                print_timings(*comm, &t, count,
+                              ccl::datatype_get_size(dtype),
+                              options.buf_count, comm->rank(),
+                              comm->size());
+            }
+            catch(const std::exception& ex)
+            {
+                ASSERT(0, "error on count %zu, reason: %s", count, ex.what());
+            }
+        }
+
+        comm->barrier();
+
+        /* benchmark with single buffer per collective */
+        PRINT_BY_ROOT(comm, "do single-buffer benchmark");
+        coll_attr.to_cache = 1;
+        for (size_t count = options.buf_count; count <= SINGLE_ELEM_COUNT; count *= 2)
+        {
+            try
+            {
+                double t = 0;
+                for (size_t iter_idx = 0; iter_idx < options.iters; iter_idx++)
                 {
-                    auto& coll = colls[coll_idx];
-                    for (size_t buf_idx = 0; buf_idx < options.buf_count; buf_idx++)
+                    double t1 = when();
+                    for (size_t coll_idx = 0; coll_idx < colls.size(); coll_idx++)
                     {
-                        snprintf(match_id, MATCH_ID_SIZE, "coll_%s_%zu_count_%zu_buf_%zu",
-                                 coll->name(), coll_idx, count, buf_idx);
-                        coll->start(count, buf_idx, coll_attr, reqs);
+                        auto& coll = colls[coll_idx];
+                        snprintf(match_id, MATCH_ID_SIZE, "coll_%s_%zu_single_count_%zu",
+                                 coll->name(), coll_idx, count);
+                        coll->start_single(count, coll_attr, reqs);
                     }
-                }
-                for (auto &req : reqs)
-                {
-                    req->wait();
-                }
-                double t2 = when();
-                t += (t2 - t1);
-            }
+                    for (auto &req : reqs)
+                    {
+                        req->wait();
+                    }
+                    double t2 = when();
+                    t += (t2 - t1);
 
-            reqs.clear();
-
-            if (options.check_values)
+                    reqs.clear();
+                }
+                print_timings(*comm, &t, count,
+                              ccl::datatype_get_size(dtype),
+                              1, comm->rank(), comm->size());
+            } catch (...)
             {
-                for (auto& coll : colls)
-                {
-                    coll->finalize(count);
-                }
+                ASSERT(0, "error on count %zu", count);
             }
-
-            print_timings(*comm, &t, count,
-                          sizeof(DTYPE), options.buf_count,
-                          comm->rank(), comm->size());
-        }
-        catch(const std::exception& ex)
-        {
-            ASSERT(0, "error on count %zu, reason: %s", count, ex.what());
-        }
-    }
-
-    comm->barrier();
-
-    /* benchmark with single buffer per collective */
-    PRINT_BY_ROOT(comm, "do single-buffer benchmark");
-    coll_attr.to_cache = 1;
-    for (size_t count = options.buf_count; count <= SINGLE_ELEM_COUNT; count *= 2)
-    {
-        try
-        {
-            double t = 0;
-            for (size_t iter_idx = 0; iter_idx < options.iters; iter_idx++)
-            {
-                double t1 = when();
-                for (size_t coll_idx = 0; coll_idx < colls.size(); coll_idx++)
-                {
-                    auto& coll = colls[coll_idx];
-                    snprintf(match_id, MATCH_ID_SIZE, "coll_%s_%zu_single_count_%zu",
-                             coll->name(), coll_idx, count);
-                    coll->start_single(count, coll_attr, reqs);
-                }
-                for (auto &req : reqs)
-                {
-                    req->wait();
-                }
-                double t2 = when();
-                t += (t2 - t1);
-
-                reqs.clear();
-            }
-            print_timings(*comm, &t, count,
-                          sizeof(DTYPE), 1,
-                          comm->rank(), comm->size());
-        }
-        catch (...)
-        {
-            ASSERT(0, "error on count %zu", count);
         }
     }
 
@@ -147,77 +163,95 @@ void do_regular(ccl::communicator* comm,
 
 void do_unordered(ccl::communicator* comm,
                   ccl::coll_attr& coll_attr,
-                  coll_list_t& colls,
+                  coll_list_t& all_colls,
                   req_list_t& reqs,
                   const user_options_t& options)
 {
     std::set<std::string> match_ids;
     char* match_id = (char*)coll_attr.match_id;
-    size_t rank = comm->rank();
 
-    reqs.reserve(colls.size() * options.buf_count * (log2(ELEM_COUNT) + 1));
-
-    PRINT_BY_ROOT(comm, "do unordered test");
-    coll_attr.to_cache = 1;
-
-    for (size_t count = 1; count <= ELEM_COUNT; count *= 2)
+    for (auto dtype : all_dtypes)
     {
-        try
+        coll_list_t colls;
+        std::string dtype_name;
+
+        std::copy_if(all_colls.begin(), all_colls.end(), std::back_inserter(colls),
+                    [dtype](const typename coll_list_t::value_type coll)
+                    {  return dtype == coll->get_dtype(); });
+
+        if (colls.empty())
+            continue;
+
+        dtype_name = find_str_val(dtype_names, dtype);
+
+        PRINT_BY_ROOT(comm, "\ndtype: %s", dtype_name.c_str());
+
+        size_t rank = comm->rank();
+
+        reqs.reserve(colls.size() * options.buf_count * (log2(ELEM_COUNT) + 1));
+
+        PRINT_BY_ROOT(comm, "do unordered test");
+        coll_attr.to_cache = 1;
+
+        for (size_t count = 1; count <= ELEM_COUNT; count *= 2)
         {
-            if (rank % 2)
+            try
             {
-                for (size_t coll_idx = 0; coll_idx < colls.size(); coll_idx++)
+                if (rank % 2)
                 {
-                    auto& coll = colls[coll_idx];
-                    for (size_t buf_idx = 0; buf_idx < options.buf_count; buf_idx++)
+                    for (size_t coll_idx = 0; coll_idx < colls.size(); coll_idx++)
                     {
-                        snprintf(match_id, MATCH_ID_SIZE, "coll_%s_%zu_count_%zu_buf_%zu",
-                                 coll->name(), coll_idx, count, buf_idx);
-                        coll->start(count, buf_idx, coll_attr, reqs);
-                        match_ids.emplace(match_id);
+                        auto& coll = colls[coll_idx];
+                        for (size_t buf_idx = 0; buf_idx < options.buf_count; buf_idx++)
+                        {
+                            snprintf(match_id, MATCH_ID_SIZE, "coll_%s_%zu_count_%zu_buf_%zu",
+                                     coll->name(), coll_idx, count, buf_idx);
+                            coll->start(count, buf_idx, coll_attr, reqs);
+                            match_ids.emplace(match_id);
+                        }
+                    }
+                }
+                else
+                {
+                    for (size_t coll_idx = 0; coll_idx < colls.size(); coll_idx++)
+                    {
+                        size_t real_coll_idx = colls.size() - coll_idx - 1;
+                        auto& coll = colls[real_coll_idx];
+                        for (size_t buf_idx = 0; buf_idx < options.buf_count; buf_idx++)
+                        {
+                            size_t real_buf_idx = options.buf_count - buf_idx - 1;
+                            snprintf(match_id, MATCH_ID_SIZE, "coll_%s_%zu_count_%zu_buf_%zu",
+                                     coll->name(), real_coll_idx, count, real_buf_idx);
+                            coll->start(count, real_buf_idx, coll_attr, reqs);
+                            match_ids.insert(std::string(match_id));
+                        }
                     }
                 }
             }
-            else
+            catch (...)
             {
-                for (size_t coll_idx = 0; coll_idx < colls.size(); coll_idx++)
-                {
-                    size_t real_coll_idx = colls.size() - coll_idx - 1;
-                    auto& coll = colls[real_coll_idx];
-                    for (size_t buf_idx = 0; buf_idx < options.buf_count; buf_idx++)
-                    {
-                        size_t real_buf_idx = options.buf_count - buf_idx - 1;
-                        snprintf(match_id, MATCH_ID_SIZE, "coll_%s_%zu_count_%zu_buf_%zu",
-                                 coll->name(), real_coll_idx, count, real_buf_idx);
-                        coll->start(count, real_buf_idx, coll_attr, reqs);
-                        match_ids.insert(std::string(match_id));
-                    }
-                }
+                ASSERT(0, "error on count %zu", count);
+            }
+        }
+
+        ASSERT(match_ids.size() == reqs.size(),
+               "unexpected match_ids.size %zu, expected %zu",
+               match_ids.size(), reqs.size());
+
+        try
+        {
+            for (auto &req : reqs)
+            {
+                req->wait();
             }
         }
         catch (...)
         {
-            ASSERT(0, "error on count %zu", count);
+            ASSERT(0, "error on coll completion");
         }
-    }
 
-    ASSERT(match_ids.size() == reqs.size(),
-           "unexpected match_ids.size %zu, expected %zu",
-           match_ids.size(), reqs.size());
-
-    try
-    {
-        for (auto &req : reqs)
-        {
-            req->wait();
-        }
+        PRINT_BY_ROOT(comm, "PASSED\n");
     }
-    catch (...)
-    {
-        ASSERT(0, "error on coll completion");
-    }
-
-    PRINT_BY_ROOT(comm, "PASSED\n");
 }
 
 template<class Dtype>
@@ -458,7 +492,10 @@ int main(int argc, char *argv[])
 
     try
     {
-        ccl_tuple_for_each(dtype_indices,
+        ccl_tuple_for_each(launch_dtypes,
+                           set_types_func(options.dtypes));
+
+        ccl_tuple_for_each(launch_dtypes,
                            create_colls_func(options.coll_names,
                                              options.backend, colls));
     }
