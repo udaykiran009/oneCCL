@@ -1,5 +1,5 @@
 -------------------------------------------------------
-Intel(R) oneAPI Collective Communications Library for Linux* OS
+oneAPI Collective Communications Library for Linux* OS
 README
 -------------------------------------------------------
 
@@ -19,7 +19,7 @@ and type "accept" when prompted.
 Introduction
 ------------
 
-Intel(R) oneAPI Collective Communications Library (Intel(R) CCL) is a library providing
+oneAPI Collective Communications Library (oneCCL) is a library providing
 an efficient implementation of communication patterns used in deep learning.
 
     - Built on top of MPI, allows for use of other communication libraries
@@ -29,37 +29,25 @@ an efficient implementation of communication patterns used in deep learning.
     - Common API to support Deep Learning frameworks (Caffe*, Theano*,
       Torch*, etc.)
 
-Intel(R) CCL package comprises the Intel CCL Software Development Kit (SDK)
+oneCCL package comprises the oneCL Software Development Kit (SDK)
 and the Intel(R) MPI Library Runtime components.
 
 ----------------------------------------------------
-Installing Intel(R) oneAPI Collective Communications Library
+Installing oneAPI Collective Communications Library
 ----------------------------------------------------
 
-I.   Installing Intel(R) CCL using RPM Package Manager (root mode):
+Installing oneCCL using install.sh (user mode):
 
-        1. Log in as root.
+ Run install.sh and follow the instructions.
 
-        2. Install the package:
-            $ rpm -i intel-iccl-devel-64-<version>.<update>-<package#>.x86_64.rpm
-
-            where <version>.<update>-<package#> is a string, such as: 2017.0-009
-
-     To uninstall Intel(R) CCL, use the command:
-     $ rpm -e intel-iccl-devel-64-<version>.<update>-<package#>.x86_64
-
-II.  Installing Intel(R) CCL using install.sh (user mode):
-
-     Run install.sh and follow the instructions.
-
-     There is no uninstall script. To uninstall Intel(R) CCL, delete the entire
-     directory where you have installed the package.
+ There is no uninstall script. To uninstall oneCCL, delete the entire
+ directory where you have installed the package.
 
 -------------------
 Directory Structure
 -------------------
 
-Following a successful installation, the files associated with the Intel(R) CCL
+Following a successful installation, the files associated with the oneCCL
 are installed on your host system. The following directory map indicates the 
 default structure and identifies the file types stored in each sub-directory:
 
@@ -67,55 +55,161 @@ default structure and identifies the file types stored in each sub-directory:
     `-- intel        Common directory for Intel(R) Software Development Products.
             `-- iccl_<version>.<update>.<package#>
                 |               Subdirectory for the version, specific update
-                |               and package number of Intel(R) CCL.
-                |-- doc         Subdirectory with documentation.
-                |-- |-- API_Reference.htm
-                |   |-- Developer_Guide.pdf
-                |   |-- README.txt
-                |   |-- Release_Notes.txt
-                |   |-- api     Subdirectory with API reference.
-                |-- example     Intel(R) CCL example
-                |   |-- Makefile
-                |   `-- iccl_example.cpp
-                |-- intel64     Files for specific architecture.
-                |   |-- bin     Binaries, scripts, and executable files.
-                |   |   |-- ep_server
-                |   |   |-- hydra_persist
-                |   |   |-- icclvars.sh
-                |   |   |-- mpiexec -> mpiexec.hydra
-                |   |   |-- mpiexec.hydra
-                |   |   |-- mpirun
-                |   |   `-- pmi_proxy
-                |   |-- etc     Configuration files.
-                |   |   |-- mpiexec.conf
-                |   |   `-- tmi.conf
-                |   |-- include Include and header files.
-                |   |   |-- iccl    Subdirectory for Python* module
-                |   |   |-- iccl.hpp
-                |   |   `-- iccl.h
-                |   `-- lib     Libraries
-                |       |-- libiccl.so -> libiccl.so.1
-                |       |-- libiccl.so.1 -> libiccl.so.1.0
-                |       |-- libiccl.so.1.0
-                |       |-- libmpi.so -> libmpi.so.12
-                |       |-- libmpi.so.12 -> libmpi.so.12.0
-                |       |-- libmpi.so.12.0
-                |       |-- libtmi.so -> libtmi.so.1.2
-                |       |-- libtmi.so.1.2
-                |       |-- libtmip_psm.so -> libtmip_psm.so.1.2
-                |       |-- libtmip_psm.so.1.2
-                |       |-- libtmip_psm2.so -> libtmip_psm2.so.1.0
-                |       `-- libtmip_psm2.so.1.0
-                |-- licensing
-                |   |-- iccl    Subdirectory for supported files, license
-                |   |           of the Intel(R) CCL
-                |   `-- mpi     Subdirectory for supported files, EULAs,
-                |               redist files, third-party-programs file 
-                |               of the Intel(R) MPI Library
-                `-- test        Intel(R) CCL tests
-                    |-- Makefile
-                    |-- iccl_test.py
-                    `-- iccl_test.cpp
+                |               and package number of oneCCL.
+				|-- env                                                                                                
+				|   `-- vars.sh                                                                                        
+				|-- examples                                                                                           
+				|   |-- benchmark                                                                                      
+				|   |   |-- CMakeLists.txt                                                                             
+				|   |   |-- include                                                                                    
+				|   |   |   |-- benchmark.hpp                                                                          
+				|   |   |   |-- coll.hpp                                                                               
+				|   |   |   |-- config.hpp                                                                             
+				|   |   |   |-- cpu_coll.hpp                                                                           
+				|   |   |   `-- sycl_coll.hpp                                                                          
+				|   |   `-- src                                                                                        
+				|   |       |-- allgatherv                                                                             
+				|   |       |   |-- allgatherv_strategy.hpp                                                            
+				|   |       |   |-- cpu_allgatherv_coll.hpp                                                            
+				|   |       |   `-- sycl_allgatherv_coll.hpp                                                           
+				|   |       |-- allreduce                                                                              
+				|   |       |   |-- allreduce_strategy.hpp                                                             
+				|   |       |   |-- cpu_allreduce_coll.hpp                                                             
+				|   |       |   `-- sycl_allreduce_coll.hpp                                                            
+				|   |       |-- alltoall                                                                               
+				|   |       |   |-- alltoall_strategy.hpp                                                              
+				|   |       |   |-- cpu_alltoall_coll.hpp                                                              
+				|   |       |   `-- sycl_alltoall_coll.hpp                                                             
+				|   |       |-- alltoallv                                                                              
+				|   |       |   |-- alltoallv_strategy.hpp                                                             
+				|   |       |   |-- cpu_alltoallv_coll.hpp                                                             
+				|   |       |   `-- sycl_alltoallv_coll.hpp                                                            
+				|   |       |-- bcast                                                                                  
+				|   |       |   |-- bcast_strategy.hpp                                                                 
+				|   |       |   |-- cpu_bcast_coll.hpp                                                                 
+				|   |       |   `-- sycl_bcast_coll.hpp                                                                
+				|   |       |-- benchmark.cpp                                                                          
+				|   |       |-- declarations.hpp                                                                       
+				|   |       |-- reduce                                                                                 
+				|   |       |   |-- cpu_reduce_coll.hpp                                                                
+				|   |       |   |-- reduce_strategy.hpp                                                                
+				|   |       |   `-- sycl_reduce_coll.hpp                                                               
+				|   |       `-- sparse_allreduce                                                                       
+				|   |           |-- cpu_sparse_allreduce_coll.hpp                                                      
+				|   |           |-- sparse_allreduce_base.hpp                                                          
+				|   |           |-- sparse_allreduce_strategy.hpp                                                      
+				|   |           |-- sparse_detail.hpp                                                                  
+				|   |           `-- sycl_sparse_allreduce_coll.hpp                                                     
+				|   |-- CMakeLists.txt                                                                                 
+				|   |-- common                                                                                         
+				|   |   |-- api_info.cpp                                                                               
+				|   |   `-- CMakeLists.txt                                                                             
+				|   |-- cpu                                                                                            
+				|   |   |-- allgatherv.cpp                                                                             
+				|   |   |-- allgatherv_cpp.cpp                                                                         
+				|   |   |-- allgatherv_iov.cpp                                                                         
+				|   |   |-- allreduce.c                                                                                
+				|   |   |-- allreduce_cpp.cpp                                                                          
+				|   |   |-- alltoall.c                                                                                 
+				|   |   |-- alltoallv.cpp                                                                              
+				|   |   |-- bcast.cpp                                                                                  
+				|   |   |-- bcast_cpp.cpp                                                                              
+				|   |   |-- CMakeLists.txt                                                                             
+				|   |   |-- communicator.cpp                                                                           
+				|   |   |-- cpu_allgatherv_test.c                                                                      
+				|   |   |-- cpu_allreduce_bfp16.c                                                                      
+				|   |   |-- cpu_allreduce_cpp_test.cpp                                                                 
+				|   |   |-- cpu_allreduce_test.c                                                                       
+				|   |   |-- custom_allreduce.cpp                                                                       
+				|   |   |-- datatype.cpp                                                                               
+				|   |   |-- priority_allreduce.cpp                                                                     
+				|   |   |-- reduce.cpp                                                                                 
+				|   |   |-- reduce_cpp.cpp                                                                             
+				|   |   |-- sparse_allreduce.cpp                                                                       
+				|   |   |-- sparse_test_algo.hpp                                                                       
+				|   |   `-- unordered_allreduce.cpp                                                                    
+				|   |-- include                                                                                        
+				|   |   |-- base.h                                                                                     
+				|   |   |-- base.hpp                                                                                   
+				|   |   |-- base_utils.hpp                                                                             
+				|   |   |-- bfp16.h                                                                                    
+				|   |   `-- sycl_base.hpp                                                                              
+				|   `-- sycl                                                                                           
+				|       |-- CMakeLists.txt                                                                             
+				|       |-- sycl_allgatherv_cpp_test.cpp                                                               
+				|       |-- sycl_allgatherv_test.cpp                                                                   
+				|       |-- sycl_allreduce_cpp_test.cpp                                                                
+				|       |-- sycl_allreduce_test.cpp                                                                    
+				|       |-- sycl_alltoall_cpp_test.cpp                                                                 
+				|       |-- sycl_alltoall_test.cpp                                                                     
+				|       |-- sycl_alltoallv_cpp_test.cpp                                                                
+				|       |-- sycl_alltoallv_test.cpp                                                                    
+				|       |-- sycl_bcast_cpp_test.cpp                                                                    
+				|       |-- sycl_bcast_test.cpp                                                                        
+				|       |-- sycl_reduce_cpp_test.cpp                                                                   
+				|       `-- sycl_reduce_test.cpp                                                                       
+				|-- include                                                                                            
+				|   |-- cpu_gpu_dpcpp                                                                                  
+				|   |   |-- ccl_config.h                                                                               
+				|   |   |-- ccl_device_type_traits.hpp                                                                 
+				|   |   |-- ccl.h                                                                                      
+				|   |   |-- ccl.hpp                                                                                    
+				|   |   |-- ccl_types.h                                                                                
+				|   |   |-- ccl_types.hpp                                                                              
+				|   |   `-- ccl_type_traits.hpp                                                                        
+				|   `-- cpu_icc                                                                                        
+				|       |-- ccl_config.h                                                                               
+				|       |-- ccl_device_type_traits.hpp                                                                 
+				|       |-- ccl.h                                                                                      
+				|       |-- ccl.hpp                                                                                    
+				|       |-- ccl_types.h                                                                                
+				|       |-- ccl_types.hpp                                                                              
+				|       `-- ccl_type_traits.hpp                                                                        
+				|-- lib                                                                                                
+				|   |-- cpu_gpu_dpcpp                                                                                  
+				|   |   |-- libccl.a                                                                                   
+				|   |   |-- libccl_atl_mpi.a                                                                           
+				|   |   |-- libccl_atl_mpi.so -> libccl_atl_mpi.so.1.0                                                 
+				|   |   |-- libccl_atl_mpi.so.1                                                                        
+				|   |   |-- libccl_atl_mpi.so.1.0 -> libccl_atl_mpi.so.1                                               
+				|   |   |-- libccl_atl_ofi.a                                                                           
+				|   |   |-- libccl_atl_ofi.so -> libccl_atl_ofi.so.1.0                                                 
+				|   |   |-- libccl_atl_ofi.so.1                                                                        
+				|   |   |-- libccl_atl_ofi.so.1.0 -> libccl_atl_ofi.so.1                                               
+				|   |   |-- libccl.so                                                                                  
+				|   |   |-- libpmi.a                                                                                   
+				|   |   |-- libpmi.so -> libpmi.so.1.0                                                                 
+				|   |   |-- libpmi.so.1                                                                                
+				|   |   |-- libpmi.so.1.0 -> libpmi.so.1                                                               
+				|   |   |-- libresizable_pmi.a                                                                         
+				|   |   |-- libresizable_pmi.so -> libresizable_pmi.so.1.0                                             
+				|   |   |-- libresizable_pmi.so.1                                                                      
+				|   |   `-- libresizable_pmi.so.1.0 -> libresizable_pmi.so.1                                           
+				|   `-- cpu_icc                                                                                        
+				|       |-- libccl.a                                                                                   
+				|       |-- libccl_atl_mpi.a                                                                           
+				|       |-- libccl_atl_mpi.so -> libccl_atl_mpi.so.1.0                                                 
+				|       |-- libccl_atl_mpi.so.1
+				|       |-- libccl_atl_mpi.so.1.0 -> libccl_atl_mpi.so.1
+				|       |-- libccl_atl_ofi.a
+				|       |-- libccl_atl_ofi.so -> libccl_atl_ofi.so.1.0
+				|       |-- libccl_atl_ofi.so.1
+				|       |-- libccl_atl_ofi.so.1.0 -> libccl_atl_ofi.so.1
+				|       |-- libccl.so
+				|       |-- libpmi.a
+				|       |-- libpmi.so -> libpmi.so.1.0
+				|       |-- libpmi.so.1
+				|       |-- libpmi.so.1.0 -> libpmi.so.1
+				|       |-- libresizable_pmi.a
+				|       |-- libresizable_pmi.so -> libresizable_pmi.so.1.0
+				|       |-- libresizable_pmi.so.1
+				|       `-- libresizable_pmi.so.1.0 -> libresizable_pmi.so.1
+				|-- licensing
+				|   |-- license.txt
+				|   `-- third-party-programs.txt
+				`-- modulefiles
+					`-- ccl
+
 
 --------------------------------
 Disclaimer and Legal Information

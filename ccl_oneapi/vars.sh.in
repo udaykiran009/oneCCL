@@ -39,6 +39,7 @@ case "$ccl_configuration" in
         ;;
 esac
 export CCL_CONFIGURATION=${ccl_configuration}
+export I_MPI_LIBRARY_KIND="release_mt"
 
 if [ -z "${LD_LIBRARY_PATH}" ]
 then
