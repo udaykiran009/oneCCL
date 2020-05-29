@@ -181,6 +181,8 @@ Available algorithms for each collective operation (``<algo_name>``):
    :widths: 25 50
    :align: left
 
+   * - ``ring``
+     - Ring-allreduce based algorithm
    * - ``mask``
      - Mask matrix based algorithm
    * - ``allgatherv``
