@@ -120,6 +120,11 @@ ccl_status_t ccl_parallelizer::process(ccl_master_sched* sched)
             part_count = max_data_partition_count;
             break;
         case ccl_coll_bcast:
+            if (env_data.bcast_part_count != CCL_ENV_SIZET_NOT_SPECIFIED)
+            {
+                part_count = env_data.bcast_part_count;
+                break;
+            }
         case ccl_coll_reduce:
         case ccl_coll_allreduce:
             if (coll_param.count * dtype_size <= env_data.max_short_size)

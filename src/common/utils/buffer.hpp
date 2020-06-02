@@ -23,20 +23,22 @@ class ccl_buffer
 private:
     void* src;
     ssize_t size; /* max available size, for sanity checks */
-    int offset;
+    size_t offset;
     ccl_buffer_type type;
 
-    bool check_offset(ssize_t access_size = 0) const
+    bool check_offset(size_t access_size = 0) const
     {
         bool result = true;
 
-        if (offset < 0)
+        if ((std::numeric_limits<size_t>::max() - offset) < access_size)
         {
             result = false;
-            LOG_ERROR("unexpected offset ", offset);
+            LOG_ERROR("unexpected (offset + access_size): ",
+                      ", offset ", offset,
+                      ", access_size ", access_size);
         }
 
-        if ((size != -1) && (offset + access_size > size))
+        if ((size != -1) && (offset + access_size > (size_t)size))
         {
             result = false;
             LOG_ERROR("unexpected (offset + access_size): ",
@@ -52,7 +54,7 @@ public:
     
     ccl_buffer(void* src) = delete;
 
-    ccl_buffer(void* src, ssize_t size, int offset, ccl_buffer_type type)
+    ccl_buffer(void* src, ssize_t size, size_t offset, ccl_buffer_type type)
         : src(src), size(size),
           offset(offset), type(type)
     {
@@ -62,7 +64,7 @@ public:
 
     ccl_buffer() : ccl_buffer(nullptr, -1, 0, ccl_buffer_type::DIRECT) {}
     ccl_buffer(void* src, ssize_t size) : ccl_buffer(src, size, 0, ccl_buffer_type::DIRECT) {}
-    ccl_buffer(void* src, ssize_t size, int offset) : ccl_buffer(src, size, offset, ccl_buffer_type::DIRECT) {}
+    ccl_buffer(void* src, ssize_t size, size_t offset) : ccl_buffer(src, size, offset, ccl_buffer_type::DIRECT) {}
     ccl_buffer(void* src, ssize_t size, ccl_buffer_type type) : ccl_buffer(src, size, 0, type) {}
 
     ccl_buffer(const ccl_buffer& buf)
@@ -74,7 +76,7 @@ public:
         CCL_ASSERT(check_offset());
     }
 
-    void set(void* src, ssize_t size, int offset, ccl_buffer_type type)
+    void set(void* src, ssize_t size, size_t offset, ccl_buffer_type type)
     {
         LOG_DEBUG("set: src ", src, ", size ", size, ", offset ", offset, ", type ", type,
                   ", old src: ", this->src);
@@ -91,11 +93,11 @@ public:
     void set(void* src) { set(src, -1, 0, ccl_buffer_type::DIRECT); }
     void set(void* src, ssize_t size) { set(src, size, 0, ccl_buffer_type::DIRECT); }
     void set(void* src, ssize_t size, ccl_buffer_type type) { set(src, size, 0, type); }
-    void set(void* src, ssize_t size, int offset) { set(src, size, offset, ccl_buffer_type::DIRECT); }
+    void set(void* src, ssize_t size, size_t offset) { set(src, size, offset, ccl_buffer_type::DIRECT); }
 
     void* get_src() const { return src; }
     ssize_t get_size() const { return size; }
-    int get_offset() const { return offset; }
+    size_t get_offset() const { return offset; }
     ccl_buffer_type get_type() const { return type; }
 
     ccl_buffer operator+ (size_t val)
@@ -110,6 +112,7 @@ public:
 
     ccl_buffer operator- (size_t val)
     {
+        CCL_ASSERT(offset >= val, "unexpected decrement value ", val);
         return ccl_buffer(src, size, offset - val, type);
     }
 
@@ -120,6 +123,7 @@ public:
 
     ccl_buffer operator- (int val)
     {
+        CCL_ASSERT(offset >= (size_t)val, "unexpected decrement value ", val);
         return ccl_buffer(src, size, offset - val, type);
     }
 
@@ -136,7 +140,7 @@ public:
         return (static_cast<char*>(get_ptr()) - static_cast<char*>(buf.get_ptr()));
     }
 
-    void* get_ptr(ssize_t access_size = 0) const
+    void* get_ptr(size_t access_size = 0) const
     {
         CCL_ASSERT(check_offset(access_size));
 

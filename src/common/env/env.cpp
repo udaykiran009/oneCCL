@@ -38,6 +38,7 @@ ccl_env_data env_data =
     .spin_count = 100,
     .yield_type = ccl_yield_pause,
     .max_short_size = 4096,
+    .bcast_part_count = CCL_ENV_SIZET_NOT_SPECIFIED,
     .cache_key_type = ccl_cache_key_match_id,
     .enable_cache_flush = 1,
 
@@ -69,7 +70,7 @@ int ccl_env_2_size_t(const char* env_name, size_t& val)
     val_ptr = getenv(env_name);
     if (val_ptr)
     {
-        val = std::strtoul(val_ptr, nullptr, 10);
+        val = std::strtoull(val_ptr, nullptr, 10);
         return 1;
     }
     return 0;
@@ -193,6 +194,7 @@ void ccl_env_parse()
     ccl_env_2_size_t(CCL_SPIN_COUNT, env_data.spin_count);
     ccl_env_parse_yield_type();
     ccl_env_2_size_t(CCL_MAX_SHORT_SIZE, env_data.max_short_size);
+    ccl_env_2_size_t(CCL_BCAST_PART_COUNT, (size_t&)env_data.bcast_part_count);
     ccl_env_parse_cache_key();
     ccl_env_2_int(CCL_CACHE_FLUSH, env_data.enable_cache_flush);
 
@@ -258,21 +260,21 @@ void ccl_env_print()
     LOG_INFO(CCL_ATL_SHM, ": ", env_data.enable_shm);
 
     LOG_INFO(CCL_ALLGATHERV, ": ", (env_data.allgatherv_algo_raw.length()) ?
-        env_data.allgatherv_algo_raw : CCL_ENV_NOT_SPECIFIED);
+        env_data.allgatherv_algo_raw : CCL_ENV_STR_NOT_SPECIFIED);
     LOG_INFO(CCL_ALLREDUCE, ": ", (env_data.allreduce_algo_raw.length()) ?
-        env_data.allreduce_algo_raw : CCL_ENV_NOT_SPECIFIED);
+        env_data.allreduce_algo_raw : CCL_ENV_STR_NOT_SPECIFIED);
     LOG_INFO(CCL_ALLTOALL, ": ", (env_data.alltoall_algo_raw.length()) ?
-        env_data.alltoall_algo_raw : CCL_ENV_NOT_SPECIFIED);
+        env_data.alltoall_algo_raw : CCL_ENV_STR_NOT_SPECIFIED);
     LOG_INFO(CCL_ALLTOALLV, ": ", (env_data.alltoallv_algo_raw.length()) ?
-        env_data.alltoallv_algo_raw : CCL_ENV_NOT_SPECIFIED);
+        env_data.alltoallv_algo_raw : CCL_ENV_STR_NOT_SPECIFIED);
     LOG_INFO(CCL_BARRIER, ": ", (env_data.barrier_algo_raw.length()) ?
-        env_data.barrier_algo_raw : CCL_ENV_NOT_SPECIFIED);
+        env_data.barrier_algo_raw : CCL_ENV_STR_NOT_SPECIFIED);
     LOG_INFO(CCL_BCAST, ": ", (env_data.bcast_algo_raw.length()) ?
-        env_data.bcast_algo_raw : CCL_ENV_NOT_SPECIFIED);
+        env_data.bcast_algo_raw : CCL_ENV_STR_NOT_SPECIFIED);
     LOG_INFO(CCL_REDUCE, ": ", (env_data.reduce_algo_raw.length()) ?
-        env_data.reduce_algo_raw : CCL_ENV_NOT_SPECIFIED);
+        env_data.reduce_algo_raw : CCL_ENV_STR_NOT_SPECIFIED);
     LOG_INFO(CCL_SPARSE_ALLREDUCE, ": ", (env_data.sparse_allreduce_algo_raw.length()) ?
-        env_data.sparse_allreduce_algo_raw : CCL_ENV_NOT_SPECIFIED);
+        env_data.sparse_allreduce_algo_raw : CCL_ENV_STR_NOT_SPECIFIED);
     LOG_INFO(CCL_UNORDERED_COLL, ": ", env_data.enable_unordered_coll);
 
     LOG_INFO(CCL_FUSION, ": ", env_data.enable_fusion);
@@ -286,6 +288,8 @@ void ccl_env_print()
     LOG_INFO(CCL_SPIN_COUNT, ": ", env_data.spin_count);
     LOG_INFO(CCL_YIELD, ": ", ccl_yield_type_to_str(env_data.yield_type));
     LOG_INFO(CCL_MAX_SHORT_SIZE, ": ", env_data.max_short_size);
+    LOG_INFO(CCL_BCAST_PART_COUNT, ": ", (env_data.bcast_part_count != CCL_ENV_SIZET_NOT_SPECIFIED) ?
+        std::to_string(env_data.bcast_part_count) : CCL_ENV_STR_NOT_SPECIFIED);
     LOG_INFO(CCL_CACHE_KEY, ": ", ccl_cache_key_type_to_str(env_data.cache_key_type));
     LOG_INFO(CCL_CACHE_FLUSH, ": ", env_data.enable_cache_flush);
 

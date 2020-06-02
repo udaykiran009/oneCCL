@@ -256,6 +256,7 @@ atl_ofi_get_prov(atl_ep_t* ep, size_t peer_proc_idx, size_t msg_size)
             prov_idx = ofi_ctx->nw_prov_idx;
     }
 
+    /* TODO: add segmentation logic */
     ATL_OFI_ASSERT(msg_size <= ofi_ctx->provs[prov_idx].max_msg_size,
         "msg_size (%zu) is greater than max_msg_size (%zu), prov_idx %zu",
         msg_size, ofi_ctx->provs[prov_idx].max_msg_size, prov_idx);
