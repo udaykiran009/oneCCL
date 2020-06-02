@@ -3,7 +3,7 @@ cmake_minimum_required (VERSION 2.8)
 if (DEFINED ENV{CCL_CONFIGURATION})
     set(CCL_CONFIGURATION "$ENV{CCL_CONFIGURATION}")
     if(${CCL_CONFIGURATION} STREQUAL "cpu_gpu_dpcpp")
-        set(COMPUTE_RUNTIME_TARGET_NAME "Intel::SYCL")
+        set(COMPUTE_RUNTIME_TARGET_NAME "sycl")
     endif()
 endif()
 
@@ -73,7 +73,6 @@ endif()
 include_directories(${CCL_ROOT}/include/${CCL_CONFIGURATION})
 link_directories(${CCL_ROOT}/lib/${CCL_CONFIGURATION})
 
-include(cmake/helpers.cmake)
 include_directories(include)
 
 add_subdirectory(cpu)
