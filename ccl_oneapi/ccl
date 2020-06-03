@@ -52,6 +52,11 @@ if { [ module-info mode ] == "unload" || [ module-info mode ] == "remove" } {
     puts stderr "Removing $modulefilename version $modulefilever"
 }
 
+
+# ###### Component Specific env vars setup ###################################
+
+module-whatis "Intel(R) oneAPI Collective Communications Library"
+
 set ccl_conf "cpu_gpu_dpcpp"
 
 if { [info exists ::env(CCL_CONFIGURATION) ] } {
@@ -64,11 +69,6 @@ if { [info exists ::env(CCL_CONFIGURATION) ] } {
         }
     }
 }
-
-
-# ###### Component Specific env vars setup ###################################
-
-module-whatis "Intel(R) oneAPI Collective Communications Library"
 
 set                topdir                               "$componentroot/$modulefilever"
 
