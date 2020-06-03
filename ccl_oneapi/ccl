@@ -52,13 +52,13 @@ if { [ module-info mode ] == "unload" || [ module-info mode ] == "remove" } {
     puts stderr "Removing $modulefilename version $modulefilever"
 }
 
-set ccl_library_kind "cpu_gpu_dpcpp"
+set ccl_conf "cpu_gpu_dpcpp"
 
-if { [info exists ::env(CCL_LIBRARY_KIND) ] } {
-    switch "$::env(CCL_LIBRARY_KIND)" {
+if { [info exists ::env(CCL_CONFIGURATION) ] } {
+    switch "$::env(CCL_CONFIGURATION)" {
         "cpu_gpu_dpcpp" -
         "cpu_icc" {
-            set ccl_library_kind "$::env(CCL_LIBRARY_KIND)"
+            set ccl_conf "$::env(CCL_CONFIGURATION)"
         }
         default {
         }
@@ -73,6 +73,8 @@ module-whatis "Intel(R) oneAPI Collective Communications Library"
 set                topdir                               "$componentroot/$modulefilever"
 
 setenv             CCL_ROOT                             "$topdir"
-setenv             CCL_ATL_TRANSPORT_PATH               "$topdir/lib/$ccl_library_kind"
+setenv             CCL_CONFIGURATION                    "$ccl_conf"
+setenv             CCL_ATL_TRANSPORT_PATH               "$topdir/lib/$ccl_conf"
+setenv             I_MPI_LIBRARY_KIND                   "release_mt"
 
-prepend-path       LD_LIBRARY_PATH                      "$topdir/lib/$ccl_library_kind"
+prepend-path       LD_LIBRARY_PATH                      "$topdir/lib/$ccl_conf"
