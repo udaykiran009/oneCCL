@@ -3,7 +3,10 @@
 touch main_ouput.txt
 exec | tee ./main_ouput.txt
 
-function create_work_dir(){
+BASENAME=`basename $0 .sh`
+
+function create_work_dir()
+{
     if [ -z ${EXAMPLE_WORK_DIR} ]
     then
         SCRIPT_DIR=`cd $(dirname "$BASH_SOURCE") && pwd -P`
@@ -14,7 +17,8 @@ function create_work_dir(){
     echo "EXAMPLE_WORK_DIR =" ${EXAMPLE_WORK_DIR}
 }
 
-CheckCommandExitCode() {
+CheckCommandExitCode()
+{
     if [ $1 -ne 0 ]; then
         echo "ERROR: ${2}" 1>&2
         exit $1
@@ -24,7 +28,8 @@ CheckCommandExitCode() {
 declare -i total_fails=0
 declare -i total_skipped=0
 
-function check_test(){
+function check_test()
+{
     test_log=$1
     test_file=$2
     test_passed=`grep -E -c -i 'PASSED' ${test_log}`
@@ -49,8 +54,6 @@ function check_test(){
     fi
 }
 
-export FI_PROVIDER=tcp
-
 check_clang()
 {
     which clang++
@@ -61,6 +64,7 @@ check_clang()
         exit 1
     fi
 }
+
 which mpiexec
 MPI_INSTALL_CHECK=$?
 if [ "$MPI_INSTALL_CHECK" != "0" ]
@@ -82,6 +86,7 @@ then
     echo "Error: CCL_ROOT wasn't found"
     exit 1
 fi
+
 run_benchmark()
 {
     echo "================ENVIRONMENT=================="
@@ -102,7 +107,9 @@ run_benchmark()
     local dtype=$8
     echo "dtype: " $dtype
     echo "================ENVIRONMENT=================="
-    test_log="$EXAMPLE_WORK_DIR/$dir_name/run_${transport}_${example}_${backend}_${loop}_output.log"
+
+    test_log="$EXAMPLE_WORK_DIR/$dir_name/run"
+    test_log="${test_log}_${transport}_${example}_b_${backend}_e_${loop}_l_${coll}_d_${dtype}_output.log"
 
     options=""
     if [ "${backend}" != "" ];
@@ -122,15 +129,28 @@ run_benchmark()
         options="${options} --dtype ${dtype}"
     fi
 
-	if [ `echo $ccl_extra_env | grep -c CCL_LOG_LEVEL` -ne 1 ]
-	then
-		eval `echo $ccl_extra_env mpiexec.hydra -n 2 -ppn $ppn -l ./$example ${options}` 2>&1 | tee ${test_log}
-	else
-		echo Output for run with CCL_LOG_LEVEL=2 has been redirected to log file ${test_log}
-		eval `echo $ccl_extra_env mpiexec.hydra -n 2 -ppn $ppn -l ./$example ${options}` > ${test_log} 2>&1
-	fi
-    check_test ${test_log} ${example}
+    if [ `echo $ccl_extra_env | grep -c CCL_LOG_LEVEL` -ne 1 ]
+    then
+        eval `echo $ccl_extra_env mpiexec.hydra -n 2 -ppn $ppn -l ./$example ${options}` 2>&1 | tee ${test_log}
+        check_test ${test_log} ${example}
+    else
+        base_test_log="${test_log}"
+
+        test_log="${base_test_log}.2_ranks"
+        echo Output for run with CCL_LOG_LEVEL=2 and 2 ranks has been redirected to log file ${test_log}
+        eval `echo $ccl_extra_env mpiexec.hydra -n 2 -ppn $ppn -l ./$example ${options}` > ${test_log} 2>&1
+        check_test ${test_log} ${example}
+
+        if [ "${transport}" == "ofi" ];
+        then
+            test_log="${base_test_log}.1_rank"
+            echo Output for run with CCL_LOG_LEVEL=2 and 1 rank has been redirected to log file ${test_log}
+            eval `echo $ccl_extra_env mpiexec.hydra -n 1 -ppn $ppn -l ./$example ${options}` > ${test_log} 2>&1
+            check_test ${test_log} ${example}
+        fi
+    fi
 }
+
 run_example()
 {
     echo "================ENVIRONMENT=================="
@@ -176,14 +196,17 @@ build()
         echo "OK"
     fi
 }
+
 run()
 {
     cd ${EXAMPLE_WORK_DIR}/
     pwd
+
     ppn=1
     n=2
     dtype_list="char,int,float"
-    ccl_base_env="CCL_YIELD=sleep CCL_ATL_SHM=1"
+    ccl_base_env="FI_PROVIDER=tcp CCL_YIELD=sleep CCL_ATL_SHM=1"
+
     if ! [[ -n "${DASHBOARD_GPU_DEVICE_PRESENT}" ]]
     then
         echo "WARNING: DASHBOARD_GPU_DEVICE_PRESENT was not set"
@@ -251,8 +274,9 @@ run()
                             run_benchmark "${ccl_extra_env}" ${dir_name} ${transport} ${example} ${backend} regular
                             
                             # run a benchmark with the specific data types list
+                            ccl_extra_env="${ccl_transport_env}"
                             run_benchmark "${ccl_extra_env}" ${dir_name} ${transport} ${example} ${backend} regular allreduce ${dtype_list}
-		        fi
+                        fi
                     done
                 elif [ "$dir_name" == "sycl" ];
                 then
@@ -271,7 +295,7 @@ run()
                     then
                         n=8
                         ccl_extra_env="${ccl_transport_env}"
-                        run_example "${ccl_extra_env}" ${dir_name} ${transport} ${example}                       
+                        run_example "${ccl_extra_env}" ${dir_name} ${transport} ${example}
                     elif [[ "${example}" == *"sparse_allreduce"* ]]
                     then
                         if [ "$transport" == "mpi" ];
@@ -311,6 +335,11 @@ run()
     fi
 }
 
+echo_log()
+{
+    echo -e "$*"
+}
+
 print_help()
 {
     echo_log "Usage:"
@@ -325,8 +354,7 @@ print_help()
     echo_log "CXX_COMPILER = clang++|icpc|g++|<full path to compiler>, default is clang++"
     echo_log ""
     echo_log "<options>:"
-    echo_log "    -h|-H|-help|--help"
-    echo_log "        Print help information"
+    echo_log "    -h Print help information"
     echo_log ""
 }
 
@@ -342,9 +370,9 @@ case $1 in
     fi
     shift
     ;;
-"--help|-help|-h" )
+"-h" )
     print_help
-    shift
+    exit 0
     ;;
 "gpu"|* )
     check_clang

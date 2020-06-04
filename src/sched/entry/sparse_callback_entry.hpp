@@ -72,10 +72,10 @@ protected:
     void dump_detail(std::stringstream& str) const override
     {
         ccl_logger::format(str,
-                           "i_dt ", global_data.dtypes->name(i_dtype),
+                           "i_dt ", ccl::global_data::get().dtypes->name(i_dtype),
                            ", i_cnt ", i_cnt,
                            ", i_buf ", i_buf,
-                           ", v_dt ", global_data.dtypes->name(v_dtype),
+                           ", v_dt ", ccl::global_data::get().dtypes->name(v_dtype),
                            ", v_cnt ", v_cnt,
                            ", v_buf ", v_buf,
                            ", fn ", fn,

@@ -10,9 +10,9 @@ std::map<ccl_coll_alltoall_algo,
 
 ccl_algorithm_selector<ccl_coll_alltoall>::ccl_algorithm_selector()
 {
-    if (env_data.atl_transport == ccl_atl_ofi)
+    if (ccl::global_data::env().atl_transport == ccl_atl_ofi)
         insert(main_table, 0, CCL_SELECTION_MAX_COLL_SIZE, ccl_coll_alltoall_naive);
-    else if (env_data.atl_transport == ccl_atl_mpi)
+    else if (ccl::global_data::env().atl_transport == ccl_atl_mpi)
         insert(main_table, 0, CCL_SELECTION_MAX_COLL_SIZE, ccl_coll_alltoall_direct);
 
     insert(fallback_table, 0, CCL_SELECTION_MAX_COLL_SIZE, ccl_coll_alltoall_naive);
@@ -33,4 +33,4 @@ bool ccl_algorithm_selector_helper<ccl_coll_alltoall_algo>::can_use(ccl_coll_all
 }
 
 CCL_SELECTION_DEFINE_HELPER_METHODS(ccl_coll_alltoall_algo, ccl_coll_alltoall,
-                                    env_data.alltoall_algo_raw, param.count);
+                                    ccl::global_data::env().alltoall_algo_raw, param.count);

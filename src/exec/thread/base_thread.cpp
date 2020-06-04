@@ -1,4 +1,4 @@
-#include "common/env/env.hpp"
+#include "common/global/global.hpp"
 #include "common/utils/yield.hpp"
 #include "exec/thread/base_thread.hpp"
 
@@ -14,7 +14,7 @@ ccl_status_t ccl_base_thread::start()
 
     while (!started.load(std::memory_order_relaxed))
     {
-        ccl_yield(env_data.yield_type);
+        ccl_yield(ccl::global_data::env().yield_type);
     }
     return ccl_status_success;
 }
@@ -29,7 +29,7 @@ ccl_status_t ccl_base_thread::stop()
     should_stop = true;
     while (started.load(std::memory_order_relaxed))
     {
-        ccl_yield(env_data.yield_type);
+        ccl_yield(ccl::global_data::env().yield_type);
     }
 
 

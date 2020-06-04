@@ -57,7 +57,7 @@ public:
         elem_count(cnt), dtype(), op(op),
         device_stream(stream)
     {
-        dtype = global_data.dtypes->get(dtype_in);
+        dtype = ccl::global_data::get().dtypes->get(dtype_in);
     }
 
     virtual ~base_gpu_entry()
@@ -264,7 +264,7 @@ protected:
     {
         ccl_logger::format(str,
                             class_name(),
-                            ", dt ", global_data.dtypes->name(dtype),
+                            ", dt ", ccl::global_data::get().dtypes->name(dtype),
                             ", elem_count ", elem_count,
                             ", send_buf ", send_buf,
                             ", recv_buf ", recv_buf,

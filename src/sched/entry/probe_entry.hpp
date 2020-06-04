@@ -24,8 +24,8 @@ public:
 
     void start() override
     {
-        size_t global_src = global_data.comm->get_global_rank(src);
-        atl_tag = global_data.atl_tag->create(sched->get_comm_id(), global_src,
+        size_t global_src = ccl::global_data::get().comm->get_global_rank(src);
+        atl_tag = ccl::global_data::get().atl_tag->create(sched->get_comm_id(), global_src,
                                               sched->sched_id, sched->get_op_id());
         LOG_DEBUG("PROBE entry src ", src, ", tag ", atl_tag);
         status = ccl_sched_entry_status_started;

@@ -1,6 +1,6 @@
 #pragma once
 
-#include "common/env/env.hpp"
+#include "common/global/global.hpp"
 #include "common/utils/sync_object.hpp"
 #include "common/utils/yield.hpp"
 #include "sched/entry/entry.hpp"
@@ -44,7 +44,7 @@ public:
         else
         {
             LOG_TRACE("waiting SYNC entry cnt ", counter);
-            ccl_yield(env_data.yield_type);
+            ccl_yield(ccl::global_data::env().yield_type);
         }
     }
 

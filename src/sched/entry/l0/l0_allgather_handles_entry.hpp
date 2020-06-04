@@ -223,7 +223,7 @@ protected:
     {
         ccl_logger::format(str,
                             class_name(),
-                            ", dt ", global_data.dtypes->name(dtype),
+                            ", dt ", ccl::global_data::get().dtypes->name(dtype),
                             ", cnt ", cnt,
                             ", comm_id ", sched->coll_param.comm->id(),
                             ", req ",&req,

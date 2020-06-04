@@ -1,20 +1,20 @@
 #pragma once
 
-#include "common/env/env.hpp"
+#include "common/global/global.hpp"
 #include "sched/entry/factory/entry_factory.hpp"
 
 #define CCL_CHUNKED_ENTRY_FUNCTION(entry_name, dtype, cnt, entry_expr) \
   do                                                                   \
   {                                                                    \
       LOG_DEBUG("creating chunked ", entry_name, " entry");            \
-      size_t dtype_size = dtype.size();                               \
+      size_t dtype_size = dtype.size();                                \
       size_t bytes = cnt * dtype_size;                                 \
       size_t chunk_count =                                             \
-          (bytes >= env_data.min_chunk_size &&                         \
-           bytes >= env_data.chunk_count) ?                            \
-              env_data.chunk_count : 1;                                \
+          (bytes >= ccl::global_data::env().min_chunk_size &&          \
+           bytes >= ccl::global_data::env().chunk_count) ?             \
+              ccl::global_data::env().chunk_count : 1;                 \
       while ((chunk_count > 1) &&                                      \
-             (bytes / chunk_count < env_data.min_chunk_size))          \
+        (bytes / chunk_count < ccl::global_data::env().min_chunk_size))\
       {                                                                \
           chunk_count--;                                               \
       }                                                                \

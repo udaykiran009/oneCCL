@@ -1,7 +1,9 @@
 #pragma once
 
+#include "coll/coll.hpp"
 #include "comp/comp.hpp"
 
+#include <map>
 #include <unordered_map>
 
 enum ccl_cache_key_type
@@ -69,6 +71,8 @@ public:
     bool operator== (const ccl_sched_key& k) const;
 
     void print() const;
+
+    static std::map<ccl_cache_key_type, std::string> key_type_names;
 };
 
 class ccl_sched_key_hasher

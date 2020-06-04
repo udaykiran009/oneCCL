@@ -1,4 +1,4 @@
-#include "common/env/env.hpp"
+#include "common/global/global.hpp"
 #include "sched/cache/cache.hpp"
 
 ccl_master_sched* ccl_sched_cache::find_unsafe(const ccl_sched_key& key) const
@@ -40,7 +40,7 @@ void ccl_sched_cache::release(ccl_master_sched* sched)
 
 bool ccl_sched_cache::try_flush()
 {
-    if (!env_data.enable_cache_flush)
+    if (!ccl::global_data::env().enable_cache_flush)
         return true;
 
     std::lock_guard<sched_cache_lock_t> lock{guard};

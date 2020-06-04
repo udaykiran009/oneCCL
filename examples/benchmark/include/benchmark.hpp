@@ -450,7 +450,7 @@ void print_user_options(const user_options_t& options, ccl::communicator* comm)
     std::string loop_str = find_str_val(loop_names, options.loop);
 
     PRINT_BY_ROOT(comm,
-                  "options:"
+                  "\noptions:"
                   "\n  ranks:     %zu"
                   "\n  backend:   %s"
                   "\n  loop:      %s"

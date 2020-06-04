@@ -1,4 +1,3 @@
-#include "common/global/global.hpp"
 #include "exec/thread/service_worker.hpp"
 
 ccl_service_worker::ccl_service_worker(size_t idx,

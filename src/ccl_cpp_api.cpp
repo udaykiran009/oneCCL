@@ -22,7 +22,35 @@
 namespace ccl
 {
 
-static std::atomic<size_t> env_ref_counter;
+CCL_API ccl::environment::environment()
+{
+    static auto result = global_data::get().init();
+    CCL_CHECK_AND_THROW(result, "failed to initialize CCL");
+}
+
+CCL_API ccl::environment::~environment()
+{}
+
+CCL_API ccl::environment& ccl::environment::instance()
+{
+    static ccl::environment env;
+    return env;
+}
+
+void CCL_API ccl::environment::set_resize_fn(ccl_resize_fn_t callback)
+{
+    ccl_status_t result = ccl_set_resize_fn(callback);
+    CCL_CHECK_AND_THROW(result, "failed to set resize callback");
+    return;
+}
+
+ccl_version_t CCL_API ccl::environment::get_version() const
+{
+    ccl_version_t ret;
+    ccl_status_t result = ccl_get_version(&ret);
+    CCL_CHECK_AND_THROW(result, "failed to get version");
+    return ret;
+}
 
 static ccl::stream_t& get_empty_stream()
 {
@@ -78,44 +106,6 @@ template                                                                        
 CCL_API const VALUE_TYPE& ccl::ccl_host_attr::get_value<ATTR_ID>() const;
 }
 
-CCL_API ccl::environment::environment()
-{
-    static auto result = ccl_init();
-    env_ref_counter++;
-    CCL_CHECK_AND_THROW(result, "failed to initialize ccl");
-}
-
-CCL_API ccl::environment& ccl::environment::instance()
-{
-    static thread_local bool created = false;
-    if (!created)
-    {
-        /*
-            environment destructor uses logger for ccl_finalize and it should be destroyed before logger,
-            therefore construct thread_local logger at first follows to global/static initialization rules
-        */
-        LOG_INFO("created environment");
-        created = true;
-    }
-    static thread_local std::unique_ptr<ccl::environment> env(new environment);
-    return *env;
-}
-
-void CCL_API ccl::environment::set_resize_fn(ccl_resize_fn_t callback)
-{
-    ccl_status_t result = ccl_set_resize_fn(callback);
-    CCL_CHECK_AND_THROW(result, "failed to set resize callback");
-    return;
-}
-
-ccl_version_t CCL_API ccl::environment::get_version() const
-{
-    ccl_version_t ret;
-    ccl_status_t result = ccl_get_version(&ret);
-    CCL_CHECK_AND_THROW(result, "failed to get version");
-    return ret;
-}
-
 ccl::comm_attr_t CCL_API ccl::environment::create_host_comm_attr(const ccl_host_comm_attr_t& attr) const
 {
     LOG_TRACE("Create host attributes");
@@ -147,18 +137,6 @@ STREAM_CREATOR_INSTANTIATION(cl::sycl::queue)
 CCL_API ccl::stream_t ccl::environment::create_stream() const
 {
     return stream_t(new ccl::stream(stream_provider_dispatcher::create()));
-}
-
-CCL_API ccl::environment::~environment()
-{
-    if (env_ref_counter-- == 1)
-    {
-        auto result = ccl_finalize();
-        if (result != ccl_status_success)
-        {
-            abort();
-        }
-    }
 }
 
 ccl::datatype CCL_API ccl::datatype_create(const ccl::datatype_attr* attr)

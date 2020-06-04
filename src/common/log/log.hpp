@@ -1,13 +1,16 @@
 #pragma once
 
-#include "ccl_types.hpp"
-
-#include <iostream>
-#include <iomanip>
-#include <memory>
-#include <sstream>
-#include <cstring>
 #include <assert.h>
+#include <cstring>
+#include <iomanip>
+#include <iostream>
+#include <memory>
+#include <mutex>
+#include <sstream>
+
+#include "ccl_types.hpp"
+#include "common/utils/spinlock.hpp"
+#include "common/utils/utils.hpp"
 
 #define __FILENAME__                                                        \
 ({                                                                          \
@@ -117,13 +120,14 @@ private:
  */
 class ccl_logger
 {
+    using ccl_logger_lock_t = ccl_spinlock;
+
 public:
     ccl_logger() :
         streambuf(LOGGER_BUFFER_SIZE),
         out_stream(&streambuf),
         initial_flags(out_stream.flags())
-    {
-    }
+    {}
 
     ccl_logger(const ccl_logger& other) = delete;
     ccl_logger(ccl_logger&& other) = delete;
@@ -145,6 +149,8 @@ public:
     void error(T&& first,
                Tpackage&& ... others)
     {
+        std::lock_guard<ccl_logger_lock_t> lock{guard};
+
         write_stream_wrapper(out_stream, std::cerr, "ERROR: ",
                              std::forward<T>(first), std::forward<Tpackage>(others)...);
 
@@ -159,6 +165,8 @@ public:
     void info(T&& first,
               Tpackage&& ... others)
     {
+        std::lock_guard<ccl_logger_lock_t> lock{guard};
+
         write_stream_wrapper(out_stream, std::cout, std::forward<T>(first),
                              std::forward<Tpackage>(others)...);
     }
@@ -167,6 +175,8 @@ public:
     void debug(T&& first,
                Tpackage&& ... others)
     {
+        std::lock_guard<ccl_logger_lock_t> lock{guard};
+
         write_stream_wrapper(out_stream, std::cout, std::forward<T>(first),
                              std::forward<Tpackage>(others)...);
     }
@@ -175,6 +185,8 @@ public:
     void trace(T&& first,
                Tpackage&& ... others)
     {
+        std::lock_guard<ccl_logger_lock_t> lock{guard};
+
         write_stream_wrapper(out_stream, std::cout, std::forward<T>(first),
                              std::forward<Tpackage>(others)...);
     }
@@ -200,6 +212,8 @@ private:
     ccl_streambuf streambuf;
     std::ostream out_stream;
     std::ios::fmtflags initial_flags;
+
+    ccl_logger_lock_t guard{};
 
     template<typename stream, typename T>
     static void write_stream(stream& ss,
@@ -239,7 +253,7 @@ private:
     static void write_backtrace(std::ostream& str);
 };
 
-extern thread_local ccl_logger logger;
+extern ccl_logger logger;
 
 #define LOG_ERROR(...)                                                                                      \
 {                                                                                                           \

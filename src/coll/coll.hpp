@@ -1,10 +1,10 @@
 #pragma once
 
+#include "coll/algorithms/algorithms_enum.hpp"
 #include "common/comm/comm.hpp"
 #include "common/stream/stream.hpp"
 #include "common/datatype/datatype.hpp"
 #include "common/utils/buffer.hpp"
-#include "common/global/global.hpp"
 
 #ifdef CCL_ENABLE_SYCL
 #include <CL/sycl.hpp>

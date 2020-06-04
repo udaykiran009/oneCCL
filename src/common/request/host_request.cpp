@@ -26,7 +26,7 @@ void host_request_impl::wait()
 {
     if (!completed)
     {
-        ccl_wait_impl(global_data.executor.get(), req);
+        ccl_wait_impl(ccl::global_data::get().executor.get(), req);
         completed = true;
     }
 }
@@ -35,7 +35,7 @@ bool host_request_impl::test()
 {
     if (!completed)
     {
-        completed = ccl_test_impl(global_data.executor.get(), req);
+        completed = ccl_test_impl(ccl::global_data::get().executor.get(), req);
     }
     return completed;
 }

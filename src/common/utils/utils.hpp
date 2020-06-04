@@ -14,9 +14,18 @@
 #include <stdlib.h>
 #include <time.h>
 #include <sstream>
+#include <vector>
 
 #include "common/utils/spinlock.hpp"
+
 /* common */
+
+#ifndef gettid
+#include <sys/syscall.h>
+#include <sys/types.h>
+#include <unistd.h>
+#define gettid() syscall(SYS_gettid)
+#endif
 
 #define CCL_CALL(expr)                                   \
   do {                                                   \
@@ -161,6 +170,23 @@ container tokenize(const std::string& input, char delimeter)
         ret.push_back(value);
     }
     return ret;
+}
+
+template<typename T>
+void ccl_str_to_array(const char* input,
+                      std::vector<T>& output,
+                      char delimiter)
+{
+    std::stringstream ss(input);
+    T temp{};
+    while (ss >> temp)
+    {
+        output.push_back(temp);
+        if (ss.peek() == delimiter)
+        {
+            ss.ignore();
+        }
+    }
 }
 
 //TODO naite implementation, use TBB

@@ -1,5 +1,5 @@
 #include "coll/selection/selection.hpp"
-#include "common/env/env.hpp"
+#include "common/global/global.hpp"
 #include "parallelizer/parallelizer.hpp"
 #include "sched/entry/coll/coll_entry_helper.hpp"
 #include "sched/entry/factory/entry_factory.hpp"
@@ -43,7 +43,7 @@ ccl_status_t ccl_parallelizer_prologue_get_buf(const void* ctx, void* field_ptr)
 {
     ccl_parallelizer_prologue_ctx* pctx = (ccl_parallelizer_prologue_ctx*)ctx;
     ccl_buffer* buf_ptr = (ccl_buffer*)field_ptr;
-    size_t dtype_size = global_data.dtypes->get(pctx->dt_idx).size();
+    size_t dtype_size = ccl::global_data::get().dtypes->get(pctx->dt_idx).size();
     buf_ptr->set(pctx->buf, pctx->count * dtype_size,
                  pctx->part_idx * (pctx->count / pctx->part_count) * dtype_size);
     return ccl_status_success;
@@ -63,7 +63,7 @@ ccl_status_t ccl_parallelizer_prologue_get_dtype(const void* ctx, void* field_pt
 {
     ccl_parallelizer_prologue_ctx* pctx = (ccl_parallelizer_prologue_ctx*)ctx;
     ccl_datatype* dtype_ptr = (ccl_datatype*)field_ptr;
-    *dtype_ptr = global_data.dtypes->get(pctx->dt_idx);
+    *dtype_ptr = ccl::global_data::get().dtypes->get(pctx->dt_idx);
     return ccl_status_success;
 }
 
@@ -72,6 +72,8 @@ ccl_status_t ccl_parallelizer::process(ccl_master_sched* sched)
     /* TODO: split on per-collective classes */
 
     CCL_ASSERT(sched);
+
+    ccl::global_data& data = ccl::global_data::get();
 
     ccl_status_t status = ccl_status_success;
     size_t part_count = 1, idx, base_count, dtype_size, comm_size;
@@ -120,14 +122,14 @@ ccl_status_t ccl_parallelizer::process(ccl_master_sched* sched)
             part_count = max_data_partition_count;
             break;
         case ccl_coll_bcast:
-            if (env_data.bcast_part_count != CCL_ENV_SIZET_NOT_SPECIFIED)
+            if (ccl::global_data::env().bcast_part_count != CCL_ENV_SIZET_NOT_SPECIFIED)
             {
-                part_count = env_data.bcast_part_count;
+                part_count = ccl::global_data::env().bcast_part_count;
                 break;
             }
         case ccl_coll_reduce:
         case ccl_coll_allreduce:
-            if (coll_param.count * dtype_size <= env_data.max_short_size)
+            if (coll_param.count * dtype_size <= ccl::global_data::env().max_short_size)
             {
                 part_count = 1;
             }
@@ -137,7 +139,7 @@ ccl_status_t ccl_parallelizer::process(ccl_master_sched* sched)
             }
             break;
         case ccl_coll_alltoall:
-            a2a_algo = global_data.algorithm_selector->get<ccl_coll_alltoall>(selector_param);
+            a2a_algo = data.algorithm_selector->get<ccl_coll_alltoall>(selector_param);
             if (a2a_algo == ccl_coll_alltoall_naive)
             {
                 part_count = comm_size;
@@ -148,7 +150,7 @@ ccl_status_t ccl_parallelizer::process(ccl_master_sched* sched)
             }
             break;
         case ccl_coll_alltoallv:
-            a2av_algo = global_data.algorithm_selector->get<ccl_coll_alltoallv>(selector_param);
+            a2av_algo = data.algorithm_selector->get<ccl_coll_alltoallv>(selector_param);
             coll_param_copy->a2av_send_counts.assign((size_t*)coll_param.send_counts,
                                                      (size_t*)coll_param.send_counts + comm_size);
             coll_param_copy->a2av_recv_counts.assign((size_t*)coll_param.recv_counts,
@@ -165,7 +167,7 @@ ccl_status_t ccl_parallelizer::process(ccl_master_sched* sched)
             break;
         case ccl_coll_allgatherv:
             selector_param.vector_buf = coll_attr->vector_buf;
-            ag_algo = global_data.algorithm_selector->get<ccl_coll_allgatherv>(selector_param);
+            ag_algo = data.algorithm_selector->get<ccl_coll_allgatherv>(selector_param);
             coll_param_copy->ag_recv_counts.assign((size_t*)coll_param.recv_counts,
                                                    (size_t*)coll_param.recv_counts + comm_size);
 
@@ -192,7 +194,7 @@ ccl_status_t ccl_parallelizer::process(ccl_master_sched* sched)
                     selector_param.ctype = ccl_coll_bcast;
                     selector_param.count = sched->coll_param.send_count;
                     selector_param.dtype = dtype;
-                    ag_mbcast_algo = global_data.algorithm_selector->get<ccl_coll_bcast>(selector_param);
+                    ag_mbcast_algo = data.algorithm_selector->get<ccl_coll_bcast>(selector_param);
                     if (ag_mbcast_algo == ccl_coll_bcast_direct)
                     {
                         /*

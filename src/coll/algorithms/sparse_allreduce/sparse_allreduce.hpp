@@ -72,8 +72,8 @@
                   break;                                                \
               default:                                                  \
                   CCL_FATAL("value datatype ",                          \
-                            global_data.dtypes->name(value_dtype),      \
-                            " is not supported yet");                   \
+                      ccl::global_data::get().dtypes->name(value_dtype),\
+                      " is not supported yet");                         \
                   return ccl_status_invalid_arguments;                  \
          }                                                              \
     } while (0)

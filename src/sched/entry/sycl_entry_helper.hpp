@@ -18,9 +18,13 @@ struct sycl_buffer_visitor
     {
         if (index == requested_dtype.idx())
         {
-            LOG_DEBUG("Visitor matched index: ", index, ", ccl: ", global_data.dtypes->name(requested_dtype), ", in: ", __PRETTY_FUNCTION__);
+            LOG_DEBUG("visitor matched index: ", index,
+                ", ccl: ", ccl::global_data::get().dtypes->name(requested_dtype),
+                ", in: ", __PRETTY_FUNCTION__);
+
             size_t bytes = cnt_requested * requested_dtype.size();
-            auto out_buf_acc = static_cast<specific_sycl_buffer*>(requested_buf.get_ptr(bytes))->template get_access<access_mode>();
+            auto out_buf_acc =
+                static_cast<specific_sycl_buffer*>(requested_buf.get_ptr(bytes))->template get_access<access_mode>();
             CCL_ASSERT(cnt_requested <= out_buf_acc.get_count());
             void* out_pointer = out_buf_acc.get_pointer();
 
@@ -28,7 +32,9 @@ struct sycl_buffer_visitor
         }
         else
         {
-            LOG_TRACE("Visitor skipped index: ", index, ", ccl: ", global_data.dtypes->name(requested_dtype), ", in: ", __PRETTY_FUNCTION__);
+            LOG_TRACE("visitor skipped index: ", index,
+                ", ccl: ", ccl::global_data::get().dtypes->name(requested_dtype),
+                ", in: ", __PRETTY_FUNCTION__);
         }
 
     }

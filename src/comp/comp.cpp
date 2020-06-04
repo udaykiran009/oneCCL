@@ -1,7 +1,7 @@
 #include "comp/bfp16/bfp16.hpp"
 #include "comp/comp.hpp"
 #include "common/log/log.hpp"
-#include "common/env/env.hpp"
+#include "common/global/global.hpp"
 #include "common/utils/utils.hpp"
 
 #define CCL_REDUCE(type)                                                \
@@ -65,7 +65,7 @@ ccl_status_t ccl_comp_reduce(const void* in_buf, size_t in_count, void* inout_bu
             CCL_REDUCE(int);
             break;
         case ccl_dtype_bfp16:
-            if (global_data.bfp16_impl_type == ccl_bfp16_none)
+            if (ccl::global_data::get().bfp16_impl_type == ccl_bfp16_none)
                 CCL_FATAL("CCL doesn't support reductions in BFP16 on this CPU");
             ccl_bfp16_reduce(in_buf, in_count, inout_buf, out_count, reduction);
             break;

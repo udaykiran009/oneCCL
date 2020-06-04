@@ -2,7 +2,7 @@
 
 #include "coll/algorithms/algorithms.hpp"
 #include "coll/coll.hpp"
-#include "common/env/env.hpp"
+#include "common/global/global.hpp"
 
 #include <map>
 #include <string>

@@ -12,12 +12,12 @@ std::map<ccl_coll_sparse_allreduce_algo,
 ccl_algorithm_selector<ccl_coll_sparse_allreduce>::ccl_algorithm_selector()
 {
     
-    if (env_data.atl_transport == ccl_atl_ofi)
+    if (ccl::global_data::env().atl_transport == ccl_atl_ofi)
     {
         insert(main_table, 0, CCL_SELECTION_MAX_COLL_SIZE, ccl_coll_sparse_allreduce_mask);
         insert(fallback_table, 0, CCL_SELECTION_MAX_COLL_SIZE, ccl_coll_sparse_allreduce_mask);
     }
-    else if (env_data.atl_transport == ccl_atl_mpi)
+    else if (ccl::global_data::env().atl_transport == ccl_atl_mpi)
     {
         insert(main_table, 0, CCL_SELECTION_MAX_COLL_SIZE, ccl_coll_sparse_allreduce_ring);
         insert(fallback_table, 0, CCL_SELECTION_MAX_COLL_SIZE, ccl_coll_sparse_allreduce_ring);
@@ -42,7 +42,7 @@ bool ccl_algorithm_selector_helper<ccl_coll_sparse_allreduce_algo>::can_use(ccl_
 
     bool can_use = true;
 
-    if (env_data.atl_transport == ccl_atl_mpi &&
+    if (ccl::global_data::env().atl_transport == ccl_atl_mpi &&
         algo != ccl_coll_sparse_allreduce_ring)
         can_use = false;
 
@@ -50,4 +50,4 @@ bool ccl_algorithm_selector_helper<ccl_coll_sparse_allreduce_algo>::can_use(ccl_
 }
 
 CCL_SELECTION_DEFINE_HELPER_METHODS(ccl_coll_sparse_allreduce_algo, ccl_coll_sparse_allreduce,
-                                    env_data.sparse_allreduce_algo_raw, 0);
+                                    ccl::global_data::env().sparse_allreduce_algo_raw, 0);

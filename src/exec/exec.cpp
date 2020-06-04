@@ -1,6 +1,7 @@
 #include "exec/exec.hpp"
 #include "exec/thread/service_worker.hpp"
 #include "exec/thread/worker.hpp"
+#include "common/env/env.hpp"
 #include "unordered_coll/unordered_coll.hpp"
 #include "sched/extra_sched.hpp"
 
@@ -19,7 +20,7 @@ size_t ccl_executor::calculate_atl_ep_count(size_t worker_count)
 {
     size_t ep_count = worker_count;
 
-    if (env_data.priority_mode != ccl_priority_none)
+    if (ccl::global_data::env().priority_mode != ccl_priority_none)
     {
         ep_count *= CCL_PRIORITY_BUCKET_COUNT;
     }
@@ -37,16 +38,16 @@ std::unique_ptr<ccl_sched_queue> ccl_executor::create_sched_queue(size_t idx, si
 
 ccl_executor::ccl_executor(const char* main_addr)
 {
-    get_worker_idx_fn = (env_data.enable_fusion || env_data.enable_unordered_coll) ?
+    get_worker_idx_fn = (ccl::global_data::env().enable_fusion || ccl::global_data::env().enable_unordered_coll) ?
         &ccl_executor::get_worker_idx_by_sched_id :
         &ccl_executor::get_worker_idx_round_robin;
 
-    auto worker_count = env_data.worker_count;
+    auto worker_count = ccl::global_data::env().worker_count;
     workers.reserve(worker_count);
     auto ep_count = calculate_atl_ep_count(worker_count);
 
     atl_attr.ep_count = ep_count;
-    atl_attr.enable_shm = env_data.enable_shm;
+    atl_attr.enable_shm = ccl::global_data::env().enable_shm;
 
     /*
         TODO:
@@ -54,11 +55,16 @@ ccl_executor::ccl_executor(const char* main_addr)
         need to refactor global objects dependencies
         don't use ring_rma till that
     */
-    atl_attr.enable_rma = 0; // env_data.enable_rma;
+    atl_attr.enable_rma = 0; // ccl::global_data::env().enable_rma;
 
     LOG_INFO("init ATL, requested ep_count ", atl_attr.ep_count);
 
-    atl_status_t atl_status = atl_init(ccl_atl_transport_to_str(env_data.atl_transport),
+    ccl::env_data& env = ccl::global_data::env();
+
+    auto transport_name = ccl::env_data::str_by_enum(ccl::env_data::atl_transport_names,
+                                                     env.atl_transport);
+
+    atl_status_t atl_status = atl_init(transport_name.c_str(),
                                        nullptr, nullptr,
                                        &atl_attr, &atl_ctx, main_addr);
 
@@ -67,7 +73,7 @@ ccl_executor::ccl_executor(const char* main_addr)
 
     atl_eps = atl_get_eps(atl_ctx);
     atl_proc_coord = atl_get_proc_coord(atl_ctx);
-    global_data.is_ft_enabled = atl_is_resize_enabled(atl_ctx);
+    ccl::global_data::get().is_ft_enabled = atl_is_resize_enabled(atl_ctx);
 
     LOG_INFO("global_proc_idx ", atl_proc_coord->global_idx,
              ", global_proc_count ", atl_proc_coord->global_count,
@@ -86,41 +92,41 @@ ccl_executor::ccl_executor(const char* main_addr)
                  "\n  max_order_waw_size:     ", atl_attr.max_order_waw_size);
     }
 
-    CCL_THROW_IF_NOT(ccl_env_parse_worker_affinity(get_local_proc_idx(),
-                                                   get_local_proc_count()));
+    CCL_THROW_IF_NOT(env.env_2_worker_affinity(get_local_proc_idx(),
+                                               get_local_proc_count()));
 
     start_workers();
 }
 
 void ccl_executor::start_workers()
 {
-    auto worker_count = env_data.worker_count;
+    auto worker_count = ccl::global_data::env().worker_count;
     auto ep_count = calculate_atl_ep_count(worker_count);
 
-    if (env_data.worker_offload)
+    if (ccl::global_data::env().worker_offload)
     {
-        CCL_THROW_IF_NOT(env_data.worker_affinity.size() >= get_local_proc_count() * worker_count,
-                         "unexpected worker affinity length ", env_data.worker_affinity.size(),
+        CCL_THROW_IF_NOT(ccl::global_data::env().worker_affinity.size() >= get_local_proc_count() * worker_count,
+                         "unexpected worker affinity length ", ccl::global_data::env().worker_affinity.size(),
                          ", should be ", get_local_proc_count() * worker_count);
     }
 
     size_t ep_per_worker = ep_count / worker_count;
     for (size_t idx = 0; idx < worker_count; idx++)
     {
-        if (env_data.enable_fusion && idx == 0)
+        if (ccl::global_data::env().enable_fusion && idx == 0)
         {
             LOG_DEBUG("create service worker");
             workers.emplace_back(new ccl_service_worker(idx, create_sched_queue(idx, ep_per_worker),
-                                                        *global_data.fusion_manager));
+                                                        *ccl::global_data::get().fusion_manager));
         }
         else
         {
             workers.emplace_back(new ccl_worker(idx, create_sched_queue(idx, ep_per_worker)));
         }
 
-        if (env_data.worker_offload)
+        if (ccl::global_data::env().worker_offload)
         {
-            size_t affinity = env_data.worker_affinity[get_local_proc_idx() * worker_count + idx];
+            size_t affinity = ccl::global_data::env().worker_affinity[get_local_proc_idx() * worker_count + idx];
             CCL_THROW_IF_NOT(workers.back()->start() == ccl_status_success,
                              "failed to start worker # ", idx);
             CCL_THROW_IF_NOT(workers.back()->pin(affinity) == ccl_status_success,
@@ -148,7 +154,7 @@ ccl_executor::~ccl_executor()
 
     for (size_t idx = 0; idx < workers.size(); idx++)
     {
-        if (env_data.worker_offload)
+        if (ccl::global_data::env().worker_offload)
         {
             if (workers[idx]->stop() != ccl_status_success)
             {
@@ -192,7 +198,7 @@ void ccl_executor::lock_workers()
         }
         else
         {
-            ccl_yield(env_data.yield_type);
+            ccl_yield(ccl::global_data::env().yield_type);
         }
     }
 }
@@ -236,13 +242,18 @@ ccl_status_t ccl_executor::create_listener(ccl_resize_fn_t resize_func)
     }
 
     if (resize_func != NULL)
-        atl_set_resize_function(global_data.executor->get_atl_ctx(), (atl_resize_fn_t) resize_func);
+        atl_set_resize_function(ccl::global_data::get().executor->get_atl_ctx(), (atl_resize_fn_t) resize_func);
 
-    listener = std::unique_ptr<ccl_listener>(new ccl_listener(&global_data));
+    listener = std::unique_ptr<ccl_listener>(new ccl_listener());
     listener->start();
 
     /* pin listener thread together with first worker thread */
-    size_t affinity = env_data.worker_affinity[get_local_proc_idx() * env_data.worker_count];
+
+    auto worker_affinity = ccl::global_data::env().worker_affinity;
+    size_t affinity_idx = get_local_proc_idx() * ccl::global_data::env().worker_count;
+    CCL_THROW_IF_NOT(worker_affinity.size() > affinity_idx);
+
+    size_t affinity = worker_affinity[affinity_idx];
     listener->pin(affinity);
     LOG_DEBUG("started listener");
 
@@ -298,9 +309,9 @@ bool ccl_executor::test(const ccl_request* req)
 void ccl_executor::do_work()
 {
     size_t processed_count;
-    if (env_data.worker_offload)
+    if (ccl::global_data::env().worker_offload)
     {
-        ccl_yield(env_data.yield_type);
+        ccl_yield(ccl::global_data::env().yield_type);
     }
     else
     {

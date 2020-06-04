@@ -1,5 +1,4 @@
 #include "common/comm/atl_tag.hpp"
-#include "common/global/global.hpp"
 #include "exec/exec.hpp"
 
 uint64_t ccl_atl_tag::create(ccl_comm_id_t comm_id, size_t rank, ccl_sched_id_t sched_id, ccl_op_id_t op_id)

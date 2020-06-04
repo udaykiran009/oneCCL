@@ -1,11 +1,11 @@
 #include "coll/algorithms/algorithms.hpp"
 #include "coll/algorithms/allreduce/allreduce_2d.hpp"
-#include "common/env/env.hpp"
+#include "common/global/global.hpp"
 #include "sched/entry/factory/entry_factory.hpp"
 
 ccl_allreduce_2d_builder::ccl_allreduce_2d_builder()
 {
-    size_t vector_size = global_data.comm->size();
+    size_t vector_size = ccl::global_data::get().comm->size();
     std::vector<int> first_dim_colors(vector_size), second_dim_colors(vector_size);
 
     for (size_t idx = 0; idx < vector_size; idx++)
@@ -16,14 +16,14 @@ ccl_allreduce_2d_builder::ccl_allreduce_2d_builder()
 
     first_dim_comm =
         std::shared_ptr<ccl_comm>(ccl_comm::create_with_colors(first_dim_colors,
-                                                               global_data.comm_ids.get(),
-                                                               global_data.comm.get()));
+                                                               ccl::global_data::get().comm_ids.get(),
+                                                               ccl::global_data::get().comm.get()));
     second_dim_comm =
         std::shared_ptr<ccl_comm>(ccl_comm::create_with_colors(second_dim_colors,
-                                                               global_data.comm_ids.get(),
-                                                               global_data.comm.get()));
+                                                               ccl::global_data::get().comm_ids.get(),
+                                                               ccl::global_data::get().comm.get()));
 
-    if (global_data.executor->get_global_proc_idx() == 0)
+    if (ccl::global_data::get().executor->get_global_proc_idx() == 0)
     {
         std::string first_dim_ranks, second_dim_ranks;
         for (size_t idx = 0; idx < first_dim_comm->size(); idx++)
@@ -59,8 +59,8 @@ ccl_allreduce_2d_add_allreduce_allgather(ccl_sched* sched,
                                          size_t chunk_idx,
                                          size_t chunk_count)
 {
-    ccl_comm* first_dim_comm = global_data.allreduce_2d_builder->get_first_dim_comm();
-    ccl_comm* second_dim_comm = global_data.allreduce_2d_builder->get_second_dim_comm();
+    ccl_comm* first_dim_comm = ccl::global_data::get().allreduce_2d_builder->get_first_dim_comm();
+    ccl_comm* second_dim_comm = ccl::global_data::get().allreduce_2d_builder->get_second_dim_comm();
 
     size_t dtype_size = dtype.size();
     size_t main_chunk_size = count / chunk_count;
@@ -100,7 +100,7 @@ ccl_allreduce_2d_add_reduce_scatter_allreduce_allgather(ccl_sched* sched,
                                                         size_t chunk_idx,
                                                         size_t chunk_count)
 {
-    ccl_comm* first_dim_comm = global_data.allreduce_2d_builder->get_first_dim_comm();
+    ccl_comm* first_dim_comm = ccl::global_data::get().allreduce_2d_builder->get_first_dim_comm();
 
     size_t dtype_size = dtype.size();
     size_t main_chunk_size = count / chunk_count;
@@ -151,7 +151,7 @@ ccl_status_t ccl_allreduce_2d_builder::build(ccl_sched* sched,
 
     ccl_status_t status = ccl_status_success;
 
-    size_t chunk_count = env_data.ar2d_chunk_count;
+    size_t chunk_count = ccl::global_data::env().ar2d_chunk_count;
 
     if (chunk_count == 0)
     {

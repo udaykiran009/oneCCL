@@ -1,6 +1,5 @@
 #include "sched/sched_base.hpp"
 #include "common/global/global.hpp"
-#include "common/env/env.hpp"
 
 std::string to_string(ccl_sched_add_mode mode)
 {
@@ -78,7 +77,7 @@ void ccl_sched_base::update_coll_param_and_attr(const ccl_coll_param& param,
         coll_param.sparse_param.recv_val_buf = param.sparse_param.recv_val_buf;
     }
 
-    if (env_data.priority_mode == ccl_priority_direct)
+    if (ccl::global_data::env().priority_mode == ccl_priority_direct)
     {
         coll_attr.priority = attr.priority;
     }
@@ -88,7 +87,7 @@ size_t ccl_sched_base::get_priority() const
 {
     size_t priority = 0;
 
-    switch (env_data.priority_mode)
+    switch (ccl::global_data::env().priority_mode)
     {
         case ccl_priority_none:
             priority = 0;
@@ -98,7 +97,7 @@ size_t ccl_sched_base::get_priority() const
             priority = coll_attr.priority;
             break;
         default:
-            CCL_FATAL("unexpected priority_mode ", env_data.priority_mode);
+            CCL_FATAL("unexpected priority_mode ", ccl::global_data::env().priority_mode);
             break;
     }
 

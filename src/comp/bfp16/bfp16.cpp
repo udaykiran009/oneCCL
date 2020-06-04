@@ -36,7 +36,7 @@ void ccl_bfp16_reduce(const void* in_buf, size_t in_cnt,
     }
 
     ccl_bfp16_reduce_impl(in_buf, inout_buf, in_cnt,
-                          op, global_data.bfp16_impl_type);
+                          op, ccl::global_data::get().bfp16_impl_type);
 }
 
 #else /* CCL_BFP16_COMPILER */

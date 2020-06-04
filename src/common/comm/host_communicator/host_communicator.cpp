@@ -13,21 +13,23 @@ host_communicator::host_communicator(const ccl::comm_attr_t& attr) :
     comm_attr(attr),
     comm_impl()
 {
+    ccl::global_data& data = ccl::global_data::get();
+
     // legacy implementation
     if (!attr)
     {
         comm_impl = std::shared_ptr<ccl_comm>(
-              new ccl_comm(global_data.comm->rank(),
-                           global_data.comm->size(),
-                           global_data.comm_ids->acquire()));
+              new ccl_comm(data.comm->rank(),
+                           data.comm->size(),
+                           data.comm_ids->acquire()));
         comm_attr = ccl::environment::instance().create_host_comm_attr();
     }
     else
     {
         comm_impl = std::shared_ptr<ccl_comm>(
             ccl_comm::create_with_color(attr->get_value<ccl_host_attributes::ccl_host_color>(),
-                                        global_data.comm_ids.get(),
-                                        global_data.comm.get()));
+                                        data.comm_ids.get(),
+                                        data.comm.get()));
     }
 
     comm_rank = comm_impl->rank();

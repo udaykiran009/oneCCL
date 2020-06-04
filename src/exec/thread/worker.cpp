@@ -1,4 +1,3 @@
-#include "common/env/env.hpp"
 #include "common/global/global.hpp"
 #include "exec/exec.hpp"
 #include "exec/thread/worker.hpp"
@@ -165,7 +164,7 @@ ccl_status_t ccl_worker::process_sched_bin(ccl_sched_bin* bin, size_t& completed
 
     /* ensure communication progress */
     atl_status_t atl_status = atl_ep_poll(bin->get_atl_ep());
-    if (global_data.is_ft_enabled)
+    if (ccl::global_data::get().is_ft_enabled)
     {
         if (atl_status != ATL_STATUS_SUCCESS)
             return ccl_status_blocked_due_to_resize;
@@ -223,11 +222,11 @@ static void* ccl_worker_func(void* args)
 
     size_t iter_count = 0;
     size_t processed_count = 0;
-    size_t spin_count = env_data.spin_count;
-    size_t max_spin_count = env_data.spin_count;
+    size_t max_spin_count = ccl::global_data::env().spin_count;
+    size_t spin_count = max_spin_count;
     ccl_status_t ret;
 
-    global_data.is_worker_thread = true;
+    ccl::global_data::get().is_worker_thread = true;
     worker->started = true;
 
     do
@@ -237,7 +236,7 @@ static void* ccl_worker_func(void* args)
             // thread is non-interruptible from this point
             ret = worker->do_work(processed_count);
 
-            if (global_data.is_ft_enabled &&
+            if (ccl::global_data::get().is_ft_enabled &&
                 unlikely(ret == ccl_status_blocked_due_to_resize || iter_count % CCL_WORKER_CHECK_UPDATE_ITERS == 0))
             {
                 if (worker->should_lock.load(std::memory_order_acquire))
@@ -246,7 +245,7 @@ static void* ccl_worker_func(void* args)
                     worker->is_locked = true;
                     while (worker->should_lock.load(std::memory_order_relaxed))
                     {
-                        ccl_yield(env_data.yield_type);
+                        ccl_yield(ccl::global_data::env().yield_type);
                     }
                     worker->is_locked = false;
                 }
@@ -278,7 +277,7 @@ static void* ccl_worker_func(void* args)
             spin_count--;
             if (!spin_count)
             {
-                ccl_yield(env_data.yield_type);
+                ccl_yield(ccl::global_data::env().yield_type);
                 spin_count = 1;
             }
         }

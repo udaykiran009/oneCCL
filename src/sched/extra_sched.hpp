@@ -1,7 +1,7 @@
 #pragma once
-#include "sched/sched.hpp"
-#include "common/env/env.hpp"
 
+#include "sched/sched.hpp"
+#include "common/global/global.hpp"
 
 class ccl_extra_sched : public ccl_request, public ccl_sched
 {
@@ -28,7 +28,7 @@ public:
     
     void dump(std::ostream& out) const
     {
-        if (!env_data.sched_dump)
+        if (!ccl::global_data::env().sched_dump)
         {
             return;
         }

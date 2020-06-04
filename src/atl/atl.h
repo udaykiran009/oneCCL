@@ -9,6 +9,9 @@
 #endif
 
 #ifndef gettid
+#include <sys/syscall.h>
+#include <sys/types.h>
+#include <unistd.h>
 #define gettid() syscall(SYS_gettid)
 #endif
 

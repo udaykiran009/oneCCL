@@ -2,7 +2,6 @@
 
 #include "atl/atl.h"
 #include "coll/coll.hpp"
-#include "common/env/env.hpp"
 #include "common/global/global.hpp"
 #include "common/request/request.hpp"
 #include "exec/thread/listener.hpp"
@@ -110,7 +109,7 @@ inline void ccl_release_sched(ccl_master_sched *sched)
 {
     if (sched->coll_attr.to_cache)
     {
-        global_data.sched_cache->release(sched);
+        ccl::global_data::get().sched_cache->release(sched);
     }
     else
     {
