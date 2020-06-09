@@ -6,9 +6,9 @@ template<ccl_datatype_t ccl_idx_type>
 struct sparse_algo_iterator
 {
     template<size_t i, typename v_type>
-    void invoke()
+    void invoke(int sparse_mode)
     {
-        sparse_test_run<ccl_idx_type, v_type::ccl_type::value>();
+        sparse_test_run<ccl_idx_type, v_type::ccl_type::value>(sparse_mode);
     }
 };
 
@@ -17,9 +17,10 @@ struct sparse_value_type_iterator
 {
     using types = std::tuple<ccl::type_info<ccl_value_type>...>;
     template<size_t index, typename i_type>
-    void invoke()
+    void invoke(int sparse_mode)
     {
-        ccl_tuple_for_each_indexed<types>(sparse_algo_iterator<i_type::ccl_type::value>());
+        ccl_tuple_for_each_indexed<types>(sparse_algo_iterator<i_type::ccl_type::value>(),
+                                          sparse_mode);
     }
 };
 
@@ -29,9 +30,12 @@ struct sparce_index_types
     using types = std::tuple<ccl::type_info<ccl_index_type>...>;
 };
 
-int main()
+// use -f command line parameter to run example with flag=0 and then with flag=1
+int main(int argc, char** argv)
 {
     test_init();
+
+    int sparse_mode = argc == 3 && std::string(argv[1]) == "-f" ? std::atoi(argv[2]) : 0;
 
     using supported_sparce_index_types = sparce_index_types<ccl_dtype_char,
                                                             ccl_dtype_int,
@@ -55,7 +59,8 @@ int main()
 #endif /* CCL_BFP16_COMPILER */
 
     // run test for each combination of supported indexes and values
-    ccl_tuple_for_each_indexed<supported_sparce_index_types>(supported_sparce_value_types());
+    ccl_tuple_for_each_indexed<supported_sparce_index_types>(supported_sparce_value_types(),
+                                                             sparse_mode);
 
     test_finalize();
 

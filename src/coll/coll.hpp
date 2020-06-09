@@ -45,6 +45,7 @@ struct ccl_coll_attr
     ccl_reduction_fn_t reduction_fn = nullptr;
     ccl_sparse_allreduce_completion_fn_t sparse_allreduce_completion_fn = nullptr;
     const void* sparse_allreduce_completion_ctx = nullptr;
+    uint8_t sparse_mode = 0;
     size_t priority = 0;
     int synchronous = 0;
     int to_cache = 0;

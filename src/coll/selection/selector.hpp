@@ -30,6 +30,8 @@ struct ccl_selector_param
     const size_t* send_counts;
     const size_t* recv_counts;
     int vector_buf;
+
+    uint8_t sparse_mode;
 };
 
 template<ccl_coll_type coll_id>

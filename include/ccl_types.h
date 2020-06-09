@@ -1,5 +1,6 @@
 #pragma once
 
+#include "stdint.h"
 #include "stdlib.h"
 #include "ccl_config.h"
 
@@ -82,6 +83,8 @@ typedef struct
     const size_t offset;
 } ccl_fn_context_t;
 
+#define CCL_SPARSE_COALESCE_NONE 0b00000001
+
 /* comm_size */
 typedef ccl_resize_action_t(*ccl_resize_fn_t)(size_t comm_size);
 
@@ -121,6 +124,11 @@ typedef struct
     /* Sparse_allreduce */
     ccl_sparse_allreduce_completion_fn_t sparse_allreduce_completion_fn;
     const void* sparse_allreduce_completion_ctx;
+    /* Use this variable to set sparse_allreduce in different modes and its combinations:
+       CCL_SPARSE_COALESCE_NONE = 1 disables coalesce function in sparse_allreduce,
+                                  allgathered data is returned
+    */
+    uint8_t sparse_mode;
 
     /* Priority for collective operation */
     size_t priority;

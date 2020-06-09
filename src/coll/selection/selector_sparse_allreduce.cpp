@@ -15,7 +15,7 @@ ccl_algorithm_selector<ccl_coll_sparse_allreduce>::ccl_algorithm_selector()
     if (ccl::global_data::env().atl_transport == ccl_atl_ofi)
     {
         insert(main_table, 0, CCL_SELECTION_MAX_COLL_SIZE, ccl_coll_sparse_allreduce_mask);
-        insert(fallback_table, 0, CCL_SELECTION_MAX_COLL_SIZE, ccl_coll_sparse_allreduce_mask);
+        insert(fallback_table, 0, CCL_SELECTION_MAX_COLL_SIZE, ccl_coll_sparse_allreduce_3_allgatherv);
     }
     else if (ccl::global_data::env().atl_transport == ccl_atl_mpi)
     {
@@ -44,7 +44,14 @@ bool ccl_algorithm_selector_helper<ccl_coll_sparse_allreduce_algo>::can_use(ccl_
 
     if (ccl::global_data::env().atl_transport == ccl_atl_mpi &&
         algo != ccl_coll_sparse_allreduce_ring)
+    {
         can_use = false;
+    }
+    else if (param.sparse_mode & CCL_SPARSE_COALESCE_NONE &&
+        algo != ccl_coll_sparse_allreduce_3_allgatherv)
+    {
+        can_use = false;
+    }    
 
     return can_use;
 }

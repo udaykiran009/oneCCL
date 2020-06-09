@@ -301,13 +301,19 @@ run()
                         if [ "$transport" == "mpi" ];
                         then
                             sparse_algo_set="ring"
+                            sparse_mode_set = "0"
                         else
                             sparse_algo_set="ring mask allgatherv"
+                            sparse_mode_set = "0 1"
                         fi
                         for sparse_algo in ${sparse_algo_set};
                         do
                             ccl_extra_env="CCL_SPARSE_ALLREDUCE=$sparse_algo ${ccl_transport_env}"
-                            run_example "${ccl_extra_env}" ${dir_name} ${transport} ${example}
+                            for sparse_mode in ${sparse_mode_set};
+                            do
+                                sparse_mode_str = "-f ${sparse_mode}"
+                                run_example "${ccl_extra_env}" ${dir_name} ${transport} ${example} ${sparse_mode_str}
+                            done
                         done
                     else
                         ccl_extra_env="${ccl_transport_env}"

@@ -78,63 +78,79 @@
          }                                                              \
     } while (0)
 
-#define REMOVE_DUPS()                                                             \
-    do {                                                                          \
-        /* fill in the <index:value_offset> map */                                \
-        for (size_t i = 0; i < send_ind_count; i++)                               \
-        {                                                                         \
-            auto it = iv_map->find(src_i[i]);                                     \
-            if (it == iv_map->end())                                              \
-            {                                                                     \
-                /* save index and starting addr of values */                      \
-                /* set according to that index */                                 \
-                iv_map->emplace(src_i[i], i * val_dim_cnt);                       \
-            }                                                                     \
-            else                                                                  \
-            {                                                                     \
-                /* reduce values from duplicate indices */                        \
-                ccl_comp_reduce((void*)(src_v + i * val_dim_cnt), val_dim_cnt,    \
-                                (void*)(src_v + it->second), nullptr, value_dtype,\
-                                op, nullptr, nullptr);                            \
-            }                                                                     \
-        }                                                                         \
-                                                                                  \
-        /* create buffer w/o duplicates */                                        \
-        iv_map_cnt = iv_map->size();                                              \
-        no_dup_size = iv_map_cnt * (itype_size + val_dim_cnt * vtype_size);       \
-        dst = sched->alloc_buffer(no_dup_size).get_ptr();                         \
-                                                                                  \
-        dst_i = (i_type*)dst;                                                     \
-        dst_v = (v_type*)((char*)dst + itype_size * iv_map_cnt);                  \
-                                                                                  \
-        size_t idx_offset = 0;                                                    \
-        size_t val_offset = 0;                                                    \
-                                                                                  \
-        /* update value offsets in the map, because */                            \
-        /* we copy data to dst buffer from source buffer */                       \
-        for (auto& it : *iv_map)                                                  \
-        {                                                                         \
-            dst_i[idx_offset] = it.first;                                         \
-            val_offset = idx_offset * val_dim_cnt;                                \
-            CCL_MEMCPY(dst_v + val_offset,                                        \
-                       src_v + it.second,                                         \
-                       vtype_size * val_dim_cnt);                                 \
-            it.second = val_offset;                                               \
-            idx_offset++;                                                         \
-        }                                                                         \
+#define COALESCE()                                                              \
+    do {                                                                        \
+        std::vector<size_t> dups;                                               \
+        /* fill in the <index:value_offset> map */                              \
+        for (size_t i = 0; i < send_ind_count; i++)                             \
+        {                                                                       \
+            /* save index and starting addr of values */                        \
+            /* set according to that index */                                   \
+            auto it = iv_map->emplace(src_i[i], i * val_dim_cnt);               \
+                                                                                \
+            /* if emplace wasn't successful, then src_i[i] is a duplicate */    \
+            if (!it.second)                                                     \
+            {                                                                   \
+                /* save idx duplicate for further local reduce */               \
+                dups.push_back(i);                                              \
+            }                                                                   \
+        }                                                                       \
+                                                                                \
+        /* create buffer w/o duplicates */                                      \
+        iv_map_cnt = iv_map->size();                                            \
+        no_dup_size = iv_map_cnt * (itype_size + val_dim_cnt * vtype_size);     \
+        dst = sched->alloc_buffer(no_dup_size).get_ptr();                       \
+                                                                                \
+        dst_i = (i_type*)dst;                                                   \
+        dst_v = (v_type*)((char*)dst + itype_size * iv_map_cnt);                \
+                                                                                \
+        size_t idx_offset = 0;                                                  \
+        size_t val_offset = 0;                                                  \
+                                                                                \
+        /* update value offsets in the map, because */                          \
+        /* we copy data to dst buffer from source buffer */                     \
+        for (auto& it : *iv_map)                                                \
+        {                                                                       \
+            dst_i[idx_offset] = it.first;                                       \
+            val_offset = idx_offset * val_dim_cnt;                              \
+            CCL_MEMCPY(dst_v + val_offset,                                      \
+                       src_v + it.second,                                       \
+                       vtype_size * val_dim_cnt);                               \
+            it.second = val_offset;                                             \
+            idx_offset++;                                                       \
+        }                                                                       \
+                                                                                \
+        for (auto i : dups)                                                     \
+        {                                                                       \
+            auto it = iv_map->find(src_i[i]);                                   \
+            /* reduce values from duplicate indices */                          \
+            ccl_comp_reduce((void*)(src_v + i * val_dim_cnt), val_dim_cnt,      \
+                            (void*)(dst_v + it->second), nullptr, value_dtype,  \
+                            op, nullptr, nullptr);                              \
+        }                                                                       \
     } while (0)
 
-
-#define IF_COMM_SIZE_IS_ONE()                          \
-    do {                                               \
-        if (comm_size == 1)                            \
-        {                                              \
-            *recv_ind_count = iv_map_cnt;              \
-            *recv_val_count = iv_map_cnt * val_dim_cnt;\
-            *r_ind_buf = (void*)dst_i;                 \
-            *r_val_buf = (void*)dst_v;                 \
-            return status;                             \
-        }                                              \
+#define IF_COMM_SIZE_IS_ONE()                              \
+    do {                                                   \
+        if (comm_size == 1)                                \
+        {                                                  \
+            if (sched->coll_attr.sparse_mode &             \
+                CCL_SPARSE_COALESCE_NONE)                  \
+            {                                              \
+                *recv_ind_count = send_ind_count;          \
+                *recv_val_count = send_val_count;          \
+                *r_ind_buf = (void*)src_i;                 \
+                *r_val_buf = (void*)src_v;                 \
+            }                                              \
+            else                                           \
+            {                                              \
+                *recv_ind_count = iv_map_cnt;              \
+                *recv_val_count = iv_map_cnt * val_dim_cnt;\
+                *r_ind_buf = (void*)dst_i;                 \
+                *r_val_buf = (void*)dst_v;                 \
+            }                                              \
+            return status;                                 \
+        }                                                  \
     } while (0)
 
 #define SET_SPARSE_HANDLER_COMMON_FIELDS()                                                  \
@@ -460,7 +476,7 @@ ccl_status_t ccl_coll_build_sparse_allreduce_ring(ccl_sched* sched,
     i_type* dst_i;
     v_type* dst_v;
 
-    REMOVE_DUPS();
+    COALESCE();
 
     IF_COMM_SIZE_IS_ONE();
 
@@ -644,8 +660,8 @@ ccl_status_t ccl_coll_build_sparse_allreduce_mask(ccl_sched* sched,
     size_t comm_size = comm->size();
 
     /* get data type sizes */
-    size_t vtype_size = sizeof(v_type);
     size_t itype_size = sizeof(i_type);
+    size_t vtype_size = sizeof(v_type); 
 
     /* get value dimension */
     size_t val_dim_cnt = send_val_count / send_ind_count;
@@ -668,7 +684,7 @@ ccl_status_t ccl_coll_build_sparse_allreduce_mask(ccl_sched* sched,
     i_type* dst_i;
     v_type* dst_v;
 
-    REMOVE_DUPS();
+    COALESCE();
 
     IF_COMM_SIZE_IS_ONE();
 
@@ -763,6 +779,18 @@ ccl_status_t sparse_set_v_counts(const void* ctx)
     {
         sa_handler->recv_counts[i + stride] = sa_handler->recv_counts[i] * sa_handler->val_dim_cnt;
     }
+
+    return ccl_status_success;
+}
+
+ccl_status_t sparse_return_gathered(const void* ctx)
+{
+    ccl_sparse_allreduce_handler* sa_handler = (ccl_sparse_allreduce_handler*)ctx;
+    *sa_handler->recv_icount = sa_handler->recv_buf_count;
+    *sa_handler->recv_vcount = sa_handler->recv_buf_count * sa_handler->val_dim_cnt;
+
+    *sa_handler->recv_ibuf = sa_handler->all_idx_buf;
+    *sa_handler->recv_vbuf = sa_handler->all_val_buf;
 
     return ccl_status_success;
 }
@@ -871,17 +899,21 @@ ccl_coll_build_sparse_allreduce_3_allgatherv(ccl_sched *sched,
     void** r_ind_buf = recv_ind_buf;
     void** r_val_buf = recv_val_buf;
 
-    std::unique_ptr<idx_offset_map> iv_map(new idx_offset_map);
-    size_t iv_map_cnt, no_dup_size;
-
     /* the accumulated result will be kept here */
     void* dst = nullptr;
-    i_type* dst_i;
-    v_type* dst_v;
+    i_type* dst_i = src_i;
+    v_type* dst_v = src_v;
+    size_t iv_map_cnt = send_ind_count;
 
-    REMOVE_DUPS();
+    if (!(sched->coll_attr.sparse_mode & CCL_SPARSE_COALESCE_NONE))
+    {
+        std::unique_ptr<idx_offset_map> iv_map(new idx_offset_map);
+        size_t no_dup_size;
+
+        COALESCE();
     
-    iv_map->clear();
+        iv_map->clear();
+    }
 
     IF_COMM_SIZE_IS_ONE();
 
@@ -941,7 +973,14 @@ ccl_coll_build_sparse_allreduce_3_allgatherv(ccl_sched *sched,
     ce->set_field_fn<ccl_sched_entry_field_recv_buf>(sparse_get_v_recv, sa_handler);
     sched->add_barrier();
 
-    entry_factory::make_entry<function_entry>(sched, sparse_reduce_gathered<i_type, v_type>, sa_handler);
+    if (sched->coll_attr.sparse_mode & CCL_SPARSE_COALESCE_NONE)
+    {
+        entry_factory::make_entry<function_entry>(sched, sparse_return_gathered, sa_handler);
+    }
+    else
+    {
+        entry_factory::make_entry<function_entry>(sched, sparse_reduce_gathered<i_type, v_type>, sa_handler);
+    }
     sched->add_barrier();
     return status;
 }
