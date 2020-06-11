@@ -86,6 +86,7 @@ ccl_status_t ccl_parallelizer::process(ccl_master_sched* sched)
     const ccl_datatype& dtype = coll_param.dtype;
     dtype_size = dtype.size();
     comm_size = comm->size();
+    size_t my_rank = comm->rank();
     ccl_coll_type coll_type = coll_param.ctype;
 
     std::vector<size_t> counts;
@@ -628,6 +629,15 @@ ccl_status_t ccl_parallelizer::process(ccl_master_sched* sched)
             /* convert sycl buffer */
             if (coll_param.stream && coll_param.stream->is_sycl_device_stream())
             {
+                size_t sycl_buf_offset = 0;
+                if (coll_param.sycl_send_buf == coll_param.sycl_recv_buf)
+                {
+                    for (int i = 0; i < my_rank; i++)
+                    {
+                        sycl_buf_offset += coll_param.recv_counts[i] * dtype_size;
+                    }
+                    LOG_TRACE("sycl_buf_offset = ", sycl_buf_offset);
+                }
                 entry_factory::make_entry<sycl_copy_device_to_host_entry>(part_scheds[0].get(),
                                                                           ccl_buffer(&(coll_param.sycl_send_buf),
                                                                                      coll_param.send_count * dtype_size,
@@ -635,7 +645,7 @@ ccl_status_t ccl_parallelizer::process(ccl_master_sched* sched)
                                                                           ccl_buffer((void*)coll_param.send_buf,
                                                                                      coll_param.send_count * dtype_size),
                                                                           coll_param.send_count,
-                                                                          dtype, coll_param.stream);
+                                                                          dtype, coll_param.stream, sycl_buf_offset);
                 sched->sync_partial_scheds();
             }
 #endif /* CCL_ENABLE_SYCL */
@@ -686,7 +696,7 @@ ccl_status_t ccl_parallelizer::process(ccl_master_sched* sched)
                                                coll_param.send_count * dtype_size,
                                                ccl_buffer_type::INDIRECT);
 
-                    size_t my_rank = comm->rank();
+                    
                     if (coll_param.send_buf != coll_param.recv_buf)
                     {
                         entry_factory::make_entry<copy_entry>(part_scheds[2 * my_rank % part_count].get(),

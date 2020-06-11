@@ -19,16 +19,16 @@ public:
                                    ccl_buffer out_buf,
                                    size_t cnt,
                                    const ccl_datatype& dtype,
-                                   const ccl_stream* stream) :
+                                   const ccl_stream* stream, size_t offset = 0) :
                                    sched_entry(sched), in_buf(in_buf), out_buf(out_buf),
-                                   cnt(cnt), dtype(dtype), stream(stream)
+                                   cnt(cnt), dtype(dtype), stream(stream), offset(offset)
     {
     }
 
     void start() override
     {
         //fill visitor with actual ccl_buffer data
-        auto visitor = make_visitor<cl::sycl::access::mode::read>(dtype, cnt, in_buf, [this](void* sycl_pointer, size_t bytes)
+        auto visitor = make_visitor<cl::sycl::access::mode::read>(dtype, cnt, offset, in_buf, [this](void* sycl_pointer, size_t bytes)
         {
             auto comp_status = ccl_comp_copy(sycl_pointer, out_buf.get_ptr(bytes), cnt, dtype);
             CCL_ASSERT(comp_status == ccl_status_success, "bad status ", comp_status);
@@ -62,4 +62,5 @@ private:
     size_t cnt;
     ccl_datatype dtype;
     const ccl_stream* stream;
+    size_t offset;
 };

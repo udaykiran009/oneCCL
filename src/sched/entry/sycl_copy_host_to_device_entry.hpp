@@ -28,7 +28,7 @@ public:
     void start() override
     {
         //fill visitor with actual ccl_buffer data
-        auto visitor = make_visitor<cl::sycl::access::mode::discard_write>(dtype, cnt, out_buf, [this](void* sycl_pointer, size_t bytes)
+        auto visitor = make_visitor<cl::sycl::access::mode::discard_write>(dtype, cnt, 0, out_buf, [this](void* sycl_pointer, size_t bytes)
         {
             auto comp_status = ccl_comp_copy(in_buf.get_ptr(bytes), sycl_pointer, cnt, dtype);
             CCL_ASSERT(comp_status == ccl_status_success, "bad status ", comp_status);

@@ -77,7 +77,7 @@ CCL_TYPE_TRAITS(ccl_dtype_uint64, uint64_t,  sizeof(uint64_t))
     CCL_CLASS_TYPE_TRAITS(ccl_dtype_int64,   cl::sycl::buffer<int64_t COMMA 1>,  sizeof(int64_t))
     CCL_CLASS_TYPE_TRAITS(ccl_dtype_uint64,  cl::sycl::buffer<uint64_t COMMA 1>, sizeof(uint64_t))
     CCL_CLASS_TYPE_TRAITS(ccl_dtype_float,   cl::sycl::buffer<float COMMA 1>,    sizeof(float))
-    CCL_CLASS_TYPE_TRAITS(ccl_dtype_char,    cl::sycl::buffer<double COMMA 1>,   sizeof(double))
+    CCL_CLASS_TYPE_TRAITS(ccl_dtype_double,    cl::sycl::buffer<double COMMA 1>,   sizeof(double))
 #endif //CCL_ENABLE_SYCL
 
 template<>
