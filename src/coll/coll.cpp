@@ -22,7 +22,7 @@ ccl_coll_attr& ccl_coll_attr::operator= (const ccl_coll_attr_t* attr)
     reduction_fn = attr->reduction_fn;
     sparse_allreduce_completion_fn = attr->sparse_allreduce_completion_fn;
     sparse_allreduce_completion_ctx = attr->sparse_allreduce_completion_ctx;
-    sparse_mode = attr->sparse_mode;
+    sparse_coalesce_mode = attr->sparse_coalesce_mode;
     priority = attr->priority;
     synchronous = attr->synchronous;
     to_cache = attr->to_cache && attr->match_id && attr->match_id[0];
@@ -514,7 +514,7 @@ ccl_status_t ccl_coll_build_sparse_allreduce(
     param.count = 0;
     param.dtype = ccl_datatype_char;
     param.comm = comm;
-    param.sparse_mode = sched->coll_attr.sparse_mode;
+    param.sparse_coalesce_mode = sched->coll_attr.sparse_coalesce_mode;
 
     if (!send_ind_buf.get_ptr() || !send_val_buf.get_ptr())
     {

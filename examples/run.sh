@@ -315,7 +315,7 @@ run()
                             sparse_mode_set = "0"
                         else
                             sparse_algo_set="ring mask allgatherv"
-                            sparse_mode_set = "0 1"
+                            sparse_mode_set = "0 1 2"
                         fi
                         for sparse_algo in ${sparse_algo_set};
                         do

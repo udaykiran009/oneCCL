@@ -32,7 +32,7 @@ struct ccl_selector_param
     const size_t* recv_counts;
     int vector_buf;
 
-    uint8_t sparse_mode;
+    ccl_sparse_coalesce_mode_t sparse_coalesce_mode;
 };
 
 template<ccl_coll_type coll_id>

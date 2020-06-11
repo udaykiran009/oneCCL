@@ -2,7 +2,7 @@
 
 #include <unordered_map>
 
-typedef std::map<size_t, size_t> idx_offset_map;
+typedef std::map<size_t, std::vector<size_t> > idx_offset_map;
 
 struct ccl_sparse_allreduce_handler
 {

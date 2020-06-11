@@ -6,9 +6,9 @@ template<ccl_datatype_t ccl_idx_type>
 struct sparse_algo_iterator
 {
     template<size_t i, typename v_type>
-    void invoke(int sparse_mode)
+    void invoke(int sparse_coalesce_mode)
     {
-        sparse_test_run<ccl_idx_type, v_type::ccl_type::value>(sparse_mode);
+        sparse_test_run<ccl_idx_type, v_type::ccl_type::value>(sparse_coalesce_mode);
     }
 };
 
@@ -17,10 +17,10 @@ struct sparse_value_type_iterator
 {
     using types = std::tuple<ccl::type_info<ccl_value_type>...>;
     template<size_t index, typename i_type>
-    void invoke(int sparse_mode)
+    void invoke(int sparse_coalesce_mode)
     {
         ccl_tuple_for_each_indexed<types>(sparse_algo_iterator<i_type::ccl_type::value>(),
-                                          sparse_mode);
+                                          sparse_coalesce_mode);
     }
 };
 
@@ -35,7 +35,7 @@ int main(int argc, char** argv)
 {
     test_init();
 
-    int sparse_mode = argc == 3 && std::string(argv[1]) == "-f" ? std::atoi(argv[2]) : 0;
+    int sparse_coalesce_mode = argc == 3 && std::string(argv[1]) == "-f" ? std::atoi(argv[2]) : 0;
 
     using supported_sparce_index_types = sparce_index_types<ccl_dtype_char,
                                                             ccl_dtype_int,
@@ -60,7 +60,7 @@ int main(int argc, char** argv)
 
     // run test for each combination of supported indexes and values
     ccl_tuple_for_each_indexed<supported_sparce_index_types>(supported_sparce_value_types(),
-                                                             sparse_mode);
+                                                             sparse_coalesce_mode);
 
     test_finalize();
 

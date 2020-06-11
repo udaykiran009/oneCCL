@@ -83,7 +83,21 @@ typedef struct
     const size_t offset;
 } ccl_fn_context_t;
 
-#define CCL_SPARSE_COALESCE_NONE 0b00000001
+/* Sparse coalesce modes */
+/* Use this variable to set sparse_allreduce coalescing mode:
+   ccl_sparse_coalesce_regular run regular coalesce funtion;
+   ccl_sparse_coalesce_disable disables coalesce function in sparse_allreduce,
+                               allgathered data is returned;
+   ccl_sparse_coalesce_keep_precision on every local reduce bfp16 data is
+                               converted to fp32, reduced and then converted
+                               back to bfp16.
+*/
+typedef enum ccl_sparse_coalesce_mode
+{
+    ccl_sparse_coalesce_regular        = 0,
+    ccl_sparse_coalesce_disable        = 1,
+    ccl_sparse_coalesce_keep_precision = 2
+} ccl_sparse_coalesce_mode_t;
 
 /* comm_size */
 typedef ccl_resize_action_t(*ccl_resize_fn_t)(size_t comm_size);
@@ -124,11 +138,7 @@ typedef struct
     /* Sparse_allreduce */
     ccl_sparse_allreduce_completion_fn_t sparse_allreduce_completion_fn;
     const void* sparse_allreduce_completion_ctx;
-    /* Use this variable to set sparse_allreduce in different modes and its combinations:
-       CCL_SPARSE_COALESCE_NONE = 1 disables coalesce function in sparse_allreduce,
-                                  allgathered data is returned
-    */
-    uint8_t sparse_mode;
+    ccl_sparse_coalesce_mode_t sparse_coalesce_mode;
 
     /* Priority for collective operation */
     size_t priority;

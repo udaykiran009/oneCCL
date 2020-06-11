@@ -87,7 +87,7 @@
     }                                                                   \
 })
 
-#define CHECK_FLAGGED(itype_name, vtype_name, is_bfp16)               \
+#define CHECK_WO_COALESCE(itype_name, vtype_name, is_bfp16)             \
 ({                                                                      \
     i_t* rcv_idx = (i_t*)recv_ibuf;                                     \
     std::vector<v_t> rcv_val((v_t*)recv_vbuf,                           \
@@ -331,7 +331,7 @@ callback_bfp16_fn(const void* i_buf, size_t i_cnt, ccl_datatype_t itype,
 
 template<ccl_datatype_t i_type, ccl_datatype_t v_type, 
         typename std::enable_if< v_type == ccl_dtype_bfp16, int>::type = 0>
-void sparse_test_run(int sparse_mode)
+void sparse_test_run(int sparse_coalesce_mode)
 {
     if (is_bfp16_enabled() == 0)
     {
@@ -356,7 +356,7 @@ void sparse_test_run(int sparse_mode)
             send_ibuf[i] = dist(gen);
             for (unsigned int j = 0; j < VDIM_SIZE; j++)
             {
-                send_vbuf[i * VDIM_SIZE + j] = rank/(rank + 1 + j);
+                send_vbuf[i * VDIM_SIZE + j] = (rank + j)/100;
             }
         }
 
@@ -367,7 +367,7 @@ void sparse_test_run(int sparse_mode)
         ASSERT(expected_count, "expected_count is zero");
 
         std::map<i_t, std::vector<v_t> > expected{};
-        if (!sparse_mode)
+        if (sparse_coalesce_mode != ccl_sparse_coalesce_disable)
         {
             expected = coalesce_expected_data<i_type, ccl_dtype_float>(expected_buf, expected_count);
         }
@@ -376,7 +376,7 @@ void sparse_test_run(int sparse_mode)
         coll_attr.to_cache = 0;
         coll_attr.sparse_allreduce_completion_fn = callback_bfp16_fn;
         coll_attr.sparse_allreduce_completion_ctx = nullptr;
-        coll_attr.sparse_mode = sparse_mode;
+        coll_attr.sparse_coalesce_mode = (ccl_sparse_coalesce_mode_t)sparse_coalesce_mode;
         void* send_vbuf_bfp16 = malloc(sizeof(ccl::bfp16) * send_vbuf.size());
 
         convert_fp32_to_bfp16_arrays(send_vbuf.data(), send_vbuf_bfp16, send_vbuf.size());
@@ -410,13 +410,13 @@ void sparse_test_run(int sparse_mode)
         double log_base2 = log(size) / log(2);
         double g = (log_base2 * BFP16_PRECISION) / (1 - (log_base2 * BFP16_PRECISION));
 
-        if (!sparse_mode)
+        if (sparse_coalesce_mode == ccl_sparse_coalesce_disable)
         {
-            CHECK(ccl::type_info<i_type>::name(), ccl::type_info<v_type>::name(), true);
+            CHECK_WO_COALESCE(ccl::type_info<i_type>::name(), ccl::type_info<v_type>::name(), true);
         }
         else
         {
-            CHECK_FLAGGED(ccl::type_info<i_type>::name(), ccl::type_info<v_type>::name(), true); 
+            CHECK(ccl::type_info<i_type>::name(), ccl::type_info<v_type>::name(), true);    
         }
 
         free(expected_buf);
@@ -432,7 +432,7 @@ void sparse_test_run(int sparse_mode)
 
 template<ccl_datatype_t i_type, ccl_datatype_t v_type, 
         typename std::enable_if< v_type != ccl_dtype_bfp16, int>::type = 0>
-void sparse_test_run(int sparse_mode)
+void sparse_test_run(int sparse_coalesce_mode)
 {
     using i_t = typename ccl::type_info<i_type>::native_type;
     using v_t = typename ccl::type_info<v_type>::native_type;
@@ -460,7 +460,7 @@ void sparse_test_run(int sparse_mode)
     ASSERT(expected_count, "expected_count is zero");
 
     std::map<i_t, std::vector<v_t> > expected{};
-    if (!sparse_mode)
+    if (sparse_coalesce_mode != ccl_sparse_coalesce_disable)
     {
         expected = coalesce_expected_data<i_type, v_type>(expected_buf, expected_count);
     }
@@ -469,7 +469,7 @@ void sparse_test_run(int sparse_mode)
     coll_attr.to_cache = 0;
     coll_attr.sparse_allreduce_completion_fn = callback_fn;
     coll_attr.sparse_allreduce_completion_ctx = nullptr;
-    coll_attr.sparse_mode = sparse_mode;
+    coll_attr.sparse_coalesce_mode = (ccl_sparse_coalesce_mode_t)sparse_coalesce_mode;
 
     recv_icount = 0;
     recv_vcount = 0;
@@ -494,13 +494,13 @@ void sparse_test_run(int sparse_mode)
 
     double g;
 
-    if (!sparse_mode)
+    if (sparse_coalesce_mode == ccl_sparse_coalesce_disable)
     {
-        CHECK(ccl::type_info<i_type>::name(), ccl::type_info<v_type>::name(), false);
+        CHECK_WO_COALESCE(ccl::type_info<i_type>::name(), ccl::type_info<v_type>::name(), false);
     }
-    else /* CCL_SPARSE_COALESCE_NONE */
+    else
     {      
-        CHECK_FLAGGED(ccl::type_info<i_type>::name(), ccl::type_info<v_type>::name(), false);
+        CHECK(ccl::type_info<i_type>::name(), ccl::type_info<v_type>::name(), false);
     }
 
     free(expected_buf);
