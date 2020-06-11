@@ -147,7 +147,13 @@ ccl_request* ccl_sched::start_subsched(ccl_extra_sched* subsched)
     subsched->set_counter(1);
 
     queue->add(subsched);
-    subsched->dump(std::cout);
+
+    if (ccl::global_data::env().sched_dump)
+    {
+        std::stringstream ostream;
+        subsched->dump(ostream);
+        LOG_INFO(ostream.str());
+    }
 
     return subsched->req;
 }

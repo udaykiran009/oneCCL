@@ -101,6 +101,11 @@ void global_data::init_resize_dependent_objects()
                                                      executor->get_atl_attr().max_tag));
     if (env_object.default_resizable)
         ccl_set_resize_fn(nullptr);
+
+    if (executor->get_global_proc_idx() == 0)
+    {
+        atl_tag->print();
+    }
 }
 
 void global_data::init_resize_independent_objects()
@@ -114,26 +119,29 @@ void global_data::init_resize_independent_objects()
 
     algorithm_selector->init();
 
-    if (executor->get_global_proc_idx() == 0)
-        algorithm_selector->print();
-
     default_coll_attr.reset(new ccl_coll_attr_t{});
     memset(default_coll_attr.get(), 0, sizeof(ccl_coll_attr_t));
 
     bfp16_impl_type = ccl_bfp16_get_impl_type();
 
-    if (bfp16_impl_type != ccl_bfp16_none)
+    if (executor->get_global_proc_idx() == 0)
     {
-        LOG_INFO("BFP16 is enabled through ",
-            (bfp16_impl_type == ccl_bfp16_avx512bf) ? "AVX512-BF" : "AVX512-F");
-    }
-    else
-    {
+        algorithm_selector->print();
+
+        if (bfp16_impl_type != ccl_bfp16_none)
+        {
+            LOG_INFO("\n\nBFP16 is enabled through ",
+                (bfp16_impl_type == ccl_bfp16_avx512bf) ? "AVX512-BF" : "AVX512-F",
+                "\n");
+        }
+        else
+        {
 #ifdef CCL_BFP16_COMPILER
-        LOG_INFO("BFP16 is disabled on HW level");
+            LOG_INFO("\n\nBFP16 is disabled on HW level\n");
 #else
-        LOG_INFO("BFP16 is disabled on compiler level");
+            LOG_INFO("\n\nBFP16 is disabled on compiler level\n");
 #endif
+        }
     }
 }
 

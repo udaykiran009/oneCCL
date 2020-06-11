@@ -117,6 +117,10 @@ run_benchmark()
     if [ "${backend}" != "" ];
     then
         options="${options} --backend ${backend}"
+        if [ "${backend}" == "sycl" ];
+        then
+            options="${options} --iters 4 --buf_count 2"
+        fi
     fi
     if [ "${loop}" != "" ];
     then

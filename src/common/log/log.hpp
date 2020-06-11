@@ -259,7 +259,7 @@ extern ccl_logger logger;
 {                                                                                                           \
     if (logger.get_log_level() >= ccl_log_level::ERROR)                                                     \
     {                                                                                                       \
-        logger.error(basedir_static(__FILE__), ":", __LINE__ , "\t", __FUNCTION__, " ", ##__VA_ARGS__);     \
+        logger.error(basedir_static(__FILE__), ":", __LINE__ , "  ", __FUNCTION__, " ", ##__VA_ARGS__);     \
     }                                                                                                       \
 }
 
@@ -267,7 +267,7 @@ extern ccl_logger logger;
 {                                                                                                           \
     if (logger.get_log_level() >= ccl_log_level::INFO)                                                      \
     {                                                                                                       \
-        logger.info(basedir_static(__FILE__), ":", __LINE__ , "\t", __FUNCTION__, " ", ##__VA_ARGS__);      \
+        logger.info(basedir_static(__FILE__), ":", __LINE__ , "  ", __FUNCTION__, " ", ##__VA_ARGS__);      \
     }                                                                                                       \
 }
 
@@ -275,7 +275,7 @@ extern ccl_logger logger;
 {                                                                                                           \
     if (logger.get_log_level() >= ccl_log_level::DEBUG)                                                     \
     {                                                                                                       \
-        logger.debug(basedir_static(__FILE__), ":", __LINE__ , "\t", __FUNCTION__, " ", ##__VA_ARGS__);     \
+        logger.debug(basedir_static(__FILE__), ":", __LINE__ , "  ", __FUNCTION__, " ", ##__VA_ARGS__);     \
     }                                                                                                       \
 }
 
@@ -283,7 +283,7 @@ extern ccl_logger logger;
 {                                                                                                           \
     if (logger.get_log_level() >= ccl_log_level::TRACE)                                                     \
     {                                                                                                       \
-        logger.trace(basedir_static(__FILE__), ":", __LINE__ , "\t", __FUNCTION__, " ", ##__VA_ARGS__);     \
+        logger.trace(basedir_static(__FILE__), ":", __LINE__ , "  ", __FUNCTION__, " ", ##__VA_ARGS__);     \
     }                                                                                                       \
 }
 

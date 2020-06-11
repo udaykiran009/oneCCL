@@ -35,9 +35,9 @@ void do_regular(ccl::communicator* comm,
 
         for (const auto &reduction : options.reductions)
         {
-            ccl::reduction reduction_key;
+            ccl::reduction reduction_op;
 
-            if (!find_key_val(reduction_key, reduction_names, reduction))
+            if (!find_key_val(reduction_op, reduction_names, reduction))
                 continue;
 
             PRINT_BY_ROOT(comm, "\ndtype: %s reduction: %s",
@@ -48,13 +48,15 @@ void do_regular(ccl::communicator* comm,
             /* warm up */
             PRINT_BY_ROOT(comm, "do warm up");
 
-            bench_attr.reduction = reduction_key;
+            bench_attr.reduction = reduction_op;
             bench_attr.coll_attr.to_cache = 0;
 
             for (size_t count = 1; count < ELEM_COUNT; count *= 2)
             {
                 for (size_t iter_idx = 0; iter_idx < options.warmup_iters; iter_idx++)
                 {
+                    comm->barrier();
+
                     for (size_t coll_idx = 0; coll_idx < colls.size(); coll_idx++)
                     {
                         auto& coll = colls[coll_idx];
@@ -91,6 +93,8 @@ void do_regular(ccl::communicator* comm,
                                 coll->prepare(count);
                             }
                         }
+                        
+                        comm->barrier();
 
                         double t1 = when();
                         for (size_t coll_idx = 0; coll_idx < colls.size(); coll_idx++)
@@ -131,8 +135,6 @@ void do_regular(ccl::communicator* comm,
                 }
             }
 
-            comm->barrier();
-
             /* benchmark with single buffer per collective */
             PRINT_BY_ROOT(comm, "do single-buffer benchmark");
             bench_attr.coll_attr.to_cache = 1;
@@ -143,6 +145,8 @@ void do_regular(ccl::communicator* comm,
                     double t = 0;
                     for (size_t iter_idx = 0; iter_idx < options.iters; iter_idx++)
                     {
+                        comm->barrier();
+
                         double t1 = when();
                         for (size_t coll_idx = 0; coll_idx < colls.size(); coll_idx++)
                         {

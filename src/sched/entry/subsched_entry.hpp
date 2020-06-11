@@ -72,6 +72,11 @@ public:
         return !subsched_name.empty() ? subsched_name.c_str() : class_name();
     }
 
+    ccl_sched* get_subsched()
+    {
+        return subsched.get();
+    }
+
 protected:
     void dump_detail(std::stringstream& str) const override
     {

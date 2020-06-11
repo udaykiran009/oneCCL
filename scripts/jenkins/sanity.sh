@@ -323,11 +323,11 @@ run_tests()
                         fi
                         CCL_ALLREDUCE=$allreduce ctest -VV -C mpi_allreduce_$allreduce
                     done
-                for alltoall in "direct" "naive"
+                for alltoall in "direct" "naive" "scatter" "scatter_barrier"
                     do
                         CCL_ALLTOALL=$alltoall ctest -VV -C mpi_alltoall_$alltoall
                     done
-                for alltoallv in "direct" "naive"
+                for alltoallv in "direct" "naive" "scatter" "scatter_barrier"
                     do
                         CCL_ALLTOALLV=$alltoallv ctest -VV -C mpi_alltoallv_$alltoallv
                     done
@@ -365,11 +365,11 @@ run_tests()
                             CCL_ALLREDUCE=$allreduce ctest -VV -C mpi_allreduce_$allreduce
                         fi
                 done
-                for alltoall in "naive"
+                for alltoall in "naive" "scatter" "scatter_barrier"
                     do
                         CCL_ALLTOALL=$alltoall ctest -VV -C mpi_alltoall_$alltoall
                     done
-                for alltoallv in "naive"
+                for alltoallv in "naive" "scatter" "scatter_barrier"
                     do
                         CCL_ALLTOALLV=$alltoallv ctest -VV -C mpi_alltoallv_$alltoallv
                     done

@@ -36,6 +36,8 @@ enum ccl_coll_alltoall_algo
 {
     ccl_coll_alltoall_direct,
     ccl_coll_alltoall_naive,
+    ccl_coll_alltoall_scatter,
+    ccl_coll_alltoall_scatter_barrier,
 
     ccl_coll_alltoall_last_value
 };
@@ -44,6 +46,8 @@ enum ccl_coll_alltoallv_algo
 {
     ccl_coll_alltoallv_direct,
     ccl_coll_alltoallv_naive,
+    ccl_coll_alltoallv_scatter,
+    ccl_coll_alltoallv_scatter_barrier,
 
     ccl_coll_alltoallv_last_value
 };
@@ -126,6 +130,8 @@ inline const char* ccl_coll_type_to_str(ccl_coll_type type)
             return "bcast";
         case ccl_coll_reduce:
             return "reduce";
+        case ccl_coll_reduce_scatter:
+            return "reduce_scatter";
         case ccl_coll_sparse_allreduce:
             return "sparse_allreduce";
         case ccl_coll_internal:

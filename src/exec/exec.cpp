@@ -75,21 +75,23 @@ ccl_executor::ccl_executor(const char* main_addr)
     atl_proc_coord = atl_get_proc_coord(atl_ctx);
     ccl::global_data::get().is_ft_enabled = atl_is_resize_enabled(atl_ctx);
 
-    LOG_INFO("global_proc_idx ", atl_proc_coord->global_idx,
-             ", global_proc_count ", atl_proc_coord->global_count,
-             ", local_proc_idx ", atl_proc_coord->local_idx,
-             ", local_proc_count ", atl_proc_coord->local_count,
-             ", worker_count ", worker_count);
+    LOG_DEBUG("\nglobal: idx ", atl_proc_coord->global_idx,
+              ", size ", atl_proc_coord->global_count,
+              "\nlocal:  idx ", atl_proc_coord->local_idx,
+              ", size ", atl_proc_coord->local_count,
+              "\nworkers:    ", worker_count);
 
     if (get_global_proc_idx() == 0)
     {
-        LOG_INFO("\nATL parameters:",
-                 "\n  ep_count:               ", atl_attr.ep_count,
-                 "\n  enable_shm:             ", atl_attr.enable_shm,
-                 "\n  tag_bits:               ", atl_attr.tag_bits,
-                 "\n  max_tag:                ", atl_attr.max_tag,
-                 "\n  enable_rma:             ", atl_attr.enable_rma,
-                 "\n  max_order_waw_size:     ", atl_attr.max_order_waw_size);
+        LOG_INFO("\n",
+                 "\nATL parameters:",
+                 "\n  ep_count:           ", atl_attr.ep_count,
+                 "\n  enable_shm:         ", atl_attr.enable_shm,
+                 "\n  tag_bits:           ", atl_attr.tag_bits,
+                 "\n  max_tag:            ", atl_attr.max_tag,
+                 "\n  enable_rma:         ", atl_attr.enable_rma,
+                 "\n  max_order_waw_size: ", atl_attr.max_order_waw_size,
+                 "\n");
     }
 
     CCL_THROW_IF_NOT(env.env_2_worker_affinity(get_local_proc_idx(),
@@ -274,6 +276,7 @@ void ccl_executor::start(ccl_master_sched* sched)
     size_t worker_idx;
     for (size_t idx = 0; idx < sched->partial_scheds.size(); idx++)
     {
+        CCL_THROW_IF_NOT(sched->partial_scheds[idx]->entries_count(), "empty sched");
         worker_idx = (this->*get_worker_idx_fn)(sched->partial_scheds[idx].get());
         workers[worker_idx]->add(sched->partial_scheds[idx].get());
     }
