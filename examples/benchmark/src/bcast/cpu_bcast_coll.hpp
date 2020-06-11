@@ -12,9 +12,13 @@ struct cpu_bcast_coll : cpu_base_coll<Dtype, bcast_strategy_impl>
     using coll_base::single_recv_buf;
     using coll_base::comm;
 
+    cpu_bcast_coll(bench_coll_init_attr init_attr) : coll_base(init_attr,
+                                                               base_coll::comm->size(),
+                                                               base_coll::comm->size()) {}
+
     virtual void prepare(size_t elem_count) override
     {
-        for (size_t b_idx = 0; b_idx < BUF_COUNT; b_idx++)
+        for (size_t b_idx = 0; b_idx < base_coll::get_buf_count(); b_idx++)
         {
             for (size_t e_idx = 0; e_idx < elem_count; e_idx++)
             {
@@ -29,7 +33,7 @@ struct cpu_bcast_coll : cpu_base_coll<Dtype, bcast_strategy_impl>
     virtual void finalize(size_t elem_count) override
     {
         Dtype value;
-        for (size_t b_idx = 0; b_idx < BUF_COUNT; b_idx++)
+        for (size_t b_idx = 0; b_idx < base_coll::get_buf_count(); b_idx++)
         {
             for (size_t e_idx = 0; e_idx < elem_count; e_idx++)
             {

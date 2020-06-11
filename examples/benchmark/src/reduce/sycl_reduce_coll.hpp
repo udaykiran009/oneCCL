@@ -22,10 +22,14 @@ struct sycl_reduce_coll : sycl_base_coll<Dtype, reduce_strategy_impl>
     using coll_base::single_recv_buf;
     using coll_base::comm;
 
+    sycl_reduce_coll(bench_coll_init_attr init_attr) : coll_base(init_attr,
+                                                                 base_coll::comm->size(),
+                                                                 base_coll::comm->size()) {}
+
     virtual void prepare(size_t elem_count) override
     {
         size_t local_rank = comm->rank();
-        for (size_t b_idx = 0; b_idx < BUF_COUNT; b_idx++)
+        for (size_t b_idx = 0; b_idx < base_coll::get_buf_count(); b_idx++)
         {
             sycl_queue.submit([&](handler& cgh)
             {
@@ -49,7 +53,7 @@ struct sycl_reduce_coll : sycl_base_coll<Dtype, reduce_strategy_impl>
         Dtype rbuf_expected = (comm->size() - 1) * ((float)comm->size() / 2);
         size_t local_rank = comm->rank();
 
-        for (size_t b_idx = 0; b_idx < BUF_COUNT; b_idx++)
+        for (size_t b_idx = 0; b_idx < base_coll::get_buf_count(); b_idx++)
         {
             sycl_queue.submit([&](handler& cgh)
             {
@@ -73,7 +77,7 @@ struct sycl_reduce_coll : sycl_base_coll<Dtype, reduce_strategy_impl>
             });
         }
 
-        for (size_t b_idx = 0; b_idx < BUF_COUNT; b_idx++)
+        for (size_t b_idx = 0; b_idx < base_coll::get_buf_count(); b_idx++)
         {
             auto send_buf = (static_cast<sycl_buffer_t<Dtype>*>(send_bufs[b_idx]));
             auto recv_buf = (static_cast<sycl_buffer_t<Dtype>*>(recv_bufs[b_idx]));

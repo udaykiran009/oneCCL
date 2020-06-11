@@ -26,11 +26,6 @@ using namespace cl::sycl::access;
 #include "coll.hpp"
 #include "sparse_allreduce/sparse_detail.hpp"
 
-/* required declarations */
-template<class Dtype>
-void create_colls(std::list<std::string>& coll_names, ccl::stream_type backend,
-                  coll_list_t& colls);
-
 /* specific benchmark variables */
 // TODO: add ccl::bfp16
 constexpr std::initializer_list<ccl::datatype> all_dtypes = {ccl::dt_char,
@@ -49,6 +44,9 @@ constexpr std::initializer_list<ccl::datatype> all_dtypes = {ccl::dt_char,
 
 #define DEFAULT_DTYPES_LIST "float"
 #define ALL_DTYPES_LIST "char,int,float,double,int64_t,uint64_t"
+
+#define DEFAULT_REDUCTIONS_LIST "sum"
+#define ALL_REDUCTIONS_LIST "sum,prod,min,max"
 
 #define PRINT(fmt, ...)             \
     printf(fmt"\n", ##__VA_ARGS__); \
@@ -104,6 +102,14 @@ std::map<ccl::datatype, std::string> dtype_names =
     std::make_pair(ccl::datatype::dt_uint64, "uint64_t"),
   };
 
+std::map<ccl::reduction, std::string> reduction_names =
+  {
+    std::make_pair(ccl::reduction::sum, "sum"),
+    std::make_pair(ccl::reduction::prod,"prod"),
+    std::make_pair(ccl::reduction::min, "min"),
+    std::make_pair(ccl::reduction::max, "max"),
+  };
+
 // variables for setting dtypes to launch benchmark
 // TODO: add ccl::bfp16
 template<class native_type>
@@ -116,49 +122,6 @@ using supported_dtypes_t = std::tuple< checked_dtype_t<char>,
                                        checked_dtype_t<uint64_t> >;
 supported_dtypes_t launch_dtypes;
 
-/* specific benchmark functors */
-class create_colls_func
-{
-private:
-    std::list<std::string>& coll_names;
-    ccl::stream_type backend;
-    coll_list_t& colls;
-public:
-    create_colls_func(std::list<std::string>& coll_names, ccl::stream_type backend,
-                      coll_list_t& colls)
-                      : coll_names(coll_names), backend(backend), colls(colls)
-    { }
-
-    template<class Dtype>
-    void operator() (const Dtype& value)
-    {
-        if (true == std::get<0>(value))
-        {
-            create_colls<typename Dtype::second_type>(coll_names, backend, colls);
-        }
-    }
-};
-
-class set_types_func
-{
-private:
-    const std::list<std::string>& dtypes;
-public:
-    set_types_func(const std::list<std::string>& dtypes) : dtypes(dtypes)
-    { }
-
-    template<class Dtype>
-    void operator() (checked_dtype_t<Dtype>& val)
-    {
-        auto it = std::find(dtypes.begin(), dtypes.end(),
-                            ccl::native_type_info<Dtype>::name());
-        if (it != std::end(dtypes))
-        {
-            val.first  = true;
-        }
-    }
-};
-
 /* specific benchmark functions */
 void print_help_usage(const char* app)
 {
@@ -167,9 +130,11 @@ void print_help_usage(const char* app)
           "[-e,--loop <execution loop>]\n\t"
           "[-l,--coll <collectives list>]\n\t"
           "[-i,--iters <iteration count>]\n\t"
+          "[-w,--warmup_iters <warm up iteration count>]\n\t"
           "[-p,--buf_count <number of parallel operations within single collective>]\n\t"
           "[-c,--check <check result correctness>]\n\t"
           "[-d,--dtype <datatypes list/all>]\n\t"
+          "[-r,--reduction <reductions list/all>]\n\t"
           "[-h,--help]\n\n"
           "example:\n\t--coll allgatherv,allreduce,sparse_allreduce,sparse_allreduce_bfp16 --backend cpu --loop regular\n"
           "example:\n\t--coll bcast,reduce --backend sycl --loop unordered \n"
@@ -208,56 +173,6 @@ double when(void)
            (double)(tv.tv_usec - tv_base.tv_usec);
 }
 
-void print_timings(ccl::communicator& comm,
-                  double* timer, size_t elem_count,
-                  size_t elem_size, size_t buf_count,
-                  size_t rank, size_t size)
-{
-    double* timers = (double*)malloc(size * sizeof(double));
-    size_t* recv_counts = (size_t*)malloc(size * sizeof(size_t));
-
-    size_t idx;
-    for (idx = 0; idx < size; idx++)
-        recv_counts[idx] = 1;
-
-    ccl::coll_attr attr;
-    memset(&attr, 0, sizeof(ccl_coll_attr_t));
-
-    comm.allgatherv(timer,
-                    1,
-                    timers,
-                    recv_counts,
-                    &attr,
-                    nullptr)->wait();
-
-    if (rank == 0)
-    {
-        double avg_timer = 0;
-        double avg_timer_per_buf = 0;
-        for (idx = 0; idx < size; idx++)
-        {
-            avg_timer += timers[idx];
-        }
-        avg_timer /= (ITERS * size);
-        avg_timer_per_buf = avg_timer / buf_count;
-
-        double stddev_timer = 0;
-        double sum = 0;
-        for (idx = 0; idx < size; idx++)
-        {
-            double val = timers[idx] / ITERS;
-            sum += (val - avg_timer) * (val - avg_timer);
-        }
-        stddev_timer = sqrt(sum / size) / avg_timer * 100;
-        printf("size %10zu x %5zu bytes, avg %10.2lf us, avg_per_buf %10.2f, stddev %5.1lf %%\n",
-                elem_count * elem_size, buf_count, avg_timer, avg_timer_per_buf, stddev_timer);
-    }
-    comm.barrier();
-
-    free(timers);
-    free(recv_counts);
-}
-
 std::list<std::string> tokenize(const std::string& input, char delimeter)
 {
     std::stringstream ss(input);
@@ -278,6 +193,20 @@ std::string find_str_val(Container& mp, const Dtype& key)
     if (it != mp.end())
          return it->second;
     return NULL;
+}
+
+template<class Dtype, class Container>
+bool find_key_val(ccl::reduction& key, Container& mp, const Dtype& val)
+{
+    for (auto &i : mp)
+    {
+        if (i.second == val)
+        {
+            key = i.first;
+            return true;
+        }
+    }
+    return false;
 }
 
 int check_supported_options(const std::string& option_name, const std::string& option_value,
@@ -341,10 +270,12 @@ typedef struct user_options_t
     ccl::stream_type backend;
     loop_type_t loop;
     size_t iters;
+    size_t warmup_iters;
     size_t buf_count;
     size_t check_values;
     std::list<std::string> coll_names;
     std::list<std::string> dtypes;
+    std::list<std::string> reductions;
 
     user_options_t()
     {
@@ -352,11 +283,83 @@ typedef struct user_options_t
         loop = LOOP_REGULAR;
         coll_names = tokenize(DEFAULT_COLL_LIST, ',');
         iters = ITERS;
+        warmup_iters = WARMUP_ITERS;
         buf_count = BUF_COUNT;
         check_values = 1;
         dtypes = tokenize(DEFAULT_DTYPES_LIST, ','); // default: float
+        reductions = tokenize(DEFAULT_REDUCTIONS_LIST, ','); // default: sum
     }
 } user_options_t;
+
+/* placing print_timings() here is because of declaration of user_options_t */
+void print_timings(ccl::communicator& comm, double& timer, const size_t& elem_count,
+                   const size_t& elem_size, const user_options_t& options)
+{
+    double *timers = new double[comm.size()];
+    size_t *recv_counts = new size_t[comm.size()];
+
+    size_t idx;
+    for (idx = 0; idx < comm.size(); idx++)
+        recv_counts[idx] = 1;
+
+    ccl::coll_attr attr;
+    memset(&attr, 0, sizeof(ccl_coll_attr_t));
+
+    comm.allgatherv(&timer,
+                    1,
+                    timers,
+                    recv_counts,
+                    &attr,
+                    nullptr)->wait();
+
+    if (comm.rank() == 0)
+    {
+        double avg_timer = 0;
+        double avg_timer_per_buf = 0;
+        for (idx = 0; idx < comm.size(); idx++)
+        {
+            avg_timer += timers[idx];
+        }
+        avg_timer /= (options.iters * comm.size());
+        avg_timer_per_buf = avg_timer / options.buf_count;
+
+        double stddev_timer = 0;
+        double sum = 0;
+        for (idx = 0; idx < comm.size(); idx++)
+        {
+            double val = timers[idx] / options.iters;
+            sum += (val - avg_timer) * (val - avg_timer);
+        }
+        stddev_timer = sqrt(sum / comm.size()) / avg_timer * 100;
+        printf("size %10zu x %5zu bytes, avg %10.2lf us, avg_per_buf %10.2f, stddev %5.1lf %%\n",
+                elem_count * elem_size, options.buf_count, avg_timer, avg_timer_per_buf, stddev_timer);
+    }
+    comm.barrier();
+
+    delete [] timers;
+    delete [] recv_counts;
+}
+
+/* specific benchmark functors */
+class set_dtypes_func
+{
+private:
+    const std::list<std::string>& dtypes;
+public:
+    set_dtypes_func(const std::list<std::string>& dtypes) : dtypes(dtypes)
+    { }
+
+    template<class Dtype>
+    void operator() (checked_dtype_t<Dtype>& val)
+    {
+        auto it = std::find(dtypes.begin(), dtypes.end(),
+                            ccl::native_type_info<Dtype>::name());
+        if (it != std::end(dtypes))
+        {
+            val.first  = true;
+        }
+    }
+};
 
 int parse_user_options(int& argc, char** (&argv), user_options_t& options)
 {
@@ -364,16 +367,18 @@ int parse_user_options(int& argc, char** (&argv), user_options_t& options)
     int errors = 0;
 
     // values needed by getopt
-    const char* const short_options = "b:e:i:p:c:l:d:h:";
+    const char* const short_options = "b:e:i:w:p:c:l:d:r:h:";
     struct option getopt_options[] =
     {
         { "backend",      required_argument, 0, 'b' },
         { "loop",         required_argument, 0, 'e' },
         { "iters",        required_argument, 0, 'i' },
+        { "warmup_iters", required_argument, 0, 'w' },
         { "buf_count",    required_argument, 0, 'p' },
         { "check",        required_argument, 0, 'c' },
         { "coll",         required_argument, 0, 'l' },
         { "dtype",        required_argument, 0, 'd' },
+        { "reduction",    required_argument, 0, 'r' },
         { "help",         no_argument,       0, 'h' },
         {  0,             0,                 0,  0 } // required at end of array.
     };
@@ -394,6 +399,9 @@ int parse_user_options(int& argc, char** (&argv), user_options_t& options)
             case 'i':
                 options.iters = atoi(optarg);
                 break;
+            case 'w':
+                options.warmup_iters = atoi(optarg);
+                break;
             case 'p':
                 options.buf_count = atoi(optarg);
                 break;
@@ -410,6 +418,14 @@ int parse_user_options(int& argc, char** (&argv), user_options_t& options)
                 }
                 else
                     options.dtypes = tokenize(optarg, ',');
+                break;
+            case 'r':
+                if (strcmp("all", optarg) == 0)
+                {
+                    options.reductions = tokenize(ALL_REDUCTIONS_LIST, ',');
+                }
+                else
+                    options.reductions = tokenize(optarg, ',');
                 break;
             case 'h':
                 print_help_usage(argv[0]);
@@ -439,29 +455,34 @@ int parse_user_options(int& argc, char** (&argv), user_options_t& options)
 void print_user_options(const user_options_t& options, ccl::communicator* comm)
 {
     std::stringstream ss;
-    ss << "colls:     ";
+    ss << "colls:        ";
     std::copy(options.coll_names.begin(), options.coll_names.end(),
               std::ostream_iterator<std::string>(ss, " "));
-    ss << "\n  dtypes:    ";
+    ss << "\n  dtypes:       ";
     std::copy(options.dtypes.begin(), options.dtypes.end(),
+              std::ostream_iterator<std::string>(ss, " "));
+    ss << "\n  reductions:   ";
+    std::copy(options.reductions.begin(), options.reductions.end(),
               std::ostream_iterator<std::string>(ss, " "));
 
     std::string backend_str = find_str_val(backend_names, options.backend);
     std::string loop_str = find_str_val(loop_names, options.loop);
 
     PRINT_BY_ROOT(comm,
-                  "\noptions:"
-                  "\n  ranks:     %zu"
-                  "\n  backend:   %s"
-                  "\n  loop:      %s"
-                  "\n  iters:     %zu"
-                  "\n  buf_count: %zu"
-                  "\n  check:     %zu"
+                  "options:"
+                  "\n  ranks:        %zu"
+                  "\n  backend:      %s"
+                  "\n  loop:         %s"
+                  "\n  iters:        %zu"
+                  "\n  warmup_iters: %zu"
+                  "\n  buf_count:    %zu"
+                  "\n  check:        %zu"
                   "\n  %s",
                   comm->size(),
                   backend_str.c_str(),
                   loop_str.c_str(),
                   options.iters,
+                  options.warmup_iters,
                   options.buf_count,
                   options.check_values,
                   ss.str().c_str());

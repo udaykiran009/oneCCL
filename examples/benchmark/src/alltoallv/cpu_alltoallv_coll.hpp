@@ -14,11 +14,14 @@ struct cpu_alltoallv_coll : cpu_base_coll<Dtype, alltoallv_strategy_impl>
     using coll_base::single_recv_buf;
     using coll_base::comm;
 
-    cpu_alltoallv_coll() : coll_base(base_coll::comm->size(), base_coll::comm->size(), base_coll::comm->size()) {}
+    cpu_alltoallv_coll(bench_coll_init_attr init_attr) : coll_base(init_attr,
+                                                                   base_coll::comm->size(),
+                                                                   base_coll::comm->size(),
+                                                                   base_coll::comm->size()) {}
 
     virtual void prepare(size_t elem_count) override
     {
-        for (size_t b_idx = 0; b_idx < BUF_COUNT; b_idx++)
+        for (size_t b_idx = 0; b_idx < base_coll::get_buf_count(); b_idx++)
         {
             for (size_t idx = 0; idx < comm->size(); idx++)
             {
@@ -37,7 +40,7 @@ struct cpu_alltoallv_coll : cpu_base_coll<Dtype, alltoallv_strategy_impl>
         Dtype rbuf_expected;
         Dtype value;
         size_t comm_size = comm->size();
-        for (size_t b_idx = 0; b_idx < BUF_COUNT; b_idx++)
+        for (size_t b_idx = 0; b_idx < base_coll::get_buf_count(); b_idx++)
         {
             for (size_t e_idx = 0; e_idx < elem_count * comm_size; e_idx++)
             {

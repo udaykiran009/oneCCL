@@ -13,15 +13,16 @@ cl::sycl::queue sycl_queue;
 
 /* sycl-specific base implementation */
 template<class Dtype, class strategy>
-struct sycl_base_coll : virtual base_coll, private strategy
+struct sycl_base_coll : base_coll, private strategy
 {
     using coll_strategy = strategy;
 
     template<class ...Args>
-    sycl_base_coll(size_t sbuf_multiplier, size_t rbuf_multiplier, Args&& ...args) :
-        coll_strategy(std::forward<Args>(args)...)
+    sycl_base_coll(bench_coll_init_attr init_attr,
+                   size_t sbuf_multiplier, size_t rbuf_multiplier, Args&& ...args) :
+        base_coll(init_attr), coll_strategy(std::forward<Args>(args)...)
     {
-        for (size_t idx = 0; idx < BUF_COUNT; idx++)
+        for (size_t idx = 0; idx < base_coll::get_buf_count(); idx++)
         {
             send_bufs[idx] = new cl::sycl::buffer<Dtype, 1>(ELEM_COUNT * sbuf_multiplier);
             recv_bufs[idx] = new cl::sycl::buffer<Dtype, 1>(ELEM_COUNT * rbuf_multiplier);
@@ -30,13 +31,13 @@ struct sycl_base_coll : virtual base_coll, private strategy
         single_recv_buf = new cl::sycl::buffer<Dtype, 1>(SINGLE_ELEM_COUNT * rbuf_multiplier);
     }
 
-    sycl_base_coll() : sycl_base_coll(1, 1)
+    sycl_base_coll(bench_coll_init_attr init_attr) : sycl_base_coll(init_attr, 1, 1)
     {
     }
 
     virtual ~sycl_base_coll()
     {
-        for (size_t idx = 0; idx < BUF_COUNT; idx++)
+        for (size_t idx = 0; idx < base_coll::get_buf_count(); idx++)
         {
             delete static_cast<sycl_buffer_t<Dtype>*>(send_bufs[idx]);
             delete static_cast<sycl_buffer_t<Dtype>*>(recv_bufs[idx]);
@@ -51,7 +52,7 @@ struct sycl_base_coll : virtual base_coll, private strategy
     }
 
     virtual void start(size_t count, size_t buf_idx,
-                       const ccl::coll_attr& attr,
+                       const bench_coll_exec_attr& attr,
                        req_list_t& reqs) override
     {
         sycl_buffer_t<Dtype> &send_buf = *(static_cast<sycl_buffer_t<Dtype>*>(send_bufs[buf_idx]));
@@ -62,7 +63,7 @@ struct sycl_base_coll : virtual base_coll, private strategy
     }
 
     virtual void start_single(size_t count,
-                              const ccl::coll_attr& attr,
+                              const bench_coll_exec_attr& attr,
                               req_list_t& reqs) override
     {
         sycl_buffer_t<Dtype> &send_buf = *(static_cast<sycl_buffer_t<Dtype>*>(single_send_buf));

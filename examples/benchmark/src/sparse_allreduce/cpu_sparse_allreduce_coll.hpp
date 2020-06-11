@@ -28,18 +28,19 @@ struct cpu_sparse_allreduce_coll :
     using coll_base::single_recv_vcount;
     using coll_base::single_user_ctx;
 
-    cpu_sparse_allreduce_coll(const std::string& args, 
+    cpu_sparse_allreduce_coll(bench_coll_init_attr init_attr,
+                              const std::string& args,
                               size_t sbuf_size_modifier = 1,
-                              size_t rbuf_size_modifier = 1) : coll_base(args)
+                              size_t rbuf_size_modifier = 1) : coll_base(init_attr, args)
     {
         int result = 0;
-        for (size_t idx = 0; idx < BUF_COUNT; idx++)
+
+        for (size_t idx = 0; idx < base_coll::get_buf_count(); idx++)
         {
             result = posix_memalign((void**)&send_ibufs[idx], ALIGNMENT,
                                      ELEM_COUNT * sizeof(IType) * sbuf_size_modifier);
             result |= posix_memalign((void**)&send_vbufs[idx], ALIGNMENT,
                                      ELEM_COUNT * sizeof(VType) * sbuf_size_modifier);
-
             result |= posix_memalign((void**)&recv_ibufs[idx], ALIGNMENT,
                                      ELEM_COUNT * sizeof(IType) * rbuf_size_modifier *
                                      base_coll::comm->size());
@@ -66,7 +67,7 @@ struct cpu_sparse_allreduce_coll :
                                 SINGLE_ELEM_COUNT * sizeof(VType) * rbuf_size_modifier *
                                 base_coll::comm->size());
 
-        for (size_t idx = 0; idx < BUF_COUNT; idx++)
+        for (size_t idx = 0; idx < base_coll::get_buf_count(); idx++)
         {
             std::memset(send_ibufs[idx], 0, ELEM_COUNT * sizeof(IType));
             std::memset(send_vbufs[idx], 0, ELEM_COUNT * sizeof(VType) * sbuf_size_modifier);
@@ -85,7 +86,7 @@ struct cpu_sparse_allreduce_coll :
         std::memset(single_recv_vbuf, 0, SINGLE_ELEM_COUNT * sizeof(VType) * rbuf_size_modifier *
                                          base_coll::comm->size());
 
-        for (size_t idx = 0; idx < BUF_COUNT; idx++)
+        for (size_t idx = 0; idx < base_coll::get_buf_count(); idx++)
         {
             user_ctxs[idx].recv_ibuf = (void**)(&(recv_ibufs[idx]));
             user_ctxs[idx].recv_vbuf = (void**)(&(recv_vbufs[idx]));
@@ -100,7 +101,7 @@ struct cpu_sparse_allreduce_coll :
 
     ~cpu_sparse_allreduce_coll()
     {
-        for (size_t idx = 0; idx < BUF_COUNT; idx++)
+        for (size_t idx = 0; idx < base_coll::get_buf_count(); idx++)
         {
             free(send_ibufs[idx]);
             free(send_vbufs[idx]);
@@ -117,7 +118,7 @@ struct cpu_sparse_allreduce_coll :
     virtual void prepare(size_t elem_count) override
     {
         this->init_distributor({0, elem_count});
-        for (size_t b_idx = 0; b_idx < BUF_COUNT; b_idx++)
+        for (size_t b_idx = 0; b_idx < base_coll::get_buf_count(); b_idx++)
         {
             sparse_detail::fill_sparse_data(this->get_expected_recv_counts(elem_count),
                                             *this->indices_distributor_impl,
@@ -134,7 +135,7 @@ struct cpu_sparse_allreduce_coll :
 
     virtual void finalize(size_t elem_count) override
     {
-        for (size_t b_idx = 0; b_idx < BUF_COUNT; b_idx++)
+        for (size_t b_idx = 0; b_idx < base_coll::get_buf_count(); b_idx++)
         {
             sparse_detail::check_sparse_result(this->get_expected_recv_counts(elem_count),
                                                elem_count,
@@ -150,7 +151,7 @@ struct cpu_sparse_allreduce_coll :
     }
 
     virtual void start(size_t count, size_t buf_idx,
-                       const ccl::coll_attr& attr,
+                       const bench_coll_exec_attr& attr,
                        req_list_t& reqs) override
     {
         coll_strategy::start_internal(*comm,
@@ -163,7 +164,7 @@ struct cpu_sparse_allreduce_coll :
     }
 
     virtual void start_single(size_t count,
-                              const ccl::coll_attr& attr,
+                              const bench_coll_exec_attr& attr,
                               req_list_t& reqs) override
     {
         coll_strategy::start_internal(*comm,

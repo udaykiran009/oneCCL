@@ -139,7 +139,7 @@ struct sparse_allreduce_strategy_impl
                         const VType send_vbuf, size_t send_vcount,
                         IType recv_ibuf, size_t recv_icount,
                         VType recv_vbuf, size_t recv_vcount,
-                        const ccl::coll_attr& attr, ccl::stream_t& stream,
+                        const bench_coll_exec_attr& bench_attr, ccl::stream_t& stream,
                         req_list_t& reqs,
                         sparse_allreduce_user_ctx_t& user_ctx)
     {
@@ -147,7 +147,7 @@ struct sparse_allreduce_strategy_impl
         recv_icount = std::get<0>(expected);
         recv_vcount = std::get<1>(expected);
 
-        auto& sparse_attr = const_cast<ccl_coll_attr_t&>(attr);
+        auto& sparse_attr = const_cast<ccl_coll_attr_t&>(bench_attr.coll_attr);
         sparse_attr.sparse_allreduce_completion_fn = sparse_allreduce_completion_fn;
         sparse_attr.sparse_allreduce_completion_ctx = &user_ctx;
 
@@ -155,7 +155,7 @@ struct sparse_allreduce_strategy_impl
                                              send_vbuf, send_vcount,
                                              recv_ibuf, recv_icount,
                                              recv_vbuf, recv_vcount,
-                                             ccl::reduction::sum,
+                                             bench_attr.reduction,
                                              &sparse_attr, stream));
     }
 

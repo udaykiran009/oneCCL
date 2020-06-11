@@ -7,11 +7,11 @@ struct bcast_strategy_impl
 
     template<class Dtype>
     void start_internal(ccl::communicator &comm, size_t count, Dtype send_buf, Dtype recv_buf,
-                        const ccl::coll_attr& attr, ccl::stream_t& stream,
+                        const bench_coll_exec_attr& bench_attr, ccl::stream_t& stream,
                         req_list_t& reqs)
     {
         (void)send_buf;
-        reqs.push_back(comm.bcast(recv_buf, count, COLL_ROOT, &attr, stream));
+        reqs.push_back(comm.bcast(recv_buf, count, COLL_ROOT, &bench_attr.coll_attr, stream));
     }
 };
 

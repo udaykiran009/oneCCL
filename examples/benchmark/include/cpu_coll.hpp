@@ -6,21 +6,23 @@
 /* cpu-specific base implementation */
 
 template<class Dtype, class strategy>
-struct cpu_base_coll : virtual base_coll, protected strategy
+struct cpu_base_coll : base_coll, protected strategy
 {
     using coll_strategy = strategy;
 
     template<class ...Args>
-    cpu_base_coll(size_t sbuf_multiplier, size_t rbuf_multiplier, Args&& ...args):
-        coll_strategy(std::forward<Args>(args)...)
+    cpu_base_coll(bench_coll_init_attr init_attr, size_t sbuf_multiplier,
+                  size_t rbuf_multiplier, Args&& ...args) :
+        base_coll(init_attr), coll_strategy(std::forward<Args>(args)...)
     {
         int result = 0;
-        for (size_t idx = 0; idx < BUF_COUNT; idx++)
+
+        for (size_t idx = 0; idx < base_coll::get_buf_count(); idx++)
         {
             result = posix_memalign((void**)&send_bufs[idx], ALIGNMENT,
-                                    ELEM_COUNT * sizeof(Dtype) * sbuf_multiplier);
+                                     ELEM_COUNT * sizeof(Dtype) * sbuf_multiplier);
             result = posix_memalign((void**)&recv_bufs[idx], ALIGNMENT,
-                                    ELEM_COUNT * sizeof(Dtype) * rbuf_multiplier);
+                                     ELEM_COUNT * sizeof(Dtype) * rbuf_multiplier);
         }
         result = posix_memalign((void**)&single_send_buf, ALIGNMENT,
                                 SINGLE_ELEM_COUNT * sizeof(Dtype) * sbuf_multiplier);
@@ -29,13 +31,13 @@ struct cpu_base_coll : virtual base_coll, protected strategy
         (void)result;
     }
 
-    cpu_base_coll() : cpu_base_coll(1, 1)
+    cpu_base_coll(bench_coll_init_attr init_attr) : cpu_base_coll(init_attr, 1, 1)
     {
     }
 
     virtual ~cpu_base_coll()
     {
-        for (size_t idx = 0; idx < BUF_COUNT; idx++)
+        for (size_t idx = 0; idx < base_coll::get_buf_count(); idx++)
         {
             free(send_bufs[idx]);
             free(recv_bufs[idx]);
@@ -50,7 +52,7 @@ struct cpu_base_coll : virtual base_coll, protected strategy
     }
 
     virtual void start(size_t count, size_t buf_idx,
-                       const ccl::coll_attr& attr,
+                       const bench_coll_exec_attr& attr,
                        req_list_t& reqs) override
     {
         coll_strategy::start_internal(*comm, count,
@@ -60,7 +62,7 @@ struct cpu_base_coll : virtual base_coll, protected strategy
     }
 
     virtual void start_single(size_t count,
-                              const ccl::coll_attr& attr,
+                              const bench_coll_exec_attr& attr,
                               req_list_t& reqs) override
     {
         coll_strategy::start_internal(*comm, count,

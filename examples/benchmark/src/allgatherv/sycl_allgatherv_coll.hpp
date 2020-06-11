@@ -22,13 +22,16 @@ struct sycl_allgatherv_coll : sycl_base_coll<Dtype, allgatherv_strategy_impl>
     using coll_base::single_recv_buf;
     using coll_base::comm;
 
-    sycl_allgatherv_coll() : coll_base(1, base_coll::comm->size(), base_coll::comm->size()) {}
+    sycl_allgatherv_coll(bench_coll_init_attr init_attr) : coll_base(init_attr, 1,
+                                                                     base_coll::comm->size(),
+                                                                     base_coll::comm->size()) {}
 
     virtual void prepare(size_t elem_count) override
     {
         size_t local_rank = comm->rank();
         size_t local_size = comm->size();
-        for (size_t b_idx = 0; b_idx < BUF_COUNT; b_idx++)
+
+        for (size_t b_idx = 0; b_idx < base_coll::get_buf_count(); b_idx++)
         {
             sycl_queue.submit([&](handler& cgh)
             {
@@ -54,7 +57,7 @@ struct sycl_allgatherv_coll : sycl_base_coll<Dtype, allgatherv_strategy_impl>
         size_t local_size = comm->size();
         Dtype sbuf_expected = comm->rank();
 
-        for (size_t b_idx = 0; b_idx < BUF_COUNT; b_idx++)
+        for (size_t b_idx = 0; b_idx < base_coll::get_buf_count(); b_idx++)
         {
             sycl_queue.submit([&](handler& cgh)
             {
@@ -80,7 +83,7 @@ struct sycl_allgatherv_coll : sycl_base_coll<Dtype, allgatherv_strategy_impl>
         }
 
         Dtype value;
-        for (size_t b_idx = 0; b_idx < BUF_COUNT; b_idx++)
+        for (size_t b_idx = 0; b_idx < base_coll::get_buf_count(); b_idx++)
         {
             auto send_buf = (static_cast<sycl_buffer_t<Dtype>*>(send_bufs[b_idx]));
             auto recv_buf = (static_cast<sycl_buffer_t<Dtype>*>(recv_bufs[b_idx]));

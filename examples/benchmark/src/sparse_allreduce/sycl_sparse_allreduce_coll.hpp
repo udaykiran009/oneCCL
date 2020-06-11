@@ -40,11 +40,12 @@ struct sycl_sparse_allreduce_coll :
     using coll_base::single_recv_vcount;
     using coll_base::single_user_ctx;
 
-    sycl_sparse_allreduce_coll(const std::string& args, 
+    sycl_sparse_allreduce_coll(bench_coll_init_attr init_attr,
+                               const std::string& args,
                                size_t sbuf_size_modifier = 1,
-                               size_t rbuf_size_modifier = 1) : coll_base(args)
+                               size_t rbuf_size_modifier = 1) : coll_base(init_attr, args)
     {
-        for (size_t idx = 0; idx < BUF_COUNT; idx++)
+        for (size_t idx = 0; idx < base_coll::get_buf_count(); idx++)
         {
             send_ibufs[idx] = new sycl_indices_t(ELEM_COUNT * sbuf_size_modifier);
             send_vbufs[idx] = new sycl_values_t(ELEM_COUNT * sbuf_size_modifier);
@@ -116,7 +117,7 @@ struct sycl_sparse_allreduce_coll :
             });
         });
 
-        for (size_t idx = 0; idx < BUF_COUNT; idx++)
+        for (size_t idx = 0; idx < base_coll::get_buf_count(); idx++)
         {
             user_ctxs[idx].recv_ibuf = (void**)(&(recv_ibufs[idx]));
             user_ctxs[idx].recv_vbuf = (void**)(&(recv_vbufs[idx]));
@@ -135,7 +136,7 @@ struct sycl_sparse_allreduce_coll :
         // TODO not implemented yet
     }
     virtual void start(size_t count, size_t buf_idx,
-                       const ccl::coll_attr& attr,
+                       const bench_coll_exec_attr& attr,
                        req_list_t& reqs) override
     {
         coll_strategy::start_internal(*comm,
@@ -152,7 +153,7 @@ struct sycl_sparse_allreduce_coll :
     }
 
     virtual void start_single(size_t count,
-                              const ccl::coll_attr& attr,
+                              const bench_coll_exec_attr& attr,
                               req_list_t& reqs) override
     {
         coll_strategy::start_internal(*comm,

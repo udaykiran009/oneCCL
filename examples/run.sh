@@ -106,6 +106,8 @@ run_benchmark()
     echo "coll: " $coll
     local dtype=$8
     echo "dtype: " $dtype
+    local reduction=$9
+    echo "dtype: " $reduction
     echo "================ENVIRONMENT=================="
 
     test_log="$EXAMPLE_WORK_DIR/$dir_name/run"
@@ -127,6 +129,10 @@ run_benchmark()
     if [ "${dtype}" != "" ];
     then
         options="${options} --dtype ${dtype}"
+    fi
+    if [ "${reduction}" != "" ];
+    then
+        options="${options} --reduction ${reduction}"
     fi
 
     if [ `echo $ccl_extra_env | grep -c CCL_LOG_LEVEL` -ne 1 ]
@@ -205,6 +211,7 @@ run()
     ppn=1
     n=2
     dtype_list="char,int,float"
+    reduction_list="sum,max"
     ccl_base_env="FI_PROVIDER=tcp CCL_YIELD=sleep CCL_ATL_SHM=1"
 
     if ! [[ -n "${DASHBOARD_GPU_DEVICE_PRESENT}" ]]
@@ -273,10 +280,10 @@ run()
                             ccl_extra_env="CCL_LOG_LEVEL=2 ${ccl_transport_env}"
                             run_benchmark "${ccl_extra_env}" ${dir_name} ${transport} ${example} ${backend} regular
                             
-                            # run a benchmark with the specific data types list
                             ccl_extra_env="${ccl_transport_env}"
-                            run_benchmark "${ccl_extra_env}" ${dir_name} ${transport} ${example} ${backend} regular allreduce ${dtype_list}
-                        fi
+                            # run a benchmark with the specific datatypes and reductions
+                            run_benchmark "${ccl_extra_env}" ${dir_name} ${transport} ${example} ${backend} regular allreduce ${dtype_list} ${reduction_list}
+		        fi
                     done
                 elif [ "$dir_name" == "sycl" ];
                 then

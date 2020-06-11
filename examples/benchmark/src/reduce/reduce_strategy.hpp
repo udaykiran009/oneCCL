@@ -10,11 +10,11 @@ struct reduce_strategy_impl
 
     template<class Dtype>
     void start_internal(ccl::communicator &comm, size_t count, const Dtype send_buf, Dtype recv_buf,
-                        const ccl::coll_attr& attr, ccl::stream_t& stream,
+                        const bench_coll_exec_attr& bench_attr, ccl::stream_t& stream,
                         req_list_t& reqs)
     {
-        reqs.push_back(comm.reduce(send_buf, recv_buf,count, ccl::reduction::sum,
-                                   COLL_ROOT, &attr, stream));
+        reqs.push_back(comm.reduce(send_buf, recv_buf, count, bench_attr.reduction,
+                                   COLL_ROOT, &bench_attr.coll_attr, stream));
     }
 };
 
