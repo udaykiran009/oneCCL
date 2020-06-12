@@ -3,10 +3,9 @@
 
 /* Common defines for all collectives */
 #define BUF_COUNT         (16)
-#define ELEM_COUNT        (128)
+#define MAX_ELEM_COUNT    (128)
 #define ITERS             (16)
 #define WARMUP_ITERS      (1)
-#define SINGLE_ELEM_COUNT (BUF_COUNT * ELEM_COUNT)
 #define ALIGNMENT         (4096)
 #define DTYPE             float
 #define MATCH_ID_SIZE     (256)

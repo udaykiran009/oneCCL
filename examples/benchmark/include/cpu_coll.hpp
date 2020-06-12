@@ -20,14 +20,14 @@ struct cpu_base_coll : base_coll, protected strategy
         for (size_t idx = 0; idx < base_coll::get_buf_count(); idx++)
         {
             result = posix_memalign((void**)&send_bufs[idx], ALIGNMENT,
-                                     ELEM_COUNT * sizeof(Dtype) * sbuf_multiplier);
+                                     base_coll::get_max_elem_count() * sizeof(Dtype) * sbuf_multiplier);
             result = posix_memalign((void**)&recv_bufs[idx], ALIGNMENT,
-                                     ELEM_COUNT * sizeof(Dtype) * rbuf_multiplier);
+                                     base_coll::get_max_elem_count() * sizeof(Dtype) * rbuf_multiplier);
         }
         result = posix_memalign((void**)&single_send_buf, ALIGNMENT,
-                                SINGLE_ELEM_COUNT * sizeof(Dtype) * sbuf_multiplier);
+                                 base_coll::get_single_buf_max_elem_count() * sizeof(Dtype) * sbuf_multiplier);
         result = posix_memalign((void**)&single_recv_buf, ALIGNMENT,
-                                SINGLE_ELEM_COUNT * sizeof(Dtype) * rbuf_multiplier);
+                                base_coll::get_single_buf_max_elem_count() * sizeof(Dtype) * rbuf_multiplier);
         (void)result;
     }
 

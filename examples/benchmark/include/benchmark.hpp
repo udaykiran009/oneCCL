@@ -125,17 +125,21 @@ supported_dtypes_t launch_dtypes;
 /* specific benchmark functions */
 void print_help_usage(const char* app)
 {
-    PRINT("USAGE: %s [OPTIONS]\n\n\t"
-          "[-b,--backend <backend>]\n\t"
-          "[-e,--loop <execution loop>]\n\t"
-          "[-l,--coll <collectives list>]\n\t"
-          "[-i,--iters <iteration count>]\n\t"
-          "[-w,--warmup_iters <warm up iteration count>]\n\t"
-          "[-p,--buf_count <number of parallel operations within single collective>]\n\t"
-          "[-c,--check <check result correctness>]\n\t"
-          "[-d,--dtype <datatypes list/all>]\n\t"
-          "[-r,--reduction <reductions list/all>]\n\t"
-          "[-h,--help]\n\n"
+    PRINT("\nUSAGE:\n"
+          "\t%s [OPTIONS]\n\n"
+          "OPTIONS:\n"
+          "\t[-b,--backend <backend>]\n"
+          "\t[-e,--loop <execution loop>]\n"
+          "\t[-l,--coll <collectives list>]\n"
+          "\t[-i,--iters <iteration count>]\n"
+          "\t[-w,--warmup_iters <warm up iteration count>]\n"
+          "\t[-p,--buf_count <number of parallel operations within single collective>]\n"
+          "\t[-f,--min_elem_count <minimum number of elements for single collective>]\n"
+          "\t[-t,--max_elem_count <maximum number of elements for single collective>]\n"
+          "\t[-c,--check <check result correctness>]\n"
+          "\t[-d,--dtype <datatypes list/all>]\n"
+          "\t[-r,--reduction <reductions list/all>]\n"
+          "\t[-h,--help]\n\n"
           "example:\n\t--coll allgatherv,allreduce,sparse_allreduce,sparse_allreduce_bfp16 --backend cpu --loop regular\n"
           "example:\n\t--coll bcast,reduce --backend sycl --loop unordered \n"
           "\n\n\tThe collectives \"sparse_*\" support additional configuration parameters:\n"
@@ -272,6 +276,8 @@ typedef struct user_options_t
     size_t iters;
     size_t warmup_iters;
     size_t buf_count;
+    size_t min_elem_count;
+    size_t max_elem_count;
     size_t check_values;
     std::list<std::string> coll_names;
     std::list<std::string> dtypes;
@@ -285,6 +291,8 @@ typedef struct user_options_t
         iters = ITERS;
         warmup_iters = WARMUP_ITERS;
         buf_count = BUF_COUNT;
+        min_elem_count = 1;
+        max_elem_count = MAX_ELEM_COUNT;
         check_values = 1;
         dtypes = tokenize(DEFAULT_DTYPES_LIST, ','); // default: float
         reductions = tokenize(DEFAULT_REDUCTIONS_LIST, ','); // default: sum
@@ -292,8 +300,9 @@ typedef struct user_options_t
 } user_options_t;
 
 /* placing print_timings() here is because of declaration of user_options_t */
-void print_timings(ccl::communicator& comm, double& timer, const size_t& elem_count,
-                   const size_t& elem_size, const user_options_t& options)
+void print_timings(ccl::communicator& comm, double& timer,
+                  const size_t& elem_count, const size_t& elem_size,
+                  const user_options_t& options)
 {
     double *timers = new double[comm.size()];
     size_t *recv_counts = new size_t[comm.size()];
@@ -367,20 +376,22 @@ int parse_user_options(int& argc, char** (&argv), user_options_t& options)
     int errors = 0;
 
     // values needed by getopt
-    const char* const short_options = "b:e:i:w:p:c:l:d:r:h:";
+    const char* const short_options = "b:e:i:w:p:f:t:c:l:d:r:h:";
     struct option getopt_options[] =
     {
-        { "backend",      required_argument, 0, 'b' },
-        { "loop",         required_argument, 0, 'e' },
-        { "iters",        required_argument, 0, 'i' },
-        { "warmup_iters", required_argument, 0, 'w' },
-        { "buf_count",    required_argument, 0, 'p' },
-        { "check",        required_argument, 0, 'c' },
-        { "coll",         required_argument, 0, 'l' },
-        { "dtype",        required_argument, 0, 'd' },
-        { "reduction",    required_argument, 0, 'r' },
-        { "help",         no_argument,       0, 'h' },
-        {  0,             0,                 0,  0 } // required at end of array.
+        { "backend",        required_argument, 0, 'b' },
+        { "loop",           required_argument, 0, 'e' },
+        { "iters",          required_argument, 0, 'i' },
+        { "warmup_iters",   required_argument, 0, 'w' },
+        { "buf_count",      required_argument, 0, 'p' },
+        { "min_elem_count", required_argument, 0, 'f' },
+        { "max_elem_count", required_argument, 0, 't' },
+        { "check",          required_argument, 0, 'c' },
+        { "coll",           required_argument, 0, 'l' },
+        { "dtype",          required_argument, 0, 'd' },
+        { "reduction",      required_argument, 0, 'r' },
+        { "help",           no_argument,       0, 'h' },
+        {  0,               0,                 0,  0 } // required at end of array.
     };
 
     while ((ch = getopt_long(argc, argv, short_options,
@@ -404,6 +415,12 @@ int parse_user_options(int& argc, char** (&argv), user_options_t& options)
                 break;
             case 'p':
                 options.buf_count = atoi(optarg);
+                break;
+            case 'f':
+                options.min_elem_count = atoi(optarg);
+                break;
+            case 't':
+                options.max_elem_count = atoi(optarg);
                 break;
             case 'c':
                 options.check_values = atoi(optarg);
@@ -455,13 +472,13 @@ int parse_user_options(int& argc, char** (&argv), user_options_t& options)
 void print_user_options(const user_options_t& options, ccl::communicator* comm)
 {
     std::stringstream ss;
-    ss << "colls:        ";
+    ss << "colls:          ";
     std::copy(options.coll_names.begin(), options.coll_names.end(),
               std::ostream_iterator<std::string>(ss, " "));
-    ss << "\n  dtypes:       ";
+    ss << "\n  dtypes:         ";
     std::copy(options.dtypes.begin(), options.dtypes.end(),
               std::ostream_iterator<std::string>(ss, " "));
-    ss << "\n  reductions:   ";
+    ss << "\n  reductions:     ";
     std::copy(options.reductions.begin(), options.reductions.end(),
               std::ostream_iterator<std::string>(ss, " "));
 
@@ -470,13 +487,15 @@ void print_user_options(const user_options_t& options, ccl::communicator* comm)
 
     PRINT_BY_ROOT(comm,
                   "options:"
-                  "\n  ranks:        %zu"
-                  "\n  backend:      %s"
-                  "\n  loop:         %s"
-                  "\n  iters:        %zu"
-                  "\n  warmup_iters: %zu"
-                  "\n  buf_count:    %zu"
-                  "\n  check:        %zu"
+                  "\n  ranks:          %zu"
+                  "\n  backend:        %s"
+                  "\n  loop:           %s"
+                  "\n  iters:          %zu"
+                  "\n  warmup_iters:   %zu"
+                  "\n  buf_count:      %zu"
+                  "\n  min_elem_count: %zu"
+                  "\n  max_elem_count: %zu"
+                  "\n  check:          %zu"
                   "\n  %s",
                   comm->size(),
                   backend_str.c_str(),
@@ -484,6 +503,8 @@ void print_user_options(const user_options_t& options, ccl::communicator* comm)
                   options.iters,
                   options.warmup_iters,
                   options.buf_count,
+                  options.min_elem_count,
+                  options.max_elem_count,
                   options.check_values,
                   ss.str().c_str());
 }

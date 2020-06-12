@@ -45,14 +45,17 @@ struct sycl_sparse_allreduce_coll :
                                size_t sbuf_size_modifier = 1,
                                size_t rbuf_size_modifier = 1) : coll_base(init_attr, args)
     {
+        size_t max_elem_count = base_coll::get_max_elem_count();
+        size_t single_buf_max_elem_count = base_coll::get_single_buf_max_elem_count();
+
         for (size_t idx = 0; idx < base_coll::get_buf_count(); idx++)
         {
-            send_ibufs[idx] = new sycl_indices_t(ELEM_COUNT * sbuf_size_modifier);
-            send_vbufs[idx] = new sycl_values_t(ELEM_COUNT * sbuf_size_modifier);
+            send_ibufs[idx] = new sycl_indices_t(max_elem_count * sbuf_size_modifier);
+            send_vbufs[idx] = new sycl_values_t(max_elem_count * sbuf_size_modifier);
 
-            recv_ibufs[idx] = new sycl_indices_t(ELEM_COUNT * rbuf_size_modifier *
+            recv_ibufs[idx] = new sycl_indices_t(max_elem_count * rbuf_size_modifier *
                                                  base_coll::comm->size());
-            recv_vbufs[idx] = new sycl_values_t(ELEM_COUNT * rbuf_size_modifier *
+            recv_vbufs[idx] = new sycl_values_t(max_elem_count * rbuf_size_modifier *
                                                base_coll::comm->size());
 
             sycl_queue.submit([&](handler& cgh)
@@ -69,9 +72,9 @@ struct sycl_sparse_allreduce_coll :
                 auto recv_vbuf_acc = recv_vbuf->template get_access<mode::write>(cgh);
 
                 cgh.parallel_for<struct sparse_allreduce_kernel_name_bufs<VType, IType>>
-                        (range<1>{ELEM_COUNT*base_coll::comm->size()}, [=](item<1> e_idx)
+                        (range<1>{max_elem_count*base_coll::comm->size()}, [=](item<1> e_idx)
                 {
-                    if (e_idx.get_linear_id() < ELEM_COUNT)
+                    if (e_idx.get_linear_id() < max_elem_count)
                     {
                         send_ibuf_acc[e_idx] = 0;
                         send_vbuf_acc[e_idx] = 0;
@@ -82,12 +85,12 @@ struct sycl_sparse_allreduce_coll :
             });
         }
 
-        single_send_ibuf = new sycl_indices_t(SINGLE_ELEM_COUNT * sbuf_size_modifier);
-        single_send_vbuf = new sycl_values_t(SINGLE_ELEM_COUNT * sbuf_size_modifier);
+        single_send_ibuf = new sycl_indices_t(single_buf_max_elem_count * sbuf_size_modifier);
+        single_send_vbuf = new sycl_values_t(single_buf_max_elem_count * sbuf_size_modifier);
 
-        single_recv_ibuf = new sycl_indices_t(SINGLE_ELEM_COUNT * rbuf_size_modifier *
+        single_recv_ibuf = new sycl_indices_t(single_buf_max_elem_count * rbuf_size_modifier *
                                               base_coll::comm->size());
-        single_recv_vbuf = new sycl_values_t(SINGLE_ELEM_COUNT * rbuf_size_modifier *
+        single_recv_vbuf = new sycl_values_t(single_buf_max_elem_count * rbuf_size_modifier *
                                             base_coll::comm->size());
 
         sycl_queue.submit([&](handler& cgh)
@@ -105,9 +108,9 @@ struct sycl_sparse_allreduce_coll :
             auto recv_vbuf_acc = recv_vbuf->template get_access<mode::write>(cgh);
 
             cgh.parallel_for<struct sparse_allreduce_kernel_name_single_bufs<VType, IType>>
-                    (range<1>{ SINGLE_ELEM_COUNT * base_coll::comm->size() }, [=](item<1> e_idx)
+                    (range<1>{ single_buf_max_elem_count * base_coll::comm->size() }, [=](item<1> e_idx)
             {
-                if (e_idx.get_linear_id() < SINGLE_ELEM_COUNT)
+                if (e_idx.get_linear_id() < single_buf_max_elem_count)
                 {
                     send_ibuf_acc[e_idx] = 0;
                     send_vbuf_acc[e_idx] = 0;

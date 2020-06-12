@@ -35,17 +35,20 @@ struct cpu_sparse_allreduce_coll :
     {
         int result = 0;
 
+        size_t max_elem_count = base_coll::get_max_elem_count();
+        size_t single_buf_max_elem_count = base_coll::get_single_buf_max_elem_count();
+
         for (size_t idx = 0; idx < base_coll::get_buf_count(); idx++)
         {
             result = posix_memalign((void**)&send_ibufs[idx], ALIGNMENT,
-                                     ELEM_COUNT * sizeof(IType) * sbuf_size_modifier);
+                                     max_elem_count * sizeof(IType) * sbuf_size_modifier);
             result |= posix_memalign((void**)&send_vbufs[idx], ALIGNMENT,
-                                     ELEM_COUNT * sizeof(VType) * sbuf_size_modifier);
+                                     max_elem_count * sizeof(VType) * sbuf_size_modifier);
             result |= posix_memalign((void**)&recv_ibufs[idx], ALIGNMENT,
-                                     ELEM_COUNT * sizeof(IType) * rbuf_size_modifier *
+                                     max_elem_count * sizeof(IType) * rbuf_size_modifier *
                                      base_coll::comm->size());
             result |= posix_memalign((void**)&recv_vbufs[idx], ALIGNMENT,
-                                     ELEM_COUNT * sizeof(VType) * rbuf_size_modifier *
+                                     max_elem_count * sizeof(VType) * rbuf_size_modifier *
                                      base_coll::comm->size());
             if (result != 0)
             {
@@ -56,47 +59,47 @@ struct cpu_sparse_allreduce_coll :
         }
 
         result = posix_memalign((void**)&single_send_ibuf, ALIGNMENT,
-                                SINGLE_ELEM_COUNT * sizeof(IType) * sbuf_size_modifier);
+                                single_buf_max_elem_count * sizeof(IType) * sbuf_size_modifier);
         result |= posix_memalign((void**)&single_send_vbuf, ALIGNMENT,
-                                SINGLE_ELEM_COUNT * sizeof(VType) * sbuf_size_modifier);
+                                single_buf_max_elem_count * sizeof(VType) * sbuf_size_modifier);
 
         result |= posix_memalign((void**)&single_recv_ibuf, ALIGNMENT,
-                                SINGLE_ELEM_COUNT * sizeof(IType) * rbuf_size_modifier *
+                                single_buf_max_elem_count * sizeof(IType) * rbuf_size_modifier *
                                 base_coll::comm->size());
         result |= posix_memalign((void**)&single_recv_vbuf, ALIGNMENT,
-                                SINGLE_ELEM_COUNT * sizeof(VType) * rbuf_size_modifier *
+                                single_buf_max_elem_count * sizeof(VType) * rbuf_size_modifier *
                                 base_coll::comm->size());
 
         for (size_t idx = 0; idx < base_coll::get_buf_count(); idx++)
         {
-            std::memset(send_ibufs[idx], 0, ELEM_COUNT * sizeof(IType));
-            std::memset(send_vbufs[idx], 0, ELEM_COUNT * sizeof(VType) * sbuf_size_modifier);
+            std::memset(send_ibufs[idx], 0, max_elem_count * sizeof(IType));
+            std::memset(send_vbufs[idx], 0, max_elem_count * sizeof(VType) * sbuf_size_modifier);
 
-            std::memset(recv_ibufs[idx], 0, ELEM_COUNT * sizeof(IType) * rbuf_size_modifier *
+            std::memset(recv_ibufs[idx], 0, max_elem_count * sizeof(IType) * rbuf_size_modifier *
                                             base_coll::comm->size());
-            std::memset(recv_vbufs[idx], 0, ELEM_COUNT * sizeof(VType) * rbuf_size_modifier *
+            std::memset(recv_vbufs[idx], 0, max_elem_count * sizeof(VType) * rbuf_size_modifier *
                                             base_coll::comm->size());
         }
 
-        std::memset(single_send_ibuf, 0, SINGLE_ELEM_COUNT * sizeof(IType) * sbuf_size_modifier);
-        std::memset(single_send_vbuf, 0, SINGLE_ELEM_COUNT * sizeof(VType) * sbuf_size_modifier);
+        std::memset(single_send_ibuf, 0, single_buf_max_elem_count * sizeof(IType) * sbuf_size_modifier);
+        std::memset(single_send_vbuf, 0, single_buf_max_elem_count * sizeof(VType) * sbuf_size_modifier);
 
-        std::memset(single_recv_ibuf, 0, SINGLE_ELEM_COUNT * sizeof(IType) * rbuf_size_modifier *
+        std::memset(single_recv_ibuf, 0, single_buf_max_elem_count * sizeof(IType) * rbuf_size_modifier *
                                          base_coll::comm->size());
-        std::memset(single_recv_vbuf, 0, SINGLE_ELEM_COUNT * sizeof(VType) * rbuf_size_modifier *
+        std::memset(single_recv_vbuf, 0, single_buf_max_elem_count * sizeof(VType) * rbuf_size_modifier *
                                          base_coll::comm->size());
 
         for (size_t idx = 0; idx < base_coll::get_buf_count(); idx++)
         {
             user_ctxs[idx].recv_ibuf = (void**)(&(recv_ibufs[idx]));
             user_ctxs[idx].recv_vbuf = (void**)(&(recv_vbufs[idx]));
-            user_ctxs[idx].recv_ibuf_count = ELEM_COUNT * rbuf_size_modifier * base_coll::comm->size();
-            user_ctxs[idx].recv_vbuf_count = ELEM_COUNT * rbuf_size_modifier * base_coll::comm->size();
+            user_ctxs[idx].recv_ibuf_count = max_elem_count * rbuf_size_modifier * base_coll::comm->size();
+            user_ctxs[idx].recv_vbuf_count = max_elem_count * rbuf_size_modifier * base_coll::comm->size();
         }
         single_user_ctx.recv_ibuf = (void**)(&single_recv_ibuf);
         single_user_ctx.recv_vbuf = (void**)(&single_recv_vbuf);
-        single_user_ctx.recv_ibuf_count = SINGLE_ELEM_COUNT * rbuf_size_modifier * base_coll::comm->size();
-        single_user_ctx.recv_vbuf_count = SINGLE_ELEM_COUNT * rbuf_size_modifier * base_coll::comm->size();
+        single_user_ctx.recv_ibuf_count = single_buf_max_elem_count * rbuf_size_modifier * base_coll::comm->size();
+        single_user_ctx.recv_vbuf_count = single_buf_max_elem_count * rbuf_size_modifier * base_coll::comm->size();
     }
 
     ~cpu_sparse_allreduce_coll()

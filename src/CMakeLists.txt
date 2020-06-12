@@ -110,7 +110,9 @@ set(CCL_SRC
 list(APPEND CCL_INC_DIRS
                  ${PROJECT_SOURCE_DIR}/include
                  ${PROJECT_SOURCE_DIR}/src)
-message("CCL_INC_DIRS: ${CCL_INC_DIRS}")
+
+message(STATUS "CCL_INC_DIRS: ${CCL_INC_DIRS}")
+
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -pthread")
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -pthread")
 

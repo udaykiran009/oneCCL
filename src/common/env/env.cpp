@@ -56,6 +56,9 @@ env_data::env_data() :
     ar2d_chunk_count(1),
     ar2d_min_chunk_size(65536),
 
+    allreduce_2d_base_size(CCL_ENV_SIZET_NOT_SPECIFIED),
+    allreduce_2d_switch_dims(0),
+
     default_resizable(0)
 {}
 
@@ -81,6 +84,10 @@ void env_data::parse()
     env_2_type(CCL_REDUCE, reduce_algo_raw);
     env_2_type(CCL_SPARSE_ALLREDUCE, sparse_allreduce_algo_raw);
     env_2_type(CCL_UNORDERED_COLL, enable_unordered_coll);
+    if (enable_unordered_coll && atl_transport != ccl_atl_ofi)
+    {
+        CCL_THROW("unordered collectives are supported for OFI transport only");
+    }
 
     env_2_type(CCL_FUSION, enable_fusion);
     env_2_type(CCL_FUSION_BYTES_THRESHOLD, fusion_bytes_threshold);
@@ -125,10 +132,8 @@ void env_data::parse()
     CCL_THROW_IF_NOT(ar2d_min_chunk_size >= 1, "incorrect ",
                      CCL_AR2D_MIN_CHUNK_SIZE, " ", ar2d_min_chunk_size);
 
-    if (enable_unordered_coll && atl_transport != ccl_atl_ofi)
-    {
-        CCL_THROW("unordered collectives are supported for OFI transport only");
-    }
+    env_2_type(CCL_ALLREDUCE_2D_BASE_SIZE, (size_t&)allreduce_2d_base_size);
+    env_2_type(CCL_ALLREDUCE_2D_SWITCH_DIMS, allreduce_2d_switch_dims);
 
     env_2_type(CCL_DEFAULT_RESIZABLE, default_resizable);
     CCL_THROW_IF_NOT(default_resizable <= 2, "incorrect ",
@@ -154,6 +159,9 @@ void env_data::print()
 
     char* ccl_root = getenv("CCL_ROOT");
     LOG_INFO("CCL_ROOT : ", (ccl_root) ? ccl_root : CCL_ENV_STR_NOT_SPECIFIED);
+
+    char* impi_root = getenv("I_MPI_ROOT");
+    LOG_INFO("I_MPI_ROOT : ", (impi_root) ? impi_root : CCL_ENV_STR_NOT_SPECIFIED);
 
     LOG_INFO(CCL_LOG_LEVEL, ": ", log_level);
     LOG_INFO(CCL_SCHED_DUMP, ": ", sched_dump);
@@ -208,6 +216,10 @@ void env_data::print()
     LOG_INFO(CCL_RS_MIN_CHUNK_SIZE, ": ", rs_min_chunk_size);
     LOG_INFO(CCL_AR2D_CHUNK_COUNT, ": ", ar2d_chunk_count);
     LOG_INFO(CCL_AR2D_MIN_CHUNK_SIZE, ": ", ar2d_min_chunk_size);
+
+    LOG_INFO(CCL_ALLREDUCE_2D_BASE_SIZE, ": ", (allreduce_2d_base_size != CCL_ENV_SIZET_NOT_SPECIFIED) ?
+        std::to_string(allreduce_2d_base_size) : CCL_ENV_STR_NOT_SPECIFIED);
+    LOG_INFO(CCL_ALLREDUCE_2D_SWITCH_DIMS, ": ", allreduce_2d_switch_dims);
 }
 
 int env_data::env_2_worker_affinity_auto(size_t local_proc_idx, size_t workers_per_process)

@@ -72,6 +72,9 @@ then
     LIBFABRIC_INSTALL_DIR="/p/pdsd/scratch/jenkins/artefacts/libfabric-1.5.3"
 fi
 
+# TODO: restore original default path
+LIBFABRIC_INSTALL_DIR="/nfs/inn/disks/nn-ssg_tcar_mpi_2Tb_unix/jenkins/artefacts/libfabric-1.5.3_test"
+
 #==============================================================================
 #                                Defaults
 #==============================================================================

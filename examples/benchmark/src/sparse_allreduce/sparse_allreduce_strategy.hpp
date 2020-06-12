@@ -3,7 +3,7 @@
 
 /* specific benchmark const expressions */
 constexpr size_t default_value_to_indices_ratio = 3;
-constexpr size_t default_vdim_size = ELEM_COUNT / 3;
+constexpr size_t default_vdim_size = MAX_ELEM_COUNT / 3;
 
 template<class type>
 struct type_printer

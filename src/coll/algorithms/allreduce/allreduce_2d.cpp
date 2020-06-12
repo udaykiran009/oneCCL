@@ -3,15 +3,23 @@
 #include "common/global/global.hpp"
 #include "sched/entry/factory/entry_factory.hpp"
 
-ccl_allreduce_2d_builder::ccl_allreduce_2d_builder()
+ccl_allreduce_2d_builder::ccl_allreduce_2d_builder(size_t base_size, bool switch_dims)
 {
     size_t vector_size = ccl::global_data::get().comm->size();
     std::vector<int> first_dim_colors(vector_size), second_dim_colors(vector_size);
 
     for (size_t idx = 0; idx < vector_size; idx++)
     {
-        first_dim_colors[idx] = idx % 2;
-        second_dim_colors[idx] = idx / 2;
+        if (switch_dims)
+        {
+            first_dim_colors[idx] = idx / base_size;
+            second_dim_colors[idx] = idx % base_size;
+        }
+        else
+        {
+            first_dim_colors[idx] = idx % base_size;
+            second_dim_colors[idx] = idx / base_size;
+        }
     }
 
     first_dim_comm =
@@ -35,6 +43,8 @@ ccl_allreduce_2d_builder::ccl_allreduce_2d_builder()
             second_dim_ranks += ((idx) ? " " : "") + std::to_string(second_dim_comm->get_global_rank(idx));
         }
         LOG_INFO("\n\nallreduce_2d",
+                 "\nbase_size: ", base_size,
+                 "\nswitch_dims: ", switch_dims,
                  "\nfirst_dim_comm: size ", first_dim_comm->size(),
                  ", ranks ", first_dim_ranks,
                  "\nsecond_dim_comm: size ", second_dim_comm->size(),

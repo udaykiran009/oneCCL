@@ -51,7 +51,7 @@ void do_regular(ccl::communicator* comm,
             bench_attr.reduction = reduction_op;
             bench_attr.coll_attr.to_cache = 0;
 
-            for (size_t count = 1; count < ELEM_COUNT; count *= 2)
+            for (size_t count = options.min_elem_count; count < options.max_elem_count; count *= 2)
             {
                 for (size_t iter_idx = 0; iter_idx < options.warmup_iters; iter_idx++)
                 {
@@ -79,7 +79,7 @@ void do_regular(ccl::communicator* comm,
             /* benchmark with multiple equal sized buffer per collective */
             PRINT_BY_ROOT(comm, "do multi-buffers benchmark");
             bench_attr.coll_attr.to_cache = 1;
-            for (size_t count = 1; count <= ELEM_COUNT; count *= 2)
+            for (size_t count = options.min_elem_count; count <= options.max_elem_count; count *= 2)
             {
                 try
                 {
@@ -137,8 +137,12 @@ void do_regular(ccl::communicator* comm,
 
             /* benchmark with single buffer per collective */
             PRINT_BY_ROOT(comm, "do single-buffer benchmark");
+            
+            size_t min_elem_count = options.min_elem_count * options.buf_count;
+            size_t max_elem_count = options.max_elem_count * options.buf_count;
+
             bench_attr.coll_attr.to_cache = 1;
-            for (size_t count = options.buf_count; count <= SINGLE_ELEM_COUNT; count *= 2)
+            for (size_t count = min_elem_count; count <= max_elem_count; count *= 2)
             {
                 try
                 {
@@ -211,13 +215,13 @@ void do_unordered(ccl::communicator* comm,
 
             size_t rank = comm->rank();
 
-            reqs.reserve(colls.size() * options.buf_count * (log2(ELEM_COUNT) + 1));
+            reqs.reserve(colls.size() * options.buf_count * (log2(options.max_elem_count) + 1));
 
             PRINT_BY_ROOT(comm, "do unordered test");
             bench_attr.reduction = reduction_op;
             bench_attr.coll_attr.to_cache = 1;
 
-            for (size_t count = 1; count <= ELEM_COUNT; count *= 2)
+            for (size_t count = options.min_elem_count; count <= options.max_elem_count; count *= 2)
             {
                 try
                 {
@@ -288,8 +292,6 @@ void create_cpu_colls(bench_coll_init_attr& init_attr, user_options_t& options, 
     using incremental_index_bfp16_sparse_strategy = 
                                 sparse_allreduce_strategy_impl<ccl::bfp16, 
                                 sparse_detail::incremental_indices_distributor>;
-
-    init_attr.buf_count = options.buf_count;
 
     std::stringstream error_messages_stream;
     base_coll::comm = ccl::environment::instance().create_communicator();
@@ -382,8 +384,6 @@ void create_sycl_colls(bench_coll_init_attr& init_attr, user_options_t& options,
     using incremental_index_bfp16_sparse_strategy = 
                             sparse_allreduce_strategy_impl<ccl::bfp16, 
                                 sparse_detail::incremental_indices_distributor>;
-
-    init_attr.buf_count = options.buf_count;
 
     std::stringstream error_messages_stream;
     base_coll::comm = ccl::environment::instance().create_communicator();
@@ -543,6 +543,9 @@ int main(int argc, char *argv[])
 
     if (parse_user_options(argc, argv, options))
         return -1;
+
+    init_attr.buf_count = options.buf_count;
+    init_attr.max_elem_count = options.max_elem_count;
 
     try
     {

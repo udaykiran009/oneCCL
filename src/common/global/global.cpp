@@ -94,7 +94,11 @@ void global_data::init_resize_dependent_objects()
     }
 
     allreduce_2d_builder =
-       std::unique_ptr<ccl_allreduce_2d_builder>(new ccl_allreduce_2d_builder());
+        std::unique_ptr<ccl_allreduce_2d_builder>(
+            new ccl_allreduce_2d_builder(
+                (env_object.allreduce_2d_base_size != CCL_ENV_SIZET_NOT_SPECIFIED) ?
+                 env_object.allreduce_2d_base_size : executor->get_local_proc_count(),
+                env_object.allreduce_2d_switch_dims));
 
     atl_tag =
         std::unique_ptr<ccl_atl_tag>(new ccl_atl_tag(executor->get_atl_attr().tag_bits,

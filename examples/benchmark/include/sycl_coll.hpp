@@ -24,11 +24,15 @@ struct sycl_base_coll : base_coll, private strategy
     {
         for (size_t idx = 0; idx < base_coll::get_buf_count(); idx++)
         {
-            send_bufs[idx] = new cl::sycl::buffer<Dtype, 1>(ELEM_COUNT * sbuf_multiplier);
-            recv_bufs[idx] = new cl::sycl::buffer<Dtype, 1>(ELEM_COUNT * rbuf_multiplier);
+            send_bufs[idx] = new cl::sycl::buffer<Dtype, 1>(base_coll::get_max_elem_count() * sbuf_multiplier);
+            recv_bufs[idx] = new cl::sycl::buffer<Dtype, 1>(base_coll::get_max_elem_count() * rbuf_multiplier);
         }
-        single_send_buf = new cl::sycl::buffer<Dtype, 1>(SINGLE_ELEM_COUNT * sbuf_multiplier);
-        single_recv_buf = new cl::sycl::buffer<Dtype, 1>(SINGLE_ELEM_COUNT * rbuf_multiplier);
+
+        single_send_buf =
+            new cl::sycl::buffer<Dtype, 1>(base_coll::get_single_buf_max_elem_count() * sbuf_multiplier);
+
+        single_recv_buf =
+            new cl::sycl::buffer<Dtype, 1>(base_coll::get_single_buf_max_elem_count() * rbuf_multiplier);
     }
 
     sycl_base_coll(bench_coll_init_attr init_attr) : sycl_base_coll(init_attr, 1, 1)

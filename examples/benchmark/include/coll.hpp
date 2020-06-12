@@ -18,12 +18,14 @@ typedef struct bench_coll_exec_attr
 typedef struct bench_coll_init_attr
 {
     size_t buf_count;
-} bench_coll_init_attr ;
+    size_t max_elem_count;
+} bench_coll_init_attr;
 
 /* base polymorph collective wrapper class */
 struct base_coll
 {
-    base_coll(bench_coll_init_attr init_attr) : init_attr(init_attr)
+    base_coll(bench_coll_init_attr init_attr)
+        : init_attr(init_attr)
     {
         send_bufs.resize(init_attr.buf_count);
         recv_bufs.resize(init_attr.buf_count);
@@ -49,6 +51,8 @@ struct base_coll
 
     /* to get buf_count from initialized private member */
     size_t get_buf_count() const noexcept { return init_attr.buf_count; }
+    size_t get_max_elem_count() const noexcept { return init_attr.max_elem_count; }
+    size_t get_single_buf_max_elem_count() const noexcept { return init_attr.buf_count * init_attr.max_elem_count; }
 
     std::vector<void*> send_bufs;
     std::vector<void*> recv_bufs;
@@ -60,8 +64,8 @@ struct base_coll
     static ccl::communicator_t comm;
     static ccl::stream_t stream;
 
-    private:
-        bench_coll_init_attr init_attr;
+private:
+    bench_coll_init_attr init_attr;
 
 };
 

@@ -113,13 +113,16 @@ run_benchmark()
     test_log="$EXAMPLE_WORK_DIR/$dir_name/run"
     test_log="${test_log}_${transport}_${example}_b_${backend}_e_${loop}_l_${coll}_d_${dtype}_output.log"
 
-    options=""
+    options="--min_elem_count 1 --max_elem_count 32"
     if [ "${backend}" != "" ];
     then
         options="${options} --backend ${backend}"
+
         if [ "${backend}" == "sycl" ];
         then
             options="${options} --iters 4 --buf_count 2"
+        else
+            options="${options} --iters 16 --buf_count 8"
         fi
     fi
     if [ "${loop}" != "" ];
