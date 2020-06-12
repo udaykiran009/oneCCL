@@ -106,8 +106,28 @@ ccl_coll_build_naive_alltoallv(std::vector<ccl_sched*>& scheds,
                                         total_send_count, total_recv_count,
                                         total_send_bytes, total_recv_bytes);
 
+    if (!inplace)
+    {
+        size_t sched_idx = (2 * comm_rank) % sched_count;
+        entry_factory::make_entry<copy_entry>(
+            scheds[sched_idx],
+            ccl_buffer((void*)(&(coll_param.send_buf)),
+                       total_send_bytes,
+                       send_offsets[comm_rank],
+                       ccl_buffer_type::INDIRECT),
+            ccl_buffer((void*)(&(coll_param.recv_buf)),
+                       total_recv_bytes,
+                       recv_offsets[comm_rank],
+                       ccl_buffer_type::INDIRECT),
+            send_counts[comm_rank],
+            dtype);
+    }
+
     for (size_t idx = 0; idx < comm_size; idx++)
     {
+        if (idx == comm_rank)
+            continue;
+
         size_t sched_idx = (comm_rank + idx) % sched_count;
 
         ccl_buffer recv_buf;
@@ -191,9 +211,30 @@ ccl_coll_build_scatter_alltoallv(std::vector<ccl_sched*>& scheds,
                                         total_send_count, total_recv_count,
                                         total_send_bytes, total_recv_bytes);
 
+    if (!inplace)
+    {
+        size_t sched_idx = (2 * comm_rank) % sched_count;
+        entry_factory::make_entry<copy_entry>(
+            scheds[sched_idx],
+            ccl_buffer((void*)(&(coll_param.send_buf)),
+                       total_send_bytes,
+                       send_offsets[comm_rank],
+                       ccl_buffer_type::INDIRECT),
+            ccl_buffer((void*)(&(coll_param.recv_buf)),
+                       total_recv_bytes,
+                       recv_offsets[comm_rank],
+                       ccl_buffer_type::INDIRECT),
+            send_counts[comm_rank],
+            dtype);
+    }
+
     for (size_t idx = 0; idx < comm_size; idx++)
     {
         size_t src = (comm_rank + idx) % comm_size;
+
+        if (src == comm_rank)
+            continue;
+
         size_t sched_idx = (comm_rank + src) % sched_count;
         ccl_buffer recv_buf;
 
@@ -221,6 +262,10 @@ ccl_coll_build_scatter_alltoallv(std::vector<ccl_sched*>& scheds,
     for (size_t idx = 0; idx < comm_size; idx++)
     {
         size_t dst = (comm_rank - idx + comm_size) % comm_size;
+
+        if (dst == comm_rank)
+            continue;
+
         size_t sched_idx = (comm_rank + dst) % sched_count;
 
         entry_factory::make_chunked_send_entry(
@@ -246,6 +291,9 @@ ccl_coll_build_scatter_alltoallv(std::vector<ccl_sched*>& scheds,
 
     for (size_t idx = 0; idx < comm_size; idx++)
     {
+        if (idx == comm_rank)
+            continue;
+
         size_t sched_idx = (comm_rank + idx) % sched_count;
 
         entry_factory::make_entry<copy_entry>(scheds[sched_idx],
@@ -317,9 +365,30 @@ ccl_coll_build_scatter_barrier_alltoallv(std::vector<ccl_sched*>& scheds,
         send_scheds[idx] = send_sched;
     }
 
+    if (!inplace)
+    {
+        size_t sched_idx = (2 * comm_rank) % sched_count;
+        entry_factory::make_entry<copy_entry>(
+            recv_scheds[sched_idx],
+            ccl_buffer((void*)(&(coll_param.send_buf)),
+                       total_send_bytes,
+                       send_offsets[comm_rank],
+                       ccl_buffer_type::INDIRECT),
+            ccl_buffer((void*)(&(coll_param.recv_buf)),
+                       total_recv_bytes,
+                       recv_offsets[comm_rank],
+                       ccl_buffer_type::INDIRECT),
+            send_counts[comm_rank],
+            dtype);
+    }
+
     for (size_t idx = 0; idx < comm_size; idx++)
     {
         size_t src = (comm_rank + idx) % comm_size;
+
+        if (src == comm_rank)
+            continue;
+
         size_t sched_idx = (comm_rank + src) % sched_count;
         auto sched = recv_scheds[sched_idx];
 
@@ -349,6 +418,10 @@ ccl_coll_build_scatter_barrier_alltoallv(std::vector<ccl_sched*>& scheds,
     for (size_t idx = 0; idx < comm_size; idx++)
     {
         size_t dst = (comm_rank - idx + comm_size) % comm_size;
+
+        if (dst == comm_rank)
+            continue;
+
         size_t sched_idx = (comm_rank + dst) % sched_count;
         auto sched = send_scheds[sched_idx];
 
@@ -377,6 +450,9 @@ ccl_coll_build_scatter_barrier_alltoallv(std::vector<ccl_sched*>& scheds,
 
     for (size_t idx = 0; idx < comm_size; idx++)
     {
+        if (idx == comm_rank)
+            continue;
+
         size_t sched_idx = (comm_rank + idx) % sched_count;
 
         entry_factory::make_entry<copy_entry>(scheds[sched_idx],

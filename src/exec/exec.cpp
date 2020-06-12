@@ -276,7 +276,6 @@ void ccl_executor::start(ccl_master_sched* sched)
     size_t worker_idx;
     for (size_t idx = 0; idx < sched->partial_scheds.size(); idx++)
     {
-        CCL_THROW_IF_NOT(sched->partial_scheds[idx]->entries_count(), "empty sched");
         worker_idx = (this->*get_worker_idx_fn)(sched->partial_scheds[idx].get());
         workers[worker_idx]->add(sched->partial_scheds[idx].get());
     }
