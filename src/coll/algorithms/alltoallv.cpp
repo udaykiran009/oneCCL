@@ -413,6 +413,8 @@ ccl_coll_build_scatter_barrier_alltoallv(std::vector<ccl_sched*>& scheds,
             dtype,
             src,
             comm);
+
+        sched->add_barrier();
     }
 
     for (size_t idx = 0; idx < comm_size; idx++)
