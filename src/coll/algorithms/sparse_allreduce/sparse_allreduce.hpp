@@ -123,6 +123,21 @@
                                                                                             \
         sa_handler->send_count[0] = send_ind_count;                                         \
         sa_handler->send_count[1] = send_val_count;                                         \
+                                                                                            \
+        if (sa_handler->sched->coll_attr.sparse_coalesce_mode ==                            \
+            ccl_sparse_coalesce_keep_precision &&                                           \
+            sa_handler->value_dtype.idx() == ccl_dtype_bfp16)                               \
+        {                                                                                   \
+            sa_handler->tmp = static_cast<float*>(                                          \
+                                sched->alloc_buffer(sizeof(float) * val_dim_cnt).get_ptr());\
+            sa_handler->acc = static_cast<float*>(                                          \
+                                sched->alloc_buffer(sizeof(float) * val_dim_cnt).get_ptr());\
+        }                                                                                   \
+        else                                                                                \
+        {                                                                                   \
+            sa_handler->tmp = nullptr;                                                      \
+            sa_handler->acc = nullptr;                                                      \
+        }                                                                                   \
     } while (0)
 
 #define GET_NNZ()                                                   \
@@ -239,7 +254,8 @@ void sparse_coalesce(ccl_sparse_allreduce_handler* sah)
                                   nullptr, nullptr, 
                                   sah->sched->coll_attr.sparse_coalesce_mode ==
                                   ccl_sparse_coalesce_keep_precision &&
-                                  sah->value_dtype.idx() == ccl_dtype_bfp16);
+                                  sah->value_dtype.idx() == ccl_dtype_bfp16,
+                                  sah->tmp, sah->acc);
 
             it.second.resize(1);
         }
@@ -747,9 +763,9 @@ ccl_status_t ccl_coll_build_sparse_allreduce_mask(ccl_sched* sched,
 
         ccl_coll_entry_param param_allgatherv{};
         param_allgatherv.ctype = ccl_coll_allgatherv;
-        param_allgatherv.send_buf = ccl_buffer();//send_ind_buf;
+        param_allgatherv.send_buf = ccl_buffer();
         param_allgatherv.recv_buf = ccl_buffer();
-        param_allgatherv.send_count = 0;//send_ind_count;
+        param_allgatherv.send_count = 0;
         param_allgatherv.recv_counts = sa_handler->recv_counts;
         param_allgatherv.dtype = index_dtype;
         param_allgatherv.comm = comm;
@@ -886,7 +902,8 @@ ccl_status_t sparse_reduce_gathered_allgatherv(const void* ctx)
                                   nullptr, nullptr,
                                   sa_handler->sched->coll_attr.sparse_coalesce_mode ==
                                   ccl_sparse_coalesce_keep_precision && 
-                                  sa_handler->value_dtype.idx() == ccl_dtype_bfp16);
+                                  sa_handler->value_dtype.idx() == ccl_dtype_bfp16,
+                                  sa_handler->tmp, sa_handler->acc);
         }
         idx_offset++;
     }

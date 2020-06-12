@@ -34,6 +34,9 @@ struct ccl_sparse_allreduce_handler
    void* send_ibuf;
    void* send_vbuf;
 
+   float* tmp;
+   float* acc;
+
    ccl_datatype value_dtype;
    ccl_datatype index_dtype;
    ccl_reduction_t op;

@@ -92,12 +92,11 @@ ccl_status_t ccl_comp_batch_reduce(const void* in_buf, const std::vector<size_t>
                                    size_t in_count, void* inout_buf, size_t* out_count,
                                    const ccl_datatype& dtype, ccl_reduction_t reduction,
                                    ccl_reduction_fn_t reduction_fn, const ccl_fn_context_t* context,
-                                   int bfp16_keep_precision_mode)
+                                   int bfp16_keep_precision_mode, float* tmp, float* acc)
 {
     if (bfp16_keep_precision_mode)
     {
-        float* acc = (float*)malloc(sizeof(float) * in_count);
-        float* tmp = (float*)malloc(sizeof(float) * in_count); //-> fusion_buffer_cache
+        //->acc, tmp fusion_buffer_cache???
     
         /* inout_buf => inout_buffer + offsets[0] */
         ccl_convert_bfp16_to_fp32_arrays(inout_buf, acc, in_count);
@@ -111,9 +110,6 @@ ccl_status_t ccl_comp_batch_reduce(const void* in_buf, const std::vector<size_t>
         }
     
         ccl_convert_fp32_to_bfp16_arrays(acc, inout_buf, in_count);
-
-        free(acc);
-        free(tmp);
     }
     else
     {
