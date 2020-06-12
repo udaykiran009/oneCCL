@@ -9,7 +9,8 @@ class coll_entry : public sched_entry,
                                            ccl_sched_entry_field_send_buf,
                                            ccl_sched_entry_field_recv_buf,
                                            ccl_sched_entry_field_cnt,
-                                           ccl_sched_entry_field_dtype>
+                                           ccl_sched_entry_field_dtype,
+                                           ccl_sched_entry_field_send_count>
 {
 public:
     static constexpr const char* class_name() noexcept
@@ -67,6 +68,11 @@ public:
     ccl_datatype& get_field_ref(field_id_t<ccl_sched_entry_field_dtype> id)
     {
         return param.dtype;
+    }
+
+    size_t& get_field_ref(field_id_t<ccl_sched_entry_field_send_count> id)
+    {
+        return param.send_count;
     }
 
 protected:

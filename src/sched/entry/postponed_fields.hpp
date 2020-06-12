@@ -23,7 +23,8 @@ enum ccl_sched_entry_field_id
     ccl_sched_entry_field_idx_buf,
     ccl_sched_entry_field_idx_cnt,
     ccl_sched_entry_field_val_buf,
-    ccl_sched_entry_field_val_cnt
+    ccl_sched_entry_field_val_cnt,
+    ccl_sched_entry_field_send_count
 };
 
 typedef ccl_status_t(*ccl_sched_entry_field_function_t) (const void*, void*);

@@ -91,26 +91,40 @@ ccl_status_t ccl_comp_reduce(const void* in_buf, size_t in_count, void* inout_bu
 ccl_status_t ccl_comp_batch_reduce(const void* in_buf, const std::vector<size_t>& offsets, 
                                    size_t in_count, void* inout_buf, size_t* out_count,
                                    const ccl_datatype& dtype, ccl_reduction_t reduction,
-                                   ccl_reduction_fn_t reduction_fn, const ccl_fn_context_t* context)
+                                   ccl_reduction_fn_t reduction_fn, const ccl_fn_context_t* context,
+                                   int bfp16_keep_precision_mode)
 {
-    float* acc = (float*)malloc(sizeof(float) * in_count);
-    float* tmp = (float*)malloc(sizeof(float) * in_count); //-> fusion_buffer_cache
-    
-    /* inout_buf => inout_buffer + offsets[0] */
-    ccl_convert_bfp16_to_fp32_arrays(inout_buf, acc, in_count);
-
-    for(size_t i = 1; i < offsets.size(); i++)
+    if (bfp16_keep_precision_mode)
     {
-       ccl_convert_bfp16_to_fp32_arrays((char*)in_buf + dtype.size() * offsets[i], tmp, in_count);
-       ccl_comp_reduce(tmp, in_count, acc, out_count,
+        float* acc = (float*)malloc(sizeof(float) * in_count);
+        float* tmp = (float*)malloc(sizeof(float) * in_count); //-> fusion_buffer_cache
+    
+        /* inout_buf => inout_buffer + offsets[0] */
+        ccl_convert_bfp16_to_fp32_arrays(inout_buf, acc, in_count);
+
+        for(size_t i = 1; i < offsets.size(); i++)
+        {
+            ccl_convert_bfp16_to_fp32_arrays((char*)in_buf + dtype.size() * offsets[i], tmp, in_count);
+            ccl_comp_reduce(tmp, in_count, acc, out_count,
                        ccl::global_data::get().dtypes->get(ccl_dtype_float),
                        reduction, reduction_fn, context);
+        }
+    
+        ccl_convert_fp32_to_bfp16_arrays(acc, inout_buf, in_count);
+
+        free(acc);
+        free(tmp);
+    }
+    else
+    {
+        for (size_t i = 1; i < offsets.size(); i++)
+        {
+            ccl_comp_reduce((char*)in_buf + dtype.size() * offsets[i], in_count,
+                            inout_buf, out_count, dtype, reduction, 
+                            reduction_fn, context);
+        }
     }
     
-    ccl_convert_fp32_to_bfp16_arrays(acc, inout_buf, in_count);
-
-    free(acc);
-    free(tmp);
 
     return ccl_status_success;
 }
