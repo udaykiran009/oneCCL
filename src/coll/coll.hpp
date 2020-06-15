@@ -43,14 +43,17 @@ struct ccl_coll_attr
     ccl_prologue_fn_t prologue_fn = nullptr;
     ccl_epilogue_fn_t epilogue_fn = nullptr;
     ccl_reduction_fn_t reduction_fn = nullptr;
-    ccl_sparse_allreduce_completion_fn_t sparse_allreduce_completion_fn = nullptr;
-    const void* sparse_allreduce_completion_ctx = nullptr;
-    ccl_sparse_coalesce_mode_t sparse_coalesce_mode = ccl_sparse_coalesce_regular;
+
     size_t priority = 0;
     int synchronous = 0;
     int to_cache = 0;
     int vector_buf = 0;
     std::string match_id{};
+
+    ccl_sparse_allreduce_completion_fn_t sparse_allreduce_completion_fn = nullptr;
+    ccl_sparse_allreduce_alloc_fn_t sparse_allreduce_alloc_fn = nullptr;
+    const void* sparse_allreduce_fn_ctx = nullptr;
+    ccl_sparse_coalesce_mode_t sparse_coalesce_mode = ccl_sparse_coalesce_regular;
 };
 
 struct ccl_coll_sparse_param

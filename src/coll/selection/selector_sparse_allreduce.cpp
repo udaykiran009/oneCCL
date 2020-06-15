@@ -11,7 +11,6 @@ std::map<ccl_coll_sparse_allreduce_algo,
 
 ccl_algorithm_selector<ccl_coll_sparse_allreduce>::ccl_algorithm_selector()
 {
-    
     if (ccl::global_data::env().atl_transport == ccl_atl_ofi)
     {
         insert(main_table, 0, CCL_SELECTION_MAX_COLL_SIZE, ccl_coll_sparse_allreduce_3_allgatherv);
@@ -22,7 +21,6 @@ ccl_algorithm_selector<ccl_coll_sparse_allreduce>::ccl_algorithm_selector()
         insert(main_table, 0, CCL_SELECTION_MAX_COLL_SIZE, ccl_coll_sparse_allreduce_ring);
         insert(fallback_table, 0, CCL_SELECTION_MAX_COLL_SIZE, ccl_coll_sparse_allreduce_ring);
     }
-
 }
 
 template<>
@@ -48,7 +46,12 @@ bool ccl_algorithm_selector_helper<ccl_coll_sparse_allreduce_algo>::can_use(ccl_
         can_use = false;
     }
     else if (param.sparse_coalesce_mode == ccl_sparse_coalesce_disable &&
-        algo != ccl_coll_sparse_allreduce_3_allgatherv)
+            algo != ccl_coll_sparse_allreduce_3_allgatherv)
+    {
+        can_use = false;
+    }
+    else if (param.sparse_allreduce_alloc_fn &&
+             algo != ccl_coll_sparse_allreduce_3_allgatherv)
     {
         can_use = false;
     }

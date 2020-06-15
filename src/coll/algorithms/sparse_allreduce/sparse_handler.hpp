@@ -18,7 +18,13 @@ struct ccl_sparse_allreduce_handler
    size_t send_count[2];
    size_t dst_count[2];
 
+   /* explicit index/value buffer for allgatherv algo */
+   void* dst_ibuf;
+   void* dst_vbuf;
+
+   /* TODO: refactor ring and mask to enable alloc_fn */
    void* dst_buf;
+
    void* send_tmp_buf;
    void* recv_buf;
    void** recv_ibuf;

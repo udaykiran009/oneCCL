@@ -20,14 +20,16 @@ ccl_coll_attr& ccl_coll_attr::operator= (const ccl_coll_attr_t* attr)
     prologue_fn = attr->prologue_fn;
     epilogue_fn = attr->epilogue_fn;
     reduction_fn = attr->reduction_fn;
-    sparse_allreduce_completion_fn = attr->sparse_allreduce_completion_fn;
-    sparse_allreduce_completion_ctx = attr->sparse_allreduce_completion_ctx;
-    sparse_coalesce_mode = attr->sparse_coalesce_mode;
     priority = attr->priority;
     synchronous = attr->synchronous;
     to_cache = attr->to_cache && attr->match_id && attr->match_id[0];
     vector_buf = attr->vector_buf;
     match_id = (attr->match_id ? attr->match_id : "");
+
+    sparse_allreduce_completion_fn = attr->sparse_allreduce_completion_fn;
+    sparse_allreduce_alloc_fn = attr->sparse_allreduce_alloc_fn;
+    sparse_allreduce_fn_ctx = attr->sparse_allreduce_fn_ctx;
+    sparse_coalesce_mode = attr->sparse_coalesce_mode;
 
     if (to_cache != attr->to_cache)
         LOG_INFO("collective caching is requested but no match_id is provided, disable caching");
@@ -515,15 +517,18 @@ ccl_status_t ccl_coll_build_sparse_allreduce(
     param.dtype = ccl_datatype_char;
     param.comm = comm;
     param.sparse_coalesce_mode = sched->coll_attr.sparse_coalesce_mode;
+    param.sparse_allreduce_alloc_fn = sched->coll_attr.sparse_allreduce_alloc_fn;
 
     if (!send_ind_buf.get_ptr() || !send_val_buf.get_ptr())
     {
         LOG_ERROR("sparse_allreduce send buffers for indices and values should not be NULL, but got " \
                   "indices buffer = ", send_ind_buf.get_ptr(), ", values buffer = ", send_val_buf.get_ptr());
         assert(send_ind_buf.get_ptr() && send_val_buf.get_ptr());
-        throw ccl::ccl_error(std::string(__FUNCTION__) + "sparse_allreduce send buffers for indices and values \
-                        should not be NULL, but got indices buffer = " + std::to_string((uintptr_t)send_ind_buf.get_ptr()) +
-                        ", values buffer = " + std::to_string((uintptr_t)send_val_buf.get_ptr()));
+
+        throw ccl::ccl_error(
+            std::string(__FUNCTION__) + "sparse_allreduce send buffers for indices and values \
+            should not be NULL, but got indices buffer = " + std::to_string((uintptr_t)send_ind_buf.get_ptr()) +
+            ", values buffer = " + std::to_string((uintptr_t)send_val_buf.get_ptr()));
     }
 
     if (!send_ind_count || !send_val_count)
@@ -531,9 +536,11 @@ ccl_status_t ccl_coll_build_sparse_allreduce(
         LOG_ERROR("sparse_allreduce send buffer count should be greater than zero, but got " \
                   "indices count = ", send_ind_count, ", values count = ", send_val_count);
         assert(send_ind_count && send_val_count);
-        throw ccl::ccl_error(std::string(__FUNCTION__) + "sparse_allreduce send buffer count should be \
-                        greater than zero, but got indices count = " + std::to_string(send_ind_count) +
-                        ", values count = " + std::to_string(send_val_count));
+
+        throw ccl::ccl_error(
+            std::string(__FUNCTION__) + "sparse_allreduce send buffer count should be \
+            greater than zero, but got indices count = " + std::to_string(send_ind_count) +
+            ", values count = " + std::to_string(send_val_count));
     }
 
     if (send_ind_count > send_val_count)
@@ -572,19 +579,21 @@ ccl_status_t ccl_coll_build_sparse_allreduce(
     switch (index_dtype.idx())
     {
         case ccl_dtype_char:
-            CCL_DEFINE_VALUE(char);
+            CCL_SPARSE_ALLREDUCE_SELECT_V_DTYPE(char, value_dtype, algo);
             break;
         case ccl_dtype_int:
-            CCL_DEFINE_VALUE(int);
+            CCL_SPARSE_ALLREDUCE_SELECT_V_DTYPE(int, value_dtype, algo);
             break;
         case ccl_dtype_int64:
-            CCL_DEFINE_VALUE(int64_t);
+            CCL_SPARSE_ALLREDUCE_SELECT_V_DTYPE(int64_t, value_dtype, algo);
             break;
         case ccl_dtype_uint64:
-            CCL_DEFINE_VALUE(uint64_t);
+            CCL_SPARSE_ALLREDUCE_SELECT_V_DTYPE(uint64_t, value_dtype, algo);
             break;
         default:
-            CCL_FATAL("index datatype ", ccl::global_data::get().dtypes->name(index_dtype), " is not supported yet");
+            CCL_FATAL("index datatype ",
+                ccl::global_data::get().dtypes->name(index_dtype),
+                " is not supported yet");
             return ccl_status_invalid_arguments;
     }
 

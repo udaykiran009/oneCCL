@@ -157,14 +157,17 @@ ccl_master_sched::ccl_master_sched_ptr ccl_master_sched::create(const ccl_coll_p
 
     CCL_THROW_IF_NOT(param.ctype == ccl_coll_allgatherv || !(attr.vector_buf),
                      "vector buffer is supported for allgatherv only");
-
-    CCL_THROW_IF_NOT(param.ctype != ccl_coll_sparse_allreduce ||
-                     ccl::global_data::env().sparse_allreduce_algo_raw != "mask" ||
-                     !(attr.reduction_fn), 
-                     "mask algorithm for sparse_allreduce does not support custom reduction");
     
-    CCL_THROW_IF_NOT(param.ctype != ccl_coll_sparse_allreduce || attr.sparse_allreduce_completion_fn,
-                     "sparse_allreduce requires completion function pointer for proper work");
+    if (param.ctype == ccl_coll_sparse_allreduce)
+    {
+        CCL_THROW_IF_NOT(ccl::global_data::env().sparse_allreduce_algo_raw != "mask" || !(attr.reduction_fn), 
+                         "mask algorithm for sparse_allreduce does not support custom reduction");
+
+        CCL_THROW_IF_NOT((attr.sparse_allreduce_completion_fn || attr.sparse_allreduce_alloc_fn) &&
+                         !(reinterpret_cast<uintptr_t>(attr.sparse_allreduce_completion_fn) &
+                           reinterpret_cast<uintptr_t>(attr.sparse_allreduce_alloc_fn)),
+                         "sparse_allreduce requires completion callback only or allocation callback only");
+    }
 
     CCL_THROW_IF_NOT((param.dtype.idx() != ccl_dtype_bfp16) ||
                      (ccl::global_data::get().bfp16_impl_type != ccl_bfp16_none),

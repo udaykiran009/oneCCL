@@ -6,9 +6,10 @@ template<ccl_datatype_t ccl_idx_type>
 struct sparse_algo_iterator
 {
     template<size_t i, typename v_type>
-    void invoke(int sparse_coalesce_mode)
+    void invoke(ccl_sparse_coalesce_mode_t coalesce_mode,
+                sparse_test_callback_mode_t callback_mode)
     {
-        sparse_test_run<ccl_idx_type, v_type::ccl_type::value>(sparse_coalesce_mode);
+        sparse_test_run<ccl_idx_type, v_type::ccl_type::value>(coalesce_mode, callback_mode);
     }
 };
 
@@ -17,10 +18,11 @@ struct sparse_value_type_iterator
 {
     using types = std::tuple<ccl::type_info<ccl_value_type>...>;
     template<size_t index, typename i_type>
-    void invoke(int sparse_coalesce_mode)
+    void invoke(ccl_sparse_coalesce_mode_t coalesce_mode,
+                sparse_test_callback_mode_t callback_mode)
     {
         ccl_tuple_for_each_indexed<types>(sparse_algo_iterator<i_type::ccl_type::value>(),
-                                          sparse_coalesce_mode);
+                                          coalesce_mode, callback_mode);
     }
 };
 
@@ -35,7 +37,51 @@ int main(int argc, char** argv)
 {
     test_init();
 
-    int sparse_coalesce_mode = argc == 3 && std::string(argv[1]) == "-f" ? std::atoi(argv[2]) : 0;
+    ccl_sparse_coalesce_mode_t coalesce_mode = ccl_sparse_coalesce_regular;
+    sparse_test_callback_mode_t callback_mode = sparse_test_callback_completion;
+
+    if (argc >= 3)
+    {
+        for (int i = 1; i < argc; i++)
+        {
+            if ((i + 1) >= argc)
+                break;
+
+            if (std::string(argv[i]) == "-coalesce")
+            {
+                if (std::string(argv[i + 1]) == "regular")
+                    coalesce_mode = ccl_sparse_coalesce_regular;
+                else if (std::string(argv[i + 1]) == "disable")
+                    coalesce_mode = ccl_sparse_coalesce_disable;
+                else if (std::string(argv[i + 1]) == "keep_precision")
+                    coalesce_mode = ccl_sparse_coalesce_keep_precision;
+                else
+                {
+                    printf("unexpected coalesce option '%s'\n", argv[i + 1]);
+                    printf("FAILED\n");
+                    return -1;
+                }
+                i++;
+            }
+
+            if (std::string(argv[i]) == "-callback")
+            {
+                if (std::string(argv[i + 1]) == "completion")
+                    callback_mode = sparse_test_callback_completion;
+                else if (std::string(argv[i + 1]) == "alloc")
+                    callback_mode = sparse_test_callback_alloc;
+                else
+                {
+                    printf("unexpected callback option '%s'\n", argv[i + 1]);
+                    printf("FAILED\n");
+                    return -1;
+                }
+                i++;
+            }
+        }
+    }
+
+    PRINT_BY_ROOT("\ncoalesce_mode = %d, callback_mode = %d\n", coalesce_mode, callback_mode);
 
     using supported_sparce_index_types = sparce_index_types<ccl_dtype_char,
                                                             ccl_dtype_int,
@@ -60,7 +106,7 @@ int main(int argc, char** argv)
 
     // run test for each combination of supported indexes and values
     ccl_tuple_for_each_indexed<supported_sparce_index_types>(supported_sparce_value_types(),
-                                                             sparse_coalesce_mode);
+                                                             coalesce_mode, callback_mode);
 
     test_finalize();
 

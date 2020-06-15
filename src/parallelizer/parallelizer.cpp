@@ -862,16 +862,16 @@ ccl_status_t ccl_parallelizer::process(ccl_master_sched* sched)
         }
         case ccl_coll_sparse_allreduce:
         {
-            ccl_parallelizer_sparse_callback_ctx* i_ctx = 
-                        (ccl_parallelizer_sparse_callback_ctx*)part_scheds[0]->alloc_buffer(
-                            sizeof(ccl_parallelizer_sparse_callback_ctx)).get_ptr();
+            ccl_parallelizer_sparse_callback_ctx* i_ctx =
+                (ccl_parallelizer_sparse_callback_ctx*)part_scheds[0]->alloc_buffer(
+                    sizeof(ccl_parallelizer_sparse_callback_ctx)).get_ptr();
 
             i_ctx->buf = coll_param.sparse_param.recv_ind_buf;
             i_ctx->dtype_size = coll_param.sparse_param.itype.size();
 
             ccl_parallelizer_sparse_callback_ctx* v_ctx = 
-                        (ccl_parallelizer_sparse_callback_ctx*)part_scheds[0]->alloc_buffer(
-                            sizeof(ccl_parallelizer_sparse_callback_ctx)).get_ptr();
+                (ccl_parallelizer_sparse_callback_ctx*)part_scheds[0]->alloc_buffer(
+                    sizeof(ccl_parallelizer_sparse_callback_ctx)).get_ptr();
 
             v_ctx->buf = coll_param.sparse_param.recv_val_buf;
             v_ctx->dtype_size = dtype.size();
@@ -900,31 +900,35 @@ ccl_status_t ccl_parallelizer::process(ccl_master_sched* sched)
                                                          comm));
             }
 
-            CCL_ASSERT(coll_attr->sparse_allreduce_completion_fn);
-
             if (coll_attr->sparse_allreduce_completion_fn)
             {
+                CCL_THROW_IF_NOT(!coll_attr->sparse_allreduce_alloc_fn);
+
                 sched->sync_partial_scheds();
 
                 auto entry =
-                    entry_factory::make_entry<sparse_callback_entry>(part_scheds[0].get(),
-                                                                     coll_attr->sparse_allreduce_completion_fn,
-                                                                     ccl_buffer(),
-                                                                     0,
-                                                                     coll_param.sparse_param.itype,
-                                                                     ccl_buffer(),
-                                                                     0,
-                                                                     dtype,
-                                                                     coll_attr->sparse_allreduce_completion_ctx);
+                    entry_factory::make_entry<sparse_allreduce_completion_entry>(
+                        part_scheds[0].get(),
+                        coll_attr->sparse_allreduce_completion_fn,
+                        coll_attr->sparse_allreduce_fn_ctx,
+                        ccl_buffer(),
+                        0,
+                        coll_param.sparse_param.itype,
+                        ccl_buffer(),
+                        0,
+                        dtype);
 
-                entry->set_field_fn<ccl_sched_entry_field_idx_buf>(ccl_parallelizer_sparse_callback_get_buf,
-                                                                   i_ctx, false);
-                entry->set_field_fn<ccl_sched_entry_field_idx_cnt>(ccl_parallelizer_sparse_callback_get_count,
-                                                                   i_ctx, false);
-                entry->set_field_fn<ccl_sched_entry_field_val_buf>(ccl_parallelizer_sparse_callback_get_buf,
-                                                                   v_ctx, false);
-                entry->set_field_fn<ccl_sched_entry_field_val_cnt>(ccl_parallelizer_sparse_callback_get_count,
-                                                                   v_ctx, false);
+                entry->set_field_fn<ccl_sched_entry_field_idx_buf>(
+                    ccl_parallelizer_sparse_callback_get_buf, i_ctx, false);
+
+                entry->set_field_fn<ccl_sched_entry_field_idx_cnt>(
+                    ccl_parallelizer_sparse_callback_get_count, i_ctx, false);
+
+                entry->set_field_fn<ccl_sched_entry_field_val_buf>(
+                    ccl_parallelizer_sparse_callback_get_buf, v_ctx, false);
+
+                entry->set_field_fn<ccl_sched_entry_field_val_cnt>(
+                    ccl_parallelizer_sparse_callback_get_count, v_ctx, false);
             }
             break;
         }

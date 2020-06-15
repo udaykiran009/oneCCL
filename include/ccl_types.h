@@ -118,10 +118,16 @@ typedef ccl_status_t(*ccl_reduction_fn_t) (const void*, size_t,
                                            ccl_datatype_t,
                                            const ccl_fn_context_t*);
 
-/* idx_buf, idx_count, idx_dtype, val_buf, val_count, val_dtype, fn_context, user_context */
+/* idx_buf, idx_count, idx_dtype, val_buf, val_count, val_dtype, fn_context */
 typedef ccl_status_t(*ccl_sparse_allreduce_completion_fn_t) (const void*, size_t, ccl_datatype_t,
                                                              const void*, size_t, ccl_datatype_t,
-                                                             const ccl_fn_context_t*, const void*);
+                                                             const void*);
+
+/* idx_count, idx_dtype, val_count, val_dtype, fn_context, out_idx_buf, out_val_buf */
+typedef ccl_status_t(*ccl_sparse_allreduce_alloc_fn_t) (size_t, ccl_datatype_t,
+                                                        size_t, ccl_datatype_t,
+                                                        const void*,
+                                                        void**, void**);
 
 /** Extendable list of collective attributes. */
 typedef struct
@@ -134,11 +140,6 @@ typedef struct
     ccl_prologue_fn_t prologue_fn;
     ccl_epilogue_fn_t epilogue_fn;
     ccl_reduction_fn_t reduction_fn;
-
-    /* Sparse_allreduce */
-    ccl_sparse_allreduce_completion_fn_t sparse_allreduce_completion_fn;
-    const void* sparse_allreduce_completion_ctx;
-    ccl_sparse_coalesce_mode_t sparse_coalesce_mode;
 
     /* Priority for collective operation */
     size_t priority;
@@ -157,6 +158,13 @@ typedef struct
      * operations with the same @b match_id will be executed in the same order.
      */
     const char* match_id;
+
+    /* Sparse allreduce specific */
+    ccl_sparse_allreduce_completion_fn_t sparse_allreduce_completion_fn;
+    ccl_sparse_allreduce_alloc_fn_t sparse_allreduce_alloc_fn;
+    const void* sparse_allreduce_fn_ctx;
+    ccl_sparse_coalesce_mode_t sparse_coalesce_mode;
+
 } ccl_coll_attr_t;
 
 /** List of host communicator attributes. */

@@ -2,9 +2,10 @@
 #include "exec/exec.hpp"
 #include "exec/thread/worker.hpp"
 
-#define CCL_WORKER_CHECK_STOP_ITERS (32768)
-#define CCL_WORKER_CHECK_UPDATE_ITERS (16384)
-#define CCL_WORKER_PROCESS_ALL_ITERS  (4096)
+#define CCL_WORKER_CHECK_STOP_ITERS     (16384)
+#define CCL_WORKER_CHECK_UPDATE_ITERS   (16384)
+#define CCL_WORKER_CHECK_AFFINITY_ITERS (16384)
+#define CCL_WORKER_PROCESS_ALL_ITERS    (4096)
 
 static void* ccl_worker_func(void* args);
 
@@ -14,7 +15,7 @@ ccl_worker::ccl_worker(size_t idx,
       should_lock(false), is_locked(false),
       strict_sched_queue(std::unique_ptr<ccl_strict_sched_queue>(new ccl_strict_sched_queue())),
       sched_queue(std::move(queue))
-{ }
+{}
 
 void ccl_worker::add(ccl_sched* sched)
 {
@@ -215,10 +216,54 @@ void ccl_worker::clear_queue()
     sched_queue->clear();
 }
 
+static inline bool
+ccl_worker_check_conditions(ccl_worker* worker,
+                            size_t iter_count,
+                            int do_work_status)
+{
+    bool should_stop = false;
+
+    if ((iter_count % CCL_WORKER_CHECK_STOP_ITERS) == 0)
+    {
+        if (worker->should_stop.load(std::memory_order_acquire))
+            should_stop = true;
+    }
+
+    if (ccl::global_data::get().is_ft_enabled &&
+        unlikely(do_work_status == ccl_status_blocked_due_to_resize ||
+                 iter_count % CCL_WORKER_CHECK_UPDATE_ITERS == 0))
+    {
+        if (worker->should_lock.load(std::memory_order_acquire))
+        {
+            worker->clear_queue();
+            worker->is_locked = true;
+            while (worker->should_lock.load(std::memory_order_relaxed))
+            {
+                ccl_yield(ccl::global_data::env().yield_type);
+            }
+            worker->is_locked = false;
+        }
+    }
+
+    if ((iter_count % CCL_WORKER_CHECK_AFFINITY_ITERS) == 0)
+    {
+        int start_affinity = worker->get_start_affinity();
+        int affinity = worker->get_affinity();
+        if (start_affinity != affinity)
+        {
+            LOG_ERROR("worker ", worker->get_idx(),
+                " unexpectedly changed affinity from ", start_affinity,
+                " to ", affinity);
+        }
+    }
+
+    return should_stop;
+}
+
 static void* ccl_worker_func(void* args)
 {
     auto worker = static_cast<ccl_worker*>(args);
-    LOG_DEBUG("worker_idx ", worker->get_idx());
+    LOG_INFO("worker_idx ", worker->get_idx());
 
     size_t iter_count = 0;
     size_t processed_count = 0;
@@ -233,24 +278,10 @@ static void* ccl_worker_func(void* args)
     {
         try
         {
-            // thread is non-interruptible from this point
             ret = worker->do_work(processed_count);
 
-            if (ccl::global_data::get().is_ft_enabled &&
-                unlikely(ret == ccl_status_blocked_due_to_resize || iter_count % CCL_WORKER_CHECK_UPDATE_ITERS == 0))
-            {
-                if (worker->should_lock.load(std::memory_order_acquire))
-                {
-                    worker->clear_queue();
-                    worker->is_locked = true;
-                    while (worker->should_lock.load(std::memory_order_relaxed))
-                    {
-                        ccl_yield(ccl::global_data::env().yield_type);
-                    }
-                    worker->is_locked = false;
-                }
-            }
-
+            if (ccl_worker_check_conditions(worker, iter_count, ret))
+                break;
         }
         catch (ccl::ccl_error& ccl_e)
         {
@@ -266,11 +297,6 @@ static void* ccl_worker_func(void* args)
         }
 
         iter_count++;
-        if ((iter_count % CCL_WORKER_CHECK_STOP_ITERS) == 0)
-        {
-            if (worker->should_stop.load(std::memory_order_acquire))
-                break;
-        }
 
         if (processed_count == 0)
         {
@@ -285,7 +311,8 @@ static void* ccl_worker_func(void* args)
         {
             spin_count = max_spin_count;
         }
-    } while (true);
+    }
+    while (true);
 
     worker->started = false;
 

@@ -18,7 +18,7 @@ struct cpu_sparse_allreduce_coll :
     using coll_base::recv_vbufs;
     using coll_base::recv_icount;
     using coll_base::recv_vcount;
-    using coll_base::user_ctxs;
+    using coll_base::fn_ctxs;
 
     using coll_base::single_send_ibuf;
     using coll_base::single_send_vbuf;
@@ -26,7 +26,7 @@ struct cpu_sparse_allreduce_coll :
     using coll_base::single_recv_vbuf;
     using coll_base::single_recv_icount;
     using coll_base::single_recv_vcount;
-    using coll_base::single_user_ctx;
+    using coll_base::single_fn_ctx;
 
     cpu_sparse_allreduce_coll(bench_coll_init_attr init_attr,
                               const std::string& args,
@@ -91,15 +91,15 @@ struct cpu_sparse_allreduce_coll :
 
         for (size_t idx = 0; idx < base_coll::get_buf_count(); idx++)
         {
-            user_ctxs[idx].recv_ibuf = (void**)(&(recv_ibufs[idx]));
-            user_ctxs[idx].recv_vbuf = (void**)(&(recv_vbufs[idx]));
-            user_ctxs[idx].recv_ibuf_count = max_elem_count * rbuf_size_modifier * base_coll::comm->size();
-            user_ctxs[idx].recv_vbuf_count = max_elem_count * rbuf_size_modifier * base_coll::comm->size();
+            fn_ctxs[idx].recv_ibuf = (void**)(&(recv_ibufs[idx]));
+            fn_ctxs[idx].recv_vbuf = (void**)(&(recv_vbufs[idx]));
+            fn_ctxs[idx].recv_ibuf_count = max_elem_count * rbuf_size_modifier * base_coll::comm->size();
+            fn_ctxs[idx].recv_vbuf_count = max_elem_count * rbuf_size_modifier * base_coll::comm->size();
         }
-        single_user_ctx.recv_ibuf = (void**)(&single_recv_ibuf);
-        single_user_ctx.recv_vbuf = (void**)(&single_recv_vbuf);
-        single_user_ctx.recv_ibuf_count = single_buf_max_elem_count * rbuf_size_modifier * base_coll::comm->size();
-        single_user_ctx.recv_vbuf_count = single_buf_max_elem_count * rbuf_size_modifier * base_coll::comm->size();
+        single_fn_ctx.recv_ibuf = (void**)(&single_recv_ibuf);
+        single_fn_ctx.recv_vbuf = (void**)(&single_recv_vbuf);
+        single_fn_ctx.recv_ibuf_count = single_buf_max_elem_count * rbuf_size_modifier * base_coll::comm->size();
+        single_fn_ctx.recv_vbuf_count = single_buf_max_elem_count * rbuf_size_modifier * base_coll::comm->size();
     }
 
     ~cpu_sparse_allreduce_coll()
@@ -129,7 +129,7 @@ struct cpu_sparse_allreduce_coll :
                                             send_ibufs[b_idx],
                                             reinterpret_cast<VType*>(send_vbufs[b_idx]),
                                             reinterpret_cast<VType*>(recv_vbufs[b_idx]),
-                                            user_ctxs[b_idx].recv_vbuf_count,
+                                            fn_ctxs[b_idx].recv_vbuf_count,
                                             recv_icount[b_idx],
                                             recv_vcount[b_idx],
                                             comm->rank());
@@ -163,7 +163,7 @@ struct cpu_sparse_allreduce_coll :
                                       recv_ibufs[buf_idx], recv_icount[buf_idx],
                                       recv_vbufs[buf_idx], recv_vcount[buf_idx],
                                       attr, stream, reqs,
-                                      user_ctxs[buf_idx]);
+                                      fn_ctxs[buf_idx]);
     }
 
     virtual void start_single(size_t count,
@@ -176,7 +176,7 @@ struct cpu_sparse_allreduce_coll :
                                       static_cast<IType*>(single_recv_ibuf), single_recv_icount,
                                       reinterpret_cast<VType*>(single_recv_vbuf), single_recv_vcount,
                                       attr, stream, reqs,
-                                      single_user_ctx);
+                                      single_fn_ctx);
     }
 };
 

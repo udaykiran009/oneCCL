@@ -30,11 +30,14 @@ The ``sparse_allreduce`` function has the following parameters:
 -	``attributes`` - attributes that customize operation
 -	returns ``ccl::request`` object to track the progress of the operation
 
-For ``sparse_allreduce``, a completion callback is required to get the results.
+For ``sparse_allreduce``, a completion callback or allocation callback is required.
+
 Use the following :ref:`Collective Call Attributes` fields:
 
--	``sparse_allreduce_completion_fn`` - a completion callback function pointer (must not be set to ``NULL``)
--	``sparse_allreduce_completion_ctx``- a user context pointer of type ``void*``
+-	``sparse_allreduce_completion_fn`` - a completion callback function pointer
+- ``sparse_allreduce_alloc_fn`` - an allocation callback function pointer
+- ``sparse_allreduce_fn_ctx``- an user context pointer of type ``void*``
+- ``sparse_coalesce_mode``- a coalesce mode
 
 Here is an example of a function definition for ``sparse_allreduce`` completion callback:
 

@@ -27,6 +27,7 @@ CheckCommandExitCode()
 
 declare -i total_fails=0
 declare -i total_skipped=0
+declare -i log_idx=0
 
 function check_test()
 {
@@ -107,11 +108,12 @@ run_benchmark()
     local dtype=$8
     echo "dtype: " $dtype
     local reduction=$9
-    echo "dtype: " $reduction
+    echo "reduction: " $reduction
     echo "================ENVIRONMENT=================="
 
+    log_idx=${log_idx}+1
     test_log="$EXAMPLE_WORK_DIR/$dir_name/run"
-    test_log="${test_log}_${transport}_${example}_b_${backend}_e_${loop}_l_${coll}_d_${dtype}_output.log"
+    test_log="${test_log}_${transport}_${example}_b_${backend}_e_${loop}_l_${coll}_d_${dtype}_${log_idx}.log"
 
     options="--min_elem_count 1 --max_elem_count 32"
     if [ "${backend}" != "" ];
@@ -150,14 +152,14 @@ run_benchmark()
         base_test_log="${test_log}"
 
         test_log="${base_test_log}.2_ranks"
-        echo Output for run with CCL_LOG_LEVEL=2 and 2 ranks has been redirected to log file ${test_log}
+        echo "output for run with CCL_LOG_LEVEL=2 and 2 ranks has been redirected to log file ${test_log}"
         eval `echo $ccl_extra_env mpiexec.hydra -n 2 -ppn $ppn -l ./$example ${options}` > ${test_log} 2>&1
         check_test ${test_log} ${example}
 
         if [ "${transport}" == "ofi" ];
         then
             test_log="${base_test_log}.1_rank"
-            echo Output for run with CCL_LOG_LEVEL=2 and 1 rank has been redirected to log file ${test_log}
+            echo "output for run with CCL_LOG_LEVEL=2 and 1 rank has been redirected to log file ${test_log}"
             eval `echo $ccl_extra_env mpiexec.hydra -n 1 -ppn $ppn -l ./$example ${options}` > ${test_log} 2>&1
             check_test ${test_log} ${example}
         fi
@@ -178,7 +180,10 @@ run_example()
     local arg=$5
     echo "arg: "$arg
     echo "================ENVIRONMENT=================="
-    test_log="$EXAMPLE_WORK_DIR/$dir_name/run_${dir_name}_${transport}_${example}_${arg}_output.log"
+
+    log_idx=${log_idx}+1
+    test_log="$EXAMPLE_WORK_DIR/$dir_name/run_${dir_name}_${transport}_${example}_${log_idx}.log"
+
     eval `echo $ccl_extra_env mpiexec.hydra -n 2 -ppn $ppn -l ./$example $arg` 2>&1 | tee ${test_log}
     check_test ${test_log} ${example}
 }
@@ -315,18 +320,28 @@ run()
                         if [ "$transport" == "mpi" ];
                         then
                             sparse_algo_set="ring"
-                            sparse_mode_set = "0"
+                            sparse_coalesce_set="regular"
+                            sparse_callback_set="completion"
                         else
                             sparse_algo_set="ring mask allgatherv"
-                            sparse_mode_set = "0 1 2"
+                            sparse_coalesce_set="regular disable keep_precision"
+                            sparse_callback_set="completion alloc"
                         fi
-                        for sparse_algo in ${sparse_algo_set};
+                        for algo in ${sparse_algo_set};
                         do
-                            ccl_extra_env="CCL_SPARSE_ALLREDUCE=$sparse_algo ${ccl_transport_env}"
-                            for sparse_mode in ${sparse_mode_set};
+                            ccl_extra_env="CCL_SPARSE_ALLREDUCE=${algo} ${ccl_transport_env}"
+                            for coalesce in ${sparse_coalesce_set};
                             do
-                                sparse_mode_str = "-f ${sparse_mode}"
-                                run_example "${ccl_extra_env}" ${dir_name} ${transport} ${example} ${sparse_mode_str}
+                                for callback in ${sparse_callback_set};
+                                do
+                                    if [ "$callback" == "alloc" ] && [ "$algo" != "allgatherv" ];
+                                    then
+                                        # TODO: implement alloc_fn for ring and mask
+                                        continue
+                                    fi
+                                    sparse_options="-coalesce ${coalesce} -callback ${callback}"
+                                    run_example "${ccl_extra_env}" ${dir_name} ${transport} ${example} "${sparse_options}"
+                                done
                             done
                         done
                     else

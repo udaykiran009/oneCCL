@@ -20,9 +20,10 @@ void* ccl_update_comm_world_info(void* args)
     {
         /*
          * atl_wait_notification return values:
-         * 0 - got notification, should to do some updates
-         * 1 - finished by timeout, should to check if thread need to stop, in another case should to recall this func
-         * TODO: change nums to enum
+         * 0 - got notification, should do some updates
+         * 1 - finished by timeout, should check whether thread should be stopped
+                                    in another case should recall this function
+         * TODO: replace numbers by enum values
          * */
         res = atl_wait_notification(global_data.executor->get_atl_ctx());
 

@@ -40,7 +40,7 @@ void do_regular(ccl::communicator* comm,
             if (!find_key_val(reduction_op, reduction_names, reduction))
                 continue;
 
-            PRINT_BY_ROOT(comm, "\ndtype: %s reduction: %s",
+            PRINT_BY_ROOT(comm, "\ndtype: %s\nreduction: %s\n",
                           dtype_name.c_str(), reduction.c_str());
 
             reqs.reserve(colls.size() * options.buf_count);
@@ -210,7 +210,7 @@ void do_unordered(ccl::communicator* comm,
             if (!find_key_val(reduction_op, reduction_names, reduction))
                 continue;
 
-            PRINT_BY_ROOT(comm, "\ndtype: %s reduction: %s",
+            PRINT_BY_ROOT(comm, "\ndtype: %s\nreduction: %s\n",
                           dtype_name.c_str(), reduction.c_str());
 
             size_t rank = comm->rank();

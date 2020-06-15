@@ -129,15 +129,14 @@ void ccl_executor::start_workers()
         if (ccl::global_data::env().worker_offload)
         {
             size_t affinity = ccl::global_data::env().worker_affinity[get_local_proc_idx() * worker_count + idx];
-            CCL_THROW_IF_NOT(workers.back()->start() == ccl_status_success,
-                             "failed to start worker # ", idx);
-            CCL_THROW_IF_NOT(workers.back()->pin(affinity) == ccl_status_success,
-                             "failed to pin worker # ", idx, " on processor ", affinity);
+
+            CCL_THROW_IF_NOT(workers.back()->start(affinity) == ccl_status_success,
+                "failed to start worker # ", idx);
 
             LOG_DEBUG("started worker: global_proc_idx ", get_global_proc_idx(),
-                      ", local_proc_idx ", get_local_proc_idx(),
-                      ", worker_idx ", idx,
-                      ", affinity ", affinity);
+                ", local_proc_idx ", get_local_proc_idx(),
+                ", worker_idx ", idx,
+                ", affinity ", affinity);
         }
     }
 }
@@ -244,19 +243,18 @@ ccl_status_t ccl_executor::create_listener(ccl_resize_fn_t resize_func)
     }
 
     if (resize_func != NULL)
-        atl_set_resize_function(ccl::global_data::get().executor->get_atl_ctx(), (atl_resize_fn_t) resize_func);
-
-    listener = std::unique_ptr<ccl_listener>(new ccl_listener());
-    listener->start();
+        atl_set_resize_function(ccl::global_data::get().executor->get_atl_ctx(),
+                                (atl_resize_fn_t)resize_func);
 
     /* pin listener thread together with first worker thread */
-
     auto worker_affinity = ccl::global_data::env().worker_affinity;
     size_t affinity_idx = get_local_proc_idx() * ccl::global_data::env().worker_count;
     CCL_THROW_IF_NOT(worker_affinity.size() > affinity_idx);
-
     size_t affinity = worker_affinity[affinity_idx];
-    listener->pin(affinity);
+
+    listener = std::unique_ptr<ccl_listener>(new ccl_listener());
+    listener->start(affinity);
+    
     LOG_DEBUG("started listener");
 
     return ccl_status_success;

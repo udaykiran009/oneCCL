@@ -31,7 +31,7 @@ struct base_sparse_allreduce_coll :
 
     size_t* recv_icount = nullptr;
     size_t* recv_vcount = nullptr;
-    std::vector<sparse_allreduce_user_ctx_t> user_ctxs;
+    std::vector<sparse_allreduce_fn_ctx_t> fn_ctxs;
 
     ITypeNonMod* single_send_ibuf = nullptr;
     VTypeNonMod* single_send_vbuf = nullptr;
@@ -39,7 +39,7 @@ struct base_sparse_allreduce_coll :
     VTypeNonMod* single_recv_vbuf = nullptr;
     size_t single_recv_icount {};
     size_t single_recv_vcount {};
-    sparse_allreduce_user_ctx_t single_user_ctx;
+    sparse_allreduce_fn_ctx_t single_fn_ctx;
 
     base_sparse_allreduce_coll(bench_coll_init_attr init_attr, const std::string& args) :
         base_coll(init_attr), coll_strategy(args, base_coll::comm->size())
@@ -55,7 +55,7 @@ struct base_sparse_allreduce_coll :
         std::memset(recv_vcount, 0, init_attr.buf_count * sizeof(size_t));
         (void)result;
 
-        user_ctxs.resize(init_attr.buf_count);
+        fn_ctxs.resize(init_attr.buf_count);
         send_ibufs.resize(init_attr.buf_count);
         send_vbufs.resize(init_attr.buf_count);
         recv_ibufs.resize(init_attr.buf_count);
@@ -66,7 +66,7 @@ struct base_sparse_allreduce_coll :
     {
         free(recv_icount);
         free(recv_vcount);
-        user_ctxs.clear();
+        fn_ctxs.clear();
     }
 
     const char* name() const noexcept override

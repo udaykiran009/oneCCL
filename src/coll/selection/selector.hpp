@@ -32,7 +32,9 @@ struct ccl_selector_param
     const size_t* recv_counts;
     int vector_buf;
 
+    /* tmp fields to avoid selection of algorithms which don't support all coalesce modes or alloc_fn */
     ccl_sparse_coalesce_mode_t sparse_coalesce_mode;
+    ccl_sparse_allreduce_alloc_fn_t sparse_allreduce_alloc_fn;
 };
 
 template<ccl_coll_type coll_id>

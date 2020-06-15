@@ -69,12 +69,10 @@ if (CCL_BFP16_COMPILER)
     endif()
 endif()
 
-
 include_directories(${CCL_ROOT}/include/${CCL_CONFIGURATION})
-link_directories(${CCL_ROOT}/lib/${CCL_CONFIGURATION})
-
-include(cmake/helpers.cmake)
 include_directories(include)
+
+link_directories(${CCL_ROOT}/lib/${CCL_CONFIGURATION})
 
 add_subdirectory(cpu)
 if (${CMAKE_CXX_COMPILER_ID} STREQUAL "Clang")

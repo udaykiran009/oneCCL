@@ -30,7 +30,7 @@ struct sycl_sparse_allreduce_coll :
     using coll_base::recv_vbufs;
     using coll_base::recv_icount;
     using coll_base::recv_vcount;
-    using coll_base::user_ctxs;
+    using coll_base::fn_ctxs;
 
     using coll_base::single_send_ibuf;
     using coll_base::single_send_vbuf;
@@ -38,7 +38,7 @@ struct sycl_sparse_allreduce_coll :
     using coll_base::single_recv_vbuf;
     using coll_base::single_recv_icount;
     using coll_base::single_recv_vcount;
-    using coll_base::single_user_ctx;
+    using coll_base::single_fn_ctx;
 
     sycl_sparse_allreduce_coll(bench_coll_init_attr init_attr,
                                const std::string& args,
@@ -122,11 +122,11 @@ struct sycl_sparse_allreduce_coll :
 
         for (size_t idx = 0; idx < base_coll::get_buf_count(); idx++)
         {
-            user_ctxs[idx].recv_ibuf = (void**)(&(recv_ibufs[idx]));
-            user_ctxs[idx].recv_vbuf = (void**)(&(recv_vbufs[idx]));
+            fn_ctxs[idx].recv_ibuf = (void**)(&(recv_ibufs[idx]));
+            fn_ctxs[idx].recv_vbuf = (void**)(&(recv_vbufs[idx]));
         }
-        single_user_ctx.recv_ibuf = (void**)(&single_recv_ibuf);
-        single_user_ctx.recv_vbuf = (void**)(&single_recv_vbuf);
+        single_fn_ctx.recv_ibuf = (void**)(&single_recv_ibuf);
+        single_fn_ctx.recv_vbuf = (void**)(&single_recv_vbuf);
     }
 
     virtual void prepare(size_t elem_count) override
@@ -152,7 +152,7 @@ struct sycl_sparse_allreduce_coll :
                                       *reinterpret_cast<cl::sycl::buffer<VType>*>(recv_vbufs[buf_idx]),
                                       recv_vcount[buf_idx],
                                       attr, stream, reqs,
-                                      user_ctxs[buf_idx]);
+                                      fn_ctxs[buf_idx]);
     }
 
     virtual void start_single(size_t count,
@@ -169,7 +169,7 @@ struct sycl_sparse_allreduce_coll :
                                       *reinterpret_cast<cl::sycl::buffer<VType>*>(single_recv_vbuf),
                                       single_recv_vcount,
                                       attr, stream, reqs,
-                                      single_user_ctx);
+                                      single_fn_ctx);
     }
 };
 #endif /* CCL_ENABLE_SYCL */
