@@ -7,6 +7,7 @@
 #include "sched/entry/coll/direct/base_coll_entry.hpp"
 
 #include "common/comm/l0/modules_connector.hpp"
+#include "common/global/global.hpp"
 #include "common/stream/stream.hpp"
 //TODO L0 Workaround
 #include <unistd.h>
