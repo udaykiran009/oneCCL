@@ -6,6 +6,8 @@ oneCCL is integrated into:
 * [Horovod\*](https://github.com/horovod/horovod) (distributed training framework). Refer to [Horovod with oneCCL](https://github.com/horovod/horovod/blob/master/docs/oneccl.md) for details.
 * [PyTorch\*](https://github.com/pytorch/pytorch) (machine learning framework). Refer to [PyTorch bindings for oneCCL](https://github.com/intel/torch-ccl) for details.
 
+Release notes available by [link](https://software.intel.com/content/www/us/en/develop/articles/oneapi-collective-communication-library-ccl-release-notes.html).
+
 ## Prerequisites
 
 Ubuntu* 18
@@ -125,5 +127,3 @@ The exact IDs of CPU cores depend on parameters passed to *mpirun*
 In the most cases there is no need in removal of the current build directory. Just run `make` to
 compile and link changed files. Only if one sees some suspicious build errors after significant
 change in the code (e.g. after rebase or change of branch) then it is a hint to clean build directory.
-
-Release notes available by link: https://software.intel.com/en-us/articles/oneapi-collective-communication-library-ccl-release-notes
