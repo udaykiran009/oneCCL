@@ -325,10 +325,20 @@ run_tests()
                     done
                 for alltoall in "direct" "naive" "scatter" "scatter_barrier"
                     do
+                        if [ "$alltoall" == "scatter_barrier" ];
+                        then
+                            CCL_ALLTOALL_SCATTER_MAX_OPS=1 CCL_ALLTOALL_SCATTER_PLAIN=1 CCL_CHUNK_COUNT=${worker_count} \
+                                CCL_ALLTOALL=$alltoall ctest -VV -C mpi_alltoall_"$alltoall"_chunked
+                        fi
                         CCL_ALLTOALL=$alltoall ctest -VV -C mpi_alltoall_$alltoall
                     done
                 for alltoallv in "direct" "naive" "scatter" "scatter_barrier"
                     do
+                        if [ "$alltoallv" == "scatter_barrier" ];
+                        then
+                            CCL_ALLTOALL_SCATTER_MAX_OPS=1 CCL_ALLTOALL_SCATTER_PLAIN=1 CCL_CHUNK_COUNT=${worker_count} \
+                                CCL_ALLTOALLV=$alltoallv ctest -VV -C mpi_alltoallv_"$alltoallv"_chunked
+                        fi
                         CCL_ALLTOALLV=$alltoallv ctest -VV -C mpi_alltoallv_$alltoallv
                     done
                 for bcast in "direct" "ring" "double_tree" "naive"
@@ -367,10 +377,20 @@ run_tests()
                 done
                 for alltoall in "naive" "scatter" "scatter_barrier"
                     do
+                        if [ "$alltoall" == "scatter_barrier" ];
+                        then
+                            CCL_ALLTOALL_SCATTER_MAX_OPS=1 CCL_ALLTOALL_SCATTER_PLAIN=1 CCL_CHUNK_COUNT=${worker_count} \
+                                CCL_ALLTOALL=$alltoall ctest -VV -C mpi_alltoall_"$alltoall"_chunked
+                        fi
                         CCL_ALLTOALL=$alltoall ctest -VV -C mpi_alltoall_$alltoall
                     done
                 for alltoallv in "naive" "scatter" "scatter_barrier"
                     do
+                        if [ "$alltoallv" == "scatter_barrier" ];
+                        then
+                            CCL_ALLTOALL_SCATTER_MAX_OPS=1 CCL_ALLTOALL_SCATTER_PLAIN=1 CCL_CHUNK_COUNT=${worker_count} \
+                                CCL_ALLTOALLV=$alltoallv ctest -VV -C mpi_alltoallv_"$alltoallv"_chunked
+                        fi
                         CCL_ALLTOALLV=$alltoallv ctest -VV -C mpi_alltoallv_$alltoallv
                     done
                 for bcast in "ring" "double_tree" "naive"

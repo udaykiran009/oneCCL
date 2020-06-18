@@ -102,4 +102,23 @@ namespace entry_factory
                     scheds[(first_sched_idx + chunk_idx) % scheds.size()];
             });
     }
+
+    void make_chunked_copy_entry(std::vector<ccl_sched*>& scheds,
+                                 size_t first_sched_idx,
+                                 const ccl_buffer in_buf,
+                                 ccl_buffer out_buf,
+                                 size_t cnt,
+                                 const ccl_datatype& dtype)
+    {
+        CCL_CHUNKED_ENTRY_FUNCTION("copy", dtype, cnt,
+            make_entry<copy_entry>(chunk_sched,
+                                   in_buf + chunk_offset,
+                                   out_buf + chunk_offset,
+                                   chunk_size,
+                                   dtype),
+            {
+                chunk_sched =
+                    scheds[(first_sched_idx + chunk_idx) % scheds.size()];
+            });
+    }
 }

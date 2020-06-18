@@ -18,10 +18,6 @@ struct base_sparse_allreduce_coll :
     using coll_base::stream;
     using coll_base::comm;
 
-    using coll_strategy::value_to_indices_ratio;
-    using coll_strategy::vdim_size;
-    using coll_strategy::minimal_indices_count;
-
     std::vector<ITypeNonMod*> send_ibufs;
     std::vector<VTypeNonMod*> send_vbufs;
 
@@ -41,8 +37,8 @@ struct base_sparse_allreduce_coll :
     size_t single_recv_vcount {};
     sparse_allreduce_fn_ctx_t single_fn_ctx;
 
-    base_sparse_allreduce_coll(bench_coll_init_attr init_attr, const std::string& args) :
-        base_coll(init_attr), coll_strategy(args, base_coll::comm->size())
+    base_sparse_allreduce_coll(bench_coll_init_attr init_attr) :
+        base_coll(init_attr), coll_strategy(init_attr.v2i_ratio, base_coll::comm->size())
     {
         int result = 0;
 

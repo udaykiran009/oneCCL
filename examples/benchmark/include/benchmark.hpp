@@ -137,22 +137,12 @@ void print_help_usage(const char* app)
           "\t[-f,--min_elem_count <minimum number of elements for single collective>]\n"
           "\t[-t,--max_elem_count <maximum number of elements for single collective>]\n"
           "\t[-c,--check <check result correctness>]\n"
+          "\t[-v,--v2i_ratio <values to indices ratio in sparse_allreduce>]\n"
           "\t[-d,--dtype <datatypes list/all>]\n"
           "\t[-r,--reduction <reductions list/all>]\n"
           "\t[-h,--help]\n\n"
           "example:\n\t--coll allgatherv,allreduce,sparse_allreduce,sparse_allreduce_bfp16 --backend cpu --loop regular\n"
-          "example:\n\t--coll bcast,reduce --backend sycl --loop unordered \n"
-          "\n\n\tThe collectives \"sparse_*\" support additional configuration parameters:\n"
-          "\n\t\t\"indices_to_value_ratio\" - to produce indices count not more than 'elem_count/indices_to_value_ratio\n"
-          "\t\t\t(default value is 3)\n"
-          "\n\t\t\"vdim_count\" - maximum value counts for index\n"
-          "\t\t\t(default values determines all elapsed elements after \"indices_to_value_ratio\" recalculation application)\n"
-          "\n\tUser can set this additional parameters to sparse collective in the way:\n"
-          "\n\t\tsparse_allreduce[4:99]\n"
-          "\t\t\t - to set \"indices_to_value_ratio\" in 4 and \"vdim_cout\" in 99\n"
-          "\t\tsparse_allreduce[6]\n"
-          "\t\t\t - to set \"indices_to_value_ratio\" in 6 and \"vdim_cout\" in default\n"
-          "\n\tPlease use default configuration in most cases! You do not need to change it in general benchmark case\n",
+          "example:\n\t--coll bcast,reduce --backend sycl --loop unordered \n",
           app);
 }
 
@@ -278,7 +268,8 @@ typedef struct user_options_t
     size_t buf_count;
     size_t min_elem_count;
     size_t max_elem_count;
-    size_t check_values;
+    int check_values;
+    size_t v2i_ratio;
     std::list<std::string> coll_names;
     std::list<std::string> dtypes;
     std::list<std::string> reductions;
@@ -294,18 +285,21 @@ typedef struct user_options_t
         min_elem_count = 1;
         max_elem_count = MAX_ELEM_COUNT;
         check_values = 1;
+        v2i_ratio = V2I_RATIO;
         dtypes = tokenize(DEFAULT_DTYPES_LIST, ','); // default: float
         reductions = tokenize(DEFAULT_REDUCTIONS_LIST, ','); // default: sum
     }
 } user_options_t;
 
 /* placing print_timings() here is because of declaration of user_options_t */
-void print_timings(ccl::communicator& comm, double& timer,
-                  const size_t& elem_count, const size_t& elem_size,
-                  const user_options_t& options)
+void print_timings(ccl::communicator& comm,
+                   double timer, size_t iters,
+                   const size_t buf_count,
+                   const size_t elem_count,
+                   ccl::datatype dtype)
 {
-    double *timers = new double[comm.size()];
-    size_t *recv_counts = new size_t[comm.size()];
+    std::vector<double> timers(comm.size());
+    std::vector<size_t> recv_counts(comm.size());
 
     size_t idx;
     for (idx = 0; idx < comm.size(); idx++)
@@ -316,8 +310,8 @@ void print_timings(ccl::communicator& comm, double& timer,
 
     comm.allgatherv(&timer,
                     1,
-                    timers,
-                    recv_counts,
+                    timers.data(),
+                    recv_counts.data(),
                     &attr,
                     nullptr)->wait();
 
@@ -329,24 +323,24 @@ void print_timings(ccl::communicator& comm, double& timer,
         {
             avg_timer += timers[idx];
         }
-        avg_timer /= (options.iters * comm.size());
-        avg_timer_per_buf = avg_timer / options.buf_count;
+        avg_timer /= (iters * comm.size());
+        avg_timer_per_buf = avg_timer / buf_count;
 
         double stddev_timer = 0;
         double sum = 0;
         for (idx = 0; idx < comm.size(); idx++)
         {
-            double val = timers[idx] / options.iters;
+            double val = timers[idx] / iters;
             sum += (val - avg_timer) * (val - avg_timer);
         }
         stddev_timer = sqrt(sum / comm.size()) / avg_timer * 100;
+
         printf("size %10zu x %5zu bytes, avg %10.2lf us, avg_per_buf %10.2f, stddev %5.1lf %%\n",
-                elem_count * elem_size, options.buf_count, avg_timer, avg_timer_per_buf, stddev_timer);
+               elem_count * ccl::datatype_get_size(dtype),
+               buf_count, avg_timer, avg_timer_per_buf,
+               stddev_timer);
     }
     comm.barrier();
-
-    delete [] timers;
-    delete [] recv_counts;
 }
 
 /* specific benchmark functors */
@@ -376,7 +370,7 @@ int parse_user_options(int& argc, char** (&argv), user_options_t& options)
     int errors = 0;
 
     // values needed by getopt
-    const char* const short_options = "b:e:i:w:p:f:t:c:l:d:r:h:";
+    const char* const short_options = "b:e:i:w:p:f:t:c:v:l:d:r:h:";
     struct option getopt_options[] =
     {
         { "backend",        required_argument, 0, 'b' },
@@ -387,6 +381,7 @@ int parse_user_options(int& argc, char** (&argv), user_options_t& options)
         { "min_elem_count", required_argument, 0, 'f' },
         { "max_elem_count", required_argument, 0, 't' },
         { "check",          required_argument, 0, 'c' },
+        { "v2i_ratio",      required_argument, 0, 'v' },
         { "coll",           required_argument, 0, 'l' },
         { "dtype",          required_argument, 0, 'd' },
         { "reduction",      required_argument, 0, 'r' },
@@ -408,22 +403,25 @@ int parse_user_options(int& argc, char** (&argv), user_options_t& options)
                     errors++;
                 break;
             case 'i':
-                options.iters = atoi(optarg);
+                options.iters = atoll(optarg);
                 break;
             case 'w':
-                options.warmup_iters = atoi(optarg);
+                options.warmup_iters = atoll(optarg);
                 break;
             case 'p':
-                options.buf_count = atoi(optarg);
+                options.buf_count = atoll(optarg);
                 break;
             case 'f':
-                options.min_elem_count = atoi(optarg);
+                options.min_elem_count = atoll(optarg);
                 break;
             case 't':
-                options.max_elem_count = atoi(optarg);
+                options.max_elem_count = atoll(optarg);
                 break;
             case 'c':
                 options.check_values = atoi(optarg);
+                break;
+            case 'v':
+                options.v2i_ratio = atoll(optarg);
                 break;
             case 'l':
                 options.coll_names = tokenize(optarg, ',');
@@ -495,7 +493,8 @@ void print_user_options(const user_options_t& options, ccl::communicator* comm)
                   "\n  buf_count:      %zu"
                   "\n  min_elem_count: %zu"
                   "\n  max_elem_count: %zu"
-                  "\n  check:          %zu"
+                  "\n  check:          %d"
+                  "\n  v2i_ratio:      %zu"
                   "\n  %s",
                   comm->size(),
                   backend_str.c_str(),
@@ -506,6 +505,7 @@ void print_user_options(const user_options_t& options, ccl::communicator* comm)
                   options.min_elem_count,
                   options.max_elem_count,
                   options.check_values,
+                  options.v2i_ratio,
                   ss.str().c_str());
 }
 

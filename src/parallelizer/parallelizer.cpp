@@ -806,17 +806,17 @@ ccl_status_t ccl_parallelizer::process(ccl_master_sched* sched)
             if (a2a_algo == ccl_coll_alltoall_naive ||
                 a2av_algo == ccl_coll_alltoallv_naive)
             {
-                ccl_coll_build_naive_alltoallv(part_scheds_vector, coll_param);
+                ccl_coll_build_naive_alltoallv(sched, part_scheds_vector, coll_param);
             }
             else if (a2a_algo == ccl_coll_alltoall_scatter ||
                      a2av_algo == ccl_coll_alltoallv_scatter)
             {
-                ccl_coll_build_scatter_alltoallv(part_scheds_vector, coll_param);
+                ccl_coll_build_scatter_alltoallv(sched, part_scheds_vector, coll_param);
             }
             else if (a2a_algo == ccl_coll_alltoall_scatter_barrier ||
                      a2av_algo == ccl_coll_alltoallv_scatter_barrier)
             {
-                ccl_coll_build_scatter_barrier_alltoallv(part_scheds_vector, coll_param);
+                ccl_coll_build_scatter_barrier_alltoallv(sched, part_scheds_vector, coll_param);
             }
             else
             {

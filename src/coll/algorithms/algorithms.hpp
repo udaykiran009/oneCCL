@@ -1,5 +1,6 @@
 #pragma once
 
+#include "sched/master_sched.hpp"
 #include "sched/sched.hpp"
 
 #include <map>
@@ -153,15 +154,18 @@ ccl_status_t ccl_coll_build_ring_allgatherv(ccl_sched* sched,
                                             ccl_comm* comm);
 
 ccl_status_t
-ccl_coll_build_naive_alltoallv(std::vector<ccl_sched*>& scheds,
+ccl_coll_build_naive_alltoallv(ccl_master_sched* main_sched,
+                               std::vector<ccl_sched*>& scheds,
                                const ccl_coll_param& coll_param);
 
 ccl_status_t
-ccl_coll_build_scatter_alltoallv(std::vector<ccl_sched*>& scheds,
-                               const ccl_coll_param& coll_param);
+ccl_coll_build_scatter_alltoallv(ccl_master_sched* main_sched,
+                                 std::vector<ccl_sched*>& scheds,
+                                 const ccl_coll_param& coll_param);
 
 ccl_status_t
-ccl_coll_build_scatter_barrier_alltoallv(std::vector<ccl_sched*>& scheds,
+ccl_coll_build_scatter_barrier_alltoallv(ccl_master_sched* main_sched,
+                                         std::vector<ccl_sched*>& scheds,
                                          const ccl_coll_param& coll_param);
 
 /* direct algorithms - i.e. direct mapping on collective API from transport level */

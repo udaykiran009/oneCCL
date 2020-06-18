@@ -29,9 +29,8 @@ struct cpu_sparse_allreduce_coll :
     using coll_base::single_fn_ctx;
 
     cpu_sparse_allreduce_coll(bench_coll_init_attr init_attr,
-                              const std::string& args,
                               size_t sbuf_size_modifier = 1,
-                              size_t rbuf_size_modifier = 1) : coll_base(init_attr, args)
+                              size_t rbuf_size_modifier = 1) : coll_base(init_attr)
     {
         int result = 0;
 

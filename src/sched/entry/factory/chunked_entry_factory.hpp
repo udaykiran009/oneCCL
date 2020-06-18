@@ -85,4 +85,11 @@ namespace entry_factory
                                  const ccl_datatype& dtype,
                                  size_t src,
                                  ccl_comm* comm);
+
+    void make_chunked_copy_entry(std::vector<ccl_sched*>& scheds,
+                                 size_t first_sched_idx,
+                                 const ccl_buffer in_buf,
+                                 ccl_buffer out_buf,
+                                 size_t cnt,
+                                 const ccl_datatype& dtype);
 }

@@ -19,6 +19,7 @@ typedef struct bench_coll_init_attr
 {
     size_t buf_count;
     size_t max_elem_count;
+    size_t v2i_ratio;
 } bench_coll_init_attr;
 
 /* base polymorph collective wrapper class */

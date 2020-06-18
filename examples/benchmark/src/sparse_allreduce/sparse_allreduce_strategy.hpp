@@ -1,10 +1,6 @@
 #ifndef SPARSE_ALLREDUCE_STRATEGY_HPP
 #define SPARSE_ALLREDUCE_STRATEGY_HPP
 
-/* specific benchmark const expressions */
-constexpr size_t default_value_to_indices_ratio = 128;
-constexpr size_t default_vdim_size = MAX_ELEM_COUNT;
-
 template<class type>
 struct type_printer
 {
@@ -117,8 +113,7 @@ struct sparse_allreduce_strategy_impl
 
     using IndicesDistributor = IndicesDistributorType<remove_all_t<IType>>;
 
-    size_t value_to_indices_ratio;
-    size_t vdim_size;
+    size_t v2i_ratio;
     size_t comm_size;
     const size_t minimal_indices_count = 1;
 
@@ -129,35 +124,10 @@ struct sparse_allreduce_strategy_impl
                                                               indices_count));
     }
 
-    sparse_allreduce_strategy_impl(const std::string& args, size_t size) :
-        value_to_indices_ratio(),
-        vdim_size(),
-        comm_size(size)
-    {
-        std::vector<size_t> default_params { default_value_to_indices_ratio, default_vdim_size};
-        if (!args.empty())
-        {
-            constexpr const char* masks = "[](){}";
-            constexpr const char delim = ':';
-            std::string arg_copy;
-            arg_copy.reserve(args.size());
-            std::remove_copy_if(args.begin(), args.end(),
-                                std::back_inserter(arg_copy), [](char sym)
-                                {
-                                    return std::strchr(masks, sym);
-                                });
-            auto sparse_params = tokenize(arg_copy, delim);
-            default_params.resize(std::max(sparse_params.size(), default_params.size()));
-            std::transform(sparse_params.begin(), sparse_params.end(), default_params.begin(),
-                           [](const std::string& val)
-            {
-                return std::stoull(val);
-            });
-        }
-
-        value_to_indices_ratio = default_params[0];
-        vdim_size = default_params[1];
-    }
+    sparse_allreduce_strategy_impl(size_t v2i_ratio, size_t comm_size)
+      : v2i_ratio(v2i_ratio),
+        comm_size(comm_size)
+    {}
 
     sparse_allreduce_strategy_impl(const allgatherv_strategy_impl&) = delete;
     sparse_allreduce_strategy_impl& operator=(const allgatherv_strategy_impl&) = delete;
@@ -165,7 +135,7 @@ struct sparse_allreduce_strategy_impl
 
     std::tuple<size_t, size_t> get_expected_recv_counts(size_t elem_count) const
     {
-        size_t indices_count = std::max(elem_count / value_to_indices_ratio,
+        size_t indices_count = std::max(elem_count / v2i_ratio,
                                         minimal_indices_count);
         size_t vdim_count = (elem_count / indices_count);
 
@@ -182,15 +152,18 @@ struct sparse_allreduce_strategy_impl
                         req_list_t& reqs,
                         sparse_allreduce_fn_ctx_t& fn_ctx)
     {
-        auto expected = get_expected_recv_counts(send_icount);
+        auto expected = get_expected_recv_counts(send_vcount);
         recv_icount = std::get<0>(expected);
         recv_vcount = std::get<1>(expected);
 
         auto& sparse_attr = const_cast<ccl_coll_attr_t&>(bench_attr.coll_attr);
-        //sparse_attr.sparse_allreduce_alloc_fn = sparse_allreduce_alloc_fn;
+
+        /* use completion_fn because it is supported by all algorithms */
         sparse_attr.sparse_allreduce_completion_fn = sparse_allreduce_completion_fn;
+        //sparse_attr.sparse_allreduce_alloc_fn = sparse_allreduce_alloc_fn;
+
         sparse_attr.sparse_allreduce_fn_ctx = &fn_ctx;
-        sparse_attr.sparse_coalesce_mode = ccl_sparse_coalesce_regular;
+        sparse_attr.sparse_coalesce_mode = ccl_sparse_coalesce_keep_precision;
 
         reqs.push_back(comm.sparse_allreduce(send_ibuf, std::get<0>(expected),
                                              send_vbuf, send_vcount,
