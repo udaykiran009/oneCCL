@@ -1940,7 +1940,16 @@ atl_ofi_init(int* argc, char*** argv,
         ofi_ctx->max_retry_count = strtol(max_retry_count_env, NULL, 10);
     }
 
-    ofi_ctx->progress_mode = ATL_PROGRESS_CHECK;
+    if ((coord->global_count == coord->local_count) &&
+        (coord->global_count <= 4))
+    {
+        ofi_ctx->progress_mode = ATL_PROGRESS_CHECK;
+    }
+    else
+    {
+        ofi_ctx->progress_mode = ATL_PROGRESS_POLL;
+    }
+
     char* progress_mode_env = getenv(ATL_PROGRESS_MODE_ENV);
     if (progress_mode_env)
     {
