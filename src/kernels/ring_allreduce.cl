@@ -452,3 +452,82 @@ __kernel void allreduce_execution_uint64_t(size_t my_rank,
 {
     return;
 }
+
+//TODO
+typedef ushort bfp16;
+__kernel void allreduce_execution_bfp16(size_t my_rank,
+                                        size_t comm_size,
+                                        size_t elems_count,
+                                        const __global bfp16* input_buffer,
+                                        __global bfp16* output_buffer,
+
+                                        __global bfp16* tmp_buffer,
+                                        __global volatile int* left_wrote_to_me_flag,
+                                        __global volatile int* i_ready_to_receive_flag,
+
+                                        __global volatile int* local_barrier_flag,
+
+                                        __global bfp16* right_temp_buffer,
+                                        __global volatile int* i_send_to_right_flag,
+                                        __global volatile int* right_ready_to_recv_flag)
+{
+    return;
+}
+
+__kernel void allreduce_execution_double(size_t my_rank,
+                                         size_t comm_size,
+                                         size_t elems_count,
+                                         const __global double4* input_buffer,
+                                         __global double4* output_buffer,
+
+                                         __global double4* tmp_buffer,
+                                         __global volatile int* left_wrote_to_me_flag,
+                                         __global volatile int* i_ready_to_receive_flag,
+
+                                         __global volatile int* local_barrier_flag,
+
+                                         __global double4* right_temp_buffer,
+                                         __global volatile int* i_send_to_right_flag,
+                                         __global volatile int* right_ready_to_recv_flag)
+{
+    return;
+}
+
+
+__kernel void allreduce_execution_int64_t(size_t my_rank,
+                                          size_t comm_size,
+                                          size_t elems_count,
+                                          const __global long4* input_buffer,
+                                          __global long4* output_buffer,
+
+                                          __global long4* tmp_buffer,
+                                          __global volatile int* left_wrote_to_me_flag,
+                                          __global volatile int* i_ready_to_receive_flag,
+
+                                          __global volatile int* local_barrier_flag,
+
+                                          __global long4* right_temp_buffer,
+                                          __global volatile int* i_send_to_right_flag,
+                                          __global volatile int* right_ready_to_recv_flag)
+{
+    return;
+}
+
+__kernel void allreduce_execution_uint64_t(size_t my_rank,
+                                           size_t comm_size,
+                                           size_t elems_count,
+                                           const __global ulong4* input_buffer,
+                                           __global ulong4* output_buffer,
+
+                                           __global ulong4* tmp_buffer,
+                                           __global volatile int* left_wrote_to_me_flag,
+                                           __global volatile int* i_ready_to_receive_flag,
+
+                                           __global volatile int* local_barrier_flag,
+
+                                           __global ulong4* right_temp_buffer,
+                                           __global volatile int* i_send_to_right_flag,
+                                           __global volatile int* right_ready_to_recv_flag)
+{
+    return;
+}
