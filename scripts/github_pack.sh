@@ -22,7 +22,9 @@ excluded=".git
 ./examples/Makefile
 ./ofi/ofi_update.sh
 ./ccl_public
-./ccl_oneapi"
+./ccl_oneapi
+./examples/level_zero
+./src/kernels"
 
 count=0
 mkdir -p $dstdir
