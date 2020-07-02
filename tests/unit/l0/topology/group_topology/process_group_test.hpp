@@ -2,6 +2,7 @@
 #include <initializer_list>
 #include "../topology_utils.hpp"
 
+#if 0
 namespace topology_suite
 {
 struct allied_process_group_ring_topology_mock : public native::allied_process_group_ring_topology
@@ -144,7 +145,7 @@ ccl::process_device_indices_t
                                         size_t process_index,
                                         size_t cluster_size,
                                         native::details::global_sorted_colored_plain_graphs& cluster_graphs,
-                                        details::global_sorted_colored_plain_graphs& initial_cluster_graphs,
+                                        native::details::global_sorted_colored_plain_graphs& initial_cluster_graphs,
                                         std::ostream& out) override
 {
     out << "<UNIT_TEST mock:" << __PRETTY_FUNCTION__ << ">" << std::endl;
@@ -249,7 +250,7 @@ TEST_F(router_fixture, single_process_group_single_threads_single_device_topolog
     using namespace native;
 
     size_t process_index = 0;
-    constexpr ccl::device_topology_type topology = ccl::device_topology_type::allied_process_group_ring;
+    constexpr ccl::device_group_split_type topology = ccl::device_group_split_type::cluster;
     {
         //emulate last thread barrier creation
         //prepare thread context
@@ -314,7 +315,7 @@ TEST_F(router_fixture, single_process_group_single_threads_single_device_topolog
                                                     optional_indices{true, {1, 2}, {}}
                                                 }));
         std::tie(res, descr) =
-                        check_multiple_topologies<topology,
+                        check_ring_multiple_topologies<topology,
                                                   process_group_context>(pg_comm->process_device_topology,
                                                                          params.thread_ids,
                                                                          expected_thread_results);
@@ -328,7 +329,7 @@ TEST_F(router_fixture, ally_process_group_topology_test)
     using namespace native;
 
     size_t process_index = 0;
-    constexpr ccl::device_topology_type topology = ccl::device_topology_type::allied_process_group_ring;
+    constexpr ccl::device_group_split_type topology = ccl::device_group_split_type::cluster;
     {
         //emulate last thread barrier creation
         process_creator_params params = prepare_process_params(
@@ -399,7 +400,7 @@ TEST_F(router_fixture, ally_process_group_topology_test)
                                                 }));
 
         std::tie(res, descr) =
-                        check_multiple_topologies<topology,
+                        check_ring_multiple_topologies<topology,
                                                   process_group_context>(pg_comm->process_device_topology,
                                                                          params.thread_ids, expected_thread_results);
         UT_ASSERT(res, descr);
@@ -556,7 +557,7 @@ TEST_F(router_fixture, ally_process_group_topology_test)
                                                 }));
 
         std::tie(res, descr) =
-                        check_multiple_topologies<topology,
+                        check_ring_multiple_topologies<topology,
                                                   process_group_context>(pg_comm->process_device_topology,
                                                                          params.thread_ids, expected_thread_results);
         UT_ASSERT(res, descr);
@@ -688,7 +689,7 @@ TEST_F(router_fixture, ally_process_group_topology_test)
                                                 }));
 
         std::tie(res, descr) =
-                        check_multiple_topologies<topology,
+                        check_ring_multiple_topologies<topology,
                                                   process_group_context>(pg_comm->process_device_topology,
                                                                          params.thread_ids, expected_thread_results);
         UT_ASSERT(res, descr);
@@ -703,7 +704,7 @@ TEST_F(router_fixture, inter_process_scale_up_process_group_topology_test)
 
     size_t process_index = 0;
 
-    constexpr ccl::device_topology_type topology = ccl::device_topology_type::process_group_torn_apart_ring;
+    constexpr ccl::device_group_split_type topology = ccl::device_group_split_type::process_group_torn_apart_ring;
     {
         output << "TEST: scaleup between thread groups in one process group" << std::endl;
         process_creator_params params = prepare_process_params(
@@ -874,7 +875,7 @@ TEST_F(router_fixture, inter_process_scale_up_process_group_topology_test)
                                             });
 
         std::tie(res, descr) =
-                        check_multiple_topologies<topology,
+                        check_ring_multiple_topologies<topology,
                                                   process_group_context>(pg_comm->process_device_topology,
                                                                          params.thread_ids, expected_thread_results);
         if (!res)
@@ -894,7 +895,7 @@ TEST_F(router_fixture, several_processes_with_inner_scale_up_in_process_group_to
 
     size_t process_index = 1;
 
-    constexpr ccl::device_topology_type topology = ccl::device_topology_type::process_group_torn_apart_ring;
+    constexpr ccl::device_group_split_type topology = ccl::device_group_split_type::process_group_torn_apart_ring;
     {
         output << "TEST: scaleup between thread groups in one process group" << std::endl;
 
@@ -1166,7 +1167,7 @@ TEST_F(router_fixture, several_processes_with_inner_scale_up_in_process_group_to
                                             });
 
         std::tie(res, descr) =
-                        check_multiple_topologies<topology,
+                        check_ring_multiple_topologies<topology,
                                                   process_group_context>(pg_comm->process_device_topology,
                                                                          params.thread_ids, expected_thread_results);
         if (!res)
@@ -1186,7 +1187,7 @@ TEST_F(router_fixture, scale_up_scale_out_process_group_topology_test)
 
     size_t process_index = 0;
 
-    constexpr ccl::device_topology_type topology = ccl::device_topology_type::process_group_torn_apart_ring;
+    constexpr ccl::device_group_split_type topology = ccl::device_group_split_type::process_group_torn_apart_ring;
     {
         output << "TEST: scaleup between thread groups in one process group" << std::endl;
 
@@ -1412,10 +1413,11 @@ TEST_F(router_fixture, scale_up_scale_out_process_group_topology_test)
                                             });
 
         std::tie(res, descr) =
-                        check_multiple_topologies<topology,
+                        check_ring_multiple_topologies<topology,
                                                   process_group_context>(pg_comm->process_device_topology,
                                                                          params.thread_ids, expected_thread_results);
         UT_ASSERT(res, descr);
     }
 }
 }
+#endif

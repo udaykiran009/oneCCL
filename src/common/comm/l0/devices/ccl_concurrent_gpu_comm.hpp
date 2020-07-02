@@ -19,15 +19,18 @@ public:
     using base = ccl_gpu_base_comm<ccl_thread_comm<device_t>,
                                    gpu_types::CONCURRENT_GPU + device_t::type_idx()>;
     using typename base::comm_rank_t;
+    using impl_t = device_t;
 
     template<ccl_coll_type algo_type,
-             ccl::device_topology_type topology_type>
-    using gpu_module_t = typename device_t::template gpu_module_t<algo_type, topology_type>;    //same as in-process GPU
+             ccl::device_group_split_type group,
+             ccl::device_topology_type mode>
+    using gpu_module_t = typename device_t::template gpu_module_t<algo_type, group, mode>;    //same as in-process GPU
 
     template<ccl_coll_type algo_type,
-             ccl::device_topology_type topology_type,
+             ccl::device_group_split_type group,
+             ccl::device_topology_type mode,
              class native_data_type>
-    using gpu_kernel_t = typename gpu_module_t<algo_type, topology_type>::template kernel<native_data_type>;
+    using gpu_kernel_t = typename gpu_module_t<algo_type, group, mode>::template kernel<native_data_type>;
 
     static constexpr const char* name_impl()
     {
@@ -49,20 +52,29 @@ public:
         return ret;
     }
 
-    template<ccl::device_topology_type topology_type>
-    topology_addr<topology_type> get_comm_data() const
+    template<ccl::device_group_split_type group_id,
+             ccl::device_topology_type class_id>
+    topology_addr<group_id, class_id> get_comm_data() const
     {
-        return next_thread_gpu_comm.template get_comm_data<topology_type>();
+        return next_thread_gpu_comm.template get_comm_data<group_id, class_id>();
     }
 
     template<ccl_coll_type module_type,
-             ccl::device_topology_type topology_type,
+             ccl::device_group_split_type group_id,
+             ccl::device_topology_type class_id,
              class native_data_type>
-    gpu_kernel_t<module_type, topology_type, native_data_type>& get_gpu_kernel()
+    gpu_kernel_t<module_type, group_id, class_id, native_data_type>& get_gpu_kernel()
     {
-        return next_thread_gpu_comm.template get_gpu_kernel<module_type, topology_type, native_data_type>();
+        return next_thread_gpu_comm.template get_gpu_kernel<module_type,
+                                                            group_id,
+                                                            class_id,
+                                                            native_data_type>();
     }
 
+    device_t& get_impl_device()
+    {
+        return next_thread_gpu_comm;
+    }
 private:
     device_t& next_thread_gpu_comm;
 };

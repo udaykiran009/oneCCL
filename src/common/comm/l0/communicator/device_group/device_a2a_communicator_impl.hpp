@@ -47,10 +47,11 @@ device_group_a2a_communicator::allreduce_impl(const buffer_type* send_buf,
 {
     using namespace native;
 
-    static constexpr ccl::device_topology_type topology = base_t::topology_type();
+    static constexpr ccl::device_group_split_type group_id = base_t::topology_type();
+    static constexpr ccl::device_topology_type class_id = base_t::topology_class();
     if(!is_ready())
     {
-        throw ccl::ccl_error(std::string("Device communicator for topology: " + ::to_string(topology) +
+        throw ccl::ccl_error(std::string("Device communicator for group_id: " + ::to_string(group_id) +
                                          " is not ready yet. Not all сommunicators are created in group. Please create them before usage"));
     }
     size_t comm_rank = rank();
@@ -61,9 +62,14 @@ device_group_a2a_communicator::allreduce_impl(const buffer_type* send_buf,
     ccl_buffer send_entry_buffer(const_cast<buffer_type**>(&send_buf), count * sizeof(buffer_type), 0, ccl_buffer_type::INDIRECT);
     ccl_buffer recv_entry_buffer(&recv_buf, count * sizeof(buffer_type), 0, ccl_buffer_type::INDIRECT);
 
+    using community_t =
+            typename device_community_container<class_id>::element_type;
+    community_t community = device_community_impl.get_topology();
 
-    const auto &in_process_gpu_storage = device_community_impl->get_devices<ccl_gpu_comm>();
-    const auto &virtual_process_gpu_storage = device_community_impl->get_devices<ccl_virtual_gpu_comm>();
+    const auto &in_process_gpu_storage =
+                community->get_devices<ccl_gpu_comm>();
+    const auto &virtual_process_gpu_storage =
+                community->get_devices<ccl_virtual_gpu_comm>();;
 
     device_group_scheduler::schedule_ptr schedule;
 
@@ -75,7 +81,7 @@ device_group_a2a_communicator::allreduce_impl(const buffer_type* send_buf,
 
         /* TODO
 
-        using gpu_allreduce_entry = l0_allreduce_typed_entry<buffer_type, ccl_gpu_comm, topology>;
+        using gpu_allreduce_entry = l0_allreduce_typed_entry<buffer_type, ccl_gpu_comm, group_id>;
 
         schedule =
             ctx->scheduler_impl->submit_entry<gpu_allreduce_entry, ccl_sched_add_back>(*device_community_impl,
@@ -94,7 +100,7 @@ device_group_a2a_communicator::allreduce_impl(const buffer_type* send_buf,
         LOG_DEBUG("Invoke: ", virtual_device_it->second->to_string());
         /* TODO
 
-        using gpu_allreduce_entry = l0_allreduce_typed_entry<buffer_type, ccl_virtual_gpu_comm, topology>;
+        using gpu_allreduce_entry = l0_allreduce_typed_entry<buffer_type, ccl_virtual_gpu_comm, group_id>;
 
         schedule =
             ctx->scheduler_impl->submit_entry<gpu_allreduce_entry, ccl_sched_add_back>(*device_community_impl,

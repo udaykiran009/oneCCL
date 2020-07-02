@@ -20,9 +20,10 @@ struct device_group_scheduler
     }
   */
     template<class EntryType, ccl_sched_add_mode mode,
-            ccl::device_topology_type topology,
+            ccl::device_group_split_type group_id,
+            ccl::device_topology_type class_id,
             class device_t, class ...Arguments>
-    schedule_ptr submit_entry(device_community<topology>& device_topology, device_t& device, Arguments &&...args)
+    schedule_ptr submit_entry(device_community<class_id>& device_topology, device_t& device, Arguments &&...args)
     {
         //create schedule
         size_t group_size = device_topology.template get_device_count<native::ccl_gpu_comm>()  +

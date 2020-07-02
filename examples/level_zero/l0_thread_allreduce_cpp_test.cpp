@@ -132,7 +132,7 @@ void user_thread_sycl(size_t thread_idx, const cl::sycl::vector_class<cl::sycl::
 
     // set preferred device topology (OPTIONAL)
     my_device_comm_attr->set_value<ccl_device_preferred_topology_class>
-                        (ccl::device_topology_class::ring_class);
+                        (ccl::device_topology_type::ring);
     std::cout << "Create device communicators, expected count: " << devices.size()
               << ", preferred topology: "
             << my_device_comm_attr->get_value<ccl_device_preferred_topology_class>() << std::endl;
@@ -254,13 +254,13 @@ void user_thread_idx(size_t thread_idx, ccl::device_indices_t thread_device_idx,
                                                                global_communicator);
 
     std::cout << "Platform info: " << group->get_context().to_string() << std::endl;
-    
+
     // create device communicator attributes
     ccl::device_comm_attr_t my_device_comm_attr = group->create_device_comm_attr();
 
     // set preferred device topology (OPTIONAL)
     my_device_comm_attr->set_value<ccl_device_preferred_topology_class>
-                           (ccl::device_topology_class::ring_class);
+                           (ccl::device_topology_type::ring);
 
     // Create communicators (auto rank balancing, based on ids): range based API
     std::vector<ccl::communicator_t> comms =

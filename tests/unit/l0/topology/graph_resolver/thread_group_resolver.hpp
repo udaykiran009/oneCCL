@@ -25,7 +25,7 @@ TEST_F(router_fixture, thread_graph_resolver_test)
                                               }
                                           }
                                       };
-
+        stub::make_stub_devices(indices);
         adjacency_matrix expected_matrix {
                                             {
                                                 ccl::device_index_type(0,0, ccl::unused_index_value),
@@ -99,7 +99,7 @@ TEST_F(router_fixture, thread_graph_resolver_test)
                                               }
                                           }
                                       };
-
+        stub::make_stub_devices(indices);
         adjacency_matrix expected_matrix {
                                             {
                                                 ccl::device_index_type(0,0, ccl::unused_index_value),

@@ -8,12 +8,14 @@ namespace native
 
 class thread_device_group_ring_communicator :
        public typed_base_communicator<thread_device_group_ring_communicator,
-                                      ccl::device_topology_type::thread_group_ring,
+                                      ccl::device_group_split_type::process,
+                                      ccl::device_topology_type::ring,
                                       ccl::gpu_communicator_traits>
 {
 public:
     using base_t = typed_base_communicator<thread_device_group_ring_communicator,
-                                           ccl::device_topology_type::thread_group_ring,
+                                           ccl::device_group_split_type::process,
+                                           ccl::device_topology_type::ring,
                                            ccl::gpu_communicator_traits>;
 
     thread_device_group_ring_communicator(ccl::unified_device_type&& device,

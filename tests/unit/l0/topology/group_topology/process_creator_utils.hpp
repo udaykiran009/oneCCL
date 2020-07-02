@@ -1,8 +1,10 @@
 #pragma once
 #include <initializer_list>
 #include "../topology_utils.hpp"
+#include "../../stubs/stub_platform.hpp"
 #include "common/comm/l0/topology/ring/ring_construction_utils.hpp"
 
+#if 0
 namespace topology_suite
 {
 
@@ -12,6 +14,12 @@ TEST_F(router_fixture, simple_merge_test)
     using namespace native::details;
 
     {
+        stub::make_stub_devices({
+                                    ccl::device_index_type(0,0, ccl::unused_index_value),
+                                    ccl::device_index_type(0,1, ccl::unused_index_value),
+                                    ccl::device_index_type(0,2, ccl::unused_index_value)
+                                });
+
         size_t process_index = 1;
         size_t terminator_index = 3;
         process_creator_params params = prepare_process_params(process_index, {}, {});
@@ -22,7 +30,7 @@ TEST_F(router_fixture, simple_merge_test)
                                            params.cluster_device_size);
 
         pg_comm->cluster_gpu_indices = {
-                                        {"unit_tests",
+                                        {router_fixture::ut_cluster_name(),
                                             {
                                                 {0,
                                                     {
@@ -48,7 +56,7 @@ TEST_F(router_fixture, simple_merge_test)
                                             },
                                         }};
 
-        size_t proces_num = pg_comm->cluster_gpu_indices[std::string("unit_tests")].size();
+        size_t proces_num = pg_comm->cluster_gpu_indices[std::string(router_fixture::ut_cluster_name())].size();
         global_sorted_colored_plain_graphs my_colored_rings{
                             {0,
                                 {
@@ -84,7 +92,12 @@ TEST_F(router_fixture, simple_merge_test)
         {
             global_colored_plain_graphs local_merged_cluster_graphs =
                     top.merge_allied_nodes_in_colored_plain_graphs(ss, pg_comm->cluster_gpu_indices,
-                                                                   pr_index, proces_num, my_colored_rings);
+                                                                   pr_index, proces_num, my_colored_rings,
+                                                                   [](const native::ccl_device &lhs,
+                                                                    const native::ccl_device &rhs) -> size_t
+                                                                    {
+                                                                        return 1;
+                                                                    });
             merged_cluster_graphs[pr_index] = local_merged_cluster_graphs[pr_index];
         }
 
@@ -402,16 +415,8 @@ TEST_F(router_fixture, simple_multithreaded_merge_test)
     {
         size_t process_index = 1;
         size_t terminator_index = 3;
-        process_creator_params params = prepare_process_params(process_index, {}, {});
-
-        allied_process_group_ring_topology top(process_index, params.thread_ids.size(),
-                                           *pg_comm, *pg_comm->gpu_device_storage,
-                                           params.cluster_device_rank_offset,
-                                           params.cluster_device_size);
-
-        pg_comm->cluster_gpu_indices = {
-                                        {"unit_tests",
-                                            {
+        process_creator_params params = prepare_process_params(process_index, {},
+        {
                                                 {0,
                                                     {
                                                         ccl::device_index_type(0,0, ccl::unused_index_value),
@@ -438,10 +443,15 @@ TEST_F(router_fixture, simple_multithreaded_merge_test)
 
                                                     }
                                                 },
-                                            },
-                                        }};
+                                            });
 
-        size_t proces_num = pg_comm->cluster_gpu_indices[std::string("unit_tests")].size();
+        allied_process_group_ring_topology top(process_index, params.thread_ids.size(),
+                                           *pg_comm, *pg_comm->gpu_device_storage,
+                                           params.cluster_device_rank_offset,
+                                           params.cluster_device_size);
+
+
+        size_t proces_num = pg_comm->cluster_gpu_indices[std::string(router_fixture::ut_cluster_name())].size();
         global_sorted_colored_plain_graphs my_colored_rings{
                             {0,
                                 {
@@ -620,8 +630,14 @@ TEST_F(router_fixture, simple_multithreaded_merge_test)
                         };
             if (merged_cluster_graphs != to_check)
             {
-                abort();
-                UT_ASSERT(false, "Invalid cluster data after merge");
+                std::stringstream ss;
+                ss << "Verification: " << std::endl;
+                utils::dump_global_colored_graph(ss, to_check);
+
+                ss << "Got: " << std::endl;
+                utils::dump_global_colored_graph(ss, merged_cluster_graphs);
+
+                UT_ASSERT(false, "Invalid cluster data after merge:\n" << ss.str());
             }
         }
 
@@ -749,7 +765,7 @@ TEST_F(router_fixture, simple_scaleout_test)
                                            params.cluster_device_size);
 
         pg_comm->cluster_gpu_indices = {
-                                        {"unit_tests",
+                                        {router_fixture::ut_cluster_name(),
                                             {
                                                 {0,
                                                     {
@@ -775,7 +791,7 @@ TEST_F(router_fixture, simple_scaleout_test)
                                             },
                                         }};
 
-        size_t proces_num = pg_comm->cluster_gpu_indices[std::string("unit_tests")].size();
+        size_t proces_num = pg_comm->cluster_gpu_indices[std::string(router_fixture::ut_cluster_name())].size();
         global_sorted_colored_plain_graphs my_colored_rings{
                             {0,
                                 {
@@ -853,8 +869,14 @@ TEST_F(router_fixture, simple_scaleout_test)
                         };
             if (merged_cluster_graphs != to_check)
             {
-                abort();
-                UT_ASSERT(false, "Invalid cluster data after merge");
+                std::stringstream ss;
+                ss << "Verification: " << std::endl;
+                utils::dump_global_colored_graph(ss, to_check);
+
+                ss << "Got: " << std::endl;
+                utils::dump_global_colored_graph(ss, merged_cluster_graphs);
+
+                UT_ASSERT(false, "Invalid cluster data after merge:\n" << ss.str());
             }
         }
 
@@ -1020,7 +1042,7 @@ TEST_F(router_fixture, simple_scaleout_multithreaded_merge_test)
                                            params.cluster_device_size);
 
         pg_comm->cluster_gpu_indices = {
-                                        {"unit_tests",
+                                        {router_fixture::ut_cluster_name(),
                                             {
                                                 {0,
                                                     {
@@ -1051,7 +1073,7 @@ TEST_F(router_fixture, simple_scaleout_multithreaded_merge_test)
                                             },
                                         }};
 
-        size_t proces_num = pg_comm->cluster_gpu_indices[std::string("unit_tests")].size();
+        size_t proces_num = pg_comm->cluster_gpu_indices[std::string(router_fixture::ut_cluster_name())].size();
         global_sorted_colored_plain_graphs my_colored_rings{
                             {0,
                                 {
@@ -1218,8 +1240,14 @@ TEST_F(router_fixture, simple_scaleout_multithreaded_merge_test)
                         };
             if (merged_cluster_graphs != to_check)
             {
-                abort();
-                UT_ASSERT(false, "Invalid cluster data after merge");
+                std::stringstream ss;
+                ss << "Verification: " << std::endl;
+                utils::dump_global_colored_graph(ss, to_check);
+
+                ss << "Got: " << std::endl;
+                utils::dump_global_colored_graph(ss, merged_cluster_graphs);
+
+                UT_ASSERT(false, "Invalid cluster data after merge:\n" << ss.str());
             }
         }
 
@@ -1346,7 +1374,7 @@ TEST_F(router_fixture, symmetric_scaleout_test)
                                            params.cluster_device_size);
 
         pg_comm->cluster_gpu_indices = {
-                                        {"unit_tests",
+                                        {router_fixture::ut_cluster_name(),
                                             {
                                                 {0,
                                                     {
@@ -1379,7 +1407,7 @@ TEST_F(router_fixture, symmetric_scaleout_test)
                                             },
                                         }};
 
-        size_t proces_num = pg_comm->cluster_gpu_indices[std::string("unit_tests")].size();
+        size_t proces_num = pg_comm->cluster_gpu_indices[std::string(router_fixture::ut_cluster_name())].size();
         global_sorted_colored_plain_graphs my_colored_rings{
                             {0,
                                 {
@@ -1523,8 +1551,14 @@ TEST_F(router_fixture, symmetric_scaleout_test)
                         };
             if (merged_cluster_graphs != to_check)
             {
-                abort();
-                UT_ASSERT(false, "Invalid cluster data after merge");
+                std::stringstream ss;
+                ss << "Verification: " << std::endl;
+                utils::dump_global_colored_graph(ss, to_check);
+
+                ss << "Got: " << std::endl;
+                utils::dump_global_colored_graph(ss, merged_cluster_graphs);
+
+                UT_ASSERT(false, "Invalid cluster data after merge:\n" << ss.str());
             }
         }
 
@@ -1721,15 +1755,7 @@ TEST_F(router_fixture, symmetric_scaleout_multithreaded_merge_test)
     {
         size_t process_index = 1;
         size_t terminator_index = 4;
-        process_creator_params params = prepare_process_params(process_index, {}, {});
-
-        allied_process_group_ring_topology top(process_index, params.thread_ids.size(),
-                                           *pg_comm, *pg_comm->gpu_device_storage,
-                                           params.cluster_device_rank_offset,
-                                           params.cluster_device_size);
-
-        pg_comm->cluster_gpu_indices = {
-                                        {"unit_tests",
+        process_creator_params params = prepare_process_params(process_index, {},
                                             {
                                                 {0,
                                                     {
@@ -1766,10 +1792,14 @@ TEST_F(router_fixture, symmetric_scaleout_multithreaded_merge_test)
 
                                                     }
                                                 }
-                                            },
-                                        }};
+                                            });
 
-        size_t proces_num = pg_comm->cluster_gpu_indices[std::string("unit_tests")].size();
+        allied_process_group_ring_topology top(process_index, params.thread_ids.size(),
+                                           *pg_comm, *pg_comm->gpu_device_storage,
+                                           params.cluster_device_rank_offset,
+                                           params.cluster_device_size);
+
+        size_t proces_num = pg_comm->cluster_gpu_indices[std::string(router_fixture::ut_cluster_name())].size();
         global_sorted_colored_plain_graphs my_colored_rings{
                             {0,
                                 {
@@ -2012,8 +2042,14 @@ TEST_F(router_fixture, symmetric_scaleout_multithreaded_merge_test)
                         };
             if (merged_cluster_graphs != to_check)
             {
-                abort();
-                UT_ASSERT(false, "Invalid cluster data after merge");
+                std::stringstream ss;
+                ss << "Verification: " << std::endl;
+                utils::dump_global_colored_graph(ss, to_check);
+
+                ss << "Got: " << std::endl;
+                utils::dump_global_colored_graph(ss, merged_cluster_graphs);
+
+                UT_ASSERT(false, "Invalid cluster data after merge:\n" << ss.str());
             }
         }
 
@@ -2150,15 +2186,7 @@ TEST_F(router_fixture, unsymmetric_scaleout_test)
 
     {
         size_t process_index = 1;
-        process_creator_params params = prepare_process_params(process_index, {}, {});
-
-        allied_process_group_ring_topology top(process_index, params.thread_ids.size(),
-                                           *pg_comm, *pg_comm->gpu_device_storage,
-                                           params.cluster_device_rank_offset,
-                                           params.cluster_device_size);
-
-        pg_comm->cluster_gpu_indices = {
-                                        {"unit_tests",
+        process_creator_params params = prepare_process_params(process_index, {},
                                             {
                                                 {0,
                                                     {
@@ -2188,10 +2216,14 @@ TEST_F(router_fixture, unsymmetric_scaleout_test)
                                                         ccl::device_index_type(0,3, ccl::unused_index_value)
                                                     }
                                                 },
-                                            },
-                                        }};
+                                            });
 
-        size_t proces_num = pg_comm->cluster_gpu_indices[std::string("unit_tests")].size();
+        allied_process_group_ring_topology top(process_index, params.thread_ids.size(),
+                                           *pg_comm, *pg_comm->gpu_device_storage,
+                                           params.cluster_device_rank_offset,
+                                           params.cluster_device_size);
+
+        size_t proces_num = pg_comm->cluster_gpu_indices[std::string(router_fixture::ut_cluster_name())].size();
         global_sorted_colored_plain_graphs my_colored_rings{
                             {0,
                                 {
@@ -2341,8 +2373,14 @@ TEST_F(router_fixture, unsymmetric_scaleout_test)
                         };
             if (merged_cluster_graphs != to_check)
             {
-                abort();
-                UT_ASSERT(false, "Invalid cluster data after merge");
+                std::stringstream ss;
+                ss << "Verification: " << std::endl;
+                utils::dump_global_colored_graph(ss, to_check);
+
+                ss << "Got: " << std::endl;
+                utils::dump_global_colored_graph(ss, merged_cluster_graphs);
+
+                UT_ASSERT(false, "Invalid cluster data after merge:\n" << ss.str());
             }
         }
 
@@ -2537,3 +2575,4 @@ TEST_F(router_fixture, unsymmetric_scaleout_test)
 }
 
 }
+#endif

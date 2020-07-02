@@ -180,7 +180,7 @@ TEST_F(ipc_one_dev_fixture, ring_allreduce_one_device)
     std::map<size_t, ze_kernel_handle_t> thread_kernels;
     std::map<size_t, ccl_device::device_queue> thread_queue;
     std::map<size_t, ccl_device::device_cmd_list> thread_cmd_list;
-    ccl_device::device_module& module  = device_modules.find(&device)->second;
+    ccl_device::device_module& module  = *(device_modules.find(&device)->second);
     for(size_t thread_idx = 0; thread_idx < num_thread; thread_idx++)
     {
         //thread_group.emplace

@@ -191,7 +191,7 @@ run_example()
 build()
 {
     cd ${EXAMPLE_WORK_DIR}
-    # please use line below for manual testing by run.sh 
+    # please use line below for manual testing by run.sh
     # cp ${EXAMPLE_WORK_DIR}/../../ccl_oneapi/CMakeLists.txt ${EXAMPLE_WORK_DIR}/../
     echo "Building"
     if [ -z "${COMPUTE_RUNTIME}" ]
@@ -258,8 +258,8 @@ run()
             else
                 examples_to_run=`find . -type f -executable -printf '%P\n' | grep -v 'allreduce_rs'`
             fi
-            
-           
+
+
             coll_list="" # empty coll_list means default benchmarking collectives set
             for example in $examples_to_run
             do
@@ -270,7 +270,7 @@ run()
                         ccl_extra_env="${ccl_transport_env}"
 
                         run_benchmark "${ccl_extra_env}" ${dir_name} ${transport} ${example} ${backend} regular ${coll_list}
-                        
+
                         # run extended version of benchmark
                         if [[ "${example}" == *"benchmark"* ]]
                         then
@@ -288,10 +288,10 @@ run()
 
                             ccl_extra_env="CCL_FUSION=1 ${ccl_transport_env}"
                             run_benchmark "${ccl_extra_env}" ${dir_name} ${transport} ${example} ${backend} regular allreduce
-                            
+
                             ccl_extra_env="CCL_LOG_LEVEL=2 ${ccl_transport_env}"
                             run_benchmark "${ccl_extra_env}" ${dir_name} ${transport} ${example} ${backend} regular
-                            
+
                             ccl_extra_env="${ccl_transport_env}"
                             # run a benchmark with the specific datatypes and reductions
                             run_benchmark "${ccl_extra_env}" ${dir_name} ${transport} ${example} ${backend} regular allreduce ${dtype_list} ${reduction_list}

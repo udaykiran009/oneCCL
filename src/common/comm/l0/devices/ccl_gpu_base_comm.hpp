@@ -70,24 +70,34 @@ public:
         return index_in_group;
     }
 
-    template<ccl::device_topology_type topology_type>
+    template<ccl::device_group_split_type group_id,
+             ccl::device_topology_type class_id>
     bool reset_rank(comm_rank_t new_rank, comm_rank_t new_size)
     {
         rank = new_rank;
         size = new_size;
-        return device_routing_web.insert<topology_type>(new_rank, new_size);   //consider inheritance
+        return device_routing_web.insert<group_id, class_id>(new_rank, new_size);   //consider inheritance
     }
 
-    template<ccl::device_topology_type topology_type>
-    const topology_addr<topology_type>& get_comm_data() const
+    template<ccl::device_group_split_type group_id,
+             ccl::device_topology_type class_id>
+    const topology_addr<group_id, class_id>& get_comm_data() const
     {
-        return device_routing_web.get<topology_type>();
+        return device_routing_web.get<group_id, class_id>();
     }
 
-    template<ccl::device_topology_type topology_type>
+    template<ccl::device_group_split_type group_id,
+             ccl::device_topology_type class_id>
+    bool is_registered() const
+    {
+        return device_routing_web.is_registered<group_id, class_id>();
+    }
+
+    template<ccl::device_group_split_type group_id,
+             ccl::device_topology_type class_id>
     std::string comm_to_str() const
     {
-        return device_routing_web.to_string<topology_type>();
+        return device_routing_web.to_string<group_id, class_id>();
     }
 
     std::string comm_to_str() const
@@ -96,11 +106,15 @@ public:
     }
 
     template<ccl_coll_type module_type,
-             ccl::device_topology_type topology_type,
-             template<ccl_coll_type, ccl::device_topology_type> class module_impl>
-    static std::shared_ptr<module_impl<module_type, topology_type>>& get_gpu_module_unsafe(supported_device_modules<module_impl> &modules)
+             ccl::device_group_split_type group_id,
+             ccl::device_topology_type class_id,
+             template<ccl_coll_type,
+                      ccl::device_group_split_type,
+                      ccl::device_topology_type> class module_impl>
+    static std::shared_ptr<module_impl<module_type, group_id, class_id>>&
+                    get_gpu_module_unsafe(supported_device_modules<module_impl> &modules)
     {
-        return std::get<topology_type>(std::get<module_type>(modules));
+        return std::get<class_id>(std::get<group_id>(std::get<module_type>(modules)));
     }
 protected:
     size_t index_in_group;

@@ -1,9 +1,10 @@
 #include "common/comm/l0/context/thread_group_ctx.hpp"
-#include "common/comm/l0/device_community.hpp"
+#include "common/comm/l0/device_community_holder_impl.hpp"
 #include "common/comm/l0/topology/ring/thread_group_ring_creator.hpp"
 #include "common/comm/l0/context/device_storage.hpp"
 
 #include "common/comm/l0/scheduler/thread_group_scheduler.hpp"
+#include "common/comm/l0/context/scaling_ctx/numa_ctx_impl.hpp"
 
 namespace native
 {
@@ -33,11 +34,14 @@ bool thread_group_context::sync_barrier(const ccl::device_indices_t& device_indi
 
     LOG_DEBUG("Thread ", comm_addr.to_string(), " reached thread group communicator barrier");
 
-    //Make device communities
-    thread_device_topology[comm_addr.thread_idx] =
-            std::make_tuple(std::make_shared<device_community<ccl::device_topology_type::thread_group_ring>>(comm_addr),
-                            std::make_shared<device_community<ccl::device_topology_type::thread_group_torn_apart_ring>>(comm_addr),
-                            std::make_shared<device_community<ccl::device_topology_type::a2a_thread_group>>(comm_addr));
+    // prepare device communities
+    auto& ring_container = thread_device_topology[comm_addr.thread_idx].get_community<ccl::device_topology_type::ring>();
+    (void)ring_container;
+
+    auto& a2a_container =
+            thread_device_topology[comm_addr.thread_idx].get_community<ccl::device_topology_type::a2a>();
+    a2a_container.set_topology(
+            std::make_shared<device_community<ccl::device_topology_type::a2a>>(comm_addr));
 
     if(thread_device_group_ctx.size() != comm_addr.thread_count)
     {
@@ -50,10 +54,9 @@ bool thread_group_context::sync_barrier(const ccl::device_indices_t& device_indi
     LOG_INFO("Thread ", comm_addr.to_string(), " starts hardware topologies creation");
     {
         std::stringstream ss;
-        thread_group_ring_topology top (*this, devices/*.get_size<ccl_gpu_comm>() +
-                                            devices.get_size<ccl_virtual_gpu_comm>()*/);
+        thread_group_ring_topology top (*this, devices);
         auto matrix = top.build_p2p_capability_matrix(ss, per_thread_indices);
-        if (!top.build(ss,  per_thread_indices, matrix))
+        if (!top.build(ss, comm_addr, per_thread_indices, matrix))
         {
             LOG_ERROR("Cannot build THREAD_GROUP_RING. Build log:\n", ss.str());
         }
@@ -122,76 +125,17 @@ void thread_group_context::dump_thread_topologies(std::ostream& out) const
         const auto& top = it->second;
         size_t thread = it->first;
 
-        out << "\nThread Group: " << thread << " topology:\n";
-        details::device_community_printer printer(out);
-        ccl_tuple_for_each(top, printer);
+        out << "\nThread Group: " << thread << " topology:\n"
+            << top.to_string();
     }
 }
 
-
-// observer interface implementations
-void thread_group_context::attach_scaleup_proxy_observer(proxy_observer<ccl_gpu_scaleup_proxy<ccl_gpu_comm>>* observer,
-                                       std::integral_constant<ccl::device_topology_type,
-                                                              ccl::device_topology_type::thread_group_ring> val)
+thread_group_context::scaling_context_base& thread_group_context::get_numa_ctx()
 {
-    register_observer_impl<ccl::device_topology_type::thread_group_ring>(observer);
+    return *this;
 }
-void thread_group_context::attach_scaleup_proxy_observer(proxy_observer<ccl_gpu_scaleup_proxy<ccl_virtual_gpu_comm>>* observer,
-                                       std::integral_constant<ccl::device_topology_type,
-                                                              ccl::device_topology_type::thread_group_ring> val)
+const thread_group_context::scaling_context_base& thread_group_context::get_numa_ctx() const
 {
-    register_observer_impl<ccl::device_topology_type::thread_group_ring>(observer);
-}
-
-
-void thread_group_context::attach_scaleup_proxy_observer(proxy_observer<ccl_gpu_scaleup_proxy<ccl_gpu_comm>>* observer,
-                                       std::integral_constant<ccl::device_topology_type,
-                                                              ccl::device_topology_type::thread_group_torn_apart_ring> val)
-{
-    register_observer_impl<ccl::device_topology_type::thread_group_torn_apart_ring>(observer);
-}
-void thread_group_context::attach_scaleup_proxy_observer(proxy_observer<ccl_gpu_scaleup_proxy<ccl_virtual_gpu_comm>>* observer,
-                                       std::integral_constant<ccl::device_topology_type,
-                                                              ccl::device_topology_type::thread_group_torn_apart_ring> val)
-{
-    register_observer_impl<ccl::device_topology_type::thread_group_torn_apart_ring>(observer);
-}
-
-
-void thread_group_context::invoke_scaleup_proxy_observer(proxy_observer<ccl_gpu_scaleup_proxy<ccl_gpu_comm>>* observer,
-                                       std::integral_constant<ccl::device_topology_type,
-                                                              ccl::device_topology_type::thread_group_ring> val)
-{
-    auto &topologu_specific_observers =
-            std::get<top_to_index(ccl::device_topology_type::thread_group_ring)>(observables);
-    observers_container_t<ccl_gpu_comm>& container = std::get<ccl_gpu_comm::type_idx()>(topologu_specific_observers);
-    auto it = container.find(observer);
-    if(it == container.end())
-    {
-        throw std::runtime_error(std::string("invalid proxy: ") + observer->get_this()->get_device().to_string());
-    }
-
-    throw std::runtime_error(std::string("Valid proxy: ") + observer->get_this()->get_device().to_string());
-}
-
-void thread_group_context::invoke_scaleup_proxy_observer(proxy_observer<ccl_gpu_scaleup_proxy<ccl_virtual_gpu_comm>>* observer,
-                                       std::integral_constant<ccl::device_topology_type,
-                                                              ccl::device_topology_type::thread_group_ring> val)
-{
-    throw std::runtime_error(std::string("Valid proxy: ") + observer->get_this()->get_device().to_string());
-}
-
-void thread_group_context::invoke_scaleup_proxy_observer(proxy_observer<ccl_gpu_scaleup_proxy<ccl_gpu_comm>>* observer,
-                                       std::integral_constant<ccl::device_topology_type,
-                                                              ccl::device_topology_type::thread_group_torn_apart_ring> val)
-{
-    throw std::runtime_error(std::string("Valid proxy: ") + observer->get_this()->get_device().to_string());
-}
-
-void thread_group_context::invoke_scaleup_proxy_observer(proxy_observer<ccl_gpu_scaleup_proxy<ccl_virtual_gpu_comm>>* observer,
-                                       std::integral_constant<ccl::device_topology_type,
-                                                              ccl::device_topology_type::thread_group_torn_apart_ring> val)
-{
-    throw std::runtime_error(std::string("Valid proxy: ") + observer->get_this()->get_device().to_string());
+    return *this;
 }
 }

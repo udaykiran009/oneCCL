@@ -13,14 +13,23 @@ static std::set<std::thread::id> registered_thread;
 
 namespace native
 {
-template<class native_type, class gpu_comm_impl, ccl::device_topology_type topology>
-class l0_allreduce_typed_entry : public base_gpu_entry<native_type, gpu_comm_impl, topology>
+template<class native_type,
+         class gpu_comm_impl,
+         ccl::device_group_split_type topology>
+class l0_allreduce_typed_entry :
+            public base_gpu_entry<native_type,
+                                  gpu_comm_impl,
+                                  topology,
+                                  ccl::device_topology_type::ring>
 {
 public:
     friend class ccl_gpu_comm;
     friend class ccl_virtual_gpu_comm;
 
-    using base = base_gpu_entry<native_type, gpu_comm_impl, topology>;
+    using base = base_gpu_entry<native_type,
+                                gpu_comm_impl,
+                                topology,
+                                ccl::device_topology_type::ring>;
     using base::parent_communicator;
     using base::comm_addr;
     using base::req;
@@ -104,13 +113,19 @@ else if(gpu_comm_impl::type_idx() == ccl_ipc_source_gpu_comm<ccl_gpu_comm>::type
 
     void start() override
     {
-        LOG_DEBUG(class_name(), " entry req ", &req, ", rank: ", comm_addr.to_string(), ", cnt ", elem_count);
+        LOG_DEBUG(class_name(), " entry req ", &req, ", rank: ",
+                  comm_addr.to_string(), ", cnt ", elem_count);
 
         //Create base primitives
         base::start();
 
         //ccl_device &device = parent_communicator->get_device();
-        kernel_main_typed &main_entry_function = parent_communicator->template get_gpu_kernel<base::type(), topology, native_type>();
+        kernel_main_typed &main_entry_function =
+                        parent_communicator->template get_gpu_kernel<
+                                                    base::type(),
+                                                    topology,
+                                                    ccl::device_topology_type::ring,
+                                                    native_type>();
 
         //create implementation specified primitives
         main_entry_function.template set_arg<typename kernel_main_typed::tmp_recv_buf_arg>(temp_buffer.get());
@@ -163,7 +178,12 @@ protected:
         LOG_TRACE("entry: ", class_name(), ", rank: ", comm_addr.to_string());
         ccl_device &device = parent_communicator->get_device();
 
-        kernel_main_typed &main_entry_function = parent_communicator->template get_gpu_kernel<base::type(), topology, native_type>();
+        kernel_main_typed &main_entry_function =
+                    parent_communicator->template get_gpu_kernel<
+                                                    base::type(),
+                                                    topology,
+                                                    ccl::device_topology_type::ring,
+                                                    native_type>();
         if((*kernel_router)(main_entry_function))
         {
             ze_result_t result;
@@ -188,7 +208,7 @@ protected:
             LOG_INFO("Check L0 Workaround: WaitCount: ", wait_count, ", ExecCount: ", exec_count, ", CurIndex: ", cur_index);
             if(cur_index == wait_count/*std::is_same<gpu_comm_impl, ccl_gpu_comm>::value*/)
             {
-                if(topology == ccl::device_topology_type::allied_process_group_ring)
+                if(topology == ccl::device_group_split_type::cluster)
                 {
                     auto c = ccl::environment::instance().create_communicator();
                     if(c->rank() == 0)

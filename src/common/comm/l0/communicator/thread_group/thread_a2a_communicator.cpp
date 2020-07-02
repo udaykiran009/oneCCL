@@ -25,7 +25,7 @@ void thread_device_group_a2a_communicator::visit(ccl::gpu_comm_attr& comm_attr)
     ctx = thread_ctx;
 
     //get rank & size
-    auto topology = ctx->get_thread_topology<base_t::topology_type()>(thread_id);
+    auto topology = ctx->get_thread_topology<base_t::topology_class()>(thread_id);
     this->initialize_comm_addr(get_device_path(), topology);
 }
 /*

@@ -10,7 +10,8 @@ namespace native
 {
 
 ccl_ipc_gpu_comm::ccl_ipc_gpu_comm(ccl_device& assigned_device, size_t idx, size_t size,
-                                   ccl::device_topology_type topology_type) :
+                                   ccl::device_group_split_type topology_type,
+                                   ccl::device_topology_type class_id) :
         base(assigned_device, idx)
 {
     /* No queue or other device-related primitives creation
@@ -22,14 +23,30 @@ ccl_ipc_gpu_comm::ccl_ipc_gpu_comm(ccl_device& assigned_device, size_t idx, size
     //register in topology
     switch(topology_type)
     {
-        case ccl::device_topology_type::allied_process_group_ring:
+        case ccl::device_group_split_type::cluster:
         {
-            reset_rank<ccl::device_topology_type::allied_process_group_ring>(idx, size);
-            break;
-        }
-        case ccl::device_topology_type::process_group_torn_apart_ring:
-        {
-            reset_rank<ccl::device_topology_type::process_group_torn_apart_ring>(idx, size);
+            switch (class_id)
+            {
+                case ccl::device_topology_type::ring:
+                {
+                    reset_rank<ccl::device_group_split_type::cluster,
+                               ccl::device_topology_type::ring>(idx, size);
+                    break;
+                }
+                case ccl::device_topology_type::a2a:
+                {
+                    reset_rank<ccl::device_group_split_type::cluster,
+                               ccl::device_topology_type::a2a>(idx, size);
+                    break;
+                }
+                default:
+                {
+                    throw std::runtime_error(std::string("ccl_ipc_gpu_comm must be created") +
+                                        " unknown topology class: " +
+                                        std::to_string(class_id));
+                }
+            }
+
             break;
         }
         default:

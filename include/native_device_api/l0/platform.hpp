@@ -1,6 +1,7 @@
 #pragma once
 
 #include "native_device_api/l0/driver.hpp"
+#include "native_device_api/l0/utils.hpp"
 
 namespace native
 {
@@ -32,6 +33,10 @@ struct ccl_device_platform : std::enable_shared_from_this<ccl_device_platform>
 
     static std::shared_ptr<ccl_device_platform> create(const ccl::device_indices_t& indices = ccl::device_indices_t());
     //static std::shared_ptr<ccl_device_platform> create(const device_affinity_per_driver& affinities);
+    
+    details::adjacency_matrix calculate_device_access_metric(const ccl::device_indices_t& indices = ccl::device_indices_t(),
+                                                             details::p2p_rating_function func = details::binary_p2p_rating_calculator) const;
+    
 private:
     ccl_device_platform();
 

@@ -38,10 +38,16 @@ public:
         return dependent_entry::type();
     }
 
-    static constexpr ccl::device_topology_type dependent_topology()
+    static constexpr ccl::device_group_split_type dependent_topology()
     {
         return dependent_entry::get_topology();
     }
+
+    static constexpr ccl::device_topology_type dependent_topology_class()
+    {
+        return dependent_entry::get_topology_class();
+    }
+
 
     l0_allgather_handles_entry() = delete;
 
@@ -51,7 +57,7 @@ public:
                               device_storage& global_device_storage,
                               std::vector<ccl_device::device_ipc_memory_handle>&& send_data) :
         base_coll_entry(sched),
-        comm_addr(comm->template get_comm_data<dependent_topology()>()),
+        comm_addr(comm->template get_comm_data<dependent_topology(), dependent_topology_class()>()),
         ccl_communicator(ccl_comm),
         node_device_storage(global_device_storage),
         send_handles(std::move(send_data))
@@ -192,7 +198,11 @@ public:
 
 
                 using kernel_ipc_typed = typename dependent_entry::kernel_ipc_typed;
-                kernel_ipc_typed& unreach_rank_main_func = ipc_device->get_gpu_kernel<dependent_type(), dependent_topology(), processing_type>();
+                kernel_ipc_typed& unreach_rank_main_func =
+                            ipc_device->get_gpu_kernel<dependent_type(),
+                                                       dependent_topology(),
+                                                       dependent_topology_class(),
+                                                       processing_type>();
 
                 typename kernel_ipc_typed::tmp_recv_buf_arg_type tmp_recv_buf = reinterpret_cast<typename kernel_ipc_typed::tmp_recv_buf_arg_type>(handles.at(0).get().pointer);
                 unreach_rank_main_func.template set_arg<typename kernel_ipc_typed::tmp_recv_buf_arg>(tmp_recv_buf);
@@ -231,7 +241,7 @@ protected:
     }
 
 private:
-    topology_addr<dependent_topology()> comm_addr;
+    topology_addr<dependent_topology(), dependent_topology_class()> comm_addr;
     std::shared_ptr<ccl::communicator> ccl_communicator;
     device_storage& node_device_storage;
 

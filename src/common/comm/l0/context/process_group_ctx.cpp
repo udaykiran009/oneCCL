@@ -12,12 +12,17 @@
 
 #include "common/comm/l0/context/thread_group_ctx.hpp"
 #include "common/comm/l0/context/process_group_ctx.hpp"
-#include "common/comm/l0/device_community.hpp"
-#include "common/comm/l0/topology/ring/process_group_ring_creator.hpp"
+#include "common/comm/l0/device_community_holder_impl.hpp"
+#include "common/comm/l0/topology/ring/cluster_group_device_creator_impl.hpp"
+#include "common/comm/l0/topology/topology_serializer.hpp"
 #include "common/comm/l0/context/device_storage.hpp"
 #include "common/comm/l0/scheduler/thread_group_scheduler.hpp"
 #include "common/comm/l0/scheduler/allied_process_group_scheduler.hpp"
 
+
+#include "common/comm/l0/context/scaling_ctx/numa_ctx_impl.hpp"
+#include "common/comm/l0/context/scaling_ctx/scale_up_ctx_impl.hpp"
+#include "common/comm/l0/context/scaling_ctx/scale_out_ctx_impl.hpp"
 namespace native
 {
 
@@ -56,11 +61,14 @@ bool process_group_context::delegate_sync(const ccl::device_indices_t& thread_de
     // set thread id sequencially
     //comm_addr.thread_idx = process_device_topology.size();
 
-    // prepare topology
-    process_device_topology[comm_addr.thread_idx] =
-            std::make_tuple(std::make_shared<device_community<ccl::device_topology_type::allied_process_group_ring>>(comm_addr),
-                            std::make_shared<device_community<ccl::device_topology_type::process_group_torn_apart_ring>>(comm_addr),
-                            std::make_shared<device_community<ccl::device_topology_type::a2a_allied_process_group>>(comm_addr));
+    // prepare device communities
+    auto& ring_container = process_device_topology[comm_addr.thread_idx].get_community<ccl::device_topology_type::ring>();
+    (void)ring_container;
+
+    auto& a2a_container =
+            process_device_topology[comm_addr.thread_idx].get_community<ccl::device_topology_type::a2a>();
+    a2a_container.set_topology(
+            std::make_shared<device_community<ccl::device_topology_type::a2a>>(comm_addr));
 
     // sync all threads at first - blocking operation
     return thread_group_ctx->sync_barrier(thread_device_indices, comm_addr, *gpu_device_storage);
@@ -100,10 +108,8 @@ bool process_group_context::sync_barrier(const ccl::device_indices_t& thread_dev
     //find possible IPC device with P2P capability
     LOG_INFO("Process (", process_idx, "/", process_count, ") starts hardware topologies creation");
 
-    allied_process_group_ring_topology ally_process_topology(process_idx, process_count, *this,
-                                                             *gpu_device_storage,
-                                                             cluster_device_rank_offset,
-                                                             cluster_device_size);
+    cluster_group_device_creator ally_process_topology(process_idx, process_count, *this,
+                                                       *gpu_device_storage);
 
     {
         const ccl::process_device_indices_t& node_mask = get_node_afinity_indices(get_host_id());
@@ -112,13 +118,9 @@ bool process_group_context::sync_barrier(const ccl::device_indices_t& thread_dev
                         ally_process_topology.build_p2p_capability_matrix(ss,
                                                                           node_mask);
         ss << "\nMatrix\n" << p2p_dependency_graph << std::endl;
-
-        std::vector<ccl::device_indices_t> ipc_device_indices =
-                        process_group_context::get_ipc_device_indices_for_id(process_idx, node_mask);
-        if (!ally_process_topology.build(ss,
-                                         thread_group_ctx->get_thread_group_device_indices(),
-                                         ipc_device_indices,
-                                         p2p_dependency_graph))
+        if (!ally_process_topology.build_all(ss, comm_addr,
+                                             thread_group_ctx->get_thread_group_device_indices(),
+                                             p2p_dependency_graph))
         {
             LOG_ERROR(ss.str(), "\nCannot build ipc ring! Abort. Build Log:\n", ss.str());
             abort();
@@ -212,21 +214,6 @@ bool process_group_context::build_cluster_affinity_table(const ccl::device_indic
                                                         receive_process_indices_sizes.end(),
                                                         0);
     LOG_DEBUG("Memory required for device indices size: ", total_device_indices_count, " count");
-
-    //calculate rank offset and total device count in cluster
-    {
-        auto my_rank_mask_size_it = receive_process_indices_sizes.begin();
-        std::advance(my_rank_mask_size_it, ccl_communicator->rank());
-        cluster_device_rank_offset = std::accumulate(receive_process_indices_sizes.begin(),
-                                                     my_rank_mask_size_it,
-                                                     0);
-        cluster_device_size = std::accumulate(my_rank_mask_size_it,
-                                              receive_process_indices_sizes.end(),
-                                              cluster_device_rank_offset);
-    }
-    LOG_INFO("Process idx: ", ccl_communicator->rank(),
-             ", device rank offset: ", cluster_device_rank_offset,
-             ", total device count: ", cluster_device_size);
 
     //Serialize own devices path data
     auto serialized_indices =
@@ -551,9 +538,8 @@ void process_group_context::dump_process_topologies(std::ostream& out) const
         const auto& top = it->second;
         size_t thread = it->first;
 
-        out << "\nProcess Thread Group: " << thread << " topology:\n";
-        details::device_community_printer printer(out);
-        ccl_tuple_for_each(top, printer);
+        out << "\nProcess Thread Group: " << thread << " topology:\n"
+            << top.to_string();
     }
 }
 
@@ -613,71 +599,118 @@ std::vector<ccl::device_indices_t>
     return ipc_device_indices;
 }
 
-
-
-// observer interface implementations
-void process_group_context::attach_scaleup_proxy_observer(proxy_observer<ccl_gpu_scaleup_proxy<ccl_gpu_comm>>* observer,
-                                       std::integral_constant<ccl::device_topology_type,
-                                                              ccl::device_topology_type::allied_process_group_ring> val)
+void process_group_context::collect_cluster_colored_plain_graphs(
+                                        const details::colored_plain_graph_list& send_graph,
+                                        details::global_sorted_colored_plain_graphs& received_graphs)
 {
-    register_observer_impl<ccl::device_topology_type::allied_process_group_ring>(observer);
-}
-void process_group_context::attach_scaleup_proxy_observer(proxy_observer<ccl_gpu_scaleup_proxy<ccl_virtual_gpu_comm>>* observer,
-                                       std::integral_constant<ccl::device_topology_type,
-                                                              ccl::device_topology_type::allied_process_group_ring> val)
-{
-    register_observer_impl<ccl::device_topology_type::allied_process_group_ring>(observer);
-}
+    using namespace details::serialize;
 
+    LOG_DEBUG("Collect cluster colored plain graphs, my process index: ", process_idx,
+              ", graphs count: ", send_graph.size());
 
-void process_group_context::attach_scaleup_proxy_observer(proxy_observer<ccl_gpu_scaleup_proxy<ccl_gpu_comm>>* observer,
-                                       std::integral_constant<ccl::device_topology_type,
-                                                              ccl::device_topology_type::process_group_torn_apart_ring> val)
-{
-    register_observer_impl<ccl::device_topology_type::process_group_torn_apart_ring>(observer);
-}
-void process_group_context::attach_scaleup_proxy_observer(proxy_observer<ccl_gpu_scaleup_proxy<ccl_virtual_gpu_comm>>* observer,
-                                       std::integral_constant<ccl::device_topology_type,
-                                                              ccl::device_topology_type::process_group_torn_apart_ring> val)
-{
-    register_observer_impl<ccl::device_topology_type::process_group_torn_apart_ring>(observer);
-}
+    // serialize current process graph list into bytes
+    device_path_serializable::raw_data_t my_serialized_graph =
+            device_path_serializer::serialize_indices(send_graph);
 
-
-void process_group_context::invoke_scaleup_proxy_observer(proxy_observer<ccl_gpu_scaleup_proxy<ccl_gpu_comm>>* observer,
-                                       std::integral_constant<ccl::device_topology_type,
-                                                              ccl::device_topology_type::allied_process_group_ring> val)
-{
-    auto &topologu_specific_observers =
-            std::get<top_to_index(ccl::device_topology_type::allied_process_group_ring)>(observables);
-    observers_container_t<ccl_gpu_comm>& container = std::get<ccl_gpu_comm::type_idx()>(topologu_specific_observers);
-    auto it = container.find(observer);
-    if(it == container.end())
+    size_t send_count = my_serialized_graph.size();
+    std::vector<size_t> recv_counts_process_graph_sizes(ccl_communicator->size());
     {
-        throw std::runtime_error(std::string("invalid proxy: ") + observer->get_this()->get_device().to_string());
+        // collect graph lists size from cluster
+        std::vector<size_t> recv_counts(ccl_communicator->size(), 1);
+
+        LOG_DEBUG("Send graph lists size by process index: ", process_idx,
+                  ", serialized size: ", send_count);
+        ccl_communicator->allgatherv(&send_count, 1,
+                                     recv_counts_process_graph_sizes.data(),
+                                     recv_counts.data())->wait();
     }
 
-    throw std::runtime_error(std::string("Valid proxy: ") + observer->get_this()->get_device().to_string());
+    size_t global_graph_data_size = std::accumulate(recv_counts_process_graph_sizes.begin(),
+                                                    recv_counts_process_graph_sizes.end(),
+                                                    0);
+
+    // collect cluster graph lists
+    device_path_serializable::raw_data_t recv_cluster_graphs;
+    try
+    {
+        LOG_DEBUG("Send graph list by process index: ", process_idx,
+                  ", serialized size: ", send_count);
+
+        recv_cluster_graphs.resize(global_graph_data_size);
+        ccl_communicator->allgatherv(reinterpret_cast<char*>(my_serialized_graph.data()),
+                                     send_count,
+                                     reinterpret_cast<char*>(recv_cluster_graphs.data()),
+                                     recv_counts_process_graph_sizes.data())->wait();
+    }
+    catch(const std::bad_alloc& ex)
+    {
+        CCL_THROW_WITH_ERROR("Memory required for global_graph_data_size size: ", global_graph_data_size,
+                             " bytes\nException: ", ex.what());
+    }
+    catch(const std::exception& ex)
+    {
+        CCL_THROW_WITH_ERROR("Cannot submit global-serialized-graph requests: ", ex.what());
+    }
+
+    size_t deserialized_bytes = 0;
+    size_t offset_bytes = 0;
+    size_t process_num = 0;
+
+    LOG_DEBUG("Deserialize recv_cluster_graphs");
+    try
+    {
+        for(process_num = 0; process_num < ccl_communicator->size(); process_num++)
+        {
+            details::colored_plain_graph_list graph =
+                    device_path_deserializer::deserialize_colored_graph_list_indices(recv_cluster_graphs,
+                                                                                     deserialized_bytes,
+                                                                                     offset_bytes);
+            LOG_DEBUG("Process index: ", process_num, ", deserialized bytes: ", deserialized_bytes,
+                      ", by offset: ", offset_bytes);
+
+            received_graphs.emplace(process_num, std::move(graph));
+        }
+    }
+    catch(const std::bad_alloc& ex)
+    {
+        CCL_THROW_WITH_ERROR("Cannot deserialize recv_cluster_graphs for process num:", process_num,
+                             ", deserialized raw bytes: ", deserialized_bytes,
+                             ", processed raw bytes: ", offset_bytes,
+                             " \nException: ", ex.what());
+    }
+    catch(const std::exception& ex)
+    {
+        CCL_THROW_WITH_ERROR("Cannot deserialize recv_cluster_graphs for process num:", process_num,
+                             ", deserialized raw bytes: ", deserialized_bytes,
+                             ", processed raw bytes: ", offset_bytes,
+                             " \nException: ", ex.what());
+    }
+
+    LOG_DEBUG("Global colored_graph deserialized on process id: ", process_idx);
 }
 
-void process_group_context::invoke_scaleup_proxy_observer(proxy_observer<ccl_gpu_scaleup_proxy<ccl_virtual_gpu_comm>>* observer,
-                                       std::integral_constant<ccl::device_topology_type,
-                                                              ccl::device_topology_type::allied_process_group_ring> val)
+process_group_context::numa_context_base& process_group_context::get_numa_ctx()
 {
-    throw std::runtime_error(std::string("Valid proxy: ") + observer->get_this()->get_device().to_string());
+    return *this;
 }
-
-void process_group_context::invoke_scaleup_proxy_observer(proxy_observer<ccl_gpu_scaleup_proxy<ccl_gpu_comm>>* observer,
-                                       std::integral_constant<ccl::device_topology_type,
-                                                              ccl::device_topology_type::process_group_torn_apart_ring> val)
+const process_group_context::numa_context_base& process_group_context::get_numa_ctx() const
 {
-    throw std::runtime_error(std::string("Valid proxy: ") + observer->get_this()->get_device().to_string());
+    return *this;
 }
-
-void process_group_context::invoke_scaleup_proxy_observer(proxy_observer<ccl_gpu_scaleup_proxy<ccl_virtual_gpu_comm>>* observer,
-                                       std::integral_constant<ccl::device_topology_type,
-                                                              ccl::device_topology_type::process_group_torn_apart_ring> val)
+process_group_context::scaleup_context_base& process_group_context::get_scaleup_ctx()
 {
-    throw std::runtime_error(std::string("Valid proxy: ") + observer->get_this()->get_device().to_string());
+    return *this;
+}
+const process_group_context::scaleup_context_base&process_group_context:: get_scaleup_ctx() const
+{
+    return *this;
+}
+process_group_context::scaleout_context_base& process_group_context::get_scaleout_ctx()
+{
+    return *this;
+}
+const process_group_context::scaleout_context_base& process_group_context::get_scaleout_ctx() const
+{
+    return *this;
 }
 }

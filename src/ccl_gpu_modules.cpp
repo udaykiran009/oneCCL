@@ -9,7 +9,7 @@
 
 ccl_status_t CCL_API register_allreduce_gpu_module_source(const char* path, ccl_topology_class_t topology_class)
 {
-    ccl::device_topology_class t_class = static_cast<ccl::device_topology_class>(topology_class);
+    ccl::device_topology_type t_class = static_cast<ccl::device_topology_type>(topology_class);
     char pwd[PATH_MAX];
     char* ret = getcwd(pwd, sizeof(pwd));
     (void)ret;

@@ -2,12 +2,19 @@
 #include <mutex> //TODO use shared
 
 #include "native_device_api/l0/primitives.hpp"
+#include "native_device_api/l0/utils.hpp"
 
 namespace native
 {
 struct ccl_device_platform;
 struct ccl_device_driver;
 struct ccl_subdevice;
+struct ccl_device;
+
+details::cross_device_rating
+    property_p2p_rating_calculator(const ccl_device& lhs,
+                                   const ccl_device& rhs,
+                                   size_t weight);
 
 // TODO not thread-safe!!!
 struct ccl_device : public cl_base<ze_device_handle_t, ccl_device_driver>,
@@ -27,12 +34,16 @@ struct ccl_device : public cl_base<ze_device_handle_t, ccl_device_driver>,
 
     template<class elem_t>
     using device_memory = memory<elem_t, ccl_device>;
+    template<class elem_t>
+    using device_memory_ptr = std::shared_ptr<memory<elem_t, ccl_device>>;
+
     using device_ipc_memory = ipc_memory<ccl_device>;
     using device_ipc_memory_handle = ipc_memory_handle<ccl_device>;
     using device_queue = queue<ccl_device>;
     using device_queue_fence  = queue_fence<ccl_device>;
     using device_cmd_list = cmd_list<ccl_device>;
     using device_module = module<ccl_device>;
+    using device_module_ptr = std::shared_ptr<device_module>;
     using indexed_handles = indexed_storage<handle_t>;
 
 
@@ -81,6 +92,17 @@ struct ccl_device : public cl_base<ze_device_handle_t, ccl_device_driver>,
         return device_memory<elem_t>(reinterpret_cast<elem_t*>(device_alloc_memory(count * sizeof(elem_t), alignment, mem_descr)),
                                      count, get_ptr());
     }
+
+    template<class elem_t>
+    device_memory_ptr<elem_t> alloc_shared_memory(size_t count, size_t alignment,
+                                                  const ze_host_mem_alloc_desc_t &host_desc,
+                                                  const ze_device_mem_alloc_desc_t& mem_descr = get_default_mem_alloc_desc())
+    {
+        return std::make_shared<device_memory<elem_t>>(reinterpret_cast<elem_t*>(
+                                        device_alloc_shared_memory(count * sizeof(elem_t),
+                                                                    alignment, host_desc, mem_descr)),
+                                        count, get_ptr());
+    }
     device_ipc_memory_handle create_ipc_memory_handle(void* device_mem_ptr);
     std::shared_ptr<device_ipc_memory_handle> create_shared_ipc_memory_handle(void* device_mem_ptr);
 
@@ -92,7 +114,7 @@ struct ccl_device : public cl_base<ze_device_handle_t, ccl_device_driver>,
     device_queue& get_cmd_queue(const ze_command_queue_desc_t &properties);
     device_cmd_list create_cmd_list(const ze_command_list_desc_t &properties = get_default_list_desc());
     device_cmd_list& get_cmd_list(const ze_command_list_desc_t &properties = get_default_list_desc());
-    device_module create_module(const ze_module_desc_t &descr);
+    device_module_ptr create_module(const ze_module_desc_t &descr, size_t hash);
 
     template<class elem_t>
     bool is_own_memory(const device_memory<elem_t>& mem_handle)
@@ -107,7 +129,7 @@ struct ccl_device : public cl_base<ze_device_handle_t, ccl_device_driver>,
         return assoc_handle == handle;
     }
 
-    std::string to_string() const;
+    std::string to_string(const std::string& prefix = std::string()) const;
 
     // primitives ownership release
     void on_delete(ze_command_queue_handle_t& handle);
@@ -131,8 +153,15 @@ struct ccl_device : public cl_base<ze_device_handle_t, ccl_device_driver>,
     static std::weak_ptr<ccl_device> deserialize(const uint8_t** data, size_t& size, ccl_device_platform& platform);
     virtual size_t serialize(std::vector<uint8_t> &out, size_t from_pos, size_t expected_size) const;
 private:
+
+    ccl_device(handle_t h, owner_ptr_t&& parent, std::false_type);
+    void initialize_device_data();
     void* device_alloc_memory(size_t bytes_count, size_t alignment,
                               const ze_device_mem_alloc_desc_t& mem_descr);
+    void* device_alloc_shared_memory(size_t bytes_count, size_t alignment,
+                                     const ze_host_mem_alloc_desc_t& host_desc,
+                                     const ze_device_mem_alloc_desc_t& mem_descr);
+
     static handle_t get_assoc_device_handle(const void* ptr, const ccl_device_driver* driver);
     void device_free_memory(void* mem_ptr);
 
@@ -150,5 +179,7 @@ private:
     ze_device_compute_properties_t compute_properties;
 
     std::map<void*, std::shared_ptr<device_ipc_memory_handle>> ipc_storage;
+
+    std::map<size_t, device_module_ptr> modules;
 };
 }

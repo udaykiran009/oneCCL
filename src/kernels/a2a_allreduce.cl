@@ -301,3 +301,75 @@ __kernel void allreduce_execution_uint64_t(size_t rank_id,
 {
     return;
 }
+
+
+
+//numa
+__kernel void allreduce_execution_numa_char(size_t rank_id,
+                                       size_t comm_size,
+                                       size_t elems_count,
+                                       const __global char* input_buffer,
+                                       __global char* output_buffer,
+                                       __global a2a_gpu_comm_data_char* comm_matrix)
+{
+    return;
+}
+
+__kernel void allreduce_execution_numa_int(size_t rank_id,
+                                      size_t comm_size,
+                                      size_t elems_count,
+                                      const __global int* input_buffer,
+                                      __global int* output_buffer,
+                                      __global a2a_gpu_comm_data_int* comm_matrix)
+{
+    return;
+}
+
+__kernel void allreduce_execution_numa_float(size_t rank_id,
+                                        size_t comm_size,
+                                        size_t elems_count,
+                                        const __global float* input_buffer,
+                                        __global float* output_buffer,
+                                        __global a2a_gpu_comm_data_float* comm_matrix)
+{
+    return;
+}
+__kernel void allreduce_execution_numa_bfp16(size_t rank_id,
+                                        size_t comm_size,
+                                        size_t elems_count,
+                                        const __global bfp16* input_buffer,
+                                        __global bfp16* output_buffer,
+                                        __global a2a_gpu_comm_data_bfp16* comm_matrix)
+{
+    return;
+}
+
+__kernel void allreduce_execution_numa_double(size_t rank_id,
+                                         size_t comm_size,
+                                         size_t elems_count,
+                                         const __global double* input_buffer,
+                                         __global double* output_buffer,
+                                         __global a2a_gpu_comm_data_double* comm_matrix)
+{
+    return;
+}
+
+__kernel void allreduce_execution_numa_int64_t(size_t rank_id,
+                                          size_t comm_size,
+                                          size_t elems_count,
+                                          const __global long* input_buffer,
+                                          __global long* output_buffer,
+                                          __global a2a_gpu_comm_data_long* comm_matrix)
+{
+    return;
+}
+
+__kernel void allreduce_execution_numa_uint64_t(size_t rank_id,
+                                           size_t comm_size,
+                                           size_t elems_count,
+                                           const __global ulong* input_buffer,
+                                           __global ulong* output_buffer,
+                                           __global a2a_gpu_comm_data_ulong* comm_matrix)
+{
+    return;
+}

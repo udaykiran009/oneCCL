@@ -10,100 +10,30 @@ namespace ccl
 /* TODO
  * Push the following code into something similar with 'ccl_device_types.hpp'
  */
-enum device_topology_type
+enum device_group_split_type
 {
-    device_group_ring,
-    device_group_torn_apart_ring,
-    thread_group_ring,
-    thread_group_torn_apart_ring,
-    allied_process_group_ring,
-    process_group_torn_apart_ring,
-    a2a_device_group,
-    a2a_thread_group,
-    a2a_allied_process_group,
+    thread,
+    process,
+    cluster,
 
     last_value
 };
 
-#define SUPPORTED_HW_TOPOLOGIES_DECL_LIST       ccl::device_topology_type::device_group_ring,               \
-                                                ccl::device_topology_type::device_group_torn_apart_ring,    \
-                                                ccl::device_topology_type::thread_group_ring,               \
-                                                ccl::device_topology_type::thread_group_torn_apart_ring,    \
-                                                ccl::device_topology_type::allied_process_group_ring,       \
-                                                ccl::device_topology_type::process_group_torn_apart_ring,   \
-                                                ccl::device_topology_type::a2a_device_group,                \
-                                                ccl::device_topology_type::a2a_thread_group,                \
-                                                ccl::device_topology_type::a2a_allied_process_group
-
-#define DEVICE_GROUP_TOPOLOGIES_DECL_LIST       ccl::device_topology_type::device_group_ring,               \
-                                                ccl::device_topology_type::device_group_torn_apart_ring,    \
-                                                ccl::device_topology_type::a2a_device_group
-
-#define THREAD_GROUP_TOPOLOGIES_DECL_LIST       ccl::device_topology_type::thread_group_ring,               \
-                                                ccl::device_topology_type::thread_group_torn_apart_ring,    \
-                                                ccl::device_topology_type::a2a_thread_group
-
-#define PROCESS_GROUP_TOPOLOGIES_DECL_LIST      ccl::device_topology_type::allied_process_group_ring,       \
-                                                ccl::device_topology_type::process_group_torn_apart_ring,   \
-                                                ccl::device_topology_type::a2a_allied_process_group
-
-enum device_topology_class
+enum device_topology_type
 {
-    ring_class = ring_algo_class,
-    a2a_class = a2a_algo_class,
+    ring = ring_algo_class,
+    a2a = a2a_algo_class,
 
     last_class_value = ccl_topology_class_last_value
 };
 
-enum device_topology_group
-{
-    dev_group = device_group,
-    thread_dev_group = thread_group,
-    process_dev_group = process_group,
+#define SUPPORTED_HW_TOPOLOGIES_DECL_LIST       ccl::device_group_split_type::thread,              \
+                                                ccl::device_group_split_type::process,             \
+                                                ccl::device_group_split_type::cluster
 
-    last_group_value = ccl_topology_group_last_value
-};
+#define SUPPORTED_TOPOLOGY_CLASSES_DECL_LIST    ccl::device_topology_type::ring,                   \
+                                                ccl::device_topology_type::a2a
 
-template <device_topology_type topology>
-constexpr device_topology_class topology_to_class()
-{
-    return std::tuple_element<topology, std::tuple<std::integral_constant<ccl::device_topology_class, ccl::device_topology_class::ring_class>,
-                                                   std::integral_constant<ccl::device_topology_class, ccl::device_topology_class::ring_class>,
-                                                   std::integral_constant<ccl::device_topology_class, ccl::device_topology_class::ring_class>,
-                                                   std::integral_constant<ccl::device_topology_class, ccl::device_topology_class::ring_class>,
-                                                   std::integral_constant<ccl::device_topology_class, ccl::device_topology_class::ring_class>,
-                                                   std::integral_constant<ccl::device_topology_class, ccl::device_topology_class::ring_class>,
-                                                   std::integral_constant<ccl::device_topology_class, ccl::device_topology_class::a2a_class>,
-                                                   std::integral_constant<ccl::device_topology_class, ccl::device_topology_class::a2a_class>,
-                                                   std::integral_constant<ccl::device_topology_class, ccl::device_topology_class::a2a_class>>>::type::value;
-
-}
-
-template <device_topology_type topology>
-constexpr device_topology_group topology_to_group()
-{
-    return std::tuple_element<topology,
-                std::tuple<std::integral_constant<ccl::device_topology_group,
-                                                  ccl::device_topology_group::dev_group>,
-                           std::integral_constant<ccl::device_topology_group,
-                                                  ccl::device_topology_group::dev_group>,
-                           std::integral_constant<ccl::device_topology_group,
-                                                  ccl::device_topology_group::thread_dev_group>,
-                           std::integral_constant<ccl::device_topology_group,
-                                                  ccl::device_topology_group::thread_dev_group>,
-                           std::integral_constant<ccl::device_topology_group,
-                                                  ccl::device_topology_group::process_dev_group>,
-                           std::integral_constant<ccl::device_topology_group,
-                                                  ccl::device_topology_group::process_dev_group>,
-                           std::integral_constant<ccl::device_topology_group,
-                                                  ccl::device_topology_group::dev_group>,
-                           std::integral_constant<ccl::device_topology_group,
-                                                  ccl::device_topology_group::thread_dev_group>,
-                           std::integral_constant<ccl::device_topology_group,
-                                                  ccl::device_topology_group::process_dev_group>
-                           >>::type::value;
-
-}
 template<ccl_device_attributes attrId>
 struct ccl_device_attributes_traits {};
 

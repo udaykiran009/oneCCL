@@ -13,6 +13,9 @@ public:
         return "gpu_concurrent_sched";
     }
 
+    using ccl_gpu_concurrent_sched_ptr = std::unique_ptr<ccl_gpu_concurrent_sched>;
+    static ccl_gpu_concurrent_sched_ptr create(size_t thread_count, const ccl_coll_param& param = ccl_coll_param());
+
     ccl_gpu_concurrent_sched(size_t expected_threads_count,
                              const ccl_coll_param& coll_param = ccl_coll_param());
     ccl_gpu_concurrent_sched(const ccl_gpu_concurrent_sched &src) = delete;
@@ -24,8 +27,6 @@ public:
                                                     const ccl_coll_param& coll_param = ccl_coll_param());
 
     std::shared_ptr<ccl_gpu_sched> get_gpu_sched(size_t thread_id);
-    using ccl_gpu_concurrent_sched_ptr = std::unique_ptr<ccl_gpu_concurrent_sched>;
-    static ccl_gpu_concurrent_sched_ptr create(size_t thread_count, const ccl_coll_param& param = ccl_coll_param());
 private:
     std::vector<std::shared_ptr<ccl_gpu_sched>> partial_scheds;
 };

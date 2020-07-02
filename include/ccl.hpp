@@ -280,7 +280,9 @@ public:
      * Retrieves logically determined devices topology based on hardware preferred
      * devices topology. Can be overriden during communicator creation phase
      */
-    ccl::device_topology_type get_topology_type() const;
+    ccl::device_group_split_type get_device_group_split_type() const;
+
+    ccl::device_topology_type get_topology_class() const;
 
     device_comm_attr_t get_device_attr() const;
 #endif

@@ -105,7 +105,7 @@ TEST_F(allreduce_multi_device_local_fixture, allreduce_multi_device_multithread_
     for(auto dev_it = driver->devices.begin(); dev_it != driver->devices.end(); ++dev_it)
     {
         ccl_device& device = *dev_it->second;
-        ccl_device::device_module& module  = device_modules.find(&device)->second;
+        ccl_device::device_module& module  = *(device_modules.find(&device)->second);
 
         ze_kernel_handle_t handle = nullptr;
         try

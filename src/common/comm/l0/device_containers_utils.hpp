@@ -27,88 +27,9 @@ struct splice_devices
     std::shared_ptr<specific_plain_device_storage>& total_process_devices;
 };
 */
-template<ccl::device_topology_type topology_type>
-struct rank_getter
-{
-    rank_getter(const ccl::device_index_type& device_idx,
-                std::multiset<ccl::device_index_type> &registered_ids) :
-        device_id(device_idx),
-        registered_device_id(registered_ids)
-    {
-    }
 
-    template<class device_t>
-    void operator() (const native::indexed_device_container<device_t>& container)
-    {
-        if(find)
-        {
-            return;
-        }
-
-        for(const auto& dev : container)
-        {
-            ccl_device& device = dev.second->get_device();
-            const ccl::device_index_type& find_id = device.get_device_path();
-            if(find_id == device_id)
-            {
-                if(enumerator == registered_device_id.count(device_id))
-                {
-                    rank = dev.second->template get_comm_data<topology_type>().rank;
-                    size = dev.second->template get_comm_data<topology_type>().size;
-                    find = true;
-
-                    registered_device_id.insert(device_id);
-                }
-                enumerator ++;
-            }
-
-            if(find)
-            {
-                return;
-            }
-        }
-    }
-
-    template<class device_t>
-    void operator() (const native::plain_device_container<device_t>& container)
-    {
-        if(find)
-        {
-            return;
-        }
-
-        for(const auto& dev : container)
-        {
-            ccl_device& device = dev.second->get_device();
-            ccl::device_index_type find_id = device.get_device_path();
-            if(find_id == device_id)
-            {
-                if(enumerator == registered_device_id.count(device_id))
-                {
-                    rank = dev.second->template get_comm_data<topology_type>().rank;
-                    size = dev.second->template get_comm_data<topology_type>().size;
-                    find = true;
-
-                    registered_device_id.insert(device_id);
-                }
-                enumerator ++;
-            }
-            if(find)
-            {
-                return;
-            }
-        }
-    }
-
-    ccl::device_index_type device_id;
-    std::multiset<ccl::device_index_type> &registered_device_id;
-    size_t rank = 0;
-    size_t size = 0;
-    bool find = false;
-    size_t enumerator = 0;
-};
-
-template<ccl::device_topology_type topology_type>
+template<ccl::device_group_split_type group_id,
+         ccl::device_topology_type class_id>
 struct printer
 {
 
@@ -126,7 +47,8 @@ struct printer
     {
         for(const auto& dev : container)
         {
-            device_rank_descr.insert({dev->template get_comm_data<topology_type>().rank, dev->to_string()});
+            device_rank_descr.insert({dev->template get_comm_data<group_id, class_id>().rank,
+                                      dev->to_string()});
         }
     }
 /*
@@ -156,7 +78,7 @@ struct printer
         std::stringstream ss;
         for(auto val : device_rank_descr)
         {
-            ss << "idx: " << val.first << ", " << val.second << std::endl;
+            ss << "idx: " << val.first << "\n" << val.second << std::endl;
         }
         return ss.str();
     }

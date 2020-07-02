@@ -207,13 +207,47 @@ CCL_API ccl_device_driver::const_device_ptr ccl_device_platform::get_device(cons
 std::string CCL_API ccl_device_platform::to_string() const
 {
     std::stringstream out;
-    out << "Platform:\n{";
+    out << "Platform:\n{\n";
+    std::string driver_prefix = "\t";
     for(const auto &driver_pair : drivers)
     {
-        out << "\n[Driver: " << driver_pair.first << std::endl;
-        out << *driver_pair.second <<  "\n],";
+        out << driver_pair.second->to_string(driver_prefix) << std::endl;
     }
-    out << "\n},\n";
+    out << "\n}";
     return out.str();
+}
+
+
+details::adjacency_matrix
+    ccl_device_platform::calculate_device_access_metric(const ccl::device_indices_t& indices,
+                                                        details::p2p_rating_function func) const
+{
+    details::adjacency_matrix result;
+
+    try
+    {
+        // diagonal matrix, assume symmetric cross device access
+        for (typename ccl::device_indices_t::const_iterator lhs_it = indices.begin();
+             lhs_it != indices.end();  ++lhs_it)
+        {
+            for (typename ccl::device_indices_t::const_iterator rhs_it = lhs_it;
+                 rhs_it != indices.end();  ++rhs_it)
+            {
+                ccl_device_driver::const_device_ptr lhs_dev = get_device(*lhs_it);
+                ccl_device_driver::const_device_ptr rhs_dev = get_device(*rhs_it);
+
+                details::cross_device_rating rating = func(*lhs_dev, *rhs_dev);
+                result[*lhs_it][*rhs_it] = rating;
+                result[*rhs_it][*lhs_it] = rating;
+
+            }
+        }
+    }
+    catch(const std::exception &ex)
+    {
+        throw ccl::ccl_error(std::string("Cannot calculate_device_access_metric, error: ") +
+                             ex.what() + "\nCurrent platform info:\n" + to_string());
+    }
+    return result;
 }
 }

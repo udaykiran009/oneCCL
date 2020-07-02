@@ -37,6 +37,7 @@ if(MULTI_GPU_SUPPORT)
     endif()
 endif()
 
+
 if (NOT COMPUTE_RUNTIME_NAME)
     message("Not OpenCL or L0")
 endif()

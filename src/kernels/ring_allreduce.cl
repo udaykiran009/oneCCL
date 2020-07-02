@@ -453,9 +453,47 @@ __kernel void allreduce_execution_uint64_t(size_t my_rank,
     return;
 }
 
-//TODO
-typedef ushort bfp16;
-__kernel void allreduce_execution_bfp16(size_t my_rank,
+
+// numa
+__kernel void allreduce_execution_numa_char(size_t my_rank,
+                                       size_t comm_size,
+                                       size_t elems_count,
+                                       const __global char4* input_buffer,
+                                       __global char4* output_buffer,
+
+                                       __global char4* tmp_buffer,
+                                       __global volatile int* left_wrote_to_me_flag,
+                                       __global volatile int* i_ready_to_receive_flag,
+
+                                       __global volatile int* local_barrier_flag,
+
+                                       __global char4* right_temp_buffer,
+                                       __global volatile int* i_send_to_right_flag,
+                                       __global volatile int* right_ready_to_recv_flag)
+{
+    return;
+}
+
+__kernel void allreduce_execution_numa_int(size_t my_rank,
+                                      size_t comm_size,
+                                      size_t elems_count,
+                                      const __global int4* input_buffer,
+                                      __global int4* output_buffer,
+
+                                      __global int4* tmp_buffer,
+                                      __global volatile int* left_wrote_to_me_flag,
+                                      __global volatile int* i_ready_to_receive_flag,
+
+                                      __global volatile int* local_barrier_flag,
+
+                                      __global int4* right_temp_buffer,
+                                      __global volatile int* i_send_to_right_flag,
+                                      __global volatile int* right_ready_to_recv_flag)
+{
+    return;
+}
+
+__kernel void allreduce_execution_numa_bfp16(size_t my_rank,
                                         size_t comm_size,
                                         size_t elems_count,
                                         const __global bfp16* input_buffer,
@@ -474,7 +512,26 @@ __kernel void allreduce_execution_bfp16(size_t my_rank,
     return;
 }
 
-__kernel void allreduce_execution_double(size_t my_rank,
+__kernel void allreduce_execution_numa_float(size_t my_rank,
+                                      size_t comm_size,
+                                      size_t elems_count,
+                                      const __global float4* input_buffer,
+                                      __global float4* output_buffer,
+
+                                      __global float4* tmp_buffer,
+                                      __global volatile int* left_wrote_to_me_flag,
+                                      __global volatile int* i_ready_to_receive_flag,
+
+                                      __global volatile int* local_barrier_flag,
+
+                                      __global float4* right_temp_buffer,
+                                      __global volatile int* i_send_to_right_flag,
+                                      __global volatile int* right_ready_to_recv_flag)
+{
+    return;
+}
+
+__kernel void allreduce_execution_numa_double(size_t my_rank,
                                          size_t comm_size,
                                          size_t elems_count,
                                          const __global double4* input_buffer,
@@ -494,7 +551,7 @@ __kernel void allreduce_execution_double(size_t my_rank,
 }
 
 
-__kernel void allreduce_execution_int64_t(size_t my_rank,
+__kernel void allreduce_execution_numa_int64_t(size_t my_rank,
                                           size_t comm_size,
                                           size_t elems_count,
                                           const __global long4* input_buffer,
@@ -513,7 +570,7 @@ __kernel void allreduce_execution_int64_t(size_t my_rank,
     return;
 }
 
-__kernel void allreduce_execution_uint64_t(size_t my_rank,
+__kernel void allreduce_execution_numa_uint64_t(size_t my_rank,
                                            size_t comm_size,
                                            size_t elems_count,
                                            const __global ulong4* input_buffer,

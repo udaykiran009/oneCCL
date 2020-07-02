@@ -69,8 +69,8 @@ communicator_interface_dispatcher::create_communicator_from_unified_device(ccl::
                                                                            size_t process_idx,
                                                                            const ccl::device_comm_attr_t& attr)
 {
-    ccl::device_topology_class preferred_topology_class;
-    ccl::device_topology_group preferred_topology_group;
+    ccl::device_topology_type preferred_topology_class;
+    ccl::device_group_split_type preferred_topology_group;
     if (attr)
     {
         preferred_topology_class = attr->get_value<ccl_device_preferred_topology_class>();
@@ -85,27 +85,62 @@ communicator_interface_dispatcher::create_communicator_from_unified_device(ccl::
     //TODO check device_id or sycl device validity before communicator creation
     (void)preferred_topology_class;
     (void)preferred_topology_group;
-    ccl::device_topology_type preferred_topology = ccl::device_topology_type::thread_group_ring;
-    switch(preferred_topology)
+    ccl::device_group_split_type preferred_topology = ccl::device_group_split_type::process;
+    switch(preferred_topology_class)
     {
-        case ccl::device_topology_type::device_group_ring:
-            return communicator_interface_ptr(new device_group_ring_communicator(std::move(device_id), thread_idx, process_idx, attr));
-        case ccl::device_topology_type::a2a_device_group:
-            return communicator_interface_ptr(new device_group_a2a_communicator(std::move(device_id), thread_idx, process_idx, attr));
-
-        case ccl::device_topology_type::thread_group_ring:
-            return communicator_interface_ptr(new thread_device_group_ring_communicator(std::move(device_id), thread_idx, process_idx, attr));
-        case ccl::device_topology_type::a2a_thread_group:
-            return communicator_interface_ptr(new thread_device_group_a2a_communicator(std::move(device_id), thread_idx, process_idx, attr));
-
-        case ccl::device_topology_type::allied_process_group_ring:
-            return communicator_interface_ptr(new process_ring_communicator(std::move(device_id), thread_idx, process_idx, attr));
-        case ccl::device_topology_type::a2a_allied_process_group:
-            return communicator_interface_ptr(new process_a2a_communicator(std::move(device_id), thread_idx, process_idx,attr));
-
+        case device_topology_type::ring:
+        {
+            switch(preferred_topology)
+            {
+                case ccl::device_group_split_type::thread:
+                    return communicator_interface_ptr(
+                                    new device_group_ring_communicator(std::move(device_id),
+                                                                       thread_idx, process_idx,
+                                                                       attr));
+                case ccl::device_group_split_type::process:
+                    return communicator_interface_ptr(
+                                    new thread_device_group_ring_communicator(std::move(device_id),
+                                                                              thread_idx, process_idx,
+                                                                              attr));
+                case ccl::device_group_split_type::cluster:
+                    return communicator_interface_ptr(
+                                    new process_ring_communicator(std::move(device_id),
+                                                                  thread_idx, process_idx,
+                                                                   attr));
+                default:
+                    throw ccl_error(std::string("Invalid `device_comm_attr_t` value for `ccl_device_preferred_group`: ") +
+                            std::to_string(preferred_topology));
+            }
+            break;
+        }
+        case device_topology_type::a2a:
+        {
+            switch(preferred_topology)
+            {
+                case ccl::device_group_split_type::thread:
+                    return communicator_interface_ptr(
+                                    new device_group_a2a_communicator(std::move(device_id),
+                                                                      thread_idx, process_idx, attr));
+                case ccl::device_group_split_type::process:
+                    return communicator_interface_ptr(new thread_device_group_a2a_communicator(
+                                                                      std::move(device_id),
+                                                                      thread_idx, process_idx, attr));
+                case ccl::device_group_split_type::cluster:
+                    return communicator_interface_ptr(new process_a2a_communicator(std::move(device_id),
+                                                                      thread_idx, process_idx, attr));
+                default:
+                    throw ccl_error(std::string("Invalid `device_comm_attr_t` value for `ccl_device_preferred_group`: ") +
+                            std::to_string(preferred_topology));
+            }
+            break;
+        }
         default:
-            throw ccl_error("Invalid color");
+        {
+            throw ccl_error(std::string("Invalid `device_comm_attr_t` value for `ccl_device_preferred_topology_class`: ") +
+                            std::to_string(preferred_topology_class));
+        }
     }
+
     return std::unique_ptr<communicator_interface>();
 }
 

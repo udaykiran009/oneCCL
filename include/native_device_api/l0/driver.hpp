@@ -49,7 +49,7 @@ struct ccl_device_driver : public cl_base<ze_driver_handle_t, ccl_device_platfor
     device_ptr get_device(const ccl::device_index_type& path);
     const_device_ptr get_device(const ccl::device_index_type& path) const;
 
-    std::string to_string() const;
+    std::string to_string(const std::string& prefix = std::string()) const;
 
     // ownership release
     void on_delete(ze_device_handle_t& sub_device_handle);

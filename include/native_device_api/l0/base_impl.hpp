@@ -1,5 +1,6 @@
 #pragma once
 #include <algorithm>
+#include <cassert>
 #include <numeric>
 #include <iterator>
 #include <sstream>
@@ -216,6 +217,8 @@ indexed_storage<value_type> merge_indexed_values(const IndexedContainer& indexes
         std::copy(values.begin(), values.end(),
               std::ostream_iterator<value_type>(ss, ", "));
         ss << "\nerror: " << ex.what();
+        
+        assert(false && "merge_indexed_values error");
         throw std::runtime_error(ss.str());
     }
     return ret;

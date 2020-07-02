@@ -10,7 +10,7 @@
 namespace native
 {
 using source_data_t = std::vector<uint8_t>;
-using source_data_storage_t = std::map<ccl::device_topology_class, source_data_t>;
+using source_data_storage_t = std::map<ccl::device_topology_type, source_data_t>;
 
 template<ccl_coll_type module_type>
 struct typed_source_data_storage_t : source_data_storage_t
@@ -34,7 +34,7 @@ public:
     }
 
     template<ccl_coll_type type>
-    void load_kernel_source(const std::string& source_path, ccl::device_topology_class method )
+    void load_kernel_source(const std::string& source_path, ccl::device_topology_type method )
     {
         static_assert(type < std::tuple_size<modules_src_tuple>::value, " Module of 'type' is not supported");
         auto binary_file = load_binary_file(source_path);

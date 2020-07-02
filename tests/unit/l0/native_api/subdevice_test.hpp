@@ -1,3 +1,4 @@
+#include "native_device_api/compiler_ccl_wrappers_dispatcher.hpp"
 // test case data
 namespace native_api_test
 {

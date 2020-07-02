@@ -13,13 +13,42 @@ enum class gpu_types : size_t
     CONCURRENT_GPU,
     CONCURRENT_REAL_GPU = CONCURRENT_GPU,
     CONCURRENT_VIRT_GPU,
+
     IPC_GPU,
     IPC_SOURCE_REAL_GPU = IPC_GPU,
     IPC_SOURCE_VIRT_GPU,
     IPC_DESTINATION_GPU,
-    SCALE_UP_GPU,
-    SCALE_UP_REAL_GPU = SCALE_UP_GPU,
+
+    SCALING_PROXY_GPU_TYPES,
+    NUMA_PROXY_GPU_TYPES = SCALING_PROXY_GPU_TYPES,
+
+    NUMA_PROXY_REAL_GPU = NUMA_PROXY_GPU_TYPES,
+    NUMA_PROXY_VIRTUAL_GPU,
+
+    SCALE_UP_GPU_TYPES,
+    SCALE_UP_REAL_GPU = SCALE_UP_GPU_TYPES,
     SCALE_UP_VIRTUAL_GPU,
+
+    MIX_SCALE_UP_NUMA_TYPES,
+    MIX_SCALE_UP_NUMA_REAL = MIX_SCALE_UP_NUMA_TYPES,
+    MIX_SCALE_UP_NUMA_VIRTUAL,
+
+    SCALE_OUT_GPU_TYPES,
+    SCALE_OUT_REAL_GPU = SCALE_OUT_GPU_TYPES,
+    SCALE_OUT_VIRTUAL_GPU,
+
+    MIX_SCALE_OUT_NUMA_TYPES,
+    MIX_SCALE_OUT_NUMA_REAL = MIX_SCALE_OUT_NUMA_TYPES,
+    MIX_SCALE_OUT_NUMA_VIRTUAL,
+
+    MIX_SCALE_OUT_SCALE_UP_TYPES,
+    MIX_SCALE_OUT_SCALE_UP_REAL = MIX_SCALE_OUT_SCALE_UP_TYPES,
+    MIX_SCALE_OUT_SCALE_UP_VIRTUAL,
+
+    MIX_UNIVERSAL_TYPES,
+    MIX_UNIVERSAL_REAL = MIX_UNIVERSAL_TYPES,
+    MIX_UNIVERSAL_VIRTUAL,
+
     MAX_TYPE
 };
 
@@ -30,7 +59,13 @@ inline std::string to_string(gpu_types type)
                            "CONCURRENT_REAL_GPU", "CONCURRENT_VIRT_GPU",
                            "SOURCE_IPC_REAL_GPU", "SOURCE_IPC_VIRT_GPU",
                            "DESTINATION_IPC_GPU",
-                           "SCALE_UP_REAL_GPU", "SCALE_UP_VIRTUAL_GPU"}).choose(type, "INVALID_VALUE");
+                           "NUMA_REAL_PROXY", "NUMA_VIRT_PROXY",
+                           "SUP_REAL_PROXY", "SUP_VIRT_PROXY",
+                           "MIX_SUP_NUMA_REAL", "MIX_SUP_NUMA_VIRTUAL",
+                           "SOUT_REAL_PROXY", "SOUT_VIRT_PROXY",
+                           "MIX_SOUT_NUMA_REAL", "MIX_SIUT_NUMA_VIRT",
+                           "MIX_SOUT_SUP_REAL", "MIX_SOUT_SUP_VIRT",
+                           "MIX_UNIVERSAL_REAL", "MIX_UNIVERSAL_VIRT"}).choose(type, "INVALID_VALUE");
 }
 
 constexpr inline gpu_types operator+ (gpu_types a, typename std::underlying_type<gpu_types>::type b)

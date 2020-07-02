@@ -25,7 +25,8 @@ void device_group_a2a_communicator::visit(ccl::gpu_comm_attr& comm_attr)
     ctx = device_ctx;
 
     //get rank & size
-    this->initialize_comm_addr(get_device_path(), ctx->get_group_topology<base_t::topology_type()>());
+    this->initialize_comm_addr(get_device_path(),
+                               ctx->get_group_topology<base_t::topology_class()>());
 }
 
 void device_group_a2a_communicator::barrier(ccl::stream::impl_t& stream)

@@ -34,13 +34,14 @@ struct allied_process_group_scheduler : public thread_group_scheduler
     }
 
     template<class EntryType, ccl_sched_add_mode mode,
-             ccl::device_topology_type topology,
+             ccl::device_group_split_type group_id,
+             ccl::device_topology_type class_id,
              class device_t, class ...Arguments>
     thread_schedule_ptr submit_entry(size_t process_id, size_t thread_id,
-                                     device_community<topology>& device_topology, device_t& device,
+                                     device_community<class_id>& device_topology, device_t& device,
                                      Arguments &&...args)
     {
-        const topology_addr<topology>& comm_data = device->template get_comm_data<topology>();
+        const topology_addr<group_id, class_id>& comm_data = device->template get_comm_data<group_id, class_id>();
 
         size_t device_group_size = device_topology.template get_device_count<native::ccl_gpu_comm>()  +
                                    device_topology.template get_device_count<native::ccl_virtual_gpu_comm>() +
@@ -81,13 +82,14 @@ struct allied_process_group_scheduler : public thread_group_scheduler
     }
 
      template<class EntryType, ccl_sched_add_mode mode,
-             ccl::device_topology_type topology,
+             ccl::device_group_split_type group_id,
+             ccl::device_topology_type class_id,
              class device_t, class ...Arguments>
     thread_schedule_ptr submit_entry_ipc(size_t process_id, size_t thread_id,
-                                     device_community<topology>& device_topology, device_t& device,
+                                     device_community<class_id>& device_topology, device_t& device,
                                      Arguments &&...args)
     {
-        const topology_addr<topology>& comm_data = device->template get_comm_data<topology>();
+        const topology_addr<group_id, class_id>& comm_data = device->template get_comm_data<group_id, class_id>();
 
         size_t ipc_source_count =  device_topology.template get_device_count<native::ccl_ipc_source_gpu_comm<ccl_gpu_comm>>() +
                                    device_topology.template get_device_count<native::ccl_ipc_source_gpu_comm<ccl_virtual_gpu_comm>>();
@@ -136,7 +138,7 @@ struct allied_process_group_scheduler : public thread_group_scheduler
         }
         //if sched is not ready - send NULL
         return thread_schedule_ptr();
-        auto req = submit_entry<EntryType, mode>(process_id, thread_id, device_topology, device, std::forward<Arguments>(args)...);
+        auto req = submit_entry<EntryType, mode, group_id, class_id>(process_id, thread_id, device_topology, device, std::forward<Arguments>(args)...);
         return req;
     }
 private:

@@ -162,3 +162,28 @@ public:
     ccl::cluster_device_indices_t global_mask;
     std::shared_ptr<ccl::communicator> global_comm;
 };
+
+
+class shared_context_fixture : public common_fixture
+{
+protected:
+    shared_context_fixture() :
+        common_fixture(get_global_device_indices())
+    {}
+
+    ~shared_context_fixture()
+    {
+    }
+
+    void SetUp() override
+    {
+        create_global_platform();
+        local_affinity = global_affinities.at(0);
+        create_local_platform();
+        create_module_descr("kernels/observer_event.spv");
+    }
+
+    void TearDown() override
+    {
+    }
+};

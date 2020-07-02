@@ -10,10 +10,14 @@ namespace native
 std::string to_string(const ze_result_t result);
 std::string to_string(ze_memory_type_t type);
 std::string to_string(ze_memory_access_capabilities_t cap);
-std::string to_string(const ze_device_properties_t& device_properties);
-std::string to_string(const ze_device_memory_properties_t& device_mem_properties);
-std::string to_string(const ze_device_memory_access_properties_t& mem_access_prop);
-std::string to_string(const ze_device_compute_properties_t& compute_properties);
+std::string to_string(const ze_device_properties_t& device_properties,
+                      const std::string& prefix = std::string("\n"));
+std::string to_string(const ze_device_memory_properties_t& device_mem_properties,
+                      const std::string& prefix = std::string("\n"));
+std::string to_string(const ze_device_memory_access_properties_t& mem_access_prop,
+                      const std::string& prefix = std::string("\n"));
+std::string to_string(const ze_device_compute_properties_t& compute_properties,
+                      const std::string& prefix = std::string("\n"));
 std::string to_string(const ze_memory_allocation_properties_t& prop);
 std::string to_string(const ze_device_p2p_properties_t& properties);
 std::string to_string(const ze_ipc_mem_handle_t& handle);

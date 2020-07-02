@@ -43,13 +43,13 @@ struct api_type_info
 template<>
 struct ccl_device_attributes_traits<ccl_device_preferred_topology_class>
 {
-    using type = device_topology_class;
+    using type = device_topology_type;
 };
 
 template<>
 struct ccl_device_attributes_traits<ccl_device_preferred_group>
 {
-    using type = device_topology_group;
+    using type = device_group_split_type;
 };
 
 

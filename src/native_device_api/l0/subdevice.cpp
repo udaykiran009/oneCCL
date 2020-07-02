@@ -18,10 +18,10 @@ uint32_t get_subdevice_properties_from_handle(ccl_device::handle_t handle)
     {
         throw std::runtime_error(std::string("zeDeviceGetProperties failed, error: ") + native::to_string(ret));
     }
-    
+
     if (!device_properties.isSubdevice)
     {
-            throw std::runtime_error(std::string(__PRETTY_FUNCTION__) + 
+            throw std::runtime_error(std::string(__PRETTY_FUNCTION__) +
                                      "- invalid device type, got device, but subdevice requested");
     }
     return device_properties.deviceId;
@@ -90,7 +90,7 @@ ccl_subdevice::indexed_handles ccl_subdevice::get_handles(const ccl_device& devi
     indexed_handles ret;
     try
     {
-        ret = 
+        ret =
             detail::collect_indexed_data<ccl::device_index_enum::subdevice_index_id>(
                             filtered_ids,
                             handles,
@@ -105,17 +105,29 @@ ccl_subdevice::indexed_handles ccl_subdevice::get_handles(const ccl_device& devi
     return ret;
 }
 
-CCL_API
-ccl_subdevice::ccl_subdevice(handle_t h, owner_ptr_t&& device, base::owner_ptr_t&& driver) :
-  //  my_enable_shared_from_this<ccl_subdevice>(),
-    base(h, std::move(driver)),
-    parent_device(std::move(device))
+void ccl_subdevice::initialize_subdevice_data()
 {
     ze_result_t ret = zeDeviceGetProperties(handle, &device_properties);
     if(ret != ZE_RESULT_SUCCESS )
     {
         throw std::runtime_error(std::string("cannot get properties for subdevice, error: ") + native::to_string(ret));
     }
+}
+
+CCL_API
+ccl_subdevice::ccl_subdevice(handle_t h, owner_ptr_t&& device, base::owner_ptr_t&& driver, std::false_type) :
+    base(h, std::move(driver), std::false_type{}),
+    parent_device(std::move(device))
+{
+}
+
+CCL_API
+ccl_subdevice::ccl_subdevice(handle_t h, owner_ptr_t&& device, base::owner_ptr_t&& driver) :
+  //  my_enable_shared_from_this<ccl_subdevice>(),
+    base(h, std::move(driver)),
+    parent_device(std::move(device))
+{
+    initialize_subdevice_data();
 }
 
 CCL_API
@@ -161,10 +173,11 @@ ccl::device_index_type CCL_API ccl_subdevice::get_device_path() const
 }
 
 CCL_API
-std::string ccl_subdevice::to_string() const
+std::string ccl_subdevice::to_string(const std::string& prefix) const
 {
     std::stringstream ss;
-    ss << "handle: " << handle << ", " << native::to_string(device_properties);
+    ss << prefix << "SubdDevice: " << handle << std::endl;
+    ss << ccl_device::to_string(prefix);
     return ss.str();
 }
 

@@ -7,13 +7,13 @@ namespace native
 std::shared_ptr<specific_plain_device_storage>
         device_storage::create_devices_by_indices(size_t thread_id, const ccl::device_indices_t& indices)
 {
-    std::shared_ptr<specific_plain_device_storage> out_devices = std::make_shared<specific_plain_device_storage>();
+    std::shared_ptr<specific_plain_device_storage> out_devices = 
+                            std::make_shared<specific_plain_device_storage>();
     size_t index_in_group = 0;
     for(const auto& idx : indices)
     {
         LOG_DEBUG("Assign device by id: ", idx, " from group size: ", indices.size());
 
-        //find real device
         try
         {
             ccl_device_driver::device_ptr runtime_device = get_runtime_device(idx);
@@ -21,18 +21,20 @@ std::shared_ptr<specific_plain_device_storage>
             {
                 throw std::runtime_error(std::string("Cannot find device by id: ") + ccl::to_string(idx));
             }
+            
+            // find index in real devices at first
             device_container<ccl_gpu_comm>& real_devices =
                         ccl_tuple_get<device_container<ccl_gpu_comm>>(gpu_device_storage);
             auto real_it = real_devices.find(runtime_device->handle);
             if(real_it == real_devices.end())
             {
-                //first time requested device, mark it as real
+                // first time requested device, mark it as real
                 std::get<ccl_gpu_comm::type_idx()>(*out_devices).push_back(
                             create_gpu_device<ccl_gpu_comm>(*runtime_device, index_in_group++));
             }
             else
             {
-                //other thread booked real device already, make virtual
+                // real device wrapper created already, make virtual wrapper
                 auto& real = real_it->second;
                 std::get<ccl_virtual_gpu_comm::type_idx()>(*out_devices).push_back(
                             create_gpu_device<ccl_virtual_gpu_comm>(real->get_device(),
@@ -47,7 +49,12 @@ std::shared_ptr<specific_plain_device_storage>
         }
     }
 
-    thread_gpu_comms.insert({thread_id, out_devices});
+    // remember in exclusive threads ownership
+    bool inserted = thread_gpu_comms.insert({thread_id, out_devices}).second;
+    if (!inserted)
+    {
+        abort();// TODO consider use-case
+    }
     return out_devices;
 }
 

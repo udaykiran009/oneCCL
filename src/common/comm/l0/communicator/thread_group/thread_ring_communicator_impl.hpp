@@ -47,25 +47,35 @@ thread_device_group_ring_communicator::allreduce_impl(const buffer_type* send_bu
 {
     using namespace native;
 
-    static constexpr ccl::device_topology_type topology = base_t::topology_type();
+    static constexpr ccl::device_group_split_type group_id = base_t::topology_type();
+    static constexpr ccl::device_topology_type class_id = base_t::topology_class();
 
     if(!is_ready())
     {
-        throw ccl::ccl_error(std::string("Device communicator for topology: " + ::to_string(topology) +
+        throw ccl::ccl_error(std::string("Device communicator for group_id: " + ::to_string(group_id) +
                                          " is not ready yet. Not all сommunicators are created in group. Please create them before usage"));
     }
 
     size_t comm_rank = rank();
+    size_t ring_index = 0;
     LOG_DEBUG("communicator for device idx: ", get_device_path(),
-              ", rank idx: ", comm_rank);
+              ", rank idx: ", comm_rank, ", ring_index :", ring_index);
 
     //TODO make const!
     ccl_buffer send_entry_buffer(const_cast<buffer_type**>(&send_buf), count * sizeof(buffer_type), 0, ccl_buffer_type::INDIRECT);
     ccl_buffer recv_entry_buffer(&recv_buf, count * sizeof(buffer_type), 0, ccl_buffer_type::INDIRECT);
 
-    const auto &in_process_gpu_storage = device_community_impl->get_devices<ccl_gpu_comm>();
-    const auto &virtual_process_gpu_storage = device_community_impl->get_devices<ccl_virtual_gpu_comm>();
-    auto &ipc_gpu_storage = device_community_impl->get_devices<ccl_ipc_gpu_comm>();
+    using community_t =
+            typename device_community_container<class_id>::element_type;
+    community_t community = device_community_impl.get_topology(ring_index);
+
+    const auto &in_process_gpu_storage =
+                community->get_devices<ccl_gpu_comm>();
+    const auto &virtual_process_gpu_storage =
+                community->get_devices<ccl_virtual_gpu_comm>();
+
+    auto &ipc_gpu_storage =
+                community->get_devices<ccl_ipc_gpu_comm>();
     (void)ipc_gpu_storage;
 
     thread_group_scheduler::thread_schedule_ptr schedule;
@@ -75,16 +85,19 @@ thread_device_group_ring_communicator::allreduce_impl(const buffer_type* send_bu
     {
         LOG_DEBUG("Invoke: ", real_device_it->second->to_string());
 
-        using gpu_allreduce_entry = l0_allreduce_typed_entry<buffer_type, ccl_gpu_comm, topology>;
+        using gpu_allreduce_entry = l0_allreduce_typed_entry<buffer_type, ccl_gpu_comm, group_id>;
 
         schedule =
-                ctx->scheduler_impl->submit_entry<gpu_allreduce_entry, ccl_sched_add_back>(thread_id,
-                                                                                           *device_community_impl,
-                                                                                           real_device_it->second,send_entry_buffer,
-                                                                                           recv_entry_buffer,
-                                                                                           count,
-                                                                                           static_cast<ccl_reduction_t>(reduction),
-                                                                                           stream);
+                ctx->scheduler_impl->submit_entry<gpu_allreduce_entry,
+                                                  ccl_sched_add_back,
+                                                  group_id,
+                                                  class_id>(thread_id,
+                                                            *community,
+                                                            real_device_it->second,send_entry_buffer,
+                                                            recv_entry_buffer,
+                                                            count,
+                                                            static_cast<ccl_reduction_t>(reduction),
+                                                            stream);
     }
     else
     {
@@ -92,17 +105,22 @@ thread_device_group_ring_communicator::allreduce_impl(const buffer_type* send_bu
     if(virtual_device_it != virtual_process_gpu_storage.end())
     {
         LOG_DEBUG("Invoke: ", virtual_device_it->second->to_string());
-        using gpu_allreduce_entry = l0_allreduce_typed_entry<buffer_type, ccl_virtual_gpu_comm, topology>;
-
+        using gpu_allreduce_entry = l0_allreduce_typed_entry<buffer_type,
+                                                             ccl_virtual_gpu_comm,
+                                                             group_id>;
 
         schedule =
-            ctx->scheduler_impl->submit_entry<gpu_allreduce_entry, ccl_sched_add_back>(thread_id,
-                                                                                       *device_community_impl,
-                                                                                       virtual_device_it->second, send_entry_buffer,
-                                                                                       recv_entry_buffer,
-                                                                                       count,
-                                                                                       static_cast<ccl_reduction_t>(reduction),
-                                                                                       stream);
+                ctx->scheduler_impl->submit_entry<gpu_allreduce_entry,
+                                                  ccl_sched_add_back,
+                                                  group_id,
+                                                  class_id>(thread_id,
+                                                            *community,
+                                                            virtual_device_it->second,
+                                                            send_entry_buffer,
+                                                            recv_entry_buffer,
+                                                            count,
+                                                            static_cast<ccl_reduction_t>(reduction),
+                                                            stream);
     }}
 
     //if sched is not ready - send NULL

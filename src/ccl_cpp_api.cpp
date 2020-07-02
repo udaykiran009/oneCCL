@@ -194,9 +194,14 @@ CCL_API ccl::comm_attr_t ccl::communicator::get_host_attr() const
 }
 
 #ifdef MULTI_GPU_SUPPORT
-CCL_API ccl::device_topology_type ccl::communicator::get_topology_type() const
+CCL_API ccl::device_group_split_type ccl::communicator::get_device_group_split_type() const
 {
     return pimpl->get_topology_type();
+}
+
+CCL_API ccl::device_topology_type ccl::communicator::get_topology_class() const
+{
+    return pimpl->get_topology_class();
 }
 
 CCL_API ccl::communicator::device_native_reference_t ccl::communicator::get_device()

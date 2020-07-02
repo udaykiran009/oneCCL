@@ -1,10 +1,24 @@
 #pragma once
+#include <functional>
+
 #include "coll/algorithms/algorithms_enum.hpp"
 #include "native_device_api/export_api.hpp"
 #include "common/comm/l0/modules/modules_source_data.hpp"
 
 namespace native
 {
+
+inline std::size_t module_hash(ccl_coll_type module_type,
+                               ccl::device_group_split_type group_id,
+                               ccl::device_topology_type class_id )
+{
+    std::size_t h1 = std::hash<std::size_t>{}(module_type);
+    std::size_t h2 = std::hash<std::size_t>{}(group_id);
+    std::size_t h3 = std::hash<std::size_t>{}(class_id);
+    std::size_t h_mix = (h1 ^ (h2 << 1)) ^ (h3 << 1);
+    return h_mix;
+}
+
 template<class communicator_type>
 struct module_loader
 {
@@ -23,17 +37,19 @@ struct module_loader
         {
             switch(it->first)
             {
-                case ccl::device_topology_class::ring_class:
+                case ccl::device_topology_type::ring:
                     load_module_impl<module_type,
-                                     ccl::device_topology_type::device_group_ring,
-                                     ccl::device_topology_type::thread_group_ring,
-                                     ccl::device_topology_type::allied_process_group_ring>(it->second);
+                                     ccl::device_topology_type::ring,
+                                     ccl::device_group_split_type::thread,
+                                     ccl::device_group_split_type::process,
+                                     ccl::device_group_split_type::cluster>(it->second);
                     break;
-                case ccl::device_topology_class::a2a_class:
+                case ccl::device_topology_type::a2a:
                     load_module_impl<module_type,
-                                     ccl::device_topology_type::a2a_device_group,
-                                     ccl::device_topology_type::a2a_thread_group,
-                                     ccl::device_topology_type::a2a_allied_process_group>(it->second);
+                                     ccl::device_topology_type::a2a,
+                                     ccl::device_group_split_type::thread,
+                                     ccl::device_group_split_type::process,
+                                     ccl::device_group_split_type::cluster>(it->second);
                     break;
                 default:
                     throw std::runtime_error(std::string("unknown topology class: ") + std::to_string(it->first));
@@ -47,7 +63,9 @@ private:
     }
 
 
-    template<ccl_coll_type module_type, ccl::device_topology_type ...topology_types>
+    template<ccl_coll_type module_type,
+             ccl::device_topology_type class_id,
+             ccl::device_group_split_type ...topology_types>
     void load_module_impl(const source_data_t& module_data)
     {
         LOG_DEBUG("Started loading module \"", ccl_coll_type_to_str(module_type),
@@ -60,10 +78,14 @@ private:
         module_description.pInputModule = module_data.data();
         module_description.pBuildFlags = nullptr;
 
-        //compile modules
-        std::array<std::string, sizeof...(topology_types)> logs {
-                                                                    get_this()->template create_module_impl<module_type, topology_types>(module_description)...
-                                                                };
+        //compile modules TODO ring only
+        std::array<std::string, sizeof...(topology_types)> logs
+        {
+            get_this()->template create_module_impl<module_type,
+                                                    topology_types,
+                                                    class_id>
+                                                        (module_description)...
+        };
 
         std::string accumulated_log;
         if (!logs.empty())

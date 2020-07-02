@@ -45,6 +45,12 @@ ze_kernel_handle_t gpu_module_base::import_kernel(const std::string& name)
                     ZE_KERNEL_FLAG_NONE   };
     desc.pKernelName = name.c_str();
     ze_kernel_handle_t handle;
+    
+    if (!module)
+    {
+        return nullptr;
+    }
+    
     ze_result_t result = zeKernelCreate(module, &desc, &handle);
     if (result != ZE_RESULT_SUCCESS)
     {

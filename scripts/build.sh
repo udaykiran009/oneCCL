@@ -333,7 +333,7 @@ post_build()
     ar x libsvml.a svml_i_div4_iface_la.o svml_d_feature_flag_.o \
         svml_i_div4_core_e7la.o svml_i_div4_core_exla.o svml_i_div4_core_h9la.o \
         svml_i_div4_core_y8la.o
-    
+
     if [ ! -z "${LIBFABRIC_INSTALL_DIR}" ]
     then
         LDFLAGS="-L${LIBFABRIC_INSTALL_DIR}/lib/"

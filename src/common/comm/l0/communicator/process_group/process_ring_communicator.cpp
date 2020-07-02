@@ -19,7 +19,7 @@ void process_ring_communicator::visit(ccl::gpu_comm_attr& comm_attr)
     ctx = comm_attr.get_process_context();
 
     //get rank & size
-    auto topology = ctx->get_process_topology<base_t::topology_type()>(process_id, thread_id);
+    auto topology = ctx->get_process_topology<base_t::topology_class()>(process_id, thread_id);
     this->initialize_comm_addr(get_device_path(), topology);
 }
 /*

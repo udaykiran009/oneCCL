@@ -36,28 +36,22 @@ void ccl_gpu_comm::register_virtual_gpu(ccl_virtual_gpu_comm* gpu)
 }
 
 std::tuple<bool, ze_module_handle_t, std::string>
-    ccl_gpu_comm::create_module_handle(const ze_module_desc_t &descr)
+    ccl_gpu_comm::create_module_handle(const ze_module_desc_t &descr, size_t hash)
 {
-    std::string build_log_string;
-    ze_module_handle_t module = nullptr;
-    ze_module_build_log_handle_t build_log = nullptr;
-    ze_result_t result = zeModuleCreate(device.handle, &descr, &module, &build_log);
-    if (result != ZE_RESULT_SUCCESS)
+    std::tuple<bool, ze_module_handle_t, std::string> ret{true, nullptr, ""};
+    
+    native::ccl_device::device_module_ptr mod;
+    try
     {
-        build_log_string = get_build_log_string(build_log);
-        zeModuleBuildLogDestroy(build_log);
-        throw std::runtime_error("xeModuleCreate failed: " + native::to_string(result) + ", Log: " + build_log_string);
+        mod = device.create_module(descr, hash);
+        std::get<1>(ret) = mod->get();
     }
-    std::tuple<bool, ze_module_handle_t, std::string> ret{true, module, build_log_string};
-    LOG_DEBUG("Module created. Build log:\n", build_log_string);
+    catch(const std::exception& ex)
+    {
+        std::get<0>(ret) = false;
+        std::get<2>(ret) = ex.what();
+    }
 
-    result = zeModuleBuildLogDestroy(build_log);
-    if (result)
-    {
-        throw std::runtime_error("xeModuleBuildLogDestroy failed: " +
-                             native::to_string(result));
-    }
-    LOG_DEBUG("Build log destroyed");
     return ret;
 }
 

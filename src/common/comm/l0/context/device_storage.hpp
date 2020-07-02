@@ -5,6 +5,16 @@
 
 namespace native
 {
+/*
+ * Class device_storage:
+ * used for typed device wrapper creation during topology construction.
+ * It must remember all created device wrappers and must guarantee uniqueness 
+ * for exclusive device wrappers (REAL devices) and their clones (VIRTUAL devices)
+ * Every time when a new device is created it wrapped into REAL deice type, 
+ * all other request to create the same device must be wrapped into VIRTUAL devices.
+ * 
+ * Guarantee must be applied across threads
+ */
 struct device_storage
 {
     size_t get_storage_size() const;
@@ -15,20 +25,29 @@ struct device_storage
         return ccl_tuple_get<device_container<device_t>>(gpu_device_storage).size();
     }
 
-    std::shared_ptr<specific_plain_device_storage> create_devices_by_indices(size_t thread_id, const ccl::device_indices_t& indices);
+    // request to create (or reuse) device wrappers by 'indices' for specific thread 'thread_id'
+    // device_storage will automatically determine wrapper types inside
+    // Result is a shared vector, which is remembered in per-thread storage
+    std::shared_ptr<specific_plain_device_storage> 
+                create_devices_by_indices(size_t thread_id, const ccl::device_indices_t& indices);
 
+    // creation specific device type, determined from 'create_devices_by_indices'
     template<class device_t, class ...Args>
     device_t_ptr<device_t> create_gpu_device(ccl_device& device, size_t ranks, Args&&...args)
     {
+        std::shared_ptr<device_t> gpu_instance = 
+                            std::make_shared<device_t>(device,
+                                                       ranks,
+                                                       std::forward<Args>(args)...);
+                                                       
+        //put in global storage: to determine device uniqueness and wrapper type
         auto& gpus = ccl_tuple_get<device_container<device_t>>(gpu_device_storage);
-        std::shared_ptr<device_t> gpu_instance = std::make_shared<device_t>(device,
-                                                                            ranks,
-                                                                            std::forward<Args>(args)...);
         gpus.emplace(std::piecewise_construct,
                      std::forward_as_tuple(device.handle),
                      std::forward_as_tuple(gpu_instance));
 
         {
+            // put in indexed storage
             auto acc = get_node_storage();
             specific_indexed_device_storage& global_storage = acc.get();
             indexed_device_container<device_t>& device_cont = ccl_tuple_get<indexed_device_container<device_t>>(global_storage);
@@ -37,9 +56,9 @@ struct device_storage
         return gpu_instance;
     }
 
-    specific_device_storage gpu_device_storage;
+    specific_device_storage gpu_device_storage;     // wrapper type determine helper storage
     using thread_plain_device_map = std::map<size_t, std::shared_ptr<specific_plain_device_storage>>;
-    thread_plain_device_map thread_gpu_comms;
+    thread_plain_device_map thread_gpu_comms;       // devices allocated in exclusive thread ownership
 
     struct accessor
     {

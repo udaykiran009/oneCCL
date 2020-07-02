@@ -4,6 +4,7 @@
 #include "ccl_type_traits.hpp"
 
 #ifdef CCL_ENABLE_SYCL
+#include <CL/sycl/backend/Intel_level0.hpp>
 static cl::sycl::vector_class<cl::sycl::device> gpu_sycl_devices;
 #endif
 
@@ -38,7 +39,7 @@ CCL_API ccl_device_driver::device_ptr get_runtime_device(const DeviceType& devic
     }
 
     // extract native handle L0
-    auto l0_handle_ptr = reinterpret_cast<native::ccl_device::handle_t*>(device.get());
+    auto l0_handle_ptr = device.template get_native<cl::sycl::backend::level0>();
     if (!l0_handle_ptr)
     {
         throw std::runtime_error(std::string("get_runtime_device failed for sycl device: handle is nullptr!"));
@@ -46,7 +47,7 @@ CCL_API ccl_device_driver::device_ptr get_runtime_device(const DeviceType& devic
 
     ze_device_properties_t device_properties;
     device_properties.version = ZE_DEVICE_PROPERTIES_VERSION_CURRENT;
-    ze_result_t ret = zeDeviceGetProperties(*l0_handle_ptr, &device_properties);
+    ze_result_t ret = zeDeviceGetProperties(l0_handle_ptr, &device_properties);
     if(ret != ZE_RESULT_SUCCESS )
     {
         throw std::runtime_error(std::string("zeDeviceGetProperties failed, error: ") + native::to_string(ret));

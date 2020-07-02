@@ -30,8 +30,8 @@ struct communicator_interface_dispatcher
     virtual ccl::device_index_type get_device_path() const = 0;
     virtual native_device_type_ref get_device() = 0;
     virtual device_comm_attr_t get_device_attr() const = 0;
-    virtual device_topology_type get_topology_type() const = 0;
-
+    virtual device_group_split_type get_topology_type() const = 0;
+    virtual device_topology_type get_topology_class() const = 0;
 
     // create communicator for device & cpu types (from device class)
     template <class DeviceType,

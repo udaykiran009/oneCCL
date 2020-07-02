@@ -43,27 +43,27 @@ const ccl_version_t& host_attr_impl::get_attribute_value(std::integral_constant<
 
 
 #ifdef MULTI_GPU_SUPPORT
-device_topology_class device_attr_impl::set_attribute_value(device_topology_class preferred_topology)
+device_topology_type device_attr_impl::set_attribute_value(device_topology_type preferred_topology)
 {
-    device_topology_class old = current_preferred_topology_class;
+    device_topology_type old = current_preferred_topology_class;
     current_preferred_topology_class = preferred_topology;
     return old;
 }
 
-device_topology_group device_attr_impl::set_attribute_value(device_topology_group preferred_topology)
+device_group_split_type device_attr_impl::set_attribute_value(device_group_split_type preferred_topology)
 {
-    device_topology_group old = current_preferred_topology_group;
+    device_group_split_type old = current_preferred_topology_group;
     current_preferred_topology_group = preferred_topology;
     return old;
 }
 
-const device_topology_class&
+const device_topology_type&
     device_attr_impl::get_attribute_value(std::integral_constant<ccl_device_attributes,
                                           ccl_device_attributes::ccl_device_preferred_topology_class> stub) const
 {
     return current_preferred_topology_class;
 }
-const device_topology_group&
+const device_group_split_type&
     device_attr_impl::get_attribute_value(std::integral_constant<ccl_device_attributes,
                                           ccl_device_attributes::ccl_device_preferred_group> stub) const
 {

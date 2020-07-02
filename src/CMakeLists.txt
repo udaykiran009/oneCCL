@@ -14,6 +14,7 @@ if(MULTI_GPU_SUPPORT)
                     native_device_api/l0/subdevice.cpp
                     native_device_api/l0/driver.cpp
                     native_device_api/l0/platform.cpp
+                    native_device_api/l0/utils.cpp
                     native_device_api/l0/primitives.cpp
                     sched/gpu_sched.cpp
                     sched/gpu_concurrent_sched.cpp
@@ -35,6 +36,7 @@ if(MULTI_GPU_SUPPORT)
                     common/comm/l0/context/device_group_ctx.cpp
                     common/comm/l0/context/device_storage.cpp
 
+                    common/comm/l0/topology/topology_serializer.cpp
                     common/comm/l0/topology/ring/device_group_ring_creator.cpp
                     common/comm/l0/topology/ring/thread_group_ring_creator.cpp
                     common/comm/l0/topology/ring/process_group_ring_creator.cpp
@@ -155,7 +157,7 @@ install(TARGETS ccl-static ARCHIVE DESTINATION ${CCL_INSTALL_LIB})
 if(MULTI_GPU_SUPPORT)
     message("Turn on L0 multi-gpu unit tests")
     add_library(ccl-ut-static STATIC $<TARGET_OBJECTS:ccl-objects>)
-    set_target_properties(ccl-ut-static PROPERTIES COMPILE_FLAGS "-fvisibility=default")
+    set_target_properties(ccl-ut-static PROPERTIES COMPILE_FLAGS "-fvisibility=default -DUNIT_TESTS")
     set_target_properties(ccl-ut-static PROPERTIES OUTPUT_NAME cclut)
     set_target_properties(ccl-ut-static PROPERTIES ARCHIVE_OUTPUT_DIRECTORY ${CCL_BUILD_DIR})
     set_target_properties(ccl-ut-static PROPERTIES INTERFACE_INCLUDE_DIRECTORIES  $<TARGET_PROPERTY:${COMPUTE_RUNTIME_TARGET_NAME},INTERFACE_INCLUDE_DIRECTORIES>)

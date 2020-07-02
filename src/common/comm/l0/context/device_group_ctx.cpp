@@ -4,9 +4,11 @@
 #include "common/comm/l0/context/device_group_ctx.hpp"
 #include "common/comm/l0/context/device_storage.hpp"
 #include "common/comm/l0/topology/ring/device_group_ring_creator.hpp"
-#include "common/comm/l0/device_community.hpp"
+#include "common/comm/l0/device_community_holder_impl.hpp"
 
 #include "common/comm/l0/scheduler/device_group_scheduler.hpp"
+
+#include "common/comm/l0/context/scaling_ctx/numa_ctx_impl.hpp"
 
 namespace native
 {
@@ -45,7 +47,7 @@ std::shared_ptr<device_group_context>
     //A2A
     {
         /* TODO
-        auto a2a_device_topology = std::make_shared<device_community<ccl::device_topology_type::a2a_device_group>>(context_addr);
+        auto a2a_device_topology = std::make_shared<device_community<ccl::device_group_split_type::a2a_device_group>>(context_addr);
         device_group_a2a_topology top(*this, plain_gpu_comms, ring_device_topology->get_device_storage_ptr());
         std::stringstream ss;
         auto matrix = top.build_p2p_capability_matrix(ss, group_device_ids);
@@ -61,7 +63,7 @@ std::shared_ptr<device_group_context>
         LOG_INFO("Device Group ", context_addr.to_string(), " RING topology:\n", p.to_string());
         LOG_INFO("Device Group ", context_addr.to_string(), " A2A topology:\nTODO!");
         //remember
-        std::get<ccl::device_topology_class::a2a_class>(device_topology) = a2a_device_topology;
+        std::get<ccl::device_topology_type::a2a>(device_topology) = a2a_device_topology;
         */
     }
 
@@ -70,8 +72,9 @@ std::shared_ptr<device_group_context>
 
 device_group_context::device_group_context(const ccl::context_comm_addr& comm_addr,
                                            const ccl::device_indices_t& group_device_ids):
-  device_indices(group_device_ids),
-  context_addr(comm_addr)
+    scaling_context_base(),
+    device_indices(group_device_ids),
+    context_addr(comm_addr)
 {
     //scheduler
     scheduler_impl.reset(new device_group_scheduler);
@@ -86,70 +89,12 @@ const ccl::device_indices_t& device_group_context::get_group_device_indices() co
     return device_indices;
 }
 
-
-
-void device_group_context::attach_scaleup_proxy_observer(proxy_observer<ccl_gpu_scaleup_proxy<ccl_gpu_comm>>* observer,
-                                       std::integral_constant<ccl::device_topology_type,
-                                                              ccl::device_topology_type::device_group_ring> val)
+device_group_context::scaling_context_base& device_group_context::get_numa_ctx()
 {
-    register_observer_impl<ccl::device_topology_type::device_group_ring>(observer);
+    return *this;
 }
-void device_group_context::attach_scaleup_proxy_observer(proxy_observer<ccl_gpu_scaleup_proxy<ccl_virtual_gpu_comm>>* observer,
-                                       std::integral_constant<ccl::device_topology_type,
-                                                              ccl::device_topology_type::device_group_ring> val)
+const device_group_context::scaling_context_base& device_group_context::get_numa_ctx() const
 {
-    register_observer_impl<ccl::device_topology_type::device_group_ring>(observer);
-}
-
-
-void device_group_context::attach_scaleup_proxy_observer(proxy_observer<ccl_gpu_scaleup_proxy<ccl_gpu_comm>>* observer,
-                                       std::integral_constant<ccl::device_topology_type,
-                                                              ccl::device_topology_type::device_group_torn_apart_ring> val)
-{
-    register_observer_impl<ccl::device_topology_type::device_group_torn_apart_ring>(observer);
-}
-void device_group_context::attach_scaleup_proxy_observer(proxy_observer<ccl_gpu_scaleup_proxy<ccl_virtual_gpu_comm>>* observer,
-                                       std::integral_constant<ccl::device_topology_type,
-                                                              ccl::device_topology_type::device_group_torn_apart_ring> val)
-{
-    register_observer_impl<ccl::device_topology_type::device_group_torn_apart_ring>(observer);
-}
-
-
-void device_group_context::invoke_scaleup_proxy_observer(proxy_observer<ccl_gpu_scaleup_proxy<ccl_gpu_comm>>* observer,
-                                       std::integral_constant<ccl::device_topology_type,
-                                                              ccl::device_topology_type::device_group_ring> val)
-{
-    auto &topologu_specific_observers =
-            std::get<top_to_index(ccl::device_topology_type::device_group_ring)>(observables);
-    observers_container_t<ccl_gpu_comm>& container = std::get<ccl_gpu_comm::type_idx()>(topologu_specific_observers);
-    auto it = container.find(observer);
-    if(it == container.end())
-    {
-        throw std::runtime_error(std::string("invalid proxy: ") + observer->get_this()->get_device().to_string());
-    }
-
-    throw std::runtime_error(std::string("Valid proxy: ") + observer->get_this()->get_device().to_string());
-}
-
-void device_group_context::invoke_scaleup_proxy_observer(proxy_observer<ccl_gpu_scaleup_proxy<ccl_virtual_gpu_comm>>* observer,
-                                       std::integral_constant<ccl::device_topology_type,
-                                                              ccl::device_topology_type::device_group_ring> val)
-{
-    throw std::runtime_error(std::string("Valid proxy: ") + observer->get_this()->get_device().to_string());
-}
-
-void device_group_context::invoke_scaleup_proxy_observer(proxy_observer<ccl_gpu_scaleup_proxy<ccl_gpu_comm>>* observer,
-                                       std::integral_constant<ccl::device_topology_type,
-                                                              ccl::device_topology_type::device_group_torn_apart_ring> val)
-{
-    throw std::runtime_error(std::string("Valid proxy: ") + observer->get_this()->get_device().to_string());
-}
-
-void device_group_context::invoke_scaleup_proxy_observer(proxy_observer<ccl_gpu_scaleup_proxy<ccl_virtual_gpu_comm>>* observer,
-                                       std::integral_constant<ccl::device_topology_type,
-                                                              ccl::device_topology_type::device_group_torn_apart_ring> val)
-{
-    throw std::runtime_error(std::string("Valid proxy: ") + observer->get_this()->get_device().to_string());
+    return *this;
 }
 }

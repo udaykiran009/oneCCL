@@ -9,7 +9,7 @@
 
 #include "utils.hpp"
 #include "ccl.hpp"
-//#define UT_DEBUG
+#define UT_DEBUG
 
 #ifdef UT_DEBUG
     std::ostream& global_output = std::cout;
@@ -22,7 +22,7 @@ static std::string device_indices{"[0:6459]"};
 
 void set_test_device_indices(const char *indices_csv)
 {
-    if (!indices_csv)
+    if (indices_csv)
     {
         device_indices = indices_csv;
     }
@@ -124,7 +124,7 @@ protected:
         }
 
         // compile test module per device
-
+        std::size_t hash = std::hash<std::string>{}(module_path);
         auto it = local_platform->drivers.find(0);
         UT_ASSERT(it != local_platform->drivers.end(), "Driver idx 0 must exist");
         for(auto &dev_it : it->second->devices)
@@ -135,13 +135,13 @@ protected:
                 if(!replace)
                 {
                     device_modules.emplace(dev.get(),
-                                           dev->create_module(module_description));
+                                           dev->create_module(module_description, hash));
                 }
                 else
                 {
                     device_modules.erase(dev.get());
                     device_modules.emplace(dev.get(),
-                                           dev->create_module(module_description));
+                                           dev->create_module(module_description, hash));
 
                 }
             }
@@ -159,13 +159,13 @@ protected:
                     if(!replace)
                     {
                         device_modules.emplace(subdev.second.get(),
-                                               subdev.second->create_module(module_description));
+                                               subdev.second->create_module(module_description, hash));
                     }
                     else
                     {
                         device_modules.erase(subdev.second.get());
                         device_modules.emplace(subdev.second.get(),
-                                            subdev.second->create_module(module_description));
+                                            subdev.second->create_module(module_description, hash));
 
                     }
                 }
@@ -184,7 +184,7 @@ protected:
     ccl::device_indices_t local_affinity;
 
 
-    std::map<native::ccl_device*, native::ccl_device::device_module> device_modules;
+    std::map<native::ccl_device*, native::ccl_device::device_module_ptr> device_modules;
 };
 
 class ipc_fixture : public common_fixture

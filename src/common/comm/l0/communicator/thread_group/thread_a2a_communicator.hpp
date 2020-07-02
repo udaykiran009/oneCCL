@@ -8,12 +8,14 @@ namespace native
 
 class thread_device_group_a2a_communicator :
         public typed_base_communicator<thread_device_group_a2a_communicator,
-                                       ccl::device_topology_type::a2a_thread_group,
+                                       ccl::device_group_split_type::process,
+                                       ccl::device_topology_type::a2a,
                                        ccl::gpu_communicator_traits>
 {
 public:
     using base_t = typed_base_communicator<thread_device_group_a2a_communicator,
-                                           ccl::device_topology_type::a2a_thread_group,
+                                           ccl::device_group_split_type::process,
+                                           ccl::device_topology_type::a2a,
                                            ccl::gpu_communicator_traits>;
 
     thread_device_group_a2a_communicator(ccl::unified_device_type&& device,

@@ -163,7 +163,7 @@ TEST_F(ipc_fixture, DISABLED_ipc_memory_test)
     for(auto &dev_it : device_modules)
     {
         ccl_device* dev = dev_it.first;
-        ccl_device::device_module& module = dev_it.second;
+        ccl_device::device_module& module = *dev_it.second;
 
         ze_kernel_handle_t handle = nullptr;
         try

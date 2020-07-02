@@ -17,12 +17,12 @@ TEST(MODULES, loading_kernels)
         myfile.open ("example.cl");
         myfile << "testfile\n";
     }
-    test_storage::instance().load_kernel_source<ccl_coll_allgatherv>("example.cl", ccl::device_topology_class::ring_class);
+    test_storage::instance().load_kernel_source<ccl_coll_allgatherv>("example.cl", ccl::device_topology_type::ring);
 
     bool success = false;
     try
     {
-        test_storage::instance().load_kernel_source<ccl_coll_allgatherv>("example.cl", ccl::device_topology_class::ring_class);
+        test_storage::instance().load_kernel_source<ccl_coll_allgatherv>("example.cl", ccl::device_topology_type::ring);
     }
     catch(const std::exception& ex)
     {
@@ -35,5 +35,5 @@ TEST(MODULES, loading_kernels)
         abort();
     }
 
-    test_storage::instance().load_kernel_source<ccl_coll_allgatherv>("example.cl", ccl::device_topology_class::a2a_class);
+    test_storage::instance().load_kernel_source<ccl_coll_allgatherv>("example.cl", ccl::device_topology_type::a2a);
 }

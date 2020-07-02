@@ -14,7 +14,7 @@ public:
 
     static constexpr type_idx_t idx()
     {
-        return impl::type_idx() - gpu_types::SCALE_UP_GPU;
+        return impl::type_idx() - gpu_types::SCALING_PROXY_GPU_TYPES;
     }
 
     template <class ...Args>

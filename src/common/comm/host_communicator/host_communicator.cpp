@@ -62,7 +62,13 @@ void host_communicator::visit(ccl::gpu_comm_attr& comm_attr)
     (void)(comm_attr);
 }
 
-ccl::device_topology_type host_communicator::get_topology_type() const
+ccl::device_group_split_type host_communicator::get_topology_type() const
+{
+    throw ccl::ccl_error(std::string(__FUNCTION__) + " is not applicable for " +
+                             traits::name());
+}
+
+ccl::device_topology_type host_communicator::get_topology_class() const
 {
     throw ccl::ccl_error(std::string(__FUNCTION__) + " is not applicable for " +
                              traits::name());
@@ -70,7 +76,7 @@ ccl::device_topology_type host_communicator::get_topology_type() const
 
 ccl::device_index_type host_communicator::get_device_path() const
 {
-    return ccl::device_index_type{ccl::unused_index_value, 
+    return ccl::device_index_type{ccl::unused_index_value,
                                   ccl::unused_index_value,
                                   ccl::unused_index_value};
 }

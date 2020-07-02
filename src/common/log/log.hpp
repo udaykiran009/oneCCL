@@ -311,6 +311,18 @@ do                                                                              
 } while(0)
 
 /**
+ * Helper macro to throw ccl::ccl_error exception. Must never be used in destructors
+ */
+#define CCL_THROW_WITH_ERROR(...)                                                               \
+do                                                                                   \
+{                                                                                    \
+    std::stringstream throw_msg_ss;                                                  \
+    ccl_logger::format(throw_msg_ss, __FILENAME__, ":", __FUNCTION__, ":", __LINE__, \
+        ": EXCEPTION: " , ##__VA_ARGS__);                                            \
+    LOG_ERROR("Error - ", ##__VA_ARGS__);                                                        \
+    throw ccl::ccl_error(throw_msg_ss.str());                                        \
+} while(0)
+/**
  * Helper macro to throw ccl::ccl_error exception if provided condition is not true.
  * Must never be used in destructors
  */

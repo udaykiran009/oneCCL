@@ -33,27 +33,27 @@ private:
 #ifdef MULTI_GPU_SUPPORT
 struct device_attr_impl
 {
-    constexpr static device_topology_class class_default()
+    constexpr static device_topology_type class_default()
     {
-        return device_topology_class::ring_class;
+        return device_topology_type::ring;
     }
-    constexpr static device_topology_group group_default()
+    constexpr static device_group_split_type group_default()
     {
-        return device_topology_group::thread_dev_group;
+        return device_group_split_type::process;
     }
 
-    device_topology_class set_attribute_value(device_topology_class preferred_topology);
-    device_topology_group set_attribute_value(device_topology_group preferred_topology);
+    device_topology_type set_attribute_value(device_topology_type preferred_topology);
+    device_group_split_type set_attribute_value(device_group_split_type preferred_topology);
 
-    const device_topology_class&
+    const device_topology_type&
         get_attribute_value(std::integral_constant<ccl_device_attributes,
                                                    ccl_device_attributes::ccl_device_preferred_topology_class> stub) const;
-    const device_topology_group&
+    const device_group_split_type&
         get_attribute_value(std::integral_constant<ccl_device_attributes,
                                                    ccl_device_attributes::ccl_device_preferred_group> stub) const;
 private:
-    device_topology_class current_preferred_topology_class = class_default();
-    device_topology_group current_preferred_topology_group = group_default();
+    device_topology_type current_preferred_topology_class = class_default();
+    device_group_split_type current_preferred_topology_group = group_default();
 };
 #endif
 }

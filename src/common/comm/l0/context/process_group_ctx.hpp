@@ -1,38 +1,43 @@
 #pragma once
 #include "common/comm/l0/context/thread_group_ctx.hpp"
+#include "common/comm/l0/context/scaling_ctx/numa_ctx.hpp"
+#include "common/comm/l0/context/scaling_ctx/scale_up_ctx.hpp"
+#include "common/comm/l0/context/scaling_ctx/scale_out_ctx.hpp"
 
-
+#include "common/comm/l0/topology/topology_declarations.hpp"
 namespace native
 {
 struct device_storage;
 
-template<ccl::device_topology_type>
-struct device_community;
-
 struct allied_process_group_scheduler;
+
 //TODO separate class on two: context & process device requestor
 struct process_group_context :
-        scale_up_ctx_specific<process_group_context>
+        numa_ctx<process_group_context, SUPPORTED_TOPOLOGY_CLASSES_DECL_LIST>,
+        scale_up_ctx<process_group_context, SUPPORTED_TOPOLOGY_CLASSES_DECL_LIST>,
+        scale_out_ctx<process_group_context, SUPPORTED_TOPOLOGY_CLASSES_DECL_LIST>
 {
-    using scaleup_context_base = scale_up_ctx_specific<process_group_context>;
+    using numa_context_base = numa_ctx<process_group_context, SUPPORTED_TOPOLOGY_CLASSES_DECL_LIST>;
+    using scaleup_context_base = scale_up_ctx<process_group_context, SUPPORTED_TOPOLOGY_CLASSES_DECL_LIST>;
+    using scaleout_context_base = scale_out_ctx<process_group_context, SUPPORTED_TOPOLOGY_CLASSES_DECL_LIST>;
 
     friend class device_group_ring_topology;
     friend class thread_group_ring_topology;
-    friend class allied_process_group_ring_topology;
+    friend class cluster_group_device_creator;
 
-    //TODO - quick fix
-    static constexpr int top_to_index(ccl::device_topology_type top)
+    static constexpr ccl::device_group_split_type group_id()
     {
-        return top == ccl::device_topology_type::allied_process_group_ring ? 0 :
-                        top == ccl::device_topology_type::process_group_torn_apart_ring ? 1 :
-                            top == ccl::device_topology_type::a2a_allied_process_group ? 2 : -1;
+        return ccl::device_group_split_type::cluster;
     }
-    using topologies = device_community_tuple_t<PROCESS_GROUP_TOPOLOGIES_DECL_LIST>;
+
+    using topologies =
+            device_group_community_holder<ccl::device_group_split_type::cluster,
+                                          SUPPORTED_TOPOLOGY_CLASSES_DECL_LIST>;
     using topologies_storage = std::map<size_t, topologies>;
-    using observable_scale_up_topologies = typename scaleup_context_base::observable_topologies<PROCESS_GROUP_TOPOLOGIES_DECL_LIST>;
 
     process_group_context(std::shared_ptr<ccl::communicator> communicator);
-    ~process_group_context();
+    virtual //TODO use stub
+        ~process_group_context();
 
     bool sync_barrier(const ccl::device_indices_t& thread_device_indices,
                       ccl::context_comm_addr& comm_addr);
@@ -42,18 +47,20 @@ struct process_group_context :
 
     std::shared_ptr<thread_group_context> get_thread_context(size_t process_id);
 
-    template<ccl::device_topology_type topology_type>
-    typename std::tuple_element<top_to_index(topology_type), topologies>::type
+    template<ccl::device_topology_type class_id>
+    typename std::tuple_element<class_id,
+                                typename topologies::device_topologies_t>::type &
              get_process_topology(size_t process_id, size_t thread_id)
     {
-        //return get_process_topology<ccl::topology_to_class<topology_type>()>(process_id, thread_id);
         auto it = process_device_topology.find(thread_id);
         if(it == process_device_topology.end())
         {
             LOG_ERROR("Cannot find device group for process: ", process_id, ", thread: ", thread_id, ". Empty topology");
-            return {};
+            static typename std::tuple_element<class_id,
+                                typename topologies::device_topologies_t>::type empty;
+            return empty;
         }
-        return std::get<top_to_index(topology_type)>(it->second);
+        return it->second.get_community<class_id>();
     }
 
     const ccl::cluster_aggregated_device_mask_t& get_afinity_mask() const;
@@ -83,37 +90,16 @@ struct process_group_context :
     void dump_process_topologies(std::ostream& out) const;
     std::unique_ptr<allied_process_group_scheduler> scheduler_impl;
 
+    numa_context_base& get_numa_ctx();
+    const numa_context_base& get_numa_ctx() const;
+    scaleup_context_base& get_scaleup_ctx();
+    const scaleup_context_base& get_scaleup_ctx() const;
+    scaleout_context_base& get_scaleout_ctx();
+    const scaleout_context_base& get_scaleout_ctx() const;
 
-//observer subject interface implementations
-    void attach_scaleup_proxy_observer(proxy_observer<ccl_gpu_scaleup_proxy<ccl_gpu_comm>>* observer,
-                                       std::integral_constant<ccl::device_topology_type,
-                                                              ccl::device_topology_type::allied_process_group_ring> val);
-    void attach_scaleup_proxy_observer(proxy_observer<ccl_gpu_scaleup_proxy<ccl_virtual_gpu_comm>>* observer,
-                                       std::integral_constant<ccl::device_topology_type,
-                                                              ccl::device_topology_type::allied_process_group_ring> val);
-
-    void attach_scaleup_proxy_observer(proxy_observer<ccl_gpu_scaleup_proxy<ccl_gpu_comm>>* observer,
-                                       std::integral_constant<ccl::device_topology_type,
-                                                              ccl::device_topology_type::process_group_torn_apart_ring> val);
-    void attach_scaleup_proxy_observer(proxy_observer<ccl_gpu_scaleup_proxy<ccl_virtual_gpu_comm>>* observer,
-                                       std::integral_constant<ccl::device_topology_type,
-                                                              ccl::device_topology_type::process_group_torn_apart_ring> val);
-
-
-    void invoke_scaleup_proxy_observer(proxy_observer<ccl_gpu_scaleup_proxy<ccl_gpu_comm>>* observer,
-                                       std::integral_constant<ccl::device_topology_type,
-                                                              ccl::device_topology_type::allied_process_group_ring> val);
-    void invoke_scaleup_proxy_observer(proxy_observer<ccl_gpu_scaleup_proxy<ccl_virtual_gpu_comm>>* observer,
-                                       std::integral_constant<ccl::device_topology_type,
-                                                              ccl::device_topology_type::allied_process_group_ring> val);
-
-    void invoke_scaleup_proxy_observer(proxy_observer<ccl_gpu_scaleup_proxy<ccl_gpu_comm>>* observer,
-                                       std::integral_constant<ccl::device_topology_type,
-                                                              ccl::device_topology_type::process_group_torn_apart_ring> val);
-    void invoke_scaleup_proxy_observer(proxy_observer<ccl_gpu_scaleup_proxy<ccl_virtual_gpu_comm>>* observer,
-                                       std::integral_constant<ccl::device_topology_type,
-                                                              ccl::device_topology_type::process_group_torn_apart_ring> val);
-
+    virtual /*TODO use stub*/
+    void collect_cluster_colored_plain_graphs(const details::colored_plain_graph_list& send_graph,
+                                              details::global_sorted_colored_plain_graphs& received_graphs);
 private:
     bool delegate_sync(const ccl::device_indices_t& thread_device_indices,
                        ccl::context_comm_addr& comm_addr);
@@ -126,21 +112,10 @@ private:
     ccl::host_id my_host_name;
     ccl::cluster_aggregated_device_mask_t global_mask;
     ccl::cluster_device_indices_t cluster_gpu_indices;
-    size_t cluster_device_rank_offset;
-    size_t cluster_device_size;
 
     std::unique_ptr<device_storage>                                     gpu_device_storage;
     topologies_storage                                                  process_device_topology;
-    observable_scale_up_topologies                                      observables;
 
-    template<ccl::device_topology_type topology_type,
-             class device_t>
-    void register_observer_impl(proxy_observer<ccl_gpu_scaleup_proxy<device_t>>* observer)
-    {
-        auto &topologu_specific_observers = std::get<top_to_index(topology_type)>(observables);
-        observers_container_t<device_t>& container = std::get<device_t::type_idx()>(topologu_specific_observers);
-        container.insert(observer);
-    }
     size_t process_idx;         //cached
     size_t process_count;     //cached
 };

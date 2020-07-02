@@ -4,6 +4,8 @@
 /* sycl-specific base implementation and its help functions */
 #include <iostream>
 #include <string>
+#include <iostream>
+#include <string>
 
 #include <CL/sycl.hpp>
 #include "ccl.hpp"
@@ -67,11 +69,11 @@ inline int create_sycl_queue(int argc, char **argv, cl::sycl::queue &queue, ccl_
         else if (strcmp(argv[1], "gpu") == 0)
         {
             stream_type = ccl_stream_gpu;
-            if (has_gpu()) 
+            if (has_gpu())
             {
                 selector.reset(new cl::sycl::gpu_selector());
             }
-            else if (has_accelerator()) 
+            else if (has_accelerator())
             {
                 selector.reset(new cl::sycl::host_selector());
                 std::cout << "Accelerator is the first in device list, but unavailable for multiprocessing, host_selector has been created instead of default_selector." << std::endl;

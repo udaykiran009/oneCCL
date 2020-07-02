@@ -1,5 +1,6 @@
 #pragma once
 #include "../topology_utils.hpp"
+#include "common/comm/l0/topology/topology_serializer.hpp"
 
 namespace topology_suite
 {

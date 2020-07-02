@@ -26,7 +26,7 @@ uint32_t get_driver_properties(ccl_device_driver::handle_t handle)
     //TODO only 0 index in implemented in L0
     return 0;
 }
- 
+
 ccl_device_driver::indexed_driver_handles ccl_device_driver::get_handles(const ccl::device_indices_t& requested_driver_indexes/* = indices()*/)
 {
     uint32_t driver_count = 0;
@@ -49,9 +49,9 @@ ccl_device_driver::indexed_driver_handles ccl_device_driver::get_handles(const c
     indexed_driver_handles ret;
     try
     {
-        ret = 
+        ret =
             detail::collect_indexed_data<ccl::device_index_enum::driver_index_id>(
-                                        requested_driver_indexes, 
+                                        requested_driver_indexes,
                                         handles,
                                         std::bind(get_driver_properties,
                                                    std::placeholders::_1));
@@ -152,7 +152,7 @@ ze_driver_properties_t ccl_device_driver::get_properties() const
     }
     return driver_properties;
 }
- 
+
 CCL_API
 const ccl_device_driver::devices_storage_type& ccl_device_driver::get_devices() const noexcept
 {
@@ -169,6 +169,7 @@ CCL_API ccl_device_driver::const_device_ptr ccl_device_driver::get_device(const 
     ccl::index_type driver_idx = std::get<ccl::device_index_enum::driver_index_id>(path);
     if (driver_idx != get_driver_id())
     {
+        assert(false && "incorrect driver requested");
         throw std::runtime_error(std::string(__PRETTY_FUNCTION__) + " - incorrect driver requested, expected: " +
                                  std::to_string(get_driver_id()) + ", requested: " +
                                  ccl::to_string(path));
@@ -178,6 +179,7 @@ CCL_API ccl_device_driver::const_device_ptr ccl_device_driver::get_device(const 
     auto device_it = devices.find(device_index);
     if (device_it == devices.end())
     {
+        assert(false && "incorrect device index requested");
         throw std::runtime_error(std::string(__PRETTY_FUNCTION__) + " - incorrect device index requested: " +
                                  ccl::to_string(path) + ". Total devices count: " + std::to_string(devices.size()));
     }
@@ -245,16 +247,17 @@ void CCL_API ccl_device_driver::on_delete(ze_device_handle_t& sub_device_handle)
     //todo
 }
 
-std::string CCL_API ccl_device_driver::to_string() const
+std::string CCL_API ccl_device_driver::to_string(const std::string& prefix) const
 {
     std::stringstream out;
-    out << "Driver:\n{";
+    out << prefix << "Driver:\n" << prefix << "{\n";
+    std::string device_prefix = prefix + "\t";
+    out << prefix  << "devices count: " << devices.size() << std::endl;
     for(const auto &device_pair : devices)
     {
-        out << "\n[\nIndex: " << device_pair.first << std::endl;
-        out << *device_pair.second <<  "\n],";
+        out << device_pair.second->to_string(device_prefix);
     }
-    out << "\n},\n";
+    out << "\n" << prefix << "},\n";
     return out.str();
 }
 

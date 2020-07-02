@@ -3,7 +3,7 @@
 
 template<class VType, class IType,
          template<class> class IndicesDistributorType = sparse_detail::incremental_indices_distributor>
-struct cpu_sparse_allreduce_coll : 
+struct cpu_sparse_allreduce_coll :
         base_sparse_allreduce_coll<VType*, IType*, IndicesDistributorType>
 {
     using coll_base = base_sparse_allreduce_coll<VType*, IType*, IndicesDistributorType>;

@@ -107,7 +107,7 @@ TEST_F(allreduce_one_device_multi_tile_local_fixture, allreduce_multi_tile_one_d
     for(auto dev_it = subdevices.begin(); dev_it != subdevices.end(); ++dev_it)
     {
         ccl_subdevice& device = *(dev_it->second);
-        ccl_device::device_module& module  = device_modules.find(&device)->second;
+        ccl_device::device_module& module  = *(device_modules.find(&device)->second);
 
         ze_kernel_handle_t handle = nullptr;
         try
