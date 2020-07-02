@@ -103,10 +103,13 @@ public:
         ze_module_handle_t handle;
         std::string descr;
 
+        size_t module_hash_val = module_hash(module_type, group_id, class_id);
+        LOG_DEBUG("Module hash for \"", ccl_coll_type_to_str(module_type),
+                  "\", \"", ::to_string(group_id),
+                  "\", \"", ::to_string(class_id),
+                  "\", is: ", module_hash_val);
         std::tie(ret, handle, descr) = create_module_handle(module_data,
-                                                            module_hash(module_type,
-                                                                        group_id,
-                                                                        class_id));
+                                                            module_hash_val);
         if (!ret)
         {
             std::string err_str;

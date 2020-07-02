@@ -135,10 +135,10 @@ CCL_API generic_device_type<CCL_ENABLE_SYCL_TRUE>::generic_device_type(device_in
 {
     LOG_DEBUG("Try to find SYCL device by index: ", id, ", type: ",
               static_cast<typename std::underlying_type<cl::sycl::info::device_type>::type>(type));
-              
+
     auto platforms = cl::sycl::platform::get_platforms();
     LOG_DEBUG("Found CL plalforms: ", platforms.size());
-    auto platform_it = 
+    auto platform_it =
             std::find_if(platforms.begin(), platforms.end(),
                         [](const cl::sycl::platform& pl)
                         {
@@ -156,11 +156,11 @@ CCL_API generic_device_type<CCL_ENABLE_SYCL_TRUE>::generic_device_type(device_in
                << "\nname: " << pl.get_info<cl::sycl::info::platform::name>()
                << "\nvendor: " << pl.get_info<cl::sycl::info::platform::vendor>();
         }
-        
-        throw std::runtime_error(std::string("Cannot find device by id: ") + ccl::to_string(id) + 
+
+        throw std::runtime_error(std::string("Cannot find device by id: ") + ccl::to_string(id) +
                                  ", reason:\n" + ss.str());
     }
-    
+
     LOG_DEBUG("Platform:\nprofile: ", platform_it->get_info<cl::sycl::info::platform::profile>(),
               "\nversion: ", platform_it->get_info<cl::sycl::info::platform::version>(),
               "\nname: ", platform_it->get_info<cl::sycl::info::platform::name>(),
@@ -183,8 +183,8 @@ CCL_API generic_device_type<CCL_ENABLE_SYCL_TRUE>::generic_device_type(device_in
                << "\nversion: " << dev.get_info<cl::sycl::info::device::version>()
                << "\nprofile: " << dev.get_info<cl::sycl::info::device::profile>();
         }
-        
-        throw std::runtime_error(std::string("Cannot find device by id: ") + ccl::to_string(id) + 
+
+        throw std::runtime_error(std::string("Cannot find device by id: ") + ccl::to_string(id) +
                                  ", reason:\n" + ss.str());
     }
     device = *it;
@@ -256,7 +256,16 @@ generic_device_context_type<CCL_ENABLE_SYCL_FALSE>::native_const_reference_t
 
 struct group_context
 {
-    using group_unique_key = std::shared_ptr<ccl_comm>;
+    /* TODO
+     * In multithreading scenario we use different comm_group_t objects in different threads.
+     * But we need to match different groups created for the same world in different threads
+     * The assumption is done: if different groups created from the same communicator color, than they
+     * should be interpreted as the same groups in the same world.
+     *
+     *
+     * In the final solution the 'group_unique_key' should be equal to unique KVS idenditifier
+     */
+    using group_unique_key = typename ccl::ccl_host_attributes_traits<ccl_host_color>::type;
     std::map<group_unique_key, comm_group_t> communicator_group_map;
 
     ccl_spinlock mutex;
@@ -317,11 +326,8 @@ CCL_API ccl::comm_group_t ccl::environment::create_comm_group(size_t current_dev
             throw ccl::ccl_error(std::string(__FUNCTION__) + " - failed, invalid host communicator type");
         }
 
-        group_context::group_unique_key unique_id = host_comm_impl->comm_impl;
-        if (!unique_id)
-        {
-            throw ccl::ccl_error(std::string(__FUNCTION__) + " - failed, host communicator is empty");
-        }
+        group_context::group_unique_key unique_id =
+                    host_comm_impl->get_host_attr()->get_value<ccl_host_color>();
 
         std::unique_lock<ccl_spinlock> lock(global_ctx.mutex);
         auto ctx_it = global_ctx.communicator_group_map.find(unique_id);

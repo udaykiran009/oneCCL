@@ -12,11 +12,9 @@ inline std::size_t module_hash(ccl_coll_type module_type,
                                ccl::device_group_split_type group_id,
                                ccl::device_topology_type class_id )
 {
-    std::size_t h1 = std::hash<std::size_t>{}(module_type);
-    std::size_t h2 = std::hash<std::size_t>{}(group_id);
-    std::size_t h3 = std::hash<std::size_t>{}(class_id);
-    std::size_t h_mix = (h1 ^ (h2 << 1)) ^ (h3 << 1);
-    return h_mix;
+    std::string str = std::string(ccl_coll_type_to_str(module_type)) + "," +
+                      ::to_string(group_id) + ::to_string(class_id);
+    return std::hash<std::string>{}(str);
 }
 
 template<class communicator_type>
@@ -69,7 +67,8 @@ private:
     void load_module_impl(const source_data_t& module_data)
     {
         LOG_DEBUG("Started loading module \"", ccl_coll_type_to_str(module_type),
-                  "\" for: ", communicator_type::name_impl())
+                  "\" for topology: \"", ::to_string(class_id),
+                  "\", for: ", communicator_type::name_impl())
 
         ze_module_desc_t module_description;
         module_description.version = ZE_MODULE_DESC_VERSION_CURRENT;
@@ -94,7 +93,8 @@ private:
                                               std::string("\nLoading log:\n"));
         }
         LOG_DEBUG("Finished loading module \"", ccl_coll_type_to_str(module_type),
-                  "\"  for: ", communicator_type::name_impl(), accumulated_log);
+                  "\" for topology: \"", ::to_string(class_id),
+                  "\" for: ", communicator_type::name_impl(), accumulated_log);
     }
 };
 }

@@ -188,6 +188,7 @@ protected:
         {
             ze_result_t result;
             //TODO L0 Workaround
+            if (!is_kernel_added)
             {
                 std::unique_lock<std::mutex> lock(global_mutex);
                 exec_count++;
@@ -200,6 +201,10 @@ protected:
                         LOG_ERROR("zeCommandListAppendLaunchKernel failed, error: ", to_string(result));
                         throw std::runtime_error("zeCommandListAppendLaunchKernel failed");
                     }
+                is_kernel_added = true;
+
+                LOG_DEBUG("entry: ", class_name(), ", rank: ", comm_addr.to_string(),
+                      ". Kernel added: ", main_entry_function.to_string(), " in list");
             }
 
             while(exec_count < registered_thread.size()) {}
@@ -232,10 +237,16 @@ protected:
                         throw std::runtime_error("zeCommandListClose failed");
                     }
                 }
-            }
 
-            LOG_INFO("entry: ", class_name(), ", rank: ", comm_addr.to_string(), " finalized!");
-            return true;
+                LOG_INFO("entry: ", class_name(), ", rank: ", comm_addr.to_string(), " finalized!");
+                return true;
+            }
+            else if(cur_index > wait_count)
+            {
+                LOG_INFO("L0 Workaround: one device should close list before!!! ", "WaitCount: ", wait_count, ", ExecCount: ", exec_count, ", CurIndex: ", cur_index);
+                LOG_INFO("entry: ", class_name(), ", rank: ", comm_addr.to_string(), " finalized!");
+                return true;
+            }
         }
         return false;
     }
@@ -247,6 +258,9 @@ protected:
     }
 
 private:
+
+    bool is_kernel_added = false;       //TODO L0 workaround - one dev close list
+
     ccl_device::device_memory<native_type>                      temp_buffer;
     ccl_device::device_memory<income_data_flag_gpu_type>        income_data_flag;
     ccl_device::device_memory<ready_to_recv_flag_gpu_type>      ready_to_recv_flag;
@@ -262,6 +276,13 @@ public:
                                                                      typename kernel_main_typed::ready_to_recv_flag_arg>();
         if(is_right_kernel_ready)
         {
+            if (is_kernel_added)
+            {
+                LOG_DEBUG("entry: ", class_name(), ", rank: ", comm_addr.to_string(),
+                      ". Function: ", main_entry_function.to_string(), " - binded already");
+                return true;
+            }
+
             //TODO do not get arguments sequencially - use array version instead
             typename kernel_main_typed::tmp_recv_buf_arg::return_t right_tmp_recv_buf_arg =
                                                 right_kernel.template get_arg<typename kernel_main_typed::tmp_recv_buf_arg>();
@@ -286,6 +307,7 @@ public:
 
             LOG_DEBUG("entry: ", class_name(), ", rank: ", comm_addr.to_string(),
                       ". Function: ", main_entry_function.to_string());
+
         }
         return is_right_kernel_ready;
     }
@@ -298,6 +320,13 @@ public:
                                                                      typename kernel_ipc_typed::ready_to_recv_flag_arg>();
         if(is_right_kernel_ready)
         {
+            if (is_kernel_added)
+            {
+                LOG_DEBUG("entry: ", class_name(), ", rank: ", comm_addr.to_string(),
+                      ". Function: ", main_entry_function.to_string(), " - binded already");
+                return true;
+            }
+
             //TODO do not get arguments sequencially - use array version instead
             typename kernel_main_typed::tmp_recv_buf_arg::return_t right_tmp_recv_buf_arg
                                         =   right_kernel.template get_arg<typename kernel_ipc_typed::tmp_recv_buf_arg>();
