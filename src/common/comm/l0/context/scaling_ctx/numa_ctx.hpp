@@ -1,26 +1,23 @@
 #pragma once
 #include "common/comm/l0/context/base_scaling_ctx.hpp"
 
-namespace native
-{
+namespace native {
 
 class ccl_gpu_comm;
 class ccl_virtual_gpu_comm;
 
-template<class device>
+template <class device>
 class ccl_numa_proxy;
 
-template<class Impl, ccl::device_topology_type ...types>
+template <class Impl, ccl::device_topology_type... types>
 class numa_ctx : public observer::base_scaling_ctx<numa_ctx<Impl, types...>,
                                                    ccl_numa_proxy<ccl_gpu_comm>,
-                                                   ccl_numa_proxy<ccl_virtual_gpu_comm>>
-{
+                                                   ccl_numa_proxy<ccl_virtual_gpu_comm>> {
 public:
-
     static_assert(sizeof...(types), "types must be not 0");
     using context_impl = Impl;
 
-    template<class device_t>
+    template <class device_t>
     using observer_t = ccl_numa_proxy<device_t>;
 
     using scaling_ctx_base_t = observer::base_scaling_ctx<numa_ctx<Impl, types...>,
@@ -28,35 +25,32 @@ public:
                                                           observer_t<ccl_virtual_gpu_comm>>;
 
     using observable_scale_up_topologies =
-            typename scaling_ctx_base_t::template observable_topologies<types...>;
+        typename scaling_ctx_base_t::template observable_topologies<types...>;
 
-    observable_scale_up_topologies                                    observables;
-
+    observable_scale_up_topologies observables;
 
     //observer subject interface implementations
-    template<class device_t, ccl::device_topology_type topology_type>
+    template <class device_t, ccl::device_topology_type topology_type>
     void attach_ctx_observer(observer_t<device_t>* observer_ptr,
-                                       std::integral_constant<ccl::device_topology_type,
-                                                              topology_type> val)
-    {
+                             std::integral_constant<ccl::device_topology_type, topology_type> val) {
         register_observer_impl<topology_type>(observer_ptr);
     }
 
-    void invoke_ctx_observer(observer_t<ccl_gpu_comm>* observer_ptr,
-                                       std::integral_constant<ccl::device_topology_type,
-                                                              ccl::device_topology_type::ring> val);
-    void invoke_ctx_observer(observer_t<ccl_virtual_gpu_comm>* observer_ptr,
-                                       std::integral_constant<ccl::device_topology_type,
-                                                              ccl::device_topology_type::ring> val);
-    void invoke_ctx_observer(observer_t<ccl_gpu_comm>* observer_ptr,
-                                       std::integral_constant<ccl::device_topology_type,
-                                                              ccl::device_topology_type::a2a> val);
-    void invoke_ctx_observer(observer_t<ccl_virtual_gpu_comm>* observer_ptr,
-                                       std::integral_constant<ccl::device_topology_type,
-                                                              ccl::device_topology_type::a2a> val);
+    void invoke_ctx_observer(
+        observer_t<ccl_gpu_comm>* observer_ptr,
+        std::integral_constant<ccl::device_topology_type, ccl::device_topology_type::ring> val);
+    void invoke_ctx_observer(
+        observer_t<ccl_virtual_gpu_comm>* observer_ptr,
+        std::integral_constant<ccl::device_topology_type, ccl::device_topology_type::ring> val);
+    void invoke_ctx_observer(
+        observer_t<ccl_gpu_comm>* observer_ptr,
+        std::integral_constant<ccl::device_topology_type, ccl::device_topology_type::a2a> val);
+    void invoke_ctx_observer(
+        observer_t<ccl_virtual_gpu_comm>* observer_ptr,
+        std::integral_constant<ccl::device_topology_type, ccl::device_topology_type::a2a> val);
+
 private:
-    template<ccl::device_topology_type topology_type,
-             class device_t>
+    template <ccl::device_topology_type topology_type, class device_t>
     void register_observer_impl(observer_t<device_t>* observer_ptr);
 };
-}
+} // namespace native

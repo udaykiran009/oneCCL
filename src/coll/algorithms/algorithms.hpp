@@ -90,41 +90,50 @@ ccl_status_t ccl_coll_build_naive_allgatherv(ccl_sched* sched,
                                              const ccl_datatype& dtype,
                                              ccl_comm* comm);
 
-template<typename i_type, typename v_type>
-ccl_status_t
-ccl_coll_build_sparse_allreduce_ring(ccl_sched* sched,
-                                     ccl_buffer send_ind_buf, size_t send_ind_count,
-                                     ccl_buffer send_val_buf, size_t send_val_count,
-                                     void** recv_ind_buf, size_t* recv_ind_count,
-                                     void** recv_val_buf, size_t* recv_val_count,
-                                     const ccl_datatype& index_dtype,
-                                     const ccl_datatype& value_dtype,
-                                     ccl_reduction_t reduction,
-                                     ccl_comm* comm);
+template <typename i_type, typename v_type>
+ccl_status_t ccl_coll_build_sparse_allreduce_ring(ccl_sched* sched,
+                                                  ccl_buffer send_ind_buf,
+                                                  size_t send_ind_count,
+                                                  ccl_buffer send_val_buf,
+                                                  size_t send_val_count,
+                                                  void** recv_ind_buf,
+                                                  size_t* recv_ind_count,
+                                                  void** recv_val_buf,
+                                                  size_t* recv_val_count,
+                                                  const ccl_datatype& index_dtype,
+                                                  const ccl_datatype& value_dtype,
+                                                  ccl_reduction_t reduction,
+                                                  ccl_comm* comm);
 
-template<typename i_type, typename v_type>
-ccl_status_t
-ccl_coll_build_sparse_allreduce_mask(ccl_sched* sched,
-                                     ccl_buffer send_ind_buf, size_t send_ind_count,
-                                     ccl_buffer send_val_buf, size_t send_val_count,
-                                     void** recv_ind_buf, size_t* recv_ind_count,
-                                     void** recv_val_buf, size_t* recv_val_count,
-                                     const ccl_datatype& index_dtype,
-                                     const ccl_datatype& value_dtype,
-                                     ccl_reduction_t reduction,
-                                     ccl_comm* comm);
+template <typename i_type, typename v_type>
+ccl_status_t ccl_coll_build_sparse_allreduce_mask(ccl_sched* sched,
+                                                  ccl_buffer send_ind_buf,
+                                                  size_t send_ind_count,
+                                                  ccl_buffer send_val_buf,
+                                                  size_t send_val_count,
+                                                  void** recv_ind_buf,
+                                                  size_t* recv_ind_count,
+                                                  void** recv_val_buf,
+                                                  size_t* recv_val_count,
+                                                  const ccl_datatype& index_dtype,
+                                                  const ccl_datatype& value_dtype,
+                                                  ccl_reduction_t reduction,
+                                                  ccl_comm* comm);
 
-template<typename i_type, typename v_type>
-ccl_status_t
-ccl_coll_build_sparse_allreduce_3_allgatherv(ccl_sched* sched,
-                                             ccl_buffer send_ind_buf, size_t send_ind_count,
-                                             ccl_buffer send_val_buf, size_t send_val_count,
-                                             void** recv_ind_buf, size_t* recv_ind_count,
-                                             void** recv_val_buf, size_t* recv_val_count,
-                                             const ccl_datatype& index_dtype,
-                                             const ccl_datatype& value_dtype,
-                                             ccl_reduction_t reduction,
-                                             ccl_comm* comm);
+template <typename i_type, typename v_type>
+ccl_status_t ccl_coll_build_sparse_allreduce_3_allgatherv(ccl_sched* sched,
+                                                          ccl_buffer send_ind_buf,
+                                                          size_t send_ind_count,
+                                                          ccl_buffer send_val_buf,
+                                                          size_t send_val_count,
+                                                          void** recv_ind_buf,
+                                                          size_t* recv_ind_count,
+                                                          void** recv_val_buf,
+                                                          size_t* recv_val_count,
+                                                          const ccl_datatype& index_dtype,
+                                                          const ccl_datatype& value_dtype,
+                                                          ccl_reduction_t reduction,
+                                                          ccl_comm* comm);
 
 class ccl_double_tree;
 ccl_status_t ccl_coll_build_double_tree_op(ccl_sched* sched,
@@ -153,26 +162,23 @@ ccl_status_t ccl_coll_build_ring_allgatherv(ccl_sched* sched,
                                             const ccl_datatype& dtype,
                                             ccl_comm* comm);
 
-ccl_status_t
-ccl_coll_build_naive_alltoallv(ccl_master_sched* main_sched,
-                               std::vector<ccl_sched*>& scheds,
-                               const ccl_coll_param& coll_param);
+ccl_status_t ccl_coll_build_naive_alltoallv(ccl_master_sched* main_sched,
+                                            std::vector<ccl_sched*>& scheds,
+                                            const ccl_coll_param& coll_param);
 
-ccl_status_t
-ccl_coll_build_scatter_alltoallv(ccl_master_sched* main_sched,
-                                 std::vector<ccl_sched*>& scheds,
-                                 const ccl_coll_param& coll_param);
+ccl_status_t ccl_coll_build_scatter_alltoallv(ccl_master_sched* main_sched,
+                                              std::vector<ccl_sched*>& scheds,
+                                              const ccl_coll_param& coll_param);
 
-ccl_status_t
-ccl_coll_build_scatter_barrier_alltoallv(ccl_master_sched* main_sched,
-                                         std::vector<ccl_sched*>& scheds,
-                                         const ccl_coll_param& coll_param);
+ccl_status_t ccl_coll_build_scatter_barrier_alltoallv(ccl_master_sched* main_sched,
+                                                      std::vector<ccl_sched*>& scheds,
+                                                      const ccl_coll_param& coll_param);
 
 /* direct algorithms - i.e. direct mapping on collective API from transport level */
 
-ccl_status_t ccl_coll_build_direct_barrier(ccl_sched *sched, ccl_comm* comm);
+ccl_status_t ccl_coll_build_direct_barrier(ccl_sched* sched, ccl_comm* comm);
 
-ccl_status_t ccl_coll_build_direct_reduce(ccl_sched *sched,
+ccl_status_t ccl_coll_build_direct_reduce(ccl_sched* sched,
                                           ccl_buffer send_buf,
                                           ccl_buffer recv_buf,
                                           size_t count,
@@ -189,7 +195,7 @@ ccl_status_t ccl_coll_build_direct_allgatherv(ccl_sched* sched,
                                               const ccl_datatype& dtype,
                                               ccl_comm* comm);
 
-ccl_status_t ccl_coll_build_direct_allreduce(ccl_sched *sched,
+ccl_status_t ccl_coll_build_direct_allreduce(ccl_sched* sched,
                                              ccl_buffer send_buf,
                                              ccl_buffer recv_buf,
                                              size_t count,
@@ -197,7 +203,7 @@ ccl_status_t ccl_coll_build_direct_allreduce(ccl_sched *sched,
                                              ccl_reduction_t reduction,
                                              ccl_comm* comm);
 
-ccl_status_t ccl_coll_build_direct_alltoall(ccl_sched *sched,
+ccl_status_t ccl_coll_build_direct_alltoall(ccl_sched* sched,
                                             ccl_buffer send_buf,
                                             ccl_buffer recv_buf,
                                             size_t count,
@@ -212,7 +218,7 @@ ccl_status_t ccl_coll_build_direct_alltoallv(ccl_sched* sched,
                                              const ccl_datatype& dtype,
                                              ccl_comm* comm);
 
-ccl_status_t ccl_coll_build_direct_bcast(ccl_sched *sched,
+ccl_status_t ccl_coll_build_direct_bcast(ccl_sched* sched,
                                          ccl_buffer buf,
                                          size_t count,
                                          const ccl_datatype& dtype,

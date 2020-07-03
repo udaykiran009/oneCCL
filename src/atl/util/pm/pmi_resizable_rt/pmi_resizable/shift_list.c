@@ -3,12 +3,10 @@
 
 #include "shift_list.h"
 
-void shift_list_clean(shift_list_t** list)
-{
+void shift_list_clean(shift_list_t** list) {
     shift_list_t* cur_list = (*list);
     shift_list_t* node_to_remove;
-    while (cur_list != NULL)
-    {
+    while (cur_list != NULL) {
         node_to_remove = cur_list;
         cur_list = cur_list->next;
         free(node_to_remove);
@@ -16,16 +14,13 @@ void shift_list_clean(shift_list_t** list)
     (*list) = NULL;
 }
 
-void shift_list_add(shift_list_t** list, size_t old, size_t new, change_type_t type)
-{
+void shift_list_add(shift_list_t** list, size_t old, size_t new, change_type_t type) {
     shift_list_t* cur_list;
-    if ((*list) == NULL)
-    {
+    if ((*list) == NULL) {
         (*list) = (shift_list_t*)malloc(sizeof(shift_list_t));
         cur_list = (*list);
     }
-    else
-    {
+    else {
         cur_list = (*list);
         while (cur_list->next != NULL)
             cur_list = cur_list->next;

@@ -2,16 +2,13 @@
 #include "common/comm/compiler_comm_interface_dispatcher.hpp"
 #include "types_generator_defines.hpp"
 
-namespace native
-{
-    struct ccl_device;
+namespace native {
+struct ccl_device;
 }
 
-namespace ccl
-{
+namespace ccl {
 struct gpu_comm_attr;
-struct communicator_interface : public communicator_interface_dispatcher
-{
+struct communicator_interface : public communicator_interface_dispatcher {
     virtual ~communicator_interface() = default;
 
     virtual size_t rank() const = 0;
@@ -88,4 +85,4 @@ struct communicator_interface : public communicator_interface_dispatcher
                                             cl::sycl::buffer<ccl::bfp16 COMMA 1>);
 #endif //CCL_ENABLE_SYCL
 };
-}
+} // namespace ccl

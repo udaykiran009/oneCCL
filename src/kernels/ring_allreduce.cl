@@ -4,17 +4,13 @@
 //#define KERNEL_DEBUG
 #ifdef KERNEL_DEBUG
 
-#define LOG_INPUT_DATA_START(kern_id) \
-    printf("Kernel %zu, wait income data \n", kern_id)
+#define LOG_INPUT_DATA_START(kern_id) printf("Kernel %zu, wait income data \n", kern_id)
 
-#define LOG_INPUT_DATA_END(kern_id) \
-    printf("Kernel %zu, received data \n", kern_id)
+#define LOG_INPUT_DATA_END(kern_id) printf("Kernel %zu, received data \n", kern_id)
 
-#define LOG_OUTGOING_DATA_START(kern_id) \
-    printf("Kernel %zu, wait signal to send\n", kern_id)
+#define LOG_OUTGOING_DATA_START(kern_id) printf("Kernel %zu, wait signal to send\n", kern_id)
 
-#define LOG_OUTGOING_DATA_END(kern_id) \
-    printf("Kernel %zu, received signal to send\n", kern_id)
+#define LOG_OUTGOING_DATA_END(kern_id) printf("Kernel %zu, received signal to send\n", kern_id)
 
 #define LOG_SEND_PROGRESS(kern_id, thread_id, flag, desired) \
     printf("Kernel %zu.%d, send %d/%d\n", kern_id, thread_id, flag, desired)
@@ -37,10 +33,9 @@
 
 #endif
 
-#define PUT_READY_TO_RECEIVE(_sync_flag)             \
-    if(thread_id == 0)                               \
-    {                                                \
-        (*_sync_flag)++;                                \
+#define PUT_READY_TO_RECEIVE(_sync_flag) \
+    if (thread_id == 0) { \
+        (*_sync_flag)++; \
     }
 /*
 #define PUT_READY_TO_RECEIVE(_sync_flag)             \
@@ -50,11 +45,9 @@
     }
 */
 
-
-#define I_SENT(_sync_flag)                          \
-    if(thread_id == 0)                              \
-    {                                               \
-        (*_sync_flag)++;                               \
+#define I_SENT(_sync_flag) \
+    if (thread_id == 0) { \
+        (*_sync_flag)++; \
     }
 /*
 #define I_SENT(_sync_flag)                          \
@@ -65,20 +58,16 @@
 */
 //int _old_value = atomic_cmpxchg(_sync_flag, _desired, _desired);
 
-
-#define WAIT_INPUT_DATA(_sync_flag, _desired)                                       \
-    if(thread_id == 0)                                                              \
-    {                                                                               \
-        LOG_INPUT_DATA_START(my_rank);                                              \
-        while(1)                                                                    \
-        {                                                                           \
-            if(*_sync_flag == _desired)                                              \
-            {                                                                       \
-                LOG_INPUT_DATA_END(my_rank);                                        \
-                ++_desired;                                                         \
-                break;                                                              \
-            }                                                                       \
-        }                                                                           \
+#define WAIT_INPUT_DATA(_sync_flag, _desired) \
+    if (thread_id == 0) { \
+        LOG_INPUT_DATA_START(my_rank); \
+        while (1) { \
+            if (*_sync_flag == _desired) { \
+                LOG_INPUT_DATA_END(my_rank); \
+                ++_desired; \
+                break; \
+            } \
+        } \
     }
 
 /*
@@ -99,14 +88,13 @@
     }
 */
 
-
-#define WAIT_SIGNAL_TO_SEND(_sync_flag, _desired)                                   \
-    if(thread_id == 0)                                                              \
-    {                                                                               \
-        LOG_OUTGOING_DATA_START(my_rank);                                           \
-        while(_desired != *_sync_flag) {};                                           \
-        LOG_OUTGOING_DATA_END(my_rank);                                             \
-        ++_desired;                                                                 \
+#define WAIT_SIGNAL_TO_SEND(_sync_flag, _desired) \
+    if (thread_id == 0) { \
+        LOG_OUTGOING_DATA_START(my_rank); \
+        while (_desired != *_sync_flag) { \
+        }; \
+        LOG_OUTGOING_DATA_END(my_rank); \
+        ++_desired; \
     }
 
 /*
@@ -119,7 +107,6 @@
         ++_desired;                                                                 \
     }
 */
-
 
 /*
 #define KERNEL_BARRIER(_barrier_flag, _desired, _increment)                         \
@@ -144,8 +131,7 @@
     } while (0);
 */
 
-size_t get_left_rank(size_t rank, size_t comm_size)
-{
+size_t get_left_rank(size_t rank, size_t comm_size) {
     return rank == 0 ? comm_size - 1 : rank - 1;
 }
 
@@ -169,9 +155,7 @@ __kernel void allreduce_execution_float(size_t my_rank,
 
                                         __global float4* right_temp_buffer,
                                         __global volatile int* i_send_to_right_flag,
-                                        __global volatile int* right_ready_to_recv_flag
-                                        )
-{
+                                        __global volatile int* right_ready_to_recv_flag) {
     //Known limitation
     //1) MUST: elems_count >= get_global_size(0) * 4 (vector size) * comm_size
     //2) MUST: elems_count be aligned with 'get_global_size(0) * 4 (vector size)'
@@ -179,7 +163,7 @@ __kernel void allreduce_execution_float(size_t my_rank,
     //4) TBA: chunking
     //5) TBA: multiple WGs;
 
-    elems_count = elems_count / 4;  //reduce by vectro float4
+    elems_count = elems_count / 4; //reduce by vectro float4
     size_t segment_size = elems_count / comm_size;
     size_t work_group_size = get_global_size(0);
     size_t my_rank_buffer_start_idx = my_rank * segment_size;
@@ -191,7 +175,11 @@ __kernel void allreduce_execution_float(size_t my_rank,
 
 #ifdef KERNEL_DEBUG
     //int sg_id = get_sub_group_id();
-    printf("kernel %zu.%d work_group_size: %d, segment_size: %d\n", my_rank, thread_id, work_group_size, segment_size/*, sg_id*/);
+    printf("kernel %zu.%d work_group_size: %d, segment_size: %d\n",
+           my_rank,
+           thread_id,
+           work_group_size,
+           segment_size /*, sg_id*/);
 #endif
 
     //1. copy own part to the right rank
@@ -201,8 +189,7 @@ __kernel void allreduce_execution_float(size_t my_rank,
     WAIT_SIGNAL_TO_SEND(right_ready_to_recv_flag, can_send_sync_count);
     barrier(CLK_LOCAL_MEM_FENCE);
 
-    for(size_t i = 0; i < segment_size; i += work_group_size )
-    {
+    for (size_t i = 0; i < segment_size; i += work_group_size) {
         right_temp_buffer[thread_id + i] = input_buffer[my_rank_buffer_start_idx + thread_id + i];
     }
     barrier(CLK_GLOBAL_MEM_FENCE);
@@ -219,8 +206,7 @@ __kernel void allreduce_execution_float(size_t my_rank,
     //2nd phase - reduce scatter
     //get data written by left rank to our temp buffer, reduce with our part and send to right rank
 
-    for(size_t iter_idx = 0; iter_idx < comm_size - 2; ++iter_idx)
-    {
+    for (size_t iter_idx = 0; iter_idx < comm_size - 2; ++iter_idx) {
         work_rank = get_left_rank(work_rank, comm_size);
         size_t segment_offset = work_rank * segment_size;
 
@@ -232,16 +218,19 @@ __kernel void allreduce_execution_float(size_t my_rank,
         WAIT_SIGNAL_TO_SEND(right_ready_to_recv_flag, can_send_sync_count);
         barrier(CLK_LOCAL_MEM_FENCE);
 
-        for(size_t i = 0; i < segment_size; i += work_group_size )
-        {
+        for (size_t i = 0; i < segment_size; i += work_group_size) {
 #ifdef KERNEL_DEBUG
-            printf("kernel %zu.%d, phase 2.%zu -- temp[%zu] = %f, this[%zu] = %f\n", my_rank, thread_id, iter_idx,
-                segment_offset + thread_id + i, tmp_buffer[thread_id + i],
-                segment_offset + thread_id + i, input_buffer[segment_offset + thread_id + i]);
+            printf("kernel %zu.%d, phase 2.%zu -- temp[%zu] = %f, this[%zu] = %f\n",
+                   my_rank,
+                   thread_id,
+                   iter_idx,
+                   segment_offset + thread_id + i,
+                   tmp_buffer[thread_id + i],
+                   segment_offset + thread_id + i,
+                   input_buffer[segment_offset + thread_id + i]);
 #endif
-            right_temp_buffer[thread_id + i] = tmp_buffer[thread_id + i]
-                                                +
-                                               input_buffer[segment_offset + thread_id + i];
+            right_temp_buffer[thread_id + i] =
+                tmp_buffer[thread_id + i] + input_buffer[segment_offset + thread_id + i];
         }
         barrier(CLK_GLOBAL_MEM_FENCE);
         I_SENT(i_send_to_right_flag);
@@ -267,11 +256,9 @@ __kernel void allreduce_execution_float(size_t my_rank,
     //left rank has written data to our temp buffer, reduce it with corresponding element from our initial buffer
     //and put to output buffer
 
-    for(size_t i = 0; i < segment_size; i += work_group_size )
-    {
-        output_buffer[segment_offset + thread_id + i] = tmp_buffer[thread_id + i]
-                                                                    +
-                                                                  input_buffer[segment_offset + thread_id + i];
+    for (size_t i = 0; i < segment_size; i += work_group_size) {
+        output_buffer[segment_offset + thread_id + i] =
+            tmp_buffer[thread_id + i] + input_buffer[segment_offset + thread_id + i];
         right_temp_buffer[thread_id + i] = output_buffer[segment_offset + thread_id + i];
         /* We should be able to issue 2 stores for the same data - local and remote, no need for local read */
     }
@@ -289,8 +276,7 @@ __kernel void allreduce_execution_float(size_t my_rank,
     work_rank = my_rank;
     //3rd phase - allgather
     //copy ready data from temp buffer by [segment_offset] offset, reduce and send data by [work_rank] offset
-    for(size_t iter_idx = 0; iter_idx < comm_size - 2; ++iter_idx)
-    {
+    for (size_t iter_idx = 0; iter_idx < comm_size - 2; ++iter_idx) {
         segment_offset = work_rank * segment_size;
         //copy reduced value to initial buffer
 
@@ -299,13 +285,17 @@ __kernel void allreduce_execution_float(size_t my_rank,
         //aka send
         WAIT_SIGNAL_TO_SEND(right_ready_to_recv_flag, can_send_sync_count);
         barrier(CLK_LOCAL_MEM_FENCE);
-        for(size_t i = 0; i < segment_size; i += work_group_size )
-        {
+        for (size_t i = 0; i < segment_size; i += work_group_size) {
             output_buffer[segment_offset + thread_id + i] = tmp_buffer[thread_id + i];
 
 #ifdef KERNEL_DEBUG
-            printf("kernel %zu.%d, phase 3.%zu -- send %f to idx %zu, rank %zu\n", my_rank, thread_id, iter_idx, tmp_buffer[thread_id + i],
-                    segment_offset + thread_id, work_rank + i);
+            printf("kernel %zu.%d, phase 3.%zu -- send %f to idx %zu, rank %zu\n",
+                   my_rank,
+                   thread_id,
+                   iter_idx,
+                   tmp_buffer[thread_id + i],
+                   segment_offset + thread_id,
+                   work_rank + i);
 #endif
             //TODO optimize for local memory to avoid double read for global?
             right_temp_buffer[thread_id + i] = tmp_buffer[thread_id + i];
@@ -326,8 +316,7 @@ __kernel void allreduce_execution_float(size_t my_rank,
     WAIT_SIGNAL_TO_SEND(right_ready_to_recv_flag, can_send_sync_count);
     barrier(CLK_LOCAL_MEM_FENCE);
     segment_offset = work_rank * segment_size;
-    for(size_t i = 0; i < segment_size; i += work_group_size )
-    {
+    for (size_t i = 0; i < segment_size; i += work_group_size) {
         output_buffer[segment_offset + thread_id + i] = tmp_buffer[thread_id + i];
     }
 
@@ -350,8 +339,7 @@ __kernel void allreduce_execution_char(size_t my_rank,
 
                                        __global char4* right_temp_buffer,
                                        __global volatile int* i_send_to_right_flag,
-                                       __global volatile int* right_ready_to_recv_flag)
-{
+                                       __global volatile int* right_ready_to_recv_flag) {
     return;
 }
 
@@ -369,8 +357,7 @@ __kernel void allreduce_execution_int(size_t my_rank,
 
                                       __global int4* right_temp_buffer,
                                       __global volatile int* i_send_to_right_flag,
-                                      __global volatile int* right_ready_to_recv_flag)
-{
+                                      __global volatile int* right_ready_to_recv_flag) {
     return;
 }
 
@@ -390,8 +377,7 @@ __kernel void allreduce_execution_bfp16(size_t my_rank,
 
                                         __global bfp16* right_temp_buffer,
                                         __global volatile int* i_send_to_right_flag,
-                                        __global volatile int* right_ready_to_recv_flag)
-{
+                                        __global volatile int* right_ready_to_recv_flag) {
     return;
 }
 
@@ -409,11 +395,9 @@ __kernel void allreduce_execution_double(size_t my_rank,
 
                                          __global double4* right_temp_buffer,
                                          __global volatile int* i_send_to_right_flag,
-                                         __global volatile int* right_ready_to_recv_flag)
-{
+                                         __global volatile int* right_ready_to_recv_flag) {
     return;
 }
-
 
 __kernel void allreduce_execution_int64_t(size_t my_rank,
                                           size_t comm_size,
@@ -429,8 +413,7 @@ __kernel void allreduce_execution_int64_t(size_t my_rank,
 
                                           __global long4* right_temp_buffer,
                                           __global volatile int* i_send_to_right_flag,
-                                          __global volatile int* right_ready_to_recv_flag)
-{
+                                          __global volatile int* right_ready_to_recv_flag) {
     return;
 }
 
@@ -448,143 +431,133 @@ __kernel void allreduce_execution_uint64_t(size_t my_rank,
 
                                            __global ulong4* right_temp_buffer,
                                            __global volatile int* i_send_to_right_flag,
-                                           __global volatile int* right_ready_to_recv_flag)
-{
+                                           __global volatile int* right_ready_to_recv_flag) {
     return;
 }
 
-
 // numa
 __kernel void allreduce_execution_numa_char(size_t my_rank,
-                                       size_t comm_size,
-                                       size_t elems_count,
-                                       const __global char4* input_buffer,
-                                       __global char4* output_buffer,
+                                            size_t comm_size,
+                                            size_t elems_count,
+                                            const __global char4* input_buffer,
+                                            __global char4* output_buffer,
 
-                                       __global char4* tmp_buffer,
-                                       __global volatile int* left_wrote_to_me_flag,
-                                       __global volatile int* i_ready_to_receive_flag,
+                                            __global char4* tmp_buffer,
+                                            __global volatile int* left_wrote_to_me_flag,
+                                            __global volatile int* i_ready_to_receive_flag,
 
-                                       __global volatile int* local_barrier_flag,
+                                            __global volatile int* local_barrier_flag,
 
-                                       __global char4* right_temp_buffer,
-                                       __global volatile int* i_send_to_right_flag,
-                                       __global volatile int* right_ready_to_recv_flag)
-{
+                                            __global char4* right_temp_buffer,
+                                            __global volatile int* i_send_to_right_flag,
+                                            __global volatile int* right_ready_to_recv_flag) {
     return;
 }
 
 __kernel void allreduce_execution_numa_int(size_t my_rank,
-                                      size_t comm_size,
-                                      size_t elems_count,
-                                      const __global int4* input_buffer,
-                                      __global int4* output_buffer,
-
-                                      __global int4* tmp_buffer,
-                                      __global volatile int* left_wrote_to_me_flag,
-                                      __global volatile int* i_ready_to_receive_flag,
-
-                                      __global volatile int* local_barrier_flag,
-
-                                      __global int4* right_temp_buffer,
-                                      __global volatile int* i_send_to_right_flag,
-                                      __global volatile int* right_ready_to_recv_flag)
-{
-    return;
-}
-
-__kernel void allreduce_execution_numa_bfp16(size_t my_rank,
-                                        size_t comm_size,
-                                        size_t elems_count,
-                                        const __global bfp16* input_buffer,
-                                        __global bfp16* output_buffer,
-
-                                        __global bfp16* tmp_buffer,
-                                        __global volatile int* left_wrote_to_me_flag,
-                                        __global volatile int* i_ready_to_receive_flag,
-
-                                        __global volatile int* local_barrier_flag,
-
-                                        __global bfp16* right_temp_buffer,
-                                        __global volatile int* i_send_to_right_flag,
-                                        __global volatile int* right_ready_to_recv_flag)
-{
-    return;
-}
-
-__kernel void allreduce_execution_numa_float(size_t my_rank,
-                                      size_t comm_size,
-                                      size_t elems_count,
-                                      const __global float4* input_buffer,
-                                      __global float4* output_buffer,
-
-                                      __global float4* tmp_buffer,
-                                      __global volatile int* left_wrote_to_me_flag,
-                                      __global volatile int* i_ready_to_receive_flag,
-
-                                      __global volatile int* local_barrier_flag,
-
-                                      __global float4* right_temp_buffer,
-                                      __global volatile int* i_send_to_right_flag,
-                                      __global volatile int* right_ready_to_recv_flag)
-{
-    return;
-}
-
-__kernel void allreduce_execution_numa_double(size_t my_rank,
-                                         size_t comm_size,
-                                         size_t elems_count,
-                                         const __global double4* input_buffer,
-                                         __global double4* output_buffer,
-
-                                         __global double4* tmp_buffer,
-                                         __global volatile int* left_wrote_to_me_flag,
-                                         __global volatile int* i_ready_to_receive_flag,
-
-                                         __global volatile int* local_barrier_flag,
-
-                                         __global double4* right_temp_buffer,
-                                         __global volatile int* i_send_to_right_flag,
-                                         __global volatile int* right_ready_to_recv_flag)
-{
-    return;
-}
-
-
-__kernel void allreduce_execution_numa_int64_t(size_t my_rank,
-                                          size_t comm_size,
-                                          size_t elems_count,
-                                          const __global long4* input_buffer,
-                                          __global long4* output_buffer,
-
-                                          __global long4* tmp_buffer,
-                                          __global volatile int* left_wrote_to_me_flag,
-                                          __global volatile int* i_ready_to_receive_flag,
-
-                                          __global volatile int* local_barrier_flag,
-
-                                          __global long4* right_temp_buffer,
-                                          __global volatile int* i_send_to_right_flag,
-                                          __global volatile int* right_ready_to_recv_flag)
-{
-    return;
-}
-
-__kernel void allreduce_execution_numa_uint64_t(size_t my_rank,
                                            size_t comm_size,
                                            size_t elems_count,
-                                           const __global ulong4* input_buffer,
-                                           __global ulong4* output_buffer,
+                                           const __global int4* input_buffer,
+                                           __global int4* output_buffer,
 
-                                           __global ulong4* tmp_buffer,
+                                           __global int4* tmp_buffer,
                                            __global volatile int* left_wrote_to_me_flag,
                                            __global volatile int* i_ready_to_receive_flag,
 
                                            __global volatile int* local_barrier_flag,
 
-                                           __global ulong4* right_temp_buffer,
+                                           __global int4* right_temp_buffer,
                                            __global volatile int* i_send_to_right_flag,
-                                           __global volatile int* right_ready_to_recv_flag)
-{
+                                           __global volatile int* right_ready_to_recv_flag) {
+    return;
+}
+
+__kernel void allreduce_execution_numa_bfp16(size_t my_rank,
+                                             size_t comm_size,
+                                             size_t elems_count,
+                                             const __global bfp16* input_buffer,
+                                             __global bfp16* output_buffer,
+
+                                             __global bfp16* tmp_buffer,
+                                             __global volatile int* left_wrote_to_me_flag,
+                                             __global volatile int* i_ready_to_receive_flag,
+
+                                             __global volatile int* local_barrier_flag,
+
+                                             __global bfp16* right_temp_buffer,
+                                             __global volatile int* i_send_to_right_flag,
+                                             __global volatile int* right_ready_to_recv_flag) {
+    return;
+}
+
+__kernel void allreduce_execution_numa_float(size_t my_rank,
+                                             size_t comm_size,
+                                             size_t elems_count,
+                                             const __global float4* input_buffer,
+                                             __global float4* output_buffer,
+
+                                             __global float4* tmp_buffer,
+                                             __global volatile int* left_wrote_to_me_flag,
+                                             __global volatile int* i_ready_to_receive_flag,
+
+                                             __global volatile int* local_barrier_flag,
+
+                                             __global float4* right_temp_buffer,
+                                             __global volatile int* i_send_to_right_flag,
+                                             __global volatile int* right_ready_to_recv_flag) {
+    return;
+}
+
+__kernel void allreduce_execution_numa_double(size_t my_rank,
+                                              size_t comm_size,
+                                              size_t elems_count,
+                                              const __global double4* input_buffer,
+                                              __global double4* output_buffer,
+
+                                              __global double4* tmp_buffer,
+                                              __global volatile int* left_wrote_to_me_flag,
+                                              __global volatile int* i_ready_to_receive_flag,
+
+                                              __global volatile int* local_barrier_flag,
+
+                                              __global double4* right_temp_buffer,
+                                              __global volatile int* i_send_to_right_flag,
+                                              __global volatile int* right_ready_to_recv_flag) {
+    return;
+}
+
+__kernel void allreduce_execution_numa_int64_t(size_t my_rank,
+                                               size_t comm_size,
+                                               size_t elems_count,
+                                               const __global long4* input_buffer,
+                                               __global long4* output_buffer,
+
+                                               __global long4* tmp_buffer,
+                                               __global volatile int* left_wrote_to_me_flag,
+                                               __global volatile int* i_ready_to_receive_flag,
+
+                                               __global volatile int* local_barrier_flag,
+
+                                               __global long4* right_temp_buffer,
+                                               __global volatile int* i_send_to_right_flag,
+                                               __global volatile int* right_ready_to_recv_flag) {
+    return;
+}
+
+__kernel void allreduce_execution_numa_uint64_t(size_t my_rank,
+                                                size_t comm_size,
+                                                size_t elems_count,
+                                                const __global ulong4* input_buffer,
+                                                __global ulong4* output_buffer,
+
+                                                __global ulong4* tmp_buffer,
+                                                __global volatile int* left_wrote_to_me_flag,
+                                                __global volatile int* i_ready_to_receive_flag,
+
+                                                __global volatile int* local_barrier_flag,
+
+                                                __global ulong4* right_temp_buffer,
+                                                __global volatile int* i_send_to_right_flag,
+                                                __global volatile int* right_ready_to_recv_flag) {
     return;
 }

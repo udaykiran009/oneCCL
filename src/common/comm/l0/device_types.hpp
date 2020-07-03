@@ -4,10 +4,8 @@
 #include <type_traits>
 #include "common/utils/enums.hpp"
 
-namespace native
-{
-enum class gpu_types : size_t
-{
+namespace native {
+enum class gpu_types : size_t {
     REAL_GPU,
     VIRTUAL_GPU,
     CONCURRENT_GPU,
@@ -53,28 +51,38 @@ enum class gpu_types : size_t
 };
 
 using gpu_type_names = utils::enum_to_str<static_cast<int>(gpu_types::MAX_TYPE)>;
-inline std::string to_string(gpu_types type)
-{
-    return gpu_type_names({"REAL_GPU", "VIRTUAL_GPU",
-                           "CONCURRENT_REAL_GPU", "CONCURRENT_VIRT_GPU",
-                           "SOURCE_IPC_REAL_GPU", "SOURCE_IPC_VIRT_GPU",
-                           "DESTINATION_IPC_GPU",
-                           "NUMA_REAL_PROXY", "NUMA_VIRT_PROXY",
-                           "SUP_REAL_PROXY", "SUP_VIRT_PROXY",
-                           "MIX_SUP_NUMA_REAL", "MIX_SUP_NUMA_VIRTUAL",
-                           "SOUT_REAL_PROXY", "SOUT_VIRT_PROXY",
-                           "MIX_SOUT_NUMA_REAL", "MIX_SIUT_NUMA_VIRT",
-                           "MIX_SOUT_SUP_REAL", "MIX_SOUT_SUP_VIRT",
-                           "MIX_UNIVERSAL_REAL", "MIX_UNIVERSAL_VIRT"}).choose(type, "INVALID_VALUE");
+inline std::string to_string(gpu_types type) {
+    return gpu_type_names({ "REAL_GPU",
+                            "VIRTUAL_GPU",
+                            "CONCURRENT_REAL_GPU",
+                            "CONCURRENT_VIRT_GPU",
+                            "SOURCE_IPC_REAL_GPU",
+                            "SOURCE_IPC_VIRT_GPU",
+                            "DESTINATION_IPC_GPU",
+                            "NUMA_REAL_PROXY",
+                            "NUMA_VIRT_PROXY",
+                            "SUP_REAL_PROXY",
+                            "SUP_VIRT_PROXY",
+                            "MIX_SUP_NUMA_REAL",
+                            "MIX_SUP_NUMA_VIRTUAL",
+                            "SOUT_REAL_PROXY",
+                            "SOUT_VIRT_PROXY",
+                            "MIX_SOUT_NUMA_REAL",
+                            "MIX_SIUT_NUMA_VIRT",
+                            "MIX_SOUT_SUP_REAL",
+                            "MIX_SOUT_SUP_VIRT",
+                            "MIX_UNIVERSAL_REAL",
+                            "MIX_UNIVERSAL_VIRT" })
+        .choose(type, "INVALID_VALUE");
 }
 
-constexpr inline gpu_types operator+ (gpu_types a, typename std::underlying_type<gpu_types>::type b)
-{
-    return static_cast<gpu_types>(static_cast< typename std::underlying_type<gpu_types>::type>(a)
-           + static_cast< typename std::underlying_type<gpu_types>::type>(b));
+constexpr inline gpu_types operator+(gpu_types a,
+                                     typename std::underlying_type<gpu_types>::type b) {
+    return static_cast<gpu_types>(static_cast<typename std::underlying_type<gpu_types>::type>(a) +
+                                  static_cast<typename std::underlying_type<gpu_types>::type>(b));
 }
 
 // devices
-template<class device_t>
+template <class device_t>
 using device_t_ptr = std::shared_ptr<device_t>;
-}
+} // namespace native

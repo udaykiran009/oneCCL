@@ -4,14 +4,13 @@
 
 #define COUNT 2
 
-int main(int argc, char** argv)
-{
+int main(int argc, char** argv) {
     int i = 0;
     size_t size = 0;
     size_t rank = 0;
     int sendbuf[COUNT];
     int* recvbuf;
-    size_t *recv_counts;
+    size_t* recv_counts;
 
     ccl_request_t request;
     ccl_stream_t stream;
@@ -55,8 +54,8 @@ int main(int argc, char** argv)
     /* check correctness of recvbuf */
     for (i = 0; i < COUNT; i++) {
         if (recvbuf[i] != rank + 1) {
-           recvbuf[i] = -1;
-       }
+            recvbuf[i] = -1;
+        }
     }
 
     /* print out the result of the test */

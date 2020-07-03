@@ -1,8 +1,7 @@
 #include "ccl.h"
 #include "sycl_base.hpp"
 
-int main(int argc, char **argv)
-{
+int main(int argc, char** argv) {
     int i = 0;
     size_t size = 0;
     size_t rank = 0;
@@ -18,7 +17,7 @@ int main(int argc, char **argv)
     ccl_init();
     ccl_get_comm_rank(NULL, &rank);
     ccl_get_comm_size(NULL, &size);
-    
+
     if (create_sycl_queue(argc, argv, q, stream_type) != 0) {
         return -1;
     }
@@ -37,10 +36,10 @@ int main(int argc, char **argv)
 
     /* open sendbuf and modify it on the target device side */
     q.submit([&](cl::sycl::handler& cgh) {
-       auto dev_acc_sbuf = sendbuf.get_access<mode::write>(cgh);
-       cgh.parallel_for<class allreduce_test_sbuf_modify>(range<1>{COUNT}, [=](item<1> id) {
-           dev_acc_sbuf[id] += 1;
-       });
+        auto dev_acc_sbuf = sendbuf.get_access<mode::write>(cgh);
+        cgh.parallel_for<class allreduce_test_sbuf_modify>(range<1>{ COUNT }, [=](item<1> id) {
+            dev_acc_sbuf[id] += 1;
+        });
     });
 
     handle_exception(q);
@@ -60,12 +59,12 @@ int main(int argc, char **argv)
 
     /* open recvbuf and check its correctness on the target device side */
     q.submit([&](handler& cgh) {
-       auto dev_acc_rbuf = recvbuf.get_access<mode::write>(cgh);
-       cgh.parallel_for<class allreduce_test_rbuf_check>(range<1>{COUNT}, [=](item<1> id) {
-           if (dev_acc_rbuf[id] != size * (size + 1) / 2) {
-               dev_acc_rbuf[id] = -1;
-           }
-       });
+        auto dev_acc_rbuf = recvbuf.get_access<mode::write>(cgh);
+        cgh.parallel_for<class allreduce_test_rbuf_check>(range<1>{ COUNT }, [=](item<1> id) {
+            if (dev_acc_rbuf[id] != size * (size + 1) / 2) {
+                dev_acc_rbuf[id] = -1;
+            }
+        });
     });
 
     handle_exception(q);
@@ -75,12 +74,12 @@ int main(int argc, char **argv)
         auto host_acc_rbuf_new = recvbuf.get_access<mode::read>();
         for (i = 0; i < COUNT; i++) {
             if (host_acc_rbuf_new[i] == -1) {
-                cout << "FAILED"<< std::endl;
+                cout << "FAILED" << std::endl;
                 break;
             }
         }
         if (i == COUNT) {
-            cout << "PASSED"<< std::endl;
+            cout << "PASSED" << std::endl;
         }
     }
 

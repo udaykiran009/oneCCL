@@ -12,34 +12,30 @@
 //      4.1.2 renew()
 //  4.2 reset_request()
 
-enum ccl_sched_in_bin_status
-{
+enum ccl_sched_in_bin_status {
     ccl_sched_in_bin_none,
     ccl_sched_in_bin_added,
     ccl_sched_in_bin_erased
 };
 
-typedef ccl_status_t(*ccl_sched_finalize_fn_t) (ccl_sched*, const void*);
+typedef ccl_status_t (*ccl_sched_finalize_fn_t)(ccl_sched*, const void*);
 
 class ccl_extra_sched;
 
-class alignas(CACHELINE_SIZE) ccl_sched : public ccl_sched_base
-{
+class alignas(CACHELINE_SIZE) ccl_sched : public ccl_sched_base {
 public:
-    static constexpr const char* class_name()
-    {
+    static constexpr const char* class_name() {
         return "worker_sched";
     }
 
-    ccl_sched(const ccl_coll_param& coll_param, ccl_request *master_request)
-        : ccl_sched_base(coll_param)
-    {
+    ccl_sched(const ccl_coll_param& coll_param, ccl_request* master_request)
+            : ccl_sched_base(coll_param) {
         req = master_request;
     }
 
     ccl_sched() = delete;
     ccl_sched(const ccl_sched& other) = delete;
-    ccl_sched& operator= (const ccl_sched& other) = delete;
+    ccl_sched& operator=(const ccl_sched& other) = delete;
 
     virtual ~ccl_sched();
 
@@ -49,39 +45,32 @@ public:
 
     virtual void complete();
 
-    void clear()
-    {
+    void clear() {
         entries.clear();
     }
 
-    size_t get_start_idx() const
-    {
+    size_t get_start_idx() const {
         return start_idx;
     }
 
     /* communicators on build and execution stages can differ */
-    ccl_comm_id_t get_comm_id()
-    {
+    ccl_comm_id_t get_comm_id() {
         return coll_param.comm->id();
     }
 
-    void set_op_id(ccl_op_id_t id)
-    {
+    void set_op_id(ccl_op_id_t id) {
         op_id = id;
     }
 
-    ccl_op_id_t get_op_id()
-    {
+    ccl_op_id_t get_op_id() {
         return op_id;
     }
 
-    void set_in_bin_status(ccl_sched_in_bin_status status)
-    {
+    void set_in_bin_status(ccl_sched_in_bin_status status) {
         in_bin_status = status;
     }
 
-    ccl_sched_in_bin_status get_in_bin_status() const
-    {
+    ccl_sched_in_bin_status get_in_bin_status() const {
         return in_bin_status;
     }
 
@@ -94,8 +83,7 @@ public:
     using ccl_sched_base::add_entry_back_t;
     using add_entry_default_t = add_entry_mode_t<ccl_sched_add_mode_last_value>;
 
-    sched_entry* add_entry(std::unique_ptr<sched_entry> &&entry)
-    {
+    sched_entry* add_entry(std::unique_ptr<sched_entry>&& entry) {
         entry->set_exec_mode(exec_mode);
 
         sched_entry* raw_ptr = entry.get();
@@ -112,13 +100,12 @@ public:
     /**
      * Policy-based add_entry
      */
-    sched_entry* add_entry(std::unique_ptr<sched_entry> &&entry, add_entry_mode_t<ccl_sched_add_mode_last_value>)
-    {
+    sched_entry* add_entry(std::unique_ptr<sched_entry>&& entry,
+                           add_entry_mode_t<ccl_sched_add_mode_last_value>) {
         return add_entry(std::move(entry));
     }
 
-    sched_entry* add_entry(std::unique_ptr<sched_entry> &&entry, add_entry_front_t)
-    {
+    sched_entry* add_entry(std::unique_ptr<sched_entry>&& entry, add_entry_front_t) {
         entry->set_exec_mode(exec_mode);
 
         sched_entry* raw_ptr = entry.get();
@@ -126,15 +113,13 @@ public:
         return raw_ptr;
     }
 
-    sched_entry* add_entry(std::unique_ptr<sched_entry> &&entry, add_entry_back_t)
-    {
+    sched_entry* add_entry(std::unique_ptr<sched_entry>&& entry, add_entry_back_t) {
         entry->set_exec_mode(exec_mode);
 
         sched_entry* raw_ptr = entry.get();
         entries.push_back(std::move(entry));
         return raw_ptr;
     }
-
 
     /**
      * Require that all previously added entries are completed before subsequent ops
@@ -146,7 +131,7 @@ public:
 
     ccl_sched_bin* bin = nullptr; /* valid only during execution */
     ccl_sched_queue* queue = nullptr; /* cached pointer to queue, valid even after execution */
-    size_t start_idx = 0;  /* index to start */
+    size_t start_idx = 0; /* index to start */
 
     /* 
       used for unique ATL tag creation in algorithms with multiple parallel sub-schedules
@@ -163,18 +148,17 @@ public:
     /* whether sched should be started in the same order as in user code */
     bool strict_start_order = false;
 
-    void set_finalize_fn(ccl_sched_finalize_fn_t fn, void* ctx)
-    {
+    void set_finalize_fn(ccl_sched_finalize_fn_t fn, void* ctx) {
         finalize_fn = fn;
         finalize_fn_ctx = ctx;
     }
     ccl_request* req = nullptr;
     void dump(std::ostream& out) const;
     size_t entries_count() const;
+
 private:
     ccl_sched_finalize_fn_t finalize_fn = nullptr;
     void* finalize_fn_ctx = nullptr;
-
 
 #ifdef ENABLE_TIMERS
     using timer_type = std::chrono::system_clock;

@@ -5,13 +5,11 @@
 
 class ccl_gpu_sched;
 
-namespace ccl
-{
+namespace ccl {
 
-class gpu_request_impl final : public ccl::request
-{
+class gpu_request_impl final : public ccl::request {
 public:
-    explicit gpu_request_impl( std::unique_ptr<ccl_gpu_sched>&& sched);
+    explicit gpu_request_impl(std::unique_ptr<ccl_gpu_sched>&& sched);
     ~gpu_request_impl();
 
     void wait() override;
@@ -22,11 +20,9 @@ private:
     bool completed = false;
 };
 
-
-class gpu_shared_request_impl final : public ccl::request
-{
+class gpu_shared_request_impl final : public ccl::request {
 public:
-    explicit gpu_shared_request_impl( std::shared_ptr<ccl_gpu_sched>&& sched);
+    explicit gpu_shared_request_impl(std::shared_ptr<ccl_gpu_sched>&& sched);
     ~gpu_shared_request_impl();
 
     void wait() override;
@@ -37,11 +33,9 @@ private:
     bool completed = false;
 };
 
-
-class gpu_shared_process_request_impl final : public ccl::request
-{
+class gpu_shared_process_request_impl final : public ccl::request {
 public:
-    explicit gpu_shared_process_request_impl( std::shared_ptr<ccl_gpu_sched>&& sched);
+    explicit gpu_shared_process_request_impl(std::shared_ptr<ccl_gpu_sched>&& sched);
     ~gpu_shared_process_request_impl();
 
     void wait() override;
@@ -50,4 +44,4 @@ public:
 private:
     std::shared_ptr<ccl_gpu_sched> gpu_sched;
 };
-}
+} // namespace ccl

@@ -5,8 +5,7 @@
 #define LOG_INPUT_DATA_START(kern_id, wg_id) \
     printf("Kernel %zu,%zu wait income data \n", kern_id, wg_id)
 
-#define LOG_INPUT_DATA_END(kern_id, wg_id) \
-    printf("Kernel %zu,%zu received data \n", kern_id, wg_id)
+#define LOG_INPUT_DATA_END(kern_id, wg_id) printf("Kernel %zu,%zu received data \n", kern_id, wg_id)
 
 #define LOG_OUTGOING_DATA_START(kern_id, wg_id) \
     printf("Kernel %zu,%zu wait signal to send\n", kern_id, wg_id)
@@ -37,41 +36,36 @@
 
 #endif
 
-#define PUT_READY_TO_RECEIVE(_sync_flag)             \
-    if(local_thread_id == 0)                         \
-    {                                                \
-        atomic_inc(_sync_flag);                      \
+#define PUT_READY_TO_RECEIVE(_sync_flag) \
+    if (local_thread_id == 0) { \
+        atomic_inc(_sync_flag); \
     }
 
-#define I_SENT(_sync_flag)                          \
-    if(local_thread_id == 0)                        \
-    {                                               \
-        atomic_inc(_sync_flag);                     \
+#define I_SENT(_sync_flag) \
+    if (local_thread_id == 0) { \
+        atomic_inc(_sync_flag); \
     }
 
-#define WAIT_INPUT_DATA(_sync_flag, _desired)                                       \
-    if(local_thread_id == 0)                                                        \
-    {                                                                               \
-        LOG_INPUT_DATA_START(rank_id, wg_id);                                       \
-        while(1)                                                                    \
-        {                                                                           \
-            int _old_value = atomic_cmpxchg(_sync_flag, _desired, _desired);        \
-            if(_old_value == _desired)                                              \
-            {                                                                       \
-                LOG_INPUT_DATA_END(rank_id, wg_id);                                 \
-                _desired += comm_size;                                              \
-                break;                                                              \
-            }                                                                       \
-        }                                                                           \
+#define WAIT_INPUT_DATA(_sync_flag, _desired) \
+    if (local_thread_id == 0) { \
+        LOG_INPUT_DATA_START(rank_id, wg_id); \
+        while (1) { \
+            int _old_value = atomic_cmpxchg(_sync_flag, _desired, _desired); \
+            if (_old_value == _desired) { \
+                LOG_INPUT_DATA_END(rank_id, wg_id); \
+                _desired += comm_size; \
+                break; \
+            } \
+        } \
     }
 
-#define WAIT_SIGNAL_TO_SEND(_sync_flag, _desired)                                   \
-    if(local_thread_id == 0)                                                        \
-    {                                                                               \
-        LOG_OUTGOING_DATA_START(rank_id, wg_id);                                    \
-        while(_desired != atomic_cmpxchg(_sync_flag, _desired, _desired)) {};       \
-        LOG_OUTGOING_DATA_END(rank_id, wg_id);                                      \
-        _desired += comm_size;                                                      \
+#define WAIT_SIGNAL_TO_SEND(_sync_flag, _desired) \
+    if (local_thread_id == 0) { \
+        LOG_OUTGOING_DATA_START(rank_id, wg_id); \
+        while (_desired != atomic_cmpxchg(_sync_flag, _desired, _desired)) { \
+        }; \
+        LOG_OUTGOING_DATA_END(rank_id, wg_id); \
+        _desired += comm_size; \
     }
 
 #define THREAD_LOCAL_REDUCE_CHUNK 1
@@ -80,8 +74,7 @@ __kernel void allreduce_execution_char(size_t rank_id,
                                        size_t elems_count,
                                        const __global char* input_buffer,
                                        __global char* output_buffer,
-                                       __global a2a_gpu_comm_data_char* comm_matrix)
-{
+                                       __global a2a_gpu_comm_data_char* comm_matrix) {
     return;
 }
 
@@ -90,8 +83,7 @@ __kernel void allreduce_execution_int(size_t rank_id,
                                       size_t elems_count,
                                       const __global int* input_buffer,
                                       __global int* output_buffer,
-                                      __global a2a_gpu_comm_data_int* comm_matrix)
-{
+                                      __global a2a_gpu_comm_data_int* comm_matrix) {
     return;
 }
 
@@ -100,8 +92,7 @@ __kernel void allreduce_execution_float(size_t rank_id,
                                         size_t elems_count,
                                         const __global float* input_buffer,
                                         __global float* output_buffer,
-                                        __global a2a_gpu_comm_data_float* comm_matrix)
-{
+                                        __global a2a_gpu_comm_data_float* comm_matrix) {
     //Limitations:
     //1) WG count is equal to ranks
 
@@ -114,8 +105,7 @@ __kernel void allreduce_execution_float(size_t rank_id,
     int ready_to_recv_sync_count = comm_size;
     int can_send_sync_count = comm_size;
 
-    size_t segment_size = wg_size * wg_count;//elems_count / comm_size;
-
+    size_t segment_size = wg_size * wg_count; //elems_count / comm_size;
 
     //   ________________________________________________________________________
     //  |                      elems_count                                      |
@@ -141,47 +131,56 @@ __kernel void allreduce_execution_float(size_t rank_id,
     //
 
 #ifdef KERNEL_DEBUG
-if(local_thread_id == 0)
-{
-    printf("kernel %zu.%zu.%zu, wg_size: %zu, segment_size: %zu\n",
-            rank_id, wg_id, local_thread_id, wg_size, segment_size);
-}
+    if (local_thread_id == 0) {
+        printf("kernel %zu.%zu.%zu, wg_size: %zu, segment_size: %zu\n",
+               rank_id,
+               wg_id,
+               local_thread_id,
+               wg_size,
+               segment_size);
+    }
 #endif
 
-    for(size_t segment_start_idx = 0; segment_start_idx < elems_count; segment_start_idx += segment_size)
-    {
+    for (size_t segment_start_idx = 0; segment_start_idx < elems_count;
+         segment_start_idx += segment_size) {
 #ifdef KERNEL_DEBUG
-if(local_thread_id == 0)
-{
-    printf("kernel %zu.%zu.%zu, start from segment offset: %zu\n",
-            rank_id, wg_id, local_thread_id, segment_start_idx);
-    printf("kernel %zu.%zu.%zu, ready_to_receive_flag: %zu\n",
-            rank_id, wg_id, local_thread_id, *comm_matrix[rank_id].ready_to_receive_flag);
-    printf("kernel %zu.%zu.%zu, data_sent_flag: %zu\n",
-            rank_id, wg_id, local_thread_id, *comm_matrix[rank_id].data_sent_flag);
-}
+        if (local_thread_id == 0) {
+            printf("kernel %zu.%zu.%zu, start from segment offset: %zu\n",
+                   rank_id,
+                   wg_id,
+                   local_thread_id,
+                   segment_start_idx);
+            printf("kernel %zu.%zu.%zu, ready_to_receive_flag: %zu\n",
+                   rank_id,
+                   wg_id,
+                   local_thread_id,
+                   *comm_matrix[rank_id].ready_to_receive_flag);
+            printf("kernel %zu.%zu.%zu, data_sent_flag: %zu\n",
+                   rank_id,
+                   wg_id,
+                   local_thread_id,
+                   *comm_matrix[rank_id].data_sent_flag);
+        }
 #endif
         PUT_READY_TO_RECEIVE(comm_matrix[rank_id].ready_to_receive_flag);
 
         //each WG waits rank ready to receive
-        WAIT_SIGNAL_TO_SEND(comm_matrix[wg_id].ready_to_receive_flag,
-                            can_send_sync_count);
+        WAIT_SIGNAL_TO_SEND(comm_matrix[wg_id].ready_to_receive_flag, can_send_sync_count);
         barrier(CLK_LOCAL_MEM_FENCE);
 
         //1)reduce scatter
         //Send segment_size by wg_size to each rank determined by WG_idx <-> rank
-        comm_matrix[wg_id].recv_buf[rank_id * wg_size +
-                                    local_thread_id] = input_buffer[segment_start_idx +
-                                                                    wg_size * wg_id +
-                                                                    local_thread_id];
+        comm_matrix[wg_id].recv_buf[rank_id * wg_size + local_thread_id] =
+            input_buffer[segment_start_idx + wg_size * wg_id + local_thread_id];
 #ifdef KERNEL_DEBUG
-{
-    printf("kernel %zu.%zu.%zu send: %e by offset: %zu\n",
-            rank_id, wg_id, local_thread_id, input_buffer[segment_start_idx +
-                                                                    wg_size * wg_id +
-                                                                    local_thread_id],
-                                        segment_start_idx + wg_size * wg_id + local_thread_id);
-}
+        {
+            printf("kernel %zu.%zu.%zu send: %e by offset: %zu\n",
+                   rank_id,
+                   wg_id,
+                   local_thread_id,
+                   input_buffer[segment_start_idx + wg_size * wg_id + local_thread_id],
+                   segment_start_idx + wg_size * wg_id + local_thread_id);
+        }
 #endif
         barrier(CLK_LOCAL_MEM_FENCE);
         I_SENT(comm_matrix[wg_id].data_sent_flag);
@@ -225,29 +224,28 @@ if(local_thread_id == 0)
         //  ---------------------------------------------
 
         float thread_reduced_value = 0;
-        for (size_t recv_buf_start_idx = 0;
-             recv_buf_start_idx < segment_size;
-             recv_buf_start_idx += wg_size )
-        {
-            thread_reduced_value += comm_matrix[rank_id].recv_buf[recv_buf_start_idx +
-                                                                  local_thread_id];
+        for (size_t recv_buf_start_idx = 0; recv_buf_start_idx < segment_size;
+             recv_buf_start_idx += wg_size) {
+            thread_reduced_value +=
+                comm_matrix[rank_id].recv_buf[recv_buf_start_idx + local_thread_id];
         }
-
 
         barrier(CLK_LOCAL_MEM_FENCE);
 #ifdef KERNEL_DEBUG
-{
-    printf("kernel %zu.%zu.%zu,thread_reduced_value: %e\n",
-            rank_id, wg_id, local_thread_id, thread_reduced_value);
-}
+        {
+            printf("kernel %zu.%zu.%zu,thread_reduced_value: %e\n",
+                   rank_id,
+                   wg_id,
+                   local_thread_id,
+                   thread_reduced_value);
+        }
 #endif
         //now each thread in each wg contains reduced value in its register
         barrier(CLK_GLOBAL_MEM_FENCE);
 
         //scatter
         I_SENT(comm_matrix[wg_id].data_sent_flag);
-        comm_matrix[wg_id].recv_buf[rank_id * wg_size +
-                                    local_thread_id] = thread_reduced_value;
+        comm_matrix[wg_id].recv_buf[rank_id * wg_size + local_thread_id] = thread_reduced_value;
 
         barrier(CLK_GLOBAL_MEM_FENCE); //wait all WGs
 
@@ -256,9 +254,9 @@ if(local_thread_id == 0)
         barrier(CLK_GLOBAL_MEM_FENCE); //wait all WGs
 
         //remember to itself from other devices
-        output_buffer[segment_start_idx + wg_size * wg_id + local_thread_id] = comm_matrix[wg_id].recv_buf[wg_id * wg_size + local_thread_id];
+        output_buffer[segment_start_idx + wg_size * wg_id + local_thread_id] =
+            comm_matrix[wg_id].recv_buf[wg_id * wg_size + local_thread_id];
         barrier(CLK_GLOBAL_MEM_FENCE);
-
     }
 }
 
@@ -267,8 +265,7 @@ __kernel void allreduce_execution_bfp16(size_t rank_id,
                                         size_t elems_count,
                                         const __global bfp16* input_buffer,
                                         __global bfp16* output_buffer,
-                                        __global a2a_gpu_comm_data_bfp16* comm_matrix)
-{
+                                        __global a2a_gpu_comm_data_bfp16* comm_matrix) {
     return;
 }
 
@@ -277,8 +274,7 @@ __kernel void allreduce_execution_double(size_t rank_id,
                                          size_t elems_count,
                                          const __global double* input_buffer,
                                          __global double* output_buffer,
-                                         __global a2a_gpu_comm_data_double* comm_matrix)
-{
+                                         __global a2a_gpu_comm_data_double* comm_matrix) {
     return;
 }
 
@@ -287,8 +283,7 @@ __kernel void allreduce_execution_int64_t(size_t rank_id,
                                           size_t elems_count,
                                           const __global long* input_buffer,
                                           __global long* output_buffer,
-                                          __global a2a_gpu_comm_data_long* comm_matrix)
-{
+                                          __global a2a_gpu_comm_data_long* comm_matrix) {
     return;
 }
 
@@ -297,79 +292,69 @@ __kernel void allreduce_execution_uint64_t(size_t rank_id,
                                            size_t elems_count,
                                            const __global ulong* input_buffer,
                                            __global ulong* output_buffer,
-                                           __global a2a_gpu_comm_data_ulong* comm_matrix)
-{
+                                           __global a2a_gpu_comm_data_ulong* comm_matrix) {
     return;
 }
 
-
-
 //numa
 __kernel void allreduce_execution_numa_char(size_t rank_id,
-                                       size_t comm_size,
-                                       size_t elems_count,
-                                       const __global char* input_buffer,
-                                       __global char* output_buffer,
-                                       __global a2a_gpu_comm_data_char* comm_matrix)
-{
+                                            size_t comm_size,
+                                            size_t elems_count,
+                                            const __global char* input_buffer,
+                                            __global char* output_buffer,
+                                            __global a2a_gpu_comm_data_char* comm_matrix) {
     return;
 }
 
 __kernel void allreduce_execution_numa_int(size_t rank_id,
-                                      size_t comm_size,
-                                      size_t elems_count,
-                                      const __global int* input_buffer,
-                                      __global int* output_buffer,
-                                      __global a2a_gpu_comm_data_int* comm_matrix)
-{
+                                           size_t comm_size,
+                                           size_t elems_count,
+                                           const __global int* input_buffer,
+                                           __global int* output_buffer,
+                                           __global a2a_gpu_comm_data_int* comm_matrix) {
     return;
 }
 
 __kernel void allreduce_execution_numa_float(size_t rank_id,
-                                        size_t comm_size,
-                                        size_t elems_count,
-                                        const __global float* input_buffer,
-                                        __global float* output_buffer,
-                                        __global a2a_gpu_comm_data_float* comm_matrix)
-{
+                                             size_t comm_size,
+                                             size_t elems_count,
+                                             const __global float* input_buffer,
+                                             __global float* output_buffer,
+                                             __global a2a_gpu_comm_data_float* comm_matrix) {
     return;
 }
 __kernel void allreduce_execution_numa_bfp16(size_t rank_id,
-                                        size_t comm_size,
-                                        size_t elems_count,
-                                        const __global bfp16* input_buffer,
-                                        __global bfp16* output_buffer,
-                                        __global a2a_gpu_comm_data_bfp16* comm_matrix)
-{
+                                             size_t comm_size,
+                                             size_t elems_count,
+                                             const __global bfp16* input_buffer,
+                                             __global bfp16* output_buffer,
+                                             __global a2a_gpu_comm_data_bfp16* comm_matrix) {
     return;
 }
 
 __kernel void allreduce_execution_numa_double(size_t rank_id,
-                                         size_t comm_size,
-                                         size_t elems_count,
-                                         const __global double* input_buffer,
-                                         __global double* output_buffer,
-                                         __global a2a_gpu_comm_data_double* comm_matrix)
-{
+                                              size_t comm_size,
+                                              size_t elems_count,
+                                              const __global double* input_buffer,
+                                              __global double* output_buffer,
+                                              __global a2a_gpu_comm_data_double* comm_matrix) {
     return;
 }
 
 __kernel void allreduce_execution_numa_int64_t(size_t rank_id,
-                                          size_t comm_size,
-                                          size_t elems_count,
-                                          const __global long* input_buffer,
-                                          __global long* output_buffer,
-                                          __global a2a_gpu_comm_data_long* comm_matrix)
-{
+                                               size_t comm_size,
+                                               size_t elems_count,
+                                               const __global long* input_buffer,
+                                               __global long* output_buffer,
+                                               __global a2a_gpu_comm_data_long* comm_matrix) {
     return;
 }
 
 __kernel void allreduce_execution_numa_uint64_t(size_t rank_id,
-                                           size_t comm_size,
-                                           size_t elems_count,
-                                           const __global ulong* input_buffer,
-                                           __global ulong* output_buffer,
-                                           __global a2a_gpu_comm_data_ulong* comm_matrix)
-{
+                                                size_t comm_size,
+                                                size_t elems_count,
+                                                const __global ulong* input_buffer,
+                                                __global ulong* output_buffer,
+                                                __global a2a_gpu_comm_data_ulong* comm_matrix) {
     return;
 }

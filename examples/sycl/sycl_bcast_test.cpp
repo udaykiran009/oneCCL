@@ -1,8 +1,7 @@
 #include "ccl.h"
 #include "sycl_base.hpp"
 
-int main(int argc, char **argv)
-{
+int main(int argc, char** argv) {
     int i = 0;
     size_t size = 0;
     size_t rank = 0;
@@ -17,7 +16,7 @@ int main(int argc, char **argv)
     ccl_init();
     ccl_get_comm_rank(NULL, &rank);
     ccl_get_comm_size(NULL, &size);
-    
+
     if (create_sycl_queue(argc, argv, q, stream_type) != 0) {
         return -1;
     }
@@ -36,7 +35,7 @@ int main(int argc, char **argv)
     /* open buf and modify it on the target device side */
     q.submit([&](cl::sycl::handler& cgh) {
         auto dev_acc_buf = buf.get_access<mode::write>(cgh);
-        cgh.parallel_for<class allreduce_test_sbuf_modify>(range<1>{COUNT}, [=](item<1> id) {
+        cgh.parallel_for<class allreduce_test_sbuf_modify>(range<1>{ COUNT }, [=](item<1> id) {
             dev_acc_buf[id] += 1;
         });
     });
@@ -58,7 +57,7 @@ int main(int argc, char **argv)
     /* open buf and check its correctness on the target device side */
     q.submit([&](handler& cgh) {
         auto dev_acc_buf = buf.get_access<mode::write>(cgh);
-        cgh.parallel_for<class bcast_test_rbuf_check>(range<1>{COUNT}, [=](item<1> id) {
+        cgh.parallel_for<class bcast_test_rbuf_check>(range<1>{ COUNT }, [=](item<1> id) {
             if (dev_acc_buf[id] != COLL_ROOT + 1) {
                 dev_acc_buf[id] = -1;
             }

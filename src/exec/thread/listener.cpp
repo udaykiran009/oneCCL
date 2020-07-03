@@ -3,12 +3,9 @@
 
 void* ccl_update_comm_world_info(void* args);
 
-ccl_listener::ccl_listener()
-    : ccl_base_thread(0, ccl_update_comm_world_info)
-{}
+ccl_listener::ccl_listener() : ccl_base_thread(0, ccl_update_comm_world_info) {}
 
-void* ccl_update_comm_world_info(void* args)
-{
+void* ccl_update_comm_world_info(void* args) {
     ccl_listener* listener = static_cast<ccl_listener*>(args);
 
     int res = 0;
@@ -16,8 +13,7 @@ void* ccl_update_comm_world_info(void* args)
 
     ccl::global_data& global_data = ccl::global_data::get();
 
-    while (true)
-    {
+    while (true) {
         /*
          * atl_wait_notification return values:
          * 0 - got notification, should do some updates
@@ -27,8 +23,7 @@ void* ccl_update_comm_world_info(void* args)
          * */
         res = atl_wait_notification(global_data.executor->get_atl_ctx());
 
-        if (res == 1)
-        {
+        if (res == 1) {
             if (listener->should_stop.load(std::memory_order_acquire))
                 break;
             else

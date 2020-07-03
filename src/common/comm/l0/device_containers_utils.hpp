@@ -4,11 +4,9 @@
 #include "ccl_types.hpp"
 #include "common/comm/l0/device_containers.hpp"
 
-namespace native
-{
+namespace native {
 
-namespace details
-{
+namespace details {
 /*
 struct splice_devices
 {
@@ -28,30 +26,23 @@ struct splice_devices
 };
 */
 
-template<ccl::device_group_split_type group_id,
-         ccl::device_topology_type class_id>
-struct printer
-{
-
-    template<class device_t>
-    void operator() (const native::indexed_device_container<device_t>& container)
-    {
-        for(const auto& dev : container)
-        {
-            device_rank_descr.insert({dev.first, dev.second->to_string()});
+template <ccl::device_group_split_type group_id, ccl::device_topology_type class_id>
+struct printer {
+    template <class device_t>
+    void operator()(const native::indexed_device_container<device_t>& container) {
+        for (const auto& dev : container) {
+            device_rank_descr.insert({ dev.first, dev.second->to_string() });
         }
     }
 
-    template<class device_t>
-    void operator() (const native::plain_device_container<device_t>& container)
-    {
-        for(const auto& dev : container)
-        {
-            device_rank_descr.insert({dev->template get_comm_data<group_id, class_id>().rank,
-                                      dev->to_string()});
+    template <class device_t>
+    void operator()(const native::plain_device_container<device_t>& container) {
+        for (const auto& dev : container) {
+            device_rank_descr.insert(
+                { dev->template get_comm_data<group_id, class_id>().rank, dev->to_string() });
         }
     }
-/*
+    /*
     template<class device_t>
     void operator() (const native::indexed_device_container<native::ccl_thread_comm<device_t>>& container)
     {
@@ -73,17 +64,15 @@ struct printer
         }
     }*/
 
-    std::string to_string() const
-    {
+    std::string to_string() const {
         std::stringstream ss;
-        for(auto val : device_rank_descr)
-        {
+        for (auto val : device_rank_descr) {
             ss << "idx: " << val.first << "\n" << val.second << std::endl;
         }
         return ss.str();
     }
     std::map<size_t, std::string> device_rank_descr;
 };
-}
+} // namespace details
 
-}
+} // namespace native

@@ -4,38 +4,31 @@ void run_collective(const char* cmd_name,
                     std::vector<float>& buf,
                     ccl::communicator_t& comm,
                     ccl::stream_t& stream,
-                    ccl::coll_attr& coll_attr)
-{
-    std::chrono::system_clock::duration exec_time{0};
+                    ccl::coll_attr& coll_attr) {
+    std::chrono::system_clock::duration exec_time{ 0 };
     float received;
 
-    if (comm->rank() == COLL_ROOT)
-    {
-        for (size_t idx = 0; idx < buf.size(); idx++)
-        {
+    if (comm->rank() == COLL_ROOT) {
+        for (size_t idx = 0; idx < buf.size(); idx++) {
             buf[idx] = static_cast<float>(idx);
         }
     }
     comm->barrier(stream);
 
-    for (size_t idx = 0; idx < ITERS; ++idx)
-    {
+    for (size_t idx = 0; idx < ITERS; ++idx) {
         auto start = std::chrono::system_clock::now();
-        comm->bcast(buf.data(),
-                   buf.size(),
-                   COLL_ROOT,
-                   &coll_attr,
-                   stream)->wait();
+        comm->bcast(buf.data(), buf.size(), COLL_ROOT, &coll_attr, stream)->wait();
         exec_time += std::chrono::system_clock::now() - start;
     }
 
-    for (size_t idx = 0; idx < buf.size(); idx++)
-    {
+    for (size_t idx = 0; idx < buf.size(); idx++) {
         received = buf[idx];
-        if (received != idx)
-        {
-            fprintf(stderr, "idx %zu, expected %4.4f, got %4.4f\n",
-                    idx, static_cast<float>(idx), received);
+        if (received != idx) {
+            fprintf(stderr,
+                    "idx %zu, expected %4.4f, got %4.4f\n",
+                    idx,
+                    static_cast<float>(idx),
+                    received);
 
             std::cout << "FAILED" << std::endl;
             std::terminate();
@@ -49,21 +42,17 @@ void run_collective(const char* cmd_name,
               << ", us" << std::endl;
 }
 
-int main()
-{
+int main() {
     auto comm = ccl::environment::instance().create_communicator();
     auto stream = ccl::environment::instance().create_stream();
     ccl::coll_attr coll_attr{};
 
-    MSG_LOOP(comm,
-        std::vector<float> buf(msg_count);
-        coll_attr.to_cache = 0;
-        run_collective("warmup_bcast", buf, comm, stream, coll_attr);
-        coll_attr.to_cache = 1;
-        run_collective("persistent_bcast", buf, comm, stream, coll_attr);
-        coll_attr.to_cache = 0;
-        run_collective("regular_bcast", buf, comm, stream, coll_attr);
-    );
+    MSG_LOOP(comm, std::vector<float> buf(msg_count); coll_attr.to_cache = 0;
+             run_collective("warmup_bcast", buf, comm, stream, coll_attr);
+             coll_attr.to_cache = 1;
+             run_collective("persistent_bcast", buf, comm, stream, coll_attr);
+             coll_attr.to_cache = 0;
+             run_collective("regular_bcast", buf, comm, stream, coll_attr););
 
     return 0;
 }

@@ -10,15 +10,14 @@
 
 #include "common/comm/l0/context/scaling_ctx/numa_ctx_impl.hpp"
 
-namespace native
-{
+namespace native {
 
-std::shared_ptr<device_group_context>
-        device_group_context::create(const ccl::context_comm_addr& comm_addr,
-                                     const ccl::device_indices_t& group_device_ids,
-                                     device_storage& devices)
-{
-    std::shared_ptr<device_group_context> ret(new device_group_context(comm_addr, group_device_ids));
+std::shared_ptr<device_group_context> device_group_context::create(
+    const ccl::context_comm_addr& comm_addr,
+    const ccl::device_indices_t& group_device_ids,
+    device_storage& devices) {
+    std::shared_ptr<device_group_context> ret(
+        new device_group_context(comm_addr, group_device_ids));
 
     //TODO More intellectual topology creation required
     //Ring
@@ -29,19 +28,21 @@ std::shared_ptr<device_group_context>
         auto matrix = top.build_p2p_capability_matrix(ss, group_device_ids);
         ss << "\nMatrix\n" << matrix << std::endl;
 
-        if(!top.build(ss, comm_addr, group_device_ids, matrix))
-        {
-            LOG_ERROR("Cannot build DEVICE_GROUP_RING. Devices cannot communicate for current setup!\nBuild log:\n", ss.str());
+        if (!top.build(ss, comm_addr, group_device_ids, matrix)) {
+            LOG_ERROR(
+                "Cannot build DEVICE_GROUP_RING. Devices cannot communicate for current setup!\nBuild log:\n",
+                ss.str());
             abort();
         }
-        LOG_DEBUG("Device Group Context for ", comm_addr.to_string(),
-                  " build RING topology. Log:\n ", ss.str());
+        LOG_DEBUG("Device Group Context for ",
+                  comm_addr.to_string(),
+                  " build RING topology. Log:\n ",
+                  ss.str());
 
-/*        native::details::printer<device_group_ring_topology::type()> p;
+        /*        native::details::printer<device_group_ring_topology::type()> p;
         ccl_tuple_for_each(ring_device_topology->get_device_storage(), p);
         LOG_INFO("Device Group ", context_addr.to_string(), " RING topology:\n", p.to_string());
 */
-
     }
 
     //A2A
@@ -71,30 +72,24 @@ std::shared_ptr<device_group_context>
 }
 
 device_group_context::device_group_context(const ccl::context_comm_addr& comm_addr,
-                                           const ccl::device_indices_t& group_device_ids):
-    scaling_context_base(),
-    device_indices(group_device_ids),
-    context_addr(comm_addr)
-{
+                                           const ccl::device_indices_t& group_device_ids)
+        : scaling_context_base(),
+          device_indices(group_device_ids),
+          context_addr(comm_addr) {
     //scheduler
     scheduler_impl.reset(new device_group_scheduler);
 }
 
-device_group_context::~device_group_context()
-{
-}
+device_group_context::~device_group_context() {}
 
-const ccl::device_indices_t& device_group_context::get_group_device_indices() const
-{
+const ccl::device_indices_t& device_group_context::get_group_device_indices() const {
     return device_indices;
 }
 
-device_group_context::scaling_context_base& device_group_context::get_numa_ctx()
-{
+device_group_context::scaling_context_base& device_group_context::get_numa_ctx() {
     return *this;
 }
-const device_group_context::scaling_context_base& device_group_context::get_numa_ctx() const
-{
+const device_group_context::scaling_context_base& device_group_context::get_numa_ctx() const {
     return *this;
 }
-}
+} // namespace native

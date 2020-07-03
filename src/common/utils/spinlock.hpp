@@ -3,8 +3,7 @@
 #include <atomic>
 #include <immintrin.h>
 
-class ccl_spinlock
-{
+class ccl_spinlock {
 public:
     ccl_spinlock();
     ccl_spinlock(const ccl_spinlock&) = delete;

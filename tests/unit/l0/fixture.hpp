@@ -1,67 +1,47 @@
 #include "base_fixture.hpp"
 
-class allreduce_one_device_local_fixture : public common_fixture
-{
+class allreduce_one_device_local_fixture : public common_fixture {
 protected:
-    allreduce_one_device_local_fixture() :
-        common_fixture(get_global_device_indices()/*"[0:0]"*/)
-    {}
+    allreduce_one_device_local_fixture()
+            : common_fixture(get_global_device_indices() /*"[0:0]"*/) {}
 
-    ~allreduce_one_device_local_fixture()
-    {
-    }
+    ~allreduce_one_device_local_fixture() {}
 
-    void SetUp() override
-    {
+    void SetUp() override {
         create_global_platform();
         local_affinity = global_affinities.at(0);
         create_local_platform();
         create_module_descr("kernels/ring_allreduce.spv");
     }
 
-    void TearDown() override
-    {
-    }
+    void TearDown() override {}
 };
 
-
-class allreduce_multi_device_local_fixture : public common_fixture
-{
+class allreduce_multi_device_local_fixture : public common_fixture {
 protected:
-    allreduce_multi_device_local_fixture() :
-        common_fixture(get_global_device_indices()/*"[0:0],[0:1]"*/)
-    {}
+    allreduce_multi_device_local_fixture()
+            : common_fixture(get_global_device_indices() /*"[0:0],[0:1]"*/) {}
 
-    ~allreduce_multi_device_local_fixture()
-    {
-    }
+    ~allreduce_multi_device_local_fixture() {}
 
-    void SetUp() override
-    {
+    void SetUp() override {
         create_global_platform();
         local_affinity = global_affinities.at(0);
         create_local_platform();
         create_module_descr("kernels/ring_allreduce.spv");
     }
 
-    void TearDown() override
-    {
-    }
+    void TearDown() override {}
 };
 
-class allreduce_one_device_multi_tile_local_fixture : public common_fixture
-{
+class allreduce_one_device_multi_tile_local_fixture : public common_fixture {
 protected:
-    allreduce_one_device_multi_tile_local_fixture() :
-        common_fixture(get_global_device_indices()/*"[0:0:0],[0:0:1]"*/)
-    {}
+    allreduce_one_device_multi_tile_local_fixture()
+            : common_fixture(get_global_device_indices() /*"[0:0:0],[0:0:1]"*/) {}
 
-    ~allreduce_one_device_multi_tile_local_fixture()
-    {
-    }
+    ~allreduce_one_device_multi_tile_local_fixture() {}
 
-    void SetUp() override
-    {
+    void SetUp() override {
         create_global_platform();
         const auto first_node_affinity = global_affinities.at(0);
         local_affinity = first_node_affinity;
@@ -72,89 +52,67 @@ protected:
         create_module_descr("kernels/ring_allreduce.spv");
     }
 
-    void TearDown() override
-    {
-    }
+    void TearDown() override {}
 };
 
-class gpu_aggregator_fixture : public common_fixture
-{
+class gpu_aggregator_fixture : public common_fixture {
 protected:
-    gpu_aggregator_fixture()
-     :common_fixture("")
-    {
-    }
+    gpu_aggregator_fixture() : common_fixture("") {}
 
-    virtual ~gpu_aggregator_fixture()
-    {
-    }
+    virtual ~gpu_aggregator_fixture() {}
 
-    void create_global_platform()
-    {
+    void create_global_platform() {
         // enumerates all available driver and all available devices(for foreign devices ipc handles recover)
         global_platform.reset(new native::ccl_device_platform());
     }
 
-    virtual void SetUp() override
-    {
+    virtual void SetUp() override {
         create_global_platform();
     }
 
-    virtual void TearDown() override
-    {
-    }
+    virtual void TearDown() override {}
 };
 
-class communicator_fixture : public testing::Test, public tracer
-{
+class communicator_fixture : public testing::Test, public tracer {
 public:
-    communicator_fixture():
-     global_comm(ccl::environment::instance().create_communicator())
-    {
+    communicator_fixture() : global_comm(ccl::environment::instance().create_communicator()) {
         global_comm->barrier();
     }
-    ~communicator_fixture() override
-    {
-    }
+    ~communicator_fixture() override {}
 
-    void initialize_global_mask(ccl::cluster_device_indices_t new_mask)
-    {
+    void initialize_global_mask(ccl::cluster_device_indices_t new_mask) {
         global_mask.swap(new_mask);
     }
 
-    size_t get_fixture_rank()
-    {
+    size_t get_fixture_rank() {
         return get_fixture_comm()->rank();
     }
 
-    size_t get_fixture_size()
-    {
+    size_t get_fixture_size() {
         return get_fixture_comm()->size();
     }
 
-    std::shared_ptr<ccl::communicator> get_fixture_comm()
-    {
+    std::shared_ptr<ccl::communicator> get_fixture_comm() {
         return global_comm;
     }
 
-    const ccl::cluster_device_indices_t& get_global_mask() const
-    {
+    const ccl::cluster_device_indices_t& get_global_mask() const {
         return global_mask;
     }
 
-    const ccl::device_indices_t& get_process_mask(const std::string& hostname, size_t process_order)
-    {
+    const ccl::device_indices_t& get_process_mask(const std::string& hostname,
+                                                  size_t process_order) {
         auto node_it = global_mask.find(hostname);
-        if(node_it == global_mask.end())
-        {
-            std::cerr << __FUNCTION__ << "global_mask doesn't contain host info: " << hostname << std::endl;
+        if (node_it == global_mask.end()) {
+            std::cerr << __FUNCTION__ << "global_mask doesn't contain host info: " << hostname
+                      << std::endl;
             abort();
         }
 
-        const auto &proc_it = node_it->second.find(process_order);
-        if(proc_it == node_it->second.end())
-        {
-            std::cerr << __FUNCTION__ << "proc mask for host: " << hostname <<" doesn't contain proc id: " << process_order << std::endl;
+        const auto& proc_it = node_it->second.find(process_order);
+        if (proc_it == node_it->second.end()) {
+            std::cerr << __FUNCTION__ << "proc mask for host: " << hostname
+                      << " doesn't contain proc id: " << process_order << std::endl;
             abort();
         }
         return proc_it->second;
@@ -163,27 +121,18 @@ public:
     std::shared_ptr<ccl::communicator> global_comm;
 };
 
-
-class shared_context_fixture : public common_fixture
-{
+class shared_context_fixture : public common_fixture {
 protected:
-    shared_context_fixture() :
-        common_fixture(get_global_device_indices())
-    {}
+    shared_context_fixture() : common_fixture(get_global_device_indices()) {}
 
-    ~shared_context_fixture()
-    {
-    }
+    ~shared_context_fixture() {}
 
-    void SetUp() override
-    {
+    void SetUp() override {
         create_global_platform();
         local_affinity = global_affinities.at(0);
         create_local_platform();
         create_module_descr("kernels/observer_event.spv");
     }
 
-    void TearDown() override
-    {
-    }
+    void TearDown() override {}
 };

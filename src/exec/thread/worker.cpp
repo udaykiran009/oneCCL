@@ -9,37 +9,31 @@
 
 static void* ccl_worker_func(void* args);
 
-ccl_worker::ccl_worker(size_t idx,
-                       std::unique_ptr<ccl_sched_queue> queue)
-    : ccl_base_thread(idx, ccl_worker_func),
-      should_lock(false), is_locked(false),
-      strict_sched_queue(std::unique_ptr<ccl_strict_sched_queue>(new ccl_strict_sched_queue())),
-      sched_queue(std::move(queue))
-{}
+ccl_worker::ccl_worker(size_t idx, std::unique_ptr<ccl_sched_queue> queue)
+        : ccl_base_thread(idx, ccl_worker_func),
+          should_lock(false),
+          is_locked(false),
+          strict_sched_queue(std::unique_ptr<ccl_strict_sched_queue>(new ccl_strict_sched_queue())),
+          sched_queue(std::move(queue)) {}
 
-void ccl_worker::add(ccl_sched* sched)
-{
-    LOG_DEBUG("add sched ", sched, ", type ",
-               ccl_coll_type_to_str(sched->coll_param.ctype));
+void ccl_worker::add(ccl_sched* sched) {
+    LOG_DEBUG("add sched ", sched, ", type ", ccl_coll_type_to_str(sched->coll_param.ctype));
 
     CCL_ASSERT(sched);
     CCL_ASSERT(!sched->bin);
     CCL_ASSERT(sched->get_in_bin_status() != ccl_sched_in_bin_added);
 
-    if (sched->strict_start_order)
-    {
+    if (sched->strict_start_order) {
         /* to keep valid non-completed req until safe releasing */
         sched->req->increase_counter(1);
         strict_sched_queue->add(sched);
     }
-    else
-    {
+    else {
         sched_queue->add(sched);
     }
 }
 
-ccl_status_t ccl_worker::do_work(size_t& processed_count)
-{
+ccl_status_t ccl_worker::do_work(size_t& processed_count) {
     do_work_counter++;
 
     auto ret = process_strict_sched_queue();
@@ -52,8 +46,7 @@ ccl_status_t ccl_worker::do_work(size_t& processed_count)
         return ret;
 
 #ifdef ENABLE_DEBUG
-    if (processed_count == 0 && (do_work_counter % CCL_WORKER_PROCESS_ALL_ITERS * 1024) == 0)
-    {
+    if (processed_count == 0 && (do_work_counter % CCL_WORKER_PROCESS_ALL_ITERS * 1024) == 0) {
         //sched_queue->dump(std::cout);
     }
 #endif
@@ -61,8 +54,7 @@ ccl_status_t ccl_worker::do_work(size_t& processed_count)
     return ccl_status_success;
 }
 
-ccl_status_t ccl_worker::process_strict_sched_queue()
-{
+ccl_status_t ccl_worker::process_strict_sched_queue() {
     auto& queue = strict_sched_queue->peek();
     if (queue.empty())
         return ccl_status_success;
@@ -70,12 +62,10 @@ ccl_status_t ccl_worker::process_strict_sched_queue()
     size_t erased_scheds = 0;
 
     /* try to finish previous postponed operations */
-    for (auto sched_it = queue.begin(); sched_it != queue.end(); sched_it++)
-    {
+    for (auto sched_it = queue.begin(); sched_it != queue.end(); sched_it++) {
         ccl_sched* sched = *sched_it;
 
-        if (sched->get_in_bin_status() == ccl_sched_in_bin_erased)
-        {
+        if (sched->get_in_bin_status() == ccl_sched_in_bin_erased) {
             CCL_ASSERT(!sched->bin);
             erased_scheds++;
 
@@ -87,8 +77,7 @@ ccl_status_t ccl_worker::process_strict_sched_queue()
             continue;
         }
 
-        if (sched->get_in_bin_status() == ccl_sched_in_bin_none)
-        {
+        if (sched->get_in_bin_status() == ccl_sched_in_bin_none) {
             CCL_ASSERT(!sched->bin, "unexpected bin ", sched->bin);
             /* here we add sched from strict_queue to regular queue for real execution */
             LOG_DEBUG("add sched ", sched, " from strict_queue to exec_queue, req ", sched->req);
@@ -96,12 +85,14 @@ ccl_status_t ccl_worker::process_strict_sched_queue()
         }
 
         CCL_ASSERT(sched->get_in_bin_status() == ccl_sched_in_bin_added,
-                   "sched ", sched, " unexpected in_bin_status ", sched->get_in_bin_status());
+                   "sched ",
+                   sched,
+                   " unexpected in_bin_status ",
+                   sched->get_in_bin_status());
 
         sched->do_progress();
 
-        if (!sched->is_strict_order_satisfied())
-        {
+        if (!sched->is_strict_order_satisfied()) {
             /*
                 we can't state that current operation is started with strict order
                 remove all previous operations from queue, as they were successfully started with strict order
@@ -110,8 +101,7 @@ ccl_status_t ccl_worker::process_strict_sched_queue()
             std::vector<ccl_sched*>(sched_it, queue.end()).swap(queue);
             return ccl_status_success;
         }
-        else
-        {
+        else {
             /* now it is safe to release this sched */
             sched->req->complete();
         }
@@ -122,19 +112,16 @@ ccl_status_t ccl_worker::process_strict_sched_queue()
     return ccl_status_success;
 }
 
-ccl_status_t ccl_worker::process_sched_queue(size_t& completed_sched_count, bool process_all)
-{
+ccl_status_t ccl_worker::process_sched_queue(size_t& completed_sched_count, bool process_all) {
     completed_sched_count = 0;
-    if (process_all)
-    {
+    if (process_all) {
         auto bins = sched_queue->peek_all();
 
         if (bins.empty())
             return ccl_status_success;
 
         size_t completed_sched_count_local = 0;
-        for (auto& bin : bins)
-        {
+        for (auto& bin : bins) {
             process_sched_bin(bin, completed_sched_count_local);
             completed_sched_count += completed_sched_count_local;
         }
@@ -144,8 +131,7 @@ ccl_status_t ccl_worker::process_sched_queue(size_t& completed_sched_count, bool
 
         return ccl_status_success;
     }
-    else
-    {
+    else {
         ccl_sched_bin* bin = sched_queue->peek();
         if (!bin)
             return ccl_status_success;
@@ -153,43 +139,42 @@ ccl_status_t ccl_worker::process_sched_queue(size_t& completed_sched_count, bool
     }
 }
 
-ccl_status_t ccl_worker::process_sched_bin(ccl_sched_bin* bin, size_t& completed_sched_count)
-{
+ccl_status_t ccl_worker::process_sched_bin(ccl_sched_bin* bin, size_t& completed_sched_count) {
     CCL_ASSERT(bin);
     completed_sched_count = 0;
 
     size_t bin_size = bin->size();
-    CCL_ASSERT(bin_size > 0 );
+    CCL_ASSERT(bin_size > 0);
 
     LOG_TRACE("bin ", bin, ", sched_count ", bin_size);
 
     /* ensure communication progress */
     atl_status_t atl_status = atl_ep_poll(bin->get_atl_ep());
-    if (ccl::global_data::get().is_ft_enabled)
-    {
+    if (ccl::global_data::get().is_ft_enabled) {
         if (atl_status != ATL_STATUS_SUCCESS)
             return ccl_status_blocked_due_to_resize;
     }
-    else
-    {
+    else {
         CCL_THROW_IF_NOT(atl_status == ATL_STATUS_SUCCESS, "bad status ", atl_status);
     }
 
     // iterate through the scheds stored in the bin
-    for (size_t sched_idx = 0; sched_idx < bin_size; )
-    {
+    for (size_t sched_idx = 0; sched_idx < bin_size;) {
         ccl_sched* sched = bin->get(sched_idx);
         CCL_ASSERT(sched && bin == sched->bin);
 
         sched->do_progress();
 
-        if (sched->start_idx == sched->entries.size())
-        {
+        if (sched->start_idx == sched->entries.size()) {
             // the last entry in the schedule has been completed, clean up the schedule and complete its request
-            LOG_DEBUG("complete and dequeue: sched ", sched,
-                ", coll ", ccl_coll_type_to_str(sched->coll_param.ctype),
-                ", req ", sched->req,
-                ", entry_count ", sched->entries.size());
+            LOG_DEBUG("complete and dequeue: sched ",
+                      sched,
+                      ", coll ",
+                      ccl_coll_type_to_str(sched->coll_param.ctype),
+                      ", req ",
+                      sched->req,
+                      ", entry_count ",
+                      sched->entries.size());
 
             // remove completed schedule from the bin
             sched_queue->erase(bin, sched_idx);
@@ -199,8 +184,7 @@ ccl_status_t ccl_worker::process_sched_bin(ccl_sched_bin* bin, size_t& completed
             sched->complete();
             ++completed_sched_count;
         }
-        else
-        {
+        else {
             // this schedule is not completed yet, switch to the next sched in bin scheds list
             // progression of unfinished schedules will be continued in the next call of @ref ccl_bin_progress
             ++sched_idx;
@@ -210,58 +194,51 @@ ccl_status_t ccl_worker::process_sched_bin(ccl_sched_bin* bin, size_t& completed
     return ccl_status_success;
 }
 
-void ccl_worker::clear_queue()
-{
+void ccl_worker::clear_queue() {
     strict_sched_queue->clear();
     sched_queue->clear();
 }
 
-static inline bool
-ccl_worker_check_conditions(ccl_worker* worker,
-                            size_t iter_count,
-                            int do_work_status)
-{
+static inline bool ccl_worker_check_conditions(ccl_worker* worker,
+                                               size_t iter_count,
+                                               int do_work_status) {
     bool should_stop = false;
 
-    if ((iter_count % CCL_WORKER_CHECK_STOP_ITERS) == 0)
-    {
+    if ((iter_count % CCL_WORKER_CHECK_STOP_ITERS) == 0) {
         if (worker->should_stop.load(std::memory_order_acquire))
             should_stop = true;
     }
 
     if (ccl::global_data::get().is_ft_enabled &&
         unlikely(do_work_status == ccl_status_blocked_due_to_resize ||
-                 iter_count % CCL_WORKER_CHECK_UPDATE_ITERS == 0))
-    {
-        if (worker->should_lock.load(std::memory_order_acquire))
-        {
+                 iter_count % CCL_WORKER_CHECK_UPDATE_ITERS == 0)) {
+        if (worker->should_lock.load(std::memory_order_acquire)) {
             worker->clear_queue();
             worker->is_locked = true;
-            while (worker->should_lock.load(std::memory_order_relaxed))
-            {
+            while (worker->should_lock.load(std::memory_order_relaxed)) {
                 ccl_yield(ccl::global_data::env().yield_type);
             }
             worker->is_locked = false;
         }
     }
 
-    if ((iter_count % CCL_WORKER_CHECK_AFFINITY_ITERS) == 0)
-    {
+    if ((iter_count % CCL_WORKER_CHECK_AFFINITY_ITERS) == 0) {
         int start_affinity = worker->get_start_affinity();
         int affinity = worker->get_affinity();
-        if (start_affinity != affinity)
-        {
-            LOG_ERROR("worker ", worker->get_idx(),
-                " unexpectedly changed affinity from ", start_affinity,
-                " to ", affinity);
+        if (start_affinity != affinity) {
+            LOG_ERROR("worker ",
+                      worker->get_idx(),
+                      " unexpectedly changed affinity from ",
+                      start_affinity,
+                      " to ",
+                      affinity);
         }
     }
 
     return should_stop;
 }
 
-static void* ccl_worker_func(void* args)
-{
+static void* ccl_worker_func(void* args) {
     auto worker = static_cast<ccl_worker*>(args);
     LOG_INFO("worker_idx ", worker->get_idx());
 
@@ -274,45 +251,36 @@ static void* ccl_worker_func(void* args)
     ccl::global_data::get().is_worker_thread = true;
     worker->started = true;
 
-    do
-    {
-        try
-        {
+    do {
+        try {
             ret = worker->do_work(processed_count);
 
             if (ccl_worker_check_conditions(worker, iter_count, ret))
                 break;
         }
-        catch (ccl::ccl_error& ccl_e)
-        {
+        catch (ccl::ccl_error& ccl_e) {
             CCL_FATAL("worker ", worker->get_idx(), " caught internal exception: ", ccl_e.what());
         }
-        catch (std::exception& e)
-        {
+        catch (std::exception& e) {
             CCL_FATAL("worker ", worker->get_idx(), " caught exception: ", e.what());
         }
-        catch (...)
-        {
+        catch (...) {
             CCL_FATAL("worker ", worker->get_idx(), " caught general exception");
         }
 
         iter_count++;
 
-        if (processed_count == 0)
-        {
+        if (processed_count == 0) {
             spin_count--;
-            if (!spin_count)
-            {
+            if (!spin_count) {
                 ccl_yield(ccl::global_data::env().yield_type);
                 spin_count = 1;
             }
         }
-        else
-        {
+        else {
             spin_count = max_spin_count;
         }
-    }
-    while (true);
+    } while (true);
 
     worker->started = false;
 

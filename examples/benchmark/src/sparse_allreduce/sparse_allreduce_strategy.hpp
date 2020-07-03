@@ -1,31 +1,34 @@
 #ifndef SPARSE_ALLREDUCE_STRATEGY_HPP
 #define SPARSE_ALLREDUCE_STRATEGY_HPP
 
-template<class type>
-struct type_printer
-{
-    static constexpr const char* sparse_class_name() { return "sparse_allreduce"; }
+template <class type>
+struct type_printer {
+    static constexpr const char* sparse_class_name() {
+        return "sparse_allreduce";
+    }
 };
 
-template<>
-struct type_printer<ccl::bfp16>
-{
-    static constexpr const char* sparse_class_name() { return "sparse_allreduce_bfp16"; }
+template <>
+struct type_printer<ccl::bfp16> {
+    static constexpr const char* sparse_class_name() {
+        return "sparse_allreduce_bfp16";
+    }
 };
 
-typedef struct
-{
+typedef struct {
     void** recv_ibuf;
     void** recv_vbuf;
     size_t recv_ibuf_count;
     size_t recv_vbuf_count;
 } sparse_allreduce_fn_ctx_t;
 
-ccl_status_t sparse_allreduce_completion_fn(
-    const void* ind_buf, size_t ind_count, ccl_datatype_t ind_dtype,
-    const void* val_buf, size_t val_count, ccl_datatype_t val_dtype,
-    const void* fn_ctx)
-{
+ccl_status_t sparse_allreduce_completion_fn(const void* ind_buf,
+                                            size_t ind_count,
+                                            ccl_datatype_t ind_dtype,
+                                            const void* val_buf,
+                                            size_t val_count,
+                                            ccl_datatype_t val_dtype,
+                                            const void* fn_ctx) {
     // printf("callback: ibuf %p, icnt %zu, idt %d, vbuf %p, cvnt %zu, vdt %d\n",
     //     ind_buf, ind_count, ind_dtype, val_buf, val_count, val_dtype);
 
@@ -59,12 +62,13 @@ ccl_status_t sparse_allreduce_completion_fn(
     return ccl_status_success;
 }
 
-ccl_status_t sparse_allreduce_alloc_fn(
-    size_t ind_count, ccl_datatype_t ind_dtype,
-    size_t val_count, ccl_datatype_t val_dtype,
-    const void* fn_ctx,
-    void** out_ind_buf, void** out_val_buf)
-{
+ccl_status_t sparse_allreduce_alloc_fn(size_t ind_count,
+                                       ccl_datatype_t ind_dtype,
+                                       size_t val_count,
+                                       ccl_datatype_t val_dtype,
+                                       const void* fn_ctx,
+                                       void** out_ind_buf,
+                                       void** out_val_buf) {
     // printf("callback: icnt %zu, idt %d, cvnt %zu, vdt %d\n",
     //     ind_count, ind_dtype, val_count, val_dtype);
 
@@ -98,17 +102,15 @@ ccl_status_t sparse_allreduce_alloc_fn(
     return ccl_status_success;
 }
 
-template<class IType, template<class> class IndicesDistributorType>
-struct sparse_allreduce_strategy_impl
-{
-    static constexpr const char* class_name()
-    {
+template <class IType, template <class> class IndicesDistributorType>
+struct sparse_allreduce_strategy_impl {
+    static constexpr const char* class_name() {
         return type_printer<IType>::sparse_class_name();
     }
 
-    template<class T>
+    template <class T>
     using remove_ptr_t = typename std::remove_pointer<T>::type;
-    template<class T>
+    template <class T>
     using remove_all_t = typename std::remove_const<remove_ptr_t<T>>::type;
 
     using IndicesDistributor = IndicesDistributorType<remove_all_t<IType>>;
@@ -117,41 +119,40 @@ struct sparse_allreduce_strategy_impl
     size_t comm_size;
     const size_t minimal_indices_count = 1;
 
-    void init_distributor(const std::pair<size_t, size_t>& elem_range)
-    {
+    void init_distributor(const std::pair<size_t, size_t>& elem_range) {
         size_t indices_count = std::get<0>(get_expected_recv_counts(elem_range.second));
-        indices_distributor_impl.reset(new IndicesDistributor(elem_range.first,
-                                                              indices_count));
+        indices_distributor_impl.reset(new IndicesDistributor(elem_range.first, indices_count));
     }
 
     sparse_allreduce_strategy_impl(size_t v2i_ratio, size_t comm_size)
-      : v2i_ratio(v2i_ratio),
-        comm_size(comm_size)
-    {}
+            : v2i_ratio(v2i_ratio),
+              comm_size(comm_size) {}
 
     sparse_allreduce_strategy_impl(const allgatherv_strategy_impl&) = delete;
     sparse_allreduce_strategy_impl& operator=(const allgatherv_strategy_impl&) = delete;
     ~sparse_allreduce_strategy_impl() = default;
 
-    std::tuple<size_t, size_t> get_expected_recv_counts(size_t elem_count) const
-    {
-        size_t indices_count = std::max(elem_count / v2i_ratio,
-                                        minimal_indices_count);
+    std::tuple<size_t, size_t> get_expected_recv_counts(size_t elem_count) const {
+        size_t indices_count = std::max(elem_count / v2i_ratio, minimal_indices_count);
         size_t vdim_count = (elem_count / indices_count);
 
         return std::tuple<size_t, size_t>(indices_count, indices_count * vdim_count);
     }
 
-    template<class VType>
+    template <class VType>
     void start_internal(ccl::communicator& comm,
-                        const IType send_ibuf, size_t send_icount,
-                        const VType send_vbuf, size_t send_vcount,
-                        IType recv_ibuf, size_t recv_icount,
-                        VType recv_vbuf, size_t recv_vcount,
-                        const bench_coll_exec_attr& bench_attr, ccl::stream_t& stream,
+                        const IType send_ibuf,
+                        size_t send_icount,
+                        const VType send_vbuf,
+                        size_t send_vcount,
+                        IType recv_ibuf,
+                        size_t recv_icount,
+                        VType recv_vbuf,
+                        size_t recv_vcount,
+                        const bench_coll_exec_attr& bench_attr,
+                        ccl::stream_t& stream,
                         req_list_t& reqs,
-                        sparse_allreduce_fn_ctx_t& fn_ctx)
-    {
+                        sparse_allreduce_fn_ctx_t& fn_ctx) {
         auto expected = get_expected_recv_counts(send_vcount);
         recv_icount = std::get<0>(expected);
         recv_vcount = std::get<1>(expected);
@@ -165,12 +166,17 @@ struct sparse_allreduce_strategy_impl
         sparse_attr.sparse_allreduce_fn_ctx = &fn_ctx;
         sparse_attr.sparse_coalesce_mode = ccl_sparse_coalesce_keep_precision;
 
-        reqs.push_back(comm.sparse_allreduce(send_ibuf, std::get<0>(expected),
-                                             send_vbuf, send_vcount,
-                                             recv_ibuf, recv_icount,
-                                             recv_vbuf, recv_vcount,
+        reqs.push_back(comm.sparse_allreduce(send_ibuf,
+                                             std::get<0>(expected),
+                                             send_vbuf,
+                                             send_vcount,
+                                             recv_ibuf,
+                                             recv_icount,
+                                             recv_vbuf,
+                                             recv_vcount,
                                              bench_attr.reduction,
-                                             &sparse_attr, stream));
+                                             &sparse_attr,
+                                             stream));
     }
 
     std::unique_ptr<IndicesDistributor> indices_distributor_impl;

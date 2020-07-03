@@ -1,17 +1,15 @@
 #pragma once
 #include "common/comm/l0/communicator/typed_base_communicator.hpp"
 
-namespace native
-{
-    struct thread_group_context;
+namespace native {
+struct thread_group_context;
 }
 
-class thread_device_group_ring_communicator :
-       public typed_base_communicator<thread_device_group_ring_communicator,
-                                      ccl::device_group_split_type::process,
-                                      ccl::device_topology_type::ring,
-                                      ccl::gpu_communicator_traits>
-{
+class thread_device_group_ring_communicator
+        : public typed_base_communicator<thread_device_group_ring_communicator,
+                                         ccl::device_group_split_type::process,
+                                         ccl::device_topology_type::ring,
+                                         ccl::gpu_communicator_traits> {
 public:
     using base_t = typed_base_communicator<thread_device_group_ring_communicator,
                                            ccl::device_group_split_type::process,

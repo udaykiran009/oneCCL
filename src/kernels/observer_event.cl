@@ -1,21 +1,18 @@
 #pragma OPENCL EXTENSION cl_khr_int64_base_atomics : enable
 
 #ifndef BUFFER_SIZE
-    #define BUFFER_SIZE 1024024
+#define BUFFER_SIZE 1024024
 #endif
-
 
 #ifndef CHUNK_SIZE
-    #define CHUNK_SIZE 16
+#define CHUNK_SIZE 16
 #endif
 
-
 __kernel void numa_poll(const __global float* input_buffer,
-                         __global float* output_buffer,
+                        __global float* output_buffer,
 
                         __global int* producer_bytes,
-                        __global float* producer_data)
-{
+                        __global float* producer_data) {
     int wg_size = get_global_size(0);
     int wi_id = get_global_id(0);
 
@@ -23,10 +20,8 @@ __kernel void numa_poll(const __global float* input_buffer,
 
     size_t i = 0;
     size_t incr = 0;
-    for (; i < BUFFER_SIZE; i += wg_size)
-    {
-        if(wi_id + i < BUFFER_SIZE)
-        {
+    for (; i < BUFFER_SIZE; i += wg_size) {
+        if (wi_id + i < BUFFER_SIZE) {
             local_buffer[wi_id] = input_buffer[i + wi_id] * (wi_id % wg_size);
             barrier(CLK_LOCAL_MEM_FENCE);
 

@@ -26,81 +26,64 @@
 #undef private
 
 #ifdef STANDALONE_UT
-    #define UT_ASSERT(cond, ...)                                                            \
-    do                                                                                      \
-    {                                                                                       \
-        if (!(cond))                                                                        \
-        {                                                                                   \
-            std::cerr << __VA_ARGS__ << std::endl;                                          \
-            set_error(__PRETTY_FUNCTION__);                                                 \
-            dump();                                                                         \
-            abort();                                                                        \
-        }                                                                                   \
-    } while(0);
+#define UT_ASSERT(cond, ...) \
+    do { \
+        if (!(cond)) { \
+            std::cerr << __VA_ARGS__ << std::endl; \
+            set_error(__PRETTY_FUNCTION__); \
+            dump(); \
+            abort(); \
+        } \
+    } while (0);
 #else
-    #define UT_ASSERT(cond, ...)                                                            \
-        do                                                                                  \
-        {                                                                                   \
-            if(!(cond))                                                                     \
-            {                                                                               \
-                set_error(__PRETTY_FUNCTION__);                                             \
-            }                                                                               \
-            {                                                                               \
-                ASSERT_TRUE((cond)) << __VA_ARGS__ << std::endl;                            \
-            }                                                                               \
-        } while(0);
+#define UT_ASSERT(cond, ...) \
+    do { \
+        if (!(cond)) { \
+            set_error(__PRETTY_FUNCTION__); \
+        } \
+        { ASSERT_TRUE((cond)) << __VA_ARGS__ << std::endl; } \
+    } while (0);
 #endif
 
-
-template<typename T>
-inline void str_to_array(const char* input,
-                  std::vector<T>& output,
-                  char delimiter)
-{
-    if(!input)
-    {
+template <typename T>
+inline void str_to_array(const char* input, std::vector<T>& output, char delimiter) {
+    if (!input) {
         return;
     }
     std::stringstream ss(input);
     T temp{};
-    while (ss >> temp)
-    {
+    while (ss >> temp) {
         output.push_back(temp);
-        if (ss.peek() == delimiter)
-        {
+        if (ss.peek() == delimiter) {
             ss.ignore();
         }
     }
 }
-template<>
-inline void str_to_array(const char* input,
-                  std::vector<std::string>& output,
-                  char delimiter)
-{
+template <>
+inline void str_to_array(const char* input, std::vector<std::string>& output, char delimiter) {
     std::string processes_input(input);
 
-    processes_input.erase(std::remove_if(processes_input.begin(), processes_input.end(), [](unsigned char x) { return std::isspace(x);}),
+    processes_input.erase(std::remove_if(processes_input.begin(),
+                                         processes_input.end(),
+                                         [](unsigned char x) {
+                                             return std::isspace(x);
+                                         }),
                           processes_input.end());
 
     std::replace(processes_input.begin(), processes_input.end(), delimiter, ' ');
     std::stringstream ss(processes_input);
 
-
-    while (ss >> processes_input)
-    {
+    while (ss >> processes_input) {
         output.push_back(processes_input);
     }
 }
 
-int readFromSocket(int socket, unsigned char *buffer, size_t size)
-{
+int readFromSocket(int socket, unsigned char* buffer, size_t size) {
     size_t bytesRead = 0;
     int result;
-    while (bytesRead < size)
-    {
+    while (bytesRead < size) {
         result = static_cast<int>(read(socket, buffer + bytesRead, size - bytesRead));
-        if (result < 0)
-        {
+        if (result < 0) {
             return -1;
         }
 
@@ -109,12 +92,10 @@ int readFromSocket(int socket, unsigned char *buffer, size_t size)
     return 0;
 }
 
-int writeToSocket(int socket, unsigned char *buffer, size_t size)
-{
+int writeToSocket(int socket, unsigned char* buffer, size_t size) {
     size_t bytesWritten = 0;
     int result;
-    while (bytesWritten < size)
-    {
+    while (bytesWritten < size) {
         result = static_cast<int>(write(socket, buffer + bytesWritten, size - bytesWritten));
         if (result < 0) {
             return -1;
@@ -125,13 +106,11 @@ int writeToSocket(int socket, unsigned char *buffer, size_t size)
     return 0;
 }
 
-std::vector<uint8_t> load_binary_file(const std::string& source_path)
-{
+std::vector<uint8_t> load_binary_file(const std::string& source_path) {
     std::ifstream stream(source_path, std::ios::in | std::ios::binary);
 
     std::vector<uint8_t> binary_file;
-    if (!stream.good())
-    {
+    if (!stream.good()) {
         std::string error("Failed to load binary file: ");
         error += source_path;
         throw std::runtime_error(error);
@@ -143,28 +122,24 @@ std::vector<uint8_t> load_binary_file(const std::string& source_path)
     stream.seekg(0, stream.beg);
 
     binary_file.resize(length);
-    stream.read(reinterpret_cast<char *>(binary_file.data()), length);
+    stream.read(reinterpret_cast<char*>(binary_file.data()), length);
     return binary_file;
 }
 
-
-template<class T>
-struct handles_storage
-{
+template <class T>
+struct handles_storage {
     using mem_handles_container = std::list<T*>;
     using thread_handles_container = std::map<size_t, mem_handles_container>;
 
-    std::vector<native::ccl_device::device_memory<T>>                       allocated_storage;
-    thread_handles_container                                            per_thread_storage;
+    std::vector<native::ccl_device::device_memory<T>> allocated_storage;
+    thread_handles_container per_thread_storage;
 
-    handles_storage(size_t expected_size)
-    {
+    handles_storage(size_t expected_size) {
         allocated_storage.reserve(expected_size);
     }
 
     // TODO check on depreaction - perhaps not needed anymore
-    void rotate_shared_data(size_t thread_id, size_t threads_count, size_t group_size)
-    {
+    void rotate_shared_data(size_t thread_id, size_t threads_count, size_t group_size) {
         size_t initial_index = 0;
         mem_handles_container& right_mem_handles = per_thread_storage[thread_id];
 
@@ -172,18 +147,14 @@ struct handles_storage
         //Needed to kernel arguments binding: Resident Parameters come at fist position
         auto rotation_it = right_mem_handles.begin();
         std::advance(rotation_it, (thread_id - initial_index) * group_size);
-        std::rotate(right_mem_handles.begin(),
-                    rotation_it,
-                    right_mem_handles.end());
+        std::rotate(right_mem_handles.begin(), rotation_it, right_mem_handles.end());
     }
 
-    template<class ...Handles>
-    void register_shared_data(size_t thread_idx, size_t threads_count, Handles&&...h)
-    {
-        std::array<native::ccl_device::device_memory<T>, sizeof...(h)> list{std::move(h)...};
+    template <class... Handles>
+    void register_shared_data(size_t thread_idx, size_t threads_count, Handles&&... h) {
+        std::array<native::ccl_device::device_memory<T>, sizeof...(h)> list{ std::move(h)... };
         std::vector<T*> weak_handles;
-        for(auto& h : list)
-        {
+        for (auto& h : list) {
             weak_handles.push_back(h.handle);
         }
 
@@ -197,47 +168,41 @@ struct handles_storage
         //to the end of right: next thread id handles belong to next device
         // -> foreign handles has position in ending of kernel arguments
         size_t initial_index = thread_idx;
-        size_t right_thread_idx = (initial_index + 1 ) % threads_count;
-        do
-        {
+        size_t right_thread_idx = (initial_index + 1) % threads_count;
+        do {
             mem_handles_container& right_mem_handles = per_thread_storage[right_thread_idx];
-            right_mem_handles.insert(right_mem_handles.begin(), weak_handles.begin(), weak_handles.end());
+            right_mem_handles.insert(
+                right_mem_handles.begin(), weak_handles.begin(), weak_handles.end());
 
             thread_idx++;
-            right_thread_idx = (thread_idx + 1 ) % threads_count;
+            right_thread_idx = (thread_idx + 1) % threads_count;
         } while (right_thread_idx != initial_index);
-
     }
 
-    void dump_for_thread(std::ostream& out, size_t thread_idx, bool handles_only = false)
-    {
+    void dump_for_thread(std::ostream& out, size_t thread_idx, bool handles_only = false) {
         auto it = per_thread_storage.find(thread_idx);
-        if(it == per_thread_storage.end())
-        {
+        if (it == per_thread_storage.end()) {
             std::cerr << __FUNCTION__ << ": Invalid thread_idx: " << thread_idx << std::endl;
             abort();
         }
         const auto& handles = it->second;
 
-        out << "Thread: "  << it->first << std::endl;
-        for(const auto& mem : handles)
-        {
+        out << "Thread: " << it->first << std::endl;
+        for (const auto& mem : handles) {
             out << mem << ", ";
         }
         out << std::endl;
 
-        if(!handles_only)
-        {
-            for(const auto& mem : handles)
-            {
+        if (!handles_only) {
+            for (const auto& mem : handles) {
                 const T* data = mem;
-                auto it = std::find_if(allocated_storage.begin(), allocated_storage.end(), [data](const native::ccl_device::device_memory<T>& wrapper)
-                {
-                    return wrapper.handle == data;
-                }) ;
+                auto it = std::find_if(allocated_storage.begin(),
+                                       allocated_storage.end(),
+                                       [data](const native::ccl_device::device_memory<T>& wrapper) {
+                                           return wrapper.handle == data;
+                                       });
 
-                if (it == allocated_storage.end())
-                {
+                if (it == allocated_storage.end()) {
                     std::cerr << __FUNCTION__ << ": Cannot find mem handle" << std::endl;
                     abort();
                 }
@@ -248,45 +213,41 @@ struct handles_storage
         }
     }
 
-    void dump(std::ostream& out, bool handles_only = false)
-    {
-        for(const auto& val : per_thread_storage)
-        {
+    void dump(std::ostream& out, bool handles_only = false) {
+        for (const auto& val : per_thread_storage) {
             dump_for_thread(out, val.first, handles_only);
         }
     }
 
-    void dump_for_thread_by_index(std::ostream& out, size_t thread_idx, size_t mem_idx, bool handles_only = false)
-    {
+    void dump_for_thread_by_index(std::ostream& out,
+                                  size_t thread_idx,
+                                  size_t mem_idx,
+                                  bool handles_only = false) {
         auto it = per_thread_storage.find(thread_idx);
-        if(it == per_thread_storage.end())
-        {
+        if (it == per_thread_storage.end()) {
             std::cerr << __FUNCTION__ << ": Invalid thread_idx: " << thread_idx << std::endl;
             abort();
         }
         const auto& handles = it->second;
 
-        out << "Thread: "  << it->first << ", handle: ";
+        out << "Thread: " << it->first << ", handle: ";
         size_t i = 0;
-        for (auto it = handles.begin(); it != handles.end(); it++, i++)
-        {
-            if(i != mem_idx)
-            {
+        for (auto it = handles.begin(); it != handles.end(); it++, i++) {
+            if (i != mem_idx) {
                 continue;
             }
             auto* mem = *it;
             out << mem << std::endl;
 
-            if(!handles_only)
-            {
+            if (!handles_only) {
                 const T* data = mem;
-                auto it = std::find_if(allocated_storage.begin(), allocated_storage.end(), [data](const native::ccl_device::device_memory<T>& wrapper)
-                {
-                    return wrapper.handle == data;
-                }) ;
+                auto it = std::find_if(allocated_storage.begin(),
+                                       allocated_storage.end(),
+                                       [data](const native::ccl_device::device_memory<T>& wrapper) {
+                                           return wrapper.handle == data;
+                                       });
 
-                if (it == allocated_storage.end())
-                {
+                if (it == allocated_storage.end()) {
                     std::cerr << __FUNCTION__ << ": Cannot find mem handle" << std::endl;
                     abort();
                 }
@@ -297,19 +258,16 @@ struct handles_storage
             }
         }
     }
-    void dump_by_index(std::ostream& out, size_t mem_handle_index, bool handles_only = false)
-    {
-        for(const auto& val : per_thread_storage)
-        {
+    void dump_by_index(std::ostream& out, size_t mem_handle_index, bool handles_only = false) {
+        for (const auto& val : per_thread_storage) {
             dump_for_thread_by_index(out, val.first, mem_handle_index, handles_only);
         }
     }
 
-    mem_handles_container collect_thread_handles_by_index(size_t thread_idx, std::initializer_list<size_t> ids)
-    {
+    mem_handles_container collect_thread_handles_by_index(size_t thread_idx,
+                                                          std::initializer_list<size_t> ids) {
         auto it = per_thread_storage.find(thread_idx);
-        if(it == per_thread_storage.end())
-        {
+        if (it == per_thread_storage.end()) {
             std::cerr << __FUNCTION__ << ": Invalid thread_idx: " << thread_idx << std::endl;
             abort();
         }
@@ -317,11 +275,10 @@ struct handles_storage
         mem_handles_container ret;
         const auto& handles = it->second;
         size_t list_size = handles.size();
-        for(auto it = ids.begin(); it != ids.end(); ++it)
-        {
-            if(*it >= list_size)
-            {
-                std::cerr << __FUNCTION__ << ": Invalid index requested: " << *it << ", max: " << list_size << std::endl;
+        for (auto it = ids.begin(); it != ids.end(); ++it) {
+            if (*it >= list_size) {
+                std::cerr << __FUNCTION__ << ": Invalid index requested: " << *it
+                          << ", max: " << list_size << std::endl;
                 abort();
             }
             auto list_it = handles.begin();
@@ -332,57 +289,50 @@ struct handles_storage
         return ret;
     }
 
-    thread_handles_container collect_handles_by_index(std::initializer_list<size_t> ids)
-    {
+    thread_handles_container collect_handles_by_index(std::initializer_list<size_t> ids) {
         thread_handles_container ret;
 
-        for(const auto& val : per_thread_storage)
-        {
+        for (const auto& val : per_thread_storage) {
             ret[val.first] = collect_thread_handles_by_index(val.first, ids);
         }
         return ret;
     }
 };
 
-
 /*IPC handles*/
-template<class T>
-struct ipc_server_handles_storage
-{
+template <class T>
+struct ipc_server_handles_storage {
     using ipc_shared_handle = std::shared_ptr<native::ccl_device::device_ipc_memory_handle>;
     using ipc_handles_container = std::list<ipc_shared_handle>;
 
-    std::vector<ipc_shared_handle>                                      allocated_storage;
-    std::map<size_t, ipc_handles_container>                             per_thread_storage;
+    std::vector<ipc_shared_handle> allocated_storage;
+    std::map<size_t, ipc_handles_container> per_thread_storage;
 
-    ipc_server_handles_storage(size_t expected_size)
-    {
+    ipc_server_handles_storage(size_t expected_size) {
         allocated_storage.reserve(expected_size);
     }
 
-    template<class ...Handles>
-    void create_ipcs(size_t thread_idx, size_t threads_count, Handles*...h)
-    {
-        std::array<native::ccl_device::device_memory<T>*, sizeof...(h)> memory_handles{h...};
+    template <class... Handles>
+    void create_ipcs(size_t thread_idx, size_t threads_count, Handles*... h) {
+        std::array<native::ccl_device::device_memory<T>*, sizeof...(h)> memory_handles{ h... };
 
         ipc_handles_container& ipc_cont = per_thread_storage[thread_idx];
 
-        std::transform(memory_handles.begin(), memory_handles.end(),
-                       std::back_inserter(ipc_cont),
-                       [](native::ccl_device::device_memory<T>* memory_handle)
-                       {
-                           auto device_ptr = memory_handle->get_owner().lock();
-                           return device_ptr->create_shared_ipc_memory_handle(memory_handle->handle);
-                       });
+        std::transform(
+            memory_handles.begin(),
+            memory_handles.end(),
+            std::back_inserter(ipc_cont),
+            [](native::ccl_device::device_memory<T>* memory_handle) {
+                auto device_ptr = memory_handle->get_owner().lock();
+                return device_ptr->create_shared_ipc_memory_handle(memory_handle->handle);
+            });
     }
 
-    std::vector<uint8_t> serialize_storage(size_t thread_idx)
-    {
+    std::vector<uint8_t> serialize_storage(size_t thread_idx) {
         std::vector<uint8_t> serialized_raw_handles;
         auto it = per_thread_storage.find(thread_idx);
-        if(it == per_thread_storage.end())
-        {
-            std::cerr <<  __PRETTY_FUNCTION__ << " invalid thred id: " << thread_idx << std::endl;
+        if (it == per_thread_storage.end()) {
+            std::cerr << __PRETTY_FUNCTION__ << " invalid thred id: " << thread_idx << std::endl;
             abort();
         }
 
@@ -391,16 +341,14 @@ struct ipc_server_handles_storage
         size_t offset = 0;
         serialized_raw_handles.push_back((uint8_t)thread_idx); //TODO
         offset += sizeof(uint8_t);
-        for(auto& ipc_ptr : ipc_cont)
-        {
-            try
-            {
+        for (auto& ipc_ptr : ipc_cont) {
+            try {
                 offset += ipc_ptr->serialize(serialized_raw_handles, offset);
             }
-            catch(const std::exception& ex)
-            {
-                std::cerr << "Cannot serialize ip memory handle: " << native::to_string(ipc_ptr->handle)
-                                << "\nError: " << ex.what() << std::endl;
+            catch (const std::exception& ex) {
+                std::cerr << "Cannot serialize ip memory handle: "
+                          << native::to_string(ipc_ptr->handle) << "\nError: " << ex.what()
+                          << std::endl;
                 abort();
             }
         }
@@ -408,20 +356,16 @@ struct ipc_server_handles_storage
     }
 };
 
-
-
-template<class T>
-struct ipc_client_handles_storage
-{
+template <class T>
+struct ipc_client_handles_storage {
     using ipc_client_shared = std::shared_ptr<native::ccl_device::device_ipc_memory>;
     using ipc_client_handles_container = std::list<ipc_client_shared>;
 
-    std::map<size_t, ipc_client_handles_container>                      per_thread_storage;
+    std::map<size_t, ipc_client_handles_container> per_thread_storage;
 
     size_t deserialize(const std::vector<uint8_t>& received_raw_handles,
                        size_t expected_handles,
-                       native::ccl_device_platform& global_platform)
-    {
+                       native::ccl_device_platform& global_platform) {
         using namespace native;
 
         size_t restored_handles = 0;
@@ -432,37 +376,35 @@ struct ipc_client_handles_storage
 
         ccl_device_driver& global_driver = *global_platform.drivers.find(0)->second;
 
-
-        while(recv_data_size > 0 and restored_handles < expected_handles)
-        {
-            try
-            {
-                auto recv_ipc_handle =
-                    ccl_device::device_ipc_memory_handle::deserialize<ccl_device::device_ipc_memory_handle>(&recv_data_start,
-                                                                                                            recv_data_size,
-                                                                                                            global_platform);
+        while (recv_data_size > 0 and restored_handles < expected_handles) {
+            try {
+                auto recv_ipc_handle = ccl_device::device_ipc_memory_handle::deserialize<
+                    ccl_device::device_ipc_memory_handle>(
+                    &recv_data_start, recv_data_size, global_platform);
 
                 std::shared_ptr<ccl_device> owner_device = recv_ipc_handle->get_owner().lock();
-                auto ipc_device_it = std::find_if(global_driver.devices.begin(), global_driver.devices.end(),
-                                                [owner_device](typename ccl_device_driver::devices_storage_type::value_type& dev)
-                                                {
-                                                    return dev.second->handle == owner_device->handle;
-                                                });
-                if(ipc_device_it == global_driver.devices.end())
-                {
+                auto ipc_device_it = std::find_if(
+                    global_driver.devices.begin(),
+                    global_driver.devices.end(),
+                    [owner_device](
+                        typename ccl_device_driver::devices_storage_type::value_type& dev) {
+                        return dev.second->handle == owner_device->handle;
+                    });
+                if (ipc_device_it == global_driver.devices.end()) {
                     throw std::runtime_error("Cannot find ipc device in global driver");
                 }
 
-                per_thread_storage[thread_id].emplace_back(owner_device->restore_shared_ipc_memory(std::move(recv_ipc_handle)));
-                restored_handles ++;
+                per_thread_storage[thread_id].emplace_back(
+                    owner_device->restore_shared_ipc_memory(std::move(recv_ipc_handle)));
+                restored_handles++;
             }
-            catch(const std::exception& ex)
-            {
+            catch (const std::exception& ex) {
                 std::stringstream ss;
-                std::copy(recv_data_start, recv_data_start + recv_data_size,
-                        std::ostream_iterator<int>(ss, ","));
+                std::copy(recv_data_start,
+                          recv_data_start + recv_data_size,
+                          std::ostream_iterator<int>(ss, ","));
                 std::cerr << "Cannot deserialize ipc memory handle at: " << ss.str()
-                          << "\n. Offset: " <<  recv_data_start - received_raw_handles.data()
+                          << "\n. Offset: " << recv_data_start - received_raw_handles.data()
                           << ". Error: " << ex.what() << std::endl;
                 throw std::runtime_error(ex.what());
             }
