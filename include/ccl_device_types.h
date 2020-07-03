@@ -34,6 +34,6 @@ typedef struct {
     ccl_host_comm_attr_t core;
 
     unsigned char data[];
-} ccl_device_comm_attr_t;
+} ccl_device_comm_split_attr_t;
 
 #endif //MULTI_GPU_SUPPORT

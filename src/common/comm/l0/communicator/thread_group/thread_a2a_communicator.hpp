@@ -19,7 +19,7 @@ public:
     thread_device_group_a2a_communicator(ccl::unified_device_type&& device,
                                          size_t thread_idx,
                                          size_t proces_idx,
-                                         const ccl::device_comm_attr_t& attr);
+                                         const ccl::device_comm_split_attr_t& attr);
 
     void visit(ccl::gpu_comm_attr& comm_attr) override;
 

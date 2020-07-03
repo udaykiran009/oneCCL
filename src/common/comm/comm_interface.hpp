@@ -19,7 +19,7 @@ struct communicator_interface : public communicator_interface_dispatcher {
     virtual bool is_gpu() const noexcept = 0;
     virtual bool is_accelerator() const noexcept = 0;
 
-    virtual comm_attr_t get_host_attr() const = 0;
+    virtual comm_attr_t get_comm_split_attr() const = 0;
 
     virtual bool is_ready() const = 0;
 
