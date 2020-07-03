@@ -10,7 +10,7 @@ using namespace ccl;
 device_group_ring_communicator::device_group_ring_communicator(ccl::unified_device_type&& device,
                                                                size_t thread_idx,
                                                                size_t process_idx,
-                                                               const ccl::device_comm_attr_t& attr):
+                                                               const ccl::device_comm_split_attr_t& attr):
  base_t(std::move(device), thread_idx, process_idx/*, comm_attr*/, attr)
 {
 }

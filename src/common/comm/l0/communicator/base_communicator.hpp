@@ -11,7 +11,7 @@ struct base_communicator : public ccl::communicator_interface
 
     base_communicator(ccl::unified_device_type&& owned_device,
                       size_t thread_idx, size_t process_idx,
-                      const ccl::device_comm_attr_t& attr) :
+                      const ccl::device_comm_split_attr_t& attr) :
         device(std::move(owned_device)),
         thread_id(thread_idx),
         process_id(process_idx),
@@ -45,12 +45,12 @@ struct base_communicator : public ccl::communicator_interface
         return device.get();
     }
 
-    ccl::comm_attr_t get_host_attr() const override
+    ccl::comm_attr_t get_comm_split_attr() const override
     {
-        return std::static_pointer_cast<ccl::ccl_host_attr>(comm_attr);
+        return std::static_pointer_cast<ccl::ccl_comm_split_attr>(comm_attr);
     }
 
-    ccl::device_comm_attr_t get_device_attr() const override
+    ccl::device_comm_split_attr_t get_device_attr() const override
     {
         return comm_attr;
     }
@@ -68,7 +68,7 @@ struct base_communicator : public ccl::communicator_interface
     ccl::unified_device_type device;
     size_t thread_id;
     size_t process_id;
-    const ccl::device_comm_attr_t comm_attr;
+    const ccl::device_comm_split_attr_t comm_attr;
 
     //TODO add context_comm_addr to aggregate device_id,thread_id, process_id & ranks
     size_t comm_rank;

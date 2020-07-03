@@ -59,7 +59,7 @@ public:
 
     typed_base_communicator(ccl::unified_device_type&& device,
                             size_t thread_idx, size_t process_idx,
-                            const ccl::device_comm_attr_t& attr);
+                            const ccl::device_comm_split_attr_t& attr);
 
     ccl::device_group_split_type get_topology_type() const override;
     ccl::device_topology_type get_topology_class() const override;

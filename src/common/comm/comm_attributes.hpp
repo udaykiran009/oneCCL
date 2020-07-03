@@ -3,14 +3,14 @@
 
 namespace ccl
 {
-struct host_attr_impl : public ccl_host_comm_attr_t
+struct comm_split_attr_impl : public ccl_host_comm_attr_t
 {
     using base_t = ccl_host_comm_attr_t;
     using base_t::comm_attr;
 
-    host_attr_impl (const base_t& base, const ccl_version_t& lib_version);
+    comm_split_attr_impl (const base_t& base, const ccl_version_t& lib_version);
 
-    host_attr_impl(const host_attr_impl& src);
+    comm_split_attr_impl(const comm_split_attr_impl& src);
 
     constexpr static int color_default()
     {
@@ -20,10 +20,10 @@ struct host_attr_impl : public ccl_host_comm_attr_t
     int set_attribute_value(int preferred_color);
     ccl_version_t set_attribute_value(ccl_version_t);
 
-    const int& get_attribute_value(std::integral_constant<ccl_host_attributes,
-                                                   ccl_host_attributes::ccl_host_color> stub) const;
-    const ccl_version_t& get_attribute_value(std::integral_constant<ccl_host_attributes,
-                                                   ccl_host_attributes::ccl_host_version> stub) const;
+    const int& get_attribute_value(std::integral_constant<ccl_comm_split_attributes,
+                                                   ccl_comm_split_attributes::ccl_host_color> stub) const;
+    const ccl_version_t& get_attribute_value(std::integral_constant<ccl_comm_split_attributes,
+                                                   ccl_comm_split_attributes::ccl_host_version> stub) const;
 private:
     ccl_version_t library_version;
 };

@@ -4,38 +4,38 @@
 namespace ccl
 {
 
-host_attr_impl::host_attr_impl (const base_t& base, const ccl_version_t& lib_version) :
+comm_split_attr_impl::comm_split_attr_impl (const base_t& base, const ccl_version_t& lib_version) :
         base_t(base),
         library_version(lib_version)
 {
 }
 
-host_attr_impl::host_attr_impl(const host_attr_impl& src) :
+comm_split_attr_impl::comm_split_attr_impl(const comm_split_attr_impl& src) :
         base_t(src),
         library_version(src.library_version)
 {
 }
 
-int host_attr_impl::set_attribute_value(int preferred_color)
+int comm_split_attr_impl::set_attribute_value(int preferred_color)
 {
     int old = comm_attr.color;
     comm_attr.color = preferred_color;
     return old;
 }
 
-ccl_version_t host_attr_impl::set_attribute_value(ccl_version_t)
+ccl_version_t comm_split_attr_impl::set_attribute_value(ccl_version_t)
 {
     return library_version;
 }
 
-const int& host_attr_impl::get_attribute_value(std::integral_constant<ccl_host_attributes,
-                                               ccl_host_attributes::ccl_host_color> stub) const
+const int& comm_split_attr_impl::get_attribute_value(std::integral_constant<ccl_comm_split_attributes,
+                                               ccl_comm_split_attributes::ccl_host_color> stub) const
 {
     return comm_attr.color;
 }
 
-const ccl_version_t& host_attr_impl::get_attribute_value(std::integral_constant<ccl_host_attributes,
-                                                         ccl_host_attributes::ccl_host_version> stub) const
+const ccl_version_t& comm_split_attr_impl::get_attribute_value(std::integral_constant<ccl_comm_split_attributes,
+                                                         ccl_comm_split_attributes::ccl_host_version> stub) const
 {
     return library_version;
 }

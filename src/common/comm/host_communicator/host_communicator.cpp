@@ -27,7 +27,7 @@ host_communicator::host_communicator(const ccl::comm_attr_t& attr) :
     else
     {
         comm_impl = std::shared_ptr<ccl_comm>(
-            ccl_comm::create_with_color(attr->get_value<ccl_host_attributes::ccl_host_color>(),
+            ccl_comm::create_with_color(attr->get_value<ccl_comm_split_attributes::ccl_host_color>(),
                                         data.comm_ids.get(),
                                         data.comm.get()));
     }
@@ -51,7 +51,7 @@ size_t host_communicator::size() const
     return comm_size;
 }
 
-ccl::comm_attr_t host_communicator::get_host_attr() const
+ccl::comm_attr_t host_communicator::get_comm_split_attr() const
 {
     return comm_attr;
 }
@@ -93,7 +93,7 @@ ccl::communicator_interface::native_device_type_ref host_communicator::get_devic
     return empty;
 }
 
-ccl::device_comm_attr_t host_communicator::get_device_attr() const
+ccl::device_comm_split_attr_t host_communicator::get_device_attr() const
 {
     return std::dynamic_pointer_cast<ccl::ccl_device_attr>(comm_attr);
 }

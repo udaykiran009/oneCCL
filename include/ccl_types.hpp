@@ -10,6 +10,7 @@
 #include <stdexcept>
 #include <vector>
 
+class ccl_internal_kvs_impl;
 namespace ccl
 {
 
@@ -61,8 +62,8 @@ typedef ccl_comm_attr_t comm_attr;
 
 typedef ccl_datatype_attr_t datatype_attr;
 
-template<ccl_host_attributes attrId>
-struct ccl_host_attributes_traits {};
+template<ccl_comm_split_attributes attrId>
+struct ccl_comm_split_attributes_traits {};
 
 /**
  * Exception type that may be thrown by ccl API
@@ -90,6 +91,38 @@ struct ccl_type_info_export
     static constexpr datatype ccl_datatype_value = static_cast<datatype>(ccl_type_value);
     static constexpr bool is_class = iclass;
     static constexpr bool is_supported = supported;
+};
+
+class ccl_kvs_interface
+{
+public:
+    virtual bool get(const std::string& prefix, const std::string& key, std::vector<char>& result) const = 0;
+
+    virtual void put(const std::string& prefix, const std::string& key, const std::vector<char>& data) const = 0;
+
+    virtual ~ccl_kvs_interface() = default;
+};
+
+#define MASTER_ADDR_MAX_SIZE 256
+using ccl_master_addr = std::array<char, MASTER_ADDR_MAX_SIZE>;
+
+class ccl_internal_kvs final: public ccl::ccl_kvs_interface
+{
+public:
+    ccl_internal_kvs();
+    ccl_internal_kvs(ccl_master_addr& master_addr);
+
+    ccl_master_addr get_master_addr();
+
+    bool get(const std::string& prefix, const std::string& key, std::vector<char>& result) const override;
+
+    void put(const std::string& prefix, const std::string& key, const std::vector<char>& data) const override;
+
+    ~ccl_internal_kvs() override;
+
+private:
+    std::unique_ptr<ccl_internal_kvs_impl> internal_kvs_impl;
+
 };
 
 }

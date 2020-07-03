@@ -30,7 +30,7 @@ communicator_interface_ptr
 communicator_interface_dispatcher::create_communicator_impl(const DeviceType& device,
                                                             size_t thread_idx,
                                                             size_t process_idx,
-                                                            const ccl::device_comm_attr_t& attr)
+                                                            const ccl::device_comm_split_attr_t& attr)
 {
     static_assert(std::is_same<typename unified_device_type::device_t, DeviceType>::value, "Unsupported 'DeviceType'");
 
@@ -48,7 +48,7 @@ communicator_interface_ptr
 communicator_interface_dispatcher::create_communicator_impl(DeviceType device_id,
                                                             size_t thread_idx,
                                                             size_t process_idx,
-                                                            const ccl::device_comm_attr_t& attr)
+                                                            const ccl::device_comm_split_attr_t& attr)
 {
 
 #ifdef CCL_ENABLE_SYCL
@@ -67,7 +67,7 @@ communicator_interface_ptr
 communicator_interface_dispatcher::create_communicator_from_unified_device(ccl::unified_device_type&& device_id,
                                                                            size_t thread_idx,
                                                                            size_t process_idx,
-                                                                           const ccl::device_comm_attr_t& attr)
+                                                                           const ccl::device_comm_split_attr_t& attr)
 {
     ccl::device_topology_type preferred_topology_class;
     ccl::device_group_split_type preferred_topology_group;
@@ -150,14 +150,14 @@ template ccl::communicator_interface_ptr                                        
 ccl::communicator_interface_dispatcher::create_communicator_impl(const DeviceType& device,              \
                                                                  size_t thread_idx,                     \
                                                                  size_t process_idx,                    \
-                                                                 const ccl::device_comm_attr_t& attr);
+                                                                 const ccl::device_comm_split_attr_t& attr);
 
 #define COMMUNICATOR_INTERFACE_DISPATCHER_NON_CLASS_EXPLICIT_INSTANTIATION(DeviceType)                  \
 template ccl::communicator_interface_ptr                                                                \
 ccl::communicator_interface_dispatcher::create_communicator_impl(DeviceType device_id,                  \
                                                                  size_t thread_idx,                     \
                                                                  size_t process_idx,                    \
-                                                                 const ccl::device_comm_attr_t& attr);
+                                                                 const ccl::device_comm_split_attr_t& attr);
 
 #endif //MULTI_GPU_SUPPORT
 }

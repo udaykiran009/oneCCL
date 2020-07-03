@@ -38,7 +38,7 @@ public:
     size_t rank() const override;
     size_t size() const override;
 
-    ccl::comm_attr_t get_host_attr() const override;
+    ccl::comm_attr_t get_comm_split_attr() const override;
 
 #ifdef MULTI_GPU_SUPPORT
     void visit(ccl::gpu_comm_attr& comm_attr) override;
@@ -46,7 +46,7 @@ public:
     ccl::device_topology_type get_topology_class() const override;
     ccl::device_index_type get_device_path() const override;
     ccl::communicator_interface::native_device_type_ref get_device() override;
-    ccl::device_comm_attr_t get_device_attr() const override;
+    ccl::device_comm_split_attr_t get_device_attr() const override;
 #endif
 
     // collectives algo implementation

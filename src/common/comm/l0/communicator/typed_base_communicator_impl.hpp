@@ -13,7 +13,7 @@
 template<TEMPLATE_DECL_ARG>
 typed_base_communicator<TEMPLATE_DEF_ARG>::typed_base_communicator(ccl::unified_device_type&& owned_device,
                                                            size_t thread_idx, size_t process_idx,
-                                                           const ccl::device_comm_attr_t& attr) :
+                                                           const ccl::device_comm_split_attr_t& attr) :
  base_communicator(std::move(owned_device),
                    thread_idx, process_idx/*, comm_attr*/, attr)
 {

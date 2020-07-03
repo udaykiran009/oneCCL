@@ -24,12 +24,12 @@ public:
               typename std::enable_if<std::is_class<typename std::remove_cv<DeviceType>::type>::value,
                                       int>::type = 0>
     communicator_t create_communicator(const DeviceType& device,
-                                       device_comm_attr_t attr = device_comm_attr_t());
+                                       device_comm_split_attr_t attr = device_comm_split_attr_t());
 
     /**
-     * Created @device_comm_attr_t, which used to create device_communicators from @comm_group_t
+     * Created @device_comm_split_attr_t, which used to create device_communicators from @comm_group_t
      */
-    device_comm_attr_t create_device_comm_attr();
+    device_comm_split_attr_t create_device_comm_split_attr();
 
     /**
      * Device Communicator creation API: single communicator creation, based on index @device_id
@@ -38,7 +38,7 @@ public:
               typename std::enable_if<not std::is_class<typename std::remove_cv<DeviceType>::type>::value,
                                       int>::type = 0>
     communicator_t create_communicator(DeviceType device_id,
-                                       device_comm_attr_t attr = device_comm_attr_t());
+                                       device_comm_split_attr_t attr = device_comm_split_attr_t());
 
     /**
      * Device Communicator creation vectorized API:
@@ -46,7 +46,7 @@ public:
      */
     template<template<class...> class Container, class Type>
     std::vector<communicator_t> create_communicators(const Container<Type>& device_ids,
-                                                     device_comm_attr_t attr = device_comm_attr_t());
+                                                     device_comm_split_attr_t attr = device_comm_split_attr_t());
 
     /**
      * Device Communicator creation vectorized API:
@@ -54,7 +54,7 @@ public:
      */
     template<class InputIt>
     std::vector<communicator_t> create_communicators(InputIt first, InputIt last,
-                                                     device_comm_attr_t attr = device_comm_attr_t());
+                                                     device_comm_split_attr_t attr = device_comm_split_attr_t());
 
     /**
      * Return device context allocated during group creation

@@ -61,16 +61,16 @@ static ccl::stream_t& get_empty_stream()
 /**
  * Public API interface for host communicator attributes
  */
-CCL_API ccl_host_attr::ccl_host_attr(const ccl_host_attr& src) :
-        ccl_host_attr(src.get_value<ccl_host_attributes::ccl_host_version>(),
+CCL_API ccl_comm_split_attr::ccl_comm_split_attr(const ccl_comm_split_attr& src) :
+        ccl_comm_split_attr(src.get_value<ccl_comm_split_attributes::ccl_host_version>(),
                       *(src.pimpl))
 {
 }
 
-CCL_API ccl_host_attr::ccl_host_attr(const ccl_version_t& library_version,
+CCL_API ccl_comm_split_attr::ccl_comm_split_attr(const ccl_version_t& library_version,
                                      const ccl_host_comm_attr_t &core,
                                      ccl_version_t api_version) :
-        pimpl(new host_attr_impl(core, library_version))
+        pimpl(new comm_split_attr_impl(core, library_version))
 {
     if (api_version.major != library_version.major)
     {
@@ -80,36 +80,36 @@ CCL_API ccl_host_attr::ccl_host_attr(const ccl_version_t& library_version,
     }
 }
 
-CCL_API ccl_host_attr::~ccl_host_attr() noexcept
+CCL_API ccl_comm_split_attr::~ccl_comm_split_attr() noexcept
 {
 }
 
-template<ccl_host_attributes attrId,
+template<ccl_comm_split_attributes attrId,
              class Value,
              typename T>
-CCL_API Value ccl_host_attr::set_value(const Value& v)
+CCL_API Value ccl_comm_split_attr::set_value(const Value& v)
 {
     return pimpl->set_attribute_value(v);
 }
 
-template<ccl_host_attributes attrId>
-CCL_API const typename ccl_host_attributes_traits<attrId>::type& ccl_host_attr::get_value() const
+template<ccl_comm_split_attributes attrId>
+CCL_API const typename ccl_comm_split_attributes_traits<attrId>::type& ccl_comm_split_attr::get_value() const
 {
     return pimpl->get_attribute_value(
-            std::integral_constant<ccl_host_attributes, attrId> {});
+            std::integral_constant<ccl_comm_split_attributes, attrId> {});
 }
 
 #define HOST_ATTRIBUTE_INSTANTIATION(ATTR_ID, VALUE_TYPE)                                          \
 template                                                                                           \
-CCL_API VALUE_TYPE ccl::ccl_host_attr::set_value<ATTR_ID, VALUE_TYPE>(const VALUE_TYPE& v);        \
+CCL_API VALUE_TYPE ccl::ccl_comm_split_attr::set_value<ATTR_ID, VALUE_TYPE>(const VALUE_TYPE& v);        \
 template                                                                                           \
-CCL_API const VALUE_TYPE& ccl::ccl_host_attr::get_value<ATTR_ID>() const;
+CCL_API const VALUE_TYPE& ccl::ccl_comm_split_attr::get_value<ATTR_ID>() const;
 }
 
 ccl::comm_attr_t CCL_API ccl::environment::create_host_comm_attr(const ccl_host_comm_attr_t& attr) const
 {
     LOG_TRACE("Create host attributes");
-    return ccl::comm_attr_t(new ccl::ccl_host_attr(get_version(), attr));
+    return ccl::comm_attr_t(new ccl::ccl_comm_split_attr(get_version(), attr));
 }
 
 ccl::communicator_t CCL_API ccl::environment::create_communicator(const ccl::comm_attr_t& attr) const
@@ -188,9 +188,9 @@ CCL_API size_t ccl::communicator::size() const
     return pimpl->size();
 }
 
-CCL_API ccl::comm_attr_t ccl::communicator::get_host_attr() const
+CCL_API ccl::comm_attr_t ccl::communicator::get_comm_split_attr() const
 {
-    return pimpl->get_host_attr();
+    return pimpl->get_comm_split_attr();
 }
 
 #ifdef MULTI_GPU_SUPPORT
@@ -209,7 +209,7 @@ CCL_API ccl::communicator::device_native_reference_t ccl::communicator::get_devi
     return pimpl->get_device();
 }
 
-CCL_API ccl::device_comm_attr_t ccl::communicator::get_device_attr() const
+CCL_API ccl::device_comm_split_attr_t ccl::communicator::get_device_attr() const
 {
     return pimpl->get_device_attr();
 }

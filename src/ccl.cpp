@@ -33,7 +33,7 @@ ccl_status_t ccl_finalize()
 }
 
 #ifdef MULTI_GPU_SUPPORT
-ccl_status_t CCL_API ccl_set_device_comm_attr(ccl_device_comm_attr_t* comm_attr, unsigned long attribute, ...)
+ccl_status_t CCL_API ccl_set_device_comm_split_attr(ccl_device_comm_split_attr_t* comm_attr, unsigned long attribute, ...)
 {
     if (!comm_attr)
     {

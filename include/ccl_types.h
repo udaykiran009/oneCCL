@@ -199,7 +199,7 @@ typedef enum
     ccl_host_color,
     ccl_host_version
 
-} ccl_host_attributes;
+} ccl_comm_split_attributes;
 
 typedef ccl_comm_attr_versioned_t ccl_host_comm_attr_t;
 

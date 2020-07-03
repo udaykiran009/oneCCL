@@ -276,7 +276,7 @@ group_context global_ctx;
 
 /* GPU communicator attributes
  */
-CCL_API ccl::ccl_device_attr::ccl_device_attr(const ccl::ccl_host_attr& src) :
+CCL_API ccl::ccl_device_attr::ccl_device_attr(const ccl::ccl_comm_split_attr& src) :
  base_t(src),
  pimpl(new ccl::device_attr_impl())
 {
@@ -361,11 +361,11 @@ CCL_API ccl::comm_group::comm_group(ccl::shared_communicator_t parent_comm,
 /**
  *  Create communicator API:
  */
-CCL_API ccl::device_comm_attr_t ccl::comm_group::create_device_comm_attr()
+CCL_API ccl::device_comm_split_attr_t ccl::comm_group::create_device_comm_split_attr()
 {
     // TODO
     const auto& host_comm = pimpl->get_host_communicator();
-    return ccl::device_comm_attr_t{new ccl::ccl_device_attr(*(host_comm->get_host_attr()))};
+    return ccl::device_comm_split_attr_t{new ccl::ccl_device_attr(*(host_comm->get_comm_split_attr()))};
 }
 /*
  *  Single device communicator creation
@@ -374,7 +374,7 @@ template <class DeviceType,
           typename std::enable_if<std::is_class<typename std::remove_cv<DeviceType>::type>::value,
                                       int>::type>
 CCL_API ccl::communicator_t ccl::comm_group::create_communicator(const DeviceType& device,
-                                                                     ccl::device_comm_attr_t attr/* = comm_device_attr_t()*/)
+                                                                     ccl::device_comm_split_attr_t attr/* = comm_device_attr_t()*/)
 {
     LOG_TRACE("Create communicator from device");
     ccl::communicator_interface_ptr impl =
@@ -391,7 +391,7 @@ template <class DeviceType,
           typename std::enable_if<not std::is_class<typename std::remove_cv<DeviceType>::type>::value,
                                       int>::type>
 CCL_API ccl::communicator_t ccl::comm_group::create_communicator(DeviceType device_id,
-                                                                    ccl::device_comm_attr_t attr/* = nullptr*/)
+                                                                    ccl::device_comm_split_attr_t attr/* = nullptr*/)
 {
     LOG_TRACE("Create communicator from id: ", device_id);
 
@@ -409,7 +409,7 @@ CCL_API ccl::communicator_t ccl::comm_group::create_communicator(DeviceType devi
  */
 template<class InputIt>
 CCL_API std::vector<ccl::communicator_t> ccl::comm_group::create_communicators(InputIt first, InputIt last,
-                                                                                   ccl::device_comm_attr_t attr/* = nullptr*/)
+                                                                                   ccl::device_comm_split_attr_t attr/* = nullptr*/)
 {
 
     using iterator_value_type = typename std::iterator_traits<InputIt>::value_type;
@@ -432,7 +432,7 @@ CCL_API std::vector<ccl::communicator_t> ccl::comm_group::create_communicators(I
 
 template<template<class...> class Container, class Type>
 CCL_API std::vector<ccl::communicator_t> ccl::comm_group::create_communicators(const Container<Type>& device_ids,
-                                                                                   ccl::device_comm_attr_t attr/* = nullptr*/)
+                                                                                   ccl::device_comm_split_attr_t attr/* = nullptr*/)
 {
     //static_assert(std::is_same<Type, ccl::device_index_type>::value, "Invalid Type in create_communicators");
     LOG_TRACE("Create device communicators from index type, count: ", device_ids.size(),
@@ -462,7 +462,7 @@ template ccl::stream_t CCL_API ccl::environment::create_stream(type& stream);
 #define COMM_CREATOR_INDEXED_INSTANTIATION_CONTAINER(type)                                         \
 template std::vector<ccl::communicator_t>                                                          \
 CCL_API ccl::comm_group::create_communicators(const type& device_ids,                              \
-                                              ccl::device_comm_attr_t attr);
+                                              ccl::device_comm_split_attr_t attr);
 
 // device attribute instantiations
 DEVICE_ATTRIBUTE_INSTANTIATION(ccl_device_preferred_topology_class,
