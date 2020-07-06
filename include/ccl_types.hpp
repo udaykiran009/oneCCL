@@ -1,7 +1,5 @@
 #pragma once
 
-#include "ccl_types.h"
-
 #include <bitset>
 #include <limits>
 #include <map>
@@ -10,38 +8,56 @@
 #include <stdexcept>
 #include <vector>
 
-class ccl_internal_kvs_impl;
+class ccl_kvs_impl;
 namespace ccl
 {
+
+/** API version description. */
+typedef struct
+{
+    unsigned int major;
+    unsigned int minor;
+    unsigned int update;
+    const char* product_status;
+    const char* build_date;
+    const char* full;
+} version_t;
 
 /**
  * Supported reduction operations
  */
 enum class reduction
 {
-    sum = ccl_reduction_sum,
-    prod = ccl_reduction_prod,
-    min = ccl_reduction_min,
-    max = ccl_reduction_max,
-    custom = ccl_reduction_custom,
+    sum = 0,
+    prod,
+    min,
+    max,
+    custom,
 
-    last_value = ccl_reduction_last_value
+    last_value
 };
 
 /**
  * Supported datatypes
  */
-enum datatype: int
+enum class datatype: int
 {
-    dt_char = ccl_dtype_char,
-    dt_int = ccl_dtype_int,
-    dt_bfp16 = ccl_dtype_bfp16,
-    dt_float = ccl_dtype_float,
-    dt_double = ccl_dtype_double,
-    dt_int64 = ccl_dtype_int64,
-    dt_uint64 = ccl_dtype_uint64,
+    int8 = 0,
+    uint8,
+    int16,
+    uint16,
+    int32,
+    uint32,
+    int64,
+    uint64,
 
-    dt_last_value = ccl_dtype_last_value
+    //float8,
+    float16,
+    bfloat16,
+    float32,
+    float64,
+
+    last_value
 };
 
 /**
@@ -49,18 +65,25 @@ enum datatype: int
  */
 enum class stream_type
 {
-    host = ccl_stream_host,
-    cpu = ccl_stream_cpu,
-    gpu = ccl_stream_gpu,
+    cpu = 0,
+    gpu,
 
-    last_value = ccl_stream_last_value
+    last_value
 };
 
-typedef ccl_coll_attr_t coll_attr;
+/**
+ * Supported stream flags
+ */
+enum class stream_flags 
+{
+    default_order = 0x1U,
+    in_order = 0x2U,
+    out_of_order = 0x4U,
 
-typedef ccl_comm_attr_t comm_attr;
+    flag_qqq = 0x8U,
 
-typedef ccl_datatype_attr_t datatype_attr;
+    default_flags = default_order
+};
 
 template<ccl_comm_split_attributes attrId>
 struct ccl_comm_split_attributes_traits {};
@@ -93,39 +116,8 @@ struct ccl_type_info_export
     static constexpr bool is_supported = supported;
 };
 
-class ccl_kvs_interface
-{
-public:
-    virtual bool get(const std::string& prefix, const std::string& key, std::vector<char>& result) const = 0;
+} // namespace ccl
 
-    virtual void put(const std::string& prefix, const std::string& key, const std::vector<char>& data) const = 0;
-
-    virtual ~ccl_kvs_interface() = default;
-};
-
-#define MASTER_ADDR_MAX_SIZE 256
-using ccl_master_addr = std::array<char, MASTER_ADDR_MAX_SIZE>;
-
-class ccl_internal_kvs final: public ccl::ccl_kvs_interface
-{
-public:
-    ccl_internal_kvs();
-    ccl_internal_kvs(ccl_master_addr& master_addr);
-
-    ccl_master_addr get_master_addr();
-
-    bool get(const std::string& prefix, const std::string& key, std::vector<char>& result) const override;
-
-    void put(const std::string& prefix, const std::string& key, const std::vector<char>& data) const override;
-
-    ~ccl_internal_kvs() override;
-
-private:
-    std::unique_ptr<ccl_internal_kvs_impl> internal_kvs_impl;
-
-};
-
-}
 #ifdef MULTI_GPU_SUPPORT
     #include "ccl_device_types.hpp"
 #endif
