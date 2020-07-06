@@ -81,13 +81,13 @@ CCL_TYPE_TRAITS(ccl_dtype_uint64, uint64_t,  sizeof(uint64_t))
 #endif //CCL_ENABLE_SYCL
 
 template<>
-struct ccl_comm_split_attributes_traits<ccl_host_color>
+struct comm_split_attributes_traits<ccl_host_color>
 {
     using type = int;
 };
 
 template<>
-struct ccl_comm_split_attributes_traits<ccl_host_version>
+struct comm_split_attributes_traits<ccl_host_version>
 {
     using type = ccl_version_t;
 };
@@ -131,13 +131,14 @@ constexpr bool is_class_supported()
     return (is_class<type>() and is_supported<type>());
 }
 
-template<ccl_comm_split_attributes attr_id, class value>
+template<comm_split_attributes attr_id, class value>
 constexpr bool is_attribute_value_supported()
 {
-    return std::is_same<typename ccl_comm_split_attributes_traits<attr_id>::type,
+    return std::is_same<typename comm_split_attributes_traits<attr_id>::type,
                         typename std::remove_cv<typename std::remove_reference<value>::type
                         >::type>::value;
 }
+
 }
 #include "ccl_device_type_traits.hpp"
 #endif //TRAITS_H_

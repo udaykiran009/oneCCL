@@ -12,8 +12,11 @@ namespace ccl
  */
 enum device_group_split_type
 {
+    //device,
     thread,
     process,
+    //socket,
+    //node,
     cluster,
 
     last_value
@@ -24,7 +27,7 @@ enum device_topology_type
     ring = ring_algo_class,
     a2a = a2a_algo_class,
 
-    last_class_value = ccl_topology_class_last_value
+    last_value = ccl_topology_type_last_value
 };
 
 #define SUPPORTED_HW_TOPOLOGIES_DECL_LIST       ccl::device_group_split_type::thread,              \

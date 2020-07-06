@@ -2,6 +2,8 @@
 
 #ifdef MULTI_GPU_SUPPORT
 
+/* TODO: add stub include directory for L0 */
+
 #include "l0/base.hpp"
 #include "l0/base_impl.hpp"
 
