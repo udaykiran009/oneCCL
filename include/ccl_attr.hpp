@@ -8,9 +8,14 @@ namespace ccl
 /**
  * Class @c comm_split_attr allows to configure host communicator split parameters
  */
-class comm_split_attr
+class comm_split_attr :
+            public pointer_on_impl<comm_split_attr,
+                                   comm_split_attr_impl>
 {
 public:
+    using impl_value_t = typename pointer_on_impl<comm_split_attr,
+                                                  comm_split_attr_impl>::impl_value_t;
+
     friend class device_comm_split_attr;
     friend struct communicator_interface_dispatcher;
     friend class environment;
@@ -34,11 +39,8 @@ public:
 
 protected:
     comm_split_attr(const comm_split_attr& src);
-
 private:
-    /* TODO:  remove ccl_host_comm_attr_t ? */
-    //comm_split_attr(const ccl_host_comm_attr_t &core = ccl_host_comm_attr_t());
-    std::unique_ptr<comm_split_attr_impl> pimpl;
+    comm_split_attr(impl_value_t&& impl);
 };
 
 using comm_split_attr_t = std::shared_ptr<comm_split_attr>;
@@ -48,12 +50,17 @@ using comm_split_attr_t = std::shared_ptr<comm_split_attr>;
 /**
  * Class @c device_comm_split_attr allows to configure device communicator split parameters
  */
-class device_comm_split_attr : public comm_split_attr
+class device_comm_split_attr :
+                public comm_split_attr
+                public pointer_on_impl<device_comm_split_attr,
+                                       device_comm_split_attr_impl>
 {
 public:
     friend class comm_group;
     friend struct communicator_interface_dispatcher;
 
+    using impl_value_t = typename pointer_on_impl<device_comm_split_attr,
+                                                  device_comm_split_attr_impl>::impl_value_t;
     ~device_comm_split_attr() noexcept;
 
     /**
@@ -72,8 +79,7 @@ public:
     const typename device_comm_split_attributes_traits<attrId>::type& get_value() const;
 
 private:
-    //device_comm_split_attr(const comm_split_attr& src);
-    std::unique_ptr<device_comm_split_attr_impl> pimpl;
+    device_comm_split_attr(impl_value_t&& impl);
 };
 
 using device_comm_split_attr_t = std::shared_ptr<device_comm_split_attr>;

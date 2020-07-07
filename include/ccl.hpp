@@ -796,10 +796,12 @@ public:
  */
 class event :
         public non_copyable<event>,
-        public non_movable<event>
+        public non_movable<event>,
+        public pointer_on_impl<event, ccl_event>
 {
 public:
     using native_handle_t = typename unified_event_type::native_reference_t;
+    using impl_value_t =  typename pointer_on_impl<event, ccl_event>::impl_value_t;
 
     event(native_event_type& native_event);
 
@@ -807,19 +809,20 @@ public:
     const native_handle_t &get() const;
 
 private:
-    using impl_t = std::shared_ptr<ccl_event>;
     friend class communicator;
     friend class environment;
-    event(impl_t&& impl);
-
-    impl_t event_impl;
+    event(impl_value_t&& impl);
 };
 
-class device_communicator final {
+class device_communicator final :
+        public pointer_on_impl<device_communicator,
+                               communicator_interface>
+{
 public:
 
     using native_handle_t = typename unified_device_type::native_reference_t;
-
+    using impl_value_t =  typename pointer_on_impl<device_communicator,
+                                                   communicator_interface>::impl_value_t;
     ~device_communicator();
 
     /**
@@ -1491,12 +1494,7 @@ private:
     friend class environment;
     friend class comm_group;
 
-    explicit device_communicator(std::shared_ptr<communicator_interface> impl);
-
-    /**
-     * Holds implementation specific details
-     */
-    std::shared_ptr<communicator_interface> pimpl;
+    explicit device_communicator(impl_value_t impl);
 };
 #endif /* MULTI_GPU_SUPPORT */
 
