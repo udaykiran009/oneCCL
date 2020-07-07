@@ -163,7 +163,7 @@ struct handles_storage {
         //to front of left: my thread handles belong to current device
         // -> owns handles has position in beginning of kernel arguments
         mem_handles_container& left_mem_handles = per_thread_storage[thread_idx];
-        left_mem_handles.insert(left_mem_handles.begin(), weak_handles.begin(), weak_handles.end());
+        left_mem_handles.insert(left_mem_handles.end(), weak_handles.begin(), weak_handles.end());
 
         //to the end of right: next thread id handles belong to next device
         // -> foreign handles has position in ending of kernel arguments
@@ -172,7 +172,7 @@ struct handles_storage {
         do {
             mem_handles_container& right_mem_handles = per_thread_storage[right_thread_idx];
             right_mem_handles.insert(
-                right_mem_handles.begin(), weak_handles.begin(), weak_handles.end());
+                right_mem_handles.end(), weak_handles.begin(), weak_handles.end());
 
             thread_idx++;
             right_thread_idx = (thread_idx + 1) % threads_count;
