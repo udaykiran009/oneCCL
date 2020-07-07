@@ -71,10 +71,12 @@ struct param_traits<stream_attr_id, properties>
  */
 class stream :
         public non_copyable<stream>,
-        public non_movable<stream>
+        public non_movable<stream>,
+        public pointer_on_impl<stream, ccl_stream>
 {
 public:
     using native_handle_t = typename unified_stream_type::native_reference_t;
+    using impl_value_t =  typename pointer_on_impl<stream, ccl_stream>::impl_value_t;
 
     using creation_args_t = native_handle_t;
     using optional_args_t = typename info::param_traits<info::stream_attr_id,
@@ -90,9 +92,6 @@ private:
     friend class communicator;
     friend class environment;
 
-    using impl_t = std::shared_ptr<ccl_stream>;
-    stream(impl_t&& impl);
-
-    impl_t stream_impl;
+    stream(impl_value_t&& impl);
 };
 }
