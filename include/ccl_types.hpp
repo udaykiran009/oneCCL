@@ -74,7 +74,7 @@ enum class stream_type
 /**
  * Supported stream flags
  */
-enum class stream_flags 
+enum class stream_flags
 {
     default_order = 0x1U,
     in_order = 0x2U,
@@ -114,6 +114,26 @@ struct ccl_type_info_export
     static constexpr datatype ccl_datatype_value = static_cast<datatype>(ccl_type_value);
     static constexpr bool is_class = iclass;
     static constexpr bool is_supported = supported;
+};
+
+
+/**
+ * API object attributes traits
+ */
+namespace info
+{
+template<class param_type, param_type value>
+struct param_traits {
+};
+
+template<int index, class value_t>
+struct arg
+{
+    using value_type = value_t;
+    arg(value_t val) : m_val(val) {}
+
+    static constexpr int idx() { return index;}
+    const value_type val() { return m_val; }
 };
 
 } // namespace ccl

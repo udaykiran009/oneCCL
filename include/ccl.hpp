@@ -9,6 +9,8 @@
 #include "ccl_types.hpp"
 #include "ccl_type_traits.hpp"
 
+#include "ccl_stream.hpp"
+
 class ccl_comm;
 class ccl_event;
 class ccl_stream;
@@ -60,7 +62,7 @@ using stream_t = std::unique_ptr<stream>;
 class kvs_interface
 {
 public:
-    virtual bool get(const std::string& prefix, 
+    virtual bool get(const std::string& prefix,
                      const std::string& key,
                      std::vector<char>& result) const = 0;
 
@@ -69,25 +71,6 @@ public:
                      const std::vector<char>& data) const = 0;
 
     virtual ~kvs_interface() = default;
-};
-
-class kvs final : public kvs_interface
-{
-public:
-
-    kvs(const master_kvs_addr& addr);
-    ~kvs() override;
-
-    bool get(const std::string& prefix, 
-             const std::string& key,
-             std::vector<char>& result) const override;
-
-    void put(const std::string& prefix,
-             const std::string& key,
-             const std::vector<char>& data) const override;
-
-private:
-    std::unique_ptr<kvs_impl> pimpl;
 };
 
 class master_kvs final : public kvs_interface
@@ -100,7 +83,7 @@ public:
     master_kvs();
     ~master_kvs() override;
 
-    bool get(const std::string& prefix, 
+    bool get(const std::string& prefix,
              const std::string& key,
              std::vector<char>& result) const override;
 
@@ -114,6 +97,25 @@ private:
     std::unique_ptr<master_kvs_impl> pimpl;
 };
 
+class kvs final : public kvs_interface
+{
+public:
+    using master_kvs_addr = master_kvs::master_kvs_addr;
+
+    kvs(const master_kvs_addr& addr);
+    ~kvs() override;
+
+    bool get(const std::string& prefix,
+             const std::string& key,
+             std::vector<char>& result) const override;
+
+    void put(const std::string& prefix,
+             const std::string& key,
+             const std::vector<char>& data) const override;
+
+private:
+    std::unique_ptr<kvs_impl> pimpl;
+};
 /**
  * CCL environment singleton
  */
@@ -243,11 +245,41 @@ public:
     /**
      * Creates a new stream from @stream_native_type
      * @param native_stream the existing handle of stream
+     * @args  full parameters set
      */
     template<class stream_native_type,
              class = typename std::enable_if<is_stream_supported<stream_native_type>()>::type>
-    stream_t create_stream(stream_native_type& native_stream);
+    stream_t create_stream(stream_native_type& native_stream,
+                           const info::stream_properties_data_t& args = info::stream_properties_data_t{});
 
+    /**
+     * Creates a new native_stream from @stream_native_type
+     * @param native_stream the existing handle of stream
+     * @props are optional specific properties
+     */
+    template<class event_native_type,
+             class = typename std::enable_if<is_event_supported<event_native_type>()>::type,
+             info::stream_properties ...prop_ids>
+    event_t create_event(event_native_type& native_event,
+                         info::arg<prop_ids,
+                                   info::stream_property_value_t>... props)
+    {
+        using tuple_t = std::tuple<info::stream_property_value_t>...>;
+        tuple_t args{props...};
+
+        info::stream_properties_data_t stream_args;
+        arg_filler exec(args);
+        ccl_tuple_for_each(args, arg_filler);
+        return create_event(native_event, stream_args);
+    }
+
+    /* Example:
+     *  auto stream = ccl::environment::instance().create_communicator(queue,
+     *                                                                 stream_arg(info::stream_properties::ordinal, 0),
+     *                                                                 stream_arg(info::stream_properties::index, 1),
+     *                                                                 stream_arg(info::stream_properties::mode, ZE_ASYNC));
+     *
+     */
     stream_t create_stream() const;
 
     /**
@@ -426,9 +458,9 @@ public:
 
 
     /**
-     * Alltoall is a collective communication operation in which each rank 
+     * Alltoall is a collective communication operation in which each rank
      * sends distinct equal-sized blocks of data to each rank.
-     * The j-th block of @c send_buf sent from the i-th rank is received by the j-th rank 
+     * The j-th block of @c send_buf sent from the i-th rank is received by the j-th rank
      * and is placed in the i-th block of @c recvbuf.
      */
 
@@ -491,9 +523,9 @@ public:
 
 
     /**
-     * Alltoall is a collective communication operation in which each rank 
+     * Alltoall is a collective communication operation in which each rank
      * sends distinct blocks of data to each rank. Block sizes may differ.
-     * The j-th block of @c send_buf sent from the i-th rank is received by the j-th rank 
+     * The j-th block of @c send_buf sent from the i-th rank is received by the j-th rank
      * and is placed in the i-th block of @c recvbuf.
      */
 
@@ -574,7 +606,7 @@ public:
 
     /**
      * @param buf [in,out] the buffer with @c count elements of @c dtype
-     * serves as send buffer for root and as receive buffer for other ranks 
+     * serves as send buffer for root and as receive buffer for other ranks
      * @param count number of elements of type @c dtype in @c buf
      * @param dtype datatype of elements in @c buf
      * @param root the rank that broadcasts @c buf
@@ -587,7 +619,7 @@ public:
     /**
      * Type safety version:
      * @param buf [in,out] the buffer with @c count elements of @c dtype
-     * serves as send buffer for root and as receive buffer for other ranks 
+     * serves as send buffer for root and as receive buffer for other ranks
      * @param count number of elements of type @c dtype in @c buf
      * @param root the rank that broadcasts @c buf
      * @param attr optional attributes to customize operation
@@ -762,13 +794,20 @@ public:
 /**
  * A event object is an abstraction over stream events
  */
-class event
+class event :
+        public non_copyable<event>,
+        public non_movable<event>
 {
 public:
+    using native_handle_t = typename unified_event_type::native_reference_t;
+
     event(native_event_type& native_event);
 
-    using impl_t = std::shared_ptr<ccl_event>;
+    native_handle_t get() const
+    const native_handle_t &get() const;
+
 private:
+    using impl_t = std::shared_ptr<ccl_event>;
     friend class communicator;
     friend class environment;
     event(impl_t&& impl);
@@ -776,37 +815,10 @@ private:
     impl_t event_impl;
 };
 
-/**
- * A stream object is an abstraction over CPU/GPU streams
- * Has no defined public constructor. Use ccl::environment::create_stream
- * for stream objects creation
- */
-class stream
-{
-public:
-    /**
-     * stream is not copyable
-     */
-    stream(const stream&) = delete;
-    stream& operator=(const stream&) = delete;
-
-    /**
-     * stream is movable
-     */
-    stream(stream&&) = default;
-    stream& operator=(stream&&) = default;
-
-    using impl_t = std::shared_ptr<ccl_stream>;
-private:
-    friend class communicator;
-    friend class environment;
-    stream(impl_t&& impl);
-
-    impl_t stream_impl;
-};
-
 class device_communicator final {
 public:
+
+    using native_handle_t = typename unified_device_type::native_reference_t;
 
     ~device_communicator();
 
@@ -826,7 +838,7 @@ public:
      * Type allows to get underlying device type,
      * which was used as communicator construction argument
      */
-    using device_native_reference_t = typename unified_device_type::native_reference_t;
+    using device_native_reference_t = native_handle_t;
 
     /**
      * Retrieves underlying device, which was used as communicator construction argument
@@ -1025,9 +1037,9 @@ public:
 
 
     /**
-     * Alltoall is a collective communication operation in which each rank 
+     * Alltoall is a collective communication operation in which each rank
      * sends distinct equal-sized blocks of data to each rank.
-     * The j-th block of @c send_buf sent from the i-th rank is received by the j-th rank 
+     * The j-th block of @c send_buf sent from the i-th rank is received by the j-th rank
      * and is placed in the i-th block of @c recvbuf.
      */
 
@@ -1145,9 +1157,9 @@ public:
 
 
     /**
-     * Alltoall is a collective communication operation in which each rank 
+     * Alltoall is a collective communication operation in which each rank
      * sends distinct blocks of data to each rank. Block sizes may differ.
-     * The j-th block of @c send_buf sent from the i-th rank is received by the j-th rank 
+     * The j-th block of @c send_buf sent from the i-th rank is received by the j-th rank
      * and is placed in the i-th block of @c recvbuf.
      */
 
@@ -1287,7 +1299,7 @@ public:
 
     /**
      * @param buf [in,out] the buffer with @c count elements of @c dtype
-     * serves as send buffer for root and as receive buffer for other ranks 
+     * serves as send buffer for root and as receive buffer for other ranks
      * @param count number of elements of type @c dtype in @c buf
      * @param dtype datatype of elements in @c buf
      * @param root the rank that broadcasts @c buf
@@ -1304,7 +1316,7 @@ public:
     /**
      * Type safety version:
      * @param buf [in,out] the buffer with @c count elements of @c dtype
-     * serves as send buffer for root and as receive buffer for other ranks 
+     * serves as send buffer for root and as receive buffer for other ranks
      * @param count number of elements of type @c dtype in @c buf
      * @param root the rank that broadcasts @c buf
      * @param stream optional stream associated with the operation
@@ -1322,7 +1334,7 @@ public:
     /**
      * Type safety version:
      * @param buf [in,out] the buffer with @c count elements of @c dtype
-     * serves as send buffer for root and as receive buffer for other ranks 
+     * serves as send buffer for root and as receive buffer for other ranks
      * @param count number of elements of type @c dtype in @c buf
      * @param root the rank that broadcasts @c buf
      * @param stream optional stream associated with the operation
