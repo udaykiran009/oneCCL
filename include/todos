@@ -1,0 +1,10 @@
+
+/* TODO: how to read correct split field from attr, bit flags? */
+/* TODO: make comm_split, datatype, op, stream, coll attributes in similar way with env::create_<...>, attr->set<... > */
+/* TODO: what default stream should be - cpu or gpu? make stream as mandatory option? */
+/* TODO: stream_attr fields: device_type, in-order/out-of-order, priority, how map it on coll_attr.priority? */
+/* TODO: shared_ptr for coll_attr */
+/* TODO: move all ccl_types into hpp */
+/* TODO: comm_group -> device_comm_creator/fabric,... */
+/* TODO: rename request -> operation/event/handle/op_context... ? */
+/* TODO: add float8 dtype, clarify with PCL */

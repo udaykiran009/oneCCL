@@ -115,7 +115,7 @@ typedef ccl_status_t(*ccl_epilogue_fn_t) (const void*, size_t, ccl_datatype_t,
 /* in_buf, in_count, inout_buf, out_count, dtype, context */
 typedef ccl_status_t(*ccl_reduction_fn_t) (const void*, size_t,
                                            void*, size_t*,
-                                           ccl_datatype_t,
+                                           //ccl_datatype_t, // not required for native, custom datatype
                                            const ccl_fn_context_t*);
 
 /* idx_buf, idx_count, idx_dtype, val_buf, val_count, val_dtype, fn_context */
