@@ -9,12 +9,10 @@
 #include <vector>
 
 class ccl_kvs_impl;
-namespace ccl
-{
+namespace ccl {
 
 /** API version description. */
-typedef struct
-{
+typedef struct {
     unsigned int major;
     unsigned int minor;
     unsigned int update;
@@ -26,8 +24,7 @@ typedef struct
 /**
  * Supported reduction operations
  */
-enum class reduction
-{
+enum class reduction {
     sum = 0,
     prod,
     min,
@@ -40,8 +37,7 @@ enum class reduction
 /**
  * Supported datatypes
  */
-enum class datatype: int
-{
+enum class datatype : int {
     int8 = 0,
     uint8,
     int16,
@@ -63,8 +59,7 @@ enum class datatype: int
 /**
  * Supported stream types
  */
-enum class stream_type
-{
+enum class stream_type {
     cpu = 0,
     gpu,
 
@@ -74,8 +69,7 @@ enum class stream_type
 /**
  * Supported stream flags
  */
-enum class stream_flags
-{
+enum class stream_flags {
     default_order = 0x1U,
     in_order = 0x2U,
     out_of_order = 0x4U,
@@ -85,28 +79,28 @@ enum class stream_flags
     default_flags = default_order
 };
 
-template<ccl_comm_split_attributes attrId>
+template <ccl_comm_split_attributes attrId>
 struct ccl_comm_split_attributes_traits {};
 
 /**
  * Exception type that may be thrown by ccl API
  */
-class ccl_error : public std::runtime_error
-{
+class ccl_error : public std::runtime_error {
 public:
-    explicit ccl_error(const std::string& message) : std::runtime_error(message)
-    {}
+    explicit ccl_error(const std::string& message) : std::runtime_error(message) {}
 
-    explicit ccl_error(const char* message) : std::runtime_error(message)
-    {}
+    explicit ccl_error(const char* message) : std::runtime_error(message) {}
 };
 
 /**
  * Type traits, which describes how-to types would be interpretered by ccl API
  */
-template<class ntype_t, size_t size_of_type, ccl_datatype_t ccl_type_v, bool iclass = false, bool supported = false>
-struct ccl_type_info_export
-{
+template <class ntype_t,
+          size_t size_of_type,
+          ccl_datatype_t ccl_type_v,
+          bool iclass = false,
+          bool supported = false>
+struct ccl_type_info_export {
     using native_type = ntype_t;
     using ccl_type = std::integral_constant<ccl_datatype_t, ccl_type_v>;
     static constexpr size_t size = size_of_type;
@@ -116,28 +110,28 @@ struct ccl_type_info_export
     static constexpr bool is_supported = supported;
 };
 
-
 /**
  * API object attributes traits
  */
-namespace info
-{
-template<class param_type, param_type value>
-struct param_traits {
-};
+namespace info {
+template <class param_type, param_type value>
+struct param_traits {};
 
-template<int index, class value_t>
-struct arg
-{
+template <int index, class value_t>
+struct arg {
     using value_type = value_t;
     arg(value_t val) : m_val(val) {}
 
-    static constexpr int idx() { return index;}
-    const value_type val() { return m_val; }
+    static constexpr int idx() {
+        return index;
+    }
+    const value_type val() {
+        return m_val;
+    }
 };
 
 } // namespace ccl
 
 #ifdef MULTI_GPU_SUPPORT
-    #include "ccl_device_types.hpp"
+#include "ccl_device_types.hpp"
 #endif
