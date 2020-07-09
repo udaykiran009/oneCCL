@@ -1,3 +1,4 @@
 DeliveryName	InstallName	FileCheckSum	FileOrigin	Owner	FileFeature	FileInstallCondition	InstalledFilePermission	Redistributable	InstalledFileOwner	SymbolicLink
 <deliverydir>/l_tags/l_oneapi.vars	<N/A>		external	Ksenya Kochanova		1	644	redistributable	root	<ccl_root>/boms/tags/l_oneapi.vars
+<deliverydir>/l_tags/l_conda.vars	<N/A>		external	Ksenya Kochanova		1	644	redistributable	root	<ccl_root>/boms/tags/l_conda.vars
 #Intel Confidential
