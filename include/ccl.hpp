@@ -17,9 +17,8 @@ class ccl_stream;
 
 namespace ccl {
 
-class communicator;
-class device_communicator;
 class stream;
+class communicator;
 struct communicator_interface;
 
 struct comm_split_attr_impl;
@@ -27,6 +26,7 @@ class comm_split_attr;
 
 #ifdef DEVICE_COMM_SUPPORT
 class device_comm_group;
+class device_communicator;
 struct device_comm_split_attr_impl;
 class device_comm_split_attr;
 #endif /* DEVICE_COMM_SUPPORT */
@@ -34,8 +34,7 @@ class device_comm_split_attr;
 /**
  * Types which allow to operate with kvs/communicator/request/stream objects in RAII manner
  */
-using kvs_t = std::unique_ptr<kvs>;
-using master_kvs_t = std::unique_ptr<master_kvs>;
+using kvs_interface_t = std::unique_ptr<kvs_interface>;
 using communicator_t = std::unique_ptr<communicator>;
 using request_t = std::unique_ptr<request>;
 
@@ -61,7 +60,7 @@ public:
 class master_kvs final : public kvs_interface {
 public:
     static constexpr size_t addr_max_size = 256;
-    using master_kvs_addr = std::array<char, addr_max_size>;
+    using addr_t = std::array<char, addr_max_size>;
 
     master_kvs();
     ~master_kvs() override;
@@ -74,7 +73,7 @@ public:
              const std::string& key,
              const std::vector<char>& data) const override;
 
-    const master_kvs_addr& get_addr() const;
+    const addr_t& get_addr() const;
 
 private:
     std::unique_ptr<master_kvs_impl> pimpl;
@@ -82,9 +81,9 @@ private:
 
 class kvs final : public kvs_interface {
 public:
-    using master_kvs_addr = master_kvs::master_kvs_addr;
+    using addr_t = master_kvs::addr_t;
 
-    kvs(const master_kvs_addr& addr);
+    kvs(const addr_t& addr);
     ~kvs() override;
 
     bool get(const std::string& prefix,
@@ -98,6 +97,7 @@ public:
 private:
     std::unique_ptr<kvs_impl> pimpl;
 };
+
 /**
  * CCL environment singleton
  */
@@ -223,51 +223,51 @@ public:
         const std::vector<std::pair<device_communicator_t, device_comm_split_attr_t>>& attrs) const;
 
     /**
-     * Creates a new stream from @stream_native_type
+     * Creates a new stream from @native_stream_type
      * @param native_stream the existing handle of stream
      * @args  full parameters set
      */
-    template <class stream_native_type,
-              class = typename std::enable_if<is_stream_supported<stream_native_type>()>::type>
+    template <class native_stream_type,
+              class = typename std::enable_if<is_stream_supported<native_stream_type>()>::type>
     stream_t create_stream(
-        stream_native_type& native_stream,
+        native_stream_type& native_stream,
         const info::stream_properties_data_t& args = info::stream_properties_data_t{});
 
     /**
-     * Creates a new native_stream from @stream_native_type
+     * Creates a new native_stream from @native_stream_type
      * @param native_stream the existing handle of stream
      * @props are optional specific properties
      */
-    template <class event_native_type,
-              class = typename std::enable_if<is_event_supported<event_native_type>()>::type,
+    template <class native_stream_type,
+              class = typename std::enable_if<is_stream_supported<native_stream_type>()>::type,
               info::stream_properties... prop_ids>
-    event_t create_event(event_native_type& native_event,
-                         info::arg<prop_ids, info::stream_property_value_t>... props) {
+    stream_t create_stream(native_stream_type& native_stream,
+                           info::arg<prop_ids, info::stream_property_value_t>... props) {
         using tuple_t = std::tuple<info::stream_property_value_t>... > ;
         tuple_t args{ props... };
 
         info::stream_properties_data_t stream_args;
         arg_filler exec(args);
         ccl_tuple_for_each(args, arg_filler);
-        return create_event(native_event, stream_args);
+        return create_event(native_stream, stream_args);
     }
 
     /* Example:
-     *  auto stream = ccl::environment::instance().create_communicator(queue,
-     *                                                                 stream_arg(info::stream_properties::ordinal, 0),
-     *                                                                 stream_arg(info::stream_properties::index, 1),
-     *                                                                 stream_arg(info::stream_properties::mode, ZE_ASYNC));
+     *  auto stream = ccl::environment::instance().create_stream(queue,
+     *                                                           stream_arg(info::stream_properties::ordinal, 0),
+     *                                                           stream_arg(info::stream_properties::index, 1),
+     *                                                           stream_arg(info::stream_properties::mode, ZE_ASYNC));
      *
      */
     stream_t create_stream() const;
 
     /**
-     * Creates a new event from @event_native_type
+     * Creates a new event from @native_event_type
      * @param native_event the existing handle of event
      */
-    template <class event_native_type,
-              class = typename std::enable_if<is_event_supported<event_native_type>()>::type>
-    event_t create_event(event_native_type& native_event);
+    template <class native_event_type,
+              class = typename std::enable_if<is_event_supported<native_event_type>()>::type>
+    event_t create_event(native_event_type& native_event);
 
 #endif /* DEVICE_COMM_SUPPORT */
 
@@ -783,13 +783,12 @@ private:
 /**
  * An device operation interface that allows the user to track operation progress
  */
-class device_operation /* : public operation*/
-{
+class device_request : public request {
 public:
     /**
      * Retrieves the event object
      */
-    virtual event get_event() = 0;
+    virtual event_t get_event() = 0;
 };
 
 /**
@@ -836,12 +835,12 @@ public:
      * Type allows to get underlying device type,
      * which was used as communicator construction argument
      */
-    using device_native_reference_t = native_handle_t;
+    using native_device_reference_t = native_handle_t;
 
     /**
      * Retrieves underlying device, which was used as communicator construction argument
      */
-    device_native_reference_t device();
+    native_device_reference_t device();
 
     device_communicator split(device_comm_split_attr_t attr);
 
@@ -989,16 +988,14 @@ public:
      * @param attr optional attributes to customize operation
      * @return @ref ccl::request_t object to track the progress of the operation
      */
-    template <class buffer_type> // add enable_if for not native type
-    request_t allreduce(
-        const buffer_type* send_buf,
-        buffer_type* recv_buf,
-        size_t count,
-        datatype dtype,
-        reduction reduction,
-        const stream_t& stream = stream_t(),
-        const std::vector<event_t>& deps = {},
-        const allreduce_attr_t& attr = allreduce_attr_t()); // add assert, not for void*
+    request_t allreduce(const void* send_buf,
+                        void* recv_buf,
+                        size_t count,
+                        datatype dtype,
+                        reduction reduction,
+                        const stream_t& stream = stream_t(),
+                        const std::vector<event_t>& deps = {},
+                        const allreduce_attr_t& attr = allreduce_attr_t());
 
     /**
      * Type safety version:
@@ -1529,4 +1526,4 @@ private:
 #ifdef DEVICE_COMM_SUPPORT
 #include "ccl_gpu_modules.h"
 #include "gpu_communicator.hpp"
-#endif
+#endif /* DEVICE_COMM_SUPPORT */

@@ -8,7 +8,6 @@
 #include <stdexcept>
 #include <vector>
 
-class ccl_kvs_impl;
 namespace ccl {
 
 /** API version description. */
@@ -47,7 +46,7 @@ enum class datatype : int {
     int64,
     uint64,
 
-    //float8,
+    float8 = 100,
     float16,
     bfloat16,
     float32,
@@ -56,6 +55,7 @@ enum class datatype : int {
     last_value
 };
 
+#ifdef DEVICE_COMM_SUPPORT
 /**
  * Supported stream types
  */
@@ -65,19 +65,7 @@ enum class stream_type {
 
     last_value
 };
-
-/**
- * Supported stream flags
- */
-enum class stream_flags {
-    default_order = 0x1U,
-    in_order = 0x2U,
-    out_of_order = 0x4U,
-
-    flag_qqq = 0x8U,
-
-    default_flags = default_order
-};
+#endif /* DEVICE_COMM_SUPPORT */
 
 template <ccl_comm_split_attributes attrId>
 struct ccl_comm_split_attributes_traits {};
@@ -132,6 +120,6 @@ struct arg {
 
 } // namespace ccl
 
-#ifdef MULTI_GPU_SUPPORT
+#ifdef DEVICE_COMM_SUPPORT
 #include "ccl_device_types.hpp"
 #endif
