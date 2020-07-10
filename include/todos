@@ -6,5 +6,21 @@ stream_attr fields: device_type, in-order/out-of-order, priority, how map it on 
 shared_ptr for coll_attr
 move all ccl_types into hpp
 comm_group -> device_comm_creator/fabric,...
-rename request -> operation/event/handle/op_context... ?
+
+remove "virtual" in request methods if host/device paths have the same impl
 remove request from device_request if wait/test have different implementation
+
+
+
+
+1. std:: ... -> replace by own impl, llvm impl (uniqie_ptr place into own namespace)
+2. write own
+3. wrapper for std, unique ptr as field, redirect calls, reference AD library
+
+look at unresolved symbols from libstd++
+
+c++filt _ZN3ccl12communicator9alltoallvEPKvPKmPvS4_NS_8datatypeEPK15ccl_coll_attr_tRKSt10unique_ptrINS_6streamESt14default_deleteISB_EE
+ccl::communicator::alltoallv(void const*, unsigned long const*, void*, unsigned long const*, ccl::datatype, ccl_coll_attr_t const*, std::unique_ptr<ccl::stream, std::default_delete<ccl::stream> > const&)
+
+
+tbb-dev / task arena
