@@ -57,7 +57,6 @@ public:
     virtual ~kvs_interface() = default;
 };
 
-/* check horovod master/non-master kvs */
 class kvs final : public kvs_interface {
 public:
 
@@ -79,7 +78,7 @@ public:
 private:
 
     kvs();
-    kvs(const std::string& hostname, int port);
+    // kvs(const std::string& hostname, int port); pass this info through env var
 
     kvs(const addr_t& addr);
 
@@ -133,14 +132,6 @@ public:
     kvs_t create_main_kvs() const;
 
     /**
-     * Creates a main key-value store with user defined hostname and port.
-     * It's address should be distributed to other ranks
-     * using out of band communication transport and be used to create key-value stores.
-     * @return kvs object
-     */
-    kvs_t create_main_kvs(const std::string& hostname, int port) const;
-
-    /**
      * Creates a new key-value store from main kvs address
      * @param addr address of main kvs
      * @return kvs object
@@ -152,6 +143,7 @@ public:
      * @return host communicator
      */
 
+    /* TODO: */
     // platform specific, dont use, not portable
     // should guarantee that rank, size should be provided by platform specific mechanism
     /* skip from spec ? */
@@ -183,33 +175,6 @@ public:
     comm_split_attr_t create_comm_split_attr() const;
 
 #ifdef DEVICE_COMM_SUPPORT
-
-    /**
-     * Creates a new device communicators with user supplied size, device and kvs.
-     * Rank will be assigned automatically.
-     * @param size user-supplied total number of ranks
-     * @param device user-supplied device object
-     * @param kvs key-value store for ranks wire-up
-     * @return device communicator
-     */
-    std::vector<device_communicator_t> create_device_communicator(
-        const size_t size,
-        const native_device_type& device,
-        std::shared_ptr<kvs_interface> kvs) const;
-
-    /**
-     * Creates a new device communicators with user supplied size, rank, device and kvs.
-     * @param size user-supplied total number of ranks
-     * @param rank user-supplied rank
-     * @param device user-supplied device object
-     * @param kvs key-value store for ranks wire-up
-     * @return device communicator
-     */
-    std::vector<device_communicator_t> create_device_communicator(
-        const size_t size,
-        const size_t rank,
-        native_device_type& device,
-        std::shared_ptr<kvs_interface> kvs) const;
 
     /**
      * Creates a new device communicators with user supplied size, device indices and kvs.
@@ -254,14 +219,14 @@ public:
      * @param native_stream the existing handle of stream
      * @args  full parameters set
      */
-    /* TODO: pass props by vector */
     template <class native_stream_type,
               class = typename std::enable_if<is_stream_supported<native_stream_type>()>::type>
     stream_t create_stream(
-        native_stream_type& native_stream,
-        const info::stream_properties_data_t& args = info::stream_properties_data_t{});
+        native_stream_type& native_stream);
 
-    /* TODO: create with native handle w/o props */
+/* TODO: move into private */
+    stream_t create_stream(
+        const info::stream_properties_data_t& args = info::stream_properties_data_t{});
 
     /**
      * Creates a new native_stream from @native_stream_type
@@ -271,8 +236,7 @@ public:
     template <class native_stream_type,
               class = typename std::enable_if<is_stream_supported<native_stream_type>()>::type,
               info::stream_properties... prop_ids>
-    stream_t create_stream(native_stream_type& native_stream,
-                           info::arg<prop_ids, info::stream_property_value_t>... props) {
+    stream_t create_stream(info::arg<prop_ids, info::stream_property_value_t>... props) {
         using tuple_t = std::tuple<info::stream_property_value_t>... > ;
         tuple_t args{ props... };
 
@@ -283,8 +247,7 @@ public:
     }
 
     /* Example:
-     *  auto stream = ccl::environment::instance().create_stream(queue,
-     *                                                           stream_arg(info::stream_properties::ordinal, 0),
+     *  auto stream = ccl::environment::instance().create_stream(stream_arg(info::stream_atts::ordinal, 0),
      *                                                           stream_arg(info::stream_properties::index, 1),
      *                                                           stream_arg(info::stream_properties::mode, ZE_ASYNC));
      *
@@ -329,7 +292,7 @@ public:
      */
     virtual bool cancel() = 0;
 
-    event_t get_event(); /* empty event wrapper for host comm, throw expection for get_native_handle() or empty() */
+    virtual event_t get_event() = 0; /* empty event wrapper for host comm, throw expection for get_native_handle() or empty() */
 
     virtual ~request() = default;
 };
@@ -383,6 +346,19 @@ public:
                          const std::vector<size_t>& recv_counts,
                          datatype dtype,
                          const allgatherv_attr_t& attr = allgatherv_attr_t());
+
+    /* TODO */
+    /*
+
+    allreduce_attr_t attr = env.create_allreduce_attr(
+        info::op_attr(info::allreduce_attr_id::reduction_fn, fn),
+        info::op_attr(info::operation_attr_id::match_id, "tensor_name"));
+    */
+
+    /*info::operation_attr_id::match_id
+    info::allreduce_attr_id
+    info::bcast_attr_id*/
+
 
     /**
      * @param send_buf the buffer with @c send_count elements of @c dtype that stores local data to be gathered
@@ -811,19 +787,6 @@ private:
     std::shared_ptr<communicator_interface> pimpl;
 };
 
-#ifdef DEVICE_COMM_SUPPORT
-// /**
-//  * An device operation interface that allows the user to track operation progress
-//  */
-// class device_request : public request
-// {
-// public:
-//     /**
-//      * Retrieves the event object
-//      */
-//     virtual event_t get_event() = 0;
-// };
-
 /**
  * A event object is an abstraction over stream events
  */
@@ -836,17 +799,19 @@ public:
 
 #ifdef DEVICE_COMM_SUPPORT
     event(native_event_type& native_event);
-#endif    
+    native_handle_t get() const const native_handle_t& get() const;
+#endif
 
     event();
-
-    native_handle_t get() const const native_handle_t& get() const;
 
 private:
     friend class communicator;
     friend class environment;
     event(impl_value_t&& impl);
 };
+
+
+#ifdef DEVICE_COMM_SUPPORT
 
 class device_communicator final
         : public pointer_on_impl<device_communicator, communicator_interface> {
@@ -872,12 +837,12 @@ public:
      * Type allows to get underlying device type,
      * which was used as communicator construction argument
      */
-    using native_device_reference_t = native_handle_t;
+    //using native_device_reference_t = native_handle_t;
 
     /**
      * Retrieves underlying device, which was used as communicator construction argument
      */
-    native_device_reference_t device();
+    native_device_type device();
 
     device_communicator split(device_comm_split_attr_t attr);
 
@@ -892,7 +857,7 @@ public:
      * @param recv_buf [out] the buffer to store gathered result, should be large enough to hold values from all ranks
      * @param recv_counts array with number of elements of type @c dtype to be received from each rank
      * @param dtype datatype of elements in @c send_buf and @c recv_buf
-     * @param stream optional stream associated with the operation
+     * @param stream stream associated with the operation
      * @param deps optional vector of events that the execution should depend on
      * @param attr optional attributes to customize operation
      * @return @ref ccl::request_t object to track the progress of the operation
@@ -902,7 +867,7 @@ public:
                          void* recv_buf,
                          const std::vector<size_t>& recv_counts,
                          datatype dtype,
-                         const stream_t& stream = stream_t(),
+                         const stream_t& stream,
                          const std::vector<event_t>& deps = {},
                          const allgatherv_attr_t& attr = allgatherv_attr_t());
 
@@ -914,7 +879,7 @@ public:
      * @param recv_bufs [out] array of buffers to store gathered result, one buffer per each rank
      * @param recv_counts array with number of elements of type @c dtype to be received from each rank
      * @param dtype datatype of elements in @c send_buf and @c recv_buf
-     * @param stream optional stream associated with the operation
+     * @param stream stream associated with the operation
      * @param deps optional vector of events that the execution should depend on
      * @param attr optional attributes to customize operation
      * @return @ref ccl::request_t object to track the progress of the operation
@@ -924,7 +889,7 @@ public:
                          const std::vector<void*>& recv_bufs,
                          const std::vector<size_t>& recv_counts,
                          datatype dtype,
-                         const stream_t& stream = stream_t(),
+                         const stream_t& stream,
                          const std::vector<event_t>& deps = {},
                          const allgatherv_attr_t& attr = allgatherv_attr_t());
     /**
@@ -933,7 +898,7 @@ public:
      * @param send_count number of elements of type @c dtype in @c send_buf
      * @param recv_buf [out] the buffer to store gathered result, should be large enough to hold values from all ranks
      * @param recv_counts array with number of elements of type @c dtype to be received from each rank
-     * @param stream optional stream associated with the operation
+     * @param stream stream associated with the operation
      * @param deps optional vector of events that the execution should depend on
      * @param attr optional attributes to customize operation
      * @return @ref ccl::request_t object to track the progress of the operation
@@ -944,7 +909,7 @@ public:
                          size_t send_count,
                          buffer_type* recv_buf,
                          const std::vector<size_t>& recv_counts,
-                         const stream_t& stream = stream_t(),
+                         const stream_t& stream,
                          const std::vector<event_t>& deps = {},
                          const allgatherv_attr_t& attr = allgatherv_attr_t());
 
@@ -954,7 +919,7 @@ public:
      * @param send_count number of elements of type @c dtype in @c send_buf
      * @param recv_bufs [out] array of buffers to store gathered result, one buffer per each rank
      * @param recv_counts array with number of elements of type @c dtype to be received from each rank
-     * @param stream optional stream associated with the operation
+     * @param stream stream associated with the operation
      * @param deps optional vector of events that the execution should depend on
      * @param attr optional attributes to customize operation
      * @return @ref ccl::request_t object to track the progress of the operation
@@ -965,7 +930,7 @@ public:
                          size_t send_count,
                          std::vector<buffer_type*>& recv_bufs,
                          const std::vector<size_t>& recv_counts,
-                         const stream_t& stream = stream_t(),
+                         const stream_t& stream,
                          const std::vector<event_t>& deps = {},
                          const allgatherv_attr_t& attr = allgatherv_attr_t());
 
@@ -975,7 +940,7 @@ public:
      * @param send_count number of elements of type @c dtype in @c send_buf
      * @param recv_buf [out] the buffer to store gathered result, should be large enough to hold values from all ranks
      * @param recv_counts array with number of elements of type @c dtype to be received from each rank
-     * @param stream optional stream associated with the operation
+     * @param stream stream associated with the operation
      * @param deps optional vector of events that the execution should depend on
      * @param attr optional attributes to customize operation
      * @return @ref ccl::request_t object to track the progress of the operation
@@ -986,7 +951,7 @@ public:
                          size_t send_count,
                          buffer_object_type& recv_buf,
                          const std::vector<size_t>& recv_counts,
-                         const stream_t& stream = stream_t(),
+                         const stream_t& stream,
                          const std::vector<event_t>& deps = {},
                          const allgatherv_attr_t& attr = allgatherv_attr_t());
 
@@ -996,7 +961,7 @@ public:
      * @param send_count number of elements of type @c dtype in @c send_buf
      * @param recv_bufs [out] array of buffers to store gathered result, one buffer per each rank
      * @param recv_counts array with number of elements of type @c dtype to be received from each rank
-     * @param stream optional stream associated with the operation
+     * @param stream stream associated with the operation
      * @param deps optional vector of events that the execution should depend on
      * @param attr optional attributes to customize operation
      * @return @ref ccl::request_t object to track the progress of the operation
@@ -1007,7 +972,7 @@ public:
                          size_t send_count,
                          std::vector<buffer_object_type&>& recv_bufs,
                          const std::vector<size_t>& recv_counts,
-                         const stream_t& stream = stream_t(),
+                         const stream_t& stream,
                          const std::vector<event_t>& deps = {},
                          const allgatherv_attr_t& attr = allgatherv_attr_t());
 
@@ -1022,7 +987,7 @@ public:
      * @param count number of elements of type @c dtype in @c send_buf and @c recv_buf
      * @param dtype datatype of elements in @c send_buf and @c recv_buf
      * @param reduction type of reduction operation to be applied
-     * @param stream optional stream associated with the operation
+     * @param stream stream associated with the operation
      * @param deps optional vector of events that the execution should depend on
      * @param attr optional attributes to customize operation
      * @return @ref ccl::request_t object to track the progress of the operation
@@ -1033,7 +998,7 @@ public:
         size_t count,
         datatype dtype,
         reduction reduction,
-        const stream_t& stream = stream_t(),
+        const stream_t& stream,
         const std::vector<event_t>& deps = {},
         const allreduce_attr_t& attr = allreduce_attr_t());
 
@@ -1043,7 +1008,7 @@ public:
      * @param recv_buf [out] the buffer to store reduced result, must have the same dimension as @c send_buf
      * @param count number of elements of type @c dtype in @c send_buf and @c recv_buf
      * @param reduction type of reduction operation to be applied
-     * @param stream optional stream associated with the operation
+     * @param stream stream associated with the operation
      * @param deps optional vector of events that the execution should depend on
      * @param attr optional attributes to customize operation
      * @return @ref ccl::request_t object to track the progress of the operation
@@ -1054,7 +1019,7 @@ public:
                         buffer_type* recv_buf,
                         size_t count,
                         reduction reduction,
-                        const stream_t& stream = stream_t(),
+                        const stream_t& stream,
                         const std::vector<event_t>& deps = {},
                         const allreduce_attr_t& attr = allreduce_attr_t());
 
@@ -1064,7 +1029,7 @@ public:
      * @param recv_buf [out] the buffer to store reduced result, must have the same dimension as @c send_buf
      * @param count number of elements of type @c dtype in @c send_buf and @c recv_buf
      * @param reduction type of reduction operation to be applied
-     * @param stream optional stream associated with the operation
+     * @param stream stream associated with the operation
      * @param deps optional vector of events that the execution should depend on
      * @param attr optional attributes to customize operation
      * @return @ref ccl::request_t object to track the progress of the operation
@@ -1075,7 +1040,7 @@ public:
                         buffer_object_type& recv_buf,
                         size_t count,
                         reduction reduction,
-                        const stream_t& stream = stream_t(),
+                        const stream_t& stream,
                         const std::vector<event_t>& deps = {},
                         const allreduce_attr_t& attr = allreduce_attr_t());
 
@@ -1092,7 +1057,7 @@ public:
      * to hold values from all ranks, i.e. at least @c comm_size * @c count
      * @param count number of elements of type @c dtype to be send to or to received from each rank
      * @param dtype datatype of elements in @c send_buf and @c recv_buf
-     * @param stream optional stream associated with the operation
+     * @param stream stream associated with the operation
      * @param deps optional vector of events that the execution should depend on
      * @param attr optional attributes to customize operation
      * @return @ref ccl::request_t object to track the progress of the operation
@@ -1101,7 +1066,7 @@ public:
                        void* recv_buf,
                        size_t count,
                        datatype dtype,
-                       const stream_t& stream = stream_t(),
+                       const stream_t& stream,
                        const std::vector<event_t>& deps = {},
                        const alltoall_attr_t& attr = alltoall_attr_t());
 
@@ -1110,7 +1075,7 @@ public:
      * @param recv_bufs [out] array of buffers to store received result, one buffer per each rank
      * @param count number of elements of type @c dtype to be send to or to received from each rank
      * @param dtype datatype of elements in @c send_buf and @c recv_buf
-     * @param stream optional stream associated with the operation
+     * @param stream stream associated with the operation
      * @param deps optional vector of events that the execution should depend on
      * @param attr optional attributes to customize operation
      * @return @ref ccl::request_t object to track the progress of the operation
@@ -1119,7 +1084,7 @@ public:
                        const std::vector<void*>& recv_buf,
                        size_t count,
                        datatype dtype,
-                       const stream_t& stream = stream_t(),
+                       const stream_t& stream,
                        const std::vector<event_t>& deps = {},
                        const alltoall_attr_t& attr = alltoall_attr_t());
 
@@ -1129,7 +1094,7 @@ public:
      * @param recv_buf [out] the buffer to store received result, should be large enough
      * to hold values from all ranks, i.e. at least @c comm_size * @c count
      * @param count number of elements to be send to or to received from each rank
-     * @param stream optional stream associated with the operation
+     * @param stream stream associated with the operation
      * @param deps optional vector of events that the execution should depend on
      * @param attr optional attributes to customize operation
      * @return @ref ccl::request_t object to track the progress of the operation
@@ -1139,7 +1104,7 @@ public:
     request_t alltoall(const buffer_type* send_buf,
                        buffer_type* recv_buf,
                        size_t count,
-                       const stream_t& stream = stream_t(),
+                       const stream_t& stream,
                        const std::vector<event_t>& deps = {},
                        const alltoall_attr_t& attr = alltoall_attr_t());
 
@@ -1148,7 +1113,7 @@ public:
      * @param send_bufs array of buffers with local data to be sent, one buffer per each rank
      * @param recv_bufs [out] array of buffers to store received result, one buffer per each rank
      * @param count number of elements to be send to or to received from each rank
-     * @param stream optional stream associated with the operation
+     * @param stream stream associated with the operation
      * @param deps optional vector of events that the execution should depend on
      * @param attr optional attributes to customize operation
      * @return @ref ccl::request_t object to track the progress of the operation
@@ -1158,7 +1123,7 @@ public:
     request_t alltoall(const std::vector<buffer_type*>& send_buf,
                        const std::vector<buffer_type*>& recv_buf,
                        size_t count,
-                       const stream_t& stream = stream_t(),
+                       const stream_t& stream,
                        const std::vector<event_t>& deps = {},
                        const alltoall_attr_t& attr = alltoall_attr_t());
 
@@ -1168,7 +1133,7 @@ public:
      * @param recv_buf [out] the buffer to store received result, should be large enough
      * to hold values from all ranks, i.e. at least @c comm_size * @c count
      * @param count number of elements to be send to or to received from each rank
-     * @param stream optional stream associated with the operation
+     * @param stream stream associated with the operation
      * @param deps optional vector of events that the execution should depend on
      * @param attr optional attributes to customize operation
      * @return @ref ccl::request_t object to track the progress of the operation
@@ -1178,7 +1143,7 @@ public:
     request_t alltoall(const buffer_object_type& send_buf,
                        buffer_object_type& recv_buf,
                        size_t count,
-                       const stream_t& stream = stream_t(),
+                       const stream_t& stream,
                        const std::vector<event_t>& deps = {},
                        const alltoall_attr_t& attr = alltoall_attr_t());
 
@@ -1187,7 +1152,7 @@ public:
      * @param send_bufs array of buffers with local data to be sent, one buffer per each rank
      * @param recv_bufs [out] array of buffers to store received result, one buffer per each rank
      * @param count number of elements to be send to or to received from each rank
-     * @param stream optional stream associated with the operation
+     * @param stream stream associated with the operation
      * @param deps optional vector of events that the execution should depend on
      * @param attr optional attributes to customize operation
      * @return @ref ccl::request_t object to track the progress of the operation
@@ -1197,7 +1162,7 @@ public:
     request_t alltoall(const std::vector<buffer_object_type&>& send_buf,
                        const std::vector<buffer_object_type&>& recv_buf,
                        size_t count,
-                       const stream_t& stream = stream_t(),
+                       const stream_t& stream,
                        const std::vector<event_t>& deps = {},
                        const alltoall_attr_t& attr = alltoall_attr_t());
 
@@ -1214,7 +1179,7 @@ public:
      * @param recv_buf [out] the buffer to store received result, should be large enough to hold blocks from all ranks
      * @param recv_counts array with number of elements of type @c dtype in receive blocks from each rank
      * @param dtype datatype of elements in @c send_buf and @c recv_buf
-     * @param stream optional stream associated with the operation
+     * @param stream stream associated with the operation
      * @param deps optional vector of events that the execution should depend on
      * @param attr optional attributes to customize operation
      * @return @ref ccl::request_t object to track the progress of the operation
@@ -1224,7 +1189,7 @@ public:
                         void* recv_buf,
                         const std::vector<size_t>& recv_counts,
                         datatype dtype,
-                        const stream_t& stream = stream_t(),
+                        const stream_t& stream,
                         const std::vector<event_t>& deps = {},
                         const alltoallv_attr_t& attr = alltoallv_attr_t());
 
@@ -1234,7 +1199,7 @@ public:
      * @param recv_bufs [out] array of buffers to store receive blocks, one buffer per each rank
      * @param recv_counts array with number of elements of type @c dtype in receive blocks from each rank
      * @param dtype datatype of elements in @c send_buf and @c recv_buf
-     * @param stream optional stream associated with the operation
+     * @param stream stream associated with the operation
      * @param deps optional vector of events that the execution should depend on
      * @param attr optional attributes to customize operation
      * @return @ref ccl::request_t object to track the progress of the operation
@@ -1244,7 +1209,7 @@ public:
                         const std::vector<void*>& recv_bufs,
                         const std::vector<size_t>& recv_counts,
                         datatype dtype,
-                        const stream_t& stream = stream_t(),
+                        const stream_t& stream,
                         const std::vector<event_t>& deps = {},
                         const alltoallv_attr_t& attr = alltoallv_attr_t());
 
@@ -1254,7 +1219,7 @@ public:
      * @param send_counts array with number of elements of type @c dtype in send blocks for each rank
      * @param recv_buf [out] the buffer to store received result, should be large enough to hold blocks from all ranks
      * @param recv_counts array with number of elements of type @c dtype in receive blocks from each rank
-     * @param stream optional stream associated with the operation
+     * @param stream stream associated with the operation
      * @param deps optional vector of events that the execution should depend on
      * @param attr optional attributes to customize operation
      * @return @ref ccl::request_t object to track the progress of the operation
@@ -1265,7 +1230,7 @@ public:
                         const std::vector<size_t>& send_counts,
                         buffer_type* recv_buf,
                         const std::vector<size_t>& recv_counts,
-                        const stream_t& stream = stream_t(),
+                        const stream_t& stream,
                         const std::vector<event_t>& deps = {},
                         const alltoallv_attr_t& attr = alltoallv_attr_t());
 
@@ -1276,7 +1241,7 @@ public:
      * @param recv_bufs [out] array of buffers to store receive blocks, one buffer per each rank
      * @param recv_counts array with number of elements of type @c dtype in receive blocks from each rank
      * @param dtype datatype of elements in @c send_buf and @c recv_buf
-     * @param stream optional stream associated with the operation
+     * @param stream stream associated with the operation
      * @param deps optional vector of events that the execution should depend on
      * @param attr optional attributes to customize operation
      * @return @ref ccl::request_t object to track the progress of the operation
@@ -1287,7 +1252,7 @@ public:
                         const std::vector<size_t>& send_counts,
                         const std::vector<buffer_type*>& recv_bufs,
                         const std::vector<size_t>& recv_counts,
-                        const stream_t& stream = stream_t(),
+                        const stream_t& stream,
                         const std::vector<event_t>& deps = {},
                         const alltoallv_attr_t& attr = alltoallv_attr_t());
 
@@ -1297,7 +1262,7 @@ public:
      * @param send_counts array with number of elements of type @c dtype in send blocks for each rank
      * @param recv_buf [out] the buffer to store received result, should be large enough to hold blocks from all ranks
      * @param recv_counts array with number of elements of type @c dtype in receive blocks from each rank
-     * @param stream optional stream associated with the operation
+     * @param stream stream associated with the operation
      * @param deps optional vector of events that the execution should depend on
      * @param attr optional attributes to customize operation
      * @return @ref ccl::request_t object to track the progress of the operation
@@ -1308,7 +1273,7 @@ public:
                         const std::vector<size_t>& send_counts,
                         buffer_object_type& recv_buf,
                         const std::vector<size_t>& recv_counts,
-                        const stream_t& stream = stream_t(),
+                        const stream_t& stream,
                         const std::vector<event_t>& deps = {},
                         const alltoallv_attr_t& attr = alltoallv_attr_t());
 
@@ -1319,7 +1284,7 @@ public:
      * @param recv_bufs [out] array of buffers to store receive blocks, one buffer per each rank
      * @param recv_counts array with number of elements of type @c dtype in receive blocks from each rank
      * @param dtype datatype of elements in @c send_buf and @c recv_buf
-     * @param stream optional stream associated with the operation
+     * @param stream stream associated with the operation
      * @param deps optional vector of events that the execution should depend on
      * @param attr optional attributes to customize operation
      * @return @ref ccl::request_t object to track the progress of the operation
@@ -1330,7 +1295,7 @@ public:
                         const std::vector<size_t>& send_counts,
                         const std::vector<buffer_object_type&>& recv_bufs,
                         const std::vector<size_t>& recv_counts,
-                        const stream_t& stream = stream_t(),
+                        const stream_t& stream,
                         const std::vector<event_t>& deps = {},
                         const alltoallv_attr_t& attr = alltoallv_attr_t());
 
@@ -1338,12 +1303,12 @@ public:
      * Barrier synchronization across all ranks of communicator.
      * Completes after all ranks in the communicator have called it.
      *
-     * @param stream optional stream associated with the operation
+     * @param stream stream associated with the operation
      * @param deps optional vector of events that the execution should depend on
      * @param attr optional attributes to customize operation
      * @return @ref ccl::request_t object to track the progress of the operation
      */
-    request_t barrier(const stream_t& stream = stream_t(),
+    request_t barrier(const stream_t& stream,
                       const std::vector<event_t>& deps = {},
                       const barrier_attr_t& attr = barrier_attr_t());
 
@@ -1358,7 +1323,7 @@ public:
      * @param count number of elements of type @c dtype in @c buf
      * @param dtype datatype of elements in @c buf
      * @param root the rank that broadcasts @c buf
-     * @param stream optional stream associated with the operation
+     * @param stream stream associated with the operation
      * @param deps optional vector of events that the execution should depend on
      * @param attr optional attributes to customize operation
      * @return @ref ccl::request_t object to track the progress of the operation
@@ -1367,7 +1332,7 @@ public:
                     size_t count,
                     datatype dtype,
                     size_t root,
-                    const stream_t& stream = stream_t(),
+                    const stream_t& stream,
                     const std::vector<event_t>& deps = {},
                     const bcast_attr_t& attr = bcast_attr_t());
 
@@ -1377,7 +1342,7 @@ public:
      * serves as send buffer for root and as receive buffer for other ranks
      * @param count number of elements of type @c dtype in @c buf
      * @param root the rank that broadcasts @c buf
-     * @param stream optional stream associated with the operation
+     * @param stream stream associated with the operation
      * @param deps optional vector of events that the execution should depend on
      * @param attr optional attributes to customize operation
      * @return @ref ccl::request_t object to track the progress of the operation
@@ -1387,7 +1352,7 @@ public:
     request_t bcast(buffer_type* buf,
                     size_t count,
                     size_t root,
-                    const stream_t& stream = stream_t(),
+                    const stream_t& stream,
                     const std::vector<event_t>& deps = {},
                     const bcast_attr_t& attr = bcast_attr_t());
 
@@ -1397,7 +1362,7 @@ public:
      * serves as send buffer for root and as receive buffer for other ranks
      * @param count number of elements of type @c dtype in @c buf
      * @param root the rank that broadcasts @c buf
-     * @param stream optional stream associated with the operation
+     * @param stream stream associated with the operation
      * @param deps optional vector of events that the execution should depend on
      * @param attr optional attributes to customize operation
      * @return @ref ccl::request_t object to track the progress of the operation
@@ -1407,7 +1372,7 @@ public:
     request_t bcast(buffer_object_type& buf,
                     size_t count,
                     size_t root,
-                    const stream_t& stream = stream_t(),
+                    const stream_t& stream,
                     const std::vector<event_t>& deps = {},
                     const bcast_attr_t& attr = bcast_attr_t());
 
@@ -1423,7 +1388,7 @@ public:
      * @param count number of elements of type @c dtype in @c send_buf and @c recv_buf
      * @param dtype datatype of elements in @c send_buf and @c recv_buf
      * @param reduction type of reduction operation to be applied
-     * @param stream optional stream associated with the operation
+     * @param stream stream associated with the operation
      * @param deps optional vector of events that the execution should depend on
      * @param attr optional attributes to customize operation
      * @return @ref ccl::request_t object to track the progress of the operation
@@ -1434,7 +1399,7 @@ public:
                      datatype dtype,
                      reduction reduction,
                      size_t root,
-                     const stream_t& stream = stream_t(),
+                     const stream_t& stream,
                      const std::vector<event_t>& deps = {},
                      const reduce_attr_t& attr = reduce_attr_t());
 
@@ -1446,7 +1411,7 @@ public:
      * @param count number of elements of type @c dtype in @c send_buf and @c recv_buf
      * @param dtype datatype of elements in @c send_buf and @c recv_buf
      * @param reduction type of reduction operation to be applied
-     * @param stream optional stream associated with the operation
+     * @param stream stream associated with the operation
      * @param deps optional vector of events that the execution should depend on
      * @param attr optional attributes to customize operation
      * @return @ref ccl::request_t object to track the progress of the operation
@@ -1458,7 +1423,7 @@ public:
                      size_t count,
                      reduction reduction,
                      size_t root,
-                     const stream_t& stream = stream_t(),
+                     const stream_t& stream,
                      const std::vector<event_t>& deps = {},
                      const reduce_attr_t& attr = reduce_attr_t());
 
@@ -1470,7 +1435,7 @@ public:
      * @param count number of elements of type @c dtype in @c send_buf and @c recv_buf
      * @param dtype datatype of elements in @c send_buf and @c recv_buf
      * @param reduction type of reduction operation to be applied
-     * @param stream optional stream associated with the operation
+     * @param stream stream associated with the operation
      * @param deps optional vector of events that the execution should depend on
      * @param attr optional attributes to customize operation
      * @return @ref ccl::request_t object to track the progress of the operation
@@ -1482,7 +1447,7 @@ public:
                      size_t count,
                      reduction reduction,
                      size_t root,
-                     const stream_t& stream = stream_t(),
+                     const stream_t& stream,
                      const std::vector<event_t>& deps = {},
                      const reduce_attr_t& attr = reduce_attr_t());
 
@@ -1497,7 +1462,7 @@ public:
      * @param recv_count number of elements of type @c dtype in receive block
      * @param dtype datatype of elements in @c send_buf and @c recv_buf
      * @param reduction type of reduction operation to be applied
-     * @param stream optional stream associated with the operation
+     * @param stream stream associated with the operation
      * @param deps optional vector of events that the execution should depend on
      * @param attr optional attributes to customize operation
      * @return @ref ccl::request_t object to track the progress of the operation
@@ -1507,7 +1472,7 @@ public:
                              size_t recv_count,
                              datatype dtype,
                              reduction reduction,
-                             const stream_t& stream = stream_t(),
+                             const stream_t& stream,
                              const std::vector<event_t>& deps = {},
                              const reduce_scatter_attr_t& attr = reduce_scatter_attr_t());
 
@@ -1517,7 +1482,7 @@ public:
      * @param recv_buf [out] the buffer to store result block containing @c recv_count elements of type @c dtype
      * @param recv_count number of elements of type @c dtype in receive block
      * @param reduction type of reduction operation to be applied
-     * @param stream optional stream associated with the operation
+     * @param stream stream associated with the operation
      * @param deps optional vector of events that the execution should depend on
      * @param attr optional attributes to customize operation
      * @return @ref ccl::request_t object to track the progress of the operation
@@ -1528,7 +1493,7 @@ public:
                              buffer_type* recv_buf,
                              size_t recv_count,
                              reduction reduction,
-                             const stream_t& stream = stream_t(),
+                             const stream_t& stream,
                              const std::vector<event_t>& deps = {},
                              const reduce_scatter_attr_t& attr = reduce_scatter_attr_t());
 
@@ -1538,7 +1503,7 @@ public:
      * @param recv_buf [out] the buffer to store result block containing @c recv_count elements of type @c dtype
      * @param recv_count number of elements of type @c dtype in receive block
      * @param reduction type of reduction operation to be applied
-     * @param stream optional stream associated with the operation
+     * @param stream stream associated with the operation
      * @param deps optional vector of events that the execution should depend on
      * @param attr optional attributes to customize operation
      * @return @ref ccl::request_t object to track the progress of the operation
@@ -1553,7 +1518,7 @@ public:
                    buffer_object_type& recv_buf,
                    size_t recv_count,
                    reduction reduction,
-                   const stream_t& stream = stream_t(),
+                   const stream_t& stream,
                    const std::vector<event_t>& deps = {},
                    const reduce_scatter_attr_t& attr = reduce_scatter_attr_t());
 
