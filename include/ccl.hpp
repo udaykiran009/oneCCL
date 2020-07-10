@@ -57,33 +57,15 @@ public:
     virtual ~kvs_interface() = default;
 };
 
-class master_kvs final : public kvs_interface {
+/* check horovod master/non-master kvs */
+class kvs final : public kvs_interface {
 public:
+
     static constexpr size_t addr_max_size = 256;
     using addr_t = std::array<char, addr_max_size>;
 
-    master_kvs();
-    ~master_kvs() override;
-
-    bool get(const std::string& prefix,
-             const std::string& key,
-             std::vector<char>& result) const override;
-
-    void put(const std::string& prefix,
-             const std::string& key,
-             const std::vector<char>& data) const override;
-
     const addr_t& get_addr() const;
 
-private:
-    std::unique_ptr<master_kvs_impl> pimpl;
-};
-
-class kvs final : public kvs_interface {
-public:
-    using addr_t = master_kvs::addr_t;
-
-    kvs(const addr_t& addr);
     ~kvs() override;
 
     bool get(const std::string& prefix,
@@ -95,6 +77,12 @@ public:
              const std::vector<char>& data) const override;
 
 private:
+
+    kvs();
+    kvs(const std::string& hostname, int port);
+
+    kvs(const addr_t& addr);
+
     std::unique_ptr<kvs_impl> pimpl;
 };
 
@@ -137,24 +125,36 @@ public:
     size_t get_datatype_size(datatype dtype);
 
     /**
-     * Creates a new master key-value store.
+     * Creates a main key-value store.
      * It's address should be distributed to other ranks
-     * using out of band communication transport and be used to create non-master key-value stores.
-     * @return kvs master
+     * using out of band communication transport and be used to create key-value stores.
+     * @return kvs object
      */
-    master_kvs_t create_master_kvs() const;
+    kvs_t create_main_kvs() const;
 
     /**
-     * Creates a new key-value store
-     * @param master_addr address of master kvs
-     * @return kvs master
+     * Creates a main key-value store with user defined hostname and port.
+     * It's address should be distributed to other ranks
+     * using out of band communication transport and be used to create key-value stores.
+     * @return kvs object
      */
-    kvs_t create_kvs(const master_kvs_addr& addr) const;
+    kvs_t create_main_kvs(const std::string& hostname, int port) const;
+
+    /**
+     * Creates a new key-value store from main kvs address
+     * @param addr address of main kvs
+     * @return kvs object
+     */
+    kvs_t create_kvs(const main_kvs_addr& addr) const;
 
     /**
      * Creates a new host communicator with externally defined size, rank and kvs (e.g. in case of mpirun launcher).
      * @return host communicator
      */
+
+    // platform specific, dont use, not portable
+    // should guarantee that rank, size should be provided by platform specific mechanism
+    /* skip from spec ? */
     communicator_t create_communicator() const;
 
     /**
@@ -183,6 +183,33 @@ public:
     comm_split_attr_t create_comm_split_attr() const;
 
 #ifdef DEVICE_COMM_SUPPORT
+
+    /**
+     * Creates a new device communicators with user supplied size, device and kvs.
+     * Rank will be assigned automatically.
+     * @param size user-supplied total number of ranks
+     * @param device user-supplied device object
+     * @param kvs key-value store for ranks wire-up
+     * @return device communicator
+     */
+    std::vector<device_communicator_t> create_device_communicator(
+        const size_t size,
+        const native_device_type& device,
+        std::shared_ptr<kvs_interface> kvs) const;
+
+    /**
+     * Creates a new device communicators with user supplied size, rank, device and kvs.
+     * @param size user-supplied total number of ranks
+     * @param rank user-supplied rank
+     * @param device user-supplied device object
+     * @param kvs key-value store for ranks wire-up
+     * @return device communicator
+     */
+    std::vector<device_communicator_t> create_device_communicator(
+        const size_t size,
+        const size_t rank,
+        native_device_type& device,
+        std::shared_ptr<kvs_interface> kvs) const;
 
     /**
      * Creates a new device communicators with user supplied size, device indices and kvs.
@@ -227,11 +254,14 @@ public:
      * @param native_stream the existing handle of stream
      * @args  full parameters set
      */
+    /* TODO: pass props by vector */
     template <class native_stream_type,
               class = typename std::enable_if<is_stream_supported<native_stream_type>()>::type>
     stream_t create_stream(
         native_stream_type& native_stream,
         const info::stream_properties_data_t& args = info::stream_properties_data_t{});
+
+    /* TODO: create with native handle w/o props */
 
     /**
      * Creates a new native_stream from @native_stream_type
@@ -298,6 +328,8 @@ public:
      * @retval false if the operation has not been canceled
      */
     virtual bool cancel() = 0;
+
+    event_t get_event(); /* empty event wrapper for host comm, throw expection for get_native_handle() or empty() */
 
     virtual ~request() = default;
 };
@@ -780,16 +812,17 @@ private:
 };
 
 #ifdef DEVICE_COMM_SUPPORT
-/**
- * An device operation interface that allows the user to track operation progress
- */
-class device_request : public request {
-public:
-    /**
-     * Retrieves the event object
-     */
-    virtual event_t get_event() = 0;
-};
+// /**
+//  * An device operation interface that allows the user to track operation progress
+//  */
+// class device_request : public request
+// {
+// public:
+//     /**
+//      * Retrieves the event object
+//      */
+//     virtual event_t get_event() = 0;
+// };
 
 /**
  * A event object is an abstraction over stream events
@@ -801,7 +834,11 @@ public:
     using native_handle_t = typename unified_event_type::native_reference_t;
     using impl_value_t = typename pointer_on_impl<event, ccl_event>::impl_value_t;
 
+#ifdef DEVICE_COMM_SUPPORT
     event(native_event_type& native_event);
+#endif    
+
+    event();
 
     native_handle_t get() const const native_handle_t& get() const;
 
@@ -868,6 +905,8 @@ public:
                          const stream_t& stream = stream_t(),
                          const std::vector<event_t>& deps = {},
                          const allgatherv_attr_t& attr = allgatherv_attr_t());
+
+
 
     /**
      * @param send_buf the buffer with @c send_count elements of @c dtype that stores local data to be gathered
@@ -988,14 +1027,15 @@ public:
      * @param attr optional attributes to customize operation
      * @return @ref ccl::request_t object to track the progress of the operation
      */
-    request_t allreduce(const void* send_buf,
-                        void* recv_buf,
-                        size_t count,
-                        datatype dtype,
-                        reduction reduction,
-                        const stream_t& stream = stream_t(),
-                        const std::vector<event_t>& deps = {},
-                        const allreduce_attr_t& attr = allreduce_attr_t());
+    request_t allreduce(
+        const void* send_buf,
+        void* recv_buf,
+        size_t count,
+        datatype dtype,
+        reduction reduction,
+        const stream_t& stream = stream_t(),
+        const std::vector<event_t>& deps = {},
+        const allreduce_attr_t& attr = allreduce_attr_t());
 
     /**
      * Type safety version:
@@ -1503,15 +1543,19 @@ public:
      * @param attr optional attributes to customize operation
      * @return @ref ccl::request_t object to track the progress of the operation
      */
-    template <class buffer_object_type,
-              class = typename std::enable_if<ccl::is_class_supported<buffer_object_type>()>::type>
-    request_t reduce_scatter(const buffer_object_type& send_buf,
-                             buffer_object_type& recv_buf,
-                             size_t recv_count,
-                             reduction reduction,
-                             const stream_t& stream = stream_t(),
-                             const std::vector<event_t>& deps = {},
-                             const reduce_scatter_attr_t& attr = reduce_scatter_attr_t());
+    // template <class buffer_object_type,
+    //           class = typename std::enable_if<ccl::is_class_supported<buffer_object_type>()>::type>
+
+    /* TODO: apply this in other places */
+    template <class buffer_object_type>
+    typename std::enable_if<ccl::is_class_supported<buffer_object_type>(), request_t>::type
+    reduce_scatter(const buffer_object_type& send_buf,
+                   buffer_object_type& recv_buf,
+                   size_t recv_count,
+                   reduction reduction,
+                   const stream_t& stream = stream_t(),
+                   const std::vector<event_t>& deps = {},
+                   const reduce_scatter_attr_t& attr = reduce_scatter_attr_t());
 
 private:
     friend class environment;

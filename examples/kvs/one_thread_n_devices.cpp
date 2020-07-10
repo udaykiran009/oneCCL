@@ -16,22 +16,22 @@ int main(int argc, char** argv) {
     MPI_Comm_rank(MPI_COMM_WORLD, &mpi_rank);
     MPI_Comm_size(MPI_COMM_WORLD, &mpi_size);
 
-    /* create key-value store */
-
     auto env = ccl::environment::instance();
+
+    /* create key-value store */
     ccl::kvs_interface_t kvs;
-    ccl::master_kvs::addr_t master_kvs_addr;
+    ccl::kvs::addr_t kvs_addr;
 
     if (mpi_rank == 0) {
-        kvs = env.create_master_kvs();
-        master_kvs_addr = kvs->get_addr();
+        kvs = env.create_main_kvs();
+        kvs_addr = kvs->get_addr();
         MPICHECK(
-            MPI_Bcast((void*)master_kvs_addr.data(), ccl::master_kvs::addr_max_size, MPI_BYTE, 0, MPI_COMM_WORLD));
+            MPI_Bcast((void*)kvs_addr.data(), ccl::kvs::addr_max_size, MPI_BYTE, 0, MPI_COMM_WORLD));
     }
     else {
         MPICHECK(
-            MPI_Bcast((void*)master_kvs_addr.data(), ccl::master_kvs::addr_max_size, MPI_BYTE, 0, MPI_COMM_WORLD));
-        kvs = env.create_kvs(master_kvs_addr);
+            MPI_Bcast((void*)kvs_addr.data(), ccl::kvs::addr_max_size, MPI_BYTE, 0, MPI_COMM_WORLD));
+        kvs = env.create_kvs(kvs_addr);
     }
 
     /*
