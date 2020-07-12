@@ -41,11 +41,8 @@ esac
 export CCL_CONFIGURATION=${ccl_configuration}
 export I_MPI_LIBRARY_KIND="release_mt"
 
-if [ -z "${LD_LIBRARY_PATH}" ]
-then
-    LD_LIBRARY_PATH="${CCL_ROOT}/lib/${ccl_configuration}"; export LD_LIBRARY_PATH
-else
-    LD_LIBRARY_PATH="${CCL_ROOT}/lib/${ccl_configuration}:${LD_LIBRARY_PATH}"; export LD_LIBRARY_PATH
-fi
-
 CCL_ATL_TRANSPORT_PATH="${CCL_ROOT}/lib/${ccl_configuration}"; export CCL_ATL_TRANSPORT_PATH
+
+export CPATH=${CCL_ROOT}/include/${ccl_configuration}${CPATH+:${CPATH}}
+export LIBRARY_PATH=${CCL_ROOT}/lib/${ccl_configuration}${LIBRARY_PATH+:${LIBRARY_PATH}}
+export LD_LIBRARY_PATH=${CCL_ROOT}/lib/${ccl_configuration}${LD_LIBRARY_PATH+:${LD_LIBRARY_PATH}}
