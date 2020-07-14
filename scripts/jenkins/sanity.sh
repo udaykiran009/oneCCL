@@ -205,22 +205,7 @@ set_environment()
         C_COMPILER=${BUILD_COMPILER}/clang
         CXX_COMPILER=${BUILD_COMPILER}/clang++
     fi
-    if [ -z "${I_MPI_HYDRA_HOST_FILE}" ]
-    then
-        if [ -f ${CURRENT_WORK_DIR}/tests/cfgs/clusters/${HOSTNAME}/mpi.hosts ]
-        then
-            export I_MPI_HYDRA_HOST_FILE=${CURRENT_WORK_DIR}/tests/cfgs/clusters/${HOSTNAME}/mpi.hosts
-        else
-            echo "WARNING: hostfile (${CURRENT_WORK_DIR}/tests/cfgs/clusters/${HOSTNAME}/mpi.hosts) isn't available"
-            echo "WARNING: I_MPI_HYDRA_HOST_FILE isn't set"
-        fi
-    fi
-    if [ -z "${IMPI_PATH}" ]
-    then
-        echo "WARNING: I_MPI_ROOT isn't set, last oneAPI pack will be used."
-        export IMPI_PATH=/p/pdsd/scratch/Uploads/IMPI/linux/functional_testing/impi/oneAPI/latest/
-    fi
-    source ${IMPI_PATH}/env/vars.sh -i_mpi_library_kind=release_mt
+    
     if [ -z "$worker_count" ]
     then
         worker_count="2"
@@ -257,6 +242,26 @@ set_environment()
     fi
 }
 
+set_impi_environment()
+{
+    if [ -z "${I_MPI_HYDRA_HOST_FILE}" ]
+    then
+        if [ -f ${CURRENT_WORK_DIR}/tests/cfgs/clusters/${HOSTNAME}/mpi.hosts ]
+        then
+            export I_MPI_HYDRA_HOST_FILE=${CURRENT_WORK_DIR}/tests/cfgs/clusters/${HOSTNAME}/mpi.hosts
+        else
+            echo "WARNING: hostfile (${CURRENT_WORK_DIR}/tests/cfgs/clusters/${HOSTNAME}/mpi.hosts) isn't available"
+            echo "WARNING: I_MPI_HYDRA_HOST_FILE isn't set"
+        fi
+    fi
+    if [ -z "${IMPI_PATH}" ]
+    then
+        echo "WARNING: I_MPI_ROOT isn't set, last oneAPI pack will be used."
+        export IMPI_PATH=/p/pdsd/scratch/Uploads/IMPI/linux/functional_testing/impi/oneAPI/latest/
+    fi
+    source ${IMPI_PATH}/env/vars.sh -i_mpi_library_kind=release_mt
+}
+
 make_tests()
 {
     cd ${CURRENT_WORK_DIR}/tests/functional
@@ -290,6 +295,66 @@ run_compatibitily_tests()
         echo "compatibitily testing ... NOK"
         exit 1
     fi
+}
+
+set_modulefile_environment()
+{
+    export CCL_CONFIGURATION=cpu_icc
+    if [ -z "$build_type" ]
+    then
+        build_type="release"
+    fi
+
+    module load ${CCL_INSTALL_DIR}/l_ccl_${build_type}*/modulefiles/ccl
+
+    log_status_fail=${PIPESTATUS[0]}
+    if [ "$log_status_fail" -eq 0 ]
+    then
+        echo "module file load ... OK"
+    else
+        echo "module file load ... NOK"
+        exit 1
+    fi
+}
+
+unset_modulefile_environment()
+{
+    module unload ccl
+
+    log_status_fail=${PIPESTATUS[0]}
+    if [ "$log_status_fail" -eq 0 ]
+    then
+        echo "module file unload ... OK"
+    else
+        echo "module file unload ... NOK"
+        exit 1
+    fi
+}
+
+run_modulefile_tests()
+{
+    set_modulefile_environment
+
+    export EXAMPLE_WORK_DIR="${CCL_ROOT}/examples/build"
+    mkdir -p ${EXAMPLE_WORK_DIR}
+    echo "EXAMPLE_WORK_DIR =" $EXAMPLE_WORK_DIR
+
+    set_external_env
+
+    cd ${EXAMPLE_WORK_DIR}
+    ${CURRENT_WORK_DIR}/examples/run.sh cpu
+
+    log_status_fail=${PIPESTATUS[0]}
+    if [ "$log_status_fail" -eq 0 ]
+    then
+        echo "module file testing ... OK"
+        exit 0
+    else
+        echo "module file testing ... NOK"
+        exit 1
+    fi
+
+    unset_modulefile_environment
 }
 
 run_tests()
@@ -461,13 +526,19 @@ EOF
 #==============================================================================
 
 set_default_values
+set_impi_environment
 set_environment
+
 clean_nodes
 while [ $# -ne 0 ]
 do
     case $1 in
     "-compatibility_tests" )
         run_compatibitily_tests
+        shift
+        ;;
+    "-modulefile_tests" )
+        run_modulefile_tests
         shift
         ;;
     *)
