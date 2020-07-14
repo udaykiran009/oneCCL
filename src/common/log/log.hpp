@@ -216,32 +216,56 @@ extern ccl_logger logger;
 #define LOG_ERROR(...) \
     { \
         if (logger.get_log_level() >= ccl_log_level::ERROR) { \
-            logger.error( \
-                basedir_static(__FILE__), ":", __LINE__, "  ", __FUNCTION__, " ", ##__VA_ARGS__); \
+            logger.error("|ERROR| ", \
+                         basedir_static(__FILE__), \
+                         ":", \
+                         __LINE__, \
+                         "  ", \
+                         __FUNCTION__, \
+                         " ", \
+                         ##__VA_ARGS__); \
         } \
     }
 
 #define LOG_INFO(...) \
     { \
         if (logger.get_log_level() >= ccl_log_level::INFO) { \
-            logger.info( \
-                basedir_static(__FILE__), ":", __LINE__, "  ", __FUNCTION__, " ", ##__VA_ARGS__); \
+            logger.info("|INFO| ", \
+                        basedir_static(__FILE__), \
+                        ":", \
+                        __LINE__, \
+                        "  ", \
+                        __FUNCTION__, \
+                        " ", \
+                        ##__VA_ARGS__); \
         } \
     }
 
 #define LOG_DEBUG(...) \
     { \
         if (logger.get_log_level() >= ccl_log_level::DEBUG) { \
-            logger.debug( \
-                basedir_static(__FILE__), ":", __LINE__, "  ", __FUNCTION__, " ", ##__VA_ARGS__); \
+            logger.debug("|DEBUG| ", \
+                         basedir_static(__FILE__), \
+                         ":", \
+                         __LINE__, \
+                         "  ", \
+                         __FUNCTION__, \
+                         " ", \
+                         ##__VA_ARGS__); \
         } \
     }
 
 #define LOG_TRACE(...) \
     { \
         if (logger.get_log_level() >= ccl_log_level::TRACE) { \
-            logger.trace( \
-                basedir_static(__FILE__), ":", __LINE__, "  ", __FUNCTION__, " ", ##__VA_ARGS__); \
+            logger.trace("|TRACE| ", \
+                         basedir_static(__FILE__), \
+                         ":", \
+                         __LINE__, \
+                         "  ", \
+                         __FUNCTION__, \
+                         " ", \
+                         ##__VA_ARGS__); \
         } \
     }
 
