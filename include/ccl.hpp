@@ -31,28 +31,53 @@ struct device_comm_split_attr_impl;
 class device_comm_split_attr;
 #endif /* DEVICE_COMM_SUPPORT */
 
+template < class T, class Alloc = std::allocator<T> >
+using vector_class = std::vector<T, Alloc>;
+
+template < class T, std::size_t N >
+using array_class = std::array<T, N>;
+
+using string_class = std::string;
+
+template<class R, class... ArgTypes>
+using function_class = std::function<R(ArgTypes...)>;
+
+using mutex_class = std::mutex;
+
+template < class T1, class T2 >
+using pair_class = std::pair<T1, N2>;
+
+template < class... Types >
+using tuple_class = std::tuple<Types...>;
+
+template <class T>
+using shared_ptr_class = std::shared_ptr<T>;
+
+template <class T>
+using unique_ptr_class = std::unique_ptr<T>;
+
 /**
- * Types which allow to operate with kvs/communicator/request/stream objects in RAII manner
+ * Types which allow to operate with kvs/communicator/request/stream/event objects in RAII manner
  */
-using kvs_interface_t = std::unique_ptr<kvs_interface>;
-using communicator_t = std::unique_ptr<communicator>;
-using request_t = std::unique_ptr<request>;
+using kvs_interface_t = unique_ptr_class<kvs_interface>;
+using communicator_t = unique_ptr_class<communicator>;
+using request_t = unique_ptr_class<request>;
+using event_t = unique_ptr_class<event>;
 
 #ifdef DEVICE_COMM_SUPPORT
-using device_communicator_t = std::unique_ptr<device_communicator>;
-using device_request_t = std::unique_ptr<device_request>;
-using stream_t = std::unique_ptr<stream>;
+using device_communicator_t = unique_ptr_class<device_communicator>;
+using stream_t = unique_ptr_class<stream>;
 #endif /* DEVICE_COMM_SUPPORT */
 
 class kvs_interface {
 public:
-    virtual bool get(const std::string& prefix,
-                     const std::string& key,
-                     std::vector<char>& result) const = 0;
+    virtual bool get(const string_class& prefix,
+                     const string_class& key,
+                     vector_class<char>& result) const = 0;
 
-    virtual void put(const std::string& prefix,
-                     const std::string& key,
-                     const std::vector<char>& data) const = 0;
+    virtual void put(const string_class& prefix,
+                     const string_class& key,
+                     const vector_class<char>& data) const = 0;
 
     virtual ~kvs_interface() = default;
 };
@@ -61,28 +86,26 @@ class kvs final : public kvs_interface {
 public:
 
     static constexpr size_t addr_max_size = 256;
-    using addr_t = std::array<char, addr_max_size>;
+    using addr_t = array_class<char, addr_max_size>;
 
     const addr_t& get_addr() const;
 
     ~kvs() override;
 
-    bool get(const std::string& prefix,
-             const std::string& key,
-             std::vector<char>& result) const override;
+    bool get(const string_class& prefix,
+             const string_class& key,
+             vector_class<char>& result) const override;
 
-    void put(const std::string& prefix,
-             const std::string& key,
-             const std::vector<char>& data) const override;
+    void put(const string_class& prefix,
+             const string_class& key,
+             const vector_class<char>& data) const override;
 
 private:
 
     kvs();
-    // kvs(const std::string& hostname, int port); pass this info through env var
-
     kvs(const addr_t& addr);
 
-    std::unique_ptr<kvs_impl> pimpl;
+    unique_ptr_class<kvs_impl> pimpl;
 };
 
 /**
@@ -104,6 +127,11 @@ public:
     version_t get_version() const;
 
     /**
+     * Creates @attr which used to register custom datatype
+     */
+    datatype_attr_t create_datatype_attr() const;
+
+    /**
      * Registers custom datatype to be used in communication operations
      * @param attr datatype attributes
      * @return datatype handle
@@ -121,12 +149,12 @@ public:
      * @param dtype datatype handle
      * @return datatype size
      */
-    size_t get_datatype_size(datatype dtype);
+    size_t get_datatype_size(datatype dtype) const;
 
     /**
      * Creates a main key-value store.
-     * It's address should be distributed to other ranks
-     * using out of band communication transport and be used to create key-value stores.
+     * It's address should be distributed using out of band communication mechanism
+     * and be used to create key-value stores on other ranks.
      * @return kvs object
      */
     kvs_t create_main_kvs() const;
@@ -139,14 +167,10 @@ public:
     kvs_t create_kvs(const main_kvs_addr& addr) const;
 
     /**
-     * Creates a new host communicator with externally defined size, rank and kvs (e.g. in case of mpirun launcher).
+     * Creates a new host communicator with externally provided size, rank and kvs.
+     * Implementation is platform specific and non portable.
      * @return host communicator
      */
-
-    /* TODO: */
-    // platform specific, dont use, not portable
-    // should guarantee that rank, size should be provided by platform specific mechanism
-    /* skip from spec ? */
     communicator_t create_communicator() const;
 
     /**
@@ -156,7 +180,7 @@ public:
      * @param kvs key-value store for ranks wire-up
      * @return host communicator
      */
-    communicator_t create_communicator(const size_t size, std::shared_ptr<kvs_interface> kvs) const;
+    communicator_t create_communicator(const size_t size, shared_ptr_class<kvs_interface> kvs) const;
 
     /**
      * Creates a new host communicator with user supplied size, rank and kvs.
@@ -167,7 +191,7 @@ public:
      */
     communicator_t create_communicator(const size_t size,
                                        const size_t rank,
-                                       std::shared_ptr<kvs_interface> kvs) const;
+                                       shared_ptr_class<kvs_interface> kvs) const;
 
     /**
      * Creates @attr which used to split host communicator
@@ -181,25 +205,29 @@ public:
      * Ranks will be assigned automatically.
      * @param size user-supplied total number of ranks
      * @param devices user-supplied device objects for local ranks
+     * @param context context containing the devices
      * @param kvs key-value store for ranks wire-up
      * @return vector of device communicators
      */
-    std::vector<device_communicator_t> create_device_communicators(
+    vector_class<device_communicator_t> create_device_communicators(
         const size_t size,
-        const std::vector<device_native_type>& devices,
-        std::shared_ptr<kvs_interface> kvs) const;
+        const vector_class<native_device_type>& devices,
+        native_context_type& context,
+        shared_ptr_class<kvs_interface> kvs) const;
 
     /**
      * Creates a new device communicators with user supplied size, ranks, device indices and kvs.
      * @param size user-supplied total number of ranks
      * @param rank_device_map user-supplied mapping of local ranks on devices
+     * @param context context containing the devices
      * @param kvs key-value store for ranks wire-up
      * @return vector of device communicators
      */
-    std::vector<device_communicator_t> create_device_communicators(
+    vector_class<device_communicator_t> create_device_communicators(
         const size_t size,
-        std::vector<std::pair<size_t, device_native_type>>& rank_device_map,
-        std::shared_ptr<kvs_interface> kvs) const;
+        vector_class<pair_class<size_t, native_device_type>>& rank_device_map,
+        native_context_type& context,
+        shared_ptr_class<kvs_interface> kvs) const;
 
     /**
      * Creates @attr which used to split device communicator
@@ -211,8 +239,8 @@ public:
      * @param attrs split attributes for local communicators
      * @return vector of device communicators
      */
-    std::vector<device_communicator_t> split_device_communicators(
-        const std::vector<std::pair<device_communicator_t, device_comm_split_attr_t>>& attrs) const;
+    vector_class<device_communicator_t> split_device_communicators(
+        const vector_class<pair_class<device_communicator_t, device_comm_split_attr_t>>& attrs) const;
 
     /**
      * Creates a new stream from @native_stream_type
@@ -222,37 +250,7 @@ public:
     template <class native_stream_type,
               class = typename std::enable_if<is_stream_supported<native_stream_type>()>::type>
     stream_t create_stream(
-        native_stream_type& native_stream);
-
-/* TODO: move into private */
-    stream_t create_stream(
-        const info::stream_properties_data_t& args = info::stream_properties_data_t{});
-
-    /**
-     * Creates a new native_stream from @native_stream_type
-     * @param native_stream the existing handle of stream
-     * @props are optional specific properties
-     */
-    template <class native_stream_type,
-              class = typename std::enable_if<is_stream_supported<native_stream_type>()>::type,
-              info::stream_properties... prop_ids>
-    stream_t create_stream(info::arg<prop_ids, info::stream_property_value_t>... props) {
-        using tuple_t = std::tuple<info::stream_property_value_t>... > ;
-        tuple_t args{ props... };
-
-        info::stream_properties_data_t stream_args;
-        arg_filler exec(args);
-        ccl_tuple_for_each(args, arg_filler);
-        return create_event(native_stream, stream_args);
-    }
-
-    /* Example:
-     *  auto stream = ccl::environment::instance().create_stream(stream_arg(info::stream_atts::ordinal, 0),
-     *                                                           stream_arg(info::stream_properties::index, 1),
-     *                                                           stream_arg(info::stream_properties::mode, ZE_ASYNC));
-     *
-     */
-    stream_t create_stream() const;
+        native_stream_type& native_stream) const;
 
     /**
      * Creates a new event from @native_event_type
@@ -260,11 +258,41 @@ public:
      */
     template <class native_event_type,
               class = typename std::enable_if<is_event_supported<native_event_type>()>::type>
-    event_t create_event(native_event_type& native_event);
+    event_t create_event(native_event_type& native_event) const;
+
+    // /**
+    //  * Creates a new native_stream from @native_stream_type
+    //  * @param native_stream the existing handle of stream
+    //  * @props are optional specific properties
+    //  */
+    // template <class native_stream_type,
+    //           class = typename std::enable_if<is_stream_supported<native_stream_type>()>::type,
+    //           info::stream_properties... prop_ids>
+    // stream_t create_stream(info::arg<prop_ids, info::stream_property_value_t>... props) const {
+    //     using tuple_t = tuple_class<info::stream_property_value_t>... > ;
+    //     tuple_t args{ props... };
+
+    //     info::stream_properties_data_t stream_args;
+    //     arg_filler exec(args);
+    //     ccl_tuple_for_each(args, arg_filler);
+    //     return create_event(native_stream, stream_args);
+    // }
+
+    // /* Example:
+    //  *  auto stream = ccl::environment::instance().create_stream(stream_arg(info::stream_atts::ordinal, 0),
+    //  *                                                           stream_arg(info::stream_properties::index, 1),
+    //  *                                                           stream_arg(info::stream_properties::mode, ZE_ASYNC));
+    //  *
+    //  */
+    // stream_t create_stream() const;
 
 #endif /* DEVICE_COMM_SUPPORT */
 
 private:
+
+    // stream_t create_stream(
+    //     const info::stream_properties_data_t& args = info::stream_properties_data_t{});
+
     environment();
 };
 
@@ -292,7 +320,7 @@ public:
      */
     virtual bool cancel() = 0;
 
-    virtual event_t get_event() = 0; /* empty event wrapper for host comm, throw expection for get_native_handle() or empty() */
+    virtual event_t get_event() = 0;
 
     virtual ~request() = default;
 };
@@ -343,7 +371,7 @@ public:
     request_t allgatherv(const void* send_buf,
                          size_t send_count,
                          void* recv_buf,
-                         const std::vector<size_t>& recv_counts,
+                         const vector_class<size_t>& recv_counts,
                          datatype dtype,
                          const allgatherv_attr_t& attr = allgatherv_attr_t());
 
@@ -371,8 +399,8 @@ public:
      */
     request_t allgatherv(const void* send_buf,
                          size_t send_count,
-                         const std::vector<void*>& recv_bufs,
-                         const std::vector<size_t>& recv_counts,
+                         const vector_class<void*>& recv_bufs,
+                         const vector_class<size_t>& recv_counts,
                          datatype dtype,
                          const allgatherv_attr_t& attr = allgatherv_attr_t());
     /**
@@ -389,7 +417,7 @@ public:
     request_t allgatherv(const buffer_type* send_buf,
                          size_t send_count,
                          buffer_type* recv_buf,
-                         const std::vector<size_t>& recv_counts,
+                         const vector_class<size_t>& recv_counts,
                          const allgatherv_attr_t& attr = allgatherv_attr_t());
 
     /**
@@ -405,8 +433,8 @@ public:
               class = typename std::enable_if<ccl::is_native_type_supported<buffer_type>()>::type>
     request_t allgatherv(const buffer_type* send_buf,
                          size_t send_count,
-                         std::vector<buffer_type*>& recv_bufs,
-                         const std::vector<size_t>& recv_counts,
+                         vector_class<buffer_type*>& recv_bufs,
+                         const vector_class<size_t>& recv_counts,
                          const allgatherv_attr_t& attr = allgatherv_attr_t());
 
     /**
@@ -477,8 +505,8 @@ public:
      * @param attr optional attributes to customize operation
      * @return @ref ccl::request_t object to track the progress of the operation
      */
-    request_t alltoall(const std::vector<void*>& send_buf,
-                       const std::vector<void*>& recv_buf,
+    request_t alltoall(const vector_class<void*>& send_buf,
+                       const vector_class<void*>& recv_buf,
                        size_t count,
                        datatype dtype,
                        const alltoall_attr_t& attr = alltoall_attr_t());
@@ -509,8 +537,8 @@ public:
      */
     template <class buffer_type,
               class = typename std::enable_if<ccl::is_native_type_supported<buffer_type>()>::type>
-    request_t alltoall(const std::vector<buffer_type*>& send_buf,
-                       const std::vector<buffer_type*>& recv_buf,
+    request_t alltoall(const vector_class<buffer_type*>& send_buf,
+                       const vector_class<buffer_type*>& recv_buf,
                        size_t count,
                        const alltoall_attr_t& attr = alltoall_attr_t());
 
@@ -531,9 +559,9 @@ public:
      * @return @ref ccl::request_t object to track the progress of the operation
      */
     request_t alltoallv(const void* send_buf,
-                        const std::vector<size_t>& send_counts,
+                        const vector_class<size_t>& send_counts,
                         void* recv_buf,
-                        const std::vector<size_t>& recv_counts,
+                        const vector_class<size_t>& recv_counts,
                         datatype dtype,
                         const alltoallv_attr_t& attr = alltoallv_attr_t());
 
@@ -546,10 +574,10 @@ public:
      * @param attr optional attributes to customize operation
      * @return @ref ccl::request_t object to track the progress of the operation
      */
-    request_t alltoallv(const std::vector<void*>& send_bufs,
-                        const std::vector<size_t>& send_counts,
-                        const std::vector<void*>& recv_bufs,
-                        const std::vector<size_t>& recv_counts,
+    request_t alltoallv(const vector_class<void*>& send_bufs,
+                        const vector_class<size_t>& send_counts,
+                        const vector_class<void*>& recv_bufs,
+                        const vector_class<size_t>& recv_counts,
                         datatype dtype,
                         const alltoallv_attr_t& attr = alltoallv_attr_t());
 
@@ -565,9 +593,9 @@ public:
     template <class buffer_type,
               class = typename std::enable_if<ccl::is_native_type_supported<buffer_type>()>::type>
     request_t alltoallv(const buffer_type* send_buf,
-                        const std::vector<size_t>& send_counts,
+                        const vector_class<size_t>& send_counts,
                         buffer_type* recv_buf,
-                        const std::vector<size_t>& recv_counts,
+                        const vector_class<size_t>& recv_counts,
                         const alltoallv_attr_t& attr = alltoallv_attr_t());
 
     /**
@@ -582,10 +610,10 @@ public:
      */
     template <class buffer_type,
               class = typename std::enable_if<ccl::is_native_type_supported<buffer_type>()>::type>
-    request_t alltoallv(const std::vector<buffer_type*>& send_bufs,
-                        const std::vector<size_t>& send_counts,
-                        const std::vector<buffer_type*>& recv_bufs,
-                        const std::vector<size_t>& recv_counts,
+    request_t alltoallv(const vector_class<buffer_type*>& send_bufs,
+                        const vector_class<size_t>& send_counts,
+                        const vector_class<buffer_type*>& recv_bufs,
+                        const vector_class<size_t>& recv_counts,
                         const alltoallv_attr_t& attr = alltoallv_attr_t());
 
     /**
@@ -779,16 +807,17 @@ public:
 private:
     friend class environment;
 
-    explicit communicator(std::shared_ptr<communicator_interface> impl);
+    explicit communicator(shared_ptr_class<communicator_interface> impl);
 
     /**
      * Holds implementation specific details
      */
-    std::shared_ptr<communicator_interface> pimpl;
+    shared_ptr_class<communicator_interface> pimpl;
 };
 
 /**
- * A event object is an abstraction over stream events
+ * A event object is an abstraction over native event object
+ * to be used for operation status tracking.
  */
 class event : public non_copyable<event>,
               public non_movable<event>,
@@ -799,7 +828,7 @@ public:
 
 #ifdef DEVICE_COMM_SUPPORT
     event(native_event_type& native_event);
-    native_handle_t get() const const native_handle_t& get() const;
+    native_event_type get() const;
 #endif
 
     event();
@@ -842,7 +871,12 @@ public:
     /**
      * Retrieves underlying device, which was used as communicator construction argument
      */
-    native_device_type device();
+    native_device_type get_device() const;
+
+    /**
+     * Retrieves underlying context, which was used as communicator construction argument
+     */
+    native_context_type get_context() const;
 
     device_communicator split(device_comm_split_attr_t attr);
 
@@ -865,10 +899,10 @@ public:
     request_t allgatherv(const void* send_buf,
                          size_t send_count,
                          void* recv_buf,
-                         const std::vector<size_t>& recv_counts,
+                         const vector_class<size_t>& recv_counts,
                          datatype dtype,
                          const stream_t& stream,
-                         const std::vector<event_t>& deps = {},
+                         const vector_class<event_t>& deps = {},
                          const allgatherv_attr_t& attr = allgatherv_attr_t());
 
 
@@ -886,11 +920,11 @@ public:
      */
     request_t allgatherv(const void* send_buf,
                          size_t send_count,
-                         const std::vector<void*>& recv_bufs,
-                         const std::vector<size_t>& recv_counts,
+                         const vector_class<void*>& recv_bufs,
+                         const vector_class<size_t>& recv_counts,
                          datatype dtype,
                          const stream_t& stream,
-                         const std::vector<event_t>& deps = {},
+                         const vector_class<event_t>& deps = {},
                          const allgatherv_attr_t& attr = allgatherv_attr_t());
     /**
      * Type safety version:
@@ -908,9 +942,9 @@ public:
     request_t allgatherv(const buffer_type* send_buf,
                          size_t send_count,
                          buffer_type* recv_buf,
-                         const std::vector<size_t>& recv_counts,
+                         const vector_class<size_t>& recv_counts,
                          const stream_t& stream,
-                         const std::vector<event_t>& deps = {},
+                         const vector_class<event_t>& deps = {},
                          const allgatherv_attr_t& attr = allgatherv_attr_t());
 
     /**
@@ -928,10 +962,10 @@ public:
               class = typename std::enable_if<ccl::is_native_type_supported<buffer_type>()>::type>
     request_t allgatherv(const buffer_type* send_buf,
                          size_t send_count,
-                         std::vector<buffer_type*>& recv_bufs,
-                         const std::vector<size_t>& recv_counts,
+                         vector_class<buffer_type*>& recv_bufs,
+                         const vector_class<size_t>& recv_counts,
                          const stream_t& stream,
-                         const std::vector<event_t>& deps = {},
+                         const vector_class<event_t>& deps = {},
                          const allgatherv_attr_t& attr = allgatherv_attr_t());
 
     /**
@@ -950,9 +984,9 @@ public:
     request_t allgatherv(const buffer_object_type& send_buf,
                          size_t send_count,
                          buffer_object_type& recv_buf,
-                         const std::vector<size_t>& recv_counts,
+                         const vector_class<size_t>& recv_counts,
                          const stream_t& stream,
-                         const std::vector<event_t>& deps = {},
+                         const vector_class<event_t>& deps = {},
                          const allgatherv_attr_t& attr = allgatherv_attr_t());
 
     /**
@@ -970,10 +1004,10 @@ public:
               class = typename std::enable_if<ccl::is_class_supported<buffer_object_type>()>::type>
     request_t allgatherv(const buffer_object_type& send_buf,
                          size_t send_count,
-                         std::vector<buffer_object_type&>& recv_bufs,
-                         const std::vector<size_t>& recv_counts,
+                         vector_class<buffer_object_type&>& recv_bufs,
+                         const vector_class<size_t>& recv_counts,
                          const stream_t& stream,
-                         const std::vector<event_t>& deps = {},
+                         const vector_class<event_t>& deps = {},
                          const allgatherv_attr_t& attr = allgatherv_attr_t());
 
     /**
@@ -999,7 +1033,7 @@ public:
         datatype dtype,
         reduction reduction,
         const stream_t& stream,
-        const std::vector<event_t>& deps = {},
+        const vector_class<event_t>& deps = {},
         const allreduce_attr_t& attr = allreduce_attr_t());
 
     /**
@@ -1020,7 +1054,7 @@ public:
                         size_t count,
                         reduction reduction,
                         const stream_t& stream,
-                        const std::vector<event_t>& deps = {},
+                        const vector_class<event_t>& deps = {},
                         const allreduce_attr_t& attr = allreduce_attr_t());
 
     /**
@@ -1041,7 +1075,7 @@ public:
                         size_t count,
                         reduction reduction,
                         const stream_t& stream,
-                        const std::vector<event_t>& deps = {},
+                        const vector_class<event_t>& deps = {},
                         const allreduce_attr_t& attr = allreduce_attr_t());
 
     /**
@@ -1067,7 +1101,7 @@ public:
                        size_t count,
                        datatype dtype,
                        const stream_t& stream,
-                       const std::vector<event_t>& deps = {},
+                       const vector_class<event_t>& deps = {},
                        const alltoall_attr_t& attr = alltoall_attr_t());
 
     /**
@@ -1080,12 +1114,12 @@ public:
      * @param attr optional attributes to customize operation
      * @return @ref ccl::request_t object to track the progress of the operation
      */
-    request_t alltoall(const std::vector<void*>& send_buf,
-                       const std::vector<void*>& recv_buf,
+    request_t alltoall(const vector_class<void*>& send_buf,
+                       const vector_class<void*>& recv_buf,
                        size_t count,
                        datatype dtype,
                        const stream_t& stream,
-                       const std::vector<event_t>& deps = {},
+                       const vector_class<event_t>& deps = {},
                        const alltoall_attr_t& attr = alltoall_attr_t());
 
     /**
@@ -1105,7 +1139,7 @@ public:
                        buffer_type* recv_buf,
                        size_t count,
                        const stream_t& stream,
-                       const std::vector<event_t>& deps = {},
+                       const vector_class<event_t>& deps = {},
                        const alltoall_attr_t& attr = alltoall_attr_t());
 
     /**
@@ -1120,11 +1154,11 @@ public:
      */
     template <class buffer_type,
               class = typename std::enable_if<ccl::is_native_type_supported<buffer_type>()>::type>
-    request_t alltoall(const std::vector<buffer_type*>& send_buf,
-                       const std::vector<buffer_type*>& recv_buf,
+    request_t alltoall(const vector_class<buffer_type*>& send_buf,
+                       const vector_class<buffer_type*>& recv_buf,
                        size_t count,
                        const stream_t& stream,
-                       const std::vector<event_t>& deps = {},
+                       const vector_class<event_t>& deps = {},
                        const alltoall_attr_t& attr = alltoall_attr_t());
 
     /**
@@ -1144,7 +1178,7 @@ public:
                        buffer_object_type& recv_buf,
                        size_t count,
                        const stream_t& stream,
-                       const std::vector<event_t>& deps = {},
+                       const vector_class<event_t>& deps = {},
                        const alltoall_attr_t& attr = alltoall_attr_t());
 
     /**
@@ -1159,11 +1193,11 @@ public:
      */
     template <class buffer_object_type,
               class = typename std::enable_if<ccl::is_class_supported<buffer_object_type>()>::type>
-    request_t alltoall(const std::vector<buffer_object_type&>& send_buf,
-                       const std::vector<buffer_object_type&>& recv_buf,
+    request_t alltoall(const vector_class<buffer_object_type&>& send_buf,
+                       const vector_class<buffer_object_type&>& recv_buf,
                        size_t count,
                        const stream_t& stream,
-                       const std::vector<event_t>& deps = {},
+                       const vector_class<event_t>& deps = {},
                        const alltoall_attr_t& attr = alltoall_attr_t());
 
     /**
@@ -1185,12 +1219,12 @@ public:
      * @return @ref ccl::request_t object to track the progress of the operation
      */
     request_t alltoallv(const void* send_buf,
-                        const std::vector<size_t>& send_counts,
+                        const vector_class<size_t>& send_counts,
                         void* recv_buf,
-                        const std::vector<size_t>& recv_counts,
+                        const vector_class<size_t>& recv_counts,
                         datatype dtype,
                         const stream_t& stream,
-                        const std::vector<event_t>& deps = {},
+                        const vector_class<event_t>& deps = {},
                         const alltoallv_attr_t& attr = alltoallv_attr_t());
 
     /**
@@ -1204,13 +1238,13 @@ public:
      * @param attr optional attributes to customize operation
      * @return @ref ccl::request_t object to track the progress of the operation
      */
-    request_t alltoallv(const std::vector<void*>& send_bufs,
-                        const std::vector<size_t>& send_counts,
-                        const std::vector<void*>& recv_bufs,
-                        const std::vector<size_t>& recv_counts,
+    request_t alltoallv(const vector_class<void*>& send_bufs,
+                        const vector_class<size_t>& send_counts,
+                        const vector_class<void*>& recv_bufs,
+                        const vector_class<size_t>& recv_counts,
                         datatype dtype,
                         const stream_t& stream,
-                        const std::vector<event_t>& deps = {},
+                        const vector_class<event_t>& deps = {},
                         const alltoallv_attr_t& attr = alltoallv_attr_t());
 
     /**
@@ -1227,11 +1261,11 @@ public:
     template <class buffer_type,
               class = typename std::enable_if<ccl::is_native_type_supported<buffer_type>()>::type>
     request_t alltoallv(const buffer_type* send_buf,
-                        const std::vector<size_t>& send_counts,
+                        const vector_class<size_t>& send_counts,
                         buffer_type* recv_buf,
-                        const std::vector<size_t>& recv_counts,
+                        const vector_class<size_t>& recv_counts,
                         const stream_t& stream,
-                        const std::vector<event_t>& deps = {},
+                        const vector_class<event_t>& deps = {},
                         const alltoallv_attr_t& attr = alltoallv_attr_t());
 
     /**
@@ -1248,12 +1282,12 @@ public:
      */
     template <class buffer_type,
               class = typename std::enable_if<ccl::is_native_type_supported<buffer_type>()>::type>
-    request_t alltoallv(const std::vector<buffer_type*>& send_bufs,
-                        const std::vector<size_t>& send_counts,
-                        const std::vector<buffer_type*>& recv_bufs,
-                        const std::vector<size_t>& recv_counts,
+    request_t alltoallv(const vector_class<buffer_type*>& send_bufs,
+                        const vector_class<size_t>& send_counts,
+                        const vector_class<buffer_type*>& recv_bufs,
+                        const vector_class<size_t>& recv_counts,
                         const stream_t& stream,
-                        const std::vector<event_t>& deps = {},
+                        const vector_class<event_t>& deps = {},
                         const alltoallv_attr_t& attr = alltoallv_attr_t());
 
     /**
@@ -1270,11 +1304,11 @@ public:
     template <class buffer_object_type,
               class = typename std::enable_if<ccl::is_class_supported<buffer_object_type>()>::type>
     request_t alltoallv(const buffer_object_type& send_buf,
-                        const std::vector<size_t>& send_counts,
+                        const vector_class<size_t>& send_counts,
                         buffer_object_type& recv_buf,
-                        const std::vector<size_t>& recv_counts,
+                        const vector_class<size_t>& recv_counts,
                         const stream_t& stream,
-                        const std::vector<event_t>& deps = {},
+                        const vector_class<event_t>& deps = {},
                         const alltoallv_attr_t& attr = alltoallv_attr_t());
 
     /**
@@ -1291,12 +1325,12 @@ public:
      */
     template <class buffer_object_type,
               class = typename std::enable_if<ccl::is_class_supported<buffer_object_type>()>::type>
-    request_t alltoallv(const std::vector<buffer_object_type&>& send_bufs,
-                        const std::vector<size_t>& send_counts,
-                        const std::vector<buffer_object_type&>& recv_bufs,
-                        const std::vector<size_t>& recv_counts,
+    request_t alltoallv(const vector_class<buffer_object_type&>& send_bufs,
+                        const vector_class<size_t>& send_counts,
+                        const vector_class<buffer_object_type&>& recv_bufs,
+                        const vector_class<size_t>& recv_counts,
                         const stream_t& stream,
-                        const std::vector<event_t>& deps = {},
+                        const vector_class<event_t>& deps = {},
                         const alltoallv_attr_t& attr = alltoallv_attr_t());
 
     /**
@@ -1309,7 +1343,7 @@ public:
      * @return @ref ccl::request_t object to track the progress of the operation
      */
     request_t barrier(const stream_t& stream,
-                      const std::vector<event_t>& deps = {},
+                      const vector_class<event_t>& deps = {},
                       const barrier_attr_t& attr = barrier_attr_t());
 
     /**
@@ -1333,7 +1367,7 @@ public:
                     datatype dtype,
                     size_t root,
                     const stream_t& stream,
-                    const std::vector<event_t>& deps = {},
+                    const vector_class<event_t>& deps = {},
                     const bcast_attr_t& attr = bcast_attr_t());
 
     /**
@@ -1353,7 +1387,7 @@ public:
                     size_t count,
                     size_t root,
                     const stream_t& stream,
-                    const std::vector<event_t>& deps = {},
+                    const vector_class<event_t>& deps = {},
                     const bcast_attr_t& attr = bcast_attr_t());
 
     /**
@@ -1373,7 +1407,7 @@ public:
                     size_t count,
                     size_t root,
                     const stream_t& stream,
-                    const std::vector<event_t>& deps = {},
+                    const vector_class<event_t>& deps = {},
                     const bcast_attr_t& attr = bcast_attr_t());
 
     /**
@@ -1400,7 +1434,7 @@ public:
                      reduction reduction,
                      size_t root,
                      const stream_t& stream,
-                     const std::vector<event_t>& deps = {},
+                     const vector_class<event_t>& deps = {},
                      const reduce_attr_t& attr = reduce_attr_t());
 
     /**
@@ -1424,7 +1458,7 @@ public:
                      reduction reduction,
                      size_t root,
                      const stream_t& stream,
-                     const std::vector<event_t>& deps = {},
+                     const vector_class<event_t>& deps = {},
                      const reduce_attr_t& attr = reduce_attr_t());
 
     /**
@@ -1448,7 +1482,7 @@ public:
                      reduction reduction,
                      size_t root,
                      const stream_t& stream,
-                     const std::vector<event_t>& deps = {},
+                     const vector_class<event_t>& deps = {},
                      const reduce_attr_t& attr = reduce_attr_t());
 
     /**
@@ -1473,7 +1507,7 @@ public:
                              datatype dtype,
                              reduction reduction,
                              const stream_t& stream,
-                             const std::vector<event_t>& deps = {},
+                             const vector_class<event_t>& deps = {},
                              const reduce_scatter_attr_t& attr = reduce_scatter_attr_t());
 
     /**
@@ -1494,7 +1528,7 @@ public:
                              size_t recv_count,
                              reduction reduction,
                              const stream_t& stream,
-                             const std::vector<event_t>& deps = {},
+                             const vector_class<event_t>& deps = {},
                              const reduce_scatter_attr_t& attr = reduce_scatter_attr_t());
 
     /**
@@ -1519,7 +1553,7 @@ public:
                    size_t recv_count,
                    reduction reduction,
                    const stream_t& stream,
-                   const std::vector<event_t>& deps = {},
+                   const vector_class<event_t>& deps = {},
                    const reduce_scatter_attr_t& attr = reduce_scatter_attr_t());
 
 private:
