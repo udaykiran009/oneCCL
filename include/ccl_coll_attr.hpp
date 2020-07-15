@@ -27,26 +27,21 @@ struct common_op_attr_traits {};
  * Traits attributes specializations
  */
 template <>
-struct common_op_attr_traits<common_op_attr_id::match_id>
-{
-    using type = const char *;
+struct common_op_attr_traits<common_op_attr_id::match_id> {
+    using type = const char*;
 };
-
 
 /**
  * Collective attributes
  */
-enum class allgather_op_attr_id : int
-{
+enum class allgather_op_attr_id : int {
     op_id_offset = common_op_attr_id::last_value,
     prolog_fn_id = op_id_offset,
 
     last_value
 };
 
-
 /* TODO other collective ops attributes id*/
-
 
 /**
  * Traits for allgather attributes
@@ -59,20 +54,19 @@ struct allgatherv_attr_traits : public common_op_attr_traits {};
  */
 template <>
 struct allgatherv_attr_traits<allgather_op_attr_id::prolog_fn_id> {
-    using type = std::variant<std::function<bool(char, char)>,
-                              std::function<bool(int, int)>,
-                              std::function<bool(double, double)>>;    //or use #define for types supporting
+    using type =
+        std::variant<std::function<bool(char, char)>,
+                     std::function<bool(int, int)>,
+                     std::function<bool(double, double)>>; //or use #define for types supporting
 };
 
 /**
  * Allgather coll attributes
  */
 
-struct ccl_allgather_op_attr
-        : public pointer_on_impl<ccl_allgather_op_attr, ccl_allgather_impl_t> {
-
-    using impl_value_t = typename pointer_on_impl<ccl_allgather_op_attr,
-                                                  ccl_allgather_impl_t>::impl_value_t;
+struct ccl_allgather_op_attr : public pointer_on_impl<ccl_allgather_op_attr, ccl_allgather_impl_t> {
+    using impl_value_t =
+        typename pointer_on_impl<ccl_allgather_op_attr, ccl_allgather_impl_t>::impl_value_t;
     /**
      * Set specific value for attribute by @attrId.
      * Previous attibute value would be returned
@@ -94,4 +88,4 @@ private:
 
 /* TODO Similar coll attributes*/
 
-}
+} // namespace ccl
