@@ -1,4 +1,3 @@
-
 replace void* by buffer_type*, add std::enable_if for non-native types, add internal assert that buffer_type matches with dtype
 how to read correct split field from attr, bit flags?
 make comm_split, datatype, op, stream, coll attributes in similar way with env::create_<...>, attr->set<... >
@@ -8,6 +7,7 @@ remove "virtual" in request methods if host/device paths have the same impl
 consider to move deps at the end of coll params list
 try to apply SFINAE with 1 type instead of 2
 expose only native_<...>_type w/o reference and so on
+return empty event wrapper for host comm, throw expection for get_native_handle() ?
 
 
 
