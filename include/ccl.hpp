@@ -31,23 +31,23 @@ struct device_comm_split_attr_impl;
 class device_comm_split_attr;
 #endif /* DEVICE_COMM_SUPPORT */
 
-template < class T, class Alloc = std::allocator<T> >
+template <class T, class Alloc = std::allocator<T>>
 using vector_class = std::vector<T, Alloc>;
 
-template < class T, std::size_t N >
+template <class T, std::size_t N>
 using array_class = std::array<T, N>;
 
 using string_class = std::string;
 
-template<class R, class... ArgTypes>
+template <class R, class... ArgTypes>
 using function_class = std::function<R(ArgTypes...)>;
 
 using mutex_class = std::mutex;
 
-template < class T1, class T2 >
+template <class T1, class T2>
 using pair_class = std::pair<T1, N2>;
 
-template < class... Types >
+template <class... Types>
 using tuple_class = std::tuple<Types...>;
 
 template <class T>
@@ -84,7 +84,6 @@ public:
 
 class kvs final : public kvs_interface {
 public:
-
     static constexpr size_t addr_max_size = 256;
     using addr_t = array_class<char, addr_max_size>;
 
@@ -101,7 +100,6 @@ public:
              const vector_class<char>& data) const override;
 
 private:
-
     kvs();
     kvs(const addr_t& addr);
 
@@ -180,7 +178,8 @@ public:
      * @param kvs key-value store for ranks wire-up
      * @return host communicator
      */
-    communicator_t create_communicator(const size_t size, shared_ptr_class<kvs_interface> kvs) const;
+    communicator_t create_communicator(const size_t size,
+                                       shared_ptr_class<kvs_interface> kvs) const;
 
     /**
      * Creates a new host communicator with user supplied size, rank and kvs.
@@ -240,7 +239,8 @@ public:
      * @return vector of device communicators
      */
     vector_class<device_communicator_t> split_device_communicators(
-        const vector_class<pair_class<device_communicator_t, device_comm_split_attr_t>>& attrs) const;
+        const vector_class<pair_class<device_communicator_t, device_comm_split_attr_t>>& attrs)
+        const;
 
     /**
      * Creates a new stream from @native_stream_type
@@ -249,8 +249,7 @@ public:
      */
     template <class native_stream_type,
               class = typename std::enable_if<is_stream_supported<native_stream_type>()>::type>
-    stream_t create_stream(
-        native_stream_type& native_stream) const;
+    stream_t create_stream(native_stream_type& native_stream) const;
 
     /**
      * Creates a new event from @native_event_type
@@ -289,7 +288,6 @@ public:
 #endif /* DEVICE_COMM_SUPPORT */
 
 private:
-
     // stream_t create_stream(
     //     const info::stream_properties_data_t& args = info::stream_properties_data_t{});
 
@@ -386,7 +384,6 @@ public:
     /*info::operation_attr_id::match_id
     info::allreduce_attr_id
     info::bcast_attr_id*/
-
 
     /**
      * @param send_buf the buffer with @c send_count elements of @c dtype that stores local data to be gathered
@@ -839,7 +836,6 @@ private:
     event(impl_value_t&& impl);
 };
 
-
 #ifdef DEVICE_COMM_SUPPORT
 
 class device_communicator final
@@ -904,8 +900,6 @@ public:
                          const stream_t& stream,
                          const vector_class<event_t>& deps = {},
                          const allgatherv_attr_t& attr = allgatherv_attr_t());
-
-
 
     /**
      * @param send_buf the buffer with @c send_count elements of @c dtype that stores local data to be gathered
@@ -1026,15 +1020,14 @@ public:
      * @param attr optional attributes to customize operation
      * @return @ref ccl::request_t object to track the progress of the operation
      */
-    request_t allreduce(
-        const void* send_buf,
-        void* recv_buf,
-        size_t count,
-        datatype dtype,
-        reduction reduction,
-        const stream_t& stream,
-        const vector_class<event_t>& deps = {},
-        const allreduce_attr_t& attr = allreduce_attr_t());
+    request_t allreduce(const void* send_buf,
+                        void* recv_buf,
+                        size_t count,
+                        datatype dtype,
+                        reduction reduction,
+                        const stream_t& stream,
+                        const vector_class<event_t>& deps = {},
+                        const allreduce_attr_t& attr = allreduce_attr_t());
 
     /**
      * Type safety version:
