@@ -299,6 +299,7 @@ run_compatibitily_tests()
 
 set_modulefile_environment()
 {
+    source /etc/profile.d/modules.sh
     export CCL_CONFIGURATION=cpu_icc
     if [ -z "$build_type" ]
     then
