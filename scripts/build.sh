@@ -489,7 +489,10 @@ prepare_staging()
                             #
                             BL_INSTALL=`echo $BL_INSTALL | sed -e "s|<installdir><l_ccl_install_path><l_ccl_platform>||" | \
                                                         sed -e "s|<installdir><l_ccl_install_path>||"`
-                            #$(replace_tags $BL_INSTALL)
+                            if [ $CUR_BOM_FILE == "l_license.txt" ]
+                            then
+                                BL_INSTALL=$(replace_tags $BL_INSTALL)
+                            fi
                             echo_debug "BL_SOURCE = $BL_SOURCE"
                             echo_debug "BL_INSTALL = $BL_INSTALL"
 
