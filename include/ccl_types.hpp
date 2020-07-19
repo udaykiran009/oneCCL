@@ -46,13 +46,13 @@ enum class datatype : int {
     int64,
     uint64,
 
-    float8 = 100,
-    float16,
+    bfloat8,
     bfloat16,
+    float16,
     float32,
     float64,
 
-    last_value
+    last_predefined
 };
 
 #ifdef DEVICE_COMM_SUPPORT

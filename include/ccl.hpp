@@ -71,11 +71,9 @@ using stream_t = unique_ptr_class<stream>;
 
 class kvs_interface {
 public:
-    virtual bool get(const string_class& prefix,
-                     const string_class& key,
-                     vector_class<char>& result) const = 0;
+    virtual vector_class<char> get(const string_class& prefix, const string_class& key) const = 0;
 
-    virtual void put(const string_class& prefix,
+    virtual void set(const string_class& prefix,
                      const string_class& key,
                      const vector_class<char>& data) const = 0;
 
@@ -91,11 +89,9 @@ public:
 
     ~kvs() override;
 
-    bool get(const string_class& prefix,
-             const string_class& key,
-             vector_class<char>& result) const override;
+    vector_class<char> get(const string_class& prefix, const string_class& key) const override;
 
-    void put(const string_class& prefix,
+    void set(const string_class& prefix,
              const string_class& key,
              const vector_class<char>& data) const override;
 
@@ -134,7 +130,7 @@ public:
      * @param attr datatype attributes
      * @return datatype handle
      */
-    datatype register_datatype(const datatype_attr& attr);
+    datatype register_datatype(const datatype_attr_t& attr);
 
     /**
      * Deregisters custom datatype
@@ -162,7 +158,7 @@ public:
      * @param addr address of main kvs
      * @return kvs object
      */
-    kvs_t create_kvs(const main_kvs_addr& addr) const;
+    kvs_t create_kvs(const kvs::addr_t& addr) const;
 
     /**
      * Creates a new host communicator with externally provided size, rank and kvs.
@@ -245,7 +241,7 @@ public:
     /**
      * Creates a new stream from @native_stream_type
      * @param native_stream the existing handle of stream
-     * @args  full parameters set
+     * @return stream object
      */
     template <class native_stream_type,
               class = typename std::enable_if<is_stream_supported<native_stream_type>()>::type>
@@ -254,6 +250,7 @@ public:
     /**
      * Creates a new event from @native_event_type
      * @param native_event the existing handle of event
+     * @return event object
      */
     template <class native_event_type,
               class = typename std::enable_if<is_event_supported<native_event_type>()>::type>
@@ -295,7 +292,7 @@ private:
 };
 
 /**
- * An request interface that allows the user to track communication operation progress
+ * Request's interface that allows users to track communication operation progress
  */
 class request {
 public:
@@ -318,6 +315,11 @@ public:
      */
     virtual bool cancel() = 0;
 
+    /**
+      * Retrieve event object to be used for synchronization
+      * with computation or other communication operations
+      * @return event object
+      */
     virtual event_t get_event() = 0;
 
     virtual ~request() = default;
@@ -333,8 +335,8 @@ public:
     ~communicator();
 
     /**
-     * Retrieves the rank of the current process in a communicator
-     * @return rank of the current process
+     * Retrieves the rank in a communicator
+     * @return rank corresponding to communicator object
      */
     size_t rank() const;
 
@@ -353,8 +355,9 @@ public:
     size_t cancel();
 
     /**
-     * Allgatherv is a collective communication operation that collects data from all ranks within a communicator.
-     * Each rank gets the same result data. Different ranks can contribute segments of different sizes.
+     * Allgatherv is a collective communication operation that collects data from all ranks within a communicator
+     * into a single buffer or vector of buffers, one per rank. Different ranks can contribute segments of different sizes.
+     * The resulting data in the output buffer(s) must be the same for each rank.
      */
 
     /**
@@ -402,35 +405,35 @@ public:
                          const allgatherv_attr_t& attr = allgatherv_attr_t());
     /**
      * Type safety version:
-     * @param send_buf the buffer with @c send_count elements of @c dtype that stores local data to be gathered
-     * @param send_count number of elements of type @c dtype in @c send_buf
+     * @param send_buf the buffer with @c send_count elements of @c BufferType that stores local data to be gathered
+     * @param send_count number of elements of type @c BufferType in @c send_buf
      * @param recv_buf [out] the buffer to store gathered result, should be large enough to hold values from all ranks
-     * @param recv_counts array with number of elements of type @c dtype to be received from each rank
+     * @param recv_counts array with number of elements of type @c BufferType to be received from each rank
      * @param attr optional attributes to customize operation
      * @return @ref ccl::request_t object to track the progress of the operation
      */
-    template <class buffer_type,
-              class = typename std::enable_if<ccl::is_native_type_supported<buffer_type>()>::type>
-    request_t allgatherv(const buffer_type* send_buf,
+    template <class BufferType,
+              class = typename std::enable_if<ccl::is_native_type_supported<BufferType>()>::type>
+    request_t allgatherv(const BufferType* send_buf,
                          size_t send_count,
-                         buffer_type* recv_buf,
+                         BufferType* recv_buf,
                          const vector_class<size_t>& recv_counts,
                          const allgatherv_attr_t& attr = allgatherv_attr_t());
 
     /**
      * Type safety version:
-     * @param send_buf the buffer with @c send_count elements of @c dtype that stores local data to be gathered
-     * @param send_count number of elements of type @c dtype in @c send_buf
+     * @param send_buf the buffer with @c send_count elements of @c BufferType that stores local data to be gathered
+     * @param send_count number of elements of type @c BufferType in @c send_buf
      * @param recv_bufs [out] array of buffers to store gathered result, one buffer per each rank
-     * @param recv_counts array with number of elements of type @c dtype to be received from each rank
+     * @param recv_counts array with number of elements of type @c BufferType to be received from each rank
      * @param attr optional attributes to customize operation
      * @return @ref ccl::request_t object to track the progress of the operation
      */
-    template <class buffer_type,
-              class = typename std::enable_if<ccl::is_native_type_supported<buffer_type>()>::type>
-    request_t allgatherv(const buffer_type* send_buf,
+    template <class BufferType,
+              class = typename std::enable_if<ccl::is_native_type_supported<BufferType>()>::type>
+    request_t allgatherv(const BufferType* send_buf,
                          size_t send_count,
-                         vector_class<buffer_type*>& recv_bufs,
+                         vector_class<BufferType*>& recv_bufs,
                          const vector_class<size_t>& recv_counts,
                          const allgatherv_attr_t& attr = allgatherv_attr_t());
 
@@ -457,17 +460,17 @@ public:
 
     /**
      * Type safety version:
-     * @param send_buf the buffer with @c count elements of @c dtype that stores local data to be reduced
+     * @param send_buf the buffer with @c count elements of @c BufferType that stores local data to be reduced
      * @param recv_buf [out] the buffer to store reduced result, must have the same dimension as @c send_buf
-     * @param count number of elements of type @c dtype in @c send_buf and @c recv_buf
+     * @param count number of elements of type @c BufferType in @c send_buf and @c recv_buf
      * @param reduction type of reduction operation to be applied
      * @param attr optional attributes to customize operation
      * @return @ref ccl::request_t object to track the progress of the operation
      */
-    template <class buffer_type,
-              class = typename std::enable_if<ccl::is_native_type_supported<buffer_type>()>::type>
-    request_t allreduce(const buffer_type* send_buf,
-                        buffer_type* recv_buf,
+    template <class BufferType,
+              class = typename std::enable_if<ccl::is_native_type_supported<BufferType>()>::type>
+    request_t allreduce(const BufferType* send_buf,
+                        BufferType* recv_buf,
                         size_t count,
                         reduction reduction,
                         const allreduce_attr_t& attr = allreduce_attr_t());
@@ -510,17 +513,17 @@ public:
 
     /**
      * Type safety version:
-     * @param send_buf the buffer with @c count elements of @c dtype that stores local data to be sent
+     * @param send_buf the buffer with @c count elements of @c BufferType that stores local data to be sent
      * @param recv_buf [out] the buffer to store received result, should be large enough
      * to hold values from all ranks, i.e. at least @c comm_size * @c count
      * @param count number of elements to be send to or to received from each rank
      * @param attr optional attributes to customize operation
      * @return @ref ccl::request_t object to track the progress of the operation
      */
-    template <class buffer_type,
-              class = typename std::enable_if<ccl::is_native_type_supported<buffer_type>()>::type>
-    request_t alltoall(const buffer_type* send_buf,
-                       buffer_type* recv_buf,
+    template <class BufferType,
+              class = typename std::enable_if<ccl::is_native_type_supported<BufferType>()>::type>
+    request_t alltoall(const BufferType* send_buf,
+                       BufferType* recv_buf,
                        size_t count,
                        const alltoall_attr_t& attr = alltoall_attr_t());
 
@@ -532,10 +535,10 @@ public:
      * @param attr optional attributes to customize operation
      * @return @ref ccl::request_t object to track the progress of the operation
      */
-    template <class buffer_type,
-              class = typename std::enable_if<ccl::is_native_type_supported<buffer_type>()>::type>
-    request_t alltoall(const vector_class<buffer_type*>& send_buf,
-                       const vector_class<buffer_type*>& recv_buf,
+    template <class BufferType,
+              class = typename std::enable_if<ccl::is_native_type_supported<BufferType>()>::type>
+    request_t alltoall(const vector_class<BufferType*>& send_buf,
+                       const vector_class<BufferType*>& recv_buf,
                        size_t count,
                        const alltoall_attr_t& attr = alltoall_attr_t());
 
@@ -580,36 +583,35 @@ public:
 
     /**
      * Type safety version:
-     * @param send_buf the buffer with elements of @c dtype that stores local blocks to be sent to each rank
-     * @param send_counts array with number of elements of type @c dtype in send blocks for each rank
+     * @param send_buf the buffer with elements of @c BufferType that stores local blocks to be sent to each rank
+     * @param send_counts array with number of elements of type @c BufferType in send blocks for each rank
      * @param recv_buf [out] the buffer to store received result, should be large enough to hold blocks from all ranks
-     * @param recv_counts array with number of elements of type @c dtype in receive blocks from each rank
+     * @param recv_counts array with number of elements of type @c BufferType in receive blocks from each rank
      * @param attr optional attributes to customize operation
      * @return @ref ccl::request_t object to track the progress of the operation
      */
-    template <class buffer_type,
-              class = typename std::enable_if<ccl::is_native_type_supported<buffer_type>()>::type>
-    request_t alltoallv(const buffer_type* send_buf,
+    template <class BufferType,
+              class = typename std::enable_if<ccl::is_native_type_supported<BufferType>()>::type>
+    request_t alltoallv(const BufferType* send_buf,
                         const vector_class<size_t>& send_counts,
-                        buffer_type* recv_buf,
+                        BufferType* recv_buf,
                         const vector_class<size_t>& recv_counts,
                         const alltoallv_attr_t& attr = alltoallv_attr_t());
 
     /**
      * Type safety version:
      * @param send_bufs array of buffers to store send blocks, one buffer per each rank
-     * @param send_counts array with number of elements of type @c dtype in send blocks for each rank
+     * @param send_counts array with number of elements of type @c BufferType in send blocks for each rank
      * @param recv_bufs [out] array of buffers to store receive blocks, one buffer per each rank
-     * @param recv_counts array with number of elements of type @c dtype in receive blocks from each rank
-     * @param dtype datatype of elements in @c send_buf and @c recv_buf
+     * @param recv_counts array with number of elements of type @c BufferType in receive blocks from each rank
      * @param attr optional attributes to customize operation
      * @return @ref ccl::request_t object to track the progress of the operation
      */
-    template <class buffer_type,
-              class = typename std::enable_if<ccl::is_native_type_supported<buffer_type>()>::type>
-    request_t alltoallv(const vector_class<buffer_type*>& send_bufs,
+    template <class BufferType,
+              class = typename std::enable_if<ccl::is_native_type_supported<BufferType>()>::type>
+    request_t alltoallv(const vector_class<BufferType*>& send_bufs,
                         const vector_class<size_t>& send_counts,
-                        const vector_class<buffer_type*>& recv_bufs,
+                        const vector_class<BufferType*>& recv_bufs,
                         const vector_class<size_t>& recv_counts,
                         const alltoallv_attr_t& attr = alltoallv_attr_t());
 
@@ -644,16 +646,16 @@ public:
 
     /**
      * Type safety version:
-     * @param buf [in,out] the buffer with @c count elements of @c dtype
+     * @param buf [in,out] the buffer with @c count elements of @c BufferType
      * serves as send buffer for root and as receive buffer for other ranks
-     * @param count number of elements of type @c dtype in @c buf
+     * @param count number of elements of type @c BufferType in @c buf
      * @param root the rank that broadcasts @c buf
      * @param attr optional attributes to customize operation
      * @return @ref ccl::request_t object to track the progress of the operation
      */
-    template <class buffer_type,
-              class = typename std::enable_if<ccl::is_native_type_supported<buffer_type>()>::type>
-    request_t bcast(buffer_type* buf,
+    template <class BufferType,
+              class = typename std::enable_if<ccl::is_native_type_supported<BufferType>()>::type>
+    request_t bcast(BufferType* buf,
                     size_t count,
                     size_t root,
                     const bcast_attr_t& attr = bcast_attr_t());
@@ -670,6 +672,7 @@ public:
      * @param count number of elements of type @c dtype in @c send_buf and @c recv_buf
      * @param dtype datatype of elements in @c send_buf and @c recv_buf
      * @param reduction type of reduction operation to be applied
+     * @param root the rank that gets the result of reduction
      * @param attr optional attributes to customize operation
      * @return @ref ccl::request_t object to track the progress of the operation
      */
@@ -683,19 +686,19 @@ public:
 
     /**
      * Type safety version:
-     * @param send_buf the buffer with @c count elements of @c dtype that stores local data to be reduced
+     * @param send_buf the buffer with @c count elements of @c BufferType that stores local data to be reduced
      * @param recv_buf [out] the buffer to store reduced result, must have the same dimension as @c send_buf.
      * Used by the @c root rank only, ignored by other ranks.
-     * @param count number of elements of type @c dtype in @c send_buf and @c recv_buf
-     * @param dtype datatype of elements in @c send_buf and @c recv_buf
+     * @param count number of elements of type @c BufferType in @c send_buf and @c recv_buf
      * @param reduction type of reduction operation to be applied
+     * @param root the rank that gets the result of reduction
      * @param attr optional attributes to customize operation
      * @return @ref ccl::request_t object to track the progress of the operation
      */
-    template <class buffer_type,
-              class = typename std::enable_if<ccl::is_native_type_supported<buffer_type>()>::type>
-    request_t reduce(const buffer_type* send_buf,
-                     buffer_type* recv_buf,
+    template <class BufferType,
+              class = typename std::enable_if<ccl::is_native_type_supported<BufferType>()>::type>
+    request_t reduce(const BufferType* send_buf,
+                     BufferType* recv_buf,
                      size_t count,
                      reduction reduction,
                      size_t root,
@@ -724,17 +727,17 @@ public:
 
     /**
      * Type safety version:
-     * @param send_buf the buffer with @c comm_size * @c count elements of @c dtype that stores local data to be reduced
-     * @param recv_buf [out] the buffer to store result block containing @c recv_count elements of type @c dtype
-     * @param recv_count number of elements of type @c dtype in receive block
+     * @param send_buf the buffer with @c comm_size * @c count elements of @c BufferType that stores local data to be reduced
+     * @param recv_buf [out] the buffer to store result block containing @c recv_count elements of type @c BufferType
+     * @param recv_count number of elements of type @c BufferType in receive block
      * @param reduction type of reduction operation to be applied
      * @param attr optional attributes to customize operation
      * @return @ref ccl::request_t object to track the progress of the operation
      */
-    template <class buffer_type,
-              class = typename std::enable_if<ccl::is_native_type_supported<buffer_type>()>::type>
-    request_t reduce_scatter(const buffer_type* send_buf,
-                             buffer_type* recv_buf,
+    template <class BufferType,
+              class = typename std::enable_if<ccl::is_native_type_supported<BufferType>()>::type>
+    request_t reduce_scatter(const BufferType* send_buf,
+                             BufferType* recv_buf,
                              size_t recv_count,
                              reduction reduction,
                              const reduce_scatter_attr_t& attr = reduce_scatter_attr_t());
@@ -774,6 +777,7 @@ public:
                                const sparse_allreduce_attr_t& attr = sparse_allreduce_attr_t());
 
     /**
+     * Type safety version:
      * @param send_ind_buf the buffer of indices with @c send_ind_count elements of type @c ind_dtype
      * @param send_int_count number of elements of type @c ind_type @c send_ind_buf
      * @param send_val_buf the buffer of values with @c send_val_count elements of type @c val_dtype
@@ -787,16 +791,16 @@ public:
      * @return @ref ccl::request_t object to track the progress of the operation
      */
     template <
-        class index_buffer_type,
-        class value_buffer_type,
-        class = typename std::enable_if<ccl::is_native_type_supported<value_buffer_type>()>::type>
-    request_t sparse_allreduce(const index_buffer_type* send_ind_buf,
+        class index_BufferType,
+        class value_BufferType,
+        class = typename std::enable_if<ccl::is_native_type_supported<value_BufferType>()>::type>
+    request_t sparse_allreduce(const index_BufferType* send_ind_buf,
                                size_t send_ind_count,
-                               const value_buffer_type* send_val_buf,
+                               const value_BufferType* send_val_buf,
                                size_t send_val_count,
-                               index_buffer_type* recv_ind_buf,
+                               index_BufferType* recv_ind_buf,
                                size_t recv_ind_count,
-                               value_buffer_type* recv_val_buf,
+                               value_BufferType* recv_val_buf,
                                size_t recv_val_count,
                                reduction reduction,
                                const sparse_allreduce_attr_t& attr = sparse_allreduce_attr_t());
@@ -847,14 +851,14 @@ public:
     ~device_communicator();
 
     /**
-     * Retrieves the rank of the current process in a communicator
-     * @return rank of the current process
+     * Retrieves the rank in a communicator
+     * @return rank corresponding to communicator object
      */
     size_t rank() const;
 
     /**
-     * Retrieves the number of processes in a communicator
-     * @return number of the processes
+     * Retrieves the number of rank in a communicator
+     * @return number of the ranks
      */
     size_t size() const;
 
@@ -877,8 +881,9 @@ public:
     device_communicator split(device_comm_split_attr_t attr);
 
     /**
-     * Allgatherv is a collective communication operation that collects data from all ranks within a communicator.
-     * Each rank gets the same result data. Different ranks can contribute segments of different sizes.
+     * Allgatherv is a collective communication operation that collects data from all ranks within a communicator
+     * into a single buffer or vector of buffers, one per rank. Different ranks can contribute segments of different sizes.
+     * The resulting data in the output buffer(s) must be the same for each rank.
      */
 
     /**
@@ -888,7 +893,7 @@ public:
      * @param recv_counts array with number of elements of type @c dtype to be received from each rank
      * @param dtype datatype of elements in @c send_buf and @c recv_buf
      * @param stream stream associated with the operation
-     * @param deps optional vector of events that the execution should depend on
+     * @param deps optional vector of events that the operation should depend on
      * @param attr optional attributes to customize operation
      * @return @ref ccl::request_t object to track the progress of the operation
      */
@@ -908,7 +913,7 @@ public:
      * @param recv_counts array with number of elements of type @c dtype to be received from each rank
      * @param dtype datatype of elements in @c send_buf and @c recv_buf
      * @param stream stream associated with the operation
-     * @param deps optional vector of events that the execution should depend on
+     * @param deps optional vector of events that the operation should depend on
      * @param attr optional attributes to customize operation
      * @return @ref ccl::request_t object to track the progress of the operation
      */
@@ -922,20 +927,62 @@ public:
                          const allgatherv_attr_t& attr = allgatherv_attr_t());
     /**
      * Type safety version:
+     * @param send_buf the buffer with @c send_count elements of @c BufferType that stores local data to be gathered
+     * @param send_count number of elements of type @c BufferType in @c send_buf
+     * @param recv_buf [out] the buffer to store gathered result, should be large enough to hold values from all ranks
+     * @param recv_counts array with number of elements of type @c BufferType to be received from each rank
+     * @param stream stream associated with the operation
+     * @param deps optional vector of events that the operation should depend on
+     * @param attr optional attributes to customize operation
+     * @return @ref ccl::request_t object to track the progress of the operation
+     */
+    template <class BufferType,
+              class = typename std::enable_if<ccl::is_native_type_supported<BufferType>()>::type>
+    request_t allgatherv(const BufferType* send_buf,
+                         size_t send_count,
+                         BufferType* recv_buf,
+                         const vector_class<size_t>& recv_counts,
+                         const stream_t& stream,
+                         const vector_class<event_t>& deps = {},
+                         const allgatherv_attr_t& attr = allgatherv_attr_t());
+
+    /**
+     * Type safety version:
+     * @param send_buf the buffer with @c send_count elements of @c BufferType that stores local data to be gathered
+     * @param send_count number of elements of type @c BufferType in @c send_buf
+     * @param recv_bufs [out] array of buffers to store gathered result, one buffer per each rank
+     * @param recv_counts array with number of elements of type @c BufferType to be received from each rank
+     * @param stream stream associated with the operation
+     * @param deps optional vector of events that the operation should depend on
+     * @param attr optional attributes to customize operation
+     * @return @ref ccl::request_t object to track the progress of the operation
+     */
+    template <class BufferType,
+              class = typename std::enable_if<ccl::is_native_type_supported<BufferType>()>::type>
+    request_t allgatherv(const BufferType* send_buf,
+                         size_t send_count,
+                         vector_class<BufferType*>& recv_bufs,
+                         const vector_class<size_t>& recv_counts,
+                         const stream_t& stream,
+                         const vector_class<event_t>& deps = {},
+                         const allgatherv_attr_t& attr = allgatherv_attr_t());
+
+    /**
+     * Type safety version:
      * @param send_buf the buffer with @c send_count elements of @c dtype that stores local data to be gathered
      * @param send_count number of elements of type @c dtype in @c send_buf
      * @param recv_buf [out] the buffer to store gathered result, should be large enough to hold values from all ranks
      * @param recv_counts array with number of elements of type @c dtype to be received from each rank
      * @param stream stream associated with the operation
-     * @param deps optional vector of events that the execution should depend on
+     * @param deps optional vector of events that the operation should depend on
      * @param attr optional attributes to customize operation
      * @return @ref ccl::request_t object to track the progress of the operation
      */
-    template <class buffer_type,
-              class = typename std::enable_if<ccl::is_native_type_supported<buffer_type>()>::type>
-    request_t allgatherv(const buffer_type* send_buf,
+    template <class BufferObjectType,
+              class = typename std::enable_if<ccl::is_class_supported<BufferObjectType>()>::type>
+    request_t allgatherv(const BufferObjectType& send_buf,
                          size_t send_count,
-                         buffer_type* recv_buf,
+                         BufferObjectType& recv_buf,
                          const vector_class<size_t>& recv_counts,
                          const stream_t& stream,
                          const vector_class<event_t>& deps = {},
@@ -948,57 +995,15 @@ public:
      * @param recv_bufs [out] array of buffers to store gathered result, one buffer per each rank
      * @param recv_counts array with number of elements of type @c dtype to be received from each rank
      * @param stream stream associated with the operation
-     * @param deps optional vector of events that the execution should depend on
+     * @param deps optional vector of events that the operation should depend on
      * @param attr optional attributes to customize operation
      * @return @ref ccl::request_t object to track the progress of the operation
      */
-    template <class buffer_type,
-              class = typename std::enable_if<ccl::is_native_type_supported<buffer_type>()>::type>
-    request_t allgatherv(const buffer_type* send_buf,
+    template <class BufferObjectType,
+              class = typename std::enable_if<ccl::is_class_supported<BufferObjectType>()>::type>
+    request_t allgatherv(const BufferObjectType& send_buf,
                          size_t send_count,
-                         vector_class<buffer_type*>& recv_bufs,
-                         const vector_class<size_t>& recv_counts,
-                         const stream_t& stream,
-                         const vector_class<event_t>& deps = {},
-                         const allgatherv_attr_t& attr = allgatherv_attr_t());
-
-    /**
-     * Type safety version:
-     * @param send_buf the buffer with @c send_count elements of @c dtype that stores local data to be gathered
-     * @param send_count number of elements of type @c dtype in @c send_buf
-     * @param recv_buf [out] the buffer to store gathered result, should be large enough to hold values from all ranks
-     * @param recv_counts array with number of elements of type @c dtype to be received from each rank
-     * @param stream stream associated with the operation
-     * @param deps optional vector of events that the execution should depend on
-     * @param attr optional attributes to customize operation
-     * @return @ref ccl::request_t object to track the progress of the operation
-     */
-    template <class buffer_object_type,
-              class = typename std::enable_if<ccl::is_class_supported<buffer_object_type>()>::type>
-    request_t allgatherv(const buffer_object_type& send_buf,
-                         size_t send_count,
-                         buffer_object_type& recv_buf,
-                         const vector_class<size_t>& recv_counts,
-                         const stream_t& stream,
-                         const vector_class<event_t>& deps = {},
-                         const allgatherv_attr_t& attr = allgatherv_attr_t());
-
-    /**
-     * Type safety version:
-     * @param send_buf the buffer with @c send_count elements of @c dtype that stores local data to be gathered
-     * @param send_count number of elements of type @c dtype in @c send_buf
-     * @param recv_bufs [out] array of buffers to store gathered result, one buffer per each rank
-     * @param recv_counts array with number of elements of type @c dtype to be received from each rank
-     * @param stream stream associated with the operation
-     * @param deps optional vector of events that the execution should depend on
-     * @param attr optional attributes to customize operation
-     * @return @ref ccl::request_t object to track the progress of the operation
-     */
-    template <class buffer_object_type,
-              class = typename std::enable_if<ccl::is_class_supported<buffer_object_type>()>::type>
-    request_t allgatherv(const buffer_object_type& send_buf,
-                         size_t send_count,
-                         vector_class<buffer_object_type&>& recv_bufs,
+                         vector_class<BufferObjectType&>& recv_bufs,
                          const vector_class<size_t>& recv_counts,
                          const stream_t& stream,
                          const vector_class<event_t>& deps = {},
@@ -1016,7 +1021,7 @@ public:
      * @param dtype datatype of elements in @c send_buf and @c recv_buf
      * @param reduction type of reduction operation to be applied
      * @param stream stream associated with the operation
-     * @param deps optional vector of events that the execution should depend on
+     * @param deps optional vector of events that the operation should depend on
      * @param attr optional attributes to customize operation
      * @return @ref ccl::request_t object to track the progress of the operation
      */
@@ -1031,19 +1036,19 @@ public:
 
     /**
      * Type safety version:
-     * @param send_buf the buffer with @c count elements of @c dtype that stores local data to be reduced
+     * @param send_buf the buffer with @c count elements of @c BufferType that stores local data to be reduced
      * @param recv_buf [out] the buffer to store reduced result, must have the same dimension as @c send_buf
-     * @param count number of elements of type @c dtype in @c send_buf and @c recv_buf
+     * @param count number of elements of type @c BufferType in @c send_buf and @c recv_buf
      * @param reduction type of reduction operation to be applied
      * @param stream stream associated with the operation
-     * @param deps optional vector of events that the execution should depend on
+     * @param deps optional vector of events that the operation should depend on
      * @param attr optional attributes to customize operation
      * @return @ref ccl::request_t object to track the progress of the operation
      */
-    template <class buffer_type,
-              class = typename std::enable_if<ccl::is_native_type_supported<buffer_type>()>::type>
-    request_t allreduce(const buffer_type* send_buf,
-                        buffer_type* recv_buf,
+    template <class BufferType,
+              class = typename std::enable_if<ccl::is_native_type_supported<BufferType>()>::type>
+    request_t allreduce(const BufferType* send_buf,
+                        BufferType* recv_buf,
                         size_t count,
                         reduction reduction,
                         const stream_t& stream,
@@ -1057,14 +1062,14 @@ public:
      * @param count number of elements of type @c dtype in @c send_buf and @c recv_buf
      * @param reduction type of reduction operation to be applied
      * @param stream stream associated with the operation
-     * @param deps optional vector of events that the execution should depend on
+     * @param deps optional vector of events that the operation should depend on
      * @param attr optional attributes to customize operation
      * @return @ref ccl::request_t object to track the progress of the operation
      */
-    template <class buffer_object_type,
-              class = typename std::enable_if<ccl::is_class_supported<buffer_object_type>()>::type>
-    request_t allreduce(const buffer_object_type& send_buf,
-                        buffer_object_type& recv_buf,
+    template <class BufferObjectType,
+              class = typename std::enable_if<ccl::is_class_supported<BufferObjectType>()>::type>
+    request_t allreduce(const BufferObjectType& send_buf,
+                        BufferObjectType& recv_buf,
                         size_t count,
                         reduction reduction,
                         const stream_t& stream,
@@ -1085,7 +1090,7 @@ public:
      * @param count number of elements of type @c dtype to be send to or to received from each rank
      * @param dtype datatype of elements in @c send_buf and @c recv_buf
      * @param stream stream associated with the operation
-     * @param deps optional vector of events that the execution should depend on
+     * @param deps optional vector of events that the operation should depend on
      * @param attr optional attributes to customize operation
      * @return @ref ccl::request_t object to track the progress of the operation
      */
@@ -1103,7 +1108,7 @@ public:
      * @param count number of elements of type @c dtype to be send to or to received from each rank
      * @param dtype datatype of elements in @c send_buf and @c recv_buf
      * @param stream stream associated with the operation
-     * @param deps optional vector of events that the execution should depend on
+     * @param deps optional vector of events that the operation should depend on
      * @param attr optional attributes to customize operation
      * @return @ref ccl::request_t object to track the progress of the operation
      */
@@ -1117,19 +1122,19 @@ public:
 
     /**
      * Type safety version:
-     * @param send_buf the buffer with @c count elements of @c dtype that stores local data to be sent
+     * @param send_buf the buffer with @c count elements of @c BufferType that stores local data to be sent
      * @param recv_buf [out] the buffer to store received result, should be large enough
      * to hold values from all ranks, i.e. at least @c comm_size * @c count
      * @param count number of elements to be send to or to received from each rank
      * @param stream stream associated with the operation
-     * @param deps optional vector of events that the execution should depend on
+     * @param deps optional vector of events that the operation should depend on
      * @param attr optional attributes to customize operation
      * @return @ref ccl::request_t object to track the progress of the operation
      */
-    template <class buffer_type,
-              class = typename std::enable_if<ccl::is_native_type_supported<buffer_type>()>::type>
-    request_t alltoall(const buffer_type* send_buf,
-                       buffer_type* recv_buf,
+    template <class BufferType,
+              class = typename std::enable_if<ccl::is_native_type_supported<BufferType>()>::type>
+    request_t alltoall(const BufferType* send_buf,
+                       BufferType* recv_buf,
                        size_t count,
                        const stream_t& stream,
                        const vector_class<event_t>& deps = {},
@@ -1141,14 +1146,14 @@ public:
      * @param recv_bufs [out] array of buffers to store received result, one buffer per each rank
      * @param count number of elements to be send to or to received from each rank
      * @param stream stream associated with the operation
-     * @param deps optional vector of events that the execution should depend on
+     * @param deps optional vector of events that the operation should depend on
      * @param attr optional attributes to customize operation
      * @return @ref ccl::request_t object to track the progress of the operation
      */
-    template <class buffer_type,
-              class = typename std::enable_if<ccl::is_native_type_supported<buffer_type>()>::type>
-    request_t alltoall(const vector_class<buffer_type*>& send_buf,
-                       const vector_class<buffer_type*>& recv_buf,
+    template <class BufferType,
+              class = typename std::enable_if<ccl::is_native_type_supported<BufferType>()>::type>
+    request_t alltoall(const vector_class<BufferType*>& send_buf,
+                       const vector_class<BufferType*>& recv_buf,
                        size_t count,
                        const stream_t& stream,
                        const vector_class<event_t>& deps = {},
@@ -1161,14 +1166,14 @@ public:
      * to hold values from all ranks, i.e. at least @c comm_size * @c count
      * @param count number of elements to be send to or to received from each rank
      * @param stream stream associated with the operation
-     * @param deps optional vector of events that the execution should depend on
+     * @param deps optional vector of events that the operation should depend on
      * @param attr optional attributes to customize operation
      * @return @ref ccl::request_t object to track the progress of the operation
      */
-    template <class buffer_object_type,
-              class = typename std::enable_if<ccl::is_class_supported<buffer_object_type>()>::type>
-    request_t alltoall(const buffer_object_type& send_buf,
-                       buffer_object_type& recv_buf,
+    template <class BufferObjectType,
+              class = typename std::enable_if<ccl::is_class_supported<BufferObjectType>()>::type>
+    request_t alltoall(const BufferObjectType& send_buf,
+                       BufferObjectType& recv_buf,
                        size_t count,
                        const stream_t& stream,
                        const vector_class<event_t>& deps = {},
@@ -1180,21 +1185,21 @@ public:
      * @param recv_bufs [out] array of buffers to store received result, one buffer per each rank
      * @param count number of elements to be send to or to received from each rank
      * @param stream stream associated with the operation
-     * @param deps optional vector of events that the execution should depend on
+     * @param deps optional vector of events that the operation should depend on
      * @param attr optional attributes to customize operation
      * @return @ref ccl::request_t object to track the progress of the operation
      */
-    template <class buffer_object_type,
-              class = typename std::enable_if<ccl::is_class_supported<buffer_object_type>()>::type>
-    request_t alltoall(const vector_class<buffer_object_type&>& send_buf,
-                       const vector_class<buffer_object_type&>& recv_buf,
+    template <class BufferObjectType,
+              class = typename std::enable_if<ccl::is_class_supported<BufferObjectType>()>::type>
+    request_t alltoall(const vector_class<BufferObjectType&>& send_buf,
+                       const vector_class<BufferObjectType&>& recv_buf,
                        size_t count,
                        const stream_t& stream,
                        const vector_class<event_t>& deps = {},
                        const alltoall_attr_t& attr = alltoall_attr_t());
 
     /**
-     * Alltoall is a collective communication operation in which each rank
+     * Alltoallv is a collective communication operation in which each rank
      * sends distinct blocks of data to each rank. Block sizes may differ.
      * The j-th block of @c send_buf sent from the i-th rank is received by the j-th rank
      * and is placed in the i-th block of @c recvbuf.
@@ -1207,7 +1212,7 @@ public:
      * @param recv_counts array with number of elements of type @c dtype in receive blocks from each rank
      * @param dtype datatype of elements in @c send_buf and @c recv_buf
      * @param stream stream associated with the operation
-     * @param deps optional vector of events that the execution should depend on
+     * @param deps optional vector of events that the operation should depend on
      * @param attr optional attributes to customize operation
      * @return @ref ccl::request_t object to track the progress of the operation
      */
@@ -1227,7 +1232,7 @@ public:
      * @param recv_counts array with number of elements of type @c dtype in receive blocks from each rank
      * @param dtype datatype of elements in @c send_buf and @c recv_buf
      * @param stream stream associated with the operation
-     * @param deps optional vector of events that the execution should depend on
+     * @param deps optional vector of events that the operation should depend on
      * @param attr optional attributes to customize operation
      * @return @ref ccl::request_t object to track the progress of the operation
      */
@@ -1242,20 +1247,62 @@ public:
 
     /**
      * Type safety version:
+     * @param send_buf the buffer with elements of @c BufferType that stores local blocks to be sent to each rank
+     * @param send_counts array with number of elements of type @c BufferType in send blocks for each rank
+     * @param recv_buf [out] the buffer to store received result, should be large enough to hold blocks from all ranks
+     * @param recv_counts array with number of elements of type @c BufferType in receive blocks from each rank
+     * @param stream stream associated with the operation
+     * @param deps optional vector of events that the operation should depend on
+     * @param attr optional attributes to customize operation
+     * @return @ref ccl::request_t object to track the progress of the operation
+     */
+    template <class BufferType,
+              class = typename std::enable_if<ccl::is_native_type_supported<BufferType>()>::type>
+    request_t alltoallv(const BufferType* send_buf,
+                        const vector_class<size_t>& send_counts,
+                        BufferType* recv_buf,
+                        const vector_class<size_t>& recv_counts,
+                        const stream_t& stream,
+                        const vector_class<event_t>& deps = {},
+                        const alltoallv_attr_t& attr = alltoallv_attr_t());
+
+    /**
+     * Type safety version:
+     * @param send_bufs array of buffers to store send blocks, one buffer per each rank
+     * @param send_counts array with number of elements of type @c BufferType in send blocks for each rank
+     * @param recv_bufs [out] array of buffers to store receive blocks, one buffer per each rank
+     * @param recv_counts array with number of elements of type @c BufferType in receive blocks from each rank
+     * @param stream stream associated with the operation
+     * @param deps optional vector of events that the operation should depend on
+     * @param attr optional attributes to customize operation
+     * @return @ref ccl::request_t object to track the progress of the operation
+     */
+    template <class BufferType,
+              class = typename std::enable_if<ccl::is_native_type_supported<BufferType>()>::type>
+    request_t alltoallv(const vector_class<BufferType*>& send_bufs,
+                        const vector_class<size_t>& send_counts,
+                        const vector_class<BufferType*>& recv_bufs,
+                        const vector_class<size_t>& recv_counts,
+                        const stream_t& stream,
+                        const vector_class<event_t>& deps = {},
+                        const alltoallv_attr_t& attr = alltoallv_attr_t());
+
+    /**
+     * Type safety version:
      * @param send_buf the buffer with elements of @c dtype that stores local blocks to be sent to each rank
      * @param send_counts array with number of elements of type @c dtype in send blocks for each rank
      * @param recv_buf [out] the buffer to store received result, should be large enough to hold blocks from all ranks
      * @param recv_counts array with number of elements of type @c dtype in receive blocks from each rank
      * @param stream stream associated with the operation
-     * @param deps optional vector of events that the execution should depend on
+     * @param deps optional vector of events that the operation should depend on
      * @param attr optional attributes to customize operation
      * @return @ref ccl::request_t object to track the progress of the operation
      */
-    template <class buffer_type,
-              class = typename std::enable_if<ccl::is_native_type_supported<buffer_type>()>::type>
-    request_t alltoallv(const buffer_type* send_buf,
+    template <class BufferObjectType,
+              class = typename std::enable_if<ccl::is_class_supported<BufferObjectType>()>::type>
+    request_t alltoallv(const BufferObjectType& send_buf,
                         const vector_class<size_t>& send_counts,
-                        buffer_type* recv_buf,
+                        BufferObjectType& recv_buf,
                         const vector_class<size_t>& recv_counts,
                         const stream_t& stream,
                         const vector_class<event_t>& deps = {},
@@ -1269,58 +1316,15 @@ public:
      * @param recv_counts array with number of elements of type @c dtype in receive blocks from each rank
      * @param dtype datatype of elements in @c send_buf and @c recv_buf
      * @param stream stream associated with the operation
-     * @param deps optional vector of events that the execution should depend on
+     * @param deps optional vector of events that the operation should depend on
      * @param attr optional attributes to customize operation
      * @return @ref ccl::request_t object to track the progress of the operation
      */
-    template <class buffer_type,
-              class = typename std::enable_if<ccl::is_native_type_supported<buffer_type>()>::type>
-    request_t alltoallv(const vector_class<buffer_type*>& send_bufs,
+    template <class BufferObjectType,
+              class = typename std::enable_if<ccl::is_class_supported<BufferObjectType>()>::type>
+    request_t alltoallv(const vector_class<BufferObjectType&>& send_bufs,
                         const vector_class<size_t>& send_counts,
-                        const vector_class<buffer_type*>& recv_bufs,
-                        const vector_class<size_t>& recv_counts,
-                        const stream_t& stream,
-                        const vector_class<event_t>& deps = {},
-                        const alltoallv_attr_t& attr = alltoallv_attr_t());
-
-    /**
-     * Type safety version:
-     * @param send_buf the buffer with elements of @c dtype that stores local blocks to be sent to each rank
-     * @param send_counts array with number of elements of type @c dtype in send blocks for each rank
-     * @param recv_buf [out] the buffer to store received result, should be large enough to hold blocks from all ranks
-     * @param recv_counts array with number of elements of type @c dtype in receive blocks from each rank
-     * @param stream stream associated with the operation
-     * @param deps optional vector of events that the execution should depend on
-     * @param attr optional attributes to customize operation
-     * @return @ref ccl::request_t object to track the progress of the operation
-     */
-    template <class buffer_object_type,
-              class = typename std::enable_if<ccl::is_class_supported<buffer_object_type>()>::type>
-    request_t alltoallv(const buffer_object_type& send_buf,
-                        const vector_class<size_t>& send_counts,
-                        buffer_object_type& recv_buf,
-                        const vector_class<size_t>& recv_counts,
-                        const stream_t& stream,
-                        const vector_class<event_t>& deps = {},
-                        const alltoallv_attr_t& attr = alltoallv_attr_t());
-
-    /**
-     * Type safety version:
-     * @param send_bufs array of buffers to store send blocks, one buffer per each rank
-     * @param send_counts array with number of elements of type @c dtype in send blocks for each rank
-     * @param recv_bufs [out] array of buffers to store receive blocks, one buffer per each rank
-     * @param recv_counts array with number of elements of type @c dtype in receive blocks from each rank
-     * @param dtype datatype of elements in @c send_buf and @c recv_buf
-     * @param stream stream associated with the operation
-     * @param deps optional vector of events that the execution should depend on
-     * @param attr optional attributes to customize operation
-     * @return @ref ccl::request_t object to track the progress of the operation
-     */
-    template <class buffer_object_type,
-              class = typename std::enable_if<ccl::is_class_supported<buffer_object_type>()>::type>
-    request_t alltoallv(const vector_class<buffer_object_type&>& send_bufs,
-                        const vector_class<size_t>& send_counts,
-                        const vector_class<buffer_object_type&>& recv_bufs,
+                        const vector_class<BufferObjectType&>& recv_bufs,
                         const vector_class<size_t>& recv_counts,
                         const stream_t& stream,
                         const vector_class<event_t>& deps = {},
@@ -1331,7 +1335,7 @@ public:
      * Completes after all ranks in the communicator have called it.
      *
      * @param stream stream associated with the operation
-     * @param deps optional vector of events that the execution should depend on
+     * @param deps optional vector of events that the operation should depend on
      * @param attr optional attributes to customize operation
      * @return @ref ccl::request_t object to track the progress of the operation
      */
@@ -1351,7 +1355,7 @@ public:
      * @param dtype datatype of elements in @c buf
      * @param root the rank that broadcasts @c buf
      * @param stream stream associated with the operation
-     * @param deps optional vector of events that the execution should depend on
+     * @param deps optional vector of events that the operation should depend on
      * @param attr optional attributes to customize operation
      * @return @ref ccl::request_t object to track the progress of the operation
      */
@@ -1365,18 +1369,18 @@ public:
 
     /**
      * Type safety version:
-     * @param buf [in,out] the buffer with @c count elements of @c dtype
+     * @param buf [in,out] the buffer with @c count elements of @c BufferType
      * serves as send buffer for root and as receive buffer for other ranks
-     * @param count number of elements of type @c dtype in @c buf
+     * @param count number of elements of type @c BufferType in @c buf
      * @param root the rank that broadcasts @c buf
      * @param stream stream associated with the operation
-     * @param deps optional vector of events that the execution should depend on
+     * @param deps optional vector of events that the operation should depend on
      * @param attr optional attributes to customize operation
      * @return @ref ccl::request_t object to track the progress of the operation
      */
-    template <class buffer_type,
-              class = typename std::enable_if<ccl::is_native_type_supported<buffer_type>()>::type>
-    request_t bcast(buffer_type* buf,
+    template <class BufferType,
+              class = typename std::enable_if<ccl::is_native_type_supported<BufferType>()>::type>
+    request_t bcast(BufferType* buf,
                     size_t count,
                     size_t root,
                     const stream_t& stream,
@@ -1390,13 +1394,13 @@ public:
      * @param count number of elements of type @c dtype in @c buf
      * @param root the rank that broadcasts @c buf
      * @param stream stream associated with the operation
-     * @param deps optional vector of events that the execution should depend on
+     * @param deps optional vector of events that the operation should depend on
      * @param attr optional attributes to customize operation
      * @return @ref ccl::request_t object to track the progress of the operation
      */
-    template <class buffer_object_type,
-              class = typename std::enable_if<ccl::is_class_supported<buffer_object_type>()>::type>
-    request_t bcast(buffer_object_type& buf,
+    template <class BufferObjectType,
+              class = typename std::enable_if<ccl::is_class_supported<BufferObjectType>()>::type>
+    request_t bcast(BufferObjectType& buf,
                     size_t count,
                     size_t root,
                     const stream_t& stream,
@@ -1415,8 +1419,9 @@ public:
      * @param count number of elements of type @c dtype in @c send_buf and @c recv_buf
      * @param dtype datatype of elements in @c send_buf and @c recv_buf
      * @param reduction type of reduction operation to be applied
+     * @param root the rank that gets the result of reduction
      * @param stream stream associated with the operation
-     * @param deps optional vector of events that the execution should depend on
+     * @param deps optional vector of events that the operation should depend on
      * @param attr optional attributes to customize operation
      * @return @ref ccl::request_t object to track the progress of the operation
      */
@@ -1432,21 +1437,21 @@ public:
 
     /**
      * Type safety version:
-     * @param send_buf the buffer with @c count elements of @c dtype that stores local data to be reduced
+     * @param send_buf the buffer with @c count elements of @c BufferType that stores local data to be reduced
      * @param recv_buf [out] the buffer to store reduced result, must have the same dimension as @c send_buf.
      * Used by the @c root rank only, ignored by other ranks.
-     * @param count number of elements of type @c dtype in @c send_buf and @c recv_buf
-     * @param dtype datatype of elements in @c send_buf and @c recv_buf
+     * @param count number of elements of type @c BufferType in @c send_buf and @c recv_buf
      * @param reduction type of reduction operation to be applied
+     * @param root the rank that gets the result of reduction
      * @param stream stream associated with the operation
-     * @param deps optional vector of events that the execution should depend on
+     * @param deps optional vector of events that the operation should depend on
      * @param attr optional attributes to customize operation
      * @return @ref ccl::request_t object to track the progress of the operation
      */
-    template <class buffer_type,
-              class = typename std::enable_if<ccl::is_native_type_supported<buffer_type>()>::type>
-    request_t reduce(const buffer_type* send_buf,
-                     buffer_type* recv_buf,
+    template <class BufferType,
+              class = typename std::enable_if<ccl::is_native_type_supported<BufferType>()>::type>
+    request_t reduce(const BufferType* send_buf,
+                     BufferType* recv_buf,
                      size_t count,
                      reduction reduction,
                      size_t root,
@@ -1463,14 +1468,14 @@ public:
      * @param dtype datatype of elements in @c send_buf and @c recv_buf
      * @param reduction type of reduction operation to be applied
      * @param stream stream associated with the operation
-     * @param deps optional vector of events that the execution should depend on
+     * @param deps optional vector of events that the operation should depend on
      * @param attr optional attributes to customize operation
      * @return @ref ccl::request_t object to track the progress of the operation
      */
-    template <class buffer_object_type,
-              class = typename std::enable_if<ccl::is_class_supported<buffer_object_type>()>::type>
-    request_t reduce(const buffer_object_type& send_buf,
-                     buffer_object_type& recv_buf,
+    template <class BufferObjectType,
+              class = typename std::enable_if<ccl::is_class_supported<BufferObjectType>()>::type>
+    request_t reduce(const BufferObjectType& send_buf,
+                     BufferObjectType& recv_buf,
                      size_t count,
                      reduction reduction,
                      size_t root,
@@ -1490,7 +1495,7 @@ public:
      * @param dtype datatype of elements in @c send_buf and @c recv_buf
      * @param reduction type of reduction operation to be applied
      * @param stream stream associated with the operation
-     * @param deps optional vector of events that the execution should depend on
+     * @param deps optional vector of events that the operation should depend on
      * @param attr optional attributes to customize operation
      * @return @ref ccl::request_t object to track the progress of the operation
      */
@@ -1505,19 +1510,19 @@ public:
 
     /**
      * Type safety version:
-     * @param send_buf the buffer with @c comm_size * @c count elements of @c dtype that stores local data to be reduced
-     * @param recv_buf [out] the buffer to store result block containing @c recv_count elements of type @c dtype
-     * @param recv_count number of elements of type @c dtype in receive block
+     * @param send_buf the buffer with @c comm_size * @c count elements of @c BufferType that stores local data to be reduced
+     * @param recv_buf [out] the buffer to store result block containing @c recv_count elements of type @c BufferType
+     * @param recv_count number of elements of type @c BufferType in receive block
      * @param reduction type of reduction operation to be applied
      * @param stream stream associated with the operation
-     * @param deps optional vector of events that the execution should depend on
+     * @param deps optional vector of events that the operation should depend on
      * @param attr optional attributes to customize operation
      * @return @ref ccl::request_t object to track the progress of the operation
      */
-    template <class buffer_type,
-              class = typename std::enable_if<ccl::is_native_type_supported<buffer_type>()>::type>
-    request_t reduce_scatter(const buffer_type* send_buf,
-                             buffer_type* recv_buf,
+    template <class BufferType,
+              class = typename std::enable_if<ccl::is_native_type_supported<BufferType>()>::type>
+    request_t reduce_scatter(const BufferType* send_buf,
+                             BufferType* recv_buf,
                              size_t recv_count,
                              reduction reduction,
                              const stream_t& stream,
@@ -1531,18 +1536,18 @@ public:
      * @param recv_count number of elements of type @c dtype in receive block
      * @param reduction type of reduction operation to be applied
      * @param stream stream associated with the operation
-     * @param deps optional vector of events that the execution should depend on
+     * @param deps optional vector of events that the operation should depend on
      * @param attr optional attributes to customize operation
      * @return @ref ccl::request_t object to track the progress of the operation
      */
-    // template <class buffer_object_type,
-    //           class = typename std::enable_if<ccl::is_class_supported<buffer_object_type>()>::type>
+    // template <class BufferObjectType,
+    //           class = typename std::enable_if<ccl::is_class_supported<BufferObjectType>()>::type>
 
     /* TODO: apply this in other places */
-    template <class buffer_object_type>
-    typename std::enable_if<ccl::is_class_supported<buffer_object_type>(), request_t>::type
-    reduce_scatter(const buffer_object_type& send_buf,
-                   buffer_object_type& recv_buf,
+    template <class BufferObjectType>
+    typename std::enable_if<ccl::is_class_supported<BufferObjectType>(), request_t>::type
+    reduce_scatter(const BufferObjectType& send_buf,
+                   BufferObjectType& recv_buf,
                    size_t recv_count,
                    reduction reduction,
                    const stream_t& stream,
