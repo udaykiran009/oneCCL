@@ -256,7 +256,7 @@ run()
                     grep -v 'allreduce_rs' |
                     grep -v 'communicator'`
             else
-                examples_to_run=`find . -type f -executable -printf '%P\n' | grep -v 'allreduce_rs'`
+                examples_to_run=`find . -type f -executable -printf '%P\n' | grep -v -e '\(^allreduce_rs$\|^platform_info$\)'`
             fi
 
 
