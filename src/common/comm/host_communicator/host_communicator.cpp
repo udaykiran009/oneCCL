@@ -27,7 +27,7 @@ host_communicator::host_communicator(const ccl::comm_attr_t& attr) :
     else
     {
         comm_impl = std::shared_ptr<ccl_comm>(
-            ccl_comm::create_with_color(attr->get_value<ccl_comm_split_attributes::ccl_host_color>(),
+            ccl_comm::create_with_color(attr->get_value<comm_split_attr_id::ccl_host_color>(),
                                         data.comm_ids.get(),
                                         data.comm.get()));
     }

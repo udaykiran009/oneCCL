@@ -5,21 +5,29 @@
 #include <utility>
 #include <vector>
 
-#include "ccl_attr.hpp"
+#include "ccl_types_policy.hpp"
 #include "ccl_types.hpp"
+#include "ccl_device_types.hpp"
 #include "ccl_type_traits.hpp"
+#include "ccl_attr.hpp"
+#include "ccl_coll_attr_ids.hpp"
+#include "ccl_coll_attr_ids_traits.hpp"
+#include "ccl_coll_attr.hpp"
 
 #include "ccl_stream.hpp"
 
 class ccl_comm;
 class ccl_event;
-class ccl_stream;
+
 
 namespace ccl {
 
 class stream;
 class communicator;
 struct communicator_interface;
+class kvs_interface;
+class request;
+class event;
 
 struct comm_split_attr_impl;
 class comm_split_attr;
@@ -31,35 +39,10 @@ struct device_comm_split_attr_impl;
 class device_comm_split_attr;
 #endif /* DEVICE_COMM_SUPPORT */
 
-template <class T, class Alloc = std::allocator<T>>
-using vector_class = std::vector<T, Alloc>;
-
-template <class T, std::size_t N>
-using array_class = std::array<T, N>;
-
-using string_class = std::string;
-
-template <class R, class... ArgTypes>
-using function_class = std::function<R(ArgTypes...)>;
-
-using mutex_class = std::mutex;
-
-template <class T1, class T2>
-using pair_class = std::pair<T1, N2>;
-
-template <class... Types>
-using tuple_class = std::tuple<Types...>;
-
-template <class T>
-using shared_ptr_class = std::shared_ptr<T>;
-
-template <class T>
-using unique_ptr_class = std::unique_ptr<T>;
-
 /**
  * Types which allow to operate with kvs/communicator/request/stream/event objects in RAII manner
  */
-using kvs_interface_t = unique_ptr_class<kvs_interface>;
+using kvs_t = unique_ptr_class<kvs_interface>;
 using communicator_t = unique_ptr_class<communicator>;
 using request_t = unique_ptr_class<request>;
 using event_t = unique_ptr_class<event>;
@@ -80,6 +63,7 @@ public:
     virtual ~kvs_interface() = default;
 };
 
+class kvs_impl;
 class kvs final : public kvs_interface {
 public:
     static constexpr size_t addr_max_size = 256;
@@ -374,7 +358,7 @@ public:
                          void* recv_buf,
                          const vector_class<size_t>& recv_counts,
                          datatype dtype,
-                         const allgatherv_attr_t& attr = allgatherv_attr_t());
+                         const allgatherv_attr_t& attr/* = allgatherv_attr_t()*/);
 
     /* TODO */
     /*
@@ -402,7 +386,7 @@ public:
                          const vector_class<void*>& recv_bufs,
                          const vector_class<size_t>& recv_counts,
                          datatype dtype,
-                         const allgatherv_attr_t& attr = allgatherv_attr_t());
+                         const allgatherv_attr_t& attr/* = allgatherv_attr_t()*/);
     /**
      * Type safety version:
      * @param send_buf the buffer with @c send_count elements of @c BufferType that stores local data to be gathered
@@ -418,7 +402,7 @@ public:
                          size_t send_count,
                          BufferType* recv_buf,
                          const vector_class<size_t>& recv_counts,
-                         const allgatherv_attr_t& attr = allgatherv_attr_t());
+                         const allgatherv_attr_t& attr/* = allgatherv_attr_t()*/);
 
     /**
      * Type safety version:
@@ -435,7 +419,7 @@ public:
                          size_t send_count,
                          vector_class<BufferType*>& recv_bufs,
                          const vector_class<size_t>& recv_counts,
-                         const allgatherv_attr_t& attr = allgatherv_attr_t());
+                         const allgatherv_attr_t& attr/* = allgatherv_attr_t()*/);
 
     /**
      * Allreduce is a collective communication operation that makes global reduction operation
@@ -456,7 +440,7 @@ public:
                         size_t count,
                         datatype dtype,
                         reduction reduction,
-                        const allreduce_attr_t& attr = allreduce_attr_t());
+                        const allreduce_attr_t& attr/* = allreduce_attr_t()*/);
 
     /**
      * Type safety version:
@@ -473,7 +457,7 @@ public:
                         BufferType* recv_buf,
                         size_t count,
                         reduction reduction,
-                        const allreduce_attr_t& attr = allreduce_attr_t());
+                        const allreduce_attr_t& attr/* = allreduce_attr_t()*/);
 
     /**
      * Alltoall is a collective communication operation in which each rank
@@ -495,7 +479,7 @@ public:
                        void* recv_buf,
                        size_t count,
                        datatype dtype,
-                       const alltoall_attr_t& attr = alltoall_attr_t());
+                       const alltoall_attr_t& attr/* = alltoall_attr_t()*/);
 
     /**
      * @param send_bufs array of buffers with local data to be sent, one buffer per each rank
@@ -509,7 +493,7 @@ public:
                        const vector_class<void*>& recv_buf,
                        size_t count,
                        datatype dtype,
-                       const alltoall_attr_t& attr = alltoall_attr_t());
+                       const alltoall_attr_t& attr/* = alltoall_attr_t()*/);
 
     /**
      * Type safety version:
@@ -525,7 +509,7 @@ public:
     request_t alltoall(const BufferType* send_buf,
                        BufferType* recv_buf,
                        size_t count,
-                       const alltoall_attr_t& attr = alltoall_attr_t());
+                       const alltoall_attr_t& attr/* = alltoall_attr_t()*/);
 
     /**
      * Type safety version:
@@ -540,7 +524,7 @@ public:
     request_t alltoall(const vector_class<BufferType*>& send_buf,
                        const vector_class<BufferType*>& recv_buf,
                        size_t count,
-                       const alltoall_attr_t& attr = alltoall_attr_t());
+                       const alltoall_attr_t& attr/* = alltoall_attr_t()*/);
 
     /**
      * Alltoall is a collective communication operation in which each rank
@@ -563,7 +547,7 @@ public:
                         void* recv_buf,
                         const vector_class<size_t>& recv_counts,
                         datatype dtype,
-                        const alltoallv_attr_t& attr = alltoallv_attr_t());
+                        const alltoallv_attr_t& attr/* = alltoallv_attr_t()*/);
 
     /**
      * @param send_bufs array of buffers to store send blocks, one buffer per each rank
@@ -579,7 +563,7 @@ public:
                         const vector_class<void*>& recv_bufs,
                         const vector_class<size_t>& recv_counts,
                         datatype dtype,
-                        const alltoallv_attr_t& attr = alltoallv_attr_t());
+                        const alltoallv_attr_t& attr/* = alltoallv_attr_t()*/);
 
     /**
      * Type safety version:
@@ -596,7 +580,7 @@ public:
                         const vector_class<size_t>& send_counts,
                         BufferType* recv_buf,
                         const vector_class<size_t>& recv_counts,
-                        const alltoallv_attr_t& attr = alltoallv_attr_t());
+                        const alltoallv_attr_t& attr/* = alltoallv_attr_t()*/);
 
     /**
      * Type safety version:
@@ -613,7 +597,7 @@ public:
                         const vector_class<size_t>& send_counts,
                         const vector_class<BufferType*>& recv_bufs,
                         const vector_class<size_t>& recv_counts,
-                        const alltoallv_attr_t& attr = alltoallv_attr_t());
+                        const alltoallv_attr_t& attr/* = alltoallv_attr_t()*/);
 
     /**
      * Barrier synchronization across all ranks of communicator.
@@ -622,7 +606,7 @@ public:
      * @param attr optional attributes to customize operation
      * @return @ref ccl::request_t object to track the progress of the operation
      */
-    request_t barrier(const barrier_attr_t& attr = barrier_attr_t());
+    request_t barrier(const barrier_attr_t& attr/* = barrier_attr_t()*/);
 
     /**
      * Bcast is collective communication operation that broadcasts data
@@ -642,7 +626,7 @@ public:
                     size_t count,
                     datatype dtype,
                     size_t root,
-                    const bcast_attr_t& attr = bcast_attr_t());
+                    const bcast_attr_t& attr/* = bcast_attr_t()*/);
 
     /**
      * Type safety version:
@@ -658,7 +642,7 @@ public:
     request_t bcast(BufferType* buf,
                     size_t count,
                     size_t root,
-                    const bcast_attr_t& attr = bcast_attr_t());
+                    const bcast_attr_t& attr/* = bcast_attr_t()*/);
 
     /**
      * Reduce is a collective communication operation that makes global reduction operation
@@ -682,7 +666,7 @@ public:
                      datatype dtype,
                      reduction reduction,
                      size_t root,
-                     const reduce_attr_t& attr = reduce_attr_t());
+                     const reduce_attr_t& attr/* = reduce_attr_t()*/);
 
     /**
      * Type safety version:
@@ -702,7 +686,7 @@ public:
                      size_t count,
                      reduction reduction,
                      size_t root,
-                     const reduce_attr_t& attr = reduce_attr_t());
+                     const reduce_attr_t& attr/* = reduce_attr_t()*/);
 
     /**
      * Reduce-scatter is a collective communication operation that makes global reduction operation
@@ -723,7 +707,7 @@ public:
                              size_t recv_count,
                              datatype dtype,
                              reduction reduction,
-                             const reduce_scatter_attr_t& attr = reduce_scatter_attr_t());
+                             const reduce_scatter_attr_t& attr/* = reduce_scatter_attr_t()*/);
 
     /**
      * Type safety version:
@@ -740,7 +724,7 @@ public:
                              BufferType* recv_buf,
                              size_t recv_count,
                              reduction reduction,
-                             const reduce_scatter_attr_t& attr = reduce_scatter_attr_t());
+                             const reduce_scatter_attr_t& attr/* = reduce_scatter_attr_t()*/);
 
     /**
      * Sparse allreduce is a collective communication operation that makes global reduction operation
@@ -774,7 +758,7 @@ public:
                                datatype ind_dtype,
                                datatype val_dtype,
                                reduction reduction,
-                               const sparse_allreduce_attr_t& attr = sparse_allreduce_attr_t());
+                               const sparse_allreduce_attr_t& attr/* = sparse_allreduce_attr_t()*/);
 
     /**
      * Type safety version:
@@ -803,7 +787,7 @@ public:
                                value_BufferType* recv_val_buf,
                                size_t recv_val_count,
                                reduction reduction,
-                               const sparse_allreduce_attr_t& attr = sparse_allreduce_attr_t());
+                               const sparse_allreduce_attr_t& attr/* = sparse_allreduce_attr_t()*/);
 
 private:
     friend class environment;
@@ -904,7 +888,7 @@ public:
                          datatype dtype,
                          const stream_t& stream,
                          const vector_class<event_t>& deps = {},
-                         const allgatherv_attr_t& attr = allgatherv_attr_t());
+                         const allgatherv_attr_t& attr/* = allgatherv_attr_t()*/);
 
     /**
      * @param send_buf the buffer with @c send_count elements of @c dtype that stores local data to be gathered
@@ -924,7 +908,7 @@ public:
                          datatype dtype,
                          const stream_t& stream,
                          const vector_class<event_t>& deps = {},
-                         const allgatherv_attr_t& attr = allgatherv_attr_t());
+                         const allgatherv_attr_t& attr/* = allgatherv_attr_t()*/);
     /**
      * Type safety version:
      * @param send_buf the buffer with @c send_count elements of @c BufferType that stores local data to be gathered
@@ -944,7 +928,7 @@ public:
                          const vector_class<size_t>& recv_counts,
                          const stream_t& stream,
                          const vector_class<event_t>& deps = {},
-                         const allgatherv_attr_t& attr = allgatherv_attr_t());
+                         const allgatherv_attr_t& attr/* = allgatherv_attr_t()*/);
 
     /**
      * Type safety version:
@@ -965,7 +949,7 @@ public:
                          const vector_class<size_t>& recv_counts,
                          const stream_t& stream,
                          const vector_class<event_t>& deps = {},
-                         const allgatherv_attr_t& attr = allgatherv_attr_t());
+                         const allgatherv_attr_t& attr/* = allgatherv_attr_t()*/);
 
     /**
      * Type safety version:
@@ -986,7 +970,7 @@ public:
                          const vector_class<size_t>& recv_counts,
                          const stream_t& stream,
                          const vector_class<event_t>& deps = {},
-                         const allgatherv_attr_t& attr = allgatherv_attr_t());
+                         const allgatherv_attr_t& attr/* = allgatherv_attr_t()*/);
 
     /**
      * Type safety version:
@@ -1007,7 +991,7 @@ public:
                          const vector_class<size_t>& recv_counts,
                          const stream_t& stream,
                          const vector_class<event_t>& deps = {},
-                         const allgatherv_attr_t& attr = allgatherv_attr_t());
+                         const allgatherv_attr_t& attr/* = allgatherv_attr_t()*/);
 
     /**
      * Allreduce is a collective communication operation that makes global reduction operation
@@ -1032,7 +1016,7 @@ public:
                         reduction reduction,
                         const stream_t& stream,
                         const vector_class<event_t>& deps = {},
-                        const allreduce_attr_t& attr = allreduce_attr_t());
+                        const allreduce_attr_t& attr/* = allreduce_attr_t()*/);
 
     /**
      * Type safety version:
@@ -1053,7 +1037,7 @@ public:
                         reduction reduction,
                         const stream_t& stream,
                         const vector_class<event_t>& deps = {},
-                        const allreduce_attr_t& attr = allreduce_attr_t());
+                        const allreduce_attr_t& attr/* = allreduce_attr_t()*/);
 
     /**
      * Type safety version:
@@ -1074,7 +1058,7 @@ public:
                         reduction reduction,
                         const stream_t& stream,
                         const vector_class<event_t>& deps = {},
-                        const allreduce_attr_t& attr = allreduce_attr_t());
+                        const allreduce_attr_t& attr/* = allreduce_attr_t()*/);
 
     /**
      * Alltoall is a collective communication operation in which each rank
@@ -1100,7 +1084,7 @@ public:
                        datatype dtype,
                        const stream_t& stream,
                        const vector_class<event_t>& deps = {},
-                       const alltoall_attr_t& attr = alltoall_attr_t());
+                       const alltoall_attr_t& attr/* = alltoall_attr_t()*/);
 
     /**
      * @param send_bufs array of buffers with local data to be sent, one buffer per each rank
@@ -1118,7 +1102,7 @@ public:
                        datatype dtype,
                        const stream_t& stream,
                        const vector_class<event_t>& deps = {},
-                       const alltoall_attr_t& attr = alltoall_attr_t());
+                       const alltoall_attr_t& attr/* = alltoall_attr_t()*/);
 
     /**
      * Type safety version:
@@ -1138,7 +1122,7 @@ public:
                        size_t count,
                        const stream_t& stream,
                        const vector_class<event_t>& deps = {},
-                       const alltoall_attr_t& attr = alltoall_attr_t());
+                       const alltoall_attr_t& attr/* = alltoall_attr_t()*/);
 
     /**
      * Type safety version:
@@ -1157,7 +1141,7 @@ public:
                        size_t count,
                        const stream_t& stream,
                        const vector_class<event_t>& deps = {},
-                       const alltoall_attr_t& attr = alltoall_attr_t());
+                       const alltoall_attr_t& attr/* = alltoall_attr_t()*/);
 
     /**
      * Type safety version:
@@ -1177,7 +1161,7 @@ public:
                        size_t count,
                        const stream_t& stream,
                        const vector_class<event_t>& deps = {},
-                       const alltoall_attr_t& attr = alltoall_attr_t());
+                       const alltoall_attr_t& attr/* = alltoall_attr_t()*/);
 
     /**
      * Type safety version:
@@ -1196,7 +1180,7 @@ public:
                        size_t count,
                        const stream_t& stream,
                        const vector_class<event_t>& deps = {},
-                       const alltoall_attr_t& attr = alltoall_attr_t());
+                       const alltoall_attr_t& attr/* = alltoall_attr_t()*/);
 
     /**
      * Alltoallv is a collective communication operation in which each rank
@@ -1223,7 +1207,7 @@ public:
                         datatype dtype,
                         const stream_t& stream,
                         const vector_class<event_t>& deps = {},
-                        const alltoallv_attr_t& attr = alltoallv_attr_t());
+                        const alltoallv_attr_t& attr/* = alltoallv_attr_t()*/);
 
     /**
      * @param send_bufs array of buffers to store send blocks, one buffer per each rank
@@ -1243,7 +1227,7 @@ public:
                         datatype dtype,
                         const stream_t& stream,
                         const vector_class<event_t>& deps = {},
-                        const alltoallv_attr_t& attr = alltoallv_attr_t());
+                        const alltoallv_attr_t& attr/* = alltoallv_attr_t()*/);
 
     /**
      * Type safety version:
@@ -1264,7 +1248,7 @@ public:
                         const vector_class<size_t>& recv_counts,
                         const stream_t& stream,
                         const vector_class<event_t>& deps = {},
-                        const alltoallv_attr_t& attr = alltoallv_attr_t());
+                        const alltoallv_attr_t& attr/* = alltoallv_attr_t()*/);
 
     /**
      * Type safety version:
@@ -1285,7 +1269,7 @@ public:
                         const vector_class<size_t>& recv_counts,
                         const stream_t& stream,
                         const vector_class<event_t>& deps = {},
-                        const alltoallv_attr_t& attr = alltoallv_attr_t());
+                        const alltoallv_attr_t& attr/* = alltoallv_attr_t()*/);
 
     /**
      * Type safety version:
@@ -1306,7 +1290,7 @@ public:
                         const vector_class<size_t>& recv_counts,
                         const stream_t& stream,
                         const vector_class<event_t>& deps = {},
-                        const alltoallv_attr_t& attr = alltoallv_attr_t());
+                        const alltoallv_attr_t& attr/* = alltoallv_attr_t()*/);
 
     /**
      * Type safety version:
@@ -1328,7 +1312,7 @@ public:
                         const vector_class<size_t>& recv_counts,
                         const stream_t& stream,
                         const vector_class<event_t>& deps = {},
-                        const alltoallv_attr_t& attr = alltoallv_attr_t());
+                        const alltoallv_attr_t& attr/* = alltoallv_attr_t()*/);
 
     /**
      * Barrier synchronization across all ranks of communicator.
@@ -1341,7 +1325,7 @@ public:
      */
     request_t barrier(const stream_t& stream,
                       const vector_class<event_t>& deps = {},
-                      const barrier_attr_t& attr = barrier_attr_t());
+                      const barrier_attr_t& attr/* = barrier_attr_t()*/);
 
     /**
      * Bcast is collective communication operation that broadcasts data
@@ -1365,7 +1349,7 @@ public:
                     size_t root,
                     const stream_t& stream,
                     const vector_class<event_t>& deps = {},
-                    const bcast_attr_t& attr = bcast_attr_t());
+                    const bcast_attr_t& attr/* = bcast_attr_t()*/);
 
     /**
      * Type safety version:
@@ -1385,7 +1369,7 @@ public:
                     size_t root,
                     const stream_t& stream,
                     const vector_class<event_t>& deps = {},
-                    const bcast_attr_t& attr = bcast_attr_t());
+                    const bcast_attr_t& attr/* = bcast_attr_t()*/);
 
     /**
      * Type safety version:
@@ -1405,7 +1389,7 @@ public:
                     size_t root,
                     const stream_t& stream,
                     const vector_class<event_t>& deps = {},
-                    const bcast_attr_t& attr = bcast_attr_t());
+                    const bcast_attr_t& attr/* = bcast_attr_t()*/);
 
     /**
      * Reduce is a collective communication operation that makes global reduction operation
@@ -1433,7 +1417,7 @@ public:
                      size_t root,
                      const stream_t& stream,
                      const vector_class<event_t>& deps = {},
-                     const reduce_attr_t& attr = reduce_attr_t());
+                     const reduce_attr_t& attr/* = reduce_attr_t()*/);
 
     /**
      * Type safety version:
@@ -1457,7 +1441,7 @@ public:
                      size_t root,
                      const stream_t& stream,
                      const vector_class<event_t>& deps = {},
-                     const reduce_attr_t& attr = reduce_attr_t());
+                     const reduce_attr_t& attr/* = reduce_attr_t()*/);
 
     /**
      * Type safety version:
@@ -1481,7 +1465,7 @@ public:
                      size_t root,
                      const stream_t& stream,
                      const vector_class<event_t>& deps = {},
-                     const reduce_attr_t& attr = reduce_attr_t());
+                     const reduce_attr_t& attr/* = reduce_attr_t()*/);
 
     /**
      * Reduce-scatter is a collective communication operation that makes global reduction operation
@@ -1506,7 +1490,7 @@ public:
                              reduction reduction,
                              const stream_t& stream,
                              const vector_class<event_t>& deps = {},
-                             const reduce_scatter_attr_t& attr = reduce_scatter_attr_t());
+                             const reduce_scatter_attr_t& attr/* = reduce_scatter_attr_t()*/);
 
     /**
      * Type safety version:
@@ -1527,7 +1511,7 @@ public:
                              reduction reduction,
                              const stream_t& stream,
                              const vector_class<event_t>& deps = {},
-                             const reduce_scatter_attr_t& attr = reduce_scatter_attr_t());
+                             const reduce_scatter_attr_t& attr/* = reduce_scatter_attr_t()*/);
 
     /**
      * Type safety version:
@@ -1552,7 +1536,7 @@ public:
                    reduction reduction,
                    const stream_t& stream,
                    const vector_class<event_t>& deps = {},
-                   const reduce_scatter_attr_t& attr = reduce_scatter_attr_t());
+                   const reduce_scatter_attr_t& attr/* = reduce_scatter_attr_t()*/);
 
 private:
     friend class environment;

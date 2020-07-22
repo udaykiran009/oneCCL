@@ -211,7 +211,7 @@ endif(MULTI_GPU_SUPPORT)
 
 #include other CMakeLists
 add_subdirectory(src)
-add_subdirectory(examples/cpu)
+#-S- TEMPORARY DISABLED add_subdirectory(examples/cpu)
 
 if (CCL_ENABLE_SYCL)
     if (${COMPUTE_RUNTIME_TARGET_NAME} STREQUAL "Intel::SYCL")
@@ -219,15 +219,15 @@ if (CCL_ENABLE_SYCL)
     else(${COMPUTE_RUNTIME_TARGET_NAME} STREQUAL "Codeplay::ComputeCpp")
         set (CCL_ENABLCE_SYCL_CHECK_CONTRACT "#if defined(__cplusplus)\n#if !defined(__clang__) || __clang_major__ < 6\n#error This version of CCL configured only for DPC++ compiler\n#endif\n#endif")
     endif()
-    add_subdirectory(examples/sycl)
+    #-S- TEMPORARY DISABLED add_subdirectory(examples/sycl)
 endif()
 
-add_subdirectory(examples/benchmark)
-add_subdirectory(examples/common)
-add_subdirectory(tests/functional)
+#-S- TEMPORARY DISABLED add_subdirectory(examples/benchmark)
+#-S- TEMPORARY DISABLED add_subdirectory(examples/common)
+#-S- TEMPORARY DISABLED add_subdirectory(tests/functional)
+add_subdirectory(tests/unit)
 if(MULTI_GPU_SUPPORT)
     add_subdirectory(examples/level_zero)
-    add_subdirectory(tests/unit)
 endif()
 
 #generate & install vars.sh

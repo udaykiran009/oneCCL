@@ -58,14 +58,14 @@ device_group_split_type device_attr_impl::set_attribute_value(device_group_split
 }
 
 const device_topology_type&
-    device_attr_impl::get_attribute_value(std::integral_constant<ccl_device_attributes,
-                                          ccl_device_attributes::ccl_device_preferred_topology_class> stub) const
+    device_attr_impl::get_attribute_value(std::integral_constant<device_comm_split_attr_id,
+                                          device_comm_split_attr_id::ccl_device_preferred_topology_class> stub) const
 {
     return current_preferred_topology_class;
 }
 const device_group_split_type&
-    device_attr_impl::get_attribute_value(std::integral_constant<ccl_device_attributes,
-                                          ccl_device_attributes::ccl_device_preferred_group> stub) const
+    device_attr_impl::get_attribute_value(std::integral_constant<device_comm_split_attr_id,
+                                          device_comm_split_attr_id::ccl_device_preferred_group> stub) const
 {
     return current_preferred_topology_group;
 }

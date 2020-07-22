@@ -20,10 +20,10 @@ struct comm_split_attr_impl : public ccl_host_comm_attr_t
     int set_attribute_value(int preferred_color);
     ccl_version_t set_attribute_value(ccl_version_t);
 
-    const int& get_attribute_value(std::integral_constant<ccl_comm_split_attributes,
-                                                   ccl_comm_split_attributes::ccl_host_color> stub) const;
-    const ccl_version_t& get_attribute_value(std::integral_constant<ccl_comm_split_attributes,
-                                                   ccl_comm_split_attributes::ccl_host_version> stub) const;
+    const int& get_attribute_value(std::integral_constant<comm_split_attr_id,
+                                                   comm_split_attr_id::ccl_host_color> stub) const;
+    const ccl_version_t& get_attribute_value(std::integral_constant<comm_split_attr_id,
+                                                   comm_split_attr_id::ccl_host_version> stub) const;
 private:
     ccl_version_t library_version;
 };
@@ -46,11 +46,11 @@ struct device_attr_impl
     device_group_split_type set_attribute_value(device_group_split_type preferred_topology);
 
     const device_topology_type&
-        get_attribute_value(std::integral_constant<ccl_device_attributes,
-                                                   ccl_device_attributes::ccl_device_preferred_topology_class> stub) const;
+        get_attribute_value(std::integral_constant<device_comm_split_attr_id,
+                                                   device_comm_split_attr_id::ccl_device_preferred_topology_class> stub) const;
     const device_group_split_type&
-        get_attribute_value(std::integral_constant<ccl_device_attributes,
-                                                   ccl_device_attributes::ccl_device_preferred_group> stub) const;
+        get_attribute_value(std::integral_constant<device_comm_split_attr_id,
+                                                   device_comm_split_attr_id::ccl_device_preferred_group> stub) const;
 private:
     device_topology_type current_preferred_topology_class = class_default();
     device_group_split_type current_preferred_topology_group = group_default();

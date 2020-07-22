@@ -6,9 +6,9 @@
  * Attributes
  */
 HOST_ATTRIBUTE_INSTANTIATION(ccl_host_color,
-                               typename ccl::ccl_comm_split_attributes_traits<ccl_host_color>::type);
+                               typename ccl::comm_split_attributes_traits<ccl_host_color>::type);
 HOST_ATTRIBUTE_INSTANTIATION(ccl_host_version,
-                               typename ccl::ccl_comm_split_attributes_traits<ccl_host_version>::type);
+                               typename ccl::comm_split_attributes_traits<ccl_host_version>::type);
 
 API_COLL_EXPLICIT_INSTANTIATION(char);
 API_COLL_EXPLICIT_INSTANTIATION(int);

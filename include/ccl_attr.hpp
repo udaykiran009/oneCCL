@@ -1,9 +1,13 @@
 #pragma once
 
-/* TODO: add op/coll attributes */
+#ifndef CCL_PRODUCT_FULL
+#error "Do not include this file directly. Please include 'ccl.hpp'"
+#endif
 
 namespace ccl {
 
+class comm_split_attr_impl;
+class device_comm_split_attr_impl;
 /**
  * Class @c comm_split_attr allows to configure host communicator split parameters
  */
@@ -22,7 +26,7 @@ public:
      * Set specific value for attribute by @attrId.
      * Previous attibute value would be returned
      */
-    template <comm_split_attributes attrId,
+    template <comm_split_attr_id attrId,
               class Value,
               class = typename std::enable_if<is_attribute_value_supported<attrId, Value>()>::type>
     Value set_value(const Value& v);
@@ -30,7 +34,7 @@ public:
     /**
      * Get specific attribute value by @attrId
      */
-    template <comm_split_attributes attrId>
+    template <comm_split_attr_id attrId>
     const typename comm_split_attributes_traits<attrId>::type& get_value() const;
 
 protected:
@@ -48,7 +52,7 @@ using comm_split_attr_t = std::shared_ptr<comm_split_attr>;
  * Class @c device_comm_split_attr allows to configure device communicator split parameters
  */
 class device_comm_split_attr
-        : public comm_split_attr public pointer_on_impl<device_comm_split_attr,
+        : public comm_split_attr, public pointer_on_impl<device_comm_split_attr,
                                                         device_comm_split_attr_impl> {
 public:
     friend class comm_group;
@@ -62,18 +66,18 @@ public:
      * Set specific value for attribute by @attrId.
      * Previous attibute value would be returned
      */
-    template <device_comm_split_attributes attrId,
+    template <device_comm_split_attr_id attrId,
               class Value,
               class = typename std::enable_if<
-                  std::is_same<typename device_comm_split_attributes_traits<attrId>::type,
+                  std::is_same<typename ccl_device_attributes_traits<attrId>::type,
                                Value>::value>::type>
     Value set_value(Value&& v);
 
     /**
      * Get specific attribute value by @attrId
      */
-    template <device_comm_split_attributes attrId>
-    const typename device_comm_split_attributes_traits<attrId>::type& get_value() const;
+    template <device_comm_split_attr_id attrId>
+    const typename ccl_device_attributes_traits<attrId>::type& get_value() const;
 
 private:
     device_comm_split_attr(impl_value_t&& impl);

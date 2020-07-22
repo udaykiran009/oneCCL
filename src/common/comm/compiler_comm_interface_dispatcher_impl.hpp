@@ -108,7 +108,7 @@ communicator_interface_dispatcher::create_communicator_from_unified_device(ccl::
                                                                   thread_idx, process_idx,
                                                                    attr));
                 default:
-                    throw ccl_error(std::string("Invalid `device_comm_attr_t` value for `ccl_device_preferred_group`: ") +
+                    throw ccl_error(std::string("Invalid `device_comm_split_attr_t` value for `ccl_device_preferred_group`: ") +
                             std::to_string(preferred_topology));
             }
             break;
@@ -129,14 +129,14 @@ communicator_interface_dispatcher::create_communicator_from_unified_device(ccl::
                     return communicator_interface_ptr(new process_a2a_communicator(std::move(device_id),
                                                                       thread_idx, process_idx, attr));
                 default:
-                    throw ccl_error(std::string("Invalid `device_comm_attr_t` value for `ccl_device_preferred_group`: ") +
+                    throw ccl_error(std::string("Invalid `device_comm_split_attr_t` value for `ccl_device_preferred_group`: ") +
                             std::to_string(preferred_topology));
             }
             break;
         }
         default:
         {
-            throw ccl_error(std::string("Invalid `device_comm_attr_t` value for `ccl_device_preferred_topology_class`: ") +
+            throw ccl_error(std::string("Invalid `device_comm_split_attr_t` value for `ccl_device_preferred_topology_class`: ") +
                             std::to_string(preferred_topology_class));
         }
     }

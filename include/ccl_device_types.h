@@ -28,7 +28,7 @@ typedef enum {
     ccl_device_preferred_topology_class,
     ccl_device_preferred_group
 
-} ccl_device_attributes;
+} device_comm_split_attr_id;
 
 typedef struct {
     ccl_host_comm_attr_t core;

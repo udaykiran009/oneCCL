@@ -8,6 +8,9 @@
 #include <stdexcept>
 #include <vector>
 
+#include "ccl_aliases.hpp"
+#include "ccl_types.h"
+
 namespace ccl {
 
 /** API version description. */
@@ -55,6 +58,7 @@ enum class datatype : int {
     last_predefined
 };
 
+using datatype_attr_t = ccl_datatype_attr_t;
 #ifdef DEVICE_COMM_SUPPORT
 /**
  * Supported stream types
@@ -67,8 +71,14 @@ enum class stream_type {
 };
 #endif /* DEVICE_COMM_SUPPORT */
 
-template <ccl_comm_split_attributes attrId>
-struct ccl_comm_split_attributes_traits {};
+typedef enum {
+    ccl_host_color,
+    ccl_host_version
+
+} comm_split_attr_id;
+
+template <comm_split_attr_id attrId>
+struct comm_split_attributes_traits {};
 
 /**
  * Exception type that may be thrown by ccl API
@@ -105,19 +115,7 @@ namespace info {
 template <class param_type, param_type value>
 struct param_traits {};
 
-template <int index, class value_t>
-struct arg {
-    using value_type = value_t;
-    arg(value_t val) : m_val(val) {}
-
-    static constexpr int idx() {
-        return index;
-    }
-    const value_type val() {
-        return m_val;
-    }
-};
-
+} //namespace info
 } // namespace ccl
 
 #ifdef DEVICE_COMM_SUPPORT

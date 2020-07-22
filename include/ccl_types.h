@@ -1,7 +1,7 @@
 #pragma once
 
-#include "stdint.h"
-#include "stdlib.h"
+#include <stdint.h>
+#include <stdlib.h>
 #include "ccl_config.h"
 
 #ifdef __cplusplus

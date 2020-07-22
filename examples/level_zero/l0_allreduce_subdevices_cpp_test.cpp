@@ -143,7 +143,7 @@ void user_thread_idx(size_t thread_idx, ccl::device_indices_t thread_device_idx,
                                                                              global_communicator);
 
     // create device communicator attributes
-    ccl::device_comm_attr_t my_device_comm_attr = group->create_device_comm_attr();
+    ccl::device_comm_split_attr_t my_device_comm_attr = group->create_device_comm_attr();
 
     // set preferred device topology (OPTIONAL)
     my_device_comm_attr->set_value<ccl_device_preferred_topology_class>(

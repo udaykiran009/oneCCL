@@ -24,7 +24,7 @@ enum device_topology_type {
     ring = ring_algo_class,
     a2a = a2a_algo_class,
 
-    last_value = ccl_topology_type_last_value
+    //last_value
 };
 
 #define SUPPORTED_HW_TOPOLOGIES_DECL_LIST \
@@ -34,7 +34,7 @@ enum device_topology_type {
 #define SUPPORTED_TOPOLOGY_CLASSES_DECL_LIST \
     ccl::device_topology_type::ring, ccl::device_topology_type::a2a
 
-template <ccl_device_attributes attrId>
+template <device_comm_split_attr_id attrId>
 struct ccl_device_attributes_traits {};
 
 using process_id = size_t;
@@ -61,6 +61,12 @@ struct generic_device_type {};
 
 template <int sycl_feature_enabled>
 struct generic_device_context_type {};
+
+template <int sycl_feature_enabled>
+struct generic_stream_type {};
+
+template <int sycl_feature_enabled>
+struct generic_event_type {};
 } // namespace ccl
 
 std::ostream& operator<<(std::ostream& out, const ccl::device_index_type&);

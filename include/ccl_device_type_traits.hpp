@@ -83,6 +83,29 @@ struct generic_device_context_type<CCL_ENABLE_SYCL_TRUE> {
     native_reference_t get() noexcept;
     native_const_reference_t get() const noexcept;
 };
+
+template <>
+struct generic_stream_type<CCL_ENABLE_SYCL_TRUE> {
+    using native_t = cl::sycl::queue;
+    using native_pointer_t = native_t*;
+    using native_reference_t = native_t&;
+    using native_const_reference_t = const native_t&;
+
+    native_reference_t get() noexcept;
+    native_const_reference_t get() const noexcept;
+};
+
+template <>
+struct generic_event_type<CCL_ENABLE_SYCL_TRUE> {
+    using native_t = cl::sycl::event;
+    using native_pointer_t = native_t*;
+    using native_reference_t = native_t&;
+    using native_const_reference_t = const native_t&;
+
+    native_reference_t get() noexcept;
+    native_const_reference_t get() const noexcept;
+};
+
 #else
 }
 namespace native {
@@ -116,10 +139,34 @@ struct generic_device_context_type<CCL_ENABLE_SYCL_FALSE> {
     native_reference_t get() noexcept;
     native_const_reference_t get() const noexcept;
 };
+
+template <>
+struct generic_stream_type<CCL_ENABLE_SYCL_FALSE> {
+    using native_t = ze_command_queue_handle_t;
+    using native_pointer_t = native_t*;
+    using native_reference_t = native_t&;
+    using native_const_reference_t = const native_t&;
+
+    native_reference_t get() noexcept;
+    native_const_reference_t get() const noexcept;
+};
+
+template <>
+struct generic_event_type<CCL_ENABLE_SYCL_FALSE> {
+    using native_t = ze_event_handle_t;
+    using native_pointer_t = native_t*;
+    using native_reference_t = native_t&;
+    using native_const_reference_t = const native_t&;
+
+    native_reference_t get() noexcept;
+    native_const_reference_t get() const noexcept;
+};
 #endif
 
 using unified_device_type = generic_device_type<CCL_ENABLE_SYCL_V>;
 using unified_device_context_type = generic_device_context_type<CCL_ENABLE_SYCL_V>;
+using unified_stream_type = generic_stream_type<CCL_ENABLE_SYCL_V>;
+using unified_event_type = generic_event_type<CCL_ENABLE_SYCL_V>;
 
 //TMP - matching device index into native device object
 template <class... Args>
