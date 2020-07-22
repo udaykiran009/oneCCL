@@ -286,7 +286,7 @@ CCL_API ccl::ccl_device_attr::~ccl_device_attr() noexcept
 {
 }
 
-template<ccl_device_attributes attrId,
+template<device_comm_split_attr_id attrId,
              class Value,
              typename T>
 CCL_API Value ccl::ccl_device_attr::set_value(Value&& v)
@@ -294,11 +294,11 @@ CCL_API Value ccl::ccl_device_attr::set_value(Value&& v)
     return pimpl->set_attribute_value(std::forward<Value>(v));
 }
 
-template<ccl_device_attributes attrId>
+template<device_comm_split_attr_id attrId>
 CCL_API const typename ccl::ccl_device_attributes_traits<attrId>::type& ccl::ccl_device_attr::get_value() const
 {
     return pimpl->get_attribute_value(
-            std::integral_constant<ccl_device_attributes, attrId> {});
+            std::integral_constant<device_comm_split_attr_id, attrId> {});
 }
 
 /* Global Environment*/

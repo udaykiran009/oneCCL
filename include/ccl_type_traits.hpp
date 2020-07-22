@@ -121,7 +121,7 @@ constexpr bool is_class_supported() {
     return (is_class<type>() and is_supported<type>());
 }
 
-template <comm_split_attributes attr_id, class value>
+template <comm_split_attr_id attr_id, class value>
 constexpr bool is_attribute_value_supported() {
     return std::is_same<
         typename comm_split_attributes_traits<attr_id>::type,

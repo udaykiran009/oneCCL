@@ -62,7 +62,7 @@ static ccl::stream_t& get_empty_stream()
  * Public API interface for host communicator attributes
  */
 CCL_API ccl_comm_split_attr::ccl_comm_split_attr(const ccl_comm_split_attr& src) :
-        ccl_comm_split_attr(src.get_value<ccl_comm_split_attributes::ccl_host_version>(),
+        ccl_comm_split_attr(src.get_value<comm_split_attr_id::ccl_host_version>(),
                       *(src.pimpl))
 {
 }
@@ -84,7 +84,7 @@ CCL_API ccl_comm_split_attr::~ccl_comm_split_attr() noexcept
 {
 }
 
-template<ccl_comm_split_attributes attrId,
+template<comm_split_attr_id attrId,
              class Value,
              typename T>
 CCL_API Value ccl_comm_split_attr::set_value(const Value& v)
@@ -92,11 +92,11 @@ CCL_API Value ccl_comm_split_attr::set_value(const Value& v)
     return pimpl->set_attribute_value(v);
 }
 
-template<ccl_comm_split_attributes attrId>
-CCL_API const typename ccl_comm_split_attributes_traits<attrId>::type& ccl_comm_split_attr::get_value() const
+template<comm_split_attr_id attrId>
+CCL_API const typename comm_split_attributes_traits<attrId>::type& ccl_comm_split_attr::get_value() const
 {
     return pimpl->get_attribute_value(
-            std::integral_constant<ccl_comm_split_attributes, attrId> {});
+            std::integral_constant<comm_split_attr_id, attrId> {});
 }
 
 #define HOST_ATTRIBUTE_INSTANTIATION(ATTR_ID, VALUE_TYPE)                                          \

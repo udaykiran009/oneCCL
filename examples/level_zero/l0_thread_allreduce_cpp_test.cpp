@@ -115,7 +115,7 @@ void user_thread_sycl(size_t thread_idx,
         devices.size(), total_devices_in_process, global_communicator);
 
     // create device communicator attributes
-    ccl::device_comm_attr_t my_device_comm_attr = group->create_device_comm_attr();
+    ccl::device_comm_split_attr_t my_device_comm_attr = group->create_device_comm_attr();
 
     // set preferred device topology (OPTIONAL)
     my_device_comm_attr->set_value<ccl_device_preferred_topology_class>(
@@ -234,7 +234,7 @@ void user_thread_idx(size_t thread_idx,
     std::cout << "Platform info: " << group->get_context().to_string() << std::endl;
 
     // create device communicator attributes
-    ccl::device_comm_attr_t my_device_comm_attr = group->create_device_comm_attr();
+    ccl::device_comm_split_attr_t my_device_comm_attr = group->create_device_comm_attr();
 
     // set preferred device topology (OPTIONAL)
     my_device_comm_attr->set_value<ccl_device_preferred_topology_class>(
