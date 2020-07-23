@@ -1,6 +1,6 @@
 #pragma once
 #include "ccl_types.h"
-
+#include "coll/ccl_allgather_op_attr_impl.hpp"
 
 class ccl_allgather_op_attr_impl_t;
 class ccl_allreduce_op_attr_impl_t;

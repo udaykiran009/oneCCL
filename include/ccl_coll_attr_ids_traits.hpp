@@ -8,7 +8,7 @@ namespace ccl {
 /**
  *  traits for common attributes
  */
-template <common_op_attr_id attrId>
+template <int attrId>
 struct common_op_attr_traits {};
 
 /**
@@ -46,31 +46,31 @@ struct common_op_attr_traits<common_op_attr_id::match_id> {
 /**
  *  Traits for collective attributes
  */
-template <allgatherv_op_attr_id attrId>
-struct allgatherv_attr_traits {};
+template <int attrId>
+struct allgatherv_attr_traits : public common_op_attr_traits<attrId> {};
 
-template <allreduce_op_attr_id attrId>
-struct allreduce_attr_traits {};
+template <int attrId>
+struct allreduce_attr_traits : public common_op_attr_traits<attrId> {};
 
-template <alltoall_op_attr_id attrId>
-struct alltoall_attr_traits {};
+template <int attrId>
+struct alltoall_attr_traits : public common_op_attr_traits<attrId> {};
 
-template <alltoallv_op_attr_id attrId>
-struct alltoallv_attr_traits {};
+template <int attrId>
+struct alltoallv_attr_traits : public common_op_attr_traits<attrId> {};
 
-template <bcast_op_attr_id attrId>
-struct bcast_attr_traits {};
+template <int attrId>
+struct bcast_attr_traits : public common_op_attr_traits<attrId> {};
 
-template <reduce_op_attr_id attrId>
-struct reduce_attr_traits {};
+template <int attrId>
+struct reduce_attr_traits : public common_op_attr_traits<attrId> {};
 
-template <reduce_scatter_op_attr_id attrId>
-struct reduce_scatter_attr_traits {};
+template <int attrId>
+struct reduce_scatter_attr_traits : public common_op_attr_traits<attrId> {};
 
-template <sparse_allreduce_op_attr_id attrId>
-struct sparse_allreduce_attr_traits {};
+template <int attrId>
+struct sparse_allreduce_attr_traits : public common_op_attr_traits<attrId> {};
 
-template <barrier_op_attr_id attrId>
+template <int attrId>
 struct barrier_attr_traits {};
 
 /**

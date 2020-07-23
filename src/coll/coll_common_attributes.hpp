@@ -1,7 +1,7 @@
 #pragma once
 #include "ccl_types.h"
 
-class ccl_common_op_attr_impl_t
+struct ccl_common_op_attr_impl_t
 {
     ccl_prologue_fn_t prologue_fn;
     ccl_epilogue_fn_t epilogue_fn;
