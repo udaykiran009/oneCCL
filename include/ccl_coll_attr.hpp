@@ -23,6 +23,8 @@ struct allgatherv_attr_t : public pointer_on_impl<allgatherv_attr_t, ccl_allgath
     using impl_value_t =
         typename pointer_on_impl<allgatherv_attr_t, ccl_allgather_op_attr_impl_t>::impl_value_t;
 
+    using impl_t = typename impl_value_t::element_type;
+
     ~allgatherv_attr_t();
 
     /**
@@ -322,4 +324,24 @@ private:
     barrier_attr_t(impl_value_t&& impl);
 };
 
+
+template<int attrId, class value_type>
+struct coll_attr_value_pair
+{
+    using value_t = value_type;
+    explicit coll_attr_value_pair(value_t val) : m_val(val) {}
+
+    static constexpr int idx() {
+        return attrId;
+    }
+    const value_type val() {
+        return m_val;
+    }
+    value_t m_val;
+};
+
+/* TODO temporary function for UT compilation: would be part of ccl::environment in final*/
+template <class coll_attribute_type,
+          class attr_value_pair... prop_ids>
+coll_attribute_type create_coll_attr(attr_value_pair&&...avps);
 } // namespace ccl
