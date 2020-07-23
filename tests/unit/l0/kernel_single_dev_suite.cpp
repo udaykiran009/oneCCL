@@ -2,6 +2,7 @@
 #include "fixture.hpp"
 #include "kernels/allreduce_test.hpp"
 #include "kernels/bcast_test.hpp"
+#include "kernels/reduce_test.hpp"
 
 int main(int ac, char* av[]) {
     set_test_device_indices(getenv("L0_CLUSTER_AFFINITY_MASK"));
@@ -15,6 +16,8 @@ int main(int ac, char* av[]) {
         t.start();
         Test_bcast_one_device_multithread_kernel t2;
         t2.start();
+        Test_reduce_one_device_multithread_kernel t3;
+        t3.start();
     }
 #endif
 }
