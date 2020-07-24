@@ -1,6 +1,0 @@
-DeliveryName	InstallName	FileCheckSum	FileOrigin	Owner	FileFeature	FileInstallCondition	InstalledFilePermission	Redistributable	InstalledFileOwner	SymbolicLink
-<deliverydir>/l_bin/hydra_persist	<installdir><l_ccl_install_path><l_ccl_platform>/bin/hydra_persist		external	Ksenya Kochanova		1	755	redistributable	root	<installroot>/bin/hydra_persist
-<deliverydir>/l_bin/mpiexec.hydra	<installdir><l_ccl_install_path><l_ccl_platform>/bin/mpiexec.hydra		external	Ksenya Kochanova		1	755	redistributable	root	<installroot>/bin/mpiexec.hydra
-<deliverydir>/l_bin/mpirun	<installdir><l_ccl_install_path><l_ccl_platform>/bin/mpirun		external	Ksenya Kochanova		1	755	redistributable	root	<installroot>/bin/mpirun
-<deliverydir>/l_bin/pmi_proxy	<installdir><l_ccl_install_path><l_ccl_platform>/bin/pmi_proxy		external	Ksenya Kochanova		1	755	redistributable	root	<installroot>/bin/pmi_proxy
-#Intel Confidential

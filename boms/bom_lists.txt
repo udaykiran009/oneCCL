@@ -1,0 +1,3 @@
+DeliveryName	InstallName	FileCheckSum	FileOrigin	Owner
+<deliverydir>/bom_lists/bom_list.txt	<bom_list_dir>/bom_list.txt		Internal	Yury Kiryanov
+#Intel Confidential
