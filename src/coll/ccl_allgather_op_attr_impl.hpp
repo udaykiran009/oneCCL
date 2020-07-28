@@ -1,67 +1,56 @@
 #pragma once
 #include "ccl_coll_attr_ids.hpp"
 #include "ccl_coll_attr_ids_traits.hpp"
-
+#include "coll/coll_common_attributes.hpp"
+namespace ccl {
 
 class ccl_allgather_op_attr_impl_t : public ccl_common_op_attr_impl_t
 {
+public:
     using base_t = ccl_common_op_attr_impl_t;
-    using base_t::comm_attr;
 
-    ccl_allgather_op_attr_impl_t(const base_t& base, const ccl_version_t& lib_version);
+    ccl_allgather_op_attr_impl_t(const base_t& base);
+    ccl_allgather_op_attr_impl_t(const typename details::ccl_api_type_attr_traits<common_op_attr_id, ccl::common_op_attr_id::version>::type& version);
     ccl_allgather_op_attr_impl_t(const ccl_allgather_op_attr_impl_t& src);
 
-    constexpr static int color_default()
-    {
-        return 0;
-    }
-vector_buf_id
-    int set_attribute_value(int preferred_color);
-    ccl_version_t set_attribute_value(ccl_version_t);
+    using vector_buf_traits_t = details::ccl_api_type_attr_traits<allgatherv_op_attr_id, allgatherv_op_attr_id::vector_buf>;
+    typename vector_buf_traits_t::type
+        set_attribute_value(typename vector_buf_traits_t::type val, const vector_buf_traits_t& t);
 
-    const int& get_attribute_value(std::integral_constant<allgatherv_op_attr_id,
-                                                   allgatherv_op_attr_id::ccl_host_color> stub) const;
-    const ccl_version_t& get_attribute_value(std::integral_constant<allgatherv_op_attr_id,
-                                                   allgatherv_op_attr_id::ccl_host_version> stub) const;
+    const typename vector_buf_traits_t::type&
+        get_attribute_value(const vector_buf_traits_t& id) const;
+
 private:
-    ccl_version_t library_version;
+    typename vector_buf_traits_t::type vector_buf_id_val;
 };
 
 
 
 
-ccl_allgather_op_attr_impl_t::ccl_allgather_op_attr_impl_t (const base_t& base, const ccl_version_t& lib_version) :
-        base_t(base),
-        library_version(lib_version)
+ccl_allgather_op_attr_impl_t::ccl_allgather_op_attr_impl_t (const base_t& base) :
+        base_t(base)
 {
 }
-
+ccl_allgather_op_attr_impl_t::ccl_allgather_op_attr_impl_t(const typename ccl_common_op_attr_impl_t::version_traits_t::type& version) :
+        base_t(version)
+{
+}
 ccl_allgather_op_attr_impl_t::ccl_allgather_op_attr_impl_t(const ccl_allgather_op_attr_impl_t& src) :
-        base_t(src),
-        library_version(src.library_version)
+        base_t(src)
 {
 }
 
-int ccl_allgather_op_attr_impl_t::set_attribute_value(int preferred_color)
+typename ccl_allgather_op_attr_impl_t::vector_buf_traits_t::type
+ccl_allgather_op_attr_impl_t::set_attribute_value(typename vector_buf_traits_t::type val, const vector_buf_traits_t&t)
 {
-    int old = comm_attr.color;
-    comm_attr.color = preferred_color;
+    auto old = vector_buf_id_val;
+    std::swap(vector_buf_id_val, val);
     return old;
 }
 
-ccl_version_t ccl_allgather_op_attr_impl_t::set_attribute_value(ccl_version_t)
+const typename ccl_allgather_op_attr_impl_t::vector_buf_traits_t::type&
+ccl_allgather_op_attr_impl_t::get_attribute_value(const vector_buf_traits_t& id) const
 {
-    return library_version;
+    return vector_buf_id_val;
 }
-
-const int& ccl_allgather_op_attr_impl_t::get_attribute_value(std::integral_constant<ccl_comm_split_attributes,
-                                               ccl_comm_split_attributes::ccl_host_color> stub) const
-{
-    return comm_attr.color;
-}
-
-const ccl_version_t& ccl_allgather_op_attr_impl_t::get_attribute_value(std::integral_constant<ccl_comm_split_attributes,
-                                                         ccl_comm_split_attributes::ccl_host_version> stub) const
-{
-    return library_version;
 }
