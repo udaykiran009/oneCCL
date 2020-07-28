@@ -5,88 +5,78 @@
 #endif
 
 namespace ccl {
-/**
- *  traits for common attributes
- */
-template <int attrId>
-struct common_op_attr_traits {};
 
+namespace details {
+template<class T>
+class function_holder
+{
+public:
+    function_holder(T in = nullptr) : val(in) {}
+    T get() const { return val; }
+private:
+    T val;
+};
 /**
  * Traits for common attributes specializations
  */
 template <>
-struct common_op_attr_traits<common_op_attr_id::version_id> {
-    using type = size_t;
+struct ccl_api_type_attr_traits<common_op_attr_id, common_op_attr_id::version> {
+    using type = ccl_version_t;
+    using return_type = type;
 };
+
 template <>
-struct common_op_attr_traits<common_op_attr_id::prolog_fn_id> {
+struct ccl_api_type_attr_traits<common_op_attr_id, common_op_attr_id::prolog_fn> {
     using type = ccl_prologue_fn_t;
+    using return_type = function_holder<type>;
 };
+
 template <>
-struct common_op_attr_traits<common_op_attr_id::epilog_fn_id> {
+struct ccl_api_type_attr_traits<common_op_attr_id, common_op_attr_id::epilog_fn> {
     using type = ccl_epilogue_fn_t;
+    using return_type = function_holder<type>;
 };
+
 template <>
-struct common_op_attr_traits<common_op_attr_id::priority_id> {
+struct ccl_api_type_attr_traits<common_op_attr_id, common_op_attr_id::priority> {
     using type = size_t;
+    using return_type = type;
 };
+
 template <>
-struct common_op_attr_traits<common_op_attr_id::synchronous_id> {
+struct ccl_api_type_attr_traits<common_op_attr_id, common_op_attr_id::synchronous> {
     using type = int;
+    using return_type = type;
 };
+
 template <>
-struct common_op_attr_traits<common_op_attr_id::to_cache_id> {
+struct ccl_api_type_attr_traits<common_op_attr_id, common_op_attr_id::to_cache> {
     using type = int;
+    using return_type = type;
 };
+
 template <>
-struct common_op_attr_traits<common_op_attr_id::match_id> {
+struct ccl_api_type_attr_traits<common_op_attr_id, common_op_attr_id::match_id> {
     using type = const char*;
+    using return_type = type;
 };
-
-/**
- *  Traits for collective attributes
- */
-template <int attrId>
-struct allgatherv_attr_traits : public common_op_attr_traits<attrId> {};
-
-template <int attrId>
-struct allreduce_attr_traits : public common_op_attr_traits<attrId> {};
-
-template <int attrId>
-struct alltoall_attr_traits : public common_op_attr_traits<attrId> {};
-
-template <int attrId>
-struct alltoallv_attr_traits : public common_op_attr_traits<attrId> {};
-
-template <int attrId>
-struct bcast_attr_traits : public common_op_attr_traits<attrId> {};
-
-template <int attrId>
-struct reduce_attr_traits : public common_op_attr_traits<attrId> {};
-
-template <int attrId>
-struct reduce_scatter_attr_traits : public common_op_attr_traits<attrId> {};
-
-template <int attrId>
-struct sparse_allreduce_attr_traits : public common_op_attr_traits<attrId> {};
-
-template <int attrId>
-struct barrier_attr_traits {};
 
 /**
  * Traits specialization for allgatherv op attributes
  */
 template <>
-struct allgatherv_attr_traits<allgatherv_op_attr_id::vector_buf_id> {
+struct ccl_api_type_attr_traits<allgatherv_op_attr_id, allgatherv_op_attr_id::vector_buf> {
     using type = int;
+    using return_type = type;
 };
 
 /**
  * Traits specialization for allreduce op attributes
  */
 template <>
-struct allreduce_attr_traits<allreduce_op_attr_id::reduction_fn_id> {
+struct ccl_api_type_attr_traits<allreduce_op_attr_id, allreduce_op_attr_id::reduction_fn> {
     using type = ccl_reduction_fn_t;
+    using return_type = function_holder<type>;
 };
 
 /**
@@ -105,35 +95,42 @@ struct allreduce_attr_traits<allreduce_op_attr_id::reduction_fn_id> {
  * Traits specialization for reduce op attributes
  */
 template <>
-struct reduce_attr_traits<reduce_op_attr_id::reduction_fn_id> {
+struct ccl_api_type_attr_traits<reduce_op_attr_id, reduce_op_attr_id::reduction_fn> {
     using type = ccl_reduction_fn_t;
+    using return_type = function_holder<type>;
 };
 
 /**
  * Traits specialization for reduce_scatter op attributes
  */
 template <>
-struct reduce_scatter_attr_traits<reduce_scatter_op_attr_id::reduction_fn_id> {
+struct ccl_api_type_attr_traits<reduce_scatter_op_attr_id, reduce_scatter_op_attr_id::reduction_fn> {
     using type = ccl_reduction_fn_t;
+    using return_type = function_holder<type>;
 };
 
 /**
  * Traits specialization for sparse_allreduce op attributes
  */
 template <>
-struct sparse_allreduce_attr_traits<sparse_allreduce_op_attr_id::sparse_allreduce_completion_fn_id> {
+struct ccl_api_type_attr_traits<sparse_allreduce_op_attr_id, sparse_allreduce_op_attr_id::sparse_allreduce_completion_fn> {
     using type = ccl_sparse_allreduce_completion_fn_t;
+    using return_type = function_holder<type>;
 };
 template <>
-struct sparse_allreduce_attr_traits<sparse_allreduce_op_attr_id::sparse_allreduce_alloc_fn_id> {
+struct ccl_api_type_attr_traits<sparse_allreduce_op_attr_id, sparse_allreduce_op_attr_id::sparse_allreduce_alloc_fn> {
     using type = ccl_sparse_allreduce_alloc_fn_t;
+    using return_type = function_holder<type>;
 };
 template <>
-struct sparse_allreduce_attr_traits<sparse_allreduce_op_attr_id::sparse_allreduce_fn_ctx_id> {
+struct ccl_api_type_attr_traits<sparse_allreduce_op_attr_id, sparse_allreduce_op_attr_id::sparse_allreduce_fn_ctx> {
     using type = const void*;
+    using return_type = function_holder<type>;
 };
 template <>
-struct sparse_allreduce_attr_traits<sparse_allreduce_op_attr_id::sparse_coalesce_mode_id> {
+struct ccl_api_type_attr_traits<sparse_allreduce_op_attr_id, sparse_allreduce_op_attr_id::sparse_coalesce_mode> {
     using type = ccl_sparse_coalesce_mode_t;
+    using return_type = type;
 };
+}
 }

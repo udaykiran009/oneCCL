@@ -9,108 +9,80 @@ namespace ccl {
 /**
  * Common operation attributes id
  */
-struct common_op_attr_id {
-    enum : int {
-        version_id,
-        prolog_fn_id,
-        epilog_fn_id,
-        priority_id,
-        synchronous_id,
-        to_cache_id,
-        match_id,
+enum class common_op_attr_id : int {
+    version,
+    prolog_fn,
+    epilog_fn,
+    priority,
+    synchronous,
+    to_cache,
+    match_id,
 
-        last_value
-    };
-    common_op_attr_id() = delete;
+    last_value
 };
 
 /**
  * Collective attributes
  */
-struct allgatherv_op_attr_id : common_op_attr_id {
-    enum : int {
-        op_id_offset = common_op_attr_id::last_value,
-        vector_buf_id = op_id_offset,
+enum class allgatherv_op_attr_id : int {
+    op_id_offset = static_cast<typename std::underlying_type<common_op_attr_id>::type>(common_op_attr_id::last_value),
+    vector_buf = op_id_offset,
 
-        last_value
-    };
-    allgatherv_op_attr_id() = delete;
+    last_value
 };
 
-struct allreduce_op_attr_id : common_op_attr_id {
-    enum : int {
-        op_id_offset = common_op_attr_id::last_value,
-        reduction_fn_id = op_id_offset,
+enum class allreduce_op_attr_id : int {
+    op_id_offset = static_cast<typename std::underlying_type<common_op_attr_id>::type>(common_op_attr_id::last_value),
+    reduction_fn = op_id_offset,
 
-        last_value
-    };
-    allreduce_op_attr_id() = delete;
+    last_value
 };
 
-struct alltoall_op_attr_id : common_op_attr_id {
-    enum : int {
-        op_id_offset = common_op_attr_id::last_value,
+enum class alltoall_op_attr_id : int {
+    op_id_offset = static_cast<typename std::underlying_type<common_op_attr_id>::type>(common_op_attr_id::last_value),
 
-        last_value
-    };
-    alltoall_op_attr_id() = delete;
+    last_value
 };
 
-struct alltoallv_op_attr_id : common_op_attr_id {
-    enum : int {
-        op_id_offset = common_op_attr_id::last_value,
+enum class alltoallv_op_attr_id : int {
+    op_id_offset = static_cast<typename std::underlying_type<common_op_attr_id>::type>(common_op_attr_id::last_value),
 
-        last_value
-    };
-    alltoallv_op_attr_id() = delete;
+    last_value
 };
 
-struct bcast_op_attr_id : common_op_attr_id {
-    enum : int {
-        op_id_offset = common_op_attr_id::last_value,
+enum class bcast_op_attr_id : int {
+    op_id_offset = static_cast<typename std::underlying_type<common_op_attr_id>::type>(common_op_attr_id::last_value),
 
-        last_value
-    };
-    bcast_op_attr_id() = delete;
+    last_value
 };
 
-struct reduce_op_attr_id : common_op_attr_id {
-    enum : int {
-        op_id_offset = common_op_attr_id::last_value,
+enum class reduce_op_attr_id : int {
+    op_id_offset = static_cast<typename std::underlying_type<common_op_attr_id>::type>(common_op_attr_id::last_value),
 
-        reduction_fn_id = op_id_offset,
-        last_value
-    };
-    reduce_op_attr_id() = delete;
+    reduction_fn = op_id_offset,
+    last_value
 };
 
-struct reduce_scatter_op_attr_id : common_op_attr_id {
-    enum : int {
-        op_id_offset = common_op_attr_id::last_value,
+enum class reduce_scatter_op_attr_id : int {
+    op_id_offset = static_cast<typename std::underlying_type<common_op_attr_id>::type>(common_op_attr_id::last_value),
 
-        reduction_fn_id = op_id_offset,
-        last_value
-    };
-    reduce_scatter_op_attr_id() = delete;
+    reduction_fn = op_id_offset,
+    last_value
 };
 
-struct sparse_allreduce_op_attr_id : common_op_attr_id {
-    enum : int {
-        op_id_offset = common_op_attr_id::last_value,
+enum class sparse_allreduce_op_attr_id : int {
+    op_id_offset = static_cast<typename std::underlying_type<common_op_attr_id>::type>(common_op_attr_id::last_value),
 
-        sparse_allreduce_completion_fn_id = op_id_offset,
-        sparse_allreduce_alloc_fn_id,
-        sparse_allreduce_fn_ctx_id,
-        sparse_coalesce_mode_id,
-        last_value
-    };
-    sparse_allreduce_op_attr_id() = delete;
+    sparse_allreduce_completion_fn = op_id_offset,
+    sparse_allreduce_alloc_fn,
+    sparse_allreduce_fn_ctx,
+    sparse_coalesce_mode,
+    last_value
 };
 
-struct barrier_op_attr_id {
-    enum : int {
-        last_value
-    };
-    barrier_op_attr_id() = delete;
+enum class barrier_op_attr_id : int {
+    version,
+
+    last_value
 };
 }
