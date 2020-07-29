@@ -21,7 +21,7 @@ struct native_type_info<a2a_gpu_comm_data_float> {
 
 /* 3) just use it! */
 
-namespace singledevice_case {
+namespace allreduce_singledevice_case {
 
 // test case data
 static const size_t buffer_size = 512;
@@ -345,4 +345,4 @@ TEST_F(allreduce_one_device_local_fixture, a2a_allreduce_one_device_multithread_
     memory_storage.dump_by_index(output, 1 /*recv_mem*/);
     //flags_storage.dump(output);
 }
-} // namespace singledevice_case
+} // namespace allreduce_singledevice_case
