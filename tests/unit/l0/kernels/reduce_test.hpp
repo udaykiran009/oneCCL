@@ -14,69 +14,6 @@ using native_type = float;
 static constexpr size_t mem_group_count = 3;
 static constexpr size_t flag_group_count = 3;
 
-inline void res(const int& errs, std::ostream& output) {
-    if (0 == errs)
-        output << " [     OK]"
-               << "\n";
-    else
-        output << " [     NOT OK]"
-               << "\n";
-}
-
-inline void check_res_not_root_thread(const std::vector<native_type>& v, size_t& errs) {
-    std::for_each(v.begin(), v.end(), [&errs](native_type const& value) {
-        if (value != 0)
-            errs++;
-    });
-}
-
-inline void check_res_root_thread(const std::vector<native_type>& v,
-                                  size_t& errs,
-                                  size_t& iter_idx) {
-    std::for_each(v.begin(), v.end(), [&errs, &iter_idx](native_type const& value) {
-        iter_idx++;
-        if (!(value / num_thread == iter_idx))
-            errs++;
-    });
-}
-
-void check_results(const handles_storage<native_type>& memory_storage,
-                   const size_t& thread_idx,
-                   const size_t& root,
-                   std::ostream& output) {
-    auto& mem_handles = memory_storage.per_thread_storage.find(thread_idx)->second;
-    size_t mem_idx = 1;
-    size_t i = 0;
-
-    for (auto iter_mem = mem_handles.begin(); iter_mem != mem_handles.end(); iter_mem++, i++) {
-        if (i != mem_idx)
-            continue;
-
-        output << "Thread: " << thread_idx << ", handle: " << *iter_mem;
-        const auto* data = *iter_mem;
-
-        auto it =
-            std::find_if(memory_storage.allocated_storage.begin(),
-                         memory_storage.allocated_storage.end(),
-                         [data](const native::ccl_device::device_memory<native_type>& wrapper) {
-                             return wrapper.handle == data;
-                         });
-
-        std::vector<native_type> tmp = it->enqueue_read_sync();
-        if (root == thread_idx) {
-            size_t iter_idx = 0;
-            size_t errs = 0;
-            check_res_root_thread(tmp, errs, iter_idx);
-            res(errs, output);
-        }
-        else {
-            size_t errs = 0;
-            check_res_not_root_thread(tmp, errs);
-            res(errs, output);
-        }
-    }
-}
-
 TEST_F(reduce_one_device_local_fixture, reduce_one_device_multithread_kernel) {
     using namespace native;
 
@@ -400,19 +337,44 @@ TEST_F(reduce_one_device_local_fixture, reduce_one_device_multithread_kernel) {
         index++;
     }
 
-    //printout
-    output << "Send memory:" << std::endl;
-    memory_storage.dump_by_index(output, 0 /*recv_mem*/);
-    output << "\nRecv memory:" << std::endl;
-    memory_storage.dump_by_index(output, 1 /*recv_mem*/);
+    size_t corr_val = 0;
+    try {
+        for (auto& idx_kernel : thread_kernels) {
+            size_t thread_idx = idx_kernel.first;
+            auto lambda = [&corr_val](const size_t root,
+                                      size_t thread_idx,
+                                      size_t num_thread,
+                                      native_type value) -> bool {
+                if (root == thread_idx) {
+                    corr_val++;
+                    if (!(value / num_thread == corr_val))
+                        return false;
+                }
+                else {
+                    if (value != 0) {
+                        corr_val = 0;
+                        return false;
+                    }
+                }
+                return true;
+            };
 
-    //check results
-    output << "Check results: \n";
-    for (auto& idx_kernel : thread_kernels) {
-        size_t thread_idx = idx_kernel.first;
-        check_results(memory_storage, thread_idx, root, output);
+            memory_storage.check_results(
+                thread_idx, output, 1, lambda, root, thread_idx, num_thread);
+        }
     }
-    output << "\n\n";
+    catch (check_on_exception& ex) {
+        output << "Check results: \n";
+        //printout
+        output << "Send memory:" << std::endl;
+        memory_storage.dump_by_index(output, 0 /*send_mem*/);
+        output << "\nRecv memory:" << std::endl;
+        memory_storage.dump_by_index(output, 1 /*recv_mem*/);
+
+        std::stringstream ss;
+        ss << ex.what() << ", But expected: " << corr_val << std::endl;
+        UT_ASSERT(false, ss.str());
+    }
 }
 
 } // namespace reduce_singledevice_case

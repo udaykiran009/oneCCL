@@ -2,6 +2,7 @@
 
 #include <algorithm>
 #include <array>
+#include <exception>
 #include <fstream>
 #include <future>
 #include <iostream>
@@ -45,6 +46,21 @@
     } while (0);
 #endif
 
+class check_on_exception : public std::exception {
+    std::string m_msg;
+
+public:
+    check_on_exception(const std::string& index,
+                       const std::string& value,
+                       const std::string& thread_idx)
+            : m_msg("Invalid data: Thread idx: " + thread_idx + ", At index: " + index +
+                    ", Has got: " + value) {}
+
+    virtual const char* what() const throw() {
+        return m_msg.c_str();
+    }
+};
+
 template <typename T>
 inline void str_to_array(const char* input, std::vector<T>& output, char delimiter) {
     if (!input) {
@@ -59,6 +75,7 @@ inline void str_to_array(const char* input, std::vector<T>& output, char delimit
         }
     }
 }
+
 template <>
 inline void str_to_array(const char* input, std::vector<std::string>& output, char delimiter) {
     std::string processes_input(input);
@@ -296,6 +313,45 @@ struct handles_storage {
             ret[val.first] = collect_thread_handles_by_index(val.first, ids);
         }
         return ret;
+    }
+
+    template <class CheckFunctor, class... Args>
+    void check_on(const std::vector<T>& vec,
+                  const size_t& thread_idx,
+                  CheckFunctor lambda,
+                  Args&&... params) {
+        auto check_lambda = std::bind(lambda, std::forward<Args>(params)..., std::placeholders::_1);
+        auto it = std::find_if_not(vec.begin(), vec.end(), check_lambda);
+        if (it != vec.end())
+            throw check_on_exception(std::to_string(std::distance(vec.begin(), it)),
+                                     std::to_string(*it),
+                                     std::to_string(thread_idx));
+    }
+
+    template <class CheckFunctor, class... Args>
+    void check_results(
+        const size_t& thread_idx,
+        std::ostream& output,
+        size_t mem_idx, /* offset into mem_handles: 0 - send buffer, 1 - recv buffer*/
+        CheckFunctor funct,
+        Args&&... params) {
+        auto& mem_handles = per_thread_storage.find(thread_idx)->second;
+        size_t i = 0;
+
+        for (auto iter_mem = mem_handles.begin(); iter_mem != mem_handles.end(); iter_mem++, i++) {
+            if (i != mem_idx)
+                continue;
+
+            const auto* data = *iter_mem;
+            auto it = std::find_if(allocated_storage.begin(),
+                                   allocated_storage.end(),
+                                   [data](const native::ccl_device::device_memory<T>& wrapper) {
+                                       return wrapper.handle == data;
+                                   });
+
+            std::vector<T> tmp = it->enqueue_read_sync();
+            check_on(tmp, thread_idx, funct, std::forward<Args>(params)...);
+        }
     }
 };
 
