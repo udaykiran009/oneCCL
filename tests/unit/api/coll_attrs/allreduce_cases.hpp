@@ -28,8 +28,11 @@ TEST(coll_attr, allreduce_copy_on_write_attr)
     ASSERT_EQ(attr.get_value<ccl::allreduce_op_attr_id::reduction_fn>().get(), function);
 
     //set new val
-    attr.set_value<ccl::allreduce_op_attr_id::reduction_fn>(stub_reduction);
-    ASSERT_EQ(attr.get_value<ccl::allreduce_op_attr_id::reduction_fn>().get(), stub_reduction);
+    {
+        ccl::details::function_holder<ccl_reduction_fn_t> check_val{stub_reduction};
+        attr.set_value<ccl::allreduce_op_attr_id::reduction_fn>(stub_reduction);
+        ASSERT_EQ(attr.get_value<ccl::allreduce_op_attr_id::reduction_fn>().get(), check_val.get());
+    }
 
     //make sure original impl is unchanged
     ASSERT_TRUE(original_inner_impl_ptr != attr.get_impl());

@@ -44,6 +44,9 @@ template <class elem_t,
           class = typename std::enable_if<ccl::is_supported<elem_t>()>::type>
 struct memory;
 
+template <class resource_owner>
+using ccl_device_event = cl_base<ze_event_handle_t, resource_owner>;
+
 template <class elem_t, class resource_owner>
 struct memory<elem_t, resource_owner> : private cl_base<elem_t*, resource_owner> {
     using base = cl_base<elem_t*, resource_owner>;

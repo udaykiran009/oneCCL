@@ -63,6 +63,9 @@ template <int sycl_feature_enabled>
 struct generic_device_context_type {};
 
 template <int sycl_feature_enabled>
+struct generic_platform_type {};
+
+template <int sycl_feature_enabled>
 struct generic_stream_type {};
 
 template <int sycl_feature_enabled>
