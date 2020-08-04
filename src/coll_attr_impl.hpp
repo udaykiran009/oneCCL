@@ -44,7 +44,7 @@ CCL_API allgatherv_attr_t::allgatherv_attr_t(const typename details::ccl_api_typ
 {
 }
 
-CCL_API allgatherv_attr_t::~allgatherv_attr_t() noexcept
+CCL_API allgatherv_attr_t::~allgatherv_attr_t()
 {
 }
 
@@ -94,7 +94,7 @@ CCL_API allreduce_attr_t::allreduce_attr_t(const typename details::ccl_api_type_
 {
 }
 
-CCL_API allreduce_attr_t::~allreduce_attr_t() noexcept
+CCL_API allreduce_attr_t::~allreduce_attr_t()
 {
 }
 
@@ -145,7 +145,7 @@ CCL_API alltoall_attr_t::alltoall_attr_t(const typename details::ccl_api_type_at
 {
 }
 
-CCL_API alltoall_attr_t::~alltoall_attr_t() noexcept
+CCL_API alltoall_attr_t::~alltoall_attr_t()
 {
 }
 
@@ -196,7 +196,7 @@ CCL_API alltoallv_attr_t::alltoallv_attr_t(const typename details::ccl_api_type_
 {
 }
 
-CCL_API alltoallv_attr_t::~alltoallv_attr_t() noexcept
+CCL_API alltoallv_attr_t::~alltoallv_attr_t()
 {
 }
 
@@ -247,7 +247,7 @@ CCL_API bcast_attr_t::bcast_attr_t(const typename details::ccl_api_type_attr_tra
 {
 }
 
-CCL_API bcast_attr_t::~bcast_attr_t() noexcept
+CCL_API bcast_attr_t::~bcast_attr_t()
 {
 }
 
@@ -297,7 +297,7 @@ CCL_API reduce_attr_t::reduce_attr_t(const typename details::ccl_api_type_attr_t
 {
 }
 
-CCL_API reduce_attr_t::~reduce_attr_t() noexcept
+CCL_API reduce_attr_t::~reduce_attr_t()
 {
 }
 
@@ -347,7 +347,7 @@ CCL_API reduce_scatter_attr_t::reduce_scatter_attr_t(const typename details::ccl
 {
 }
 
-CCL_API reduce_scatter_attr_t::~reduce_scatter_attr_t() noexcept
+CCL_API reduce_scatter_attr_t::~reduce_scatter_attr_t()
 {
 }
 
@@ -398,7 +398,7 @@ CCL_API sparse_allreduce_attr_t::sparse_allreduce_attr_t(const typename details:
 {
 }
 
-CCL_API sparse_allreduce_attr_t::~sparse_allreduce_attr_t() noexcept
+CCL_API sparse_allreduce_attr_t::~sparse_allreduce_attr_t()
 {
 }
 
@@ -448,7 +448,7 @@ CCL_API barrier_attr_t::barrier_attr_t(const typename details::ccl_api_type_attr
 {
 }
 
-CCL_API barrier_attr_t::~barrier_attr_t() noexcept
+CCL_API barrier_attr_t::~barrier_attr_t()
 {
 }
 

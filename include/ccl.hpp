@@ -247,7 +247,7 @@ public:
     //  */
     // template <class native_stream_type,
     //           class = typename std::enable_if<is_stream_supported<native_stream_type>()>::type,
-    //           info::stream_properties... prop_ids>
+    //           info::stream_property_id... prop_ids>
     // stream_t create_stream(info::arg<prop_ids, info::stream_property_value_t>... props) const {
     //     using tuple_t = tuple_class<info::stream_property_value_t>... > ;
     //     tuple_t args{ props... };
@@ -260,8 +260,8 @@ public:
 
     // /* Example:
     //  *  auto stream = ccl::environment::instance().create_stream(stream_arg(info::stream_atts::ordinal, 0),
-    //  *                                                           stream_arg(info::stream_properties::index, 1),
-    //  *                                                           stream_arg(info::stream_properties::mode, ZE_ASYNC));
+    //  *                                                           stream_arg(info::stream_property_id::index, 1),
+    //  *                                                           stream_arg(info::stream_property_id::mode, ZE_ASYNC));
     //  *
     //  */
     // stream_t create_stream() const;

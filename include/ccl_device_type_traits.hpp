@@ -80,8 +80,27 @@ struct generic_device_context_type<CCL_ENABLE_SYCL_TRUE> {
     using native_reference_t = native_t&;
     using native_const_reference_t = const native_t&;
 
+    generic_device_context_type(native_reference_t ctx);
     native_reference_t get() noexcept;
     native_const_reference_t get() const noexcept;
+
+    native_reference_t context;
+
+};
+
+template <>
+struct generic_platform_type<CCL_ENABLE_SYCL_TRUE> {
+    using platform_t = cl::sycl::platform;
+    using native_t = platform_t;
+    using native_pointer_t = native_t*;
+    using native_reference_t = native_t&;
+    using native_const_reference_t = const native_t&;
+
+    generic_platform_type(native_reference_t pl);
+    native_reference_t get() noexcept;
+    native_const_reference_t get() const noexcept;
+
+    native_reference_t platform;
 };
 
 template <>
@@ -110,7 +129,9 @@ struct generic_event_type<CCL_ENABLE_SYCL_TRUE> {
 }
 namespace native {
 class ccl_device;
+class ccl_context;
 class ccl_device_platform;
+class ccl_device_event;
 } // namespace native
 
 namespace ccl {
@@ -118,20 +139,35 @@ template <>
 struct generic_device_type<CCL_ENABLE_SYCL_FALSE> {
     using device_t = device_index_type;
     using native_t = native::ccl_device;
-    using native_pointer_t = std::shared_ptr<native::ccl_device>;
-    using native_reference_t = std::shared_ptr<native::ccl_device>;
+    using native_pointer_t = std::shared_ptr<native_t>;
+    using native_reference_t = std::shared_ptr<native_t>;
 
     generic_device_type(device_index_type id);
     device_index_type get_id() const noexcept;
     native_reference_t get() noexcept;
 
-    device_index_type device;
+    device_t device;
 };
 
 template <>
 struct generic_device_context_type<CCL_ENABLE_SYCL_FALSE> {
-    using context_t = native::ccl_device_platform;
+    using context_t = native::ccl_context;
     using native_t = context_t;
+    using native_pointer_t = std::shared_ptr<context_t>;
+    using native_reference_t = std::shared_ptr<context_t>;
+    using native_const_reference_t = const native_reference_t&;
+
+    generic_device_context_type(native_reference_t ctx);
+    native_reference_t get() noexcept;
+    native_const_reference_t get() const noexcept;
+
+    native_reference_t context;
+};
+
+template <>
+struct generic_platform_type<CCL_ENABLE_SYCL_FALSE> {
+    using platform_t = native::ccl_device_platform;
+    using native_t = platform_t;
     using native_pointer_t = native_t*;
     using native_reference_t = native_t&;
     using native_const_reference_t = const native_t&;
@@ -153,9 +189,10 @@ struct generic_stream_type<CCL_ENABLE_SYCL_FALSE> {
 
 template <>
 struct generic_event_type<CCL_ENABLE_SYCL_FALSE> {
-    using native_t = ze_event_handle_t;
-    using native_pointer_t = native_t*;
-    using native_reference_t = native_t&;
+    using event_t = native::ccl_device_event;
+    using native_t = event_t;
+    using native_pointer_t = std::shared_ptr<native_t>;
+    using native_reference_t = std::shared_ptr<native_t>;
     using native_const_reference_t = const native_t&;
 
     native_reference_t get() noexcept;
@@ -165,6 +202,7 @@ struct generic_event_type<CCL_ENABLE_SYCL_FALSE> {
 
 using unified_device_type = generic_device_type<CCL_ENABLE_SYCL_V>;
 using unified_device_context_type = generic_device_context_type<CCL_ENABLE_SYCL_V>;
+using unified_platform_type = generic_platform_type<CCL_ENABLE_SYCL_V>;
 using unified_stream_type = generic_stream_type<CCL_ENABLE_SYCL_V>;
 using unified_event_type = generic_event_type<CCL_ENABLE_SYCL_V>;
 

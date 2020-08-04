@@ -82,14 +82,29 @@ template<class T>
 struct direct_access_policy
 {
     using impl_t = T;
+    using self_t = direct_access_policy<T>;
 
-    template<template<class>class wrapper>
+    template<class ccl_api_t>
+    static void create(ccl_api_t *dst, const ccl_api_t& src)
+    {
+        static_assert( std::is_same<typename ccl_api_t::acc_policy_t, self_t>::value, "ccl_api_t is not provide 'copy_on_write_access_policy'");
+        dst->get_impl().reset(new T(*src.get_impl().get()));
+    }
+
+    template<class ccl_api_t>
+    static void create(ccl_api_t *dst, ccl_api_t&& src)
+    {
+        static_assert( std::is_same<typename ccl_api_t::acc_policy_t, self_t>::value, "ccl_api_t is not provide 'copy_on_write_access_policy'");
+        dst->get_impl().swap(src.get_impl());
+    }
+
+    template<template<class...>class wrapper>
     static wrapper<T> &get_access(wrapper<T>& obj)
     {
         return obj;
     }
 
-    template<template<class> class wrapper>
+    template<template<class...> class wrapper>
     static const wrapper<T> &get_access(const wrapper<T>& obj)
     {
         return obj;

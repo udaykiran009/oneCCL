@@ -12,91 +12,69 @@ namespace ccl {
  * Has no defined public constructor. Use ccl::environment::create_stream
  * for stream objects creation
  */
-namespace info {
-/**
- * Stream attribute ids
- */
-enum class stream_attr_id : int {
-    device,
-    properties,
-
-    last_value
-};
-
-/**
- * Stream `properties` attributes flags
- */
-enum class stream_properties : int {
-    ordinal,
-    index,
-    flags,
-    mode,
-    priority,
-
-    last_value
-};
-/**
- *Stream `properties` attributes flag values
- */
-using stream_property_value_t = uint32_t;
-using stream_properties_data_t = std::array<stream_property_value_t, static_cast<typename std::underlying_type<stream_properties>::type>(stream_properties::last_value)>;
-
-template <stream_properties index, class value_t>
-struct arg {
-    using value_type = value_t;
-    arg(value_t val) : m_val(val) {}
-
-    static constexpr stream_properties idx() {
-        return index;
-    }
-    const value_type val() {
-        return m_val;
-    }
-    value_t m_val;
-};
-
-template <stream_properties ids>
-constexpr arg<ids, stream_property_value_t> stream_args(stream_property_value_t val) {
-    return arg<ids, stream_property_value_t>(val);
-}
-
-/**
- * Traits specialization for stream attributes
- */
-template <>
-struct param_traits<stream_attr_id, stream_attr_id::device> {
-    using type = typename ccl::unified_device_type::native_reference_t;
-};
-
-template <>
-struct param_traits<stream_attr_id, stream_attr_id::properties> {
-    using type = stream_properties_data_t;
-};
-} // namespace info
-
 /**
  * Stream class
  */
-class stream : public non_copyable<stream>,
-               public non_movable<stream>,
-               public pointer_on_impl<stream, ccl_stream> {
+class stream : public ccl_api_base_movable<stream, direct_access_policy, ccl_stream>
+{
 public:
-    using native_handle_t = typename ccl::unified_stream_type::native_reference_t;
-    using impl_value_t = typename pointer_on_impl<stream, ccl_stream>::impl_value_t;
+    using base_t = ccl_api_base_movable<stream, direct_access_policy, ccl_stream>;
 
-    using creation_args_t = native_handle_t;
-    using optional_args_t =
-        typename info::param_traits<info::stream_attr_id, info::stream_attr_id::properties>::type;
+    /**
+     * Declare PIMPL type
+     */
+    using impl_value_t = typename base_t::impl_value_t;
 
-    native_handle_t get() const;
+    /**
+     * Declare implementation type
+     */
+    using impl_t = typename impl_value_t::element_type;
 
-    template <info::stream_attr_id param>
-    typename info::param_traits<info::stream_attr_id, param>::type get_info() const;
+    ~stream();
+
+    /**
+     * Get specific attribute value by @attrId
+     */
+    template <stream_attr_id attrId>
+    const typename details::ccl_api_type_attr_traits<stream_attr_id, attrId>::return_type& get() const;
 
 private:
-    friend class communicator;
     friend class environment;
-
+    friend class communicator;
+    friend class device_communicator;
+    stream(stream&& src);
     stream(impl_value_t&& impl);
+
+    /**
+     *Parametrized stream creation helper
+     */
+    template <stream_attr_id attrId,
+              class Value/*,
+              class = typename std::enable_if<is_attribute_value_supported<attrId, Value>()>::type*/>
+    Value set(const Value& v);
+
+    void build_from_params();
+    stream(const typename details::ccl_api_type_attr_traits<stream_attr_id, stream_attr_id::version>::type& version);
 };
+
+
+template <stream_attr_id t, class value_type>
+constexpr auto attr_arg(value_type v) -> details::attr_value_tripple<stream_attr_id, t, value_type>
+{
+    return details::attr_value_tripple<stream_attr_id, t, value_type>(v);
+}
+
+/* TODO temporary function for UT compilation: would be part of ccl::environment in final*/
+template <class native_stream_type,
+          class = typename std::enable_if<is_stream_supported<native_stream_type>()>::type>
+stream create_stream(native_stream_type& native_stream);
+
+template <class ...attr_value_pair_t>
+stream create_stream_from_attr(typename unified_device_type::native_reference_t device, attr_value_pair_t&&...avps);
+
+template <class ...attr_value_pair_t>
+stream create_stream_from_attr(typename unified_device_type::native_reference_t device,
+                               typename unified_device_context_type::native_reference_t context,
+                               attr_value_pair_t&&...avps);
+
 } // namespace ccl
