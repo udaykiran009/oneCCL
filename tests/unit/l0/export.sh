@@ -2,7 +2,8 @@
 
 SCRIPT_DIR=`cd $(dirname "$BASH_SOURCE") && pwd -P`
 PROJECT_DIR="${SCRIPT_DIR}/../../../"
-
+INCLUDE_PATH_TO_LEVEL_ZERO="/usr/local/include/level_zero"
+LIB_PATH_TO_LEVEL_ZERO="/usr/local/lib/"
 function show_help()
 {
     echo -e "\t\tDescription: The current script provides a possibility to export\n\
@@ -138,8 +139,8 @@ function compile()
 {
     cd ${export_dir}
     echo "Compiling..."
-    g++ -g -DSTANDALONE_UT -DUT_DEBUG -I/usr/local/include/level_zero \
-    -I./ native_device_api/l0/*.cpp -L/usr/local/lib/ -lze_loader \
+    g++ -g -DSTANDALONE_UT -DUT_DEBUG -I${INCLUDE_PATH_TO_LEVEL_ZERO} \
+    -I./ native_device_api/l0/*.cpp -L${LIB_PATH_TO_LEVEL_ZERO} -lze_loader \
     -L/usr/lib/ -lpthread  -pthread \
     ./$input_name -o ./$out_name
 }
