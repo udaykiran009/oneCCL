@@ -14,8 +14,10 @@ int main(int ac, char* av[]) {
         using namespace singledevice_case;
         Test_allreduce_one_device_multithread_kernel t;
         t.start();
+        using namespace bcast_singledevice_case;
         Test_bcast_one_device_multithread_kernel t2;
         t2.start();
+        using namespace reduce_singledevice_case;
         Test_reduce_one_device_multithread_kernel t3;
         t3.start();
     }

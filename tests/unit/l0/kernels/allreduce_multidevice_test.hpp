@@ -1,5 +1,5 @@
 // test case data
-namespace multidevice_case {
+namespace allreduce_multidevice_case {
 static const size_t buffer_size = 512;
 static const size_t num_thread = 2;
 
@@ -283,4 +283,4 @@ TEST_F(allreduce_multi_device_local_fixture, allreduce_multi_device_multithread_
     //printout
     memory_storage.dump(output);
 }
-} // namespace multidevice_case
+} // namespace allreduce_multidevice_case
