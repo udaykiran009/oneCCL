@@ -14,9 +14,9 @@ public:
     friend class environment;
 
     using device_context_native_reference_t =
-        typename unified_device_context_type::native_reference_t;
+        typename unified_device_context_type::ccl_native_t;
     using device_context_native_const_reference_t =
-        typename unified_device_context_type::native_const_reference_t;
+        typename unified_device_context_type::ccl_native_t &;
     /**
      * Device Communicator creation API: single communicator creation, based on @device
      */
@@ -80,7 +80,7 @@ public:
      * Type allows to get underlying device type,
      * which was used as communicator construction argument
      */
-    using device_native_reference_t = typename unified_device_type::native_reference_t;
+    using device_native_reference_t = typename unified_device_type::ccl_native_t;
 
     ~communicator();
 

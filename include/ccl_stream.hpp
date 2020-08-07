@@ -69,12 +69,16 @@ template <class native_stream_type,
           class = typename std::enable_if<is_stream_supported<native_stream_type>()>::type>
 stream create_stream(native_stream_type& native_stream);
 
-template <class ...attr_value_pair_t>
-stream create_stream_from_attr(typename unified_device_type::native_reference_t device, attr_value_pair_t&&...avps);
+template <class native_stream_type, class native_context_type,
+          class = typename std::enable_if<is_stream_supported<native_stream_type>()>::type>
+stream create_stream(native_stream_type& native_stream, native_context_type& native_ctx);
 
 template <class ...attr_value_pair_t>
-stream create_stream_from_attr(typename unified_device_type::native_reference_t device,
-                               typename unified_device_context_type::native_reference_t context,
+stream create_stream_from_attr(typename unified_device_type::ccl_native_t device, attr_value_pair_t&&...avps);
+
+template <class ...attr_value_pair_t>
+stream create_stream_from_attr(typename unified_device_type::ccl_native_t device,
+                               typename unified_device_context_type::ccl_native_t context,
                                attr_value_pair_t&&...avps);
 
 } // namespace ccl

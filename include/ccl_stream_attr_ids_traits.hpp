@@ -19,19 +19,22 @@ struct ccl_api_type_attr_traits<stream_attr_id, stream_attr_id::version> {
 
 template <>
 struct ccl_api_type_attr_traits<stream_attr_id, stream_attr_id::native_handle> {
-    using type = typename unified_stream_type::native_reference_t;
+    using type = typename unified_stream_type::ccl_native_t;
+    using handle_t = typename unified_stream_type::handle_t;
     using return_type = type;
 };
 
 template <>
 struct ccl_api_type_attr_traits<stream_attr_id, stream_attr_id::device> {
-    using type = typename unified_device_type::native_reference_t;
+    using type = typename unified_device_type::ccl_native_t;
+    using handle_t = typename unified_device_type::handle_t;
     using return_type = type;
 };
 
 template <>
 struct ccl_api_type_attr_traits<stream_attr_id, stream_attr_id::context> {
-    using type = typename unified_device_context_type::native_reference_t;
+    using type = typename unified_device_context_type::ccl_native_t;
+    using handle_t = typename unified_device_context_type::handle_t;
     using return_type = type;
 };
 

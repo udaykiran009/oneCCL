@@ -808,7 +808,7 @@ class event : public non_copyable<event>,
               public non_movable<event>,
               public pointer_on_impl<event, ccl_event> {
 public:
-    using native_handle_t = typename unified_event_type::native_reference_t;
+    using native_handle_t = typename unified_event_type::ccl_native_t;
     using impl_value_t = typename pointer_on_impl<event, ccl_event>::impl_value_t;
 
 #ifdef DEVICE_COMM_SUPPORT
@@ -829,7 +829,7 @@ private:
 class device_communicator final
         : public pointer_on_impl<device_communicator, communicator_interface> {
 public:
-    using native_handle_t = typename unified_device_type::native_reference_t;
+    using native_handle_t = typename unified_device_type::ccl_native_t;
     using impl_value_t =
         typename pointer_on_impl<device_communicator, communicator_interface>::impl_value_t;
     ~device_communicator();

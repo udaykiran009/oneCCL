@@ -75,7 +75,7 @@ device_index_type generic_device_type<CCL_ENABLE_SYCL_TRUE>::get_id() const noex
     return native::get_runtime_device(device)->get_device_path();
 }
 
-typename generic_device_type<CCL_ENABLE_SYCL_TRUE>::native_reference_t
+typename generic_device_type<CCL_ENABLE_SYCL_TRUE>::ccl_native_t
 generic_device_type<CCL_ENABLE_SYCL_TRUE>::get() noexcept
 {
     return device;
@@ -93,7 +93,7 @@ device_index_type generic_device_type<CCL_ENABLE_SYCL_FALSE>::get_id() const noe
     return device;
 }
 
-typename generic_device_type<CCL_ENABLE_SYCL_FALSE>::native_reference_t
+typename generic_device_type<CCL_ENABLE_SYCL_FALSE>::ccl_native_t
 generic_device_type<CCL_ENABLE_SYCL_FALSE>::get() noexcept
 {
     return native::get_runtime_device(device);

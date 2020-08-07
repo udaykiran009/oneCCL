@@ -23,8 +23,7 @@ struct communicator_interface_dispatcher
 {
 #ifdef MULTI_GPU_SUPPORT
     using native_device_type     = typename ccl::unified_device_type::native_t;
-    using native_device_type_ref = typename ccl::unified_device_type::native_reference_t;
-    using native_device_type_ptr = typename ccl::unified_device_type::native_pointer_t;
+    using native_device_type_ref = typename ccl::unified_device_type::ccl_native_t;
 
     virtual void visit(gpu_comm_attr& comm_attr) = 0;
     virtual ccl::device_index_type get_device_path() const = 0;
