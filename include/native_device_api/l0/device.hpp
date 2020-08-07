@@ -41,6 +41,7 @@ struct ccl_device : public cl_base<ze_device_handle_t, ccl_device_driver>,
     using device_cmd_list = cmd_list<ccl_device>;
     using device_module = module<ccl_device>;
     using device_module_ptr = std::shared_ptr<device_module>;
+    using device_event = event<ccl_device>;
     using indexed_handles = indexed_storage<handle_t>;
 
     ccl_device(handle_t h, owner_ptr_t&& parent);
