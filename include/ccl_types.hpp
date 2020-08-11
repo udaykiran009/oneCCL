@@ -71,15 +71,6 @@ enum class stream_type {
 };
 #endif /* DEVICE_COMM_SUPPORT */
 
-typedef enum {
-    ccl_host_color,
-    ccl_host_version
-
-} comm_split_attr_id;
-
-template <comm_split_attr_id attrId>
-struct comm_split_attributes_traits {};
-
 /**
  * Exception type that may be thrown by ccl API
  */

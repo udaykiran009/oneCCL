@@ -76,16 +76,6 @@ CCL_CLASS_TYPE_TRAITS(ccl_dtype_float, cl::sycl::buffer<float COMMA 1>, sizeof(f
 CCL_CLASS_TYPE_TRAITS(ccl_dtype_double, cl::sycl::buffer<double COMMA 1>, sizeof(double))
 #endif //CCL_ENABLE_SYCL
 
-template <>
-struct comm_split_attributes_traits<ccl_host_color> {
-    using type = int;
-};
-
-template <>
-struct comm_split_attributes_traits<ccl_host_version> {
-    using type = ccl_version_t;
-};
-
 /**
  * Checks for supporting @c type in ccl API
  */
@@ -119,13 +109,6 @@ constexpr bool is_native_type_supported() {
 template <class type>
 constexpr bool is_class_supported() {
     return (is_class<type>() and is_supported<type>());
-}
-
-template <comm_split_attr_id attr_id, class value>
-constexpr bool is_attribute_value_supported() {
-    return std::is_same<
-        typename comm_split_attributes_traits<attr_id>::type,
-        typename std::remove_cv<typename std::remove_reference<value>::type>::type>::value;
 }
 
 } // namespace ccl

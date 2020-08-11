@@ -9,16 +9,6 @@ namespace ccl {
 /* TODO
  * Push the following code into something similar with 'ccl_device_types.hpp'
  */
-enum device_group_split_type {
-    //device,
-    thread,
-    process,
-    //socket,
-    //node,
-    cluster,
-
-    last_value
-};
 
 enum device_topology_type {
     ring = ring_algo_class,
@@ -33,9 +23,6 @@ enum device_topology_type {
 
 #define SUPPORTED_TOPOLOGY_CLASSES_DECL_LIST \
     ccl::device_topology_type::ring, ccl::device_topology_type::a2a
-
-template <device_comm_split_attr_id attrId>
-struct ccl_device_attributes_traits {};
 
 using process_id = size_t;
 using host_id = std::string;

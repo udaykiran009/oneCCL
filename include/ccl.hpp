@@ -13,6 +13,9 @@
 #include "ccl_coll_attr_ids.hpp"
 #include "ccl_coll_attr_ids_traits.hpp"
 #include "ccl_coll_attr.hpp"
+#include "ccl_comm_split_attr_ids.hpp"
+#include "ccl_comm_split_attr_ids_traits.hpp"
+#include "comm_split_attr_t.hpp"
 
 #include "ccl_stream.hpp"
 
@@ -29,14 +32,9 @@ class kvs_interface;
 class request;
 class event;
 
-struct comm_split_attr_impl;
-class comm_split_attr;
-
 #ifdef DEVICE_COMM_SUPPORT
 class device_comm_group;
 class device_communicator;
-struct device_comm_split_attr_impl;
-class device_comm_split_attr;
 #endif /* DEVICE_COMM_SUPPORT */
 
 /**

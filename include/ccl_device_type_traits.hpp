@@ -53,16 +53,6 @@ API_CLASS_TYPE_INFO(cl::sycl::event);
 
 #ifdef MULTI_GPU_SUPPORT
 
-template <>
-struct ccl_device_attributes_traits<ccl_device_preferred_topology_class> {
-    using type = device_topology_type;
-};
-
-template <>
-struct ccl_device_attributes_traits<ccl_device_preferred_group> {
-    using type = device_group_split_type;
-};
-
 #ifdef CCL_ENABLE_SYCL
 template <>
 struct generic_device_type<CCL_ENABLE_SYCL_TRUE> {
