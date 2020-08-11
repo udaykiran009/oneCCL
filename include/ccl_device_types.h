@@ -21,19 +21,4 @@ typedef enum {
     ccl_topology_group_last_value
 } ccl_topology_group_t;
 
-/** Device attributes
- *
- */
-typedef enum {
-    ccl_device_preferred_topology_class,
-    ccl_device_preferred_group
-
-} device_comm_split_attr_id;
-
-typedef struct {
-    ccl_host_comm_attr_t core;
-
-    unsigned char data[];
-} ccl_device_comm_split_attr_t;
-
 #endif //MULTI_GPU_SUPPORT

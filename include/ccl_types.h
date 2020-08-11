@@ -199,17 +199,6 @@ typedef struct {
     int version;
 } ccl_comm_attr_versioned_t;
 
-/** Host attributes
- *
- */
-typedef enum {
-    ccl_host_color,
-    ccl_host_version
-
-} ccl_comm_split_attributes;
-
-typedef ccl_comm_attr_versioned_t ccl_host_comm_attr_t;
-
 typedef struct {
     /* Size of single element */
     size_t size;
