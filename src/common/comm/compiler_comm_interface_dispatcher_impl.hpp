@@ -1,6 +1,4 @@
 #pragma once
-#include "common/comm/comm_attributes.hpp"
-
 #include "common/comm/compiler_comm_interface_dispatcher.hpp"
 
 #include "common/comm/comm_interface.hpp"

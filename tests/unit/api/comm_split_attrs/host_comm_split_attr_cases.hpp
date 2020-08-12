@@ -11,6 +11,7 @@
 #include "ccl_comm_split_attr.hpp"
 
 // Core file with PIMPL implementation
+#include "common/comm/comm_split_common_attr.hpp"
 #include "comm_split_attr_impl.hpp"
 
 #undef protected
@@ -96,17 +97,34 @@ TEST(host_comm_split_attr, copy_host_comm_split_attr)
 
 TEST(host_comm_split_attr, move_host_comm_split_attr)
 {
-    auto attr = ccl::create_comm_split_attr();
-    attr.set<ccl::ccl_comm_split_attributes::color>(667);
+    /* move constructor test */
+    auto orig_attr = ccl::create_comm_split_attr(
+                        ccl::attr_arg<ccl::ccl_comm_split_attributes::color>(667)
+                     );
 
-    auto original_inner_impl_ptr = attr.get_impl().get();
+    auto orig_inner_impl_ptr = orig_attr.get_impl().get();
+    auto moved_attr = (std::move(orig_attr));
+    auto moved_inner_impl_ptr = moved_attr.get_impl().get();
 
-    auto attr2 = (std::move(attr));
-    auto moved_inner_impl_ptr = attr2.get_impl().get();
-    ASSERT_EQ(original_inner_impl_ptr, moved_inner_impl_ptr);
-    ASSERT_TRUE(!attr.get_impl());
-    ASSERT_TRUE(attr2.get<ccl::ccl_comm_split_attributes::version>().full != nullptr);
-    ASSERT_EQ(attr2.get<ccl::ccl_comm_split_attributes::color>(), 667);
+    ASSERT_EQ(orig_inner_impl_ptr, moved_inner_impl_ptr);
+    ASSERT_TRUE(!orig_attr.get_impl());
+    ASSERT_TRUE(moved_attr.get<ccl::ccl_comm_split_attributes::version>().full != nullptr);
+    ASSERT_TRUE(moved_attr.is_valid<ccl::ccl_comm_split_attributes::color>());
+    ASSERT_EQ(moved_attr.get<ccl::ccl_comm_split_attributes::color>(), 667);
+
+
+    /* move assignment test*/
+    auto orig_attr2 = ccl::create_comm_split_attr(
+                        ccl::attr_arg<ccl::ccl_comm_split_attributes::color>(123)
+                      );
+
+    auto moved_attr2 = ccl::create_comm_split_attr();
+    moved_attr2 = std::move(orig_attr2);
+
+    ASSERT_TRUE(!orig_attr2.get_impl());
+    ASSERT_TRUE(moved_attr2.is_valid<ccl::ccl_comm_split_attributes::color>());
+    ASSERT_TRUE(moved_attr2.get<ccl::ccl_comm_split_attributes::version>().full != nullptr);
+    ASSERT_EQ(moved_attr2.get<ccl::ccl_comm_split_attributes::color>(), 123);
 }
 
 TEST(host_comm_split_attr, host_comm_split_attr_valid)

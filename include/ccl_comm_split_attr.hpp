@@ -1,11 +1,13 @@
 #pragma once
-#include "common/comm/comm_split_common_attr.hpp"
 
 #ifndef CCL_PRODUCT_FULL
 #error "Do not include this file directly. Please include 'ccl.hpp'"
 #endif
 
 namespace ccl {
+
+class ccl_host_comm_split_attr_impl;
+class ccl_device_comm_split_attr_impl;
 
 /**
  * Host attributes
@@ -25,6 +27,9 @@ public:
      */
     using impl_t = typename impl_value_t::element_type;
 
+    comm_split_attr_t& operator=(comm_split_attr_t&& src);
+    comm_split_attr_t(comm_split_attr_t&& src);
+    comm_split_attr_t(const comm_split_attr_t& src);
     ~comm_split_attr_t();
 
     /**
@@ -47,8 +52,6 @@ public:
 
 private:
     friend class environment;
-    comm_split_attr_t(comm_split_attr_t&& src);
-    comm_split_attr_t(const comm_split_attr_t& src);
     comm_split_attr_t(const typename details::ccl_host_split_traits<ccl_comm_split_attributes, ccl_comm_split_attributes::version>::type& version);
 };
 
@@ -74,6 +77,9 @@ public:
      */
     using impl_t = typename impl_value_t::element_type;
 
+    device_comm_split_attr_t& operator=(device_comm_split_attr_t&& src);
+    device_comm_split_attr_t(device_comm_split_attr_t&& src);
+    device_comm_split_attr_t(const device_comm_split_attr_t& src);
     ~device_comm_split_attr_t();
 
     /**
@@ -96,8 +102,6 @@ public:
 
 private:
     friend class environment;
-    device_comm_split_attr_t(device_comm_split_attr_t&& src);
-    device_comm_split_attr_t(const device_comm_split_attr_t& src);
     device_comm_split_attr_t(const typename details::ccl_device_split_traits<ccl_comm_split_attributes, ccl_comm_split_attributes::version>::type& version);
 };
 

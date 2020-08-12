@@ -9,13 +9,12 @@
 #include "ccl_types.hpp"
 #include "ccl_device_types.hpp"
 #include "ccl_type_traits.hpp"
-#include "ccl_attr.hpp"
 #include "ccl_coll_attr_ids.hpp"
 #include "ccl_coll_attr_ids_traits.hpp"
 #include "ccl_coll_attr.hpp"
 #include "ccl_comm_split_attr_ids.hpp"
 #include "ccl_comm_split_attr_ids_traits.hpp"
-#include "comm_split_attr_t.hpp"
+#include "ccl_comm_split_attr.hpp"
 
 #include "ccl_stream.hpp"
 

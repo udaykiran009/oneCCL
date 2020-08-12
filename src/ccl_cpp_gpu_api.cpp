@@ -5,7 +5,6 @@
 #include "common/global/global.hpp"
 #include "exec/exec.hpp"
 
-#include "common/comm/comm_attributes.hpp"
 #include "common/comm/comm_interface.hpp"
 #include "common/comm/host_communicator/host_communicator.hpp"
 #include "common/comm/l0/gpu_comm_attr.hpp"
