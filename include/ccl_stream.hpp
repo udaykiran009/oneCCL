@@ -15,10 +15,10 @@ namespace ccl {
 /**
  * Stream class
  */
-class stream : public ccl_api_base_movable<stream, direct_access_policy, ccl_stream>
+class stream : public ccl_api_base_copyable<stream, direct_access_policy, ccl_stream>
 {
 public:
-    using base_t = ccl_api_base_movable<stream, direct_access_policy, ccl_stream>;
+    using base_t = ccl_api_base_copyable<stream, direct_access_policy, ccl_stream>;
 
     /**
      * Declare PIMPL type

@@ -41,6 +41,16 @@ CCL_API event::~event()
 {
 }
 
+CCL_API event& event::operator=(event&& src)
+{
+    if (src.get_impl() != this->get_impl())
+    {
+        src.get_impl().swap(this->get_impl());
+        src.get_impl().reset();
+    }
+    return *this;
+}
+
 template <event_attr_id attrId>
 CCL_API const typename details::ccl_api_type_attr_traits<event_attr_id, attrId>::return_type& event::get() const
 {

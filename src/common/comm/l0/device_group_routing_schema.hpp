@@ -5,6 +5,7 @@
 #include "ccl_types.hpp"
 #include "common/utils/enums.hpp"
 #include "common/utils/tuple.hpp"
+#include "supported_topologies.hpp"
 
 using device_group_split_type_names = utils::enum_to_str<ccl::device_group_split_type::last_value>;
 inline std::string to_string(ccl::device_group_split_type type) {

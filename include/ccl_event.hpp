@@ -30,6 +30,8 @@ public:
      */
     using impl_t = typename impl_value_t::element_type;
 
+    event(event&& src);
+    event& operator=(event&& src);
     ~event();
 
     /**
@@ -42,7 +44,6 @@ private:
     friend class environment;
     friend class communicator;
     friend class device_communicator;
-    event(event&& src);
     event(impl_value_t&& impl);
 
     /**

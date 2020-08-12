@@ -16,12 +16,7 @@
 
 namespace ccl
 {
-communicator_interface_ptr communicator_interface_dispatcher::create_communicator_impl(const comm_attr_t& attr)
-{
-    return communicator_interface_ptr(new host_communicator(attr));
-}
 
-#ifdef MULTI_GPU_SUPPORT
 template <class DeviceType,
           typename std::enable_if<not std::is_same<typename std::remove_cv<DeviceType>::type,
                                                    ccl::device_index_type>::value,
@@ -159,5 +154,4 @@ ccl::communicator_interface_dispatcher::create_communicator_impl(DeviceType devi
                                                                  size_t process_idx,                    \
                                                                  const ccl::device_comm_split_attr_t& attr);
 
-#endif //MULTI_GPU_SUPPORT
 }

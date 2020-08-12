@@ -17,13 +17,6 @@ enum device_topology_type {
     //last_value
 };
 
-#define SUPPORTED_HW_TOPOLOGIES_DECL_LIST \
-    ccl::device_group_split_type::thread, ccl::device_group_split_type::process, \
-        ccl::device_group_split_type::cluster
-
-#define SUPPORTED_TOPOLOGY_CLASSES_DECL_LIST \
-    ccl::device_topology_type::ring, ccl::device_topology_type::a2a
-
 using process_id = size_t;
 using host_id = std::string;
 

@@ -81,14 +81,14 @@ ccl::device_index_type host_communicator::get_device_path() const
                                   ccl::unused_index_value};
 }
 
-ccl::communicator_interface::native_device_type_ref host_communicator::get_device()
+ccl::communicator_interface::device_t host_communicator::get_device()
 {
     throw ccl::ccl_error(std::string(__FUNCTION__) + " is not applicable for " +
                              traits::name());
 #ifdef CCL_ENABLE_SYCL
     static ccl::communicator_interface::native_device_type empty;
 #else
-    static ccl::communicator_interface::native_device_type_ref empty;
+    static ccl::communicator_interface::device_t empty;
 #endif
     return empty;
 }

@@ -209,9 +209,9 @@ CCL_API ccl::communicator::device_native_reference_t ccl::communicator::get_devi
     return pimpl->get_device();
 }
 
-CCL_API ccl::device_comm_split_attr_t ccl::communicator::get_device_attr() const
+CCL_API ccl::device_comm_split_attr_t ccl::communicator::get_comm_split_attr() const
 {
-    return pimpl->get_device_attr();
+    return pimpl->get_comm_split_attr();
 }
 #endif
 
