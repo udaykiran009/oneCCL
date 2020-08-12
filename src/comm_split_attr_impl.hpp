@@ -63,6 +63,16 @@ CCL_API comm_split_attr_t::~comm_split_attr_t() noexcept
 {
 }
 
+CCL_API comm_split_attr_t& comm_split_attr_t::operator=(comm_split_attr_t&& src)
+{
+    if (src.get_impl() != this->get_impl())
+    {
+        src.get_impl().swap(this->get_impl());
+        src.get_impl().reset();
+    }
+    return *this;
+}
+
 
 
 template<ccl_comm_split_attributes attrId, class Value>
@@ -107,6 +117,16 @@ CCL_API device_comm_split_attr_t::device_comm_split_attr_t(const typename detail
 
 CCL_API device_comm_split_attr_t::~device_comm_split_attr_t() noexcept
 {
+}
+
+CCL_API device_comm_split_attr_t& device_comm_split_attr_t::operator=(device_comm_split_attr_t&& src)
+{
+    if (src.get_impl() != this->get_impl())
+    {
+        src.get_impl().swap(this->get_impl());
+        src.get_impl().reset();
+    }
+    return *this;
 }
 
 

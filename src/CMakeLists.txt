@@ -96,7 +96,6 @@ set(CCL_SRC
     unordered_coll/unordered_coll.cpp
     common/comm/atl_tag.cpp
     common/comm/comm.cpp
-    common/comm/comm_attributes.cpp
     common/comm/host_communicator/host_communicator.cpp
     common/comm/comm_interface.cpp
     common/datatype/datatype.cpp

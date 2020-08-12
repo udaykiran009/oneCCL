@@ -3,7 +3,6 @@
 #include "common/global/global.hpp"
 #include "exec/exec.hpp"
 
-#include "common/comm/comm_attributes.hpp"
 #include "common/comm/comm_interface.hpp"
 
 #ifdef CCL_ENABLE_SYCL
