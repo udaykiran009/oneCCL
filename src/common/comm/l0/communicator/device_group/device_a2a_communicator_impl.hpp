@@ -16,7 +16,7 @@ device_group_a2a_communicator::allgatherv_impl(const buffer_type* send_buf,
                                                buffer_type* recv_buf,
                                                const size_t* recv_counts,
                                                const ccl::coll_attr* attr,
-                                               ccl::stream::impl_t& stream)
+                                               ccl::stream::impl_value_t& stream)
 {
     throw ccl::ccl_error(std::string(__PRETTY_FUNCTION__) + " - is not implemented");
     return {};
@@ -29,7 +29,7 @@ device_group_a2a_communicator::allgatherv_impl(const buffer_type& send_buf,
                                                buffer_type& recv_buf,
                                                const size_t* recv_counts,
                                                const ccl::coll_attr* attr,
-                                               ccl::stream::impl_t& stream)
+                                               ccl::stream::impl_value_t& stream)
 {
     throw ccl::ccl_error(std::string(__PRETTY_FUNCTION__) + " - is not implemented");
     return {};
@@ -43,7 +43,7 @@ device_group_a2a_communicator::allreduce_impl(const buffer_type* send_buf,
                                               size_t count,
                                               ccl::reduction reduction,
                                               const ccl::coll_attr* attr,
-                                              ccl::stream::impl_t& stream)
+                                              ccl::stream::impl_value_t& stream)
 {
     using namespace native;
 
@@ -126,7 +126,7 @@ device_group_a2a_communicator::allreduce_impl(const buffer_type& send_buf,
                                               size_t count,
                                               ccl::reduction reduction,
                                               const ccl::coll_attr* attr,
-                                              ccl::stream::impl_t& stream)
+                                              ccl::stream::impl_value_t& stream)
 {
     throw ccl::ccl_error(std::string(__PRETTY_FUNCTION__) + " - is not implemented");
     return {};
@@ -140,7 +140,7 @@ device_group_a2a_communicator::alltoall_impl(const buffer_type* send_buf,
                                              buffer_type* recv_buf,
                                              size_t count,
                                              const ccl::coll_attr* attr,
-                                             ccl::stream::impl_t& stream)
+                                             ccl::stream::impl_value_t& stream)
 {
     throw ccl::ccl_error(std::string(__PRETTY_FUNCTION__) + " - is not implemented");
     return {};
@@ -152,7 +152,7 @@ device_group_a2a_communicator::alltoall_impl(const buffer_type& send_buf,
                                              buffer_type& recv_buf,
                                              size_t count,
                                              const ccl::coll_attr* attr,
-                                             ccl::stream::impl_t& stream)
+                                             ccl::stream::impl_value_t& stream)
 {
     throw ccl::ccl_error(std::string(__PRETTY_FUNCTION__) + " - is not implemented");
     return {};
@@ -166,7 +166,7 @@ device_group_a2a_communicator::alltoallv_impl(const buffer_type* send_buf,
                                               buffer_type* recv_buf,
                                               const size_t* recv_counts,
                                               const ccl::coll_attr* attr,
-                                              ccl::stream::impl_t& stream)
+                                              ccl::stream::impl_value_t& stream)
 {
     throw ccl::ccl_error(std::string(__PRETTY_FUNCTION__) + " - is not implemented");
     return {};
@@ -179,7 +179,7 @@ device_group_a2a_communicator::alltoallv_impl(const buffer_type& send_buf,
                                               buffer_type& recv_buf,
                                               const size_t* recv_counts,
                                               const ccl::coll_attr* attr,
-                                              ccl::stream::impl_t& stream)
+                                              ccl::stream::impl_value_t& stream)
 {
     throw ccl::ccl_error(std::string(__PRETTY_FUNCTION__) + " - is not implemented");
     return {};
@@ -193,7 +193,7 @@ device_group_a2a_communicator::bcast_impl(buffer_type* buf,
                                           size_t count,
                                           size_t root,
                                           const ccl::coll_attr* attr,
-                                          ccl::stream::impl_t& stream)
+                                          ccl::stream::impl_value_t& stream)
 {
     throw ccl::ccl_error(std::string(__PRETTY_FUNCTION__) + " - is not implemented");
     return {};
@@ -205,7 +205,7 @@ device_group_a2a_communicator::bcast_impl(buffer_type& buf,
                                           size_t count,
                                           size_t root,
                                           const ccl::coll_attr* attr,
-                                          ccl::stream::impl_t& stream)
+                                          ccl::stream::impl_value_t& stream)
 {
     throw ccl::ccl_error(std::string(__PRETTY_FUNCTION__) + " - is not implemented");
     return {};
@@ -220,7 +220,7 @@ device_group_a2a_communicator::reduce_impl(const buffer_type* send_buf,
                                            ccl::reduction reduction,
                                            size_t root,
                                            const ccl::coll_attr* attr,
-                                           ccl::stream::impl_t& stream)
+                                           ccl::stream::impl_value_t& stream)
 {
     throw ccl::ccl_error(std::string(__PRETTY_FUNCTION__) + " - is not implemented");
     return {};
@@ -234,7 +234,7 @@ device_group_a2a_communicator::reduce_impl(const buffer_type& send_buf,
                                            ccl::reduction reduction,
                                            size_t root,
                                            const ccl::coll_attr* attr,
-                                           ccl::stream::impl_t& stream)
+                                           ccl::stream::impl_value_t& stream)
 {
     throw ccl::ccl_error(std::string(__PRETTY_FUNCTION__) + " - is not implemented");
     return {};
@@ -252,7 +252,7 @@ device_group_a2a_communicator::sparse_allreduce_impl(
                                     value_buffer_type* recv_val_buf, size_t recv_val_count,
                                     ccl::reduction reduction,
                                     const ccl::coll_attr* attr,
-                                    ccl::stream::impl_t& stream)
+                                    ccl::stream::impl_value_t& stream)
 {
     throw ccl::ccl_error(std::string(__PRETTY_FUNCTION__) + " - is not implemented");
     return {};
@@ -268,7 +268,7 @@ device_group_a2a_communicator::sparse_allreduce_impl(
                                     value_buffer_container_type& recv_val_buf, size_t recv_val_count,
                                     ccl::reduction reduction,
                                     const ccl::coll_attr* attr,
-                                    ccl::stream::impl_t& stream)
+                                    ccl::stream::impl_value_t& stream)
 {
     throw ccl::ccl_error(std::string(__PRETTY_FUNCTION__) + " - is not implemented");
     return {};

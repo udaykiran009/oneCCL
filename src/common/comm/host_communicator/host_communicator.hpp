@@ -45,8 +45,8 @@ public:
     ccl::device_group_split_type get_topology_type() const override;
     ccl::device_topology_type get_topology_class() const override;
     ccl::device_index_type get_device_path() const override;
-    ccl::communicator_interface::native_device_type_ref get_device() override;
-    ccl::device_comm_split_attr_t get_device_attr() const override;
+    ccl::communicator_interface::device_t get_device() override;
+    ccl::device_comm_split_attr_t get_comm_split_attr() const override;
 #endif
 
     // collectives algo implementation

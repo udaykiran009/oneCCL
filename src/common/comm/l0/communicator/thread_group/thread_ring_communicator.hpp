@@ -25,12 +25,14 @@ public:
 
     void visit(ccl::gpu_comm_attr& comm_attr) override;
 
-    void barrier(ccl::stream::impl_t& stream) override;
+    void barrier(const barrier_attr_t& attr,
+                 ccl::stream::impl_value_t& op_stream,
+                 const vector_class<event>& deps) override;
 
-    COMM_IMPL_DECLARATION
-    COMM_IMPL_CLASS_DECLARATION
-    COMM_IMPL_SPARSE_DECLARATION
-    COMM_IMPL_SPARSE_CLASS_DECLARATION
+    DEVICE_COMM_IMPL_DECLARATION
+    DEVICE_COMM_IMPL_CLASS_DECLARATION
+    DEVICE_COMM_IMPL_SPARSE_DECLARATION
+    DEVICE_COMM_IMPL_SPARSE_CLASS_DECLARATION
 
 private:
     std::shared_ptr<native::thread_group_context> ctx;

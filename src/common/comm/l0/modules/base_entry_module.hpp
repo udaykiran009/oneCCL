@@ -1,6 +1,7 @@
 #pragma once
 #include "native_device_api/export_api.hpp"
 #include "ccl_type_traits.hpp"
+#include "supported_topologies.hpp"
 #include "common/comm/l0/modules/kernel_functions.hpp"
 
 namespace native

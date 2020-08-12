@@ -40,9 +40,16 @@ struct base_communicator : public ccl::communicator_interface
         return device.get_id();
     }
 
-    ccl::communicator_interface::native_device_type_ref get_device() override
+    ccl::communicator_interface::device_t get_device() override
     {
         return device.get();
+    }
+
+    ccl::communicator_interface::context_t get_context() override
+    {
+        //TODO not implemented
+        throw std::runtime_error(std::string(__PRETTY_FUNCTION__) + " - not implemented");
+        return context_t{};
     }
 
     ccl::comm_attr_t get_comm_split_attr() const override
@@ -50,7 +57,7 @@ struct base_communicator : public ccl::communicator_interface
         return std::static_pointer_cast<ccl::ccl_comm_split_attr>(comm_attr);
     }
 
-    ccl::device_comm_split_attr_t get_device_attr() const override
+    const ccl::device_comm_split_attr_t& get_comm_split_attr() const override
     {
         return comm_attr;
     }

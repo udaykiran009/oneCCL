@@ -1,5 +1,6 @@
 #pragma once
 #include "ccl_types.hpp"
+#include "ccl_comm_split_attr_ids_traits.hpp"
 
 namespace ccl {
 

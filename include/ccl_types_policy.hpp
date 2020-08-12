@@ -88,7 +88,7 @@ struct direct_access_policy
     static void create(ccl_api_t *dst, const ccl_api_t& src)
     {
         static_assert( std::is_same<typename ccl_api_t::acc_policy_t, self_t>::value, "ccl_api_t is not provide 'copy_on_write_access_policy'");
-        dst->get_impl().reset(new T(*src.get_impl().get()));
+        dst->get_impl() = src.get_impl().get();
     }
 
     template<class ccl_api_t>
