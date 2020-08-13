@@ -312,34 +312,40 @@ TEST_F(bcast_one_device_local_fixture, bcast_one_device_multithread_kernel) {
         index++;
     }
 
-    //printout
-    output << "Send memory:" << std::endl;
-    memory_storage.dump_by_index(output, 0 /*recv_mem*/);
-    output << "\nRecv memory:" << std::endl;
-    memory_storage.dump_by_index(output, 1 /*recv_mem*/);
-
-    /*int equal = 1;
-    auto& root_buf = memory_storage.per_thread_storage.find(root)->second.front();
-
-    for (size_t thread_idx = 0; thread_idx < num_thread; thread_idx++)
-    {
-        if (thread_idx != root)
-        {
-            auto& mem_buf = memory_storage.per_thread_storage.find(thread_idx)->second.front();
-            for (size_t i = 0; i < buffer_size; i++)
-            {
-                if (root_buf[i] != mem_buf[i])
-                {
-                    equal = 0;
-                    break;
+    size_t corr_val = 0;
+    try {
+        for (auto& idx_kernel : thread_kernels) {
+            size_t thread_idx = idx_kernel.first;
+            auto lambda = [&corr_val](const size_t root,
+                                      size_t thread_idx,
+                                      size_t buffer_size,
+                                      native_type value) -> bool {
+                if (thread_idx != root) {
+                    corr_val++;
+                    if (corr_val > buffer_size)
+                        corr_val = 1;
+                    if (value != corr_val)
+                        return false;
                 }
-            }
-            if (!equal) {
-                printf("Wrong results! Test FAILED\n");
-                break;
-            }
-        }  
-    }*/
+                return true;
+            };
+
+            memory_storage.check_results(
+                thread_idx, output, 1, lambda, root, thread_idx, buffer_size);
+        }
+    }
+    catch (check_on_exception& ex) {
+        output << "Check results: \n";
+        //printout
+        output << "Send memory:" << std::endl;
+        memory_storage.dump_by_index(output, 0 /*send_mem*/);
+        output << "\nRecv memory:" << std::endl;
+        memory_storage.dump_by_index(output, 1 /*recv_mem*/);
+
+        std::stringstream ss;
+        ss << ex.what() << ", But expected: " << corr_val << std::endl;
+        UT_ASSERT(false, ss.str());
+    }
 }
 
 } // namespace bcast_singledevice_case

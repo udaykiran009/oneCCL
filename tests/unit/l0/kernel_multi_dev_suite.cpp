@@ -1,6 +1,7 @@
 #include "base.hpp"
 #include "fixture.hpp"
 #include "kernels/allreduce_multidevice_test.hpp"
+#include "kernels/bcast_multidevice_test.hpp"
 
 int main(int ac, char* av[]) {
     set_test_device_indices(getenv("L0_CLUSTER_AFFINITY_MASK"));

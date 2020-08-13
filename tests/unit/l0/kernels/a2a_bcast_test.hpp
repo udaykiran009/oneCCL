@@ -3,25 +3,26 @@
 #include <sstream>
 
 #define HOST_CTX
-#include "kernels/a2a_helpers.h"
+
+#include "a2a_bcast_fixture.hpp"
 
 /**
  * Add custom types support into native::memory example
  */
 /* 1) Describe new type traits */
-namespace ccl {
-template <>
-struct native_type_info<a2a_gpu_comm_data_float> {
-    static constexpr bool is_supported = true;
-    static constexpr bool is_class = true;
-};
-} // namespace ccl
+// namespace ccl {
+// template <>
+// struct native_type_info<a2a_gpu_comm_data_float> {
+//     static constexpr bool is_supported = true;
+//     static constexpr bool is_class = true;
+// };
+// } // namespace ccl
 /* 2) Include explicit definition for native::memory */
 #include "native_device_api/l0/primitives_impl.hpp"
 
 /* 3) just use it! */
 
-namespace allreduce_singledevice_case {
+namespace a2a_bcast_singledevice_case {
 
 // test case data
 static const size_t buffer_size = 512;
@@ -29,14 +30,14 @@ static const size_t num_thread = 4;
 
 using native_type = float;
 
-static constexpr size_t mem_group_count = 3;
-static constexpr size_t a2a_mem_group_count = 2;
+static constexpr size_t mem_group_count = 2;
+static constexpr size_t a2a_mem_group_count = 1;
 static constexpr size_t flag_group_count = 3;
 
-TEST_F(allreduce_one_device_local_fixture, a2a_allreduce_one_device_multithread_kernel) {
+TEST_F(a2a_bcast_one_device_local_fixture, a2a_bcast_one_device_multithread_kernel) {
     using namespace native;
 
-    create_module_descr("kernels/a2a_allreduce.spv", true);
+    create_module_descr("kernels/a2a_bcast.spv", true);
 
     handles_storage<native_type> memory_storage(42 * num_thread);
     handles_storage<int> flags_storage(42 * num_thread);
@@ -62,6 +63,7 @@ TEST_F(allreduce_one_device_local_fixture, a2a_allreduce_one_device_multithread_
     // allocate device memory
     auto dev_it = driver.devices.begin();
     ccl_device& device = *dev_it->second;
+    size_t root = 2;
 
     for (size_t thread_idx = 0; thread_idx < num_thread; thread_idx++) {
         thread_indices.push_back(thread_idx);
@@ -74,28 +76,30 @@ TEST_F(allreduce_one_device_local_fixture, a2a_allreduce_one_device_multithread_
             comm_param_storage[thread_idx].push_back(rank_idx);
             comm_param_storage[thread_idx].push_back(rank_size);
             comm_param_storage[thread_idx].push_back(elem_count);
+            comm_param_storage[thread_idx].push_back(root);
 
             //allocate flags & memory
             // memory
             auto mem_send = device.alloc_memory<native_type>(buffer_size, sizeof(native_type));
             auto mem_recv = device.alloc_memory<native_type>(buffer_size, sizeof(native_type));
-            auto temp_recv =
-                device.alloc_memory<native_type>(buffer_size / num_thread, sizeof(native_type));
+            //auto temp_recv = device.alloc_memory<native_type>(buffer_size, sizeof(native_type));
 
-            mem_send.enqueue_write_sync(send_values);
+            if (thread_idx == root) {
+                mem_send.enqueue_write_sync(send_values);
+            }
+            else {
+                mem_send.enqueue_write_sync(recv_values);
+            }
+
             mem_recv.enqueue_write_sync(recv_values);
-            temp_recv.enqueue_write_sync(recv_values.begin(),
-                                         recv_values.begin() + buffer_size / num_thread);
+            //temp_recv.enqueue_write_sync(recv_values);
 
             /* fill array in specific order
              * Left: l_send, l_recv, l_tmp_recv, r_tmp_recv
              * Right: r_send, r_recv, r_tmp_recv, l_tmp_recv
              */
-            memory_storage.register_shared_data(thread_idx,
-                                                num_thread,
-                                                std::move(mem_send),
-                                                std::move(mem_recv),
-                                                std::move(temp_recv));
+            memory_storage.register_shared_data(
+                thread_idx, num_thread, std::move(mem_send), std::move(mem_recv));
 
             // flags
             auto left_wrote_2_me_flag = device.alloc_memory<int>(1, sizeof(int));
@@ -118,7 +122,7 @@ TEST_F(allreduce_one_device_local_fixture, a2a_allreduce_one_device_multithread_
         catch (const std::exception& ex) {
             UT_ASSERT(
                 false,
-                "Cannot allocate memory for thread: %" << thread_idx << "\nError: " << ex.what());
+                "Cannot allocate memory for thread: " << thread_idx << "\nError: " << ex.what());
         }
     }
 
@@ -129,7 +133,7 @@ TEST_F(allreduce_one_device_local_fixture, a2a_allreduce_one_device_multithread_
 
     //get handles for A2A
     typename handles_storage<native_type>::thread_handles_container rank_mem =
-        memory_storage.collect_handles_by_index({ 2 });
+        memory_storage.collect_handles_by_index({ 1 });
     typename handles_storage<int>::thread_handles_container rank_flags =
         flags_storage.collect_handles_by_index({ 0, 1 });
 
@@ -152,7 +156,7 @@ TEST_F(allreduce_one_device_local_fixture, a2a_allreduce_one_device_multithread_
 
     //prepare kernels in multithreading environment
     ze_kernel_desc_t desc = { ZE_KERNEL_DESC_VERSION_CURRENT, ZE_KERNEL_FLAG_NONE };
-    desc.pKernelName = "allreduce_execution_float";
+    desc.pKernelName = "bcast_execution_float";
     std::map<size_t, ze_kernel_handle_t> thread_kernels;
     std::map<size_t, ccl_device::device_queue> thread_queue;
     std::map<size_t, ccl_device::device_cmd_list> thread_cmd_list;
@@ -221,7 +225,7 @@ TEST_F(allreduce_one_device_local_fixture, a2a_allreduce_one_device_multithread_
 
                 // bind rank, size, buffer_size
                 size_t i = 0;
-                std::array<int, 3> comm_offset{ 0, 1, 2 };
+                std::array<int, 4> comm_offset{ 0, 1, 2, 5 };
                 UT_ASSERT(comm_offset.size() == comm_handles.size(), "comm_offset != comm_handles");
                 for (auto& comm : comm_handles) {
                     out << "index: " << comm_offset[i] << ": " << comm << std::endl;
@@ -238,7 +242,7 @@ TEST_F(allreduce_one_device_local_fixture, a2a_allreduce_one_device_multithread_
 
                 // bind l_send, l_recv, l_tmp, , , r_tmp
                 i = 0;
-                std::array<int, a2a_mem_group_count> mem_offset{ 3, 4 };
+                std::array<int, a2a_mem_group_count> mem_offset{ 3 };
                 //UT_ASSERT(mem_offset.size() == mem_handles.size(), "mem_offset != mem_handles");
                 out << "thread_idx: " << thread_idx << ", mem_handles: \n";
                 for (auto& mem : mem_handles) {
@@ -258,7 +262,7 @@ TEST_F(allreduce_one_device_local_fixture, a2a_allreduce_one_device_multithread_
                 out << std::endl;
 
                 {
-                    int a2a_comm_offset = 5;
+                    int a2a_comm_offset = 4;
                     out << "index: " << a2a_comm_offset << ": " << a2a_comm_handle.handle
                         << std::endl;
                     result = zeKernelSetArgumentValue(kernel,
@@ -338,11 +342,39 @@ TEST_F(allreduce_one_device_local_fixture, a2a_allreduce_one_device_multithread_
         index++;
     }
 
-    //printout
-    output << "Send memory:" << std::endl;
-    memory_storage.dump_by_index(output, 0 /*secv_mem*/);
-    output << "\nRecv memory:" << std::endl;
-    memory_storage.dump_by_index(output, 1 /*recv_mem*/);
-    //flags_storage.dump(output);
+    size_t corr_val = 0;
+    try {
+        for (auto& idx_kernel : thread_kernels) {
+            size_t thread_idx = idx_kernel.first;
+            auto lambda = [&corr_val](const size_t root,
+                                      size_t thread_idx,
+                                      size_t buffer_size,
+                                      native_type value) -> bool {
+                if (thread_idx != root) {
+                    corr_val++;
+                    if (corr_val > buffer_size)
+                        corr_val = 1;
+                    if (value != corr_val)
+                        return false;
+                }
+                return true;
+            };
+
+            memory_storage.check_results(
+                thread_idx, output, 1, lambda, root, thread_idx, buffer_size);
+        }
+    }
+    catch (check_on_exception& ex) {
+        output << "Check results: \n";
+        //printout
+        output << "Send memory:" << std::endl;
+        memory_storage.dump_by_index(output, 0 /*send_mem*/);
+        output << "\nRecv memory:" << std::endl;
+        memory_storage.dump_by_index(output, 1 /*recv_mem*/);
+
+        std::stringstream ss;
+        ss << ex.what() << ", But expected: " << corr_val << std::endl;
+        UT_ASSERT(false, ss.str());
+    }
 }
-} // namespace allreduce_singledevice_case
+} // namespace a2a_bcast_singledevice_case
