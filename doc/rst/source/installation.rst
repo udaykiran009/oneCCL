@@ -123,7 +123,7 @@ Binary releases are available on our release page.
 Installation using tar.gz
 *************************
 
-To install |product_short| using the |tgz_file| in a user mode, execute the following commands:
+To install |product_short| using the |tgz_file|_ in a user mode, execute the following commands:
 
 .. prompt:: bash
 
