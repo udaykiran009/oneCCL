@@ -39,7 +39,6 @@ case "$ccl_configuration" in
         ;;
 esac
 export CCL_CONFIGURATION=${ccl_configuration}
-export I_MPI_LIBRARY_KIND="release_mt"
 
 CCL_ATL_TRANSPORT_PATH="${CCL_ROOT}/lib/${ccl_configuration}"; export CCL_ATL_TRANSPORT_PATH
 
