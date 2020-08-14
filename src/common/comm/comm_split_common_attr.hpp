@@ -155,7 +155,7 @@ public:
      */
     constexpr typename group_traits_t::type get_default_group_type() const
     {
-        return group_traits_t::type::thread;    // host-specific value (ccl_group_split_type)
+        return group_traits_t::type::cluster;    // host-specific value (ccl_group_split_type)
     }
 
     ccl_host_comm_split_attr_impl(const typename version_traits_t::type& version) :
@@ -199,7 +199,7 @@ public:
      */
     constexpr typename group_traits_t::type get_default_group_type() const
     {
-        return group_traits_t::type::thread;    // device-specific value (ccl_device_group_split_type)
+        return group_traits_t::type::cluster;    // device-specific value (ccl_device_group_split_type)
     }
 
     ccl_device_comm_split_attr_impl(const typename version_traits_t::type& version) :
