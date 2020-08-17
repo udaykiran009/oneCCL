@@ -24,7 +24,8 @@ excluded=".git
 ./ccl_public
 ./ccl_oneapi
 ./examples/level_zero
-./src/kernels"
+./src/kernels
+./tests/unit"
 
 count=0
 mkdir -p $dstdir
@@ -50,7 +51,7 @@ do
         dstfile=$srcfile
         echo $dstfile
         echo "new" $dstfile
-        cp --parents $srcfile $dstdir
+        cp -P --parents $srcfile $dstdir
     fi
     count=0
 done

@@ -20,6 +20,7 @@ else
         grep -v googletest | \
         grep -v "ofi/include"| \
         grep -v "mpi/include" | \
+        grep -v "scripts/copyright" | \
         grep -P ".*\.(c|cpp|h|hpp|cl|i)$")
     do 
         clang-format -style=file -i $filename
