@@ -13,7 +13,7 @@ print_help()
     echo ""
 }
 
-WORK_DIR="$(cd "$( dirname "${BASH_SOURCE[0]}" )" > /dev/null && pwd)"
+WORK_DIR="$(cd "$( dirname "${BASH_SOURCE[0]:-$0}" )" > /dev/null && pwd)"
 export CCL_ROOT="$(cd ${WORK_DIR}/../; pwd -P)"
 
 if [ -z ${CCL_CONFIGURATION} ]
