@@ -41,7 +41,7 @@ public:
     using ccl_context_t = typename unified_device_context_type::ccl_native_t;
 
 
-    using request_t = unique_ptr_class<request>;
+    using request_t = ccl::request_t;
     using coll_request_t = request_t;
 
     device_communicator(device_communicator&& src);
@@ -371,8 +371,8 @@ public:
     request_t alltoall(const BufferObjectType& send_buf,
                        BufferObjectType& recv_buf,
                        size_t count,
-                       stream op_stream,
                        const alltoall_attr_t& attr/* = alltoall_attr_t()*/,
+                       stream op_stream,
                        const vector_class<event>& deps = {});
 
     /**
@@ -849,7 +849,7 @@ public:
                                const vector_class<event>& deps = {});
 private:
     friend class environment;
-
+    friend class comm_group;
     device_communicator(impl_value_t&& impl);
 };
 

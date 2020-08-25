@@ -26,25 +26,6 @@ std::ostream& operator<<(std::ostream& out, const ccl::device_index_type& index)
 namespace ccl
 {
 
-struct group_context
-{
-    /* TODO
-     * In multithreading scenario we use different comm_group_t objects in different threads.
-     * But we need to match different groups created for the same world in different threads
-     * The assumption is done: if different groups created from the same communicator color, than they
-     * should be interpreted as the same groups in the same world.
-     *
-     *
-     * In the final solution the 'group_unique_key' should be equal to unique KVS idenditifier
-     */
-    using group_unique_key = typename ccl::ccl_host_attributes_traits<ccl_host_color>::type;
-    std::map<group_unique_key, comm_group_t> communicator_group_map;
-
-    ccl_spinlock mutex;
-};
-
-group_context global_ctx;
-}
 
 /* GPU communicator attributes
  */

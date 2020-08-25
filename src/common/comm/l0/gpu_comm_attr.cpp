@@ -3,6 +3,11 @@
 #include "common/comm/comm_interface.hpp"
 #include "common/comm/l0/context/process_group_ctx.hpp"
 
+#if 1
+    #include "../tests/unit/api/stubs/host_communicator.hpp"
+#else
+    #include "common/comm/host_communicator/host_communicator.hpp"
+#endif
 
 
 namespace ccl
@@ -20,15 +25,15 @@ std::string context_comm_addr::to_string() const
 
 thread_local size_t gpu_comm_attr::thread_id = 0;
 
-gpu_comm_attr::gpu_comm_attr(std::shared_ptr<communicator> parent_comm, size_t thread_group_size, size_t process_device_size)
+gpu_comm_attr::gpu_comm_attr(std::shared_ptr<host_communicator> parent_comm, size_t thread_count, size_t process_device_size)
  :ccl_communicator(parent_comm),
-  expected_threads_count(process_device_size/ thread_group_size),
+  expected_threads_count(thread_count),
   expected_process_device_size(process_device_size)
 {
     ctx = std::make_shared<native::process_group_context>(ccl_communicator);
 }
 
-std::shared_ptr<communicator> gpu_comm_attr::get_host_communicator()
+std::shared_ptr<host_communicator> gpu_comm_attr::get_host_communicator()
 {
     return ccl_communicator;
 }
@@ -63,7 +68,7 @@ gpu_comm_attr::~gpu_comm_attr()
 }
 
 
-bool gpu_comm_attr::sync_register_communicator(std::shared_ptr<communicator_interface> comm)
+bool gpu_comm_attr::sync_register_communicator(communicator_interface* comm)
 {
     if (!delegate_sync_register_communicator(comm))
     {
@@ -81,7 +86,7 @@ bool gpu_comm_attr::sync_register_communicator(std::shared_ptr<communicator_inte
     return true;
 }
 
-bool gpu_comm_attr::delegate_sync_register_communicator(std::shared_ptr<communicator_interface>& comm)
+bool gpu_comm_attr::delegate_sync_register_communicator(communicator_interface* comm)
 {
     ccl::device_indices_t device_group_indices;
 
@@ -149,7 +154,7 @@ bool gpu_comm_attr::delegate_sync_register_communicator(std::shared_ptr<communic
         //flush cache
         auto ready_count = std::count_if(thread_communicators.begin(), thread_communicators.end(),
                                          [](const std::pair<size_t,
-                                                            ccl::communicator_interface_ptr>& comm)
+                                                            communicator_interface*>& comm)
                                          {
                                              return comm.second->is_ready();
                                          });

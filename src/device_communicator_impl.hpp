@@ -205,6 +205,9 @@ ccl::device_communicator::allgatherv(const BufferObjectType& send_buf,
                          stream op_stream,
                          const vector_class<event>& deps)
 {
+     return pimpl->allgatherv(send_buf, send_count, recv_buf, recv_counts,
+                            attr,
+                            op_stream.get_impl(), deps);
 }
 
 template <class BufferObjectType,
@@ -218,6 +221,9 @@ ccl::device_communicator::allgatherv(const BufferObjectType& send_buf,
                          stream op_stream,
                          const vector_class<event>& deps)
 {
+        return pimpl->allgatherv(send_buf, send_count, recv_bufs, recv_counts,
+                            attr,
+                            op_stream.get_impl(), deps);
 }
 
 /* allreduce */
@@ -331,8 +337,8 @@ ccl::device_communicator::request_t CCL_API
 ccl::device_communicator::alltoall(const BufferObjectType& send_buf,
                        BufferObjectType& recv_buf,
                        size_t count,
-                       stream op_stream,
                        const alltoall_attr_t& attr/* = alltoall_attr_t()*/,
+                       stream op_stream,
                        const vector_class<event>& deps)
 {
     return pimpl->alltoall(send_buf, recv_buf, count, attr,

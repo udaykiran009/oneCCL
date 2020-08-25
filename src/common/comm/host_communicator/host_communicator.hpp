@@ -6,10 +6,14 @@ class host_communicator :
 {
 public:
     friend class ccl::environment;
+    friend class ccl::comm_group;
+    friend class ccl::group_context;
+
     using base_t = ccl::communicator_interface;
     using traits = ccl::host_communicator_traits;
 
     host_communicator(const ccl::comm_attr_t& attr);
+    host_communicator(std::shared_ptr<ccl_comm> impl);
 
     bool is_ready() const override;
 

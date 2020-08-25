@@ -2,6 +2,8 @@
 #include "common/comm/comm.hpp"
 #include "common/global/global.hpp"
 #include "sched/sched.hpp"
+#include "ccl_types.hpp"
+#include "ccl_kvs.hpp"
 
 ccl_comm::ccl_comm(size_t rank,
                    size_t size,
@@ -15,9 +17,38 @@ ccl_comm::ccl_comm(size_t rank,
                    ccl_rank2rank_map&& rank_map) :
     m_id(std::move(id)),
     m_local2global_map(std::move(rank_map)),
-    m_dtree(size, rank)
+    m_dtree(size, rank),
+    thread_number(1),
+    on_process_ranks_number(1)
 {
     reset(rank, size);
+}
+
+//TODO non-implemented
+ccl_comm::ccl_comm(const std::vector<size_t> &local_thread_device_ranks, size_t cluster_devices_count,
+             std::shared_ptr<ccl::kvs_interface> kvs_instance, ccl_comm_id_storage::comm_id&& id) :
+             m_id(std::move(id)),
+             m_local2global_map(),
+             m_dtree(local_thread_device_ranks.size(), cluster_devices_count)
+{
+    //TODO use multithreaded  atl_init
+    //...
+
+    //TODO rude simulation of multi-thread barrier
+    static std::atomic<size_t> thread_counter{};
+    static std::atomic<size_t> thread_ranks_counter{};
+
+    thread_counter.fetch_add(1);       //calc entered threads
+    thread_ranks_counter.fetch_add(local_thread_device_ranks.size());   //calc total thread device ranks
+
+    std::this_thread::sleep_for(std::chrono::seconds(30));  //simulate barrier
+
+    thread_number = thread_counter.load();     // obtain total thread count
+    on_process_ranks_number = thread_ranks_counter.load();   // obtain total thread ranks
+
+    // recharge counters again
+    thread_counter.store(0);
+    thread_ranks_counter.store(0);
 }
 
 static ccl_status_t ccl_comm_exchange_colors(std::vector<int>& colors)
@@ -50,7 +81,7 @@ ccl_comm* ccl_comm::create_with_color(int color,
     {
         throw ccl::ccl_error("MPI transport doesn't support creation of communicator with color yet");
     }
-    
+
     ccl_status_t status = ccl_status_success;
 
     std::vector<int> colors(global_comm->size());

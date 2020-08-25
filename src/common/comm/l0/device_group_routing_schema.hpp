@@ -7,18 +7,6 @@
 #include "common/utils/tuple.hpp"
 #include "supported_topologies.hpp"
 
-using device_group_split_type_names = utils::enum_to_str<ccl::device_group_split_type::last_value>;
-inline std::string to_string(ccl::device_group_split_type type)
-{
-    return device_group_split_type_names({"TG", "PG", "CG",}).choose(type, "INVALID_VALUE");
-}
-
-using device_topology_type_names = utils::enum_to_str<ccl::device_topology_type::last_class_value>;
-inline std::string to_string(ccl::device_topology_type class_value)
-{
-    return device_topology_type_names({"RING_CLASS", "A2A_CLASS"}).choose(class_value, "INVALID_VALUE");
-}
-
 template<ccl::device_group_split_type schema_id, ccl::device_topology_type class_id>
 struct topology_addr
 {

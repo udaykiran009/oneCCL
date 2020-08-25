@@ -2,6 +2,7 @@
 
 #include <array>
 #include <functional>
+#include <list>
 #include <memory>
 #include <mutex>
 #include <string>
@@ -22,10 +23,16 @@ using string_class = std::string;
 template <class R, class... ArgTypes>
 using function_class = std::function<R(ArgTypes...)>;
 
+template <class T, class Allocator = std::allocator<T>>
+using list_class = std::list<T, Allocator>;
+
 using mutex_class = std::mutex;
 
 template <class T1, class T2>
 using pair_class = std::pair<T1, T2>;
+
+template <class T>
+using reference_wrapper_class = std::reference_wrapper<T>;
 
 template <class... Types>
 using tuple_class = std::tuple<Types...>;

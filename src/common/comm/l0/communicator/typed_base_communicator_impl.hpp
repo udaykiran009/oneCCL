@@ -1,5 +1,5 @@
 #pragma once
-#include "ccl.hpp"
+#include "ccl_types.hpp"
 #include "ccl_type_traits.hpp"
 #include "common/comm/l0/communicator/typed_base_communicator.hpp"
 #include "common/comm/l0/gpu_comm_attr.hpp"

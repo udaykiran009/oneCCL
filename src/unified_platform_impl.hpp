@@ -3,6 +3,8 @@
 #include "ccl_type_traits.hpp"
 #include "common/log/log.hpp"
 
+namespace ccl
+{
 #ifdef CCL_ENABLE_SYCL
 
 
@@ -41,3 +43,4 @@ const generic_platform_type<CCL_ENABLE_SYCL_FALSE>::ccl_native_t&
 }
 
 #endif
+}

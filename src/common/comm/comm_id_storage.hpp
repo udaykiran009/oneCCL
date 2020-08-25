@@ -66,6 +66,11 @@ public:
             return id;
         }
 
+        //TODO
+        comm_id clone()
+        {
+            return comm_id(id_storage.get(), id);
+        }
     private:
         std::reference_wrapper<ccl_comm_id_storage> id_storage;
         ccl_comm_id_t id;

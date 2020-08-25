@@ -6,28 +6,26 @@
 #include "supported_topologies.hpp"
 #include "communicator_traits.hpp"
 
-#ifdef MULTI_GPU_SUPPORT
-class gpu_comm_attr;
-#endif
-
 namespace native
 {
     struct ccl_device;
 }
 namespace ccl
 {
-
+#ifdef MULTI_GPU_SUPPORT
+class gpu_comm_attr;
+#endif
 struct communicator_interface;
 class device_comm_split_attr_t;
 
-using communicator_interface_ptr = std::shared_ptr<communicator_interface>;
+using communicator_interface_ptr = std::unique_ptr<communicator_interface>;
 
 struct communicator_interface_dispatcher
 {
     using device_t = typename ccl::unified_device_type::ccl_native_t;
     using context_t = typename ccl::unified_device_context_type::ccl_native_t;
 
-    virtual void visit(gpu_comm_attr& comm_attr) = 0;
+    virtual void visit(ccl::gpu_comm_attr& comm_attr) = 0;
     virtual ccl::device_index_type get_device_path() const = 0;
     virtual device_t get_device() = 0;
     virtual context_t get_context() = 0;

@@ -26,7 +26,7 @@
 namespace native
 {
 
-process_group_context::process_group_context(std::shared_ptr<ccl::communicator> comm) :
+process_group_context::process_group_context(std::shared_ptr<host_communicator> comm) :
     ccl_communicator(comm),
     thread_group_ctx(new thread_group_context),
     gpu_device_storage(new device_storage)
@@ -163,7 +163,7 @@ std::shared_ptr<process_group_context::ring_topology>& process_group_context::ge
 }
 */
 
-std::shared_ptr<ccl::communicator> process_group_context::get_communicator()
+std::shared_ptr<host_communicator> process_group_context::get_communicator()
 {
     return ccl_communicator;
 }
