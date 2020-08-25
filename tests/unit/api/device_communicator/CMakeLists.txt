@@ -45,6 +45,11 @@ set (dependencies_sources
              "${PROJECT_SOURCE_DIR}/src/common/log/log.cpp"
              "${PROJECT_SOURCE_DIR}/src/common/event/event.cpp"
              "${PROJECT_SOURCE_DIR}/src/common/stream/stream.cpp"
+             "${PROJECT_SOURCE_DIR}/src/common/comm/comm.cpp"
+             "${PROJECT_SOURCE_DIR}/src/common/comm/comm_interface.cpp"
+             "${PROJECT_SOURCE_DIR}/src/common/comm/l0/comm_context_storage.cpp"
+             "${PROJECT_SOURCE_DIR}/src/common/comm/l0/comm_context.cpp"
+             "${PROJECT_SOURCE_DIR}/src/common/comm/l0/gpu_comm_attr.cpp"
              "${PROJECT_SOURCE_DIR}/src/native_device_api/l0/base.cpp"
              "${PROJECT_SOURCE_DIR}/src/native_device_api/l0/device.cpp"
              "${PROJECT_SOURCE_DIR}/src/native_device_api/l0/driver.cpp"
@@ -53,9 +58,20 @@ set (dependencies_sources
              "${PROJECT_SOURCE_DIR}/src/native_device_api/l0/subdevice.cpp"
              "${PROJECT_SOURCE_DIR}/src/native_device_api/l0/primitives.cpp"
              "${PROJECT_SOURCE_DIR}/src/native_device_api/l0/utils.cpp"
+             "${PROJECT_SOURCE_DIR}/src/ccl_cpp_utils.cpp"
              "${PROJECT_SOURCE_DIR}/tests/unit/api/stubs/spinlock.cpp"
              "${PROJECT_SOURCE_DIR}/tests/unit/api/stubs/kvs.cpp"
-             "${PROJECT_SOURCE_DIR}/tests/unit/api/stubs/request.cpp")
+             "${PROJECT_SOURCE_DIR}/tests/unit/api/stubs/request.cpp"
+             "${PROJECT_SOURCE_DIR}/tests/unit/api/stubs/host_communicator.cpp"
+             "${PROJECT_SOURCE_DIR}/tests/unit/api/stubs/device_topology_communicator.cpp"
+             "${PROJECT_SOURCE_DIR}/tests/unit/api/stubs/thread_topology_communicator.cpp"
+             "${PROJECT_SOURCE_DIR}/tests/unit/api/stubs/process_topology_communicator.cpp"
+             "${PROJECT_SOURCE_DIR}/tests/unit/api/stubs/process_group_context.cpp"
+             "${PROJECT_SOURCE_DIR}/tests/unit/api/stubs/global.cpp"
+             "${PROJECT_SOURCE_DIR}/tests/unit/api/stubs/env.cpp"
+             "${PROJECT_SOURCE_DIR}/tests/unit/api/stubs/cache.cpp"
+             "${PROJECT_SOURCE_DIR}/tests/unit/api/stubs/ccl.cpp"
+             "${PROJECT_SOURCE_DIR}/tests/unit/api/stubs/datatype.cpp")
 
 set(CCL_MAJOR_VERSION     "0")
 set(CCL_MINOR_VERSION     "0")

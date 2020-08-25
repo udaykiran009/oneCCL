@@ -32,19 +32,6 @@ ccl_status_t ccl_finalize()
     COMMON_CATCH_BLOCK();
 }
 
-#ifdef MULTI_GPU_SUPPORT
-ccl_status_t CCL_API ccl_set_device_comm_split_attr(ccl_device_comm_split_attr_t* comm_attr, unsigned long attribute, ...)
-{
-    if (!comm_attr)
-    {
-        return ccl_status_invalid_arguments;
-    }
-
-    //TODO
-    return ccl_status_invalid_arguments;
-}
-#endif //MULTI_GPU_SUPPORT
-
 ccl_status_t CCL_API ccl_get_version(ccl_version_t* version)
 {
     if (!version)

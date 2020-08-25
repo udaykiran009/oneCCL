@@ -8,15 +8,19 @@
 #include "common/comm/l0/device_group_routing_schema.hpp"
 #include "common/comm/l0/context/context_barrier.hpp"
 
-namespace native {
-struct process_group_context;
-struct thread_group_context;
-} // namespace native
+namespace native
+{
+    struct process_group_context;
+    struct thread_group_context;
+}
 
-namespace ccl {
-class communicator;
+class host_communicator;
+namespace ccl
+{
+class device_communicator;
 struct communicator_interface;
-struct context_comm_addr {
+struct context_comm_addr
+{
     size_t thread_idx = 0;
     size_t thread_count = 0;
     size_t comm_rank = 0;
@@ -25,7 +29,8 @@ struct context_comm_addr {
     std::string to_string() const;
 };
 
-struct gpu_comm_attr {
+struct gpu_comm_attr
+{
 public:
     friend class device_group_ring_communicator;
     friend class device_group_a2a_communicator;
@@ -35,23 +40,20 @@ public:
     friend class process_a2a_communicator;
     friend class comm_group;
 
-    using thread_comm_storage = std::multimap<size_t, std::shared_ptr<communicator_interface>>;
+    using thread_comm_storage = std::multimap<size_t, communicator_interface*>;
 
-    gpu_comm_attr(std::shared_ptr<ccl::communicator> parent_comm,
-                  size_t thread_group_size,
-                  size_t process_device_size);
+    gpu_comm_attr(std::shared_ptr<host_communicator> parent_comm, size_t thread_count, size_t process_device_size);
     ~gpu_comm_attr();
 
     std::shared_ptr<::native::process_group_context> get_process_context();
     bool sync_group_size(size_t device_group_size);
-    bool sync_register_communicator(std::shared_ptr<communicator_interface> comm);
+    bool sync_register_communicator(communicator_interface* comm);
 
-    std::shared_ptr<ccl::communicator> get_host_communicator();
-
+    std::shared_ptr<host_communicator> get_host_communicator();
 private:
-    bool delegate_sync_register_communicator(std::shared_ptr<communicator_interface>& comm);
+    bool delegate_sync_register_communicator(communicator_interface* comm);
 
-    std::shared_ptr<ccl::communicator> ccl_communicator;
+    std::shared_ptr<host_communicator> ccl_communicator;
     size_t expected_threads_count;
     size_t expected_process_device_size;
     std::shared_ptr<::native::process_group_context> ctx;
@@ -68,4 +70,4 @@ private:
 
     static thread_local size_t thread_id;
 };
-} // namespace ccl
+}

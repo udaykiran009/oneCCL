@@ -111,6 +111,7 @@ public:
      * Implementation is platform specific and non portable.
      * @return host communicator
      */
+    //TODO limitation
     communicator_t create_communicator() const;
 
     /**
@@ -120,6 +121,7 @@ public:
      * @param kvs key-value store for ranks wire-up
      * @return host communicator
      */
+    //TODO limitation
     communicator_t create_communicator(const size_t size,
                                        shared_ptr_class<kvs_interface> kvs) const;
 
@@ -151,8 +153,8 @@ public:
      * @return vector of device communicators
      */
     vector_class<device_communicator_t> create_device_communicators(
-        const size_t size,
-        const vector_class<native_device_type>& devices,
+        const size_t devices_size,
+        const vector_class<native_device_type>& local_devices,
         native_context_type& context,
         shared_ptr_class<kvs_interface> kvs) const;
 
@@ -165,8 +167,8 @@ public:
      * @return vector of device communicators
      */
     vector_class<device_communicator_t> create_device_communicators(
-        const size_t size,
-        vector_class<pair_class<size_t, native_device_type>>& rank_device_map,
+        const size_t devices_size,
+        vector_class<pair_class<size_t, native_device_type>>& local_rank_device_map,
         native_context_type& context,
         shared_ptr_class<kvs_interface> kvs) const;
 

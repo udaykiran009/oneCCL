@@ -52,7 +52,7 @@ struct ccl_device_split_traits<ccl_comm_split_attributes, ccl_comm_split_attribu
 
 template <>
 struct ccl_device_split_traits<ccl_comm_split_attributes, ccl_comm_split_attributes::group> {
-    using type = ccl_device_group_split_type;
+    using type = device_group_split_type;
 };
 
 #endif

@@ -5,6 +5,10 @@
 #ifndef DEVICE_COMM_SUPPORT
 #error "aaa"
 #endif
+
+
+std::ostream& operator<<(std::ostream& out, const ccl::device_index_type& index);
+
 namespace ccl
 {
 CCL_API
@@ -107,4 +111,11 @@ device_index_type from_string(const std::string& device_id_str)
 
     return path;
 }
+}
+
+
+std::ostream& operator<<(std::ostream& out, const ccl::device_index_type& index)
+{
+    out << ccl::to_string(index);
+    return out;
 }

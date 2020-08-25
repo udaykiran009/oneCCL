@@ -1,5 +1,8 @@
 #pragma once
 #include "ccl_device_communicator.hpp"
+#include "common/comm/l0/comm_context.hpp"
+#include "common/comm/l0/comm_context_storage.hpp"
+
 
 namespace ccl
 {
@@ -9,20 +12,44 @@ class kvs_interface;
 template<class DeviceType,
          class ContextType>
 vector_class<device_communicator> create_device_communicators(
-        const size_t size,
-        const vector_class<DeviceType>& devices,
+        const size_t cluster_devices_size,
+        const vector_class<DeviceType>& local_devices,
         ContextType& context,
         shared_ptr_class<kvs_interface> kvs)
 {
+    vector_class<device_communicator> ret;
+    return ret;
 }
+
+using rank_t = size_t;
 
 template<class DeviceType,
          class ContextType>
 vector_class<device_communicator> create_device_communicators(
-        const size_t size,
-        vector_class<pair_class<size_t, DeviceType>>& rank_device_map,
+        const size_t cluster_devices_size, /*global devics count*/
+        vector_class<pair_class<rank_t, DeviceType>>& local_rank_device_map,
         ContextType& context,
         shared_ptr_class<kvs_interface> kvs)
 {
+    vector_class<rank_t> local_thread_ranks;
+    local_thread_ranks.reserve(local_rank_device_map.size());
+    std::transform(local_rank_device_map.begin(), local_rank_device_map.end(), std::back_inserter(local_thread_ranks),
+                    [](const typename vector_class<pair_class<rank_t, DeviceType>>::value_type& val)
+                    {
+                        return val.first;
+                    });
+    group_context::comm_group_t thread_group = group_context::instance().group_by_kvs(local_thread_ranks, cluster_devices_size, kvs);
+
+
+    vector_class<DeviceType> local_thread_devices;
+    local_thread_devices.reserve(local_rank_device_map.size());
+    std::transform(local_rank_device_map.begin(), local_rank_device_map.end(), std::back_inserter(local_thread_devices),
+                    [](const typename vector_class<pair_class<rank_t, DeviceType>>::value_type& val)
+                    {
+                        return val.second;
+                    });
+
+    auto ret = thread_group->create_communicators(local_thread_devices);
+    return ret;
 }
 }

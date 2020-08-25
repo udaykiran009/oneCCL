@@ -3,6 +3,8 @@
 #include "ccl_type_traits.hpp"
 #include "common/log/log.hpp"
 
+namespace ccl
+{
 #ifdef CCL_ENABLE_SYCL
 
 generic_stream_type<CCL_ENABLE_SYCL_TRUE>::generic_stream_type(handle_t q) :
@@ -44,3 +46,4 @@ const generic_stream_type<CCL_ENABLE_SYCL_FALSE>::ccl_native_t&
 }
 
 #endif
+}

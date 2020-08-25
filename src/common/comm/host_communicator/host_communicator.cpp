@@ -36,6 +36,14 @@ host_communicator::host_communicator(const ccl::comm_attr_t& attr) :
     comm_size = comm_impl->size();
 }
 
+host_communicator::host_communicator(std::shared_ptr<ccl_comm> impl) :
+    comm_attr(),
+    comm_impl(impl)
+{
+    comm_rank = comm_impl->rank();
+    comm_size = comm_impl->size();
+}
+
 bool host_communicator::is_ready() const
 {
     return true;

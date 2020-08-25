@@ -2,6 +2,11 @@
 
 #include "ccl_type_traits.hpp"
 #include "common/log/log.hpp"
+#include "native_device_api/compiler_ccl_wrappers_dispatcher.hpp"
+
+
+namespace ccl
+{
 
 #ifdef CCL_ENABLE_SYCL
 CCL_API generic_device_type<CCL_ENABLE_SYCL_TRUE>::generic_device_type(device_index_type id,
@@ -43,7 +48,7 @@ CCL_API generic_device_type<CCL_ENABLE_SYCL_TRUE>::generic_device_type(device_in
     auto devices = platform_it->get_devices(type);
 
     LOG_DEBUG("Found devices: ", devices.size());
-    auto it = std::find_if(devices.begin(), devices.end(), [id] (const cl::sycl::device& dev)
+    auto it = std::find_if(devices.begin(), devices.end(), [id] (const cl::sycl::device& dev) -> bool
     {
         return id == native::get_runtime_device(dev)->get_device_path();
     });
@@ -75,7 +80,7 @@ device_index_type generic_device_type<CCL_ENABLE_SYCL_TRUE>::get_id() const noex
     return native::get_runtime_device(device)->get_device_path();
 }
 
-typename generic_device_type<CCL_ENABLE_SYCL_TRUE>::ccl_native_t
+typename generic_device_type<CCL_ENABLE_SYCL_TRUE>::ccl_native_t &
 generic_device_type<CCL_ENABLE_SYCL_TRUE>::get() noexcept
 {
     return device;
@@ -99,3 +104,4 @@ generic_device_type<CCL_ENABLE_SYCL_FALSE>::get() noexcept
     return native::get_runtime_device(device);
 }
 #endif
+}

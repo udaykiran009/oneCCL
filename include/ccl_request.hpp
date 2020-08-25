@@ -42,4 +42,7 @@ public:
     virtual ~request() = default;
 };
 
+
+using request_t = unique_ptr_class<request>;
+using coll_request_t = request_t;
 }

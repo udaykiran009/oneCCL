@@ -8,7 +8,7 @@ namespace ccl {
 
 typedef enum {
     color,
-    group,      // ccl_group_split_type or ccl_device_group_split_type
+    group,      // ccl_group_split_type or device_group_split_type
     version,
 } ccl_comm_split_attributes;
 
@@ -33,13 +33,15 @@ enum class ccl_group_split_type {    // TODO fill in this enum with the actual v
 /**
  * Device-specific values for the 'group' split attribute
  */
-enum class ccl_device_group_split_type { // TODO fill in this enum with the actual values in the final
+enum class device_group_split_type : int { // TODO fill in this enum with the actual values in the final
     //device,
     thread,
     process,
     //socket,
     //node,
     cluster,
+
+    last_value
 };
 
 #endif

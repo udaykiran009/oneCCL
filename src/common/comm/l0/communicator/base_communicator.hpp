@@ -52,11 +52,6 @@ struct base_communicator : public ccl::communicator_interface
         return context_t{};
     }
 
-    ccl::comm_attr_t get_comm_split_attr() const override
-    {
-        return std::static_pointer_cast<ccl::ccl_comm_split_attr>(comm_attr);
-    }
-
     const ccl::device_comm_split_attr_t& get_comm_split_attr() const override
     {
         return comm_attr;

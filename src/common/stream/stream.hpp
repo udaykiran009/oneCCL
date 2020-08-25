@@ -11,19 +11,20 @@ namespace ccl
 {
     class environment;  //friend-zone
 }
-
+/*
 ccl_status_t CCL_API ccl_stream_create(ccl_stream_type_t type,
                                           void* native_stream,
                                           ccl_stream_t* stream);
-
+*/
 class alignas(CACHELINE_SIZE) ccl_stream : public stream_provider_dispatcher
 {
 public:
     friend class stream_provider_dispatcher;
     friend class ccl::environment;
+    /*
     friend ccl_status_t CCL_API ccl_stream_create(ccl_stream_type_t type,
                                void* native_stream,
-                               ccl_stream_t* stream);
+                               ccl_stream_t* stream);*/
     using stream_native_t = stream_provider_dispatcher::stream_native_t;
 
     ccl_stream() = delete;
