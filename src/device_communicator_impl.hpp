@@ -4,6 +4,7 @@
 #include "ccl_comm_split_attr_ids_traits.hpp"
 #include "ccl_device_communicator.hpp"
 
+#include "common/comm/l0/comm_context_id.hpp"
 //TODO
 /*
 namespace ccl
@@ -93,6 +94,29 @@ CCL_API size_t ccl::device_communicator::size() const
     return pimpl->size();
 }
 
+CCL_API size_t ccl::device_communicator::get_group_unique_id() const
+{
+    return static_cast<size_t> (pimpl->get_comm_group_id());
+}
+
+CCL_API ccl::device_communicator ccl::device_communicator::split(const ccl::device_comm_split_attr_t& attr)
+{
+    if (!attr.is_valid<ccl::ccl_comm_split_attributes::group>())
+    {
+        throw ccl_error(std::string(__FUNCTION__) + " - TODO `device_comm_split_attr_t`: supports `group` only");
+    }
+
+    auto id = pimpl->get_comm_group_id();
+    ccl::group_context::comm_group_t my_group = ccl::group_context::instance().get_existing_group_by_id(id);
+#ifdef CCL_ENABLE_SYCL
+    return my_group->create_communicator(get_device(), attr);
+#else
+    #ifdef MULTI_GPU_SUPPORT
+        return my_group->create_communicator(pimpl->get_device_path(), attr);
+    #endif
+#endif
+
+}
 /*
 CCL_API ccl::comm_attr_t ccl::device_communicator::get_comm_split_attr() const
 {

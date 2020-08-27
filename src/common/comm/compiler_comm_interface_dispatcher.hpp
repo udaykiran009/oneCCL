@@ -18,7 +18,7 @@ class gpu_comm_attr;
 struct communicator_interface;
 class device_comm_split_attr_t;
 
-using communicator_interface_ptr = std::unique_ptr<communicator_interface>;
+using communicator_interface_ptr = std::shared_ptr<communicator_interface>;
 
 struct communicator_interface_dispatcher
 {

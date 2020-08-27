@@ -4,6 +4,15 @@ set (executable "coll_attr_suite")
 enable_testing()
 message ("PROJECT_SOURCE_DIR: ${PROJECT_SOURCE_DIR}")
 
+if(MULTI_GPU_SUPPORT)
+    set (DEFINITIONS "-DDEVICE_COMM_SUPPORT")
+    option(CCL_GPU_DEVICES_AFFINITY_ENABLE "Enable L0" ON)
+    if(CCL_GPU_DEVICES_AFFINITY_ENABLE)
+        set(CCL_GPU_DEVICES_AFFINITY_MASK_SIZE 4)
+        message ("Set L0 device mask affinity size: ${CCL_GPU_DEVICES_AFFINITY_MASK_SIZE}")
+    endif()
+endif()
+
 if(API_UT)
     set(PROJECT_SOURCE_DIR "${PROJECT_SOURCE_DIR}/../..")
     include(${PROJECT_SOURCE_DIR}/cmake/helpers.cmake)
@@ -11,7 +20,14 @@ if(API_UT)
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g")
     if(COMPUTE_RUNTIME)
         activate_compute_runtime("${PROJECT_SOURCE_DIR}/cmake" ${COMPUTE_RUNTIME})
+
+        if (${CCL_ENABLE_SYCL_V} STREQUAL 1)
+            option (CCL_ENABLE_SYCL "Enable CCL SYCL runtime" ON)
+            message(STATUS "Enable CCL SYCL runtime")
+        endif()
+
         set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${COMPUTE_RUNTIME_FLAGS}")
+        add_definitions(${DEFINITIONS})
     endif()
 endif(API_UT)
 
@@ -25,8 +41,20 @@ include_directories(${PROJECT_SOURCE_DIR}/tests/functional/googletest-release-1.
 
 file(GLOB sources "*.c" "*.cpp")
 
-#set (dependencies_sources
-#             "${PROJECT_SOURCE_DIR}/src/ccl_cpp_api.cpp")
+set (dependencies_sources
+             "${PROJECT_SOURCE_DIR}/src/ccl_empty_attr.cpp"
+             "${PROJECT_SOURCE_DIR}/src/ccl_empty_coll_attr.cpp"
+             "${PROJECT_SOURCE_DIR}/src/ccl_app_api_coll_attr.cpp"
+             "${PROJECT_SOURCE_DIR}/src/coll/coll_common_attributes.cpp"
+             "${PROJECT_SOURCE_DIR}/src/coll/ccl_allgather_op_attr.cpp"
+             "${PROJECT_SOURCE_DIR}/src/coll/ccl_allreduce_op_attr.cpp"
+             "${PROJECT_SOURCE_DIR}/src/coll/ccl_alltoall_op_attr.cpp"
+             "${PROJECT_SOURCE_DIR}/src/coll/ccl_alltoallv_op_attr.cpp"
+             "${PROJECT_SOURCE_DIR}/src/coll/ccl_bcast_op_attr.cpp"
+             "${PROJECT_SOURCE_DIR}/src/coll/ccl_reduce_op_attr.cpp"
+             "${PROJECT_SOURCE_DIR}/src/coll/ccl_reduce_scatter_op_attr.cpp"
+             "${PROJECT_SOURCE_DIR}/src/coll/ccl_sparse_allreduce_op_attr.cpp"
+             "${PROJECT_SOURCE_DIR}/src/coll/ccl_barrier_op_attr.cpp")
 
 set(CCL_MAJOR_VERSION     "0")
 set(CCL_MINOR_VERSION     "0")

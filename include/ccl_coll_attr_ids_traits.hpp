@@ -57,7 +57,7 @@ struct ccl_api_type_attr_traits<common_op_attr_id, common_op_attr_id::to_cache> 
 
 template <>
 struct ccl_api_type_attr_traits<common_op_attr_id, common_op_attr_id::match_id> {
-    using type = const char*;
+    using type = string_class;
     using return_type = type;
 };
 
@@ -125,12 +125,17 @@ struct ccl_api_type_attr_traits<sparse_allreduce_op_attr_id, sparse_allreduce_op
 template <>
 struct ccl_api_type_attr_traits<sparse_allreduce_op_attr_id, sparse_allreduce_op_attr_id::sparse_allreduce_fn_ctx> {
     using type = const void*;
-    using return_type = function_holder<type>;
+    using return_type = const void*;
 };
 template <>
 struct ccl_api_type_attr_traits<sparse_allreduce_op_attr_id, sparse_allreduce_op_attr_id::sparse_coalesce_mode> {
     using type = ccl_sparse_coalesce_mode_t;
     using return_type = type;
 };
+
+
+/**
+ * Traits specialization for barrier op attributes
+ */
 }
 }

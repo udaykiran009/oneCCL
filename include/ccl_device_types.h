@@ -1,5 +1,4 @@
 #pragma once
-#ifdef MULTI_GPU_SUPPORT
 #ifndef CCL_PRODUCT_FULL
 #error "Do not include this file directly. Please include 'ccl_types.h'"
 #endif
@@ -20,5 +19,3 @@ typedef enum {
 
     ccl_topology_group_last_value
 } ccl_topology_group_t;
-
-#endif //MULTI_GPU_SUPPORT

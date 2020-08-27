@@ -20,6 +20,9 @@ global_data::global_data() {
     /* create ccl_logger before ccl::global_data
        to ensure static objects construction/destruction rule */
     LOG_INFO("create global_data object");
+
+    //TODO new_api configure thread wait timeout
+    extern size_t thread_barrier_wait_timeout_sec = 5;
 }
 
 global_data::~global_data() {

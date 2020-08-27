@@ -39,9 +39,24 @@ include_directories(${PROJECT_SOURCE_DIR}/tests/functional/googletest-release-1.
                     ${PROJECT_SOURCE_DIR}/src)
 
 file(GLOB sources "*.c" "*.cpp")
-
+if(MULTI_GPU_SUPPORT)
 set (dependencies_sources
              "${PROJECT_SOURCE_DIR}/src/ccl_cpp_utils.cpp"
+             "${PROJECT_SOURCE_DIR}/src/ccl_empty_attr.cpp"
+             "${PROJECT_SOURCE_DIR}/src/ccl_empty_coll_attr.cpp"
+             "${PROJECT_SOURCE_DIR}/src/ccl_empty_stream.cpp"
+             "${PROJECT_SOURCE_DIR}/src/ccl_app_api_comm_split_attr.cpp"
+             "${PROJECT_SOURCE_DIR}/src/ccl_app_api_coll_attr.cpp"
+             "${PROJECT_SOURCE_DIR}/src/coll/coll_common_attributes.cpp"
+             "${PROJECT_SOURCE_DIR}/src/coll/ccl_allgather_op_attr.cpp"
+             "${PROJECT_SOURCE_DIR}/src/coll/ccl_allreduce_op_attr.cpp"
+             "${PROJECT_SOURCE_DIR}/src/coll/ccl_alltoall_op_attr.cpp"
+             "${PROJECT_SOURCE_DIR}/src/coll/ccl_alltoallv_op_attr.cpp"
+             "${PROJECT_SOURCE_DIR}/src/coll/ccl_bcast_op_attr.cpp"
+             "${PROJECT_SOURCE_DIR}/src/coll/ccl_reduce_op_attr.cpp"
+             "${PROJECT_SOURCE_DIR}/src/coll/ccl_reduce_scatter_op_attr.cpp"
+             "${PROJECT_SOURCE_DIR}/src/coll/ccl_sparse_allreduce_op_attr.cpp"
+             "${PROJECT_SOURCE_DIR}/src/coll/ccl_barrier_op_attr.cpp"
              "${PROJECT_SOURCE_DIR}/src/common/log/log.cpp"
              "${PROJECT_SOURCE_DIR}/src/common/event/event.cpp"
              "${PROJECT_SOURCE_DIR}/src/common/stream/stream.cpp"
@@ -57,7 +72,6 @@ set (dependencies_sources
              "${PROJECT_SOURCE_DIR}/src/native_device_api/l0/platform.cpp"
              "${PROJECT_SOURCE_DIR}/src/native_device_api/l0/subdevice.cpp"
              "${PROJECT_SOURCE_DIR}/src/native_device_api/l0/primitives.cpp"
-             "${PROJECT_SOURCE_DIR}/src/native_device_api/l0/utils.cpp"
              "${PROJECT_SOURCE_DIR}/src/ccl_cpp_utils.cpp"
              "${PROJECT_SOURCE_DIR}/tests/unit/api/stubs/spinlock.cpp"
              "${PROJECT_SOURCE_DIR}/tests/unit/api/stubs/kvs.cpp"
@@ -67,11 +81,13 @@ set (dependencies_sources
              "${PROJECT_SOURCE_DIR}/tests/unit/api/stubs/thread_topology_communicator.cpp"
              "${PROJECT_SOURCE_DIR}/tests/unit/api/stubs/process_topology_communicator.cpp"
              "${PROJECT_SOURCE_DIR}/tests/unit/api/stubs/process_group_context.cpp"
+             "${PROJECT_SOURCE_DIR}/tests/unit/api/stubs/thread_group_context.cpp"
              "${PROJECT_SOURCE_DIR}/tests/unit/api/stubs/global.cpp"
              "${PROJECT_SOURCE_DIR}/tests/unit/api/stubs/env.cpp"
              "${PROJECT_SOURCE_DIR}/tests/unit/api/stubs/cache.cpp"
              "${PROJECT_SOURCE_DIR}/tests/unit/api/stubs/ccl.cpp"
-             "${PROJECT_SOURCE_DIR}/tests/unit/api/stubs/datatype.cpp")
+             "${PROJECT_SOURCE_DIR}/tests/unit/api/stubs/datatype.cpp"
+             "${PROJECT_SOURCE_DIR}/tests/unit/api/stubs/native_runtime_utils.cpp")
 
 set(CCL_MAJOR_VERSION     "0")
 set(CCL_MINOR_VERSION     "0")
@@ -106,3 +122,4 @@ foreach(src ${sources})
     target_link_libraries(${executable} PUBLIC gtest_main)
     target_link_libraries(${executable} PUBLIC gtest)
 endforeach()
+endif()

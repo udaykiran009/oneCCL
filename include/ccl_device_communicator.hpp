@@ -6,6 +6,7 @@
 
 namespace ccl {
 class request;
+class kvs_interface;
 
 
 class communicator_interface;
@@ -14,10 +15,10 @@ class communicator_interface;
  * Has no defined public constructor.
  * Use ccl::environment::create_device_communicator for communicator objects creation.
  */
-class device_communicator final : public ccl_api_base_movable<device_communicator, direct_access_policy, communicator_interface>
+class device_communicator final : public ccl_api_base_movable<device_communicator, direct_access_policy, communicator_interface, std::shared_ptr>
 {
 public:
-    using base_t = ccl_api_base_movable<device_communicator, direct_access_policy, communicator_interface>;
+    using base_t = ccl_api_base_movable<device_communicator, direct_access_policy, communicator_interface, std::shared_ptr>;
 
     /**
      * Declare PIMPL type
@@ -70,12 +71,23 @@ public:
      */
     ccl_context_t get_context();
 
+
+    size_t get_group_unique_id() const;
+
+
     bool is_ready() const;
 
-/* TODO enable later
 
-    device_communicator split(device_comm_split_attr_t attr);
-*/
+    template <class ...attr_value_pair_t>
+    stream create_stream(attr_value_pair_t&&...avps)
+    {
+        return create_stream_from_attr(get_device(), get_context(), std::forward<attr_value_pair_t>(avps)...);
+    }
+
+
+    device_communicator split(const device_comm_split_attr_t& attr);
+
+
     /**
      * Allgatherv is a collective communication operation that collects data from all ranks within a communicator
      * into a single buffer or vector of buffers, one per rank. Different ranks can contribute segments of different sizes.
@@ -98,8 +110,8 @@ public:
                          void* recv_buf,
                          const vector_class<size_t>& recv_counts,
                          datatype dtype,
-                         const allgatherv_attr_t& attr/* = allgatherv_attr_t()*/,
-                         stream op_stream,
+                         const allgatherv_attr_t& attr = default_allgather_attr,
+                         stream op_stream = default_stream,
                          const vector_class<event>& deps = {});
 
     /**
@@ -118,8 +130,8 @@ public:
                          const vector_class<void*>& recv_bufs,
                          const vector_class<size_t>& recv_counts,
                          datatype dtype,
-                         const allgatherv_attr_t& attr/* = allgatherv_attr_t()*/,
-                         stream op_stream,
+                         const allgatherv_attr_t& attr = default_allgather_attr,
+                         stream op_stream = default_stream,
                          const vector_class<event>& deps = {});
     /**
      * Type safety version:
@@ -853,4 +865,23 @@ private:
     device_communicator(impl_value_t&& impl);
 };
 
+
+// factory methods
+using rank_t = size_t;
+
+template<class DeviceType,
+         class ContextType>
+vector_class<device_communicator> create_device_communicators(
+        const size_t cluster_devices_size, /*global devics count*/
+        const vector_class<pair_class<rank_t, DeviceType>>& local_rank_device_map,
+        ContextType& context,
+        shared_ptr_class<kvs_interface> kvs);
+
+template<class DeviceType,
+         class ContextType>
+vector_class<device_communicator> create_device_communicators(
+        const size_t cluster_devices_size, /*global devics count*/
+        const map_class<rank_t, DeviceType>& local_rank_device_map,
+        ContextType& context,
+        shared_ptr_class<kvs_interface> kvs);
 } // namespace ccl

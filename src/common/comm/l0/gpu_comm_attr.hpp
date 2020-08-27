@@ -8,6 +8,8 @@
 #include "common/comm/l0/device_group_routing_schema.hpp"
 #include "common/comm/l0/context/context_barrier.hpp"
 
+#include "common/comm/l0/comm_context_id.hpp"
+
 namespace native
 {
     struct process_group_context;
@@ -40,22 +42,25 @@ public:
     friend class process_a2a_communicator;
     friend class comm_group;
 
-    using thread_comm_storage = std::multimap<size_t, communicator_interface*>;
+    using thread_comm_storage = std::multimap<size_t, std::shared_ptr<communicator_interface>>;
 
-    gpu_comm_attr(std::shared_ptr<host_communicator> parent_comm, size_t thread_count, size_t process_device_size);
+    gpu_comm_attr(std::shared_ptr<host_communicator> parent_comm, size_t thread_count, size_t process_device_size, group_unique_key id);
     ~gpu_comm_attr();
 
     std::shared_ptr<::native::process_group_context> get_process_context();
     bool sync_group_size(size_t device_group_size);
-    bool sync_register_communicator(communicator_interface* comm);
+    bool sync_register_communicator(std::shared_ptr<communicator_interface> comm);
 
     std::shared_ptr<host_communicator> get_host_communicator();
+
+    const group_unique_key& get_unique_id() const;
 private:
-    bool delegate_sync_register_communicator(communicator_interface* comm);
+    bool delegate_sync_register_communicator(std::shared_ptr<communicator_interface> comm);
 
     std::shared_ptr<host_communicator> ccl_communicator;
     size_t expected_threads_count;
     size_t expected_process_device_size;
+    group_unique_key unique_id;
     std::shared_ptr<::native::process_group_context> ctx;
 
     std::mutex thread_group_size_mutex;

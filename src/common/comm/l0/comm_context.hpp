@@ -21,6 +21,8 @@
 #include "ccl_request.hpp"
 #include "ccl_device_communicator.hpp"
 
+#include "common/comm/l0/comm_context_id.hpp"
+
 class host_communicator;
 namespace ccl
 {
@@ -45,7 +47,7 @@ public:
         typename std::enable_if<std::is_class<typename std::remove_cv<DeviceType>::type>::value,
                                 int>::type = 0>
     device_communicator create_communicator(const DeviceType& device,
-                                       device_comm_split_attr_t attr = create_device_comm_split_attr());
+                                       device_comm_split_attr_t attr = ccl_empty_attr());
 
     /**
      * Created @device_comm_split_attr_t, which used to create device_communicators from @comm_group_t
@@ -60,7 +62,7 @@ public:
         typename std::enable_if<not std::is_class<typename std::remove_cv<DeviceType>::type>::value,
                                 int>::type = 0>
     device_communicator create_communicator(DeviceType device_id,
-                                       device_comm_split_attr_t attr = create_device_comm_split_attr());
+                                       device_comm_split_attr_t attr = ccl_empty_attr());
 
     /**
      * Device Communicator creation vectorized API:
@@ -69,7 +71,7 @@ public:
     template <template <class...> class Container, class Type>
     std::vector<device_communicator> create_communicators(
         const Container<Type>& device_ids,
-        device_comm_split_attr_t attr = create_device_comm_split_attr());
+        device_comm_split_attr_t attr = ccl_empty_attr());
 
     /**
      * Device Communicator creation vectorized API:
@@ -79,7 +81,7 @@ public:
     std::vector<device_communicator> create_communicators(
         InputIt first,
         InputIt last,
-        device_comm_split_attr_t attr = create_device_comm_split_attr());
+        device_comm_split_attr_t attr = ccl_empty_attr());
 
     /**
      * Return device context allocated during group creation
@@ -87,10 +89,15 @@ public:
     //device_context_native_const_reference_t get_context() const;
 
     bool sync_group_size(size_t device_group_size);
+/*
+    std::string to_string() const;
+*/
+    const group_unique_key& get_unique_id() const;
 private:
     comm_group(ccl::shared_communicator_t comm,
                size_t current_device_group_size,
-               size_t process_device_group_size);
+               size_t process_device_group_size,
+               group_unique_key id);
     std::unique_ptr<gpu_comm_attr> pimpl;
 };
 }

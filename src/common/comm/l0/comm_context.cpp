@@ -7,8 +7,9 @@
 namespace ccl
 {
 comm_group::comm_group(shared_communicator_t parent_comm,
-                                    size_t threads_count, size_t on_process_ranks_count):
-    pimpl(new gpu_comm_attr(parent_comm, threads_count, on_process_ranks_count))
+                                    size_t threads_count, size_t on_process_ranks_count,
+                                    group_unique_key id):
+    pimpl(new gpu_comm_attr(parent_comm, threads_count, on_process_ranks_count, id))
 {
 };
 
@@ -21,6 +22,15 @@ comm_group::~comm_group()
 {
 }
 
+const group_unique_key& comm_group::get_unique_id() const
+{
+    return pimpl->get_unique_id();;
+}
+/*
+std::string comm_group::to_string() const
+{
+    pimpl->to_string();
+}*/
 
 /***********************************************************************/
 

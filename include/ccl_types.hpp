@@ -59,7 +59,7 @@ enum class datatype : int {
 };
 
 using datatype_attr_t = ccl_datatype_attr_t;
-#ifdef DEVICE_COMM_SUPPORT
+#ifdef MULTI_GPU_SUPPORT
 /**
  * Supported stream types
  */
@@ -69,7 +69,7 @@ enum class stream_type {
 
     last_value
 };
-#endif /* DEVICE_COMM_SUPPORT */
+#endif /* MULTI_GPU_SUPPORT */
 
 /**
  * Exception type that may be thrown by ccl API
@@ -99,6 +99,14 @@ struct ccl_type_info_export {
     static constexpr bool is_supported = supported;
 };
 
+struct ccl_empty_attr
+{
+    static ccl_version_t version;
+
+    template<class attr>
+    static attr create_empty();
+};
+
 /**
  * API object attributes traits
  */
@@ -109,6 +117,4 @@ struct param_traits {};
 } //namespace info
 } // namespace ccl
 
-#ifdef DEVICE_COMM_SUPPORT
 #include "ccl_device_types.hpp"
-#endif

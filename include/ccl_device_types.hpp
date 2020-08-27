@@ -1,6 +1,5 @@
 #pragma once
 
-#ifdef MULTI_GPU_SUPPORT
 #ifndef CCL_PRODUCT_FULL
 #error "Do not include this file directly. Please include 'ccl_types.hpp'"
 #endif
@@ -20,9 +19,11 @@ enum device_topology_type {
 using process_id = size_t;
 using host_id = std::string;
 
+#ifdef MULTI_GPU_SUPPORT
 using device_mask_t = std::bitset<CCL_GPU_DEVICES_AFFINITY_MASK_SIZE>;
 using process_aggregated_device_mask_t = std::map<process_id, device_mask_t>;
 using cluster_aggregated_device_mask_t = std::map<host_id, process_aggregated_device_mask_t>;
+#endif
 
 using index_type = uint32_t;
 static constexpr index_type unused_index_value = std::numeric_limits<index_type>::max(); //TODO
@@ -54,5 +55,3 @@ struct generic_event_type {};
 
 std::ostream& operator<<(std::ostream& out, const ccl::device_index_type&);
 std::ostream& operator>>(std::ostream& out, const ccl::device_index_type&);
-
-#endif //MULTI_GPU_SUPPORT

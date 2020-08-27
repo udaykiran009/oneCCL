@@ -25,12 +25,19 @@ std::string context_comm_addr::to_string() const
 
 thread_local size_t gpu_comm_attr::thread_id = 0;
 
-gpu_comm_attr::gpu_comm_attr(std::shared_ptr<host_communicator> parent_comm, size_t thread_count, size_t process_device_size)
+gpu_comm_attr::gpu_comm_attr(std::shared_ptr<host_communicator> parent_comm, size_t thread_count, size_t process_device_size,
+group_unique_key id)
  :ccl_communicator(parent_comm),
   expected_threads_count(thread_count),
-  expected_process_device_size(process_device_size)
+  expected_process_device_size(process_device_size),
+  unique_id(id)
 {
     ctx = std::make_shared<native::process_group_context>(ccl_communicator);
+}
+
+const group_unique_key& gpu_comm_attr::get_unique_id() const
+{
+    return unique_id;
 }
 
 std::shared_ptr<host_communicator> gpu_comm_attr::get_host_communicator()
@@ -68,7 +75,7 @@ gpu_comm_attr::~gpu_comm_attr()
 }
 
 
-bool gpu_comm_attr::sync_register_communicator(communicator_interface* comm)
+bool gpu_comm_attr::sync_register_communicator(std::shared_ptr<communicator_interface> comm)
 {
     if (!delegate_sync_register_communicator(comm))
     {
@@ -86,7 +93,7 @@ bool gpu_comm_attr::sync_register_communicator(communicator_interface* comm)
     return true;
 }
 
-bool gpu_comm_attr::delegate_sync_register_communicator(communicator_interface* comm)
+bool gpu_comm_attr::delegate_sync_register_communicator(std::shared_ptr<communicator_interface> comm)
 {
     ccl::device_indices_t device_group_indices;
 
@@ -117,8 +124,10 @@ bool gpu_comm_attr::delegate_sync_register_communicator(communicator_interface* 
 
     //group is not formed yet
     thread_communicators.insert({thread_id, comm});
-    LOG_DEBUG("Thread id: ", thread_id, " register communicators count: ", thread_communicators.count(thread_id));
-    if(thread_communicators.count(thread_id) != thread_device_group_sizes[thread_id])
+    size_t registered = thread_communicators.count(thread_id);
+    size_t expected = thread_device_group_sizes[thread_id];
+    LOG_DEBUG("Thread id: ", thread_id, " register communicators count: [", registered, "/", expected, "]");
+    if(registered != expected)
     {
         return false;   //comm group is not reached expected size
     }
@@ -153,8 +162,7 @@ bool gpu_comm_attr::delegate_sync_register_communicator(communicator_interface* 
 
         //flush cache
         auto ready_count = std::count_if(thread_communicators.begin(), thread_communicators.end(),
-                                         [](const std::pair<size_t,
-                                                            communicator_interface*>& comm)
+                                         [](const typename thread_comm_storage::value_type& comm)
                                          {
                                              return comm.second->is_ready();
                                          });

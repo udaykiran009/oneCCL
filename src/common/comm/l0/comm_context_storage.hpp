@@ -32,6 +32,7 @@ struct group_context
                                                         size_t cluster_device_group_size,
                                                         std::shared_ptr<kvs_interface> kvs);
     comm_group_t group_by_comm(std::shared_ptr<host_communicator> host_comm);
+    comm_group_t get_existing_group_by_id(const group_unique_key& id);
     static group_context& instance();
 private:
     group_context() = default;

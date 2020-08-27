@@ -35,8 +35,10 @@ include_directories(${PROJECT_SOURCE_DIR}/tests/functional/googletest-release-1.
 
 file(GLOB sources "*.c" "*.cpp")
 
-#set (dependencies_sources
-#             "${PROJECT_SOURCE_DIR}/src/ccl_cpp_api.cpp")
+set (dependencies_sources
+             "${PROJECT_SOURCE_DIR}/src/ccl_empty_attr.cpp"
+             "${PROJECT_SOURCE_DIR}/src/ccl_app_api_comm_split_attr.cpp")
+
 set(CCL_MAJOR_VERSION     "0")
 set(CCL_MINOR_VERSION     "0")
 set(CCL_UPDATE_VERSION    "0")

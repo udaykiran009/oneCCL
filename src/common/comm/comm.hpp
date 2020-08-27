@@ -1,5 +1,4 @@
 #pragma once
-
 //#include "ccl.hpp"
 #include "common/comm/comm_id_storage.hpp"
 #include "common/comm/atl_tag.hpp"
@@ -21,6 +20,8 @@ namespace ccl
 class alignas(CACHELINE_SIZE) ccl_comm
 {
 public:
+    //TODO
+    static void ccl_comm_reset_thread_barrier();
     ccl_comm() = delete;
     ccl_comm(const ccl_comm& other) = delete;
     ccl_comm& operator=(const ccl_comm& other) = delete;

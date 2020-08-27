@@ -88,7 +88,7 @@ struct direct_access_policy
     static void create(ccl_api_t *dst, const ccl_api_t& src)
     {
         static_assert( std::is_same<typename ccl_api_t::acc_policy_t, self_t>::value, "ccl_api_t is not provide 'copy_on_write_access_policy'");
-        dst->get_impl() = src.get_impl().get();
+        dst->get_impl() = src.get_impl();
     }
 
     template<class ccl_api_t>
@@ -113,13 +113,16 @@ struct direct_access_policy
 
 template <class derived_t,
           template<class> class access_policy_t,
-          class impl_t>
+          class impl_t,
+          template<class...> class pointer_t = std::shared_ptr>
 class ccl_api_base_copyable : protected access_policy_t<impl_t>
 {
 protected:
-    using impl_value_t = std::shared_ptr<impl_t>;
+    using impl_value_t = pointer_t<impl_t>;
     using parent_t = derived_t;
     using acc_policy_t = access_policy_t<impl_t>;
+
+    friend class access_policy_t<impl_t>;
 
     ccl_api_base_copyable(impl_value_t&& impl) : pimpl(std::move(impl)) {}
 
@@ -143,11 +146,12 @@ private:
 
 template <class derived_t,
           template<class> class access_policy_t,
-          class impl_t>
+          class impl_t,
+          template<class...> class pointer_t = std::unique_ptr>
 class ccl_api_base_movable : protected access_policy_t<impl_t>
 {
 protected:
-    using impl_value_t = std::unique_ptr<impl_t>;
+    using impl_value_t = pointer_t<impl_t>;
     using parent_t = derived_t;
     using acc_policy_t = access_policy_t<impl_t>;
 

@@ -13,7 +13,12 @@
         template std::unique_ptr<ccl_stream> stream_provider_dispatcher::create(ze_command_queue_handle_t& native_stream, const ccl_version_t& version);
     #endif
 #else
-    template std::unique_ptr<ccl_stream> stream_provider_dispatcher::create(void*& native_stream, const ccl_version_t& version);
+    #ifdef CCL_ENABLE_SYCL
+        template std::unique_ptr<ccl_stream> stream_provider_dispatcher::create(cl::sycl::queue& native_stream, const ccl_version_t& version);
+        template std::unique_ptr<ccl_stream> stream_provider_dispatcher::create(cl_command_queue& native_stream, const ccl_version_t& version);
+    #else
+        template std::unique_ptr<ccl_stream> stream_provider_dispatcher::create(void*& native_stream, const ccl_version_t& version);
+    #endif
 #endif
 
 

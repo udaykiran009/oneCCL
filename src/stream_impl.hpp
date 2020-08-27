@@ -42,6 +42,11 @@ stream create_stream_from_attr(typename unified_device_type::ccl_native_t device
     return str;
 }
 
+CCL_API stream::stream(const typename details::ccl_api_type_attr_traits<stream_attr_id, stream_attr_id::version>::type& version):
+        base_t(impl_value_t())
+{
+}
+
 CCL_API stream::stream(stream&& src) :
         base_t(std::move(src))
 {
@@ -54,6 +59,20 @@ CCL_API stream::stream(impl_value_t&& impl) :
 
 CCL_API stream::~stream()
 {
+}
+
+CCL_API stream::stream(const stream& src) :
+        base_t(src)
+{
+}
+
+CCL_API stream& stream::operator= (const stream&src)
+{
+    if (src.get_impl() != this->get_impl())
+    {
+        this->get_impl() = src.get_impl();
+    }
+    return *this;
 }
 
 template <stream_attr_id attrId>

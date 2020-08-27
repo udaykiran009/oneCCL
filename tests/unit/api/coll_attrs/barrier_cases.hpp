@@ -4,7 +4,7 @@ TEST(coll_attr, barrier_attr_creation)
 {
     auto attr = ccl::create_coll_attr<ccl::barrier_attr_t>();
 
-    ASSERT_TRUE(attr.get_value<ccl::common_op_attr_id::version>().full != nullptr);
+    ASSERT_TRUE(attr.get<ccl::common_op_attr_id::version>().full != nullptr);
 }
 
 TEST(coll_attr, barrier_copy_attr)

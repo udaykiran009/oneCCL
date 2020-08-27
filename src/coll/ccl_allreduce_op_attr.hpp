@@ -1,4 +1,6 @@
 #pragma once
+#include "ccl_types.hpp"
+#include "ccl_types_policy.hpp"
 #include "ccl_coll_attr_ids.hpp"
 #include "ccl_coll_attr_ids_traits.hpp"
 #include "coll/coll_common_attributes.hpp"
@@ -22,24 +24,4 @@ private:
     typename reduction_fn_traits_t::return_type reduction_fn_val;
 };
 
-
-
-ccl_allreduce_op_attr_impl_t::ccl_allreduce_op_attr_impl_t(const typename ccl_common_op_attr_impl_t::version_traits_t::type& version) :
-        base_t(version)
-{
-}
-
-typename ccl_allreduce_op_attr_impl_t::reduction_fn_traits_t::return_type
-ccl_allreduce_op_attr_impl_t::set_attribute_value(typename reduction_fn_traits_t::type val, const reduction_fn_traits_t&t)
-{
-    auto old = reduction_fn_val.get();
-    reduction_fn_val = typename reduction_fn_traits_t::return_type{val};
-    return typename reduction_fn_traits_t::return_type{old};
-}
-
-const typename ccl_allreduce_op_attr_impl_t::reduction_fn_traits_t::return_type&
-ccl_allreduce_op_attr_impl_t::get_attribute_value(const reduction_fn_traits_t& id) const
-{
-    return reduction_fn_val;
-}
 }

@@ -25,6 +25,16 @@ ccl_comm::ccl_comm(size_t rank,
 }
 
 //TODO non-implemented
+//TODO rude simulation of multi-thread barrier
+static std::atomic<size_t> thread_counter{};
+static std::atomic<size_t> thread_ranks_counter{};
+void ccl_comm::ccl_comm_reset_thread_barrier()
+{
+    // recharge counters again
+    thread_counter.store(0);
+    thread_ranks_counter.store(0);
+}
+
 ccl_comm::ccl_comm(const std::vector<size_t> &local_thread_device_ranks, size_t cluster_devices_count,
              std::shared_ptr<ccl::kvs_interface> kvs_instance, ccl_comm_id_storage::comm_id&& id) :
              m_id(std::move(id)),
@@ -35,20 +45,13 @@ ccl_comm::ccl_comm(const std::vector<size_t> &local_thread_device_ranks, size_t 
     //...
 
     //TODO rude simulation of multi-thread barrier
-    static std::atomic<size_t> thread_counter{};
-    static std::atomic<size_t> thread_ranks_counter{};
-
     thread_counter.fetch_add(1);       //calc entered threads
     thread_ranks_counter.fetch_add(local_thread_device_ranks.size());   //calc total thread device ranks
 
-    std::this_thread::sleep_for(std::chrono::seconds(30));  //simulate barrier
+    std::this_thread::sleep_for(std::chrono::seconds(ccl::global_data::get().thread_barrier_wait_timeout_sec));  //simulate barrier
 
     thread_number = thread_counter.load();     // obtain total thread count
     on_process_ranks_number = thread_ranks_counter.load();   // obtain total thread ranks
-
-    // recharge counters again
-    thread_counter.store(0);
-    thread_ranks_counter.store(0);
 }
 
 static ccl_status_t ccl_comm_exchange_colors(std::vector<int>& colors)

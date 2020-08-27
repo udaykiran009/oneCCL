@@ -3,7 +3,7 @@
 
 #include "common/comm/comm_interface.hpp"
 #include "sched/gpu_sched.hpp"
-
+#include "common/comm/l0/comm_context_id.hpp"
 
 struct base_communicator : public ccl::communicator_interface
 {
@@ -56,6 +56,16 @@ struct base_communicator : public ccl::communicator_interface
     {
         return comm_attr;
     }
+
+    const ccl::group_unique_key& get_comm_group_id() const override
+    {
+        return owner_id;
+    }
+
+    void set_comm_group_id(ccl::group_unique_key id)
+    {
+        owner_id = id;
+    }
 /*
     virtual bool is_ready() const
     {
@@ -78,4 +88,6 @@ struct base_communicator : public ccl::communicator_interface
 
     mutable ccl_spinlock ready_mutex;
   //  group_comm_storage* devices;
+
+    ccl::group_unique_key owner_id;
 };

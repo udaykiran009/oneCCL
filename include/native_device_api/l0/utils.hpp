@@ -27,14 +27,19 @@ struct adjacency_matrix : std::map<ccl::device_index_type, adjacency_list> {
     ~adjacency_matrix() = default;
 };
 
-/* 
+/*
  * Functor for calculation peer-to-peer device access capability:
- * Receives left-hand-side and right-hand-side devices 
+ * Receives left-hand-side and right-hand-side devices
  * Return cross_device_rating score
  */
 using p2p_rating_function =
     std::function<cross_device_rating(const ccl_device&, const ccl_device&)>;
 
 cross_device_rating binary_p2p_rating_calculator(const ccl_device& lhs, const ccl_device& rhs);
+
+
+#ifdef CCL_ENABLE_SYCL
+size_t get_sycl_device_id(const cl::sycl::device &dev);
+#endif
 } // namespace details
 } // namespace native
