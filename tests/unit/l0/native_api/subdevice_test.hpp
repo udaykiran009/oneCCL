@@ -5,7 +5,7 @@ const size_t tiles_count = 2;
 
 // ADD TODO serialize/deserialize test!!!!
 
-TEST_F(allreduce_one_device_local_fixture, subdevice_2_tiles_test) {
+TEST_F(allreduce_single_device_fixture, subdevice_2_tiles_test) {
     using namespace native;
 
     auto drv_it = local_platform->drivers.find(0);

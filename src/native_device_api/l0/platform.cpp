@@ -40,7 +40,8 @@ CCL_API ccl_device_platform::ccl_device_platform() {
     // initialize Level-Zero driver
     ze_result_t ret = zeInit(ZE_INIT_FLAG_NONE);
     if (ret != ZE_RESULT_SUCCESS) {
-        throw std::runtime_error("Cannot initialize L0: " + native::to_string(ret));
+        throw std::runtime_error("Cannot initialize L0: " + native::to_string(ret) +
+                                 ", hint: add user into `video` group");
     }
 }
 /*

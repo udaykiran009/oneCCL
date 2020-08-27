@@ -241,7 +241,7 @@ void user_thread_idx(size_t thread_idx,
 
     // Create communicators (auto rank balancing, based on ids): range based API
     std::vector<ccl::communicator_t> comms = group->create_communicators(
-        thread_device_idx.begin(), thread_device_idx.end(), my_device_comm_attr);
+        thread_device_idx, my_device_comm_attr);
 
     std::cout << "Create device communicators, expected count: " << thread_device_idx.size()
               << ", preferred topology: "

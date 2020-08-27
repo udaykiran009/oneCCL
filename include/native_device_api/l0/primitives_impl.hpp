@@ -75,7 +75,8 @@ void memory<TEMPLATE_DEF_ARG>::enqueue_write_sync(
     }
 
     try {
-        detail::copy_memory_to_device_sync_unsafe(get(), &(*first), requested_size, get_owner());
+        detail::copy_memory_to_device_sync_unsafe(
+            get(), &(*first), requested_size * sizeof(elem_t), get_owner());
     }
     catch (const std::exception& ex) {
         throw std::runtime_error(std::string(__PRETTY_FUNCTION__) + "\n" + ex.what());

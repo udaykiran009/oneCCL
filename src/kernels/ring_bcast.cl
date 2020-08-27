@@ -1,7 +1,7 @@
 #pragma OPENCL EXTENSION cl_intel_subgroups : enable
 #pragma OPENCL EXTENSION cl_khr_subgroups : enable
 
-#define KERNEL_DEBUG
+//#define KERNEL_DEBUG
 #ifdef KERNEL_DEBUG
 
 #define LOG_INPUT_DATA_START(kern_id) printf("Kernel %zu, wait income data \n", kern_id)
@@ -98,7 +98,12 @@ __kernel void bcast_execution_float(size_t my_rank, //0
     int can_send_sync_count = 1;
 
 #ifdef KERNEL_DEBUG
-    printf("kernel %zu.%d work_group_size: %d\n", my_rank, work_item_id, work_group_size);
+    printf("kernel %zu.%d work_group_size: %d, elems_count: %zu, segment_count %zu\n",
+           my_rank,
+           work_item_id,
+           work_group_size,
+           elems_count,
+           segment_count);
 #endif
 
     if (my_rank == root) {

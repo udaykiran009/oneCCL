@@ -55,7 +55,8 @@ public:
     ccl_device& get_device() {
         return device;
     }
-    [[deprecated]] comm_rank_t get_index_in_group() const {
+    //[[deprecated]]
+    comm_rank_t get_index_in_group() const {
         return index_in_group;
     }
 

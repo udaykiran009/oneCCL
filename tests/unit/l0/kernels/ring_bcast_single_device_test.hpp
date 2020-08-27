@@ -4,22 +4,21 @@
 
 #include "bcast_fixture.hpp"
 
-namespace bcast_singledevice_case {
-
-// test case data
-static const size_t buffer_size = 512;
-static const size_t num_thread = 5;
+namespace ring_single_device_case {
 
 using native_type = float;
 
-static constexpr size_t mem_group_count = 3;
-static constexpr size_t flag_group_count = 3;
-
-TEST_F(bcast_one_device_local_fixture, bcast_one_device_multithread_kernel) {
+TEST_F(ring_bcast_single_device_fixture, ring_bcast_single_device_mt) {
     using namespace native;
 
-    handles_storage<native_type> memory_storage(42 * num_thread);
-    handles_storage<int> flags_storage(42 * num_thread);
+    // test case data
+    const size_t buffer_size = 512;
+    const size_t num_thread = 5;
+    constexpr size_t mem_group_count = 3;
+    constexpr size_t flag_group_count = 3;
+
+    handles_storage<native_type> memory_storage(mem_group_count * num_thread);
+    handles_storage<int> flags_storage(flag_group_count * num_thread);
     std::map<size_t, std::vector<size_t>> comm_param_storage;
 
     // check global driver
@@ -141,7 +140,7 @@ TEST_F(bcast_one_device_local_fixture, bcast_one_device_multithread_kernel) {
 
     //Set args and launch kernel
     std::mutex thread_lock; //workaround
-    size_t val = 0; //workaround
+    std::atomic<size_t> val { 0 }; //workaround
     std::vector<std::thread> thread_group;
     std::vector<std::unique_ptr<std::stringstream>> thread_out_put;
     for (auto& idx_kernel : thread_kernels) {
@@ -348,4 +347,4 @@ TEST_F(bcast_one_device_local_fixture, bcast_one_device_multithread_kernel) {
     }
 }
 
-} // namespace bcast_singledevice_case
+} // namespace ring_single_device_case

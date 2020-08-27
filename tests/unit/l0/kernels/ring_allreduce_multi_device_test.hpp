@@ -1,14 +1,18 @@
-// test case data
-namespace allreduce_multidevice_case {
-static const size_t buffer_size = 512;
-static const size_t num_thread = 2;
+#pragma once
+
+#include "allreduce_fixture.hpp"
+
+namespace ring_multi_device_case {
 
 using native_type = float;
 
-static constexpr size_t mem_group_count = 3;
-static constexpr size_t flag_group_count = 3;
+TEST_F(ring_allreduce_multi_device_fixture, ring_allreduce_multi_device_mt) {
+    // test case data
+    const size_t buffer_size = 512;
+    const size_t num_thread = 2;
+    constexpr size_t mem_group_count = 3;
+    constexpr size_t flag_group_count = 3;
 
-TEST_F(allreduce_multi_device_local_fixture, allreduce_multi_device_multithread_kernel) {
     handles_storage<native_type> memory_storage(42 * num_thread);
     handles_storage<int> flags_storage(42 * num_thread);
     std::map<size_t, std::vector<size_t>> comm_param_storage;
@@ -283,4 +287,4 @@ TEST_F(allreduce_multi_device_local_fixture, allreduce_multi_device_multithread_
     //printout
     memory_storage.dump(output);
 }
-} // namespace allreduce_multidevice_case
+} // namespace ring_multi_device_case

@@ -4,22 +4,20 @@
 
 #include "ipc_fixture.hpp"
 
-namespace ipc_singledevice_case {
-
-// test case data
-static const size_t buffer_size = 512;
-static const size_t num_thread = 1;
+namespace ring_single_device_case {
 
 using native_type = float;
 
-static constexpr size_t mem_group_count = 3;
-static constexpr size_t flag_group_count = 3;
-
-static constexpr size_t ipc_mem_group_count = 1;
-static constexpr size_t ipc_flag_group_count = 2;
-
-TEST_F(ipc_one_dev_fixture, ring_allreduce_one_device) {
+TEST_F(ring_ipc_allreduce_single_device_fixture, ring_ipc_allreduce_single_device) {
     using namespace native;
+
+    // test case data
+    const size_t buffer_size = 512;
+    const size_t num_thread = 1;
+    constexpr size_t mem_group_count = 3;
+    constexpr size_t flag_group_count = 3;
+    constexpr size_t ipc_mem_group_count = 1;
+    constexpr size_t ipc_flag_group_count = 2;
 
     handles_storage<native_type> memory_storage(42 * num_thread);
     handles_storage<int> flags_storage(42 * num_thread);
@@ -211,7 +209,7 @@ TEST_F(ipc_one_dev_fixture, ring_allreduce_one_device) {
 
     //Set args and launch kernel
     std::mutex thread_lock; //workaround
-    size_t val = 0; //workaround
+    std::atomic<size_t> val { 0 }; //workaround
     std::vector<std::thread> thread_group;
     std::vector<std::unique_ptr<std::stringstream>> thread_out_put;
     for (auto& idx_kernel : thread_kernels) {
@@ -441,7 +439,7 @@ TEST_F(ipc_one_dev_fixture, ring_allreduce_one_device) {
             catch (const std::exception& ex) {
                 UT_ASSERT(false,
                           "Exception in PID: " << pid << ",thread: " << thread_idx
-                                               << "\nError: " << ex.what() << ", at phase:\n\{\n"
+                                               << "\nError: " << ex.what() << ", at phase:\n{\n"
                                                << out.str() << "\n}\n");
                 throw;
             }
@@ -479,4 +477,4 @@ TEST_F(ipc_one_dev_fixture, ring_allreduce_one_device) {
     * */
 }
 
-} // namespace ipc_singledevice_case
+} // namespace ring_single_device_case

@@ -1,8 +1,7 @@
 #include "base.hpp"
 #include "fixture.hpp"
-
-#include "cases.hpp"
-#include "kernel_storage.hpp"
+#include "kernels/a2a_allreduce_single_device_test.hpp"
+#include "kernels/a2a_bcast_single_device_test.hpp"
 
 int main(int ac, char* av[]) {
     set_test_device_indices(getenv("L0_CLUSTER_AFFINITY_MASK"));
@@ -10,16 +9,15 @@ int main(int ac, char* av[]) {
     testing::InitGoogleTest(&ac, av);
     return RUN_ALL_TESTS();
 #else
+
+    using namespace a2a_single_device_case;
     {
-        Test_one_device_multithread_kernel t;
+        Test_a2a_allreduce_single_device_mt t;
         t.start();
     }
+
     {
-        Test_ipc_memory_test t;
-        t.start();
-    }
-    {
-        Test_multithreading_kernel_execution t;
+        Test_a2a_bcast_single_device_mt t;
         t.start();
     }
     return 0;

@@ -1,11 +1,11 @@
 #pragma once
+
 #include "../base_fixture.hpp"
-namespace ipc_singledevice_case {
-class ipc_one_dev_fixture : public ipc_fixture {
+
+class ring_ipc_allreduce_single_device_fixture : public ipc_fixture {
 protected:
-    ipc_one_dev_fixture() : ipc_fixture("[0:0],[0:0]", "kernels/ring_allreduce.spv") {}
+    ring_ipc_allreduce_single_device_fixture()
+            : ipc_fixture("[0:0],[0:0]", "kernels/ring_allreduce.spv") {}
 
-    ~ipc_one_dev_fixture() override {}
+    ~ring_ipc_allreduce_single_device_fixture() override {}
 };
-
-} // namespace ipc_singledevice_case

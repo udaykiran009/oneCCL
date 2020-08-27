@@ -1,6 +1,6 @@
 #include "base.hpp"
 #include "fixture.hpp"
-#include "kernels/ipc_single_dev_allreduce_test.hpp"
+#include "kernels/ring_allreduce_single_device_multi_tile_case.hpp"
 
 int main(int ac, char* av[]) {
     set_test_device_indices(getenv("L0_CLUSTER_AFFINITY_MASK"));
@@ -8,10 +8,12 @@ int main(int ac, char* av[]) {
     testing::InitGoogleTest(&ac, av);
     return RUN_ALL_TESTS();
 #else
-    using namespace ipc_singledevice_case;
+
+    using namespace ring_single_device_multi_tile_case;
     {
-        Test_ring_allreduce_one_device t;
+        Test_ring_allreduce_single_device_multi_tile t;
         t.start();
     }
+    return 0;
 #endif
 }

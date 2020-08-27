@@ -339,7 +339,7 @@ inline bool cluster_group_device_creator::build_impl(
             process = tmp.color;
             last_in_graph_index = tmp.index;
             if (per_thread.second.find(last_in_graph_index) != per_thread.second.end()) {
-                assert(process == process_index);
+                CCL_ASSERT(process == process_index);
                 out << "thread: " << thread_id
                     << " wants to create numa-proxy device by idx: " << last_in_graph_index
                     << std::endl;
