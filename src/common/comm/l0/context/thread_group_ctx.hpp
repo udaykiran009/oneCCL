@@ -7,8 +7,8 @@
 namespace native
 {
 struct device_storage;
-
 struct thread_group_scheduler;
+
 struct thread_group_context :
         numa_ctx<thread_group_context, SUPPORTED_TOPOLOGY_CLASSES_DECL_LIST>
 {

@@ -26,7 +26,7 @@ const generic_device_context_type<CCL_ENABLE_SYCL_TRUE>::ccl_native_t&
 
 
 #else
-
+#ifdef MULTI_GPU_SUPPORT
 
 generic_device_context_type<CCL_ENABLE_SYCL_FALSE>::generic_device_context_type(handle_t ctx) :
     context()
@@ -49,6 +49,6 @@ const generic_device_context_type<CCL_ENABLE_SYCL_FALSE>::ccl_native_t&
     //TODO
     return context;//native::get_platform();
 }
-
+#endif //MULTI_GPU_SUPPORT
 #endif
 }

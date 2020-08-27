@@ -82,6 +82,10 @@ public:
     bool is_ft_enabled;
     ccl_bfp16_impl_type bfp16_impl_type;
 
+//TODO new_api configure thread wait timeout
+    size_t thread_barrier_wait_timeout_sec = 5;
+
+
 private:
     global_data();
 

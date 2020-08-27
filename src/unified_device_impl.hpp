@@ -88,6 +88,7 @@ generic_device_type<CCL_ENABLE_SYCL_TRUE>::get() noexcept
 
 #else
 
+#ifdef MULTI_GPU_SUPPORT
 generic_device_type<CCL_ENABLE_SYCL_FALSE>::generic_device_type(device_index_type id)
  :device(id)
 {
@@ -103,5 +104,6 @@ generic_device_type<CCL_ENABLE_SYCL_FALSE>::get() noexcept
 {
     return native::get_runtime_device(device);
 }
+#endif //MULTI_GPU_SUPPORT
 #endif
 }

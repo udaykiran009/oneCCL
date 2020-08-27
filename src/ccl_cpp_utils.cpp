@@ -2,9 +2,7 @@
 
 #include "ccl_config.h"
 #include "ccl_types.hpp"
-#ifndef DEVICE_COMM_SUPPORT
-#error "aaa"
-#endif
+#ifdef MULTI_GPU_SUPPORT
 
 
 std::ostream& operator<<(std::ostream& out, const ccl::device_index_type& index);
@@ -119,3 +117,4 @@ std::ostream& operator<<(std::ostream& out, const ccl::device_index_type& index)
     out << ccl::to_string(index);
     return out;
 }
+#endif

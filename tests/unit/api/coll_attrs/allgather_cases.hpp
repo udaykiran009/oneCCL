@@ -5,8 +5,18 @@ TEST(coll_attr, allgather_attr_creation)
     auto attr = ccl::create_coll_attr<ccl::allgatherv_attr_t>(
                                                 ccl::attr_arg<ccl::allgatherv_op_attr_id::vector_buf>(666));
 
-    ASSERT_TRUE(attr.get_value<ccl::common_op_attr_id::version>().full != nullptr);
-    ASSERT_EQ(attr.get_value<ccl::allgatherv_op_attr_id::vector_buf>(), 666);
+    ASSERT_TRUE(attr.get<ccl::common_op_attr_id::version>().full != nullptr);
+    ASSERT_EQ(attr.get<ccl::allgatherv_op_attr_id::vector_buf>(), 666);
+}
+
+TEST(coll_attr, allgather_attr_creation_match_id)
+{
+    std::string match_id("aaaa");
+    auto attr = ccl::create_coll_attr<ccl::allgatherv_attr_t>(
+                                                ccl::attr_arg<ccl::common_op_attr_id::match_id>(match_id));
+
+    ASSERT_TRUE(attr.get<ccl::common_op_attr_id::version>().full != nullptr);
+    ASSERT_EQ(attr.get<ccl::common_op_attr_id::match_id>(), match_id);
 }
 
 TEST(coll_attr, allgather_creation_attr_with_common_attr)
@@ -16,10 +26,10 @@ TEST(coll_attr, allgather_creation_attr_with_common_attr)
                                                     ccl::attr_arg<ccl::common_op_attr_id::priority>(10),
                                                     ccl::attr_arg<ccl::common_op_attr_id::to_cache>(0));
 
-    ASSERT_TRUE(attr.get_value<ccl::common_op_attr_id::version>().full != nullptr);
-    ASSERT_EQ(attr.get_value<ccl::allgatherv_op_attr_id::vector_buf>(), 666);
-    ASSERT_EQ(attr.get_value<ccl::common_op_attr_id::priority>(), 10);
-    ASSERT_EQ(attr.get_value<ccl::common_op_attr_id::to_cache>(), 0);
+    ASSERT_TRUE(attr.get<ccl::common_op_attr_id::version>().full != nullptr);
+    ASSERT_EQ(attr.get<ccl::allgatherv_op_attr_id::vector_buf>(), 666);
+    ASSERT_EQ(attr.get<ccl::common_op_attr_id::priority>(), 10);
+    ASSERT_EQ(attr.get<ccl::common_op_attr_id::to_cache>(), 0);
 }
 
 TEST(coll_attr, allgather_copy_on_write_attr)
@@ -29,11 +39,11 @@ TEST(coll_attr, allgather_copy_on_write_attr)
 
     auto original_inner_impl_ptr = attr.get_impl();
 
-    ASSERT_EQ(attr.get_value<ccl::common_op_attr_id::priority>(), 10);
+    ASSERT_EQ(attr.get<ccl::common_op_attr_id::priority>(), 10);
 
     //set new val
-    attr.set_value<ccl::common_op_attr_id::priority>(11);
-    ASSERT_EQ(attr.get_value<ccl::common_op_attr_id::priority>(), 11);
+    attr.set<ccl::common_op_attr_id::priority>(11);
+    ASSERT_EQ(attr.get<ccl::common_op_attr_id::priority>(), 11);
 
     //make sure original impl is unchanged
     ASSERT_TRUE(original_inner_impl_ptr !=attr.get_impl());
@@ -76,25 +86,25 @@ TEST(coll_attr, allgather_creation_attr_setters)
                                                     ccl::attr_arg<ccl::common_op_attr_id::priority>(10),
                                                     ccl::attr_arg<ccl::common_op_attr_id::to_cache>(0));
 
-    ASSERT_TRUE(attr.get_value<ccl::common_op_attr_id::version>().full != nullptr);
-    ASSERT_EQ(attr.get_value<ccl::allgatherv_op_attr_id::vector_buf>(), 666);
-    ASSERT_EQ(attr.get_value<ccl::common_op_attr_id::priority>(), 10);
-    ASSERT_EQ(attr.get_value<ccl::common_op_attr_id::to_cache>(), 0);
+    ASSERT_TRUE(attr.get<ccl::common_op_attr_id::version>().full != nullptr);
+    ASSERT_EQ(attr.get<ccl::allgatherv_op_attr_id::vector_buf>(), 666);
+    ASSERT_EQ(attr.get<ccl::common_op_attr_id::priority>(), 10);
+    ASSERT_EQ(attr.get<ccl::common_op_attr_id::to_cache>(), 0);
 
-    attr.set_value<ccl::allgatherv_op_attr_id::vector_buf>(999);
-    ASSERT_EQ(attr.get_value<ccl::allgatherv_op_attr_id::vector_buf>(), 999);
+    attr.set<ccl::allgatherv_op_attr_id::vector_buf>(999);
+    ASSERT_EQ(attr.get<ccl::allgatherv_op_attr_id::vector_buf>(), 999);
 
-    attr.set_value<ccl::common_op_attr_id::priority>(11);
-    ASSERT_EQ(attr.get_value<ccl::common_op_attr_id::priority>(), 11);
+    attr.set<ccl::common_op_attr_id::priority>(11);
+    ASSERT_EQ(attr.get<ccl::common_op_attr_id::priority>(), 11);
 
-    attr.set_value<ccl::common_op_attr_id::to_cache>(1);
-    ASSERT_EQ(attr.get_value<ccl::common_op_attr_id::to_cache>(), 1);
+    attr.set<ccl::common_op_attr_id::to_cache>(1);
+    ASSERT_EQ(attr.get<ccl::common_op_attr_id::to_cache>(), 1);
 
     ccl_version_t new_ver;
     bool exception_throwed = false;
     try
     {
-        attr.set_value<ccl::common_op_attr_id::version>(new_ver);
+        attr.set<ccl::common_op_attr_id::version>(new_ver);
     }
     catch(...)
     {

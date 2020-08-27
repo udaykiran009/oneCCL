@@ -30,12 +30,15 @@ group_context::comm_group_t group_context::group_by_kvs(const std::vector<size_t
             std::make_shared<host_communicator>(std::make_shared<ccl_comm>(local_thread_device_group_ranks, cluster_device_group_size, kvs,
             TODO_TMP_ID.clone()));
     //barrier operation release: every threads continue its execution here...
+    LOG_INFO("Thread released by barrier");
 
     // register group slot in global context table, based on communicator id
     comm_group_t group = group_context::group_by_comm(host_comm);
 
     // sync existing group: blocking operation - wait for all groups
+    LOG_INFO("group thread barrier acquired: ", static_cast<void*>(group.get()));
     group->sync_group_size(local_thread_device_group_ranks.size());
+    LOG_INFO("group thread barrier released: ", static_cast<void*>(group.get()));
     return group;
 }
 
@@ -53,15 +56,43 @@ group_context::comm_group_t group_context::group_by_comm(shared_communicator_t h
         {
             group.reset(new ccl::comm_group(host_comm,
                                             threads_count,
-                                            on_process_ranks_count));
+                                            on_process_ranks_count,
+                                            unique_id));
             communicator_group_map.insert({
                                                         unique_id,
                                                         group
                                                         });
+            LOG_INFO("Comm group: " ,static_cast<void*>(group.get()), " has been created for unique_id: ", unique_id,
+                     ", expected thread count: ", threads_count, ", on process rank count: ", on_process_ranks_count);
         }
         else
         {
             group = ctx_it->second;
+            LOG_INFO("get existing comm group: " ,static_cast<void*>(group.get()), " for unique_id: ", unique_id);
+        }
+    }
+    return group;
+}
+
+group_context::comm_group_t group_context::get_existing_group_by_id(const group_unique_key& unique_id)
+{
+    comm_group_t group;
+    LOG_DEBUG("get existing comm group by id: ", unique_id, ", total groups: ", communicator_group_map.size());
+    {
+        std::unique_lock<ccl_spinlock> lock(mutex);
+        auto ctx_it = communicator_group_map.find(unique_id);
+        if(ctx_it == communicator_group_map.end())
+        {
+            std::stringstream ss;
+            ss << "Cannot find `comm_group_t` by id: " << unique_id << std::endl;
+            const std::string mess = ss.str();
+            LOG_ERROR(mess);
+            throw ccl_error(std::string(__FUNCTION__) + " - " + mess);
+        }
+        else
+        {
+            group = ctx_it->second;
+            LOG_DEBUG("get existing comm group: ", static_cast<void*>(group.get()), " for unique_id: ", unique_id);
         }
     }
     return group;

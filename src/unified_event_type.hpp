@@ -27,7 +27,7 @@ const generic_event_type<CCL_ENABLE_SYCL_TRUE>::ccl_native_t&
 
 #else
 
-
+#ifdef MULTI_GPU_SUPPORT
 generic_event_type<CCL_ENABLE_SYCL_FALSE>::generic_event_type(handle_t e) :
     event(/*TODO use ccl_device_context to create event*/)
 {
@@ -44,6 +44,6 @@ const generic_event_type<CCL_ENABLE_SYCL_FALSE>::ccl_native_t&
 {
     return event;
 }
-
+#endif //MULTI_GPU_SUPPORT
 #endif
 }

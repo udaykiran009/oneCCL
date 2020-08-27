@@ -1,9 +1,17 @@
 namespace coll_attr_suite
 {
-ccl_status_t stub_reduction(const void*, size_t, void*, size_t*, const ccl_fn_context_t*)
+
+ccl_status_t stub_reduction(
+    const void*,
+    size_t,
+    void*,
+    size_t*,
+    //ccl_datatype_t, // not required for native, custom datatype
+    const ccl_fn_context_t*)
 {
-    return ccl_status_success;
-}
+     return ccl_status_success;
+    }
+
 
 TEST(coll_attr, allreduce_attr_creation)
 {
@@ -12,8 +20,8 @@ TEST(coll_attr, allreduce_attr_creation)
     auto attr = ccl::create_coll_attr<ccl::allreduce_attr_t>(
                                                 ccl::attr_arg<ccl::allreduce_op_attr_id::reduction_fn>(function));
 
-    ASSERT_TRUE(attr.get_value<ccl::common_op_attr_id::version>().full != nullptr);
-    ASSERT_EQ(attr.get_value<ccl::allreduce_op_attr_id::reduction_fn>().get(), function);
+    ASSERT_TRUE(attr.get<ccl::common_op_attr_id::version>().full != nullptr);
+    ASSERT_EQ(attr.get<ccl::allreduce_op_attr_id::reduction_fn>().get(), function);
 }
 
 TEST(coll_attr, allreduce_copy_on_write_attr)
@@ -25,13 +33,13 @@ TEST(coll_attr, allreduce_copy_on_write_attr)
 
     auto original_inner_impl_ptr = attr.get_impl();
 
-    ASSERT_EQ(attr.get_value<ccl::allreduce_op_attr_id::reduction_fn>().get(), function);
+    ASSERT_EQ(attr.get<ccl::allreduce_op_attr_id::reduction_fn>().get(), function);
 
     //set new val
     {
         ccl::details::function_holder<ccl_reduction_fn_t> check_val{stub_reduction};
-        attr.set_value<ccl::allreduce_op_attr_id::reduction_fn>(stub_reduction);
-        ASSERT_EQ(attr.get_value<ccl::allreduce_op_attr_id::reduction_fn>().get(), check_val.get());
+        attr.set<ccl::allreduce_op_attr_id::reduction_fn>((ccl_reduction_fn_t)stub_reduction);
+        ASSERT_EQ(attr.get<ccl::allreduce_op_attr_id::reduction_fn>().get(), check_val.get());
     }
 
     //make sure original impl is unchanged

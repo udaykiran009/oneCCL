@@ -10,13 +10,13 @@
 #include "ccl_coll_attr_ids_traits.hpp"
 #include "ccl_coll_attr.hpp"
 
-// Core file with PIMPL implementation
-#include "coll_attr_impl.hpp"
+#include "coll_attr_creation_impl.hpp"
 #include "coll/coll_attributes.hpp"
 
 #include <array>
 #include "allgather_cases.hpp"
 #include "allreduce_cases.hpp"
 #include "barrier_cases.hpp"
+#include "sparse_allreduce_cases.hpp"
 #undef protected
 #undef private

@@ -81,7 +81,7 @@ enum class sparse_allreduce_op_attr_id : int {
 };
 
 enum class barrier_op_attr_id : int {
-    version,
+    op_id_offset = static_cast<typename std::underlying_type<common_op_attr_id>::type>(common_op_attr_id::last_value),
 
     last_value
 };

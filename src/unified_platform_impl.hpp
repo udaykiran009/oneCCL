@@ -27,9 +27,7 @@ const generic_platform_type<CCL_ENABLE_SYCL_TRUE>::ccl_native_t&
 
 
 #else
-
-
-
+#ifdef MULTI_GPU_SUPPORT
 generic_platform_type<CCL_ENABLE_SYCL_FALSE>::ccl_native_t
     generic_platform_type<CCL_ENABLE_SYCL_FALSE>::get() noexcept
 {
@@ -41,6 +39,6 @@ const generic_platform_type<CCL_ENABLE_SYCL_FALSE>::ccl_native_t&
 {
     return native::get_platform();
 }
-
+#endif //MULTI_GPU_SUPPORT
 #endif
 }

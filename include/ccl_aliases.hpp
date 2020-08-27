@@ -3,6 +3,7 @@
 #include <array>
 #include <functional>
 #include <list>
+#include <map>
 #include <memory>
 #include <mutex>
 #include <string>
@@ -25,6 +26,14 @@ using function_class = std::function<R(ArgTypes...)>;
 
 template <class T, class Allocator = std::allocator<T>>
 using list_class = std::list<T, Allocator>;
+
+template<
+    class Key,
+    class T,
+    class Compare = std::less<Key>,
+    class Allocator = std::allocator<std::pair<const Key, T> >
+>
+using map_class = std::map<Key, T, Compare, Allocator>;
 
 using mutex_class = std::mutex;
 

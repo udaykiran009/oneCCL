@@ -26,7 +26,7 @@ const generic_stream_type<CCL_ENABLE_SYCL_TRUE>::ccl_native_t&
 
 
 #else
-
+#ifdef MULTI_GPU_SUPPORT
 
 generic_stream_type<CCL_ENABLE_SYCL_FALSE>::generic_stream_type(handle_t q) :
     queue(/*TODO use ccl_device to create event*/)
@@ -44,6 +44,6 @@ const generic_stream_type<CCL_ENABLE_SYCL_FALSE>::ccl_native_t&
 {
     return queue;
 }
-
+#endif MULTI_GPU_SUPPORT
 #endif
 }

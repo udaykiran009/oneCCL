@@ -1,4 +1,6 @@
 #pragma once
+#include "ccl_types.hpp"
+#include "ccl_types_policy.hpp"
 #include "ccl_coll_attr_ids.hpp"
 #include "ccl_coll_attr_ids_traits.hpp"
 #include "coll/coll_common_attributes.hpp"
@@ -13,9 +15,4 @@ public:
 };
 
 
-
-ccl_alltoall_op_attr_impl_t::ccl_alltoall_op_attr_impl_t(const typename ccl_common_op_attr_impl_t::version_traits_t::type& version) :
-        base_t(version)
-{
-}
 }

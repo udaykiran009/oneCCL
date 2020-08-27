@@ -39,7 +39,7 @@ CCL_API ccl::device_communicator ccl::comm_group::create_communicator(const Devi
                                                                   pimpl->get_host_communicator()->rank(),
                                                                   attr);
     // registering device in group - is non blocking operation, until it is not the last device
-    pimpl->sync_register_communicator(impl.get());
+    pimpl->sync_register_communicator(impl);
     return device_communicator(std::move(impl));
 }
 
@@ -56,7 +56,7 @@ CCL_API ccl::device_communicator ccl::comm_group::create_communicator(DeviceType
                                                                                                  pimpl->get_host_communicator()->rank(),
                                                                                                  attr);
     // registering device in group - is non blocking operation, until it is not the last device
-    pimpl->sync_register_communicator(impl.get());
+    pimpl->sync_register_communicator(impl);
     return ccl::device_communicator(std::move(impl));
 }
 

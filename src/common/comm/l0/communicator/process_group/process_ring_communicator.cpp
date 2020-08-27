@@ -21,6 +21,8 @@ void process_ring_communicator::visit(ccl::gpu_comm_attr& comm_attr)
     //get rank & size
     auto topology = ctx->get_process_topology<base_t::topology_class()>(process_id, thread_id);
     this->initialize_comm_addr(get_device_path(), topology);
+
+    this->set_comm_group_id(comm_attr.get_unique_id);
 }
 /*
 size_t process_ring_communicator::group_size() const

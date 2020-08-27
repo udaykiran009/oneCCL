@@ -4,6 +4,13 @@
 #include "common/comm/comm_interface.hpp"
 #include "unified_device_impl.hpp"
 
+#include "ccl_types_policy.hpp"
+#include "ccl_comm_split_attr_ids.hpp"
+#include "ccl_comm_split_attr_ids_traits.hpp"
+#include "ccl_comm_split_attr.hpp"
+
+#include "common/comm/comm_split_common_attr.hpp"
+#include "comm_split_attr_impl.hpp"
 
 #ifdef MULTI_GPU_SUPPORT
 #include "common/comm/l0/communicator/device_group/device_ring_communicator.hpp"
@@ -69,28 +76,30 @@ communicator_interface_dispatcher::create_communicator_from_unified_device(ccl::
                                                                            size_t process_idx,
                                                                            const ccl::device_comm_split_attr_t& attr)
 {
-    ccl::device_topology_type preferred_topology_class;
-    ccl::device_group_split_type preferred_topology_group;
-    /*if (attr)
+    // TODO ring by default at now. Choose preferred a2a if availbale
+    ccl::device_topology_type preferred_topology_class = ccl::device_topology_type::ring;
+    ccl::device_group_split_type preferred_topology_group = ccl::device_group_split_type::cluster;
+
+    // read comm split attributes
+    if (attr.is_valid<ccl::ccl_comm_split_attributes::group>())
     {
-        preferred_topology_class = attr.get_value<ccl_device_preferred_topology_class>();
-        preferred_topology_group = attr.get_value<ccl_device_preferred_group>();
+        preferred_topology_group = attr.get<ccl::ccl_comm_split_attributes::group>();
+        if(attr.is_valid<ccl::ccl_comm_split_attributes::color>())
+        {
+            throw ccl_error(std::string("Invalid `device_comm_split_attr_t`: both `color` and `group` set. Only one is supported"));
+        }
     }
-    else
+    else if (attr.is_valid<ccl::ccl_comm_split_attributes::color>())
     {
-        preferred_topology_class = device_attr_impl::class_default();
-        preferred_topology_group = device_attr_impl::group_default();
-    }*/
+        throw ccl_error(std::string(__FUNCTION__) + " - not implemented for 'color'");
+    }
 
     //TODO check device_id or sycl device validity before communicator creation
-    (void)preferred_topology_class;
-    (void)preferred_topology_group;
-    ccl::device_group_split_type preferred_topology = ccl::device_group_split_type::process;
     switch(preferred_topology_class)
     {
         case device_topology_type::ring:
         {
-            switch(preferred_topology)
+            switch(preferred_topology_group)
             {
                 case ccl::device_group_split_type::thread:
                     return communicator_interface_ptr(
@@ -109,13 +118,13 @@ communicator_interface_dispatcher::create_communicator_from_unified_device(ccl::
                                                                    attr));
                 default:
                     throw ccl_error(std::string("Invalid `device_comm_split_attr_t` value for `ccl_device_preferred_group`: ") +
-                            ::to_string(preferred_topology));
+                            ::to_string(preferred_topology_group));
             }
             break;
         }
         case device_topology_type::a2a:
         {
-            switch(preferred_topology)
+            switch(preferred_topology_group)
             {
                 case ccl::device_group_split_type::thread:
                     return communicator_interface_ptr(
@@ -130,7 +139,7 @@ communicator_interface_dispatcher::create_communicator_from_unified_device(ccl::
                                                                       thread_idx, process_idx, attr));
                 default:
                     throw ccl_error(std::string("Invalid `device_comm_split_attr_t` value for `ccl_device_preferred_group`: ") +
-                            ::to_string(preferred_topology));
+                            ::to_string(preferred_topology_group));
             }
             break;
         }

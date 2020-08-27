@@ -31,6 +31,8 @@ public:
     #ifdef CCL_ENABLE_SYCL
         using stream_native_t = cl::sycl::queue;
         using stream_native_device_t = cl::sycl::device;
+        using stream_native_context_t = typename ccl::unified_device_context_type::ccl_native_t;
+        using stream_native_handle_t = typename ccl::unified_stream_type::handle_t;
     #else
         using stream_native_t = void *;
         using stream_native_device_t = void *;

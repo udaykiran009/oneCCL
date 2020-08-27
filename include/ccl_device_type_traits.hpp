@@ -7,6 +7,7 @@
 #ifdef MULTI_GPU_SUPPORT
 #include <ze_api.h>
 #endif
+
 namespace ccl {
 
 template <class type>
@@ -50,8 +51,6 @@ API_CLASS_TYPE_INFO(cl_command_queue);
 API_CLASS_TYPE_INFO(cl_context);
 API_CLASS_TYPE_INFO(cl::sycl::event);
 #endif
-
-#ifdef MULTI_GPU_SUPPORT
 
 #ifdef CCL_ENABLE_SYCL
 template <>
@@ -122,6 +121,9 @@ struct generic_event_type<CCL_ENABLE_SYCL_TRUE> {
 };
 
 #else
+
+#ifdef MULTI_GPU_SUPPORT
+
 }
 namespace native {
 class ccl_device;
@@ -206,6 +208,7 @@ struct generic_event_type<CCL_ENABLE_SYCL_FALSE> {
 
     ccl_native_t event;
 };
+#endif /* MULTI_GPU_SUPPORT */
 #endif
 
 using unified_device_type = generic_device_type<CCL_ENABLE_SYCL_V>;
@@ -219,5 +222,5 @@ template <class... Args>
 unified_device_type create_from_index(Args&&... args) {
     return unified_device_type(std::forward<Args>(args)...);
 }
-#endif /* MULTI_GPU_SUPPORT */
+
 } // namespace ccl

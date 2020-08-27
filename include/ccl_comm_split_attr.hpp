@@ -8,7 +8,7 @@ namespace ccl {
 
 class ccl_host_comm_split_attr_impl;
 class ccl_device_comm_split_attr_impl;
-
+class ccl_empty_attr;
 /**
  * Host attributes
  */
@@ -30,7 +30,8 @@ public:
     comm_split_attr_t& operator=(comm_split_attr_t&& src);
     comm_split_attr_t(comm_split_attr_t&& src);
     comm_split_attr_t(const comm_split_attr_t& src);
-    ~comm_split_attr_t();
+    comm_split_attr_t(ccl_empty_attr);
+    ~comm_split_attr_t() noexcept;
 
     /**
      * Set specific value for selft attribute by @attrId.
@@ -80,7 +81,8 @@ public:
     device_comm_split_attr_t& operator=(device_comm_split_attr_t&& src);
     device_comm_split_attr_t(device_comm_split_attr_t&& src);
     device_comm_split_attr_t(const device_comm_split_attr_t& src);
-    ~device_comm_split_attr_t();
+    device_comm_split_attr_t(ccl_empty_attr);
+    ~device_comm_split_attr_t() noexcept;
 
     /**
      * Set specific value for selft attribute by @attrId.

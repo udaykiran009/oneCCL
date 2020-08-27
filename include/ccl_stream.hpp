@@ -32,6 +32,10 @@ public:
 
     ~stream();
 
+    stream(stream&& src);
+    stream(const stream& src);
+    stream& operator= (const stream&src);
+
     /**
      * Get specific attribute value by @attrId
      */
@@ -42,7 +46,15 @@ private:
     friend class environment;
     friend class communicator;
     friend class device_communicator;
-    stream(stream&& src);
+    friend class ccl_empty_attr;
+
+    template <class ...attr_value_pair_t>
+    friend stream create_stream_from_attr(typename unified_device_type::ccl_native_t device,
+                               typename unified_device_context_type::ccl_native_t context,
+                               attr_value_pair_t&&...avps);
+    template <class ...attr_value_pair_t>
+    friend stream create_stream_from_attr(typename unified_device_type::ccl_native_t device, attr_value_pair_t&&...avps);
+
     stream(impl_value_t&& impl);
 
     /**
@@ -63,6 +75,13 @@ constexpr auto attr_arg(value_type v) -> details::attr_value_tripple<stream_attr
 {
     return details::attr_value_tripple<stream_attr_id, t, value_type>(v);
 }
+
+
+/**
+ * Declare extern empty attributes
+ */
+extern stream default_stream;
+
 
 /* TODO temporary function for UT compilation: would be part of ccl::environment in final*/
 template <class native_stream_type,

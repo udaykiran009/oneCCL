@@ -45,6 +45,10 @@ set (dependencies_sources
              "${PROJECT_SOURCE_DIR}/src/ccl_cpp_utils.cpp"
              "${PROJECT_SOURCE_DIR}/src/common/log/log.cpp"
              "${PROJECT_SOURCE_DIR}/src/common/event/event.cpp"
+             "${PROJECT_SOURCE_DIR}/tests/unit/api/stubs/spinlock.cpp")
+
+if(MULTI_GPU_SUPPORT)
+    list( APPEND dependencies_sources
              "${PROJECT_SOURCE_DIR}/src/native_device_api/l0/base.cpp"
              "${PROJECT_SOURCE_DIR}/src/native_device_api/l0/device.cpp"
              "${PROJECT_SOURCE_DIR}/src/native_device_api/l0/driver.cpp"
@@ -53,7 +57,8 @@ set (dependencies_sources
              "${PROJECT_SOURCE_DIR}/src/native_device_api/l0/subdevice.cpp"
              "${PROJECT_SOURCE_DIR}/src/native_device_api/l0/primitives.cpp"
              "${PROJECT_SOURCE_DIR}/src/native_device_api/l0/utils.cpp"
-             "${PROJECT_SOURCE_DIR}/tests/unit/api/stubs/spinlock.cpp")
+             )
+endif()
 
 set(CCL_MAJOR_VERSION     "0")
 set(CCL_MINOR_VERSION     "0")
