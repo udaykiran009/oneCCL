@@ -60,7 +60,8 @@ TEST_F(ring_reduce_scatter_single_device_fixture, ring_reduce_scatter_single_dev
             // memory
             auto mem_send = device.alloc_memory<native_type>(send_buffer_size, sizeof(native_type));
             auto mem_recv = device.alloc_memory<native_type>(recv_buffer_size, sizeof(native_type));
-            auto temp_recv = device.alloc_memory<native_type>(2 * recv_buffer_size, sizeof(native_type));
+            auto temp_recv =
+                device.alloc_memory<native_type>(2 * recv_buffer_size, sizeof(native_type));
 
             mem_send.enqueue_write_sync(send_values);
             mem_recv.enqueue_write_sync(recv_values.begin(),
@@ -140,7 +141,7 @@ TEST_F(ring_reduce_scatter_single_device_fixture, ring_reduce_scatter_single_dev
 
     //Set args and launch kernel
     std::mutex thread_lock; //workaround
-    std::atomic<size_t> val { 0 }; //workaround
+    std::atomic<size_t> val{ 0 }; //workaround
     std::vector<std::thread> thread_group;
     std::vector<std::unique_ptr<std::stringstream>> thread_out_put;
     for (auto& idx_kernel : thread_kernels) {
@@ -319,10 +320,8 @@ TEST_F(ring_reduce_scatter_single_device_fixture, ring_reduce_scatter_single_dev
             size_t thread_idx = idx_kernel.first;
             corr_val = thread_idx * recv_buffer_size * num_thread;
 
-            auto lambda = [&corr_val](size_t thread_idx,
-                                      size_t num_thread,
-                                      native_type value) -> bool {
-
+            auto lambda = [&corr_val](
+                              size_t thread_idx, size_t num_thread, native_type value) -> bool {
                 corr_val += num_thread;
 
                 if (value != corr_val)
@@ -332,7 +331,7 @@ TEST_F(ring_reduce_scatter_single_device_fixture, ring_reduce_scatter_single_dev
             };
 
             memory_storage.check_results(
-                thread_idx, output, 1 /*recv_mem*/,  lambda, thread_idx, num_thread);
+                thread_idx, output, 1 /*recv_mem*/, lambda, thread_idx, num_thread);
         }
     }
     catch (check_on_exception& ex) {

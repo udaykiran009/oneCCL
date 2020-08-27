@@ -186,7 +186,7 @@ TEST_F(a2a_bcast_single_device_fixture, a2a_bcast_single_device_mt) {
 
     //Set args and launch kernel
     std::mutex thread_lock; //workaround
-    std::atomic<size_t> val { 0 }; //workaround
+    std::atomic<size_t> val{ 0 }; //workaround
     std::vector<std::thread> thread_group;
     std::vector<std::unique_ptr<std::stringstream>> thread_out_put;
     for (auto& idx_kernel : thread_kernels) {

@@ -7,7 +7,6 @@ namespace ring_single_device_multi_tile_case {
 using native_type = float;
 
 TEST_F(ring_allreduce_single_device_multi_tile_fixture, ring_allreduce_single_device_multi_tile) {
-
     // test case data
     const size_t buffer_size = 512;
     const size_t num_thread = 2;
@@ -131,7 +130,7 @@ TEST_F(ring_allreduce_single_device_multi_tile_fixture, ring_allreduce_single_de
 
     //Set args and launch kernel
     std::mutex thread_lock; //workaround
-    std::atomic<size_t> val { 0 }; //workaround
+    std::atomic<size_t> val{ 0 }; //workaround
 
     std::vector<std::thread> thread_group;
     std::vector<std::unique_ptr<std::stringstream>> thread_out_put;

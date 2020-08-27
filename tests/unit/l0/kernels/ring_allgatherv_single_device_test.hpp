@@ -79,15 +79,14 @@ TEST_F(ring_allgatherv_single_device_fixture, ring_allgatherv_single_device_mt) 
             auto mem_send = device.alloc_memory<native_type>(send_count, sizeof(native_type));
             auto mem_recv = device.alloc_memory<native_type>(recv_buffer_size, sizeof(native_type));
 
-            mem_send.enqueue_write_sync(send_values.begin() + recv_offsets[thread_idx],
-                                        send_values.begin() + recv_offsets[thread_idx] + send_count);
+            mem_send.enqueue_write_sync(
+                send_values.begin() + recv_offsets[thread_idx],
+                send_values.begin() + recv_offsets[thread_idx] + send_count);
 
             mem_recv.enqueue_write_sync(recv_values.begin(),
                                         recv_values.begin() + recv_buffer_size);
-            memory_storage.register_shared_data(thread_idx,
-                                                num_thread,
-                                                std::move(mem_send),
-                                                std::move(mem_recv));
+            memory_storage.register_shared_data(
+                thread_idx, num_thread, std::move(mem_send), std::move(mem_recv));
 
             // flags
             auto left_wrote_2_me_flag = device.alloc_memory<int>(1, sizeof(int));
@@ -148,7 +147,7 @@ TEST_F(ring_allgatherv_single_device_fixture, ring_allgatherv_single_device_mt) 
 
     //Set args and launch kernel
     std::mutex thread_lock; //workaround
-    std::atomic<size_t> val { 0 }; //workaround
+    std::atomic<size_t> val{ 0 }; //workaround
     std::vector<std::thread> thread_group;
     std::vector<std::unique_ptr<std::stringstream>> thread_out_put;
     for (auto& idx_kernel : thread_kernels) {
@@ -211,12 +210,15 @@ TEST_F(ring_allgatherv_single_device_fixture, ring_allgatherv_single_device_mt) 
                 // bind recv_counts, recv_offets
                 i = 0;
                 std::array<int, 2> comm_mem_offset{ 2, 3 };
-                UT_ASSERT(comm_mem_offset.size() == comm_mem_handles.size(), "comm_mem_offset != comm_mem_handles");
+                UT_ASSERT(comm_mem_offset.size() == comm_mem_handles.size(),
+                          "comm_mem_offset != comm_mem_handles");
                 for (auto& comm : comm_mem_handles) {
-                    result = zeKernelSetArgumentValue(kernel, comm_mem_offset[i], sizeof(comm), &comm);
+                    result =
+                        zeKernelSetArgumentValue(kernel, comm_mem_offset[i], sizeof(comm), &comm);
                     if (result != ZE_RESULT_SUCCESS) {
                         throw std::runtime_error(
-                            std::string("Cannot zeKernelSetArgumentValue memory at comm_mem_offset: ") +
+                            std::string(
+                                "Cannot zeKernelSetArgumentValue memory at comm_mem_offset: ") +
                             std::to_string(comm_mem_offset[i]) +
                             " index\nError: " + native::to_string(result));
                     }
@@ -348,10 +350,8 @@ TEST_F(ring_allgatherv_single_device_fixture, ring_allgatherv_single_device_mt) 
             size_t thread_idx = idx_kernel.first;
             corr_val = 0;
 
-            auto lambda = [&corr_val](size_t thread_idx,
-                                      size_t num_thread,
-                                      native_type value) -> bool {
-
+            auto lambda = [&corr_val](
+                              size_t thread_idx, size_t num_thread, native_type value) -> bool {
                 corr_val++;
 
                 if (value != corr_val)
@@ -361,7 +361,7 @@ TEST_F(ring_allgatherv_single_device_fixture, ring_allgatherv_single_device_mt) 
             };
 
             memory_storage.check_results(
-                thread_idx, output, 1 /*recv_mem*/,  lambda, thread_idx, num_thread);
+                thread_idx, output, 1 /*recv_mem*/, lambda, thread_idx, num_thread);
         }
     }
     catch (check_on_exception& ex) {

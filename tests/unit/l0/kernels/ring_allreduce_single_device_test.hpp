@@ -175,7 +175,7 @@ TEST_F(ring_allreduce_single_device_fixture, ring_allreduce_single_device_mt) {
 
     //Set args and launch kernel
     std::mutex thread_lock; //workaround
-    std::atomic<size_t> val { 0 }; //workaround
+    std::atomic<size_t> val{ 0 }; //workaround
     std::vector<std::thread> thread_group;
     std::vector<std::unique_ptr<std::stringstream>> thread_out_put;
     for (auto& idx_kernel : thread_kernels) {
@@ -379,10 +379,8 @@ TEST_F(ring_allreduce_single_device_fixture, ring_allreduce_single_device_mt) {
             size_t thread_idx = idx_kernel.first;
             corr_val = 0;
 
-            auto lambda = [&corr_val](size_t thread_idx,
-                                      size_t num_thread,
-                                      native_type value) -> bool {
-
+            auto lambda = [&corr_val](
+                              size_t thread_idx, size_t num_thread, native_type value) -> bool {
                 corr_val += num_thread;
 
                 if (value != corr_val)
