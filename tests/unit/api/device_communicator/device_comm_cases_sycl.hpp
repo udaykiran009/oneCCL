@@ -28,7 +28,6 @@
 
 #include "ccl_request.hpp"
 
-#include "coll_attr_impl.hpp"
 #include "coll/coll_attributes.hpp"
 
 #include "common/comm/comm_split_common_attr.hpp"
