@@ -3,4 +3,4 @@ add_subdirectory(device_communicator)
 add_subdirectory(event)
 add_subdirectory(comm_split_attrs)
 add_subdirectory(stream)
-
+add_subdirectory(host_communicator)
