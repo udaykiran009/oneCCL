@@ -129,7 +129,7 @@ communicator::allgatherv(const void* send_buf,
 }
 
 template <class BufferType,
-              class = typename std::enable_if<ccl::is_native_type_supported<BufferType>()>::type>
+          typename T>
 communicator::request_t CCL_API
 communicator::allgatherv(const BufferType* send_buf,
                          size_t send_count,
@@ -142,7 +142,7 @@ communicator::allgatherv(const BufferType* send_buf,
 }
 
 template <class BufferType,
-            class = typename std::enable_if<ccl::is_native_type_supported<BufferType>()>::type>
+          typename T>
 communicator::request_t CCL_API
 communicator::allgatherv(const BufferType* send_buf,
                          size_t send_count,
@@ -168,7 +168,7 @@ communicator::allreduce(const void* send_buf,
 }
 
 template <class BufferType,
-            class = typename std::enable_if<ccl::is_native_type_supported<BufferType>()>::type>
+          typename T>
 communicator::request_t CCL_API
 communicator::allreduce(const BufferType* send_buf,
                         BufferType* recv_buf,
@@ -204,7 +204,7 @@ communicator::alltoall(const vector_class<void*>& send_buf,
 }
 
 template <class BufferType,
-            class = typename std::enable_if<ccl::is_native_type_supported<BufferType>()>::type>
+          typename T>
 communicator::request_t CCL_API
 communicator::alltoall(const BufferType* send_buf,
                        BufferType* recv_buf,
@@ -216,7 +216,7 @@ communicator::alltoall(const BufferType* send_buf,
 }
 
 template <class BufferType,
-            class = typename std::enable_if<ccl::is_native_type_supported<BufferType>()>::type>
+          typename T>
 communicator::request_t CCL_API
 communicator::alltoall(const vector_class<BufferType*>& send_buf,
                        const vector_class<BufferType*>& recv_buf,
@@ -253,7 +253,7 @@ communicator::alltoallv(const vector_class<void*>& send_bufs,
 }
 
 template <class BufferType,
-            class = typename std::enable_if<ccl::is_native_type_supported<BufferType>()>::type>
+          typename T>
 communicator::request_t CCL_API
 communicator::alltoallv(const BufferType* send_buf,
                         const vector_class<size_t>& send_counts,
@@ -266,7 +266,7 @@ communicator::alltoallv(const BufferType* send_buf,
 }
 
 template <class BufferType,
-            class = typename std::enable_if<ccl::is_native_type_supported<BufferType>()>::type>
+          typename T>
 communicator::request_t CCL_API
 communicator::alltoallv(const vector_class<BufferType*>& send_bufs,
                         const vector_class<size_t>& send_counts,
@@ -298,7 +298,7 @@ communicator::bcast(void* buf,
 }
 
 template <class BufferType,
-            class = typename std::enable_if<ccl::is_native_type_supported<BufferType>()>::type>
+          typename T>
 communicator::request_t CCL_API
 communicator::bcast(BufferType* buf,
                     size_t count,
@@ -324,7 +324,7 @@ communicator::reduce(const void* send_buf,
 }
 
 template <class BufferType,
-            class = typename std::enable_if<ccl::is_native_type_supported<BufferType>()>::type>
+          typename T>
 communicator::request_t CCL_API
 communicator::reduce(const BufferType* send_buf,
                      BufferType* recv_buf,
@@ -351,7 +351,7 @@ communicator::reduce_scatter(const void* send_buf,
 }
 
 template <class BufferType,
-            class = typename std::enable_if<ccl::is_native_type_supported<BufferType>()>::type>
+          typename T>
 communicator::request_t CCL_API
 communicator::reduce_scatter(const BufferType* send_buf,
                              BufferType* recv_buf,
@@ -387,7 +387,7 @@ communicator::sparse_allreduce(const void* send_ind_buf,
 template <
     class index_BufferType,
     class value_BufferType,
-    class = typename std::enable_if<ccl::is_native_type_supported<value_BufferType>()>::type>
+    typename T>
 communicator::request_t CCL_API
 communicator::sparse_allreduce(const index_BufferType* send_ind_buf,
                                size_t send_ind_count,

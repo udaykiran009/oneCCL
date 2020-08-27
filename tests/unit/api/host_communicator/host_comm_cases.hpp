@@ -13,8 +13,8 @@
 #include "ccl_coll_attr_ids_traits.hpp"
 #include "ccl_coll_attr.hpp"
 
-#include "coll_attr_impl.hpp"
 #include "coll/coll_attributes.hpp"
+#include "coll_attr_creation_impl.hpp"
 
 #include "ccl_event_attr_ids.hpp"
 #include "ccl_event_attr_ids_traits.hpp"
