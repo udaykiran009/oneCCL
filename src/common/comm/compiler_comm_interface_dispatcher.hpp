@@ -13,7 +13,7 @@ namespace native
 namespace ccl
 {
 #ifdef MULTI_GPU_SUPPORT
-class gpu_comm_attr;
+struct gpu_comm_attr;
 #endif
 struct communicator_interface;
 class device_comm_split_attr_t;

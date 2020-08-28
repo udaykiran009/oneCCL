@@ -210,6 +210,8 @@ ccl_status_t ccl_stream_create(ccl_stream_type_t type,
     CCL_ASSERT(stream);
     try
     {
+//TODO
+#if 0
         LOG_DEBUG("create stream by type: ", type);
 #ifdef MULTI_GPU_SUPPORT
     #ifdef CCL_ENABLE_SYCL
@@ -231,6 +233,7 @@ ccl_status_t ccl_stream_create(ccl_stream_type_t type,
 
         //for legacy stream: override type for 'host' related queue
         static_cast<ccl_stream*>(*stream)->type = type;
+#endif
 #endif
         return ccl_status_success;
     }

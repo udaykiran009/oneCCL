@@ -23,7 +23,7 @@ void process_a2a_communicator::visit(ccl::gpu_comm_attr& comm_attr)
     auto topology = ctx->get_process_topology<base_t::topology_class()>(process_id, thread_id);
     this->initialize_comm_addr(get_device_path(), topology);
 
-    this->set_comm_group_id(comm_attr.get_unique_id);
+    this->set_comm_group_id(comm_attr.get_unique_id());
 }
 
 ccl::request_t process_a2a_communicator::barrier(const ccl::barrier_attr_t& attr,

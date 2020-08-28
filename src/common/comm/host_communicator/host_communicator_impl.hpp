@@ -1,17 +1,5 @@
 #pragma once
 
-#include "ccl_types.hpp"
-#include "ccl_type_traits.hpp"
-#include "ccl_types_policy.hpp"
-
-#include "ccl_request.hpp"
-
-#include "ccl_coll_attr_ids.hpp"
-#include "ccl_coll_attr_ids_traits.hpp"
-#include "ccl_coll_attr.hpp"
-
-#include "ccl_communicator.hpp"
-
 #include "common/comm/host_communicator/host_communicator.hpp"
 #include "common/comm/host_communicator/host_communicator_defines.hpp"
 
@@ -19,7 +7,7 @@ namespace ccl {
 
 /* allgatherv */
 template<class BufferType>
-ccl::communicator::request_t
+ccl::request_t
 host_communicator::allgatherv_impl(const BufferType* send_buf,
                                    size_t send_count,
                                    BufferType* recv_buf,
@@ -27,11 +15,11 @@ host_communicator::allgatherv_impl(const BufferType* send_buf,
                                    const allgatherv_attr_t& attr)
 {
     // TODO There must be a call to a collective function
-    return communicator::request_t();
+    return ccl::request_t();
 }
 
 template<class BufferType>
-ccl::communicator::request_t
+ccl::request_t
 host_communicator::allgatherv_impl(const BufferType* send_buf,
                                    size_t send_count,
                                    const vector_class<BufferType*>& recv_bufs,
@@ -39,13 +27,13 @@ host_communicator::allgatherv_impl(const BufferType* send_buf,
                                    const allgatherv_attr_t& attr)
 {
     // TODO There must be a call to a collective function
-    return communicator::request_t();
+    return ccl::request_t();
 }
 
 /* allreduce */
 template <class BufferType,
           typename T>
-ccl::communicator::request_t
+ccl::request_t
 host_communicator::allreduce_impl(const BufferType* send_buf,
                                   BufferType* recv_buf,
                                   size_t count,
@@ -53,38 +41,38 @@ host_communicator::allreduce_impl(const BufferType* send_buf,
                                   const allreduce_attr_t& attr)
 {
     // TODO There must be a call to a collective function
-    return communicator::request_t();
+    return ccl::request_t();
 }
 
 /* alltoall */
 template <class BufferType,
            typename T>
-ccl::communicator::request_t
+ccl::request_t
 host_communicator::alltoall_impl(const BufferType* send_buf,
                                  BufferType* recv_buf,
                                  size_t count,
                                  const alltoall_attr_t& attr)
 {
     // TODO There must be a call to a collective function
-    return communicator::request_t();
+    return ccl::request_t();
 }
 
 template <class BufferType,
           typename T>
-ccl::communicator::request_t
+ccl::request_t
 host_communicator::alltoall_impl(const vector_class<BufferType*>& send_buf,
                                  const vector_class<BufferType*>& recv_buf,
                                  size_t count,
                                  const alltoall_attr_t& attr)
 {
     // TODO There must be a call to a collective function
-    return communicator::request_t();
+    return ccl::request_t();
 }
 
 /* alltoallv */
 template <class BufferType,
           typename T>
-ccl::communicator::request_t
+ccl::request_t
 host_communicator::alltoallv_impl(const BufferType* send_buf,
                                  const vector_class<size_t>& send_counts,
                                  BufferType* recv_buf,
@@ -92,12 +80,12 @@ host_communicator::alltoallv_impl(const BufferType* send_buf,
                                  const alltoallv_attr_t& attr)
 {
     // TODO There must be a call to a collective function
-    return communicator::request_t();
+    return ccl::request_t();
 }
 
 template <class BufferType,
           typename T>
-ccl::communicator::request_t
+ccl::request_t
 host_communicator::alltoallv_impl(const vector_class<BufferType*>& send_bufs,
                                   const vector_class<size_t>& send_counts,
                                   const vector_class<BufferType*>& recv_bufs,
@@ -105,26 +93,26 @@ host_communicator::alltoallv_impl(const vector_class<BufferType*>& send_bufs,
                                   const alltoallv_attr_t& attr)
 {
     // TODO There must be a call to a collective function
-    return communicator::request_t();
+    return ccl::request_t();
 }
 
 /* bcast */
 template <class BufferType,
           typename T>
-ccl::communicator::request_t
+ccl::request_t
 host_communicator::bcast_impl(BufferType* buf,
                               size_t count,
                               size_t root,
                               const bcast_attr_t& attr)
 {
     // TODO There must be a call to a collective function
-    return communicator::request_t();
+    return ccl::request_t();
 }
 
 /* reduce */
 template <class BufferType,
           typename T>
-ccl::communicator::request_t
+ccl::request_t
 host_communicator::reduce_impl(const BufferType* send_buf,
                                BufferType* recv_buf,
                                size_t count,
@@ -133,13 +121,13 @@ host_communicator::reduce_impl(const BufferType* send_buf,
                                const reduce_attr_t& attr)
 {
     // TODO There must be a call to a collective function
-    return communicator::request_t();
+    return ccl::request_t();
 }
 
 /* reduce_scatter */
 template <class BufferType,
           typename T>
-ccl::communicator::request_t
+ccl::request_t
 host_communicator::reduce_scatter_impl(const BufferType* send_buf,
                                        BufferType* recv_buf,
                                        size_t recv_count,
@@ -147,7 +135,7 @@ host_communicator::reduce_scatter_impl(const BufferType* send_buf,
                                        const reduce_scatter_attr_t& attr)
 {
     // TODO There must be a call to a collective function
-    return communicator::request_t();
+    return ccl::request_t();
 }
 
 /* sparse_allreduce */
@@ -155,7 +143,7 @@ template <
     class index_BufferType,
     class value_BufferType,
     typename T>
-ccl::communicator::request_t
+ccl::request_t
 host_communicator::sparse_allreduce_impl(const index_BufferType* send_ind_buf,
                                          size_t send_ind_count,
                                          const value_BufferType* send_val_buf,
@@ -168,7 +156,7 @@ host_communicator::sparse_allreduce_impl(const index_BufferType* send_ind_buf,
                                          const sparse_allreduce_attr_t& attr)
 {
     // TODO There must be a call to a collective function
-    return communicator::request_t();
+    return ccl::request_t();
 }
 
 } // namespace ccl

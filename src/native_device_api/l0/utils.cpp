@@ -3,7 +3,7 @@
 
 #ifdef CCL_ENABLE_SYCL
 #include <CL/sycl/backend/Intel_level0.hpp>
-static cl::sycl::vector_class<cl::sycl::device> gpu_sycl_devices;
+//static cl::sycl::vector_class<cl::sycl::device> gpu_sycl_devices;
 #endif
 
 namespace native

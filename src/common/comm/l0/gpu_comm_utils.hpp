@@ -1,6 +1,7 @@
 #pragma once
 #include <functional>
 
+#include "supported_topologies.hpp"
 #include "coll/algorithms/algorithms_enum.hpp"
 #include "native_device_api/export_api.hpp"
 #include "common/comm/l0/modules/modules_source_data.hpp"

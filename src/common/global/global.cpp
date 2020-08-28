@@ -22,7 +22,7 @@ global_data::global_data() {
     LOG_INFO("create global_data object");
 
     //TODO new_api configure thread wait timeout
-    extern size_t thread_barrier_wait_timeout_sec = 5;
+    thread_barrier_wait_timeout_sec = 5;
 }
 
 global_data::~global_data() {

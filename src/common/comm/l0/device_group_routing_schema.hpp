@@ -83,12 +83,12 @@ struct aggregated_topology_addr
              class ...SchemaArgs>
     bool insert(SchemaArgs&& ...args)
     {
-        if(std::get<class_id>(std::get<schema_id>(web)))
+        if(std::get<utils::enum_to_underlying(class_id)>(std::get<utils::enum_to_underlying(schema_id)>(web)))
         {
             assert(false && "Topology is registered already");
             return false;
         }
-        auto& schema_ptr = std::get<class_id>(std::get<schema_id>(web));
+        auto& schema_ptr = std::get<utils::enum_to_underlying(class_id)>(std::get<utils::enum_to_underlying(schema_id)>(web));
         schema_ptr.reset(new topology_addr<schema_id, class_id>(std::forward<SchemaArgs>(args)...));
         return true;
     }
@@ -97,7 +97,7 @@ struct aggregated_topology_addr
              ccl::device_topology_type class_id>
     const topology_addr<schema_id, class_id>& get() const
     {
-        const auto& schema_ptr = std::get<class_id>(std::get<schema_id>(web));
+        const auto& schema_ptr = std::get<utils::enum_to_underlying(class_id)>(std::get<utils::enum_to_underlying(schema_id)>(web));
         if(!schema_ptr)
         {
             assert(false && "Topology is not registered");
@@ -111,7 +111,7 @@ struct aggregated_topology_addr
     std::string to_string() const
     {
         details::topology_printer p;
-        p(std::get<schema_id>(web));
+        p(std::get<utils::enum_to_underlying(schema_id)>(web));
         return p.result.str();
     }
 
@@ -119,7 +119,7 @@ struct aggregated_topology_addr
              ccl::device_topology_type class_id>
     bool is_registered() const
     {
-        return std::get<class_id>(std::get<schema_id>(web));
+        return std::get<utils::enum_to_underlying(class_id)>(std::get<utils::enum_to_underlying(schema_id)>(web));
     }
 
     std::string to_string() const

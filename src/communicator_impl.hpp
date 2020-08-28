@@ -1,6 +1,8 @@
 #pragma once
 
 #include "common/log/log.hpp"
+#include "ccl_request.hpp"
+#include "ccl_communicator.hpp"
 #include "common/comm/host_communicator/host_communicator_impl.hpp"
 
 namespace ccl {
@@ -45,7 +47,7 @@ CCL_API size_t communicator::size() const
  * Implementation is platform specific and non portable.
  * @return host communicator
  */
-communicator create_communicator()
+communicator communicator::create_communicator()
 {
     throw ccl_error("Not implemented");
 
@@ -66,7 +68,7 @@ communicator create_communicator()
  * @param kvs key-value store for ranks wire-up
  * @return host communicator
  */
-communicator create_communicator(const size_t size,
+communicator communicator::create_communicator(const size_t size,
                                  shared_ptr_class<kvs_interface> kvs)
 {
     throw ccl_error("Not implemented");
@@ -88,7 +90,7 @@ communicator create_communicator(const size_t size,
  * @param kvs key-value store for ranks wire-up
  * @return host communicator
  */
-communicator create_communicator(const size_t size,
+communicator communicator::create_communicator(const size_t size,
                                  const size_t rank,
                                  shared_ptr_class<kvs_interface> kvs)
 {

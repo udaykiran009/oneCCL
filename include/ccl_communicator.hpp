@@ -39,7 +39,7 @@ public:
     communicator(communicator&& other);
     communicator operator=(communicator& other) = delete;
     communicator& operator=(communicator&& other);
-    ~communicator();
+    ~communicator() noexcept;
 
     size_t rank() const;
     size_t size() const;
@@ -67,7 +67,7 @@ public:
                          void* recv_buf,
                          const vector_class<size_t>& recv_counts,
                          ccl_datatype_t dtype,
-                         const allgatherv_attr_t& attr/* = allgatherv_attr_t()*/);
+                         const allgatherv_attr_t& attr = default_allgather_attr);
 
     /**
      * @param send_buf the buffer with @c send_count elements of @c dtype that stores local data to be gathered
@@ -83,7 +83,7 @@ public:
                          const vector_class<void*>& recv_bufs,
                          const vector_class<size_t>& recv_counts,
                          ccl_datatype_t dtype,
-                         const allgatherv_attr_t& attr/* = allgatherv_attr_t()*/);
+                         const allgatherv_attr_t& attr = default_allgather_attr);
 
     /**
      * Type safety version:
@@ -100,7 +100,7 @@ public:
                          size_t send_count,
                          BufferType* recv_buf,
                          const vector_class<size_t>& recv_counts,
-                         const allgatherv_attr_t& attr/* = allgatherv_attr_t()*/);
+                         const allgatherv_attr_t& attr =default_allgather_attr);
 
     /**
      * Type safety version:
@@ -117,7 +117,7 @@ public:
                          size_t send_count,
                          const vector_class<BufferType*>& recv_bufs,
                          const vector_class<size_t>& recv_counts,
-                         const allgatherv_attr_t& attr/* = allgatherv_attr_t()*/);
+                         const allgatherv_attr_t& attr =default_allgather_attr);
 
     /**
      * Type safety version:
@@ -134,7 +134,7 @@ public:
                          size_t send_count,
                          BufferObjectType& recv_buf,
                          const vector_class<size_t>& recv_counts,
-                         const allgatherv_attr_t& attr/* = allgatherv_attr_t()*/);
+                         const allgatherv_attr_t& attr = default_allgather_attr);
 
     /**
      * Allreduce is a collective communication operation that makes global reduction operation
@@ -507,6 +507,13 @@ public:
 private:
     friend class environment;
     explicit communicator(impl_value_t&& impl);
+
+    static communicator create_communicator();
+    static communicator create_communicator(const size_t size,
+                                 shared_ptr_class<kvs_interface> kvs);
+    static communicator create_communicator(const size_t size,
+                                 const size_t rank,
+                                 shared_ptr_class<kvs_interface> kvs);
 }; // class communicator
 
 } // namespace ccl

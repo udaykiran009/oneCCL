@@ -8,7 +8,7 @@ namespace ccl {
 
 class ccl_host_comm_split_attr_impl;
 class ccl_device_comm_split_attr_impl;
-class ccl_empty_attr;
+struct ccl_empty_attr;
 /**
  * Host attributes
  */
@@ -54,6 +54,10 @@ public:
 private:
     friend class environment;
     comm_split_attr_t(const typename details::ccl_host_split_traits<ccl_comm_split_attributes, ccl_comm_split_attributes::version>::type& version);
+
+    /* TODO temporary function for UT compilation: would be part of ccl::environment in final*/
+    template <class ...attr_value_pair_t>
+    static comm_split_attr_t create_comm_split_attr(attr_value_pair_t&&...avps);
 };
 
 
@@ -105,6 +109,10 @@ public:
 private:
     friend class environment;
     device_comm_split_attr_t(const typename details::ccl_device_split_traits<ccl_comm_split_attributes, ccl_comm_split_attributes::version>::type& version);
+
+    /* TODO temporary function for UT compilation: would be part of ccl::environment in final*/
+    template <class ...attr_value_pair_t>
+    static device_comm_split_attr_t create_device_comm_split_attr(attr_value_pair_t&&...avps);
 };
 
 #endif
@@ -117,15 +125,4 @@ constexpr auto attr_arg(value_type v) -> details::attr_value_tripple<ccl_comm_sp
 {
     return details::attr_value_tripple<ccl_comm_split_attributes, t, value_type>(v);
 }
-
-/* TODO temporary function for UT compilation: would be part of ccl::environment in final*/
-template <class ...attr_value_pair_t>
-comm_split_attr_t create_comm_split_attr(attr_value_pair_t&&...avps);
-
-#ifdef MULTI_GPU_SUPPORT
-/* TODO temporary function for UT compilation: would be part of ccl::environment in final*/
-template <class ...attr_value_pair_t>
-device_comm_split_attr_t create_device_comm_split_attr(attr_value_pair_t&&...avps);
-#endif
-
 } // namespace ccl

@@ -21,7 +21,7 @@ namespace stream_suite
 TEST(stream_api, stream_from_device_creation)
 {
     auto dev = native::get_platform().get_device(ccl::from_string("[0:6459]"));
-    auto str = ccl::create_stream_from_attr(dev);
+    auto str = ccl::stream::create_stream_from_attr(dev);
 
     ASSERT_TRUE(str.get<ccl::stream_attr_id::version>().full != nullptr);
 
@@ -33,7 +33,7 @@ TEST(stream_api, stream_from_device_context_creation)
 {
     auto dev = native::get_platform().get_device(ccl::from_string("[0:6459]"));
     auto ctx = std::make_shared<native::ccl_context>(); //TODO stub at moment
-    auto str = ccl::create_stream_from_attr(dev, ctx);
+    auto str = ccl::stream::create_stream_from_attr(dev, ctx);
 
     ASSERT_TRUE(str.get<ccl::stream_attr_id::version>().full != nullptr);
 
@@ -51,7 +51,7 @@ TEST(stream_api, stream_creation_from_native)
 
     //TODO HACK
     typename ccl::unified_stream_type::ccl_native_t *s = new typename ccl::unified_stream_type::ccl_native_t(&queue);
-    auto str = ccl::create_stream(*s);
+    auto str = ccl::stream::create_stream(*s);
 
     ASSERT_TRUE(str.get<ccl::stream_attr_id::version>().full != nullptr);
 
@@ -63,7 +63,7 @@ TEST(stream_api, stream_creation_from_native)
 TEST(stream_api, stream_creation_from_native_handle)
 {
     ze_command_queue_handle_t h;
-    auto str = ccl::create_stream(h);
+    auto str = ccl::stream::create_stream(h);
 
     ASSERT_TRUE(str.get<ccl::stream_attr_id::version>().full != nullptr);
 

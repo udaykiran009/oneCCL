@@ -63,7 +63,7 @@ bool gpu_comm_attr::sync_group_size(size_t device_group_size)
     }
 
     // master thread
-    ccl_communicator->barrier();
+    ccl_communicator->barrier_impl();
 
     ready = true;
     thread_group_size_cond.notify_all();
@@ -186,7 +186,7 @@ bool gpu_comm_attr::delegate_sync_register_communicator(std::shared_ptr<communic
         comm_it->second->visit(*this);
     }
 
-    ccl_communicator->barrier();
+    ccl_communicator->barrier_impl();
 
     //notify SLAVES thread ready
     barrier.communicator_ready = true;

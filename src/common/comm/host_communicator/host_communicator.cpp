@@ -3,13 +3,13 @@
 namespace ccl {
 
 host_communicator::host_communicator() :
-    comm_size(1), comm_rank(0)
+    comm_rank(0), comm_size(1)
 {
 }
 
 host_communicator::host_communicator(size_t size,
                                      shared_ptr_class<kvs_interface> kvs) :
-    comm_size(size), comm_rank(0)
+    comm_rank(0), comm_size(size)
 {
     if (size <= 0) {
         throw ccl_error("Incorrect size value when creating a host communicator");
@@ -19,7 +19,7 @@ host_communicator::host_communicator(size_t size,
 host_communicator::host_communicator(size_t size,
                                      size_t rank,
                                      shared_ptr_class<kvs_interface> kvs) :
-    comm_size(size), comm_rank(rank)
+    comm_rank(rank), comm_size(size)
 {
     if (rank > size || size <= 0) {
         throw ccl_error("Incorrect rank or size value when creating a host communicator");
@@ -37,7 +37,7 @@ size_t host_communicator::size() const
 }
 
 /* allgatherv */
-ccl::communicator::request_t
+ccl::request_t
 host_communicator::allgatherv_impl(const void* send_buf,
                                    size_t send_count,
                                    void* recv_buf,
@@ -46,10 +46,10 @@ host_communicator::allgatherv_impl(const void* send_buf,
                                    const allgatherv_attr_t& attr)
 {
     // TODO There must be a call to a collective function
-    return communicator::request_t();
+    return ccl::request_t();
 }
 
-ccl::communicator::request_t
+ccl::request_t
 host_communicator::allgatherv_impl(const void* send_buf,
                                    size_t send_count,
                                    const vector_class<void*>& recv_bufs,
@@ -58,11 +58,11 @@ host_communicator::allgatherv_impl(const void* send_buf,
                                    const allgatherv_attr_t& attr)
 {
     // TODO There must be a call to a collective function
-    return communicator::request_t();
+    return ccl::request_t();
 }
 
 /* allreduce */
-ccl::communicator::request_t
+ccl::request_t
 host_communicator::allreduce_impl(const void* send_buf,
                                   void* recv_buf,
                                   size_t count,
@@ -71,11 +71,11 @@ host_communicator::allreduce_impl(const void* send_buf,
                                   const allreduce_attr_t& attr)
 {
     // TODO There must be a call to a collective function
-    return communicator::request_t();
+    return ccl::request_t();
 }
 
 /* alltoall */
-ccl::communicator::request_t
+ccl::request_t
 host_communicator::alltoall_impl(const void* send_buf,
                                  void* recv_buf,
                                  size_t count,
@@ -83,10 +83,10 @@ host_communicator::alltoall_impl(const void* send_buf,
                                  const alltoall_attr_t& attr)
 {
     // TODO There must be a call to a collective function
-    return communicator::request_t();
+    return ccl::request_t();
 }
 
-ccl::communicator::request_t
+ccl::request_t
 host_communicator::alltoall_impl(const vector_class<void*>& send_buf,
                                  const vector_class<void*>& recv_buf,
                                  size_t count,
@@ -94,11 +94,11 @@ host_communicator::alltoall_impl(const vector_class<void*>& send_buf,
                                  const alltoall_attr_t& attr)
 {
     // TODO There must be a call to a collective function
-    return communicator::request_t();
+    return ccl::request_t();
 }
 
 /* alltoallv */
-ccl::communicator::request_t
+ccl::request_t
 host_communicator::alltoallv_impl(const void* send_buf,
                                   const vector_class<size_t>& send_counts,
                                   void* recv_buf,
@@ -107,10 +107,10 @@ host_communicator::alltoallv_impl(const void* send_buf,
                                   const alltoallv_attr_t& attr)
 {
     // TODO There must be a call to a collective function
-    return communicator::request_t();
+    return ccl::request_t();
 }
 
-ccl::communicator::request_t
+ccl::request_t
 host_communicator::alltoallv_impl(const vector_class<void*>& send_bufs,
                                   const vector_class<size_t>& send_counts,
                                   const vector_class<void*>& recv_bufs,
@@ -119,19 +119,19 @@ host_communicator::alltoallv_impl(const vector_class<void*>& send_bufs,
                                   const alltoallv_attr_t& attr)
 {
     // TODO There must be a call to a collective function
-    return communicator::request_t();
+    return ccl::request_t();
 }
 
 /* barrier */
-communicator::request_t
+ccl::request_t
 host_communicator::barrier_impl(const barrier_attr_t& attr)
 {
     // TODO There must be a call to a collective function
-    return communicator::request_t();
+    return ccl::request_t();
 }
 
 /* bcast */
-ccl::communicator::request_t
+ccl::request_t
 host_communicator::bcast_impl(void* buf,
                               size_t count,
                               ccl_datatype_t dtype,
@@ -139,11 +139,11 @@ host_communicator::bcast_impl(void* buf,
                               const bcast_attr_t& attr)
 {
     // TODO There must be a call to a collective function
-    return communicator::request_t();
+    return ccl::request_t();
 }
 
 /* reduce */
-ccl::communicator::request_t
+ccl::request_t
 host_communicator::reduce_impl(const void* send_buf,
                                void* recv_buf,
                                size_t count,
@@ -153,11 +153,11 @@ host_communicator::reduce_impl(const void* send_buf,
                                const reduce_attr_t& attr)
 {
     // TODO There must be a call to a collective function
-    return communicator::request_t();
+    return ccl::request_t();
 }
 
 /* reduce_scatter */
-ccl::communicator::request_t
+ccl::request_t
 host_communicator::reduce_scatter_impl(const void* send_buf,
                                        void* recv_buf,
                                        size_t recv_count,
@@ -166,11 +166,11 @@ host_communicator::reduce_scatter_impl(const void* send_buf,
                                        const reduce_scatter_attr_t& attr)
 {
     // TODO There must be a call to a collective function
-    return communicator::request_t();
+    return ccl::request_t();
 }
 
 /* sparse_allreduce */
-ccl::communicator::request_t
+ccl::request_t
 host_communicator::sparse_allreduce_impl(const void* send_ind_buf,
                                          size_t send_ind_count,
                                          const void* send_val_buf,
@@ -185,7 +185,7 @@ host_communicator::sparse_allreduce_impl(const void* send_ind_buf,
                                          const sparse_allreduce_attr_t& attr)
 {
     // TODO There must be a call to a collective function
-    return communicator::request_t();
+    return ccl::request_t();
 }
 
 HOST_COMM_IMPL_COLL_EXPLICIT_INSTANTIATIONS(host_communicator, char);

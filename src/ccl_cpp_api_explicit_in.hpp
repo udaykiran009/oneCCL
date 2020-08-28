@@ -2,6 +2,8 @@
 #define COMMA ,
 #endif
 
+//TODO
+#if 0
 /**
  * Attributes
  */
@@ -67,3 +69,6 @@ API_SPARSE_ALLREDUCE_EXPLICIT_INSTANTIATION(uint64_t, uint64_t);
                                                       cl::sycl::buffer<ccl::bfp16 COMMA 1>);
 #endif //CCL_ENABLE_SYCL
 #undef COMMA
+
+
+#endif //TODO

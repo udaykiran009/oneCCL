@@ -20,6 +20,7 @@ static attr_t create_attr(attr_value_pair_t&&...avps)
     auto attr = attr_t(ret);
 
     int expander [] {(attr.template set<attr_value_pair_t::idx()>(avps.val()), 0)...};
+    (void)expander;
     return attr;
 }
 

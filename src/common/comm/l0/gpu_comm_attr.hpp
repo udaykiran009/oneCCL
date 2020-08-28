@@ -16,9 +16,9 @@ namespace native
     struct thread_group_context;
 }
 
-class host_communicator;
 namespace ccl
 {
+class host_communicator;
 class device_communicator;
 struct communicator_interface;
 struct context_comm_addr

@@ -6,8 +6,9 @@
 #include "coll/coll_common_attributes.hpp"
 
 namespace ccl {
-struct ccl_barrier_attr_impl_t : public ccl_common_op_attr_impl_t
+class ccl_barrier_attr_impl_t : public ccl_common_op_attr_impl_t
 {
+public:
     using base_t = ccl_common_op_attr_impl_t;
 
     ccl_barrier_attr_impl_t(const typename details::ccl_api_type_attr_traits<common_op_attr_id, ccl::common_op_attr_id::version>::type& version);
