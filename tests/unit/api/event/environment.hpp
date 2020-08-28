@@ -7,7 +7,7 @@ namespace ccl
 /* TODO temporary function for UT compilation: would be part of ccl::environment in final*/
 template <class native_event_type,
           class T>
-event create_event(native_event_type& native_event)
+event event::create_event(native_event_type& native_event)
 {
     ccl_version_t ret {};
     ret.major = CCL_MAJOR_VERSION;

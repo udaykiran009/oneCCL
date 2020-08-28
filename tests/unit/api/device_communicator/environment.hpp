@@ -11,7 +11,7 @@ class kvs_interface;
 /* TODO temporary function for UT compilation: would be part of ccl::environment in final*/
 template<class DeviceType,
          class ContextType>
-vector_class<device_communicator> create_device_communicators(
+vector_class<device_communicator> device_communicator::create_device_communicators(
         const size_t cluster_devices_size,
         const vector_class<DeviceType>& local_devices,
         ContextType& context,
@@ -26,7 +26,7 @@ using rank_t = size_t;
 
 template<class DeviceType,
          class ContextType>
-vector_class<device_communicator> create_device_communicators(
+vector_class<device_communicator> device_communicator::create_device_communicators(
         const size_t cluster_devices_size, /*global devics count*/
         const vector_class<pair_class<rank_t, DeviceType>>& local_rank_device_map,
         ContextType& context,
@@ -57,7 +57,7 @@ vector_class<device_communicator> create_device_communicators(
 
 template<class DeviceType,
          class ContextType>
-vector_class<device_communicator> create_device_communicators(
+vector_class<device_communicator> device_communicator::create_device_communicators(
         const size_t cluster_devices_size, /*global devics count*/
         const map_class<rank_t, DeviceType>& local_rank_device_map,
         ContextType& context,

@@ -7,7 +7,7 @@ namespace ccl
 /* TODO temporary function for UT compilation: would be part of ccl::environment in final*/
 template <class native_stream_type,
           class T>
-stream create_stream(native_stream_type& native_stream)
+stream stream::create_stream(native_stream_type& native_stream)
 {
     ccl_version_t ret {};
     ret.major = CCL_MAJOR_VERSION;
@@ -22,7 +22,7 @@ stream create_stream(native_stream_type& native_stream)
 
 template <class native_stream_type, class native_context_type,
           class T>
-stream create_stream(native_stream_type& native_stream, native_context_type& native_ctx)
+stream stream::create_stream(native_stream_type& native_stream, native_context_type& native_ctx)
 {
     ccl_version_t ret {};
     ret.major = CCL_MAJOR_VERSION;

@@ -19,14 +19,14 @@
 #include "common/comm/l0/scheduler/thread_group_scheduler.hpp"
 #include "common/comm/l0/scheduler/allied_process_group_scheduler.hpp"
 
-
+#include "common/comm/host_communicator/host_communicator.hpp"
 #include "common/comm/l0/context/scaling_ctx/numa_ctx_impl.hpp"
 #include "common/comm/l0/context/scaling_ctx/scale_up_ctx_impl.hpp"
 #include "common/comm/l0/context/scaling_ctx/scale_out_ctx_impl.hpp"
 namespace native
 {
 
-process_group_context::process_group_context(std::shared_ptr<host_communicator> comm) :
+process_group_context::process_group_context(std::shared_ptr<ccl::host_communicator> comm) :
     ccl_communicator(comm),
     thread_group_ctx(new thread_group_context),
     gpu_device_storage(new device_storage)
@@ -163,7 +163,7 @@ std::shared_ptr<process_group_context::ring_topology>& process_group_context::ge
 }
 */
 
-std::shared_ptr<host_communicator> process_group_context::get_communicator()
+std::shared_ptr<ccl::host_communicator> process_group_context::get_communicator()
 {
     return ccl_communicator;
 }
@@ -186,15 +186,15 @@ bool process_group_context::build_cluster_affinity_table(const ccl::device_indic
     std::vector<ccl::communicator::coll_request_t> requests;
     requests.reserve(hostname_indices_requests_count);
     {
-        requests.push_back(ccl_communicator->allgatherv(&send_hostname_size, 1,
+        requests.push_back(ccl_communicator->allgatherv_impl(&send_hostname_size, 1,
                                                         receive_hostname_sizes.data(),
-                                                        recv_counts.data()));
+                                                        recv_counts));
         LOG_TRACE("Request hostname sizes, process (", ccl_communicator->rank(), "/",
                  ccl_communicator->size(), ") has own hostname: ", my_host_name, ", size: ", send_hostname_size);
 
-        requests.push_back(ccl_communicator->allgatherv(&send_process_indices_count, 1,
+        requests.push_back(ccl_communicator->allgatherv_impl(&send_process_indices_count, 1,
                                                         receive_process_indices_sizes.data(),
-                                                        recv_process_indices_counts.data()));
+                                                        recv_process_indices_counts));
         LOG_TRACE("Request device indices sizes, process (", ccl_communicator->rank(), "/",
                  ccl_communicator->size(), ") has own indices count: ", send_process_indices_count);
     }
@@ -234,10 +234,10 @@ bool process_group_context::build_cluster_affinity_table(const ccl::device_indic
         requests.clear();
         hostnames.resize(total_hostname_size);
 
-        requests.push_back(ccl_communicator->allgatherv(my_host_name.data(),
+        requests.push_back(ccl_communicator->allgatherv_impl(my_host_name.data(),
                                                         send_hostname_size,
                                                         hostnames.data(),
-                                                        receive_hostname_sizes.data()));
+                                                        receive_hostname_sizes));
         LOG_TRACE("Submit request for hostnames. Process (",
                   ccl_communicator->rank(), "/", ccl_communicator->size(), ")"
                   " has own hostname: ", my_host_name);
@@ -250,10 +250,10 @@ bool process_group_context::build_cluster_affinity_table(const ccl::device_indic
                        receive_process_indices_sizes.end(),
                        receive_process_indices_sizes.begin(),
                        indices_count_to_bytes_converter);
-        requests.push_back(ccl_communicator->allgatherv(reinterpret_cast<const char*>(serialized_indices.data()),
+        requests.push_back(ccl_communicator->allgatherv_impl(reinterpret_cast<const char*>(serialized_indices.data()),
                                                         serialized_indices.size(),
                                                         reinterpret_cast<char*>(affinity_indices.data()),
-                                                        receive_process_indices_sizes.data()));
+                                                        receive_process_indices_sizes));
         LOG_TRACE("Submit request for affinity masks. Process (",
                   ccl_communicator->rank(), "/", ccl_communicator->size(), ")"
                   " has own mask size: ", serialized_indices.size());
@@ -620,9 +620,9 @@ void process_group_context::collect_cluster_colored_plain_graphs(
 
         LOG_DEBUG("Send graph lists size by process index: ", process_idx,
                   ", serialized size: ", send_count);
-        ccl_communicator->allgatherv(&send_count, 1,
+        ccl_communicator->allgatherv_impl(&send_count, 1,
                                      recv_counts_process_graph_sizes.data(),
-                                     recv_counts.data())->wait();
+                                     recv_counts)->wait();
     }
 
     size_t global_graph_data_size = std::accumulate(recv_counts_process_graph_sizes.begin(),
@@ -637,10 +637,10 @@ void process_group_context::collect_cluster_colored_plain_graphs(
                   ", serialized size: ", send_count);
 
         recv_cluster_graphs.resize(global_graph_data_size);
-        ccl_communicator->allgatherv(reinterpret_cast<char*>(my_serialized_graph.data()),
+        ccl_communicator->allgatherv_impl(reinterpret_cast<char*>(my_serialized_graph.data()),
                                      send_count,
                                      reinterpret_cast<char*>(recv_cluster_graphs.data()),
-                                     recv_counts_process_graph_sizes.data())->wait();
+                                     recv_counts_process_graph_sizes)->wait();
     }
     catch(const std::bad_alloc& ex)
     {

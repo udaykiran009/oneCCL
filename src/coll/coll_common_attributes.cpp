@@ -53,7 +53,7 @@ ccl_common_op_attr_impl_t::set_attribute_value(typename epilog_fn_traits_t::type
 {
     auto old = epilogue_fn.get();
     epilogue_fn = typename epilog_fn_traits_t::return_type{val};
-    return typename epilog_fn_traits_t::return_type{epilogue_fn};
+    return typename epilog_fn_traits_t::return_type{old};
 }
 
 /**

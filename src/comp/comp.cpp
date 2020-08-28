@@ -51,7 +51,7 @@ ccl_status_t ccl_comp_reduce(const void* in_buf, size_t in_count, void* inout_bu
     if (reduction == ccl_reduction_custom)
     {
         CCL_THROW_IF_NOT(reduction_fn, "custom reduction requires user callback");
-        reduction_fn(in_buf, in_count, inout_buf, out_count, dtype.idx(), context);
+        reduction_fn(in_buf, in_count, inout_buf, out_count/*, NEW_API: TODO dtype.idx()*/, context);
         return ccl_status_success;
     }
 
@@ -88,7 +88,7 @@ ccl_status_t ccl_comp_reduce(const void* in_buf, size_t in_count, void* inout_bu
     return ccl_status_success;
 }
 
-ccl_status_t ccl_comp_batch_reduce(const void* in_buf, const std::vector<size_t>& offsets, 
+ccl_status_t ccl_comp_batch_reduce(const void* in_buf, const std::vector<size_t>& offsets,
                                    size_t in_count, void* inout_buf, size_t* out_count,
                                    const ccl_datatype& dtype, ccl_reduction_t reduction,
                                    ccl_reduction_fn_t reduction_fn, const ccl_fn_context_t* context,
@@ -97,7 +97,7 @@ ccl_status_t ccl_comp_batch_reduce(const void* in_buf, const std::vector<size_t>
     if (bfp16_keep_precision_mode)
     {
         //->acc, tmp fusion_buffer_cache???
-    
+
         /* inout_buf => inout_buffer + offsets[0] */
         ccl_convert_bfp16_to_fp32_arrays(inout_buf, acc, in_count);
 
@@ -108,7 +108,7 @@ ccl_status_t ccl_comp_batch_reduce(const void* in_buf, const std::vector<size_t>
                        ccl::global_data::get().dtypes->get(ccl_dtype_float),
                        reduction, reduction_fn, context);
         }
-    
+
         ccl_convert_fp32_to_bfp16_arrays(acc, inout_buf, in_count);
     }
     else
@@ -116,11 +116,11 @@ ccl_status_t ccl_comp_batch_reduce(const void* in_buf, const std::vector<size_t>
         for (size_t i = 1; i < offsets.size(); i++)
         {
             ccl_comp_reduce((char*)in_buf + dtype.size() * offsets[i], in_count,
-                            inout_buf, out_count, dtype, reduction, 
+                            inout_buf, out_count, dtype, reduction,
                             reduction_fn, context);
         }
     }
-    
+
 
     return ccl_status_success;
 }

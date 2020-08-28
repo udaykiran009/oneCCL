@@ -21,6 +21,7 @@ coll_attribute_type create_coll_attr(attr_value_pair_t&&...avps)
     auto coll_attr = coll_attribute_type(ret);
 
     int expander [] {(coll_attr.template set<attr_value_pair_t::idx()>(avps.val()), 0)...};
+    (void)expander;
     return coll_attr;
 }
 }

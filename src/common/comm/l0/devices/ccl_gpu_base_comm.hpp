@@ -114,7 +114,7 @@ public:
     static std::shared_ptr<module_impl<module_type, group_id, class_id>>&
                     get_gpu_module_unsafe(supported_device_modules<module_impl> &modules)
     {
-        return std::get<class_id>(std::get<group_id>(std::get<module_type>(modules)));
+        return std::get<utils::enum_to_underlying(class_id)>(std::get<utils::enum_to_underlying(group_id)>(std::get<module_type>(modules)));
     }
 protected:
     size_t index_in_group;

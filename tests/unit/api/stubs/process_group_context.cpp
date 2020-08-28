@@ -21,7 +21,7 @@ namespace native
 struct allied_process_group_scheduler {};
 struct device_storage{};
 
-process_group_context::process_group_context(std::shared_ptr<host_communicator> comm) :
+process_group_context::process_group_context(std::shared_ptr<ccl::host_communicator> comm) :
     ccl_communicator(comm),
     thread_group_ctx(new thread_group_context)
 {}

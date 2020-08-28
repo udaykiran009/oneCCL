@@ -21,7 +21,7 @@ namespace stream_suite
 TEST(stream_api, stream_from_sycl_queue)
 {
     auto q = cl::sycl::queue();
-    auto str = ccl::create_stream(q);
+    auto str = ccl::stream::create_stream(q);
 
     ASSERT_TRUE(str.get<ccl::stream_attr_id::version>().full != nullptr);
 }
@@ -33,14 +33,14 @@ TEST(stream_api, stream_from_sycl_queue_handle)
     auto ctx = cl::sycl::context(dev);
     cl_command_queue h = q.get();
 
-    auto str = ccl::create_stream(h, ctx);
+    auto str = ccl::stream::create_stream(h, ctx);
 
     ASSERT_TRUE(str.get<ccl::stream_attr_id::version>().full != nullptr);
 }
 TEST(stream_api, stream_from_sycl_device_creation)
 {
     auto dev = cl::sycl::device();
-    auto str = ccl::create_stream_from_attr(dev);
+    auto str = ccl::stream::create_stream_from_attr(dev);
 
     ASSERT_TRUE(str.get<ccl::stream_attr_id::version>().full != nullptr);
 }
@@ -49,7 +49,7 @@ TEST(stream_api, stream_from_sycl_device_context_creation)
 {
     auto dev = cl::sycl::device();
     auto ctx = cl::sycl::context(dev);
-    auto str = ccl::create_stream_from_attr(dev, ctx);
+    auto str = ccl::stream::create_stream_from_attr(dev, ctx);
 
     ASSERT_TRUE(str.get<ccl::stream_attr_id::version>().full != nullptr);
 }
@@ -58,7 +58,7 @@ TEST(stream_api, stream_from_sycl_device_context_creation_with_attr)
 {
     auto dev = cl::sycl::device();
     auto ctx = cl::sycl::context(dev);
-    auto str = ccl::create_stream_from_attr(dev, ctx,
+    auto str = ccl::stream::create_stream_from_attr(dev, ctx,
                                             ccl::attr_arg<ccl::stream_attr_id::ordinal>(1),
                                             ccl::attr_arg<ccl::stream_attr_id::priority>(100));
 

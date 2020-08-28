@@ -8,7 +8,7 @@ namespace ccl
 /* TODO temporary function for UT compilation: would be part of ccl::environment in final*/
 template <class event_type,
           class ...attr_value_pair_t>
-event create_event_from_attr(event_type& native_event_handle,
+event event::create_event_from_attr(event_type& native_event_handle,
                              typename unified_device_context_type::ccl_native_t context,
                              attr_value_pair_t&&...avps)
 {
@@ -22,6 +22,7 @@ event create_event_from_attr(event_type& native_event_handle,
 
     event str {event::impl_value_t(new event::impl_t(native_event_handle, context, ret))};
     int expander [] {(str.template set<attr_value_pair_t::idx()>(avps.val()), 0)...};
+    (void)expander;
     str.build_from_params();
 
     return str;

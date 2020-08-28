@@ -2,6 +2,9 @@
 #include "ccl_types.hpp"
 #include "common/datatype/datatype.hpp"
 #include "ccl_type_traits.hpp"
+
+#include "ccl.hpp"
+
 #include "comp/comp.hpp"
 #include "common/comm/l0/devices/devices_declaration.hpp"
 #include "sched/entry/coll/direct/base_coll_entry.hpp"
@@ -232,7 +235,7 @@ if(gpu_comm_impl::type_idx() == ccl_gpu_comm::type_idx()
                         if(group_id == ccl::device_group_split_type::cluster)
                         {
                             auto c = ccl::environment::instance().create_communicator();
-                            if(c->rank() == 0)
+                            if(c.rank() == 0)
                             {
                                 throw ccl::ccl_error(std::string("cannot sync queue from real device, error: ") + native::to_string(ret));
                             }

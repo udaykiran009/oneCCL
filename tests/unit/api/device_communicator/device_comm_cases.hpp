@@ -59,7 +59,7 @@ TEST(device_communicator_api, device_comm_from_device_index)
                        return std::make_pair(curr_rank++, val);
                    });
 
-    ccl::vector_class<ccl::device_communicator> comms = create_device_communicators(total_devices_size, local_rank_device_map, ctx, stub_storage);
+    ccl::vector_class<ccl::device_communicator> comms = ccl::device_communicator::create_device_communicators(total_devices_size, local_rank_device_map, ctx, stub_storage);
     ASSERT_EQ(comms.size(), devices.size());
 
     for (const auto& dev_comm : comms)

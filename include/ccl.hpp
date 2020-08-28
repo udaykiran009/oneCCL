@@ -7,48 +7,36 @@
 
 #include "ccl_types_policy.hpp"
 #include "ccl_types.hpp"
-#include "ccl_device_types.hpp"
 #include "ccl_type_traits.hpp"
 #include "ccl_coll_attr_ids.hpp"
 #include "ccl_coll_attr_ids_traits.hpp"
 #include "ccl_coll_attr.hpp"
+
 #include "ccl_comm_split_attr_ids.hpp"
 #include "ccl_comm_split_attr_ids_traits.hpp"
 #include "ccl_comm_split_attr.hpp"
 
+#include "ccl_event_attr_ids.hpp"
+#include "ccl_event_attr_ids_traits.hpp"
+#include "ccl_event.hpp"
+
+#include "ccl_kvs.hpp"
+
+#include "ccl_request.hpp"
+
+#include "ccl_stream_attr_ids.hpp"
+#include "ccl_stream_attr_ids_traits.hpp"
 #include "ccl_stream.hpp"
+
 #include "ccl_communicator.hpp"
-
-class ccl_comm;
-class ccl_event;
-
+#include "ccl_device_communicator.hpp"
 
 namespace ccl {
-
-class stream;
-class communicator;
-struct communicator_interface;
-class kvs_interface;
-class request;
-class event;
-
-#ifdef DEVICE_COMM_SUPPORT
-class device_comm_group;
-class device_communicator;
-#endif /* DEVICE_COMM_SUPPORT */
-
 /**
  * Types which allow to operate with kvs/communicator/request/stream/event objects in RAII manner
  */
-using kvs_t = unique_ptr_class<kvs_interface>;
-using communicator_t = unique_ptr_class<communicator>;
-using request_t = unique_ptr_class<request>;
-using event_t = unique_ptr_class<event>;
+using kvs_t = shared_ptr_class<kvs_interface>;
 
-#ifdef DEVICE_COMM_SUPPORT
-using device_communicator_t = unique_ptr_class<device_communicator>;
-using stream_t = unique_ptr_class<stream>;
-#endif /* DEVICE_COMM_SUPPORT */
 /**
  * CCL environment singleton
  */
@@ -65,8 +53,8 @@ public:
     /**
      * Retrieves the current version
      */
-    version_t get_version() const;
-
+    ccl_version_t get_version() const;
+#if 0
     /**
      * Creates @attr which used to register custom datatype
      */
@@ -84,6 +72,8 @@ public:
      * @param dtype custom datatype handle
      */
     void deregister_datatype(datatype dtype);
+#endif
+    void set_resize_fn(ccl_resize_fn_t callback);
 
     /**
      * Retrieves a datatype size in bytes
@@ -138,9 +128,13 @@ public:
     /**
      * Creates @attr which used to split host communicator
      */
-    comm_split_attr_t create_comm_split_attr() const;
+    template <class ...attr_value_pair_t>
+    comm_split_attr_t create_comm_split_attr(attr_value_pair_t&&...avps) const;
 
 #ifdef DEVICE_COMM_SUPPORT
+
+    template <class ...attr_value_pair_t>
+    device_comm_split_attr_t create_device_comm_split_attr(attr_value_pair_t&&...avps) const;
 
     /**
      * Creates a new device communicators with user supplied size, device indices and kvs.
@@ -151,10 +145,12 @@ public:
      * @param kvs key-value store for ranks wire-up
      * @return vector of device communicators
      */
+    template<class DeviceType,
+             class ContextType>
     vector_class<device_communicator_t> create_device_communicators(
         const size_t devices_size,
-        const vector_class<native_device_type>& local_devices,
-        native_context_type& context,
+        const vector_class<DeviceType>& local_devices,
+        ContextType& context,
         shared_ptr_class<kvs_interface> kvs) const;
 
     /**
@@ -165,24 +161,30 @@ public:
      * @param kvs key-value store for ranks wire-up
      * @return vector of device communicators
      */
-    vector_class<device_communicator_t> create_device_communicators(
-        const size_t devices_size,
-        vector_class<pair_class<size_t, native_device_type>>& local_rank_device_map,
-        native_context_type& context,
-        shared_ptr_class<kvs_interface> kvs) const;
+    template<class DeviceType,
+         class ContextType>
+    vector_class<device_communicator> create_device_communicators(
+        const size_t cluster_devices_size, /*global devics count*/
+        const vector_class<pair_class<rank_t, DeviceType>>& local_rank_device_map,
+        ContextType& context,
+        shared_ptr_class<kvs_interface> kvs);
 
-    /**
-     * Creates @attr which used to split device communicator
-     */
-    device_comm_split_attr_t create_device_comm_split_attr() const;
+
+    template<class DeviceType,
+         class ContextType>
+    vector_class<device_communicator> create_device_communicators(
+        const size_t cluster_devices_size, /*global devics count*/
+        const map_class<rank_t, DeviceType>& local_rank_device_map,
+        ContextType& context,
+        shared_ptr_class<kvs_interface> kvs);
 
     /**
      * Splits device communicators according to attributes.
      * @param attrs split attributes for local communicators
      * @return vector of device communicators
      */
-    vector_class<device_communicator_t> split_device_communicators(
-        const vector_class<pair_class<device_communicator_t, device_comm_split_attr_t>>& attrs)
+    vector_class<device_communicator> split_device_communicators(
+        const vector_class<pair_class<device_communicator, device_comm_split_attr_t>>& attrs)
         const;
 
     /**
@@ -191,50 +193,40 @@ public:
      * @return stream object
      */
     template <class native_stream_type,
-              class = typename std::enable_if<is_stream_supported<native_stream_type>()>::type>
-    stream_t create_stream(native_stream_type& native_stream) const;
+          class = typename std::enable_if<is_stream_supported<native_stream_type>()>::type>
+    stream create_stream(native_stream_type& native_stream);
+
+    template <class native_stream_type, class native_context_type,
+          class = typename std::enable_if<is_stream_supported<native_stream_type>()>::type>
+    stream create_stream(native_stream_type& native_stream, native_context_type& native_ctx);
+
+    template <class ...attr_value_pair_t>
+    stream create_stream_from_attr(typename unified_device_type::ccl_native_t device, attr_value_pair_t&&...avps);
+
+    template <class ...attr_value_pair_t>
+    stream create_stream_from_attr(typename unified_device_type::ccl_native_t device,
+                               typename unified_device_context_type::ccl_native_t context,
+                               attr_value_pair_t&&...avps);
 
     /**
      * Creates a new event from @native_event_type
      * @param native_event the existing handle of event
      * @return event object
      */
-    template <class native_event_type,
-              class = typename std::enable_if<is_event_supported<native_event_type>()>::type>
-    event_t create_event(native_event_type& native_event) const;
+    template <class event_type,
+          class = typename std::enable_if<is_event_supported<event_type>()>::type>
+    event create_event(event_type& native_event);
 
-    // /**
-    //  * Creates a new native_stream from @native_stream_type
-    //  * @param native_stream the existing handle of stream
-    //  * @props are optional specific properties
-    //  */
-    // template <class native_stream_type,
-    //           class = typename std::enable_if<is_stream_supported<native_stream_type>()>::type,
-    //           info::stream_property_id... prop_ids>
-    // stream_t create_stream(info::arg<prop_ids, info::stream_property_value_t>... props) const {
-    //     using tuple_t = tuple_class<info::stream_property_value_t>... > ;
-    //     tuple_t args{ props... };
+    template <class event_type,
+          class ...attr_value_pair_t>
+    event create_event_from_attr(event_type& native_event_handle,
+                             typename unified_device_context_type::ccl_native_t context,
+                             attr_value_pair_t&&...avps);
 
-    //     info::stream_properties_data_t stream_args;
-    //     arg_filler exec(args);
-    //     ccl_tuple_for_each(args, arg_filler);
-    //     return create_event(native_stream, stream_args);
-    // }
-
-    // /* Example:
-    //  *  auto stream = ccl::environment::instance().create_stream(stream_arg(info::stream_atts::ordinal, 0),
-    //  *                                                           stream_arg(info::stream_property_id::index, 1),
-    //  *                                                           stream_arg(info::stream_property_id::mode, ZE_ASYNC));
-    //  *
-    //  */
-    // stream_t create_stream() const;
 
 #endif /* DEVICE_COMM_SUPPORT */
 
 private:
-    // stream_t create_stream(
-    //     const info::stream_properties_data_t& args = info::stream_properties_data_t{});
-
     environment();
 };
 

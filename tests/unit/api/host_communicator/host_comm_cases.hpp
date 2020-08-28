@@ -37,7 +37,7 @@ namespace host_communicator_suite
 TEST(host_communicator_api, host_comm_creation)
 {
     std::shared_ptr<stub_kvs> stub_storage;
-    auto comm = ccl::create_communicator(2, 1, stub_storage);
+    auto comm = ccl::communicator::create_communicator(2, 1, stub_storage);
     ASSERT_EQ(comm.size(), 2);
     ASSERT_EQ(comm.rank(), 1);
 }
@@ -46,7 +46,7 @@ TEST(host_communicator_api, move_host_comm)
 {
     /* move constructor test */
     std::shared_ptr<stub_kvs> stub_storage;
-    auto orig_comm = ccl::create_communicator(2, 1, stub_storage);
+    auto orig_comm = ccl::communicator::create_communicator(2, 1, stub_storage);
 
     auto orig_inner_impl_ptr = orig_comm.get_impl().get();
     auto moved_comm = (std::move(orig_comm));
@@ -59,8 +59,8 @@ TEST(host_communicator_api, move_host_comm)
     ASSERT_EQ(moved_comm.rank(), 1);
 
     /* move assignment test*/
-    auto orig_comm2 = ccl::create_communicator(2, 1, stub_storage);
-    auto moved_comm2 = ccl::create_communicator(4, 3, stub_storage);;
+    auto orig_comm2 = ccl::communicator::create_communicator(2, 1, stub_storage);
+    auto moved_comm2 = ccl::communicator::create_communicator(4, 3, stub_storage);;
     moved_comm2 = std::move(orig_comm2);
 
     ASSERT_TRUE(moved_comm2.get_impl());
@@ -72,7 +72,7 @@ TEST(host_communicator_api, move_host_comm)
 TEST(host_communicator_api, host_comm_allgatherv_void)
 {
     std::shared_ptr<stub_kvs> stub_storage;
-    auto comm = ccl::create_communicator(1, 0, stub_storage);
+    auto comm = ccl::communicator::create_communicator(1, 0, stub_storage);
 
     void* send_buf = nullptr;
     void* recv_buf = nullptr;
@@ -89,7 +89,7 @@ TEST(host_communicator_api, host_comm_allgatherv_void)
 TEST(host_communicator_api, host_comm_allgatherv_int)
 {
     std::shared_ptr<stub_kvs> stub_storage;
-    auto comm = ccl::create_communicator(1, 0, stub_storage);
+    auto comm = ccl::communicator::create_communicator(1, 0, stub_storage);
 
     int* send_buf = nullptr;
     int* recv_buf = nullptr;
@@ -105,7 +105,7 @@ TEST(host_communicator_api, host_comm_allgatherv_int)
 TEST(host_communicator_api, host_comm_allgatherv_void_recv_bufs)
 {
     std::shared_ptr<stub_kvs> stub_storage;
-    auto comm = ccl::create_communicator(1, 0, stub_storage);
+    auto comm = ccl::communicator::create_communicator(1, 0, stub_storage);
 
     void* send_buf = nullptr;
     ccl::vector_class<void*> recv_bufs;
@@ -122,7 +122,7 @@ TEST(host_communicator_api, host_comm_allgatherv_void_recv_bufs)
 TEST(host_communicator_api, host_comm_allgatherv_int_recv_bufs)
 {
     std::shared_ptr<stub_kvs> stub_storage;
-    auto comm = ccl::create_communicator(1, 0, stub_storage);
+    auto comm = ccl::communicator::create_communicator(1, 0, stub_storage);
 
     int* send_buf = nullptr;
     ccl::vector_class<int*> recv_bufs;
@@ -138,7 +138,7 @@ TEST(host_communicator_api, host_comm_allgatherv_int_recv_bufs)
 TEST(host_communicator_api, host_comm_allreduce_void)
 {
     std::shared_ptr<stub_kvs> stub_storage;
-    auto comm = ccl::create_communicator(1, 0, stub_storage);
+    auto comm = ccl::communicator::create_communicator(1, 0, stub_storage);
 
     void* send_buf = nullptr;
     void* recv_buf = nullptr;
@@ -155,7 +155,7 @@ TEST(host_communicator_api, host_comm_allreduce_void)
 TEST(host_communicator_api, host_comm_allreduce_int)
 {
     std::shared_ptr<stub_kvs> stub_storage;
-    auto comm = ccl::create_communicator(1, 0, stub_storage);
+    auto comm = ccl::communicator::create_communicator(1, 0, stub_storage);
 
     int* send_buf = nullptr;
     int* recv_buf = nullptr;
@@ -171,7 +171,7 @@ TEST(host_communicator_api, host_comm_allreduce_int)
 TEST(host_communicator_api, host_comm_alltoall_void)
 {
     std::shared_ptr<stub_kvs> stub_storage;
-    auto comm = ccl::create_communicator(1, 0, stub_storage);
+    auto comm = ccl::communicator::create_communicator(1, 0, stub_storage);
 
     void* send_buf = nullptr;
     void* recv_buf = nullptr;
@@ -187,7 +187,7 @@ TEST(host_communicator_api, host_comm_alltoall_void)
 TEST(host_communicator_api, host_comm_alltoall_void_vector_bufs)
 {
     std::shared_ptr<stub_kvs> stub_storage;
-    auto comm = ccl::create_communicator(1, 0, stub_storage);
+    auto comm = ccl::communicator::create_communicator(1, 0, stub_storage);
 
     ccl::vector_class<void*> send_buf;
     ccl::vector_class<void*> recv_buf;
@@ -203,7 +203,7 @@ TEST(host_communicator_api, host_comm_alltoall_void_vector_bufs)
 TEST(host_communicator_api, host_comm_alltoall_int)
 {
     std::shared_ptr<stub_kvs> stub_storage;
-    auto comm = ccl::create_communicator(1, 0, stub_storage);
+    auto comm = ccl::communicator::create_communicator(1, 0, stub_storage);
 
     int* send_buf = nullptr;
     int* recv_buf = nullptr;
@@ -218,7 +218,7 @@ TEST(host_communicator_api, host_comm_alltoall_int)
 TEST(host_communicator_api, host_comm_alltoall_int_vector_bufs)
 {
     std::shared_ptr<stub_kvs> stub_storage;
-    auto comm = ccl::create_communicator(1, 0, stub_storage);
+    auto comm = ccl::communicator::create_communicator(1, 0, stub_storage);
 
     ccl::vector_class<int*> send_buf;
     ccl::vector_class<int*> recv_buf;
@@ -233,7 +233,7 @@ TEST(host_communicator_api, host_comm_alltoall_int_vector_bufs)
 TEST(host_communicator_api, host_comm_alltoallv_void)
 {
     std::shared_ptr<stub_kvs> stub_storage;
-    auto comm = ccl::create_communicator(1, 0, stub_storage);
+    auto comm = ccl::communicator::create_communicator(1, 0, stub_storage);
 
     void* send_buf = nullptr;
     void* recv_buf = nullptr;
@@ -250,7 +250,7 @@ TEST(host_communicator_api, host_comm_alltoallv_void)
 TEST(host_communicator_api, host_comm_alltoallv_void_recv_bufs)
 {
     std::shared_ptr<stub_kvs> stub_storage;
-    auto comm = ccl::create_communicator(1, 0, stub_storage);
+    auto comm = ccl::communicator::create_communicator(1, 0, stub_storage);
 
     ccl::vector_class<void*> send_bufs;
     ccl::vector_class<void*> recv_bufs;
@@ -267,7 +267,7 @@ TEST(host_communicator_api, host_comm_alltoallv_void_recv_bufs)
 TEST(host_communicator_api, host_comm_alltoallv_int)
 {
     std::shared_ptr<stub_kvs> stub_storage;
-    auto comm = ccl::create_communicator(1, 0, stub_storage);
+    auto comm = ccl::communicator::create_communicator(1, 0, stub_storage);
 
     int* send_buf = nullptr;
     int* recv_buf = nullptr;
@@ -283,7 +283,7 @@ TEST(host_communicator_api, host_comm_alltoallv_int)
 TEST(host_communicator_api, host_comm_alltoallv_int_recv_bufs)
 {
     std::shared_ptr<stub_kvs> stub_storage;
-    auto comm = ccl::create_communicator(1, 0, stub_storage);
+    auto comm = ccl::communicator::create_communicator(1, 0, stub_storage);
 
     ccl::vector_class<int*> send_bufs;
     ccl::vector_class<int*> recv_bufs;
@@ -299,7 +299,7 @@ TEST(host_communicator_api, host_comm_alltoallv_int_recv_bufs)
 TEST(host_communicator_api, host_comm_barrier)
 {
     std::shared_ptr<stub_kvs> stub_storage;
-    auto comm = ccl::create_communicator(1, 0, stub_storage);
+    auto comm = ccl::communicator::create_communicator(1, 0, stub_storage);
 
     auto attr = ccl::create_coll_attr<ccl::barrier_attr_t>();
 
@@ -309,7 +309,7 @@ TEST(host_communicator_api, host_comm_barrier)
 TEST(host_communicator_api, host_comm_bcast_void)
 {
     std::shared_ptr<stub_kvs> stub_storage;
-    auto comm = ccl::create_communicator(1, 0, stub_storage);
+    auto comm = ccl::communicator::create_communicator(1, 0, stub_storage);
 
     void* buf = nullptr;
     size_t count = 0;
@@ -325,7 +325,7 @@ TEST(host_communicator_api, host_comm_bcast_void)
 TEST(host_communicator_api, host_comm_bcast_int)
 {
     std::shared_ptr<stub_kvs> stub_storage;
-    auto comm = ccl::create_communicator(1, 0, stub_storage);
+    auto comm = ccl::communicator::create_communicator(1, 0, stub_storage);
 
     int* buf = nullptr;
     size_t count = 0;
@@ -340,7 +340,7 @@ TEST(host_communicator_api, host_comm_bcast_int)
 TEST(host_communicator_api, host_comm_reduce_void)
 {
     std::shared_ptr<stub_kvs> stub_storage;
-    auto comm = ccl::create_communicator(1, 0, stub_storage);
+    auto comm = ccl::communicator::create_communicator(1, 0, stub_storage);
 
     void* send_buf = nullptr;
     void* recv_buf = nullptr;
@@ -358,7 +358,7 @@ TEST(host_communicator_api, host_comm_reduce_void)
 TEST(host_communicator_api, host_comm_reduce_int)
 {
     std::shared_ptr<stub_kvs> stub_storage;
-    auto comm = ccl::create_communicator(1, 0, stub_storage);
+    auto comm = ccl::communicator::create_communicator(1, 0, stub_storage);
 
     int* send_buf = nullptr;
     int* recv_buf = nullptr;
@@ -375,7 +375,7 @@ TEST(host_communicator_api, host_comm_reduce_int)
 TEST(host_communicator_api, host_comm_reduce_scatter_void)
 {
     std::shared_ptr<stub_kvs> stub_storage;
-    auto comm = ccl::create_communicator(1, 0, stub_storage);
+    auto comm = ccl::communicator::create_communicator(1, 0, stub_storage);
 
     void* send_buf = nullptr;
     void* recv_buf = nullptr;
@@ -392,7 +392,7 @@ TEST(host_communicator_api, host_comm_reduce_scatter_void)
 TEST(host_communicator_api, host_comm_reduce_scatter_int)
 {
     std::shared_ptr<stub_kvs> stub_storage;
-    auto comm = ccl::create_communicator(1, 0, stub_storage);
+    auto comm = ccl::communicator::create_communicator(1, 0, stub_storage);
 
     int* send_buf = nullptr;
     int* recv_buf = nullptr;
@@ -408,7 +408,7 @@ TEST(host_communicator_api, host_comm_reduce_scatter_int)
 TEST(host_communicator_api, host_comm_sparse_allreduce_void)
 {
     std::shared_ptr<stub_kvs> stub_storage;
-    auto comm = ccl::create_communicator(1, 0, stub_storage);
+    auto comm = ccl::communicator::create_communicator(1, 0, stub_storage);
 
     void* send_ind_buf = nullptr;
     size_t send_ind_count = 0;
@@ -433,7 +433,7 @@ TEST(host_communicator_api, host_comm_sparse_allreduce_void)
 TEST(host_communicator_api, host_comm_sparse_allreduce_int)
 {
     std::shared_ptr<stub_kvs> stub_storage;
-    auto comm = ccl::create_communicator(1, 0, stub_storage);
+    auto comm = ccl::communicator::create_communicator(1, 0, stub_storage);
 
     int* send_ind_buf = nullptr;
     size_t send_ind_count = 0;

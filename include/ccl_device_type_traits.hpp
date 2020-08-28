@@ -50,9 +50,7 @@ API_CLASS_TYPE_INFO(cl::sycl::queue);
 API_CLASS_TYPE_INFO(cl_command_queue);
 API_CLASS_TYPE_INFO(cl_context);
 API_CLASS_TYPE_INFO(cl::sycl::event);
-#endif
 
-#ifdef CCL_ENABLE_SYCL
 template <>
 struct generic_device_type<CCL_ENABLE_SYCL_TRUE> {
     using handle_t = cl::sycl::device;
@@ -208,8 +206,12 @@ struct generic_event_type<CCL_ENABLE_SYCL_FALSE> {
 
     ccl_native_t event;
 };
-#endif /* MULTI_GPU_SUPPORT */
+#else  /* MULTI_GPU_SUPPORT */
+    // no sycl no multu gpu ...
+    #undef CCL_ENABLE_SYCL_V
+    #define CCL_ENABLE_SYCL_V   -1
 #endif
+#endif /* else for  CCL_ENABLE_SYCL */
 
 using unified_device_type = generic_device_type<CCL_ENABLE_SYCL_V>;
 using unified_device_context_type = generic_device_context_type<CCL_ENABLE_SYCL_V>;

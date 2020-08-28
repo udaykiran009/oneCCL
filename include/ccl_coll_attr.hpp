@@ -15,7 +15,7 @@ class ccl_reduce_op_attr_impl_t;
 class ccl_reduce_scatter_op_attr_impl_t;
 class ccl_sparse_allreduce_op_attr_impl_t;
 class ccl_barrier_attr_impl_t;
-class ccl_empty_attr;
+struct ccl_empty_attr;
 /**
  * Allgatherv coll attributes
  */
@@ -62,7 +62,7 @@ public:
 
 private:
     friend class environment;
-    friend class ccl_empty_attr;
+    friend struct ccl_empty_attr;
     allgatherv_attr_t(const typename details::ccl_api_type_attr_traits<common_op_attr_id, common_op_attr_id::version>::type& version);
 };
 
@@ -113,14 +113,14 @@ public:
 
 private:
     friend class environment;
-    friend class ccl_empty_attr;
+    friend struct ccl_empty_attr;
     allreduce_attr_t(const typename details::ccl_api_type_attr_traits<common_op_attr_id, common_op_attr_id::version>::type& version);
 };
 
 /**
  * alltoall coll attributes
  */
-struct alltoall_attr_t : public ccl_api_base_copyable<alltoall_attr_t, copy_on_write_access_policy, ccl_alltoall_op_attr_impl_t> {
+class alltoall_attr_t : public ccl_api_base_copyable<alltoall_attr_t, copy_on_write_access_policy, ccl_alltoall_op_attr_impl_t> {
 public:
     using base_t = ccl_api_base_copyable<alltoall_attr_t, copy_on_write_access_policy, ccl_alltoall_op_attr_impl_t>;
 
@@ -163,14 +163,14 @@ public:
 
 private:
     friend class environment;
-    friend class ccl_empty_attr;
+    friend struct ccl_empty_attr;
     alltoall_attr_t(const typename details::ccl_api_type_attr_traits<common_op_attr_id, common_op_attr_id::version>::type& version);
 };
 
 /**
  * Alltoallv coll attributes
  */
-struct alltoallv_attr_t : public ccl_api_base_copyable<alltoallv_attr_t, copy_on_write_access_policy, ccl_alltoallv_op_attr_impl_t> {
+class alltoallv_attr_t : public ccl_api_base_copyable<alltoallv_attr_t, copy_on_write_access_policy, ccl_alltoallv_op_attr_impl_t> {
 public:
     using base_t = ccl_api_base_copyable<alltoallv_attr_t, copy_on_write_access_policy, ccl_alltoallv_op_attr_impl_t>;
 
@@ -213,14 +213,14 @@ public:
 
 private:
     friend class environment;
-    friend class ccl_empty_attr;
+    friend struct ccl_empty_attr;
     alltoallv_attr_t(const typename details::ccl_api_type_attr_traits<common_op_attr_id, common_op_attr_id::version>::type& version);
 };
 
 /**
  * Bcast coll attributes
  */
-struct bcast_attr_t : public ccl_api_base_copyable<bcast_attr_t, copy_on_write_access_policy, ccl_bcast_op_attr_impl_t> {
+class bcast_attr_t : public ccl_api_base_copyable<bcast_attr_t, copy_on_write_access_policy, ccl_bcast_op_attr_impl_t> {
 public:
     using base_t = ccl_api_base_copyable<bcast_attr_t, copy_on_write_access_policy, ccl_bcast_op_attr_impl_t>;
 
@@ -263,14 +263,14 @@ public:
 
 private:
     friend class environment;
-    friend class ccl_empty_attr;
+    friend struct ccl_empty_attr;
     bcast_attr_t(const typename details::ccl_api_type_attr_traits<common_op_attr_id, common_op_attr_id::version>::type& version);
 };
 
 /**
  * Reduce coll attributes
  */
-struct reduce_attr_t : public ccl_api_base_copyable<reduce_attr_t, copy_on_write_access_policy, ccl_reduce_op_attr_impl_t> {
+class reduce_attr_t : public ccl_api_base_copyable<reduce_attr_t, copy_on_write_access_policy, ccl_reduce_op_attr_impl_t> {
 public:
     using base_t = ccl_api_base_copyable<reduce_attr_t, copy_on_write_access_policy, ccl_reduce_op_attr_impl_t>;
 
@@ -313,14 +313,14 @@ public:
 
 private:
     friend class environment;
-    friend class ccl_empty_attr;
+    friend struct ccl_empty_attr;
     reduce_attr_t(const typename details::ccl_api_type_attr_traits<common_op_attr_id, common_op_attr_id::version>::type& version);
 };
 
 /**
  * Reduce_scatter coll attributes
  */
-struct reduce_scatter_attr_t : public ccl_api_base_copyable<reduce_scatter_attr_t, copy_on_write_access_policy, ccl_reduce_scatter_op_attr_impl_t> {
+class reduce_scatter_attr_t : public ccl_api_base_copyable<reduce_scatter_attr_t, copy_on_write_access_policy, ccl_reduce_scatter_op_attr_impl_t> {
 public:
     using base_t = ccl_api_base_copyable<reduce_scatter_attr_t, copy_on_write_access_policy, ccl_reduce_scatter_op_attr_impl_t>;
 
@@ -363,14 +363,14 @@ public:
 
 private:
     friend class environment;
-    friend class ccl_empty_attr;
+    friend struct ccl_empty_attr;
     reduce_scatter_attr_t(const typename details::ccl_api_type_attr_traits<common_op_attr_id, common_op_attr_id::version>::type& version);;
 };
 
 /**
  * Sparse_allreduce coll attributes
  */
-struct sparse_allreduce_attr_t : public ccl_api_base_copyable<sparse_allreduce_attr_t, copy_on_write_access_policy, ccl_sparse_allreduce_op_attr_impl_t> {
+class sparse_allreduce_attr_t : public ccl_api_base_copyable<sparse_allreduce_attr_t, copy_on_write_access_policy, ccl_sparse_allreduce_op_attr_impl_t> {
 public:
     using base_t = ccl_api_base_copyable<sparse_allreduce_attr_t, copy_on_write_access_policy, ccl_sparse_allreduce_op_attr_impl_t>;
 
@@ -413,14 +413,14 @@ public:
 
 private:
     friend class environment;
-    friend class ccl_empty_attr;
+    friend struct ccl_empty_attr;
     sparse_allreduce_attr_t(const typename details::ccl_api_type_attr_traits<common_op_attr_id, common_op_attr_id::version>::type& version);;
 };
 
 /**
  * Barrier coll attributes
  */
-struct barrier_attr_t : public ccl_api_base_copyable<barrier_attr_t, copy_on_write_access_policy, ccl_barrier_attr_impl_t> {
+class barrier_attr_t : public ccl_api_base_copyable<barrier_attr_t, copy_on_write_access_policy, ccl_barrier_attr_impl_t> {
 public:
     using base_t = ccl_api_base_copyable<barrier_attr_t, copy_on_write_access_policy, ccl_barrier_attr_impl_t>;
 
@@ -463,7 +463,7 @@ public:
 
 private:
     friend class environment;
-    friend class ccl_empty_attr;
+    friend struct ccl_empty_attr;
     barrier_attr_t(const typename details::ccl_api_type_attr_traits<common_op_attr_id, common_op_attr_id::version>::type& version);;
 };
 

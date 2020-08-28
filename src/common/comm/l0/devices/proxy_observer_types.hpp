@@ -25,7 +25,7 @@ public:
     {
         // context linkage
         ctx.template attach<group_id, class_id>(static_cast<impl*>(this));
-        std::get<group_id>(contexts) = &ctx_to_reg;
+        std::get<utils::enum_to_underlying(group_id)>(contexts) = &ctx_to_reg;
     }
 
     template<ccl::device_group_split_type group_id,
@@ -33,7 +33,7 @@ public:
     void invoke()
     {
         //use context to invoke/register proxy jobs
-        std::get<group_id>(contexts).invoke_proxy(static_cast<impl*>(this));
+        std::get<utils::enum_to_underlying(group_id)>(contexts).invoke_proxy(static_cast<impl*>(this));
     }
 };
 

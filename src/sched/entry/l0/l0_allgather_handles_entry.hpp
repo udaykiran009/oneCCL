@@ -3,13 +3,14 @@
 #include <initializer_list>
 #include <iterator>
 #include "ccl_types.hpp"
-#include "ccl.hpp"
+//#include "ccl.hpp"
 #include "common/datatype/datatype.hpp"
 #include "comp/comp.hpp"
 #include "common/comm/l0/devices/devices_declaration.hpp"
 #include "sched/entry/coll/direct/base_coll_entry.hpp"
 
 #include "common/comm/l0/context/device_storage.hpp"
+#include "common/comm/host_communicator/host_communicator.hpp"
 namespace native
 {
 
@@ -53,7 +54,7 @@ public:
 
     l0_allgather_handles_entry(ccl_sched* sched,
                               std::shared_ptr<gpu_comm> comm,
-                              std::shared_ptr<ccl::communicator> ccl_comm,
+                              std::shared_ptr<ccl::host_communicator> ccl_comm,
                               device_storage& global_device_storage,
                               std::vector<ccl_device::device_ipc_memory_handle>&& send_data) :
         base_coll_entry(sched),
@@ -105,8 +106,8 @@ public:
                  ", send_bytes ", send_bytes,
                  ", waiting recv_bytes: ", plain_recv_data.size());
 
-        request = ccl_communicator->allgatherv((char*)plain_send_data.data(), send_bytes,
-                                               (char*)plain_recv_data.data(), recv_bytes.data());
+        request = ccl_communicator->allgatherv_impl((char*)plain_send_data.data(), send_bytes,
+                                               (char*)plain_recv_data.data(), recv_bytes);
         status = ccl_sched_entry_status_started;
 
         //TODO prepare foreign_device_ipc_mem_storage handles array
@@ -242,7 +243,7 @@ protected:
 
 private:
     topology_addr<dependent_topology(), dependent_topology_class()> comm_addr;
-    std::shared_ptr<ccl::communicator> ccl_communicator;
+    std::shared_ptr<ccl::host_communicator> ccl_communicator;
     device_storage& node_device_storage;
 
     std::vector<ccl_device::device_ipc_memory_handle> send_handles;

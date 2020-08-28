@@ -4,12 +4,13 @@
 #error "Do not include this file directly. Please include 'ccl.hpp'"
 #endif
 
+#if defined(MULTI_GPU_SUPPORT) || defined(CCL_ENABLE_SYCL)
 namespace ccl {
 class request;
 class kvs_interface;
+using rank_t = size_t;
 
-
-class communicator_interface;
+struct communicator_interface;
 /**
  * A device communicator that permits device communication operations
  * Has no defined public constructor.
@@ -863,25 +864,34 @@ private:
     friend class environment;
     friend class comm_group;
     device_communicator(impl_value_t&& impl);
-};
 
-
-// factory methods
-using rank_t = size_t;
-
-template<class DeviceType,
+    // factory methods
+    template<class DeviceType,
          class ContextType>
-vector_class<device_communicator> create_device_communicators(
+    static vector_class<device_communicator> create_device_communicators(
+        const size_t cluster_devices_size,
+        const vector_class<DeviceType>& local_devices,
+        ContextType& context,
+        shared_ptr_class<kvs_interface> kvs);
+
+    template<class DeviceType,
+         class ContextType>
+    static vector_class<device_communicator> create_device_communicators(
         const size_t cluster_devices_size, /*global devics count*/
         const vector_class<pair_class<rank_t, DeviceType>>& local_rank_device_map,
         ContextType& context,
         shared_ptr_class<kvs_interface> kvs);
 
-template<class DeviceType,
+    template<class DeviceType,
          class ContextType>
-vector_class<device_communicator> create_device_communicators(
+    static vector_class<device_communicator> create_device_communicators(
         const size_t cluster_devices_size, /*global devics count*/
         const map_class<rank_t, DeviceType>& local_rank_device_map,
         ContextType& context,
         shared_ptr_class<kvs_interface> kvs);
+};
+
+
+
 } // namespace ccl
+#endif //#if defined(MULTI_GPU_SUPPORT) || defined(CCL_ENABLE_SYCL)

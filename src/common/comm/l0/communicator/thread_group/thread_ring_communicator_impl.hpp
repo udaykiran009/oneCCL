@@ -185,7 +185,7 @@ thread_device_group_ring_communicator::alltoall_impl(const buffer_type* send_buf
 }
 template<class buffer_type>
 ccl::request_t
-thread_device_group_a2a_communicator::alltoall_impl(const ccl::vector_class<buffer_type*>& send_buf,
+thread_device_group_ring_communicator::alltoall_impl(const ccl::vector_class<buffer_type*>& send_buf,
                                                    const ccl::vector_class<buffer_type*>& recv_buf,
                                                    size_t count,
                                                    const ccl::alltoall_attr_t& attr,

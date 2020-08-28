@@ -2,6 +2,7 @@
 #include <sstream>
 
 #include "ccl_types.hpp"
+#include "ccl_comm_split_attr_ids.hpp"
 #include "common/comm/l0/device_containers.hpp"
 
 namespace native

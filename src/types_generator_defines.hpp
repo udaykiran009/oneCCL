@@ -3,7 +3,8 @@
 /**
  * API types generators
  */
-
+ //TODO
+#if 0
 #define API_COLL_EXPLICIT_CLASS_INSTANTIATION(type)         \
 template ccl::communicator::coll_request_t CCL_API          \
 ccl::communicator::allgatherv(const type& send_buf,         \
@@ -123,7 +124,7 @@ ccl::communicator::sparse_allreduce(const index_type& send_ind_buf, size_t send_
                                     const ccl::coll_attr* attr,                            \
                                     const ccl::stream_t& stream);
 
-
+#endif //TODO
 /**
  * Core types generators
  */

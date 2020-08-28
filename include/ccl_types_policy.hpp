@@ -122,7 +122,7 @@ protected:
     using parent_t = derived_t;
     using acc_policy_t = access_policy_t<impl_t>;
 
-    friend class access_policy_t<impl_t>;
+    friend struct access_policy_t<impl_t>;
 
     ccl_api_base_copyable(impl_value_t&& impl) : pimpl(std::move(impl)) {}
 

@@ -4,6 +4,8 @@
 #error "Do not include this file directly. Please include 'ccl.hpp'"
 #endif
 
+#if defined(MULTI_GPU_SUPPORT) || defined(CCL_ENABLE_SYCL)
+
 class ccl_stream;
 namespace ccl {
 
@@ -46,7 +48,7 @@ private:
     friend class environment;
     friend class communicator;
     friend class device_communicator;
-    friend class ccl_empty_attr;
+    friend struct ccl_empty_attr;
 
     template <class ...attr_value_pair_t>
     friend stream create_stream_from_attr(typename unified_device_type::ccl_native_t device,
@@ -67,6 +69,25 @@ private:
 
     void build_from_params();
     stream(const typename details::ccl_api_type_attr_traits<stream_attr_id, stream_attr_id::version>::type& version);
+
+    /**
+     *  Factory methods
+     */
+    template <class native_stream_type,
+          class = typename std::enable_if<is_stream_supported<native_stream_type>()>::type>
+    static stream create_stream(native_stream_type& native_stream);
+
+    template <class native_stream_type, class native_context_type,
+          class = typename std::enable_if<is_stream_supported<native_stream_type>()>::type>
+    static stream create_stream(native_stream_type& native_stream, native_context_type& native_ctx);
+
+    template <class ...attr_value_pair_t>
+    static stream create_stream_from_attr(typename unified_device_type::ccl_native_t device, attr_value_pair_t&&...avps);
+
+    template <class ...attr_value_pair_t>
+    static stream create_stream_from_attr(typename unified_device_type::ccl_native_t device,
+                               typename unified_device_context_type::ccl_native_t context,
+                               attr_value_pair_t&&...avps);
 };
 
 
@@ -83,21 +104,6 @@ constexpr auto attr_arg(value_type v) -> details::attr_value_tripple<stream_attr
 extern stream default_stream;
 
 
-/* TODO temporary function for UT compilation: would be part of ccl::environment in final*/
-template <class native_stream_type,
-          class = typename std::enable_if<is_stream_supported<native_stream_type>()>::type>
-stream create_stream(native_stream_type& native_stream);
 
-template <class native_stream_type, class native_context_type,
-          class = typename std::enable_if<is_stream_supported<native_stream_type>()>::type>
-stream create_stream(native_stream_type& native_stream, native_context_type& native_ctx);
-
-template <class ...attr_value_pair_t>
-stream create_stream_from_attr(typename unified_device_type::ccl_native_t device, attr_value_pair_t&&...avps);
-
-template <class ...attr_value_pair_t>
-stream create_stream_from_attr(typename unified_device_type::ccl_native_t device,
-                               typename unified_device_context_type::ccl_native_t context,
-                               attr_value_pair_t&&...avps);
-
+#endif //#if defined(MULTI_GPU_SUPPORT) || defined(CCL_ENABLE_SYCL)
 } // namespace ccl

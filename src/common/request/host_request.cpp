@@ -39,4 +39,14 @@ bool host_request_impl::test()
     }
     return completed;
 }
+
+bool host_request_impl::cancel()
+{
+    throw ccl_error(std::string(__FUNCTION__) + " - is not implemented");
+}
+
+event& host_request_impl::get_event()
+{
+    throw ccl_error(std::string(__FUNCTION__) + " - is not implemented");
+}
 }

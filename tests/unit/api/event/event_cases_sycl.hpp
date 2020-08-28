@@ -21,7 +21,7 @@ namespace stream_suite
 TEST(event_api, event_from_sycl_event_creation)
 {
     auto ev = cl::sycl::event();
-    auto str = ccl::create_event(ev);
+    auto str = ccl::event::create_event(ev);
 
     ASSERT_TRUE(str.get<ccl::event_attr_id::version>().full != nullptr);
 }
@@ -31,7 +31,7 @@ TEST(event_api, event_from_sycl_device_context_creation)
     auto ctx = cl::sycl::context();
     auto ev = cl::sycl::event();
     cl_event h = ev.get();
-    auto str = ccl::create_event_from_attr(h, ctx);
+    auto str = ccl::event::create_event_from_attr(h, ctx);
 
     ASSERT_TRUE(str.get<ccl::event_attr_id::version>().full != nullptr);
 }

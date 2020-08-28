@@ -14,7 +14,7 @@ ccl::coll_request_t
 thread_device_group_a2a_communicator::allgatherv_impl(const buffer_type& send_buf,
                                                       size_t send_count,
                                                       buffer_type& recv_buf,
-                                                      const ccl::vector_class<size_t>&* recv_counts,
+                                                      const ccl::vector_class<size_t>& recv_counts,
                                                       const ccl::allgatherv_attr_t& attr,
                                                       ccl::stream::impl_value_t& stream, const ccl::vector_class<ccl::event>& deps)
 {
@@ -40,7 +40,7 @@ ccl::coll_request_t
 thread_device_group_a2a_communicator::allgatherv_impl(const buffer_type* send_buf,
                                                       size_t send_count,
                                                       buffer_type* recv_buf,
-                                                      const ccl::vector_class<size_t>&* recv_counts,
+                                                      const ccl::vector_class<size_t>& recv_counts,
                                                       const ccl::allgatherv_attr_t& attr,
                                                       ccl::stream::impl_value_t& stream, const ccl::vector_class<ccl::event>& deps)
 {
@@ -218,9 +218,9 @@ thread_device_group_a2a_communicator::alltoall_impl(const ccl::vector_class<ccl:
 template<class buffer_type>
 ccl::coll_request_t
 thread_device_group_a2a_communicator::alltoallv_impl(const buffer_type* send_buf,
-                                                     const ccl::vector_class<size_t>&* send_counts,
+                                                     const ccl::vector_class<size_t>& send_counts,
                                                      buffer_type* recv_buf,
-                                                     const ccl::vector_class<size_t>&* recv_counts,
+                                                     const ccl::vector_class<size_t>& recv_counts,
                                                      const ccl::alltoallv_attr_t& attr,
                                                      ccl::stream::impl_value_t& stream, const ccl::vector_class<ccl::event>& deps)
 {
@@ -244,9 +244,9 @@ thread_device_group_a2a_communicator::alltoallv_impl(const ccl::vector_class<buf
 template<class buffer_type>
 ccl::coll_request_t
 thread_device_group_a2a_communicator::alltoallv_impl(const buffer_type& send_buf,
-                                                     const ccl::vector_class<size_t>&* send_counts,
+                                                     const ccl::vector_class<size_t>& send_counts,
                                                      buffer_type& recv_buf,
-                                                     const ccl::vector_class<size_t>&* recv_counts,
+                                                     const ccl::vector_class<size_t>& recv_counts,
                                                      const ccl::alltoallv_attr_t& attr,
                                                      ccl::stream::impl_value_t& stream, const ccl::vector_class<ccl::event>& deps)
 {

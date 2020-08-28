@@ -83,7 +83,7 @@ TEST(device_communicator_api, device_comm_from_sycl_devices_single_thread)
     std::shared_ptr<stub_kvs> in_kvs;
 
     // create `out_comms` from in parameters
-    ccl::vector_class<ccl::device_communicator> out_comms = create_device_communicators(in_total_devices_size, in_local_rank_device_map, in_ctx, in_kvs);
+    ccl::vector_class<ccl::device_communicator> out_comms = ccl::device_communicator::create_device_communicators(in_total_devices_size, in_local_rank_device_map, in_ctx, in_kvs);
 
     // check correctness
     curr_rank = in_local_rank_device_map.begin()->first;
@@ -120,7 +120,7 @@ TEST(device_communicator_api, device_comm_from_sycl_devices_single_thread)
 
         curr_rank++;
 
-        void *tmp;
+        void *tmp = nullptr;
         ccl::vector_class<size_t> recv_counts;
         ccl::datatype dtype{ccl::datatype::int8};
         dev_comm.allgatherv(tmp, 0, tmp, recv_counts, dtype);
@@ -137,7 +137,7 @@ void user_thread_function(size_t total_devices_count, const rank_device_containe
                           std::atomic<size_t>& total_communicators_count)
 {
     // blocking API call: wait for all threads from all processes
-    ccl::vector_class<ccl::device_communicator> out_comms = create_device_communicators(total_devices_count, in_local_rank_device_map, in_ctx, in_kvs);
+    ccl::vector_class<ccl::device_communicator> out_comms = ccl::device_communicator::create_device_communicators(total_devices_count, in_local_rank_device_map, in_ctx, in_kvs);
 
     // check correctness
     total_communicators_count.fetch_add(out_comms.size());
@@ -149,7 +149,7 @@ void user_thread_function(size_t total_devices_count, const rank_device_containe
 
         ASSERT_TRUE(dev_comm.is_ready());
 
-        void *tmp;
+        void *tmp = nullptr;
         ccl::vector_class<size_t> recv_counts;
         ccl::datatype dtype{ccl::datatype::int8};
         dev_comm.allgatherv(tmp, 0, tmp, recv_counts, dtype);
@@ -264,7 +264,7 @@ void user_thread_function_splitted_comm(size_t total_devices_count, const rank_d
                           std::atomic<size_t>& total_communicators_count)
 {
     // blocking API call: wait for all threads from all processes
-    ccl::vector_class<ccl::device_communicator> out_comms = create_device_communicators(total_devices_count, in_local_rank_device_map, in_ctx, in_kvs);
+    ccl::vector_class<ccl::device_communicator> out_comms = ccl::device_communicator::create_device_communicators(total_devices_count, in_local_rank_device_map, in_ctx, in_kvs);
 
     // check correctness
     total_communicators_count.fetch_add(out_comms.size());
@@ -300,7 +300,7 @@ void user_thread_function_splitted_comm(size_t total_devices_count, const rank_d
 
 
         // collective test
-        void *tmp;
+        void *tmp = nullptr;
         ccl::vector_class<size_t> recv_counts;
         ccl::datatype dtype{ccl::datatype::int8};
         dev_comm.allgatherv(tmp, 0, tmp, recv_counts, dtype);

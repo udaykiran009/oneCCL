@@ -216,7 +216,7 @@ protected:
                 if(topology == ccl::device_group_split_type::cluster)
                 {
                     auto c = ccl::environment::instance().create_communicator();
-                    if(c->rank() == 0)
+                    if(c.rank() == 0)
                     {
                         LOG_INFO("L0 Workaround: one device close list!!!", "WaitCount: ", wait_count, ", ExecCount: ", exec_count, ", CurIndex: ", cur_index);
                         result = zeCommandListClose(device.get_cmd_list().get());
