@@ -1,25 +1,32 @@
 #pragma once
 #include <memory>
 #include <sstream>
-
-#include "bcast_fixture.hpp"
+#include "alltoallv_fixture.hpp"
 
 namespace ring_single_device_case {
 
 using native_type = float;
 
-TEST_F(ring_bcast_single_device_fixture, ring_bcast_single_device_mt) {
+TEST_F(ring_alltoallv_single_device_fixture, ring_alltoallv_single_device_mt) {
     using namespace native;
 
     // test case data
-    const size_t buffer_size = 512;
-    const size_t num_thread = 5;
+    const size_t num_thread = 4;
     constexpr size_t mem_group_count = 3;
     constexpr size_t flag_group_count = 3;
 
-    handles_storage<native_type> memory_storage(mem_group_count * num_thread);
-    handles_storage<int> flags_storage(flag_group_count * num_thread);
+    const size_t send_buffer_base_size = 128;
+    size_t total_recv_size = send_buffer_base_size * (num_thread / 2) * (1 + num_thread);
+    std::vector<size_t> total_send_sizes(num_thread);
+    for (size_t i = 0; i < num_thread; ++i) {
+        total_send_sizes[i] = num_thread * send_buffer_base_size * (i + 1);
+    }
+    size_t tmp_buffer_size = send_buffer_base_size * num_thread * (num_thread - 1);
+
     std::map<size_t, std::vector<size_t>> comm_param_storage;
+    std::map<size_t, std::vector<ccl_device::device_memory<size_t>>> comm_param_mem_storage;
+    handles_storage<native_type> memory_storage(42 * num_thread);
+    handles_storage<int> flags_storage(42 * num_thread);
 
     // check global driver
     auto drv_it = local_platform->drivers.find(0);
@@ -31,69 +38,119 @@ TEST_F(ring_bcast_single_device_fixture, ring_bcast_single_device_mt) {
               "Count: %" << driver.devices.size() << ", bits: " << local_affinity.size()
                          << "Device count is not equal to affinity mask!");
 
+    std::vector<size_t> thread_indices;
+
     // device memory stencil data
-    std::vector<native_type> send_values(buffer_size);
-    std::iota(send_values.begin(), send_values.end(), 1);
-    std::vector<native_type> recv_values(buffer_size, 0);
+    // send
+    std::vector<std::vector<native_type>> send_values(num_thread);
+    std::vector<std::vector<size_t>> send_counts(num_thread);
+    std::vector<std::vector<size_t>> send_offsets(num_thread);
+
+    size_t iota_base_value = 0;
+    for (size_t idx = 0; idx < num_thread; idx++) {
+        send_values[idx].resize(total_send_sizes[idx]);
+
+        send_counts[idx].resize(num_thread, 0);
+        send_offsets[idx].resize(num_thread, 0);
+        iota_base_value += idx;
+        for (size_t iter = 0; iter < send_counts[idx].size(); iter++) {
+            send_counts[idx][iter] = send_buffer_base_size * (idx + 1);
+            if (iter > 0)
+                send_offsets[idx][iter] += send_offsets[idx][iter - 1] + send_counts[idx][iter - 1];
+
+            std::iota(send_values[idx].begin() + send_offsets[idx][iter],
+                      send_values[idx].begin() + send_offsets[idx][iter] + send_counts[idx][iter],
+                      send_buffer_base_size * iota_base_value);
+        }
+    }
+
+    // recv
+    std::vector<std::vector<native_type>> recv_values(num_thread);
+    std::vector<std::vector<size_t>> recv_counts(num_thread);
+    std::vector<std::vector<size_t>> recv_offsets(num_thread);
+    for (size_t idx = 0; idx < num_thread; idx++) {
+        recv_values[idx].resize(total_recv_size, 0);
+        recv_counts[idx].resize(num_thread, 0);
+        recv_offsets[idx].resize(num_thread, 0);
+        for (size_t iter = 0; iter < recv_counts[idx].size(); iter++) {
+            recv_counts[idx][iter] = send_buffer_base_size * (iter + 1);
+            if (iter > 0)
+                recv_offsets[idx][iter] += recv_offsets[idx][iter - 1] + recv_counts[idx][iter - 1];
+        }
+    }
+
+    // tmp
+    std::vector<native_type> tmp_values(tmp_buffer_size, 0);
 
     // allocate device memory
     auto dev_it = driver.devices.begin();
     ccl_device& device = *dev_it->second;
-    size_t root = 2;
 
     for (size_t thread_idx = 0; thread_idx < num_thread; thread_idx++) {
+        thread_indices.push_back(thread_idx);
         try {
-            //initialize communication params
+            // initialize communication params
             size_t rank_idx = thread_idx;
             size_t rank_size = num_thread;
-            size_t elem_count = buffer_size;
+            // size_t send_count = recv_counts[thread_idx];
 
             comm_param_storage[thread_idx].push_back(rank_idx);
             comm_param_storage[thread_idx].push_back(rank_size);
-            comm_param_storage[thread_idx].push_back(elem_count);
-            comm_param_storage[thread_idx].push_back(root);
 
-            //allocate flags & memory
+            // send
+            auto mem_send_counts = device.alloc_memory<size_t>(num_thread, sizeof(size_t));
+            auto mem_send_offsets = device.alloc_memory<size_t>(num_thread, sizeof(size_t));
+
+            mem_send_counts.enqueue_write_sync(send_counts[thread_idx]);
+            mem_send_offsets.enqueue_write_sync(send_offsets[thread_idx]);
+
+            comm_param_mem_storage[thread_idx].emplace_back(std::move(mem_send_counts));
+            comm_param_mem_storage[thread_idx].emplace_back(std::move(mem_send_offsets));
+
+            // recv
+            auto mem_recv_counts = device.alloc_memory<size_t>(num_thread, sizeof(size_t));
+            auto mem_recv_offsets = device.alloc_memory<size_t>(num_thread, sizeof(size_t));
+
+            mem_recv_counts.enqueue_write_sync(recv_counts[thread_idx]);
+            mem_recv_offsets.enqueue_write_sync(recv_offsets[thread_idx]);
+
+            comm_param_mem_storage[thread_idx].emplace_back(std::move(mem_recv_counts));
+            comm_param_mem_storage[thread_idx].emplace_back(std::move(mem_recv_offsets));
+
+            // allocate flags & memory
             // memory
-            auto mem_send = device.alloc_memory<native_type>(buffer_size, sizeof(native_type));
-            auto mem_recv = device.alloc_memory<native_type>(buffer_size, sizeof(native_type));
-            auto temp_recv = device.alloc_memory<native_type>(buffer_size, sizeof(native_type));
-            if (thread_idx == root) {
-                mem_send.enqueue_write_sync(send_values);
-            }
-            else {
-                mem_send.enqueue_write_sync(recv_values);
-            }
-            mem_recv.enqueue_write_sync(recv_values);
-            temp_recv.enqueue_write_sync(recv_values);
+            auto mem_send =
+                device.alloc_memory<native_type>(total_send_sizes[thread_idx], sizeof(native_type));
+            auto mem_recv = device.alloc_memory<native_type>(total_recv_size, sizeof(native_type));
+            auto mem_tmp = device.alloc_memory<native_type>(tmp_buffer_size, sizeof(native_type));
 
-            /* fill array in specific order
-             * Left: l_send, l_recv, l_tmp_recv, r_tmp_recv
-             * Right: r_send, r_recv, r_tmp_recv, l_tmp_recv
-             */
+            mem_send.enqueue_write_sync(send_values[thread_idx]);
+            mem_recv.enqueue_write_sync(recv_values[thread_idx]);
+            mem_tmp.enqueue_write_sync(tmp_values);
+
             memory_storage.register_shared_data(thread_idx,
                                                 num_thread,
                                                 std::move(mem_send),
                                                 std::move(mem_recv),
-                                                std::move(temp_recv));
+                                                std::move(mem_tmp));
 
             // flags
             auto left_wrote_2_me_flag = device.alloc_memory<int>(1, sizeof(int));
-            auto read_for_receive_flag = device.alloc_memory<int>(1, sizeof(int));
-            auto barrier_flag = device.alloc_memory<int>(1, sizeof(int));
+            auto ready_for_receive_flag = device.alloc_memory<int>(1, sizeof(int));
+            auto proxy_size = device.alloc_memory<int>(1, sizeof(int));
             left_wrote_2_me_flag.enqueue_write_sync({ (int)0 });
-            read_for_receive_flag.enqueue_write_sync({ (int)0 });
-            barrier_flag.enqueue_write_sync({ (int)0 });
+            ready_for_receive_flag.enqueue_write_sync({ (int)0 });
+            proxy_size.enqueue_write_sync({ (int)0 });
 
             /* fill array in specific order
-             * Left: l_L, l_R, l_B, r_L, r_R
-             * Right: r_L, r_R, r_B, l_L, L_R
+             * Left: l_L, l_R, r_L, r_R
+             * Right: r_L, r_R, l_L, L_R
              */
             flags_storage.register_shared_data(thread_idx,
                                                num_thread,
                                                std::move(left_wrote_2_me_flag),
-                                               std::move(read_for_receive_flag),
-                                               std::move(barrier_flag));
+                                               std::move(ready_for_receive_flag),
+                                               std::move(proxy_size));
         }
         catch (const std::exception& ex) {
             UT_ASSERT(
@@ -106,17 +163,16 @@ TEST_F(ring_bcast_single_device_fixture, ring_bcast_single_device_mt) {
         memory_storage.rotate_shared_data(thread_idx, num_thread, mem_group_count);
         flags_storage.rotate_shared_data(thread_idx, num_thread, flag_group_count);
     }
-    //Check memory handles
 
-    //prepare kernels in multithreading environment
+    // prepare kernels in multithreading environment
     ze_kernel_desc_t desc = { ZE_KERNEL_DESC_VERSION_CURRENT, ZE_KERNEL_FLAG_NONE };
-    desc.pKernelName = "bcast_execution_float";
+    desc.pKernelName = "alltoallv_execution_float";
     std::map<size_t, ze_kernel_handle_t> thread_kernels;
     std::map<size_t, ccl_device::device_queue> thread_queue;
     std::map<size_t, ccl_device::device_cmd_list> thread_cmd_list;
     ccl_device::device_module& module = *(device_modules.find(&device)->second);
     for (size_t thread_idx = 0; thread_idx < num_thread; thread_idx++) {
-        //thread_group.emplace
+        // thread_group.emplace
         ze_kernel_handle_t handle = nullptr;
         try {
             ze_result_t result = zeKernelCreate(module.handle, &desc, &handle);
@@ -124,7 +180,6 @@ TEST_F(ring_bcast_single_device_fixture, ring_bcast_single_device_mt) {
                 throw std::runtime_error(std::string("Cannot create kernel: ") + desc.pKernelName +
                                          ", error: " + native::to_string(result));
             }
-
             thread_kernels.emplace(thread_idx, std::move(handle));
             thread_queue.emplace(thread_idx, device.create_cmd_queue());
             thread_cmd_list.emplace(thread_idx, device.create_cmd_list());
@@ -145,13 +200,17 @@ TEST_F(ring_bcast_single_device_fixture, ring_bcast_single_device_mt) {
     std::vector<std::unique_ptr<std::stringstream>> thread_out_put;
     for (auto& idx_kernel : thread_kernels) {
         size_t thread_idx = idx_kernel.first;
-
         ze_kernel_handle_t kernel = idx_kernel.second;
+
+        auto& comm_handles = comm_param_storage.find(thread_idx)->second;
+        auto& comm_mem_handles = comm_param_mem_storage.find(thread_idx)->second;
         auto& mem_handles = memory_storage.per_thread_storage.find(thread_idx)->second;
         auto& flag_handles = flags_storage.per_thread_storage.find(thread_idx)->second;
-        auto& comm_handles = comm_param_storage.find(thread_idx)->second;
+
         //WORKAROUND: ONLY ONE LIST & QUEUE!
+        //ccl_device::device_queue& queue = thread_queue.find(thread_idx)->second;
         ccl_device::device_queue& queue = thread_queue.find(0)->second;
+        //ccl_device::device_cmd_list& list = thread_cmd_list.find(thread_idx)->second;
         ccl_device::device_cmd_list& list = thread_cmd_list.find(0)->second;
 
         std::unique_ptr<std::stringstream> out_ptr(new std::stringstream());
@@ -166,6 +225,7 @@ TEST_F(ring_bcast_single_device_fixture, ring_bcast_single_device_mt) {
                                    &mem_handles,
                                    &flag_handles,
                                    &comm_handles,
+                                   &comm_mem_handles,
                                    &thread_lock,
                                    &val,
                                    raw_out]() {
@@ -177,9 +237,9 @@ TEST_F(ring_bcast_single_device_fixture, ring_bcast_single_device_mt) {
                 ze_result_t result;
                 out << "thread_idx: " << thread_idx << ", comm_handles: \n";
 
-                // bind rank, size, buffer_size
+                // bind rank, size
                 size_t i = 0;
-                std::array<int, 4> comm_offset{ 0, 1, 2, 11 };
+                std::array<int, 2> comm_offset{ 0, 1 };
                 UT_ASSERT(comm_offset.size() == comm_handles.size(), "comm_offset != comm_handles");
                 for (auto& comm : comm_handles) {
                     out << "index: " << comm_offset[i] << ": " << comm << std::endl;
@@ -195,10 +255,30 @@ TEST_F(ring_bcast_single_device_fixture, ring_bcast_single_device_mt) {
                 }
                 out << std::endl;
 
-                // bind l_send, l_recv, l_tmp, , , r_tmp
-                // bind l_send, l_recv, , , r_recv, ,
+                // bind recv_counts, recv_offets
                 i = 0;
-                std::array<int, mem_group_count * 2> mem_offset{ 3, 4, -1, -1, 8, -1 };
+                std::array<int, 4> comm_mem_offset{ 2, 3, 4, 5 };
+                UT_ASSERT(comm_mem_offset.size() == comm_mem_handles.size(),
+                          "comm_mem_offset != comm_mem_handles");
+                for (auto& comm : comm_mem_handles) {
+                    result =
+                        zeKernelSetArgumentValue(kernel, comm_mem_offset[i], sizeof(comm), &comm);
+                    if (result != ZE_RESULT_SUCCESS) {
+                        throw std::runtime_error(
+                            std::string(
+                                "Cannot zeKernelSetArgumentValue memory at comm_mem_offset: ") +
+                            std::to_string(comm_mem_offset[i]) +
+                            " index\nError: " + native::to_string(result));
+                    }
+
+                    i++;
+                }
+                out << std::endl;
+
+                // bind l_send, l_recv, r_recv
+                i = 0;
+                std::array<int, mem_group_count * 2> mem_offset{ 6, 7, 8, -1, -1, 9 };
+                //UT_ASSERT(mem_offset.size() == mem_handles.size(), "mem_offset != mem_handles");
                 out << "thread_idx: " << thread_idx << ", mem_handles: \n";
                 for (auto& mem : mem_handles) {
                     if (i >= mem_group_count * 2) {
@@ -222,9 +302,10 @@ TEST_F(ring_bcast_single_device_fixture, ring_bcast_single_device_mt) {
                 }
                 out << std::endl;
 
-                // bind left_wrote_2_me_flag, read_for_receive_flag, local_barrier_flag
+                // bind left_wrote_2_me_flag, ready_for_receive_flag
                 i = 0;
-                std::array<int, flag_group_count * 2> flag_offset{ 5, 6, 7, 9, 10, -1 };
+                std::array<int, flag_group_count * 2> flag_offset{ 10, 11, 12, 13, 14, 15 };
+                //UT_ASSERT(flag_offset.size() == flag_handles.size(), "flag_offset != flag_handles");
                 out << "thread_idx: " << thread_idx << ", flag_handles: \n";
                 for (auto& flag : flag_handles) {
                     if (i >= flag_group_count * 2) {
@@ -311,26 +392,21 @@ TEST_F(ring_bcast_single_device_fixture, ring_bcast_single_device_mt) {
         index++;
     }
 
-    size_t corr_val = 0;
+    size_t corr_val;
     try {
         for (auto& idx_kernel : thread_kernels) {
             size_t thread_idx = idx_kernel.first;
-            auto lambda = [&corr_val](const size_t root,
-                                      size_t thread_idx,
-                                      size_t buffer_size,
-                                      native_type value) -> bool {
-                if (thread_idx != root) {
-                    corr_val++;
-                    if (corr_val > buffer_size)
-                        corr_val = 1;
-                    if (value != corr_val)
-                        return false;
-                }
+            corr_val = 0;
+
+            auto lambda = [&corr_val](
+                              size_t thread_idx, size_t num_thread, native_type value) -> bool {
+                if (corr_val != value)
+                    return false;
+                corr_val++;
                 return true;
             };
-
             memory_storage.check_results(
-                thread_idx, output, 1, lambda, root, thread_idx, buffer_size);
+                thread_idx, output, 1 /*recv_mem*/, lambda, thread_idx, num_thread);
         }
     }
     catch (check_on_exception& ex) {

@@ -2,6 +2,7 @@
 #include "fixture.hpp"
 #include "kernels/ring_allgatherv_single_device_test.hpp"
 #include "kernels/ring_allreduce_single_device_test.hpp"
+#include "kernels/ring_alltoallv_single_device_test.hpp"
 #include "kernels/ring_bcast_single_device_test.hpp"
 #include "kernels/ring_reduce_single_device_test.hpp"
 #include "kernels/ring_reduce_scatter_single_device_test.hpp"
@@ -36,6 +37,10 @@ int main(int ac, char* av[]) {
 
     {
         Test_ring_reduce_scatter_single_device_mt t;
+        t.start();
+    }
+    {
+        Test_ring_alltoallv_single_device_mt t;
         t.start();
     }
     return 0;
