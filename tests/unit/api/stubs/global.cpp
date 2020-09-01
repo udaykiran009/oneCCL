@@ -20,7 +20,22 @@ global_data::global_data()
 
 global_data::~global_data()
 {
+    comm.reset();
     comm_ids.reset();
+}
+
+void global_data::init_resize_dependent_objects()
+{
+    comm_ids = std::unique_ptr<ccl_comm_id_storage>(new ccl_comm_id_storage(ccl_comm::max_comm_count));
+
+    comm = std::make_shared<ccl_comm>(0, 1, comm_ids->acquire(true));
+}
+
+ccl_status_t global_data::init()
+{
+    init_resize_dependent_objects();
+
+    return ccl_status_success;
 }
 
 global_data& global_data::get()

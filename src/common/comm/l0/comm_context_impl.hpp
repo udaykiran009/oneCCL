@@ -4,11 +4,7 @@
 #include "common/comm/l0/gpu_comm_attr.hpp"
 #include "common/comm/l0/comm_context.hpp"
 #include "common/comm/comm_interface.hpp"
-#if 1
-    #include "../tests/unit/api/stubs/host_communicator.hpp"
-#else
-    #include "common/comm/host_communicator/host_communicator.hpp"
-#endif
+#include "common/comm/host_communicator/host_communicator.hpp"
 
 namespace ccl
 {

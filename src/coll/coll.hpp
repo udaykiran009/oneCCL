@@ -6,6 +6,12 @@
 #include "common/datatype/datatype.hpp"
 #include "common/utils/buffer.hpp"
 
+#include "ccl_coll_attr_ids.hpp"
+#include "ccl_coll_attr_ids_traits.hpp"
+#include "ccl_coll_attr.hpp"
+
+#include "coll/coll_common_attributes.hpp"
+
 #ifdef CCL_ENABLE_SYCL
 #include <CL/sycl.hpp>
 typedef cl::sycl::buffer<char, 1> ccl_sycl_buffer_t;
@@ -37,8 +43,20 @@ struct ccl_coll_attr
     ccl_coll_attr(const ccl_coll_attr_t* attr);
     ccl_coll_attr& operator= (const ccl_coll_attr_t* attr);
 
-    ccl_coll_attr(ccl_coll_attr&&) = delete;
-    ccl_coll_attr& operator= (ccl_coll_attr&&) = delete;
+    //TODO temporary solution for type convertation, ccl_coll_attr would be depreacated
+    ccl_coll_attr(const ccl::allgatherv_attr_t& attr);
+    ccl_coll_attr(const ccl::allreduce_attr_t& attr);
+    ccl_coll_attr(const ccl::alltoall_attr_t& attr);
+    ccl_coll_attr(const ccl::alltoallv_attr_t& attr);
+    ccl_coll_attr(const ccl::barrier_attr_t& attr);
+    ccl_coll_attr(const ccl::bcast_attr_t& attr);
+    ccl_coll_attr(const ccl::reduce_attr_t& attr);
+    ccl_coll_attr(const ccl::reduce_scatter_attr_t& attr);
+    ccl_coll_attr(const ccl::sparse_allreduce_attr_t& attr);
+
+
+    ccl_coll_attr(ccl_coll_attr&&) = default;
+    ccl_coll_attr& operator= (ccl_coll_attr&&) = default;
 
     ccl_prologue_fn_t prologue_fn = nullptr;
     ccl_epilogue_fn_t epilogue_fn = nullptr;
@@ -183,7 +201,7 @@ ccl_request* ccl_allgatherv_impl(const void* send_buf,
                                  void* recv_buf,
                                  const size_t* recv_counts,
                                  ccl_datatype_t dtype,
-                                 const ccl_coll_attr_t* attr,
+                                 const ccl_coll_attr& attr,
                                  ccl_comm* comm,
                                  const ccl_stream* stream);
 
@@ -192,7 +210,7 @@ ccl_request* ccl_allreduce_impl(const void* send_buf,
                                 size_t count,
                                 ccl_datatype_t dtype,
                                 ccl_reduction_t reduction,
-                                const ccl_coll_attr_t* attr,
+                                const ccl_coll_attr& attr,
                                 ccl_comm* comm,
                                 const ccl_stream* stream);
 template<class gpu_device_type>
@@ -201,7 +219,7 @@ ccl_request* ccl_allreduce_gpu_impl(const void* send_buf,
                                 size_t count,
                                 ccl_datatype_t dtype,
                                 ccl_reduction_t reduction,
-                                const ccl_coll_attr_t* attr,
+                                const ccl_coll_attr& attr,
                                 ccl_comm* comm,
                                 const ccl_stream* stream);
 
@@ -209,7 +227,7 @@ ccl_request* ccl_alltoall_impl(const void* send_buf,
                                void* recv_buf,
                                size_t count,
                                ccl_datatype_t dtype,
-                               const ccl_coll_attr_t* attr,
+                               const ccl_coll_attr& attr,
                                ccl_comm* comm,
                                const ccl_stream* stream);
 
@@ -218,7 +236,7 @@ ccl_request* ccl_alltoallv_impl(const void* send_buf,
                                 void* recv_buf,
                                 const size_t* recv_counts,
                                 ccl_datatype_t dtype,
-                                const ccl_coll_attr_t* attr,
+                                const ccl_coll_attr& attr,
                                 ccl_comm* comm,
                                 const ccl_stream* stream);
 
@@ -229,7 +247,7 @@ ccl_request* ccl_bcast_impl(void* buf,
                             size_t count,
                             ccl_datatype_t dtype,
                             size_t root,
-                            const ccl_coll_attr_t* attr,
+                            const ccl_coll_attr& attr,
                             ccl_comm* comm,
                             const ccl_stream* stream);
 
@@ -239,7 +257,7 @@ ccl_request* ccl_reduce_impl(const void* send_buf,
                              ccl_datatype_t dtype,
                              ccl_reduction_t reduction,
                              size_t root,
-                             const ccl_coll_attr_t* attr,
+                             const ccl_coll_attr& attr,
                              ccl_comm* comm,
                              const ccl_stream* stream);
 
@@ -248,5 +266,5 @@ ccl_request* ccl_sparse_allreduce_impl(const void* send_ind_buf, size_t send_ind
                                        void* recv_ind_buf, size_t recv_ind_count,
                                        void* recv_val_buf, size_t recv_val_count,
                                        ccl_datatype_t index_dtype, ccl_datatype_t dtype,
-                                       ccl_reduction_t reduction, const ccl_coll_attr_t* attr,
+                                       ccl_reduction_t reduction, const ccl_coll_attr& attr,
                                        ccl_comm* comm, const ccl_stream* stream);

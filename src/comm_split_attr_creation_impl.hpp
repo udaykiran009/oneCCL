@@ -7,7 +7,7 @@ namespace ccl
 /* TODO temporary function for UT compilation: would be part of ccl::environment in final*/
 
 template <class attr_t, class ...attr_value_pair_t>
-static attr_t create_attr(attr_value_pair_t&&...avps)
+attr_t create_split_attr(attr_value_pair_t&&...avps)
 {
     ccl_version_t ret {};
     ret.major = CCL_MAJOR_VERSION;
@@ -27,7 +27,7 @@ static attr_t create_attr(attr_value_pair_t&&...avps)
 template <class ...attr_value_pair_t>
 comm_split_attr_t create_comm_split_attr(attr_value_pair_t&&...avps)
 {
-    return create_attr<comm_split_attr_t>(std::forward<attr_value_pair_t>(avps)...);
+    return create_split_attr<comm_split_attr_t>(std::forward<attr_value_pair_t>(avps)...);
 }
 
 #ifdef MULTI_GPU_SUPPORT
@@ -35,7 +35,7 @@ comm_split_attr_t create_comm_split_attr(attr_value_pair_t&&...avps)
 template <class ...attr_value_pair_t>
 device_comm_split_attr_t create_device_comm_split_attr(attr_value_pair_t&&...avps)
 {
-    return create_attr<device_comm_split_attr_t>(std::forward<attr_value_pair_t>(avps)...);
+    return create_split_attr<device_comm_split_attr_t>(std::forward<attr_value_pair_t>(avps)...);
 }
 
 #endif

@@ -49,7 +49,7 @@ CCL_API size_t communicator::size() const
  */
 communicator communicator::create_communicator()
 {
-    throw ccl_error("Not implemented");
+    throw ccl_error(std::string(__PRETTY_FUNCTION__) + " - is not implemented");
 
     LOG_TRACE("Create host communicator");
 
@@ -71,7 +71,7 @@ communicator communicator::create_communicator()
 communicator communicator::create_communicator(const size_t size,
                                  shared_ptr_class<kvs_interface> kvs)
 {
-    throw ccl_error("Not implemented");
+    throw ccl_error(std::string(__PRETTY_FUNCTION__) + " - is not implemented");
 
     LOG_TRACE("Create host communicator");
 
