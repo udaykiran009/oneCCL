@@ -1,20 +1,65 @@
-#include "ccl.hpp"
+#include "ccl_types.hpp"
+#include "ccl_aliases.hpp"
+
+#include "ccl_type_traits.hpp"
+#include "ccl_types_policy.hpp"
+
+#include "ccl_coll_attr_ids.hpp"
+#include "ccl_coll_attr_ids_traits.hpp"
+#include "ccl_coll_attr.hpp"
+
+#include "ccl_comm_split_attr_ids.hpp"
+#include "ccl_comm_split_attr_ids_traits.hpp"
+#include "ccl_comm_split_attr.hpp"
+
+#include "ccl_event_attr_ids.hpp"
+#include "ccl_event_attr_ids_traits.hpp"
+#include "ccl_event.hpp"
+
+#include "ccl_stream_attr_ids.hpp"
+#include "ccl_stream_attr_ids_traits.hpp"
+#include "ccl_stream.hpp"
+
+#include "common/request/request.hpp"
+
+#include "common/comm/comm.hpp"
+#include "coll/coll.hpp"
+#include "coll/coll_common_attributes.hpp"
+#include "coll/ccl_allgather_op_attr.hpp"
+#include "coll/ccl_allreduce_op_attr.hpp"
+#include "coll/ccl_alltoall_op_attr.hpp"
+#include "coll/ccl_alltoallv_op_attr.hpp"
+#include "coll/ccl_barrier_attr.hpp"
+#include "coll/ccl_bcast_op_attr.hpp"
+#include "coll/ccl_reduce_op_attr.hpp"
+#include "coll/ccl_reduce_scatter_op_attr.hpp"
+#include "coll/ccl_sparse_allreduce_op_attr.hpp"
+
+#include "common/global/global.hpp"
+
 #include "coll/algorithms/algorithms.hpp"
 #include "coll/algorithms/allreduce/allreduce_2d.hpp"
 #include "coll/algorithms/sparse_allreduce/sparse_allreduce.hpp"
-#include "coll/coll.hpp"
 #include "coll/selection/selection.hpp"
-#include "common/global/global.hpp"
-#include "common/request/request.hpp"
 #include "exec/exec.hpp"
 #include "fusion/fusion.hpp"
 #include "unordered_coll/unordered_coll.hpp"
 
-ccl_coll_attr::ccl_coll_attr(const ccl_coll_attr_t* attr) {
+#define COPY_COMMON_OP_ATTRS(from, to) \
+    to->prologue_fn = from.get<ccl::common_op_attr_id::prolog_fn>().get(); \
+    to->epilogue_fn = from.get<ccl::common_op_attr_id::epilog_fn>().get(); \
+    to->priority = from.get<ccl::common_op_attr_id::priority>(); \
+    to->synchronous = from.get<ccl::common_op_attr_id::synchronous>(); \
+    to->to_cache = from.get<ccl::common_op_attr_id::to_cache>(); \
+    to->match_id = from.get<ccl::common_op_attr_id::match_id>();
+
+ccl_coll_attr::ccl_coll_attr(const ccl_coll_attr_t* attr)
+{
     *this = attr ?: ccl::global_data::get().default_coll_attr.get();
 }
 
-ccl_coll_attr& ccl_coll_attr::operator=(const ccl_coll_attr_t* attr) {
+ccl_coll_attr& ccl_coll_attr::operator= (const ccl_coll_attr_t* attr)
+{
     prologue_fn = attr->prologue_fn;
     epilogue_fn = attr->epilogue_fn;
     reduction_fn = attr->reduction_fn;
@@ -35,28 +80,95 @@ ccl_coll_attr& ccl_coll_attr::operator=(const ccl_coll_attr_t* attr) {
     return *this;
 }
 
+//TODO temporary solution for type convertation, ccl_coll_attr would be depreacated
+ccl_coll_attr::ccl_coll_attr(const ccl::allgatherv_attr_t& attr)
+{
+    COPY_COMMON_OP_ATTRS(attr, this);
+
+    vector_buf = attr.get<ccl::allgatherv_op_attr_id::vector_buf>();
+}
+
+ccl_coll_attr::ccl_coll_attr(const ccl::allreduce_attr_t& attr)
+{
+    COPY_COMMON_OP_ATTRS(attr, this);
+
+    reduction_fn = attr.get<ccl::allreduce_op_attr_id::reduction_fn>().get();
+}
+
+ccl_coll_attr::ccl_coll_attr(const ccl::alltoall_attr_t& attr)
+{
+    COPY_COMMON_OP_ATTRS(attr, this);
+}
+
+ccl_coll_attr::ccl_coll_attr(const ccl::alltoallv_attr_t& attr)
+{
+    COPY_COMMON_OP_ATTRS(attr, this);
+}
+
+ccl_coll_attr::ccl_coll_attr(const ccl::barrier_attr_t& attr)
+{
+    COPY_COMMON_OP_ATTRS(attr, this);
+}
+
+ccl_coll_attr::ccl_coll_attr(const ccl::bcast_attr_t& attr)
+{
+    COPY_COMMON_OP_ATTRS(attr, this);
+}
+
+ccl_coll_attr::ccl_coll_attr(const ccl::reduce_attr_t& attr)
+{
+    COPY_COMMON_OP_ATTRS(attr, this);
+
+    reduction_fn = attr.get<ccl::reduce_op_attr_id::reduction_fn>().get();
+}
+
+ccl_coll_attr::ccl_coll_attr(const ccl::reduce_scatter_attr_t& attr)
+{
+    COPY_COMMON_OP_ATTRS(attr, this);
+
+    reduction_fn = attr.get<ccl::reduce_scatter_op_attr_id::reduction_fn>().get();
+}
+
+ccl_coll_attr::ccl_coll_attr(const ccl::sparse_allreduce_attr_t& attr)
+{
+    COPY_COMMON_OP_ATTRS(attr, this);
+
+    sparse_allreduce_completion_fn = attr.get<ccl::sparse_allreduce_op_attr_id::sparse_allreduce_completion_fn>().get();
+    sparse_allreduce_alloc_fn = attr.get<ccl::sparse_allreduce_op_attr_id::sparse_allreduce_alloc_fn>().get();
+    sparse_allreduce_fn_ctx = attr.get<ccl::sparse_allreduce_op_attr_id::sparse_allreduce_fn_ctx>();
+    sparse_coalesce_mode = attr.get<ccl::sparse_allreduce_op_attr_id::sparse_coalesce_mode>();
+}
+
 /* param is not const because param.comm can be updated for unordered colls */
-static ccl_request* ccl_coll_create(ccl_coll_param& param, const ccl_coll_attr& attr) {
+static ccl_request* ccl_coll_create(ccl_coll_param& param,
+                                    const ccl_coll_attr& attr)
+{
     ccl::global_data& data = ccl::global_data::get();
 
     /* 1. decide whether schedule should be postponed (this includes caching and staring) */
     bool postpone_schedule = false;
-    if (ccl::global_data::env().enable_unordered_coll) {
-        if (!attr.match_id.empty()) {
+    if (ccl::global_data::env().enable_unordered_coll)
+    {
+        if (!attr.match_id.empty())
+        {
             auto comm = data.unordered_coll_manager->get_comm(std::string(attr.match_id)).get();
-            if (!comm) {
-                if (attr.synchronous) {
+            if (!comm)
+            {
+                if (attr.synchronous)
+                {
                     CCL_THROW("unsupported collective (synchronous && unordered && !communicator)");
                 }
                 LOG_DEBUG("didn't find comm for match_id ", attr.match_id, ", postpone schedule");
                 postpone_schedule = true;
             }
-            else {
+            else
+            {
                 LOG_DEBUG("found comm ", comm->id(), " for match_id ", attr.match_id);
                 param.comm = comm;
             }
         }
-        else {
+        else
+        {
             /* use comm provided by user, it is ordered collective */
         }
     }
@@ -65,13 +177,12 @@ static ccl_request* ccl_coll_create(ccl_coll_param& param, const ccl_coll_attr& 
     ccl_master_sched* sched = ccl_master_sched::create(param, attr);
 
     /* 3. fuse schedule */
-    if (!postpone_schedule && ccl::global_data::env().enable_fusion) {
-        if (data.fusion_manager->add(sched)) {
-            LOG_DEBUG("sched ",
-                      sched,
-                      ", ctype ",
-                      ccl_coll_type_to_str(sched->coll_param.ctype),
-                      " will be fused");
+    if (!postpone_schedule && ccl::global_data::env().enable_fusion)
+    {
+        if (data.fusion_manager->add(sched))
+        {
+            LOG_DEBUG("sched ", sched, ", ctype ",
+                      ccl_coll_type_to_str(sched->coll_param.ctype), " will be fused");
             return sched;
         }
     }
@@ -80,7 +191,8 @@ static ccl_request* ccl_coll_create(ccl_coll_param& param, const ccl_coll_attr& 
     sched->commit(data.parallelizer.get());
 
     /* 5. postpone unordered coll schedule */
-    if (postpone_schedule) {
+    if (postpone_schedule)
+    {
         /*
             user has provided match_id that has not been resolved yet.
             schedule will be postponed until comm resolution
@@ -90,7 +202,8 @@ static ccl_request* ccl_coll_create(ccl_coll_param& param, const ccl_coll_attr& 
 
     /* 6. regular schedule execution */
     ccl_request* request = sched->start(data.executor.get());
-    if (sched->coll_attr.synchronous) {
+    if (sched->coll_attr.synchronous)
+    {
         ccl_wait_impl<ccl_master_sched>(data.executor.get(), request);
         request = nullptr;
     }
@@ -98,28 +211,38 @@ static ccl_request* ccl_coll_create(ccl_coll_param& param, const ccl_coll_attr& 
     return request;
 }
 
+
+
 //TODO duplicated code - make `ccl_coll_create` templated
-static ccl_request* ccl_gpu_coll_create(ccl_coll_param& param, const ccl_coll_attr& attr) {
+static ccl_request* ccl_gpu_coll_create(ccl_coll_param& param,
+                                    const ccl_coll_attr& attr)
+{
     ccl::global_data& data = ccl::global_data::get();
 
     /* 1. decide whether schedule should be postponed */
     bool postpone_schedule = false;
-    if (ccl::global_data::env().enable_unordered_coll) {
-        if (!attr.match_id.empty()) {
+    if (ccl::global_data::env().enable_unordered_coll)
+    {
+        if (!attr.match_id.empty())
+        {
             auto comm = data.unordered_coll_manager->get_comm(std::string(attr.match_id)).get();
-            if (!comm) {
-                if (attr.synchronous) {
+            if (!comm)
+            {
+                if (attr.synchronous)
+                {
                     CCL_THROW("unsupported collective (synchronous && unordered && !communicator)");
                 }
                 LOG_DEBUG("didn't find comm for match_id ", attr.match_id, ", postpone schedule");
                 postpone_schedule = true;
             }
-            else {
+            else
+            {
                 LOG_DEBUG("found comm ", comm->id(), " for match_id ", attr.match_id);
                 param.comm = comm;
             }
         }
-        else {
+        else
+        {
             /* use comm provided by user, it is ordered collective */
         }
     }
@@ -128,13 +251,12 @@ static ccl_request* ccl_gpu_coll_create(ccl_coll_param& param, const ccl_coll_at
     ccl_master_sched* sched = ccl_master_sched::create(param, attr);
 
     /* 3. fuse schedule */
-    if (!postpone_schedule && ccl::global_data::env().enable_fusion) {
-        if (data.fusion_manager->add(sched)) {
-            LOG_DEBUG("sched ",
-                      sched,
-                      ", ctype ",
-                      ccl_coll_type_to_str(sched->coll_param.ctype),
-                      " will be fused");
+    if (!postpone_schedule && ccl::global_data::env().enable_fusion)
+    {
+        if (data.fusion_manager->add(sched))
+        {
+            LOG_DEBUG("sched ", sched, ", ctype ",
+                      ccl_coll_type_to_str(sched->coll_param.ctype), " will be fused");
             return sched;
         }
     }
@@ -143,7 +265,8 @@ static ccl_request* ccl_gpu_coll_create(ccl_coll_param& param, const ccl_coll_at
     sched->commit(data.parallelizer.get());
 
     /* 5. postpone unordered coll schedule */
-    if (postpone_schedule) {
+    if (postpone_schedule)
+    {
         /*
             user has provided match_id that has not been resolved yet.
             schedule will be postponed until comm resolution
@@ -153,7 +276,8 @@ static ccl_request* ccl_gpu_coll_create(ccl_coll_param& param, const ccl_coll_at
 
     /* 6. regular schedule execution */
     ccl_request* request = sched->start(data.executor.get());
-    if (sched->coll_attr.synchronous) {
+    if (sched->coll_attr.synchronous)
+    {
         ccl_wait_impl<ccl_master_sched>(data.executor.get(), request);
         request = nullptr;
     }
@@ -161,13 +285,15 @@ static ccl_request* ccl_gpu_coll_create(ccl_coll_param& param, const ccl_coll_at
     return request;
 }
 
-ccl_status_t ccl_coll_build_allgatherv(ccl_sched* sched,
-                                       ccl_buffer send_buf,
-                                       size_t send_count,
-                                       ccl_buffer recv_buf,
-                                       const size_t* recv_counts,
-                                       const ccl_datatype& dtype,
-                                       ccl_comm* comm) {
+ccl_status_t ccl_coll_build_allgatherv(
+    ccl_sched* sched,
+    ccl_buffer send_buf,
+    size_t send_count,
+    ccl_buffer recv_buf,
+    const size_t* recv_counts,
+    const ccl_datatype& dtype,
+    ccl_comm* comm)
+{
     ccl_status_t status = ccl_status_success;
 
     ccl_selector_param param;
@@ -179,18 +305,19 @@ ccl_status_t ccl_coll_build_allgatherv(ccl_sched* sched,
 
     auto algo = ccl::global_data::get().algorithm_selector->get<ccl_coll_allgatherv>(param);
 
-    switch (algo) {
+    switch (algo)
+    {
         case ccl_coll_allgatherv_direct:
-            CCL_CALL(ccl_coll_build_direct_allgatherv(
-                sched, send_buf, send_count, recv_buf, recv_counts, dtype, comm));
+            CCL_CALL(ccl_coll_build_direct_allgatherv(sched, send_buf, send_count, recv_buf, recv_counts,
+                                                      dtype, comm));
             break;
         case ccl_coll_allgatherv_naive:
-            CCL_CALL(ccl_coll_build_naive_allgatherv(
-                sched, send_buf, send_count, recv_buf, recv_counts, dtype, comm));
+            CCL_CALL(ccl_coll_build_naive_allgatherv(sched, send_buf, send_count, recv_buf, recv_counts,
+                                                     dtype, comm));
             break;
         case ccl_coll_allgatherv_ring:
-            CCL_CALL(ccl_coll_build_ring_allgatherv(
-                sched, send_buf, send_count, recv_buf, recv_counts, dtype, comm));
+            CCL_CALL(ccl_coll_build_ring_allgatherv(sched, send_buf, send_count, recv_buf, recv_counts,
+                                                    dtype, comm));
             break;
         default:
             CCL_FATAL("unexpected allgatherv_algo ", ccl_coll_algorithm_to_str(algo));
@@ -199,13 +326,15 @@ ccl_status_t ccl_coll_build_allgatherv(ccl_sched* sched,
     return status;
 }
 
-ccl_status_t ccl_coll_build_allreduce(ccl_sched* sched,
-                                      ccl_buffer send_buf,
-                                      ccl_buffer recv_buf,
-                                      size_t count,
-                                      const ccl_datatype& dtype,
-                                      ccl_reduction_t reduction,
-                                      ccl_comm* comm) {
+ccl_status_t ccl_coll_build_allreduce(
+    ccl_sched* sched,
+    ccl_buffer send_buf,
+    ccl_buffer recv_buf,
+    size_t count,
+    const ccl_datatype& dtype,
+    ccl_reduction_t reduction,
+    ccl_comm* comm)
+{
     ccl_status_t status = ccl_status_success;
 
     ccl_selector_param param;
@@ -216,45 +345,41 @@ ccl_status_t ccl_coll_build_allreduce(ccl_sched* sched,
 
     auto algo = ccl::global_data::get().algorithm_selector->get<ccl_coll_allreduce>(param);
 
-    switch (algo) {
+    switch (algo)
+    {
         case ccl_coll_allreduce_direct:
-            CCL_CALL(ccl_coll_build_direct_allreduce(
-                sched, send_buf, recv_buf, count, dtype, reduction, comm));
+            CCL_CALL(ccl_coll_build_direct_allreduce(sched, send_buf, recv_buf, count,
+                                                     dtype, reduction, comm));
             break;
         case ccl_coll_allreduce_rabenseifner:
-            CCL_CALL(ccl_coll_build_rabenseifner_allreduce(
-                sched, send_buf, recv_buf, count, dtype, reduction, comm));
+            CCL_CALL(ccl_coll_build_rabenseifner_allreduce(sched, send_buf, recv_buf, count,
+                                                           dtype, reduction, comm));
             break;
         case ccl_coll_allreduce_starlike:
-            CCL_CALL(ccl_coll_build_starlike_allreduce(
-                sched, send_buf, recv_buf, count, dtype, reduction, comm));
+            CCL_CALL(ccl_coll_build_starlike_allreduce(sched, send_buf, recv_buf, count,
+                                                       dtype, reduction, comm));
             break;
         case ccl_coll_allreduce_ring:
-            CCL_CALL(ccl_coll_build_ring_allreduce(
-                sched, send_buf, recv_buf, count, dtype, reduction, comm));
+            CCL_CALL(ccl_coll_build_ring_allreduce(sched, send_buf, recv_buf, count,
+                                                   dtype, reduction, comm));
             break;
         case ccl_coll_allreduce_ring_rma:
-            CCL_CALL(ccl_coll_build_ring_rma_allreduce(
-                sched, send_buf, recv_buf, count, dtype, reduction, comm));
+            CCL_CALL(ccl_coll_build_ring_rma_allreduce(sched, send_buf, recv_buf, count,
+                                                       dtype, reduction, comm));
             break;
         case ccl_coll_allreduce_double_tree:
-            CCL_CALL(ccl_coll_build_double_tree_op(sched,
-                                                   ccl_coll_allreduce,
-                                                   send_buf,
-                                                   recv_buf,
-                                                   count,
-                                                   dtype,
-                                                   reduction,
-                                                   comm->dtree(),
-                                                   comm));
+            CCL_CALL(
+                ccl_coll_build_double_tree_op(sched, ccl_coll_allreduce, send_buf, recv_buf,
+                                              count, dtype, reduction, comm->dtree(), comm));
             break;
         case ccl_coll_allreduce_recursive_doubling:
-            CCL_CALL(ccl_coll_build_recursive_doubling_allreduce(
-                sched, send_buf, recv_buf, count, dtype, reduction, comm));
+            CCL_CALL(ccl_coll_build_recursive_doubling_allreduce(sched, send_buf, recv_buf, count,
+                                                                 dtype, reduction, comm));
             break;
         case ccl_coll_allreduce_2d:
-            CCL_CALL(ccl::global_data::get().allreduce_2d_builder->build(
-                sched, send_buf, recv_buf, count, dtype, reduction, comm));
+            CCL_CALL(ccl::global_data::get().allreduce_2d_builder->build(sched, send_buf,
+                                                                         recv_buf, count,
+                                                                         dtype, reduction, comm));
             break;
         default:
             CCL_FATAL("unexpected allreduce_algo ", ccl_coll_algorithm_to_str(algo));
@@ -264,12 +389,14 @@ ccl_status_t ccl_coll_build_allreduce(ccl_sched* sched,
     return status;
 }
 
-ccl_status_t ccl_coll_build_alltoall(ccl_sched* sched,
-                                     ccl_buffer send_buf,
-                                     ccl_buffer recv_buf,
-                                     size_t count,
-                                     const ccl_datatype& dtype,
-                                     ccl_comm* comm) {
+ccl_status_t ccl_coll_build_alltoall(
+    ccl_sched* sched,
+    ccl_buffer send_buf,
+    ccl_buffer recv_buf,
+    size_t count,
+    const ccl_datatype& dtype,
+    ccl_comm* comm)
+{
     ccl_status_t status = ccl_status_success;
 
     ccl_selector_param param;
@@ -280,9 +407,11 @@ ccl_status_t ccl_coll_build_alltoall(ccl_sched* sched,
 
     auto algo = ccl::global_data::get().algorithm_selector->get<ccl_coll_alltoall>(param);
 
-    switch (algo) {
+    switch (algo)
+    {
         case ccl_coll_alltoall_direct:
-            CCL_CALL(ccl_coll_build_direct_alltoall(sched, send_buf, recv_buf, count, dtype, comm));
+            CCL_CALL(ccl_coll_build_direct_alltoall(sched, send_buf, recv_buf,
+                                                    count, dtype, comm));
             break;
         default:
             CCL_FATAL("unexpected alltoall_algo ", ccl_coll_algorithm_to_str(algo));
@@ -292,13 +421,15 @@ ccl_status_t ccl_coll_build_alltoall(ccl_sched* sched,
     return status;
 }
 
-ccl_status_t ccl_coll_build_alltoallv(ccl_sched* sched,
-                                      ccl_buffer send_buf,
-                                      const size_t* send_counts,
-                                      ccl_buffer recv_buf,
-                                      const size_t* recv_counts,
-                                      const ccl_datatype& dtype,
-                                      ccl_comm* comm) {
+ccl_status_t ccl_coll_build_alltoallv(
+    ccl_sched* sched,
+    ccl_buffer send_buf,
+    const size_t* send_counts,
+    ccl_buffer recv_buf,
+    const size_t* recv_counts,
+    const ccl_datatype& dtype,
+    ccl_comm* comm)
+{
     ccl_status_t status = ccl_status_success;
 
     ccl_selector_param param;
@@ -308,10 +439,11 @@ ccl_status_t ccl_coll_build_alltoallv(ccl_sched* sched,
 
     auto algo = ccl::global_data::get().algorithm_selector->get<ccl_coll_alltoallv>(param);
 
-    switch (algo) {
+    switch (algo)
+    {
         case ccl_coll_alltoallv_direct:
-            CCL_CALL(ccl_coll_build_direct_alltoallv(
-                sched, send_buf, send_counts, recv_buf, recv_counts, dtype, comm));
+            CCL_CALL(ccl_coll_build_direct_alltoallv(sched, send_buf, send_counts,
+                                                     recv_buf, recv_counts, dtype, comm));
             break;
         default:
             CCL_FATAL("unexpected alltoallv_algo ", ccl_coll_algorithm_to_str(algo));
@@ -321,7 +453,8 @@ ccl_status_t ccl_coll_build_alltoallv(ccl_sched* sched,
     return status;
 }
 
-ccl_status_t ccl_coll_build_barrier(ccl_sched* sched, ccl_comm* comm) {
+ccl_status_t ccl_coll_build_barrier(ccl_sched* sched, ccl_comm* comm)
+{
     ccl_status_t status = ccl_status_success;
 
     ccl_selector_param param;
@@ -332,8 +465,11 @@ ccl_status_t ccl_coll_build_barrier(ccl_sched* sched, ccl_comm* comm) {
 
     auto algo = ccl::global_data::get().algorithm_selector->get<ccl_coll_barrier>(param);
 
-    switch (algo) {
-        case ccl_coll_barrier_direct: CCL_CALL(ccl_coll_build_direct_barrier(sched, comm)); break;
+    switch (algo)
+    {
+        case ccl_coll_barrier_direct:
+            CCL_CALL(ccl_coll_build_direct_barrier(sched, comm));
+            break;
         case ccl_coll_barrier_ring:
             CCL_CALL(ccl_coll_build_dissemination_barrier(sched, comm));
             break;
@@ -350,7 +486,8 @@ ccl_status_t ccl_coll_build_bcast(ccl_sched* sched,
                                   size_t count,
                                   const ccl_datatype& dtype,
                                   size_t root,
-                                  ccl_comm* comm) {
+                                  ccl_comm* comm)
+{
     ccl_status_t status = ccl_status_success;
 
     ccl_selector_param param;
@@ -361,25 +498,19 @@ ccl_status_t ccl_coll_build_bcast(ccl_sched* sched,
 
     auto algo = ccl::global_data::get().algorithm_selector->get<ccl_coll_bcast>(param);
 
-    switch (algo) {
+    switch (algo)
+    {
         case ccl_coll_bcast_direct:
             CCL_CALL(ccl_coll_build_direct_bcast(sched, buf, count, dtype, root, comm));
             break;
         case ccl_coll_bcast_ring:
-            CCL_CALL(
-                ccl_coll_build_scatter_ring_allgather_bcast(sched, buf, count, dtype, root, comm));
+            CCL_CALL(ccl_coll_build_scatter_ring_allgather_bcast(sched, buf, count, dtype, root, comm));
             break;
         case ccl_coll_bcast_double_tree:
-            CCL_CALL(ccl_coll_build_double_tree_op(
-                sched,
-                ccl_coll_bcast,
-                ccl_buffer(),
-                buf,
-                count,
-                dtype,
-                ccl_reduction_custom,
-                root == 0 ? comm->dtree() : comm->dtree().copy_with_new_root(root),
-                comm));
+            CCL_CALL(ccl_coll_build_double_tree_op(sched, ccl_coll_bcast, ccl_buffer(), buf, count, dtype,
+                                                   ccl_reduction_custom,
+                                                   root == 0 ? comm->dtree() :
+                                                   comm->dtree().copy_with_new_root(root), comm));
             break;
         case ccl_coll_bcast_naive:
             CCL_CALL(ccl_coll_build_naive_bcast(sched, buf, count, dtype, root, comm));
@@ -398,7 +529,8 @@ ccl_status_t ccl_coll_build_reduce(ccl_sched* sched,
                                    const ccl_datatype& dtype,
                                    ccl_reduction_t reduction,
                                    size_t root,
-                                   ccl_comm* comm) {
+                                   ccl_comm* comm)
+{
     ccl_status_t status = ccl_status_success;
 
     ccl_selector_param param;
@@ -409,30 +541,24 @@ ccl_status_t ccl_coll_build_reduce(ccl_sched* sched,
 
     auto algo = ccl::global_data::get().algorithm_selector->get<ccl_coll_reduce>(param);
 
-    switch (algo) {
+    switch (algo)
+    {
         case ccl_coll_reduce_direct:
-            CCL_CALL(ccl_coll_build_direct_reduce(
-                sched, send_buf, recv_buf, count, dtype, reduction, root, comm));
+            CCL_CALL(ccl_coll_build_direct_reduce(sched, send_buf, recv_buf, count,
+                                                  dtype, reduction, root, comm));
             break;
         case ccl_coll_reduce_rabenseifner:
-            CCL_CALL(ccl_coll_build_rabenseifner_reduce(
-                sched, send_buf, recv_buf, count, dtype, reduction, root, comm));
+            CCL_CALL(ccl_coll_build_rabenseifner_reduce(sched, send_buf, recv_buf, count,
+                                                        dtype, reduction, root, comm));
             break;
         case ccl_coll_reduce_tree:
-            CCL_CALL(ccl_coll_build_binomial_reduce(
-                sched, send_buf, recv_buf, count, dtype, reduction, root, comm));
+            CCL_CALL(ccl_coll_build_binomial_reduce(sched, send_buf, recv_buf, count,
+                                                    dtype, reduction, root, comm));
             break;
         case ccl_coll_reduce_double_tree:
-            CCL_CALL(ccl_coll_build_double_tree_op(
-                sched,
-                ccl_coll_reduce,
-                send_buf,
-                recv_buf,
-                count,
-                dtype,
-                reduction,
-                root == 0 ? comm->dtree() : comm->dtree().copy_with_new_root(root),
-                comm));
+            CCL_CALL(ccl_coll_build_double_tree_op(sched, ccl_coll_reduce, send_buf, recv_buf, count, dtype,
+                                                   reduction, root == 0 ? comm->dtree() :
+                                                   comm->dtree().copy_with_new_root(root), comm));
             break;
         default:
             CCL_FATAL("unexpected reduce_algo ", ccl_coll_algorithm_to_str(algo));
@@ -448,7 +574,8 @@ ccl_status_t ccl_coll_build_reduce_scatter(ccl_sched* sched,
                                            size_t send_count,
                                            const ccl_datatype& dtype,
                                            ccl_reduction_t reduction,
-                                           ccl_comm* comm) {
+                                           ccl_comm* comm)
+{
     ccl_status_t status = ccl_status_success;
 
     ccl_selector_param param;
@@ -459,10 +586,11 @@ ccl_status_t ccl_coll_build_reduce_scatter(ccl_sched* sched,
 
     auto algo = ccl::global_data::get().algorithm_selector->get<ccl_coll_reduce_scatter>(param);
 
-    switch (algo) {
+    switch (algo)
+    {
         case ccl_coll_reduce_scatter_ring:
-            CCL_CALL(ccl_coll_build_ring_reduce_scatter(
-                sched, send_buf, recv_buf, send_count, dtype, reduction, comm));
+            CCL_CALL(ccl_coll_build_ring_reduce_scatter(sched, send_buf, recv_buf, send_count,
+                                                        dtype, reduction, comm));
             break;
         default:
             CCL_FATAL("unexpected reduce_scatter_algo ", ccl_coll_algorithm_to_str(algo));
@@ -472,19 +600,17 @@ ccl_status_t ccl_coll_build_reduce_scatter(ccl_sched* sched,
     return status;
 }
 
-ccl_status_t ccl_coll_build_sparse_allreduce(ccl_sched* sched,
-                                             ccl_buffer send_ind_buf,
-                                             size_t send_ind_count,
-                                             ccl_buffer send_val_buf,
-                                             size_t send_val_count,
-                                             void** recv_ind_buf,
-                                             size_t* recv_ind_count,
-                                             void** recv_val_buf,
-                                             size_t* recv_val_count,
-                                             const ccl_datatype& index_dtype,
-                                             const ccl_datatype& value_dtype,
-                                             ccl_reduction_t reduction,
-                                             ccl_comm* comm) {
+ccl_status_t ccl_coll_build_sparse_allreduce(
+    ccl_sched* sched,
+    ccl_buffer send_ind_buf, size_t send_ind_count,
+    ccl_buffer send_val_buf, size_t send_val_count,
+    void** recv_ind_buf, size_t* recv_ind_count,
+    void** recv_val_buf, size_t* recv_val_count,
+    const ccl_datatype& index_dtype,
+    const ccl_datatype& value_dtype,
+    ccl_reduction_t reduction,
+    ccl_comm* comm)
+{
     ccl_status_t status = ccl_status_success;
 
     ccl_selector_param param;
@@ -495,46 +621,40 @@ ccl_status_t ccl_coll_build_sparse_allreduce(ccl_sched* sched,
     param.sparse_coalesce_mode = sched->coll_attr.sparse_coalesce_mode;
     param.sparse_allreduce_alloc_fn = sched->coll_attr.sparse_allreduce_alloc_fn;
 
-    if (!send_ind_buf.get_ptr() || !send_val_buf.get_ptr()) {
-        LOG_ERROR(
-            "sparse_allreduce send buffers for indices and values should not be NULL, but got "
-            "indices buffer = ",
-            send_ind_buf.get_ptr(),
-            ", values buffer = ",
-            send_val_buf.get_ptr());
+    if (!send_ind_buf.get_ptr() || !send_val_buf.get_ptr())
+    {
+        LOG_ERROR("sparse_allreduce send buffers for indices and values should not be NULL, but got " \
+                  "indices buffer = ", send_ind_buf.get_ptr(), ", values buffer = ", send_val_buf.get_ptr());
         assert(send_ind_buf.get_ptr() && send_val_buf.get_ptr());
 
         throw ccl::ccl_error(
             std::string(__FUNCTION__) + "sparse_allreduce send buffers for indices and values \
-            should not be NULL, but got indices buffer = " +
-            std::to_string((uintptr_t)send_ind_buf.get_ptr()) +
+            should not be NULL, but got indices buffer = " + std::to_string((uintptr_t)send_ind_buf.get_ptr()) +
             ", values buffer = " + std::to_string((uintptr_t)send_val_buf.get_ptr()));
     }
 
-    if (!send_ind_count || !send_val_count) {
-        LOG_ERROR("sparse_allreduce send buffer count should be greater than zero, but got "
-                  "indices count = ",
-                  send_ind_count,
-                  ", values count = ",
-                  send_val_count);
+    if (!send_ind_count || !send_val_count)
+    {
+        LOG_ERROR("sparse_allreduce send buffer count should be greater than zero, but got " \
+                  "indices count = ", send_ind_count, ", values count = ", send_val_count);
         assert(send_ind_count && send_val_count);
 
         throw ccl::ccl_error(
             std::string(__FUNCTION__) + "sparse_allreduce send buffer count should be \
-            greater than zero, but got indices count = " +
-            std::to_string(send_ind_count) + ", values count = " + std::to_string(send_val_count));
+            greater than zero, but got indices count = " + std::to_string(send_ind_count) +
+            ", values count = " + std::to_string(send_val_count));
     }
 
-    if (send_ind_count > send_val_count) {
+    if (send_ind_count > send_val_count)
+    {
         CCL_FATAL("sparse collective algorithms now support only 1-D indices and \
-                  multi-dimensional values format\n got indices count = ",
-                  send_ind_count,
-                  ", values count = ",
-                  send_val_count);
+                  multi-dimensional values format\n got indices count = ", send_ind_count,
+                  ", values count = ", send_val_count);
         return ccl_status_invalid_arguments;
     }
 
-    if (ccl::global_data::env().atl_transport == ccl_atl_mpi) {
+    if (ccl::global_data::env().atl_transport == ccl_atl_mpi)
+    {
         /*
             for now all sparse_allreduce algorithms
             may contains direct collective entries (allreduce/allgatherv)
@@ -546,32 +666,26 @@ ccl_status_t ccl_coll_build_sparse_allreduce(ccl_sched* sched,
     auto algo = ccl::global_data::get().algorithm_selector->get<ccl_coll_sparse_allreduce>(param);
 
     LOG_DEBUG("build sparse allreduce, param:",
-              "\nsend_ind_buf ",
-              send_ind_buf,
-              "\nsend_ind_count ",
-              send_ind_count,
-              "\nsend_val_buf ",
-              send_val_buf,
-              "\nsend_val_count ",
-              send_val_count,
-              "\nrecv_ind_buf ",
-              recv_ind_buf,
-              "\nrecv_ind_count ",
-              recv_ind_count,
-              "\nrecv_val_buf ",
-              recv_val_buf,
-              "\nrecv_val_count ",
-              recv_val_count,
-              "\nindex_dtype ",
-              ccl::global_data::get().dtypes->name(index_dtype),
-              "\nvalue_dtype ",
-              ccl::global_data::get().dtypes->name(value_dtype),
-              "\nop ",
-              ccl_reduction_to_str(reduction));
+              "\nsend_ind_buf ", send_ind_buf,
+              "\nsend_ind_count ", send_ind_count,
+              "\nsend_val_buf ", send_val_buf,
+              "\nsend_val_count ", send_val_count,
+              "\nrecv_ind_buf ", recv_ind_buf,
+              "\nrecv_ind_count ", recv_ind_count,
+              "\nrecv_val_buf ", recv_val_buf,
+              "\nrecv_val_count ", recv_val_count,
+              "\nindex_dtype ", ccl::global_data::get().dtypes->name(index_dtype),
+              "\nvalue_dtype ", ccl::global_data::get().dtypes->name(value_dtype),
+              "\nop ", ccl_reduction_to_str(reduction));
 
-    switch (index_dtype.idx()) {
-        case ccl_dtype_char: CCL_SPARSE_ALLREDUCE_SELECT_V_DTYPE(char, value_dtype, algo); break;
-        case ccl_dtype_int: CCL_SPARSE_ALLREDUCE_SELECT_V_DTYPE(int, value_dtype, algo); break;
+    switch (index_dtype.idx())
+    {
+        case ccl_dtype_char:
+            CCL_SPARSE_ALLREDUCE_SELECT_V_DTYPE(char, value_dtype, algo);
+            break;
+        case ccl_dtype_int:
+            CCL_SPARSE_ALLREDUCE_SELECT_V_DTYPE(int, value_dtype, algo);
+            break;
         case ccl_dtype_int64:
             CCL_SPARSE_ALLREDUCE_SELECT_V_DTYPE(int64_t, value_dtype, algo);
             break;
@@ -580,8 +694,8 @@ ccl_status_t ccl_coll_build_sparse_allreduce(ccl_sched* sched,
             break;
         default:
             CCL_FATAL("index datatype ",
-                      ccl::global_data::get().dtypes->name(index_dtype),
-                      " is not supported yet");
+                ccl::global_data::get().dtypes->name(index_dtype),
+                " is not supported yet");
             return ccl_status_invalid_arguments;
     }
 
@@ -593,9 +707,10 @@ ccl_request* ccl_allgatherv_impl(const void* send_buf,
                                  void* recv_buf,
                                  const size_t* recv_counts,
                                  ccl_datatype_t dtype,
-                                 const ccl_coll_attr_t* attr,
+                                 const ccl_coll_attr& attr,
                                  ccl_comm* comm,
-                                 const ccl_stream* stream) {
+                                 const ccl_stream* stream)
+{
     ccl_coll_param param{};
 
     param.ctype = ccl_coll_allgatherv;
@@ -607,7 +722,7 @@ ccl_request* ccl_allgatherv_impl(const void* send_buf,
     param.stream = stream;
     param.comm = comm;
 
-    auto req = ccl_coll_create(param, ccl_coll_attr(attr));
+    auto req = ccl_coll_create(param, attr);
     LOG_DEBUG("coll ", ccl_coll_type_to_str(param.ctype), " created, req ", req);
     return req;
 }
@@ -617,9 +732,10 @@ ccl_request* ccl_allreduce_impl(const void* send_buf,
                                 size_t count,
                                 ccl_datatype_t dtype,
                                 ccl_reduction_t reduction,
-                                const ccl_coll_attr_t* attr,
+                                const ccl_coll_attr& attr,
                                 ccl_comm* comm,
-                                const ccl_stream* stream) {
+                                const ccl_stream* stream)
+{
     ccl_coll_param param{};
 
     param.ctype = ccl_coll_allreduce;
@@ -631,7 +747,7 @@ ccl_request* ccl_allreduce_impl(const void* send_buf,
     param.stream = stream;
     param.comm = comm;
 
-    auto req = ccl_coll_create(param, ccl_coll_attr(attr));
+    auto req = ccl_coll_create(param, attr);
     LOG_DEBUG("coll ", ccl_coll_type_to_str(param.ctype), " created, req ", req, " count ", count);
     return req;
 }
@@ -640,9 +756,10 @@ ccl_request* ccl_alltoall_impl(const void* send_buf,
                                void* recv_buf,
                                size_t count,
                                ccl_datatype_t dtype,
-                               const ccl_coll_attr_t* attr,
+                               const ccl_coll_attr& attr,
                                ccl_comm* comm,
-                               const ccl_stream* stream) {
+                               const ccl_stream* stream)
+{
     ccl_coll_param param{};
 
     param.ctype = ccl_coll_alltoall;
@@ -653,7 +770,7 @@ ccl_request* ccl_alltoall_impl(const void* send_buf,
     param.stream = stream;
     param.comm = comm;
 
-    auto req = ccl_coll_create(param, ccl_coll_attr(attr));
+    auto req = ccl_coll_create(param, attr);
     LOG_DEBUG("coll ", ccl_coll_type_to_str(param.ctype), " created, req ", req, " count ", count);
     return req;
 }
@@ -663,9 +780,10 @@ ccl_request* ccl_alltoallv_impl(const void* send_buf,
                                 void* recv_buf,
                                 const size_t* recv_counts,
                                 ccl_datatype_t dtype,
-                                const ccl_coll_attr_t* attr,
+                                const ccl_coll_attr& attr,
                                 ccl_comm* comm,
-                                const ccl_stream* stream) {
+                                const ccl_stream* stream)
+{
     ccl_coll_param param{};
 
     param.ctype = ccl_coll_alltoallv;
@@ -677,19 +795,20 @@ ccl_request* ccl_alltoallv_impl(const void* send_buf,
     param.stream = stream;
     param.comm = comm;
 
-    auto req = ccl_coll_create(param, ccl_coll_attr(attr));
+    auto req = ccl_coll_create(param, attr);
     LOG_DEBUG("coll ", ccl_coll_type_to_str(param.ctype), " created, req ", req);
     return req;
 }
 
 ccl_request* ccl_allreduce_gpu_impl(const void* send_buf,
-                                    void* recv_buf,
-                                    size_t count,
-                                    ccl_datatype_t dtype,
-                                    ccl_reduction_t reduction,
-                                    const ccl_coll_attr_t* attr,
-                                    ccl_comm* comm,
-                                    const ccl_stream* stream) {
+                                void* recv_buf,
+                                size_t count,
+                                ccl_datatype_t dtype,
+                                ccl_reduction_t reduction,
+                                const ccl_coll_attr& attr,
+                                ccl_comm* comm,
+                                const ccl_stream* stream)
+{
     ccl_coll_param param{};
 
     param.ctype = ccl_coll_allreduce;
@@ -701,13 +820,13 @@ ccl_request* ccl_allreduce_gpu_impl(const void* send_buf,
     param.stream = stream;
     param.comm = comm;
 
-    auto req = ccl_gpu_coll_create(param, ccl_coll_attr(attr));
-    LOG_DEBUG(
-        "GPU coll ", ccl_coll_type_to_str(param.ctype), " created, req ", req, " count ", count);
+    auto req = ccl_gpu_coll_create(param, attr);
+    LOG_DEBUG("GPU coll ", ccl_coll_type_to_str(param.ctype), " created, req ", req, " count ", count);
     return req;
 }
 
-void ccl_barrier_impl(ccl_comm* comm, const ccl_stream* stream) {
+void ccl_barrier_impl(ccl_comm* comm, const ccl_stream* stream)
+{
     ccl_coll_param param{};
 
     param.ctype = ccl_coll_barrier;
@@ -720,10 +839,12 @@ void ccl_barrier_impl(ccl_comm* comm, const ccl_stream* stream) {
 
     ccl_coll_create(param, attr);
 
-    if (ccl::global_data::get().sched_cache->try_flush()) {
+    if (ccl::global_data::get().sched_cache->try_flush())
+    {
         LOG_DEBUG("flushed cache in barrier");
     }
-    else {
+    else
+    {
         LOG_DEBUG("didn't flush cache in barrier");
     }
 }
@@ -732,9 +853,10 @@ ccl_request* ccl_bcast_impl(void* buf,
                             size_t count,
                             ccl_datatype_t dtype,
                             size_t root,
-                            const ccl_coll_attr_t* attr,
+                            const ccl_coll_attr& attr,
                             ccl_comm* comm,
-                            const ccl_stream* stream) {
+                            const ccl_stream* stream)
+{
     ccl_coll_param param{};
 
     param.ctype = ccl_coll_bcast;
@@ -745,7 +867,7 @@ ccl_request* ccl_bcast_impl(void* buf,
     param.stream = stream;
     param.comm = comm;
 
-    auto req = ccl_coll_create(param, ccl_coll_attr(attr));
+    auto req = ccl_coll_create(param, attr);
     LOG_DEBUG("coll ", ccl_coll_type_to_str(param.ctype), " created, req ", req);
     return req;
 }
@@ -756,9 +878,10 @@ ccl_request* ccl_reduce_impl(const void* send_buf,
                              ccl_datatype_t dtype,
                              ccl_reduction_t reduction,
                              size_t root,
-                             const ccl_coll_attr_t* attr,
+                             const ccl_coll_attr& attr,
                              ccl_comm* comm,
-                             const ccl_stream* stream) {
+                             const ccl_stream* stream)
+{
     ccl_coll_param param{};
 
     param.ctype = ccl_coll_reduce;
@@ -771,25 +894,19 @@ ccl_request* ccl_reduce_impl(const void* send_buf,
     param.stream = stream;
     param.comm = comm;
 
-    auto req = ccl_coll_create(param, ccl_coll_attr(attr));
+    auto req = ccl_coll_create(param, attr);
     LOG_DEBUG("coll ", ccl_coll_type_to_str(param.ctype), " created, req ", req);
     return req;
 }
 
-ccl_request* ccl_sparse_allreduce_impl(const void* send_ind_buf,
-                                       size_t send_ind_count,
-                                       const void* send_val_buf,
-                                       size_t send_val_count,
-                                       void* recv_ind_buf,
-                                       size_t recv_ind_count,
-                                       void* recv_val_buf,
-                                       size_t recv_val_count,
-                                       ccl_datatype_t index_dtype,
-                                       ccl_datatype_t value_dtype,
-                                       ccl_reduction_t reduction,
-                                       const ccl_coll_attr_t* attr,
-                                       ccl_comm* comm,
-                                       const ccl_stream* stream) {
+ccl_request* ccl_sparse_allreduce_impl(const void* send_ind_buf, size_t send_ind_count,
+                                       const void* send_val_buf, size_t send_val_count,
+                                       void* recv_ind_buf, size_t recv_ind_count,
+                                       void* recv_val_buf, size_t recv_val_count,
+                                       ccl_datatype_t index_dtype, ccl_datatype_t value_dtype,
+                                       ccl_reduction_t reduction, const ccl_coll_attr& attr,
+                                       ccl_comm* comm, const ccl_stream* stream)
+{
     ccl_coll_param param{};
 
     param.ctype = ccl_coll_sparse_allreduce;

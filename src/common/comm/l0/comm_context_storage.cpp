@@ -1,8 +1,4 @@
-#if 1
-    #include "../tests/unit/api/stubs/host_communicator.hpp"
-#else
-    #include "common/comm/host_communicator/host_communicator.hpp"
-#endif
+#include "common/comm/host_communicator/host_communicator.hpp"
 
 #include "common/comm/comm.hpp"
 #include "common/comm/l0/comm_context.hpp"

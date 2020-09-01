@@ -58,6 +58,11 @@ private:
     /* TODO temporary function for UT compilation: would be part of ccl::environment in final*/
     template <class ...attr_value_pair_t>
     static comm_split_attr_t create_comm_split_attr(attr_value_pair_t&&...avps);
+
+    // TODO should be removed after moving create_comm_split_attr() function to environment class
+    // create_split_attr() is internal func of create_comm_split_attr() in which comm_split_attr_t constructor is called
+    template <class attr_t, class ...attr_value_pair_t>
+    friend attr_t create_split_attr(attr_value_pair_t&&...avps);
 };
 
 

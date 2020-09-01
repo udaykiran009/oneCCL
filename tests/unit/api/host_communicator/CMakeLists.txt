@@ -29,14 +29,6 @@ if(API_UT)
         set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${COMPUTE_RUNTIME_FLAGS}")
         add_definitions(${DEFINITIONS})
     endif()
-
-    set(CCL_MAJOR_VERSION     "0")
-    set(CCL_MINOR_VERSION     "0")
-    set(CCL_UPDATE_VERSION    "0")
-    set(CCL_PRODUCT_STATUS    "epsilon")
-    string(TIMESTAMP CCL_PRODUCT_BUILD_DATE "%Y-%m-%dT %H:%M:%SZ")
-    set(CCL_PRODUCT_FULL "${CCL_PRODUCT_STATUS}-${CCL_MAJOR_VERSION}.${CCL_MINOR_VERSION}.${CCL_UPDATE_VERSION} ${CCL_PRODUCT_BUILD_DATE} ${VCS_INFO}")
-    configure_file(${PROJECT_SOURCE_DIR}/include/ccl_config.h.in "${CMAKE_CURRENT_BINARY_DIR}/ccl_config.h")
 endif(API_UT)
 
 
@@ -50,6 +42,15 @@ file(GLOB sources "*.c" "*.cpp")
 
 set (dependencies_sources
              "${PROJECT_SOURCE_DIR}/src/common/log/log.cpp"
+             "${PROJECT_SOURCE_DIR}/tests/unit/api/stubs/env.cpp"
+             "${PROJECT_SOURCE_DIR}/tests/unit/api/stubs/cache.cpp"
+             "${PROJECT_SOURCE_DIR}/tests/unit/api/stubs/datatype.cpp"
+             "${PROJECT_SOURCE_DIR}/tests/unit/api/stubs/request.cpp"
+             "${PROJECT_SOURCE_DIR}/tests/unit/api/stubs/ccl.cpp"
+             "${PROJECT_SOURCE_DIR}/src/common/comm/comm.cpp"
+             "${PROJECT_SOURCE_DIR}/tests/unit/api/stubs/global.cpp"
+             "${PROJECT_SOURCE_DIR}/tests/unit/api/stubs/host_request.cpp"
+             "${PROJECT_SOURCE_DIR}/tests/unit/api/stubs/coll.cpp"
              "${PROJECT_SOURCE_DIR}/src/common/comm/host_communicator/host_communicator.cpp"
              "${PROJECT_SOURCE_DIR}/tests/unit/api/stubs/spinlock.cpp"
              "${PROJECT_SOURCE_DIR}/tests/unit/api/stubs/kvs.cpp"

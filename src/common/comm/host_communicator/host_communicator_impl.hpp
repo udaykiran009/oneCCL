@@ -2,6 +2,9 @@
 
 #include "common/comm/host_communicator/host_communicator.hpp"
 #include "common/comm/host_communicator/host_communicator_defines.hpp"
+#include "common/request/request.hpp"
+#include "common/request/host_request.hpp"
+#include "coll/coll.hpp"
 
 namespace ccl {
 
@@ -14,8 +17,16 @@ host_communicator::allgatherv_impl(const BufferType* send_buf,
                                    const vector_class<size_t>& recv_counts,
                                    const allgatherv_attr_t& attr)
 {
-    // TODO There must be a call to a collective function
-    return ccl::request_t();
+    ccl_request* req = ccl_allgatherv_impl(reinterpret_cast<const void*>(send_buf),
+                                           send_count,
+                                           reinterpret_cast<void*>(recv_buf),
+                                           recv_counts.data(),
+                                           ccl::native_type_info<BufferType>::ccl_type_value,
+                                           attr,
+                                           comm_impl.get(),
+                                           nullptr);
+
+    return std::unique_ptr<ccl::host_request_impl>(new ccl::host_request_impl(req));
 }
 
 template<class BufferType>
@@ -26,8 +37,11 @@ host_communicator::allgatherv_impl(const BufferType* send_buf,
                                    const vector_class<size_t>& recv_counts,
                                    const allgatherv_attr_t& attr)
 {
-    // TODO There must be a call to a collective function
-    return ccl::request_t();
+    // TODO not implemented
+    throw ccl_error(std::string(__PRETTY_FUNCTION__) + " - is not implemented");
+
+    ccl_request* req = nullptr;
+    return std::unique_ptr<ccl::host_request_impl>(new ccl::host_request_impl(req));
 }
 
 /* allreduce */
@@ -40,8 +54,16 @@ host_communicator::allreduce_impl(const BufferType* send_buf,
                                   ccl_reduction_t reduction,
                                   const allreduce_attr_t& attr)
 {
-    // TODO There must be a call to a collective function
-    return ccl::request_t();
+    ccl_request* req = ccl_allreduce_impl(reinterpret_cast<const void*>(send_buf),
+                                          reinterpret_cast<void*>(recv_buf),
+                                          count,
+                                          ccl::native_type_info<BufferType>::ccl_type_value,
+                                          reduction,
+                                          attr,
+                                          comm_impl.get(),
+                                          nullptr);
+
+    return std::unique_ptr<ccl::host_request_impl>(new ccl::host_request_impl(req));
 }
 
 /* alltoall */
@@ -53,8 +75,15 @@ host_communicator::alltoall_impl(const BufferType* send_buf,
                                  size_t count,
                                  const alltoall_attr_t& attr)
 {
-    // TODO There must be a call to a collective function
-    return ccl::request_t();
+    ccl_request* req = ccl_alltoall_impl(reinterpret_cast<const void*>(send_buf),
+                                         reinterpret_cast<void*>(recv_buf),
+                                         count,
+                                         ccl::native_type_info<BufferType>::ccl_type_value,
+                                         attr,
+                                         comm_impl.get(),
+                                         nullptr);
+
+    return std::unique_ptr<ccl::host_request_impl>(new ccl::host_request_impl(req));
 }
 
 template <class BufferType,
@@ -65,8 +94,11 @@ host_communicator::alltoall_impl(const vector_class<BufferType*>& send_buf,
                                  size_t count,
                                  const alltoall_attr_t& attr)
 {
-    // TODO There must be a call to a collective function
-    return ccl::request_t();
+    // TODO not implemented
+    throw ccl_error(std::string(__PRETTY_FUNCTION__) + " - is not implemented");
+
+    ccl_request* req = nullptr;
+    return std::unique_ptr<ccl::host_request_impl>(new ccl::host_request_impl(req));
 }
 
 /* alltoallv */
@@ -79,8 +111,16 @@ host_communicator::alltoallv_impl(const BufferType* send_buf,
                                  const vector_class<size_t>& recv_counts,
                                  const alltoallv_attr_t& attr)
 {
-    // TODO There must be a call to a collective function
-    return ccl::request_t();
+    ccl_request* req = ccl_alltoallv_impl(reinterpret_cast<const void*>(send_buf),
+                                          send_counts.data(),
+                                          reinterpret_cast<void*>(recv_buf),
+                                          recv_counts.data(),
+                                          ccl::native_type_info<BufferType>::ccl_type_value,
+                                          attr,
+                                          comm_impl.get(),
+                                          nullptr);
+
+    return std::unique_ptr<ccl::host_request_impl>(new ccl::host_request_impl(req));
 }
 
 template <class BufferType,
@@ -92,8 +132,11 @@ host_communicator::alltoallv_impl(const vector_class<BufferType*>& send_bufs,
                                   const vector_class<size_t>& recv_counts,
                                   const alltoallv_attr_t& attr)
 {
-    // TODO There must be a call to a collective function
-    return ccl::request_t();
+    // TODO not implemented
+    throw ccl_error(std::string(__PRETTY_FUNCTION__) + " - is not implemented");
+
+    ccl_request* req = nullptr;
+    return std::unique_ptr<ccl::host_request_impl>(new ccl::host_request_impl(req));
 }
 
 /* bcast */
@@ -105,8 +148,15 @@ host_communicator::bcast_impl(BufferType* buf,
                               size_t root,
                               const bcast_attr_t& attr)
 {
-    // TODO There must be a call to a collective function
-    return ccl::request_t();
+    ccl_request* req = ccl_bcast_impl(reinterpret_cast<void*>(buf),
+                                      count,
+                                      ccl::native_type_info<BufferType>::ccl_type_value,
+                                      root,
+                                      attr,
+                                      comm_impl.get(),
+                                      nullptr);
+
+    return std::unique_ptr<ccl::host_request_impl>(new ccl::host_request_impl(req));
 }
 
 /* reduce */
@@ -120,8 +170,17 @@ host_communicator::reduce_impl(const BufferType* send_buf,
                                size_t root,
                                const reduce_attr_t& attr)
 {
-    // TODO There must be a call to a collective function
-    return ccl::request_t();
+    ccl_request* req = ccl_reduce_impl(reinterpret_cast<const void*>(send_buf),
+                                       reinterpret_cast<void*>(recv_buf),
+                                       count,
+                                       ccl::native_type_info<BufferType>::ccl_type_value,
+                                       reduction,
+                                       root,
+                                       attr,
+                                       comm_impl.get(),
+                                       nullptr);
+
+    return std::unique_ptr<ccl::host_request_impl>(new ccl::host_request_impl(req));
 }
 
 /* reduce_scatter */
@@ -134,8 +193,11 @@ host_communicator::reduce_scatter_impl(const BufferType* send_buf,
                                        ccl_reduction_t reduction,
                                        const reduce_scatter_attr_t& attr)
 {
-    // TODO There must be a call to a collective function
-    return ccl::request_t();
+    // TODO not implemented
+    throw ccl_error(std::string(__PRETTY_FUNCTION__) + " - is not implemented");
+
+    ccl_request* req = nullptr;
+    return std::unique_ptr<ccl::host_request_impl>(new ccl::host_request_impl(req));
 }
 
 /* sparse_allreduce */
@@ -155,8 +217,23 @@ host_communicator::sparse_allreduce_impl(const index_BufferType* send_ind_buf,
                                          ccl_reduction_t reduction,
                                          const sparse_allreduce_attr_t& attr)
 {
-    // TODO There must be a call to a collective function
-    return ccl::request_t();
+    ccl_request* req =
+        ccl_sparse_allreduce_impl((const void*)send_ind_buf,
+                                  send_ind_count,
+                                  (const void*)send_val_buf,
+                                  send_val_count,
+                                  (void*)recv_ind_buf,
+                                  recv_ind_count,
+                                  (void*)recv_val_buf,
+                                  recv_val_count,
+                                  ccl::native_type_info<index_BufferType>::ccl_type_value,
+                                  ccl::native_type_info<value_BufferType>::ccl_type_value,
+                                  reduction,
+                                  attr,
+                                  comm_impl.get(),
+                                  nullptr);
+
+    return std::unique_ptr<ccl::host_request_impl>(new ccl::host_request_impl(req));
 }
 
 } // namespace ccl

@@ -72,7 +72,7 @@ comm_class::reduce_scatter_impl(const type* send_buf, \
                                 type* recv_buf, \
                                 size_t recv_count, \
                                 ccl_reduction_t reduction, \
-                                const reduce_scatter_attr_t& attr); \
+                                const reduce_scatter_attr_t& attr);
 
 
 #define HOST_COMM_IMPL_SPARSE_ALLREDUCE_EXPLICIT_INSTANTIATION(comm_class, index_type, value_type) \
@@ -87,7 +87,7 @@ comm_class::sparse_allreduce_impl(const index_type* send_ind_buf, \
                                   value_type* recv_val_buf, \
                                   size_t recv_val_count, \
                                   ccl_reduction_t reduction, \
-                                  const sparse_allreduce_attr_t& attr); \
+                                  const sparse_allreduce_attr_t& attr);
 
 
 
@@ -163,7 +163,7 @@ comm_class::reduce_scatter(const type* send_buf, \
                            type* recv_buf, \
                            size_t recv_count, \
                            ccl_reduction_t reduction, \
-                           const reduce_scatter_attr_t& attr); \
+                           const reduce_scatter_attr_t& attr);
 
 
 #define API_HOST_COMM_SPARSE_ALLREDUCE_EXPLICIT_INSTANTIATION(comm_class, index_type, value_type) \
@@ -178,4 +178,4 @@ comm_class::sparse_allreduce(const index_type* send_ind_buf, \
                              value_type* recv_val_buf, \
                              size_t recv_val_count, \
                              ccl_reduction_t reduction, \
-                             const sparse_allreduce_attr_t& attr); \
+                             const sparse_allreduce_attr_t& attr);

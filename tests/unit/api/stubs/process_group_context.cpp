@@ -11,11 +11,8 @@
 #include "thread_group_scheduler.hpp"
 #include "common/comm/l0/context/thread_group_ctx.hpp"
 #include "common/comm/l0/gpu_comm_attr.hpp"
-#if 1
-    #include "../tests/unit/api/stubs/host_communicator.hpp"
-#else
-    #include "common/comm/host_communicator/host_communicator.hpp"
-#endif
+#include "common/comm/host_communicator/host_communicator.hpp"
+
 namespace native
 {
 struct allied_process_group_scheduler {};
