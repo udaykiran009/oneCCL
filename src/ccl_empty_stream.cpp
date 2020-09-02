@@ -12,11 +12,13 @@
 
 namespace ccl
 {
+
 template<class attr>
-attr ccl_empty_attr::create_empty()
+CCL_API attr ccl_empty_attr::create_empty()
 {
     return attr{ccl_empty_attr::version};
 }
 
-stream default_stream = ccl_empty_attr::create_empty<stream>();
+CCL_API stream default_stream = ccl_empty_attr::create_empty<stream>();
+
 }

@@ -211,7 +211,7 @@ endif(MULTI_GPU_SUPPORT)
 
 #include other CMakeLists
 add_subdirectory(src)
-#-S- TEMPORARY DISABLED add_subdirectory(examples/cpu)
+add_subdirectory(examples/cpu)
 
 if (CCL_ENABLE_SYCL)
     if (${COMPUTE_RUNTIME_TARGET_NAME} STREQUAL "Intel::SYCL")

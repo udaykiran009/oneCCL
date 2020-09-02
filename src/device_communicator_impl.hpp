@@ -1,7 +1,7 @@
 #pragma once
-#include "ccl_comm_split_attr.hpp"
 #include "ccl_comm_split_attr_ids.hpp"
 #include "ccl_comm_split_attr_ids_traits.hpp"
+#include "ccl_comm_split_attr.hpp"
 #include "ccl_device_communicator.hpp"
 
 #include "common/comm/l0/comm_context_id.hpp"

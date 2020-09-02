@@ -127,7 +127,7 @@ TEST(device_communicator_api, device_comm_from_sycl_devices_single_thread)
         void *tmp = nullptr;
         ccl::vector_class<size_t> recv_counts;
         ccl::datatype dtype{ccl::datatype::int8};
-        dev_comm.allgatherv((const void*) tmp, size_t(0), tmp, recv_counts, dtype, ccl::default_allgather_attr);
+        dev_comm.allgatherv((const void*) tmp, size_t(0), tmp, recv_counts, dtype, ccl::default_allgatherv_attr);
     }
 }
 
