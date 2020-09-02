@@ -44,8 +44,7 @@ public:
     size_t rank() const;
     size_t size() const;
 
-    // TODO enable later
-    // communicator split(const comm_split_attr_t& attr);
+    communicator split(const comm_split_attr_t& attr);
 
     /**
      * Allgatherv is a collective communication operation that collects data from all ranks within a communicator
@@ -67,7 +66,7 @@ public:
                          void* recv_buf,
                          const vector_class<size_t>& recv_counts,
                          ccl_datatype_t dtype,
-                         const allgatherv_attr_t& attr = default_allgather_attr);
+                         const allgatherv_attr_t& attr = default_allgatherv_attr);
 
     /**
      * @param send_buf the buffer with @c send_count elements of @c dtype that stores local data to be gathered
@@ -83,7 +82,7 @@ public:
                          const vector_class<void*>& recv_bufs,
                          const vector_class<size_t>& recv_counts,
                          ccl_datatype_t dtype,
-                         const allgatherv_attr_t& attr = default_allgather_attr);
+                         const allgatherv_attr_t& attr = default_allgatherv_attr);
 
     /**
      * Type safety version:
@@ -100,7 +99,7 @@ public:
                          size_t send_count,
                          BufferType* recv_buf,
                          const vector_class<size_t>& recv_counts,
-                         const allgatherv_attr_t& attr =default_allgather_attr);
+                         const allgatherv_attr_t& attr = default_allgatherv_attr);
 
     /**
      * Type safety version:
@@ -117,7 +116,7 @@ public:
                          size_t send_count,
                          const vector_class<BufferType*>& recv_bufs,
                          const vector_class<size_t>& recv_counts,
-                         const allgatherv_attr_t& attr =default_allgather_attr);
+                         const allgatherv_attr_t& attr = default_allgatherv_attr);
 
     /**
      * Type safety version:
@@ -134,7 +133,7 @@ public:
                          size_t send_count,
                          BufferObjectType& recv_buf,
                          const vector_class<size_t>& recv_counts,
-                         const allgatherv_attr_t& attr = default_allgather_attr);
+                         const allgatherv_attr_t& attr = default_allgatherv_attr);
 
     /**
      * Allreduce is a collective communication operation that makes global reduction operation
@@ -155,7 +154,7 @@ public:
                         size_t count,
                         ccl_datatype_t dtype,
                         ccl_reduction_t reduction,
-                        const allreduce_attr_t& attr/* = allreduce_attr_t()*/);
+                        const allreduce_attr_t& attr = default_allreduce_attr);
 
     /**
      * Type safety version:
@@ -172,7 +171,7 @@ public:
                         BufferType* recv_buf,
                         size_t count,
                         ccl_reduction_t reduction,
-                        const allreduce_attr_t& attr/* = allreduce_attr_t()*/);
+                        const allreduce_attr_t& attr = default_allreduce_attr);
 
     /**
      * Alltoall is a collective communication operation in which each rank
@@ -194,7 +193,7 @@ public:
                        void* recv_buf,
                        size_t count,
                        ccl_datatype_t dtype,
-                       const alltoall_attr_t& attr/* = alltoall_attr_t()*/);
+                       const alltoall_attr_t& attr = default_alltoall_attr);
 
     /**
      * @param send_bufs array of buffers with local data to be sent, one buffer per each rank
@@ -208,7 +207,7 @@ public:
                        const vector_class<void*>& recv_buf,
                        size_t count,
                        ccl_datatype_t dtype,
-                       const alltoall_attr_t& attr/* = alltoall_attr_t()*/);
+                       const alltoall_attr_t& attr = default_alltoall_attr);
 
     /**
      * Type safety version:
@@ -224,7 +223,7 @@ public:
     request_t alltoall(const BufferType* send_buf,
                        BufferType* recv_buf,
                        size_t count,
-                       const alltoall_attr_t& attr/* = alltoall_attr_t()*/);
+                       const alltoall_attr_t& attr = default_alltoall_attr);
 
     /**
      * Type safety version:
@@ -239,7 +238,7 @@ public:
     request_t alltoall(const vector_class<BufferType*>& send_buf,
                        const vector_class<BufferType*>& recv_buf,
                        size_t count,
-                       const alltoall_attr_t& attr/* = alltoall_attr_t()*/);
+                       const alltoall_attr_t& attr = default_alltoall_attr);
 
     /**
      * Alltoall is a collective communication operation in which each rank
@@ -262,7 +261,7 @@ public:
                         void* recv_buf,
                         const vector_class<size_t>& recv_counts,
                         ccl_datatype_t dtype,
-                        const alltoallv_attr_t& attr/* = alltoallv_attr_t()*/);
+                        const alltoallv_attr_t& attr = default_alltoallv_attr);
 
     /**
      * @param send_bufs array of buffers to store send blocks, one buffer per each rank
@@ -278,7 +277,7 @@ public:
                         const vector_class<void*>& recv_bufs,
                         const vector_class<size_t>& recv_counts,
                         ccl_datatype_t dtype,
-                        const alltoallv_attr_t& attr/* = alltoallv_attr_t()*/);
+                        const alltoallv_attr_t& attr = default_alltoallv_attr);
 
     /**
      * Type safety version:
@@ -295,7 +294,7 @@ public:
                         const vector_class<size_t>& send_counts,
                         BufferType* recv_buf,
                         const vector_class<size_t>& recv_counts,
-                        const alltoallv_attr_t& attr/* = alltoallv_attr_t()*/);
+                        const alltoallv_attr_t& attr = default_alltoallv_attr);
 
     /**
      * Type safety version:
@@ -312,7 +311,7 @@ public:
                         const vector_class<size_t>& send_counts,
                         const vector_class<BufferType*>& recv_bufs,
                         const vector_class<size_t>& recv_counts,
-                        const alltoallv_attr_t& attr/* = alltoallv_attr_t()*/);
+                        const alltoallv_attr_t& attr = default_alltoallv_attr);
 
     /**
      * Barrier synchronization across all ranks of communicator.
@@ -321,7 +320,7 @@ public:
      * @param attr optional attributes to customize operation
      * @return @ref ccl::request_t object to track the progress of the operation
      */
-    request_t barrier(const barrier_attr_t& attr/* = barrier_attr_t()*/);
+    request_t barrier(const barrier_attr_t& attr = default_barrier_attr);
 
     /**
      * Bcast is collective communication operation that broadcasts data
@@ -341,7 +340,7 @@ public:
                     size_t count,
                     ccl_datatype_t dtype,
                     size_t root,
-                    const bcast_attr_t& attr/* = bcast_attr_t()*/);
+                    const bcast_attr_t& attr = default_bcast_attr);
 
     /**
      * Type safety version:
@@ -357,7 +356,7 @@ public:
     request_t bcast(BufferType* buf,
                     size_t count,
                     size_t root,
-                    const bcast_attr_t& attr/* = bcast_attr_t()*/);
+                    const bcast_attr_t& attr = default_bcast_attr);
 
     /**
      * Reduce is a collective communication operation that makes global reduction operation
@@ -381,7 +380,7 @@ public:
                      ccl_datatype_t dtype,
                      ccl_reduction_t reduction,
                      size_t root,
-                     const reduce_attr_t& attr/* = reduce_attr_t()*/);
+                     const reduce_attr_t& attr = default_reduce_attr);
 
     /**
      * Type safety version:
@@ -401,7 +400,7 @@ public:
                      size_t count,
                      ccl_reduction_t reduction,
                      size_t root,
-                     const reduce_attr_t& attr/* = reduce_attr_t()*/);
+                     const reduce_attr_t& attr = default_reduce_attr);
 
     /**
      * Reduce-scatter is a collective communication operation that makes global reduction operation
@@ -422,7 +421,7 @@ public:
                              size_t recv_count,
                              ccl_datatype_t dtype,
                              ccl_reduction_t reduction,
-                             const reduce_scatter_attr_t& attr/* = reduce_scatter_attr_t()*/);
+                             const reduce_scatter_attr_t& attr = default_reduce_scatter_attr);
 
     /**
      * Type safety version:
@@ -439,7 +438,7 @@ public:
                              BufferType* recv_buf,
                              size_t recv_count,
                              ccl_reduction_t reduction,
-                             const reduce_scatter_attr_t& attr/* = reduce_scatter_attr_t()*/);
+                             const reduce_scatter_attr_t& attr = default_reduce_scatter_attr);
 
     /**
      * Sparse allreduce is a collective communication operation that makes global reduction operation
@@ -473,7 +472,7 @@ public:
                                ccl_datatype_t ind_dtype,
                                ccl_datatype_t val_dtype,
                                ccl_reduction_t reduction,
-                               const sparse_allreduce_attr_t& attr/* = sparse_allreduce_attr_t()*/);
+                               const sparse_allreduce_attr_t& attr = default_sparse_allreduce_attr);
 
     /**
      * Type safety version:
@@ -502,7 +501,7 @@ public:
                                value_BufferType* recv_val_buf,
                                size_t recv_val_count,
                                ccl_reduction_t reduction,
-                               const sparse_allreduce_attr_t& attr/* = sparse_allreduce_attr_t()*/);
+                               const sparse_allreduce_attr_t& attr = default_sparse_allreduce_attr);
 
 private:
     friend class environment;

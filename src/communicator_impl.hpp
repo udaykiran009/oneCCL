@@ -2,10 +2,14 @@
 
 #include "common/log/log.hpp"
 #include "ccl_request.hpp"
+#include "ccl_comm_split_attr_ids.hpp"
+#include "ccl_comm_split_attr_ids_traits.hpp"
+#include "ccl_comm_split_attr.hpp"
 #include "ccl_communicator.hpp"
 #include "common/comm/host_communicator/host_communicator_impl.hpp"
 
-namespace ccl {
+namespace ccl
+{
 
 CCL_API communicator::communicator(communicator&& other) :
         base_t(std::move(other))
@@ -39,6 +43,13 @@ CCL_API size_t communicator::rank() const
 CCL_API size_t communicator::size() const
 {
     return get_impl()->size();
+}
+
+// TODO implement split()
+CCL_API communicator communicator::split(const comm_split_attr_t& attr)
+{
+    throw ccl_error(std::string(__PRETTY_FUNCTION__) + " - is not implemented");
+    return create_communicator();
 }
 
 /* TODO temporary function for UT compilation: would be part of ccl::environment in final*/

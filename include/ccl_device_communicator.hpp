@@ -112,7 +112,7 @@ public:
                          void* recv_buf,
                          const vector_class<size_t>& recv_counts,
                          datatype dtype,
-                         const allgatherv_attr_t& attr = default_allgather_attr,
+                         const allgatherv_attr_t& attr = default_allgatherv_attr,
                          stream op_stream = default_stream,
                          const vector_class<event>& deps = {});
 
@@ -132,7 +132,7 @@ public:
                          const vector_class<void*>& recv_bufs,
                          const vector_class<size_t>& recv_counts,
                          datatype dtype,
-                         const allgatherv_attr_t& attr = default_allgather_attr,
+                         const allgatherv_attr_t& attr = default_allgatherv_attr,
                          stream op_stream = default_stream,
                          const vector_class<event>& deps = {});
     /**
@@ -152,7 +152,7 @@ public:
                          size_t send_count,
                          BufferType* recv_buf,
                          const vector_class<size_t>& recv_counts,
-                         const allgatherv_attr_t& attr = default_allgather_attr,
+                         const allgatherv_attr_t& attr = default_allgatherv_attr,
                          stream op_stream = default_stream,
                          const vector_class<event>& deps = {});
 
@@ -173,7 +173,7 @@ public:
                          size_t send_count,
                          vector_class<BufferType*>& recv_bufs,
                          const vector_class<size_t>& recv_counts,
-                         const allgatherv_attr_t& attr = default_allgather_attr,
+                         const allgatherv_attr_t& attr = default_allgatherv_attr,
                          stream op_stream = default_stream,
                          const vector_class<event>& deps = {});
 
@@ -194,7 +194,7 @@ public:
                          size_t send_count,
                          BufferObjectType& recv_buf,
                          const vector_class<size_t>& recv_counts,
-                         const allgatherv_attr_t& attr = default_allgather_attr,
+                         const allgatherv_attr_t& attr = default_allgatherv_attr,
                          stream op_stream = default_stream,
                          const vector_class<event>& deps = {});
 
@@ -215,7 +215,7 @@ public:
                          size_t send_count,
                          vector_class<reference_wrapper_class<BufferObjectType>>& recv_bufs,
                          const vector_class<size_t>& recv_counts,
-                         const allgatherv_attr_t& attr = default_allgather_attr,
+                         const allgatherv_attr_t& attr = default_allgatherv_attr,
                          stream op_stream = default_stream,
                          const vector_class<event>& deps = {});
 
@@ -308,8 +308,8 @@ public:
                        void* recv_buf,
                        size_t count,
                        datatype dtype,
-                       const alltoall_attr_t& attr/* = alltoall_attr_t()*/,
-                       stream op_stream,
+                       const alltoall_attr_t& attr = default_alltoall_attr,
+                       stream op_stream = default_stream,
                        const vector_class<event>& deps = {});
 
     /**
@@ -326,8 +326,8 @@ public:
                        const vector_class<void*>& recv_buf,
                        size_t count,
                        datatype dtype,
-                       const alltoall_attr_t& attr/* = alltoall_attr_t()*/,
-                       stream op_stream,
+                       const alltoall_attr_t& attr = default_alltoall_attr,
+                       stream op_stream = default_stream,
                        const vector_class<event>& deps = {});
 
     /**
@@ -346,8 +346,8 @@ public:
     request_t alltoall(const BufferType* send_buf,
                        BufferType* recv_buf,
                        size_t count,
-                       const alltoall_attr_t& attr/* = alltoall_attr_t()*/,
-                       stream op_stream,
+                       const alltoall_attr_t& attr = default_alltoall_attr,
+                       stream op_stream = default_stream,
                        const vector_class<event>& deps = {});
 
     /**
@@ -365,8 +365,8 @@ public:
     request_t alltoall(const vector_class<BufferType*>& send_buf,
                        const vector_class<BufferType*>& recv_buf,
                        size_t count,
-                       const alltoall_attr_t& attr/* = alltoall_attr_t()*/,
-                       stream op_stream,
+                       const alltoall_attr_t& attr = default_alltoall_attr,
+                       stream op_stream = default_stream,
                        const vector_class<event>& deps = {});
 
     /**
@@ -385,8 +385,8 @@ public:
     request_t alltoall(const BufferObjectType& send_buf,
                        BufferObjectType& recv_buf,
                        size_t count,
-                       const alltoall_attr_t& attr/* = alltoall_attr_t()*/,
-                       stream op_stream,
+                       const alltoall_attr_t& attr = default_alltoall_attr,
+                       stream op_stream = default_stream,
                        const vector_class<event>& deps = {});
 
     /**
@@ -404,8 +404,8 @@ public:
     request_t alltoall(const vector_class<reference_wrapper_class<BufferObjectType>>& send_buf,
                        const vector_class<reference_wrapper_class<BufferObjectType>>& recv_buf,
                        size_t count,
-                       const alltoall_attr_t& attr/* = alltoall_attr_t()*/,
-                       stream op_stream,
+                       const alltoall_attr_t& attr = default_alltoall_attr,
+                       stream op_stream = default_stream,
                        const vector_class<event>& deps = {});
 
     /**
@@ -431,8 +431,8 @@ public:
                         void* recv_buf,
                         const vector_class<size_t>& recv_counts,
                         datatype dtype,
-                        const alltoallv_attr_t& attr/* = alltoallv_attr_t()*/,
-                        stream op_stream,
+                        const alltoallv_attr_t& attr = default_alltoallv_attr,
+                        stream op_stream = default_stream,
                         const vector_class<event>& deps = {});
 
     /**
@@ -451,8 +451,8 @@ public:
                         const vector_class<void*>& recv_bufs,
                         const vector_class<size_t>& recv_counts,
                         datatype dtype,
-                        const alltoallv_attr_t& attr/* = alltoallv_attr_t()*/,
-                        stream op_stream,
+                        const alltoallv_attr_t& attr = default_alltoallv_attr,
+                        stream op_stream = default_stream,
                         const vector_class<event>& deps = {});
 
     /**
@@ -472,8 +472,8 @@ public:
                         const vector_class<size_t>& send_counts,
                         BufferType* recv_buf,
                         const vector_class<size_t>& recv_counts,
-                        const alltoallv_attr_t& attr/* = alltoallv_attr_t()*/,
-                        stream op_stream,
+                        const alltoallv_attr_t& attr = default_alltoallv_attr,
+                        stream op_stream = default_stream,
                         const vector_class<event>& deps = {});
 
     /**
@@ -493,8 +493,8 @@ public:
                         const vector_class<size_t>& send_counts,
                         const vector_class<BufferType*>& recv_bufs,
                         const vector_class<size_t>& recv_counts,
-                        const alltoallv_attr_t& attr/* = alltoallv_attr_t()*/,
-                        stream op_stream,
+                        const alltoallv_attr_t& attr = default_alltoallv_attr,
+                        stream op_stream = default_stream,
                         const vector_class<event>& deps = {});
 
     /**
@@ -514,8 +514,8 @@ public:
                         const vector_class<size_t>& send_counts,
                         BufferObjectType& recv_buf,
                         const vector_class<size_t>& recv_counts,
-                        const alltoallv_attr_t& attr/* = alltoallv_attr_t()*/,
-                        stream op_stream,
+                        const alltoallv_attr_t& attr = default_alltoallv_attr,
+                        stream op_stream = default_stream,
                         const vector_class<event>& deps = {});
 
     /**
@@ -536,8 +536,8 @@ public:
                         const vector_class<size_t>& send_counts,
                         const vector_class<reference_wrapper_class<BufferObjectType>>& recv_bufs,
                         const vector_class<size_t>& recv_counts,
-                        const alltoallv_attr_t& attr/* = alltoallv_attr_t()*/,
-                        stream op_stream,
+                        const alltoallv_attr_t& attr = default_alltoallv_attr,
+                        stream op_stream = default_stream,
                         const vector_class<event>& deps = {});
 
     /**
@@ -549,8 +549,8 @@ public:
      * @param attr optional attributes to customize operation
      * @return @ref ccl::request_t object to track the progress of the operation
      */
-    request_t barrier(const barrier_attr_t& attr/* = barrier_attr_t()*/,
-                      stream op_stream,
+    request_t barrier(const barrier_attr_t& attr = default_barrier_attr,
+                      stream op_stream = default_stream,
                       const vector_class<event>& deps = {});
 
     /**
@@ -573,8 +573,8 @@ public:
                     size_t count,
                     datatype dtype,
                     size_t root,
-                    const bcast_attr_t& attr/* = bcast_attr_t()*/,
-                    stream op_stream,
+                    const bcast_attr_t& attr = default_bcast_attr,
+                    stream op_stream = default_stream,
                     const vector_class<event>& deps = {});
 
     /**
@@ -593,8 +593,8 @@ public:
     request_t bcast(BufferType* buf,
                     size_t count,
                     size_t root,
-                    const bcast_attr_t& attr/* = bcast_attr_t()*/,
-                    stream op_stream,
+                    const bcast_attr_t& attr = default_bcast_attr,
+                    stream op_stream = default_stream,
                     const vector_class<event>& deps = {});
 
     /**
@@ -613,8 +613,8 @@ public:
     request_t bcast(BufferObjectType& buf,
                     size_t count,
                     size_t root,
-                    const bcast_attr_t& attr/* = bcast_attr_t()*/,
-                    stream op_stream,
+                    const bcast_attr_t& attr = default_bcast_attr,
+                    stream op_stream = default_stream,
                     const vector_class<event>& deps = {});
 
     /**
@@ -641,8 +641,8 @@ public:
                      datatype dtype,
                      reduction reduction,
                      size_t root,
-                     const reduce_attr_t& attr/* = reduce_attr_t()*/,
-                     stream op_stream,
+                     const reduce_attr_t& attr = default_reduce_attr,
+                     stream op_stream = default_stream,
                      const vector_class<event>& deps = {});
 
     /**
@@ -665,8 +665,8 @@ public:
                      size_t count,
                      reduction reduction,
                      size_t root,
-                     const reduce_attr_t& attr/* = reduce_attr_t()*/,
-                     stream op_stream,
+                     const reduce_attr_t& attr = default_reduce_attr,
+                     stream op_stream = default_stream,
                      const vector_class<event>& deps = {});
 
     /**
@@ -689,8 +689,8 @@ public:
                      size_t count,
                      reduction reduction,
                      size_t root,
-                     const reduce_attr_t& attr/* = reduce_attr_t()*/,
-                     stream op_stream,
+                     const reduce_attr_t& attr = default_reduce_attr,
+                     stream op_stream = default_stream,
                      const vector_class<event>& deps = {});
 
     /**
@@ -714,8 +714,8 @@ public:
                              size_t recv_count,
                              datatype dtype,
                              reduction reduction,
-                             const reduce_scatter_attr_t& attr/* = reduce_scatter_attr_t()*/,
-                             stream op_stream,
+                             const reduce_scatter_attr_t& attr = default_reduce_scatter_attr,
+                             stream op_stream = default_stream,
                              const vector_class<event>& deps = {});
 
     /**
@@ -735,8 +735,8 @@ public:
                              BufferType* recv_buf,
                              size_t recv_count,
                              reduction reduction,
-                             const reduce_scatter_attr_t& attr/* = reduce_scatter_attr_t()*/,
-                             stream op_stream,
+                             const reduce_scatter_attr_t& attr = default_reduce_scatter_attr,
+                             stream op_stream = default_stream,
                              const vector_class<event>& deps = {});
 
     /**
@@ -760,8 +760,8 @@ public:
                    BufferObjectType& recv_buf,
                    size_t recv_count,
                    reduction reduction,
-                   const reduce_scatter_attr_t& attr/* = reduce_scatter_attr_t()*/,
-                   stream op_stream,
+                   const reduce_scatter_attr_t& attr = default_reduce_scatter_attr,
+                   stream op_stream = default_stream,
                    const vector_class<event>& deps = {});
 
     /**
@@ -796,8 +796,8 @@ public:
                                datatype ind_dtype,
                                datatype val_dtype,
                                reduction reduction,
-                               const sparse_allreduce_attr_t& attr/* = sparse_allreduce_attr_t()*/,
-                               stream op_stream,
+                               const sparse_allreduce_attr_t& attr = default_sparse_allreduce_attr,
+                               stream op_stream = default_stream,
                                const vector_class<event>& deps = {});
 
     /**
@@ -827,8 +827,8 @@ public:
                                value_BufferType* recv_val_buf,
                                size_t recv_val_count,
                                reduction reduction,
-                               const sparse_allreduce_attr_t& attr/* = sparse_allreduce_attr_t()*/,
-                               stream op_stream,
+                               const sparse_allreduce_attr_t& attr = default_sparse_allreduce_attr,
+                               stream op_stream = default_stream,
                                const vector_class<event>& deps = {});
 
     /**
@@ -858,8 +858,8 @@ public:
                                value_BufferObjectType& recv_val_buf,
                                size_t recv_val_count,
                                reduction reduction,
-                               const sparse_allreduce_attr_t& attr/* = sparse_allreduce_attr_t()*/,
-                               stream op_stream,
+                               const sparse_allreduce_attr_t& attr = default_sparse_allreduce_attr,
+                               stream op_stream = default_stream,
                                const vector_class<event>& deps = {});
 private:
     friend class environment;

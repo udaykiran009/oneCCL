@@ -31,7 +31,7 @@ public:
                     void* recv_buf,
                     const vector_class<size_t>& recv_counts,
                     ccl_datatype_t dtype,
-                    const allgatherv_attr_t& attr = default_allgather_attr);
+                    const allgatherv_attr_t& attr = default_allgatherv_attr);
 
     ccl::request_t
     allgatherv_impl(const void* send_buf,
@@ -39,7 +39,7 @@ public:
                     const vector_class<void*>& recv_bufs,
                     const vector_class<size_t>& recv_counts,
                     ccl_datatype_t dtype,
-                    const allgatherv_attr_t& attr = default_allgather_attr);
+                    const allgatherv_attr_t& attr = default_allgatherv_attr);
 
     template<class BufferType>
     ccl::request_t
@@ -47,7 +47,7 @@ public:
                     size_t send_count,
                     BufferType* recv_buf,
                     const vector_class<size_t>& recv_counts,
-                    const allgatherv_attr_t& attr = default_allgather_attr);
+                    const allgatherv_attr_t& attr = default_allgatherv_attr);
 
     template<class BufferType>
     ccl::request_t
@@ -55,7 +55,7 @@ public:
                     size_t send_count,
                     const vector_class<BufferType*>& recv_bufs,
                     const vector_class<size_t>& recv_counts,
-                    const allgatherv_attr_t& attr = default_allgather_attr);
+                    const allgatherv_attr_t& attr = default_allgatherv_attr);
 
     /* allreduce */
     ccl::request_t
@@ -143,7 +143,7 @@ public:
 
     /* barrier */
     ccl::request_t
-    barrier_impl(const barrier_attr_t& attr = default_barrier_attr_t);
+    barrier_impl(const barrier_attr_t& attr = default_barrier_attr);
 
     /* bcast */
     ccl::request_t
@@ -212,7 +212,7 @@ public:
                           ccl_datatype_t ind_dtype,
                           ccl_datatype_t val_dtype,
                           ccl_reduction_t reduction,
-                          const sparse_allreduce_attr_t& attr = default_sparse_allreduce_attr_t);
+                          const sparse_allreduce_attr_t& attr = default_sparse_allreduce_attr);
 
     template <
         class index_BufferType,
@@ -228,7 +228,7 @@ public:
                           value_BufferType* recv_val_buf,
                           size_t recv_val_count,
                           ccl_reduction_t reduction,
-                          const sparse_allreduce_attr_t& attr = default_sparse_allreduce_attr_t);
+                          const sparse_allreduce_attr_t& attr = default_sparse_allreduce_attr);
 
     host_communicator();
     host_communicator(size_t size,

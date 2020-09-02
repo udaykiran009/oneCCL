@@ -470,15 +470,15 @@ private:
 /**
  * Declare extern empty attributes
  */
-extern allgatherv_attr_t default_allgather_attr;
+extern allgatherv_attr_t default_allgatherv_attr;
 extern allreduce_attr_t default_allreduce_attr;
 extern alltoall_attr_t default_alltoall_attr;
 extern alltoallv_attr_t default_alltoallv_attr;
 extern bcast_attr_t default_bcast_attr;
 extern reduce_attr_t default_reduce_attr;
 extern reduce_scatter_attr_t default_reduce_scatter_attr;
-extern sparse_allreduce_attr_t default_sparse_allreduce_attr_t;
-extern barrier_attr_t default_barrier_attr_t;
+extern sparse_allreduce_attr_t default_sparse_allreduce_attr;
+extern barrier_attr_t default_barrier_attr;
 
 /**
  * Fabric helpers

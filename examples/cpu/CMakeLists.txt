@@ -10,6 +10,7 @@ foreach(src ${sources})
     target_link_libraries(${executable} PUBLIC dl)
     target_link_libraries(${executable} PUBLIC pthread)
     target_link_libraries(${executable} PUBLIC stdc++)
+    target_link_libraries(${executable} PUBLIC mpi)
     install(TARGETS ${executable} RUNTIME DESTINATION ${CCL_INSTALL_EXAMPLES}/cpu)
 endforeach()
 

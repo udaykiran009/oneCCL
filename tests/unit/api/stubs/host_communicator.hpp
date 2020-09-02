@@ -23,7 +23,7 @@ public:
     void barrier_impl();
 
     ccl::request_t
-    barrier_impl(const barrier_attr_t& attr = default_barrier_attr_t);
+    barrier_impl(const barrier_attr_t& attr = default_barrier_attr);
     std::shared_ptr<ccl_comm> comm_impl;
 };
 }
