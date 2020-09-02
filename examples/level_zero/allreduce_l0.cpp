@@ -11,8 +11,8 @@
 #include <limits>
 #include <thread>
 #include <numeric>
-//#include "mpi/include/mpi.h"
-//#include <mpi.h>
+
+#include <mpi.h>
 
 #include "base.hpp"
 #include "base_utils.hpp"
@@ -24,7 +24,7 @@
 
 #ifdef CCL_ENABLE_SYCL
 template<class processing_type>
-void user_thread_idx(size_t thread_idx, const std::vector<cl::sycl::device>& devices,
+void user_thread_idx(size_t thread_idx, const std::vector<std::pair<size_t, cl::sycl::device>>& devices,
                      cl::sycl::context ctx,
                      size_t total_devices_in_cluster,
                      std::shared_ptr<ccl::kvs_interface> kvs);
@@ -69,7 +69,7 @@ int main(int argc, char** argv)
 
 
     //get addresses from MPI
-    int mpi_rank = 0, mpi_size = 0;
+    int mpi_rank = 0, mpi_size = 1;
     //MPI_Init(&argc, &argv);
     //MPI_Comm_rank(MPI_COMM_WORLD, &mpi_rank);
     //MPI_Comm_size(MPI_COMM_WORLD, &mpi_size);
@@ -83,25 +83,25 @@ int main(int argc, char** argv)
     std::cout << "MPI process rank: " << mpi_rank << ", size: " << mpi_size << std::endl;
 
     // build CCL internal KVS
-    std::shared_ptr<ccl::kvs_interface> kvs;
+    std::shared_ptr<ccl::kvs_interface> kvs_instance;
     ccl::kvs::addr_t master_addr;
     if (mpi_rank == 0)
     {
-        kvs = ccl::environment::instance().create_main_kvs();
-        master_addr = std::dynamic_pointer_cast<ccl::kvs>(kvs)->get_addr();
+        kvs_instance = ccl::environment::instance().create_main_kvs();
+        //master_addr = std::dynamic_pointer_cast<ccl::kvs>(kvs_instance)->get_addr();
 
         std::cout << "Master KVS  hast build on addr: " /*<< master_addr*/ << std::endl;
-//        MPICHECK(MPI_Bcast((void *)master_addr.data(), master_addr.size(), MPI_BYTE, 0, MPI_COMM_WORLD));
+        //MPI_Bcast((void *)master_addr.data(), master_addr.size(), MPI_BYTE, 0, MPI_COMM_WORLD);
     }
     else
     {
-//        MPICHECK(MPI_Bcast((void *)master_addr.data(), master_addr.size(), MPI_BYTE, 0, MPI_COMM_WORLD));
-        kvs = kvs = ccl::environment::instance().create_kvs(master_addr);
+       // MPI_Bcast((void *)master_addr.data(), master_addr.size(), MPI_BYTE, 0, MPI_COMM_WORLD);
+        kvs_instance = ccl::environment::instance().create_kvs(master_addr);
 
         std::cout << "Slave KVS hast connected on addr: "/* << master_addr*/ << std::endl;
     }
 
-size_t total_device_in_cluster = 0;
+    size_t total_device_in_cluster = 0;
     std::cout << "Expected process count: " << process_group_gpu_affinity.size() << std::endl;
     std::vector<size_t> total_devices_in_process(process_group_gpu_affinity.size(), 0);
 
@@ -109,6 +109,7 @@ size_t total_device_in_cluster = 0;
     std::map<size_t, std::vector<cl::sycl::device>> sycl_devices_in_mpi_rank;
 #endif
 
+    size_t device_rank_for_mpi_rank_id_offset = 0;
     for(size_t process_index = 0; process_index < process_group_gpu_affinity.size(); process_index++)
     {
         // extract  GPU affinities by thread inside process using '|' separator from L0_CLUSTER_AFFINITY_MASK
@@ -118,6 +119,11 @@ size_t total_device_in_cluster = 0;
 
         const std::vector<std::string>& thread_gpu_affinity = thread_group_gpu_affinity_per_process.find(process_index)->second;
         thread_device_indices_t thread_group_affinity;
+
+        if(process_index == mpi_rank)
+        {
+            device_rank_for_mpi_rank_id_offset = total_device_in_cluster;
+        }
 
         std::cout << "For process by id: " << process_index << ", expected threads in process count: " << thread_gpu_affinity.size() << std::endl;
         for(size_t thread_index = 0; thread_index < thread_gpu_affinity.size(); thread_index++)
@@ -155,6 +161,7 @@ size_t total_device_in_cluster = 0;
     register_allreduce_gpu_module_source("kernels/a2a_allreduce.spv", ccl_topology_class_t::a2a_algo_class);
 
 
+
     // launch user threads
 #ifdef CCL_ENABLE_SYCL
     const auto& thread_group_affinity = sycl_devices_in_mpi_rank;
@@ -163,7 +170,10 @@ size_t total_device_in_cluster = 0;
     {
         devices_in_process.insert(devices_in_process.end(), thread_devices.second.begin(), thread_devices.second.end());
     }
-    auto ctx = cl::sycl::context(devices_in_process);
+    //TODO: terminate called after throwing an instance of 'cl::sycl::invalid_parameter_error'
+    //what():  Can't add devices across platforms to a single context. -33 (CL_INVALID_DEVICE)
+    //auto ctx = cl::sycl::context(devices_in_process);
+    auto ctx = cl::sycl::context(*devices_in_process.begin());  //use single device
 #else
     const auto& thread_group_affinity = node_device_indices[mpi_rank];
     auto ctx = std::make_shared<::native::ccl_context>(); //TODO stub at moment
@@ -175,15 +185,24 @@ size_t total_device_in_cluster = 0;
         std::vector<cl::sycl::device> devices;
         std::tie(thread_id, devices) = *thread_affinity_it;
 
+
+        std::vector<std::pair<size_t, cl::sycl::device>> ranked_devices;
+        ranked_devices.reserve(devices.size());
+        std::transform(devices.begin(), devices.end(), std::back_inserter(ranked_devices),
+                  [&device_rank_for_mpi_rank_id_offset](const cl::sycl::device &dev)
+                  {
+                      return std::make_pair(device_rank_for_mpi_rank_id_offset++, dev);
+                  });
+
         std::cout << "Launch thread: " << thread_id << " with expected local thread device communicators count: " << devices.size() << std::endl;
-        thread_group.emplace_back(&user_thread_idx<float>, thread_id, std::cref(devices), ctx, total_device_in_cluster, kvs);
+        thread_group.emplace_back(&user_thread_idx<float>, thread_id, std::cref(ranked_devices), ctx, total_device_in_cluster, kvs_instance);
 #else
         size_t thread_id;
         ccl::device_indices_t devices;
         std::tie(thread_id, devices) = *thread_affinity_it;
 
         std::cout << "Launch thread: " << thread_id << " with expected local thread device communicators count: " << devices.size() << std::endl;
-        thread_group.emplace_back(&user_thread_idx<float>, thread_id, std::cref(devices), ctx, total_device_in_cluster, kvs);
+        thread_group.emplace_back(&user_thread_idx<float>, thread_id, std::cref(devices), ctx, total_device_in_cluster, kvs_instance);
 #endif
     }
 
@@ -199,10 +218,10 @@ size_t total_device_in_cluster = 0;
 
 #ifdef CCL_ENABLE_SYCL
 template<class processing_type>
-void user_thread_idx(size_t thread_idx, const std::vector<cl::sycl::device>& devices,
+void user_thread_idx(size_t thread_idx, const std::vector<std::pair<size_t, cl::sycl::device>>& devices,
                      cl::sycl::context ctx,
                      size_t total_devices_in_cluster,
-                     std::shared_ptr<ccl::kvs_interface> kvs)
+                     std::shared_ptr<ccl::kvs_interface> kvs_instance)
 {
     using namespace ::native;
 
@@ -222,7 +241,7 @@ void user_thread_idx(size_t thread_idx, const std::vector<cl::sycl::device>& dev
     // Create device communicators
     std::vector<ccl::device_communicator> comms =
                 ccl::environment::instance().create_device_communicators(total_devices_in_cluster,
-                                                                         devices, ctx, kvs);
+                                                                         devices, ctx, kvs_instance);
 
     std::cout << "Create device communicators, expected count: " << devices.size() << std::endl;
 
@@ -233,6 +252,11 @@ void user_thread_idx(size_t thread_idx, const std::vector<cl::sycl::device>& dev
         ccl::device_communicator::ccl_device_t dev = comm.get_device();
         size_t rank = comm.rank();
 
+        // create comm split attr
+        auto device_spilt_attr = ccl::environment::instance().create_device_comm_split_attr();
+        (void)device_spilt_attr;
+
+        // create stream from device communicator directly
         streams.emplace(rank, comm.create_stream());
         const cl::sycl::queue& q = streams.find(rank)->second.get<ccl::stream_attr_id::native_handle>();
 
@@ -274,12 +298,15 @@ void user_thread_idx(size_t thread_idx, const std::vector<cl::sycl::device>& dev
 
         allocated_memory_array& mem_objects = memory_storage.find(rank)->second;
 
-        //auto attr = ccl::environment::instance().create_coll_attr<ccl::allreduce_attr_t>();
+        // create operation attributes
+        auto attr = ccl::environment::instance().create_op_attr<ccl::allreduce_attr_t>();
+
+        // invoke operation
         reqs.push_back(comm.allreduce(mem_objects[0],
                                        mem_objects[1],
                                        COUNT,
                                        ccl::reduction::sum,
-                                       ccl::default_allreduce_attr,
+                                       attr,
                                        streams.find(rank)->second));
     }
 

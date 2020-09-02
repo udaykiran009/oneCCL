@@ -65,7 +65,7 @@ private:
     template <stream_attr_id attrId,
               class Value/*,
               class = typename std::enable_if<is_attribute_value_supported<attrId, Value>()>::type*/>
-    Value set(const Value& v);
+    typename details::ccl_api_type_attr_traits<stream_attr_id, attrId>::return_type set(const Value& v);
 
     void build_from_params();
     stream(const typename details::ccl_api_type_attr_traits<stream_attr_id, stream_attr_id::version>::type& version);

@@ -59,8 +59,12 @@ set(CCL_SRC
     ccl.cpp
     ccl_cpp_api.cpp
     ccl_cpp_communicator.cpp
+    ccl_cpp_environment.cpp
+    ccl_cpp_event.cpp
     ccl_app_api_coll_attr.cpp
     ccl_app_api_comm_split_attr.cpp
+    ccl_cpp_kvs.cpp
+    ccl_cpp_stream.cpp
     ccl_cpp_utils.cpp
     ccl_empty_attr.cpp
     ccl_empty_coll_attr.cpp

@@ -56,6 +56,7 @@ set (dependencies_sources
              "${PROJECT_SOURCE_DIR}/src/ccl_cpp_utils.cpp"
              "${PROJECT_SOURCE_DIR}/src/common/log/log.cpp"
              "${PROJECT_SOURCE_DIR}/src/common/stream/stream.cpp"
+             "${PROJECT_SOURCE_DIR}/src/ccl_cpp_stream.cpp"
              "${PROJECT_SOURCE_DIR}/tests/unit/api/stubs/spinlock.cpp")
 
 if(MULTI_GPU_SUPPORT)

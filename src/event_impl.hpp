@@ -1,6 +1,12 @@
 #pragma once
 #include "ccl_types.hpp"
+#include "ccl_type_traits.hpp"
+#include "ccl_types_policy.hpp"
+
+#include "ccl_event_attr_ids.hpp"
+#include "ccl_event_attr_ids_traits.hpp"
 #include "ccl_event.hpp"
+
 #include "common/event/event.hpp"
 
 namespace ccl
@@ -28,30 +34,6 @@ event event::create_event_from_attr(event_type& native_event_handle,
     return str;
 }
 
-CCL_API event::event(event&& src) :
-        base_t(std::move(src))
-{
-}
-
-CCL_API event::event(impl_value_t&& impl) :
-        base_t(std::move(impl))
-{
-}
-
-CCL_API event::~event()
-{
-}
-
-CCL_API event& event::operator=(event&& src)
-{
-    if (src.get_impl() != this->get_impl())
-    {
-        src.get_impl().swap(this->get_impl());
-        src.get_impl().reset();
-    }
-    return *this;
-}
-
 template <event_attr_id attrId>
 CCL_API const typename details::ccl_api_type_attr_traits<event_attr_id, attrId>::return_type& event::get() const
 {
@@ -67,8 +49,4 @@ CCL_API Value event::set(const Value& v)
     return get_impl()->set_attribute_value(v, details::ccl_api_type_attr_traits<event_attr_id, attrId> {});
 }
 
-void event::build_from_params()
-{
-    get_impl()->build_from_params();
-}
 }

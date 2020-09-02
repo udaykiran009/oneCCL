@@ -1,5 +1,4 @@
 #pragma once
-//#include "ccl.hpp"
 #include "common/comm/comm_id_storage.hpp"
 #include "common/comm/atl_tag.hpp"
 #include "common/log/log.hpp"
