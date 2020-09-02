@@ -31,21 +31,13 @@ std::string comm_group::to_string() const
 {
     pimpl->to_string();
 }*/
-
-/***********************************************************************/
-
-#define COMM_CREATOR_INDEXED_INSTANTIATION_CONTAINER(type)                                         \
-template std::vector<ccl::device_communicator>                                                          \
-CCL_API ccl::comm_group::create_communicators(const type& device_ids,                              \
-                                              ccl::device_comm_split_attr_t attr);
-
-
-// container-based method force-instantiation will trigger ALL other methods instantiations
-COMM_CREATOR_INDEXED_INSTANTIATION_CONTAINER(vector_class<ccl::device_index_type>);
-COMM_CREATOR_INDEXED_INSTANTIATION_CONTAINER(list_class<ccl::device_index_type>);
-COMM_CREATOR_INDEXED_INSTANTIATION_CONTAINER(ccl::device_indices_t);
-#ifdef CCL_ENABLE_SYCL
-    COMM_CREATOR_INDEXED_INSTANTIATION_CONTAINER(cl::sycl::vector_class<cl::sycl::device>);
-#endif
-
 }
+// container-based method force-instantiation will trigger ALL other methods instantiations
+COMM_CREATOR_INDEXED_INSTANTIATION_CONTAINER(ccl::vector_class<ccl::device_index_type>);
+COMM_CREATOR_INDEXED_INSTANTIATION_CONTAINER(ccl::list_class<ccl::device_index_type>);
+COMM_CREATOR_INDEXED_INSTANTIATION_CONTAINER(ccl::device_indices_t);
+COMM_CREATOR_INDEXED_INSTANTIATION_TYPE(ccl::device_index_type);
+#ifdef CCL_ENABLE_SYCL
+    COMM_CREATOR_INDEXED_INSTANTIATION_CONTAINER(ccl::vector_class<cl::sycl::device>);
+    COMM_CREATOR_INDEXED_INSTANTIATION_TYPE(cl::sycl::device);
+#endif

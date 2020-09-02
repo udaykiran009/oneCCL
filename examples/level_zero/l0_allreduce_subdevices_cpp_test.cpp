@@ -1,3 +1,8 @@
+int main()
+{
+}
+#if 0       //TODO may be remove
+
 #include <algorithm>
 #include <iostream>
 #include <stdio.h>
@@ -346,3 +351,5 @@ int main(int argc, char** argv)
 
     return 0;
 }
+
+#endif

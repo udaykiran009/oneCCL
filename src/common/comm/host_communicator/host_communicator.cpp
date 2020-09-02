@@ -5,7 +5,7 @@
 #include "ccl_comm_split_attr.hpp"
 
 #include "comm_split_attr_creation_impl.hpp"
- 
+
 #include "common/request/request.hpp"
 #include "common/request/host_request.hpp"
 #include "coll/coll.hpp"
@@ -46,6 +46,14 @@ host_communicator::host_communicator(size_t size,
     ccl::global_data& data = ccl::global_data::get();
     comm_impl = std::shared_ptr<ccl_comm>(
             new ccl_comm(rank, size, data.comm_ids->acquire()));
+}
+
+host_communicator::host_communicator(std::shared_ptr<ccl_comm> impl) :
+    comm_impl(impl),
+    comm_attr(ccl::create_comm_split_attr()), // TODO should be ccl::environment::instance().create_comm_split_attr() call in final?
+    comm_rank(impl->rank()),
+    comm_size(impl->size())
+{
 }
 
 size_t host_communicator::rank() const

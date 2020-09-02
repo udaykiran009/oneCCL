@@ -32,9 +32,9 @@
 #include "common/comm/comm_split_common_attr.hpp"
 #include "comm_split_attr_impl.hpp"
 
-#include "environment.hpp"
-#include "device_communicator_impl.hpp"
-
+//#include "environment.hpp"
+//#include "device_communicator_impl.hpp"
+#include "common/comm/l0/comm_context_storage.hpp"
 #include "../stubs/kvs.hpp"
 
 

@@ -1,3 +1,7 @@
+int main()
+{
+}
+#if 0
 #include <algorithm>
 #include <iostream>
 #include <stdio.h>
@@ -451,3 +455,4 @@ int main(int argc, char** argv) {
 
     return 0;
 }
+#endif

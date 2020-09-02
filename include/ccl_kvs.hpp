@@ -34,6 +34,8 @@ public:
              const vector_class<char>& data) const override;
 
 private:
+    friend class environment;
+
     kvs();
     kvs(const addr_t& addr);
 

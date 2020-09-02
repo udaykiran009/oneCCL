@@ -34,8 +34,10 @@
 #include "comm_split_attr_impl.hpp"
 #include "comm_split_attr_creation_impl.hpp"
 
-#include "environment.hpp"
-#include "device_communicator_impl.hpp"
+//#include "environment.hpp"
+#include "ccl_device_communicator.hpp"
+#include "common/comm/l0/comm_context_storage.hpp"
+
 #include "event_impl.hpp"
 #include "stream_impl.hpp"
 
@@ -48,6 +50,8 @@
 //TODO
 #include "common/comm/comm.hpp"
 
+#include "common/comm/l0/comm_context.hpp"
+#include "device_communicator_impl.hpp"
 namespace device_communicator_suite
 {
 
@@ -102,7 +106,7 @@ TEST(device_communicator_api, device_comm_from_sycl_devices_single_thread)
 
         try
         {
-            ASSERT_EQ(dev_comm.size(), in_total_devices_size);
+            EXPECT_EQ(dev_comm.size(), in_total_devices_size);
         }
         catch(...)
         {
@@ -111,7 +115,7 @@ TEST(device_communicator_api, device_comm_from_sycl_devices_single_thread)
 
         try
         {
-            ASSERT_EQ(dev_comm.rank(), curr_rank);
+            EXPECT_EQ(dev_comm.rank(), curr_rank);
         }
         catch(...)
         {
@@ -123,7 +127,7 @@ TEST(device_communicator_api, device_comm_from_sycl_devices_single_thread)
         void *tmp = nullptr;
         ccl::vector_class<size_t> recv_counts;
         ccl::datatype dtype{ccl::datatype::int8};
-        dev_comm.allgatherv(tmp, 0, tmp, recv_counts, dtype);
+        dev_comm.allgatherv((const void*) tmp, size_t(0), tmp, recv_counts, dtype, ccl::default_allgather_attr);
     }
 }
 
@@ -165,7 +169,7 @@ void user_thread_function(size_t total_devices_count, const rank_device_containe
 
         try
         {
-            ASSERT_EQ(dev_comm.size(), total_devices_count);
+            EXPECT_EQ(dev_comm.size(), total_devices_count);
         }
         catch(...)
         {
@@ -174,7 +178,7 @@ void user_thread_function(size_t total_devices_count, const rank_device_containe
 
         try
         {
-            ASSERT_EQ(dev_comm.rank(), curr_rank);
+            EXPECT_EQ(dev_comm.rank(), curr_rank);
         }
         catch(...)
         {
