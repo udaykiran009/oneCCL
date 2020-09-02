@@ -14,7 +14,7 @@ TEST_F(ring_bcast_single_device_fixture, ring_bcast_single_device_mt) {
     // test case data
     const size_t buffer_size = 512;
     const size_t num_thread = 5;
-    constexpr size_t mem_group_count = 3;
+    constexpr size_t mem_group_count = 1; //3;
     constexpr size_t flag_group_count = 3;
 
     handles_storage<native_type> memory_storage(mem_group_count * num_thread);
@@ -55,27 +55,29 @@ TEST_F(ring_bcast_single_device_fixture, ring_bcast_single_device_mt) {
 
             //allocate flags & memory
             // memory
-            auto mem_send = device.alloc_memory<native_type>(buffer_size, sizeof(native_type));
-            auto mem_recv = device.alloc_memory<native_type>(buffer_size, sizeof(native_type));
-            auto temp_recv = device.alloc_memory<native_type>(buffer_size, sizeof(native_type));
+            auto mem_buf = device.alloc_memory<native_type>(buffer_size, sizeof(native_type));
+            // auto mem_send = device.alloc_memory<native_type>(buffer_size, sizeof(native_type));
+            // auto mem_recv = device.alloc_memory<native_type>(buffer_size, sizeof(native_type));
+            // auto temp_recv = device.alloc_memory<native_type>(buffer_size, sizeof(native_type));
             if (thread_idx == root) {
-                mem_send.enqueue_write_sync(send_values);
+                // mem_send.enqueue_write_sync(send_values);
+                mem_buf.enqueue_write_sync(send_values);
             }
             else {
-                mem_send.enqueue_write_sync(recv_values);
+                // mem_send.enqueue_write_sync(recv_values);
+                mem_buf.enqueue_write_sync(recv_values);
             }
-            mem_recv.enqueue_write_sync(recv_values);
-            temp_recv.enqueue_write_sync(recv_values);
+            // mem_recv.enqueue_write_sync(recv_values);
+            // temp_recv.enqueue_write_sync(recv_values);
 
             /* fill array in specific order
              * Left: l_send, l_recv, l_tmp_recv, r_tmp_recv
              * Right: r_send, r_recv, r_tmp_recv, l_tmp_recv
              */
-            memory_storage.register_shared_data(thread_idx,
-                                                num_thread,
-                                                std::move(mem_send),
-                                                std::move(mem_recv),
-                                                std::move(temp_recv));
+            memory_storage.register_shared_data(thread_idx, num_thread, std::move(mem_buf));
+            // std::move(mem_send),
+            // std::move(mem_recv),
+            // std::move(temp_recv));
 
             // flags
             auto left_wrote_2_me_flag = device.alloc_memory<int>(1, sizeof(int));
@@ -179,7 +181,8 @@ TEST_F(ring_bcast_single_device_fixture, ring_bcast_single_device_mt) {
 
                 // bind rank, size, buffer_size
                 size_t i = 0;
-                std::array<int, 4> comm_offset{ 0, 1, 2, 11 };
+                // std::array<int, 4> comm_offset{ 0, 1, 2, 11 };
+                std::array<int, 4> comm_offset{ 0, 1, 2, 10 };
                 UT_ASSERT(comm_offset.size() == comm_handles.size(), "comm_offset != comm_handles");
                 for (auto& comm : comm_handles) {
                     out << "index: " << comm_offset[i] << ": " << comm << std::endl;
@@ -198,7 +201,8 @@ TEST_F(ring_bcast_single_device_fixture, ring_bcast_single_device_mt) {
                 // bind l_send, l_recv, l_tmp, , , r_tmp
                 // bind l_send, l_recv, , , r_recv, ,
                 i = 0;
-                std::array<int, mem_group_count * 2> mem_offset{ 3, 4, -1, -1, 8, -1 };
+                // std::array<int, mem_group_count * 2> mem_offset{ 3, 4, -1, -1, 8, -1 };
+                std::array<int, mem_group_count * 2> mem_offset{ 3, 7 };
                 out << "thread_idx: " << thread_idx << ", mem_handles: \n";
                 for (auto& mem : mem_handles) {
                     if (i >= mem_group_count * 2) {
@@ -224,7 +228,8 @@ TEST_F(ring_bcast_single_device_fixture, ring_bcast_single_device_mt) {
 
                 // bind left_wrote_2_me_flag, read_for_receive_flag, local_barrier_flag
                 i = 0;
-                std::array<int, flag_group_count * 2> flag_offset{ 5, 6, 7, 9, 10, -1 };
+                // std::array<int, flag_group_count * 2> flag_offset{ 5, 6, 7, 9, 10, -1 };
+                std::array<int, flag_group_count * 2> flag_offset{ 4, 5, 6, 8, 9, -1 };
                 out << "thread_idx: " << thread_idx << ", flag_handles: \n";
                 for (auto& flag : flag_handles) {
                     if (i >= flag_group_count * 2) {
@@ -330,16 +335,16 @@ TEST_F(ring_bcast_single_device_fixture, ring_bcast_single_device_mt) {
             };
 
             memory_storage.check_results(
-                thread_idx, output, 1, lambda, root, thread_idx, buffer_size);
+                thread_idx, output, 0, lambda, root, thread_idx, buffer_size);
         }
     }
     catch (check_on_exception& ex) {
         output << "Check results: \n";
         //printout
-        output << "Send memory:" << std::endl;
-        memory_storage.dump_by_index(output, 0 /*send_mem*/);
+        // output << "Send memory:" << std::endl;
+        // memory_storage.dump_by_index(output, 0 /*send_mem*/);
         output << "\nRecv memory:" << std::endl;
-        memory_storage.dump_by_index(output, 1 /*recv_mem*/);
+        memory_storage.dump_by_index(output, 0 /*recv_mem*/);
 
         std::stringstream ss;
         ss << ex.what() << ", But expected: " << corr_val << std::endl;

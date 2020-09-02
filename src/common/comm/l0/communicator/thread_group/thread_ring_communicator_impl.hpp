@@ -194,8 +194,81 @@ ccl::communicator::coll_request_t thread_device_group_ring_communicator::bcast_i
     size_t root,
     const ccl::coll_attr* attr,
     ccl::stream::impl_t& stream) {
-    throw ccl::ccl_error(std::string(__PRETTY_FUNCTION__) + " - is not implemented");
-    return {};
+    using namespace native;
+
+    static constexpr ccl::device_group_split_type group_id = base_t::topology_type();
+    static constexpr ccl::device_topology_type class_id = base_t::topology_class();
+
+    if (!is_ready()) {
+        throw ccl::ccl_error(std::string(
+            "Device communicator for group_id: " + ::to_string(group_id) +
+            " is not ready yet. Not all сommunicators are created in group. Please create them before usage"));
+    }
+
+    size_t comm_rank = rank();
+    size_t ring_index = 0;
+    LOG_DEBUG("communicator for device idx: ",
+              get_device_path(),
+              ", rank idx: ",
+              comm_rank,
+              ", ring_index :",
+              ring_index);
+
+    //TODO make const!
+    ccl_buffer entry_buffer(&buf, count * sizeof(buffer_type), 0, ccl_buffer_type::INDIRECT);
+
+    using community_t = typename device_community_container<class_id>::element_type;
+    community_t community = device_community_impl.get_topology(ring_index);
+
+    const auto& in_process_gpu_storage = community->get_devices<ccl_gpu_comm>();
+    const auto& virtual_process_gpu_storage = community->get_devices<ccl_virtual_gpu_comm>();
+
+    auto& ipc_gpu_storage = community->get_devices<ccl_ipc_gpu_comm>();
+    (void)ipc_gpu_storage;
+
+    thread_group_scheduler::thread_schedule_ptr schedule;
+    //source for collective operation is real gpu or virtual gpu
+    auto real_device_it = in_process_gpu_storage.find(comm_rank);
+    if (real_device_it != in_process_gpu_storage.end()) {
+        LOG_DEBUG("Invoke: ", real_device_it->second->to_string());
+
+        using gpu_bcast_entry = l0_bcast_typed_entry<buffer_type, ccl_gpu_comm, group_id>;
+
+        schedule = ctx->scheduler_impl
+                       ->submit_entry<gpu_bcast_entry, ccl_sched_add_back, group_id, class_id>(
+                           thread_id,
+                           *community,
+                           real_device_it->second,
+                           entry_buffer,
+                           count,
+                           root,
+                           stream);
+    }
+    else {
+        auto virtual_device_it = virtual_process_gpu_storage.find(comm_rank);
+        if (virtual_device_it != virtual_process_gpu_storage.end()) {
+            LOG_DEBUG("Invoke: ", virtual_device_it->second->to_string());
+            using gpu_bcast_entry =
+                l0_bcast_typed_entry<buffer_type, ccl_virtual_gpu_comm, group_id>;
+
+            schedule = ctx->scheduler_impl
+                           ->submit_entry<gpu_bcast_entry, ccl_sched_add_back, group_id, class_id>(
+                               thread_id,
+                               *community,
+                               virtual_device_it->second,
+                               entry_buffer,
+                               count,
+                               root,
+                               stream);
+        }
+    }
+
+    //if sched is not ready - send NULL
+    if (schedule) {
+        LOG_DEBUG("Device group finalized");
+    }
+    return std::unique_ptr<ccl::gpu_shared_request_impl>(
+        new ccl::gpu_shared_request_impl(std::move(schedule)));
 }
 
 template <class buffer_type>

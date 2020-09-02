@@ -75,8 +75,9 @@ __kernel void bcast_execution_float(size_t my_rank, //0
                                     size_t comm_size, //1
                                     size_t elems_count, //2
 
-                                    const __global float4* input_buffer, //3
-                                    __global float4* output_buffer, //4
+                                    // const __global float4* input_buffer, //3
+                                    // __global float4* output_buffer, //4
+                                    __global float4* buffer, //3
 
                                     __global volatile int* left_wrote_to_me_flag, //5
                                     __global volatile int* i_ready_to_receive_flag, //6
@@ -112,17 +113,18 @@ __kernel void bcast_execution_float(size_t my_rank, //0
 
         for (size_t i = 0; i < segment_count; i++) {
             right_buffer[work_group_size * i + work_item_id] =
-                input_buffer[work_group_size * i + work_item_id];
+                buffer[work_group_size * i + work_item_id];
+            // input_buffer[work_group_size * i + work_item_id];
         }
         barrier(CLK_GLOBAL_MEM_FENCE);
 
         I_SENT(i_send_to_right_flag);
 
-        for (size_t i = 0; i < segment_count; i++) {
-            output_buffer[work_group_size * i + work_item_id] =
-                input_buffer[work_group_size * i + work_item_id];
-        }
-        barrier(CLK_GLOBAL_MEM_FENCE);
+        // for (size_t i = 0; i < segment_count; i++) {
+        //     output_buffer[work_group_size * i + work_item_id] =
+        //         input_buffer[work_group_size * i + work_item_id];
+        // }
+        // barrier(CLK_GLOBAL_MEM_FENCE);
     }
     else {
         PUT_READY_TO_RECEIVE(i_ready_to_receive_flag);
@@ -134,7 +136,8 @@ __kernel void bcast_execution_float(size_t my_rank, //0
             barrier(CLK_LOCAL_MEM_FENCE);
             for (size_t i = 0; i < segment_count; i++) {
                 right_buffer[work_group_size * i + work_item_id] =
-                    output_buffer[work_group_size * i + work_item_id];
+                    buffer[work_group_size * i + work_item_id];
+                // output_buffer[work_group_size * i + work_item_id];
             }
             barrier(CLK_GLOBAL_MEM_FENCE);
             I_SENT(i_send_to_right_flag);
@@ -253,5 +256,60 @@ __kernel void bcast_execution_uint64_t(size_t my_rank,
                                        __global ulong4* right_temp_buffer,
                                        __global volatile int* i_send_to_right_flag,
                                        __global volatile int* right_ready_to_recv_flag) {
+    return;
+}
+
+// numa
+__kernel void bcast_execution_numa_char(size_t my_rank,
+                                        size_t comm_size,
+                                        size_t elems_count,
+                                        const __global char4* input_buffer,
+                                        __global char4* output_buffer,
+
+                                        __global char4* tmp_buffer,
+                                        __global volatile int* left_wrote_to_me_flag,
+                                        __global volatile int* i_ready_to_receive_flag,
+
+                                        __global volatile int* local_barrier_flag,
+
+                                        __global char4* right_temp_buffer,
+                                        __global volatile int* i_send_to_right_flag,
+                                        __global volatile int* right_ready_to_recv_flag) {
+    return;
+}
+
+__kernel void bcast_execution_numa_int(size_t my_rank,
+                                       size_t comm_size,
+                                       size_t elems_count,
+                                       const __global int4* input_buffer,
+                                       __global int4* output_buffer,
+
+                                       __global int4* tmp_buffer,
+                                       __global volatile int* left_wrote_to_me_flag,
+                                       __global volatile int* i_ready_to_receive_flag,
+
+                                       __global volatile int* local_barrier_flag,
+
+                                       __global int4* right_temp_buffer,
+                                       __global volatile int* i_send_to_right_flag,
+                                       __global volatile int* right_ready_to_recv_flag) {
+    return;
+}
+
+__kernel void bcast_execution_numa_bfp16(size_t my_rank,
+                                         size_t comm_size,
+                                         size_t elems_count,
+                                         const __global bfp16* input_buffer,
+                                         __global bfp16* output_buffer,
+
+                                         __global bfp16* tmp_buffer,
+                                         __global volatile int* left_wrote_to_me_flag,
+                                         __global volatile int* i_ready_to_receive_flag,
+
+                                         __global volatile int* local_barrier_flag,
+
+                                         __global ulong4* right_temp_buffer,
+                                         __global volatile int* i_send_to_right_flag,
+                                         __global volatile int* right_ready_to_recv_flag) {
     return;
 }

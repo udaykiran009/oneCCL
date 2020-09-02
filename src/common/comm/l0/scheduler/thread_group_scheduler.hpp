@@ -2,6 +2,7 @@
 #include "common/utils/spinlock.hpp"
 #include "sched/gpu_concurrent_sched.hpp"
 #include "sched/entry/l0/l0_allreduce_typed_entry.hpp"
+#include "sched/entry/l0/l0_bcast_typed_entry.hpp"
 //#include "sched/entry/l0/l0_allgather_handles_entry.hpp"
 #include "sched/entry/factory/entry_factory.hpp"
 #include "common/comm/l0/device_community.hpp"
