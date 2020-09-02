@@ -3,7 +3,6 @@
 #include <initializer_list>
 #include <iterator>
 #include "ccl_types.hpp"
-//#include "ccl.hpp"
 #include "common/datatype/datatype.hpp"
 #include "comp/comp.hpp"
 #include "common/comm/l0/devices/devices_declaration.hpp"

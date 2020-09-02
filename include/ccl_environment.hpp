@@ -1,11 +1,5 @@
 #pragma once
-#include "ccl_environment.hpp"
-#ifdef MULTI_GPU_SUPPORT
-#include "ccl_gpu_modules.h"
-#include "gpu_communicator.hpp"
-#endif /* MULTI_GPU_SUPPORT */
 
-#if 0
 #include <memory>
 #include <ostream>
 #include <utility>
@@ -131,16 +125,38 @@ public:
                                      const size_t rank,
                                      shared_ptr_class<kvs_interface> kvs) const;
 
+    template <class coll_attribute_type,
+              class ...attr_value_pair_t>
+    coll_attribute_type create_op_attr(attr_value_pair_t&&...avps) const
+    {
+        auto coll_attr = create_postponed_api_type<coll_attribute_type>();
+        int expander [] {(coll_attr.template set<attr_value_pair_t::idx()>(avps.val()), 0)...};
+        (void)expander;
+        return coll_attr;
+    }
+
     /**
      * Creates @attr which used to split host communicator
      */
     template <class ...attr_value_pair_t>
-    comm_split_attr_t create_comm_split_attr(attr_value_pair_t&&...avps) const;
+    comm_split_attr_t create_comm_split_attr(attr_value_pair_t&&...avps) const
+    {
+        auto split_attr = create_postponed_api_type<comm_split_attr_t>();
+        int expander [] {(split_attr.template set<attr_value_pair_t::idx()>(avps.val()), 0)...};
+        (void)expander;
+        return split_attr;
+    }
 
 #ifdef MULTI_GPU_SUPPORT
 
     template <class ...attr_value_pair_t>
-    device_comm_split_attr_t create_device_comm_split_attr(attr_value_pair_t&&...avps) const;
+    device_comm_split_attr_t create_device_comm_split_attr(attr_value_pair_t&&...avps) const
+    {
+        auto split_attr = create_postponed_api_type<device_comm_split_attr_t>();
+        int expander [] {(split_attr.template set<attr_value_pair_t::idx()>(avps.val()), 0)...};
+        (void)expander;
+        return split_attr;
+    }
 
     /**
      * Creates a new device communicators with user supplied size, device indices and kvs.
@@ -173,7 +189,7 @@ public:
         const size_t cluster_devices_size, /*global devics count*/
         const vector_class<pair_class<rank_t, DeviceType>>& local_rank_device_map,
         ContextType& context,
-        shared_ptr_class<kvs_interface> kvs);
+        shared_ptr_class<kvs_interface> kvs) const;
 
 
     template<class DeviceType,
@@ -182,7 +198,7 @@ public:
         const size_t cluster_devices_size, /*global devics count*/
         const map_class<rank_t, DeviceType>& local_rank_device_map,
         ContextType& context,
-        shared_ptr_class<kvs_interface> kvs);
+        shared_ptr_class<kvs_interface> kvs) const;
 
     /**
      * Splits device communicators according to attributes.
@@ -207,12 +223,26 @@ public:
     stream create_stream(native_stream_type& native_stream, native_context_type& native_ctx);
 
     template <class ...attr_value_pair_t>
-    stream create_stream_from_attr(typename unified_device_type::ccl_native_t device, attr_value_pair_t&&...avps);
+    stream create_stream_from_attr(typename unified_device_type::ccl_native_t device, attr_value_pair_t&&...avps)
+    {
+        stream str = create_postponed_api_type<stream>(device);
+        int expander [] {(str.template set<attr_value_pair_t::idx()>(avps.val()), 0)...};
+        (void) expander;
+        str.build_from_params();
+        return str;
+    }
 
     template <class ...attr_value_pair_t>
     stream create_stream_from_attr(typename unified_device_type::ccl_native_t device,
                                typename unified_device_context_type::ccl_native_t context,
-                               attr_value_pair_t&&...avps);
+                               attr_value_pair_t&&...avps)
+    {
+        stream str = create_postponed_api_type<stream>(device, context);
+        int expander [] {(str.template set<attr_value_pair_t::idx()>(avps.val()), 0)...};
+        (void) expander;
+        str.build_from_params();
+        return str;
+    }
 
     /**
      * Creates a new event from @native_event_type
@@ -234,13 +264,9 @@ public:
 
 private:
     environment();
+
+    template<class ccl_api_type, class ...args_type>
+    ccl_api_type create_postponed_api_type(args_type... args) const;
 };
 
 } // namespace ccl
-
-#ifdef MULTI_GPU_SUPPORT
-#include "ccl_gpu_modules.h"
-#include "gpu_communicator.hpp"
-#endif /* MULTI_GPU_SUPPORT */
-
-#endif

@@ -1,5 +1,11 @@
 #pragma once
 #include "ccl_types.hpp"
+#include "ccl_aliases.hpp"
+
+#include "ccl_type_traits.hpp"
+#include "ccl_types_policy.hpp"
+#include "ccl_stream_attr_ids.hpp"
+#include "ccl_stream_attr_ids_traits.hpp"
 #include "ccl_stream.hpp"
 #include "common/stream/stream.hpp"
 
@@ -44,39 +50,6 @@ stream stream::create_stream_from_attr(typename unified_device_type::ccl_native_
     return str;
 }
 
-CCL_API stream::stream(const typename details::ccl_api_type_attr_traits<stream_attr_id, stream_attr_id::version>::type& version):
-        base_t(impl_value_t())
-{
-}
-
-CCL_API stream::stream(stream&& src) :
-        base_t(std::move(src))
-{
-}
-
-CCL_API stream::stream(impl_value_t&& impl) :
-        base_t(std::move(impl))
-{
-}
-
-CCL_API stream::~stream()
-{
-}
-
-CCL_API stream::stream(const stream& src) :
-        base_t(src)
-{
-}
-
-CCL_API stream& stream::operator= (const stream&src)
-{
-    if (src.get_impl() != this->get_impl())
-    {
-        this->get_impl() = src.get_impl();
-    }
-    return *this;
-}
-
 template <stream_attr_id attrId>
 CCL_API const typename details::ccl_api_type_attr_traits<stream_attr_id, attrId>::return_type& stream::get() const
 {
@@ -87,18 +60,29 @@ CCL_API const typename details::ccl_api_type_attr_traits<stream_attr_id, attrId>
 template<stream_attr_id attrId,
              class Value/*,
              typename T*/>
-CCL_API Value stream::set(const Value& v)
+CCL_API typename details::ccl_api_type_attr_traits<stream_attr_id, attrId>::return_type stream::set(const Value& v)
 {
     return get_impl()->set_attribute_value(v, details::ccl_api_type_attr_traits<stream_attr_id, attrId> {});
 }
 
-void stream::build_from_params()
-{
-    get_impl()->build_from_params();
-}
 /*
 stream::stream(const typename details::ccl_api_type_attr_traits<stream_attr_id, stream_attr_id::version>::type& version) :
         base_t(stream_provider_dispatcher::create(version))
 {
 }*/
 }
+
+
+/***************************TypeGenerations*********************************************************/
+#define API_STREAM_FORCE_INSTANTIATION_SET(IN_attrId, IN_Value)                                     \
+template                                                                                            \
+CCL_API typename ccl::details::ccl_api_type_attr_traits<ccl::stream_attr_id, IN_attrId>::return_type ccl::stream::set<IN_attrId, IN_Value>(const IN_Value& v);
+
+#define API_STREAM_FORCE_INSTANTIATION_GET(IN_attrId)                                  \
+template                                                                                            \
+CCL_API const typename ccl::details::ccl_api_type_attr_traits<ccl::stream_attr_id, IN_attrId>::return_type& ccl::stream::get<IN_attrId>() const;
+
+
+#define API_STREAM_FORCE_INSTANTIATION(IN_attrId, IN_Value)                       \
+API_STREAM_FORCE_INSTANTIATION_SET(IN_attrId, IN_Value)                           \
+API_STREAM_FORCE_INSTANTIATION_GET(IN_attrId)

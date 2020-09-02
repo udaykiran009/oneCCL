@@ -82,7 +82,8 @@ public:
     template <class ...attr_value_pair_t>
     stream create_stream(attr_value_pair_t&&...avps)
     {
-        return stream::create_stream_from_attr(get_device(), get_context(), std::forward<attr_value_pair_t>(avps)...);
+       // return stream::create_stream_from_attr(get_device(), get_context(), std::forward<attr_value_pair_t>(avps)...);
+       throw;
     }
 
 
