@@ -6,7 +6,9 @@ set (EXTENSIONS_SRC)
 
 if(MULTI_GPU_SUPPORT)
     list (APPEND EXTENSIONS_SRC
+                    ccl_empty_stream.cpp
                     ccl_cpp_gpu_api.cpp
+                    ccl_cpp_device_communicator.cpp
                     ccl_gpu_modules.cpp
 
                     native_device_api/l0/base.cpp
@@ -19,6 +21,11 @@ if(MULTI_GPU_SUPPORT)
                     sched/gpu_sched.cpp
                     sched/gpu_concurrent_sched.cpp
                     common/request/gpu_request.cpp
+
+                    common/comm/l0/comm_context.cpp
+                    common/comm/l0/comm_context_storage.cpp
+
+                    common/event/event.cpp
 
                     common/comm/l0/devices/ccl_gpu_comm.cpp
                     common/comm/l0/devices/ccl_virtual_gpu_comm.cpp
@@ -50,7 +57,23 @@ endif(MULTI_GPU_SUPPORT)
 set(CCL_SRC
     ccl.cpp
     ccl_cpp_api.cpp
+    ccl_cpp_communicator.cpp
+    ccl_app_api_coll_attr.cpp
+    ccl_app_api_comm_split_attr.cpp
+    ccl_cpp_utils.cpp
+    ccl_empty_attr.cpp
+    ccl_empty_coll_attr.cpp
     atl/atl.cpp
+    coll/coll_common_attributes.cpp
+    coll/ccl_allgather_op_attr.cpp
+    coll/ccl_allreduce_op_attr.cpp
+    coll/ccl_alltoall_op_attr.cpp
+    coll/ccl_alltoallv_op_attr.cpp
+    coll/ccl_bcast_op_attr.cpp
+    coll/ccl_reduce_op_attr.cpp
+    coll/ccl_reduce_scatter_op_attr.cpp
+    coll/ccl_sparse_allreduce_op_attr.cpp
+    coll/ccl_barrier_op_attr.cpp
     coll/algorithms/allgatherv.cpp
     coll/algorithms/allreduce/allreduce.cpp
     coll/algorithms/allreduce/allreduce_2d.cpp

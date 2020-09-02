@@ -155,6 +155,8 @@ protected:
     using parent_t = derived_t;
     using acc_policy_t = access_policy_t<impl_t>;
 
+    friend struct access_policy_t<impl_t>;
+
     ccl_api_base_movable(impl_value_t&& impl) : pimpl(std::move(impl)) {}
 
     ccl_api_base_movable(ccl_api_base_movable&& src) {

@@ -1,6 +1,8 @@
 #pragma once
 
 #include "common/comm/comm.hpp"
+#include "ccl_types.hpp"
+#include "ccl_types_policy.hpp"
 #include "ccl_comm_split_attr_ids.hpp"
 #include "ccl_comm_split_attr_ids_traits.hpp"
 #include "ccl_comm_split_attr.hpp"
@@ -234,6 +236,7 @@ public:
     host_communicator(size_t size,
                       size_t rank,
                       shared_ptr_class<kvs_interface> kvs);
+    host_communicator(std::shared_ptr<ccl_comm> impl);
     host_communicator(host_communicator& src) = delete;
     host_communicator(host_communicator&& src) = default;
     host_communicator& operator=(host_communicator& src) = delete;

@@ -18,4 +18,10 @@ size_t host_communicator::size() const
 void host_communicator::barrier_impl()
 {
 }
+
+request_t
+host_communicator::barrier_impl(const barrier_attr_t& attr)
+{
+    return {};
+}
 }

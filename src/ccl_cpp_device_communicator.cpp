@@ -1,0 +1,109 @@
+#include "ccl_types.hpp"
+#include "ccl_aliases.hpp"
+
+#include "ccl_type_traits.hpp"
+#include "ccl_types_policy.hpp"
+
+#include "ccl_coll_attr_ids.hpp"
+#include "ccl_coll_attr_ids_traits.hpp"
+#include "ccl_coll_attr.hpp"
+
+#include "ccl_comm_split_attr_ids.hpp"
+#include "ccl_comm_split_attr_ids_traits.hpp"
+#include "ccl_comm_split_attr.hpp"
+
+
+#include "ccl_event_attr_ids.hpp"
+#include "ccl_event_attr_ids_traits.hpp"
+#include "ccl_event.hpp"
+
+#include "ccl_stream_attr_ids.hpp"
+#include "ccl_stream_attr_ids_traits.hpp"
+#include "ccl_stream.hpp"
+
+#include "ccl_request.hpp"
+
+
+#include "ccl_device_communicator.hpp"
+#include "common/comm/l0/comm_context_storage.hpp"
+
+#include "common/global/global.hpp"
+
+//TODO
+#include "common/comm/comm.hpp"
+
+#include "common/comm/l0/comm_context.hpp"
+#include "device_communicator_impl.hpp"
+
+
+#ifndef COMMA
+#define COMMA ,
+#endif
+
+//API force instantiations for factory methods
+#ifdef CCL_ENABLE_SYCL
+API_DEVICE_COMM_CREATE_WO_RANK_EXPLICIT_INSTANTIATION(cl::sycl::device, cl::sycl::context)
+API_DEVICE_COMM_CREATE_WITH_RANK_IN_VECTOR_EXPLICIT_INSTANTIATION(cl::sycl::device, cl::sycl::context)
+API_DEVICE_COMM_CREATE_WITH_RANK_IN_MAP_EXPLICIT_INSTANTIATION(cl::sycl::device, cl::sycl::context)
+#endif
+
+// API force instantiations for Operations
+API_DEVICE_COMM_OP_PTR_EXPLICIT_INSTANTIATION(char);
+API_DEVICE_COMM_OP_PTR_EXPLICIT_INSTANTIATION(int);
+API_DEVICE_COMM_OP_PTR_EXPLICIT_INSTANTIATION(int64_t);
+API_DEVICE_COMM_OP_PTR_EXPLICIT_INSTANTIATION(uint64_t);
+API_DEVICE_COMM_OP_PTR_EXPLICIT_INSTANTIATION(float);
+API_DEVICE_COMM_OP_PTR_EXPLICIT_INSTANTIATION(double);
+
+#ifdef CCL_ENABLE_SYCL
+    API_DEVICE_COMM_OP_REF_EXPLICIT_INSTANTIATION(cl::sycl::buffer<char COMMA 1>);
+    API_DEVICE_COMM_OP_REF_EXPLICIT_INSTANTIATION(cl::sycl::buffer<int COMMA 1>);
+    API_DEVICE_COMM_OP_REF_EXPLICIT_INSTANTIATION(cl::sycl::buffer<int64_t COMMA 1>);
+    API_DEVICE_COMM_OP_REF_EXPLICIT_INSTANTIATION(cl::sycl::buffer<uint64_t COMMA 1>);
+    API_DEVICE_COMM_OP_REF_EXPLICIT_INSTANTIATION(cl::sycl::buffer<float COMMA 1>);
+    API_DEVICE_COMM_OP_REF_EXPLICIT_INSTANTIATION(cl::sycl::buffer<double COMMA 1>);
+#endif //CCL_ENABLE_SYCL
+
+API_DEVICE_COMM_SPARSE_OP_PTR_EXPLICIT_INSTANTIATION(char, char);
+API_DEVICE_COMM_SPARSE_OP_PTR_EXPLICIT_INSTANTIATION(char, int);
+API_DEVICE_COMM_SPARSE_OP_PTR_EXPLICIT_INSTANTIATION(char, ccl::bfp16);
+API_DEVICE_COMM_SPARSE_OP_PTR_EXPLICIT_INSTANTIATION(char, float);
+API_DEVICE_COMM_SPARSE_OP_PTR_EXPLICIT_INSTANTIATION(char, double);
+API_DEVICE_COMM_SPARSE_OP_PTR_EXPLICIT_INSTANTIATION(char, int64_t);
+API_DEVICE_COMM_SPARSE_OP_PTR_EXPLICIT_INSTANTIATION(char, uint64_t);
+API_DEVICE_COMM_SPARSE_OP_PTR_EXPLICIT_INSTANTIATION(int, char);
+API_DEVICE_COMM_SPARSE_OP_PTR_EXPLICIT_INSTANTIATION(int, int);
+API_DEVICE_COMM_SPARSE_OP_PTR_EXPLICIT_INSTANTIATION(int, ccl::bfp16);
+API_DEVICE_COMM_SPARSE_OP_PTR_EXPLICIT_INSTANTIATION(int, float);
+API_DEVICE_COMM_SPARSE_OP_PTR_EXPLICIT_INSTANTIATION(int, double);
+API_DEVICE_COMM_SPARSE_OP_PTR_EXPLICIT_INSTANTIATION(int, int64_t);
+API_DEVICE_COMM_SPARSE_OP_PTR_EXPLICIT_INSTANTIATION(int, uint64_t);
+API_DEVICE_COMM_SPARSE_OP_PTR_EXPLICIT_INSTANTIATION(int64_t, char);
+API_DEVICE_COMM_SPARSE_OP_PTR_EXPLICIT_INSTANTIATION(int64_t, int);
+API_DEVICE_COMM_SPARSE_OP_PTR_EXPLICIT_INSTANTIATION(int64_t, ccl::bfp16);
+API_DEVICE_COMM_SPARSE_OP_PTR_EXPLICIT_INSTANTIATION(int64_t, float);
+API_DEVICE_COMM_SPARSE_OP_PTR_EXPLICIT_INSTANTIATION(int64_t, double);
+API_DEVICE_COMM_SPARSE_OP_PTR_EXPLICIT_INSTANTIATION(int64_t, int64_t);
+API_DEVICE_COMM_SPARSE_OP_PTR_EXPLICIT_INSTANTIATION(int64_t, uint64_t);
+API_DEVICE_COMM_SPARSE_OP_PTR_EXPLICIT_INSTANTIATION(uint64_t, char);
+API_DEVICE_COMM_SPARSE_OP_PTR_EXPLICIT_INSTANTIATION(uint64_t, int);
+API_DEVICE_COMM_SPARSE_OP_PTR_EXPLICIT_INSTANTIATION(uint64_t, ccl::bfp16);
+API_DEVICE_COMM_SPARSE_OP_PTR_EXPLICIT_INSTANTIATION(uint64_t, float);
+API_DEVICE_COMM_SPARSE_OP_PTR_EXPLICIT_INSTANTIATION(uint64_t, double);
+API_DEVICE_COMM_SPARSE_OP_PTR_EXPLICIT_INSTANTIATION(uint64_t, int64_t);
+API_DEVICE_COMM_SPARSE_OP_PTR_EXPLICIT_INSTANTIATION(uint64_t, uint64_t);
+
+#ifdef CCL_ENABLE_SYCL
+    /*
+    API_DEVICE_COMM_SPARSE_OP_REF_EXPLICIT_INSTANTIATION(cl::sycl::buffer<int COMMA 1>,
+                                                      cl::sycl::buffer<float COMMA 1>);
+    API_DEVICE_COMM_SPARSE_OP_REF_EXPLICIT_INSTANTIATION(cl::sycl::buffer<int COMMA 1>,
+                                                      cl::sycl::buffer<ccl::bfp16 COMMA 1>);
+
+    API_DEVICE_COMM_SPARSE_OP_REF_EXPLICIT_INSTANTIATION(cl::sycl::buffer<int64_t COMMA 1>,
+                                                      cl::sycl::buffer<float COMMA 1>);
+    API_DEVICE_COMM_SPARSE_OP_REF_EXPLICIT_INSTANTIATION(cl::sycl::buffer<int64_t COMMA 1>,
+                                                      cl::sycl::buffer<ccl::bfp16 COMMA 1>);
+    */
+#endif //CCL_ENABLE_SYCL
+#undef COMMA

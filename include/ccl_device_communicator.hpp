@@ -82,7 +82,7 @@ public:
     template <class ...attr_value_pair_t>
     stream create_stream(attr_value_pair_t&&...avps)
     {
-        return create_stream_from_attr(get_device(), get_context(), std::forward<attr_value_pair_t>(avps)...);
+        return stream::create_stream_from_attr(get_device(), get_context(), std::forward<attr_value_pair_t>(avps)...);
     }
 
 
@@ -146,13 +146,13 @@ public:
      * @return @ref ccl::request_t object to track the progress of the operation
      */
     template <class BufferType,
-              class = typename std::enable_if<ccl::is_native_type_supported<BufferType>()>::type>
+              class =  int/*typename std::enable_if<ccl::is_native_type_supported<BufferType>()>::type*/>
     request_t allgatherv(const BufferType* send_buf,
                          size_t send_count,
                          BufferType* recv_buf,
                          const vector_class<size_t>& recv_counts,
-                         const allgatherv_attr_t& attr/* = allgatherv_attr_t()*/,
-                         stream op_stream,
+                         const allgatherv_attr_t& attr = default_allgather_attr,
+                         stream op_stream = default_stream,
                          const vector_class<event>& deps = {});
 
     /**
@@ -172,8 +172,8 @@ public:
                          size_t send_count,
                          vector_class<BufferType*>& recv_bufs,
                          const vector_class<size_t>& recv_counts,
-                         const allgatherv_attr_t& attr/* = allgatherv_attr_t()*/,
-                         stream op_stream,
+                         const allgatherv_attr_t& attr = default_allgather_attr,
+                         stream op_stream = default_stream,
                          const vector_class<event>& deps = {});
 
     /**
@@ -188,13 +188,13 @@ public:
      * @return @ref ccl::request_t object to track the progress of the operation
      */
     template <class BufferObjectType,
-              class = typename std::enable_if<ccl::is_class_supported<BufferObjectType>()>::type>
+              class = int >//typename std::enable_if<ccl::is_class_supported<BufferObjectType>()>::type>
     request_t allgatherv(const BufferObjectType& send_buf,
                          size_t send_count,
                          BufferObjectType& recv_buf,
                          const vector_class<size_t>& recv_counts,
-                         const allgatherv_attr_t& attr/* = allgatherv_attr_t()*/,
-                         stream op_stream,
+                         const allgatherv_attr_t& attr = default_allgather_attr,
+                         stream op_stream = default_stream,
                          const vector_class<event>& deps = {});
 
     /**
@@ -209,13 +209,13 @@ public:
      * @return @ref ccl::request_t object to track the progress of the operation
      */
     template <class BufferObjectType,
-              class = typename std::enable_if<ccl::is_class_supported<BufferObjectType>()>::type>
+              class = int>//typename std::enable_if<ccl::is_class_supported<BufferObjectType>()>::type>
     request_t allgatherv(const BufferObjectType& send_buf,
                          size_t send_count,
-                         vector_class<BufferObjectType&>& recv_bufs,
+                         vector_class<reference_wrapper_class<BufferObjectType>>& recv_bufs,
                          const vector_class<size_t>& recv_counts,
-                         const allgatherv_attr_t& attr/* = allgatherv_attr_t()*/,
-                         stream op_stream,
+                         const allgatherv_attr_t& attr = default_allgather_attr,
+                         stream op_stream = default_stream,
                          const vector_class<event>& deps = {});
 
     /**
@@ -239,8 +239,8 @@ public:
                         size_t count,
                         datatype dtype,
                         reduction reduction,
-                        const allreduce_attr_t& attr,/* = allreduce_attr_t()*/
-                        stream op_stream,
+                        const allreduce_attr_t& attr = default_allreduce_attr,
+                        stream op_stream = default_stream,
                         const vector_class<event>& deps = {});
 
     /**
@@ -260,8 +260,8 @@ public:
                         BufferType* recv_buf,
                         size_t count,
                         reduction reduction,
-                        const allreduce_attr_t& attr,/* = allreduce_attr_t()*/
-                        stream op_stream,
+                        const allreduce_attr_t& attr = default_allreduce_attr,
+                        stream op_stream = default_stream,
                         const vector_class<event>& deps = {});
 
     /**
@@ -281,8 +281,8 @@ public:
                         BufferObjectType& recv_buf,
                         size_t count,
                         reduction reduction,
-                        const allreduce_attr_t& attr/* = allreduce_attr_t()*/,
-                        stream op_stream,
+                        const allreduce_attr_t& attr = default_allreduce_attr,
+                        stream op_stream = default_stream,
                         const vector_class<event>& deps = {});
 
     /**
@@ -400,8 +400,8 @@ public:
      */
     template <class BufferObjectType,
               class = typename std::enable_if<ccl::is_class_supported<BufferObjectType>()>::type>
-    request_t alltoall(const vector_class<BufferObjectType&>& send_buf,
-                       const vector_class<BufferObjectType&>& recv_buf,
+    request_t alltoall(const vector_class<reference_wrapper_class<BufferObjectType>>& send_buf,
+                       const vector_class<reference_wrapper_class<BufferObjectType>>& recv_buf,
                        size_t count,
                        const alltoall_attr_t& attr/* = alltoall_attr_t()*/,
                        stream op_stream,
@@ -531,9 +531,9 @@ public:
      */
     template <class BufferObjectType,
               class = typename std::enable_if<ccl::is_class_supported<BufferObjectType>()>::type>
-    request_t alltoallv(const vector_class<BufferObjectType&>& send_bufs,
+    request_t alltoallv(const vector_class<reference_wrapper_class<BufferObjectType>>& send_bufs,
                         const vector_class<size_t>& send_counts,
-                        const vector_class<BufferObjectType&>& recv_bufs,
+                        const vector_class<reference_wrapper_class<BufferObjectType>>& recv_bufs,
                         const vector_class<size_t>& recv_counts,
                         const alltoallv_attr_t& attr/* = alltoallv_attr_t()*/,
                         stream op_stream,

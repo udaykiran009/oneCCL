@@ -5,6 +5,7 @@ namespace ccl
 {
 host_request_impl::host_request_impl(ccl_request* r) : req(r)
 {
+    (void)req;
 }
 
 host_request_impl::~host_request_impl()
@@ -17,6 +18,7 @@ void host_request_impl::wait()
 
 bool host_request_impl::test()
 {
+    (void)completed;
     return true;
 }
 

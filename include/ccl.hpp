@@ -131,7 +131,7 @@ public:
     template <class ...attr_value_pair_t>
     comm_split_attr_t create_comm_split_attr(attr_value_pair_t&&...avps) const;
 
-#ifdef DEVICE_COMM_SUPPORT
+#ifdef MULTI_GPU_SUPPORT
 
     template <class ...attr_value_pair_t>
     device_comm_split_attr_t create_device_comm_split_attr(attr_value_pair_t&&...avps) const;
@@ -147,7 +147,7 @@ public:
      */
     template<class DeviceType,
              class ContextType>
-    vector_class<device_communicator_t> create_device_communicators(
+    vector_class<device_communicator> create_device_communicators(
         const size_t devices_size,
         const vector_class<DeviceType>& local_devices,
         ContextType& context,
@@ -224,7 +224,7 @@ public:
                              attr_value_pair_t&&...avps);
 
 
-#endif /* DEVICE_COMM_SUPPORT */
+#endif /* MULTI_GPU_SUPPORT */
 
 private:
     environment();
@@ -232,7 +232,7 @@ private:
 
 } // namespace ccl
 
-#ifdef DEVICE_COMM_SUPPORT
+#ifdef MULTI_GPU_SUPPORT
 #include "ccl_gpu_modules.h"
 #include "gpu_communicator.hpp"
-#endif /* DEVICE_COMM_SUPPORT */
+#endif /* MULTI_GPU_SUPPORT */

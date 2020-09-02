@@ -1,9 +1,31 @@
 #include "ccl.hpp"
-#include "ccl_type_traits.hpp"
+
+
+#include "coll/coll_attributes.hpp"
+
+#include "common/comm/comm_split_common_attr.hpp"
+#include "comm_split_attr_impl.hpp"
+#include "comm_split_attr_creation_impl.hpp"
+
+#include "ccl_communicator.hpp"
+
+#include "common/comm/l0/comm_context_storage.hpp"
+
+#include "event_impl.hpp"
+#include "stream_impl.hpp"
+
+#include "common/global/global.hpp"
+#include "common/comm/comm.hpp"
+
+#include "common/comm/l0/comm_context.hpp"
+#include "ccl_device_communicator.hpp"
+
 #include "common/global/global.hpp"
 #include "exec/exec.hpp"
 
 #include "common/comm/comm_interface.hpp"
+
+#include "native_device_api/export_api.hpp"
 
 #ifdef CCL_ENABLE_SYCL
 #include <CL/sycl.hpp>
@@ -20,6 +42,45 @@
 
 namespace ccl
 {
+
+class kvs_impl
+{
+    //STUB
+};
+const ccl::kvs::addr_t& CCL_API ccl::kvs::get_addr() const
+{
+    //TODO: add logic;
+    throw;
+}
+
+ccl::vector_class<char> CCL_API ccl::kvs::get(const string_class& prefix, const string_class& key) const
+{
+    //TODO: add logic;
+    throw;
+}
+
+void CCL_API kvs::set(const string_class& prefix,
+              const string_class& key,
+              const vector_class<char>& data) const
+{
+    //TODO: add logic;
+    throw;
+}
+CCL_API kvs::~kvs()
+{
+    //TODO: add logic;
+}
+
+CCL_API kvs::kvs(const kvs::addr_t& addr)
+{
+    //TODO: add logic;
+}
+
+CCL_API kvs::kvs()
+{
+    //TODO: add logic;
+}
+
 
 CCL_API ccl::environment::environment()
 {
@@ -61,19 +122,30 @@ static ccl::stream& get_empty_stream()
 /**
  * Factory methods
  */
+// KVS
+kvs_t CCL_API environment::create_main_kvs() const
+{
+    return std::shared_ptr<kvs>(new kvs);
+}
+
+kvs_t CCL_API environment::create_kvs(const kvs::addr_t& addr) const
+{
+    return std::shared_ptr<kvs>(new kvs(addr));
+}
+
 //Communicator
-communicator environment::create_communicator() const
+communicator CCL_API environment::create_communicator() const
 {
     return communicator::create_communicator();
 }
 
-communicator environment::create_communicator(const size_t size,
+communicator CCL_API environment::create_communicator(const size_t size,
                                        shared_ptr_class<kvs_interface> kvs) const
 {
     return communicator::create_communicator(size, kvs);
 }
 
-communicator environment::create_communicator(const size_t size,
+communicator CCL_API environment::create_communicator(const size_t size,
                                      const size_t rank,
                                      shared_ptr_class<kvs_interface> kvs) const
 {
@@ -81,13 +153,13 @@ communicator environment::create_communicator(const size_t size,
 }
 
 template <class ...attr_value_pair_t>
-comm_split_attr_t environment::create_comm_split_attr(attr_value_pair_t&&...avps) const
+comm_split_attr_t CCL_API environment::create_comm_split_attr(attr_value_pair_t&&...avps) const
 {
     return comm_split_attr_t::create_comm_split_attr(std::forward<attr_value_pair_t>(avps)...);
 }
 
 //Device communicator
-#ifdef DEVICE_COMM_SUPPORT
+#ifdef MULTI_GPU_SUPPORT
 
 template <class ...attr_value_pair_t>
 device_comm_split_attr_t environment::create_device_comm_split_attr(attr_value_pair_t&&...avps) const
@@ -97,7 +169,7 @@ device_comm_split_attr_t environment::create_device_comm_split_attr(attr_value_p
 
 template<class DeviceType,
              class ContextType>
-vector_class<device_communicator> environment::create_device_communicators(
+vector_class<device_communicator> CCL_API environment::create_device_communicators(
         const size_t devices_size,
         const vector_class<DeviceType>& local_devices,
         ContextType& context,
@@ -108,7 +180,7 @@ vector_class<device_communicator> environment::create_device_communicators(
 
 template<class DeviceType,
          class ContextType>
-vector_class<device_communicator> environment::create_device_communicators(
+vector_class<device_communicator> CCL_API environment::create_device_communicators(
         const size_t cluster_devices_size, /*global devics count*/
         const vector_class<pair_class<rank_t, DeviceType>>& local_rank_device_map,
         ContextType& context,
@@ -120,7 +192,7 @@ vector_class<device_communicator> environment::create_device_communicators(
 
 template<class DeviceType,
          class ContextType>
-vector_class<device_communicator> environment::create_device_communicators(
+vector_class<device_communicator> CCL_API environment::create_device_communicators(
         const size_t cluster_devices_size, /*global devics count*/
         const map_class<rank_t, DeviceType>& local_rank_device_map,
         ContextType& context,
@@ -132,27 +204,27 @@ vector_class<device_communicator> environment::create_device_communicators(
 
 //Stream
 template <class native_stream_type,
-          class = typename std::enable_if<is_stream_supported<native_stream_type>()>::type>
-stream environment::create_stream(native_stream_type& native_stream)
+          typename T>
+stream CCL_API environment::create_stream(native_stream_type& native_stream)
 {
     return stream::create_stream(native_stream);
 }
 
 template <class native_stream_type, class native_context_type,
-          class = typename std::enable_if<is_stream_supported<native_stream_type>()>::type>
-stream environment::create_stream(native_stream_type& native_stream, native_context_type& native_ctx)
+          typename T>
+stream CCL_API environment::create_stream(native_stream_type& native_stream, native_context_type& native_ctx)
 {
-    return stream::create_stream(native_stream, ctx);
+    return stream::create_stream(native_stream, native_ctx);
 }
 
 template <class ...attr_value_pair_t>
-stream environment::create_stream_from_attr(typename unified_device_type::ccl_native_t device, attr_value_pair_t&&...avps)
+stream CCL_API environment::create_stream_from_attr(typename unified_device_type::ccl_native_t device, attr_value_pair_t&&...avps)
 {
     return stream::create_stream_from_attr(device, std::forward<attr_value_pair_t>(avps)...);
 }
 
 template <class ...attr_value_pair_t>
-stream environment::create_stream_from_attr(typename unified_device_type::ccl_native_t device,
+stream CCL_API environment::create_stream_from_attr(typename unified_device_type::ccl_native_t device,
                                typename unified_device_context_type::ccl_native_t context,
                                attr_value_pair_t&&...avps)
 {
@@ -162,19 +234,19 @@ stream environment::create_stream_from_attr(typename unified_device_type::ccl_na
 
 //Event
 template <class event_type,
-          class = typename std::enable_if<is_event_supported<event_type>()>::type>
-event environment::create_event(event_type& native_event)
+          typename T>
+event CCL_API environment::create_event(event_type& native_event)
 {
     return event::create_event(native_event);
 }
 
 template <class event_type,
           class ...attr_value_pair_t>
-event environment::create_event_from_attr(event_type& native_event_handle,
+event CCL_API environment::create_event_from_attr(event_type& native_event_handle,
                              typename unified_device_context_type::ccl_native_t context,
                              attr_value_pair_t&&...avps)
 {
-    return event::create_event_from_attr(native_event, context,  std::forward<attr_value_pair_t>(avps)...);
+    return event::create_event_from_attr(native_event_handle, context,  std::forward<attr_value_pair_t>(avps)...);
 }
 /*
 #define STREAM_CREATOR_INSTANTIATION(type)                                                                                                           \
@@ -184,7 +256,7 @@ template ccl::stream_t CCL_API ccl::environment::create_stream(type& stream);
 STREAM_CREATOR_INSTANTIATION(cl::sycl::queue)
 #endif
 */
-#endif //DEVICE_COMM_SUPPORT
+#endif //MULTI_GPU_SUPPORT
 #if 0
 ccl::datatype CCL_API ccl::datatype_create(const ccl::datatype_attr_t* attr)
 {
