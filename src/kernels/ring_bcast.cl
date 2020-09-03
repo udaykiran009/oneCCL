@@ -89,7 +89,7 @@ __kernel void bcast_execution_float(size_t my_rank, //0
                                     __global volatile int* right_ready_to_recv_flag, //10
                                     size_t root //11
 ) {
-    elems_count = elems_count / 4; //reduce by vector float4
+    elems_count = elems_count / 4; //bcast by vector float4
     size_t work_group_size = get_global_size(0);
     size_t last_rank = root ? root - 1 : comm_size - 1;
     size_t segment_count = elems_count / work_group_size;
@@ -260,6 +260,7 @@ __kernel void bcast_execution_uint64_t(size_t my_rank,
 }
 
 // numa
+// numa
 __kernel void bcast_execution_numa_char(size_t my_rank,
                                         size_t comm_size,
                                         size_t elems_count,
@@ -308,8 +309,80 @@ __kernel void bcast_execution_numa_bfp16(size_t my_rank,
 
                                          __global volatile int* local_barrier_flag,
 
-                                         __global ulong4* right_temp_buffer,
+                                         __global bfp16* right_temp_buffer,
                                          __global volatile int* i_send_to_right_flag,
                                          __global volatile int* right_ready_to_recv_flag) {
+    return;
+}
+
+__kernel void bcast_execution_numa_float(size_t my_rank,
+                                         size_t comm_size,
+                                         size_t elems_count,
+                                         const __global float4* input_buffer,
+                                         __global float4* output_buffer,
+
+                                         __global float4* tmp_buffer,
+                                         __global volatile int* left_wrote_to_me_flag,
+                                         __global volatile int* i_ready_to_receive_flag,
+
+                                         __global volatile int* local_barrier_flag,
+
+                                         __global float4* right_temp_buffer,
+                                         __global volatile int* i_send_to_right_flag,
+                                         __global volatile int* right_ready_to_recv_flag) {
+    return;
+}
+
+__kernel void bcast_execution_numa_double(size_t my_rank,
+                                          size_t comm_size,
+                                          size_t elems_count,
+                                          const __global double4* input_buffer,
+                                          __global double4* output_buffer,
+
+                                          __global double4* tmp_buffer,
+                                          __global volatile int* left_wrote_to_me_flag,
+                                          __global volatile int* i_ready_to_receive_flag,
+
+                                          __global volatile int* local_barrier_flag,
+
+                                          __global double4* right_temp_buffer,
+                                          __global volatile int* i_send_to_right_flag,
+                                          __global volatile int* right_ready_to_recv_flag) {
+    return;
+}
+
+__kernel void bcast_execution_numa_int64_t(size_t my_rank,
+                                           size_t comm_size,
+                                           size_t elems_count,
+                                           const __global long4* input_buffer,
+                                           __global long4* output_buffer,
+
+                                           __global long4* tmp_buffer,
+                                           __global volatile int* left_wrote_to_me_flag,
+                                           __global volatile int* i_ready_to_receive_flag,
+
+                                           __global volatile int* local_barrier_flag,
+
+                                           __global long4* right_temp_buffer,
+                                           __global volatile int* i_send_to_right_flag,
+                                           __global volatile int* right_ready_to_recv_flag) {
+    return;
+}
+
+__kernel void bcast_execution_numa_uint64_t(size_t my_rank,
+                                            size_t comm_size,
+                                            size_t elems_count,
+                                            const __global ulong4* input_buffer,
+                                            __global ulong4* output_buffer,
+
+                                            __global ulong4* tmp_buffer,
+                                            __global volatile int* left_wrote_to_me_flag,
+                                            __global volatile int* i_ready_to_receive_flag,
+
+                                            __global volatile int* local_barrier_flag,
+
+                                            __global ulong4* right_temp_buffer,
+                                            __global volatile int* i_send_to_right_flag,
+                                            __global volatile int* right_ready_to_recv_flag) {
     return;
 }
