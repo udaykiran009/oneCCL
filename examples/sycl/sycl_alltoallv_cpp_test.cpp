@@ -4,34 +4,46 @@
 int main(int argc, char **argv)
 {
     int i = 0;
-    size_t size = 0;
-    size_t rank = 0;
-    size_t* send_counts;
-    size_t* recv_counts;
+    int size = 0;
+    int rank = 0;
+
     ccl_stream_type_t stream_type;
 
-    auto comm = ccl::environment::instance().create_communicator();
-
-    rank = comm->rank();
-    size = comm->size();
+    MPI_Init(NULL, NULL);
+    MPI_Comm_size(MPI_COMM_WORLD, &size);
+    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
 
     cl::sycl::queue q;
-    cl::sycl::buffer<int, 1> sendbuf(COUNT * size);
-    cl::sycl::buffer<int, 1> recvbuf(COUNT * size);
-
     if (create_sycl_queue(argc, argv, q, stream_type) != 0) {
         return -1;
     }
+
+    /* create CCL internal KVS */
+    ccl::shared_ptr_class<ccl::kvs> kvs;
+    ccl::kvs::addr_t master_addr;
+    if (rank == 0)
+    {
+        kvs = ccl::environment::instance().create_main_kvs();
+        master_addr = kvs->get_addr();
+        MPI_Bcast((void *)master_addr.data(), master_addr.size(), MPI_BYTE, 0, MPI_COMM_WORLD);
+    }
+    else
+    {
+        MPI_Bcast((void *)master_addr.data(), master_addr.size(), MPI_BYTE, 0, MPI_COMM_WORLD);
+        kvs = ccl::environment::instance().create_kvs(master_addr);
+    }
+
+    /* create SYCL communicator */
+    auto comm = ccl::environment::instance().create_single_device_communicator(size, rank, q, kvs);
+
     /* create SYCL stream */
     auto stream = ccl::environment::instance().create_stream(q);
 
-    send_counts = static_cast<size_t*>(malloc(size * sizeof(size_t)));
-    recv_counts = static_cast<size_t*>(malloc(size * sizeof(size_t)));
+    cl::sycl::buffer<int, 1> sendbuf(COUNT * size);
+    cl::sycl::buffer<int, 1> recvbuf(COUNT * size);
 
-    for (size_t idx = 0; idx < size; idx++) {
-        send_counts[idx] = COUNT;
-        recv_counts[idx] = COUNT;
-    }
+    std::vector<size_t> send_counts(size, COUNT);
+    std::vector<size_t> recv_counts(size, COUNT);
 
     {
         /* open buffers and initialize them on the CPU side */
@@ -57,11 +69,12 @@ int main(int argc, char **argv)
     handle_exception(q);
 
     /* invoke ccl_alltoall on the CPU side */
-    comm->alltoallv(sendbuf,
+    auto attr = ccl::environment::instance().create_op_attr<ccl::alltoallv_attr_t>();
+    comm.alltoallv(sendbuf,
                     send_counts,
                     recvbuf,
                     recv_counts,
-                    nullptr, /* attr */
+                    attr,
                     stream)->wait();
 
     /* open recvbuf and check its correctness on the target device side */
@@ -89,9 +102,6 @@ int main(int argc, char **argv)
             cout<<"PASSED"<< std::endl;
         }
     }
-
-    free(send_counts);
-    free(recv_counts);
 
     return 0;
 }

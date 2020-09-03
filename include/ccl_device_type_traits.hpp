@@ -46,10 +46,16 @@ constexpr bool is_event_supported() {
 }
 
 #ifdef CCL_ENABLE_SYCL
+API_CLASS_TYPE_INFO(cl::sycl::device)
+
 API_CLASS_TYPE_INFO(cl::sycl::queue);
 API_CLASS_TYPE_INFO(cl_command_queue);
+
+API_CLASS_TYPE_INFO(cl::sycl::context)
 API_CLASS_TYPE_INFO(cl_context);
+
 API_CLASS_TYPE_INFO(cl::sycl::event);
+API_CLASS_TYPE_INFO(cl_event)
 
 template <>
 struct generic_device_type<CCL_ENABLE_SYCL_TRUE> {

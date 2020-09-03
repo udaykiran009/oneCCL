@@ -5,35 +5,51 @@ int main(int argc, char **argv)
 {
     int i = 0;
     int j = 0;
-    size_t size = 0;
-    size_t rank = 0;
+    int size = 0;
+    int rank = 0;
     size_t sendbuf_count = 0;
     size_t recvbuf_count = 0;
-    size_t* recv_counts;
     ccl_stream_type_t stream_type;
 
     cl::sycl::queue q;
 
-    auto comm = ccl::environment::instance().create_communicator();
+    MPI_Init(NULL, NULL);
+    MPI_Comm_size(MPI_COMM_WORLD, &size);
+    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
 
-    rank = comm->rank();
-    size = comm->size();
+    if (create_sycl_queue(argc, argv, q, stream_type) != 0) {
+        return -1;
+    }
+
+    /* create CCL internal KVS */
+    ccl::shared_ptr_class<ccl::kvs> kvs;
+    ccl::kvs::addr_t master_addr;
+    if (rank == 0)
+    {
+        kvs = ccl::environment::instance().create_main_kvs();
+        master_addr = kvs->get_addr();
+        MPI_Bcast((void *)master_addr.data(), master_addr.size(), MPI_BYTE, 0, MPI_COMM_WORLD);
+    }
+    else
+    {
+        MPI_Bcast((void *)master_addr.data(), master_addr.size(), MPI_BYTE, 0, MPI_COMM_WORLD);
+        kvs = ccl::environment::instance().create_kvs(master_addr);
+    }
+
+    /* create SYCL communicator */
+    auto comm = ccl::environment::instance().create_single_device_communicator(size, rank, q, kvs);
+
+    /* create SYCL stream */
+    auto stream = ccl::environment::instance().create_stream(q);
 
     sendbuf_count = COUNT + rank;
     recvbuf_count = COUNT * size + ((size - 1)*size)/2;
     cl::sycl::buffer<int, 1> sendbuf(sendbuf_count);
     cl::sycl::buffer<int, 1> expected_buf(recvbuf_count);
     cl::sycl::buffer<int, 1> recvbuf(recvbuf_count);
-    if (create_sycl_queue(argc, argv, q, stream_type) != 0) {
-        return -1;
-    }
-    /* create SYCL stream */
-    auto stream = ccl::environment::instance().create_stream(q);
 
-    recv_counts = static_cast<size_t*>(malloc(size * sizeof(size_t)));
-
-    for (size_t idx = 0; idx < size; idx++)
-        recv_counts[idx] = COUNT + idx;
+    std::vector<size_t> recv_counts(size, 0);
+    std::iota(recv_counts.begin(), recv_counts.end(), COUNT);
 
     {
         /* open buffers and initialize them on the CPU side */
@@ -67,18 +83,19 @@ int main(int argc, char **argv)
         auto dev_acc_rbuf = recvbuf.get_access<mode::write>(cgh);
         cgh.parallel_for<class allgatherv_test_sbuf_modify>(range<1>{sendbuf_count}, [=](item<1> id) {
                 dev_acc_rbuf[idx_rbuf + id[0]] = dev_acc_sbuf[id] + 1;
-                
+
         });
     });
 
     handle_exception(q);
     /* invoke ccl_allgatherv on the CPU side */
     /* request in-place operation by providing recvbuf as input */
-    comm->allgatherv(recvbuf,
+    auto attr = ccl::environment::instance().create_op_attr<ccl::allgatherv_attr_t>();
+    comm.allgatherv(recvbuf,
                      sendbuf_count,
                      recvbuf,
                      recv_counts,
-                     nullptr, /* attr */
+                     attr,
                      stream)->wait();
 
     /* open recvbuf and check its correctness on the target device side */
@@ -108,8 +125,6 @@ int main(int argc, char **argv)
             cout << "PASSED" << std::endl;
         }
     }
-
-    free(recv_counts);
 
     return 0;
 }

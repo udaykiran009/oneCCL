@@ -7,13 +7,17 @@ namespace ccl
 
 class kvs_impl
 {
+public:
     //STUB
+
+     kvs::addr_t addr;
 };
 
 const kvs::addr_t& CCL_API kvs::get_addr() const
 {
     //TODO: add logic;
-    throw;
+    static kvs_impl tmp;
+    return tmp.addr;
 }
 
 vector_class<char> CCL_API kvs::get(const string_class& prefix, const string_class& key) const

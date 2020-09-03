@@ -25,19 +25,33 @@
 #include "ccl_stream_attr_ids.hpp"
 #include "ccl_stream_attr_ids_traits.hpp"
 #include "ccl_stream.hpp"
-#include "stream_impl.hpp"
 
 #include "ccl_request.hpp"
 
+#include "coll/coll_attributes.hpp"
+
 #include "common/comm/comm_split_common_attr.hpp"
 #include "comm_split_attr_impl.hpp"
+#include "comm_split_attr_creation_impl.hpp"
 
 //#include "environment.hpp"
-//#include "device_communicator_impl.hpp"
+#include "ccl_device_communicator.hpp"
 #include "common/comm/l0/comm_context_storage.hpp"
+
+#include "event_impl.hpp"
+#include "stream_impl.hpp"
+
 #include "../stubs/kvs.hpp"
 
+#include "common/global/global.hpp"
 
+#include "../stubs/native_platform.hpp"
+
+//TODO
+#include "common/comm/comm.hpp"
+
+#include "common/comm/l0/comm_context.hpp"
+#include "device_communicator_impl.hpp"
 #include "native_device_api/export_api.hpp"
 
 namespace device_communicator_suite

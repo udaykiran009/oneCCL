@@ -88,14 +88,14 @@ public:
      * and be used to create key-value stores on other ranks.
      * @return kvs object
      */
-    kvs_t create_main_kvs() const;
+    shared_ptr_class<kvs> create_main_kvs() const;
 
     /**
      * Creates a new key-value store from main kvs address
      * @param addr address of main kvs
      * @return kvs object
      */
-    kvs_t create_kvs(const kvs::addr_t& addr) const;
+    shared_ptr_class<kvs> create_kvs(const kvs::addr_t& addr) const;
 
     /**
      * Creates a new host communicator with externally provided size, rank and kvs.
@@ -147,6 +147,28 @@ public:
         return split_attr;
     }
 
+#ifdef CCL_ENABLE_SYCL
+    device_communicator create_single_device_communicator(const size_t world_size,
+                                     const size_t rank,
+                                     const cl::sycl::device &device,
+                                     shared_ptr_class<kvs_interface> kvs) const;
+
+    device_communicator create_single_device_communicator(const size_t world_size,
+                                     const size_t rank,
+                                     cl::sycl::queue queue,
+                                     shared_ptr_class<kvs_interface> kvs) const;
+
+    template<class DeviceSelectorType>
+    device_communicator create_single_device_communicator(const size_t world_size,
+                                     const size_t rank,
+                                     const DeviceSelectorType& selector,
+                                     shared_ptr_class<kvs_interface> kvs) const
+    {
+        return create_single_device_communicator(world_size, rank, cl::sycl::device(selector), kvs);
+    }
+
+
+#endif
 #ifdef MULTI_GPU_SUPPORT
 
     template <class ...attr_value_pair_t>
@@ -253,11 +275,22 @@ public:
           class = typename std::enable_if<is_event_supported<event_type>()>::type>
     event create_event(event_type& native_event);
 
+    template <class event_handle_type,
+              class = typename std::enable_if<is_event_supported<event_handle_type>()>::type>
+    event create_event(event_handle_type native_event_handle, typename unified_device_context_type::ccl_native_t context);
+
     template <class event_type,
           class ...attr_value_pair_t>
     event create_event_from_attr(event_type& native_event_handle,
                              typename unified_device_context_type::ccl_native_t context,
-                             attr_value_pair_t&&...avps);
+                             attr_value_pair_t&&...avps)
+    {
+        event ev = create_postponed_api_type<event>(native_event_handle, context);
+        int expander [] {(ev.template set<attr_value_pair_t::idx()>(avps.val()), 0)...};
+        (void) expander;
+        ev.build_from_params();
+        return ev;
+    }
 
 
 #endif /* MULTI_GPU_SUPPORT */
