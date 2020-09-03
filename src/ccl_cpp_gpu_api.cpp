@@ -132,24 +132,6 @@ generic_device_context_type<CCL_ENABLE_SYCL_FALSE>::get() const noexcept {
 }
 
 #endif
-
-struct group_context {
-    /* TODO
-     * In multithreading scenario we use different comm_group_t objects in different threads.
-     * But we need to match different groups created for the same world in different threads
-     * The assumption is done: if different groups created from the same communicator color, than they
-     * should be interpreted as the same groups in the same world.
-     *
-     *
-     * In the final solution the 'group_unique_key' should be equal to unique KVS idenditifier
-     */
-    using group_unique_key = typename ccl::ccl_host_attributes_traits<ccl_host_color>::type;
-    std::map<group_unique_key, comm_group_t> communicator_group_map;
-
-    ccl_spinlock mutex;
-};
-
-group_context global_ctx;
 } // namespace ccl
 
 /* GPU communicator attributes
@@ -196,15 +178,15 @@ CCL_API ccl::comm_group_t ccl::environment::create_comm_group(
                                  " - failed, invalid host communicator type");
         }
 
-        group_context::group_unique_key unique_id =
+        ccl_group_context::group_unique_key unique_id =
             host_comm_impl->get_host_attr()->get_value<ccl_host_color>();
 
-        std::unique_lock<ccl_spinlock> lock(global_ctx.mutex);
-        auto ctx_it = global_ctx.communicator_group_map.find(unique_id);
-        if (ctx_it == global_ctx.communicator_group_map.end()) {
+        std::unique_lock<ccl_spinlock> lock(ccl::global_data::get().global_ctx->mutex);
+        auto ctx_it = ccl::global_data::get().global_ctx->communicator_group_map.find(unique_id);
+        if (ctx_it == ccl::global_data::get().global_ctx->communicator_group_map.end()) {
             group.reset(new ccl::comm_group(
                 parent_comm, current_device_group_size, process_device_group_size));
-            global_ctx.communicator_group_map.insert({ unique_id, group });
+            ccl::global_data::get().global_ctx->communicator_group_map.insert({ unique_id, group });
         }
         else {
             group = ctx_it->second;

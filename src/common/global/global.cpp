@@ -41,6 +41,7 @@ ccl_status_t global_data::reset() {
         executor is responsible for resize logic and has own multi-step reset
      */
     executor.reset();
+    global_ctx.reset();
     reset_resize_dependent_objects();
     reset_resize_independent_objects();
 
@@ -97,6 +98,8 @@ void global_data::init_resize_dependent_objects() {
     if (executor->get_global_proc_idx() == 0) {
         atl_tag->print();
     }
+
+    global_ctx = std::unique_ptr<ccl_group_context>(new ccl_group_context());
 }
 
 void global_data::init_resize_independent_objects() {

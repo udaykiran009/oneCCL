@@ -5,6 +5,7 @@
 #include "comp/bfp16/bfp16_utils.h"
 #include "common/env/env.hpp"
 #include "common/utils/utils.hpp"
+#include "gpu_communicator.hpp"
 
 #include <memory>
 #include <thread>
@@ -34,11 +35,29 @@ class ccl_parallelizer;
 class ccl_fusion_manager;
 class ccl_unordered_coll_manager;
 class ccl_allreduce_2d_builder;
+struct ccl_group_context;
 
 template <ccl_coll_type... registered_types_id>
 class ccl_algorithm_selector_wrapper;
 
 namespace ccl {
+class comm_group;
+using comm_group_t = std::shared_ptr<comm_group>;
+
+struct ccl_group_context {
+    /* TODO
+     * In multithreading scenario we use different comm_group_t objects in different threads.
+     * But we need to match different groups created for the same world in different threads
+     * The assumption is done: if different groups created from the same communicator color, than they
+     * should be interpreted as the same groups in the same world.
+     *
+     *
+     * In the final solution the 'group_unique_key' should be equal to unique KVS idenditifier
+     */
+    using group_unique_key = typename ccl::ccl_host_attributes_traits<ccl_host_color>::type;
+    std::map<group_unique_key, comm_group_t> communicator_group_map;
+    ccl_spinlock mutex;
+};
 
 class global_data {
 public:
@@ -72,6 +91,8 @@ public:
     std::unique_ptr<ccl_unordered_coll_manager> unordered_coll_manager;
     std::unique_ptr<ccl_algorithm_selector_wrapper<CCL_COLL_LIST>> algorithm_selector;
     std::unique_ptr<ccl_allreduce_2d_builder> allreduce_2d_builder;
+    std::unique_ptr<ccl_group_context> global_ctx;
+
     static thread_local bool is_worker_thread;
     bool is_ft_enabled;
     ccl_bfp16_impl_type bfp16_impl_type;

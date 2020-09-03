@@ -76,7 +76,6 @@ public:
         return comm_id(*this, internal);
     }
 
-    //[[deprecated]]
     ccl_comm_id_t acquire_id(bool internal = false) {
         std::lock_guard<ccl_spinlock> lock(sync_guard);
         ccl_comm_id_t &last_used_ref = internal ? last_used_id_internal : last_used_id_external;
