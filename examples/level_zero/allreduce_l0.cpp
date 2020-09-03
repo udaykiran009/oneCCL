@@ -69,10 +69,10 @@ int main(int argc, char** argv)
 
 
     //get addresses from MPI
-    int mpi_rank = 0, mpi_size = 1;
-    //MPI_Init(&argc, &argv);
-    //MPI_Comm_rank(MPI_COMM_WORLD, &mpi_rank);
-    //MPI_Comm_size(MPI_COMM_WORLD, &mpi_size);
+    int mpi_rank = 0, mpi_size = 0;
+    MPI_Init(&argc, &argv);
+    MPI_Comm_rank(MPI_COMM_WORLD, &mpi_rank);
+    MPI_Comm_size(MPI_COMM_WORLD, &mpi_size);
     if (mpi_size != process_group_gpu_affinity.size())
     {
         std::cerr << "L0_CLUSTER_AFFINITY_MASK is configured for processes: " << process_group_gpu_affinity.size()
@@ -83,19 +83,19 @@ int main(int argc, char** argv)
     std::cout << "MPI process rank: " << mpi_rank << ", size: " << mpi_size << std::endl;
 
     // build CCL internal KVS
-    std::shared_ptr<ccl::kvs_interface> kvs_instance;
+    std::shared_ptr<ccl::kvs> kvs_instance;
     ccl::kvs::addr_t master_addr;
     if (mpi_rank == 0)
     {
         kvs_instance = ccl::environment::instance().create_main_kvs();
-        //master_addr = std::dynamic_pointer_cast<ccl::kvs>(kvs_instance)->get_addr();
+        master_addr = kvs_instance->get_addr();
 
         std::cout << "Master KVS  hast build on addr: " /*<< master_addr*/ << std::endl;
-        //MPI_Bcast((void *)master_addr.data(), master_addr.size(), MPI_BYTE, 0, MPI_COMM_WORLD);
+        MPI_Bcast((void *)master_addr.data(), master_addr.size(), MPI_BYTE, 0, MPI_COMM_WORLD);
     }
     else
     {
-       // MPI_Bcast((void *)master_addr.data(), master_addr.size(), MPI_BYTE, 0, MPI_COMM_WORLD);
+        MPI_Bcast((void *)master_addr.data(), master_addr.size(), MPI_BYTE, 0, MPI_COMM_WORLD);
         kvs_instance = ccl::environment::instance().create_kvs(master_addr);
 
         std::cout << "Slave KVS hast connected on addr: "/* << master_addr*/ << std::endl;

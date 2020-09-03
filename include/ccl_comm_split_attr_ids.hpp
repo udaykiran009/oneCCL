@@ -34,6 +34,7 @@ enum class ccl_group_split_type {    // TODO fill in this enum with the actual v
  * Device-specific values for the 'group' split attribute
  */
 enum class device_group_split_type : int { // TODO fill in this enum with the actual values in the final
+    undetermined = -1,
     //device,
     thread,
     process,

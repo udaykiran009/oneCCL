@@ -26,6 +26,8 @@ public:
     ccl_event(const ccl_event& other) = delete;
     ccl_event& operator=(const ccl_event& other) = delete;
 
+    ccl_event(event_native_t& event, const ccl_version_t& version);
+    ccl_event(event_native_handle_t event, event_native_context_t context, const ccl_version_t& version);
     ~ccl_event() = default;
 
     //Export Attributes
@@ -63,11 +65,8 @@ public:
         get_attribute_value(const command_execution_status_traits_t& id) const;
 
     void build_from_params();
+
 private:
-
-    ccl_event(event_native_t& event, const ccl_version_t& version);
-    ccl_event(event_native_handle_t event, event_native_context_t context, const ccl_version_t& version);
-
     const ccl_version_t library_version;
     event_native_t native_event;
     event_native_context_t native_context;

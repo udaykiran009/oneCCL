@@ -125,6 +125,7 @@ set(CCL_SRC
     common/comm/comm.cpp
     common/comm/host_communicator/host_communicator.cpp
     common/comm/comm_interface.cpp
+    common/comm/single_device_communicator/single_device_communicator.cpp
     common/datatype/datatype.cpp
     common/env/env.cpp
     common/global/global.cpp

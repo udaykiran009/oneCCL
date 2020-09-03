@@ -10,6 +10,7 @@ namespace ccl {
  */
 
 enum device_topology_type {
+    undetermined = -1,
     ring = ring_algo_class,
     a2a = a2a_algo_class,
 

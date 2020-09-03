@@ -22,9 +22,9 @@
 #include "supported_topologies.hpp"
 
 #endif
-#if 0
-#include "common/comm/host_communicator/host_communicator_impl.hpp"
-#endif
+
+#include "common/comm/single_device_communicator/single_device_communicator.hpp"
+
 
 namespace ccl
 {
@@ -101,6 +101,11 @@ communicator_interface_dispatcher::create_communicator_from_unified_device(ccl::
         {
             switch(preferred_topology_group)
             {
+                case ccl::device_group_split_type::undetermined:
+                    return communicator_interface_ptr(
+                                    new single_device_communicator(std::move(device_id),
+                                                                       thread_idx, process_idx,
+                                                                       attr));
                 case ccl::device_group_split_type::thread:
                     return communicator_interface_ptr(
                                     new device_group_ring_communicator(std::move(device_id),
@@ -126,6 +131,11 @@ communicator_interface_dispatcher::create_communicator_from_unified_device(ccl::
         {
             switch(preferred_topology_group)
             {
+                case ccl::device_group_split_type::undetermined:
+                    return communicator_interface_ptr(
+                                    new single_device_communicator(std::move(device_id),
+                                                                       thread_idx, process_idx,
+                                                                       attr));
                 case ccl::device_group_split_type::thread:
                     return communicator_interface_ptr(
                                     new device_group_a2a_communicator(std::move(device_id),
@@ -142,6 +152,13 @@ communicator_interface_dispatcher::create_communicator_from_unified_device(ccl::
                             ::to_string(preferred_topology_group));
             }
             break;
+        }
+        case device_topology_type::undetermined:
+        {
+            return communicator_interface_ptr(
+                            new single_device_communicator(std::move(device_id),
+                                                                       thread_idx, process_idx,
+                                                                       attr));
         }
         default:
         {

@@ -46,12 +46,12 @@ static ccl::stream& get_empty_stream()
  * Factory methods
  */
 // KVS
-kvs_t CCL_API environment::create_main_kvs() const
+shared_ptr_class<kvs> CCL_API environment::create_main_kvs() const
 {
     return std::shared_ptr<kvs>(new kvs);
 }
 
-kvs_t CCL_API environment::create_kvs(const kvs::addr_t& addr) const
+shared_ptr_class<kvs> CCL_API environment::create_kvs(const kvs::addr_t& addr) const
 {
     return std::shared_ptr<kvs>(new kvs(addr));
 }
@@ -77,6 +77,29 @@ communicator CCL_API environment::create_communicator(const size_t size,
 
 }
 
+#ifdef CCL_ENABLE_SYCL
+ccl::device_communicator CCL_API ccl::environment::create_single_device_communicator(const size_t world_size,
+                                     const size_t rank,
+                                     const cl::sycl::device &device,
+                                     ccl::shared_ptr_class<ccl::kvs_interface> kvs) const
+{
+    LOG_TRACE("Create single device communicator from SYCL device");
+    ccl::communicator_interface_ptr impl = ccl::communicator_interface::create_communicator_impl(device,
+                                                                                                 0,
+                                                                                                 rank,
+                                                                                                 ccl_empty_attr());
+    return ccl::device_communicator(std::move(impl));
+}
+
+ccl::device_communicator CCL_API ccl::environment::create_single_device_communicator(const size_t world_size,
+                                     const size_t rank,
+                                     cl::sycl::queue queue,
+                                     ccl::shared_ptr_class<ccl::kvs_interface> kvs) const
+{
+    LOG_TRACE("Create single device communicator from SYCL queue");
+    return create_single_device_communicator(world_size, rank, queue.get_device(), kvs);
+}
+#endif
 
 
 /***************************TypeGenerations*********************************************************/
@@ -128,6 +151,14 @@ CREATE_OP_ATTR_INSTANTIATION(ccl::comm_split_attr_t)
 
 #ifdef CCL_ENABLE_SYCL
     CREATE_DEV_COMM_INSTANTIATION(cl::sycl::device, cl::sycl::context)
-    //-S- TODO CREATE_STREAM_INSTANTIATION(cl::sycl::queue, cl::sycl::context)
-    //-S- TODO CREATE_EVENT_INSTANTIATION(cl::sycl::event)
+    CREATE_DEV_COMM_INSTANTIATION(ccl::device_index_type, cl::sycl::context)
+    CREATE_STREAM_INSTANTIATION(cl::sycl::queue)
+    CREATE_STREAM_EXT_INSTANTIATION(cl::sycl::device, cl::sycl::context)
+
+    CREATE_EVENT_INSTANTIATION(cl::sycl::event)
+    CREATE_EVENT_EXT_INSTANTIATION(cl_event)
+#else
+    #ifdef MULTI_GPU_SUPPORT
+        CREATE_DEV_COMM_INSTANTIATION(ccl::device_index_type, ccl::unified_device_context_type::ccl_native_t)
+    #endif
 #endif

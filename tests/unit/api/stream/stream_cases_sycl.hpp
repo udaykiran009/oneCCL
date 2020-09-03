@@ -28,12 +28,12 @@ TEST(stream_api, stream_from_sycl_queue)
 
 TEST(stream_api, stream_from_sycl_queue_handle)
 {
-    auto q = cl::sycl::queue();
+    //auto q = cl::sycl::queue();
     auto dev = cl::sycl::device();
     auto ctx = cl::sycl::context(dev);
-    cl_command_queue h = q.get();
+    //cl_command_queue h = q.get();
 
-    auto str = ccl::stream::create_stream(h, ctx);
+    auto str = ccl::stream::create_stream(dev, ctx);
 
     ASSERT_TRUE(str.get<ccl::stream_attr_id::version>().full != nullptr);
 }

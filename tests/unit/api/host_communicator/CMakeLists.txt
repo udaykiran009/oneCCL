@@ -32,6 +32,16 @@ if(API_UT)
 endif(API_UT)
 
 
+if(API_UT)
+    set(CCL_MAJOR_VERSION     "0")
+    set(CCL_MINOR_VERSION     "0")
+    set(CCL_UPDATE_VERSION    "0")
+    set(CCL_PRODUCT_STATUS    "epsilon")
+    string(TIMESTAMP CCL_PRODUCT_BUILD_DATE "%Y-%m-%dT %H:%M:%SZ")
+    set(CCL_PRODUCT_FULL "${CCL_PRODUCT_STATUS}-${CCL_MAJOR_VERSION}.${CCL_MINOR_VERSION}.${CCL_UPDATE_VERSION} ${CCL_PRODUCT_BUILD_DATE} ${VCS_INFO}")
+    configure_file(${PROJECT_SOURCE_DIR}/include/ccl_config.h.in "${CMAKE_CURRENT_BINARY_DIR}/ccl_config.h")
+endif(API_UT)
+
 include_directories(${PROJECT_SOURCE_DIR}/tests/functional/googletest-release-1.8.1/googletest/include
                     ${PROJECT_SOURCE_DIR}/tests/functional/googletest-release-1.8.1/googletest/src
                     ${CMAKE_CURRENT_BINARY_DIR}

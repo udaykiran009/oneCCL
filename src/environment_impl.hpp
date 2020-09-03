@@ -119,13 +119,11 @@ event CCL_API environment::create_event(event_type& native_event)
     return event::create_event(native_event);
 }
 
-template <class event_type,
-          class ...attr_value_pair_t>
-event CCL_API environment::create_event_from_attr(event_type& native_event_handle,
-                             typename unified_device_context_type::ccl_native_t context,
-                             attr_value_pair_t&&...avps)
+template <class event_handle_type,
+          typename T >
+event CCL_API environment::create_event(event_handle_type native_event_handle, typename unified_device_context_type::ccl_native_t context)
 {
-    return event::create_event_from_attr(native_event_handle, context, std::forward<attr_value_pair_t>(avps)...);
+    return event::create_event(native_event_handle, context);
 }
 #endif //MULTI_GPU_SUPPORT
 
@@ -197,17 +195,22 @@ CCL_API ccl::environment::create_device_communicators<DeviceType, ContextType>(c
 
 
 
-#define CREATE_STREAM_INSTANTIATION(native_stream_type, native_context_type)                        \
+#define CREATE_STREAM_INSTANTIATION(native_stream_type)                                             \
 template ccl::stream                                                                                \
-CCL_API ccl::environment::create_stream(native_stream_type& native_stream);                         \
-                                                                                                    \
+CCL_API ccl::environment::create_stream(native_stream_type& native_stream);
+
+#define CREATE_STREAM_EXT_INSTANTIATION(device_type, native_context_type)                           \
 template ccl::stream                                                                                \
-CCL_API ccl::environment::create_stream(native_stream_type& native_stream, native_context_type& native_ctx);
+CCL_API ccl::environment::create_stream(device_type& device, native_context_type& native_ctx);
 
 
 
 
 
-#define CREATE_EVENT_INSTANTIATION(native_event_type)                                              \
+#define CREATE_EVENT_INSTANTIATION(native_event_type)                                               \
 template ccl::event                                                                                 \
 CCL_API ccl::environment::create_event(native_event_type& native_event);
+
+#define CREATE_EVENT_EXT_INSTANTIATION(event_handle_type)                                           \
+template ccl::event                                                                                 \
+CCL_API ccl::environment::create_event(event_handle_type native_event_handle, typename unified_device_context_type::ccl_native_t context);

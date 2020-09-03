@@ -45,6 +45,11 @@ void stream::build_from_params()
 }
 }
 
+#ifdef CCL_ENABLE_SYCL
+    API_STREAM_CREATION_FORCE_INSTANTIATION(cl::sycl::queue)
+    API_STREAM_CREATION_FORCE_INSTANTIATION(cl_command_queue)
+    API_STREAM_CREATION_EXT_FORCE_INSTANTIATION(cl::sycl::device, cl::sycl::context)
+#endif
 
 API_STREAM_FORCE_INSTANTIATION(ccl::stream_attr_id::version, ccl_version_t);
 API_STREAM_FORCE_INSTANTIATION_GET(ccl::stream_attr_id::native_handle);//, typename ccl::unified_stream_type::ccl_native_t);

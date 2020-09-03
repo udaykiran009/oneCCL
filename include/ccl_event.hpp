@@ -53,7 +53,7 @@ private:
     template <event_attr_id attrId,
               class Value/*,
               class = typename std::enable_if<is_attribute_value_supported<attrId, Value>()>::type*/>
-    Value set(const Value& v);
+    typename ccl::details::ccl_api_type_attr_traits<ccl::event_attr_id, attrId>::return_type set(const Value& v);
 
     void build_from_params();
     event(const typename details::ccl_api_type_attr_traits<event_attr_id, event_attr_id::version>::type& version);
@@ -64,6 +64,10 @@ private:
     template <class event_type,
           class = typename std::enable_if<is_event_supported<event_type>()>::type>
     static event create_event(event_type& native_event);
+
+    template <class event_handle_type,
+          class = typename std::enable_if<is_event_supported<event_handle_type>()>::type>
+    static event create_event(event_handle_type native_event_handle, typename unified_device_context_type::ccl_native_t context);
 
     template <class event_type,
           class ...attr_value_pair_t>

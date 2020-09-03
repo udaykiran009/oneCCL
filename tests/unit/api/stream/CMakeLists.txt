@@ -17,20 +17,20 @@ if(API_UT)
     set(PROJECT_SOURCE_DIR "${PROJECT_SOURCE_DIR}/../..")
 endif()
 
-    include(${PROJECT_SOURCE_DIR}/cmake/helpers.cmake)
+include(${PROJECT_SOURCE_DIR}/cmake/helpers.cmake)
 
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g")
-    if(COMPUTE_RUNTIME)
-        activate_compute_runtime("${PROJECT_SOURCE_DIR}/cmake" ${COMPUTE_RUNTIME})
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g")
+if(COMPUTE_RUNTIME)
+    activate_compute_runtime("${PROJECT_SOURCE_DIR}/cmake" ${COMPUTE_RUNTIME})
 
-        if (${CCL_ENABLE_SYCL_V} STREQUAL 1)
-            option (CCL_ENABLE_SYCL "Enable CCL SYCL runtime" ON)
-            message(STATUS "Enable CCL SYCL runtime")
-        endif()
-
-        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${COMPUTE_RUNTIME_FLAGS}")
-        add_definitions(${DEFINITIONS})
+    if (${CCL_ENABLE_SYCL_V} STREQUAL 1)
+        option (CCL_ENABLE_SYCL "Enable CCL SYCL runtime" ON)
+        message(STATUS "Enable CCL SYCL runtime")
     endif()
+
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${COMPUTE_RUNTIME_FLAGS}")
+    add_definitions(${DEFINITIONS})
+endif()
 
 if(API_UT)
     set(CCL_MAJOR_VERSION     "0")
