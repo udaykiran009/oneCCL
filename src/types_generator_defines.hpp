@@ -1273,7 +1273,7 @@ ccl::request_t alltoall_impl(const ccl::vector_class<ccl::reference_wrapper_clas
                                                                                                     \
                                                                                                     \
 template ccl::request_t                                  \
-comm_class::alltoallv_impl(const type& send_buf,                            \
+comm_class::alltoallv_impl<type>(const type& send_buf,                            \
                              const ccl::vector_class<size_t>& send_counts,                     \
                              type& recv_buf,                                \
                              const ccl::vector_class<size_t>& recv_counts,                     \
@@ -1281,9 +1281,9 @@ comm_class::alltoallv_impl(const type& send_buf,                            \
                              ccl::stream::impl_value_t& stream, \
                              const ccl::vector_class<ccl::event>& dep);                  \
 template ccl::request_t                                  \
-comm_class::alltoallv_impl(const ccl::vector_class<ccl::reference_wrapper_class<type>>& send_buf,                            \
+comm_class::alltoallv_impl<type>(const ccl::vector_class<ccl::reference_wrapper_class<type>>& send_buf,                            \
                              const ccl::vector_class<size_t>& send_counts,                     \
-                             ccl::vector_class<ccl::reference_wrapper_class<type>>& recv_buf,                                \
+                             const ccl::vector_class<ccl::reference_wrapper_class<type>>& recv_buf,                                \
                              const ccl::vector_class<size_t>& recv_counts,                     \
                              const ccl::alltoallv_attr_t& attr,                    \
                              ccl::stream::impl_value_t& stream, \
@@ -1353,7 +1353,7 @@ comm_class::alltoall_impl(const ccl::vector_class<type*>& send_buf,             
                                                                             \
                                                                             \
 template ccl::request_t                                  \
-comm_class::alltoallv_impl(const type* send_buf,                            \
+comm_class::alltoallv_impl<type>(const type* send_buf,                            \
                              const ccl::vector_class<size_t>& send_counts,                     \
                              type* recv_buf,                                \
                              const ccl::vector_class<size_t>& recv_counts,                     \
@@ -1361,7 +1361,7 @@ comm_class::alltoallv_impl(const type* send_buf,                            \
                              ccl::stream::impl_value_t& stream, \
                              const ccl::vector_class<ccl::event>& dep);                  \
 template ccl::request_t                                                                                      \
-comm_class::alltoallv_impl(const ccl::vector_class<type*>& send_buf,           \
+comm_class::alltoallv_impl<type>(const ccl::vector_class<type*>& send_buf,           \
                                                  const ccl::vector_class<size_t>& send_counts,             \
                                                  const ccl::vector_class<type*>& recv_buf,                 \
                                                  const ccl::vector_class<size_t>& recv_counts,             \

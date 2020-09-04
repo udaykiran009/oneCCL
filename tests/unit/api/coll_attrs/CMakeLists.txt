@@ -42,8 +42,10 @@ if(API_UT)
     configure_file(${PROJECT_SOURCE_DIR}/include/ccl_config.h.in "${CMAKE_CURRENT_BINARY_DIR}/ccl_config.h")
 endif(API_UT)
 
+if(API_UT)
+    add_subdirectory (${PROJECT_SOURCE_DIR}/tests/functional/googletest-release-1.8.1/googletest/ ${PROJECT_SOURCE_DIR}/tests/units)
+endif()
 
-add_subdirectory (${PROJECT_SOURCE_DIR}/tests/functional/googletest-release-1.8.1/googletest/ ${PROJECT_SOURCE_DIR}/tests/units)
 include_directories(${PROJECT_SOURCE_DIR}/tests/functional/googletest-release-1.8.1/googletest/include
                     ${PROJECT_SOURCE_DIR}/tests/functional/googletest-release-1.8.1/googletest/src
                     ${CMAKE_CURRENT_BINARY_DIR}
