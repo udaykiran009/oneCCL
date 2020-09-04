@@ -261,6 +261,15 @@ ccl_request* ccl_reduce_impl(const void* send_buf,
                              ccl_comm* comm,
                              const ccl_stream* stream);
 
+ccl_request* ccl_reduce_scatter_impl(const void* send_buf,
+                                     void* recv_buf,
+                                     size_t recv_count,
+                                     ccl_datatype_t dtype,
+                                     ccl_reduction_t reduction,
+                                     const ccl_coll_attr& attr,
+                                     ccl_comm* comm,
+                                     const ccl_stream* stream);
+
 ccl_request* ccl_sparse_allreduce_impl(const void* send_ind_buf, size_t send_ind_count,
                                        const void* send_val_buf, size_t send_val_count,
                                        void* recv_ind_buf, size_t recv_ind_count,
