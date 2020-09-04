@@ -5,6 +5,12 @@
 #include "common/comm/l0/devices/devices_declaration.hpp"
 #include "common/comm/l0/device_community.hpp"
 
+#include "common/request/request.hpp"
+#include "common/request/host_request.hpp"
+#include "coll/coll.hpp"
+#include "coll/coll_common_attributes.hpp"
+
+
 /* allgatherv */
 template<class buffer_type>
 ccl::coll_request_t
@@ -15,8 +21,21 @@ single_device_communicator::allgatherv_impl(const buffer_type* send_buf,
                                                 const ccl::allgatherv_attr_t& attr,
                                                 ccl::stream::impl_value_t& stream, const ccl::vector_class<ccl::event>& deps)
 {
-    throw ccl::ccl_error(std::string(__PRETTY_FUNCTION__) + " - is not implemented");
-    return {};
+    // c-api require null stream for host-stream for backward compatibility
+   /* const ccl_stream* stream_ptr =
+        (stream->get_type() != static_cast<ccl_stream_type_t>(ccl::stream_type::host))
+            ? stream.get()
+            : nullptr;
+*/
+    ccl_request* req = ccl_allgatherv_impl(reinterpret_cast<const void*>(send_buf),
+                                           send_count,
+                                           reinterpret_cast<void*>(recv_buf),
+                                           recv_counts.data(),
+                                           ccl::native_type_info<buffer_type>::ccl_type_value,
+                                           attr,
+                                           comm_impl.get(),
+                                           stream.get());
+    return std::unique_ptr<ccl::host_request_impl>(new ccl::host_request_impl(req));
 }
 template<class buffer_type>
 ccl::coll_request_t
@@ -41,8 +60,15 @@ single_device_communicator::allgatherv_impl(const buffer_type& send_buf,
                                                 const ccl::allgatherv_attr_t& attr,
                                                 ccl::stream::impl_value_t& stream, const ccl::vector_class<ccl::event>& deps)
 {
-    throw ccl::ccl_error(std::string(__PRETTY_FUNCTION__) + " - is not implemented");
-    return {};
+    ccl_request* req = ccl_allgatherv_impl(reinterpret_cast<const void*>(&send_buf),
+                                           send_count,
+                                           reinterpret_cast<void*>(&recv_buf),
+                                           recv_counts.data(),
+                                           ccl::native_type_info<buffer_type>::ccl_type_value,
+                                           attr,
+                                           comm_impl.get(),
+                                           stream.get());
+    return std::unique_ptr<ccl::host_request_impl>(new ccl::host_request_impl(req));
 }
 template<class buffer_type>
 ccl::request_t single_device_communicator::allgatherv_impl(const buffer_type& send_buf,
@@ -83,8 +109,15 @@ single_device_communicator::allreduce_impl(const buffer_type* send_buf,
     LOG_DEBUG("communicator for device idx: ", get_device_path(),
               ", rank idx: ", comm_rank);
 
-    throw ccl::ccl_error(std::string(__PRETTY_FUNCTION__) + " - is not implemented");
-    return {};
+    ccl_request* req = ccl_allreduce_impl(reinterpret_cast<const void*>(send_buf),
+                                          reinterpret_cast<void*>(recv_buf),
+                                          count,
+                                          ccl::native_type_info<buffer_type>::ccl_type_value,
+                                          static_cast<ccl_reduction_t>(reduction),
+                                          attr,
+                                          comm_impl.get(),
+                                          stream.get());
+    return std::unique_ptr<ccl::host_request_impl>(new ccl::host_request_impl(req));
 }
 
 template<class buffer_type>
@@ -96,8 +129,15 @@ single_device_communicator::allreduce_impl(const buffer_type& send_buf,
                                                const ccl::allreduce_attr_t& attr,
                                                ccl::stream::impl_value_t& stream, const ccl::vector_class<ccl::event>& deps)
 {
-    throw ccl::ccl_error(std::string(__PRETTY_FUNCTION__) + " - is not implemented");
-    return {};
+    ccl_request* req = ccl_allreduce_impl(reinterpret_cast<const void*>(&send_buf),
+                                          reinterpret_cast<void*>(&recv_buf),
+                                          count,
+                                          ccl::native_type_info<buffer_type>::ccl_type_value,
+                                          static_cast<ccl_reduction_t>(reduction),
+                                          attr,
+                                          comm_impl.get(),
+                                          stream.get());
+    return std::unique_ptr<ccl::host_request_impl>(new ccl::host_request_impl(req));
 }
 
 
@@ -110,8 +150,14 @@ single_device_communicator::alltoall_impl(const buffer_type* send_buf,
                                               const ccl::alltoall_attr_t& attr,
                                               ccl::stream::impl_value_t& stream, const ccl::vector_class<ccl::event>& deps)
 {
-    throw ccl::ccl_error(std::string(__PRETTY_FUNCTION__) + " - is not implemented");
-    return {};
+    ccl_request* req = ccl_alltoall_impl(reinterpret_cast<const void*>(send_buf),
+                                         reinterpret_cast<void*>(recv_buf),
+                                         count,
+                                         ccl::native_type_info<buffer_type>::ccl_type_value,
+                                         attr,
+                                         comm_impl.get(),
+                                         stream.get());
+    return std::unique_ptr<ccl::host_request_impl>(new ccl::host_request_impl(req));
 }
 template<class buffer_type>
 ccl::request_t
@@ -134,8 +180,14 @@ single_device_communicator::alltoall_impl(const buffer_type& send_buf,
                                               const ccl::alltoall_attr_t& attr,
                                               ccl::stream::impl_value_t& stream, const ccl::vector_class<ccl::event>& deps)
 {
-    throw ccl::ccl_error(std::string(__PRETTY_FUNCTION__) + " - is not implemented");
-    return {};
+    ccl_request* req = ccl_alltoall_impl(reinterpret_cast<const void*>(&send_buf),
+                                         reinterpret_cast<void*>(&recv_buf),
+                                         count,
+                                         ccl::native_type_info<buffer_type>::ccl_type_value,
+                                         attr,
+                                         comm_impl.get(),
+                                         stream.get());
+    return std::unique_ptr<ccl::host_request_impl>(new ccl::host_request_impl(req));
 }
 template<class buffer_type>
 ccl::request_t
@@ -162,8 +214,15 @@ single_device_communicator::alltoallv_impl(const buffer_type* send_buf,
                                                const ccl::alltoallv_attr_t& attr,
                                                ccl::stream::impl_value_t& stream, const ccl::vector_class<ccl::event>& deps)
 {
-    throw ccl::ccl_error(std::string(__PRETTY_FUNCTION__) + " - is not implemented");
-    return {};
+    ccl_request* req = ccl_alltoallv_impl(reinterpret_cast<const void*>(send_buf),
+                                          send_counts.data(),
+                                          reinterpret_cast<void*>(recv_buf),
+                                          recv_counts.data(),
+                                          ccl::native_type_info<buffer_type>::ccl_type_value,
+                                          attr,
+                                          comm_impl.get(),
+                                          stream.get());
+    return std::unique_ptr<ccl::host_request_impl>(new ccl::host_request_impl(req));
 }
 template<class buffer_type>
 ccl::coll_request_t
@@ -188,8 +247,16 @@ single_device_communicator::alltoallv_impl(const buffer_type& send_buf,
                                                const ccl::alltoallv_attr_t& attr,
                                                ccl::stream::impl_value_t& stream, const ccl::vector_class<ccl::event>& deps)
 {
-    throw ccl::ccl_error(std::string(__PRETTY_FUNCTION__) + " - is not implemented");
-    return {};
+    static_assert(!std::is_same<buffer_type, ccl::vector_class<ccl::reference_wrapper_class<cl::sycl::buffer<unsigned long, 1>>>>::value, "???");
+    ccl_request* req = ccl_alltoallv_impl(reinterpret_cast<const void*>(&send_buf),
+                                          send_counts.data(),
+                                          reinterpret_cast<void*>(&recv_buf),
+                                          recv_counts.data(),
+                                          ccl::native_type_info<buffer_type>::ccl_type_value,
+                                          attr,
+                                          comm_impl.get(),
+                                          stream.get());
+    return std::unique_ptr<ccl::host_request_impl>(new ccl::host_request_impl(req));
 }
 template<class buffer_type>
 ccl::coll_request_t
@@ -215,8 +282,14 @@ single_device_communicator::bcast_impl(buffer_type* buf,
                                            const ccl::bcast_attr_t& attr,
                                            ccl::stream::impl_value_t& stream, const ccl::vector_class<ccl::event>& deps)
 {
-    throw ccl::ccl_error(std::string(__PRETTY_FUNCTION__) + " - is not implemented");
-    return {};
+    ccl_request* req = ccl_bcast_impl(reinterpret_cast<void*>(buf),
+                                      count,
+                                      ccl::native_type_info<buffer_type>::ccl_type_value,
+                                      root,
+                                      attr,
+                                      comm_impl.get(),
+                                      stream.get());
+    return std::unique_ptr<ccl::host_request_impl>(new ccl::host_request_impl(req));
 }
 
 template<class buffer_type>
@@ -227,8 +300,14 @@ single_device_communicator::bcast_impl(buffer_type& buf,
                                            const ccl::bcast_attr_t& attr,
                                            ccl::stream::impl_value_t& stream, const ccl::vector_class<ccl::event>& deps)
 {
-    throw ccl::ccl_error(std::string(__PRETTY_FUNCTION__) + " - is not implemented");
-    return {};
+    ccl_request* req = ccl_bcast_impl(reinterpret_cast<void*>(&buf),
+                                      count,
+                                      ccl::native_type_info<buffer_type>::ccl_type_value,
+                                      root,
+                                      attr,
+                                      comm_impl.get(),
+                                      stream.get());
+    return std::unique_ptr<ccl::host_request_impl>(new ccl::host_request_impl(req));
 }
 
 
@@ -243,8 +322,18 @@ single_device_communicator::reduce_impl(const buffer_type* send_buf,
                                             const ccl::reduce_attr_t& attr,
                                             ccl::stream::impl_value_t& stream, const ccl::vector_class<ccl::event>& deps)
 {
-    throw ccl::ccl_error(std::string(__PRETTY_FUNCTION__) + " - is not implemented");
-    return {};
+    const ccl_stream* stream_ptr = stream.get();
+
+    ccl_request* req = ccl_reduce_impl(reinterpret_cast<const void*>(send_buf),
+                                       reinterpret_cast<void*>(recv_buf),
+                                       count,
+                                       ccl::native_type_info<buffer_type>::ccl_type_value,
+                                       static_cast<ccl_reduction_t>(reduction),
+                                       root,
+                                       attr,
+                                       comm_impl.get(),
+                                       stream_ptr);
+    return std::unique_ptr<ccl::host_request_impl>(new ccl::host_request_impl(req));
 }
 
 template<class buffer_type>
@@ -257,8 +346,18 @@ single_device_communicator::reduce_impl(const buffer_type& send_buf,
                                             const ccl::reduce_attr_t& attr,
                                             ccl::stream::impl_value_t& stream, const ccl::vector_class<ccl::event>& deps)
 {
-    throw ccl::ccl_error(std::string(__PRETTY_FUNCTION__) + " - is not implemented");
-    return {};
+    const ccl_stream* stream_ptr = stream.get();
+
+    ccl_request* req = ccl_reduce_impl(reinterpret_cast<const void*>(&send_buf),
+                                       reinterpret_cast<void*>(&recv_buf),
+                                       count,
+                                       ccl::native_type_info<buffer_type>::ccl_type_value,
+                                       static_cast<ccl_reduction_t>(reduction),
+                                       root,
+                                       attr,
+                                       comm_impl.get(),
+                                       stream_ptr);
+    return std::unique_ptr<ccl::host_request_impl>(new ccl::host_request_impl(req));
 }
 /* reduce_scatter */
 template<class buffer_type>
@@ -303,8 +402,24 @@ single_device_communicator::sparse_allreduce_impl(
                                     const ccl::sparse_allreduce_attr_t& attr,
                                     ccl::stream::impl_value_t& stream, const ccl::vector_class<ccl::event>& deps)
 {
-    throw ccl::ccl_error(std::string(__PRETTY_FUNCTION__) + " - is not implemented");
-    return {};
+const ccl_stream* stream_ptr = stream.get();
+
+    ccl_request* req =
+        ccl_sparse_allreduce_impl((const void*)send_ind_buf,
+                                  send_ind_count,
+                                  (const void*)send_val_buf,
+                                  send_val_count,
+                                  (void*)recv_ind_buf,
+                                  recv_ind_count,
+                                  (void*)recv_val_buf,
+                                  recv_val_count,
+                                  ccl::native_type_info<index_buffer_type>::ccl_type_value,
+                                  ccl::native_type_info<value_buffer_type>::ccl_type_value,
+                                  static_cast<ccl_reduction_t>(reduction),
+                                  attr,
+                                  comm_impl.get(),
+                                  stream_ptr);
+    return std::unique_ptr<ccl::host_request_impl>(new ccl::host_request_impl(req));
 }
 
 template<class index_buffer_container_type,
@@ -319,6 +434,22 @@ single_device_communicator::sparse_allreduce_impl(
                                     const ccl::sparse_allreduce_attr_t& attr,
                                     ccl::stream::impl_value_t& stream, const ccl::vector_class<ccl::event>& deps)
 {
-    throw ccl::ccl_error(std::string(__PRETTY_FUNCTION__) + " - is not implemented");
-    return {};
+const ccl_stream* stream_ptr = stream.get();
+
+    ccl_request* req = ccl_sparse_allreduce_impl(
+        reinterpret_cast<const void*>(&send_ind_buf),
+        send_ind_count,
+        reinterpret_cast<const void*>(&send_val_buf),
+        send_val_count,
+        reinterpret_cast<void*>(&recv_ind_buf),
+        recv_ind_count,
+        reinterpret_cast<void*>(&recv_val_buf),
+        recv_val_count,
+        ccl::native_type_info<index_buffer_container_type>::ccl_type_value,
+        ccl::native_type_info<value_buffer_container_type>::ccl_type_value,
+        static_cast<ccl_reduction_t>(reduction),
+        attr,
+        comm_impl.get(),
+        stream_ptr);
+    return std::unique_ptr<ccl::host_request_impl>(new ccl::host_request_impl(req));
 }

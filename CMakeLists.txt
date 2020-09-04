@@ -224,7 +224,7 @@ endif()
 
 #-S- TEMPORARY DISABLED add_subdirectory(examples/benchmark)
 add_subdirectory(examples/common)
-#-S- TEMPORARY DISABLED add_subdirectory(tests/functional)
+add_subdirectory(tests/functional)
 add_subdirectory(tests/unit)
 if(MULTI_GPU_SUPPORT)
     add_subdirectory(examples/level_zero)

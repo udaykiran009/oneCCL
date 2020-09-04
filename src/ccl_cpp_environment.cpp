@@ -1,6 +1,8 @@
 #include "environment_impl.hpp"
 
+#include <memory>
 
+#include "common/comm/single_device_communicator/single_device_communicator.hpp"
 namespace ccl
 {
 
@@ -84,10 +86,12 @@ ccl::device_communicator CCL_API ccl::environment::create_single_device_communic
                                      ccl::shared_ptr_class<ccl::kvs_interface> kvs) const
 {
     LOG_TRACE("Create single device communicator from SYCL device");
+    ccl::device_comm_split_attr_t attr = create_device_comm_split_attr(
+                ccl::attr_arg<ccl::ccl_comm_split_attributes::group>(ccl::device_group_split_type::undetermined));
     ccl::communicator_interface_ptr impl = ccl::communicator_interface::create_communicator_impl(device,
                                                                                                  0,
                                                                                                  rank,
-                                                                                                 ccl_empty_attr());
+                                                                                                 attr);
     return ccl::device_communicator(std::move(impl));
 }
 
@@ -97,7 +101,16 @@ ccl::device_communicator CCL_API ccl::environment::create_single_device_communic
                                      ccl::shared_ptr_class<ccl::kvs_interface> kvs) const
 {
     LOG_TRACE("Create single device communicator from SYCL queue");
-    return create_single_device_communicator(world_size, rank, queue.get_device(), kvs);
+
+    //TODO use group_context
+    auto single_dev_comm = create_single_device_communicator(world_size, rank, queue.get_device(), kvs);
+
+    auto comm_impl = std::dynamic_pointer_cast<single_device_communicator>(single_dev_comm.get_impl());
+    ccl::global_data& data = ccl::global_data::get();
+    auto comm = std::shared_ptr<ccl_comm>(
+            new ccl_comm(rank, world_size, data.comm_ids->acquire()));
+    comm_impl->set_ccl_comm(std::move(comm));
+    return single_dev_comm;
 }
 #endif
 

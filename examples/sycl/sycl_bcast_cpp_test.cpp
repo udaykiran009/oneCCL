@@ -20,6 +20,8 @@ int main(int argc, char **argv)
     }
 
     /* create CCL internal KVS */
+    auto &env = ccl::environment::instance();
+    (void)env;
     ccl::shared_ptr_class<ccl::kvs> kvs;
     ccl::kvs::addr_t master_addr;
     if (rank == 0)

@@ -55,19 +55,18 @@ public:
         void* recv_buf;
         size_t count = param.elem_count;
         const ccl_test_conf& test_conf = param.get_conf();
-        ccl::coll_attr* attr = &param.coll_attr;
-        ccl::stream_t& stream = param.get_stream();
+        auto attr = ccl::environment::instance().create_op_attr<ccl::bcast_attr_t>();
         ccl::datatype data_type = static_cast<ccl::datatype>(test_conf.data_type);
 
         for (size_t buf_idx = 0; buf_idx < param.buffer_count; buf_idx++)
         {
             size_t new_idx = param.buf_indexes[buf_idx];
-            param.prepare_coll_attr(param.buf_indexes[buf_idx]);
+            param.prepare_coll_attr(attr, param.buf_indexes[buf_idx]);
 
             recv_buf = param.get_recv_buf(new_idx);
 
             param.reqs[buf_idx] =
-                    param.global_comm->bcast(recv_buf, count, data_type, ROOT_PROCESS_IDX, attr, stream);
+                    param.global_comm.bcast(recv_buf, count, (ccl_datatype_t)data_type, ROOT_PROCESS_IDX, attr);
         }
     }
 };

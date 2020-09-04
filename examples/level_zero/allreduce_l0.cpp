@@ -83,6 +83,8 @@ int main(int argc, char** argv)
     std::cout << "MPI process rank: " << mpi_rank << ", size: " << mpi_size << std::endl;
 
     // build CCL internal KVS
+    auto &env = ccl::environment::instance();
+    (void)env;
     std::shared_ptr<ccl::kvs> kvs_instance;
     ccl::kvs::addr_t master_addr;
     if (mpi_rank == 0)

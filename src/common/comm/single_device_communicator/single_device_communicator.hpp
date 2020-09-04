@@ -1,5 +1,6 @@
 #pragma once
 #include "common/comm/l0/communicator/typed_base_communicator.hpp"
+#include "common/comm/comm.hpp"
 
 namespace native
 {
@@ -33,4 +34,8 @@ public:
     DEVICE_COMM_IMPL_CLASS_DECLARATION
     DEVICE_COMM_IMPL_SPARSE_DECLARATION
     DEVICE_COMM_IMPL_SPARSE_CLASS_DECLARATION
+
+    void set_ccl_comm(std::shared_ptr<ccl_comm> imp);
+private:
+    std::shared_ptr<ccl_comm> comm_impl;
 };
