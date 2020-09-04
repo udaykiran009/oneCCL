@@ -222,10 +222,12 @@ host_communicator::reduce_scatter_impl(const void* send_buf,
                                        ccl_reduction_t reduction,
                                        const reduce_scatter_attr_t& attr)
 {
-    // TODO not implemented
+    // TODO not fully implemented (need to implement reduce_scatter in parallelizer.cpp)
     throw ccl_error(std::string(__PRETTY_FUNCTION__) + " - is not implemented");
 
-    ccl_request* req = nullptr;
+    ccl_request* req = ccl_reduce_scatter_impl(send_buf, recv_buf, recv_count, dtype,
+                            reduction, ccl_coll_attr(attr), comm_impl.get(), nullptr);
+
     return std::unique_ptr<ccl::host_request_impl>(new ccl::host_request_impl(req));
 }
 

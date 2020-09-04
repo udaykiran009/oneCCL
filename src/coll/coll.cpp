@@ -800,6 +800,7 @@ ccl_request* ccl_alltoallv_impl(const void* send_buf,
     return req;
 }
 
+/* Unused function */
 ccl_request* ccl_allreduce_gpu_impl(const void* send_buf,
                                 void* recv_buf,
                                 size_t count,
@@ -891,6 +892,31 @@ ccl_request* ccl_reduce_impl(const void* send_buf,
     param.dtype = ccl::global_data::get().dtypes->get(dtype);
     param.reduction = reduction;
     param.root = root;
+    param.stream = stream;
+    param.comm = comm;
+
+    auto req = ccl_coll_create(param, attr);
+    LOG_DEBUG("coll ", ccl_coll_type_to_str(param.ctype), " created, req ", req);
+    return req;
+}
+
+ccl_request* ccl_reduce_scatter_impl(const void* send_buf,
+                                     void* recv_buf,
+                                     size_t recv_count,
+                                     ccl_datatype_t dtype,
+                                     ccl_reduction_t reduction,
+                                     const ccl_coll_attr& attr,
+                                     ccl_comm* comm,
+                                     const ccl_stream* stream)
+{
+    ccl_coll_param param{};
+
+    param.ctype = ccl_coll_reduce_scatter;
+    param.send_buf = send_buf;
+    param.recv_buf = recv_buf;
+    param.count = recv_count;
+    param.dtype = ccl::global_data::get().dtypes->get(dtype);
+    param.reduction = reduction;
     param.stream = stream;
     param.comm = comm;
 

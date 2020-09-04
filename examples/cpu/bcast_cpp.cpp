@@ -55,9 +55,24 @@ int main()
     int size, rank;
     MPI_Comm_size(MPI_COMM_WORLD, &size);
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
-    auto kvs = ccl::environment::instance().create_main_kvs();
+
+    /* create CCL internal KVS */
+    ccl::shared_ptr_class<ccl::kvs> kvs;
+    ccl::kvs::addr_t master_addr;
+    if (rank == 0)
+    {
+        kvs = ccl::environment::instance().create_main_kvs();
+        master_addr = kvs->get_addr();
+        MPI_Bcast((void *)master_addr.data(), master_addr.size(), MPI_BYTE, 0, MPI_COMM_WORLD);
+    }
+    else
+    {
+        MPI_Bcast((void *)master_addr.data(), master_addr.size(), MPI_BYTE, 0, MPI_COMM_WORLD);
+        kvs = ccl::environment::instance().create_kvs(master_addr);
+    }
+
     auto comm = ccl::environment::instance().create_communicator(size, rank, kvs);
-    ccl::bcast_attr_t coll_attr = ccl::default_bcast_attr;
+    auto coll_attr = ccl::environment::instance().create_op_attr<ccl::bcast_attr_t>();
 
     MSG_LOOP(comm,
         std::vector<float> buf(msg_count);

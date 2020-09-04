@@ -41,7 +41,16 @@ public:
     communicator& operator=(communicator&& other);
     ~communicator() noexcept;
 
+    /**
+     * Retrieves the rank in a communicator
+     * @return rank corresponding to communicator object
+     */
     size_t rank() const;
+
+    /**
+     * Retrieves the number of rank in a communicator
+     * @return number of the ranks
+     */
     size_t size() const;
 
     communicator split(const comm_split_attr_t& attr);
