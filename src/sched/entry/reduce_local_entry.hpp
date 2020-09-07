@@ -18,13 +18,13 @@ public:
                        ccl_buffer inout_buf,
                        size_t* out_cnt,
                        const ccl_datatype& dtype,
-                       ccl_reduction_t reduction_op) :
+                       ccl::reduction reduction_op) :
         sched_entry(sched), in_buf(in_buf),
         in_cnt(in_cnt), inout_buf(inout_buf),
         out_cnt(out_cnt), dtype(dtype), op(reduction_op),
         fn(sched->coll_attr.reduction_fn)
     {
-        CCL_THROW_IF_NOT(op != ccl_reduction_custom || fn,
+        CCL_THROW_IF_NOT(op != ccl::reduction::custom || fn,
                           "custom reduction requires user provided callback");
     }
 
@@ -66,6 +66,6 @@ private:
     ccl_buffer inout_buf;
     size_t* out_cnt;
     ccl_datatype dtype;
-    ccl_reduction_t op;
+    ccl::reduction op;
     ccl_reduction_fn_t fn;
 };

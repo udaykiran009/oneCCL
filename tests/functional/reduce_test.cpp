@@ -80,7 +80,7 @@ public:
 
             param.reqs[buf_idx] =
                 param.global_comm.reduce((test_conf.place_type == PT_IN) ? recv_buf : send_buf,
-                                           recv_buf, count, (ccl_datatype_t)data_type, (ccl_reduction_t)reduction, ROOT_PROCESS_IDX, attr);
+                                           recv_buf, count, (ccl_datatype_t)data_type, reduction, ROOT_PROCESS_IDX, attr);
         }
     }
 };

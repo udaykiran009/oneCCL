@@ -162,19 +162,19 @@
     
 template<typename vtype>
 typename std::enable_if<!std::is_same<vtype, ccl::bfp16>::value, vtype>::type
-get_mask(ccl_reduction_t op)
+get_mask(ccl::reduction op)
 {
     switch (op)
     {
-        case ccl_reduction_sum:
+        case ccl::reduction::sum:
             return 0;
-        case ccl_reduction_prod:
+        case ccl::reduction::prod:
             return 1;
-        case ccl_reduction_min:
+        case ccl::reduction::min:
             return std::numeric_limits<vtype>::max();
-        case ccl_reduction_max:
+        case ccl::reduction::max:
             return std::numeric_limits<vtype>::min(); 
-        case ccl_reduction_custom:
+        case ccl::reduction::custom:
             CCL_FATAL("custom reduction is not supported for sparse_allreduce/mask algorithm");
             return ccl_status_invalid_arguments;
         default:
@@ -184,19 +184,19 @@ get_mask(ccl_reduction_t op)
 
 template <typename vtype>
 typename std::enable_if<std::is_same<vtype, ccl::bfp16>::value, vtype>::type
-get_mask(ccl_reduction_t op)
+get_mask(ccl::reduction op)
 {
     switch (op)
     {
-        case ccl_reduction_sum:
+        case ccl::reduction::sum:
             return 0;
-        case ccl_reduction_prod:
+        case ccl::reduction::prod:
             return CCL_BFP16_ONE;
-        case ccl_reduction_min:
+        case ccl::reduction::min:
             return CCL_BFP16_MAX;
-        case ccl_reduction_max:
+        case ccl::reduction::max:
             return CCL_BFP16_MIN; 
-        case ccl_reduction_custom:
+        case ccl::reduction::custom:
             CCL_FATAL("custom reduction is not supported for sparse_allreduce/mask algorithm");
             return ccl_status_invalid_arguments;
         default:
@@ -531,7 +531,7 @@ ccl_status_t ccl_coll_build_sparse_allreduce_ring(ccl_sched* sched,
                                                   void** recv_val_buf, size_t* recv_val_count,
                                                   const ccl_datatype& index_dtype,
                                                   const ccl_datatype& value_dtype,
-                                                  ccl_reduction_t op,
+                                                  ccl::reduction op,
                                                   ccl_comm* comm)
 {
     ccl_status_t status = ccl_status_success;
@@ -753,7 +753,7 @@ ccl_status_t ccl_coll_build_sparse_allreduce_mask(ccl_sched* sched,
                                                   void** recv_val_buf, size_t* recv_val_count,
                                                   const ccl_datatype& index_dtype,
                                                   const ccl_datatype& value_dtype,
-                                                  ccl_reduction_t op,
+                                                  ccl::reduction op,
                                                   ccl_comm* comm)
 {
     ccl_status_t status = ccl_status_success;
@@ -1067,7 +1067,7 @@ ccl_coll_build_sparse_allreduce_3_allgatherv(ccl_sched *sched,
                                              void** recv_val_buf, size_t* recv_val_count,
                                              const ccl_datatype& index_dtype,
                                              const ccl_datatype& value_dtype,
-                                             ccl_reduction_t op,
+                                             ccl::reduction op,
                                              ccl_comm* comm)
 {
     ccl_status_t status = ccl_status_success;

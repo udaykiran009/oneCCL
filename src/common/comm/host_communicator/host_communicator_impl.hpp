@@ -51,7 +51,7 @@ ccl::request_t
 host_communicator::allreduce_impl(const BufferType* send_buf,
                                   BufferType* recv_buf,
                                   size_t count,
-                                  ccl_reduction_t reduction,
+                                  ccl::reduction reduction,
                                   const allreduce_attr_t& attr)
 {
     ccl_request* req = ccl_allreduce_impl(reinterpret_cast<const void*>(send_buf),
@@ -166,7 +166,7 @@ ccl::request_t
 host_communicator::reduce_impl(const BufferType* send_buf,
                                BufferType* recv_buf,
                                size_t count,
-                               ccl_reduction_t reduction,
+                               ccl::reduction reduction,
                                size_t root,
                                const reduce_attr_t& attr)
 {
@@ -190,7 +190,7 @@ ccl::request_t
 host_communicator::reduce_scatter_impl(const BufferType* send_buf,
                                        BufferType* recv_buf,
                                        size_t recv_count,
-                                       ccl_reduction_t reduction,
+                                       ccl::reduction reduction,
                                        const reduce_scatter_attr_t& attr)
 {
     // TODO not implemented
@@ -214,7 +214,7 @@ host_communicator::sparse_allreduce_impl(const index_BufferType* send_ind_buf,
                                          size_t recv_ind_count,
                                          value_BufferType* recv_val_buf,
                                          size_t recv_val_count,
-                                         ccl_reduction_t reduction,
+                                         ccl::reduction reduction,
                                          const sparse_allreduce_attr_t& attr)
 {
     ccl_request* req =

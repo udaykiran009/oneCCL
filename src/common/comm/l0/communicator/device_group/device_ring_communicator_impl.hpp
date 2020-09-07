@@ -116,7 +116,7 @@ device_group_ring_communicator::allreduce_impl(const buffer_type* send_buf,
                                                                   send_entry_buffer,
                                                                   recv_entry_buffer,
                                                                   count,
-                                                                  static_cast<ccl_reduction_t>(reduction),
+                                                                  reduction,
                                                                   stream);
     }
     else
@@ -137,7 +137,7 @@ device_group_ring_communicator::allreduce_impl(const buffer_type* send_buf,
                                                         send_entry_buffer,
                                                         recv_entry_buffer,
                                                         count,
-                                                        static_cast<ccl_reduction_t>(reduction),
+                                                        reduction,
                                                         stream);
     }}
 

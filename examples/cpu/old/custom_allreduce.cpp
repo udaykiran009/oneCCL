@@ -572,7 +572,7 @@ int main()
         coll_attr.epilogue_fn = NULL;
         coll_attr.reduction_fn = do_reduction_sum;
         RUN_COLLECTIVE(ccl_allreduce(send_buf, recv_buf, COUNT, dtype,
-                                     ccl_reduction_custom, &coll_attr,
+                                     ccl::reduction::custom, &coll_attr,
                                      NULL, NULL, &request),
                        fill_fn, check_fn, expected_fn,
                        "allreduce_with_reduction_sum");
@@ -588,7 +588,7 @@ int main()
         coll_attr.epilogue_fn = NULL;
         coll_attr.reduction_fn = do_reduction_null;
         RUN_COLLECTIVE(ccl_allreduce(send_buf, recv_buf, COUNT, dtype,
-                                     ccl_reduction_custom, &coll_attr,
+                                     ccl::reduction::custom, &coll_attr,
                                      NULL, NULL, &request),
                        fill_fn, check_fn, expected_fn,
                        "allreduce_with_reduction_null");
@@ -604,7 +604,7 @@ int main()
         coll_attr.epilogue_fn = NULL;
         coll_attr.reduction_fn = do_reduction_custom;
         RUN_COLLECTIVE(ccl_allreduce(send_buf, recv_buf, COUNT, dtype,
-                                     ccl_reduction_custom, &coll_attr,
+                                     ccl::reduction::custom, &coll_attr,
                                      NULL, NULL, &request),
                        fill_fn, check_fn, expected_fn,
                        "allreduce_with_reduction_custom");
@@ -617,7 +617,7 @@ int main()
         coll_attr.epilogue_fn = NULL;
         coll_attr.reduction_fn = do_reduction_sum;
         RUN_COLLECTIVE(ccl_allreduce(send_buf, recv_buf, COUNT, dtype,
-                                     ccl_reduction_custom, &coll_attr,
+                                     ccl::reduction::custom, &coll_attr,
                                      NULL, NULL, &request),
                        fill_fn, check_fn, expected_fn,
                        "allreduce_with_prologue_and_reduction_sum");
@@ -630,7 +630,7 @@ int main()
         coll_attr.epilogue_fn = do_epilogue_2x;
         coll_attr.reduction_fn = do_reduction_sum;
         RUN_COLLECTIVE(ccl_allreduce(send_buf, recv_buf, COUNT, dtype,
-                                     ccl_reduction_custom, &coll_attr,
+                                     ccl::reduction::custom, &coll_attr,
                                      NULL, NULL, &request),
                        fill_fn, check_fn, expected_fn,
                        "allreduce_with_epilogue_and_reduction_sum");
@@ -643,7 +643,7 @@ int main()
         coll_attr.epilogue_fn = do_epilogue_2x;
         coll_attr.reduction_fn = do_reduction_sum;
         RUN_COLLECTIVE(ccl_allreduce(send_buf, recv_buf, COUNT, dtype,
-                                     ccl_reduction_custom, &coll_attr,
+                                     ccl::reduction::custom, &coll_attr,
                                      NULL, NULL, &request),
                        fill_fn, check_fn, expected_fn,
                        "allreduce_with_prologue_and_epilogue_and_reduction_sum");
@@ -659,7 +659,7 @@ int main()
         coll_attr.epilogue_fn = do_epilogue_2x;
         coll_attr.reduction_fn = do_reduction_null;
         RUN_COLLECTIVE(ccl_allreduce(send_buf, recv_buf, COUNT, dtype,
-                                     ccl_reduction_custom, &coll_attr,
+                                     ccl::reduction::custom, &coll_attr,
                                      NULL, NULL, &request),
                        fill_fn, check_fn, expected_fn,
                        "allreduce_with_prologue_and_epilogue_and_reduction_null");
@@ -672,7 +672,7 @@ int main()
         coll_attr.epilogue_fn = do_epilogue_char_to_dtype;
         coll_attr.reduction_fn = do_reduction_sum;
         RUN_COLLECTIVE(ccl_allreduce(send_buf, recv_buf, COUNT, dtype,
-                                     ccl_reduction_custom, &coll_attr,
+                                     ccl::reduction::custom, &coll_attr,
                                      NULL, NULL, &request),
                        fill_fn, check_fn, expected_fn,
                        "allreduce_with_prologue_and_epilogue_and_reduction_sum2");
@@ -688,7 +688,7 @@ int main()
         coll_attr.epilogue_fn = do_epilogue_2x;
         coll_attr.reduction_fn = do_reduction_custom;
         RUN_COLLECTIVE(ccl_allreduce(send_buf, recv_buf, COUNT, dtype,
-                                     ccl_reduction_custom, &coll_attr,
+                                     ccl::reduction::custom, &coll_attr,
                                      NULL, NULL, &request),
                        fill_fn, check_fn, expected_fn,
                        "allreduce_with_epilogue_and_reduction_custom");

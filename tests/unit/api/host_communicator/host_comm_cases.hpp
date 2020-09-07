@@ -167,7 +167,7 @@ TEST(host_communicator_api, host_comm_allreduce_void)
     void* recv_buf = nullptr;
     size_t count = 0;
     ccl_datatype_t dtype = ccl_dtype_int;
-    ccl_reduction_t reduction = ccl_reduction_sum;
+    ccl::reduction reduction = ccl::reduction::sum;
     auto attr = ccl::create_coll_attr<ccl::allreduce_attr_t>();
 
     auto req = comm.allreduce(
@@ -184,7 +184,7 @@ TEST(host_communicator_api, host_comm_allreduce_int)
     int* send_buf = nullptr;
     int* recv_buf = nullptr;
     size_t count = 0;
-    ccl_reduction_t reduction = ccl_reduction_sum;
+    ccl::reduction reduction = ccl::reduction::sum;
     auto attr = ccl::create_coll_attr<ccl::allreduce_attr_t>();
 
     auto req = comm.allreduce(
@@ -382,7 +382,7 @@ TEST(host_communicator_api, host_comm_reduce_void)
     void* recv_buf = nullptr;
     size_t count = 0;
     ccl_datatype_t dtype = ccl_dtype_int;
-    ccl_reduction_t reduction = ccl_reduction_sum;
+    ccl::reduction reduction = ccl::reduction::sum;
     size_t root = 0;
     auto attr = ccl::create_coll_attr<ccl::reduce_attr_t>();
 
@@ -400,7 +400,7 @@ TEST(host_communicator_api, host_comm_reduce_int)
     int* send_buf = nullptr;
     int* recv_buf = nullptr;
     size_t count = 0;
-    ccl_reduction_t reduction = ccl_reduction_sum;
+    ccl::reduction reduction = ccl::reduction::sum;
     size_t root = 0;
     auto attr = ccl::create_coll_attr<ccl::reduce_attr_t>();
 
@@ -419,7 +419,7 @@ TEST(host_communicator_api, host_comm_reduce_scatter_void)
     void* recv_buf = nullptr;
     size_t recv_count = 0;
     ccl_datatype_t dtype = ccl_dtype_int;
-    ccl_reduction_t reduction = ccl_reduction_sum;
+    ccl::reduction reduction = ccl::reduction::sum;
     auto attr = ccl::create_coll_attr<ccl::reduce_scatter_attr_t>();
 
     auto req = comm.reduce_scatter(
@@ -436,7 +436,7 @@ TEST(host_communicator_api, host_comm_reduce_scatter_int)
     int* send_buf = nullptr;
     int* recv_buf = nullptr;
     size_t recv_count = 0;
-    ccl_reduction_t reduction = ccl_reduction_sum;
+    ccl::reduction reduction = ccl::reduction::sum;
     auto attr = ccl::create_coll_attr<ccl::reduce_scatter_attr_t>();
 
     auto req = comm.reduce_scatter(
@@ -460,7 +460,7 @@ TEST(host_communicator_api, host_comm_sparse_allreduce_void)
     size_t recv_val_count = 0;
     ccl_datatype_t ind_dtype = ccl_dtype_int;
     ccl_datatype_t val_dtype = ccl_dtype_int;
-    ccl_reduction_t reduction = ccl_reduction_sum;
+    ccl::reduction reduction = ccl::reduction::sum;
     auto attr = ccl::create_coll_attr<ccl::sparse_allreduce_attr_t>();
 
     auto req = comm.sparse_allreduce(
@@ -484,7 +484,7 @@ TEST(host_communicator_api, host_comm_sparse_allreduce_int)
     size_t recv_ind_count = 0;
     int* recv_val_buf = nullptr;
     size_t recv_val_count = 0;
-    ccl_reduction_t reduction = ccl_reduction_sum;
+    ccl::reduction reduction = ccl::reduction::sum;
     auto attr = ccl::create_coll_attr<ccl::sparse_allreduce_attr_t>();
 
     auto req = comm.sparse_allreduce(

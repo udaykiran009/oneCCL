@@ -19,7 +19,7 @@ void run_collective(const char* cmd_name,
         auto req = comm.reduce(send_buf.data(),
                                recv_buf.data(),
                                recv_buf.size(),
-                               ccl_reduction_sum,
+                               ccl::reduction::sum,
                                COLL_ROOT,
                                coll_attr);
         req->wait();

@@ -118,7 +118,7 @@ host_communicator::allreduce_impl(const void* send_buf,
                                   void* recv_buf,
                                   size_t count,
                                   ccl_datatype_t dtype,
-                                  ccl_reduction_t reduction,
+                                  ccl::reduction reduction,
                                   const allreduce_attr_t& attr)
 {
     ccl_request* req = ccl_allreduce_impl(send_buf, recv_buf, count, dtype,
@@ -218,7 +218,7 @@ host_communicator::reduce_impl(const void* send_buf,
                                void* recv_buf,
                                size_t count,
                                ccl_datatype_t dtype,
-                               ccl_reduction_t reduction,
+                               ccl::reduction reduction,
                                size_t root,
                                const reduce_attr_t& attr)
 {
@@ -234,7 +234,7 @@ host_communicator::reduce_scatter_impl(const void* send_buf,
                                        void* recv_buf,
                                        size_t recv_count,
                                        ccl_datatype_t dtype,
-                                       ccl_reduction_t reduction,
+                                       ccl::reduction reduction,
                                        const reduce_scatter_attr_t& attr)
 {
     // TODO not fully implemented (need to implement reduce_scatter in parallelizer.cpp)
@@ -258,7 +258,7 @@ host_communicator::sparse_allreduce_impl(const void* send_ind_buf,
                                          size_t recv_val_count,
                                          ccl_datatype_t ind_dtype,
                                          ccl_datatype_t val_dtype,
-                                         ccl_reduction_t reduction,
+                                         ccl::reduction reduction,
                                          const sparse_allreduce_attr_t& attr)
 {
     ccl_request* req = ccl_sparse_allreduce_impl(send_ind_buf, send_ind_count,

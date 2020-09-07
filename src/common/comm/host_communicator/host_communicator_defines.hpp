@@ -24,7 +24,7 @@ template ccl::request_t \
 comm_class::allreduce_impl(const type* send_buf, \
                            type* recv_buf, \
                            size_t count, \
-                           ccl_reduction_t reduction, \
+                           ccl::reduction reduction, \
                            const allreduce_attr_t& attr); \
 \
 template ccl::request_t \
@@ -63,7 +63,7 @@ template ccl::request_t \
 comm_class::reduce_impl(const type* send_buf, \
                         type* recv_buf, \
                         size_t count, \
-                        ccl_reduction_t reduction, \
+                        ccl::reduction reduction, \
                         size_t root, \
                         const reduce_attr_t& attr); \
 \
@@ -71,7 +71,7 @@ template ccl::request_t \
 comm_class::reduce_scatter_impl(const type* send_buf, \
                                 type* recv_buf, \
                                 size_t recv_count, \
-                                ccl_reduction_t reduction, \
+                                ccl::reduction reduction, \
                                 const reduce_scatter_attr_t& attr);
 
 
@@ -86,7 +86,7 @@ comm_class::sparse_allreduce_impl(const index_type* send_ind_buf, \
                                   size_t recv_ind_count, \
                                   value_type* recv_val_buf, \
                                   size_t recv_val_count, \
-                                  ccl_reduction_t reduction, \
+                                  ccl::reduction reduction, \
                                   const sparse_allreduce_attr_t& attr);
 
 
@@ -115,7 +115,7 @@ template ccl::request_t CCL_API \
 comm_class::allreduce(const type* send_buf, \
                       type* recv_buf, \
                       size_t count, \
-                      ccl_reduction_t reduction, \
+                      ccl::reduction reduction, \
                       const allreduce_attr_t& attr); \
 \
 template ccl::request_t CCL_API \
@@ -154,7 +154,7 @@ template ccl::request_t CCL_API \
 comm_class::reduce(const type* send_buf, \
                    type* recv_buf, \
                    size_t count, \
-                   ccl_reduction_t reduction, \
+                   ccl::reduction reduction, \
                    size_t root, \
                    const reduce_attr_t& attr); \
 \
@@ -162,7 +162,7 @@ template ccl::request_t CCL_API \
 comm_class::reduce_scatter(const type* send_buf, \
                            type* recv_buf, \
                            size_t recv_count, \
-                           ccl_reduction_t reduction, \
+                           ccl::reduction reduction, \
                            const reduce_scatter_attr_t& attr);
 
 
@@ -177,5 +177,5 @@ comm_class::sparse_allreduce(const index_type* send_ind_buf, \
                              size_t recv_ind_count, \
                              value_type* recv_val_buf, \
                              size_t recv_val_count, \
-                             ccl_reduction_t reduction, \
+                             ccl::reduction reduction, \
                              const sparse_allreduce_attr_t& attr);

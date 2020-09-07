@@ -494,7 +494,7 @@ public:
             COUNT = param.elem_count;
             param.reqs[buf_idx] =
                 param.global_comm.allreduce((test_conf.place_type == PT_IN) ? recv_buf : send_buf,
-                                             recv_buf, count, (ccl_reduction_t)reduction, attr);
+                                             recv_buf, count, reduction, attr);
         }
     }
 
@@ -565,7 +565,7 @@ public:
                 result += check(param);
                 // free_buffers(param);
 
-                if (((get_ccl_lib_reduction_type(test_conf) == ccl_reduction_custom ||
+                if (((get_ccl_lib_reduction_type(test_conf) == ccl::reduction::custom ||
                     param.test_conf.prolog_type != PTYPE_NULL ||
                     param.test_conf.epilog_type != ETYPE_NULL) &&
                             (attr.get<ccl::common_op_attr_id::prolog_fn>().get() != nullptr ||

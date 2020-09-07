@@ -1,5 +1,6 @@
 #include "common/global/global.hpp"
 #include "sched/cache/key.hpp"
+#include "common/utils/enums.hpp"
 
 #include <cstring>
 
@@ -168,7 +169,7 @@ size_t ccl_sched_key_hasher::operator()(const ccl_sched_key& k) const
     size_t hash_value = string_hasher(k.match_id);
     if (ccl::global_data::env().cache_key_type == ccl_cache_key_full)
     {
-        hash_value += k.f.ctype + k.f.dtype + k.f.itype + k.f.reduction +
+        hash_value += k.f.ctype + k.f.dtype + k.f.itype + utils::enum_to_underlying(k.f.reduction) +
             k.f.count1 + k.f.count2 + k.f.root + (size_t)k.f.buf1 + (size_t)k.f.buf2 +
             (size_t)k.f.count3 + (size_t)k.f.count4 + (size_t)k.f.comm +
             (size_t)k.f.prologue_fn + (size_t)k.f.epilogue_fn + (size_t)k.f.reduction_fn;

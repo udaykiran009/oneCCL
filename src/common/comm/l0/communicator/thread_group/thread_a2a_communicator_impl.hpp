@@ -131,7 +131,7 @@ thread_device_group_a2a_communicator::allreduce_impl(const buffer_type* send_buf
                                                                                            real_device_it->second,send_entry_buffer,
                                                                                            recv_entry_buffer,
                                                                                            count,
-                                                                                           static_cast<ccl_reduction_t>(reduction));
+                                                                                           reduction);
         */
     }
     else
@@ -150,7 +150,7 @@ thread_device_group_a2a_communicator::allreduce_impl(const buffer_type* send_buf
                                                                                        virtual_device_it->second, send_entry_buffer,
                                                                                        recv_entry_buffer,
                                                                                        count,
-                                                                                       static_cast<ccl_reduction_t>(reduction));
+                                                                                       reduction);
         */
     }}
 

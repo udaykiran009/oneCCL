@@ -27,7 +27,7 @@ public:
                       size_t cnt,
                       size_t* out_cnt,
                       const ccl_datatype& dtype,
-                      ccl_reduction_t reduction_op,
+                      ccl::reduction reduction_op,
                       size_t src,
                       ccl_buffer comm_buf,
                       ccl_comm* comm,
@@ -40,7 +40,7 @@ public:
         result_buf_type(result_buf_type),
         fn(sched->coll_attr.reduction_fn)
     {
-        CCL_ASSERT(op != ccl_reduction_custom || fn,
+        CCL_ASSERT(op != ccl::reduction::custom || fn,
                    "custom reduction requires user provided callback");
 
         CCL_ASSERT((result_buf_type == ccl_recv_reduce_local_buf && inout_buf.get_ptr() != nullptr) ||
@@ -147,7 +147,7 @@ private:
     size_t in_cnt;
     size_t* out_cnt;
     ccl_datatype dtype;
-    ccl_reduction_t op;
+    ccl::reduction op;
     size_t src;
     ccl_buffer comm_buf;
     ccl_comm* comm;

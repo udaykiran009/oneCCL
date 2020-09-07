@@ -62,7 +62,7 @@ namespace entry_factory
                                         size_t cnt,
                                         size_t* out_cnt,
                                         const ccl_datatype& dtype,
-                                        ccl_reduction_t reduction_op,
+                                        ccl::reduction reduction_op,
                                         size_t src,
                                         ccl_buffer comm_buf,
                                         ccl_comm* comm,

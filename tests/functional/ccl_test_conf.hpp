@@ -196,16 +196,16 @@ std::map<int, const char*>ccl_reduction_type_str =
 #endif
   };
 
-std::map<int, ccl_reduction_t> ccl_reduction_type_values =
+std::map<int, ccl::reduction> ccl_reduction_type_values =
   {
-    { RT_SUM, ccl_reduction_sum },
+    { RT_SUM, ccl::reduction::sum },
 #ifdef TEST_CCL_REDUCE
-    { RT_PROD, ccl_reduction_prod },
-    { RT_MIN, ccl_reduction_min },
-    { RT_MAX, ccl_reduction_max },
+    { RT_PROD, ccl::reduction::prod },
+    { RT_MIN, ccl::reduction::min },
+    { RT_MAX, ccl::reduction::max },
 #ifdef TEST_CCL_CUSTOM_REDUCE
-    { RT_CUSTOM, ccl_reduction_custom },
-    { RT_CUSTOM_NULL, ccl_reduction_custom }
+    { RT_CUSTOM, ccl::reduction::custom },
+    { RT_CUSTOM_NULL, ccl::reduction::custom }
 #endif
 #endif
   };
@@ -321,7 +321,7 @@ size_t get_ccl_buffer_count(ccl_test_conf &test_conf)
     return ccl_buffer_count_values[test_conf.buffer_count];
 }
 
-ccl_reduction_t get_ccl_lib_reduction_type(const ccl_test_conf &test_conf)
+ccl::reduction get_ccl_lib_reduction_type(const ccl_test_conf &test_conf)
 {
     return ccl_reduction_type_values[test_conf.reduction_type];
 }
