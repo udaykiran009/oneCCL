@@ -9,6 +9,11 @@
 #include "ccl_type_traits.hpp"
 #include "ccl_types_policy.hpp"
 
+#include "ccl_comm_split_attr_ids.hpp"
+#include "ccl_comm_split_attr_ids_traits.hpp"
+#include "ccl_comm_split_attr.hpp"
+#include "comm_split_attr_creation_impl.hpp"
+
 #include "ccl_coll_attr_ids.hpp"
 #include "ccl_coll_attr_ids_traits.hpp"
 #include "ccl_coll_attr.hpp"
@@ -70,6 +75,17 @@ TEST(host_communicator_api, move_host_comm)
     ASSERT_TRUE(!orig_comm2.get_impl());
     ASSERT_EQ(moved_comm2.rank(), 1);
     ASSERT_EQ(moved_comm2.size(), 2);
+}
+
+TEST(host_communicator_api, host_comm_split)
+{
+    std::shared_ptr<stub_kvs> stub_storage;
+    auto comm = ccl::communicator::create_communicator(2, 1, stub_storage);
+    auto attr = ccl::create_comm_split_attr(
+                    ccl::attr_arg<ccl::ccl_comm_split_attributes::color>(1)
+                );
+    auto new_comm = comm.split(attr);
+    ASSERT_EQ(new_comm.size(), 1);
 }
 
 TEST(host_communicator_api, host_comm_allgatherv_void)

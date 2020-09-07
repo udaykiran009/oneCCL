@@ -66,6 +66,21 @@ size_t host_communicator::size() const
     return comm_size;
 }
 
+ccl::unique_ptr_class<host_communicator>
+host_communicator::split(const comm_split_attr_t& attr)
+{
+    ccl::global_data& data = ccl::global_data::get();
+    auto new_comm = ccl_comm::create_with_color(
+                        attr.get<ccl::ccl_comm_split_attributes::color>(),
+                        data.comm_ids.get(),
+                        comm_impl.get()
+                    );
+
+    return unique_ptr_class<host_communicator>(
+                new host_communicator(std::shared_ptr<ccl_comm>(new_comm))
+           );
+}
+
 /* allgatherv */
 ccl::request_t
 host_communicator::allgatherv_impl(const void* send_buf,
@@ -77,7 +92,7 @@ host_communicator::allgatherv_impl(const void* send_buf,
 {
     ccl_request* req = ccl_allgatherv_impl(
         send_buf, send_count, recv_buf, recv_counts.data(),
-        dtype, ccl_coll_attr(attr), comm_impl.get(), nullptr);
+        dtype, attr, comm_impl.get(), nullptr);
 
     return std::unique_ptr<ccl::host_request_impl>(new ccl::host_request_impl(req));
 }
@@ -107,7 +122,7 @@ host_communicator::allreduce_impl(const void* send_buf,
                                   const allreduce_attr_t& attr)
 {
     ccl_request* req = ccl_allreduce_impl(send_buf, recv_buf, count, dtype,
-                       reduction, ccl_coll_attr(attr), comm_impl.get(), nullptr);
+                       reduction, attr, comm_impl.get(), nullptr);
 
     return std::unique_ptr<ccl::host_request_impl>(new ccl::host_request_impl(req));
 }
@@ -121,7 +136,7 @@ host_communicator::alltoall_impl(const void* send_buf,
                                  const alltoall_attr_t& attr)
 {
     ccl_request* req = ccl_alltoall_impl(send_buf, recv_buf, count, dtype,
-                      ccl_coll_attr(attr), comm_impl.get(), nullptr);
+                      attr, comm_impl.get(), nullptr);
 
     return std::unique_ptr<ccl::host_request_impl>(new ccl::host_request_impl(req));
 }
@@ -150,7 +165,7 @@ host_communicator::alltoallv_impl(const void* send_buf,
                                   const alltoallv_attr_t& attr)
 {
     ccl_request* req = ccl_alltoallv_impl(send_buf, send_counts.data(), recv_buf, recv_counts.data(),
-                       dtype, ccl_coll_attr(attr), comm_impl.get(), nullptr);
+                       dtype, attr, comm_impl.get(), nullptr);
 
     return std::unique_ptr<ccl::host_request_impl>(new ccl::host_request_impl(req));
 }
@@ -192,7 +207,7 @@ host_communicator::bcast_impl(void* buf,
                               const bcast_attr_t& attr)
 {
     ccl_request* req = ccl_bcast_impl(buf, count, dtype, root,
-                   ccl_coll_attr(attr), comm_impl.get(), nullptr);
+                   attr, comm_impl.get(), nullptr);
 
     return std::unique_ptr<ccl::host_request_impl>(new ccl::host_request_impl(req));
 }
@@ -208,7 +223,7 @@ host_communicator::reduce_impl(const void* send_buf,
                                const reduce_attr_t& attr)
 {
     ccl_request* req = ccl_reduce_impl(send_buf, recv_buf, count, dtype,
-                    reduction, root, ccl_coll_attr(attr), comm_impl.get(), nullptr);
+                    reduction, root, attr, comm_impl.get(), nullptr);
 
     return std::unique_ptr<ccl::host_request_impl>(new ccl::host_request_impl(req));
 }
@@ -226,7 +241,7 @@ host_communicator::reduce_scatter_impl(const void* send_buf,
     throw ccl_error(std::string(__PRETTY_FUNCTION__) + " - is not implemented");
 
     ccl_request* req = ccl_reduce_scatter_impl(send_buf, recv_buf, recv_count, dtype,
-                            reduction, ccl_coll_attr(attr), comm_impl.get(), nullptr);
+                            reduction, attr, comm_impl.get(), nullptr);
 
     return std::unique_ptr<ccl::host_request_impl>(new ccl::host_request_impl(req));
 }
@@ -251,7 +266,7 @@ host_communicator::sparse_allreduce_impl(const void* send_ind_buf,
                               recv_ind_buf, recv_ind_count,
                               recv_val_buf, recv_val_count,
                               ind_dtype, val_dtype,
-                              reduction, ccl_coll_attr(attr),
+                              reduction, attr,
                               comm_impl.get(), nullptr);
 
     return std::unique_ptr<ccl::host_request_impl>(new ccl::host_request_impl(req));

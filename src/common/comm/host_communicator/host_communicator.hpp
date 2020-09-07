@@ -18,11 +18,15 @@
 namespace ccl {
 
 class kvs_interface;
+
 class host_communicator
 {
 public:
     size_t rank() const;
     size_t size() const;
+
+    ccl::unique_ptr_class<host_communicator>
+    split(const comm_split_attr_t& attr);
 
     /* allgatherv */
     ccl::request_t

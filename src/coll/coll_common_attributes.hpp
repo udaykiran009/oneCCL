@@ -79,24 +79,24 @@ struct ccl_common_op_attr_impl_t
         set_attribute_value(typename match_id_traits_t::type val, const match_id_traits_t& t);
 
 
-    typename ccl_common_op_attr_impl_t::prolog_fn_traits_t::return_type prologue_fn;
-    typename ccl_common_op_attr_impl_t::epilog_fn_traits_t::return_type epilogue_fn;
+    typename ccl_common_op_attr_impl_t::prolog_fn_traits_t::return_type prologue_fn{};
+    typename ccl_common_op_attr_impl_t::epilog_fn_traits_t::return_type epilogue_fn{};
 
     /* Priority for collective operation */
-    size_t priority;
+    size_t priority = 0;
 
     /* Blocking/non-blocking */
-    int synchronous;
+    int synchronous = 0;
 
     /* Persistent/non-persistent */
-    int to_cache;
+    int to_cache = 0;
 
 
     /**
      * Id of the operation. If specified, new communicator will be created and collective
      * operations with the same @b match_id will be executed in the same order.
      */
-    typename match_id_traits_t::return_type match_id;
+    typename match_id_traits_t::return_type match_id{};
 
 protected:
     ccl_version_t library_version;

@@ -21,7 +21,7 @@ public:
         get_attribute_value(const reduction_fn_traits_t& id) const;
 
 private:
-    typename reduction_fn_traits_t::return_type reduction_fn_val;
+    typename reduction_fn_traits_t::return_type reduction_fn_val{};
 };
 
 }
