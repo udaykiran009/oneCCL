@@ -93,7 +93,7 @@ single_device_communicator::allreduce_impl(const void* send_buf,
                                                ccl::stream::impl_value_t& stream, const ccl::vector_class<ccl::event>& deps)
 {
     ccl_request* req = ccl_allreduce_impl(send_buf, recv_buf, count, dtype,
-                       static_cast<ccl_reduction_t>(reduction), attr, comm_impl.get(), stream.get());
+                                          reduction, attr, comm_impl.get(), stream.get());
 
     return std::unique_ptr<ccl::host_request_impl>(new ccl::host_request_impl(req));
 }
@@ -186,7 +186,7 @@ single_device_communicator::reduce_impl(const void* send_buf,
                                             ccl::stream::impl_value_t& stream, const ccl::vector_class<ccl::event>& deps)
 {
     ccl_request* req = ccl_reduce_impl(send_buf, recv_buf, count, dtype,
-                    static_cast<ccl_reduction_t>(reduction), root, attr, comm_impl.get(), stream.get());
+                                       reduction, root, attr, comm_impl.get(), stream.get());
 
     return std::unique_ptr<ccl::host_request_impl>(new ccl::host_request_impl(req));
 }
@@ -231,7 +231,7 @@ single_device_communicator::sparse_allreduce_impl(const void* send_ind_buf, size
                               recv_ind_buf, recv_ind_count,
                               recv_val_buf, recv_val_count,
                               index_dtype, value_dtype,
-                              static_cast<ccl_reduction_t>(reduction), attr,
+                              reduction, attr,
                               comm_impl.get(), stream.get());
 
     return std::unique_ptr<ccl::host_request_impl>(new ccl::host_request_impl(req));

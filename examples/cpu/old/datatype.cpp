@@ -110,7 +110,7 @@ void check_allreduce() {
                                recv_bufs[idx].data(),
                                COUNT,
                                dtypes[idx],
-                               ccl_reduction_custom,
+                               ccl::reduction::custom,
                                &coll_attr,
                                nullptr,
                                nullptr,

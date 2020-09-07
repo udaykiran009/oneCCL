@@ -172,7 +172,7 @@ communicator::allreduce(const void* send_buf,
                         void* recv_buf,
                         size_t count,
                         ccl_datatype_t dtype,
-                        ccl_reduction_t reduction,
+                        ccl::reduction reduction,
                         const allreduce_attr_t& attr)
 {
     return get_impl()->allreduce_impl(
@@ -185,7 +185,7 @@ communicator::request_t CCL_API
 communicator::allreduce(const BufferType* send_buf,
                         BufferType* recv_buf,
                         size_t count,
-                        ccl_reduction_t reduction,
+                        ccl::reduction reduction,
                         const allreduce_attr_t& attr)
 {
     return get_impl()->allreduce_impl(
@@ -327,7 +327,7 @@ communicator::reduce(const void* send_buf,
                      void* recv_buf,
                      size_t count,
                      ccl_datatype_t dtype,
-                     ccl_reduction_t reduction,
+                     ccl::reduction reduction,
                      size_t root,
                      const reduce_attr_t& attr)
 {
@@ -341,7 +341,7 @@ communicator::request_t CCL_API
 communicator::reduce(const BufferType* send_buf,
                      BufferType* recv_buf,
                      size_t count,
-                     ccl_reduction_t reduction,
+                     ccl::reduction reduction,
                      size_t root,
                      const reduce_attr_t& attr)
 {
@@ -355,7 +355,7 @@ communicator::reduce_scatter(const void* send_buf,
                              void* recv_buf,
                              size_t recv_count,
                              ccl_datatype_t dtype,
-                             ccl_reduction_t reduction,
+                             ccl::reduction reduction,
                              const reduce_scatter_attr_t& attr)
 {
     return get_impl()->reduce_scatter_impl(
@@ -368,7 +368,7 @@ communicator::request_t CCL_API
 communicator::reduce_scatter(const BufferType* send_buf,
                              BufferType* recv_buf,
                              size_t recv_count,
-                             ccl_reduction_t reduction,
+                             ccl::reduction reduction,
                              const reduce_scatter_attr_t& attr)
 {
     return get_impl()->reduce_scatter_impl(
@@ -387,7 +387,7 @@ communicator::sparse_allreduce(const void* send_ind_buf,
                                size_t recv_val_count,
                                ccl_datatype_t ind_dtype,
                                ccl_datatype_t val_dtype,
-                               ccl_reduction_t reduction,
+                               ccl::reduction reduction,
                                const sparse_allreduce_attr_t& attr)
 {
     return get_impl()->sparse_allreduce_impl(
@@ -409,7 +409,7 @@ communicator::sparse_allreduce(const index_BufferType* send_ind_buf,
                                size_t recv_ind_count,
                                value_BufferType* recv_val_buf,
                                size_t recv_val_count,
-                               ccl_reduction_t reduction,
+                               ccl::reduction reduction,
                                const sparse_allreduce_attr_t& attr)
 {
     return get_impl()->sparse_allreduce_impl(

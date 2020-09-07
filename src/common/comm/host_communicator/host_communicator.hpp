@@ -67,7 +67,7 @@ public:
                    void* recv_buf,
                    size_t count,
                    ccl_datatype_t dtype,
-                   ccl_reduction_t reduction,
+                   ccl::reduction reduction,
                    const allreduce_attr_t& attr = default_allreduce_attr);
 
     template <class BufferType,
@@ -76,7 +76,7 @@ public:
     allreduce_impl(const BufferType* send_buf,
                    BufferType* recv_buf,
                    size_t count,
-                   ccl_reduction_t reduction,
+                   ccl::reduction reduction,
                    const allreduce_attr_t& attr = default_allreduce_attr);
 
     /* alltoall */
@@ -171,7 +171,7 @@ public:
                 void* recv_buf,
                 size_t count,
                 ccl_datatype_t dtype,
-                ccl_reduction_t reduction,
+                ccl::reduction reduction,
                 size_t root,
                 const reduce_attr_t& attr = default_reduce_attr);
 
@@ -181,7 +181,7 @@ public:
     reduce_impl(const BufferType* send_buf,
                 BufferType* recv_buf,
                 size_t count,
-                ccl_reduction_t reduction,
+                ccl::reduction reduction,
                 size_t root,
                 const reduce_attr_t& attr = default_reduce_attr);
 
@@ -191,7 +191,7 @@ public:
                         void* recv_buf,
                         size_t recv_count,
                         ccl_datatype_t dtype,
-                        ccl_reduction_t reduction,
+                        ccl::reduction reduction,
                         const reduce_scatter_attr_t& attr = default_reduce_scatter_attr);
 
     template <class BufferType,
@@ -200,7 +200,7 @@ public:
     reduce_scatter_impl(const BufferType* send_buf,
                         BufferType* recv_buf,
                         size_t recv_count,
-                        ccl_reduction_t reduction,
+                        ccl::reduction reduction,
                         const reduce_scatter_attr_t& attr = default_reduce_scatter_attr);
 
     /* sparse_allreduce */
@@ -215,7 +215,7 @@ public:
                           size_t recv_val_count,
                           ccl_datatype_t ind_dtype,
                           ccl_datatype_t val_dtype,
-                          ccl_reduction_t reduction,
+                          ccl::reduction reduction,
                           const sparse_allreduce_attr_t& attr = default_sparse_allreduce_attr);
 
     template <
@@ -231,7 +231,7 @@ public:
                           size_t recv_ind_count,
                           value_BufferType* recv_val_buf,
                           size_t recv_val_count,
-                          ccl_reduction_t reduction,
+                          ccl::reduction reduction,
                           const sparse_allreduce_attr_t& attr = default_sparse_allreduce_attr);
 
     host_communicator();

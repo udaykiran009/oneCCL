@@ -298,7 +298,7 @@ ccl_status_t CCL_API ccl_allreduce(
         {
             return ccl_status_invalid_arguments;
         }
-        auto request = ccl_allreduce_impl(send_buf, recv_buf, count, dtype, reduction, attr,
+        auto request = ccl_allreduce_impl(send_buf, recv_buf, count, dtype, static_cast<ccl::reduction>(reduction), attr,
                                           (comm) ? static_cast<ccl_comm*>(comm) : ccl::global_data::get().comm.get(),
                                           static_cast<const ccl_stream*>(stream));
         *req = static_cast<ccl_request_t>(request);
@@ -416,7 +416,7 @@ ccl_status_t CCL_API ccl_reduce(
         {
             return ccl_status_invalid_arguments;
         }
-        auto request = ccl_reduce_impl(send_buf, recv_buf, count, dtype, reduction, root, attr,
+        auto request = ccl_reduce_impl(send_buf, recv_buf, count, dtype, static_cast<ccl::reduction>(reduction), root, attr,
                                        (comm) ? static_cast<ccl_comm*>(comm) : ccl::global_data::get().comm.get(),
                                        static_cast<const ccl_stream*>(stream));
         *req = static_cast<ccl_request_t>(request);
@@ -449,7 +449,7 @@ ccl_status_t CCL_API ccl_sparse_allreduce(const void* send_ind_buf, size_t send_
                                                  recv_ind_buf, recv_ind_count,
                                                  recv_val_buf, recv_val_count,
                                                  index_dtype, value_dtype,
-                                                 reduction, attr,
+                                                 static_cast<ccl::reduction>(reduction), attr,
                                                  (comm) ? static_cast<ccl_comm*>(comm) : ccl::global_data::get().comm.get(),
                                                  static_cast<const ccl_stream*>(stream));
         *req = static_cast<ccl_request_t>(request);

@@ -20,7 +20,7 @@ public:
                        ccl_buffer recv_buf,
                        size_t count,
                        const ccl_datatype& dtype,
-                       ccl_reduction_t op,
+                       ccl::reduction op,
                        ccl_comm* comm);
 
     ccl_comm* get_first_dim_comm() const {

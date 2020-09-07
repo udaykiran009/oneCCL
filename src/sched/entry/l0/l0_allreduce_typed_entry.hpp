@@ -61,7 +61,7 @@ public:
                        const ccl_buffer send_buf,
                        ccl_buffer recv_buf,
                        size_t cnt,
-                       ccl_reduction_t op,
+                       ccl::reduction op,
                        std::shared_ptr<ccl_stream> device_stream = std::shared_ptr<ccl_stream>()) :
         base(sched, comm, send_buf, recv_buf, cnt,
         ccl::native_type_info<native_type>::ccl_type_value,

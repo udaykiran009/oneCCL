@@ -162,7 +162,7 @@ public:
                         void* recv_buf,
                         size_t count,
                         ccl_datatype_t dtype,
-                        ccl_reduction_t reduction,
+                        ccl::reduction reduction,
                         const allreduce_attr_t& attr = default_allreduce_attr);
 
     /**
@@ -179,7 +179,7 @@ public:
     request_t allreduce(const BufferType* send_buf,
                         BufferType* recv_buf,
                         size_t count,
-                        ccl_reduction_t reduction,
+                        ccl::reduction reduction,
                         const allreduce_attr_t& attr = default_allreduce_attr);
 
     /**
@@ -387,7 +387,7 @@ public:
                      void* recv_buf,
                      size_t count,
                      ccl_datatype_t dtype,
-                     ccl_reduction_t reduction,
+                     ccl::reduction reduction,
                      size_t root,
                      const reduce_attr_t& attr = default_reduce_attr);
 
@@ -407,7 +407,7 @@ public:
     request_t reduce(const BufferType* send_buf,
                      BufferType* recv_buf,
                      size_t count,
-                     ccl_reduction_t reduction,
+                     ccl::reduction reduction,
                      size_t root,
                      const reduce_attr_t& attr = default_reduce_attr);
 
@@ -429,7 +429,7 @@ public:
                              void* recv_buf,
                              size_t recv_count,
                              ccl_datatype_t dtype,
-                             ccl_reduction_t reduction,
+                             ccl::reduction reduction,
                              const reduce_scatter_attr_t& attr = default_reduce_scatter_attr);
 
     /**
@@ -446,7 +446,7 @@ public:
     request_t reduce_scatter(const BufferType* send_buf,
                              BufferType* recv_buf,
                              size_t recv_count,
-                             ccl_reduction_t reduction,
+                             ccl::reduction reduction,
                              const reduce_scatter_attr_t& attr = default_reduce_scatter_attr);
 
     /**
@@ -480,7 +480,7 @@ public:
                                size_t recv_val_count,
                                ccl_datatype_t ind_dtype,
                                ccl_datatype_t val_dtype,
-                               ccl_reduction_t reduction,
+                               ccl::reduction reduction,
                                const sparse_allreduce_attr_t& attr = default_sparse_allreduce_attr);
 
     /**
@@ -509,7 +509,7 @@ public:
                                size_t recv_ind_count,
                                value_BufferType* recv_val_buf,
                                size_t recv_val_count,
-                               ccl_reduction_t reduction,
+                               ccl::reduction reduction,
                                const sparse_allreduce_attr_t& attr = default_sparse_allreduce_attr);
 
 private:

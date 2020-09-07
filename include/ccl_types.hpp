@@ -26,7 +26,7 @@ typedef struct {
 /**
  * Supported reduction operations
  */
-enum class reduction {
+enum class reduction : int {
     sum = 0,
     prod,
     min,

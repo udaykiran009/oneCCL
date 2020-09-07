@@ -60,7 +60,7 @@ public:
                    ccl_buffer recv_buf,
                    size_t cnt,
                    ccl_datatype_t dtype_in,
-                   ccl_reduction_t op,
+                   ccl::reduction op,
                    std::shared_ptr<ccl_stream>& stream) :
         sched_entry(sched),
         parent_communicator(comm),
@@ -297,7 +297,7 @@ protected:
     ccl_buffer recv_buf;
     size_t elem_count;
     ccl_datatype dtype;
-    ccl_reduction_t op;
+    ccl::reduction op;
     atl_req_t req{};
     std::shared_ptr<ccl_stream> device_stream;
 

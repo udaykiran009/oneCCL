@@ -110,7 +110,7 @@ do                                                  \
       std::shared_ptr <ccl::request> reqs;                                  \
       auto coll_attr = ccl::environment::instance().create_op_attr<ccl::allreduce_attr_t>();    \
       reqs = comm.allreduce(&result, &result_final, 1,                     \
-                         (ccl_reduction_t)ccl::reduction::sum, coll_attr);          \
+                         ccl::reduction::sum, coll_attr);          \
       reqs->wait();                                                         \
       if (result_final > 0)                                                 \
       {                                                                     \

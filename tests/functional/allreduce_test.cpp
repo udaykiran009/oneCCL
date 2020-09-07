@@ -77,7 +77,7 @@ public:
 
             param.reqs[buf_idx] =
                 param.global_comm.allreduce((test_conf.place_type == PT_IN) ? recv_buf : send_buf,
-                                             recv_buf, count, (ccl_datatype_t)data_type, (ccl_reduction_t)reduction, attr);
+                                             recv_buf, count, (ccl_datatype_t)data_type, reduction, attr);
         }
     }
 };
