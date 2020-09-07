@@ -80,10 +80,10 @@ ccl_comm* ccl_comm::create_with_color(int color,
                                       ccl_comm_id_storage* comm_ids,
                                       const ccl_comm* global_comm)
 {
-    // if (ccl::global_data::env().atl_transport == ccl_atl_mpi)
-    // {
-    //     throw ccl::ccl_error("MPI transport doesn't support creation of communicator with color yet");
-    // }
+    if (ccl::global_data::env().atl_transport == ccl_atl_mpi)
+    {
+        throw ccl::ccl_error("MPI transport doesn't support creation of communicator with color yet");
+    }
 
     ccl_status_t status = ccl_status_success;
 
