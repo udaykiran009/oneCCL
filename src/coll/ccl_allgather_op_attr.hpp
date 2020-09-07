@@ -23,6 +23,6 @@ public:
         get_attribute_value(const vector_buf_traits_t& id) const;
 
 private:
-    typename vector_buf_traits_t::type vector_buf_id_val;
+    typename vector_buf_traits_t::type vector_buf_id_val = 0;
 };
 }

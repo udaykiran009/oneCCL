@@ -41,9 +41,9 @@ public:
         get_attribute_value(const sparse_coalesce_mode_traits& id) const;
 
 private:
-    typename sparse_allreduce_completion_fn_traits::return_type reduction_fn_val;
-    typename sparse_allreduce_alloc_fn_traits::return_type alloc_fn_val;
-    typename sparse_allreduce_fn_ctx_traits::return_type fn_ctx_val;
-    typename sparse_coalesce_mode_traits::return_type mode_val;
+    typename sparse_allreduce_completion_fn_traits::return_type reduction_fn_val{};
+    typename sparse_allreduce_alloc_fn_traits::return_type alloc_fn_val{};
+    typename sparse_allreduce_fn_ctx_traits::return_type fn_ctx_val = nullptr;
+    typename sparse_coalesce_mode_traits::return_type mode_val = ccl_sparse_coalesce_regular;
 };
 }
