@@ -178,7 +178,7 @@ void check_comm_split_by_color(ccl::communicator& comm, int mpi_size, int mpi_ra
              comm_rank, comm_size,
              new_comm_rank, new_comm_size);
 
-        // check_allreduce_on_comm(new_comm);
+        check_allreduce_on_comm(new_comm);
     }
 }
 
