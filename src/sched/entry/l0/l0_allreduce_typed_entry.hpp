@@ -1,5 +1,6 @@
 #pragma once
 #include <initializer_list>
+#include <atomic>
 
 #include "sched/entry/l0/l0_entry.hpp"
 
@@ -7,7 +8,7 @@
 static std::mutex global_mutex;
 static size_t exec_count = 0;
 static thread_local size_t cur_index = 0;
-static size_t wait_count = 0;
+static std::atomic<size_t> wait_count{};
 static std::set<std::thread::id> registered_thread;
 
 namespace native {
@@ -15,13 +16,17 @@ template <class native_type, class gpu_comm_impl, ccl::device_group_split_type t
 class l0_allreduce_typed_entry : public base_gpu_entry<native_type,
                                                        gpu_comm_impl,
                                                        topology,
-                                                       ccl::device_topology_type::ring> {
+                                                       ccl::device_topology_type::ring,
+                                                       ccl_coll_allreduce> {
 public:
     friend class ccl_gpu_comm;
     friend class ccl_virtual_gpu_comm;
 
-    using base =
-        base_gpu_entry<native_type, gpu_comm_impl, topology, ccl::device_topology_type::ring>;
+    using base = base_gpu_entry<native_type,
+                                gpu_comm_impl,
+                                topology,
+                                ccl::device_topology_type::ring,
+                                ccl_coll_allreduce>;
     using base::parent_communicator;
     using base::comm_addr;
     using base::req;
@@ -60,10 +65,8 @@ public:
             : base(sched,
                    comm,
                    send_buf,
-                   recv_buf,
                    cnt,
                    ccl::native_type_info<native_type>::ccl_type_value,
-                   op,
                    device_stream),
 
               temp_buffer(parent_communicator->get_device().template alloc_memory<native_type>(
@@ -81,11 +84,15 @@ public:
                                      .template alloc_memory<local_barrier_flag_gpu_type>(
                                          1,
                                          sizeof(local_barrier_flag_gpu_type))) {
+        recv_buf_typed_entry = recv_buf;
+        op_typed_entry = op;
         LOG_DEBUG(class_name(),
                   " entry req ",
                   &req,
                   ", cnt ",
                   elem_count,
+                  ", op ",
+                  op,
                   ", rank: ",
                   comm_addr.to_string());
         size_t next_rank = (comm_addr.rank + 1) % comm_addr.size;
@@ -150,15 +157,18 @@ public:
                                                          ccl::device_topology_type::ring,
                                                          native_type>();
 
+        auto recv_buf_ptr = reinterpret_cast<native_type*>(recv_buf_typed_entry.get_ptr());
         //create implementation specified primitives
-        main_entry_function.template set_arg<typename kernel_main_typed::tmp_recv_buf_arg>(
-            temp_buffer.get());
-        main_entry_function.template set_arg<typename kernel_main_typed::income_data_flag_arg>(
-            income_data_flag.get());
-        main_entry_function.template set_arg<typename kernel_main_typed::ready_to_recv_flag_arg>(
-            ready_to_recv_flag.get());
-        main_entry_function.template set_arg<typename kernel_main_typed::local_barrier_flag_arg>(
-            local_barrier_flag.get());
+        main_entry_function.template set_args<typename kernel_main_typed::tmp_recv_buf_arg,
+                                              typename kernel_main_typed::income_data_flag_arg,
+                                              typename kernel_main_typed::ready_to_recv_flag_arg,
+                                              typename kernel_main_typed::local_barrier_flag_arg,
+                                              typename kernel_main_typed::recv_buf_arg>(
+            temp_buffer.get(),
+            income_data_flag.get(),
+            ready_to_recv_flag.get(),
+            local_barrier_flag.get(),
+            recv_buf_ptr);
 
         /* TRY To APPEND Kernel HERE!!! Not in update
          *
@@ -308,6 +318,8 @@ private:
     ccl_device::device_memory<income_data_flag_gpu_type> income_data_flag;
     ccl_device::device_memory<ready_to_recv_flag_gpu_type> ready_to_recv_flag;
     ccl_device::device_memory<local_barrier_flag_gpu_type> local_barrier_flag;
+    ccl_reduction_t op_typed_entry;
+    ccl_buffer recv_buf_typed_entry;
 
 public:
     bool execute(kernel_main_typed& main_entry_function, kernel_main_typed& right_kernel) {
@@ -361,19 +373,16 @@ public:
                       "}\n");
 
             //TODO register argument for current device kernel: use array-version
-            LOG_TRACE("Set right_tmp_recv_buf_arg");
             main_entry_function
-                .template set_arg<typename kernel_main_typed::right_tmp_recv_buf_arg>(
-                    right_tmp_recv_buf_arg.second);
-            LOG_TRACE("Set right_income_data_flag_arg");
-            main_entry_function
-                .template set_arg<typename kernel_main_typed::right_income_data_flag_arg>(
-                    right_income_data_flag_arg.second);
-            LOG_TRACE("Set right_ready_to_recv_flag_arg");
-            main_entry_function
-                .template set_arg<typename kernel_main_typed::right_ready_to_recv_flag_arg>(
+                .template set_args<typename kernel_main_typed::right_tmp_recv_buf_arg,
+                                   typename kernel_main_typed::right_income_data_flag_arg,
+                                   typename kernel_main_typed::right_ready_to_recv_flag_arg>(
+                    right_tmp_recv_buf_arg.second,
+                    right_income_data_flag_arg.second,
                     right_ready_to_recv_flag_arg.second);
-
+            LOG_TRACE("Set right_tmp_recv_buf_arg",
+                      "Set right_income_data_flag_arg",
+                      "Set right_ready_to_recv_flag_arg");
             LOG_DEBUG("entry: ",
                       class_name(),
                       ", rank: ",
@@ -435,19 +444,16 @@ public:
                       "}\n");
 
             //TODO register argument for current device kernel: user array version
-            LOG_TRACE("Set right_tmp_recv_buf_arg");
             main_entry_function
-                .template set_arg<typename kernel_main_typed::right_tmp_recv_buf_arg>(
-                    right_tmp_recv_buf_arg.second);
-            LOG_TRACE("Set right_income_data_flag_arg");
-            main_entry_function
-                .template set_arg<typename kernel_main_typed::right_income_data_flag_arg>(
-                    right_income_data_flag_arg.second);
-            LOG_TRACE("Set right_ready_to_recv_flag_arg");
-            main_entry_function
-                .template set_arg<typename kernel_main_typed::right_ready_to_recv_flag_arg>(
+                .template set_args<typename kernel_main_typed::right_tmp_recv_buf_arg,
+                                   typename kernel_main_typed::right_income_data_flag_arg,
+                                   typename kernel_main_typed::right_ready_to_recv_flag_arg>(
+                    right_tmp_recv_buf_arg.second,
+                    right_income_data_flag_arg.second,
                     right_ready_to_recv_flag_arg.second);
-
+            LOG_TRACE("Set right_tmp_recv_buf_arg",
+                      "Set right_income_data_flag_arg",
+                      "Set right_ready_to_recv_flag_arg");
             LOG_DEBUG("entry: ",
                       class_name(),
                       ", rank: ",

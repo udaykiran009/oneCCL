@@ -1,22 +1,26 @@
 #pragma once
 #include <initializer_list>
 
-#include "sched/entry/l0/l0_bcast_entry.hpp"
+#include "sched/entry/l0/l0_entry.hpp"
 
 //TODO L0 Workaround
 
 namespace native {
 template <class native_type, class gpu_comm_impl, ccl::device_group_split_type topology>
-class l0_bcast_typed_entry : public base_gpu_bcast_entry<native_type,
-                                                         gpu_comm_impl,
-                                                         topology,
-                                                         ccl::device_topology_type::ring> {
+class l0_bcast_typed_entry : public base_gpu_entry<native_type,
+                                                   gpu_comm_impl,
+                                                   topology,
+                                                   ccl::device_topology_type::ring,
+                                                   ccl_coll_bcast> {
 public:
     friend class ccl_gpu_comm;
     friend class ccl_virtual_gpu_comm;
 
-    using base =
-        base_gpu_bcast_entry<native_type, gpu_comm_impl, topology, ccl::device_topology_type::ring>;
+    using base = base_gpu_entry<native_type,
+                                gpu_comm_impl,
+                                topology,
+                                ccl::device_topology_type::ring,
+                                ccl_coll_bcast>;
     using base::parent_communicator;
     using base::comm_addr;
     using base::req;
@@ -55,12 +59,8 @@ public:
                    buf,
                    cnt,
                    ccl::native_type_info<native_type>::ccl_type_value,
-                   root,
                    device_stream),
 
-              //   temp_buffer(parent_communicator->get_device().template alloc_memory<native_type>(
-              //       cnt,
-              //       sizeof(native_type))),
               income_data_flag(parent_communicator->get_device()
                                    .template alloc_memory<income_data_flag_gpu_type>(
                                        1,
@@ -73,11 +73,14 @@ public:
                                      .template alloc_memory<local_barrier_flag_gpu_type>(
                                          1,
                                          sizeof(local_barrier_flag_gpu_type))) {
+        root_typed_entry = root;
         LOG_DEBUG(class_name(),
                   " entry req ",
                   &req,
                   ", cnt ",
                   elem_count,
+                  ", root",
+                  root,
                   ", rank: ",
                   comm_addr.to_string());
         size_t next_rank = (comm_addr.rank + 1) % comm_addr.size;
@@ -127,13 +130,14 @@ public:
                                                          native_type>();
 
         //create implementation specified primitives
-        main_entry_function.template set_arg<typename kernel_main_typed::income_data_flag_arg>(
-            income_data_flag.get());
-        main_entry_function.template set_arg<typename kernel_main_typed::ready_to_recv_flag_arg>(
-            ready_to_recv_flag.get());
-        main_entry_function.template set_arg<typename kernel_main_typed::local_barrier_flag_arg>(
-            local_barrier_flag.get());
-
+        main_entry_function.template set_args<typename kernel_main_typed::income_data_flag_arg,
+                                              typename kernel_main_typed::ready_to_recv_flag_arg,
+                                              typename kernel_main_typed::local_barrier_flag_arg,
+                                              typename kernel_main_typed::root_arg>(
+            income_data_flag.get(),
+            ready_to_recv_flag.get(),
+            local_barrier_flag.get(),
+            root_typed_entry);
         /* TRY To APPEND Kernel HERE!!! Not in update
          *
          * ze_result_t result = zeCommandListAppendLaunchKernel(exec_cmd_list->handle, main_entry_function.handle, &launch_args, nullptr, 0, nullptr);
@@ -276,12 +280,13 @@ private:
     ccl_device::device_memory<income_data_flag_gpu_type> income_data_flag;
     ccl_device::device_memory<ready_to_recv_flag_gpu_type> ready_to_recv_flag;
     ccl_device::device_memory<local_barrier_flag_gpu_type> local_barrier_flag;
+    size_t root_typed_entry;
 
 public:
     bool execute(kernel_main_typed& main_entry_function, kernel_main_typed& right_kernel) {
         //Check argument binding in kernels for next rank
         bool is_right_kernel_ready =
-            right_kernel.template test_args<typename kernel_main_typed::buf_arg,
+            right_kernel.template test_args<typename kernel_main_typed::common_entry_buf_arg,
                                             typename kernel_main_typed::income_data_flag_arg,
                                             typename kernel_main_typed::ready_to_recv_flag_arg>();
         if (is_right_kernel_ready) {
@@ -297,8 +302,8 @@ public:
             }
 
             //TODO do not get arguments sequencially - use array version instead
-            typename kernel_main_typed::buf_arg::return_t right_buf_arg =
-                right_kernel.template get_arg<typename kernel_main_typed::buf_arg>();
+            typename kernel_main_typed::common_entry_buf_arg::return_t right_buf_arg =
+                right_kernel.template get_arg<typename kernel_main_typed::common_entry_buf_arg>();
             typename kernel_main_typed::income_data_flag_arg::return_t right_income_data_flag_arg =
                 right_kernel.template get_arg<typename kernel_main_typed::income_data_flag_arg>();
             typename kernel_main_typed::ready_to_recv_flag_arg::return_t
@@ -329,17 +334,16 @@ public:
                       "}\n");
 
             //TODO register argument for current device kernel: use array-version
-            LOG_TRACE("Set right_buf_arg");
-            main_entry_function.template set_arg<typename kernel_main_typed::right_buf_arg>(
-                right_buf_arg.second);
-            LOG_TRACE("Set right_income_data_flag_arg");
             main_entry_function
-                .template set_arg<typename kernel_main_typed::right_income_data_flag_arg>(
-                    right_income_data_flag_arg.second);
-            LOG_TRACE("Set right_ready_to_recv_flag_arg");
-            main_entry_function
-                .template set_arg<typename kernel_main_typed::right_ready_to_recv_flag_arg>(
+                .template set_args<typename kernel_main_typed::right_buf_arg,
+                                   typename kernel_main_typed::right_income_data_flag_arg,
+                                   typename kernel_main_typed::right_ready_to_recv_flag_arg>(
+                    right_buf_arg.second,
+                    right_income_data_flag_arg.second,
                     right_ready_to_recv_flag_arg.second);
+            LOG_TRACE("Set right_buf_arg",
+                      "Set right_income_data_flag_arg",
+                      "Set right_ready_to_recv_flag_arg");
 
             LOG_DEBUG("entry: ",
                       class_name(),
@@ -370,7 +374,7 @@ public:
             }
 
             //TODO do not get arguments sequencially - use array version instead
-            typename kernel_main_typed::buf_arg::return_t right_buf_arg =
+            typename kernel_main_typed::common_entry_buf_arg::return_t right_buf_arg =
                 right_kernel.template get_arg<typename kernel_ipc_typed::recv_buf_arg>();
             typename kernel_main_typed::income_data_flag_arg::return_t right_income_data_flag_arg =
                 right_kernel.template get_arg<typename kernel_ipc_typed::income_data_flag_arg>();
@@ -402,18 +406,16 @@ public:
                       "}\n");
 
             //TODO register argument for current device kernel: user array version
-            LOG_TRACE("Set right_tmp_recv_buf_arg");
-            main_entry_function.template set_arg<typename kernel_main_typed::right_buf_arg>(
-                right_buf_arg.second);
-            LOG_TRACE("Set right_income_data_flag_arg");
             main_entry_function
-                .template set_arg<typename kernel_main_typed::right_income_data_flag_arg>(
-                    right_income_data_flag_arg.second);
-            LOG_TRACE("Set right_ready_to_recv_flag_arg");
-            main_entry_function
-                .template set_arg<typename kernel_main_typed::right_ready_to_recv_flag_arg>(
+                .template set_args<typename kernel_main_typed::right_buf_arg,
+                                   typename kernel_main_typed::right_income_data_flag_arg,
+                                   typename kernel_main_typed::right_ready_to_recv_flag_arg>(
+                    right_buf_arg.second,
+                    right_income_data_flag_arg.second,
                     right_ready_to_recv_flag_arg.second);
-
+            LOG_TRACE("Set right_tmp_recv_buf_arg",
+                      "Set right_income_data_flag_arg",
+                      "Set right_ready_to_recv_flag_arg");
             LOG_DEBUG("entry: ",
                       class_name(),
                       ", rank: ",

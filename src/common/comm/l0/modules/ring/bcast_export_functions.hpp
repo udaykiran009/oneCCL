@@ -23,9 +23,11 @@ struct ring_bcast_kernel
 
     //own
     using buf_size_arg = arg<main_kernel_args::args_start_index, size_t>;
+    using common_entry_buf_size_arg = buf_size_arg;
     using buf_size_arg_type = typename buf_size_arg::arg_type;
 
     using buf_arg = arg<main_kernel_args::args_start_index + 1, processing_type*>;
+    using common_entry_buf_arg = buf_arg;
     using buf_arg_type = typename buf_arg::arg_type;
 
     using income_data_flag_arg = thread_safe_arg<main_kernel_args::args_start_index + 2, int*>;
