@@ -32,7 +32,7 @@ else
 fi
 
 BOM_DIR="${WORKSPACE}/boms"
-BOM_LIST_NAME="bom_list.txt"
+BOM_LIST_NAME="bom_lists.txt"
 TMP_DIR="${WORKSPACE}/_tmp"
 PACKAGE_DIR="${WORKSPACE}/_package"
 # Files ready to be packaged as an engineering archive
@@ -402,217 +402,270 @@ prepare_staging()
         mkdir -p ${TARGET_DIR}/BOMS
         cp ${BOM_DIR}/${BOM_LIST_NAME} ${TARGET_DIR}/BOMS/
         mkdir -p ${TARGET_DIR}/bom_lists
+        sed -e "/^#/d" -e "/^DeliveryName/d" ${BOM_DIR}/bom_lists.txt > ${TMP_DIR}/bom_lists.txt
     fi
    # Result of BOM-files processing (if there're missed files RES=1)
     RES=0
 
     cp ${BOM_DIR}/${BOM_LIST_NAME} ${TMP_DIR}/
-
-    while read CUR_BOM_FILE
+    
+    while read LINE
     do
-        echo_debug "CUR_BOM_FILE = $CUR_BOM_FILE"
-        echo "CUR_BOM_FILE = $CUR_BOM_FILE" >> ${PACKAGE_LOG}
-        if [ ! -f "${BOM_DIR}/${CUR_BOM_FILE}" ]
+        echo_debug "LINE = $LINE"
+        BOM_SOURCE=`echo "$LINE" | awk -F $'\t' '{print $1}'`
+        BOM_DEST=`echo "$LINE" | awk -F $'\t' '{print $2}'`
+        BOM_CHECK=`echo "$LINE" | awk -F $'\t' '{print $3}'`
+        BOM_ORIG=`echo "$LINE" | awk -F $'\t' '{print $4}'`
+        BOM_OWN=`echo "$LINE" | awk -F $'\t' '{print $5}'`
+        BOM_REST=`echo "$LINE" | awk -F $'\t' '{print $6}'`
+        echo_debug "BOM_SOURCE = $BOM_SOURCE"
+        echo_debug "BOM_DEST = $BOM_DEST"
+        echo_debug "BOM_CHECK = $BOM_CHECK"
+        echo_debug "BOM_ORIG = $BOM_ORIG"
+        echo_debug "BOM_OWN = $BOM_OWN"
+        echo_debug "BOM_REST = $BOM_REST"
+
+        if [ -n "${BOM_REST}" ]
         then
-            echo_log "ERROR: ${BOM_DIR}/${CUR_BOM_FILE} is unavailable"
+            echo_log "ERROR: unexpected extra data in BOM line: ${BOM_REST}"
             exit 1
         fi
+        case ${BOM_SOURCE} in
+            "<deliverydir>"*)
+                BOM_SOURCE=`echo ${BOM_SOURCE} | sed -e "s|<deliverydir>/bom_lists/||"`
+                echo_debug "BOM_SOURCE = $BOM_SOURCE"
 
-        bad_word=""
-
-        if [ "${MODE}" == "package" ]
-        then
-            for word in $exp_array
-            do
-                if echo $CUR_BOM_FILE | grep -q $word
+                if [ -z "${BOM_SOURCE}" ]
                 then
-                    bad_word=$word
-                fi
-            done
-        fi
-
-        if [ ! -z $bad_word ]
-        then
-            echo_debug "${CUR_BOM_FILE} is skipped for pack mode"
-        else
-            if [ "$MODE" = "swf_pre_drop" ]
-            then
-                 # Remove the last column which is for internal purposes (for engineering package)
-                 sed -e "/^<deliverydir\>/ s/\t[^[:space:]]*$//" ${BOM_DIR}/${CUR_BOM_FILE} > ${TARGET_DIR}/BOMS/${CUR_BOM_FILE}
-            fi
-
-            sed -e "/^#/d" -e "/^DeliveryName/d" ${BOM_DIR}/${CUR_BOM_FILE} > ${TMP_DIR}/${CUR_BOM_FILE}
-
-            while read LINE
-            do
-                echo_debug "LINE = $LINE"
-
-                BL_SOURCE=`echo "$LINE" | awk -F $'\t' '{print $1}'`
-                BL_INSTALL=`echo "$LINE" | awk -F $'\t' '{print $2}'`
-                BL_CHECKSUM=`echo "$LINE" | awk -F $'\t' '{print $3}' `
-                BL_ORIGIN=`echo "$LINE" | awk -F $'\t' '{print $4}'`
-                BL_OWNER=`echo "$LINE" | awk -F $'\t' '{print $5}'`
-                BL_FEATURE=`echo "$LINE" | awk -F $'\t' '{print $6}'`
-                BL_ICOND=`echo "$LINE" | awk -F $'\t' '{print $7}'`
-                BL_MODE=`echo "$LINE" | awk -F $'\t' '{print $8}'`
-                BL_IOWNER=`echo "$LINE" | awk -F $'\t' '{print $9}'`
-                BL_REDIST=`echo "$LINE" | awk -F $'\t' '{print $10}'`
-                BL_LINK=`echo "$LINE" | awk -F $'\t' '{print $11}'`
-                BL_REST=`echo "$LINE" | awk -F $'\t' '{print $12}'`
-
-                echo_debug "BL_SOURCE = $BL_SOURCE"
-                echo_debug "BL_INSTALL = $BL_INSTALL"
-                echo_debug "BL_CHECKSUM = $BL_CHECKSUM"
-                echo_debug "BL_ORIGIN = $BL_ORIGIN"
-                echo_debug "BL_OWNER = $BL_OWNER"
-                echo_debug "BL_FEATURE = $BL_FEATURE"
-                echo_debug "BL_ICOND = $BL_ICOND"
-                echo_debug "BL_MODE = $BL_MODE"
-                echo_debug "BL_IOWNER = $BL_IOWNER"
-                echo_debug "BL_REDIST = $BL_REDIST"
-                echo_debug "BL_LINK = $BL_LINK"
-                echo_debug "BL_REST = $BL_REST"
-
-                if [ -n "${BL_REST}" ]
-                then
-                    echo_log "ERROR: unexpected extra data in BOM line: ${BL_REST}"
+                    echo_log "ERROR: ${TMP_DIR}/bom_lists.txt is invalid"
                     exit 1
                 fi
 
-                case ${BL_SOURCE} in
-                    "<deliverydir>"*)
-                        if [ "$BL_INSTALL" = "N/A" ] && [ "$MODE" = "package" ]
-                        then
-                            echo_debug "Skipped for MODE=pack"
-                        else
-                            BL_SOURCE=`echo $BL_SOURCE | sed -e "s|<deliverydir>/||"`
-                            #
-                            BL_INSTALL=`echo $BL_INSTALL | sed -e "s|<installdir><l_ccl_install_path><l_ccl_platform>||" | \
-                                                        sed -e "s|<installdir><l_ccl_install_path>||"`
-                            if [ $CUR_BOM_FILE == "l_license.txt" ]
+                if [ ! -f "${BOM_DIR}/${BOM_SOURCE}" ]
+                then
+                    echo_log "ERROR: ${BOM_DIR}/${BOM_SOURCE} is unavailable"
+                    exit 1
+                fi
+
+                echo_log "${BOM_SOURCE}..."
+
+                sed -e "/^#/d" ${BOM_DIR}/${BOM_SOURCE} > ${TMP_DIR}/${BOM_SOURCE}
+
+                if [ "$MODE" = "swf_pre_drop" ]
+                then
+                    cp ${BOM_DIR}/${BOM_SOURCE} ${TARGET_DIR}/bom_lists/
+                fi
+
+
+                while read CUR_BOM_FILE
+                do
+                    echo_debug "CUR_BOM_FILE = $CUR_BOM_FILE"
+                    echo "CUR_BOM_FILE = $CUR_BOM_FILE" >> ${PACKAGE_LOG}
+                    echo "CUR_BOM_FILE = ${CUR_BOM_FILE}"
+                    if [ ! -f "${BOM_DIR}/${CUR_BOM_FILE}" ]
+                    then
+                        echo_log "ERROR: ${BOM_DIR}/${CUR_BOM_FILE} is unavailable"
+                        exit 1
+                    fi
+
+                    bad_word=""
+
+                    if [ "${MODE}" == "package" ]
+                    then
+                        for word in $exp_array
+                        do
+                            if echo $CUR_BOM_FILE | grep -q $word
                             then
-                                BL_INSTALL=$(replace_tags $BL_INSTALL)
+                                bad_word=$word
                             fi
-                            echo_debug "BL_SOURCE = $BL_SOURCE"
-                            echo_debug "BL_INSTALL = $BL_INSTALL"
+                        done
+                    fi
 
-                            if [ -z "${BL_SOURCE}" ] || [ -z "${BL_INSTALL}" ]
-                            then
-                                echo_log "ERROR: ${BOM_DIR}/${CUR_BOM_FILE} is invalid"
-                                exit 1
-                            fi
-
-                            #echo -en "\t${BL_SOURCE}..." >> ${PACKAGE_LOG}
-                            case $MODE in
-                                "package")
-                                    DROP_DEST_FILE="${BL_INSTALL}"
-                                    ;;
-                                "swf_pre_drop")
-                                    DROP_DEST_FILE=`echo ${BL_SOURCE} | sed -e "s/<deliverydir>\///"`""
-                                    ;;
-                            esac
-
-                            echo_debug "DROP_DEST_FILE = $DROP_DEST_FILE"
-
-                            case "${BL_LINK}" in
-                                "<installroot>"*)
-                                    DROP_SRC_FILE=`echo $BL_LINK | sed -e "s|<installroot>/||"`
-                                    if [ "$MODE" = "swf_pre_drop" ]
-                                    then
-                                        DROP_SRC_FILE="${PACKAGE_ENG_DIR}/${DROP_SRC_FILE}"
-                                    else
-                                        DROP_SRC_FILE="${WORKSPACE}/build/_install/${DROP_SRC_FILE}"
-                                    fi
-                                    echo_debug "DROP_SRC_FILE = ${DROP_SRC_FILE}"
-                                    ;;
-                                "<ccl_root>"*)
-                                    DROP_SRC_FILE=`echo $BL_LINK | sed -e "s|<ccl_root>/||"`
-                                    DROP_SRC_FILE="${WORKSPACE}/${DROP_SRC_FILE}"
-                                    echo_debug "DROP_SRC_FILE = ${DROP_SRC_FILE}"
-                                    ;;
-                                *)
-                                    ;;
-                            esac
-
-                            DROP_DEST_DIR=`dirname ${TARGET_DIR}/$DROP_DEST_FILE`
-                            mkdir -p ${DROP_DEST_DIR}
-
-                            if [ ! -f ${DROP_SRC_FILE} ]
-                            then
-                                echo " NOK" >> ${PACKAGE_LOG}
-                                RES=1
-                                continue
-                            fi
-
-                            cp ${DROP_SRC_FILE} ${TARGET_DIR}/${DROP_DEST_FILE}
-                            chmod ${BL_MODE} ${TARGET_DIR}/${DROP_DEST_FILE}
-                            echo " OK" >> ${PACKAGE_LOG}
-                        fi
-                        ;;
-                    "<N/A>")
+                    if [ ! -z $bad_word ]
+                    then
+                        echo_debug "${CUR_BOM_FILE} is skipped for pack mode"
+                    else
                         if [ "$MODE" = "swf_pre_drop" ]
                         then
-                            echo_debug "Skipped for MODE=swf_pre_drop"
-                        else
-                            #TODO packing
-                            #echo "packing mode is under construction"
-                            BL_SOURCE=`echo $BL_LINK | sed -e "s|<installdir><l_ccl_install_path><l_ccl_platform>||" `
-                            BL_SOURCE=$(replace_tags $BL_SOURCE)
-                            BL_INSTALL=`echo $BL_INSTALL | sed -e "s|<installdir><l_ccl_install_path><l_ccl_platform>||"`
-                            BL_INSTALL=$(replace_tags $BL_INSTALL)
-                            if [ -z "${BL_SOURCE}" ]
-                            then
-                                echo_log "ERROR: BL_SOURCE is empty"
-                                exit 1
-                            fi
-                            if [ -z "${BL_INSTALL}" ]
-                            then
-                                echo_log "ERROR: BL_INSTALL is empty"
-                                exit 1
-                            fi
-                            if [ -z "${BL_LINK}" ]
-                            then
-                                echo_log "ERROR: BL_LINK is empty"
-                                exit 1
-                            fi
-                            echo_log -en "\t${BL_SOURCE}..." >> ${PACKAGE_LOG}
+                            # Remove the last column which is for internal purposes (for engineering package)
+                            sed -e "/^<deliverydir\>/ s/\t[^[:space:]]*$//" ${BOM_DIR}/${CUR_BOM_FILE} > ${TARGET_DIR}/BOMS/${CUR_BOM_FILE}
+                        fi
 
-                            DROP_DEST_FILE="${BL_INSTALL}"
-                            case "${BL_LINK}" in
-                                "<installdir"*)
-                                    PATH_TO_RM=`dirname ${BL_INSTALL}`
-                                    if [ "${PATH_TO_RM}" = "." ]
+                        sed -e "/^#/d" -e "/^DeliveryName/d" ${BOM_DIR}/${CUR_BOM_FILE} > ${TMP_DIR}/${CUR_BOM_FILE}
+
+                        while read LINE
+                        do
+                            echo_debug "LINE = $LINE"
+
+                            BL_SOURCE=`echo "$LINE" | awk -F $'\t' '{print $1}'`
+                            BL_INSTALL=`echo "$LINE" | awk -F $'\t' '{print $2}'`
+                            BL_CHECKSUM=`echo "$LINE" | awk -F $'\t' '{print $3}' `
+                            BL_ORIGIN=`echo "$LINE" | awk -F $'\t' '{print $4}'`
+                            BL_OWNER=`echo "$LINE" | awk -F $'\t' '{print $5}'`
+                            BL_FEATURE=`echo "$LINE" | awk -F $'\t' '{print $6}'`
+                            BL_ICOND=`echo "$LINE" | awk -F $'\t' '{print $7}'`
+                            BL_MODE=`echo "$LINE" | awk -F $'\t' '{print $8}'`
+                            BL_IOWNER=`echo "$LINE" | awk -F $'\t' '{print $9}'`
+                            BL_REDIST=`echo "$LINE" | awk -F $'\t' '{print $10}'`
+                            BL_LINK=`echo "$LINE" | awk -F $'\t' '{print $11}'`
+                            BL_REST=`echo "$LINE" | awk -F $'\t' '{print $12}'`
+
+                            echo_debug "BL_SOURCE = $BL_SOURCE"
+                            echo_debug "BL_INSTALL = $BL_INSTALL"
+                            echo_debug "BL_CHECKSUM = $BL_CHECKSUM"
+                            echo_debug "BL_ORIGIN = $BL_ORIGIN"
+                            echo_debug "BL_OWNER = $BL_OWNER"           
+                            echo_debug "BL_FEATURE = $BL_FEATURE"           
+                            echo_debug "BL_ICOND = $BL_ICOND"
+                            echo_debug "BL_MODE = $BL_MODE"
+                            echo_debug "BL_IOWNER = $BL_IOWNER"
+                            echo_debug "BL_REDIST = $BL_REDIST"
+                            echo_debug "BL_LINK = $BL_LINK"
+                            echo_debug "BL_REST = $BL_REST"
+
+                            if [ -n "${BL_REST}" ]
+                            then
+                                echo_log "ERROR: unexpected extra data in BOM line: ${BL_REST}"
+                                exit 1
+                            fi
+
+                            case ${BL_SOURCE} in
+                                "<deliverydir>"*)
+                                    if [ "$BL_INSTALL" = "N/A" ] && [ "$MODE" = "package" ]
                                     then
-                                        DROP_SRC_FILE="${BL_SOURCE}"
+                                        echo_debug "Skipped for MODE=pack"
                                     else
-                                        DROP_SRC_FILE=`echo "${BL_SOURCE}" | sed -e "s|${PATH_TO_RM}/||"`
+                                        BL_SOURCE=`echo $BL_SOURCE | sed -e "s|<deliverydir>/||"`
+                                        #
+                                        BL_INSTALL=`echo $BL_INSTALL | sed -e "s|<installdir><l_ccl_install_path><l_ccl_platform>||" | \
+                                                                    sed -e "s|<installdir><l_ccl_install_path>||"`
+                                        if [ $CUR_BOM_FILE == "l_license.txt" ]
+                                        then
+                                            BL_INSTALL=$(replace_tags $BL_INSTALL)
+                                        fi
+                                        echo_debug "BL_SOURCE = $BL_SOURCE"
+                                        echo_debug "BL_INSTALL = $BL_INSTALL"
+
+                                        if [ -z "${BL_SOURCE}" ] || [ -z "${BL_INSTALL}" ]
+                                        then
+                                            echo_log "ERROR: ${BOM_DIR}/${CUR_BOM_FILE} is invalid"
+                                            exit 1
+                                        fi
+
+                                        #echo -en "\t${BL_SOURCE}..." >> ${PACKAGE_LOG}
+                                        case $MODE in
+                                            "package")
+                                                DROP_DEST_FILE="${BL_INSTALL}"
+                                                ;;
+                                            "swf_pre_drop")
+                                                DROP_DEST_FILE=`echo ${BL_SOURCE} | sed -e "s/<deliverydir>\///"`""
+                                                ;;
+                                        esac
+
+                                        echo_debug "DROP_DEST_FILE = $DROP_DEST_FILE"
+
+                                        case "${BL_LINK}" in
+                                            "<installroot>"*)
+                                                DROP_SRC_FILE=`echo $BL_LINK | sed -e "s|<installroot>/||"`
+                                                if [ "$MODE" = "swf_pre_drop" ]
+                                                then
+                                                    DROP_SRC_FILE="${PACKAGE_ENG_DIR}/${DROP_SRC_FILE}"
+                                                else
+                                                    DROP_SRC_FILE="${WORKSPACE}/build/_install/${DROP_SRC_FILE}"
+                                                fi
+                                                echo_debug "DROP_SRC_FILE = ${DROP_SRC_FILE}"
+                                                ;;
+                                            "<ccl_root>"*)
+                                                DROP_SRC_FILE=`echo $BL_LINK | sed -e "s|<ccl_root>/||"`
+                                                DROP_SRC_FILE="${WORKSPACE}/${DROP_SRC_FILE}"
+                                                echo_debug "DROP_SRC_FILE = ${DROP_SRC_FILE}"
+                                                ;;
+                                            *)
+                                                ;;
+                                        esac
+
+                                        DROP_DEST_DIR=`dirname ${TARGET_DIR}/$DROP_DEST_FILE`
+                                        mkdir -p ${DROP_DEST_DIR}
+
+                                        if [ ! -f ${DROP_SRC_FILE} ]
+                                        then
+                                            echo " NOK" >> ${PACKAGE_LOG}
+                                            RES=1
+                                            continue
+                                        fi
+
+                                        cp ${DROP_SRC_FILE} ${TARGET_DIR}/${DROP_DEST_FILE}
+                                        chmod ${BL_MODE} ${TARGET_DIR}/${DROP_DEST_FILE}
+                                        echo " OK" >> ${PACKAGE_LOG}
                                     fi
                                     ;;
+                                "<N/A>")
+                                    if [ "$MODE" = "swf_pre_drop" ]
+                                    then
+                                        echo_debug "Skipped for MODE=swf_pre_drop"
+                                    else
+                                        #TODO packing
+                                        #echo "packing mode is under construction"
+                                        BL_SOURCE=`echo $BL_LINK | sed -e "s|<installdir><l_ccl_install_path><l_ccl_platform>||" `
+                                        BL_SOURCE=$(replace_tags $BL_SOURCE)
+                                        BL_INSTALL=`echo $BL_INSTALL | sed -e "s|<installdir><l_ccl_install_path><l_ccl_platform>||"`
+                                        BL_INSTALL=$(replace_tags $BL_INSTALL)
+                                        if [ -z "${BL_SOURCE}" ]
+                                        then
+                                            echo_log "ERROR: BL_SOURCE is empty"
+                                            exit 1
+                                        fi
+                                        if [ -z "${BL_INSTALL}" ]
+                                        then
+                                            echo_log "ERROR: BL_INSTALL is empty"
+                                            exit 1
+                                        fi
+                                        if [ -z "${BL_LINK}" ]
+                                        then
+                                            echo_log "ERROR: BL_LINK is empty"
+                                            exit 1
+                                        fi
+                                        echo_log -en "\t${BL_SOURCE}..." >> ${PACKAGE_LOG}
+
+                                        DROP_DEST_FILE="${BL_INSTALL}"
+                                        case "${BL_LINK}" in
+                                            "<installdir"*)
+                                                PATH_TO_RM=`dirname ${BL_INSTALL}`
+                                                if [ "${PATH_TO_RM}" = "." ]
+                                                then
+                                                    DROP_SRC_FILE="${BL_SOURCE}"
+                                                else
+                                                    DROP_SRC_FILE=`echo "${BL_SOURCE}" | sed -e "s|${PATH_TO_RM}/||"`
+                                                fi
+                                                ;;
+                                        esac
+                                        DROP_DEST_DIR=`dirname ${TARGET_DIR}/${DROP_DEST_FILE}`
+                                        DROP_DEST_FILE=`basename ${DROP_DEST_FILE}`
+                                        mkdir -p ${DROP_DEST_DIR}
+                                        cd ${DROP_DEST_DIR} && ln -s ${DROP_SRC_FILE} ${DROP_DEST_FILE}
+                                        echo " OK" >> ${PACKAGE_LOG}
+                                    fi
+                                    ;;
+
                             esac
-                            DROP_DEST_DIR=`dirname ${TARGET_DIR}/${DROP_DEST_FILE}`
-                            DROP_DEST_FILE=`basename ${DROP_DEST_FILE}`
-                            mkdir -p ${DROP_DEST_DIR}
-                            cd ${DROP_DEST_DIR} && ln -s ${DROP_SRC_FILE} ${DROP_DEST_FILE}
-                            echo " OK" >> ${PACKAGE_LOG}
-                        fi
-                        ;;
+                        done < ${TMP_DIR}/${CUR_BOM_FILE}
 
-                esac
-            done < ${TMP_DIR}/${CUR_BOM_FILE}
+                    fi
+                echo_log "Done"
+                done < ${TMP_DIR}/${BOM_SOURCE}
 
-        fi
-    echo_log "Done"
-    done < ${TMP_DIR}/${BOM_LIST_NAME}
-
-    if [ "${ENABLE_VERBOSE}" = "yes" ]
-    then
-        if [ -f ${PACKAGE_LOG} ]
-        then
-            cat ${PACKAGE_LOG} | column -t | sed 's|^|\t|' | tee -a ${LOG_FILE}
-            rm -f ${PACKAGE_LOG}
-        fi
-    fi
-    echo_log "${BOM_SOURCE}... DONE"
+                if [ "${ENABLE_VERBOSE}" = "yes" ]
+                then
+                    if [ -f ${PACKAGE_LOG} ]
+                    then
+                        cat ${PACKAGE_LOG} | column -t | sed 's|^|\t|' | tee -a ${LOG_FILE}
+                        rm -f ${PACKAGE_LOG}
+                    fi
+                fi
+                echo_log "${BOM_SOURCE}... DONE"
+                ;;
+        esac
+    done < ${TMP_DIR}/bom_lists.txt
 
 
     if [ $RES -eq 1 ]

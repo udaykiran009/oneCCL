@@ -1,0 +1,12 @@
+DeliveryName	InstallName	FileCheckSum	FileOrigin	Owner	FileFeature	FileInstallCondition	InstalledFilePermission	Redistributable	InstalledFileOwner	SymbolicLink
+<deliverydir>/l_lib/cpu_gpu_dpcpp/libccl.a	<installdir><l_ccl_install_path><l_ccl_platform>/lib/cpu_gpu_dpcpp/libccl.a		external	Ksenya Kochanova		1	755	redistributable	root	<installroot>/lib/cpu_gpu_dpcpp/libccl.a
+<deliverydir>/l_lib/cpu_icc/libccl.a	<installdir><l_ccl_install_path><l_ccl_platform>/lib/cpu_icc/libccl.a		external	Ksenya Kochanova		1	755	redistributable	root	<installroot>/lib/cpu_icc/libccl.a
+<deliverydir>/l_lib/cpu_gpu_dpcpp/libresizable_pmi.a	<installdir><l_ccl_install_path><l_ccl_platform>/lib/cpu_gpu_dpcpp/libresizable_pmi.a		external	Ksenya Kochanova		1	755	redistributable	root	<installroot>/lib/cpu_gpu_dpcpp/libresizable_pmi.a
+<deliverydir>/l_lib/cpu_gpu_dpcpp/libccl_atl_mpi.a	<installdir><l_ccl_install_path><l_ccl_platform>/lib/cpu_gpu_dpcpp/libccl_atl_mpi.a		external	Ksenya Kochanova		1	755	redistributable	root	<installroot>/lib/cpu_gpu_dpcpp/libccl_atl_mpi.a
+<deliverydir>/l_lib/cpu_gpu_dpcpp/libccl_atl_ofi.a	<installdir><l_ccl_install_path><l_ccl_platform>/lib/cpu_gpu_dpcpp/libccl_atl_ofi.a		external	Ksenya Kochanova		1	755	redistributable	root	<installroot>/lib/cpu_gpu_dpcpp/libccl_atl_ofi.a
+<deliverydir>/l_lib/cpu_gpu_dpcpp/libpmi.a	<installdir><l_ccl_install_path><l_ccl_platform>/lib/cpu_gpu_dpcpp/libpmi.a		external	Ksenya Kochanova		1	755	redistributable	root	<installroot>/lib/cpu_gpu_dpcpp/libpmi.a
+<deliverydir>/l_lib/cpu_icc/libresizable_pmi.a	<installdir><l_ccl_install_path><l_ccl_platform>/lib/cpu_icc/libresizable_pmi.a		external	Ksenya Kochanova		1	755	redistributable	root	<installroot>/lib/cpu_icc/libresizable_pmi.a
+<deliverydir>/l_lib/cpu_icc/libccl_atl_mpi.a	<installdir><l_ccl_install_path><l_ccl_platform>/lib/cpu_icc/libccl_atl_mpi.a		external	Ksenya Kochanova		1	755	redistributable	root	<installroot>/lib/cpu_icc/libccl_atl_mpi.a
+<deliverydir>/l_lib/cpu_icc/libccl_atl_ofi.a	<installdir><l_ccl_install_path><l_ccl_platform>/lib/cpu_icc/libccl_atl_ofi.a		external	Ksenya Kochanova		1	755	redistributable	root	<installroot>/lib/cpu_icc/libccl_atl_ofi.a
+<deliverydir>/l_lib/cpu_icc/libpmi.a	<installdir><l_ccl_install_path><l_ccl_platform>/lib/cpu_icc/libpmi.a		external	Ksenya Kochanova		1	755	redistributable	root	<installroot>/lib/cpu_icc/libpmi.a
+#Intel Confidential
