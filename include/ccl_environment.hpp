@@ -36,15 +36,6 @@
 #include "ccl_device_communicator.hpp"
 
 namespace ccl {
-
-/**
- * Helper functions to create custom datatype.
- */
-datatype datatype_create(const datatype_attr_t* attr);
-void datatype_free(datatype dtype);
-size_t datatype_get_size(datatype dtype);
-
-
 /**
  * Types which allow to operate with kvs/communicator/request/stream/event objects in RAII manner
  */
