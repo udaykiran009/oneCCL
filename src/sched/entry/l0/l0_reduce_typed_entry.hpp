@@ -5,19 +5,14 @@
 #include "sched/entry/l0/l0_entry.hpp"
 
 //TODO L0 Workaround
-static std::mutex global_mutex;
-static std::atomic<size_t> exec_count{};
-static thread_local size_t cur_index = 0;
-static std::atomic<size_t> wait_count{};
-static std::set<std::thread::id> registered_thread;
 
 namespace native {
 template <class native_type, class gpu_comm_impl, ccl::device_group_split_type topology>
-class l0_allreduce_typed_entry : public base_gpu_entry<native_type,
-                                                       gpu_comm_impl,
-                                                       topology,
-                                                       ccl::device_topology_type::ring,
-                                                       ccl_coll_allreduce> {
+class l0_reduce_typed_entry : public base_gpu_entry<native_type,
+                                                    gpu_comm_impl,
+                                                    topology,
+                                                    ccl::device_topology_type::ring,
+                                                    ccl_coll_reduce> {
 public:
     friend class ccl_gpu_comm;
     friend class ccl_virtual_gpu_comm;
@@ -26,7 +21,7 @@ public:
                                 gpu_comm_impl,
                                 topology,
                                 ccl::device_topology_type::ring,
-                                ccl_coll_allreduce>;
+                                ccl_coll_reduce>;
     using base::parent_communicator;
     using base::comm_addr;
     using base::req;
@@ -34,8 +29,8 @@ public:
     using base::launch_args;
     using base::elem_count;
     using base::kernel_router;
-    using kernel_main_typed = ring_allreduce_kernel<native_type>;
-    using kernel_ipc_typed = ring_allreduce_ipc<native_type>;
+    using kernel_main_typed = ring_reduce_kernel<native_type>;
+    using kernel_ipc_typed = ring_reduce_ipc<native_type>;
 
     using income_data_flag_gpu_type =
         typename std::remove_pointer<typename kernel_main_typed::income_data_flag_arg_type>::type;
@@ -45,23 +40,23 @@ public:
         typename std::remove_pointer<typename kernel_main_typed::local_barrier_flag_arg_type>::type;
 
     static constexpr const char* class_name() noexcept {
-        return "L0_ALLREDUCE_TYPED";
+        return "L0_REDUCE_TYPED";
     }
 
     static constexpr ccl_coll_type type() noexcept {
-        return ccl_coll_allreduce;
+        return ccl_coll_reduce;
     }
 
-    l0_allreduce_typed_entry() = delete;
-    l0_allreduce_typed_entry(
-        ccl_sched* sched,
-        std::shared_ptr<gpu_comm_impl> comm,
-        specific_indexed_device_storage& available_devices,
-        const ccl_buffer send_buf,
-        ccl_buffer recv_buf,
-        size_t cnt,
-        ccl_reduction_t op,
-        std::shared_ptr<ccl_stream> device_stream = std::shared_ptr<ccl_stream>())
+    l0_reduce_typed_entry() = delete;
+    l0_reduce_typed_entry(ccl_sched* sched,
+                          std::shared_ptr<gpu_comm_impl> comm,
+                          specific_indexed_device_storage& available_devices,
+                          const ccl_buffer send_buf,
+                          ccl_buffer recv_buf,
+                          size_t cnt,
+                          ccl_reduction_t op,
+                          size_t root,
+                          std::shared_ptr<ccl_stream> device_stream = std::shared_ptr<ccl_stream>())
             : base(sched,
                    comm,
                    send_buf,
@@ -86,6 +81,7 @@ public:
                                          sizeof(local_barrier_flag_gpu_type))) {
         recv_buf_typed_entry = recv_buf;
         op_typed_entry = op;
+        root_typed_entry = root;
         LOG_DEBUG(class_name(),
                   " entry req ",
                   &req,
@@ -97,7 +93,7 @@ public:
                   comm_addr.to_string());
         size_t next_rank = (comm_addr.rank + 1) % comm_addr.size;
         kernel_router = base::template create_kernel_router_for_rank<
-            l0_allreduce_typed_entry<native_type, gpu_comm_impl, topology>>(
+            l0_reduce_typed_entry<native_type, gpu_comm_impl, topology>>(
             *this, next_rank, available_devices);
 
         //TODO L0 workaround
@@ -120,7 +116,7 @@ public:
         }
     }
 
-    ~l0_allreduce_typed_entry() {
+    ~l0_reduce_typed_entry() {
         /* std::stringstream ss;
         ss << "native_type: " << std::endl;
         std::vector<native_type> mem_get(temp_buffer.count());
@@ -320,6 +316,7 @@ private:
     ccl_device::device_memory<local_barrier_flag_gpu_type> local_barrier_flag;
     ccl_reduction_t op_typed_entry;
     ccl_buffer recv_buf_typed_entry;
+    size_t root_typed_entry;
 
 public:
     bool execute(kernel_main_typed& main_entry_function, kernel_main_typed& right_kernel) {

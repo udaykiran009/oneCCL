@@ -12,6 +12,7 @@
 #include "common/comm/l0/gpu_device_types.hpp"
 #include "common/comm/l0/modules/ring/allreduce_entry_module.hpp"
 #include "common/comm/l0/modules/ring/bcast_entry_module.hpp"
+#include "common/comm/l0/modules/ring/reduce_entry_module.hpp"
 #include "common/comm/l0/modules/a2a/allreduce_module.hpp"
 #include "common/comm/l0/modules/supported_modules.hpp"
 

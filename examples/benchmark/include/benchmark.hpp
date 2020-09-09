@@ -64,11 +64,11 @@ constexpr std::initializer_list<ccl::datatype> all_dtypes = { ccl::dt_char,  ccl
 
 /* specific benchmark dtypes */
 typedef enum { LOOP_REGULAR, LOOP_UNORDERED } loop_type_t;
-typedef enum { SINGLE_BUF, MULTI_BUF } buf_type_t;
+typedef enum { BUF_SINGLE, BUF_MULTI } buf_type_t;
 
 #define DEFAULT_BACKEND ccl::stream_type::host
 #define DEFAULT_LOOP    LOOP_REGULAR
-#define DEFAULT_BUF     SINGLE_BUF
+#define DEFAULT_BUF     BUF_SINGLE
 
 std::map<ccl::stream_type, std::string> backend_names = {
     std::make_pair(ccl::stream_type::host, "cpu"),
@@ -78,8 +78,8 @@ std::map<ccl::stream_type, std::string> backend_names = {
 std::map<loop_type_t, std::string> loop_names = { std::make_pair(LOOP_REGULAR, "regular"),
                                                   std::make_pair(LOOP_UNORDERED, "unordered") };
 
-std::map<buf_type_t, std::string> buf_names = { std::make_pair(MULTI_BUF, "multi"),
-                                                std::make_pair(SINGLE_BUF, "single") };
+std::map<buf_type_t, std::string> buf_names = { std::make_pair(BUF_MULTI, "multi"),
+                                                std::make_pair(BUF_SINGLE, "single") };
 
 // TODO: add ccl::bfp16
 std::map<ccl::datatype, std::string> dtype_names = {
@@ -236,12 +236,12 @@ int set_loop(const std::string& option_value, loop_type_t& loop) {
 
 int set_buf_type(const std::string& option_value, buf_type_t& buf) {
     std::string option_name = "buf_type";
-    std::set<std::string> supported_option_values{ buf_names[SINGLE_BUF], buf_names[MULTI_BUF] };
+    std::set<std::string> supported_option_values{ buf_names[BUF_SINGLE], buf_names[BUF_MULTI] };
 
     if (check_supported_options(option_name, option_value, supported_option_values))
         return -1;
 
-    buf = (option_value == buf_names[SINGLE_BUF]) ? SINGLE_BUF : MULTI_BUF;
+    buf = (option_value == buf_names[BUF_SINGLE]) ? BUF_SINGLE : BUF_MULTI;
 
     return 0;
 }
@@ -315,7 +315,7 @@ void print_timings(ccl::communicator& comm,
             sum += (val - avg_timer) * (val - avg_timer);
         }
         stddev_timer = sqrt(sum / comm.size()) / avg_timer * 100;
-        if (buf_type == SINGLE_BUF) {
+        if (buf_type == BUF_SINGLE) {
             printf("%10zu %12.2lf %11.1lf\n",
                    elem_count * ccl::datatype_get_size(dtype) * buf_count,
                    avg_timer,

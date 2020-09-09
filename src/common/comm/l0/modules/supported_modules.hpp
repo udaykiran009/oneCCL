@@ -31,11 +31,5 @@ using supported_topology_device_modules = std::tuple<
 // alias for implemented modules
 template <template <ccl_coll_type, ccl::device_group_split_type, ccl::device_topology_type>
           class module_impl>
-using supported_device_modules = supported_topology_device_modules<module_impl,
-                                                                   ccl_coll_allgatherv,
-                                                                   ccl_coll_allreduce,
-                                                                   ccl_coll_alltoall,
-                                                                   ccl_coll_alltoallv,
-                                                                   ccl_coll_barrier,
-                                                                   ccl_coll_bcast>;
+using supported_device_modules = supported_topology_device_modules<module_impl, CCL_COLL_TYPE_LIST>;
 } // namespace native

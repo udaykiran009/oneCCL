@@ -326,8 +326,8 @@ void user_thread_idx(size_t thread_idx,
         }
     }
 }
-
 #endif
+
 int main(int argc, char** argv) {
     using namespace ::native;
     setenv("CreateMultipleDevices", "4", 1);
