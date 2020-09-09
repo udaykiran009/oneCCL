@@ -52,7 +52,7 @@ ccl_status_t ccl_comp_reduce(const void* in_buf, size_t in_count, void* inout_bu
     if (reduction == ccl::reduction::custom)
     {
         CCL_THROW_IF_NOT(reduction_fn, "custom reduction requires user callback");
-        reduction_fn(in_buf, in_count, inout_buf, out_count/*, NEW_API: TODO dtype.idx()*/, context);
+        reduction_fn(in_buf, in_count, inout_buf, out_count, dtype.idx(), context);
         return ccl_status_success;
     }
 

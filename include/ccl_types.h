@@ -128,7 +128,7 @@ typedef ccl_status_t (*ccl_reduction_fn_t)(
     size_t,
     void*,
     size_t*,
-    //ccl_datatype_t, // not required for native, custom datatype
+    ccl_datatype_t,
     const ccl_fn_context_t*);
 
 /* idx_buf, idx_count, idx_dtype, val_buf, val_count, val_dtype, fn_context */
