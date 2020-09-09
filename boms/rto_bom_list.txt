@@ -1,4 +1,0 @@
-l_modulefiles.txt
-l_lib_rto.txt
-l_env.txt
-l_license.txt
