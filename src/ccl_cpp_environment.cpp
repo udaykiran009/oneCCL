@@ -3,6 +3,7 @@
 #include <memory>
 
 #include "common/comm/single_device_communicator/single_device_communicator.hpp"
+
 namespace ccl
 {
 
@@ -77,7 +78,41 @@ communicator CCL_API environment::create_communicator(const size_t size,
     return communicator::create_communicator(size, rank, kvs);
 }
 
+ccl_datatype_t CCL_API environment::register_datatype(const ccl::datatype_attr_t& attr)
+{
+    while(unlikely(ccl::global_data::get().executor->is_locked))
+    {
+        std::this_thread::yield();
+    }
+
+    LOG_DEBUG("register datatype");
+
+    return ccl::global_data::get().dtypes->create(attr);
 }
+
+void CCL_API environment::deregister_datatype(ccl_datatype_t dtype)
+{
+    while(unlikely(ccl::global_data::get().executor->is_locked))
+    {
+        std::this_thread::yield();
+    }
+
+    LOG_DEBUG("deregister datatype");
+
+    ccl::global_data::get().dtypes->free(dtype);
+}
+
+size_t CCL_API environment::get_datatype_size(ccl_datatype_t dtype) const
+{
+    while(unlikely(ccl::global_data::get().executor->is_locked))
+    {
+        std::this_thread::yield();
+    }
+
+    return ccl::global_data::get().dtypes->get(dtype).size();
+}
+
+} // namespace ccl
 
 #ifdef CCL_ENABLE_SYCL
 ccl::device_communicator CCL_API ccl::environment::create_single_device_communicator(const size_t world_size,
@@ -161,6 +196,8 @@ CREATE_OP_ATTR_INSTANTIATION(ccl::comm_split_attr_t)
 #ifdef MULTI_GPU_SUPPORT
     CREATE_OP_ATTR_INSTANTIATION(ccl::device_comm_split_attr_t)
 #endif
+
+CREATE_OP_ATTR_INSTANTIATION(ccl::datatype_attr_t)
 
 #ifdef CCL_ENABLE_SYCL
     CREATE_DEV_COMM_INSTANTIATION(cl::sycl::device, cl::sycl::context)
