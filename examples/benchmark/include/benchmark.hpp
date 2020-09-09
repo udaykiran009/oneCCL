@@ -29,9 +29,13 @@ using namespace cl::sycl::access;
 
 /* specific benchmark variables */
 // TODO: add ccl::bfp16
-constexpr std::initializer_list<ccl::datatype> all_dtypes = { ccl::dt_char,  ccl::dt_int,
-                                                              ccl::dt_float, ccl::dt_double,
-                                                              ccl::dt_int64, ccl::dt_uint64 };
+constexpr std::initializer_list<ccl::datatype> all_dtypes = {
+                                                        ccl::datatype::int8,
+                                                        ccl::datatype::int32,
+                                                        ccl::datatype::float32,
+                                                        ccl::datatype::float64,
+                                                        ccl::datatype::int64,
+                                                        ccl::datatype::uint64};
 
 /* specific benchmark defines */
 // different collectives with duplications
@@ -49,10 +53,13 @@ constexpr std::initializer_list<ccl::datatype> all_dtypes = { ccl::dt_char,  ccl
 
 #define PRINT(fmt, ...) printf(fmt "\n", ##__VA_ARGS__);
 
-#define PRINT_BY_ROOT(comm, fmt, ...) \
-    if (comm->rank() == 0) { \
-        printf(fmt "\n", ##__VA_ARGS__); \
+#ifndef PRINT_BY_ROOT
+#define PRINT_BY_ROOT(comm, fmt, ...)   \
+    if (comm->rank() == 0)              \
+    {                                   \
+        printf(fmt"\n", ##__VA_ARGS__); \
     }
+#endif //PRINT_BY_ROOT
 
 #define ASSERT(cond, fmt, ...) \
     do { \
@@ -73,6 +80,7 @@ typedef enum { BUF_SINGLE, BUF_MULTI } buf_type_t;
 
 std::map<ccl::stream_type, std::string> backend_names = {
     std::make_pair(ccl::stream_type::host, "cpu"),
+    std::make_pair(ccl::stream_type::cpu, "sycl_cpu"),
     std::make_pair(ccl::stream_type::gpu, "sycl") /* TODO: align names */
 };
 
@@ -83,14 +91,15 @@ std::map<buf_type_t, std::string> buf_names = { std::make_pair(BUF_MULTI, "multi
                                                 std::make_pair(BUF_SINGLE, "single") };
 
 // TODO: add ccl::bfp16
-std::map<ccl::datatype, std::string> dtype_names = {
-    std::make_pair(ccl::datatype::dt_char, "char"),
-    std::make_pair(ccl::datatype::dt_int, "int"),
-    std::make_pair(ccl::datatype::dt_float, "float"),
-    std::make_pair(ccl::datatype::dt_double, "double"),
-    std::make_pair(ccl::datatype::dt_int64, "int64_t"),
-    std::make_pair(ccl::datatype::dt_uint64, "uint64_t"),
-};
+std::map<ccl::datatype, std::string> dtype_names =
+  {
+    std::make_pair(ccl::datatype::int8,   "char"),
+    std::make_pair(ccl::datatype::int32,    "int"),
+    std::make_pair(ccl::datatype::float32,  "float"),
+    std::make_pair(ccl::datatype::float64, "double"),
+    std::make_pair(ccl::datatype::int64,  "int64_t"),
+    std::make_pair(ccl::datatype::uint64, "uint64_t"),
+  };
 
 std::map<ccl::reduction, std::string> reduction_names = {
     std::make_pair(ccl::reduction::sum, "sum"),
@@ -300,22 +309,20 @@ void print_timings(ccl::communicator& comm,
     for (idx = 0; idx < comm.size(); idx++)
         recv_counts[idx] = ncolls;
 
-    ccl::coll_attr attr;
-    memset((void*)&attr, 0, sizeof(ccl_coll_attr_t));
+    auto attr = ccl::environment::instance().create_op_attr<ccl::allgatherv_attr_t>();
 
-    comm.allgatherv(timer.data(), ncolls, all_timers.data(), recv_counts.data(), &attr, nullptr)
-        ->wait();
+    comm.allgatherv(&timer,
+                    1,
+                    timers.data(),
+                    recv_counts,
+                    attr)->wait();
 
-    if (comm.rank() == 0) {
-        std::vector<double> timers(comm.size(), 0);
-        for (size_t r = 0; r < comm.size(); ++r) {
-            for (size_t c = 0; c < ncolls; ++c) {
-                timers[r] += all_timers[r * ncolls + c];
-            }
-        }
-        double avg_timer(0);
-        double avg_timer_per_buf(0);
-        for (idx = 0; idx < comm.size(); idx++) {
+    if (comm.rank() == 0)
+    {
+        double avg_timer = 0;
+        double avg_timer_per_buf = 0;
+        for (idx = 0; idx < comm.size(); idx++)
+        {
             avg_timer += timers[idx];
         }
         avg_timer /= (options.iters * comm.size());
@@ -471,7 +478,8 @@ int parse_user_options(int& argc, char**(&argv), user_options_t& options) {
     return 0;
 }
 
-void print_user_options(const user_options_t& options, ccl::communicator* comm) {
+void print_user_options(const user_options_t& options, ccl::communicator& comm)
+{
     std::stringstream ss;
     ss << "colls:          ";
     std::copy(options.coll_names.begin(),
@@ -504,7 +512,7 @@ void print_user_options(const user_options_t& options, ccl::communicator* comm) 
                   "\n  v2i_ratio:      %zu"
                   "\n  %s"
                   "\n  csv_filepath:   %s",
-                  comm->size(),
+                  comm.size(),
                   backend_str.c_str(),
                   loop_str.c_str(),
                   options.iters,

@@ -52,6 +52,12 @@ ccl_comm::ccl_comm(const std::vector<size_t> &local_thread_device_ranks, size_t 
 
     thread_number = thread_counter.load();     // obtain total thread count
     on_process_ranks_number = thread_ranks_counter.load();   // obtain total thread ranks
+
+    //WA for single device case
+    if (on_process_ranks_number == 1)
+    {
+        reset(*local_thread_device_ranks.begin(), cluster_devices_count);
+    }
 }
 
 static ccl_status_t ccl_comm_exchange_colors(std::vector<int>& colors)

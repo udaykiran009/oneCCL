@@ -13,13 +13,16 @@
 #include "benchmark.hpp"
 #include "declarations.hpp"
 
+#include "transport_impl.hpp"
 void do_regular(ccl::communicator* comm,
                 bench_coll_exec_attr& bench_attr,
                 coll_list_t& all_colls,
                 req_list_t& reqs,
-                const user_options_t& options) {
-    char* match_id = (char*)bench_attr.coll_attr.match_id;
-    for (auto dtype : all_dtypes) {
+                const user_options_t& options)
+{
+    bench_coll_exec_attr::match_id_t& match_id = bench_attr.get_match_id();
+    for (auto dtype : all_dtypes)
+    {
         coll_list_t colls;
         std::string dtype_name;
 
@@ -40,19 +43,21 @@ void do_regular(ccl::communicator* comm,
             if (!find_key_val(reduction_op, reduction_names, reduction))
                 continue;
 
-            PRINT_BY_ROOT(
-                comm, "\ndtype: %s\nreduction: %s\n", dtype_name.c_str(), reduction.c_str());
+            PRINT_BY_ROOT((*comm), "\ndtype: %s\nreduction: %s\n",
+                          dtype_name.c_str(), reduction.c_str());
 
             reqs.reserve(colls.size() * options.buf_count);
 
             /* warm up */
-            PRINT_BY_ROOT(comm, "do warm up");
+            PRINT_BY_ROOT((*comm), "do warm up");
 
             bench_attr.reduction = reduction_op;
-            bench_attr.coll_attr.to_cache = 0;
-            for (size_t count = options.min_elem_count; count <= options.max_elem_count;
-                 count *= 2) {
-                for (size_t iter_idx = 0; iter_idx < options.warmup_iters; iter_idx++) {
+            bench_attr.set<ccl::common_op_attr_id::to_cache>(0);
+
+            for (size_t count = options.min_elem_count; count <= options.max_elem_count; count *= 2)
+            {
+                for (size_t iter_idx = 0; iter_idx < options.warmup_iters; iter_idx++)
+                {
                     comm->barrier();
 
                     for (size_t coll_idx = 0; coll_idx < colls.size(); coll_idx++) {
@@ -91,7 +96,7 @@ void do_regular(ccl::communicator* comm,
                               "avg[usec]",
                               "avg_per_buf[usec]",
                               "stddev[%]");
-                bench_attr.coll_attr.to_cache = 1;
+                bench_attr.set<ccl::common_op_attr_id::to_cache>(1);
                 for (size_t count = options.min_elem_count; count <= options.max_elem_count;
                      count *= 2) {
                     try {
@@ -135,7 +140,6 @@ void do_regular(ccl::communicator* comm,
                             double t2 = when();
                             t[coll_idx] += (t2 - t1);
                         }
-
                         print_timings(*comm, t, options, count, dtype, reduction_op);
                     }
                     catch (const std::exception& ex) {
@@ -160,7 +164,7 @@ void do_regular(ccl::communicator* comm,
                 size_t min_elem_count = options.min_elem_count * options.buf_count;
                 size_t max_elem_count = options.max_elem_count * options.buf_count;
 
-                bench_attr.coll_attr.to_cache = 1;
+                bench_attr.set<ccl::common_op_attr_id::to_cache>(1);
                 for (size_t count = min_elem_count; count <= max_elem_count; count *= 2) {
                     try {
                         // we store times for each collective separately,
@@ -206,7 +210,7 @@ void do_unordered(ccl::communicator* comm,
                   req_list_t& reqs,
                   const user_options_t& options) {
     std::set<std::string> match_ids;
-    char* match_id = (char*)bench_attr.coll_attr.match_id;
+    bench_coll_exec_attr::match_id_t& match_id = bench_attr.get_match_id();
 
     for (auto dtype : all_dtypes) {
         coll_list_t colls;
@@ -229,16 +233,16 @@ void do_unordered(ccl::communicator* comm,
             if (!find_key_val(reduction_op, reduction_names, reduction))
                 continue;
 
-            PRINT_BY_ROOT(
-                comm, "\ndtype: %s\nreduction: %s\n", dtype_name.c_str(), reduction.c_str());
+            PRINT_BY_ROOT((*comm), "\ndtype: %s\nreduction: %s\n",
+                          dtype_name.c_str(), reduction.c_str());
 
             size_t rank = comm->rank();
 
             reqs.reserve(colls.size() * options.buf_count * (log2(options.max_elem_count) + 1));
 
-            PRINT_BY_ROOT(comm, "do unordered test");
+            PRINT_BY_ROOT((*comm), "do unordered test");
             bench_attr.reduction = reduction_op;
-            bench_attr.coll_attr.to_cache = 1;
+            bench_attr.set<ccl::common_op_attr_id::to_cache>(1);
 
             for (size_t count = options.min_elem_count; count <= options.max_elem_count;
                  count *= 2) {
@@ -246,16 +250,12 @@ void do_unordered(ccl::communicator* comm,
                     if (rank % 2) {
                         for (size_t coll_idx = 0; coll_idx < colls.size(); coll_idx++) {
                             auto& coll = colls[coll_idx];
-                            for (size_t buf_idx = 0; buf_idx < options.buf_count; buf_idx++) {
-                                snprintf(match_id,
-                                         MATCH_ID_SIZE,
-                                         "coll_%s_%zu_count_%zu_buf_%zu",
-                                         coll->name(),
-                                         coll_idx,
-                                         count,
-                                         buf_idx);
+                            for (size_t buf_idx = 0; buf_idx < options.buf_count; buf_idx++)
+                            {
+                                snprintf(match_id.data(), MATCH_ID_SIZE, "coll_%s_%zu_count_%zu_buf_%zu",
+                                         coll->name(), coll_idx, count, buf_idx);
                                 coll->start(count, buf_idx, bench_attr, reqs);
-                                match_ids.emplace(match_id);
+                                match_ids.emplace(match_id.begin(), match_id.end());
                             }
                         }
                     }
@@ -265,15 +265,10 @@ void do_unordered(ccl::communicator* comm,
                             auto& coll = colls[real_coll_idx];
                             for (size_t buf_idx = 0; buf_idx < options.buf_count; buf_idx++) {
                                 size_t real_buf_idx = options.buf_count - buf_idx - 1;
-                                snprintf(match_id,
-                                         MATCH_ID_SIZE,
-                                         "coll_%s_%zu_count_%zu_buf_%zu",
-                                         coll->name(),
-                                         real_coll_idx,
-                                         count,
-                                         real_buf_idx);
+                                snprintf(match_id.data(), MATCH_ID_SIZE, "coll_%s_%zu_count_%zu_buf_%zu",
+                                         coll->name(), real_coll_idx, count, real_buf_idx);
                                 coll->start(count, real_buf_idx, bench_attr, reqs);
-                                match_ids.insert(std::string(match_id));
+                                match_ids.emplace(match_id.begin(), match_id.end());
                             }
                         }
                     }
@@ -296,7 +291,7 @@ void do_unordered(ccl::communicator* comm,
             catch (...) {
                 ASSERT(0, "error on coll completion");
             }
-            PRINT_BY_ROOT(comm, "PASSED\n");
+            PRINT_BY_ROOT((*comm), "PASSED\n");
         }
     }
 }
@@ -307,14 +302,17 @@ void create_cpu_colls(bench_coll_init_attr& init_attr,
                       coll_list_t& colls) {
     using namespace sparse_detail;
     using incremental_index_int_sparse_strategy =
-        sparse_allreduce_strategy_impl<int, sparse_detail::incremental_indices_distributor>;
+                                sparse_allreduce_strategy_impl<int,
+                                sparse_detail::incremental_indices_distributor>;
     using incremental_index_bfp16_sparse_strategy =
-        sparse_allreduce_strategy_impl<ccl::bfp16, sparse_detail::incremental_indices_distributor>;
+                                sparse_allreduce_strategy_impl<ccl::bfp16,
+                                sparse_detail::incremental_indices_distributor>;
 
     std::stringstream error_messages_stream;
-    base_coll::comm = ccl::environment::instance().create_communicator();
-    base_coll::stream = ccl::environment::instance().create_stream();
-    for (auto names_it = options.coll_names.begin(); names_it != options.coll_names.end();) {
+    //base_coll::comm = ccl::environment::instance().create_communicator();
+    //base_coll::stream = ccl::environment::instance().create_stream();
+    for (auto names_it = options.coll_names.begin(); names_it != options.coll_names.end(); )
+    {
         const std::string& name = *names_it;
         if (name == allgatherv_strategy_impl::class_name()) {
             colls.emplace_back(new cpu_allgatherv_coll<Dtype>(init_attr));
@@ -374,30 +372,34 @@ void create_cpu_colls(bench_coll_init_attr& init_attr,
         std::cerr << "WARNING:\n" << coll_processing_log << std::endl;
     }
 
-    if (colls.empty()) {
+    if (colls.empty())
+    {
         throw std::logic_error(std::string(__FUNCTION__) +
                                " - empty colls, reason: " + coll_processing_log);
     }
 }
 
 #ifdef CCL_ENABLE_SYCL
-template <class Dtype>
-void create_sycl_colls(bench_coll_init_attr& init_attr,
-                       user_options_t& options,
-                       coll_list_t& colls) {
+template<class Dtype>
+void create_sycl_colls(bench_coll_init_attr& init_attr, user_options_t& options, coll_list_t& colls)
+{
+
     using incremental_index_int_sparse_strategy =
-        sparse_allreduce_strategy_impl<int, sparse_detail::incremental_indices_distributor>;
+                            sparse_allreduce_strategy_impl<int,
+                                sparse_detail::incremental_indices_distributor>;
     using incremental_index_bfp16_sparse_strategy =
-        sparse_allreduce_strategy_impl<ccl::bfp16, sparse_detail::incremental_indices_distributor>;
+                            sparse_allreduce_strategy_impl<ccl::bfp16,
+                                sparse_detail::incremental_indices_distributor>;
 
     std::stringstream error_messages_stream;
-    base_coll::comm = ccl::environment::instance().create_communicator();
-    base_coll::stream = ccl::environment::instance().create_stream(sycl_queue);
+    //base_coll::comm = ccl::environment::instance().create_communicator();
+    //base_coll::stream = ccl::environment::instance().create_stream(sycl_queue);
 
     for (auto names_it = options.coll_names.begin(); names_it != options.coll_names.end();) {
         const std::string& name = *names_it;
 
-        if (name == allgatherv_strategy_impl::class_name()) {
+        if (name == allgatherv_strategy_impl::class_name())
+        {
             colls.emplace_back(new sycl_allgatherv_coll<Dtype>(init_attr));
         }
         else if (name == allreduce_strategy_impl::class_name()) {
@@ -436,9 +438,9 @@ void create_sycl_colls(bench_coll_init_attr& init_attr,
                 continue;
             }
 
-            if (is_bfp16_enabled() == 0) {
-                error_messages_stream << "SYCL BFP16 is not supported for current CPU, skipping "
-                                      << name << ".\n";
+            if (is_bfp16_enabled() == 0)
+            {
+                error_messages_stream << "SYCL BFP16 is not supported for current CPU, skipping " << name << ".\n";
                 names_it = options.coll_names.erase(names_it);
                 continue;
             }
@@ -469,7 +471,8 @@ void create_sycl_colls(bench_coll_init_attr& init_attr,
         std::cerr << "WARNING: " << coll_processing_log << std::endl;
     }
 
-    if (colls.empty()) {
+    if (colls.empty())
+    {
         throw std::logic_error(std::string(__FUNCTION__) +
                                " - empty colls, reason: " + coll_processing_log);
     }
@@ -520,10 +523,6 @@ int main(int argc, char* argv[]) {
     req_list_t reqs;
 
     bench_coll_init_attr init_attr;
-    bench_coll_exec_attr bench_attr{};
-
-    char match_id[MATCH_ID_SIZE]{ '\0' };
-    bench_attr.coll_attr.match_id = match_id;
 
     if (parse_user_options(argc, argv, options))
         return -1;
@@ -532,8 +531,40 @@ int main(int argc, char* argv[]) {
     init_attr.max_elem_count = options.max_elem_count;
     init_attr.v2i_ratio = options.v2i_ratio;
 
-    try {
-        ccl_tuple_for_each(launch_dtypes, set_dtypes_func(options.dtypes));
+    cpu_specific_data::init(transport_settings::instance().get_size(),
+                            transport_settings::instance().get_rank(),
+                            transport_settings::instance().get_kvs());
+#ifdef CCL_ENABLE_SYCL
+    std::unique_ptr<cl::sycl::device_selector> selector;
+    switch(options.backend)
+    {
+        case ccl::stream_type::gpu:
+            selector.reset(new cl::sycl::gpu_selector());
+            break;
+        case ccl::stream_type::cpu:
+            selector.reset(new cl::sycl::cpu_selector());
+            break;
+        case ccl::stream_type::host:
+            selector.reset(new cl::sycl::host_selector());
+            break;
+        default:
+            selector.reset(new cl::sycl::default_selector());
+            break;
+    }
+
+    cl::sycl::device device(*selector);
+    cl::sycl::context ctx(device);
+    device_specific_data::init(transport_settings::instance().get_size(),
+                               transport_settings::instance().get_rank(),
+                               device,
+                               ctx,
+                               transport_settings::instance().get_kvs());
+#endif
+
+    try
+    {
+        ccl_tuple_for_each(launch_dtypes,
+                           set_dtypes_func(options.dtypes));
 
         ccl_tuple_for_each(launch_dtypes, create_colls_func(init_attr, options, colls));
     }
@@ -545,7 +576,12 @@ int main(int argc, char* argv[]) {
         return -1;
     }
 
-    ccl::communicator* comm = base_coll::comm.get();
+    ccl::communicator& comm = *cpu_specific_data::comm_ptr;
+
+    char match_id[MATCH_ID_SIZE] {'\0'};
+    bench_coll_exec_attr bench_attr{};
+    bench_attr.init_all();
+    bench_attr.set<ccl::common_op_attr_id::match_id>(std::string{match_id});
 
     print_user_options(options, comm);
 
@@ -589,8 +625,10 @@ int main(int argc, char* argv[]) {
         default: ASSERT(0, "unknown loop %d", options.loop); break;
     }
 
-    base_coll::comm.reset();
-    base_coll::stream.reset();
+    //base_coll::comm.reset();
+    //base_coll::stream.reset();
 
+    device_specific_data::deinit();
+    cpu_specific_data::deinit();
     return 0;
 }

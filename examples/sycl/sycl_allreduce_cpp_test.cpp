@@ -38,7 +38,10 @@ int main(int argc, char **argv)
     }
 
     /* create SYCL communicator */
-    auto comm = ccl::environment::instance().create_single_device_communicator(size, rank, q, kvs);
+    auto ctx = q.get_context();
+    auto communcators = ccl::environment::instance().create_device_communicators(size,
+                    ccl::vector_class<ccl::pair_class<ccl::rank_t, cl::sycl::device>>{{rank, q.get_device()}}, ctx, kvs);
+    auto &comm = *communcators.begin();
 
     if (create_sycl_queue(argc, argv, q, stream_type) != 0) {
         return -1;

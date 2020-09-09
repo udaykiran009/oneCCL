@@ -75,7 +75,7 @@ generic_device_type<CCL_ENABLE_SYCL_TRUE>::generic_device_type(const cl::sycl::d
 {
 }
 
-device_index_type generic_device_type<CCL_ENABLE_SYCL_TRUE>::get_id() const noexcept
+device_index_type generic_device_type<CCL_ENABLE_SYCL_TRUE>::get_id() const
 {
     return native::get_runtime_device(device)->get_device_path();
 }

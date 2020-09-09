@@ -33,14 +33,30 @@ ccl::device_communicator ccl::comm_group::create_communicator(const DeviceType& 
     static_assert(std::is_same<DeviceType, cl::sycl::device>::value, "ccl::comm_group::create_communicator() - supports SYCL devices at now");
 #endif
 
-    LOG_TRACE("Create communicator from device");
-    ccl::communicator_interface_ptr impl =
-            ccl::communicator_interface::create_communicator_impl(device,
+    ccl::communicator_interface_ptr impl;
+    //TODO -S- temporary solution to support single device case
+    auto device_count_per_process = pimpl->get_expected_process_device_size();
+    LOG_DEBUG("Create communicator from device, expected devices per process: ", device_count_per_process);
+    if (device_count_per_process == 1) /* special single device case */
+    {
+        LOG_TRACE("Create single device communicator from SYCL device");
+        auto host_comm = pimpl->get_host_communicator();
+        //TODO
+        ccl::device_comm_split_attr_t single_dev_attr = attr;
+        single_dev_attr.set<ccl::ccl_comm_split_attributes::group>(ccl::device_group_split_type::undetermined);
+        impl = ccl::communicator_interface::create_communicator_impl(device, host_comm->rank(), host_comm->size(), single_dev_attr);
+    }
+    else
+    {
+        // multiple device case
+        impl = ccl::communicator_interface::create_communicator_impl(device,
                                                                   pimpl->thread_id,
                                                                   pimpl->get_host_communicator()->rank(),
                                                                   attr);
-    // registering device in group - is non blocking operation, until it is not the last device
-    pimpl->sync_register_communicator(impl);
+
+        // registering device in group - is non blocking operation, until it is not the last device
+        pimpl->sync_register_communicator(impl);
+    }
     return device_communicator(std::move(impl));
 }
 

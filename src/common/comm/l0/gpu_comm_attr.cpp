@@ -190,6 +190,11 @@ bool gpu_comm_attr::delegate_sync_register_communicator(std::shared_ptr<communic
     return true;
 }
 
+const size_t gpu_comm_attr::get_expected_process_device_size() const noexcept
+{
+    return expected_process_device_size;
+}
+
 std::shared_ptr<native::process_group_context> gpu_comm_attr::get_process_context()
 {
     return ctx;

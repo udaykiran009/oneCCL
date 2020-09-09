@@ -24,7 +24,7 @@ comm_group::~comm_group()
 
 const group_unique_key& comm_group::get_unique_id() const
 {
-    return pimpl->get_unique_id();;
+    return pimpl->get_unique_id();
 }
 /*
 std::string comm_group::to_string() const

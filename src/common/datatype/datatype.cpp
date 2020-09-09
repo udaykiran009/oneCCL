@@ -25,20 +25,33 @@ ccl_datatype_storage::ccl_datatype_storage()
     {
         /* fill table with predefined datatypes */
         size = (idx == ccl_dtype_char) ? sizeof(char) :
+               (idx == ccl_dtype_uint8) ? sizeof(uint8_t) :
+               (idx == ccl_dtype_int16) ? sizeof(int16_t) :
+               (idx == ccl_dtype_uint16) ? sizeof(uint16_t) :
                (idx == ccl_dtype_int) ? sizeof(int) :
-               (idx == ccl_dtype_bfp16) ? sizeof(uint16_t) :
-               (idx == ccl_dtype_float) ? sizeof(float) :
-               (idx == ccl_dtype_double) ? sizeof(double) :
+               (idx == ccl_dtype_uint32) ? sizeof(uint32_t) :
                (idx == ccl_dtype_int64) ? sizeof(int64_t) :
-               (idx == ccl_dtype_uint64) ? sizeof(uint64_t) : 0;
+               (idx == ccl_dtype_uint64) ? sizeof(uint64_t) :
+               (idx == ccl_dtype_bfloat8)? sizeof(uint8_t) :
+               (idx == ccl_dtype_bfp16) ? sizeof(uint16_t) :
+               (idx == ccl_dtype_float16) ? sizeof(uint16_t) :
+               (idx == ccl_dtype_float) ? sizeof(float) :
+               (idx == ccl_dtype_double) ? sizeof(double) : 0;
 
+        CCL_ASSERT(size > 0, "Unexpected data type size: ", size, ", for idx: ", idx);
         name_str = (idx == ccl_dtype_char) ? "CHAR" :
+                   (idx == ccl_dtype_uint8) ? "UINT8" :
+                   (idx == ccl_dtype_int16) ? "INT16" :
+                   (idx == ccl_dtype_uint16) ? "UINT16" :
                    (idx == ccl_dtype_int) ? "INT" :
-                   (idx == ccl_dtype_bfp16) ? "BFLOAT16" :
-                   (idx == ccl_dtype_float) ? "FLOAT" :
-                   (idx == ccl_dtype_double) ? "DOUBLE" :
+                   (idx == ccl_dtype_uint32) ? "UINT32" :
                    (idx == ccl_dtype_int64) ? "INT64" :
-                   (idx == ccl_dtype_uint64) ? "UINT64" : 0;
+                   (idx == ccl_dtype_uint64) ? "UINT64" :
+                   (idx == ccl_dtype_bfloat8)? "BFLOAT8" :
+                   (idx == ccl_dtype_bfp16) ? "BFLOAT16" :
+                   (idx == ccl_dtype_float16) ? "FLOAT16" :
+                   (idx == ccl_dtype_float) ? "FLOAT" :
+                   (idx == ccl_dtype_double) ? "DOUBLE" : 0;
 
         create_internal(predefined_table, idx, size, name_str);
 

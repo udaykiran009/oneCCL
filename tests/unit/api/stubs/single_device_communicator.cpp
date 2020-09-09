@@ -18,6 +18,14 @@ void single_device_communicator::visit(ccl::gpu_comm_attr& comm_attr)
 {
 }
 
+void single_device_communicator::set_ccl_comm(std::shared_ptr<ccl_comm> impl)
+{
+    comm_impl = impl;
+
+    comm_rank = comm_impl->rank();
+    comm_size = comm_impl->size();
+}
+
 ccl::request_t single_device_communicator::barrier(const ccl::barrier_attr_t& attr,
                  ccl::stream::impl_value_t& op_stream,
                  const ccl::vector_class<ccl::event>& deps)
