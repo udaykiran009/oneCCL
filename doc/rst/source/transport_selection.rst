@@ -1,4 +1,4 @@
-.. _mpi: https://software.intel.com/en-us/mpi-library
+.. _mpi: https://software.intel.com/content/www/us/en/develop/tools/mpi-library.html
 
 Transport selection
 ===================
