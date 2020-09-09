@@ -219,26 +219,6 @@ STREAM_CREATOR_INSTANTIATION(cl::sycl::queue)
 #endif
 */
 #endif //MULTI_GPU_SUPPORT
-#if 0
-ccl::datatype CCL_API ccl::datatype_create(const ccl::datatype_attr_t* attr)
-{
-    ccl_datatype_t dtype;
-    ccl_datatype_create(&dtype, attr);
-    return static_cast<ccl::datatype>(dtype);
-}
-
-void CCL_API ccl::datatype_free(ccl::datatype dtype)
-{
-    ccl_datatype_free(dtype);
-}
-
-size_t CCL_API ccl::datatype_get_size(ccl::datatype dtype)
-{
-    size_t size;
-    ccl_get_datatype_size(dtype, &size);
-    return size;
-}
-#endif
 }
 #include "types_generator_defines.hpp"
 #include "ccl_cpp_api_explicit_in.hpp"

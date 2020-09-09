@@ -7,23 +7,6 @@
 
 namespace ccl
 {
-//TODO datatypes
-datatype CCL_API datatype_create(const datatype_attr_t* attr) {
-    ccl_datatype_t dtype;
-    ccl_datatype_create(&dtype, attr);
-    return static_cast<datatype>(dtype);
-}
-
-void CCL_API datatype_free(datatype dtype) {
-    ccl_datatype_free(static_cast<ccl_datatype_t>(dtype));
-}
-
-size_t CCL_API datatype_get_size(datatype dtype) {
-    size_t size;
-    ccl_get_datatype_size(static_cast<ccl_datatype_t>(dtype), &size);
-    return size;
-}
-
 CCL_API ccl::environment::environment()
 {
     static auto result = global_data::get().init();

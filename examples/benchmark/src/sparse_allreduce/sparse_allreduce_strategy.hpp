@@ -29,8 +29,8 @@ ccl_status_t sparse_allreduce_completion_fn(
     // printf("callback: ibuf %p, icnt %zu, idt %d, vbuf %p, cvnt %zu, vdt %d\n",
     //     ind_buf, ind_count, ind_dtype, val_buf, val_count, val_dtype);
 
-    size_t ind_bytes = ind_count * ccl::datatype_get_size((ccl::datatype)(ind_dtype));
-    size_t val_bytes = val_count * ccl::datatype_get_size((ccl::datatype)(val_dtype));
+    size_t ind_bytes = ind_count * ccl::environment::instance().get_datatype_size(ind_dtype);
+    size_t val_bytes = val_count * ccl::environment::instance().get_datatype_size(val_dtype);
 
     ASSERT(fn_ctx, "fn_ctx is null");
 
@@ -68,8 +68,8 @@ ccl_status_t sparse_allreduce_alloc_fn(
     // printf("callback: icnt %zu, idt %d, cvnt %zu, vdt %d\n",
     //     ind_count, ind_dtype, val_count, val_dtype);
 
-    size_t ind_bytes = ind_count * ccl::datatype_get_size((ccl::datatype)(ind_dtype));
-    size_t val_bytes = val_count * ccl::datatype_get_size((ccl::datatype)(val_dtype));
+    size_t ind_bytes = ind_count * ccl::environment::instance().get_datatype_size(ind_dtype);
+    size_t val_bytes = val_count * ccl::environment::instance().get_datatype_size(val_dtype);
 
     ASSERT(fn_ctx, "fn_ctx is null");
 

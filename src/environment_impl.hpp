@@ -145,26 +145,6 @@ ccl_api_type CCL_API environment::create_postponed_api_type(args_type... args) c
     //static_assert(std::is_constructible<ccl_api_type, args_type..., ccl_version_t>::value, "Cannot construct `ccl_api_type` from given `args_type...`");
     return ccl_api_type(std::forward<args_type>(args)..., ret);
 }
-#if 0
-ccl::datatype CCL_API ccl::datatype_create(const ccl::datatype_attr_t* attr)
-{
-    ccl_datatype_t dtype;
-    ccl_datatype_create(&dtype, attr);
-    return static_cast<ccl::datatype>(dtype);
-}
-
-void CCL_API ccl::datatype_free(ccl::datatype dtype)
-{
-    ccl_datatype_free(dtype);
-}
-
-size_t CCL_API ccl::datatype_get_size(ccl::datatype dtype)
-{
-    size_t size;
-    ccl_get_datatype_size(dtype, &size);
-    return size;
-}
-#endif
 }
 
 
