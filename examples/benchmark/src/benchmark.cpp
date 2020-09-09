@@ -72,95 +72,131 @@ void do_regular(ccl::communicator* comm,
                 }
             }
 
+            std::ostringstream scolls;
+            std::copy(options.coll_names.begin(),
+                      options.coll_names.end(),
+                      std::ostream_iterator<std::string>{ scolls, " " });
+
             /* benchmark with multiple equal sized buffer per collective */
-            PRINT_BY_ROOT(comm, "do multi-buffers benchmark");
-            bench_attr.coll_attr.to_cache = 1;
-            for (size_t count = options.min_elem_count; count <= options.max_elem_count;
-                 count *= 2) {
-                try {
-                    double t = 0;
-                    for (size_t iter_idx = 0; iter_idx < options.iters; iter_idx++) {
-                        if (options.check_values) {
-                            for (auto& coll : colls) {
-                                coll->prepare(count);
+            if (options.buf_type) {
+                PRINT_BY_ROOT(comm,
+                              "do multi-buffers benchmark\n"
+                              "#------------------------------------------------------------\n"
+                              "# Benchmarking: %s\n"
+                              "# ranks: %zu\n"
+                              "#------------------------------------------------------------\n"
+                              "%10s %13s %18s %11s",
+                              scolls.str().c_str(),
+                              comm->size(),
+                              "#bytes",
+                              "avg[usec]",
+                              "avg_per_buf[usec]",
+                              "stddev[%]");
+                bench_attr.coll_attr.to_cache = 1;
+                for (size_t count = options.min_elem_count; count <= options.max_elem_count;
+                     count *= 2) {
+                    try {
+                        double t = 0;
+                        for (size_t iter_idx = 0; iter_idx < options.iters; iter_idx++) {
+                            if (options.check_values) {
+                                for (auto& coll : colls) {
+                                    coll->prepare(count);
+                                }
                             }
-                        }
 
-                        comm->barrier();
+                            comm->barrier();
 
-                        double t1 = when();
-                        for (size_t coll_idx = 0; coll_idx < colls.size(); coll_idx++) {
-                            auto& coll = colls[coll_idx];
-                            for (size_t buf_idx = 0; buf_idx < options.buf_count; buf_idx++) {
-                                snprintf(match_id,
-                                         MATCH_ID_SIZE,
-                                         "coll_%s_%zu_count_%zu_buf_%zu",
-                                         coll->name(),
-                                         coll_idx,
-                                         count,
-                                         buf_idx);
-                                coll->start(count, buf_idx, bench_attr, reqs);
+                            double t1 = when();
+                            for (size_t coll_idx = 0; coll_idx < colls.size(); coll_idx++) {
+                                auto& coll = colls[coll_idx];
+                                for (size_t buf_idx = 0; buf_idx < options.buf_count; buf_idx++) {
+                                    snprintf(match_id,
+                                             MATCH_ID_SIZE,
+                                             "coll_%s_%zu_count_%zu_buf_%zu",
+                                             coll->name(),
+                                             coll_idx,
+                                             count,
+                                             buf_idx);
+                                    coll->start(count, buf_idx, bench_attr, reqs);
+                                }
                             }
+                            for (auto& req : reqs) {
+                                req->wait();
+                            }
+                            double t2 = when();
+                            t += (t2 - t1);
                         }
-                        for (auto& req : reqs) {
-                            req->wait();
-                        }
-                        double t2 = when();
-                        t += (t2 - t1);
-                    }
-
-                    reqs.clear();
-
-                    if (options.check_values) {
-                        for (auto& coll : colls) {
-                            coll->finalize(count);
-                        }
-                    }
-
-                    print_timings(*comm, t, options.iters, options.buf_count, count, dtype);
-                }
-                catch (const std::exception& ex) {
-                    ASSERT(0, "error on count %zu, reason: %s", count, ex.what());
-                }
-            }
-
-            /* benchmark with single buffer per collective */
-            PRINT_BY_ROOT(comm, "do single-buffer benchmark");
-
-            size_t min_elem_count = options.min_elem_count * options.buf_count;
-            size_t max_elem_count = options.max_elem_count * options.buf_count;
-
-            bench_attr.coll_attr.to_cache = 1;
-            for (size_t count = min_elem_count; count <= max_elem_count; count *= 2) {
-                try {
-                    double t = 0;
-                    for (size_t iter_idx = 0; iter_idx < options.iters; iter_idx++) {
-                        comm->barrier();
-
-                        double t1 = when();
-                        for (size_t coll_idx = 0; coll_idx < colls.size(); coll_idx++) {
-                            auto& coll = colls[coll_idx];
-                            snprintf(match_id,
-                                     MATCH_ID_SIZE,
-                                     "coll_%s_%zu_single_count_%zu",
-                                     coll->name(),
-                                     coll_idx,
-                                     count);
-                            coll->start_single(count, bench_attr, reqs);
-                        }
-                        for (auto& req : reqs) {
-                            req->wait();
-                        }
-                        double t2 = when();
-                        t += (t2 - t1);
 
                         reqs.clear();
-                    }
 
-                    print_timings(*comm, t, options.iters, 1, count, dtype);
+                        if (options.check_values) {
+                            for (auto& coll : colls) {
+                                coll->finalize(count);
+                            }
+                        }
+
+                        print_timings(*comm,
+                                      t,
+                                      options.iters,
+                                      options.buf_type,
+                                      options.buf_count,
+                                      count,
+                                      dtype);
+                    }
+                    catch (const std::exception& ex) {
+                        ASSERT(0, "error on count %zu, reason: %s", count, ex.what());
+                    }
                 }
-                catch (...) {
-                    ASSERT(0, "error on count %zu", count);
+            }
+            else {
+                /* benchmark with single buffer per collective */
+                PRINT_BY_ROOT(comm,
+                              "do single-buffer benchmark\n"
+                              "#--------------------------------------\n"
+                              "# Benchmarking: %s\n"
+                              "# ranks: %zu\n"
+                              "#--------------------------------------\n"
+                              "%10s %12s %11s",
+                              scolls.str().c_str(),
+                              comm->size(),
+                              "#bytes",
+                              "avg[usec]",
+                              "stddev[%]");
+                size_t min_elem_count = options.min_elem_count * options.buf_count;
+                size_t max_elem_count = options.max_elem_count * options.buf_count;
+
+                bench_attr.coll_attr.to_cache = 1;
+                for (size_t count = min_elem_count; count <= max_elem_count; count *= 2) {
+                    try {
+                        double t = 0;
+                        for (size_t iter_idx = 0; iter_idx < options.iters; iter_idx++) {
+                            comm->barrier();
+
+                            double t1 = when();
+                            for (size_t coll_idx = 0; coll_idx < colls.size(); coll_idx++) {
+                                auto& coll = colls[coll_idx];
+                                snprintf(match_id,
+                                         MATCH_ID_SIZE,
+                                         "coll_%s_%zu_single_count_%zu",
+                                         coll->name(),
+                                         coll_idx,
+                                         count);
+                                coll->start_single(count, bench_attr, reqs);
+                            }
+                            for (auto& req : reqs) {
+                                req->wait();
+                            }
+                            double t2 = when();
+                            t += (t2 - t1);
+
+                            reqs.clear();
+                        }
+
+                        print_timings(*comm, t, options.iters, options.buf_type, 1, count, dtype);
+                    }
+                    catch (...) {
+                        ASSERT(0, "error on count %zu", count);
+                    }
                 }
             }
             PRINT_BY_ROOT(comm, "PASSED\n");

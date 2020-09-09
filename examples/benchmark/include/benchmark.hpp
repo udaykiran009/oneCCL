@@ -64,9 +64,11 @@ constexpr std::initializer_list<ccl::datatype> all_dtypes = { ccl::dt_char,  ccl
 
 /* specific benchmark dtypes */
 typedef enum { LOOP_REGULAR, LOOP_UNORDERED } loop_type_t;
+typedef enum { SINGLE_BUF, MULTI_BUF } buf_type_t;
 
 #define DEFAULT_BACKEND ccl::stream_type::host
 #define DEFAULT_LOOP    LOOP_REGULAR
+#define DEFAULT_BUF     SINGLE_BUF
 
 std::map<ccl::stream_type, std::string> backend_names = {
     std::make_pair(ccl::stream_type::host, "cpu"),
@@ -75,6 +77,9 @@ std::map<ccl::stream_type, std::string> backend_names = {
 
 std::map<loop_type_t, std::string> loop_names = { std::make_pair(LOOP_REGULAR, "regular"),
                                                   std::make_pair(LOOP_UNORDERED, "unordered") };
+
+std::map<buf_type_t, std::string> buf_names = { std::make_pair(MULTI_BUF, "multi"),
+                                                std::make_pair(SINGLE_BUF, "single") };
 
 // TODO: add ccl::bfp16
 std::map<ccl::datatype, std::string> dtype_names = {
@@ -123,6 +128,7 @@ void print_help_usage(const char* app) {
         "\t[-v,--v2i_ratio <values to indices ratio in sparse_allreduce>]\n"
         "\t[-d,--dtype <datatypes list/all>]\n"
         "\t[-r,--reduction <reductions list/all>]\n"
+        "\t[-n,--buf_type <buffer type>]\n"
         "\t[-h,--help]\n\n"
         "example:\n\t--coll allgatherv,allreduce,sparse_allreduce,sparse_allreduce_bfp16 --backend cpu --loop regular\n"
         "example:\n\t--coll bcast,reduce --backend sycl --loop unordered \n",
@@ -228,6 +234,18 @@ int set_loop(const std::string& option_value, loop_type_t& loop) {
     return 0;
 }
 
+int set_buf_type(const std::string& option_value, buf_type_t& buf) {
+    std::string option_name = "buf_type";
+    std::set<std::string> supported_option_values{ buf_names[SINGLE_BUF], buf_names[MULTI_BUF] };
+
+    if (check_supported_options(option_name, option_value, supported_option_values))
+        return -1;
+
+    buf = (option_value == buf_names[SINGLE_BUF]) ? SINGLE_BUF : MULTI_BUF;
+
+    return 0;
+}
+
 // leave this dtype here because of tokenize() call
 typedef struct user_options_t {
     ccl::stream_type backend;
@@ -238,6 +256,7 @@ typedef struct user_options_t {
     size_t min_elem_count;
     size_t max_elem_count;
     int check_values;
+    buf_type_t buf_type;
     size_t v2i_ratio;
     std::list<std::string> coll_names;
     std::list<std::string> dtypes;
@@ -253,6 +272,7 @@ typedef struct user_options_t {
         min_elem_count = 1;
         max_elem_count = MAX_ELEM_COUNT;
         check_values = 1;
+        buf_type = DEFAULT_BUF;
         v2i_ratio = V2I_RATIO;
         dtypes = tokenize(DEFAULT_DTYPES_LIST, ','); // default: float
         reductions = tokenize(DEFAULT_REDUCTIONS_LIST, ','); // default: sum
@@ -263,6 +283,7 @@ typedef struct user_options_t {
 void print_timings(ccl::communicator& comm,
                    double timer,
                    size_t iters,
+                   buf_type_t buf_type,
                    const size_t buf_count,
                    const size_t elem_count,
                    ccl::datatype dtype) {
@@ -294,13 +315,19 @@ void print_timings(ccl::communicator& comm,
             sum += (val - avg_timer) * (val - avg_timer);
         }
         stddev_timer = sqrt(sum / comm.size()) / avg_timer * 100;
-
-        printf("size %10zu x %5zu bytes, avg %10.2lf us, avg_per_buf %10.2f, stddev %5.1lf %%\n",
-               elem_count * ccl::datatype_get_size(dtype),
-               buf_count,
-               avg_timer,
-               avg_timer_per_buf,
-               stddev_timer);
+        if (buf_type == SINGLE_BUF) {
+            printf("%10zu %12.2lf %11.1lf\n",
+                   elem_count * ccl::datatype_get_size(dtype) * buf_count,
+                   avg_timer,
+                   stddev_timer);
+        }
+        else {
+            printf("%10zu %13.2lf %18.2lf %11.1lf\n",
+                   elem_count * ccl::datatype_get_size(dtype) * buf_count,
+                   avg_timer,
+                   avg_timer_per_buf,
+                   stddev_timer);
+        }
     }
     comm.barrier();
 }
@@ -327,7 +354,7 @@ int parse_user_options(int& argc, char**(&argv), user_options_t& options) {
     int errors = 0;
 
     // values needed by getopt
-    const char* const short_options = "b:e:i:w:p:f:t:c:v:l:d:r:h:";
+    const char* const short_options = "b:e:i:w:p:f:t:c:v:l:d:r:n:h:";
     struct option getopt_options[] = {
         { "backend", required_argument, 0, 'b' },
         { "loop", required_argument, 0, 'e' },
@@ -341,6 +368,7 @@ int parse_user_options(int& argc, char**(&argv), user_options_t& options) {
         { "coll", required_argument, 0, 'l' },
         { "dtype", required_argument, 0, 'd' },
         { "reduction", required_argument, 0, 'r' },
+        { "buf_type", required_argument, 0, 'n' },
         { "help", no_argument, 0, 'h' },
         { 0, 0, 0, 0 } // required at end of array.
     };
@@ -377,6 +405,10 @@ int parse_user_options(int& argc, char**(&argv), user_options_t& options) {
                 else
                     options.reductions = tokenize(optarg, ',');
                 break;
+            case 'n':
+                if (set_buf_type(optarg, options.buf_type))
+                    errors++;
+                break;
             case 'h': print_help_usage(argv[0]); return -1;
             default: errors++; break;
         }
@@ -412,6 +444,7 @@ void print_user_options(const user_options_t& options, ccl::communicator* comm) 
 
     std::string backend_str = find_str_val(backend_names, options.backend);
     std::string loop_str = find_str_val(loop_names, options.loop);
+    std::string buf_type_str = find_str_val(buf_names, options.buf_type);
 
     PRINT_BY_ROOT(comm,
                   "options:"
@@ -424,6 +457,7 @@ void print_user_options(const user_options_t& options, ccl::communicator* comm) 
                   "\n  min_elem_count: %zu"
                   "\n  max_elem_count: %zu"
                   "\n  check:          %d"
+                  "\n  buf_type:       %s"
                   "\n  v2i_ratio:      %zu"
                   "\n  %s",
                   comm->size(),
@@ -435,6 +469,7 @@ void print_user_options(const user_options_t& options, ccl::communicator* comm) 
                   options.min_elem_count,
                   options.max_elem_count,
                   options.check_values,
+                  buf_type_str.c_str(),
                   options.v2i_ratio,
                   ss.str().c_str());
 }
