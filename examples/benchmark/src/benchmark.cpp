@@ -50,7 +50,6 @@ void do_regular(ccl::communicator* comm,
 
             bench_attr.reduction = reduction_op;
             bench_attr.coll_attr.to_cache = 0;
-
             for (size_t count = options.min_elem_count; count <= options.max_elem_count;
                  count *= 2) {
                 for (size_t iter_idx = 0; iter_idx < options.warmup_iters; iter_idx++) {
@@ -560,7 +559,9 @@ int main(int argc, char* argv[]) {
     }
 
     comm->barrier();
-
+#ifdef CCL_ENABLE_SYCL
+    set_pinning();
+#endif
     switch (options.loop) {
         case LOOP_REGULAR: do_regular(comm, bench_attr, colls, reqs, options); break;
         case LOOP_UNORDERED: do_unordered(comm, bench_attr, colls, reqs, options); break;

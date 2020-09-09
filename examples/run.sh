@@ -297,6 +297,9 @@ run()
 
                             ccl_extra_env="${ccl_transport_env}"
                             # run a benchmark with the specific datatypes and reductions
+                            ccl_extra_env="SYCL_BE=PI_LEVEL0"
+                            run_benchmark "${ccl_extra_env}" ${dir_name} ${transport} ${example} ${backend} regular allreduce ${dtype_list} ${reduction_list}
+                            ccl_extra_env="SYCL_BE=PI_OPENCL"
                             run_benchmark "${ccl_extra_env}" ${dir_name} ${transport} ${example} ${backend} regular allreduce ${dtype_list} ${reduction_list}
 		        fi
                     done
@@ -306,7 +309,7 @@ run()
                     do
                         if [ "$selector" == "gpu" ];
                         then
-                            ccl_extra_env="SYCL_DEVICE_WHITE_LIST=\"\" SYCL_BE=PI_LEVEL0 ${ccl_transport_env}"
+                            ccl_extra_env="SYCL_DEVICE_ALLOWLIST=\"\" SYCL_BE=PI_LEVEL0 ${ccl_transport_env}"
                             run_example "${ccl_extra_env}" ${dir_name} ${transport} ${example} ${selector}
                         fi
                         ccl_extra_env="SYCL_BE=PI_OPENCL ${ccl_transport_env}"
