@@ -6,7 +6,7 @@ ccl_status_t stub_reduction(
     size_t,
     void*,
     size_t*,
-    //ccl_datatype_t, // not required for native, custom datatype
+    ccl_datatype_t,
     const ccl_fn_context_t*)
 {
      return ccl_status_success;
