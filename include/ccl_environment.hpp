@@ -16,6 +16,10 @@
 #include "ccl_comm_split_attr_ids_traits.hpp"
 #include "ccl_comm_split_attr.hpp"
 
+#include "ccl_datatype_attr_ids.hpp"
+#include "ccl_datatype_attr_ids_traits.hpp"
+#include "ccl_datatype_attr.hpp"
+
 #include "ccl_event_attr_ids.hpp"
 #include "ccl_event_attr_ids_traits.hpp"
 #include "ccl_event.hpp"
@@ -54,25 +58,40 @@ public:
      * Retrieves the current version
      */
     ccl_version_t get_version() const;
-#if 0
+
     /**
      * Creates @attr which used to register custom datatype
      */
-    datatype_attr_t create_datatype_attr() const;
+    template <class ...attr_value_pair_t>
+    datatype_attr_t create_datatype_attr(attr_value_pair_t&&...avps) const
+    {
+        static_assert(sizeof...(avps) > 0, "At least one argument must be specified");
+        auto datatype_attr = create_postponed_api_type<datatype_attr_t>();
+        int expander [] {(datatype_attr.template set<attr_value_pair_t::idx()>(avps.val()), 0)...};
+        (void)expander;
+        return datatype_attr;
+    }
 
     /**
      * Registers custom datatype to be used in communication operations
      * @param attr datatype attributes
      * @return datatype handle
      */
-    datatype register_datatype(const datatype_attr_t& attr);
+    ccl_datatype_t register_datatype(const ccl::datatype_attr_t& attr);
 
     /**
      * Deregisters custom datatype
      * @param dtype custom datatype handle
      */
-    void deregister_datatype(datatype dtype);
-#endif
+    void deregister_datatype(ccl_datatype_t dtype);
+
+    size_t get_datatype_size(ccl_datatype_t dtype) const;
+
+    /**
+     * Enables job scalability policy
+     * @param callback of @c ccl_resize_fn_t type, which enables scalability policy
+     * (@c nullptr enables default behavior)
+     */
     void set_resize_fn(ccl_resize_fn_t callback);
 
     /**

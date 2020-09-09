@@ -1,6 +1,8 @@
 #include <limits>
 
 #include "common/datatype/datatype.hpp"
+#include "common/global/global.hpp"
+#include "exec/exec.hpp"
 
 ccl_datatype ccl_datatype_char;
 
@@ -70,7 +72,7 @@ void ccl_datatype_storage::create_internal(ccl_datatype_table_t& table,
     LOG_DEBUG("created datatype idx: ", idx, ", size: ", size, ", name: ", name);
 }
 
-ccl_datatype_t ccl_datatype_storage::create(const ccl_datatype_attr_t* attr)
+ccl_datatype_t ccl_datatype_storage::create_by_datatype_size(size_t datatype_size)
 {
     std::lock_guard<ccl_datatype_lock_t> lock{guard};
 
@@ -81,12 +83,29 @@ ccl_datatype_t ccl_datatype_storage::create(const ccl_datatype_attr_t* attr)
         if (custom_idx < 0)
             custom_idx = 0;
     }
-    
+
+    CCL_ASSERT(datatype_size > 0);
     create_internal(custom_table, custom_idx,
-                    (attr) ? attr->size : 1,
+                    datatype_size,
                     std::string("DTYPE_") + std::to_string(custom_idx));
 
     return custom_idx;
+}
+
+/**
+ * TODO Deprecated. At this time we have two types of attributes (yup, with the same names).
+ * And two create() functions. This is left for compatibility with the old api (for ccl_datatype_create()).
+ * It makes sense to remove it when we remove the c-style api
+ */
+ccl_datatype_t ccl_datatype_storage::create(const ccl_datatype_attr_t* attr)
+{
+    return create_by_datatype_size(attr->size);
+}
+
+ccl_datatype_t ccl_datatype_storage::create(const ccl::datatype_attr_t& attr)
+{
+    size_t size = attr.get<ccl::ccl_datatype_attributes::size>();
+    return create_by_datatype_size(size);
 }
 
 void ccl_datatype_storage::free(ccl_datatype_t idx)

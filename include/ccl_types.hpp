@@ -58,7 +58,7 @@ enum class datatype : int {
     last_predefined
 };
 
-using datatype_attr_t = ccl_datatype_attr_t;
+// using datatype_attr_t = ccl_datatype_attr_t;
 #ifdef MULTI_GPU_SUPPORT
 /**
  * Supported stream types
