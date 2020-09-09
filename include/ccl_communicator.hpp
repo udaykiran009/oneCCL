@@ -128,23 +128,6 @@ public:
                          const allgatherv_attr_t& attr = default_allgatherv_attr);
 
     /**
-     * Type safety version:
-     * @param send_buf the buffer with @c send_count elements of @c dtype that stores local data to be gathered
-     * @param send_count number of elements of type @c dtype in @c send_buf
-     * @param recv_buf [out] the buffer to store gathered result, should be large enough to hold values from all ranks
-     * @param recv_counts array with number of elements of type @c dtype to be received from each rank
-     * @param attr optional attributes to customize operation
-     * @return @ref ccl::request_t object to track the progress of the operation
-     */
-    template <class BufferObjectType,
-              class = typename std::enable_if<ccl::is_class_supported<BufferObjectType>()>::type>
-    request_t allgatherv(const BufferObjectType& send_buf,
-                         size_t send_count,
-                         BufferObjectType& recv_buf,
-                         const vector_class<size_t>& recv_counts,
-                         const allgatherv_attr_t& attr = default_allgatherv_attr);
-
-    /**
      * Allreduce is a collective communication operation that makes global reduction operation
      * on values from all ranks of communicator and distributes result back to all ranks.
      */
