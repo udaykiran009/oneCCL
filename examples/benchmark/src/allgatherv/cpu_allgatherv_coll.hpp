@@ -12,11 +12,10 @@ struct cpu_allgatherv_coll : cpu_base_coll<Dtype, allgatherv_strategy_impl>
     using coll_base::recv_bufs;
     using coll_base::single_send_buf;
     using coll_base::single_recv_buf;
-    using coll_base::comm;
 
     cpu_allgatherv_coll(bench_coll_init_attr init_attr) : coll_base(init_attr, 1,
-                                                                    base_coll::comm->size(),
-                                                                    base_coll::comm->size()) {}
+                                                                    coll_base::comm().size(),
+                                                                    coll_base::comm().size()) {}
 
     virtual void prepare(size_t elem_count) override
     {
@@ -24,10 +23,10 @@ struct cpu_allgatherv_coll : cpu_base_coll<Dtype, allgatherv_strategy_impl>
         {
             for (size_t e_idx = 0; e_idx < elem_count; e_idx++)
             {
-                ((Dtype*)send_bufs[b_idx])[e_idx] = comm->rank();
+                ((Dtype*)send_bufs[b_idx])[e_idx] = coll_base::comm().rank();
             }
 
-            for (size_t idx = 0; idx < comm->size(); idx++)
+            for (size_t idx = 0; idx < coll_base::comm().size(); idx++)
             {
                 for (size_t e_idx = 0; e_idx < elem_count; e_idx++)
                 {
@@ -39,7 +38,7 @@ struct cpu_allgatherv_coll : cpu_base_coll<Dtype, allgatherv_strategy_impl>
 
     virtual void finalize(size_t elem_count) override
     {
-        Dtype sbuf_expected = comm->rank();
+        Dtype sbuf_expected = coll_base::comm().rank();
         Dtype value;
         for (size_t b_idx = 0; b_idx < base_coll::get_buf_count(); b_idx++)
         {
@@ -55,7 +54,7 @@ struct cpu_allgatherv_coll : cpu_base_coll<Dtype, allgatherv_strategy_impl>
                 }
             }
 
-            for (size_t idx = 0; idx < comm->size(); idx++)
+            for (size_t idx = 0; idx < coll_base::comm().size(); idx++)
             {
                 Dtype rbuf_expected = idx;
                 for (size_t e_idx = 0; e_idx < elem_count; e_idx++)

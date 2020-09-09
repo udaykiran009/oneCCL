@@ -4,16 +4,9 @@
 #include "coll.hpp"
 
 #ifdef CCL_ENABLE_SYCL
-
-#include "sycl_base.hpp"
-
-template<typename Dtype>
-using sycl_buffer_t = cl::sycl::buffer<Dtype, 1>;
-cl::sycl::queue sycl_queue;
-
 /* sycl-specific base implementation */
 template<class Dtype, class strategy>
-struct sycl_base_coll : base_coll, private strategy
+struct sycl_base_coll : base_coll, private strategy, device_specific_data
 {
     using coll_strategy = strategy;
 
@@ -61,9 +54,9 @@ struct sycl_base_coll : base_coll, private strategy
     {
         sycl_buffer_t<Dtype> &send_buf = *(static_cast<sycl_buffer_t<Dtype>*>(send_bufs[buf_idx]));
         sycl_buffer_t<Dtype> &recv_buf = *(static_cast<sycl_buffer_t<Dtype>*>(recv_bufs[buf_idx]));
-        coll_strategy::template start_internal<sycl_buffer_t<Dtype> &>(*comm, count,
+        coll_strategy::template start_internal<sycl_buffer_t<Dtype> &>(comm(), count,
                                                                        send_buf, recv_buf,
-                                                                       attr, stream, reqs);
+                                                                       attr, reqs, stream());
     }
 
     virtual void start_single(size_t count,
@@ -72,14 +65,31 @@ struct sycl_base_coll : base_coll, private strategy
     {
         sycl_buffer_t<Dtype> &send_buf = *(static_cast<sycl_buffer_t<Dtype>*>(single_send_buf));
         sycl_buffer_t<Dtype> &recv_buf = *(static_cast<sycl_buffer_t<Dtype>*>(single_recv_buf));
-        coll_strategy::template start_internal<sycl_buffer_t<Dtype> &>(*comm, count,
+        coll_strategy::template start_internal<sycl_buffer_t<Dtype> &>(comm(), count,
                                                                        send_buf, recv_buf,
-                                                                       attr, stream, reqs);
+                                                                       attr, reqs, stream());
     }
 
     ccl::datatype get_dtype() const override final
     {
         return ccl::native_type_info<typename std::remove_pointer<Dtype>::type>::ccl_datatype_value;
+    }
+
+    /* global communicator & stream for all cpu collectives */
+    static ccl::device_communicator& comm()
+    {
+        if (!device_specific_data::comm_ptr)
+        {
+        }
+        return *device_specific_data::comm_ptr;
+    }
+
+    static ccl::stream& stream()
+    {
+        if (!device_specific_data::stream_ptr)
+        {
+        }
+        return *device_specific_data::stream_ptr;
     }
 };
 #endif /* CCL_ENABLE_SYCL */

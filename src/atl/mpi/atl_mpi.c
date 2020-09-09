@@ -159,7 +159,7 @@ typedef struct
 
 // helpers: check contract
 static inline void
-atl_mpi_check_op_params(void* in_buf, void* inout_buf, int* length, 
+atl_mpi_check_op_params(void* in_buf, void* inout_buf, int* length,
                         MPI_Datatype* datatype, const char* caller_func_name)
 {
     (void)datatype;
@@ -169,7 +169,7 @@ atl_mpi_check_op_params(void* in_buf, void* inout_buf, int* length,
 }
 
 static void INLINE_TARGET_ATTRIBUTE_ALL
-atl_mpi_bfp16_base_op(void* in, void* inout, int* length, 
+atl_mpi_bfp16_base_op(void* in, void* inout, int* length,
                       ccl_bfp16_reduction_func_ptr op)
 {
     unsigned short* in_buf = (unsigned short*)in;
@@ -178,7 +178,7 @@ atl_mpi_bfp16_base_op(void* in, void* inout, int* length,
     size_t len = *length;
     ccl_bfp16_reduce_impl(in_buf, inout_buf, len, op, global_data.bfp16.impl_type);
 }
-    
+
 // MPI BFP16 operation definitions
 static void TARGET_ATTRIBUTE_ALL
 atl_mpi_bfp16_sum_op(void* in, void* inout, int* length,
@@ -205,7 +205,7 @@ atl_mpi_bfp16_min_op(void* in, void* inout, int* length,
 }
 
 static void TARGET_ATTRIBUTE_ALL
-atl_mpi_bfp16_max_op(void* in, void* inout, int* length, 
+atl_mpi_bfp16_max_op(void* in, void* inout, int* length,
                      MPI_Datatype* datatype)
 {
     atl_mpi_check_op_params(in, inout, length, datatype, __FUNCTION__);
@@ -245,7 +245,7 @@ atl_mpi_bfp16_init()
     global_data.bfp16.max_op = MPI_OP_NULL;
 
     global_data.bfp16.impl_type = ccl_bfp16_get_impl_type();
-    
+
     if (global_data.bfp16.impl_type == ccl_bfp16_none)
     {
         ATL_MPI_DEBUG_PRINT("%s: success - BFP16 is not supported on current arch",
@@ -287,7 +287,7 @@ atl_mpi_bfp16_init()
         atl_mpi_print_error(ret);
         return RET2ATL(ret);
     }
-    
+
     // create custom MPI BFP16 min op
     ret = MPI_Op_create(&atl_mpi_bfp16_min_op, 1, &global_data.bfp16.min_op);
     if (ret != MPI_SUCCESS)
@@ -351,18 +351,29 @@ atl2mpi_dtype(atl_datatype_t dtype)
     {
         case ATL_DTYPE_CHAR:
             return MPI_CHAR;
+        case ATL_DTYPE_UINT8:
+            return MPI_UNSIGNED_CHAR;
+        case ATL_DTYPE_INT16:
+            return MPI_INT16_T;
+        case ATL_DTYPE_UINT16:
+            return MPI_UINT16_T;
         case ATL_DTYPE_INT:
             return MPI_INT;
+        case ATL_DTYPE_UINT32:
+            return MPI_UINT32_T;
+        case ATL_DTYPE_INT64:
+            return MPI_LONG_LONG;
+        case ATL_DTYPE_UINT64:
+            return MPI_UNSIGNED_LONG_LONG;
+        case ATL_DTYPE_BFP8:
+            printf("unknown datatype: %d\n", dtype);
+            exit(1);
         case ATL_DTYPE_BFP16:
             return MPI_BFP16;
         case ATL_DTYPE_FLOAT:
             return MPI_FLOAT;
         case ATL_DTYPE_DOUBLE:
             return MPI_DOUBLE;
-        case ATL_DTYPE_INT64:
-            return MPI_LONG_LONG;
-        case ATL_DTYPE_UINT64:
-            return MPI_UNSIGNED_LONG_LONG;
         default:
             printf("unknown datatype: %d\n", dtype);
             exit(1);
@@ -679,7 +690,7 @@ atl_mpi_ep_send(atl_ep_t* ep, const void* buf, size_t len,
         int flag;
         MPI_Comm_get_info(mpi_ep->mpi_comm, &info_out);
         MPI_Info_get(info_out, EP_IDX_KEY, MPI_MAX_INFO_VAL, buf, &flag);
-        
+
         if (!flag)
         {
             ATL_MPI_PRINT("unexpected ep_idx_key %s", EP_IDX_KEY);
@@ -721,7 +732,7 @@ atl_mpi_ep_recv(atl_ep_t* ep, void* buf, size_t len,
         int flag;
         MPI_Comm_get_info(mpi_ep->mpi_comm, &info_out);
         MPI_Info_get(info_out, EP_IDX_KEY, MPI_MAX_INFO_VAL, buf, &flag);
-        
+
         if (!flag)
         {
             ATL_MPI_PRINT("unexpected ep_idx_key %s", EP_IDX_KEY);
@@ -807,7 +818,7 @@ atl_mpi_ep_allreduce(atl_ep_t* ep, const void* send_buf, void* recv_buf, size_t 
         int flag;
         MPI_Comm_get_info(mpi_ep->mpi_comm, &info_out);
         MPI_Info_get(info_out, EP_IDX_KEY, MPI_MAX_INFO_VAL, buf, &flag);
-        
+
         if (!flag)
         {
             ATL_MPI_PRINT("unexpected ep_idx_key %s", EP_IDX_KEY);
@@ -987,7 +998,7 @@ atl_mpi_ep_check(atl_ep_t* ep, int* is_completed, atl_req_t* req)
     {
         return ATL_STATUS_SUCCESS;
     }
-    
+
     status = atl_mpi_ep_progress(ep, mpi_req);
     *is_completed = (mpi_req->comp_state == ATL_MPI_COMP_COMPLETED);
 
@@ -1068,7 +1079,7 @@ atl_mpi_ep_init(atl_mpi_ctx_t* mpi_ctx, size_t idx, atl_ep_t** ep)
         MPI_Irecv(NULL, 0, MPI_CHAR, 0, 0, mpi_ep->dummy_comm,
                   &(mpi_ep->dummy_req.native_req));
     }
-    
+
     MPI_Info_free(&info);
 
     ATL_MPI_DEBUG_PRINT("idx %zu, ep_idx_str %s", idx, ep_idx_str);

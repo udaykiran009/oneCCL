@@ -102,10 +102,18 @@ communicator_interface_dispatcher::create_communicator_from_unified_device(ccl::
             switch(preferred_topology_group)
             {
                 case ccl::device_group_split_type::undetermined:
-                    return communicator_interface_ptr(
+                {
+                    auto comm_impl =
                                     new single_device_communicator(std::move(device_id),
                                                                        thread_idx, process_idx,
-                                                                       attr));
+                                                                       attr);
+
+                    ccl::global_data& data = ccl::global_data::get();
+                    auto comm = std::shared_ptr<ccl_comm>(
+                            new ccl_comm(thread_idx, process_idx, data.comm_ids->acquire()));
+                    comm_impl->set_ccl_comm(std::move(comm));
+                    return communicator_interface_ptr(comm_impl);
+                }
                 case ccl::device_group_split_type::thread:
                     return communicator_interface_ptr(
                                     new device_group_ring_communicator(std::move(device_id),
@@ -155,10 +163,16 @@ communicator_interface_dispatcher::create_communicator_from_unified_device(ccl::
         }
         case device_topology_type::undetermined:
         {
-            return communicator_interface_ptr(
-                            new single_device_communicator(std::move(device_id),
+            auto comm_impl =
+                                    new single_device_communicator(std::move(device_id),
                                                                        thread_idx, process_idx,
-                                                                       attr));
+                                                                       attr);
+
+            ccl::global_data& data = ccl::global_data::get();
+            auto comm = std::shared_ptr<ccl_comm>(
+                        new ccl_comm(thread_idx, process_idx, data.comm_ids->acquire()));
+            comm_impl->set_ccl_comm(std::move(comm));
+            return communicator_interface_ptr(comm_impl);
         }
         default:
         {

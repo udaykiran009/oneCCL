@@ -4,9 +4,8 @@
 #include "coll.hpp"
 
 /* cpu-specific base implementation */
-
 template<class Dtype, class strategy>
-struct cpu_base_coll : base_coll, protected strategy
+struct cpu_base_coll : base_coll, protected strategy, cpu_specific_data
 {
     using coll_strategy = strategy;
 
@@ -55,26 +54,34 @@ struct cpu_base_coll : base_coll, protected strategy
                        const bench_coll_exec_attr& attr,
                        req_list_t& reqs) override
     {
-        coll_strategy::start_internal(*comm, count,
+        coll_strategy::start_internal(comm(), count,
                                       static_cast<Dtype*>(send_bufs[buf_idx]),
                                       static_cast<Dtype*>(recv_bufs[buf_idx]),
-                                      attr, stream, reqs);
+                                      attr, reqs);
     }
 
     virtual void start_single(size_t count,
                               const bench_coll_exec_attr& attr,
                               req_list_t& reqs) override
     {
-        coll_strategy::start_internal(*comm, count,
+        coll_strategy::start_internal(comm(), count,
                                       static_cast<Dtype*>(single_send_buf),
                                       static_cast<Dtype*>(single_recv_buf),
-                                      attr, stream, reqs);
+                                      attr, reqs);
     }
 
     ccl::datatype get_dtype() const override final
     {
         return ccl::native_type_info<typename std::remove_pointer<Dtype>::type>::ccl_datatype_value;
     }
-};
 
+    /* global communicator for all cpu collectives */
+    static ccl::communicator& comm()
+    {
+        if (!cpu_specific_data::comm_ptr)
+        {
+        }
+        return *cpu_specific_data::comm_ptr;
+    }
+};
 #endif /* CPU_COLL_HPP */

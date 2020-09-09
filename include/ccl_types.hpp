@@ -63,8 +63,9 @@ enum class datatype : int {
 /**
  * Supported stream types
  */
-enum class stream_type {
-    cpu = 0,
+enum class stream_type : int {
+    host = 0,
+    cpu,
     gpu,
 
     last_value

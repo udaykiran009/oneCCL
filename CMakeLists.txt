@@ -222,7 +222,7 @@ if (CCL_ENABLE_SYCL)
     add_subdirectory(examples/sycl)
 endif()
 
-#-S- TEMPORARY DISABLED add_subdirectory(examples/benchmark)
+add_subdirectory(examples/benchmark)
 add_subdirectory(examples/common)
 add_subdirectory(tests/functional)
 add_subdirectory(tests/unit)

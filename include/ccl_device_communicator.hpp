@@ -848,7 +848,7 @@ public:
     template <
         class index_BufferObjectType,
         class value_BufferObjectType,
-        class = typename std::enable_if<ccl::is_native_type_supported<value_BufferObjectType>()>::type>
+        class = typename std::enable_if<ccl::is_class_supported<value_BufferObjectType>()>::type>
     request_t sparse_allreduce(const index_BufferObjectType& send_ind_buf,
                                size_t send_ind_count,
                                const value_BufferObjectType& send_val_buf,

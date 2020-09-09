@@ -20,12 +20,12 @@ struct sycl_bcast_coll : sycl_base_coll<Dtype, bcast_strategy_impl>
     using coll_base::single_recv_buf;
     using coll_base::comm;
 
-    sycl_bcast_coll(bench_coll_init_attr init_attr) : coll_base(init_attr, base_coll::comm->size(),
-                                                                base_coll::comm->size()) {}
+    sycl_bcast_coll(bench_coll_init_attr init_attr) : coll_base(init_attr, coll_base::comm().size(),
+                                                                coll_base::comm().size()) {}
 
     virtual void prepare(size_t elem_count) override
     {
-        size_t local_rank = comm->rank();
+        size_t local_rank = coll_base::comm().rank();
         for (size_t b_idx = 0; b_idx < base_coll::get_buf_count(); b_idx++)
         {
             sycl_queue.submit([&](handler& cgh)

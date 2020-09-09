@@ -66,7 +66,7 @@ struct generic_device_type<CCL_ENABLE_SYCL_TRUE> {
     generic_device_type(device_index_type id,
                         cl::sycl::info::device_type = cl::sycl::info::device_type::gpu);
     generic_device_type(const cl::sycl::device& device);
-    device_index_type get_id() const noexcept;
+    device_index_type get_id() const;
     ccl_native_t& get() noexcept;
 
     cl::sycl::device device;

@@ -15,9 +15,6 @@ struct base_sparse_allreduce_coll :
     using coll_strategy = sparse_allreduce_strategy_impl<IType,
                                                          IndicesDistributorType>;
 
-    using coll_base::stream;
-    using coll_base::comm;
-
     std::vector<ITypeNonMod*> send_ibufs;
     std::vector<VTypeNonMod*> send_vbufs;
 
@@ -37,8 +34,8 @@ struct base_sparse_allreduce_coll :
     size_t single_recv_vcount {};
     sparse_allreduce_fn_ctx_t single_fn_ctx;
 
-    base_sparse_allreduce_coll(bench_coll_init_attr init_attr) :
-        base_coll(init_attr), coll_strategy(init_attr.v2i_ratio, base_coll::comm->size())
+    base_sparse_allreduce_coll(bench_coll_init_attr init_attr, size_t size) :
+        base_coll(init_attr), coll_strategy(init_attr.v2i_ratio, size)
     {
         int result = 0;
 

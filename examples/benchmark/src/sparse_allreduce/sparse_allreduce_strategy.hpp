@@ -142,35 +142,34 @@ struct sparse_allreduce_strategy_impl
         return std::tuple<size_t, size_t>(indices_count, indices_count * vdim_count);
     }
 
-    template<class VType>
-    void start_internal(ccl::communicator& comm,
+    template<class VType, class comm_t, class ...Args>
+    void start_internal(comm_t& comm,
                         const IType send_ibuf, size_t send_icount,
                         const VType send_vbuf, size_t send_vcount,
                         IType recv_ibuf, size_t recv_icount,
                         VType recv_vbuf, size_t recv_vcount,
-                        const bench_coll_exec_attr& bench_attr, ccl::stream_t& stream,
+                        const bench_coll_exec_attr& bench_attr,
                         req_list_t& reqs,
-                        sparse_allreduce_fn_ctx_t& fn_ctx)
+                        sparse_allreduce_fn_ctx_t& fn_ctx, Args&& ...args)
     {
         auto expected = get_expected_recv_counts(send_vcount);
         recv_icount = std::get<0>(expected);
         recv_vcount = std::get<1>(expected);
 
-        auto& sparse_attr = const_cast<ccl_coll_attr_t&>(bench_attr.coll_attr);
-
+        auto& sparse_attr = const_cast<ccl::sparse_allreduce_attr_t&>(bench_attr.get_attr<ccl::sparse_allreduce_attr_t>());
         /* use completion_fn because it is supported by all algorithms */
-        sparse_attr.sparse_allreduce_completion_fn = sparse_allreduce_completion_fn;
+        sparse_attr.set<ccl::sparse_allreduce_op_attr_id::sparse_allreduce_completion_fn>(&sparse_allreduce_completion_fn);
         //sparse_attr.sparse_allreduce_alloc_fn = sparse_allreduce_alloc_fn;
 
-        sparse_attr.sparse_allreduce_fn_ctx = &fn_ctx;
-        sparse_attr.sparse_coalesce_mode = ccl_sparse_coalesce_keep_precision;
+        sparse_attr.set<ccl::sparse_allreduce_op_attr_id::sparse_allreduce_fn_ctx>(static_cast<const void*>(&fn_ctx));
+        sparse_attr.set<ccl::sparse_allreduce_op_attr_id::sparse_coalesce_mode>(ccl_sparse_coalesce_keep_precision);
 
         reqs.push_back(comm.sparse_allreduce(send_ibuf, std::get<0>(expected),
                                              send_vbuf, send_vcount,
                                              recv_ibuf, recv_icount,
                                              recv_vbuf, recv_vcount,
                                              bench_attr.reduction,
-                                             &sparse_attr, stream));
+                                             sparse_attr, std::forward<Args>(args)...));
     }
 
     std::unique_ptr<IndicesDistributor> indices_distributor_impl;

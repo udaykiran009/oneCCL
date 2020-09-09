@@ -17,7 +17,14 @@ typed_base_communicator<TEMPLATE_DEF_ARG>::typed_base_communicator(ccl::unified_
  base_communicator(std::move(owned_device),
                    thread_idx, process_idx/*, comm_attr*/, attr)
 {
-    LOG_INFO("sheduled for create, device id: ", device.get_id(), ", thread_id: ",thread_idx, ", process id:", process_idx);
+    try
+    {
+        LOG_INFO("sheduled for create, device id: ", device.get_id(), ", thread_id: ",thread_idx, ", process id:", process_idx);
+    }
+    catch(...)
+    {
+        LOG_INFO("sheduled for create single device communicator , thread_id: ",thread_idx, ", process id:", process_idx);
+    }
 }
 
 template<TEMPLATE_DECL_ARG>
