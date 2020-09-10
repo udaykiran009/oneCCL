@@ -219,8 +219,7 @@ if (CCL_ENABLE_SYCL)
     else(${COMPUTE_RUNTIME_TARGET_NAME} STREQUAL "Codeplay::ComputeCpp")
         set (CCL_ENABLCE_SYCL_CHECK_CONTRACT "#if defined(__cplusplus)\n#if !defined(__clang__) || __clang_major__ < 6\n#error This version of CCL configured only for DPC++ compiler\n#endif\n#endif")
     endif()
-    # TODO enable back
-    # add_subdirectory(examples/sycl)
+    add_subdirectory(examples/sycl)
 endif()
 
 add_subdirectory(examples/benchmark)
