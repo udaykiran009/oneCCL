@@ -15,7 +15,7 @@
 namespace ccl {
 
 host_communicator::host_communicator() :
-    comm_attr(ccl::create_comm_split_attr()), // TODO should be ccl::environment::instance().create_comm_split_attr() call in final?
+    comm_attr(ccl::create_comm_split_attr()),
     comm_rank(0),
     comm_size(1)
 {
@@ -23,7 +23,7 @@ host_communicator::host_communicator() :
 
 host_communicator::host_communicator(size_t size,
                                      shared_ptr_class<kvs_interface> kvs) :
-    comm_attr(ccl::create_comm_split_attr()), // TODO should be ccl::environment::instance().create_comm_split_attr() call in final?
+    comm_attr(ccl::create_comm_split_attr()),
     comm_rank(0),
     comm_size(size)
 {
@@ -35,7 +35,7 @@ host_communicator::host_communicator(size_t size,
 host_communicator::host_communicator(size_t size,
                                      size_t rank,
                                      shared_ptr_class<kvs_interface> kvs) :
-    comm_attr(ccl::create_comm_split_attr()), // TODO should be ccl::environment::instance().create_comm_split_attr() call in final?
+    comm_attr(ccl::create_comm_split_attr()),
     comm_rank(rank),
     comm_size(size)
 {
@@ -75,6 +75,8 @@ host_communicator::split(const comm_split_attr& attr)
                         data.comm_ids.get(),
                         comm_impl.get()
                     );
+
+    comm_attr = attr;
 
     return unique_ptr_class<host_communicator>(
                 new host_communicator(std::shared_ptr<ccl_comm>(new_comm))

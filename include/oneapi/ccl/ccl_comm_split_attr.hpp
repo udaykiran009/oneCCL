@@ -4,11 +4,13 @@
 #error "Do not include this file directly. Please include 'ccl.hpp'"
 #endif
 
-namespace ccl {
+namespace ccl
+{
 
 class ccl_host_comm_split_attr_impl;
 class ccl_device_comm_split_attr_impl;
 struct ccl_empty_attr;
+
 /**
  * Host attributes
  */
@@ -27,6 +29,7 @@ public:
      */
     using impl_t = typename impl_value_t::element_type;
 
+    comm_split_attr& operator=(const comm_split_attr& src);
     comm_split_attr& operator=(comm_split_attr&& src);
     comm_split_attr(comm_split_attr&& src);
     comm_split_attr(const comm_split_attr& src);
@@ -59,7 +62,6 @@ private:
     template <class ...attr_value_pair_t>
     static comm_split_attr create_comm_split_attr(attr_value_pair_t&&...avps);
 
-    // TODO should be removed after moving create_comm_split_attr() function to environment class
     // create_split_attr() is internal func of create_comm_split_attr() in which comm_split_attr constructor is called
     template <class attr_t, class ...attr_value_pair_t>
     friend attr_t create_split_attr(attr_value_pair_t&&...avps);

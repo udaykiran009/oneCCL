@@ -1,13 +1,14 @@
 #pragma once
-#include "oneapi/ccl/ccl_comm_split_attr_ids.hpp"
 
 #ifndef CCL_PRODUCT_FULL
 #error "Do not include this file directly. Please include 'ccl.hpp'"
 #endif
 
-namespace ccl {
+namespace ccl
+{
 
-namespace details {
+namespace details
+{
 
 /**
  * Host-specific traits
