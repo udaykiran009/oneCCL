@@ -141,7 +141,7 @@ public:
      * @return @ref ccl::request_t object to track the progress of the operation
      */
     template <class BufferType,
-              class =  int/*typename std::enable_if<ccl::is_native_type_supported<BufferType>()>::type*/>
+              class = typename std::enable_if<ccl::is_native_type_supported<BufferType>()>::type>
     request_t allgatherv(const BufferType* send_buf,
                          size_t send_count,
                          BufferType* recv_buf,
@@ -183,7 +183,7 @@ public:
      * @return @ref ccl::request_t object to track the progress of the operation
      */
     template <class BufferObjectType,
-              class = int >//typename std::enable_if<ccl::is_class_supported<BufferObjectType>()>::type>
+              class = typename std::enable_if<ccl::is_class_supported<BufferObjectType>()>::type>
     request_t allgatherv(const BufferObjectType& send_buf,
                          size_t send_count,
                          BufferObjectType& recv_buf,
@@ -204,7 +204,7 @@ public:
      * @return @ref ccl::request_t object to track the progress of the operation
      */
     template <class BufferObjectType,
-              class = int>//typename std::enable_if<ccl::is_class_supported<BufferObjectType>()>::type>
+              class = typename std::enable_if<ccl::is_class_supported<BufferObjectType>()>::type>
     request_t allgatherv(const BufferObjectType& send_buf,
                          size_t send_count,
                          vector_class<reference_wrapper_class<BufferObjectType>>& recv_bufs,

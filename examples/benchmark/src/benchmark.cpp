@@ -544,6 +544,9 @@ int main(int argc, char *argv[])
                             transport_settings::instance().get_rank(),
                             transport_settings::instance().get_kvs());
 #ifdef CCL_ENABLE_SYCL
+//TODO only for gpu
+if (options.backend == ccl::stream_type::gpu)
+{
     std::unique_ptr<cl::sycl::device_selector> selector;
     switch(options.backend)
     {
@@ -563,11 +566,13 @@ int main(int argc, char *argv[])
 
     cl::sycl::device device(*selector);
     cl::sycl::context ctx(device);
+
     device_specific_data::init(transport_settings::instance().get_size(),
                                transport_settings::instance().get_rank(),
                                device,
                                ctx,
                                transport_settings::instance().get_kvs());
+}
 #endif
 
     try
