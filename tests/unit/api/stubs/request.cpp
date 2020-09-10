@@ -1,5 +1,5 @@
-#include "ccl_types.hpp"
-#include "ccl_request.hpp"
+#include "oneapi/ccl/ccl_types.hpp"
+#include "oneapi/ccl/ccl_request.hpp"
 
 namespace ccl
 {

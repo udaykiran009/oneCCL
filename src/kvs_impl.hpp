@@ -1,6 +1,6 @@
 #pragma once
-#include "ccl_types.hpp"
-#include "ccl_kvs.hpp"
+#include "oneapi/ccl/ccl_types.hpp"
+#include "oneapi/ccl/ccl_kvs.hpp"
 
 namespace ccl
 {
@@ -10,10 +10,10 @@ class kvs_impl
 public:
     //STUB
 
-     kvs::addr_t addr;
+     kvs::address_type addr;
 };
 
-const kvs::addr_t& CCL_API kvs::get_addr() const
+const kvs::address_type& CCL_API kvs::get_address() const
 {
     //TODO: add logic;
     static kvs_impl tmp;
@@ -38,7 +38,7 @@ CCL_API kvs::~kvs()
     //TODO: add logic;
 }
 
-CCL_API kvs::kvs(const kvs::addr_t& addr)
+CCL_API kvs::kvs(const kvs::address_type& addr)
 {
     //TODO: add logic;
 }

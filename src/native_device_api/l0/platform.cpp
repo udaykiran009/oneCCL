@@ -2,8 +2,8 @@
 #include <iterator>
 #include <sstream>
 
-#include "native_device_api/l0/primitives_impl.hpp"
-#include "native_device_api/l0/platform.hpp"
+#include "oneapi/ccl/native_device_api/l0/primitives_impl.hpp"
+#include "oneapi/ccl/native_device_api/l0/platform.hpp"
 
 namespace native
 {

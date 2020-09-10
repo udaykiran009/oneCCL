@@ -1,7 +1,7 @@
 #pragma once
 #include <memory>
 
-#include "ccl.hpp"
+#include "oneapi/ccl.hpp"
 
 class ccl_gpu_sched;
 

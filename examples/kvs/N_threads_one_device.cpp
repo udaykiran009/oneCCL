@@ -114,17 +114,17 @@ int main(int argc, char** argv)
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
     MPI_Comm_size(MPI_COMM_WORLD, &size);
     std::shared_ptr<ccl::ccl_internal_kvs> kvs;
-    ccl::ccl_master_addr master_addr;
+    ccl::ccl_main_addr main_addr;
     if (rank == 0)
     {
         kvs = std::make_shared<ccl::ccl_internal_kvs>();
-        master_addr = kvs->get_master_addr();
-        MPICHECK(MPI_Bcast((void *)master_addr.data(), master_addr.size(), MPI_BYTE, 0, MPI_COMM_WORLD));
+        main_addr = kvs->get_main_addr();
+        MPICHECK(MPI_Bcast((void *)main_addr.data(), main_addr.size(), MPI_BYTE, 0, MPI_COMM_WORLD));
     }
     else
     {
-        MPICHECK(MPI_Bcast((void *)master_addr.data(), master_addr.size(), MPI_BYTE, 0, MPI_COMM_WORLD));
-        kvs = std::make_shared<ccl::ccl_internal_kvs>(master_addr);
+        MPICHECK(MPI_Bcast((void *)main_addr.data(), main_addr.size(), MPI_BYTE, 0, MPI_COMM_WORLD));
+        kvs = std::make_shared<ccl::ccl_internal_kvs>(main_addr);
     }
 
     for(int thread_id = 0; thread_id < thread_count; thread_id++)

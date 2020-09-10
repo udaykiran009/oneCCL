@@ -1,6 +1,6 @@
 #pragma once
-#include "ccl_types.hpp"
-#include "ccl_comm_split_attr_ids.hpp"
+#include "oneapi/ccl/ccl_types.hpp"
+#include "oneapi/ccl/ccl_comm_split_attr_ids.hpp"
 #include "common/comm/l0/device_group_routing_schema.hpp"
 #include "common/comm/l0/devices/devices_declaration.hpp"
 #include "common/comm/l0/gpu_device_types.hpp"

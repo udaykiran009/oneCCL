@@ -1,6 +1,6 @@
 #include <iostream>
 #include <stdio.h>
-#include "ccl.hpp"
+#include "oneapi/ccl.hpp"
 
 #define COUNT 128
 

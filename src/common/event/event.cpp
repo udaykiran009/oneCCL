@@ -1,15 +1,15 @@
 #include "common/log/log.hpp"
 #include "common/event/event.hpp"
-#include "native_device_api/export_api.hpp"
+#include "oneapi/ccl/native_device_api/export_api.hpp"
 
 
-ccl_event::ccl_event(event_native_t& event, const ccl_version_t& version) :
+ccl_event::ccl_event(event_native_t& event, const ccl::version& version) :
         library_version(version),
         native_event(event)
 {
 }
 
-ccl_event::ccl_event(event_native_handle_t event, event_native_context_t context, const ccl_version_t& version) :
+ccl_event::ccl_event(event_native_handle_t event, event_native_context_t context, const ccl::version& version) :
         library_version(version)
 {
 #ifdef CCL_ENABLE_SYCL

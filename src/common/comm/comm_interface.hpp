@@ -1,20 +1,20 @@
 #pragma once
-#include "ccl_types.hpp"
-#include "ccl_type_traits.hpp"
-#include "ccl_request.hpp"
-#include "ccl_types_policy.hpp"
+#include "oneapi/ccl/ccl_types.hpp"
+#include "oneapi/ccl/ccl_type_traits.hpp"
+#include "oneapi/ccl/ccl_request.hpp"
+#include "oneapi/ccl/ccl_types_policy.hpp"
 
-#include "ccl_comm_split_attr_ids.hpp"
-#include "ccl_comm_split_attr_ids_traits.hpp"
-#include "ccl_comm_split_attr.hpp"
+#include "oneapi/ccl/ccl_comm_split_attr_ids.hpp"
+#include "oneapi/ccl/ccl_comm_split_attr_ids_traits.hpp"
+#include "oneapi/ccl/ccl_comm_split_attr.hpp"
 
-#include "ccl_stream_attr_ids.hpp"
-#include "ccl_stream_attr_ids_traits.hpp"
-#include "ccl_stream.hpp"
+#include "oneapi/ccl/ccl_stream_attr_ids.hpp"
+#include "oneapi/ccl/ccl_stream_attr_ids_traits.hpp"
+#include "oneapi/ccl/ccl_stream.hpp"
 
-#include "ccl_event_attr_ids.hpp"
-#include "ccl_event_attr_ids_traits.hpp"
-#include "ccl_event.hpp"
+#include "oneapi/ccl/ccl_event_attr_ids.hpp"
+#include "oneapi/ccl/ccl_event_attr_ids_traits.hpp"
+#include "oneapi/ccl/ccl_event.hpp"
 
 #include "common/comm/compiler_comm_interface_dispatcher.hpp"
 #include "common/comm/l0/comm_context_id.hpp"
@@ -27,15 +27,15 @@ namespace native
 namespace ccl
 {
 struct gpu_comm_attr;
-class allgatherv_attr_t;
-class allreduce_attr_t;
-class alltoall_attr_t;
-class alltoallv_attr_t;
-class barrier_attr_t;
-class bcast_attr_t;
-class reduce_attr_t;
-class reduce_scatter_attr_t;
-class sparse_allreduce_attr_t;
+class allgatherv_attr;
+class allreduce_attr;
+class alltoall_attr;
+class alltoallv_attr;
+class barrier_attr;
+class broadcast_attr;
+class reduce_attr;
+class reduce_scatter_attr;
+class sparse_allreduce_attr;
 }
 
 #include "types_generator_defines.hpp"
@@ -60,8 +60,8 @@ struct communicator_interface : public communicator_interface_dispatcher
 
     // collectives operation declarations
     virtual ccl::request_t barrier(
-                         const barrier_attr_t& attr,
                          stream::impl_value_t& op_stream,
+                         const barrier_attr& attr,
                          const vector_class<event>& deps = {}) = 0;
 
     DEVICE_COMM_INTERFACE_COLL_DECLARATION__VOID;

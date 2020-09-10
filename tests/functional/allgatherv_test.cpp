@@ -107,7 +107,7 @@ public:
         void* recv_buf;
         size_t count = recv_counts[param.process_idx];
         const ccl_test_conf& test_conf = param.get_conf();
-        auto attr = ccl::environment::instance().create_op_attr<ccl::allgatherv_attr_t>();
+        auto attr = ccl::environment::instance().create_operation_attr<ccl::allgatherv_attr>();
         ccl::datatype data_type = static_cast<ccl::datatype>(test_conf.data_type);
 
         for (size_t buf_idx = 0; buf_idx < param.buffer_count; buf_idx++)

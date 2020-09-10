@@ -4,7 +4,7 @@
 
 
 #include "sched/entry/entry.hpp"
-#include "native_device_api/l0/device.hpp"
+#include "oneapi/ccl/native_device_api/l0/device.hpp"
 
 
 /**
@@ -20,7 +20,7 @@ struct native_type_info<shared_event_float>
     static constexpr bool is_class = true;
 };
 }
-#include "native_device_api/l0/primitives_impl.hpp"
+#include "oneapi/ccl/native_device_api/l0/primitives_impl.hpp"
 */
 class ccl_gpu_sched;
 

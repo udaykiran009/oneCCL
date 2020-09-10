@@ -1,9 +1,9 @@
 #pragma once
-#include "ccl_types_policy.hpp"
-#include "ccl_types.hpp"
-#include "ccl_type_traits.hpp"
-#include "ccl_stream_attr_ids.hpp"
-#include "ccl_stream_attr_ids_traits.hpp"
+#include "oneapi/ccl/ccl_types_policy.hpp"
+#include "oneapi/ccl/ccl_types.hpp"
+#include "oneapi/ccl/ccl_type_traits.hpp"
+#include "oneapi/ccl/ccl_stream_attr_ids.hpp"
+#include "oneapi/ccl/ccl_stream_attr_ids_traits.hpp"
 #include "common/utils/utils.hpp"
 #include "common/stream/stream_provider_dispatcher.hpp"
 
@@ -44,7 +44,7 @@ public:
         return (type == ccl_stream_cpu || type == ccl_stream_gpu);
     }
 
-    static std::unique_ptr<ccl_stream> create(stream_native_t& native_stream, const ccl_version_t& version);
+    static std::unique_ptr<ccl_stream> create(stream_native_t& native_stream, const ccl::version& version);
 
     //Export Attributes
     using version_traits_t = ccl::details::ccl_api_type_attr_traits<ccl::stream_attr_id, ccl::stream_attr_id::version>;
@@ -119,7 +119,7 @@ private:
     template<class NativeStream,
              typename std::enable_if<std::is_class<typename std::remove_cv<NativeStream>::type>::value,
                                      int>::type = 0>
-    ccl_stream(ccl_stream_type_t stream_type, NativeStream& native_stream, const ccl_version_t& version) :
+    ccl_stream(ccl_stream_type_t stream_type, NativeStream& native_stream, const ccl::version& version) :
         stream_provider_dispatcher(native_stream),
         type(stream_type),
         library_version(version)
@@ -128,14 +128,14 @@ private:
     template<class NativeStreamHandle,
              typename std::enable_if<not std::is_class<typename std::remove_cv<NativeStreamHandle>::type>::value,
                                      int>::type = 0>
-    ccl_stream(ccl_stream_type_t stream_type, NativeStreamHandle native_stream, const ccl_version_t& version) :
+    ccl_stream(ccl_stream_type_t stream_type, NativeStreamHandle native_stream, const ccl::version& version) :
         stream_provider_dispatcher(native_stream),
         type(stream_type),
         library_version(version)
     {
     }
 
-    ccl_stream(ccl_stream_type_t stream_type, const ccl_version_t& version) :
+    ccl_stream(ccl_stream_type_t stream_type, const ccl::version& version) :
         stream_provider_dispatcher(),
         type(stream_type),
         library_version(version)
@@ -143,7 +143,7 @@ private:
     }
 
     ccl_stream_type_t type;
-    const ccl_version_t library_version;
+    const ccl::version library_version;
     typename ordinal_traits_t::return_type ordinal_val;
     typename index_traits_t::return_type index_val;
     typename flags_traits_t::return_type flags_val;

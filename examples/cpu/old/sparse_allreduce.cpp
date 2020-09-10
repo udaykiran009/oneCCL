@@ -6,7 +6,7 @@ template<ccl_datatype_t ccl_idx_type>
 struct sparse_algo_iterator
 {
     template<size_t i, typename v_type>
-    void invoke(ccl_sparse_coalesce_mode_t coalesce_mode,
+    void invoke(ccl::sparse_coalesce_mode coalesce_mode,
                 sparse_test_callback_mode_t callback_mode)
     {
         sparse_test_run<ccl_idx_type, v_type::ccl_type::value>(coalesce_mode, callback_mode);
@@ -18,7 +18,7 @@ struct sparse_value_type_iterator
 {
     using types = std::tuple<ccl::type_info<ccl_value_type>...>;
     template<size_t index, typename i_type>
-    void invoke(ccl_sparse_coalesce_mode_t coalesce_mode,
+    void invoke(ccl::sparse_coalesce_mode coalesce_mode,
                 sparse_test_callback_mode_t callback_mode)
     {
         ccl_tuple_for_each_indexed<types>(sparse_algo_iterator<i_type::ccl_type::value>(),
@@ -37,7 +37,7 @@ int main(int argc, char** argv)
 {
     test_init();
 
-    ccl_sparse_coalesce_mode_t coalesce_mode = ccl_sparse_coalesce_regular;
+    ccl::sparse_coalesce_mode coalesce_mode = ccl_sparse_coalesce_regular;
     sparse_test_callback_mode_t callback_mode = sparse_test_callback_completion;
 
     if (argc >= 3)

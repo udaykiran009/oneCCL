@@ -8,7 +8,7 @@
 #include <mutex>
 #include <sstream>
 
-#include "ccl_types.hpp"
+#include "oneapi/ccl/ccl_types.hpp"
 #include "common/utils/spinlock.hpp"
 #include "common/utils/utils.hpp"
 

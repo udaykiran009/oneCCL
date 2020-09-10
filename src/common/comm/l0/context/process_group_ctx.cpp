@@ -7,7 +7,7 @@
 #include <limits.h>
 #include <gnu/libc-version.h>
 
-#include "ccl.hpp"
+#include "oneapi/ccl.hpp"
 #include "common/comm/l0/devices/devices_declaration.hpp"
 
 #include "common/comm/l0/context/thread_group_ctx.hpp"

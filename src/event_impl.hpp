@@ -1,11 +1,11 @@
 #pragma once
-#include "ccl_types.hpp"
-#include "ccl_type_traits.hpp"
-#include "ccl_types_policy.hpp"
+#include "oneapi/ccl/ccl_types.hpp"
+#include "oneapi/ccl/ccl_type_traits.hpp"
+#include "oneapi/ccl/ccl_types_policy.hpp"
 
-#include "ccl_event_attr_ids.hpp"
-#include "ccl_event_attr_ids_traits.hpp"
-#include "ccl_event.hpp"
+#include "oneapi/ccl/ccl_event_attr_ids.hpp"
+#include "oneapi/ccl/ccl_event_attr_ids_traits.hpp"
+#include "oneapi/ccl/ccl_event.hpp"
 
 #include "common/event/event.hpp"
 
@@ -18,7 +18,7 @@ event event::create_event_from_attr(event_type& native_event_handle,
                              typename unified_device_context_type::ccl_native_t context,
                              attr_value_pair_t&&...avps)
 {
-    ccl_version_t ret {};
+    ccl::version ret {};
     ret.major = CCL_MAJOR_VERSION;
     ret.minor = CCL_MINOR_VERSION;
     ret.update = CCL_UPDATE_VERSION;
@@ -39,7 +39,7 @@ template <class event_handle_type,
           typename T>
 event event::create_event(event_handle_type native_event_handle, typename unified_device_context_type::ccl_native_t context)
 {
-    ccl_version_t ret {};
+    ccl::version ret {};
     ret.major = CCL_MAJOR_VERSION;
     ret.minor = CCL_MINOR_VERSION;
     ret.update = CCL_UPDATE_VERSION;
@@ -57,7 +57,7 @@ template <class event_type,
           typename T>
 event event::create_event(event_type& native_event)
 {
-    ccl_version_t ret {};
+    ccl::version ret {};
     ret.major = CCL_MAJOR_VERSION;
     ret.minor = CCL_MINOR_VERSION;
     ret.update = CCL_UPDATE_VERSION;

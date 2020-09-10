@@ -100,7 +100,7 @@ public:
             size_t bytes = in_cnt * dtype.size();
             size_t offset = inout_buf.get_offset();
 
-            const ccl_fn_context_t context = { sched->coll_attr.match_id.c_str(), offset };
+            const ccl::fn_context context = { sched->coll_attr.match_id.c_str(), offset };
 
             ccl_buffer reduce_in_buf = 
                 (result_buf_type == ccl_recv_reduce_local_buf) ? comm_buf : inout_buf;
@@ -154,6 +154,6 @@ private:
     bool own_comm_buff = false;
     ccl_recv_reduce_result_buf_type result_buf_type;
     uint64_t atl_tag = 0;
-    ccl_reduction_fn_t fn;
+    ccl::reduction_fn_t fn;
     atl_req_t req{};
 };

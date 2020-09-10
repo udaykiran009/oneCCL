@@ -18,7 +18,7 @@ public:
     sparse_allreduce_completion_entry() = delete;
     sparse_allreduce_completion_entry(
       ccl_sched* sched,
-      ccl_sparse_allreduce_completion_fn_t fn,
+      ccl::sparse_allreduce_completion_fn_t fn,
       const void* fn_ctx,
       const ccl_buffer i_buf,
       size_t i_cnt,
@@ -86,7 +86,7 @@ protected:
     }
 
 private:
-    ccl_sparse_allreduce_completion_fn_t fn;
+    ccl::sparse_allreduce_completion_fn_t fn;
     const void* fn_ctx;
     ccl_buffer i_buf;
     size_t i_cnt;

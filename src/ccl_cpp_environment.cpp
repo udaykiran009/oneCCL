@@ -1,5 +1,5 @@
 #include "environment_impl.hpp"
-#include "ccl.h"    //TODO datatypes
+//#include "ccl.h"    //TODO datatypes
 
 #include <memory>
 
@@ -23,18 +23,24 @@ CCL_API ccl::environment& ccl::environment::instance()
     return env;
 }
 
-void CCL_API ccl::environment::set_resize_fn(ccl_resize_fn_t callback)
-{
-    ccl_status_t result = ccl_set_resize_fn(callback);
-    CCL_CHECK_AND_THROW(result, "failed to set resize callback");
-    return;
-}
+// void CCL_API ccl::environment::set_resize_fn(ccl_resize_fn_t callback)
+// {
+//     ccl_status_t result = ccl_set_resize_fn(callback);
+//     CCL_CHECK_AND_THROW(result, "failed to set resize callback");
+//     return;
+// }
 
-ccl_version_t CCL_API ccl::environment::get_version() const
+ccl::version CCL_API ccl::environment::get_version() const
 {
-    ccl_version_t ret;
-    ccl_status_t result = ccl_get_version(&ret);
-    CCL_CHECK_AND_THROW(result, "failed to get version");
+    ccl::version ret;
+
+    ret.major = CCL_MAJOR_VERSION;
+    ret.minor = CCL_MINOR_VERSION;
+    ret.update = CCL_UPDATE_VERSION;
+    ret.product_status = CCL_PRODUCT_STATUS;
+    ret.build_date = CCL_PRODUCT_BUILD_DATE;
+    ret.full = CCL_PRODUCT_FULL;
+
     return ret;
 }
 /*
@@ -54,7 +60,7 @@ shared_ptr_class<kvs> CCL_API environment::create_main_kvs() const
     return std::shared_ptr<kvs>(new kvs);
 }
 
-shared_ptr_class<kvs> CCL_API environment::create_kvs(const kvs::addr_t& addr) const
+shared_ptr_class<kvs> CCL_API environment::create_kvs(const kvs::address_type& addr) const
 {
     return std::shared_ptr<kvs>(new kvs(addr));
 }
@@ -78,7 +84,7 @@ communicator CCL_API environment::create_communicator(const size_t size,
     return communicator::create_communicator(size, rank, kvs);
 }
 
-ccl_datatype_t CCL_API environment::register_datatype(const ccl::datatype_attr_t& attr)
+ccl::datatype CCL_API environment::register_datatype(const ccl::datatype_attr& attr)
 {
     while(unlikely(ccl::global_data::get().executor->is_locked))
     {
@@ -90,7 +96,7 @@ ccl_datatype_t CCL_API environment::register_datatype(const ccl::datatype_attr_t
     return ccl::global_data::get().dtypes->create(attr);
 }
 
-void CCL_API environment::deregister_datatype(ccl_datatype_t dtype)
+void CCL_API environment::deregister_datatype(ccl::datatype dtype)
 {
     while(unlikely(ccl::global_data::get().executor->is_locked))
     {
@@ -102,7 +108,7 @@ void CCL_API environment::deregister_datatype(ccl_datatype_t dtype)
     ccl::global_data::get().dtypes->free(dtype);
 }
 
-size_t CCL_API environment::get_datatype_size(ccl_datatype_t dtype) const
+size_t CCL_API environment::get_datatype_size(ccl::datatype dtype) const
 {
     while(unlikely(ccl::global_data::get().executor->is_locked))
     {
@@ -114,40 +120,42 @@ size_t CCL_API environment::get_datatype_size(ccl_datatype_t dtype) const
 
 } // namespace ccl
 
-#ifdef CCL_ENABLE_SYCL
-ccl::device_communicator CCL_API ccl::environment::create_single_device_communicator(const size_t world_size,
-                                     const size_t rank,
-                                     const cl::sycl::device &device,
-                                     ccl::shared_ptr_class<ccl::kvs_interface> kvs) const
-{
-    LOG_TRACE("Create single device communicator from SYCL device");
-    ccl::device_comm_split_attr_t attr = create_device_comm_split_attr(
-                ccl::attr_arg<ccl::ccl_comm_split_attributes::group>(ccl::device_group_split_type::undetermined));
-    ccl::communicator_interface_ptr impl = ccl::communicator_interface::create_communicator_impl(device,
-                                                                                                 0,
-                                                                                                 rank,
-                                                                                                 attr);
-    return ccl::device_communicator(std::move(impl));
-}
+/* TODO: enable back using create_device_communicators */
+// #ifdef CCL_ENABLE_SYCL
+// ccl::device_communicator CCL_API ccl::environment::create_single_device_communicator(
+//                                      const size_t comm_size,
+//                                      const size_t rank,
+//                                      const cl::sycl::device &device,
+//                                      ccl::shared_ptr_class<ccl::kvs_interface> kvs) const
+// {
+//     LOG_TRACE("Create single device communicator from SYCL device");
+//     ccl::device_comm_split_attr attr = create_device_comm_split_attr(
+//                 ccl::attr_arg<ccl::ccl_comm_split_attributes::group>(ccl::device_group_split_type::undetermined));
+//     ccl::communicator_interface_ptr impl = ccl::communicator_interface::create_communicator_impl(device,
+//                                                                                                  0,
+//                                                                                                  rank,
+//                                                                                                  attr);
+//     return ccl::device_communicator(std::move(impl));
+// }
 
-ccl::device_communicator CCL_API ccl::environment::create_single_device_communicator(const size_t world_size,
-                                     const size_t rank,
-                                     cl::sycl::queue queue,
-                                     ccl::shared_ptr_class<ccl::kvs_interface> kvs) const
-{
-    LOG_TRACE("Create single device communicator from SYCL queue");
+// ccl::device_communicator CCL_API ccl::environment::create_single_device_communicator(const size_t world_size,
+//                                      const size_t rank,
+//                                      cl::sycl::queue queue,
+//                                      ccl::shared_ptr_class<ccl::kvs_interface> kvs) const
+// {
+//     LOG_TRACE("Create single device communicator from SYCL queue");
 
-    //TODO use group_context
-    auto single_dev_comm = create_single_device_communicator(world_size, rank, queue.get_device(), kvs);
+//     //TODO use group_context
+//     auto single_dev_comm = create_single_device_communicator(world_size, rank, queue.get_device(), kvs);
 
-    auto comm_impl = std::dynamic_pointer_cast<single_device_communicator>(single_dev_comm.get_impl());
-    ccl::global_data& data = ccl::global_data::get();
-    auto comm = std::shared_ptr<ccl_comm>(
-            new ccl_comm(rank, world_size, data.comm_ids->acquire()));
-    comm_impl->set_ccl_comm(std::move(comm));
-    return single_dev_comm;
-}
-#endif
+//     auto comm_impl = std::dynamic_pointer_cast<single_device_communicator>(single_dev_comm.get_impl());
+//     ccl::global_data& data = ccl::global_data::get();
+//     auto comm = std::shared_ptr<ccl_comm>(
+//             new ccl_comm(rank, world_size, data.comm_ids->acquire()));
+//     comm_impl->set_ccl_comm(std::move(comm));
+//     return single_dev_comm;
+// }
+// #endif
 
 
 /***************************TypeGenerations*********************************************************/
@@ -156,7 +164,7 @@ ccl::stream CCL_API ccl::environment::create_postponed_api_type<ccl::stream, typ
                                typename ccl::unified_device_type::ccl_native_t device,
                                typename ccl::unified_device_context_type::ccl_native_t context) const
 {
-    ccl_version_t ret {};
+    ccl::version ret {};
     ret.major = CCL_MAJOR_VERSION;
     ret.minor = CCL_MINOR_VERSION;
     ret.update = CCL_UPDATE_VERSION;
@@ -170,7 +178,7 @@ template <>
 ccl::stream CCL_API ccl::environment::create_postponed_api_type<ccl::stream, typename ccl::unified_device_type::ccl_native_t>(
                                typename ccl::unified_device_type::ccl_native_t device) const
 {
-    ccl_version_t ret {};
+    ccl::version ret {};
     ret.major = CCL_MAJOR_VERSION;
     ret.minor = CCL_MINOR_VERSION;
     ret.update = CCL_UPDATE_VERSION;
@@ -182,22 +190,22 @@ ccl::stream CCL_API ccl::environment::create_postponed_api_type<ccl::stream, typ
 }
 
 
-CREATE_OP_ATTR_INSTANTIATION(ccl::allgatherv_attr_t)
-CREATE_OP_ATTR_INSTANTIATION(ccl::allreduce_attr_t)
-CREATE_OP_ATTR_INSTANTIATION(ccl::alltoall_attr_t)
-CREATE_OP_ATTR_INSTANTIATION(ccl::alltoallv_attr_t)
-CREATE_OP_ATTR_INSTANTIATION(ccl::bcast_attr_t)
-CREATE_OP_ATTR_INSTANTIATION(ccl::reduce_attr_t)
-CREATE_OP_ATTR_INSTANTIATION(ccl::reduce_scatter_attr_t)
-CREATE_OP_ATTR_INSTANTIATION(ccl::sparse_allreduce_attr_t)
+CREATE_OP_ATTR_INSTANTIATION(ccl::allgatherv_attr)
+CREATE_OP_ATTR_INSTANTIATION(ccl::allreduce_attr)
+CREATE_OP_ATTR_INSTANTIATION(ccl::alltoall_attr)
+CREATE_OP_ATTR_INSTANTIATION(ccl::alltoallv_attr)
+CREATE_OP_ATTR_INSTANTIATION(ccl::broadcast_attr)
+CREATE_OP_ATTR_INSTANTIATION(ccl::reduce_attr)
+CREATE_OP_ATTR_INSTANTIATION(ccl::reduce_scatter_attr)
+CREATE_OP_ATTR_INSTANTIATION(ccl::sparse_allreduce_attr)
 
 
-CREATE_OP_ATTR_INSTANTIATION(ccl::comm_split_attr_t)
+CREATE_OP_ATTR_INSTANTIATION(ccl::comm_split_attr)
 #ifdef MULTI_GPU_SUPPORT
-    CREATE_OP_ATTR_INSTANTIATION(ccl::device_comm_split_attr_t)
+    CREATE_OP_ATTR_INSTANTIATION(ccl::device_comm_split_attr)
 #endif
 
-CREATE_OP_ATTR_INSTANTIATION(ccl::datatype_attr_t)
+CREATE_OP_ATTR_INSTANTIATION(ccl::datatype_attr)
 
 #ifdef CCL_ENABLE_SYCL
     CREATE_DEV_COMM_INSTANTIATION(cl::sycl::device, cl::sycl::context)

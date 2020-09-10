@@ -6,6 +6,8 @@
 #include "common/global/global.hpp"
 #include "common/log/log.hpp"
 
+#include "oneapi/ccl/ccl_environment.hpp"
+
 namespace ccl
 {
 
@@ -155,11 +157,7 @@ void env_data::print()
 #endif
     LOG_INFO("build mode : ", build_mode);
 
-    ccl_version_t version;
-    if (ccl_get_version(&version) != ccl_status_success)
-    {
-        throw std::runtime_error("cannot determine CCL version!");
-    }
+    ccl::version version = ccl::environment::instance().get_version();
 
     LOG_INFO("version : ", version.full);
 

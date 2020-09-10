@@ -1,5 +1,5 @@
 #pragma once
-#include "ccl_environment.hpp"
+#include "oneapi/ccl/ccl_environment.hpp"
 
 #include "coll/coll_attributes.hpp"
 
@@ -7,7 +7,7 @@
 #include "comm_split_attr_impl.hpp"
 #include "comm_split_attr_creation_impl.hpp"
 
-#include "ccl_communicator.hpp"
+#include "oneapi/ccl/ccl_communicator.hpp"
 
 #include "common/comm/l0/comm_context_storage.hpp"
 
@@ -18,14 +18,14 @@
 #include "common/comm/comm.hpp"
 
 #include "common/comm/l0/comm_context.hpp"
-#include "ccl_device_communicator.hpp"
+#include "oneapi/ccl/ccl_device_communicator.hpp"
 
 #include "common/global/global.hpp"
 #include "exec/exec.hpp"
 
 #include "common/comm/comm_interface.hpp"
 
-#include "native_device_api/export_api.hpp"
+#include "oneapi/ccl/native_device_api/export_api.hpp"
 
 #ifdef CCL_ENABLE_SYCL
 #include <CL/sycl.hpp>
@@ -45,18 +45,18 @@ namespace ccl
 
 /*
 template <class ...attr_value_pair_t>
-comm_split_attr_t CCL_API environment::create_comm_split_attr(attr_value_pair_t&&...avps) const
+comm_split_attr CCL_API environment::create_comm_split_attr(attr_value_pair_t&&...avps) const
 {
-    return comm_split_attr_t::create_comm_split_attr(std::forward<attr_value_pair_t>(avps)...);
+    return comm_split_attr::create_comm_split_attr(std::forward<attr_value_pair_t>(avps)...);
 }
 */
 //Device communicator
 #ifdef MULTI_GPU_SUPPORT
 /*
 template <class ...attr_value_pair_t>
-device_comm_split_attr_t environment::create_device_comm_split_attr(attr_value_pair_t&&...avps) const
+device_comm_split_attr environment::create_device_comm_split_attr(attr_value_pair_t&&...avps) const
 {
-    return device_comm_split_attr_t::create_device_comm_split_attr(std::forward<attr_value_pair_t>(avps)...);
+    return device_comm_split_attr::create_device_comm_split_attr(std::forward<attr_value_pair_t>(avps)...);
 }
 */
 template<class DeviceType,
@@ -134,7 +134,7 @@ event CCL_API environment::create_event(event_handle_type native_event_handle, t
 template <class ccl_api_type, class ...args_type>
 ccl_api_type CCL_API environment::create_postponed_api_type(args_type... args) const
 {
-    ccl_version_t ret {};
+    ccl::version ret {};
     ret.major = CCL_MAJOR_VERSION;
     ret.minor = CCL_MINOR_VERSION;
     ret.update = CCL_UPDATE_VERSION;
@@ -142,7 +142,7 @@ ccl_api_type CCL_API environment::create_postponed_api_type(args_type... args) c
     ret.build_date = CCL_PRODUCT_BUILD_DATE;
     ret.full = CCL_PRODUCT_FULL;
     // TODO: ccl_api_type is private constructor, so `static_cast`  fails always. Fix it
-    //static_assert(std::is_constructible<ccl_api_type, args_type..., ccl_version_t>::value, "Cannot construct `ccl_api_type` from given `args_type...`");
+    //static_assert(std::is_constructible<ccl_api_type, args_type..., ccl::version>::value, "Cannot construct `ccl_api_type` from given `args_type...`");
     return ccl_api_type(std::forward<args_type>(args)..., ret);
 }
 }

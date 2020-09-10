@@ -10,7 +10,7 @@
 #include <mpi.h>
 
 #include <CL/sycl.hpp>
-#include "ccl.hpp"
+#include "oneapi/ccl.hpp"
 
 #define COUNT     size_t(10 * 1024 * 1024)
 #define COLL_ROOT (0)

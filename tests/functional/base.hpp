@@ -5,7 +5,7 @@
 #include <functional>
 #include <vector>
 
-#include "ccl.hpp"
+#include "oneapi/ccl.hpp"
 #include "ccl_test_conf.hpp"
 #include "utils.hpp"
 
@@ -45,7 +45,7 @@ struct typed_test_param
         buf_indexes.resize(buffer_count);
     }
 
-    void prepare_coll_attr(ccl::allgatherv_attr_t& coll_attr, size_t idx);
+    void prepare_coll_attr(ccl::allgatherv_attr& coll_attr, size_t idx);
     template <class coll_attr_type>
     void prepare_coll_attr(coll_attr_type& coll_attr, size_t idx);
 

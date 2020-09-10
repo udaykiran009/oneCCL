@@ -9,7 +9,7 @@
 
 #include "gtest/gtest.h"
 
-#include "ccl.hpp"
+#include "oneapi/ccl.hpp"
 
 #define sizeofa(arr)        (sizeof(arr) / sizeof(*arr))
 #define DTYPE               float
@@ -108,7 +108,7 @@ do                                                  \
       static int glob_idx = 0;                                              \
       auto comm = ccl::environment::instance().create_communicator();       \
       std::shared_ptr <ccl::request> reqs;                                  \
-      auto coll_attr = ccl::environment::instance().create_op_attr<ccl::allreduce_attr_t>();    \
+      auto coll_attr = ccl::environment::instance().create_operation_attr<ccl::allreduce_attr>();    \
       reqs = comm.allreduce(&result, &result_final, 1,                     \
                          ccl::reduction::sum, coll_attr);          \
       reqs->wait();                                                         \
@@ -172,7 +172,7 @@ void print_err_message(char* err_message, std::ostream& output)
     int message_len = strlen(err_message);
     auto comm = ccl::environment::instance().create_communicator();
     std::shared_ptr <ccl::request> reqs;
-    ccl::allgatherv_attr_t coll_attr = ccl::environment::instance().create_op_attr<ccl::allgatherv_attr_t>();
+    ccl::allgatherv_attr coll_attr = ccl::environment::instance().create_operation_attr<ccl::allgatherv_attr>();
     int process_count = comm.size();
     int process_idx = comm.rank();
     std::vector<size_t> arr_message_len (process_count, 0);

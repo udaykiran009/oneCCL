@@ -1,6 +1,6 @@
 #pragma once
-#include "ccl_types.hpp"
-#include "ccl_comm_split_attr.hpp"
+#include "oneapi/ccl/ccl_types.hpp"
+#include "oneapi/ccl/ccl_comm_split_attr.hpp"
 
 namespace ccl
 {
@@ -9,7 +9,7 @@ namespace ccl
 template <class attr_t, class ...attr_value_pair_t>
 attr_t create_split_attr(attr_value_pair_t&&...avps)
 {
-    ccl_version_t ret {};
+    ccl::version ret {};
     ret.major = CCL_MAJOR_VERSION;
     ret.minor = CCL_MINOR_VERSION;
     ret.update = CCL_UPDATE_VERSION;
@@ -25,17 +25,17 @@ attr_t create_split_attr(attr_value_pair_t&&...avps)
 }
 
 template <class ...attr_value_pair_t>
-comm_split_attr_t create_comm_split_attr(attr_value_pair_t&&...avps)
+comm_split_attr create_comm_split_attr(attr_value_pair_t&&...avps)
 {
-    return create_split_attr<comm_split_attr_t>(std::forward<attr_value_pair_t>(avps)...);
+    return create_split_attr<comm_split_attr>(std::forward<attr_value_pair_t>(avps)...);
 }
 
 #ifdef MULTI_GPU_SUPPORT
 
 template <class ...attr_value_pair_t>
-device_comm_split_attr_t create_device_comm_split_attr(attr_value_pair_t&&...avps)
+device_comm_split_attr create_device_comm_split_attr(attr_value_pair_t&&...avps)
 {
-    return create_split_attr<device_comm_split_attr_t>(std::forward<attr_value_pair_t>(avps)...);
+    return create_split_attr<device_comm_split_attr>(std::forward<attr_value_pair_t>(avps)...);
 }
 
 #endif

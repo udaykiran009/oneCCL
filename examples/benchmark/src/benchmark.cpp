@@ -50,7 +50,7 @@ void do_regular(ccl::communicator* comm,
             PRINT_BY_ROOT((*comm), "do warm up");
 
             bench_attr.reduction = reduction_op;
-            bench_attr.set<ccl::common_op_attr_id::to_cache>(0);
+            bench_attr.set<ccl::operation_attr_id::to_cache>(0);
 
             for (size_t count = options.min_elem_count; count <= options.max_elem_count; count *= 2)
             {
@@ -79,7 +79,7 @@ void do_regular(ccl::communicator* comm,
 
             /* benchmark with multiple equal sized buffer per collective */
             PRINT_BY_ROOT((*comm), "do multi-buffers benchmark");
-            bench_attr.set<ccl::common_op_attr_id::to_cache>(1);
+            bench_attr.set<ccl::operation_attr_id::to_cache>(1);
             for (size_t count = options.min_elem_count; count <= options.max_elem_count; count *= 2)
             {
                 try
@@ -140,7 +140,7 @@ void do_regular(ccl::communicator* comm,
             size_t min_elem_count = options.min_elem_count * options.buf_count;
             size_t max_elem_count = options.max_elem_count * options.buf_count;
 
-            bench_attr.set<ccl::common_op_attr_id::to_cache>(1);
+            bench_attr.set<ccl::operation_attr_id::to_cache>(1);
             for (size_t count = min_elem_count; count <= max_elem_count; count *= 2)
             {
                 try
@@ -218,7 +218,7 @@ void do_unordered(ccl::communicator* comm,
 
             PRINT_BY_ROOT((*comm), "do unordered test");
             bench_attr.reduction = reduction_op;
-            bench_attr.set<ccl::common_op_attr_id::to_cache>(1);
+            bench_attr.set<ccl::operation_attr_id::to_cache>(1);
 
             for (size_t count = options.min_elem_count; count <= options.max_elem_count; count *= 2)
             {
@@ -592,7 +592,7 @@ int main(int argc, char *argv[])
     char match_id[MATCH_ID_SIZE] {'\0'};
     bench_coll_exec_attr bench_attr{};
     bench_attr.init_all();
-    bench_attr.set<ccl::common_op_attr_id::match_id>(std::string{match_id});
+    bench_attr.set<ccl::operation_attr_id::match_id>(std::string{match_id});
 
     print_user_options(options, comm);
 

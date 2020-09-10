@@ -1,9 +1,9 @@
-#include "ccl.h"
+//#include "ccl.h"
 #include "common/comm/comm.hpp"
 #include "common/global/global.hpp"
 #include "sched/sched.hpp"
-#include "ccl_types.hpp"
-#include "ccl_kvs.hpp"
+#include "oneapi/ccl/ccl_types.hpp"
+#include "oneapi/ccl/ccl_kvs.hpp"
 
 ccl_comm::ccl_comm(size_t rank,
                    size_t size,
@@ -62,24 +62,26 @@ ccl_comm::ccl_comm(const std::vector<size_t> &local_thread_device_ranks, size_t 
 
 static ccl_status_t ccl_comm_exchange_colors(std::vector<int>& colors)
 {
-    const size_t exchange_count = 1;
-    std::vector<size_t> recv_counts(colors.size(), exchange_count);
-    ccl_coll_attr_t coll_attr{};
-    coll_attr.to_cache = false;
-    ccl_request_t request;
+    throw ccl::ccl_error("ccl_comm_exchange_colors not implemented yet");
 
-    ccl_status_t status;
+    // const size_t exchange_count = 1;
+    // std::vector<size_t> recv_counts(colors.size(), exchange_count);
+    // ccl_coll_attr_t coll_attr{};
+    // coll_attr.to_cache = false;
+    // ccl_request_t request;
 
-    CCL_CALL(ccl_allgatherv(colors.data(), exchange_count,
-                            colors.data(), recv_counts.data(),
-                            ccl_dtype_int, &coll_attr,
-                            nullptr, /* comm */
-                            nullptr, /* stream */
-                            &request));
+    // ccl_status_t status;
 
-    CCL_CALL(ccl_wait(request));
+    // CCL_CALL(ccl_allgatherv(colors.data(), exchange_count,
+    //                         colors.data(), recv_counts.data(),
+    //                         ccl_dtype_int, &coll_attr,
+    //                         nullptr, /* comm */
+    //                         nullptr, /* stream */
+    //                         &request));
 
-    return status;
+    // CCL_CALL(ccl_wait(request));
+
+    // return status;
 }
 
 ccl_comm* ccl_comm::create_with_color(int color,

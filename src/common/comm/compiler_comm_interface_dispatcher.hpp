@@ -2,7 +2,7 @@
 #include <cstddef>
 #include <memory>
 
-#include "ccl_types.hpp"
+#include "oneapi/ccl/ccl_types.hpp"
 #include "supported_topologies.hpp"
 #include "communicator_traits.hpp"
 
@@ -16,7 +16,7 @@ namespace ccl
 struct gpu_comm_attr;
 #endif
 struct communicator_interface;
-class device_comm_split_attr_t;
+class device_comm_split_attr;
 
 using communicator_interface_ptr = std::shared_ptr<communicator_interface>;
 
@@ -29,7 +29,7 @@ struct communicator_interface_dispatcher
     virtual ccl::device_index_type get_device_path() const = 0;
     virtual device_t get_device() = 0;
     virtual context_t get_context() = 0;
-    virtual const device_comm_split_attr_t& get_comm_split_attr() const = 0;
+    virtual const device_comm_split_attr& get_comm_split_attr() const = 0;
     virtual device_group_split_type get_topology_type() const = 0;
     virtual device_topology_type get_topology_class() const = 0;
 
@@ -41,7 +41,7 @@ struct communicator_interface_dispatcher
     static communicator_interface_ptr create_communicator_impl(const DeviceType& device,
                                                                size_t thread_idx,
                                                                size_t process_idx,
-                                                               const device_comm_split_attr_t& attr);
+                                                               const device_comm_split_attr& attr);
 
     // create communicator for device & cpu types (from device index)
     template <class DeviceType,
@@ -51,13 +51,13 @@ struct communicator_interface_dispatcher
     static communicator_interface_ptr create_communicator_impl(DeviceType device_id,
                                                                size_t thread_idx,
                                                                size_t process_idx,
-                                                               const device_comm_split_attr_t& attr);
+                                                               const device_comm_split_attr& attr);
 private:
 
     static communicator_interface_ptr create_communicator_from_unified_device(unified_device_type&& device_id,
                                                                               size_t thread_idx,
                                                                               size_t process_idx,
-                                                                              const device_comm_split_attr_t& attr);
+                                                                              const device_comm_split_attr& attr);
 
 };
 }

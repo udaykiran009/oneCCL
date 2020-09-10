@@ -32,7 +32,7 @@ struct allgatherv_strategy_impl
         }
         reqs.push_back(comm.allgatherv(send_buf, count,
                                        recv_buf, recv_counts,
-                                       bench_attr.get_attr<ccl::allgatherv_attr_t>(), std::forward<Args>(args)...));
+                                       bench_attr.get_attr<ccl::allgatherv_attr>(), std::forward<Args>(args)...));
     }
 };
 

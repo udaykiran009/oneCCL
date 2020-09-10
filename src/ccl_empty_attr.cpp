@@ -1,8 +1,8 @@
-#include "ccl_types.hpp"
+#include "oneapi/ccl/ccl_types.hpp"
 
 namespace ccl
 {
-ccl_version_t ccl_empty_attr::version {
+ccl::version ccl_empty_attr::version {
     CCL_MAJOR_VERSION,
     CCL_MINOR_VERSION,
     CCL_UPDATE_VERSION,

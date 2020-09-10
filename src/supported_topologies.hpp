@@ -1,6 +1,6 @@
 #pragma once
-#include "ccl_type_traits.hpp"
-#include "ccl_comm_split_attr_ids.hpp"
+#include "oneapi/ccl/ccl_type_traits.hpp"
+#include "oneapi/ccl/ccl_comm_split_attr_ids.hpp"
 #include "common/utils/enums.hpp"
 
 namespace ccl

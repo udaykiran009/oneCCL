@@ -1,5 +1,5 @@
-#include "native_device_api/l0/utils.hpp"
-#include "native_device_api/l0/device.hpp"
+#include "oneapi/ccl/native_device_api/l0/utils.hpp"
+#include "oneapi/ccl/native_device_api/l0/device.hpp"
 
 #ifdef CCL_ENABLE_SYCL
 #include <CL/sycl/backend/Intel_level0.hpp>

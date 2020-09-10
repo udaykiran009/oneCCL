@@ -16,8 +16,8 @@
 
 #include "base.hpp"
 #include "base_utils.hpp"
-#include "ccl_gpu_modules.h"
-#include "native_device_api/export_api.hpp"
+#include "oneapi/ccl/ccl_gpu_modules.h"
+#include "oneapi/ccl/native_device_api/export_api.hpp"
 
 #define COUNT 512
 #define COLL_ROOT (0)
@@ -86,21 +86,21 @@ int main(int argc, char** argv)
     auto &env = ccl::environment::instance();
     (void)env;
     std::shared_ptr<ccl::kvs> kvs_instance;
-    ccl::kvs::addr_t master_addr;
+    ccl::kvs::address_type main_addr;
     if (mpi_rank == 0)
     {
         kvs_instance = ccl::environment::instance().create_main_kvs();
-        master_addr = kvs_instance->get_addr();
+        main_addr = kvs_instance->get_address();
 
-        std::cout << "Master KVS  hast build on addr: " /*<< master_addr*/ << std::endl;
-        MPI_Bcast((void *)master_addr.data(), master_addr.size(), MPI_BYTE, 0, MPI_COMM_WORLD);
+        std::cout << "Master KVS  hast build on addr: " /*<< main_addr*/ << std::endl;
+        MPI_Bcast((void *)main_addr.data(), main_addr.size(), MPI_BYTE, 0, MPI_COMM_WORLD);
     }
     else
     {
-        MPI_Bcast((void *)master_addr.data(), master_addr.size(), MPI_BYTE, 0, MPI_COMM_WORLD);
-        kvs_instance = ccl::environment::instance().create_kvs(master_addr);
+        MPI_Bcast((void *)main_addr.data(), main_addr.size(), MPI_BYTE, 0, MPI_COMM_WORLD);
+        kvs_instance = ccl::environment::instance().create_kvs(main_addr);
 
-        std::cout << "Slave KVS hast connected on addr: "/* << master_addr*/ << std::endl;
+        std::cout << "Slave KVS hast connected on addr: "/* << main_addr*/ << std::endl;
     }
 
     size_t total_device_in_cluster = 0;
@@ -159,8 +159,8 @@ int main(int argc, char** argv)
               << ", thread count" << node_device_indices[mpi_rank].size() << std::endl;
 
     // Register algorithm from kernel source
-    register_allreduce_gpu_module_source("kernels/ring_allreduce.spv", ccl_topology_class_t::ring_algo_class);
-    register_allreduce_gpu_module_source("kernels/a2a_allreduce.spv", ccl_topology_class_t::a2a_algo_class);
+    register_allreduce_gpu_module_source("kernels/ring_allreduce.spv", ccl::device_topology_type::ring);
+    register_allreduce_gpu_module_source("kernels/a2a_allreduce.spv", ccl::device_topology_type::a2a);
 
 
 
@@ -301,7 +301,7 @@ void user_thread_idx(size_t thread_idx, const std::vector<std::pair<size_t, cl::
         allocated_memory_array& mem_objects = memory_storage.find(rank)->second;
 
         // create operation attributes
-        auto attr = ccl::environment::instance().create_op_attr<ccl::allreduce_attr_t>();
+        auto attr = ccl::environment::instance().create_operation_attr<ccl::allreduce_attr>();
 
         // invoke operation
         reqs.push_back(comm.allreduce(mem_objects[0],

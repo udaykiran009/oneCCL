@@ -3,7 +3,7 @@
 #include <tuple>
 #include <vector>
 
-#include "native_device_api/export_api.hpp"
+#include "oneapi/ccl/native_device_api/export_api.hpp"
 #include "common/utils/tuple.hpp"
 #include "common/utils/utils.hpp"
 #include "common/comm/l0/device_types.hpp"

@@ -20,7 +20,7 @@ typedef struct bench_coll_exec_attr
 {
     ccl::reduction reduction;
 
-    template <ccl::common_op_attr_id attrId, class value_t>
+    template <ccl::operation_attr_id attrId, class value_t>
         struct setter
         {
             setter(value_t v) :val(v) {}
@@ -36,18 +36,18 @@ typedef struct bench_coll_exec_attr
             template<class attr_t>
             void operator()(ccl::shared_ptr_class<attr_t>& attr)
             {
-                attr = std::make_shared<attr_t>(ccl::environment::instance().create_op_attr<attr_t>());
+                attr = std::make_shared<attr_t>(ccl::environment::instance().create_operation_attr<attr_t>());
             }
         };
 
-    using supported_op_attr_t = std::tuple<ccl::shared_ptr_class<ccl::allgatherv_attr_t>,
-                                           ccl::shared_ptr_class<ccl::allreduce_attr_t>,
-                                           ccl::shared_ptr_class<ccl::alltoall_attr_t>,
-                                           ccl::shared_ptr_class<ccl::alltoallv_attr_t>,
-                                           ccl::shared_ptr_class<ccl::reduce_attr_t>,
-                                           ccl::shared_ptr_class<ccl::bcast_attr_t>,
-                                           ccl::shared_ptr_class<ccl::reduce_scatter_attr_t>,
-                                           ccl::shared_ptr_class<ccl::sparse_allreduce_attr_t>>;
+    using supported_op_attr_t = std::tuple<ccl::shared_ptr_class<ccl::allgatherv_attr>,
+                                           ccl::shared_ptr_class<ccl::allreduce_attr>,
+                                           ccl::shared_ptr_class<ccl::alltoall_attr>,
+                                           ccl::shared_ptr_class<ccl::alltoallv_attr>,
+                                           ccl::shared_ptr_class<ccl::reduce_attr>,
+                                           ccl::shared_ptr_class<ccl::broadcast_attr>,
+                                           ccl::shared_ptr_class<ccl::reduce_scatter_attr>,
+                                           ccl::shared_ptr_class<ccl::sparse_allreduce_attr>>;
     using match_id_t = std::array<char, MATCH_ID_SIZE>;
 
     template<class attr_t>
@@ -62,13 +62,13 @@ typedef struct bench_coll_exec_attr
         return *(ccl_tuple_get<ccl::shared_ptr_class<attr_t>>(coll_attrs).get());
     }
 
-    template <ccl::common_op_attr_id attrId,
+    template <ccl::operation_attr_id attrId,
               class Value>
-    typename ccl::details::ccl_api_type_attr_traits<ccl::common_op_attr_id, attrId>::return_type set(const Value& v)
+    typename ccl::details::ccl_api_type_attr_traits<ccl::operation_attr_id, attrId>::return_type set(const Value& v)
     {
         ccl_tuple_for_each(coll_attrs, setter<attrId, Value>(v));
 
-        set_common_fields(std::integral_constant<ccl::common_op_attr_id, attrId>{}, v);
+        set_common_fields(std::integral_constant<ccl::operation_attr_id, attrId>{}, v);
         return v;
     }
 
@@ -85,7 +85,7 @@ private:
 
     void set_common_fields(...){};
 
-    void set_common_fields(std::integral_constant<ccl::common_op_attr_id, ccl::common_op_attr_id::match_id>, const std::string& match)
+    void set_common_fields(std::integral_constant<ccl::operation_attr_id, ccl::operation_attr_id::match_id>, const std::string& match)
     {
         if (match.size() >= MATCH_ID_SIZE)
         {

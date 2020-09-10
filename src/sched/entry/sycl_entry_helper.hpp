@@ -17,7 +17,7 @@ struct sycl_buffer_visitor
     template<size_t index, class specific_sycl_buffer>
     void invoke()
     {
-        if (index == requested_dtype.idx())
+        if (index == (int)(requested_dtype.idx()))
         {
             LOG_DEBUG("visitor matched index: ", index,
                       ", ccl: ", ccl::global_data::get().dtypes->name(requested_dtype),

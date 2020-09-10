@@ -106,8 +106,9 @@ void global_data::init_resize_dependent_objects()
     atl_tag =
         std::unique_ptr<ccl_atl_tag>(new ccl_atl_tag(executor->get_atl_attr().tag_bits,
                                                      executor->get_atl_attr().max_tag));
-    if (env_object.default_resizable)
-        ccl_set_resize_fn(nullptr);
+    /* TODO: enable back after API update */
+    // if (env_object.default_resizable)
+    //     ccl_set_resize_fn(nullptr);
 
     if (executor->get_global_proc_idx() == 0)
     {

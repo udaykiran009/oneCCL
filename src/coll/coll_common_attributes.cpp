@@ -4,7 +4,7 @@ namespace ccl {
 /**
  * Definition
  */
-ccl_common_op_attr_impl_t::ccl_common_op_attr_impl_t(const ccl_version_t& version) :
+ccl_common_op_attr_impl_t::ccl_common_op_attr_impl_t(const ccl::version& version) :
     library_version(version)
 {
 }
@@ -13,7 +13,7 @@ typename ccl_common_op_attr_impl_t::version_traits_t::return_type
 ccl_common_op_attr_impl_t::set_attribute_value(typename version_traits_t::type val, const version_traits_t& t)
 {
     (void)t;
-    throw ccl_error("Set value for 'ccl::common_op_attr_id::version' is not allowed");
+    throw ccl_error("Set value for 'ccl::operation_attr_id::version' is not allowed");
     return library_version;
 }
 
@@ -26,34 +26,34 @@ ccl_common_op_attr_impl_t::get_attribute_value(const version_traits_t& id) const
 /**
  * `prologue_fn` operations definitions
  */
-const typename ccl_common_op_attr_impl_t::prolog_fn_traits_t::return_type&
-ccl_common_op_attr_impl_t::get_attribute_value(const prolog_fn_traits_t& id) const
+const typename ccl_common_op_attr_impl_t::prologue_fn_traits_t::return_type&
+ccl_common_op_attr_impl_t::get_attribute_value(const prologue_fn_traits_t& id) const
 {
     return prologue_fn;
 }
 
-typename ccl_common_op_attr_impl_t::prolog_fn_traits_t::return_type
-ccl_common_op_attr_impl_t::set_attribute_value(typename prolog_fn_traits_t::type val, const prolog_fn_traits_t& t)
+typename ccl_common_op_attr_impl_t::prologue_fn_traits_t::return_type
+ccl_common_op_attr_impl_t::set_attribute_value(typename prologue_fn_traits_t::type val, const prologue_fn_traits_t& t)
 {
     auto old = prologue_fn.get();
-    prologue_fn = typename prolog_fn_traits_t::return_type{val};
-    return typename prolog_fn_traits_t::return_type{old};
+    prologue_fn = typename prologue_fn_traits_t::return_type{val};
+    return typename prologue_fn_traits_t::return_type{old};
 }
 /**
- * `epilog_fn` operations definitions
+ * `epilogue_fn` operations definitions
  */
-const typename ccl_common_op_attr_impl_t::epilog_fn_traits_t::return_type&
-ccl_common_op_attr_impl_t::get_attribute_value(const epilog_fn_traits_t& id) const
+const typename ccl_common_op_attr_impl_t::epilogue_fn_traits_t::return_type&
+ccl_common_op_attr_impl_t::get_attribute_value(const epilogue_fn_traits_t& id) const
 {
     return epilogue_fn;
 }
 
-typename ccl_common_op_attr_impl_t::epilog_fn_traits_t::return_type
-ccl_common_op_attr_impl_t::set_attribute_value(typename epilog_fn_traits_t::type val, const epilog_fn_traits_t& t)
+typename ccl_common_op_attr_impl_t::epilogue_fn_traits_t::return_type
+ccl_common_op_attr_impl_t::set_attribute_value(typename epilogue_fn_traits_t::type val, const epilogue_fn_traits_t& t)
 {
     auto old = epilogue_fn.get();
-    epilogue_fn = typename epilog_fn_traits_t::return_type{val};
-    return typename epilog_fn_traits_t::return_type{old};
+    epilogue_fn = typename epilogue_fn_traits_t::return_type{val};
+    return typename epilogue_fn_traits_t::return_type{old};
 }
 
 /**

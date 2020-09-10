@@ -10,7 +10,7 @@ struct alltoall_strategy_impl
                         const bench_coll_exec_attr& bench_attr,
                         req_list_t& reqs, Args&&...args)
     {
-        reqs.push_back(comm.alltoall(send_buf, recv_buf, count, bench_attr.get_attr<ccl::alltoall_attr_t>(), std::forward<Args>(args)...));
+        reqs.push_back(comm.alltoall(send_buf, recv_buf, count, bench_attr.get_attr<ccl::alltoall_attr>(), std::forward<Args>(args)...));
     }
 };
 

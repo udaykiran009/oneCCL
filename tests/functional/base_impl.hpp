@@ -7,29 +7,29 @@ template <typename T>
 template <class coll_attr_type>
 void typed_test_param<T>::prepare_coll_attr(coll_attr_type& coll_attr, size_t idx)
 {
-    coll_attr.template set<ccl::common_op_attr_id::priority>(generate_priority_value(idx));
-    coll_attr.template set<ccl::common_op_attr_id::to_cache>((int)test_conf.cache_type);
+    coll_attr.template set<ccl::operation_attr_id::priority>(generate_priority_value(idx));
+    coll_attr.template set<ccl::operation_attr_id::to_cache>((int)test_conf.cache_type);
     //coll_attr.vector_buf = 0;
 
     char* test_unordered_coll = getenv("CCL_UNORDERED_COLL");
     if (test_unordered_coll && atoi(test_unordered_coll) == 1)
     {
-        coll_attr.template set<ccl::common_op_attr_id::synchronous>(0);
+        coll_attr.template set<ccl::operation_attr_id::synchronous>(0);
     }
     else
     {
-        coll_attr.template set<ccl::common_op_attr_id::synchronous>((int)test_conf.sync_type);
+        coll_attr.template set<ccl::operation_attr_id::synchronous>((int)test_conf.sync_type);
     }
 
     match_id = create_match_id(idx);
-    coll_attr.template set<ccl::common_op_attr_id::match_id>(match_id);
+    coll_attr.template set<ccl::operation_attr_id::match_id>(match_id);
 }
 
 template <typename T>
-void typed_test_param<T>::prepare_coll_attr(ccl::allgatherv_attr_t& coll_attr, size_t idx)
+void typed_test_param<T>::prepare_coll_attr(ccl::allgatherv_attr& coll_attr, size_t idx)
 {
-    this->template prepare_coll_attr<ccl::allgatherv_attr_t>(coll_attr, idx);
-    coll_attr.set<ccl::allgatherv_op_attr_id::vector_buf>(0);
+    this->template prepare_coll_attr<ccl::allgatherv_attr>(coll_attr, idx);
+    coll_attr.set<ccl::allgatherv_attr_id::vector_buf>(0);
 }
 
 template <typename T>

@@ -9,7 +9,7 @@
 #include "base.h"
 #include "base_utils.hpp"
 #include "bfp16.h"
-#include "ccl.hpp"
+#include "oneapi/ccl.hpp"
 
 #define COUNT_I 1024
 #define VDIM_SIZE 64
@@ -385,7 +385,7 @@ alloc_bfp16_fn(size_t i_cnt, ccl_datatype_t itype,
 
 template<ccl_datatype_t i_type, ccl_datatype_t v_type, 
         typename std::enable_if< v_type == ccl_dtype_bfp16, int>::type = 0>
-void sparse_test_run(ccl_sparse_coalesce_mode_t coalesce_mode,
+void sparse_test_run(ccl::sparse_coalesce_mode coalesce_mode,
                      sparse_test_callback_mode_t callback_mode)
 {
     if (is_bfp16_enabled() == 0)
@@ -422,7 +422,7 @@ void sparse_test_run(ccl_sparse_coalesce_mode_t coalesce_mode,
         ASSERT(expected_count, "expected_count is zero");
 
         std::map<i_t, std::vector<v_t> > expected{};
-        if (coalesce_mode != ccl_sparse_coalesce_disable)
+        if (coalesce_mode != ccl::sparse_coalesce_mode::disable)
         {
             expected = coalesce_expected_data<i_type, ccl_dtype_float>(expected_buf, expected_count);
         }
@@ -469,7 +469,7 @@ void sparse_test_run(ccl_sparse_coalesce_mode_t coalesce_mode,
         double log_base2 = log(size) / log(2);
         double g = (log_base2 * BFP16_PRECISION) / (1 - (log_base2 * BFP16_PRECISION));
 
-        if (coalesce_mode == ccl_sparse_coalesce_disable)
+        if (coalesce_mode == ccl::sparse_coalesce_mode::disable)
         {
             CHECK_WO_COALESCE(ccl::type_info<i_type>::name(), ccl::type_info<v_type>::name(), true);
         }
@@ -491,7 +491,7 @@ void sparse_test_run(ccl_sparse_coalesce_mode_t coalesce_mode,
 
 template<ccl_datatype_t i_type, ccl_datatype_t v_type, 
         typename std::enable_if< v_type != ccl_dtype_bfp16, int>::type = 0>
-void sparse_test_run(ccl_sparse_coalesce_mode_t coalesce_mode,
+void sparse_test_run(ccl::sparse_coalesce_mode coalesce_mode,
                      sparse_test_callback_mode_t callback_mode)
 {
     using i_t = typename ccl::type_info<i_type>::native_type;
@@ -520,7 +520,7 @@ void sparse_test_run(ccl_sparse_coalesce_mode_t coalesce_mode,
     ASSERT(expected_count, "expected_count is zero");
 
     std::map<i_t, std::vector<v_t> > expected{};
-    if (coalesce_mode != ccl_sparse_coalesce_disable)
+    if (coalesce_mode != ccl::sparse_coalesce_mode::disable)
     {
         expected = coalesce_expected_data<i_type, v_type>(expected_buf, expected_count);
     }
@@ -558,7 +558,7 @@ void sparse_test_run(ccl_sparse_coalesce_mode_t coalesce_mode,
 
     double g;
 
-    if (coalesce_mode == ccl_sparse_coalesce_disable)
+    if (coalesce_mode == ccl::sparse_coalesce_mode::disable)
     {
         CHECK_WO_COALESCE(ccl::type_info<i_type>::name(), ccl::type_info<v_type>::name(), false);
     }

@@ -17,8 +17,8 @@ int main()
 #include <thread>
 #include <numeric>
 #include "base.hpp"
-#include "ccl_gpu_modules.h"
-#include "native_device_api/export_api.hpp"
+#include "oneapi/ccl/ccl_gpu_modules.h"
+#include "oneapi/ccl/native_device_api/export_api.hpp"
 
 #define COUNT 512
 #define COLL_ROOT (0)
@@ -148,7 +148,7 @@ void user_thread_idx(size_t thread_idx, ccl::device_indices_t thread_device_idx,
                                                                              global_communicator);
 
     // create device communicator attributes
-    ccl::device_comm_split_attr_t my_device_comm_attr = group->create_device_comm_attr();
+    ccl::device_comm_split_attr my_device_comm_attr = group->create_device_comm_attr();
 
     // set preferred device topology (OPTIONAL)
     my_device_comm_attr->set_value<ccl_device_preferred_topology_class>(

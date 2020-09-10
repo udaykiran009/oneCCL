@@ -3,12 +3,12 @@
 //API headers with declaration of new API object
 #define private public
 #define protected public
-#include "ccl_types.h"
-#include "ccl_aliases.hpp"
-#include "ccl_types_policy.hpp"
-#include "ccl_datatype_attr_ids.hpp"
-#include "ccl_datatype_attr_ids_traits.hpp"
-#include "ccl_datatype_attr.hpp"
+#include "oneapi/ccl/ccl_types.hpp"
+#include "oneapi/ccl/ccl_aliases.hpp"
+#include "oneapi/ccl/ccl_types_policy.hpp"
+#include "oneapi/ccl/ccl_datatype_attr_ids.hpp"
+#include "oneapi/ccl/ccl_datatype_attr_ids_traits.hpp"
+#include "oneapi/ccl/ccl_datatype_attr.hpp"
 
 #include "datatype_attr_creation_impl.hpp"
 
@@ -23,7 +23,7 @@ namespace datatype_attr_suite
 
 TEST(datatype_attr, datatype_attr_empty_creation)
 {
-    ccl::datatype_attr_t attr = ccl::create_datatype_attr();
+    ccl::datatype_attr attr = ccl::create_datatype_attr();
     ASSERT_TRUE(attr.get<ccl::ccl_datatype_attributes::version>().full != nullptr);
     ASSERT_EQ(attr.get<ccl::ccl_datatype_attributes::size>(), 0);
 }

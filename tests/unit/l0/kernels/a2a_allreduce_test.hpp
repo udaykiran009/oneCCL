@@ -20,7 +20,7 @@ struct native_type_info<a2a_gpu_comm_data_float>
 };
 }
 /* 2) Include explicit definition for native::memory */
-#include "native_device_api/l0/primitives_impl.hpp"
+#include "oneapi/ccl/native_device_api/l0/primitives_impl.hpp"
 
 /* 3) just use it! */
 

@@ -20,11 +20,11 @@ int main(int argc, char** argv) {
 
     /* create key-value store */
     ccl::kvs_interface_t kvs;
-    ccl::kvs::addr_t kvs_addr;
+    ccl::kvs::address_type kvs_addr;
 
     if (mpi_rank == 0) {
         kvs = env.create_main_kvs();
-        kvs_addr = kvs->get_addr();
+        kvs_addr = kvs->get_address();
         MPICHECK(
             MPI_Bcast((void*)kvs_addr.data(), ccl::kvs::addr_max_size, MPI_BYTE, 0, MPI_COMM_WORLD));
     }

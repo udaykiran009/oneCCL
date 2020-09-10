@@ -1,5 +1,5 @@
 #pragma once
-#include "ccl_device_communicator.hpp"
+#include "oneapi/ccl/ccl_device_communicator.hpp"
 #include "common/comm/l0/comm_context.hpp"
 #include "common/comm/l0/comm_context_storage.hpp"
 

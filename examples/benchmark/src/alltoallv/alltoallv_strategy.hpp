@@ -35,7 +35,7 @@ struct alltoallv_strategy_impl
 
         reqs.push_back(comm.alltoallv(send_buf, send_counts,
                                       recv_buf, recv_counts,
-                                      bench_attr.get_attr<ccl::alltoallv_attr_t>(), std::forward<Args>(args)...));
+                                      bench_attr.get_attr<ccl::alltoallv_attr>(), std::forward<Args>(args)...));
     }
 };
 

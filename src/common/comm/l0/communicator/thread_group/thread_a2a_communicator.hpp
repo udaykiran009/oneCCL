@@ -21,12 +21,11 @@ public:
     thread_device_group_a2a_communicator(ccl::unified_device_type&& device,
                                          size_t thread_idx,
                                          size_t proces_idx,
-                                         const ccl::device_comm_split_attr_t& attr);
+                                         const ccl::device_comm_split_attr& attr);
 
     void visit(ccl::gpu_comm_attr& comm_attr) override;
 
-    ccl::request_t barrier(const ccl::barrier_attr_t& attr,
-                 ccl::stream::impl_value_t& op_stream,
+    ccl::request_t barrier(ccl::stream::impl_value_t& stream, const ccl::barrier_attr& attr,
                  const ccl::vector_class<ccl::event>& deps) override;
 
     DEVICE_COMM_IMPL_DECLARATION

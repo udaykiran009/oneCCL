@@ -1,5 +1,5 @@
-#include "ccl_types.hpp"
-#include "ccl_kvs.hpp"
+#include "oneapi/ccl/ccl_types.hpp"
+#include "oneapi/ccl/ccl_kvs.hpp"
 #include "common/log/log.hpp"
 #include "common/comm/l0/gpu_comm_attr.hpp"
 #include "common/comm/l0/comm_context.hpp"
@@ -12,11 +12,11 @@ namespace ccl
  *  Create communicator API:
  */
 /*
- ccl::device_comm_split_attr_t ccl::comm_group::create_device_comm_split_attr()
+ ccl::device_comm_split_attr ccl::comm_group::create_device_comm_split_attr()
 {
     // TODO
     const auto& host_comm = pimpl->get_host_communicator();
-    return ccl::device_comm_split_attr_t{new ccl::ccl_device_attr(*(host_comm->get_comm_split_attr()))};
+    return ccl::device_comm_split_attr{new ccl::ccl_device_attr(*(host_comm->get_comm_split_attr()))};
 }
 */
 /*
@@ -27,7 +27,7 @@ template <class DeviceType,
                                                ccl::device_index_type>::value,
                                       int>::type>
 ccl::device_communicator ccl::comm_group::create_communicator(const DeviceType& device,
-                                                               const ccl::device_comm_split_attr_t& attr/* = comm_device_attr_t()*/)
+                                                               const ccl::device_comm_split_attr& attr/* = comm_device_attr_t()*/)
 {
 #ifdef CCL_ENABLE_SYCL
     static_assert(std::is_same<DeviceType, cl::sycl::device>::value, "ccl::comm_group::create_communicator() - supports SYCL devices at now");
@@ -42,7 +42,7 @@ ccl::device_communicator ccl::comm_group::create_communicator(const DeviceType& 
         LOG_TRACE("Create single device communicator from SYCL device");
         auto host_comm = pimpl->get_host_communicator();
         //TODO
-        ccl::device_comm_split_attr_t single_dev_attr = attr;
+        ccl::device_comm_split_attr single_dev_attr = attr;
         single_dev_attr.set<ccl::ccl_comm_split_attributes::group>(ccl::device_group_split_type::undetermined);
         impl = ccl::communicator_interface::create_communicator_impl(device, host_comm->rank(), host_comm->size(), single_dev_attr);
     }
@@ -65,7 +65,7 @@ template <class DeviceType,
                                                ccl::device_index_type>::value,
                                       int>::type>
  ccl::device_communicator ccl::comm_group::create_communicator(const DeviceType& device_id,
-                                                               const ccl::device_comm_split_attr_t& attr/* = nullptr*/)
+                                                               const ccl::device_comm_split_attr& attr/* = nullptr*/)
 {
     LOG_TRACE("Create communicator from id: ", device_id);
 
@@ -83,7 +83,7 @@ template <class DeviceType,
  */
 template<class InputIt>
  std::vector<ccl::device_communicator> ccl::comm_group::create_communicators(InputIt first, InputIt last,
-                                                                                   ccl::device_comm_split_attr_t attr/* = nullptr*/)
+                                                                                   ccl::device_comm_split_attr attr/* = nullptr*/)
 {
 /*
     static_assert(not std::is_same<InputIt, typename ccl::vector_class<cl::sycl::device>::const_iterator>::value, "SYCL");
@@ -108,7 +108,7 @@ template<class InputIt>
 
 template<template<class...> class Container, class Type>
  std::vector<ccl::device_communicator> ccl::comm_group::create_communicators(const Container<Type>& device_ids,
-                                                                                   ccl::device_comm_split_attr_t attr/* = nullptr*/)
+                                                                                   ccl::device_comm_split_attr attr/* = nullptr*/)
 {
     //static_assert(not std::is_same<Type, cl::sycl::device>::value, "SYCL cont");
     //static_assert(std::is_same<Type, ccl::device_index_type>::value, "Invalid Type in create_communicators");
@@ -131,9 +131,9 @@ template<template<class...> class Container, class Type>
 #define COMM_CREATOR_INDEXED_INSTANTIATION_CONTAINER(type)                                          \
 template ccl::vector_class<ccl::device_communicator>                                                \
  ccl::comm_group::create_communicators(const type& devices,                                         \
-                                       ccl::device_comm_split_attr_t attr);
+                                       ccl::device_comm_split_attr attr);
 
 #define COMM_CREATOR_INDEXED_INSTANTIATION_TYPE(type)                                               \
 template ccl::device_communicator                                                                   \
 ccl::comm_group::create_communicator(const type& device,                                            \
-                                     const ccl::device_comm_split_attr_t& attr);
+                                     const ccl::device_comm_split_attr& attr);

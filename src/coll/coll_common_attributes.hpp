@@ -1,17 +1,17 @@
 #pragma once
-#include "ccl_types.hpp"
-#include "ccl_types_policy.hpp"
-#include "ccl_coll_attr_ids.hpp"
-#include "ccl_coll_attr_ids_traits.hpp"
+#include "oneapi/ccl/ccl_types.hpp"
+#include "oneapi/ccl/ccl_types_policy.hpp"
+#include "oneapi/ccl/ccl_coll_attr_ids.hpp"
+#include "oneapi/ccl/ccl_coll_attr_ids_traits.hpp"
 
 namespace ccl {
 struct ccl_common_op_attr_impl_t
 {
-    ccl_common_op_attr_impl_t(const ccl_version_t& version);
+    ccl_common_op_attr_impl_t(const ccl::version& version);
     /**
      * `version` operations
      */
-    using version_traits_t = details::ccl_api_type_attr_traits<common_op_attr_id, ccl::common_op_attr_id::version>;
+    using version_traits_t = details::ccl_api_type_attr_traits<operation_attr_id, ccl::operation_attr_id::version>;
     const typename version_traits_t::return_type&
         get_attribute_value(const version_traits_t& id) const;
 
@@ -19,29 +19,29 @@ struct ccl_common_op_attr_impl_t
         set_attribute_value(typename version_traits_t::type val, const version_traits_t& t);
 
     /**
-     * `prolog_fn` operations
+     * `prologue_fn` operations
      */
-    using prolog_fn_traits_t = details::ccl_api_type_attr_traits<common_op_attr_id, ccl::common_op_attr_id::prolog_fn>;
-    const typename prolog_fn_traits_t::return_type&
-        get_attribute_value(const prolog_fn_traits_t& id) const;
+    using prologue_fn_traits_t = details::ccl_api_type_attr_traits<operation_attr_id, ccl::operation_attr_id::prologue_fn>;
+    const typename prologue_fn_traits_t::return_type&
+        get_attribute_value(const prologue_fn_traits_t& id) const;
 
-    typename prolog_fn_traits_t::return_type
-        set_attribute_value(typename prolog_fn_traits_t::type val, const prolog_fn_traits_t& t);
+    typename prologue_fn_traits_t::return_type
+        set_attribute_value(typename prologue_fn_traits_t::type val, const prologue_fn_traits_t& t);
 
     /**
-     * `epilog_fn` operations
+     * `epilogue_fn` operations
      */
-    using epilog_fn_traits_t = details::ccl_api_type_attr_traits<common_op_attr_id, ccl::common_op_attr_id::epilog_fn>;
-    const typename epilog_fn_traits_t::return_type&
-        get_attribute_value(const epilog_fn_traits_t& id) const;
+    using epilogue_fn_traits_t = details::ccl_api_type_attr_traits<operation_attr_id, ccl::operation_attr_id::epilogue_fn>;
+    const typename epilogue_fn_traits_t::return_type&
+        get_attribute_value(const epilogue_fn_traits_t& id) const;
 
-    typename epilog_fn_traits_t::return_type
-        set_attribute_value(typename epilog_fn_traits_t::type val, const epilog_fn_traits_t& t);
+    typename epilogue_fn_traits_t::return_type
+        set_attribute_value(typename epilogue_fn_traits_t::type val, const epilogue_fn_traits_t& t);
 
     /**
      * `priority` operations
      */
-    using priority_traits_t = details::ccl_api_type_attr_traits<common_op_attr_id, ccl::common_op_attr_id::priority>;
+    using priority_traits_t = details::ccl_api_type_attr_traits<operation_attr_id, ccl::operation_attr_id::priority>;
     const typename priority_traits_t::return_type&
         get_attribute_value(const priority_traits_t& id) const;
 
@@ -51,7 +51,7 @@ struct ccl_common_op_attr_impl_t
     /**
      * `synchronous` operations
      */
-    using synchronous_traits_t = details::ccl_api_type_attr_traits<common_op_attr_id, ccl::common_op_attr_id::synchronous>;
+    using synchronous_traits_t = details::ccl_api_type_attr_traits<operation_attr_id, ccl::operation_attr_id::synchronous>;
     const typename synchronous_traits_t::return_type&
         get_attribute_value(const synchronous_traits_t& id) const;
 
@@ -61,7 +61,7 @@ struct ccl_common_op_attr_impl_t
     /**
      * `to_cache` operations
      */
-    using to_cache_traits_t = details::ccl_api_type_attr_traits<common_op_attr_id, ccl::common_op_attr_id::to_cache>;
+    using to_cache_traits_t = details::ccl_api_type_attr_traits<operation_attr_id, ccl::operation_attr_id::to_cache>;
     const typename to_cache_traits_t::return_type&
         get_attribute_value(const to_cache_traits_t& id) const;
 
@@ -71,7 +71,7 @@ struct ccl_common_op_attr_impl_t
     /**
      * `match_id` operations
      */
-    using match_id_traits_t = details::ccl_api_type_attr_traits<common_op_attr_id, ccl::common_op_attr_id::match_id>;
+    using match_id_traits_t = details::ccl_api_type_attr_traits<operation_attr_id, ccl::operation_attr_id::match_id>;
     const typename match_id_traits_t::return_type&
         get_attribute_value(const match_id_traits_t& id) const;
 
@@ -79,8 +79,8 @@ struct ccl_common_op_attr_impl_t
         set_attribute_value(typename match_id_traits_t::type val, const match_id_traits_t& t);
 
 
-    typename ccl_common_op_attr_impl_t::prolog_fn_traits_t::return_type prologue_fn{};
-    typename ccl_common_op_attr_impl_t::epilog_fn_traits_t::return_type epilogue_fn{};
+    typename ccl_common_op_attr_impl_t::prologue_fn_traits_t::return_type prologue_fn{};
+    typename ccl_common_op_attr_impl_t::epilogue_fn_traits_t::return_type epilogue_fn{};
 
     /* Priority for collective operation */
     size_t priority = 0;
@@ -99,6 +99,6 @@ struct ccl_common_op_attr_impl_t
     typename match_id_traits_t::return_type match_id{};
 
 protected:
-    ccl_version_t library_version;
+    ccl::version library_version;
 };
 }

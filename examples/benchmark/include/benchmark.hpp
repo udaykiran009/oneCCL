@@ -309,7 +309,7 @@ void print_timings(ccl::communicator& comm,
     for (idx = 0; idx < comm.size(); idx++)
         recv_counts[idx] = 1;
 
-    auto attr = ccl::environment::instance().create_op_attr<ccl::allgatherv_attr_t>();
+    auto attr = ccl::environment::instance().create_operation_attr<ccl::allgatherv_attr>();
 
     comm.allgatherv(&timer,
                     1,
@@ -338,7 +338,7 @@ void print_timings(ccl::communicator& comm,
         stddev_timer = sqrt(sum / comm.size()) / avg_timer * 100;
 
         printf("size %10zu x %5zu bytes, avg %10.2lf us, avg_per_buf %10.2f, stddev %5.1lf %%\n",
-               elem_count * ccl::environment::instance().get_datatype_size(static_cast<ccl_datatype_t>(dtype)),
+               elem_count * ccl::environment::instance().get_datatype_size(dtype),
                buf_count, avg_timer, avg_timer_per_buf,
                stddev_timer);
     }

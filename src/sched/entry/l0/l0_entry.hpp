@@ -1,9 +1,9 @@
 #pragma once
-#include "ccl_types.hpp"
+#include "oneapi/ccl/ccl_types.hpp"
 #include "common/datatype/datatype.hpp"
-#include "ccl_type_traits.hpp"
+#include "oneapi/ccl/ccl_type_traits.hpp"
 
-#include "ccl.hpp"
+#include "oneapi/ccl.hpp"
 
 #include "comp/comp.hpp"
 #include "common/comm/l0/devices/devices_declaration.hpp"

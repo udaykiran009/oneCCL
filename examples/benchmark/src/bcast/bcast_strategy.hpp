@@ -11,7 +11,7 @@ struct bcast_strategy_impl
                         req_list_t& reqs, Args&&...args)
     {
         (void)send_buf;
-        reqs.push_back(comm.bcast(recv_buf, count, COLL_ROOT, bench_attr.get_attr<ccl::bcast_attr_t>(), std::forward<Args>(args)...));
+        reqs.push_back(comm.broadcast(recv_buf, count, COLL_ROOT, bench_attr.get_attr<ccl::broadcast_attr>(), std::forward<Args>(args)...));
     }
 };
 

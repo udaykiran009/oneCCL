@@ -3,12 +3,12 @@
 //API headers with declaration of new API object
 #define private public
 #define protected public
-#include "ccl_types.h"
-#include "ccl_aliases.hpp"
-#include "ccl_types_policy.hpp"
-#include "ccl_comm_split_attr_ids.hpp"
-#include "ccl_comm_split_attr_ids_traits.hpp"
-#include "ccl_comm_split_attr.hpp"
+#include "oneapi/ccl/ccl_types.hpp"
+#include "oneapi/ccl/ccl_aliases.hpp"
+#include "oneapi/ccl/ccl_types_policy.hpp"
+#include "oneapi/ccl/ccl_comm_split_attr_ids.hpp"
+#include "oneapi/ccl/ccl_comm_split_attr_ids_traits.hpp"
+#include "oneapi/ccl/ccl_comm_split_attr.hpp"
 
 #include "comm_split_attr_creation_impl.hpp"
 
@@ -24,7 +24,7 @@ namespace host_comm_split_attr_suite
 
 TEST(host_comm_split_attr, host_comm_split_attr_empty_creation)
 {
-    ccl::comm_split_attr_t attr = ccl::create_comm_split_attr();
+    ccl::comm_split_attr attr = ccl::create_comm_split_attr();
     ASSERT_TRUE(attr.is_valid<ccl::ccl_comm_split_attributes::version>());
     ASSERT_TRUE(attr.get<ccl::ccl_comm_split_attributes::version>().full != nullptr);
     ASSERT_TRUE(!attr.is_valid<ccl::ccl_comm_split_attributes::color>());

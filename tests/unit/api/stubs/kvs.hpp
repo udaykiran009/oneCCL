@@ -1,10 +1,10 @@
-#include "ccl_types.hpp"
-#include "ccl_aliases.hpp"
+#include "oneapi/ccl/ccl_types.hpp"
+#include "oneapi/ccl/ccl_aliases.hpp"
 
-#include "ccl_type_traits.hpp"
-#include "ccl_types_policy.hpp"
+#include "oneapi/ccl/ccl_type_traits.hpp"
+#include "oneapi/ccl/ccl_types_policy.hpp"
 
-#include "ccl_kvs.hpp"
+#include "oneapi/ccl/ccl_kvs.hpp"
 
 
 class stub_kvs : public ccl::kvs_interface {

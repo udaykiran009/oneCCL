@@ -1,7 +1,7 @@
 #ifndef BASE_HPP
 #define BASE_HPP
 
-#include "ccl.hpp"
+#include "oneapi/ccl.hpp"
 
 #include <chrono>
 #include <cstring>
@@ -64,9 +64,9 @@ using namespace cl::sycl::access;
           for (size_t idx = 0; idx < MSG_SIZE_COUNT; ++idx)     \
           {                                                     \
               size_t msg_count = msg_counts[idx];               \
-              coll_attr.set<ccl::common_op_attr_id::match_id>(msg_match_ids[idx]); \
+              coll_attr.set<ccl::operation_attr_id::match_id>(msg_match_ids[idx]); \
               PRINT_BY_ROOT(comm, "msg_count=%zu, match_id=%s", \
-                            msg_count, coll_attr.get<ccl::common_op_attr_id::match_id>().c_str()); \
+                            msg_count, coll_attr.get<ccl::operation_attr_id::match_id>().c_str()); \
               per_msg_code;                                     \
           }                                                     \
       }                                                         \
