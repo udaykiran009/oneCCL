@@ -31,9 +31,6 @@
 
 #include "communicator_impl.hpp"
 
-// #include "../stream/environment.hpp"
-// #include "oneapi/ccl/native_device_api/export_api.hpp"
-
 #include "../stubs/kvs.hpp"
 #include "common/global/global.hpp"
 
@@ -42,7 +39,7 @@ namespace host_communicator_suite
 
 TEST(host_communicator_api, host_comm_creation)
 {
-    ccl::global_data::get().init(); // TODO must be a part of the environment class
+    ccl::global_data::get().init();
 
     std::shared_ptr<stub_kvs> stub_storage;
     auto comm = ccl::communicator::create_communicator(2, 1, stub_storage);

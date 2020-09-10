@@ -4,12 +4,15 @@
 #error "Do not include this file directly. Please include 'ccl.hpp'"
 #endif
 
-namespace ccl {
+namespace ccl
+{
 
 enum class ccl_comm_split_attributes : int {
+    version,
     color,
     group,      // ccl_group_split_type or device_group_split_type
-    version,
+
+    last_value
 };
 
 
@@ -17,13 +20,15 @@ enum class ccl_comm_split_attributes : int {
 /**
  * Host-specific values for the 'group' split attribute
  */
-enum class ccl_group_split_type {    // TODO fill in this enum with the actual values in the final
+enum class ccl_group_split_type : int {    // TODO fill in this enum with the actual values in the final
     //device,
     thread,
     process,
     //socket,
     //node,
     cluster,
+
+    last_value
 };
 
 
