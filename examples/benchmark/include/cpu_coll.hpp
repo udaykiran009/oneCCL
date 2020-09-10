@@ -57,7 +57,7 @@ struct cpu_base_coll : base_coll, protected strategy, cpu_specific_data
         coll_strategy::start_internal(comm(), count,
                                       static_cast<Dtype*>(send_bufs[buf_idx]),
                                       static_cast<Dtype*>(recv_bufs[buf_idx]),
-                                      attr, reqs);
+                                      attr, reqs, coll_strategy::get_op_attr(attr));
     }
 
     virtual void start_single(size_t count,
@@ -67,7 +67,7 @@ struct cpu_base_coll : base_coll, protected strategy, cpu_specific_data
         coll_strategy::start_internal(comm(), count,
                                       static_cast<Dtype*>(single_send_buf),
                                       static_cast<Dtype*>(single_recv_buf),
-                                      attr, reqs);
+                                      attr, reqs, coll_strategy::get_op_attr(attr));
     }
 
     ccl::datatype get_dtype() const override final

@@ -151,7 +151,7 @@ struct sycl_sparse_allreduce_coll :
                                       *reinterpret_cast<cl::sycl::buffer<VType>*>(recv_vbufs[buf_idx]),
                                       recv_vcount[buf_idx],
                                       attr, reqs,
-                                      fn_ctxs[buf_idx], stream());
+                                      fn_ctxs[buf_idx], stream(), coll_strategy::get_op_attr(attr));
     }
 
     virtual void start_single(size_t count,
@@ -168,7 +168,7 @@ struct sycl_sparse_allreduce_coll :
                                       *reinterpret_cast<cl::sycl::buffer<VType>*>(single_recv_vbuf),
                                       single_recv_vcount,
                                       attr, reqs,
-                                      single_fn_ctx, stream());
+                                      single_fn_ctx, stream(), coll_strategy::get_op_attr(attr));
     }
 
     /* global communicator for cpu collectives */

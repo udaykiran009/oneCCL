@@ -27,9 +27,8 @@ public:
 
     void start() override
     {
-        LOG_DEBUG("ALLREDUCE entry req ", &req, ", cnt ", cnt);
         size_t bytes = cnt * dtype.size();
-
+        LOG_DEBUG("ALLREDUCE entry req: ", &req, ", cnt: ", cnt, ", bytes: ", bytes);
         atl_status_t atl_status = atl_ep_allreduce(sched->bin->get_atl_ep(), send_buf.get_ptr(bytes),
                                                    recv_buf.get_ptr(bytes), cnt,
                                                    static_cast<atl_datatype_t>(dtype.idx()),

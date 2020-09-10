@@ -102,6 +102,11 @@ struct sparse_allreduce_strategy_impl
         return type_printer<IType>::sparse_class_name();
     }
 
+    static const ccl::sparse_allreduce_attr& get_op_attr(const bench_coll_exec_attr& bench_attr)
+    {
+        return bench_attr.get_attr<ccl::sparse_allreduce_attr>();
+    }
+
     template<class T>
     using remove_ptr_t = typename std::remove_pointer<T>::type;
     template<class T>
@@ -165,7 +170,7 @@ struct sparse_allreduce_strategy_impl
                                              recv_ibuf, recv_icount,
                                              recv_vbuf, recv_vcount,
                                              bench_attr.reduction,
-                                             sparse_attr, std::forward<Args>(args)...));
+                                             std::forward<Args>(args)...));
     }
 
     std::unique_ptr<IndicesDistributor> indices_distributor_impl;

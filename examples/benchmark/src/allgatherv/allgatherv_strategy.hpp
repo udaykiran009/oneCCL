@@ -22,6 +22,11 @@ struct allgatherv_strategy_impl
 
     static constexpr const char* class_name() { return "allgatherv"; }
 
+    static const ccl::allgatherv_attr& get_op_attr(const bench_coll_exec_attr& bench_attr)
+    {
+        return bench_attr.get_attr<ccl::allgatherv_attr>();
+    }
+
     template<class Dtype, class comm_t, class ...Args>
     void start_internal(comm_t& comm, size_t count, const Dtype send_buf, Dtype recv_buf,
                         const bench_coll_exec_attr& bench_attr, req_list_t& reqs, Args&& ...args)
@@ -32,7 +37,7 @@ struct allgatherv_strategy_impl
         }
         reqs.push_back(comm.allgatherv(send_buf, count,
                                        recv_buf, recv_counts,
-                                       bench_attr.get_attr<ccl::allgatherv_attr>(), std::forward<Args>(args)...));
+                                       std::forward<Args>(args)...));
     }
 };
 
