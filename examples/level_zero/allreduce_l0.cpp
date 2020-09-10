@@ -292,12 +292,13 @@ void user_thread_idx(size_t thread_idx, const std::vector<std::pair<size_t, cl::
     {
         size_t rank = comm.rank();
 
+/*
         if (!comm.is_ready())
         {
             std::cerr << "Communicator by rank: " << rank << " should be ready already" << std::endl;
             abort();
         }
-
+*/
         allocated_memory_array& mem_objects = memory_storage.find(rank)->second;
 
         // create operation attributes
@@ -308,8 +309,8 @@ void user_thread_idx(size_t thread_idx, const std::vector<std::pair<size_t, cl::
                                        mem_objects[1],
                                        COUNT,
                                        ccl::reduction::sum,
-                                       attr,
-                                       streams.find(rank)->second));
+                                       streams.find(rank)->second,
+                                       attr));
     }
 
     //wait
@@ -412,13 +413,13 @@ void user_thread_idx(size_t thread_idx, ccl::device_indices_t thread_device_idx,
     for(auto &comm : comms)
     {
         size_t rank = comm.rank();
-
+/*
         if (!comm.is_ready())
         {
             std::cerr << "Communicator by rank: " << rank << " should be ready already" << std::endl;
             abort();
         }
-
+*/
         allocated_memory_array& mem_objects = memory_storage.find(rank)->second;
         reqs.push_back(comm.allreduce(mem_objects[0].get(),
                                        mem_objects[1].get(),

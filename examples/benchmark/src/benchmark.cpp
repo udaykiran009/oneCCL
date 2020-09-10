@@ -105,6 +105,7 @@ void do_regular(ccl::communicator* comm,
                             {
                                 snprintf(match_id.data(), MATCH_ID_SIZE, "coll_%s_%zu_count_%zu_buf_%zu",
                                          coll->name(), coll_idx, count, buf_idx);
+                                bench_attr.set<ccl::operation_attr_id::match_id>(std::string{match_id.data(), match_id.size()});
                                 coll->start(count, buf_idx, bench_attr, reqs);
                             }
                         }
@@ -156,6 +157,7 @@ void do_regular(ccl::communicator* comm,
                             auto& coll = colls[coll_idx];
                             snprintf(match_id.data(), MATCH_ID_SIZE, "coll_%s_%zu_single_count_%zu",
                                      coll->name(), coll_idx, count);
+                            bench_attr.set<ccl::operation_attr_id::match_id>(std::string{match_id.data(), match_id.size()});
                             coll->start_single(count, bench_attr, reqs);
                         }
                         for (auto &req : reqs)

@@ -109,22 +109,22 @@ size_t ccl_sched_base::get_priority() const
 ccl_buffer ccl_sched_base::alloc_buffer(size_t bytes)
 {
 
-    LOG_TRACE("try to allocate buffer size: ", bytes);
+    LOG_DEBUG("try to allocate buffer size: ", bytes);
     CCL_THROW_IF_NOT(bytes > 0, "incorrect buffer size: ", bytes);
 
     ccl_buffer buffer = ccl_buffer(CCL_CALLOC(bytes, "sched_buffer"),
                                    bytes, 0, ccl_buffer_type::DIRECT);
     memory.buf_list.emplace_back(buffer, bytes);
     CCL_THROW_IF_NOT(buffer.get_ptr(), "null ptr");
-    
-    LOG_DEBUG("allocated buffer ptr: ", buffer.get_ptr(), 
+
+    LOG_DEBUG("allocated buffer ptr: ", buffer.get_ptr(),
               ", size: ", buffer.get_size());
     return buffer;
 }
 
 ccl_buffer ccl_sched_base::update_buffer(ccl_buffer buffer, size_t new_size)
 {
-    LOG_DEBUG("update pointer data size: ", buffer.get_ptr(), 
+    LOG_DEBUG("update pointer data size: ", buffer.get_ptr(),
               ", from: ", buffer.get_size(), ", to: ", new_size);
     CCL_THROW_IF_NOT(new_size > 0, "incorrect buffer size: ", new_size);
 
@@ -153,7 +153,7 @@ ccl_buffer ccl_sched_base::update_buffer(ccl_buffer buffer, size_t new_size)
 
 ccl_buffer ccl_sched_base::find_and_realloc_buffer(void* in_ptr, size_t new_size, size_t expected_size)
 {
-    LOG_TRACE("sched: ", this, ", contains buffer objects: ", memory.buf_list.size());
+    LOG_DEBUG("sched: ", this, ", contains buffer objects: ", memory.buf_list.size());
     for (auto& it : memory.buf_list)
     {
         if (it.buffer.get_ptr() == in_ptr)
@@ -163,7 +163,7 @@ ccl_buffer ccl_sched_base::find_and_realloc_buffer(void* in_ptr, size_t new_size
             {
                 std::stringstream ss;
                 ss << "Unexpected realloc buffer by pointer: " << in_ptr
-                   << ", cur size: " << it.buffer.get_size() 
+                   << ", cur size: " << it.buffer.get_size()
                    << ", to: " << new_size << ", expected: " << expected_size;
                 ss << "\nbuffers:\n";
                 for (const auto& it : memory.buf_list)
@@ -178,10 +178,10 @@ ccl_buffer ccl_sched_base::find_and_realloc_buffer(void* in_ptr, size_t new_size
             if ((it.buffer.get_size() < 0) ||
                 (static_cast<size_t>(it.buffer.get_size()) < new_size))
             {
-                LOG_DEBUG("try to realloc buffer by pointer: ", in_ptr, 
-                          ", from: ", it.buffer.get_size(), ", to: ", new_size, 
+                LOG_DEBUG("try to realloc buffer by pointer: ", in_ptr,
+                          ", from: ", it.buffer.get_size(), ", to: ", new_size,
                           ", expected: ", expected_size);
-              
+
                 it.buffer = ccl_buffer(CCL_REALLOC(in_ptr, (size_t)it.buffer.get_size(),
                                                    new_size, CACHELINE_SIZE, "sched_buffer"),
                                         new_size, 0, ccl_buffer_type::DIRECT);

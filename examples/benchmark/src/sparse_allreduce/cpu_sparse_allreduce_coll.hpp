@@ -159,7 +159,7 @@ struct cpu_sparse_allreduce_coll :
                                       recv_ibufs[buf_idx], recv_icount[buf_idx],
                                       recv_vbufs[buf_idx], recv_vcount[buf_idx],
                                       attr,reqs,
-                                      fn_ctxs[buf_idx]);
+                                      fn_ctxs[buf_idx], coll_strategy::get_op_attr(attr));
     }
 
     virtual void start_single(size_t count,
@@ -172,7 +172,7 @@ struct cpu_sparse_allreduce_coll :
                                       static_cast<IType*>(single_recv_ibuf), single_recv_icount,
                                       reinterpret_cast<VType*>(single_recv_vbuf), single_recv_vcount,
                                       attr, reqs,
-                                      single_fn_ctx);
+                                      single_fn_ctx, coll_strategy::get_op_attr(attr));
     }
 
     /* global communicator for cpu collectives */

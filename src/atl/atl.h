@@ -80,37 +80,36 @@ atl_status_to_str(atl_status_t status)
 typedef enum
 {
     ATL_DTYPE_CHAR,
-    ATL_DTYPE_UINT8,    //new
-    ATL_DTYPE_INT16,    //new
-    ATL_DTYPE_UINT16,    //new
-    ATL_DTYPE_INT,      //replace
-    ATL_DTYPE_UINT32,    //new
-    ATL_DTYPE_INT64,    //replace
-    ATL_DTYPE_UINT64,      //replace
-    ATL_DTYPE_BFP8,    //new
-    ATL_DTYPE_BFP16,
+    ATL_DTYPE_UINT8,
+    ATL_DTYPE_INT16,
+    ATL_DTYPE_UINT16,
+    ATL_DTYPE_INT,
+    ATL_DTYPE_UINT32,
+    ATL_DTYPE_INT64,
+    ATL_DTYPE_UINT64,
+
+    ATL_DTYPE_FLOAT16,
     ATL_DTYPE_FLOAT,
     ATL_DTYPE_DOUBLE,
+
+    ATL_DTYPE_BFP16,
 } atl_datatype_t;
 
-// #ifndef ccl_dtype_uint8
-
-// #define ccl_dtype_uint8         ((ccl_datatype_t)(1))
-// #define ccl_dtype_int16         ((ccl_datatype_t)(2))
-// #define ccl_dtype_uint16        ((ccl_datatype_t)(3))
-// #define ccl_dtype_int           ((ccl_datatype_t)(4))
-// #define ccl_dtype_uint32        ((ccl_datatype_t)(5))
-// #define ccl_dtype_int64         ((ccl_datatype_t)(6))
-// #define ccl_dtype_uint64        ((ccl_datatype_t)(7))
-
-// #define ccl_dtype_bfloat8       ((ccl_datatype_t)(8))
-// #define ccl_dtype_bfp16         ((ccl_datatype_t)(9))
-// #define ccl_dtype_float16       ((ccl_datatype_t)(10))
-// #define ccl_dtype_float         ((ccl_datatype_t)(11))
-
-// #define ccl_dtype_double        ((ccl_datatype_t)(12))
-
-// #endif
+//#define ccl_dtype_char          ((ccl_datatype_t)(0))
+//#define ccl_dtype_uint8         ((ccl_datatype_t)(1))
+//#define ccl_dtype_int16         ((ccl_datatype_t)(2))
+//#define ccl_dtype_uint16        ((ccl_datatype_t)(3))
+//#define ccl_dtype_int           ((ccl_datatype_t)(4))
+//#define ccl_dtype_uint32        ((ccl_datatype_t)(5))
+//#define ccl_dtype_int64         ((ccl_datatype_t)(6))
+//#define ccl_dtype_uint64        ((ccl_datatype_t)(7))
+//
+//#define ccl_dtype_bfloat8       ((ccl_datatype_t)(8))
+//#define ccl_dtype_bfp16         ((ccl_datatype_t)(9))
+//#define ccl_dtype_float16       ((ccl_datatype_t)(10))
+//#define ccl_dtype_float         ((ccl_datatype_t)(11))
+//
+//#define ccl_dtype_double        ((ccl_datatype_t)(12))
 
 typedef enum
 {

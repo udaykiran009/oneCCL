@@ -56,7 +56,7 @@ struct sycl_base_coll : base_coll, private strategy, device_specific_data
         sycl_buffer_t<Dtype> &recv_buf = *(static_cast<sycl_buffer_t<Dtype>*>(recv_bufs[buf_idx]));
         coll_strategy::template start_internal<sycl_buffer_t<Dtype> &>(comm(), count,
                                                                        send_buf, recv_buf,
-                                                                       attr, reqs, stream());
+                                                                       attr, reqs, stream(), coll_strategy::get_op_attr(attr));
     }
 
     virtual void start_single(size_t count,
@@ -67,7 +67,7 @@ struct sycl_base_coll : base_coll, private strategy, device_specific_data
         sycl_buffer_t<Dtype> &recv_buf = *(static_cast<sycl_buffer_t<Dtype>*>(single_recv_buf));
         coll_strategy::template start_internal<sycl_buffer_t<Dtype> &>(comm(), count,
                                                                        send_buf, recv_buf,
-                                                                       attr, reqs, stream());
+                                                                       attr, reqs, stream(), coll_strategy::get_op_attr(attr));
     }
 
     ccl::datatype get_dtype() const override final

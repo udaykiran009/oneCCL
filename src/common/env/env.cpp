@@ -157,7 +157,13 @@ void env_data::print()
 #endif
     LOG_INFO("build mode : ", build_mode);
 
-    ccl::version version = ccl::environment::instance().get_version();
+    ccl::version version;
+    version.major = CCL_MAJOR_VERSION;
+    version.minor = CCL_MINOR_VERSION;
+    version.update = CCL_UPDATE_VERSION;
+    version.product_status = CCL_PRODUCT_STATUS;
+    version.build_date = CCL_PRODUCT_BUILD_DATE;
+    version.full = CCL_PRODUCT_FULL;
 
     LOG_INFO("version : ", version.full);
 

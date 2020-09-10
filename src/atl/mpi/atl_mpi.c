@@ -365,15 +365,15 @@ atl2mpi_dtype(atl_datatype_t dtype)
             return MPI_LONG_LONG;
         case ATL_DTYPE_UINT64:
             return MPI_UNSIGNED_LONG_LONG;
-        case ATL_DTYPE_BFP8:
+        case ATL_DTYPE_FLOAT16:
             printf("unknown datatype: %d\n", dtype);
             exit(1);
-        case ATL_DTYPE_BFP16:
-            return MPI_BFP16;
         case ATL_DTYPE_FLOAT:
             return MPI_FLOAT;
         case ATL_DTYPE_DOUBLE:
             return MPI_DOUBLE;
+        case ATL_DTYPE_BFP16:
+            return MPI_BFP16;
         default:
             printf("unknown datatype: %d\n", dtype);
             exit(1);
