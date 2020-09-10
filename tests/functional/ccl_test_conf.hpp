@@ -141,13 +141,22 @@ std::map<int, const char*> ccl_epilog_type_str =
 
 typedef enum
 {
+    // DT_CHAR = ccl::datatype::int8,
+    // DT_INT = ccl::datatype::int32,
+    // DT_BFP16 = ccl::datatype::bfloat16,
+    // DT_FLOAT = ccl::datatype::float32,
+    // DT_DOUBLE = ccl::datatype::float64,
+    // // DT_INT64 = ccl::datatype::int64,
+    // // DT_UINT64 = ccl::datatype::uint64,
+
     DT_CHAR = ccl_dtype_char,
     DT_INT = ccl_dtype_int,
     DT_BFP16 = ccl_dtype_bfp16,
     DT_FLOAT = ccl_dtype_float,
     DT_DOUBLE = ccl_dtype_double,
-    // DT_INT64 = ccl_dtype_int64,
-    // DT_UINT64 = ccl_dtype_uint64,
+    // DT_INT64 = ccl::datatype::int64,
+    // DT_UINT64 = ccl::datatype::uint64,
+
     DT_LAST
 } ccl_data_type;
 ccl_data_type first_ccl_data_type = DT_CHAR;

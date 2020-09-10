@@ -1,25 +1,25 @@
-#include "ccl_aliases.hpp"
-#include "ccl_device_types.hpp"
-#include "ccl_type_traits.hpp"
-#include "ccl_types_policy.hpp"
-#include "ccl_comm_split_attr_ids.hpp"
-#include "ccl_comm_split_attr_ids_traits.hpp"
-#include "ccl_comm_split_attr.hpp"
+#include "oneapi/ccl/ccl_aliases.hpp"
+#include "oneapi/ccl/ccl_device_types.hpp"
+#include "oneapi/ccl/ccl_type_traits.hpp"
+#include "oneapi/ccl/ccl_types_policy.hpp"
+#include "oneapi/ccl/ccl_comm_split_attr_ids.hpp"
+#include "oneapi/ccl/ccl_comm_split_attr_ids_traits.hpp"
+#include "oneapi/ccl/ccl_comm_split_attr.hpp"
 
-#include "ccl_coll_attr_ids.hpp"
-#include "ccl_coll_attr_ids_traits.hpp"
-#include "ccl_coll_attr.hpp"
+#include "oneapi/ccl/ccl_coll_attr_ids.hpp"
+#include "oneapi/ccl/ccl_coll_attr_ids_traits.hpp"
+#include "oneapi/ccl/ccl_coll_attr.hpp"
 
-#include "ccl_event_attr_ids.hpp"
-#include "ccl_event_attr_ids_traits.hpp"
-#include "ccl_event.hpp"
+#include "oneapi/ccl/ccl_event_attr_ids.hpp"
+#include "oneapi/ccl/ccl_event_attr_ids_traits.hpp"
+#include "oneapi/ccl/ccl_event.hpp"
 
-#include "ccl_stream_attr_ids.hpp"
-#include "ccl_stream_attr_ids_traits.hpp"
-#include "ccl_stream.hpp"
+#include "oneapi/ccl/ccl_stream_attr_ids.hpp"
+#include "oneapi/ccl/ccl_stream_attr_ids_traits.hpp"
+#include "oneapi/ccl/ccl_stream.hpp"
 
-#include "ccl_request.hpp"
-#include "ccl_device_communicator.hpp"
+#include "oneapi/ccl/ccl_request.hpp"
+#include "oneapi/ccl/ccl_device_communicator.hpp"
 
 #include "common/comm/l0/comm_context_id.hpp"
 
@@ -48,7 +48,7 @@ public:
                                                ccl::device_index_type>::value,
                                 int>::type = 0>
      device_communicator create_communicator(const DeviceType& device,
-                                       const device_comm_split_attr_t& attr = ccl_empty_attr());
+                                       const device_comm_split_attr& attr = ccl_empty_attr());
 
     /**
      * Device Communicator creation API: single communicator creation, based on index @device_id
@@ -59,7 +59,7 @@ public:
                                                ccl::device_index_type>::value,
                                 int>::type = 0>
      device_communicator create_communicator(const DeviceType& device_id,
-                                       const device_comm_split_attr_t& attr = ccl_empty_attr());
+                                       const device_comm_split_attr& attr = ccl_empty_attr());
 
     /**
      * Device Communicator creation vectorized API:
@@ -69,7 +69,7 @@ public:
      vector_class<device_communicator> create_communicators(
         InputIt first,
         InputIt last,
-        device_comm_split_attr_t attr = ccl_empty_attr());
+        device_comm_split_attr attr = ccl_empty_attr());
 
     /**
      * Device Communicator creation vectorized API:
@@ -78,7 +78,7 @@ public:
     template <template <class...> class Container, class Type>
      vector_class<device_communicator> create_communicators(
         const Container<Type>& device_ids,
-        device_comm_split_attr_t attr = ccl_empty_attr());
+        device_comm_split_attr attr = ccl_empty_attr());
 
 
 

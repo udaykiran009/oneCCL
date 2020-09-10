@@ -1,9 +1,9 @@
-#include "ccl_types.h"
-#include "ccl_aliases.hpp"
-#include "ccl_types_policy.hpp"
-#include "ccl_comm_split_attr_ids.hpp"
-#include "ccl_comm_split_attr_ids_traits.hpp"
-#include "ccl_comm_split_attr.hpp"
+#include "oneapi/ccl/ccl_types.hpp"
+#include "oneapi/ccl/ccl_aliases.hpp"
+#include "oneapi/ccl/ccl_types_policy.hpp"
+#include "oneapi/ccl/ccl_comm_split_attr_ids.hpp"
+#include "oneapi/ccl/ccl_comm_split_attr_ids_traits.hpp"
+#include "oneapi/ccl/ccl_comm_split_attr.hpp"
 
 // Core file with PIMPL implementation
 #include "common/comm/comm_split_common_attr.hpp"
@@ -25,33 +25,33 @@ CCL_API bool class_name::is_valid<IN_attrId>() const noexcept;
 
 
 /**
- * comm_split_attr_t attributes definition
+ * comm_split_attr attributes definition
  */
-CCL_API comm_split_attr_t::comm_split_attr_t(ccl_empty_attr) :
+CCL_API comm_split_attr::comm_split_attr(ccl_empty_attr) :
         base_t(std::shared_ptr<impl_t>(new impl_t(ccl_empty_attr::version)))
 {
 
 }
-CCL_API comm_split_attr_t::comm_split_attr_t(comm_split_attr_t&& src) :
+CCL_API comm_split_attr::comm_split_attr(comm_split_attr&& src) :
         base_t(std::move(src))
 {
 }
 
-CCL_API comm_split_attr_t::comm_split_attr_t(const comm_split_attr_t& src) :
+CCL_API comm_split_attr::comm_split_attr(const comm_split_attr& src) :
         base_t(src)
 {
 }
 
-CCL_API comm_split_attr_t::comm_split_attr_t(const typename details::ccl_host_split_traits<ccl_comm_split_attributes, ccl_comm_split_attributes::version>::type& version) :
+CCL_API comm_split_attr::comm_split_attr(const typename details::ccl_host_split_traits<ccl_comm_split_attributes, ccl_comm_split_attributes::version>::type& version) :
         base_t(std::shared_ptr<impl_t>(new impl_t(version)))
 {
 }
 
-CCL_API comm_split_attr_t::~comm_split_attr_t() noexcept
+CCL_API comm_split_attr::~comm_split_attr() noexcept
 {
 }
 
-CCL_API comm_split_attr_t& comm_split_attr_t::operator=(comm_split_attr_t&& src)
+CCL_API comm_split_attr& comm_split_attr::operator=(comm_split_attr&& src)
 {
     if (src.get_impl() != this->get_impl())
     {
@@ -60,9 +60,9 @@ CCL_API comm_split_attr_t& comm_split_attr_t::operator=(comm_split_attr_t&& src)
     }
     return *this;
 }
-API_FORCE_INSTANTIATION(comm_split_attr_t, ccl_comm_split_attributes::color, int, ccl_host_split_traits)
-API_FORCE_INSTANTIATION(comm_split_attr_t, ccl_comm_split_attributes::group, ccl_group_split_type, ccl_host_split_traits)
-API_FORCE_INSTANTIATION(comm_split_attr_t, ccl_comm_split_attributes::version, ccl_version_t, ccl_host_split_traits)
+API_FORCE_INSTANTIATION(comm_split_attr, ccl_comm_split_attributes::color, int, ccl_host_split_traits)
+API_FORCE_INSTANTIATION(comm_split_attr, ccl_comm_split_attributes::group, ccl_group_split_type, ccl_host_split_traits)
+API_FORCE_INSTANTIATION(comm_split_attr, ccl_comm_split_attributes::version, ccl::version, ccl_host_split_traits)
 
 
 
@@ -70,33 +70,33 @@ API_FORCE_INSTANTIATION(comm_split_attr_t, ccl_comm_split_attributes::version, c
 #ifdef MULTI_GPU_SUPPORT
 
 /**
- * device_comm_split_attr_t attributes definition
+ * device_comm_split_attr attributes definition
  */
-CCL_API device_comm_split_attr_t::device_comm_split_attr_t(ccl_empty_attr) :
+CCL_API device_comm_split_attr::device_comm_split_attr(ccl_empty_attr) :
         base_t(std::shared_ptr<impl_t>(new impl_t(ccl_empty_attr::version)))
 {
 
 }
-CCL_API device_comm_split_attr_t::device_comm_split_attr_t(device_comm_split_attr_t&& src) :
+CCL_API device_comm_split_attr::device_comm_split_attr(device_comm_split_attr&& src) :
         base_t(std::move(src))
 {
 }
 
-CCL_API device_comm_split_attr_t::device_comm_split_attr_t(const device_comm_split_attr_t& src) :
+CCL_API device_comm_split_attr::device_comm_split_attr(const device_comm_split_attr& src) :
         base_t(src)
 {
 }
 
-CCL_API device_comm_split_attr_t::device_comm_split_attr_t(const typename details::ccl_host_split_traits<ccl_comm_split_attributes, ccl_comm_split_attributes::version>::type& version) :
+CCL_API device_comm_split_attr::device_comm_split_attr(const typename details::ccl_host_split_traits<ccl_comm_split_attributes, ccl_comm_split_attributes::version>::type& version) :
         base_t(std::shared_ptr<impl_t>(new impl_t(version)))
 {
 }
 
-CCL_API device_comm_split_attr_t::~device_comm_split_attr_t() noexcept
+CCL_API device_comm_split_attr::~device_comm_split_attr() noexcept
 {
 }
 
-CCL_API device_comm_split_attr_t& device_comm_split_attr_t::operator=(device_comm_split_attr_t&& src)
+CCL_API device_comm_split_attr& device_comm_split_attr::operator=(device_comm_split_attr&& src)
 {
     if (src.get_impl() != this->get_impl())
     {
@@ -105,9 +105,9 @@ CCL_API device_comm_split_attr_t& device_comm_split_attr_t::operator=(device_com
     }
     return *this;
 }
-API_FORCE_INSTANTIATION(device_comm_split_attr_t, ccl_comm_split_attributes::color, int, ccl_device_split_traits)
-API_FORCE_INSTANTIATION(device_comm_split_attr_t, ccl_comm_split_attributes::group, device_group_split_type, ccl_device_split_traits)
-API_FORCE_INSTANTIATION(device_comm_split_attr_t, ccl_comm_split_attributes::version, ccl_version_t, ccl_device_split_traits)
+API_FORCE_INSTANTIATION(device_comm_split_attr, ccl_comm_split_attributes::color, int, ccl_device_split_traits)
+API_FORCE_INSTANTIATION(device_comm_split_attr, ccl_comm_split_attributes::group, device_group_split_type, ccl_device_split_traits)
+API_FORCE_INSTANTIATION(device_comm_split_attr, ccl_comm_split_attributes::version, ccl::version, ccl_device_split_traits)
 
 #endif
 

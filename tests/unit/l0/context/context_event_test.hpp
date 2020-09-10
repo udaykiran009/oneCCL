@@ -19,7 +19,7 @@ struct native_type_info<shared_event_float> {
 };
 } // namespace ccl
 /* 2) Include explicit definition for native::memory */
-#include "native_device_api/l0/primitives_impl.hpp"
+#include "oneapi/ccl/native_device_api/l0/primitives_impl.hpp"
 
 #include "observer_event_impl.hpp"
 #undef protected

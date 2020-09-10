@@ -31,7 +31,7 @@ void ccl_sched_key::set(const ccl_coll_param& param,
     match_id = attr.match_id;
 
     f.ctype = param.ctype;
-    f.dtype = param.dtype.idx();
+    f.dtype = (ccl_datatype_t)(param.dtype.idx());
     f.comm = param.comm;
 
     switch (f.ctype)
@@ -66,7 +66,7 @@ void ccl_sched_key::set(const ccl_coll_param& param,
             f.count2 = param.sparse_param.send_val_count;
             f.count3 = param.sparse_param.recv_ind_count;
             f.count4 = param.sparse_param.recv_val_count;
-            f.itype = param.sparse_param.itype.idx();
+            f.itype = (ccl_datatype_t)(param.sparse_param.itype.idx());
             f.reduction = param.reduction;
             break;
         default:
@@ -83,7 +83,7 @@ bool ccl_sched_key::check(const ccl_coll_param& param,
                attr.epilogue_fn == f.epilogue_fn ||
                attr.reduction_fn == f.reduction_fn ||
                param.ctype == f.ctype ||
-               param.dtype.idx() == f.dtype ||
+               (ccl_datatype_t)(param.dtype.idx()) == f.dtype ||
                param.comm == f.comm);
 
     switch (f.ctype)
@@ -118,7 +118,7 @@ bool ccl_sched_key::check(const ccl_coll_param& param,
                        param.sparse_param.send_val_count == f.count2 &&
                        param.sparse_param.recv_ind_count == f.count3 &&
                        param.sparse_param.recv_val_count == f.count4 &&
-                       param.sparse_param.itype.idx() == f.itype &&
+                       (ccl_datatype_t)(param.sparse_param.itype.idx()) == f.itype &&
                        param.reduction == f.reduction);
             break;
         default:

@@ -1,23 +1,23 @@
 #include "common/log/log.hpp"
 #include "common/stream/stream.hpp"
 #include "common/stream/stream_provider_dispatcher_impl.hpp"
-#include "native_device_api/export_api.hpp"
+#include "oneapi/ccl/native_device_api/export_api.hpp"
 #include "unified_context_impl.hpp"
 
 #ifdef MULTI_GPU_SUPPORT
     #ifdef CCL_ENABLE_SYCL
-        template std::unique_ptr<ccl_stream> stream_provider_dispatcher::create(cl::sycl::queue& native_stream, const ccl_version_t& version);
-        template std::unique_ptr<ccl_stream> stream_provider_dispatcher::create(cl_command_queue& native_stream_handle, const ccl_version_t& version);
+        template std::unique_ptr<ccl_stream> stream_provider_dispatcher::create(cl::sycl::queue& native_stream, const ccl::version& version);
+        template std::unique_ptr<ccl_stream> stream_provider_dispatcher::create(cl_command_queue& native_stream_handle, const ccl::version& version);
     #else
-        template std::unique_ptr<ccl_stream> stream_provider_dispatcher::create(std::shared_ptr<native::ccl_device::device_queue>& native_stream, const ccl_version_t& version);
-        template std::unique_ptr<ccl_stream> stream_provider_dispatcher::create(ze_command_queue_handle_t& native_stream_handle, const ccl_version_t& version);
+        template std::unique_ptr<ccl_stream> stream_provider_dispatcher::create(std::shared_ptr<native::ccl_device::device_queue>& native_stream, const ccl::version& version);
+        template std::unique_ptr<ccl_stream> stream_provider_dispatcher::create(ze_command_queue_handle_t& native_stream_handle, const ccl::version& version);
     #endif
 #else
     #ifdef CCL_ENABLE_SYCL
-        template std::unique_ptr<ccl_stream> stream_provider_dispatcher::create(cl::sycl::queue& native_stream, const ccl_version_t& version);
-        template std::unique_ptr<ccl_stream> stream_provider_dispatcher::create(cl_command_queue& native_stream, const ccl_version_t& version);
+        template std::unique_ptr<ccl_stream> stream_provider_dispatcher::create(cl::sycl::queue& native_stream, const ccl::version& version);
+        template std::unique_ptr<ccl_stream> stream_provider_dispatcher::create(cl_command_queue& native_stream, const ccl::version& version);
     #else
-        template std::unique_ptr<ccl_stream> stream_provider_dispatcher::create(void*& native_stream, const ccl_version_t& version);
+        template std::unique_ptr<ccl_stream> stream_provider_dispatcher::create(void*& native_stream, const ccl::version& version);
     #endif
 #endif
 

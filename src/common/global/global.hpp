@@ -1,6 +1,6 @@
 #pragma once
 
-#include "ccl.h"
+//#include "ccl.h"
 #include "coll/algorithms/algorithms_enum.hpp"
 #include "comp/bfp16/bfp16_utils.h"
 #include "common/env/env.hpp"

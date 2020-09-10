@@ -1,9 +1,9 @@
 #pragma once
-#include "ccl_types_policy.hpp"
-#include "ccl_types.hpp"
-#include "ccl_type_traits.hpp"
-#include "ccl_event_attr_ids.hpp"
-#include "ccl_event_attr_ids_traits.hpp"
+#include "oneapi/ccl/ccl_types_policy.hpp"
+#include "oneapi/ccl/ccl_types.hpp"
+#include "oneapi/ccl/ccl_type_traits.hpp"
+#include "oneapi/ccl/ccl_event_attr_ids.hpp"
+#include "oneapi/ccl/ccl_event_attr_ids_traits.hpp"
 #include "common/utils/utils.hpp"
 
 namespace ccl
@@ -26,8 +26,8 @@ public:
     ccl_event(const ccl_event& other) = delete;
     ccl_event& operator=(const ccl_event& other) = delete;
 
-    ccl_event(event_native_t& event, const ccl_version_t& version);
-    ccl_event(event_native_handle_t event, event_native_context_t context, const ccl_version_t& version);
+    ccl_event(event_native_t& event, const ccl::version& version);
+    ccl_event(event_native_handle_t event, event_native_context_t context, const ccl::version& version);
     ~ccl_event() = default;
 
     //Export Attributes
@@ -67,7 +67,7 @@ public:
     void build_from_params();
 
 private:
-    const ccl_version_t library_version;
+    const ccl::version library_version;
     event_native_t native_event;
     event_native_context_t native_context;
     bool creation_is_postponed {false};

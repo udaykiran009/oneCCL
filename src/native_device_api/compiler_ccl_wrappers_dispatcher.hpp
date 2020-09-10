@@ -1,14 +1,14 @@
 #pragma once
 
-#include "native_device_api/export_api.hpp"
-#include "ccl_type_traits.hpp"
+#include "oneapi/ccl/native_device_api/export_api.hpp"
+#include "oneapi/ccl/ccl_type_traits.hpp"
 
 #ifdef CCL_ENABLE_SYCL
 #include <CL/sycl/backend/Intel_level0.hpp>
 //static cl::sycl::vector_class<cl::sycl::device> gpu_sycl_devices;
 #endif
 
-#include "native_device_api/l0/utils.hpp"
+#include "oneapi/ccl/native_device_api/l0/utils.hpp"
 
 namespace native
 {

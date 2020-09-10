@@ -4,7 +4,7 @@
 #include <mutex>
 #include <condition_variable>
 
-#include "ccl_types.hpp"
+#include "oneapi/ccl/ccl_types.hpp"
 #include "common/comm/l0/device_group_routing_schema.hpp"
 #include "common/comm/l0/context/context_barrier.hpp"
 

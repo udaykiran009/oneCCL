@@ -21,9 +21,9 @@ typedef struct
     size_t recv_vbuf_count;
 } sparse_allreduce_fn_ctx_t;
 
-ccl_status_t sparse_allreduce_completion_fn(
-    const void* ind_buf, size_t ind_count, ccl_datatype_t ind_dtype,
-    const void* val_buf, size_t val_count, ccl_datatype_t val_dtype,
+void sparse_allreduce_completion_fn(
+    const void* ind_buf, size_t ind_count, ccl::datatype ind_dtype,
+    const void* val_buf, size_t val_count, ccl::datatype val_dtype,
     const void* fn_ctx)
 {
     // printf("callback: ibuf %p, icnt %zu, idt %d, vbuf %p, cvnt %zu, vdt %d\n",
@@ -55,13 +55,11 @@ ccl_status_t sparse_allreduce_completion_fn(
     *ctx->recv_vbuf = recv_vbuf;
     ctx->recv_ibuf_count = ind_count;
     ctx->recv_vbuf_count = val_count;
-
-    return ccl_status_success;
 }
 
-ccl_status_t sparse_allreduce_alloc_fn(
-    size_t ind_count, ccl_datatype_t ind_dtype,
-    size_t val_count, ccl_datatype_t val_dtype,
+void sparse_allreduce_alloc_fn(
+    size_t ind_count, ccl::datatype ind_dtype,
+    size_t val_count, ccl::datatype val_dtype,
     const void* fn_ctx,
     void** out_ind_buf, void** out_val_buf)
 {
@@ -94,8 +92,6 @@ ccl_status_t sparse_allreduce_alloc_fn(
 
     *out_ind_buf = recv_ibuf;
     *out_val_buf = recv_vbuf;
-
-    return ccl_status_success;
 }
 
 template<class IType, template<class> class IndicesDistributorType>
@@ -156,13 +152,13 @@ struct sparse_allreduce_strategy_impl
         recv_icount = std::get<0>(expected);
         recv_vcount = std::get<1>(expected);
 
-        auto& sparse_attr = const_cast<ccl::sparse_allreduce_attr_t&>(bench_attr.get_attr<ccl::sparse_allreduce_attr_t>());
+        auto& sparse_attr = const_cast<ccl::sparse_allreduce_attr&>(bench_attr.get_attr<ccl::sparse_allreduce_attr>());
         /* use completion_fn because it is supported by all algorithms */
-        sparse_attr.set<ccl::sparse_allreduce_op_attr_id::sparse_allreduce_completion_fn>(&sparse_allreduce_completion_fn);
+        sparse_attr.set<ccl::sparse_allreduce_attr_id::completion_fn>(&sparse_allreduce_completion_fn);
         //sparse_attr.sparse_allreduce_alloc_fn = sparse_allreduce_alloc_fn;
 
-        sparse_attr.set<ccl::sparse_allreduce_op_attr_id::sparse_allreduce_fn_ctx>(static_cast<const void*>(&fn_ctx));
-        sparse_attr.set<ccl::sparse_allreduce_op_attr_id::sparse_coalesce_mode>(ccl_sparse_coalesce_keep_precision);
+        sparse_attr.set<ccl::sparse_allreduce_attr_id::fn_ctx>(static_cast<const void*>(&fn_ctx));
+        sparse_attr.set<ccl::sparse_allreduce_attr_id::coalesce_mode>(ccl::sparse_coalesce_mode::keep_precision);
 
         reqs.push_back(comm.sparse_allreduce(send_ibuf, std::get<0>(expected),
                                              send_vbuf, send_vcount,

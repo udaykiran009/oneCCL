@@ -53,9 +53,9 @@ public:
         size_t count4 = 0; /* used in sparse collective to store recv value count */
         size_t root = 0;
         const ccl_comm* comm = nullptr;
-        ccl_prologue_fn_t prologue_fn = nullptr;
-        ccl_epilogue_fn_t epilogue_fn = nullptr;
-        ccl_reduction_fn_t reduction_fn = nullptr;
+        ccl::prologue_fn_t prologue_fn = nullptr;
+        ccl::epilogue_fn_t epilogue_fn = nullptr;
+        ccl::reduction_fn_t reduction_fn = nullptr;
     };
 
     /* inner structure for bit comparison */

@@ -135,12 +135,13 @@ bool gpu_comm_attr::delegate_sync_register_communicator(std::shared_ptr<communic
         device_group_indices.insert(it->second->get_device_path());//.get_device_properties().deviceId);
     }
     {
-        std::stringstream ss;
-        for(const auto &path : device_group_indices)
-        {
-            ss << path << ", ";
-        }
-        LOG_DEBUG("Thread id: ", thread_id, " collected device indices: ", ss.str());
+        /* TODO: enable back */
+        // std::stringstream ss;
+        // for(const auto &path : device_group_indices)
+        // {
+        //     ss << path << ", ";
+        // }
+        // LOG_DEBUG("Thread id: ", thread_id, " collected device indices: ", ss.str());
     }
 
     //bind addr

@@ -5,7 +5,7 @@
 #define private public
 #define protected public
 //#include "../utils.hpp"
-#include "ccl_types.hpp"
+#include "oneapi/ccl/ccl_types.hpp"
 #include "common/comm/l0/devices/devices_declaration.hpp"
 #undef protected
 #undef private

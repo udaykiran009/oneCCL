@@ -3,7 +3,7 @@
 #include <memory>
 
 #include "common/comm/l0/topology/topology_construction_utils.hpp"
-#include "ccl_config.h"
+#include "oneapi/ccl/ccl_config.h"
 
 #include "native_device_api/compiler_ccl_wrappers_dispatcher.hpp"
 #include "common/comm/l0/devices/devices_declaration.hpp"

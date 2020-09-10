@@ -1,4 +1,4 @@
-#include "native_device_api/l0/utils.hpp"
+#include "oneapi/ccl/native_device_api/l0/utils.hpp"
 namespace native
 {
 namespace details

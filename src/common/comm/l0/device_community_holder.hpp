@@ -3,7 +3,7 @@
 #include <tuple>
 #include <vector>
 
-#include "ccl_types.hpp"
+#include "oneapi/ccl/ccl_types.hpp"
 #include "common/comm/l0/device_community.hpp"
 
 namespace native {

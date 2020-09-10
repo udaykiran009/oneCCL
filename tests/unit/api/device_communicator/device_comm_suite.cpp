@@ -1,6 +1,6 @@
 #include <gtest/gtest.h>
 
-#include "ccl_config.h"
+#include "oneapi/ccl/ccl_config.h"
 
 #ifdef MULTI_GPU_SUPPORT
 #ifdef CCL_ENABLE_SYCL

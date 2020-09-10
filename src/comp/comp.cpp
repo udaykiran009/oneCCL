@@ -1,4 +1,4 @@
-#include "ccl_types.hpp"
+#include "oneapi/ccl/ccl_types.hpp"
 #include "comp/bfp16/bfp16.hpp"
 #include "comp/comp.hpp"
 #include "common/log/log.hpp"
@@ -47,7 +47,7 @@ ccl_status_t ccl_comp_copy(const void* in_buf, void* out_buf, size_t count, cons
 
 ccl_status_t ccl_comp_reduce(const void* in_buf, size_t in_count, void* inout_buf, size_t* out_count,
                              const ccl_datatype& dtype, ccl::reduction reduction,
-                             ccl_reduction_fn_t reduction_fn, const ccl_fn_context_t* context)
+                             ccl::reduction_fn_t reduction_fn, const ccl::fn_context* context)
 {
     if (reduction == ccl::reduction::custom)
     {
@@ -59,27 +59,27 @@ ccl_status_t ccl_comp_reduce(const void* in_buf, size_t in_count, void* inout_bu
     size_t i;
     switch (dtype.idx())
     {
-        case ccl_dtype_char:
+        case ccl::datatype::int8:
             CCL_REDUCE(char);
             break;
-        case ccl_dtype_int:
+        case ccl::datatype::int32:
             CCL_REDUCE(int);
             break;
-        case ccl_dtype_bfp16:
+        case ccl::datatype::bfloat16:
             if (ccl::global_data::get().bfp16_impl_type == ccl_bfp16_none)
                 CCL_FATAL("CCL doesn't support reductions in BFP16 on this CPU");
             ccl_bfp16_reduce(in_buf, in_count, inout_buf, out_count, reduction);
             break;
-        case ccl_dtype_float:
+        case ccl::datatype::float32:
             CCL_REDUCE(float);
             break;
-        case ccl_dtype_double:
+        case ccl::datatype::float64:
             CCL_REDUCE(double);
             break;
-        case ccl_dtype_int64:
+        case ccl::datatype::int64:
             CCL_REDUCE(int64_t);
             break;
-        case ccl_dtype_uint64:
+        case ccl::datatype::uint64:
             CCL_REDUCE(uint64_t);
             break;
         default:
@@ -92,7 +92,7 @@ ccl_status_t ccl_comp_reduce(const void* in_buf, size_t in_count, void* inout_bu
 ccl_status_t ccl_comp_batch_reduce(const void* in_buf, const std::vector<size_t>& offsets,
                                    size_t in_count, void* inout_buf, size_t* out_count,
                                    const ccl_datatype& dtype, ccl::reduction reduction,
-                                   ccl_reduction_fn_t reduction_fn, const ccl_fn_context_t* context,
+                                   ccl::reduction_fn_t reduction_fn, const ccl::fn_context* context,
                                    int bfp16_keep_precision_mode, float* tmp, float* acc)
 {
     if (bfp16_keep_precision_mode)

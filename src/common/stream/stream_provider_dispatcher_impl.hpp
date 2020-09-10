@@ -11,7 +11,7 @@
 template <class NativeStream,
           typename std::enable_if<std::is_class<typename std::remove_cv<NativeStream>::type>::value,
                                   int>::type>
-std::unique_ptr<ccl_stream> stream_provider_dispatcher::create(NativeStream& native_stream, const ccl_version_t& version)
+std::unique_ptr<ccl_stream> stream_provider_dispatcher::create(NativeStream& native_stream, const ccl::version& version)
 {
     static_assert(std::is_same<NativeStream, stream_native_t>::value, "Unsupported 'NativeStream'");
 
@@ -31,7 +31,7 @@ std::unique_ptr<ccl_stream> stream_provider_dispatcher::create(NativeStream& nat
 template <class NativeStreamHandle,
           typename std::enable_if<not std::is_class<typename std::remove_cv<NativeStreamHandle>::type>::value,
                                   int>::type>
-std::unique_ptr<ccl_stream> stream_provider_dispatcher::create(NativeStreamHandle& native_stream, const ccl_version_t& version)
+std::unique_ptr<ccl_stream> stream_provider_dispatcher::create(NativeStreamHandle& native_stream, const ccl::version& version)
 {
     static_assert(std::is_same<NativeStreamHandle, stream_native_handle_t>::value, "Unsupported 'NativeStream'");
     return std::unique_ptr<ccl_stream>(new ccl_stream(ccl_stream_gpu, native_stream, version));
@@ -39,7 +39,7 @@ std::unique_ptr<ccl_stream> stream_provider_dispatcher::create(NativeStreamHandl
 
 // Postponed creation from device
 std::unique_ptr<ccl_stream> stream_provider_dispatcher::create(stream_native_device_t device,
-                                                               const ccl_version_t& version)
+                                                               const ccl::version& version)
 {
     auto ret = std::unique_ptr<ccl_stream>(new ccl_stream(ccl_stream_gpu, version));
     ret->native_device = device;
@@ -49,7 +49,7 @@ std::unique_ptr<ccl_stream> stream_provider_dispatcher::create(stream_native_dev
 // Postponed creation from device & context
 std::unique_ptr<ccl_stream> stream_provider_dispatcher::create(stream_native_device_t device,
                                               stream_native_context_t context,
-                                              const ccl_version_t& version)
+                                              const ccl::version& version)
 {
     auto ret = stream_provider_dispatcher::create(device, version);
     ret->native_context = context;

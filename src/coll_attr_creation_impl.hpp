@@ -1,6 +1,6 @@
 #pragma once
-#include "ccl_types.hpp"
-#include "ccl_coll_attr.hpp"
+#include "oneapi/ccl/ccl_types.hpp"
+#include "oneapi/ccl/ccl_coll_attr.hpp"
 #include "coll/coll_attributes.hpp"
 
 namespace ccl
@@ -10,7 +10,7 @@ template <class coll_attribute_type,
           class ...attr_value_pair_t>
 coll_attribute_type create_coll_attr(attr_value_pair_t&&...avps)
 {
-    ccl_version_t ret {};
+    ccl::version ret {};
     ret.major = CCL_MAJOR_VERSION;
     ret.minor = CCL_MINOR_VERSION;
     ret.update = CCL_UPDATE_VERSION;

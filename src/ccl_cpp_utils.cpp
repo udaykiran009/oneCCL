@@ -1,7 +1,7 @@
 #include <sstream>
 
-#include "ccl_config.h"
-#include "ccl_types.hpp"
+#include "oneapi/ccl/ccl_config.h"
+#include "oneapi/ccl/ccl_types.hpp"
 #ifdef MULTI_GPU_SUPPORT
 
 

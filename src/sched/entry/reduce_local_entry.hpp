@@ -32,7 +32,7 @@ public:
     {
         size_t bytes = in_cnt * dtype.size();
         size_t offset = inout_buf.get_offset();
-        const ccl_fn_context_t context = { sched->coll_attr.match_id.c_str(), offset };
+        const ccl::fn_context context = { sched->coll_attr.match_id.c_str(), offset };
         ccl_status_t comp_status = ccl_comp_reduce(in_buf.get_ptr(bytes), in_cnt,
                                                    inout_buf.get_ptr(bytes), out_cnt,
                                                    dtype, op, fn, &context);
@@ -67,5 +67,5 @@ private:
     size_t* out_cnt;
     ccl_datatype dtype;
     ccl::reduction op;
-    ccl_reduction_fn_t fn;
+    ccl::reduction_fn_t fn;
 };

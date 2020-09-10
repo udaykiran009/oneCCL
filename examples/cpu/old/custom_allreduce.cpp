@@ -7,7 +7,7 @@
 #define CUSTOM_BASE_DTYPE_FORMAT "%d"
 #define CUSTOM_DTYPE_SIZE        (CUSTOM_REPEAT_COUNT * sizeof(CUSTOM_BASE_DTYPE))
 
-ccl_datatype_t ccl_dtype_custom;
+ccl::datatype ccl_dtype_custom;
 std::string global_match_id;
 
 typedef void(*expected_fn_t)(void*, size_t);
@@ -227,9 +227,9 @@ void expected_custom_6(void* elem, size_t idx)
     custom_set(elem, 2 * idx);
 }
 
-ccl_status_t do_prologue_2x(const void* in_buf, size_t in_count, ccl_datatype_t in_dtype,
-                            void** out_buf, size_t* out_count, ccl_datatype_t* out_dtype,
-                            const ccl_fn_context_t* context)
+void do_prologue_2x(const void* in_buf, size_t in_count, ccl::datatype in_dtype,
+                            void** out_buf, size_t* out_count, ccl::datatype* out_dtype,
+                            const ccl::fn_context* context)
 {
     size_t dtype_size;
     ccl_get_datatype_size(in_dtype, &dtype_size);
@@ -260,13 +260,11 @@ ccl_status_t do_prologue_2x(const void* in_buf, size_t in_count, ccl_datatype_t 
             ASSERT(0, "unexpected dtype %d", in_dtype);
         }
     }
-
-    return ccl_status_success;
 }
 
-ccl_status_t do_epilogue_2x(const void* in_buf, size_t in_count, ccl_datatype_t in_dtype,
-                            void* out_buf, size_t* out_count, ccl_datatype_t out_dtype,
-                            const ccl_fn_context_t* context)
+void do_epilogue_2x(const void* in_buf, size_t in_count, ccl::datatype in_dtype,
+                            void* out_buf, size_t* out_count, ccl::datatype out_dtype,
+                            const ccl::fn_context* context)
 {
     ASSERT((in_dtype == ccl_dtype_float) || (in_dtype == ccl_dtype_custom),
            "unexpected in_dtype %d", in_dtype);
@@ -292,13 +290,11 @@ ccl_status_t do_epilogue_2x(const void* in_buf, size_t in_count, ccl_datatype_t 
             ASSERT(0, "unexpected dtype %d", in_dtype);
         }
     }
-
-    return ccl_status_success;
 }
 
-ccl_status_t do_prologue_dtype_to_char(const void* in_buf, size_t in_count, ccl_datatype_t in_dtype,
-                                       void** out_buf, size_t* out_count, ccl_datatype_t* out_dtype,
-                                       const ccl_fn_context_t* context)
+void do_prologue_dtype_to_char(const void* in_buf, size_t in_count, ccl::datatype in_dtype,
+                                       void** out_buf, size_t* out_count, ccl::datatype* out_dtype,
+                                       const ccl::fn_context* context)
 {
     ASSERT((in_dtype == ccl_dtype_float) || (in_dtype == ccl_dtype_custom),
            "unexpected in_dtype %d", in_dtype);
@@ -328,13 +324,11 @@ ccl_status_t do_prologue_dtype_to_char(const void* in_buf, size_t in_count, ccl_
             ASSERT(0, "unexpected dtype %d", in_dtype);
         }
     }
-
-    return ccl_status_success;
 }
 
-ccl_status_t do_epilogue_char_to_dtype(const void* in_buf, size_t in_count, ccl_datatype_t in_dtype,
-                                       void* out_buf, size_t* out_count, ccl_datatype_t out_dtype,
-                                       const ccl_fn_context_t* context)
+void do_epilogue_char_to_dtype(const void* in_buf, size_t in_count, ccl::datatype in_dtype,
+                                       void* out_buf, size_t* out_count, ccl::datatype out_dtype,
+                                       const ccl::fn_context* context)
 {
     ASSERT(in_dtype == ccl_dtype_char, "unexpected in_dtype %d", in_dtype);
     ASSERT((out_dtype == ccl_dtype_float) || (out_dtype == ccl_dtype_custom),
@@ -362,13 +356,11 @@ ccl_status_t do_epilogue_char_to_dtype(const void* in_buf, size_t in_count, ccl_
     }
 
     if (in_buf != out_buf) free((void*)in_buf);
-
-    return ccl_status_success;
 }
 
-ccl_status_t do_reduction_sum(const void* in_buf, size_t in_count, void* inout_buf,
-                              size_t* out_count, ccl_datatype_t dtype,
-                              const ccl_fn_context_t* context)
+void do_reduction_sum(const void* in_buf, size_t in_count, void* inout_buf,
+                              size_t* out_count, ccl::datatype dtype,
+                              const ccl::fn_context* context)
 {
     size_t dtype_size;
     ccl_get_datatype_size(dtype, &dtype_size);
@@ -401,13 +393,11 @@ ccl_status_t do_reduction_sum(const void* in_buf, size_t in_count, void* inout_b
             ASSERT(0, "unexpected dtype %d", dtype);
         }
     }
-
-    return ccl_status_success;
 }
 
-ccl_status_t do_reduction_null(const void* in_buf, size_t in_count, void* inout_buf,
-                               size_t* out_count, ccl_datatype_t dtype,
-                               const ccl_fn_context_t* context)
+void do_reduction_null(const void* in_buf, size_t in_count, void* inout_buf,
+                               size_t* out_count, ccl::datatype dtype,
+                               const ccl::fn_context* context)
 {
     size_t dtype_size;
     ccl_get_datatype_size(dtype, &dtype_size);
@@ -439,13 +429,11 @@ ccl_status_t do_reduction_null(const void* in_buf, size_t in_count, void* inout_
             ASSERT(0, "unexpected dtype %d", dtype);
         }
     }
-
-    return ccl_status_success;
 }
 
-ccl_status_t do_reduction_custom(const void* in_buf, size_t in_count, void* inout_buf,
-                                 size_t* out_count, ccl_datatype_t dtype,
-                                 const ccl_fn_context_t* context)
+void do_reduction_custom(const void* in_buf, size_t in_count, void* inout_buf,
+                                 size_t* out_count, ccl::datatype dtype,
+                                 const ccl::fn_context* context)
 {
     size_t dtype_size;
     ccl_get_datatype_size(dtype, &dtype_size);
@@ -475,8 +463,6 @@ ccl_status_t do_reduction_custom(const void* in_buf, size_t in_count, void* inou
             ASSERT(0, "unexpected dtype %d", dtype);
         }
     }
-
-    return ccl_status_success;
 }
 
 int main()
@@ -488,8 +474,8 @@ int main()
     float float_send_buf[COUNT];
     float float_recv_buf[COUNT];
 
-    ccl_datatype_attr_t dt_attr = { .size = CUSTOM_DTYPE_SIZE };
-    ccl_datatype_create(&ccl_dtype_custom, &dt_attr);
+    ccl::datatype_attr attr = { .size = CUSTOM_DTYPE_SIZE };
+    ccl_datatype_create(&ccl_dtype_custom, &attr);
 
     char custom_send_buf[COUNT * CUSTOM_DTYPE_SIZE];
     char custom_recv_buf[COUNT * CUSTOM_DTYPE_SIZE];
@@ -503,7 +489,7 @@ int main()
         if (rank == 0)
             printf("test %s datatype\n", (idx == 0) ? "FLOAT" : "CUSTOM");
 
-        ccl_datatype_t dtype = (idx == 0) ? ccl_dtype_float : ccl_dtype_custom;
+        ccl::datatype dtype = (idx == 0) ? ccl_dtype_float : ccl_dtype_custom;
 
         void* send_buf = (idx == 0) ? (void*)float_send_buf : (void*)custom_send_buf;
         void* recv_buf = (idx == 0) ? (void*)float_recv_buf : (void*)custom_recv_buf;

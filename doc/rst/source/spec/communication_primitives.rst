@@ -284,7 +284,7 @@ Collective communication operation that broadcasts data from one participant of 
         ::
 
             template<class buffer_type>
-            col_request_t communicator::bcast(
+            col_request_t communicator::broadcast(
                                     buffer_type* buf,
                                     size_t count,
                                     size_t root,

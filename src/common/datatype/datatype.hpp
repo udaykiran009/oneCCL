@@ -4,13 +4,13 @@
 #include <unordered_map>
 #include <utility>
 
-#include "ccl_types.h"
+#include "oneapi/ccl/ccl_types.hpp"
 #include "common/log/log.hpp"
 #include "common/utils/spinlock.hpp"
-#include "ccl_types_policy.hpp"
-#include "ccl_datatype_attr_ids.hpp"
-#include "ccl_datatype_attr_ids_traits.hpp"
-#include "ccl_datatype_attr.hpp"
+#include "oneapi/ccl/ccl_types_policy.hpp"
+#include "oneapi/ccl/ccl_datatype_attr_ids.hpp"
+#include "oneapi/ccl/ccl_datatype_attr_ids_traits.hpp"
+#include "oneapi/ccl/ccl_datatype_attr.hpp"
 
 class ccl_datatype
 {
@@ -23,9 +23,14 @@ public:
 
     ccl_datatype(const ccl_datatype& other) = default;
 
-    ccl_datatype_t idx() const
+    // ccl_datatype_t idx() const
+    // {
+    //     return m_idx;
+    // }
+
+    ccl::datatype idx() const
     {
-        return m_idx;
+        return (ccl::datatype)(m_idx);
     }
 
     size_t size() const
@@ -57,21 +62,20 @@ public:
     ccl_datatype_storage(const ccl_datatype_storage& other) = delete;
     ccl_datatype_storage& operator= (const ccl_datatype_storage& other) = delete;
 
-    /* deprecated */
-    ccl_datatype_t create(const ccl_datatype_attr_t* attr);
-
-    ccl_datatype_t create(const ccl::datatype_attr_t& attr);
+    ccl::datatype create(const ccl::datatype_attr& attr);
+    void free(ccl::datatype idx);
     void free(ccl_datatype_t idx);
 
     const ccl_datatype& get(ccl_datatype_t idx) const;
+    const ccl_datatype& get(ccl::datatype idx) const;
 
     const std::string& name(const ccl_datatype& dtype) const;
     const std::string& name(ccl_datatype_t idx) const;
 
-    static bool is_predefined_datatype(ccl_datatype_t idx);
+    static bool is_predefined_datatype(ccl::datatype idx);
 
 private:
-    ccl_datatype_t create_by_datatype_size(size_t datatype_size);
+    ccl::datatype create_by_datatype_size(size_t datatype_size);
     void create_internal(ccl_datatype_table_t& table,
                          size_t idx, size_t size,
                          const std::string& name);

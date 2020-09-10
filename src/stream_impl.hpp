@@ -1,12 +1,12 @@
 #pragma once
-#include "ccl_types.hpp"
-#include "ccl_aliases.hpp"
+#include "oneapi/ccl/ccl_types.hpp"
+#include "oneapi/ccl/ccl_aliases.hpp"
 
-#include "ccl_type_traits.hpp"
-#include "ccl_types_policy.hpp"
-#include "ccl_stream_attr_ids.hpp"
-#include "ccl_stream_attr_ids_traits.hpp"
-#include "ccl_stream.hpp"
+#include "oneapi/ccl/ccl_type_traits.hpp"
+#include "oneapi/ccl/ccl_types_policy.hpp"
+#include "oneapi/ccl/ccl_stream_attr_ids.hpp"
+#include "oneapi/ccl/ccl_stream_attr_ids_traits.hpp"
+#include "oneapi/ccl/ccl_stream.hpp"
 #include "common/stream/stream.hpp"
 
 namespace ccl
@@ -15,7 +15,7 @@ namespace ccl
 template <class ...attr_value_pair_t>
 stream stream::create_stream_from_attr(typename unified_device_type::ccl_native_t device, attr_value_pair_t&&...avps)
 {
-    ccl_version_t ret {};
+    ccl::version ret {};
     ret.major = CCL_MAJOR_VERSION;
     ret.minor = CCL_MINOR_VERSION;
     ret.update = CCL_UPDATE_VERSION;
@@ -35,7 +35,7 @@ stream stream::create_stream_from_attr(typename unified_device_type::ccl_native_
                                typename unified_device_context_type::ccl_native_t context,
                                attr_value_pair_t&&...avps)
 {
-    ccl_version_t ret {};
+    ccl::version ret {};
     ret.major = CCL_MAJOR_VERSION;
     ret.minor = CCL_MINOR_VERSION;
     ret.update = CCL_UPDATE_VERSION;
@@ -54,7 +54,7 @@ template <class native_stream_type,
           typename T>
 stream stream::create_stream(native_stream_type& native_stream)
 {
-    ccl_version_t ret {};
+    ccl::version ret {};
     ret.major = CCL_MAJOR_VERSION;
     ret.minor = CCL_MINOR_VERSION;
     ret.update = CCL_UPDATE_VERSION;
@@ -68,7 +68,7 @@ template <class device_type, class native_context_type,
            typename T>
 stream stream::create_stream(device_type& device, native_context_type& native_ctx)
 {
-    ccl_version_t ret {};
+    ccl::version ret {};
     ret.major = CCL_MAJOR_VERSION;
     ret.minor = CCL_MINOR_VERSION;
     ret.update = CCL_UPDATE_VERSION;

@@ -3,30 +3,30 @@
 //API headers with declaration of new API object
 #define private public
 #define protected public
-#include "ccl_types.hpp"
-#include "ccl_aliases.hpp"
+#include "oneapi/ccl/ccl_types.hpp"
+#include "oneapi/ccl/ccl_aliases.hpp"
 
-#include "ccl_type_traits.hpp"
-#include "ccl_types_policy.hpp"
+#include "oneapi/ccl/ccl_type_traits.hpp"
+#include "oneapi/ccl/ccl_types_policy.hpp"
 
-#include "ccl_coll_attr_ids.hpp"
-#include "ccl_coll_attr_ids_traits.hpp"
-#include "ccl_coll_attr.hpp"
+#include "oneapi/ccl/ccl_coll_attr_ids.hpp"
+#include "oneapi/ccl/ccl_coll_attr_ids_traits.hpp"
+#include "oneapi/ccl/ccl_coll_attr.hpp"
 
-#include "ccl_comm_split_attr_ids.hpp"
-#include "ccl_comm_split_attr_ids_traits.hpp"
-#include "ccl_comm_split_attr.hpp"
+#include "oneapi/ccl/ccl_comm_split_attr_ids.hpp"
+#include "oneapi/ccl/ccl_comm_split_attr_ids_traits.hpp"
+#include "oneapi/ccl/ccl_comm_split_attr.hpp"
 
 
-#include "ccl_event_attr_ids.hpp"
-#include "ccl_event_attr_ids_traits.hpp"
-#include "ccl_event.hpp"
+#include "oneapi/ccl/ccl_event_attr_ids.hpp"
+#include "oneapi/ccl/ccl_event_attr_ids_traits.hpp"
+#include "oneapi/ccl/ccl_event.hpp"
 
-#include "ccl_stream_attr_ids.hpp"
-#include "ccl_stream_attr_ids_traits.hpp"
-#include "ccl_stream.hpp"
+#include "oneapi/ccl/ccl_stream_attr_ids.hpp"
+#include "oneapi/ccl/ccl_stream_attr_ids_traits.hpp"
+#include "oneapi/ccl/ccl_stream.hpp"
 
-#include "ccl_request.hpp"
+#include "oneapi/ccl/ccl_request.hpp"
 
 #include "coll/coll_attributes.hpp"
 
@@ -35,7 +35,7 @@
 #include "comm_split_attr_creation_impl.hpp"
 
 //#include "environment.hpp"
-#include "ccl_device_communicator.hpp"
+#include "oneapi/ccl/ccl_device_communicator.hpp"
 #include "common/comm/l0/comm_context_storage.hpp"
 
 #include "event_impl.hpp"
@@ -52,7 +52,7 @@
 
 #include "common/comm/l0/comm_context.hpp"
 #include "device_communicator_impl.hpp"
-#include "native_device_api/export_api.hpp"
+#include "oneapi/ccl/native_device_api/export_api.hpp"
 
 namespace device_communicator_suite
 {

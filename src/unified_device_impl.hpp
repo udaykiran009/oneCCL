@@ -1,6 +1,6 @@
 #pragma once
 
-#include "ccl_type_traits.hpp"
+#include "oneapi/ccl/ccl_type_traits.hpp"
 #include "common/log/log.hpp"
 #include "native_device_api/compiler_ccl_wrappers_dispatcher.hpp"
 

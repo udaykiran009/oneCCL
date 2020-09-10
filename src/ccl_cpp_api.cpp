@@ -1,5 +1,5 @@
 #if 0
-#include "ccl.hpp"
+#include "oneapi/ccl.hpp"
 
 
 #include "coll/coll_attributes.hpp"
@@ -8,7 +8,7 @@
 #include "comm_split_attr_impl.hpp"
 #include "comm_split_attr_creation_impl.hpp"
 
-#include "ccl_communicator.hpp"
+#include "oneapi/ccl/ccl_communicator.hpp"
 
 #include "common/comm/l0/comm_context_storage.hpp"
 
@@ -19,14 +19,14 @@
 #include "common/comm/comm.hpp"
 
 #include "common/comm/l0/comm_context.hpp"
-#include "ccl_device_communicator.hpp"
+#include "oneapi/ccl/ccl_device_communicator.hpp"
 
 #include "common/global/global.hpp"
 #include "exec/exec.hpp"
 
 #include "common/comm/comm_interface.hpp"
 
-#include "native_device_api/export_api.hpp"
+#include "oneapi/ccl/native_device_api/export_api.hpp"
 
 #ifdef CCL_ENABLE_SYCL
 #include <CL/sycl.hpp>
@@ -66,9 +66,9 @@ void CCL_API ccl::environment::set_resize_fn(ccl_resize_fn_t callback)
     return;
 }
 
-ccl_version_t CCL_API ccl::environment::get_version() const
+ccl::version CCL_API ccl::environment::get_version() const
 {
-    ccl_version_t ret;
+    ccl::version ret;
     ccl_status_t result = ccl_get_version(&ret);
     CCL_CHECK_AND_THROW(result, "failed to get version");
     return ret;
@@ -115,18 +115,18 @@ communicator CCL_API environment::create_communicator(const size_t size,
 }
 
 template <class ...attr_value_pair_t>
-comm_split_attr_t CCL_API environment::create_comm_split_attr(attr_value_pair_t&&...avps) const
+comm_split_attr CCL_API environment::create_comm_split_attr(attr_value_pair_t&&...avps) const
 {
-    return comm_split_attr_t::create_comm_split_attr(std::forward<attr_value_pair_t>(avps)...);
+    return comm_split_attr::create_comm_split_attr(std::forward<attr_value_pair_t>(avps)...);
 }
 
 //Device communicator
 #ifdef MULTI_GPU_SUPPORT
 
 template <class ...attr_value_pair_t>
-device_comm_split_attr_t environment::create_device_comm_split_attr(attr_value_pair_t&&...avps) const
+device_comm_split_attr environment::create_device_comm_split_attr(attr_value_pair_t&&...avps) const
 {
-    return device_comm_split_attr_t::create_device_comm_split_attr(std::forward<attr_value_pair_t>(avps)...);
+    return device_comm_split_attr::create_device_comm_split_attr(std::forward<attr_value_pair_t>(avps)...);
 }
 
 template<class DeviceType,
@@ -221,5 +221,5 @@ STREAM_CREATOR_INSTANTIATION(cl::sycl::queue)
 #endif //MULTI_GPU_SUPPORT
 }
 #include "types_generator_defines.hpp"
-#include "ccl_cpp_api_explicit_in.hpp"
+#include "oneapi/ccl/ccl_cpp_api_explicit_in.hpp"
 #endif //0

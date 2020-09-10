@@ -1,6 +1,6 @@
 #include <gtest/gtest.h>
 
-#include "ccl_config.h"
+#include "oneapi/ccl/ccl_config.h"
 
 #include "host_comm_cases.hpp"
 

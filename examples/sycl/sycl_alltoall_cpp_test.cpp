@@ -21,17 +21,17 @@ int main(int argc, char **argv)
     auto &env = ccl::environment::instance();
     (void)env;
     ccl::shared_ptr_class<ccl::kvs> kvs;
-    ccl::kvs::addr_t master_addr;
+    ccl::kvs::address_type main_addr;
     if (rank == 0)
     {
         kvs = ccl::environment::instance().create_main_kvs();
-        master_addr = kvs->get_addr();
-        MPI_Bcast((void *)master_addr.data(), master_addr.size(), MPI_BYTE, 0, MPI_COMM_WORLD);
+        main_addr = kvs->get_address();
+        MPI_Bcast((void *)main_addr.data(), main_addr.size(), MPI_BYTE, 0, MPI_COMM_WORLD);
     }
     else
     {
-        MPI_Bcast((void *)master_addr.data(), master_addr.size(), MPI_BYTE, 0, MPI_COMM_WORLD);
-        kvs = ccl::environment::instance().create_kvs(master_addr);
+        MPI_Bcast((void *)main_addr.data(), main_addr.size(), MPI_BYTE, 0, MPI_COMM_WORLD);
+        kvs = ccl::environment::instance().create_kvs(main_addr);
     }
 
     /* create SYCL communicator */
@@ -67,7 +67,7 @@ int main(int argc, char **argv)
     handle_exception(q);
 
     /* invoke ccl_alltoall on the CPU side */
-    auto attr = ccl::environment::instance().create_op_attr<ccl::alltoall_attr_t>();
+    auto attr = ccl::environment::instance().create_operation_attr<ccl::alltoall_attr>();
     comm.alltoall(sendbuf,
                    recvbuf,
                    COUNT,

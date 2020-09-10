@@ -1,5 +1,5 @@
-#include "ccl.hpp"
-#include "ccl_type_traits.hpp"
+#include "oneapi/ccl.hpp"
+#include "oneapi/ccl/ccl_type_traits.hpp"
 #include "common/comm/l0/communicator/device_group/device_ring_communicator_impl.hpp"
 #include "common/comm/l0/gpu_comm_attr.hpp"
 #include "common/comm/l0/context/thread_group_ctx.hpp"
@@ -10,7 +10,7 @@ using namespace ccl;
 device_group_ring_communicator::device_group_ring_communicator(ccl::unified_device_type&& device,
                                                                size_t thread_idx,
                                                                size_t process_idx,
-                                                               const ccl::device_comm_split_attr_t& attr):
+                                                               const ccl::device_comm_split_attr& attr):
  base_t(std::move(device), thread_idx, process_idx/*, comm_attr*/, attr)
 {
 }
@@ -31,8 +31,7 @@ void device_group_ring_communicator::visit(ccl::gpu_comm_attr& comm_attr)
     this->set_comm_group_id(comm_attr.get_unique_id());
 }
 
-ccl::request_t device_group_ring_communicator::barrier(const ccl::barrier_attr_t& attr,
-                 ccl::stream::impl_value_t& op_stream,
+ccl::request_t device_group_ring_communicator::barrier(ccl::stream::impl_value_t& stream, const ccl::barrier_attr& attr,
                  const ccl::vector_class<ccl::event>& deps)
 {
     throw ccl::ccl_error(std::string(__PRETTY_FUNCTION__) + " - is not implemented yet");
@@ -44,9 +43,9 @@ device_group_ring_communicator::allgatherv_impl(const void* send_buf,
                                                 size_t send_count,
                                                 void* recv_buf,
                                                 const ccl::vector_class<size_t>& recv_counts,
-                                                ccl_datatype_t dtype,
-                                                const ccl::allgatherv_attr_t& attr,
-                                                ccl::stream::impl_value_t& stream, const ccl::vector_class<ccl::event>& deps)
+                                                ccl::datatype dtype,
+                                                 ccl::stream::impl_value_t& stream, const ccl::allgatherv_attr& attr,
+                                                const ccl::vector_class<ccl::event>& deps)
 {
     throw ccl::ccl_error(std::string(__PRETTY_FUNCTION__) + " - is not implemented");
     return {};
@@ -56,9 +55,8 @@ device_group_ring_communicator::allgatherv_impl(const void* send_buf,
                                              size_t send_count,
                                              const ccl::vector_class<void*>& recv_bufs,
                                             const ccl::vector_class<size_t>& recv_counts,
-                                             ccl_datatype_t dtype,
-                                             const ccl::allgatherv_attr_t& attr,
-                                             ccl::stream::impl_value_t& stream,
+                                             ccl::datatype dtype,
+                                              ccl::stream::impl_value_t& stream, const ccl::allgatherv_attr& attr,
                                              const ccl::vector_class<ccl::event>& deps)
 {
     throw ccl::ccl_error(std::string(__PRETTY_FUNCTION__) + " - is not implemented");
@@ -71,10 +69,10 @@ ccl::coll_request_t
 device_group_ring_communicator::allreduce_impl(const void* send_buf,
                                                void* recv_buf,
                                                size_t count,
-                                               ccl_datatype_t dtype,
+                                               ccl::datatype dtype,
                                                ccl::reduction reduction,
-                                               const ccl::allreduce_attr_t& attr,
-                                               ccl::stream::impl_value_t& stream, const ccl::vector_class<ccl::event>& deps)
+                                               ccl::stream::impl_value_t& stream, const ccl::allreduce_attr& attr,
+                                               const ccl::vector_class<ccl::event>& deps)
 {
     throw ccl::ccl_error(std::string(__PRETTY_FUNCTION__) + " - is not implemented");
     return {};
@@ -86,9 +84,9 @@ ccl::coll_request_t
 device_group_ring_communicator::alltoall_impl(const void* send_buf,
                                              void* recv_buf,
                                              size_t count,
-                                             ccl_datatype_t dtype,
-                                             const ccl::alltoall_attr_t& attr,
-                                             ccl::stream::impl_value_t& stream, const ccl::vector_class<ccl::event>& deps)
+                                             ccl::datatype dtype,
+                                             ccl::stream::impl_value_t& stream, const ccl::alltoall_attr& attr,
+                                             const ccl::vector_class<ccl::event>& deps)
 {
     throw ccl::ccl_error(std::string(__PRETTY_FUNCTION__) + " - is not implemented");
     return {};
@@ -97,9 +95,9 @@ ccl::coll_request_t
 device_group_ring_communicator::alltoall_impl(const ccl::vector_class<void*>& send_buf,
                        const ccl::vector_class<void*>& recv_buf,
                        size_t count,
-                       ccl_datatype_t dtype,
-                       const ccl::alltoall_attr_t& attr/* = alltoall_attr_t()*/,
-                       ccl::stream::impl_value_t op_stream,
+                       ccl::datatype dtype,
+                       ccl::stream::impl_value_t& stream,
+                       const ccl::alltoall_attr& attr,
                        const ccl::vector_class<ccl::event>& deps)
 {
     throw ccl::ccl_error(std::string(__PRETTY_FUNCTION__) + " - is not implemented");
@@ -112,9 +110,9 @@ device_group_ring_communicator::alltoallv_impl(const void* send_buf,
                                                const ccl::vector_class<size_t>& send_counts,
                                                void* recv_buf,
                                                const ccl::vector_class<size_t>& recv_counts,
-                                               ccl_datatype_t dtype,
-                                               const ccl::alltoallv_attr_t& attr,
-                                               ccl::stream::impl_value_t& stream, const ccl::vector_class<ccl::event>& deps)
+                                               ccl::datatype dtype,
+                                               ccl::stream::impl_value_t& stream, const ccl::alltoallv_attr& attr,
+                                               const ccl::vector_class<ccl::event>& deps)
 {
     throw ccl::ccl_error(std::string(__PRETTY_FUNCTION__) + " - is not implemented");
     return {};
@@ -124,9 +122,9 @@ device_group_ring_communicator::alltoallv_impl(const ccl::vector_class<void*>& s
                                                  const ccl::vector_class<size_t>& send_counts,
                                                  ccl::vector_class<void*> recv_buf,
                                                  const ccl::vector_class<size_t>& recv_counts,
-                                                 ccl_datatype_t dtype,
-                                                 const ccl::alltoallv_attr_t& attr,
-                                                 ccl::stream::impl_value_t& stream,
+                                                 ccl::datatype dtype,
+                                                 ccl::stream::impl_value_t& stream, const ccl::alltoallv_attr& attr,
+                                                 
                                                  const ccl::vector_class<ccl::event>& dep)
 {
     throw ccl::ccl_error(std::string(__PRETTY_FUNCTION__) + " - is not implemented");
@@ -137,12 +135,12 @@ device_group_ring_communicator::alltoallv_impl(const ccl::vector_class<void*>& s
 
 /* bcast */
 ccl::coll_request_t
-device_group_ring_communicator::bcast_impl(void* buf,
+device_group_ring_communicator::broadcast_impl(void* buf,
                                            size_t count,
-                                           ccl_datatype_t dtype,
+                                           ccl::datatype dtype,
                                            size_t root,
-                                           const ccl::bcast_attr_t& attr,
-                                           ccl::stream::impl_value_t& stream, const ccl::vector_class<ccl::event>& deps)
+                                           ccl::stream::impl_value_t& stream, const ccl::broadcast_attr& attr,
+                                           const ccl::vector_class<ccl::event>& deps)
 {
     throw ccl::ccl_error(std::string(__PRETTY_FUNCTION__) + " - is not implemented");
     return {};
@@ -153,11 +151,11 @@ ccl::coll_request_t
 device_group_ring_communicator::reduce_impl(const void* send_buf,
                                             void* recv_buf,
                                             size_t count,
-                                            ccl_datatype_t dtype,
+                                            ccl::datatype dtype,
                                             ccl::reduction reduction,
                                             size_t root,
-                                            const ccl::reduce_attr_t& attr,
-                                            ccl::stream::impl_value_t& stream, const ccl::vector_class<ccl::event>& deps)
+                                            ccl::stream::impl_value_t& stream, const ccl::reduce_attr& attr,
+                                            const ccl::vector_class<ccl::event>& deps)
 {
     throw ccl::ccl_error(std::string(__PRETTY_FUNCTION__) + " - is not implemented");
     return {};
@@ -171,10 +169,9 @@ ccl::request_t
 device_group_ring_communicator::reduce_scatter_impl(const void* send_buf,
                              void* recv_buf,
                              size_t recv_count,
-                             ccl_datatype_t dtype,
+                             ccl::datatype dtype,
                              ccl::reduction reduction,
-                             const ccl::reduce_scatter_attr_t& attr/* = reduce_scatter_attr_t()*/,
-                             ccl::stream::impl_value_t& op_stream,
+                             ccl::stream::impl_value_t& stream, const ccl::reduce_scatter_attr& attr,
                              const ccl::vector_class<ccl::event>& deps)
 {
     throw ccl::ccl_error(std::string(__PRETTY_FUNCTION__) + " - is not implemented");
@@ -189,11 +186,11 @@ device_group_ring_communicator::sparse_allreduce_impl(const void* send_ind_buf, 
                                                       const void* send_val_buf, size_t send_val_count,
                                                       void* recv_ind_buf, size_t recv_ind_count,
                                                       void* recv_val_buf, size_t recv_val_count,
-                                                      ccl_datatype_t index_dtype,
-                                                      ccl_datatype_t value_dtype,
+                                                      ccl::datatype index_dtype,
+                                                      ccl::datatype value_dtype,
                                                       ccl::reduction reduction,
-                                                      const ccl::sparse_allreduce_attr_t& attr,
-                                                      ccl::stream::impl_value_t& stream, const ccl::vector_class<ccl::event>& deps)
+                                                      ccl::stream::impl_value_t& stream, const ccl::sparse_allreduce_attr& attr,
+                                                      const ccl::vector_class<ccl::event>& deps)
 {
     throw ccl::ccl_error(std::string(__PRETTY_FUNCTION__) + " - is not implemented");
     return {};

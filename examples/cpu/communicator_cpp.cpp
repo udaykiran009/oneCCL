@@ -1,7 +1,7 @@
 #include <vector>
 
 #include "base.hpp"
-#include "ccl.hpp"
+#include "oneapi/ccl.hpp"
 #include "mpi.h"
 
 void check_allreduce_on_comm(ccl::communicator& comm)
@@ -194,18 +194,18 @@ int main()
 
     // build CCL internal KVS
     std::shared_ptr<ccl::kvs> kvs_instance;
-    ccl::kvs::addr_t master_addr;
+    ccl::kvs::address_type main_addr;
     if (mpi_rank == 0)
     {
         kvs_instance = env.create_main_kvs();
-        master_addr = kvs_instance->get_addr();
+        main_addr = kvs_instance->get_address();
 
-        MPI_Bcast((void *)master_addr.data(), master_addr.size(), MPI_BYTE, 0, MPI_COMM_WORLD);
+        MPI_Bcast((void *)main_addr.data(), main_addr.size(), MPI_BYTE, 0, MPI_COMM_WORLD);
     }
     else
     {
-        MPI_Bcast((void *)master_addr.data(), master_addr.size(), MPI_BYTE, 0, MPI_COMM_WORLD);
-        kvs_instance = env.create_kvs(master_addr);
+        MPI_Bcast((void *)main_addr.data(), main_addr.size(), MPI_BYTE, 0, MPI_COMM_WORLD);
+        kvs_instance = env.create_kvs(main_addr);
 
     }
 

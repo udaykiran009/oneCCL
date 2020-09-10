@@ -1,19 +1,19 @@
 #pragma once
 
 #include "common/comm/comm.hpp"
-#include "ccl_types.hpp"
-#include "ccl_types_policy.hpp"
-#include "ccl_comm_split_attr_ids.hpp"
-#include "ccl_comm_split_attr_ids_traits.hpp"
-#include "ccl_comm_split_attr.hpp"
-#include "ccl_types.hpp"
-#include "ccl_type_traits.hpp"
-#include "ccl_types_policy.hpp"
+#include "oneapi/ccl/ccl_types.hpp"
+#include "oneapi/ccl/ccl_types_policy.hpp"
+#include "oneapi/ccl/ccl_comm_split_attr_ids.hpp"
+#include "oneapi/ccl/ccl_comm_split_attr_ids_traits.hpp"
+#include "oneapi/ccl/ccl_comm_split_attr.hpp"
+#include "oneapi/ccl/ccl_types.hpp"
+#include "oneapi/ccl/ccl_type_traits.hpp"
+#include "oneapi/ccl/ccl_types_policy.hpp"
 
-#include "ccl_request.hpp"
-#include "ccl_coll_attr_ids.hpp"
-#include "ccl_coll_attr_ids_traits.hpp"
-#include "ccl_coll_attr.hpp"
+#include "oneapi/ccl/ccl_request.hpp"
+#include "oneapi/ccl/ccl_coll_attr_ids.hpp"
+#include "oneapi/ccl/ccl_coll_attr_ids_traits.hpp"
+#include "oneapi/ccl/ccl_coll_attr.hpp"
 
 namespace ccl {
 
@@ -26,7 +26,7 @@ public:
     size_t size() const;
 
     ccl::unique_ptr_class<host_communicator>
-    split(const comm_split_attr_t& attr);
+    split(const comm_split_attr& attr);
 
     /* allgatherv */
     ccl::request_t
@@ -34,16 +34,16 @@ public:
                     size_t send_count,
                     void* recv_buf,
                     const vector_class<size_t>& recv_counts,
-                    ccl_datatype_t dtype,
-                    const allgatherv_attr_t& attr = default_allgatherv_attr);
+                    ccl::datatype dtype,
+                    const allgatherv_attr& attr = default_allgatherv_attr);
 
     ccl::request_t
     allgatherv_impl(const void* send_buf,
                     size_t send_count,
                     const vector_class<void*>& recv_bufs,
                     const vector_class<size_t>& recv_counts,
-                    ccl_datatype_t dtype,
-                    const allgatherv_attr_t& attr = default_allgatherv_attr);
+                    ccl::datatype dtype,
+                    const allgatherv_attr& attr = default_allgatherv_attr);
 
     template<class BufferType>
     ccl::request_t
@@ -51,7 +51,7 @@ public:
                     size_t send_count,
                     BufferType* recv_buf,
                     const vector_class<size_t>& recv_counts,
-                    const allgatherv_attr_t& attr = default_allgatherv_attr);
+                    const allgatherv_attr& attr = default_allgatherv_attr);
 
     template<class BufferType>
     ccl::request_t
@@ -59,16 +59,16 @@ public:
                     size_t send_count,
                     const vector_class<BufferType*>& recv_bufs,
                     const vector_class<size_t>& recv_counts,
-                    const allgatherv_attr_t& attr = default_allgatherv_attr);
+                    const allgatherv_attr& attr = default_allgatherv_attr);
 
     /* allreduce */
     ccl::request_t
     allreduce_impl(const void* send_buf,
                    void* recv_buf,
                    size_t count,
-                   ccl_datatype_t dtype,
-                   ccl::reduction reduction,
-                   const allreduce_attr_t& attr = default_allreduce_attr);
+                   ccl::datatype dtype,
+                   ccl::reduction rtype,
+                   const allreduce_attr& attr = default_allreduce_attr);
 
     template <class BufferType,
               class = typename std::enable_if<ccl::is_native_type_supported<BufferType>()>::type>
@@ -76,23 +76,23 @@ public:
     allreduce_impl(const BufferType* send_buf,
                    BufferType* recv_buf,
                    size_t count,
-                   ccl::reduction reduction,
-                   const allreduce_attr_t& attr = default_allreduce_attr);
+                   ccl::reduction rtype,
+                   const allreduce_attr& attr = default_allreduce_attr);
 
     /* alltoall */
     ccl::request_t
     alltoall_impl(const void* send_buf,
                   void* recv_buf,
                   size_t count,
-                  ccl_datatype_t dtype,
-                  const alltoall_attr_t& attr = default_alltoall_attr);
+                  ccl::datatype dtype,
+                  const alltoall_attr& attr = default_alltoall_attr);
 
     ccl::request_t
     alltoall_impl(const vector_class<void*>& send_buf,
                   const vector_class<void*>& recv_buf,
                   size_t count,
-                  ccl_datatype_t dtype,
-                  const alltoall_attr_t& attr = default_alltoall_attr);
+                  ccl::datatype dtype,
+                  const alltoall_attr& attr = default_alltoall_attr);
 
     template <class BufferType,
               class = typename std::enable_if<ccl::is_native_type_supported<BufferType>()>::type>
@@ -100,7 +100,7 @@ public:
     alltoall_impl(const BufferType* send_buf,
                   BufferType* recv_buf,
                   size_t count,
-                  const alltoall_attr_t& attr = default_alltoall_attr);
+                  const alltoall_attr& attr = default_alltoall_attr);
 
     template <class BufferType,
               class = typename std::enable_if<ccl::is_native_type_supported<BufferType>()>::type>
@@ -108,7 +108,7 @@ public:
     alltoall_impl(const vector_class<BufferType*>& send_buf,
                   const vector_class<BufferType*>& recv_buf,
                   size_t count,
-                  const alltoall_attr_t& attr = default_alltoall_attr);
+                  const alltoall_attr& attr = default_alltoall_attr);
 
     /* alltoallv */
     ccl::request_t
@@ -116,16 +116,16 @@ public:
                    const vector_class<size_t>& send_counts,
                    void* recv_buf,
                    const vector_class<size_t>& recv_counts,
-                   ccl_datatype_t dtype,
-                   const alltoallv_attr_t& attr = default_alltoallv_attr);
+                   ccl::datatype dtype,
+                   const alltoallv_attr& attr = default_alltoallv_attr);
 
     ccl::request_t
     alltoallv_impl(const vector_class<void*>& send_bufs,
                    const vector_class<size_t>& send_counts,
                    const vector_class<void*>& recv_bufs,
                    const vector_class<size_t>& recv_counts,
-                   ccl_datatype_t dtype,
-                   const alltoallv_attr_t& attr = default_alltoallv_attr);
+                   ccl::datatype dtype,
+                   const alltoallv_attr& attr = default_alltoallv_attr);
 
     template <class BufferType,
               class = typename std::enable_if<ccl::is_native_type_supported<BufferType>()>::type>
@@ -134,7 +134,7 @@ public:
                    const vector_class<size_t>& send_counts,
                    BufferType* recv_buf,
                    const vector_class<size_t>& recv_counts,
-                   const alltoallv_attr_t& attr = default_alltoallv_attr);
+                   const alltoallv_attr& attr = default_alltoallv_attr);
 
     template <class BufferType,
               class = typename std::enable_if<ccl::is_native_type_supported<BufferType>()>::type>
@@ -143,37 +143,37 @@ public:
                    const vector_class<size_t>& send_counts,
                    const vector_class<BufferType*>& recv_bufs,
                    const vector_class<size_t>& recv_counts,
-                   const alltoallv_attr_t& attr = default_alltoallv_attr);
+                   const alltoallv_attr& attr = default_alltoallv_attr);
 
     /* barrier */
     ccl::request_t
-    barrier_impl(const barrier_attr_t& attr = default_barrier_attr);
+    barrier_impl(const barrier_attr& attr = default_barrier_attr);
 
     /* bcast */
     ccl::request_t
-    bcast_impl(void* buf,
+    broadcast_impl(void* buf,
                size_t count,
-               ccl_datatype_t dtype,
+               ccl::datatype dtype,
                size_t root,
-               const bcast_attr_t& attr = default_bcast_attr);
+               const broadcast_attr& attr = default_broadcast_attr);
 
     template <class BufferType,
               class = typename std::enable_if<ccl::is_native_type_supported<BufferType>()>::type>
     ccl::request_t
-    bcast_impl(BufferType* buf,
+    broadcast_impl(BufferType* buf,
                size_t count,
                size_t root,
-               const bcast_attr_t& attr = default_bcast_attr);
+               const broadcast_attr& attr = default_broadcast_attr);
 
     /* reduce */
     ccl::request_t
     reduce_impl(const void* send_buf,
                 void* recv_buf,
                 size_t count,
-                ccl_datatype_t dtype,
-                ccl::reduction reduction,
+                ccl::datatype dtype,
+                ccl::reduction rtype,
                 size_t root,
-                const reduce_attr_t& attr = default_reduce_attr);
+                const reduce_attr& attr = default_reduce_attr);
 
     template <class BufferType,
               class = typename std::enable_if<ccl::is_native_type_supported<BufferType>()>::type>
@@ -181,18 +181,18 @@ public:
     reduce_impl(const BufferType* send_buf,
                 BufferType* recv_buf,
                 size_t count,
-                ccl::reduction reduction,
+                ccl::reduction rtype,
                 size_t root,
-                const reduce_attr_t& attr = default_reduce_attr);
+                const reduce_attr& attr = default_reduce_attr);
 
     /* reduce_scatter */
     ccl::request_t
     reduce_scatter_impl(const void* send_buf,
                         void* recv_buf,
                         size_t recv_count,
-                        ccl_datatype_t dtype,
-                        ccl::reduction reduction,
-                        const reduce_scatter_attr_t& attr = default_reduce_scatter_attr);
+                        ccl::datatype dtype,
+                        ccl::reduction rtype,
+                        const reduce_scatter_attr& attr = default_reduce_scatter_attr);
 
     template <class BufferType,
               class = typename std::enable_if<ccl::is_native_type_supported<BufferType>()>::type>
@@ -200,8 +200,8 @@ public:
     reduce_scatter_impl(const BufferType* send_buf,
                         BufferType* recv_buf,
                         size_t recv_count,
-                        ccl::reduction reduction,
-                        const reduce_scatter_attr_t& attr = default_reduce_scatter_attr);
+                        ccl::reduction rtype,
+                        const reduce_scatter_attr& attr = default_reduce_scatter_attr);
 
     /* sparse_allreduce */
     ccl::request_t
@@ -213,10 +213,10 @@ public:
                           size_t recv_ind_count,
                           void* recv_val_buf,
                           size_t recv_val_count,
-                          ccl_datatype_t ind_dtype,
-                          ccl_datatype_t val_dtype,
-                          ccl::reduction reduction,
-                          const sparse_allreduce_attr_t& attr = default_sparse_allreduce_attr);
+                          ccl::datatype ind_dtype,
+                          ccl::datatype val_dtype,
+                          ccl::reduction rtype,
+                          const sparse_allreduce_attr& attr = default_sparse_allreduce_attr);
 
     template <
         class index_BufferType,
@@ -231,8 +231,8 @@ public:
                           size_t recv_ind_count,
                           value_BufferType* recv_val_buf,
                           size_t recv_val_count,
-                          ccl::reduction reduction,
-                          const sparse_allreduce_attr_t& attr = default_sparse_allreduce_attr);
+                          ccl::reduction rtype,
+                          const sparse_allreduce_attr& attr = default_sparse_allreduce_attr);
 
     host_communicator();
     host_communicator(size_t size,
@@ -250,7 +250,7 @@ public:
 private:
     friend struct group_context;
     std::shared_ptr<ccl_comm> comm_impl;
-    ccl::comm_split_attr_t comm_attr;
+    ccl::comm_split_attr comm_attr;
     size_t comm_rank;
     size_t comm_size;
 }; // class host_communicator

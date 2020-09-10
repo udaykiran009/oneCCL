@@ -1,4 +1,4 @@
-#include "ccl_type_traits.hpp"
+#include "oneapi/ccl/ccl_type_traits.hpp"
 #include "coll/algorithms/sparse_allreduce/sparse_handler.hpp"
 #include "sched/entry/factory/entry_factory.hpp"
 
@@ -51,25 +51,25 @@
     do {                                                                     \
          switch (vtype.idx())                                                \
          {                                                                   \
-              case ccl_dtype_float:                                          \
+              case ccl::datatype::float32:                                   \
                   CCL_SPARSE_ALLREDUCE_SELECT_ALGO(itype, float, algo);      \
                   break;                                                     \
-              case ccl_dtype_double:                                         \
+              case ccl::datatype::float64:                                   \
                   CCL_SPARSE_ALLREDUCE_SELECT_ALGO(itype, double, algo);     \
                   break;                                                     \
-              case ccl_dtype_char:                                           \
+              case ccl::datatype::int8:                                      \
                   CCL_SPARSE_ALLREDUCE_SELECT_ALGO(itype, char, algo);       \
                   break;                                                     \
-              case ccl_dtype_int:                                            \
+              case ccl::datatype::int32:                                     \
                   CCL_SPARSE_ALLREDUCE_SELECT_ALGO(itype, int, algo);        \
                   break;                                                     \
-              case ccl_dtype_int64:                                          \
+              case ccl::datatype::int64:                                     \
                   CCL_SPARSE_ALLREDUCE_SELECT_ALGO(itype, int64_t, algo);    \
                   break;                                                     \
-              case ccl_dtype_uint64:                                         \
+              case ccl::datatype::uint64:                                    \
                   CCL_SPARSE_ALLREDUCE_SELECT_ALGO(itype, uint64_t, algo);   \
                   break;                                                     \
-              case ccl_dtype_bfp16:                                          \
+              case ccl::datatype::bfloat16:                                  \
                   CCL_SPARSE_ALLREDUCE_SELECT_ALGO(itype, ccl::bfp16, algo); \
                   break;                                                     \
               default:                                                       \
@@ -128,8 +128,8 @@
         sa_handler->send_count[1] = send_val_count;                                         \
                                                                                             \
         if (sa_handler->sched->coll_attr.sparse_coalesce_mode ==                            \
-            ccl_sparse_coalesce_keep_precision &&                                           \
-            sa_handler->value_dtype.idx() == ccl_dtype_bfp16)                               \
+            ccl::sparse_coalesce_mode::keep_precision &&                                    \
+            sa_handler->value_dtype.idx() == ccl::datatype::bfloat16)                       \
         {                                                                                   \
             sa_handler->tmp = static_cast<float*>(                                          \
                                 sched->alloc_buffer(sizeof(float) * val_dim_cnt).get_ptr());\
@@ -283,8 +283,8 @@ void sparse_coalesce(ccl_sparse_allreduce_handler* sah)
                                   sah->value_dtype, sah->op, 
                                   nullptr, nullptr, 
                                   (sched->coll_attr.sparse_coalesce_mode ==
-                                   ccl_sparse_coalesce_keep_precision &&
-                                   sah->value_dtype.idx() == ccl_dtype_bfp16),
+                                   ccl::sparse_coalesce_mode::keep_precision &&
+                                   sah->value_dtype.idx() == ccl::datatype::bfloat16),
                                   sah->tmp, sah->acc);
 
             it.second.resize(1);
@@ -845,7 +845,7 @@ ccl_status_t sparse_alloc_result_buf_allgatherv(const void* ctx)
 
     ccl_sched* sched = sa_handler->sched;
 
-    if (sched->coll_attr.sparse_coalesce_mode == ccl_sparse_coalesce_disable &&
+    if (sched->coll_attr.sparse_coalesce_mode == ccl::sparse_coalesce_mode::disable &&
         sched->coll_attr.sparse_allreduce_alloc_fn)
     {
         /* with coalesce_disable the final buffers are allocated here, so use alloc_fn */
@@ -969,8 +969,8 @@ ccl_status_t sparse_reduce_gathered_allgatherv(const void* ctx)
                                   sa_handler->value_dtype, sa_handler->op,
                                   nullptr, nullptr,
                                   sched->coll_attr.sparse_coalesce_mode ==
-                                  ccl_sparse_coalesce_keep_precision && 
-                                  sa_handler->value_dtype.idx() == ccl_dtype_bfp16,
+                                  ccl::sparse_coalesce_mode::keep_precision && 
+                                  sa_handler->value_dtype.idx() == ccl::datatype::bfloat16,
                                   sa_handler->tmp, sa_handler->acc);
         }
         idx_offset++;
@@ -1024,7 +1024,7 @@ ccl_status_t sparse_get_v_send_allgatherv(const void* ctx, void* field_ptr)
 {
     ccl_sparse_allreduce_handler* sa_handler = (ccl_sparse_allreduce_handler*)ctx;
     ccl_buffer* buf_ptr = (ccl_buffer*)field_ptr;
-    if (sa_handler->sched->coll_attr.sparse_coalesce_mode == ccl_sparse_coalesce_disable)
+    if (sa_handler->sched->coll_attr.sparse_coalesce_mode == ccl::sparse_coalesce_mode::disable)
     {
         buf_ptr->set(sa_handler->send_vbuf);
     }
@@ -1102,7 +1102,7 @@ ccl_coll_build_sparse_allreduce_3_allgatherv(ccl_sched *sched,
       ", sa_handler->val_dim_cnt: ", sa_handler->val_dim_cnt,
       ", sa_handler->recv_counts: ", sa_handler->recv_counts);
     
-    if (sched->coll_attr.sparse_coalesce_mode != ccl_sparse_coalesce_disable)
+    if (sched->coll_attr.sparse_coalesce_mode != ccl::sparse_coalesce_mode::disable)
     {
         entry_factory::make_entry<function_entry>(
             sched, sparse_coalesce_allgatherv<i_type, v_type>, sa_handler);
@@ -1156,7 +1156,7 @@ ccl_coll_build_sparse_allreduce_3_allgatherv(ccl_sched *sched,
     ce->set_field_fn<ccl_sched_entry_field_send_count>(sparse_get_send_count_allgatherv<1>, sa_handler);
     sched->add_barrier();
 
-    if (sched->coll_attr.sparse_coalesce_mode == ccl_sparse_coalesce_disable)
+    if (sched->coll_attr.sparse_coalesce_mode == ccl::sparse_coalesce_mode::disable)
     {
         entry_factory::make_entry<function_entry>(
             sched, sparse_return_gathered_allgatherv, sa_handler);

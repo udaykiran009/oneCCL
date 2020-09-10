@@ -4,10 +4,10 @@
 #include "common/comm/comm_interface.hpp"
 #include "unified_device_impl.hpp"
 
-#include "ccl_types_policy.hpp"
-#include "ccl_comm_split_attr_ids.hpp"
-#include "ccl_comm_split_attr_ids_traits.hpp"
-#include "ccl_comm_split_attr.hpp"
+#include "oneapi/ccl/ccl_types_policy.hpp"
+#include "oneapi/ccl/ccl_comm_split_attr_ids.hpp"
+#include "oneapi/ccl/ccl_comm_split_attr_ids_traits.hpp"
+#include "oneapi/ccl/ccl_comm_split_attr.hpp"
 
 #include "common/comm/comm_split_common_attr.hpp"
 #include "comm_split_attr_impl.hpp"
@@ -37,7 +37,7 @@ communicator_interface_ptr
 communicator_interface_dispatcher::create_communicator_impl(const DeviceType& device,
                                                             size_t thread_idx,
                                                             size_t process_idx,
-                                                            const ccl::device_comm_split_attr_t& attr)
+                                                            const ccl::device_comm_split_attr& attr)
 {
     static_assert(std::is_same<typename unified_device_type::handle_t, DeviceType>::value, "Unsupported 'DeviceType'");
 
@@ -55,7 +55,7 @@ communicator_interface_ptr
 communicator_interface_dispatcher::create_communicator_impl(DeviceType device_id,
                                                             size_t thread_idx,
                                                             size_t process_idx,
-                                                            const ccl::device_comm_split_attr_t& attr)
+                                                            const ccl::device_comm_split_attr& attr)
 {
 
 #ifdef CCL_ENABLE_SYCL
@@ -74,7 +74,7 @@ communicator_interface_ptr
 communicator_interface_dispatcher::create_communicator_from_unified_device(ccl::unified_device_type&& device_id,
                                                                            size_t thread_idx,
                                                                            size_t process_idx,
-                                                                           const ccl::device_comm_split_attr_t& attr)
+                                                                           const ccl::device_comm_split_attr& attr)
 {
     // TODO ring by default at now. Choose preferred a2a if availbale
     ccl::device_topology_type preferred_topology_class = ccl::device_topology_type::ring;
@@ -86,7 +86,7 @@ communicator_interface_dispatcher::create_communicator_from_unified_device(ccl::
         preferred_topology_group = attr.get<ccl::ccl_comm_split_attributes::group>();
         if(attr.is_valid<ccl::ccl_comm_split_attributes::color>())
         {
-            throw ccl_error(std::string("Invalid `device_comm_split_attr_t`: both `color` and `group` set. Only one is supported"));
+            throw ccl_error(std::string("Invalid `device_comm_split_attr`: both `color` and `group` set. Only one is supported"));
         }
     }
     else if (attr.is_valid<ccl::ccl_comm_split_attributes::color>())
@@ -130,7 +130,7 @@ communicator_interface_dispatcher::create_communicator_from_unified_device(ccl::
                                                                   thread_idx, process_idx,
                                                                    attr));
                 default:
-                    throw ccl_error(std::string("Invalid `device_comm_split_attr_t` value for `ccl_device_preferred_group`: ") +
+                    throw ccl_error(std::string("Invalid `device_comm_split_attr` value for `ccl_device_preferred_group`: ") +
                             ::to_string(preferred_topology_group));
             }
             break;
@@ -156,7 +156,7 @@ communicator_interface_dispatcher::create_communicator_from_unified_device(ccl::
                     return communicator_interface_ptr(new process_a2a_communicator(std::move(device_id),
                                                                       thread_idx, process_idx, attr));
                 default:
-                    throw ccl_error(std::string("Invalid `device_comm_split_attr_t` value for `ccl_device_preferred_group`: ") +
+                    throw ccl_error(std::string("Invalid `device_comm_split_attr` value for `ccl_device_preferred_group`: ") +
                             ::to_string(preferred_topology_group));
             }
             break;
@@ -176,7 +176,7 @@ communicator_interface_dispatcher::create_communicator_from_unified_device(ccl::
         }
         default:
         {
-            throw ccl_error(std::string("Invalid `device_comm_split_attr_t` value for `ccl_device_preferred_topology_class`: ") +
+            throw ccl_error(std::string("Invalid `device_comm_split_attr` value for `ccl_device_preferred_topology_class`: ") +
                             ::to_string(preferred_topology_class));
         }
     }
@@ -190,13 +190,13 @@ template ccl::communicator_interface_ptr                                        
 ccl::communicator_interface_dispatcher::create_communicator_impl(const DeviceType& device,              \
                                                                  size_t thread_idx,                     \
                                                                  size_t process_idx,                    \
-                                                                 const ccl::device_comm_split_attr_t& attr);
+                                                                 const ccl::device_comm_split_attr& attr);
 
 #define COMMUNICATOR_INTERFACE_DISPATCHER_NON_CLASS_EXPLICIT_INSTANTIATION(DeviceType)                  \
 template ccl::communicator_interface_ptr                                                                \
 ccl::communicator_interface_dispatcher::create_communicator_impl(DeviceType device_id,                  \
                                                                  size_t thread_idx,                     \
                                                                  size_t process_idx,                    \
-                                                                 const ccl::device_comm_split_attr_t& attr);
+                                                                 const ccl::device_comm_split_attr& attr);
 
 }

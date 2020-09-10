@@ -38,7 +38,7 @@ size_t get_dtype_size(ccl_datatype_t dtype)
 template <typename T>
 ccl_status_t do_prologue_T_2x(const void* in_buf, size_t in_count, ccl_datatype_t in_dtype,
                               void** out_buf, size_t* out_count, ccl_datatype_t* out_dtype,
-                              const ccl_fn_context_t* ctx)
+                              const ccl::fn_context* ctx)
 {
     size_t buf_idx;
     ASSERT(out_buf, "null ptr");
@@ -67,7 +67,7 @@ ccl_status_t do_prologue_T_2x(const void* in_buf, size_t in_count, ccl_datatype_
 template <typename T>
 ccl_status_t do_epilogue_T_2x(const void* in_buf, size_t in_count, ccl_datatype_t in_dtype,
                               void* out_buf, size_t* out_count, ccl_datatype_t out_dtype,
-                              const ccl_fn_context_t* ctx)
+                              const ccl::fn_context* ctx)
 {
     size_t buf_idx;
     if (out_count)* out_count = in_count;
@@ -92,7 +92,7 @@ ccl_status_t do_epilogue_T_2x(const void* in_buf, size_t in_count, ccl_datatype_
 template <typename T>
 ccl_status_t do_prologue_T_to_char(const void* in_buf, size_t in_count, ccl_datatype_t in_dtype,
                                    void** out_buf, size_t* out_count, ccl_datatype_t* out_dtype,
-                                   const ccl_fn_context_t* ctx)
+                                   const ccl::fn_context* ctx)
 {
     size_t buf_idx;
     ASSERT(out_buf, "null ptr");
@@ -123,7 +123,7 @@ ccl_status_t do_prologue_T_to_char(const void* in_buf, size_t in_count, ccl_data
 template <typename T>
 ccl_status_t do_epilogue_char_to_T(const void* in_buf, size_t in_count, ccl_datatype_t in_dtype,
                                    void* out_buf, size_t* out_count, ccl_datatype_t out_dtype,
-                                   const ccl_fn_context_t* ctx)
+                                   const ccl::fn_context* ctx)
 {
     size_t buf_idx;
     if (out_count)
@@ -152,7 +152,7 @@ ccl_status_t do_epilogue_char_to_T(const void* in_buf, size_t in_count, ccl_data
 
 template <typename T>
 ccl_status_t do_reduction_null(const void* in_buf, size_t in_count, void* inout_buf,
-                               size_t* out_count, ccl_datatype_t dtype, const ccl_fn_context_t* ctx)
+                               size_t* out_count, ccl_datatype_t dtype, const ccl::fn_context* ctx)
 {
     size_t buf_idx;
     ASSERT(ctx->offset < COUNT * get_dtype_size(dtype),
@@ -202,7 +202,7 @@ ccl_status_t do_reduction_null(const void* in_buf, size_t in_count, void* inout_
 
 template <typename T>
 ccl_status_t do_reduction_custom(const void* in_buf, size_t in_count, void* inout_buf,
-                                 size_t* out_count, ccl_datatype_t dtype, const ccl_fn_context_t* ctx)
+                                 size_t* out_count, ccl_datatype_t dtype, const ccl::fn_context* ctx)
 {
     size_t buf_idx;
     ASSERT(ctx->offset < COUNT * get_dtype_size(dtype),
@@ -251,15 +251,15 @@ ccl_status_t do_reduction_custom(const void* in_buf, size_t in_count, void* inou
 }
 
 template <typename T>
-int set_custom_reduction (ccl::allreduce_attr_t& coll_attr, typed_test_param<T>& param)
+int set_custom_reduction (ccl::allreduce_attr& coll_attr, typed_test_param<T>& param)
 {
     ccl_reduction_type customFuncName = param.test_conf.reduction_type;
     switch (customFuncName) {
         case RT_CUSTOM:
-            coll_attr.set<ccl::allreduce_op_attr_id::reduction_fn>(do_reduction_custom<T>);
+            coll_attr.set<ccl::allreduce_attr_id::reduction_fn>(do_reduction_custom<T>);
             break;
         case RT_CUSTOM_NULL:
-            coll_attr.set<ccl::allreduce_op_attr_id::reduction_fn>(do_reduction_null<T>);
+            coll_attr.set<ccl::allreduce_attr_id::reduction_fn>(do_reduction_null<T>);
             break;
         default:
             return TEST_FAILURE;
@@ -452,7 +452,7 @@ public:
         const ccl_test_conf& test_conf = param.get_conf();
         size_t count = param.elem_count;
         ccl::reduction reduction = (ccl::reduction) get_ccl_lib_reduction_type(test_conf);
-        auto attr = ccl::environment::instance().create_op_attr<ccl::allreduce_attr_t>();
+        auto attr = ccl::environment::instance().create_operation_attr<ccl::allreduce_attr>();
 
         for (size_t buf_idx = 0; buf_idx < param.buffer_count; buf_idx++)
         {
@@ -464,26 +464,26 @@ public:
 
             if (param.test_conf.prolog_type == PTYPE_T_TO_2X)
             {
-                attr.set<ccl::common_op_attr_id::prolog_fn>(do_prologue_T_2x<T>);
+                attr.set<ccl::operation_attr_id::prologue_fn>(do_prologue_T_2x<T>);
             }
 
             if (param.test_conf.epilog_type == ETYPE_T_TO_2X)
             {
-                attr.set<ccl::common_op_attr_id::epilog_fn>(do_epilogue_T_2x<T>);
+                attr.set<ccl::operation_attr_id::epilogue_fn>(do_epilogue_T_2x<T>);
             }
 
             if (param.test_conf.prolog_type == PTYPE_T_TO_CHAR && param.test_conf.epilog_type == ETYPE_CHAR_TO_T)
             {
-                attr.set<ccl::common_op_attr_id::prolog_fn>(do_prologue_T_to_char<T>);
-                attr.set<ccl::common_op_attr_id::epilog_fn>(do_epilogue_char_to_T<T>);
+                attr.set<ccl::operation_attr_id::prologue_fn>(do_prologue_T_to_char<T>);
+                attr.set<ccl::operation_attr_id::epilogue_fn>(do_epilogue_char_to_T<T>);
             }
             else if (param.test_conf.prolog_type != PTYPE_T_TO_CHAR && param.test_conf.epilog_type == ETYPE_CHAR_TO_T)
             {
-                attr.set<ccl::common_op_attr_id::epilog_fn>(nullptr);
+                attr.set<ccl::operation_attr_id::epilogue_fn>(nullptr);
             }
             else if (param.test_conf.prolog_type == PTYPE_T_TO_CHAR && param.test_conf.epilog_type != ETYPE_CHAR_TO_T)
             {
-                attr.set<ccl::common_op_attr_id::prolog_fn>(nullptr);
+                attr.set<ccl::operation_attr_id::prologue_fn>(nullptr);
             }
 
             if (reduction == ccl::reduction::custom)
@@ -521,30 +521,30 @@ public:
 
             //TODO make coll_attr again from run_derived, bceause we doen't remember it in `param`
             ccl::reduction reduction = (ccl::reduction) get_ccl_lib_reduction_type(test_conf);
-            auto attr = ccl::environment::instance().create_op_attr<ccl::allreduce_attr_t>();
+            auto attr = ccl::environment::instance().create_operation_attr<ccl::allreduce_attr>();
             param.prepare_coll_attr(attr, 0);
             if (param.test_conf.prolog_type == PTYPE_T_TO_2X)
             {
-                attr.set<ccl::common_op_attr_id::prolog_fn>(do_prologue_T_2x<T>);
+                attr.set<ccl::operation_attr_id::prologue_fn>(do_prologue_T_2x<T>);
             }
 
             if (param.test_conf.epilog_type == ETYPE_T_TO_2X)
             {
-                attr.set<ccl::common_op_attr_id::epilog_fn>(do_epilogue_T_2x<T>);
+                attr.set<ccl::operation_attr_id::epilogue_fn>(do_epilogue_T_2x<T>);
             }
 
             if (param.test_conf.prolog_type == PTYPE_T_TO_CHAR && param.test_conf.epilog_type == ETYPE_CHAR_TO_T)
             {
-                attr.set<ccl::common_op_attr_id::prolog_fn>(do_prologue_T_to_char<T>);
-                attr.set<ccl::common_op_attr_id::epilog_fn>(do_epilogue_char_to_T<T>);
+                attr.set<ccl::operation_attr_id::prologue_fn>(do_prologue_T_to_char<T>);
+                attr.set<ccl::operation_attr_id::epilogue_fn>(do_epilogue_char_to_T<T>);
             }
             else if (param.test_conf.prolog_type != PTYPE_T_TO_CHAR && param.test_conf.epilog_type == ETYPE_CHAR_TO_T)
             {
-                attr.set<ccl::common_op_attr_id::epilog_fn>(nullptr);
+                attr.set<ccl::operation_attr_id::epilogue_fn>(nullptr);
             }
             else if (param.test_conf.prolog_type == PTYPE_T_TO_CHAR && param.test_conf.epilog_type != ETYPE_CHAR_TO_T)
             {
-                attr.set<ccl::common_op_attr_id::prolog_fn>(nullptr);
+                attr.set<ccl::operation_attr_id::prologue_fn>(nullptr);
             }
 
             if (reduction == ccl::reduction::custom)
@@ -568,8 +568,8 @@ public:
                 if (((get_ccl_lib_reduction_type(test_conf) == ccl::reduction::custom ||
                     param.test_conf.prolog_type != PTYPE_NULL ||
                     param.test_conf.epilog_type != ETYPE_NULL) &&
-                            (attr.get<ccl::common_op_attr_id::prolog_fn>().get() != nullptr ||
-                                attr.get<ccl::common_op_attr_id::epilog_fn>().get() != nullptr)))
+                            (attr.get<ccl::operation_attr_id::prologue_fn>().get() != nullptr ||
+                                attr.get<ccl::operation_attr_id::epilogue_fn>().get() != nullptr)))
                 {
                     for (auto it : glob_match_id)
                     {

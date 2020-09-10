@@ -1,7 +1,7 @@
 #include <algorithm>
 #include <sstream>
 
-#include "native_device_api/l0/base_impl.hpp"
+#include "oneapi/ccl/native_device_api/l0/base_impl.hpp"
 
 namespace native {
 

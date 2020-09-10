@@ -5,7 +5,7 @@ void run_collective(const char* cmd_name,
                     const std::vector<float>& send_buf,
                     std::vector<float>& recv_buf,
                     ccl::communicator& comm,
-                    ccl::reduce_attr_t& coll_attr)
+                    ccl::reduce_attr& coll_attr)
 {
     std::chrono::system_clock::duration exec_time{0};
     float expected = (comm.size() - 1) * (static_cast<float>(comm.size()) / 2);
@@ -58,30 +58,30 @@ int main()
 
     /* create CCL internal KVS */
     ccl::shared_ptr_class<ccl::kvs> kvs;
-    ccl::kvs::addr_t master_addr;
+    ccl::kvs::address_type main_addr;
     if (rank == 0)
     {
         kvs = env.create_main_kvs();
-        master_addr = kvs->get_addr();
-        MPI_Bcast((void *)master_addr.data(), master_addr.size(), MPI_BYTE, 0, MPI_COMM_WORLD);
+        main_addr = kvs->get_address();
+        MPI_Bcast((void *)main_addr.data(), main_addr.size(), MPI_BYTE, 0, MPI_COMM_WORLD);
     }
     else
     {
-        MPI_Bcast((void *)master_addr.data(), master_addr.size(), MPI_BYTE, 0, MPI_COMM_WORLD);
-        kvs = env.create_kvs(master_addr);
+        MPI_Bcast((void *)main_addr.data(), main_addr.size(), MPI_BYTE, 0, MPI_COMM_WORLD);
+        kvs = env.create_kvs(main_addr);
     }
 
     auto comm = env.create_communicator(size, rank, kvs);
-    auto coll_attr = ccl::environment::instance().create_op_attr<ccl::reduce_attr_t>();
+    auto coll_attr = ccl::environment::instance().create_operation_attr<ccl::reduce_attr>();
 
     MSG_LOOP(comm,
         std::vector<float> send_buf(msg_count, static_cast<float>(comm.rank()));
         std::vector<float> recv_buf(msg_count);
-        coll_attr.set<ccl::common_op_attr_id::to_cache>(0);
+        coll_attr.set<ccl::operation_attr_id::to_cache>(0);
         run_collective("warmup_reduce", send_buf, recv_buf, comm, coll_attr);
-        coll_attr.set<ccl::common_op_attr_id::to_cache>(1);
+        coll_attr.set<ccl::operation_attr_id::to_cache>(1);
         run_collective("persistent_reduce", send_buf, recv_buf, comm, coll_attr);
-        coll_attr.set<ccl::common_op_attr_id::to_cache>(0);
+        coll_attr.set<ccl::operation_attr_id::to_cache>(0);
         run_collective("regular_reduce", send_buf, recv_buf, comm, coll_attr);
     );
 

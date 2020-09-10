@@ -1,5 +1,5 @@
-#include "ccl_types.hpp"
-#include "ccl_type_traits.hpp"
+#include "oneapi/ccl/ccl_types.hpp"
+#include "oneapi/ccl/ccl_type_traits.hpp"
 #include "typed_base_communicator_impl.hpp"
 #include "common/comm/l0/communicator/process_group/process_a2a_communicator.hpp"
 #include "common/comm/l0/communicator/process_group/process_ring_communicator.hpp"
@@ -11,7 +11,7 @@ using namespace ccl;
 process_a2a_communicator::process_a2a_communicator(ccl::unified_device_type&& device,
                                                      size_t thread_idx,
                                                      size_t process_idx,
-                                                     const ccl::device_comm_split_attr_t& attr) :
+                                                     const ccl::device_comm_split_attr& attr) :
  base_t(std::move(device), thread_idx, process_idx, /*comm_attr, */attr)
 {
 }
@@ -21,8 +21,7 @@ void process_a2a_communicator::visit(ccl::gpu_comm_attr& comm_attr)
 }
 
 
-ccl::request_t process_a2a_communicator::barrier(const ccl::barrier_attr_t& attr,
-                 ccl::stream::impl_value_t& op_stream,
+ccl::request_t process_a2a_communicator::barrier(ccl::stream::impl_value_t& stream, const ccl::barrier_attr& attr,
                  const ccl::vector_class<ccl::event>& deps)
 {
     return {};
@@ -35,9 +34,9 @@ process_a2a_communicator::allgatherv_impl(const void* send_buf,
                                                        size_t send_count,
                                                        void* recv_buf,
                                                        const ccl::vector_class<size_t>& recv_counts,
-                                                       ccl_datatype_t dtype,
-                                                       const ccl::allgatherv_attr_t& attr,
-                                                       ccl::stream::impl_value_t& stream,
+                                                       ccl::datatype dtype,
+                                                       ccl::stream::impl_value_t& stream, const ccl::allgatherv_attr& attr,
+                                                       
                                                        const ccl::vector_class<ccl::event>& deps)
 {
     return {};
@@ -47,9 +46,9 @@ process_a2a_communicator::allgatherv_impl(const void* send_buf,
                                              size_t send_count,
                                              const ccl::vector_class<void*>& recv_bufs,
                                             const ccl::vector_class<size_t>& recv_counts,
-                                             ccl_datatype_t dtype,
-                                             const ccl::allgatherv_attr_t& attr,
-                                             ccl::stream::impl_value_t& stream,
+                                             ccl::datatype dtype,
+                                             ccl::stream::impl_value_t& stream, const ccl::allgatherv_attr& attr,
+                                             
                                              const ccl::vector_class<ccl::event>& deps)
 {
     return {};
@@ -62,10 +61,10 @@ ccl::coll_request_t
 process_a2a_communicator::allreduce_impl(const void* send_buf,
                                                       void* recv_buf,
                                                       size_t count,
-                                                      ccl_datatype_t dtype,
+                                                      ccl::datatype dtype,
                                                       ccl::reduction reduction,
-                                                      const ccl::allreduce_attr_t& attr,
-                                                      ccl::stream::impl_value_t& stream,
+                                                      ccl::stream::impl_value_t& stream, const ccl::allreduce_attr& attr,
+                                                      
                                                       const ccl::vector_class<ccl::event>& deps)
 {
     return {};
@@ -77,9 +76,9 @@ ccl::coll_request_t
 process_a2a_communicator::alltoall_impl(const void* send_buf,
                                                      void* recv_buf,
                                                      size_t count,
-                                                     ccl_datatype_t dtype,
-                                                     const ccl::alltoall_attr_t& attr,
-                                                     ccl::stream::impl_value_t& stream,
+                                                     ccl::datatype dtype,
+                                                     ccl::stream::impl_value_t& stream, const ccl::alltoall_attr& attr,
+                                                     
                                                      const ccl::vector_class<ccl::event>& deps)
 {
     return {};
@@ -88,9 +87,9 @@ ccl::coll_request_t
 process_a2a_communicator::alltoall_impl(const ccl::vector_class<void*>& send_buf,
                        const ccl::vector_class<void*>& recv_buf,
                        size_t count,
-                       ccl_datatype_t dtype,
-                       const ccl::alltoall_attr_t& attr/* = alltoall_attr_t()*/,
-                       ccl::stream::impl_value_t op_stream,
+                       ccl::datatype dtype,
+                       ccl::stream::impl_value_t& stream,
+                       const ccl::alltoall_attr& attr,
                        const ccl::vector_class<ccl::event>& deps)
 {
     return {};
@@ -104,9 +103,9 @@ process_a2a_communicator::alltoallv_impl(const void* send_buf,
                                                       const ccl::vector_class<size_t>& send_counts,
                                                       void* recv_buf,
                                                       const ccl::vector_class<size_t>& recv_counts,
-                                                      ccl_datatype_t dtype,
-                                                      const ccl::alltoallv_attr_t& attr,
-                                                      ccl::stream::impl_value_t& stream,
+                                                      ccl::datatype dtype,
+                                                      ccl::stream::impl_value_t& stream, const ccl::alltoallv_attr& attr,
+                                                      
                                                       const ccl::vector_class<ccl::event>& deps)
 {
     return {};
@@ -116,9 +115,9 @@ process_a2a_communicator::alltoallv_impl(const ccl::vector_class<void*>& send_bu
                                                  const ccl::vector_class<size_t>& send_counts,
                                                  ccl::vector_class<void*> recv_buf,
                                                  const ccl::vector_class<size_t>& recv_counts,
-                                                 ccl_datatype_t dtype,
-                                                 const ccl::alltoallv_attr_t& attr,
-                                                 ccl::stream::impl_value_t& stream,
+                                                 ccl::datatype dtype,
+                                                 ccl::stream::impl_value_t& stream, const ccl::alltoallv_attr& attr,
+                                                 
                                                  const ccl::vector_class<ccl::event>& dep)
 {
     return {};
@@ -129,12 +128,12 @@ process_a2a_communicator::alltoallv_impl(const ccl::vector_class<void*>& send_bu
 
 /* bcast */
 ccl::coll_request_t
-process_a2a_communicator::bcast_impl(void* buf,
+process_a2a_communicator::broadcast_impl(void* buf,
                                                   size_t count,
-                                                  ccl_datatype_t dtype,
+                                                  ccl::datatype dtype,
                                                   size_t root,
-                                                  const ccl::bcast_attr_t& attr,
-                                                  ccl::stream::impl_value_t& stream,
+                                                  ccl::stream::impl_value_t& stream, const ccl::broadcast_attr& attr,
+                                                  
                                                   const ccl::vector_class<ccl::event>& deps)
 {
     return {};
@@ -145,11 +144,11 @@ ccl::coll_request_t
 process_a2a_communicator::reduce_impl(const void* send_buf,
                                                    void* recv_buf,
                                                    size_t count,
-                                                   ccl_datatype_t dtype,
+                                                   ccl::datatype dtype,
                                                    ccl::reduction reduction,
                                                    size_t root,
-                                                   const ccl::reduce_attr_t& attr,
-                                                   ccl::stream::impl_value_t& stream,
+                                                   ccl::stream::impl_value_t& stream, const ccl::reduce_attr& attr,
+                                                   
                                                    const ccl::vector_class<ccl::event>& deps)
 {
     return {};
@@ -163,10 +162,9 @@ ccl::request_t
 process_a2a_communicator::reduce_scatter_impl(const void* send_buf,
                              void* recv_buf,
                              size_t recv_count,
-                             ccl_datatype_t dtype,
+                             ccl::datatype dtype,
                              ccl::reduction reduction,
-                             const ccl::reduce_scatter_attr_t& attr/* = reduce_scatter_attr_t()*/,
-                             ccl::stream::impl_value_t& op_stream,
+                             ccl::stream::impl_value_t& stream, const ccl::reduce_scatter_attr& attr,
                              const ccl::vector_class<ccl::event>& deps)
 {
     return {};
@@ -181,11 +179,11 @@ process_a2a_communicator::sparse_allreduce_impl(const void* send_ind_buf, size_t
                                                       const void* send_val_buf, size_t send_val_count,
                                                       void* recv_ind_buf, size_t recv_ind_count,
                                                       void* recv_val_buf, size_t recv_val_count,
-                                                      ccl_datatype_t index_dtype,
-                                                      ccl_datatype_t value_dtype,
+                                                      ccl::datatype index_dtype,
+                                                      ccl::datatype value_dtype,
                                                       ccl::reduction reduction,
-                                                      const ccl::sparse_allreduce_attr_t& attr,
-                                                      ccl::stream::impl_value_t& stream, const ccl::vector_class<ccl::event>& deps)
+                                                      ccl::stream::impl_value_t& stream, const ccl::sparse_allreduce_attr& attr,
+                                                       const ccl::vector_class<ccl::event>& deps)
 {
     return {};
 }
@@ -200,8 +198,8 @@ process_a2a_communicator::allgatherv_impl(const buffer_type* send_buf,
                                                        size_t send_count,
                                                        buffer_type* recv_buf,
                                                        const ccl::vector_class<size_t>& recv_counts,
-                                                       const ccl::allgatherv_attr_t& attr,
-                                                       ccl::stream::impl_value_t& stream, const ccl::vector_class<ccl::event>& deps)
+                                                       ccl::stream::impl_value_t& stream, const ccl::allgatherv_attr& attr,
+                                                        const ccl::vector_class<ccl::event>& deps)
 {
     return {};
 }
@@ -211,8 +209,8 @@ process_a2a_communicator::allgatherv_impl(const buffer_type* send_buf,
                                              size_t send_count,
                                              ccl::vector_class<buffer_type*>& recv_buf,
                                              const ccl::vector_class<size_t>& recv_counts,
-                                             const ccl::allgatherv_attr_t& attr,
-                                             ccl::stream::impl_value_t& stream,
+                                             ccl::stream::impl_value_t& stream, const ccl::allgatherv_attr& attr,
+                                             
                                              const ccl::vector_class<ccl::event>& deps)
 {
     return {};
@@ -224,8 +222,8 @@ process_a2a_communicator::allgatherv_impl(const buffer_type& send_buf,
                                                        size_t send_count,
                                                        buffer_type& recv_buf,
                                                        const ccl::vector_class<size_t>& recv_counts,
-                                                       const ccl::allgatherv_attr_t& attr,
-                                                       ccl::stream::impl_value_t& stream, const ccl::vector_class<ccl::event>& deps)
+                                                       ccl::stream::impl_value_t& stream, const ccl::allgatherv_attr& attr,
+                                                        const ccl::vector_class<ccl::event>& deps)
 {
     return {};
 }
@@ -234,8 +232,8 @@ ccl::request_t process_a2a_communicator::allgatherv_impl(const buffer_type& send
                                              size_t send_count,
                                              ccl::vector_class<ccl::reference_wrapper_class<buffer_type>>& recv_buf,
                                              const ccl::vector_class<size_t>& recv_counts,
-                                             const ccl::allgatherv_attr_t& attr,
-                                             ccl::stream::impl_value_t& stream,
+                                             ccl::stream::impl_value_t& stream, const ccl::allgatherv_attr& attr,
+                                             
                                              const ccl::vector_class<ccl::event>& deps)
 {
     return {};
@@ -249,8 +247,8 @@ process_a2a_communicator::allreduce_impl(const buffer_type* send_buf,
                                                       buffer_type* recv_buf,
                                                       size_t count,
                                                       ccl::reduction reduction,
-                                                      const ccl::allreduce_attr_t& attr,
-                                                      ccl::stream::impl_value_t& stream, const ccl::vector_class<ccl::event>& deps)
+                                                      ccl::stream::impl_value_t& stream, const ccl::allreduce_attr& attr,
+                                                       const ccl::vector_class<ccl::event>& deps)
 {
     return {};
 }
@@ -261,8 +259,8 @@ process_a2a_communicator::allreduce_impl(const buffer_type& send_buf,
                                                       buffer_type& recv_buf,
                                                       size_t count,
                                                       ccl::reduction reduction,
-                                                      const ccl::allreduce_attr_t& attr,
-                                                      ccl::stream::impl_value_t& stream, const ccl::vector_class<ccl::event>& deps)
+                                                      ccl::stream::impl_value_t& stream, const ccl::allreduce_attr& attr,
+                                                       const ccl::vector_class<ccl::event>& deps)
 {
     return {};
 }
@@ -274,8 +272,8 @@ ccl::coll_request_t
 process_a2a_communicator::alltoall_impl(const buffer_type* send_buf,
                                                      buffer_type* recv_buf,
                                                      size_t count,
-                                                     const ccl::alltoall_attr_t& attr,
-                                                     ccl::stream::impl_value_t& stream, const ccl::vector_class<ccl::event>& deps)
+                                                     ccl::stream::impl_value_t& stream, const ccl::alltoall_attr& attr,
+                                                      const ccl::vector_class<ccl::event>& deps)
 {
     return {};
 }
@@ -284,8 +282,8 @@ ccl::request_t
 process_a2a_communicator::alltoall_impl(const ccl::vector_class<buffer_type*>& send_buf,
                                                    const ccl::vector_class<buffer_type*>& recv_buf,
                                                    size_t count,
-                                                   const ccl::alltoall_attr_t& attr,
-                                                   ccl::stream::impl_value_t& stream,
+                                                   ccl::stream::impl_value_t& stream, const ccl::alltoall_attr& attr,
+                                                   
                                                    const ccl::vector_class<ccl::event>& deps)
 {
     return {};
@@ -296,8 +294,8 @@ ccl::coll_request_t
 process_a2a_communicator::alltoall_impl(const buffer_type& send_buf,
                                                      buffer_type& recv_buf,
                                                      size_t count,
-                                                     const ccl::alltoall_attr_t& attr,
-                                                     ccl::stream::impl_value_t& stream, const ccl::vector_class<ccl::event>& deps)
+                                                     ccl::stream::impl_value_t& stream, const ccl::alltoall_attr& attr,
+                                                      const ccl::vector_class<ccl::event>& deps)
 {
     return {};
 }
@@ -306,8 +304,8 @@ ccl::request_t
 process_a2a_communicator::alltoall_impl(const ccl::vector_class<ccl::reference_wrapper_class<buffer_type>>& send_buf,
                               const ccl::vector_class<ccl::reference_wrapper_class<buffer_type>>& recv_buf,
                                                 size_t count,
-                                                const ccl::alltoall_attr_t& attr,
-                                                ccl::stream::impl_value_t& stream,
+                                                ccl::stream::impl_value_t& stream, const ccl::alltoall_attr& attr,
+                                                
                                                 const ccl::vector_class<ccl::event>& dep)
 {
     return {};
@@ -322,8 +320,8 @@ process_a2a_communicator::alltoallv_impl(const buffer_type* send_buf,
                                                       const ccl::vector_class<size_t>& send_counts,
                                                       buffer_type* recv_buf,
                                                       const ccl::vector_class<size_t>& recv_counts,
-                                                      const ccl::alltoallv_attr_t& attr,
-                                                      ccl::stream::impl_value_t& stream, const ccl::vector_class<ccl::event>& deps)
+                                                      ccl::stream::impl_value_t& stream, const ccl::alltoallv_attr& attr,
+                                                       const ccl::vector_class<ccl::event>& deps)
 {
     return {};
 }
@@ -333,8 +331,8 @@ process_a2a_communicator::alltoallv_impl(const ccl::vector_class<buffer_type*>& 
                                                  const ccl::vector_class<size_t>& send_counts,
                                                  const ccl::vector_class<buffer_type*>& recv_buf,
                                                  const ccl::vector_class<size_t>& recv_counts,
-                                                 const ccl::alltoallv_attr_t& attr,
-                                                 ccl::stream::impl_value_t& stream,
+                                                 ccl::stream::impl_value_t& stream, const ccl::alltoallv_attr& attr,
+                                                 
                                                  const ccl::vector_class<ccl::event>& dep)
 {
     return {};
@@ -346,8 +344,8 @@ process_a2a_communicator::alltoallv_impl(const buffer_type& send_buf,
                                                       const ccl::vector_class<size_t>& send_counts,
                                                       buffer_type& recv_buf,
                                                       const ccl::vector_class<size_t>& recv_counts,
-                                                      const ccl::alltoallv_attr_t& attr,
-                                                      ccl::stream::impl_value_t& stream, const ccl::vector_class<ccl::event>& deps)
+                                                      ccl::stream::impl_value_t& stream, const ccl::alltoallv_attr& attr,
+                                                       const ccl::vector_class<ccl::event>& deps)
 {
     return {};
 }
@@ -357,8 +355,8 @@ process_a2a_communicator::alltoallv_impl(const ccl::vector_class<ccl::reference_
                              const ccl::vector_class<size_t>& send_counts,
                              const ccl::vector_class<ccl::reference_wrapper_class<buffer_type>>& recv_buf,
                              const ccl::vector_class<size_t>& recv_counts,
-                             const ccl::alltoallv_attr_t& attr,
-                             ccl::stream::impl_value_t& stream,
+                             ccl::stream::impl_value_t& stream, const ccl::alltoallv_attr& attr,
+                             
                              const ccl::vector_class<ccl::event>& dep)
 {
     return {};
@@ -370,22 +368,22 @@ process_a2a_communicator::alltoallv_impl(const ccl::vector_class<ccl::reference_
 /* bcast */
 template<class buffer_type>
 ccl::coll_request_t
-process_a2a_communicator::bcast_impl(buffer_type* buf,
+process_a2a_communicator::broadcast_impl(buffer_type* buf,
                                                   size_t count,
                                                   size_t root,
-                                                  const ccl::bcast_attr_t& attr,
-                                                  ccl::stream::impl_value_t& stream, const ccl::vector_class<ccl::event>& deps)
+                                                  ccl::stream::impl_value_t& stream, const ccl::broadcast_attr& attr,
+                                                   const ccl::vector_class<ccl::event>& deps)
 {
     return {};
 }
 
 template<class buffer_type>
 ccl::coll_request_t
-process_a2a_communicator::bcast_impl(buffer_type& buf,
+process_a2a_communicator::broadcast_impl(buffer_type& buf,
                                                   size_t count,
                                                   size_t root,
-                                                  const ccl::bcast_attr_t& attr,
-                                                  ccl::stream::impl_value_t& stream, const ccl::vector_class<ccl::event>& deps)
+                                                  ccl::stream::impl_value_t& stream, const ccl::broadcast_attr& attr,
+                                                   const ccl::vector_class<ccl::event>& deps)
 {
     return {};
 }
@@ -399,8 +397,8 @@ process_a2a_communicator::reduce_impl(const buffer_type* send_buf,
                                                    size_t count,
                                                    ccl::reduction reduction,
                                                    size_t root,
-                                                   const ccl::reduce_attr_t& attr,
-                                                   ccl::stream::impl_value_t& stream, const ccl::vector_class<ccl::event>& deps)
+                                                   ccl::stream::impl_value_t& stream, const ccl::reduce_attr& attr,
+                                                    const ccl::vector_class<ccl::event>& deps)
 {
     return {};
 }
@@ -412,8 +410,8 @@ process_a2a_communicator::reduce_impl(const buffer_type& send_buf,
                                                    size_t count,
                                                    ccl::reduction reduction,
                                                    size_t root,
-                                                   const ccl::reduce_attr_t& attr,
-                                                   ccl::stream::impl_value_t& stream, const ccl::vector_class<ccl::event>& deps)
+                                                   ccl::stream::impl_value_t& stream, const ccl::reduce_attr& attr,
+                                                    const ccl::vector_class<ccl::event>& deps)
 {
     return {};
 }
@@ -424,8 +422,7 @@ process_a2a_communicator::reduce_scatter_impl(const buffer_type* send_buf,
                              buffer_type* recv_buf,
                              size_t recv_count,
                              ccl::reduction reduction,
-                             const ccl::reduce_scatter_attr_t& attr/* = reduce_scatter_attr_t()*/,
-                             ccl::stream::impl_value_t& op_stream,
+                             ccl::stream::impl_value_t& stream, const ccl::reduce_scatter_attr& attr,
                              const ccl::vector_class<ccl::event>& deps)
 {
     return {};
@@ -436,8 +433,7 @@ process_a2a_communicator::reduce_scatter_impl(const buffer_type& send_buf,
                              buffer_type& recv_buf,
                              size_t recv_count,
                              ccl::reduction reduction,
-                             const ccl::reduce_scatter_attr_t& attr/* = reduce_scatter_attr_t()*/,
-                             ccl::stream::impl_value_t& op_stream,
+                             ccl::stream::impl_value_t& stream, const ccl::reduce_scatter_attr& attr,
                              const ccl::vector_class<ccl::event>& deps)
 {
     return {};
@@ -455,8 +451,8 @@ process_a2a_communicator::sparse_allreduce_impl(
                                     index_buffer_type* recv_ind_buf, size_t recv_ind_count,
                                     value_buffer_type* recv_val_buf, size_t recv_val_count,
                                     ccl::reduction reduction,
-                                    const ccl::sparse_allreduce_attr_t& attr,
-                                    ccl::stream::impl_value_t& stream, const ccl::vector_class<ccl::event>& deps)
+                                    ccl::stream::impl_value_t& stream, const ccl::sparse_allreduce_attr& attr,
+                                     const ccl::vector_class<ccl::event>& deps)
 {
     return {};
 }
@@ -470,8 +466,8 @@ process_a2a_communicator::sparse_allreduce_impl(
                                     index_buffer_container_type& recv_ind_buf, size_t recv_ind_count,
                                     value_buffer_container_type& recv_val_buf, size_t recv_val_count,
                                     ccl::reduction reduction,
-                                    const ccl::sparse_allreduce_attr_t& attr,
-                                    ccl::stream::impl_value_t& stream, const ccl::vector_class<ccl::event>& deps)
+                                    ccl::stream::impl_value_t& stream, const ccl::sparse_allreduce_attr& attr,
+                                     const ccl::vector_class<ccl::event>& deps)
 {
     return {};
 }
@@ -543,7 +539,7 @@ DEVICE_COMM_INTERFACE_SPARSE_ALLREDUCE_EXPLICIT_INSTANTIATION(process_a2a_commun
 process_ring_communicator::process_ring_communicator(ccl::unified_device_type&& device,
                                                      size_t thread_idx,
                                                      size_t process_idx,
-                                                     const ccl::device_comm_split_attr_t& attr) :
+                                                     const ccl::device_comm_split_attr& attr) :
  base_t(std::move(device), thread_idx, process_idx, /*comm_attr, */attr)
 {
 }
@@ -552,8 +548,7 @@ void process_ring_communicator::visit(ccl::gpu_comm_attr& comm_attr)
 {
 }
 
-ccl::request_t process_ring_communicator::barrier(const ccl::barrier_attr_t& attr,
-                 ccl::stream::impl_value_t& op_stream,
+ccl::request_t process_ring_communicator::barrier(ccl::stream::impl_value_t& stream, const ccl::barrier_attr& attr,
                  const ccl::vector_class<ccl::event>& deps)
 {
     return {};
@@ -566,9 +561,9 @@ process_ring_communicator::allgatherv_impl(const void* send_buf,
                                                        size_t send_count,
                                                        void* recv_buf,
                                                        const ccl::vector_class<size_t>& recv_counts,
-                                                       ccl_datatype_t dtype,
-                                                       const ccl::allgatherv_attr_t& attr,
-                                                       ccl::stream::impl_value_t& stream,
+                                                       ccl::datatype dtype,
+                                                       ccl::stream::impl_value_t& stream, const ccl::allgatherv_attr& attr,
+                                                       
                                                        const ccl::vector_class<ccl::event>& deps)
 {
     return {};
@@ -579,10 +574,10 @@ ccl::coll_request_t
 process_ring_communicator::allreduce_impl(const void* send_buf,
                                                       void* recv_buf,
                                                       size_t count,
-                                                      ccl_datatype_t dtype,
+                                                      ccl::datatype dtype,
                                                       ccl::reduction reduction,
-                                                      const ccl::allreduce_attr_t& attr,
-                                                      ccl::stream::impl_value_t& stream,
+                                                      ccl::stream::impl_value_t& stream, const ccl::allreduce_attr& attr,
+                                                      
                                                       const ccl::vector_class<ccl::event>& deps)
 {
     return {};
@@ -594,9 +589,9 @@ ccl::coll_request_t
 process_ring_communicator::alltoall_impl(const void* send_buf,
                                                      void* recv_buf,
                                                      size_t count,
-                                                     ccl_datatype_t dtype,
-                                                     const ccl::alltoall_attr_t& attr,
-                                                     ccl::stream::impl_value_t& stream,
+                                                     ccl::datatype dtype,
+                                                     ccl::stream::impl_value_t& stream, const ccl::alltoall_attr& attr,
+                                                     
                                                      const ccl::vector_class<ccl::event>& deps)
 {
     return {};
@@ -609,9 +604,9 @@ process_ring_communicator::alltoallv_impl(const void* send_buf,
                                                       const ccl::vector_class<size_t>& send_counts,
                                                       void* recv_buf,
                                                       const ccl::vector_class<size_t>& recv_counts,
-                                                      ccl_datatype_t dtype,
-                                                      const ccl::alltoallv_attr_t& attr,
-                                                      ccl::stream::impl_value_t& stream,
+                                                      ccl::datatype dtype,
+                                                      ccl::stream::impl_value_t& stream, const ccl::alltoallv_attr& attr,
+                                                      
                                                       const ccl::vector_class<ccl::event>& deps)
 {
     return {};
@@ -621,9 +616,9 @@ process_ring_communicator::alltoallv_impl(const ccl::vector_class<void*>& send_b
                                                  const ccl::vector_class<size_t>& send_counts,
                                                  ccl::vector_class<void*> recv_buf,
                                                  const ccl::vector_class<size_t>& recv_counts,
-                                                 ccl_datatype_t dtype,
-                                                 const ccl::alltoallv_attr_t& attr,
-                                                 ccl::stream::impl_value_t& stream,
+                                                 ccl::datatype dtype,
+                                                 ccl::stream::impl_value_t& stream, const ccl::alltoallv_attr& attr,
+                                                 
                                                  const ccl::vector_class<ccl::event>& dep)
 {
     return {};
@@ -633,9 +628,9 @@ ccl::coll_request_t
 process_ring_communicator::alltoall_impl(const ccl::vector_class<void*>& send_buf,
                        const ccl::vector_class<void*>& recv_buf,
                        size_t count,
-                       ccl_datatype_t dtype,
-                       const ccl::alltoall_attr_t& attr/* = alltoall_attr_t()*/,
-                       ccl::stream::impl_value_t op_stream,
+                       ccl::datatype dtype,
+                       ccl::stream::impl_value_t& stream,
+                       const ccl::alltoall_attr& attr,
                        const ccl::vector_class<ccl::event>& deps)
 {
     return {};
@@ -645,12 +640,12 @@ process_ring_communicator::alltoall_impl(const ccl::vector_class<void*>& send_bu
 
 /* bcast */
 ccl::coll_request_t
-process_ring_communicator::bcast_impl(void* buf,
+process_ring_communicator::broadcast_impl(void* buf,
                                                   size_t count,
-                                                  ccl_datatype_t dtype,
+                                                  ccl::datatype dtype,
                                                   size_t root,
-                                                  const ccl::bcast_attr_t& attr,
-                                                  ccl::stream::impl_value_t& stream,
+                                                  ccl::stream::impl_value_t& stream, const ccl::broadcast_attr& attr,
+                                                  
                                                   const ccl::vector_class<ccl::event>& deps)
 {
     return {};
@@ -661,11 +656,11 @@ ccl::coll_request_t
 process_ring_communicator::reduce_impl(const void* send_buf,
                                                    void* recv_buf,
                                                    size_t count,
-                                                   ccl_datatype_t dtype,
+                                                   ccl::datatype dtype,
                                                    ccl::reduction reduction,
                                                    size_t root,
-                                                   const ccl::reduce_attr_t& attr,
-                                                   ccl::stream::impl_value_t& stream,
+                                                   ccl::stream::impl_value_t& stream, const ccl::reduce_attr& attr,
+                                                   
                                                    const ccl::vector_class<ccl::event>& deps)
 {
     return {};
@@ -679,10 +674,9 @@ ccl::request_t
 process_ring_communicator::reduce_scatter_impl(const void* send_buf,
                              void* recv_buf,
                              size_t recv_count,
-                             ccl_datatype_t dtype,
+                             ccl::datatype dtype,
                              ccl::reduction reduction,
-                             const ccl::reduce_scatter_attr_t& attr/* = reduce_scatter_attr_t()*/,
-                             ccl::stream::impl_value_t& op_stream,
+                             ccl::stream::impl_value_t& stream, const ccl::reduce_scatter_attr& attr,
                              const ccl::vector_class<ccl::event>& deps)
 {
     return {};
@@ -698,11 +692,11 @@ process_ring_communicator::sparse_allreduce_impl(const void* send_ind_buf, size_
                                                       const void* send_val_buf, size_t send_val_count,
                                                       void* recv_ind_buf, size_t recv_ind_count,
                                                       void* recv_val_buf, size_t recv_val_count,
-                                                      ccl_datatype_t index_dtype,
-                                                      ccl_datatype_t value_dtype,
+                                                      ccl::datatype index_dtype,
+                                                      ccl::datatype value_dtype,
                                                       ccl::reduction reduction,
-                                                      const ccl::sparse_allreduce_attr_t& attr,
-                                                      ccl::stream::impl_value_t& stream, const ccl::vector_class<ccl::event>& deps)
+                                                      ccl::stream::impl_value_t& stream, const ccl::sparse_allreduce_attr& attr,
+                                                       const ccl::vector_class<ccl::event>& deps)
 {
     return {};
 }
@@ -716,8 +710,8 @@ process_ring_communicator::allgatherv_impl(const buffer_type* send_buf,
                                                        size_t send_count,
                                                        buffer_type* recv_buf,
                                                        const ccl::vector_class<size_t>& recv_counts,
-                                                       const ccl::allgatherv_attr_t& attr,
-                                                       ccl::stream::impl_value_t& stream, const ccl::vector_class<ccl::event>& deps)
+                                                       ccl::stream::impl_value_t& stream, const ccl::allgatherv_attr& attr,
+                                                        const ccl::vector_class<ccl::event>& deps)
 {
     return {};
 }
@@ -727,8 +721,8 @@ process_ring_communicator::allgatherv_impl(const buffer_type* send_buf,
                                              size_t send_count,
                                              ccl::vector_class<buffer_type*>& recv_buf,
                                              const ccl::vector_class<size_t>& recv_counts,
-                                             const ccl::allgatherv_attr_t& attr,
-                                             ccl::stream::impl_value_t& stream,
+                                             ccl::stream::impl_value_t& stream, const ccl::allgatherv_attr& attr,
+                                             
                                              const ccl::vector_class<ccl::event>& deps)
 {
     return {};
@@ -740,8 +734,8 @@ process_ring_communicator::allgatherv_impl(const buffer_type& send_buf,
                                                        size_t send_count,
                                                        buffer_type& recv_buf,
                                                        const ccl::vector_class<size_t>& recv_counts,
-                                                       const ccl::allgatherv_attr_t& attr,
-                                                       ccl::stream::impl_value_t& stream, const ccl::vector_class<ccl::event>& deps)
+                                                       ccl::stream::impl_value_t& stream, const ccl::allgatherv_attr& attr,
+                                                        const ccl::vector_class<ccl::event>& deps)
 {
     return {};
 }
@@ -750,8 +744,8 @@ ccl::request_t process_ring_communicator::allgatherv_impl(const buffer_type& sen
                                              size_t send_count,
                                              ccl::vector_class<ccl::reference_wrapper_class<buffer_type>>& recv_buf,
                                              const ccl::vector_class<size_t>& recv_counts,
-                                             const ccl::allgatherv_attr_t& attr,
-                                             ccl::stream::impl_value_t& stream,
+                                             ccl::stream::impl_value_t& stream, const ccl::allgatherv_attr& attr,
+                                             
                                              const ccl::vector_class<ccl::event>& deps)
 {
     return {};
@@ -761,9 +755,9 @@ process_ring_communicator::allgatherv_impl(const void* send_buf,
                                              size_t send_count,
                                              const ccl::vector_class<void*>& recv_bufs,
                                             const ccl::vector_class<size_t>& recv_counts,
-                                             ccl_datatype_t dtype,
-                                             const ccl::allgatherv_attr_t& attr,
-                                             ccl::stream::impl_value_t& stream,
+                                             ccl::datatype dtype,
+                                             ccl::stream::impl_value_t& stream, const ccl::allgatherv_attr& attr,
+                                             
                                              const ccl::vector_class<ccl::event>& deps)
 {
     return {};
@@ -779,8 +773,8 @@ process_ring_communicator::allreduce_impl(const buffer_type* send_buf,
                                                       buffer_type* recv_buf,
                                                       size_t count,
                                                       ccl::reduction reduction,
-                                                      const ccl::allreduce_attr_t& attr,
-                                                      ccl::stream::impl_value_t& stream, const ccl::vector_class<ccl::event>& deps)
+                                                      ccl::stream::impl_value_t& stream, const ccl::allreduce_attr& attr,
+                                                       const ccl::vector_class<ccl::event>& deps)
 {
     return {};
 }
@@ -791,8 +785,8 @@ process_ring_communicator::allreduce_impl(const buffer_type& send_buf,
                                                       buffer_type& recv_buf,
                                                       size_t count,
                                                       ccl::reduction reduction,
-                                                      const ccl::allreduce_attr_t& attr,
-                                                      ccl::stream::impl_value_t& stream, const ccl::vector_class<ccl::event>& deps)
+                                                      ccl::stream::impl_value_t& stream, const ccl::allreduce_attr& attr,
+                                                       const ccl::vector_class<ccl::event>& deps)
 {
     return {};
 }
@@ -804,8 +798,8 @@ ccl::coll_request_t
 process_ring_communicator::alltoall_impl(const buffer_type* send_buf,
                                                      buffer_type* recv_buf,
                                                      size_t count,
-                                                     const ccl::alltoall_attr_t& attr,
-                                                     ccl::stream::impl_value_t& stream, const ccl::vector_class<ccl::event>& deps)
+                                                     ccl::stream::impl_value_t& stream, const ccl::alltoall_attr& attr,
+                                                      const ccl::vector_class<ccl::event>& deps)
 {
     return {};
 }
@@ -814,8 +808,8 @@ ccl::request_t
 process_ring_communicator::alltoall_impl(const ccl::vector_class<buffer_type*>& send_buf,
                                                    const ccl::vector_class<buffer_type*>& recv_buf,
                                                    size_t count,
-                                                   const ccl::alltoall_attr_t& attr,
-                                                   ccl::stream::impl_value_t& stream,
+                                                   ccl::stream::impl_value_t& stream, const ccl::alltoall_attr& attr,
+                                                   
                                                    const ccl::vector_class<ccl::event>& deps)
 {
     return {};
@@ -826,8 +820,8 @@ ccl::coll_request_t
 process_ring_communicator::alltoall_impl(const buffer_type& send_buf,
                                                      buffer_type& recv_buf,
                                                      size_t count,
-                                                     const ccl::alltoall_attr_t& attr,
-                                                     ccl::stream::impl_value_t& stream, const ccl::vector_class<ccl::event>& deps)
+                                                     ccl::stream::impl_value_t& stream, const ccl::alltoall_attr& attr,
+                                                      const ccl::vector_class<ccl::event>& deps)
 {
     return {};
 }
@@ -836,8 +830,8 @@ ccl::request_t
 process_ring_communicator::alltoall_impl(const ccl::vector_class<ccl::reference_wrapper_class<buffer_type>>& send_buf,
                               const ccl::vector_class<ccl::reference_wrapper_class<buffer_type>>& recv_buf,
                                                 size_t count,
-                                                const ccl::alltoall_attr_t& attr,
-                                                ccl::stream::impl_value_t& stream,
+                                                ccl::stream::impl_value_t& stream, const ccl::alltoall_attr& attr,
+                                                
                                                 const ccl::vector_class<ccl::event>& dep)
 {
     return {};
@@ -852,8 +846,8 @@ process_ring_communicator::alltoallv_impl(const buffer_type* send_buf,
                                                       const ccl::vector_class<size_t>& send_counts,
                                                       buffer_type* recv_buf,
                                                       const ccl::vector_class<size_t>& recv_counts,
-                                                      const ccl::alltoallv_attr_t& attr,
-                                                      ccl::stream::impl_value_t& stream, const ccl::vector_class<ccl::event>& deps)
+                                                      ccl::stream::impl_value_t& stream, const ccl::alltoallv_attr& attr,
+                                                       const ccl::vector_class<ccl::event>& deps)
 {
     return {};
 }
@@ -863,8 +857,8 @@ process_ring_communicator::alltoallv_impl(const ccl::vector_class<buffer_type*>&
                                                  const ccl::vector_class<size_t>& send_counts,
                                                  const ccl::vector_class<buffer_type*>& recv_buf,
                                                  const ccl::vector_class<size_t>& recv_counts,
-                                                 const ccl::alltoallv_attr_t& attr,
-                                                 ccl::stream::impl_value_t& stream,
+                                                 ccl::stream::impl_value_t& stream, const ccl::alltoallv_attr& attr,
+                                                 
                                                  const ccl::vector_class<ccl::event>& dep)
 {
     return {};
@@ -876,8 +870,8 @@ process_ring_communicator::alltoallv_impl(const buffer_type& send_buf,
                                                       const ccl::vector_class<size_t>& send_counts,
                                                       buffer_type& recv_buf,
                                                       const ccl::vector_class<size_t>& recv_counts,
-                                                      const ccl::alltoallv_attr_t& attr,
-                                                      ccl::stream::impl_value_t& stream, const ccl::vector_class<ccl::event>& deps)
+                                                      ccl::stream::impl_value_t& stream, const ccl::alltoallv_attr& attr,
+                                                       const ccl::vector_class<ccl::event>& deps)
 {
     return {};
 }
@@ -887,8 +881,8 @@ process_ring_communicator::alltoallv_impl(const ccl::vector_class<ccl::reference
                              const ccl::vector_class<size_t>& send_counts,
                              const ccl::vector_class<ccl::reference_wrapper_class<buffer_type>>& recv_buf,
                              const ccl::vector_class<size_t>& recv_counts,
-                             const ccl::alltoallv_attr_t& attr,
-                             ccl::stream::impl_value_t& stream,
+                             ccl::stream::impl_value_t& stream, const ccl::alltoallv_attr& attr,
+                             
                              const ccl::vector_class<ccl::event>& dep)
 {
     return {};
@@ -900,22 +894,22 @@ process_ring_communicator::alltoallv_impl(const ccl::vector_class<ccl::reference
 /* bcast */
 template<class buffer_type>
 ccl::coll_request_t
-process_ring_communicator::bcast_impl(buffer_type* buf,
+process_ring_communicator::broadcast_impl(buffer_type* buf,
                                                   size_t count,
                                                   size_t root,
-                                                  const ccl::bcast_attr_t& attr,
-                                                  ccl::stream::impl_value_t& stream, const ccl::vector_class<ccl::event>& deps)
+                                                  ccl::stream::impl_value_t& stream, const ccl::broadcast_attr& attr,
+                                                   const ccl::vector_class<ccl::event>& deps)
 {
     return {};
 }
 
 template<class buffer_type>
 ccl::coll_request_t
-process_ring_communicator::bcast_impl(buffer_type& buf,
+process_ring_communicator::broadcast_impl(buffer_type& buf,
                                                   size_t count,
                                                   size_t root,
-                                                  const ccl::bcast_attr_t& attr,
-                                                  ccl::stream::impl_value_t& stream, const ccl::vector_class<ccl::event>& deps)
+                                                  ccl::stream::impl_value_t& stream, const ccl::broadcast_attr& attr,
+                                                   const ccl::vector_class<ccl::event>& deps)
 {
     return {};
 }
@@ -929,8 +923,8 @@ process_ring_communicator::reduce_impl(const buffer_type* send_buf,
                                                    size_t count,
                                                    ccl::reduction reduction,
                                                    size_t root,
-                                                   const ccl::reduce_attr_t& attr,
-                                                   ccl::stream::impl_value_t& stream, const ccl::vector_class<ccl::event>& deps)
+                                                   ccl::stream::impl_value_t& stream, const ccl::reduce_attr& attr,
+                                                    const ccl::vector_class<ccl::event>& deps)
 {
     return {};
 }
@@ -942,8 +936,8 @@ process_ring_communicator::reduce_impl(const buffer_type& send_buf,
                                                    size_t count,
                                                    ccl::reduction reduction,
                                                    size_t root,
-                                                   const ccl::reduce_attr_t& attr,
-                                                   ccl::stream::impl_value_t& stream, const ccl::vector_class<ccl::event>& deps)
+                                                   ccl::stream::impl_value_t& stream, const ccl::reduce_attr& attr,
+                                                    const ccl::vector_class<ccl::event>& deps)
 {
     return {};
 }
@@ -954,8 +948,7 @@ process_ring_communicator::reduce_scatter_impl(const buffer_type* send_buf,
                              buffer_type* recv_buf,
                              size_t recv_count,
                              ccl::reduction reduction,
-                             const ccl::reduce_scatter_attr_t& attr/* = reduce_scatter_attr_t()*/,
-                             ccl::stream::impl_value_t& op_stream,
+                             ccl::stream::impl_value_t& stream, const ccl::reduce_scatter_attr& attr,
                              const ccl::vector_class<ccl::event>& deps)
 {
     return {};
@@ -966,8 +959,7 @@ process_ring_communicator::reduce_scatter_impl(const buffer_type& send_buf,
                              buffer_type& recv_buf,
                              size_t recv_count,
                              ccl::reduction reduction,
-                             const ccl::reduce_scatter_attr_t& attr/* = reduce_scatter_attr_t()*/,
-                             ccl::stream::impl_value_t& op_stream,
+                             ccl::stream::impl_value_t& stream, const ccl::reduce_scatter_attr& attr,
                              const ccl::vector_class<ccl::event>& deps)
 {
     return {};
@@ -985,8 +977,8 @@ process_ring_communicator::sparse_allreduce_impl(
                                     index_buffer_type* recv_ind_buf, size_t recv_ind_count,
                                     value_buffer_type* recv_val_buf, size_t recv_val_count,
                                     ccl::reduction reduction,
-                                    const ccl::sparse_allreduce_attr_t& attr,
-                                    ccl::stream::impl_value_t& stream, const ccl::vector_class<ccl::event>& deps)
+                                    ccl::stream::impl_value_t& stream, const ccl::sparse_allreduce_attr& attr,
+                                     const ccl::vector_class<ccl::event>& deps)
 {
     return {};
 }
@@ -1000,8 +992,8 @@ process_ring_communicator::sparse_allreduce_impl(
                                     index_buffer_container_type& recv_ind_buf, size_t recv_ind_count,
                                     value_buffer_container_type& recv_val_buf, size_t recv_val_count,
                                     ccl::reduction reduction,
-                                    const ccl::sparse_allreduce_attr_t& attr,
-                                    ccl::stream::impl_value_t& stream, const ccl::vector_class<ccl::event>& deps)
+                                    ccl::stream::impl_value_t& stream, const ccl::sparse_allreduce_attr& attr,
+                                     const ccl::vector_class<ccl::event>& deps)
 {
     return {};
 }

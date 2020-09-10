@@ -1,6 +1,6 @@
 #pragma once
 
-#include "ccl_types.h"
+#include "oneapi/ccl/ccl_types.hpp"
 #include "common/log/log.hpp"
 #include "common/utils/spinlock.hpp"
 

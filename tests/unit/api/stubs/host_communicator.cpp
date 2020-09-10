@@ -20,7 +20,7 @@ void host_communicator::barrier_impl()
 }
 
 request_t
-host_communicator::barrier_impl(const barrier_attr_t& attr)
+host_communicator::barrier_impl(const barrier_attr& attr)
 {
     return {};
 }
