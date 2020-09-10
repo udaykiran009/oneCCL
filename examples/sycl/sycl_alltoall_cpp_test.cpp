@@ -14,6 +14,7 @@ int main(int argc, char **argv)
 
     cl::sycl::queue q;
     if (create_sycl_queue(argc, argv, q, stream_type) != 0) {
+        MPI_Finalize();
         return -1;
     }
 
@@ -35,7 +36,10 @@ int main(int argc, char **argv)
     }
 
     /* create SYCL communicator */
-    auto comm = ccl::environment::instance().create_single_device_communicator(size, rank, q, kvs);
+    auto ctx = q.get_context();
+    auto communcators = ccl::environment::instance().create_device_communicators(size,
+                    ccl::vector_class<ccl::pair_class<ccl::rank_t, cl::sycl::device>>{{rank, q.get_device()}}, ctx, kvs);
+    auto &comm = *communcators.begin();
 
     /* create SYCL stream */
     auto stream = ccl::environment::instance().create_stream(q);
@@ -71,8 +75,8 @@ int main(int argc, char **argv)
     comm.alltoall(sendbuf,
                    recvbuf,
                    COUNT,
-                   attr,
-                   stream)->wait();
+                   stream,
+                   attr)->wait();
 
     /* open recvbuf and check its correctness on the target device side */
     q.submit([&](handler& cgh){
@@ -100,5 +104,6 @@ int main(int argc, char **argv)
         }
     }
 
+    MPI_Finalize();
     return 0;
 }
