@@ -24,22 +24,22 @@ namespace datatype_attr_suite
 TEST(datatype_attr, datatype_attr_empty_creation)
 {
     ccl::datatype_attr attr = ccl::create_datatype_attr();
-    ASSERT_TRUE(attr.get<ccl::ccl_datatype_attributes::version>().full != nullptr);
-    ASSERT_EQ(attr.get<ccl::ccl_datatype_attributes::size>(), 0);
+    ASSERT_TRUE(attr.get<ccl::datatype_attr_id::version>().full != nullptr);
+    ASSERT_EQ(attr.get<ccl::datatype_attr_id::size>(), 0);
 }
 
 TEST(datatype_attr, copy_datatype_attr)
 {
     auto attr = ccl::create_datatype_attr();
-    attr.set<ccl::ccl_datatype_attributes::size>(666);
+    attr.set<ccl::datatype_attr_id::size>(666);
 
     auto original_inner_impl_ptr = attr.get_impl().get();
     auto attr2 = attr;
     auto copied_inner_impl_ptr = attr2.get_impl().get();
     ASSERT_TRUE(original_inner_impl_ptr != copied_inner_impl_ptr);
     ASSERT_TRUE(attr.get_impl());
-    ASSERT_TRUE(attr2.get<ccl::ccl_datatype_attributes::version>().full != nullptr);
-    ASSERT_EQ(attr2.get<ccl::ccl_datatype_attributes::size>(), 666);
+    ASSERT_TRUE(attr2.get<ccl::datatype_attr_id::version>().full != nullptr);
+    ASSERT_EQ(attr2.get<ccl::datatype_attr_id::size>(), 666);
 }
 
 TEST(datatype_attr, move_datatype_attr)
@@ -67,14 +67,14 @@ TEST(datatype_attr, move_datatype_attr)
 TEST(datatype_attr, datatype_attr_empty_size)
 {
     auto attr = ccl::create_datatype_attr(
-                    ccl::attr_arg<ccl::ccl_datatype_attributes::size>(123)
+                    ccl::attr_val<ccl::datatype_attr_id::size>(123)
                 );
-    ASSERT_TRUE(attr.get<ccl::ccl_datatype_attributes::version>().full != nullptr);
+    ASSERT_TRUE(attr.get<ccl::datatype_attr_id::version>().full != nullptr);
 
-    ASSERT_EQ(attr.get<ccl::ccl_datatype_attributes::size>(), 123);
+    ASSERT_EQ(attr.get<ccl::datatype_attr_id::size>(), 123);
 
-    auto old_value = attr.set<ccl::ccl_datatype_attributes::size>(1234);
-    ASSERT_EQ(attr.get<ccl::ccl_datatype_attributes::size>(), 1234);
+    auto old_value = attr.set<ccl::datatype_attr_id::size>(1234);
+    ASSERT_EQ(attr.get<ccl::datatype_attr_id::size>(), 1234);
     ASSERT_EQ(old_value, 123);
 }
 

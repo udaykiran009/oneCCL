@@ -152,7 +152,7 @@ void check_comm_split_by_color(ccl::communicator& comm, int mpi_size, int mpi_ra
     {
         int color = comm.rank() % split_by;
         auto attr = ccl::environment::instance().create_comm_split_attr(
-                        ccl::attr_arg<ccl::ccl_comm_split_attributes::color>(color)
+                        ccl::attr_val<ccl::comm_split_attr_id::color>(color)
                     );
         auto new_comm = comm.split(attr);
 

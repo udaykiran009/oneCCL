@@ -12,26 +12,26 @@ public:
     /**
      * `version` operations
      */
-    using version_traits_t = details::ccl_api_type_attr_traits<ccl_datatype_attributes, ccl_datatype_attributes::version>;
+    using version_traits_t = details::ccl_api_type_attr_traits<datatype_attr_id, datatype_attr_id::version>;
 
     const typename version_traits_t::return_type&
         get_attribute_value(const version_traits_t& id) const
     {
-        return library_version;
+        return version;
     }
 
     typename version_traits_t::return_type
         set_attribute_value(typename version_traits_t::type val, const version_traits_t& t)
     {
         (void)t;
-        throw ccl_error("Set value for 'ccl::ccl_datatype_attributes::version' is not allowed");
-        return library_version;
+        throw ccl_error("Set value for 'ccl::datatype_attr_id::version' is not allowed");
+        return version;
     }
 
     /**
      * `size` operations
      */
-    using size_traits_t = details::ccl_api_type_attr_traits<ccl_datatype_attributes, ccl_datatype_attributes::size>;
+    using size_traits_t = details::ccl_api_type_attr_traits<datatype_attr_id, datatype_attr_id::size>;
 
     const typename size_traits_t::return_type&
         get_attribute_value(const size_traits_t& id) const
@@ -51,12 +51,12 @@ public:
     }
 
     ccl_datatype_attr_impl(const typename version_traits_t::return_type& version) :
-                                    library_version(version)
+                                    version(version)
     {
     }
 
 protected:
-    typename version_traits_t::return_type library_version;
+    typename version_traits_t::return_type version;
     typename size_traits_t::return_type datatype_size = 1;
 };
 

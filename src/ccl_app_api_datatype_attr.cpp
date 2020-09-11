@@ -19,7 +19,7 @@ CCL_API IN_Value class_name::set<IN_attrId, IN_Value>(const IN_Value& v);
 
 #define API_FORCE_GETTER_INSTANTIATION(class_name, IN_attrId, IN_Value, OUT_Traits_Value)           \
 template                                                                                            \
-CCL_API const typename details::OUT_Traits_Value<ccl_datatype_attributes, IN_attrId>::return_type& class_name::get<IN_attrId>() const;
+CCL_API const typename details::OUT_Traits_Value<datatype_attr_id, IN_attrId>::return_type& class_name::get<IN_attrId>() const;
 
 /**
  * datatype_attr attributes definition
@@ -35,8 +35,8 @@ CCL_API datatype_attr::datatype_attr(const datatype_attr& src) :
 }
 
 CCL_API datatype_attr::datatype_attr(
-        const typename details::ccl_api_type_attr_traits<ccl_datatype_attributes,
-        ccl_datatype_attributes::version>::return_type& version) :
+        const typename details::ccl_api_type_attr_traits<datatype_attr_id,
+        datatype_attr_id::version>::return_type& version) :
         base_t(std::shared_ptr<impl_t>(new impl_t(version)))
 {
 }
@@ -61,10 +61,10 @@ CCL_API datatype_attr& datatype_attr::operator=(datatype_attr&& src)
     return *this;
 }
 
-API_FORCE_SETTER_INSTANTIATION(datatype_attr, ccl_datatype_attributes::size, int, ccl_api_type_attr_traits);
-API_FORCE_SETTER_INSTANTIATION(datatype_attr, ccl_datatype_attributes::size, size_t, ccl_api_type_attr_traits);
-API_FORCE_GETTER_INSTANTIATION(datatype_attr, ccl_datatype_attributes::size, size_t, ccl_api_type_attr_traits);
-API_FORCE_GETTER_INSTANTIATION(datatype_attr, ccl_datatype_attributes::version, ccl::version, ccl_api_type_attr_traits);
+API_FORCE_SETTER_INSTANTIATION(datatype_attr, datatype_attr_id::size, int, ccl_api_type_attr_traits);
+API_FORCE_SETTER_INSTANTIATION(datatype_attr, datatype_attr_id::size, size_t, ccl_api_type_attr_traits);
+API_FORCE_GETTER_INSTANTIATION(datatype_attr, datatype_attr_id::size, size_t, ccl_api_type_attr_traits);
+API_FORCE_GETTER_INSTANTIATION(datatype_attr, datatype_attr_id::version, ccl::library_version, ccl_api_type_attr_traits);
 
 #undef API_FORCE_SETTER_INSTANTIATION
 #undef API_FORCE_GETTER_INSTANTIATION

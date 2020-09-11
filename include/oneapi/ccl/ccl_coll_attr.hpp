@@ -486,63 +486,63 @@ extern barrier_attr default_barrier_attr;
  * Fabric helpers
  */
 template <allgatherv_attr_id t, class value_type>
-constexpr auto attr_arg(value_type v) -> details::attr_value_tripple<allgatherv_attr_id,
+constexpr auto attr_val(value_type v) -> details::attr_value_tripple<allgatherv_attr_id,
                                                               t, value_type>
 {
     return details::attr_value_tripple<allgatherv_attr_id, t, value_type>(v);
 }
 
 template <allreduce_attr_id t, class value_type>
-constexpr auto attr_arg(value_type v) -> details::attr_value_tripple<allreduce_attr_id,
+constexpr auto attr_val(value_type v) -> details::attr_value_tripple<allreduce_attr_id,
                                                               t, value_type>
 {
     return details::attr_value_tripple<allreduce_attr_id, t, value_type>(v);
 }
 
 template <alltoall_attr_id t, class value_type>
-constexpr auto attr_arg(value_type v) -> details::attr_value_tripple<alltoall_attr_id,
+constexpr auto attr_val(value_type v) -> details::attr_value_tripple<alltoall_attr_id,
                                                               t, value_type>
 {
     return details::attr_value_tripple<alltoall_attr_id, t, value_type>(v);
 }
 
 template <alltoallv_attr_id t, class value_type>
-constexpr auto attr_arg(value_type v) -> details::attr_value_tripple<alltoallv_attr_id,
+constexpr auto attr_val(value_type v) -> details::attr_value_tripple<alltoallv_attr_id,
                                                               t, value_type>
 {
     return details::attr_value_tripple<alltoallv_attr_id, t, value_type>(v);
 }
 
 template <broadcast_attr_id t, class value_type>
-constexpr auto attr_arg(value_type v) -> details::attr_value_tripple<broadcast_attr_id,
+constexpr auto attr_val(value_type v) -> details::attr_value_tripple<broadcast_attr_id,
                                                               t, value_type>
 {
     return details::attr_value_tripple<broadcast_attr_id, t, value_type>(v);
 }
 
 template <reduce_attr_id t, class value_type>
-constexpr auto attr_arg(value_type v) -> details::attr_value_tripple<reduce_attr_id,
+constexpr auto attr_val(value_type v) -> details::attr_value_tripple<reduce_attr_id,
                                                               t, value_type>
 {
     return details::attr_value_tripple<reduce_attr_id, t, value_type>(v);
 }
 
 template <reduce_scatter_attr_id t, class value_type>
-constexpr auto attr_arg(value_type v) -> details::attr_value_tripple<reduce_scatter_attr_id,
+constexpr auto attr_val(value_type v) -> details::attr_value_tripple<reduce_scatter_attr_id,
                                                               t, value_type>
 {
     return details::attr_value_tripple<reduce_scatter_attr_id, t, value_type>(v);
 }
 
 template <sparse_allreduce_attr_id t, class value_type>
-constexpr auto attr_arg(value_type v) -> details::attr_value_tripple<sparse_allreduce_attr_id,
+constexpr auto attr_val(value_type v) -> details::attr_value_tripple<sparse_allreduce_attr_id,
                                                               t, value_type>
 {
     return details::attr_value_tripple<sparse_allreduce_attr_id, t, value_type>(v);
 }
 
 template <operation_attr_id t, class value_type>
-constexpr auto attr_arg(value_type v) -> details::attr_value_tripple<operation_attr_id, t, value_type>
+constexpr auto attr_val(value_type v) -> details::attr_value_tripple<operation_attr_id, t, value_type>
 {
     return details::attr_value_tripple<operation_attr_id, t, value_type>(v);
 }

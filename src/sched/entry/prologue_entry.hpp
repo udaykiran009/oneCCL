@@ -12,7 +12,7 @@ public:
 
     prologue_entry() = delete;
     prologue_entry(ccl_sched* sched,
-                   ccl::prologue_fn_t fn,
+                   ccl::prologue_fn fn,
                    const ccl_buffer in_buf,
                    size_t in_cnt,
                    const ccl_datatype& in_dtype,
@@ -56,7 +56,7 @@ protected:
     }
 
 private:
-    ccl::prologue_fn_t fn;
+    ccl::prologue_fn fn;
     ccl_buffer in_buf;
     size_t in_cnt;
     ccl_datatype in_dtype;

@@ -16,7 +16,7 @@ namespace ccl
 template <class ...attr_value_pair_t>
 stream stream::create_stream_from_attr(typename unified_device_type::ccl_native_t device, attr_value_pair_t&&...avps)
 {
-    ccl::version ret {};
+    ccl::library_version ret {};
     ret.major = CCL_MAJOR_VERSION;
     ret.minor = CCL_MINOR_VERSION;
     ret.update = CCL_UPDATE_VERSION;
@@ -36,7 +36,7 @@ stream stream::create_stream_from_attr(typename unified_device_type::ccl_native_
                                typename unified_device_context_type::ccl_native_t context,
                                attr_value_pair_t&&...avps)
 {
-    ccl::version ret {};
+    ccl::library_version ret {};
     ret.major = CCL_MAJOR_VERSION;
     ret.minor = CCL_MINOR_VERSION;
     ret.update = CCL_UPDATE_VERSION;
@@ -55,7 +55,7 @@ template <class native_stream_type,
           typename T>
 stream stream::create_stream(native_stream_type& native_stream)
 {
-    ccl::version ret {};
+    ccl::library_version ret {};
     ret.major = CCL_MAJOR_VERSION;
     ret.minor = CCL_MINOR_VERSION;
     ret.update = CCL_UPDATE_VERSION;
@@ -69,7 +69,7 @@ template <class device_type, class native_context_type,
            typename T>
 stream stream::create_stream(device_type& device, native_context_type& native_ctx)
 {
-    ccl::version ret {};
+    ccl::library_version ret {};
     ret.major = CCL_MAJOR_VERSION;
     ret.minor = CCL_MINOR_VERSION;
     ret.update = CCL_UPDATE_VERSION;

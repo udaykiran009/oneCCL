@@ -102,7 +102,7 @@ default structure and identifies the file types stored in each sub-directory:
 				|   |           `-- sycl_sparse_allreduce_coll.hpp                                                     
 				|   |-- CMakeLists.txt                                                                                 
 				|   |-- common                                                                                         
-				|   |   |-- api_info.cpp                                                                               
+				|   |   |-- version.cpp                                                                                
 				|   |   `-- CMakeLists.txt                                                                             
 				|   |-- cpu                                                                                            
 				|   |   |-- allgatherv.cpp                                                                             

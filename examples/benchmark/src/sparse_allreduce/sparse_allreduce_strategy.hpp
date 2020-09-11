@@ -165,12 +165,14 @@ struct sparse_allreduce_strategy_impl
         sparse_attr.set<ccl::sparse_allreduce_attr_id::fn_ctx>(static_cast<const void*>(&fn_ctx));
         sparse_attr.set<ccl::sparse_allreduce_attr_id::coalesce_mode>(ccl::sparse_coalesce_mode::keep_precision);
 
+#ifndef CCL_ENABLE_SYCL
         reqs.push_back(comm.sparse_allreduce(send_ibuf, std::get<0>(expected),
                                              send_vbuf, send_vcount,
                                              recv_ibuf, recv_icount,
                                              recv_vbuf, recv_vcount,
                                              bench_attr.reduction,
                                              std::forward<Args>(args)...));
+#endif
     }
 
     std::unique_ptr<IndicesDistributor> indices_distributor_impl;

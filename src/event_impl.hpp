@@ -19,7 +19,7 @@ event event::create_event_from_attr(event_type& native_event_handle,
                              typename unified_device_context_type::ccl_native_t context,
                              attr_value_pair_t&&...avps)
 {
-    ccl::version ret {};
+    ccl::library_version ret {};
     ret.major = CCL_MAJOR_VERSION;
     ret.minor = CCL_MINOR_VERSION;
     ret.update = CCL_UPDATE_VERSION;
@@ -40,7 +40,7 @@ template <class event_handle_type,
           typename T>
 event event::create_event(event_handle_type native_event_handle, typename unified_device_context_type::ccl_native_t context)
 {
-    ccl::version ret {};
+    ccl::library_version ret {};
     ret.major = CCL_MAJOR_VERSION;
     ret.minor = CCL_MINOR_VERSION;
     ret.update = CCL_UPDATE_VERSION;
@@ -58,7 +58,7 @@ template <class event_type,
           typename T>
 event event::create_event(event_type& native_event)
 {
-    ccl::version ret {};
+    ccl::library_version ret {};
     ret.major = CCL_MAJOR_VERSION;
     ret.minor = CCL_MINOR_VERSION;
     ret.update = CCL_UPDATE_VERSION;

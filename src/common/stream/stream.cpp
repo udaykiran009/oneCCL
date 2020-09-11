@@ -6,18 +6,18 @@
 
 #ifdef MULTI_GPU_SUPPORT
     #ifdef CCL_ENABLE_SYCL
-        template std::unique_ptr<ccl_stream> stream_provider_dispatcher::create(cl::sycl::queue& native_stream, const ccl::version& version);
-        template std::unique_ptr<ccl_stream> stream_provider_dispatcher::create(cl_command_queue& native_stream_handle, const ccl::version& version);
+        template std::unique_ptr<ccl_stream> stream_provider_dispatcher::create(cl::sycl::queue& native_stream, const ccl::library_version& version);
+        template std::unique_ptr<ccl_stream> stream_provider_dispatcher::create(cl_command_queue& native_stream_handle, const ccl::library_version& version);
     #else
-        template std::unique_ptr<ccl_stream> stream_provider_dispatcher::create(std::shared_ptr<native::ccl_device::device_queue>& native_stream, const ccl::version& version);
-        template std::unique_ptr<ccl_stream> stream_provider_dispatcher::create(ze_command_queue_handle_t& native_stream_handle, const ccl::version& version);
+        template std::unique_ptr<ccl_stream> stream_provider_dispatcher::create(std::shared_ptr<native::ccl_device::device_queue>& native_stream, const ccl::library_version& version);
+        template std::unique_ptr<ccl_stream> stream_provider_dispatcher::create(ze_command_queue_handle_t& native_stream_handle, const ccl::library_version& version);
     #endif
 #else
     #ifdef CCL_ENABLE_SYCL
-        template std::unique_ptr<ccl_stream> stream_provider_dispatcher::create(cl::sycl::queue& native_stream, const ccl::version& version);
-        template std::unique_ptr<ccl_stream> stream_provider_dispatcher::create(cl_command_queue& native_stream, const ccl::version& version);
+        template std::unique_ptr<ccl_stream> stream_provider_dispatcher::create(cl::sycl::queue& native_stream, const ccl::library_version& version);
+        template std::unique_ptr<ccl_stream> stream_provider_dispatcher::create(cl_command_queue& native_stream, const ccl::library_version& version);
     #else
-        template std::unique_ptr<ccl_stream> stream_provider_dispatcher::create(void*& native_stream, const ccl::version& version);
+        template std::unique_ptr<ccl_stream> stream_provider_dispatcher::create(void*& native_stream, const ccl::library_version& version);
     #endif
 #endif
 
@@ -61,14 +61,14 @@ typename ccl_stream::version_traits_t::type
 ccl_stream::set_attribute_value(typename version_traits_t::type val, const version_traits_t& t)
 {
     (void)t;
-    throw ccl::ccl_error("Set value for 'ccl::stream_attr_id::version' is not allowed");
-    return library_version;
+    throw ccl::ccl_error("Set value for 'ccl::stream_attr_id::library_version' is not allowed");
+    return version;
 }
 
 const typename ccl_stream::version_traits_t::return_type&
 ccl_stream::get_attribute_value(const version_traits_t& id) const
 {
-    return library_version;
+    return version;
 }
 
 typename ccl_stream::native_handle_traits_t::return_type &

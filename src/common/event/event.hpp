@@ -26,8 +26,8 @@ public:
     ccl_event(const ccl_event& other) = delete;
     ccl_event& operator=(const ccl_event& other) = delete;
 
-    ccl_event(event_native_t& event, const ccl::version& version);
-    ccl_event(event_native_handle_t event, event_native_context_t context, const ccl::version& version);
+    ccl_event(event_native_t& event, const ccl::library_version& version);
+    ccl_event(event_native_handle_t event, event_native_context_t context, const ccl::library_version& version);
     ~ccl_event() = default;
 
     //Export Attributes
@@ -67,7 +67,7 @@ public:
     void build_from_params();
 
 private:
-    const ccl::version library_version;
+    const ccl::library_version version;
     event_native_t native_event;
     event_native_context_t native_context;
     bool creation_is_postponed {false};

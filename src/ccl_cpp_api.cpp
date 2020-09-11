@@ -66,9 +66,9 @@ void CCL_API ccl::environment::set_resize_fn(ccl_resize_fn_t callback)
     return;
 }
 
-ccl::version CCL_API ccl::environment::get_version() const
+ccl::library_version CCL_API ccl::environment::get_version() const
 {
-    ccl::version ret;
+    ccl::library_version ret;
     ccl_status_t result = ccl_get_version(&ret);
     CCL_CHECK_AND_THROW(result, "failed to get version");
     return ret;

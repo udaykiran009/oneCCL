@@ -34,7 +34,7 @@ public:
      * Set specific value for selft attribute by @attrId.
      * Previous attibute value would be returned
      */
-    template <ccl_datatype_attributes attrId,
+    template <datatype_attr_id attrId,
               class Value/*,
               class = typename std::enable_if<is_attribute_value_supported<attrId, Value>()>::return_type*/>
     Value set(const Value& v);
@@ -42,19 +42,19 @@ public:
     /**
      * Get specific attribute value by @attrId
      */
-    template <ccl_datatype_attributes attrId>
-    const typename details::ccl_api_type_attr_traits<ccl_datatype_attributes, attrId>::return_type& get() const;
+    template <datatype_attr_id attrId>
+    const typename details::ccl_api_type_attr_traits<datatype_attr_id, attrId>::return_type& get() const;
 
 private:
     friend class environment;
-    datatype_attr(const typename details::ccl_api_type_attr_traits<ccl_datatype_attributes, ccl_datatype_attributes::version>::return_type& version);
+    datatype_attr(const typename details::ccl_api_type_attr_traits<datatype_attr_id, datatype_attr_id::version>::return_type& version);
 };
 
-template <ccl_datatype_attributes t, class value_type>
-constexpr auto attr_arg(value_type v) -> details::attr_value_tripple<ccl_datatype_attributes,
+template <datatype_attr_id t, class value_type>
+constexpr auto attr_val(value_type v) -> details::attr_value_tripple<datatype_attr_id,
                                                               t, value_type>
 {
-    return details::attr_value_tripple<ccl_datatype_attributes, t, value_type>(v);
+    return details::attr_value_tripple<datatype_attr_id, t, value_type>(v);
 }
 
 } // namespace ccl

@@ -9,7 +9,7 @@ namespace ccl
 template <class attr_t, class ...attr_value_pair_t>
 attr_t create_split_attr(attr_value_pair_t&&...avps)
 {
-    ccl::version ret {};
+    ccl::library_version ret {};
     ret.major = CCL_MAJOR_VERSION;
     ret.minor = CCL_MINOR_VERSION;
     ret.update = CCL_UPDATE_VERSION;

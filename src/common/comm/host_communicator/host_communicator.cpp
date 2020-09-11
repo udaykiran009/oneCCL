@@ -71,7 +71,7 @@ host_communicator::split(const comm_split_attr& attr)
 {
     ccl::global_data& data = ccl::global_data::get();
     auto new_comm = ccl_comm::create_with_color(
-                        attr.get<ccl::ccl_comm_split_attributes::color>(),
+                        attr.get<ccl::comm_split_attr_id::color>(),
                         data.comm_ids.get(),
                         comm_impl.get()
                     );

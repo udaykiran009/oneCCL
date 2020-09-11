@@ -49,17 +49,17 @@ public:
     template <class NativeStream,
               typename std::enable_if<std::is_class<typename std::remove_cv<NativeStream>::type>::value,
                                       int>::type = 0>
-    static std::unique_ptr<ccl_stream> create(NativeStream& native_stream, const ccl::version& version);
+    static std::unique_ptr<ccl_stream> create(NativeStream& native_stream, const ccl::library_version& version);
 
     template <class NativeStreamHandle,
               typename std::enable_if<not std::is_class<typename std::remove_cv<NativeStreamHandle>::type>::value,
                                       int>::type = 0>
-    static std::unique_ptr<ccl_stream> create(NativeStreamHandle& native_stream, const ccl::version& version);
+    static std::unique_ptr<ccl_stream> create(NativeStreamHandle& native_stream, const ccl::library_version& version);
 
-    static std::unique_ptr<ccl_stream> create(stream_native_device_t device, const ccl::version& version);
+    static std::unique_ptr<ccl_stream> create(stream_native_device_t device, const ccl::library_version& version);
     static std::unique_ptr<ccl_stream> create(stream_native_device_t device,
                                               stream_native_context_t context,
-                                              const ccl::version& version);
+                                              const ccl::library_version& version);
 protected:
     template <class NativeStream,
               typename std::enable_if<std::is_class<typename std::remove_cv<NativeStream>::type>::value,

@@ -79,7 +79,7 @@ TEST(host_communicator_api, host_comm_split)
     std::shared_ptr<stub_kvs> stub_storage;
     auto comm = ccl::communicator::create_communicator(2, 1, stub_storage);
     auto attr = ccl::create_comm_split_attr(
-                    ccl::attr_arg<ccl::ccl_comm_split_attributes::color>(1)
+                    ccl::attr_val<ccl::comm_split_attr_id::color>(1)
                 );
     auto new_comm = comm.split(attr);
     ASSERT_EQ(new_comm.size(), 1);

@@ -16,8 +16,8 @@
 #include "oneapi/ccl/ccl_aliases.hpp"
 
 
-// TODO: tmp mapping
-
+// TODO: tmp enums, refactor core code and remove them
+/************************************************/
 typedef int ccl_datatype_t;
 
 typedef int ccl_reduction_t;
@@ -52,10 +52,12 @@ typedef enum {
 
     ccl_stream_last_value
 } ccl_stream_type_t;
+/************************************************/
+
 
 namespace ccl {
 
-/** API version description. */
+/** Library version description. */
 typedef struct {
     unsigned int major;
     unsigned int minor;
@@ -63,7 +65,7 @@ typedef struct {
     const char* product_status;
     const char* build_date;
     const char* full;
-} version;
+} library_version;
 
 /**
  * Supported reduction operations
@@ -131,7 +133,7 @@ enum class sparse_coalesce_mode : int {
 typedef ccl_resize_action_t (*ccl_resize_fn_t)(size_t comm_size);
 
 /* in_buf, in_count, in_dtype, out_buf, out_count, out_dtype, context */
-typedef void (*prologue_fn_t)(const void*,
+typedef void (*prologue_fn)(const void*,
                                           size_t,
                                           ccl::datatype,
                                           void**,
@@ -140,7 +142,7 @@ typedef void (*prologue_fn_t)(const void*,
                                           const ccl::fn_context*);
 
 /* in_buf, in_count, in_dtype, out_buf, out_count, out_dtype, context */
-typedef void (*epilogue_fn_t)(const void*,
+typedef void (*epilogue_fn)(const void*,
                                           size_t,
                                           ccl::datatype,
                                           void*,
@@ -149,7 +151,7 @@ typedef void (*epilogue_fn_t)(const void*,
                                           const ccl::fn_context*);
 
 /* in_buf, in_count, inout_buf, out_count, dtype, context */
-typedef void (*reduction_fn_t)(
+typedef void (*reduction_fn)(
     const void*,
     size_t,
     void*,
@@ -158,7 +160,7 @@ typedef void (*reduction_fn_t)(
     const ccl::fn_context*);
 
 /* idx_buf, idx_count, idx_dtype, val_buf, val_count, val_dtype, fn_context */
-typedef void (*sparse_allreduce_completion_fn_t)(const void*,
+typedef void (*sparse_allreduce_completion_fn)(const void*,
                                                              size_t,
                                                              ccl::datatype,
                                                              const void*,
@@ -167,7 +169,7 @@ typedef void (*sparse_allreduce_completion_fn_t)(const void*,
                                                              const void*);
 
 /* idx_count, idx_dtype, val_count, val_dtype, fn_context, out_idx_buf, out_val_buf */
-typedef void (*sparse_allreduce_alloc_fn_t)(size_t,
+typedef void (*sparse_allreduce_alloc_fn)(size_t,
                                                         ccl::datatype,
                                                         size_t,
                                                         ccl::datatype,
@@ -217,7 +219,7 @@ struct ccl_type_info_export {
 
 struct ccl_empty_attr
 {
-    static ccl::version version;
+    static ccl::library_version version;
 
     template<class attr>
     static attr create_empty();
@@ -253,6 +255,7 @@ struct param_traits {};
 #define ccl_reduction_custom (int)(ccl::reduction::custom)
 #define ccl_reduction_last_value (int)(ccl::reduction::last_value)
 
+// TODO: tmp struct, refactor core code and remove it
 /*********************************************************/
 
 /** Extendable list of collective attributes. */
@@ -262,9 +265,9 @@ typedef struct {
      * for pre-/post-processing data
      * and custom reduction operation
      */
-    ccl::prologue_fn_t prologue_fn;
-    ccl::epilogue_fn_t epilogue_fn;
-    ccl::reduction_fn_t reduction_fn;
+    ccl::prologue_fn prologue_fn;
+    ccl::epilogue_fn epilogue_fn;
+    ccl::reduction_fn reduction_fn;
 
     /* Priority for collective operation */
     size_t priority;
@@ -285,8 +288,8 @@ typedef struct {
     const char* match_id;
 
     /* Sparse allreduce specific */
-    ccl::sparse_allreduce_completion_fn_t sparse_allreduce_completion_fn;
-    ccl::sparse_allreduce_alloc_fn_t sparse_allreduce_alloc_fn;
+    ccl::sparse_allreduce_completion_fn sparse_allreduce_completion_fn;
+    ccl::sparse_allreduce_alloc_fn sparse_allreduce_alloc_fn;
     const void* sparse_allreduce_fn_ctx;
     ccl::sparse_coalesce_mode sparse_coalesce_mode;
 

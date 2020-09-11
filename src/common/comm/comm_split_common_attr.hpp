@@ -19,7 +19,7 @@ public:
     const typename version_traits_t::type&
         get_attribute_value(const version_traits_t& id) const
     {
-        return library_version;
+        return version;
     }
 
     typename version_traits_t::type
@@ -27,7 +27,7 @@ public:
     {
         (void)t;
         throw ccl_error("Set value for 'version' attribute is not allowed");
-        return library_version;
+        return version;
     }
 
     /**
@@ -107,7 +107,7 @@ public:
     ccl_base_comm_split_attr_impl(const typename version_traits_t::type& version,
                                     const typename group_traits_t::type& group
                                     ) :
-                                        library_version(version),
+                                        version(version),
                                         color(get_default_color()),
                                         group(group),
                                         cur_attr({ false, split_attrs_t::color })
@@ -115,7 +115,7 @@ public:
     }
 
 protected:
-    const typename version_traits_t::type library_version;
+    const typename version_traits_t::type version;
     typename color_traits_t::type color;
     typename group_traits_t::type group;
 
@@ -133,7 +133,7 @@ protected:
  * Host implementation
  */
 class ccl_host_comm_split_attr_impl :
-    public ccl_base_comm_split_attr_impl<details::ccl_host_split_traits, ccl_comm_split_attributes>
+    public ccl_base_comm_split_attr_impl<details::ccl_host_split_traits, comm_split_attr_id>
 {
 public:
     using base_t = ccl_base_comm_split_attr_impl;
@@ -177,7 +177,7 @@ public:
  * Device implementation
  */
 class ccl_device_comm_split_attr_impl :
-    public ccl_base_comm_split_attr_impl<details::ccl_device_split_traits, ccl_comm_split_attributes>
+    public ccl_base_comm_split_attr_impl<details::ccl_device_split_traits, comm_split_attr_id>
 {
 public:
     using base_t = ccl_base_comm_split_attr_impl;

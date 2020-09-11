@@ -67,5 +67,5 @@ private:
     size_t* out_cnt;
     ccl_datatype dtype;
     ccl::reduction op;
-    ccl::reduction_fn_t fn;
+    ccl::reduction_fn fn;
 };

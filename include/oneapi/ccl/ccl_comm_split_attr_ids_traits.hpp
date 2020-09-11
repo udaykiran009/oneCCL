@@ -17,17 +17,17 @@ template <class attr, attr id>
 struct ccl_host_split_traits {};
 
 template <>
-struct ccl_host_split_traits<ccl_comm_split_attributes, ccl_comm_split_attributes::version> {
-    using type = ccl::version;
+struct ccl_host_split_traits<comm_split_attr_id, comm_split_attr_id::version> {
+    using type = ccl::library_version;
 };
 
 template <>
-struct ccl_host_split_traits<ccl_comm_split_attributes, ccl_comm_split_attributes::color> {
+struct ccl_host_split_traits<comm_split_attr_id, comm_split_attr_id::color> {
     using type = int;
 };
 
 template <>
-struct ccl_host_split_traits<ccl_comm_split_attributes, ccl_comm_split_attributes::group> {
+struct ccl_host_split_traits<comm_split_attr_id, comm_split_attr_id::group> {
     using type = ccl_group_split_type;
 };
 
@@ -42,17 +42,17 @@ template <class attr, attr id>
 struct ccl_device_split_traits {};
 
 template <>
-struct ccl_device_split_traits<ccl_comm_split_attributes, ccl_comm_split_attributes::version> {
-    using type = ccl::version;
+struct ccl_device_split_traits<comm_split_attr_id, comm_split_attr_id::version> {
+    using type = ccl::library_version;
 };
 
 template <>
-struct ccl_device_split_traits<ccl_comm_split_attributes, ccl_comm_split_attributes::color> {
+struct ccl_device_split_traits<comm_split_attr_id, comm_split_attr_id::color> {
     using type = int;
 };
 
 template <>
-struct ccl_device_split_traits<ccl_comm_split_attributes, ccl_comm_split_attributes::group> {
+struct ccl_device_split_traits<comm_split_attr_id, comm_split_attr_id::group> {
     using type = device_group_split_type;
 };
 

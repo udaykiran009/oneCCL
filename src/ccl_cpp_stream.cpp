@@ -49,7 +49,7 @@ CCL_API void stream::build_from_params()
     API_STREAM_CREATION_EXT_FORCE_INSTANTIATION(cl::sycl::device, cl::sycl::context)
 #endif
 
-API_STREAM_FORCE_INSTANTIATION(ccl::stream_attr_id::version, ccl::version);
+API_STREAM_FORCE_INSTANTIATION(ccl::stream_attr_id::version, ccl::library_version);
 API_STREAM_FORCE_INSTANTIATION_GET(ccl::stream_attr_id::native_handle);//, typename ccl::unified_stream_type::ccl_native_t);
 API_STREAM_FORCE_INSTANTIATION_GET(ccl::stream_attr_id::device);//, typename ccl::unified_device_type::ccl_native_t);
 API_STREAM_FORCE_INSTANTIATION(ccl::stream_attr_id::context, typename ccl::unified_device_context_type::ccl_native_t);

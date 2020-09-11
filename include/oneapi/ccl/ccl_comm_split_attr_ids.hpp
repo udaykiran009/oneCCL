@@ -7,8 +7,9 @@
 namespace ccl
 {
 
-enum class ccl_comm_split_attributes : int {
+enum class comm_split_attr_id : int {
     version,
+
     color,
     group,      // ccl_group_split_type or device_group_split_type
 

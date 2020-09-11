@@ -154,6 +154,6 @@ private:
     bool own_comm_buff = false;
     ccl_recv_reduce_result_buf_type result_buf_type;
     uint64_t atl_tag = 0;
-    ccl::reduction_fn_t fn;
+    ccl::reduction_fn fn;
     atl_req_t req{};
 };

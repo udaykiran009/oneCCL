@@ -30,9 +30,9 @@ API_FORCE_INSTANTIATION_GET(class_name, IN_attrType, IN_attrId)                 
 
 
 #define COMMON_API_FORCE_INSTANTIATION(class_name)                                                  \
-API_FORCE_INSTANTIATION(class_name, operation_attr_id, operation_attr_id::version, ccl::version)    \
-API_FORCE_INSTANTIATION(class_name, operation_attr_id, operation_attr_id::prologue_fn, ccl::prologue_fn_t) \
-API_FORCE_INSTANTIATION(class_name, operation_attr_id, operation_attr_id::epilogue_fn, ccl::epilogue_fn_t)  \
+API_FORCE_INSTANTIATION(class_name, operation_attr_id, operation_attr_id::version, ccl::library_version)    \
+API_FORCE_INSTANTIATION(class_name, operation_attr_id, operation_attr_id::prologue_fn, ccl::prologue_fn) \
+API_FORCE_INSTANTIATION(class_name, operation_attr_id, operation_attr_id::epilogue_fn, ccl::epilogue_fn)  \
                                                                                                     \
 API_FORCE_INSTANTIATION_SET(class_name, operation_attr_id, operation_attr_id::priority, size_t)  \
 API_FORCE_INSTANTIATION_SET(class_name, operation_attr_id, operation_attr_id::priority, int)  \
@@ -276,11 +276,11 @@ COMMON_API_FORCE_INSTANTIATION(reduce_scatter_attr)
 COMMON_API_FORCE_INSTANTIATION(sparse_allreduce_attr)
 
 API_FORCE_INSTANTIATION(allgatherv_attr, allgatherv_attr_id, allgatherv_attr_id::vector_buf, int)
-API_FORCE_INSTANTIATION(allreduce_attr, allreduce_attr_id, allreduce_attr_id::reduction_fn, ccl::reduction_fn_t)
-API_FORCE_INSTANTIATION(reduce_attr, reduce_attr_id, reduce_attr_id::reduction_fn, ccl::reduction_fn_t)
-API_FORCE_INSTANTIATION(reduce_scatter_attr, reduce_scatter_attr_id, reduce_scatter_attr_id::reduction_fn, ccl::reduction_fn_t)
-API_FORCE_INSTANTIATION(sparse_allreduce_attr, sparse_allreduce_attr_id, sparse_allreduce_attr_id::completion_fn, ccl::sparse_allreduce_completion_fn_t)
-API_FORCE_INSTANTIATION(sparse_allreduce_attr, sparse_allreduce_attr_id, sparse_allreduce_attr_id::alloc_fn, ccl::sparse_allreduce_alloc_fn_t)
+API_FORCE_INSTANTIATION(allreduce_attr, allreduce_attr_id, allreduce_attr_id::reduction_fn, ccl::reduction_fn)
+API_FORCE_INSTANTIATION(reduce_attr, reduce_attr_id, reduce_attr_id::reduction_fn, ccl::reduction_fn)
+API_FORCE_INSTANTIATION(reduce_scatter_attr, reduce_scatter_attr_id, reduce_scatter_attr_id::reduction_fn, ccl::reduction_fn)
+API_FORCE_INSTANTIATION(sparse_allreduce_attr, sparse_allreduce_attr_id, sparse_allreduce_attr_id::completion_fn, ccl::sparse_allreduce_completion_fn)
+API_FORCE_INSTANTIATION(sparse_allreduce_attr, sparse_allreduce_attr_id, sparse_allreduce_attr_id::alloc_fn, ccl::sparse_allreduce_alloc_fn)
 //API_FORCE_INSTANTIATION(sparse_allreduce_attr, sparse_allreduce_attr_id, sparse_allreduce_attr_id::fn_ctx, void*)
 //template CCL_API const void * sparse_allreduce_attr::set<sparse_allreduce_attr_id::fn_ctx, void*>(void *const & v);
 API_FORCE_INSTANTIATION(sparse_allreduce_attr, sparse_allreduce_attr_id, sparse_allreduce_attr_id::coalesce_mode, ccl::sparse_coalesce_mode)

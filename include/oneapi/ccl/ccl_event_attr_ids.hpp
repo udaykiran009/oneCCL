@@ -11,6 +11,7 @@ namespace ccl {
  */
 enum class event_attr_id : int {
     version,
+
     native_handle,
     context,
 

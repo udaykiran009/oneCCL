@@ -21,19 +21,19 @@ private:
  */
 template <>
 struct ccl_api_type_attr_traits<operation_attr_id, operation_attr_id::version> {
-    using type = ccl::version;
+    using type = ccl::library_version;
     using return_type = type;
 };
 
 template <>
 struct ccl_api_type_attr_traits<operation_attr_id, operation_attr_id::prologue_fn> {
-    using type = ccl::prologue_fn_t;
+    using type = ccl::prologue_fn;
     using return_type = function_holder<type>;
 };
 
 template <>
 struct ccl_api_type_attr_traits<operation_attr_id, operation_attr_id::epilogue_fn> {
-    using type = ccl::epilogue_fn_t;
+    using type = ccl::epilogue_fn;
     using return_type = function_holder<type>;
 };
 
@@ -75,7 +75,7 @@ struct ccl_api_type_attr_traits<allgatherv_attr_id, allgatherv_attr_id::vector_b
  */
 template <>
 struct ccl_api_type_attr_traits<allreduce_attr_id, allreduce_attr_id::reduction_fn> {
-    using type = ccl::reduction_fn_t;
+    using type = ccl::reduction_fn;
     using return_type = function_holder<type>;
 };
 
@@ -96,7 +96,7 @@ struct ccl_api_type_attr_traits<allreduce_attr_id, allreduce_attr_id::reduction_
  */
 template <>
 struct ccl_api_type_attr_traits<reduce_attr_id, reduce_attr_id::reduction_fn> {
-    using type = ccl::reduction_fn_t;
+    using type = ccl::reduction_fn;
     using return_type = function_holder<type>;
 };
 
@@ -105,7 +105,7 @@ struct ccl_api_type_attr_traits<reduce_attr_id, reduce_attr_id::reduction_fn> {
  */
 template <>
 struct ccl_api_type_attr_traits<reduce_scatter_attr_id, reduce_scatter_attr_id::reduction_fn> {
-    using type = ccl::reduction_fn_t;
+    using type = ccl::reduction_fn;
     using return_type = function_holder<type>;
 };
 
@@ -114,12 +114,12 @@ struct ccl_api_type_attr_traits<reduce_scatter_attr_id, reduce_scatter_attr_id::
  */
 template <>
 struct ccl_api_type_attr_traits<sparse_allreduce_attr_id, sparse_allreduce_attr_id::completion_fn> {
-    using type = ccl::sparse_allreduce_completion_fn_t;
+    using type = ccl::sparse_allreduce_completion_fn;
     using return_type = function_holder<type>;
 };
 template <>
 struct ccl_api_type_attr_traits<sparse_allreduce_attr_id, sparse_allreduce_attr_id::alloc_fn> {
-    using type = ccl::sparse_allreduce_alloc_fn_t;
+    using type = ccl::sparse_allreduce_alloc_fn;
     using return_type = function_holder<type>;
 };
 template <>
