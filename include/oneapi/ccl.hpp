@@ -7,6 +7,9 @@
 #include "oneapi/ccl/gpu_communicator.hpp"
 #endif /* MULTI_GPU_SUPPORT */
 
+namespace ccl {}
+namespace oneapi { namespace ccl = ::ccl; }
+
 #if 0
 #include <memory>
 #include <ostream>
@@ -61,7 +64,7 @@ public:
     /**
      * Retrieves the current version
      */
-    ccl::version get_version() const;
+    ccl::library_version get_library_version() const;
 #if 0
     /**
      * Creates @attr which used to register custom datatype

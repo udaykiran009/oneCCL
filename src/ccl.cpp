@@ -32,7 +32,7 @@
 //     COMMON_CATCH_BLOCK();
 // }
 
-// ccl_status_t CCL_API ccl_get_version(ccl::version* version)
+// ccl_status_t CCL_API ccl_get_version(ccl::library_version* version)
 // {
 //     if (!version)
 //     {

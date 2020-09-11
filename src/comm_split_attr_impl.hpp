@@ -9,19 +9,19 @@ namespace ccl
 /**
  * comm_split_attr attributes definition
  */
-template<ccl_comm_split_attributes attrId, class Value>
+template<comm_split_attr_id attrId, class Value>
 CCL_API Value comm_split_attr::set(const Value& v)
 {
-    return get_impl()->set_attribute_value(v, details::ccl_host_split_traits<ccl_comm_split_attributes, attrId> {});
+    return get_impl()->set_attribute_value(v, details::ccl_host_split_traits<comm_split_attr_id, attrId> {});
 }
 
-template <ccl_comm_split_attributes attrId>
-CCL_API const typename details::ccl_host_split_traits<ccl_comm_split_attributes, attrId>::type& comm_split_attr::get() const
+template <comm_split_attr_id attrId>
+CCL_API const typename details::ccl_host_split_traits<comm_split_attr_id, attrId>::type& comm_split_attr::get() const
 {
-    return get_impl()->get_attribute_value(details::ccl_host_split_traits<ccl_comm_split_attributes, attrId>{});
+    return get_impl()->get_attribute_value(details::ccl_host_split_traits<comm_split_attr_id, attrId>{});
 }
 
-template <ccl_comm_split_attributes attrId>
+template <comm_split_attr_id attrId>
 CCL_API bool comm_split_attr::is_valid() const noexcept
 {
     return get_impl()->is_valid<attrId>();
@@ -34,19 +34,19 @@ CCL_API bool comm_split_attr::is_valid() const noexcept
 /**
  * device_comm_split_attr attributes definition
  */
-template<ccl_comm_split_attributes attrId, class Value>
+template<comm_split_attr_id attrId, class Value>
 CCL_API Value device_comm_split_attr::set(const Value& v)
 {
-    return get_impl()->set_attribute_value(v, details::ccl_device_split_traits<ccl_comm_split_attributes, attrId> {});
+    return get_impl()->set_attribute_value(v, details::ccl_device_split_traits<comm_split_attr_id, attrId> {});
 }
 
-template <ccl_comm_split_attributes attrId>
-CCL_API const typename details::ccl_device_split_traits<ccl_comm_split_attributes, attrId>::type& device_comm_split_attr::get() const
+template <comm_split_attr_id attrId>
+CCL_API const typename details::ccl_device_split_traits<comm_split_attr_id, attrId>::type& device_comm_split_attr::get() const
 {
-    return get_impl()->get_attribute_value(details::ccl_device_split_traits<ccl_comm_split_attributes, attrId>{});
+    return get_impl()->get_attribute_value(details::ccl_device_split_traits<comm_split_attr_id, attrId>{});
 }
 
-template <ccl_comm_split_attributes attrId>
+template <comm_split_attr_id attrId>
 CCL_API bool device_comm_split_attr::is_valid() const noexcept
 {
     return get_impl()->is_valid<attrId>();

@@ -7,8 +7,9 @@
 namespace ccl
 {
 
-enum class ccl_datatype_attributes : int {
+enum class datatype_attr_id : int {
     version,
+
     size,
 
     last_value

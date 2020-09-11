@@ -2,7 +2,7 @@
 
 namespace ccl
 {
-ccl::version ccl_empty_attr::version {
+ccl::library_version ccl_empty_attr::version {
     CCL_MAJOR_VERSION,
     CCL_MINOR_VERSION,
     CCL_UPDATE_VERSION,

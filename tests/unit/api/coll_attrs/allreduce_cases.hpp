@@ -13,10 +13,10 @@ void stub_reduction(
 
 TEST(coll_attr, allreduce_attr_creation)
 {
-    ccl::reduction_fn_t function {nullptr};
+    ccl::reduction_fn function {nullptr};
 
     auto attr = ccl::create_coll_attr<ccl::allreduce_attr>(
-                                                ccl::attr_arg<ccl::allreduce_attr_id::reduction_fn>(function));
+                                                ccl::attr_val<ccl::allreduce_attr_id::reduction_fn>(function));
 
     ASSERT_TRUE(attr.get<ccl::operation_attr_id::version>().full != nullptr);
     ASSERT_EQ(attr.get<ccl::allreduce_attr_id::reduction_fn>().get(), function);
@@ -24,10 +24,10 @@ TEST(coll_attr, allreduce_attr_creation)
 
 TEST(coll_attr, allreduce_copy_on_write_attr)
 {
-    ccl::reduction_fn_t function {nullptr};
+    ccl::reduction_fn function {nullptr};
 
     auto attr = ccl::create_coll_attr<ccl::allreduce_attr>(
-                                                ccl::attr_arg<ccl::allreduce_attr_id::reduction_fn>(function));
+                                                ccl::attr_val<ccl::allreduce_attr_id::reduction_fn>(function));
 
     auto original_inner_impl_ptr = attr.get_impl();
 
@@ -35,8 +35,8 @@ TEST(coll_attr, allreduce_copy_on_write_attr)
 
     //set new val
     {
-        ccl::details::function_holder<ccl::reduction_fn_t> check_val{stub_reduction};
-        attr.set<ccl::allreduce_attr_id::reduction_fn>((ccl::reduction_fn_t)stub_reduction);
+        ccl::details::function_holder<ccl::reduction_fn> check_val{stub_reduction};
+        attr.set<ccl::allreduce_attr_id::reduction_fn>((ccl::reduction_fn)stub_reduction);
         ASSERT_EQ(attr.get<ccl::allreduce_attr_id::reduction_fn>().get(), check_val.get());
     }
 
@@ -49,7 +49,7 @@ TEST(coll_attr, allreduce_copy_on_write_attr)
 TEST(coll_attr, allreduce_copy_attr)
 {
     auto attr = ccl::create_coll_attr<ccl::allreduce_attr>(
-                                                ccl::attr_arg<ccl::allreduce_attr_id::reduction_fn>(stub_reduction));
+                                                ccl::attr_val<ccl::allreduce_attr_id::reduction_fn>(stub_reduction));
 
     auto original_inner_impl_ptr = attr.get_impl().get();
     auto attr2 = attr;
@@ -62,7 +62,7 @@ TEST(coll_attr, allreduce_copy_attr)
 TEST(coll_attr, allreduce_move_attr)
 {
     auto attr = ccl::create_coll_attr<ccl::allreduce_attr>(
-                                                ccl::attr_arg<ccl::allreduce_attr_id::reduction_fn>(stub_reduction));
+                                                ccl::attr_val<ccl::allreduce_attr_id::reduction_fn>(stub_reduction));
 
     auto original_inner_impl_ptr = attr.get_impl().get();
 

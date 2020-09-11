@@ -40,7 +40,7 @@ public:
      * Set specific value for selft attribute by @attrId.
      * Previous attibute value would be returned
      */
-    template <ccl_comm_split_attributes attrId,
+    template <comm_split_attr_id attrId,
               class Value/*,
               class = typename std::enable_if<is_attribute_value_supported<attrId, Value>()>::type*/>
     Value set(const Value& v);
@@ -48,15 +48,15 @@ public:
     /**
      * Get specific attribute value by @attrId
      */
-    template <ccl_comm_split_attributes attrId>
-    const typename details::ccl_host_split_traits<ccl_comm_split_attributes, attrId>::type& get() const;
+    template <comm_split_attr_id attrId>
+    const typename details::ccl_host_split_traits<comm_split_attr_id, attrId>::type& get() const;
 
-    template <ccl_comm_split_attributes attrId>
+    template <comm_split_attr_id attrId>
     bool is_valid() const noexcept;
 
 private:
     friend class environment;
-    comm_split_attr(const typename details::ccl_host_split_traits<ccl_comm_split_attributes, ccl_comm_split_attributes::version>::type& version);
+    comm_split_attr(const typename details::ccl_host_split_traits<comm_split_attr_id, comm_split_attr_id::version>::type& version);
 
     /* TODO temporary function for UT compilation: would be part of ccl::environment in final*/
     template <class ...attr_value_pair_t>
@@ -99,7 +99,7 @@ public:
      * Set specific value for selft attribute by @attrId.
      * Previous attibute value would be returned
      */
-    template <ccl_comm_split_attributes attrId,
+    template <comm_split_attr_id attrId,
               class Value/*,
               class = typename std::enable_if<is_attribute_value_supported<attrId, Value>()>::type*/>
     Value set(const Value& v);
@@ -107,15 +107,15 @@ public:
     /**
      * Get specific attribute value by @attrId
      */
-    template <ccl_comm_split_attributes attrId>
-    const typename details::ccl_device_split_traits<ccl_comm_split_attributes, attrId>::type& get() const;
+    template <comm_split_attr_id attrId>
+    const typename details::ccl_device_split_traits<comm_split_attr_id, attrId>::type& get() const;
 
-    template <ccl_comm_split_attributes attrId>
+    template <comm_split_attr_id attrId>
     bool is_valid() const noexcept;
 
 private:
     friend class environment;
-    device_comm_split_attr(const typename details::ccl_device_split_traits<ccl_comm_split_attributes, ccl_comm_split_attributes::version>::type& version);
+    device_comm_split_attr(const typename details::ccl_device_split_traits<comm_split_attr_id, comm_split_attr_id::version>::type& version);
 
     /* TODO temporary function for UT compilation: would be part of ccl::environment in final*/
     template <class ...attr_value_pair_t>
@@ -126,10 +126,10 @@ private:
 
 
 
-template <ccl_comm_split_attributes t, class value_type>
-constexpr auto attr_arg(value_type v) -> details::attr_value_tripple<ccl_comm_split_attributes,
+template <comm_split_attr_id t, class value_type>
+constexpr auto attr_val(value_type v) -> details::attr_value_tripple<comm_split_attr_id,
                                                               t, value_type>
 {
-    return details::attr_value_tripple<ccl_comm_split_attributes, t, value_type>(v);
+    return details::attr_value_tripple<comm_split_attr_id, t, value_type>(v);
 }
 } // namespace ccl

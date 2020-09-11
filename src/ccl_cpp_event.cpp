@@ -43,7 +43,7 @@ CCL_API void event::build_from_params()
     API_EVENT_CREATION_EXT_FORCE_INSTANTIATION(cl_event)
 #endif
 
-API_EVENT_FORCE_INSTANTIATION(ccl::event_attr_id::version, ccl::version);
+API_EVENT_FORCE_INSTANTIATION(ccl::event_attr_id::version, ccl::library_version);
 API_EVENT_FORCE_INSTANTIATION_GET(ccl::event_attr_id::native_handle);
 API_EVENT_FORCE_INSTANTIATION_GET(ccl::event_attr_id::context)
 API_EVENT_FORCE_INSTANTIATION(ccl::event_attr_id::command_type, uint32_t);

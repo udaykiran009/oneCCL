@@ -38,9 +38,9 @@ CCL_API ccl::environment& ccl::environment::instance()
 //     return;
 // }
 
-ccl::version CCL_API ccl::environment::get_version() const
+ccl::library_version CCL_API ccl::environment::get_library_version() const
 {
-    ccl::version ret;
+    ccl::library_version ret;
 
     ret.major = CCL_MAJOR_VERSION;
     ret.minor = CCL_MINOR_VERSION;
@@ -128,6 +128,30 @@ size_t CCL_API environment::get_datatype_size(ccl::datatype dtype) const
 
 } // namespace ccl
 
+/* TODO: enable back using create_device_communicators */
+// #ifdef CCL_ENABLE_SYCL
+// ccl::device_communicator CCL_API ccl::environment::create_single_device_communicator(
+//                                      const size_t comm_size,
+//                                      const size_t rank,
+//                                      const cl::sycl::device &device,
+//                                      ccl::shared_ptr_class<ccl::kvs_interface> kvs) const
+// {
+//     LOG_TRACE("Create single device communicator from SYCL device");
+//     ccl::device_comm_split_attr attr = create_device_comm_split_attr(
+//                 ccl::attr_val<ccl::comm_split_attr_id::group>(ccl::device_group_split_type::undetermined));
+//     ccl::communicator_interface_ptr impl = ccl::communicator_interface::create_communicator_impl(device,
+//                                                                                                  0,
+//                                                                                                  rank,
+//                                                                                                  attr);
+//     return ccl::device_communicator(std::move(impl));
+// }
+
+// ccl::device_communicator CCL_API ccl::environment::create_single_device_communicator(const size_t world_size,
+//                                      const size_t rank,
+//                                      cl::sycl::queue queue,
+//                                      ccl::shared_ptr_class<ccl::kvs_interface> kvs) const
+// {
+//     LOG_TRACE("Create single device communicator from SYCL queue");
 
  #ifdef CCL_ENABLE_SYCL
  ccl::device_communicator CCL_API ccl::environment::create_single_device_communicator(
@@ -157,7 +181,7 @@ ccl::stream CCL_API ccl::environment::create_postponed_api_type<ccl::stream, typ
                                typename ccl::unified_device_type::ccl_native_t device,
                                typename ccl::unified_device_context_type::ccl_native_t context) const
 {
-    ccl::version ret {};
+    ccl::library_version ret {};
     ret.major = CCL_MAJOR_VERSION;
     ret.minor = CCL_MINOR_VERSION;
     ret.update = CCL_UPDATE_VERSION;
@@ -171,7 +195,7 @@ template <>
 ccl::stream CCL_API ccl::environment::create_postponed_api_type<ccl::stream, typename ccl::unified_device_type::ccl_native_t>(
                                typename ccl::unified_device_type::ccl_native_t device) const
 {
-    ccl::version ret {};
+    ccl::library_version ret {};
     ret.major = CCL_MAJOR_VERSION;
     ret.minor = CCL_MINOR_VERSION;
     ret.update = CCL_UPDATE_VERSION;

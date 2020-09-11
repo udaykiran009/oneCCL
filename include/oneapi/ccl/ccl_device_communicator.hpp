@@ -141,7 +141,7 @@ public:
      * @return @ref ccl::request_t object to track the progress of the operation
      */
     template <class BufferType,
-              class = typename std::enable_if<ccl::is_native_type_supported<BufferType>()>::type>
+              class = typename std::enable_if<ccl::is_native_type_supported<BufferType>(), request_t>::type>
     request_t allgatherv(const BufferType* send_buf,
                          size_t send_count,
                          BufferType* recv_buf,
@@ -162,7 +162,7 @@ public:
      * @return @ref ccl::request_t object to track the progress of the operation
      */
     template <class BufferType,
-              class = typename std::enable_if<ccl::is_native_type_supported<BufferType>()>::type>
+              class = typename std::enable_if<ccl::is_native_type_supported<BufferType>(), request_t>::type>
     request_t allgatherv(const BufferType* send_buf,
                          size_t send_count,
                          vector_class<BufferType*>& recv_bufs,
@@ -183,7 +183,7 @@ public:
      * @return @ref ccl::request_t object to track the progress of the operation
      */
     template <class BufferObjectType,
-              class = typename std::enable_if<ccl::is_class_supported<BufferObjectType>()>::type>
+              class = typename std::enable_if<ccl::is_class_supported<BufferObjectType>(), request_t>::type>
     request_t allgatherv(const BufferObjectType& send_buf,
                          size_t send_count,
                          BufferObjectType& recv_buf,
@@ -204,7 +204,7 @@ public:
      * @return @ref ccl::request_t object to track the progress of the operation
      */
     template <class BufferObjectType,
-              class = typename std::enable_if<ccl::is_class_supported<BufferObjectType>()>::type>
+              class = typename std::enable_if<ccl::is_class_supported<BufferObjectType>(), request_t>::type>
     request_t allgatherv(const BufferObjectType& send_buf,
                          size_t send_count,
                          vector_class<reference_wrapper_class<BufferObjectType>>& recv_bufs,
@@ -250,7 +250,7 @@ public:
      * @return @ref ccl::request_t object to track the progress of the operation
      */
     template <class BufferType,
-              class = typename std::enable_if<ccl::is_native_type_supported<BufferType>()>::type>
+              class = typename std::enable_if<ccl::is_native_type_supported<BufferType>(), request_t>::type>
     request_t allreduce(const BufferType* send_buf,
                         BufferType* recv_buf,
                         size_t count,
@@ -271,7 +271,7 @@ public:
      * @return @ref ccl::request_t object to track the progress of the operation
      */
     template <class BufferObjectType,
-              class = typename std::enable_if<ccl::is_class_supported<BufferObjectType>()>::type>
+              class = typename std::enable_if<ccl::is_class_supported<BufferObjectType>(), request_t>::type>
     request_t allreduce(const BufferObjectType& send_buf,
                         BufferObjectType& recv_buf,
                         size_t count,
@@ -336,7 +336,7 @@ public:
      * @return @ref ccl::request_t object to track the progress of the operation
      */
     template <class BufferType,
-              class = typename std::enable_if<ccl::is_native_type_supported<BufferType>()>::type>
+              class = typename std::enable_if<ccl::is_native_type_supported<BufferType>(), request_t>::type>
     request_t alltoall(const BufferType* send_buf,
                        BufferType* recv_buf,
                        size_t count,
@@ -355,7 +355,7 @@ public:
      * @return @ref ccl::request_t object to track the progress of the operation
      */
     template <class BufferType,
-              class = typename std::enable_if<ccl::is_native_type_supported<BufferType>()>::type>
+              class = typename std::enable_if<ccl::is_native_type_supported<BufferType>(), request_t>::type>
     request_t alltoall(const vector_class<BufferType*>& send_buf,
                        const vector_class<BufferType*>& recv_buf,
                        size_t count,
@@ -375,7 +375,7 @@ public:
      * @return @ref ccl::request_t object to track the progress of the operation
      */
     template <class BufferObjectType,
-              class = typename std::enable_if<ccl::is_class_supported<BufferObjectType>()>::type>
+              class = typename std::enable_if<ccl::is_class_supported<BufferObjectType>(), request_t>::type>
     request_t alltoall(const BufferObjectType& send_buf,
                        BufferObjectType& recv_buf,
                        size_t count,
@@ -394,7 +394,7 @@ public:
      * @return @ref ccl::request_t object to track the progress of the operation
      */
     template <class BufferObjectType,
-              class = typename std::enable_if<ccl::is_class_supported<BufferObjectType>()>::type>
+              class = typename std::enable_if<ccl::is_class_supported<BufferObjectType>(), request_t>::type>
     request_t alltoall(const vector_class<reference_wrapper_class<BufferObjectType>>& send_buf,
                        const vector_class<reference_wrapper_class<BufferObjectType>>& recv_buf,
                        size_t count,
@@ -461,7 +461,7 @@ public:
      * @return @ref ccl::request_t object to track the progress of the operation
      */
     template <class BufferType,
-              class = typename std::enable_if<ccl::is_native_type_supported<BufferType>()>::type>
+              class = typename std::enable_if<ccl::is_native_type_supported<BufferType>(), request_t>::type>
     request_t alltoallv(const BufferType* send_buf,
                         const vector_class<size_t>& send_counts,
                         BufferType* recv_buf,
@@ -482,7 +482,7 @@ public:
      * @return @ref ccl::request_t object to track the progress of the operation
      */
     template <class BufferType,
-              class = typename std::enable_if<ccl::is_native_type_supported<BufferType>()>::type>
+              class = typename std::enable_if<ccl::is_native_type_supported<BufferType>(), request_t>::type>
     request_t alltoallv(const vector_class<BufferType*>& send_bufs,
                         const vector_class<size_t>& send_counts,
                         const vector_class<BufferType*>& recv_bufs,
@@ -503,7 +503,7 @@ public:
      * @return @ref ccl::request_t object to track the progress of the operation
      */
     template <class BufferObjectType,
-              class = typename std::enable_if<ccl::is_class_supported<BufferObjectType>()>::type>
+              class = typename std::enable_if<ccl::is_class_supported<BufferObjectType>(), request_t>::type>
     request_t alltoallv(const BufferObjectType& send_buf,
                         const vector_class<size_t>& send_counts,
                         BufferObjectType& recv_buf,
@@ -525,7 +525,7 @@ public:
      * @return @ref ccl::request_t object to track the progress of the operation
      */
     template <class BufferObjectType,
-              class = typename std::enable_if<ccl::is_class_supported<BufferObjectType>()>::type>
+              class = typename std::enable_if<ccl::is_class_supported<BufferObjectType>(), request_t>::type>
     request_t alltoallv(const vector_class<reference_wrapper_class<BufferObjectType>>& send_bufs,
                         const vector_class<size_t>& send_counts,
                         const vector_class<reference_wrapper_class<BufferObjectType>>& recv_bufs,
@@ -583,7 +583,7 @@ public:
      * @return @ref ccl::request_t object to track the progress of the operation
      */
     template <class BufferType,
-              class = typename std::enable_if<ccl::is_native_type_supported<BufferType>()>::type>
+              class = typename std::enable_if<ccl::is_native_type_supported<BufferType>(), request_t>::type>
     request_t broadcast(BufferType* buf,
                     size_t count,
                     size_t root,
@@ -603,7 +603,7 @@ public:
      * @return @ref ccl::request_t object to track the progress of the operation
      */
     template <class BufferObjectType,
-              class = typename std::enable_if<ccl::is_class_supported<BufferObjectType>()>::type>
+              class = typename std::enable_if<ccl::is_class_supported<BufferObjectType>(), request_t>::type>
     request_t broadcast(BufferObjectType& buf,
                     size_t count,
                     size_t root,
@@ -653,7 +653,7 @@ public:
      * @return @ref ccl::request_t object to track the progress of the operation
      */
     template <class BufferType,
-              class = typename std::enable_if<ccl::is_native_type_supported<BufferType>()>::type>
+              class = typename std::enable_if<ccl::is_native_type_supported<BufferType>(), request_t>::type>
     request_t reduce(const BufferType* send_buf,
                      BufferType* recv_buf,
                      size_t count,
@@ -677,7 +677,7 @@ public:
      * @return @ref ccl::request_t object to track the progress of the operation
      */
     template <class BufferObjectType,
-              class = typename std::enable_if<ccl::is_class_supported<BufferObjectType>()>::type>
+              class = typename std::enable_if<ccl::is_class_supported<BufferObjectType>(), request_t>::type>
     request_t reduce(const BufferObjectType& send_buf,
                      BufferObjectType& recv_buf,
                      size_t count,
@@ -724,7 +724,7 @@ public:
      * @return @ref ccl::request_t object to track the progress of the operation
      */
     template <class BufferType,
-              class = typename std::enable_if<ccl::is_native_type_supported<BufferType>()>::type>
+              class = typename std::enable_if<ccl::is_native_type_supported<BufferType>(), request_t>::type>
     request_t reduce_scatter(const BufferType* send_buf,
                              BufferType* recv_buf,
                              size_t recv_count,
@@ -744,10 +744,6 @@ public:
      * @param deps optional vector of events that the operation should depend on
      * @return @ref ccl::request_t object to track the progress of the operation
      */
-    // template <class BufferObjectType,
-    //           class = typename std::enable_if<ccl::is_class_supported<BufferObjectType>()>::type>
-
-    /* TODO: apply this in other places */
     template <class BufferObjectType,
               class = typename std::enable_if<ccl::is_class_supported<BufferObjectType>(), request_t>::type>
     request_t reduce_scatter(const BufferObjectType& send_buf,
@@ -758,117 +754,11 @@ public:
                    const reduce_scatter_attr& attr = default_reduce_scatter_attr,
                    const vector_class<event>& deps = {});
 
-    /**
-     * Sparse allreduce is a collective communication operation that makes global reduction operation
-     * on sparse buffers from all ranks of communicator and distributes result back to all ranks.
-     * Sparse buffers are defined by separate index and value buffers.
-     */
-
-    /**
-     * @param send_ind_buf the buffer of indices with @c send_ind_count elements of type @c ind_dtype
-     * @param send_int_count number of elements of type @c ind_type @c send_ind_buf
-     * @param send_val_buf the buffer of values with @c send_val_count elements of type @c val_dtype
-     * @param send_val_count number of elements of type @c val_type @c send_val_buf
-     * @param recv_ind_buf [out] the buffer to store reduced indices, unused
-     * @param recv_ind_count [out] number of elements in @c recv_ind_buf, unused
-     * @param recv_val_buf [out] the buffer to store reduced values, unused
-     * @param recv_val_count [out] number of elements in @c recv_val_buf, unused
-     * @param ind_dtype datatype of elements in @c send_ind_buf and @c recv_ind_buf
-     * @param val_dtype datatype of elements in @c send_val_buf and @c recv_val_buf
-     * @param rtype type of reduction operation to be applied
-     * @param op_stream op_stream associated with the operation
-     * @param attr optional attributes to customize operation
-     * @param deps optional vector of events that the operation should depend on
-     * @return @ref ccl::request_t object to track the progress of the operation
-     */
-    request_t sparse_allreduce(const void* send_ind_buf,
-                               size_t send_ind_count,
-                               const void* send_val_buf,
-                               size_t send_val_count,
-                               void* recv_ind_buf,
-                               size_t recv_ind_count,
-                               void* recv_val_buf,
-                               size_t recv_val_count,
-                               ccl::datatype ind_dtype,
-                               ccl::datatype val_dtype,
-                               reduction rtype,
-                               stream op_stream = default_stream,
-                               const sparse_allreduce_attr& attr = default_sparse_allreduce_attr,
-                               const vector_class<event>& deps = {});
-
-    /**
-     * Type safety version:
-     * @param send_ind_buf the buffer of indices with @c send_ind_count elements of type @c ind_dtype
-     * @param send_int_count number of elements of type @c ind_type @c send_ind_buf
-     * @param send_val_buf the buffer of values with @c send_val_count elements of type @c val_dtype
-     * @param send_val_count number of elements of type @c val_type @c send_val_buf
-     * @param recv_ind_buf [out] the buffer to store reduced indices, unused
-     * @param recv_ind_count [out] number of elements in @c recv_ind_buf, unused
-     * @param recv_val_buf [out] the buffer to store reduced values, unused
-     * @param recv_val_count [out] number of elements in @c recv_val_buf, unused
-     * @param rtype type of reduction operation to be applied
-     * @param op_stream op_stream associated with the operation
-     * @param attr optional attributes to customize operation
-     * @param deps optional vector of events that the operation should depend on
-     * @return @ref ccl::request_t object to track the progress of the operation
-     */
-    template <
-        class index_BufferType,
-        class value_BufferType,
-        class = typename std::enable_if<ccl::is_native_type_supported<value_BufferType>()>::type>
-    request_t sparse_allreduce(const index_BufferType* send_ind_buf,
-                               size_t send_ind_count,
-                               const value_BufferType* send_val_buf,
-                               size_t send_val_count,
-                               index_BufferType* recv_ind_buf,
-                               size_t recv_ind_count,
-                               value_BufferType* recv_val_buf,
-                               size_t recv_val_count,
-                               reduction rtype,
-                               stream op_stream = default_stream,
-                               const sparse_allreduce_attr& attr = default_sparse_allreduce_attr,
-                               const vector_class<event>& deps = {});
-
-    /**
-     * Type safety version:
-     * @param send_ind_buf the buffer of indices with @c send_ind_count elements of type @c ind_dtype
-     * @param send_int_count number of elements of type @c ind_type @c send_ind_buf
-     * @param send_val_buf the buffer of values with @c send_val_count elements of type @c val_dtype
-     * @param send_val_count number of elements of type @c val_type @c send_val_buf
-     * @param recv_ind_buf [out] the buffer to store reduced indices, unused
-     * @param recv_ind_count [out] number of elements in @c recv_ind_buf, unused
-     * @param recv_val_buf [out] the buffer to store reduced values, unused
-     * @param recv_val_count [out] number of elements in @c recv_val_buf, unused
-     * @param rtype type of reduction operation to be applied
-     * @param op_stream op_stream associated with the operation
-     * @param attr optional attributes to customize operation
-     * @param deps optional vector of events that the operation should depend on
-     * @return @ref ccl::request_t object to track the progress of the operation
-     */
-    template <
-        class index_BufferObjectType,
-        class value_BufferObjectType,
-        class = typename std::enable_if<ccl::is_class_supported<value_BufferObjectType>()>::type>
-    request_t sparse_allreduce(const index_BufferObjectType& send_ind_buf,
-                               size_t send_ind_count,
-                               const value_BufferObjectType& send_val_buf,
-                               size_t send_val_count,
-                               index_BufferObjectType& recv_ind_buf,
-                               size_t recv_ind_count,
-                               value_BufferObjectType& recv_val_buf,
-                               size_t recv_val_count,
-                               reduction rtype,
-                               stream op_stream = default_stream,
-                               const sparse_allreduce_attr& attr = default_sparse_allreduce_attr,
-                               const vector_class<event>& deps = {});
 private:
     friend class environment;
     friend class comm_group;
 
     device_communicator(impl_value_t&& impl);
-
-    size_t get_group_unique_id() const;
-    bool is_ready() const;
 
     // factory methods
     template<class DeviceType,

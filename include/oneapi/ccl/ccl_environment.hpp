@@ -55,7 +55,7 @@ public:
     /**
      * Retrieves the library version
      */
-    ccl::version get_version() const;
+    ccl::library_version get_library_version() const;
 
     /**
      * Creates @attr which used to register custom datatype

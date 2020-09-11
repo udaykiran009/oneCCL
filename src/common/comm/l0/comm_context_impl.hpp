@@ -43,7 +43,7 @@ ccl::device_communicator ccl::comm_group::create_communicator(const DeviceType& 
         auto host_comm = pimpl->get_host_communicator();
         //TODO
         ccl::device_comm_split_attr single_dev_attr = attr;
-        single_dev_attr.set<ccl::ccl_comm_split_attributes::group>(ccl::device_group_split_type::undetermined);
+        single_dev_attr.set<ccl::comm_split_attr_id::group>(ccl::device_group_split_type::undetermined);
         impl = ccl::communicator_interface::create_communicator_impl(device, host_comm->rank(), host_comm->size(), single_dev_attr);
     }
     else

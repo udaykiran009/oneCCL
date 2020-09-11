@@ -15,7 +15,7 @@ struct comm_split_attr_impl
     {
         return 0;
     }
-    ccl::version library_version;
+    ccl::library_version version;
 };
 
 struct device_attr_impl
@@ -43,7 +43,7 @@ event create_event_from_attr(event_type& native_event_handle,
                              typename unified_device_context_type::ccl_native_t context,
                              attr_value_pair_t&&...avps)
 {
-    ccl::version ret {};
+    ccl::library_version ret {};
     ret.major = CCL_MAJOR_VERSION;
     ret.minor = CCL_MINOR_VERSION;
     ret.update = CCL_UPDATE_VERSION;
@@ -177,14 +177,14 @@ CCL_API size_t ccl::device_communicator::size() const
     return get_impl()->size();
 }
 
-CCL_API size_t ccl::device_communicator::get_group_unique_id() const
+/*CCL_API size_t ccl::device_communicator::get_group_unique_id() const
 {
     return static_cast<size_t> (get_impl()->get_comm_group_id());
-}
+}*/
 
 CCL_API ccl::device_communicator ccl::device_communicator::split(const ccl::device_comm_split_attr& attr)
 {
-    if (!attr.is_valid<ccl::ccl_comm_split_attributes::group>())
+    if (!attr.is_valid<ccl::comm_split_attr_id::group>())
     {
         throw ccl_error(std::string(__FUNCTION__) + " - TODO `device_comm_split_attr`: supports `group` only");
     }
@@ -233,10 +233,10 @@ CCL_API ccl::device_communicator::ccl_context_t ccl::device_communicator::get_co
 }
 
 
-CCL_API bool ccl::device_communicator::is_ready() const
+/*CCL_API bool ccl::device_communicator::is_ready() const
 {
     return get_impl()->is_ready();
-}
+}*/
 
 /* allgatherv */
 //(stream) ? stream.get_impl() :222 ccl::get_empty_stream().get_impl())111;
@@ -708,81 +708,81 @@ ccl::device_communicator::reduce_scatter(const BufferObjectType& send_buf,
 }
 
 /* sparse_allreduce */
-ccl::device_communicator::request_t CCL_API
-ccl::device_communicator::sparse_allreduce(const void* send_ind_buf,
-                               size_t send_ind_count,
-                               const void* send_val_buf,
-                               size_t send_val_count,
-                               void* recv_ind_buf,
-                               size_t recv_ind_count,
-                               void* recv_val_buf,
-                               size_t recv_val_count,
-                               datatype index_dtype,
-                               datatype value_dtype,
-                               reduction reduction,
-                               stream stream,
-                               const sparse_allreduce_attr& attr,
-                               const vector_class<event>& deps)
-{
-    return get_impl()->sparse_allreduce(send_ind_buf, send_ind_count,
-                                   send_val_buf, send_val_count,
-                                   recv_ind_buf, recv_ind_count,
-                                   recv_val_buf, recv_val_count,
-                                   index_dtype,
-                                   value_dtype,
-                                   reduction,
-                                   stream.get_impl(), attr, deps);
-}
+// ccl::device_communicator::request_t CCL_API
+// ccl::device_communicator::sparse_allreduce(const void* send_ind_buf,
+//                                size_t send_ind_count,
+//                                const void* send_val_buf,
+//                                size_t send_val_count,
+//                                void* recv_ind_buf,
+//                                size_t recv_ind_count,
+//                                void* recv_val_buf,
+//                                size_t recv_val_count,
+//                                datatype index_dtype,
+//                                datatype value_dtype,
+//                                reduction reduction,
+//                                stream stream,
+//                                const sparse_allreduce_attr& attr,
+//                                const vector_class<event>& deps)
+// {
+//     return get_impl()->sparse_allreduce(send_ind_buf, send_ind_count,
+//                                    send_val_buf, send_val_count,
+//                                    recv_ind_buf, recv_ind_count,
+//                                    recv_val_buf, recv_val_count,
+//                                    index_dtype,
+//                                    value_dtype,
+//                                    reduction,
+//                                    stream.get_impl(), attr, deps);
+// }
 
-template<class index_BufferType,
-         class value_BufferType,
-         typename T>
-ccl::device_communicator::request_t CCL_API
-ccl::device_communicator::sparse_allreduce(const index_BufferType* send_ind_buf,
-                               size_t send_ind_count,
-                               const value_BufferType* send_val_buf,
-                               size_t send_val_count,
-                               index_BufferType* recv_ind_buf,
-                               size_t recv_ind_count,
-                               value_BufferType* recv_val_buf,
-                               size_t recv_val_count,
-                               reduction reduction,
-                               stream stream,
-                               const sparse_allreduce_attr& attr,
-                               const vector_class<event>& deps)
-{
-    return get_impl()->sparse_allreduce(send_ind_buf, send_ind_count,
-                                   send_val_buf, send_val_count,
-                                   recv_ind_buf, recv_ind_count,
-                                   recv_val_buf, recv_val_count,
-                                   reduction,
-                                   stream.get_impl(), attr, deps);
-}
+// template<class index_BufferType,
+//          class value_BufferType,
+//          typename T>
+// ccl::device_communicator::request_t CCL_API
+// ccl::device_communicator::sparse_allreduce(const index_BufferType* send_ind_buf,
+//                                size_t send_ind_count,
+//                                const value_BufferType* send_val_buf,
+//                                size_t send_val_count,
+//                                index_BufferType* recv_ind_buf,
+//                                size_t recv_ind_count,
+//                                value_BufferType* recv_val_buf,
+//                                size_t recv_val_count,
+//                                reduction reduction,
+//                                stream stream,
+//                                const sparse_allreduce_attr& attr,
+//                                const vector_class<event>& deps)
+// {
+//     return get_impl()->sparse_allreduce(send_ind_buf, send_ind_count,
+//                                    send_val_buf, send_val_count,
+//                                    recv_ind_buf, recv_ind_count,
+//                                    recv_val_buf, recv_val_count,
+//                                    reduction,
+//                                    stream.get_impl(), attr, deps);
+// }
 
-template<class index_BufferObjectType,
-         class value_BufferObjectType,
-         typename T>
-ccl::device_communicator::request_t CCL_API
-ccl::device_communicator::sparse_allreduce(const index_BufferObjectType& send_ind_buf,
-                               size_t send_ind_count,
-                               const value_BufferObjectType& send_val_buf,
-                               size_t send_val_count,
-                               index_BufferObjectType& recv_ind_buf,
-                               size_t recv_ind_count,
-                               value_BufferObjectType& recv_val_buf,
-                               size_t recv_val_count,
-                               reduction reduction,
-                               stream stream,
-                               const sparse_allreduce_attr& attr,
-                               const vector_class<event>& deps)
-{
-    return get_impl()->sparse_allreduce(send_ind_buf, send_ind_count,
-                                   send_val_buf, send_val_count,
-                                   recv_ind_buf, recv_ind_count,
-                                   recv_val_buf, recv_val_count,
-                                   reduction,
-                                   stream.get_impl(), attr, deps);
-}
+// template<class IndexBufferObjectType,
+//          class ValueBufferObjectType,
+//          typename T>
+// ccl::device_communicator::request_t CCL_API
+// ccl::device_communicator::sparse_allreduce(const IndexBufferObjectType& send_ind_buf,
+//                                size_t send_ind_count,
+//                                const ValueBufferObjectType& send_val_buf,
+//                                size_t send_val_count,
+//                                IndexBufferObjectType& recv_ind_buf,
+//                                size_t recv_ind_count,
+//                                ValueBufferObjectType& recv_val_buf,
+//                                size_t recv_val_count,
+//                                reduction reduction,
+//                                stream stream,
+//                                const sparse_allreduce_attr& attr,
+//                                const vector_class<event>& deps)
+// {
+//     return get_impl()->sparse_allreduce(send_ind_buf, send_ind_count,
+//                                    send_val_buf, send_val_count,
+//                                    recv_ind_buf, recv_ind_count,
+//                                    recv_val_buf, recv_val_count,
+//                                    reduction,
+//                                    stream.get_impl(), attr, deps);
+// }
 
 
 }

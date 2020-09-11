@@ -10,13 +10,13 @@ namespace details
 {
 
 template <>
-struct ccl_api_type_attr_traits<ccl_datatype_attributes, ccl_datatype_attributes::version> {
-    using type = ccl::version;
+struct ccl_api_type_attr_traits<datatype_attr_id, datatype_attr_id::version> {
+    using type = ccl::library_version;
     using return_type = type;
 };
 
 template <>
-struct ccl_api_type_attr_traits<ccl_datatype_attributes, ccl_datatype_attributes::size> {
+struct ccl_api_type_attr_traits<datatype_attr_id, datatype_attr_id::size> {
     using type = size_t;
     using return_type = type;
 };

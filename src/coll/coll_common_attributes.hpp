@@ -5,9 +5,9 @@
 #include "oneapi/ccl/ccl_coll_attr_ids_traits.hpp"
 
 namespace ccl {
-struct ccl_common_op_attr_impl_t
+struct ccl_operation_attr_impl_t
 {
-    ccl_common_op_attr_impl_t(const ccl::version& version);
+    ccl_operation_attr_impl_t(const ccl::library_version& version);
     /**
      * `version` operations
      */
@@ -79,8 +79,8 @@ struct ccl_common_op_attr_impl_t
         set_attribute_value(typename match_id_traits_t::type val, const match_id_traits_t& t);
 
 
-    typename ccl_common_op_attr_impl_t::prologue_fn_traits_t::return_type prologue_fn{};
-    typename ccl_common_op_attr_impl_t::epilogue_fn_traits_t::return_type epilogue_fn{};
+    typename ccl_operation_attr_impl_t::prologue_fn_traits_t::return_type prologue_fn{};
+    typename ccl_operation_attr_impl_t::epilogue_fn_traits_t::return_type epilogue_fn{};
 
     /* Priority for collective operation */
     size_t priority = 0;
@@ -99,6 +99,6 @@ struct ccl_common_op_attr_impl_t
     typename match_id_traits_t::return_type match_id{};
 
 protected:
-    ccl::version library_version;
+    ccl::library_version version;
 };
 }

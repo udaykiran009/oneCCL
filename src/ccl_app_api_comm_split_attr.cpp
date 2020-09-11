@@ -17,7 +17,7 @@ template                                                                        
 CCL_API IN_Value class_name::set<IN_attrId, IN_Value>(const IN_Value& v);                           \
                                                                                                     \
 template                                                                                            \
-CCL_API const typename details::OUT_Traits_Value<ccl_comm_split_attributes, IN_attrId>::type& class_name::get<IN_attrId>() const; \
+CCL_API const typename details::OUT_Traits_Value<comm_split_attr_id, IN_attrId>::type& class_name::get<IN_attrId>() const; \
                                                                                                     \
 template                                                                                            \
 CCL_API bool class_name::is_valid<IN_attrId>() const noexcept;
@@ -42,7 +42,7 @@ CCL_API comm_split_attr::comm_split_attr(const comm_split_attr& src) :
 {
 }
 
-CCL_API comm_split_attr::comm_split_attr(const typename details::ccl_host_split_traits<ccl_comm_split_attributes, ccl_comm_split_attributes::version>::type& version) :
+CCL_API comm_split_attr::comm_split_attr(const typename details::ccl_host_split_traits<comm_split_attr_id, comm_split_attr_id::version>::type& version) :
         base_t(std::shared_ptr<impl_t>(new impl_t(version)))
 {
 }
@@ -66,9 +66,9 @@ CCL_API comm_split_attr& comm_split_attr::operator=(comm_split_attr&& src)
     }
     return *this;
 }
-API_FORCE_INSTANTIATION(comm_split_attr, ccl_comm_split_attributes::color, int, ccl_host_split_traits)
-API_FORCE_INSTANTIATION(comm_split_attr, ccl_comm_split_attributes::group, ccl_group_split_type, ccl_host_split_traits)
-API_FORCE_INSTANTIATION(comm_split_attr, ccl_comm_split_attributes::version, ccl::version, ccl_host_split_traits)
+API_FORCE_INSTANTIATION(comm_split_attr, comm_split_attr_id::color, int, ccl_host_split_traits)
+API_FORCE_INSTANTIATION(comm_split_attr, comm_split_attr_id::group, ccl_group_split_type, ccl_host_split_traits)
+API_FORCE_INSTANTIATION(comm_split_attr, comm_split_attr_id::version, ccl::library_version, ccl_host_split_traits)
 
 
 
@@ -93,7 +93,7 @@ CCL_API device_comm_split_attr::device_comm_split_attr(const device_comm_split_a
 {
 }
 
-CCL_API device_comm_split_attr::device_comm_split_attr(const typename details::ccl_host_split_traits<ccl_comm_split_attributes, ccl_comm_split_attributes::version>::type& version) :
+CCL_API device_comm_split_attr::device_comm_split_attr(const typename details::ccl_host_split_traits<comm_split_attr_id, comm_split_attr_id::version>::type& version) :
         base_t(std::shared_ptr<impl_t>(new impl_t(version)))
 {
 }
@@ -111,9 +111,9 @@ CCL_API device_comm_split_attr& device_comm_split_attr::operator=(device_comm_sp
     }
     return *this;
 }
-API_FORCE_INSTANTIATION(device_comm_split_attr, ccl_comm_split_attributes::color, int, ccl_device_split_traits)
-API_FORCE_INSTANTIATION(device_comm_split_attr, ccl_comm_split_attributes::group, device_group_split_type, ccl_device_split_traits)
-API_FORCE_INSTANTIATION(device_comm_split_attr, ccl_comm_split_attributes::version, ccl::version, ccl_device_split_traits)
+API_FORCE_INSTANTIATION(device_comm_split_attr, comm_split_attr_id::color, int, ccl_device_split_traits)
+API_FORCE_INSTANTIATION(device_comm_split_attr, comm_split_attr_id::group, device_group_split_type, ccl_device_split_traits)
+API_FORCE_INSTANTIATION(device_comm_split_attr, comm_split_attr_id::version, ccl::library_version, ccl_device_split_traits)
 
 #endif   //#if defined(MULTI_GPU_SUPPORT) || defined(CCL_ENABLE_SYCL)/
 

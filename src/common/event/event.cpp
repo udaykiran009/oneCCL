@@ -3,14 +3,14 @@
 #include "oneapi/ccl/native_device_api/export_api.hpp"
 
 
-ccl_event::ccl_event(event_native_t& event, const ccl::version& version) :
-        library_version(version),
+ccl_event::ccl_event(event_native_t& event, const ccl::library_version& version) :
+        version(version),
         native_event(event)
 {
 }
 
-ccl_event::ccl_event(event_native_handle_t event, event_native_context_t context, const ccl::version& version) :
-        library_version(version)
+ccl_event::ccl_event(event_native_handle_t event, event_native_context_t context, const ccl::library_version& version) :
+        version(version)
 {
 #ifdef CCL_ENABLE_SYCL
     native_event = event_native_t{event, context};
@@ -47,14 +47,14 @@ typename ccl_event::version_traits_t::type
 ccl_event::set_attribute_value(typename version_traits_t::type val, const version_traits_t& t)
 {
     (void)t;
-    throw ccl::ccl_error("Set value for 'ccl::event_attr_id::version' is not allowed");
-    return library_version;
+    throw ccl::ccl_error("Set value for 'ccl::event_attr_id::library_version' is not allowed");
+    return version;
 }
 
 const typename ccl_event::version_traits_t::return_type&
 ccl_event::get_attribute_value(const version_traits_t& id) const
 {
-    return library_version;
+    return version;
 }
 
 typename ccl_event::native_handle_traits_t::return_type &

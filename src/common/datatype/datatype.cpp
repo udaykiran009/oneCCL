@@ -129,7 +129,7 @@ ccl::datatype ccl_datatype_storage::create_by_datatype_size(size_t datatype_size
 
 ccl::datatype ccl_datatype_storage::create(const ccl::datatype_attr& attr)
 {
-    size_t size = attr.get<ccl::ccl_datatype_attributes::size>();
+    size_t size = attr.get<ccl::datatype_attr_id::size>();
     return create_by_datatype_size(size);
 }
 

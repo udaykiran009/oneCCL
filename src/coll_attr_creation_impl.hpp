@@ -10,7 +10,7 @@ template <class coll_attribute_type,
           class ...attr_value_pair_t>
 coll_attribute_type create_coll_attr(attr_value_pair_t&&...avps)
 {
-    ccl::version ret {};
+    ccl::library_version ret {};
     ret.major = CCL_MAJOR_VERSION;
     ret.minor = CCL_MINOR_VERSION;
     ret.update = CCL_UPDATE_VERSION;

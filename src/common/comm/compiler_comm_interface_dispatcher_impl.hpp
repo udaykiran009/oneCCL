@@ -82,15 +82,15 @@ communicator_interface_dispatcher::create_communicator_from_unified_device(ccl::
     ccl::device_group_split_type preferred_topology_group = ccl::device_group_split_type::cluster;
 
     // read comm split attributes
-    if (attr.is_valid<ccl::ccl_comm_split_attributes::group>())
+    if (attr.is_valid<ccl::comm_split_attr_id::group>())
     {
-        preferred_topology_group = attr.get<ccl::ccl_comm_split_attributes::group>();
-        if(attr.is_valid<ccl::ccl_comm_split_attributes::color>())
+        preferred_topology_group = attr.get<ccl::comm_split_attr_id::group>();
+        if(attr.is_valid<ccl::comm_split_attr_id::color>())
         {
             throw ccl_error(std::string("Invalid `device_comm_split_attr`: both `color` and `group` set. Only one is supported"));
         }
     }
-    else if (attr.is_valid<ccl::ccl_comm_split_attributes::color>())
+    else if (attr.is_valid<ccl::comm_split_attr_id::color>())
     {
         throw ccl_error(std::string(__FUNCTION__) + " - not implemented for 'color'");
     }

@@ -59,8 +59,8 @@ TEST(stream_api, stream_from_sycl_device_context_creation_with_attr)
     auto dev = cl::sycl::device();
     auto ctx = cl::sycl::context(dev);
     auto str = ccl::stream::create_stream_from_attr(dev, ctx,
-                                            ccl::attr_arg<ccl::stream_attr_id::ordinal>(1),
-                                            ccl::attr_arg<ccl::stream_attr_id::priority>(100));
+                                            ccl::attr_val<ccl::stream_attr_id::ordinal>(1),
+                                            ccl::attr_val<ccl::stream_attr_id::priority>(100));
 
     ASSERT_TRUE(str.get<ccl::stream_attr_id::version>().full != nullptr);
 

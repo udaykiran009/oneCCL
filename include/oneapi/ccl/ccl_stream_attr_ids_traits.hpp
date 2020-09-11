@@ -15,7 +15,7 @@ namespace details
  */
 template <>
 struct ccl_api_type_attr_traits<stream_attr_id, stream_attr_id::version> {
-    using type = ccl::version;
+    using type = ccl::library_version;
     using return_type = type;
 };
 
