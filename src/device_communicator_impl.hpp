@@ -240,7 +240,7 @@ ccl::device_communicator::allgatherv(const void* send_buf,
                          const allgatherv_attr& attr,
                          const vector_class<event>& deps)
 {
-    static_assert(std::is_base_of<direct_access_policy<ccl_stream>, stream>::value, "stream should provide shared acces to ints pimpl member");
+    //static_assert(std::is_base_of<direct_access_policy<ccl_stream>, stream>::value, "stream should provide shared acces to ints pimpl member");
     return get_impl()->allgatherv(send_buf, send_count, recv_buf, recv_counts,
                              dtype,
                              op_stream.get_impl(), attr, deps);

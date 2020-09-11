@@ -1,4 +1,5 @@
 #pragma once
+#if defined(MULTI_GPU_SUPPORT) || defined(CCL_ENABLE_SYCL)
 #include "oneapi/ccl/ccl_types.hpp"
 #include "oneapi/ccl/ccl_type_traits.hpp"
 #include "oneapi/ccl/ccl_types_policy.hpp"
@@ -108,3 +109,5 @@ CCL_API const typename ccl::details::ccl_api_type_attr_traits<ccl::event_attr_id
 #define API_EVENT_FORCE_INSTANTIATION(IN_attrId, IN_Value)                       \
 API_EVENT_FORCE_INSTANTIATION_SET(IN_attrId, IN_Value)                           \
 API_EVENT_FORCE_INSTANTIATION_GET(IN_attrId)
+
+#endif //#if defined(MULTI_GPU_SUPPORT) || defined(CCL_ENABLE_SYCL)

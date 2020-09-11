@@ -4,13 +4,37 @@ add_subdirectory(atl)
 
 set (EXTENSIONS_SRC)
 
-if(MULTI_GPU_SUPPORT)
+if (CCL_ENABLE_SYCL)
     list (APPEND EXTENSIONS_SRC
                     ccl_empty_stream.cpp
                     ccl_cpp_gpu_api.cpp
+                    ccl_cpp_stream.cpp
+                    ccl_cpp_event.cpp
                     ccl_cpp_device_communicator.cpp
+
+                    native_device_api/l0/utils.cpp
+
+                    sched/gpu_sched.cpp
+                    sched/gpu_concurrent_sched.cpp
+                    common/request/gpu_request.cpp
+
+                    common/comm/l0/comm_context.cpp
+                    common/comm/l0/comm_context_storage.cpp
+                    common/comm/comm_interface.cpp
+                    common/comm/single_device_communicator/single_device_communicator.cpp
+                    common/event/event.cpp
+                    common/stream/stream.cpp
+
+                    common/comm/l0/gpu_comm_attr.cpp)
+endif(CCL_ENABLE_SYCL)
+
+if (MULTI_GPU_SUPPORT)
+list (APPEND EXTENSIONS_SRC
+                    ccl_cpp_gpu_api.cpp
                     ccl_gpu_modules.cpp
-                    ccl_utils.cpp
+                    ccl_cpp_utils.cpp
+                    ccl_cpp_stream.cpp
+                    ccl_cpp_event.cpp
 
                     native_device_api/l0/base.cpp
                     native_device_api/l0/device.cpp
@@ -27,11 +51,14 @@ if(MULTI_GPU_SUPPORT)
                     common/comm/l0/comm_context_storage.cpp
 
                     common/event/event.cpp
+                    common/stream/stream.cpp
 
                     common/comm/l0/devices/ccl_gpu_comm.cpp
                     common/comm/l0/devices/ccl_virtual_gpu_comm.cpp
                     common/comm/l0/devices/ccl_ipc_gpu_comm.cpp
 
+                    common/comm/comm_interface.cpp
+                    common/comm/single_device_communicator/single_device_communicator.cpp
                     common/comm/l0/communicator/device_group/device_ring_communicator.cpp
                     common/comm/l0/communicator/device_group/device_a2a_communicator.cpp
                     common/comm/l0/communicator/thread_group/thread_ring_communicator.cpp
@@ -60,12 +87,10 @@ set(CCL_SRC
     ccl_cpp_api.cpp
     ccl_cpp_communicator.cpp
     ccl_cpp_environment.cpp
-    ccl_cpp_event.cpp
     ccl_app_api_coll_attr.cpp
     ccl_app_api_comm_split_attr.cpp
     ccl_app_api_datatype_attr.cpp
     ccl_cpp_kvs.cpp
-    ccl_cpp_stream.cpp
     ccl_cpp_utils.cpp
     ccl_empty_attr.cpp
     ccl_empty_coll_attr.cpp
@@ -125,15 +150,12 @@ set(CCL_SRC
     common/comm/atl_tag.cpp
     common/comm/comm.cpp
     common/comm/host_communicator/host_communicator.cpp
-    common/comm/comm_interface.cpp
-    common/comm/single_device_communicator/single_device_communicator.cpp
     common/datatype/datatype.cpp
     common/env/env.cpp
     common/global/global.cpp
     common/log/log.cpp
     common/request/host_request.cpp
     common/request/request.cpp
-    common/stream/stream.cpp
     common/utils/spinlock.cpp
     common/utils/yield.cpp
     ${EXTENSIONS_SRC})

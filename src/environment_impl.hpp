@@ -17,13 +17,7 @@
 #include "common/global/global.hpp"
 #include "common/comm/comm.hpp"
 
-#include "common/comm/l0/comm_context.hpp"
 #include "oneapi/ccl/ccl_device_communicator.hpp"
-
-#include "common/global/global.hpp"
-#include "exec/exec.hpp"
-
-#include "common/comm/comm_interface.hpp"
 
 #include "oneapi/ccl/native_device_api/export_api.hpp"
 
@@ -51,7 +45,7 @@ comm_split_attr CCL_API environment::create_comm_split_attr(attr_value_pair_t&&.
 }
 */
 //Device communicator
-#ifdef MULTI_GPU_SUPPORT
+#if defined(MULTI_GPU_SUPPORT) || defined(CCL_ENABLE_SYCL)
 /*
 template <class ...attr_value_pair_t>
 device_comm_split_attr environment::create_device_comm_split_attr(attr_value_pair_t&&...avps) const
@@ -93,7 +87,6 @@ vector_class<device_communicator> CCL_API environment::create_device_communicato
     return device_communicator::create_device_communicators(cluster_devices_size, local_rank_device_map, context, kvs);
 }
 
-
 //Stream
 template <class native_stream_type,
           typename T>
@@ -125,7 +118,7 @@ event CCL_API environment::create_event(event_handle_type native_event_handle, t
 {
     return event::create_event(native_event_handle, context);
 }
-#endif //MULTI_GPU_SUPPORT
+#endif //#if defined(MULTI_GPU_SUPPORT) || defined(CCL_ENABLE_SYCL)
 
 
 
@@ -152,6 +145,8 @@ ccl_api_type CCL_API environment::create_postponed_api_type(args_type... args) c
 #define CREATE_OP_ATTR_INSTANTIATION(Attr)                                                                        \
 template Attr CCL_API ccl::environment::create_postponed_api_type<Attr>() const;
 
+
+#if defined(MULTI_GPU_SUPPORT) || defined(CCL_ENABLE_SYCL)
 
 #define  CREATE_DEV_COMM_INSTANTIATION(DeviceType, ContextType)                                     \
 template ccl::vector_class<ccl::device_communicator>                                                \
@@ -194,3 +189,6 @@ CCL_API ccl::environment::create_event(native_event_type& native_event);
 #define CREATE_EVENT_EXT_INSTANTIATION(event_handle_type)                                           \
 template ccl::event                                                                                 \
 CCL_API ccl::environment::create_event(event_handle_type native_event_handle, typename unified_device_context_type::ccl_native_t context);
+
+
+#endif //#if defined(MULTI_GPU_SUPPORT) || defined(CCL_ENABLE_SYCL)

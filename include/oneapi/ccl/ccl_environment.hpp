@@ -184,7 +184,7 @@ public:
 
 
 // #endif
-#ifdef MULTI_GPU_SUPPORT
+#if defined(MULTI_GPU_SUPPORT) || defined(CCL_ENABLE_SYCL)
 
     template <class ...attr_value_pair_t>
     device_comm_split_attr create_device_comm_split_attr(attr_value_pair_t&&...avps) const
@@ -308,7 +308,7 @@ public:
     }
 
 
-#endif /* MULTI_GPU_SUPPORT */
+#endif //#if defined(MULTI_GPU_SUPPORT) || defined(CCL_ENABLE_SYCL)
 
 private:
     environment();

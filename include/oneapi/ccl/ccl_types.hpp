@@ -176,7 +176,6 @@ typedef void (*sparse_allreduce_alloc_fn_t)(size_t,
                                                         void**);
 
 // using datatype_attr_t = ccl_datatype_attr_t;
-#ifdef MULTI_GPU_SUPPORT
 /**
  * Supported stream types
  */
@@ -187,7 +186,6 @@ enum class stream_type : int {
 
     last_value
 };
-#endif /* MULTI_GPU_SUPPORT */
 
 /**
  * Exception type that may be thrown by ccl API
