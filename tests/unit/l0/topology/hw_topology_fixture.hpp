@@ -8,7 +8,6 @@
 #define protected public
 #include <map>
 
-
 #include "oneapi/ccl/ccl_config.h"
 #include "common/comm/l0/topology/ring_topology.hpp"
 #include "common/comm/l0/device_community.hpp"
@@ -22,65 +21,56 @@
 #undef protected
 #undef private
 
-
-class router_fixture : public common_fixture
-{
+class router_fixture : public common_fixture {
 public:
     using tracer::set_error;
 
-    router_fixture() :
-     common_fixture(get_global_device_indices()/*"[0:0:0],[0:1:0],[0:2:0],[0:3:0]"*/)
-    {
-    }
+    router_fixture()
+            : common_fixture(get_global_device_indices() /*"[0:0:0],[0:1:0],[0:2:0],[0:3:0]"*/) {}
 
-    virtual ~router_fixture()
-    {
-    }
+    virtual ~router_fixture() {}
 
-    static constexpr const char* ut_cluster_name()
-    {
+    static constexpr const char* ut_cluster_name() {
         return "unit_tests";
     }
 
-    virtual void SetUp() override
-    {
+    virtual void SetUp() override {
         create_global_platform();
         local_affinity = global_affinities.at(0);
         create_local_platform();
 
-        const auto& modules = native::modules_src_container<ccl_coll_allgatherv,ccl_coll_allreduce>::instance().get_modules_collection<ccl_coll_allreduce>();
-        if (modules.end() == modules.find(ccl::device_topology_type::ring))
-        {
-            native::modules_src_container<ccl_coll_allgatherv,ccl_coll_allreduce>::instance().load_kernel_source<ccl_coll_allreduce>("kernels/ring_allreduce.spv", ccl::device_topology_type::ring);
+        const auto& modules =
+            native::modules_src_container<ccl_coll_allgatherv, ccl_coll_allreduce>::instance()
+                .get_modules_collection<ccl_coll_allreduce>();
+        if (modules.end() == modules.find(ccl::device_topology_type::ring)) {
+            native::modules_src_container<ccl_coll_allgatherv, ccl_coll_allreduce>::instance()
+                .load_kernel_source<ccl_coll_allreduce>("kernels/ring_allreduce.spv",
+                                                        ccl::device_topology_type::ring);
         }
     }
 
-    virtual void TearDown() override
-    {
-    }
+    virtual void TearDown() override {}
 
-    void init_routing_data(size_t proc_idx)
-    {
+    void init_routing_data(size_t proc_idx) {
         process_idx = proc_idx;
 
-        pg_comm.reset( new stub::process_context(ccl::environment::instance().create_communicator()));
+        pg_comm.reset(
+            new stub::process_context(ccl::environment::instance().create_communicator()));
         tg_comm = pg_comm->thread_group_ctx.get();
     }
 
-    void fill_indices_data(size_t thread_idx, ccl::device_indices_t data)
-    {
+    void fill_indices_data(size_t thread_idx, ccl::device_indices_t data) {
         idx[thread_idx] = data;
         stub::make_stub_devices(data);
     }
 
-    void create_devices_by_affinity(size_t thread_idx,
-                                    std::initializer_list< typename ccl::device_indices_t::value_type> data)
-    {
-        create_devices_by_affinity(thread_idx,ccl::device_indices_t (data));
+    void create_devices_by_affinity(
+        size_t thread_idx,
+        std::initializer_list<typename ccl::device_indices_t::value_type> data) {
+        create_devices_by_affinity(thread_idx, ccl::device_indices_t(data));
     }
 
-    void create_devices_by_affinity(size_t thread_idx, ccl::device_indices_t data)
-    {
+    void create_devices_by_affinity(size_t thread_idx, ccl::device_indices_t data) {
         using namespace native;
 
         fill_indices_data(thread_idx, data);
@@ -89,9 +79,9 @@ public:
         comm_addr.thread_idx = thread_idx;
         comm_addr.thread_count = tg_comm->per_thread_indices.size();
 
-        thread_group_context::device_group_ctx_ptr
-                group_ctx(new device_group_context(comm_addr, idx[thread_idx]));
-/*
+        thread_group_context::device_group_ctx_ptr group_ctx(
+            new device_group_context(comm_addr, idx[thread_idx]));
+        /*
                                 device_group_context::create(comm_addr, idx[thread_idx],
                                                              *pg_comm->gpu_device_storage);
 */
@@ -99,32 +89,30 @@ public:
 
         // prepare device communities
         {
-            auto& ring_container =
-                tg_comm->thread_device_topology[thread_idx].get_community<ccl::device_topology_type::ring>();
+            auto& ring_container = tg_comm->thread_device_topology[thread_idx]
+                                       .get_community<ccl::device_topology_type::ring>();
             (void)ring_container;
 
-            auto& a2a_container =
-            tg_comm->thread_device_topology[thread_idx].get_community<ccl::device_topology_type::a2a>();
+            auto& a2a_container = tg_comm->thread_device_topology[thread_idx]
+                                      .get_community<ccl::device_topology_type::a2a>();
             a2a_container.set_topology(
-            std::make_shared<device_community<ccl::device_topology_type::a2a>>(comm_addr));
+                std::make_shared<device_community<ccl::device_topology_type::a2a>>(comm_addr));
         }
         {
-            auto& ring_container =
-                pg_comm->process_device_topology[comm_addr.thread_idx].get_community<ccl::device_topology_type::ring>();
+            auto& ring_container = pg_comm->process_device_topology[comm_addr.thread_idx]
+                                       .get_community<ccl::device_topology_type::ring>();
             (void)ring_container;
 
-            auto& a2a_container =
-                pg_comm->process_device_topology[comm_addr.thread_idx].get_community<ccl::device_topology_type::a2a>();
+            auto& a2a_container = pg_comm->process_device_topology[comm_addr.thread_idx]
+                                      .get_community<ccl::device_topology_type::a2a>();
             a2a_container.set_topology(
-            std::make_shared<device_community<ccl::device_topology_type::a2a>>(comm_addr));
+                std::make_shared<device_community<ccl::device_topology_type::a2a>>(comm_addr));
         }
     }
 
-    const ccl::device_indices_t& get_device_affinity(size_t thread_id) const
-    {
+    const ccl::device_indices_t& get_device_affinity(size_t thread_id) const {
         auto it = idx.find(thread_id);
-        if(it == idx.end())
-        {
+        if (it == idx.end()) {
             set_error(__PRETTY_FUNCTION__);
             std::cerr << "invalid thread id: " << thread_id << std::endl;
             dump();
@@ -138,8 +126,7 @@ public:
     native::thread_group_context* tg_comm;
     std::unique_ptr<stub::process_context> pg_comm;
 
-    struct process_creator_params
-    {
+    struct process_creator_params {
         ccl::process_device_indices_t total_node_mask;
         size_t process_index;
         size_t cluster_device_rank_offset;
@@ -148,36 +135,32 @@ public:
         std::vector<size_t> process_ids;
     };
 
-
     process_creator_params prepare_process_params(
-            size_t process_index,
-            std::initializer_list<typename ccl::process_device_indices_t::value_type> thread_indices,
-            std::initializer_list<typename ccl::process_device_indices_t::value_type> total_cluster_indices,
-            const std::map<size_t, ccl::host_id> &process_to_cluster_table = std::map<size_t, std::string>{})
-    {
-
+        size_t process_index,
+        std::initializer_list<typename ccl::process_device_indices_t::value_type> thread_indices,
+        std::initializer_list<typename ccl::process_device_indices_t::value_type>
+            total_cluster_indices,
+        const std::map<size_t, ccl::host_id>& process_to_cluster_table =
+            std::map<size_t, std::string>{}) {
         init_routing_data(process_index);
         process_creator_params ret;
         ret.process_index = process_index;
 
         //prepare thread context
         tg_comm->per_thread_indices = thread_indices;
-        for(const auto& thread_id : tg_comm->per_thread_indices)
-        {
+        for (const auto& thread_id : tg_comm->per_thread_indices) {
             create_devices_by_affinity(thread_id.first, thread_id.second);
             ret.thread_ids.push_back(thread_id.first);
         }
 
         ret.total_node_mask = total_cluster_indices;
-        for (const auto &prc : ret.total_node_mask)
-        {
+        for (const auto& prc : ret.total_node_mask) {
             ret.process_ids.push_back(prc.first);
 
             //find cluster name for process id
             ccl::host_id node_name = ut_cluster_name();
             auto name_candidate_it = process_to_cluster_table.find(prc.first);
-            if (name_candidate_it != process_to_cluster_table.end())
-            {
+            if (name_candidate_it != process_to_cluster_table.end()) {
                 node_name = name_candidate_it->second;
             }
 
@@ -185,14 +168,10 @@ public:
             stub::make_stub_devices(prc.second);
         }
 
-
-
         ret.cluster_device_rank_offset = 0;
         ret.cluster_device_size = 0;
-        for (const auto& cluster_value : ret.total_node_mask)
-        {
-            if (cluster_value.first < process_idx)
-            {
+        for (const auto& cluster_value : ret.total_node_mask) {
+            if (cluster_value.first < process_idx) {
                 ret.cluster_device_rank_offset += cluster_value.second.size();
             }
             ret.cluster_device_size += cluster_value.second.size();

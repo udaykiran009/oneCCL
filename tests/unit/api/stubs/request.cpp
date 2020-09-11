@@ -1,27 +1,21 @@
 #include "oneapi/ccl/ccl_types.hpp"
 #include "oneapi/ccl/ccl_request.hpp"
 
-namespace ccl
-{
+namespace ccl {
 
-void request::wait()
-{
-}
+void request::wait() {}
 
-bool request::test()
-{
+bool request::test() {
     return true;
 }
 
-bool request::cancel()
-{
+bool request::cancel() {
     return true;
 }
 
-event& get_event()
-{
+event& get_event() {
     //todo
-    static event *ret = nullptr;
+    static event* ret = nullptr;
     return *ret;
 }
-}
+} // namespace ccl

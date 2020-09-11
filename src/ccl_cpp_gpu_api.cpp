@@ -204,20 +204,17 @@ CCL_API ccl::comm_group::device_context_native_const_reference_t ccl::comm_group
 
 
 /***********************************************************************/
-#define DEVICE_ATTRIBUTE_INSTANTIATION(ATTR_ID, VALUE_TYPE)                                        \
-template                                                                                           \
-VALUE_TYPE CCL_API ccl::ccl_device_attr::set_value<ATTR_ID, VALUE_TYPE>(VALUE_TYPE&& v);           \
-template                                                                                           \
-CCL_API const VALUE_TYPE& ccl::ccl_device_attr::get_value<ATTR_ID>() const;
+#define DEVICE_ATTRIBUTE_INSTANTIATION(ATTR_ID, VALUE_TYPE) \
+    template VALUE_TYPE CCL_API ccl::ccl_device_attr::set_value<ATTR_ID, VALUE_TYPE>(VALUE_TYPE && \
+                                                                                     v); \
+    template CCL_API const VALUE_TYPE& ccl::ccl_device_attr::get_value<ATTR_ID>() const;
 
+#define STREAM_CREATOR_INSTANTIATION(type) \
+    template ccl::stream_t CCL_API ccl::environment::create_stream(type& stream);
 
-#define STREAM_CREATOR_INSTANTIATION(type)                                                         \
-template ccl::stream_t CCL_API ccl::environment::create_stream(type& stream);
-
-#define COMM_CREATOR_INDEXED_INSTANTIATION_CONTAINER(type)                                         \
-template std::vector<ccl::communicator_t>                                                          \
-CCL_API ccl::comm_group::create_communicators(const type& device_ids,                              \
-                                              ccl::device_comm_split_attr attr);
+#define COMM_CREATOR_INDEXED_INSTANTIATION_CONTAINER(type) \
+    template std::vector<ccl::communicator_t> CCL_API ccl::comm_group::create_communicators( \
+        const type& device_ids, ccl::device_comm_split_attr attr);
 
 // device attribute instantiations
 DEVICE_ATTRIBUTE_INSTANTIATION(ccl_device_preferred_topology_class,
@@ -239,6 +236,5 @@ COMM_CREATOR_INDEXED_INSTANTIATION_CONTAINER(ccl::device_indices_t);
 #ifdef CCL_ENABLE_SYCL
     COMM_CREATOR_INDEXED_INSTANTIATION_CONTAINER(cl::sycl::vector_class<cl::sycl::device>);
 #endif
-
 
 #endif //TODO

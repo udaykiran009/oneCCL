@@ -14,7 +14,6 @@
 
 #include "oneapi/ccl/ccl_request.hpp"
 
-
 #include "oneapi/ccl/ccl_communicator.hpp"
 
 #include "common/global/global.hpp"
@@ -23,8 +22,6 @@
 #include "common/comm/comm.hpp"
 
 #include "communicator_impl.hpp"
-
-
 
 //API force instantiations
 //TODO

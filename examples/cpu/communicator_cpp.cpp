@@ -4,33 +4,27 @@
 #include "oneapi/ccl.hpp"
 #include "mpi.h"
 
-void check_allreduce_on_comm(ccl::communicator& comm)
-{
+void check_allreduce_on_comm(ccl::communicator& comm) {
     const int count = 1000;
 
     std::vector<int> send_buf(count);
     std::vector<int> recv_buf(count, 0);
     std::vector<int> expected_buf(count);
 
-    for (size_t i = 0; i < count; i++)
-    {
+    for (size_t i = 0; i < count; i++) {
         send_buf.at(i) = i;
         expected_buf.at(i) = i * comm.size();
     }
 
-    auto req = comm.allreduce(send_buf.data(),
-                              recv_buf.data(),
-                              count,
-                              ccl::reduction::sum);
+    auto req = comm.allreduce(send_buf.data(), recv_buf.data(), count, ccl::reduction::sum);
     req->wait();
 
-    for (size_t i = 0; i < count; i++)
-    {
-        if (recv_buf.at(i) != expected_buf.at(i))
-        {
+    for (size_t i = 0; i < count; i++) {
+        if (recv_buf.at(i) != expected_buf.at(i)) {
             printf("FAILED (allreduce test)\n");
-            throw std::runtime_error("recv_buf[" + std::to_string(i) + "]= " + std::to_string(recv_buf.at(i)) +
-                ", expected " + std::to_string(expected_buf.at(i)));
+            throw std::runtime_error("recv_buf[" + std::to_string(i) +
+                                     "]= " + std::to_string(recv_buf.at(i)) + ", expected " +
+                                     std::to_string(expected_buf.at(i)));
         }
     }
 }
@@ -39,23 +33,19 @@ void check_max_comm_number(ccl::communicator& comm,
                            ccl::environment& env,
                            std::shared_ptr<ccl::kvs> kvs_instance,
                            int mpi_size,
-                           int mpi_rank)
-{
+                           int mpi_rank) {
     size_t user_comms = 0;
     std::vector<ccl::communicator> communicators;
 
-    do
-    {
-        try
-        {
+    do {
+        try {
             auto new_comm = env.create_communicator(mpi_size, mpi_rank, kvs_instance);
             ++user_comms;
             communicators.push_back(std::move(new_comm));
         }
-        catch (...)
-        {
+        catch (...) {
             break;
-        }       
+        }
     } while (true);
 
     PRINT_BY_ROOT(comm, "created %zu communicators", user_comms);
@@ -134,26 +124,22 @@ void check_max_comm_number(ccl::communicator& comm,
 //     check_allreduce_on_comm(comm);
 // }
 
-bool isPowerOfTwo(unsigned int x)
-{
+bool isPowerOfTwo(unsigned int x) {
     return x && !(x & (x - 1));
 }
 
-void check_comm_split_by_color(ccl::communicator& comm, int mpi_size, int mpi_rank)
-{
-    if (!isPowerOfTwo(comm.size()))
-    {
-        PRINT_BY_ROOT(comm,
-        "split comm by color: number of processes should be a power of 2 for test purpose");
+void check_comm_split_by_color(ccl::communicator& comm, int mpi_size, int mpi_rank) {
+    if (!isPowerOfTwo(comm.size())) {
+        PRINT_BY_ROOT(
+            comm,
+            "split comm by color: number of processes should be a power of 2 for test purpose");
         return;
     }
 
-    for (size_t split_by = 2; split_by <= comm.size(); split_by *= 2)
-    {
+    for (size_t split_by = 2; split_by <= comm.size(); split_by *= 2) {
         int color = comm.rank() % split_by;
         auto attr = ccl::environment::instance().create_comm_split_attr(
-                        ccl::attr_val<ccl::comm_split_attr_id::color>(color)
-                    );
+            ccl::attr_val<ccl::comm_split_attr_id::color>(color));
         auto new_comm = comm.split(attr);
 
         size_t comm_size = comm.size();
@@ -163,50 +149,47 @@ void check_comm_split_by_color(ccl::communicator& comm, int mpi_size, int mpi_ra
 
         size_t expected_new_comm_size = comm_size / split_by;
 
-        if (new_comm_size != expected_new_comm_size)
-        {
+        if (new_comm_size != expected_new_comm_size) {
             printf("FAILED (split)\n");
 
             throw std::runtime_error("mismatch in size, expected " +
-                    std::to_string(expected_new_comm_size) +
-                    " received " + std::to_string(new_comm_size));
+                                     std::to_string(expected_new_comm_size) + " received " +
+                                     std::to_string(new_comm_size));
         }
 
         PRINT_BY_ROOT(comm,
-            "base comm: rank = %zu, size = %zu; "
-            "new comm: rank = %zu, size = %zu",
-             comm_rank, comm_size,
-             new_comm_rank, new_comm_size);
+                      "base comm: rank = %zu, size = %zu; "
+                      "new comm: rank = %zu, size = %zu",
+                      comm_rank,
+                      comm_size,
+                      new_comm_rank,
+                      new_comm_size);
 
         check_allreduce_on_comm(new_comm);
     }
 }
 
-int main()
-{
+int main() {
     MPI_Init(NULL, NULL);
     int mpi_size, mpi_rank;
     MPI_Comm_size(MPI_COMM_WORLD, &mpi_size);
     MPI_Comm_rank(MPI_COMM_WORLD, &mpi_rank);
 
-    auto &env = ccl::environment::instance();
+    auto& env = ccl::environment::instance();
     (void)env;
 
     // build CCL internal KVS
     std::shared_ptr<ccl::kvs> kvs_instance;
     ccl::kvs::address_type main_addr;
-    if (mpi_rank == 0)
-    {
+    if (mpi_rank == 0) {
         kvs_instance = env.create_main_kvs();
         main_addr = kvs_instance->get_address();
 
-        MPI_Bcast((void *)main_addr.data(), main_addr.size(), MPI_BYTE, 0, MPI_COMM_WORLD);
+        MPI_Bcast((void*)main_addr.data(), main_addr.size(), MPI_BYTE, 0, MPI_COMM_WORLD);
     }
-    else
-    {
-        MPI_Bcast((void *)main_addr.data(), main_addr.size(), MPI_BYTE, 0, MPI_COMM_WORLD);
+    else {
+        MPI_Bcast((void*)main_addr.data(), main_addr.size(), MPI_BYTE, 0, MPI_COMM_WORLD);
         kvs_instance = env.create_kvs(main_addr);
-
     }
 
     auto comm = env.create_communicator(mpi_size, mpi_rank, kvs_instance);

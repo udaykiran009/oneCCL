@@ -15,7 +15,6 @@
 
 #include "oneapi/ccl/ccl_aliases.hpp"
 
-
 // TODO: tmp enums, refactor core code and remove them
 /************************************************/
 typedef int ccl_datatype_t;
@@ -23,13 +22,13 @@ typedef int ccl_datatype_t;
 typedef int ccl_reduction_t;
 
 typedef int ccl_status_t;
-#define ccl_status_success (0)
-#define ccl_status_out_of_resource (1)
-#define ccl_status_invalid_arguments (2)
-#define ccl_status_unimplemented (3)
-#define ccl_status_runtime_error (4)
+#define ccl_status_success               (0)
+#define ccl_status_out_of_resource       (1)
+#define ccl_status_invalid_arguments     (2)
+#define ccl_status_unimplemented         (3)
+#define ccl_status_runtime_error         (4)
 #define ccl_status_blocked_due_to_resize (5)
-#define ccl_status_last_value (6)
+#define ccl_status_last_value            (6)
 
 /** Resize action types. */
 typedef enum ccl_resize_action {
@@ -53,7 +52,6 @@ typedef enum {
     ccl_stream_last_value
 } ccl_stream_type_t;
 /************************************************/
-
 
 namespace ccl {
 
@@ -102,10 +100,9 @@ enum class datatype : int {
     last_predefined = bfloat16
 };
 
-inline std::ostream& operator << (std::ostream& os, const ccl::datatype& dt)
-{
-   os << static_cast<std::underlying_type<ccl::datatype>::type>(dt);
-   return os;
+inline std::ostream& operator<<(std::ostream& os, const ccl::datatype& dt) {
+    os << static_cast<std::underlying_type<ccl::datatype>::type>(dt);
+    return os;
 }
 
 typedef struct {
@@ -123,59 +120,50 @@ typedef struct {
                                back to bfp16.
 */
 
-enum class sparse_coalesce_mode : int {
-    regular = 0,
-    disable = 1,
-    keep_precision = 2
-};
+enum class sparse_coalesce_mode : int { regular = 0, disable = 1, keep_precision = 2 };
 
 /* comm_size */
 typedef ccl_resize_action_t (*ccl_resize_fn_t)(size_t comm_size);
 
 /* in_buf, in_count, in_dtype, out_buf, out_count, out_dtype, context */
 typedef void (*prologue_fn)(const void*,
-                                          size_t,
-                                          ccl::datatype,
-                                          void**,
-                                          size_t*,
-                                          ccl::datatype*,
-                                          const ccl::fn_context*);
+                            size_t,
+                            ccl::datatype,
+                            void**,
+                            size_t*,
+                            ccl::datatype*,
+                            const ccl::fn_context*);
 
 /* in_buf, in_count, in_dtype, out_buf, out_count, out_dtype, context */
 typedef void (*epilogue_fn)(const void*,
-                                          size_t,
-                                          ccl::datatype,
-                                          void*,
-                                          size_t*,
-                                          ccl::datatype,
-                                          const ccl::fn_context*);
+                            size_t,
+                            ccl::datatype,
+                            void*,
+                            size_t*,
+                            ccl::datatype,
+                            const ccl::fn_context*);
 
 /* in_buf, in_count, inout_buf, out_count, dtype, context */
-typedef void (*reduction_fn)(
-    const void*,
-    size_t,
-    void*,
-    size_t*,
-    ccl::datatype,
-    const ccl::fn_context*);
+typedef void (
+    *reduction_fn)(const void*, size_t, void*, size_t*, ccl::datatype, const ccl::fn_context*);
 
 /* idx_buf, idx_count, idx_dtype, val_buf, val_count, val_dtype, fn_context */
 typedef void (*sparse_allreduce_completion_fn)(const void*,
-                                                             size_t,
-                                                             ccl::datatype,
-                                                             const void*,
-                                                             size_t,
-                                                             ccl::datatype,
-                                                             const void*);
+                                               size_t,
+                                               ccl::datatype,
+                                               const void*,
+                                               size_t,
+                                               ccl::datatype,
+                                               const void*);
 
 /* idx_count, idx_dtype, val_count, val_dtype, fn_context, out_idx_buf, out_val_buf */
 typedef void (*sparse_allreduce_alloc_fn)(size_t,
-                                                        ccl::datatype,
-                                                        size_t,
-                                                        ccl::datatype,
-                                                        const void*,
-                                                        void**,
-                                                        void**);
+                                          ccl::datatype,
+                                          size_t,
+                                          ccl::datatype,
+                                          const void*,
+                                          void**,
+                                          void**);
 
 // using datatype_attr_t = ccl_datatype_attr_t;
 /**
@@ -217,11 +205,10 @@ struct ccl_type_info_export {
     static constexpr bool is_supported = supported;
 };
 
-struct ccl_empty_attr
-{
+struct ccl_empty_attr {
     static ccl::library_version version;
 
-    template<class attr>
+    template <class attr>
     static attr create_empty();
 };
 
@@ -239,20 +226,20 @@ struct param_traits {};
 
 /*********************************************************/
 
-#define ccl_dtype_char          (int)(ccl::datatype::int8)
-#define ccl_dtype_int           (int)(ccl::datatype::int32)
-#define ccl_dtype_int64         (int)(ccl::datatype::int64)
-#define ccl_dtype_uint64        (int)(ccl::datatype::uint64)
-#define ccl_dtype_bfp16         (int)(ccl::datatype::bfloat16)
-#define ccl_dtype_float         (int)(ccl::datatype::float32)
-#define ccl_dtype_double        (int)(ccl::datatype::float64)
-#define ccl_dtype_last_value    (int)(ccl::datatype::last_predefined)
+#define ccl_dtype_char       (int)(ccl::datatype::int8)
+#define ccl_dtype_int        (int)(ccl::datatype::int32)
+#define ccl_dtype_int64      (int)(ccl::datatype::int64)
+#define ccl_dtype_uint64     (int)(ccl::datatype::uint64)
+#define ccl_dtype_bfp16      (int)(ccl::datatype::bfloat16)
+#define ccl_dtype_float      (int)(ccl::datatype::float32)
+#define ccl_dtype_double     (int)(ccl::datatype::float64)
+#define ccl_dtype_last_value (int)(ccl::datatype::last_predefined)
 
-#define ccl_reduction_sum (int)(ccl::reduction::sum)
-#define ccl_reduction_min (int)(ccl::reduction::min)
-#define ccl_reduction_max (int)(ccl::reduction::max)
-#define ccl_reduction_prod (int)(ccl::reduction::prod)
-#define ccl_reduction_custom (int)(ccl::reduction::custom)
+#define ccl_reduction_sum        (int)(ccl::reduction::sum)
+#define ccl_reduction_min        (int)(ccl::reduction::min)
+#define ccl_reduction_max        (int)(ccl::reduction::max)
+#define ccl_reduction_prod       (int)(ccl::reduction::prod)
+#define ccl_reduction_custom     (int)(ccl::reduction::custom)
 #define ccl_reduction_last_value (int)(ccl::reduction::last_value)
 
 // TODO: tmp struct, refactor core code and remove it

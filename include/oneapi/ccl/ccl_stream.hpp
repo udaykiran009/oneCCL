@@ -17,8 +17,7 @@ namespace ccl {
 /**
  * Stream class
  */
-class stream : public ccl_api_base_copyable<stream, direct_access_policy, ccl_stream>
-{
+class stream : public ccl_api_base_copyable<stream, direct_access_policy, ccl_stream> {
 public:
     using base_t = ccl_api_base_copyable<stream, direct_access_policy, ccl_stream>;
 
@@ -36,13 +35,14 @@ public:
 
     stream(stream&& src);
     stream(const stream& src);
-    stream& operator= (const stream&src);
+    stream& operator=(const stream& src);
 
     /**
      * Get specific attribute value by @attrId
      */
     template <stream_attr_id attrId>
-    const typename details::ccl_api_type_attr_traits<stream_attr_id, attrId>::return_type& get() const;
+    const typename details::ccl_api_type_attr_traits<stream_attr_id, attrId>::return_type& get()
+        const;
 
 private:
     friend class environment;
@@ -50,12 +50,14 @@ private:
     friend class device_communicator;
     friend struct ccl_empty_attr;
 
-    template <class ...attr_value_pair_t>
+    template <class... attr_value_pair_t>
+    friend stream create_stream_from_attr(
+        typename unified_device_type::ccl_native_t device,
+        typename unified_device_context_type::ccl_native_t context,
+        attr_value_pair_t&&... avps);
+    template <class... attr_value_pair_t>
     friend stream create_stream_from_attr(typename unified_device_type::ccl_native_t device,
-                               typename unified_device_context_type::ccl_native_t context,
-                               attr_value_pair_t&&...avps);
-    template <class ...attr_value_pair_t>
-    friend stream create_stream_from_attr(typename unified_device_type::ccl_native_t device, attr_value_pair_t&&...avps);
+                                          attr_value_pair_t&&... avps);
 
     stream(impl_value_t&& impl);
 
@@ -68,41 +70,43 @@ private:
     typename details::ccl_api_type_attr_traits<stream_attr_id, attrId>::return_type set(const Value& v);
 
     void build_from_params();
-    stream(const typename details::ccl_api_type_attr_traits<stream_attr_id, stream_attr_id::version>::type& version);
+    stream(
+        const typename details::ccl_api_type_attr_traits<stream_attr_id,
+                                                         stream_attr_id::version>::type& version);
 
     /**
      *  Factory methods
      */
     template <class native_stream_type,
-          class = typename std::enable_if<is_stream_supported<native_stream_type>()>::type>
+              class = typename std::enable_if<is_stream_supported<native_stream_type>()>::type>
     static stream create_stream(native_stream_type& native_stream);
 
-    template <class native_stream_type, class native_context_type,
-          class = typename std::enable_if<is_stream_supported<native_stream_type>()>::type>
+    template <class native_stream_type,
+              class native_context_type,
+              class = typename std::enable_if<is_stream_supported<native_stream_type>()>::type>
     static stream create_stream(native_stream_type& native_stream, native_context_type& native_ctx);
 
-    template <class ...attr_value_pair_t>
-    static stream create_stream_from_attr(typename unified_device_type::ccl_native_t device, attr_value_pair_t&&...avps);
-
-    template <class ...attr_value_pair_t>
+    template <class... attr_value_pair_t>
     static stream create_stream_from_attr(typename unified_device_type::ccl_native_t device,
-                               typename unified_device_context_type::ccl_native_t context,
-                               attr_value_pair_t&&...avps);
+                                          attr_value_pair_t&&... avps);
+
+    template <class... attr_value_pair_t>
+    static stream create_stream_from_attr(
+        typename unified_device_type::ccl_native_t device,
+        typename unified_device_context_type::ccl_native_t context,
+        attr_value_pair_t&&... avps);
 };
 
-
 template <stream_attr_id t, class value_type>
-constexpr auto attr_val(value_type v) -> details::attr_value_tripple<stream_attr_id, t, value_type>
-{
+constexpr auto attr_val(value_type v)
+    -> details::attr_value_tripple<stream_attr_id, t, value_type> {
     return details::attr_value_tripple<stream_attr_id, t, value_type>(v);
 }
-
 
 /**
  * Declare extern empty attributes
  */
 extern stream default_stream;
 } // namespace ccl
-
 
 #endif //#if defined(MULTI_GPU_SUPPORT) || defined(CCL_ENABLE_SYCL)

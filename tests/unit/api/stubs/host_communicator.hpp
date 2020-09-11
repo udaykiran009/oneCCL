@@ -10,10 +10,8 @@
 #include "oneapi/ccl/ccl_request.hpp"
 
 class ccl_comm;
-namespace ccl
-{
-class host_communicator
-{
+namespace ccl {
+class host_communicator {
 public:
     host_communicator(std::shared_ptr<ccl_comm> impl);
 
@@ -22,8 +20,7 @@ public:
 
     void barrier_impl();
 
-    ccl::request_t
-    barrier_impl(const barrier_attr& attr = default_barrier_attr);
+    ccl::request_t barrier_impl(const barrier_attr& attr = default_barrier_attr);
     std::shared_ptr<ccl_comm> comm_impl;
 };
-}
+} // namespace ccl

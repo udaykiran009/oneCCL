@@ -1,8 +1,7 @@
 
 #include "sycl_base.hpp"
 
-int main(int argc, char **argv)
-{
+int main(int argc, char **argv) {
     int i = 0;
     int j = 0;
     int size = 0;
@@ -27,29 +26,31 @@ int main(int argc, char **argv)
     (void)env;
     ccl::shared_ptr_class<ccl::kvs> kvs;
     ccl::kvs::address_type main_addr;
-    if (rank == 0)
-    {
+    if (rank == 0) {
         kvs = ccl::environment::instance().create_main_kvs();
         main_addr = kvs->get_address();
         MPI_Bcast((void *)main_addr.data(), main_addr.size(), MPI_BYTE, 0, MPI_COMM_WORLD);
     }
-    else
-    {
+    else {
         MPI_Bcast((void *)main_addr.data(), main_addr.size(), MPI_BYTE, 0, MPI_COMM_WORLD);
         kvs = ccl::environment::instance().create_kvs(main_addr);
     }
 
     /* create SYCL communicator */
     auto ctx = q.get_context();
-    auto communcators = ccl::environment::instance().create_device_communicators(size,
-                    ccl::vector_class<ccl::pair_class<ccl::rank_t, cl::sycl::device>>{{rank, q.get_device()}}, ctx, kvs);
+    auto communcators = ccl::environment::instance().create_device_communicators(
+        size,
+        ccl::vector_class<ccl::pair_class<ccl::rank_t, cl::sycl::device>>{
+            { rank, q.get_device() } },
+        ctx,
+        kvs);
     auto &comm = *communcators.begin();
 
     /* create SYCL stream */
     auto stream = ccl::environment::instance().create_stream(q);
 
     sendbuf_count = COUNT + rank;
-    recvbuf_count = COUNT * size + ((size - 1)*size)/2;
+    recvbuf_count = COUNT * size + ((size - 1) * size) / 2;
     cl::sycl::buffer<int, 1> sendbuf(sendbuf_count);
     cl::sycl::buffer<int, 1> expected_buf(recvbuf_count);
     cl::sycl::buffer<int, 1> recvbuf(recvbuf_count);
@@ -81,39 +82,34 @@ int main(int argc, char **argv)
     /* open sendbuf and modify it on the target device side */
     /* we try in-place updates so we do the modification in the appropriate place in recvbuf */
     size_t idx_rbuf = 0;
-    for (int i =0; i < rank; i++)
+    for (int i = 0; i < rank; i++)
         idx_rbuf += recv_counts[i];
 
-    q.submit([&](handler& cgh) {
+    q.submit([&](handler &cgh) {
         auto dev_acc_sbuf = sendbuf.get_access<mode::read>(cgh);
         auto dev_acc_rbuf = recvbuf.get_access<mode::write>(cgh);
-        cgh.parallel_for<class allgatherv_test_sbuf_modify>(range<1>{sendbuf_count}, [=](item<1> id) {
+        cgh.parallel_for<class allgatherv_test_sbuf_modify>(
+            range<1>{ sendbuf_count }, [=](item<1> id) {
                 dev_acc_rbuf[idx_rbuf + id[0]] = dev_acc_sbuf[id] + 1;
-
-        });
+            });
     });
 
     handle_exception(q);
     /* invoke ccl_allgatherv on the CPU side */
     /* request in-place operation by providing recvbuf as input */
     auto attr = ccl::environment::instance().create_operation_attr<ccl::allgatherv_attr>();
-    comm.allgatherv(recvbuf,
-                     sendbuf_count,
-                     recvbuf,
-                     recv_counts,
-                     stream,
-                     attr)->wait();
+    comm.allgatherv(recvbuf, sendbuf_count, recvbuf, recv_counts, stream, attr)->wait();
 
     /* open recvbuf and check its correctness on the target device side */
-    q.submit([&](handler& cgh) {
+    q.submit([&](handler &cgh) {
         auto dev_acc_rbuf = recvbuf.get_access<mode::write>(cgh);
         auto expected_acc_buf_dev = expected_buf.get_access<mode::read>(cgh);
-        cgh.parallel_for<class allgatherv_test_rbuf_check>(range<1>{recvbuf_count}, [=](item<1> id) {
-
-            if (dev_acc_rbuf[id] != expected_acc_buf_dev[id]) {
-                dev_acc_rbuf[id] = -1;
-            }
-        });
+        cgh.parallel_for<class allgatherv_test_rbuf_check>(
+            range<1>{ recvbuf_count }, [=](item<1> id) {
+                if (dev_acc_rbuf[id] != expected_acc_buf_dev[id]) {
+                    dev_acc_rbuf[id] = -1;
+                }
+            });
     });
 
     handle_exception(q);
@@ -123,7 +119,7 @@ int main(int argc, char **argv)
         auto host_acc_rbuf_new = recvbuf.get_access<mode::read>();
         for (i = 0; i < recvbuf_count; i++) {
             if (host_acc_rbuf_new[i] == -1) {
-                cout << "FAILED" ;
+                cout << "FAILED";
                 break;
             }
         }

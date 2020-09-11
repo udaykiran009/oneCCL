@@ -7,8 +7,7 @@
 #if defined(MULTI_GPU_SUPPORT) || defined(CCL_ENABLE_SYCL)
 
 namespace ccl {
-namespace details
-{
+namespace details {
 
 /**
  * Traits for stream attributes specializations
@@ -70,6 +69,6 @@ struct ccl_api_type_attr_traits<stream_attr_id, stream_attr_id::priority> {
     using return_type = type;
 };
 
-}
-}
+} // namespace details
+} // namespace ccl
 #endif // defined(MULTI_GPU_SUPPORT) || defined(CCL_ENABLE_SYCL)

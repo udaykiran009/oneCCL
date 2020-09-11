@@ -27,53 +27,61 @@ enum class operation_attr_id : int {
  * Collective attributes
  */
 enum class allgatherv_attr_id : int {
-    op_id_offset = static_cast<typename std::underlying_type<operation_attr_id>::type>(operation_attr_id::last_value),
+    op_id_offset = static_cast<typename std::underlying_type<operation_attr_id>::type>(
+        operation_attr_id::last_value),
     vector_buf = op_id_offset,
 
     last_value
 };
 
 enum class allreduce_attr_id : int {
-    op_id_offset = static_cast<typename std::underlying_type<operation_attr_id>::type>(operation_attr_id::last_value),
+    op_id_offset = static_cast<typename std::underlying_type<operation_attr_id>::type>(
+        operation_attr_id::last_value),
     reduction_fn = op_id_offset,
 
     last_value
 };
 
 enum class alltoall_attr_id : int {
-    op_id_offset = static_cast<typename std::underlying_type<operation_attr_id>::type>(operation_attr_id::last_value),
+    op_id_offset = static_cast<typename std::underlying_type<operation_attr_id>::type>(
+        operation_attr_id::last_value),
 
     last_value
 };
 
 enum class alltoallv_attr_id : int {
-    op_id_offset = static_cast<typename std::underlying_type<operation_attr_id>::type>(operation_attr_id::last_value),
+    op_id_offset = static_cast<typename std::underlying_type<operation_attr_id>::type>(
+        operation_attr_id::last_value),
 
     last_value
 };
 
 enum class broadcast_attr_id : int {
-    op_id_offset = static_cast<typename std::underlying_type<operation_attr_id>::type>(operation_attr_id::last_value),
+    op_id_offset = static_cast<typename std::underlying_type<operation_attr_id>::type>(
+        operation_attr_id::last_value),
 
     last_value
 };
 
 enum class reduce_attr_id : int {
-    op_id_offset = static_cast<typename std::underlying_type<operation_attr_id>::type>(operation_attr_id::last_value),
+    op_id_offset = static_cast<typename std::underlying_type<operation_attr_id>::type>(
+        operation_attr_id::last_value),
 
     reduction_fn = op_id_offset,
     last_value
 };
 
 enum class reduce_scatter_attr_id : int {
-    op_id_offset = static_cast<typename std::underlying_type<operation_attr_id>::type>(operation_attr_id::last_value),
+    op_id_offset = static_cast<typename std::underlying_type<operation_attr_id>::type>(
+        operation_attr_id::last_value),
 
     reduction_fn = op_id_offset,
     last_value
 };
 
 enum class sparse_allreduce_attr_id : int {
-    op_id_offset = static_cast<typename std::underlying_type<operation_attr_id>::type>(operation_attr_id::last_value),
+    op_id_offset = static_cast<typename std::underlying_type<operation_attr_id>::type>(
+        operation_attr_id::last_value),
 
     completion_fn = op_id_offset,
     alloc_fn,
@@ -83,8 +91,9 @@ enum class sparse_allreduce_attr_id : int {
 };
 
 enum class barrier_attr_id : int {
-    op_id_offset = static_cast<typename std::underlying_type<operation_attr_id>::type>(operation_attr_id::last_value),
+    op_id_offset = static_cast<typename std::underlying_type<operation_attr_id>::type>(
+        operation_attr_id::last_value),
 
     last_value
 };
-}
+} // namespace ccl

@@ -16,10 +16,8 @@
 #include "environment.hpp"
 #include "oneapi/ccl/native_device_api/export_api.hpp"
 
-namespace stream_suite
-{
-TEST(stream_api, stream_from_device_creation)
-{
+namespace stream_suite {
+TEST(stream_api, stream_from_device_creation) {
     auto dev = native::get_platform().get_device(ccl::from_string("[0:6459]"));
     auto str = ccl::stream::create_stream_from_attr(dev);
 
@@ -29,8 +27,7 @@ TEST(stream_api, stream_from_device_creation)
     ASSERT_EQ(assigned_dev.get(), dev.get());
 }
 
-TEST(stream_api, stream_from_device_context_creation)
-{
+TEST(stream_api, stream_from_device_context_creation) {
     auto dev = native::get_platform().get_device(ccl::from_string("[0:6459]"));
     auto ctx = std::make_shared<native::ccl_context>(); //TODO stub at moment
     auto str = ccl::stream::create_stream_from_attr(dev, ctx);
@@ -44,13 +41,13 @@ TEST(stream_api, stream_from_device_context_creation)
     ASSERT_EQ(assigned_ctx.get(), ctx.get());
 }
 
-TEST(stream_api, stream_creation_from_native)
-{
+TEST(stream_api, stream_creation_from_native) {
     auto dev = native::get_platform().get_device(ccl::from_string("[0:6459]"));
     auto queue = dev->create_cmd_queue();
 
     //TODO HACK
-    typename ccl::unified_stream_type::ccl_native_t *s = new typename ccl::unified_stream_type::ccl_native_t(&queue);
+    typename ccl::unified_stream_type::ccl_native_t *s =
+        new typename ccl::unified_stream_type::ccl_native_t(&queue);
     auto str = ccl::stream::create_stream(*s);
 
     ASSERT_TRUE(str.get<ccl::stream_attr_id::version>().full != nullptr);
@@ -72,6 +69,6 @@ TEST(stream_api, stream_creation_from_native_handle)
     (void)assigned_handle;
 }
 #endif
-}
+} // namespace stream_suite
 #undef protected
 #undef private

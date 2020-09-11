@@ -21,10 +21,13 @@ struct ccl_empty_attr;
 /**
  * Allgatherv coll attributes
  */
-class allgatherv_attr : public ccl_api_base_copyable<allgatherv_attr, copy_on_write_access_policy, ccl_allgatherv_attr_impl_t>
-{
+class allgatherv_attr : public ccl_api_base_copyable<allgatherv_attr,
+                                                     copy_on_write_access_policy,
+                                                     ccl_allgatherv_attr_impl_t> {
 public:
-    using base_t = ccl_api_base_copyable<allgatherv_attr, copy_on_write_access_policy, ccl_allgatherv_attr_impl_t>;
+    using base_t = ccl_api_base_copyable<allgatherv_attr,
+                                         copy_on_write_access_policy,
+                                         ccl_allgatherv_attr_impl_t>;
 
     /**
      * Declare PIMPL type
@@ -57,24 +60,32 @@ public:
      * Get specific attribute value by @attrId
      */
     template <allgatherv_attr_id attrId>
-    const typename details::ccl_api_type_attr_traits<allgatherv_attr_id, attrId>::return_type& get() const;
+    const typename details::ccl_api_type_attr_traits<allgatherv_attr_id, attrId>::return_type& get()
+        const;
 
     template <operation_attr_id attrId>
-    const typename details::ccl_api_type_attr_traits<operation_attr_id, attrId>::return_type& get() const;
+    const typename details::ccl_api_type_attr_traits<operation_attr_id, attrId>::return_type& get()
+        const;
 
 private:
     friend class environment;
     friend struct ccl_empty_attr;
-    allgatherv_attr(const typename details::ccl_api_type_attr_traits<operation_attr_id, operation_attr_id::version>::type& version);
+    allgatherv_attr(
+        const typename details::ccl_api_type_attr_traits<operation_attr_id,
+                                                         operation_attr_id::version>::type&
+            version);
 };
 
 /**
  * Allreduce coll attributes
  */
-class allreduce_attr : public ccl_api_base_copyable<allreduce_attr, copy_on_write_access_policy, ccl_allreduce_attr_impl_t> {
-
+class allreduce_attr : public ccl_api_base_copyable<allreduce_attr,
+                                                    copy_on_write_access_policy,
+                                                    ccl_allreduce_attr_impl_t> {
 public:
-    using base_t = ccl_api_base_copyable<allreduce_attr, copy_on_write_access_policy, ccl_allreduce_attr_impl_t>;
+    using base_t = ccl_api_base_copyable<allreduce_attr,
+                                         copy_on_write_access_policy,
+                                         ccl_allreduce_attr_impl_t>;
 
     /**
      * Declare PIMPL type
@@ -108,23 +119,31 @@ public:
      * Get specific attribute value by @attrId
      */
     template <allreduce_attr_id attrId>
-    const typename details::ccl_api_type_attr_traits<allreduce_attr_id, attrId>::return_type& get() const;
+    const typename details::ccl_api_type_attr_traits<allreduce_attr_id, attrId>::return_type& get()
+        const;
 
     template <operation_attr_id attrId>
-    const typename details::ccl_api_type_attr_traits<operation_attr_id, attrId>::return_type& get() const;
+    const typename details::ccl_api_type_attr_traits<operation_attr_id, attrId>::return_type& get()
+        const;
 
 private:
     friend class environment;
     friend struct ccl_empty_attr;
-    allreduce_attr(const typename details::ccl_api_type_attr_traits<operation_attr_id, operation_attr_id::version>::type& version);
+    allreduce_attr(
+        const typename details::ccl_api_type_attr_traits<operation_attr_id,
+                                                         operation_attr_id::version>::type&
+            version);
 };
 
 /**
  * alltoall coll attributes
  */
-class alltoall_attr : public ccl_api_base_copyable<alltoall_attr, copy_on_write_access_policy, ccl_alltoall_attr_impl_t> {
+class alltoall_attr : public ccl_api_base_copyable<alltoall_attr,
+                                                   copy_on_write_access_policy,
+                                                   ccl_alltoall_attr_impl_t> {
 public:
-    using base_t = ccl_api_base_copyable<alltoall_attr, copy_on_write_access_policy, ccl_alltoall_attr_impl_t>;
+    using base_t =
+        ccl_api_base_copyable<alltoall_attr, copy_on_write_access_policy, ccl_alltoall_attr_impl_t>;
 
     /**
      * Declare PIMPL type
@@ -158,23 +177,32 @@ public:
      * Get specific attribute value by @attrId
      */
     template <alltoall_attr_id attrId>
-    const typename details::ccl_api_type_attr_traits<alltoall_attr_id, attrId>::return_type& get() const;
+    const typename details::ccl_api_type_attr_traits<alltoall_attr_id, attrId>::return_type& get()
+        const;
 
     template <operation_attr_id attrId>
-    const typename details::ccl_api_type_attr_traits<operation_attr_id, attrId>::return_type& get() const;
+    const typename details::ccl_api_type_attr_traits<operation_attr_id, attrId>::return_type& get()
+        const;
 
 private:
     friend class environment;
     friend struct ccl_empty_attr;
-    alltoall_attr(const typename details::ccl_api_type_attr_traits<operation_attr_id, operation_attr_id::version>::type& version);
+    alltoall_attr(
+        const typename details::ccl_api_type_attr_traits<operation_attr_id,
+                                                         operation_attr_id::version>::type&
+            version);
 };
 
 /**
  * Alltoallv coll attributes
  */
-class alltoallv_attr : public ccl_api_base_copyable<alltoallv_attr, copy_on_write_access_policy, ccl_alltoallv_attr_impl_t> {
+class alltoallv_attr : public ccl_api_base_copyable<alltoallv_attr,
+                                                    copy_on_write_access_policy,
+                                                    ccl_alltoallv_attr_impl_t> {
 public:
-    using base_t = ccl_api_base_copyable<alltoallv_attr, copy_on_write_access_policy, ccl_alltoallv_attr_impl_t>;
+    using base_t = ccl_api_base_copyable<alltoallv_attr,
+                                         copy_on_write_access_policy,
+                                         ccl_alltoallv_attr_impl_t>;
 
     /**
      * Declare PIMPL type
@@ -208,23 +236,31 @@ public:
      * Get specific attribute value by @attrId
      */
     template <alltoallv_attr_id attrId>
-    const typename details::ccl_api_type_attr_traits<alltoallv_attr_id, attrId>::return_type& get() const;
+    const typename details::ccl_api_type_attr_traits<alltoallv_attr_id, attrId>::return_type& get()
+        const;
 
     template <operation_attr_id attrId>
-    const typename details::ccl_api_type_attr_traits<operation_attr_id, attrId>::return_type& get() const;
+    const typename details::ccl_api_type_attr_traits<operation_attr_id, attrId>::return_type& get()
+        const;
 
 private:
     friend class environment;
     friend struct ccl_empty_attr;
-    alltoallv_attr(const typename details::ccl_api_type_attr_traits<operation_attr_id, operation_attr_id::version>::type& version);
+    alltoallv_attr(
+        const typename details::ccl_api_type_attr_traits<operation_attr_id,
+                                                         operation_attr_id::version>::type&
+            version);
 };
 
 /**
  * Barrier coll attributes
  */
-class barrier_attr : public ccl_api_base_copyable<barrier_attr, copy_on_write_access_policy, ccl_barrier_attr_impl_t> {
+class barrier_attr : public ccl_api_base_copyable<barrier_attr,
+                                                  copy_on_write_access_policy,
+                                                  ccl_barrier_attr_impl_t> {
 public:
-    using base_t = ccl_api_base_copyable<barrier_attr, copy_on_write_access_policy, ccl_barrier_attr_impl_t>;
+    using base_t =
+        ccl_api_base_copyable<barrier_attr, copy_on_write_access_policy, ccl_barrier_attr_impl_t>;
 
     /**
      * Declare PIMPL type
@@ -258,23 +294,32 @@ public:
      * Get specific attribute value by @attrId
      */
     template <barrier_attr_id attrId>
-    const typename details::ccl_api_type_attr_traits<barrier_attr_id, attrId>::return_type& get() const;
+    const typename details::ccl_api_type_attr_traits<barrier_attr_id, attrId>::return_type& get()
+        const;
 
     template <operation_attr_id attrId>
-    const typename details::ccl_api_type_attr_traits<operation_attr_id, attrId>::return_type& get() const;
+    const typename details::ccl_api_type_attr_traits<operation_attr_id, attrId>::return_type& get()
+        const;
 
 private:
     friend class environment;
     friend struct ccl_empty_attr;
-    barrier_attr(const typename details::ccl_api_type_attr_traits<operation_attr_id, operation_attr_id::version>::type& version);;
+    barrier_attr(const typename details::ccl_api_type_attr_traits<operation_attr_id,
+                                                                  operation_attr_id::version>::type&
+                     version);
+    ;
 };
 
 /**
  * Broadcast coll attributes
  */
-class broadcast_attr : public ccl_api_base_copyable<broadcast_attr, copy_on_write_access_policy, ccl_broadcast_attr_impl_t> {
+class broadcast_attr : public ccl_api_base_copyable<broadcast_attr,
+                                                    copy_on_write_access_policy,
+                                                    ccl_broadcast_attr_impl_t> {
 public:
-    using base_t = ccl_api_base_copyable<broadcast_attr, copy_on_write_access_policy, ccl_broadcast_attr_impl_t>;
+    using base_t = ccl_api_base_copyable<broadcast_attr,
+                                         copy_on_write_access_policy,
+                                         ccl_broadcast_attr_impl_t>;
 
     /**
      * Declare PIMPL type
@@ -308,23 +353,31 @@ public:
      * Get specific attribute value by @attrId
      */
     template <broadcast_attr_id attrId>
-    const typename details::ccl_api_type_attr_traits<broadcast_attr_id, attrId>::return_type& get() const;
+    const typename details::ccl_api_type_attr_traits<broadcast_attr_id, attrId>::return_type& get()
+        const;
 
     template <operation_attr_id attrId>
-    const typename details::ccl_api_type_attr_traits<operation_attr_id, attrId>::return_type& get() const;
+    const typename details::ccl_api_type_attr_traits<operation_attr_id, attrId>::return_type& get()
+        const;
 
 private:
     friend class environment;
     friend struct ccl_empty_attr;
-    broadcast_attr(const typename details::ccl_api_type_attr_traits<operation_attr_id, operation_attr_id::version>::type& version);
+    broadcast_attr(
+        const typename details::ccl_api_type_attr_traits<operation_attr_id,
+                                                         operation_attr_id::version>::type&
+            version);
 };
 
 /**
  * Reduce coll attributes
  */
-class reduce_attr : public ccl_api_base_copyable<reduce_attr, copy_on_write_access_policy, ccl_reduce_attr_impl_t> {
+class reduce_attr : public ccl_api_base_copyable<reduce_attr,
+                                                 copy_on_write_access_policy,
+                                                 ccl_reduce_attr_impl_t> {
 public:
-    using base_t = ccl_api_base_copyable<reduce_attr, copy_on_write_access_policy, ccl_reduce_attr_impl_t>;
+    using base_t =
+        ccl_api_base_copyable<reduce_attr, copy_on_write_access_policy, ccl_reduce_attr_impl_t>;
 
     /**
      * Declare PIMPL type
@@ -358,23 +411,31 @@ public:
      * Get specific attribute value by @attrId
      */
     template <reduce_attr_id attrId>
-    const typename details::ccl_api_type_attr_traits<reduce_attr_id, attrId>::return_type& get() const;
+    const typename details::ccl_api_type_attr_traits<reduce_attr_id, attrId>::return_type& get()
+        const;
 
     template <operation_attr_id attrId>
-    const typename details::ccl_api_type_attr_traits<operation_attr_id, attrId>::return_type& get() const;
+    const typename details::ccl_api_type_attr_traits<operation_attr_id, attrId>::return_type& get()
+        const;
 
 private:
     friend class environment;
     friend struct ccl_empty_attr;
-    reduce_attr(const typename details::ccl_api_type_attr_traits<operation_attr_id, operation_attr_id::version>::type& version);
+    reduce_attr(const typename details::ccl_api_type_attr_traits<operation_attr_id,
+                                                                 operation_attr_id::version>::type&
+                    version);
 };
 
 /**
  * Reduce_scatter coll attributes
  */
-class reduce_scatter_attr : public ccl_api_base_copyable<reduce_scatter_attr, copy_on_write_access_policy, ccl_reduce_scatter_attr_impl_t> {
+class reduce_scatter_attr : public ccl_api_base_copyable<reduce_scatter_attr,
+                                                         copy_on_write_access_policy,
+                                                         ccl_reduce_scatter_attr_impl_t> {
 public:
-    using base_t = ccl_api_base_copyable<reduce_scatter_attr, copy_on_write_access_policy, ccl_reduce_scatter_attr_impl_t>;
+    using base_t = ccl_api_base_copyable<reduce_scatter_attr,
+                                         copy_on_write_access_policy,
+                                         ccl_reduce_scatter_attr_impl_t>;
 
     /**
      * Declare PIMPL type
@@ -408,23 +469,33 @@ public:
      * Get specific attribute value by @attrId
      */
     template <reduce_scatter_attr_id attrId>
-    const typename details::ccl_api_type_attr_traits<reduce_scatter_attr_id, attrId>::return_type& get() const;
+    const typename details::ccl_api_type_attr_traits<reduce_scatter_attr_id, attrId>::return_type&
+    get() const;
 
     template <operation_attr_id attrId>
-    const typename details::ccl_api_type_attr_traits<operation_attr_id, attrId>::return_type& get() const;
+    const typename details::ccl_api_type_attr_traits<operation_attr_id, attrId>::return_type& get()
+        const;
 
 private:
     friend class environment;
     friend struct ccl_empty_attr;
-    reduce_scatter_attr(const typename details::ccl_api_type_attr_traits<operation_attr_id, operation_attr_id::version>::type& version);;
+    reduce_scatter_attr(
+        const typename details::ccl_api_type_attr_traits<operation_attr_id,
+                                                         operation_attr_id::version>::type&
+            version);
+    ;
 };
 
 /**
  * Sparse_allreduce coll attributes
  */
-class sparse_allreduce_attr : public ccl_api_base_copyable<sparse_allreduce_attr, copy_on_write_access_policy, ccl_sparse_allreduce_attr_impl_t> {
+class sparse_allreduce_attr : public ccl_api_base_copyable<sparse_allreduce_attr,
+                                                           copy_on_write_access_policy,
+                                                           ccl_sparse_allreduce_attr_impl_t> {
 public:
-    using base_t = ccl_api_base_copyable<sparse_allreduce_attr, copy_on_write_access_policy, ccl_sparse_allreduce_attr_impl_t>;
+    using base_t = ccl_api_base_copyable<sparse_allreduce_attr,
+                                         copy_on_write_access_policy,
+                                         ccl_sparse_allreduce_attr_impl_t>;
 
     /**
      * Declare PIMPL type
@@ -458,15 +529,21 @@ public:
      * Get specific attribute value by @attrId
      */
     template <sparse_allreduce_attr_id attrId>
-    const typename details::ccl_api_type_attr_traits<sparse_allreduce_attr_id, attrId>::return_type& get() const;
+    const typename details::ccl_api_type_attr_traits<sparse_allreduce_attr_id, attrId>::return_type&
+    get() const;
 
     template <operation_attr_id attrId>
-    const typename details::ccl_api_type_attr_traits<operation_attr_id, attrId>::return_type& get() const;
+    const typename details::ccl_api_type_attr_traits<operation_attr_id, attrId>::return_type& get()
+        const;
 
 private:
     friend class environment;
     friend struct ccl_empty_attr;
-    sparse_allreduce_attr(const typename details::ccl_api_type_attr_traits<operation_attr_id, operation_attr_id::version>::type& version);;
+    sparse_allreduce_attr(
+        const typename details::ccl_api_type_attr_traits<operation_attr_id,
+                                                         operation_attr_id::version>::type&
+            version);
+    ;
 };
 
 /**
@@ -486,69 +563,60 @@ extern barrier_attr default_barrier_attr;
  * Fabric helpers
  */
 template <allgatherv_attr_id t, class value_type>
-constexpr auto attr_val(value_type v) -> details::attr_value_tripple<allgatherv_attr_id,
-                                                              t, value_type>
-{
+constexpr auto attr_val(value_type v)
+    -> details::attr_value_tripple<allgatherv_attr_id, t, value_type> {
     return details::attr_value_tripple<allgatherv_attr_id, t, value_type>(v);
 }
 
 template <allreduce_attr_id t, class value_type>
-constexpr auto attr_val(value_type v) -> details::attr_value_tripple<allreduce_attr_id,
-                                                              t, value_type>
-{
+constexpr auto attr_val(value_type v)
+    -> details::attr_value_tripple<allreduce_attr_id, t, value_type> {
     return details::attr_value_tripple<allreduce_attr_id, t, value_type>(v);
 }
 
 template <alltoall_attr_id t, class value_type>
-constexpr auto attr_val(value_type v) -> details::attr_value_tripple<alltoall_attr_id,
-                                                              t, value_type>
-{
+constexpr auto attr_val(value_type v)
+    -> details::attr_value_tripple<alltoall_attr_id, t, value_type> {
     return details::attr_value_tripple<alltoall_attr_id, t, value_type>(v);
 }
 
 template <alltoallv_attr_id t, class value_type>
-constexpr auto attr_val(value_type v) -> details::attr_value_tripple<alltoallv_attr_id,
-                                                              t, value_type>
-{
+constexpr auto attr_val(value_type v)
+    -> details::attr_value_tripple<alltoallv_attr_id, t, value_type> {
     return details::attr_value_tripple<alltoallv_attr_id, t, value_type>(v);
 }
 
 template <broadcast_attr_id t, class value_type>
-constexpr auto attr_val(value_type v) -> details::attr_value_tripple<broadcast_attr_id,
-                                                              t, value_type>
-{
+constexpr auto attr_val(value_type v)
+    -> details::attr_value_tripple<broadcast_attr_id, t, value_type> {
     return details::attr_value_tripple<broadcast_attr_id, t, value_type>(v);
 }
 
 template <reduce_attr_id t, class value_type>
-constexpr auto attr_val(value_type v) -> details::attr_value_tripple<reduce_attr_id,
-                                                              t, value_type>
-{
+constexpr auto attr_val(value_type v)
+    -> details::attr_value_tripple<reduce_attr_id, t, value_type> {
     return details::attr_value_tripple<reduce_attr_id, t, value_type>(v);
 }
 
 template <reduce_scatter_attr_id t, class value_type>
-constexpr auto attr_val(value_type v) -> details::attr_value_tripple<reduce_scatter_attr_id,
-                                                              t, value_type>
-{
+constexpr auto attr_val(value_type v)
+    -> details::attr_value_tripple<reduce_scatter_attr_id, t, value_type> {
     return details::attr_value_tripple<reduce_scatter_attr_id, t, value_type>(v);
 }
 
 template <sparse_allreduce_attr_id t, class value_type>
-constexpr auto attr_val(value_type v) -> details::attr_value_tripple<sparse_allreduce_attr_id,
-                                                              t, value_type>
-{
+constexpr auto attr_val(value_type v)
+    -> details::attr_value_tripple<sparse_allreduce_attr_id, t, value_type> {
     return details::attr_value_tripple<sparse_allreduce_attr_id, t, value_type>(v);
 }
 
 template <operation_attr_id t, class value_type>
-constexpr auto attr_val(value_type v) -> details::attr_value_tripple<operation_attr_id, t, value_type>
-{
+constexpr auto attr_val(value_type v)
+    -> details::attr_value_tripple<operation_attr_id, t, value_type> {
     return details::attr_value_tripple<operation_attr_id, t, value_type>(v);
 }
 
 /* TODO temporary function for UT compilation: would be part of ccl::environment in final*/
-template <class coll_attribute_type,
-          class ...attr_value_pair_t>
-coll_attribute_type create_coll_attr(attr_value_pair_t&&...avps);
+template <class coll_attribute_type, class... attr_value_pair_t>
+coll_attribute_type create_coll_attr(attr_value_pair_t&&... avps);
 } // namespace ccl

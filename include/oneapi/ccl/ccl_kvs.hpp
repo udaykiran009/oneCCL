@@ -41,4 +41,4 @@ private:
 
     unique_ptr_class<kvs_impl> pimpl;
 };
-}
+} // namespace ccl

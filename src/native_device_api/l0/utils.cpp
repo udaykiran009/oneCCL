@@ -9,49 +9,41 @@
 //static cl::sycl::vector_class<cl::sycl::device> gpu_sycl_devices;
 #endif
 
-namespace native
-{
-namespace details
-{
+namespace native {
+namespace details {
 
-adjacency_matrix::adjacency_matrix(std::initializer_list<typename base::value_type> init) :
-        base(init)
-{
-}
+adjacency_matrix::adjacency_matrix(std::initializer_list<typename base::value_type> init)
+        : base(init) {}
 
-cross_device_rating
-        binary_p2p_rating_calculator(const native::ccl_device& lhs,
-                                     const native::ccl_device& rhs,
-                                     size_t weight)
-{
+cross_device_rating binary_p2p_rating_calculator(const native::ccl_device& lhs,
+                                                 const native::ccl_device& rhs,
+                                                 size_t weight) {
     return property_p2p_rating_calculator(lhs, rhs, 1);
 }
 
-
-
 #ifdef CCL_ENABLE_SYCL
-size_t get_sycl_device_id(const cl::sycl::device &device)
-{
-    if (!device.is_gpu())
-    {
-        throw std::runtime_error(std::string(__FUNCTION__) + " - failed for sycl device: it is not gpu!");
+size_t get_sycl_device_id(const cl::sycl::device& device) {
+    if (!device.is_gpu()) {
+        throw std::runtime_error(std::string(__FUNCTION__) +
+                                 " - failed for sycl device: it is not gpu!");
     }
 
     size_t device_id = std::numeric_limits<size_t>::max();
 
     // extract native handle L0
     auto l0_handle_ptr = device.template get_native<cl::sycl::backend::level0>();
-    if (!l0_handle_ptr)
-    {
-        throw std::runtime_error(std::string(__FUNCTION__) + " - failed for sycl device: handle is nullptr!");
+    if (!l0_handle_ptr) {
+        throw std::runtime_error(std::string(__FUNCTION__) +
+                                 " - failed for sycl device: handle is nullptr!");
     }
 
     ze_device_properties_t device_properties;
     device_properties.version = ZE_DEVICE_PROPERTIES_VERSION_CURRENT;
     ze_result_t ret = zeDeviceGetProperties(l0_handle_ptr, &device_properties);
-    if(ret != ZE_RESULT_SUCCESS )
-    {
-        throw std::runtime_error(std::string(__FUNCTION__) + " - zeDeviceGetProperties failed, error: " + native::to_string(ret));
+    if (ret != ZE_RESULT_SUCCESS) {
+        throw std::runtime_error(
+            std::string(__FUNCTION__) +
+            " - zeDeviceGetProperties failed, error: " + native::to_string(ret));
     }
 
     //use deviceId to return native device
@@ -61,6 +53,6 @@ size_t get_sycl_device_id(const cl::sycl::device &device)
     return device_id;
 }
 #endif
-}
-}
-#endif  //#if defined(MULTI_GPU_SUPPORT) || defined(CCL_ENABLE_SYCL)
+} // namespace details
+} // namespace native
+#endif //#if defined(MULTI_GPU_SUPPORT) || defined(CCL_ENABLE_SYCL)

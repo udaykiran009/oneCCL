@@ -16,8 +16,7 @@ namespace ccl {
 /**
  * Stream class
  */
-class event : public ccl_api_base_movable<event, direct_access_policy, ccl_event>
-{
+class event : public ccl_api_base_movable<event, direct_access_policy, ccl_event> {
 public:
     using base_t = ccl_api_base_movable<event, direct_access_policy, ccl_event>;
 
@@ -39,7 +38,8 @@ public:
      * Get specific attribute value by @attrId
      */
     template <event_attr_id attrId>
-    const typename details::ccl_api_type_attr_traits<event_attr_id, attrId>::return_type& get() const;
+    const typename details::ccl_api_type_attr_traits<event_attr_id, attrId>::return_type& get()
+        const;
 
 private:
     friend class environment;
@@ -56,34 +56,31 @@ private:
     typename ccl::details::ccl_api_type_attr_traits<ccl::event_attr_id, attrId>::return_type set(const Value& v);
 
     void build_from_params();
-    event(const typename details::ccl_api_type_attr_traits<event_attr_id, event_attr_id::version>::type& version);
+    event(const typename details::ccl_api_type_attr_traits<event_attr_id,
+                                                           event_attr_id::version>::type& version);
 
     /**
      * Factory methods
      */
     template <class event_type,
-          class = typename std::enable_if<is_event_supported<event_type>()>::type>
+              class = typename std::enable_if<is_event_supported<event_type>()>::type>
     static event create_event(event_type& native_event);
 
     template <class event_handle_type,
-          class = typename std::enable_if<is_event_supported<event_handle_type>()>::type>
-    static event create_event(event_handle_type native_event_handle, typename unified_device_context_type::ccl_native_t context);
+              class = typename std::enable_if<is_event_supported<event_handle_type>()>::type>
+    static event create_event(event_handle_type native_event_handle,
+                              typename unified_device_context_type::ccl_native_t context);
 
-    template <class event_type,
-          class ...attr_value_pair_t>
+    template <class event_type, class... attr_value_pair_t>
     static event create_event_from_attr(event_type& native_event_handle,
-                             typename unified_device_context_type::ccl_native_t context,
-                             attr_value_pair_t&&...avps);
+                                        typename unified_device_context_type::ccl_native_t context,
+                                        attr_value_pair_t&&... avps);
 };
 
-
 template <event_attr_id t, class value_type>
-constexpr auto attr_val(value_type v) -> details::attr_value_tripple<event_attr_id, t, value_type>
-{
+constexpr auto attr_val(value_type v) -> details::attr_value_tripple<event_attr_id, t, value_type> {
     return details::attr_value_tripple<event_attr_id, t, value_type>(v);
 }
-
-
 
 } // namespace ccl
 #endif //#if defined(MULTI_GPU_SUPPORT) || defined(CCL_ENABLE_SYCL)

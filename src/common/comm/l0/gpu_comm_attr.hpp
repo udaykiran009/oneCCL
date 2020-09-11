@@ -10,19 +10,16 @@
 
 #include "common/comm/l0/comm_context_id.hpp"
 
-namespace native
-{
-    struct process_group_context;
-    struct thread_group_context;
-}
+namespace native {
+struct process_group_context;
+struct thread_group_context;
+} // namespace native
 
-namespace ccl
-{
+namespace ccl {
 class host_communicator;
 class device_communicator;
 struct communicator_interface;
-struct context_comm_addr
-{
+struct context_comm_addr {
     size_t thread_idx = 0;
     size_t thread_count = 0;
     size_t comm_rank = 0;
@@ -31,8 +28,7 @@ struct context_comm_addr
     std::string to_string() const;
 };
 
-struct gpu_comm_attr
-{
+struct gpu_comm_attr {
 public:
     friend class device_group_ring_communicator;
     friend class device_group_a2a_communicator;
@@ -44,7 +40,10 @@ public:
 
     using thread_comm_storage = std::multimap<size_t, std::shared_ptr<communicator_interface>>;
 
-    gpu_comm_attr(std::shared_ptr<host_communicator> parent_comm, size_t thread_count, size_t process_device_size, group_unique_key id);
+    gpu_comm_attr(std::shared_ptr<host_communicator> parent_comm,
+                  size_t thread_count,
+                  size_t process_device_size,
+                  group_unique_key id);
     ~gpu_comm_attr();
 
     std::shared_ptr<::native::process_group_context> get_process_context();
@@ -55,6 +54,7 @@ public:
 
     const group_unique_key& get_unique_id() const;
     const size_t get_expected_process_device_size() const noexcept;
+
 private:
     bool delegate_sync_register_communicator(std::shared_ptr<communicator_interface> comm);
 
@@ -76,4 +76,4 @@ private:
 
     static thread_local size_t thread_id;
 };
-}
+} // namespace ccl

@@ -26,7 +26,8 @@ public:
     template <ccl::device_group_split_type group_id, ccl::device_topology_type class_id>
     void invoke() {
         //use context to invoke/register proxy jobs
-        std::get<utils::enum_to_underlying(group_id)>(contexts).invoke_proxy(static_cast<impl*>(this));
+        std::get<utils::enum_to_underlying(group_id)>(contexts).invoke_proxy(
+            static_cast<impl*>(this));
     }
 };
 

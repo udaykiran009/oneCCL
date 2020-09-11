@@ -13,12 +13,11 @@ namespace native
     device_community_container;
 }
 */
-template<class comm_impl,
-         ccl::device_group_split_type group_id,
-         ccl::device_topology_type class_id,
-         class communicator_traits>
-class typed_base_communicator : public base_communicator
-{
+template <class comm_impl,
+          ccl::device_group_split_type group_id,
+          ccl::device_topology_type class_id,
+          class communicator_traits>
+class typed_base_communicator : public base_communicator {
 public:
     using base_t = base_communicator;
     using impl_t = comm_impl;
@@ -26,39 +25,34 @@ public:
     using traits = communicator_traits;
 
     // Topologies
-    static constexpr ccl::device_group_split_type topology_type()
-    {
+    static constexpr ccl::device_group_split_type topology_type() {
         return group_id;
     }
 
-    static constexpr ccl::device_topology_type topology_class()
-    {
+    static constexpr ccl::device_topology_type topology_class() {
         return class_id;
     }
 
     // traits
-    bool is_host() const noexcept override
-    {
+    bool is_host() const noexcept override {
         return traits::is_host();
     }
 
-    bool is_cpu() const noexcept override
-    {
+    bool is_cpu() const noexcept override {
         return traits::is_cpu();
     }
 
-    bool is_gpu() const noexcept override
-    {
+    bool is_gpu() const noexcept override {
         return traits::is_gpu();
     }
 
-    bool is_accelerator() const noexcept override
-    {
+    bool is_accelerator() const noexcept override {
         return traits::is_accelerator();
     }
 
     typed_base_communicator(ccl::unified_device_type&& device,
-                            size_t thread_idx, size_t process_idx,
+                            size_t thread_idx,
+                            size_t process_idx,
                             const ccl::device_comm_split_attr& attr);
 
     ccl::device_group_split_type get_topology_type() const override;
@@ -119,18 +113,18 @@ public:
 
 #ifdef CCL_ENABLE_SYCL
     DEVICE_COMM_INTERFACE_SPARSE_CLASS_DEFINITION(cl::sycl::buffer<int COMMA 1>,
-                                           cl::sycl::buffer<float COMMA 1>);
+                                                  cl::sycl::buffer<float COMMA 1>);
     DEVICE_COMM_INTERFACE_SPARSE_CLASS_DEFINITION(cl::sycl::buffer<int COMMA 1>,
-                                           cl::sycl::buffer<ccl::bfp16 COMMA 1>);
+                                                  cl::sycl::buffer<ccl::bfp16 COMMA 1>);
 
     DEVICE_COMM_INTERFACE_SPARSE_CLASS_DEFINITION(cl::sycl::buffer<int64_t COMMA 1>,
-                                           cl::sycl::buffer<float COMMA 1>);
+                                                  cl::sycl::buffer<float COMMA 1>);
     DEVICE_COMM_INTERFACE_SPARSE_CLASS_DEFINITION(cl::sycl::buffer<int64_t COMMA 1>,
-                                           cl::sycl::buffer<ccl::bfp16 COMMA 1>);
+                                                  cl::sycl::buffer<ccl::bfp16 COMMA 1>);
 #endif //CCL_ENABLE_SYCL
 
     // Device community interface
-/*    template<class device_t>
+    /*    template<class device_t>
     size_t get_device_count() const;
 
     template<class device_t>
@@ -141,8 +135,7 @@ public:
 
     native::device_community_container<class_id> device_community_impl;
 
-    impl_t* get_impl()
-    {
+    impl_t* get_impl() {
         return static_cast<impl_t*>(this);
     }
 };

@@ -14,20 +14,16 @@
 
 #include "environment.hpp"
 
+namespace stream_suite {
 
-namespace stream_suite
-{
-
-TEST(event_api, event_from_sycl_event_creation)
-{
+TEST(event_api, event_from_sycl_event_creation) {
     auto ev = cl::sycl::event();
     auto str = ccl::event::create_event(ev);
 
     ASSERT_TRUE(str.get<ccl::event_attr_id::version>().full != nullptr);
 }
 
-TEST(event_api, event_from_sycl_device_context_creation)
-{
+TEST(event_api, event_from_sycl_device_context_creation) {
     auto ctx = cl::sycl::context();
     auto ev = cl::sycl::event();
     cl_event h = ev.get();
@@ -36,6 +32,6 @@ TEST(event_api, event_from_sycl_device_context_creation)
     ASSERT_TRUE(str.get<ccl::event_attr_id::version>().full != nullptr);
 }
 
-}
+} // namespace stream_suite
 #undef protected
 #undef private

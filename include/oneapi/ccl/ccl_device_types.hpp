@@ -18,17 +18,11 @@ typedef enum {
     ccl_topology_group_last_value
 } ccl_topology_group_t;
 
-
-enum device_topology_type {
-    undetermined = -1,
-    ring,
-    a2a,
-    last_class_value
-};
+enum device_topology_type { undetermined = -1, ring, a2a, last_class_value };
 
 // TODO: tmp mapping
-#define ring_algo_class device_topology_type::ring
-#define a2a_algo_class device_topology_type::a2a
+#define ring_algo_class               device_topology_type::ring
+#define a2a_algo_class                device_topology_type::a2a
 #define ccl_topology_class_last_value device_topology_type::last_class_value
 
 using process_id = size_t;

@@ -4,8 +4,7 @@
 #error "Do not include this file directly. Please include 'ccl.hpp'"
 #endif
 
-namespace ccl
-{
+namespace ccl {
 
 enum class datatype_attr_id : int {
     version,

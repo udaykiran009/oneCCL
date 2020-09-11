@@ -19,13 +19,11 @@
 #include "common/comm/compiler_comm_interface_dispatcher.hpp"
 #include "common/comm/l0/comm_context_id.hpp"
 
-namespace native
-{
-    struct ccl_device;
+namespace native {
+struct ccl_device;
 }
 
-namespace ccl
-{
+namespace ccl {
 struct gpu_comm_attr;
 class allgatherv_attr;
 class allreduce_attr;
@@ -36,14 +34,12 @@ class broadcast_attr;
 class reduce_attr;
 class reduce_scatter_attr;
 class sparse_allreduce_attr;
-}
+} // namespace ccl
 
 #include "types_generator_defines.hpp"
 
-namespace ccl
-{
-struct communicator_interface : public communicator_interface_dispatcher
-{
+namespace ccl {
+struct communicator_interface : public communicator_interface_dispatcher {
     virtual ~communicator_interface() = default;
 
     virtual size_t rank() const = 0;
@@ -59,10 +55,9 @@ struct communicator_interface : public communicator_interface_dispatcher
     virtual const group_unique_key& get_comm_group_id() const = 0;
 
     // collectives operation declarations
-    virtual ccl::request_t barrier(
-                         stream::impl_value_t& op_stream,
-                         const barrier_attr& attr,
-                         const vector_class<event>& deps = {}) = 0;
+    virtual ccl::request_t barrier(stream::impl_value_t& op_stream,
+                                   const barrier_attr& attr,
+                                   const vector_class<event>& deps = {}) = 0;
 
     DEVICE_COMM_INTERFACE_COLL_DECLARATION__VOID;
     DEVICE_COMM_INTERFACE_COLL_DECLARATION(char);
@@ -113,14 +108,14 @@ struct communicator_interface : public communicator_interface_dispatcher
 
 #ifdef CCL_ENABLE_SYCL
     DEVICE_COMM_INTERFACE_SPARSE_CLASS_DECLARATION(cl::sycl::buffer<int COMMA 1>,
-                                            cl::sycl::buffer<float COMMA 1>);
+                                                   cl::sycl::buffer<float COMMA 1>);
     DEVICE_COMM_INTERFACE_SPARSE_CLASS_DECLARATION(cl::sycl::buffer<int COMMA 1>,
-                                            cl::sycl::buffer<ccl::bfp16 COMMA 1>);
+                                                   cl::sycl::buffer<ccl::bfp16 COMMA 1>);
 
     DEVICE_COMM_INTERFACE_SPARSE_CLASS_DECLARATION(cl::sycl::buffer<int64_t COMMA 1>,
-                                            cl::sycl::buffer<float COMMA 1>);
+                                                   cl::sycl::buffer<float COMMA 1>);
     DEVICE_COMM_INTERFACE_SPARSE_CLASS_DECLARATION(cl::sycl::buffer<int64_t COMMA 1>,
-                                            cl::sycl::buffer<ccl::bfp16 COMMA 1>);
+                                                   cl::sycl::buffer<ccl::bfp16 COMMA 1>);
 #endif //CCL_ENABLE_SYCL
 };
-}
+} // namespace ccl

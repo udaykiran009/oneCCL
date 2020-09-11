@@ -8,7 +8,9 @@
 #endif /* MULTI_GPU_SUPPORT */
 
 namespace ccl {}
-namespace oneapi { namespace ccl = ::ccl; }
+namespace oneapi {
+namespace ccl = ::ccl;
+}
 
 #if 0
 #include <memory>
@@ -233,7 +235,6 @@ public:
     event create_event_from_attr(event_type& native_event_handle,
                              typename unified_device_context_type::ccl_native_t context,
                              attr_value_pair_t&&...avps);
-
 
 #endif /* MULTI_GPU_SUPPORT */
 

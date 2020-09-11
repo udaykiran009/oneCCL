@@ -23,8 +23,9 @@ public:
 
     void visit(ccl::gpu_comm_attr& comm_attr) override;
 
-    ccl::request_t barrier(ccl::stream::impl_value_t& stream, const ccl::barrier_attr& attr,
-                 const ccl::vector_class<ccl::event>& deps) override;
+    ccl::request_t barrier(ccl::stream::impl_value_t& stream,
+                           const ccl::barrier_attr& attr,
+                           const ccl::vector_class<ccl::event>& deps) override;
 
     DEVICE_COMM_IMPL_DECLARATION
     DEVICE_COMM_IMPL_CLASS_DECLARATION

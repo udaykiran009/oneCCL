@@ -2,19 +2,16 @@
 #include "oneapi/ccl/ccl_types.hpp"
 #include "oneapi/ccl/ccl_kvs.hpp"
 
-namespace ccl
-{
+namespace ccl {
 
-class kvs_impl
-{
+class kvs_impl {
 public:
     //STUB
 
-     kvs::address_type addr;
+    kvs::address_type addr;
 };
 
-kvs::address_type CCL_API kvs::get_address() const
-{
+kvs::address_type CCL_API kvs::get_address() const {
     //TODO: add logic;
     //static kvs_impl tmp;
     //return tmp.addr;
@@ -22,33 +19,27 @@ kvs::address_type CCL_API kvs::get_address() const
     return tmp;
 }
 
-vector_class<char> CCL_API kvs::get(const string_class& prefix, const string_class& key) const
-{
+vector_class<char> CCL_API kvs::get(const string_class& prefix, const string_class& key) const {
     //TODO: add logic;
     throw;
 }
 
 void CCL_API kvs::set(const string_class& prefix,
-              const string_class& key,
-              const vector_class<char>& data) const
-{
+                      const string_class& key,
+                      const vector_class<char>& data) const {
     //TODO: add logic;
     throw;
 }
-CCL_API kvs::~kvs()
-{
+CCL_API kvs::~kvs() {
     //TODO: add logic;
 }
 
-CCL_API kvs::kvs(const kvs::address_type& addr)
-{
+CCL_API kvs::kvs(const kvs::address_type& addr) {
     //TODO: add logic;
 }
 
-CCL_API kvs::kvs()
-{
+CCL_API kvs::kvs() {
     //TODO: add logic;
 }
 
-
-}
+} // namespace ccl

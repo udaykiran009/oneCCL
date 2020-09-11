@@ -5,7 +5,6 @@ using dtype = float;
 using dtype_ptr = float*;
 
 int main(int argc, char** argv) {
-
     /* Note: SYCL devices are provided by framework */
     std::vector<sycl::device> devices;
 
@@ -25,12 +24,12 @@ int main(int argc, char** argv) {
     if (mpi_rank == 0) {
         kvs = env.create_main_kvs();
         kvs_addr = kvs->get_address();
-        MPICHECK(
-            MPI_Bcast((void*)kvs_addr.data(), ccl::kvs::addr_max_size, MPI_BYTE, 0, MPI_COMM_WORLD));
+        MPICHECK(MPI_Bcast(
+            (void*)kvs_addr.data(), ccl::kvs::addr_max_size, MPI_BYTE, 0, MPI_COMM_WORLD));
     }
     else {
-        MPICHECK(
-            MPI_Bcast((void*)kvs_addr.data(), ccl::kvs::addr_max_size, MPI_BYTE, 0, MPI_COMM_WORLD));
+        MPICHECK(MPI_Bcast(
+            (void*)kvs_addr.data(), ccl::kvs::addr_max_size, MPI_BYTE, 0, MPI_COMM_WORLD));
         kvs = env.create_kvs(kvs_addr);
     }
 
@@ -47,7 +46,6 @@ int main(int argc, char** argv) {
     std::map<size_t, std::vector<dtype_ptr>> rank_buf_map;
 
     for (auto& comm : comms) {
-
         auto dev = comm->device();
         auto rank = comm->rank();
 
@@ -57,11 +55,11 @@ int main(int argc, char** argv) {
         rank_stream_map[rank] = env.create_stream(sycl_queue);
 
         /* allocate send/recv buffers */
-        dtype* send_buf = static_cast<dtype*>(
-            cl::sycl::aligned_alloc_device(ALIGNMENT, COUNT, sycl_queue));
+        dtype* send_buf =
+            static_cast<dtype*>(cl::sycl::aligned_alloc_device(ALIGNMENT, COUNT, sycl_queue));
 
-        dtype* recv_buf = static_cast<dtype*>(
-            cl::sycl::aligned_alloc_device(ALIGNMENT, COUNT, sycl_queue));
+        dtype* recv_buf =
+            static_cast<dtype*>(cl::sycl::aligned_alloc_device(ALIGNMENT, COUNT, sycl_queue));
 
         if (!send_buf or !recv_buf) {
             std::cerr << "Cannot allocate USM buffers! Abort" << std::endl;
@@ -78,7 +76,6 @@ int main(int argc, char** argv) {
     /* call allreduce for each local devices/ranks */
     std::vector<ccl::request_t> reqs;
     for (auto& comm : comms) {
-
         size_t rank = comm->rank();
         auto& buffers = rank_buf_map.find(rank)->second;
         auto& stream = rank_stream_map[rank];
@@ -97,15 +94,13 @@ int main(int argc, char** argv) {
         std::unique_lock<std::mutex> lock(printout_mutex);
 
         for (auto& iter : rank_buf_map) {
-
             size_t rank = iter.first;
             const auto& buffers = iter.second;
             std::cout << "rank : " << rank << std::endl;
 
             for (const auto& buf : buffers) {
                 std::vector<dtype> tmp(buf, buf + COUNT);
-                std::copy(
-                    tmp.begin(), tmp.end(), std::ostream_iterator<dtype>(std::cout, ","));
+                std::copy(tmp.begin(), tmp.end(), std::ostream_iterator<dtype>(std::cout, ","));
                 std::cout << "\n\n" << std::endl;
             }
         }
