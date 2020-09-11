@@ -20,11 +20,21 @@ excluded=".git
 ./doc/spec
 ./examples/run.sh
 ./examples/Makefile
+./examples/kvs
+./examples/level_zero/l0_allreduce_subdevices_cpp_test.cpp
+./examples/level_zero/l0_thread_allreduce_cpp_test.cpp
+./examples/resizable
+./examples/cpu/old
 ./ofi/ofi_update.sh
 ./ccl_public
 ./ccl_oneapi
-./examples/level_zero
-./src/kernels"
+./test/unit/l0
+./src/kernels/*.h
+./src/kernels/*.cl
+./src/kernels/a2a_allreduce.spv
+./src/kernels/ipc_test.spv
+./src/kernels/observer_event.spv
+./src/kernels/test_one_kernel_mt.spv"
 
 count=0
 mkdir -p $dstdir
@@ -50,7 +60,7 @@ do
         dstfile=$srcfile
         echo $dstfile
         echo "new" $dstfile
-        cp --parents $srcfile $dstdir
+        cp -P --parents $srcfile $dstdir
     fi
     count=0
 done

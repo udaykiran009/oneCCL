@@ -11,7 +11,10 @@ Release notes available by [link](https://software.intel.com/content/www/us/en/d
 ## Prerequisites
 
 Ubuntu* 18
-GNU*: C, C++ 4.8.5 or higher.
+GNU*: C, C++ 7.5.0 or higher.
+
+### SYCL support
+Intel(R) oneAPI DPC++ Compiler with L0 v0.9 support
 
 ## Installation
 ### General installation scenario
@@ -89,7 +92,7 @@ Use the command:
 ```
 $ source <install_dir>/env/setvars.sh
 $ cd <install_dir>/examples
-$ mpirun -n 2 ./common/benchmark
+$ mpirun -n 2 ./benchmark/benchmark
 ```
 ### Setting workers affinity
 There are two ways to set workers threads affinity - explicit and automatic
