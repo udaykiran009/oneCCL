@@ -75,7 +75,6 @@ set                topdir                               "$componentroot/$modulef
 setenv             CCL_ROOT                             "$topdir"
 setenv             CCL_CONFIGURATION                    "$ccl_conf"
 setenv             CCL_ATL_TRANSPORT_PATH               "$topdir/lib/$ccl_conf"
-setenv             I_MPI_LIBRARY_KIND                   "release_mt"
 
 prepend-path       LD_LIBRARY_PATH                      "$topdir/lib/$ccl_conf"
 prepend-path       LIBRARY_PATH                         "$topdir/lib/$ccl_conf"
