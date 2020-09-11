@@ -7,12 +7,14 @@
 namespace ccl {
 
 namespace details {
-template<class T>
-class function_holder
-{
+template <class T>
+class function_holder {
 public:
     function_holder(T in = nullptr) : val(in) {}
-    T get() const { return val; }
+    T get() const {
+        return val;
+    }
+
 private:
     T val;
 };
@@ -133,9 +135,8 @@ struct ccl_api_type_attr_traits<sparse_allreduce_attr_id, sparse_allreduce_attr_
     using return_type = type;
 };
 
-
 /**
  * Traits specialization for barrier op attributes
  */
-}
-}
+} // namespace details
+} // namespace ccl

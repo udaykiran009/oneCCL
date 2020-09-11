@@ -6,19 +6,20 @@
 #include <CL/sycl.hpp>
 #endif /* CCL_ENABLE_SYCL */
 
-
 // Creation from class-type: cl::sycl::queue or native::ccl_device::devie_queue
 template <class NativeStream,
           typename std::enable_if<std::is_class<typename std::remove_cv<NativeStream>::type>::value,
                                   int>::type>
-std::unique_ptr<ccl_stream> stream_provider_dispatcher::create(NativeStream& native_stream, const ccl::library_version& version)
-{
+std::unique_ptr<ccl_stream> stream_provider_dispatcher::create(
+    NativeStream& native_stream,
+    const ccl::library_version& version) {
     static_assert(std::is_same<NativeStream, stream_native_t>::value, "Unsupported 'NativeStream'");
 
     ccl_stream_type_t type = ccl_stream_cpu;
 #ifdef CCL_ENABLE_SYCL
     type = native_stream.get_device().is_host() ? ccl_stream_cpu : ccl_stream_gpu;
-    LOG_INFO("SYCL queue's device is ", native_stream.get_device().template get_info<cl::sycl::info::device::name>());
+    LOG_INFO("SYCL queue's device is ",
+             native_stream.get_device().template get_info<cl::sycl::info::device::name>());
 #else
     //L0 at now for GPU only
     type = ccl_stream_gpu;
@@ -29,28 +30,31 @@ std::unique_ptr<ccl_stream> stream_provider_dispatcher::create(NativeStream& nat
 
 // Creation from handles: cl_queue or ze_device_queue_handle_t
 template <class NativeStreamHandle,
-          typename std::enable_if<not std::is_class<typename std::remove_cv<NativeStreamHandle>::type>::value,
-                                  int>::type>
-std::unique_ptr<ccl_stream> stream_provider_dispatcher::create(NativeStreamHandle& native_stream, const ccl::library_version& version)
-{
-    static_assert(std::is_same<NativeStreamHandle, stream_native_handle_t>::value, "Unsupported 'NativeStream'");
+          typename std::enable_if<
+              not std::is_class<typename std::remove_cv<NativeStreamHandle>::type>::value,
+              int>::type>
+std::unique_ptr<ccl_stream> stream_provider_dispatcher::create(
+    NativeStreamHandle& native_stream,
+    const ccl::library_version& version) {
+    static_assert(std::is_same<NativeStreamHandle, stream_native_handle_t>::value,
+                  "Unsupported 'NativeStream'");
     return std::unique_ptr<ccl_stream>(new ccl_stream(ccl_stream_gpu, native_stream, version));
 }
 
 // Postponed creation from device
-std::unique_ptr<ccl_stream> stream_provider_dispatcher::create(stream_native_device_t device,
-                                                               const ccl::library_version& version)
-{
+std::unique_ptr<ccl_stream> stream_provider_dispatcher::create(
+    stream_native_device_t device,
+    const ccl::library_version& version) {
     auto ret = std::unique_ptr<ccl_stream>(new ccl_stream(ccl_stream_gpu, version));
     ret->native_device = device;
     return ret;
 }
 
 // Postponed creation from device & context
-std::unique_ptr<ccl_stream> stream_provider_dispatcher::create(stream_native_device_t device,
-                                              stream_native_context_t context,
-                                              const ccl::library_version& version)
-{
+std::unique_ptr<ccl_stream> stream_provider_dispatcher::create(
+    stream_native_device_t device,
+    stream_native_context_t context,
+    const ccl::library_version& version) {
     auto ret = stream_provider_dispatcher::create(device, version);
     ret->native_context = context;
     return ret;
@@ -58,17 +62,15 @@ std::unique_ptr<ccl_stream> stream_provider_dispatcher::create(stream_native_dev
 
 template <class NativeStream,
           typename std::enable_if<std::is_class<typename std::remove_cv<NativeStream>::type>::value,
-                                   int>::type>
+                                  int>::type>
 stream_provider_dispatcher::stream_provider_dispatcher(NativeStream& stream)
-: native_stream(stream)
-{
-}
+        : native_stream(stream) {}
 
 template <class NativeStreamHandle,
-          typename std::enable_if<not std::is_class<typename std::remove_cv<NativeStreamHandle>::type>::value,
-                                  int>::type>
-stream_provider_dispatcher::stream_provider_dispatcher(NativeStreamHandle stream)
-{
+          typename std::enable_if<
+              not std::is_class<typename std::remove_cv<NativeStreamHandle>::type>::value,
+              int>::type>
+stream_provider_dispatcher::stream_provider_dispatcher(NativeStreamHandle stream) {
     creation_is_postponed = true;
     /*
 #ifdef CCL_ENABLE_SYCL
@@ -78,44 +80,41 @@ stream_provider_dispatcher::stream_provider_dispatcher(NativeStreamHandle stream
 #endif*/
 }
 
-stream_provider_dispatcher::stream_provider_dispatcher()
-{
+stream_provider_dispatcher::stream_provider_dispatcher() {
     creation_is_postponed = true;
 }
 
-stream_provider_dispatcher::stream_native_t stream_provider_dispatcher::get_native_stream() const
-{
-    if (!creation_is_postponed)
-    {
-        throw  ccl::ccl_error("native stream is not set");
+stream_provider_dispatcher::stream_native_t stream_provider_dispatcher::get_native_stream() const {
+    if (!creation_is_postponed) {
+        throw ccl::ccl_error("native stream is not set");
     }
 
     return native_stream;
 }
 
-const stream_provider_dispatcher::stream_native_device_t& stream_provider_dispatcher::get_native_device() const
-{
-    if (creation_is_postponed)
-    {
+const stream_provider_dispatcher::stream_native_device_t&
+stream_provider_dispatcher::get_native_device() const {
+    if (creation_is_postponed) {
         throw ccl::ccl_error("native device is not set");
     }
     return native_device;
 }
 
-stream_provider_dispatcher::stream_native_device_t& stream_provider_dispatcher::get_native_device()
-{
-    return const_cast<stream_provider_dispatcher::stream_native_device_t&>(static_cast<const stream_provider_dispatcher*>(this)->get_native_device());
+stream_provider_dispatcher::stream_native_device_t&
+stream_provider_dispatcher::get_native_device() {
+    return const_cast<stream_provider_dispatcher::stream_native_device_t&>(
+        static_cast<const stream_provider_dispatcher*>(this)->get_native_device());
 }
 
-std::string stream_provider_dispatcher::to_string() const
-{
-    if (creation_is_postponed)
-    {
+std::string stream_provider_dispatcher::to_string() const {
+    if (creation_is_postponed) {
         throw ccl::ccl_error("native device is not set");
     }
     std::stringstream ss;
 #ifdef CCL_ENABLE_SYCL
-    ss << "sycl: " << native_stream.get_info<cl::sycl::info::queue::device>().get_info<cl::sycl::info::device::name>();
+    ss << "sycl: "
+       << native_stream.get_info<cl::sycl::info::queue::device>()
+              .get_info<cl::sycl::info::device::name>();
 #else
     ss << reinterpret_cast<void*>(native_stream.get()); //TODO
 #endif

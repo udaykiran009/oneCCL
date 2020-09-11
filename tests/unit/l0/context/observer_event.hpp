@@ -2,10 +2,8 @@
 #include <memory>
 #include <vector>
 
-
 #include "sched/entry/entry.hpp"
 #include "oneapi/ccl/native_device_api/l0/device.hpp"
-
 
 /**
  * Add custom types support into native::memory example
@@ -24,9 +22,8 @@ struct native_type_info<shared_event_float>
 */
 class ccl_gpu_sched;
 
-template<class native_data_t>
-class observer_event : public sched_entry
-{
+template <class native_data_t>
+class observer_event : public sched_entry {
 public:
     using element_t = native_data_t;
     using event_struct_t = typename shared_event_traits<element_t>::impl_t;
@@ -38,8 +35,7 @@ public:
                    /*event_ptr_t device_event,*/
                    size_t wait_bytes_count);
 
-    static constexpr const char* class_name()
-    {
+    static constexpr const char* class_name() {
         return "OBSERVER_EVENT";
     }
 
@@ -55,5 +51,5 @@ private:
     native::ccl_device::device_memory_ptr<int> ready_bytes;
     native::ccl_device::device_memory_ptr<element_t> ready_memory_chunk;
     //event_ptr_t producer_event;
-    std::vector<element_t> numa_host_data;// TODO
+    std::vector<element_t> numa_host_data; // TODO
 };

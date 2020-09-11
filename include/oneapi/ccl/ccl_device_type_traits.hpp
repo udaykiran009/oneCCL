@@ -83,7 +83,6 @@ struct generic_device_context_type<CCL_ENABLE_SYCL_TRUE> {
     const ccl_native_t& get() const noexcept;
 
     ccl_native_t context;
-
 };
 
 template <>
@@ -127,7 +126,6 @@ struct generic_event_type<CCL_ENABLE_SYCL_TRUE> {
 #else
 
 #ifdef MULTI_GPU_SUPPORT
-
 }
 namespace native {
 class ccl_device;
@@ -161,7 +159,7 @@ struct generic_device_type<CCL_ENABLE_SYCL_FALSE> {
 };
 
 #ifndef ze_context_handle_t
-    #define ze_context_handle_t void *
+#define ze_context_handle_t void*
 #endif
 
 template <>
@@ -212,10 +210,10 @@ struct generic_event_type<CCL_ENABLE_SYCL_FALSE> {
 
     ccl_native_t event;
 };
-#else  /* MULTI_GPU_SUPPORT */
-    // no sycl no multu gpu ...
-    #undef CCL_ENABLE_SYCL_V
-    #define CCL_ENABLE_SYCL_V   -1
+#else /* MULTI_GPU_SUPPORT */
+// no sycl no multu gpu ...
+#undef CCL_ENABLE_SYCL_V
+#define CCL_ENABLE_SYCL_V -1
 #endif
 #endif /* else for  CCL_ENABLE_SYCL */
 

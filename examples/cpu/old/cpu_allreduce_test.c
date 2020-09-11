@@ -1,11 +1,10 @@
-# remove
+#remove
 #include <stdio.h>
 #include "ccl.h"
 
 #define COUNT 128
 
-int main(int argc, char** argv)
-{
+int main(int argc, char** argv) {
     int i = 0;
     size_t size = 0;
     size_t rank = 0;
@@ -49,9 +48,9 @@ int main(int argc, char** argv)
 
     /* check correctness of recvbuf */
     for (i = 0; i < COUNT; i++) {
-       if (recvbuf[i] != size * (size + 1) / 2) {
-           recvbuf[i] = -1;
-       }
+        if (recvbuf[i] != size * (size + 1) / 2) {
+            recvbuf[i] = -1;
+        }
     }
 
     /* print out the result of the test */

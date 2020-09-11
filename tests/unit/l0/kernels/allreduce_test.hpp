@@ -2,8 +2,7 @@
 #include <memory>
 #include <sstream>
 
-namespace singledevice_case
-{
+namespace singledevice_case {
 
 // test case data
 static const size_t buffer_size = 512;
@@ -14,26 +13,24 @@ using native_type = float;
 static constexpr size_t mem_group_count = 3;
 static constexpr size_t flag_group_count = 3;
 
-TEST_F(allreduce_one_device_local_fixture, allreduce_one_device_multithread_kernel)
-{
+TEST_F(allreduce_one_device_local_fixture, allreduce_one_device_multithread_kernel) {
     using namespace native;
 
-    handles_storage<native_type>                memory_storage(42 * num_thread);
-    handles_storage<int>                        flags_storage(42 * num_thread);
-    std::map<size_t, std::vector<size_t>>       comm_param_storage;
+    handles_storage<native_type> memory_storage(42 * num_thread);
+    handles_storage<int> flags_storage(42 * num_thread);
+    std::map<size_t, std::vector<size_t>> comm_param_storage;
 
     // check global driver
     auto drv_it = local_platform->drivers.find(0);
-    UT_ASSERT(drv_it != local_platform->drivers.end(),
-              "Driver by idx 0 must exist!");
+    UT_ASSERT(drv_it != local_platform->drivers.end(), "Driver by idx 0 must exist!");
     ccl_device_driver& driver = *drv_it->second;
 
     // check devices per process
-    UT_ASSERT(driver.devices.size() == local_affinity.size(), "Count: %" <<  driver.devices.size()
-              << ", bits: " << local_affinity.size()
-              << "Device count is not equal to affinity mask!");
+    UT_ASSERT(driver.devices.size() == local_affinity.size(),
+              "Count: %" << driver.devices.size() << ", bits: " << local_affinity.size()
+                         << "Device count is not equal to affinity mask!");
 
-    std::vector<size_t>                                         thread_indices;
+    std::vector<size_t> thread_indices;
 
     // device memory stencil data
     std::vector<native_type> send_values(buffer_size);
@@ -44,14 +41,10 @@ TEST_F(allreduce_one_device_local_fixture, allreduce_one_device_multithread_kern
     auto dev_it = driver.devices.begin();
     ccl_device& device = *dev_it->second;
 
-
-
-    for(size_t thread_idx = 0; thread_idx < num_thread; thread_idx++)
-    {
+    for (size_t thread_idx = 0; thread_idx < num_thread; thread_idx++) {
         thread_indices.push_back(thread_idx);
-        try
-        {
-             //initialize communication params
+        try {
+            //initialize communication params
             size_t rank_idx = thread_idx;
             size_t rank_size = num_thread;
             size_t elem_count = buffer_size;
@@ -64,16 +57,19 @@ TEST_F(allreduce_one_device_local_fixture, allreduce_one_device_multithread_kern
             // memory
             auto mem_send = device.alloc_memory<native_type>(buffer_size, sizeof(native_type));
             auto mem_recv = device.alloc_memory<native_type>(buffer_size, sizeof(native_type));
-            auto temp_recv = device.alloc_memory<native_type>(buffer_size / num_thread, sizeof(native_type));
+            auto temp_recv =
+                device.alloc_memory<native_type>(buffer_size / num_thread, sizeof(native_type));
             mem_send.enqueue_write_sync(send_values);
             mem_recv.enqueue_write_sync(recv_values);
-            temp_recv.enqueue_write_sync(recv_values.begin(), recv_values.begin() + buffer_size / num_thread);
+            temp_recv.enqueue_write_sync(recv_values.begin(),
+                                         recv_values.begin() + buffer_size / num_thread);
 
             /* fill array in specific order
              * Left: l_send, l_recv, l_tmp_recv, r_tmp_recv
              * Right: r_send, r_recv, r_tmp_recv, l_tmp_recv
              */
-            memory_storage.register_shared_data(thread_idx, num_thread,
+            memory_storage.register_shared_data(thread_idx,
+                                                num_thread,
                                                 std::move(mem_send),
                                                 std::move(mem_recv),
                                                 std::move(temp_recv));
@@ -82,30 +78,29 @@ TEST_F(allreduce_one_device_local_fixture, allreduce_one_device_multithread_kern
             auto left_wrote_2_me_flag = device.alloc_memory<int>(1, sizeof(int));
             auto read_for_receive_flag = device.alloc_memory<int>(1, sizeof(int));
             auto barrier_flag = device.alloc_memory<int>(1, sizeof(int));
-            left_wrote_2_me_flag.enqueue_write_sync({(int)0});
-            read_for_receive_flag.enqueue_write_sync({(int)0});
-            barrier_flag.enqueue_write_sync({(int)0});
-
+            left_wrote_2_me_flag.enqueue_write_sync({ (int)0 });
+            read_for_receive_flag.enqueue_write_sync({ (int)0 });
+            barrier_flag.enqueue_write_sync({ (int)0 });
 
             /* fill array in specific order
              * Left: l_L, l_R, l_B, r_L, r_R
              * Right: r_L, r_R, r_B, l_L, L_R
              */
-            flags_storage.register_shared_data(thread_idx, num_thread,
+            flags_storage.register_shared_data(thread_idx,
+                                               num_thread,
                                                std::move(left_wrote_2_me_flag),
                                                std::move(read_for_receive_flag),
                                                std::move(barrier_flag));
         }
-        catch (const std::exception& ex)
-        {
-            UT_ASSERT(false, "Cannot allocate memory for thread: " << thread_idx
-                             << "\nError: " << ex.what());
+        catch (const std::exception& ex) {
+            UT_ASSERT(
+                false,
+                "Cannot allocate memory for thread: " << thread_idx << "\nError: " << ex.what());
         }
     }
 
-    for(size_t thread_idx = 0; thread_idx < num_thread; thread_idx++)
-    {
-        memory_storage.rotate_shared_data(thread_idx, num_thread,mem_group_count);
+    for (size_t thread_idx = 0; thread_idx < num_thread; thread_idx++) {
+        memory_storage.rotate_shared_data(thread_idx, num_thread, mem_group_count);
         flags_storage.rotate_shared_data(thread_idx, num_thread, flag_group_count);
     }
     //Check memory handles
@@ -144,24 +139,19 @@ TEST_F(allreduce_one_device_local_fixture, allreduce_one_device_multithread_kern
     }
     */
     //prepare kernels in multithreading environment
-    ze_kernel_desc_t desc = { ZE_KERNEL_DESC_VERSION_CURRENT,
-                              ZE_KERNEL_FLAG_NONE   };
+    ze_kernel_desc_t desc = { ZE_KERNEL_DESC_VERSION_CURRENT, ZE_KERNEL_FLAG_NONE };
     desc.pKernelName = "allreduce_execution_float";
     std::map<size_t, ze_kernel_handle_t> thread_kernels;
     std::map<size_t, ccl_device::device_queue> thread_queue;
     std::map<size_t, ccl_device::device_cmd_list> thread_cmd_list;
-    ccl_device::device_module& module  = *(device_modules.find(&device)->second);
-    for(size_t thread_idx = 0; thread_idx < num_thread; thread_idx++)
-    {
+    ccl_device::device_module& module = *(device_modules.find(&device)->second);
+    for (size_t thread_idx = 0; thread_idx < num_thread; thread_idx++) {
         //thread_group.emplace
         ze_kernel_handle_t handle = nullptr;
-        try
-        {
+        try {
             ze_result_t result = zeKernelCreate(module.handle, &desc, &handle);
-            if (result != ZE_RESULT_SUCCESS)
-            {
-                throw std::runtime_error(std::string("Cannot create kernel: ") +
-                                         desc.pKernelName +
+            if (result != ZE_RESULT_SUCCESS) {
+                throw std::runtime_error(std::string("Cannot create kernel: ") + desc.pKernelName +
                                          ", error: " + native::to_string(result));
             }
 
@@ -169,25 +159,21 @@ TEST_F(allreduce_one_device_local_fixture, allreduce_one_device_multithread_kern
             thread_queue.emplace(thread_idx, device.create_cmd_queue());
             thread_cmd_list.emplace(thread_idx, device.create_cmd_list());
         }
-        catch(const std::exception& ex)
-        {
-            throw std::runtime_error(std::string("Error: ") +
-                                     ex.what());
+        catch (const std::exception& ex) {
+            throw std::runtime_error(std::string("Error: ") + ex.what());
         }
     }
-
 
     //printout
     output << "L0 memory handles: " << std::endl;
     memory_storage.dump(output, true);
 
     //Set args and launch kernel
-    std::mutex thread_lock;     //workaround
-    size_t val = 0;             //workaround
+    std::mutex thread_lock; //workaround
+    size_t val = 0; //workaround
     std::vector<std::thread> thread_group;
     std::vector<std::unique_ptr<std::stringstream>> thread_out_put;
-    for(auto &idx_kernel : thread_kernels)
-    {
+    for (auto& idx_kernel : thread_kernels) {
         size_t thread_idx = idx_kernel.first;
         ze_kernel_handle_t kernel = idx_kernel.second;
         auto& mem_handles = memory_storage.per_thread_storage.find(thread_idx)->second;
@@ -199,73 +185,72 @@ TEST_F(allreduce_one_device_local_fixture, allreduce_one_device_multithread_kern
         //ccl_device::device_cmd_list& list = thread_cmd_list.find(thread_idx)->second;
         ccl_device::device_cmd_list& list = thread_cmd_list.find(0)->second;
 
-
         std::unique_ptr<std::stringstream> out_ptr(new std::stringstream());
         std::stringstream* raw_out = out_ptr.get();
-        thread_group.emplace_back([this, &driver, &device,
-                                   thread_idx, kernel, &list, &queue,
-                                   &mem_handles, &flag_handles,
+        thread_group.emplace_back([this,
+                                   &driver,
+                                   &device,
+                                   thread_idx,
+                                   kernel,
+                                   &list,
+                                   &queue,
+                                   &mem_handles,
+                                   &flag_handles,
                                    &comm_handles,
-                                   &thread_lock, &val, raw_out]()
-        {
-            (void) driver;
-            (void) device;
+                                   &thread_lock,
+                                   &val,
+                                   raw_out]() {
+            (void)driver;
+            (void)device;
             std::stringstream& out = *raw_out;
             ze_group_count_t launch_args = { 1, 1, 1 };
-            try
-            {
+            try {
                 ze_result_t result;
                 out << "thread_idx: " << thread_idx << ", comm_handles: \n";
 
                 // bind rank, size, buffer_size
                 size_t i = 0;
-                std::array<int, 3> comm_offset{0, 1, 2};
+                std::array<int, 3> comm_offset{ 0, 1, 2 };
                 UT_ASSERT(comm_offset.size() == comm_handles.size(), "comm_offset != comm_handles");
-                for(auto& comm : comm_handles)
-                {
+                for (auto& comm : comm_handles) {
                     out << "index: " << comm_offset[i] << ": " << comm << std::endl;
                     result = zeKernelSetArgumentValue(kernel, comm_offset[i], sizeof(comm), &comm);
-                    if (result != ZE_RESULT_SUCCESS)
-                    {
-                        throw std::runtime_error(std::string("Cannot zeKernelSetArgumentValue memory at comm_offset: ") +
-                                                std::to_string(comm_offset[i]) + " index\nError: " +
-                                                native::to_string(result));
+                    if (result != ZE_RESULT_SUCCESS) {
+                        throw std::runtime_error(
+                            std::string("Cannot zeKernelSetArgumentValue memory at comm_offset: ") +
+                            std::to_string(comm_offset[i]) +
+                            " index\nError: " + native::to_string(result));
                     }
 
                     i++;
                 }
                 out << std::endl;
 
-
                 // bind l_send, l_recv, l_tmp, , , r_tmp
                 i = 0;
-                std::array<int, mem_group_count * 2> mem_offset{3, 4, 5, -1, -1, 9};
+                std::array<int, mem_group_count * 2> mem_offset{ 3, 4, 5, -1, -1, 9 };
                 //UT_ASSERT(mem_offset.size() == mem_handles.size(), "mem_offset != mem_handles");
                 out << "thread_idx: " << thread_idx << ", mem_handles: \n";
-                for(auto &mem : mem_handles)
-                {
-                    if(i >= mem_group_count * 2 )
-                    {
+                for (auto& mem : mem_handles) {
+                    if (i >= mem_group_count * 2) {
                         break; //only own+right is needed
                     }
-                    if(mem_offset[i] == -1)
-                    {
+                    if (mem_offset[i] == -1) {
                         i++;
                         continue; //skip this argument
                     }
 
                     out << "index: " << mem_offset[i] << ": " << mem << std::endl;
                     result = zeKernelSetArgumentValue(kernel, mem_offset[i], sizeof(mem), &mem);
-                    if (result != ZE_RESULT_SUCCESS)
-                    {
-                        throw std::runtime_error(std::string("Cannot zeKernelSetArgumentValue memory at mem_offset: ") +
-                                                std::to_string(mem_offset[i]) + " index\nError: " +
-                                                native::to_string(result));
+                    if (result != ZE_RESULT_SUCCESS) {
+                        throw std::runtime_error(
+                            std::string("Cannot zeKernelSetArgumentValue memory at mem_offset: ") +
+                            std::to_string(mem_offset[i]) +
+                            " index\nError: " + native::to_string(result));
                     }
 
                     /* Hints for memory allocation*/
-                    if(mem_offset[i] == 9)
-                    {
+                    if (mem_offset[i] == 9) {
                         //set indirect access for another peer device buffer
                         /* TODO
                         result = zeKernelSetAttribute(kernel, ze_kernel_attribute_t::ZE_KERNEL_ATTR_INDIRECT_DEVICE_ACCESS, sizeof(mem), &mem));
@@ -282,34 +267,29 @@ TEST_F(allreduce_one_device_local_fixture, allreduce_one_device_multithread_kern
 
                 // bindleft_wrote_2_me_flag, read_for_receive_flag, local_barrier_flag
                 i = 0;
-                std::array<int, flag_group_count * 2> flag_offset{6, 7, 8, 10, 11, -1};
+                std::array<int, flag_group_count * 2> flag_offset{ 6, 7, 8, 10, 11, -1 };
                 //UT_ASSERT(flag_offset.size() == flag_handles.size(), "flag_offset != flag_handles");
                 out << "thread_idx: " << thread_idx << ", flag_handles: \n";
-                for(auto &flag: flag_handles)
-                {
-                    if(i >= flag_group_count * 2)
-                    {
+                for (auto& flag : flag_handles) {
+                    if (i >= flag_group_count * 2) {
                         break; //only own+right is needed
                     }
 
-                    if(flag_offset[i] == -1)
-                    {
+                    if (flag_offset[i] == -1) {
                         i++;
                         continue; //skip this argument
                     }
                     out << "index: " << flag_offset[i] << ": " << flag << std::endl;
                     result = zeKernelSetArgumentValue(kernel, flag_offset[i], sizeof(flag), &flag);
-                    if (result != ZE_RESULT_SUCCESS)
-                    {
-                        throw std::runtime_error(std::string("Cannot zeKernelSetArgumentValue flags at flag_offset: ") +
-                                                std::to_string(flag_offset[i]) + " index\nError: " +
-                                                native::to_string(result));
+                    if (result != ZE_RESULT_SUCCESS) {
+                        throw std::runtime_error(
+                            std::string("Cannot zeKernelSetArgumentValue flags at flag_offset: ") +
+                            std::to_string(flag_offset[i]) +
+                            " index\nError: " + native::to_string(result));
                     }
 
-
                     /* Hints for memory allocation*/
-                    if(flag_offset[i] == 7 or flag_offset[i] == 8 )
-                    {
+                    if (flag_offset[i] == 7 or flag_offset[i] == 8) {
                         //set indirect access for another peer device buffer
                         /* TODO
                         result = zeKernelSetAttribute(kernel, ze_kernel_attribute_t::ZE_KERNEL_ATTR_INDIRECT_DEVICE_ACCESS, sizeof(flag), &flag));
@@ -328,58 +308,60 @@ TEST_F(allreduce_one_device_local_fixture, allreduce_one_device_multithread_kern
                 // lock before submitting to the command list
                 thread_lock.lock();
 
-                ze_result_t ret = zeCommandListAppendLaunchKernel(list.handle, kernel, &launch_args, nullptr, 0, nullptr);
-                if(ret != ZE_RESULT_SUCCESS )
-                {
-                    throw std::runtime_error(std::string("cannot zeCommandListAppendLaunchKernel, error: ") + std::to_string(ret));
+                ze_result_t ret = zeCommandListAppendLaunchKernel(
+                    list.handle, kernel, &launch_args, nullptr, 0, nullptr);
+                if (ret != ZE_RESULT_SUCCESS) {
+                    throw std::runtime_error(
+                        std::string("cannot zeCommandListAppendLaunchKernel, error: ") +
+                        std::to_string(ret));
                 }
                 val++;
 
                 thread_lock.unlock();
 
                 // sync and make sure all threads have arrived up to this point.
-                while(val < num_thread)
-                {
+                while (val < num_thread) {
                 }
 
                 // let thread 0 to be the one submitting commands to the queue and sync
-                if (thread_idx ==  0)
-                {
+                if (thread_idx == 0) {
                     ret = zeCommandListClose(list.handle);
-                    if(ret != ZE_RESULT_SUCCESS )
-                    {
-                        throw std::runtime_error(std::string("cannot zeCommandListClose, error: ") + std::to_string(ret));
+                    if (ret != ZE_RESULT_SUCCESS) {
+                        throw std::runtime_error(std::string("cannot zeCommandListClose, error: ") +
+                                                 std::to_string(ret));
                     }
 
                     ret = zeCommandQueueExecuteCommandLists(queue.handle, 1, &list.handle, nullptr);
-                    if(ret != ZE_RESULT_SUCCESS )
-                    {
-                        throw std::runtime_error(std::string("cannot zeCommandQueueExecuteCommandLists, error: ") + std::to_string(ret));
+                    if (ret != ZE_RESULT_SUCCESS) {
+                        throw std::runtime_error(
+                            std::string("cannot zeCommandQueueExecuteCommandLists, error: ") +
+                            std::to_string(ret));
                     }
 
-                    ret = zeCommandQueueSynchronize(queue.handle, std::numeric_limits<uint32_t>::max());
-                    if(ret != ZE_RESULT_SUCCESS )
-                    {
-                        throw std::runtime_error(std::string("cannot zeCommandQueueSynchronize, error: ") + std::to_string(ret));
+                    ret = zeCommandQueueSynchronize(queue.handle,
+                                                    std::numeric_limits<uint32_t>::max());
+                    if (ret != ZE_RESULT_SUCCESS) {
+                        throw std::runtime_error(
+                            std::string("cannot zeCommandQueueSynchronize, error: ") +
+                            std::to_string(ret));
                     }
 
                     out << "thread finished" << std::endl;
                 }
             }
-            catch(const std::exception& ex)
-            {
-                UT_ASSERT(false, "Exception in thread: " << thread_idx << "\nError: " <<ex.what() << ", at pahse: " << out.str());
+            catch (const std::exception& ex) {
+                UT_ASSERT(false,
+                          "Exception in thread: " << thread_idx << "\nError: " << ex.what()
+                                                  << ", at pahse: " << out.str());
                 throw;
             }
-
         });
 
         thread_out_put.push_back(std::move(out_ptr));
     }
 
     size_t index = 0;
-    for(auto& t : thread_group)
-    {
+    for (auto& t : thread_group) {
         t.join();
         output << "Kernels argument binding log for Thread: " << index << std::endl;
         output << thread_out_put[index]->str() << std::endl;
@@ -388,11 +370,10 @@ TEST_F(allreduce_one_device_local_fixture, allreduce_one_device_multithread_kern
 
     //printout
     output << "Send memory:" << std::endl;
-    memory_storage.dump_by_index(output, 0/*recv_mem*/);
+    memory_storage.dump_by_index(output, 0 /*recv_mem*/);
     output << "\nRecv memory:" << std::endl;
-    memory_storage.dump_by_index(output, 1/*recv_mem*/);
+    memory_storage.dump_by_index(output, 1 /*recv_mem*/);
     //flags_storage.dump(output);
 }
 
-
-}
+} // namespace singledevice_case

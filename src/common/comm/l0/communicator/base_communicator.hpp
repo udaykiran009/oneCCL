@@ -5,68 +5,59 @@
 //TODO #include "sched/gpu_sched.hpp"
 #include "common/comm/l0/comm_context_id.hpp"
 
-struct base_communicator : public ccl::communicator_interface
-{
+struct base_communicator : public ccl::communicator_interface {
     //TODO using group_comm_storage = native::specific_indexed_device_storage;
 
     base_communicator(ccl::unified_device_type&& owned_device,
-                      size_t thread_idx, size_t process_idx,
-                      const ccl::device_comm_split_attr& attr) :
-        device(std::move(owned_device)),
-        thread_id(thread_idx),
-        process_id(process_idx),
-        comm_attr(attr),
-        comm_rank(),
-        comm_size(),
-        ready_mutex()/*,
+                      size_t thread_idx,
+                      size_t process_idx,
+                      const ccl::device_comm_split_attr& attr)
+            : device(std::move(owned_device)),
+              thread_id(thread_idx),
+              process_id(process_idx),
+              comm_attr(attr),
+              comm_rank(),
+              comm_size(),
+              ready_mutex() /*,
         devices(nullptr)*/
-    {
-    }
+    {}
 
     virtual ~base_communicator() = default;
 
-    size_t rank() const override
-    {
+    size_t rank() const override {
         return comm_rank;
     }
 
-    size_t size() const override
-    {
+    size_t size() const override {
         return comm_size;
     }
 
-    ccl::device_index_type get_device_path() const override
-    {
+    ccl::device_index_type get_device_path() const override {
         return device.get_id();
     }
 
-    ccl::communicator_interface::device_t get_device() override
-    {
+    ccl::communicator_interface::device_t get_device() override {
         return device.get();
     }
 
-    ccl::communicator_interface::context_t get_context() override
-    {
+    ccl::communicator_interface::context_t get_context() override {
         //TODO not implemented
         throw std::runtime_error(std::string(__PRETTY_FUNCTION__) + " - not implemented");
         return context_t{};
     }
 
-    const ccl::device_comm_split_attr& get_comm_split_attr() const override
-    {
+    const ccl::device_comm_split_attr& get_comm_split_attr() const override {
         return comm_attr;
     }
 
-    const ccl::group_unique_key& get_comm_group_id() const override
-    {
+    const ccl::group_unique_key& get_comm_group_id() const override {
         return owner_id;
     }
 
-    void set_comm_group_id(ccl::group_unique_key id)
-    {
+    void set_comm_group_id(ccl::group_unique_key id) {
         owner_id = id;
     }
-/*
+    /*
     virtual bool is_ready() const
     {
         if(!devices)

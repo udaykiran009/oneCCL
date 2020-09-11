@@ -6,8 +6,7 @@
 #include <sched.h>
 #include <time.h>
 
-enum ccl_yield_type
-{
+enum ccl_yield_type {
     ccl_yield_none,
     ccl_yield_pause,
     ccl_yield_sleep,

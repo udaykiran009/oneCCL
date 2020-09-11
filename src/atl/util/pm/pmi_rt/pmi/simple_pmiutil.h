@@ -5,22 +5,21 @@
  */
 
 /* maximum sizes for arrays */
-#define PMIU_MAXLINE 1024
-#define PMIU_ERROR_MSG_SIZE (PMIU_MAXLINE*3)
-#define PMIU_IDSIZE    32
+#define PMIU_MAXLINE        1024
+#define PMIU_ERROR_MSG_SIZE (PMIU_MAXLINE * 3)
+#define PMIU_IDSIZE         32
 
 /* we don't have access to MPIR_Assert and friends here in the PMI code */
 #if defined(HAVE_ASSERT_H)
-#  include <assert.h>
-#  define PMIU_Assert(expr) assert(expr)
+#include <assert.h>
+#define PMIU_Assert(expr) assert(expr)
 #else
-#  define PMIU_Assert(expr)
+#define PMIU_Assert(expr)
 #endif
 
 #if defined HAVE_ARPA_INET_H
 #include <arpa/inet.h>
 #endif /* HAVE_ARPA_INET_H */
-
 
 /* prototypes for PMIU routines */
 void PMIU_Set_rank(int PMI_rank);

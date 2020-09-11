@@ -1,7 +1,7 @@
 
 #include "base.hpp"
 
-#define COUNT 512 //(10*1024*1024)
+#define COUNT     512 //(10*1024*1024)
 #define COLL_ROOT (0)
 
 using processing_type = float;
@@ -11,23 +11,23 @@ using processing_type_ptr = float*;
 void run_test(size_t thread_idx,
               const size_t size,
               const size_t device_id,
-              std::shared_ptr<ccl::ccl_kvs_interface> kvs)
-{
-
+              std::shared_ptr<ccl::ccl_kvs_interface> kvs) {
     using namespace ::native;
 
-    ccl::device_communicator_t comm = ccl::environment::instance().create_device_communicators(size, {device_id}, kvs)[0];
+    ccl::device_communicator_t comm =
+        ccl::environment::instance().create_device_communicators(size, { device_id }, kvs)[0];
     size_t rank = comm->rank();
     ccl::communicator::device_native_reference_t dev = comm->get_device();
 
     cl::sycl::queue queue(dev);
 
     // allocate memory
-    processing_type* mem_send = static_cast<processing_type*>(cl::sycl::aligned_alloc_device(sizeof(processing_type), COUNT, queue));
-    processing_type* mem_recv = static_cast<processing_type*>(cl::sycl::aligned_alloc_device(sizeof(processing_type), COUNT, queue));
+    processing_type* mem_send = static_cast<processing_type*>(
+        cl::sycl::aligned_alloc_device(sizeof(processing_type), COUNT, queue));
+    processing_type* mem_recv = static_cast<processing_type*>(
+        cl::sycl::aligned_alloc_device(sizeof(processing_type), COUNT, queue));
 
-    if (!mem_send or !mem_recv)
-    {
+    if (!mem_send or !mem_recv) {
         std::cerr << "Cannot allocate USM! Abort" << std::endl;
         abort();
     }
@@ -41,12 +41,8 @@ void run_test(size_t thread_idx,
     //allreduce
     ccl::coll_attr coll_attr{};
 
-    std::shared_ptr<ccl::request> req = comm->allreduce(mem_send,
-                                                        mem_recv,
-                                                        COUNT,
-                                                        ccl::reduction::sum,
-                                                        &coll_attr,
-                                                        stream);
+    std::shared_ptr<ccl::request> req =
+        comm->allreduce(mem_send, mem_recv, COUNT, ccl::reduction::sum, &coll_attr, stream);
 
     //wait
     req->wait();
@@ -55,11 +51,10 @@ void run_test(size_t thread_idx,
 void run_test(size_t thread_idx,
               const size_t size,
               const size_t device_id,
-              std::shared_ptr<ccl::ccl_kvs_interface> kvs)
-{
-
+              std::shared_ptr<ccl::ccl_kvs_interface> kvs) {
     using namespace ::native;
-    ccl::device_communicator_t comm = ccl::environment::instance().create_device_communicators(size, {device_id}, kvs)[0];
+    ccl::device_communicator_t comm =
+        ccl::environment::instance().create_device_communicators(size, { device_id }, kvs)[0];
     size_t rank = comm->rank();
     ccl::communicator::device_native_reference_t dev = comm->get_device();
 
@@ -84,19 +79,14 @@ void run_test(size_t thread_idx,
     //allreduce
     ccl::coll_attr coll_attr{};
 
-    std::shared_ptr<ccl::request> req = comm->allreduce(mem_send,
-                                                        mem_recv,
-                                                        COUNT,
-                                                        ccl::reduction::sum,
-                                                        &coll_attr,
-                                                        stream);
+    std::shared_ptr<ccl::request> req =
+        comm->allreduce(mem_send, mem_recv, COUNT, ccl::reduction::sum, &coll_attr, stream);
 
     //wait
     req->wait();
 }
 #endif // CCL_ENABLE_SYCL
-int main(int argc, char** argv)
-{
+int main(int argc, char** argv) {
     const size_t thread_count = 4;
     std::vector<size_t> device_ids(thread_count);
     std::vector<std::thread> thread_group;
@@ -108,33 +98,29 @@ int main(int argc, char** argv)
     size_t device_id;
     int rank, size;
 
-
     //initializing MPI
     MPI_Init(&argc, &argv);
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
     MPI_Comm_size(MPI_COMM_WORLD, &size);
     std::shared_ptr<ccl::ccl_internal_kvs> kvs;
     ccl::ccl_main_addr main_addr;
-    if (rank == 0)
-    {
+    if (rank == 0) {
         kvs = std::make_shared<ccl::ccl_internal_kvs>();
         main_addr = kvs->get_main_addr();
-        MPICHECK(MPI_Bcast((void *)main_addr.data(), main_addr.size(), MPI_BYTE, 0, MPI_COMM_WORLD));
+        MPICHECK(MPI_Bcast((void*)main_addr.data(), main_addr.size(), MPI_BYTE, 0, MPI_COMM_WORLD));
     }
-    else
-    {
-        MPICHECK(MPI_Bcast((void *)main_addr.data(), main_addr.size(), MPI_BYTE, 0, MPI_COMM_WORLD));
+    else {
+        MPICHECK(MPI_Bcast((void*)main_addr.data(), main_addr.size(), MPI_BYTE, 0, MPI_COMM_WORLD));
         kvs = std::make_shared<ccl::ccl_internal_kvs>(main_addr);
     }
 
-    for(int thread_id = 0; thread_id < thread_count; thread_id++)
-    {
-        thread_group.emplace_back(&run_test, thread_id, size * thread_count, device_ids[thread_id], kvs);
+    for (int thread_id = 0; thread_id < thread_count; thread_id++) {
+        thread_group.emplace_back(
+            &run_test, thread_id, size * thread_count, device_ids[thread_id], kvs);
     }
 
     //wait finishing
-    for(auto& t : thread_group)
-    {
+    for (auto& t : thread_group) {
         t.join();
     }
 

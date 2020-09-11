@@ -70,5 +70,4 @@ API_SPARSE_ALLREDUCE_EXPLICIT_INSTANTIATION(uint64_t, uint64_t);
 #endif //CCL_ENABLE_SYCL
 #undef COMMA
 
-
 #endif //TODO

@@ -24,4 +24,4 @@ enum class stream_attr_id : int {
     last_value
 };
 
-}
+} // namespace ccl

@@ -3,32 +3,25 @@
 #include "common/global/global.hpp"
 #include "sched/entry/entry.hpp"
 
-class deregister_entry : public sched_entry
-{
+class deregister_entry : public sched_entry {
 public:
-    static constexpr const char* class_name() noexcept
-    {
+    static constexpr const char* class_name() noexcept {
         return "DEREGISTER";
     }
 
     deregister_entry() = delete;
-    deregister_entry(ccl_sched* sched,
-                     std::list<atl_mr_t*>& mr_list) :
-        sched_entry(sched, true), mr_list(mr_list)
-    {
-    }
+    deregister_entry(ccl_sched* sched, std::list<atl_mr_t*>& mr_list)
+            : sched_entry(sched, true),
+              mr_list(mr_list) {}
 
-    void start() override
-    {
+    void start() override {
         LOG_DEBUG("DEREGISTER entry sched ", sched, " mr_count ", mr_list.size());
         atl_status_t atl_status;
         std::list<atl_mr_t*>::iterator it;
-        for (it = mr_list.begin(); it != mr_list.end(); it++)
-        {
+        for (it = mr_list.begin(); it != mr_list.end(); it++) {
             LOG_DEBUG("deregister mr ", *it);
             atl_status = atl_mr_dereg(ccl::global_data::get().executor->get_atl_ctx(), *it);
-            if (unlikely(atl_status != ATL_STATUS_SUCCESS))
-            {
+            if (unlikely(atl_status != ATL_STATUS_SUCCESS)) {
                 CCL_THROW("DEREGISTER entry failed. atl_status: ", atl_status_to_str(atl_status));
             }
         }
@@ -36,19 +29,13 @@ public:
         status = ccl_sched_entry_status_complete;
     }
 
-    const char* name() const override
-    {
+    const char* name() const override {
         return class_name();
     }
 
 protected:
-    void dump_detail(std::stringstream& str) const override
-    {
-        ccl_logger::format(str,
-                           "sched ", sched,
-                           ", mr_count ", sched, mr_list.size(),
-                           "\n");
-
+    void dump_detail(std::stringstream& str) const override {
+        ccl_logger::format(str, "sched ", sched, ", mr_count ", sched, mr_list.size(), "\n");
     }
 
 private:

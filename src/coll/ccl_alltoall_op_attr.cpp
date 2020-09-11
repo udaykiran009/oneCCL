@@ -2,8 +2,7 @@
 
 namespace ccl {
 
-ccl_alltoall_attr_impl_t::ccl_alltoall_attr_impl_t(const typename ccl_operation_attr_impl_t::version_traits_t::type& version) :
-        base_t(version)
-{
-}
-}
+ccl_alltoall_attr_impl_t::ccl_alltoall_attr_impl_t(
+    const typename ccl_operation_attr_impl_t::version_traits_t::type& version)
+        : base_t(version) {}
+} // namespace ccl

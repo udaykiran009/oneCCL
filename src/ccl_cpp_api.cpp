@@ -1,7 +1,6 @@
 #if 0
 #include "oneapi/ccl.hpp"
 
-
 #include "coll/coll_attributes.hpp"
 
 #include "common/comm/comm_split_common_attr.hpp"
@@ -32,13 +31,12 @@
 #include <CL/sycl.hpp>
 #endif
 
-#define CCL_CHECK_AND_THROW(result, diagnostic)   \
-  do {                                            \
-      if (result != ccl_status_success)           \
-      {                                           \
-          throw ccl_error(diagnostic);            \
-      }                                           \
-  } while (0);
+#define CCL_CHECK_AND_THROW(result, diagnostic) \
+    do { \
+        if (result != ccl_status_success) { \
+            throw ccl_error(diagnostic); \
+        } \
+    } while (0);
 
 
 namespace ccl

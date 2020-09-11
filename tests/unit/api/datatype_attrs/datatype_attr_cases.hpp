@@ -18,18 +18,15 @@
 #undef protected
 #undef private
 
-namespace datatype_attr_suite
-{
+namespace datatype_attr_suite {
 
-TEST(datatype_attr, datatype_attr_empty_creation)
-{
+TEST(datatype_attr, datatype_attr_empty_creation) {
     ccl::datatype_attr attr = ccl::create_datatype_attr();
     ASSERT_TRUE(attr.get<ccl::datatype_attr_id::version>().full != nullptr);
     ASSERT_EQ(attr.get<ccl::datatype_attr_id::size>(), 0);
 }
 
-TEST(datatype_attr, copy_datatype_attr)
-{
+TEST(datatype_attr, copy_datatype_attr) {
     auto attr = ccl::create_datatype_attr();
     attr.set<ccl::datatype_attr_id::size>(666);
 
@@ -42,8 +39,7 @@ TEST(datatype_attr, copy_datatype_attr)
     ASSERT_EQ(attr2.get<ccl::datatype_attr_id::size>(), 666);
 }
 
-TEST(datatype_attr, move_datatype_attr)
-{
+TEST(datatype_attr, move_datatype_attr) {
     /* move constructor test */
     auto orig_attr = ccl::create_datatype_attr();
 
@@ -64,11 +60,8 @@ TEST(datatype_attr, move_datatype_attr)
     ASSERT_TRUE(!orig_attr2.get_impl());
 }
 
-TEST(datatype_attr, datatype_attr_empty_size)
-{
-    auto attr = ccl::create_datatype_attr(
-                    ccl::attr_val<ccl::datatype_attr_id::size>(123)
-                );
+TEST(datatype_attr, datatype_attr_empty_size) {
+    auto attr = ccl::create_datatype_attr(ccl::attr_val<ccl::datatype_attr_id::size>(123));
     ASSERT_TRUE(attr.get<ccl::datatype_attr_id::version>().full != nullptr);
 
     ASSERT_EQ(attr.get<ccl::datatype_attr_id::size>(), 123);

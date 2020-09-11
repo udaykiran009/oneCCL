@@ -6,8 +6,7 @@
 
 using namespace std;
 
-int main(int argc, char** argv)
-{
+int main(int argc, char** argv) {
     int i = 0;
     int size = 0;
     int rank = 0;
@@ -37,12 +36,13 @@ int main(int argc, char** argv)
                     COUNT,
                     ccl::reduction::sum,
                     nullptr, /* attr */
-                    stream)->wait();
+                    stream)
+        ->wait();
 
     /* check correctness of recvbuf */
     for (i = 0; i < COUNT; i++) {
         if (recvbuf[i] != size * (size + 1) / 2) {
-           recvbuf[i] = -1;
+            recvbuf[i] = -1;
         }
     }
 

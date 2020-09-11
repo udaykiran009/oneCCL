@@ -34,11 +34,9 @@
 #include "../stubs/kvs.hpp"
 #include "common/global/global.hpp"
 
-namespace host_communicator_suite
-{
+namespace host_communicator_suite {
 
-TEST(host_communicator_api, host_comm_creation)
-{
+TEST(host_communicator_api, host_comm_creation) {
     ccl::global_data::get().init();
 
     std::shared_ptr<stub_kvs> stub_storage;
@@ -47,8 +45,7 @@ TEST(host_communicator_api, host_comm_creation)
     ASSERT_EQ(comm.rank(), 1);
 }
 
-TEST(host_communicator_api, move_host_comm)
-{
+TEST(host_communicator_api, move_host_comm) {
     /* move constructor test */
     std::shared_ptr<stub_kvs> stub_storage;
     auto orig_comm = ccl::communicator::create_communicator(2, 1, stub_storage);
@@ -65,7 +62,8 @@ TEST(host_communicator_api, move_host_comm)
 
     /* move assignment test*/
     auto orig_comm2 = ccl::communicator::create_communicator(2, 1, stub_storage);
-    auto moved_comm2 = ccl::communicator::create_communicator(4, 3, stub_storage);;
+    auto moved_comm2 = ccl::communicator::create_communicator(4, 3, stub_storage);
+    ;
     moved_comm2 = std::move(orig_comm2);
 
     ASSERT_TRUE(moved_comm2.get_impl());
@@ -74,19 +72,15 @@ TEST(host_communicator_api, move_host_comm)
     ASSERT_EQ(moved_comm2.size(), 2);
 }
 
-TEST(host_communicator_api, host_comm_split)
-{
+TEST(host_communicator_api, host_comm_split) {
     std::shared_ptr<stub_kvs> stub_storage;
     auto comm = ccl::communicator::create_communicator(2, 1, stub_storage);
-    auto attr = ccl::create_comm_split_attr(
-                    ccl::attr_val<ccl::comm_split_attr_id::color>(1)
-                );
+    auto attr = ccl::create_comm_split_attr(ccl::attr_val<ccl::comm_split_attr_id::color>(1));
     auto new_comm = comm.split(attr);
     ASSERT_EQ(new_comm.size(), 1);
 }
 
-TEST(host_communicator_api, host_comm_allgatherv_void)
-{
+TEST(host_communicator_api, host_comm_allgatherv_void) {
     std::shared_ptr<stub_kvs> stub_storage;
     auto comm = ccl::communicator::create_communicator(1, 0, stub_storage);
 
@@ -97,14 +91,11 @@ TEST(host_communicator_api, host_comm_allgatherv_void)
     ccl::datatype dtype = ccl::datatype::int32;
     auto attr = ccl::create_coll_attr<ccl::allgatherv_attr>();
 
-    auto req = comm.allgatherv(
-                    send_buf, send_count, recv_buf, recv_counts, dtype, attr
-                );
+    auto req = comm.allgatherv(send_buf, send_count, recv_buf, recv_counts, dtype, attr);
     req->wait();
 }
 
-TEST(host_communicator_api, host_comm_allgatherv_int)
-{
+TEST(host_communicator_api, host_comm_allgatherv_int) {
     std::shared_ptr<stub_kvs> stub_storage;
     auto comm = ccl::communicator::create_communicator(1, 0, stub_storage);
 
@@ -114,14 +105,11 @@ TEST(host_communicator_api, host_comm_allgatherv_int)
     const ccl::vector_class<size_t> recv_counts;
     auto attr = ccl::create_coll_attr<ccl::allgatherv_attr>();
 
-    auto req = comm.allgatherv(
-                    send_buf, send_count, recv_buf, recv_counts, attr
-                );
+    auto req = comm.allgatherv(send_buf, send_count, recv_buf, recv_counts, attr);
     req->wait();
 }
 
-TEST(host_communicator_api, host_comm_allgatherv_void_recv_bufs)
-{
+TEST(host_communicator_api, host_comm_allgatherv_void_recv_bufs) {
     std::shared_ptr<stub_kvs> stub_storage;
     auto comm = ccl::communicator::create_communicator(1, 0, stub_storage);
 
@@ -132,14 +120,11 @@ TEST(host_communicator_api, host_comm_allgatherv_void_recv_bufs)
     ccl::datatype dtype = ccl::datatype::int32;
     auto attr = ccl::create_coll_attr<ccl::allgatherv_attr>();
 
-    auto req = comm.allgatherv(
-                    send_buf, send_count, recv_bufs, recv_counts, dtype, attr
-                );
+    auto req = comm.allgatherv(send_buf, send_count, recv_bufs, recv_counts, dtype, attr);
     req->wait();
 }
 
-TEST(host_communicator_api, host_comm_allgatherv_int_recv_bufs)
-{
+TEST(host_communicator_api, host_comm_allgatherv_int_recv_bufs) {
     std::shared_ptr<stub_kvs> stub_storage;
     auto comm = ccl::communicator::create_communicator(1, 0, stub_storage);
 
@@ -149,14 +134,11 @@ TEST(host_communicator_api, host_comm_allgatherv_int_recv_bufs)
     const ccl::vector_class<size_t> recv_counts;
     auto attr = ccl::create_coll_attr<ccl::allgatherv_attr>();
 
-    auto req = comm.allgatherv(
-                    send_buf, send_count, recv_bufs, recv_counts, attr
-                );
+    auto req = comm.allgatherv(send_buf, send_count, recv_bufs, recv_counts, attr);
     req->wait();
 }
 
-TEST(host_communicator_api, host_comm_allreduce_void)
-{
+TEST(host_communicator_api, host_comm_allreduce_void) {
     std::shared_ptr<stub_kvs> stub_storage;
     auto comm = ccl::communicator::create_communicator(1, 0, stub_storage);
 
@@ -167,14 +149,11 @@ TEST(host_communicator_api, host_comm_allreduce_void)
     ccl::reduction reduction = ccl::reduction::sum;
     auto attr = ccl::create_coll_attr<ccl::allreduce_attr>();
 
-    auto req = comm.allreduce(
-                    send_buf, recv_buf, count, dtype, reduction, attr
-                );
+    auto req = comm.allreduce(send_buf, recv_buf, count, dtype, reduction, attr);
     req->wait();
 }
 
-TEST(host_communicator_api, host_comm_allreduce_int)
-{
+TEST(host_communicator_api, host_comm_allreduce_int) {
     std::shared_ptr<stub_kvs> stub_storage;
     auto comm = ccl::communicator::create_communicator(1, 0, stub_storage);
 
@@ -184,14 +163,11 @@ TEST(host_communicator_api, host_comm_allreduce_int)
     ccl::reduction reduction = ccl::reduction::sum;
     auto attr = ccl::create_coll_attr<ccl::allreduce_attr>();
 
-    auto req = comm.allreduce(
-                    send_buf, recv_buf, count, reduction, attr
-                );
+    auto req = comm.allreduce(send_buf, recv_buf, count, reduction, attr);
     req->wait();
 }
 
-TEST(host_communicator_api, host_comm_alltoall_void)
-{
+TEST(host_communicator_api, host_comm_alltoall_void) {
     std::shared_ptr<stub_kvs> stub_storage;
     auto comm = ccl::communicator::create_communicator(1, 0, stub_storage);
 
@@ -201,14 +177,11 @@ TEST(host_communicator_api, host_comm_alltoall_void)
     ccl::datatype dtype = ccl::datatype::int32;
     auto attr = ccl::create_coll_attr<ccl::alltoall_attr>();
 
-    auto req = comm.alltoall(
-                    send_buf, recv_buf, count, dtype, attr
-                );
+    auto req = comm.alltoall(send_buf, recv_buf, count, dtype, attr);
     req->wait();
 }
 
-TEST(host_communicator_api, host_comm_alltoall_void_vector_bufs)
-{
+TEST(host_communicator_api, host_comm_alltoall_void_vector_bufs) {
     std::shared_ptr<stub_kvs> stub_storage;
     auto comm = ccl::communicator::create_communicator(1, 0, stub_storage);
 
@@ -218,14 +191,11 @@ TEST(host_communicator_api, host_comm_alltoall_void_vector_bufs)
     ccl::datatype dtype = ccl::datatype::int32;
     auto attr = ccl::create_coll_attr<ccl::alltoall_attr>();
 
-    auto req = comm.alltoall(
-                    send_buf, recv_buf, count, dtype, attr
-                );
+    auto req = comm.alltoall(send_buf, recv_buf, count, dtype, attr);
     req->wait();
 }
 
-TEST(host_communicator_api, host_comm_alltoall_int)
-{
+TEST(host_communicator_api, host_comm_alltoall_int) {
     std::shared_ptr<stub_kvs> stub_storage;
     auto comm = ccl::communicator::create_communicator(1, 0, stub_storage);
 
@@ -234,14 +204,11 @@ TEST(host_communicator_api, host_comm_alltoall_int)
     size_t count = 0;
     auto attr = ccl::create_coll_attr<ccl::alltoall_attr>();
 
-    auto req = comm.alltoall(
-                    send_buf, recv_buf, count, attr
-                );
+    auto req = comm.alltoall(send_buf, recv_buf, count, attr);
     req->wait();
 }
 
-TEST(host_communicator_api, host_comm_alltoall_int_vector_bufs)
-{
+TEST(host_communicator_api, host_comm_alltoall_int_vector_bufs) {
     std::shared_ptr<stub_kvs> stub_storage;
     auto comm = ccl::communicator::create_communicator(1, 0, stub_storage);
 
@@ -250,14 +217,11 @@ TEST(host_communicator_api, host_comm_alltoall_int_vector_bufs)
     size_t count = 0;
     auto attr = ccl::create_coll_attr<ccl::alltoall_attr>();
 
-    auto req = comm.alltoall(
-                    send_buf, recv_buf, count, attr
-                );
+    auto req = comm.alltoall(send_buf, recv_buf, count, attr);
     req->wait();
 }
 
-TEST(host_communicator_api, host_comm_alltoallv_void)
-{
+TEST(host_communicator_api, host_comm_alltoallv_void) {
     std::shared_ptr<stub_kvs> stub_storage;
     auto comm = ccl::communicator::create_communicator(1, 0, stub_storage);
 
@@ -268,14 +232,11 @@ TEST(host_communicator_api, host_comm_alltoallv_void)
     ccl::datatype dtype = ccl::datatype::int32;
     auto attr = ccl::create_coll_attr<ccl::alltoallv_attr>();
 
-    auto req = comm.alltoallv(
-                    send_buf, send_counts, recv_buf, recv_counts, dtype, attr
-                );
+    auto req = comm.alltoallv(send_buf, send_counts, recv_buf, recv_counts, dtype, attr);
     req->wait();
 }
 
-TEST(host_communicator_api, host_comm_alltoallv_void_recv_bufs)
-{
+TEST(host_communicator_api, host_comm_alltoallv_void_recv_bufs) {
     std::shared_ptr<stub_kvs> stub_storage;
     auto comm = ccl::communicator::create_communicator(1, 0, stub_storage);
 
@@ -286,14 +247,11 @@ TEST(host_communicator_api, host_comm_alltoallv_void_recv_bufs)
     ccl::datatype dtype = ccl::datatype::int32;
     auto attr = ccl::create_coll_attr<ccl::alltoallv_attr>();
 
-    auto req = comm.alltoallv(
-                    send_bufs, send_counts, recv_bufs, recv_counts, dtype, attr
-                );
+    auto req = comm.alltoallv(send_bufs, send_counts, recv_bufs, recv_counts, dtype, attr);
     req->wait();
 }
 
-TEST(host_communicator_api, host_comm_alltoallv_int)
-{
+TEST(host_communicator_api, host_comm_alltoallv_int) {
     std::shared_ptr<stub_kvs> stub_storage;
     auto comm = ccl::communicator::create_communicator(1, 0, stub_storage);
 
@@ -303,14 +261,11 @@ TEST(host_communicator_api, host_comm_alltoallv_int)
     ccl::vector_class<size_t> recv_counts;
     auto attr = ccl::create_coll_attr<ccl::alltoallv_attr>();
 
-    auto req = comm.alltoallv(
-                    send_buf, send_counts, recv_buf, recv_counts, attr
-                );
+    auto req = comm.alltoallv(send_buf, send_counts, recv_buf, recv_counts, attr);
     req->wait();
 }
 
-TEST(host_communicator_api, host_comm_alltoallv_int_recv_bufs)
-{
+TEST(host_communicator_api, host_comm_alltoallv_int_recv_bufs) {
     std::shared_ptr<stub_kvs> stub_storage;
     auto comm = ccl::communicator::create_communicator(1, 0, stub_storage);
 
@@ -320,14 +275,11 @@ TEST(host_communicator_api, host_comm_alltoallv_int_recv_bufs)
     ccl::vector_class<size_t> recv_counts;
     auto attr = ccl::create_coll_attr<ccl::alltoallv_attr>();
 
-    auto req = comm.alltoallv(
-                    send_bufs, send_counts, recv_bufs, recv_counts, attr
-                );
+    auto req = comm.alltoallv(send_bufs, send_counts, recv_bufs, recv_counts, attr);
     req->wait();
 }
 
-TEST(host_communicator_api, host_comm_barrier)
-{
+TEST(host_communicator_api, host_comm_barrier) {
     std::shared_ptr<stub_kvs> stub_storage;
     auto comm = ccl::communicator::create_communicator(1, 0, stub_storage);
 
@@ -337,8 +289,7 @@ TEST(host_communicator_api, host_comm_barrier)
     req->wait();
 }
 
-TEST(host_communicator_api, host_comm_bcast_void)
-{
+TEST(host_communicator_api, host_comm_bcast_void) {
     std::shared_ptr<stub_kvs> stub_storage;
     auto comm = ccl::communicator::create_communicator(1, 0, stub_storage);
 
@@ -348,14 +299,11 @@ TEST(host_communicator_api, host_comm_bcast_void)
     size_t root = 0;
     auto attr = ccl::create_coll_attr<ccl::broadcast_attr>();
 
-    auto req = comm.broadcast(
-                    buf, count, dtype, root, attr
-                );
+    auto req = comm.broadcast(buf, count, dtype, root, attr);
     req->wait();
 }
 
-TEST(host_communicator_api, host_comm_bcast_int)
-{
+TEST(host_communicator_api, host_comm_bcast_int) {
     std::shared_ptr<stub_kvs> stub_storage;
     auto comm = ccl::communicator::create_communicator(1, 0, stub_storage);
 
@@ -364,14 +312,11 @@ TEST(host_communicator_api, host_comm_bcast_int)
     size_t root = 0;
     auto attr = ccl::create_coll_attr<ccl::broadcast_attr>();
 
-    auto req = comm.broadcast(
-                    buf, count, root, attr
-                );
+    auto req = comm.broadcast(buf, count, root, attr);
     req->wait();
 }
 
-TEST(host_communicator_api, host_comm_reduce_void)
-{
+TEST(host_communicator_api, host_comm_reduce_void) {
     std::shared_ptr<stub_kvs> stub_storage;
     auto comm = ccl::communicator::create_communicator(1, 0, stub_storage);
 
@@ -383,14 +328,11 @@ TEST(host_communicator_api, host_comm_reduce_void)
     size_t root = 0;
     auto attr = ccl::create_coll_attr<ccl::reduce_attr>();
 
-    auto req = comm.reduce(
-                    send_buf, recv_buf, count, dtype, reduction, root, attr
-                );
+    auto req = comm.reduce(send_buf, recv_buf, count, dtype, reduction, root, attr);
     req->wait();
 }
 
-TEST(host_communicator_api, host_comm_reduce_int)
-{
+TEST(host_communicator_api, host_comm_reduce_int) {
     std::shared_ptr<stub_kvs> stub_storage;
     auto comm = ccl::communicator::create_communicator(1, 0, stub_storage);
 
@@ -401,14 +343,11 @@ TEST(host_communicator_api, host_comm_reduce_int)
     size_t root = 0;
     auto attr = ccl::create_coll_attr<ccl::reduce_attr>();
 
-    auto req = comm.reduce(
-                    send_buf, recv_buf, count, reduction, root, attr
-                );
+    auto req = comm.reduce(send_buf, recv_buf, count, reduction, root, attr);
     req->wait();
 }
 
-TEST(host_communicator_api, host_comm_reduce_scatter_void)
-{
+TEST(host_communicator_api, host_comm_reduce_scatter_void) {
     std::shared_ptr<stub_kvs> stub_storage;
     auto comm = ccl::communicator::create_communicator(1, 0, stub_storage);
 
@@ -419,14 +358,11 @@ TEST(host_communicator_api, host_comm_reduce_scatter_void)
     ccl::reduction reduction = ccl::reduction::sum;
     auto attr = ccl::create_coll_attr<ccl::reduce_scatter_attr>();
 
-    auto req = comm.reduce_scatter(
-                    send_buf, recv_buf, recv_count, dtype, reduction, attr
-                );
+    auto req = comm.reduce_scatter(send_buf, recv_buf, recv_count, dtype, reduction, attr);
     req->wait();
 }
 
-TEST(host_communicator_api, host_comm_reduce_scatter_int)
-{
+TEST(host_communicator_api, host_comm_reduce_scatter_int) {
     std::shared_ptr<stub_kvs> stub_storage;
     auto comm = ccl::communicator::create_communicator(1, 0, stub_storage);
 
@@ -436,14 +372,11 @@ TEST(host_communicator_api, host_comm_reduce_scatter_int)
     ccl::reduction reduction = ccl::reduction::sum;
     auto attr = ccl::create_coll_attr<ccl::reduce_scatter_attr>();
 
-    auto req = comm.reduce_scatter(
-                    send_buf, recv_buf, recv_count, reduction, attr
-                );
+    auto req = comm.reduce_scatter(send_buf, recv_buf, recv_count, reduction, attr);
     req->wait();
 }
 
-TEST(host_communicator_api, host_comm_sparse_allreduce_void)
-{
+TEST(host_communicator_api, host_comm_sparse_allreduce_void) {
     std::shared_ptr<stub_kvs> stub_storage;
     auto comm = ccl::communicator::create_communicator(1, 0, stub_storage);
 
@@ -460,16 +393,22 @@ TEST(host_communicator_api, host_comm_sparse_allreduce_void)
     ccl::reduction reduction = ccl::reduction::sum;
     auto attr = ccl::create_coll_attr<ccl::sparse_allreduce_attr>();
 
-    auto req = comm.sparse_allreduce(
-                    send_ind_buf, send_ind_count, send_val_buf, send_val_count,
-                    recv_ind_buf, recv_ind_count, recv_val_buf, recv_val_count,
-                    ind_dtype, val_dtype, reduction, attr
-                );
+    auto req = comm.sparse_allreduce(send_ind_buf,
+                                     send_ind_count,
+                                     send_val_buf,
+                                     send_val_count,
+                                     recv_ind_buf,
+                                     recv_ind_count,
+                                     recv_val_buf,
+                                     recv_val_count,
+                                     ind_dtype,
+                                     val_dtype,
+                                     reduction,
+                                     attr);
     req->wait();
 }
 
-TEST(host_communicator_api, host_comm_sparse_allreduce_int)
-{
+TEST(host_communicator_api, host_comm_sparse_allreduce_int) {
     std::shared_ptr<stub_kvs> stub_storage;
     auto comm = ccl::communicator::create_communicator(1, 0, stub_storage);
 
@@ -484,11 +423,16 @@ TEST(host_communicator_api, host_comm_sparse_allreduce_int)
     ccl::reduction reduction = ccl::reduction::sum;
     auto attr = ccl::create_coll_attr<ccl::sparse_allreduce_attr>();
 
-    auto req = comm.sparse_allreduce(
-                    send_ind_buf, send_ind_count, send_val_buf, send_val_count,
-                    recv_ind_buf, recv_ind_count, recv_val_buf, recv_val_count,
-                    reduction, attr
-                );
+    auto req = comm.sparse_allreduce(send_ind_buf,
+                                     send_ind_count,
+                                     send_val_buf,
+                                     send_val_count,
+                                     recv_ind_buf,
+                                     recv_ind_count,
+                                     recv_val_buf,
+                                     recv_val_count,
+                                     reduction,
+                                     attr);
     req->wait();
 }
 

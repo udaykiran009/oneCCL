@@ -4,10 +4,8 @@
 #error "Do not include this file directly. Please include 'ccl.hpp'"
 #endif
 
-namespace ccl
-{
-namespace details
-{
+namespace ccl {
+namespace details {
 
 template <>
 struct ccl_api_type_attr_traits<datatype_attr_id, datatype_attr_id::version> {

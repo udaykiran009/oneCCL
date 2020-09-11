@@ -45,56 +45,47 @@
     to->to_cache = from.get<ccl::operation_attr_id::to_cache>(); \
     to->match_id = from.get<ccl::operation_attr_id::match_id>();
 
-ccl_coll_attr::ccl_coll_attr(const ccl::allgatherv_attr& attr)
-{
+ccl_coll_attr::ccl_coll_attr(const ccl::allgatherv_attr& attr) {
     COPY_COMMON_OP_ATTRS(attr, this);
 
     vector_buf = attr.get<ccl::allgatherv_attr_id::vector_buf>();
 }
 
-ccl_coll_attr::ccl_coll_attr(const ccl::allreduce_attr& attr)
-{
+ccl_coll_attr::ccl_coll_attr(const ccl::allreduce_attr& attr) {
     COPY_COMMON_OP_ATTRS(attr, this);
 
     reduction_fn = attr.get<ccl::allreduce_attr_id::reduction_fn>().get();
 }
 
-ccl_coll_attr::ccl_coll_attr(const ccl::alltoall_attr& attr)
-{
+ccl_coll_attr::ccl_coll_attr(const ccl::alltoall_attr& attr) {
     COPY_COMMON_OP_ATTRS(attr, this);
 }
 
-ccl_coll_attr::ccl_coll_attr(const ccl::alltoallv_attr& attr)
-{
+ccl_coll_attr::ccl_coll_attr(const ccl::alltoallv_attr& attr) {
     COPY_COMMON_OP_ATTRS(attr, this);
 }
 
-ccl_coll_attr::ccl_coll_attr(const ccl::barrier_attr& attr)
-{
+ccl_coll_attr::ccl_coll_attr(const ccl::barrier_attr& attr) {
     COPY_COMMON_OP_ATTRS(attr, this);
 }
 
-ccl_coll_attr::ccl_coll_attr(const ccl::broadcast_attr& attr)
-{
+ccl_coll_attr::ccl_coll_attr(const ccl::broadcast_attr& attr) {
     COPY_COMMON_OP_ATTRS(attr, this);
 }
 
-ccl_coll_attr::ccl_coll_attr(const ccl::reduce_attr& attr)
-{
+ccl_coll_attr::ccl_coll_attr(const ccl::reduce_attr& attr) {
     COPY_COMMON_OP_ATTRS(attr, this);
 
     reduction_fn = attr.get<ccl::reduce_attr_id::reduction_fn>().get();
 }
 
-ccl_coll_attr::ccl_coll_attr(const ccl::reduce_scatter_attr& attr)
-{
+ccl_coll_attr::ccl_coll_attr(const ccl::reduce_scatter_attr& attr) {
     COPY_COMMON_OP_ATTRS(attr, this);
 
     reduction_fn = attr.get<ccl::reduce_scatter_attr_id::reduction_fn>().get();
 }
 
-ccl_coll_attr::ccl_coll_attr(const ccl::sparse_allreduce_attr& attr)
-{
+ccl_coll_attr::ccl_coll_attr(const ccl::sparse_allreduce_attr& attr) {
     COPY_COMMON_OP_ATTRS(attr, this);
 
     sparse_allreduce_completion_fn = attr.get<ccl::sparse_allreduce_attr_id::completion_fn>().get();
@@ -110,8 +101,7 @@ ccl_request* ccl_allgatherv_impl(const void* send_buf,
                                  ccl::datatype dtype,
                                  const ccl_coll_attr& attr,
                                  ccl_comm* comm,
-                                 const ccl_stream* stream)
-{
+                                 const ccl_stream* stream) {
     return nullptr;
 }
 
@@ -122,8 +112,7 @@ ccl_request* ccl_allreduce_impl(const void* send_buf,
                                 ccl::reduction reduction,
                                 const ccl_coll_attr& attr,
                                 ccl_comm* comm,
-                                const ccl_stream* stream)
-{
+                                const ccl_stream* stream) {
     return nullptr;
 }
 
@@ -133,8 +122,7 @@ ccl_request* ccl_alltoall_impl(const void* send_buf,
                                ccl::datatype dtype,
                                const ccl_coll_attr& attr,
                                ccl_comm* comm,
-                               const ccl_stream* stream)
-{
+                               const ccl_stream* stream) {
     return nullptr;
 }
 
@@ -145,23 +133,19 @@ ccl_request* ccl_alltoallv_impl(const void* send_buf,
                                 ccl::datatype dtype,
                                 const ccl_coll_attr& attr,
                                 ccl_comm* comm,
-                                const ccl_stream* stream)
-{
+                                const ccl_stream* stream) {
     return nullptr;
 }
 
-void ccl_barrier_impl(ccl_comm* comm, const ccl_stream* stream)
-{
-}
+void ccl_barrier_impl(ccl_comm* comm, const ccl_stream* stream) {}
 
 ccl_request* ccl_broadcast_impl(void* buf,
-                            size_t count,
-                            ccl::datatype dtype,
-                            size_t root,
-                            const ccl_coll_attr& attr,
-                            ccl_comm* comm,
-                            const ccl_stream* stream)
-{
+                                size_t count,
+                                ccl::datatype dtype,
+                                size_t root,
+                                const ccl_coll_attr& attr,
+                                ccl_comm* comm,
+                                const ccl_stream* stream) {
     return nullptr;
 }
 
@@ -173,8 +157,7 @@ ccl_request* ccl_reduce_impl(const void* send_buf,
                              size_t root,
                              const ccl_coll_attr& attr,
                              ccl_comm* comm,
-                             const ccl_stream* stream)
-{
+                             const ccl_stream* stream) {
     return nullptr;
 }
 
@@ -185,18 +168,23 @@ ccl_request* ccl_reduce_scatter_impl(const void* send_buf,
                                      ccl::reduction reduction,
                                      const ccl_coll_attr& attr,
                                      ccl_comm* comm,
-                                     const ccl_stream* stream)
-{
+                                     const ccl_stream* stream) {
     return nullptr;
 }
 
-ccl_request* ccl_sparse_allreduce_impl(const void* send_ind_buf, size_t send_ind_count,
-                                       const void* send_val_buf, size_t send_val_count,
-                                       void* recv_ind_buf, size_t recv_ind_count,
-                                       void* recv_val_buf, size_t recv_val_count,
-                                       ccl::datatype index_dtype, ccl::datatype dtype,
-                                       ccl::reduction reduction, const ccl_coll_attr& attr,
-                                       ccl_comm* comm, const ccl_stream* stream)
-{
+ccl_request* ccl_sparse_allreduce_impl(const void* send_ind_buf,
+                                       size_t send_ind_count,
+                                       const void* send_val_buf,
+                                       size_t send_val_count,
+                                       void* recv_ind_buf,
+                                       size_t recv_ind_count,
+                                       void* recv_val_buf,
+                                       size_t recv_val_count,
+                                       ccl::datatype index_dtype,
+                                       ccl::datatype dtype,
+                                       ccl::reduction reduction,
+                                       const ccl_coll_attr& attr,
+                                       ccl_comm* comm,
+                                       const ccl_stream* stream) {
     return nullptr;
 }

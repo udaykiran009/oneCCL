@@ -7,13 +7,9 @@ using ccl_op_id_t = uint8_t;
 using ccl_sched_id_t = uint16_t;
 using ccl_comm_id_t = uint16_t;
 
-class ccl_atl_tag
-{
+class ccl_atl_tag {
 public:
-    ccl_atl_tag(size_t tag_bits, size_t max_tag) :
-        tag_bits(tag_bits),
-        max_tag(max_tag)
-    {
+    ccl_atl_tag(size_t tag_bits, size_t max_tag) : tag_bits(tag_bits), max_tag(max_tag) {
         if (max_tag == ccl_pof2(max_tag) * 2 - 1)
             max_tag_mask = max_tag;
         else
@@ -40,7 +36,6 @@ public:
     uint64_t create(ccl_comm_id_t comm_id, size_t rank, ccl_sched_id_t sched_id, ccl_op_id_t op_id);
 
 private:
-
     /**********************************************************************************
      *  atl tag layout                                                                *
      * ********************************************************************************
@@ -58,8 +53,8 @@ private:
     const int rank_shift = 24;
     const int comm_id_shift = 48;
 
-    const uint64_t op_id_mask    = 0x00000000000000FF;
+    const uint64_t op_id_mask = 0x00000000000000FF;
     const uint64_t sched_id_mask = 0x0000000000FFFF00;
-    const uint64_t rank_mask     = 0x0000FFFFFF000000;
-    const uint64_t comm_id_mask  = 0xFFFF000000000000;
+    const uint64_t rank_mask = 0x0000FFFFFF000000;
+    const uint64_t comm_id_mask = 0xFFFF000000000000;
 };

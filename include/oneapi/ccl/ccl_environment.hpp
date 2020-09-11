@@ -41,9 +41,7 @@ namespace ccl {
  * CCL environment singleton
  */
 class environment {
-
 public:
-
     ~environment();
 
     /**
@@ -60,12 +58,11 @@ public:
     /**
      * Creates @attr which used to register custom datatype
      */
-    template <class ...attr_value_pair_t>
-    datatype_attr create_datatype_attr(attr_value_pair_t&&...avps) const
-    {
+    template <class... attr_value_pair_t>
+    datatype_attr create_datatype_attr(attr_value_pair_t&&... avps) const {
         static_assert(sizeof...(avps) > 0, "At least one argument must be specified");
         auto attr = create_postponed_api_type<datatype_attr>();
-        int expander [] {(attr.template set<attr_value_pair_t::idx()>(avps.val()), 0)...};
+        int expander[]{ (attr.template set<attr_value_pair_t::idx()>(avps.val()), 0)... };
         (void)expander;
         return attr;
     }
@@ -126,8 +123,7 @@ public:
      * @param kvs key-value store for ranks wire-up
      * @return host communicator
      */
-    communicator create_communicator(const size_t size,
-                                       shared_ptr_class<kvs_interface> kvs) const;
+    communicator create_communicator(const size_t size, shared_ptr_class<kvs_interface> kvs) const;
 
     /**
      * Creates a new host communicator with user supplied size, rank and kvs.
@@ -140,12 +136,10 @@ public:
                                      const size_t rank,
                                      shared_ptr_class<kvs_interface> kvs) const;
 
-    template <class coll_attribute_type,
-              class ...attr_value_pair_t>
-    coll_attribute_type create_operation_attr(attr_value_pair_t&&...avps) const
-    {
+    template <class coll_attribute_type, class... attr_value_pair_t>
+    coll_attribute_type create_operation_attr(attr_value_pair_t&&... avps) const {
         auto op_attr = create_postponed_api_type<coll_attribute_type>();
-        int expander [] {(op_attr.template set<attr_value_pair_t::idx()>(avps.val()), 0)...};
+        int expander[]{ (op_attr.template set<attr_value_pair_t::idx()>(avps.val()), 0)... };
         (void)expander;
         return op_attr;
     }
@@ -153,22 +147,43 @@ public:
     /**
      * Creates @attr which used to split host communicator
      */
-    template <class ...attr_value_pair_t>
-    comm_split_attr create_comm_split_attr(attr_value_pair_t&&...avps) const
-    {
+    template <class... attr_value_pair_t>
+    comm_split_attr create_comm_split_attr(attr_value_pair_t&&... avps) const {
         auto split_attr = create_postponed_api_type<comm_split_attr>();
-        int expander [] {(split_attr.template set<attr_value_pair_t::idx()>(avps.val()), 0)...};
+        int expander[]{ (split_attr.template set<attr_value_pair_t::idx()>(avps.val()), 0)... };
         (void)expander;
         return split_attr;
     }
 
+#ifdef CCL_ENABLE_SYCL
+    device_communicator create_single_device_communicator(
+        const size_t comm_size,
+        const size_t rank,
+        const cl::sycl::device& device,
+        shared_ptr_class<kvs_interface> kvs) const;
+#endif
+
+//     device_communicator create_single_device_communicator(const size_t world_size,
+//                                      const size_t rank,
+//                                      cl::sycl::queue queue,
+//                                      shared_ptr_class<kvs_interface> kvs) const;
+
+//     template<class DeviceSelectorType>
+//     device_communicator create_single_device_communicator(const size_t world_size,
+//                                      const size_t rank,
+//                                      const DeviceSelectorType& selector,
+//                                      shared_ptr_class<kvs_interface> kvs) const
+//     {
+//         return create_single_device_communicator(world_size, rank, cl::sycl::device(selector), kvs);
+//     }
+
+// #endif
 #if defined(MULTI_GPU_SUPPORT) || defined(CCL_ENABLE_SYCL)
 
-    template <class ...attr_value_pair_t>
-    device_comm_split_attr create_device_comm_split_attr(attr_value_pair_t&&...avps) const
-    {
+    template <class... attr_value_pair_t>
+    device_comm_split_attr create_device_comm_split_attr(attr_value_pair_t&&... avps) const {
         auto split_attr = create_postponed_api_type<device_comm_split_attr>();
-        int expander [] {(split_attr.template set<attr_value_pair_t::idx()>(avps.val()), 0)...};
+        int expander[]{ (split_attr.template set<attr_value_pair_t::idx()>(avps.val()), 0)... };
         (void)expander;
         return split_attr;
     }
@@ -182,8 +197,7 @@ public:
      * @param kvs key-value store for ranks wire-up
      * @return vector of device communicators
      */
-    template<class DeviceType,
-             class ContextType>
+    template <class DeviceType, class ContextType>
     vector_class<device_communicator> create_device_communicators(
         const size_t comm_size,
         const vector_class<DeviceType>& local_devices,
@@ -198,17 +212,14 @@ public:
      * @param kvs key-value store for ranks wire-up
      * @return vector of device communicators
      */
-    template<class DeviceType,
-         class ContextType>
+    template <class DeviceType, class ContextType>
     vector_class<device_communicator> create_device_communicators(
         const size_t comm_size,
         const vector_class<pair_class<rank_t, DeviceType>>& local_rank_device_map,
         ContextType& context,
         shared_ptr_class<kvs_interface> kvs) const;
 
-
-    template<class DeviceType,
-         class ContextType>
+    template <class DeviceType, class ContextType>
     vector_class<device_communicator> create_device_communicators(
         const size_t comm_size,
         const map_class<rank_t, DeviceType>& local_rank_device_map,
@@ -221,8 +232,7 @@ public:
      * @return vector of device communicators
      */
     vector_class<device_communicator> split_device_communicators(
-        const vector_class<pair_class<device_communicator, device_comm_split_attr>>& attrs)
-        const;
+        const vector_class<pair_class<device_communicator, device_comm_split_attr>>& attrs) const;
 
     /**
      * Creates a new stream from @native_stream_type
@@ -230,31 +240,31 @@ public:
      * @return stream object
      */
     template <class native_stream_type,
-          class = typename std::enable_if<is_stream_supported<native_stream_type>()>::type>
+              class = typename std::enable_if<is_stream_supported<native_stream_type>()>::type>
     stream create_stream(native_stream_type& native_stream);
 
-    template <class native_stream_type, class native_context_type,
-          class = typename std::enable_if<is_stream_supported<native_stream_type>()>::type>
+    template <class native_stream_type,
+              class native_context_type,
+              class = typename std::enable_if<is_stream_supported<native_stream_type>()>::type>
     stream create_stream(native_stream_type& native_stream, native_context_type& native_ctx);
 
-    template <class ...attr_value_pair_t>
-    stream create_stream_from_attr(typename unified_device_type::ccl_native_t device, attr_value_pair_t&&...avps)
-    {
+    template <class... attr_value_pair_t>
+    stream create_stream_from_attr(typename unified_device_type::ccl_native_t device,
+                                   attr_value_pair_t&&... avps) {
         stream str = create_postponed_api_type<stream>(device);
-        int expander [] {(str.template set<attr_value_pair_t::idx()>(avps.val()), 0)...};
-        (void) expander;
+        int expander[]{ (str.template set<attr_value_pair_t::idx()>(avps.val()), 0)... };
+        (void)expander;
         str.build_from_params();
         return str;
     }
 
-    template <class ...attr_value_pair_t>
+    template <class... attr_value_pair_t>
     stream create_stream_from_attr(typename unified_device_type::ccl_native_t device,
-                               typename unified_device_context_type::ccl_native_t context,
-                               attr_value_pair_t&&...avps)
-    {
+                                   typename unified_device_context_type::ccl_native_t context,
+                                   attr_value_pair_t&&... avps) {
         stream str = create_postponed_api_type<stream>(device, context);
-        int expander [] {(str.template set<attr_value_pair_t::idx()>(avps.val()), 0)...};
-        (void) expander;
+        int expander[]{ (str.template set<attr_value_pair_t::idx()>(avps.val()), 0)... };
+        (void)expander;
         str.build_from_params();
         return str;
     }
@@ -265,43 +275,32 @@ public:
      * @return event object
      */
     template <class event_type,
-          class = typename std::enable_if<is_event_supported<event_type>()>::type>
+              class = typename std::enable_if<is_event_supported<event_type>()>::type>
     event create_event(event_type& native_event);
 
     template <class event_handle_type,
               class = typename std::enable_if<is_event_supported<event_handle_type>()>::type>
-    event create_event(event_handle_type native_event_handle, typename unified_device_context_type::ccl_native_t context);
+    event create_event(event_handle_type native_event_handle,
+                       typename unified_device_context_type::ccl_native_t context);
 
-    template <class event_type,
-          class ...attr_value_pair_t>
+    template <class event_type, class... attr_value_pair_t>
     event create_event_from_attr(event_type& native_event_handle,
-                             typename unified_device_context_type::ccl_native_t context,
-                             attr_value_pair_t&&...avps)
-    {
+                                 typename unified_device_context_type::ccl_native_t context,
+                                 attr_value_pair_t&&... avps) {
         event ev = create_postponed_api_type<event>(native_event_handle, context);
-        int expander [] {(ev.template set<attr_value_pair_t::idx()>(avps.val()), 0)...};
-        (void) expander;
+        int expander[]{ (ev.template set<attr_value_pair_t::idx()>(avps.val()), 0)... };
+        (void)expander;
         ev.build_from_params();
         return ev;
     }
-
 
 #endif //#if defined(MULTI_GPU_SUPPORT) || defined(CCL_ENABLE_SYCL)
 
 private:
     environment();
 
-    template<class ccl_api_type, class ...args_type>
+    template <class ccl_api_type, class... args_type>
     ccl_api_type create_postponed_api_type(args_type... args) const;
-
-#ifdef CCL_ENABLE_SYCL
-     device_communicator create_single_device_communicator(const size_t world_size,
-                                      const size_t rank,
-                                      const cl::sycl::device &device,
-                                      shared_ptr_class<kvs_interface> kvs) const;
-
-
- #endif
 };
 
 } // namespace ccl

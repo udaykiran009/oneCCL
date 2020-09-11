@@ -9,22 +9,19 @@
 #include <memory>
 #include <thread>
 
-#define COMMON_CATCH_BLOCK()                             \
-    catch (ccl::ccl_error& ccl_e)                        \
-    {                                                    \
+#define COMMON_CATCH_BLOCK() \
+    catch (ccl::ccl_error & ccl_e) { \
         LOG_ERROR("ccl internal error: ", ccl_e.what()); \
-        return ccl_status_invalid_arguments;             \
-    }                                                    \
-    catch (std::exception& e)                            \
-    {                                                    \
-        LOG_ERROR("error: ", e.what());                  \
-        return ccl_status_runtime_error;                 \
-    }                                                    \
-    catch (...)                                          \
-    {                                                    \
-        LOG_ERROR("general error");                      \
-        return ccl_status_runtime_error;                 \
-    }                                                    \
+        return ccl_status_invalid_arguments; \
+    } \
+    catch (std::exception & e) { \
+        LOG_ERROR("error: ", e.what()); \
+        return ccl_status_runtime_error; \
+    } \
+    catch (...) { \
+        LOG_ERROR("general error"); \
+        return ccl_status_runtime_error; \
+    }
 
 class ccl_comm;
 class ccl_stream;
@@ -38,16 +35,13 @@ class ccl_fusion_manager;
 class ccl_unordered_coll_manager;
 class ccl_allreduce_2d_builder;
 
-template<ccl_coll_type... registered_types_id>
+template <ccl_coll_type... registered_types_id>
 class ccl_algorithm_selector_wrapper;
 
-namespace ccl
-{
+namespace ccl {
 
-class global_data
-{
+class global_data {
 public:
-
     global_data(const global_data&) = delete;
     global_data(global_data&&) = delete;
 
@@ -82,9 +76,8 @@ public:
     bool is_ft_enabled;
     ccl_bfp16_impl_type bfp16_impl_type;
 
-//TODO new_api configure thread wait timeout
+    //TODO new_api configure thread wait timeout
     size_t thread_barrier_wait_timeout_sec = 5;
-
 
 private:
     global_data();
@@ -95,16 +88,13 @@ private:
     env_data env_object;
 };
 
-#define CCL_CHECK_IS_BLOCKED()                            \
-  {                                                       \
-    do                                                    \
-    {                                                     \
-        if (unlikely(                                     \
-            ccl::global_data::get().executor->is_locked)) \
-        {                                                 \
-            return ccl_status_blocked_due_to_resize;      \
-        }                                                 \
-    } while (0);                                          \
-  }
+#define CCL_CHECK_IS_BLOCKED() \
+    { \
+        do { \
+            if (unlikely(ccl::global_data::get().executor->is_locked)) { \
+                return ccl_status_blocked_due_to_resize; \
+            } \
+        } while (0); \
+    }
 
 } /* namespace ccl */

@@ -10,15 +10,13 @@
 // Core file with PIMPL implementation
 //#include "stream_impl.hpp"
 
-namespace ccl
-{
+namespace ccl {
 
-template<class attr>
-CCL_API attr ccl_empty_attr::create_empty()
-{
-    return attr{ccl_empty_attr::version};
+template <class attr>
+CCL_API attr ccl_empty_attr::create_empty() {
+    return attr{ ccl_empty_attr::version };
 }
 
 CCL_API stream default_stream = ccl_empty_attr::create_empty<stream>();
 
-}
+} // namespace ccl

@@ -1,27 +1,22 @@
 #include "common/comm/l0/topology/ring/ring_construction_utils.hpp"
 #include "common/comm/l0/topology/ring/device_group_ring_creator.hpp"
 
-namespace native
-{
+namespace native {
 
 device_group_ring_topology::device_group_ring_topology(device_group_context& comm,
-                                                       device_storage& devs) :
-    context(comm),
-    devices_factory(devs)
-{
-}
+                                                       device_storage& devs)
+        : context(comm),
+          devices_factory(devs) {}
 
-size_t device_group_ring_topology::default_property_p2p_rating_calculator(const ccl_device &lhs,
-                                                                          const ccl_device &rhs)
-{
+size_t device_group_ring_topology::default_property_p2p_rating_calculator(const ccl_device& lhs,
+                                                                          const ccl_device& rhs) {
     return details::property_p2p_rating_calculator(lhs, rhs, DEVICE_GROUP_WEIGHT);
 }
 
-details::adjacency_matrix
-device_group_ring_topology::build_p2p_capability_matrix(std::ostream& out,
-                                                        const ccl::device_indices_t &group_device_indices,
-                                                        details::p2p_rating_function ping)
-{
+details::adjacency_matrix device_group_ring_topology::build_p2p_capability_matrix(
+    std::ostream& out,
+    const ccl::device_indices_t& group_device_indices,
+    details::p2p_rating_function ping) {
     // Build adjacency matrix between devices using `ping` function:
     // Default ping function is checking P2P access capabilities in a way:
     // 1) Rows & columnn is a device IDs ( froms 0 to CCL_GPU_DEVICES_AFFINITY_MASK_SIZE)
@@ -35,12 +30,10 @@ device_group_ring_topology::build_p2p_capability_matrix(std::ostream& out,
     return get_platform().calculate_device_access_metric(group_device_indices, ping);
 }
 
-
-details::adjacency_matrix
-device_group_ring_topology::build_p2p_capability_matrix(std::ostream& out,
-                                                        const ccl::device_mask_t &group_device_masks,
-                                                        details::p2p_rating_function ping)
-{
+details::adjacency_matrix device_group_ring_topology::build_p2p_capability_matrix(
+    std::ostream& out,
+    const ccl::device_mask_t& group_device_masks,
+    details::p2p_rating_function ping) {
     // Build adjacency matrix between devices using `ping` function:
     // Default ping function is checking P2P access capabilities in a way:
     // 1) Rows & columnn is a device IDs ( froms 0 to CCL_GPU_DEVICES_AFFINITY_MASK_SIZE)
@@ -48,33 +41,29 @@ device_group_ring_topology::build_p2p_capability_matrix(std::ostream& out,
     // If values is not 0 - than two devies can access either together
 
     out << "Group mask mask: " << group_device_masks << std::endl;
-    return build_p2p_capability_matrix(out,
-                                       native::ccl_device_driver::get_device_indices(group_device_masks),
-                                       ping);
+    return build_p2p_capability_matrix(
+        out, native::ccl_device_driver::get_device_indices(group_device_masks), ping);
 }
 
 bool device_group_ring_topology::build(std::ostream& out,
-                                        const ccl::context_comm_addr& comm_addr,
-                                        const ccl::device_indices_t &group_device_indices,
-                                        const details::adjacency_matrix& matrix)
-{
-    out << "\n/*************\"" << device_group_ring_topology::name()
-        << "\"*************/\n" << std::endl;
+                                       const ccl::context_comm_addr& comm_addr,
+                                       const ccl::device_indices_t& group_device_indices,
+                                       const details::adjacency_matrix& matrix) {
+    out << "\n/*************\"" << device_group_ring_topology::name() << "\"*************/\n"
+        << std::endl;
 
     out << "Resolve device graph" << std::endl;
     details::plain_graph_list id_rings = graph_list_resolver(matrix, group_device_indices);
 
     size_t size = id_rings.size();
     out << "Resolved graphs count: " << size << "\n";
-    if (!size)
-    {
+    if (!size) {
         out << "Cannot build any ring" << std::endl;
         return false;
     }
     else if (id_rings.size() == 1) // whole ring, each device is accessible, no CPU copy here
     {
-        return build_specific(out, comm_addr, group_device_indices, *id_rings.begin(),
-                              matrix);
+        return build_specific(out, comm_addr, group_device_indices, *id_rings.begin(), matrix);
     }
 
     /* torn-apart ring:
@@ -84,19 +73,20 @@ bool device_group_ring_topology::build(std::ostream& out,
     return build_scale_up_specific(out, comm_addr, group_device_indices, id_rings, matrix);
 }
 
-bool device_group_ring_topology::build(std::ostream& out, const ccl::context_comm_addr& comm_addr,
-                                       const ccl::device_mask_t &group_device_masks,
-                                       const details::adjacency_matrix& matrix)
-{
-    return build(out, comm_addr, native::ccl_device_driver::get_device_indices(group_device_masks), matrix);
+bool device_group_ring_topology::build(std::ostream& out,
+                                       const ccl::context_comm_addr& comm_addr,
+                                       const ccl::device_mask_t& group_device_masks,
+                                       const details::adjacency_matrix& matrix) {
+    return build(
+        out, comm_addr, native::ccl_device_driver::get_device_indices(group_device_masks), matrix);
 }
 
-template<ccl::device_topology_type class_id>
-bool device_group_ring_topology::build_specific_topology(std::ostream& out,
-                                                         const ccl::context_comm_addr& comm_addr,
-                                                         const ccl::device_indices_t& group_device_indices,
-                                                         const details::plain_graph& graph)
-{
+template <ccl::device_topology_type class_id>
+bool device_group_ring_topology::build_specific_topology(
+    std::ostream& out,
+    const ccl::context_comm_addr& comm_addr,
+    const ccl::device_indices_t& group_device_indices,
+    const details::plain_graph& graph) {
     out << "Start building topology: " << ::to_string(class_id) << ", for graph:\n";
     out << details::to_string(graph);
 
@@ -108,14 +98,10 @@ bool device_group_ring_topology::build_specific_topology(std::ostream& out,
     out << "\nStart indexer for thread: " << thread_id << std::endl;
     details::id_thread_table assigned_ids;
     std::vector<details::marked_idx> marked_id_ring = details::create_marked(graph);
-    auto rank_builder =
-                    create_device_functor<details::graph_ring_indexer<group_id(),
-                                                                      class_id>>(marked_id_ring,
-                                                                                 assigned_ids,
-                                                                                 thread_id,
-                                                                                 device_topology->get_device_storage());
+    auto rank_builder = create_device_functor<details::graph_ring_indexer<group_id(), class_id>>(
+        marked_id_ring, assigned_ids, thread_id, device_topology->get_device_storage());
     std::shared_ptr<specific_plain_device_storage> group_gpu_comms =
-                            devices_factory.create_devices_by_indices(thread_id, group_device_indices);
+        devices_factory.create_devices_by_indices(thread_id, group_device_indices);
 
     ccl_tuple_for_each(*group_gpu_comms, rank_builder);
 
@@ -134,13 +120,9 @@ bool device_group_ring_topology::build_specific(std::ostream& out,
                                                 const ccl::context_comm_addr& comm_addr,
                                                 const ccl::device_indices_t& group_device_indices,
                                                 const details::plain_graph& graph,
-                                                const details::adjacency_matrix& matrix)
-{
-    bool result =
-            build_specific_topology<ccl::device_topology_type::ring>(out,
-                                                                            comm_addr,
-                                                                            group_device_indices,
-                                                                            graph);
+                                                const details::adjacency_matrix& matrix) {
+    bool result = build_specific_topology<ccl::device_topology_type::ring>(
+        out, comm_addr, group_device_indices, graph);
     /*
     // check a2a possibility
     bool a2a_capable = details::check_graph_a2a_capable(graph, matrix,out);
@@ -161,13 +143,12 @@ bool device_group_ring_topology::build_specific(std::ostream& out,
     return result;
 }
 
-template<ccl::device_topology_type class_id>
+template <ccl::device_topology_type class_id>
 bool device_group_ring_topology::build_scale_up_specific_topology(
-                                          std::ostream& out,
-                                          const ccl::context_comm_addr& comm_addr,
-                                          const ccl::device_indices_t& group_device_indices,
-                                          const details::plain_graph_list& graph_list)
-{
+    std::ostream& out,
+    const ccl::context_comm_addr& comm_addr,
+    const ccl::device_indices_t& group_device_indices,
+    const details::plain_graph_list& graph_list) {
     out << "Start building topology: " << ::to_string(class_id)
         << ", for graphs: " << graph_list.size() << "\n";
     out << details::to_string(graph_list);
@@ -179,13 +160,11 @@ bool device_group_ring_topology::build_scale_up_specific_topology(
     // create all required device wrappers
     // these wrappers would be used for ALL context at the next iteration
     ccl::device_indices_t total_device_indices;
-    for (const auto& graph : graph_list)
-    {
+    for (const auto& graph : graph_list) {
         total_device_indices.insert(graph.begin(), graph.end());
     }
     std::shared_ptr<specific_plain_device_storage> initial_group_gpu_comms =
-                                devices_factory.create_devices_by_indices(thread_id,
-                                                                          total_device_indices);
+        devices_factory.create_devices_by_indices(thread_id, total_device_indices);
     //set lobal devices size to topology
     auto topology_comm_addr = comm_addr;
     topology_comm_addr.comm_size = total_device_indices.size();
@@ -194,60 +173,46 @@ bool device_group_ring_topology::build_scale_up_specific_topology(
     // make copy for wrappers, because other context should work with original structure
     // but current context modified it (transform some wrappers into new scale_up_wrapper type)
     std::shared_ptr<specific_plain_device_storage> group_gpu_comms =
-                                std::make_shared<specific_plain_device_storage>(*initial_group_gpu_comms);
-    for (const auto& graph : graph_list)
-    {
-        out << "\nStart indexer for graph num: " << graph_num
-            << ", thread: " << thread_id << std::endl;
+        std::make_shared<specific_plain_device_storage>(*initial_group_gpu_comms);
+    for (const auto& graph : graph_list) {
+        out << "\nStart indexer for graph num: " << graph_num << ", thread: " << thread_id
+            << std::endl;
 
         details::id_thread_table assigned_ids;
         std::vector<details::marked_idx> marked_id_ring = details::create_marked(graph);
         auto rank_builder =
-                        create_device_functor<details::graph_ring_indexer_unique_index<group_id(),
-                                                                                       class_id>>(marked_id_ring,
-                                                                                          assigned_ids,
-                                                                                          thread_id,
-                                                                                          device_topology->get_device_storage(),
-                                                                                          index_offset,
-                                                                                          0,
-                                                                                          0);
+            create_device_functor<details::graph_ring_indexer_unique_index<group_id(), class_id>>(
+                marked_id_ring,
+                assigned_ids,
+                thread_id,
+                device_topology->get_device_storage(),
+                index_offset,
+                0,
+                0);
         // promote real-virtual device (right corner devices) in graphs up to scale_up_proxy type
         // all loca group devices in different graph would be linked by scale_up_proxy
         // each local group ( in graph) must have at least one scale_up_proxy device
         const ccl::device_index_type& last_in_graph_index = *graph.rbegin();
         auto scale_virt =
-                details::add_numa_proxy_device<ccl_virtual_gpu_comm,
-                                               group_id(),
-                                               class_id>(*group_gpu_comms,
-                                                         last_in_graph_index,
-                                                         context,
-                                                         devices_factory);
-        if (scale_virt)
-        {
-            out << "Added scaleup virtual device:\n" << scale_virt->to_string()
-                << "\nby idx: " << last_in_graph_index << std::endl;
+            details::add_numa_proxy_device<ccl_virtual_gpu_comm, group_id(), class_id>(
+                *group_gpu_comms, last_in_graph_index, context, devices_factory);
+        if (scale_virt) {
+            out << "Added scaleup virtual device:\n"
+                << scale_virt->to_string() << "\nby idx: " << last_in_graph_index << std::endl;
         }
-        else
-        {
-            auto scale_real =
-                details::add_numa_proxy_device<ccl_gpu_comm,
-                                               group_id(),
-                                               class_id>(*group_gpu_comms,
-                                                         last_in_graph_index,
-                                                         context,
-                                                         devices_factory);
-            if (scale_real)
-            {
-                out << "Added scaleup real device:\n" << scale_real->to_string()
-                    << "\nby idx: " << last_in_graph_index << std::endl;
+        else {
+            auto scale_real = details::add_numa_proxy_device<ccl_gpu_comm, group_id(), class_id>(
+                *group_gpu_comms, last_in_graph_index, context, devices_factory);
+            if (scale_real) {
+                out << "Added scaleup real device:\n"
+                    << scale_real->to_string() << "\nby idx: " << last_in_graph_index << std::endl;
             }
-            else
-            {
+            else {
                 assert(false && "Unsupported device type in topology creation");
                 std::ostringstream ss;
                 ss << out.rdbuf();
-                throw std::runtime_error(std::string("Unsupported device type in topology creation. Log:\n") +
-                                         ss.str());
+                throw std::runtime_error(
+                    std::string("Unsupported device type in topology creation. Log:\n") + ss.str());
             }
         }
 
@@ -275,25 +240,20 @@ bool device_group_ring_topology::build_scale_up_specific_topology(
     // remember constructed topology
     context.device_topology.get_community<class_id>().set_additiona_topology(device_topology);
 
-
     details::printer<group_id(), class_id> p;
     ccl_tuple_for_each(device_topology->get_device_storage(), p);
     out << "\nFinal topology: \n" << p.to_string();
     return true;
 }
 
-bool device_group_ring_topology::build_scale_up_specific(std::ostream& out,
-                                                const ccl::context_comm_addr& comm_addr,
-                                                const ccl::device_indices_t& group_device_indices,
-                                                const details::plain_graph_list& graph_list,
-                                                const details::adjacency_matrix& matrix)
-{
-    bool result =
-            build_scale_up_specific_topology<ccl::device_topology_type::ring>(
-                                                out,
-                                                comm_addr,
-                                                group_device_indices,
-                                                graph_list);
+bool device_group_ring_topology::build_scale_up_specific(
+    std::ostream& out,
+    const ccl::context_comm_addr& comm_addr,
+    const ccl::device_indices_t& group_device_indices,
+    const details::plain_graph_list& graph_list,
+    const details::adjacency_matrix& matrix) {
+    bool result = build_scale_up_specific_topology<ccl::device_topology_type::ring>(
+        out, comm_addr, group_device_indices, graph_list);
     /*
     // check a2a possibility
     bool a2a_capable = true;
@@ -320,4 +280,4 @@ bool device_group_ring_topology::build_scale_up_specific(std::ostream& out,
     */
     return result;
 }
-}
+} // namespace native

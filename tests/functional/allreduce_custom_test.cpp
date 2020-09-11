@@ -1,7 +1,6 @@
 //-S- TODO
 #if 0
 
-
 #define TEST_CCL_REDUCE
 #define TEST_CCL_CUSTOM_PROLOG
 #define TEST_CCL_CUSTOM_EPILOG
@@ -597,6 +596,5 @@ public:
 RUN_METHOD_DEFINITION(allreduce_custom_test);
 TEST_CASES_DEFINITION(allreduce_custom_test);
 MAIN_FUNCTION();
-
 
 #endif //0

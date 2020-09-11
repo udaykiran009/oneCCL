@@ -7,79 +7,70 @@
 #include "common/comm/l0/gpu_comm_attr.hpp"
 #include "common/comm/l0/device_community_utils.hpp"
 
-namespace native
-{
+namespace native {
 
-template<ccl::device_topology_type schema_id>
-struct device_community
-{
-    device_community(const ccl::context_comm_addr& comm_addr) :
-        community_addr(comm_addr),
-        devices(new specific_indexed_device_storage())
-    {
-    }
+template <ccl::device_topology_type schema_id>
+struct device_community {
+    device_community(const ccl::context_comm_addr& comm_addr)
+            : community_addr(comm_addr),
+              devices(new specific_indexed_device_storage()) {}
 
     std::multiset<ccl::device_index_type> registered_device_id;
 
-    specific_indexed_device_storage& get_device_storage()
-    {
-        auto &ptr = get_impl();
-        if(!ptr)
-        {
+    specific_indexed_device_storage& get_device_storage() {
+        auto& ptr = get_impl();
+        if (!ptr) {
             abort();
         }
         return *ptr;
     }
 
-    template<class device_t>
-    indexed_device_container<device_t>& get_devices()
-    {
+    template <class device_t>
+    indexed_device_container<device_t>& get_devices() {
         static native::indexed_device_container<device_t> empty;
 
-        return devices ?
-                    std::get<device_t::type_idx()>(*devices) :
-                    empty;
+        return devices ? std::get<device_t::type_idx()>(*devices) : empty;
     }
 
-    template<class device_t>
-    size_t get_device_count() const
-    {
-        return devices ?
-                    std::get<device_t::type_idx()>(*devices).size():
-                    0;
+    template <class device_t>
+    size_t get_device_count() const {
+        return devices ? std::get<device_t::type_idx()>(*devices).size() : 0;
     }
 
-    template<ccl::device_group_split_type group_id>
+    template <ccl::device_group_split_type group_id>
     void register_device_by_id(const ccl::device_index_type& device_id,
-                               ccl::context_comm_addr& registered_addr)
-    {
-        if (!get_impl())
-        {
+                               ccl::context_comm_addr& registered_addr) {
+        if (!get_impl()) {
             std::string err_str;
             {
                 std::stringstream str;
-                ccl_logger::format(str, "Cannot initialize comm_addr for device id: ", device_id,
-                                        " on topology: ", ::to_string(group_id),
-                                        ", class: ", ::to_string(schema_id),
-                                        ", empty device storage has got from context");
+                ccl_logger::format(str,
+                                   "Cannot initialize comm_addr for device id: ",
+                                   device_id,
+                                   " on topology: ",
+                                   ::to_string(group_id),
+                                   ", class: ",
+                                   ::to_string(schema_id),
+                                   ", empty device storage has got from context");
                 err_str = str.str();
             }
             LOG_ERROR(err_str);
             throw std::runtime_error(err_str);
         }
 
-        if (registered_addr.comm_rank != 0 or
-            registered_addr.comm_size != 0)
-        {
+        if (registered_addr.comm_rank != 0 or registered_addr.comm_size != 0) {
             std::string err_str;
             {
                 std::stringstream str;
-                ccl_logger::format(str, "Cannot register_device_by_id in topology for device id: ",
-                                        device_id,
-                                        " on topology: ", ::to_string(group_id),
-                                        ", class: ", ::to_string(schema_id),
-                                        ", because topology registered already, comm addr:",
-                                        registered_addr.to_string());
+                ccl_logger::format(str,
+                                   "Cannot register_device_by_id in topology for device id: ",
+                                   device_id,
+                                   " on topology: ",
+                                   ::to_string(group_id),
+                                   ", class: ",
+                                   ::to_string(schema_id),
+                                   ", because topology registered already, comm addr:",
+                                   registered_addr.to_string());
                 err_str = str.str();
             }
             LOG_ERROR(err_str);
@@ -87,8 +78,7 @@ struct device_community
         }
 
         // find device in topology and obtain its rank/sie
-        details::rank_getter<group_id, schema_id> initializer(device_id,
-                                                              registered_device_id);
+        details::rank_getter<group_id, schema_id> initializer(device_id, registered_device_id);
         ccl_tuple_for_each(get_device_storage(), initializer);
 
         // copy shared data from community addr
@@ -98,35 +88,31 @@ struct device_community
         registered_addr.comm_rank = initializer.get_assigned_rank();
     }
 
-    const ccl::context_comm_addr& get_comm_addr() const noexcept
-    {
+    const ccl::context_comm_addr& get_comm_addr() const noexcept {
         return community_addr;
     }
 
-    template<ccl::device_group_split_type group_id>
-    std::string to_string() const
-    {
+    template <ccl::device_group_split_type group_id>
+    std::string to_string() const {
         std::stringstream result;
         result << "Topology: " << ::to_string(schema_id) << "\n";
         native::details::printer<group_id, schema_id> p;
-        if(devices)
-        {
+        if (devices) {
             ccl_tuple_for_each(*devices, p);
             result << p.to_string();
         }
-        else
-        {
+        else {
             result << "EMPTY";
         }
         return result.str();
     }
+
 private:
     ccl::context_comm_addr community_addr;
-    std::unique_ptr<specific_indexed_device_storage>& get_impl()
-    {
+    std::unique_ptr<specific_indexed_device_storage>& get_impl() {
         return devices;
     }
 
     std::unique_ptr<specific_indexed_device_storage> devices;
 };
-}
+} // namespace native

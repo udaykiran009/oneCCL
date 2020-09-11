@@ -9,14 +9,12 @@
 namespace ccl {
 
 /* allgatherv */
-template<class BufferType>
-ccl::request_t
-host_communicator::allgatherv_impl(const BufferType* send_buf,
-                                   size_t send_count,
-                                   BufferType* recv_buf,
-                                   const vector_class<size_t>& recv_counts,
-                                   const allgatherv_attr& attr)
-{
+template <class BufferType>
+ccl::request_t host_communicator::allgatherv_impl(const BufferType* send_buf,
+                                                  size_t send_count,
+                                                  BufferType* recv_buf,
+                                                  const vector_class<size_t>& recv_counts,
+                                                  const allgatherv_attr& attr) {
     ccl_request* req = ccl_allgatherv_impl(reinterpret_cast<const void*>(send_buf),
                                            send_count,
                                            reinterpret_cast<void*>(recv_buf),
@@ -29,14 +27,12 @@ host_communicator::allgatherv_impl(const BufferType* send_buf,
     return std::unique_ptr<ccl::host_request_impl>(new ccl::host_request_impl(req));
 }
 
-template<class BufferType>
-ccl::request_t
-host_communicator::allgatherv_impl(const BufferType* send_buf,
-                                   size_t send_count,
-                                   const vector_class<BufferType*>& recv_bufs,
-                                   const vector_class<size_t>& recv_counts,
-                                   const allgatherv_attr& attr)
-{
+template <class BufferType>
+ccl::request_t host_communicator::allgatherv_impl(const BufferType* send_buf,
+                                                  size_t send_count,
+                                                  const vector_class<BufferType*>& recv_bufs,
+                                                  const vector_class<size_t>& recv_counts,
+                                                  const allgatherv_attr& attr) {
     // TODO not implemented
     throw ccl_error(std::string(__PRETTY_FUNCTION__) + " - is not implemented");
 
@@ -45,15 +41,12 @@ host_communicator::allgatherv_impl(const BufferType* send_buf,
 }
 
 /* allreduce */
-template <class BufferType,
-          typename T>
-ccl::request_t
-host_communicator::allreduce_impl(const BufferType* send_buf,
-                                  BufferType* recv_buf,
-                                  size_t count,
-                                  ccl::reduction reduction,
-                                  const allreduce_attr& attr)
-{
+template <class BufferType, typename T>
+ccl::request_t host_communicator::allreduce_impl(const BufferType* send_buf,
+                                                 BufferType* recv_buf,
+                                                 size_t count,
+                                                 ccl::reduction reduction,
+                                                 const allreduce_attr& attr) {
     ccl_request* req = ccl_allreduce_impl(reinterpret_cast<const void*>(send_buf),
                                           reinterpret_cast<void*>(recv_buf),
                                           count,
@@ -67,14 +60,11 @@ host_communicator::allreduce_impl(const BufferType* send_buf,
 }
 
 /* alltoall */
-template <class BufferType,
-           typename T>
-ccl::request_t
-host_communicator::alltoall_impl(const BufferType* send_buf,
-                                 BufferType* recv_buf,
-                                 size_t count,
-                                 const alltoall_attr& attr)
-{
+template <class BufferType, typename T>
+ccl::request_t host_communicator::alltoall_impl(const BufferType* send_buf,
+                                                BufferType* recv_buf,
+                                                size_t count,
+                                                const alltoall_attr& attr) {
     ccl_request* req = ccl_alltoall_impl(reinterpret_cast<const void*>(send_buf),
                                          reinterpret_cast<void*>(recv_buf),
                                          count,
@@ -86,14 +76,11 @@ host_communicator::alltoall_impl(const BufferType* send_buf,
     return std::unique_ptr<ccl::host_request_impl>(new ccl::host_request_impl(req));
 }
 
-template <class BufferType,
-          typename T>
-ccl::request_t
-host_communicator::alltoall_impl(const vector_class<BufferType*>& send_buf,
-                                 const vector_class<BufferType*>& recv_buf,
-                                 size_t count,
-                                 const alltoall_attr& attr)
-{
+template <class BufferType, typename T>
+ccl::request_t host_communicator::alltoall_impl(const vector_class<BufferType*>& send_buf,
+                                                const vector_class<BufferType*>& recv_buf,
+                                                size_t count,
+                                                const alltoall_attr& attr) {
     // TODO not implemented
     throw ccl_error(std::string(__PRETTY_FUNCTION__) + " - is not implemented");
 
@@ -102,15 +89,12 @@ host_communicator::alltoall_impl(const vector_class<BufferType*>& send_buf,
 }
 
 /* alltoallv */
-template <class BufferType,
-          typename T>
-ccl::request_t
-host_communicator::alltoallv_impl(const BufferType* send_buf,
-                                 const vector_class<size_t>& send_counts,
-                                 BufferType* recv_buf,
-                                 const vector_class<size_t>& recv_counts,
-                                 const alltoallv_attr& attr)
-{
+template <class BufferType, typename T>
+ccl::request_t host_communicator::alltoallv_impl(const BufferType* send_buf,
+                                                 const vector_class<size_t>& send_counts,
+                                                 BufferType* recv_buf,
+                                                 const vector_class<size_t>& recv_counts,
+                                                 const alltoallv_attr& attr) {
     ccl_request* req = ccl_alltoallv_impl(reinterpret_cast<const void*>(send_buf),
                                           send_counts.data(),
                                           reinterpret_cast<void*>(recv_buf),
@@ -123,15 +107,12 @@ host_communicator::alltoallv_impl(const BufferType* send_buf,
     return std::unique_ptr<ccl::host_request_impl>(new ccl::host_request_impl(req));
 }
 
-template <class BufferType,
-          typename T>
-ccl::request_t
-host_communicator::alltoallv_impl(const vector_class<BufferType*>& send_bufs,
-                                  const vector_class<size_t>& send_counts,
-                                  const vector_class<BufferType*>& recv_bufs,
-                                  const vector_class<size_t>& recv_counts,
-                                  const alltoallv_attr& attr)
-{
+template <class BufferType, typename T>
+ccl::request_t host_communicator::alltoallv_impl(const vector_class<BufferType*>& send_bufs,
+                                                 const vector_class<size_t>& send_counts,
+                                                 const vector_class<BufferType*>& recv_bufs,
+                                                 const vector_class<size_t>& recv_counts,
+                                                 const alltoallv_attr& attr) {
     // TODO not implemented
     throw ccl_error(std::string(__PRETTY_FUNCTION__) + " - is not implemented");
 
@@ -140,36 +121,30 @@ host_communicator::alltoallv_impl(const vector_class<BufferType*>& send_bufs,
 }
 
 /* bcast */
-template <class BufferType,
-          typename T>
-ccl::request_t
-host_communicator::broadcast_impl(BufferType* buf,
-                              size_t count,
-                              size_t root,
-                              const broadcast_attr& attr)
-{
+template <class BufferType, typename T>
+ccl::request_t host_communicator::broadcast_impl(BufferType* buf,
+                                                 size_t count,
+                                                 size_t root,
+                                                 const broadcast_attr& attr) {
     ccl_request* req = ccl_broadcast_impl(reinterpret_cast<void*>(buf),
-                                      count,
-                                      ccl::native_type_info<BufferType>::ccl_datatype_value,
-                                      root,
-                                      attr,
-                                      comm_impl.get(),
-                                      nullptr);
+                                          count,
+                                          ccl::native_type_info<BufferType>::ccl_datatype_value,
+                                          root,
+                                          attr,
+                                          comm_impl.get(),
+                                          nullptr);
 
     return std::unique_ptr<ccl::host_request_impl>(new ccl::host_request_impl(req));
 }
 
 /* reduce */
-template <class BufferType,
-          typename T>
-ccl::request_t
-host_communicator::reduce_impl(const BufferType* send_buf,
-                               BufferType* recv_buf,
-                               size_t count,
-                               ccl::reduction reduction,
-                               size_t root,
-                               const reduce_attr& attr)
-{
+template <class BufferType, typename T>
+ccl::request_t host_communicator::reduce_impl(const BufferType* send_buf,
+                                              BufferType* recv_buf,
+                                              size_t count,
+                                              ccl::reduction reduction,
+                                              size_t root,
+                                              const reduce_attr& attr) {
     ccl_request* req = ccl_reduce_impl(reinterpret_cast<const void*>(send_buf),
                                        reinterpret_cast<void*>(recv_buf),
                                        count,
@@ -184,15 +159,12 @@ host_communicator::reduce_impl(const BufferType* send_buf,
 }
 
 /* reduce_scatter */
-template <class BufferType,
-          typename T>
-ccl::request_t
-host_communicator::reduce_scatter_impl(const BufferType* send_buf,
-                                       BufferType* recv_buf,
-                                       size_t recv_count,
-                                       ccl::reduction reduction,
-                                       const reduce_scatter_attr& attr)
-{
+template <class BufferType, typename T>
+ccl::request_t host_communicator::reduce_scatter_impl(const BufferType* send_buf,
+                                                      BufferType* recv_buf,
+                                                      size_t recv_count,
+                                                      ccl::reduction reduction,
+                                                      const reduce_scatter_attr& attr) {
     // TODO not implemented
     throw ccl_error(std::string(__PRETTY_FUNCTION__) + " - is not implemented");
 
@@ -201,22 +173,17 @@ host_communicator::reduce_scatter_impl(const BufferType* send_buf,
 }
 
 /* sparse_allreduce */
-template <
-    class index_BufferType,
-    class value_BufferType,
-    typename T>
-ccl::request_t
-host_communicator::sparse_allreduce_impl(const index_BufferType* send_ind_buf,
-                                         size_t send_ind_count,
-                                         const value_BufferType* send_val_buf,
-                                         size_t send_val_count,
-                                         index_BufferType* recv_ind_buf,
-                                         size_t recv_ind_count,
-                                         value_BufferType* recv_val_buf,
-                                         size_t recv_val_count,
-                                         ccl::reduction reduction,
-                                         const sparse_allreduce_attr& attr)
-{
+template <class index_BufferType, class value_BufferType, typename T>
+ccl::request_t host_communicator::sparse_allreduce_impl(const index_BufferType* send_ind_buf,
+                                                        size_t send_ind_count,
+                                                        const value_BufferType* send_val_buf,
+                                                        size_t send_val_count,
+                                                        index_BufferType* recv_ind_buf,
+                                                        size_t recv_ind_count,
+                                                        value_BufferType* recv_val_buf,
+                                                        size_t recv_val_count,
+                                                        ccl::reduction reduction,
+                                                        const sparse_allreduce_attr& attr) {
     ccl_request* req =
         ccl_sparse_allreduce_impl((const void*)send_ind_buf,
                                   send_ind_count,

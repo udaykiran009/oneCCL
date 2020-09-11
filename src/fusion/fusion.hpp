@@ -14,20 +14,21 @@
 
 using ccl_fusion_lock_t = ccl_spinlock;
 
-class ccl_fusion_buffer_cache
-{
+class ccl_fusion_buffer_cache {
 public:
     ccl_fusion_buffer_cache(size_t buf_size);
     ~ccl_fusion_buffer_cache();
 
     ccl_fusion_buffer_cache(const ccl_fusion_buffer_cache& other) = delete;
-    ccl_fusion_buffer_cache& operator= (const ccl_fusion_buffer_cache& other) = delete;
+    ccl_fusion_buffer_cache& operator=(const ccl_fusion_buffer_cache& other) = delete;
 
     void* get();
     void release(void* buf);
     void clear();
 
-    size_t get_buf_size() { return buf_size; }
+    size_t get_buf_size() {
+        return buf_size;
+    }
 
 private:
     size_t buf_size;
@@ -36,14 +37,13 @@ private:
     std::deque<void*> all_buffers;
 };
 
-class ccl_fusion_manager
-{
+class ccl_fusion_manager {
 public:
     ccl_fusion_manager();
     ~ccl_fusion_manager();
 
     ccl_fusion_manager(const ccl_fusion_manager& other) = delete;
-    ccl_fusion_manager& operator= (const ccl_fusion_manager& other) = delete;
+    ccl_fusion_manager& operator=(const ccl_fusion_manager& other) = delete;
 
     bool can_fuse(ccl_master_sched* sched);
     bool add(ccl_master_sched* sched);

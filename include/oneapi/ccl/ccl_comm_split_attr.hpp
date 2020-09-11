@@ -4,8 +4,7 @@
 #error "Do not include this file directly. Please include 'ccl.hpp'"
 #endif
 
-namespace ccl
-{
+namespace ccl {
 
 class ccl_host_comm_split_attr_impl;
 class ccl_device_comm_split_attr_impl;
@@ -14,10 +13,13 @@ struct ccl_empty_attr;
 /**
  * Host attributes
  */
-class comm_split_attr : public ccl_api_base_copyable<comm_split_attr, copy_on_write_access_policy, ccl_host_comm_split_attr_impl>
-{
+class comm_split_attr : public ccl_api_base_copyable<comm_split_attr,
+                                                     copy_on_write_access_policy,
+                                                     ccl_host_comm_split_attr_impl> {
 public:
-    using base_t = ccl_api_base_copyable<comm_split_attr, copy_on_write_access_policy, ccl_host_comm_split_attr_impl>;
+    using base_t = ccl_api_base_copyable<comm_split_attr,
+                                         copy_on_write_access_policy,
+                                         ccl_host_comm_split_attr_impl>;
 
     /**
      * Declare PIMPL type
@@ -56,28 +58,31 @@ public:
 
 private:
     friend class environment;
-    comm_split_attr(const typename details::ccl_host_split_traits<comm_split_attr_id, comm_split_attr_id::version>::type& version);
+    comm_split_attr(
+        const typename details::ccl_host_split_traits<comm_split_attr_id,
+                                                      comm_split_attr_id::version>::type& version);
 
     /* TODO temporary function for UT compilation: would be part of ccl::environment in final*/
-    template <class ...attr_value_pair_t>
-    static comm_split_attr create_comm_split_attr(attr_value_pair_t&&...avps);
+    template <class... attr_value_pair_t>
+    static comm_split_attr create_comm_split_attr(attr_value_pair_t&&... avps);
 
     // create_split_attr() is internal func of create_comm_split_attr() in which comm_split_attr constructor is called
-    template <class attr_t, class ...attr_value_pair_t>
-    friend attr_t create_split_attr(attr_value_pair_t&&...avps);
+    template <class attr_t, class... attr_value_pair_t>
+    friend attr_t create_split_attr(attr_value_pair_t&&... avps);
 };
-
-
 
 #if defined(MULTI_GPU_SUPPORT) || defined(CCL_ENABLE_SYCL)
 
 /**
  * Device attributes
  */
-class device_comm_split_attr : public ccl_api_base_copyable<device_comm_split_attr, copy_on_write_access_policy, ccl_device_comm_split_attr_impl>
-{
+class device_comm_split_attr : public ccl_api_base_copyable<device_comm_split_attr,
+                                                            copy_on_write_access_policy,
+                                                            ccl_device_comm_split_attr_impl> {
 public:
-    using base_t = ccl_api_base_copyable<device_comm_split_attr, copy_on_write_access_policy, ccl_device_comm_split_attr_impl>;
+    using base_t = ccl_api_base_copyable<device_comm_split_attr,
+                                         copy_on_write_access_policy,
+                                         ccl_device_comm_split_attr_impl>;
 
     /**
      * Declare PIMPL type
@@ -115,21 +120,21 @@ public:
 
 private:
     friend class environment;
-    device_comm_split_attr(const typename details::ccl_device_split_traits<comm_split_attr_id, comm_split_attr_id::version>::type& version);
+    device_comm_split_attr(
+        const typename details::ccl_device_split_traits<comm_split_attr_id,
+                                                        comm_split_attr_id::version>::type&
+            version);
 
     /* TODO temporary function for UT compilation: would be part of ccl::environment in final*/
-    template <class ...attr_value_pair_t>
-    static device_comm_split_attr create_device_comm_split_attr(attr_value_pair_t&&...avps);
+    template <class... attr_value_pair_t>
+    static device_comm_split_attr create_device_comm_split_attr(attr_value_pair_t&&... avps);
 };
 
 #endif //#if defined(MULTI_GPU_SUPPORT) || defined(CCL_ENABLE_SYCL)
 
-
-
 template <comm_split_attr_id t, class value_type>
-constexpr auto attr_val(value_type v) -> details::attr_value_tripple<comm_split_attr_id,
-                                                              t, value_type>
-{
+constexpr auto attr_val(value_type v)
+    -> details::attr_value_tripple<comm_split_attr_id, t, value_type> {
     return details::attr_value_tripple<comm_split_attr_id, t, value_type>(v);
 }
 } // namespace ccl

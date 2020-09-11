@@ -1,6 +1,4 @@
-int main()
-{
-}
+int main() {}
 #if 0
 #include <algorithm>
 #include <iostream>
@@ -19,7 +17,7 @@ int main()
 #include "oneapi/ccl/ccl_gpu_modules.h"
 #include "oneapi/ccl/native_device_api/export_api.hpp"
 
-#define COUNT 512 //(10*1024*1024)
+#define COUNT     512 //(10*1024*1024)
 #define COLL_ROOT (0)
 
 int gpu_topology_type = 1; //0 - between devices in single thread
@@ -364,7 +362,6 @@ void user_thread_idx(size_t thread_idx, ccl::device_indices_t thread_device_idx,
         }
     }
 }
-
 
 #endif
 int main(int argc, char** argv)

@@ -1,8 +1,5 @@
 #pragma once
-namespace native
-{
+namespace native {
 
-struct thread_group_scheduler
-{
-};
-}
+struct thread_group_scheduler {};
+} // namespace native

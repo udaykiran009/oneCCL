@@ -5,8 +5,7 @@
 
 #include "common/utils/utils.hpp"
 
-class alignas(CACHELINE_SIZE) ccl_request
-{
+class alignas(CACHELINE_SIZE) ccl_request {
 public:
     using dump_func = std::function<void(std::ostream &)>;
 #ifdef ENABLE_DEBUG
@@ -24,8 +23,9 @@ public:
     void increase_counter(int increment);
 
     mutable bool urgent = false;
+
 private:
-    std::atomic_int completion_counter { 0 };
+    std::atomic_int completion_counter{ 0 };
 
 #ifdef ENABLE_DEBUG
     dump_func dump_callback;

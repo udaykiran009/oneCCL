@@ -5,37 +5,35 @@
 
 #ifdef CCL_ENABLE_SYCL
 /* sycl-specific base implementation */
-template<class Dtype, class strategy>
-struct sycl_base_coll : base_coll, private strategy, device_specific_data
-{
+template <class Dtype, class strategy>
+struct sycl_base_coll : base_coll, private strategy, device_specific_data {
     using coll_strategy = strategy;
 
-    template<class ...Args>
+    template <class... Args>
     sycl_base_coll(bench_coll_init_attr init_attr,
-                   size_t sbuf_multiplier, size_t rbuf_multiplier, Args&& ...args) :
-        base_coll(init_attr), coll_strategy(std::forward<Args>(args)...)
-    {
-        for (size_t idx = 0; idx < base_coll::get_buf_count(); idx++)
-        {
-            send_bufs[idx] = new cl::sycl::buffer<Dtype, 1>(base_coll::get_max_elem_count() * sbuf_multiplier);
-            recv_bufs[idx] = new cl::sycl::buffer<Dtype, 1>(base_coll::get_max_elem_count() * rbuf_multiplier);
+                   size_t sbuf_multiplier,
+                   size_t rbuf_multiplier,
+                   Args&&... args)
+            : base_coll(init_attr),
+              coll_strategy(std::forward<Args>(args)...) {
+        for (size_t idx = 0; idx < base_coll::get_buf_count(); idx++) {
+            send_bufs[idx] =
+                new cl::sycl::buffer<Dtype, 1>(base_coll::get_max_elem_count() * sbuf_multiplier);
+            recv_bufs[idx] =
+                new cl::sycl::buffer<Dtype, 1>(base_coll::get_max_elem_count() * rbuf_multiplier);
         }
 
-        single_send_buf =
-            new cl::sycl::buffer<Dtype, 1>(base_coll::get_single_buf_max_elem_count() * sbuf_multiplier);
+        single_send_buf = new cl::sycl::buffer<Dtype, 1>(
+            base_coll::get_single_buf_max_elem_count() * sbuf_multiplier);
 
-        single_recv_buf =
-            new cl::sycl::buffer<Dtype, 1>(base_coll::get_single_buf_max_elem_count() * rbuf_multiplier);
+        single_recv_buf = new cl::sycl::buffer<Dtype, 1>(
+            base_coll::get_single_buf_max_elem_count() * rbuf_multiplier);
     }
 
-    sycl_base_coll(bench_coll_init_attr init_attr) : sycl_base_coll(init_attr, 1, 1)
-    {
-    }
+    sycl_base_coll(bench_coll_init_attr init_attr) : sycl_base_coll(init_attr, 1, 1) {}
 
-    virtual ~sycl_base_coll()
-    {
-        for (size_t idx = 0; idx < base_coll::get_buf_count(); idx++)
-        {
+    virtual ~sycl_base_coll() {
+        for (size_t idx = 0; idx < base_coll::get_buf_count(); idx++) {
             delete static_cast<sycl_buffer_t<Dtype>*>(send_bufs[idx]);
             delete static_cast<sycl_buffer_t<Dtype>*>(recv_bufs[idx]);
         }
@@ -43,51 +41,56 @@ struct sycl_base_coll : base_coll, private strategy, device_specific_data
         delete static_cast<sycl_buffer_t<Dtype>*>(single_recv_buf);
     }
 
-    const char* name() const noexcept override
-    {
+    const char* name() const noexcept override {
         return coll_strategy::class_name();
     }
 
-    virtual void start(size_t count, size_t buf_idx,
+    virtual void start(size_t count,
+                       size_t buf_idx,
                        const bench_coll_exec_attr& attr,
-                       req_list_t& reqs) override
-    {
-        sycl_buffer_t<Dtype> &send_buf = *(static_cast<sycl_buffer_t<Dtype>*>(send_bufs[buf_idx]));
-        sycl_buffer_t<Dtype> &recv_buf = *(static_cast<sycl_buffer_t<Dtype>*>(recv_bufs[buf_idx]));
-        coll_strategy::template start_internal<sycl_buffer_t<Dtype> &>(comm(), count,
-                                                                       send_buf, recv_buf,
-                                                                       attr, reqs, stream(), coll_strategy::get_op_attr(attr));
+                       req_list_t& reqs) override {
+        sycl_buffer_t<Dtype>& send_buf = *(static_cast<sycl_buffer_t<Dtype>*>(send_bufs[buf_idx]));
+        sycl_buffer_t<Dtype>& recv_buf = *(static_cast<sycl_buffer_t<Dtype>*>(recv_bufs[buf_idx]));
+        coll_strategy::template start_internal<sycl_buffer_t<Dtype>&>(
+            comm(),
+            count,
+            send_buf,
+            recv_buf,
+            attr,
+            reqs,
+            stream(),
+            coll_strategy::get_op_attr(attr));
     }
 
     virtual void start_single(size_t count,
                               const bench_coll_exec_attr& attr,
-                              req_list_t& reqs) override
-    {
-        sycl_buffer_t<Dtype> &send_buf = *(static_cast<sycl_buffer_t<Dtype>*>(single_send_buf));
-        sycl_buffer_t<Dtype> &recv_buf = *(static_cast<sycl_buffer_t<Dtype>*>(single_recv_buf));
-        coll_strategy::template start_internal<sycl_buffer_t<Dtype> &>(comm(), count,
-                                                                       send_buf, recv_buf,
-                                                                       attr, reqs, stream(), coll_strategy::get_op_attr(attr));
+                              req_list_t& reqs) override {
+        sycl_buffer_t<Dtype>& send_buf = *(static_cast<sycl_buffer_t<Dtype>*>(single_send_buf));
+        sycl_buffer_t<Dtype>& recv_buf = *(static_cast<sycl_buffer_t<Dtype>*>(single_recv_buf));
+        coll_strategy::template start_internal<sycl_buffer_t<Dtype>&>(
+            comm(),
+            count,
+            send_buf,
+            recv_buf,
+            attr,
+            reqs,
+            stream(),
+            coll_strategy::get_op_attr(attr));
     }
 
-    ccl::datatype get_dtype() const override final
-    {
+    ccl::datatype get_dtype() const override final {
         return ccl::native_type_info<typename std::remove_pointer<Dtype>::type>::ccl_datatype_value;
     }
 
     /* global communicator & stream for all cpu collectives */
-    static ccl::device_communicator& comm()
-    {
-        if (!device_specific_data::comm_ptr)
-        {
+    static ccl::device_communicator& comm() {
+        if (!device_specific_data::comm_ptr) {
         }
         return *device_specific_data::comm_ptr;
     }
 
-    static ccl::stream& stream()
-    {
-        if (!device_specific_data::stream_ptr)
-        {
+    static ccl::stream& stream() {
+        if (!device_specific_data::stream_ptr) {
         }
         return *device_specific_data::stream_ptr;
     }

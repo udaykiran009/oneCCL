@@ -63,8 +63,7 @@ constexpr const char* CCL_ALLTOALL_SCATTER_PLAIN = "CCL_ALLTOALL_SCATTER_PLAIN";
 
 constexpr const char* CCL_DEFAULT_RESIZABLE = "CCL_DEFAULT_RESIZABLE";
 
-enum ccl_priority_mode
-{
+enum ccl_priority_mode {
     ccl_priority_none,
     ccl_priority_direct,
     ccl_priority_lifo,
@@ -72,21 +71,17 @@ enum ccl_priority_mode
     ccl_priority_last_value
 };
 
-enum ccl_atl_transport
-{
+enum ccl_atl_transport {
     ccl_atl_ofi,
     ccl_atl_mpi,
 
     ccl_atl_last_value
 };
 
-namespace ccl
-{
+namespace ccl {
 
-class env_data
-{
+class env_data {
 public:
-
     env_data();
     ~env_data() = default;
 
@@ -155,12 +150,10 @@ public:
 
     size_t default_resizable;
 
-    template<class T>
-    static int env_2_type(const char* env_name, T& val)
-    {
+    template <class T>
+    static int env_2_type(const char* env_name, T& val) {
         const char* env_val = getenv(env_name);
-        if (env_val)
-        {
+        if (env_val) {
             std::stringstream ss;
             ss << env_val;
             ss >> val;
@@ -169,47 +162,35 @@ public:
         return 0;
     }
 
-    template<class T>
-    static int env_2_enum(const char* env_name,
-                          const std::map<T, std::string>& values,
-                          T& val)
-    {
+    template <class T>
+    static int env_2_enum(const char* env_name, const std::map<T, std::string>& values, T& val) {
         const char* env_val = getenv(env_name);
-        if (env_val)
-        {
+        if (env_val) {
             val = enum_by_str(values, env_val);
             return 1;
         }
         return 0;
     }
 
-    template<class T>
-    static T enum_by_str(const std::map<T, std::string>& values,
-                         const std::string& str)
-    {
-        for (const auto& val: values)
-        {
-            if (!str.compare(val.second))
-            {
+    template <class T>
+    static T enum_by_str(const std::map<T, std::string>& values, const std::string& str) {
+        for (const auto& val : values) {
+            if (!str.compare(val.second)) {
                 return val.first;
             }
         }
         CCL_THROW("unexpected str '", str, "'");
     }
 
-    template<class T>
-    static std::string str_by_enum(const std::map<T, std::string>& values,
-                                   const T& val)
-    {
+    template <class T>
+    static std::string str_by_enum(const std::map<T, std::string>& values, const T& val) {
         typename std::map<T, std::string>::const_iterator it;
 
         it = values.find(val);
-        if (it != values.end())
-        {
-             return it->second;
+        if (it != values.end()) {
+            return it->second;
         }
-        else
-        {
+        else {
             CCL_THROW("unexpected val ", val);
             return NULL;
         }
@@ -221,7 +202,6 @@ public:
     int env_2_worker_affinity(size_t local_proc_idx, size_t local_proc_count);
 
 private:
-
     int env_2_worker_affinity_auto(size_t local_proc_idx, size_t workers_per_process);
 };
 

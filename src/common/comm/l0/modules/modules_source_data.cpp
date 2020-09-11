@@ -2,15 +2,12 @@
 #include <fstream>
 #include "common/comm/l0/modules/modules_source_data.hpp"
 
-namespace native
-{
-source_data_t load_binary_file(const std::string& source_path)
-{
+namespace native {
+source_data_t load_binary_file(const std::string& source_path) {
     std::ifstream stream(source_path, std::ios::in | std::ios::binary);
 
     source_data_t binary_file;
-    if (!stream.good())
-    {
+    if (!stream.good()) {
         std::string error("Failed to load binary file: ");
         error += source_path;
 
@@ -23,7 +20,7 @@ source_data_t load_binary_file(const std::string& source_path)
     stream.seekg(0, stream.beg);
 
     binary_file.resize(length);
-    stream.read(reinterpret_cast<char *>(binary_file.data()), length);
+    stream.read(reinterpret_cast<char*>(binary_file.data()), length);
     return binary_file;
 }
-}
+} // namespace native

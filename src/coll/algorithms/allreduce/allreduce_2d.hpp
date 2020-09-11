@@ -4,8 +4,7 @@
 #include "common/utils/buffer.hpp"
 #include "sched/sched.hpp"
 
-class ccl_allreduce_2d_builder
-{
+class ccl_allreduce_2d_builder {
 public:
     ccl_allreduce_2d_builder(size_t base_size, bool switch_dims);
     ~ccl_allreduce_2d_builder();
@@ -24,8 +23,12 @@ public:
                        ccl::reduction op,
                        ccl_comm* comm);
 
-    ccl_comm* get_first_dim_comm() const { return first_dim_comm.get(); }
-    ccl_comm* get_second_dim_comm() const { return second_dim_comm.get(); }
+    ccl_comm* get_first_dim_comm() const {
+        return first_dim_comm.get();
+    }
+    ccl_comm* get_second_dim_comm() const {
+        return second_dim_comm.get();
+    }
 
 private:
     std::shared_ptr<ccl_comm> first_dim_comm;

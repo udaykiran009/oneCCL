@@ -1,7 +1,5 @@
-int main()
-{
-}
-#if 0       //TODO may be remove
+int main() {}
+#if 0 //TODO may be remove
 
 #include <algorithm>
 #include <iostream>
@@ -20,7 +18,7 @@ int main()
 #include "oneapi/ccl/ccl_gpu_modules.h"
 #include "oneapi/ccl/native_device_api/export_api.hpp"
 
-#define COUNT 512
+#define COUNT     512
 #define COLL_ROOT (0)
 
 int gpu_topology_type = 1; //0 - between devices in single thread

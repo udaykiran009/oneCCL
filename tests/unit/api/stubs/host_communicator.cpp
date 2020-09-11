@@ -1,27 +1,20 @@
 #include "host_communicator.hpp"
 
 class ccl_comm;
-namespace ccl
-{
+namespace ccl {
 host_communicator::host_communicator(std::shared_ptr<ccl_comm> impl) : comm_impl(impl) {}
 
-size_t host_communicator::rank() const
-{
+size_t host_communicator::rank() const {
     return 0;
 }
 
-size_t host_communicator::size() const
-{
+size_t host_communicator::size() const {
     return 1;
 }
 
-void host_communicator::barrier_impl()
-{
-}
+void host_communicator::barrier_impl() {}
 
-request_t
-host_communicator::barrier_impl(const barrier_attr& attr)
-{
+request_t host_communicator::barrier_impl(const barrier_attr& attr) {
     return {};
 }
-}
+} // namespace ccl

@@ -7,18 +7,13 @@
 #include <chrono>
 #include <memory>
 
-typedef ccl_status_t(* ccl_sched_entry_function_t)(const void*);
+typedef ccl_status_t (*ccl_sched_entry_function_t)(const void*);
 
 class ccl_sched;
 
-enum ccl_sched_entry_exec_mode
-{
-    ccl_sched_entry_exec_regular,
-    ccl_sched_entry_exec_once
-};
+enum ccl_sched_entry_exec_mode { ccl_sched_entry_exec_regular, ccl_sched_entry_exec_once };
 
-enum ccl_sched_entry_status
-{
+enum ccl_sched_entry_status {
     ccl_sched_entry_status_not_started,
     ccl_sched_entry_status_again,
     ccl_sched_entry_status_started,
@@ -28,8 +23,7 @@ enum ccl_sched_entry_status
     ccl_sched_entry_status_invalid
 };
 
-enum ccl_condition
-{
+enum ccl_condition {
     ccl_condition_equal,
     ccl_condition_not_equal,
     ccl_condition_less,
@@ -38,15 +32,12 @@ enum ccl_condition
     ccl_condition_greater_or_equal
 };
 
-class alignas(CACHELINE_SIZE) sched_entry
-{
+class alignas(CACHELINE_SIZE) sched_entry {
 public:
     sched_entry() = delete;
-    explicit sched_entry(ccl_sched* sched,
-                         bool is_barrier = false) :
-        sched(sched),
-        barrier(is_barrier)
-    {}
+    explicit sched_entry(ccl_sched* sched, bool is_barrier = false)
+            : sched(sched),
+              barrier(is_barrier) {}
 
     virtual ~sched_entry() {}
 
@@ -57,8 +48,7 @@ public:
 
     virtual bool is_strict_order_satisfied();
 
-    void dump(std::stringstream& str,
-              size_t idx) const;
+    void dump(std::stringstream& str, size_t idx) const;
 
     void make_barrier();
     bool is_barrier() const;
@@ -71,7 +61,6 @@ public:
     static const char* status_to_str(ccl_sched_entry_status status);
 
 protected:
-
     virtual void start() = 0;
     virtual void update();
 
