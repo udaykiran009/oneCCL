@@ -625,10 +625,9 @@ if (options.backend == ccl::stream_type::gpu)
             break;
     }
 
-    //base_coll::comm.reset();
-    //base_coll::stream.reset();
-
+#ifdef CCL_ENABLE_SYCL
     device_specific_data::deinit();
+#endif
     cpu_specific_data::deinit();
     return 0;
 }

@@ -124,10 +124,10 @@ TEST(device_communicator_api, device_comm_from_sycl_devices_single_thread)
 
         curr_rank++;
 
-        void *tmp = nullptr;
+        int *tmp = nullptr;
         ccl::vector_class<size_t> recv_counts;
         ccl::datatype dtype{ccl::datatype::int8};
-        dev_comm.allgatherv((const void*) tmp, size_t(0), tmp, recv_counts, dtype, ccl::default_stream, ccl::default_allgatherv_attr);
+        dev_comm.allgatherv(const_cast<const int*>(tmp), size_t(0), tmp, recv_counts, ccl::default_stream, ccl::default_allgatherv_attr);
     }
 }
 
@@ -153,10 +153,11 @@ void user_thread_function(size_t total_devices_count, const rank_device_containe
 
         ASSERT_TRUE(dev_comm.is_ready());
 
-        void *tmp = nullptr;
+        int *tmp = nullptr;
         ccl::vector_class<size_t> recv_counts;
         ccl::datatype dtype{ccl::datatype::int8};
-        dev_comm.allgatherv(tmp, 0, tmp, recv_counts, dtype);
+        dev_comm.allgatherv(tmp, 0, tmp, recv_counts);
+
 
         try
         {
@@ -304,10 +305,9 @@ void user_thread_function_splitted_comm(size_t total_devices_count, const rank_d
 
 
         // collective test
-        void *tmp = nullptr;
+        int *tmp = nullptr;
         ccl::vector_class<size_t> recv_counts;
-        ccl::datatype dtype{ccl::datatype::int8};
-        dev_comm.allgatherv(tmp, 0, tmp, recv_counts, dtype);
+        dev_comm.allgatherv(tmp, 0, tmp, recv_counts);
 
 
         // split test for current thread local scope

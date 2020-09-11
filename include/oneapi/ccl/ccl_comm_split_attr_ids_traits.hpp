@@ -33,7 +33,7 @@ struct ccl_host_split_traits<ccl_comm_split_attributes, ccl_comm_split_attribute
 
 
 
-#ifdef MULTI_GPU_SUPPORT
+#if defined(MULTI_GPU_SUPPORT) || defined(CCL_ENABLE_SYCL)
 
 /**
  * Device-specific traits
@@ -56,7 +56,7 @@ struct ccl_device_split_traits<ccl_comm_split_attributes, ccl_comm_split_attribu
     using type = device_group_split_type;
 };
 
-#endif
+#endif //#if defined(MULTI_GPU_SUPPORT) || defined(CCL_ENABLE_SYCL)
 
 } // namespace details
 

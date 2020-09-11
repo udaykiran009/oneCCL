@@ -1,9 +1,7 @@
+#include "oneapi/ccl/ccl_types.hpp"
+#if defined(MULTI_GPU_SUPPORT) || defined(CCL_ENABLE_SYCL)
 #include "stream_impl.hpp"
-/*
-#include "unified_stream_impl.hpp"
-#include "unified_device_impl.hpp"
-#include "unified_context_impl.hpp"
-*/
+
 namespace ccl
 {
 CCL_API stream::stream(const typename details::ccl_api_type_attr_traits<stream_attr_id, stream_attr_id::version>::type& version):
@@ -39,7 +37,7 @@ CCL_API stream& stream::operator= (const stream&src)
     return *this;
 }
 
-void stream::build_from_params()
+CCL_API void stream::build_from_params()
 {
     get_impl()->build_from_params();
 }
@@ -60,3 +58,5 @@ API_STREAM_FORCE_INSTANTIATION(ccl::stream_attr_id::index, uint32_t);
 API_STREAM_FORCE_INSTANTIATION(ccl::stream_attr_id::flags, size_t);
 API_STREAM_FORCE_INSTANTIATION(ccl::stream_attr_id::mode, size_t);
 API_STREAM_FORCE_INSTANTIATION(ccl::stream_attr_id::priority, size_t);
+
+#endif

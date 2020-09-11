@@ -1,4 +1,12 @@
 #include "environment_impl.hpp"
+#include "common/global/global.hpp"
+#include "exec/exec.hpp"
+
+#if defined(MULTI_GPU_SUPPORT) || defined(CCL_ENABLE_SYCL)
+#include "common/comm/l0/comm_context.hpp"
+#include "common/comm/comm_interface.hpp"
+#endif //#if defined(MULTI_GPU_SUPPORT) || defined(CCL_ENABLE_SYCL)
+
 //#include "ccl.h"    //TODO datatypes
 
 #include <memory>
@@ -159,6 +167,8 @@ size_t CCL_API environment::get_datatype_size(ccl::datatype dtype) const
 
 
 /***************************TypeGenerations*********************************************************/
+
+#if defined(MULTI_GPU_SUPPORT) || defined(CCL_ENABLE_SYCL)
 template <>
 ccl::stream CCL_API ccl::environment::create_postponed_api_type<ccl::stream, typename ccl::unified_device_type::ccl_native_t, typename ccl::unified_device_context_type::ccl_native_t>(
                                typename ccl::unified_device_type::ccl_native_t device,
@@ -188,7 +198,7 @@ ccl::stream CCL_API ccl::environment::create_postponed_api_type<ccl::stream, typ
 
     return ccl::stream{stream_provider_dispatcher::create(device, ret)};
 }
-
+#endif //#if defined(MULTI_GPU_SUPPORT) || defined(CCL_ENABLE_SYCL)
 
 CREATE_OP_ATTR_INSTANTIATION(ccl::allgatherv_attr)
 CREATE_OP_ATTR_INSTANTIATION(ccl::allreduce_attr)
@@ -201,9 +211,9 @@ CREATE_OP_ATTR_INSTANTIATION(ccl::sparse_allreduce_attr)
 
 
 CREATE_OP_ATTR_INSTANTIATION(ccl::comm_split_attr)
-#ifdef MULTI_GPU_SUPPORT
+#if defined(MULTI_GPU_SUPPORT) || defined(CCL_ENABLE_SYCL)
     CREATE_OP_ATTR_INSTANTIATION(ccl::device_comm_split_attr)
-#endif
+#endif //#if defined(MULTI_GPU_SUPPORT) || defined(CCL_ENABLE_SYCL)
 
 CREATE_OP_ATTR_INSTANTIATION(ccl::datatype_attr)
 

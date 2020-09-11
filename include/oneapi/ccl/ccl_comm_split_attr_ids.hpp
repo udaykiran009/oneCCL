@@ -33,7 +33,7 @@ enum class ccl_group_split_type : int {    // TODO fill in this enum with the ac
 
 
 
-#ifdef MULTI_GPU_SUPPORT
+#if defined(MULTI_GPU_SUPPORT) || defined(CCL_ENABLE_SYCL)
 
 /**
  * Device-specific values for the 'group' split attribute
@@ -50,6 +50,6 @@ enum class device_group_split_type : int { // TODO fill in this enum with the ac
     last_value
 };
 
-#endif
+#endif //#if defined(MULTI_GPU_SUPPORT) || defined(CCL_ENABLE_SYCL)
 
 } // namespace ccl

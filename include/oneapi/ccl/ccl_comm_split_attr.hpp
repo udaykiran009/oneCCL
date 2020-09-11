@@ -69,7 +69,7 @@ private:
 
 
 
-#ifdef MULTI_GPU_SUPPORT
+#if defined(MULTI_GPU_SUPPORT) || defined(CCL_ENABLE_SYCL)
 
 /**
  * Device attributes
@@ -122,7 +122,7 @@ private:
     static device_comm_split_attr create_device_comm_split_attr(attr_value_pair_t&&...avps);
 };
 
-#endif
+#endif //#if defined(MULTI_GPU_SUPPORT) || defined(CCL_ENABLE_SYCL)
 
 
 

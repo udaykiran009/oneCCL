@@ -34,7 +34,7 @@ public:
     ~ccl_stream() = default;
 
     using stream_provider_dispatcher::get_native_stream;
-
+#if defined(MULTI_GPU_SUPPORT) || defined(CCL_ENABLE_SYCL)
     ccl_stream_type_t get_type() const
     {
         return type;
@@ -48,7 +48,7 @@ public:
 
     //Export Attributes
     using version_traits_t = ccl::details::ccl_api_type_attr_traits<ccl::stream_attr_id, ccl::stream_attr_id::version>;
-    typename version_traits_t::type
+    typename version_traits_t::return_type
         set_attribute_value(typename version_traits_t::type val, const version_traits_t& t);
 
     const typename version_traits_t::return_type&
@@ -151,4 +151,5 @@ private:
     typename priority_traits_t::return_type priority_val;
 
     bool is_context_enabled{false};
+#endif //#if defined(MULTI_GPU_SUPPORT) || defined(CCL_ENABLE_SYCL)
 };

@@ -6,7 +6,7 @@
 
 namespace ccl {
 
-class kvs_interface {
+class CCL_API kvs_interface {
 public:
     virtual vector_class<char> get(const string_class& prefix, const string_class& key) const = 0;
 
@@ -18,12 +18,12 @@ public:
 };
 
 class kvs_impl;
-class kvs final : public kvs_interface {
+class CCL_API kvs final : public kvs_interface {
 public:
     static constexpr size_t address_max_size = 256;
     using address_type = array_class<char, address_max_size>;
 
-    const address_type& get_address() const;
+    address_type get_address() const;
 
     ~kvs() override;
 

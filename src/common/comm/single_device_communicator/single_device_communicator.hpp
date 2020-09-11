@@ -1,4 +1,5 @@
 #pragma once
+#if defined(MULTI_GPU_SUPPORT) || defined(CCL_ENABLE_SYCL)
 #include "common/comm/l0/communicator/typed_base_communicator.hpp"
 #include "common/comm/comm.hpp"
 
@@ -39,3 +40,5 @@ public:
 private:
     std::shared_ptr<ccl_comm> comm_impl;
 };
+
+#endif //#if defined(MULTI_GPU_SUPPORT) || defined(CCL_ENABLE_SYCL)

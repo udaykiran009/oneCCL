@@ -102,8 +102,7 @@ constexpr auto attr_arg(value_type v) -> details::attr_value_tripple<stream_attr
  * Declare extern empty attributes
  */
 extern stream default_stream;
-
+} // namespace ccl
 
 
 #endif //#if defined(MULTI_GPU_SUPPORT) || defined(CCL_ENABLE_SYCL)
-} // namespace ccl

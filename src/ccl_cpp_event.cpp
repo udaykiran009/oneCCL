@@ -1,3 +1,5 @@
+#include "oneapi/ccl/ccl_types.hpp"
+#if defined(MULTI_GPU_SUPPORT) || defined(CCL_ENABLE_SYCL)
 #include "event_impl.hpp"
 
 
@@ -28,7 +30,7 @@ CCL_API event& event::operator=(event&& src)
     return *this;
 }
 
-void event::build_from_params()
+CCL_API void event::build_from_params()
 {
     get_impl()->build_from_params();
 }
@@ -46,3 +48,5 @@ API_EVENT_FORCE_INSTANTIATION_GET(ccl::event_attr_id::native_handle);
 API_EVENT_FORCE_INSTANTIATION_GET(ccl::event_attr_id::context)
 API_EVENT_FORCE_INSTANTIATION(ccl::event_attr_id::command_type, uint32_t);
 API_EVENT_FORCE_INSTANTIATION(ccl::event_attr_id::command_execution_status, int64_t);
+
+#endif //#if defined(MULTI_GPU_SUPPORT) || defined(CCL_ENABLE_SYCL)
