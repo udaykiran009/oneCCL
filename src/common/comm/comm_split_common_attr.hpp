@@ -171,7 +171,7 @@ public:
 
 
 
-#ifdef MULTI_GPU_SUPPORT
+#if defined(MULTI_GPU_SUPPORT) || defined(CCL_ENABLE_SYCL)
 
 /**
  * Device implementation
@@ -211,6 +211,6 @@ public:
     }
 };
 
-#endif
+#endif  //#if defined(MULTI_GPU_SUPPORT) || defined(CCL_ENABLE_SYCL)
 
 } // namespace ccl

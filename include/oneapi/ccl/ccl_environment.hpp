@@ -162,28 +162,6 @@ public:
         return split_attr;
     }
 
-// #ifdef CCL_ENABLE_SYCL
-//     device_communicator create_single_device_communicator(const size_t world_size,
-//                                      const size_t rank,
-//                                      const cl::sycl::device &device,
-//                                      shared_ptr_class<kvs_interface> kvs) const;
-
-//     device_communicator create_single_device_communicator(const size_t world_size,
-//                                      const size_t rank,
-//                                      cl::sycl::queue queue,
-//                                      shared_ptr_class<kvs_interface> kvs) const;
-
-//     template<class DeviceSelectorType>
-//     device_communicator create_single_device_communicator(const size_t world_size,
-//                                      const size_t rank,
-//                                      const DeviceSelectorType& selector,
-//                                      shared_ptr_class<kvs_interface> kvs) const
-//     {
-//         return create_single_device_communicator(world_size, rank, cl::sycl::device(selector), kvs);
-//     }
-
-
-// #endif
 #if defined(MULTI_GPU_SUPPORT) || defined(CCL_ENABLE_SYCL)
 
     template <class ...attr_value_pair_t>
@@ -315,6 +293,15 @@ private:
 
     template<class ccl_api_type, class ...args_type>
     ccl_api_type create_postponed_api_type(args_type... args) const;
+
+#ifdef CCL_ENABLE_SYCL
+     device_communicator create_single_device_communicator(const size_t world_size,
+                                      const size_t rank,
+                                      const cl::sycl::device &device,
+                                      shared_ptr_class<kvs_interface> kvs) const;
+
+
+ #endif
 };
 
 } // namespace ccl
