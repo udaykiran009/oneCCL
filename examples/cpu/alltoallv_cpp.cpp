@@ -7,8 +7,8 @@
 void run_collective(const char* cmd_name,
                     std::vector<int>& send_buf,
                     std::vector<int>& recv_buf,
-                    const vector_class<size_t>& send_counts,
-                    const vector_class<size_t>& recv_counts,
+                    std::vector<size_t>& send_counts,
+                    std::vector<size_t>& recv_counts,
                     ccl::communicator& comm,
                     ccl::alltoallv_attr& coll_attr)
 {

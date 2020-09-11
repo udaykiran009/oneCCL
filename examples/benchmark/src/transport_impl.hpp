@@ -18,12 +18,12 @@ transport_settings& transport_settings::instance()
     return inst;
 }
 
-const int transport_settings::get_rank() const noexcept
+int transport_settings::get_rank() const noexcept
 {
     return rank;
 }
 
-const int transport_settings::get_size() const noexcept
+int transport_settings::get_size() const noexcept
 {
     return size;
 }
