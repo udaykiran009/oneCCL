@@ -61,8 +61,9 @@ check_clang()
     COMPILER_INSTALL_CHECK=$?
     if [ "$COMPILER_INSTALL_CHECK" != "0" ]
     then
-        echo "Error: Need to source clang++ compiler"
-        exit 1
+        echo "Warning: clang++ compiler wasn't found, ccl-configuration=cpu_icc will be sourced"
+        source ${CCL_ROOT}/env/vars.sh --ccl-configuration=cpu_icc
+        MODE="cpu"
     fi
 }
 
@@ -226,16 +227,15 @@ run()
     reduction_list="sum,max"
     ccl_base_env="FI_PROVIDER=tcp CCL_YIELD=sleep CCL_ATL_SHM=1"
 
-    if ! [[ -n "${DASHBOARD_GPU_DEVICE_PRESENT}" ]]
+    if [[ ${MODE} = "cpu" ]]
     then
-        echo "WARNING: DASHBOARD_GPU_DEVICE_PRESENT was not set"
         dir_list="cpu common benchmark"
         backend_list="cpu"
         selectors_list="cpu host default"
     else
-        dir_list="cpu sycl common benchmark"
+        dir_list="cpu common sycl benchmark"
         backend_list="cpu sycl"
-        selectors_list="cpu gpu host default"
+        selectors_list="cpu host gpu default"
     fi
 
     echo "dir_list =" $dir_list "; selectors_list =" $selectors_list
@@ -257,13 +257,12 @@ run()
                     grep -v 'communicator' |
                     grep -v 'sparse_allreduce'`
             else
-                examples_to_run=`find . -type f -executable -printf '%P\n' | 
+                examples_to_run=`find . -type f -executable -printf '%P\n' |
                     grep -v -e '\(^allreduce_rs$\|^platform_info$\)' |
                     grep -v 'sparse_allreduce'`
             fi
-
-
-            coll_list="" # empty coll_list means default benchmarking collectives set
+	    
+	    coll_list="" # empty coll_list means default benchmarking collectives set
             for example in $examples_to_run
             do
                 if [ "$dir_name" == "benchmark" ];
@@ -271,9 +270,7 @@ run()
                     for backend in $backend_list
                     do
                         ccl_extra_env="${ccl_transport_env}"
-
                         run_benchmark "${ccl_extra_env}" ${dir_name} ${transport} ${example} ${backend} regular ${coll_list}
-
                         # run extended version of benchmark
                         if [[ "${example}" == *"benchmark"* ]]
                         then
@@ -297,9 +294,6 @@ run()
 
                             ccl_extra_env="${ccl_transport_env}"
                             # run a benchmark with the specific datatypes and reductions
-                            ccl_extra_env="SYCL_BE=PI_LEVEL0"
-                            run_benchmark "${ccl_extra_env}" ${dir_name} ${transport} ${example} ${backend} regular allreduce ${dtype_list} ${reduction_list}
-                            ccl_extra_env="SYCL_BE=PI_OPENCL"
                             run_benchmark "${ccl_extra_env}" ${dir_name} ${transport} ${example} ${backend} regular allreduce ${dtype_list} ${reduction_list}
 		        fi
                     done
@@ -399,14 +393,32 @@ print_help()
     echo_log ""
 }
 
-case $1 in
+if [[ ! -z ${1} ]]
+then
+    MODE=${1}
+elif [[ ! ",${DASHBOARD_INSTALL_TOOLS_INSTALLED}," == *",dpcpp,"* ]] || [[ ! -n ${DASHBOARD_GPU_DEVICE_PRESENT} ]]
+then
+    echo "WARNING: DASHBOARD_INSTALL_TOOLS_INSTALLED variable doesn't contain 'dpcpp' or the DASHBOARD_GPU_DEVICE_PRESENT variable is missing"
+    echo "WARNING: Using cpu_icc configuration of the library"
+    source ${CCL_ROOT}/env/vars.sh --ccl-configuration=cpu_icc
+    MODE="cpu"
+else
+    MODE="gpu"
+fi
+echo "MODE: $MODE "
+
+case $MODE in
 "cpu" )
-    if [ -z "${C_COMPILER}"]
+    if [[ -z "${C_COMPILER}" ]] && [[ ",${DASHBOARD_INSTALL_TOOLS_INSTALLED}," == *",icc,"* ]]
     then
+        C_COMPILER=icc
+    else
         C_COMPILER=gcc
     fi
-    if [ -z "${CXX_COMPILER}"]
+    if [[ -z "${CXX_COMPILER}" ]] && [[ ",${DASHBOARD_INSTALL_TOOLS_INSTALLED}," == *",icc,"* ]]
     then
+        CXX_COMPILER=icpc
+    else
         CXX_COMPILER=g++
     fi
     shift
