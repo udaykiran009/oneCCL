@@ -1,10 +1,11 @@
 #include "oneapi/ccl.hpp"
 #include "oneapi/ccl/ccl_type_traits.hpp"
 #include "common/comm/single_device_communicator/single_device_communicator_impl.hpp"
+#ifdef MULTI_GPU_SUPPORT
 #include "common/comm/l0/gpu_comm_attr.hpp"
 #include "common/comm/l0/context/thread_group_ctx.hpp"
 #include "common/comm/l0/context/process_group_ctx.hpp"
-
+#endif //MULTI_GPU_SUPPORT
 using namespace ccl;
 
 single_device_communicator::single_device_communicator(ccl::unified_device_type&& device,
@@ -24,6 +25,7 @@ void single_device_communicator::set_ccl_comm(std::shared_ptr<ccl_comm> impl)
     comm_size = comm_impl->size();
 }
 
+#ifdef MULTI_GPU_SUPPORT
 void single_device_communicator::visit(ccl::gpu_comm_attr& comm_attr)
 {
     auto process_ctx = comm_attr.get_process_context();
@@ -37,7 +39,7 @@ void single_device_communicator::visit(ccl::gpu_comm_attr& comm_attr)
 */
     this->set_comm_group_id(comm_attr.get_unique_id());
 }
-
+#endif
 ccl::request_t single_device_communicator::barrier(
                  ccl::stream::impl_value_t& op_stream,
                  const ccl::barrier_attr& attr,

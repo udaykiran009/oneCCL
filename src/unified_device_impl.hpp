@@ -50,7 +50,12 @@ CCL_API generic_device_type<CCL_ENABLE_SYCL_TRUE>::generic_device_type(device_in
     LOG_DEBUG("Found devices: ", devices.size());
     auto it = std::find_if(devices.begin(), devices.end(), [id] (const cl::sycl::device& dev) -> bool
     {
+#ifdef MULTI_GPU_SUPPORT
+//TODO -S-
         return id == native::get_runtime_device(dev)->get_device_path();
+#endif
+        (void)id;
+        return true;
     });
     if(it == devices.end())
     {
@@ -77,7 +82,11 @@ generic_device_type<CCL_ENABLE_SYCL_TRUE>::generic_device_type(const cl::sycl::d
 
 device_index_type generic_device_type<CCL_ENABLE_SYCL_TRUE>::get_id() const
 {
+    //TODO -S-
+#ifdef MULTI_GPU_SUPPORT
     return native::get_runtime_device(device)->get_device_path();
+#endif
+    return device_index_type{};
 }
 
 typename generic_device_type<CCL_ENABLE_SYCL_TRUE>::ccl_native_t &

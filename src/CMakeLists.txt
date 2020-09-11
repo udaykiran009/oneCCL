@@ -13,19 +13,12 @@ if (CCL_ENABLE_SYCL)
                     ccl_cpp_device_communicator.cpp
 
                     native_device_api/l0/utils.cpp
-
-                    sched/gpu_sched.cpp
-                    sched/gpu_concurrent_sched.cpp
-                    common/request/gpu_request.cpp
-
-                    common/comm/l0/comm_context.cpp
-                    common/comm/l0/comm_context_storage.cpp
+                    #common/comm/l0/comm_context.cpp
+                    #common/comm/l0/comm_context_storage.cpp
                     common/comm/comm_interface.cpp
                     common/comm/single_device_communicator/single_device_communicator.cpp
                     common/event/event.cpp
-                    common/stream/stream.cpp
-
-                    common/comm/l0/gpu_comm_attr.cpp)
+                    common/stream/stream.cpp)
 endif(CCL_ENABLE_SYCL)
 
 if (MULTI_GPU_SUPPORT)

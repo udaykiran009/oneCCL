@@ -1,9 +1,6 @@
 #pragma once
 #include "common/comm/single_device_communicator/single_device_communicator.hpp"
-#include "common/comm/l0/communicator/typed_base_communicator_impl.hpp"
-
-#include "common/comm/l0/devices/devices_declaration.hpp"
-#include "common/comm/l0/device_community.hpp"
+#include "common/comm/single_device_communicator/single_device_base_impl.hpp"
 
 #include "common/request/request.hpp"
 #include "common/request/host_request.hpp"

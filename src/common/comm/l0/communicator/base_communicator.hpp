@@ -2,12 +2,12 @@
 #include <mutex>
 
 #include "common/comm/comm_interface.hpp"
-#include "sched/gpu_sched.hpp"
+//TODO #include "sched/gpu_sched.hpp"
 #include "common/comm/l0/comm_context_id.hpp"
 
 struct base_communicator : public ccl::communicator_interface
 {
-    using group_comm_storage = native::specific_indexed_device_storage;
+    //TODO using group_comm_storage = native::specific_indexed_device_storage;
 
     base_communicator(ccl::unified_device_type&& owned_device,
                       size_t thread_idx, size_t process_idx,
@@ -87,7 +87,6 @@ struct base_communicator : public ccl::communicator_interface
     size_t comm_size;
 
     mutable ccl_spinlock ready_mutex;
-  //  group_comm_storage* devices;
 
     ccl::group_unique_key owner_id;
 };

@@ -73,7 +73,7 @@ API_FORCE_INSTANTIATION(comm_split_attr, ccl_comm_split_attributes::version, ccl
 
 
 
-#ifdef MULTI_GPU_SUPPORT
+#if defined(MULTI_GPU_SUPPORT) || defined(CCL_ENABLE_SYCL)
 
 /**
  * device_comm_split_attr attributes definition
@@ -115,7 +115,7 @@ API_FORCE_INSTANTIATION(device_comm_split_attr, ccl_comm_split_attributes::color
 API_FORCE_INSTANTIATION(device_comm_split_attr, ccl_comm_split_attributes::group, device_group_split_type, ccl_device_split_traits)
 API_FORCE_INSTANTIATION(device_comm_split_attr, ccl_comm_split_attributes::version, ccl::version, ccl_device_split_traits)
 
-#endif
+#endif   //#if defined(MULTI_GPU_SUPPORT) || defined(CCL_ENABLE_SYCL)/
 
 #undef API_FORCE_INSTANTIATION
 #undef COMMA

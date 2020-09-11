@@ -126,7 +126,6 @@ TEST(device_communicator_api, device_comm_from_sycl_devices_single_thread)
 
         int *tmp = nullptr;
         ccl::vector_class<size_t> recv_counts;
-        ccl::datatype dtype{ccl::datatype::int8};
         dev_comm.allgatherv(const_cast<const int*>(tmp), size_t(0), tmp, recv_counts, ccl::default_stream, ccl::default_allgatherv_attr);
     }
 }
@@ -155,7 +154,6 @@ void user_thread_function(size_t total_devices_count, const rank_device_containe
 
         int *tmp = nullptr;
         ccl::vector_class<size_t> recv_counts;
-        ccl::datatype dtype{ccl::datatype::int8};
         dev_comm.allgatherv(tmp, 0, tmp, recv_counts);
 
 

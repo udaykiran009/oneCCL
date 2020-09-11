@@ -82,6 +82,7 @@ vector_class<device_communicator> device_communicator::create_device_communicato
         ContextType& context,
         shared_ptr_class<kvs_interface> kvs)
 {
+#ifdef MULTI_GPU_SUPPORT
     vector_class<rank_t> local_thread_ranks;
     local_thread_ranks.reserve(local_rank_device_map.size());
     std::transform(local_rank_device_map.begin(), local_rank_device_map.end(), std::back_inserter(local_thread_ranks),
@@ -102,6 +103,8 @@ vector_class<device_communicator> device_communicator::create_device_communicato
 
     auto ret = thread_group->create_communicators(local_thread_devices);
     return ret;
+#endif
+    return {};
 }
 
 
@@ -114,6 +117,7 @@ vector_class<device_communicator> device_communicator::create_device_communicato
         shared_ptr_class<kvs_interface> kvs)
 
 {
+#ifdef MULTI_GPU_SUPPORT
     vector_class<rank_t> local_thread_ranks;
     local_thread_ranks.reserve(local_rank_device_map.size());
     std::transform(local_rank_device_map.begin(), local_rank_device_map.end(), std::back_inserter(local_thread_ranks),
@@ -134,6 +138,8 @@ vector_class<device_communicator> device_communicator::create_device_communicato
 
     auto ret = thread_group->create_communicators(local_thread_devices);
     return ret;
+#endif
+    return {};
 }
 
 
@@ -182,7 +188,8 @@ CCL_API ccl::device_communicator ccl::device_communicator::split(const ccl::devi
     {
         throw ccl_error(std::string(__FUNCTION__) + " - TODO `device_comm_split_attr`: supports `group` only");
     }
-
+    //TODO
+#ifdef MULTI_GPU_SUPPORT
     auto id = get_impl()->get_comm_group_id();
     ccl::group_context::comm_group_t my_group = ccl::group_context::instance().get_existing_group_by_id(id);
 #ifdef CCL_ENABLE_SYCL
@@ -192,7 +199,10 @@ CCL_API ccl::device_communicator ccl::device_communicator::split(const ccl::devi
         return my_group->create_communicator(get_impl()->get_device_path(), attr);
     #endif
 #endif
-
+#else
+    throw ccl_error(std::string(__FUNCTION__) + " - TODO `device_comm_split_attr`: unsupported");
+    return std::move(*this);
+#endif
 }
 /*
 CCL_API ccl::comm_attr_t ccl::device_communicator::get_comm_split_attr() const

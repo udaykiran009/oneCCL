@@ -2,7 +2,7 @@
 
 #include "oneapi/ccl/ccl_config.h"
 #include "oneapi/ccl/ccl_types.hpp"
-#ifdef MULTI_GPU_SUPPORT
+
 
 
 std::ostream& operator<<(std::ostream& out, const ccl::device_index_type& index);
@@ -117,4 +117,3 @@ std::ostream& operator<<(std::ostream& out, const ccl::device_index_type& index)
     out << ccl::to_string(index);
     return out;
 }
-#endif

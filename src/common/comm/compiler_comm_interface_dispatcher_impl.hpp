@@ -12,6 +12,7 @@
 #include "common/comm/comm_split_common_attr.hpp"
 #include "comm_split_attr_impl.hpp"
 
+#include "common/global/global.hpp"
 #ifdef MULTI_GPU_SUPPORT
 #include "common/comm/l0/communicator/device_group/device_ring_communicator.hpp"
 #include "common/comm/l0/communicator/device_group/device_a2a_communicator.hpp"
@@ -114,6 +115,7 @@ communicator_interface_dispatcher::create_communicator_from_unified_device(ccl::
                     comm_impl->set_ccl_comm(std::move(comm));
                     return communicator_interface_ptr(comm_impl);
                 }
+#ifdef MULTI_GPU_SUPPORT
                 case ccl::device_group_split_type::thread:
                     return communicator_interface_ptr(
                                     new device_group_ring_communicator(std::move(device_id),
@@ -129,6 +131,7 @@ communicator_interface_dispatcher::create_communicator_from_unified_device(ccl::
                                     new process_ring_communicator(std::move(device_id),
                                                                   thread_idx, process_idx,
                                                                    attr));
+#endif //MULTI_GPU_SUPPORT
                 default:
                     throw ccl_error(std::string("Invalid `device_comm_split_attr` value for `ccl_device_preferred_group`: ") +
                             ::to_string(preferred_topology_group));
@@ -144,6 +147,7 @@ communicator_interface_dispatcher::create_communicator_from_unified_device(ccl::
                                     new single_device_communicator(std::move(device_id),
                                                                        thread_idx, process_idx,
                                                                        attr));
+#ifdef MULTI_GPU_SUPPORT
                 case ccl::device_group_split_type::thread:
                     return communicator_interface_ptr(
                                     new device_group_a2a_communicator(std::move(device_id),
@@ -155,6 +159,7 @@ communicator_interface_dispatcher::create_communicator_from_unified_device(ccl::
                 case ccl::device_group_split_type::cluster:
                     return communicator_interface_ptr(new process_a2a_communicator(std::move(device_id),
                                                                       thread_idx, process_idx, attr));
+#endif //MULTI_GPU_SUPPORT
                 default:
                     throw ccl_error(std::string("Invalid `device_comm_split_attr` value for `ccl_device_preferred_group`: ") +
                             ::to_string(preferred_topology_group));

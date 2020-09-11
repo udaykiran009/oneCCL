@@ -61,7 +61,11 @@ vector_class<device_communicator> CCL_API environment::create_device_communicato
         ContextType& context,
         shared_ptr_class<kvs_interface> kvs) const
 {
+#ifdef MULTI_GPU_SUPPORT
     return device_communicator::create_device_communicators(devices_size, local_devices, context, kvs);
+#else
+    return {};
+#endif
 }
 
 template<class DeviceType,
@@ -72,7 +76,14 @@ vector_class<device_communicator> CCL_API environment::create_device_communicato
         ContextType& context,
         shared_ptr_class<kvs_interface> kvs) const
 {
+#ifdef MULTI_GPU_SUPPORT
     return device_communicator::create_device_communicators(cluster_devices_size, local_rank_device_map, context, kvs);
+#else
+    (void)context;
+    vector_class<device_communicator> ret;
+    ret.push_back(create_single_device_communicator(cluster_devices_size, local_rank_device_map.begin()->first, local_rank_device_map.begin()->second, kvs));
+    return ret;
+#endif
 }
 
 
@@ -84,7 +95,14 @@ vector_class<device_communicator> CCL_API environment::create_device_communicato
         ContextType& context,
         shared_ptr_class<kvs_interface> kvs) const
 {
+#ifdef MULTI_GPU_SUPPORT
     return device_communicator::create_device_communicators(cluster_devices_size, local_rank_device_map, context, kvs);
+#else
+    (void)context;
+    vector_class<device_communicator> ret;
+    ret.push_back(create_single_device_communicator(cluster_devices_size, local_rank_device_map.begin()->first, local_rank_device_map.begin()->second, kvs));
+    return ret;
+#endif
 }
 
 //Stream

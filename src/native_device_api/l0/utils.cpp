@@ -1,7 +1,10 @@
 #include "oneapi/ccl/native_device_api/l0/utils.hpp"
+
+#if defined(MULTI_GPU_SUPPORT)
 #include "oneapi/ccl/native_device_api/l0/device.hpp"
 
-#ifdef CCL_ENABLE_SYCL
+#if defined(MULTI_GPU_SUPPORT) || defined(CCL_ENABLE_SYCL)
+//#ifdef CCL_ENABLE_SYCL
 #include <CL/sycl/backend/Intel_level0.hpp>
 //static cl::sycl::vector_class<cl::sycl::device> gpu_sycl_devices;
 #endif
@@ -60,3 +63,4 @@ size_t get_sycl_device_id(const cl::sycl::device &device)
 #endif
 }
 }
+#endif  //#if defined(MULTI_GPU_SUPPORT) || defined(CCL_ENABLE_SYCL)

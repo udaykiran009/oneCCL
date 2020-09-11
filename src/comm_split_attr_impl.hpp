@@ -29,7 +29,7 @@ CCL_API bool comm_split_attr::is_valid() const noexcept
 
 
 
-#ifdef MULTI_GPU_SUPPORT
+#if defined(MULTI_GPU_SUPPORT) || defined(CCL_ENABLE_SYCL)
 
 /**
  * device_comm_split_attr attributes definition
@@ -52,6 +52,6 @@ CCL_API bool device_comm_split_attr::is_valid() const noexcept
     return get_impl()->is_valid<attrId>();
 }
 
-#endif
+#endif //#if defined(MULTI_GPU_SUPPORT) || defined(CCL_ENABLE_SYCL)
 
 } // namespace ccl

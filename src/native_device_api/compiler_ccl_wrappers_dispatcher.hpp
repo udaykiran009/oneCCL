@@ -1,5 +1,6 @@
 #pragma once
 
+#if defined(MULTI_GPU_SUPPORT)
 #include "oneapi/ccl/native_device_api/export_api.hpp"
 #include "oneapi/ccl/ccl_type_traits.hpp"
 
@@ -60,3 +61,5 @@ template
 native::ccl_device_driver::device_ptr
 native::get_runtime_device(const cl::sycl::device& device);
 #endif
+
+#endif //#if defined(MULTI_GPU_SUPPORT) || defined(CCL_ENABLE_SYCL)
