@@ -580,8 +580,8 @@ typedef int (MPI_Delete_function) ( MPI_Comm, int, void *, void * );
  * digits for REV, 1 digit for EXT and 2 digits for EXT_NUMBER. So,
  * 2019.0.0b0 will have the numeric version 20190000100.
  */
-#define I_MPI_VERSION "2019.0.8"
-#define I_MPI_NUMVERSION 20190008300
+#define I_MPI_VERSION "2021.1.0b9"
+#define I_MPI_NUMVERSION 20210100109
 
 /* for the datatype decoders */
 enum MPIR_Combiner_enum {
