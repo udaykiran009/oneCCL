@@ -1,8 +1,6 @@
 #include "base.hpp"
 #include "mpi.h"
 
-using namespace oneapi;
-
 #define COUNT (1048576 / 256)
 
 void custom_reduce(const void *in_buf,
