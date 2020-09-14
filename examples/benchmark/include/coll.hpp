@@ -19,6 +19,7 @@ using req_list_t = std::vector<std::unique_ptr<ccl::request>>;
 typedef struct bench_coll_exec_attr {
     ccl::reduction reduction;
 
+    bench_coll_exec_attr() = default;
     template <ccl::operation_attr_id attrId, class value_t>
     struct setter {
         setter(value_t v) : val(v) {}
@@ -88,8 +89,8 @@ private:
         match_id[match.size()] = '\0';
     }
 
-    supported_op_attr_t coll_attrs{};
-    match_id_t match_id{ '\0' };
+    supported_op_attr_t coll_attrs;
+    match_id_t match_id;
 } bench_coll_exec_attr;
 
 typedef struct bench_coll_init_attr {
