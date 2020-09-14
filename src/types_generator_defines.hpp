@@ -1234,6 +1234,14 @@
         ccl::stream::impl_value_t& stream, \
         const ccl::allgatherv_attr& attr, \
         const ccl::vector_class<ccl::event>& deps); \
+    template ccl::request_t comm_class::allgatherv_impl( \
+        const type* send_buf, \
+        size_t send_count, \
+        ccl::vector_class<type*>& recv_buf, \
+        const ccl::vector_class<size_t>& recv_counts, \
+        ccl::stream::impl_value_t& stream, \
+        const ccl::allgatherv_attr& attr, \
+        const ccl::vector_class<ccl::event>& deps); \
 \
     template ccl::request_t comm_class::allreduce_impl(const type* send_buf, \
                                                        type* recv_buf, \
@@ -1287,7 +1295,14 @@
                                                     size_t root, \
                                                     ccl::stream::impl_value_t& stream, \
                                                     const ccl::reduce_attr& attr, \
-                                                    const ccl::vector_class<ccl::event>& deps);
+                                                    const ccl::vector_class<ccl::event>& deps); \
+    template ccl::request_t comm_class::reduce_scatter_impl(const type* send_buf, \
+                                       type* recv_buf, \
+                                       size_t recv_count, \
+                                       ccl::reduction reduction, \
+                                       ccl::stream::impl_value_t& stream, \
+                                       const ccl::reduce_scatter_attr& attr, \
+                                       const ccl::vector_class<ccl::event>& deps);
 
 #define DEVICE_COMM_INTERFACE_SPARSE_ALLREDUCE_EXPLICIT_INSTANTIATION( \
     comm_class, index_type, value_type) \

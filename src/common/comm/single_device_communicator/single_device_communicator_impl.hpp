@@ -235,11 +235,7 @@ ccl::coll_request_t single_device_communicator::alltoallv_impl(
     ccl::stream::impl_value_t& stream,
     const ccl::alltoallv_attr& attr,
     const ccl::vector_class<ccl::event>& deps) {
-    static_assert(
-        !std::is_same<buffer_type,
-                      ccl::vector_class<
-                          ccl::reference_wrapper_class<cl::sycl::buffer<unsigned long, 1>>>>::value,
-        "???");
+
     ccl_request* req = ccl_alltoallv_impl(reinterpret_cast<const void*>(&send_buf),
                                           send_counts.data(),
                                           reinterpret_cast<void*>(&recv_buf),

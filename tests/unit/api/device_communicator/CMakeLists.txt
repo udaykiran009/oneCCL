@@ -60,6 +60,7 @@ set (dependencies_sources
              "${PROJECT_SOURCE_DIR}/src/ccl_app_api_coll_attr.cpp"
              "${PROJECT_SOURCE_DIR}/src/ccl_cpp_stream.cpp"
              "${PROJECT_SOURCE_DIR}/src/ccl_cpp_event.cpp"
+             "${PROJECT_SOURCE_DIR}/src/ccl_cpp_device_communicator.cpp"
              "${PROJECT_SOURCE_DIR}/src/coll/coll_common_attributes.cpp"
              "${PROJECT_SOURCE_DIR}/src/coll/ccl_allgather_op_attr.cpp"
              "${PROJECT_SOURCE_DIR}/src/coll/ccl_allreduce_op_attr.cpp"

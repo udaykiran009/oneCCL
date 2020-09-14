@@ -22,7 +22,7 @@ void custom_reduce(const void *in_buf,
                (dtype != ccl::datatype::float16) && (dtype != ccl::datatype::float32) &&
                (dtype != ccl::datatype::float64) && (dtype != ccl::datatype::bfloat16),
            "unexpected datatype %d",
-           dtype);
+           static_cast<int>(dtype));
 
     for (size_t idx = 0; idx < in_count; idx++) {
         ((float *)inout_buf)[idx] += ((float *)in_buf)[idx];

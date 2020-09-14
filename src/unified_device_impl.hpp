@@ -1,5 +1,6 @@
 #pragma once
 
+#include "oneapi/ccl/ccl_types.hpp"
 #include "oneapi/ccl/ccl_type_traits.hpp"
 #include "common/log/log.hpp"
 #include "native_device_api/compiler_ccl_wrappers_dispatcher.hpp"
@@ -91,7 +92,6 @@ generic_device_type<CCL_ENABLE_SYCL_TRUE>::get() noexcept {
 }
 
 #else
-
 #ifdef MULTI_GPU_SUPPORT
 generic_device_type<CCL_ENABLE_SYCL_FALSE>::generic_device_type(device_index_type id)
         : device(id) {}
@@ -104,6 +104,8 @@ typename generic_device_type<CCL_ENABLE_SYCL_FALSE>::ccl_native_t
 generic_device_type<CCL_ENABLE_SYCL_FALSE>::get() noexcept {
     return native::get_runtime_device(device);
 }
-#endif //MULTI_GPU_SUPPORT
+#else
+    #error "No compute runtime is configured"
+#endif
 #endif
 } // namespace ccl

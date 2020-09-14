@@ -142,6 +142,7 @@ using ccl_device_queue = cl_base<ze_command_queue_handle_t, ccl_device>;
 namespace ccl {
 API_CLASS_TYPE_INFO(std::shared_ptr<native::ccl_device_event>);
 API_CLASS_TYPE_INFO(std::shared_ptr<native::ccl_device_queue>);
+API_CLASS_TYPE_INFO(native::ccl_device_queue);
 //API_CLASS_TYPE_INFO(ze_command_queue_handle_t);
 API_CLASS_TYPE_INFO(ze_event_handle_t);
 
