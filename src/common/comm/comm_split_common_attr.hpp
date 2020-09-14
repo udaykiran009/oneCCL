@@ -15,7 +15,7 @@ public:
      */
     using version_traits_t = traits_t<split_attrs_t, split_attrs_t::version>;
 
-    const typename version_traits_t::type& get_attribute_value(const version_traits_t& id) const {
+    const typename version_traits_t::type& get_attribute_value(const traits_t<split_attrs_t, split_attrs_t::version>& id) const {
         return version;
     }
 
@@ -31,7 +31,7 @@ public:
      */
     using color_traits_t = traits_t<split_attrs_t, split_attrs_t::color>;
 
-    const typename color_traits_t::type& get_attribute_value(const color_traits_t& id) const {
+    const typename color_traits_t::type& get_attribute_value(const traits_t<split_attrs_t, split_attrs_t::color>& id) const {
         if (!is_valid<split_attrs_t::color>()) {
             throw ccl_error("Trying to get the value of the attribute 'color' which was not set");
         }
@@ -51,7 +51,7 @@ public:
      */
     using group_traits_t = traits_t<split_attrs_t, split_attrs_t::group>;
 
-    const typename group_traits_t::type& get_attribute_value(const group_traits_t& id) const {
+    const typename group_traits_t::type& get_attribute_value(group_traits_t id) const {
         if (!is_valid<split_attrs_t::group>()) {
             throw ccl_error("Trying to get the value of the attribute 'group' which was not set");
         }
@@ -87,7 +87,7 @@ public:
         return cur_attr;
     }
 
-    constexpr typename color_traits_t::type get_default_color() const {
+    static constexpr typename color_traits_t::type get_default_color() {
         return 0;
     }
 
@@ -115,7 +115,7 @@ protected:
 class ccl_host_comm_split_attr_impl
         : public ccl_base_comm_split_attr_impl<details::ccl_host_split_traits, comm_split_attr_id> {
 public:
-    using base_t = ccl_base_comm_split_attr_impl;
+    using base_t = ccl_base_comm_split_attr_impl<details::ccl_host_split_traits, comm_split_attr_id>;
 
     template <class traits_t>
     const typename traits_t::type& get_attribute_value(const traits_t& id) const {
@@ -130,7 +130,7 @@ public:
     /**
      * Host-specific methods
      */
-    constexpr typename group_traits_t::type get_default_group_type() const {
+    static constexpr typename group_traits_t::type get_default_group_type() {
         return group_traits_t::type::cluster; // host-specific value (ccl_group_split_type)
     }
 
@@ -147,7 +147,7 @@ class ccl_device_comm_split_attr_impl
         : public ccl_base_comm_split_attr_impl<details::ccl_device_split_traits,
                                                comm_split_attr_id> {
 public:
-    using base_t = ccl_base_comm_split_attr_impl;
+    using base_t = ccl_base_comm_split_attr_impl<details::ccl_device_split_traits, comm_split_attr_id>;
 
     template <class traits_t>
     const typename traits_t::type& get_attribute_value(const traits_t& id) const {
@@ -162,7 +162,7 @@ public:
     /**
      * Device-specific methods
      */
-    constexpr typename group_traits_t::type get_default_group_type() const {
+    static constexpr typename group_traits_t::type get_default_group_type() {
         return group_traits_t::type::cluster; // device-specific value (ccl_device_group_split_type)
     }
 
