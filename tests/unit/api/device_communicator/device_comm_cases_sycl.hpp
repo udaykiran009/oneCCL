@@ -50,7 +50,7 @@
 #include "common/comm/comm.hpp"
 
 #include "common/comm/l0/comm_context.hpp"
-#include "device_communicator_impl.hpp"
+
 namespace device_communicator_suite {
 
 TEST(device_communicator_api, device_comm_from_sycl_devices_single_thread) {

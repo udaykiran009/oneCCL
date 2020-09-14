@@ -28,6 +28,7 @@ list (APPEND EXTENSIONS_SRC
                     ccl_cpp_utils.cpp
                     ccl_cpp_stream.cpp
                     ccl_cpp_event.cpp
+                    ccl_cpp_device_communicator.cpp
 
                     native_device_api/l0/base.cpp
                     native_device_api/l0/device.cpp
