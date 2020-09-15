@@ -36,7 +36,8 @@ void single_device_communicator::visit(ccl::gpu_comm_attr& comm_attr) {
     this->set_comm_group_id(comm_attr.get_unique_id());
 }
 #endif
-single_device_communicator::coll_request_t single_device_communicator::barrier(ccl::stream::impl_value_t& op_stream,
+single_device_communicator::coll_request_t
+single_device_communicator::barrier(ccl::stream::impl_value_t& op_stream,
                                                    const ccl::barrier_attr& attr,
                                                    const ccl::vector_class<ccl::event>& deps) {
     // TODO what exactly we need to do with 'attr' here?
@@ -49,7 +50,8 @@ single_device_communicator::coll_request_t single_device_communicator::barrier(c
 }
 
 /* allgatherv */
-single_device_communicator::coll_request_t single_device_communicator::allgatherv_impl(
+single_device_communicator::coll_request_t
+single_device_communicator::allgatherv_impl(
     const void* send_buf,
     size_t send_count,
     void* recv_buf,
@@ -69,7 +71,8 @@ single_device_communicator::coll_request_t single_device_communicator::allgather
 
     return std::unique_ptr<ccl::request_impl>(new ccl::host_request_impl(req));
 }
-single_device_communicator::coll_request_t single_device_communicator::allgatherv_impl(
+single_device_communicator::coll_request_t
+single_device_communicator::allgatherv_impl(
     const void* send_buf,
     size_t send_count,
     const ccl::vector_class<void*>& recv_bufs,
@@ -83,7 +86,8 @@ single_device_communicator::coll_request_t single_device_communicator::allgather
 }
 
 /* allreduce */
-single_device_communicator::coll_request_t single_device_communicator::allreduce_impl(
+single_device_communicator::coll_request_t
+single_device_communicator::allreduce_impl(
     const void* send_buf,
     void* recv_buf,
     size_t count,
@@ -99,7 +103,8 @@ single_device_communicator::coll_request_t single_device_communicator::allreduce
 }
 
 /* alltoall */
-single_device_communicator::coll_request_t single_device_communicator::alltoall_impl(
+single_device_communicator::coll_request_t
+single_device_communicator::alltoall_impl(
     const void* send_buf,
     void* recv_buf,
     size_t count,
@@ -113,7 +118,8 @@ single_device_communicator::coll_request_t single_device_communicator::alltoall_
     return std::unique_ptr<ccl::request_impl>(new ccl::host_request_impl(req));
 }
 
-single_device_communicator::coll_request_t single_device_communicator::alltoall_impl(
+single_device_communicator::coll_request_t
+single_device_communicator::alltoall_impl(
     const ccl::vector_class<void*>& send_buf,
     const ccl::vector_class<void*>& recv_buf,
     size_t count,
@@ -126,7 +132,8 @@ single_device_communicator::coll_request_t single_device_communicator::alltoall_
 }
 
 /* alltoallv */
-single_device_communicator::coll_request_t single_device_communicator::alltoallv_impl(
+single_device_communicator::coll_request_t
+single_device_communicator::alltoallv_impl(
     const void* send_buf,
     const ccl::vector_class<size_t>& send_counts,
     void* recv_buf,
@@ -146,7 +153,8 @@ single_device_communicator::coll_request_t single_device_communicator::alltoallv
 
     return std::unique_ptr<ccl::request_impl>(new ccl::host_request_impl(req));
 }
-single_device_communicator::coll_request_t single_device_communicator::alltoallv_impl(
+single_device_communicator::coll_request_t
+single_device_communicator::alltoallv_impl(
     const ccl::vector_class<void*>& send_buf,
     const ccl::vector_class<size_t>& send_counts,
     ccl::vector_class<void*> recv_buf,
@@ -160,7 +168,8 @@ single_device_communicator::coll_request_t single_device_communicator::alltoallv
 }
 
 /* bcast */
-single_device_communicator::coll_request_t single_device_communicator::broadcast_impl(
+single_device_communicator::coll_request_t
+single_device_communicator::broadcast_impl(
     void* buf,
     size_t count,
     ccl::datatype dtype,
@@ -175,7 +184,8 @@ single_device_communicator::coll_request_t single_device_communicator::broadcast
 }
 
 /* reduce */
-single_device_communicator::coll_request_t single_device_communicator::reduce_impl(
+single_device_communicator::coll_request_t
+single_device_communicator::reduce_impl(
     const void* send_buf,
     void* recv_buf,
     size_t count,
@@ -192,7 +202,8 @@ single_device_communicator::coll_request_t single_device_communicator::reduce_im
 }
 
 /* reduce_scatter */
-single_device_communicator::coll_request_t single_device_communicator::reduce_scatter_impl(
+single_device_communicator::coll_request_t
+single_device_communicator::reduce_scatter_impl(
     const void* send_buf,
     void* recv_buf,
     size_t recv_count,
@@ -209,7 +220,8 @@ single_device_communicator::coll_request_t single_device_communicator::reduce_sc
 }
 
 /* sparse_allreduce */
-single_device_communicator::coll_request_t single_device_communicator::sparse_allreduce_impl(
+single_device_communicator::coll_request_t
+single_device_communicator::sparse_allreduce_impl(
     const void* send_ind_buf,
     size_t send_ind_count,
     const void* send_val_buf,
