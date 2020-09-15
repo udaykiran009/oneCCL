@@ -78,7 +78,7 @@ int main(int argc, char **argv) {
 
     /* invoke ccl_alltoall on the CPU side */
     auto attr = ccl::environment::instance().create_operation_attr<ccl::alltoallv_attr>();
-    comm.alltoallv(sendbuf, send_counts, recvbuf, recv_counts, stream, attr)->wait();
+    comm.alltoallv(sendbuf, send_counts, recvbuf, recv_counts, stream, attr).wait();
 
     /* open recvbuf and check its correctness on the target device side */
     q.submit([&](handler &cgh) {

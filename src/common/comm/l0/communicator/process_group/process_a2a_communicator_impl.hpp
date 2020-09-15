@@ -10,7 +10,8 @@
 
 /* allgatherv */
 template <class buffer_type>
-ccl::coll_request_t process_a2a_communicator::allgatherv_impl(
+process_a2a_communicator::coll_request_t
+process_a2a_communicator::allgatherv_impl(
     const buffer_type* send_buf,
     size_t send_count,
     buffer_type* recv_buf,
@@ -22,7 +23,8 @@ ccl::coll_request_t process_a2a_communicator::allgatherv_impl(
     return {};
 }
 template <class buffer_type>
-ccl::coll_request_t process_a2a_communicator::allgatherv_impl(
+process_a2a_communicator::coll_request_t
+process_a2a_communicator::allgatherv_impl(
     const buffer_type* send_buf,
     size_t send_count,
     ccl::vector_class<buffer_type*>& recv_buf,
@@ -36,7 +38,8 @@ ccl::coll_request_t process_a2a_communicator::allgatherv_impl(
 }
 
 template <class buffer_type>
-ccl::coll_request_t process_a2a_communicator::allgatherv_impl(
+process_a2a_communicator::coll_request_t
+process_a2a_communicator::allgatherv_impl(
     const buffer_type& send_buf,
     size_t send_count,
     buffer_type& recv_buf,
@@ -48,7 +51,8 @@ ccl::coll_request_t process_a2a_communicator::allgatherv_impl(
     return {};
 }
 template <class buffer_type>
-ccl::request_t process_a2a_communicator::allgatherv_impl(
+process_a2a_communicator::coll_request_t
+process_a2a_communicator::allgatherv_impl(
     const buffer_type& send_buf,
     size_t send_count,
     ccl::vector_class<ccl::reference_wrapper_class<buffer_type>>& recv_buf,
@@ -63,7 +67,8 @@ ccl::request_t process_a2a_communicator::allgatherv_impl(
 
 /* allreduce */
 template <class buffer_type>
-ccl::coll_request_t process_a2a_communicator::allreduce_impl(
+process_a2a_communicator::coll_request_t
+process_a2a_communicator::allreduce_impl(
     const buffer_type* send_buf,
     buffer_type* recv_buf,
     size_t count,
@@ -190,12 +195,12 @@ ccl::coll_request_t process_a2a_communicator::allreduce_impl(
     if (schedule) {
         LOG_DEBUG("Device group finalized");
     }
-    return std::unique_ptr<ccl::gpu_shared_request_impl>(
-        new ccl::gpu_shared_request_impl(std::move(schedule)));
+    return std::unique_ptr<ccl::request_impl>(new ccl::gpu_shared_request_impl(std::move(schedule)));
 }
 
 template <class buffer_type>
-ccl::coll_request_t process_a2a_communicator::allreduce_impl(
+process_a2a_communicator::coll_request_t
+process_a2a_communicator::allreduce_impl(
     const buffer_type& send_buf,
     buffer_type& recv_buf,
     size_t count,
@@ -209,7 +214,8 @@ ccl::coll_request_t process_a2a_communicator::allreduce_impl(
 
 /* alltoall */
 template <class buffer_type>
-ccl::coll_request_t process_a2a_communicator::alltoall_impl(
+process_a2a_communicator::coll_request_t
+process_a2a_communicator::alltoall_impl(
     const buffer_type* send_buf,
     buffer_type* recv_buf,
     size_t count,
@@ -220,7 +226,8 @@ ccl::coll_request_t process_a2a_communicator::alltoall_impl(
     return {};
 }
 template <class buffer_type>
-ccl::request_t process_a2a_communicator::alltoall_impl(
+process_a2a_communicator::coll_request_t
+process_a2a_communicator::alltoall_impl(
     const ccl::vector_class<buffer_type*>& send_buf,
     const ccl::vector_class<buffer_type*>& recv_buf,
     size_t count,
@@ -233,7 +240,8 @@ ccl::request_t process_a2a_communicator::alltoall_impl(
 }
 
 template <class buffer_type>
-ccl::coll_request_t process_a2a_communicator::alltoall_impl(
+process_a2a_communicator::coll_request_t
+process_a2a_communicator::alltoall_impl(
     const buffer_type& send_buf,
     buffer_type& recv_buf,
     size_t count,
@@ -244,7 +252,8 @@ ccl::coll_request_t process_a2a_communicator::alltoall_impl(
     return {};
 }
 template <class buffer_type>
-ccl::request_t process_a2a_communicator::alltoall_impl(
+process_a2a_communicator::coll_request_t
+process_a2a_communicator::alltoall_impl(
     const ccl::vector_class<ccl::reference_wrapper_class<buffer_type>>& send_buf,
     const ccl::vector_class<ccl::reference_wrapper_class<buffer_type>>& recv_buf,
     size_t count,
@@ -258,7 +267,8 @@ ccl::request_t process_a2a_communicator::alltoall_impl(
 
 /* alltoallv */
 template <class buffer_type>
-ccl::coll_request_t process_a2a_communicator::alltoallv_impl(
+process_a2a_communicator::coll_request_t
+process_a2a_communicator::alltoallv_impl(
     const buffer_type* send_buf,
     const ccl::vector_class<size_t>& send_counts,
     buffer_type* recv_buf,
@@ -270,7 +280,8 @@ ccl::coll_request_t process_a2a_communicator::alltoallv_impl(
     return {};
 }
 template <class buffer_type>
-ccl::coll_request_t process_a2a_communicator::alltoallv_impl(
+process_a2a_communicator::coll_request_t
+process_a2a_communicator::alltoallv_impl(
     const ccl::vector_class<buffer_type*>& send_buf,
     const ccl::vector_class<size_t>& send_counts,
     const ccl::vector_class<buffer_type*>& recv_buf,
@@ -284,7 +295,8 @@ ccl::coll_request_t process_a2a_communicator::alltoallv_impl(
 }
 
 template <class buffer_type>
-ccl::coll_request_t process_a2a_communicator::alltoallv_impl(
+process_a2a_communicator::coll_request_t
+process_a2a_communicator::alltoallv_impl(
     const buffer_type& send_buf,
     const ccl::vector_class<size_t>& send_counts,
     buffer_type& recv_buf,
@@ -296,7 +308,8 @@ ccl::coll_request_t process_a2a_communicator::alltoallv_impl(
     return {};
 }
 template <class buffer_type>
-ccl::coll_request_t process_a2a_communicator::alltoallv_impl(
+process_a2a_communicator::coll_request_t
+process_a2a_communicator::alltoallv_impl(
     const ccl::vector_class<ccl::reference_wrapper_class<buffer_type>>& send_buf,
     const ccl::vector_class<size_t>& send_counts,
     const ccl::vector_class<ccl::reference_wrapper_class<buffer_type>>& recv_buf,
@@ -311,7 +324,8 @@ ccl::coll_request_t process_a2a_communicator::alltoallv_impl(
 
 /* bcast */
 template <class buffer_type>
-ccl::coll_request_t process_a2a_communicator::broadcast_impl(
+process_a2a_communicator::coll_request_t
+process_a2a_communicator::broadcast_impl(
     buffer_type* buf,
     size_t count,
     size_t root,
@@ -323,7 +337,8 @@ ccl::coll_request_t process_a2a_communicator::broadcast_impl(
 }
 
 template <class buffer_type>
-ccl::coll_request_t process_a2a_communicator::broadcast_impl(
+process_a2a_communicator::coll_request_t
+process_a2a_communicator::broadcast_impl(
     buffer_type& buf,
     size_t count,
     size_t root,
@@ -336,7 +351,8 @@ ccl::coll_request_t process_a2a_communicator::broadcast_impl(
 
 /* reduce */
 template <class buffer_type>
-ccl::coll_request_t process_a2a_communicator::reduce_impl(
+process_a2a_communicator::coll_request_t
+process_a2a_communicator::reduce_impl(
     const buffer_type* send_buf,
     buffer_type* recv_buf,
     size_t count,
@@ -350,7 +366,8 @@ ccl::coll_request_t process_a2a_communicator::reduce_impl(
 }
 
 template <class buffer_type>
-ccl::coll_request_t process_a2a_communicator::reduce_impl(
+process_a2a_communicator::coll_request_t
+process_a2a_communicator::reduce_impl(
     const buffer_type& send_buf,
     buffer_type& recv_buf,
     size_t count,
@@ -364,7 +381,8 @@ ccl::coll_request_t process_a2a_communicator::reduce_impl(
 }
 /* reduce_scatter */
 template <class buffer_type>
-ccl::coll_request_t process_a2a_communicator::reduce_scatter_impl(
+process_a2a_communicator::coll_request_t
+process_a2a_communicator::reduce_scatter_impl(
     const buffer_type* send_buf,
     buffer_type* recv_buf,
     size_t recv_count,
@@ -376,7 +394,8 @@ ccl::coll_request_t process_a2a_communicator::reduce_scatter_impl(
     return {};
 }
 template <class buffer_type>
-ccl::coll_request_t process_a2a_communicator::reduce_scatter_impl(
+process_a2a_communicator::coll_request_t
+process_a2a_communicator::reduce_scatter_impl(
     const buffer_type& send_buf,
     buffer_type& recv_buf,
     size_t recv_count,
@@ -390,7 +409,8 @@ ccl::coll_request_t process_a2a_communicator::reduce_scatter_impl(
 
 /* sparse_allreduce */
 template <class index_buffer_type, class value_buffer_type>
-ccl::coll_request_t process_a2a_communicator::sparse_allreduce_impl(
+process_a2a_communicator::coll_request_t
+process_a2a_communicator::sparse_allreduce_impl(
     const index_buffer_type* send_ind_buf,
     size_t send_ind_count,
     const value_buffer_type* send_val_buf,
@@ -408,7 +428,8 @@ ccl::coll_request_t process_a2a_communicator::sparse_allreduce_impl(
 }
 
 template <class index_buffer_container_type, class value_buffer_container_type>
-ccl::coll_request_t process_a2a_communicator::sparse_allreduce_impl(
+process_a2a_communicator::coll_request_t
+process_a2a_communicator::sparse_allreduce_impl(
     const index_buffer_container_type& send_ind_buf,
     size_t send_ind_count,
     const value_buffer_container_type& send_val_buf,

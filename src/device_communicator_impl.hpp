@@ -148,7 +148,7 @@ CCL_API vector_class<device_communicator> device_communicator::create_device_com
 
 /* allgatherv */
 //(stream) ? stream.get_impl() :222 ccl::get_empty_stream().get_impl())111;
-ccl::device_communicator::request_t CCL_API
+ccl::device_communicator::coll_request_t CCL_API
 ccl::device_communicator::allgatherv(const void* send_buf,
                                      size_t send_count,
                                      void* recv_buf,
@@ -162,7 +162,7 @@ ccl::device_communicator::allgatherv(const void* send_buf,
         send_buf, send_count, recv_buf, recv_counts, dtype, op_stream.get_impl(), attr, deps);
 }
 
-CCL_API ccl::device_communicator::request_t ccl::device_communicator::allgatherv(
+CCL_API ccl::device_communicator::coll_request_t ccl::device_communicator::allgatherv(
     const void* send_buf,
     size_t send_count,
     const vector_class<void*>& recv_bufs,
@@ -176,7 +176,7 @@ CCL_API ccl::device_communicator::request_t ccl::device_communicator::allgatherv
 }
 
 template <class BufferType, typename T>
-ccl::device_communicator::request_t CCL_API
+ccl::device_communicator::coll_request_t CCL_API
 ccl::device_communicator::allgatherv(const BufferType* send_buf,
                                      size_t send_count,
                                      BufferType* recv_buf,
@@ -189,7 +189,7 @@ ccl::device_communicator::allgatherv(const BufferType* send_buf,
 }
 ////////////////////////// TODO
 template <class BufferType, typename T>
-ccl::device_communicator::request_t CCL_API
+ccl::device_communicator::coll_request_t CCL_API
 ccl::device_communicator::allgatherv(const BufferType* send_buf,
                                      size_t send_count,
                                      vector_class<BufferType*>& recv_bufs,
@@ -202,7 +202,7 @@ ccl::device_communicator::allgatherv(const BufferType* send_buf,
 }
 
 template <class BufferObjectType, typename T>
-ccl::device_communicator::request_t CCL_API
+ccl::device_communicator::coll_request_t CCL_API
 ccl::device_communicator::allgatherv(const BufferObjectType& send_buf,
                                      size_t send_count,
                                      BufferObjectType& recv_buf,
@@ -215,7 +215,7 @@ ccl::device_communicator::allgatherv(const BufferObjectType& send_buf,
 }
 
 template <class BufferObjectType, typename T>
-ccl::device_communicator::request_t CCL_API ccl::device_communicator::allgatherv(
+ccl::device_communicator::coll_request_t CCL_API ccl::device_communicator::allgatherv(
     const BufferObjectType& send_buf,
     size_t send_count,
     vector_class<ccl::reference_wrapper_class<BufferObjectType>>& recv_bufs,
@@ -228,7 +228,7 @@ ccl::device_communicator::request_t CCL_API ccl::device_communicator::allgatherv
 }
 
 /* allreduce */
-ccl::device_communicator::request_t CCL_API
+ccl::device_communicator::coll_request_t CCL_API
 ccl::device_communicator::allreduce(const void* send_buf,
                                     void* recv_buf,
                                     size_t count,
@@ -242,7 +242,7 @@ ccl::device_communicator::allreduce(const void* send_buf,
 }
 
 template <class BufferType, typename T>
-ccl::device_communicator::request_t CCL_API
+ccl::device_communicator::coll_request_t CCL_API
 ccl::device_communicator::allreduce(const BufferType* send_buf,
                                     BufferType* recv_buf,
                                     size_t count,
@@ -255,7 +255,7 @@ ccl::device_communicator::allreduce(const BufferType* send_buf,
 }
 
 template <class BufferObjectType, typename T>
-ccl::device_communicator::request_t CCL_API
+ccl::device_communicator::coll_request_t CCL_API
 ccl::device_communicator::allreduce(const BufferObjectType& send_buf,
                                     BufferObjectType& recv_buf,
                                     size_t count,
@@ -268,7 +268,7 @@ ccl::device_communicator::allreduce(const BufferObjectType& send_buf,
 }
 
 /* alltoall */
-ccl::device_communicator::request_t CCL_API
+ccl::device_communicator::coll_request_t CCL_API
 ccl::device_communicator::alltoall(const void* send_buf,
                                    void* recv_buf,
                                    size_t count,
@@ -279,7 +279,7 @@ ccl::device_communicator::alltoall(const void* send_buf,
     return get_impl()->alltoall(send_buf, recv_buf, count, dtype, stream.get_impl(), attr, deps);
 }
 
-ccl::device_communicator::request_t CCL_API
+ccl::device_communicator::coll_request_t CCL_API
 ccl::device_communicator::alltoall(const vector_class<void*>& send_buf,
                                    const vector_class<void*>& recv_buf,
                                    size_t count,
@@ -291,7 +291,7 @@ ccl::device_communicator::alltoall(const vector_class<void*>& send_buf,
 }
 
 template <class BufferType, typename T>
-ccl::device_communicator::request_t CCL_API
+ccl::device_communicator::coll_request_t CCL_API
 ccl::device_communicator::alltoall(const BufferType* send_buf,
                                    BufferType* recv_buf,
                                    size_t count,
@@ -302,7 +302,7 @@ ccl::device_communicator::alltoall(const BufferType* send_buf,
 }
 
 template <class BufferType, typename T>
-ccl::device_communicator::request_t CCL_API
+ccl::device_communicator::coll_request_t CCL_API
 ccl::device_communicator::alltoall(const vector_class<BufferType*>& send_buf,
                                    const vector_class<BufferType*>& recv_buf,
                                    size_t count,
@@ -313,7 +313,7 @@ ccl::device_communicator::alltoall(const vector_class<BufferType*>& send_buf,
 }
 
 template <class BufferObjectType, typename T>
-ccl::device_communicator::request_t CCL_API
+ccl::device_communicator::coll_request_t CCL_API
 ccl::device_communicator::alltoall(const BufferObjectType& send_buf,
                                    BufferObjectType& recv_buf,
                                    size_t count,
@@ -324,7 +324,7 @@ ccl::device_communicator::alltoall(const BufferObjectType& send_buf,
 }
 
 template <class BufferObjectType, typename T>
-ccl::device_communicator::request_t CCL_API ccl::device_communicator::alltoall(
+ccl::device_communicator::coll_request_t CCL_API ccl::device_communicator::alltoall(
     const vector_class<ccl::reference_wrapper_class<BufferObjectType>>& send_buf,
     const vector_class<ccl::reference_wrapper_class<BufferObjectType>>& recv_buf,
     size_t count,
@@ -335,7 +335,7 @@ ccl::device_communicator::request_t CCL_API ccl::device_communicator::alltoall(
 }
 
 /* alltoallv */
-ccl::device_communicator::request_t CCL_API
+ccl::device_communicator::coll_request_t CCL_API
 ccl::device_communicator::alltoallv(const void* send_buf,
                                     const vector_class<size_t>& send_counts,
                                     void* recv_buf,
@@ -348,7 +348,7 @@ ccl::device_communicator::alltoallv(const void* send_buf,
         send_buf, send_counts, recv_buf, recv_counts, dtype, stream.get_impl(), attr, deps);
 }
 
-ccl::device_communicator::request_t CCL_API
+ccl::device_communicator::coll_request_t CCL_API
 ccl::device_communicator::alltoallv(const vector_class<void*>& send_bufs,
                                     const vector_class<size_t>& send_counts,
                                     const vector_class<void*>& recv_bufs,
@@ -362,7 +362,7 @@ ccl::device_communicator::alltoallv(const vector_class<void*>& send_bufs,
 }
 
 template <class BufferType, typename T>
-ccl::device_communicator::request_t CCL_API
+ccl::device_communicator::coll_request_t CCL_API
 ccl::device_communicator::alltoallv(const BufferType* send_buf,
                                     const vector_class<size_t>& send_counts,
                                     BufferType* recv_buf,
@@ -375,7 +375,7 @@ ccl::device_communicator::alltoallv(const BufferType* send_buf,
 }
 
 template <class BufferType, typename T>
-ccl::device_communicator::request_t CCL_API
+ccl::device_communicator::coll_request_t CCL_API
 ccl::device_communicator::alltoallv(const vector_class<BufferType*>& send_bufs,
                                     const vector_class<size_t>& send_counts,
                                     const vector_class<BufferType*>& recv_bufs,
@@ -388,7 +388,7 @@ ccl::device_communicator::alltoallv(const vector_class<BufferType*>& send_bufs,
 }
 
 template <class BufferObjectType, typename T>
-ccl::device_communicator::request_t CCL_API
+ccl::device_communicator::coll_request_t CCL_API
 ccl::device_communicator::alltoallv(const BufferObjectType& send_buf,
                                     const vector_class<size_t>& send_counts,
                                     BufferObjectType& recv_buf,
@@ -401,7 +401,7 @@ ccl::device_communicator::alltoallv(const BufferObjectType& send_buf,
 }
 
 template <class BufferObjectType, typename T>
-ccl::device_communicator::request_t CCL_API ccl::device_communicator::alltoallv(
+ccl::device_communicator::coll_request_t CCL_API ccl::device_communicator::alltoallv(
     const vector_class<ccl::reference_wrapper_class<BufferObjectType>>& send_bufs,
     const vector_class<size_t>& send_counts,
     const vector_class<ccl::reference_wrapper_class<BufferObjectType>>& recv_bufs,
@@ -414,7 +414,7 @@ ccl::device_communicator::request_t CCL_API ccl::device_communicator::alltoallv(
 }
 
 /* barrier */
-ccl::device_communicator::request_t CCL_API
+ccl::device_communicator::coll_request_t CCL_API
 ccl::device_communicator::barrier(stream stream,
                                   const barrier_attr& attr,
                                   const vector_class<event>& deps) {
@@ -422,7 +422,7 @@ ccl::device_communicator::barrier(stream stream,
 }
 
 /* bcast */
-ccl::device_communicator::request_t CCL_API
+ccl::device_communicator::coll_request_t CCL_API
 ccl::device_communicator::broadcast(void* buf,
                                     size_t count,
                                     datatype dtype,
@@ -434,7 +434,7 @@ ccl::device_communicator::broadcast(void* buf,
 }
 
 template <class BufferType, typename T>
-ccl::device_communicator::request_t CCL_API
+ccl::device_communicator::coll_request_t CCL_API
 ccl::device_communicator::broadcast(BufferType* buf,
                                     size_t count,
                                     size_t root,
@@ -447,7 +447,7 @@ ccl::device_communicator::broadcast(BufferType* buf,
 }
 
 template <class BufferObjectType, typename T>
-ccl::device_communicator::request_t CCL_API
+ccl::device_communicator::coll_request_t CCL_API
 ccl::device_communicator::broadcast(BufferObjectType& buf,
                                     size_t count,
                                     size_t root,
@@ -458,7 +458,7 @@ ccl::device_communicator::broadcast(BufferObjectType& buf,
 }
 
 /* reduce */
-ccl::device_communicator::request_t CCL_API
+ccl::device_communicator::coll_request_t CCL_API
 ccl::device_communicator::reduce(const void* send_buf,
                                  void* recv_buf,
                                  size_t count,
@@ -473,7 +473,7 @@ ccl::device_communicator::reduce(const void* send_buf,
 }
 
 template <class BufferType, typename T>
-ccl::device_communicator::request_t CCL_API
+ccl::device_communicator::coll_request_t CCL_API
 ccl::device_communicator::reduce(const BufferType* send_buf,
                                  BufferType* recv_buf,
                                  size_t count,
@@ -487,7 +487,7 @@ ccl::device_communicator::reduce(const BufferType* send_buf,
 }
 
 template <class BufferObjectType, typename T>
-ccl::device_communicator::request_t CCL_API
+ccl::device_communicator::coll_request_t CCL_API
 ccl::device_communicator::reduce(const BufferObjectType& send_buf,
                                  BufferObjectType& recv_buf,
                                  size_t count,
@@ -501,7 +501,7 @@ ccl::device_communicator::reduce(const BufferObjectType& send_buf,
 }
 
 /* reduce_scatter */
-ccl::device_communicator::request_t CCL_API
+ccl::device_communicator::coll_request_t CCL_API
 ccl::device_communicator::reduce_scatter(const void* send_buf,
                                          void* recv_buf,
                                          size_t recv_count,
@@ -515,7 +515,7 @@ ccl::device_communicator::reduce_scatter(const void* send_buf,
 }
 
 template <class BufferType, typename T>
-ccl::device_communicator::request_t CCL_API
+ccl::device_communicator::coll_request_t CCL_API
 ccl::device_communicator::reduce_scatter(const BufferType* send_buf,
                                          BufferType* recv_buf,
                                          size_t recv_count,
@@ -528,7 +528,7 @@ ccl::device_communicator::reduce_scatter(const BufferType* send_buf,
 }
 
 template <class BufferObjectType, typename T>
-ccl::device_communicator::request_t CCL_API
+ccl::device_communicator::coll_request_t CCL_API
 ccl::device_communicator::reduce_scatter(const BufferObjectType& send_buf,
                                          BufferObjectType& recv_buf,
                                          size_t recv_count,
@@ -541,7 +541,7 @@ ccl::device_communicator::reduce_scatter(const BufferObjectType& send_buf,
 }
 
 /* sparse_allreduce */
-// ccl::device_communicator::request_t CCL_API
+// ccl::device_communicator::coll_request_t CCL_API
 // ccl::device_communicator::sparse_allreduce(const void* send_ind_buf,
 //                                size_t send_ind_count,
 //                                const void* send_val_buf,
@@ -570,7 +570,7 @@ ccl::device_communicator::reduce_scatter(const BufferObjectType& send_buf,
 // template<class index_BufferType,
 //          class value_BufferType,
 //          typename T>
-// ccl::device_communicator::request_t CCL_API
+// ccl::device_communicator::coll_request_t CCL_API
 // ccl::device_communicator::sparse_allreduce(const index_BufferType* send_ind_buf,
 //                                size_t send_ind_count,
 //                                const value_BufferType* send_val_buf,
@@ -595,7 +595,7 @@ ccl::device_communicator::reduce_scatter(const BufferObjectType& send_buf,
 // template<class IndexBufferObjectType,
 //          class ValueBufferObjectType,
 //          typename T>
-// ccl::device_communicator::request_t CCL_API
+// ccl::device_communicator::coll_request_t CCL_API
 // ccl::device_communicator::sparse_allreduce(const IndexBufferObjectType& send_ind_buf,
 //                                size_t send_ind_count,
 //                                const ValueBufferObjectType& send_val_buf,
@@ -645,7 +645,7 @@ ccl::device_communicator::reduce_scatter(const BufferObjectType& send_buf,
         ccl::shared_ptr_class<ccl::kvs_interface> kvs);
 
 #define API_DEVICE_COMM_OP_PTR_EXPLICIT_INSTANTIATION(BufferType) \
-    template ccl::device_communicator::request_t CCL_API ccl::device_communicator::allgatherv( \
+    template ccl::device_communicator::coll_request_t CCL_API ccl::device_communicator::allgatherv( \
         const BufferType* send_buf, \
         size_t send_count, \
         BufferType* recv_buf, \
@@ -654,7 +654,7 @@ ccl::device_communicator::reduce_scatter(const BufferObjectType& send_buf,
         const ccl::allgatherv_attr& attr, \
         const ccl::vector_class<ccl::event>& deps); \
 \
-    template ccl::device_communicator::request_t CCL_API ccl::device_communicator::allgatherv( \
+    template ccl::device_communicator::coll_request_t CCL_API ccl::device_communicator::allgatherv( \
         const BufferType* send_buf, \
         size_t send_count, \
         ccl::vector_class<BufferType*>& recv_bufs, \
@@ -663,7 +663,7 @@ ccl::device_communicator::reduce_scatter(const BufferObjectType& send_buf,
         const ccl::allgatherv_attr& attr, \
         const ccl::vector_class<ccl::event>& deps); \
 \
-    template ccl::device_communicator::request_t CCL_API ccl::device_communicator::allreduce( \
+    template ccl::device_communicator::coll_request_t CCL_API ccl::device_communicator::allreduce( \
         const BufferType* send_buf, \
         BufferType* recv_buf, \
         size_t count, \
@@ -672,7 +672,7 @@ ccl::device_communicator::reduce_scatter(const BufferObjectType& send_buf,
         const ccl::allreduce_attr& attr, \
         const ccl::vector_class<ccl::event>& deps); \
 \
-    template ccl::device_communicator::request_t CCL_API ccl::device_communicator::alltoall( \
+    template ccl::device_communicator::coll_request_t CCL_API ccl::device_communicator::alltoall( \
         const BufferType* send_buf, \
         BufferType* recv_buf, \
         size_t count, \
@@ -680,7 +680,7 @@ ccl::device_communicator::reduce_scatter(const BufferObjectType& send_buf,
         const ccl::alltoall_attr& attr, \
         const ccl::vector_class<ccl::event>& deps); \
 \
-    template ccl::device_communicator::request_t CCL_API ccl::device_communicator::alltoall( \
+    template ccl::device_communicator::coll_request_t CCL_API ccl::device_communicator::alltoall( \
         const ccl::vector_class<BufferType*>& send_buf, \
         const ccl::vector_class<BufferType*>& recv_buf, \
         size_t count, \
@@ -688,7 +688,7 @@ ccl::device_communicator::reduce_scatter(const BufferObjectType& send_buf,
         const ccl::alltoall_attr& attr, \
         const ccl::vector_class<ccl::event>& deps); \
 \
-    template ccl::device_communicator::request_t CCL_API ccl::device_communicator::alltoallv( \
+    template ccl::device_communicator::coll_request_t CCL_API ccl::device_communicator::alltoallv( \
         const BufferType* send_buf, \
         const ccl::vector_class<size_t>& send_counts, \
         BufferType* recv_buf, \
@@ -697,7 +697,7 @@ ccl::device_communicator::reduce_scatter(const BufferObjectType& send_buf,
         const ccl::alltoallv_attr& attr, \
         const ccl::vector_class<ccl::event>& deps); \
 \
-    template ccl::device_communicator::request_t CCL_API ccl::device_communicator::alltoallv( \
+    template ccl::device_communicator::coll_request_t CCL_API ccl::device_communicator::alltoallv( \
         const ccl::vector_class<BufferType*>& send_bufs, \
         const ccl::vector_class<size_t>& send_counts, \
         const ccl::vector_class<BufferType*>& recv_bufs, \
@@ -706,7 +706,7 @@ ccl::device_communicator::reduce_scatter(const BufferObjectType& send_buf,
         const ccl::alltoallv_attr& attr, \
         const ccl::vector_class<ccl::event>& deps); \
 \
-    template ccl::device_communicator::request_t CCL_API ccl::device_communicator::broadcast( \
+    template ccl::device_communicator::coll_request_t CCL_API ccl::device_communicator::broadcast( \
         BufferType* buf, \
         size_t count, \
         size_t root, \
@@ -714,7 +714,7 @@ ccl::device_communicator::reduce_scatter(const BufferObjectType& send_buf,
         const ccl::broadcast_attr& attr, \
         const ccl::vector_class<ccl::event>& deps); \
 \
-    template ccl::device_communicator::request_t CCL_API ccl::device_communicator::reduce( \
+    template ccl::device_communicator::coll_request_t CCL_API ccl::device_communicator::reduce( \
         const BufferType* send_buf, \
         BufferType* recv_buf, \
         size_t count, \
@@ -724,7 +724,7 @@ ccl::device_communicator::reduce_scatter(const BufferObjectType& send_buf,
         const ccl::reduce_attr& attr, \
         const ccl::vector_class<ccl::event>& deps); \
 \
-    template ccl::device_communicator::request_t CCL_API ccl::device_communicator::reduce_scatter( \
+    template ccl::device_communicator::coll_request_t CCL_API ccl::device_communicator::reduce_scatter( \
         const BufferType* send_buf, \
         BufferType* recv_buf, \
         size_t recv_count, \
@@ -734,7 +734,7 @@ ccl::device_communicator::reduce_scatter(const BufferObjectType& send_buf,
         const ccl::vector_class<ccl::event>& deps);
 
 #define API_DEVICE_COMM_OP_REF_EXPLICIT_INSTANTIATION(BufferObjectType) \
-    template ccl::device_communicator::request_t CCL_API ccl::device_communicator::allgatherv( \
+    template ccl::device_communicator::coll_request_t CCL_API ccl::device_communicator::allgatherv( \
         const BufferObjectType& send_buf, \
         size_t send_count, \
         BufferObjectType& recv_buf, \
@@ -743,7 +743,7 @@ ccl::device_communicator::reduce_scatter(const BufferObjectType& send_buf,
         const allgatherv_attr& attr, \
         const ccl::vector_class<ccl::event>& deps); \
 \
-    template ccl::device_communicator::request_t CCL_API ccl::device_communicator::allgatherv( \
+    template ccl::device_communicator::coll_request_t CCL_API ccl::device_communicator::allgatherv( \
         const BufferObjectType& send_buf, \
         size_t send_count, \
         ccl::vector_class<ccl::reference_wrapper_class<BufferObjectType>>& recv_bufs, \
@@ -752,7 +752,7 @@ ccl::device_communicator::reduce_scatter(const BufferObjectType& send_buf,
         const allgatherv_attr& attr, \
         const ccl::vector_class<ccl::event>& deps); \
 \
-    template ccl::device_communicator::request_t CCL_API ccl::device_communicator::allreduce( \
+    template ccl::device_communicator::coll_request_t CCL_API ccl::device_communicator::allreduce( \
         const BufferObjectType& send_buf, \
         BufferObjectType& recv_buf, \
         size_t count, \
@@ -761,7 +761,7 @@ ccl::device_communicator::reduce_scatter(const BufferObjectType& send_buf,
         const allreduce_attr& attr, \
         const ccl::vector_class<ccl::event>& deps); \
 \
-    template ccl::device_communicator::request_t CCL_API ccl::device_communicator::alltoall( \
+    template ccl::device_communicator::coll_request_t CCL_API ccl::device_communicator::alltoall( \
         const BufferObjectType& send_buf, \
         BufferObjectType& recv_buf, \
         size_t count, \
@@ -769,7 +769,7 @@ ccl::device_communicator::reduce_scatter(const BufferObjectType& send_buf,
         const alltoall_attr& attr, \
         const ccl::vector_class<ccl::event>& deps); \
 \
-    template ccl::device_communicator::request_t CCL_API ccl::device_communicator::alltoall( \
+    template ccl::device_communicator::coll_request_t CCL_API ccl::device_communicator::alltoall( \
         const ccl::vector_class<ccl::reference_wrapper_class<BufferObjectType>>& send_buf, \
         const ccl::vector_class<ccl::reference_wrapper_class<BufferObjectType>>& recv_buf, \
         size_t count, \
@@ -777,7 +777,7 @@ ccl::device_communicator::reduce_scatter(const BufferObjectType& send_buf,
         const alltoall_attr& attr, \
         const ccl::vector_class<ccl::event>& deps); \
 \
-    template ccl::device_communicator::request_t CCL_API ccl::device_communicator::alltoallv( \
+    template ccl::device_communicator::coll_request_t CCL_API ccl::device_communicator::alltoallv( \
         const BufferObjectType& send_buf, \
         const ccl::vector_class<size_t>& send_counts, \
         BufferObjectType& recv_buf, \
@@ -786,7 +786,7 @@ ccl::device_communicator::reduce_scatter(const BufferObjectType& send_buf,
         const alltoallv_attr& attr, \
         const ccl::vector_class<ccl::event>& deps); \
 \
-    template ccl::device_communicator::request_t CCL_API ccl::device_communicator::alltoallv( \
+    template ccl::device_communicator::coll_request_t CCL_API ccl::device_communicator::alltoallv( \
         const ccl::vector_class<ccl::reference_wrapper_class<BufferObjectType>>& send_bufs, \
         const ccl::vector_class<size_t>& send_counts, \
         const ccl::vector_class<ccl::reference_wrapper_class<BufferObjectType>>& recv_bufs, \
@@ -795,7 +795,7 @@ ccl::device_communicator::reduce_scatter(const BufferObjectType& send_buf,
         const alltoallv_attr& attr, \
         const ccl::vector_class<ccl::event>& deps); \
 \
-    template ccl::device_communicator::request_t CCL_API ccl::device_communicator::broadcast( \
+    template ccl::device_communicator::coll_request_t CCL_API ccl::device_communicator::broadcast( \
         BufferObjectType& buf, \
         size_t count, \
         size_t root, \
@@ -803,7 +803,7 @@ ccl::device_communicator::reduce_scatter(const BufferObjectType& send_buf,
         const broadcast_attr& attr, \
         const ccl::vector_class<ccl::event>& deps); \
 \
-    template ccl::device_communicator::request_t CCL_API ccl::device_communicator::reduce( \
+    template ccl::device_communicator::coll_request_t CCL_API ccl::device_communicator::reduce( \
         const BufferObjectType& send_buf, \
         BufferObjectType& recv_buf, \
         size_t count, \
@@ -813,7 +813,7 @@ ccl::device_communicator::reduce_scatter(const BufferObjectType& send_buf,
         const reduce_attr& attr, \
         const ccl::vector_class<ccl::event>& deps); \
 \
-    template ccl::device_communicator::request_t CCL_API ccl::device_communicator::reduce_scatter( \
+    template ccl::device_communicator::coll_request_t CCL_API ccl::device_communicator::reduce_scatter( \
         const BufferObjectType& send_buf, \
         BufferObjectType& recv_buf, \
         size_t recv_count, \

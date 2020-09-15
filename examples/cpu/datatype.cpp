@@ -33,7 +33,7 @@ void check_allreduce(ccl::communicator &comm) {
     const size_t max_dtype_count = 1024;
 
     std::vector<ccl::datatype> dtypes(max_dtype_count);
-    std::vector<ccl::request_t> reqs(max_dtype_count);
+    std::vector<ccl::request> reqs(max_dtype_count);
     std::vector<std::vector<float>> send_bufs(max_dtype_count);
     std::vector<std::vector<float>> recv_bufs(max_dtype_count);
 
@@ -59,7 +59,7 @@ void check_allreduce(ccl::communicator &comm) {
     }
 
     for (size_t idx = 0; idx < max_dtype_count; idx++) {
-        reqs[idx]->wait();
+        reqs[idx].wait();
     }
 
     float expected = (comm.size() + 1) * ((float)comm.size() / 2);

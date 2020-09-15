@@ -7,7 +7,7 @@ class ccl_gpu_sched;
 
 namespace ccl {
 class event;
-class gpu_request_impl final : public ccl::request {
+class gpu_request_impl final : public ccl::request_impl {
 public:
     explicit gpu_request_impl(std::unique_ptr<ccl_gpu_sched>&& sched);
     ~gpu_request_impl();
@@ -22,7 +22,7 @@ private:
     bool completed = false;
 };
 
-class gpu_shared_request_impl final : public ccl::request {
+class gpu_shared_request_impl final : public ccl::request_impl {
 public:
     explicit gpu_shared_request_impl(std::shared_ptr<ccl_gpu_sched>&& sched);
     ~gpu_shared_request_impl();
@@ -37,7 +37,7 @@ private:
     bool completed = false;
 };
 
-class gpu_shared_process_request_impl final : public ccl::request {
+class gpu_shared_process_request_impl final : public ccl::request_impl {
 public:
     explicit gpu_shared_process_request_impl(std::shared_ptr<ccl_gpu_sched>&& sched);
     ~gpu_shared_process_request_impl();

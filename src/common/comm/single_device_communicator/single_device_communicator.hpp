@@ -14,6 +14,8 @@ public:
     using base_t = typed_single_device_base_communicator<single_device_communicator,
                                                          ccl::gpu_communicator_traits>;
 
+    using coll_request_t = ccl::request;
+
     single_device_communicator(ccl::unified_device_type&& device,
                                size_t thread_idx,
                                size_t proces_idx,
@@ -21,7 +23,7 @@ public:
 #ifdef MULTI_GPU_SUPPORT
     void visit(ccl::gpu_comm_attr& comm_attr) override;
 #endif
-    ccl::request_t barrier(ccl::stream::impl_value_t& op_stream,
+    coll_request_t barrier(ccl::stream::impl_value_t& op_stream,
                            const ccl::barrier_attr& attr,
                            const ccl::vector_class<ccl::event>& deps) override;
 

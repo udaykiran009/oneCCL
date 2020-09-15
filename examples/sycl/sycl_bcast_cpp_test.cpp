@@ -70,7 +70,7 @@ int main(int argc, char **argv) {
 
     /* invoke ccl_bcast on the CPU side */
     auto attr = ccl::environment::instance().create_operation_attr<ccl::broadcast_attr>();
-    comm.broadcast(buf, COUNT, COLL_ROOT, stream, attr)->wait();
+    comm.broadcast(buf, COUNT, COLL_ROOT, stream, attr).wait();
 
     /* open buf and check its correctness on the target device side */
     q.submit([&](handler &cgh) {

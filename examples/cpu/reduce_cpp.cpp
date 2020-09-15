@@ -20,7 +20,7 @@ void run_collective(const char* cmd_name,
                                ccl::reduction::sum,
                                COLL_ROOT,
                                coll_attr);
-        req->wait();
+        req.wait();
         exec_time += std::chrono::system_clock::now() - start;
     }
 

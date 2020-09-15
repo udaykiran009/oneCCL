@@ -84,6 +84,7 @@ set(CCL_SRC
     ccl_app_api_coll_attr.cpp
     ccl_app_api_comm_split_attr.cpp
     ccl_app_api_datatype_attr.cpp
+    ccl_app_api_request.cpp
     ccl_cpp_kvs.cpp
     ccl_cpp_utils.cpp
     ccl_empty_attr.cpp

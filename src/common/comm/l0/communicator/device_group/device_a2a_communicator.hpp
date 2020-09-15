@@ -16,6 +16,8 @@ public:
                                            ccl::device_topology_type::a2a,
                                            ccl::gpu_communicator_traits>;
 
+    using coll_request_t = ccl::request;
+
     device_group_a2a_communicator(ccl::unified_device_type&& device,
                                   size_t thread_idx,
                                   size_t proces_idx,
@@ -23,7 +25,7 @@ public:
 
     void visit(ccl::gpu_comm_attr& comm_attr) override;
 
-    ccl::request_t barrier(ccl::stream::impl_value_t& stream,
+    coll_request_t barrier(ccl::stream::impl_value_t& stream,
                            const ccl::barrier_attr& attr,
                            const ccl::vector_class<ccl::event>& deps) override;
 

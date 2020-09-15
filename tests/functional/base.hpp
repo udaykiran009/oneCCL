@@ -27,7 +27,7 @@ struct typed_test_param {
     std::vector<std::vector<short>> send_buf_bfp16;
     std::vector<std::vector<short>> recv_buf_bfp16;
 
-    std::vector<std::shared_ptr<ccl::request>> reqs;
+    std::vector<ccl::request> reqs;
     std::string match_id;
     ccl::communicator comm;
     ccl::communicator global_comm;
@@ -50,7 +50,7 @@ struct typed_test_param {
     void prepare_coll_attr(coll_attr_type& coll_attr, size_t idx);
 
     std::string create_match_id(size_t buf_idx);
-    bool complete_request(std::shared_ptr<ccl::request> reqs);
+    bool complete_request(ccl::request reqs);
     void define_start_order();
     bool complete();
     void swap_buffers(size_t iter);

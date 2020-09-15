@@ -41,11 +41,11 @@ void run_test(size_t thread_idx,
     //allreduce
     ccl::coll_attr coll_attr{};
 
-    std::shared_ptr<ccl::request> req =
+    ccl::request req =
         comm->allreduce(mem_send, mem_recv, COUNT, ccl::reduction::sum, &coll_attr, stream);
 
     //wait
-    req->wait();
+    req.wait();
 }
 #else
 void run_test(size_t thread_idx,
@@ -79,11 +79,11 @@ void run_test(size_t thread_idx,
     //allreduce
     ccl::coll_attr coll_attr{};
 
-    std::shared_ptr<ccl::request> req =
+    ccl::request req =
         comm->allreduce(mem_send, mem_recv, COUNT, ccl::reduction::sum, &coll_attr, stream);
 
     //wait
-    req->wait();
+    req.wait();
 }
 #endif // CCL_ENABLE_SYCL
 int main(int argc, char** argv) {

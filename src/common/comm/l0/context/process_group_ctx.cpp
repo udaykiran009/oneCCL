@@ -209,7 +209,7 @@ bool process_group_context::build_cluster_affinity_table(
 
     //wait for completion
     for (auto& req : requests) {
-        req->wait();
+        req.wait();
     }
 
     size_t total_hostname_size =
@@ -275,7 +275,7 @@ bool process_group_context::build_cluster_affinity_table(
 
     //wait for completion
     for (auto& req : requests) {
-        req->wait();
+        req.wait();
     }
 
     //parse hostnames
@@ -606,7 +606,7 @@ void process_group_context::collect_cluster_colored_plain_graphs(
                   send_count);
         ccl_communicator
             ->allgatherv_impl(&send_count, 1, recv_counts_process_graph_sizes.data(), recv_counts)
-            ->wait();
+            .wait();
     }
 
     size_t global_graph_data_size = std::accumulate(
@@ -624,7 +624,7 @@ void process_group_context::collect_cluster_colored_plain_graphs(
                               send_count,
                               reinterpret_cast<char*>(recv_cluster_graphs.data()),
                               recv_counts_process_graph_sizes)
-            ->wait();
+            .wait();
     }
     catch (const std::bad_alloc& ex) {
         CCL_THROW_WITH_ERROR("Memory required for global_graph_data_size size: ",

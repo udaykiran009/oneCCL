@@ -9,7 +9,7 @@
 
 /* allgatherv */
 template <class buffer_type>
-ccl::coll_request_t single_device_communicator::allgatherv_impl(
+single_device_communicator::coll_request_t single_device_communicator::allgatherv_impl(
     const buffer_type* send_buf,
     size_t send_count,
     buffer_type* recv_buf,
@@ -31,10 +31,10 @@ ccl::coll_request_t single_device_communicator::allgatherv_impl(
                                            attr,
                                            comm_impl.get(),
                                            stream.get());
-    return std::unique_ptr<ccl::host_request_impl>(new ccl::host_request_impl(req));
+    return std::unique_ptr<ccl::request_impl>(new ccl::host_request_impl(req));
 }
 template <class buffer_type>
-ccl::coll_request_t single_device_communicator::allgatherv_impl(
+single_device_communicator::coll_request_t single_device_communicator::allgatherv_impl(
     const buffer_type* send_buf,
     size_t send_count,
     ccl::vector_class<buffer_type*>& recv_buf,
@@ -47,7 +47,7 @@ ccl::coll_request_t single_device_communicator::allgatherv_impl(
 }
 
 template <class buffer_type>
-ccl::coll_request_t single_device_communicator::allgatherv_impl(
+single_device_communicator::coll_request_t single_device_communicator::allgatherv_impl(
     const buffer_type& send_buf,
     size_t send_count,
     buffer_type& recv_buf,
@@ -63,10 +63,10 @@ ccl::coll_request_t single_device_communicator::allgatherv_impl(
                                            attr,
                                            comm_impl.get(),
                                            stream.get());
-    return std::unique_ptr<ccl::host_request_impl>(new ccl::host_request_impl(req));
+    return std::unique_ptr<ccl::request_impl>(new ccl::host_request_impl(req));
 }
 template <class buffer_type>
-ccl::request_t single_device_communicator::allgatherv_impl(
+single_device_communicator::coll_request_t single_device_communicator::allgatherv_impl(
     const buffer_type& send_buf,
     size_t send_count,
     ccl::vector_class<ccl::reference_wrapper_class<buffer_type>>& recv_buf,
@@ -80,7 +80,7 @@ ccl::request_t single_device_communicator::allgatherv_impl(
 
 /* allreduce */
 template <class buffer_type>
-ccl::coll_request_t single_device_communicator::allreduce_impl(
+single_device_communicator::coll_request_t single_device_communicator::allreduce_impl(
     const buffer_type* send_buf,
     buffer_type* recv_buf,
     size_t count,
@@ -111,11 +111,11 @@ ccl::coll_request_t single_device_communicator::allreduce_impl(
                                           attr,
                                           comm_impl.get(),
                                           stream.get());
-    return std::unique_ptr<ccl::host_request_impl>(new ccl::host_request_impl(req));
+    return std::unique_ptr<ccl::request_impl>(new ccl::host_request_impl(req));
 }
 
 template <class buffer_type>
-ccl::coll_request_t single_device_communicator::allreduce_impl(
+single_device_communicator::coll_request_t single_device_communicator::allreduce_impl(
     const buffer_type& send_buf,
     buffer_type& recv_buf,
     size_t count,
@@ -131,12 +131,12 @@ ccl::coll_request_t single_device_communicator::allreduce_impl(
                                           attr,
                                           comm_impl.get(),
                                           stream.get());
-    return std::unique_ptr<ccl::host_request_impl>(new ccl::host_request_impl(req));
+    return std::unique_ptr<ccl::request_impl>(new ccl::host_request_impl(req));
 }
 
 /* alltoall */
 template <class buffer_type>
-ccl::coll_request_t single_device_communicator::alltoall_impl(
+single_device_communicator::coll_request_t single_device_communicator::alltoall_impl(
     const buffer_type* send_buf,
     buffer_type* recv_buf,
     size_t count,
@@ -150,10 +150,10 @@ ccl::coll_request_t single_device_communicator::alltoall_impl(
                                          attr,
                                          comm_impl.get(),
                                          stream.get());
-    return std::unique_ptr<ccl::host_request_impl>(new ccl::host_request_impl(req));
+    return std::unique_ptr<ccl::request_impl>(new ccl::host_request_impl(req));
 }
 template <class buffer_type>
-ccl::request_t single_device_communicator::alltoall_impl(
+single_device_communicator::coll_request_t single_device_communicator::alltoall_impl(
     const ccl::vector_class<buffer_type*>& send_buf,
     const ccl::vector_class<buffer_type*>& recv_buf,
     size_t count,
@@ -165,7 +165,7 @@ ccl::request_t single_device_communicator::alltoall_impl(
 }
 
 template <class buffer_type>
-ccl::coll_request_t single_device_communicator::alltoall_impl(
+single_device_communicator::coll_request_t single_device_communicator::alltoall_impl(
     const buffer_type& send_buf,
     buffer_type& recv_buf,
     size_t count,
@@ -179,10 +179,10 @@ ccl::coll_request_t single_device_communicator::alltoall_impl(
                                          attr,
                                          comm_impl.get(),
                                          stream.get());
-    return std::unique_ptr<ccl::host_request_impl>(new ccl::host_request_impl(req));
+    return std::unique_ptr<ccl::request_impl>(new ccl::host_request_impl(req));
 }
 template <class buffer_type>
-ccl::request_t single_device_communicator::alltoall_impl(
+single_device_communicator::coll_request_t single_device_communicator::alltoall_impl(
     const ccl::vector_class<ccl::reference_wrapper_class<buffer_type>>& send_buf,
     const ccl::vector_class<ccl::reference_wrapper_class<buffer_type>>& recv_buf,
     size_t count,
@@ -195,7 +195,7 @@ ccl::request_t single_device_communicator::alltoall_impl(
 
 /* alltoallv */
 template <class buffer_type>
-ccl::coll_request_t single_device_communicator::alltoallv_impl(
+single_device_communicator::coll_request_t single_device_communicator::alltoallv_impl(
     const buffer_type* send_buf,
     const ccl::vector_class<size_t>& send_counts,
     buffer_type* recv_buf,
@@ -211,10 +211,10 @@ ccl::coll_request_t single_device_communicator::alltoallv_impl(
                                           attr,
                                           comm_impl.get(),
                                           stream.get());
-    return std::unique_ptr<ccl::host_request_impl>(new ccl::host_request_impl(req));
+    return std::unique_ptr<ccl::request_impl>(new ccl::host_request_impl(req));
 }
 template <class buffer_type>
-ccl::coll_request_t single_device_communicator::alltoallv_impl(
+single_device_communicator::coll_request_t single_device_communicator::alltoallv_impl(
     const ccl::vector_class<buffer_type*>& send_buf,
     const ccl::vector_class<size_t>& send_counts,
     const ccl::vector_class<buffer_type*>& recv_buf,
@@ -227,7 +227,7 @@ ccl::coll_request_t single_device_communicator::alltoallv_impl(
 }
 
 template <class buffer_type>
-ccl::coll_request_t single_device_communicator::alltoallv_impl(
+single_device_communicator::coll_request_t single_device_communicator::alltoallv_impl(
     const buffer_type& send_buf,
     const ccl::vector_class<size_t>& send_counts,
     buffer_type& recv_buf,
@@ -244,10 +244,10 @@ ccl::coll_request_t single_device_communicator::alltoallv_impl(
                                           attr,
                                           comm_impl.get(),
                                           stream.get());
-    return std::unique_ptr<ccl::host_request_impl>(new ccl::host_request_impl(req));
+    return std::unique_ptr<ccl::request_impl>(new ccl::host_request_impl(req));
 }
 template <class buffer_type>
-ccl::coll_request_t single_device_communicator::alltoallv_impl(
+single_device_communicator::coll_request_t single_device_communicator::alltoallv_impl(
     const ccl::vector_class<ccl::reference_wrapper_class<buffer_type>>& send_buf,
     const ccl::vector_class<size_t>& send_counts,
     const ccl::vector_class<ccl::reference_wrapper_class<buffer_type>>& recv_buf,
@@ -261,7 +261,7 @@ ccl::coll_request_t single_device_communicator::alltoallv_impl(
 
 /* bcast */
 template <class buffer_type>
-ccl::coll_request_t single_device_communicator::broadcast_impl(
+single_device_communicator::coll_request_t single_device_communicator::broadcast_impl(
     buffer_type* buf,
     size_t count,
     size_t root,
@@ -275,11 +275,11 @@ ccl::coll_request_t single_device_communicator::broadcast_impl(
                                           attr,
                                           comm_impl.get(),
                                           stream.get());
-    return std::unique_ptr<ccl::host_request_impl>(new ccl::host_request_impl(req));
+    return std::unique_ptr<ccl::request_impl>(new ccl::host_request_impl(req));
 }
 
 template <class buffer_type>
-ccl::coll_request_t single_device_communicator::broadcast_impl(
+single_device_communicator::coll_request_t single_device_communicator::broadcast_impl(
     buffer_type& buf,
     size_t count,
     size_t root,
@@ -293,12 +293,12 @@ ccl::coll_request_t single_device_communicator::broadcast_impl(
                                           attr,
                                           comm_impl.get(),
                                           stream.get());
-    return std::unique_ptr<ccl::host_request_impl>(new ccl::host_request_impl(req));
+    return std::unique_ptr<ccl::request_impl>(new ccl::host_request_impl(req));
 }
 
 /* reduce */
 template <class buffer_type>
-ccl::coll_request_t single_device_communicator::reduce_impl(
+single_device_communicator::coll_request_t single_device_communicator::reduce_impl(
     const buffer_type* send_buf,
     buffer_type* recv_buf,
     size_t count,
@@ -318,11 +318,11 @@ ccl::coll_request_t single_device_communicator::reduce_impl(
                                        attr,
                                        comm_impl.get(),
                                        stream_ptr);
-    return std::unique_ptr<ccl::host_request_impl>(new ccl::host_request_impl(req));
+    return std::unique_ptr<ccl::request_impl>(new ccl::host_request_impl(req));
 }
 
 template <class buffer_type>
-ccl::coll_request_t single_device_communicator::reduce_impl(
+single_device_communicator::coll_request_t single_device_communicator::reduce_impl(
     const buffer_type& send_buf,
     buffer_type& recv_buf,
     size_t count,
@@ -342,11 +342,11 @@ ccl::coll_request_t single_device_communicator::reduce_impl(
                                        attr,
                                        comm_impl.get(),
                                        stream_ptr);
-    return std::unique_ptr<ccl::host_request_impl>(new ccl::host_request_impl(req));
+    return std::unique_ptr<ccl::request_impl>(new ccl::host_request_impl(req));
 }
 /* reduce_scatter */
 template <class buffer_type>
-ccl::coll_request_t single_device_communicator::reduce_scatter_impl(
+single_device_communicator::coll_request_t single_device_communicator::reduce_scatter_impl(
     const buffer_type* send_buf,
     buffer_type* recv_buf,
     size_t recv_count,
@@ -358,7 +358,7 @@ ccl::coll_request_t single_device_communicator::reduce_scatter_impl(
     return {};
 }
 template <class buffer_type>
-ccl::coll_request_t single_device_communicator::reduce_scatter_impl(
+single_device_communicator::coll_request_t single_device_communicator::reduce_scatter_impl(
     const buffer_type& send_buf,
     buffer_type& recv_buf,
     size_t recv_count,
@@ -372,7 +372,7 @@ ccl::coll_request_t single_device_communicator::reduce_scatter_impl(
 
 /* sparse_allreduce */
 template <class index_buffer_type, class value_buffer_type>
-ccl::coll_request_t single_device_communicator::sparse_allreduce_impl(
+single_device_communicator::coll_request_t single_device_communicator::sparse_allreduce_impl(
     const index_buffer_type* send_ind_buf,
     size_t send_ind_count,
     const value_buffer_type* send_val_buf,
@@ -402,11 +402,11 @@ ccl::coll_request_t single_device_communicator::sparse_allreduce_impl(
                                   attr,
                                   comm_impl.get(),
                                   stream_ptr);
-    return std::unique_ptr<ccl::host_request_impl>(new ccl::host_request_impl(req));
+    return std::unique_ptr<ccl::request_impl>(new ccl::host_request_impl(req));
 }
 
 template <class index_buffer_container_type, class value_buffer_container_type>
-ccl::coll_request_t single_device_communicator::sparse_allreduce_impl(
+single_device_communicator::coll_request_t single_device_communicator::sparse_allreduce_impl(
     const index_buffer_container_type& send_ind_buf,
     size_t send_ind_count,
     const value_buffer_container_type& send_val_buf,
@@ -436,5 +436,5 @@ ccl::coll_request_t single_device_communicator::sparse_allreduce_impl(
         attr,
         comm_impl.get(),
         stream_ptr);
-    return std::unique_ptr<ccl::host_request_impl>(new ccl::host_request_impl(req));
+    return std::unique_ptr<ccl::request_impl>(new ccl::host_request_impl(req));
 }

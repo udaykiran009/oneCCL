@@ -55,14 +55,16 @@ typed_single_device_base_communicator<TEMPLATE_DEF_ARG>::typed_single_device_bas
                             process_idx /*, comm_attr*/,
                             attr) {}
 
-ccl::request_t single_device_communicator::barrier(ccl::stream::impl_value_t& stream,
+single_device_communicator::coll_request_t
+single_device_communicator::barrier(ccl::stream::impl_value_t& stream,
                                                    const ccl::barrier_attr& attr,
                                                    const ccl::vector_class<ccl::event>& deps) {
     return {};
 }
 
 /* allgatherv */
-ccl::coll_request_t single_device_communicator::allgatherv_impl(
+single_device_communicator::coll_request_t
+single_device_communicator::allgatherv_impl(
     const void* send_buf,
     size_t send_count,
     void* recv_buf,
@@ -74,7 +76,8 @@ ccl::coll_request_t single_device_communicator::allgatherv_impl(
     const ccl::vector_class<ccl::event>& deps) {
     return {};
 }
-ccl::coll_request_t single_device_communicator::allgatherv_impl(
+single_device_communicator::coll_request_t
+single_device_communicator::allgatherv_impl(
     const void* send_buf,
     size_t send_count,
     const ccl::vector_class<void*>& recv_bufs,
@@ -88,7 +91,8 @@ ccl::coll_request_t single_device_communicator::allgatherv_impl(
 }
 
 /* allreduce */
-ccl::coll_request_t single_device_communicator::allreduce_impl(
+single_device_communicator::coll_request_t
+single_device_communicator::allreduce_impl(
     const void* send_buf,
     void* recv_buf,
     size_t count,
@@ -102,7 +106,8 @@ ccl::coll_request_t single_device_communicator::allreduce_impl(
 }
 
 /* alltoall */
-ccl::coll_request_t single_device_communicator::alltoall_impl(
+single_device_communicator::coll_request_t
+single_device_communicator::alltoall_impl(
     const void* send_buf,
     void* recv_buf,
     size_t count,
@@ -113,7 +118,8 @@ ccl::coll_request_t single_device_communicator::alltoall_impl(
     const ccl::vector_class<ccl::event>& deps) {
     return {};
 }
-ccl::coll_request_t single_device_communicator::alltoall_impl(
+single_device_communicator::coll_request_t
+single_device_communicator::alltoall_impl(
     const ccl::vector_class<void*>& send_buf,
     const ccl::vector_class<void*>& recv_buf,
     size_t count,
@@ -125,7 +131,8 @@ ccl::coll_request_t single_device_communicator::alltoall_impl(
 }
 
 /* alltoallv */
-ccl::coll_request_t single_device_communicator::alltoallv_impl(
+single_device_communicator::coll_request_t
+single_device_communicator::alltoallv_impl(
     const void* send_buf,
     const ccl::vector_class<size_t>& send_counts,
     void* recv_buf,
@@ -137,7 +144,8 @@ ccl::coll_request_t single_device_communicator::alltoallv_impl(
     const ccl::vector_class<ccl::event>& deps) {
     return {};
 }
-ccl::coll_request_t single_device_communicator::alltoallv_impl(
+single_device_communicator::coll_request_t
+single_device_communicator::alltoallv_impl(
     const ccl::vector_class<void*>& send_buf,
     const ccl::vector_class<size_t>& send_counts,
     ccl::vector_class<void*> recv_buf,
@@ -151,7 +159,8 @@ ccl::coll_request_t single_device_communicator::alltoallv_impl(
 }
 
 /* bcast */
-ccl::coll_request_t single_device_communicator::broadcast_impl(
+single_device_communicator::coll_request_t
+single_device_communicator::broadcast_impl(
     void* buf,
     size_t count,
     ccl::datatype dtype,
@@ -164,7 +173,8 @@ ccl::coll_request_t single_device_communicator::broadcast_impl(
 }
 
 /* reduce */
-ccl::coll_request_t single_device_communicator::reduce_impl(
+single_device_communicator::coll_request_t
+single_device_communicator::reduce_impl(
     const void* send_buf,
     void* recv_buf,
     size_t count,
@@ -179,7 +189,8 @@ ccl::coll_request_t single_device_communicator::reduce_impl(
 }
 
 /* reduce_scatter */
-ccl::request_t single_device_communicator::reduce_scatter_impl(
+single_device_communicator::coll_request_t
+single_device_communicator::reduce_scatter_impl(
     const void* send_buf,
     void* recv_buf,
     size_t recv_count,
@@ -193,7 +204,8 @@ ccl::request_t single_device_communicator::reduce_scatter_impl(
 }
 
 /* sparse_allreduce */
-ccl::coll_request_t single_device_communicator::sparse_allreduce_impl(
+single_device_communicator::coll_request_t
+single_device_communicator::sparse_allreduce_impl(
     const void* send_ind_buf,
     size_t send_ind_count,
     const void* send_val_buf,
@@ -214,7 +226,8 @@ ccl::coll_request_t single_device_communicator::sparse_allreduce_impl(
 
 /* allgatherv */
 template <class buffer_type>
-ccl::coll_request_t single_device_communicator::allgatherv_impl(
+single_device_communicator::coll_request_t
+single_device_communicator::allgatherv_impl(
     const buffer_type* send_buf,
     size_t send_count,
     buffer_type* recv_buf,
@@ -225,7 +238,8 @@ ccl::coll_request_t single_device_communicator::allgatherv_impl(
     return {};
 }
 template <class buffer_type>
-ccl::coll_request_t single_device_communicator::allgatherv_impl(
+single_device_communicator::coll_request_t
+single_device_communicator::allgatherv_impl(
     const buffer_type* send_buf,
     size_t send_count,
     ccl::vector_class<buffer_type*>& recv_buf,
@@ -238,7 +252,8 @@ ccl::coll_request_t single_device_communicator::allgatherv_impl(
 }
 
 template <class buffer_type>
-ccl::coll_request_t single_device_communicator::allgatherv_impl(
+single_device_communicator::coll_request_t
+single_device_communicator::allgatherv_impl(
     const buffer_type& send_buf,
     size_t send_count,
     buffer_type& recv_buf,
@@ -249,7 +264,8 @@ ccl::coll_request_t single_device_communicator::allgatherv_impl(
     return {};
 }
 template <class buffer_type>
-ccl::request_t single_device_communicator::allgatherv_impl(
+single_device_communicator::coll_request_t
+single_device_communicator::allgatherv_impl(
     const buffer_type& send_buf,
     size_t send_count,
     ccl::vector_class<ccl::reference_wrapper_class<buffer_type>>& recv_buf,
@@ -263,7 +279,8 @@ ccl::request_t single_device_communicator::allgatherv_impl(
 
 /* allreduce */
 template <class buffer_type>
-ccl::coll_request_t single_device_communicator::allreduce_impl(
+single_device_communicator::coll_request_t
+single_device_communicator::allreduce_impl(
     const buffer_type* send_buf,
     buffer_type* recv_buf,
     size_t count,
@@ -275,7 +292,8 @@ ccl::coll_request_t single_device_communicator::allreduce_impl(
 }
 
 template <class buffer_type>
-ccl::coll_request_t single_device_communicator::allreduce_impl(
+single_device_communicator::coll_request_t
+single_device_communicator::allreduce_impl(
     const buffer_type& send_buf,
     buffer_type& recv_buf,
     size_t count,
@@ -288,7 +306,8 @@ ccl::coll_request_t single_device_communicator::allreduce_impl(
 
 /* alltoall */
 template <class buffer_type>
-ccl::coll_request_t single_device_communicator::alltoall_impl(
+single_device_communicator::coll_request_t
+single_device_communicator::alltoall_impl(
     const buffer_type* send_buf,
     buffer_type* recv_buf,
     size_t count,
@@ -298,7 +317,8 @@ ccl::coll_request_t single_device_communicator::alltoall_impl(
     return {};
 }
 template <class buffer_type>
-ccl::request_t single_device_communicator::alltoall_impl(
+single_device_communicator::coll_request_t
+single_device_communicator::alltoall_impl(
     const ccl::vector_class<buffer_type*>& send_buf,
     const ccl::vector_class<buffer_type*>& recv_buf,
     size_t count,
@@ -310,7 +330,8 @@ ccl::request_t single_device_communicator::alltoall_impl(
 }
 
 template <class buffer_type>
-ccl::coll_request_t single_device_communicator::alltoall_impl(
+single_device_communicator::coll_request_t
+single_device_communicator::alltoall_impl(
     const buffer_type& send_buf,
     buffer_type& recv_buf,
     size_t count,
@@ -320,7 +341,8 @@ ccl::coll_request_t single_device_communicator::alltoall_impl(
     return {};
 }
 template <class buffer_type>
-ccl::request_t single_device_communicator::alltoall_impl(
+single_device_communicator::coll_request_t
+single_device_communicator::alltoall_impl(
     const ccl::vector_class<ccl::reference_wrapper_class<buffer_type>>& send_buf,
     const ccl::vector_class<ccl::reference_wrapper_class<buffer_type>>& recv_buf,
     size_t count,
@@ -333,7 +355,8 @@ ccl::request_t single_device_communicator::alltoall_impl(
 
 /* alltoallv */
 template <class buffer_type>
-ccl::coll_request_t single_device_communicator::alltoallv_impl(
+single_device_communicator::coll_request_t
+single_device_communicator::alltoallv_impl(
     const buffer_type* send_buf,
     const ccl::vector_class<size_t>& send_counts,
     buffer_type* recv_buf,
@@ -344,7 +367,8 @@ ccl::coll_request_t single_device_communicator::alltoallv_impl(
     return {};
 }
 template <class buffer_type>
-ccl::coll_request_t single_device_communicator::alltoallv_impl(
+single_device_communicator::coll_request_t
+single_device_communicator::alltoallv_impl(
     const ccl::vector_class<buffer_type*>& send_buf,
     const ccl::vector_class<size_t>& send_counts,
     const ccl::vector_class<buffer_type*>& recv_buf,
@@ -357,7 +381,8 @@ ccl::coll_request_t single_device_communicator::alltoallv_impl(
 }
 
 template <class buffer_type>
-ccl::coll_request_t single_device_communicator::alltoallv_impl(
+single_device_communicator::coll_request_t
+single_device_communicator::alltoallv_impl(
     const buffer_type& send_buf,
     const ccl::vector_class<size_t>& send_counts,
     buffer_type& recv_buf,
@@ -368,7 +393,8 @@ ccl::coll_request_t single_device_communicator::alltoallv_impl(
     return {};
 }
 template <class buffer_type>
-ccl::coll_request_t single_device_communicator::alltoallv_impl(
+single_device_communicator::coll_request_t
+single_device_communicator::alltoallv_impl(
     const ccl::vector_class<ccl::reference_wrapper_class<buffer_type>>& send_buf,
     const ccl::vector_class<size_t>& send_counts,
     const ccl::vector_class<ccl::reference_wrapper_class<buffer_type>>& recv_buf,
@@ -382,7 +408,8 @@ ccl::coll_request_t single_device_communicator::alltoallv_impl(
 
 /* bcast */
 template <class buffer_type>
-ccl::coll_request_t single_device_communicator::broadcast_impl(
+single_device_communicator::coll_request_t
+single_device_communicator::broadcast_impl(
     buffer_type* buf,
     size_t count,
     size_t root,
@@ -393,7 +420,8 @@ ccl::coll_request_t single_device_communicator::broadcast_impl(
 }
 
 template <class buffer_type>
-ccl::coll_request_t single_device_communicator::broadcast_impl(
+single_device_communicator::coll_request_t
+single_device_communicator::broadcast_impl(
     buffer_type& buf,
     size_t count,
     size_t root,
@@ -405,7 +433,8 @@ ccl::coll_request_t single_device_communicator::broadcast_impl(
 
 /* reduce */
 template <class buffer_type>
-ccl::coll_request_t single_device_communicator::reduce_impl(
+single_device_communicator::coll_request_t
+single_device_communicator::reduce_impl(
     const buffer_type* send_buf,
     buffer_type* recv_buf,
     size_t count,
@@ -418,7 +447,8 @@ ccl::coll_request_t single_device_communicator::reduce_impl(
 }
 
 template <class buffer_type>
-ccl::coll_request_t single_device_communicator::reduce_impl(
+single_device_communicator::coll_request_t
+single_device_communicator::reduce_impl(
     const buffer_type& send_buf,
     buffer_type& recv_buf,
     size_t count,
@@ -431,7 +461,8 @@ ccl::coll_request_t single_device_communicator::reduce_impl(
 }
 /* reduce_scatter */
 template <class buffer_type>
-ccl::coll_request_t single_device_communicator::reduce_scatter_impl(
+single_device_communicator::coll_request_t
+single_device_communicator::reduce_scatter_impl(
     const buffer_type* send_buf,
     buffer_type* recv_buf,
     size_t recv_count,
@@ -442,7 +473,8 @@ ccl::coll_request_t single_device_communicator::reduce_scatter_impl(
     return {};
 }
 template <class buffer_type>
-ccl::coll_request_t single_device_communicator::reduce_scatter_impl(
+single_device_communicator::coll_request_t
+single_device_communicator::reduce_scatter_impl(
     const buffer_type& send_buf,
     buffer_type& recv_buf,
     size_t recv_count,
@@ -455,7 +487,8 @@ ccl::coll_request_t single_device_communicator::reduce_scatter_impl(
 
 /* sparse_allreduce */
 template <class index_buffer_type, class value_buffer_type>
-ccl::coll_request_t single_device_communicator::sparse_allreduce_impl(
+single_device_communicator::coll_request_t
+single_device_communicator::sparse_allreduce_impl(
     const index_buffer_type* send_ind_buf,
     size_t send_ind_count,
     const value_buffer_type* send_val_buf,
@@ -472,7 +505,8 @@ ccl::coll_request_t single_device_communicator::sparse_allreduce_impl(
 }
 
 template <class index_buffer_container_type, class value_buffer_container_type>
-ccl::coll_request_t single_device_communicator::sparse_allreduce_impl(
+single_device_communicator::coll_request_t
+single_device_communicator::sparse_allreduce_impl(
     const index_buffer_container_type& send_ind_buf,
     size_t send_ind_count,
     const value_buffer_container_type& send_val_buf,

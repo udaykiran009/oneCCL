@@ -81,7 +81,7 @@ Consider a simple ``allreduce`` example for CPU.
                            COUNT,
                            ccl::reduction::sum,
                            nullptr, /* attr */
-                           stream)->wait();
+                           stream).wait();
 
 
 

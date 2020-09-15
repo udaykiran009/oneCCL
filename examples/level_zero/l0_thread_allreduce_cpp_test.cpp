@@ -179,7 +179,7 @@ void user_thread_sycl(size_t thread_idx, const cl::sycl::vector_class<cl::sycl::
 
     //allreduce
     ccl::coll_attr coll_attr{};
-    std::vector<std::shared_ptr<ccl::request>> reqs;
+    std::vector<ccl::request> reqs;
     for(auto &comm : comms)
     {
         size_t rank = comm->rank();
@@ -203,7 +203,7 @@ void user_thread_sycl(size_t thread_idx, const cl::sycl::vector_class<cl::sycl::
     //wait
     for(auto &req : reqs)
     {
-        req->wait();
+        req.wait();
     }
 
     //gpu_comm->barrier(stream);
@@ -316,7 +316,7 @@ void user_thread_idx(size_t thread_idx, ccl::device_indices_t thread_device_idx,
     global_communicator->barrier();
 
     //allreduce
-    std::vector<std::shared_ptr<ccl::request>> reqs;
+    std::vector<ccl::request> reqs;
         ccl::coll_attr coll_attr{};
     for(auto &comm : comms)
     {
@@ -340,7 +340,7 @@ void user_thread_idx(size_t thread_idx, ccl::device_indices_t thread_device_idx,
     //wait
     for(auto &req : reqs)
     {
-        req->wait();
+        req.wait();
     }
 
     //gpu_comm->barrier(stream);

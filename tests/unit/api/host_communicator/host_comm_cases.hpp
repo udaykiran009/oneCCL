@@ -92,7 +92,7 @@ TEST(host_communicator_api, host_comm_allgatherv_void) {
     auto attr = ccl::create_coll_attr<ccl::allgatherv_attr>();
 
     auto req = comm.allgatherv(send_buf, send_count, recv_buf, recv_counts, dtype, attr);
-    req->wait();
+    req.wait();
 }
 
 TEST(host_communicator_api, host_comm_allgatherv_int) {
@@ -106,7 +106,7 @@ TEST(host_communicator_api, host_comm_allgatherv_int) {
     auto attr = ccl::create_coll_attr<ccl::allgatherv_attr>();
 
     auto req = comm.allgatherv(send_buf, send_count, recv_buf, recv_counts, attr);
-    req->wait();
+    req.wait();
 }
 
 TEST(host_communicator_api, host_comm_allgatherv_void_recv_bufs) {
@@ -121,7 +121,7 @@ TEST(host_communicator_api, host_comm_allgatherv_void_recv_bufs) {
     auto attr = ccl::create_coll_attr<ccl::allgatherv_attr>();
 
     auto req = comm.allgatherv(send_buf, send_count, recv_bufs, recv_counts, dtype, attr);
-    req->wait();
+    req.wait();
 }
 
 TEST(host_communicator_api, host_comm_allgatherv_int_recv_bufs) {
@@ -135,7 +135,7 @@ TEST(host_communicator_api, host_comm_allgatherv_int_recv_bufs) {
     auto attr = ccl::create_coll_attr<ccl::allgatherv_attr>();
 
     auto req = comm.allgatherv(send_buf, send_count, recv_bufs, recv_counts, attr);
-    req->wait();
+    req.wait();
 }
 
 TEST(host_communicator_api, host_comm_allreduce_void) {
@@ -150,7 +150,7 @@ TEST(host_communicator_api, host_comm_allreduce_void) {
     auto attr = ccl::create_coll_attr<ccl::allreduce_attr>();
 
     auto req = comm.allreduce(send_buf, recv_buf, count, dtype, reduction, attr);
-    req->wait();
+    req.wait();
 }
 
 TEST(host_communicator_api, host_comm_allreduce_int) {
@@ -164,7 +164,7 @@ TEST(host_communicator_api, host_comm_allreduce_int) {
     auto attr = ccl::create_coll_attr<ccl::allreduce_attr>();
 
     auto req = comm.allreduce(send_buf, recv_buf, count, reduction, attr);
-    req->wait();
+    req.wait();
 }
 
 TEST(host_communicator_api, host_comm_alltoall_void) {
@@ -178,7 +178,7 @@ TEST(host_communicator_api, host_comm_alltoall_void) {
     auto attr = ccl::create_coll_attr<ccl::alltoall_attr>();
 
     auto req = comm.alltoall(send_buf, recv_buf, count, dtype, attr);
-    req->wait();
+    req.wait();
 }
 
 TEST(host_communicator_api, host_comm_alltoall_void_vector_bufs) {
@@ -192,7 +192,7 @@ TEST(host_communicator_api, host_comm_alltoall_void_vector_bufs) {
     auto attr = ccl::create_coll_attr<ccl::alltoall_attr>();
 
     auto req = comm.alltoall(send_buf, recv_buf, count, dtype, attr);
-    req->wait();
+    req.wait();
 }
 
 TEST(host_communicator_api, host_comm_alltoall_int) {
@@ -205,7 +205,7 @@ TEST(host_communicator_api, host_comm_alltoall_int) {
     auto attr = ccl::create_coll_attr<ccl::alltoall_attr>();
 
     auto req = comm.alltoall(send_buf, recv_buf, count, attr);
-    req->wait();
+    req.wait();
 }
 
 TEST(host_communicator_api, host_comm_alltoall_int_vector_bufs) {
@@ -218,7 +218,7 @@ TEST(host_communicator_api, host_comm_alltoall_int_vector_bufs) {
     auto attr = ccl::create_coll_attr<ccl::alltoall_attr>();
 
     auto req = comm.alltoall(send_buf, recv_buf, count, attr);
-    req->wait();
+    req.wait();
 }
 
 TEST(host_communicator_api, host_comm_alltoallv_void) {
@@ -233,7 +233,7 @@ TEST(host_communicator_api, host_comm_alltoallv_void) {
     auto attr = ccl::create_coll_attr<ccl::alltoallv_attr>();
 
     auto req = comm.alltoallv(send_buf, send_counts, recv_buf, recv_counts, dtype, attr);
-    req->wait();
+    req.wait();
 }
 
 TEST(host_communicator_api, host_comm_alltoallv_void_recv_bufs) {
@@ -248,7 +248,7 @@ TEST(host_communicator_api, host_comm_alltoallv_void_recv_bufs) {
     auto attr = ccl::create_coll_attr<ccl::alltoallv_attr>();
 
     auto req = comm.alltoallv(send_bufs, send_counts, recv_bufs, recv_counts, dtype, attr);
-    req->wait();
+    req.wait();
 }
 
 TEST(host_communicator_api, host_comm_alltoallv_int) {
@@ -262,7 +262,7 @@ TEST(host_communicator_api, host_comm_alltoallv_int) {
     auto attr = ccl::create_coll_attr<ccl::alltoallv_attr>();
 
     auto req = comm.alltoallv(send_buf, send_counts, recv_buf, recv_counts, attr);
-    req->wait();
+    req.wait();
 }
 
 TEST(host_communicator_api, host_comm_alltoallv_int_recv_bufs) {
@@ -276,7 +276,7 @@ TEST(host_communicator_api, host_comm_alltoallv_int_recv_bufs) {
     auto attr = ccl::create_coll_attr<ccl::alltoallv_attr>();
 
     auto req = comm.alltoallv(send_bufs, send_counts, recv_bufs, recv_counts, attr);
-    req->wait();
+    req.wait();
 }
 
 TEST(host_communicator_api, host_comm_barrier) {
@@ -286,7 +286,7 @@ TEST(host_communicator_api, host_comm_barrier) {
     auto attr = ccl::create_coll_attr<ccl::barrier_attr>();
 
     auto req = comm.barrier(attr);
-    req->wait();
+    req.wait();
 }
 
 TEST(host_communicator_api, host_comm_bcast_void) {
@@ -300,7 +300,7 @@ TEST(host_communicator_api, host_comm_bcast_void) {
     auto attr = ccl::create_coll_attr<ccl::broadcast_attr>();
 
     auto req = comm.broadcast(buf, count, dtype, root, attr);
-    req->wait();
+    req.wait();
 }
 
 TEST(host_communicator_api, host_comm_bcast_int) {
@@ -313,7 +313,7 @@ TEST(host_communicator_api, host_comm_bcast_int) {
     auto attr = ccl::create_coll_attr<ccl::broadcast_attr>();
 
     auto req = comm.broadcast(buf, count, root, attr);
-    req->wait();
+    req.wait();
 }
 
 TEST(host_communicator_api, host_comm_reduce_void) {
@@ -329,7 +329,7 @@ TEST(host_communicator_api, host_comm_reduce_void) {
     auto attr = ccl::create_coll_attr<ccl::reduce_attr>();
 
     auto req = comm.reduce(send_buf, recv_buf, count, dtype, reduction, root, attr);
-    req->wait();
+    req.wait();
 }
 
 TEST(host_communicator_api, host_comm_reduce_int) {
@@ -344,7 +344,7 @@ TEST(host_communicator_api, host_comm_reduce_int) {
     auto attr = ccl::create_coll_attr<ccl::reduce_attr>();
 
     auto req = comm.reduce(send_buf, recv_buf, count, reduction, root, attr);
-    req->wait();
+    req.wait();
 }
 
 TEST(host_communicator_api, host_comm_reduce_scatter_void) {
@@ -359,7 +359,7 @@ TEST(host_communicator_api, host_comm_reduce_scatter_void) {
     auto attr = ccl::create_coll_attr<ccl::reduce_scatter_attr>();
 
     auto req = comm.reduce_scatter(send_buf, recv_buf, recv_count, dtype, reduction, attr);
-    req->wait();
+    req.wait();
 }
 
 TEST(host_communicator_api, host_comm_reduce_scatter_int) {
@@ -373,7 +373,7 @@ TEST(host_communicator_api, host_comm_reduce_scatter_int) {
     auto attr = ccl::create_coll_attr<ccl::reduce_scatter_attr>();
 
     auto req = comm.reduce_scatter(send_buf, recv_buf, recv_count, reduction, attr);
-    req->wait();
+    req.wait();
 }
 
 TEST(host_communicator_api, host_comm_sparse_allreduce_void) {
@@ -405,7 +405,7 @@ TEST(host_communicator_api, host_comm_sparse_allreduce_void) {
                                      val_dtype,
                                      reduction,
                                      attr);
-    req->wait();
+    req.wait();
 }
 
 TEST(host_communicator_api, host_comm_sparse_allreduce_int) {
@@ -433,7 +433,7 @@ TEST(host_communicator_api, host_comm_sparse_allreduce_int) {
                                      recv_val_count,
                                      reduction,
                                      attr);
-    req->wait();
+    req.wait();
 }
 
 } // namespace host_communicator_suite

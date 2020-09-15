@@ -15,7 +15,7 @@ void run_collective(const char* cmd_name,
         auto start = std::chrono::system_clock::now();
         auto req = comm.allreduce(
             send_buf.data(), recv_buf.data(), recv_buf.size(), ccl::reduction::sum, coll_attr);
-        req->wait();
+        req.wait();
         exec_time += std::chrono::system_clock::now() - start;
     }
 

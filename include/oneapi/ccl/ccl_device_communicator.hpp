@@ -47,8 +47,7 @@ public:
      */
     using ccl_context_t = typename unified_device_context_type::ccl_native_t;
 
-    using request_t = ccl::request_t;
-    using coll_request_t = request_t;
+    using coll_request_t = ccl::request;
 
     device_communicator(device_communicator&& src);
     device_communicator& operator=(device_communicator&& src);
@@ -99,9 +98,9 @@ public:
      * @param op_stream op_stream associated with the operation
      * @param attr optional attributes to customize operation
      * @param deps optional vector of events that the operation should depend on
-     * @return @ref ccl::request_t object to track the progress of the operation
+     * @return @ref ccl::request object to track the progress of the operation
      */
-    request_t allgatherv(const void* send_buf,
+    coll_request_t allgatherv(const void* send_buf,
                          size_t send_count,
                          void* recv_buf,
                          const vector_class<size_t>& recv_counts,
@@ -119,9 +118,9 @@ public:
      * @param op_stream op_stream associated with the operation
      * @param attr optional attributes to customize operation
      * @param deps optional vector of events that the operation should depend on
-     * @return @ref ccl::request_t object to track the progress of the operation
+     * @return @ref ccl::request object to track the progress of the operation
      */
-    request_t allgatherv(const void* send_buf,
+    coll_request_t allgatherv(const void* send_buf,
                          size_t send_count,
                          const vector_class<void*>& recv_bufs,
                          const vector_class<size_t>& recv_counts,
@@ -138,12 +137,12 @@ public:
      * @param op_stream op_stream associated with the operation
      * @param attr optional attributes to customize operation
      * @param deps optional vector of events that the operation should depend on
-     * @return @ref ccl::request_t object to track the progress of the operation
+     * @return @ref ccl::request object to track the progress of the operation
      */
     template <class BufferType,
               class = typename std::enable_if<ccl::is_native_type_supported<BufferType>(),
-                                              request_t>::type>
-    request_t allgatherv(const BufferType* send_buf,
+                                              coll_request_t>::type>
+    coll_request_t allgatherv(const BufferType* send_buf,
                          size_t send_count,
                          BufferType* recv_buf,
                          const vector_class<size_t>& recv_counts,
@@ -160,12 +159,12 @@ public:
      * @param op_stream op_stream associated with the operation
      * @param attr optional attributes to customize operation
      * @param deps optional vector of events that the operation should depend on
-     * @return @ref ccl::request_t object to track the progress of the operation
+     * @return @ref ccl::request object to track the progress of the operation
      */
     template <class BufferType,
               class = typename std::enable_if<ccl::is_native_type_supported<BufferType>(),
-                                              request_t>::type>
-    request_t allgatherv(const BufferType* send_buf,
+                                              coll_request_t>::type>
+    coll_request_t allgatherv(const BufferType* send_buf,
                          size_t send_count,
                          vector_class<BufferType*>& recv_bufs,
                          const vector_class<size_t>& recv_counts,
@@ -182,12 +181,12 @@ public:
      * @param op_stream op_stream associated with the operation
      * @param attr optional attributes to customize operation
      * @param deps optional vector of events that the operation should depend on
-     * @return @ref ccl::request_t object to track the progress of the operation
+     * @return @ref ccl::request object to track the progress of the operation
      */
     template <class BufferObjectType,
               class = typename std::enable_if<ccl::is_class_supported<BufferObjectType>(),
-                                              request_t>::type>
-    request_t allgatherv(const BufferObjectType& send_buf,
+                                              coll_request_t>::type>
+    coll_request_t allgatherv(const BufferObjectType& send_buf,
                          size_t send_count,
                          BufferObjectType& recv_buf,
                          const vector_class<size_t>& recv_counts,
@@ -204,12 +203,12 @@ public:
      * @param op_stream op_stream associated with the operation
      * @param attr optional attributes to customize operation
      * @param deps optional vector of events that the operation should depend on
-     * @return @ref ccl::request_t object to track the progress of the operation
+     * @return @ref ccl::request object to track the progress of the operation
      */
     template <class BufferObjectType,
               class = typename std::enable_if<ccl::is_class_supported<BufferObjectType>(),
-                                              request_t>::type>
-    request_t allgatherv(const BufferObjectType& send_buf,
+                                              coll_request_t>::type>
+    coll_request_t allgatherv(const BufferObjectType& send_buf,
                          size_t send_count,
                          vector_class<reference_wrapper_class<BufferObjectType>>& recv_bufs,
                          const vector_class<size_t>& recv_counts,
@@ -231,9 +230,9 @@ public:
      * @param op_stream op_stream associated with the operation
      * @param attr optional attributes to customize operation
      * @param deps optional vector of events that the operation should depend on
-     * @return @ref ccl::request_t object to track the progress of the operation
+     * @return @ref ccl::request object to track the progress of the operation
      */
-    request_t allreduce(const void* send_buf,
+    coll_request_t allreduce(const void* send_buf,
                         void* recv_buf,
                         size_t count,
                         datatype dtype,
@@ -251,12 +250,12 @@ public:
      * @param op_stream op_stream associated with the operation
      * @param attr optional attributes to customize operation
      * @param deps optional vector of events that the operation should depend on
-     * @return @ref ccl::request_t object to track the progress of the operation
+     * @return @ref ccl::request object to track the progress of the operation
      */
     template <class BufferType,
               class = typename std::enable_if<ccl::is_native_type_supported<BufferType>(),
-                                              request_t>::type>
-    request_t allreduce(const BufferType* send_buf,
+                                              coll_request_t>::type>
+    coll_request_t allreduce(const BufferType* send_buf,
                         BufferType* recv_buf,
                         size_t count,
                         reduction rtype,
@@ -273,12 +272,12 @@ public:
      * @param op_stream op_stream associated with the operation
      * @param attr optional attributes to customize operation
      * @param deps optional vector of events that the operation should depend on
-     * @return @ref ccl::request_t object to track the progress of the operation
+     * @return @ref ccl::request object to track the progress of the operation
      */
     template <class BufferObjectType,
               class = typename std::enable_if<ccl::is_class_supported<BufferObjectType>(),
-                                              request_t>::type>
-    request_t allreduce(const BufferObjectType& send_buf,
+                                              coll_request_t>::type>
+    coll_request_t allreduce(const BufferObjectType& send_buf,
                         BufferObjectType& recv_buf,
                         size_t count,
                         reduction rtype,
@@ -302,9 +301,9 @@ public:
      * @param op_stream op_stream associated with the operation
      * @param attr optional attributes to customize operation
      * @param deps optional vector of events that the operation should depend on
-     * @return @ref ccl::request_t object to track the progress of the operation
+     * @return @ref ccl::request object to track the progress of the operation
      */
-    request_t alltoall(const void* send_buf,
+    coll_request_t alltoall(const void* send_buf,
                        void* recv_buf,
                        size_t count,
                        datatype dtype,
@@ -320,9 +319,9 @@ public:
      * @param op_stream op_stream associated with the operation
      * @param attr optional attributes to customize operation
      * @param deps optional vector of events that the operation should depend on
-     * @return @ref ccl::request_t object to track the progress of the operation
+     * @return @ref ccl::request object to track the progress of the operation
      */
-    request_t alltoall(const vector_class<void*>& send_buf,
+    coll_request_t alltoall(const vector_class<void*>& send_buf,
                        const vector_class<void*>& recv_buf,
                        size_t count,
                        datatype dtype,
@@ -339,12 +338,12 @@ public:
      * @param op_stream op_stream associated with the operation
      * @param attr optional attributes to customize operation
      * @param deps optional vector of events that the operation should depend on
-     * @return @ref ccl::request_t object to track the progress of the operation
+     * @return @ref ccl::request object to track the progress of the operation
      */
     template <class BufferType,
               class = typename std::enable_if<ccl::is_native_type_supported<BufferType>(),
-                                              request_t>::type>
-    request_t alltoall(const BufferType* send_buf,
+                                              coll_request_t>::type>
+    coll_request_t alltoall(const BufferType* send_buf,
                        BufferType* recv_buf,
                        size_t count,
                        stream op_stream = default_stream,
@@ -359,12 +358,12 @@ public:
      * @param op_stream op_stream associated with the operation
      * @param attr optional attributes to customize operation
      * @param deps optional vector of events that the operation should depend on
-     * @return @ref ccl::request_t object to track the progress of the operation
+     * @return @ref ccl::request object to track the progress of the operation
      */
     template <class BufferType,
               class = typename std::enable_if<ccl::is_native_type_supported<BufferType>(),
-                                              request_t>::type>
-    request_t alltoall(const vector_class<BufferType*>& send_buf,
+                                              coll_request_t>::type>
+    coll_request_t alltoall(const vector_class<BufferType*>& send_buf,
                        const vector_class<BufferType*>& recv_buf,
                        size_t count,
                        stream op_stream = default_stream,
@@ -380,12 +379,12 @@ public:
      * @param op_stream op_stream associated with the operation
      * @param attr optional attributes to customize operation
      * @param deps optional vector of events that the operation should depend on
-     * @return @ref ccl::request_t object to track the progress of the operation
+     * @return @ref ccl::request object to track the progress of the operation
      */
     template <class BufferObjectType,
               class = typename std::enable_if<ccl::is_class_supported<BufferObjectType>(),
-                                              request_t>::type>
-    request_t alltoall(const BufferObjectType& send_buf,
+                                              coll_request_t>::type>
+    coll_request_t alltoall(const BufferObjectType& send_buf,
                        BufferObjectType& recv_buf,
                        size_t count,
                        stream op_stream = default_stream,
@@ -400,12 +399,12 @@ public:
      * @param op_stream op_stream associated with the operation
      * @param attr optional attributes to customize operation
      * @param deps optional vector of events that the operation should depend on
-     * @return @ref ccl::request_t object to track the progress of the operation
+     * @return @ref ccl::request object to track the progress of the operation
      */
     template <class BufferObjectType,
               class = typename std::enable_if<ccl::is_class_supported<BufferObjectType>(),
-                                              request_t>::type>
-    request_t alltoall(const vector_class<reference_wrapper_class<BufferObjectType>>& send_buf,
+                                              coll_request_t>::type>
+    coll_request_t alltoall(const vector_class<reference_wrapper_class<BufferObjectType>>& send_buf,
                        const vector_class<reference_wrapper_class<BufferObjectType>>& recv_buf,
                        size_t count,
                        stream op_stream = default_stream,
@@ -428,9 +427,9 @@ public:
      * @param op_stream op_stream associated with the operation
      * @param attr optional attributes to customize operation
      * @param deps optional vector of events that the operation should depend on
-     * @return @ref ccl::request_t object to track the progress of the operation
+     * @return @ref ccl::request object to track the progress of the operation
      */
-    request_t alltoallv(const void* send_buf,
+    coll_request_t alltoallv(const void* send_buf,
                         const vector_class<size_t>& send_counts,
                         void* recv_buf,
                         const vector_class<size_t>& recv_counts,
@@ -448,9 +447,9 @@ public:
      * @param op_stream op_stream associated with the operation
      * @param attr optional attributes to customize operation
      * @param deps optional vector of events that the operation should depend on
-     * @return @ref ccl::request_t object to track the progress of the operation
+     * @return @ref ccl::request object to track the progress of the operation
      */
-    request_t alltoallv(const vector_class<void*>& send_bufs,
+    coll_request_t alltoallv(const vector_class<void*>& send_bufs,
                         const vector_class<size_t>& send_counts,
                         const vector_class<void*>& recv_bufs,
                         const vector_class<size_t>& recv_counts,
@@ -468,12 +467,12 @@ public:
      * @param op_stream op_stream associated with the operation
      * @param attr optional attributes to customize operation
      * @param deps optional vector of events that the operation should depend on
-     * @return @ref ccl::request_t object to track the progress of the operation
+     * @return @ref ccl::request object to track the progress of the operation
      */
     template <class BufferType,
               class = typename std::enable_if<ccl::is_native_type_supported<BufferType>(),
-                                              request_t>::type>
-    request_t alltoallv(const BufferType* send_buf,
+                                              coll_request_t>::type>
+    coll_request_t alltoallv(const BufferType* send_buf,
                         const vector_class<size_t>& send_counts,
                         BufferType* recv_buf,
                         const vector_class<size_t>& recv_counts,
@@ -490,12 +489,12 @@ public:
      * @param op_stream op_stream associated with the operation
      * @param attr optional attributes to customize operation
      * @param deps optional vector of events that the operation should depend on
-     * @return @ref ccl::request_t object to track the progress of the operation
+     * @return @ref ccl::request object to track the progress of the operation
      */
     template <class BufferType,
               class = typename std::enable_if<ccl::is_native_type_supported<BufferType>(),
-                                              request_t>::type>
-    request_t alltoallv(const vector_class<BufferType*>& send_bufs,
+                                              coll_request_t>::type>
+    coll_request_t alltoallv(const vector_class<BufferType*>& send_bufs,
                         const vector_class<size_t>& send_counts,
                         const vector_class<BufferType*>& recv_bufs,
                         const vector_class<size_t>& recv_counts,
@@ -512,12 +511,12 @@ public:
      * @param op_stream op_stream associated with the operation
      * @param attr optional attributes to customize operation
      * @param deps optional vector of events that the operation should depend on
-     * @return @ref ccl::request_t object to track the progress of the operation
+     * @return @ref ccl::request object to track the progress of the operation
      */
     template <class BufferObjectType,
               class = typename std::enable_if<ccl::is_class_supported<BufferObjectType>(),
-                                              request_t>::type>
-    request_t alltoallv(const BufferObjectType& send_buf,
+                                              coll_request_t>::type>
+    coll_request_t alltoallv(const BufferObjectType& send_buf,
                         const vector_class<size_t>& send_counts,
                         BufferObjectType& recv_buf,
                         const vector_class<size_t>& recv_counts,
@@ -535,12 +534,12 @@ public:
      * @param op_stream op_stream associated with the operation
      * @param attr optional attributes to customize operation
      * @param deps optional vector of events that the operation should depend on
-     * @return @ref ccl::request_t object to track the progress of the operation
+     * @return @ref ccl::request object to track the progress of the operation
      */
     template <class BufferObjectType,
               class = typename std::enable_if<ccl::is_class_supported<BufferObjectType>(),
-                                              request_t>::type>
-    request_t alltoallv(const vector_class<reference_wrapper_class<BufferObjectType>>& send_bufs,
+                                              coll_request_t>::type>
+    coll_request_t alltoallv(const vector_class<reference_wrapper_class<BufferObjectType>>& send_bufs,
                         const vector_class<size_t>& send_counts,
                         const vector_class<reference_wrapper_class<BufferObjectType>>& recv_bufs,
                         const vector_class<size_t>& recv_counts,
@@ -555,9 +554,9 @@ public:
      * @param op_stream op_stream associated with the operation
      * @param attr optional attributes to customize operation
      * @param deps optional vector of events that the operation should depend on
-     * @return @ref ccl::request_t object to track the progress of the operation
+     * @return @ref ccl::request object to track the progress of the operation
      */
-    request_t barrier(stream op_stream = default_stream,
+    coll_request_t barrier(stream op_stream = default_stream,
                       const barrier_attr& attr = default_barrier_attr,
                       const vector_class<event>& deps = {});
 
@@ -575,9 +574,9 @@ public:
      * @param op_stream op_stream associated with the operation
      * @param attr optional attributes to customize operation
      * @param deps optional vector of events that the operation should depend on
-     * @return @ref ccl::request_t object to track the progress of the operation
+     * @return @ref ccl::request object to track the progress of the operation
      */
-    request_t broadcast(void* buf,
+    coll_request_t broadcast(void* buf,
                         size_t count,
                         datatype dtype,
                         size_t root,
@@ -594,12 +593,12 @@ public:
      * @param op_stream op_stream associated with the operation
      * @param attr optional attributes to customize operation
      * @param deps optional vector of events that the operation should depend on
-     * @return @ref ccl::request_t object to track the progress of the operation
+     * @return @ref ccl::request object to track the progress of the operation
      */
     template <class BufferType,
               class = typename std::enable_if<ccl::is_native_type_supported<BufferType>(),
-                                              request_t>::type>
-    request_t broadcast(BufferType* buf,
+                                              coll_request_t>::type>
+    coll_request_t broadcast(BufferType* buf,
                         size_t count,
                         size_t root,
                         stream op_stream = default_stream,
@@ -615,12 +614,12 @@ public:
      * @param op_stream op_stream associated with the operation
      * @param attr optional attributes to customize operation
      * @param deps optional vector of events that the operation should depend on
-     * @return @ref ccl::request_t object to track the progress of the operation
+     * @return @ref ccl::request object to track the progress of the operation
      */
     template <class BufferObjectType,
               class = typename std::enable_if<ccl::is_class_supported<BufferObjectType>(),
-                                              request_t>::type>
-    request_t broadcast(BufferObjectType& buf,
+                                              coll_request_t>::type>
+    coll_request_t broadcast(BufferObjectType& buf,
                         size_t count,
                         size_t root,
                         stream op_stream = default_stream,
@@ -643,9 +642,9 @@ public:
      * @param op_stream op_stream associated with the operation
      * @param attr optional attributes to customize operation
      * @param deps optional vector of events that the operation should depend on
-     * @return @ref ccl::request_t object to track the progress of the operation
+     * @return @ref ccl::request object to track the progress of the operation
      */
-    request_t reduce(const void* send_buf,
+    coll_request_t reduce(const void* send_buf,
                      void* recv_buf,
                      size_t count,
                      datatype dtype,
@@ -666,12 +665,12 @@ public:
      * @param op_stream op_stream associated with the operation
      * @param attr optional attributes to customize operation
      * @param deps optional vector of events that the operation should depend on
-     * @return @ref ccl::request_t object to track the progress of the operation
+     * @return @ref ccl::request object to track the progress of the operation
      */
     template <class BufferType,
               class = typename std::enable_if<ccl::is_native_type_supported<BufferType>(),
-                                              request_t>::type>
-    request_t reduce(const BufferType* send_buf,
+                                              coll_request_t>::type>
+    coll_request_t reduce(const BufferType* send_buf,
                      BufferType* recv_buf,
                      size_t count,
                      reduction rtype,
@@ -691,12 +690,12 @@ public:
      * @param op_stream op_stream associated with the operation
      * @param attr optional attributes to customize operation
      * @param deps optional vector of events that the operation should depend on
-     * @return @ref ccl::request_t object to track the progress of the operation
+     * @return @ref ccl::request object to track the progress of the operation
      */
     template <class BufferObjectType,
               class = typename std::enable_if<ccl::is_class_supported<BufferObjectType>(),
-                                              request_t>::type>
-    request_t reduce(const BufferObjectType& send_buf,
+                                              coll_request_t>::type>
+    coll_request_t reduce(const BufferObjectType& send_buf,
                      BufferObjectType& recv_buf,
                      size_t count,
                      reduction rtype,
@@ -719,9 +718,9 @@ public:
      * @param op_stream op_stream associated with the operation
      * @param attr optional attributes to customize operation
      * @param deps optional vector of events that the operation should depend on
-     * @return @ref ccl::request_t object to track the progress of the operation
+     * @return @ref ccl::request object to track the progress of the operation
      */
-    request_t reduce_scatter(const void* send_buf,
+    coll_request_t reduce_scatter(const void* send_buf,
                              void* recv_buf,
                              size_t recv_count,
                              datatype dtype,
@@ -739,12 +738,12 @@ public:
      * @param op_stream op_stream associated with the operation
      * @param attr optional attributes to customize operation
      * @param deps optional vector of events that the operation should depend on
-     * @return @ref ccl::request_t object to track the progress of the operation
+     * @return @ref ccl::request object to track the progress of the operation
      */
     template <class BufferType,
               class = typename std::enable_if<ccl::is_native_type_supported<BufferType>(),
-                                              request_t>::type>
-    request_t reduce_scatter(const BufferType* send_buf,
+                                              coll_request_t>::type>
+    coll_request_t reduce_scatter(const BufferType* send_buf,
                              BufferType* recv_buf,
                              size_t recv_count,
                              reduction rtype,
@@ -761,12 +760,12 @@ public:
      * @param op_stream op_stream associated with the operation
      * @param attr optional attributes to customize operation
      * @param deps optional vector of events that the operation should depend on
-     * @return @ref ccl::request_t object to track the progress of the operation
+     * @return @ref ccl::request object to track the progress of the operation
      */
     template <class BufferObjectType,
               class = typename std::enable_if<ccl::is_class_supported<BufferObjectType>(),
-                                              request_t>::type>
-    request_t reduce_scatter(const BufferObjectType& send_buf,
+                                              coll_request_t>::type>
+    coll_request_t reduce_scatter(const BufferObjectType& send_buf,
                              BufferObjectType& recv_buf,
                              size_t recv_count,
                              reduction rtype,

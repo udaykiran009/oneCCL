@@ -23,7 +23,7 @@ public:
     /**
      * Type allows to operate request interface in RAII manner
      */
-    using coll_request_t = std::unique_ptr<request>;
+    using coll_request_t = ccl::request;
 
     /**
      * Retrieves the rank of the current process in a communicator

@@ -84,7 +84,7 @@ Consider a simple ``allreduce`` example for GPU.
                                COUNT,
                                ccl::reduction::sum,
                                nullptr, /* attr */
-                               stream)->wait();
+                               stream).wait();
 
 #. Check the correctness of ``ccl_allreduce`` on the GPU:
 
