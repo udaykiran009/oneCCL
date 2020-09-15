@@ -1234,7 +1234,7 @@
         ccl::stream::impl_value_t& stream, \
         const ccl::allgatherv_attr& attr, \
         const ccl::vector_class<ccl::event>& deps); \
-    template ccl::request_t comm_class::allgatherv_impl( \
+    template ccl::request comm_class::allgatherv_impl( \
         const type* send_buf, \
         size_t send_count, \
         ccl::vector_class<type*>& recv_buf, \
@@ -1296,7 +1296,7 @@
                                                     ccl::stream::impl_value_t& stream, \
                                                     const ccl::reduce_attr& attr, \
                                                     const ccl::vector_class<ccl::event>& deps); \
-    template ccl::request_t comm_class::reduce_scatter_impl(const type* send_buf, \
+    template ccl::request comm_class::reduce_scatter_impl(const type* send_buf, \
                                        type* recv_buf, \
                                        size_t recv_count, \
                                        ccl::reduction reduction, \

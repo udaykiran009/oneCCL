@@ -6,55 +6,55 @@
  */
 #define HOST_COMM_IMPL_COLL_EXPLICIT_INSTANTIATIONS(comm_class, type) \
 \
-    template ccl::request comm_class::allgatherv_impl(const type* send_buf, \
+    template comm_class::coll_request_t comm_class::allgatherv_impl(const type* send_buf, \
                                                         size_t send_count, \
                                                         type* recv_buf, \
                                                         const vector_class<size_t>& recv_counts, \
                                                         const allgatherv_attr& attr); \
 \
-    template ccl::request comm_class::allgatherv_impl(const type* send_buf, \
+    template comm_class::coll_request_t comm_class::allgatherv_impl(const type* send_buf, \
                                                         size_t send_count, \
                                                         const vector_class<type*>& recv_bufs, \
                                                         const vector_class<size_t>& recv_counts, \
                                                         const allgatherv_attr& attr); \
 \
-    template ccl::request comm_class::allreduce_impl(const type* send_buf, \
+    template comm_class::coll_request_t comm_class::allreduce_impl(const type* send_buf, \
                                                        type* recv_buf, \
                                                        size_t count, \
                                                        ccl::reduction reduction, \
                                                        const allreduce_attr& attr); \
 \
-    template ccl::request comm_class::alltoall_impl( \
+    template comm_class::coll_request_t comm_class::alltoall_impl( \
         const type* send_buf, type* recv_buf, size_t count, const alltoall_attr& attr); \
 \
-    template ccl::request comm_class::alltoall_impl(const vector_class<type*>& send_buf, \
+    template comm_class::coll_request_t comm_class::alltoall_impl(const vector_class<type*>& send_buf, \
                                                       const vector_class<type*>& recv_buf, \
                                                       size_t count, \
                                                       const alltoall_attr& attr); \
 \
-    template ccl::request comm_class::alltoallv_impl(const type* send_buf, \
+    template comm_class::coll_request_t comm_class::alltoallv_impl(const type* send_buf, \
                                                        const vector_class<size_t>& send_counts, \
                                                        type* recv_buf, \
                                                        const vector_class<size_t>& recv_counts, \
                                                        const alltoallv_attr& attr); \
 \
-    template ccl::request comm_class::alltoallv_impl(const vector_class<type*>& send_bufs, \
+    template comm_class::coll_request_t comm_class::alltoallv_impl(const vector_class<type*>& send_bufs, \
                                                        const vector_class<size_t>& send_counts, \
                                                        const vector_class<type*>& recv_bufs, \
                                                        const vector_class<size_t>& recv_counts, \
                                                        const alltoallv_attr& attr); \
 \
-    template ccl::request comm_class::broadcast_impl( \
+    template comm_class::coll_request_t comm_class::broadcast_impl( \
         type* buf, size_t count, size_t root, const broadcast_attr& attr); \
 \
-    template ccl::request comm_class::reduce_impl(const type* send_buf, \
+    template comm_class::coll_request_t comm_class::reduce_impl(const type* send_buf, \
                                                     type* recv_buf, \
                                                     size_t count, \
                                                     ccl::reduction reduction, \
                                                     size_t root, \
                                                     const reduce_attr& attr); \
 \
-    template ccl::request comm_class::reduce_scatter_impl(const type* send_buf, \
+    template comm_class::coll_request_t comm_class::reduce_scatter_impl(const type* send_buf, \
                                                             type* recv_buf, \
                                                             size_t recv_count, \
                                                             ccl::reduction reduction, \
@@ -62,7 +62,7 @@
 
 #define HOST_COMM_IMPL_SPARSE_ALLREDUCE_EXPLICIT_INSTANTIATION(comm_class, index_type, value_type) \
 \
-    template ccl::request comm_class::sparse_allreduce_impl(const index_type* send_ind_buf, \
+    template comm_class::coll_request_t comm_class::sparse_allreduce_impl(const index_type* send_ind_buf, \
                                                               size_t send_ind_count, \
                                                               const value_type* send_val_buf, \
                                                               size_t send_val_count, \
@@ -79,57 +79,57 @@
  */
 #define API_HOST_COMM_COLL_EXPLICIT_INSTANTIATION(comm_class, type) \
 \
-    template ccl::request CCL_API comm_class::allgatherv( \
+    template comm_class::coll_request_t CCL_API comm_class::allgatherv( \
         const type* send_buf, \
         size_t send_count, \
         type* recv_buf, \
         const vector_class<size_t>& recv_counts, \
         const allgatherv_attr& attr); \
 \
-    template ccl::request CCL_API comm_class::allgatherv( \
+    template comm_class::coll_request_t CCL_API comm_class::allgatherv( \
         const type* send_buf, \
         size_t send_count, \
         const vector_class<type*>& recv_bufs, \
         const vector_class<size_t>& recv_counts, \
         const allgatherv_attr& attr); \
 \
-    template ccl::request CCL_API comm_class::allreduce(const type* send_buf, \
+    template comm_class::coll_request_t CCL_API comm_class::allreduce(const type* send_buf, \
                                                           type* recv_buf, \
                                                           size_t count, \
                                                           ccl::reduction reduction, \
                                                           const allreduce_attr& attr); \
 \
-    template ccl::request CCL_API comm_class::alltoall( \
+    template comm_class::coll_request_t CCL_API comm_class::alltoall( \
         const type* send_buf, type* recv_buf, size_t count, const alltoall_attr& attr); \
 \
-    template ccl::request CCL_API comm_class::alltoall(const vector_class<type*>& send_buf, \
+    template comm_class::coll_request_t CCL_API comm_class::alltoall(const vector_class<type*>& send_buf, \
                                                          const vector_class<type*>& recv_buf, \
                                                          size_t count, \
                                                          const alltoall_attr& attr); \
 \
-    template ccl::request CCL_API comm_class::alltoallv(const type* send_buf, \
+    template comm_class::coll_request_t CCL_API comm_class::alltoallv(const type* send_buf, \
                                                           const vector_class<size_t>& send_counts, \
                                                           type* recv_buf, \
                                                           const vector_class<size_t>& recv_counts, \
                                                           const alltoallv_attr& attr); \
 \
-    template ccl::request CCL_API comm_class::alltoallv(const vector_class<type*>& send_bufs, \
+    template comm_class::coll_request_t CCL_API comm_class::alltoallv(const vector_class<type*>& send_bufs, \
                                                           const vector_class<size_t>& send_counts, \
                                                           const vector_class<type*>& recv_bufs, \
                                                           const vector_class<size_t>& recv_counts, \
                                                           const alltoallv_attr& attr); \
 \
-    template ccl::request CCL_API comm_class::broadcast( \
+    template comm_class::coll_request_t CCL_API comm_class::broadcast( \
         type* buf, size_t count, size_t root, const broadcast_attr& attr); \
 \
-    template ccl::request CCL_API comm_class::reduce(const type* send_buf, \
+    template comm_class::coll_request_t CCL_API comm_class::reduce(const type* send_buf, \
                                                        type* recv_buf, \
                                                        size_t count, \
                                                        ccl::reduction reduction, \
                                                        size_t root, \
                                                        const reduce_attr& attr); \
 \
-    template ccl::request CCL_API comm_class::reduce_scatter(const type* send_buf, \
+    template comm_class::coll_request_t CCL_API comm_class::reduce_scatter(const type* send_buf, \
                                                                type* recv_buf, \
                                                                size_t recv_count, \
                                                                ccl::reduction reduction, \
@@ -137,7 +137,7 @@
 
 #define API_HOST_COMM_SPARSE_ALLREDUCE_EXPLICIT_INSTANTIATION(comm_class, index_type, value_type) \
 \
-    template ccl::request CCL_API comm_class::sparse_allreduce( \
+    template comm_class::coll_request_t CCL_API comm_class::sparse_allreduce( \
         const index_type* send_ind_buf, \
         size_t send_ind_count, \
         const value_type* send_val_buf, \
