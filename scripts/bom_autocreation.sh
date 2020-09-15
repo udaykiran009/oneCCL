@@ -9,7 +9,7 @@ fi
 
 SRC_ROOT_DIR=`cd ${SCRIPT_DIR}/ && pwd -P`
 INTEL_DIR="${SRC_ROOT_DIR}/"
-DOC_DIR="${INTEL_DIR}/doc"
+DOC_DIR="${INTEL_DIR}/../examples"
 
 if [ "$1" = "win" ]; then
     # Windows
@@ -17,10 +17,10 @@ if [ "$1" = "win" ]; then
     :
 else
     # Linux
-    BOM_COMPONENT="<deliverydir>/l_include/cpu_gpu_dpcpp/oneapi/ccl/"
-    DEST_BOM_FILE=${INTEL_DIR}/l_include_auto.txt
-    SRC_PATH="<installroot>/include/oneapi/ccl/cpu_gpu_dpcpp/"
-    INSTALL_PATH="<installdir><l_ccl_install_path><l_ccl_platform>/include/oneapi/ccl/cpu_gpu_dpcpp/"
+    BOM_COMPONENT="<deliverydir>/l_examples"
+    DEST_BOM_FILE=${INTEL_DIR}/l_examples_auto.txt
+    SRC_PATH="<installroot>/examples"
+    INSTALL_PATH="<installdir><l_ccl_install_path><l_ccl_platform>/examples"
     CONTENT=`find ${DOC_DIR} -type f | sort -u`""
 fi
 
