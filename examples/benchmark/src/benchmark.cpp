@@ -67,7 +67,7 @@ void do_regular(ccl::communicator* comm,
                         }
                     }
                     for (auto& req : reqs) {
-                        req->wait();
+                        req.wait();
                     }
                     reqs.clear();
                 }
@@ -106,7 +106,7 @@ void do_regular(ccl::communicator* comm,
                             }
                         }
                         for (auto& req : reqs) {
-                            req->wait();
+                            req.wait();
                         }
                         double t2 = when();
                         t += (t2 - t1);
@@ -154,7 +154,7 @@ void do_regular(ccl::communicator* comm,
                             coll->start_single(count, bench_attr, reqs);
                         }
                         for (auto& req : reqs) {
-                            req->wait();
+                            req.wait();
                         }
                         double t2 = when();
                         t += (t2 - t1);
@@ -263,7 +263,7 @@ void do_unordered(ccl::communicator* comm,
 
             try {
                 for (auto& req : reqs) {
-                    req->wait();
+                    req.wait();
                 }
             }
             catch (...) {

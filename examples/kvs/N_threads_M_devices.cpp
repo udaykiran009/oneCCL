@@ -55,7 +55,7 @@ void run_test(size_t thread_idx,
 
     //allreduce
     ccl::coll_attr coll_attr{};
-    std::vector<std::shared_ptr<ccl::request>> reqs;
+    std::vector<ccl::request> reqs;
     for (auto& comm : comms) {
         size_t rank = comm->rank();
 
@@ -67,7 +67,7 @@ void run_test(size_t thread_idx,
 
     //wait
     for (auto& req : reqs) {
-        req->wait();
+        req.wait();
     }
 
     //gpu_comm->barrier(stream);
@@ -147,7 +147,7 @@ void run_test(size_t thread_idx,
     global_communicator->barrier();
 
     //allreduce
-    std::vector<std::shared_ptr<ccl::request>> reqs;
+    std::vector<ccl::request> reqs;
     ccl::coll_attr coll_attr{};
     for (auto &comm : comms) {
         size_t rank = comm->rank();
@@ -163,7 +163,7 @@ void run_test(size_t thread_idx,
 
     //wait
     for (auto &req : reqs) {
-        req->wait();
+        req.wait();
     }
 
     //gpu_comm->barrier(stream);

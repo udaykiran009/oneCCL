@@ -89,7 +89,7 @@ set (dependencies_sources
              "${PROJECT_SOURCE_DIR}/src/ccl_cpp_utils.cpp"
              "${PROJECT_SOURCE_DIR}/tests/unit/api/stubs/spinlock.cpp"
              "${PROJECT_SOURCE_DIR}/tests/unit/api/stubs/kvs.cpp"
-             "${PROJECT_SOURCE_DIR}/tests/unit/api/stubs/request.cpp"
+             "${PROJECT_SOURCE_DIR}/src/ccl_app_api_request.cpp"
              "${PROJECT_SOURCE_DIR}/tests/unit/api/stubs/host_communicator.cpp"
              "${PROJECT_SOURCE_DIR}/tests/unit/api/stubs/single_device_communicator.cpp"
              "${PROJECT_SOURCE_DIR}/tests/unit/api/stubs/device_topology_communicator.cpp"

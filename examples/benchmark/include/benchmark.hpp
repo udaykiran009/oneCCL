@@ -279,7 +279,7 @@ void print_timings(ccl::communicator& comm,
 
     auto attr = ccl::environment::instance().create_operation_attr<ccl::allgatherv_attr>();
 
-    comm.allgatherv(&timer, 1, timers.data(), recv_counts, attr)->wait();
+    comm.allgatherv(&timer, 1, timers.data(), recv_counts, attr).wait();
 
     if (comm.rank() == 0) {
         double avg_timer = 0;

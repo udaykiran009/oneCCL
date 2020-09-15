@@ -108,7 +108,7 @@ public:
     }
 
     void update() override {
-        if (request->test()) {
+        if (request.test()) {
             LOG_DEBUG(class_name(),
                       " entry req ",
                       &req,

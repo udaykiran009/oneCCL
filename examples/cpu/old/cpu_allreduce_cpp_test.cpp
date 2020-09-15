@@ -37,7 +37,7 @@ int main(int argc, char** argv) {
                     ccl::reduction::sum,
                     nullptr, /* attr */
                     stream)
-        ->wait();
+        .wait();
 
     /* check correctness of recvbuf */
     for (i = 0; i < COUNT; i++) {

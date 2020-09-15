@@ -20,4 +20,4 @@ Below is a generic flow for using C++ API of |product_short|:
         ::
 
                 auto request = comm.allreduce(...);
-                request->wait();
+                request.wait();

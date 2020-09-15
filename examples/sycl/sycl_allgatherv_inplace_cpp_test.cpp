@@ -98,7 +98,7 @@ int main(int argc, char **argv) {
     /* invoke ccl_allgatherv on the CPU side */
     /* request in-place operation by providing recvbuf as input */
     auto attr = ccl::environment::instance().create_operation_attr<ccl::allgatherv_attr>();
-    comm.allgatherv(recvbuf, sendbuf_count, recvbuf, recv_counts, stream, attr)->wait();
+    comm.allgatherv(recvbuf, sendbuf_count, recvbuf, recv_counts, stream, attr).wait();
 
     /* open recvbuf and check its correctness on the target device side */
     q.submit([&](handler &cgh) {

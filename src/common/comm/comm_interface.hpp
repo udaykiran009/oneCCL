@@ -1,8 +1,8 @@
 #pragma once
 #include "oneapi/ccl/ccl_types.hpp"
 #include "oneapi/ccl/ccl_type_traits.hpp"
-#include "oneapi/ccl/ccl_request.hpp"
 #include "oneapi/ccl/ccl_types_policy.hpp"
+#include "oneapi/ccl/ccl_request.hpp"
 
 #include "oneapi/ccl/ccl_comm_split_attr_ids.hpp"
 #include "oneapi/ccl/ccl_comm_split_attr_ids_traits.hpp"
@@ -55,7 +55,7 @@ struct communicator_interface : public communicator_interface_dispatcher {
     virtual const group_unique_key& get_comm_group_id() const = 0;
 
     // collectives operation declarations
-    virtual ccl::request_t barrier(stream::impl_value_t& op_stream,
+    virtual ccl::request barrier(stream::impl_value_t& op_stream,
                                    const barrier_attr& attr,
                                    const vector_class<event>& deps = {}) = 0;
 

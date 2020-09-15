@@ -17,7 +17,7 @@ void check_allreduce_on_comm(ccl::communicator& comm) {
     }
 
     auto req = comm.allreduce(send_buf.data(), recv_buf.data(), count, ccl::reduction::sum);
-    req->wait();
+    req.wait();
 
     for (size_t i = 0; i < count; i++) {
         if (recv_buf.at(i) != expected_buf.at(i)) {

@@ -41,12 +41,12 @@ std::string typed_test_param<T>::create_match_id(size_t buf_idx) {
 }
 
 template <typename T>
-bool typed_test_param<T>::complete_request(std::shared_ptr<ccl::request> reqs) {
+bool typed_test_param<T>::complete_request(ccl::request reqs) {
     if (test_conf.completion_type == CMPT_TEST) {
-        return reqs->test();
+        return reqs.test();
     }
     else if (test_conf.completion_type == CMPT_WAIT) {
-        reqs->wait();
+        reqs.wait();
         return true;
     }
     else {

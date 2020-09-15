@@ -70,7 +70,7 @@ int main(int argc, char **argv) {
 
     /* invoke ccl_allreduce on the CPU side */
     auto attr = ccl::environment::instance().create_operation_attr<ccl::allreduce_attr>();
-    comm.allreduce(sendbuf, recvbuf, COUNT, ccl::reduction::sum, stream, attr)->wait();
+    comm.allreduce(sendbuf, recvbuf, COUNT, ccl::reduction::sum, stream, attr).wait();
 
     /* open recvbuf and check its correctness on the target device side */
     q.submit([&](handler &cgh) {

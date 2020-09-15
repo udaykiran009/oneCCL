@@ -90,7 +90,7 @@ void user_thread_idx(size_t thread_idx,
     }
 
     //allreduce
-    std::vector<std::shared_ptr<ccl::request>> reqs;
+    std::vector<ccl::request> reqs;
     for (auto& comm : comms) {
         size_t rank = comm.rank();
 
@@ -117,7 +117,7 @@ void user_thread_idx(size_t thread_idx,
 
     //wait
     for (auto& req : reqs) {
-        req->wait();
+        req.wait();
     }
 
 //gpu_comm->barrier(stream);
@@ -204,7 +204,7 @@ void user_thread_idx(size_t thread_idx,
     }
 
     //allreduce
-    std::vector<std::shared_ptr<ccl::request>> reqs;
+    std::vector<ccl::request> reqs;
     for (auto &comm : comms) {
         size_t rank = comm.rank();
         /*
@@ -224,7 +224,7 @@ void user_thread_idx(size_t thread_idx,
 
     //wait
     for (auto &req : reqs) {
-        req->wait();
+        req.wait();
     }
 
     //gpu_comm->barrier(stream);

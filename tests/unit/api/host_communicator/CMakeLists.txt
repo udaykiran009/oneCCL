@@ -54,7 +54,7 @@ set (dependencies_sources
              "${PROJECT_SOURCE_DIR}/tests/unit/api/stubs/env.cpp"
              "${PROJECT_SOURCE_DIR}/tests/unit/api/stubs/cache.cpp"
              "${PROJECT_SOURCE_DIR}/tests/unit/api/stubs/datatype.cpp"
-             "${PROJECT_SOURCE_DIR}/tests/unit/api/stubs/request.cpp"
+             "${PROJECT_SOURCE_DIR}/src/ccl_app_api_request.cpp"
              "${PROJECT_SOURCE_DIR}/tests/unit/api/stubs/ccl.cpp"
              "${PROJECT_SOURCE_DIR}/src/common/comm/comm.cpp"
              "${PROJECT_SOURCE_DIR}/tests/unit/api/stubs/global.cpp"
