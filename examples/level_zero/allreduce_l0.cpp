@@ -22,7 +22,6 @@
 #define COUNT     512
 #define COLL_ROOT (0)
 
-
 #ifdef CCL_ENABLE_SYCL
 template <class processing_type>
 void user_thread_idx(size_t thread_idx,
@@ -171,7 +170,7 @@ void user_thread_idx(size_t thread_idx,
               << std::endl;
 
     // alloc memory specific to devices
-    for (auto &comm : comms) {
+    for (auto& comm : comms) {
         // get native l0* /
         ccl::device_communicator::ccl_device_t dev = comm.get_device();
         size_t rank = comm.rank();
@@ -205,7 +204,7 @@ void user_thread_idx(size_t thread_idx,
 
     //allreduce
     std::vector<ccl::request> reqs;
-    for (auto &comm : comms) {
+    for (auto& comm : comms) {
         size_t rank = comm.rank();
         /*
         if (!comm.is_ready())
@@ -214,7 +213,7 @@ void user_thread_idx(size_t thread_idx,
             abort();
         }
 */
-        allocated_memory_array &mem_objects = memory_storage.find(rank)->second;
+        allocated_memory_array& mem_objects = memory_storage.find(rank)->second;
         reqs.push_back(comm.allreduce(mem_objects[0].get(),
                                       mem_objects[1].get(),
                                       mem_objects[1].count(),
@@ -223,7 +222,7 @@ void user_thread_idx(size_t thread_idx,
     }
 
     //wait
-    for (auto &req : reqs) {
+    for (auto& req : reqs) {
         req.wait();
     }
 
@@ -232,11 +231,11 @@ void user_thread_idx(size_t thread_idx,
     static std::mutex printout_mutex;
     {
         std::unique_lock<std::mutex> lock(printout_mutex);
-        for (auto &dev_it : memory_storage) {
+        for (auto& dev_it : memory_storage) {
             size_t rank = dev_it.first;
-            const auto &handles = dev_it.second;
+            const auto& handles = dev_it.second;
             std::cout << "rank : " << rank << std::endl;
-            for (const auto &mem : handles) {
+            for (const auto& mem : handles) {
                 std::vector<processing_type> tmp = mem.enqueue_read_sync();
                 std::copy(
                     tmp.begin(), tmp.end(), std::ostream_iterator<processing_type>(std::cout, ","));
@@ -401,7 +400,6 @@ int main(int argc, char** argv) {
     for (auto thread_affinity_it = thread_group_affinity.begin();
          thread_affinity_it != thread_group_affinity.end();
          ++thread_affinity_it) {
-
         size_t thread_id;
         std::vector<device_type> devices;
         std::tie(thread_id, devices) = *thread_affinity_it;

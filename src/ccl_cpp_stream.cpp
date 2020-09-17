@@ -37,10 +37,12 @@ API_STREAM_CREATION_FORCE_INSTANTIATION(cl::sycl::queue)
 API_STREAM_CREATION_FORCE_INSTANTIATION(cl_command_queue)
 API_STREAM_CREATION_EXT_FORCE_INSTANTIATION(cl::sycl::device, cl::sycl::context)
 #else
-    #ifdef MULTI_GPU_SUPPORT
-    API_STREAM_CREATION_FORCE_INSTANTIATION(native::cl_base<ze_command_queue_handle_t COMMA native::ccl_device>)
-    API_STREAM_CREATION_FORCE_INSTANTIATION(ccl::shared_ptr_class<native::cl_base<ze_command_queue_handle_t COMMA native::ccl_device>>)
-    #endif
+#ifdef MULTI_GPU_SUPPORT
+API_STREAM_CREATION_FORCE_INSTANTIATION(
+    native::cl_base<ze_command_queue_handle_t COMMA native::ccl_device>)
+API_STREAM_CREATION_FORCE_INSTANTIATION(
+    ccl::shared_ptr_class<native::cl_base<ze_command_queue_handle_t COMMA native::ccl_device>>)
+#endif
 #endif
 
 API_STREAM_FORCE_INSTANTIATION(ccl::stream_attr_id::version, ccl::library_version);

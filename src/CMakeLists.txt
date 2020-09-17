@@ -13,6 +13,7 @@ if (CCL_ENABLE_SYCL)
                     ccl_cpp_device_communicator.cpp
 
                     native_device_api/l0/utils.cpp
+                    native_device_api/interop_utils.cpp
                     #common/comm/l0/comm_context.cpp
                     #common/comm/l0/comm_context_storage.cpp
                     common/comm/comm_interface.cpp
@@ -37,6 +38,7 @@ list (APPEND EXTENSIONS_SRC
                     native_device_api/l0/platform.cpp
                     native_device_api/l0/utils.cpp
                     native_device_api/l0/primitives.cpp
+                    native_device_api/interop_utils.cpp
                     sched/gpu_sched.cpp
                     sched/gpu_concurrent_sched.cpp
                     common/request/gpu_request.cpp

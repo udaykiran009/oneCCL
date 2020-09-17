@@ -22,6 +22,12 @@ void single_device_communicator::set_ccl_comm(std::shared_ptr<ccl_comm> impl) {
     comm_size = comm_impl->size();
 }
 
+//TODO use visit() to set `context`
+void single_device_communicator::set_context(
+    const ccl::unified_device_context_type::ccl_native_t& in_context) {
+    context = in_context;
+}
+
 #ifdef MULTI_GPU_SUPPORT
 void single_device_communicator::visit(ccl::gpu_comm_attr& comm_attr) {
     auto process_ctx = comm_attr.get_process_context();
@@ -60,14 +66,15 @@ single_device_communicator::allgatherv_impl(
     ccl::stream::impl_value_t& stream,
     const ccl::allgatherv_attr& attr,
     const ccl::vector_class<ccl::event>& deps) {
-    ccl_request* req = ccl_allgatherv_impl(send_buf,
-                                           send_count,
-                                           recv_buf,
-                                           recv_counts.data(),
-                                           dtype,
-                                           attr,
-                                           comm_impl.get(),
-                                           stream.get());
+    ccl_request* req = nullptr;
+    req = ccl_allgatherv_impl(send_buf,
+                              send_count,
+                              recv_buf,
+                              recv_counts.data(),
+                              dtype,
+                              attr,
+                              comm_impl.get(),
+                              stream.get());
 
     return std::unique_ptr<ccl::request_impl>(new ccl::host_request_impl(req));
 }

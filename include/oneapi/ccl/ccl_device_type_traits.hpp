@@ -78,6 +78,7 @@ struct generic_device_context_type<CCL_ENABLE_SYCL_TRUE> {
     using impl_t = cl::sycl::context;
     using ccl_native_t = impl_t;
 
+    generic_device_context_type();
     generic_device_context_type(ccl_native_t ctx);
     ccl_native_t& get() noexcept;
     const ccl_native_t& get() const noexcept;
@@ -169,6 +170,7 @@ struct generic_device_context_type<CCL_ENABLE_SYCL_FALSE> {
     using impl_t = native::ccl_context;
     using ccl_native_t = std::shared_ptr<impl_t>;
 
+    generic_device_context_type();
     generic_device_context_type(handle_t ctx);
     ccl_native_t get() noexcept;
     const ccl_native_t& get() const noexcept;
