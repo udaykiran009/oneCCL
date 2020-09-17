@@ -77,7 +77,7 @@ void do_regular(ccl::communicator* comm,
                       std::ostream_iterator<std::string>{ scolls, " " });
 
             /* benchmark with multiple equal sized buffer per collective */
-            if (options.buf_type) {
+            if (options.buf_type == BUF_MULTI) {
                 PRINT_BY_ROOT(comm,
                               "do multi-buffers benchmark\n"
                               "#------------------------------------------------------------\n"
@@ -95,19 +95,23 @@ void do_regular(ccl::communicator* comm,
                 for (size_t count = options.min_elem_count; count <= options.max_elem_count;
                      count *= 2) {
                     try {
-                        double t = 0;
-                        for (size_t iter_idx = 0; iter_idx < options.iters; iter_idx++) {
-                            if (options.check_values) {
-                                for (auto& coll : colls) {
-                                    coll->prepare(count);
-                                }
-                            }
-
+                        // we store times for each collective separately,
+                        // but aggregate over buffers and iterations
+                        std::vector<double> t(colls.size(), 0);
+                        for (size_t coll_idx = 0; coll_idx < colls.size(); coll_idx++) {
                             comm->barrier();
 
                             double t1 = when();
-                            for (size_t coll_idx = 0; coll_idx < colls.size(); coll_idx++) {
+                            for (size_t iter_idx = 0; iter_idx < options.iters; iter_idx++) {
                                 auto& coll = colls[coll_idx];
+                                // collective is configured to handle only
+                                // options.buf_count many buffers/executions 'at once'.
+                                // -> check cannot combine executions over iterations
+                                // -> wait and check and must be in this loop nest
+                                if (options.check_values) {
+                                    coll->prepare(count);
+                                }
+
                                 for (size_t buf_idx = 0; buf_idx < options.buf_count; buf_idx++) {
                                     snprintf(match_id,
                                              MATCH_ID_SIZE,
@@ -118,29 +122,21 @@ void do_regular(ccl::communicator* comm,
                                              buf_idx);
                                     coll->start(count, buf_idx, bench_attr, reqs);
                                 }
-                            }
-                            for (auto& req : reqs) {
-                                req->wait();
+
+                                for (auto& req : reqs) {
+                                    req->wait();
+                                }
+                                reqs.clear();
+
+                                if (options.check_values) {
+                                    coll->finalize(count);
+                                }
                             }
                             double t2 = when();
-                            t += (t2 - t1);
+                            t[coll_idx] += (t2 - t1);
                         }
 
-                        reqs.clear();
-
-                        if (options.check_values) {
-                            for (auto& coll : colls) {
-                                coll->finalize(count);
-                            }
-                        }
-
-                        print_timings(*comm,
-                                      t,
-                                      options.iters,
-                                      options.buf_type,
-                                      options.buf_count,
-                                      count,
-                                      dtype);
+                        print_timings(*comm, t, options, count, dtype, reduction_op);
                     }
                     catch (const std::exception& ex) {
                         ASSERT(0, "error on count %zu, reason: %s", count, ex.what());
@@ -167,13 +163,15 @@ void do_regular(ccl::communicator* comm,
                 bench_attr.coll_attr.to_cache = 1;
                 for (size_t count = min_elem_count; count <= max_elem_count; count *= 2) {
                     try {
-                        double t = 0;
-                        for (size_t iter_idx = 0; iter_idx < options.iters; iter_idx++) {
+                        // we store times for each collective separately,
+                        // but aggregate over iterations
+                        std::vector<double> t(colls.size(), 0);
+                        double t1 = when();
+                        for (size_t coll_idx = 0; coll_idx < colls.size(); coll_idx++) {
+                            auto& coll = colls[coll_idx];
                             comm->barrier();
 
-                            double t1 = when();
-                            for (size_t coll_idx = 0; coll_idx < colls.size(); coll_idx++) {
-                                auto& coll = colls[coll_idx];
+                            for (size_t iter_idx = 0; iter_idx < options.iters; iter_idx++) {
                                 snprintf(match_id,
                                          MATCH_ID_SIZE,
                                          "coll_%s_%zu_single_count_%zu",
@@ -181,24 +179,23 @@ void do_regular(ccl::communicator* comm,
                                          coll_idx,
                                          count);
                                 coll->start_single(count, bench_attr, reqs);
-                            }
-                            for (auto& req : reqs) {
-                                req->wait();
+                                for (auto& req : reqs) {
+                                    req->wait();
+                                }
+                                reqs.clear();
                             }
                             double t2 = when();
-                            t += (t2 - t1);
-
-                            reqs.clear();
+                            t[coll_idx] += (t2 - t1);
                         }
 
-                        print_timings(*comm, t, options.iters, options.buf_type, 1, count, dtype);
+                        print_timings(*comm, t, options, count, dtype, reduction_op);
                     }
                     catch (...) {
                         ASSERT(0, "error on count %zu", count);
                     }
                 }
+                PRINT_BY_ROOT(comm, "PASSED\n");
             }
-            PRINT_BY_ROOT(comm, "PASSED\n");
         }
     }
 }
@@ -562,9 +559,33 @@ int main(int argc, char* argv[]) {
 #ifdef CCL_ENABLE_SYCL
     set_pinning();
 #endif
+
     switch (options.loop) {
-        case LOOP_REGULAR: do_regular(comm, bench_attr, colls, reqs, options); break;
-        case LOOP_UNORDERED: do_unordered(comm, bench_attr, colls, reqs, options); break;
+        case LOOP_REGULAR: {
+            // open and truncate CSV file if csv-output is requested
+            if (comm->rank() == 0 && !options.csv_filepath.empty()) {
+                std::ofstream csvf;
+                csvf.open(options.csv_filepath, std::ios::trunc);
+                if (!csvf.is_open()) {
+                    std::cerr << "Cannot open CSV file for writing: " << options.csv_filepath
+                              << std::endl;
+                    return -1;
+                }
+                // write header (column names)
+                csvf << "#ranks,collective,reduction,type,typesize,#elements/buffer,#buffers,time"
+                     << std::endl;
+                csvf.close();
+            }
+            comm->barrier();
+            do_regular(comm, bench_attr, colls, reqs, options);
+            break;
+        }
+        case LOOP_UNORDERED: {
+            // no timing is printed or exported here
+            comm->barrier();
+            do_unordered(comm, bench_attr, colls, reqs, options);
+            break;
+        }
         default: ASSERT(0, "unknown loop %d", options.loop); break;
     }
 

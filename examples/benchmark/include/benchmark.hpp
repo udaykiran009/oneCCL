@@ -14,6 +14,7 @@
 #include <stdio.h>
 #include <sys/time.h>
 #include <vector>
+#include <fstream>
 
 #ifdef CCL_ENABLE_SYCL
 #include <CL/sycl.hpp>
@@ -129,6 +130,7 @@ void print_help_usage(const char* app) {
         "\t[-d,--dtype <datatypes list/all>]\n"
         "\t[-r,--reduction <reductions list/all>]\n"
         "\t[-n,--buf_type <buffer type>]\n"
+        "\t[-o,--csv_filepath <file to store CSV-formatted data into>]\n"
         "\t[-h,--help]\n\n"
         "example:\n\t--coll allgatherv,allreduce,sparse_allreduce,sparse_allreduce_bfp16 --backend cpu --loop regular\n"
         "example:\n\t--coll bcast,reduce --backend sycl --loop unordered \n",
@@ -261,6 +263,7 @@ typedef struct user_options_t {
     std::list<std::string> coll_names;
     std::list<std::string> dtypes;
     std::list<std::string> reductions;
+    std::string csv_filepath;
 
     user_options_t() {
         backend = ccl::stream_type::host;
@@ -276,46 +279,56 @@ typedef struct user_options_t {
         v2i_ratio = V2I_RATIO;
         dtypes = tokenize(DEFAULT_DTYPES_LIST, ','); // default: float
         reductions = tokenize(DEFAULT_REDUCTIONS_LIST, ','); // default: sum
+        csv_filepath = std::string();
     }
 } user_options_t;
 
 /* placing print_timings() here is because of declaration of user_options_t */
+// FIXME FS: what?
 void print_timings(ccl::communicator& comm,
-                   double timer,
-                   size_t iters,
-                   buf_type_t buf_type,
-                   const size_t buf_count,
+                   const std::vector<double>& timer,
+                   const user_options_t& options,
                    const size_t elem_count,
-                   ccl::datatype dtype) {
-    std::vector<double> timers(comm.size());
+                   ccl::datatype dtype,
+                   ccl::reduction op) {
+    const size_t buf_count = options.buf_type == BUF_SINGLE ? 1 : options.buf_count;
+    const size_t ncolls = options.coll_names.size();
+    std::vector<double> all_timers(ncolls * comm.size());
     std::vector<size_t> recv_counts(comm.size());
 
     size_t idx;
     for (idx = 0; idx < comm.size(); idx++)
-        recv_counts[idx] = 1;
+        recv_counts[idx] = ncolls;
 
     ccl::coll_attr attr;
     memset((void*)&attr, 0, sizeof(ccl_coll_attr_t));
 
-    comm.allgatherv(&timer, 1, timers.data(), recv_counts.data(), &attr, nullptr)->wait();
+    comm.allgatherv(timer.data(), ncolls, all_timers.data(), recv_counts.data(), &attr, nullptr)
+        ->wait();
 
     if (comm.rank() == 0) {
-        double avg_timer = 0;
-        double avg_timer_per_buf = 0;
+        std::vector<double> timers(comm.size(), 0);
+        for (size_t r = 0; r < comm.size(); ++r) {
+            for (size_t c = 0; c < ncolls; ++c) {
+                timers[r] += all_timers[r * ncolls + c];
+            }
+        }
+        double avg_timer(0);
+        double avg_timer_per_buf(0);
         for (idx = 0; idx < comm.size(); idx++) {
             avg_timer += timers[idx];
         }
-        avg_timer /= (iters * comm.size());
+        avg_timer /= (options.iters * comm.size());
         avg_timer_per_buf = avg_timer / buf_count;
 
         double stddev_timer = 0;
         double sum = 0;
         for (idx = 0; idx < comm.size(); idx++) {
-            double val = timers[idx] / iters;
+            double val = timers[idx] / options.iters;
             sum += (val - avg_timer) * (val - avg_timer);
         }
         stddev_timer = sqrt(sum / comm.size()) / avg_timer * 100;
-        if (buf_type == BUF_SINGLE) {
+        if (options.buf_type == BUF_SINGLE) {
             printf("%10zu %12.2lf %11.1lf\n",
                    elem_count * ccl::datatype_get_size(dtype) * buf_count,
                    avg_timer,
@@ -327,6 +340,34 @@ void print_timings(ccl::communicator& comm,
                    avg_timer,
                    avg_timer_per_buf,
                    stddev_timer);
+        }
+
+        // in case csv export is requested
+        // we write one line per collop, dtype and reduction
+        // hence average is per collop, not the aggregate over all
+        if (!options.csv_filepath.empty()) {
+            std::ofstream csvf;
+            csvf.open(options.csv_filepath, std::ios::app);
+            if (csvf.is_open()) {
+                std::vector<double> avg_timer(ncolls, 0);
+                for (size_t r = 0; r < comm.size(); ++r) {
+                    for (size_t c = 0; c < ncolls; ++c) {
+                        avg_timer[c] += all_timers[r * ncolls + c];
+                    }
+                }
+                for (size_t c = 0; c < ncolls; ++c) {
+                    avg_timer[c] /= (options.iters * comm.size());
+                }
+
+                int idx = 0;
+                for (auto cop = options.coll_names.begin(); cop != options.coll_names.end();
+                     ++cop, ++idx) {
+                    csvf << comm.size() << "," << (*cop) << "," << reduction_names[op] << ","
+                         << dtype_names[dtype] << "," << ccl::datatype_get_size(dtype) << ","
+                         << elem_count << "," << buf_count << "," << avg_timer[idx] << std::endl;
+                }
+                csvf.close();
+            }
         }
     }
     comm.barrier();
@@ -354,7 +395,7 @@ int parse_user_options(int& argc, char**(&argv), user_options_t& options) {
     int errors = 0;
 
     // values needed by getopt
-    const char* const short_options = "b:e:i:w:p:f:t:c:v:l:d:r:n:h:";
+    const char* const short_options = "b:e:i:w:p:f:t:c:v:l:d:r:n:o:h:";
     struct option getopt_options[] = {
         { "backend", required_argument, 0, 'b' },
         { "loop", required_argument, 0, 'e' },
@@ -369,6 +410,7 @@ int parse_user_options(int& argc, char**(&argv), user_options_t& options) {
         { "dtype", required_argument, 0, 'd' },
         { "reduction", required_argument, 0, 'r' },
         { "buf_type", required_argument, 0, 'n' },
+        { "csv_filepath", required_argument, 0, 'o' },
         { "help", no_argument, 0, 'h' },
         { 0, 0, 0, 0 } // required at end of array.
     };
@@ -409,6 +451,7 @@ int parse_user_options(int& argc, char**(&argv), user_options_t& options) {
                 if (set_buf_type(optarg, options.buf_type))
                     errors++;
                 break;
+            case 'o': options.csv_filepath = std::string(optarg); break;
             case 'h': print_help_usage(argv[0]); return -1;
             default: errors++; break;
         }
@@ -459,7 +502,8 @@ void print_user_options(const user_options_t& options, ccl::communicator* comm) 
                   "\n  check:          %d"
                   "\n  buf_type:       %s"
                   "\n  v2i_ratio:      %zu"
-                  "\n  %s",
+                  "\n  %s"
+                  "\n  csv_filepath:   %s",
                   comm->size(),
                   backend_str.c_str(),
                   loop_str.c_str(),
@@ -471,7 +515,8 @@ void print_user_options(const user_options_t& options, ccl::communicator* comm) 
                   options.check_values,
                   buf_type_str.c_str(),
                   options.v2i_ratio,
-                  ss.str().c_str());
+                  ss.str().c_str(),
+                  options.csv_filepath.c_str());
 }
 
 #endif /* BENCHMARK_HPP */
