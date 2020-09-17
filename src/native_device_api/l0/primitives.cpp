@@ -38,16 +38,24 @@ CCL_API void copy_memory_to_device_sync_unsafe(void* dst,
         throw std::runtime_error(std::string("Cannot close cmd list, error: ") +
                                  std::to_string(ret));
     }
-    // Execute command list in command queue
-    ret = zeCommandQueueExecuteCommandLists(queue.get(), 1, cmd_list.get_ptr(), nullptr);
-    if (ret != ZE_RESULT_SUCCESS) {
-        throw std::runtime_error(std::string("Cannot execute command list, error: ") +
-                                 std::to_string(ret));
-    }
-    // synchronize host and device
-    ret = zeCommandQueueSynchronize(queue.get(), std::numeric_limits<uint32_t>::max());
-    if (ret != ZE_RESULT_SUCCESS) {
-        throw std::runtime_error(std::string("Cannot sync queue, error: ") + std::to_string(ret));
+
+    {
+        static std::mutex memory_mutex;
+
+        std::lock_guard<std::mutex> lock(memory_mutex);
+        // Execute command list in command queue
+        ret = zeCommandQueueExecuteCommandLists(queue.get(), 1, cmd_list.get_ptr(), nullptr);
+        if (ret != ZE_RESULT_SUCCESS) {
+            throw std::runtime_error(std::string("Cannot execute command list, error: ") +
+                                     std::to_string(ret));
+        }
+
+        // synchronize host and device
+        ret = zeCommandQueueSynchronize(queue.get(), std::numeric_limits<uint32_t>::max());
+        if (ret != ZE_RESULT_SUCCESS) {
+            throw std::runtime_error(std::string("Cannot sync queue, error: ") +
+                                     std::to_string(ret));
+        }
     }
     // Reset (recycle) command list for new commands
     ret = zeCommandListReset(cmd_list.get());

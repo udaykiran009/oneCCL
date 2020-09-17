@@ -151,6 +151,7 @@ size_t get_left_rank(size_t rank, size_t comm_size) {
  */
 __kernel void allgatherv_execution_float(size_t my_rank,
                                          size_t comm_size,
+                                         size_t elems_count,
 
                                          __global size_t* recv_elem_counts,
                                          __global size_t* recv_elem_offsets,

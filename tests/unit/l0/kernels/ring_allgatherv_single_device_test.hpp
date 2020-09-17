@@ -64,6 +64,7 @@ TEST_F(ring_allgatherv_single_device_fixture, ring_allgatherv_single_device_mt) 
 
             comm_param_storage[thread_idx].push_back(rank_idx);
             comm_param_storage[thread_idx].push_back(rank_size);
+            comm_param_storage[thread_idx].push_back(send_count);
 
             auto mem_recv_counts = device.alloc_memory<size_t>(num_thread, sizeof(size_t));
             auto mem_recv_offsets = device.alloc_memory<size_t>(num_thread, sizeof(size_t));
@@ -191,7 +192,7 @@ TEST_F(ring_allgatherv_single_device_fixture, ring_allgatherv_single_device_mt) 
 
                 // bind rank, size
                 size_t i = 0;
-                std::array<int, 2> comm_offset{ 0, 1 };
+                std::array<int, 3> comm_offset{ 0, 1, 2 };
                 UT_ASSERT(comm_offset.size() == comm_handles.size(), "comm_offset != comm_handles");
                 for (auto& comm : comm_handles) {
                     out << "index: " << comm_offset[i] << ": " << comm << std::endl;
@@ -209,7 +210,7 @@ TEST_F(ring_allgatherv_single_device_fixture, ring_allgatherv_single_device_mt) 
 
                 // bind recv_counts, recv_offets
                 i = 0;
-                std::array<int, 2> comm_mem_offset{ 2, 3 };
+                std::array<int, 2> comm_mem_offset{ 3, 4 };
                 UT_ASSERT(comm_mem_offset.size() == comm_mem_handles.size(),
                           "comm_mem_offset != comm_mem_handles");
                 for (auto& comm : comm_mem_handles) {
@@ -229,7 +230,7 @@ TEST_F(ring_allgatherv_single_device_fixture, ring_allgatherv_single_device_mt) 
 
                 // bind l_send, l_recv, r_recv
                 i = 0;
-                std::array<int, mem_group_count * 2> mem_offset{ 4, 5, -1, 6 };
+                std::array<int, mem_group_count * 2> mem_offset{ 5, 6, -1, 7 };
                 //UT_ASSERT(mem_offset.size() == mem_handles.size(), "mem_offset != mem_handles");
                 out << "thread_idx: " << thread_idx << ", mem_handles: \n";
                 for (auto& mem : mem_handles) {
@@ -256,7 +257,7 @@ TEST_F(ring_allgatherv_single_device_fixture, ring_allgatherv_single_device_mt) 
 
                 // bind left_wrote_2_me_flag, ready_for_receive_flag
                 i = 0;
-                std::array<int, flag_group_count * 2> flag_offset{ 7, 8, 9, 10 };
+                std::array<int, flag_group_count * 2> flag_offset{ 8, 9, 10, 11 };
                 //UT_ASSERT(flag_offset.size() == flag_handles.size(), "flag_offset != flag_handles");
                 out << "thread_idx: " << thread_idx << ", flag_handles: \n";
                 for (auto& flag : flag_handles) {

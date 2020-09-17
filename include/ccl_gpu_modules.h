@@ -7,6 +7,8 @@
 extern "C" {
 #endif
 
+ccl_status_t CCL_API register_allgatherv_gpu_module_source(const char* source,
+                                                           ccl_topology_class_t topology_class);
 ccl_status_t CCL_API register_allreduce_gpu_module_source(const char* source,
                                                           ccl_topology_class_t topology_class);
 ccl_status_t CCL_API register_bcast_gpu_module_source(const char* source,
