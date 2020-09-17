@@ -15,7 +15,8 @@ public:
      */
     using version_traits_t = traits_t<split_attrs_t, split_attrs_t::version>;
 
-    const typename version_traits_t::type& get_attribute_value(const traits_t<split_attrs_t, split_attrs_t::version>& id) const {
+    const typename version_traits_t::type& get_attribute_value(
+        const traits_t<split_attrs_t, split_attrs_t::version>& id) const {
         return version;
     }
 
@@ -31,7 +32,8 @@ public:
      */
     using color_traits_t = traits_t<split_attrs_t, split_attrs_t::color>;
 
-    const typename color_traits_t::type& get_attribute_value(const traits_t<split_attrs_t, split_attrs_t::color>& id) const {
+    const typename color_traits_t::type& get_attribute_value(
+        const traits_t<split_attrs_t, split_attrs_t::color>& id) const {
         if (!is_valid<split_attrs_t::color>()) {
             throw ccl_error("Trying to get the value of the attribute 'color' which was not set");
         }
@@ -115,7 +117,8 @@ protected:
 class ccl_host_comm_split_attr_impl
         : public ccl_base_comm_split_attr_impl<details::ccl_host_split_traits, comm_split_attr_id> {
 public:
-    using base_t = ccl_base_comm_split_attr_impl<details::ccl_host_split_traits, comm_split_attr_id>;
+    using base_t =
+        ccl_base_comm_split_attr_impl<details::ccl_host_split_traits, comm_split_attr_id>;
 
     template <class traits_t>
     const typename traits_t::type& get_attribute_value(const traits_t& id) const {
@@ -147,7 +150,8 @@ class ccl_device_comm_split_attr_impl
         : public ccl_base_comm_split_attr_impl<details::ccl_device_split_traits,
                                                comm_split_attr_id> {
 public:
-    using base_t = ccl_base_comm_split_attr_impl<details::ccl_device_split_traits, comm_split_attr_id>;
+    using base_t =
+        ccl_base_comm_split_attr_impl<details::ccl_device_split_traits, comm_split_attr_id>;
 
     template <class traits_t>
     const typename traits_t::type& get_attribute_value(const traits_t& id) const {

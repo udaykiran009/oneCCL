@@ -34,6 +34,9 @@ public:
 
     void set_ccl_comm(std::shared_ptr<ccl_comm> imp);
 
+    //TODO use visit() to set `context`
+    void set_context(const ccl::unified_device_context_type::ccl_native_t& context);
+
 private:
     std::shared_ptr<ccl_comm> comm_impl;
 };

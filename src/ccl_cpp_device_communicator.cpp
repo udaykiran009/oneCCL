@@ -37,10 +37,8 @@
 #define COMMA ,
 #endif
 
-namespace ccl
-{
-CCL_API device_communicator::device_communicator(impl_value_t&& impl) : base_t(std::move(impl))
-{}
+namespace ccl {
+CCL_API device_communicator::device_communicator(impl_value_t&& impl) : base_t(std::move(impl)) {}
 
 CCL_API device_communicator::device_communicator(device_communicator&& src)
         : base_t(std::move(src)) {}
@@ -100,8 +98,7 @@ CCL_API ccl::device_communicator::ccl_context_t ccl::device_communicator::get_co
     return get_impl()->get_context();
 }
 
-}
-
+} // namespace ccl
 
 /****API force instantiations for factory methods******/
 #ifdef CCL_ENABLE_SYCL

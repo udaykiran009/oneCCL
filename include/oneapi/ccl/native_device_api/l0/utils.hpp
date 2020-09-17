@@ -36,9 +36,5 @@ using p2p_rating_function =
     std::function<cross_device_rating(const ccl_device&, const ccl_device&)>;
 
 cross_device_rating binary_p2p_rating_calculator(const ccl_device& lhs, const ccl_device& rhs);
-
-#ifdef CCL_ENABLE_SYCL
-size_t get_sycl_device_id(const cl::sycl::device& dev);
-#endif
 } // namespace details
 } // namespace native

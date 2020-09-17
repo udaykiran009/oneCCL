@@ -79,6 +79,7 @@ vector_class<device_communicator> CCL_API environment::create_device_communicato
     ret.push_back(create_single_device_communicator(comm_size,
                                                     local_rank_device_map.begin()->first,
                                                     local_rank_device_map.begin()->second,
+                                                    context,
                                                     kvs));
     return ret;
 #endif
@@ -99,6 +100,7 @@ environment::create_device_communicators(const size_t comm_size,
     ret.push_back(create_single_device_communicator(comm_size,
                                                     local_rank_device_map.begin()->first,
                                                     local_rank_device_map.begin()->second,
+                                                    context,
                                                     kvs));
     return ret;
 #endif

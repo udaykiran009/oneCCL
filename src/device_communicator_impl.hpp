@@ -621,24 +621,24 @@ ccl::device_communicator::reduce_scatter(const BufferObjectType& send_buf,
 
 /***************************TypeGenerations*********************************************************/
 #define API_DEVICE_COMM_CREATE_WO_RANK_EXPLICIT_INSTANTIATION(DeviceType, ContextType) \
-    template ccl::vector_class<ccl::device_communicator> \
-    CCL_API ccl::device_communicator::create_device_communicators( \
+    template ccl::vector_class<ccl::device_communicator> CCL_API \
+    ccl::device_communicator::create_device_communicators( \
         const size_t comm_size, \
         const ccl::vector_class<DeviceType>& local_devices, \
         ContextType& context, \
         ccl::shared_ptr_class<ccl::kvs_interface> kvs);
 
 #define API_DEVICE_COMM_CREATE_WITH_RANK_IN_VECTOR_EXPLICIT_INSTANTIATION(DeviceType, ContextType) \
-    template ccl::vector_class<ccl::device_communicator> \
-    CCL_API ccl::device_communicator::create_device_communicators( \
+    template ccl::vector_class<ccl::device_communicator> CCL_API \
+    ccl::device_communicator::create_device_communicators( \
         const size_t comm_size, \
         const ccl::vector_class<ccl::pair_class<ccl::rank_t, DeviceType>>& local_rank_device_map, \
         ContextType& context, \
         ccl::shared_ptr_class<ccl::kvs_interface> kvs);
 
 #define API_DEVICE_COMM_CREATE_WITH_RANK_IN_MAP_EXPLICIT_INSTANTIATION(DeviceType, ContextType) \
-    template ccl::vector_class<ccl::device_communicator> \
-    CCL_API ccl::device_communicator::create_device_communicators( \
+    template ccl::vector_class<ccl::device_communicator> CCL_API \
+    ccl::device_communicator::create_device_communicators( \
         const size_t comm_size, \
         const ccl::map_class<ccl::rank_t, DeviceType>& local_rank_device_map, \
         ContextType& context, \

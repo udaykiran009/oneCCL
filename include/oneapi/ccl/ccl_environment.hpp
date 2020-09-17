@@ -160,6 +160,7 @@ public:
         const size_t comm_size,
         const size_t rank,
         const cl::sycl::device& device,
+        const cl::sycl::context& context,
         shared_ptr_class<kvs_interface> kvs) const;
 #endif
 

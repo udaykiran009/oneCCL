@@ -116,12 +116,17 @@ ccl::device_communicator CCL_API ccl::environment::create_single_device_communic
     const size_t comm_size,
     const size_t rank,
     const cl::sycl::device& device,
+    const cl::sycl::context& context,
     ccl::shared_ptr_class<ccl::kvs_interface> kvs) const {
     LOG_TRACE("Create single device communicator from SYCL device");
     ccl::device_comm_split_attr attr = create_device_comm_split_attr(
         ccl::attr_val<ccl::comm_split_attr_id::group>(ccl::device_group_split_type::undetermined));
     ccl::communicator_interface_ptr impl =
         ccl::communicator_interface::create_communicator_impl(device, rank, comm_size, attr);
+
+    //TODO use gpu_comm_attr to automatically visit()
+    auto single_dev_comm = std::dynamic_pointer_cast<single_device_communicator>(impl);
+    single_dev_comm->set_context(context);
     return ccl::device_communicator(std::move(impl));
 }
 
@@ -181,18 +186,18 @@ CREATE_OP_ATTR_INSTANTIATION(ccl::device_comm_split_attr)
 CREATE_OP_ATTR_INSTANTIATION(ccl::datatype_attr)
 
 #ifdef CCL_ENABLE_SYCL
-    CREATE_DEV_COMM_INSTANTIATION(cl::sycl::device, cl::sycl::context)
-    #ifdef MULTI_GPU_SUPPORT
-        CREATE_DEV_COMM_INSTANTIATION(ccl::device_index_type, cl::sycl::context)
-    #endif
-    CREATE_STREAM_INSTANTIATION(cl::sycl::queue)
-    CREATE_STREAM_EXT_INSTANTIATION(cl::sycl::device, cl::sycl::context)
+CREATE_DEV_COMM_INSTANTIATION(cl::sycl::device, cl::sycl::context)
+#ifdef MULTI_GPU_SUPPORT
+CREATE_DEV_COMM_INSTANTIATION(ccl::device_index_type, cl::sycl::context)
+#endif
+CREATE_STREAM_INSTANTIATION(cl::sycl::queue)
+CREATE_STREAM_EXT_INSTANTIATION(cl::sycl::device, cl::sycl::context)
 
-    CREATE_EVENT_INSTANTIATION(cl::sycl::event)
-    CREATE_EVENT_EXT_INSTANTIATION(cl_event)
+CREATE_EVENT_INSTANTIATION(cl::sycl::event)
+CREATE_EVENT_EXT_INSTANTIATION(cl_event)
 #else
-    #ifdef MULTI_GPU_SUPPORT
-        CREATE_DEV_COMM_INSTANTIATION(ccl::device_index_type,
-                                      ccl::unified_device_context_type::ccl_native_t)
-    #endif
+#ifdef MULTI_GPU_SUPPORT
+CREATE_DEV_COMM_INSTANTIATION(ccl::device_index_type,
+                              ccl::unified_device_context_type::ccl_native_t)
+#endif
 #endif

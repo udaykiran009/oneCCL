@@ -6,6 +6,7 @@
 namespace ccl {
 #ifdef CCL_ENABLE_SYCL
 
+generic_device_context_type<CCL_ENABLE_SYCL_TRUE>::generic_device_context_type() {}
 generic_device_context_type<CCL_ENABLE_SYCL_TRUE>::generic_device_context_type(ccl_native_t ctx)
         : context(ctx) {}
 
@@ -23,6 +24,7 @@ generic_device_context_type<CCL_ENABLE_SYCL_TRUE>::get() const noexcept {
 #else
 #ifdef MULTI_GPU_SUPPORT
 
+generic_device_context_type<CCL_ENABLE_SYCL_FALSE>::generic_device_context_type() {}
 generic_device_context_type<CCL_ENABLE_SYCL_FALSE>::generic_device_context_type(handle_t ctx)
         : context() {
     //TODO context

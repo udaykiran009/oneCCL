@@ -41,9 +41,7 @@ struct base_communicator : public ccl::communicator_interface {
     }
 
     ccl::communicator_interface::context_t get_context() override {
-        //TODO not implemented
-        throw std::runtime_error(std::string(__PRETTY_FUNCTION__) + " - not implemented");
-        return context_t{};
+        return context.get();
     }
 
     const ccl::device_comm_split_attr& get_comm_split_attr() const override {
@@ -69,6 +67,7 @@ struct base_communicator : public ccl::communicator_interface {
     }
 */
     ccl::unified_device_type device;
+    ccl::unified_device_context_type context;
     size_t thread_id;
     size_t process_id;
     const ccl::device_comm_split_attr comm_attr;
