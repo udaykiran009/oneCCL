@@ -1,4 +1,2 @@
-l_modulefiles_runtime.txt
 l_lib_runtime.txt
-l_env_runtime.txt
 l_license_runtime.txt

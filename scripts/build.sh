@@ -556,6 +556,7 @@ prepare_staging()
                                         case $MODE in
                                             "package")
                                                 DROP_DEST_FILE="${BL_INSTALL}"
+                                                DROP_DEST_FILE=$(replace_tags $DROP_DEST_FILE)
                                                 ;;
                                             "swf_pre_drop")
                                                 DROP_DEST_FILE=`echo ${BL_SOURCE} | sed -e "s/<deliverydir>\///"`""

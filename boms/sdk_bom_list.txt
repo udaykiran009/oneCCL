@@ -2,3 +2,5 @@ l_include_sdk.txt
 l_examples_sdk.txt
 l_tags.txt
 l_lib_sdk.txt
+l_env_sdk.txt
+l_modulefiles_sdk.txt
