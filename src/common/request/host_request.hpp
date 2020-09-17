@@ -1,6 +1,7 @@
 #pragma once
 #include "oneapi/ccl/ccl_types.hpp"
 #include "oneapi/ccl/ccl_types_policy.hpp"
+#include "common/request/request_impl.hpp"
 #include "oneapi/ccl/ccl_request.hpp"
 
 class ccl_request;

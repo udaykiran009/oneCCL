@@ -2,6 +2,7 @@
 #include <memory>
 
 #include "oneapi/ccl.hpp"
+#include "common/request/request_impl.hpp"
 
 class ccl_gpu_sched;
 
