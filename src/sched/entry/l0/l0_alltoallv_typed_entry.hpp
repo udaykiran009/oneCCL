@@ -5,19 +5,14 @@
 #include "sched/entry/l0/l0_entry.hpp"
 
 //TODO L0 Workaround
-static std::mutex global_mutex;
-static std::atomic<size_t> exec_count{};
-static thread_local size_t cur_index = 0;
-static std::atomic<size_t> wait_count{};
-static std::set<std::thread::id> registered_thread;
 
 namespace native {
 template <class native_type, class gpu_comm_impl, ccl::device_group_split_type topology>
-class l0_allreduce_typed_entry : public base_gpu_entry<native_type,
+class l0_alltoallv_typed_entry : public base_gpu_entry<native_type,
                                                        gpu_comm_impl,
                                                        topology,
                                                        ccl::device_topology_type::ring,
-                                                       ccl_coll_allreduce> {
+                                                       ccl_coll_alltoallv> {
 public:
     friend class ccl_gpu_comm;
     friend class ccl_virtual_gpu_comm;
@@ -26,77 +21,130 @@ public:
                                 gpu_comm_impl,
                                 topology,
                                 ccl::device_topology_type::ring,
-                                ccl_coll_allreduce>;
+                                ccl_coll_alltoallv>;
     using base::parent_communicator;
     using base::comm_addr;
     using base::req;
     using base::status;
     using base::launch_args;
     using base::kernel_router;
-    using kernel_main_typed = ring_allreduce_kernel<native_type>;
-    using kernel_ipc_typed = ring_allreduce_ipc<native_type>;
+    using kernel_main_typed = ring_alltoallv_kernel<native_type>;
+    using kernel_ipc_typed = ring_alltoallv_ipc<native_type>;
 
     using income_data_flag_gpu_type =
         typename std::remove_pointer<typename kernel_main_typed::income_data_flag_arg_type>::type;
     using ready_to_recv_flag_gpu_type =
         typename std::remove_pointer<typename kernel_main_typed::ready_to_recv_flag_arg_type>::type;
-    using local_barrier_flag_gpu_type =
-        typename std::remove_pointer<typename kernel_main_typed::local_barrier_flag_arg_type>::type;
+
+    using recv_counts_typed_entry_type = typename std::remove_pointer<
+        typename kernel_main_typed::recv_elem_counts_buf_arg_type>::type;
+    using recv_offsets_typed_entry_type = typename std::remove_pointer<
+        typename kernel_main_typed::recv_elem_offsets_buf_arg_type>::type;
+
+    using proxy_size_flag_gpu_type =
+        typename std::remove_pointer<typename kernel_main_typed::proxy_size_flag_arg_type>::type;
+
+    using send_counts_typed_entry_type =
+        typename std::remove_pointer<typename kernel_main_typed::send_buf_size_arg_type>::type;
+    using send_offsets_typed_entry_type = typename std::remove_pointer<
+        typename kernel_main_typed::send_elem_offsets_buf_arg_type>::type;
 
     static constexpr const char* class_name() noexcept {
-        return "L0_ALLREDUCE_TYPED";
+        return "L0_ALLTOALLV_TYPED";
     }
 
     static constexpr ccl_coll_type type() noexcept {
-        return ccl_coll_allreduce;
+        return ccl_coll_alltoallv;
     }
 
-    l0_allreduce_typed_entry() = delete;
-    l0_allreduce_typed_entry(
+    l0_alltoallv_typed_entry() = delete;
+    l0_alltoallv_typed_entry(
         ccl_sched* sched,
         std::shared_ptr<gpu_comm_impl> comm,
         specific_indexed_device_storage& available_devices,
         const ccl_buffer send_buf,
+        const size_t* send_counts,
         ccl_buffer recv_buf,
-        size_t cnt,
-        ccl_reduction_t op,
+        const size_t* recv_counts,
         std::shared_ptr<ccl_stream> device_stream = std::shared_ptr<ccl_stream>())
             : base(sched,
                    comm,
                    send_buf,
                    ccl::native_type_info<native_type>::ccl_type_value,
                    device_stream),
-
               temp_buffer(parent_communicator->get_device().template alloc_memory<native_type>(
-                  cnt,
+                  512,
                   sizeof(native_type))),
+              // left_wrote_to_me_flag
               income_data_flag(parent_communicator->get_device()
                                    .template alloc_memory<income_data_flag_gpu_type>(
                                        1,
                                        sizeof(income_data_flag_gpu_type))),
+              // ready_to_recv_flag_arg
               ready_to_recv_flag(parent_communicator->get_device()
                                      .template alloc_memory<ready_to_recv_flag_gpu_type>(
                                          1,
                                          sizeof(ready_to_recv_flag_gpu_type))),
-              local_barrier_flag(parent_communicator->get_device()
-                                     .template alloc_memory<local_barrier_flag_gpu_type>(
-                                         1,
-                                         sizeof(local_barrier_flag_gpu_type))) {
-        recv_buf_typed_entry = recv_buf;
-        op_typed_entry = op;
-        cnt_entry = cnt;
+              proxy_size_flag_entry(
+                  parent_communicator->get_device().template alloc_memory<proxy_size_flag_gpu_type>(
+                      1,
+                      sizeof(proxy_size_flag_gpu_type))),
+              recv_counts_buf(parent_communicator->get_device()
+                                  .template alloc_memory<recv_counts_typed_entry_type>(
+                                      512,
+                                      sizeof(recv_counts_typed_entry_type))),
+              recv_offsets_buf(parent_communicator->get_device()
+                                   .template alloc_memory<recv_offsets_typed_entry_type>(
+                                       comm_addr.size,
+                                       sizeof(recv_offsets_typed_entry_type))),
+              send_counts_buf(parent_communicator->get_device()
+                                  .template alloc_memory<recv_counts_typed_entry_type>(
+                                      512,
+                                      sizeof(recv_counts_typed_entry_type))),
+              send_offsets_buf(parent_communicator->get_device()
+                                   .template alloc_memory<send_offsets_typed_entry_type>(
+                                       comm_addr.size,
+                                       sizeof(send_offsets_typed_entry_type)))
+
+    {
+        // copy recv_buf into recv_buf_entry
+        recv_buf_entry = recv_buf;
+
+        // same as parent_communicator->template
+        //                    get_comm_data<base::get_topology(),
+        //                    base::get_topology_class()>().size;
+        size_t local_topology_size = comm_addr.size;
+        std::vector<size_t> recv_offsets_v(local_topology_size, 0);
+
+        for (size_t idx = 0; idx < local_topology_size; idx++) {
+            if (idx > 0)
+                recv_offsets_v[idx] += recv_offsets_v[idx - 1] + recv_counts[idx - 1];
+        }
+
+        std::vector<size_t> send_offsets_v(local_topology_size, 0);
+        for (size_t idx = 0; idx < local_topology_size; idx++) {
+            if (idx > 0)
+                send_offsets_v[idx] += send_offsets_v[idx - 1] + send_counts[idx - 1];
+        }
+        // recv
+        recv_counts_buf.enqueue_write_sync(recv_counts, local_topology_size);
+        recv_offsets_buf.enqueue_write_sync(recv_offsets_v);
+        // send
+        send_counts_buf.enqueue_write_sync(send_counts, local_topology_size);
+        send_offsets_buf.enqueue_write_sync(send_offsets_v);
+        // flag
+        proxy_size_flag_entry.enqueue_write_sync({ (int)0 });
+
         LOG_DEBUG(class_name(),
                   " entry req ",
                   &req,
-                  ", cnt ",
-                  cnt_entry,
-                  ", op ",
-                  op,
                   ", rank: ",
+                  "local topology size:",
+                  local_topology_size,
                   comm_addr.to_string());
         size_t next_rank = (comm_addr.rank + 1) % comm_addr.size;
         kernel_router = base::template create_kernel_router_for_rank<
-            l0_allreduce_typed_entry<native_type, gpu_comm_impl, topology>>(
+            l0_alltoallv_typed_entry<native_type, gpu_comm_impl, topology>>(
             *this, next_rank, available_devices);
 
         //TODO L0 workaround
@@ -119,11 +167,11 @@ public:
         }
     }
 
-    ~l0_allreduce_typed_entry() {
+    ~l0_alltoallv_typed_entry() {
         /* std::stringstream ss;
         ss << "native_type: " << std::endl;
-        std::vector<native_type> mem_get(temp_buffer.count());
-        std::copy(temp_buffer.handle, temp_buffer.handle + temp_buffer.count(), mem_get.begin());
+        std::vector<native_type> mem_get(right_output_buffer.count());
+        std::copy(right_output_buffer.handle, right_output_buffer.handle + right_output_buffer.count(), mem_get.begin());
         std::copy(mem_get.begin(), mem_get.end(), std::ostream_iterator<native_type>(ss, ","));
         ss << std::endl;
 
@@ -138,13 +186,7 @@ public:
     }
 
     void start() override {
-        LOG_DEBUG(class_name(),
-                  " entry req ",
-                  &req,
-                  ", rank: ",
-                  comm_addr.to_string(),
-                  ", cnt ",
-                  cnt_entry);
+        LOG_DEBUG(class_name(), " entry req ", &req, ", rank: ", comm_addr.to_string());
 
         //Create base primitives
         base::start();
@@ -156,21 +198,25 @@ public:
                                                          ccl::device_topology_type::ring,
                                                          native_type>();
 
-        auto recv_buf_ptr = reinterpret_cast<native_type*>(recv_buf_typed_entry.get_ptr());
+        auto recv_buf_ptr = reinterpret_cast<native_type*>(recv_buf_entry.get_ptr());
+        // auto send_counts_ptr = reinterpret_cast<size_t*>(send_counts_entry.get_ptr());
         //create implementation specified primitives
-        main_entry_function
-            .template set_args<typename kernel_main_typed::tmp_recv_buf_arg,
-                               typename kernel_main_typed::income_data_flag_arg,
-                               typename kernel_main_typed::ready_to_recv_flag_arg,
-                               typename kernel_main_typed::local_barrier_flag_arg,
-                               typename kernel_main_typed::recv_buf_arg,
-                               typename kernel_main_typed::common_entry_buf_size_arg>(
-                temp_buffer.get(),
-                income_data_flag.get(),
-                ready_to_recv_flag.get(),
-                local_barrier_flag.get(),
-                recv_buf_ptr,
-                cnt_entry);
+        main_entry_function.template set_args<typename kernel_main_typed::tmp_recv_buf_arg,
+                                              typename kernel_main_typed::income_data_flag_arg,
+                                              typename kernel_main_typed::ready_to_recv_flag_arg,
+                                              typename kernel_main_typed::recv_buf_arg,
+                                              typename kernel_main_typed::recv_elem_counts_buf_arg,
+                                              typename kernel_main_typed::recv_elem_offsets_buf_arg,
+                                              typename kernel_main_typed::proxy_size_flag_arg,
+                                              typename kernel_main_typed::send_buf_size_arg>(
+            temp_buffer.get(),
+            income_data_flag.get(),
+            ready_to_recv_flag.get(),
+            recv_buf_ptr,
+            recv_counts_buf.get(),
+            recv_offsets_buf.get(),
+            proxy_size_flag_entry.get(),
+            send_counts_buf.get());
 
         /* TRY To APPEND Kernel HERE!!! Not in update
          *
@@ -203,7 +249,6 @@ public:
         //TODO
         std::vector<ccl_device::device_ipc_memory_handle> ret;
         ret.reserve(3);
-        ret.push_back(owned_device.create_ipc_memory_handle(temp_buffer.get()));
         ret.push_back(owned_device.create_ipc_memory_handle(income_data_flag.get()));
         ret.push_back(owned_device.create_ipc_memory_handle(ready_to_recv_flag.get()));
         return ret;
@@ -319,10 +364,12 @@ private:
     ccl_device::device_memory<native_type> temp_buffer;
     ccl_device::device_memory<income_data_flag_gpu_type> income_data_flag;
     ccl_device::device_memory<ready_to_recv_flag_gpu_type> ready_to_recv_flag;
-    ccl_device::device_memory<local_barrier_flag_gpu_type> local_barrier_flag;
-    ccl_reduction_t op_typed_entry;
-    ccl_buffer recv_buf_typed_entry;
-    size_t cnt_entry;
+    ccl_device::device_memory<proxy_size_flag_gpu_type> proxy_size_flag_entry;
+    ccl_buffer recv_buf_entry;
+    ccl_device::device_memory<recv_counts_typed_entry_type> recv_counts_buf;
+    ccl_device::device_memory<recv_offsets_typed_entry_type> recv_offsets_buf;
+    ccl_device::device_memory<send_counts_typed_entry_type> send_counts_buf;
+    ccl_device::device_memory<send_offsets_typed_entry_type> send_offsets_buf;
 
 public:
     bool execute(kernel_main_typed& main_entry_function, kernel_main_typed& right_kernel) {
@@ -330,7 +377,8 @@ public:
         bool is_right_kernel_ready =
             right_kernel.template test_args<typename kernel_main_typed::tmp_recv_buf_arg,
                                             typename kernel_main_typed::income_data_flag_arg,
-                                            typename kernel_main_typed::ready_to_recv_flag_arg>();
+                                            typename kernel_main_typed::ready_to_recv_flag_arg,
+                                            typename kernel_main_typed::proxy_size_flag_arg>();
         if (is_right_kernel_ready) {
             if (is_kernel_added) {
                 LOG_DEBUG("entry: ",
@@ -352,6 +400,9 @@ public:
                 right_ready_to_recv_flag_arg =
                     right_kernel
                         .template get_arg<typename kernel_main_typed::ready_to_recv_flag_arg>();
+
+            typename kernel_main_typed::proxy_size_flag_arg::return_t right_proxy_size_flag_arg =
+                right_kernel.template get_arg<typename kernel_main_typed::proxy_size_flag_arg>();
 
             LOG_DEBUG("entry: ",
                       class_name(),
@@ -379,10 +430,12 @@ public:
             main_entry_function
                 .template set_args<typename kernel_main_typed::right_tmp_recv_buf_arg,
                                    typename kernel_main_typed::right_income_data_flag_arg,
-                                   typename kernel_main_typed::right_ready_to_recv_flag_arg>(
+                                   typename kernel_main_typed::right_ready_to_recv_flag_arg,
+                                   typename kernel_main_typed::right_proxy_size_flag_arg>(
                     right_tmp_recv_buf_arg.second,
                     right_income_data_flag_arg.second,
-                    right_ready_to_recv_flag_arg.second);
+                    right_ready_to_recv_flag_arg.second,
+                    right_proxy_size_flag_arg.second);
             LOG_TRACE("Set right_tmp_recv_buf_arg",
                       "Set right_income_data_flag_arg",
                       "Set right_ready_to_recv_flag_arg");
@@ -396,12 +449,12 @@ public:
         return is_right_kernel_ready;
     }
 
-    bool execute(kernel_main_typed& main_entry_function, kernel_ipc_typed& right_kernel) {
+    /*bool execute(kernel_main_typed& main_entry_function, kernel_ipc_typed& right_kernel) {
         //Check argument binding in kernels for next rank
         bool is_right_kernel_ready =
-            right_kernel.template test_args<typename kernel_ipc_typed::tmp_recv_buf_arg,
-                                            typename kernel_ipc_typed::income_data_flag_arg,
-                                            typename kernel_ipc_typed::ready_to_recv_flag_arg>();
+            right_kernel.template test_args< //typename kernel_ipc_typed::right_output_buf_arg,
+                typename kernel_ipc_typed::income_data_flag_arg,
+                typename kernel_ipc_typed::ready_to_recv_flag_arg>();
         if (is_right_kernel_ready) {
             if (is_kernel_added) {
                 LOG_DEBUG("entry: ",
@@ -415,8 +468,8 @@ public:
             }
 
             //TODO do not get arguments sequencially - use array version instead
-            typename kernel_main_typed::tmp_recv_buf_arg::return_t right_tmp_recv_buf_arg =
-                right_kernel.template get_arg<typename kernel_ipc_typed::tmp_recv_buf_arg>();
+            typename kernel_main_typed::right_output_buf_arg::return_t right_output_buf_arg =
+                right_kernel.template get_arg<typename kernel_ipc_typed::right_output_buf_arg>();
             typename kernel_main_typed::income_data_flag_arg::return_t right_income_data_flag_arg =
                 right_kernel.template get_arg<typename kernel_ipc_typed::income_data_flag_arg>();
             typename kernel_main_typed::ready_to_recv_flag_arg::return_t
@@ -431,9 +484,9 @@ public:
                       ", bind elapsed arguments for kernel: ",
                       kernel_main_typed::name());
             LOG_TRACE("Args: \n{ ",
-                      right_tmp_recv_buf_arg.first,
+                      right_output_buf_arg.first,
                       ", ",
-                      right_tmp_recv_buf_arg.second,
+                      right_output_buf_arg.second,
                       "}\n",
                       "{ ",
                       right_income_data_flag_arg.first,
@@ -448,13 +501,13 @@ public:
 
             //TODO register argument for current device kernel: user array version
             main_entry_function
-                .template set_args<typename kernel_main_typed::right_tmp_recv_buf_arg,
-                                   typename kernel_main_typed::right_income_data_flag_arg,
-                                   typename kernel_main_typed::right_ready_to_recv_flag_arg>(
-                    right_tmp_recv_buf_arg.second,
+                .template set_args< //typename kernel_main_typed::right_output_buf_arg,
+                    typename kernel_main_typed::right_income_data_flag_arg,
+                    typename kernel_main_typed::right_ready_to_recv_flag_arg>(
+                    //right_output_buf_arg.second,
                     right_income_data_flag_arg.second,
                     right_ready_to_recv_flag_arg.second);
-            LOG_TRACE("Set right_tmp_recv_buf_arg",
+            LOG_TRACE("Set right_output_buf_arg",
                       "Set right_income_data_flag_arg",
                       "Set right_ready_to_recv_flag_arg");
             LOG_DEBUG("entry: ",
@@ -465,6 +518,6 @@ public:
                       main_entry_function.to_string());
         }
         return is_right_kernel_ready;
-    }
+    }*/
 };
 } // namespace native

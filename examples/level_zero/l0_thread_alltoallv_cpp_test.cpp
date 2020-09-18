@@ -160,7 +160,7 @@ void user_thread_sycl(size_t thread_idx,
 
     global_communicator->barrier();
 
-    // allgatherv
+    // alltoallv
     std::vector<std::shared_ptr<ccl::request>> reqs;
     ccl::coll_attr coll_attr{};
     for (auto& comm : comms) {
@@ -173,13 +173,14 @@ void user_thread_sycl(size_t thread_idx,
         }
 
         allocated_memory_array& mem_objects = memory_storage.find(rank)->second;
-        reqs.push_back(comm->allgatherv(mem_objects[0].get(),
-                                        mem_objects[0].count(),
-                                        mem_objects[1].get(),
-                                        &coll_attr,
-                                        streams[rank]));
+        reqs.push_back(comm->alltoallv(mem_objects[0].get(),
+                                       send_counts, //send_counts
+                                       mem_objects[1].get(), //recv_buf
+                                       recv_counts, //recv_counts
+                                       &coll_attr,
+                                       streams[rank]));
     }
-    // end allgatherv
+    // end alltoallv
 
     //wait
     for (auto& req : reqs) {
@@ -249,15 +250,19 @@ void user_thread_idx(size_t thread_idx,
 
     size_t local_topology_size = comms[0]->size();
 
-    std::vector<processing_type> send_values(COUNT);
+    std::vector<processing_type> send_values(COUNT * local_topology_size);
     std::iota(send_values.begin(), send_values.end(), 1);
-    std::vector<processing_type> recv_values(COUNT, 0);
+    std::vector<processing_type> recv_values(COUNT * local_topology_size, 0);
 
     size_t* recv_counts = new size_t[local_topology_size];
     for (size_t idx = 0; idx < local_topology_size; idx++) {
         recv_counts[idx] = COUNT;
     }
 
+    size_t* send_counts = new size_t[local_topology_size];
+    for (size_t idx = 0; idx < local_topology_size; idx++) {
+        send_counts[idx] = COUNT;
+    }
     // alloc memory specific to devices
     for (auto& comm : comms) {
         // get native l0*
@@ -265,7 +270,8 @@ void user_thread_idx(size_t thread_idx,
         size_t rank = comm->rank();
 
         // wrapped L0-native API for devices: create native buffers
-        auto mem_send = dev->alloc_memory<processing_type>(COUNT, sizeof(processing_type));
+        auto mem_send = dev->alloc_memory<processing_type>(COUNT * local_topology_size,
+                                                           sizeof(processing_type));
         auto mem_recv = dev->alloc_memory<processing_type>(COUNT * local_topology_size,
                                                            sizeof(processing_type));
 
@@ -294,7 +300,7 @@ void user_thread_idx(size_t thread_idx,
 
     global_communicator->barrier();
 
-    // allgatherv
+    // alltoallv
     std::vector<std::shared_ptr<ccl::request>> reqs;
     ccl::coll_attr coll_attr{};
     for (auto& comm : comms) {
@@ -307,14 +313,14 @@ void user_thread_idx(size_t thread_idx,
         }
 
         allocated_memory_array& mem_objects = memory_storage.find(rank)->second;
-        reqs.push_back(comm->allgatherv(mem_objects[0].get(), //send_buf
-                                        mem_objects[0].count(), //send_count
-                                        mem_objects[1].get(), //recv_buf
-                                        recv_counts, //recv_counts
-                                        &coll_attr,
-                                        streams[rank]));
+        reqs.push_back(comm->alltoallv(mem_objects[0].get(), //send_buf
+                                       send_counts, //send_counts
+                                       mem_objects[1].get(), //recv_buf
+                                       recv_counts, //recv_counts
+                                       &coll_attr,
+                                       streams[rank]));
     }
-    // end allgatherv
+    // end alltoallv
 
     //wait
     for (auto& req : reqs) {
@@ -340,6 +346,7 @@ void user_thread_idx(size_t thread_idx,
     }
 
     delete[] recv_counts;
+    delete[] send_counts;
 }
 #endif
 
@@ -355,7 +362,7 @@ int main(int argc, char** argv) {
     }
 
     //Use:
-    // SYCL_BE=PI_OTHER SYCL_PI_TRACE=1 ZE_DEBUG=1  SYCL_DEVICE_WHITE_LIST="" CCL_LOG_LEVEL=1 gdb examples/level_zero/l0_thread_allgatherv_cpp_test
+    // SYCL_BE=PI_OTHER SYCL_PI_TRACE=1 ZE_DEBUG=1  SYCL_DEVICE_WHITE_LIST="" CCL_LOG_LEVEL=1 gdb examples/level_zero/l0_thread_alltoallv_cpp_test
 
     // determine GPu device affinity
     /*
@@ -406,9 +413,9 @@ int main(int argc, char** argv) {
     }
 
     // Register algorithm from kernel source
-    register_allgatherv_gpu_module_source("kernels/ring_allgatherv.spv",
-                                          ccl_topology_class_t::ring_algo_class);
-    // register_allgatherv_gpu_module_source("kernels/a2a_allgatherv.spv",
+    register_alltoallv_gpu_module_source("kernels/ring_alltoallv.spv",
+                                         ccl_topology_class_t::ring_algo_class);
+    // register_alltoallv_gpu_module_source("kernels/a2a_alltoallv.spv",
     //                                      ccl_topology_class_t::a2a_algo_class);
 
 #ifdef CCL_ENABLE_SYCL

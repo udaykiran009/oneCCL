@@ -225,7 +225,7 @@ void user_thread_idx(size_t thread_idx,
     std::vector<processing_type> send_values(COUNT);
     std::iota(send_values.begin(), send_values.end(), 1);
     std::vector<processing_type> recv_values(COUNT, 0);
-    size_t root = 0; // reduce
+    size_t root = 1; // reduce
 
     // API
 

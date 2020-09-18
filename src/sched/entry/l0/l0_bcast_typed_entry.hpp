@@ -26,7 +26,6 @@ public:
     using base::req;
     using base::status;
     using base::launch_args;
-    using base::elem_count;
     using base::kernel_router;
     using kernel_main_typed = ring_bcast_kernel<native_type>;
     using kernel_ipc_typed = ring_bcast_ipc<native_type>;
@@ -57,7 +56,6 @@ public:
             : base(sched,
                    comm,
                    buf,
-                   cnt,
                    ccl::native_type_info<native_type>::ccl_type_value,
                    device_stream),
 
@@ -74,11 +72,12 @@ public:
                                          1,
                                          sizeof(local_barrier_flag_gpu_type))) {
         root_typed_entry = root;
+        cnt_entry = cnt;
         LOG_DEBUG(class_name(),
                   " entry req ",
                   &req,
                   ", cnt ",
-                  elem_count,
+                  cnt_entry,
                   ", root",
                   root,
                   ", rank: ",
@@ -117,7 +116,7 @@ public:
                   ", rank: ",
                   comm_addr.to_string(),
                   ", cnt ",
-                  elem_count);
+                  cnt_entry);
 
         //Create base primitives
         base::start();
@@ -130,14 +129,17 @@ public:
                                                          native_type>();
 
         //create implementation specified primitives
-        main_entry_function.template set_args<typename kernel_main_typed::income_data_flag_arg,
-                                              typename kernel_main_typed::ready_to_recv_flag_arg,
-                                              typename kernel_main_typed::local_barrier_flag_arg,
-                                              typename kernel_main_typed::root_arg>(
-            income_data_flag.get(),
-            ready_to_recv_flag.get(),
-            local_barrier_flag.get(),
-            root_typed_entry);
+        main_entry_function
+            .template set_args<typename kernel_main_typed::income_data_flag_arg,
+                               typename kernel_main_typed::ready_to_recv_flag_arg,
+                               typename kernel_main_typed::local_barrier_flag_arg,
+                               typename kernel_main_typed::root_arg,
+                               typename kernel_main_typed::common_entry_buf_size_arg>(
+                income_data_flag.get(),
+                ready_to_recv_flag.get(),
+                local_barrier_flag.get(),
+                root_typed_entry,
+                cnt_entry);
         /* TRY To APPEND Kernel HERE!!! Not in update
          *
          * ze_result_t result = zeCommandListAppendLaunchKernel(exec_cmd_list->handle, main_entry_function.handle, &launch_args, nullptr, 0, nullptr);
@@ -281,6 +283,7 @@ private:
     ccl_device::device_memory<ready_to_recv_flag_gpu_type> ready_to_recv_flag;
     ccl_device::device_memory<local_barrier_flag_gpu_type> local_barrier_flag;
     size_t root_typed_entry;
+    size_t cnt_entry;
 
 public:
     bool execute(kernel_main_typed& main_entry_function, kernel_main_typed& right_kernel) {

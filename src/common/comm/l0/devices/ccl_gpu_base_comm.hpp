@@ -11,6 +11,8 @@
 #include "common/comm/l0/device_group_routing_schema.hpp"
 #include "common/comm/l0/gpu_device_types.hpp"
 #include "common/comm/l0/modules/ring/allreduce_entry_module.hpp"
+#include "common/comm/l0/modules/ring/allgatherv_entry_module.hpp"
+#include "common/comm/l0/modules/ring/alltoallv_entry_module.hpp"
 #include "common/comm/l0/modules/ring/bcast_entry_module.hpp"
 #include "common/comm/l0/modules/ring/reduce_entry_module.hpp"
 #include "common/comm/l0/modules/ring/allgatherv_entry_module.hpp"

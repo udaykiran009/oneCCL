@@ -27,7 +27,6 @@ public:
     using base::req;
     using base::status;
     using base::launch_args;
-    using base::elem_count;
     using base::kernel_router;
     using kernel_main_typed = ring_reduce_kernel<native_type>;
     using kernel_ipc_typed = ring_reduce_ipc<native_type>;
@@ -60,7 +59,6 @@ public:
             : base(sched,
                    comm,
                    send_buf,
-                   cnt,
                    ccl::native_type_info<native_type>::ccl_type_value,
                    device_stream),
 
@@ -82,11 +80,12 @@ public:
         recv_buf_typed_entry = recv_buf;
         op_typed_entry = op;
         root_typed_entry = root;
+        cnt_entry = cnt;
         LOG_DEBUG(class_name(),
                   " entry req ",
                   &req,
                   ", cnt ",
-                  elem_count,
+                  cnt_entry,
                   ", op ",
                   op,
                   ", rank: ",
@@ -141,7 +140,7 @@ public:
                   ", rank: ",
                   comm_addr.to_string(),
                   ", cnt ",
-                  elem_count);
+                  cnt_entry);
 
         //Create base primitives
         base::start();
@@ -155,16 +154,21 @@ public:
 
         auto recv_buf_ptr = reinterpret_cast<native_type*>(recv_buf_typed_entry.get_ptr());
         //create implementation specified primitives
-        main_entry_function.template set_args<typename kernel_main_typed::tmp_recv_buf_arg,
-                                              typename kernel_main_typed::income_data_flag_arg,
-                                              typename kernel_main_typed::ready_to_recv_flag_arg,
-                                              typename kernel_main_typed::local_barrier_flag_arg,
-                                              typename kernel_main_typed::recv_buf_arg>(
-            temp_buffer.get(),
-            income_data_flag.get(),
-            ready_to_recv_flag.get(),
-            local_barrier_flag.get(),
-            recv_buf_ptr);
+        main_entry_function
+            .template set_args<typename kernel_main_typed::tmp_recv_buf_arg,
+                               typename kernel_main_typed::income_data_flag_arg,
+                               typename kernel_main_typed::ready_to_recv_flag_arg,
+                               typename kernel_main_typed::local_barrier_flag_arg,
+                               typename kernel_main_typed::recv_buf_arg,
+                               typename kernel_main_typed::root_arg,
+                               typename kernel_main_typed::common_entry_buf_size_arg>(
+                temp_buffer.get(),
+                income_data_flag.get(),
+                ready_to_recv_flag.get(),
+                local_barrier_flag.get(),
+                recv_buf_ptr,
+                root_typed_entry,
+                cnt_entry);
 
         /* TRY To APPEND Kernel HERE!!! Not in update
          *
@@ -317,6 +321,7 @@ private:
     ccl_reduction_t op_typed_entry;
     ccl_buffer recv_buf_typed_entry;
     size_t root_typed_entry;
+    size_t cnt_entry;
 
 public:
     bool execute(kernel_main_typed& main_entry_function, kernel_main_typed& right_kernel) {

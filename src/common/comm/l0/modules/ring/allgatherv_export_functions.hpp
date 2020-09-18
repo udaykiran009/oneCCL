@@ -10,9 +10,8 @@ struct ring_allgatherv_kernel
               arg<main_kernel_args::args_start_index + 1, size_t*>, // recv_elem_counts_buf
               arg<main_kernel_args::args_start_index + 2, size_t*>, // recv_elem_offsets_buf
               arg<main_kernel_args::args_start_index + 3, native_type*>, // send_buf
-              arg<main_kernel_args::args_start_index + 4, native_type*>, // recv_buf
-              thread_safe_arg<main_kernel_args::args_start_index + 5,
-                              native_type*>, // right_output_buffer
+              thread_safe_arg<main_kernel_args::args_start_index + 4, native_type*>, // recv_buf
+              arg<main_kernel_args::args_start_index + 5, native_type*>, // right_output_buffer
               thread_safe_arg<main_kernel_args::args_start_index + 6,
                               int*>, // left_wrote_to_me_flag
               thread_safe_arg<main_kernel_args::args_start_index + 7,

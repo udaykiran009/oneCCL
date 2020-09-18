@@ -2,6 +2,8 @@
 #include "common/utils/spinlock.hpp"
 #include "sched/gpu_concurrent_sched.hpp"
 #include "sched/entry/l0/l0_allreduce_typed_entry.hpp"
+#include "sched/entry/l0/l0_allgatherv_typed_entry.hpp"
+#include "sched/entry/l0/l0_alltoallv_typed_entry.hpp"
 #include "sched/entry/l0/l0_bcast_typed_entry.hpp"
 #include "sched/entry/l0/l0_reduce_typed_entry.hpp"
 #include "sched/entry/l0/l0_allgatherv_typed_entry.hpp"

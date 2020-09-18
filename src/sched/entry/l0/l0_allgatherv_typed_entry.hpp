@@ -27,7 +27,6 @@ public:
     using base::req;
     using base::status;
     using base::launch_args;
-    using base::elem_count;
     using base::kernel_router;
     using kernel_main_typed = ring_allgatherv_kernel<native_type>;
     using kernel_ipc_typed = ring_allgatherv_ipc<native_type>;
@@ -62,7 +61,6 @@ public:
             : base(sched,
                    comm,
                    send_buf,
-                   send_count,
                    ccl::native_type_info<native_type>::ccl_type_value,
                    device_stream),
               // left_wrote_to_me_flag
@@ -82,13 +80,13 @@ public:
 
               recv_offsets_buf(parent_communicator->get_device()
                                    .template alloc_memory<recv_offsets_typed_entry_type>(
-                                       send_count,
+                                       comm_addr.size,
                                        sizeof(recv_offsets_typed_entry_type)))
 
     {
         // copy recv_buf into alloced recv_buf_entry
         recv_buf_entry = recv_buf;
-
+        cnt_entry = send_count;
         // same as parent_communicator->template
         //                    get_comm_data<base::get_topology(),
         //                    base::get_topology_class()>().size;
@@ -107,7 +105,7 @@ public:
                   " entry req ",
                   &req,
                   ", cnt ",
-                  elem_count,
+                  cnt_entry,
                   ", rank: ",
                   "local topology size:",
                   local_topology_size,
@@ -162,7 +160,7 @@ public:
                   ", rank: ",
                   comm_addr.to_string(),
                   ", cnt ",
-                  elem_count);
+                  cnt_entry);
 
         //Create base primitives
         base::start();
@@ -181,12 +179,14 @@ public:
                                typename kernel_main_typed::ready_to_recv_flag_arg,
                                typename kernel_main_typed::recv_buf_arg,
                                typename kernel_main_typed::recv_elem_counts_buf_arg,
-                               typename kernel_main_typed::recv_elem_offsets_buf_arg>(
+                               typename kernel_main_typed::recv_elem_offsets_buf_arg,
+                               typename kernel_main_typed::common_entry_buf_size_arg>(
                 income_data_flag.get(),
                 ready_to_recv_flag.get(),
                 recv_buf_ptr,
                 recv_counts_buf.get(),
-                recv_offsets_buf.get());
+                recv_offsets_buf.get(),
+                cnt_entry);
 
         /* TRY To APPEND Kernel HERE!!! Not in update
          *
@@ -336,6 +336,7 @@ private:
     ccl_buffer recv_buf_entry;
     ccl_device::device_memory<recv_counts_typed_entry_type> recv_counts_buf;
     ccl_device::device_memory<recv_offsets_typed_entry_type> recv_offsets_buf;
+    size_t cnt_entry;
 
 public:
     bool execute(kernel_main_typed& main_entry_function, kernel_main_typed& right_kernel) {

@@ -48,7 +48,6 @@ public:
     base_gpu_entry(ccl_sched *sched,
                    std::shared_ptr<gpu_comm> comm,
                    const ccl_buffer send_buf,
-                   size_t cnt,
                    ccl_datatype_t dtype_in,
                    std::shared_ptr<ccl_stream> &stream)
             : sched_entry(sched),
@@ -56,7 +55,6 @@ public:
               comm_addr(parent_communicator
                             ->template get_comm_data<get_topology(), get_topology_class()>()),
               send_buf(send_buf),
-              elem_count(cnt),
               dtype(),
               device_stream(stream) {
         dtype = ccl::global_data::get().dtypes->get(dtype_in);
@@ -65,13 +63,7 @@ public:
     virtual ~base_gpu_entry() {}
 
     virtual void start() override {
-        LOG_DEBUG(class_name(),
-                  " entry req ",
-                  &req,
-                  ", elem_count ",
-                  elem_count,
-                  ", rank: ",
-                  comm_addr.to_string());
+        LOG_DEBUG(class_name(), " entry req ", &req, ", rank: ", comm_addr.to_string());
 
         ccl_device &device = parent_communicator->get_device();
         {
@@ -94,9 +86,8 @@ public:
             parent_communicator->template register_entry<native_type, group_id, class_id>(*this);
 
         auto send_buf_ptr = reinterpret_cast<native_type *>(send_buf.get_ptr());
-        main_entry_function.template set_args<typename kernel_main_typed::common_entry_buf_size_arg,
-                                              typename kernel_main_typed::common_entry_buf_arg>(
-            elem_count, send_buf_ptr);
+        main_entry_function.template set_args<typename kernel_main_typed::common_entry_buf_arg>(
+            send_buf_ptr);
 
         /*ze_result_t result = zeCommandListAppendLaunchKernel(exec_cmd_list->handle, main_entry_function.handle, &launch_args, nullptr, 0, nullptr);
         if(result != ZE_RESULT_SUCCESS)
@@ -289,8 +280,6 @@ protected:
                            class_name(),
                            ", dt ",
                            ccl::global_data::get().dtypes->name(dtype),
-                           ", elem_count ",
-                           elem_count,
                            ", send_buf ",
                            send_buf,
                            ", comm_id ",
@@ -304,7 +293,6 @@ protected:
     std::shared_ptr<gpu_comm> parent_communicator;
     topology_addr<group_id, class_id> comm_addr;
     ccl_buffer send_buf;
-    size_t elem_count;
     ccl_datatype dtype;
     atl_req_t req{};
     std::shared_ptr<ccl_stream> device_stream;
