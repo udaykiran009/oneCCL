@@ -47,7 +47,8 @@ include_directories(${PROJECT_SOURCE_DIR}/tests/functional/googletest-release-1.
                     ${PROJECT_SOURCE_DIR}/tests/functional/googletest-release-1.8.1/googletest/src
                     ${CMAKE_CURRENT_BINARY_DIR}
                     ${PROJECT_SOURCE_DIR}/include
-                    ${PROJECT_SOURCE_DIR}/src)
+                    ${PROJECT_SOURCE_DIR}/src
+                    ${PROJECT_SOURCE_DIR}/src/atl)
 
 file(GLOB sources "*.c" "*.cpp")
 if(MULTI_GPU_SUPPORT)

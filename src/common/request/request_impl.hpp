@@ -13,4 +13,4 @@ public:
     virtual ~request_impl() = default;
 };
 
-}
+} // namespace ccl

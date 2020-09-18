@@ -12,13 +12,9 @@ class event;
 /**
  * Request's interface that allows users to track communication operation progress
  */
-class request : public ccl_api_base_movable<request,
-                                              direct_access_policy,
-                                              request_impl> {
+class request : public ccl_api_base_movable<request, direct_access_policy, request_impl> {
 public:
-    using base_t = ccl_api_base_movable<request,
-                                        direct_access_policy,
-                                        request_impl>;
+    using base_t = ccl_api_base_movable<request, direct_access_policy, request_impl>;
 
     /**
      * Declare PIMPL type

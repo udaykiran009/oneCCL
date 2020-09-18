@@ -1,10 +1,10 @@
 #include "helper.h"
-#include "kvs.h"
+#include "util/pm/pmi_resizable_rt/pmi_resizable/kvs/internal_kvs.h"
 
 size_t my_rank, count_pods;
 size_t barrier_num = 0;
 size_t up_idx;
-size_t initialized = 0;
+size_t applied = 0;
 
 rank_list_t* killed_ranks = NULL;
 size_t killed_ranks_count = 0;
@@ -12,16 +12,16 @@ size_t killed_ranks_count = 0;
 rank_list_t* new_ranks = NULL;
 size_t new_ranks_count = 0;
 
-size_t replace_str(char* str, size_t old, size_t new) {
+size_t helper::replace_str(char* str, size_t old_rank, size_t new_rank) {
     char old_str[INT_STR_SIZE];
     char new_str[INT_STR_SIZE];
     char* point_to_replace;
     size_t old_str_size;
     size_t new_str_size;
 
-    SET_STR(old_str, INT_STR_SIZE, SIZE_T_TEMPLATE, old);
+    SET_STR(old_str, INT_STR_SIZE, SIZE_T_TEMPLATE, old_rank);
 
-    SET_STR(new_str, INT_STR_SIZE, SIZE_T_TEMPLATE, new);
+    SET_STR(new_str, INT_STR_SIZE, SIZE_T_TEMPLATE, new_rank);
 
     point_to_replace = strstr(str, old_str);
     if (point_to_replace == NULL)
@@ -37,9 +37,9 @@ size_t replace_str(char* str, size_t old, size_t new) {
     return 0;
 }
 
-void update_ranks(size_t* old_count, rank_list_t** origin_list, const char* kvs_name) {
+void helper::update_ranks(size_t* old_count, rank_list_t** origin_list, const char* kvs_name) {
     char** rank_nums = NULL;
-    size_t rank_count = kvs_get_keys_values_by_name(kvs_name, NULL, &rank_nums);
+    size_t rank_count = get_keys_values_by_name(kvs_name, NULL, &rank_nums);
     size_t i;
     size_t cur_count = 0;
 
@@ -64,17 +64,17 @@ void update_ranks(size_t* old_count, rank_list_t** origin_list, const char* kvs_
     *old_count += cur_count;
 }
 
-void keep_first_n_up(size_t prev_new_ranks_count, size_t prev_killed_ranks_count) {
+void helper::keep_first_n_up(size_t prev_new_ranks_count, size_t prev_killed_ranks_count) {
     rank_list_keep_first_n(&killed_ranks, prev_killed_ranks_count);
     rank_list_keep_first_n(&new_ranks, prev_new_ranks_count);
 }
 
-void get_update_ranks(void) {
+void helper::get_update_ranks(void) {
     update_ranks(&killed_ranks_count, &killed_ranks, KVS_APPROVED_DEAD_POD);
     update_ranks(&new_ranks_count, &new_ranks, KVS_APPROVED_NEW_POD);
 }
 
-void get_shift(shift_list_t** list) {
+void helper::get_shift(shift_list_t** list) {
     size_t shift_pods_count = 0;
     size_t max_rank_survivor_pod = count_pods;
     rank_list_t* cur_new = new_ranks;
@@ -118,35 +118,33 @@ void get_shift(shift_list_t** list) {
     }
 }
 
-void up_pods_count(void) {
-    count_pods = kvs_get_count_names(KVS_POD_NUM);
+void helper::up_pods_count(void) {
+    count_pods = get_count_names(KVS_POD_NUM);
 }
 
-void wait_accept(void) {
+void helper::wait_accept(void) {
     char my_rank_str[MAX_KVS_VAL_LENGTH];
-
-    send_notification(0);
 
     my_rank = 0;
 
     while (1) {
-        if (kvs_get_value_by_name_key(KVS_ACCEPT, my_hostname, my_rank_str) != 0) {
+        if (get_value_by_name_key(KVS_ACCEPT, my_hostname, my_rank_str) != 0) {
             my_rank = strtol(my_rank_str, NULL, 10);
             break;
         }
     }
 }
 
-void clean_dead_pods_info(rank_list_t* dead_up_idx) {
+void helper::clean_dead_pods_info(rank_list_t* dead_up_idx) {
     size_t i;
     size_t count_death;
     char** kvs_keys = NULL;
 
     while (dead_up_idx != NULL) {
-        count_death = kvs_get_keys_values_by_name(KVS_APPROVED_DEAD_POD, &kvs_keys, NULL);
+        count_death = get_keys_values_by_name(KVS_APPROVED_DEAD_POD, &kvs_keys, NULL);
 
         for (i = 0; i < count_death; i++) {
-            kvs_remove_name_key(KVS_APPROVED_DEAD_POD, kvs_keys[i]);
+            remove_name_key(KVS_APPROVED_DEAD_POD, kvs_keys[i]);
             dead_up_idx = dead_up_idx->next;
             if (dead_up_idx == NULL) {
                 for (; i < count_death; i++) {
@@ -161,7 +159,7 @@ void clean_dead_pods_info(rank_list_t* dead_up_idx) {
         free(kvs_keys);
 }
 
-void accept_new_ranks(shift_list_t* cur_list) {
+void helper::accept_new_ranks(shift_list_t* cur_list) {
     char new_rank_str[INT_STR_SIZE];
     char old_rank_str[INT_STR_SIZE];
     char** kvs_values = NULL;
@@ -171,15 +169,14 @@ void accept_new_ranks(shift_list_t* cur_list) {
 
     while (cur_list != NULL) {
         if (cur_list->shift.type == CH_T_UPDATE || cur_list->shift.type == CH_T_NEW) {
-            SET_STR(old_rank_str, INT_STR_SIZE, SIZE_T_TEMPLATE, cur_list->shift.old);
-            SET_STR(new_rank_str, INT_STR_SIZE, SIZE_T_TEMPLATE, cur_list->shift.new);
+            SET_STR(old_rank_str, INT_STR_SIZE, SIZE_T_TEMPLATE, cur_list->shift.old_rank);
+            SET_STR(new_rank_str, INT_STR_SIZE, SIZE_T_TEMPLATE, cur_list->shift.new_rank);
 
-            count_values =
-                kvs_get_keys_values_by_name(KVS_APPROVED_NEW_POD, &kvs_keys, &kvs_values);
+            count_values = get_keys_values_by_name(KVS_APPROVED_NEW_POD, &kvs_keys, &kvs_values);
 
             for (i = 0; i < count_values; i++) {
                 if (!strcmp(kvs_values[i], old_rank_str)) {
-                    kvs_set_value(KVS_ACCEPT, kvs_keys[i], new_rank_str);
+                    set_value(KVS_ACCEPT, kvs_keys[i], new_rank_str);
                     break;
                 }
             }
@@ -191,7 +188,7 @@ void accept_new_ranks(shift_list_t* cur_list) {
         cur_list = cur_list->next;
     }
 
-    while ((count_values = kvs_get_keys_values_by_name(KVS_ACCEPT, NULL, &kvs_values)) != 0) {
+    while ((count_values = get_keys_values_by_name(KVS_ACCEPT, NULL, &kvs_values)) != 0) {
         for (i = 0; i < count_values; i++) {
             free(kvs_values[i]);
         }
@@ -203,7 +200,7 @@ void accept_new_ranks(shift_list_t* cur_list) {
         free(kvs_values);
 }
 
-void update_kvs_info(size_t new_rank) {
+void helper::update_kvs_info(size_t new_rank) {
     char kvs_name[MAX_KVS_NAME_LENGTH];
     char kvs_key[MAX_KVS_KEY_LENGTH];
     char kvs_val[MAX_KVS_VAL_LENGTH];
@@ -213,17 +210,17 @@ void update_kvs_info(size_t new_rank) {
     for (k = 0; k < kvs_list_size; k++) {
         cut_head(kvs_name, kvs_key, kvs_val, ST_CLIENT);
 
-        kvs_remove_name_key(kvs_name, kvs_key);
+        remove_name_key(kvs_name, kvs_key);
 
         replace_str(kvs_key, my_rank, new_rank);
 
-        kvs_set_value(kvs_name, kvs_key, kvs_val);
+        set_value(kvs_name, kvs_key, kvs_val);
 
         put_key(kvs_name, kvs_key, kvs_val, ST_CLIENT);
     }
 }
 
-void move_to_new_rank(size_t new_rank) {
+void helper::move_to_new_rank(size_t new_rank) {
     char rank_str[INT_STR_SIZE];
 
     update_kvs_info(new_rank);
@@ -233,20 +230,20 @@ void move_to_new_rank(size_t new_rank) {
 
     //    request_set_val(KVS_POD_REQUEST, my_hostname, rank_str);
 
-    kvs_set_value(KVS_POD_NUM, rank_str, my_hostname);
+    set_value(KVS_POD_NUM, rank_str, my_hostname);
 }
 
-void update_my_info(shift_list_t* list) {
+void helper::update_my_info(shift_list_t* list) {
     char rank_str[INT_STR_SIZE];
 
     while (list != NULL) {
-        if (list->shift.old == my_rank) {
+        if (list->shift.old_rank == my_rank) {
             size_t old_rank = my_rank;
-            move_to_new_rank(list->shift.new);
+            move_to_new_rank(list->shift.new_rank);
 
             SET_STR(rank_str, INT_STR_SIZE, SIZE_T_TEMPLATE, old_rank);
 
-            kvs_remove_name_key(KVS_POD_NUM, rank_str);
+            remove_name_key(KVS_POD_NUM, rank_str);
 
             break;
         }
@@ -254,14 +251,14 @@ void update_my_info(shift_list_t* list) {
     }
 }
 
-size_t get_barrier_idx(void) {
+size_t helper::get_barrier_idx(void) {
     char** kvs_values = NULL;
     size_t count_kvs_values = 0;
     size_t tmp_barrier_num;
     size_t min_barrier_num;
     size_t i = 0;
 
-    count_kvs_values = kvs_get_keys_values_by_name(KVS_BARRIER, NULL, &kvs_values);
+    count_kvs_values = get_keys_values_by_name(KVS_BARRIER, NULL, &kvs_values);
     if (count_kvs_values == 0)
         return 0;
 
@@ -278,33 +275,33 @@ size_t get_barrier_idx(void) {
     return min_barrier_num;
 }
 
-void post_my_info(void) {
+void helper::post_my_info(void) {
     char barrier_num_str[INT_STR_SIZE];
     char my_rank_str[INT_STR_SIZE];
 
-    initialized = 1;
+    applied = 1;
 
     SET_STR(my_rank_str, INT_STR_SIZE, SIZE_T_TEMPLATE, my_rank);
 
-    kvs_set_value(KVS_POD_NUM, my_rank_str, my_hostname);
+    set_value(KVS_POD_NUM, my_rank_str, my_hostname);
 
     barrier_num = get_barrier_idx();
 
     SET_STR(barrier_num_str, INT_STR_SIZE, SIZE_T_TEMPLATE, barrier_num);
 
-    kvs_set_value(KVS_BARRIER, my_hostname, barrier_num_str);
+    set_value(KVS_BARRIER, my_hostname, barrier_num_str);
 
-    kvs_remove_name_key(KVS_ACCEPT, my_hostname);
+    remove_name_key(KVS_ACCEPT, my_hostname);
 
-    kvs_remove_name_key(KVS_APPROVED_NEW_POD, my_hostname);
+    remove_name_key(KVS_APPROVED_NEW_POD, my_hostname);
 
     barrier_num++;
     if (barrier_num > BARRIER_NUM_MAX)
         barrier_num = 0;
 }
 
-size_t update(shift_list_t** list, rank_list_t** dead_up_idx, size_t root_rank) {
-    if (initialized == 1) {
+size_t helper::update(shift_list_t** list, rank_list_t** dead_up_idx, size_t root_rank) {
+    if (applied == 1) {
         if ((*list) != NULL) {
             if (my_rank == root_rank) {
                 if ((*dead_up_idx) != NULL)
@@ -321,13 +318,13 @@ size_t update(shift_list_t** list, rank_list_t** dead_up_idx, size_t root_rank) 
     return 0;
 }
 
-size_t get_val_count(const char* name, const char* val) {
+size_t helper::get_val_count(const char* name, const char* val) {
     size_t res = 0;
     char** kvs_values = NULL;
     size_t count_values;
     size_t i;
 
-    count_values = kvs_get_keys_values_by_name(name, NULL, &kvs_values);
+    count_values = get_keys_values_by_name(name, NULL, &kvs_values);
 
     if (count_values == 0)
         return res;
@@ -343,14 +340,14 @@ size_t get_val_count(const char* name, const char* val) {
     return res;
 }
 
-size_t get_occupied_ranks_count(char* rank) {
+size_t helper::get_occupied_ranks_count(char* rank) {
     char occupied_rank_val_str[MAX_KVS_VAL_LENGTH];
     size_t is_occupied_rank;
     size_t count_new_pod = 0;
     size_t count_seen_new_pod = 0;
 
     is_occupied_rank =
-        (kvs_get_value_by_name_key(KVS_POD_NUM, rank, occupied_rank_val_str) == 0) ? 0 : 1;
+        (get_value_by_name_key(KVS_POD_NUM, rank, occupied_rank_val_str) == 0) ? 0 : 1;
 
     count_new_pod = get_val_count(KVS_NEW_POD, rank);
 
@@ -359,7 +356,7 @@ size_t get_occupied_ranks_count(char* rank) {
     return is_occupied_rank + count_new_pod + count_seen_new_pod;
 }
 
-size_t get_count_requested_ranks(char* rank) {
+size_t helper::get_count_requested_ranks(char* rank) {
     size_t count_pods_with_my_rank = 0;
 
     count_pods_with_my_rank = get_val_count(KVS_POD_REQUEST, rank);
@@ -367,25 +364,25 @@ size_t get_count_requested_ranks(char* rank) {
     return count_pods_with_my_rank;
 }
 
-void occupied_rank(char* rank) {
+void helper::occupied_rank(char* rank) {
     char idx_val[MAX_KVS_VAL_LENGTH];
     size_t is_inited;
 
-    is_inited = kvs_get_value_by_name_key(KVS_UP, KVS_IDX, idx_val);
+    is_inited = get_value_by_name_key(KVS_UP, KVS_IDX, idx_val);
 
     if ((is_inited == 0) && (my_rank == 0)) {
-        kvs_set_value(KVS_UP, KVS_IDX, INITIAL_UPDATE_IDX);
+        set_value(KVS_UP, KVS_IDX, INITIAL_UPDATE_IDX);
 
         count_pods = 1;
 
         update(NULL, NULL, 0);
     }
     else {
-        kvs_set_value(KVS_NEW_POD, my_hostname, rank);
+        set_value(KVS_NEW_POD, my_hostname, rank);
     }
 }
 
-void reg_rank(void) {
+void helper::reg_rank(void) {
     char rank_str[INT_STR_SIZE];
     size_t wait_shift = 0;
     char** kvs_values = NULL;
@@ -395,7 +392,7 @@ void reg_rank(void) {
     size_t i;
 
     my_rank = 0;
-    kvs_set_value(KVS_POD_REQUEST, my_hostname, INITIAL_RANK_NUM);
+    set_value(KVS_POD_REQUEST, my_hostname, INITIAL_RANK_NUM);
 
     SET_STR(rank_str, INT_STR_SIZE, SIZE_T_TEMPLATE, my_rank);
 
@@ -403,7 +400,7 @@ void reg_rank(void) {
         wait_shift = 0;
         my_num_in_pod_request_line = 0;
 
-        count_values = kvs_get_keys_values_by_name(KVS_POD_REQUEST, &kvs_keys, &kvs_values);
+        count_values = get_keys_values_by_name(KVS_POD_REQUEST, &kvs_keys, &kvs_values);
 
         for (i = 0; i < count_values; i++) {
             if (!strcmp(kvs_values[i], rank_str)) {
@@ -433,11 +430,11 @@ void reg_rank(void) {
         if (!wait_shift) {
             my_rank++;
             SET_STR(rank_str, INT_STR_SIZE, SIZE_T_TEMPLATE, my_rank);
-            kvs_set_value(KVS_POD_REQUEST, my_hostname, rank_str);
+            set_value(KVS_POD_REQUEST, my_hostname, rank_str);
         }
     }
 
-    kvs_remove_name_key(KVS_POD_REQUEST, my_hostname);
+    remove_name_key(KVS_POD_REQUEST, my_hostname);
 
     if (kvs_keys != NULL)
         free(kvs_keys);
@@ -445,21 +442,21 @@ void reg_rank(void) {
         free(kvs_values);
 }
 
-size_t get_replica_size(void) {
-    return kvs_get_replica_size();
+size_t helper::get_replica_size(void) {
+    return k->kvs_get_replica_size();
 }
 
-void up_kvs(const char* new_kvs_name, const char* old_kvs_name) {
+void helper::up_kvs(const char* new_kvs_name, const char* old_kvs_name) {
     char** kvs_values = NULL;
     char** kvs_keys = NULL;
     size_t i = 0;
     size_t count_values;
 
-    count_values = kvs_get_keys_values_by_name(old_kvs_name, &kvs_keys, &kvs_values);
+    count_values = get_keys_values_by_name(old_kvs_name, &kvs_keys, &kvs_values);
     for (i = 0; i < count_values; i++) {
-        kvs_remove_name_key(old_kvs_name, kvs_keys[i]);
+        remove_name_key(old_kvs_name, kvs_keys[i]);
 
-        kvs_set_value(new_kvs_name, kvs_keys[i], kvs_values[i]);
+        set_value(new_kvs_name, kvs_keys[i], kvs_values[i]);
 
         free(kvs_keys[i]);
         free(kvs_values[i]);
@@ -470,21 +467,46 @@ void up_kvs(const char* new_kvs_name, const char* old_kvs_name) {
         free(kvs_values);
 }
 
-void up_kvs_new_and_dead(void) {
+void helper::up_kvs_new_and_dead(void) {
     up_kvs(KVS_APPROVED_NEW_POD, KVS_NEW_POD);
     up_kvs(KVS_APPROVED_DEAD_POD, KVS_DEAD_POD);
 }
 
-void get_new_root(size_t* old_root) {
+void helper::get_new_root(size_t* old_root) {
     size_t i;
     char** rank_nums = NULL;
-    size_t rank_count = kvs_get_keys_values_by_name(KVS_DEAD_POD, NULL, &rank_nums);
+    size_t rank_count = get_keys_values_by_name(KVS_DEAD_POD, NULL, &rank_nums);
 
     for (i = 0; i < rank_count; i++) {
-        if (*old_root == strtol(rank_nums[i], NULL, 10))
+        if (*old_root == (size_t)strtol(rank_nums[i], NULL, 10))
             (*old_root)++;
         free(rank_nums[i]);
     }
     if (rank_nums != NULL)
         free(rank_nums);
+}
+
+size_t helper::get_keys_values_by_name(const char* kvs_name, char*** kvs_keys, char*** kvs_values) {
+    return k->kvs_get_keys_values_by_name(kvs_name, kvs_keys, kvs_values);
+}
+size_t helper::set_value(const char* kvs_name, const char* kvs_key, const char* kvs_val) {
+    return k->kvs_set_value(kvs_name, kvs_key, kvs_val);
+}
+size_t helper::remove_name_key(const char* kvs_name, const char* kvs_key) {
+    return k->kvs_remove_name_key(kvs_name, kvs_key);
+}
+size_t helper::get_value_by_name_key(const char* kvs_name, const char* kvs_key, char* kvs_val) {
+    return k->kvs_get_value_by_name_key(kvs_name, kvs_key, kvs_val);
+}
+size_t helper::init(const char* main_addr) {
+    return k->kvs_init(main_addr);
+}
+size_t helper::main_server_address_reserve(char* main_addr) {
+    return k->kvs_main_server_address_reserve(main_addr);
+}
+size_t helper::get_count_names(const char* kvs_name) {
+    return k->kvs_get_count_names(kvs_name);
+}
+size_t helper::finalize(void) {
+    return k->kvs_finalize();
 }

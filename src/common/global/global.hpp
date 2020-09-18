@@ -1,5 +1,6 @@
 #pragma once
 
+#include "atl/atl_wrapper.h"
 //#include "ccl.h"
 #include "coll/algorithms/algorithms_enum.hpp"
 #include "comp/bfp16/bfp16_utils.h"
@@ -33,7 +34,8 @@ class ccl_sched_cache;
 class ccl_parallelizer;
 class ccl_fusion_manager;
 class ccl_unordered_coll_manager;
-class ccl_allreduce_2d_builder;
+//class ccl_allreduce_2d_builder;
+class atl_wrapper;
 
 template <ccl_coll_type... registered_types_id>
 class ccl_algorithm_selector_wrapper;
@@ -61,7 +63,6 @@ public:
     void reset_resize_dependent_objects();
 
     std::unique_ptr<ccl_comm_id_storage> comm_ids;
-    std::shared_ptr<ccl_comm> comm;
     std::unique_ptr<ccl_datatype_storage> dtypes;
     std::unique_ptr<ccl_atl_tag> atl_tag;
     std::unique_ptr<ccl_executor> executor;
@@ -71,7 +72,7 @@ public:
     std::unique_ptr<ccl_fusion_manager> fusion_manager;
     std::unique_ptr<ccl_unordered_coll_manager> unordered_coll_manager;
     std::unique_ptr<ccl_algorithm_selector_wrapper<CCL_COLL_LIST>> algorithm_selector;
-    std::unique_ptr<ccl_allreduce_2d_builder> allreduce_2d_builder;
+    //    std::unique_ptr<ccl_allreduce_2d_builder> allreduce_2d_builder;
     static thread_local bool is_worker_thread;
     bool is_ft_enabled;
     ccl_bfp16_impl_type bfp16_impl_type;

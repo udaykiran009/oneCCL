@@ -56,31 +56,21 @@ public:
     void start_workers();
     size_t get_worker_count() const;
 
-    ccl_status_t create_listener(ccl_resize_fn_t resize_func);
+    // TODO: Rework to support listener
+    //    ccl_status_t create_listener(ccl_resize_fn_t resize_func);
     void update_workers();
     void lock_workers();
     void unlock_workers();
     bool is_locked = false;
 
-    size_t get_global_proc_idx() const {
-        return atl_proc_coord->global_idx;
-    }
-    size_t get_global_proc_count() const {
-        return atl_proc_coord->global_count;
-    }
+    // TODO: make method to get real local_proc***
     size_t get_local_proc_idx() const {
-        return atl_proc_coord->local_idx;
+        return 0;
     }
     size_t get_local_proc_count() const {
-        return atl_proc_coord->local_count;
+        return 1;
     }
 
-    atl_ctx_t* get_atl_ctx() const {
-        return atl_ctx;
-    }
-    atl_proc_coord_t* get_proc_coord() const {
-        return atl_proc_coord;
-    }
     const atl_attr_t& get_atl_attr() const {
         return atl_attr;
     }
@@ -103,12 +93,9 @@ private:
         0 /* max_order_waw_size */
     };
 
-    atl_proc_coord_t* atl_proc_coord = nullptr;
-    atl_ep_t** atl_eps = nullptr;
-    atl_ctx_t* atl_ctx = nullptr;
-
     std::vector<std::unique_ptr<ccl_worker>> workers;
-    std::unique_ptr<ccl_listener> listener;
+    // TODO: Rework to support listener
+    //  std::unique_ptr<ccl_listener> listener;
 
     typedef size_t (ccl_executor::*get_worker_idx_fn_t)(ccl_sched* sched);
     get_worker_idx_fn_t get_worker_idx_fn;

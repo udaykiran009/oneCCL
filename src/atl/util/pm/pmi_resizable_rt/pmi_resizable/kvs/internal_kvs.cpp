@@ -9,10 +9,10 @@
 #include <time.h>
 #include <unistd.h>
 
-#include "def.h"
-#include "kvs.h"
-#include "kvs_keeper.h"
-#include "request_wrappers_k8s.h"
+#include "util/pm/pmi_resizable_rt/pmi_resizable/def.h"
+#include "internal_kvs.h"
+#include "util/pm/pmi_resizable_rt/pmi_resizable/kvs_keeper.h"
+#include "util/pm/pmi_resizable_rt/pmi_resizable/request_wrappers_k8s.h"
 
 #define CCL_KVS_IP_PORT_ENV         "CCL_KVS_IP_PORT"
 #define CCL_KVS_IP_EXCHANGE_ENV     "CCL_KVS_IP_EXCHANGE"
@@ -38,7 +38,7 @@ typedef enum ip_getting_type {
 static ip_getting_type_t ip_getting_mode = IGT_K8S;
 
 typedef enum kvs_access_mode {
-    AM_CONNECT = 0,
+    AM_CONNECT = -1,
     AM_DISCONNECT = 1,
     AM_PUT = 2,
     AM_REMOVE = 3,
@@ -60,7 +60,7 @@ static struct sockaddr_in main_server_address;
 static struct sockaddr_in local_server_address;
 static int sock_sender, local_sock, accepted_local_sock;
 
-size_t kvs_set_value(const char* kvs_name, const char* kvs_key, const char* kvs_val) {
+size_t internal_kvs::kvs_set_value(const char* kvs_name, const char* kvs_key, const char* kvs_val) {
     kvs_request_t request;
     memset(&request, 0, sizeof(kvs_request_t));
     request.mode = AM_PUT;
@@ -73,7 +73,7 @@ size_t kvs_set_value(const char* kvs_name, const char* kvs_key, const char* kvs_
     return 0;
 }
 
-size_t kvs_remove_name_key(const char* kvs_name, const char* kvs_key) {
+size_t internal_kvs::kvs_remove_name_key(const char* kvs_name, const char* kvs_key) {
     kvs_request_t request;
     memset(&request, 0, sizeof(kvs_request_t));
     request.mode = AM_REMOVE;
@@ -85,7 +85,9 @@ size_t kvs_remove_name_key(const char* kvs_name, const char* kvs_key) {
     return 0;
 }
 
-size_t kvs_get_value_by_name_key(const char* kvs_name, const char* kvs_key, char* kvs_val) {
+size_t internal_kvs::kvs_get_value_by_name_key(const char* kvs_name,
+                                               const char* kvs_key,
+                                               char* kvs_val) {
     kvs_request_t request;
     memset(&request, 0, sizeof(kvs_request_t));
     request.mode = AM_GET_VAL;
@@ -105,7 +107,7 @@ size_t kvs_get_value_by_name_key(const char* kvs_name, const char* kvs_key, char
     return strlen(kvs_val);
 }
 
-size_t kvs_get_count_names(const char* kvs_name) {
+size_t internal_kvs::kvs_get_count_names(const char* kvs_name) {
     size_t count_names = 0;
     kvs_request_t request;
     memset(&request, 0, sizeof(kvs_request_t));
@@ -119,7 +121,9 @@ size_t kvs_get_count_names(const char* kvs_name) {
     return count_names;
 }
 
-size_t kvs_get_keys_values_by_name(const char* kvs_name, char*** kvs_keys, char*** kvs_values) {
+size_t internal_kvs::kvs_get_keys_values_by_name(const char* kvs_name,
+                                                 char*** kvs_keys,
+                                                 char*** kvs_values) {
     size_t count = 0;
     size_t i;
     kvs_request_t request;
@@ -165,7 +169,7 @@ size_t kvs_get_keys_values_by_name(const char* kvs_name, char*** kvs_keys, char*
     return count;
 }
 
-size_t kvs_get_replica_size(void) {
+size_t internal_kvs::kvs_get_replica_size(void) {
     size_t replica_size = 0;
     if (ip_getting_mode == IGT_K8S) {
         replica_size = request_k8s_get_replica_size();
@@ -217,7 +221,7 @@ void* kvs_server_init(void* args) {
         exit(EXIT_FAILURE);
     }
 
-    while (!is_stop) {
+    while (!is_stop || clients_count != 0) {
         FD_ZERO(&read_fds);
         FD_SET(sock_listener, &read_fds);
         FD_SET(local_sock, &read_fds);
@@ -248,8 +252,7 @@ void* kvs_server_init(void* args) {
                 exit(1);
             }
             is_stop = 1;
-            kvs_keeper_clear(ST_SERVER);
-            break;
+            continue;
         }
         else {
             for (i = 0; i < MAX_CLIENT_COUNT; i++) {
@@ -333,6 +336,8 @@ void* kvs_server_init(void* args) {
                             break;
                         }
                         default: {
+                            if (request.name[0] == '\0')
+                                continue;
                             printf("server: Unknown request mode - %d.\n", request.mode);
                             exit(1);
                         }
@@ -360,6 +365,7 @@ void* kvs_server_init(void* args) {
         }
     }
 
+    kvs_keeper_clear(ST_SERVER);
     DO_RW_OP(write, local_sock, &is_stop, sizeof(int));
     close(local_sock);
     for (i = 0; i < MAX_CLIENT_COUNT; i++) {
@@ -456,7 +462,7 @@ size_t init_main_server_by_string(const char* main_addr) {
     return 0;
 }
 
-size_t main_server_address_reserve(char* main_address) {
+size_t internal_kvs::kvs_main_server_address_reserve(char* main_address) {
     FILE* fp;
     char* additional_local_host_ips;
     if ((fp = popen(CHECKER_IP, READ_ONLY)) == NULL) {
@@ -620,7 +626,7 @@ size_t init_main_server_address(const char* main_addr) {
     }
 }
 
-size_t kvs_init(const char* main_addr) {
+size_t internal_kvs::kvs_init(const char* main_addr) {
     int err;
     socklen_t len = 0;
     struct sockaddr_in addr;
@@ -687,11 +693,12 @@ size_t kvs_init(const char* main_addr) {
     if (strstr(main_host_ip, local_host_ip) && local_port == main_port) {
         is_master = 1;
     }
+    is_inited = true;
 
     return 0;
 }
 
-size_t kvs_finalize(void) {
+size_t internal_kvs::kvs_finalize(void) {
     kvs_request_t request;
     memset(&request, 0, sizeof(kvs_request_t));
     request.mode = AM_DISCONNECT;
@@ -718,6 +725,10 @@ size_t kvs_finalize(void) {
 
     if (ip_getting_mode == IGT_K8S)
         request_k8s_kvs_finalize(is_master);
-
+    is_inited = false;
     return 0;
+}
+internal_kvs::~internal_kvs() {
+    if (is_inited)
+        kvs_finalize();
 }

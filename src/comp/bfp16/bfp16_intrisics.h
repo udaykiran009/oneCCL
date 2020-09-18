@@ -34,25 +34,15 @@
 
 typedef __m512 (*ccl_bfp16_reduction_func_ptr)(__m512 a, __m512 b);
 
-TARGET_ATTRIBUTE_BWF __m512 sum_wrap(__m512 a, __m512 b) {
-    return _mm512_add_ps(a, b);
-}
+TARGET_ATTRIBUTE_BWF __m512 sum_wrap(__m512 a, __m512 b);
 
-TARGET_ATTRIBUTE_BWF __m512 prod_wrap(__m512 a, __m512 b) {
-    return _mm512_mul_ps(a, b);
-}
+TARGET_ATTRIBUTE_BWF __m512 prod_wrap(__m512 a, __m512 b);
 
-TARGET_ATTRIBUTE_BWF __m512 min_wrap(__m512 a, __m512 b) {
-    return _mm512_min_ps(a, b);
-}
+TARGET_ATTRIBUTE_BWF __m512 min_wrap(__m512 a, __m512 b);
 
-TARGET_ATTRIBUTE_BWF __m512 max_wrap(__m512 a, __m512 b) {
-    return _mm512_max_ps(a, b);
-}
+TARGET_ATTRIBUTE_BWF __m512 max_wrap(__m512 a, __m512 b);
 
-TARGET_ATTRIBUTE_BWF __m512 ccl_m512_reduce(__m512 a, __m512 b, ccl_bfp16_reduction_func_ptr op) {
-    return (*op)(a, b);
-}
+TARGET_ATTRIBUTE_BWF __m512 ccl_m512_reduce(__m512 a, __m512 b, ccl_bfp16_reduction_func_ptr op);
 
 INLINE_TARGET_ATTRIBUTE_BW void ccl_bfp16_load_as_fp32(const void* src, void* dst) {
     __m512i y = _mm512_cvtepu16_epi32(_mm256_loadu_si256((__m256i const*)src));

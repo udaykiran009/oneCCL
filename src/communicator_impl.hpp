@@ -99,11 +99,11 @@ communicator::allgatherv(const void* send_buf,
 
 communicator::coll_request_t CCL_API
 communicator::allgatherv(const void* send_buf,
-              size_t send_count,
-              const vector_class<void*>& recv_bufs,
-              const vector_class<size_t>& recv_counts,
-              datatype dtype,
-              const allgatherv_attr& attr) {
+                         size_t send_count,
+                         const vector_class<void*>& recv_bufs,
+                         const vector_class<size_t>& recv_counts,
+                         datatype dtype,
+                         const allgatherv_attr& attr) {
     return get_impl()->allgatherv_impl(send_buf, send_count, recv_bufs, recv_counts, dtype, attr);
 }
 
@@ -128,51 +128,46 @@ communicator::allgatherv(const BufferType* send_buf,
 }
 
 /* allreduce */
-communicator::coll_request_t CCL_API
-communicator::allreduce(const void* send_buf,
-                        void* recv_buf,
-                        size_t count,
-                        datatype dtype,
-                        reduction rtype,
-                        const allreduce_attr& attr) {
+communicator::coll_request_t CCL_API communicator::allreduce(const void* send_buf,
+                                                             void* recv_buf,
+                                                             size_t count,
+                                                             datatype dtype,
+                                                             reduction rtype,
+                                                             const allreduce_attr& attr) {
     return get_impl()->allreduce_impl(send_buf, recv_buf, count, dtype, rtype, attr);
 }
 
 template <class BufferType, typename T>
-communicator::coll_request_t CCL_API
-communicator::allreduce(const BufferType* send_buf,
-                        BufferType* recv_buf,
-                        size_t count,
-                        reduction rtype,
-                        const allreduce_attr& attr) {
+communicator::coll_request_t CCL_API communicator::allreduce(const BufferType* send_buf,
+                                                             BufferType* recv_buf,
+                                                             size_t count,
+                                                             reduction rtype,
+                                                             const allreduce_attr& attr) {
     return get_impl()->allreduce_impl(send_buf, recv_buf, count, rtype, attr);
 }
 
 /* alltoall */
-communicator::coll_request_t CCL_API
-communicator::alltoall(const void* send_buf,
-                       void* recv_buf,
-                       size_t count,
-                       datatype dtype,
-                       const alltoall_attr& attr) {
+communicator::coll_request_t CCL_API communicator::alltoall(const void* send_buf,
+                                                            void* recv_buf,
+                                                            size_t count,
+                                                            datatype dtype,
+                                                            const alltoall_attr& attr) {
     return get_impl()->alltoall_impl(send_buf, recv_buf, count, dtype, attr);
 }
 
-communicator::coll_request_t CCL_API
-communicator::alltoall(const vector_class<void*>& send_buf,
-                       const vector_class<void*>& recv_buf,
-                       size_t count,
-                       datatype dtype,
-                       const alltoall_attr& attr) {
+communicator::coll_request_t CCL_API communicator::alltoall(const vector_class<void*>& send_buf,
+                                                            const vector_class<void*>& recv_buf,
+                                                            size_t count,
+                                                            datatype dtype,
+                                                            const alltoall_attr& attr) {
     return get_impl()->alltoall_impl(send_buf, recv_buf, count, dtype, attr);
 }
 
 template <class BufferType, typename T>
-communicator::coll_request_t CCL_API
-communicator::alltoall(const BufferType* send_buf,
-                       BufferType* recv_buf,
-                       size_t count,
-                       const alltoall_attr& attr) {
+communicator::coll_request_t CCL_API communicator::alltoall(const BufferType* send_buf,
+                                                            BufferType* recv_buf,
+                                                            size_t count,
+                                                            const alltoall_attr& attr) {
     return get_impl()->alltoall_impl(send_buf, recv_buf, count, attr);
 }
 
@@ -227,18 +222,16 @@ communicator::alltoallv(const vector_class<BufferType*>& send_bufs,
 }
 
 /* barrier */
-communicator::coll_request_t CCL_API
-communicator::barrier(const barrier_attr& attr) {
+communicator::coll_request_t CCL_API communicator::barrier(const barrier_attr& attr) {
     return get_impl()->barrier_impl(attr);
 }
 
 /* bcast */
-communicator::coll_request_t CCL_API
-communicator::broadcast(void* buf,
-                        size_t count,
-                        datatype dtype,
-                        size_t root,
-                        const broadcast_attr& attr) {
+communicator::coll_request_t CCL_API communicator::broadcast(void* buf,
+                                                             size_t count,
+                                                             datatype dtype,
+                                                             size_t root,
+                                                             const broadcast_attr& attr) {
     return get_impl()->broadcast_impl(buf, count, dtype, root, attr);
 }
 
@@ -249,46 +242,42 @@ communicator::broadcast(BufferType* buf, size_t count, size_t root, const broadc
 }
 
 /* reduce */
-communicator::coll_request_t CCL_API
-communicator::reduce(const void* send_buf,
-                     void* recv_buf,
-                     size_t count,
-                     datatype dtype,
-                     reduction rtype,
-                     size_t root,
-                     const reduce_attr& attr) {
+communicator::coll_request_t CCL_API communicator::reduce(const void* send_buf,
+                                                          void* recv_buf,
+                                                          size_t count,
+                                                          datatype dtype,
+                                                          reduction rtype,
+                                                          size_t root,
+                                                          const reduce_attr& attr) {
     return get_impl()->reduce_impl(send_buf, recv_buf, count, dtype, rtype, root, attr);
 }
 
 template <class BufferType, typename T>
-communicator::coll_request_t CCL_API
-communicator::reduce(const BufferType* send_buf,
-                     BufferType* recv_buf,
-                     size_t count,
-                     reduction rtype,
-                     size_t root,
-                     const reduce_attr& attr) {
+communicator::coll_request_t CCL_API communicator::reduce(const BufferType* send_buf,
+                                                          BufferType* recv_buf,
+                                                          size_t count,
+                                                          reduction rtype,
+                                                          size_t root,
+                                                          const reduce_attr& attr) {
     return get_impl()->reduce_impl(send_buf, recv_buf, count, rtype, root, attr);
 }
 
 /* reduce_scatter */
-communicator::coll_request_t CCL_API
-communicator::reduce_scatter(const void* send_buf,
-                             void* recv_buf,
-                             size_t recv_count,
-                             datatype dtype,
-                             reduction rtype,
-                             const reduce_scatter_attr& attr) {
+communicator::coll_request_t CCL_API communicator::reduce_scatter(const void* send_buf,
+                                                                  void* recv_buf,
+                                                                  size_t recv_count,
+                                                                  datatype dtype,
+                                                                  reduction rtype,
+                                                                  const reduce_scatter_attr& attr) {
     return get_impl()->reduce_scatter_impl(send_buf, recv_buf, recv_count, dtype, rtype, attr);
 }
 
 template <class BufferType, typename T>
-communicator::coll_request_t CCL_API
-communicator::reduce_scatter(const BufferType* send_buf,
-                             BufferType* recv_buf,
-                             size_t recv_count,
-                             reduction rtype,
-                             const reduce_scatter_attr& attr) {
+communicator::coll_request_t CCL_API communicator::reduce_scatter(const BufferType* send_buf,
+                                                                  BufferType* recv_buf,
+                                                                  size_t recv_count,
+                                                                  reduction rtype,
+                                                                  const reduce_scatter_attr& attr) {
     return get_impl()->reduce_scatter_impl(send_buf, recv_buf, recv_count, rtype, attr);
 }
 

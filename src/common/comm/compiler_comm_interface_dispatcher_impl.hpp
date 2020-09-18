@@ -99,7 +99,7 @@ communicator_interface_dispatcher::create_communicator_from_unified_device(
 
                     ccl::global_data& data = ccl::global_data::get();
                     auto comm = std::shared_ptr<ccl_comm>(
-                        new ccl_comm(thread_idx, process_idx, data.comm_ids->acquire()));
+                        new ccl_comm(thread_idx, process_idx, data.comm_ids->acquire(), data.atl));
                     comm_impl->set_ccl_comm(std::move(comm));
                     return communicator_interface_ptr(comm_impl);
                 }
@@ -152,7 +152,7 @@ communicator_interface_dispatcher::create_communicator_from_unified_device(
 
             ccl::global_data& data = ccl::global_data::get();
             auto comm = std::shared_ptr<ccl_comm>(
-                new ccl_comm(thread_idx, process_idx, data.comm_ids->acquire()));
+                new ccl_comm(thread_idx, process_idx, data.comm_ids->acquire(), data.atl));
             comm_impl->set_ccl_comm(std::move(comm));
             return communicator_interface_ptr(comm_impl);
         }

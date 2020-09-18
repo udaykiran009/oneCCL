@@ -56,8 +56,8 @@ struct communicator_interface : public communicator_interface_dispatcher {
 
     // collectives operation declarations
     virtual ccl::request barrier(stream::impl_value_t& op_stream,
-                                   const barrier_attr& attr,
-                                   const vector_class<event>& deps = {}) = 0;
+                                 const barrier_attr& attr,
+                                 const vector_class<event>& deps = {}) = 0;
 
     DEVICE_COMM_INTERFACE_COLL_DECLARATION__VOID;
     DEVICE_COMM_INTERFACE_COLL_DECLARATION(char);

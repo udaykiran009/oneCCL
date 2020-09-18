@@ -1,7 +1,5 @@
 #builds ccl
 
-add_subdirectory(atl)
-
 set (EXTENSIONS_SRC)
 
 if (CCL_ENABLE_SYCL)
@@ -92,6 +90,23 @@ set(CCL_SRC
     ccl_empty_attr.cpp
     ccl_empty_coll_attr.cpp
     atl/atl.cpp
+    atl/atl_wrapper.cpp
+    atl/mpi/atl_mpi.cpp
+    atl/ofi/atl_ofi.cpp
+    atl/util/pm/pmi_resizable_rt/pmi_resizable.cpp
+    atl/util/pm/pmi_resizable_rt/pmi_resizable_simple.cpp
+    atl/util/pm/pmi_resizable_rt/pmi_resizable/helper.cpp
+    atl/util/pm/pmi_resizable_rt/pmi_resizable/kvs_keeper.c
+    atl/util/pm/pmi_resizable_rt/pmi_resizable/pmi_listener.cpp
+    atl/util/pm/pmi_resizable_rt/pmi_resizable/rank_list.c
+    atl/util/pm/pmi_resizable_rt/pmi_resizable/request_wrappers_k8s.c
+    atl/util/pm/pmi_resizable_rt/pmi_resizable/resizable_pmi.cpp
+    atl/util/pm/pmi_resizable_rt/pmi_resizable/shift_list.c
+        atl/util/pm/pmi_resizable_rt/pmi_resizable/kvs/internal_kvs.cpp
+    atl/util/pm/pmi_resizable_rt/pmi_resizable/kvs/users_kvs.cpp
+    atl/util/pm/pmi_rt/pmi_simple.cpp
+    atl/util/pm/pmi_rt/pmi/simple_pmi.c
+    atl/util/pm/pmi_rt/pmi/simple_pmiutil.c
     coll/coll_common_attributes.cpp
     coll/ccl_allgather_op_attr.cpp
     coll/ccl_allreduce_op_attr.cpp
@@ -124,6 +139,7 @@ set(CCL_SRC
     coll/selection/selector_reduce_scatter.cpp
     coll/selection/selector_sparse_allreduce.cpp
     comp/bfp16/bfp16.cpp
+    comp/bfp16/bfp16_intrisics.cpp
     comp/comp.cpp
     sched/sched.cpp
     sched/master_sched.cpp
@@ -159,7 +175,10 @@ set(CCL_SRC
 
 list(APPEND CCL_INC_DIRS
                  ${PROJECT_SOURCE_DIR}/include
-                 ${PROJECT_SOURCE_DIR}/src)
+                 ${PROJECT_SOURCE_DIR}/mpi/include
+                 ${PROJECT_SOURCE_DIR}/ofi/include
+                 ${PROJECT_SOURCE_DIR}/src
+                 ${PROJECT_SOURCE_DIR}/src/atl)
 
 message(STATUS "CCL_INC_DIRS: ${CCL_INC_DIRS}")
 
@@ -177,10 +196,13 @@ if(COMPUTE_RUNTIME_TARGET_NAME)
     target_include_directories(ccl-objects PRIVATE $<TARGET_PROPERTY:${COMPUTE_RUNTIME_TARGET_NAME},INTERFACE_INCLUDE_DIRECTORIES>)
 endif()
 
+# add library search directory
+link_directories(${PROJECT_SOURCE_DIR}/mpi/lib)
+link_directories(${PROJECT_SOURCE_DIR}/ofi/lib)
 #shared library
 add_library(ccl SHARED $<TARGET_OBJECTS:ccl-objects>)
 target_include_directories(ccl PUBLIC ${CCL_INC_DIRS})
-target_link_libraries(ccl PUBLIC dl pthread ${EXTERNAL_LIBS} ${COMPUTE_RUNTIME_TARGET_NAME})
+target_link_libraries(ccl PUBLIC dl pthread ${EXTERNAL_LIBS} ${COMPUTE_RUNTIME_TARGET_NAME} fabric mpi)
 if (NOT LIB_SO_VERSION AND NOT LIB_MAJOR_VERSION)
         set_target_properties(ccl PROPERTIES LIBRARY_OUTPUT_DIRECTORY ${CCL_BUILD_DIR})
 else()

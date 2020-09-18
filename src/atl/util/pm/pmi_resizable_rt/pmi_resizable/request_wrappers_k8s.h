@@ -1,6 +1,9 @@
 #ifndef REQUEST_WRAPPERS_H
 #define REQUEST_WRAPPERS_H
 
+#ifdef __cplusplus
+extern "C" {
+#endif
 #include <stddef.h>
 
 size_t request_k8s_kvs_init(void);
@@ -11,4 +14,7 @@ size_t request_k8s_kvs_finalize(size_t is_master);
 
 size_t request_k8s_get_replica_size(void);
 
+#ifdef __cplusplus
+}
+#endif
 #endif

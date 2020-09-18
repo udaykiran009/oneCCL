@@ -37,7 +37,11 @@ host_communicator::host_communicator(size_t size, size_t rank, shared_ptr_class<
     }
 
     ccl::global_data& data = ccl::global_data::get();
-    comm_impl = std::shared_ptr<ccl_comm>(new ccl_comm(rank, size, data.comm_ids->acquire()));
+    std::shared_ptr<ikvs_wrapper> kvs_tmp = std::shared_ptr<ikvs_wrapper>(new users_kvs(kvs));
+    std::shared_ptr<atl_wrapper> atl_tmp =
+        std::shared_ptr<atl_wrapper>(new atl_wrapper(size, { rank }, kvs_tmp));
+    comm_impl =
+        std::shared_ptr<ccl_comm>(new ccl_comm(rank, size, data.comm_ids->acquire(), atl_tmp));
 }
 
 host_communicator::host_communicator(std::shared_ptr<ccl_comm> impl)
@@ -68,26 +72,26 @@ ccl::unique_ptr_class<host_communicator> host_communicator::split(const comm_spl
 }
 
 /* allgatherv */
-host_communicator::coll_request_t
-host_communicator::allgatherv_impl(const void* send_buf,
-                                   size_t send_count,
-                                   void* recv_buf,
-                                   const vector_class<size_t>& recv_counts,
-                                   datatype dtype,
-                                   const allgatherv_attr& attr) {
+host_communicator::coll_request_t host_communicator::allgatherv_impl(
+    const void* send_buf,
+    size_t send_count,
+    void* recv_buf,
+    const vector_class<size_t>& recv_counts,
+    datatype dtype,
+    const allgatherv_attr& attr) {
     ccl_request* req = ccl_allgatherv_impl(
         send_buf, send_count, recv_buf, recv_counts.data(), dtype, attr, comm_impl.get(), nullptr);
 
     return std::unique_ptr<ccl::request_impl>(new ccl::host_request_impl(req));
 }
 
-host_communicator::coll_request_t
-host_communicator::allgatherv_impl(const void* send_buf,
-                                   size_t send_count,
-                                   const vector_class<void*>& recv_bufs,
-                                   const vector_class<size_t>& recv_counts,
-                                   datatype dtype,
-                                   const allgatherv_attr& attr) {
+host_communicator::coll_request_t host_communicator::allgatherv_impl(
+    const void* send_buf,
+    size_t send_count,
+    const vector_class<void*>& recv_bufs,
+    const vector_class<size_t>& recv_counts,
+    datatype dtype,
+    const allgatherv_attr& attr) {
     // TODO not implemented
     throw ccl_error(std::string(__PRETTY_FUNCTION__) + " - is not implemented");
 
@@ -96,13 +100,12 @@ host_communicator::allgatherv_impl(const void* send_buf,
 }
 
 /* allreduce */
-host_communicator::coll_request_t
-host_communicator::allreduce_impl(const void* send_buf,
-                                  void* recv_buf,
-                                  size_t count,
-                                  datatype dtype,
-                                  reduction rtype,
-                                  const allreduce_attr& attr) {
+host_communicator::coll_request_t host_communicator::allreduce_impl(const void* send_buf,
+                                                                    void* recv_buf,
+                                                                    size_t count,
+                                                                    datatype dtype,
+                                                                    reduction rtype,
+                                                                    const allreduce_attr& attr) {
     ccl_request* req =
         ccl_allreduce_impl(send_buf, recv_buf, count, dtype, rtype, attr, comm_impl.get(), nullptr);
 
@@ -110,24 +113,23 @@ host_communicator::allreduce_impl(const void* send_buf,
 }
 
 /* alltoall */
-host_communicator::coll_request_t
-host_communicator::alltoall_impl(const void* send_buf,
-                                 void* recv_buf,
-                                 size_t count,
-                                 datatype dtype,
-                                 const alltoall_attr& attr) {
+host_communicator::coll_request_t host_communicator::alltoall_impl(const void* send_buf,
+                                                                   void* recv_buf,
+                                                                   size_t count,
+                                                                   datatype dtype,
+                                                                   const alltoall_attr& attr) {
     ccl_request* req =
         ccl_alltoall_impl(send_buf, recv_buf, count, dtype, attr, comm_impl.get(), nullptr);
 
     return std::unique_ptr<ccl::request_impl>(new ccl::host_request_impl(req));
 }
 
-host_communicator::coll_request_t
-host_communicator::alltoall_impl(const vector_class<void*>& send_buf,
-                                 const vector_class<void*>& recv_buf,
-                                 size_t count,
-                                 datatype dtype,
-                                 const alltoall_attr& attr) {
+host_communicator::coll_request_t host_communicator::alltoall_impl(
+    const vector_class<void*>& send_buf,
+    const vector_class<void*>& recv_buf,
+    size_t count,
+    datatype dtype,
+    const alltoall_attr& attr) {
     // TODO not implemented
     throw ccl_error(std::string(__PRETTY_FUNCTION__) + " - is not implemented");
 
@@ -136,13 +138,13 @@ host_communicator::alltoall_impl(const vector_class<void*>& send_buf,
 }
 
 /* alltoallv */
-host_communicator::coll_request_t
-host_communicator::alltoallv_impl(const void* send_buf,
-                                  const vector_class<size_t>& send_counts,
-                                  void* recv_buf,
-                                  const vector_class<size_t>& recv_counts,
-                                  datatype dtype,
-                                  const alltoallv_attr& attr) {
+host_communicator::coll_request_t host_communicator::alltoallv_impl(
+    const void* send_buf,
+    const vector_class<size_t>& send_counts,
+    void* recv_buf,
+    const vector_class<size_t>& recv_counts,
+    datatype dtype,
+    const alltoallv_attr& attr) {
     ccl_request* req = ccl_alltoallv_impl(send_buf,
                                           send_counts.data(),
                                           recv_buf,
@@ -155,13 +157,13 @@ host_communicator::alltoallv_impl(const void* send_buf,
     return std::unique_ptr<ccl::request_impl>(new ccl::host_request_impl(req));
 }
 
-host_communicator::coll_request_t
-host_communicator::alltoallv_impl(const vector_class<void*>& send_bufs,
-                                  const vector_class<size_t>& send_counts,
-                                  const vector_class<void*>& recv_bufs,
-                                  const vector_class<size_t>& recv_counts,
-                                  datatype dtype,
-                                  const alltoallv_attr& attr) {
+host_communicator::coll_request_t host_communicator::alltoallv_impl(
+    const vector_class<void*>& send_bufs,
+    const vector_class<size_t>& send_counts,
+    const vector_class<void*>& recv_bufs,
+    const vector_class<size_t>& recv_counts,
+    datatype dtype,
+    const alltoallv_attr& attr) {
     // TODO not implemented
     throw ccl_error(std::string(__PRETTY_FUNCTION__) + " - is not implemented");
 
@@ -170,8 +172,7 @@ host_communicator::alltoallv_impl(const vector_class<void*>& send_bufs,
 }
 
 /* barrier */
-host_communicator::coll_request_t
-host_communicator::barrier_impl(const barrier_attr& attr) {
+host_communicator::coll_request_t host_communicator::barrier_impl(const barrier_attr& attr) {
     // TODO what exactly we need to do with 'attr' here?
 
     ccl_barrier_impl(comm_impl.get(), nullptr);
@@ -182,26 +183,24 @@ host_communicator::barrier_impl(const barrier_attr& attr) {
 }
 
 /* bcast */
-host_communicator::coll_request_t
-host_communicator::broadcast_impl(void* buf,
-                                  size_t count,
-                                  datatype dtype,
-                                  size_t root,
-                                  const broadcast_attr& attr) {
+host_communicator::coll_request_t host_communicator::broadcast_impl(void* buf,
+                                                                    size_t count,
+                                                                    datatype dtype,
+                                                                    size_t root,
+                                                                    const broadcast_attr& attr) {
     ccl_request* req = ccl_broadcast_impl(buf, count, dtype, root, attr, comm_impl.get(), nullptr);
 
     return std::unique_ptr<ccl::request_impl>(new ccl::host_request_impl(req));
 }
 
 /* reduce */
-host_communicator::coll_request_t
-host_communicator::reduce_impl(const void* send_buf,
-                               void* recv_buf,
-                               size_t count,
-                               datatype dtype,
-                               reduction rtype,
-                               size_t root,
-                               const reduce_attr& attr) {
+host_communicator::coll_request_t host_communicator::reduce_impl(const void* send_buf,
+                                                                 void* recv_buf,
+                                                                 size_t count,
+                                                                 datatype dtype,
+                                                                 reduction rtype,
+                                                                 size_t root,
+                                                                 const reduce_attr& attr) {
     ccl_request* req = ccl_reduce_impl(
         send_buf, recv_buf, count, dtype, rtype, root, attr, comm_impl.get(), nullptr);
 
@@ -209,13 +208,13 @@ host_communicator::reduce_impl(const void* send_buf,
 }
 
 /* reduce_scatter */
-host_communicator::coll_request_t
-host_communicator::reduce_scatter_impl(const void* send_buf,
-                                       void* recv_buf,
-                                       size_t recv_count,
-                                       datatype dtype,
-                                       reduction rtype,
-                                       const reduce_scatter_attr& attr) {
+host_communicator::coll_request_t host_communicator::reduce_scatter_impl(
+    const void* send_buf,
+    void* recv_buf,
+    size_t recv_count,
+    datatype dtype,
+    reduction rtype,
+    const reduce_scatter_attr& attr) {
     // TODO not fully implemented (need to implement reduce_scatter in parallelizer.cpp)
     throw ccl_error(std::string(__PRETTY_FUNCTION__) + " - is not implemented");
 
@@ -226,19 +225,19 @@ host_communicator::reduce_scatter_impl(const void* send_buf,
 }
 
 /* sparse_allreduce */
-host_communicator::coll_request_t
-host_communicator::sparse_allreduce_impl(const void* send_ind_buf,
-                                         size_t send_ind_count,
-                                         const void* send_val_buf,
-                                         size_t send_val_count,
-                                         void* recv_ind_buf,
-                                         size_t recv_ind_count,
-                                         void* recv_val_buf,
-                                         size_t recv_val_count,
-                                         datatype ind_dtype,
-                                         datatype val_dtype,
-                                         reduction rtype,
-                                         const sparse_allreduce_attr& attr) {
+host_communicator::coll_request_t host_communicator::sparse_allreduce_impl(
+    const void* send_ind_buf,
+    size_t send_ind_count,
+    const void* send_val_buf,
+    size_t send_val_count,
+    void* recv_ind_buf,
+    size_t recv_ind_count,
+    void* recv_val_buf,
+    size_t recv_val_count,
+    datatype ind_dtype,
+    datatype val_dtype,
+    reduction rtype,
+    const sparse_allreduce_attr& attr) {
     ccl_request* req = ccl_sparse_allreduce_impl(send_ind_buf,
                                                  send_ind_count,
                                                  send_val_buf,

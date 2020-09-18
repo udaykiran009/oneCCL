@@ -645,23 +645,23 @@ ccl::device_communicator::reduce_scatter(const BufferObjectType& send_buf,
         ccl::shared_ptr_class<ccl::kvs_interface> kvs);
 
 #define API_DEVICE_COMM_OP_PTR_EXPLICIT_INSTANTIATION(BufferType) \
-    template ccl::device_communicator::coll_request_t CCL_API ccl::device_communicator::allgatherv( \
-        const BufferType* send_buf, \
-        size_t send_count, \
-        BufferType* recv_buf, \
-        const ccl::vector_class<size_t>& recv_counts, \
-        ccl::stream stream, \
-        const ccl::allgatherv_attr& attr, \
-        const ccl::vector_class<ccl::event>& deps); \
+    template ccl::device_communicator::coll_request_t CCL_API \
+    ccl::device_communicator::allgatherv(const BufferType* send_buf, \
+                                         size_t send_count, \
+                                         BufferType* recv_buf, \
+                                         const ccl::vector_class<size_t>& recv_counts, \
+                                         ccl::stream stream, \
+                                         const ccl::allgatherv_attr& attr, \
+                                         const ccl::vector_class<ccl::event>& deps); \
 \
-    template ccl::device_communicator::coll_request_t CCL_API ccl::device_communicator::allgatherv( \
-        const BufferType* send_buf, \
-        size_t send_count, \
-        ccl::vector_class<BufferType*>& recv_bufs, \
-        const ccl::vector_class<size_t>& recv_counts, \
-        ccl::stream stream, \
-        const ccl::allgatherv_attr& attr, \
-        const ccl::vector_class<ccl::event>& deps); \
+    template ccl::device_communicator::coll_request_t CCL_API \
+    ccl::device_communicator::allgatherv(const BufferType* send_buf, \
+                                         size_t send_count, \
+                                         ccl::vector_class<BufferType*>& recv_bufs, \
+                                         const ccl::vector_class<size_t>& recv_counts, \
+                                         ccl::stream stream, \
+                                         const ccl::allgatherv_attr& attr, \
+                                         const ccl::vector_class<ccl::event>& deps); \
 \
     template ccl::device_communicator::coll_request_t CCL_API ccl::device_communicator::allreduce( \
         const BufferType* send_buf, \
@@ -724,26 +724,27 @@ ccl::device_communicator::reduce_scatter(const BufferObjectType& send_buf,
         const ccl::reduce_attr& attr, \
         const ccl::vector_class<ccl::event>& deps); \
 \
-    template ccl::device_communicator::coll_request_t CCL_API ccl::device_communicator::reduce_scatter( \
-        const BufferType* send_buf, \
-        BufferType* recv_buf, \
-        size_t recv_count, \
-        ccl::reduction reduction, \
-        ccl::stream stream, \
-        const ccl::reduce_scatter_attr& attr, \
-        const ccl::vector_class<ccl::event>& deps);
+    template ccl::device_communicator::coll_request_t CCL_API \
+    ccl::device_communicator::reduce_scatter(const BufferType* send_buf, \
+                                             BufferType* recv_buf, \
+                                             size_t recv_count, \
+                                             ccl::reduction reduction, \
+                                             ccl::stream stream, \
+                                             const ccl::reduce_scatter_attr& attr, \
+                                             const ccl::vector_class<ccl::event>& deps);
 
 #define API_DEVICE_COMM_OP_REF_EXPLICIT_INSTANTIATION(BufferObjectType) \
-    template ccl::device_communicator::coll_request_t CCL_API ccl::device_communicator::allgatherv( \
-        const BufferObjectType& send_buf, \
-        size_t send_count, \
-        BufferObjectType& recv_buf, \
-        const ccl::vector_class<size_t>& recv_counts, \
-        ccl::stream stream, \
-        const allgatherv_attr& attr, \
-        const ccl::vector_class<ccl::event>& deps); \
+    template ccl::device_communicator::coll_request_t CCL_API \
+    ccl::device_communicator::allgatherv(const BufferObjectType& send_buf, \
+                                         size_t send_count, \
+                                         BufferObjectType& recv_buf, \
+                                         const ccl::vector_class<size_t>& recv_counts, \
+                                         ccl::stream stream, \
+                                         const allgatherv_attr& attr, \
+                                         const ccl::vector_class<ccl::event>& deps); \
 \
-    template ccl::device_communicator::coll_request_t CCL_API ccl::device_communicator::allgatherv( \
+    template ccl::device_communicator::coll_request_t CCL_API \
+    ccl::device_communicator::allgatherv( \
         const BufferObjectType& send_buf, \
         size_t send_count, \
         ccl::vector_class<ccl::reference_wrapper_class<BufferObjectType>>& recv_bufs, \
@@ -813,14 +814,14 @@ ccl::device_communicator::reduce_scatter(const BufferObjectType& send_buf,
         const reduce_attr& attr, \
         const ccl::vector_class<ccl::event>& deps); \
 \
-    template ccl::device_communicator::coll_request_t CCL_API ccl::device_communicator::reduce_scatter( \
-        const BufferObjectType& send_buf, \
-        BufferObjectType& recv_buf, \
-        size_t recv_count, \
-        reduction reduction, \
-        ccl::stream stream, \
-        const reduce_scatter_attr& attr, \
-        const ccl::vector_class<ccl::event>& deps);
+    template ccl::device_communicator::coll_request_t CCL_API \
+    ccl::device_communicator::reduce_scatter(const BufferObjectType& send_buf, \
+                                             BufferObjectType& recv_buf, \
+                                             size_t recv_count, \
+                                             reduction reduction, \
+                                             ccl::stream stream, \
+                                             const reduce_scatter_attr& attr, \
+                                             const ccl::vector_class<ccl::event>& deps);
 
 #define API_DEVICE_COMM_SPARSE_OP_PTR_EXPLICIT_INSTANTIATION(index_type, value_type) \
     template ccl::device_communicator::coll_request_t CCL_API \
