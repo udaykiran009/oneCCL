@@ -69,11 +69,11 @@ public:
      * @return @ref ccl::request object to track the progress of the operation
      */
     coll_request_t allgatherv(const void* send_buf,
-                         size_t send_count,
-                         void* recv_buf,
-                         const vector_class<size_t>& recv_counts,
-                         datatype dtype,
-                         const allgatherv_attr& attr = default_allgatherv_attr);
+                              size_t send_count,
+                              void* recv_buf,
+                              const vector_class<size_t>& recv_counts,
+                              datatype dtype,
+                              const allgatherv_attr& attr = default_allgatherv_attr);
 
     /**
      * @param send_buf the buffer with @c send_count elements of @c dtype that stores local data to be gathered
@@ -85,11 +85,11 @@ public:
      * @return @ref ccl::request object to track the progress of the operation
      */
     coll_request_t allgatherv(const void* send_buf,
-                         size_t send_count,
-                         const vector_class<void*>& recv_bufs,
-                         const vector_class<size_t>& recv_counts,
-                         datatype dtype,
-                         const allgatherv_attr& attr = default_allgatherv_attr);
+                              size_t send_count,
+                              const vector_class<void*>& recv_bufs,
+                              const vector_class<size_t>& recv_counts,
+                              datatype dtype,
+                              const allgatherv_attr& attr = default_allgatherv_attr);
 
     /**
      * Type safety version:
@@ -104,10 +104,10 @@ public:
               class = typename std::enable_if<ccl::is_native_type_supported<BufferType>(),
                                               coll_request_t>::type>
     coll_request_t allgatherv(const BufferType* send_buf,
-                         size_t send_count,
-                         BufferType* recv_buf,
-                         const vector_class<size_t>& recv_counts,
-                         const allgatherv_attr& attr = default_allgatherv_attr);
+                              size_t send_count,
+                              BufferType* recv_buf,
+                              const vector_class<size_t>& recv_counts,
+                              const allgatherv_attr& attr = default_allgatherv_attr);
 
     /**
      * Type safety version:
@@ -122,10 +122,10 @@ public:
               class = typename std::enable_if<ccl::is_native_type_supported<BufferType>(),
                                               coll_request_t>::type>
     coll_request_t allgatherv(const BufferType* send_buf,
-                         size_t send_count,
-                         const vector_class<BufferType*>& recv_bufs,
-                         const vector_class<size_t>& recv_counts,
-                         const allgatherv_attr& attr = default_allgatherv_attr);
+                              size_t send_count,
+                              const vector_class<BufferType*>& recv_bufs,
+                              const vector_class<size_t>& recv_counts,
+                              const allgatherv_attr& attr = default_allgatherv_attr);
 
     /**
      * Allreduce is a collective communication operation that makes global reduction operation
@@ -142,11 +142,11 @@ public:
      * @return @ref ccl::request object to track the progress of the operation
      */
     coll_request_t allreduce(const void* send_buf,
-                        void* recv_buf,
-                        size_t count,
-                        datatype dtype,
-                        reduction rtype,
-                        const allreduce_attr& attr = default_allreduce_attr);
+                             void* recv_buf,
+                             size_t count,
+                             datatype dtype,
+                             reduction rtype,
+                             const allreduce_attr& attr = default_allreduce_attr);
 
     /**
      * Type safety version:
@@ -161,10 +161,10 @@ public:
               class = typename std::enable_if<ccl::is_native_type_supported<BufferType>(),
                                               coll_request_t>::type>
     coll_request_t allreduce(const BufferType* send_buf,
-                        BufferType* recv_buf,
-                        size_t count,
-                        reduction rtype,
-                        const allreduce_attr& attr = default_allreduce_attr);
+                             BufferType* recv_buf,
+                             size_t count,
+                             reduction rtype,
+                             const allreduce_attr& attr = default_allreduce_attr);
 
     /**
      * Alltoall is a collective communication operation in which each rank
@@ -183,10 +183,10 @@ public:
      * @return @ref ccl::request object to track the progress of the operation
      */
     coll_request_t alltoall(const void* send_buf,
-                       void* recv_buf,
-                       size_t count,
-                       datatype dtype,
-                       const alltoall_attr& attr = default_alltoall_attr);
+                            void* recv_buf,
+                            size_t count,
+                            datatype dtype,
+                            const alltoall_attr& attr = default_alltoall_attr);
 
     /**
      * @param send_bufs array of buffers with local data to be sent, one buffer per each rank
@@ -197,10 +197,10 @@ public:
      * @return @ref ccl::request object to track the progress of the operation
      */
     coll_request_t alltoall(const vector_class<void*>& send_buf,
-                       const vector_class<void*>& recv_buf,
-                       size_t count,
-                       datatype dtype,
-                       const alltoall_attr& attr = default_alltoall_attr);
+                            const vector_class<void*>& recv_buf,
+                            size_t count,
+                            datatype dtype,
+                            const alltoall_attr& attr = default_alltoall_attr);
 
     /**
      * Type safety version:
@@ -215,9 +215,9 @@ public:
               class = typename std::enable_if<ccl::is_native_type_supported<BufferType>(),
                                               coll_request_t>::type>
     coll_request_t alltoall(const BufferType* send_buf,
-                       BufferType* recv_buf,
-                       size_t count,
-                       const alltoall_attr& attr = default_alltoall_attr);
+                            BufferType* recv_buf,
+                            size_t count,
+                            const alltoall_attr& attr = default_alltoall_attr);
 
     /**
      * Type safety version:
@@ -231,9 +231,9 @@ public:
               class = typename std::enable_if<ccl::is_native_type_supported<BufferType>(),
                                               coll_request_t>::type>
     coll_request_t alltoall(const vector_class<BufferType*>& send_buf,
-                       const vector_class<BufferType*>& recv_buf,
-                       size_t count,
-                       const alltoall_attr& attr = default_alltoall_attr);
+                            const vector_class<BufferType*>& recv_buf,
+                            size_t count,
+                            const alltoall_attr& attr = default_alltoall_attr);
 
     /**
      * Alltoall is a collective communication operation in which each rank
@@ -252,11 +252,11 @@ public:
      * @return @ref ccl::request object to track the progress of the operation
      */
     coll_request_t alltoallv(const void* send_buf,
-                        const vector_class<size_t>& send_counts,
-                        void* recv_buf,
-                        const vector_class<size_t>& recv_counts,
-                        datatype dtype,
-                        const alltoallv_attr& attr = default_alltoallv_attr);
+                             const vector_class<size_t>& send_counts,
+                             void* recv_buf,
+                             const vector_class<size_t>& recv_counts,
+                             datatype dtype,
+                             const alltoallv_attr& attr = default_alltoallv_attr);
 
     /**
      * @param send_bufs array of buffers to store send blocks, one buffer per each rank
@@ -268,11 +268,11 @@ public:
      * @return @ref ccl::request object to track the progress of the operation
      */
     coll_request_t alltoallv(const vector_class<void*>& send_bufs,
-                        const vector_class<size_t>& send_counts,
-                        const vector_class<void*>& recv_bufs,
-                        const vector_class<size_t>& recv_counts,
-                        datatype dtype,
-                        const alltoallv_attr& attr = default_alltoallv_attr);
+                             const vector_class<size_t>& send_counts,
+                             const vector_class<void*>& recv_bufs,
+                             const vector_class<size_t>& recv_counts,
+                             datatype dtype,
+                             const alltoallv_attr& attr = default_alltoallv_attr);
 
     /**
      * Type safety version:
@@ -287,10 +287,10 @@ public:
               class = typename std::enable_if<ccl::is_native_type_supported<BufferType>(),
                                               coll_request_t>::type>
     coll_request_t alltoallv(const BufferType* send_buf,
-                        const vector_class<size_t>& send_counts,
-                        BufferType* recv_buf,
-                        const vector_class<size_t>& recv_counts,
-                        const alltoallv_attr& attr = default_alltoallv_attr);
+                             const vector_class<size_t>& send_counts,
+                             BufferType* recv_buf,
+                             const vector_class<size_t>& recv_counts,
+                             const alltoallv_attr& attr = default_alltoallv_attr);
 
     /**
      * Type safety version:
@@ -305,10 +305,10 @@ public:
               class = typename std::enable_if<ccl::is_native_type_supported<BufferType>(),
                                               coll_request_t>::type>
     coll_request_t alltoallv(const vector_class<BufferType*>& send_bufs,
-                        const vector_class<size_t>& send_counts,
-                        const vector_class<BufferType*>& recv_bufs,
-                        const vector_class<size_t>& recv_counts,
-                        const alltoallv_attr& attr = default_alltoallv_attr);
+                             const vector_class<size_t>& send_counts,
+                             const vector_class<BufferType*>& recv_bufs,
+                             const vector_class<size_t>& recv_counts,
+                             const alltoallv_attr& attr = default_alltoallv_attr);
 
     /**
      * Barrier synchronization across all ranks of communicator.
@@ -334,10 +334,10 @@ public:
      * @return @ref ccl::request object to track the progress of the operation
      */
     coll_request_t broadcast(void* buf,
-                        size_t count,
-                        datatype dtype,
-                        size_t root,
-                        const broadcast_attr& attr = default_broadcast_attr);
+                             size_t count,
+                             datatype dtype,
+                             size_t root,
+                             const broadcast_attr& attr = default_broadcast_attr);
 
     /**
      * Type safety version:
@@ -352,9 +352,9 @@ public:
               class = typename std::enable_if<ccl::is_native_type_supported<BufferType>(),
                                               coll_request_t>::type>
     coll_request_t broadcast(BufferType* buf,
-                        size_t count,
-                        size_t root,
-                        const broadcast_attr& attr = default_broadcast_attr);
+                             size_t count,
+                             size_t root,
+                             const broadcast_attr& attr = default_broadcast_attr);
 
     /**
      * Reduce is a collective communication operation that makes global reduction operation
@@ -373,12 +373,12 @@ public:
      * @return @ref ccl::request object to track the progress of the operation
      */
     coll_request_t reduce(const void* send_buf,
-                     void* recv_buf,
-                     size_t count,
-                     datatype dtype,
-                     reduction rtype,
-                     size_t root,
-                     const reduce_attr& attr = default_reduce_attr);
+                          void* recv_buf,
+                          size_t count,
+                          datatype dtype,
+                          reduction rtype,
+                          size_t root,
+                          const reduce_attr& attr = default_reduce_attr);
 
     /**
      * Type safety version:
@@ -395,11 +395,11 @@ public:
               class = typename std::enable_if<ccl::is_native_type_supported<BufferType>(),
                                               coll_request_t>::type>
     coll_request_t reduce(const BufferType* send_buf,
-                     BufferType* recv_buf,
-                     size_t count,
-                     reduction rtype,
-                     size_t root,
-                     const reduce_attr& attr = default_reduce_attr);
+                          BufferType* recv_buf,
+                          size_t count,
+                          reduction rtype,
+                          size_t root,
+                          const reduce_attr& attr = default_reduce_attr);
 
     /**
      * Reduce-scatter is a collective communication operation that makes global reduction operation
@@ -416,11 +416,11 @@ public:
      * @return @ref ccl::request object to track the progress of the operation
      */
     coll_request_t reduce_scatter(const void* send_buf,
-                             void* recv_buf,
-                             size_t recv_count,
-                             datatype dtype,
-                             reduction rtype,
-                             const reduce_scatter_attr& attr = default_reduce_scatter_attr);
+                                  void* recv_buf,
+                                  size_t recv_count,
+                                  datatype dtype,
+                                  reduction rtype,
+                                  const reduce_scatter_attr& attr = default_reduce_scatter_attr);
 
     /**
      * Type safety version:
@@ -435,10 +435,10 @@ public:
               class = typename std::enable_if<ccl::is_native_type_supported<BufferType>(),
                                               coll_request_t>::type>
     coll_request_t reduce_scatter(const BufferType* send_buf,
-                             BufferType* recv_buf,
-                             size_t recv_count,
-                             reduction rtype,
-                             const reduce_scatter_attr& attr = default_reduce_scatter_attr);
+                                  BufferType* recv_buf,
+                                  size_t recv_count,
+                                  reduction rtype,
+                                  const reduce_scatter_attr& attr = default_reduce_scatter_attr);
 
     /**
      * Sparse allreduce is a collective communication operation that makes global reduction operation
@@ -463,18 +463,19 @@ public:
      * @param attr optional attributes to customize operation
      * @return @ref ccl::request object to track the progress of the operation
      */
-    coll_request_t sparse_allreduce(const void* send_ind_buf,
-                               size_t send_ind_count,
-                               const void* send_val_buf,
-                               size_t send_val_count,
-                               void* recv_ind_buf,
-                               size_t recv_ind_count,
-                               void* recv_val_buf,
-                               size_t recv_val_count,
-                               ccl::datatype ind_dtype,
-                               ccl::datatype val_dtype,
-                               reduction rtype,
-                               const sparse_allreduce_attr& attr = default_sparse_allreduce_attr);
+    coll_request_t sparse_allreduce(
+        const void* send_ind_buf,
+        size_t send_ind_count,
+        const void* send_val_buf,
+        size_t send_val_count,
+        void* recv_ind_buf,
+        size_t recv_ind_count,
+        void* recv_val_buf,
+        size_t recv_val_count,
+        ccl::datatype ind_dtype,
+        ccl::datatype val_dtype,
+        reduction rtype,
+        const sparse_allreduce_attr& attr = default_sparse_allreduce_attr);
 
     /**
      * Type safety version:
@@ -494,16 +495,17 @@ public:
               class ValueBufferType,
               class = typename std::enable_if<ccl::is_native_type_supported<ValueBufferType>(),
                                               coll_request_t>::type>
-    coll_request_t sparse_allreduce(const IndexBufferType* send_ind_buf,
-                               size_t send_ind_count,
-                               const ValueBufferType* send_val_buf,
-                               size_t send_val_count,
-                               IndexBufferType* recv_ind_buf,
-                               size_t recv_ind_count,
-                               ValueBufferType* recv_val_buf,
-                               size_t recv_val_count,
-                               reduction rtype,
-                               const sparse_allreduce_attr& attr = default_sparse_allreduce_attr);
+    coll_request_t sparse_allreduce(
+        const IndexBufferType* send_ind_buf,
+        size_t send_ind_count,
+        const ValueBufferType* send_val_buf,
+        size_t send_val_count,
+        IndexBufferType* recv_ind_buf,
+        size_t recv_ind_count,
+        ValueBufferType* recv_val_buf,
+        size_t recv_val_count,
+        reduction rtype,
+        const sparse_allreduce_attr& attr = default_sparse_allreduce_attr);
 
 private:
     friend class environment;

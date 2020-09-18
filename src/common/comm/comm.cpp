@@ -1,18 +1,24 @@
 //#include "ccl.h"
+#include "atl/util/pm/pmi_resizable_rt/pmi_resizable/kvs/users_kvs.h"
 #include "common/comm/comm.hpp"
 #include "common/global/global.hpp"
 #include "sched/sched.hpp"
 #include "oneapi/ccl/ccl_types.hpp"
 #include "oneapi/ccl/ccl_kvs.hpp"
 
-ccl_comm::ccl_comm(size_t rank, size_t size, ccl_comm_id_storage::comm_id&& id)
-        : ccl_comm(rank, size, std::move(id), ccl_rank2rank_map{}) {}
+ccl_comm::ccl_comm(size_t rank,
+                   size_t size,
+                   ccl_comm_id_storage::comm_id&& id,
+                   std::shared_ptr<atl_wrapper> atl)
+        : ccl_comm(rank, size, std::move(id), ccl_rank2rank_map{}, atl) {}
 
 ccl_comm::ccl_comm(size_t rank,
                    size_t size,
                    ccl_comm_id_storage::comm_id&& id,
-                   ccl_rank2rank_map&& rank_map)
-        : m_id(std::move(id)),
+                   ccl_rank2rank_map&& rank_map,
+                   std::shared_ptr<atl_wrapper> atl)
+        : atl(atl),
+          m_id(std::move(id)),
           m_local2global_map(std::move(rank_map)),
           m_dtree(size, rank),
           thread_number(1),
@@ -37,24 +43,14 @@ ccl_comm::ccl_comm(const std::vector<size_t>& local_thread_device_ranks,
         : m_id(std::move(id)),
           m_local2global_map(),
           m_dtree(local_thread_device_ranks.size(), cluster_devices_count) {
-    //TODO use multithreaded  atl_init
-    //...
+    std::shared_ptr<ikvs_wrapper> kvs_wrapper(new users_kvs(kvs_instance));
+    atl = std::shared_ptr<atl_wrapper>(
+        new atl_wrapper(cluster_devices_count, local_thread_device_ranks, kvs_wrapper));
 
-    //TODO rude simulation of multi-thread barrier
-    thread_counter.fetch_add(1); //calc entered threads
-    thread_ranks_counter.fetch_add(
-        local_thread_device_ranks.size()); //calc total thread device ranks
+    thread_number = atl->get_threads_count();
+    on_process_ranks_number = atl->get_devices_per_rank_count();
 
-    std::this_thread::sleep_for(std::chrono::seconds(
-        ccl::global_data::get().thread_barrier_wait_timeout_sec)); //simulate barrier
-
-    thread_number = thread_counter.load(); // obtain total thread count
-    on_process_ranks_number = thread_ranks_counter.load(); // obtain total thread ranks
-
-    //WA for single device case
-    if (on_process_ranks_number == 1) {
-        reset(*local_thread_device_ranks.begin(), cluster_devices_count);
-    }
+    reset(atl->get_rank(), atl->get_size());
 }
 
 static ccl_status_t ccl_comm_exchange_colors(std::vector<int>& colors) {
@@ -129,8 +125,8 @@ ccl_comm* ccl_comm::create_with_colors(const std::vector<int>& colors,
         rank_map.clear();
     }
 
-    ccl_comm* comm =
-        new ccl_comm(new_comm_rank, new_comm_size, comm_ids->acquire(), std::move(rank_map));
+    ccl_comm* comm = new ccl_comm(
+        new_comm_rank, new_comm_size, comm_ids->acquire(), std::move(rank_map), global_comm->atl);
 
     LOG_DEBUG("new comm: color ",
               color,
@@ -146,7 +142,7 @@ ccl_comm* ccl_comm::create_with_colors(const std::vector<int>& colors,
 
 std::shared_ptr<ccl_comm> ccl_comm::clone_with_new_id(ccl_comm_id_storage::comm_id&& id) {
     ccl_rank2rank_map rank_map{ m_local2global_map };
-    return std::make_shared<ccl_comm>(m_rank, m_size, std::move(id), std::move(rank_map));
+    return std::make_shared<ccl_comm>(m_rank, m_size, std::move(id), std::move(rank_map), atl);
 }
 
 size_t ccl_comm::get_global_rank(size_t rank) const {

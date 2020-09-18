@@ -31,7 +31,7 @@ public:
         if (status == ccl_sched_entry_status_started) {
             size_t bytes = cnt * dtype.size();
             LOG_DEBUG("cancel RECV entry src ", src, ", req ", &req, ", bytes ", bytes);
-            atl_ep_cancel(sched->bin->get_atl_ep(), &req);
+            comm->atl->atl_ep_cancel(sched->bin->get_atl_ep(), &req);
         }
     }
 
@@ -46,7 +46,7 @@ public:
         LOG_DEBUG(
             "RECV entry src ", global_src, ", tag ", atl_tag, ", req ", &req, ", bytes ", bytes);
 
-        atl_status_t atl_status = atl_ep_recv(
+        atl_status_t atl_status = comm->atl->atl_ep_recv(
             sched->bin->get_atl_ep(), buf.get_ptr(bytes), bytes, global_src, atl_tag, &req);
 
         update_status(atl_status);
@@ -54,7 +54,8 @@ public:
 
     void update() override {
         int req_status;
-        atl_status_t atl_status = atl_ep_check(sched->bin->get_atl_ep(), &req_status, &req);
+        atl_status_t atl_status =
+            comm->atl->atl_ep_check(sched->bin->get_atl_ep(), &req_status, &req);
 
         if (unlikely(atl_status != ATL_STATUS_SUCCESS)) {
             CCL_THROW("RECV entry failed. atl_status: ", atl_status_to_str(atl_status));

@@ -149,33 +149,37 @@ ccl_status_t ccl_coll_build_ring_rma_allreduce(ccl_sched* sched,
         sched,
         2 * comm_size * sizeof(uint64_t),
         ccl_buffer(ar_handler->sync_flags, 2 * comm_size * sizeof(uint64_t)),
-        &ar_handler->sync_flags_mr);
+        &ar_handler->sync_flags_mr,
+        comm);
     entry_factory::make_entry<register_entry>(
         sched,
         sizeof(uint64_t),
         ccl_buffer((void*)&ar_handler->sync_flag, sizeof(uint64_t)),
-        &ar_handler->sync_flag_mr);
+        &ar_handler->sync_flag_mr,
+        comm);
     entry_factory::make_entry<register_entry>(
         sched,
         sizeof(uint64_t),
         ccl_buffer((void*)&ar_handler->dst_ready_flag, sizeof(uint64_t)),
-        &ar_handler->dst_ready_flag_mr);
+        &ar_handler->dst_ready_flag_mr,
+        comm);
     entry_factory::make_entry<register_entry>(
         sched,
         sizeof(uint64_t),
         ccl_buffer(&ar_handler->dst_ready_value, sizeof(uint64_t)),
-        &ar_handler->dst_ready_value_mr);
+        &ar_handler->dst_ready_value_mr,
+        comm);
 
     if (inplace) {
         tmp_buf = sched->alloc_buffer(count * dtype_size);
         entry_factory::make_entry<register_entry>(
-            sched, count * dtype_size, tmp_buf, &ar_handler->tmp_buf_mr);
+            sched, count * dtype_size, tmp_buf, &ar_handler->tmp_buf_mr, comm);
     }
     else
         entry_factory::make_entry<register_entry>(
-            sched, count * dtype_size, send_buf, &ar_handler->send_buf_mr);
+            sched, count * dtype_size, send_buf, &ar_handler->send_buf_mr, comm);
     entry_factory::make_entry<register_entry>(
-        sched, count * dtype_size, recv_buf, &ar_handler->recv_buf_mr);
+        sched, count * dtype_size, recv_buf, &ar_handler->recv_buf_mr, comm);
 
     sched->set_entry_exec_mode(ccl_sched_entry_exec_regular);
 

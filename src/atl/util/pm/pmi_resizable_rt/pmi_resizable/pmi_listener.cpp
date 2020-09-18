@@ -8,7 +8,8 @@
 #include <errno.h>
 
 #include "def.h"
-#include "kvs.h"
+#include "pmi_listener.hpp"
+
 #define KVS_LISTENER "CCL_LISTENER"
 
 #define LISTENER_TIMEOUT 5
@@ -25,13 +26,13 @@ static struct sockaddr_in* server_addresses = NULL;
 static struct sockaddr_in addr;
 static int num_changes = 0;
 
-void set_applied_count(int count) {
+void pmi_listener::set_applied_count(int count) {
     num_changes -= count;
 }
 
-int collect_sock_addr(void) {
+int pmi_listener::collect_sock_addr(std::shared_ptr<helper> h) {
     FILE* fp;
-    int i, j;
+    size_t i, j;
     int res = 0;
     size_t glob_num_listeners;
     char** sock_addr_str = NULL;
@@ -50,8 +51,7 @@ int collect_sock_addr(void) {
     if ((point_to_space = strstr(my_ip, " ")) != NULL)
         point_to_space[0] = NULL_CHAR;
 
-    glob_num_listeners =
-        kvs_get_keys_values_by_name(KVS_LISTENER, &hosts_names_str, &sock_addr_str);
+    glob_num_listeners = h->get_keys_values_by_name(KVS_LISTENER, &hosts_names_str, &sock_addr_str);
     num_listeners = glob_num_listeners;
 
     for (i = 0; i < num_listeners; i++) {
@@ -111,16 +111,16 @@ exit:
     return res;
 }
 
-void clean_listener(void) {
-    kvs_remove_name_key(KVS_LISTENER, my_hostname);
+void pmi_listener::clean_listener(std::shared_ptr<helper> h) {
+    h->remove_name_key(KVS_LISTENER, my_hostname);
     close(sock_listener);
 }
 
-void send_notification(int sig) {
-    int i;
+void pmi_listener::send_notification(int sig, std::shared_ptr<helper> h) {
+    size_t i;
     char message[INT_STR_SIZE];
 
-    collect_sock_addr();
+    collect_sock_addr(h);
 
     SET_STR(message, INT_STR_SIZE, "%s", "Update!");
     for (i = 0; i < num_listeners; ++i) {
@@ -132,10 +132,10 @@ void send_notification(int sig) {
                sizeof(server_addresses[i]));
     }
     if (sig)
-        clean_listener();
+        clean_listener(h);
 }
 
-int run_listener(void) {
+int pmi_listener::run_listener(std::shared_ptr<helper> h) {
     socklen_t len = 0;
     char recv_buf[INT_STR_SIZE];
     memset(recv_buf, 0, INT_STR_SIZE);
@@ -175,7 +175,7 @@ int run_listener(void) {
 
         SET_STR(
             addr_for_kvs, REQUEST_POSTFIX_SIZE, KVS_NAME_TEMPLATE_I, my_ip, (size_t)addr.sin_port);
-        kvs_set_value(KVS_LISTENER, my_hostname, addr_for_kvs);
+        h->set_value(KVS_LISTENER, my_hostname, addr_for_kvs);
         if (setsockopt(sock_listener, SOL_SOCKET, SO_RCVTIMEO, &timeout, sizeof(timeout)) < 0) {
             perror("Error");
         }

@@ -104,7 +104,8 @@
 //             LOG_DEBUG("create communicator as copy of global communicator");
 //             comm_ptr = new ccl_comm(data.comm->rank(),
 //                                     data.comm->size(),
-//                                     data.comm_ids->acquire());
+//                                     data.comm_ids->acquire(),
+//                                     ccl::global_data::get().atl);
 //         }
 //         else
 //         {

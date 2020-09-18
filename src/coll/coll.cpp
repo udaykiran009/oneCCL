@@ -346,8 +346,9 @@ ccl_status_t ccl_coll_build_allreduce(ccl_sched* sched,
                 sched, send_buf, recv_buf, count, dtype, reduction, comm));
             break;
         case ccl_coll_allreduce_2d:
-            CCL_CALL(ccl::global_data::get().allreduce_2d_builder->build(
-                sched, send_buf, recv_buf, count, dtype, reduction, comm));
+            // TODO: Rework to support non global creation
+            //            CCL_CALL(ccl::global_data::get().allreduce_2d_builder->build(
+            //                sched, send_buf, recv_buf, count, dtype, reduction, comm));
             break;
         default:
             CCL_FATAL("unexpected allreduce_algo ", ccl_coll_algorithm_to_str(algo));

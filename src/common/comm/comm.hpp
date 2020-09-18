@@ -4,6 +4,7 @@
 #include "common/log/log.hpp"
 #include "common/utils/tree.hpp"
 #include "common/utils/utils.hpp"
+#include "atl/atl_wrapper.h"
 
 #include <atomic>
 #include <unordered_map>
@@ -23,11 +24,15 @@ public:
     ccl_comm(const ccl_comm& other) = delete;
     ccl_comm& operator=(const ccl_comm& other) = delete;
 
-    ccl_comm(size_t rank, size_t size, ccl_comm_id_storage::comm_id&& id);
     ccl_comm(size_t rank,
              size_t size,
              ccl_comm_id_storage::comm_id&& id,
-             ccl_rank2rank_map&& ranks);
+             std::shared_ptr<atl_wrapper> atl);
+    ccl_comm(size_t rank,
+             size_t size,
+             ccl_comm_id_storage::comm_id&& id,
+             ccl_rank2rank_map&& ranks,
+             std::shared_ptr<atl_wrapper> atl);
 
     //TODO non-implemented
     //1) cluster_devices_count (devices 1000) -> (processes 10)
@@ -133,6 +138,7 @@ public:
      * Maximum value of schedule id in scope of the current communicator
      */
     static constexpr ccl_sched_id_t max_sched_count = std::numeric_limits<ccl_sched_id_t>::max();
+    std::shared_ptr<atl_wrapper> atl;
 
 private:
     size_t m_rank;

@@ -36,8 +36,7 @@ size_t thread_device_group_ring_communicator::group_size() const
 
 }
 */
-thread_device_group_a2a_communicator::coll_request_t
-thread_device_group_a2a_communicator::barrier(
+thread_device_group_a2a_communicator::coll_request_t thread_device_group_a2a_communicator::barrier(
     ccl::stream::impl_value_t& stream,
     const ccl::barrier_attr& attr,
     const ccl::vector_class<ccl::event>& deps) {
@@ -46,129 +45,120 @@ thread_device_group_a2a_communicator::barrier(
 
 /* allgatherv */
 thread_device_group_a2a_communicator::coll_request_t
-thread_device_group_a2a_communicator::allgatherv_impl(
-    const void* send_buf,
-    size_t send_count,
-    void* recv_buf,
-    const ccl::vector_class<size_t>& recv_counts,
-    ccl::datatype dtype,
-    ccl::stream::impl_value_t& stream,
-    const ccl::allgatherv_attr& attr,
-    const ccl::vector_class<ccl::event>& deps) {
+thread_device_group_a2a_communicator::allgatherv_impl(const void* send_buf,
+                                                      size_t send_count,
+                                                      void* recv_buf,
+                                                      const ccl::vector_class<size_t>& recv_counts,
+                                                      ccl::datatype dtype,
+                                                      ccl::stream::impl_value_t& stream,
+                                                      const ccl::allgatherv_attr& attr,
+                                                      const ccl::vector_class<ccl::event>& deps) {
     throw ccl::ccl_error(std::string(__PRETTY_FUNCTION__) + " - is not implemented");
     return {};
 }
 thread_device_group_a2a_communicator::coll_request_t
-thread_device_group_a2a_communicator::allgatherv_impl(
-    const void* send_buf,
-    size_t send_count,
-    const ccl::vector_class<void*>& recv_bufs,
-    const ccl::vector_class<size_t>& recv_counts,
-    ccl::datatype dtype,
-    ccl::stream::impl_value_t& stream,
-    const ccl::allgatherv_attr& attr,
+thread_device_group_a2a_communicator::allgatherv_impl(const void* send_buf,
+                                                      size_t send_count,
+                                                      const ccl::vector_class<void*>& recv_bufs,
+                                                      const ccl::vector_class<size_t>& recv_counts,
+                                                      ccl::datatype dtype,
+                                                      ccl::stream::impl_value_t& stream,
+                                                      const ccl::allgatherv_attr& attr,
 
-    const ccl::vector_class<ccl::event>& deps) {
+                                                      const ccl::vector_class<ccl::event>& deps) {
     throw ccl::ccl_error(std::string(__PRETTY_FUNCTION__) + " - is not implemented");
     return {};
 }
 
 /* allreduce */
 thread_device_group_a2a_communicator::coll_request_t
-thread_device_group_a2a_communicator::allreduce_impl(
-    const void* send_buf,
-    void* recv_buf,
-    size_t count,
-    ccl::datatype dtype,
-    ccl::reduction reduction,
-    ccl::stream::impl_value_t& stream,
-    const ccl::allreduce_attr& attr,
-    const ccl::vector_class<ccl::event>& deps) {
+thread_device_group_a2a_communicator::allreduce_impl(const void* send_buf,
+                                                     void* recv_buf,
+                                                     size_t count,
+                                                     ccl::datatype dtype,
+                                                     ccl::reduction reduction,
+                                                     ccl::stream::impl_value_t& stream,
+                                                     const ccl::allreduce_attr& attr,
+                                                     const ccl::vector_class<ccl::event>& deps) {
     throw ccl::ccl_error(std::string(__PRETTY_FUNCTION__) + " - is not implemented");
     return {};
 }
 
 /* alltoall */
 thread_device_group_a2a_communicator::coll_request_t
-thread_device_group_a2a_communicator::alltoall_impl(
-    const void* send_buf,
-    void* recv_buf,
-    size_t count,
-    ccl::datatype dtype,
-    ccl::stream::impl_value_t& stream,
-    const ccl::alltoall_attr& attr,
-    const ccl::vector_class<ccl::event>& deps) {
+thread_device_group_a2a_communicator::alltoall_impl(const void* send_buf,
+                                                    void* recv_buf,
+                                                    size_t count,
+                                                    ccl::datatype dtype,
+                                                    ccl::stream::impl_value_t& stream,
+                                                    const ccl::alltoall_attr& attr,
+                                                    const ccl::vector_class<ccl::event>& deps) {
     throw ccl::ccl_error(std::string(__PRETTY_FUNCTION__) + " - is not implemented");
     return {};
 }
 thread_device_group_a2a_communicator::coll_request_t
-thread_device_group_a2a_communicator::alltoall_impl(
-    const ccl::vector_class<void*>& send_buf,
-    const ccl::vector_class<void*>& recv_buf,
-    size_t count,
-    ccl::datatype dtype,
-    ccl::stream::impl_value_t& stream,
-    const ccl::alltoall_attr& attr,
-    const ccl::vector_class<ccl::event>& deps) {
+thread_device_group_a2a_communicator::alltoall_impl(const ccl::vector_class<void*>& send_buf,
+                                                    const ccl::vector_class<void*>& recv_buf,
+                                                    size_t count,
+                                                    ccl::datatype dtype,
+                                                    ccl::stream::impl_value_t& stream,
+                                                    const ccl::alltoall_attr& attr,
+                                                    const ccl::vector_class<ccl::event>& deps) {
     throw ccl::ccl_error(std::string(__PRETTY_FUNCTION__) + " - is not implemented");
     return {};
 }
 
 /* alltoallv */
 thread_device_group_a2a_communicator::coll_request_t
-thread_device_group_a2a_communicator::alltoallv_impl(
-    const void* send_buf,
-    const ccl::vector_class<size_t>& send_counts,
-    void* recv_buf,
-    const ccl::vector_class<size_t>& recv_counts,
-    ccl::datatype dtype,
-    ccl::stream::impl_value_t& stream,
-    const ccl::alltoallv_attr& attr,
-    const ccl::vector_class<ccl::event>& deps) {
+thread_device_group_a2a_communicator::alltoallv_impl(const void* send_buf,
+                                                     const ccl::vector_class<size_t>& send_counts,
+                                                     void* recv_buf,
+                                                     const ccl::vector_class<size_t>& recv_counts,
+                                                     ccl::datatype dtype,
+                                                     ccl::stream::impl_value_t& stream,
+                                                     const ccl::alltoallv_attr& attr,
+                                                     const ccl::vector_class<ccl::event>& deps) {
     throw ccl::ccl_error(std::string(__PRETTY_FUNCTION__) + " - is not implemented");
     return {};
 }
 thread_device_group_a2a_communicator::coll_request_t
-thread_device_group_a2a_communicator::alltoallv_impl(
-    const ccl::vector_class<void*>& send_buf,
-    const ccl::vector_class<size_t>& send_counts,
-    ccl::vector_class<void*> recv_buf,
-    const ccl::vector_class<size_t>& recv_counts,
-    ccl::datatype dtype,
-    ccl::stream::impl_value_t& stream,
-    const ccl::alltoallv_attr& attr,
+thread_device_group_a2a_communicator::alltoallv_impl(const ccl::vector_class<void*>& send_buf,
+                                                     const ccl::vector_class<size_t>& send_counts,
+                                                     ccl::vector_class<void*> recv_buf,
+                                                     const ccl::vector_class<size_t>& recv_counts,
+                                                     ccl::datatype dtype,
+                                                     ccl::stream::impl_value_t& stream,
+                                                     const ccl::alltoallv_attr& attr,
 
-    const ccl::vector_class<ccl::event>& dep) {
+                                                     const ccl::vector_class<ccl::event>& dep) {
     throw ccl::ccl_error(std::string(__PRETTY_FUNCTION__) + " - is not implemented");
     return {};
 }
 
 /* bcast */
 thread_device_group_a2a_communicator::coll_request_t
-thread_device_group_a2a_communicator::broadcast_impl(
-    void* buf,
-    size_t count,
-    ccl::datatype dtype,
-    size_t root,
-    ccl::stream::impl_value_t& stream,
-    const ccl::broadcast_attr& attr,
-    const ccl::vector_class<ccl::event>& deps) {
+thread_device_group_a2a_communicator::broadcast_impl(void* buf,
+                                                     size_t count,
+                                                     ccl::datatype dtype,
+                                                     size_t root,
+                                                     ccl::stream::impl_value_t& stream,
+                                                     const ccl::broadcast_attr& attr,
+                                                     const ccl::vector_class<ccl::event>& deps) {
     throw ccl::ccl_error(std::string(__PRETTY_FUNCTION__) + " - is not implemented");
     return {};
 }
 
 /* reduce */
 thread_device_group_a2a_communicator::coll_request_t
-thread_device_group_a2a_communicator::reduce_impl(
-    const void* send_buf,
-    void* recv_buf,
-    size_t count,
-    ccl::datatype dtype,
-    ccl::reduction reduction,
-    size_t root,
-    ccl::stream::impl_value_t& stream,
-    const ccl::reduce_attr& attr,
-    const ccl::vector_class<ccl::event>& deps) {
+thread_device_group_a2a_communicator::reduce_impl(const void* send_buf,
+                                                  void* recv_buf,
+                                                  size_t count,
+                                                  ccl::datatype dtype,
+                                                  ccl::reduction reduction,
+                                                  size_t root,
+                                                  ccl::stream::impl_value_t& stream,
+                                                  const ccl::reduce_attr& attr,
+                                                  const ccl::vector_class<ccl::event>& deps) {
     throw ccl::ccl_error(std::string(__PRETTY_FUNCTION__) + " - is not implemented");
     return {};
 }

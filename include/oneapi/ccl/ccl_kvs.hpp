@@ -8,11 +8,11 @@ namespace ccl {
 
 class CCL_API kvs_interface {
 public:
-    virtual vector_class<char> get(const string_class& prefix, const string_class& key) const = 0;
+    virtual string_class get(const string_class& prefix, const string_class& key) const = 0;
 
     virtual void set(const string_class& prefix,
                      const string_class& key,
-                     const vector_class<char>& data) const = 0;
+                     const string_class& data) const = 0;
 
     virtual ~kvs_interface() = default;
 };
@@ -27,11 +27,11 @@ public:
 
     ~kvs() override;
 
-    vector_class<char> get(const string_class& prefix, const string_class& key) const override;
+    string_class get(const string_class& prefix, const string_class& key) const override;
 
     void set(const string_class& prefix,
              const string_class& key,
-             const vector_class<char>& data) const override;
+             const string_class& data) const override;
 
 private:
     friend class environment;

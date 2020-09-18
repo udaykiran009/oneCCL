@@ -22,16 +22,15 @@ void process_a2a_communicator::visit(ccl::gpu_comm_attr& comm_attr) {
     this->set_comm_group_id(comm_attr.get_unique_id());
 }
 
-process_a2a_communicator::coll_request_t
-process_a2a_communicator::barrier(ccl::stream::impl_value_t& stream,
-                                                 const ccl::barrier_attr& attr,
-                                                 const ccl::vector_class<ccl::event>& deps) {
+process_a2a_communicator::coll_request_t process_a2a_communicator::barrier(
+    ccl::stream::impl_value_t& stream,
+    const ccl::barrier_attr& attr,
+    const ccl::vector_class<ccl::event>& deps) {
     throw ccl::ccl_error(std::string(__PRETTY_FUNCTION__) + " - is not implemented yet");
 }
 
 /* allgatherv */
-process_a2a_communicator::coll_request_t
-process_a2a_communicator::allgatherv_impl(
+process_a2a_communicator::coll_request_t process_a2a_communicator::allgatherv_impl(
     const void* send_buf,
     size_t send_count,
     void* recv_buf,
@@ -43,8 +42,7 @@ process_a2a_communicator::allgatherv_impl(
     throw ccl::ccl_error(std::string(__PRETTY_FUNCTION__) + " - is not implemented");
     return {};
 }
-process_a2a_communicator::coll_request_t
-process_a2a_communicator::allgatherv_impl(
+process_a2a_communicator::coll_request_t process_a2a_communicator::allgatherv_impl(
     const void* send_buf,
     size_t send_count,
     const ccl::vector_class<void*>& recv_bufs,
@@ -59,8 +57,7 @@ process_a2a_communicator::allgatherv_impl(
 }
 
 /* allreduce */
-process_a2a_communicator::coll_request_t
-process_a2a_communicator::allreduce_impl(
+process_a2a_communicator::coll_request_t process_a2a_communicator::allreduce_impl(
     const void* send_buf,
     void* recv_buf,
     size_t count,
@@ -74,8 +71,7 @@ process_a2a_communicator::allreduce_impl(
 }
 
 /* alltoall */
-process_a2a_communicator::coll_request_t
-process_a2a_communicator::alltoall_impl(
+process_a2a_communicator::coll_request_t process_a2a_communicator::alltoall_impl(
     const void* send_buf,
     void* recv_buf,
     size_t count,
@@ -86,8 +82,7 @@ process_a2a_communicator::alltoall_impl(
     throw ccl::ccl_error(std::string(__PRETTY_FUNCTION__) + " - is not implemented");
     return {};
 }
-process_a2a_communicator::coll_request_t
-process_a2a_communicator::alltoall_impl(
+process_a2a_communicator::coll_request_t process_a2a_communicator::alltoall_impl(
     const ccl::vector_class<void*>& send_buf,
     const ccl::vector_class<void*>& recv_buf,
     size_t count,
@@ -100,8 +95,7 @@ process_a2a_communicator::alltoall_impl(
 }
 
 /* alltoallv */
-process_a2a_communicator::coll_request_t
-process_a2a_communicator::alltoallv_impl(
+process_a2a_communicator::coll_request_t process_a2a_communicator::alltoallv_impl(
     const void* send_buf,
     const ccl::vector_class<size_t>& send_counts,
     void* recv_buf,
@@ -113,8 +107,7 @@ process_a2a_communicator::alltoallv_impl(
     throw ccl::ccl_error(std::string(__PRETTY_FUNCTION__) + " - is not implemented");
     return {};
 }
-process_a2a_communicator::coll_request_t
-process_a2a_communicator::alltoallv_impl(
+process_a2a_communicator::coll_request_t process_a2a_communicator::alltoallv_impl(
     const ccl::vector_class<void*>& send_buf,
     const ccl::vector_class<size_t>& send_counts,
     ccl::vector_class<void*> recv_buf,
@@ -129,8 +122,7 @@ process_a2a_communicator::alltoallv_impl(
 }
 
 /* bcast */
-process_a2a_communicator::coll_request_t
-process_a2a_communicator::broadcast_impl(
+process_a2a_communicator::coll_request_t process_a2a_communicator::broadcast_impl(
     void* buf,
     size_t count,
     ccl::datatype dtype,
@@ -143,8 +135,7 @@ process_a2a_communicator::broadcast_impl(
 }
 
 /* reduce */
-process_a2a_communicator::coll_request_t
-process_a2a_communicator::reduce_impl(
+process_a2a_communicator::coll_request_t process_a2a_communicator::reduce_impl(
     const void* send_buf,
     void* recv_buf,
     size_t count,
@@ -159,8 +150,7 @@ process_a2a_communicator::reduce_impl(
 }
 
 /* reduce_scatter */
-process_a2a_communicator::coll_request_t
-process_a2a_communicator::reduce_scatter_impl(
+process_a2a_communicator::coll_request_t process_a2a_communicator::reduce_scatter_impl(
     const void* send_buf,
     void* recv_buf,
     size_t recv_count,
@@ -174,8 +164,7 @@ process_a2a_communicator::reduce_scatter_impl(
 }
 
 /* sparse_allreduce */
-process_a2a_communicator::coll_request_t
-process_a2a_communicator::sparse_allreduce_impl(
+process_a2a_communicator::coll_request_t process_a2a_communicator::sparse_allreduce_impl(
     const void* send_ind_buf,
     size_t send_ind_count,
     const void* send_val_buf,

@@ -10,8 +10,7 @@
 
 /* allgatherv */
 template <class buffer_type>
-device_group_ring_communicator::coll_request_t
-device_group_ring_communicator::allgatherv_impl(
+device_group_ring_communicator::coll_request_t device_group_ring_communicator::allgatherv_impl(
     const buffer_type* send_buf,
     size_t send_count,
     buffer_type* recv_buf,
@@ -23,8 +22,7 @@ device_group_ring_communicator::allgatherv_impl(
     return {};
 }
 template <class buffer_type>
-device_group_ring_communicator::coll_request_t
-device_group_ring_communicator::allgatherv_impl(
+device_group_ring_communicator::coll_request_t device_group_ring_communicator::allgatherv_impl(
     const buffer_type* send_buf,
     size_t send_count,
     ccl::vector_class<buffer_type*>& recv_buf,
@@ -38,8 +36,7 @@ device_group_ring_communicator::allgatherv_impl(
 }
 
 template <class buffer_type>
-device_group_ring_communicator::coll_request_t
-device_group_ring_communicator::allgatherv_impl(
+device_group_ring_communicator::coll_request_t device_group_ring_communicator::allgatherv_impl(
     const buffer_type& send_buf,
     size_t send_count,
     buffer_type& recv_buf,
@@ -51,8 +48,7 @@ device_group_ring_communicator::allgatherv_impl(
     return {};
 }
 template <class buffer_type>
-device_group_ring_communicator::coll_request_t
-device_group_ring_communicator::allgatherv_impl(
+device_group_ring_communicator::coll_request_t device_group_ring_communicator::allgatherv_impl(
     const buffer_type& send_buf,
     size_t send_count,
     ccl::vector_class<ccl::reference_wrapper_class<buffer_type>>& recv_buf,
@@ -67,8 +63,7 @@ device_group_ring_communicator::allgatherv_impl(
 
 /* allreduce */
 template <class buffer_type>
-device_group_ring_communicator::coll_request_t
-device_group_ring_communicator::allreduce_impl(
+device_group_ring_communicator::coll_request_t device_group_ring_communicator::allreduce_impl(
     const buffer_type* send_buf,
     buffer_type* recv_buf,
     size_t count,
@@ -156,8 +151,7 @@ device_group_ring_communicator::allreduce_impl(
 }
 
 template <class buffer_type>
-device_group_ring_communicator::coll_request_t
-device_group_ring_communicator::allreduce_impl(
+device_group_ring_communicator::coll_request_t device_group_ring_communicator::allreduce_impl(
     const buffer_type& send_buf,
     buffer_type& recv_buf,
     size_t count,
@@ -171,8 +165,7 @@ device_group_ring_communicator::allreduce_impl(
 
 /* alltoall */
 template <class buffer_type>
-device_group_ring_communicator::coll_request_t
-device_group_ring_communicator::alltoall_impl(
+device_group_ring_communicator::coll_request_t device_group_ring_communicator::alltoall_impl(
     const buffer_type* send_buf,
     buffer_type* recv_buf,
     size_t count,
@@ -183,8 +176,7 @@ device_group_ring_communicator::alltoall_impl(
     return {};
 }
 template <class buffer_type>
-device_group_ring_communicator::coll_request_t
-device_group_ring_communicator::alltoall_impl(
+device_group_ring_communicator::coll_request_t device_group_ring_communicator::alltoall_impl(
     const ccl::vector_class<buffer_type*>& send_buf,
     const ccl::vector_class<buffer_type*>& recv_buf,
     size_t count,
@@ -197,8 +189,7 @@ device_group_ring_communicator::alltoall_impl(
 }
 
 template <class buffer_type>
-device_group_ring_communicator::coll_request_t
-device_group_ring_communicator::alltoall_impl(
+device_group_ring_communicator::coll_request_t device_group_ring_communicator::alltoall_impl(
     const buffer_type& send_buf,
     buffer_type& recv_buf,
     size_t count,
@@ -209,8 +200,7 @@ device_group_ring_communicator::alltoall_impl(
     return {};
 }
 template <class buffer_type>
-device_group_ring_communicator::coll_request_t
-device_group_ring_communicator::alltoall_impl(
+device_group_ring_communicator::coll_request_t device_group_ring_communicator::alltoall_impl(
     const ccl::vector_class<ccl::reference_wrapper_class<buffer_type>>& send_buf,
     const ccl::vector_class<ccl::reference_wrapper_class<buffer_type>>& recv_buf,
     size_t count,
@@ -224,8 +214,7 @@ device_group_ring_communicator::alltoall_impl(
 
 /* alltoallv */
 template <class buffer_type>
-device_group_ring_communicator::coll_request_t
-device_group_ring_communicator::alltoallv_impl(
+device_group_ring_communicator::coll_request_t device_group_ring_communicator::alltoallv_impl(
     const buffer_type* send_buf,
     const ccl::vector_class<size_t>& send_counts,
     buffer_type* recv_buf,
@@ -237,8 +226,7 @@ device_group_ring_communicator::alltoallv_impl(
     return {};
 }
 template <class buffer_type>
-device_group_ring_communicator::coll_request_t
-device_group_ring_communicator::alltoallv_impl(
+device_group_ring_communicator::coll_request_t device_group_ring_communicator::alltoallv_impl(
     const ccl::vector_class<buffer_type*>& send_buf,
     const ccl::vector_class<size_t>& send_counts,
     const ccl::vector_class<buffer_type*>& recv_buf,
@@ -252,8 +240,7 @@ device_group_ring_communicator::alltoallv_impl(
 }
 
 template <class buffer_type>
-device_group_ring_communicator::coll_request_t
-device_group_ring_communicator::alltoallv_impl(
+device_group_ring_communicator::coll_request_t device_group_ring_communicator::alltoallv_impl(
     const buffer_type& send_buf,
     const ccl::vector_class<size_t>& send_counts,
     buffer_type& recv_buf,
@@ -265,8 +252,7 @@ device_group_ring_communicator::alltoallv_impl(
     return {};
 }
 template <class buffer_type>
-device_group_ring_communicator::coll_request_t
-device_group_ring_communicator::alltoallv_impl(
+device_group_ring_communicator::coll_request_t device_group_ring_communicator::alltoallv_impl(
     const ccl::vector_class<ccl::reference_wrapper_class<buffer_type>>& send_buf,
     const ccl::vector_class<size_t>& send_counts,
     const ccl::vector_class<ccl::reference_wrapper_class<buffer_type>>& recv_buf,
@@ -281,8 +267,7 @@ device_group_ring_communicator::alltoallv_impl(
 
 /* bcast */
 template <class buffer_type>
-device_group_ring_communicator::coll_request_t
-device_group_ring_communicator::broadcast_impl(
+device_group_ring_communicator::coll_request_t device_group_ring_communicator::broadcast_impl(
     buffer_type* buf,
     size_t count,
     size_t root,
@@ -294,8 +279,7 @@ device_group_ring_communicator::broadcast_impl(
 }
 
 template <class buffer_type>
-device_group_ring_communicator::coll_request_t
-device_group_ring_communicator::broadcast_impl(
+device_group_ring_communicator::coll_request_t device_group_ring_communicator::broadcast_impl(
     buffer_type& buf,
     size_t count,
     size_t root,
@@ -308,8 +292,7 @@ device_group_ring_communicator::broadcast_impl(
 
 /* reduce */
 template <class buffer_type>
-device_group_ring_communicator::coll_request_t
-device_group_ring_communicator::reduce_impl(
+device_group_ring_communicator::coll_request_t device_group_ring_communicator::reduce_impl(
     const buffer_type* send_buf,
     buffer_type* recv_buf,
     size_t count,
@@ -323,8 +306,7 @@ device_group_ring_communicator::reduce_impl(
 }
 
 template <class buffer_type>
-device_group_ring_communicator::coll_request_t
-device_group_ring_communicator::reduce_impl(
+device_group_ring_communicator::coll_request_t device_group_ring_communicator::reduce_impl(
     const buffer_type& send_buf,
     buffer_type& recv_buf,
     size_t count,
@@ -338,8 +320,7 @@ device_group_ring_communicator::reduce_impl(
 }
 /* reduce_scatter */
 template <class buffer_type>
-device_group_ring_communicator::coll_request_t
-device_group_ring_communicator::reduce_scatter_impl(
+device_group_ring_communicator::coll_request_t device_group_ring_communicator::reduce_scatter_impl(
     const buffer_type* send_buf,
     buffer_type* recv_buf,
     size_t recv_count,
@@ -351,8 +332,7 @@ device_group_ring_communicator::reduce_scatter_impl(
     return {};
 }
 template <class buffer_type>
-device_group_ring_communicator::coll_request_t
-device_group_ring_communicator::reduce_scatter_impl(
+device_group_ring_communicator::coll_request_t device_group_ring_communicator::reduce_scatter_impl(
     const buffer_type& send_buf,
     buffer_type& recv_buf,
     size_t recv_count,
@@ -367,19 +347,18 @@ device_group_ring_communicator::reduce_scatter_impl(
 /* sparse_allreduce */
 template <class index_buffer_type, class value_buffer_type>
 device_group_ring_communicator::coll_request_t
-device_group_ring_communicator::sparse_allreduce_impl(
-    const index_buffer_type* send_ind_buf,
-    size_t send_ind_count,
-    const value_buffer_type* send_val_buf,
-    size_t send_val_count,
-    index_buffer_type* recv_ind_buf,
-    size_t recv_ind_count,
-    value_buffer_type* recv_val_buf,
-    size_t recv_val_count,
-    ccl::reduction reduction,
-    ccl::stream::impl_value_t& stream,
-    const ccl::sparse_allreduce_attr& attr,
-    const ccl::vector_class<ccl::event>& deps) {
+device_group_ring_communicator::sparse_allreduce_impl(const index_buffer_type* send_ind_buf,
+                                                      size_t send_ind_count,
+                                                      const value_buffer_type* send_val_buf,
+                                                      size_t send_val_count,
+                                                      index_buffer_type* recv_ind_buf,
+                                                      size_t recv_ind_count,
+                                                      value_buffer_type* recv_val_buf,
+                                                      size_t recv_val_count,
+                                                      ccl::reduction reduction,
+                                                      ccl::stream::impl_value_t& stream,
+                                                      const ccl::sparse_allreduce_attr& attr,
+                                                      const ccl::vector_class<ccl::event>& deps) {
     throw ccl::ccl_error(std::string(__PRETTY_FUNCTION__) + " - is not implemented");
     return {};
 }
