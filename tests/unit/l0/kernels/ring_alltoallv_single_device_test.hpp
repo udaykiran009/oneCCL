@@ -421,13 +421,6 @@ TEST_F(ring_alltoallv_single_device_fixture, ring_alltoallv_single_device_mt) {
         ss << ex.what() << ", But expected: " << corr_val << std::endl;
         UT_ASSERT(false, ss.str());
     }
-
-    output << "Check results: \n";
-    //printout
-    output << "Send memory:" << std::endl;
-    memory_storage.dump_by_index(output, 0 /*send_mem*/);
-    output << "\nRecv memory:" << std::endl;
-    memory_storage.dump_by_index(output, 1 /*recv_mem*/);
 }
 
 } // namespace ring_single_device_case

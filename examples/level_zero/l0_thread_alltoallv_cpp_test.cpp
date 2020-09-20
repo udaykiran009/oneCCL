@@ -14,6 +14,7 @@
 #include "base.hpp"
 #include "ccl_gpu_modules.h"
 #include "native_device_api/export_api.hpp"
+#include "coll/algorithms/algorithms_enum.hpp"
 
 #define COUNT     512 //(10*1024*1024)
 #define COLL_ROOT (0)
@@ -413,10 +414,11 @@ int main(int argc, char** argv) {
     }
 
     // Register algorithm from kernel source
-    register_alltoallv_gpu_module_source("kernels/ring_alltoallv.spv",
-                                         ccl_topology_class_t::ring_algo_class);
-    // register_alltoallv_gpu_module_source("kernels/a2a_alltoallv.spv",
-    //                                      ccl_topology_class_t::a2a_algo_class);
+    register_gpu_module_source(
+        "kernels/ring_alltoallv.spv", ccl_topology_class_t::ring_algo_class, ccl_coll_alltoallv);
+    // register_gpu_module_source("kernels/a2a_alltoallv.spv",
+    //                             ccl_topology_class_t::a2a_algo_class,
+    //                             ccl_coll_alltoallv);
 
 #ifdef CCL_ENABLE_SYCL
     std::map<size_t, cl::sycl::vector_class<cl::sycl::device>> per_thread_sycl_devices;
