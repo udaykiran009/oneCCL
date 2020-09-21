@@ -87,6 +87,7 @@ set (dependencies_sources
              "${PROJECT_SOURCE_DIR}/src/native_device_api/l0/platform.cpp"
              "${PROJECT_SOURCE_DIR}/src/native_device_api/l0/subdevice.cpp"
              "${PROJECT_SOURCE_DIR}/src/native_device_api/l0/primitives.cpp"
+#             "${PROJECT_SOURCE_DIR}/src/native_device_api/interop_utils.cpp"
              "${PROJECT_SOURCE_DIR}/src/ccl_cpp_utils.cpp"
              "${PROJECT_SOURCE_DIR}/tests/unit/api/stubs/spinlock.cpp"
              "${PROJECT_SOURCE_DIR}/tests/unit/api/stubs/kvs.cpp"
@@ -103,7 +104,8 @@ set (dependencies_sources
              "${PROJECT_SOURCE_DIR}/tests/unit/api/stubs/cache.cpp"
              "${PROJECT_SOURCE_DIR}/tests/unit/api/stubs/ccl.cpp"
              "${PROJECT_SOURCE_DIR}/tests/unit/api/stubs/datatype.cpp"
-             "${PROJECT_SOURCE_DIR}/tests/unit/api/stubs/native_runtime_utils.cpp")
+             "${PROJECT_SOURCE_DIR}/tests/unit/api/stubs/native_runtime_utils.cpp"
+             "${PROJECT_SOURCE_DIR}/tests/unit/api/stubs/atl_wrapper.cpp")
 
 foreach(src ${sources})
     get_filename_component(executable ${src} NAME_WE)

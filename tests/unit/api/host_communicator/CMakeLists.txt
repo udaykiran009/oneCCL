@@ -64,6 +64,7 @@ set (dependencies_sources
              "${PROJECT_SOURCE_DIR}/src/common/comm/host_communicator/host_communicator.cpp"
              "${PROJECT_SOURCE_DIR}/tests/unit/api/stubs/spinlock.cpp"
              "${PROJECT_SOURCE_DIR}/tests/unit/api/stubs/kvs.cpp"
+             "${PROJECT_SOURCE_DIR}/tests/unit/api/stubs/atl_wrapper.cpp"
              "${PROJECT_SOURCE_DIR}/src/ccl_empty_attr.cpp"
              "${PROJECT_SOURCE_DIR}/src/ccl_empty_coll_attr.cpp"
              "${PROJECT_SOURCE_DIR}/src/ccl_app_api_comm_split_attr.cpp"

@@ -4,8 +4,10 @@
 #ifdef CCL_ENABLE_SYCL
 #include <CL/sycl.hpp>
 #endif
+
 namespace native {
 namespace details {
+
 #ifdef CCL_ENABLE_SYCL
 size_t get_sycl_device_id(const cl::sycl::device& dev);
 std::string usm_to_string(cl::sycl::usm::alloc val);
@@ -22,13 +24,16 @@ enum assoc_result_index
     ERROR_CAUSE
 };
 
+#if defined(MULTI_GPU_SUPPORT) || defined(CCL_ENABLE_SYCL)
 assoc_retult check_assoc_device_memory(
     const void* mem,
     const ccl::unified_device_type::ccl_native_t& device,
     const ccl::unified_device_context_type::ccl_native_t& ctx);
 
+#endif //defined(MULTI_GPU_SUPPORT) || defined(CCL_ENABLE_SYCL)
 std::string to_string(const assoc_retult& res);
 
+#if defined(MULTI_GPU_SUPPORT) || defined(CCL_ENABLE_SYCL)
 template<size_t N>
 using multiple_assoc_result = std::array<assoc_retult, N>;
 
@@ -52,5 +57,6 @@ std::string to_string(const multiple_assoc_result<N>& res)
     }
     return ss.str();
 }
+#endif //defined(MULTI_GPU_SUPPORT) || defined(CCL_ENABLE_SYCL)
 } // namespace details
 } // namespace native

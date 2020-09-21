@@ -100,8 +100,11 @@ enum class datatype : int {
     last_predefined = bfloat16
 };
 
-inline std::ostream& operator<<(std::ostream& os, const ccl::datatype& dt) {
-    os << static_cast<std::underlying_type<ccl::datatype>::type>(dt);
+string_class to_string(const ccl::datatype& dt);
+
+inline std::ostream& operator<<(std::ostream& os, const ccl::datatype& dt)
+{
+    os << ccl::to_string(dt);
     return os;
 }
 

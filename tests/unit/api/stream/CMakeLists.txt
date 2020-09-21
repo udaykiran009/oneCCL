@@ -69,6 +69,7 @@ if(MULTI_GPU_SUPPORT)
              "${PROJECT_SOURCE_DIR}/src/native_device_api/l0/subdevice.cpp"
              "${PROJECT_SOURCE_DIR}/src/native_device_api/l0/primitives.cpp"
              "${PROJECT_SOURCE_DIR}/src/native_device_api/l0/utils.cpp"
+             "${PROJECT_SOURCE_DIR}/src/native_device_api/interop_utils.cpp"
              )
 endif()
 
