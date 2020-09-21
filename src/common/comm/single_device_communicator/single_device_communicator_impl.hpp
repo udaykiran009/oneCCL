@@ -33,7 +33,7 @@ single_device_communicator::coll_request_t single_device_communicator::allgather
          send_buf_result == usm_support_mode::shared) and
         (recv_buf_result == usm_support_mode::direct or
          recv_buf_result == usm_support_mode::shared)) {
-        LOG_TRACE("use USM direct pointers for both buffers");
+        LOG_TRACE("comm: ", to_string(), " - use USM direct pointers for both buffers");
         scoped_req = ccl::details::make_unique_scoped_request<
             ccl::host_request_impl>(ccl_allgatherv_impl(
             reinterpret_cast<const void*>(send_buf),
@@ -167,7 +167,7 @@ single_device_communicator::coll_request_t single_device_communicator::allreduce
          send_buf_result == usm_support_mode::shared) and
         (recv_buf_result == usm_support_mode::direct or
          recv_buf_result == usm_support_mode::shared)) {
-        LOG_TRACE("use USM direct pointers for both buffers");
+        LOG_TRACE("comm: ", to_string(), " - use USM direct pointers for both buffers");
         scoped_req = ccl::details::make_unique_scoped_request<
             ccl::host_request_impl>(ccl_allreduce_impl(reinterpret_cast<const void*>(send_buf),
                                           reinterpret_cast<void*>(recv_buf),
@@ -183,7 +183,7 @@ single_device_communicator::coll_request_t single_device_communicator::allreduce
              recv_buf_result == usm_support_mode::need_conversion) {
 
         ccl_request* req = nullptr;
-        LOG_TRACE("use USM pointers convertation for both buffers");
+        LOG_TRACE("comm: ", to_string(), " - use USM pointers convertation for both buffers");
 #ifdef CCL_ENABLE_SYCL
         auto scoped_req_sycl = ccl::details::make_unique_scoped_request<ccl::host_request_impl>(
             nullptr,
@@ -283,10 +283,10 @@ single_device_communicator::coll_request_t single_device_communicator::alltoall_
     switch(test_value)
     {
         case usm_support_mode::shared: /*the same as `direct` at now*/
-            LOG_TRACE("use USM shared pointers for buffers");
+            LOG_TRACE("comm: ", to_string(), " - use USM shared pointers for buffers");
         case usm_support_mode::direct:
         {
-            LOG_TRACE("use USM direct pointers for buffers");
+            LOG_TRACE("comm: ", to_string(), " - use USM direct pointers for buffers");
             scoped_req = ccl::details::make_unique_scoped_request<
             ccl::host_request_impl>(ccl_alltoall_impl(reinterpret_cast<const void*>(send_buf),
                                          reinterpret_cast<void*>(recv_buf),
@@ -302,7 +302,7 @@ single_device_communicator::coll_request_t single_device_communicator::alltoall_
         {
             ccl_request* req = nullptr;
 #ifdef CCL_ENABLE_SYCL
-            LOG_TRACE("use USM pointers convertation to SYCL for both buffers");
+            LOG_TRACE("comm: ", to_string(), " - use USM pointers convertation to SYCL for both buffers");
             auto scoped_req_sycl = ccl::details::make_unique_scoped_request<ccl::host_request_impl>(
                                     nullptr,
                                     /*send_buf*/
@@ -419,10 +419,10 @@ single_device_communicator::coll_request_t single_device_communicator::alltoallv
     switch(test_value)
     {
         case usm_support_mode::shared: /*the same as `direct` at now*/
-            LOG_TRACE("use USM shared pointers for buffers");
+            LOG_TRACE("comm: ", to_string(), " - use USM shared pointers for buffers");
         case usm_support_mode::direct:
         {
-            LOG_TRACE("use USM direct pointers for buffers");
+            LOG_TRACE("comm: ", to_string(), " - use USM direct pointers for buffers");
             scoped_req = ccl::details::make_unique_scoped_request<
             ccl::host_request_impl>(ccl_alltoallv_impl(reinterpret_cast<const void*>(send_buf),
                                           send_counts.data(),
@@ -441,7 +441,7 @@ single_device_communicator::coll_request_t single_device_communicator::alltoallv
 #ifdef CCL_ENABLE_SYCL
             size_t send_total_size = std::accumulate(send_counts.begin(), recv_counts.end(), size_t{});
             size_t recv_total_size = std::accumulate(recv_counts.begin(), recv_counts.end(), size_t{});
-            LOG_TRACE("use USM pointers convertation to SYCL for both buffers, send_total_size: ",
+            LOG_TRACE("comm: ", to_string(), " - use USM pointers convertation to SYCL for both buffers, send_total_size: ",
                       send_total_size, ", recv_total_size: ", recv_total_size);
             auto scoped_req_sycl = ccl::details::make_unique_scoped_request<ccl::host_request_impl>(
                                     nullptr,
@@ -554,10 +554,10 @@ single_device_communicator::coll_request_t single_device_communicator::broadcast
     switch(test_value)
     {
         case usm_support_mode::shared: /*the same as `direct` at now*/
-            LOG_TRACE("use USM shared pointers for buffers");
+            LOG_TRACE("comm: ", to_string(), " - use USM shared pointers for buffers");
         case usm_support_mode::direct:
         {
-            LOG_TRACE("use USM direct pointers for buffers");
+            LOG_TRACE("comm: ", to_string(), " - use USM direct pointers for buffers");
             scoped_req = ccl::details::make_unique_scoped_request<
             ccl::host_request_impl>(ccl_broadcast_impl(reinterpret_cast<void*>(buf),
                                           count,
@@ -573,7 +573,7 @@ single_device_communicator::coll_request_t single_device_communicator::broadcast
         {
             ccl_request* req = nullptr;
 #ifdef CCL_ENABLE_SYCL
-            LOG_TRACE("use USM pointers convertation to SYCL for both buffers");
+            LOG_TRACE("comm: ", to_string(), " - use USM pointers convertation to SYCL for both buffers");
             auto scoped_req_sycl = ccl::details::make_unique_scoped_request<ccl::host_request_impl>(
                                     nullptr,
                                     /*buf*/
@@ -666,10 +666,10 @@ single_device_communicator::coll_request_t single_device_communicator::reduce_im
     switch(test_value)
     {
         case usm_support_mode::shared: /*the same as `direct` at now*/
-            LOG_TRACE("use USM shared pointers for buffers");
+            LOG_TRACE("comm: ", to_string(), " - use USM shared pointers for buffers");
         case usm_support_mode::direct:
         {
-            LOG_TRACE("use USM direct pointers for buffers");
+            LOG_TRACE("comm: ", to_string(), " - use USM direct pointers for buffers");
             scoped_req = ccl::details::make_unique_scoped_request<
             ccl::host_request_impl>(ccl_reduce_impl(reinterpret_cast<const void*>(send_buf),
                                        reinterpret_cast<void*>(recv_buf),
@@ -687,7 +687,7 @@ single_device_communicator::coll_request_t single_device_communicator::reduce_im
         {
             ccl_request* req = nullptr;
 #ifdef CCL_ENABLE_SYCL
-            LOG_TRACE("use USM pointers convertation to SYCL for both buffers");
+            LOG_TRACE("comm: ", to_string(), " - use USM pointers convertation to SYCL for both buffers");
             auto scoped_req_sycl = ccl::details::make_unique_scoped_request<ccl::host_request_impl>(
                                     nullptr,
                                     /*send_buf*/
@@ -820,10 +820,10 @@ single_device_communicator::coll_request_t single_device_communicator::sparse_al
     switch(test_value)
     {
         case usm_support_mode::shared: /*the same as `direct` at now*/
-            LOG_TRACE("use USM shared pointers for buffers");
+            LOG_TRACE("comm: ", to_string(), " - use USM shared pointers for buffers");
         case usm_support_mode::direct:
         {
-            LOG_TRACE("use USM direct pointers for buffers");
+            LOG_TRACE("comm: ", to_string(), " - use USM direct pointers for buffers");
             scoped_req = ccl::details::make_unique_scoped_request<
             ccl::host_request_impl>(ccl_sparse_allreduce_impl((const void*)send_ind_buf,
                                   send_ind_count,
@@ -846,7 +846,7 @@ single_device_communicator::coll_request_t single_device_communicator::sparse_al
         {
             ccl_request* req = nullptr;
 #ifdef CCL_ENABLE_SYCL
-            LOG_TRACE("use USM pointers convertation to SYCL for every buffers");
+            LOG_TRACE("comm: ", to_string(), " - use USM pointers convertation to SYCL for every buffers");
             auto scoped_req_sycl = ccl::details::make_unique_scoped_request<ccl::host_request_impl>(
                                     nullptr,
                                     /*send_ind_buf*/

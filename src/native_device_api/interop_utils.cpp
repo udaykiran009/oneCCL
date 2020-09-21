@@ -1,5 +1,9 @@
 #include "oneapi/ccl/native_device_api/interop_utils.hpp"
 #include "common/utils/enums.hpp"
+#if defined(MULTI_GPU_SUPPORT)
+    #include "oneapi/ccl/native_device_api/l0/primitives.hpp"
+#endif
+
 #if defined(MULTI_GPU_SUPPORT) && defined(CCL_ENABLE_SYCL)
 #include <CL/sycl/backend/Intel_level0.hpp>
 #include "oneapi/ccl/native_device_api/l0/primitives.hpp"
@@ -87,6 +91,7 @@ int get_platform_type_index(const ccl::unified_device_type::ccl_native_t& device
     return index;
 }
 
+#if defined(MULTI_GPU_SUPPORT) || defined(CCL_ENABLE_SYCL)
 assoc_retult check_assoc_device_memory(
     const void* mem,
     const ccl::unified_device_type::ccl_native_t& device,
@@ -126,6 +131,8 @@ assoc_retult check_assoc_device_memory(
 #endif
     return ret;
 }
+
+#endif //defined(MULTI_GPU_SUPPORT) || defined(CCL_ENABLE_SYCL)
 
 std::string to_string(const assoc_retult& res)
 {

@@ -2,10 +2,31 @@
 
 #include "oneapi/ccl/ccl_config.h"
 #include "oneapi/ccl/ccl_types.hpp"
+#include "common/utils/enums.hpp"
 
 std::ostream& operator<<(std::ostream& out, const ccl::device_index_type& index);
 
 namespace ccl {
+
+using datatype_str_enum = utils::enum_to_str<utils::enum_to_underlying(datatype::last_predefined) + 1>;
+CCL_API string_class to_string(const ccl::datatype& dt)
+{
+    return datatype_str_enum({
+                            "INT8",
+                            "UINT8",
+                            "INT16",
+                            "UINT16",
+                            "INT32",
+                            "UINT32",
+                            "INT64",
+                            "UINT64",
+                            "FLOAT16",
+                            "FLOAT32",
+                            "FLOAT64",
+                            "BFLOAT16" })
+        .choose(dt, "CUSTOM_TYPE");
+}
+
 CCL_API
 std::string to_string(const device_index_type& device_id) {
     std::stringstream ss;
