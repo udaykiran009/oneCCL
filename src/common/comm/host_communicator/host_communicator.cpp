@@ -9,6 +9,7 @@
 #include "coll/coll.hpp"
 #include "coll/coll_common_attributes.hpp"
 #include "coll/ccl_allgather_op_attr.hpp"
+#include "host_communicator.hpp"
 
 #include "util/pm/pmi_resizable_rt/pmi_resizable/kvs/ikvs_wrapper.h"
 #include "atl/atl_wrapper.h"
@@ -253,6 +254,9 @@ host_communicator::coll_request_t host_communicator::sparse_allreduce_impl(
                                                  nullptr);
 
     return std::unique_ptr<ccl::request_impl>(new ccl::host_request_impl(req));
+}
+std::shared_ptr<atl_wrapper> host_communicator::get_atl() {
+    return comm_impl->atl;
 }
 
 HOST_COMM_IMPL_COLL_EXPLICIT_INSTANTIATIONS(host_communicator, char);

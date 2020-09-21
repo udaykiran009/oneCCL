@@ -1,4 +1,5 @@
 #pragma once
+#include <cstring>
 #include "oneapi/ccl/ccl_types.hpp"
 #include "oneapi/ccl/ccl_kvs.hpp"
 #include "atl/util/pm/pmi_resizable_rt/pmi_resizable/kvs/internal_kvs.h"
@@ -20,14 +21,27 @@ public:
         return addr;
     }
 
-    string_class get(const string_class& prefix, const string_class& key) const {
+    vector_class<char> get(const string_class& prefix, const string_class& key) const {
         char ret[128];
         inter_kvs->kvs_get_value_by_name_key(prefix.c_str(), key.c_str(), ret);
-        return string_class(ret);
+        size_t ret_len = strlen(ret);
+        vector_class<char> ret_vec;
+        if (ret_len != 0) {
+            ret_vec = vector_class<char>(ret, ret + ret_len + 1);
+            ret_vec[ret_len] = '\0';
+        }
+        else
+            ret_vec = vector_class<char>('\0');
+        return ret_vec;
     }
 
-    void set(const string_class& prefix, const string_class& key, const string_class& data) const {
-        inter_kvs->kvs_set_value(prefix.c_str(), key.c_str(), data.c_str());
+    void set(const string_class& prefix, const string_class& key, const vector_class<char>& data) const {
+        inter_kvs->kvs_set_value(prefix.c_str(), key.c_str(), data.data() ? data.data() : "");
+    }
+
+    std::shared_ptr<internal_kvs> get()
+    {
+        return inter_kvs;
     }
 
 private:
@@ -39,18 +53,21 @@ kvs::address_type CCL_API kvs::get_address() const {
     return pimpl->get_addr();
 }
 
-string_class CCL_API kvs::get(const string_class& prefix, const string_class& key) const {
+vector_class<char> CCL_API kvs::get(const string_class& key) const {
     return pimpl->get(prefix, key);
 }
 
-void CCL_API kvs::set(const string_class& prefix,
-                      const string_class& key,
-                      const string_class& data) const {
+void CCL_API kvs::set(const string_class& key,
+                      const vector_class<char>& data) const {
     pimpl->set(prefix, key, data);
 }
 
 CCL_API kvs::kvs(const kvs::address_type& addr) {
     pimpl = std::unique_ptr<kvs_impl>(new kvs_impl(addr));
+}
+
+CCL_API const kvs_impl& kvs::get_impl() {
+    return *pimpl;
 }
 
 CCL_API kvs::kvs() {

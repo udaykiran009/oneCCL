@@ -65,10 +65,10 @@ public:
 
     // TODO: make method to get real local_proc***
     size_t get_local_proc_idx() const {
-        return 0;
+        return local_proc_idx;
     }
     size_t get_local_proc_count() const {
-        return 1;
+        return local_proc_count;
     }
 
     const atl_attr_t& get_atl_attr() const {
@@ -83,6 +83,7 @@ private:
 
     std::unique_ptr<ccl_sched_queue> create_sched_queue(size_t idx, size_t ep_per_worker);
     void do_work();
+    void up_local_coord();
 
     atl_attr_t atl_attr = {
         1, /* ep_count */
@@ -100,6 +101,8 @@ private:
     typedef size_t (ccl_executor::*get_worker_idx_fn_t)(ccl_sched* sched);
     get_worker_idx_fn_t get_worker_idx_fn;
     size_t rr_worker_idx = 0; /* to distribute work in round-robin */
+    size_t local_proc_idx;
+    size_t local_proc_count;
 };
 
 inline void ccl_release_sched(ccl_master_sched* sched) {

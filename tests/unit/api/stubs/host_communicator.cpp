@@ -17,4 +17,8 @@ void host_communicator::barrier_impl() {}
 ccl::request host_communicator::barrier_impl(const barrier_attr& attr) {
     return {};
 }
+
+std::shared_ptr<atl_wrapper> host_communicator::get_atl() {
+    return {};
+}
 } // namespace ccl

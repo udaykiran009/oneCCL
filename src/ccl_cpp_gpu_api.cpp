@@ -136,7 +136,8 @@ CCL_API ccl::communicator_t ccl::comm_group::create_communicator(const DeviceTyp
             ccl::communicator_interface::create_communicator_impl(device,
                                                                   pimpl->thread_id,
                                                                   pimpl->ccl_communicator->rank(),
-                                                                  attr);
+                                                                  attr,
+                                                                  pimpl->ccl_communicator->comm_impl.atl);
     // registering device in group - is non blocking operation, until it is not the last device
     pimpl->sync_register_communicator(impl);
     return ccl::communicator_t(new ccl::communicator(impl));

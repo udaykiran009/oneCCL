@@ -5,6 +5,7 @@
 #include "oneapi/ccl/ccl_types.hpp"
 #include "supported_topologies.hpp"
 #include "communicator_traits.hpp"
+#include "atl/atl_wrapper.h"
 
 namespace native {
 struct ccl_device;
@@ -41,7 +42,8 @@ struct communicator_interface_dispatcher {
     static communicator_interface_ptr create_communicator_impl(const DeviceType& device,
                                                                size_t thread_idx,
                                                                size_t process_idx,
-                                                               const device_comm_split_attr& attr);
+                                                               const device_comm_split_attr& attr,
+                                                               std::shared_ptr<atl_wrapper> atl);
 
     // create communicator for device & cpu types (from device index)
     template <class DeviceType,
@@ -51,13 +53,15 @@ struct communicator_interface_dispatcher {
     static communicator_interface_ptr create_communicator_impl(DeviceType device_id,
                                                                size_t thread_idx,
                                                                size_t process_idx,
-                                                               const device_comm_split_attr& attr);
+                                                               const device_comm_split_attr& attr,
+                                                               std::shared_ptr<atl_wrapper> atl);
 
 private:
     static communicator_interface_ptr create_communicator_from_unified_device(
         unified_device_type&& device_id,
         size_t thread_idx,
         size_t process_idx,
-        const device_comm_split_attr& attr);
+        const device_comm_split_attr& attr,
+        std::shared_ptr<atl_wrapper> atl);
 };
 } // namespace ccl

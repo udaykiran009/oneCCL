@@ -119,10 +119,15 @@ ccl::device_communicator CCL_API ccl::environment::create_single_device_communic
     const cl::sycl::context& context,
     ccl::shared_ptr_class<ccl::kvs_interface> kvs) const {
     LOG_TRACE("Create single device communicator from SYCL device");
+
+    std::shared_ptr<ikvs_wrapper> kvs_wrapper(new users_kvs(kvs));
+    std::shared_ptr<atl_wrapper> atl = std::shared_ptr<atl_wrapper>(
+        new atl_wrapper(comm_size, {rank}, kvs_wrapper));
+
     ccl::device_comm_split_attr attr = create_device_comm_split_attr(
         ccl::attr_val<ccl::comm_split_attr_id::group>(ccl::device_group_split_type::undetermined));
     ccl::communicator_interface_ptr impl =
-        ccl::communicator_interface::create_communicator_impl(device, rank, comm_size, attr);
+        ccl::communicator_interface::create_communicator_impl(device, rank, comm_size, attr, atl);
 
     //TODO use gpu_comm_attr to automatically visit()
     auto single_dev_comm = std::dynamic_pointer_cast<single_device_communicator>(impl);

@@ -38,21 +38,21 @@ ccl::device_communicator ccl::comm_group::create_communicator(
     auto device_count_per_process = pimpl->get_expected_process_device_size();
     LOG_DEBUG("Create communicator from device, expected devices per process: ",
               device_count_per_process);
+    auto host_comm = pimpl->get_host_communicator();
     if (device_count_per_process == 1) /* special single device case */
     {
         LOG_TRACE("Create single device communicator from SYCL device");
-        auto host_comm = pimpl->get_host_communicator();
         //TODO
         ccl::device_comm_split_attr single_dev_attr = attr;
         single_dev_attr.set<ccl::comm_split_attr_id::group>(
             ccl::device_group_split_type::undetermined);
         impl = ccl::communicator_interface::create_communicator_impl(
-            device, host_comm->rank(), host_comm->size(), single_dev_attr);
+            device, host_comm->rank(), host_comm->size(), single_dev_attr, host_comm->get_atl());
     }
     else {
         // multiple device case
         impl = ccl::communicator_interface::create_communicator_impl(
-            device, pimpl->thread_id, pimpl->get_host_communicator()->rank(), attr);
+            device, pimpl->thread_id, host_comm->rank(), attr, host_comm->get_atl());
 
         // registering device in group - is non blocking operation, until it is not the last device
         pimpl->sync_register_communicator(impl);
@@ -68,9 +68,10 @@ ccl::device_communicator ccl::comm_group::create_communicator(
     const DeviceType& device_id,
     const ccl::device_comm_split_attr& attr /* = nullptr*/) {
     LOG_TRACE("Create communicator from id: ", device_id);
+    auto host_comm = pimpl->get_host_communicator();
 
     ccl::communicator_interface_ptr impl = ccl::communicator_interface::create_communicator_impl(
-        device_id, pimpl->thread_id, pimpl->get_host_communicator()->rank(), attr);
+        device_id, pimpl->thread_id, host_comm->rank(), attr, host_comm->get_atl());
     // registering device in group - is non blocking operation, until it is not the last device
     pimpl->sync_register_communicator(impl);
     return ccl::device_communicator(std::move(impl));

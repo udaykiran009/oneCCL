@@ -224,6 +224,7 @@ public:
     host_communicator& operator=(host_communicator& src) = delete;
     host_communicator& operator=(host_communicator&& src) = default;
     ~host_communicator() = default;
+    std::shared_ptr<atl_wrapper> get_atl();
 
 private:
     friend struct group_context;

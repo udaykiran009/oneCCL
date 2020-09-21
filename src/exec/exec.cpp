@@ -56,6 +56,7 @@ ccl_executor::ccl_executor(const char* main_addr) {
     atl_attr.enable_rma = 0; // ccl::global_data::env().enable_rma;
 
     atl_wrapper::atl_attr = atl_attr;
+    up_local_coord();
 
     LOG_INFO("init ATL, requested ep_count ", atl_attr.ep_count);
 
@@ -251,4 +252,19 @@ void ccl_executor::do_work() {
 
 size_t ccl_executor::get_worker_count() const {
     return workers.size();
+}
+void ccl_executor::up_local_coord() {
+    // TODO: works only for hydra
+    char* local_count = getenv("MPI_LOCALNRANKS");
+    local_proc_count = 1;
+    local_proc_idx = 0;
+    if (local_count)
+    {
+        char* local_id = getenv("MPI_LOCALRANKID");
+        if (local_id)
+        {
+            local_proc_count = std::atoi(local_count);
+            local_proc_idx = std::atoi(local_id);
+        }
+    }
 }
