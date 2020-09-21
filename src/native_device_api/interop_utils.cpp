@@ -2,6 +2,7 @@
 #include "common/utils/enums.hpp"
 #if defined(MULTI_GPU_SUPPORT) && defined(CCL_ENABLE_SYCL)
 #include <CL/sycl/backend/Intel_level0.hpp>
+#include "oneapi/ccl/native_device_api/l0/primitives.hpp"
 #endif
 
 namespace native {
