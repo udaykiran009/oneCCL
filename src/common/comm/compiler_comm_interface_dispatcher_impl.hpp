@@ -96,11 +96,11 @@ communicator_interface_dispatcher::create_communicator_from_unified_device(
                 case ccl::device_group_split_type::undetermined: {
                     auto comm_impl = new single_device_communicator(
                         std::move(device_id), thread_idx, process_idx, attr);
-// TODO: rework for using real atl
-//                    ccl::global_data& data = ccl::global_data::get();
-//                    auto comm = std::shared_ptr<ccl_comm>(
-//                        new ccl_comm(thread_idx, process_idx, data.comm_ids->acquire(), data.atl));
-//                    comm_impl->set_ccl_comm(std::move(comm));
+                    // TODO: rework for using real atl
+                    //                    ccl::global_data& data = ccl::global_data::get();
+                    //                    auto comm = std::shared_ptr<ccl_comm>(
+                    //                        new ccl_comm(thread_idx, process_idx, data.comm_ids->acquire(), data.atl));
+                    //                    comm_impl->set_ccl_comm(std::move(comm));
                     return communicator_interface_ptr(comm_impl);
                 }
 #ifdef MULTI_GPU_SUPPORT
@@ -149,11 +149,11 @@ communicator_interface_dispatcher::create_communicator_from_unified_device(
         case device_topology_type::undetermined: {
             auto comm_impl =
                 new single_device_communicator(std::move(device_id), thread_idx, process_idx, attr);
-// TODO: rework it for using real atl
-//            ccl::global_data& data = ccl::global_data::get();
-//            auto comm = std::shared_ptr<ccl_comm>(
-//                new ccl_comm(thread_idx, process_idx, data.comm_ids->acquire(), data.atl));
-//            comm_impl->set_ccl_comm(std::move(comm));
+            // TODO: rework it for using real atl
+            //            ccl::global_data& data = ccl::global_data::get();
+            //            auto comm = std::shared_ptr<ccl_comm>(
+            //                new ccl_comm(thread_idx, process_idx, data.comm_ids->acquire(), data.atl));
+            //            comm_impl->set_ccl_comm(std::move(comm));
             return communicator_interface_ptr(comm_impl);
         }
         default: {

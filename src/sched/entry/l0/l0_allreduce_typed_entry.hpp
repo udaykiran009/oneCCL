@@ -83,7 +83,6 @@ public:
                                      .template alloc_memory<local_barrier_flag_gpu_type>(
                                          1,
                                          sizeof(local_barrier_flag_gpu_type))) {
-
         recv_buf_typed_entry = recv_buf;
         op_typed_entry = op;
         cnt_entry = cnt;

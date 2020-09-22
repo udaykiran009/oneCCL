@@ -31,8 +31,10 @@ public:
     using alltoallv_usm_visitor_base_t = alltoallv_usm_visitor<single_device_communicator>;
     using broadcast_usm_visitor_base_t = broadcast_usm_visitor<single_device_communicator>;
     using reduce_usm_visitor_base_t = reduce_usm_visitor<single_device_communicator>;
-    using reduce_scatter_usm_visitor_base_t = reduce_scatter_usm_visitor<single_device_communicator>;
-    using sparse_allreduce_usm_visitor_base_t = sparse_allreduce_usm_visitor<single_device_communicator>;
+    using reduce_scatter_usm_visitor_base_t =
+        reduce_scatter_usm_visitor<single_device_communicator>;
+    using sparse_allreduce_usm_visitor_base_t =
+        sparse_allreduce_usm_visitor<single_device_communicator>;
 
     single_device_communicator(ccl::unified_device_type&& device,
                                size_t thread_idx,

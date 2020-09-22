@@ -114,11 +114,11 @@ void global_data::init_resize_independent_objects() {
 
     if (1) { //executor->get_global_proc_idx() == 0) {
         algorithm_selector->print();
-    
+
         if (bfp16_impl_type != ccl_bfp16_none) {
             LOG_INFO("\n\nBFP16 is enabled through ",
                      (bfp16_impl_type == ccl_bfp16_avx512bf) ? "AVX512-BF" : "AVX512-F",
-                    "\n");
+                     "\n");
         }
         else {
 #ifdef CCL_BFP16_COMPILER

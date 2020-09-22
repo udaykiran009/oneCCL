@@ -8,22 +8,21 @@ std::ostream& operator<<(std::ostream& out, const ccl::device_index_type& index)
 
 namespace ccl {
 
-using datatype_str_enum = utils::enum_to_str<utils::enum_to_underlying(datatype::last_predefined) + 1>;
-CCL_API string_class to_string(const ccl::datatype& dt)
-{
-    return datatype_str_enum({
-                            "INT8",
-                            "UINT8",
-                            "INT16",
-                            "UINT16",
-                            "INT32",
-                            "UINT32",
-                            "INT64",
-                            "UINT64",
-                            "FLOAT16",
-                            "FLOAT32",
-                            "FLOAT64",
-                            "BFLOAT16" })
+using datatype_str_enum =
+    utils::enum_to_str<utils::enum_to_underlying(datatype::last_predefined) + 1>;
+CCL_API string_class to_string(const ccl::datatype& dt) {
+    return datatype_str_enum({ "INT8",
+                               "UINT8",
+                               "INT16",
+                               "UINT16",
+                               "INT32",
+                               "UINT32",
+                               "INT64",
+                               "UINT64",
+                               "FLOAT16",
+                               "FLOAT32",
+                               "FLOAT64",
+                               "BFLOAT16" })
         .choose(dt, "CUSTOM_TYPE");
 }
 

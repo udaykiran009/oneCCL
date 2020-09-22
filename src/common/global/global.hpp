@@ -55,7 +55,7 @@ namespace ccl {
 //      *
 //      *
 //      * In the final solution the 'group_unique_key' should be equal to unique KVS idenditifier
-     
+
 //     using group_unique_key = typename ccl::ccl_host_attributes_traits<ccl_host_color>::type;
 //     std::map<group_unique_key, comm_group_t> communicator_group_map;
 //     ccl_spinlock mutex;
@@ -99,9 +99,8 @@ public:
     bool is_ft_enabled;
     ccl_bfp16_impl_type bfp16_impl_type;
 
-//TODO new_api configure thread wait timeout
+    //TODO new_api configure thread wait timeout
     size_t thread_barrier_wait_timeout_sec = 5;
-
 
 private:
     global_data();

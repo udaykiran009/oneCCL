@@ -3,8 +3,7 @@
 
 using native_data_t = int32_t;
 
-struct custom_data_type
-{
+struct custom_data_type {
     native_data_t arr[sizeof(uint32_t)];
 } __attribute__((packed));
 
@@ -32,28 +31,28 @@ int main(int argc, char **argv) {
         usm_type = cl::sycl::usm::alloc::host;
         /* create USM */
         cl::sycl::usm_allocator<custom_data_type, cl::sycl::usm::alloc::host> allocator{ q };
-        sendbuf = static_cast<void*>(allocator.allocate(COUNT));
-        recvbuf = static_cast<void*>(allocator.allocate(COUNT * size));
+        sendbuf = static_cast<void *>(allocator.allocate(COUNT));
+        recvbuf = static_cast<void *>(allocator.allocate(COUNT * size));
     }
     else if (argc > 2 && strcmp(argv[2], "DEVICE") == 0) {
         usm_type = cl::sycl::usm::alloc::device;
         /* create USM */
         cl::sycl::usm_allocator<custom_data_type, cl::sycl::usm::alloc::device> allocator{ q };
-        sendbuf = static_cast<void*>(allocator.allocate(COUNT));
-        recvbuf = static_cast<void*>(allocator.allocate(COUNT * size));
+        sendbuf = static_cast<void *>(allocator.allocate(COUNT));
+        recvbuf = static_cast<void *>(allocator.allocate(COUNT * size));
     }
     else if (argc > 2 && strcmp(argv[2], "SHARED") == 0) {
         usm_type = cl::sycl::usm::alloc::shared;
         cl::sycl::usm_allocator<custom_data_type, cl::sycl::usm::alloc::shared> allocator{ q };
-        sendbuf = static_cast<void*>(allocator.allocate(COUNT));
-        recvbuf = static_cast<void*>(allocator.allocate(COUNT * size));
+        sendbuf = static_cast<void *>(allocator.allocate(COUNT));
+        recvbuf = static_cast<void *>(allocator.allocate(COUNT * size));
     }
     else {
         //default device
         usm_type = cl::sycl::usm::alloc::device;
         cl::sycl::usm_allocator<custom_data_type, cl::sycl::usm::alloc::device> allocator{ q };
-        sendbuf = static_cast<void*>(allocator.allocate(COUNT));
-        recvbuf = static_cast<void*>(allocator.allocate(COUNT * size));
+        sendbuf = static_cast<void *>(allocator.allocate(COUNT));
+        recvbuf = static_cast<void *>(allocator.allocate(COUNT * size));
     }
 
     constexpr size_t actual_data_count = COUNT * sizeof(custom_data_type) / sizeof(native_data_t);
@@ -98,21 +97,30 @@ int main(int argc, char **argv) {
     /* open sendbuf and modify it on the target device side */
     q.submit([&](handler &cgh) {
         auto expected_acc_buf_dev = expected_buf.get_access<mode::write>(cgh);
-        cgh.parallel_for<class allgatherv_test_sbuf_modify>(range<1>{ actual_data_count }, [=](item<1> id) {
-            size_t index = id[0];
-            static_cast<native_data_t*>(sendbuf)[index] = rank + 1;
-            static_cast<native_data_t*>(recvbuf)[index] = -1;
-            for (int i = 0; i < size; i++) {
-                expected_acc_buf_dev[i * actual_data_count + index] = i + 1;
-            }
-        });
+        cgh.parallel_for<class allgatherv_test_sbuf_modify>(
+            range<1>{ actual_data_count }, [=](item<1> id) {
+                size_t index = id[0];
+                static_cast<native_data_t *>(sendbuf)[index] = rank + 1;
+                static_cast<native_data_t *>(recvbuf)[index] = -1;
+                for (int i = 0; i < size; i++) {
+                    expected_acc_buf_dev[i * actual_data_count + index] = i + 1;
+                }
+            });
     });
 
     handle_exception(q);
 
     /* invoke ccl_allagtherv on the CPU side */
     auto attr = ccl::environment::instance().create_operation_attr<ccl::allgatherv_attr>();
-    comm.allgatherv(sendbuf, actual_data_count, recvbuf, recv_counts, ccl::datatype::int32, stream, attr, events_list).wait();
+    comm.allgatherv(sendbuf,
+                    actual_data_count,
+                    recvbuf,
+                    recv_counts,
+                    ccl::datatype::int32,
+                    stream,
+                    attr,
+                    events_list)
+        .wait();
 
     /* open recvbuf and check its correctness on the target device side */
     q.submit([&](handler &cgh) {
@@ -121,7 +129,7 @@ int main(int argc, char **argv) {
         cgh.parallel_for<class allgatherv_test_rbuf_check>(
             range<1>{ size * actual_data_count }, [=](item<1> id) {
                 size_t index = id[0];
-                if (static_cast<native_data_t*>(recvbuf)[index] != expected_acc_buf_dev[index]) {
+                if (static_cast<native_data_t *>(recvbuf)[index] != expected_acc_buf_dev[index]) {
                     out_recv_buf_dev[index] = -1;
                 }
             });

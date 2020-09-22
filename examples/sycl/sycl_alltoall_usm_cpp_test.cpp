@@ -21,17 +21,17 @@ int main(int argc, char **argv) {
     usm_polymorphic_allocator<int,
                               cl::sycl::usm::alloc::host,
                               cl::sycl::usm::alloc::device,
-                              cl::sycl::usm::alloc::shared> allocator(q);
+                              cl::sycl::usm::alloc::shared>
+        allocator(q);
 
     /* default type of USM allocation is SHARED */
     cl::sycl::usm::alloc usm_alloc_type = cl::sycl::usm::alloc::shared;
-    if (argc > 2 )
-    {
-         usm_alloc_type = usm_alloc_type_from_string(argv[2]);
+    if (argc > 2) {
+        usm_alloc_type = usm_alloc_type_from_string(argv[2]);
     }
 
-    int* sendbuf = allocator.allocate(COUNT * size, usm_alloc_type);
-    int* recvbuf = allocator.allocate(COUNT * size, usm_alloc_type);
+    int *sendbuf = allocator.allocate(COUNT * size, usm_alloc_type);
+    int *recvbuf = allocator.allocate(COUNT * size, usm_alloc_type);
 
     /* create CCL internal KVS */
     auto &env = ccl::environment::instance();
@@ -64,12 +64,11 @@ int main(int argc, char **argv) {
     /* open sendbuf and modify it on the target device side */
     q.submit([&](handler &cgh) {
         cgh.parallel_for<class alltoall_test_sbuf_modify>(range<1>{ COUNT * size },
-                                                          [=](item<1> id)
-        {
-            size_t index = id[0];
-            sendbuf[index] = index / COUNT + 1;
-            recvbuf[index] = -1;
-        });
+                                                          [=](item<1> id) {
+                                                              size_t index = id[0];
+                                                              sendbuf[index] = index / COUNT + 1;
+                                                              recvbuf[index] = -1;
+                                                          });
     });
 
     handle_exception(q);

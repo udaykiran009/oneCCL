@@ -1,7 +1,7 @@
 #include "oneapi/ccl/native_device_api/interop_utils.hpp"
 #include "common/utils/enums.hpp"
 #if defined(MULTI_GPU_SUPPORT)
-    #include "oneapi/ccl/native_device_api/l0/primitives.hpp"
+#include "oneapi/ccl/native_device_api/l0/primitives.hpp"
 #endif
 
 #if defined(MULTI_GPU_SUPPORT) && defined(CCL_ENABLE_SYCL)
@@ -58,8 +58,7 @@ std::string usm_to_string(cl::sycl::usm::alloc val) {
 #endif
 
 using usm_move_str = utils::enum_to_str<utils::enum_to_underlying(usm_support_mode::last_value)>;
-std::string to_string(usm_support_mode val)
-{
+std::string to_string(usm_support_mode val) {
     return usm_move_str({
                             "prohibited",
                             "direct",
@@ -92,10 +91,9 @@ int get_platform_type_index(const ccl::unified_device_type::ccl_native_t& device
 }
 
 #if defined(MULTI_GPU_SUPPORT) || defined(CCL_ENABLE_SYCL)
-assoc_retult check_assoc_device_memory(
-    const void* mem,
-    const ccl::unified_device_type::ccl_native_t& device,
-    const ccl::unified_device_context_type::ccl_native_t& ctx) {
+assoc_retult check_assoc_device_memory(const void* mem,
+                                       const ccl::unified_device_type::ccl_native_t& device,
+                                       const ccl::unified_device_context_type::ccl_native_t& ctx) {
     assoc_retult ret{ usm_support_mode::direct, mem, "" };
 #ifdef CCL_ENABLE_SYCL
     cl::sycl::usm::alloc pointer_type = cl::sycl::get_pointer_type(mem, ctx);
@@ -134,14 +132,12 @@ assoc_retult check_assoc_device_memory(
 
 #endif //defined(MULTI_GPU_SUPPORT) || defined(CCL_ENABLE_SYCL)
 
-std::string to_string(const assoc_retult& res)
-{
+std::string to_string(const assoc_retult& res) {
     std::stringstream ss;
-    ss << "Mem: " << std::get<assoc_result_index::POINTER_VALUE>(res) << ", is: "
-       << to_string(std::get<assoc_result_index::SUPPORT_MODE>(res));
+    ss << "Mem: " << std::get<assoc_result_index::POINTER_VALUE>(res)
+       << ", is: " << to_string(std::get<assoc_result_index::SUPPORT_MODE>(res));
     const std::string& err_cause = std::get<assoc_result_index::ERROR_CAUSE>(res);
-    if (!err_cause.empty())
-    {
+    if (!err_cause.empty()) {
         ss << ", error cause: " << err_cause;
     }
     return ss.str();

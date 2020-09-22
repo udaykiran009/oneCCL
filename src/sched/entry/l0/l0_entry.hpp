@@ -33,7 +33,8 @@ public:
     friend class ccl_gpu_comm;
     friend class ccl_virtual_gpu_comm;
     static constexpr const char *class_name() noexcept {
-        return ccl_coll_type_to_str(type_op);;
+        return ccl_coll_type_to_str(type_op);
+        ;
     }
     static constexpr ccl_coll_type type() noexcept {
         return type_op;

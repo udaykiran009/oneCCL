@@ -125,22 +125,18 @@ void handle_exception(cl::sycl::queue& q) {
     }
 }
 
-cl::sycl::usm::alloc usm_alloc_type_from_string(const std::string& str)
-{
-    const std::map<std::string, cl::sycl::usm::alloc> names
-        {{
-            {"HOST", cl::sycl::usm::alloc::host},
-            {"DEVICE", cl::sycl::usm::alloc::device},
-            {"SHARED", cl::sycl::usm::alloc::shared},
-        }};
+cl::sycl::usm::alloc usm_alloc_type_from_string(const std::string& str) {
+    const std::map<std::string, cl::sycl::usm::alloc> names{ {
+        { "HOST", cl::sycl::usm::alloc::host },
+        { "DEVICE", cl::sycl::usm::alloc::device },
+        { "SHARED", cl::sycl::usm::alloc::shared },
+    } };
 
     auto it = names.find(str);
-    if (it == names.end())
-    {
+    if (it == names.end()) {
         std::stringstream ss;
         ss << "Invalid USM type requested: " << str << "\nSupported types are:\n";
-        for(const auto& v : names)
-        {
+        for (const auto& v : names) {
             ss << v.first << ", ";
         }
         throw std::runtime_error(ss.str());
@@ -148,53 +144,44 @@ cl::sycl::usm::alloc usm_alloc_type_from_string(const std::string& str)
     return it->second;
 }
 
-
-template<class data_native_type, cl::sycl::usm::alloc ...types>
-struct usm_polymorphic_allocator
-{
+template <class data_native_type, cl::sycl::usm::alloc... types>
+struct usm_polymorphic_allocator {
     using native_type = data_native_type;
     using allocator_types = std::tuple<cl::sycl::usm_allocator<native_type, types>...>;
     using integer_usm_type = typename std::underlying_type<cl::sycl::usm::alloc>::type;
     using self_t = usm_polymorphic_allocator<data_native_type, types...>;
 
-    usm_polymorphic_allocator(cl::sycl::queue& q) :
-        allocators{std::make_tuple(cl::sycl::usm_allocator<native_type, types>(q)...)}
-    {
-    }
+    usm_polymorphic_allocator(cl::sycl::queue& q)
+            : allocators{ std::make_tuple(cl::sycl::usm_allocator<native_type, types>(q)...) } {}
 
-    ~usm_polymorphic_allocator()
-    {
-        for(auto &v : memory_storage)
-        {
-            data_native_type *mem = v.first;
+    ~usm_polymorphic_allocator() {
+        for (auto& v : memory_storage) {
+            data_native_type* mem = v.first;
             deallocate(mem, v.second.size, v.second.type);
         }
     }
+
 private:
-    struct alloc_info
-    {
+    struct alloc_info {
         size_t size;
         cl::sycl::usm::alloc type;
     };
     std::map<data_native_type*, alloc_info> memory_storage;
 
-    struct alloc_impl
-    {
-        alloc_impl(native_type** out_ptr, size_t count, cl::sycl::usm::alloc type, self_t* parent) :
-            out_usm_memory_pointer(out_ptr), size(count), alloc_index(0),
-            requested_alloc_type(type),
-            owner(parent)
-        {
-        }
+    struct alloc_impl {
+        alloc_impl(native_type** out_ptr, size_t count, cl::sycl::usm::alloc type, self_t* parent)
+                : out_usm_memory_pointer(out_ptr),
+                  size(count),
+                  alloc_index(0),
+                  requested_alloc_type(type),
+                  owner(parent) {}
 
-        template <class specific_allocator >
-        void operator()(specific_allocator& al)
-        {
-            if (alloc_index++ == static_cast<integer_usm_type>(requested_alloc_type))
-            {
+        template <class specific_allocator>
+        void operator()(specific_allocator& al) {
+            if (alloc_index++ == static_cast<integer_usm_type>(requested_alloc_type)) {
                 *out_usm_memory_pointer = al.allocate(size);
 
-                alloc_info info{size, requested_alloc_type};
+                alloc_info info{ size, requested_alloc_type };
                 owner->memory_storage.emplace(*out_usm_memory_pointer, info);
             }
         }
@@ -205,24 +192,21 @@ private:
         self_t* owner;
     };
 
-    struct dealloc_impl
-    {
-        dealloc_impl(native_type** in_ptr, size_t count, cl::sycl::usm::alloc type ,self_t* parent) :
-            in_usm_memory_pointer(in_ptr), size(count), alloc_index(0),
-            requested_alloc_type(type),
-            owner(parent)
-        {
-        }
+    struct dealloc_impl {
+        dealloc_impl(native_type** in_ptr, size_t count, cl::sycl::usm::alloc type, self_t* parent)
+                : in_usm_memory_pointer(in_ptr),
+                  size(count),
+                  alloc_index(0),
+                  requested_alloc_type(type),
+                  owner(parent) {}
 
-        template <class specific_allocator >
-        void operator()(specific_allocator& al)
-        {
-            if (alloc_index++ == static_cast<integer_usm_type>(requested_alloc_type))
-            {
+        template <class specific_allocator>
+        void operator()(specific_allocator& al) {
+            if (alloc_index++ == static_cast<integer_usm_type>(requested_alloc_type)) {
                 auto it = owner->memory_storage.find(*in_usm_memory_pointer);
-                if (it == owner->memory_storage.end())
-                {
-                    throw std::runtime_error(std::string(__PRETTY_FUNCTION__) + " - not owns memory object");
+                if (it == owner->memory_storage.end()) {
+                    throw std::runtime_error(std::string(__PRETTY_FUNCTION__) +
+                                             " - not owns memory object");
                 }
 
                 al.deallocate(*in_usm_memory_pointer, size);
@@ -237,19 +221,18 @@ private:
         cl::sycl::usm::alloc requested_alloc_type;
         self_t* owner;
     };
+
 public:
     allocator_types allocators;
 
-    native_type* allocate(size_t size, cl::sycl::usm::alloc type)
-    {
+    native_type* allocate(size_t size, cl::sycl::usm::alloc type) {
         native_type* ret = nullptr;
-        ccl_tuple_for_each(allocators, alloc_impl{&ret, size, type, this});
+        ccl_tuple_for_each(allocators, alloc_impl{ &ret, size, type, this });
         return ret;
     }
 
-    void deallocate(native_type* in_ptr, size_t size, cl::sycl::usm::alloc type)
-    {
-        ccl_tuple_for_each(allocators, dealloc_impl{&in_ptr, size, type, this});
+    void deallocate(native_type* in_ptr, size_t size, cl::sycl::usm::alloc type) {
+        ccl_tuple_for_each(allocators, dealloc_impl{ &in_ptr, size, type, this });
     }
 };
 #endif /* SYCL_BASE_HPP */

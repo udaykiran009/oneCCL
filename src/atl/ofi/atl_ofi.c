@@ -91,8 +91,7 @@ static inline atl_status_t atl_ofi_ep_poll(atl_ep_t* ep);
     do { \
         ret_val = func; \
         if (ret_val != FI_SUCCESS) { \
-            ATL_OFI_PRINT( \
-                #func "\n fails with ret %ld, %s", ret_val, fi_strerror(ret_val)); \
+            ATL_OFI_PRINT(#func "\n fails with ret %ld, %s", ret_val, fi_strerror(ret_val)); \
             err_action; \
         } \
     } while (0)
@@ -460,8 +459,10 @@ static atl_status_t atl_ofi_prov_update_addr_table(atl_ofi_ctx_t* ofi_ctx,
     insert_count = fi_av_insert(
         prov->av, epnames_table, named_ep_count * proc_count, prov->addr_table, 0, NULL);
 
-    ATL_OFI_DEBUG_PRINT(
-        "av_insert: ep_count %zu, proc_count %zu, inserted %d", named_ep_count, proc_count, insert_count);
+    ATL_OFI_DEBUG_PRINT("av_insert: ep_count %zu, proc_count %zu, inserted %d",
+                        named_ep_count,
+                        proc_count,
+                        insert_count);
 
     if (insert_count != (int)(named_ep_count * proc_count)) {
         ATL_OFI_PRINT("unexpected av_insert results: expected %zu, got %d",

@@ -30,12 +30,9 @@ using namespace cl::sycl::access;
 /* specific benchmark variables */
 // TODO: add ccl::bfp16
 constexpr std::initializer_list<ccl::datatype> all_dtypes = {
-                                                        ccl::datatype::int8,
-                                                        ccl::datatype::int32,
-                                                        ccl::datatype::float32,
-                                                        ccl::datatype::float64,
-                                                        ccl::datatype::int64,
-                                                        ccl::datatype::uint64};
+    ccl::datatype::int8,    ccl::datatype::int32, ccl::datatype::float32,
+    ccl::datatype::float64, ccl::datatype::int64, ccl::datatype::uint64
+};
 
 /* specific benchmark defines */
 // different collectives with duplications
@@ -54,10 +51,9 @@ constexpr std::initializer_list<ccl::datatype> all_dtypes = {
 #define PRINT(fmt, ...) printf(fmt "\n", ##__VA_ARGS__);
 
 #ifndef PRINT_BY_ROOT
-#define PRINT_BY_ROOT(comm, fmt, ...)   \
-    if (comm.rank() == 0)              \
-    {                                   \
-        printf(fmt"\n", ##__VA_ARGS__); \
+#define PRINT_BY_ROOT(comm, fmt, ...) \
+    if (comm.rank() == 0) { \
+        printf(fmt "\n", ##__VA_ARGS__); \
     }
 #endif //PRINT_BY_ROOT
 
@@ -91,15 +87,14 @@ std::map<buf_type_t, std::string> buf_names = { std::make_pair(BUF_MULTI, "multi
                                                 std::make_pair(BUF_SINGLE, "single") };
 
 // TODO: add ccl::bfp16
-std::map<ccl::datatype, std::string> dtype_names =
-  {
-    std::make_pair(ccl::datatype::int8,   "char"),
-    std::make_pair(ccl::datatype::int32,    "int"),
-    std::make_pair(ccl::datatype::float32,  "float"),
+std::map<ccl::datatype, std::string> dtype_names = {
+    std::make_pair(ccl::datatype::int8, "char"),
+    std::make_pair(ccl::datatype::int32, "int"),
+    std::make_pair(ccl::datatype::float32, "float"),
     std::make_pair(ccl::datatype::float64, "double"),
-    std::make_pair(ccl::datatype::int64,  "int64_t"),
+    std::make_pair(ccl::datatype::int64, "int64_t"),
     std::make_pair(ccl::datatype::uint64, "uint64_t"),
-  };
+};
 
 std::map<ccl::reduction, std::string> reduction_names = {
     std::make_pair(ccl::reduction::sum, "sum"),
@@ -368,7 +363,8 @@ void print_timings(ccl::communicator& comm,
                 for (auto cop = options.coll_names.begin(); cop != options.coll_names.end();
                      ++cop, ++idx) {
                     csvf << comm.size() << "," << (*cop) << "," << reduction_names[op] << ","
-                         << dtype_names[dtype] << "," << ccl::environment::instance().get_datatype_size(dtype) << ","
+                         << dtype_names[dtype] << ","
+                         << ccl::environment::instance().get_datatype_size(dtype) << ","
                          << elem_count << "," << buf_count << "," << avg_timer[idx] << std::endl;
                 }
                 csvf.close();
@@ -476,8 +472,7 @@ int parse_user_options(int& argc, char**(&argv), user_options_t& options) {
     return 0;
 }
 
-void print_user_options(const user_options_t& options, ccl::communicator& comm)
-{
+void print_user_options(const user_options_t& options, ccl::communicator& comm) {
     std::stringstream ss;
     ss << "colls:          ";
     std::copy(options.coll_names.begin(),
