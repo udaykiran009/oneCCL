@@ -31,8 +31,8 @@ declare -i log_idx=0
 
 function check_test()
 {
-    test_log=$1
-    test_file=$2
+    local test_log=$1
+    local test_file=$2
     test_passed=`grep -E -c -i 'PASSED' ${test_log}`
     if [[ "${test_file}" != *"communicator"* ]] && [[ "${test_file}" != *"datatype"* ]];
     then
@@ -114,7 +114,7 @@ run_benchmark()
 
     log_idx=${log_idx}+1
     test_log="$EXAMPLE_WORK_DIR/$dir_name/run"
-    test_log="${test_log}_${transport}_${example}_b_${backend}_e_${loop}_l_${coll}_d_${dtype}_${log_idx}.log"
+    test_log="${test_log}_${transport}_${example}_b_${backend}_n_\${buf_type}_e_${loop}_l_${coll}_d_${dtype}_${log_idx}.log"
 
     options="--min_elem_count 1 --max_elem_count 32"
     if [ "${backend}" != "" ];
@@ -144,27 +144,31 @@ run_benchmark()
     then
         options="${options} --reduction ${reduction}"
     fi
-
-    if [ `echo $ccl_extra_env | grep -c CCL_LOG_LEVEL` -ne 1 ]
-    then
-        eval `echo $ccl_extra_env mpiexec.hydra -n 2 -ppn $ppn -l ./$example ${options}` 2>&1 | tee ${test_log}
-        check_test ${test_log} ${example}
-    else
-        base_test_log="${test_log}"
-
-        test_log="${base_test_log}.2_ranks"
-        echo "output for run with CCL_LOG_LEVEL=2 and 2 ranks has been redirected to log file ${test_log}"
-        eval `echo $ccl_extra_env mpiexec.hydra -n 2 -ppn $ppn -l ./$example ${options}` > ${test_log} 2>&1
-        check_test ${test_log} ${example}
-
-        if [ "${transport}" == "ofi" ];
+    options="${options} --buf_type \${buf_type}"
+    for buf_type in "single" "multi"
+    do
+        benchmark_log_file=`eval echo ${test_log}`
+        if [ `echo $ccl_extra_env | grep -c CCL_LOG_LEVEL` -ne 1 ]
         then
-            test_log="${base_test_log}.1_rank"
-            echo "output for run with CCL_LOG_LEVEL=2 and 1 rank has been redirected to log file ${test_log}"
-            eval `echo $ccl_extra_env mpiexec.hydra -n 1 -ppn $ppn -l ./$example ${options}` > ${test_log} 2>&1
-            check_test ${test_log} ${example}
+            eval `echo $ccl_extra_env mpiexec.hydra -n 2 -ppn $ppn -l ./$example ${options}` 2>&1 | tee ${benchmark_log_file}
+            check_test ${benchmark_log_file} ${example}
+        else
+            base_test_log="${benchmark_log_file}"
+
+            benchmark_log_file="${base_test_log}.2_ranks"
+            echo "output for run with CCL_LOG_LEVEL=2 and 2 ranks has been redirected to log file ${benchmark_log_file}"
+            eval `echo $ccl_extra_env mpiexec.hydra -n 2 -ppn $ppn -l ./$example ${options}` > ${benchmark_log_file} 2>&1
+            check_test ${benchmark_log_file} ${example}
+
+            if [ "${transport}" == "ofi" ];
+            then
+                benchmark_log_file="${base_test_log}.1_rank"
+                echo "output for run with CCL_LOG_LEVEL=2 and 1 rank has been redirected to log file ${benchmark_log_file}"
+                eval `echo $ccl_extra_env mpiexec.hydra -n 1 -ppn $ppn -l ./$example ${options}` > ${benchmark_log_file} 2>&1
+                check_test ${benchmark_log_file} ${example}
+            fi
         fi
-    fi
+    done
 }
 
 run_example()
@@ -295,7 +299,7 @@ run()
                             ccl_extra_env="${ccl_transport_env}"
                             # run a benchmark with the specific datatypes and reductions
                             run_benchmark "${ccl_extra_env}" ${dir_name} ${transport} ${example} ${backend} regular allreduce ${dtype_list} ${reduction_list}
-		        fi
+                        fi
                     done
                 elif [ "$dir_name" == "sycl" ];
                 then
