@@ -1,3 +1,5 @@
+#include <numeric>
+
 #include "exec/exec.hpp"
 #include "exec/thread/service_worker.hpp"
 #include "exec/thread/worker.hpp"
