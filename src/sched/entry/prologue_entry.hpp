@@ -10,7 +10,7 @@ public:
 
     prologue_entry() = delete;
     prologue_entry(ccl_sched* sched,
-                   ccl_prologue_fn_t fn,
+                   ccl::prologue_fn fn,
                    const ccl_buffer in_buf,
                    size_t in_cnt,
                    const ccl_datatype& in_dtype,
@@ -29,13 +29,13 @@ public:
     void start() override {
         size_t in_bytes = in_cnt * in_dtype.size();
         size_t offset = in_buf.get_offset();
-        const ccl_fn_context_t context = { sched->coll_attr.match_id.c_str(), offset };
+        const ccl::fn_context context = { sched->coll_attr.match_id.c_str(), offset };
         fn(in_buf.get_ptr(in_bytes),
            in_cnt,
            in_dtype.idx(),
            out_buf,
            out_cnt,
-           out_dtype_idx,
+           (ccl::datatype*)(out_dtype_idx),
            &context);
         status = ccl_sched_entry_status_complete;
     }
@@ -67,7 +67,7 @@ protected:
     }
 
 private:
-    ccl_prologue_fn_t fn;
+    ccl::prologue_fn fn;
     ccl_buffer in_buf;
     size_t in_cnt;
     ccl_datatype in_dtype;

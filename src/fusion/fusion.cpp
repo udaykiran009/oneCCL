@@ -159,7 +159,7 @@ ccl_master_sched* ccl_fusion_manager::build_sched() {
     size_t max_priority = 0;
     bool use_cache = true;
     ccl_comm* comm;
-    ccl_reduction_t reduction;
+    ccl::reduction reduction;
     ccl_coll_type ctype;
     const ccl_stream* stream __attribute__((unused)) = nullptr;
     void* fusion_buf = nullptr;
@@ -220,7 +220,7 @@ ccl_master_sched* ccl_fusion_manager::build_sched() {
         key.f.ctype = ctype;
         key.f.count1 = sum_count;
         key.f.count2 = exec_queue.size();
-        key.f.dtype = dtype.idx();
+        key.f.dtype = (ccl_datatype_t)(dtype.idx());
         key.f.reduction = reduction;
         key.f.comm = comm;
         key.match_id = first_sched->coll_attr.match_id + last_sched->coll_attr.match_id;

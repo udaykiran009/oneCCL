@@ -390,7 +390,7 @@ details::global_sorted_plain_graphs
                                  receive_process_graph_sizes.data(),
                                  recv_process_indices_counts.data());
 
-    req->wait();
+    req.wait();
     size_t global_graph_data_size = std::accumulate(receive_process_graph_sizes.begin(),
                                                     receive_process_graph_sizes.end(),
                                                     0);
@@ -405,7 +405,7 @@ details::global_sorted_plain_graphs
         req = comm->allgatherv(reinterpret_cast<char*>(my_serialized_graph.data()), send_count,
                                reinterpret_cast<char*>(global_serialized_graph.data()),
                                receive_process_graph_sizes.data());
-        req->wait();
+        req.wait();
     }
     catch(const std::exception& ex)
     {
@@ -462,7 +462,7 @@ details::global_sorted_colored_plain_graphs
                                  receive_process_graph_sizes.data(),
                                  recv_process_indices_counts.data());
 
-    req->wait();
+    req.wait();
     size_t global_graph_data_size = std::accumulate(receive_process_graph_sizes.begin(),
                                                     receive_process_graph_sizes.end(),
                                                     0);
@@ -477,7 +477,7 @@ details::global_sorted_colored_plain_graphs
         req = comm->allgatherv(reinterpret_cast<char*>(my_serialized_graph.data()), send_count,
                                reinterpret_cast<char*>(global_serialized_graph.data()),
                                receive_process_graph_sizes.data());
-        req->wait();
+        req.wait();
     }
     catch(const std::exception& ex)
     {

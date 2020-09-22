@@ -13,16 +13,18 @@ struct ccl_unordered_coll_ctx {
 };
 
 ccl_unordered_coll_manager::ccl_unordered_coll_manager() {
-    ccl::global_data& data = ccl::global_data::get();
-
-    coordination_comm =
-        std::unique_ptr<ccl_comm>(new ccl_comm(data.executor->get_global_proc_idx(),
-                                               data.executor->get_global_proc_count(),
-                                               data.comm_ids->acquire(true)));
-    CCL_ASSERT(coordination_comm.get(), "coordination_comm is null");
-
-    if (data.executor->get_global_proc_idx() == 0)
-        LOG_INFO("created unordered collectives manager");
+    // TODO: move it in execute body, with real comm dependency
+    //    ccl::global_data& data = ccl::global_data
+    //
+    //    coordination_comm =
+    //        std::unique_ptr<ccl_comm>(new ccl_comm(data.executor->get_global_proc_idx(),
+    //                                               data.executor->get_global_proc_count(),
+    //                                               data.comm_ids->acquire(true),
+    //                                                               ccl::global_data::get().atl));
+    //    CCL_ASSERT(coordination_comm.get(), "coordination_comm is null");
+    //
+    //    if (data.executor->get_global_proc_idx() == 0)
+    //        LOG_INFO("created unordered collectives manager");
 }
 
 ccl_unordered_coll_manager::~ccl_unordered_coll_manager() {

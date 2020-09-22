@@ -35,9 +35,8 @@ ccl_ipc_gpu_comm::ccl_ipc_gpu_comm(ccl_device& assigned_device,
                     break;
                 }
                 default: {
-                    throw std::runtime_error(
-                        std::string("ccl_ipc_gpu_comm must be created") +
-                        " unknown topology class: " + std::to_string(class_id));
+                    throw std::runtime_error(std::string("ccl_ipc_gpu_comm must be created") +
+                                             " unknown topology class: " + ::to_string(class_id));
                 }
             }
 
@@ -46,7 +45,7 @@ ccl_ipc_gpu_comm::ccl_ipc_gpu_comm(ccl_device& assigned_device,
         default: {
             throw std::runtime_error(
                 std::string("ccl_ipc_gpu_comm must be created") +
-                "for process-based topology, but requested: " + std::to_string(topology_type));
+                "for process-based topology, but requested: " + ::to_string(topology_type));
         }
     }
 }

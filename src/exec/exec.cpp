@@ -1,3 +1,5 @@
+#include <numeric>
+
 #include "exec/exec.hpp"
 #include "exec/thread/service_worker.hpp"
 #include "exec/thread/worker.hpp"
@@ -26,8 +28,8 @@ size_t ccl_executor::calculate_atl_ep_count(size_t worker_count) {
 
 std::unique_ptr<ccl_sched_queue> ccl_executor::create_sched_queue(size_t idx,
                                                                   size_t ep_per_worker) {
-    std::vector<atl_ep_t*> ep_vec(atl_eps + idx * ep_per_worker,
-                                  atl_eps + (idx + 1) * ep_per_worker);
+    std::vector<size_t> ep_vec(ep_per_worker);
+    std::iota(std::begin(ep_vec), std::end(ep_vec), idx * ep_per_worker);
     std::unique_ptr<ccl_sched_queue> sched_queue{ new ccl_sched_queue(ep_vec) };
     return sched_queue;
 }
@@ -53,54 +55,11 @@ ccl_executor::ccl_executor(const char* main_addr) {
     */
     atl_attr.enable_rma = 0; // ccl::global_data::env().enable_rma;
 
+    atl_wrapper::atl_attr = atl_attr;
+
     LOG_INFO("init ATL, requested ep_count ", atl_attr.ep_count);
 
     ccl::env_data& env = ccl::global_data::env();
-
-    auto transport_name =
-        ccl::env_data::str_by_enum(ccl::env_data::atl_transport_names, env.atl_transport);
-
-    atl_status_t atl_status =
-        atl_init(transport_name.c_str(), nullptr, nullptr, &atl_attr, &atl_ctx, main_addr);
-
-    CCL_THROW_IF_NOT(atl_status == ATL_STATUS_SUCCESS && atl_ctx,
-                     "ATL init failed, res ",
-                     atl_status,
-                     ", ctx ",
-                     atl_ctx);
-
-    atl_eps = atl_get_eps(atl_ctx);
-    atl_proc_coord = atl_get_proc_coord(atl_ctx);
-    ccl::global_data::get().is_ft_enabled = atl_is_resize_enabled(atl_ctx);
-
-    LOG_DEBUG("\nglobal: idx ",
-              atl_proc_coord->global_idx,
-              ", size ",
-              atl_proc_coord->global_count,
-              "\nlocal:  idx ",
-              atl_proc_coord->local_idx,
-              ", size ",
-              atl_proc_coord->local_count,
-              "\nworkers:    ",
-              worker_count);
-
-    if (get_global_proc_idx() == 0) {
-        LOG_INFO("\n",
-                 "\nATL parameters:",
-                 "\n  ep_count:           ",
-                 atl_attr.ep_count,
-                 "\n  enable_shm:         ",
-                 atl_attr.enable_shm,
-                 "\n  tag_bits:           ",
-                 atl_attr.tag_bits,
-                 "\n  max_tag:            ",
-                 atl_attr.max_tag,
-                 "\n  enable_rma:         ",
-                 atl_attr.enable_rma,
-                 "\n  max_order_waw_size: ",
-                 atl_attr.max_order_waw_size,
-                 "\n");
-    }
 
     CCL_THROW_IF_NOT(env.env_2_worker_affinity(get_local_proc_idx(), get_local_proc_count()));
 
@@ -140,9 +99,7 @@ void ccl_executor::start_workers() {
                              "failed to start worker # ",
                              idx);
 
-            LOG_DEBUG("started worker: global_proc_idx ",
-                      get_global_proc_idx(),
-                      ", local_proc_idx ",
+            LOG_DEBUG("started worker: local_proc_idx ",
                       get_local_proc_idx(),
                       ", worker_idx ",
                       idx,
@@ -153,14 +110,15 @@ void ccl_executor::start_workers() {
 }
 
 ccl_executor::~ccl_executor() {
-    if (listener) {
-        listener->stop();
-        LOG_DEBUG("stopped listener");
-
-        lock_workers();
-        unlock_workers();
-    }
-    listener.reset();
+    // TODO: Rework to support listener
+    //    if (listener) {
+    //        listener->stop();
+    //        LOG_DEBUG("stopped listener");
+    //
+    //        lock_workers();
+    //        unlock_workers();
+    //    }
+    //    listener.reset();
 
     for (size_t idx = 0; idx < workers.size(); idx++) {
         if (ccl::global_data::env().worker_offload) {
@@ -172,18 +130,6 @@ ccl_executor::~ccl_executor() {
 
             workers[idx].reset();
         }
-    }
-
-    if (get_global_proc_idx() == 0)
-        LOG_INFO("finalizing ATL");
-
-    auto result = atl_finalize(atl_ctx);
-
-    if (get_global_proc_idx() == 0)
-        LOG_INFO("finalized ATL");
-
-    if (result != ATL_STATUS_SUCCESS) {
-        LOG_ERROR("ATL finalize failed, error ", result);
     }
 }
 
@@ -228,29 +174,29 @@ void ccl_executor::update_workers() {
     }
 }
 
-ccl_status_t ccl_executor::create_listener(ccl_resize_fn_t resize_func) {
-    if (listener) {
-        LOG_ERROR("attempt to create listener twice");
-        return ccl_status_runtime_error;
-    }
-
-    if (resize_func != NULL)
-        atl_set_resize_function(ccl::global_data::get().executor->get_atl_ctx(),
-                                (atl_resize_fn_t)resize_func);
-
-    /* pin listener thread together with first worker thread */
-    auto worker_affinity = ccl::global_data::env().worker_affinity;
-    size_t affinity_idx = get_local_proc_idx() * ccl::global_data::env().worker_count;
-    CCL_THROW_IF_NOT(worker_affinity.size() > affinity_idx);
-    size_t affinity = worker_affinity[affinity_idx];
-
-    listener = std::unique_ptr<ccl_listener>(new ccl_listener());
-    listener->start(affinity);
-
-    LOG_DEBUG("started listener");
-
-    return ccl_status_success;
-}
+// TODO: Rework to support listener
+//ccl_status_t ccl_executor::create_listener(ccl_resize_fn_t resize_func) {
+//    if (listener) {
+//        LOG_ERROR("attempt to create listener twice");
+//        return ccl_status_runtime_error;
+//    }
+//
+//    if (resize_func != NULL)
+//        ccl::global_data::get().atl->atl_set_resize_function((atl_resize_fn_t)resize_func);
+//
+//    /* pin listener thread together with first worker thread */
+//    auto worker_affinity = ccl::global_data::env().worker_affinity;
+//    size_t affinity_idx = get_local_proc_idx() * ccl::global_data::env().worker_count;
+//    CCL_THROW_IF_NOT(worker_affinity.size() > affinity_idx);
+//    size_t affinity = worker_affinity[affinity_idx];
+//
+//    listener = std::unique_ptr<ccl_listener>(new ccl_listener());
+//    listener->start(affinity);
+//
+//    LOG_DEBUG("started listener");
+//
+//    return ccl_status_success;
+//}
 
 void ccl_executor::start(ccl_extra_sched* extra_sched) {
     CCL_ASSERT(extra_sched->internal_type == ccl_sched_internal_unordered_coll,

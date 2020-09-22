@@ -10,7 +10,7 @@ extern "C" {
 #endif
 
 ccl_status_t CCL_API register_gpu_module_source(const char* source,
-                                                ccl_topology_class_t topology_class,
+                                                ccl::device_topology_type topology_class,
                                                 ccl_coll_type type);
 
 #ifdef __cplusplus

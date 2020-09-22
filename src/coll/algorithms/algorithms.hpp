@@ -29,7 +29,7 @@ ccl_status_t ccl_coll_build_rabenseifner_reduce(ccl_sched* sched,
                                                 ccl_buffer recv_buf,
                                                 size_t count,
                                                 const ccl_datatype& dtype,
-                                                ccl_reduction_t reduction,
+                                                ccl::reduction reduction,
                                                 size_t root,
                                                 ccl_comm* comm);
 
@@ -38,7 +38,7 @@ ccl_status_t ccl_coll_build_rabenseifner_allreduce(ccl_sched* sched,
                                                    ccl_buffer recv_buf,
                                                    size_t count,
                                                    const ccl_datatype& dtype,
-                                                   ccl_reduction_t reduction,
+                                                   ccl::reduction reduction,
                                                    ccl_comm* comm);
 
 ccl_status_t ccl_coll_build_binomial_reduce(ccl_sched* sched,
@@ -46,7 +46,7 @@ ccl_status_t ccl_coll_build_binomial_reduce(ccl_sched* sched,
                                             ccl_buffer recv_buf,
                                             size_t count,
                                             const ccl_datatype& dtype,
-                                            ccl_reduction_t reduction,
+                                            ccl::reduction reduction,
                                             size_t root,
                                             ccl_comm* comm);
 
@@ -55,7 +55,7 @@ ccl_status_t ccl_coll_build_ring_allreduce(ccl_sched* sched,
                                            ccl_buffer recv_buf,
                                            size_t count,
                                            const ccl_datatype& dtype,
-                                           ccl_reduction_t reduction,
+                                           ccl::reduction reduction,
                                            ccl_comm* comm);
 
 ccl_status_t ccl_coll_build_ring_rma_allreduce(ccl_sched* sched,
@@ -63,7 +63,7 @@ ccl_status_t ccl_coll_build_ring_rma_allreduce(ccl_sched* sched,
                                                ccl_buffer recv_buf,
                                                size_t count,
                                                const ccl_datatype& dtype,
-                                               ccl_reduction_t reduction,
+                                               ccl::reduction reduction,
                                                ccl_comm* comm);
 
 ccl_status_t ccl_coll_build_recursive_doubling_allreduce(ccl_sched* sched,
@@ -71,7 +71,7 @@ ccl_status_t ccl_coll_build_recursive_doubling_allreduce(ccl_sched* sched,
                                                          ccl_buffer recv_buf,
                                                          size_t count,
                                                          const ccl_datatype& dtype,
-                                                         ccl_reduction_t reduction,
+                                                         ccl::reduction reduction,
                                                          ccl_comm* comm);
 
 ccl_status_t ccl_coll_build_starlike_allreduce(ccl_sched* sched,
@@ -79,7 +79,7 @@ ccl_status_t ccl_coll_build_starlike_allreduce(ccl_sched* sched,
                                                ccl_buffer recv_buf,
                                                size_t count,
                                                const ccl_datatype& dtype,
-                                               ccl_reduction_t reduction,
+                                               ccl::reduction reduction,
                                                ccl_comm* comm);
 
 ccl_status_t ccl_coll_build_naive_allgatherv(ccl_sched* sched,
@@ -102,7 +102,7 @@ ccl_status_t ccl_coll_build_sparse_allreduce_ring(ccl_sched* sched,
                                                   size_t* recv_val_count,
                                                   const ccl_datatype& index_dtype,
                                                   const ccl_datatype& value_dtype,
-                                                  ccl_reduction_t reduction,
+                                                  ccl::reduction reduction,
                                                   ccl_comm* comm);
 
 template <typename i_type, typename v_type>
@@ -117,7 +117,7 @@ ccl_status_t ccl_coll_build_sparse_allreduce_mask(ccl_sched* sched,
                                                   size_t* recv_val_count,
                                                   const ccl_datatype& index_dtype,
                                                   const ccl_datatype& value_dtype,
-                                                  ccl_reduction_t reduction,
+                                                  ccl::reduction reduction,
                                                   ccl_comm* comm);
 
 template <typename i_type, typename v_type>
@@ -132,7 +132,7 @@ ccl_status_t ccl_coll_build_sparse_allreduce_3_allgatherv(ccl_sched* sched,
                                                           size_t* recv_val_count,
                                                           const ccl_datatype& index_dtype,
                                                           const ccl_datatype& value_dtype,
-                                                          ccl_reduction_t reduction,
+                                                          ccl::reduction reduction,
                                                           ccl_comm* comm);
 
 class ccl_double_tree;
@@ -142,7 +142,7 @@ ccl_status_t ccl_coll_build_double_tree_op(ccl_sched* sched,
                                            ccl_buffer recv_buf,
                                            size_t count,
                                            const ccl_datatype& dtype,
-                                           ccl_reduction_t reduction,
+                                           ccl::reduction reduction,
                                            const ccl_double_tree& dtree,
                                            ccl_comm* comm);
 
@@ -151,7 +151,7 @@ ccl_status_t ccl_coll_build_ring_reduce_scatter(ccl_sched* sched,
                                                 ccl_buffer recv_buf,
                                                 size_t send_count,
                                                 const ccl_datatype& dtype,
-                                                ccl_reduction_t reduction,
+                                                ccl::reduction reduction,
                                                 ccl_comm* comm);
 
 ccl_status_t ccl_coll_build_ring_allgatherv(ccl_sched* sched,
@@ -183,7 +183,7 @@ ccl_status_t ccl_coll_build_direct_reduce(ccl_sched* sched,
                                           ccl_buffer recv_buf,
                                           size_t count,
                                           const ccl_datatype& dtype,
-                                          ccl_reduction_t reduction,
+                                          ccl::reduction reduction,
                                           size_t root,
                                           ccl_comm* comm);
 
@@ -200,7 +200,7 @@ ccl_status_t ccl_coll_build_direct_allreduce(ccl_sched* sched,
                                              ccl_buffer recv_buf,
                                              size_t count,
                                              const ccl_datatype& dtype,
-                                             ccl_reduction_t reduction,
+                                             ccl::reduction reduction,
                                              ccl_comm* comm);
 
 ccl_status_t ccl_coll_build_direct_alltoall(ccl_sched* sched,

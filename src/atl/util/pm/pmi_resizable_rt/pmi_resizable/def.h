@@ -22,7 +22,8 @@
 
 #define DO_RW_OP(op, fd, buf, size) \
     do { \
-        ssize_t res = 0, shift = 0; \
+        ssize_t res = 0; \
+        size_t shift = 0; \
         while (shift != size) { \
             res = op(fd, (char*)buf + shift, size - shift); \
             if (res == -1) { \

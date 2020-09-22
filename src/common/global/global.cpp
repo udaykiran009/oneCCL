@@ -20,6 +20,9 @@ global_data::global_data() {
     /* create ccl_logger before ccl::global_data
        to ensure static objects construction/destruction rule */
     LOG_INFO("create global_data object");
+
+    //TODO new_api configure thread wait timeout
+    thread_barrier_wait_timeout_sec = 5;
 }
 
 global_data::~global_data() {
@@ -41,7 +44,6 @@ ccl_status_t global_data::reset() {
         executor is responsible for resize logic and has own multi-step reset
      */
     executor.reset();
-    global_ctx.reset();
     reset_resize_dependent_objects();
     reset_resize_independent_objects();
 
@@ -54,7 +56,7 @@ ccl_status_t global_data::init() {
     init_resize_dependent_objects();
     init_resize_independent_objects();
 
-    if (executor->get_global_proc_idx() == 0)
+    if (1) //executor->get_global_proc_idx() == 0)
         env_object.print();
 
     return ccl_status_success;
@@ -75,31 +77,26 @@ void global_data::init_resize_dependent_objects() {
     comm_ids =
         std::unique_ptr<ccl_comm_id_storage>(new ccl_comm_id_storage(ccl_comm::max_comm_count));
 
-    comm = std::make_shared<ccl_comm>(executor->get_global_proc_idx(),
-                                      executor->get_global_proc_count(),
-                                      comm_ids->acquire(true));
-
     if (env_object.enable_unordered_coll) {
         unordered_coll_manager =
             std::unique_ptr<ccl_unordered_coll_manager>(new ccl_unordered_coll_manager());
     }
 
-    allreduce_2d_builder = std::unique_ptr<ccl_allreduce_2d_builder>(new ccl_allreduce_2d_builder(
-        (env_object.allreduce_2d_base_size != CCL_ENV_SIZET_NOT_SPECIFIED)
-            ? env_object.allreduce_2d_base_size
-            : executor->get_local_proc_count(),
-        env_object.allreduce_2d_switch_dims));
+    //    allreduce_2d_builder = std::unique_ptr<ccl_allreduce_2d_builder>(new ccl_allreduce_2d_builder(
+    //        (env_object.allreduce_2d_base_size != CCL_ENV_SIZET_NOT_SPECIFIED)
+    //            ? env_object.allreduce_2d_base_size
+    //            : executor->get_local_proc_count(),
+    //        env_object.allreduce_2d_switch_dims));
 
     atl_tag = std::unique_ptr<ccl_atl_tag>(
         new ccl_atl_tag(executor->get_atl_attr().tag_bits, executor->get_atl_attr().max_tag));
-    if (env_object.default_resizable)
-        ccl_set_resize_fn(nullptr);
+    /* TODO: enable back after API update */
+    // if (env_object.default_resizable)
+    //     ccl_set_resize_fn(nullptr);
 
-    if (executor->get_global_proc_idx() == 0) {
-        atl_tag->print();
-    }
-
-    global_ctx = std::unique_ptr<ccl_group_context>(new ccl_group_context());
+    //    if (executor->get_global_proc_idx() == 0) {
+    //        atl_tag->print();
+    //    }
 }
 
 void global_data::init_resize_independent_objects() {
@@ -115,13 +112,13 @@ void global_data::init_resize_independent_objects() {
 
     bfp16_impl_type = ccl_bfp16_get_impl_type();
 
-    if (executor->get_global_proc_idx() == 0) {
+    if (1) { //executor->get_global_proc_idx() == 0) {
         algorithm_selector->print();
-
+    
         if (bfp16_impl_type != ccl_bfp16_none) {
             LOG_INFO("\n\nBFP16 is enabled through ",
                      (bfp16_impl_type == ccl_bfp16_avx512bf) ? "AVX512-BF" : "AVX512-F",
-                     "\n");
+                    "\n");
         }
         else {
 #ifdef CCL_BFP16_COMPILER
@@ -135,9 +132,8 @@ void global_data::init_resize_independent_objects() {
 
 void global_data::reset_resize_dependent_objects() {
     atl_tag.reset();
-    allreduce_2d_builder.reset();
+    //    allreduce_2d_builder.reset();
     unordered_coll_manager.reset();
-    comm.reset();
     comm_ids.reset();
     fusion_manager.reset();
     sched_cache.reset();

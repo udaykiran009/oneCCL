@@ -1,7 +1,10 @@
 #pragma once
-#include "ccl_types.hpp"
+#include "oneapi/ccl/ccl_types.hpp"
 #include "common/datatype/datatype.hpp"
-#include "ccl_type_traits.hpp"
+#include "oneapi/ccl/ccl_type_traits.hpp"
+
+#include "oneapi/ccl.hpp"
+
 #include "comp/comp.hpp"
 #include "common/comm/l0/devices/devices_declaration.hpp"
 #include "sched/entry/coll/direct/base_coll_entry.hpp"
@@ -30,7 +33,7 @@ public:
     friend class ccl_gpu_comm;
     friend class ccl_virtual_gpu_comm;
     static constexpr const char *class_name() noexcept {
-        return ccl_coll_type_to_str(type_op);
+        return ccl_coll_type_to_str(type_op);;
     }
     static constexpr ccl_coll_type type() noexcept {
         return type_op;
@@ -86,6 +89,7 @@ public:
             parent_communicator->template register_entry<native_type, group_id, class_id>(*this);
 
         auto send_buf_ptr = reinterpret_cast<native_type *>(send_buf.get_ptr());
+
         main_entry_function.template set_args<typename kernel_main_typed::common_entry_buf_arg>(
             send_buf_ptr);
 
@@ -225,7 +229,7 @@ public:
                             ccl_ipc_source_gpu_comm<ccl_gpu_comm>::type_idx()) {
                         if (group_id == ccl::device_group_split_type::cluster) {
                             auto c = ccl::environment::instance().create_communicator();
-                            if (c->rank() == 0) {
+                            if (c.rank() == 0) {
                                 throw ccl::ccl_error(
                                     std::string("cannot sync queue from real device, error: ") +
                                     native::to_string(ret));
@@ -433,6 +437,7 @@ protected:
                 new kernel_connector<kernel_main_typed, executor, kernel_main_typed>(
                     exec, right_main_func));
         }
+
         // TODO: check for launching ipc kernel
         // while (!kernel_router) {
         //     //gather data for ipc-GPU

@@ -1,43 +1,79 @@
-#include "ccl.h"
+//#include "ccl.h"
+#include "atl/util/pm/pmi_resizable_rt/pmi_resizable/kvs/users_kvs.h"
 #include "common/comm/comm.hpp"
 #include "common/global/global.hpp"
 #include "sched/sched.hpp"
-
-ccl_comm::ccl_comm(size_t rank, size_t size, ccl_comm_id_storage::comm_id&& id)
-        : ccl_comm(rank, size, std::move(id), ccl_rank2rank_map{}) {}
+#include "oneapi/ccl/ccl_types.hpp"
+#include "oneapi/ccl/ccl_kvs.hpp"
 
 ccl_comm::ccl_comm(size_t rank,
                    size_t size,
                    ccl_comm_id_storage::comm_id&& id,
-                   ccl_rank2rank_map&& rank_map)
-        : m_id(std::move(id)),
+                   std::shared_ptr<atl_wrapper> atl)
+        : ccl_comm(rank, size, std::move(id), ccl_rank2rank_map{}, atl) {}
+
+ccl_comm::ccl_comm(size_t rank,
+                   size_t size,
+                   ccl_comm_id_storage::comm_id&& id,
+                   ccl_rank2rank_map&& rank_map,
+                   std::shared_ptr<atl_wrapper> atl)
+        : atl(atl),
+          m_id(std::move(id)),
           m_local2global_map(std::move(rank_map)),
-          m_dtree(size, rank) {
+          m_dtree(size, rank),
+          thread_number(1),
+          on_process_ranks_number(1) {
     reset(rank, size);
 }
 
+//TODO non-implemented
+//TODO rude simulation of multi-thread barrier
+static std::atomic<size_t> thread_counter{};
+static std::atomic<size_t> thread_ranks_counter{};
+void ccl_comm::ccl_comm_reset_thread_barrier() {
+    // recharge counters again
+    thread_counter.store(0);
+    thread_ranks_counter.store(0);
+}
+
+ccl_comm::ccl_comm(const std::vector<size_t>& local_thread_device_ranks,
+                   size_t cluster_devices_count,
+                   std::shared_ptr<ccl::kvs_interface> kvs_instance,
+                   ccl_comm_id_storage::comm_id&& id)
+        : m_id(std::move(id)),
+          m_local2global_map(),
+          m_dtree(local_thread_device_ranks.size(), cluster_devices_count) {
+    std::shared_ptr<ikvs_wrapper> kvs_wrapper(new users_kvs(kvs_instance));
+    atl = std::shared_ptr<atl_wrapper>(
+        new atl_wrapper(cluster_devices_count, local_thread_device_ranks, kvs_wrapper));
+
+    thread_number = atl->get_threads_count();
+    on_process_ranks_number = atl->get_devices_per_rank_count();
+
+    reset(atl->get_rank(), atl->get_size());
+}
+
 static ccl_status_t ccl_comm_exchange_colors(std::vector<int>& colors) {
-    const size_t exchange_count = 1;
-    std::vector<size_t> recv_counts(colors.size(), exchange_count);
-    ccl_coll_attr_t coll_attr{};
-    coll_attr.to_cache = false;
-    ccl_request_t request;
+    throw ccl::ccl_error("ccl_comm_exchange_colors not implemented yet");
 
-    ccl_status_t status;
+    // const size_t exchange_count = 1;
+    // std::vector<size_t> recv_counts(colors.size(), exchange_count);
+    // ccl_coll_attr_t coll_attr{};
+    // coll_attr.to_cache = false;
+    // ccl_request_t request;
 
-    CCL_CALL(ccl_allgatherv(colors.data(),
-                            exchange_count,
-                            colors.data(),
-                            recv_counts.data(),
-                            ccl_dtype_int,
-                            &coll_attr,
-                            nullptr, /* comm */
-                            nullptr, /* stream */
-                            &request));
+    // ccl_status_t status;
 
-    CCL_CALL(ccl_wait(request));
+    // CCL_CALL(ccl_allgatherv(colors.data(), exchange_count,
+    //                         colors.data(), recv_counts.data(),
+    //                         ccl_dtype_int, &coll_attr,
+    //                         nullptr, /* comm */
+    //                         nullptr, /* stream */
+    //                         &request));
 
-    return status;
+    // CCL_CALL(ccl_wait(request));
+
+    // return status;
 }
 
 ccl_comm* ccl_comm::create_with_color(int color,
@@ -89,8 +125,8 @@ ccl_comm* ccl_comm::create_with_colors(const std::vector<int>& colors,
         rank_map.clear();
     }
 
-    ccl_comm* comm =
-        new ccl_comm(new_comm_rank, new_comm_size, comm_ids->acquire(), std::move(rank_map));
+    ccl_comm* comm = new ccl_comm(
+        new_comm_rank, new_comm_size, comm_ids->acquire(), std::move(rank_map), global_comm->atl);
 
     LOG_DEBUG("new comm: color ",
               color,
@@ -106,7 +142,7 @@ ccl_comm* ccl_comm::create_with_colors(const std::vector<int>& colors,
 
 std::shared_ptr<ccl_comm> ccl_comm::clone_with_new_id(ccl_comm_id_storage::comm_id&& id) {
     ccl_rank2rank_map rank_map{ m_local2global_map };
-    return std::make_shared<ccl_comm>(m_rank, m_size, std::move(id), std::move(rank_map));
+    return std::make_shared<ccl_comm>(m_rank, m_size, std::move(id), std::move(rank_map), atl);
 }
 
 size_t ccl_comm::get_global_rank(size_t rank) const {

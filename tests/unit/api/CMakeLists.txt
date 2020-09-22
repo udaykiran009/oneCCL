@@ -1,0 +1,10 @@
+add_subdirectory(coll_attrs)
+add_subdirectory(comm_split_attrs)
+add_subdirectory(host_communicator)
+add_subdirectory(datatype_attrs)
+
+if (MULTI_GPU_SUPPORT OR CCL_ENABLE_SYCL)
+    add_subdirectory(device_communicator)
+    add_subdirectory(event)
+    add_subdirectory(stream)
+endif()

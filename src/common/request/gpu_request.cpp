@@ -33,6 +33,14 @@ bool gpu_request_impl::test() {
     return completed;
 }
 
+bool gpu_request_impl::cancel() {
+    throw ccl_error(std::string(__FUNCTION__) + " - is not implemented");
+}
+
+event& gpu_request_impl::get_event() {
+    throw ccl_error(std::string(__FUNCTION__) + " - is not implemented");
+}
+
 gpu_shared_request_impl::gpu_shared_request_impl(std::shared_ptr<ccl_gpu_sched>&& sched)
         : gpu_sched(std::move(sched)) {
     if (!gpu_sched) {
@@ -63,6 +71,14 @@ bool gpu_shared_request_impl::test() {
     return completed;
 }
 
+bool gpu_shared_request_impl::cancel() {
+    throw ccl_error(std::string(__FUNCTION__) + " - is not implemented");
+}
+
+event& gpu_shared_request_impl::get_event() {
+    throw ccl_error(std::string(__FUNCTION__) + " - is not implemented");
+}
+
 gpu_shared_process_request_impl::gpu_shared_process_request_impl(
     std::shared_ptr<ccl_gpu_sched>&& sched) {}
 
@@ -72,5 +88,13 @@ void gpu_shared_process_request_impl::wait() {}
 
 bool gpu_shared_process_request_impl::test() {
     return false;
+}
+
+bool gpu_shared_process_request_impl::cancel() {
+    throw ccl_error(std::string(__FUNCTION__) + " - is not implemented");
+}
+
+event& gpu_shared_process_request_impl::get_event() {
+    throw ccl_error(std::string(__FUNCTION__) + " - is not implemented");
 }
 } // namespace ccl

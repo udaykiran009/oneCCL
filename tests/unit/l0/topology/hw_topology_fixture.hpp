@@ -8,7 +8,7 @@
 #define protected public
 #include <map>
 
-#include "ccl_config.h"
+#include "oneapi/ccl/ccl_config.h"
 #include "common/comm/l0/topology/ring_topology.hpp"
 #include "common/comm/l0/device_community.hpp"
 #include "common/comm/l0/context/device_group_ctx.hpp"

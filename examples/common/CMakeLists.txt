@@ -1,5 +1,7 @@
 file(GLOB sources "*.c" "*.cpp")
 
+link_directories(${PROJECT_SOURCE_DIR}/ofi/lib)
+link_directories(${PROJECT_SOURCE_DIR}/mpi/lib)
 foreach(src ${sources})
     get_filename_component(executable ${src} NAME_WE)
     add_executable(${executable} ${src})

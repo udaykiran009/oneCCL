@@ -12,7 +12,7 @@
 #include <thread>
 #include <numeric>
 #include "base.hpp"
-#include "ccl_gpu_modules.h"
+#include "oneapi/ccl/ccl_gpu_modules.h"
 #include "native_device_api/export_api.hpp"
 #include "coll/algorithms/algorithms_enum.hpp"
 
@@ -392,9 +392,9 @@ int main(int argc, char** argv) {
 
     // Register algorithm from kernel source
     register_gpu_module_source(
-        "kernels/ring_bcast.spv", ccl_topology_class_t::ring_algo_class, ccl_coll_bcast);
+        "kernels/ring_bcast.spv", ccl::device_topology_type::ring, ccl_coll_bcast);
     register_gpu_module_source(
-        "kernels/a2a_bcast.spv", ccl_topology_class_t::a2a_algo_class, ccl_coll_bcast);
+        "kernels/a2a_bcast.spv", ccl::device_topology_type::a2a, ccl_coll_bcast);
 
 #ifdef CCL_ENABLE_SYCL
     std::map<size_t, cl::sycl::vector_class<cl::sycl::device>> per_thread_sycl_devices;

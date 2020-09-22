@@ -1,6 +1,6 @@
 #pragma once
 
-#include "ccl_types.h"
+#include "oneapi/ccl/ccl_types.hpp"
 
 #ifdef CCL_BFP16_TARGET_ATTRIBUTES
 #ifdef CCL_BFP16_AVX512BF_COMPILER
@@ -10,13 +10,13 @@ __attribute__((target("avx512bw,avx512vl")))
 #endif
 void ccl_bfp16_reduce(const void* in_buf, size_t in_cnt,
                      void* inout_buf, size_t* out_cnt,
-                     ccl_reduction_t reduction_op);
+                     ccl::reduction reduction_op);
 #else
 void ccl_bfp16_reduce(const void* in_buf,
                       size_t in_cnt,
                       void* inout_buf,
                       size_t* out_cnt,
-                      ccl_reduction_t reduction_op);
+                      ccl::reduction reduction_op);
 #endif
 
 void ccl_convert_fp32_to_bfp16_arrays(void*, void*, size_t);

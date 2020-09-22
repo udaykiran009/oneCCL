@@ -4,21 +4,28 @@
 #include "base_bfp16.hpp"
 
 template <typename T>
-void typed_test_param<T>::prepare_coll_attr(size_t idx) {
-    coll_attr.priority = generate_priority_value(idx);
-    coll_attr.to_cache = test_conf.cache_type;
-    coll_attr.vector_buf = 0;
+template <class coll_attr_type>
+void typed_test_param<T>::prepare_coll_attr(coll_attr_type& coll_attr, size_t idx) {
+    coll_attr.template set<ccl::operation_attr_id::priority>(generate_priority_value(idx));
+    coll_attr.template set<ccl::operation_attr_id::to_cache>((int)test_conf.cache_type);
+    //coll_attr.vector_buf = 0;
 
     char* test_unordered_coll = getenv("CCL_UNORDERED_COLL");
     if (test_unordered_coll && atoi(test_unordered_coll) == 1) {
-        coll_attr.synchronous = 0;
+        coll_attr.template set<ccl::operation_attr_id::synchronous>(0);
     }
     else {
-        coll_attr.synchronous = test_conf.sync_type;
+        coll_attr.template set<ccl::operation_attr_id::synchronous>((int)test_conf.sync_type);
     }
 
     match_id = create_match_id(idx);
-    coll_attr.match_id = match_id.c_str();
+    coll_attr.template set<ccl::operation_attr_id::match_id>(match_id);
+}
+
+template <typename T>
+void typed_test_param<T>::prepare_coll_attr(ccl::allgatherv_attr& coll_attr, size_t idx) {
+    this->template prepare_coll_attr<ccl::allgatherv_attr>(coll_attr, idx);
+    coll_attr.set<ccl::allgatherv_attr_id::vector_buf>(0);
 }
 
 template <typename T>
@@ -34,12 +41,12 @@ std::string typed_test_param<T>::create_match_id(size_t buf_idx) {
 }
 
 template <typename T>
-bool typed_test_param<T>::complete_request(std::shared_ptr<ccl::request> reqs) {
+bool typed_test_param<T>::complete_request(ccl::request reqs) {
     if (test_conf.completion_type == CMPT_TEST) {
-        return reqs->test();
+        return reqs.test();
     }
     else if (test_conf.completion_type == CMPT_WAIT) {
-        reqs->wait();
+        reqs.wait();
         return true;
     }
     else {
@@ -143,10 +150,9 @@ void typed_test_param<T>::print(std::ostream& output) {
 }
 
 template <typename T>
-base_test<T>::base_test() {
-    comm = ccl::environment::instance().create_communicator();
-    global_process_idx = comm->rank();
-    global_process_count = comm->size();
+base_test<T>::base_test() : comm(ccl::environment::instance().create_communicator()) {
+    global_process_idx = comm.rank();
+    global_process_count = comm.size();
     memset(err_message, '\0', ERR_MESSAGE_MAX_LEN);
 }
 

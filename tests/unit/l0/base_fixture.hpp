@@ -8,7 +8,7 @@
 #include <string>
 
 #include "utils.hpp"
-#include "ccl.hpp"
+#include "oneapi/ccl.hpp"
 #define UT_DEBUG
 
 #ifdef UT_DEBUG

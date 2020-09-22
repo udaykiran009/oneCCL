@@ -64,7 +64,7 @@ Consider a simple ``allreduce`` example for CPU.
                           &recvbuf,
                           COUNT,
                           ccl_dtype_int,
-                          ccl_reduction_sum,
+                          ccl::reduction::sum,
                           NULL, /* attr */
                           NULL, /* comm */
                           stream,
@@ -81,7 +81,7 @@ Consider a simple ``allreduce`` example for CPU.
                            COUNT,
                            ccl::reduction::sum,
                            nullptr, /* attr */
-                           stream)->wait();
+                           stream).wait();
 
 
 

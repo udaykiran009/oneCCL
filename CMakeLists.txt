@@ -188,7 +188,7 @@ set(CCL_BUILD_DIR ${CMAKE_CURRENT_BINARY_DIR}/src)
 enable_testing()
 
 set (EXTERNAL_LIBS "")
-set(EXAMPLES_INC_DIRS ${PROJECT_SOURCE_DIR}/include ${PROJECT_SOURCE_DIR}/examples/include)
+set(EXAMPLES_INC_DIRS ${PROJECT_SOURCE_DIR}/include ${PROJECT_SOURCE_DIR}/examples/include ${PROJECT_SOURCE_DIR}/mpi/include)
 
 # allow `deprecated`
 set(CMAKE_CLANG_FLAGS "${CMAKE_CLANG_FLAGS}")
@@ -225,10 +225,11 @@ endif()
 add_subdirectory(examples/benchmark)
 add_subdirectory(examples/common)
 add_subdirectory(tests/functional)
-if(MULTI_GPU_SUPPORT)
-    add_subdirectory(examples/level_zero)
-    add_subdirectory(tests/unit)
-endif()
+#add_subdirectory(tests/unit)
+
+#if(MULTI_GPU_SUPPORT)
+#    add_subdirectory(examples/level_zero)
+#endif()
 
 #generate & install vars.sh
 configure_file(cmake/vars.sh.in ${CMAKE_CURRENT_BINARY_DIR}/vars.sh @ONLY)
@@ -248,5 +249,5 @@ set(CCL_PRODUCT_STATUS    "beta")
 string(TIMESTAMP CCL_PRODUCT_BUILD_DATE "%Y-%m-%dT %H:%M:%SZ")
 get_vcs_properties("git")
 set(CCL_PRODUCT_FULL "${CCL_PRODUCT_STATUS}-${CCL_MAJOR_VERSION}.${CCL_MINOR_VERSION}.${CCL_UPDATE_VERSION} ${CCL_PRODUCT_BUILD_DATE} ${VCS_INFO}")
-configure_file(${PROJECT_SOURCE_DIR}/include/ccl_config.h.in "${CMAKE_CURRENT_BINARY_DIR}/include/ccl_config.h")
-file(COPY "${CMAKE_CURRENT_BINARY_DIR}/include/ccl_config.h" DESTINATION ${PROJECT_SOURCE_DIR}/include/)
+configure_file(${PROJECT_SOURCE_DIR}/include/oneapi/ccl/ccl_config.h.in "${CMAKE_CURRENT_BINARY_DIR}/include/oneapi/ccl/ccl_config.h")
+file(COPY "${CMAKE_CURRENT_BINARY_DIR}/include/oneapi/ccl/ccl_config.h" DESTINATION ${PROJECT_SOURCE_DIR}/include/oneapi/ccl)

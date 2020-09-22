@@ -348,11 +348,11 @@ post_build()
     mkdir -p ${WORKSPACE}/build/_install/lib/cpu_icc
     mkdir -p ${WORKSPACE}/build/_install/include/cpu_gpu_dpcpp
     mkdir -p ${WORKSPACE}/build/_install/include/cpu_icc
-    mv `find ${WORKSPACE}/build/_install/include/* -type f` ${WORKSPACE}/build/_install/include/cpu_icc
+    mv ${WORKSPACE}/build/_install/include/oneapi ${WORKSPACE}/build/_install/include/cpu_icc
     mv ${TMP_DIR}/lib/lib* ${WORKSPACE}/build/_install/lib/cpu_icc
     mv ${WORKSPACE}/build/_install/lib/prov ${WORKSPACE}/build/_install/lib/cpu_icc
     cp -r ${WORKSPACE}/build_gpu/_install/lib/* ${WORKSPACE}/build/_install/lib/cpu_gpu_dpcpp
-    cp -r ${WORKSPACE}/build_gpu/_install/include/* ${WORKSPACE}/build/_install/include/cpu_gpu_dpcpp
+    cp -r ${WORKSPACE}/build_gpu/_install/include/oneapi ${WORKSPACE}/build/_install/include/cpu_gpu_dpcpp
     cp -r ${WORKSPACE}/examples ${WORKSPACE}/build/_install
 }
 

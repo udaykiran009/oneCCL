@@ -305,7 +305,7 @@ protected:
             if (cur_index == wait_count /*std::is_same<gpu_comm_impl, ccl_gpu_comm>::value*/) {
                 if (topology == ccl::device_group_split_type::cluster) {
                     auto c = ccl::environment::instance().create_communicator();
-                    if (c->rank() == 0) {
+                    if (c.rank() == 0) {
                         LOG_INFO("L0 Workaround: one device close list!!!",
                                  "WaitCount: ",
                                  wait_count,

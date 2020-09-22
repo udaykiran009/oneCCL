@@ -17,7 +17,7 @@ struct sycl_buffer_visitor {
 
     template <size_t index, class specific_sycl_buffer>
     void invoke() {
-        if (index == requested_dtype.idx()) {
+        if (index == (int)(requested_dtype.idx())) {
             LOG_DEBUG("visitor matched index: ",
                       index,
                       ", ccl: ",
@@ -28,7 +28,6 @@ struct sycl_buffer_visitor {
             size_t bytes = requested_cnt * requested_dtype.size();
             auto out_buf_acc = static_cast<specific_sycl_buffer*>(requested_buf.get_ptr(bytes))
                                    ->template get_access<access_mode>();
-            CCL_ASSERT(requested_cnt <= out_buf_acc.get_count());
             void* out_pointer = out_buf_acc.get_pointer();
             LOG_DEBUG("requested_cnt: ",
                       requested_cnt,
@@ -40,6 +39,7 @@ struct sycl_buffer_visitor {
                       bytes,
                       ", out_buf_acc.get_count(): ",
                       out_buf_acc.get_count());
+            CCL_ASSERT(requested_cnt <= out_buf_acc.get_count());
             callback((char*)out_pointer + requested_offset, bytes);
         }
         else {

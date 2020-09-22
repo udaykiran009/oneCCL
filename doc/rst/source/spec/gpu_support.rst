@@ -68,7 +68,7 @@ Consider a simple ``allreduce`` example for GPU.
                               &recvbuf,
                               COUNT,
                               ccl_dtype_int,
-                              ccl_reduction_sum,
+                              ccl::reduction::sum,
                               NULL, /* attr */
                               NULL, /* comm */
                               stream,
@@ -84,7 +84,7 @@ Consider a simple ``allreduce`` example for GPU.
                                COUNT,
                                ccl::reduction::sum,
                                nullptr, /* attr */
-                               stream)->wait();
+                               stream).wait();
 
 #. Check the correctness of ``ccl_allreduce`` on the GPU:
 

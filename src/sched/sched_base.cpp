@@ -87,7 +87,7 @@ size_t ccl_sched_base::get_priority() const {
 }
 
 ccl_buffer ccl_sched_base::alloc_buffer(size_t bytes) {
-    LOG_TRACE("try to allocate buffer size: ", bytes);
+    LOG_DEBUG("try to allocate buffer size: ", bytes);
     CCL_THROW_IF_NOT(bytes > 0, "incorrect buffer size: ", bytes);
 
     ccl_buffer buffer =
@@ -135,7 +135,7 @@ ccl_buffer ccl_sched_base::update_buffer(ccl_buffer buffer, size_t new_size) {
 ccl_buffer ccl_sched_base::find_and_realloc_buffer(void* in_ptr,
                                                    size_t new_size,
                                                    size_t expected_size) {
-    LOG_TRACE("sched: ", this, ", contains buffer objects: ", memory.buf_list.size());
+    LOG_DEBUG("sched: ", this, ", contains buffer objects: ", memory.buf_list.size());
     for (auto& it : memory.buf_list) {
         if (it.buffer.get_ptr() == in_ptr) {
 #ifdef ENABLE_DEBUG_SPARSE

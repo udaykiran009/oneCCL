@@ -1,6 +1,6 @@
 #pragma once
 
-#include "ccl_types.h"
+#include "oneapi/ccl/ccl_types.hpp"
 #include "common/log/log.hpp"
 #include "common/utils/spinlock.hpp"
 
@@ -59,6 +59,13 @@ public:
             return id;
         }
 
+        //TODO
+        comm_id clone()
+        {
+            comm_id cloned(id_storage.get(), id);
+            cloned.refuse = true;
+            return cloned;
+        }
     private:
         std::reference_wrapper<ccl_comm_id_storage> id_storage;
         ccl_comm_id_t id;

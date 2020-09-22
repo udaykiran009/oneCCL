@@ -1,4 +1,4 @@
-#include "ccl_type_traits.hpp"
+#include "oneapi/ccl/ccl_type_traits.hpp"
 #include "coll/algorithms/sparse_allreduce/sparse_handler.hpp"
 #include "sched/entry/factory/entry_factory.hpp"
 
@@ -66,13 +66,22 @@
 #define CCL_SPARSE_ALLREDUCE_SELECT_V_DTYPE(itype, vtype, algo) \
     do { \
         switch (vtype.idx()) { \
-            case ccl_dtype_float: CCL_SPARSE_ALLREDUCE_SELECT_ALGO(itype, float, algo); break; \
-            case ccl_dtype_double: CCL_SPARSE_ALLREDUCE_SELECT_ALGO(itype, double, algo); break; \
-            case ccl_dtype_char: CCL_SPARSE_ALLREDUCE_SELECT_ALGO(itype, char, algo); break; \
-            case ccl_dtype_int: CCL_SPARSE_ALLREDUCE_SELECT_ALGO(itype, int, algo); break; \
-            case ccl_dtype_int64: CCL_SPARSE_ALLREDUCE_SELECT_ALGO(itype, int64_t, algo); break; \
-            case ccl_dtype_uint64: CCL_SPARSE_ALLREDUCE_SELECT_ALGO(itype, uint64_t, algo); break; \
-            case ccl_dtype_bfp16: CCL_SPARSE_ALLREDUCE_SELECT_ALGO(itype, ccl::bfp16, algo); \
+            case ccl::datatype::float32: \
+                CCL_SPARSE_ALLREDUCE_SELECT_ALGO(itype, float, algo); \
+                break; \
+            case ccl::datatype::float64: \
+                CCL_SPARSE_ALLREDUCE_SELECT_ALGO(itype, double, algo); \
+                break; \
+            case ccl::datatype::int8: CCL_SPARSE_ALLREDUCE_SELECT_ALGO(itype, char, algo); break; \
+            case ccl::datatype::int32: CCL_SPARSE_ALLREDUCE_SELECT_ALGO(itype, int, algo); break; \
+            case ccl::datatype::int64: \
+                CCL_SPARSE_ALLREDUCE_SELECT_ALGO(itype, int64_t, algo); \
+                break; \
+            case ccl::datatype::uint64: \
+                CCL_SPARSE_ALLREDUCE_SELECT_ALGO(itype, uint64_t, algo); \
+                break; \
+            case ccl::datatype::bfloat16: \
+                CCL_SPARSE_ALLREDUCE_SELECT_ALGO(itype, ccl::bfp16, algo); \
                 break; \
             default: \
                 CCL_FATAL("value datatype ", \
@@ -127,8 +136,8 @@
         sa_handler->send_count[1] = send_val_count; \
 \
         if (sa_handler->sched->coll_attr.sparse_coalesce_mode == \
-                ccl_sparse_coalesce_keep_precision && \
-            sa_handler->value_dtype.idx() == ccl_dtype_bfp16) { \
+                ccl::sparse_coalesce_mode::keep_precision && \
+            sa_handler->value_dtype.idx() == ccl::datatype::bfloat16) { \
             sa_handler->tmp = \
                 static_cast<float*>(sched->alloc_buffer(sizeof(float) * val_dim_cnt).get_ptr()); \
             sa_handler->acc = \
@@ -157,13 +166,13 @@
 
 template <typename vtype>
 typename std::enable_if<!std::is_same<vtype, ccl::bfp16>::value, vtype>::type get_mask(
-    ccl_reduction_t op) {
+    ccl::reduction op) {
     switch (op) {
-        case ccl_reduction_sum: return 0;
-        case ccl_reduction_prod: return 1;
-        case ccl_reduction_min: return std::numeric_limits<vtype>::max();
-        case ccl_reduction_max: return std::numeric_limits<vtype>::min();
-        case ccl_reduction_custom:
+        case ccl::reduction::sum: return 0;
+        case ccl::reduction::prod: return 1;
+        case ccl::reduction::min: return std::numeric_limits<vtype>::max();
+        case ccl::reduction::max: return std::numeric_limits<vtype>::min();
+        case ccl::reduction::custom:
             CCL_FATAL("custom reduction is not supported for sparse_allreduce/mask algorithm");
             return ccl_status_invalid_arguments;
         default: return 0;
@@ -172,13 +181,13 @@ typename std::enable_if<!std::is_same<vtype, ccl::bfp16>::value, vtype>::type ge
 
 template <typename vtype>
 typename std::enable_if<std::is_same<vtype, ccl::bfp16>::value, vtype>::type get_mask(
-    ccl_reduction_t op) {
+    ccl::reduction op) {
     switch (op) {
-        case ccl_reduction_sum: return 0;
-        case ccl_reduction_prod: return CCL_BFP16_ONE;
-        case ccl_reduction_min: return CCL_BFP16_MAX;
-        case ccl_reduction_max: return CCL_BFP16_MIN;
-        case ccl_reduction_custom:
+        case ccl::reduction::sum: return 0;
+        case ccl::reduction::prod: return CCL_BFP16_ONE;
+        case ccl::reduction::min: return CCL_BFP16_MAX;
+        case ccl::reduction::max: return CCL_BFP16_MIN;
+        case ccl::reduction::custom:
             CCL_FATAL("custom reduction is not supported for sparse_allreduce/mask algorithm");
             return ccl_status_invalid_arguments;
         default: return 0;
@@ -253,20 +262,20 @@ void sparse_coalesce(ccl_sparse_allreduce_handler* sah) {
 
         /* reduce values from duplicate indices */
         if (it.second.size() > 1) {
-            ccl_comp_batch_reduce(
-                src_v,
-                it.second,
-                sah->val_dim_cnt,
-                dst_v + val_offset,
-                nullptr,
-                sah->value_dtype,
-                sah->op,
-                nullptr,
-                nullptr,
-                (sched->coll_attr.sparse_coalesce_mode == ccl_sparse_coalesce_keep_precision &&
-                 sah->value_dtype.idx() == ccl_dtype_bfp16),
-                sah->tmp,
-                sah->acc);
+            ccl_comp_batch_reduce(src_v,
+                                  it.second,
+                                  sah->val_dim_cnt,
+                                  dst_v + val_offset,
+                                  nullptr,
+                                  sah->value_dtype,
+                                  sah->op,
+                                  nullptr,
+                                  nullptr,
+                                  (sched->coll_attr.sparse_coalesce_mode ==
+                                       ccl::sparse_coalesce_mode::keep_precision &&
+                                   sah->value_dtype.idx() == ccl::datatype::bfloat16),
+                                  sah->tmp,
+                                  sah->acc);
 
             it.second.resize(1);
         }
@@ -521,7 +530,7 @@ ccl_status_t ccl_coll_build_sparse_allreduce_ring(ccl_sched* sched,
                                                   size_t* recv_val_count,
                                                   const ccl_datatype& index_dtype,
                                                   const ccl_datatype& value_dtype,
-                                                  ccl_reduction_t op,
+                                                  ccl::reduction op,
                                                   ccl_comm* comm) {
     ccl_status_t status = ccl_status_success;
 
@@ -741,7 +750,7 @@ ccl_status_t ccl_coll_build_sparse_allreduce_mask(ccl_sched* sched,
                                                   size_t* recv_val_count,
                                                   const ccl_datatype& index_dtype,
                                                   const ccl_datatype& value_dtype,
-                                                  ccl_reduction_t op,
+                                                  ccl::reduction op,
                                                   ccl_comm* comm) {
     ccl_status_t status = ccl_status_success;
 
@@ -835,7 +844,7 @@ ccl_status_t sparse_alloc_result_buf_allgatherv(const void* ctx) {
 
     ccl_sched* sched = sa_handler->sched;
 
-    if (sched->coll_attr.sparse_coalesce_mode == ccl_sparse_coalesce_disable &&
+    if (sched->coll_attr.sparse_coalesce_mode == ccl::sparse_coalesce_mode::disable &&
         sched->coll_attr.sparse_allreduce_alloc_fn) {
         /* with coalesce_disable the final buffers are allocated here, so use alloc_fn */
         sched->coll_attr.sparse_allreduce_alloc_fn(
@@ -947,20 +956,20 @@ ccl_status_t sparse_reduce_gathered_allgatherv(const void* ctx) {
 
         /* reduce values from duplicate indices */
         if (it.second.size() > 1) {
-            ccl_comp_batch_reduce(
-                values,
-                it.second,
-                sa_handler->val_dim_cnt,
-                v_recv + val_offset,
-                nullptr,
-                sa_handler->value_dtype,
-                sa_handler->op,
-                nullptr,
-                nullptr,
-                sched->coll_attr.sparse_coalesce_mode == ccl_sparse_coalesce_keep_precision &&
-                    sa_handler->value_dtype.idx() == ccl_dtype_bfp16,
-                sa_handler->tmp,
-                sa_handler->acc);
+            ccl_comp_batch_reduce(values,
+                                  it.second,
+                                  sa_handler->val_dim_cnt,
+                                  v_recv + val_offset,
+                                  nullptr,
+                                  sa_handler->value_dtype,
+                                  sa_handler->op,
+                                  nullptr,
+                                  nullptr,
+                                  sched->coll_attr.sparse_coalesce_mode ==
+                                          ccl::sparse_coalesce_mode::keep_precision &&
+                                      sa_handler->value_dtype.idx() == ccl::datatype::bfloat16,
+                                  sa_handler->tmp,
+                                  sa_handler->acc);
         }
         idx_offset++;
     }
@@ -1008,7 +1017,7 @@ ccl_status_t sparse_get_v_recv_allgatherv(const void* ctx, void* field_ptr) {
 ccl_status_t sparse_get_v_send_allgatherv(const void* ctx, void* field_ptr) {
     ccl_sparse_allreduce_handler* sa_handler = (ccl_sparse_allreduce_handler*)ctx;
     ccl_buffer* buf_ptr = (ccl_buffer*)field_ptr;
-    if (sa_handler->sched->coll_attr.sparse_coalesce_mode == ccl_sparse_coalesce_disable) {
+    if (sa_handler->sched->coll_attr.sparse_coalesce_mode == ccl::sparse_coalesce_mode::disable) {
         buf_ptr->set(sa_handler->send_vbuf);
     }
     else {
@@ -1051,7 +1060,7 @@ ccl_status_t ccl_coll_build_sparse_allreduce_3_allgatherv(ccl_sched* sched,
                                                           size_t* recv_val_count,
                                                           const ccl_datatype& index_dtype,
                                                           const ccl_datatype& value_dtype,
-                                                          ccl_reduction_t op,
+                                                          ccl::reduction op,
                                                           ccl_comm* comm) {
     ccl_status_t status = ccl_status_success;
 
@@ -1088,7 +1097,7 @@ ccl_status_t ccl_coll_build_sparse_allreduce_3_allgatherv(ccl_sched* sched,
               ", sa_handler->recv_counts: ",
               sa_handler->recv_counts);
 
-    if (sched->coll_attr.sparse_coalesce_mode != ccl_sparse_coalesce_disable) {
+    if (sched->coll_attr.sparse_coalesce_mode != ccl::sparse_coalesce_mode::disable) {
         entry_factory::make_entry<function_entry>(
             sched, sparse_coalesce_allgatherv<i_type, v_type>, sa_handler);
         sched->add_barrier();
@@ -1143,7 +1152,7 @@ ccl_status_t ccl_coll_build_sparse_allreduce_3_allgatherv(ccl_sched* sched,
                                                        sa_handler);
     sched->add_barrier();
 
-    if (sched->coll_attr.sparse_coalesce_mode == ccl_sparse_coalesce_disable) {
+    if (sched->coll_attr.sparse_coalesce_mode == ccl::sparse_coalesce_mode::disable) {
         entry_factory::make_entry<function_entry>(
             sched, sparse_return_gathered_allgatherv, sa_handler);
     }

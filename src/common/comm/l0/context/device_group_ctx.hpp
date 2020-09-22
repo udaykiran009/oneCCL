@@ -4,7 +4,8 @@
 #include <memory>
 #include <mutex>
 
-#include "ccl.hpp"
+#include "oneapi/ccl/ccl_types.hpp"
+#include "supported_topologies.hpp"
 #include "common/comm/l0/gpu_comm_attr.hpp"
 #include "common/comm/l0/context/scaling_ctx/numa_ctx.hpp"
 #include "common/comm/l0/device_community_holder_impl.hpp"

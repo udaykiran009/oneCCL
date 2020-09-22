@@ -51,10 +51,11 @@ bool ccl_algorithm_selector_helper<ccl_coll_allreduce_algo>::can_use(
         can_use = false;
     else if (algo == ccl_coll_allreduce_starlike && !(param.count / param.comm->size()))
         can_use = false;
-    else if (algo == ccl_coll_allreduce_2d &&
-             (ccl::global_data::env().atl_transport == ccl_atl_mpi ||
-              param.comm->size() != ccl::global_data::get().comm->size()))
-        can_use = false;
+    // TODO: Rework it
+    //    else if (algo == ccl_coll_allreduce_2d &&
+    //             (ccl::global_data::env().atl_transport == ccl_atl_mpi ||
+    //              param.comm->size() != ccl::global_data::get().comm->size()))
+    //        can_use = false;
 
     return can_use;
 }

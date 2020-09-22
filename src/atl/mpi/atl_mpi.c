@@ -13,6 +13,9 @@
 #include "comp/bfp16/bfp16_intrisics.h"
 #include "comp/bfp16/bfp16_utils.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
 #define ATL_MPI_PM_KEY     "atl-mpi"
 #define EP_IDX_MAX_STR_LEN 4
 #define EP_IDX_KEY         "ep_idx"
@@ -320,12 +323,17 @@ static void atl_mpi_bfp16_finalize() {
 static MPI_Datatype atl2mpi_dtype(atl_datatype_t dtype) {
     switch (dtype) {
         case ATL_DTYPE_CHAR: return MPI_CHAR;
+        case ATL_DTYPE_UINT8: return MPI_UNSIGNED_CHAR;
+        case ATL_DTYPE_INT16: return MPI_INT16_T;
+        case ATL_DTYPE_UINT16: return MPI_UINT16_T;
         case ATL_DTYPE_INT: return MPI_INT;
-        case ATL_DTYPE_BFP16: return MPI_BFP16;
-        case ATL_DTYPE_FLOAT: return MPI_FLOAT;
-        case ATL_DTYPE_DOUBLE: return MPI_DOUBLE;
+        case ATL_DTYPE_UINT32: return MPI_UINT32_T;
         case ATL_DTYPE_INT64: return MPI_LONG_LONG;
         case ATL_DTYPE_UINT64: return MPI_UNSIGNED_LONG_LONG;
+        case ATL_DTYPE_FLOAT16: printf("unknown datatype: %d\n", dtype); exit(1);
+        case ATL_DTYPE_FLOAT: return MPI_FLOAT;
+        case ATL_DTYPE_DOUBLE: return MPI_DOUBLE;
+        case ATL_DTYPE_BFP16: return MPI_BFP16;
         default: printf("unknown datatype: %d\n", dtype); exit(1);
     }
 }
@@ -517,7 +525,7 @@ static atl_status_t atl_mpi_finalize(atl_ctx_t* ctx) {
     MPI_Finalized(&is_mpi_finalized);
 
     if (!is_mpi_finalized) {
-        for (int i = 0; i < ctx->ep_count; i++) {
+        for (size_t i = 0; i < ctx->ep_count; i++) {
             atl_mpi_ep_t* mpi_ep = container_of(eps[i], atl_mpi_ep_t, ep);
 
             if (mpi_ep) {
@@ -544,18 +552,6 @@ static atl_status_t atl_mpi_finalize(atl_ctx_t* ctx) {
     free(mpi_ctx);
 
     return RET2ATL(ret);
-}
-
-static atl_status_t atl_mpi_update(atl_ctx_t* ctx) {
-    return ATL_STATUS_UNSUPPORTED;
-}
-
-static atl_status_t atl_mpi_wait_notification(atl_ctx_t* ctx) {
-    return ATL_STATUS_UNSUPPORTED;
-}
-
-static atl_status_t atl_mpi_set_resize_function(atl_resize_fn_t fn) {
-    return ATL_STATUS_UNSUPPORTED;
 }
 
 static atl_status_t atl_mpi_mr_reg(atl_ctx_t* ctx, const void* buf, size_t len, atl_mr_t** mr) {
@@ -588,7 +584,7 @@ static atl_status_t atl_mpi_ep_send(atl_ep_t* ep,
         int flag;
         MPI_Comm_get_info(mpi_ep->mpi_comm, &info_out);
         MPI_Info_get(info_out, EP_IDX_KEY, MPI_MAX_INFO_VAL, buf, &flag);
-        
+
         if (!flag)
         {
             ATL_MPI_PRINT("unexpected ep_idx_key %s", EP_IDX_KEY);
@@ -631,7 +627,7 @@ static atl_status_t atl_mpi_ep_recv(atl_ep_t* ep,
         int flag;
         MPI_Comm_get_info(mpi_ep->mpi_comm, &info_out);
         MPI_Info_get(info_out, EP_IDX_KEY, MPI_MAX_INFO_VAL, buf, &flag);
-        
+
         if (!flag)
         {
             ATL_MPI_PRINT("unexpected ep_idx_key %s", EP_IDX_KEY);
@@ -732,7 +728,7 @@ static atl_status_t atl_mpi_ep_allreduce(atl_ep_t* ep,
         int flag;
         MPI_Comm_get_info(mpi_ep->mpi_comm, &info_out);
         MPI_Info_get(info_out, EP_IDX_KEY, MPI_MAX_INFO_VAL, buf, &flag);
-        
+
         if (!flag)
         {
             ATL_MPI_PRINT("unexpected ep_idx_key %s", EP_IDX_KEY);
@@ -882,7 +878,7 @@ static atl_status_t atl_mpi_ep_write(atl_ep_t* ep,
 }
 
 static atl_status_t atl_mpi_ep_wait(atl_ep_t* ep, atl_req_t* req) {
-    atl_status_t ret;
+    int ret;
     MPI_Status status;
     atl_mpi_req_t* mpi_req = ((atl_mpi_req_t*)req->internal);
     ret = MPI_Wait(&mpi_req->native_req, &status);
@@ -935,9 +931,6 @@ static atl_status_t atl_mpi_ep_check(atl_ep_t* ep, int* is_completed, atl_req_t*
 
 static atl_ops_t atl_mpi_ops = {
     .finalize = atl_mpi_finalize,
-    .update = atl_mpi_update,
-    .wait_notification = atl_mpi_wait_notification,
-    .set_resize_function = atl_mpi_set_resize_function,
 };
 
 static atl_mr_ops_t atl_mpi_mr_ops = {
@@ -966,12 +959,13 @@ static atl_rma_ops_t atl_mpi_ep_rma_ops = {
 
 static atl_comp_ops_t atl_mpi_ep_comp_ops = { .wait = atl_mpi_ep_wait,
                                               .wait_all = atl_mpi_ep_wait_all,
+                                              .cancel = NULL,
                                               .poll = atl_mpi_ep_poll,
                                               .check = atl_mpi_ep_check };
 
 static atl_status_t atl_mpi_ep_init(atl_mpi_ctx_t* mpi_ctx, size_t idx, atl_ep_t** ep) {
     int ret;
-    atl_mpi_ep_t* mpi_ep = calloc(1, sizeof(atl_mpi_ep_t));
+    atl_mpi_ep_t* mpi_ep = (atl_mpi_ep_t*)calloc(1, sizeof(atl_mpi_ep_t));
     if (!mpi_ep)
         return ATL_STATUS_FAILURE;
 
@@ -981,7 +975,8 @@ static atl_status_t atl_mpi_ep_init(atl_mpi_ctx_t* mpi_ctx, size_t idx, atl_ep_t
 
     MPI_Info info;
     MPI_Info_create(&info);
-    char ep_idx_str[EP_IDX_MAX_STR_LEN] = { 0 };
+    char ep_idx_str[EP_IDX_MAX_STR_LEN];
+    memset(ep_idx_str, 0, EP_IDX_MAX_STR_LEN);
     snprintf(ep_idx_str, EP_IDX_MAX_STR_LEN, "%zu", idx);
     MPI_Info_set(info, EP_IDX_KEY, ep_idx_str);
     MPI_Comm_set_info(mpi_ep->mpi_comm, info);
@@ -1031,7 +1026,7 @@ static atl_status_t atl_mpi_init(int* argc,
     void* tag_ub_ptr = NULL;
     int required_thread_level = MPI_THREAD_MULTIPLE, provided_thread_level;
 
-    atl_mpi_ctx_t* mpi_ctx = calloc(1, sizeof(atl_mpi_ctx_t));
+    atl_mpi_ctx_t* mpi_ctx = (atl_mpi_ctx_t*)calloc(1, sizeof(atl_mpi_ctx_t));
     if (!mpi_ctx)
         return ATL_STATUS_FAILURE;
 
@@ -1064,7 +1059,8 @@ static atl_status_t atl_mpi_init(int* argc,
     if (ret)
         goto err_init;
 
-    atl_proc_coord_t* coord = &(ctx->coord);
+    atl_proc_coord_t* coord;
+    coord = &(ctx->coord);
 
     MPI_Comm_rank(MPI_COMM_WORLD, (int*)&(coord->global_idx));
     MPI_Comm_size(MPI_COMM_WORLD, (int*)&(coord->global_count));
@@ -1079,15 +1075,16 @@ static atl_status_t atl_mpi_init(int* argc,
     ctx->ops = &atl_mpi_ops;
     ctx->mr_ops = &atl_mpi_mr_ops;
     ctx->ep_count = attr->ep_count;
-    ctx->eps = calloc(1, sizeof(void*) * attr->ep_count);
+    ctx->eps = (atl_ep_t**)calloc(1, sizeof(void*) * attr->ep_count);
     if (!ctx->eps)
         goto err_after_init;
     ctx->is_resize_enabled = 0;
 
     mpi_ctx->progress_mode = ATL_PROGRESS_CHECK;
-    char* progress_mode_env = getenv(ATL_PROGRESS_MODE_ENV);
+    char* progress_mode_env;
+    progress_mode_env = getenv(ATL_PROGRESS_MODE_ENV);
     if (progress_mode_env) {
-        mpi_ctx->progress_mode = atoi(progress_mode_env);
+        mpi_ctx->progress_mode = (atl_progress_mode_t)atoi(progress_mode_env);
     }
     ATL_MPI_DEBUG_PRINT_ROOT("progress_mode %d", mpi_ctx->progress_mode);
 
@@ -1143,3 +1140,6 @@ ATL_MPI_INI {
     atl_transport->main_addr_reserv = atl_mpi_main_addr_reserv;
     return ATL_STATUS_SUCCESS;
 }
+#ifdef __cplusplus
+}
+#endif

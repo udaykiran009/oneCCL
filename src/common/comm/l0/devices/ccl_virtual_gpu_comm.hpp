@@ -77,7 +77,9 @@ public:
         //virtual based on real
         auto real_kernel = real_gpu_comm.get_gpu_module_ptr<module_type, group_id, class_id>();
 
-        std::get<class_id>(std::get<group_id>(std::get<module_type>(registered_modules)))
+        std::get<utils::enum_to_underlying(class_id)>(
+            std::get<utils::enum_to_underlying(group_id)>(
+                std::get<module_type>(registered_modules)))
             .reset(new gpu_module_t<module_type, group_id, class_id>(real_kernel));
         return { "virtual module" };
     }

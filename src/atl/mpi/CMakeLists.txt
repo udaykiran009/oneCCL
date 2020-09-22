@@ -1,6 +1,6 @@
 
 set(MPI_SRC
-    atl_mpi.c)
+        atl_mpi.c)
 
 set(COMMON_MPI_INC_DIRS
     ${CMAKE_CURRENT_SOURCE_DIR}/../
