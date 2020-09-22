@@ -56,8 +56,8 @@ ccl_status_t global_data::init() {
     init_resize_dependent_objects();
     init_resize_independent_objects();
 
-    //    if (executor->get_global_proc_idx() == 0)
-    //        env_object.print();
+    if (1) //executor->get_global_proc_idx() == 0)
+        env_object.print();
 
     return ccl_status_success;
 }
@@ -112,22 +112,22 @@ void global_data::init_resize_independent_objects() {
 
     bfp16_impl_type = ccl_bfp16_get_impl_type();
 
-    //    if (executor->get_global_proc_idx() == 0) {
-    //        algorithm_selector->print();
-    //
-    //        if (bfp16_impl_type != ccl_bfp16_none) {
-    //            LOG_INFO("\n\nBFP16 is enabled through ",
-    //                     (bfp16_impl_type == ccl_bfp16_avx512bf) ? "AVX512-BF" : "AVX512-F",
-    //                     "\n");
-    //        }
-    //        else {
-    //#ifdef CCL_BFP16_COMPILER
-    //            LOG_INFO("\n\nBFP16 is disabled on HW level\n");
-    //#else
-    //            LOG_INFO("\n\nBFP16 is disabled on compiler level\n");
-    //#endif
-    //        }
-    //    }
+    if (1) { //executor->get_global_proc_idx() == 0) {
+        algorithm_selector->print();
+    
+        if (bfp16_impl_type != ccl_bfp16_none) {
+            LOG_INFO("\n\nBFP16 is enabled through ",
+                     (bfp16_impl_type == ccl_bfp16_avx512bf) ? "AVX512-BF" : "AVX512-F",
+                    "\n");
+        }
+        else {
+#ifdef CCL_BFP16_COMPILER
+            LOG_INFO("\n\nBFP16 is disabled on HW level\n");
+#else
+            LOG_INFO("\n\nBFP16 is disabled on compiler level\n");
+#endif
+        }
+    }
 }
 
 void global_data::reset_resize_dependent_objects() {

@@ -6,6 +6,7 @@
 #include <rdma/fi_tagged.h>
 #include <rdma/fi_rma.h>
 #include <stdio.h>
+#include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
 #include <sys/syscall.h>
@@ -29,6 +30,10 @@
 #define ATL_OFI_PMI_PROC_MULTIPLIER (ATL_OFI_PMI_PROV_MULTIPLIER * 10)
 #define ATL_OFI_MAX_PROV_COUNT      2 /* NW and SHM providers */
 #define ATL_OFI_SHM_PROV_NAME       "shm"
+
+#ifndef PRId64
+#define PRId64 "lld"
+#endif
 
 #define MAX(a, b) \
     ({ \
@@ -87,7 +92,7 @@ static inline atl_status_t atl_ofi_ep_poll(atl_ep_t* ep);
         ret_val = func; \
         if (ret_val != FI_SUCCESS) { \
             ATL_OFI_PRINT( \
-                #func "\n fails with ret %" PRId64 ", %s", ret_val, fi_strerror(ret_val)); \
+                #func "\n fails with ret %ld, %s", ret_val, fi_strerror(ret_val)); \
             err_action; \
         } \
     } while (0)
@@ -111,7 +116,7 @@ static inline atl_status_t atl_ofi_ep_poll(atl_ep_t* ep);
                     break; \
                 if (ret_val != -FI_EAGAIN) { \
                     ATL_OFI_PRINT( \
-                        #func "\n fails with ret %" PRId64 ", %s", ret_val, fi_strerror(ret_val)); \
+                        #func "\n fails with ret %ld, %s", ret_val, fi_strerror(ret_val)); \
                     ATL_OFI_ASSERT(0, "OFI function error"); \
                     break; \
                 } \
@@ -264,7 +269,7 @@ static atl_status_t atl_ofi_get_local_proc_coord(atl_ofi_ctx_t* ofi_ctx, ipmi* p
 
     atl_proc_coord_t* coord = &(ofi_ctx->ctx.coord);
 
-    size_t ret = ATL_STATUS_SUCCESS;
+    atl_status_t ret = ATL_STATUS_SUCCESS;
     size_t i;
     size_t local_idx = 0, local_count = 0;
     char* all_hostnames = NULL;
@@ -296,7 +301,7 @@ static atl_status_t atl_ofi_get_local_proc_coord(atl_ofi_ctx_t* ofi_ctx, ipmi* p
                             ATL_OFI_MAX_HOSTNAME_LEN);
 
     if (ret) {
-        ATL_OFI_PRINT("pmrt_kvs_put: ret: %zu", ret);
+        ATL_OFI_PRINT("pmrt_kvs_put: ret: %d", ret);
         goto fn_err;
     }
 
@@ -314,7 +319,7 @@ static atl_status_t atl_ofi_get_local_proc_coord(atl_ofi_ctx_t* ofi_ctx, ipmi* p
                                 all_hostnames + i * ATL_OFI_MAX_HOSTNAME_LEN,
                                 ATL_OFI_MAX_HOSTNAME_LEN);
         if (ret) {
-            ATL_OFI_PRINT("pmrt_kvs_get: ret: %zu", ret);
+            ATL_OFI_PRINT("pmrt_kvs_get: ret: %d", ret);
             goto fn_err;
         }
     }
@@ -338,7 +343,7 @@ static atl_status_t atl_ofi_get_local_proc_coord(atl_ofi_ctx_t* ofi_ctx, ipmi* p
 
 fn_exit:
     free(all_hostnames);
-    return RET2ATL(ret);
+    return ret;
 
 fn_err:
     ret = ATL_STATUS_FAILURE;
@@ -353,8 +358,9 @@ static atl_status_t atl_ofi_prov_update_addr_table(atl_ofi_ctx_t* ofi_ctx,
     atl_ctx_t* ctx = &(ofi_ctx->ctx);
     atl_ofi_prov_t* prov = &(ofi_ctx->provs[prov_idx]);
 
-    size_t ret;
+    atl_status_t ret;
     size_t i, j;
+    int insert_count;
 
     size_t addr_idx = 0;
     char* epnames_table;
@@ -418,7 +424,7 @@ static atl_status_t atl_ofi_prov_update_addr_table(atl_ofi_ctx_t* ofi_ctx,
                 prov->addr_len);
 
             if (ret) {
-                ATL_OFI_PRINT("kvs_get error: ret %zu, proc_idx %zu, ep_idx %zu, addr_idx %zu",
+                ATL_OFI_PRINT("kvs_get error: ret %d, proc_idx %zu, ep_idx %zu, addr_idx %zu",
                               ret,
                               i,
                               j,
@@ -451,16 +457,16 @@ static atl_status_t atl_ofi_prov_update_addr_table(atl_ofi_ctx_t* ofi_ctx,
         goto err_ep_names;
 
     /* insert all the EP names into the AV */
-    ret = fi_av_insert(
+    insert_count = fi_av_insert(
         prov->av, epnames_table, named_ep_count * proc_count, prov->addr_table, 0, NULL);
 
     ATL_OFI_DEBUG_PRINT(
-        "av_insert: ep_count %zu, proc_count %zu, inserted %zu", named_ep_count, proc_count, ret);
+        "av_insert: ep_count %zu, proc_count %zu, inserted %d", named_ep_count, proc_count, insert_count);
 
-    if (ret != named_ep_count * proc_count) {
-        ATL_OFI_PRINT("unexpected av_insert results: expected %zu, got %zu",
+    if (insert_count != (int)(named_ep_count * proc_count)) {
+        ATL_OFI_PRINT("unexpected av_insert results: expected %zu, got %d",
                       named_ep_count * proc_count,
-                      ret);
+                      insert_count);
         ret = ATL_STATUS_FAILURE;
         goto err_addr_table;
     }
@@ -486,7 +492,7 @@ static atl_status_t atl_ofi_prov_update_addr_table(atl_ofi_ctx_t* ofi_ctx,
 
     /* normal end of execution */
     free(epnames_table);
-    return RET2ATL(ret);
+    return ret;
 
     /* abnormal end of execution */
 err_addr_table:
@@ -494,7 +500,7 @@ err_addr_table:
 
 err_ep_names:
     free(epnames_table);
-    return RET2ATL(ret);
+    return ret;
 }
 
 static atl_status_t atl_ofi_prov_ep_get_name(atl_ofi_prov_t* prov, size_t ep_idx) {
