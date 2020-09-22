@@ -55,7 +55,7 @@ constexpr std::initializer_list<ccl::datatype> all_dtypes = {
 
 #ifndef PRINT_BY_ROOT
 #define PRINT_BY_ROOT(comm, fmt, ...)   \
-    if (comm->rank() == 0)              \
+    if (comm.rank() == 0)              \
     {                                   \
         printf(fmt"\n", ##__VA_ARGS__); \
     }
@@ -309,20 +309,18 @@ void print_timings(ccl::communicator& comm,
     for (idx = 0; idx < comm.size(); idx++)
         recv_counts[idx] = ncolls;
 
-    auto attr = ccl::environment::instance().create_op_attr<ccl::allgatherv_attr_t>();
+    comm.allgatherv(timer.data(), ncolls, all_timers.data(), recv_counts).wait();
 
-    comm.allgatherv(&timer,
-                    1,
-                    timers.data(),
-                    recv_counts,
-                    attr)->wait();
-
-    if (comm.rank() == 0)
-    {
-        double avg_timer = 0;
-        double avg_timer_per_buf = 0;
-        for (idx = 0; idx < comm.size(); idx++)
-        {
+    if (comm.rank() == 0) {
+        std::vector<double> timers(comm.size(), 0);
+        for (size_t r = 0; r < comm.size(); ++r) {
+            for (size_t c = 0; c < ncolls; ++c) {
+                timers[r] += all_timers[r * ncolls + c];
+            }
+        }
+        double avg_timer(0);
+        double avg_timer_per_buf(0);
+        for (idx = 0; idx < comm.size(); idx++) {
             avg_timer += timers[idx];
         }
         avg_timer /= (options.iters * comm.size());
@@ -337,13 +335,13 @@ void print_timings(ccl::communicator& comm,
         stddev_timer = sqrt(sum / comm.size()) / avg_timer * 100;
         if (options.buf_type == BUF_SINGLE) {
             printf("%10zu %12.2lf %11.1lf\n",
-                   elem_count * ccl::datatype_get_size(dtype) * buf_count,
+                   elem_count * ccl::environment::instance().get_datatype_size(dtype) * buf_count,
                    avg_timer,
                    stddev_timer);
         }
         else {
             printf("%10zu %13.2lf %18.2lf %11.1lf\n",
-                   elem_count * ccl::datatype_get_size(dtype) * buf_count,
+                   elem_count * ccl::environment::instance().get_datatype_size(dtype) * buf_count,
                    avg_timer,
                    avg_timer_per_buf,
                    stddev_timer);
@@ -370,7 +368,7 @@ void print_timings(ccl::communicator& comm,
                 for (auto cop = options.coll_names.begin(); cop != options.coll_names.end();
                      ++cop, ++idx) {
                     csvf << comm.size() << "," << (*cop) << "," << reduction_names[op] << ","
-                         << dtype_names[dtype] << "," << ccl::datatype_get_size(dtype) << ","
+                         << dtype_names[dtype] << "," << ccl::environment::instance().get_datatype_size(dtype) << ","
                          << elem_count << "," << buf_count << "," << avg_timer[idx] << std::endl;
                 }
                 csvf.close();

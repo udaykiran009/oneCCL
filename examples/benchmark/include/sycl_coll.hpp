@@ -4,6 +4,45 @@
 #include "coll.hpp"
 
 #ifdef CCL_ENABLE_SYCL
+
+void set_pinning(ccl::communicator& comm) {
+    // select requested platform by SYCL_BE: L0 or OpenCL
+    std::vector<cl::sycl::device> all_devices =
+        cl::sycl::device::get_devices(info::device_type::gpu);
+    std::vector<cl::sycl::device> selected_devices;
+    std::string backend;
+    if (getenv("SYCL_BE") == nullptr) {
+        backend = "Level-Zero";
+    }
+    else if (getenv("SYCL_BE") != nullptr) {
+        if (std::strcmp(getenv("SYCL_BE"), "PI_LEVEL0") == 0) {
+            backend = "Level-Zero";
+        }
+        else if (std::strcmp(getenv("SYCL_BE"), "PI_OPENCL") == 0) {
+            backend = "OpenCL";
+        }
+        else {
+            throw std::runtime_error("invalid backend: " + std::string(getenv("SYCL_BE")));
+        }
+    }
+
+    for (const auto& device : all_devices) {
+        auto platform = device.get_platform();
+        auto platform_name = platform.get_info<cl::sycl::info::platform::name>();
+        std::size_t found = platform_name.find(backend);
+        if (found != std::string::npos)
+            selected_devices.push_back(device);
+    }
+    if (selected_devices.size() <= 0) {
+        throw ccl::ccl_error("No selected device found.");
+    }
+    size_t idx = comm.rank() % selected_devices.size();
+    auto selected_device = selected_devices[idx];
+    sycl_queue = cl::sycl::queue(selected_device);
+    std::cout << "\nRunning on: " << selected_device.get_info<cl::sycl::info::device::name>()
+              << " for device id: " << idx << "\n";
+}
+
 /* sycl-specific base implementation */
 template <class Dtype, class strategy>
 struct sycl_base_coll : base_coll, private strategy, device_specific_data {

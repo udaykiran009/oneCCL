@@ -20,21 +20,23 @@ namespace native {
 template <class native_type,
           class gpu_comm_impl,
           ccl::device_group_split_type group_id,
-          ccl::device_topology_type class_id>
+          ccl::device_topology_type class_id,
+          ccl_coll_type type_op>
 class base_gpu_entry : public sched_entry {
 public:
     using gpu_comm = gpu_comm_impl;
     using processing_type = native_type;
-    using kernel_main_typed = ring_allreduce_kernel<processing_type>;
-    using kernel_ipc_typed = ring_allreduce_ipc<native_type>;
+    using kernel_main_typed =
+        typename gpu_comm::template gpu_kernel_t<type_op, group_id, class_id, native_type>;
+    // using kernel_ipc_typed = ring_allreduce_ipc<native_type>;
 
     friend class ccl_gpu_comm;
     friend class ccl_virtual_gpu_comm;
     static constexpr const char *class_name() noexcept {
-        return "L0_ALLREDUCE";
+        return ccl_coll_type_to_str(type_op);;
     }
     static constexpr ccl_coll_type type() noexcept {
-        return ccl_coll_allreduce;
+        return type_op;
     }
 
     static constexpr ccl::device_group_split_type get_topology() {
@@ -49,20 +51,14 @@ public:
     base_gpu_entry(ccl_sched *sched,
                    std::shared_ptr<gpu_comm> comm,
                    const ccl_buffer send_buf,
-                   ccl_buffer recv_buf,
-                   size_t cnt,
                    ccl_datatype_t dtype_in,
-                   ccl::reduction op,
                    std::shared_ptr<ccl_stream> &stream)
             : sched_entry(sched),
               parent_communicator(comm),
               comm_addr(parent_communicator
                             ->template get_comm_data<get_topology(), get_topology_class()>()),
               send_buf(send_buf),
-              recv_buf(recv_buf),
-              elem_count(cnt),
               dtype(),
-              op(op),
               device_stream(stream) {
         dtype = ccl::global_data::get().dtypes->get(dtype_in);
     }
@@ -70,13 +66,7 @@ public:
     virtual ~base_gpu_entry() {}
 
     virtual void start() override {
-        LOG_DEBUG(class_name(),
-                  " entry req ",
-                  &req,
-                  ", elem_count ",
-                  elem_count,
-                  ", rank: ",
-                  comm_addr.to_string());
+        LOG_DEBUG(class_name(), " entry req ", &req, ", rank: ", comm_addr.to_string());
 
         ccl_device &device = parent_communicator->get_device();
         {
@@ -98,15 +88,10 @@ public:
         kernel_main_typed &main_entry_function =
             parent_communicator->template register_entry<native_type, group_id, class_id>(*this);
 
-        auto recv_buf_ptr = reinterpret_cast<native_type *>(recv_buf.get_ptr());
         auto send_buf_ptr = reinterpret_cast<native_type *>(send_buf.get_ptr());
 
-        main_entry_function.template set_arg<typename kernel_main_typed::send_buf_size_arg>(
-            elem_count);
-        main_entry_function.template set_arg<typename kernel_main_typed::send_buf_arg>(
+        main_entry_function.template set_args<typename kernel_main_typed::common_entry_buf_arg>(
             send_buf_ptr);
-        main_entry_function.template set_arg<typename kernel_main_typed::recv_buf_arg>(
-            recv_buf_ptr);
 
         /*ze_result_t result = zeCommandListAppendLaunchKernel(exec_cmd_list->handle, main_entry_function.handle, &launch_args, nullptr, 0, nullptr);
         if(result != ZE_RESULT_SUCCESS)
@@ -299,14 +284,8 @@ protected:
                            class_name(),
                            ", dt ",
                            ccl::global_data::get().dtypes->name(dtype),
-                           ", elem_count ",
-                           elem_count,
                            ", send_buf ",
                            send_buf,
-                           ", recv_buf ",
-                           recv_buf,
-                           ", op ",
-                           ccl_reduction_to_str(op),
                            ", comm_id ",
                            sched->coll_param.comm->id(),
                            ", req ",
@@ -318,10 +297,7 @@ protected:
     std::shared_ptr<gpu_comm> parent_communicator;
     topology_addr<group_id, class_id> comm_addr;
     ccl_buffer send_buf;
-    ccl_buffer recv_buf;
-    size_t elem_count;
     ccl_datatype dtype;
-    ccl::reduction op;
     atl_req_t req{};
     std::shared_ptr<ccl_stream> device_stream;
 
@@ -462,19 +438,20 @@ protected:
                     exec, right_main_func));
         }
 
-        while (!kernel_router) {
-            //gather data for ipc-GPU
-            auto &map_devices = std::get<ccl_ipc_gpu_comm::type_idx()>(group_devices);
-            auto it = map_devices.find(next_rank);
-            if (it == map_devices.end()) {
-                break; // not ready yet!
-            }
-            std::shared_ptr<ccl_ipc_gpu_comm> gpu = it->second;
-            kernel_ipc_typed &right_main_func =
-                gpu->get_gpu_kernel<type(), get_topology(), get_topology_class(), native_type>();
-            kernel_router.reset(new kernel_connector<kernel_main_typed, executor, kernel_ipc_typed>(
-                exec, right_main_func));
-        }
+        // TODO: check for launching ipc kernel
+        // while (!kernel_router) {
+        //     //gather data for ipc-GPU
+        //     auto &map_devices = std::get<ccl_ipc_gpu_comm::type_idx()>(group_devices);
+        //     auto it = map_devices.find(next_rank);
+        //     if (it == map_devices.end()) {
+        //         break; // not ready yet!
+        //     }
+        //     std::shared_ptr<ccl_ipc_gpu_comm> gpu = it->second;
+        //     kernel_ipc_typed &right_main_func =
+        //         gpu->get_gpu_kernel<type(), get_topology(), get_topology_class(), native_type>();
+        //     kernel_router.reset(new kernel_connector<kernel_main_typed, executor, kernel_ipc_typed>(
+        //         exec, right_main_func));
+        // }
 
         //sanity
         if (!kernel_router) {

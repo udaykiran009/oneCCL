@@ -53,7 +53,7 @@ public:
                           const ccl_buffer send_buf,
                           ccl_buffer recv_buf,
                           size_t cnt,
-                          ccl_reduction_t op,
+                          ccl::reduction op,
                           size_t root,
                           std::shared_ptr<ccl_stream> device_stream = std::shared_ptr<ccl_stream>())
             : base(sched,
@@ -87,7 +87,7 @@ public:
                   ", cnt ",
                   cnt_entry,
                   ", op ",
-                  op,
+                  (int)(op),
                   ", rank: ",
                   comm_addr.to_string());
         size_t next_rank = (comm_addr.rank + 1) % comm_addr.size;
@@ -258,7 +258,7 @@ protected:
             if (cur_index == wait_count /*std::is_same<gpu_comm_impl, ccl_gpu_comm>::value*/) {
                 if (topology == ccl::device_group_split_type::cluster) {
                     auto c = ccl::environment::instance().create_communicator();
-                    if (c->rank() == 0) {
+                    if (c.rank() == 0) {
                         LOG_INFO("L0 Workaround: one device close list!!!",
                                  "WaitCount: ",
                                  wait_count,
@@ -318,7 +318,7 @@ private:
     ccl_device::device_memory<income_data_flag_gpu_type> income_data_flag;
     ccl_device::device_memory<ready_to_recv_flag_gpu_type> ready_to_recv_flag;
     ccl_device::device_memory<local_barrier_flag_gpu_type> local_barrier_flag;
-    ccl_reduction_t op_typed_entry;
+    ccl::reduction op_typed_entry;
     ccl_buffer recv_buf_typed_entry;
     size_t root_typed_entry;
     size_t cnt_entry;

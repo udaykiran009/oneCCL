@@ -327,8 +327,8 @@ int main(int argc, char** argv)
     }
 
     // Register algorithm from kernel source
-    register_allreduce_gpu_module_source("kernels/ring_allreduce.spv", ccl_topology_class_t::ring_algo_class);
-    register_allreduce_gpu_module_source("kernels/a2a_allreduce.spv", ccl_topology_class_t::a2a_algo_class);
+    register_allreduce_gpu_module_source("kernels/ring_allreduce.spv", ccl::device_topology_type::ring);
+    register_allreduce_gpu_module_source("kernels/a2a_allreduce.spv", ccl::device_topology_type::a2a);
 
     // launch threads
     for(auto thread_affinity_it = thread_group_affinity.begin(); thread_affinity_it != thread_group_affinity.end(); ++thread_affinity_it)

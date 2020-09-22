@@ -52,7 +52,7 @@ void do_regular(ccl::communicator* comm,
             PRINT_BY_ROOT((*comm), "do warm up");
 
             bench_attr.reduction = reduction_op;
-            bench_attr.set<ccl::common_op_attr_id::to_cache>(0);
+            bench_attr.set<ccl::operation_attr_id::to_cache>(0);
 
             for (size_t count = options.min_elem_count; count <= options.max_elem_count; count *= 2)
             {
@@ -70,7 +70,7 @@ void do_regular(ccl::communicator* comm,
                         }
                     }
                     for (auto& req : reqs) {
-                        req->wait();
+                        req.wait();
                     }
                     reqs.clear();
                 }
@@ -83,7 +83,7 @@ void do_regular(ccl::communicator* comm,
 
             /* benchmark with multiple equal sized buffer per collective */
             if (options.buf_type == BUF_MULTI) {
-                PRINT_BY_ROOT(comm,
+                PRINT_BY_ROOT((*comm),
                               "do multi-buffers benchmark\n"
                               "#------------------------------------------------------------\n"
                               "# Benchmarking: %s\n"
@@ -96,7 +96,7 @@ void do_regular(ccl::communicator* comm,
                               "avg[usec]",
                               "avg_per_buf[usec]",
                               "stddev[%]");
-                bench_attr.set<ccl::common_op_attr_id::to_cache>(1);
+                bench_attr.set<ccl::operation_attr_id::to_cache>(1);
                 for (size_t count = options.min_elem_count; count <= options.max_elem_count;
                      count *= 2) {
                     try {
@@ -118,7 +118,7 @@ void do_regular(ccl::communicator* comm,
                                 }
 
                                 for (size_t buf_idx = 0; buf_idx < options.buf_count; buf_idx++) {
-                                    snprintf(match_id,
+                                    snprintf(match_id.data(),
                                              MATCH_ID_SIZE,
                                              "coll_%s_%zu_count_%zu_buf_%zu",
                                              coll->name(),
@@ -129,7 +129,7 @@ void do_regular(ccl::communicator* comm,
                                 }
 
                                 for (auto& req : reqs) {
-                                    req->wait();
+                                    req.wait();
                                 }
                                 reqs.clear();
 
@@ -149,7 +149,7 @@ void do_regular(ccl::communicator* comm,
             }
             else {
                 /* benchmark with single buffer per collective */
-                PRINT_BY_ROOT(comm,
+                PRINT_BY_ROOT((*comm),
                               "do single-buffer benchmark\n"
                               "#--------------------------------------\n"
                               "# Benchmarking: %s\n"
@@ -164,7 +164,7 @@ void do_regular(ccl::communicator* comm,
                 size_t min_elem_count = options.min_elem_count * options.buf_count;
                 size_t max_elem_count = options.max_elem_count * options.buf_count;
 
-                bench_attr.set<ccl::common_op_attr_id::to_cache>(1);
+                bench_attr.set<ccl::operation_attr_id::to_cache>(1);
                 for (size_t count = min_elem_count; count <= max_elem_count; count *= 2) {
                     try {
                         // we store times for each collective separately,
@@ -176,7 +176,7 @@ void do_regular(ccl::communicator* comm,
                             comm->barrier();
 
                             for (size_t iter_idx = 0; iter_idx < options.iters; iter_idx++) {
-                                snprintf(match_id,
+                                snprintf(match_id.data(),
                                          MATCH_ID_SIZE,
                                          "coll_%s_%zu_single_count_%zu",
                                          coll->name(),
@@ -184,7 +184,7 @@ void do_regular(ccl::communicator* comm,
                                          count);
                                 coll->start_single(count, bench_attr, reqs);
                                 for (auto& req : reqs) {
-                                    req->wait();
+                                    req.wait();
                                 }
                                 reqs.clear();
                             }
@@ -198,7 +198,7 @@ void do_regular(ccl::communicator* comm,
                         ASSERT(0, "error on count %zu", count);
                     }
                 }
-                PRINT_BY_ROOT(comm, "PASSED\n");
+                PRINT_BY_ROOT((*comm), "PASSED\n");
             }
         }
     }
@@ -242,7 +242,7 @@ void do_unordered(ccl::communicator* comm,
 
             PRINT_BY_ROOT((*comm), "do unordered test");
             bench_attr.reduction = reduction_op;
-            bench_attr.set<ccl::common_op_attr_id::to_cache>(1);
+            bench_attr.set<ccl::operation_attr_id::to_cache>(1);
 
             for (size_t count = options.min_elem_count; count <= options.max_elem_count;
                  count *= 2) {
@@ -285,7 +285,7 @@ void do_unordered(ccl::communicator* comm,
 
             try {
                 for (auto& req : reqs) {
-                    req->wait();
+                    req.wait();
                 }
             }
             catch (...) {
@@ -586,7 +586,7 @@ if (options.backend == ccl::stream_type::gpu)
     char match_id[MATCH_ID_SIZE] {'\0'};
     bench_coll_exec_attr bench_attr{};
     bench_attr.init_all();
-    bench_attr.set<ccl::common_op_attr_id::match_id>(std::string{match_id});
+    bench_attr.set<ccl::operation_attr_id::match_id>(std::string{match_id});
 
     print_user_options(options, comm);
 
@@ -596,15 +596,15 @@ if (options.backend == ccl::stream_type::gpu)
         return -1;
     }
 
-    comm->barrier();
+    comm.barrier();
 #ifdef CCL_ENABLE_SYCL
-    set_pinning();
+    set_pinning(comm);
 #endif
 
     switch (options.loop) {
         case LOOP_REGULAR: {
             // open and truncate CSV file if csv-output is requested
-            if (comm->rank() == 0 && !options.csv_filepath.empty()) {
+            if (comm.rank() == 0 && !options.csv_filepath.empty()) {
                 std::ofstream csvf;
                 csvf.open(options.csv_filepath, std::ios::trunc);
                 if (!csvf.is_open()) {
@@ -617,14 +617,14 @@ if (options.backend == ccl::stream_type::gpu)
                      << std::endl;
                 csvf.close();
             }
-            comm->barrier();
-            do_regular(comm, bench_attr, colls, reqs, options);
+            comm.barrier();
+            do_regular(&comm, bench_attr, colls, reqs, options);
             break;
         }
         case LOOP_UNORDERED: {
             // no timing is printed or exported here
-            comm->barrier();
-            do_unordered(comm, bench_attr, colls, reqs, options);
+            comm.barrier();
+            do_unordered(&comm, bench_attr, colls, reqs, options);
             break;
         }
         default: ASSERT(0, "unknown loop %d", options.loop); break;

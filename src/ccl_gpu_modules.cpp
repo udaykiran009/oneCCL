@@ -1,7 +1,7 @@
 #include <limits.h>
 #include <unistd.h>
 
-#include "ccl_gpu_modules.h"
+#include "oneapi/ccl/ccl_gpu_modules.h"
 
 #ifdef MULTI_GPU_SUPPORT
 #include "common/comm/l0/modules/specific_modules_source_data.hpp"
@@ -9,7 +9,7 @@
 #include "coll/algorithms/algorithms_enum.hpp"
 
 ccl_status_t CCL_API register_gpu_module_source(const char* path,
-                                                ccl_topology_class_t topology_class,
+                                                ccl::device_topology_type topology_class,
                                                 ccl_coll_type type) {
     ccl::device_topology_type t_class = static_cast<ccl::device_topology_type>(topology_class);
     char pwd[PATH_MAX];

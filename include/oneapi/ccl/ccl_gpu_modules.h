@@ -1,14 +1,18 @@
 #pragma once
 
 #include "oneapi/ccl/ccl_types.hpp"
+#include "coll/algorithms/algorithms_enum.hpp"
+
 #ifdef MULTI_GPU_SUPPORT
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-void CCL_API register_allreduce_gpu_module_source(const char* source,
-                                                  ccl::device_topology_type type);
+ccl_status_t CCL_API register_gpu_module_source(const char* source,
+                                                ccl::device_topology_type topology_class,
+                                                ccl_coll_type type);
+
 #ifdef __cplusplus
 } /*extern C */
 #endif

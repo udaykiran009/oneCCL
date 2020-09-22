@@ -12,7 +12,7 @@
 #include <thread>
 #include <numeric>
 #include "base.hpp"
-#include "ccl_gpu_modules.h"
+#include "oneapi/ccl/ccl_gpu_modules.h"
 #include "native_device_api/export_api.hpp"
 #include "coll/algorithms/algorithms_enum.hpp"
 
