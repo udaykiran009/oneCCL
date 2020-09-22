@@ -82,7 +82,7 @@ CCL_CLASS_TYPE_TRAITS(ccl_dtype_double, cl::sycl::buffer<double COMMA 1>, sizeof
 template <class type>
 constexpr bool is_supported() {
     using clear_type = typename std::remove_pointer<type>::type;
-    static_assert(native_type_info<clear_type>::is_supported, "type is not supported by ccl API");
+//    static_assert(native_type_info<clear_type>::is_supported, "type is not supported by ccl API");
     return native_type_info<clear_type>::is_supported;
 }
 

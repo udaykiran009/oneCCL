@@ -12,6 +12,9 @@
 #include "coll/coll_common_attributes.hpp"
 #include "coll/ccl_allgather_op_attr.hpp"
 
+#include "util/pm/pmi_resizable_rt/pmi_resizable/kvs/ikvs_wrapper.h"
+#include "atl/atl_wrapper.h"
+
 namespace ccl {
 
 host_communicator::host_communicator()

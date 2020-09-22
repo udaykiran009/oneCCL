@@ -1,35 +1,27 @@
+
 #include <string.h>
-#include "users_kvs.h"
+#include "util/pm/pmi_resizable_rt/pmi_resizable/kvs/users_kvs.h"
 #include "util/pm/pmi_resizable_rt/pmi_resizable/def.h"
 
-users_kvs::users_kvs(std::shared_ptr<ccl::kvs_interface> kvs) :
-kvs(kvs)
+users_kvs::users_kvs(std::shared_ptr<ccl::kvs_interface> kvs)
 {
 }
 
 size_t users_kvs::kvs_set_value(const char* kvs_name, const char* kvs_key, const char* kvs_val) {
-    kvs->set(kvs_name, kvs_key, kvs_val);
-
     return 0;
 }
 
 size_t users_kvs::kvs_remove_name_key(const char* kvs_name, const char* kvs_key) {
-    kvs->set(kvs_name, kvs_key, "");
-
     return 0;
 }
 
 size_t users_kvs::kvs_get_value_by_name_key(const char* kvs_name,
                                             const char* kvs_key,
                                             char* kvs_val) {
-    SET_STR(kvs_val, MAX_KVS_VAL_LENGTH, "%s", kvs->get(kvs_name, kvs_key).c_str());
-
-    return strlen(kvs_val);
+    return 0;
 }
 
 size_t users_kvs::kvs_get_count_names(const char* kvs_name) {
-    /*TODO: Unsupported*/
-    (void)kvs_name;
     return 0;
 }
 

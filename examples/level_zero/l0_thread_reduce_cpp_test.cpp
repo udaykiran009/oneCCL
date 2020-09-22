@@ -1,3 +1,6 @@
+int main() {}
+#if 0 //TODO may be remove
+
 #include <algorithm>
 #include <iostream>
 #include <stdio.h>
@@ -13,7 +16,7 @@
 #include <numeric>
 #include "base.hpp"
 #include "oneapi/ccl/ccl_gpu_modules.h"
-#include "native_device_api/export_api.hpp"
+#include "oneapi/ccl/native_device_api/export_api.hpp"
 #include "coll/algorithms/algorithms_enum.hpp"
 
 #define COUNT     512 //(10*1024*1024)
@@ -460,3 +463,4 @@ int main(int argc, char** argv) {
 
     return 0;
 }
+#endif

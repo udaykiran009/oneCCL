@@ -114,15 +114,64 @@ TEST(device_communicator_api, device_comm_from_sycl_devices_single_thread) {
         }
 
         curr_rank++;
-
         int* tmp = nullptr;
         ccl::vector_class<size_t> recv_counts;
+
+        // tests templates
+        dev_comm.allgatherv(const_cast<const int*>(tmp),
+                            size_t(0),
+                            tmp,
+                            recv_counts,
+                            ccl::default_stream,
+                            ccl::default_allgatherv_attr, {});
+
         dev_comm.allgatherv(const_cast<const int*>(tmp),
                             size_t(0),
                             tmp,
                             recv_counts,
                             ccl::default_stream,
                             ccl::default_allgatherv_attr);
+
+        dev_comm.allgatherv(const_cast<const int*>(tmp),
+                            size_t(0),
+                            tmp,
+                            recv_counts,
+                            ccl::default_stream);
+
+        //test non-templates
+        dev_comm.allgatherv(static_cast<const void*>(tmp),
+                            size_t(0),
+                            static_cast<void*>(tmp),
+                            recv_counts,
+                            ccl::datatype::int32,
+                            ccl::default_stream,
+                            ccl::default_allgatherv_attr, {});
+        dev_comm.allgatherv(static_cast<const void*>(tmp),
+                            size_t(0),
+                            static_cast<void*>(tmp),
+                            recv_counts,
+                            ccl::datatype::int32,
+                            ccl::default_stream,
+                            ccl::default_allgatherv_attr);
+        dev_comm.allgatherv(static_cast<const void*>(tmp),
+                            size_t(0),
+                            static_cast<void*>(tmp),
+                            recv_counts,
+                            ccl::datatype::int32,
+                            ccl::default_stream);
+
+        dev_comm.allgatherv(static_cast<const void*>(tmp),
+                            size_t(0),
+                            static_cast<void*>(tmp),
+                            recv_counts,
+                            ccl::datatype::int32);
+/* SFINAE check
+        struct NotSupported{};
+        dev_comm.allgatherv(reinterpret_cast<const NotSupported*>(tmp),
+                            size_t(0),
+                            reinterpret_cast<NotSupported*>(tmp),
+                            recv_counts);
+*/
     }
 }
 

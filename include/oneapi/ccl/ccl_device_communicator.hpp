@@ -217,6 +217,24 @@ public:
                               const vector_class<event>& deps = {});
 
     /**
+     * Forbidden version with type checking
+     * Produce compile time error for unsupported 'native_types'
+     */
+    template <class BufferType,
+              class = typename std::enable_if<not ccl::is_native_type_supported<BufferType>(),
+                                              void>::type>
+    void allgatherv(const BufferType* send_buf,
+                              size_t send_count,
+                              BufferType* recv_buf,
+                              const vector_class<size_t>& recv_counts,
+                              stream op_stream = default_stream,
+                              const allgatherv_attr& attr = default_allgatherv_attr,
+                              const vector_class<event>& deps = {})
+    {
+        static_assert(ccl::is_native_type_supported<BufferType>(), "Type is not supported");
+    }
+
+    /**
      * Allreduce is a collective communication operation that makes global reduction operation
      * on values from all ranks of communicator and distributes result back to all ranks.
      */

@@ -377,10 +377,12 @@ int main(int argc, char** argv) {
               << node_device_indices[mpi_rank].size() << std::endl;
 
     // Register algorithm from kernel source
-    register_allreduce_gpu_module_source("kernels/ring_allreduce.spv",
-                                         ccl::device_topology_type::ring);
-    register_allreduce_gpu_module_source("kernels/a2a_allreduce.spv",
-                                         ccl::device_topology_type::a2a);
+    register_gpu_module_source("kernels/ring_allreduce.spv",
+                               ccl::device_topology_type::ring,
+                               ccl_coll_allreduce);
+    register_gpu_module_source("kernels/a2a_allreduce.spv",
+                               ccl::device_topology_type::a2a,
+                               ccl_coll_allreduce);
 
     // launch user threads
     const auto& thread_group_affinity = devices_for_mpi_rank;

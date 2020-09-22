@@ -7,7 +7,7 @@
 class users_kvs final : public ikvs_wrapper {
 public:
     users_kvs() = delete;
-    users_kvs(std::shared_ptr<ccl::kvs_interface> kvs) : kvs(kvs){};
+    users_kvs(std::shared_ptr<ccl::kvs_interface> kvs);
 
     ~users_kvs() = default;
 

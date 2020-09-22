@@ -99,6 +99,7 @@ set (dependencies_sources
              "${PROJECT_SOURCE_DIR}/tests/unit/api/stubs/process_topology_communicator.cpp"
              "${PROJECT_SOURCE_DIR}/tests/unit/api/stubs/process_group_context.cpp"
              "${PROJECT_SOURCE_DIR}/tests/unit/api/stubs/thread_group_context.cpp"
+             "${PROJECT_SOURCE_DIR}/tests/unit/api/stubs/user_kvs.cpp"
              "${PROJECT_SOURCE_DIR}/tests/unit/api/stubs/global.cpp"
              "${PROJECT_SOURCE_DIR}/tests/unit/api/stubs/env.cpp"
              "${PROJECT_SOURCE_DIR}/tests/unit/api/stubs/cache.cpp"
