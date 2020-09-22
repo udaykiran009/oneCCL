@@ -246,11 +246,7 @@ private:
 
 #ifdef MULTI_GPU_SUPPORT
 #include "oneapi/ccl/ccl_gpu_modules.h"
-<<<<<<< HEAD
 #include "oneapi/ccl/gpu_communicator.hpp"
-=======
-#include "gpu_communicator.hpp"
->>>>>>> ffc3a2b9e14b387e58918449284645c170346325
 #endif /* MULTI_GPU_SUPPORT */
 
 #endif
