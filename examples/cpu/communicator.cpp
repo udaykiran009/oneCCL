@@ -4,7 +4,7 @@
 #include "oneapi/ccl.hpp"
 #include "mpi.h"
 
-void check_allreduce_on_comm(ccl::communicator& comm) {
+void check_allreduce_on_comm(const ccl::communicator& comm) {
     const int count = 1000;
 
     std::vector<int> send_buf(count);
@@ -16,7 +16,7 @@ void check_allreduce_on_comm(ccl::communicator& comm) {
         expected_buf.at(i) = i * comm.size();
     }
 
-    auto req = comm.allreduce(send_buf.data(), recv_buf.data(), count, ccl::reduction::sum);
+    auto req = ccl::allreduce(send_buf.data(), recv_buf.data(), count, ccl::reduction::sum, comm);
     req.wait();
 
     for (size_t i = 0; i < count; i++) {
@@ -29,8 +29,7 @@ void check_allreduce_on_comm(ccl::communicator& comm) {
     }
 }
 
-void check_max_comm_number(ccl::communicator& comm,
-                           ccl::environment& env,
+void check_max_comm_number(const ccl::communicator& comm,
                            std::shared_ptr<ccl::kvs> kvs_instance,
                            int mpi_size,
                            int mpi_rank) {
@@ -39,7 +38,7 @@ void check_max_comm_number(ccl::communicator& comm,
 
     do {
         try {
-            auto new_comm = env.create_communicator(mpi_size, mpi_rank, kvs_instance);
+            auto new_comm = ccl::create_communicator(mpi_size, mpi_rank, kvs_instance);
             ++user_comms;
             communicators.push_back(std::move(new_comm));
         }
@@ -128,7 +127,9 @@ bool isPowerOfTwo(unsigned int x) {
     return x && !(x & (x - 1));
 }
 
-void check_comm_split_by_color(ccl::communicator& comm, int mpi_size, int mpi_rank) {
+void check_comm_split_by_color(ccl::communicator& comm,
+                               int mpi_size,
+                               int mpi_rank) {
     if (!isPowerOfTwo(comm.size())) {
         PRINT_BY_ROOT(
             comm,
@@ -138,7 +139,7 @@ void check_comm_split_by_color(ccl::communicator& comm, int mpi_size, int mpi_ra
 
     for (size_t split_by = 2; split_by <= comm.size(); split_by *= 2) {
         int color = comm.rank() % split_by;
-        auto attr = ccl::environment::instance().create_comm_split_attr(
+        auto attr = ccl::create_comm_split_attr(
             ccl::attr_val<ccl::comm_split_attr_id::color>(color));
         auto new_comm = comm.split(attr);
 
@@ -175,31 +176,28 @@ int main() {
     MPI_Comm_size(MPI_COMM_WORLD, &mpi_size);
     MPI_Comm_rank(MPI_COMM_WORLD, &mpi_rank);
 
-    auto& env = ccl::environment::instance();
-    (void)env;
+    ccl::init();
 
-    // build CCL internal KVS
-    std::shared_ptr<ccl::kvs> kvs_instance;
+    ccl::shared_ptr_class<ccl::kvs> kvs;
     ccl::kvs::address_type main_addr;
     if (mpi_rank == 0) {
-        kvs_instance = env.create_main_kvs();
-        main_addr = kvs_instance->get_address();
-
+        kvs = ccl::create_main_kvs();
+        main_addr = kvs->get_address();
         MPI_Bcast((void*)main_addr.data(), main_addr.size(), MPI_BYTE, 0, MPI_COMM_WORLD);
     }
     else {
         MPI_Bcast((void*)main_addr.data(), main_addr.size(), MPI_BYTE, 0, MPI_COMM_WORLD);
-        kvs_instance = env.create_kvs(main_addr);
+        kvs = ccl::create_kvs(main_addr);
     }
 
-    auto comm = env.create_communicator(mpi_size, mpi_rank, kvs_instance);
+    auto comm = ccl::create_communicator(mpi_size, mpi_rank, kvs);
 
     PRINT_BY_ROOT(comm, "\n- Basic communicator allreduce test");
     check_allreduce_on_comm(comm);
     PRINT_BY_ROOT(comm, "PASSED");
 
     PRINT_BY_ROOT(comm, "\n- Create max number of communicators");
-    check_max_comm_number(comm, env, kvs_instance, mpi_size, mpi_rank);
+    check_max_comm_number(comm, kvs, mpi_size, mpi_rank);
     PRINT_BY_ROOT(comm, "PASSED");
 
     PRINT_BY_ROOT(comm, "\n- Communicator split test");

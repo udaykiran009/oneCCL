@@ -4,8 +4,6 @@
 #include "oneapi/ccl/ccl_comm_split_attr_ids_traits.hpp"
 #include "oneapi/ccl/ccl_comm_split_attr.hpp"
 
-#include "comm_split_attr_creation_impl.hpp"
-
 #include "common/request/request.hpp"
 #include "common/request/host_request.hpp"
 #include "coll/coll.hpp"
@@ -49,9 +47,7 @@ host_communicator::host_communicator(size_t size, size_t rank, shared_ptr_class<
 
 host_communicator::host_communicator(std::shared_ptr<ccl_comm> impl)
         : comm_impl(impl),
-          comm_attr(
-              ccl::
-                  create_comm_split_attr()), // TODO should be ccl::environment::instance().create_comm_split_attr() call in final?
+          comm_attr(ccl::create_comm_split_attr()),
           comm_rank(impl->rank()),
           comm_size(impl->size()) {}
 

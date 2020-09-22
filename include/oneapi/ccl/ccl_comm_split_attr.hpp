@@ -61,14 +61,6 @@ private:
     comm_split_attr(
         const typename details::ccl_host_split_traits<comm_split_attr_id,
                                                       comm_split_attr_id::version>::type& version);
-
-    /* TODO temporary function for UT compilation: would be part of ccl::environment in final*/
-    template <class... attr_value_pair_t>
-    static comm_split_attr create_comm_split_attr(attr_value_pair_t&&... avps);
-
-    // create_split_attr() is internal func of create_comm_split_attr() in which comm_split_attr constructor is called
-    template <class attr_t, class... attr_value_pair_t>
-    friend attr_t create_split_attr(attr_value_pair_t&&... avps);
 };
 
 #if defined(MULTI_GPU_SUPPORT) || defined(CCL_ENABLE_SYCL)
@@ -124,10 +116,6 @@ private:
         const typename details::ccl_device_split_traits<comm_split_attr_id,
                                                         comm_split_attr_id::version>::type&
             version);
-
-    /* TODO temporary function for UT compilation: would be part of ccl::environment in final*/
-    template <class... attr_value_pair_t>
-    static device_comm_split_attr create_device_comm_split_attr(attr_value_pair_t&&... avps);
 };
 
 #endif //#if defined(MULTI_GPU_SUPPORT) || defined(CCL_ENABLE_SYCL)

@@ -509,6 +509,7 @@ public:
 
 private:
     friend class environment;
+    friend struct impl_dispatch;
     explicit communicator(impl_value_t&& impl);
 
     static communicator create_communicator();

@@ -5,7 +5,6 @@
 
 #include "common/comm/comm_split_common_attr.hpp"
 #include "comm_split_attr_impl.hpp"
-#include "comm_split_attr_creation_impl.hpp"
 
 #include "oneapi/ccl/ccl_communicator.hpp"
 

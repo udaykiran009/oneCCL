@@ -12,7 +12,6 @@
 #include "oneapi/ccl/ccl_comm_split_attr_ids.hpp"
 #include "oneapi/ccl/ccl_comm_split_attr_ids_traits.hpp"
 #include "oneapi/ccl/ccl_comm_split_attr.hpp"
-#include "comm_split_attr_creation_impl.hpp"
 
 #include "oneapi/ccl/ccl_coll_attr_ids.hpp"
 #include "oneapi/ccl/ccl_coll_attr_ids_traits.hpp"

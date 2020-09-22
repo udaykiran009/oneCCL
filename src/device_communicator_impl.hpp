@@ -154,7 +154,7 @@ ccl::device_communicator::allgatherv(const void* send_buf,
                                      void* recv_buf,
                                      const vector_class<size_t>& recv_counts,
                                      datatype dtype,
-                                     stream op_stream,
+                                     stream& op_stream,
                                      const allgatherv_attr& attr,
                                      const vector_class<event>& deps) {
     //static_assert(std::is_base_of<direct_access_policy<ccl_stream>, stream>::value, "stream should provide shared acces to ints pimpl member");
@@ -168,7 +168,7 @@ CCL_API ccl::device_communicator::coll_request_t ccl::device_communicator::allga
     const vector_class<void*>& recv_bufs,
     const vector_class<size_t>& recv_counts,
     datatype dtype,
-    stream stream,
+    stream& stream,
     const allgatherv_attr& attr,
     const vector_class<event>& deps) {
     return get_impl()->allgatherv(
@@ -181,7 +181,7 @@ ccl::device_communicator::allgatherv(const BufferType* send_buf,
                                      size_t send_count,
                                      BufferType* recv_buf,
                                      const vector_class<size_t>& recv_counts,
-                                     stream stream,
+                                     stream& stream,
                                      const allgatherv_attr& attr,
                                      const vector_class<event>& deps) {
     return get_impl()->allgatherv(
@@ -194,7 +194,7 @@ ccl::device_communicator::allgatherv(const BufferType* send_buf,
                                      size_t send_count,
                                      vector_class<BufferType*>& recv_bufs,
                                      const vector_class<size_t>& recv_counts,
-                                     stream stream,
+                                     stream& stream,
                                      const allgatherv_attr& attr,
                                      const vector_class<event>& deps) {
     return get_impl()->allgatherv(
@@ -207,7 +207,7 @@ ccl::device_communicator::allgatherv(const BufferObjectType& send_buf,
                                      size_t send_count,
                                      BufferObjectType& recv_buf,
                                      const vector_class<size_t>& recv_counts,
-                                     stream stream,
+                                     stream& stream,
                                      const allgatherv_attr& attr,
                                      const vector_class<event>& deps) {
     return get_impl()->allgatherv(
@@ -220,7 +220,7 @@ ccl::device_communicator::coll_request_t CCL_API ccl::device_communicator::allga
     size_t send_count,
     vector_class<ccl::reference_wrapper_class<BufferObjectType>>& recv_bufs,
     const vector_class<size_t>& recv_counts,
-    stream stream,
+    stream& stream,
     const allgatherv_attr& attr,
     const vector_class<event>& deps) {
     return get_impl()->allgatherv(
@@ -234,7 +234,7 @@ ccl::device_communicator::allreduce(const void* send_buf,
                                     size_t count,
                                     datatype dtype,
                                     reduction reduction,
-                                    stream stream,
+                                    stream& stream,
                                     const allreduce_attr& attr,
                                     const vector_class<event>& deps) {
     return get_impl()->allreduce(
@@ -247,7 +247,7 @@ ccl::device_communicator::allreduce(const BufferType* send_buf,
                                     BufferType* recv_buf,
                                     size_t count,
                                     reduction reduction,
-                                    stream stream,
+                                    stream& stream,
                                     const allreduce_attr& attr,
                                     const vector_class<event>& deps) {
     return get_impl()->allreduce(
@@ -260,7 +260,7 @@ ccl::device_communicator::allreduce(const BufferObjectType& send_buf,
                                     BufferObjectType& recv_buf,
                                     size_t count,
                                     reduction reduction,
-                                    stream stream,
+                                    stream& stream,
                                     const allreduce_attr& attr,
                                     const vector_class<event>& deps) {
     return get_impl()->allreduce(
@@ -273,7 +273,7 @@ ccl::device_communicator::alltoall(const void* send_buf,
                                    void* recv_buf,
                                    size_t count,
                                    datatype dtype,
-                                   stream stream,
+                                   stream& stream,
                                    const alltoall_attr& attr,
                                    const vector_class<event>& deps) {
     return get_impl()->alltoall(send_buf, recv_buf, count, dtype, stream.get_impl(), attr, deps);
@@ -284,7 +284,7 @@ ccl::device_communicator::alltoall(const vector_class<void*>& send_buf,
                                    const vector_class<void*>& recv_buf,
                                    size_t count,
                                    datatype dtype,
-                                   stream stream,
+                                   stream& stream,
                                    const alltoall_attr& attr,
                                    const vector_class<event>& deps) {
     return get_impl()->alltoall(send_buf, recv_buf, count, dtype, stream.get_impl(), attr, deps);
@@ -295,7 +295,7 @@ ccl::device_communicator::coll_request_t CCL_API
 ccl::device_communicator::alltoall(const BufferType* send_buf,
                                    BufferType* recv_buf,
                                    size_t count,
-                                   stream stream,
+                                   stream& stream,
                                    const alltoall_attr& attr,
                                    const vector_class<event>& deps) {
     return get_impl()->alltoall(send_buf, recv_buf, count, stream.get_impl(), attr, deps);
@@ -306,7 +306,7 @@ ccl::device_communicator::coll_request_t CCL_API
 ccl::device_communicator::alltoall(const vector_class<BufferType*>& send_buf,
                                    const vector_class<BufferType*>& recv_buf,
                                    size_t count,
-                                   stream stream,
+                                   stream& stream,
                                    const alltoall_attr& attr,
                                    const vector_class<event>& deps) {
     return get_impl()->alltoall(send_buf, recv_buf, count, stream.get_impl(), attr, deps);
@@ -317,7 +317,7 @@ ccl::device_communicator::coll_request_t CCL_API
 ccl::device_communicator::alltoall(const BufferObjectType& send_buf,
                                    BufferObjectType& recv_buf,
                                    size_t count,
-                                   stream stream,
+                                   stream& stream,
                                    const alltoall_attr& attr,
                                    const vector_class<event>& deps) {
     return get_impl()->alltoall(send_buf, recv_buf, count, stream.get_impl(), attr, deps);
@@ -328,7 +328,7 @@ ccl::device_communicator::coll_request_t CCL_API ccl::device_communicator::allto
     const vector_class<ccl::reference_wrapper_class<BufferObjectType>>& send_buf,
     const vector_class<ccl::reference_wrapper_class<BufferObjectType>>& recv_buf,
     size_t count,
-    stream stream,
+    stream& stream,
     const alltoall_attr& attr,
     const vector_class<event>& deps) {
     return get_impl()->alltoall(send_buf, recv_buf, count, stream.get_impl(), attr, deps);
@@ -341,7 +341,7 @@ ccl::device_communicator::alltoallv(const void* send_buf,
                                     void* recv_buf,
                                     const vector_class<size_t>& recv_counts,
                                     datatype dtype,
-                                    stream stream,
+                                    stream& stream,
                                     const alltoallv_attr& attr,
                                     const vector_class<event>& deps) {
     return get_impl()->alltoallv(
@@ -354,7 +354,7 @@ ccl::device_communicator::alltoallv(const vector_class<void*>& send_bufs,
                                     const vector_class<void*>& recv_bufs,
                                     const vector_class<size_t>& recv_counts,
                                     datatype dtype,
-                                    stream stream,
+                                    stream& stream,
                                     const alltoallv_attr& attr,
                                     const vector_class<event>& deps) {
     return get_impl()->alltoallv(
@@ -367,7 +367,7 @@ ccl::device_communicator::alltoallv(const BufferType* send_buf,
                                     const vector_class<size_t>& send_counts,
                                     BufferType* recv_buf,
                                     const vector_class<size_t>& recv_counts,
-                                    stream stream,
+                                    stream& stream,
                                     const alltoallv_attr& attr,
                                     const vector_class<event>& deps) {
     return get_impl()->alltoallv(
@@ -380,7 +380,7 @@ ccl::device_communicator::alltoallv(const vector_class<BufferType*>& send_bufs,
                                     const vector_class<size_t>& send_counts,
                                     const vector_class<BufferType*>& recv_bufs,
                                     const vector_class<size_t>& recv_counts,
-                                    stream stream,
+                                    stream& stream,
                                     const alltoallv_attr& attr,
                                     const vector_class<event>& deps) {
     return get_impl()->alltoallv(
@@ -393,7 +393,7 @@ ccl::device_communicator::alltoallv(const BufferObjectType& send_buf,
                                     const vector_class<size_t>& send_counts,
                                     BufferObjectType& recv_buf,
                                     const vector_class<size_t>& recv_counts,
-                                    stream stream,
+                                    stream& stream,
                                     const alltoallv_attr& attr,
                                     const vector_class<event>& deps) {
     return get_impl()->alltoallv(
@@ -406,7 +406,7 @@ ccl::device_communicator::coll_request_t CCL_API ccl::device_communicator::allto
     const vector_class<size_t>& send_counts,
     const vector_class<ccl::reference_wrapper_class<BufferObjectType>>& recv_bufs,
     const vector_class<size_t>& recv_counts,
-    stream stream,
+    stream& stream,
     const alltoallv_attr& attr,
     const vector_class<event>& deps) {
     return get_impl()->alltoallv(
@@ -415,7 +415,7 @@ ccl::device_communicator::coll_request_t CCL_API ccl::device_communicator::allto
 
 /* barrier */
 ccl::device_communicator::coll_request_t CCL_API
-ccl::device_communicator::barrier(stream stream,
+ccl::device_communicator::barrier(stream& stream,
                                   const barrier_attr& attr,
                                   const vector_class<event>& deps) {
     return get_impl()->barrier(stream.get_impl(), attr, deps);
@@ -427,7 +427,7 @@ ccl::device_communicator::broadcast(void* buf,
                                     size_t count,
                                     datatype dtype,
                                     size_t root,
-                                    stream stream,
+                                    stream& stream,
                                     const broadcast_attr& attr,
                                     const vector_class<event>& deps) {
     return get_impl()->bcast(buf, count, dtype, root, stream.get_impl(), attr, deps);
@@ -438,7 +438,7 @@ ccl::device_communicator::coll_request_t CCL_API
 ccl::device_communicator::broadcast(BufferType* buf,
                                     size_t count,
                                     size_t root,
-                                    stream stream,
+                                    stream& stream,
                                     const broadcast_attr& attr,
                                     const vector_class<event>& deps)
 
@@ -451,7 +451,7 @@ ccl::device_communicator::coll_request_t CCL_API
 ccl::device_communicator::broadcast(BufferObjectType& buf,
                                     size_t count,
                                     size_t root,
-                                    stream stream,
+                                    stream& stream,
                                     const broadcast_attr& attr,
                                     const vector_class<event>& deps) {
     return get_impl()->bcast(buf, count, root, stream.get_impl(), attr, deps);
@@ -465,7 +465,7 @@ ccl::device_communicator::reduce(const void* send_buf,
                                  datatype dtype,
                                  reduction reduction,
                                  size_t root,
-                                 stream stream,
+                                 stream& stream,
                                  const reduce_attr& attr,
                                  const vector_class<event>& deps) {
     return get_impl()->reduce(
@@ -479,7 +479,7 @@ ccl::device_communicator::reduce(const BufferType* send_buf,
                                  size_t count,
                                  reduction reduction,
                                  size_t root,
-                                 stream stream,
+                                 stream& stream,
                                  const reduce_attr& attr,
                                  const vector_class<event>& deps) {
     return get_impl()->reduce(
@@ -493,7 +493,7 @@ ccl::device_communicator::reduce(const BufferObjectType& send_buf,
                                  size_t count,
                                  reduction reduction,
                                  size_t root,
-                                 stream stream,
+                                 stream& stream,
                                  const reduce_attr& attr,
                                  const vector_class<event>& deps) {
     return get_impl()->reduce(
@@ -507,7 +507,7 @@ ccl::device_communicator::reduce_scatter(const void* send_buf,
                                          size_t recv_count,
                                          datatype dtype,
                                          reduction reduction,
-                                         stream stream,
+                                         stream& stream,
                                          const reduce_scatter_attr& attr,
                                          const vector_class<event>& deps) {
     return get_impl()->reduce_scatter(
@@ -520,7 +520,7 @@ ccl::device_communicator::reduce_scatter(const BufferType* send_buf,
                                          BufferType* recv_buf,
                                          size_t recv_count,
                                          reduction reduction,
-                                         stream stream,
+                                         stream& stream,
                                          const reduce_scatter_attr& attr,
                                          const vector_class<event>& deps) {
     return get_impl()->reduce_scatter(
@@ -533,7 +533,7 @@ ccl::device_communicator::reduce_scatter(const BufferObjectType& send_buf,
                                          BufferObjectType& recv_buf,
                                          size_t recv_count,
                                          reduction reduction,
-                                         stream stream,
+                                         stream& stream,
                                          const reduce_scatter_attr& attr,
                                          const vector_class<event>& deps) {
     return get_impl()->reduce_scatter(
@@ -553,7 +553,7 @@ ccl::device_communicator::reduce_scatter(const BufferObjectType& send_buf,
 //                                datatype index_dtype,
 //                                datatype value_dtype,
 //                                reduction reduction,
-//                                stream stream,
+//                                stream& stream,
 //                                const sparse_allreduce_attr& attr,
 //                                const vector_class<event>& deps)
 // {
@@ -580,7 +580,7 @@ ccl::device_communicator::reduce_scatter(const BufferObjectType& send_buf,
 //                                value_BufferType* recv_val_buf,
 //                                size_t recv_val_count,
 //                                reduction reduction,
-//                                stream stream,
+//                                stream& stream,
 //                                const sparse_allreduce_attr& attr,
 //                                const vector_class<event>& deps)
 // {
@@ -605,7 +605,7 @@ ccl::device_communicator::reduce_scatter(const BufferObjectType& send_buf,
 //                                ValueBufferObjectType& recv_val_buf,
 //                                size_t recv_val_count,
 //                                reduction reduction,
-//                                stream stream,
+//                                stream& stream,
 //                                const sparse_allreduce_attr& attr,
 //                                const vector_class<event>& deps)
 // {
@@ -650,7 +650,7 @@ ccl::device_communicator::reduce_scatter(const BufferObjectType& send_buf,
                                          size_t send_count, \
                                          BufferType* recv_buf, \
                                          const ccl::vector_class<size_t>& recv_counts, \
-                                         ccl::stream stream, \
+                                         ccl::stream& stream, \
                                          const ccl::allgatherv_attr& attr, \
                                          const ccl::vector_class<ccl::event>& deps); \
 \
@@ -659,7 +659,7 @@ ccl::device_communicator::reduce_scatter(const BufferObjectType& send_buf,
                                          size_t send_count, \
                                          ccl::vector_class<BufferType*>& recv_bufs, \
                                          const ccl::vector_class<size_t>& recv_counts, \
-                                         ccl::stream stream, \
+                                         ccl::stream& stream, \
                                          const ccl::allgatherv_attr& attr, \
                                          const ccl::vector_class<ccl::event>& deps); \
 \
@@ -668,7 +668,7 @@ ccl::device_communicator::reduce_scatter(const BufferObjectType& send_buf,
         BufferType* recv_buf, \
         size_t count, \
         ccl::reduction reduction, \
-        ccl::stream stream, \
+        ccl::stream& stream, \
         const ccl::allreduce_attr& attr, \
         const ccl::vector_class<ccl::event>& deps); \
 \
@@ -676,7 +676,7 @@ ccl::device_communicator::reduce_scatter(const BufferObjectType& send_buf,
         const BufferType* send_buf, \
         BufferType* recv_buf, \
         size_t count, \
-        ccl::stream stream, \
+        ccl::stream& stream, \
         const ccl::alltoall_attr& attr, \
         const ccl::vector_class<ccl::event>& deps); \
 \
@@ -684,7 +684,7 @@ ccl::device_communicator::reduce_scatter(const BufferObjectType& send_buf,
         const ccl::vector_class<BufferType*>& send_buf, \
         const ccl::vector_class<BufferType*>& recv_buf, \
         size_t count, \
-        ccl::stream stream, \
+        ccl::stream& stream, \
         const ccl::alltoall_attr& attr, \
         const ccl::vector_class<ccl::event>& deps); \
 \
@@ -693,7 +693,7 @@ ccl::device_communicator::reduce_scatter(const BufferObjectType& send_buf,
         const ccl::vector_class<size_t>& send_counts, \
         BufferType* recv_buf, \
         const ccl::vector_class<size_t>& recv_counts, \
-        ccl::stream stream, \
+        ccl::stream& stream, \
         const ccl::alltoallv_attr& attr, \
         const ccl::vector_class<ccl::event>& deps); \
 \
@@ -702,7 +702,7 @@ ccl::device_communicator::reduce_scatter(const BufferObjectType& send_buf,
         const ccl::vector_class<size_t>& send_counts, \
         const ccl::vector_class<BufferType*>& recv_bufs, \
         const ccl::vector_class<size_t>& recv_counts, \
-        ccl::stream stream, \
+        ccl::stream& stream, \
         const ccl::alltoallv_attr& attr, \
         const ccl::vector_class<ccl::event>& deps); \
 \
@@ -710,7 +710,7 @@ ccl::device_communicator::reduce_scatter(const BufferObjectType& send_buf,
         BufferType* buf, \
         size_t count, \
         size_t root, \
-        ccl::stream stream, \
+        ccl::stream& stream, \
         const ccl::broadcast_attr& attr, \
         const ccl::vector_class<ccl::event>& deps); \
 \
@@ -720,7 +720,7 @@ ccl::device_communicator::reduce_scatter(const BufferObjectType& send_buf,
         size_t count, \
         ccl::reduction reduction, \
         size_t root, \
-        ccl::stream stream, \
+        ccl::stream& stream, \
         const ccl::reduce_attr& attr, \
         const ccl::vector_class<ccl::event>& deps); \
 \
@@ -729,7 +729,7 @@ ccl::device_communicator::reduce_scatter(const BufferObjectType& send_buf,
                                              BufferType* recv_buf, \
                                              size_t recv_count, \
                                              ccl::reduction reduction, \
-                                             ccl::stream stream, \
+                                             ccl::stream& stream, \
                                              const ccl::reduce_scatter_attr& attr, \
                                              const ccl::vector_class<ccl::event>& deps);
 
@@ -739,7 +739,7 @@ ccl::device_communicator::reduce_scatter(const BufferObjectType& send_buf,
                                          size_t send_count, \
                                          BufferObjectType& recv_buf, \
                                          const ccl::vector_class<size_t>& recv_counts, \
-                                         ccl::stream stream, \
+                                         ccl::stream& stream, \
                                          const allgatherv_attr& attr, \
                                          const ccl::vector_class<ccl::event>& deps); \
 \
@@ -749,7 +749,7 @@ ccl::device_communicator::reduce_scatter(const BufferObjectType& send_buf,
         size_t send_count, \
         ccl::vector_class<ccl::reference_wrapper_class<BufferObjectType>>& recv_bufs, \
         const ccl::vector_class<size_t>& recv_counts, \
-        ccl::stream stream, \
+        ccl::stream& stream, \
         const allgatherv_attr& attr, \
         const ccl::vector_class<ccl::event>& deps); \
 \
@@ -758,7 +758,7 @@ ccl::device_communicator::reduce_scatter(const BufferObjectType& send_buf,
         BufferObjectType& recv_buf, \
         size_t count, \
         reduction reduction, \
-        ccl::stream stream, \
+        ccl::stream& stream, \
         const allreduce_attr& attr, \
         const ccl::vector_class<ccl::event>& deps); \
 \
@@ -766,7 +766,7 @@ ccl::device_communicator::reduce_scatter(const BufferObjectType& send_buf,
         const BufferObjectType& send_buf, \
         BufferObjectType& recv_buf, \
         size_t count, \
-        ccl::stream stream, \
+        ccl::stream& stream, \
         const alltoall_attr& attr, \
         const ccl::vector_class<ccl::event>& deps); \
 \
@@ -774,7 +774,7 @@ ccl::device_communicator::reduce_scatter(const BufferObjectType& send_buf,
         const ccl::vector_class<ccl::reference_wrapper_class<BufferObjectType>>& send_buf, \
         const ccl::vector_class<ccl::reference_wrapper_class<BufferObjectType>>& recv_buf, \
         size_t count, \
-        ccl::stream stream, \
+        ccl::stream& stream, \
         const alltoall_attr& attr, \
         const ccl::vector_class<ccl::event>& deps); \
 \
@@ -783,7 +783,7 @@ ccl::device_communicator::reduce_scatter(const BufferObjectType& send_buf,
         const ccl::vector_class<size_t>& send_counts, \
         BufferObjectType& recv_buf, \
         const ccl::vector_class<size_t>& recv_counts, \
-        ccl::stream stream, \
+        ccl::stream& stream, \
         const alltoallv_attr& attr, \
         const ccl::vector_class<ccl::event>& deps); \
 \
@@ -792,7 +792,7 @@ ccl::device_communicator::reduce_scatter(const BufferObjectType& send_buf,
         const ccl::vector_class<size_t>& send_counts, \
         const ccl::vector_class<ccl::reference_wrapper_class<BufferObjectType>>& recv_bufs, \
         const ccl::vector_class<size_t>& recv_counts, \
-        ccl::stream stream, \
+        ccl::stream& stream, \
         const alltoallv_attr& attr, \
         const ccl::vector_class<ccl::event>& deps); \
 \
@@ -800,7 +800,7 @@ ccl::device_communicator::reduce_scatter(const BufferObjectType& send_buf,
         BufferObjectType& buf, \
         size_t count, \
         size_t root, \
-        ccl::stream stream, \
+        ccl::stream& stream, \
         const broadcast_attr& attr, \
         const ccl::vector_class<ccl::event>& deps); \
 \
@@ -810,7 +810,7 @@ ccl::device_communicator::reduce_scatter(const BufferObjectType& send_buf,
         size_t count, \
         reduction reduction, \
         size_t root, \
-        ccl::stream stream, \
+        ccl::stream& stream, \
         const reduce_attr& attr, \
         const ccl::vector_class<ccl::event>& deps); \
 \
@@ -819,7 +819,7 @@ ccl::device_communicator::reduce_scatter(const BufferObjectType& send_buf,
                                              BufferObjectType& recv_buf, \
                                              size_t recv_count, \
                                              reduction reduction, \
-                                             ccl::stream stream, \
+                                             ccl::stream& stream, \
                                              const reduce_scatter_attr& attr, \
                                              const ccl::vector_class<ccl::event>& deps);
 
@@ -834,7 +834,7 @@ ccl::device_communicator::reduce_scatter(const BufferObjectType& send_buf,
                                                value_type* recv_val_buf, \
                                                size_t recv_val_count, \
                                                ccl::reduction reduction, \
-                                               ccl::stream stream, \
+                                               ccl::stream& stream, \
                                                const ccl::sparse_allreduce_attr& attr, \
                                                const ccl::vector_class<ccl::event>& deps);
 
@@ -849,6 +849,6 @@ ccl::device_communicator::reduce_scatter(const BufferObjectType& send_buf,
                                                value_object_type& recv_val_buf, \
                                                size_t recv_val_count, \
                                                ccl::reduction reduction, \
-                                               ccl::stream stream, \
+                                               ccl::stream& stream, \
                                                const ccl::sparse_allreduce_attr& attr, \
                                                const ccl::vector_class<ccl::event>& deps);

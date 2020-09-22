@@ -10,8 +10,6 @@
 #include "oneapi/ccl/ccl_comm_split_attr_ids_traits.hpp"
 #include "oneapi/ccl/ccl_comm_split_attr.hpp"
 
-#include "comm_split_attr_creation_impl.hpp"
-
 #undef protected
 #undef private
 

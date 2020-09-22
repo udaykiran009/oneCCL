@@ -81,6 +81,7 @@ set(CCL_SRC
     ccl_cpp_api.cpp
     ccl_cpp_communicator.cpp
     ccl_cpp_environment.cpp
+    ccl_api_functions.cpp
     ccl_app_api_coll_attr.cpp
     ccl_app_api_comm_split_attr.cpp
     ccl_app_api_datatype_attr.cpp

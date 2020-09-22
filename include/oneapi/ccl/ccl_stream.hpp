@@ -49,6 +49,7 @@ private:
     friend class communicator;
     friend class device_communicator;
     friend struct ccl_empty_attr;
+    friend struct impl_dispatch;
 
     template <class... attr_value_pair_t>
     friend stream create_stream_from_attr(

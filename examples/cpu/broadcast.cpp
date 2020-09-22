@@ -3,8 +3,8 @@
 
 void run_collective(const char* cmd_name,
                     std::vector<float>& buf,
-                    ccl::communicator& comm,
-                    ccl::broadcast_attr& coll_attr) {
+                    const ccl::communicator& comm,
+                    const ccl::broadcast_attr& coll_attr) {
     std::chrono::system_clock::duration exec_time{ 0 };
     float received;
 
@@ -13,11 +13,11 @@ void run_collective(const char* cmd_name,
             buf[idx] = static_cast<float>(idx);
         }
     }
-    comm.barrier();
+    ccl::barrier(comm);
 
     for (size_t idx = 0; idx < ITERS; ++idx) {
         auto start = std::chrono::system_clock::now();
-        auto req = comm.broadcast(buf.data(), buf.size(), COLL_ROOT, coll_attr);
+        auto req = ccl::broadcast(buf.data(), buf.size(), COLL_ROOT, comm, coll_attr);
         req.wait();
         exec_time += std::chrono::system_clock::now() - start;
     }
@@ -36,7 +36,7 @@ void run_collective(const char* cmd_name,
         }
     }
 
-    comm.barrier();
+    ccl::barrier(comm);
 
     std::cout << "avg time of " << cmd_name << ": "
               << std::chrono::duration_cast<std::chrono::microseconds>(exec_time).count() / ITERS
@@ -49,24 +49,22 @@ int main() {
     MPI_Comm_size(MPI_COMM_WORLD, &size);
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
 
-    auto& env = ccl::environment::instance();
-    (void)env;
+    ccl::init();
 
-    /* create CCL internal KVS */
     ccl::shared_ptr_class<ccl::kvs> kvs;
     ccl::kvs::address_type main_addr;
     if (rank == 0) {
-        kvs = env.create_main_kvs();
+        kvs = ccl::create_main_kvs();
         main_addr = kvs->get_address();
         MPI_Bcast((void*)main_addr.data(), main_addr.size(), MPI_BYTE, 0, MPI_COMM_WORLD);
     }
     else {
         MPI_Bcast((void*)main_addr.data(), main_addr.size(), MPI_BYTE, 0, MPI_COMM_WORLD);
-        kvs = env.create_kvs(main_addr);
+        kvs = ccl::create_kvs(main_addr);
     }
 
-    auto comm = env.create_communicator(size, rank, kvs);
-    auto coll_attr = ccl::environment::instance().create_operation_attr<ccl::broadcast_attr>();
+    auto comm = ccl::create_communicator(size, rank, kvs);
+    auto coll_attr = ccl::create_operation_attr<ccl::broadcast_attr>();
 
     MSG_LOOP(comm, std::vector<float> buf(msg_count);
              coll_attr.set<ccl::operation_attr_id::to_cache>(0);

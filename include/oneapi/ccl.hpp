@@ -1,6 +1,7 @@
 #pragma once
 
 #include "oneapi/ccl/ccl_environment.hpp"
+#include "oneapi/ccl/ccl_api_functions.hpp"
 
 #ifdef MULTI_GPU_SUPPORT
 #include "oneapi/ccl/ccl_gpu_modules.h"

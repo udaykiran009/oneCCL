@@ -9,11 +9,11 @@ void run_collective(const char* cmd_name,
                     std::vector<int>& recv_buf,
                     std::vector<size_t>& send_counts,
                     std::vector<size_t>& recv_counts,
-                    ccl::communicator& comm,
-                    ccl::alltoallv_attr& coll_attr) {
+                    const ccl::communicator& comm,
+                    const ccl::alltoallv_attr& coll_attr) {
     std::chrono::system_clock::duration exec_time{ 0 };
 
-    comm.barrier();
+    ccl::barrier(comm);
 
     size_t iter_idx;
     for (iter_idx = 0; iter_idx < ITERS; iter_idx++) {
@@ -29,12 +29,12 @@ void run_collective(const char* cmd_name,
 
         auto start = std::chrono::system_clock::now();
         auto req =
-            comm.alltoallv(send_buf.data(), send_counts, recv_buf.data(), recv_counts, coll_attr);
+            ccl::alltoallv(send_buf.data(), send_counts, recv_buf.data(), recv_counts, comm, coll_attr);
         req.wait();
         exec_time += std::chrono::system_clock::now() - start;
     }
 
-    comm.barrier();
+    ccl::barrier(comm);
 
     size_t elem_idx = 0;
     for (size_t rank_idx = 0; rank_idx < comm.size(); rank_idx++) {
@@ -52,7 +52,7 @@ void run_collective(const char* cmd_name,
         }
     }
 
-    comm.barrier();
+    ccl::barrier(comm);
 
     std::cout << "avg time of " << cmd_name << ": "
               << std::chrono::duration_cast<std::chrono::microseconds>(exec_time).count() / ITERS
@@ -65,22 +65,22 @@ int main() {
     MPI_Comm_size(MPI_COMM_WORLD, &size);
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
 
-    auto& env = ccl::environment::instance();
+    ccl::init();
 
     ccl::shared_ptr_class<ccl::kvs> kvs;
     ccl::kvs::address_type main_addr;
     if (rank == 0) {
-        kvs = env.create_main_kvs();
+        kvs = ccl::create_main_kvs();
         main_addr = kvs->get_address();
         MPI_Bcast((void*)main_addr.data(), main_addr.size(), MPI_BYTE, 0, MPI_COMM_WORLD);
     }
     else {
         MPI_Bcast((void*)main_addr.data(), main_addr.size(), MPI_BYTE, 0, MPI_COMM_WORLD);
-        kvs = env.create_kvs(main_addr);
+        kvs = ccl::create_kvs(main_addr);
     }
 
-    auto comm = env.create_communicator(size, rank, kvs);
-    auto coll_attr = env.create_operation_attr<ccl::alltoallv_attr>();
+    auto comm = ccl::create_communicator(size, rank, kvs);
+    auto coll_attr = ccl::create_operation_attr<ccl::alltoallv_attr>();
 
     int is_even = (rank % 2 == 0) ? 1 : 0;
     size_t send_count = (is_even) ? EVEN_RANK_SEND_COUNT : ODD_RANK_SEND_COUNT;
