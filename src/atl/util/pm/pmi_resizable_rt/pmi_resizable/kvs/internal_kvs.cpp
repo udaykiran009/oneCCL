@@ -351,8 +351,8 @@ void* kvs_server_init(void* args) {
         }
         if (FD_ISSET(sock_listener, &read_fds)) {
             int new_socket;
-            if ((new_socket = accept(sock_listener, (struct sockaddr*)&addr, (socklen_t*)&addr)) <
-                0) {
+            socklen_t len;
+            if ((new_socket = accept(sock_listener, (struct sockaddr*)&addr, &len)) < 0) {
                 perror("accept");
                 exit(EXIT_FAILURE);
             }
