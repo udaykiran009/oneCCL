@@ -21,7 +21,7 @@ public:
         return addr;
     }
 
-    vector_class<char> get(const string_class& prefix, const string_class& key) const {
+    vector_class<char> get(const string_class& key) const {
         char ret[128];
         inter_kvs->kvs_get_value_by_name_key(prefix.c_str(), key.c_str(), ret);
         size_t ret_len = strlen(ret);
@@ -35,7 +35,7 @@ public:
         return ret_vec;
     }
 
-    void set(const string_class& prefix, const string_class& key, const vector_class<char>& data) const {
+    void set(const string_class& key, const vector_class<char>& data) const {
         inter_kvs->kvs_set_value(prefix.c_str(), key.c_str(), data.data() ? data.data() : "");
     }
 
@@ -45,6 +45,7 @@ public:
     }
 
 private:
+    const std::string prefix = "USER_DATA";
     std::shared_ptr<internal_kvs> inter_kvs;
     kvs::address_type addr;
 };
@@ -54,12 +55,12 @@ kvs::address_type CCL_API kvs::get_address() const {
 }
 
 vector_class<char> CCL_API kvs::get(const string_class& key) const {
-    return pimpl->get(prefix, key);
+    return pimpl->get(key);
 }
 
 void CCL_API kvs::set(const string_class& key,
                       const vector_class<char>& data) const {
-    pimpl->set(prefix, key, data);
+    pimpl->set(key, data);
 }
 
 CCL_API kvs::kvs(const kvs::address_type& addr) {

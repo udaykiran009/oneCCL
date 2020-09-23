@@ -20,7 +20,6 @@ class kvs_impl;
 class CCL_API kvs final : public kvs_interface {
 public:
     static constexpr size_t address_max_size = 256;
-    const std::string prefix = "USER_DATA";
     using address_type = array_class<char, address_max_size>;
 
     address_type get_address() const;
