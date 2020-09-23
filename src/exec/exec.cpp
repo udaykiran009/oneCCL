@@ -255,16 +255,22 @@ size_t ccl_executor::get_worker_count() const {
 }
 void ccl_executor::up_local_coord() {
     // TODO: works only for hydra
-    char* local_count = getenv("MPI_LOCALNRANKS");
-    local_proc_count = 1;
-    local_proc_idx = 0;
+    const char* mpi_local_ranks_env = "MPI_LOCALNRANKS";
+    const char* mpi_local_id_env = "MPI_LOCALRANKID";
+
+    char* local_count = getenv(mpi_local_ranks_env);
     if (local_count)
     {
-        char* local_id = getenv("MPI_LOCALRANKID");
+        char* local_id = getenv(mpi_local_id_env);
         if (local_id)
         {
             local_proc_count = std::atoi(local_count);
             local_proc_idx = std::atoi(local_id);
+            return;
         }
     }
+    local_proc_count = 1;
+    local_proc_idx = 0;
+    LOG_INFO("Warning: ", mpi_local_ranks_env, " or ", mpi_local_id_env, " not found. Use default: ",
+             local_proc_count, " , ", local_proc_idx);
 }
