@@ -52,8 +52,11 @@ namespace ccl {
                                        const communicator& comm, \
                                        const alltoallv_attr& attr); \
 \
-    template request CCL_API broadcast( \
-        type* buf, size_t count, size_t root, const communicator& comm, const broadcast_attr& attr); \
+    template request CCL_API broadcast(type* buf, \
+                                       size_t count, \
+                                       size_t root, \
+                                       const communicator& comm, \
+                                       const broadcast_attr& attr); \
 \
     template request CCL_API reduce(const type* send_buf, \
                                     type* recv_buf, \

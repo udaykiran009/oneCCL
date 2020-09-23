@@ -76,7 +76,8 @@ device_communicator create_single_device_communicator(const size_t comm_size,
                                                       const cl::sycl::device& device,
                                                       const cl::sycl::context& context,
                                                       shared_ptr_class<kvs_interface> kvs) {
-    return environment::instance().create_single_device_communicator(comm_size, rank, device, context, kvs);
+    return environment::instance().create_single_device_communicator(
+        comm_size, rank, device, context, kvs);
 }
 #endif // CCL_ENABLE_SYCL
 

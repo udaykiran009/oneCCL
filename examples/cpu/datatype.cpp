@@ -35,7 +35,8 @@ void check_allreduce(const ccl::communicator &comm) {
     std::vector<std::vector<float>> send_bufs(max_dtype_count);
     std::vector<std::vector<float>> recv_bufs(max_dtype_count);
 
-    auto attr = ccl::create_datatype_attr(ccl::attr_val<ccl::datatype_attr_id::size>(sizeof(float)));
+    auto attr =
+        ccl::create_datatype_attr(ccl::attr_val<ccl::datatype_attr_id::size>(sizeof(float)));
 
     for (size_t idx = 0; idx < max_dtype_count; idx++) {
         dtypes[idx] = ccl::register_datatype(attr);
@@ -122,10 +123,10 @@ int main() {
     if (rank == 0) {
         kvs = ccl::create_main_kvs();
         main_addr = kvs->get_address();
-        MPI_Bcast((void*)main_addr.data(), main_addr.size(), MPI_BYTE, 0, MPI_COMM_WORLD);
+        MPI_Bcast((void *)main_addr.data(), main_addr.size(), MPI_BYTE, 0, MPI_COMM_WORLD);
     }
     else {
-        MPI_Bcast((void*)main_addr.data(), main_addr.size(), MPI_BYTE, 0, MPI_COMM_WORLD);
+        MPI_Bcast((void *)main_addr.data(), main_addr.size(), MPI_BYTE, 0, MPI_COMM_WORLD);
         kvs = ccl::create_kvs(main_addr);
     }
 

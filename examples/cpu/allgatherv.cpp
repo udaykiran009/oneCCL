@@ -62,17 +62,18 @@ int main() {
     auto comm = ccl::create_communicator(size, rank, kvs);
     auto coll_attr = ccl::create_operation_attr<ccl::allgatherv_attr>();
 
-    MSG_LOOP(comm,
-        std::vector<float> send_buf(msg_count, static_cast<float>(msg_count));
-        std::vector<float> recv_buf(comm.size() * msg_count, 0);
-        std::vector<size_t> recv_counts(comm.size(), msg_count);
-        coll_attr.set<ccl::operation_attr_id::to_cache>(0);
-        run_collective("warmup_allgatherv", send_buf, recv_buf, recv_counts, comm, coll_attr, false);
-        coll_attr.set<ccl::operation_attr_id::to_cache>(1);
-        run_collective("persistent_allgatherv", send_buf, recv_buf, recv_counts, comm, coll_attr, false);
-        coll_attr.set<ccl::operation_attr_id::to_cache>(0);
-        run_collective("regular_allgatherv", send_buf, recv_buf, recv_counts, comm, coll_attr, false);
-    );
+    MSG_LOOP(comm, std::vector<float> send_buf(msg_count, static_cast<float>(msg_count));
+             std::vector<float> recv_buf(comm.size() * msg_count, 0);
+             std::vector<size_t> recv_counts(comm.size(), msg_count);
+             coll_attr.set<ccl::operation_attr_id::to_cache>(0);
+             run_collective(
+                 "warmup_allgatherv", send_buf, recv_buf, recv_counts, comm, coll_attr, false);
+             coll_attr.set<ccl::operation_attr_id::to_cache>(1);
+             run_collective(
+                 "persistent_allgatherv", send_buf, recv_buf, recv_counts, comm, coll_attr, false);
+             coll_attr.set<ccl::operation_attr_id::to_cache>(0);
+             run_collective(
+                 "regular_allgatherv", send_buf, recv_buf, recv_counts, comm, coll_attr, false););
 
     MPI_Finalize();
     return 0;
