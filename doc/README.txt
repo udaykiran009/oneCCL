@@ -118,7 +118,7 @@ default structure and identifies the file types stored in each sub-directory:
 				|   |   |-- communicator.cpp                                                                           
 				|   |   |-- cpu_allgatherv_test.c                                                                      
 				|   |   |-- cpu_allreduce_bfp16.c                                                                      
-				|   |   |-- cpu_allreduce_cpp_test.cpp                                                                 
+				|   |   |-- cpu_allreduce_test.cpp                                                                 
 				|   |   |-- cpu_allreduce_test.c                                                                       
 				|   |   |-- custom_allreduce.cpp                                                                       
 				|   |   |-- datatype.cpp                                                                               
@@ -136,17 +136,17 @@ default structure and identifies the file types stored in each sub-directory:
 				|   |   `-- sycl_base.hpp                                                                              
 				|   `-- sycl                                                                                           
 				|       |-- CMakeLists.txt                                                                             
-				|       |-- sycl_allgatherv_cpp_test.cpp                                                               
+				|       |-- sycl_allgatherv_test.cpp                                                               
 				|       |-- sycl_allgatherv_test.cpp                                                                   
-				|       |-- sycl_allreduce_cpp_test.cpp                                                                
+				|       |-- sycl_allreduce_test.cpp                                                                
 				|       |-- sycl_allreduce_test.cpp                                                                    
-				|       |-- sycl_alltoall_cpp_test.cpp                                                                 
+				|       |-- sycl_alltoall_test.cpp                                                                 
 				|       |-- sycl_alltoall_test.cpp                                                                     
-				|       |-- sycl_alltoallv_cpp_test.cpp                                                                
+				|       |-- sycl_alltoallv_test.cpp                                                                
 				|       |-- sycl_alltoallv_test.cpp                                                                    
-				|       |-- sycl_bcast_cpp_test.cpp                                                                    
+				|       |-- sycl_bcast_test.cpp                                                                    
 				|       |-- sycl_bcast_test.cpp                                                                        
-				|       |-- sycl_reduce_cpp_test.cpp                                                                   
+				|       |-- sycl_reduce_test.cpp                                                                   
 				|       `-- sycl_reduce_test.cpp                                                                       
 				|-- include                                                                                            
 				|   |-- cpu_gpu_dpcpp                                                                                  

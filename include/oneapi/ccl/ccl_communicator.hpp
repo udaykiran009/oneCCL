@@ -513,9 +513,9 @@ private:
     explicit communicator(impl_value_t&& impl);
 
     static communicator create_communicator();
-    static communicator create_communicator(const size_t size, shared_ptr_class<kvs_interface> kvs);
-    static communicator create_communicator(const size_t size,
-                                            const size_t rank,
+    static communicator create_communicator(size_t size, shared_ptr_class<kvs_interface> kvs);
+    static communicator create_communicator(size_t size,
+                                            size_t rank,
                                             shared_ptr_class<kvs_interface> kvs);
 }; // class communicator
 

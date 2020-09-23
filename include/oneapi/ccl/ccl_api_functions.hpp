@@ -73,7 +73,7 @@ communicator create_communicator();
  * @param kvs key-value store for ranks wire-up
  * @return host communicator
  */
-communicator create_communicator(const size_t size, shared_ptr_class<kvs_interface> kvs);
+communicator create_communicator(size_t size, shared_ptr_class<kvs_interface> kvs);
 
 /**
  * Creates a new host communicator with user supplied size, rank and kvs.
@@ -82,8 +82,8 @@ communicator create_communicator(const size_t size, shared_ptr_class<kvs_interfa
  * @param kvs key-value store for ranks wire-up
  * @return host communicator
  */
-communicator create_communicator(const size_t size,
-                                 const size_t rank,
+communicator create_communicator(size_t size,
+                                 size_t rank,
                                  shared_ptr_class<kvs_interface> kvs);
 
 template <class coll_attribute_type, class... attr_value_pair_t>
@@ -101,8 +101,8 @@ comm_split_attr create_comm_split_attr(attr_value_pair_t&&... avps) {
 }
 
 #ifdef CCL_ENABLE_SYCL
-device_communicator create_single_device_communicator(const size_t comm_size,
-                                                      const size_t rank,
+device_communicator create_single_device_communicator(size_t comm_size,
+                                                      size_t rank,
                                                       const cl::sycl::device& device,
                                                       shared_ptr_class<kvs_interface> kvs);
 #endif
@@ -126,7 +126,7 @@ device_comm_split_attr create_device_comm_split_attr(attr_value_pair_t&&... avps
  */
 template <class DeviceType, class ContextType>
 vector_class<device_communicator> create_device_communicators(
-    const size_t comm_size,
+    size_t comm_size,
     const vector_class<DeviceType>& local_devices,
     ContextType& context,
     shared_ptr_class<kvs_interface> kvs) {
@@ -144,7 +144,7 @@ vector_class<device_communicator> create_device_communicators(
  */
 template <class DeviceType, class ContextType>
 vector_class<device_communicator> create_device_communicators(
-    const size_t comm_size,
+    size_t comm_size,
     const vector_class<pair_class<rank_t, DeviceType>>& local_rank_device_map,
     ContextType& context,
     shared_ptr_class<kvs_interface> kvs) {
@@ -154,7 +154,7 @@ vector_class<device_communicator> create_device_communicators(
 
 template <class DeviceType, class ContextType>
 vector_class<device_communicator> create_device_communicators(
-    const size_t comm_size,
+    size_t comm_size,
     const map_class<rank_t, DeviceType>& local_rank_device_map,
     ContextType& context,
     shared_ptr_class<kvs_interface> kvs) {

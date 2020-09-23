@@ -784,21 +784,21 @@ private:
     // factory methods
     template <class DeviceType, class ContextType>
     static vector_class<device_communicator> create_device_communicators(
-        const size_t comm_size,
+        size_t comm_size,
         const vector_class<DeviceType>& local_devices,
         ContextType& context,
         shared_ptr_class<kvs_interface> kvs);
 
     template <class DeviceType, class ContextType>
     static vector_class<device_communicator> create_device_communicators(
-        const size_t comm_size,
+        size_t comm_size,
         const vector_class<pair_class<rank_t, DeviceType>>& local_rank_device_map,
         ContextType& context,
         shared_ptr_class<kvs_interface> kvs);
 
     template <class DeviceType, class ContextType>
     static vector_class<device_communicator> create_device_communicators(
-        const size_t comm_size,
+        size_t comm_size,
         const map_class<rank_t, DeviceType>& local_rank_device_map,
         ContextType& context,
         shared_ptr_class<kvs_interface> kvs);
