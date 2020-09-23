@@ -3,14 +3,10 @@
 #include "users_kvs.h"
 #include "util/pm/pmi_resizable_rt/pmi_resizable/def.h"
 
-users_kvs::users_kvs(std::shared_ptr<ccl::kvs_interface> kvs) :
-kvs(kvs)
-{
-}
+users_kvs::users_kvs(std::shared_ptr<ccl::kvs_interface> kvs) : kvs(kvs) {}
 
 size_t users_kvs::kvs_set_value(const char* kvs_name, const char* kvs_key, const char* kvs_val) {
-    std::string name(kvs_name),
-                key(kvs_key);
+    std::string name(kvs_name), key(kvs_key);
     ccl::vector_class<char> vec_val(kvs_val, kvs_val + strlen(kvs_val) + 1);
     vec_val[strlen(kvs_val)] = '\0';
     kvs->set((name + key).c_str(), vec_val);
@@ -19,9 +15,8 @@ size_t users_kvs::kvs_set_value(const char* kvs_name, const char* kvs_key, const
 }
 
 size_t users_kvs::kvs_remove_name_key(const char* kvs_name, const char* kvs_key) {
-    ccl::vector_class<char> kvs_val = {'\0'};
-    std::string name(kvs_name),
-                key(kvs_key);
+    ccl::vector_class<char> kvs_val = { '\0' };
+    std::string name(kvs_name), key(kvs_key);
     kvs->set((name + key).c_str(), kvs_val);
 
     return 0;
@@ -30,15 +25,13 @@ size_t users_kvs::kvs_remove_name_key(const char* kvs_name, const char* kvs_key)
 size_t users_kvs::kvs_get_value_by_name_key(const char* kvs_name,
                                             const char* kvs_key,
                                             char* kvs_val) {
-    std::string name(kvs_name),
-                key(kvs_key);
+    std::string name(kvs_name), key(kvs_key);
 
     ccl::vector_class<char> res = kvs->get((name + key).c_str());
     if (res.data())
         SET_STR(kvs_val, MAX_KVS_VAL_LENGTH, "%s", res.data());
     else
         SET_STR(kvs_val, MAX_KVS_VAL_LENGTH, "%s", "");
-
 
     return strlen(kvs_val);
 }

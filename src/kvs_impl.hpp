@@ -39,8 +39,7 @@ public:
         inter_kvs->kvs_set_value(prefix.c_str(), key.c_str(), data.data() ? data.data() : "");
     }
 
-    std::shared_ptr<internal_kvs> get()
-    {
+    std::shared_ptr<internal_kvs> get() {
         return inter_kvs;
     }
 
@@ -58,8 +57,7 @@ vector_class<char> CCL_API kvs::get(const string_class& key) const {
     return pimpl->get(key);
 }
 
-void CCL_API kvs::set(const string_class& key,
-                      const vector_class<char>& data) const {
+void CCL_API kvs::set(const string_class& key, const vector_class<char>& data) const {
     pimpl->set(key, data);
 }
 

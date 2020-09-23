@@ -3,9 +3,7 @@
 #include "util/pm/pmi_resizable_rt/pmi_resizable/kvs/users_kvs.h"
 #include "util/pm/pmi_resizable_rt/pmi_resizable/def.h"
 
-users_kvs::users_kvs(std::shared_ptr<ccl::kvs_interface> kvs)
-{
-}
+users_kvs::users_kvs(std::shared_ptr<ccl::kvs_interface> kvs) {}
 
 size_t users_kvs::kvs_set_value(const char* kvs_name, const char* kvs_key, const char* kvs_val) {
     return 0;

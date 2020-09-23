@@ -259,11 +259,9 @@ void ccl_executor::up_local_coord() {
     const char* mpi_local_id_env = "MPI_LOCALRANKID";
 
     char* local_count = getenv(mpi_local_ranks_env);
-    if (local_count)
-    {
+    if (local_count) {
         char* local_id = getenv(mpi_local_id_env);
-        if (local_id)
-        {
+        if (local_id) {
             local_proc_count = std::atoi(local_count);
             local_proc_idx = std::atoi(local_id);
             return;
@@ -271,6 +269,12 @@ void ccl_executor::up_local_coord() {
     }
     local_proc_count = 1;
     local_proc_idx = 0;
-    LOG_INFO("Warning: ", mpi_local_ranks_env, " or ", mpi_local_id_env, " not found. Use default: ",
-             local_proc_count, " , ", local_proc_idx);
+    LOG_INFO("Warning: ",
+             mpi_local_ranks_env,
+             " or ",
+             mpi_local_id_env,
+             " not found. Use default: ",
+             local_proc_count,
+             " , ",
+             local_proc_idx);
 }

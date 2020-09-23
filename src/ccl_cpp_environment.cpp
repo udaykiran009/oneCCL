@@ -121,8 +121,8 @@ ccl::device_communicator CCL_API ccl::environment::create_single_device_communic
     LOG_TRACE("Create single device communicator from SYCL device");
 
     std::shared_ptr<ikvs_wrapper> kvs_wrapper(new users_kvs(kvs));
-    std::shared_ptr<atl_wrapper> atl = std::shared_ptr<atl_wrapper>(
-        new atl_wrapper(comm_size, {rank}, kvs_wrapper));
+    std::shared_ptr<atl_wrapper> atl =
+        std::shared_ptr<atl_wrapper>(new atl_wrapper(comm_size, { rank }, kvs_wrapper));
 
     ccl::device_comm_split_attr attr = create_device_comm_split_attr(
         ccl::attr_val<ccl::comm_split_attr_id::group>(ccl::device_group_split_type::undetermined));

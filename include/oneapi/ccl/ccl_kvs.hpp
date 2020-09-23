@@ -10,8 +10,7 @@ class CCL_API kvs_interface {
 public:
     virtual vector_class<char> get(const string_class& key) const = 0;
 
-    virtual void set(const string_class& key,
-                     const vector_class<char>& data) const = 0;
+    virtual void set(const string_class& key, const vector_class<char>& data) const = 0;
 
     virtual ~kvs_interface() = default;
 };
@@ -28,8 +27,7 @@ public:
 
     vector_class<char> get(const string_class& key) const override;
 
-    void set(const string_class& key,
-             const vector_class<char>& data) const override;
+    void set(const string_class& key, const vector_class<char>& data) const override;
 
 private:
     friend class environment;

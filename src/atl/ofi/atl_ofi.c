@@ -1467,7 +1467,7 @@ static atl_status_t atl_ofi_init(int* argc,
     ssize_t ret;
     size_t idx, ep_idx;
 
-    memset(&av_attr, 0 , sizeof(struct fi_av_attr));
+    memset(&av_attr, 0, sizeof(struct fi_av_attr));
     providers = NULL;
     base_hints = NULL;
     prov_hints = NULL;
