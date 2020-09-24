@@ -3,6 +3,8 @@ add_subdirectory(coll_attrs)
 #add_subdirectory(host_communicator)
 add_subdirectory(datatype_attrs)
 
+add_subdirectory(device)
+add_subdirectory(device_context)
 if (MULTI_GPU_SUPPORT OR CCL_ENABLE_SYCL)
     add_subdirectory(device_communicator)
     add_subdirectory(event)

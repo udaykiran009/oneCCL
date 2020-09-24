@@ -45,6 +45,20 @@ constexpr bool is_event_supported() {
                          native_event /*>::type>::type*/>::is_supported();
 }
 
+template <class native_device>
+constexpr bool is_device_supported() {
+    return api_type_info</*typename std::remove_pointer<typename std::remove_cv<*/
+                         native_device /*>::type>::type*/>::is_supported();
+}
+
+template <class native_context>
+constexpr bool is_device_context_supported() {
+    return api_type_info</*typename std::remove_pointer<typename std::remove_cv<*/
+                         native_context /*>::type>::type*/>::is_supported();
+}
+
+API_CLASS_TYPE_INFO(empty_t);
+
 #ifdef CCL_ENABLE_SYCL
 API_CLASS_TYPE_INFO(cl::sycl::device)
 
@@ -59,8 +73,8 @@ API_CLASS_TYPE_INFO(cl_event)
 
 template <>
 struct generic_device_type<CCL_ENABLE_SYCL_TRUE> {
-    using handle_t = cl::sycl::device;
-    using impl_t = handle_t;
+    using handle_t = cl_device_id;//cl::sycl::device;
+    using impl_t = cl::sycl::device;
     using ccl_native_t = impl_t;
 
     generic_device_type(device_index_type id,
@@ -141,6 +155,8 @@ using ccl_device_queue = cl_base<ze_command_queue_handle_t, ccl_device>;
 } // namespace native
 
 namespace ccl {
+API_CLASS_TYPE_INFO(std::shared_ptr<native::ccl_context>);
+API_CLASS_TYPE_INFO(std::shared_ptr<native::ccl_device>);
 API_CLASS_TYPE_INFO(std::shared_ptr<native::ccl_device_event>);
 API_CLASS_TYPE_INFO(std::shared_ptr<native::ccl_device_queue>);
 API_CLASS_TYPE_INFO(native::ccl_device_queue);
@@ -217,6 +233,86 @@ struct generic_event_type<CCL_ENABLE_SYCL_FALSE> {
 // no sycl no multu gpu ...
 #undef CCL_ENABLE_SYCL_V
 #define CCL_ENABLE_SYCL_V -1
+
+}
+namespace native {
+class ccl_device;
+class ccl_context;
+class ccl_device_platform;
+/*
+template <class handle_type, class resource_owner>
+class cl_base;
+
+using ccl_device_event = cl_base<ze_event_handle_t, ccl_device>;
+using ccl_device_queue = cl_base<ze_command_queue_handle_t, ccl_device>;*/
+} // namespace native
+
+namespace ccl {
+API_CLASS_TYPE_INFO(std::shared_ptr<native::ccl_context>);
+API_CLASS_TYPE_INFO(std::shared_ptr<native::ccl_device>);
+//API_CLASS_TYPE_INFO(std::shared_ptr<native::ccl_device_event>);
+//API_CLASS_TYPE_INFO(std::shared_ptr<native::ccl_device_queue>);
+
+template <>
+struct generic_device_type<CCL_ENABLE_SYCL_V> {
+    using handle_t = empty_t;
+    using impl_t = native::ccl_device;
+    using ccl_native_t = std::shared_ptr<impl_t>;
+
+    generic_device_type();
+    void get_id() const noexcept;
+    ccl_native_t get() noexcept;
+};
+
+template <>
+struct generic_device_context_type<CCL_ENABLE_SYCL_V> {
+    using handle_t = empty_t;
+    using impl_t = native::ccl_context;
+    using ccl_native_t = std::shared_ptr<impl_t>;
+
+    generic_device_context_type();
+    ccl_native_t get() noexcept;
+    const ccl_native_t& get() const noexcept;
+
+    ccl_native_t context;
+};
+
+template <>
+struct generic_platform_type<CCL_ENABLE_SYCL_V> {
+    using handle_t = empty_t;
+    using impl_t = native::ccl_device_platform;
+    using ccl_native_t = std::shared_ptr<impl_t>;
+
+    ccl_native_t get() noexcept;
+    const ccl_native_t& get() const noexcept;
+};
+/* TODO uncomment later
+template <>
+struct generic_stream_type<CCL_ENABLE_SYCL_V> {
+    using handle_t = void;
+    using impl_t = handle_t;
+    using ccl_native_t = std::shared_ptr<native::ccl_device_queue>;
+
+    generic_stream_type(handle_t);
+    ccl_native_t get() noexcept;
+    const ccl_native_t& get() const noexcept;
+
+    ccl_native_t queue;
+};
+
+template <>
+struct generic_event_type<CCL_ENABLE_SYCL_V> {
+    using handle_t = void;
+    using impl_t = handle_t;
+    using ccl_native_t = std::shared_ptr<native::ccl_device_event>;
+
+    generic_event_type(handle_t e);
+    ccl_native_t get() noexcept;
+    const ccl_native_t& get() const noexcept;
+
+    ccl_native_t event;
+};
+*/
 #endif
 #endif /* else for  CCL_ENABLE_SYCL */
 

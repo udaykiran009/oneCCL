@@ -164,6 +164,44 @@ vector_class<device_communicator> create_device_communicators(
 }
 
 /**
+ * Creates a new device from @native_device_type
+ * @param native_device the existing handle of device
+ * @return device object
+ */
+device create_device();
+
+template <class native_device_type, class T>
+device create_device(native_device_type& native_device) {
+    return environment::instance().create_device(native_device);
+}
+
+template <class... attr_value_pair_t>
+device create_device_from_attr(typename unified_device_type::ccl_native_t dev,
+                               attr_value_pair_t&&... avps) {
+    return environment::instance().create_device_from_attr(
+        dev, std::forward<attr_value_pair_t>(avps)...);
+}
+
+/**
+ * Creates a new context from @native_device_contex_type
+ * @param native_device_context the existing handle of context
+ * @return context object
+ */
+context create_context();
+
+template <class native_device_context_type, class T>
+context create_context(native_device_context_type& native_device_context) {
+    return environment::instance().create_context(native_device_context);
+}
+
+template <class... attr_value_pair_t>
+context create_context_from_attr(typename unified_device_context_type::ccl_native_t ctx,
+                               attr_value_pair_t&&... avps) {
+    return environment::instance().create_context_from_attr(
+        ctx, std::forward<attr_value_pair_t>(avps)...);
+}
+
+/**
  * Splits device communicators according to attributes.
  * @param attrs split attributes for local communicators
  * @return vector of device communicators

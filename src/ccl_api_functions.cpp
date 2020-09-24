@@ -55,6 +55,20 @@ shared_ptr_class<kvs> CCL_API create_kvs(const kvs::address_type& addr) {
     return environment::instance().create_kvs(addr);
 }
 
+/* device */
+device CCL_API create_device()
+{
+    static empty_t empty {};
+    return environment::instance().create_device(empty);
+}
+
+/* context */
+context CCL_API create_context()
+{
+    static empty_t empty {};
+    return environment::instance().create_context(empty);
+}
+
 /* communicator */
 communicator CCL_API create_communicator() {
     return environment::instance().create_communicator();

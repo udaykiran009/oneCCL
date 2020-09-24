@@ -46,6 +46,8 @@ using device_indices_t = std::multiset<device_index_type>;
 using process_device_indices_t = std::map<process_id, device_indices_t>;
 using cluster_device_indices_t = std::map<host_id, process_device_indices_t>;
 
+struct empty_t{
+};
 template <int sycl_feature_enabled>
 struct generic_device_type {};
 

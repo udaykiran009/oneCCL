@@ -65,6 +65,20 @@ shared_ptr_class<kvs> CCL_API environment::create_kvs(const kvs::address_type& a
     return std::shared_ptr<kvs>(new kvs(addr));
 }
 
+// device
+device CCL_API environment::create_device(empty_t empty) const
+{
+    static typename ccl::unified_device_type::ccl_native_t default_native_device;
+    return device::create_device(default_native_device);
+}
+
+// context
+context CCL_API environment::create_context(empty_t empty) const
+{
+    static typename ccl::unified_device_context_type::ccl_native_t default_native_context;
+    return context::create_context(default_native_context);
+}
+
 //Communicator
 communicator CCL_API environment::create_communicator() const {
     return communicator::create_communicator();
@@ -197,6 +211,18 @@ CREATE_DEV_COMM_INSTANTIATION(ccl::device_index_type, cl::sycl::context)
 #endif
 CREATE_STREAM_INSTANTIATION(cl::sycl::queue)
 CREATE_STREAM_EXT_INSTANTIATION(cl::sycl::device, cl::sycl::context)
+
+#ifdef CCL_ENABLE_SYCL
+    CREATE_CONTEXT_INSTANTIATION(cl::sycl::context)
+#else
+    CREATE_CONTEXT_INSTANTIATION(ccl::empty_t)
+#endif //CCL_ENABLE_SYCL
+
+#ifdef CCL_ENABLE_SYCL
+    CREATE_DEVICE_INSTANTIATION(cl::sycl::device)
+#else
+    CREATE_DEVICE_INSTANTIATION(ccl::empty_t)
+#endif //CCL_ENABLE_SYCL
 
 CREATE_EVENT_INSTANTIATION(cl::sycl::event)
 CREATE_EVENT_EXT_INSTANTIATION(cl_event)

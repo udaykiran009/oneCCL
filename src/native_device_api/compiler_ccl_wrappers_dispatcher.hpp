@@ -23,7 +23,7 @@ template <class DeviceType,
                                                    ccl::device_index_type>::value,
                                   int>::type = 0>
 CCL_API ccl_device_driver::device_ptr get_runtime_device(const DeviceType& device) {
-    static_assert(std::is_same<typename ccl::unified_device_type::handle_t, DeviceType>::value,
+    static_assert(std::is_same<typename ccl::unified_device_type::ccl_native_t, DeviceType>::value,
                   "Unsupported 'DeviceType'");
     size_t driver_idx = 0; // limitation for OPENCL/SYCL
     size_t device_id = 0;

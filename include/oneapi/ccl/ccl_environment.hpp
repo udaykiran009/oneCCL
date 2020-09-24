@@ -16,9 +16,17 @@
 #include "oneapi/ccl/ccl_comm_split_attr_ids_traits.hpp"
 #include "oneapi/ccl/ccl_comm_split_attr.hpp"
 
+#include "oneapi/ccl/ccl_context_attr_ids.hpp"
+#include "oneapi/ccl/ccl_context_attr_ids_traits.hpp"
+#include "oneapi/ccl/ccl_context.hpp"
+
 #include "oneapi/ccl/ccl_datatype_attr_ids.hpp"
 #include "oneapi/ccl/ccl_datatype_attr_ids_traits.hpp"
 #include "oneapi/ccl/ccl_datatype_attr.hpp"
+
+#include "oneapi/ccl/ccl_device_attr_ids.hpp"
+#include "oneapi/ccl/ccl_device_attr_ids_traits.hpp"
+#include "oneapi/ccl/ccl_device.hpp"
 
 #include "oneapi/ccl/ccl_event_attr_ids.hpp"
 #include "oneapi/ccl/ccl_event_attr_ids_traits.hpp"
@@ -108,6 +116,48 @@ public:
      * @return kvs object
      */
     shared_ptr_class<kvs> create_kvs(const kvs::address_type& addr) const;
+
+        /**
+     * Creates a new device from @native_device_type
+     * @param native_device the existing handle of device
+     * @return device object
+     */
+    device create_device(empty_t empty) const;
+
+    template <class native_device_type,
+              class = typename std::enable_if<is_device_supported<native_device_type>()>::type>
+    device create_device(native_device_type& native_device) const;
+
+    template <class... attr_value_pair_t>
+    device create_device_from_attr(typename unified_device_type::ccl_native_t dev,
+                                   attr_value_pair_t&&... avps) const {
+        device str = create_postponed_api_type<device>(dev);
+        int expander[]{ (str.template set<attr_value_pair_t::idx()>(avps.val()), 0)... };
+        (void)expander;
+        str.build_from_params();
+        return str;
+    }
+
+    /**
+     * Creates a new device_contex from @native_device_contex_type
+     * @param native_device_context the existing handle of context
+     * @return context object
+     */
+    context create_context(empty_t empty) const;
+
+    template <class native_device_contex_type,
+              class = typename std::enable_if<is_device_supported<native_device_contex_type>()>::type>
+    context create_context(native_device_contex_type& native_device_context) const;
+
+    template <class... attr_value_pair_t>
+    context create_context_from_attr(typename unified_device_context_type::ccl_native_t ctx,
+                                   attr_value_pair_t&&... avps) const {
+        context str = create_postponed_api_type<context>(ctx);
+        int expander[]{ (str.template set<attr_value_pair_t::idx()>(avps.val()), 0)... };
+        (void)expander;
+        str.build_from_params();
+        return str;
+    }
 
     /**
      * Creates a new host communicator with externally provided size, rank and kvs.

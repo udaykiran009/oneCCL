@@ -38,7 +38,7 @@ communicator_interface_ptr communicator_interface_dispatcher::create_communicato
     size_t process_idx,
     const ccl::device_comm_split_attr& attr,
     std::shared_ptr<atl_wrapper> atl) {
-    static_assert(std::is_same<typename unified_device_type::handle_t, DeviceType>::value,
+    static_assert(std::is_same<typename unified_device_type::ccl_native_t, DeviceType>::value,
                   "Unsupported 'DeviceType'");
 
     return communicator_interface_dispatcher::create_communicator_from_unified_device(

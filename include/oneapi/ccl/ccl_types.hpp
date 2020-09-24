@@ -168,6 +168,17 @@ typedef void (*sparse_allreduce_alloc_fn)(size_t,
                                           void**);
 
 // using datatype_attr_t = ccl_datatype_attr_t;
+
+/**
+ *  Supported CL backend types
+ */
+enum class cl_backend_type : int {
+    empty_backend = 0,
+    sycl,
+    l0,
+
+    last_value
+};
 /**
  * Supported stream types
  */

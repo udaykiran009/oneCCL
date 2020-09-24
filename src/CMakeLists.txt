@@ -87,6 +87,8 @@ set(CCL_SRC
     ccl_app_api_datatype_attr.cpp
     ccl_app_api_request.cpp
     ccl_cpp_kvs.cpp
+    ccl_cpp_device.cpp
+    ccl_cpp_context.cpp
     ccl_cpp_utils.cpp
     ccl_empty_attr.cpp
     ccl_empty_coll_attr.cpp
@@ -165,6 +167,8 @@ set(CCL_SRC
     common/comm/comm.cpp
     common/comm/host_communicator/host_communicator.cpp
     common/datatype/datatype.cpp
+    common/device/device.cpp
+    common/context/context.cpp
     common/env/env.cpp
     common/global/global.cpp
     common/log/log.cpp
