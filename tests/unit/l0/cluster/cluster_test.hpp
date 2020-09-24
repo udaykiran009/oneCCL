@@ -4,6 +4,7 @@
 #undef protected
 #undef private
 
+#if 0
 namespace cluster_suite {
 TEST_F(gpu_aggregator_fixture, DISABLED_host_mask_validity) {
     using namespace native;
@@ -52,6 +53,7 @@ TEST_F(communicator_fixture, build_allied_processes_affinity_mask) {
             ccl::device_index_type(0, 0, ccl::unused_index_value),
             ccl::device_index_type(0, 0, ccl::unused_index_value) } }
     };
+
     auto ccl_comm = get_fixture_comm();
     {
         output << "One node case" << std::endl;
@@ -88,7 +90,7 @@ TEST_F(communicator_fixture, build_allied_processes_affinity_mask) {
 
     {
         output << "Two node case" << std::endl;
-        process_group_context p_group_comm(ccl_comm);
+        process_group_context p_group_comm(ccl_comm->get_impl());
 
         std::string real_hostname = p_group_comm.get_host_id();
         if (proces_idx == 0) {
@@ -120,3 +122,4 @@ TEST_F(communicator_fixture, build_allied_processes_affinity_mask) {
     }
 }
 } // namespace cluster_suite
+#endif

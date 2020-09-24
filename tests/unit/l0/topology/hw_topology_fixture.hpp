@@ -55,7 +55,7 @@ public:
         process_idx = proc_idx;
 
         pg_comm.reset(
-            new stub::process_context(ccl::environment::instance().create_communicator()));
+            new stub::process_context(std::make_shared<ccl::communicator>(ccl::create_communicator())));
         tg_comm = pg_comm->thread_group_ctx.get();
     }
 

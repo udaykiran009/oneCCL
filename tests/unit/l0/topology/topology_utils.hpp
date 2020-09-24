@@ -239,7 +239,7 @@ std::pair<bool, std::string> check_ring_multiple_topologies(
         if (!top_type) {
             res = false;
             descr += std::string("Thread: ") + std::to_string(thread_id) +
-                     " - there is no topology: " + std::to_string(topology);
+                     " - there is no topology: " + std::to_string((int) topology);
             break;
         }
 
@@ -247,7 +247,7 @@ std::pair<bool, std::string> check_ring_multiple_topologies(
         if (!devices_ptr) {
             res = false;
             descr += std::string("Thread: ") + std::to_string(thread_id) +
-                     " - there are no devices for topology: " + std::to_string(topology);
+                     " - there are no devices for topology: " + std::to_string((int) topology);
             break;
         }
 

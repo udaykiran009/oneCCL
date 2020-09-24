@@ -1,4 +1,3 @@
-#include "oneapi/ccl/native_device_api/compiler_ccl_wrappers_dispatcher.hpp"
 // test case data
 namespace native_api_test {
 const size_t tiles_count = 2;
