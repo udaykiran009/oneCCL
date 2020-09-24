@@ -33,18 +33,18 @@ void transport_settings::init_by_mpi() {
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
 
     /* create CCL internal KVS */
-    auto &env = ccl::environment::instance();
-    (void)env;
+    ccl::init();
+
     ccl::shared_ptr_class<ccl::kvs> kvs_candidate;
     ccl::kvs::address_type main_addr;
     if (rank == 0) {
-        kvs_candidate = ccl::environment::instance().create_main_kvs();
+        kvs_candidate = ccl::create_main_kvs();
         main_addr = kvs_candidate->get_address();
         MPI_Bcast((void *)main_addr.data(), main_addr.size(), MPI_BYTE, 0, MPI_COMM_WORLD);
     }
     else {
         MPI_Bcast((void *)main_addr.data(), main_addr.size(), MPI_BYTE, 0, MPI_COMM_WORLD);
-        kvs_candidate = ccl::environment::instance().create_kvs(main_addr);
+        kvs_candidate = ccl::create_kvs(main_addr);
     }
     kvs = kvs_candidate;
 }

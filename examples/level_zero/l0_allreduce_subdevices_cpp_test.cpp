@@ -138,12 +138,12 @@ void user_thread_idx(size_t thread_idx, ccl::device_indices_t thread_device_idx,
     // API
 
     // create 'global_communicator' for wire-up processes in cluster
-    ccl::shared_communicator_t global_communicator(ccl::environment::instance().create_communicator());
+    ccl::shared_communicator_t global_communicator(ccl::create_communicator());
 
     // create 'comm_group' for wire-up threads in processes
-    ccl::comm_group_t group = ccl::environment::instance().create_comm_group(thread_device_idx.size(),
-                                                                             total_devices_in_process,
-                                                                             global_communicator);
+    ccl::comm_group_t group = ccl::create_comm_group(thread_device_idx.size(),
+                                                     total_devices_in_process,
+                                                     global_communicator);
 
     // create device communicator attributes
     ccl::device_comm_split_attr my_device_comm_attr = group->create_device_comm_attr();
@@ -206,7 +206,7 @@ void user_thread_idx(size_t thread_idx, ccl::device_indices_t thread_device_idx,
             RESULT
         };
         auto queue_it = std::get<INSERTED_ITER>(queues.emplace(rank, dev->create_cmd_queue()));
-        streams.emplace(rank, ccl::environment::instance().create_stream(queue_it->second.get()));
+        streams.emplace(rank, ccl::create_stream(queue_it->second.get()));
     }
 
     global_communicator->barrier();
@@ -301,7 +301,7 @@ int main(int argc, char** argv)
                                   '|');
     }
 
-    ccl::communicator_t global_comm = ccl::environment::instance().create_communicator();
+    ccl::communicator_t global_comm = ccl::create_communicator();
     size_t instance_rank = global_comm->rank();
     size_t instance_count = global_comm->size();
     std::cout << "Process rank: " << instance_rank << ", size: " << instance_count << std::endl;

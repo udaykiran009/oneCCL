@@ -33,7 +33,7 @@ typedef struct bench_coll_exec_attr {
         template <class attr_t>
         void operator()(ccl::shared_ptr_class<attr_t>& attr) {
             attr = std::make_shared<attr_t>(
-                ccl::environment::instance().create_operation_attr<attr_t>());
+                ccl::create_operation_attr<attr_t>());
         }
     };
 
@@ -154,7 +154,7 @@ struct cpu_specific_data {
         }
 
         comm_ptr = std::make_shared<ccl::communicator>(
-            ccl::environment::instance().create_communicator(size, rank, kvs));
+            ccl::create_communicator(size, rank, kvs));
     }
 
     static void deinit() {
@@ -179,7 +179,7 @@ struct device_specific_data {
             throw ccl::ccl_error(std::string(__FUNCTION__) + " - reinit is not allowed");
         }
 
-        comm_array = ccl::environment::instance().create_device_communicators(
+        comm_array = ccl::create_device_communicators(
             size,
             ccl::vector_class<ccl::pair_class<ccl::rank_t, cl::sycl::device>>{ { rank, device } },
             ctx,

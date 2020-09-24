@@ -22,6 +22,7 @@ template <class... attr_value_pair_t>
 datatype_attr CCL_API create_datatype_attr(attr_value_pair_t&&... avps) {
     return environment::instance().create_datatype_attr(std::forward<attr_value_pair_t>(avps)...);
 }
+
 /**
  * Registers custom datatype to be used in communication operations
  * @param attr datatype attributes
@@ -175,12 +176,14 @@ vector_class<device_communicator> split_device_communicators(
  * @param native_stream the existing handle of stream
  * @return stream object
  */
-template <class native_stream_type, class T>
+template <class native_stream_type,
+          class = typename std::enable_if<is_stream_supported<native_stream_type>()>::type>
 stream create_stream(native_stream_type& native_stream) {
     return environment::instance().create_stream(native_stream);
 }
 
-template <class native_stream_type, class native_context_type, class T>
+template <class native_stream_type, class native_context_type,
+          class = typename std::enable_if<is_stream_supported<native_stream_type>()>::type>
 stream create_stream(native_stream_type& native_stream, native_context_type& native_ctx) {
     return environment::instance().create_stream(native_stream, native_ctx);
 }
@@ -205,12 +208,14 @@ stream create_stream_from_attr(typename unified_device_type::ccl_native_t device
      * @param native_event the existing handle of event
      * @return event object
      */
-template <class event_type, class T>
+template <class event_type,
+          class = typename std::enable_if<is_event_supported<event_type>()>::type>
 event create_event(event_type& native_event) {
     return environment::instance().create_event(native_event);
 }
 
-template <class event_handle_type, class T>
+template <class event_handle_type,
+          class = typename std::enable_if<is_event_supported<event_handle_type>()>::type>
 event create_event(event_handle_type native_event_handle,
                    typename unified_device_context_type::ccl_native_t context) {
     return environment::instance().create_event(native_event_handle, context);

@@ -14,7 +14,7 @@
 #include "declarations.hpp"
 
 #include "transport_impl.hpp"
-void do_regular(ccl::communicator* comm,
+void do_regular(const ccl::communicator& comm,
                 bench_coll_exec_attr& bench_attr,
                 coll_list_t& all_colls,
                 req_list_t& reqs,
@@ -42,12 +42,12 @@ void do_regular(ccl::communicator* comm,
                 continue;
 
             PRINT_BY_ROOT(
-                (*comm), "\ndtype: %s\nreduction: %s\n", dtype_name.c_str(), reduction.c_str());
+                comm, "\ndtype: %s\nreduction: %s\n", dtype_name.c_str(), reduction.c_str());
 
             reqs.reserve(colls.size() * options.buf_count);
 
             /* warm up */
-            PRINT_BY_ROOT((*comm), "do warm up");
+            PRINT_BY_ROOT(comm, "do warm up");
 
             bench_attr.reduction = reduction_op;
             bench_attr.set<ccl::operation_attr_id::to_cache>(0);
@@ -55,7 +55,7 @@ void do_regular(ccl::communicator* comm,
             for (size_t count = options.min_elem_count; count <= options.max_elem_count;
                  count *= 2) {
                 for (size_t iter_idx = 0; iter_idx < options.warmup_iters; iter_idx++) {
-                    comm->barrier();
+                    ccl::barrier(comm);
 
                     for (size_t coll_idx = 0; coll_idx < colls.size(); coll_idx++) {
                         auto& coll = colls[coll_idx];
@@ -80,7 +80,7 @@ void do_regular(ccl::communicator* comm,
 
             /* benchmark with multiple equal sized buffer per collective */
             if (options.buf_type == BUF_MULTI) {
-                PRINT_BY_ROOT((*comm),
+                PRINT_BY_ROOT(comm,
                               "do multi-buffers benchmark\n"
                               "#------------------------------------------------------------\n"
                               "# Benchmarking: %s\n"
@@ -88,7 +88,7 @@ void do_regular(ccl::communicator* comm,
                               "#------------------------------------------------------------\n"
                               "%10s %13s %18s %11s",
                               scolls.str().c_str(),
-                              comm->size(),
+                              comm.size(),
                               "#bytes",
                               "avg[usec]",
                               "avg_per_buf[usec]",
@@ -101,7 +101,7 @@ void do_regular(ccl::communicator* comm,
                         // but aggregate over buffers and iterations
                         std::vector<double> t(colls.size(), 0);
                         for (size_t coll_idx = 0; coll_idx < colls.size(); coll_idx++) {
-                            comm->barrier();
+                            ccl::barrier(comm);
 
                             double t1 = when();
                             for (size_t iter_idx = 0; iter_idx < options.iters; iter_idx++) {
@@ -137,7 +137,7 @@ void do_regular(ccl::communicator* comm,
                             double t2 = when();
                             t[coll_idx] += (t2 - t1);
                         }
-                        print_timings(*comm, t, options, count, dtype, reduction_op);
+                        print_timings(comm, t, options, count, dtype, reduction_op);
                     }
                     catch (const std::exception& ex) {
                         ASSERT(0, "error on count %zu, reason: %s", count, ex.what());
@@ -146,7 +146,7 @@ void do_regular(ccl::communicator* comm,
             }
             else {
                 /* benchmark with single buffer per collective */
-                PRINT_BY_ROOT((*comm),
+                PRINT_BY_ROOT(comm,
                               "do single-buffer benchmark\n"
                               "#--------------------------------------\n"
                               "# Benchmarking: %s\n"
@@ -154,7 +154,7 @@ void do_regular(ccl::communicator* comm,
                               "#--------------------------------------\n"
                               "%10s %12s %11s",
                               scolls.str().c_str(),
-                              comm->size(),
+                              comm.size(),
                               "#bytes",
                               "avg[usec]",
                               "stddev[%]");
@@ -170,7 +170,7 @@ void do_regular(ccl::communicator* comm,
                         double t1 = when();
                         for (size_t coll_idx = 0; coll_idx < colls.size(); coll_idx++) {
                             auto& coll = colls[coll_idx];
-                            comm->barrier();
+                            ccl::barrier(comm);
 
                             for (size_t iter_idx = 0; iter_idx < options.iters; iter_idx++) {
                                 snprintf(match_id.data(),
@@ -189,19 +189,19 @@ void do_regular(ccl::communicator* comm,
                             t[coll_idx] += (t2 - t1);
                         }
 
-                        print_timings(*comm, t, options, count, dtype, reduction_op);
+                        print_timings(comm, t, options, count, dtype, reduction_op);
                     }
                     catch (...) {
                         ASSERT(0, "error on count %zu", count);
                     }
                 }
-                PRINT_BY_ROOT((*comm), "PASSED\n");
+                PRINT_BY_ROOT(comm, "PASSED\n");
             }
         }
     }
 }
 
-void do_unordered(ccl::communicator* comm,
+void do_unordered(const ccl::communicator& comm,
                   bench_coll_exec_attr& bench_attr,
                   coll_list_t& all_colls,
                   req_list_t& reqs,
@@ -231,13 +231,13 @@ void do_unordered(ccl::communicator* comm,
                 continue;
 
             PRINT_BY_ROOT(
-                (*comm), "\ndtype: %s\nreduction: %s\n", dtype_name.c_str(), reduction.c_str());
+                comm, "\ndtype: %s\nreduction: %s\n", dtype_name.c_str(), reduction.c_str());
 
-            size_t rank = comm->rank();
+            size_t rank = comm.rank();
 
             reqs.reserve(colls.size() * options.buf_count * (log2(options.max_elem_count) + 1));
 
-            PRINT_BY_ROOT((*comm), "do unordered test");
+            PRINT_BY_ROOT(comm, "do unordered test");
             bench_attr.reduction = reduction_op;
             bench_attr.set<ccl::operation_attr_id::to_cache>(1);
 
@@ -297,7 +297,7 @@ void do_unordered(ccl::communicator* comm,
             catch (...) {
                 ASSERT(0, "error on coll completion");
             }
-            PRINT_BY_ROOT((*comm), "PASSED\n");
+            PRINT_BY_ROOT(comm, "PASSED\n");
         }
     }
 }
@@ -313,8 +313,8 @@ void create_cpu_colls(bench_coll_init_attr& init_attr,
         sparse_allreduce_strategy_impl<ccl::bfp16, sparse_detail::incremental_indices_distributor>;
 
     std::stringstream error_messages_stream;
-    //base_coll::comm = ccl::environment::instance().create_communicator();
-    //base_coll::stream = ccl::environment::instance().create_stream();
+    //base_coll::comm = ccl::create_communicator();
+    //base_coll::stream = ccl::create_stream();
     for (auto names_it = options.coll_names.begin(); names_it != options.coll_names.end();) {
         const std::string& name = *names_it;
         if (name == allgatherv_strategy_impl::class_name()) {
@@ -392,8 +392,8 @@ void create_sycl_colls(bench_coll_init_attr& init_attr,
         sparse_allreduce_strategy_impl<ccl::bfp16, sparse_detail::incremental_indices_distributor>;
 
     std::stringstream error_messages_stream;
-    //base_coll::comm = ccl::environment::instance().create_communicator();
-    //base_coll::stream = ccl::environment::instance().create_stream(sycl_queue);
+    //base_coll::comm = ccl::create_communicator();
+    //base_coll::stream = ccl::create_stream(sycl_queue);
 
     for (auto names_it = options.coll_names.begin(); names_it != options.coll_names.end();) {
         const std::string& name = *names_it;
@@ -582,7 +582,7 @@ int main(int argc, char* argv[]) {
         return -1;
     }
 
-    comm.barrier();
+    ccl::barrier(comm);
 #ifdef CCL_ENABLE_SYCL
     set_pinning(comm);
 #endif
@@ -603,14 +603,14 @@ int main(int argc, char* argv[]) {
                      << std::endl;
                 csvf.close();
             }
-            comm.barrier();
-            do_regular(&comm, bench_attr, colls, reqs, options);
+            ccl::barrier(comm);
+            do_regular(comm, bench_attr, colls, reqs, options);
             break;
         }
         case LOOP_UNORDERED: {
             // no timing is printed or exported here
-            comm.barrier();
-            do_unordered(&comm, bench_attr, colls, reqs, options);
+            ccl::barrier(comm);
+            do_unordered(comm, bench_attr, colls, reqs, options);
             break;
         }
         default: ASSERT(0, "unknown loop %d", options.loop); break;

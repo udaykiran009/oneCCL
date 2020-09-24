@@ -21,11 +21,12 @@ struct reduce_strategy_impl {
                         const bench_coll_exec_attr& bench_attr,
                         req_list_t& reqs,
                         Args&&... args) {
-        reqs.push_back(comm.reduce(send_buf,
+        reqs.push_back(ccl::reduce(send_buf,
                                    recv_buf,
                                    count,
                                    bench_attr.reduction,
                                    COLL_ROOT,
+                                   comm,
                                    std::forward<Args>(args)...));
     }
 };

@@ -3,7 +3,7 @@
 #include "base.hpp"
 
 int main() {
-    auto version = ccl::environment::instance().get_library_version();
+    auto version = ccl::get_library_version();
 
     printf("\nCompile-time CCL library version:\nmajor: %d\nminor: %d\nupdate: %d\n"
            "Product: %s\nBuild date: %s\nFull: %s\n",

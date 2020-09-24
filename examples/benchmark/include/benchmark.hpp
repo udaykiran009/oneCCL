@@ -289,7 +289,7 @@ typedef struct user_options_t {
 
 /* placing print_timings() here is because of declaration of user_options_t */
 // FIXME FS: what?
-void print_timings(ccl::communicator& comm,
+void print_timings(const ccl::communicator& comm,
                    const std::vector<double>& timer,
                    const user_options_t& options,
                    const size_t elem_count,
@@ -304,7 +304,7 @@ void print_timings(ccl::communicator& comm,
     for (idx = 0; idx < comm.size(); idx++)
         recv_counts[idx] = ncolls;
 
-    comm.allgatherv(timer.data(), ncolls, all_timers.data(), recv_counts).wait();
+    ccl::allgatherv(timer.data(), ncolls, all_timers.data(), recv_counts, comm).wait();
 
     if (comm.rank() == 0) {
         std::vector<double> timers(comm.size(), 0);
@@ -330,13 +330,13 @@ void print_timings(ccl::communicator& comm,
         stddev_timer = sqrt(sum / comm.size()) / avg_timer * 100;
         if (options.buf_type == BUF_SINGLE) {
             printf("%10zu %12.2lf %11.1lf\n",
-                   elem_count * ccl::environment::instance().get_datatype_size(dtype) * buf_count,
+                   elem_count * ccl::get_datatype_size(dtype) * buf_count,
                    avg_timer,
                    stddev_timer);
         }
         else {
             printf("%10zu %13.2lf %18.2lf %11.1lf\n",
-                   elem_count * ccl::environment::instance().get_datatype_size(dtype) * buf_count,
+                   elem_count * ccl::get_datatype_size(dtype) * buf_count,
                    avg_timer,
                    avg_timer_per_buf,
                    stddev_timer);
@@ -364,14 +364,14 @@ void print_timings(ccl::communicator& comm,
                      ++cop, ++idx) {
                     csvf << comm.size() << "," << (*cop) << "," << reduction_names[op] << ","
                          << dtype_names[dtype] << ","
-                         << ccl::environment::instance().get_datatype_size(dtype) << ","
+                         << ccl::get_datatype_size(dtype) << ","
                          << elem_count << "," << buf_count << "," << avg_timer[idx] << std::endl;
                 }
                 csvf.close();
             }
         }
     }
-    comm.barrier();
+    ccl::barrier(comm);
 }
 
 /* specific benchmark functors */
@@ -391,7 +391,9 @@ public:
     }
 };
 
-int parse_user_options(int& argc, char**(&argv), user_options_t& options) {
+int parse_user_options(int& argc,
+                       char**(&argv),
+                       user_options_t& options) {
     int ch;
     int errors = 0;
 
@@ -472,7 +474,8 @@ int parse_user_options(int& argc, char**(&argv), user_options_t& options) {
     return 0;
 }
 
-void print_user_options(const user_options_t& options, ccl::communicator& comm) {
+void print_user_options(const user_options_t& options,
+                        const ccl::communicator& comm) {
     std::stringstream ss;
     ss << "colls:          ";
     std::copy(options.coll_names.begin(),

@@ -37,7 +37,7 @@ struct allgatherv_strategy_impl {
             recv_counts[idx] = count;
         }
         reqs.push_back(
-            comm.allgatherv(send_buf, count, recv_buf, recv_counts, std::forward<Args>(args)...));
+            ccl::allgatherv(send_buf, count, recv_buf, recv_counts, comm, std::forward<Args>(args)...));
     }
 };
 

@@ -32,8 +32,8 @@ void sparse_allreduce_completion_fn(const void* ind_buf,
     // printf("callback: ibuf %p, icnt %zu, idt %d, vbuf %p, cvnt %zu, vdt %d\n",
     //     ind_buf, ind_count, ind_dtype, val_buf, val_count, val_dtype);
 
-    size_t ind_bytes = ind_count * ccl::environment::instance().get_datatype_size(ind_dtype);
-    size_t val_bytes = val_count * ccl::environment::instance().get_datatype_size(val_dtype);
+    size_t ind_bytes = ind_count * ccl::get_datatype_size(ind_dtype);
+    size_t val_bytes = val_count * ccl::get_datatype_size(val_dtype);
 
     ASSERT(fn_ctx, "fn_ctx is null");
 
@@ -70,8 +70,8 @@ void sparse_allreduce_alloc_fn(size_t ind_count,
     // printf("callback: icnt %zu, idt %d, cvnt %zu, vdt %d\n",
     //     ind_count, ind_dtype, val_count, val_dtype);
 
-    size_t ind_bytes = ind_count * ccl::environment::instance().get_datatype_size(ind_dtype);
-    size_t val_bytes = val_count * ccl::environment::instance().get_datatype_size(val_dtype);
+    size_t ind_bytes = ind_count * ccl::get_datatype_size(ind_dtype);
+    size_t val_bytes = val_count * ccl::get_datatype_size(val_dtype);
 
     ASSERT(fn_ctx, "fn_ctx is null");
 
@@ -169,16 +169,17 @@ struct sparse_allreduce_strategy_impl {
             ccl::sparse_coalesce_mode::keep_precision);
 
 #ifndef CCL_ENABLE_SYCL
-        reqs.push_back(comm.sparse_allreduce(send_ibuf,
-                                             std::get<0>(expected),
-                                             send_vbuf,
-                                             send_vcount,
-                                             recv_ibuf,
-                                             recv_icount,
-                                             recv_vbuf,
-                                             recv_vcount,
-                                             bench_attr.reduction,
-                                             std::forward<Args>(args)...));
+        reqs.push_back(ccl::preview::sparse_allreduce(send_ibuf,
+                                                      std::get<0>(expected),
+                                                      send_vbuf,
+                                                      send_vcount,
+                                                      recv_ibuf,
+                                                      recv_icount,
+                                                      recv_vbuf,
+                                                      recv_vcount,
+                                                      bench_attr.reduction,
+                                                      comm,
+                                                      std::forward<Args>(args)...));
 #endif
     }
 

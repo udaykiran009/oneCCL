@@ -46,7 +46,7 @@ void user_thread_idx(size_t thread_idx,
 
     // Create device communicators
     std::vector<ccl::device_communicator> comms =
-        ccl::environment::instance().create_device_communicators(
+        ccl::create_device_communicators(
             total_devices_in_cluster, devices, ctx, kvs_instance);
 
     std::cout << "Create device communicators, expected count: " << devices.size() << std::endl;
@@ -58,7 +58,7 @@ void user_thread_idx(size_t thread_idx,
         size_t rank = comm.rank();
 
         // create comm split attr
-        auto device_spilt_attr = ccl::environment::instance().create_device_comm_split_attr();
+        auto device_spilt_attr = ccl::create_device_comm_split_attr();
         (void)device_spilt_attr;
 
         // create stream from device communicator directly
@@ -103,13 +103,14 @@ void user_thread_idx(size_t thread_idx,
         allocated_memory_array& mem_objects = memory_storage.find(rank)->second;
 
         // create operation attributes
-        auto attr = ccl::environment::instance().create_operation_attr<ccl::allreduce_attr>();
+        auto attr = ccl::create_operation_attr<ccl::allreduce_attr>();
 
         // invoke operation
-        reqs.push_back(comm.allreduce(mem_objects[0],
+        reqs.push_back(ccl::allreduce(mem_objects[0],
                                       mem_objects[1],
                                       COUNT,
                                       ccl::reduction::sum,
+                                      comm,
                                       streams.find(rank)->second,
                                       attr));
     }
@@ -163,7 +164,7 @@ void user_thread_idx(size_t thread_idx,
 
     // Create device communicators
     std::vector<ccl::device_communicator> comms =
-        ccl::environment::instance().create_device_communicators(
+        ccl::create_device_communicators(
             total_devices_in_cluster, ranked_device_indices, ctx, kvs);
 
     std::cout << "Create device communicators, expected count: " << ranked_device_indices.size()
@@ -199,7 +200,7 @@ void user_thread_idx(size_t thread_idx,
         // create native stream
         enum { INSERTED_ITER, RESULT };
         auto queue_it = std::get<INSERTED_ITER>(queues.emplace(rank, dev->create_cmd_queue()));
-        streams.emplace(rank, ccl::environment::instance().create_stream(queue_it->second.get()));
+        streams.emplace(rank, ccl::create_stream(queue_it->second.get()));
     }
 
     //allreduce
@@ -292,12 +293,12 @@ int main(int argc, char** argv) {
     std::cout << "MPI process rank: " << mpi_rank << ", size: " << mpi_size << std::endl;
 
     // build CCL internal KVS
-    auto& env = ccl::environment::instance();
-    (void)env;
+    ccl::init();
+
     std::shared_ptr<ccl::kvs> kvs_instance;
     ccl::kvs::address_type main_addr;
     if (mpi_rank == 0) {
-        kvs_instance = ccl::environment::instance().create_main_kvs();
+        kvs_instance = ccl::create_main_kvs();
         main_addr = kvs_instance->get_address();
 
         std::cout << "Master KVS  hast build on addr: " /*<< main_addr*/ << std::endl;
@@ -305,7 +306,7 @@ int main(int argc, char** argv) {
     }
     else {
         MPI_Bcast((void*)main_addr.data(), main_addr.size(), MPI_BYTE, 0, MPI_COMM_WORLD);
-        kvs_instance = ccl::environment::instance().create_kvs(main_addr);
+        kvs_instance = ccl::create_kvs(main_addr);
 
         std::cout << "Slave KVS hast connected on addr: " /* << main_addr*/ << std::endl;
     }

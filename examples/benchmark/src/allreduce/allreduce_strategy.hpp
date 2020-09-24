@@ -18,8 +18,8 @@ struct allreduce_strategy_impl {
                         const bench_coll_exec_attr& bench_attr,
                         req_list_t& reqs,
                         Args&&... args) {
-        reqs.push_back(comm.allreduce(
-            send_buf, recv_buf, count, bench_attr.reduction, std::forward<Args>(args)...));
+        reqs.push_back(ccl::allreduce(
+            send_buf, recv_buf, count, bench_attr.reduction, comm, std::forward<Args>(args)...));
     }
 };
 

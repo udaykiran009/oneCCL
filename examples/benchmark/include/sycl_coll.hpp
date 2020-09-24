@@ -5,7 +5,7 @@
 
 #ifdef CCL_ENABLE_SYCL
 
-void set_pinning(ccl::communicator& comm) {
+void set_pinning(const ccl::communicator& comm) {
     // select requested platform by SYCL_BE: L0 or OpenCL
     std::vector<cl::sycl::device> all_devices =
         cl::sycl::device::get_devices(info::device_type::gpu);

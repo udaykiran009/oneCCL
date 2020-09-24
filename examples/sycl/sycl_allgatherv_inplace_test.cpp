@@ -22,23 +22,23 @@ int main(int argc, char **argv) {
     }
 
     /* create CCL internal KVS */
-    auto &env = ccl::environment::instance();
-    (void)env;
+    ccl::init();
+
     ccl::shared_ptr_class<ccl::kvs> kvs;
     ccl::kvs::address_type main_addr;
     if (rank == 0) {
-        kvs = ccl::environment::instance().create_main_kvs();
+        kvs = ccl::create_main_kvs();
         main_addr = kvs->get_address();
         MPI_Bcast((void *)main_addr.data(), main_addr.size(), MPI_BYTE, 0, MPI_COMM_WORLD);
     }
     else {
         MPI_Bcast((void *)main_addr.data(), main_addr.size(), MPI_BYTE, 0, MPI_COMM_WORLD);
-        kvs = ccl::environment::instance().create_kvs(main_addr);
+        kvs = ccl::create_kvs(main_addr);
     }
 
     /* create SYCL communicator */
     auto ctx = q.get_context();
-    auto communcators = ccl::environment::instance().create_device_communicators(
+    auto communcators = ccl::create_device_communicators(
         size,
         ccl::vector_class<ccl::pair_class<ccl::rank_t, cl::sycl::device>>{
             { rank, q.get_device() } },
@@ -47,7 +47,7 @@ int main(int argc, char **argv) {
     auto &comm = *communcators.begin();
 
     /* create SYCL stream */
-    auto stream = ccl::environment::instance().create_stream(q);
+    auto stream = ccl::create_stream(q);
 
     sendbuf_count = COUNT + rank;
     recvbuf_count = COUNT * size + ((size - 1) * size) / 2;
@@ -97,8 +97,8 @@ int main(int argc, char **argv) {
     handle_exception(q);
     /* invoke ccl_allgatherv on the CPU side */
     /* request in-place operation by providing recvbuf as input */
-    auto attr = ccl::environment::instance().create_operation_attr<ccl::allgatherv_attr>();
-    comm.allgatherv(recvbuf, sendbuf_count, recvbuf, recv_counts, stream, attr).wait();
+    auto attr = ccl::create_operation_attr<ccl::allgatherv_attr>();
+    ccl::allgatherv(recvbuf, sendbuf_count, recvbuf, recv_counts, comm, stream, attr).wait();
 
     /* open recvbuf and check its correctness on the target device side */
     q.submit([&](handler &cgh) {

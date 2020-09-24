@@ -37,8 +37,8 @@ struct alltoallv_strategy_impl {
             recv_counts[idx] = count;
         }
 
-        reqs.push_back(comm.alltoallv(
-            send_buf, send_counts, recv_buf, recv_counts, std::forward<Args>(args)...));
+        reqs.push_back(ccl::alltoallv(
+            send_buf, send_counts, recv_buf, recv_counts, comm, std::forward<Args>(args)...));
     }
 };
 

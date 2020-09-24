@@ -5,7 +5,7 @@
 #endif
 
 int main() {
-    auto version = ccl::environment::instance().get_library_version();
+    auto version = ccl::get_library_version();
     std::cout << "CCL library info:\nVersion:\n"
               << "major: " << version.major << "\nminor: " << version.minor
               << "\nupdate: " << version.update << "\nProduct: " << version.product_status
