@@ -1,5 +1,4 @@
 #include "oneapi/ccl/ccl_types.hpp"
-#if defined(MULTI_GPU_SUPPORT) || defined(CCL_ENABLE_SYCL)
 #include "stream_impl.hpp"
 #include "oneapi/ccl/native_device_api/export_api.hpp"
 
@@ -42,7 +41,9 @@ API_STREAM_CREATION_FORCE_INSTANTIATION(
     native::cl_base<ze_command_queue_handle_t COMMA native::ccl_device>)
 API_STREAM_CREATION_FORCE_INSTANTIATION(
     ccl::shared_ptr_class<native::cl_base<ze_command_queue_handle_t COMMA native::ccl_device>>)
+API_STREAM_CREATION_FORCE_INSTANTIATION(ccl::shared_ptr_class<native::ccl_device>)
 #endif
+//API_STREAM_CREATION_FORCE_INSTANTIATION(ccl::empty_t)
 #endif
 
 API_STREAM_FORCE_INSTANTIATION(ccl::stream_attr_id::version, ccl::library_version);
@@ -57,7 +58,5 @@ API_STREAM_FORCE_INSTANTIATION(ccl::stream_attr_id::index, uint32_t);
 API_STREAM_FORCE_INSTANTIATION(ccl::stream_attr_id::flags, size_t);
 API_STREAM_FORCE_INSTANTIATION(ccl::stream_attr_id::mode, size_t);
 API_STREAM_FORCE_INSTANTIATION(ccl::stream_attr_id::priority, size_t);
-
-#endif
 
 #undef COMMA

@@ -4,8 +4,6 @@
 #error "Do not include this file directly. Please include 'ccl.hpp'"
 #endif
 
-#if defined(MULTI_GPU_SUPPORT) || defined(CCL_ENABLE_SYCL)
-
 namespace ccl {
 namespace details {
 
@@ -45,4 +43,3 @@ struct ccl_api_type_attr_traits<event_attr_id, event_attr_id::command_execution_
 
 } // namespace details
 } // namespace ccl
-#endif //#if defined(MULTI_GPU_SUPPORT) || defined(CCL_ENABLE_SYCL)

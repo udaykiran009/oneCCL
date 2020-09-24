@@ -32,7 +32,7 @@ public:
     ~ccl_stream() = default;
 
     using stream_provider_dispatcher::get_native_stream;
-#if defined(MULTI_GPU_SUPPORT) || defined(CCL_ENABLE_SYCL)
+
     ccl_stream_type_t get_type() const {
         return type;
     }
@@ -149,5 +149,4 @@ private:
     typename priority_traits_t::return_type priority_val;
 
     bool is_context_enabled{ false };
-#endif //#if defined(MULTI_GPU_SUPPORT) || defined(CCL_ENABLE_SYCL)
 };

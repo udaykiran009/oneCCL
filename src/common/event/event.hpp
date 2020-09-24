@@ -13,7 +13,6 @@ class environment; //friend-zone
 class alignas(CACHELINE_SIZE) ccl_event {
 public:
     friend class ccl::environment;
-#if defined(MULTI_GPU_SUPPORT) || defined(CCL_ENABLE_SYCL)
     using event_native_handle_t = typename ccl::unified_event_type::handle_t;
     using event_native_t = typename ccl::unified_event_type::ccl_native_t;
 
@@ -79,5 +78,4 @@ private:
 
     typename command_type_traits_t::return_type command_type_val;
     typename command_execution_status_traits_t::return_type command_execution_status_val;
-#endif //#if defined(MULTI_GPU_SUPPORT) || defined(CCL_ENABLE_SYCL)
 };

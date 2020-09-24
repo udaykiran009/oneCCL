@@ -202,18 +202,38 @@ context create_context_from_attr(typename unified_device_context_type::ccl_nativ
 }
 
 /**
- * Splits device communicators according to attributes.
- * @param attrs split attributes for local communicators
- * @return vector of device communicators
+ * Creates a new event from @native_event_type
+ * @param native_event the existing handle of event
+ * @return event object
  */
-vector_class<device_communicator> split_device_communicators(
-    const vector_class<pair_class<device_communicator, device_comm_split_attr>>& attrs);
+template <class event_type,
+          class = typename std::enable_if<is_event_supported<event_type>()>::type>
+event create_event(event_type& native_event) {
+    return environment::instance().create_event(native_event);
+}
+
+template <class event_handle_type,
+          class = typename std::enable_if<is_event_supported<event_handle_type>()>::type>
+event create_event(event_handle_type native_event_handle,
+                   typename unified_device_context_type::ccl_native_t context) {
+    return environment::instance().create_event(native_event_handle, context);
+}
+
+template <class event_type, class... attr_value_pair_t>
+event create_event_from_attr(event_type& native_event_handle,
+                             typename unified_device_context_type::ccl_native_t context,
+                             attr_value_pair_t&&... avps) {
+    return environment::instance().create_event_from_attr(
+        native_event_handle, context, std::forward<attr_value_pair_t>(avps)...);
+}
 
 /**
  * Creates a new stream from @native_stream_type
  * @param native_stream the existing handle of stream
  * @return stream object
  */
+stream create_stream();
+
 template <class native_stream_type,
           class = typename std::enable_if<is_stream_supported<native_stream_type>()>::type>
 stream create_stream(native_stream_type& native_stream) {
@@ -242,30 +262,13 @@ stream create_stream_from_attr(typename unified_device_type::ccl_native_t device
 }
 
 /**
-     * Creates a new event from @native_event_type
-     * @param native_event the existing handle of event
-     * @return event object
-     */
-template <class event_type,
-          class = typename std::enable_if<is_event_supported<event_type>()>::type>
-event create_event(event_type& native_event) {
-    return environment::instance().create_event(native_event);
-}
+ * Splits device communicators according to attributes.
+ * @param attrs split attributes for local communicators
+ * @return vector of device communicators
+ */
+vector_class<device_communicator> split_device_communicators(
+    const vector_class<pair_class<device_communicator, device_comm_split_attr>>& attrs);
 
-template <class event_handle_type,
-          class = typename std::enable_if<is_event_supported<event_handle_type>()>::type>
-event create_event(event_handle_type native_event_handle,
-                   typename unified_device_context_type::ccl_native_t context) {
-    return environment::instance().create_event(native_event_handle, context);
-}
-
-template <class event_type, class... attr_value_pair_t>
-event create_event_from_attr(event_type& native_event_handle,
-                             typename unified_device_context_type::ccl_native_t context,
-                             attr_value_pair_t&&... avps) {
-    return environment::instance().create_event_from_attr(
-        native_event_handle, context, std::forward<attr_value_pair_t>(avps)...);
-}
 
 #endif //#if defined(MULTI_GPU_SUPPORT) || defined(CCL_ENABLE_SYCL)
 

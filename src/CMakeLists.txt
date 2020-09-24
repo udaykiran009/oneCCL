@@ -4,10 +4,8 @@ set (EXTENSIONS_SRC)
 
 if (CCL_ENABLE_SYCL)
     list (APPEND EXTENSIONS_SRC
-                    ccl_empty_stream.cpp
+
                     ccl_cpp_gpu_api.cpp
-                    ccl_cpp_stream.cpp
-                    ccl_cpp_event.cpp
                     ccl_cpp_device_communicator.cpp
 
                     native_device_api/l0/utils.cpp
@@ -16,8 +14,7 @@ if (CCL_ENABLE_SYCL)
                     #common/comm/l0/comm_context_storage.cpp
                     common/comm/comm_interface.cpp
                     common/comm/single_device_communicator/single_device_communicator.cpp
-                    common/event/event.cpp
-                    common/stream/stream.cpp)
+        )
 endif(CCL_ENABLE_SYCL)
 
 if (MULTI_GPU_SUPPORT)
@@ -25,8 +22,6 @@ list (APPEND EXTENSIONS_SRC
                     ccl_cpp_gpu_api.cpp
                     ccl_gpu_modules.cpp
                     ccl_cpp_utils.cpp
-                    ccl_cpp_stream.cpp
-                    ccl_cpp_event.cpp
                     ccl_cpp_device_communicator.cpp
 
                     native_device_api/l0/base.cpp
@@ -43,9 +38,6 @@ list (APPEND EXTENSIONS_SRC
 
                     common/comm/l0/comm_context.cpp
                     common/comm/l0/comm_context_storage.cpp
-
-                    common/event/event.cpp
-                    common/stream/stream.cpp
 
                     common/comm/l0/devices/ccl_gpu_comm.cpp
                     common/comm/l0/devices/ccl_virtual_gpu_comm.cpp
@@ -88,10 +80,13 @@ set(CCL_SRC
     ccl_app_api_request.cpp
     ccl_cpp_kvs.cpp
     ccl_cpp_device.cpp
+    ccl_cpp_stream.cpp
+    ccl_cpp_event.cpp
     ccl_cpp_context.cpp
     ccl_cpp_utils.cpp
     ccl_empty_attr.cpp
     ccl_empty_coll_attr.cpp
+    ccl_empty_stream.cpp
     atl/atl.cpp
     atl/atl_wrapper.cpp
     atl/mpi/atl_mpi.cpp
@@ -166,9 +161,13 @@ set(CCL_SRC
     common/comm/atl_tag.cpp
     common/comm/comm.cpp
     common/comm/host_communicator/host_communicator.cpp
+
+    common/context/context.cpp
     common/datatype/datatype.cpp
     common/device/device.cpp
-    common/context/context.cpp
+    common/event/event.cpp
+    common/stream/stream.cpp
+
     common/env/env.cpp
     common/global/global.cpp
     common/log/log.cpp

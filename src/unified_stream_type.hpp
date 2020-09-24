@@ -35,6 +35,8 @@ const generic_stream_type<CCL_ENABLE_SYCL_FALSE>::ccl_native_t&
 generic_stream_type<CCL_ENABLE_SYCL_FALSE>::get() const noexcept {
     return queue;
 }
-#endif MULTI_GPU_SUPPORT
+#else  //MULTI_GPU_SUPPORT
+
+#endif
 #endif
 } // namespace ccl

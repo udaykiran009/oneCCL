@@ -4,7 +4,6 @@
 #error "Do not include this file directly. Please include 'ccl.hpp'"
 #endif
 
-#if defined(MULTI_GPU_SUPPORT) || defined(CCL_ENABLE_SYCL)
 class ccl_event;
 namespace ccl {
 
@@ -83,4 +82,3 @@ constexpr auto attr_val(value_type v) -> details::attr_value_tripple<event_attr_
 }
 
 } // namespace ccl
-#endif //#if defined(MULTI_GPU_SUPPORT) || defined(CCL_ENABLE_SYCL)

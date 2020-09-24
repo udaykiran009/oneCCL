@@ -5,7 +5,11 @@
 #ifdef CCL_ENABLE_SYCL
 #include "event_cases_sycl.hpp"
 #else
-#include "event_cases.hpp"
+#ifdef MULTI_GPU_SUPPORT
+#include "event_cases_l0.hpp"
+#else
+#include "event_cases_empty.hpp"
+#endif
 #endif
 
 int main(int ac, char* av[]) {

@@ -5,8 +5,9 @@ add_subdirectory(datatype_attrs)
 
 add_subdirectory(device)
 add_subdirectory(device_context)
+add_subdirectory(event)
+add_subdirectory(stream)
+
 if (MULTI_GPU_SUPPORT OR CCL_ENABLE_SYCL)
     add_subdirectory(device_communicator)
-    add_subdirectory(event)
-    add_subdirectory(stream)
 endif()

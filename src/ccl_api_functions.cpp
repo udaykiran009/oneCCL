@@ -69,6 +69,12 @@ context CCL_API create_context()
     return environment::instance().create_context(empty);
 }
 
+/* stream */
+stream CCL_API create_stream()
+{
+    return default_stream;
+}
+
 /* communicator */
 communicator CCL_API create_communicator() {
     return environment::instance().create_communicator();

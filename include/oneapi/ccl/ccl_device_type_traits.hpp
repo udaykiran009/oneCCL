@@ -239,19 +239,15 @@ namespace native {
 class ccl_device;
 class ccl_context;
 class ccl_device_platform;
-/*
-template <class handle_type, class resource_owner>
-class cl_base;
-
-using ccl_device_event = cl_base<ze_event_handle_t, ccl_device>;
-using ccl_device_queue = cl_base<ze_command_queue_handle_t, ccl_device>;*/
+class ccl_device_event;
+class ccl_device_queue;
 } // namespace native
 
 namespace ccl {
 API_CLASS_TYPE_INFO(std::shared_ptr<native::ccl_context>);
 API_CLASS_TYPE_INFO(std::shared_ptr<native::ccl_device>);
-//API_CLASS_TYPE_INFO(std::shared_ptr<native::ccl_device_event>);
-//API_CLASS_TYPE_INFO(std::shared_ptr<native::ccl_device_queue>);
+API_CLASS_TYPE_INFO(std::shared_ptr<native::ccl_device_event>);
+API_CLASS_TYPE_INFO(std::shared_ptr<native::ccl_device_queue>);
 
 template <>
 struct generic_device_type<CCL_ENABLE_SYCL_V> {
@@ -270,7 +266,7 @@ struct generic_device_context_type<CCL_ENABLE_SYCL_V> {
     using impl_t = native::ccl_context;
     using ccl_native_t = std::shared_ptr<impl_t>;
 
-    generic_device_context_type();
+    generic_device_context_type(...);
     ccl_native_t get() noexcept;
     const ccl_native_t& get() const noexcept;
 
@@ -286,33 +282,29 @@ struct generic_platform_type<CCL_ENABLE_SYCL_V> {
     ccl_native_t get() noexcept;
     const ccl_native_t& get() const noexcept;
 };
-/* TODO uncomment later
+
 template <>
 struct generic_stream_type<CCL_ENABLE_SYCL_V> {
-    using handle_t = void;
-    using impl_t = handle_t;
-    using ccl_native_t = std::shared_ptr<native::ccl_device_queue>;
+    using handle_t = empty_t;
+    using impl_t = native::ccl_device_queue;
+    using ccl_native_t = std::shared_ptr<impl_t>;
 
     generic_stream_type(handle_t);
     ccl_native_t get() noexcept;
     const ccl_native_t& get() const noexcept;
-
-    ccl_native_t queue;
 };
 
 template <>
 struct generic_event_type<CCL_ENABLE_SYCL_V> {
-    using handle_t = void;
-    using impl_t = handle_t;
+    using handle_t = empty_t;
+    using impl_t = native::ccl_device_event;
     using ccl_native_t = std::shared_ptr<native::ccl_device_event>;
 
-    generic_event_type(handle_t e);
+    generic_event_type(handle_t);
     ccl_native_t get() noexcept;
     const ccl_native_t& get() const noexcept;
-
-    ccl_native_t event;
 };
-*/
+
 #endif
 #endif /* else for  CCL_ENABLE_SYCL */
 

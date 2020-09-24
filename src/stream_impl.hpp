@@ -1,5 +1,4 @@
 #pragma once
-#if defined(MULTI_GPU_SUPPORT) || defined(CCL_ENABLE_SYCL)
 #include "oneapi/ccl/ccl_types.hpp"
 #include "oneapi/ccl/ccl_aliases.hpp"
 
@@ -117,5 +116,3 @@ stream::stream(const typename details::ccl_api_type_attr_traits<stream_attr_id, 
 #define API_STREAM_FORCE_INSTANTIATION(IN_attrId, IN_Value) \
     API_STREAM_FORCE_INSTANTIATION_SET(IN_attrId, IN_Value) \
     API_STREAM_FORCE_INSTANTIATION_GET(IN_attrId)
-
-#endif //#if defined(MULTI_GPU_SUPPORT) || defined(CCL_ENABLE_SYCL)

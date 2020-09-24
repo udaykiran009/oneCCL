@@ -30,7 +30,7 @@ template std::unique_ptr<ccl_stream> stream_provider_dispatcher::create(
     const ccl::library_version& version);
 #else
 template std::unique_ptr<ccl_stream> stream_provider_dispatcher::create(
-    void*& native_stream,
+    typename ccl::unified_stream_type::ccl_native_t& native_stream,
     const ccl::library_version& version);
 #endif
 #endif
@@ -52,11 +52,13 @@ void ccl_stream::build_from_params() {
                       native_stream); //TODO USE attributes fro sycl queue construction
         }
 #else
+    #ifdef MULTI_GPU_SUPPORT
         ze_command_queue_desc_t descr =
             stream_native_device_t::element_type::get_default_queue_desc();
 
         //TODO use attributes
         native_device->create_cmd_queue(descr);
+    #endif
 #endif
     }
     catch (const std::exception& ex) {

@@ -4,8 +4,6 @@
 #error "Do not include this file directly. Please include 'ccl.hpp'"
 #endif
 
-#if defined(MULTI_GPU_SUPPORT) || defined(CCL_ENABLE_SYCL)
-
 namespace ccl {
 namespace details {
 
@@ -71,4 +69,3 @@ struct ccl_api_type_attr_traits<stream_attr_id, stream_attr_id::priority> {
 
 } // namespace details
 } // namespace ccl
-#endif // defined(MULTI_GPU_SUPPORT) || defined(CCL_ENABLE_SYCL)

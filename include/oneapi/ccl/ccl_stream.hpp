@@ -4,8 +4,6 @@
 #error "Do not include this file directly. Please include 'ccl.hpp'"
 #endif
 
-#if defined(MULTI_GPU_SUPPORT) || defined(CCL_ENABLE_SYCL)
-
 class ccl_stream;
 namespace ccl {
 
@@ -109,5 +107,3 @@ constexpr auto attr_val(value_type v)
  */
 extern stream default_stream;
 } // namespace ccl
-
-#endif //#if defined(MULTI_GPU_SUPPORT) || defined(CCL_ENABLE_SYCL)
