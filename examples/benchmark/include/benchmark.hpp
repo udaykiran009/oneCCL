@@ -141,23 +141,6 @@ void print_help_usage(const char* app) {
         app);
 }
 
-double when(void) {
-    struct timeval tv;
-    static struct timeval tv_base;
-    static int is_first = 1;
-
-    if (gettimeofday(&tv, NULL)) {
-        perror("gettimeofday");
-        return 0;
-    }
-
-    if (is_first) {
-        tv_base = tv;
-        is_first = 0;
-    }
-    return (double)(tv.tv_sec - tv_base.tv_sec) * 1.0e6 + (double)(tv.tv_usec - tv_base.tv_usec);
-}
-
 std::list<std::string> tokenize(const std::string& input, char delimeter) {
     std::stringstream ss(input);
     std::list<std::string> ret;
