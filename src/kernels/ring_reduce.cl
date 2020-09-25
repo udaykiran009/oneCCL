@@ -1,3 +1,5 @@
+#include "common_helpers.h"
+
 #pragma OPENCL EXTENSION cl_intel_subgroups : enable
 #pragma OPENCL EXTENSION cl_khr_subgroups : enable
 
@@ -20,6 +22,8 @@
 #define LOG_IN_BARRIER(kern_id, thread_id, flag, desired) \
     printf("kernel %zu.%d barrier %d/%d\n", kern_id, thread_id, flag, desired);
 
+#define DEBUG_BLOCK(block) block
+
 #else
 
 #define LOG_INPUT_DATA_START(kern_id)
@@ -29,6 +33,8 @@
 #define LOG_BARRIER_PASSED(kern_id, thread_id)
 
 #define LOG_IN_BARRIER(kern_id, thread_id, flag, desired)
+
+#define DEBUG_BLOCK(block)
 
 #endif
 
@@ -69,219 +75,186 @@
  * @param i_send_to_right_flag - located in the memory of the right kernel. Used by current kernel to notify right kernel that he has sent some data
  * @param right_ready_to_recv_flag - located in the memory of the current kernel. Used by right kernel to notify us it's ready to receive
  */
-__kernel void reduce_execution_float(size_t my_rank, //0
-                                     size_t comm_size, //1
-                                     size_t elems_count, //2
-                                     const __global float4* input_buffer, //3
-                                     __global float4* output_buffer, //4
 
-                                     __global float4* tmp_buffer, //5
-                                     __global volatile int* left_wrote_to_me_flag, //6
-                                     __global volatile int* i_ready_to_receive_flag, //7
+// Name - unique name suffix for the kernel
+// T - type parameter(e.g. float, int4, etc)
+// VecSize - vector size of the type. E.g. if float4 is used, VecSize is 4. Note: if just float is used,
+// the value must be one as it's used for division inside the kernel.
+// Op - A operation parameter(e.g. add(x, y))
+// OpName - Operator name which goes to the kernel name, e.g. OpName = add, Op = __add_int(actual function)
+#define DEFINE_KERNEL(Name, T, VecSize, Op, OpName)                                                     \
+__kernel void reduce_execution_##Name##_##OpName(size_t my_rank, /*0*/                                  \
+                                     size_t comm_size, /*1*/                                            \
+                                     size_t elems_count, /*2*/                                          \
+                                     const __global T* input_buffer, /*3*/                              \
+                                     __global T* output_buffer, /*4*/                                   \
+                                                                                                        \
+                                     __global T* tmp_buffer, /*5*/                                      \
+                                     __global volatile int* left_wrote_to_me_flag, /*6*/                \
+                                     __global volatile int* i_ready_to_receive_flag, /*7*/              \
+                                                                                                        \
+                                     __global volatile int* local_barrier_flag, /*8*/                   \
+                                                                                                        \
+                                     __global T* right_temp_buffer, /*9*/                               \
+                                     __global volatile int* i_send_to_right_flag, /*10*/                \
+                                     __global volatile int* right_ready_to_recv_flag, /*11*/            \
+                                     size_t root /*12*/                                                 \
+) {                                                                                                     \
+    /* The RING based algorithm,                                                                        \
+     where the root rank is the end point.                                                              \
+     The direction is from Left -> to Right                                                             \
+                                                                                                        \
+                          0 (in-between rank)                                                           \
+                         / \                                                                            \
+    (the farthest rank) 3   1 (in-between rank)                                                         \
+        from Root        \ /                                                                            \
+                          2 (Root.End point)                                                            \
+                                                                                                        \
+     Root(2) - consumer                                                                                 \
+     In-between ranks(0,1) - consumer producer                                                          \
+     The farthest rank(3) - producer */                                                                 \
+                                                                                                        \
+    elems_count = elems_count / VecSize;                                                                \
+    size_t work_group_size = get_global_size(0);                                                        \
+    size_t segment_count = elems_count / work_group_size;                                               \
+    int thread_id = get_global_id(0);                                                                   \
+                                                                                                        \
+    int ready_to_recv_sync_count = 1;                                                                   \
+    int can_send_sync_count = 1;                                                                        \
+                                                                                                        \
+    DEBUG_BLOCK(printf("kernel %zu.%d work_group_size: %d\n", my_rank, thread_id,                       \
+                       work_group_size));                                                               \
+                                                                                                        \
+    if (my_rank == root) { /*consumer r:ROOT*/                                                          \
+        PUT_READY_TO_RECEIVE(i_ready_to_receive_flag);                                                  \
+        /*                                                                                              \
+            TODO consider prefetch v                                                                    \
+            oid prefetch(const __global gentype *p, size_t num_gentypes)                                \
+        */                                                                                              \
+        WAIT_INPUT_DATA(left_wrote_to_me_flag, ready_to_recv_sync_count);                               \
+        barrier(CLK_LOCAL_MEM_FENCE);                                                                   \
+        for (size_t i = 0; i < segment_count; i++) {                                                    \
+            DEBUG_BLOCK(printf("kernel %zu.%d, phase 2. -- temp[%zu] = %f, this[%zu] = %f\n",           \
+                   my_rank,                                                                             \
+                   thread_id,                                                                           \
+                   i + thread_id,                                                                       \
+                   tmp_buffer[thread_id + i],                                                           \
+                   i + thread_id,                                                                       \
+                   input_buffer[i + thread_id]));                                                       \
+            output_buffer[work_group_size * i + thread_id] =                                            \
+                Op(input_buffer[work_group_size * i + thread_id],                                       \
+                   tmp_buffer[work_group_size * i + thread_id]);                                        \
+        }                                                                                               \
+        barrier(CLK_GLOBAL_MEM_FENCE);                                                                  \
+    }                                                                                                   \
+    else if (my_rank == (root + 1) % comm_size) { /* producer (the farthest rank) */                    \
+        WAIT_SIGNAL_TO_SEND(right_ready_to_recv_flag, can_send_sync_count);                             \
+        barrier(CLK_LOCAL_MEM_FENCE);                                                                   \
+                                                                                                        \
+        for (size_t i = 0; i < segment_count; i++) {                                                    \
+            right_temp_buffer[work_group_size * i + thread_id] =                                        \
+                input_buffer[work_group_size * i + thread_id];                                          \
+        }                                                                                               \
+                                                                                                        \
+        barrier(CLK_GLOBAL_MEM_FENCE);                                                                  \
+        I_SENT(i_send_to_right_flag);                                                                   \
+    }                                                                                                   \
+    else { /* consumer producer (in-between ranks) */                                                   \
+        PUT_READY_TO_RECEIVE(i_ready_to_receive_flag);                                                  \
+        WAIT_SIGNAL_TO_SEND(right_ready_to_recv_flag, can_send_sync_count);                             \
+        /*                                                                                              \
+            TODO consider prefetch v                                                                    \
+            oid prefetch(const __global gentype *p, size_t num_gentypes)                                \
+        */                                                                                              \
+        WAIT_INPUT_DATA(left_wrote_to_me_flag, ready_to_recv_sync_count);                               \
+        barrier(CLK_LOCAL_MEM_FENCE);                                                                   \
+                                                                                                        \
+        for (size_t i = 0; i < segment_count; i++) {                                                    \
+            right_temp_buffer[work_group_size * i + thread_id] =                                        \
+                Op(tmp_buffer[work_group_size * i + thread_id],                                         \
+                   input_buffer[work_group_size * i + thread_id]);                                      \
+        }                                                                                               \
+                                                                                                        \
+        barrier(CLK_GLOBAL_MEM_FENCE);                                                                  \
+        I_SENT(i_send_to_right_flag);                                                                   \
+    }                                                                                                   \
+                                                                                                        \
+    DEBUG_BLOCK(printf("kernel %zu.%d completed\n", my_rank, thread_id));                               \
+}
 
-                                     __global volatile int* local_barrier_flag, //8
+// Macro to define kernels for a specific operation for all the supported types.
+// Note: for op function we use convention __<OpName>_<type>, where type is the actual type(e.g. int4, float)
+#define DEFINE_KERNELS_WITH_OP(OpName)                                      \
+    DEFINE_KERNEL(int8_t, char4, 4, __##OpName##_##char4, OpName)           \
+    DEFINE_KERNEL(uint8_t, uchar4, 4, __##OpName##_##uchar4, OpName)        \
+                                                                            \
+    DEFINE_KERNEL(int16_t, short4, 4, __##OpName##_##short4, OpName)        \
+    DEFINE_KERNEL(uint16_t, ushort4, 4, __##OpName##_##ushort4, OpName)     \
+                                                                            \
+    DEFINE_KERNEL(int32_t, int4, 4, __##OpName##_##int4, OpName)            \
+    DEFINE_KERNEL(uint32_t, uint4, 4, __##OpName##_##uint4, OpName)         \
+                                                                            \
+    DEFINE_KERNEL(int64_t, long4, 4, __##OpName##_##long4, OpName)          \
+    DEFINE_KERNEL(uint64_t, ulong4, 4, __##OpName##_##ulong4, OpName)       \
+                                                                            \
+    DEFINE_KERNEL(float32_t, float4, 4, __##OpName##_##float4, OpName)      \
+    DEFINE_KERNEL(float64_t, double4, 4, __##OpName##_##double4, OpName)    \
+    /* TODO: implement support for missing types*/                          \
+    /*DEFINE_KERNEL(float16_t, half, 1, __##OpName##_##half, OpName)*/      \
+    /* TODO: replace once bf16 support is fully implemented */              \
+    DEFINE_KERNEL(bf16, ushort, 1, __##OpName##_##bf16, OpName)
 
-                                     __global float4* right_temp_buffer, //9
-                                     __global volatile int* i_send_to_right_flag, //10
-                                     __global volatile int* right_ready_to_recv_flag, //11
-                                     size_t root //12
-) {
-    // The RING based algorithm,
-    // where the root rank is the end point.
-    // The direction is from Left -> to Right
-    //
-    //                      0 (in-between rank)
-    //                     / \
-    // (the farthest rank)3   1 (in-between rank)
-    //    from Root        \ /
-    //                      2 (Root.End point)
-
-    // Root(2) - consumer
-    // In-between ranks(0,1) - consumer producer
-    // The farthest rank(3) - producer
-
-    elems_count = elems_count / 4;
-    size_t work_group_size = get_global_size(0);
-    size_t segment_count = elems_count / work_group_size;
-    int thread_id = get_global_id(0);
-
-    int ready_to_recv_sync_count = 1;
-    int can_send_sync_count = 1;
-
-#ifdef KERNEL_DEBUG
-    printf("kernel %zu.%d work_group_size: %d\n", my_rank, thread_id, work_group_size);
-#endif
-
-    if (my_rank == root) { //consumer r:ROOT
-        PUT_READY_TO_RECEIVE(i_ready_to_receive_flag);
-        /*
-            TODO consider prefetch v
-            oid prefetch(const __global gentype *p, size_t num_gentypes)
-        */
-        WAIT_INPUT_DATA(left_wrote_to_me_flag, ready_to_recv_sync_count);
-        barrier(CLK_LOCAL_MEM_FENCE);
-        for (size_t i = 0; i < segment_count; i++) {
-#ifdef KERNEL_DEBUG
-            printf("kernel %zu.%d, phase 2. -- temp[%zu] = %f, this[%zu] = %f\n",
-                   my_rank,
-                   thread_id,
-                   i + thread_id,
-                   tmp_buffer[thread_id + i],
-                   i + thread_id,
-                   input_buffer[i + thread_id]);
-#endif
-            output_buffer[work_group_size * i + thread_id] =
-                input_buffer[work_group_size * i + thread_id] +
-                tmp_buffer[work_group_size * i + thread_id];
-        }
-        barrier(CLK_GLOBAL_MEM_FENCE);
+#define DEFINE_ADD_OP(T)                                    \
+    T __add_##T(T lhs, T rhs) {                             \
+        return lhs + rhs;                                   \
     }
-    else if (my_rank == (root + 1) % comm_size) { // producer (the farthest rank)
-        WAIT_SIGNAL_TO_SEND(right_ready_to_recv_flag, can_send_sync_count);
-        barrier(CLK_LOCAL_MEM_FENCE);
 
-        for (size_t i = 0; i < segment_count; i++) {
-            right_temp_buffer[work_group_size * i + thread_id] =
-                input_buffer[work_group_size * i + thread_id];
-        }
-
-        barrier(CLK_GLOBAL_MEM_FENCE);
-        I_SENT(i_send_to_right_flag);
-    }
-    else { // consumer producer (in-between ranks)
-        PUT_READY_TO_RECEIVE(i_ready_to_receive_flag);
-        WAIT_SIGNAL_TO_SEND(right_ready_to_recv_flag, can_send_sync_count);
-        /*
-            TODO consider prefetch v
-            oid prefetch(const __global gentype *p, size_t num_gentypes)
-        */
-        WAIT_INPUT_DATA(left_wrote_to_me_flag, ready_to_recv_sync_count);
-        barrier(CLK_LOCAL_MEM_FENCE);
-
-        for (size_t i = 0; i < segment_count; i++) {
-            right_temp_buffer[work_group_size * i + thread_id] =
-                tmp_buffer[work_group_size * i + thread_id] +
-                input_buffer[work_group_size * i + thread_id];
-        }
-
-        barrier(CLK_GLOBAL_MEM_FENCE);
-        I_SENT(i_send_to_right_flag);
+#define DEFINE_MULT_OP(T)                                   \
+    T __mult_##T(T lhs, T rhs) {                            \
+       return lhs * rhs;                                    \
     }
 
-#ifdef KERNEL_DEBUG
-    printf("kernel %zu.%d completed\n", my_rank, thread_id);
-#endif
-}
+#define DEFINE_MIN_OP(T)                                    \
+    T __min_##T(T lhs, T rhs) {                             \
+        return min(lhs, rhs);                               \
+    }
 
-__kernel void reduce_execution_char(size_t my_rank,
-                                    size_t comm_size,
-                                    size_t elems_count,
-                                    const __global char4* input_buffer,
-                                    __global char4* output_buffer,
+#define DEFINE_MAX_OP(T)                                    \
+    T __max_##T(T lhs, T rhs) {                             \
+        return max(lhs, rhs);                               \
+    }
 
-                                    __global char4* tmp_buffer,
-                                    __global volatile int* left_wrote_to_me_flag,
-                                    __global volatile int* i_ready_to_receive_flag,
+#define DEFINE_OPS(T)                                       \
+    DEFINE_ADD_OP(T)                                        \
+    DEFINE_MULT_OP(T)                                       \
+    DEFINE_MIN_OP(T)                                        \
+    DEFINE_MAX_OP(T)
 
-                                    __global volatile int* local_barrier_flag,
+// Define Op function for each supported type(use vector types for some of them as required by the kernel)
+DEFINE_OPS(char4)
+DEFINE_OPS(uchar4)
 
-                                    __global char4* right_temp_buffer,
-                                    __global volatile int* i_send_to_right_flag,
-                                    __global volatile int* right_ready_to_recv_flag) {
-    return;
-}
+DEFINE_OPS(short4)
+DEFINE_OPS(ushort4)
 
-__kernel void reduce_execution_int(size_t my_rank,
-                                   size_t comm_size,
-                                   size_t elems_count,
-                                   const __global int4* input_buffer,
-                                   __global int4* output_buffer,
+DEFINE_OPS(int4)
+DEFINE_OPS(uint4)
 
-                                   __global int4* tmp_buffer,
-                                   __global volatile int* left_wrote_to_me_flag,
-                                   __global volatile int* i_ready_to_receive_flag,
+DEFINE_OPS(long4)
+DEFINE_OPS(ulong4)
 
-                                   __global volatile int* local_barrier_flag,
+DEFINE_OPS(float4)
+DEFINE_OPS(double4)
+// Uses integer ops for now since bf16 is aliased to ushort for now
+DEFINE_OPS(bf16)
+// TODO: Enable when half is supported
+/*DEFINE_OPS(half)*/
 
-                                   __global int4* right_temp_buffer,
-                                   __global volatile int* i_send_to_right_flag,
-                                   __global volatile int* right_ready_to_recv_flag) {
-    return;
-}
-
-//TODO
-typedef ushort bf16;
-__kernel void reduce_execution_bf16(size_t my_rank,
-                                     size_t comm_size,
-                                     size_t elems_count,
-                                     const __global bf16* input_buffer,
-                                     __global bf16* output_buffer,
-
-                                     __global bf16* tmp_buffer,
-                                     __global volatile int* left_wrote_to_me_flag,
-                                     __global volatile int* i_ready_to_receive_flag,
-
-                                     __global volatile int* local_barrier_flag,
-
-                                     __global bf16* right_temp_buffer,
-                                     __global volatile int* i_send_to_right_flag,
-                                     __global volatile int* right_ready_to_recv_flag) {
-    return;
-}
-
-__kernel void reduce_execution_double(size_t my_rank,
-                                      size_t comm_size,
-                                      size_t elems_count,
-                                      const __global double4* input_buffer,
-                                      __global double4* output_buffer,
-
-                                      __global double4* tmp_buffer,
-                                      __global volatile int* left_wrote_to_me_flag,
-                                      __global volatile int* i_ready_to_receive_flag,
-
-                                      __global volatile int* local_barrier_flag,
-
-                                      __global double4* right_temp_buffer,
-                                      __global volatile int* i_send_to_right_flag,
-                                      __global volatile int* right_ready_to_recv_flag) {
-    return;
-}
-
-__kernel void reduce_execution_int64_t(size_t my_rank,
-                                       size_t comm_size,
-                                       size_t elems_count,
-                                       const __global long4* input_buffer,
-                                       __global long4* output_buffer,
-
-                                       __global long4* tmp_buffer,
-                                       __global volatile int* left_wrote_to_me_flag,
-                                       __global volatile int* i_ready_to_receive_flag,
-
-                                       __global volatile int* local_barrier_flag,
-
-                                       __global long4* right_temp_buffer,
-                                       __global volatile int* i_send_to_right_flag,
-                                       __global volatile int* right_ready_to_recv_flag) {
-    return;
-}
-
-__kernel void reduce_execution_uint64_t(size_t my_rank,
-                                        size_t comm_size,
-                                        size_t elems_count,
-                                        const __global ulong4* input_buffer,
-                                        __global ulong4* output_buffer,
-
-                                        __global ulong4* tmp_buffer,
-                                        __global volatile int* left_wrote_to_me_flag,
-                                        __global volatile int* i_ready_to_receive_flag,
-
-                                        __global volatile int* local_barrier_flag,
-
-                                        __global ulong4* right_temp_buffer,
-                                        __global volatile int* i_send_to_right_flag,
-                                        __global volatile int* right_ready_to_recv_flag) {
-    return;
-}
+// Define the actual kernels
+DEFINE_KERNELS_WITH_OP(add)
+DEFINE_KERNELS_WITH_OP(mult)
+DEFINE_KERNELS_WITH_OP(min)
+DEFINE_KERNELS_WITH_OP(max)
 
 // numa
 __kernel void reduce_execution_numa_char(size_t my_rank,

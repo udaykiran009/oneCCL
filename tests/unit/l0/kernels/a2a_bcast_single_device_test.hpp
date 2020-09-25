@@ -10,13 +10,8 @@
  * Add custom types support into native::memory example
  */
 /* 1) Describe new type traits */
-// namespace ccl {
-// template <>
-// struct native_type_info<a2a_gpu_comm_data_float> {
-//     static constexpr bool is_supported = true;
-//     static constexpr bool is_class = true;
-// };
-// } // namespace ccl
+#include "native_type_traits.hpp"
+
 /* 2) Include explicit definition for native::memory */
 #include "oneapi/ccl/native_device_api/l0/primitives_impl.hpp"
 
@@ -24,10 +19,69 @@
 
 namespace a2a_single_device_case {
 
-using native_type = float;
+namespace a2a_bcast_case {
 
-TEST_F(a2a_bcast_single_device_fixture, a2a_bcast_single_device_mt) {
+using bf16 = ushort;
+using float32_t = float;
+using float64_t = double;
+
+using TestTypes = ::testing::Types<
+// In order to match type of a2a_gpu_comm_data we need to use
+// char, instead of int8_t and other types which set explicit signess
+// TODO: find out a better way to align the types
+/*    int8_t, */ char,
+    uint8_t,
+/*    int16_t, */ short,
+    uint16_t,
+/*  int32_t,  */ int,
+    uint32_t,
+/*    int64_t, */ long,
+    uint64_t,
+/*  float16_t, */
+    float32_t,
+    float64_t,
+    bf16
+>;
+
+template <class T>
+struct param_traits;
+
+#define DEFINE_KERNEL_TYPE(Name, T) \
+    template <> \
+    struct param_traits<T> { \
+        static constexpr const char* kernel_name = "bcast_execution_" #Name; \
+        using comm_data_type = a2a_gpu_comm_data_##T; \
+    };
+
+DEFINE_KERNEL_TYPE(int8_t, char)
+DEFINE_KERNEL_TYPE(uint8_t, uchar)
+
+DEFINE_KERNEL_TYPE(int16_t, short)
+DEFINE_KERNEL_TYPE(uint16_t, ushort)
+
+DEFINE_KERNEL_TYPE(int32_t, int)
+DEFINE_KERNEL_TYPE(uint32_t, uint)
+
+DEFINE_KERNEL_TYPE(int64_t, long)
+DEFINE_KERNEL_TYPE(uint64_t, ulong)
+
+/*DEFINE_KERNEL_TYPE(float16_t)*/
+DEFINE_KERNEL_TYPE(float32_t, float)
+DEFINE_KERNEL_TYPE(float64_t, double)
+
+// Disable for now since we already have a specialization for ushort
+// DEFINE_KERNEL_TYPE(bf16, ushort)
+
+#undef DEFINE_KERNEL_TYPE
+
+}
+
+TYPED_TEST_CASE(a2a_bcast_single_device_fixture, a2a_bcast_case::TestTypes);
+
+TYPED_TEST(a2a_bcast_single_device_fixture, a2a_bcast_single_device_mt) {
     using namespace native;
+    // Type of our test
+    using native_type = TypeParam;
 
     // test case data
     const size_t buffer_size = 512;
@@ -36,20 +90,20 @@ TEST_F(a2a_bcast_single_device_fixture, a2a_bcast_single_device_mt) {
     constexpr size_t a2a_mem_group_count = 1;
     constexpr size_t flag_group_count = 3;
 
-    create_module_descr("kernels/a2a_bcast.spv", true);
+    this->create_module_descr("kernels/a2a_bcast.spv", true);
 
     handles_storage<native_type> memory_storage(42 * num_thread);
     handles_storage<int> flags_storage(42 * num_thread);
     std::map<size_t, std::vector<size_t>> comm_param_storage;
 
     // check global driver
-    auto drv_it = local_platform->drivers.find(0);
-    UT_ASSERT(drv_it != local_platform->drivers.end(), "Driver by idx 0 must exist!");
+    auto drv_it = this->local_platform->drivers.find(0);
+    UT_ASSERT(drv_it != this->local_platform->drivers.end(), "Driver by idx 0 must exist!");
     ccl_device_driver& driver = *drv_it->second;
 
     // check devices per process
-    UT_ASSERT(driver.devices.size() == local_affinity.size(),
-              "Count: %" << driver.devices.size() << ", bits: " << local_affinity.size()
+    UT_ASSERT(driver.devices.size() == this->local_affinity.size(),
+              "Count: %" << driver.devices.size() << ", bits: " << this->local_affinity.size()
                          << "Device count is not equal to affinity mask!");
 
     std::vector<size_t> thread_indices;
@@ -136,7 +190,7 @@ TEST_F(a2a_bcast_single_device_fixture, a2a_bcast_single_device_mt) {
     typename handles_storage<int>::thread_handles_container rank_flags =
         flags_storage.collect_handles_by_index({ 0, 1 });
 
-    std::vector<a2a_gpu_comm_data_float> a2a_comm(num_thread);
+    std::vector<typename a2a_bcast_case::param_traits<native_type>::comm_data_type> a2a_comm(num_thread);
 
     //Register memory handles to A2A
     for (size_t thread_id = 0; thread_id < rank_mem.size(); thread_id++) {
@@ -150,16 +204,17 @@ TEST_F(a2a_bcast_single_device_fixture, a2a_bcast_single_device_mt) {
 
     //prepare gpu object
     auto a2a_comm_handle =
-        device.alloc_memory<a2a_gpu_comm_data_float>(num_thread, sizeof(a2a_gpu_comm_data_float));
+        device.alloc_memory<typename a2a_bcast_case::param_traits<native_type>::comm_data_type>(
+            num_thread, sizeof(typename a2a_bcast_case::param_traits<native_type>::comm_data_type));
     a2a_comm_handle.enqueue_write_sync(a2a_comm);
 
     //prepare kernels in multithreading environment
     ze_kernel_desc_t desc = { ZE_KERNEL_DESC_VERSION_CURRENT, ZE_KERNEL_FLAG_NONE };
-    desc.pKernelName = "bcast_execution_float";
+    desc.pKernelName = a2a_bcast_case::param_traits<native_type>::kernel_name;
     std::map<size_t, ze_kernel_handle_t> thread_kernels;
     std::map<size_t, ccl_device::device_queue> thread_queue;
     std::map<size_t, ccl_device::device_cmd_list> thread_cmd_list;
-    ccl_device::device_module& module = *(device_modules.find(&device)->second);
+    ccl_device::device_module& module = *(this->device_modules.find(&device)->second);
     for (size_t thread_idx = 0; thread_idx < num_thread; thread_idx++) {
         //thread_group.emplace
         ze_kernel_handle_t handle = nullptr;
@@ -179,10 +234,11 @@ TEST_F(a2a_bcast_single_device_fixture, a2a_bcast_single_device_mt) {
         }
     }
 
+    auto& out = this->output;
     //printout
-    output << "L0 memory handles: " << std::endl;
-    memory_storage.dump(output, true);
-    memory_storage.dump_by_index(output, 0 /*secv_mem*/);
+    out << "L0 memory handles: " << std::endl;
+    memory_storage.dump(out, true);
+    memory_storage.dump_by_index(out, 0 /*secv_mem*/);
 
     //Set args and launch kernel
     std::mutex thread_lock; //workaround
@@ -248,7 +304,7 @@ TEST_F(a2a_bcast_single_device_fixture, a2a_bcast_single_device_mt) {
                     if (i >= a2a_mem_group_count) {
                         break; //only own is needed
                     }
-                    out << "index: " << mem_offset[i] << ": " << mem << std::endl;
+                    out << "index: " << mem_offset[i] << ": " << (void*)mem << std::endl;
                     result = zeKernelSetArgumentValue(kernel, mem_offset[i], sizeof(mem), &mem);
                     if (result != ZE_RESULT_SUCCESS) {
                         throw std::runtime_error(
@@ -336,8 +392,8 @@ TEST_F(a2a_bcast_single_device_fixture, a2a_bcast_single_device_mt) {
     size_t index = 0;
     for (auto& t : thread_group) {
         t.join();
-        output << "Kernels argument binding log for Thread: " << index << std::endl;
-        output << thread_out_put[index]->str() << std::endl;
+        out << "Kernels argument binding log for Thread: " << index << std::endl;
+        out << thread_out_put[index]->str() << std::endl;
         index++;
     }
 
@@ -349,31 +405,30 @@ TEST_F(a2a_bcast_single_device_fixture, a2a_bcast_single_device_mt) {
                                       size_t thread_idx,
                                       size_t buffer_size,
                                       native_type value) -> bool {
-                if (thread_idx != root) {
-                    corr_val++;
-                    if (corr_val > buffer_size)
-                        corr_val = 1;
-                    if (value != corr_val)
-                        return false;
+                corr_val++;
+                if (corr_val > buffer_size)
+                    corr_val = 1;
+                if (value != static_cast<native_type>(corr_val)) {
+                    return false;
                 }
                 return true;
             };
 
-            memory_storage.check_results(
-                thread_idx, output, 1, lambda, root, thread_idx, buffer_size);
+            memory_storage.check_results(thread_idx, out, 1, lambda, root, thread_idx, buffer_size);
         }
     }
     catch (check_on_exception& ex) {
-        output << "Check results: \n";
+        out << "Check results: \n";
         //printout
-        output << "Send memory:" << std::endl;
-        memory_storage.dump_by_index(output, 0 /*send_mem*/);
-        output << "\nRecv memory:" << std::endl;
-        memory_storage.dump_by_index(output, 1 /*recv_mem*/);
+        out << "Send memory:" << std::endl;
+        memory_storage.dump_by_index(out, 0 /*send_mem*/);
+        out << "\nRecv memory:" << std::endl;
+        memory_storage.dump_by_index(out, 1 /*recv_mem*/);
 
         std::stringstream ss;
         ss << ex.what() << ", But expected: " << corr_val << std::endl;
         UT_ASSERT(false, ss.str());
     }
 }
+
 } // namespace a2a_single_device_case

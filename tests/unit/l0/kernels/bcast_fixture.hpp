@@ -2,6 +2,7 @@
 
 #include "../base_fixture.hpp"
 
+template <class T>
 class ring_bcast_single_device_fixture : public common_fixture {
 protected:
     ring_bcast_single_device_fixture() : common_fixture(get_global_device_indices() /*"[0:0]"*/) {}
@@ -55,6 +56,7 @@ protected:
     void TearDown() override {}
 };
 
+template <class T>
 class a2a_bcast_single_device_fixture : public common_fixture {
 protected:
     a2a_bcast_single_device_fixture() : common_fixture(get_global_device_indices() /*"[0:0]"*/) {}

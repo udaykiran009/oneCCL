@@ -9,13 +9,8 @@
  * Add custom types support into native::memory example
  */
 /* 1) Describe new type traits */
-namespace ccl {
-template <>
-struct native_type_info<a2a_gpu_comm_data_float> {
-    static constexpr bool is_supported = true;
-    static constexpr bool is_class = true;
-};
-} // namespace ccl
+#include "native_type_traits.hpp"
+
 /* 2) Include explicit definition for native::memory */
 #include "oneapi/ccl/native_device_api/l0/primitives_impl.hpp"
 

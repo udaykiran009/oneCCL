@@ -6,10 +6,141 @@
 
 namespace ring_single_device_case {
 
-using native_type = float;
+namespace ring_allreduce_case {
 
-TEST_F(ring_allreduce_single_device_fixture, ring_allreduce_single_device_mt) {
+using bf16 = ushort;
+using float32_t = float;
+using float64_t = double;
+
+template <class T>
+struct my_add {
+    T operator()(const T& lhs, const T& rhs) const {
+        return lhs + rhs;
+    }
+
+    static constexpr T init = 0;
+};
+
+template <class T>
+struct my_mult {
+    T operator()(const T& lhs, const T& rhs) const {
+        return lhs * rhs;
+    }
+
+    static constexpr T init = 1;
+};
+
+template <class T>
+struct my_min {
+    T operator()(const T& lhs, const T& rhs) const {
+        return std::min(lhs, rhs);
+    }
+
+    static constexpr T init = std::numeric_limits<T>::max();
+};
+
+template <class T>
+struct my_max {
+    T operator()(const T& lhs, const T& rhs) const {
+        return std::max(lhs, rhs);
+    }
+
+    static constexpr T init = std::numeric_limits<T>::min();
+};
+
+#define DEFINE_PAIR(T, Op) \
+    std::pair<T, Op>
+
+#define DEFINE_TYPE(T)          \
+    DEFINE_PAIR(T, my_add<T>),  \
+    DEFINE_PAIR(T, my_mult<T>), \
+    DEFINE_PAIR(T, my_max<T>),  \
+    DEFINE_PAIR(T, my_min<T>)
+
+// For test we use enumerate over all the types and the ops and get pairs of <T, Op>.
+using TestTypes = ::testing::Types<
+// Reduce the number of tested typed in order to speedup test
+/*  DEFINE_TYPE(int8_t),
+    DEFINE_TYPE(uint8_t),
+    DEFINE_TYPE(int16_t),
+    DEFINE_TYPE(uint16_t),
+    DEFINE_TYPE(int32_t),
+    DEFINE_TYPE(uint32_t),
+    DEFINE_TYPE(int64_t),
+    DEFINE_TYPE(uint64_t),
+//  DEFINE_TYPE(float16_t),
+    DEFINE_TYPE(float32_t),
+    DEFINE_TYPE(float64_t),
+    DEFINE_TYPE(bf16) */
+    DEFINE_PAIR(int8_t, my_add<int8_t>),
+    DEFINE_PAIR(uint8_t, my_mult<uint8_t>),
+    DEFINE_PAIR(int16_t, my_min<int16_t>),
+    DEFINE_PAIR(uint16_t, my_max<uint16_t>),
+    DEFINE_PAIR(int32_t, my_add<int32_t>),
+    DEFINE_PAIR(uint32_t, my_mult<uint32_t>),
+    DEFINE_PAIR(int64_t, my_min<int64_t>),
+    DEFINE_PAIR(uint64_t, my_max<uint64_t>),
+//  DEFINE_PAIR(float16_t, my_add<float16_t>),
+    DEFINE_PAIR(float32_t, my_mult<float32_t>),
+    DEFINE_PAIR(float64_t, my_min<float64_t>),
+    DEFINE_PAIR(bf16, my_max<bf16>)
+>;
+
+template <class T, class Op>
+struct op_traits {
+    static constexpr size_t buffer_size = 512;
+};
+
+template <class T, class Op>
+struct param_traits;
+
+#define DEFINE_KERNEL_TYPE(T, Op) \
+    template <> \
+    struct param_traits<T, my_##Op<T>> { \
+        static constexpr const char* kernel_name = "allreduce_execution_" # T "_" #Op; \
+        using op_type = my_##Op<T>; \
+    };
+
+#define DEFINE_KERNEL_TYPES_FOR_OP(OpName)              \
+    DEFINE_KERNEL_TYPE(int8_t, OpName)                  \
+    DEFINE_KERNEL_TYPE(uint8_t, OpName)                 \
+                                                        \
+    DEFINE_KERNEL_TYPE(int16_t, OpName)                 \
+    DEFINE_KERNEL_TYPE(uint16_t, OpName)                \
+                                                        \
+    DEFINE_KERNEL_TYPE(int32_t, OpName)                 \
+    DEFINE_KERNEL_TYPE(uint32_t, OpName)                \
+                                                        \
+    DEFINE_KERNEL_TYPE(int64_t, OpName)                 \
+    DEFINE_KERNEL_TYPE(uint64_t, OpName)                \
+                                                        \
+    /*DEFINE_KERNEL_TYPE(float16_t, OpName)*/           \
+    DEFINE_KERNEL_TYPE(float32_t, OpName)               \
+    DEFINE_KERNEL_TYPE(float64_t, OpName)               \
+    /* TODO: Enable once bf16 is not aliased to ushort  \
+        or remove if it's kept as this */               \
+    /*DEFINE_KERNEL_TYPE(bf16, OpName)*/                \
+
+DEFINE_KERNEL_TYPES_FOR_OP(add);
+DEFINE_KERNEL_TYPES_FOR_OP(mult);
+DEFINE_KERNEL_TYPES_FOR_OP(min);
+DEFINE_KERNEL_TYPES_FOR_OP(max);
+
+#undef DEFINE_KERNEL_TYPE
+#undef DEFINE_TYPE
+#undef DEFINE_PAIR
+#undef DEFINE_KERNEL_TYPES_FOR_OP
+
+}
+
+TYPED_TEST_CASE(ring_allreduce_single_device_fixture, ring_allreduce_case::TestTypes);
+
+TYPED_TEST(ring_allreduce_single_device_fixture, ring_allreduce_single_device_mt) {
     using namespace native;
+
+    // Type of our test
+    using native_type = typename TypeParam::first_type;
+    using op_type = typename TypeParam::second_type;
 
     // test case data
     const size_t buffer_size = 512 * 4;
@@ -22,13 +153,13 @@ TEST_F(ring_allreduce_single_device_fixture, ring_allreduce_single_device_mt) {
     std::map<size_t, std::vector<size_t>> comm_param_storage;
 
     // check global driver
-    auto drv_it = local_platform->drivers.find(0);
-    UT_ASSERT(drv_it != local_platform->drivers.end(), "Driver by idx 0 must exist!");
+    auto drv_it = this->local_platform->drivers.find(0);
+    UT_ASSERT(drv_it != this->local_platform->drivers.end(), "Driver by idx 0 must exist!");
     ccl_device_driver& driver = *drv_it->second;
 
     // check devices per process
-    UT_ASSERT(driver.devices.size() == local_affinity.size(),
-              "Count: %" << driver.devices.size() << ", bits: " << local_affinity.size()
+    UT_ASSERT(driver.devices.size() == this->local_affinity.size(),
+              "Count: %" << driver.devices.size() << ", bits: " << this->local_affinity.size()
                          << "Device count is not equal to affinity mask!");
 
     std::vector<size_t> thread_indices;
@@ -145,11 +276,11 @@ TEST_F(ring_allreduce_single_device_fixture, ring_allreduce_single_device_mt) {
     */
     //prepare kernels in multithreading environment
     ze_kernel_desc_t desc = { ZE_KERNEL_DESC_VERSION_CURRENT, ZE_KERNEL_FLAG_NONE };
-    desc.pKernelName = "allreduce_execution_float";
+    desc.pKernelName = ring_allreduce_case::param_traits<native_type, op_type>::kernel_name;
     std::map<size_t, ze_kernel_handle_t> thread_kernels;
     std::map<size_t, ccl_device::device_queue> thread_queue;
     std::map<size_t, ccl_device::device_cmd_list> thread_cmd_list;
-    ccl_device::device_module& module = *(device_modules.find(&device)->second);
+    ccl_device::device_module& module = *(this->device_modules.find(&device)->second);
     for (size_t thread_idx = 0; thread_idx < num_thread; thread_idx++) {
         //thread_group.emplace
         ze_kernel_handle_t handle = nullptr;
@@ -170,8 +301,9 @@ TEST_F(ring_allreduce_single_device_fixture, ring_allreduce_single_device_mt) {
     }
 
     //printout
-    output << "L0 memory handles: " << std::endl;
-    memory_storage.dump(output, true);
+    auto& out = this->output;
+    out << "L0 memory handles: " << std::endl;
+    memory_storage.dump(out, true);
 
     //Set args and launch kernel
     std::mutex thread_lock; //workaround
@@ -245,7 +377,7 @@ TEST_F(ring_allreduce_single_device_fixture, ring_allreduce_single_device_mt) {
                         continue; //skip this argument
                     }
 
-                    out << "index: " << mem_offset[i] << ": " << mem << std::endl;
+                    out << "index: " << mem_offset[i] << ": " << (void*)mem << std::endl;
                     result = zeKernelSetArgumentValue(kernel, mem_offset[i], sizeof(mem), &mem);
                     if (result != ZE_RESULT_SUCCESS) {
                         throw std::runtime_error(
@@ -368,8 +500,8 @@ TEST_F(ring_allreduce_single_device_fixture, ring_allreduce_single_device_mt) {
     size_t index = 0;
     for (auto& t : thread_group) {
         t.join();
-        output << "Kernels argument binding log for Thread: " << index << std::endl;
-        output << thread_out_put[index]->str() << std::endl;
+        out << "Kernels argument binding log for Thread: " << index << std::endl;
+        out << thread_out_put[index]->str() << std::endl;
         index++;
     }
 
@@ -381,25 +513,33 @@ TEST_F(ring_allreduce_single_device_fixture, ring_allreduce_single_device_mt) {
 
             auto lambda = [&corr_val](
                               size_t thread_idx, size_t num_thread, native_type value) -> bool {
-                corr_val += num_thread;
+                corr_val++;
 
-                if (value != corr_val)
+                constexpr auto op = op_type{};
+
+                native_type totalVal = op.init;
+                for (size_t i = 0; i < num_thread; ++i) {
+                    totalVal = op(totalVal, static_cast<native_type>(corr_val));
+                }
+
+                if (!(value == totalVal)) {
                     return false;
+                }
 
                 return true;
             };
 
             memory_storage.check_results(
-                thread_idx, output, 1 /*recv_mem*/, lambda, thread_idx, num_thread);
+                thread_idx, out, 1 /*recv_mem*/, lambda, thread_idx, num_thread);
         }
     }
     catch (check_on_exception& ex) {
-        output << "Check results: \n";
+        out << "Check results: \n";
         //printout
-        output << "Send memory:" << std::endl;
-        memory_storage.dump_by_index(output, 0 /*send_mem*/);
-        output << "\nRecv memory:" << std::endl;
-        memory_storage.dump_by_index(output, 1 /*recv_mem*/);
+        out << "Send memory:" << std::endl;
+        memory_storage.dump_by_index(out, 0 /*send_mem*/);
+        out << "\nRecv memory:" << std::endl;
+        memory_storage.dump_by_index(out, 1 /*recv_mem*/);
 
         std::stringstream ss;
         ss << ex.what() << ", But expected: " << corr_val * num_thread << std::endl;

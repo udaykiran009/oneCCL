@@ -2,6 +2,7 @@
 
 #include "../base_fixture.hpp"
 
+template <class T>
 class ring_reduce_single_device_fixture : public common_fixture {
 protected:
     ring_reduce_single_device_fixture() : common_fixture(get_global_device_indices() /*"[0:0]"*/) {}

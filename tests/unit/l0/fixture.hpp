@@ -36,8 +36,8 @@ protected:
 
 class communicator_fixture : public testing::Test, public tracer {
 public:
-    communicator_fixture() : global_comm(new ccl::communicator(ccl::create_communicator())) {
-        global_comm->barrier();
+    communicator_fixture() : global_comm(new ccl::communicator(ccl::preview::create_communicator())) {
+        ccl::barrier(*global_comm);
     }
     ~communicator_fixture() override {}
 

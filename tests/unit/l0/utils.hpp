@@ -31,7 +31,7 @@
     do { \
         if (!(cond)) { \
             std::cerr << __VA_ARGS__ << std::endl; \
-            set_error(__PRETTY_FUNCTION__); \
+            this->set_error(__PRETTY_FUNCTION__); \
             dump(); \
             abort(); \
         } \
@@ -40,7 +40,7 @@
 #define UT_ASSERT(cond, ...) \
     do { \
         if (!(cond)) { \
-            set_error(__PRETTY_FUNCTION__); \
+            this->set_error(__PRETTY_FUNCTION__); \
         } \
         { ASSERT_TRUE((cond)) << __VA_ARGS__ << std::endl; } \
     } while (0);
@@ -206,7 +206,7 @@ struct handles_storage {
 
         out << "Thread: " << it->first << std::endl;
         for (const auto& mem : handles) {
-            out << mem << ", ";
+            out << (void*)mem << ", ";
         }
         out << std::endl;
 
@@ -254,7 +254,7 @@ struct handles_storage {
                 continue;
             }
             auto* mem = *it;
-            out << mem << std::endl;
+            out << (void*)mem << std::endl;
 
             if (!handles_only) {
                 const T* data = mem;

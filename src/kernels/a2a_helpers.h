@@ -1,48 +1,38 @@
+#ifndef A2A_HELPERS_H
+#define A2A_HELPERS_H
+
+#include "common_helpers.h"
+
+#define DEFINE_A2A_COMM_DATA(T) \
+    typedef struct __attribute__((packed)) a2a_gpu_comm_data_##T {      \
+        __global T* recv_buf;                                           \
+        __global int* ready_to_receive_flag;                            \
+        __global int* data_sent_flag;                                   \
+    } a2a_gpu_comm_data_##T;
+
 #ifdef HOST_CTX
-#define __global
-using namespace ccl;
-#else
-typedef ushort bf16;
+using uchar = unsigned char;
+using ushort = unsigned short;
+using uint = unsigned int;
+using ulong = unsigned long;
+using bf16 = ushort;
 #endif
 
-typedef struct __attribute__((packed)) a2a_gpu_comm_data_char {
-    __global char* recv_buf;
-    __global int* ready_to_receive_flag;
-    __global int* data_sent_flag;
-} a2a_gpu_comm_data_char;
+// TODO: check whether we need to have aliases here, e.g. int8_t
+DEFINE_A2A_COMM_DATA(char)
+DEFINE_A2A_COMM_DATA(uchar)
 
-typedef struct __attribute__((packed)) a2a_gpu_comm_data_int {
-    __global int* recv_buf;
-    __global int* ready_to_receive_flag;
-    __global int* data_sent_flag;
-} a2a_gpu_comm_data_int;
+DEFINE_A2A_COMM_DATA(short)
+DEFINE_A2A_COMM_DATA(ushort)
 
-typedef struct __attribute__((packed)) a2a_gpu_comm_data_float {
-    __global float* recv_buf;
-    __global int* ready_to_receive_flag;
-    __global int* data_sent_flag;
-} a2a_gpu_comm_data_float;
+DEFINE_A2A_COMM_DATA(int)
+DEFINE_A2A_COMM_DATA(uint)
 
-typedef struct __attribute__((packed)) a2a_gpu_comm_data_bf16 {
-    __global bf16* recv_buf;
-    __global int* ready_to_receive_flag;
-    __global int* data_sent_flag;
-} a2a_gpu_comm_data_bf16;
+DEFINE_A2A_COMM_DATA(long)
+DEFINE_A2A_COMM_DATA(ulong)
 
-typedef struct __attribute__((packed)) a2a_gpu_comm_data_double {
-    __global double* recv_buf;
-    __global int* ready_to_receive_flag;
-    __global int* data_sent_flag;
-} a2a_gpu_comm_data_double;
+DEFINE_A2A_COMM_DATA(float)
+DEFINE_A2A_COMM_DATA(double)
 
-typedef struct __attribute__((packed)) a2a_gpu_comm_data_long {
-    __global long* recv_buf;
-    __global int* ready_to_receive_flag;
-    __global int* data_sent_flag;
-} a2a_gpu_comm_data_long;
-
-typedef struct __attribute__((packed)) a2a_gpu_comm_data_ulong {
-    __global ulong* recv_buf;
-    __global int* ready_to_receive_flag;
-    __global int* data_sent_flag;
-} a2a_gpu_comm_data_ulong;
+DEFINE_A2A_COMM_DATA(bf16)
+#endif /* A2A_HELPERS_H */

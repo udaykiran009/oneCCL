@@ -7,10 +7,65 @@
 
 namespace ring_single_device_case {
 
-using native_type = float;
+namespace ring_allgatherv_case {
 
-TEST_F(ring_allgatherv_single_device_fixture, ring_allgatherv_single_device_mt) {
+using bf16 = ushort;
+using float32_t = float;
+using float64_t = double;
+
+using TestTypes = ::testing::Types<
+    int8_t,
+    uint8_t,
+    int16_t,
+    uint16_t,
+    int32_t,
+    uint32_t,
+    int64_t,
+    uint64_t,
+/*  float16_t, */
+    float32_t,
+    float64_t,
+    bf16
+>;
+
+template <class T>
+struct param_traits;
+
+#define DEFINE_KERNEL_TYPE(T) \
+    template <> \
+    struct param_traits<T> { \
+        static constexpr const char* kernel_name = "allgatherv_execution_" #T; \
+    };
+
+DEFINE_KERNEL_TYPE(int8_t)
+DEFINE_KERNEL_TYPE(uint8_t)
+
+DEFINE_KERNEL_TYPE(int16_t)
+DEFINE_KERNEL_TYPE(uint16_t)
+
+DEFINE_KERNEL_TYPE(int32_t)
+DEFINE_KERNEL_TYPE(uint32_t)
+
+DEFINE_KERNEL_TYPE(int64_t)
+DEFINE_KERNEL_TYPE(uint64_t)
+
+/*DEFINE_KERNEL_TYPE(float16_t)*/
+DEFINE_KERNEL_TYPE(float32_t)
+DEFINE_KERNEL_TYPE(float64_t)
+// TODO: Enable once bf16 is not aliased to ushort or remove if it's kept as this
+/*DEFINE_KERNEL_TYPE(bf16)*/
+
+#undef DEFINE_KERNEL_TYPE
+
+}
+
+TYPED_TEST_CASE(ring_allgatherv_single_device_fixture, ring_allgatherv_case::TestTypes);
+
+TYPED_TEST(ring_allgatherv_single_device_fixture, ring_allgatherv_single_device_mt) {
     using namespace native;
+
+    // Type of our test
+    using native_type = TypeParam;
 
     // test case data
     const size_t num_thread = 4;
@@ -25,13 +80,13 @@ TEST_F(ring_allgatherv_single_device_fixture, ring_allgatherv_single_device_mt) 
     handles_storage<int> flags_storage(flag_group_count * num_thread);
 
     // check global driver
-    auto drv_it = local_platform->drivers.find(0);
-    UT_ASSERT(drv_it != local_platform->drivers.end(), "Driver by idx 0 must exist!");
+    auto drv_it = this->local_platform->drivers.find(0);
+    UT_ASSERT(drv_it != this->local_platform->drivers.end(), "Driver by idx 0 must exist!");
     ccl_device_driver& driver = *drv_it->second;
 
     // check devices per process
-    UT_ASSERT(driver.devices.size() == local_affinity.size(),
-              "Count: %" << driver.devices.size() << ", bits: " << local_affinity.size()
+    UT_ASSERT(driver.devices.size() == this->local_affinity.size(),
+              "Count: %" << driver.devices.size() << ", bits: " << this->local_affinity.size()
                          << "Device count is not equal to affinity mask!");
 
     std::vector<size_t> thread_indices;
@@ -118,11 +173,11 @@ TEST_F(ring_allgatherv_single_device_fixture, ring_allgatherv_single_device_mt) 
 
     // prepare kernels in multithreading environment
     ze_kernel_desc_t desc = { ZE_KERNEL_DESC_VERSION_CURRENT, ZE_KERNEL_FLAG_NONE };
-    desc.pKernelName = "allgatherv_execution_float";
+    desc.pKernelName = ring_allgatherv_case::param_traits<native_type>::kernel_name;
     std::map<size_t, ze_kernel_handle_t> thread_kernels;
     std::map<size_t, ccl_device::device_queue> thread_queue;
     std::map<size_t, ccl_device::device_cmd_list> thread_cmd_list;
-    ccl_device::device_module& module = *(device_modules.find(&device)->second);
+    ccl_device::device_module& module = *(this->device_modules.find(&device)->second);
     for (size_t thread_idx = 0; thread_idx < num_thread; thread_idx++) {
         // thread_group.emplace
         ze_kernel_handle_t handle = nullptr;
@@ -143,8 +198,9 @@ TEST_F(ring_allgatherv_single_device_fixture, ring_allgatherv_single_device_mt) 
     }
 
     //printout
-    output << "L0 memory handles: " << std::endl;
-    memory_storage.dump(output, true);
+    auto& out = this->output;
+    out << "L0 memory handles: " << std::endl;
+    memory_storage.dump(out, true);
 
     //Set args and launch kernel
     std::mutex thread_lock; //workaround
@@ -242,7 +298,7 @@ TEST_F(ring_allgatherv_single_device_fixture, ring_allgatherv_single_device_mt) 
                         continue; //skip this argument
                     }
 
-                    out << "index: " << mem_offset[i] << ": " << mem << std::endl;
+                    out << "index: " << mem_offset[i] << ": " << (void*) mem << std::endl;
                     result = zeKernelSetArgumentValue(kernel, mem_offset[i], sizeof(mem), &mem);
                     if (result != ZE_RESULT_SUCCESS) {
                         throw std::runtime_error(
@@ -340,8 +396,8 @@ TEST_F(ring_allgatherv_single_device_fixture, ring_allgatherv_single_device_mt) 
     size_t index = 0;
     for (auto& t : thread_group) {
         t.join();
-        output << "Kernels argument binding log for Thread: " << index << std::endl;
-        output << thread_out_put[index]->str() << std::endl;
+        out << "Kernels argument binding log for Thread: " << index << std::endl;
+        out << thread_out_put[index]->str() << std::endl;
         index++;
     }
 
@@ -355,23 +411,23 @@ TEST_F(ring_allgatherv_single_device_fixture, ring_allgatherv_single_device_mt) 
                               size_t thread_idx, size_t num_thread, native_type value) -> bool {
                 corr_val++;
 
-                if (value != corr_val)
+                if (value != static_cast<native_type>(corr_val))
                     return false;
 
                 return true;
             };
 
             memory_storage.check_results(
-                thread_idx, output, 1 /*recv_mem*/, lambda, thread_idx, num_thread);
+                thread_idx, out, 1 /*recv_mem*/, lambda, thread_idx, num_thread);
         }
     }
     catch (check_on_exception& ex) {
-        output << "Check results: \n";
+        out << "Check results: \n";
         //printout
-        output << "Send memory:" << std::endl;
-        memory_storage.dump_by_index(output, 0 /*send_mem*/);
-        output << "\nRecv memory:" << std::endl;
-        memory_storage.dump_by_index(output, 1 /*recv_mem*/);
+        out << "Send memory:" << std::endl;
+        memory_storage.dump_by_index(out, 0 /*send_mem*/);
+        out << "\nRecv memory:" << std::endl;
+        memory_storage.dump_by_index(out, 1 /*recv_mem*/);
 
         std::stringstream ss;
         ss << ex.what() << ", But expected: " << corr_val << std::endl;
