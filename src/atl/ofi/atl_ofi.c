@@ -721,20 +721,17 @@ static int atl_ofi_wait_cancel_cq(struct fid_cq* cq) {
 }
 
 static atl_status_t atl_ofi_prov_ep_init(atl_ofi_prov_t* prov, size_t ep_idx) {
+
     ssize_t ret = 0;
-    struct fi_cq_attr cq_attr = {
-        .size = 0,
-        .flags = 0,
-        .format = FI_CQ_FORMAT_TAGGED,
-        .wait_obj = static_cast<fi_wait_obj>(0),
-        .signaling_vector = 0,
-        .wait_cond = static_cast<fi_cq_wait_cond>(0),
-        .wait_set = NULL,
-    };
+
+    struct fi_cq_attr cq_attr;
     struct fi_tx_attr tx_attr;
     struct fi_rx_attr rx_attr;
 
     atl_ofi_prov_ep_t* ep = &(prov->eps[ep_idx]);
+
+    memset(&cq_attr, 0, sizeof(cq_attr));
+    cq_attr.format = FI_CQ_FORMAT_TAGGED;
 
     ATL_OFI_CALL(fi_cq_open(prov->domain, &cq_attr, &ep->cq, NULL), ret, return ATL_STATUS_FAILURE);
 
@@ -1467,11 +1464,12 @@ static atl_status_t atl_ofi_init(int* argc,
     ssize_t ret;
     size_t idx, ep_idx;
 
-    memset(&av_attr, 0, sizeof(struct fi_av_attr));
     providers = NULL;
     base_hints = NULL;
     prov_hints = NULL;
-    av_attr.type = (enum fi_av_type)0;
+
+    memset(&av_attr, 0, sizeof(av_attr));
+
     ret = 0;
     idx = 0;
     ep_idx = 0;

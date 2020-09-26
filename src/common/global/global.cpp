@@ -52,6 +52,7 @@ ccl_status_t global_data::reset() {
 
 ccl_status_t global_data::init() {
     env_object.parse();
+    env_object.set_internal_env();
 
     init_resize_dependent_objects();
     init_resize_independent_objects();

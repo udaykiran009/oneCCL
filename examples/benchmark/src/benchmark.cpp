@@ -19,7 +19,9 @@ void do_regular(const ccl::communicator& comm,
                 coll_list_t& all_colls,
                 req_list_t& reqs,
                 const user_options_t& options) {
-    bench_coll_exec_attr::match_id_t& match_id = bench_attr.get_match_id();
+
+    std::stringstream match_id_stream;
+
     for (auto dtype : all_dtypes) {
         coll_list_t colls;
         std::string dtype_name;
@@ -50,7 +52,7 @@ void do_regular(const ccl::communicator& comm,
             PRINT_BY_ROOT(comm, "do warm up");
 
             bench_attr.reduction = reduction_op;
-            bench_attr.set<ccl::operation_attr_id::to_cache>(0);
+            bench_attr.set<ccl::operation_attr_id::to_cache>(1);
 
             for (size_t count = options.min_elem_count; count <= options.max_elem_count;
                  count *= 2) {
@@ -60,9 +62,11 @@ void do_regular(const ccl::communicator& comm,
                     for (size_t coll_idx = 0; coll_idx < colls.size(); coll_idx++) {
                         auto& coll = colls[coll_idx];
                         for (size_t buf_idx = 0; buf_idx < options.buf_count; buf_idx++) {
-                            // snprintf(match_id, MATCH_ID_SIZE, "coll_%s_%zu_count_%zu_buf_%zu",
-                            //          coll->name(), coll_idx, count, buf_idx);
-                            // PRINT_BY_ROOT(comm, "start_coll: %s, count %zu, buf_idx %zu", coll->name(), count, buf_idx);
+                            match_id_stream << "coll_" << coll->name()
+                                            << "_" << coll_idx << "_count_" << count 
+                                            << "_buf_" << buf_idx;
+                            bench_attr.set<ccl::operation_attr_id::match_id>(match_id_stream.str());
+                            match_id_stream.str("");
                             coll->start(count, buf_idx, bench_attr, reqs);
                         }
                     }
@@ -115,13 +119,11 @@ void do_regular(const ccl::communicator& comm,
                                 }
 
                                 for (size_t buf_idx = 0; buf_idx < options.buf_count; buf_idx++) {
-                                    snprintf(match_id.data(),
-                                             MATCH_ID_SIZE,
-                                             "coll_%s_%zu_count_%zu_buf_%zu",
-                                             coll->name(),
-                                             coll_idx,
-                                             count,
-                                             buf_idx);
+                                    match_id_stream << "coll_" << coll->name()
+                                                    << "_" << coll_idx << "_count_" << count 
+                                                    << "_buf_" << buf_idx;
+                                    bench_attr.set<ccl::operation_attr_id::match_id>(match_id_stream.str());
+                                    match_id_stream.str("");
                                     coll->start(count, buf_idx, bench_attr, reqs);
                                 }
 
@@ -173,12 +175,10 @@ void do_regular(const ccl::communicator& comm,
                             ccl::barrier(comm);
 
                             for (size_t iter_idx = 0; iter_idx < options.iters; iter_idx++) {
-                                snprintf(match_id.data(),
-                                         MATCH_ID_SIZE,
-                                         "coll_%s_%zu_single_count_%zu",
-                                         coll->name(),
-                                         coll_idx,
-                                         count);
+                                match_id_stream << "coll_" << coll->name()
+                                                << "_" << coll_idx << "_single_count_" << count;
+                                bench_attr.set<ccl::operation_attr_id::match_id>(match_id_stream.str());
+                                match_id_stream.str("");
                                 coll->start_single(count, bench_attr, reqs);
                                 for (auto& req : reqs) {
                                     req.wait();
@@ -206,8 +206,9 @@ void do_unordered(const ccl::communicator& comm,
                   coll_list_t& all_colls,
                   req_list_t& reqs,
                   const user_options_t& options) {
+
     std::set<std::string> match_ids;
-    bench_coll_exec_attr::match_id_t& match_id = bench_attr.get_match_id();
+    std::stringstream match_id_stream;
 
     for (auto dtype : all_dtypes) {
         coll_list_t colls;
@@ -248,15 +249,14 @@ void do_unordered(const ccl::communicator& comm,
                         for (size_t coll_idx = 0; coll_idx < colls.size(); coll_idx++) {
                             auto& coll = colls[coll_idx];
                             for (size_t buf_idx = 0; buf_idx < options.buf_count; buf_idx++) {
-                                snprintf(match_id.data(),
-                                         MATCH_ID_SIZE,
-                                         "coll_%s_%zu_count_%zu_buf_%zu",
-                                         coll->name(),
-                                         coll_idx,
-                                         count,
-                                         buf_idx);
+                                match_id_stream << "coll_" << coll->name()
+                                                << "_" << coll_idx << "_count_" << count 
+                                                << "_buf_" << buf_idx;
+                                bench_attr.set<ccl::operation_attr_id::match_id>(match_id_stream.str());
+                                match_ids.insert(match_id_stream.str());
+                                match_id_stream.str("");
                                 coll->start(count, buf_idx, bench_attr, reqs);
-                                match_ids.emplace(match_id.begin(), match_id.end());
+                                
                             }
                         }
                     }
@@ -266,15 +266,13 @@ void do_unordered(const ccl::communicator& comm,
                             auto& coll = colls[real_coll_idx];
                             for (size_t buf_idx = 0; buf_idx < options.buf_count; buf_idx++) {
                                 size_t real_buf_idx = options.buf_count - buf_idx - 1;
-                                snprintf(match_id.data(),
-                                         MATCH_ID_SIZE,
-                                         "coll_%s_%zu_count_%zu_buf_%zu",
-                                         coll->name(),
-                                         real_coll_idx,
-                                         count,
-                                         real_buf_idx);
+                                match_id_stream << "coll_" << coll->name()
+                                                << "_" << real_coll_idx << "_count_" << count 
+                                                << "_buf_" << real_buf_idx;
+                                bench_attr.set<ccl::operation_attr_id::match_id>(match_id_stream.str());
+                                match_ids.insert(match_id_stream.str());
+                                match_id_stream.str("");
                                 coll->start(count, real_buf_idx, bench_attr, reqs);
-                                match_ids.emplace(match_id.begin(), match_id.end());
                             }
                         }
                     }
@@ -569,10 +567,8 @@ int main(int argc, char* argv[]) {
 
     ccl::communicator& comm = *cpu_specific_data::comm_ptr;
 
-    char match_id[MATCH_ID_SIZE]{ '\0' };
     bench_coll_exec_attr bench_attr{};
     bench_attr.init_all();
-    bench_attr.set<ccl::operation_attr_id::match_id>(std::string{ match_id });
 
     print_user_options(options, comm);
 
@@ -583,6 +579,7 @@ int main(int argc, char* argv[]) {
     }
 
     ccl::barrier(comm);
+
 #ifdef CCL_ENABLE_SYCL
     set_pinning(comm);
 #endif

@@ -22,7 +22,6 @@ struct impl_dispatch {
 };
 
 void CCL_API init() {
-    // TODO
     auto& env = environment::instance();
     (void)env;
 }

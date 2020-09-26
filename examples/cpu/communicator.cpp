@@ -169,12 +169,13 @@ void check_comm_split_by_color(ccl::communicator& comm, int mpi_size, int mpi_ra
 }
 
 int main() {
-    MPI_Init(NULL, NULL);
-    int mpi_size, mpi_rank;
-    MPI_Comm_size(MPI_COMM_WORLD, &mpi_size);
-    MPI_Comm_rank(MPI_COMM_WORLD, &mpi_rank);
 
     ccl::init();
+
+    int mpi_size, mpi_rank;
+    MPI_Init(NULL, NULL);
+    MPI_Comm_size(MPI_COMM_WORLD, &mpi_size);
+    MPI_Comm_rank(MPI_COMM_WORLD, &mpi_rank);
 
     ccl::shared_ptr_class<ccl::kvs> kvs;
     ccl::kvs::address_type main_addr;

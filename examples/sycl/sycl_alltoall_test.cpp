@@ -5,21 +5,20 @@ int main(int argc, char **argv) {
     int i = 0;
     int size = 0;
     int rank = 0;
-    ccl_stream_type_t stream_type;
+
+     ccl::init();
 
     MPI_Init(NULL, NULL);
     MPI_Comm_size(MPI_COMM_WORLD, &size);
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
 
     cl::sycl::queue q;
-    if (create_sycl_queue(argc, argv, q, stream_type) != 0) {
+    if (create_sycl_queue(argc, argv, q) != 0) {
         MPI_Finalize();
         return -1;
     }
 
     /* create CCL internal KVS */
-    ccl::init();
-
     ccl::shared_ptr_class<ccl::kvs> kvs;
     ccl::kvs::address_type main_addr;
     if (rank == 0) {

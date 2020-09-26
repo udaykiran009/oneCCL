@@ -93,6 +93,7 @@ public:
 
     void parse();
     void print();
+    void set_internal_env();
 
     int log_level;
     int sched_dump;

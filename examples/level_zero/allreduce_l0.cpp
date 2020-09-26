@@ -277,6 +277,8 @@ int main(int argc, char** argv) {
     // extract GPU affinities by processes using '#' separator from L0_CLUSTER_AFFINITY_MASK
     utils::str_to_array<std::string>(affinity_env_value, process_group_gpu_affinity, '#');
 
+    ccl::init();
+
     //get addresses from MPI
     int mpi_rank = 0, mpi_size = 0;
     MPI_Init(&argc, &argv);
@@ -293,8 +295,6 @@ int main(int argc, char** argv) {
     std::cout << "MPI process rank: " << mpi_rank << ", size: " << mpi_size << std::endl;
 
     // build CCL internal KVS
-    ccl::init();
-
     std::shared_ptr<ccl::kvs> kvs_instance;
     ccl::kvs::address_type main_addr;
     if (mpi_rank == 0) {

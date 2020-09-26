@@ -245,6 +245,12 @@ void env_data::print() {
     LOG_INFO(CCL_ALLTOALL_SCATTER_PLAIN, ": ", alltoall_scatter_plain);
 }
 
+void env_data::set_internal_env()
+{
+    /* TODO */
+    setenv("PSM2_MULTI_EP", "1", 0);
+}
+
 int env_data::env_2_worker_affinity_auto(size_t local_proc_idx, size_t workers_per_process) {
     char* available_cores = std::getenv(I_MPI_AVAILABLE_CORES_ENV);
     CCL_THROW_IF_NOT(available_cores && strlen(available_cores) != 0,

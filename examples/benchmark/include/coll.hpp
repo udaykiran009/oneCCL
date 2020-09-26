@@ -17,7 +17,6 @@ using coll_list_t = std::vector<std::shared_ptr<base_coll>>;
 using req_list_t = std::vector<ccl::request>;
 
 typedef struct bench_coll_exec_attr {
-    ccl::reduction reduction;
 
     bench_coll_exec_attr() = default;
     template <ccl::operation_attr_id attrId, class value_t>
@@ -45,7 +44,6 @@ typedef struct bench_coll_exec_attr {
                                            ccl::shared_ptr_class<ccl::broadcast_attr>,
                                            ccl::shared_ptr_class<ccl::reduce_scatter_attr>,
                                            ccl::shared_ptr_class<ccl::sparse_allreduce_attr>>;
-    using match_id_t = std::array<char, MATCH_ID_SIZE - 1>;
 
     template <class attr_t>
     attr_t& get_attr() {
@@ -61,36 +59,17 @@ typedef struct bench_coll_exec_attr {
     typename ccl::details::ccl_api_type_attr_traits<ccl::operation_attr_id, attrId>::return_type
     set(const Value& v) {
         ccl_tuple_for_each(coll_attrs, setter<attrId, Value>(v));
-
-        set_common_fields(std::integral_constant<ccl::operation_attr_id, attrId>{}, v);
         return v;
-    }
-
-    match_id_t& get_match_id() {
-        return match_id;
     }
 
     void init_all() {
         ccl_tuple_for_each(coll_attrs, factory{});
     }
 
+    ccl::reduction reduction;
+
 private:
-    void set_common_fields(...){};
-
-    void set_common_fields(
-        std::integral_constant<ccl::operation_attr_id, ccl::operation_attr_id::match_id>,
-        const std::string& match) {
-        if (match.size() >= MATCH_ID_SIZE) {
-            throw ccl::ccl_error(std::string("Too long `match_id` size: ") +
-                                 std::to_string(match.size()) +
-                                 ", expected less than: " + std::to_string(MATCH_ID_SIZE));
-        }
-        std::copy(match.begin(), match.end(), match_id.begin());
-        match_id[match.size()] = '\0';
-    }
-
     supported_op_attr_t coll_attrs;
-    match_id_t match_id;
 } bench_coll_exec_attr;
 
 typedef struct bench_coll_init_attr {

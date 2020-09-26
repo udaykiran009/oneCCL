@@ -35,18 +35,6 @@ constexpr std::initializer_list<ccl::datatype> all_dtypes = {
 };
 
 /* specific benchmark defines */
-// different collectives with duplications
-#define DEFAULT_COLL_LIST \
-    "allgatherv,allreduce,alltoall,alltoallv,bcast,reduce," \
-    "sparse_allreduce,sparse_allreduce_bfp16," \
-    "allgatherv,allreduce,alltoall,alltoallv,bcast,reduce," \
-    "sparse_allreduce,sparse_allreduce_bfp16"
-
-#define DEFAULT_DTYPES_LIST "float"
-#define ALL_DTYPES_LIST     "char,int,float,double,int64_t,uint64_t"
-
-#define DEFAULT_REDUCTIONS_LIST "sum"
-#define ALL_REDUCTIONS_LIST     "sum,prod,min,max"
 
 #define PRINT(fmt, ...) printf(fmt "\n", ##__VA_ARGS__);
 
@@ -92,8 +80,8 @@ std::map<ccl::datatype, std::string> dtype_names = {
     std::make_pair(ccl::datatype::int32, "int"),
     std::make_pair(ccl::datatype::float32, "float"),
     std::make_pair(ccl::datatype::float64, "double"),
-    std::make_pair(ccl::datatype::int64, "int64_t"),
-    std::make_pair(ccl::datatype::uint64, "uint64_t"),
+    std::make_pair(ccl::datatype::int64, "int64"),
+    std::make_pair(ccl::datatype::uint64, "uint64"),
 };
 
 std::map<ccl::reduction, std::string> reduction_names = {
@@ -121,24 +109,38 @@ void print_help_usage(const char* app) {
         "\nUSAGE:\n"
         "\t%s [OPTIONS]\n\n"
         "OPTIONS:\n"
-        "\t[-b,--backend <backend>]\n"
-        "\t[-e,--loop <execution loop>]\n"
-        "\t[-l,--coll <collectives list>]\n"
-        "\t[-i,--iters <iteration count>]\n"
-        "\t[-w,--warmup_iters <warm up iteration count>]\n"
-        "\t[-p,--buf_count <number of parallel operations within single collective>]\n"
-        "\t[-f,--min_elem_count <minimum number of elements for single collective>]\n"
-        "\t[-t,--max_elem_count <maximum number of elements for single collective>]\n"
-        "\t[-c,--check <check result correctness>]\n"
-        "\t[-v,--v2i_ratio <values to indices ratio in sparse_allreduce>]\n"
-        "\t[-d,--dtype <datatypes list/all>]\n"
-        "\t[-r,--reduction <reductions list/all>]\n"
-        "\t[-n,--buf_type <buffer type>]\n"
-        "\t[-o,--csv_filepath <file to store CSV-formatted data into>]\n"
+        "\t[-b,--backend <backend>]: %s\n"
+        "\t[-e,--loop <execution loop>]: %s\n"
+        "\t[-l,--coll <collectives list>]: %s\n"
+        "\t[-i,--iters <iteration count>]: %d\n"
+        "\t[-w,--warmup_iters <warm up iteration count>]: %d\n"
+        "\t[-p,--buf_count <number of parallel operations within single collective>]: %d\n"
+        "\t[-f,--min_elem_count <minimum number of elements for single collective>]: %d\n"
+        "\t[-t,--max_elem_count <maximum number of elements for single collective>]: %d\n"
+        "\t[-c,--check <check result correctness>]: %d\n"
+        "\t[-v,--v2i_ratio <values to indices ratio in sparse_allreduce>]: %d\n"
+        "\t[-d,--dtype <datatypes list/all>]: %s\n"
+        "\t[-r,--reduction <reductions list/all>]: %s\n"
+        "\t[-n,--buf_type <buffer type>]: %s\n"
+        "\t[-o,--csv_filepath <file to store CSV-formatted data into>]: %s\n"
         "\t[-h,--help]\n\n"
         "example:\n\t--coll allgatherv,allreduce,sparse_allreduce,sparse_allreduce_bfp16 --backend cpu --loop regular\n"
         "example:\n\t--coll bcast,reduce --backend sycl --loop unordered \n",
-        app);
+        app,
+        backend_names[DEFAULT_BACKEND].c_str(),
+        loop_names[DEFAULT_LOOP].c_str(),
+        DEFAULT_COLL_LIST,
+        DEFAULT_ITERS,
+        DEFAULT_WARMUP_ITERS,
+        DEFAULT_BUF_COUNT,
+        DEFAULT_MIN_ELEM_COUNT,
+        DEFAULT_MAX_ELEM_COUNT,
+        DEFAULT_CHECK_VALUES,
+        DEFAULT_V2I_RATIO,
+        DEFAULT_DTYPES_LIST,
+        DEFAULT_REDUCTIONS_LIST,
+        buf_names[DEFAULT_BUF_TYPE].c_str(),
+        DEFAULT_CSV_FILEPATH);
 }
 
 std::list<std::string> tokenize(const std::string& input, char delimeter) {
@@ -253,20 +255,20 @@ typedef struct user_options_t {
     std::string csv_filepath;
 
     user_options_t() {
-        backend = ccl::stream_type::host;
-        loop = LOOP_REGULAR;
+        backend = DEFAULT_BACKEND;
+        loop = DEFAULT_LOOP;
         coll_names = tokenize(DEFAULT_COLL_LIST, ',');
-        iters = ITERS;
-        warmup_iters = WARMUP_ITERS;
-        buf_count = BUF_COUNT;
-        min_elem_count = 1;
-        max_elem_count = MAX_ELEM_COUNT;
-        check_values = 1;
-        buf_type = DEFAULT_BUF;
-        v2i_ratio = V2I_RATIO;
-        dtypes = tokenize(DEFAULT_DTYPES_LIST, ','); // default: float
-        reductions = tokenize(DEFAULT_REDUCTIONS_LIST, ','); // default: sum
-        csv_filepath = std::string();
+        iters = DEFAULT_ITERS;
+        warmup_iters = DEFAULT_WARMUP_ITERS;
+        buf_count = DEFAULT_BUF_COUNT;
+        min_elem_count = DEFAULT_MIN_ELEM_COUNT;
+        max_elem_count = DEFAULT_MAX_ELEM_COUNT;
+        check_values = DEFAULT_CHECK_VALUES;
+        buf_type = DEFAULT_BUF_TYPE;
+        v2i_ratio = DEFAULT_V2I_RATIO;
+        dtypes = tokenize(DEFAULT_DTYPES_LIST, ',');
+        reductions = tokenize(DEFAULT_REDUCTIONS_LIST, ',');
+        csv_filepath = std::string(DEFAULT_CSV_FILEPATH);
     }
 } user_options_t;
 

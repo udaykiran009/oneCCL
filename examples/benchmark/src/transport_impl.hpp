@@ -28,13 +28,14 @@ ccl::shared_ptr_class<ccl::kvs> transport_settings::get_kvs() {
 }
 
 void transport_settings::init_by_mpi() {
+
+    ccl::init();
+
     MPI_Init(NULL, NULL);
     MPI_Comm_size(MPI_COMM_WORLD, &size);
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
 
     /* create CCL internal KVS */
-    ccl::init();
-
     ccl::shared_ptr_class<ccl::kvs> kvs_candidate;
     ccl::kvs::address_type main_addr;
     if (rank == 0) {
