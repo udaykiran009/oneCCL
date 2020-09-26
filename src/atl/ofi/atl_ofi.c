@@ -870,7 +870,7 @@ static void atl_ofi_reset(atl_ctx_t* ctx) {
     free(recv_buf);
 }
 
-static void atl_ofi_adjust_env(atl_ofi_ctx_t* ofi_ctx, const atl_attr_t* attr) {
+static atl_status_t atl_ofi_set_env(const atl_attr_t* attr) {
     setenv("FI_PSM2_DELAY", "0", 0);
     setenv("FI_PSM2_LOCK_LEVEL", "1", 0);
     setenv("HFI_NO_CPUAFFINITY", "1", 0);
@@ -882,6 +882,15 @@ static void atl_ofi_adjust_env(atl_ofi_ctx_t* ofi_ctx, const atl_attr_t* attr) {
 
     setenv("FI_SHM_TX_SIZE", "8192", 0);
     setenv("FI_SHM_RX_SIZE", "8192", 0);
+
+    setenv("PSM2_MULTI_EP", "1", 0);
+
+    return ATL_STATUS_SUCCESS;
+}
+
+static atl_status_t atl_ofi_adjust_env(atl_ofi_ctx_t* ofi_ctx, const atl_attr_t* attr) {
+    
+    atl_ofi_set_env(attr);
 
     char* prov_env = getenv("FI_PROVIDER");
 
@@ -920,6 +929,8 @@ static void atl_ofi_adjust_env(atl_ofi_ctx_t* ofi_ctx, const atl_attr_t* attr) {
             free(prov_env_copy);
         }
     }
+
+    return ATL_STATUS_SUCCESS;
 }
 
 static atl_status_t atl_ofi_finalize(atl_ctx_t* ctx) {

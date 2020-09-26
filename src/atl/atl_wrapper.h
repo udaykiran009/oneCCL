@@ -11,6 +11,9 @@
 
 class atl_wrapper {
 public:
+
+    static void set_internal_env(atl_attr_t& attr);
+
     ~atl_wrapper();
     atl_wrapper();
     atl_wrapper(std::shared_ptr<ikvs_wrapper> k);

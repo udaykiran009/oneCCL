@@ -491,26 +491,34 @@ atl_mpi_lib_type_t atl_mpi_get_lib_type() {
     return lib_type;
 }
 
-atl_status_t atl_mpi_set_lib_environment(const atl_attr_t* attr) {
+atl_status_t atl_mpi_set_env(const atl_attr_t* attr) {
     char ep_count_str[EP_IDX_MAX_STR_LEN] = { 0 };
     snprintf(ep_count_str, EP_IDX_MAX_STR_LEN, "%zu", attr->ep_count);
 
+    setenv("I_MPI_THREAD_LEVEL", "multiple", 0);
+    setenv("I_MPI_THREAD_SPLIT", "1", 0);
+    setenv("I_MPI_THREAD_RUNTIME", "generic", 0);
+    setenv("I_MPI_THREAD_MAX", ep_count_str, 0);
+    setenv("I_MPI_THREAD_ID_KEY", EP_IDX_KEY, 0);
+    setenv("I_MPI_THREAD_LOCK_LEVEL", "vci", 0);
+
+    if (attr->enable_shm)
+        setenv("I_MPI_FABRICS", "shm:ofi", 0);
+    else
+        setenv("I_MPI_FABRICS", "ofi", 0);
+
+    if (attr->ep_count)
+        setenv("I_MPI_OFI_ISEND_INJECT_THRESHOLD", "0", 0);
+
+    setenv("PSM2_MULTI_EP", "1", 0);
+
+    return ATL_STATUS_SUCCESS;
+}
+
+atl_status_t atl_mpi_set_lib_environment(const atl_attr_t* attr) {
     if (global_data.mpi_lib_type == ATL_MPI_LIB_IMPI) {
-        setenv("I_MPI_THREAD_SPLIT", "1", 0);
-        setenv("I_MPI_THREAD_RUNTIME", "generic", 0);
-        setenv("I_MPI_THREAD_MAX", ep_count_str, 0);
-        setenv("I_MPI_THREAD_ID_KEY", EP_IDX_KEY, 0);
-        setenv("I_MPI_THREAD_LOCK_LEVEL", "vci", 0);
-
-        if (attr->enable_shm)
-            setenv("I_MPI_FABRICS", "shm:ofi", 0);
-        else
-            setenv("I_MPI_FABRICS", "ofi", 0);
-
-        if (attr->ep_count)
-            setenv("I_MPI_OFI_ISEND_INJECT_THRESHOLD", "0", 0);
+        atl_mpi_set_env(attr);        
     }
-
     return ATL_STATUS_SUCCESS;
 }
 

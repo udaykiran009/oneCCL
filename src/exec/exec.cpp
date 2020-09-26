@@ -56,12 +56,10 @@ ccl_executor::ccl_executor(const char* main_addr) {
     atl_attr.enable_rma = 0; // ccl::global_data::env().enable_rma;
 
     atl_wrapper::atl_attr = atl_attr;
-    up_local_coord();
-
     LOG_INFO("init ATL, requested ep_count ", atl_attr.ep_count);
 
     ccl::env_data& env = ccl::global_data::env();
-
+    set_local_coord();
     CCL_THROW_IF_NOT(env.env_2_worker_affinity(get_local_proc_idx(), get_local_proc_count()));
 
     start_workers();
@@ -253,7 +251,7 @@ void ccl_executor::do_work() {
 size_t ccl_executor::get_worker_count() const {
     return workers.size();
 }
-void ccl_executor::up_local_coord() {
+void ccl_executor::set_local_coord() {
     // TODO: works only for hydra
     const char* mpi_local_ranks_env = "MPI_LOCALNRANKS";
     const char* mpi_local_id_env = "MPI_LOCALRANKID";
@@ -267,8 +265,10 @@ void ccl_executor::up_local_coord() {
             return;
         }
     }
+
     local_proc_count = 1;
     local_proc_idx = 0;
+
     LOG_INFO("Warning: ",
              mpi_local_ranks_env,
              " or ",

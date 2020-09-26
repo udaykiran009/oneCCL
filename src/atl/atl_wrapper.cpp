@@ -18,96 +18,117 @@ atl_attr_t atl_wrapper::atl_attr = {
     0 /* max_order_waw_size */
 };
 
+void atl_wrapper::set_internal_env(atl_attr_t& attr)
+{
+    auto transport_type = ccl::global_data::env().atl_transport;
+
+    if (transport_type == ccl_atl_mpi)
+        atl_mpi::atl_set_env(&attr);
+    else if (transport_type == ccl_atl_ofi)
+        atl_ofi::atl_set_env(&attr);
+}
+
 atl_wrapper::atl_wrapper() {
-    auto transport_name = ccl::env_data::str_by_enum(ccl::env_data::atl_transport_names,
-                                                     ccl::global_data::env().atl_transport);
 
-    if (!transport_name.compare("ofi")) {
-        char *type_str = getenv(PM_TYPE);
+    auto transport_type = ccl::global_data::env().atl_transport;
 
-        if (type_str) {
-            if (strstr(type_str, PM_RT_VAL_SIMPLE)) {
-                pmi = std::unique_ptr<ipmi>(new pmi_simple());
-            }
-            else if (strstr(type_str, PM_RT_VAL_RESIZABLE)) {
-                std::shared_ptr<ikvs_wrapper> k(new internal_kvs());
-                pmi = std::unique_ptr<ipmi>(new pmi_resizable(k));
+    char* pm_type_str;
+    switch (transport_type)
+    {
+        case ccl_atl_ofi:
+            pm_type_str = getenv(PM_TYPE);
+            if (pm_type_str) {
+                if (strstr(pm_type_str, PM_RT_VAL_SIMPLE)) {
+                    pmi = std::unique_ptr<ipmi>(new pmi_simple());
+                }
+                else if (strstr(pm_type_str, PM_RT_VAL_RESIZABLE)) {
+                    std::shared_ptr<ikvs_wrapper> k(new internal_kvs());
+                    pmi = std::unique_ptr<ipmi>(new pmi_resizable(k));
+                }
+                else {
+                    LOG_ERROR("Unknown %s: %s\n", PM_TYPE, pm_type_str);
+                }
             }
             else {
-                LOG_ERROR("Unknown %s: %s\n", PM_TYPE, type_str);
+                pmi = std::unique_ptr<ipmi>(new pmi_simple());
             }
-        }
-        else {
-            pmi = std::unique_ptr<ipmi>(new pmi_simple());
-        }
-        transport = std::shared_ptr<iatl>(new atl_ofi());
+            transport = std::shared_ptr<iatl>(new atl_ofi());
+            break;
+        case ccl_atl_mpi:
+            transport = std::shared_ptr<iatl>(new atl_mpi());
+            break;
+        default:
+            LOG_ERROR("Unsupported yet");
+            break;
     }
-    else if (!transport_name.compare("mpi")) {
-        transport = std::shared_ptr<iatl>(new atl_mpi());
-    }
-    else {
-        LOG_ERROR("Unsupported yet");
-    }
+
     init_transport();
 }
 
 atl_wrapper::atl_wrapper(std::shared_ptr<ikvs_wrapper> k) {
-    auto transport_name = ccl::env_data::str_by_enum(ccl::env_data::atl_transport_names,
-                                                     ccl::global_data::env().atl_transport);
 
-    if (!transport_name.compare("ofi")) {
-        char *type_str = getenv(PM_TYPE);
+    auto transport_type = ccl::global_data::env().atl_transport;
 
-        if (type_str) {
-            if (strstr(type_str, PM_RT_VAL_SIMPLE)) {
-                pmi = std::unique_ptr<ipmi>(new pmi_simple());
-            }
-            else if (strstr(type_str, PM_RT_VAL_RESIZABLE)) {
-                pmi = std::unique_ptr<ipmi>(new pmi_resizable(k));
+    char* pm_type_str;
+    switch (transport_type)
+    {
+        case ccl_atl_ofi:
+            pm_type_str = getenv(PM_TYPE);
+            if (pm_type_str) {
+                if (strstr(pm_type_str, PM_RT_VAL_SIMPLE)) {
+                    pmi = std::unique_ptr<ipmi>(new pmi_simple());
+                }
+                else if (strstr(pm_type_str, PM_RT_VAL_RESIZABLE)) {
+                    pmi = std::unique_ptr<ipmi>(new pmi_resizable(k));
+                }
+                else {
+                    LOG_ERROR("Unknown %s: %s\n", PM_TYPE, pm_type_str);
+                }
             }
             else {
-                LOG_ERROR("Unknown %s: %s\n", PM_TYPE, type_str);
+                pmi = std::unique_ptr<ipmi>(new pmi_simple());
             }
-        }
-        else {
-            pmi = std::unique_ptr<ipmi>(new pmi_simple());
-        }
-        transport = std::shared_ptr<iatl>(new atl_ofi());
+            transport = std::shared_ptr<iatl>(new atl_ofi());
+            break;
+        case ccl_atl_mpi:
+            transport = std::shared_ptr<iatl>(new atl_mpi());
+            break;
+        default:
+            LOG_ERROR("Unsupported yet");
+            break;
     }
-    else if (!transport_name.compare("mpi")) {
-        transport = std::shared_ptr<iatl>(new atl_mpi());
-    }
-    else {
-        LOG_ERROR("Unsupported yet");
-    }
+
     init_transport();
 }
 
 atl_wrapper::atl_wrapper(size_t dev_count,
                          const std::vector<size_t> &ranks,
                          std::shared_ptr<ikvs_wrapper> k) {
-    auto transport_name = ccl::env_data::str_by_enum(ccl::env_data::atl_transport_names,
-                                                     ccl::global_data::env().atl_transport);
+    auto transport_type = ccl::global_data::env().atl_transport;
 
-    if (!transport_name.compare("ofi")) {
-        pmi = std::unique_ptr<ipmi>(new pmi_resizable_simple(dev_count, ranks, k));
+    switch (transport_type)
+    {
+        case ccl_atl_ofi:
+            pmi = std::unique_ptr<ipmi>(new pmi_resizable_simple(dev_count, ranks, k));
 
-        if (pmi->get_thread() == 0) {
-            transports.push_back(std::shared_ptr<iatl>(new atl_ofi()));
-        }
-        pmi->pmrt_barrier();
-        static std::mutex memory_mutex;
-        {
-            std::lock_guard<std::mutex> lock(memory_mutex);
-            transport = transports.back();
-        }
+            if (pmi->get_thread() == 0) {
+                transports.push_back(std::shared_ptr<iatl>(new atl_ofi()));
+            }
+            pmi->pmrt_barrier();
+            static std::mutex memory_mutex;
+            {
+                std::lock_guard<std::mutex> lock(memory_mutex);
+                transport = transports.back();
+            }
+            break;
+        case ccl_atl_mpi:
+             transport = std::shared_ptr<iatl>(new atl_mpi());
+             break;
+        default:
+            LOG_ERROR("Unsupported yet");
+            break;
     }
-    else if (!transport_name.compare("mpi")) {
-        transport = std::shared_ptr<iatl>(new atl_mpi());
-    }
-    else {
-        LOG_ERROR("Unsupported yet");
-    }
+
     init_transport();
 }
 void atl_wrapper::init_transport() {

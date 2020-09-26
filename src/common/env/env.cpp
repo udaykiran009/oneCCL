@@ -247,8 +247,9 @@ void env_data::print() {
 
 void env_data::set_internal_env()
 {
-    /* TODO */
-    setenv("PSM2_MULTI_EP", "1", 0);
+    atl_attr_t attr = { 0 };
+    attr.ep_count = worker_count;
+    atl_wrapper::set_internal_env(attr);
 }
 
 int env_data::env_2_worker_affinity_auto(size_t local_proc_idx, size_t workers_per_process) {

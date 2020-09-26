@@ -83,7 +83,7 @@ private:
 
     std::unique_ptr<ccl_sched_queue> create_sched_queue(size_t idx, size_t ep_per_worker);
     void do_work();
-    void up_local_coord();
+    void set_local_coord();
 
     atl_attr_t atl_attr = {
         1, /* ep_count */

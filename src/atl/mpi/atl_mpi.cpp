@@ -1,6 +1,11 @@
 #include "atl_mpi.h"
 #include "atl_mpi.c"
 
+atl_status_t atl_mpi::atl_set_env(atl_attr_t* attr)
+{
+    return atl_mpi_set_env(attr);
+}
+
 atl_status_t atl_mpi::atl_init(int* argc,
                                char*** argv,
                                atl_attr_t* attr,
