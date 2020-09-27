@@ -75,8 +75,9 @@ public:
         return atl_attr;
     }
 
-private:
     static size_t calculate_atl_ep_count(size_t worker_count);
+
+private:
 
     size_t get_worker_idx_round_robin(ccl_sched* sched);
     size_t get_worker_idx_by_sched_id(ccl_sched* sched);

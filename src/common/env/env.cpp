@@ -5,7 +5,7 @@
 #include "common/env/env.hpp"
 #include "common/global/global.hpp"
 #include "common/log/log.hpp"
-
+#include "exec/exec.hpp"
 #include "oneapi/ccl/ccl_environment.hpp"
 
 namespace ccl {
@@ -248,7 +248,7 @@ void env_data::print() {
 void env_data::set_internal_env()
 {
     atl_attr_t attr = { 0 };
-    attr.ep_count = worker_count;
+    attr.ep_count = ccl_executor::calculate_atl_ep_count(worker_count);
     atl_wrapper::set_internal_env(attr);
 }
 

@@ -874,6 +874,7 @@ static atl_status_t atl_ofi_set_env(const atl_attr_t* attr) {
     setenv("FI_PSM2_DELAY", "0", 0);
     setenv("FI_PSM2_LOCK_LEVEL", "1", 0);
     setenv("HFI_NO_CPUAFFINITY", "1", 0);
+    setenv("PSM2_MULTI_EP", "1", 0);
 
     setenv("FI_OFI_RXM_RX_SIZE", "8192", 0);
     setenv("FI_OFI_RXM_TX_SIZE", "8192", 0);
@@ -882,8 +883,6 @@ static atl_status_t atl_ofi_set_env(const atl_attr_t* attr) {
 
     setenv("FI_SHM_TX_SIZE", "8192", 0);
     setenv("FI_SHM_RX_SIZE", "8192", 0);
-
-    setenv("PSM2_MULTI_EP", "1", 0);
 
     return ATL_STATUS_SUCCESS;
 }
