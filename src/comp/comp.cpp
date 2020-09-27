@@ -101,7 +101,7 @@ ccl_status_t ccl_comp_batch_reduce(const void* in_buf,
                             in_count,
                             acc,
                             out_count,
-                            ccl::global_data::get().dtypes->get(ccl_dtype_float),
+                            ccl::global_data::get().dtypes->get(ccl::datatype::float32),
                             reduction,
                             reduction_fn,
                             context);

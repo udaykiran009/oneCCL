@@ -26,12 +26,6 @@ endif()
 #make build variable case insensitive
 string( TOLOWER "${CMAKE_BUILD_TYPE}" CMAKE_BUILD_TYPE_CASE_INSENSITIVE)
 
-#show build info
-message(STATUS "Installation directory: ${CMAKE_INSTALL_PREFIX}")
-message(STATUS "Build type: ${CMAKE_BUILD_TYPE_CASE_INSENSITIVE}")
-message(STATUS "C compiler : ${CMAKE_C_COMPILER}")
-message(STATUS "CXX compiler : ${CMAKE_CXX_COMPILER}")
-
 #predefined options
 option(USE_SECURITY_FLAGS "Use security flags" TRUE)
 if (${CMAKE_BUILD_TYPE_CASE_INSENSITIVE} STREQUAL "debug")
@@ -43,9 +37,16 @@ option(WITH_ASAN "Use address sanitizer, can only be used in Debug build" FALSE)
 
 #installation path variables
 include(GNUInstallDirs)
+
 if(CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT)
     set(CMAKE_INSTALL_PREFIX "${CMAKE_BINARY_DIR}/_install" CACHE PATH "Default install path" FORCE)
 endif()
+
+#show build info
+message(STATUS "Installation directory: ${CMAKE_INSTALL_PREFIX}")
+message(STATUS "Build type: ${CMAKE_BUILD_TYPE_CASE_INSENSITIVE}")
+message(STATUS "C compiler : ${CMAKE_C_COMPILER}")
+message(STATUS "CXX compiler : ${CMAKE_CXX_COMPILER}")
 
 SET(MULTI_GPU_SUPPORT OFF CACHE BOOL "Enable Multi GPU extension support")
 
@@ -209,6 +210,29 @@ if (MULTI_GPU_SUPPORT)
 
 endif(MULTI_GPU_SUPPORT)
 
+#generate & install vars.sh
+configure_file(cmake/vars.sh.in ${CMAKE_CURRENT_BINARY_DIR}/vars.sh @ONLY)
+configure_file(cmake/setvars.sh.in ${CMAKE_CURRENT_BINARY_DIR}/setvars.sh @ONLY)
+configure_file(cmake/ccl ${CMAKE_CURRENT_BINARY_DIR}/ccl @ONLY)
+configure_file(third-party-programs.txt ${CMAKE_CURRENT_BINARY_DIR}/third-party-programs.txt COPYONLY)
+install(PROGRAMS ${CMAKE_CURRENT_BINARY_DIR}/vars.sh DESTINATION ${CCL_INSTALL_ENV})
+install(PROGRAMS ${CMAKE_CURRENT_BINARY_DIR}/setvars.sh DESTINATION ${CCL_INSTALL_ENV})
+install(PROGRAMS ${CMAKE_CURRENT_BINARY_DIR}/ccl DESTINATION ${CCL_INSTALL_MODULE})
+install(PROGRAMS ${CMAKE_CURRENT_BINARY_DIR}/third-party-programs.txt DESTINATION ${CCL_INSTALL_LICENSE})
+install(PROGRAMS ${PROJECT_SOURCE_DIR}/LICENSE DESTINATION ${CCL_INSTALL_LICENSE})
+
+set(CCL_MAJOR_VERSION     "0")
+set(CCL_MINOR_VERSION     "10")
+set(CCL_UPDATE_VERSION    "0")
+set(CCL_PRODUCT_STATUS    "beta")
+string(TIMESTAMP CCL_PRODUCT_BUILD_DATE "%Y-%m-%dT %H:%M:%SZ")
+get_vcs_properties("git")
+set(CCL_PRODUCT_FULL "${CCL_PRODUCT_STATUS}-${CCL_MAJOR_VERSION}.${CCL_MINOR_VERSION}.${CCL_UPDATE_VERSION} ${CCL_PRODUCT_BUILD_DATE} ${VCS_INFO}")
+configure_file(${PROJECT_SOURCE_DIR}/include/oneapi/ccl/ccl_config.h.in "${CMAKE_CURRENT_BINARY_DIR}/include/oneapi/ccl/ccl_config.h")
+#file(COPY "${CMAKE_CURRENT_BINARY_DIR}/include/oneapi/ccl/ccl_config.h" DESTINATION ${PROJECT_SOURCE_DIR}/include/oneapi/ccl)
+include_directories(${CMAKE_CURRENT_BINARY_DIR}/include)
+
+
 #include other CMakeLists
 add_subdirectory(src)
 add_subdirectory(examples/cpu)
@@ -229,24 +253,3 @@ add_subdirectory(tests/unit)
 if(MULTI_GPU_SUPPORT)
     add_subdirectory(examples/level_zero)
 endif()
-
-#generate & install vars.sh
-configure_file(cmake/vars.sh.in ${CMAKE_CURRENT_BINARY_DIR}/vars.sh @ONLY)
-configure_file(cmake/setvars.sh.in ${CMAKE_CURRENT_BINARY_DIR}/setvars.sh @ONLY)
-configure_file(cmake/ccl ${CMAKE_CURRENT_BINARY_DIR}/ccl @ONLY)
-configure_file(third-party-programs.txt ${CMAKE_CURRENT_BINARY_DIR}/third-party-programs.txt COPYONLY)
-install(PROGRAMS ${CMAKE_CURRENT_BINARY_DIR}/vars.sh DESTINATION ${CCL_INSTALL_ENV})
-install(PROGRAMS ${CMAKE_CURRENT_BINARY_DIR}/setvars.sh DESTINATION ${CCL_INSTALL_ENV})
-install(PROGRAMS ${CMAKE_CURRENT_BINARY_DIR}/ccl DESTINATION ${CCL_INSTALL_MODULE})
-install(PROGRAMS ${CMAKE_CURRENT_BINARY_DIR}/third-party-programs.txt DESTINATION ${CCL_INSTALL_LICENSE})
-install(PROGRAMS ${PROJECT_SOURCE_DIR}/LICENSE DESTINATION ${CCL_INSTALL_LICENSE})
-
-set(CCL_MAJOR_VERSION     "0")
-set(CCL_MINOR_VERSION     "10")
-set(CCL_UPDATE_VERSION    "0")
-set(CCL_PRODUCT_STATUS    "beta")
-string(TIMESTAMP CCL_PRODUCT_BUILD_DATE "%Y-%m-%dT %H:%M:%SZ")
-get_vcs_properties("git")
-set(CCL_PRODUCT_FULL "${CCL_PRODUCT_STATUS}-${CCL_MAJOR_VERSION}.${CCL_MINOR_VERSION}.${CCL_UPDATE_VERSION} ${CCL_PRODUCT_BUILD_DATE} ${VCS_INFO}")
-configure_file(${PROJECT_SOURCE_DIR}/include/oneapi/ccl/ccl_config.h.in "${CMAKE_CURRENT_BINARY_DIR}/include/oneapi/ccl/ccl_config.h")
-file(COPY "${CMAKE_CURRENT_BINARY_DIR}/include/oneapi/ccl/ccl_config.h" DESTINATION ${PROJECT_SOURCE_DIR}/include/oneapi/ccl)

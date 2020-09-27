@@ -12,7 +12,7 @@ int main(int argc, char **argv) {
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
 
     cl::sycl::queue q;
-    if (create_sycl_queue(argc, argv, q, stream_type) != 0) {
+    if (create_sycl_queue(argc, argv, q) != 0) {
         MPI_Finalize();
         return -1;
     }

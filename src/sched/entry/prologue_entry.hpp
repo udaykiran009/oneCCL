@@ -16,7 +16,7 @@ public:
                    const ccl_datatype& in_dtype,
                    void** out_buf,
                    size_t* out_cnt,
-                   ccl_datatype_t* out_dtype_idx)
+                   ccl::datatype* out_dtype_idx)
             : sched_entry(sched),
               fn(fn),
               in_buf(in_buf),
@@ -35,7 +35,7 @@ public:
            in_dtype.idx(),
            out_buf,
            out_cnt,
-           (ccl::datatype*)(out_dtype_idx),
+           out_dtype_idx,
            &context);
         status = ccl_sched_entry_status_complete;
     }
@@ -73,5 +73,5 @@ private:
     ccl_datatype in_dtype;
     void** out_buf;
     size_t* out_cnt;
-    ccl_datatype_t* out_dtype_idx;
+    ccl::datatype* out_dtype_idx;
 };

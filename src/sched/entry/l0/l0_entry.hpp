@@ -52,16 +52,15 @@ public:
     base_gpu_entry(ccl_sched *sched,
                    std::shared_ptr<gpu_comm> comm,
                    const ccl_buffer send_buf,
-                   ccl_datatype_t dtype_in,
+                   ccl::datatype dtype_in,
                    std::shared_ptr<ccl_stream> &stream)
             : sched_entry(sched),
               parent_communicator(comm),
               comm_addr(parent_communicator
                             ->template get_comm_data<get_topology(), get_topology_class()>()),
               send_buf(send_buf),
-              dtype(),
+              dtype(dtype_in),
               device_stream(stream) {
-        dtype = ccl::global_data::get().dtypes->get(dtype_in);
     }
 
     virtual ~base_gpu_entry() {}
@@ -298,7 +297,7 @@ protected:
     std::shared_ptr<gpu_comm> parent_communicator;
     topology_addr<group_id, class_id> comm_addr;
     ccl_buffer send_buf;
-    ccl_datatype dtype;
+    ccl::datatype dtype;
     atl_req_t req{};
     std::shared_ptr<ccl_stream> device_stream;
 

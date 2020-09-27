@@ -12,7 +12,7 @@ typedef struct {
     /* keep these 3 fields on the top of structure */
     void* buf;
     size_t count;
-    ccl_datatype_t dt_idx;
+    ccl::datatype dt_idx;
     /*---*/
 
     size_t part_idx;
@@ -461,7 +461,7 @@ ccl_status_t ccl_parallelizer::process(ccl_master_sched* sched) {
                         part_scheds[idx].get(),
                         ccl_buffer(main_ctx, sizeof(ccl_parallelizer_prologue_ctx)),
                         ccl_buffer(part_ctx, sizeof(ccl_parallelizer_prologue_ctx)),
-                        sizeof(void*) + sizeof(size_t) + sizeof(ccl_datatype_t),
+                        sizeof(void*) + sizeof(size_t) + sizeof(ccl::datatype),
                         ccl_datatype_char);
                 }
             }

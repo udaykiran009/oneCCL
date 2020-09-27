@@ -89,7 +89,7 @@ static atl_mpi_lib_info_t mpi_lib_infos[MPI_LIB_INFO_MAX_COUNT] = {
 typedef struct {
 #ifdef CCL_BF16_COMPILER
 
-#ifndef ATL_MPI_BF16
+#ifndef ATL_MPI_BFLOAT16
 
 // BF16 type support
 #define ATL_MPI_BF16 /* more strict than CCL_BF16_COMPILER */
@@ -140,7 +140,7 @@ typedef struct {
     MPI_Comm dummy_comm;
 } atl_mpi_ep_t;
 
-#define MPI_BF16 \
+#define MPI_BFLOAT16 \
     ({ \
         ATL_MPI_ASSERT(global_data.bf16.dtype != MPI_DATATYPE_NULL, \
                        "unsupported datatype: ATL_DTYPE_BF16"); \
@@ -322,18 +322,18 @@ static void atl_mpi_bf16_finalize() {
 
 static MPI_Datatype atl2mpi_dtype(atl_datatype_t dtype) {
     switch (dtype) {
-        case ATL_DTYPE_CHAR: return MPI_CHAR;
+        case ATL_DTYPE_INT8: return MPI_CHAR;
         case ATL_DTYPE_UINT8: return MPI_UNSIGNED_CHAR;
         case ATL_DTYPE_INT16: return MPI_INT16_T;
         case ATL_DTYPE_UINT16: return MPI_UINT16_T;
-        case ATL_DTYPE_INT: return MPI_INT;
+        case ATL_DTYPE_INT32: return MPI_INT;
         case ATL_DTYPE_UINT32: return MPI_UINT32_T;
         case ATL_DTYPE_INT64: return MPI_LONG_LONG;
         case ATL_DTYPE_UINT64: return MPI_UNSIGNED_LONG_LONG;
         case ATL_DTYPE_FLOAT16: printf("unknown datatype: %d\n", dtype); exit(1);
-        case ATL_DTYPE_FLOAT: return MPI_FLOAT;
-        case ATL_DTYPE_DOUBLE: return MPI_DOUBLE;
-        case ATL_DTYPE_BF16: return MPI_BF16;
+        case ATL_DTYPE_FLOAT32: return MPI_FLOAT;
+        case ATL_DTYPE_FLOAT64: return MPI_DOUBLE;
+        case ATL_DTYPE_BFLOAT16: return MPI_BFLOAT16;
         default: printf("unknown datatype: %d\n", dtype); exit(1);
     }
 }

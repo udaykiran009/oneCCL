@@ -220,7 +220,7 @@ ccl_master_sched* ccl_fusion_manager::build_sched() {
         key.f.ctype = ctype;
         key.f.count1 = sum_count;
         key.f.count2 = exec_queue.size();
-        key.f.dtype = (ccl_datatype_t)(dtype.idx());
+        key.f.dtype = dtype.idx();
         key.f.reduction = reduction;
         key.f.comm = comm;
         key.match_id = first_sched->coll_attr.match_id + last_sched->coll_attr.match_id;

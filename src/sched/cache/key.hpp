@@ -44,8 +44,8 @@ public:
         ccl_coll_type ctype = ccl_coll_internal;
         void* buf1 = nullptr; /* non-data buffer which can be used for caching */
         void* buf2 = nullptr; /* non-data buffer which can be used for caching */
-        ccl_datatype_t dtype = ccl_dtype_char;
-        ccl_datatype_t itype = ccl_dtype_char; /* used in sparse collective to store index type */
+        ccl::datatype dtype = ccl::datatype::int8;
+        ccl::datatype itype = ccl::datatype::int8; /* used in sparse collective to store index type */
         ccl::reduction reduction = ccl::reduction::sum;
         size_t count1 = 0;
         size_t count2 = 0;
