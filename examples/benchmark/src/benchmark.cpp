@@ -52,7 +52,7 @@ void do_regular(const ccl::communicator& comm,
             PRINT_BY_ROOT(comm, "do warm up");
 
             bench_attr.reduction = reduction_op;
-            bench_attr.set<ccl::operation_attr_id::to_cache>(1);
+            bench_attr.set<ccl::operation_attr_id::to_cache>(true);
 
             for (size_t count = options.min_elem_count; count <= options.max_elem_count;
                  count *= 2) {
@@ -97,7 +97,7 @@ void do_regular(const ccl::communicator& comm,
                               "avg[usec]",
                               "avg_per_buf[usec]",
                               "stddev[%]");
-                bench_attr.set<ccl::operation_attr_id::to_cache>(1);
+                bench_attr.set<ccl::operation_attr_id::to_cache>(true);
                 for (size_t count = options.min_elem_count; count <= options.max_elem_count;
                      count *= 2) {
                     try {
@@ -163,7 +163,7 @@ void do_regular(const ccl::communicator& comm,
                 size_t min_elem_count = options.min_elem_count * options.buf_count;
                 size_t max_elem_count = options.max_elem_count * options.buf_count;
 
-                bench_attr.set<ccl::operation_attr_id::to_cache>(1);
+                bench_attr.set<ccl::operation_attr_id::to_cache>(true);
                 for (size_t count = min_elem_count; count <= max_elem_count; count *= 2) {
                     try {
                         // we store times for each collective separately,
@@ -240,7 +240,7 @@ void do_unordered(const ccl::communicator& comm,
 
             PRINT_BY_ROOT(comm, "do unordered test");
             bench_attr.reduction = reduction_op;
-            bench_attr.set<ccl::operation_attr_id::to_cache>(1);
+            bench_attr.set<ccl::operation_attr_id::to_cache>(true);
 
             for (size_t count = options.min_elem_count; count <= options.max_elem_count;
                  count *= 2) {
@@ -307,8 +307,8 @@ void create_cpu_colls(bench_coll_init_attr& init_attr,
     using namespace sparse_detail;
     using incremental_index_int_sparse_strategy =
         sparse_allreduce_strategy_impl<int, sparse_detail::incremental_indices_distributor>;
-    using incremental_index_bfp16_sparse_strategy =
-        sparse_allreduce_strategy_impl<ccl::bfp16, sparse_detail::incremental_indices_distributor>;
+    using incremental_index_bf16_sparse_strategy =
+        sparse_allreduce_strategy_impl<ccl::bf16, sparse_detail::incremental_indices_distributor>;
 
     std::stringstream error_messages_stream;
     //base_coll::comm = ccl::create_communicator();
@@ -335,24 +335,24 @@ void create_cpu_colls(bench_coll_init_attr& init_attr,
         }
         else if (name.find(incremental_index_int_sparse_strategy::class_name()) !=
                  std::string::npos) {
-            if (name.find(incremental_index_bfp16_sparse_strategy::class_name()) !=
+            if (name.find(incremental_index_bf16_sparse_strategy::class_name()) !=
                 std::string::npos) {
-                if (is_bfp16_enabled() == 0) {
-                    error_messages_stream << "BFP16 is not supported for current CPU, skipping "
+                if (is_bf16_enabled() == 0) {
+                    error_messages_stream << "bfloat16 is not supported for current CPU, skipping "
                                           << name << ".\n";
                     names_it = options.coll_names.erase(names_it);
                     continue;
                 }
-#ifdef CCL_BFP16_COMPILER
+#ifdef CCL_bf16_COMPILER
                 colls.emplace_back(
-                    new cpu_sparse_allreduce_coll<ccl::bfp16,
+                    new cpu_sparse_allreduce_coll<ccl::bf16,
                                                   int64_t,
                                                   sparse_detail::incremental_indices_distributor>(
                         init_attr,
-                        sizeof(float) / sizeof(ccl::bfp16),
-                        sizeof(float) / sizeof(ccl::bfp16)));
+                        sizeof(float) / sizeof(ccl::bf16),
+                        sizeof(float) / sizeof(ccl::bf16)));
 #else
-                error_messages_stream << "BFP16 is not supported by current compiler, skipping "
+                error_messages_stream << "bfloat16 is not supported by current compiler, skipping "
                                       << name << ".\n";
                 names_it = options.coll_names.erase(names_it);
                 continue;
@@ -386,8 +386,8 @@ void create_sycl_colls(bench_coll_init_attr& init_attr,
                        coll_list_t& colls) {
     using incremental_index_int_sparse_strategy =
         sparse_allreduce_strategy_impl<int, sparse_detail::incremental_indices_distributor>;
-    using incremental_index_bfp16_sparse_strategy =
-        sparse_allreduce_strategy_impl<ccl::bfp16, sparse_detail::incremental_indices_distributor>;
+    using incremental_index_bf16_sparse_strategy =
+        sparse_allreduce_strategy_impl<ccl::bf16, sparse_detail::incremental_indices_distributor>;
 
     std::stringstream error_messages_stream;
     //base_coll::comm = ccl::create_communicator();
@@ -425,7 +425,7 @@ void create_sycl_colls(bench_coll_init_attr& init_attr,
             }
             colls.emplace_back(new sycl_sparse_allreduce_coll<Dtype, int>(init_attr));
         }
-        else if (name.find(incremental_index_bfp16_sparse_strategy::class_name()) !=
+        else if (name.find(incremental_index_bf16_sparse_strategy::class_name()) !=
                  std::string::npos) {
             // TODO case is not supported yet
             if (true) {
@@ -435,22 +435,22 @@ void create_sycl_colls(bench_coll_init_attr& init_attr,
                 continue;
             }
 
-            if (is_bfp16_enabled() == 0) {
-                error_messages_stream << "SYCL BFP16 is not supported for current CPU, skipping "
+            if (is_bf16_enabled() == 0) {
+                error_messages_stream << "SYCL bf16 is not supported for current CPU, skipping "
                                       << name << ".\n";
                 names_it = options.coll_names.erase(names_it);
                 continue;
             }
-#ifdef CCL_BFP16_COMPILER
+#ifdef CCL_bf16_COMPILER
             colls.emplace_back(
-                new sycl_sparse_allreduce_coll<ccl::bfp16,
+                new sycl_sparse_allreduce_coll<ccl::bf16,
                                                int64_t,
                                                sparse_detail::incremental_indices_distributor>(
                     init_attr,
-                    sizeof(float) / sizeof(ccl::bfp16),
-                    sizeof(float) / sizeof(ccl::bfp16)));
+                    sizeof(float) / sizeof(ccl::bf16),
+                    sizeof(float) / sizeof(ccl::bf16)));
 #else
-            error_messages_stream << "SYCL BFP16 is not supported by current compiler, skipping "
+            error_messages_stream << "SYCL bf16 is not supported by current compiler, skipping "
                                   << name << ".\n";
             names_it = options.coll_names.erase(names_it);
             continue;

@@ -55,7 +55,8 @@ ccl_executor::ccl_executor(const char* main_addr) {
     */
     atl_attr.enable_rma = 0; // ccl::global_data::env().enable_rma;
 
-    atl_wrapper::atl_attr = atl_attr;
+    /* set atl attr for all future communicators */
+    atl_wrapper::attr = atl_attr;
     LOG_INFO("init ATL, requested ep_count ", atl_attr.ep_count);
 
     ccl::env_data& env = ccl::global_data::env();

@@ -495,7 +495,7 @@ atl_status_t atl_mpi_set_env(const atl_attr_t* attr) {
     char ep_count_str[EP_IDX_MAX_STR_LEN] = { 0 };
     snprintf(ep_count_str, EP_IDX_MAX_STR_LEN, "%zu", attr->ep_count);
 
-    setenv("I_MPI_THREAD_LEVEL", "multiple", 0);
+    setenv("MPIR_CVAR_DEFAULT_THREAD_LEVEL", "MPI_THREAD_MULTIPLE", 0);
     setenv("I_MPI_THREAD_SPLIT", "1", 0);
     setenv("I_MPI_THREAD_RUNTIME", "generic", 0);
     setenv("I_MPI_THREAD_MAX", ep_count_str, 0);

@@ -9,7 +9,7 @@
 
 static std::list<std::shared_ptr<iatl>> transports{};
 
-atl_attr_t atl_wrapper::atl_attr = {
+atl_attr_t atl_wrapper::attr = {
     1, /* ep_count */
     1, /* enable_shm */
     64, /* tag_bits */
@@ -132,8 +132,10 @@ atl_wrapper::atl_wrapper(size_t dev_count,
     init_transport();
 }
 void atl_wrapper::init_transport() {
-    transport->atl_init(nullptr, nullptr, &atl_attr, nullptr, pmi);
+
+    transport->atl_init(nullptr, nullptr, &attr, nullptr, pmi);
     eps = transport->atl_get_eps();
+    tag = std::unique_ptr<ccl_atl_tag>(new ccl_atl_tag(attr.tag_bits, attr.max_tag));
 
     if (pmi) {
         threads_count = pmi->get_threads_count();
@@ -147,9 +149,13 @@ void atl_wrapper::init_transport() {
         rank = static_cast<atl_mpi *>(transport.get())->get_rank();
         size = static_cast<atl_mpi *>(transport.get())->get_size();
     }
+
+    if (rank == 0)
+        tag->print();
 }
 atl_wrapper::~atl_wrapper() {
     static std::mutex memory_mutex;
     std::lock_guard<std::mutex> lock(memory_mutex);
     transports.remove(transport);
+    tag.reset();
 }

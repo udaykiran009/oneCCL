@@ -70,7 +70,7 @@ int main(int argc, char** argv) {
         }
     }
 
-    PRINT("\ncoalesce_mode = %d, callback_mode = %d\n", coalesce_mode, callback_mode);
+    PRINT("\ncoalesce_mode = %d, callback_mode = %d\n", (int)coalesce_mode, (int)callback_mode);
 
     using supported_sparce_index_types =
         sparce_index_types<ccl::datatype::int8, ccl::datatype::int32, ccl::datatype::int64, ccl::datatype::uint64>::types;

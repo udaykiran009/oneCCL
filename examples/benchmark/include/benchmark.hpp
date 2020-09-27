@@ -23,12 +23,12 @@ using namespace cl::sycl::access;
 #endif /* CCL_ENABLE_SYCL */
 
 #include "base_utils.hpp"
-#include "bfp16.h"
+#include "bf16.hpp"
 #include "coll.hpp"
 #include "sparse_allreduce/sparse_detail.hpp"
 
 /* specific benchmark variables */
-// TODO: add ccl::bfp16
+// TODO: add ccl::bf16
 constexpr std::initializer_list<ccl::datatype> all_dtypes = {
     ccl::datatype::int8,    ccl::datatype::int32, ccl::datatype::float32,
     ccl::datatype::float64, ccl::datatype::int64, ccl::datatype::uint64
@@ -74,7 +74,7 @@ std::map<loop_type_t, std::string> loop_names = { std::make_pair(LOOP_REGULAR, "
 std::map<buf_type_t, std::string> buf_names = { std::make_pair(BUF_MULTI, "multi"),
                                                 std::make_pair(BUF_SINGLE, "single") };
 
-// TODO: add ccl::bfp16
+// TODO: add ccl::bf16
 std::map<ccl::datatype, std::string> dtype_names = {
     std::make_pair(ccl::datatype::int8, "char"),
     std::make_pair(ccl::datatype::int32, "int"),
@@ -92,7 +92,7 @@ std::map<ccl::reduction, std::string> reduction_names = {
 };
 
 // variables for setting dtypes to launch benchmark
-// TODO: add ccl::bfp16
+// TODO: add ccl::bf16
 template <class native_type>
 using checked_dtype_t = std::pair<bool, native_type>;
 using supported_dtypes_t = std::tuple<checked_dtype_t<char>,
@@ -124,7 +124,7 @@ void print_help_usage(const char* app) {
         "\t[-n,--buf_type <buffer type>]: %s\n"
         "\t[-o,--csv_filepath <file to store CSV-formatted data into>]: %s\n"
         "\t[-h,--help]\n\n"
-        "example:\n\t--coll allgatherv,allreduce,sparse_allreduce,sparse_allreduce_bfp16 --backend cpu --loop regular\n"
+        "example:\n\t--coll allgatherv,allreduce,sparse_allreduce,sparse_allreduce_bf16 --backend cpu --loop regular\n"
         "example:\n\t--coll bcast,reduce --backend sycl --loop unordered \n",
         app,
         backend_names[DEFAULT_BACKEND].c_str(),

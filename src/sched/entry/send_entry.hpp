@@ -33,7 +33,7 @@ public:
         size_t global_dst = comm->get_global_rank(dst);
         size_t global_rank = comm->get_global_rank(comm->rank());
 
-        atl_tag = ccl::global_data::get().atl_tag->create(
+        atl_tag = comm->atl->tag->create(
             sched->get_comm_id(), global_rank, sched->sched_id, sched->get_op_id());
         size_t bytes = cnt * dtype.size();
 

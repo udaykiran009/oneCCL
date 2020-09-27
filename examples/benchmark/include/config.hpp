@@ -11,9 +11,9 @@
 #define DEFAULT_LOOP            LOOP_REGULAR
 #define DEFAULT_COLL_LIST \
     "allgatherv,allreduce,alltoall,alltoallv,bcast,reduce," \
-    "sparse_allreduce,sparse_allreduce_bfp16," \
+    "sparse_allreduce,sparse_allreduce_bf16," \
     "allgatherv,allreduce,alltoall,alltoallv,bcast,reduce," \
-    "sparse_allreduce,sparse_allreduce_bfp16"
+    "sparse_allreduce,sparse_allreduce_bf16"
 #define DEFAULT_ITERS           (16)
 #define DEFAULT_WARMUP_ITERS    (16)
 #define DEFAULT_BUF_COUNT       (16)

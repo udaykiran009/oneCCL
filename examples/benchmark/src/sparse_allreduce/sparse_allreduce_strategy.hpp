@@ -9,9 +9,9 @@ struct type_printer {
 };
 
 template <>
-struct type_printer<ccl::bfp16> {
+struct type_printer<ccl::bf16> {
     static constexpr const char* sparse_class_name() {
-        return "sparse_allreduce_bfp16";
+        return "sparse_allreduce_bf16";
     }
 };
 

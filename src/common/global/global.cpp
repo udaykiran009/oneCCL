@@ -89,15 +89,9 @@ void global_data::init_resize_dependent_objects() {
     //            : executor->get_local_proc_count(),
     //        env_object.allreduce_2d_switch_dims));
 
-    atl_tag = std::unique_ptr<ccl_atl_tag>(
-        new ccl_atl_tag(executor->get_atl_attr().tag_bits, executor->get_atl_attr().max_tag));
     /* TODO: enable back after API update */
     // if (env_object.default_resizable)
     //     ccl_set_resize_fn(nullptr);
-
-    //    if (executor->get_global_proc_idx() == 0) {
-    //        atl_tag->print();
-    //    }
 }
 
 void global_data::init_resize_independent_objects() {
@@ -132,7 +126,6 @@ void global_data::init_resize_independent_objects() {
 }
 
 void global_data::reset_resize_dependent_objects() {
-    atl_tag.reset();
     //    allreduce_2d_builder.reset();
     unordered_coll_manager.reset();
     comm_ids.reset();

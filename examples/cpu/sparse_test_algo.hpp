@@ -398,7 +398,7 @@ void sparse_test_run(ccl::sparse_coalesce_mode coalesce_mode,
 
         void* send_vbuf_bf16 = malloc(ccl::get_datatype_size(ccl::datatype::bfloat16) * send_vbuf.size());
 
-        convert_fp32_to_bf16_arrays(send_vbuf, send_vbuf_bf16, send_vbuf.size());
+        convert_fp32_to_bf16_arrays(send_vbuf.data(), send_vbuf_bf16, send_vbuf.size());
 
         recv_icount = 0;
         recv_vcount = 0;
@@ -434,7 +434,7 @@ void sparse_test_run(ccl::sparse_coalesce_mode coalesce_mode,
         convert_bf16_to_fp32_arrays(recv_vbuf_bf16, (float*)recv_vbuf, (int)recv_vcount);
 
         /* https://www.mcs.anl.gov/papers/P4093-0713_1.pdf */
-        double log_base2 = log(size) / log(2);
+        double log_base2 = log(comm->size()) / log(2);
         double g = (log_base2 * BF16_PRECISION) / (1 - (log_base2 * BF16_PRECISION));
 
         if (coalesce_mode == ccl::sparse_coalesce_mode::disable) {

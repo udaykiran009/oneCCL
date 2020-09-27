@@ -1,10 +1,12 @@
 #pragma once
+
 #include <memory>
 #include <mutex>
 #include <list>
 #include <vector>
 
 #include "atl.h"
+#include "common/comm/atl_tag.hpp"
 #include "util/pm/pmi_resizable_rt/pmi_resizable/kvs/ikvs_wrapper.h"
 #include "util/pm/pmi_resizable_rt/pmi_resizable/kvs/internal_kvs.h"
 #include "util/pm/pmi_resizable_rt/pmi_resizable/kvs/users_kvs.h"
@@ -223,11 +225,17 @@ public:
     size_t get_size() {
         return size;
     }
-    static atl_attr_t atl_attr;
+
+    static atl_attr_t attr;
+
+    std::unique_ptr<ccl_atl_tag> tag;
 
 private:
+
     std::shared_ptr<iatl> transport;
     std::unique_ptr<ipmi> pmi;
+    
+
     atl_ep_t** eps = nullptr;
     size_t threads_count;
     size_t devices_per_rank_count;
