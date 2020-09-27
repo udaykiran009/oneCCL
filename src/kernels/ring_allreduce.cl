@@ -385,20 +385,20 @@ __kernel void allreduce_execution_int(size_t my_rank,
 }
 
 //TODO
-typedef ushort bfp16;
-__kernel void allreduce_execution_bfp16(size_t my_rank,
+typedef ushort bf16;
+__kernel void allreduce_execution_bf16(size_t my_rank,
                                         size_t comm_size,
                                         size_t elems_count,
-                                        const __global bfp16* input_buffer,
-                                        __global bfp16* output_buffer,
+                                        const __global bf16* input_buffer,
+                                        __global bf16* output_buffer,
 
-                                        __global bfp16* tmp_buffer,
+                                        __global bf16* tmp_buffer,
                                         __global volatile int* left_wrote_to_me_flag,
                                         __global volatile int* i_ready_to_receive_flag,
 
                                         __global volatile int* local_barrier_flag,
 
-                                        __global bfp16* right_temp_buffer,
+                                        __global bf16* right_temp_buffer,
                                         __global volatile int* i_send_to_right_flag,
                                         __global volatile int* right_ready_to_recv_flag) {
     return;
@@ -495,19 +495,19 @@ __kernel void allreduce_execution_numa_int(size_t my_rank,
     return;
 }
 
-__kernel void allreduce_execution_numa_bfp16(size_t my_rank,
+__kernel void allreduce_execution_numa_bf16(size_t my_rank,
                                              size_t comm_size,
                                              size_t elems_count,
-                                             const __global bfp16* input_buffer,
-                                             __global bfp16* output_buffer,
+                                             const __global bf16* input_buffer,
+                                             __global bf16* output_buffer,
 
-                                             __global bfp16* tmp_buffer,
+                                             __global bf16* tmp_buffer,
                                              __global volatile int* left_wrote_to_me_flag,
                                              __global volatile int* i_ready_to_receive_flag,
 
                                              __global volatile int* local_barrier_flag,
 
-                                             __global bfp16* right_temp_buffer,
+                                             __global bf16* right_temp_buffer,
                                              __global volatile int* i_send_to_right_flag,
                                              __global volatile int* right_ready_to_recv_flag) {
     return;

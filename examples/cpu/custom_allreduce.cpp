@@ -1,13 +1,14 @@
-#include "base.hpp"
-#include "mpi.h"
 #include <string>
+
+#include "base.hpp"
 
 #define CUSTOM_BASE_DTYPE        int
 #define CUSTOM_REPEAT_COUNT      8
 #define CUSTOM_BASE_DTYPE_FORMAT "%d"
 #define CUSTOM_DTYPE_SIZE        (CUSTOM_REPEAT_COUNT * sizeof(CUSTOM_BASE_DTYPE))
 
-ccl::datatype ccl_dtype_custom;
+int size, rank;
+ccl::datatype custom_dtype;
 std::string global_match_id;
 
 typedef void (*expected_fn_t)(void*, size_t);
@@ -191,7 +192,7 @@ void do_prologue_2x(const void* in_buf,
                     size_t* out_count,
                     ccl::datatype* out_dtype,
                     const ccl::fn_context* context) {
-    ASSERT((in_dtype == ccl::datatype::float32) || (in_dtype == ccl_dtype_custom),
+    ASSERT((in_dtype == ccl::datatype::float32) || (in_dtype == custom_dtype),
            "unexpected in_dtype %d",
            static_cast<int>(in_dtype));
     ASSERT(out_buf, "null ptr");
@@ -209,7 +210,7 @@ void do_prologue_2x(const void* in_buf,
         if (in_dtype == ccl::datatype::float32) {
             ((float*)(*out_buf))[idx] = ((float*)in_buf)[idx] * 2;
         }
-        else if (in_dtype == ccl_dtype_custom) {
+        else if (in_dtype == custom_dtype) {
             custom_2x((char*)in_buf + idx * CUSTOM_DTYPE_SIZE,
                       (char*)(*out_buf) + idx * CUSTOM_DTYPE_SIZE);
         }
@@ -226,7 +227,7 @@ void do_epilogue_2x(const void* in_buf,
                     size_t* out_count,
                     ccl::datatype* out_dtype,
                     const ccl::fn_context* context) {
-    ASSERT((in_dtype == ccl::datatype::float32) || (in_dtype == ccl_dtype_custom),
+    ASSERT((in_dtype == ccl::datatype::float32) || (in_dtype == custom_dtype),
            "unexpected in_dtype %d",
            static_cast<int>(in_dtype));
     ASSERT(context->offset == 0, "wrong offset for epilogue func, should be 0");
@@ -239,7 +240,7 @@ void do_epilogue_2x(const void* in_buf,
         if (in_dtype == ccl::datatype::float32) {
             ((float*)out_buf)[idx] = ((float*)in_buf)[idx] * 2;
         }
-        else if (in_dtype == ccl_dtype_custom) {
+        else if (in_dtype == custom_dtype) {
             custom_2x((char*)in_buf + idx * CUSTOM_DTYPE_SIZE,
                       (char*)out_buf + idx * CUSTOM_DTYPE_SIZE);
         }
@@ -256,7 +257,7 @@ void do_prologue_dtype_to_char(const void* in_buf,
                                size_t* out_count,
                                ccl::datatype* out_dtype,
                                const ccl::fn_context* context) {
-    ASSERT((in_dtype == ccl::datatype::float32) || (in_dtype == ccl_dtype_custom),
+    ASSERT((in_dtype == ccl::datatype::float32) || (in_dtype == custom_dtype),
            "unexpected in_dtype %d",
            static_cast<int>(in_dtype));
     ASSERT(out_buf, "null ptr");
@@ -276,7 +277,7 @@ void do_prologue_dtype_to_char(const void* in_buf,
             int ival = (int)fval;
             ((char*)(*out_buf))[idx] = (char)(ival % 256);
         }
-        else if (in_dtype == ccl_dtype_custom) {
+        else if (in_dtype == custom_dtype) {
             custom_to_char((char*)in_buf + idx * CUSTOM_DTYPE_SIZE, (char*)(*out_buf) + idx);
         }
         else {
@@ -293,7 +294,7 @@ void do_epilogue_char_to_dtype(const void* in_buf,
                                ccl::datatype out_dtype,
                                const ccl::fn_context* context) {
     ASSERT(in_dtype == ccl::datatype::int8, "unexpected in_dtype %d", static_cast<int>(in_dtype));
-    ASSERT((out_dtype == ccl::datatype::float32) || (out_dtype == ccl_dtype_custom),
+    ASSERT((out_dtype == ccl::datatype::float32) || (out_dtype == custom_dtype),
            "unexpected out_dtype %d",
            static_cast<int>(out_dtype));
     ASSERT(context->offset == 0, "wrong offset for epilogue func, should be 0");
@@ -306,7 +307,7 @@ void do_epilogue_char_to_dtype(const void* in_buf,
         if (out_dtype == ccl::datatype::float32) {
             ((float*)out_buf)[idx] = (float)(((char*)in_buf)[idx]);
         }
-        else if (out_dtype == ccl_dtype_custom) {
+        else if (out_dtype == custom_dtype) {
             custom_from_char((char*)in_buf + idx, (char*)out_buf + idx * CUSTOM_DTYPE_SIZE);
         }
         else {
@@ -329,7 +330,7 @@ void do_reduction_sum(const void* in_buf,
     dtype_size = env.get_datatype_size(dtype);
 
     ASSERT((dtype == ccl::datatype::int8) || (dtype == ccl::datatype::float32) ||
-               (dtype == ccl_dtype_custom),
+               (dtype == custom_dtype),
            "unexpected in_dtype %d",
            static_cast<int>(dtype));
     ASSERT(context->offset < MSG_SIZE_COUNT * dtype_size,
@@ -346,7 +347,7 @@ void do_reduction_sum(const void* in_buf,
         else if (dtype == ccl::datatype::float32) {
             ((float*)inout_buf)[idx] += ((float*)in_buf)[idx];
         }
-        else if (dtype == ccl_dtype_custom) {
+        else if (dtype == custom_dtype) {
             custom_sum((char*)in_buf + idx * CUSTOM_DTYPE_SIZE,
                        (char*)inout_buf + idx * CUSTOM_DTYPE_SIZE);
         }
@@ -367,7 +368,7 @@ void do_reduction_null(const void* in_buf,
     dtype_size = env.get_datatype_size(dtype);
 
     ASSERT((dtype == ccl::datatype::int8) || (dtype == ccl::datatype::float32) ||
-               (dtype == ccl_dtype_custom),
+               (dtype == custom_dtype),
            "unexpected in_dtype %d",
            static_cast<int>(dtype));
     ASSERT(context->offset < MSG_SIZE_COUNT * dtype_size,
@@ -384,7 +385,7 @@ void do_reduction_null(const void* in_buf,
         else if (dtype == ccl::datatype::float32) {
             ((float*)inout_buf)[idx] = (float)0;
         }
-        else if (dtype == ccl_dtype_custom) {
+        else if (dtype == custom_dtype) {
             custom_zeroize((char*)inout_buf + idx * CUSTOM_DTYPE_SIZE);
         }
         else {
@@ -403,7 +404,7 @@ void do_reduction_custom(const void* in_buf,
     auto& env = ccl::environment::instance();
     dtype_size = env.get_datatype_size(dtype);
 
-    ASSERT((dtype == ccl::datatype::float32) || (dtype == ccl_dtype_custom),
+    ASSERT((dtype == ccl::datatype::float32) || (dtype == custom_dtype),
            "unexpected in_dtype %d",
            static_cast<int>(dtype));
     ASSERT(context->offset < MSG_SIZE_COUNT * dtype_size,
@@ -419,7 +420,7 @@ void do_reduction_custom(const void* in_buf,
         if (dtype == ccl::datatype::float32) {
             ((float*)inout_buf)[idx] = (float)(global_elem_offset + idx);
         }
-        else if (dtype == ccl_dtype_custom) {
+        else if (dtype == custom_dtype) {
             custom_set((char*)inout_buf + idx * CUSTOM_DTYPE_SIZE, global_elem_offset + idx);
         }
         else {
@@ -429,8 +430,12 @@ void do_reduction_custom(const void* in_buf,
 }
 
 int main() {
-    MPI_Init(NULL, NULL);
 
+    setenv("CCL_ATL_TRANSPORT", "ofi", 1);
+
+    ccl::init();
+
+    MPI_Init(NULL, NULL);
     MPI_Comm_size(MPI_COMM_WORLD, &size);
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
 
@@ -449,26 +454,26 @@ int main() {
     }
 
     auto comm = env.create_communicator(size, rank, kvs);
-    auto coll_attr = env.create_operation_attr<ccl::allreduce_attr>();
+    auto attr = env.create_operation_attr<ccl::allreduce_attr>();
 
     float float_send_buf[MSG_SIZE_COUNT];
     float float_recv_buf[MSG_SIZE_COUNT];
 
-    auto attr =
+    auto dt_attr =
         ccl::create_datatype_attr(ccl::attr_val<ccl::datatype_attr_id::size>(CUSTOM_DTYPE_SIZE));
-    ccl_dtype_custom = ccl::register_datatype(attr);
+    custom_dtype = ccl::register_datatype(dt_attr);
 
     char custom_send_buf[MSG_SIZE_COUNT * CUSTOM_DTYPE_SIZE];
     char custom_recv_buf[MSG_SIZE_COUNT * CUSTOM_DTYPE_SIZE];
 
-    std::string base_match_id = coll_attr.get<ccl::operation_attr_id::match_id>();
-    coll_attr.set<ccl::operation_attr_id::to_cache>(1);
+    std::string base_match_id = attr.get<ccl::operation_attr_id::match_id>();
+    attr.set<ccl::operation_attr_id::to_cache>(true);
     std::string match_id;
 
     for (size_t idx = 0; idx < 2; idx++) {
         if (rank == 0)
             printf("Running tests for %s datatype\n", (idx == 0) ? "FLOAT" : "CUSTOM");
-        ccl::datatype dtype = (idx == 0) ? ccl::datatype::float32 : ccl_dtype_custom;
+        ccl::datatype dtype = (idx == 0) ? ccl::datatype::float32 : custom_dtype;
         void* send_buf = (idx == 0) ? (void*)float_send_buf : (void*)custom_send_buf;
         void* recv_buf = (idx == 0) ? (void*)float_recv_buf : (void*)custom_recv_buf;
 
@@ -480,10 +485,10 @@ int main() {
             /* regular sum allreduce */
             expected_fn = (idx == 0) ? expected_float_1 : expected_custom_1;
             match_id = base_match_id + "_regular_" + std::to_string(idx);
-            coll_attr.set<ccl::operation_attr_id::match_id>(match_id);
+            attr.set<ccl::operation_attr_id::match_id>(match_id);
             RUN_COLLECTIVE(
                 comm.allreduce(
-                    send_buf, recv_buf, MSG_SIZE_COUNT, dtype, ccl::reduction::sum, coll_attr),
+                    send_buf, recv_buf, MSG_SIZE_COUNT, dtype, ccl::reduction::sum, attr),
                 fill_fn,
                 check_fn,
                 expected_fn,
@@ -492,11 +497,11 @@ int main() {
             /* prologue */
             expected_fn = (idx == 0) ? expected_float_2 : expected_custom_2;
             match_id = base_match_id + "_prologue_" + std::to_string(idx);
-            coll_attr.set<ccl::operation_attr_id::match_id>(match_id);
-            coll_attr.set<ccl::operation_attr_id::prologue_fn>((ccl::prologue_fn)do_prologue_2x);
+            attr.set<ccl::operation_attr_id::match_id>(match_id);
+            attr.set<ccl::operation_attr_id::prologue_fn>((ccl::prologue_fn)do_prologue_2x);
             RUN_COLLECTIVE(
                 comm.allreduce(
-                    send_buf, recv_buf, MSG_SIZE_COUNT, dtype, ccl::reduction::sum, coll_attr),
+                    send_buf, recv_buf, MSG_SIZE_COUNT, dtype, ccl::reduction::sum, attr),
                 fill_fn,
                 check_fn,
                 expected_fn,
@@ -505,12 +510,12 @@ int main() {
             /* epilogue */
             expected_fn = (idx == 0) ? expected_float_2 : expected_custom_2;
             match_id = base_match_id + "_epilogue_" + std::to_string(idx);
-            coll_attr.set<ccl::operation_attr_id::match_id>(match_id);
-            coll_attr.set<ccl::operation_attr_id::prologue_fn>((ccl::prologue_fn) nullptr);
-            coll_attr.set<ccl::operation_attr_id::epilogue_fn>((ccl::epilogue_fn)do_epilogue_2x);
+            attr.set<ccl::operation_attr_id::match_id>(match_id);
+            attr.set<ccl::operation_attr_id::prologue_fn>((ccl::prologue_fn) nullptr);
+            attr.set<ccl::operation_attr_id::epilogue_fn>((ccl::epilogue_fn)do_epilogue_2x);
             RUN_COLLECTIVE(
                 comm.allreduce(
-                    send_buf, recv_buf, MSG_SIZE_COUNT, dtype, ccl::reduction::sum, coll_attr),
+                    send_buf, recv_buf, MSG_SIZE_COUNT, dtype, ccl::reduction::sum, attr),
                 fill_fn,
                 check_fn,
                 expected_fn,
@@ -519,12 +524,12 @@ int main() {
             /* prologue and epilogue */
             expected_fn = (idx == 0) ? expected_float_4 : expected_custom_4;
             match_id = base_match_id + "_prologue_and_epilogue_" + std::to_string(idx);
-            coll_attr.set<ccl::operation_attr_id::match_id>(match_id);
-            coll_attr.set<ccl::operation_attr_id::prologue_fn>((ccl::prologue_fn)do_prologue_2x);
-            coll_attr.set<ccl::operation_attr_id::epilogue_fn>((ccl::epilogue_fn)do_epilogue_2x);
+            attr.set<ccl::operation_attr_id::match_id>(match_id);
+            attr.set<ccl::operation_attr_id::prologue_fn>((ccl::prologue_fn)do_prologue_2x);
+            attr.set<ccl::operation_attr_id::epilogue_fn>((ccl::epilogue_fn)do_epilogue_2x);
             RUN_COLLECTIVE(
                 comm.allreduce(
-                    send_buf, recv_buf, MSG_SIZE_COUNT, dtype, ccl::reduction::sum, coll_attr),
+                    send_buf, recv_buf, MSG_SIZE_COUNT, dtype, ccl::reduction::sum, attr),
                 fill_fn,
                 check_fn,
                 expected_fn,
@@ -534,13 +539,13 @@ int main() {
         /* reduction_sum */
         expected_fn = (idx == 0) ? expected_float_1 : expected_custom_1;
         match_id = base_match_id + "_reduction_sum_" + std::to_string(idx);
-        coll_attr.set<ccl::operation_attr_id::match_id>(match_id);
-        coll_attr.set<ccl::operation_attr_id::prologue_fn>((ccl::prologue_fn) nullptr);
-        coll_attr.set<ccl::operation_attr_id::epilogue_fn>((ccl::epilogue_fn) nullptr);
-        coll_attr.set<ccl::allreduce_attr_id::reduction_fn>((ccl::reduction_fn)do_reduction_sum);
+        attr.set<ccl::operation_attr_id::match_id>(match_id);
+        attr.set<ccl::operation_attr_id::prologue_fn>((ccl::prologue_fn) nullptr);
+        attr.set<ccl::operation_attr_id::epilogue_fn>((ccl::epilogue_fn) nullptr);
+        attr.set<ccl::allreduce_attr_id::reduction_fn>((ccl::reduction_fn)do_reduction_sum);
         RUN_COLLECTIVE(
             comm.allreduce(
-                send_buf, recv_buf, MSG_SIZE_COUNT, dtype, ccl::reduction::custom, coll_attr),
+                send_buf, recv_buf, MSG_SIZE_COUNT, dtype, ccl::reduction::custom, attr),
             fill_fn,
             check_fn,
             expected_fn,
@@ -552,13 +557,13 @@ int main() {
         else
             expected_fn = (idx == 0) ? expected_float_3 : expected_custom_3;
         match_id = base_match_id + "_reduction_null_" + std::to_string(idx);
-        coll_attr.set<ccl::operation_attr_id::match_id>(match_id);
-        coll_attr.set<ccl::operation_attr_id::prologue_fn>((ccl::prologue_fn) nullptr);
-        coll_attr.set<ccl::operation_attr_id::epilogue_fn>((ccl::epilogue_fn) nullptr);
-        coll_attr.set<ccl::allreduce_attr_id::reduction_fn>((ccl::reduction_fn)do_reduction_null);
+        attr.set<ccl::operation_attr_id::match_id>(match_id);
+        attr.set<ccl::operation_attr_id::prologue_fn>((ccl::prologue_fn) nullptr);
+        attr.set<ccl::operation_attr_id::epilogue_fn>((ccl::epilogue_fn) nullptr);
+        attr.set<ccl::allreduce_attr_id::reduction_fn>((ccl::reduction_fn)do_reduction_null);
         RUN_COLLECTIVE(
             comm.allreduce(
-                send_buf, recv_buf, MSG_SIZE_COUNT, dtype, ccl::reduction::custom, coll_attr),
+                send_buf, recv_buf, MSG_SIZE_COUNT, dtype, ccl::reduction::custom, attr),
             fill_fn,
             check_fn,
             expected_fn,
@@ -570,13 +575,13 @@ int main() {
         else
             expected_fn = (idx == 0) ? expected_float_5 : expected_custom_5;
         match_id = base_match_id + "_reduction_custom_" + std::to_string(idx);
-        coll_attr.set<ccl::operation_attr_id::match_id>(match_id);
-        coll_attr.set<ccl::operation_attr_id::prologue_fn>((ccl::prologue_fn) nullptr);
-        coll_attr.set<ccl::operation_attr_id::epilogue_fn>((ccl::epilogue_fn) nullptr);
-        coll_attr.set<ccl::allreduce_attr_id::reduction_fn>((ccl::reduction_fn)do_reduction_custom);
+        attr.set<ccl::operation_attr_id::match_id>(match_id);
+        attr.set<ccl::operation_attr_id::prologue_fn>((ccl::prologue_fn) nullptr);
+        attr.set<ccl::operation_attr_id::epilogue_fn>((ccl::epilogue_fn) nullptr);
+        attr.set<ccl::allreduce_attr_id::reduction_fn>((ccl::reduction_fn)do_reduction_custom);
         RUN_COLLECTIVE(
             comm.allreduce(
-                send_buf, recv_buf, MSG_SIZE_COUNT, dtype, ccl::reduction::custom, coll_attr),
+                send_buf, recv_buf, MSG_SIZE_COUNT, dtype, ccl::reduction::custom, attr),
             fill_fn,
             check_fn,
             expected_fn,
@@ -585,13 +590,13 @@ int main() {
         /* prologue and reduction_sum */
         expected_fn = (idx == 0) ? expected_float_2 : expected_custom_2;
         match_id = base_match_id + "_prologue_and_reduction_sum_" + std::to_string(idx);
-        coll_attr.set<ccl::operation_attr_id::match_id>(match_id);
-        coll_attr.set<ccl::operation_attr_id::prologue_fn>((ccl::prologue_fn)do_prologue_2x);
-        coll_attr.set<ccl::operation_attr_id::epilogue_fn>((ccl::epilogue_fn) nullptr);
-        coll_attr.set<ccl::allreduce_attr_id::reduction_fn>((ccl::reduction_fn)do_reduction_sum);
+        attr.set<ccl::operation_attr_id::match_id>(match_id);
+        attr.set<ccl::operation_attr_id::prologue_fn>((ccl::prologue_fn)do_prologue_2x);
+        attr.set<ccl::operation_attr_id::epilogue_fn>((ccl::epilogue_fn) nullptr);
+        attr.set<ccl::allreduce_attr_id::reduction_fn>((ccl::reduction_fn)do_reduction_sum);
         RUN_COLLECTIVE(
             comm.allreduce(
-                send_buf, recv_buf, MSG_SIZE_COUNT, dtype, ccl::reduction::custom, coll_attr),
+                send_buf, recv_buf, MSG_SIZE_COUNT, dtype, ccl::reduction::custom, attr),
             fill_fn,
             check_fn,
             expected_fn,
@@ -600,13 +605,13 @@ int main() {
         /* epilogue and reduction_sum */
         expected_fn = (idx == 0) ? expected_float_2 : expected_custom_2;
         match_id = base_match_id + "_epilogue_and_reduction_sum_" + std::to_string(idx);
-        coll_attr.set<ccl::operation_attr_id::match_id>(match_id);
-        coll_attr.set<ccl::operation_attr_id::prologue_fn>((ccl::prologue_fn) nullptr);
-        coll_attr.set<ccl::operation_attr_id::epilogue_fn>((ccl::epilogue_fn)do_epilogue_2x);
-        coll_attr.set<ccl::allreduce_attr_id::reduction_fn>((ccl::reduction_fn)do_reduction_sum);
+        attr.set<ccl::operation_attr_id::match_id>(match_id);
+        attr.set<ccl::operation_attr_id::prologue_fn>((ccl::prologue_fn) nullptr);
+        attr.set<ccl::operation_attr_id::epilogue_fn>((ccl::epilogue_fn)do_epilogue_2x);
+        attr.set<ccl::allreduce_attr_id::reduction_fn>((ccl::reduction_fn)do_reduction_sum);
         RUN_COLLECTIVE(
             comm.allreduce(
-                send_buf, recv_buf, MSG_SIZE_COUNT, dtype, ccl::reduction::custom, coll_attr),
+                send_buf, recv_buf, MSG_SIZE_COUNT, dtype, ccl::reduction::custom, attr),
             fill_fn,
             check_fn,
             expected_fn,
@@ -616,13 +621,13 @@ int main() {
         expected_fn = (idx == 0) ? expected_float_4 : expected_custom_4;
         match_id =
             base_match_id + "_prologue_and_epilogue_and_reduction_sum_" + std::to_string(idx);
-        coll_attr.set<ccl::operation_attr_id::match_id>(match_id);
-        coll_attr.set<ccl::operation_attr_id::prologue_fn>((ccl::prologue_fn)do_prologue_2x);
-        coll_attr.set<ccl::operation_attr_id::epilogue_fn>((ccl::epilogue_fn)do_epilogue_2x);
-        coll_attr.set<ccl::allreduce_attr_id::reduction_fn>((ccl::reduction_fn)do_reduction_sum);
+        attr.set<ccl::operation_attr_id::match_id>(match_id);
+        attr.set<ccl::operation_attr_id::prologue_fn>((ccl::prologue_fn)do_prologue_2x);
+        attr.set<ccl::operation_attr_id::epilogue_fn>((ccl::epilogue_fn)do_epilogue_2x);
+        attr.set<ccl::allreduce_attr_id::reduction_fn>((ccl::reduction_fn)do_reduction_sum);
         RUN_COLLECTIVE(
             comm.allreduce(
-                send_buf, recv_buf, MSG_SIZE_COUNT, dtype, ccl::reduction::custom, coll_attr),
+                send_buf, recv_buf, MSG_SIZE_COUNT, dtype, ccl::reduction::custom, attr),
             fill_fn,
             check_fn,
             expected_fn,
@@ -635,13 +640,13 @@ int main() {
             expected_fn = (idx == 0) ? expected_float_3 : expected_custom_3;
         match_id =
             base_match_id + "_prologue_and_epilogue_and_reduction_null_" + std::to_string(idx);
-        coll_attr.set<ccl::operation_attr_id::match_id>(match_id);
-        coll_attr.set<ccl::operation_attr_id::prologue_fn>((ccl::prologue_fn)do_prologue_2x);
-        coll_attr.set<ccl::operation_attr_id::epilogue_fn>((ccl::epilogue_fn)do_epilogue_2x);
-        coll_attr.set<ccl::allreduce_attr_id::reduction_fn>((ccl::reduction_fn)do_reduction_null);
+        attr.set<ccl::operation_attr_id::match_id>(match_id);
+        attr.set<ccl::operation_attr_id::prologue_fn>((ccl::prologue_fn)do_prologue_2x);
+        attr.set<ccl::operation_attr_id::epilogue_fn>((ccl::epilogue_fn)do_epilogue_2x);
+        attr.set<ccl::allreduce_attr_id::reduction_fn>((ccl::reduction_fn)do_reduction_null);
         RUN_COLLECTIVE(
             comm.allreduce(
-                send_buf, recv_buf, MSG_SIZE_COUNT, dtype, ccl::reduction::custom, coll_attr),
+                send_buf, recv_buf, MSG_SIZE_COUNT, dtype, ccl::reduction::custom, attr),
             fill_fn,
             check_fn,
             expected_fn,
@@ -651,15 +656,15 @@ int main() {
         expected_fn = (idx == 0) ? expected_float_1 : expected_custom_1;
         match_id =
             base_match_id + "_prologue_and_epilogue_and_reduction_sum2_" + std::to_string(idx);
-        coll_attr.set<ccl::operation_attr_id::match_id>(match_id);
-        coll_attr.set<ccl::operation_attr_id::prologue_fn>(
+        attr.set<ccl::operation_attr_id::match_id>(match_id);
+        attr.set<ccl::operation_attr_id::prologue_fn>(
             (ccl::prologue_fn)do_prologue_dtype_to_char);
-        coll_attr.set<ccl::operation_attr_id::epilogue_fn>(
+        attr.set<ccl::operation_attr_id::epilogue_fn>(
             (ccl::epilogue_fn)do_epilogue_char_to_dtype);
-        coll_attr.set<ccl::allreduce_attr_id::reduction_fn>((ccl::reduction_fn)do_reduction_sum);
+        attr.set<ccl::allreduce_attr_id::reduction_fn>((ccl::reduction_fn)do_reduction_sum);
         RUN_COLLECTIVE(
             comm.allreduce(
-                send_buf, recv_buf, MSG_SIZE_COUNT, dtype, ccl::reduction::custom, coll_attr),
+                send_buf, recv_buf, MSG_SIZE_COUNT, dtype, ccl::reduction::custom, attr),
             fill_fn,
             check_fn,
             expected_fn,
@@ -672,20 +677,23 @@ int main() {
             expected_fn = (idx == 0) ? expected_float_6 : expected_custom_6;
         match_id =
             base_match_id + "_prologue_and_epilogue_and_reduction_custom_" + std::to_string(idx);
-        coll_attr.set<ccl::operation_attr_id::match_id>(match_id);
-        coll_attr.set<ccl::operation_attr_id::prologue_fn>((ccl::prologue_fn) nullptr);
-        coll_attr.set<ccl::operation_attr_id::epilogue_fn>((ccl::epilogue_fn)do_epilogue_2x);
-        coll_attr.set<ccl::allreduce_attr_id::reduction_fn>((ccl::reduction_fn)do_reduction_custom);
+        attr.set<ccl::operation_attr_id::match_id>(match_id);
+        attr.set<ccl::operation_attr_id::prologue_fn>((ccl::prologue_fn) nullptr);
+        attr.set<ccl::operation_attr_id::epilogue_fn>((ccl::epilogue_fn)do_epilogue_2x);
+        attr.set<ccl::allreduce_attr_id::reduction_fn>((ccl::reduction_fn)do_reduction_custom);
         RUN_COLLECTIVE(
             comm.allreduce(
-                send_buf, recv_buf, MSG_SIZE_COUNT, dtype, ccl::reduction::custom, coll_attr),
+                send_buf, recv_buf, MSG_SIZE_COUNT, dtype, ccl::reduction::custom, attr),
             fill_fn,
             check_fn,
             expected_fn,
             "allreduce_with_epilogue_and_reduction_custom");
     }
-    MPI_Finalize();
+
     if (rank == 0)
         printf("PASSED\n");
+
+    MPI_Finalize();
+
     return 0;
 }

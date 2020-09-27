@@ -2,7 +2,7 @@
 #define __global
 using namespace ccl;
 #else
-typedef ushort bfp16;
+typedef ushort bf16;
 #endif
 
 typedef struct __attribute__((packed)) a2a_gpu_comm_data_char {
@@ -23,11 +23,11 @@ typedef struct __attribute__((packed)) a2a_gpu_comm_data_float {
     __global int* data_sent_flag;
 } a2a_gpu_comm_data_float;
 
-typedef struct __attribute__((packed)) a2a_gpu_comm_data_bfp16 {
-    __global bfp16* recv_buf;
+typedef struct __attribute__((packed)) a2a_gpu_comm_data_bf16 {
+    __global bf16* recv_buf;
     __global int* ready_to_receive_flag;
     __global int* data_sent_flag;
-} a2a_gpu_comm_data_bfp16;
+} a2a_gpu_comm_data_bf16;
 
 typedef struct __attribute__((packed)) a2a_gpu_comm_data_double {
     __global double* recv_buf;

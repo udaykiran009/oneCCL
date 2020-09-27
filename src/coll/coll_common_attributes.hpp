@@ -97,10 +97,10 @@ struct ccl_operation_attr_impl_t {
     size_t priority = 0;
 
     /* Blocking/non-blocking */
-    int synchronous = 0;
+    bool synchronous = 0;
 
     /* Persistent/non-persistent */
-    int to_cache = 0;
+    bool to_cache = 0;
 
     /**
      * Id of the operation. If specified, new communicator will be created and collective

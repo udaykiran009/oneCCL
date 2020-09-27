@@ -165,7 +165,7 @@ void user_thread_sycl(size_t thread_idx,
     global_communicator->barrier();
 
     //bcast
-    ccl::coll_attr coll_attr{};
+    ccl::attr attr{};
     std::vector<std::shared_ptr<ccl::request>> reqs;
     for (auto& comm : comms) {
         size_t rank = comm->rank();
@@ -179,7 +179,7 @@ void user_thread_sycl(size_t thread_idx,
         auto& mem_objects = memory_storage.find(rank)->second;
         auto& stream = rank_stream_map[rank];
         reqs.push_back(comm->bcast(
-            mem_objects[0], mem_objects[1], COUNT, ccl::reduction::sum, &coll_attr, stream));
+            mem_objects[0], mem_objects[1], COUNT, ccl::reduction::sum, &attr, stream));
     }
 
     //wait
@@ -291,7 +291,7 @@ void user_thread_idx(size_t thread_idx,
 
     //bcast
     std::vector<std::shared_ptr<ccl::request>> reqs;
-    ccl::coll_attr coll_attr{};
+    ccl::attr attr{};
     for (auto& comm : comms) {
         size_t rank = comm->rank();
 
@@ -303,7 +303,7 @@ void user_thread_idx(size_t thread_idx,
 
         allocated_memory_array& mem_objects = memory_storage.find(rank)->second;
         reqs.push_back(comm->bcast(
-            mem_objects[0].get(), mem_objects[0].count(), root, &coll_attr, streams[rank]));
+            mem_objects[0].get(), mem_objects[0].count(), root, &attr, streams[rank]));
     }
 
     //wait

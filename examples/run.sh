@@ -40,7 +40,7 @@ function check_test()
     else
         test_failed=`grep -E -c -i 'Aborted|failed|^BAD$|KILLED|^fault$|cl::sycl::runtime_error|terminate' ${test_log}`
     fi
-    test_skipped=`grep -E -c -i 'unavailable|skipped' ${test_log}`
+    test_skipped=`grep -E -c -i 'unavailable|skipped|skip' ${test_log}`
     if ([ ${test_passed} -eq 0 ] || [ ${test_skipped} -eq 0 ]) && [ ${test_failed} -ne 0 ]
     then
         echo "Error: example $test_file testing failed"
@@ -265,8 +265,8 @@ run()
                     grep -v -e '\(^allreduce_rs$\|^platform_info$\)' |
                     grep -v 'sparse_allreduce'`
             fi
-	    
-	    coll_list="" # empty coll_list means default benchmarking collectives set
+
+            coll_list="" # empty coll_list means default benchmarking collectives set
             for example in $examples_to_run
             do
                 if [ "$dir_name" == "benchmark" ];

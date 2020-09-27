@@ -45,12 +45,6 @@
     to->to_cache = from.get<ccl::operation_attr_id::to_cache>(); \
     to->match_id = from.get<ccl::operation_attr_id::match_id>();
 
-ccl_coll_attr::ccl_coll_attr(const ccl::allgatherv_attr& attr) {
-    COPY_COMMON_OP_ATTRS(attr, this);
-
-    vector_buf = attr.get<ccl::allgatherv_attr_id::vector_buf>();
-}
-
 ccl_coll_attr::ccl_coll_attr(const ccl::allreduce_attr& attr) {
     COPY_COMMON_OP_ATTRS(attr, this);
 

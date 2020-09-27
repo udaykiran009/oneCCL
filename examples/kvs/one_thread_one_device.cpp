@@ -38,10 +38,10 @@ void run_test(const size_t size,
     ccl::stream_t stream = ccl::environment::instance().create_stream(queue);
 
     //allreduce
-    ccl::coll_attr coll_attr{};
+    ccl::attr attr{};
 
     ccl::request req =
-        comm->allreduce(mem_send, mem_recv, COUNT, ccl::reduction::sum, &coll_attr, stream);
+        comm->allreduce(mem_send, mem_recv, COUNT, ccl::reduction::sum, &attr, stream);
 
     //wait
     req.wait();
@@ -75,10 +75,10 @@ void run_test(const size_t size,
     ccl::stream_t stream = ccl::environment::instance().create_stream(queue);
 
     //allreduce
-    ccl::coll_attr coll_attr{};
+    ccl::attr attr{};
 
     ccl::request req =
-        comm->allreduce(mem_send, mem_recv, COUNT, ccl::reduction::sum, &coll_attr, stream);
+        comm->allreduce(mem_send, mem_recv, COUNT, ccl::reduction::sum, &attr, stream);
 
     //wait
     req.wait();

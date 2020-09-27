@@ -72,7 +72,7 @@ typedef enum {
     ATL_DTYPE_FLOAT,
     ATL_DTYPE_DOUBLE,
 
-    ATL_DTYPE_BFP16,
+    ATL_DTYPE_BF16,
 } atl_datatype_t;
 //#define ccl_dtype_uint8         ((ccl_datatype_t)(1))
 //#define ccl_dtype_int16         ((ccl_datatype_t)(2))
@@ -83,7 +83,7 @@ typedef enum {
 //#define ccl_dtype_uint64        ((ccl_datatype_t)(7))
 //
 //#define ccl_dtype_bfloat8       ((ccl_datatype_t)(8))
-//#define ccl_dtype_bfp16         ((ccl_datatype_t)(9))
+//#define ccl_dtype_bf16         ((ccl_datatype_t)(9))
 //#define ccl_dtype_float16       ((ccl_datatype_t)(10))
 //#define ccl_dtype_float         ((ccl_datatype_t)(11))
 //

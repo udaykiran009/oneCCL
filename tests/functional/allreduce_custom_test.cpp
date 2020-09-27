@@ -24,7 +24,7 @@ size_t get_dtype_size(ccl_datatype_t dtype)
     {
         case ccl_dtype_char: { dtype_size = 1; break; }
         case ccl_dtype_int: { dtype_size = 4; break; }
-        case ccl_dtype_bfp16: { dtype_size = 2; break; }
+        case ccl_dtype_bf16: { dtype_size = 2; break; }
         case ccl_dtype_float: { dtype_size = 4; break; }
         case ccl_dtype_double: { dtype_size = 8; break; }
         case ccl_dtype_int64: { dtype_size = 8; break; }
@@ -512,9 +512,9 @@ public:
         const ccl_test_conf& test_conf = param.get_conf();
         glob_match_id.resize(param.buffer_count);
 
-        if (test_conf.data_type == DT_BFP16)
+        if (test_conf.data_type == DT_BF16)
         {
-            printf("WARNING! BFP16 is not supported for custom reduction, test skipped");
+            printf("WARNING! BF16 is not supported for custom reduction, test skipped");
             return result;
         }
 

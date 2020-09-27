@@ -2,7 +2,7 @@
 
 //#include "ccl.h"
 #include "coll/algorithms/algorithms_enum.hpp"
-#include "comp/bfp16/bfp16_utils.h"
+#include "comp/bf16/bf16_utils.hpp"
 #include "common/env/env.hpp"
 #include "common/utils/utils.hpp"
 #include "oneapi/ccl/gpu_communicator.hpp"
@@ -97,7 +97,7 @@ public:
 
     static thread_local bool is_worker_thread;
     bool is_ft_enabled;
-    ccl_bfp16_impl_type bfp16_impl_type;
+    ccl_bf16_impl_type bf16_impl_type;
 
     //TODO new_api configure thread wait timeout
     size_t thread_barrier_wait_timeout_sec = 5;

@@ -1,11 +1,10 @@
 #include "base.hpp"
-#include "mpi.h"
 
 void run_collective(const char* cmd_name,
                     const std::vector<float>& send_buf,
                     std::vector<float>& recv_buf,
                     const ccl::communicator& comm,
-                    const ccl::allreduce_attr& coll_attr) {
+                    const ccl::allreduce_attr& attr) {
     std::chrono::system_clock::duration exec_time{ 0 };
     float expected = (comm.size() - 1) * (static_cast<float>(comm.size()) / 2);
 
@@ -18,7 +17,7 @@ void run_collective(const char* cmd_name,
                                   recv_buf.size(),
                                   ccl::reduction::sum,
                                   comm,
-                                  coll_attr);
+                                  attr);
         req.wait();
         exec_time += std::chrono::system_clock::now() - start;
     }
@@ -61,17 +60,18 @@ int main() {
     }
 
     auto comm = ccl::create_communicator(size, rank, kvs);
-    auto coll_attr = ccl::create_operation_attr<ccl::allreduce_attr>();
+    auto attr = ccl::create_operation_attr<ccl::allreduce_attr>();
 
     MSG_LOOP(comm, std::vector<float> send_buf(msg_count, static_cast<float>(comm.rank()));
              std::vector<float> recv_buf(msg_count);
-             coll_attr.set<ccl::operation_attr_id::to_cache>(0);
-             run_collective("warmup allreduce", send_buf, recv_buf, comm, coll_attr);
-             coll_attr.set<ccl::operation_attr_id::to_cache>(1);
-             run_collective("persistent allreduce", send_buf, recv_buf, comm, coll_attr);
-             coll_attr.set<ccl::operation_attr_id::to_cache>(0);
-             run_collective("regular allreduce", send_buf, recv_buf, comm, coll_attr););
+             attr.set<ccl::operation_attr_id::to_cache>(false);
+             run_collective("warmup allreduce", send_buf, recv_buf, comm, attr);
+             attr.set<ccl::operation_attr_id::to_cache>(true);
+             run_collective("persistent allreduce", send_buf, recv_buf, comm, attr);
+             attr.set<ccl::operation_attr_id::to_cache>(false);
+             run_collective("regular allreduce", send_buf, recv_buf, comm, attr););
 
     MPI_Finalize();
+
     return 0;
 }

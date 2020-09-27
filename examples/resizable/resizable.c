@@ -101,13 +101,13 @@ int main(int argc, char** argv) {
     for (int i = 0; i < reinit_count; ++i) {
         test_init();
         for (int j = 0; j < repeat_count; ++j) {
-            coll_attr.to_cache = 0;
+            attr.to_cache = 0;
             RUN_COLLECTIVE(ccl_allreduce(send_buf,
                                          recv_buf,
                                          COUNT,
                                          ccl_dtype_float,
                                          ccl_reduction_sum,
-                                         &coll_attr,
+                                         &attr,
                                          NULL,
                                          NULL,
                                          &request),

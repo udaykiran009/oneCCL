@@ -4,9 +4,9 @@
 
 #define CCL_COALESCE_RESERVE_SIZE 16
 
-#define CCL_BFP16_ONE 0x3f80
-#define CCL_BFP16_MAX 0x7f7f
-#define CCL_BFP16_MIN 0xff7f
+#define CCL_BF16_ONE 0x3f80
+#define CCL_BF16_MAX 0x7f7f
+#define CCL_BF16_MIN 0xff7f
 
 #define CCL_SPARSE_ALLREDUCE_SELECT_ALGO(itype, vtype, algo) \
     do { \
@@ -81,7 +81,7 @@
                 CCL_SPARSE_ALLREDUCE_SELECT_ALGO(itype, uint64_t, algo); \
                 break; \
             case ccl::datatype::bfloat16: \
-                CCL_SPARSE_ALLREDUCE_SELECT_ALGO(itype, ccl::bfp16, algo); \
+                CCL_SPARSE_ALLREDUCE_SELECT_ALGO(itype, ccl::bf16, algo); \
                 break; \
             default: \
                 CCL_FATAL("value datatype ", \
@@ -165,7 +165,7 @@
     } while (0)
 
 template <typename vtype>
-typename std::enable_if<!std::is_same<vtype, ccl::bfp16>::value, vtype>::type get_mask(
+typename std::enable_if<!std::is_same<vtype, ccl::bf16>::value, vtype>::type get_mask(
     ccl::reduction op) {
     switch (op) {
         case ccl::reduction::sum: return 0;
@@ -180,13 +180,13 @@ typename std::enable_if<!std::is_same<vtype, ccl::bfp16>::value, vtype>::type ge
 }
 
 template <typename vtype>
-typename std::enable_if<std::is_same<vtype, ccl::bfp16>::value, vtype>::type get_mask(
+typename std::enable_if<std::is_same<vtype, ccl::bf16>::value, vtype>::type get_mask(
     ccl::reduction op) {
     switch (op) {
         case ccl::reduction::sum: return 0;
-        case ccl::reduction::prod: return CCL_BFP16_ONE;
-        case ccl::reduction::min: return CCL_BFP16_MAX;
-        case ccl::reduction::max: return CCL_BFP16_MIN;
+        case ccl::reduction::prod: return CCL_BF16_ONE;
+        case ccl::reduction::min: return CCL_BF16_MAX;
+        case ccl::reduction::max: return CCL_BF16_MIN;
         case ccl::reduction::custom:
             CCL_FATAL("custom reduction is not supported for sparse_allreduce/mask algorithm");
             return ccl_status_invalid_arguments;

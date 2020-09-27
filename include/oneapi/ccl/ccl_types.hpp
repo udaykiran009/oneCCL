@@ -117,9 +117,9 @@ typedef struct {
    ccl_sparse_coalesce_regular run regular coalesce funtion;
    ccl_sparse_coalesce_disable disables coalesce function in sparse_allreduce,
                                allgathered data is returned;
-   ccl_sparse_coalesce_keep_precision on every local reduce bfp16 data is
+   ccl_sparse_coalesce_keep_precision on every local reduce bf16 data is
                                converted to fp32, reduced and then converted
-                               back to bfp16.
+                               back to bf16.
 */
 
 enum class sparse_coalesce_mode : int { regular = 0, disable = 1, keep_precision = 2 };
@@ -205,14 +205,14 @@ public:
  */
 template <class ntype_t,
           size_t size_of_type,
-          ccl_datatype_t ccl_type_v,
+          ccl::datatype ccl_type_v,
           bool iclass = false,
           bool supported = false>
 struct ccl_type_info_export {
     using native_type = ntype_t;
-    using ccl_type = std::integral_constant<ccl_datatype_t, ccl_type_v>;
+    using ccl_type = std::integral_constant<ccl::datatype, ccl_type_v>;
     static constexpr size_t size = size_of_type;
-    static constexpr ccl_datatype_t ccl_type_value = ccl_type::value;
+    static constexpr ccl::datatype ccl_type_value = ccl_type::value;
     static constexpr datatype ccl_datatype_value = static_cast<datatype>(ccl_type_value);
     static constexpr bool is_class = iclass;
     static constexpr bool is_supported = supported;
@@ -243,7 +243,7 @@ struct param_traits {};
 #define ccl_dtype_int        (int)(ccl::datatype::int32)
 #define ccl_dtype_int64      (int)(ccl::datatype::int64)
 #define ccl_dtype_uint64     (int)(ccl::datatype::uint64)
-#define ccl_dtype_bfp16      (int)(ccl::datatype::bfloat16)
+#define ccl_dtype_bf16      (int)(ccl::datatype::bfloat16)
 #define ccl_dtype_float      (int)(ccl::datatype::float32)
 #define ccl_dtype_double     (int)(ccl::datatype::float64)
 #define ccl_dtype_last_value (int)(ccl::datatype::last_predefined)

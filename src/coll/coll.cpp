@@ -81,8 +81,6 @@ ccl_coll_attr& ccl_coll_attr::operator=(const ccl_coll_attr_t* attr) {
 //TODO temporary solution for type convertation, ccl_coll_attr would be depreacated
 ccl_coll_attr::ccl_coll_attr(const ccl::allgatherv_attr& attr) {
     COPY_COMMON_OP_ATTRS(attr, this);
-
-    vector_buf = attr.get<ccl::allgatherv_attr_id::vector_buf>();
 }
 
 ccl_coll_attr::ccl_coll_attr(const ccl::allreduce_attr& attr) {

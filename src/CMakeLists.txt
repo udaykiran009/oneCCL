@@ -136,8 +136,8 @@ set(CCL_SRC
     coll/selection/selector_reduce.cpp
     coll/selection/selector_reduce_scatter.cpp
     coll/selection/selector_sparse_allreduce.cpp
-    comp/bfp16/bfp16.cpp
-    comp/bfp16/bfp16_intrisics.cpp
+    comp/bf16/bf16.cpp
+    comp/bf16/bf16_intrisics.cpp
     comp/comp.cpp
     sched/sched.cpp
     sched/master_sched.cpp

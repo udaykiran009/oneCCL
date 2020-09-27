@@ -35,10 +35,19 @@ host_communicator::coll_request_t host_communicator::allgatherv_impl(
     const vector_class<BufferType*>& recv_bufs,
     const vector_class<size_t>& recv_counts,
     const allgatherv_attr& attr) {
-    // TODO not implemented
-    throw ccl_error(std::string(__PRETTY_FUNCTION__) + " - is not implemented");
 
-    ccl_request* req = nullptr;
+    ccl_coll_attr internal_attr(attr);
+    internal_attr.vector_buf = 1;
+    
+    ccl_request* req = ccl_allgatherv_impl(reinterpret_cast<const void*>(send_buf),
+                                           send_count,
+                                           (void*)(recv_bufs.data()),
+                                           recv_counts.data(),
+                                           ccl::native_type_info<BufferType>::ccl_datatype_value,
+                                           internal_attr,
+                                           comm_impl.get(),
+                                           nullptr);
+
     return std::unique_ptr<ccl::request_impl>(new ccl::host_request_impl(req));
 }
 

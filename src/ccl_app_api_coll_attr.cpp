@@ -41,8 +41,8 @@ namespace ccl {
         class_name, operation_attr_id, operation_attr_id::priority, unsigned int) \
     API_FORCE_INSTANTIATION_GET(class_name, operation_attr_id, operation_attr_id::priority) \
 \
-    API_FORCE_INSTANTIATION(class_name, operation_attr_id, operation_attr_id::synchronous, int) \
-    API_FORCE_INSTANTIATION(class_name, operation_attr_id, operation_attr_id::to_cache, int) \
+    API_FORCE_INSTANTIATION(class_name, operation_attr_id, operation_attr_id::synchronous, bool) \
+    API_FORCE_INSTANTIATION(class_name, operation_attr_id, operation_attr_id::to_cache, bool) \
     API_FORCE_INSTANTIATION( \
         class_name, operation_attr_id, operation_attr_id::match_id, ccl::string_class)
 
@@ -203,7 +203,6 @@ COMMON_API_FORCE_INSTANTIATION(reduce_attr)
 COMMON_API_FORCE_INSTANTIATION(reduce_scatter_attr)
 COMMON_API_FORCE_INSTANTIATION(sparse_allreduce_attr)
 
-API_FORCE_INSTANTIATION(allgatherv_attr, allgatherv_attr_id, allgatherv_attr_id::vector_buf, int)
 API_FORCE_INSTANTIATION(allreduce_attr,
                         allreduce_attr_id,
                         allreduce_attr_id::reduction_fn,

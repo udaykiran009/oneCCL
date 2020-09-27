@@ -1,5 +1,4 @@
 #include "base.hpp"
-#include "mpi.h"
 
 #define EVEN_RANK_SEND_COUNT 100
 #define ODD_RANK_SEND_COUNT  200
@@ -10,7 +9,7 @@ void run_collective(const char* cmd_name,
                     std::vector<size_t>& send_counts,
                     std::vector<size_t>& recv_counts,
                     const ccl::communicator& comm,
-                    const ccl::alltoallv_attr& coll_attr) {
+                    const ccl::alltoallv_attr& attr) {
     std::chrono::system_clock::duration exec_time{ 0 };
 
     ccl::barrier(comm);
@@ -29,7 +28,7 @@ void run_collective(const char* cmd_name,
 
         auto start = std::chrono::system_clock::now();
         auto req = ccl::alltoallv(
-            send_buf.data(), send_counts, recv_buf.data(), recv_counts, comm, coll_attr);
+            send_buf.data(), send_counts, recv_buf.data(), recv_counts, comm, attr);
         req.wait();
         exec_time += std::chrono::system_clock::now() - start;
     }
@@ -81,7 +80,7 @@ int main() {
     }
 
     auto comm = ccl::create_communicator(size, rank, kvs);
-    auto coll_attr = ccl::create_operation_attr<ccl::alltoallv_attr>();
+    auto attr = ccl::create_operation_attr<ccl::alltoallv_attr>();
 
     int is_even = (rank % 2 == 0) ? 1 : 0;
     size_t send_count = (is_even) ? EVEN_RANK_SEND_COUNT : ODD_RANK_SEND_COUNT;
@@ -102,15 +101,18 @@ int main() {
     }
 
     MSG_LOOP(
-        comm, coll_attr.set<ccl::operation_attr_id::to_cache>(0); run_collective(
-            "warmup alltoallv", send_buf, recv_buf, send_counts, recv_counts, comm, coll_attr);
-        coll_attr.set<ccl::operation_attr_id::to_cache>(1);
+        comm,
+        attr.set<ccl::operation_attr_id::to_cache>(false);
         run_collective(
-            "persistent alltoallv", send_buf, recv_buf, send_counts, recv_counts, comm, coll_attr);
-        coll_attr.set<ccl::operation_attr_id::to_cache>(0);
+            "warmup alltoallv", send_buf, recv_buf, send_counts, recv_counts, comm, attr);
+        attr.set<ccl::operation_attr_id::to_cache>(true);
         run_collective(
-            "regular alltoallv", send_buf, recv_buf, send_counts, recv_counts, comm, coll_attr););
+            "persistent alltoallv", send_buf, recv_buf, send_counts, recv_counts, comm, attr);
+        attr.set<ccl::operation_attr_id::to_cache>(false);
+        run_collective(
+            "regular alltoallv", send_buf, recv_buf, send_counts, recv_counts, comm, attr););
 
     MPI_Finalize();
+
     return 0;
 }

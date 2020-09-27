@@ -54,7 +54,7 @@ void run_test(size_t thread_idx,
     }
 
     //allreduce
-    ccl::coll_attr coll_attr{};
+    ccl::attr attr{};
     std::vector<ccl::request> reqs;
     for (auto& comm : comms) {
         size_t rank = comm->rank();
@@ -62,7 +62,7 @@ void run_test(size_t thread_idx,
         auto& mem_objects = memory_storage.find(rank)->second;
         auto& stream = rank_stream_map[rank];
         reqs.push_back(comm->allreduce(
-            mem_objects[0], mem_objects[1], COUNT, ccl::reduction::sum, &coll_attr, stream));
+            mem_objects[0], mem_objects[1], COUNT, ccl::reduction::sum, &attr, stream));
     }
 
     //wait
@@ -148,7 +148,7 @@ void run_test(size_t thread_idx,
 
     //allreduce
     std::vector<ccl::request> reqs;
-    ccl::coll_attr coll_attr{};
+    ccl::attr attr{};
     for (auto &comm : comms) {
         size_t rank = comm->rank();
 
@@ -157,7 +157,7 @@ void run_test(size_t thread_idx,
                                        mem_objects[1].get(),
                                        mem_objects[1].count(),
                                        ccl::reduction::sum,
-                                       &coll_attr,
+                                       &attr,
                                        streams[rank]));
     }
 

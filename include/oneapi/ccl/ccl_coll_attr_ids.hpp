@@ -29,7 +29,6 @@ enum class operation_attr_id : int {
 enum class allgatherv_attr_id : int {
     op_id_offset = static_cast<typename std::underlying_type<operation_attr_id>::type>(
         operation_attr_id::last_value),
-    vector_buf = op_id_offset,
 
     last_value
 };

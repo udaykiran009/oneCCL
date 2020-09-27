@@ -1,9 +1,11 @@
 #ifndef BASE_UTILS_HPP
 #define BASE_UTILS_HPP
 
+#include <algorithm>
 #include <iterator>
-#include <utility>
+#include <sstream>
 #include <tuple>
+#include <utility>
 
 template <int CurIndex, class T, class U, class... Args>
 struct get_tuple_elem_index {

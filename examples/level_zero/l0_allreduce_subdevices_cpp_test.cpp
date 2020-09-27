@@ -213,7 +213,7 @@ void user_thread_idx(size_t thread_idx, ccl::device_indices_t thread_device_idx,
 
     //allreduce
     std::vector<ccl::request> reqs;
-    ccl::coll_attr coll_attr{};
+    ccl::attr attr{};
     for(auto &comm : comms)
     {
         size_t rank = comm->rank();
@@ -229,7 +229,7 @@ void user_thread_idx(size_t thread_idx, ccl::device_indices_t thread_device_idx,
                                        mem_objects[1].get(),
                                        mem_objects[1].count(),
                                        ccl::reduction::sum,
-                                       &coll_attr,
+                                       &attr,
                                        streams[rank]));
     }
 

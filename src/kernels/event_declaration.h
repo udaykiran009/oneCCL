@@ -8,7 +8,7 @@ template <class native_type>
 struct shared_event_traits {};
 
 #else
-typedef ushort bfp16;
+typedef ushort bf16;
 #endif
 
 typedef struct __attribute__((packed)) shared_event_float {

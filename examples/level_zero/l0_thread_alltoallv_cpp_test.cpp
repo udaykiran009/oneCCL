@@ -166,7 +166,7 @@ void user_thread_sycl(size_t thread_idx,
 
     // alltoallv
     std::vector<std::shared_ptr<ccl::request>> reqs;
-    ccl::coll_attr coll_attr{};
+    ccl::attr attr{};
     for (auto& comm : comms) {
         size_t rank = comm->rank();
 
@@ -181,7 +181,7 @@ void user_thread_sycl(size_t thread_idx,
                                        send_counts, //send_counts
                                        mem_objects[1].get(), //recv_buf
                                        recv_counts, //recv_counts
-                                       &coll_attr,
+                                       &attr,
                                        streams[rank]));
     }
     // end alltoallv
@@ -306,7 +306,7 @@ void user_thread_idx(size_t thread_idx,
 
     // alltoallv
     std::vector<std::shared_ptr<ccl::request>> reqs;
-    ccl::coll_attr coll_attr{};
+    ccl::attr attr{};
     for (auto& comm : comms) {
         size_t rank = comm->rank();
 
@@ -321,7 +321,7 @@ void user_thread_idx(size_t thread_idx,
                                        send_counts, //send_counts
                                        mem_objects[1].get(), //recv_buf
                                        recv_counts, //recv_counts
-                                       &coll_attr,
+                                       &attr,
                                        streams[rank]));
     }
     // end alltoallv

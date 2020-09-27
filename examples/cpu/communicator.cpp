@@ -1,8 +1,6 @@
 #include <vector>
 
 #include "base.hpp"
-#include "oneapi/ccl.hpp"
-#include "mpi.h"
 
 void check_allreduce_on_comm(const ccl::communicator& comm) {
     const int count = 1000;
@@ -206,5 +204,6 @@ int main() {
     // check_comm_create_identical_color();
 
     MPI_Finalize();
+
     return 0;
 }

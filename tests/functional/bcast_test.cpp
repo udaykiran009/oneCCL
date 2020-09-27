@@ -26,8 +26,8 @@ public:
                 }
                 else {
                     param.recv_buf[buf_idx][elem_idx] = static_cast<T>(SOME_VALUE);
-                    if (param.test_conf.data_type == DT_BFP16) {
-                        param.recv_buf_bfp16[buf_idx][elem_idx] = static_cast<short>(SOME_VALUE);
+                    if (param.test_conf.data_type == DT_BF16) {
+                        param.recv_buf_bf16[buf_idx][elem_idx] = static_cast<short>(SOME_VALUE);
                     }
                 }
             }

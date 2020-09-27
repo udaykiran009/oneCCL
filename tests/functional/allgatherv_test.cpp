@@ -37,8 +37,8 @@ public:
             for (size_t elem_idx = 0; elem_idx < param.buffer_count; elem_idx++) {
                 /* each buffer is different size */
                 param.recv_buf[elem_idx].resize(param.elem_count * param.process_count);
-                if (param.test_conf.data_type == DT_BFP16) {
-                    param.recv_buf_bfp16[elem_idx].resize(param.elem_count * param.process_count);
+                if (param.test_conf.data_type == DT_BF16) {
+                    param.recv_buf_bf16[elem_idx].resize(param.elem_count * param.process_count);
                 }
             }
         }
@@ -60,8 +60,8 @@ public:
                     if (param.test_conf.place_type == PT_OOP) {
                         param.recv_buf[buf_idx][offsets[elem_idx] + recv_count_idx] =
                             static_cast<T>(SOME_VALUE);
-                        if (param.test_conf.data_type == DT_BFP16) {
-                            param.recv_buf_bfp16[buf_idx][offsets[elem_idx] + recv_count_idx] =
+                        if (param.test_conf.data_type == DT_BF16) {
+                            param.recv_buf_bf16[buf_idx][offsets[elem_idx] + recv_count_idx] =
                                 static_cast<short>(SOME_VALUE);
                         }
                     }

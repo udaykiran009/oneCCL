@@ -105,7 +105,7 @@ std::map<int, const char*> ccl_epilog_type_str = { { ETYPE_NULL, "ETYPE_NULL" },
 typedef enum {
     // DT_CHAR = ccl::datatype::int8,
     // DT_INT = ccl::datatype::int32,
-    // DT_BFP16 = ccl::datatype::bfloat16,
+    // DT_BF16 = ccl::datatype::bfloat16,
     // DT_FLOAT = ccl::datatype::float32,
     // DT_DOUBLE = ccl::datatype::float64,
     // // DT_INT64 = ccl::datatype::int64,
@@ -113,7 +113,7 @@ typedef enum {
 
     DT_CHAR = ccl_dtype_char,
     DT_INT = ccl_dtype_int,
-    DT_BFP16 = ccl_dtype_bfp16,
+    DT_BF16 = ccl_dtype_bf16,
     DT_FLOAT = ccl_dtype_float,
     DT_DOUBLE = ccl_dtype_double,
     // DT_INT64 = ccl::datatype::int64,
@@ -127,7 +127,7 @@ ccl_data_type last_ccl_data_type = DT_LAST;
 std::map<int, const char*> ccl_data_type_str = {
     { DT_CHAR, "DT_CHAR" },
     { DT_INT, "DT_INT" },
-    { DT_BFP16, "DT_BFP16" },
+    { DT_BF16, "DT_BF16" },
     { DT_FLOAT, "DT_FLOAT" },
     { DT_DOUBLE, "DT_DOUBLE" }
     // { DT_INT64, "INT64" },
@@ -335,8 +335,8 @@ size_t calculate_test_count() {
     return test_count;
 }
 
-int is_bfp16_enabled() {
-#ifdef CCL_BFP16_COMPILER
+int is_bf16_enabled() {
+#ifdef CCL_BF16_COMPILER
     int is_avx512f_enabled = 0;
     uint32_t reg[4];
 
@@ -378,7 +378,7 @@ void init_test_params() {
                             for (ccl_data_type data_type = first_ccl_data_type;
                                  data_type < last_ccl_data_type;
                                  data_type++) {
-                                if (data_type == DT_BFP16 && !is_bfp16_enabled())
+                                if (data_type == DT_BF16 && !is_bf16_enabled())
                                     continue;
 
                                 for (ccl_completion_type completion_type =

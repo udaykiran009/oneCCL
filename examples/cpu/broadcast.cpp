@@ -1,10 +1,9 @@
 #include "base.hpp"
-#include "mpi.h"
 
 void run_collective(const char* cmd_name,
                     std::vector<float>& buf,
                     const ccl::communicator& comm,
-                    const ccl::broadcast_attr& coll_attr) {
+                    const ccl::broadcast_attr& attr) {
     std::chrono::system_clock::duration exec_time{ 0 };
     float received;
 
@@ -17,7 +16,7 @@ void run_collective(const char* cmd_name,
 
     for (size_t idx = 0; idx < ITERS; ++idx) {
         auto start = std::chrono::system_clock::now();
-        auto req = ccl::broadcast(buf.data(), buf.size(), COLL_ROOT, comm, coll_attr);
+        auto req = ccl::broadcast(buf.data(), buf.size(), COLL_ROOT, comm, attr);
         req.wait();
         exec_time += std::chrono::system_clock::now() - start;
     }
@@ -65,16 +64,17 @@ int main() {
     }
 
     auto comm = ccl::create_communicator(size, rank, kvs);
-    auto coll_attr = ccl::create_operation_attr<ccl::broadcast_attr>();
+    auto attr = ccl::create_operation_attr<ccl::broadcast_attr>();
 
     MSG_LOOP(comm, std::vector<float> buf(msg_count);
-             coll_attr.set<ccl::operation_attr_id::to_cache>(0);
-             run_collective("warmup_bcast", buf, comm, coll_attr);
-             coll_attr.set<ccl::operation_attr_id::to_cache>(1);
-             run_collective("persistent_bcast", buf, comm, coll_attr);
-             coll_attr.set<ccl::operation_attr_id::to_cache>(0);
-             run_collective("regular_bcast", buf, comm, coll_attr););
+             attr.set<ccl::operation_attr_id::to_cache>(false);
+             run_collective("warmup_bcast", buf, comm, attr);
+             attr.set<ccl::operation_attr_id::to_cache>(true);
+             run_collective("persistent_bcast", buf, comm, attr);
+             attr.set<ccl::operation_attr_id::to_cache>(false);
+             run_collective("regular_bcast", buf, comm, attr););
 
     MPI_Finalize();
+
     return 0;
 }

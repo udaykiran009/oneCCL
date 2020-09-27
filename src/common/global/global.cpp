@@ -111,21 +111,21 @@ void global_data::init_resize_independent_objects() {
     default_coll_attr.reset(new ccl_coll_attr_t{});
     memset(default_coll_attr.get(), 0, sizeof(ccl_coll_attr_t));
 
-    bfp16_impl_type = ccl_bfp16_get_impl_type();
+    bf16_impl_type = ccl_bf16_get_impl_type();
 
     if (1) { //executor->get_global_proc_idx() == 0) {
         algorithm_selector->print();
 
-        if (bfp16_impl_type != ccl_bfp16_none) {
-            LOG_INFO("\n\nBFP16 is enabled through ",
-                     (bfp16_impl_type == ccl_bfp16_avx512bf) ? "AVX512-BF" : "AVX512-F",
+        if (bf16_impl_type != ccl_bf16_none) {
+            LOG_INFO("\n\nBF16 is enabled through ",
+                     (bf16_impl_type == ccl_bf16_avx512bf) ? "AVX512-BF" : "AVX512-F",
                      "\n");
         }
         else {
-#ifdef CCL_BFP16_COMPILER
-            LOG_INFO("\n\nBFP16 is disabled on HW level\n");
+#ifdef CCL_BF16_COMPILER
+            LOG_INFO("\n\nBF16 is disabled on HW level\n");
 #else
-            LOG_INFO("\n\nBFP16 is disabled on compiler level\n");
+            LOG_INFO("\n\nBF16 is disabled on compiler level\n");
 #endif
         }
     }

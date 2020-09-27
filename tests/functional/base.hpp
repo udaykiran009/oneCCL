@@ -23,9 +23,9 @@ struct typed_test_param {
     std::vector<std::vector<T>> send_buf;
     std::vector<std::vector<T>> recv_buf;
 
-    // buffers for bfp16
-    std::vector<std::vector<short>> send_buf_bfp16;
-    std::vector<std::vector<short>> recv_buf_bfp16;
+    // buffers for bf16
+    std::vector<std::vector<short>> send_buf_bf16;
+    std::vector<std::vector<short>> recv_buf_bf16;
 
     std::vector<ccl::request> reqs;
     std::string match_id;
@@ -67,15 +67,15 @@ struct typed_test_param {
     }
 
     void* get_send_buf(size_t buf_idx) {
-        if (test_conf.data_type == DT_BFP16)
-            return static_cast<void*>(send_buf_bfp16[buf_idx].data());
+        if (test_conf.data_type == DT_BF16)
+            return static_cast<void*>(send_buf_bf16[buf_idx].data());
         else
             return static_cast<void*>(send_buf[buf_idx].data());
     }
 
     void* get_recv_buf(size_t buf_idx) {
-        if (test_conf.data_type == DT_BFP16)
-            return static_cast<void*>(recv_buf_bfp16[buf_idx].data());
+        if (test_conf.data_type == DT_BF16)
+            return static_cast<void*>(recv_buf_bf16[buf_idx].data());
         else
             return static_cast<void*>(recv_buf[buf_idx].data());
     }
@@ -120,7 +120,7 @@ public:
             case DT_CHAR: return run<char>(param);
             case DT_INT: return run<int>(param);
             //TODO: add additional type to testing
-            case DT_BFP16: return run<float>(param);
+            case DT_BF16: return run<float>(param);
             case DT_FLOAT: return run<float>(param);
             case DT_DOUBLE: return run<double>(param);
             // case DT_INT64:

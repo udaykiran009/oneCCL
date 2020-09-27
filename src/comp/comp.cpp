@@ -1,5 +1,5 @@
 #include "oneapi/ccl/ccl_types.hpp"
-#include "comp/bfp16/bfp16.hpp"
+#include "comp/bf16/bf16.hpp"
 #include "comp/comp.hpp"
 #include "common/log/log.hpp"
 #include "common/global/global.hpp"
@@ -63,9 +63,9 @@ ccl_status_t ccl_comp_reduce(const void* in_buf,
         case ccl::datatype::int8: CCL_REDUCE(char); break;
         case ccl::datatype::int32: CCL_REDUCE(int); break;
         case ccl::datatype::bfloat16:
-            if (ccl::global_data::get().bfp16_impl_type == ccl_bfp16_none)
-                CCL_FATAL("CCL doesn't support reductions in BFP16 on this CPU");
-            ccl_bfp16_reduce(in_buf, in_count, inout_buf, out_count, reduction);
+            if (ccl::global_data::get().bf16_impl_type == ccl_bf16_none)
+                CCL_FATAL("CCL doesn't support reductions in BF16 on this CPU");
+            ccl_bf16_reduce(in_buf, in_count, inout_buf, out_count, reduction);
             break;
         case ccl::datatype::float32: CCL_REDUCE(float); break;
         case ccl::datatype::float64: CCL_REDUCE(double); break;
@@ -85,17 +85,17 @@ ccl_status_t ccl_comp_batch_reduce(const void* in_buf,
                                    ccl::reduction reduction,
                                    ccl::reduction_fn reduction_fn,
                                    const ccl::fn_context* context,
-                                   int bfp16_keep_precision_mode,
+                                   int bf16_keep_precision_mode,
                                    float* tmp,
                                    float* acc) {
-    if (bfp16_keep_precision_mode) {
+    if (bf16_keep_precision_mode) {
         //->acc, tmp fusion_buffer_cache???
 
         /* inout_buf => inout_buffer + offsets[0] */
-        ccl_convert_bfp16_to_fp32_arrays(inout_buf, acc, in_count);
+        ccl_convert_bf16_to_fp32_arrays(inout_buf, acc, in_count);
 
         for (size_t i = 1; i < offsets.size(); i++) {
-            ccl_convert_bfp16_to_fp32_arrays(
+            ccl_convert_bf16_to_fp32_arrays(
                 (char*)in_buf + dtype.size() * offsets[i], tmp, in_count);
             ccl_comp_reduce(tmp,
                             in_count,
@@ -107,7 +107,7 @@ ccl_status_t ccl_comp_batch_reduce(const void* in_buf,
                             context);
         }
 
-        ccl_convert_fp32_to_bfp16_arrays(acc, inout_buf, in_count);
+        ccl_convert_fp32_to_bf16_arrays(acc, inout_buf, in_count);
     }
     else {
         for (size_t i = 1; i < offsets.size(); i++) {

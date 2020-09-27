@@ -10,8 +10,8 @@
 #include <unistd.h>
 
 #include "atl.h"
-#include "comp/bfp16/bfp16_intrisics.h"
-#include "comp/bfp16/bfp16_utils.h"
+#include "comp/bf16/bf16_intrisics.hpp"
+#include "comp/bf16/bf16_utils.hpp"
 
 #ifdef __cplusplus
 extern "C" {
@@ -87,33 +87,33 @@ static atl_mpi_lib_info_t mpi_lib_infos[MPI_LIB_INFO_MAX_COUNT] = {
 };
 
 typedef struct {
-#ifdef CCL_BFP16_COMPILER
+#ifdef CCL_BF16_COMPILER
 
-#ifndef ATL_MPI_BFP16
+#ifndef ATL_MPI_BF16
 
-// BFP16 type support
-#define ATL_MPI_BFP16 /* more strict than CCL_BFP16_COMPILER */
+// BF16 type support
+#define ATL_MPI_BF16 /* more strict than CCL_BF16_COMPILER */
 
-    // custom MPI operations for BFP16
+    // custom MPI operations for BF16
     MPI_Op sum_op;
     MPI_Op prod_op;
     MPI_Op min_op;
     MPI_Op max_op;
-#else /* ATL_MPI_BFP16 */
-#error "MPI_BFP16 is already defined, unsupported case"
-#endif /* ATL_MPI_BFP16 */
-#endif /* CCL_BFP16_COMPILER */
+#else /* ATL_MPI_BF16 */
+#error "MPI_BF16 is already defined, unsupported case"
+#endif /* ATL_MPI_BF16 */
+#endif /* CCL_BF16_COMPILER */
 
-    // custom MPI dtype for BFP16
+    // custom MPI dtype for BF16
     MPI_Datatype dtype;
 
-    ccl_bfp16_impl_type impl_type;
+    ccl_bf16_impl_type impl_type;
 
-} atl_mpi_bfp16_data_t;
+} atl_mpi_bf16_data_t;
 
 typedef struct {
     atl_mpi_lib_type_t mpi_lib_type;
-    atl_mpi_bfp16_data_t bfp16;
+    atl_mpi_bf16_data_t bf16;
 } atl_mpi_global_data_t;
 
 static atl_mpi_global_data_t global_data;
@@ -140,14 +140,14 @@ typedef struct {
     MPI_Comm dummy_comm;
 } atl_mpi_ep_t;
 
-#define MPI_BFP16 \
+#define MPI_BF16 \
     ({ \
-        ATL_MPI_ASSERT(global_data.bfp16.dtype != MPI_DATATYPE_NULL, \
-                       "unsupported datatype: ATL_DTYPE_BFP16"); \
-        global_data.bfp16.dtype; \
+        ATL_MPI_ASSERT(global_data.bf16.dtype != MPI_DATATYPE_NULL, \
+                       "unsupported datatype: ATL_DTYPE_BF16"); \
+        global_data.bf16.dtype; \
     })
 
-#ifdef ATL_MPI_BFP16
+#ifdef ATL_MPI_BF16
 
 // helpers: check contract
 static inline void atl_mpi_check_op_params(void* in_buf,
@@ -164,48 +164,48 @@ static inline void atl_mpi_check_op_params(void* in_buf,
                    length);
 }
 
-static void INLINE_TARGET_ATTRIBUTE_ALL atl_mpi_bfp16_base_op(void* in,
+static void INLINE_TARGET_ATTRIBUTE_ALL atl_mpi_bf16_base_op(void* in,
                                                               void* inout,
                                                               int* length,
-                                                              ccl_bfp16_reduction_func_ptr op) {
+                                                              ccl_bf16_reduction_func_ptr op) {
     unsigned short* in_buf = (unsigned short*)in;
     unsigned short* inout_buf = (unsigned short*)inout;
 
     size_t len = *length;
-    ccl_bfp16_reduce_impl(in_buf, inout_buf, len, op, global_data.bfp16.impl_type);
+    ccl_bf16_reduce_impl(in_buf, inout_buf, len, op, global_data.bf16.impl_type);
 }
 
-// MPI BFP16 operation definitions
-static void TARGET_ATTRIBUTE_ALL atl_mpi_bfp16_sum_op(void* in,
+// MPI BF16 operation definitions
+static void TARGET_ATTRIBUTE_ALL atl_mpi_bf16_sum_op(void* in,
                                                       void* inout,
                                                       int* length,
                                                       MPI_Datatype* datatype) {
     atl_mpi_check_op_params(in, inout, length, datatype, __FUNCTION__);
-    atl_mpi_bfp16_base_op(in, inout, length, &sum_wrap);
+    atl_mpi_bf16_base_op(in, inout, length, &sum_wrap);
 }
 
-static void TARGET_ATTRIBUTE_ALL atl_mpi_bfp16_prod_op(void* in,
+static void TARGET_ATTRIBUTE_ALL atl_mpi_bf16_prod_op(void* in,
                                                        void* inout,
                                                        int* length,
                                                        MPI_Datatype* datatype) {
     atl_mpi_check_op_params(in, inout, length, datatype, __FUNCTION__);
-    atl_mpi_bfp16_base_op(in, inout, length, &prod_wrap);
+    atl_mpi_bf16_base_op(in, inout, length, &prod_wrap);
 }
 
-static void TARGET_ATTRIBUTE_ALL atl_mpi_bfp16_min_op(void* in,
+static void TARGET_ATTRIBUTE_ALL atl_mpi_bf16_min_op(void* in,
                                                       void* inout,
                                                       int* length,
                                                       MPI_Datatype* datatype) {
     atl_mpi_check_op_params(in, inout, length, datatype, __FUNCTION__);
-    atl_mpi_bfp16_base_op(in, inout, length, &min_wrap);
+    atl_mpi_bf16_base_op(in, inout, length, &min_wrap);
 }
 
-static void TARGET_ATTRIBUTE_ALL atl_mpi_bfp16_max_op(void* in,
+static void TARGET_ATTRIBUTE_ALL atl_mpi_bf16_max_op(void* in,
                                                       void* inout,
                                                       int* length,
                                                       MPI_Datatype* datatype) {
     atl_mpi_check_op_params(in, inout, length, datatype, __FUNCTION__);
-    atl_mpi_bfp16_base_op(in, inout, length, &max_wrap);
+    atl_mpi_bf16_base_op(in, inout, length, &max_wrap);
 }
 
 static void atl_mpi_print_error(int error) {
@@ -221,103 +221,103 @@ static void atl_mpi_print_error(int error) {
 
     ATL_MPI_PRINT("MPI error: %s(%d)", str_error, error);
 }
-#endif /* ATL_MPI_BFP16 */
+#endif /* ATL_MPI_BF16 */
 
-static int atl_mpi_bfp16_init() {
+static int atl_mpi_bf16_init() {
     int ret = MPI_SUCCESS;
 
-    global_data.bfp16.dtype = MPI_DATATYPE_NULL;
+    global_data.bf16.dtype = MPI_DATATYPE_NULL;
 
-#ifdef ATL_MPI_BFP16
+#ifdef ATL_MPI_BF16
 
-    global_data.bfp16.sum_op = MPI_OP_NULL;
-    global_data.bfp16.prod_op = MPI_OP_NULL;
-    global_data.bfp16.min_op = MPI_OP_NULL;
-    global_data.bfp16.max_op = MPI_OP_NULL;
+    global_data.bf16.sum_op = MPI_OP_NULL;
+    global_data.bf16.prod_op = MPI_OP_NULL;
+    global_data.bf16.min_op = MPI_OP_NULL;
+    global_data.bf16.max_op = MPI_OP_NULL;
 
-    global_data.bfp16.impl_type = ccl_bfp16_get_impl_type();
+    global_data.bf16.impl_type = ccl_bf16_get_impl_type();
 
-    if (global_data.bfp16.impl_type == ccl_bfp16_none) {
-        ATL_MPI_DEBUG_PRINT("%s: success - BFP16 is not supported on current arch", __FUNCTION__);
+    if (global_data.bf16.impl_type == ccl_bf16_none) {
+        ATL_MPI_DEBUG_PRINT("%s: success - BF16 is not supported on current arch", __FUNCTION__);
         return RET2ATL(ret);
     }
 
-    // create custom MPI BFP16 dtype
-    ret = MPI_Type_contiguous(2, MPI_BYTE, &global_data.bfp16.dtype);
+    // create custom MPI BF16 dtype
+    ret = MPI_Type_contiguous(2, MPI_BYTE, &global_data.bf16.dtype);
     if (ret != MPI_SUCCESS) {
-        ATL_MPI_DEBUG_PRINT("cannot create MPI BFP16 dtype");
+        ATL_MPI_DEBUG_PRINT("cannot create MPI BF16 dtype");
         atl_mpi_print_error(ret);
         return RET2ATL(ret);
     }
 
-    ret = MPI_Type_commit(&global_data.bfp16.dtype);
+    ret = MPI_Type_commit(&global_data.bf16.dtype);
     if (ret != MPI_SUCCESS) {
-        ATL_MPI_DEBUG_PRINT("cannot commit MPI BFP16 type");
+        ATL_MPI_DEBUG_PRINT("cannot commit MPI BF16 type");
         atl_mpi_print_error(ret);
         return RET2ATL(ret);
     }
 
-    // create custom MPI BFP16 summation op
-    ret = MPI_Op_create(&atl_mpi_bfp16_sum_op, 1, &global_data.bfp16.sum_op);
+    // create custom MPI BF16 summation op
+    ret = MPI_Op_create(&atl_mpi_bf16_sum_op, 1, &global_data.bf16.sum_op);
     if (ret != MPI_SUCCESS) {
-        ATL_MPI_DEBUG_PRINT("cannot create MPI BFP16 sum op");
+        ATL_MPI_DEBUG_PRINT("cannot create MPI BF16 sum op");
         atl_mpi_print_error(ret);
         return RET2ATL(ret);
     }
 
-    // create custom MPI BFP16 production op
-    ret = MPI_Op_create(&atl_mpi_bfp16_prod_op, 1, &global_data.bfp16.prod_op);
+    // create custom MPI BF16 production op
+    ret = MPI_Op_create(&atl_mpi_bf16_prod_op, 1, &global_data.bf16.prod_op);
     if (ret != MPI_SUCCESS) {
-        ATL_MPI_DEBUG_PRINT("cannot create MPI BFP16 prod op");
+        ATL_MPI_DEBUG_PRINT("cannot create MPI BF16 prod op");
         atl_mpi_print_error(ret);
         return RET2ATL(ret);
     }
 
-    // create custom MPI BFP16 min op
-    ret = MPI_Op_create(&atl_mpi_bfp16_min_op, 1, &global_data.bfp16.min_op);
+    // create custom MPI BF16 min op
+    ret = MPI_Op_create(&atl_mpi_bf16_min_op, 1, &global_data.bf16.min_op);
     if (ret != MPI_SUCCESS) {
-        ATL_MPI_DEBUG_PRINT("cannot create MPI BFP16 min op");
+        ATL_MPI_DEBUG_PRINT("cannot create MPI BF16 min op");
         atl_mpi_print_error(ret);
         return RET2ATL(ret);
     }
 
-    // create custom MPI BFP16 max op
-    ret = MPI_Op_create(&atl_mpi_bfp16_max_op, 1, &global_data.bfp16.max_op);
+    // create custom MPI BF16 max op
+    ret = MPI_Op_create(&atl_mpi_bf16_max_op, 1, &global_data.bf16.max_op);
     if (ret != MPI_SUCCESS) {
-        ATL_MPI_DEBUG_PRINT("cannot create MPI BFP16 max op");
+        ATL_MPI_DEBUG_PRINT("cannot create MPI BF16 max op");
         atl_mpi_print_error(ret);
         return RET2ATL(ret);
     }
 
-#endif /* ATL_MPI_BFP16 */
+#endif /* ATL_MPI_BF16 */
 
     return RET2ATL(ret);
 }
 
-static void atl_mpi_bfp16_finalize() {
-#ifdef ATL_MPI_BFP16
+static void atl_mpi_bf16_finalize() {
+#ifdef ATL_MPI_BF16
 
-    if (global_data.bfp16.dtype != MPI_DATATYPE_NULL) {
-        MPI_Type_free(&global_data.bfp16.dtype);
+    if (global_data.bf16.dtype != MPI_DATATYPE_NULL) {
+        MPI_Type_free(&global_data.bf16.dtype);
     }
 
-    if (global_data.bfp16.sum_op != MPI_OP_NULL) {
-        MPI_Op_free(&global_data.bfp16.sum_op);
+    if (global_data.bf16.sum_op != MPI_OP_NULL) {
+        MPI_Op_free(&global_data.bf16.sum_op);
     }
 
-    if (global_data.bfp16.prod_op != MPI_OP_NULL) {
-        MPI_Op_free(&global_data.bfp16.prod_op);
+    if (global_data.bf16.prod_op != MPI_OP_NULL) {
+        MPI_Op_free(&global_data.bf16.prod_op);
     }
 
-    if (global_data.bfp16.min_op != MPI_OP_NULL) {
-        MPI_Op_free(&global_data.bfp16.min_op);
+    if (global_data.bf16.min_op != MPI_OP_NULL) {
+        MPI_Op_free(&global_data.bf16.min_op);
     }
 
-    if (global_data.bfp16.max_op != MPI_OP_NULL) {
-        MPI_Op_free(&global_data.bfp16.max_op);
+    if (global_data.bf16.max_op != MPI_OP_NULL) {
+        MPI_Op_free(&global_data.bf16.max_op);
     }
 
-#endif /* ATL_MPI_BFP16 */
+#endif /* ATL_MPI_BF16 */
 }
 
 static MPI_Datatype atl2mpi_dtype(atl_datatype_t dtype) {
@@ -333,25 +333,25 @@ static MPI_Datatype atl2mpi_dtype(atl_datatype_t dtype) {
         case ATL_DTYPE_FLOAT16: printf("unknown datatype: %d\n", dtype); exit(1);
         case ATL_DTYPE_FLOAT: return MPI_FLOAT;
         case ATL_DTYPE_DOUBLE: return MPI_DOUBLE;
-        case ATL_DTYPE_BFP16: return MPI_BFP16;
+        case ATL_DTYPE_BF16: return MPI_BF16;
         default: printf("unknown datatype: %d\n", dtype); exit(1);
     }
 }
 
 static MPI_Op atl2mpi_op(atl_reduction_t rtype, MPI_Datatype dtype) {
-#ifdef ATL_MPI_BFP16
+#ifdef ATL_MPI_BF16
     switch (rtype) {
         case ATL_REDUCTION_SUM:
-            return dtype == global_data.bfp16.dtype ? global_data.bfp16.sum_op : MPI_SUM;
+            return dtype == global_data.bf16.dtype ? global_data.bf16.sum_op : MPI_SUM;
         case ATL_REDUCTION_PROD:
-            return dtype == global_data.bfp16.dtype ? global_data.bfp16.prod_op : MPI_PROD;
+            return dtype == global_data.bf16.dtype ? global_data.bf16.prod_op : MPI_PROD;
         case ATL_REDUCTION_MIN:
-            return dtype == global_data.bfp16.dtype ? global_data.bfp16.min_op : MPI_MIN;
+            return dtype == global_data.bf16.dtype ? global_data.bf16.min_op : MPI_MIN;
         case ATL_REDUCTION_MAX:
-            return dtype == global_data.bfp16.dtype ? global_data.bfp16.max_op : MPI_MAX;
+            return dtype == global_data.bf16.dtype ? global_data.bf16.max_op : MPI_MAX;
         default: printf("unknown reduction type: %d\n", rtype); exit(1);
     }
-#else /* ATL_MPI_BFP16 */
+#else /* ATL_MPI_BF16 */
     (void)dtype;
     switch (rtype) {
         case ATL_REDUCTION_SUM: return MPI_SUM;
@@ -360,7 +360,7 @@ static MPI_Op atl2mpi_op(atl_reduction_t rtype, MPI_Datatype dtype) {
         case ATL_REDUCTION_MAX: return MPI_MAX;
         default: printf("unknown reduction type: %d\n", rtype); exit(1);
     }
-#endif /* ATL_MPI_BFP16 */
+#endif /* ATL_MPI_BF16 */
 }
 
 atl_mpi_lib_type_t atl_mpi_get_lib_type() {
@@ -547,7 +547,7 @@ static atl_status_t atl_mpi_finalize(atl_ctx_t* ctx) {
         }
 
         if (!is_external_init) {
-            atl_mpi_bfp16_finalize();
+            atl_mpi_bf16_finalize();
             ret = MPI_Finalize();
         }
         else
@@ -1054,8 +1054,8 @@ static atl_status_t atl_mpi_init(int* argc,
         if (provided_thread_level < required_thread_level)
             goto err_init;
 
-        if (atl_mpi_bfp16_init() == ATL_STATUS_FAILURE) {
-            atl_mpi_bfp16_finalize();
+        if (atl_mpi_bf16_init() == ATL_STATUS_FAILURE) {
+            atl_mpi_bf16_finalize();
             goto err_init;
         }
     }
@@ -1129,7 +1129,7 @@ err_ep_dup:
 
 err_after_init:
     if (!is_external_init) {
-        atl_mpi_bfp16_finalize();
+        atl_mpi_bf16_finalize();
         MPI_Finalize();
     }
 

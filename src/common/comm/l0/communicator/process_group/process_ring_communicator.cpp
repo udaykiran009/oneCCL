@@ -220,7 +220,7 @@ DEVICE_COMM_INTERFACE_SPARSE_ALLREDUCE_EXPLICIT_INSTANTIATION(process_ring_commu
 DEVICE_COMM_INTERFACE_SPARSE_ALLREDUCE_EXPLICIT_INSTANTIATION(process_ring_communicator, char, int);
 DEVICE_COMM_INTERFACE_SPARSE_ALLREDUCE_EXPLICIT_INSTANTIATION(process_ring_communicator,
                                                               char,
-                                                              ccl::bfp16);
+                                                              ccl::bf16);
 DEVICE_COMM_INTERFACE_SPARSE_ALLREDUCE_EXPLICIT_INSTANTIATION(process_ring_communicator,
                                                               char,
                                                               float);
@@ -237,7 +237,7 @@ DEVICE_COMM_INTERFACE_SPARSE_ALLREDUCE_EXPLICIT_INSTANTIATION(process_ring_commu
 DEVICE_COMM_INTERFACE_SPARSE_ALLREDUCE_EXPLICIT_INSTANTIATION(process_ring_communicator, int, int);
 DEVICE_COMM_INTERFACE_SPARSE_ALLREDUCE_EXPLICIT_INSTANTIATION(process_ring_communicator,
                                                               int,
-                                                              ccl::bfp16);
+                                                              ccl::bf16);
 DEVICE_COMM_INTERFACE_SPARSE_ALLREDUCE_EXPLICIT_INSTANTIATION(process_ring_communicator,
                                                               int,
                                                               float);
@@ -258,7 +258,7 @@ DEVICE_COMM_INTERFACE_SPARSE_ALLREDUCE_EXPLICIT_INSTANTIATION(process_ring_commu
                                                               int);
 DEVICE_COMM_INTERFACE_SPARSE_ALLREDUCE_EXPLICIT_INSTANTIATION(process_ring_communicator,
                                                               int64_t,
-                                                              ccl::bfp16);
+                                                              ccl::bf16);
 DEVICE_COMM_INTERFACE_SPARSE_ALLREDUCE_EXPLICIT_INSTANTIATION(process_ring_communicator,
                                                               int64_t,
                                                               float);
@@ -279,7 +279,7 @@ DEVICE_COMM_INTERFACE_SPARSE_ALLREDUCE_EXPLICIT_INSTANTIATION(process_ring_commu
                                                               int);
 DEVICE_COMM_INTERFACE_SPARSE_ALLREDUCE_EXPLICIT_INSTANTIATION(process_ring_communicator,
                                                               uint64_t,
-                                                              ccl::bfp16);
+                                                              ccl::bf16);
 DEVICE_COMM_INTERFACE_SPARSE_ALLREDUCE_EXPLICIT_INSTANTIATION(process_ring_communicator,
                                                               uint64_t,
                                                               float);
@@ -301,7 +301,7 @@ DEVICE_COMM_INTERFACE_SPARSE_ALLREDUCE_EXPLICIT_CLASS_INSTANTIATION(
 DEVICE_COMM_INTERFACE_SPARSE_ALLREDUCE_EXPLICIT_CLASS_INSTANTIATION(
     process_ring_communicator,
     cl::sycl::buffer<int COMMA 1>,
-    cl::sycl::buffer<ccl::bfp16 COMMA 1>);
+    cl::sycl::buffer<ccl::bf16 COMMA 1>);
 
 DEVICE_COMM_INTERFACE_SPARSE_ALLREDUCE_EXPLICIT_CLASS_INSTANTIATION(
     process_ring_communicator,
@@ -310,5 +310,5 @@ DEVICE_COMM_INTERFACE_SPARSE_ALLREDUCE_EXPLICIT_CLASS_INSTANTIATION(
 DEVICE_COMM_INTERFACE_SPARSE_ALLREDUCE_EXPLICIT_CLASS_INSTANTIATION(
     process_ring_communicator,
     cl::sycl::buffer<int64_t COMMA 1>,
-    cl::sycl::buffer<ccl::bfp16 COMMA 1>);
+    cl::sycl::buffer<ccl::bf16 COMMA 1>);
 #endif //CCL_ENABLE_SYCL

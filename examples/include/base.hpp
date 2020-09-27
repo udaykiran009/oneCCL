@@ -3,11 +3,13 @@
 
 #include "oneapi/ccl.hpp"
 
+#include <cassert>
 #include <chrono>
 #include <cstring>
 #include <functional>
 #include <iostream>
 #include <math.h>
+#include <mpi.h>
 #include <stdexcept>
 #include <stdio.h>
 #include <sys/time.h>
@@ -58,11 +60,11 @@ using namespace cl::sycl::access;
         try { \
             for (size_t idx = 0; idx < MSG_SIZE_COUNT; ++idx) { \
                 size_t msg_count = msg_counts[idx]; \
-                coll_attr.set<ccl::operation_attr_id::match_id>(msg_match_ids[idx]); \
+                attr.set<ccl::operation_attr_id::match_id>(msg_match_ids[idx]); \
                 PRINT_BY_ROOT(comm, \
                               "msg_count=%zu, match_id=%s", \
                               msg_count, \
-                              coll_attr.get<ccl::operation_attr_id::match_id>().c_str()); \
+                              attr.get<ccl::operation_attr_id::match_id>().c_str()); \
                 per_msg_code; \
             } \
         } \
@@ -77,7 +79,6 @@ using namespace cl::sycl::access;
         PRINT_BY_ROOT(comm, "PASSED"); \
     } while (0)
 
-int rank, size;
 double t1, t2, t;
 
 double when(void) {

@@ -178,11 +178,11 @@ __kernel void bcast_execution_float(size_t rank_id,
     }
 }
 
-__kernel void bcast_execution_bfp16(size_t rank_id,
+__kernel void bcast_execution_bf16(size_t rank_id,
                                     size_t comm_size,
                                     size_t elems_count,
-                                    const __global bfp16* input_buffer,
-                                    __global a2a_gpu_comm_data_bfp16* comm_matrix,
+                                    const __global bf16* input_buffer,
+                                    __global a2a_gpu_comm_data_bf16* comm_matrix,
                                     size_t root) {
     return;
 }

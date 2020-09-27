@@ -117,7 +117,7 @@ default structure and identifies the file types stored in each sub-directory:
 				|   |   |-- CMakeLists.txt                                                                             
 				|   |   |-- communicator.cpp                                                                           
 				|   |   |-- cpu_allgatherv_test.c                                                                      
-				|   |   |-- cpu_allreduce_bfp16.c                                                                      
+				|   |   |-- cpu_allreduce_bf16.c                                                                      
 				|   |   |-- cpu_allreduce_test.cpp                                                                 
 				|   |   |-- cpu_allreduce_test.c                                                                       
 				|   |   |-- custom_allreduce.cpp                                                                       
@@ -132,7 +132,7 @@ default structure and identifies the file types stored in each sub-directory:
 				|   |   |-- base.h                                                                                     
 				|   |   |-- base.hpp                                                                                   
 				|   |   |-- base_utils.hpp                                                                             
-				|   |   |-- bfp16.h                                                                                    
+				|   |   |-- bf16.h                                                                                    
 				|   |   `-- sycl_base.hpp                                                                              
 				|   `-- sycl                                                                                           
 				|       |-- CMakeLists.txt                                                                             

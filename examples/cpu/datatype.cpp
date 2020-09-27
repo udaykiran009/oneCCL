@@ -1,5 +1,4 @@
 #include "base.hpp"
-#include "mpi.h"
 
 #define COUNT (1048576 / 256)
 
@@ -35,17 +34,17 @@ void check_allreduce(const ccl::communicator &comm) {
     std::vector<std::vector<float>> send_bufs(max_dtype_count);
     std::vector<std::vector<float>> recv_bufs(max_dtype_count);
 
-    auto attr =
+    auto dt_attr =
         ccl::create_datatype_attr(ccl::attr_val<ccl::datatype_attr_id::size>(sizeof(float)));
 
     for (size_t idx = 0; idx < max_dtype_count; idx++) {
-        dtypes[idx] = ccl::register_datatype(attr);
+        dtypes[idx] = ccl::register_datatype(dt_attr);
         send_bufs[idx].resize(COUNT, comm.rank() + 1);
         recv_bufs[idx].resize(COUNT, 0);
     }
 
-    auto coll_attr = ccl::create_operation_attr<ccl::allreduce_attr>();
-    coll_attr.set<ccl::allreduce_attr_id::reduction_fn>((ccl::reduction_fn)custom_reduce);
+    auto attr = ccl::create_operation_attr<ccl::allreduce_attr>();
+    attr.set<ccl::allreduce_attr_id::reduction_fn>((ccl::reduction_fn)custom_reduce);
 
     for (size_t idx = 0; idx < max_dtype_count; idx++) {
         reqs[idx] = allreduce(send_bufs[idx].data(),
@@ -54,7 +53,7 @@ void check_allreduce(const ccl::communicator &comm) {
                               dtypes[idx],
                               ccl::reduction::custom,
                               comm,
-                              coll_attr);
+                              attr);
     }
 
     for (size_t idx = 0; idx < max_dtype_count; idx++) {
@@ -143,5 +142,6 @@ int main() {
     PRINT_BY_ROOT(comm, "PASSED");
 
     MPI_Finalize();
+
     return 0;
 }

@@ -162,8 +162,8 @@ ccl_master_sched::ccl_master_sched_ptr ccl_master_sched::create(const ccl_coll_p
     }
 
     CCL_THROW_IF_NOT((param.dtype.idx() != ccl::datatype::bfloat16) ||
-                         (ccl::global_data::get().bfp16_impl_type != ccl_bfp16_none),
-                     "BFP16 datatype is requested but not supported");
+                         (ccl::global_data::get().bf16_impl_type != ccl_bf16_none),
+                     "BF16 datatype is requested but not supported");
 
     ccl_sched_key key;
     ccl_master_sched_ptr sched;

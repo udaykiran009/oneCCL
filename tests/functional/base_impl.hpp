@@ -1,14 +1,13 @@
 #include <math.h>
 
 #include "base.hpp"
-#include "base_bfp16.hpp"
+#include "base_bf16.hpp"
 
 template <typename T>
 template <class coll_attr_type>
 void typed_test_param<T>::prepare_coll_attr(coll_attr_type& coll_attr, size_t idx) {
     coll_attr.template set<ccl::operation_attr_id::priority>(generate_priority_value(idx));
     coll_attr.template set<ccl::operation_attr_id::to_cache>((int)test_conf.cache_type);
-    //coll_attr.vector_buf = 0;
 
     char* test_unordered_coll = getenv("CCL_UNORDERED_COLL");
     if (test_unordered_coll && atoi(test_unordered_coll) == 1) {
@@ -25,7 +24,6 @@ void typed_test_param<T>::prepare_coll_attr(coll_attr_type& coll_attr, size_t id
 template <typename T>
 void typed_test_param<T>::prepare_coll_attr(ccl::allgatherv_attr& coll_attr, size_t idx) {
     this->template prepare_coll_attr<ccl::allgatherv_attr>(coll_attr, idx);
-    coll_attr.set<ccl::allgatherv_attr_id::vector_buf>(0);
 }
 
 template <typename T>
@@ -163,14 +161,14 @@ int base_test<T>::check_error(typed_test_param<T>& param,
                               size_t elem_idx) {
     double max_error = 0;
 
-    if (param.test_conf.data_type == DT_BFP16) {
+    if (param.test_conf.data_type == DT_BF16) {
         /* TODO: handle float and double */
 
         // sources https://www.mcs.anl.gov/papers/P4093-0713_1.pdf
 
-#ifdef CCL_BFP16_COMPILER
+#ifdef CCL_BF16_COMPILER
         double log_base2 = log(param.process_count) / log(2);
-        double precision = BFP16_PRECISION;
+        double precision = BF16_PRECISION;
         double g = (log_base2 * precision) / (1 - (log_base2 * precision));
         max_error = g * expected;
 #else
@@ -204,13 +202,13 @@ void base_test<T>::alloc_buffers(typed_test_param<T>& param) {
         param.recv_buf[buf_idx].resize(param.elem_count * param.process_count);
     }
 
-    if (param.test_conf.data_type == DT_BFP16) {
-        param.send_buf_bfp16.resize(param.buffer_count);
-        param.recv_buf_bfp16.resize(param.buffer_count);
+    if (param.test_conf.data_type == DT_BF16) {
+        param.send_buf_bf16.resize(param.buffer_count);
+        param.recv_buf_bf16.resize(param.buffer_count);
 
         for (size_t buf_idx = 0; buf_idx < param.buffer_count; buf_idx++) {
-            param.send_buf_bfp16[buf_idx].resize(param.elem_count * param.process_count);
-            param.recv_buf_bfp16[buf_idx].resize(param.elem_count * param.process_count);
+            param.send_buf_bf16[buf_idx].resize(param.elem_count * param.process_count);
+            param.recv_buf_bf16[buf_idx].resize(param.elem_count * param.process_count);
         }
     }
 }
@@ -243,9 +241,9 @@ int base_test<T>::run(typed_test_param<T>& param) {
             param.swap_buffers(iter);
             param.define_start_order();
 
-            if (param.test_conf.data_type == DT_BFP16) {
-#ifdef CCL_BFP16_COMPILER
-                make_bfp16_prologue<T>(param, get_recv_buf_size(param));
+            if (param.test_conf.data_type == DT_BF16) {
+#ifdef CCL_BF16_COMPILER
+                make_bf16_prologue<T>(param, get_recv_buf_size(param));
 #else
                 ASSERT(0, "unexpected data_type %d", param.test_conf.data_type);
 #endif
@@ -254,9 +252,9 @@ int base_test<T>::run(typed_test_param<T>& param) {
             run_derived(param);
             param.complete();
 
-            if (param.test_conf.data_type == DT_BFP16) {
-#ifdef CCL_BFP16_COMPILER
-                make_bfp16_epilogue<T>(param, get_recv_buf_size(param));
+            if (param.test_conf.data_type == DT_BF16) {
+#ifdef CCL_BF16_COMPILER
+                make_bf16_epilogue<T>(param, get_recv_buf_size(param));
 #else
                 ASSERT(0, "unexpected data_type %d", param.test_conf.data_type);
 #endif

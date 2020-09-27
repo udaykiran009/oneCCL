@@ -20,7 +20,7 @@ struct api_type_info {
     }
 };
 
-#define SUPPORTED_KERNEL_NATIVE_DATA_TYPES char, int, float, ccl::bfp16, double, int64_t, uint64_t
+#define SUPPORTED_KERNEL_NATIVE_DATA_TYPES char, int, float, ccl::bf16, double, int64_t, uint64_t
 
 #define API_CLASS_TYPE_INFO(api_type) \
     template <> \

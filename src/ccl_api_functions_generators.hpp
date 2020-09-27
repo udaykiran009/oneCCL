@@ -18,6 +18,13 @@ namespace ccl {
                                         const vector_class<size_t>& recv_counts, \
                                         const communicator& comm, \
                                         const allgatherv_attr& attr); \
+    \
+    template request CCL_API allgatherv(const type* send_buf, \
+                                        size_t send_count, \
+                                        const vector_class<type*>& recv_buf, \
+                                        const vector_class<size_t>& recv_counts, \
+                                        const communicator& comm, \
+                                        const allgatherv_attr& attr); \
 \
     template request CCL_API allreduce(const type* send_buf, \
                                        type* recv_buf, \

@@ -13,7 +13,7 @@ Data Types
             {
                 ccl_dtype_char   = 0,
                 ccl_dtype_int    = 1,
-                ccl_dtype_bfp16  = 2,
+                ccl_dtype_bf16  = 2,
                 ccl_dtype_float  = 3,
                 ccl_dtype_double = 4,
                 ccl_dtype_int64  = 5,
@@ -28,7 +28,7 @@ Data Types
             {
                 dt_char = ccl_dtype_char,
                 dt_int = ccl_dtype_int,
-                dt_bfp16 = ccl_dtype_bfp16,
+                dt_bf16 = ccl_dtype_bf16,
                 dt_float = ccl_dtype_float,
                 dt_double = ccl_dtype_double,
                 dt_int64 = ccl_dtype_int64,
@@ -39,7 +39,7 @@ ccl_dtype_char
     Corresponds to *char* in C language
 ccl_dtype_int
     Corresponds to *signed int* in C language
-ccl_dtype_bfp16
+ccl_dtype_bf16
     BFloat16 datatype
 ccl_dtype_float
     Corresponds to *float* in C language

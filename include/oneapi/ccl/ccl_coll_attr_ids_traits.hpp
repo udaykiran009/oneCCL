@@ -47,28 +47,19 @@ struct ccl_api_type_attr_traits<operation_attr_id, operation_attr_id::priority> 
 
 template <>
 struct ccl_api_type_attr_traits<operation_attr_id, operation_attr_id::synchronous> {
-    using type = int;
+    using type = bool;
     using return_type = type;
 };
 
 template <>
 struct ccl_api_type_attr_traits<operation_attr_id, operation_attr_id::to_cache> {
-    using type = int;
+    using type = bool;
     using return_type = type;
 };
 
 template <>
 struct ccl_api_type_attr_traits<operation_attr_id, operation_attr_id::match_id> {
     using type = string_class;
-    using return_type = type;
-};
-
-/**
- * Traits specialization for allgatherv op attributes
- */
-template <>
-struct ccl_api_type_attr_traits<allgatherv_attr_id, allgatherv_attr_id::vector_buf> {
-    using type = int;
     using return_type = type;
 };
 

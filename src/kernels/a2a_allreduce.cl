@@ -260,12 +260,12 @@ __kernel void allreduce_execution_float(size_t rank_id,
     }
 }
 
-__kernel void allreduce_execution_bfp16(size_t rank_id,
+__kernel void allreduce_execution_bf16(size_t rank_id,
                                         size_t comm_size,
                                         size_t elems_count,
-                                        const __global bfp16* input_buffer,
-                                        __global bfp16* output_buffer,
-                                        __global a2a_gpu_comm_data_bfp16* comm_matrix) {
+                                        const __global bf16* input_buffer,
+                                        __global bf16* output_buffer,
+                                        __global a2a_gpu_comm_data_bf16* comm_matrix) {
     return;
 }
 
@@ -323,12 +323,12 @@ __kernel void allreduce_execution_numa_float(size_t rank_id,
                                              __global a2a_gpu_comm_data_float* comm_matrix) {
     return;
 }
-__kernel void allreduce_execution_numa_bfp16(size_t rank_id,
+__kernel void allreduce_execution_numa_bf16(size_t rank_id,
                                              size_t comm_size,
                                              size_t elems_count,
-                                             const __global bfp16* input_buffer,
-                                             __global bfp16* output_buffer,
-                                             __global a2a_gpu_comm_data_bfp16* comm_matrix) {
+                                             const __global bf16* input_buffer,
+                                             __global bf16* output_buffer,
+                                             __global a2a_gpu_comm_data_bf16* comm_matrix) {
     return;
 }
 

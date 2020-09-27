@@ -79,28 +79,28 @@ struct communicator_interface : public communicator_interface_dispatcher {
     DEVICE_COMM_INTERFACE_SPARSE_DECLARATION__VOID
     DEVICE_COMM_INTERFACE_SPARSE_DECLARATION(char, char);
     DEVICE_COMM_INTERFACE_SPARSE_DECLARATION(char, int);
-    DEVICE_COMM_INTERFACE_SPARSE_DECLARATION(char, ccl::bfp16);
+    DEVICE_COMM_INTERFACE_SPARSE_DECLARATION(char, ccl::bf16);
     DEVICE_COMM_INTERFACE_SPARSE_DECLARATION(char, float);
     DEVICE_COMM_INTERFACE_SPARSE_DECLARATION(char, double);
     DEVICE_COMM_INTERFACE_SPARSE_DECLARATION(char, int64_t);
     DEVICE_COMM_INTERFACE_SPARSE_DECLARATION(char, uint64_t);
     DEVICE_COMM_INTERFACE_SPARSE_DECLARATION(int, char);
     DEVICE_COMM_INTERFACE_SPARSE_DECLARATION(int, int);
-    DEVICE_COMM_INTERFACE_SPARSE_DECLARATION(int, ccl::bfp16);
+    DEVICE_COMM_INTERFACE_SPARSE_DECLARATION(int, ccl::bf16);
     DEVICE_COMM_INTERFACE_SPARSE_DECLARATION(int, float);
     DEVICE_COMM_INTERFACE_SPARSE_DECLARATION(int, double);
     DEVICE_COMM_INTERFACE_SPARSE_DECLARATION(int, int64_t);
     DEVICE_COMM_INTERFACE_SPARSE_DECLARATION(int, uint64_t);
     DEVICE_COMM_INTERFACE_SPARSE_DECLARATION(int64_t, char);
     DEVICE_COMM_INTERFACE_SPARSE_DECLARATION(int64_t, int);
-    DEVICE_COMM_INTERFACE_SPARSE_DECLARATION(int64_t, ccl::bfp16);
+    DEVICE_COMM_INTERFACE_SPARSE_DECLARATION(int64_t, ccl::bf16);
     DEVICE_COMM_INTERFACE_SPARSE_DECLARATION(int64_t, float);
     DEVICE_COMM_INTERFACE_SPARSE_DECLARATION(int64_t, double);
     DEVICE_COMM_INTERFACE_SPARSE_DECLARATION(int64_t, int64_t);
     DEVICE_COMM_INTERFACE_SPARSE_DECLARATION(int64_t, uint64_t);
     DEVICE_COMM_INTERFACE_SPARSE_DECLARATION(uint64_t, char);
     DEVICE_COMM_INTERFACE_SPARSE_DECLARATION(uint64_t, int);
-    DEVICE_COMM_INTERFACE_SPARSE_DECLARATION(uint64_t, ccl::bfp16);
+    DEVICE_COMM_INTERFACE_SPARSE_DECLARATION(uint64_t, ccl::bf16);
     DEVICE_COMM_INTERFACE_SPARSE_DECLARATION(uint64_t, float);
     DEVICE_COMM_INTERFACE_SPARSE_DECLARATION(uint64_t, double);
     DEVICE_COMM_INTERFACE_SPARSE_DECLARATION(uint64_t, int64_t);
@@ -110,12 +110,12 @@ struct communicator_interface : public communicator_interface_dispatcher {
     DEVICE_COMM_INTERFACE_SPARSE_CLASS_DECLARATION(cl::sycl::buffer<int COMMA 1>,
                                                    cl::sycl::buffer<float COMMA 1>);
     DEVICE_COMM_INTERFACE_SPARSE_CLASS_DECLARATION(cl::sycl::buffer<int COMMA 1>,
-                                                   cl::sycl::buffer<ccl::bfp16 COMMA 1>);
+                                                   cl::sycl::buffer<ccl::bf16 COMMA 1>);
 
     DEVICE_COMM_INTERFACE_SPARSE_CLASS_DECLARATION(cl::sycl::buffer<int64_t COMMA 1>,
                                                    cl::sycl::buffer<float COMMA 1>);
     DEVICE_COMM_INTERFACE_SPARSE_CLASS_DECLARATION(cl::sycl::buffer<int64_t COMMA 1>,
-                                                   cl::sycl::buffer<ccl::bfp16 COMMA 1>);
+                                                   cl::sycl::buffer<ccl::bf16 COMMA 1>);
 #endif //CCL_ENABLE_SYCL
 };
 } // namespace ccl
