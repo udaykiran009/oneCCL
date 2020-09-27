@@ -10,8 +10,8 @@ std::map<ccl_coll_allreduce_algo, std::string>
         std::make_pair(ccl_coll_allreduce_ring, "ring"),
         std::make_pair(ccl_coll_allreduce_ring_rma, "ring_rma"),
         std::make_pair(ccl_coll_allreduce_double_tree, "double_tree"),
-        std::make_pair(ccl_coll_allreduce_recursive_doubling, "recursive_doubling"),
-        std::make_pair(ccl_coll_allreduce_2d, "2d")
+        std::make_pair(ccl_coll_allreduce_recursive_doubling, "recursive_doubling")
+        //std::make_pair(ccl_coll_allreduce_2d, "2d")
     };
 
 ccl_algorithm_selector<ccl_coll_allreduce>::ccl_algorithm_selector() {

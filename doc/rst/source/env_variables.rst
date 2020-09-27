@@ -97,8 +97,6 @@ Available algorithms for each collective operation (``<algo_name>``):
      - Double-tree algorithm
    * - ``recursive_doubling``
      - Recursive doubling algorithm
-   * - ``2d``
-     - 2-dimensional algorithm (reduce_scatter+allreduce+allgather)
 
 
 ``ALLTOALL`` algorithms

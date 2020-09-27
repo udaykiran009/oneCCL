@@ -423,7 +423,7 @@ run_tests()
                     do
                         CCL_ALLGATHERV=$allgatherv ctest -VV -C mpi_allgatherv_$allgatherv
                     done
-                for allreduce in "rabenseifner" "starlike" "ring" "ring_rma" "double_tree" "recursive_doubling" "2d"
+                for allreduce in "rabenseifner" "starlike" "ring" "ring_rma" "double_tree" "recursive_doubling"
                     do
                         if [ "$allreduce" == "ring_rma" ];
                         then
