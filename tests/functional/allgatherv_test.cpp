@@ -93,7 +93,7 @@ public:
         void* recv_buf;
         size_t count = recv_counts[param.process_idx];
         const ccl_test_conf& test_conf = param.get_conf();
-        auto attr = ccl::environment::instance().create_operation_attr<ccl::allgatherv_attr>();
+        auto attr = ccl::create_operation_attr<ccl::allgatherv_attr>();
         ccl::datatype data_type = static_cast<ccl::datatype>(test_conf.data_type);
 
         for (size_t buf_idx = 0; buf_idx < param.buffer_count; buf_idx++) {
@@ -103,15 +103,15 @@ public:
             send_buf = param.get_send_buf(new_idx);
             recv_buf = param.get_recv_buf(new_idx);
 
-            param.reqs[buf_idx] =
-                ccl::allgatherv((test_conf.place_type == PT_IN) ? recv_buf : send_buf,
-                                             count,
-                                             recv_buf,
-                                             recv_counts,
-                                             (ccl_datatype_t)data_type,
-                                             param.global_comm,
-                                             ccl::default_stream,
-                                             attr);
+            param.reqs[buf_idx] = ccl::allgatherv(
+                (test_conf.place_type == PT_IN) ? recv_buf : send_buf,
+                count,
+                recv_buf,
+                recv_counts,
+                data_type,
+                GlobalData::instance().comms[0],
+                ccl::default_stream,
+                attr);
         }
     }
 };

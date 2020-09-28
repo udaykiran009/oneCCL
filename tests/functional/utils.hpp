@@ -9,6 +9,8 @@
 
 #include "gtest/gtest.h"
 
+#include "mpi.h"
+
 #include "oneapi/ccl.hpp"
 
 #define sizeofa(arr)   (sizeof(arr) / sizeof(*arr))
@@ -59,7 +61,7 @@
 #define OUTPUT_NAME_ARG "--gtest_output="
 #define PATCH_OUTPUT_NAME_ARG(argc, argv) \
     do { \
-        auto comm = ccl::environment::instance().create_communicator(); \
+        auto& comm = gd.comms[0]; \
         if (comm.size() > 1) { \
             for (int idx = 1; idx < argc; idx++) { \
                 if (strstr(argv[idx], OUTPUT_NAME_ARG)) { \
@@ -102,11 +104,11 @@
         int result = className.run(typed_param); \
         int result_final = 0; \
         static int glob_idx = 0; \
-        auto comm = ccl::create_communicator(); \ // TODO create_communicator must have args
+        auto& comm = GlobalData::instance().comms[0]; \
         ccl::event reqs; \
         auto coll_attr = \
             ccl::create_operation_attr<ccl::allreduce_attr>(); \
-        reqs = comm.allreduce(&result, &result_final, 1, ccl::reduction::sum, coll_attr); \
+        reqs = ccl::allreduce(&result, &result_final, 1, ccl::reduction::sum, comm, ccl::default_stream, coll_attr); \
         reqs.wait(); \
         if (result_final > 0) { \
             print_err_message(className.get_err_message(), output); \
@@ -149,10 +151,31 @@
 #define MAIN_FUNCTION() \
     int main(int argc, char** argv, char* envs[]) { \
         init_test_params(); \
-        ccl::init(); \
+        ccl::environment::instance(); \
+        int mpi_inited = 0; \
+        MPI_Initialized(&mpi_inited); \
+        if (!mpi_inited) { \
+            MPI_Init(NULL, NULL); \
+        } \
+        int size, rank; \
+        MPI_Comm_size(MPI_COMM_WORLD, &size); \
+        MPI_Comm_rank(MPI_COMM_WORLD, &rank); \
+        ccl::kvs::address_type main_addr; \
+        auto& gd = GlobalData::instance(); \
+        if (rank == 0) { \
+            gd.kvs = ccl::create_main_kvs(); \
+            main_addr = gd.kvs->get_address(); \
+            MPI_Bcast((void*)main_addr.data(), main_addr.size(), MPI_BYTE, 0, MPI_COMM_WORLD); \
+        } \
+        else { \
+            MPI_Bcast((void*)main_addr.data(), main_addr.size(), MPI_BYTE, 0, MPI_COMM_WORLD); \
+            gd.kvs = ccl::create_kvs(main_addr); \
+        } \
+        gd.comms.push_back(ccl::create_communicator(size, rank, gd.kvs)); \
         PATCH_OUTPUT_NAME_ARG(argc, argv); \
         testing::InitGoogleTest(&argc, argv); \
         int res = RUN_ALL_TESTS(); \
+        MPI_Finalize(); \
         return res; \
     }
 
@@ -165,7 +188,9 @@
 
 void print_err_message(char* err_message, std::ostream& output) {
     int message_len = strlen(err_message);
-    auto comm = ccl::create_communicator(); // TODO create_communicator must have args
+    auto comm = ccl::create_communicator(GlobalData::instance().comms[0].size(),
+                                         GlobalData::instance().comms[0].rank(),
+                                         GlobalData::instance().kvs);
     ccl::event reqs;
     ccl::allgatherv_attr coll_attr =
         ccl::create_operation_attr<ccl::allgatherv_attr>();

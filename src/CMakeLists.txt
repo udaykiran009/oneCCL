@@ -177,11 +177,13 @@ set(CCL_SRC
 list(APPEND CCL_INC_DIRS
                  ${PROJECT_SOURCE_DIR}/include
                  ${PROJECT_SOURCE_DIR}/mpi/include
-                 ${PROJECT_SOURCE_DIR}/ofi/include
+                 ${LIBFABRIC_INCLUDE_DIR}
                  ${PROJECT_SOURCE_DIR}/src
                  ${PROJECT_SOURCE_DIR}/src/atl)
 
 message(STATUS "CCL_INC_DIRS: ${CCL_INC_DIRS}")
+message(STATUS "oneCCL lib LIBFABRIC_LIB_DIR: ${LIBFABRIC_LIB_DIR}")
+message(STATUS "oneCCL lib LIBFABRIC_INCLUDE_DIR: ${LIBFABRIC_INCLUDE_DIR}")
 
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -pthread")
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -pthread")
@@ -199,7 +201,7 @@ endif()
 
 # add library search directory
 link_directories(${PROJECT_SOURCE_DIR}/mpi/lib)
-link_directories(${PROJECT_SOURCE_DIR}/ofi/lib)
+link_directories(${LIBFABRIC_LIB_DIR})
 #shared library
 add_library(ccl SHARED $<TARGET_OBJECTS:ccl-objects>)
 target_include_directories(ccl PUBLIC ${CCL_INC_DIRS})

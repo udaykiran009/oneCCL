@@ -14,13 +14,17 @@ endif()
 
 message(STATUS "CCL_ROOT: ${CCL_ROOT}")
 message(STATUS "CCL_CONFIGURATION: ${CCL_CONFIGURATION}")
+message(STATUS "tests/functional LIBFABRIC_LIB_DIR: ${LIBFABRIC_LIB_DIR}")
+message(STATUS "tests/functional LIBFABRIC_INCLUDE_DIR: ${LIBFABRIC_INCLUDE_DIR}")
 
 set(CCL_INSTALL_TESTS "$ENV{PWD}")
 enable_testing()
 ADD_SUBDIRECTORY (googletest-release-1.8.1/googletest/)
 include_directories(${PROJECT_SOURCE_DIR}/tests/googletest-release-1.8.1/googletest/include ${PROJECT_SOURCE_DIR}/tests/googletest-release-1.8.1/googletest/src)
 include_directories(${CCL_ROOT}/include/${CCL_CONFIGURATION})
+include_directories(${LIBFABRIC_INCLUDE_DIR})
 link_directories(${CCL_ROOT}/lib/${CCL_CONFIGURATION})
+link_directories(${LIBFABRIC_LIB_DIR})
 
 if (${CMAKE_VERSION} VERSION_LESS 3.1)
 #cmake version below 3.1 does not support CMAKE_C[XX}_STANDARD flags
@@ -58,6 +62,8 @@ foreach(src ${sources})
     target_link_libraries(${executable} PUBLIC rt)
     target_link_libraries(${executable} PUBLIC m)
     target_link_libraries(${executable} PUBLIC dl)
+    target_link_libraries(${executable} PRIVATE fabric m)
+    target_link_libraries(${executable} PUBLIC mpi) 
     install(TARGETS ${executable} RUNTIME DESTINATION ${CCL_INSTALL_TESTS})
     # FIXME: enable allreduce_custom for non-direct case only
     if(NOT ${executable} STREQUAL "allreduce_custom_test")

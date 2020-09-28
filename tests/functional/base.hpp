@@ -7,6 +7,24 @@
 
 #include "oneapi/ccl.hpp"
 #include "ccl_test_conf.hpp"
+
+class GlobalData {
+public:
+    std::vector<ccl::communicator> comms;
+    ccl::shared_ptr_class<ccl::kvs> kvs;
+
+    GlobalData(GlobalData& gd) = delete;
+    void operator=(const GlobalData&) = delete;
+    static GlobalData& instance() {
+        static GlobalData gd;
+        return gd;
+    };
+
+protected:
+    GlobalData(){};
+    ~GlobalData(){};
+};
+
 #include "utils.hpp"
 
 #define SEED_STEP 10
@@ -29,19 +47,13 @@ struct typed_test_param {
 
     std::vector<ccl::event> reqs;
     std::string match_id;
-    ccl::communicator comm;
-    ccl::communicator global_comm;
-    ccl::stream stream;
 
     typed_test_param(ccl_test_conf tconf)
             : test_conf(tconf),
               elem_count(get_ccl_elem_count(test_conf)),
-              buffer_count(get_ccl_buffer_count(test_conf)),
-              comm(ccl::environment::instance().create_communicator()), // TODO create_communicator must have args
-              global_comm(ccl::environment::instance().create_communicator()), // TODO create_communicator must have args
-              stream(ccl::default_stream) {
-        process_count = comm.size();
-        process_idx = comm.rank();
+              buffer_count(get_ccl_buffer_count(test_conf)) {
+        process_count = GlobalData::instance().comms[0].size();
+        process_idx = GlobalData::instance().comms[0].rank();
         buf_indexes.resize(buffer_count);
     }
 
@@ -62,10 +74,6 @@ struct typed_test_param {
 
     void print(std::ostream& output);
 
-    ccl::stream& get_stream() {
-        return stream;
-    }
-
     void* get_send_buf(size_t buf_idx) {
         if (test_conf.data_type == DT_BF16)
             return static_cast<void*>(send_buf_bf16[buf_idx].data());
@@ -84,7 +92,6 @@ struct typed_test_param {
 template <typename T>
 class base_test {
 public:
-    ccl::communicator comm;
     size_t global_process_idx;
     size_t global_process_count;
     char err_message[ERR_MESSAGE_MAX_LEN]{};
@@ -118,9 +125,12 @@ public:
     int test(ccl_test_conf& param) {
         switch (param.data_type) {
             case DT_CHAR: return run<char>(param);
-            case DT_INT: return run<int>(param);
-            //TODO: add additional type to testing
+            case DT_INT:
+                return run<int>(param);
+                //TODO: add additional type to testing
+#ifdef CCL_BF16_COMPILER
             case DT_BF16: return run<float>(param);
+#endif
             case DT_FLOAT: return run<float>(param);
             case DT_DOUBLE: return run<double>(param);
             // case DT_INT64:

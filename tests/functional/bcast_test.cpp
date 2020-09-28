@@ -53,7 +53,7 @@ public:
             recv_buf = param.get_recv_buf(new_idx);
 
             param.reqs[buf_idx] = ccl::broadcast(
-                recv_buf, count, (ccl_datatype_t)data_type, ROOT_PROCESS_IDX, param.global_comm, ccl::default_stream, attr);
+                recv_buf, count, data_type, ROOT_PROCESS_IDX, GlobalData::instance().comms[0], ccl::default_stream, attr);
         }
     }
 };

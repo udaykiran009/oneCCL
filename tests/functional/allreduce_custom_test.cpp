@@ -451,7 +451,7 @@ public:
         const ccl_test_conf& test_conf = param.get_conf();
         size_t count = param.elem_count;
         ccl::reduction reduction = (ccl::reduction) get_ccl_lib_reduction_type(test_conf);
-        auto attr = ccl::environment::instance().create_operation_attr<ccl::allreduce_attr>();
+        auto attr = ccl::create_operation_attr<ccl::allreduce_attr>();
 
         for (size_t buf_idx = 0; buf_idx < param.buffer_count; buf_idx++)
         {
@@ -520,7 +520,7 @@ public:
 
             //TODO make coll_attr again from run_derived, bceause we doen't remember it in `param`
             ccl::reduction reduction = (ccl::reduction) get_ccl_lib_reduction_type(test_conf);
-            auto attr = ccl::environment::instance().create_operation_attr<ccl::allreduce_attr>();
+            auto attr = ccl::create_operation_attr<ccl::allreduce_attr>();
             param.prepare_coll_attr(attr, 0);
             if (param.test_conf.prolog_type == PTYPE_T_TO_2X)
             {

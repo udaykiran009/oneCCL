@@ -52,7 +52,7 @@ public:
         size_t count = param.elem_count;
         const ccl_test_conf& test_conf = param.get_conf();
         ccl::reduction reduction = (ccl::reduction)test_conf.reduction_type;
-        auto attr = ccl::environment::instance().create_operation_attr<ccl::allreduce_attr>();
+        auto attr = ccl::create_operation_attr<ccl::allreduce_attr>();
         ccl::datatype data_type = static_cast<ccl::datatype>(test_conf.data_type);
 
         for (size_t buf_idx = 0; buf_idx < param.buffer_count; buf_idx++) {
@@ -62,15 +62,15 @@ public:
             send_buf = param.get_send_buf(new_idx);
             recv_buf = param.get_recv_buf(new_idx);
 
-            param.reqs[buf_idx] =
-                ccl::allreduce((test_conf.place_type == PT_IN) ? recv_buf : send_buf,
-                                            recv_buf,
-                                            count,
-                                            (ccl_datatype_t)data_type,
-                                            reduction,
-                                            param.global_comm,
-                                            ccl::default_stream,
-                                            attr);
+            param.reqs[buf_idx] = ccl::allreduce(
+                (test_conf.place_type == PT_IN) ? recv_buf : send_buf,
+                recv_buf,
+                count,
+                data_type,
+                reduction,
+                GlobalData::instance().comms[0],
+                ccl::default_stream,
+                attr);
         }
     }
 };

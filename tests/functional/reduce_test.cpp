@@ -64,16 +64,16 @@ public:
             send_buf = param.get_send_buf(new_idx);
             recv_buf = param.get_recv_buf(new_idx);
 
-            param.reqs[buf_idx] =
-                ccl::reduce((test_conf.place_type == PT_IN) ? recv_buf : send_buf,
-                                         recv_buf,
-                                         count,
-                                         (ccl_datatype_t)data_type,
-                                         reduction,
-                                         ROOT_PROCESS_IDX,
-                                         param.global_comm,
-                                         ccl::default_stream,
-                                         attr);
+            param.reqs[buf_idx] = ccl::reduce(
+                (test_conf.place_type == PT_IN) ? recv_buf : send_buf,
+                recv_buf,
+                count,
+                data_type,
+                reduction,
+                ROOT_PROCESS_IDX,
+                GlobalData::instance().comms[0],
+                ccl::default_stream,
+                attr);
         }
     }
 };
