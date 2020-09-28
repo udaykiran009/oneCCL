@@ -73,7 +73,7 @@ private:
      */
     template <class device_type,
               class = typename std::enable_if<is_device_supported<device_type>()>::type>
-    static device create_device(device_type& native_device);
+    static device create_device(device_type&& native_device);
 
     template <class device_handle_type, class... attr_value_pair_t>
     static device create_device_from_attr(device_handle_type& native_device_handle,

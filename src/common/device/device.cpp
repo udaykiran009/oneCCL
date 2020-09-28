@@ -8,6 +8,12 @@ ccl_device_impl::ccl_device_impl(device_native_t& dev, const ccl::library_versio
 {
 }
 
+ccl_device_impl::ccl_device_impl(device_native_t&& dev, const ccl::library_version& version)
+    : version(version),
+    native_device(std::move(dev))
+{
+}
+
 ccl_device_impl::ccl_device_impl(device_native_handle_t dev_handle,
                     const ccl::library_version& version)
     : version(version)

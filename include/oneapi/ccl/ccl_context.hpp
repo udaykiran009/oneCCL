@@ -72,8 +72,8 @@ private:
      * Factory methods
      */
     template <class device_context_type,
-              class = typename std::enable_if<is_device_context_supported<device_context_type>()>::type>
-    static context create_context(device_context_type& native_device_context);
+              class = typename std::enable_if<is_context_supported<device_context_type>()>::type>
+    static context create_context(device_context_type&& native_device_context);
 
     template <class device_context_handle_type, class... attr_value_pair_t>
     static context create_context_from_attr(device_context_handle_type& native_device_context_handle,

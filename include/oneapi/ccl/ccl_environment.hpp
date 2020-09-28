@@ -116,7 +116,7 @@ public:
      */
     shared_ptr_class<kvs> create_kvs(const kvs::address_type& addr) const;
 
-        /**
+    /**
      * Creates a new device from @native_device_type
      * @param native_device the existing handle of device
      * @return device object
@@ -125,7 +125,7 @@ public:
 
     template <class native_device_type,
               class = typename std::enable_if<is_device_supported<native_device_type>()>::type>
-    device create_device(native_device_type& native_device) const;
+    device create_device(native_device_type&& native_device) const;
 
     template <class... attr_value_pair_t>
     device create_device_from_attr(typename unified_device_type::ccl_native_t dev,
@@ -146,7 +146,7 @@ public:
 
     template <class native_device_contex_type,
               class = typename std::enable_if<is_device_supported<native_device_contex_type>()>::type>
-    context create_context(native_device_contex_type& native_device_context) const;
+    context create_context(native_device_contex_type&& native_device_context) const;
 
     template <class... attr_value_pair_t>
     context create_context_from_attr(typename unified_device_context_type::ccl_native_t ctx,
@@ -165,6 +165,67 @@ public:
         (void)expander;
         return op_attr;
     }
+
+    /**
+     * Creates a new stream from @native_stream_type
+     * @param native_stream the existing handle of stream
+     * @return stream object
+     */
+    template <class native_stream_type,
+              class = typename std::enable_if<is_stream_supported<native_stream_type>()>::type>
+    stream create_stream(native_stream_type& native_stream);
+
+    template <class native_stream_type,
+              class native_context_type,
+              class = typename std::enable_if<is_stream_supported<native_stream_type>()>::type>
+    stream create_stream(native_stream_type& native_stream, native_context_type& native_ctx);
+
+    template <class... attr_value_pair_t>
+    stream create_stream_from_attr(typename unified_device_type::ccl_native_t device,
+                                   attr_value_pair_t&&... avps) {
+        stream str = create_postponed_api_type<stream>(device);
+        int expander[]{ (str.template set<attr_value_pair_t::idx()>(avps.val()), 0)... };
+        (void)expander;
+        str.build_from_params();
+        return str;
+    }
+
+    template <class... attr_value_pair_t>
+    stream create_stream_from_attr(typename unified_device_type::ccl_native_t device,
+                                   typename unified_device_context_type::ccl_native_t context,
+                                   attr_value_pair_t&&... avps) {
+        stream str = create_postponed_api_type<stream>(device, context);
+        int expander[]{ (str.template set<attr_value_pair_t::idx()>(avps.val()), 0)... };
+        (void)expander;
+        str.build_from_params();
+        return str;
+    }
+
+    /**
+     * Creates a new event from @native_event_type
+     * @param native_event the existing handle of event
+     * @return event object
+     */
+    template <class event_type,
+              class = typename std::enable_if<is_event_supported<event_type>()>::type>
+    event create_event(event_type& native_event);
+
+    template <class event_handle_type,
+              class = typename std::enable_if<is_event_supported<event_handle_type>()>::type>
+    event create_event(event_handle_type native_event_handle,
+                       typename unified_device_context_type::ccl_native_t context);
+
+    template <class event_type, class... attr_value_pair_t>
+    event create_event_from_attr(event_type& native_event_handle,
+                                 typename unified_device_context_type::ccl_native_t context,
+                                 attr_value_pair_t&&... avps) {
+        event ev = create_postponed_api_type<event>(native_event_handle, context);
+        int expander[]{ (ev.template set<attr_value_pair_t::idx()>(avps.val()), 0)... };
+        (void)expander;
+        ev.build_from_params();
+        return ev;
+    }
+
 
 #ifdef CCL_ENABLE_SYCL
     communicator create_single_device_communicator(
@@ -271,66 +332,6 @@ public:
      */
     vector_class<communicator> split_device_communicators(
         const vector_class<pair_class<communicator, comm_split_attr>>& attrs) const;
-
-    /**
-     * Creates a new stream from @native_stream_type
-     * @param native_stream the existing handle of stream
-     * @return stream object
-     */
-    template <class native_stream_type,
-              class = typename std::enable_if<is_stream_supported<native_stream_type>()>::type>
-    stream create_stream(native_stream_type& native_stream);
-
-    template <class native_stream_type,
-              class native_context_type,
-              class = typename std::enable_if<is_stream_supported<native_stream_type>()>::type>
-    stream create_stream(native_stream_type& native_stream, native_context_type& native_ctx);
-
-    template <class... attr_value_pair_t>
-    stream create_stream_from_attr(typename unified_device_type::ccl_native_t device,
-                                   attr_value_pair_t&&... avps) {
-        stream str = create_postponed_api_type<stream>(device);
-        int expander[]{ (str.template set<attr_value_pair_t::idx()>(avps.val()), 0)... };
-        (void)expander;
-        str.build_from_params();
-        return str;
-    }
-
-    template <class... attr_value_pair_t>
-    stream create_stream_from_attr(typename unified_device_type::ccl_native_t device,
-                                   typename unified_device_context_type::ccl_native_t context,
-                                   attr_value_pair_t&&... avps) {
-        stream str = create_postponed_api_type<stream>(device, context);
-        int expander[]{ (str.template set<attr_value_pair_t::idx()>(avps.val()), 0)... };
-        (void)expander;
-        str.build_from_params();
-        return str;
-    }
-
-    /**
-     * Creates a new event from @native_event_type
-     * @param native_event the existing handle of event
-     * @return event object
-     */
-    template <class event_type,
-              class = typename std::enable_if<is_event_supported<event_type>()>::type>
-    event create_event(event_type& native_event);
-
-    template <class event_handle_type,
-              class = typename std::enable_if<is_event_supported<event_handle_type>()>::type>
-    event create_event(event_handle_type native_event_handle,
-                       typename unified_device_context_type::ccl_native_t context);
-
-    template <class event_type, class... attr_value_pair_t>
-    event create_event_from_attr(event_type& native_event_handle,
-                                 typename unified_device_context_type::ccl_native_t context,
-                                 attr_value_pair_t&&... avps) {
-        event ev = create_postponed_api_type<event>(native_event_handle, context);
-        int expander[]{ (ev.template set<attr_value_pair_t::idx()>(avps.val()), 0)... };
-        (void)expander;
-        ev.build_from_params();
-        return ev;
-    }
 
 private:
     environment();

@@ -22,11 +22,9 @@ CCL_API void event::build_from_params() {
 }
 } // namespace ccl
 
+API_EVENT_CREATION_FORCE_INSTANTIATION(typename ccl::unified_event_type::ccl_native_t);
 #ifdef CCL_ENABLE_SYCL
-API_EVENT_CREATION_FORCE_INSTANTIATION(cl::sycl::event)
-API_EVENT_CREATION_EXT_FORCE_INSTANTIATION(cl_event)
-#else
-API_EVENT_CREATION_FORCE_INSTANTIATION(ccl::shared_ptr_class<native::ccl_device_event>)
+    API_EVENT_CREATION_EXT_FORCE_INSTANTIATION(cl_event)
 #endif
 
 API_EVENT_FORCE_INSTANTIATION(ccl::event_attr_id::version, ccl::library_version);

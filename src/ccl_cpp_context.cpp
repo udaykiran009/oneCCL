@@ -33,13 +33,8 @@ CCL_API const context::native_t& context::get_native() const
 }
 } // namespace ccl
 
-#ifdef CCL_ENABLE_SYCL
-API_DEVICE_CONTEXT_CREATION_FORCE_INSTANTIATION(cl::sycl::context)
-//API_DEVICE_CONTEXT_CREATION_EXT_FORCE_INSTANTIATION(cl_context)
-#else
-    API_DEVICE_CONTEXT_CREATION_FORCE_INSTANTIATION(ccl::empty_t)
-    API_DEVICE_CONTEXT_CREATION_FORCE_INSTANTIATION(ccl::shared_ptr_class<native::ccl_context>)
-#endif
+
+API_DEVICE_CONTEXT_CREATION_FORCE_INSTANTIATION(typename ccl::unified_device_context_type::ccl_native_t)
 
 API_DEVICE_CONTEXT_FORCE_INSTANTIATION(ccl::context_attr_id::version, ccl::library_version);
 API_DEVICE_CONTEXT_FORCE_INSTANTIATION_GET(ccl::context_attr_id::cl_backend);

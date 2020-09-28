@@ -31,7 +31,7 @@ CCL_API device device::create_device_from_attr(device_type& native_device_handle
 }
 
 template <class device_type, typename T>
-CCL_API device device::create_device(device_type& native_device) {
+CCL_API device device::create_device(device_type&& native_device) {
     ccl::library_version ret{};
     ret.major = CCL_MAJOR_VERSION;
     ret.minor = CCL_MINOR_VERSION;
@@ -40,7 +40,7 @@ CCL_API device device::create_device(device_type& native_device) {
     ret.build_date = CCL_PRODUCT_BUILD_DATE;
     ret.full = CCL_PRODUCT_FULL;
 
-    return { device::impl_value_t(new device::impl_t(native_device, ret)) };
+    return { device::impl_value_t(new device::impl_t(std::forward<device_type>(native_device), ret)) };
 }
 
 template <device_attr_id attrId>
@@ -63,6 +63,7 @@ CCL_API typename ccl::details::ccl_api_type_attr_traits<ccl::device_attr_id, att
 
 /***************************TypeGenerations*********************************************************/
 #define API_DEVICE_CREATION_FORCE_INSTANTIATION(native_device_type) \
+    template CCL_API ccl::device ccl::device::create_device(native_device_type&& dev); \
     template CCL_API ccl::device ccl::device::create_device(native_device_type& dev);
 
 #define API_DEVICE_FORCE_INSTANTIATION_SET(IN_attrId, IN_Value) \

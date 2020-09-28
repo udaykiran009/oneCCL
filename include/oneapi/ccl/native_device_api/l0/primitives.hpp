@@ -38,17 +38,17 @@ using ipc_memory_handle = cl_base<ze_ipc_mem_handle_t, resource_owner>;
 
 template <class resource_owner>
 using queue_fence = cl_base<ze_fence_handle_t, resource_owner>;
-
+/*
 template <class elem_t,
           class resource_owner,
           class = typename std::enable_if<ccl::is_supported<elem_t>()>::type>
 struct memory;
-
+*/
 template <class resource_owner>
 using event = cl_base<ze_event_handle_t, resource_owner>;
 
 template <class elem_t, class resource_owner>
-struct memory<elem_t, resource_owner> : private cl_base<elem_t*, resource_owner> {
+struct memory/*<elem_t, resource_owner> */: private cl_base<elem_t*, resource_owner> {
     using base = cl_base<elem_t*, resource_owner>;
     using base::get_owner;
     using base::handle;

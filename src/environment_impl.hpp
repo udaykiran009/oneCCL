@@ -31,6 +31,44 @@
 
 namespace ccl {
 
+//Device
+template <class native_device_type, typename T>
+device CCL_API environment::create_device(native_device_type&& native_device) const {
+    return device::create_device(std::forward<native_device_type>(native_device));
+}
+
+//Device context
+template <class native_device_contex_type, typename T>
+context CCL_API environment::create_context(native_device_contex_type&& native_device_context) const {
+    return context::create_context(std::forward<native_device_contex_type>(native_device_context));
+}
+
+//Stream
+template <class native_stream_type, typename T>
+stream CCL_API environment::create_stream(native_stream_type& native_stream) {
+    return stream::create_stream(native_stream);
+}
+
+template <class native_stream_type, class native_context_type, typename T>
+stream CCL_API environment::create_stream(native_stream_type& native_stream,
+                                          native_context_type& native_ctx) {
+    return stream::create_stream(native_stream, native_ctx);
+}
+
+//Event
+template <class event_type, typename T>
+event CCL_API environment::create_event(event_type& native_event) {
+    return event::create_event(native_event);
+}
+
+template <class event_handle_type, typename T>
+event CCL_API
+environment::create_event(event_handle_type native_event_handle,
+                          typename unified_device_context_type::ccl_native_t context) {
+    return event::create_event(native_event_handle, context);
+}
+
+
 //Device communicator
 #if defined(MULTI_GPU_SUPPORT) || defined(CCL_ENABLE_SYCL)
 template <class DeviceType, class ContextType>
@@ -88,43 +126,6 @@ environment::create_device_communicators(const size_t comm_size,
     return ret;
 #endif
 }
-
-//Device
-template <class native_device_type, typename T>
-device CCL_API environment::create_device(native_device_type& native_device) const {
-    return device::create_device(native_device);
-}
-
-//Device context
-template <class native_device_contex_type, typename T>
-context CCL_API environment::create_context(native_device_contex_type& native_device_context) const {
-    return context::create_context(native_device_context);
-}
-
-//Stream
-template <class native_stream_type, typename T>
-stream CCL_API environment::create_stream(native_stream_type& native_stream) {
-    return stream::create_stream(native_stream);
-}
-
-template <class native_stream_type, class native_context_type, typename T>
-stream CCL_API environment::create_stream(native_stream_type& native_stream,
-                                          native_context_type& native_ctx) {
-    return stream::create_stream(native_stream, native_ctx);
-}
-
-//Event
-template <class event_type, typename T>
-event CCL_API environment::create_event(event_type& native_event) {
-    return event::create_event(native_event);
-}
-
-template <class event_handle_type, typename T>
-event CCL_API
-environment::create_event(event_handle_type native_event_handle,
-                          typename unified_device_context_type::ccl_native_t context) {
-    return event::create_event(native_event_handle, context);
-}
 #endif //#if defined(MULTI_GPU_SUPPORT) || defined(CCL_ENABLE_SYCL)
 
 template <class ccl_api_type, class... args_type>
@@ -178,9 +179,11 @@ ccl_api_type CCL_API environment::create_postponed_api_type(args_type... args) c
                                                                  native_context_type& native_ctx);
 
 #define CREATE_CONTEXT_INSTANTIATION(native_context_type) \
+    template ccl::context CCL_API ccl::environment::create_context(native_context_type&& native_ctx) const; \
     template ccl::context CCL_API ccl::environment::create_context(native_context_type& native_ctx) const;
 
 #define CREATE_DEVICE_INSTANTIATION(native_device_type) \
+    template ccl::device CCL_API ccl::environment::create_device(native_device_type&& native_device) const; \
     template ccl::device CCL_API ccl::environment::create_device(native_device_type& native_device) const;
 
 #define CREATE_EVENT_INSTANTIATION(native_event_type) \

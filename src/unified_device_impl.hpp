@@ -8,7 +8,7 @@
 namespace ccl {
 
 #ifdef CCL_ENABLE_SYCL
-CCL_API generic_device_type<CCL_ENABLE_SYCL_TRUE>::generic_device_type(
+CCL_API generic_device_type<cl_backend_type::dpcpp_sycl>::generic_device_type(
     device_index_type id,
     cl::sycl::info::device_type type /* = info::device_type::gpu*/)
         : device() {
@@ -75,10 +75,10 @@ CCL_API generic_device_type<CCL_ENABLE_SYCL_TRUE>::generic_device_type(
     device = *it;
 }
 
-generic_device_type<CCL_ENABLE_SYCL_TRUE>::generic_device_type(const cl::sycl::device& in_device)
+generic_device_type<cl_backend_type::dpcpp_sycl>::generic_device_type(const cl::sycl::device& in_device)
         : device(in_device) {}
 
-device_index_type generic_device_type<CCL_ENABLE_SYCL_TRUE>::get_id() const {
+device_index_type generic_device_type<cl_backend_type::dpcpp_sycl>::get_id() const {
     //TODO -S-
 #ifdef MULTI_GPU_SUPPORT
     return native::get_runtime_device(device)->get_device_path();
@@ -86,22 +86,22 @@ device_index_type generic_device_type<CCL_ENABLE_SYCL_TRUE>::get_id() const {
     return device_index_type{};
 }
 
-typename generic_device_type<CCL_ENABLE_SYCL_TRUE>::ccl_native_t&
-generic_device_type<CCL_ENABLE_SYCL_TRUE>::get() noexcept {
+typename generic_device_type<cl_backend_type::dpcpp_sycl>::ccl_native_t&
+generic_device_type<cl_backend_type::dpcpp_sycl>::get() noexcept {
     return device;
 }
 
 #else
 #ifdef MULTI_GPU_SUPPORT
-generic_device_type<CCL_ENABLE_SYCL_FALSE>::generic_device_type(device_index_type id)
+generic_device_type<cl_backend_type::l0>::generic_device_type(device_index_type id)
         : device(id) {}
 
-device_index_type generic_device_type<CCL_ENABLE_SYCL_FALSE>::get_id() const noexcept {
+device_index_type generic_device_type<cl_backend_type::l0>::get_id() const noexcept {
     return device;
 }
 
-typename generic_device_type<CCL_ENABLE_SYCL_FALSE>::ccl_native_t
-generic_device_type<CCL_ENABLE_SYCL_FALSE>::get() noexcept {
+typename generic_device_type<cl_backend_type::l0>::ccl_native_t
+generic_device_type<cl_backend_type::l0>::get() noexcept {
     return native::get_runtime_device(device);
 }
 // #else

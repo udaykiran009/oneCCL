@@ -76,10 +76,166 @@ communicator create_single_device_communicator(size_t comm_size,
 template <class... attr_value_pair_t>
 comm_split_attr create_device_comm_split_attr(attr_value_pair_t&&... avps) {
     return environment::instance().create_device_comm_split_attr(
-        std::forward<attr_value_pair_t>(avps)...);
+    std::forward<attr_value_pair_t>(avps)...);
+}
+
+
+/**
+ * Creates a new device from @native_device_type
+ * @param native_device the existing handle of device
+ * @return device object
+ */
+device create_device();
+
+template <class native_device_type,
+          class = typename std::enable_if<is_device_supported<native_device_type>()>::type>
+device create_device(native_device_type&& native_device) {
+    return environment::instance().create_device(std::forward<native_device_type>(native_device));
+}
+
+template <class... attr_value_pair_t>
+device create_device_from_attr(typename unified_device_type::ccl_native_t dev,
+                               attr_value_pair_t&&... avps) {
+    return environment::instance().create_device_from_attr(
+        dev, std::forward<attr_value_pair_t>(avps)...);
+}
+
+/**
+ * Creates a new context from @native_device_contex_type
+ * @param native_device_context the existing handle of context
+ * @return context object
+ */
+context create_context();
+
+template <class native_device_context_type,
+          class = typename std::enable_if<is_context_supported<native_device_context_type>()>::type>
+context create_context(native_device_context_type&& native_device_context) {
+    return environment::instance().create_context(std::forward<native_device_context_type>(native_device_context));
+}
+
+template <class... attr_value_pair_t>
+context create_context_from_attr(typename unified_device_context_type::ccl_native_t ctx,
+                               attr_value_pair_t&&... avps) {
+    return environment::instance().create_context_from_attr(
+        ctx, std::forward<attr_value_pair_t>(avps)...);
+}
+
+/**
+ * Creates a new event from @native_event_type
+ * @param native_event the existing handle of event
+ * @return event object
+ */
+template <class event_type,
+          class = typename std::enable_if<is_event_supported<event_type>()>::type>
+event create_event(event_type& native_event) {
+    return environment::instance().create_event(native_event);
+}
+
+template <class event_handle_type,
+          class = typename std::enable_if<is_event_supported<event_handle_type>()>::type>
+event create_event(event_handle_type native_event_handle,
+                   typename unified_device_context_type::ccl_native_t context) {
+    return environment::instance().create_event(native_event_handle, context);
+}
+
+template <class event_type, class... attr_value_pair_t>
+event create_event_from_attr(event_type& native_event_handle,
+                             typename unified_device_context_type::ccl_native_t context,
+                             attr_value_pair_t&&... avps) {
+    return environment::instance().create_event_from_attr(
+        native_event_handle, context, std::forward<attr_value_pair_t>(avps)...);
+}
+
+/**
+ * Creates a new stream from @native_stream_type
+ * @param native_stream the existing handle of stream
+ * @return stream object
+ */
+stream create_stream();
+
+template <class native_stream_type,
+          class = typename std::enable_if<is_stream_supported<native_stream_type>()>::type>
+stream create_stream(native_stream_type& native_stream) {
+    return environment::instance().create_stream(native_stream);
+}
+
+template <class native_stream_type, class native_context_type,
+          class = typename std::enable_if<is_stream_supported<native_stream_type>()>::type>
+stream create_stream(native_stream_type& native_stream, native_context_type& native_ctx) {
+    return environment::instance().create_stream(native_stream, native_ctx);
+}
+
+template <class... attr_value_pair_t>
+stream create_stream_from_attr(typename unified_device_type::ccl_native_t device,
+                               attr_value_pair_t&&... avps) {
+    return environment::instance().create_stream_from_attr(
+        device, std::forward<attr_value_pair_t>(avps)...);
+}
+
+template <class... attr_value_pair_t>
+stream create_stream_from_attr(typename unified_device_type::ccl_native_t device,
+                               typename unified_device_context_type::ccl_native_t context,
+                               attr_value_pair_t&&... avps) {
+    return environment::instance().create_stream_from_attr(
+        device, context, std::forward<attr_value_pair_t>(avps)...);
 }
 
 namespace preview {
+/**
+ * Creates a new device communicators with user supplied size, device indices and kvs.
+ * Ranks will be assigned automatically.
+ * @param comm_size user-supplied total number of ranks
+ * @param local_devices user-supplied device objects for local ranks
+ * @param context context containing the devices
+ * @param kvs key-value store for ranks wire-up
+ * @return vector of device communicators
+ */
+template <class DeviceType, class ContextType>
+vector_class<device_communicator> create_device_communicators(
+    size_t comm_size,
+    const vector_class<DeviceType>& local_devices,
+    ContextType& context,
+    shared_ptr_class<kvs_interface> kvs) {
+    return environment::instance().create_device_communicators(
+        comm_size, local_devices, context, kvs);
+}
+
+/**
+ * Creates a new device communicators with user supplied size, ranks, device indices and kvs.
+ * @param comm_size user-supplied total number of ranks
+ * @param local_rank_device_map user-supplied mapping of local ranks on devices
+ * @param context context containing the devices
+ * @param kvs key-value store for ranks wire-up
+ * @return vector of device communicators
+ */
+template <class DeviceType, class ContextType>
+vector_class<device_communicator> create_device_communicators(
+    size_t comm_size,
+    const vector_class<pair_class<rank_t, DeviceType>>& local_rank_device_map,
+    ContextType& context,
+    shared_ptr_class<kvs_interface> kvs) {
+    return environment::instance().create_device_communicators(
+        comm_size, local_rank_device_map, context, kvs);
+}
+
+template <class DeviceType, class ContextType>
+vector_class<device_communicator> create_device_communicators(
+    size_t comm_size,
+    const map_class<rank_t, DeviceType>& local_rank_device_map,
+    ContextType& context,
+    shared_ptr_class<kvs_interface> kvs) {
+    return environment::instance().create_device_communicators(
+        comm_size, local_rank_device_map, context, kvs);
+}
+
+/**
+ * Splits device communicators according to attributes.
+ * @param attrs split attributes for local communicators
+ * @return vector of device communicators
+ */
+vector_class<communicator> split_device_communicators(
+    const vector_class<pair_class<communicator, comm_split_attr>>& attrs);
+
 
 /**
  * Creates a new host communicator with externally provided size, rank and kvs.
@@ -177,95 +333,6 @@ device create_device_from_attr(typename unified_device_type::ccl_native_t dev,
     return environment::instance().create_device_from_attr(
         dev, std::forward<attr_value_pair_t>(avps)...);
 }
-
-/**
- * Creates a new context from @native_device_contex_type
- * @param native_device_context the existing handle of context
- * @return context object
- */
-context create_context();
-
-template <class native_device_context_type, class T>
-context create_context(native_device_context_type& native_device_context) {
-    return environment::instance().create_context(native_device_context);
-}
-
-template <class... attr_value_pair_t>
-context create_context_from_attr(typename unified_device_context_type::ccl_native_t ctx,
-                               attr_value_pair_t&&... avps) {
-    return environment::instance().create_context_from_attr(
-        ctx, std::forward<attr_value_pair_t>(avps)...);
-}
-
-/**
- * Creates a new event from @native_event_type
- * @param native_event the existing handle of event
- * @return event object
- */
-template <class event_type,
-          class = typename std::enable_if<is_event_supported<event_type>()>::type>
-event create_event(event_type& native_event) {
-    return environment::instance().create_event(native_event);
-}
-
-template <class event_handle_type,
-          class = typename std::enable_if<is_event_supported<event_handle_type>()>::type>
-event create_event(event_handle_type native_event_handle,
-                   typename unified_device_context_type::ccl_native_t context) {
-    return environment::instance().create_event(native_event_handle, context);
-}
-
-template <class event_type, class... attr_value_pair_t>
-event create_event_from_attr(event_type& native_event_handle,
-                             typename unified_device_context_type::ccl_native_t context,
-                             attr_value_pair_t&&... avps) {
-    return environment::instance().create_event_from_attr(
-        native_event_handle, context, std::forward<attr_value_pair_t>(avps)...);
-}
-
-/**
- * Creates a new stream from @native_stream_type
- * @param native_stream the existing handle of stream
- * @return stream object
- */
-stream create_stream();
-
-template <class native_stream_type,
-          class = typename std::enable_if<is_stream_supported<native_stream_type>()>::type>
-stream create_stream(native_stream_type& native_stream) {
-    return environment::instance().create_stream(native_stream);
-}
-
-template <class native_stream_type, class native_context_type,
-          class = typename std::enable_if<is_stream_supported<native_stream_type>()>::type>
-stream create_stream(native_stream_type& native_stream, native_context_type& native_ctx) {
-    return environment::instance().create_stream(native_stream, native_ctx);
-}
-
-template <class... attr_value_pair_t>
-stream create_stream_from_attr(typename unified_device_type::ccl_native_t device,
-                               attr_value_pair_t&&... avps) {
-    return environment::instance().create_stream_from_attr(
-        device, std::forward<attr_value_pair_t>(avps)...);
-}
-
-template <class... attr_value_pair_t>
-stream create_stream_from_attr(typename unified_device_type::ccl_native_t device,
-                               typename unified_device_context_type::ccl_native_t context,
-                               attr_value_pair_t&&... avps) {
-    return environment::instance().create_stream_from_attr(
-        device, context, std::forward<attr_value_pair_t>(avps)...);
-}
-
-/**
- * Splits device communicators according to attributes.
- * @param attrs split attributes for local communicators
- * @return vector of device communicators
- */
-vector_class<communicator> split_device_communicators(
-    const vector_class<pair_class<communicator, comm_split_attr>>& attrs);
-
-// #endif //#if defined(MULTI_GPU_SUPPORT) || defined(CCL_ENABLE_SYCL)
 
 /******************** DEVICE COMMUNICATOR ********************/
 

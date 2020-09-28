@@ -174,7 +174,7 @@ typedef void (*sparse_allreduce_alloc_fn)(size_t,
  */
 enum class cl_backend_type : int {
     empty_backend = 0,
-    sycl,
+    dpcpp_sycl,
     l0,
 
     last_value

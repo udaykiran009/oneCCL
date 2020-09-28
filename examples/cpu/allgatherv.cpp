@@ -111,6 +111,13 @@ int main() {
         kvs = ccl::create_kvs(main_addr);
     }
 
+    ccl::context ctx = ccl::create_context();
+    ccl::device dev = ccl::create_device();
+    ccl::stream str = ccl::create_stream();
+    (void)dev;
+    (void)ctx;
+    (void)str;
+
     auto comm = ccl::create_communicator(size, rank, kvs);
     auto attr = ccl::create_operation_attr<ccl::allgatherv_attr>();
 

@@ -48,20 +48,41 @@ using cluster_device_indices_t = std::map<host_id, process_device_indices_t>;
 
 struct empty_t{
 };
-template <int sycl_feature_enabled>
+template <cl_backend_type config_backend>
 struct generic_device_type {};
 
-template <int sycl_feature_enabled>
+template <cl_backend_type config_backend>
 struct generic_device_context_type {};
 
-template <int sycl_feature_enabled>
+template <cl_backend_type config_backend>
 struct generic_platform_type {};
 
-template <int sycl_feature_enabled>
+template <cl_backend_type config_backend>
 struct generic_stream_type {};
 
-template <int sycl_feature_enabled>
+template <cl_backend_type config_backend>
 struct generic_event_type {};
+
+template <class type>
+struct api_type_info {
+    static constexpr bool is_supported() {
+        return false;
+    }
+    static constexpr bool is_class() {
+        return false;
+    }
+};
+
+#define API_CLASS_TYPE_INFO(api_type) \
+    template <> \
+    struct api_type_info<api_type> { \
+        static constexpr bool is_supported() { \
+            return true; \
+        } \
+        static constexpr bool is_class() { \
+            return std::is_class<api_type>::value; \
+        } \
+    };
 } // namespace ccl
 
 std::ostream& operator<<(std::ostream& out, const ccl::device_index_type&);

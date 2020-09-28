@@ -8,6 +8,12 @@ ccl_context_impl::ccl_context_impl(device_context_native_t& ctx, const ccl::libr
 {
 }
 
+ccl_context_impl::ccl_context_impl(device_context_native_t&& ctx, const ccl::library_version& version)
+    : version(version),
+    native_device_context(std::move(ctx))
+{
+}
+
 ccl_context_impl::ccl_context_impl(device_context_native_handle_t ctx_handle,
                     const ccl::library_version& version)
     : version(version)

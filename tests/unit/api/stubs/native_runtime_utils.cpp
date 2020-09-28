@@ -1,4 +1,4 @@
-#include "oneapi/ccl/native_device_api/l0/utils.hpp"
+#include "oneapi/ccl/native_device_api/interop_utils.hpp"
 namespace native {
 namespace details {
 #ifdef CCL_ENABLE_SYCL

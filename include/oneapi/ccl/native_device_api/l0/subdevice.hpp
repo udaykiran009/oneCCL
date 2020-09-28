@@ -1,9 +1,8 @@
 #pragma once
-#include "oneapi/ccl/native_device_api/l0/primitives.hpp"
+#include "oneapi/ccl/native_device_api/l0/device.hpp"
 
 namespace native {
 struct ccl_device_driver;
-struct ccl_device;
 
 // TODO not thread-safe!!!
 struct ccl_subdevice : public ccl_device {

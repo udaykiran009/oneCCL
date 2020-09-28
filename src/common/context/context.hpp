@@ -18,6 +18,7 @@ public:
     ccl_context_impl& operator=(const ccl_context_impl& other) = delete;
 
     ccl_context_impl(device_context_native_t& ctx, const ccl::library_version& version);
+    ccl_context_impl(device_context_native_t&& ctx, const ccl::library_version& version);
     ccl_context_impl(device_context_native_handle_t ctx_handle,
                     const ccl::library_version& version);
     ~ccl_context_impl() = default;
