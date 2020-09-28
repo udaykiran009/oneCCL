@@ -272,6 +272,10 @@ void ccl_sched_base::alloc_buffers_for_sycl_copy() {
 #endif /* CCL_ENABLE_SYCL */
 }
 
+void ccl_sched_base::update_id() {
+    sched_id = coll_param.comm->get_sched_id(internal_type != ccl_sched_internal_none);
+}
+
 void ccl_sched_base::dump(std::ostream& out, const char* name) const {
     ccl_logger::format(out, "\n-----------------", name, "---------------\n");
     ccl_logger::format(out,

@@ -7,6 +7,8 @@
 #include "common/utils/utils.hpp"
 #include "common/stream/stream_provider_dispatcher.hpp"
 
+#include "coll/coll_common_attributes.hpp"
+
 namespace ccl {
 class environment; //friend-zone
 }

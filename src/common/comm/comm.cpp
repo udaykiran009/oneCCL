@@ -6,17 +6,27 @@
 #include "oneapi/ccl/ccl_types.hpp"
 #include "oneapi/ccl/ccl_kvs.hpp"
 
+void ccl_comm::allocate_resources()
+{
+    if (ccl::global_data::env().enable_unordered_coll) {
+        unordered_coll_manager =
+            std::unique_ptr<ccl_unordered_coll_manager>(new ccl_unordered_coll_manager(*this));
+    }
+}
+
 ccl_comm::ccl_comm(size_t rank,
                    size_t size,
                    ccl_comm_id_storage::comm_id&& id,
-                   std::shared_ptr<atl_wrapper> atl)
-        : ccl_comm(rank, size, std::move(id), ccl_rank2rank_map{}, atl) {}
+                   std::shared_ptr<atl_wrapper> atl,
+                   bool share_resources)
+        : ccl_comm(rank, size, std::move(id), ccl_rank2rank_map{}, atl, share_resources) {}
 
 ccl_comm::ccl_comm(size_t rank,
                    size_t size,
                    ccl_comm_id_storage::comm_id&& id,
                    ccl_rank2rank_map&& rank_map,
-                   std::shared_ptr<atl_wrapper> atl)
+                   std::shared_ptr<atl_wrapper> atl,
+                   bool share_resources)
         : atl(atl),
           m_id(std::move(id)),
           m_local2global_map(std::move(rank_map)),
@@ -24,6 +34,11 @@ ccl_comm::ccl_comm(size_t rank,
           thread_number(1),
           on_process_ranks_number(1) {
     reset(rank, size);
+
+    if (!share_resources)
+    {
+        allocate_resources();
+    }
 }
 
 //TODO non-implemented
@@ -39,11 +54,14 @@ void ccl_comm::ccl_comm_reset_thread_barrier() {
 ccl_comm::ccl_comm(const std::vector<size_t>& local_thread_device_ranks,
                    size_t cluster_devices_count,
                    std::shared_ptr<ccl::kvs_interface> kvs_instance,
-                   ccl_comm_id_storage::comm_id&& id)
+                   ccl_comm_id_storage::comm_id&& id,
+                   bool share_resources)
         : m_id(std::move(id)),
           m_local2global_map(),
           m_dtree(local_thread_device_ranks.size(), cluster_devices_count) {
+
     std::shared_ptr<ikvs_wrapper> kvs_wrapper(new users_kvs(kvs_instance));
+
     atl = std::shared_ptr<atl_wrapper>(
         new atl_wrapper(cluster_devices_count, local_thread_device_ranks, kvs_wrapper));
 
@@ -51,6 +69,11 @@ ccl_comm::ccl_comm(const std::vector<size_t>& local_thread_device_ranks,
     on_process_ranks_number = atl->get_devices_per_rank_count();
 
     reset(atl->get_rank(), atl->get_size());
+
+    if (!share_resources)
+    {
+        allocate_resources();
+    }
 }
 
 static ccl_status_t ccl_comm_exchange_colors(std::vector<int>& colors) {
@@ -79,6 +102,8 @@ static ccl_status_t ccl_comm_exchange_colors(std::vector<int>& colors) {
 ccl_comm* ccl_comm::create_with_color(int color,
                                       ccl_comm_id_storage* comm_ids,
                                       const ccl_comm* global_comm) {
+    throw ccl::ccl_error("unimplemented yet");
+
     if (ccl::global_data::env().atl_transport == ccl_atl_mpi) {
         throw ccl::ccl_error(
             "MPI transport doesn't support creation of communicator with color yet");
@@ -142,7 +167,7 @@ ccl_comm* ccl_comm::create_with_colors(const std::vector<int>& colors,
 
 std::shared_ptr<ccl_comm> ccl_comm::clone_with_new_id(ccl_comm_id_storage::comm_id&& id) {
     ccl_rank2rank_map rank_map{ m_local2global_map };
-    return std::make_shared<ccl_comm>(m_rank, m_size, std::move(id), std::move(rank_map), atl);
+    return std::make_shared<ccl_comm>(m_rank, m_size, std::move(id), std::move(rank_map), atl, true /*share_resources*/);
 }
 
 size_t ccl_comm::get_global_rank(size_t rank) const {

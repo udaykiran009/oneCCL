@@ -124,8 +124,10 @@ int main() {
         std::cout << "iter " << iter << " has been finished" << std::endl;
     }
 
+    ccl::barrier(comm);
+
     if (rank == 0)
-        std::cout << "PASSED" << std::endl;
+        std::cout << "PASSED" << std::endl << std::flush;
 
     MPI_Finalize();
 

@@ -12,19 +12,19 @@ struct ccl_unordered_coll_ctx {
     ccl_unordered_coll_manager* manager;
 };
 
-ccl_unordered_coll_manager::ccl_unordered_coll_manager() {
-    // TODO: move it in execute body, with real comm dependency
-    //    ccl::global_data& data = ccl::global_data
-    //
-    //    coordination_comm =
-    //        std::unique_ptr<ccl_comm>(new ccl_comm(data.executor->get_global_proc_idx(),
-    //                                               data.executor->get_global_proc_count(),
-    //                                               data.comm_ids->acquire(true),
-    //                                                               ccl::global_data::get().atl));
-    //    CCL_ASSERT(coordination_comm.get(), "coordination_comm is null");
-    //
-    //    if (data.executor->get_global_proc_idx() == 0)
-    //        LOG_INFO("created unordered collectives manager");
+ccl_unordered_coll_manager::ccl_unordered_coll_manager(ccl_comm& parent_comm) {
+
+       coordination_comm =
+           std::unique_ptr<ccl_comm>(new ccl_comm(parent_comm.rank(),
+                                                  parent_comm.size(),
+                                                  ccl::global_data::get().comm_ids->acquire(true/*internal_id_space*/),
+                                                  parent_comm.atl,
+                                                  true/*share_resources*/));
+
+       CCL_ASSERT(coordination_comm.get(), "coordination_comm is null");
+    
+       if (parent_comm.rank() == 0)
+           LOG_INFO("created unordered collectives manager");
 }
 
 ccl_unordered_coll_manager::~ccl_unordered_coll_manager() {

@@ -177,7 +177,8 @@ void do_iter(size_t iter_idx,
 }
 
 int main() {
-    setenv("CCL_PRIORITY", "direct", 1);
+    
+    setenv("CCL_PRIORITY", "direct", 0);
 
     ccl::init();
 

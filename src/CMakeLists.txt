@@ -140,6 +140,7 @@ set(CCL_SRC
     comp/bf16/bf16_intrisics.cpp
     comp/comp.cpp
     sched/sched.cpp
+    sched/extra_sched.cpp
     sched/master_sched.cpp
     sched/sched_base.cpp
     sched/cache/cache.cpp

@@ -4,7 +4,6 @@
 #include "exec/thread/service_worker.hpp"
 #include "exec/thread/worker.hpp"
 #include "common/env/env.hpp"
-#include "unordered_coll/unordered_coll.hpp"
 #include "sched/extra_sched.hpp"
 
 size_t ccl_executor::get_worker_idx_by_sched_id(ccl_sched* sched) {

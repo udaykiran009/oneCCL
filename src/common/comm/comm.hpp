@@ -1,13 +1,15 @@
 #pragma once
+
+#include <atomic>
+#include <unordered_map>
+
 #include "atl/atl_wrapper.h"
 #include "common/comm/comm_id_storage.hpp"
 #include "common/comm/atl_tag.hpp"
 #include "common/log/log.hpp"
 #include "common/utils/tree.hpp"
 #include "common/utils/utils.hpp"
-
-#include <atomic>
-#include <unordered_map>
+#include "unordered_coll/unordered_coll.hpp"
 
 // index = local_rank, value = global_rank
 using ccl_rank2rank_map = std::vector<size_t>;
@@ -27,12 +29,14 @@ public:
     ccl_comm(size_t rank,
              size_t size,
              ccl_comm_id_storage::comm_id&& id,
-             std::shared_ptr<atl_wrapper> atl);
+             std::shared_ptr<atl_wrapper> atl,
+             bool share_resources = false);
     ccl_comm(size_t rank,
              size_t size,
              ccl_comm_id_storage::comm_id&& id,
              ccl_rank2rank_map&& ranks,
-             std::shared_ptr<atl_wrapper> atl);
+             std::shared_ptr<atl_wrapper> atl,
+             bool share_resources = false);
 
     //TODO non-implemented
     //1) cluster_devices_count (devices 1000) -> (processes 10)
@@ -47,7 +51,8 @@ public:
     ccl_comm(const std::vector<size_t>& local_thread_device_ranks,
              size_t cluster_devices_count,
              std::shared_ptr<ccl::kvs_interface> kvs_instance,
-             ccl_comm_id_storage::comm_id&& id);
+             ccl_comm_id_storage::comm_id&& id,
+             bool share_resources = false);
 
     ~ccl_comm() = default;
 
@@ -138,9 +143,14 @@ public:
      * Maximum value of schedule id in scope of the current communicator
      */
     static constexpr ccl_sched_id_t max_sched_count = std::numeric_limits<ccl_sched_id_t>::max();
+
     std::shared_ptr<atl_wrapper> atl;
+    std::unique_ptr<ccl_unordered_coll_manager> unordered_coll_manager;
 
 private:
+
+    void allocate_resources();
+
     size_t m_rank;
     size_t m_size;
     size_t m_pof2;

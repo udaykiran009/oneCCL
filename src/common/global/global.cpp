@@ -10,7 +10,6 @@
 #include "fusion/fusion.hpp"
 #include "parallelizer/parallelizer.hpp"
 #include "sched/cache/cache.hpp"
-#include "unordered_coll/unordered_coll.hpp"
 
 namespace ccl {
 
@@ -78,11 +77,6 @@ void global_data::init_resize_dependent_objects() {
     comm_ids =
         std::unique_ptr<ccl_comm_id_storage>(new ccl_comm_id_storage(ccl_comm::max_comm_count));
 
-    if (env_object.enable_unordered_coll) {
-        unordered_coll_manager =
-            std::unique_ptr<ccl_unordered_coll_manager>(new ccl_unordered_coll_manager());
-    }
-
     //    allreduce_2d_builder = std::unique_ptr<ccl_allreduce_2d_builder>(new ccl_allreduce_2d_builder(
     //        (env_object.allreduce_2d_base_size != CCL_ENV_SIZET_NOT_SPECIFIED)
     //            ? env_object.allreduce_2d_base_size
@@ -127,7 +121,6 @@ void global_data::init_resize_independent_objects() {
 
 void global_data::reset_resize_dependent_objects() {
     //    allreduce_2d_builder.reset();
-    unordered_coll_manager.reset();
     comm_ids.reset();
     fusion_manager.reset();
     sched_cache.reset();

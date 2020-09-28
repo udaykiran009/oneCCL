@@ -134,7 +134,7 @@ static ccl_request* ccl_coll_create(ccl_coll_param& param, const ccl_coll_attr& 
     bool postpone_schedule = false;
     if (ccl::global_data::env().enable_unordered_coll) {
         if (!attr.match_id.empty()) {
-            auto comm = data.unordered_coll_manager->get_comm(std::string(attr.match_id)).get();
+            auto comm = param.comm->unordered_coll_manager->get_comm(std::string(attr.match_id)).get();
             if (!comm) {
                 if (attr.synchronous) {
                     CCL_THROW("unsupported collective (synchronous && unordered && !communicator)");
@@ -176,7 +176,7 @@ static ccl_request* ccl_coll_create(ccl_coll_param& param, const ccl_coll_attr& 
             user has provided match_id that has not been resolved yet.
             schedule will be postponed until comm resolution
         */
-        return data.unordered_coll_manager->postpone(sched);
+        return param.comm->unordered_coll_manager->postpone(sched);
     }
 
     /* 6. regular schedule execution */
@@ -197,7 +197,7 @@ static ccl_request* ccl_gpu_coll_create(ccl_coll_param& param, const ccl_coll_at
     bool postpone_schedule = false;
     if (ccl::global_data::env().enable_unordered_coll) {
         if (!attr.match_id.empty()) {
-            auto comm = data.unordered_coll_manager->get_comm(std::string(attr.match_id)).get();
+            auto comm = param.comm->unordered_coll_manager->get_comm(std::string(attr.match_id)).get();
             if (!comm) {
                 if (attr.synchronous) {
                     CCL_THROW("unsupported collective (synchronous && unordered && !communicator)");
@@ -239,7 +239,7 @@ static ccl_request* ccl_gpu_coll_create(ccl_coll_param& param, const ccl_coll_at
             user has provided match_id that has not been resolved yet.
             schedule will be postponed until comm resolution
         */
-        return data.unordered_coll_manager->postpone(sched);
+        return param.comm->unordered_coll_manager->postpone(sched);
     }
 
     /* 6. regular schedule execution */
