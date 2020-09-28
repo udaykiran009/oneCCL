@@ -4,7 +4,7 @@
 class ccl_executor {};
 class ccl_parallelizer {};
 class ccl_fusion_manager {};
-class ccl_unordered_coll_manager {};
+//class ccl_unordered_coll_manager {};
 //class ccl_allreduce_2d_builder {};
 template <ccl_coll_type... registered_types_id>
 class ccl_algorithm_selector_wrapper {};

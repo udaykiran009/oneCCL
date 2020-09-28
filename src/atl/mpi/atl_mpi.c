@@ -1051,8 +1051,11 @@ static atl_status_t atl_mpi_init(int* argc,
 
     if (!is_mpi_inited) {
         ret = MPI_Init_thread(argc, argv, required_thread_level, &provided_thread_level);
-        if (provided_thread_level < required_thread_level)
+        if (provided_thread_level < required_thread_level) {
+            ATL_MPI_PRINT("unexpected MPI thread level: requested %d, provided %d",
+                required_thread_level, provided_thread_level);
             goto err_init;
+        }
 
         if (atl_mpi_bf16_init() == ATL_STATUS_FAILURE) {
             atl_mpi_bf16_finalize();
@@ -1062,6 +1065,13 @@ static atl_status_t atl_mpi_init(int* argc,
     else {
         is_external_init = 1;
         ATL_MPI_DEBUG_PRINT("MPI was initialized externaly");
+        MPI_Query_thread(&provided_thread_level);
+        if (provided_thread_level < required_thread_level) {
+            ATL_MPI_PRINT("MPI was initialized externaly but with unexpected thread level: "
+                "requested %d, provided %d",
+                required_thread_level, provided_thread_level);
+            goto err_init;
+        }
     }
 
     if (ret)
