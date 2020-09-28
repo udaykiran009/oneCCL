@@ -63,6 +63,7 @@ struct cpu_base_coll : base_coll, protected strategy, cpu_specific_data {
                                       static_cast<Dtype*>(recv_bufs[buf_idx]),
                                       attr,
                                       reqs,
+                                      ccl::default_stream,
                                       coll_strategy::get_op_attr(attr));
     }
 
@@ -75,6 +76,7 @@ struct cpu_base_coll : base_coll, protected strategy, cpu_specific_data {
                                       static_cast<Dtype*>(single_recv_buf),
                                       attr,
                                       reqs,
+                                      ccl::default_stream,
                                       coll_strategy::get_op_attr(attr));
     }
 
