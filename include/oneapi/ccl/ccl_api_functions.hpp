@@ -181,52 +181,6 @@ stream create_stream_from_attr(typename unified_device_type::ccl_native_t device
 }
 
 namespace preview {
-/**
- * Creates a new device communicators with user supplied size, device indices and kvs.
- * Ranks will be assigned automatically.
- * @param comm_size user-supplied total number of ranks
- * @param local_devices user-supplied device objects for local ranks
- * @param context context containing the devices
- * @param kvs key-value store for ranks wire-up
- * @return vector of device communicators
- */
-template <class DeviceType, class ContextType>
-vector_class<device_communicator> create_device_communicators(
-    size_t comm_size,
-    const vector_class<DeviceType>& local_devices,
-    ContextType& context,
-    shared_ptr_class<kvs_interface> kvs) {
-    return environment::instance().create_device_communicators(
-        comm_size, local_devices, context, kvs);
-}
-
-/**
- * Creates a new device communicators with user supplied size, ranks, device indices and kvs.
- * @param comm_size user-supplied total number of ranks
- * @param local_rank_device_map user-supplied mapping of local ranks on devices
- * @param context context containing the devices
- * @param kvs key-value store for ranks wire-up
- * @return vector of device communicators
- */
-template <class DeviceType, class ContextType>
-vector_class<device_communicator> create_device_communicators(
-    size_t comm_size,
-    const vector_class<pair_class<rank_t, DeviceType>>& local_rank_device_map,
-    ContextType& context,
-    shared_ptr_class<kvs_interface> kvs) {
-    return environment::instance().create_device_communicators(
-        comm_size, local_rank_device_map, context, kvs);
-}
-
-template <class DeviceType, class ContextType>
-vector_class<device_communicator> create_device_communicators(
-    size_t comm_size,
-    const map_class<rank_t, DeviceType>& local_rank_device_map,
-    ContextType& context,
-    shared_ptr_class<kvs_interface> kvs) {
-    return environment::instance().create_device_communicators(
-        comm_size, local_rank_device_map, context, kvs);
-}
 
 /**
  * Splits device communicators according to attributes.
@@ -313,25 +267,6 @@ vector_class<communicator> create_device_communicators(
     shared_ptr_class<kvs_interface> kvs) {
     return environment::instance().create_device_communicators(
         comm_size, local_rank_device_map, context, kvs);
-}
-
-/**
- * Creates a new device from @native_device_type
- * @param native_device the existing handle of device
- * @return device object
- */
-device create_device();
-
-template <class native_device_type, class T>
-device create_device(native_device_type& native_device) {
-    return environment::instance().create_device(native_device);
-}
-
-template <class... attr_value_pair_t>
-device create_device_from_attr(typename unified_device_type::ccl_native_t dev,
-                               attr_value_pair_t&&... avps) {
-    return environment::instance().create_device_from_attr(
-        dev, std::forward<attr_value_pair_t>(avps)...);
 }
 
 /******************** DEVICE COMMUNICATOR ********************/

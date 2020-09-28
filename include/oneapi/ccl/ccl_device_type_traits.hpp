@@ -8,7 +8,7 @@
 
 namespace ccl {
 
-#define SUPPORTED_KERNEL_NATIVE_DATA_TYPES char, int, float, ccl::bfp16, double, int64_t, uint64_t
+#define SUPPORTED_KERNEL_NATIVE_DATA_TYPES char, int, float, ccl::bf16, double, int64_t, uint64_t
 
 template <class native_stream>
 constexpr bool is_stream_supported() {
