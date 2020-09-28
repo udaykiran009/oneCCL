@@ -37,8 +37,8 @@ struct typed_test_param {
             : test_conf(tconf),
               elem_count(get_ccl_elem_count(test_conf)),
               buffer_count(get_ccl_buffer_count(test_conf)),
-              comm(ccl::environment::instance().create_communicator()),
-              global_comm(ccl::environment::instance().create_communicator()),
+              comm(ccl::environment::instance().create_communicator()), // TODO create_communicator must have args
+              global_comm(ccl::environment::instance().create_communicator()), // TODO create_communicator must have args
               stream(ccl::default_stream) {
         process_count = comm.size();
         process_idx = comm.rank();

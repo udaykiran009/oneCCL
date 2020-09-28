@@ -9,7 +9,7 @@
 namespace native {
 
 inline std::size_t module_hash(ccl_coll_type module_type,
-                               ccl::device_group_split_type group_id,
+                               ccl::group_split_type group_id,
                                ccl::device_topology_type class_id) {
     std::string str = std::string(ccl_coll_type_to_str(module_type)) + "," + ::to_string(group_id) +
                       ::to_string(class_id);
@@ -31,16 +31,16 @@ struct module_loader {
                 case ccl::device_topology_type::ring:
                     load_module_impl<module_type,
                                      ccl::device_topology_type::ring,
-                                     ccl::device_group_split_type::thread,
-                                     ccl::device_group_split_type::process,
-                                     ccl::device_group_split_type::cluster>(it->second);
+                                     ccl::group_split_type::thread,
+                                     ccl::group_split_type::process,
+                                     ccl::group_split_type::cluster>(it->second);
                     break;
                 case ccl::device_topology_type::a2a:
                     load_module_impl<module_type,
                                      ccl::device_topology_type::a2a,
-                                     ccl::device_group_split_type::thread,
-                                     ccl::device_group_split_type::process,
-                                     ccl::device_group_split_type::cluster>(it->second);
+                                     ccl::group_split_type::thread,
+                                     ccl::group_split_type::process,
+                                     ccl::group_split_type::cluster>(it->second);
                     break;
                 default:
                     throw std::runtime_error(std::string("unknown topology class: ") +
@@ -56,7 +56,7 @@ private:
 
     template <ccl_coll_type module_type,
               ccl::device_topology_type class_id,
-              ccl::device_group_split_type... topology_types>
+              ccl::group_split_type... topology_types>
     void load_module_impl(const source_data_t& module_data) {
         LOG_DEBUG("Started loading module \"",
                   ccl_coll_type_to_str(module_type),

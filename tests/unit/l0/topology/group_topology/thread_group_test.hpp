@@ -10,7 +10,7 @@ TEST_F(router_fixture, thread_group_topology_test) {
     size_t process_index = 0;
     std::vector<size_t> thread_ids{ 0, 1 };
 
-    constexpr ccl::device_group_split_type topology = ccl::device_group_split_type::process;
+    constexpr ccl::group_split_type topology = ccl::group_split_type::process;
     constexpr ccl::device_topology_type class_id = ccl::device_topology_type::ring;
 
     init_routing_data(process_index);
@@ -121,7 +121,7 @@ TEST_F(router_fixture, same_device_topology_test) {
     size_t process_index = 0;
     std::vector<size_t> thread_ids{ 0, 1 };
 
-    constexpr ccl::device_group_split_type topology = ccl::device_group_split_type::process;
+    constexpr ccl::group_split_type topology = ccl::group_split_type::process;
     constexpr ccl::device_topology_type class_id = ccl::device_topology_type::ring;
 
     //same device test
@@ -230,7 +230,7 @@ TEST_F(router_fixture, thread_group_topology_scaleup_test) {
     size_t process_index = 0;
     std::vector<size_t> thread_ids{ 0, 1 };
 
-    constexpr ccl::device_group_split_type topology = ccl::device_group_split_type::process;
+    constexpr ccl::group_split_type topology = ccl::group_split_type::process;
     constexpr ccl::device_topology_type class_id = ccl::device_topology_type::ring;
 
     init_routing_data(process_index);
@@ -343,7 +343,7 @@ TEST_F(router_fixture, two_inaccessible_groups_topology_scaleup_test) {
     size_t process_index = 0;
     std::vector<size_t> thread_ids{ 0, 1 };
 
-    constexpr ccl::device_group_split_type topology = ccl::device_group_split_type::process;
+    constexpr ccl::group_split_type topology = ccl::group_split_type::process;
     constexpr ccl::device_topology_type class_id = ccl::device_topology_type::ring;
 
     init_routing_data(process_index);
@@ -468,7 +468,7 @@ TEST_F(router_fixture, local_group_inaccessible_devices_topology_scaleup_test) {
     size_t process_index = 0;
     std::vector<size_t> thread_ids{ 0, 1 };
 
-    constexpr ccl::device_group_split_type topology = ccl::device_group_split_type::process;
+    constexpr ccl::group_split_type topology = ccl::group_split_type::process;
     constexpr ccl::device_topology_type class_id = ccl::device_topology_type::ring;
 
     init_routing_data(process_index);

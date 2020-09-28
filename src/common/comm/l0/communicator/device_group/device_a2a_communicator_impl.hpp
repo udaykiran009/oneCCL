@@ -72,7 +72,7 @@ device_group_a2a_communicator::coll_request_t device_group_a2a_communicator::all
     const ccl::vector_class<ccl::event>& deps) {
     using namespace native;
 
-    static constexpr ccl::device_group_split_type group_id = base_t::topology_type();
+    static constexpr ccl::group_split_type group_id = base_t::topology_type();
     static constexpr ccl::device_topology_type class_id = base_t::topology_class();
     if (!is_ready()) {
         throw ccl::ccl_error(std::string(

@@ -16,11 +16,11 @@ struct thread_group_context : numa_ctx<thread_group_context, SUPPORTED_TOPOLOGY_
     friend class thread_group_ring_topology;
     friend class allied_process_group_ring_topology;
 
-    static constexpr ccl::device_group_split_type group_id() {
-        return ccl::device_group_split_type::process;
+    static constexpr ccl::group_split_type group_id() {
+        return ccl::group_split_type::process;
     }
 
-    using topologies = device_group_community_holder<ccl::device_group_split_type::process,
+    using topologies = device_group_community_holder<ccl::group_split_type::process,
                                                      SUPPORTED_TOPOLOGY_CLASSES_DECL_LIST>;
     using topologies_storage = std::map<size_t, topologies>;
     using device_group_ctx_ptr = std::shared_ptr<device_group_context>;

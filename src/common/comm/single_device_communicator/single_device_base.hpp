@@ -11,8 +11,8 @@ public:
     using traits = communicator_traits;
 
     // Topologies
-    static constexpr ccl::device_group_split_type topology_type() {
-        return ccl::device_group_split_type::undetermined;
+    static constexpr ccl::group_split_type topology_type() {
+        return ccl::group_split_type::undetermined;
     }
 
     static constexpr ccl::device_topology_type topology_class() {
@@ -39,9 +39,9 @@ public:
     typed_single_device_base_communicator(ccl::unified_device_type&& device,
                                           size_t thread_idx,
                                           size_t process_idx,
-                                          const ccl::device_comm_split_attr& attr);
+                                          const ccl::comm_split_attr& attr);
 
-    ccl::device_group_split_type get_topology_type() const override;
+    ccl::group_split_type get_topology_type() const override;
     ccl::device_topology_type get_topology_class() const override;
 
     bool is_ready() const override;

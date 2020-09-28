@@ -39,7 +39,7 @@ public:
     single_device_communicator(ccl::unified_device_type&& device,
                                size_t thread_idx,
                                size_t proces_idx,
-                               const ccl::device_comm_split_attr& attr);
+                               const ccl::comm_split_attr& attr);
 #ifdef MULTI_GPU_SUPPORT
     void visit(ccl::gpu_comm_attr& comm_attr) override;
 #endif

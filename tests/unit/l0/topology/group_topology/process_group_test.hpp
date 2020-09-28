@@ -250,7 +250,7 @@ TEST_F(router_fixture, single_process_group_single_threads_single_device_topolog
     using namespace native;
 
     size_t process_index = 0;
-    constexpr ccl::device_group_split_type topology = ccl::device_group_split_type::cluster;
+    constexpr ccl::group_split_type topology = ccl::group_split_type::cluster;
     {
         //emulate last thread barrier creation
         //prepare thread context
@@ -329,7 +329,7 @@ TEST_F(router_fixture, ally_process_group_topology_test)
     using namespace native;
 
     size_t process_index = 0;
-    constexpr ccl::device_group_split_type topology = ccl::device_group_split_type::cluster;
+    constexpr ccl::group_split_type topology = ccl::group_split_type::cluster;
     {
         //emulate last thread barrier creation
         process_creator_params params = prepare_process_params(
@@ -704,7 +704,7 @@ TEST_F(router_fixture, inter_process_scale_up_process_group_topology_test)
 
     size_t process_index = 0;
 
-    constexpr ccl::device_group_split_type topology = ccl::device_group_split_type::process_group_torn_apart_ring;
+    constexpr ccl::group_split_type topology = ccl::group_split_type::process_group_torn_apart_ring;
     {
         output << "TEST: scaleup between thread groups in one process group" << std::endl;
         process_creator_params params = prepare_process_params(
@@ -895,7 +895,7 @@ TEST_F(router_fixture, several_processes_with_inner_scale_up_in_process_group_to
 
     size_t process_index = 1;
 
-    constexpr ccl::device_group_split_type topology = ccl::device_group_split_type::process_group_torn_apart_ring;
+    constexpr ccl::group_split_type topology = ccl::group_split_type::process_group_torn_apart_ring;
     {
         output << "TEST: scaleup between thread groups in one process group" << std::endl;
 
@@ -1187,7 +1187,7 @@ TEST_F(router_fixture, scale_up_scale_out_process_group_topology_test)
 
     size_t process_index = 0;
 
-    constexpr ccl::device_group_split_type topology = ccl::device_group_split_type::process_group_torn_apart_ring;
+    constexpr ccl::group_split_type topology = ccl::group_split_type::process_group_torn_apart_ring;
     {
         output << "TEST: scaleup between thread groups in one process group" << std::endl;
 

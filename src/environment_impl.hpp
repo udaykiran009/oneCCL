@@ -6,8 +6,6 @@
 #include "common/comm/comm_split_common_attr.hpp"
 #include "comm_split_attr_impl.hpp"
 
-#include "oneapi/ccl/ccl_communicator.hpp"
-
 #include "common/comm/l0/comm_context_storage.hpp"
 
 #include "event_impl.hpp"
@@ -16,7 +14,7 @@
 #include "common/global/global.hpp"
 #include "common/comm/comm.hpp"
 
-#include "oneapi/ccl/ccl_device_communicator.hpp"
+#include "oneapi/ccl/ccl_communicator.hpp"
 
 #include "oneapi/ccl/native_device_api/export_api.hpp"
 
@@ -33,30 +31,16 @@
 
 namespace ccl {
 
-/*
-template <class ...attr_value_pair_t>
-comm_split_attr CCL_API environment::create_comm_split_attr(attr_value_pair_t&&...avps) const
-{
-    return comm_split_attr::create_comm_split_attr(std::forward<attr_value_pair_t>(avps)...);
-}
-*/
 //Device communicator
 #if defined(MULTI_GPU_SUPPORT) || defined(CCL_ENABLE_SYCL)
-/*
-template <class ...attr_value_pair_t>
-device_comm_split_attr environment::create_device_comm_split_attr(attr_value_pair_t&&...avps) const
-{
-    return device_comm_split_attr::create_device_comm_split_attr(std::forward<attr_value_pair_t>(avps)...);
-}
-*/
 template <class DeviceType, class ContextType>
-vector_class<device_communicator> CCL_API
+vector_class<communicator> CCL_API
 environment::create_device_communicators(const size_t devices_size,
                                          const vector_class<DeviceType>& local_devices,
                                          ContextType& context,
                                          shared_ptr_class<kvs_interface> kvs) const {
 #ifdef MULTI_GPU_SUPPORT
-    return device_communicator::create_device_communicators(
+    return communicator::create_device_communicators(
         devices_size, local_devices, context, kvs);
 #else
     return {};
@@ -64,17 +48,17 @@ environment::create_device_communicators(const size_t devices_size,
 }
 
 template <class DeviceType, class ContextType>
-vector_class<device_communicator> CCL_API environment::create_device_communicators(
+vector_class<communicator> CCL_API environment::create_device_communicators(
     const size_t comm_size,
     const vector_class<pair_class<rank_t, DeviceType>>& local_rank_device_map,
     ContextType& context,
     shared_ptr_class<kvs_interface> kvs) const {
 #ifdef MULTI_GPU_SUPPORT
-    return device_communicator::create_device_communicators(
+    return communicator::create_device_communicators(
         comm_size, local_rank_device_map, context, kvs);
 #else
     (void)context;
-    vector_class<device_communicator> ret;
+    vector_class<communicator> ret;
     ret.push_back(create_single_device_communicator(comm_size,
                                                     local_rank_device_map.begin()->first,
                                                     local_rank_device_map.begin()->second,
@@ -85,17 +69,17 @@ vector_class<device_communicator> CCL_API environment::create_device_communicato
 }
 
 template <class DeviceType, class ContextType>
-vector_class<device_communicator> CCL_API
+vector_class<communicator> CCL_API
 environment::create_device_communicators(const size_t comm_size,
                                          const map_class<rank_t, DeviceType>& local_rank_device_map,
                                          ContextType& context,
                                          shared_ptr_class<kvs_interface> kvs) const {
 #ifdef MULTI_GPU_SUPPORT
-    return device_communicator::create_device_communicators(
+    return communicator::create_device_communicators(
         comm_size, local_rank_device_map, context, kvs);
 #else
     (void)context;
-    vector_class<device_communicator> ret;
+    vector_class<communicator> ret;
     ret.push_back(create_single_device_communicator(comm_size,
                                                     local_rank_device_map.begin()->first,
                                                     local_rank_device_map.begin()->second,
@@ -165,21 +149,21 @@ ccl_api_type CCL_API environment::create_postponed_api_type(args_type... args) c
 #if defined(MULTI_GPU_SUPPORT) || defined(CCL_ENABLE_SYCL)
 
 #define CREATE_DEV_COMM_INSTANTIATION(DeviceType, ContextType) \
-    template ccl::vector_class<ccl::device_communicator> CCL_API \
+    template ccl::vector_class<ccl::communicator> CCL_API \
     ccl::environment::create_device_communicators<DeviceType, ContextType>( \
         const size_t devices_size, \
         const ccl::vector_class<DeviceType>& local_devices, \
         ContextType& context, \
         ccl::shared_ptr_class<ccl::kvs_interface> kvs) const; \
 \
-    template ccl::vector_class<ccl::device_communicator> CCL_API \
+    template ccl::vector_class<ccl::communicator> CCL_API \
     ccl::environment::create_device_communicators<DeviceType, ContextType>( \
         const size_t cluster_devices_size, \
         const ccl::vector_class<ccl::pair_class<ccl::rank_t, DeviceType>>& local_devices, \
         ContextType& context, \
         ccl::shared_ptr_class<ccl::kvs_interface> kvs) const; \
 \
-    template ccl::vector_class<ccl::device_communicator> CCL_API \
+    template ccl::vector_class<ccl::communicator> CCL_API \
     ccl::environment::create_device_communicators<DeviceType, ContextType>( \
         const size_t cluster_devices_size, \
         const ccl::map_class<ccl::rank_t, DeviceType>& local_devices, \

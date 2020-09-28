@@ -147,8 +147,9 @@ void typed_test_param<T>::print(std::ostream& output) {
            << std::endl;
 }
 
+// TODO create_communicator must have args
 template <typename T>
-base_test<T>::base_test() : comm(ccl::environment::instance().create_communicator()) {
+base_test<T>::base_test() : comm(ccl::environment::instance().create_communicator(/*args*/)) {
     global_process_idx = comm.rank();
     global_process_count = comm.size();
     memset(err_message, '\0', ERR_MESSAGE_MAX_LEN);

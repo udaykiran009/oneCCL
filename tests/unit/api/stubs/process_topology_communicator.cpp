@@ -11,7 +11,7 @@ using namespace ccl;
 process_a2a_communicator::process_a2a_communicator(ccl::unified_device_type&& device,
                                                    size_t thread_idx,
                                                    size_t process_idx,
-                                                   const ccl::device_comm_split_attr& attr)
+                                                   const ccl::comm_split_attr& attr)
         : base_t(std::move(device), thread_idx, process_idx, /*comm_attr, */ attr) {}
 
 void process_a2a_communicator::visit(ccl::gpu_comm_attr& comm_attr) {}
@@ -569,7 +569,7 @@ DEVICE_COMM_INTERFACE_SPARSE_ALLREDUCE_EXPLICIT_CLASS_INSTANTIATION(
 process_ring_communicator::process_ring_communicator(ccl::unified_device_type&& device,
                                                      size_t thread_idx,
                                                      size_t process_idx,
-                                                     const ccl::device_comm_split_attr& attr)
+                                                     const ccl::comm_split_attr& attr)
         : base_t(std::move(device), thread_idx, process_idx, /*comm_attr, */ attr) {}
 
 void process_ring_communicator::visit(ccl::gpu_comm_attr& comm_attr) {}

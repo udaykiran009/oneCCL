@@ -43,7 +43,6 @@ public:
 private:
     friend class environment;
     friend class communicator;
-    friend class device_communicator;
     event(impl_value_t&& impl);
 
     /**

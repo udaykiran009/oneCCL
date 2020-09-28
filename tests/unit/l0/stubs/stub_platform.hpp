@@ -37,20 +37,20 @@ struct test_device : public native::ccl_device {
         auto module_ptr = std::make_shared<ccl_device::device_module>(nullptr, dev->get_ptr());
 
         using mod_integer_type = typename std::underlying_type<ccl_coll_type>::type;
-        using top_integer_type = typename std::underlying_type<ccl::device_group_split_type>::type;
+        using top_integer_type = typename std::underlying_type<ccl::group_split_type>::type;
         using top_class_integer_type =
             typename std::underlying_type<ccl::device_topology_type>::type;
         for (auto i = static_cast<mod_integer_type>(ccl_coll_type::ccl_coll_allgatherv);
              i < static_cast<mod_integer_type>(ccl_coll_type::ccl_coll_last_value);
              i++) {
-            for (auto j = static_cast<top_integer_type>(ccl::device_group_split_type::thread);
-                 j < static_cast<top_integer_type>(ccl::device_group_split_type::cluster);
+            for (auto j = static_cast<top_integer_type>(ccl::group_split_type::thread);
+                 j < static_cast<top_integer_type>(ccl::group_split_type::cluster);
                  j++) {
                 for (auto k = static_cast<top_class_integer_type>(ccl::device_topology_type::ring);
                      k < static_cast<top_class_integer_type>(ccl::device_topology_type::a2a);
                      k++) {
                     size_t hash = native::module_hash(static_cast<ccl_coll_type>(i),
-                                                      static_cast<ccl::device_group_split_type>(j),
+                                                      static_cast<ccl::group_split_type>(j),
                                                       static_cast<ccl::device_topology_type>(k));
                     dev->modules.insert({ hash, module_ptr });
                 }
@@ -92,20 +92,20 @@ struct test_subdevice : public native::ccl_subdevice {
             std::make_shared<ccl_subdevice::device_module>(nullptr, subdev->get_ptr());
 
         using mod_integer_type = typename std::underlying_type<ccl_coll_type>::type;
-        using top_integer_type = typename std::underlying_type<ccl::device_group_split_type>::type;
+        using top_integer_type = typename std::underlying_type<ccl::group_split_type>::type;
         using top_class_integer_type =
             typename std::underlying_type<ccl::device_topology_type>::type;
         for (auto i = static_cast<mod_integer_type>(ccl_coll_type::ccl_coll_allgatherv);
              i < static_cast<mod_integer_type>(ccl_coll_type::ccl_coll_last_value);
              i++) {
-            for (auto j = static_cast<top_integer_type>(ccl::device_group_split_type::thread);
-                 j < static_cast<top_integer_type>(ccl::device_group_split_type::cluster);
+            for (auto j = static_cast<top_integer_type>(ccl::group_split_type::thread);
+                 j < static_cast<top_integer_type>(ccl::group_split_type::cluster);
                  j++) {
                 for (auto k = static_cast<top_class_integer_type>(ccl::device_topology_type::ring);
                      k < static_cast<top_class_integer_type>(ccl::device_topology_type::a2a);
                      k++) {
                     size_t hash = native::module_hash(static_cast<ccl_coll_type>(i),
-                                                      static_cast<ccl::device_group_split_type>(j),
+                                                      static_cast<ccl::group_split_type>(j),
                                                       static_cast<ccl::device_topology_type>(k));
                     subdev->modules.insert({ hash, module_ptr });
                 }

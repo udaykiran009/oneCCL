@@ -19,7 +19,7 @@ TEST_F(router_fixture, cluster_simple_scaleup_test) {
     using namespace native::details;
     using namespace utils;
 
-    constexpr ccl::device_group_split_type topology = ccl::device_group_split_type::cluster;
+    constexpr ccl::group_split_type topology = ccl::group_split_type::cluster;
     constexpr ccl::device_topology_type class_id = ccl::device_topology_type::ring;
 
     {
@@ -146,7 +146,7 @@ TEST_F(router_fixture, cluster_simple_scaleout_test) {
     using namespace native::details;
     using namespace utils;
 
-    constexpr ccl::device_group_split_type topology = ccl::device_group_split_type::cluster;
+    constexpr ccl::group_split_type topology = ccl::group_split_type::cluster;
     constexpr ccl::device_topology_type class_id = ccl::device_topology_type::ring;
 
     {
@@ -276,7 +276,7 @@ TEST_F(router_fixture, cluster_simple_scaleup_scaleout_test) {
     using namespace native::details;
     using namespace utils;
 
-    constexpr ccl::device_group_split_type topology = ccl::device_group_split_type::cluster;
+    constexpr ccl::group_split_type topology = ccl::group_split_type::cluster;
     constexpr ccl::device_topology_type class_id = ccl::device_topology_type::ring;
 
     {
@@ -413,7 +413,7 @@ TEST_F(router_fixture, cluster_numa_scaleup_test) {
     using namespace native::details;
     using namespace utils;
 
-    constexpr ccl::device_group_split_type topology = ccl::device_group_split_type::cluster;
+    constexpr ccl::group_split_type topology = ccl::group_split_type::cluster;
     constexpr ccl::device_topology_type class_id = ccl::device_topology_type::ring;
 
     {
@@ -585,7 +585,7 @@ TEST_F(router_fixture, cluster_numa_scaleout_test) {
     using namespace native::details;
     using namespace utils;
 
-    constexpr ccl::device_group_split_type topology = ccl::device_group_split_type::cluster;
+    constexpr ccl::group_split_type topology = ccl::group_split_type::cluster;
     constexpr ccl::device_topology_type class_id = ccl::device_topology_type::ring;
 
     {
@@ -759,7 +759,7 @@ TEST_F(router_fixture, cluster_numa_scaleup_scale_out_test) {
     using namespace native::details;
     using namespace utils;
 
-    constexpr ccl::device_group_split_type topology = ccl::device_group_split_type::cluster;
+    constexpr ccl::group_split_type topology = ccl::group_split_type::cluster;
     constexpr ccl::device_topology_type class_id = ccl::device_topology_type::ring;
 
     {

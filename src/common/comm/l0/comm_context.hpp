@@ -19,13 +19,13 @@
 #include "oneapi/ccl/ccl_stream.hpp"
 
 #include "oneapi/ccl/ccl_request.hpp"
-#include "oneapi/ccl/ccl_device_communicator.hpp"
+#include "oneapi/ccl/ccl_communicator.hpp"
 
 #include "common/comm/l0/comm_context_id.hpp"
 
-class host_communicator;
 namespace ccl {
 
+class host_communicator;
 struct gpu_comm_attr;
 using shared_communicator_t = std::shared_ptr<host_communicator>;
 
@@ -44,8 +44,8 @@ public:
               typename std::enable_if<not std::is_same<typename std::remove_cv<DeviceType>::type,
                                                        ccl::device_index_type>::value,
                                       int>::type = 0>
-    device_communicator create_communicator(const DeviceType& device,
-                                            const device_comm_split_attr& attr = ccl_empty_attr());
+    communicator create_communicator(const DeviceType& device,
+                                            const comm_split_attr& attr = ccl_empty_attr());
 
     /**
      * Device Communicator creation API: single communicator creation, based on index @device_id
@@ -54,27 +54,27 @@ public:
               typename std::enable_if<std::is_same<typename std::remove_cv<DeviceType>::type,
                                                    ccl::device_index_type>::value,
                                       int>::type = 0>
-    device_communicator create_communicator(const DeviceType& device_id,
-                                            const device_comm_split_attr& attr = ccl_empty_attr());
+    communicator create_communicator(const DeviceType& device_id,
+                                            const comm_split_attr& attr = ccl_empty_attr());
 
     /**
      * Device Communicator creation vectorized API:
      * multiple communicator creation, based on devices iterator @InputIt
      */
     template <class InputIt>
-    vector_class<device_communicator> create_communicators(
+    vector_class<communicator> create_communicators(
         InputIt first,
         InputIt last,
-        device_comm_split_attr attr = ccl_empty_attr());
+        comm_split_attr attr = ccl_empty_attr());
 
     /**
      * Device Communicator creation vectorized API:
      * multiple communicator creation, based on devices of @Type, packed into container @Container
      */
     template <template <class...> class Container, class Type>
-    vector_class<device_communicator> create_communicators(
+    vector_class<communicator> create_communicators(
         const Container<Type>& device_ids,
-        device_comm_split_attr attr = ccl_empty_attr());
+        comm_split_attr attr = ccl_empty_attr());
 
     /**
      * Return device context allocated during group creation

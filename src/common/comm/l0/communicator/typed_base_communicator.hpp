@@ -14,7 +14,7 @@ namespace native
 }
 */
 template <class comm_impl,
-          ccl::device_group_split_type group_id,
+          ccl::group_split_type group_id,
           ccl::device_topology_type class_id,
           class communicator_traits>
 class typed_base_communicator : public base_communicator {
@@ -25,7 +25,7 @@ public:
     using traits = communicator_traits;
 
     // Topologies
-    static constexpr ccl::device_group_split_type topology_type() {
+    static constexpr ccl::group_split_type topology_type() {
         return group_id;
     }
 
@@ -53,9 +53,9 @@ public:
     typed_base_communicator(ccl::unified_device_type&& device,
                             size_t thread_idx,
                             size_t process_idx,
-                            const ccl::device_comm_split_attr& attr);
+                            const ccl::comm_split_attr& attr);
 
-    ccl::device_group_split_type get_topology_type() const override;
+    ccl::group_split_type get_topology_type() const override;
     ccl::device_topology_type get_topology_class() const override;
 
     void initialize_comm_addr(const ccl::device_index_type& device_id,

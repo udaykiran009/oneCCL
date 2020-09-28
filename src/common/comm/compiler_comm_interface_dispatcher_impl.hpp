@@ -25,8 +25,24 @@
 #endif
 
 #include "common/comm/single_device_communicator/single_device_communicator.hpp"
+#include "common/comm/host_communicator/host_communicator_impl.hpp"
 
 namespace ccl {
+
+communicator_interface_ptr communicator_interface_dispatcher::create_communicator_impl() {
+    return communicator_interface_ptr(new host_communicator());
+}
+
+communicator_interface_ptr communicator_interface_dispatcher::create_communicator_impl(const size_t size,
+                                                               shared_ptr_class<kvs_interface> kvs) {
+    return communicator_interface_ptr(new host_communicator(size, kvs));
+}
+
+communicator_interface_ptr communicator_interface_dispatcher::create_communicator_impl(const size_t size,
+                                                               const size_t rank,
+                                                               shared_ptr_class<kvs_interface> kvs) {
+    return communicator_interface_ptr(new host_communicator(size, rank, kvs));
+}
 
 template <class DeviceType,
           typename std::enable_if<not std::is_same<typename std::remove_cv<DeviceType>::type,
@@ -36,7 +52,7 @@ communicator_interface_ptr communicator_interface_dispatcher::create_communicato
     const DeviceType& device,
     size_t thread_idx,
     size_t process_idx,
-    const ccl::device_comm_split_attr& attr,
+    const ccl::comm_split_attr& attr,
     std::shared_ptr<atl_wrapper> atl) {
     static_assert(std::is_same<typename unified_device_type::ccl_native_t, DeviceType>::value,
                   "Unsupported 'DeviceType'");
@@ -53,7 +69,7 @@ communicator_interface_ptr communicator_interface_dispatcher::create_communicato
     DeviceType device_id,
     size_t thread_idx,
     size_t process_idx,
-    const ccl::device_comm_split_attr& attr,
+    const ccl::comm_split_attr& attr,
     std::shared_ptr<atl_wrapper> atl) {
 #ifdef CCL_ENABLE_SYCL
     return communicator_interface_dispatcher::create_communicator_from_unified_device(
@@ -75,29 +91,34 @@ communicator_interface_dispatcher::create_communicator_from_unified_device(
     ccl::unified_device_type&& device_id,
     size_t thread_idx,
     size_t process_idx,
-    const ccl::device_comm_split_attr& attr,
+    const ccl::comm_split_attr& attr,
     std::shared_ptr<atl_wrapper> atl) {
     // TODO ring by default at now. Choose preferred a2a if availbale
     ccl::device_topology_type preferred_topology_class = ccl::device_topology_type::ring;
-    ccl::device_group_split_type preferred_topology_group = ccl::device_group_split_type::cluster;
+    ccl::group_split_type preferred_topology_group = ccl::group_split_type::cluster;
 
     // read comm split attributes
     if (attr.is_valid<ccl::comm_split_attr_id::group>()) {
         preferred_topology_group = attr.get<ccl::comm_split_attr_id::group>();
         if (attr.is_valid<ccl::comm_split_attr_id::color>()) {
             throw ccl_error(std::string(
-                "Invalid `device_comm_split_attr`: both `color` and `group` set. Only one is supported"));
+                "Invalid `comm_split_attr`: both `color` and `group` set. Only one is supported"));
         }
     }
     else if (attr.is_valid<ccl::comm_split_attr_id::color>()) {
         throw ccl_error(std::string(__FUNCTION__) + " - not implemented for 'color'");
     }
 
+    // TODO creation host communicator from device
+    // if (device is host ?)
+    // return new host_communicator(atl);
+
     //TODO check device_id or sycl device validity before communicator creation
     switch (preferred_topology_class) {
         case device_topology_type::ring: {
             switch (preferred_topology_group) {
-                case ccl::device_group_split_type::undetermined: {
+#if defined(MULTI_GPU_SUPPORT) || defined(CCL_ENABLE_SYCL)
+                case ccl::group_split_type::undetermined: {
                     auto comm_impl = new single_device_communicator(
                         std::move(device_id), thread_idx, process_idx, attr);
                     ccl::global_data& data = ccl::global_data::get();
@@ -106,49 +127,53 @@ communicator_interface_dispatcher::create_communicator_from_unified_device(
                     comm_impl->set_ccl_comm(std::move(comm));
                     return communicator_interface_ptr(comm_impl);
                 }
+#endif
 #ifdef MULTI_GPU_SUPPORT
-                case ccl::device_group_split_type::thread:
+                case ccl::group_split_type::thread:
                     return communicator_interface_ptr(new device_group_ring_communicator(
                         std::move(device_id), thread_idx, process_idx, attr));
-                case ccl::device_group_split_type::process:
+                case ccl::group_split_type::process:
                     return communicator_interface_ptr(new thread_device_group_ring_communicator(
                         std::move(device_id), thread_idx, process_idx, attr));
-                case ccl::device_group_split_type::cluster:
+                case ccl::group_split_type::cluster:
                     return communicator_interface_ptr(new process_ring_communicator(
                         std::move(device_id), thread_idx, process_idx, attr));
 #endif //MULTI_GPU_SUPPORT
                 default:
                     throw ccl_error(
                         std::string(
-                            "Invalid `device_comm_split_attr` value for `ccl_device_preferred_group`: ") +
+                            "Invalid `comm_split_attr` value for `ccl_device_preferred_group`: ") +
                         ::to_string(preferred_topology_group));
             }
             break;
         }
         case device_topology_type::a2a: {
             switch (preferred_topology_group) {
-                case ccl::device_group_split_type::undetermined:
+#if defined(MULTI_GPU_SUPPORT) || defined(CCL_ENABLE_SYCL)
+                case ccl::group_split_type::undetermined:
                     return communicator_interface_ptr(new single_device_communicator(
                         std::move(device_id), thread_idx, process_idx, attr));
+#endif
 #ifdef MULTI_GPU_SUPPORT
-                case ccl::device_group_split_type::thread:
+                case ccl::group_split_type::thread:
                     return communicator_interface_ptr(new device_group_a2a_communicator(
                         std::move(device_id), thread_idx, process_idx, attr));
-                case ccl::device_group_split_type::process:
+                case ccl::group_split_type::process:
                     return communicator_interface_ptr(new thread_device_group_a2a_communicator(
                         std::move(device_id), thread_idx, process_idx, attr));
-                case ccl::device_group_split_type::cluster:
+                case ccl::group_split_type::cluster:
                     return communicator_interface_ptr(new process_a2a_communicator(
                         std::move(device_id), thread_idx, process_idx, attr));
-#endif //MULTI_GPU_SUPPORT
+#endif
                 default:
                     throw ccl_error(
                         std::string(
-                            "Invalid `device_comm_split_attr` value for `ccl_device_preferred_group`: ") +
+                            "Invalid `comm_split_attr` value for `ccl_device_preferred_group`: ") +
                         ::to_string(preferred_topology_group));
             }
             break;
         }
+#if defined(MULTI_GPU_SUPPORT) || defined(CCL_ENABLE_SYCL)
         case device_topology_type::undetermined: {
             auto comm_impl =
                 new single_device_communicator(std::move(device_id), thread_idx, process_idx, attr);
@@ -158,10 +183,11 @@ communicator_interface_dispatcher::create_communicator_from_unified_device(
             comm_impl->set_ccl_comm(std::move(comm));
             return communicator_interface_ptr(comm_impl);
         }
+#endif //MULTI_GPU_SUPPORT
         default: {
             throw ccl_error(
                 std::string(
-                    "Invalid `device_comm_split_attr` value for `ccl_device_preferred_topology_class`: ") +
+                    "Invalid `comm_split_attr` value for `ccl_device_preferred_topology_class`: ") +
                 ::to_string(preferred_topology_class));
         }
     }
@@ -175,7 +201,7 @@ communicator_interface_dispatcher::create_communicator_from_unified_device(
         const DeviceType& device, \
         size_t thread_idx, \
         size_t process_idx, \
-        const ccl::device_comm_split_attr& attr, \
+        const ccl::comm_split_attr& attr, \
         std::shared_ptr<atl_wrapper> atl);
 
 #define COMMUNICATOR_INTERFACE_DISPATCHER_NON_CLASS_EXPLICIT_INSTANTIATION(DeviceType) \
@@ -184,7 +210,7 @@ communicator_interface_dispatcher::create_communicator_from_unified_device(
         DeviceType device_id, \
         size_t thread_idx, \
         size_t process_idx, \
-        const ccl::device_comm_split_attr& attr, \
+        const ccl::comm_split_attr& attr, \
         std::shared_ptr<atl_wrapper> atl);
 
 } // namespace ccl

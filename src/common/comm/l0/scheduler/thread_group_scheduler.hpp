@@ -33,7 +33,7 @@ struct thread_group_scheduler {
 
     template <class EntryType,
               ccl_sched_add_mode mode,
-              ccl::device_group_split_type group_id,
+              ccl::group_split_type group_id,
               ccl::device_topology_type class_id,
               class device_t,
               class... Arguments>

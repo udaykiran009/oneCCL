@@ -1,5 +1,5 @@
 #include "oneapi/ccl/ccl_aliases.hpp"
-
+#include "common/comm/host_communicator/host_communicator.hpp"
 #include "common/comm/l0/comm_context_impl.hpp"
 #include "common/utils/spinlock.hpp"
 #include "common/comm/atl_tag.hpp"

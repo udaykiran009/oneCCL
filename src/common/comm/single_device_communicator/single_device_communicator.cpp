@@ -11,7 +11,7 @@ using namespace ccl;
 single_device_communicator::single_device_communicator(ccl::unified_device_type&& device,
                                                        size_t thread_idx,
                                                        size_t process_idx,
-                                                       const ccl::device_comm_split_attr& attr)
+                                                       const ccl::comm_split_attr& attr)
         : base_t(std::move(device), thread_idx, process_idx /*, comm_attr*/, attr) {}
 
 void single_device_communicator::set_ccl_comm(std::shared_ptr<ccl_comm> impl) {

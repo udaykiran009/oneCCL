@@ -17,7 +17,7 @@ struct thread_group_context;
 
 namespace ccl {
 class host_communicator;
-class device_communicator;
+class communicator;
 struct communicator_interface;
 struct context_comm_addr {
     size_t thread_idx = 0;

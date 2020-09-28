@@ -145,9 +145,9 @@ ccl::shared_ptr_class<ccl::communicator> cpu_specific_data::comm_ptr{};
 
 #ifdef CCL_ENABLE_SYCL
 struct device_specific_data {
-    using device_communicator_ptr = ccl::unique_ptr_class<ccl::device_communicator>;
+    using device_communicator_ptr = ccl::unique_ptr_class<ccl::communicator>;
     static device_communicator_ptr comm_ptr;
-    static ccl::vector_class<ccl::device_communicator> comm_array;
+    static ccl::vector_class<ccl::communicator> comm_array;
     static ccl::shared_ptr_class<ccl::stream> stream_ptr;
     static void init(size_t size,
                      size_t rank,
@@ -165,7 +165,7 @@ struct device_specific_data {
             kvs);
         //single device version
         comm_ptr =
-            device_communicator_ptr(new ccl::device_communicator(std::move(*comm_array.begin())));
+            device_communicator_ptr(new ccl::communicator(std::move(*comm_array.begin())));
         stream_ptr =
             std::make_shared<ccl::stream>(ccl::environment::instance().create_stream(sycl_queue));
     }
@@ -177,7 +177,7 @@ struct device_specific_data {
 };
 
 device_specific_data::device_communicator_ptr device_specific_data::comm_ptr{};
-ccl::vector_class<ccl::device_communicator> device_specific_data::comm_array{};
+ccl::vector_class<ccl::communicator> device_specific_data::comm_array{};
 ccl::shared_ptr_class<ccl::stream> device_specific_data::stream_ptr{};
 #endif //CCL_ENABLE_SYCL
 #endif /* COLL_HPP */

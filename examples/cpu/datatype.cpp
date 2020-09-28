@@ -47,12 +47,13 @@ void check_allreduce(const ccl::communicator &comm) {
     attr.set<ccl::allreduce_attr_id::reduction_fn>((ccl::reduction_fn)custom_reduce);
 
     for (size_t idx = 0; idx < max_dtype_count; idx++) {
-        reqs[idx] = allreduce(send_bufs[idx].data(),
+        reqs[idx] = ccl::allreduce(send_bufs[idx].data(),
                               recv_bufs[idx].data(),
                               COUNT,
                               dtypes[idx],
                               ccl::reduction::custom,
                               comm,
+                              ccl::default_stream,
                               attr);
     }
 

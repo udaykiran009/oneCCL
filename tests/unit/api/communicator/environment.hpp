@@ -1,5 +1,5 @@
 #pragma once
-#include "oneapi/ccl/ccl_device_communicator.hpp"
+#include "oneapi/ccl/ccl_communicator.hpp"
 #include "common/comm/l0/comm_context.hpp"
 #include "common/comm/l0/comm_context_storage.hpp"
 
@@ -8,12 +8,12 @@ class kvs_interface;
 
 /* TODO temporary function for UT compilation: would be part of ccl::environment in final*/
 template <class DeviceType, class ContextType>
-vector_class<device_communicator> device_communicator::create_device_communicators(
+vector_class<communicator> communicator::create_device_communicators(
     const size_t cluster_devices_size,
     const vector_class<DeviceType>& local_devices,
     ContextType& context,
     shared_ptr_class<kvs_interface> kvs) {
-    vector_class<device_communicator> ret;
+    vector_class<communicator> ret;
     throw std::runtime_error(std::string(__FUNCTION__) + " - not implemented");
     return ret;
 }
@@ -21,7 +21,7 @@ vector_class<device_communicator> device_communicator::create_device_communicato
 using rank_t = size_t;
 
 template <class DeviceType, class ContextType>
-vector_class<device_communicator> device_communicator::create_device_communicators(
+vector_class<communicator> communicator::create_device_communicators(
     const size_t cluster_devices_size, /*global devics count*/
     const vector_class<pair_class<rank_t, DeviceType>>& local_rank_device_map,
     ContextType& context,
@@ -53,7 +53,7 @@ vector_class<device_communicator> device_communicator::create_device_communicato
 }
 
 template <class DeviceType, class ContextType>
-vector_class<device_communicator> device_communicator::create_device_communicators(
+vector_class<communicator> communicator::create_device_communicators(
     const size_t cluster_devices_size, /*global devics count*/
     const map_class<rank_t, DeviceType>& local_rank_device_map,
     ContextType& context,

@@ -33,7 +33,7 @@
 #include "comm_split_attr_impl.hpp"
 
 //#include "environment.hpp"
-#include "oneapi/ccl/ccl_device_communicator.hpp"
+#include "oneapi/ccl/ccl_communicator.hpp"
 #include "common/comm/l0/comm_context_storage.hpp"
 
 #include "event_impl.hpp"
@@ -71,8 +71,8 @@ TEST(device_communicator_api, device_comm_from_device_index) {
                        return std::make_pair(curr_rank++, val);
                    });
 
-    ccl::vector_class<ccl::device_communicator> comms =
-        ccl::device_communicator::create_device_communicators(
+    ccl::vector_class<ccl::communicator> comms =
+        ccl::communicator::create_device_communicators(
             total_devices_size, local_rank_device_map, ctx, stub_storage);
     ASSERT_EQ(comms.size(), devices.size());
 

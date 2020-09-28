@@ -7,7 +7,7 @@
 #include "common/comm/l0/context/process_group_ctx.hpp"
 
 #define TEMPLATE_DECL_ARG \
-    class comm_impl, ccl::device_group_split_type topology, ccl::device_topology_type class_id, \
+    class comm_impl, ccl::group_split_type topology, ccl::device_topology_type class_id, \
         class communicator_traits
 #define TEMPLATE_DEF_ARG comm_impl, topology, class_id, communicator_traits
 
@@ -16,7 +16,7 @@ typed_base_communicator<TEMPLATE_DEF_ARG>::typed_base_communicator(
     ccl::unified_device_type&& owned_device,
     size_t thread_idx,
     size_t process_idx,
-    const ccl::device_comm_split_attr& attr)
+    const ccl::comm_split_attr& attr)
         : base_communicator(std::move(owned_device),
                             thread_idx,
                             process_idx /*, comm_attr*/,
@@ -87,7 +87,7 @@ bool typed_base_communicator<TEMPLATE_DEF_ARG>::is_ready() const {
 }
 
 template <TEMPLATE_DECL_ARG>
-ccl::device_group_split_type typed_base_communicator<TEMPLATE_DEF_ARG>::get_topology_type() const {
+ccl::group_split_type typed_base_communicator<TEMPLATE_DEF_ARG>::get_topology_type() const {
     return self_t::topology_type();
 }
 

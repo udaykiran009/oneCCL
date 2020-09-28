@@ -492,8 +492,8 @@ public:
 
             COUNT = param.elem_count;
             param.reqs[buf_idx] =
-                param.global_comm.allreduce((test_conf.place_type == PT_IN) ? recv_buf : send_buf,
-                                             recv_buf, count, reduction, attr);
+                ccl::allreduce((test_conf.place_type == PT_IN) ? recv_buf : send_buf,
+                                             recv_buf, count, reduction, param.global_comm, ccl::default_stream, attr);
         }
     }
 

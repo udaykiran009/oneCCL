@@ -4,15 +4,12 @@ set (EXTENSIONS_SRC)
 
 if (CCL_ENABLE_SYCL)
     list (APPEND EXTENSIONS_SRC
-
                     ccl_cpp_gpu_api.cpp
-                    ccl_cpp_device_communicator.cpp
 
                     native_device_api/l0/utils.cpp
                     native_device_api/interop_utils.cpp
                     #common/comm/l0/comm_context.cpp
                     #common/comm/l0/comm_context_storage.cpp
-                    common/comm/comm_interface.cpp
                     common/comm/single_device_communicator/single_device_communicator.cpp
         )
 endif(CCL_ENABLE_SYCL)
@@ -22,7 +19,6 @@ list (APPEND EXTENSIONS_SRC
                     ccl_cpp_gpu_api.cpp
                     ccl_gpu_modules.cpp
                     ccl_cpp_utils.cpp
-                    ccl_cpp_device_communicator.cpp
 
                     native_device_api/l0/base.cpp
                     native_device_api/l0/device.cpp
@@ -43,7 +39,6 @@ list (APPEND EXTENSIONS_SRC
                     common/comm/l0/devices/ccl_virtual_gpu_comm.cpp
                     common/comm/l0/devices/ccl_ipc_gpu_comm.cpp
 
-                    common/comm/comm_interface.cpp
                     common/comm/single_device_communicator/single_device_communicator.cpp
                     common/comm/l0/communicator/device_group/device_ring_communicator.cpp
                     common/comm/l0/communicator/device_group/device_a2a_communicator.cpp
@@ -161,6 +156,7 @@ set(CCL_SRC
     unordered_coll/unordered_coll.cpp
     common/comm/atl_tag.cpp
     common/comm/comm.cpp
+    common/comm/comm_interface.cpp
     common/comm/host_communicator/host_communicator.cpp
 
     common/context/context.cpp

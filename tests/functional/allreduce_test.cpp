@@ -63,11 +63,13 @@ public:
             recv_buf = param.get_recv_buf(new_idx);
 
             param.reqs[buf_idx] =
-                param.global_comm.allreduce((test_conf.place_type == PT_IN) ? recv_buf : send_buf,
+                ccl::allreduce((test_conf.place_type == PT_IN) ? recv_buf : send_buf,
                                             recv_buf,
                                             count,
                                             (ccl_datatype_t)data_type,
                                             reduction,
+                                            param.global_comm,
+                                            ccl::default_stream,
                                             attr);
         }
     }

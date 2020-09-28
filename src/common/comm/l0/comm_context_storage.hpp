@@ -5,8 +5,8 @@
 #include "common/utils/spinlock.hpp"
 #include "common/comm/atl_tag.hpp"
 
-class host_communicator;
 namespace ccl {
+class host_communicator;
 class comm_group;
 class kvs_interface;
 

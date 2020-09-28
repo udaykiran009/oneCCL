@@ -27,7 +27,7 @@ struct splice_devices
 };
 */
 
-template <ccl::device_group_split_type group_id, ccl::device_topology_type class_id>
+template <ccl::group_split_type group_id, ccl::device_topology_type class_id>
 struct printer {
     template <class device_t>
     void operator()(const native::indexed_device_container<device_t>& container) {

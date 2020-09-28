@@ -11,7 +11,7 @@ typed_single_device_base_communicator<TEMPLATE_DEF_ARG>::typed_single_device_bas
     ccl::unified_device_type&& owned_device,
     size_t thread_idx,
     size_t process_idx,
-    const ccl::device_comm_split_attr& attr)
+    const ccl::comm_split_attr& attr)
         : base_communicator(std::move(owned_device),
                             thread_idx,
                             process_idx /*, comm_attr*/,
@@ -38,7 +38,7 @@ bool typed_single_device_base_communicator<TEMPLATE_DEF_ARG>::is_ready() const {
 }
 
 template <TEMPLATE_DECL_ARG>
-ccl::device_group_split_type
+ccl::group_split_type
 typed_single_device_base_communicator<TEMPLATE_DEF_ARG>::get_topology_type() const {
     return self_t::topology_type();
 }

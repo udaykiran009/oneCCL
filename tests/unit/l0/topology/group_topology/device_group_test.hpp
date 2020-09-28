@@ -11,7 +11,7 @@ TEST_F(router_fixture, real_virtual_topology_test) {
     size_t process_index = 0;
     size_t thread_index = 0;
 
-    constexpr ccl::device_group_split_type topology = ccl::device_group_split_type::thread;
+    constexpr ccl::group_split_type topology = ccl::group_split_type::thread;
     constexpr ccl::device_topology_type class_id = ccl::device_topology_type::ring;
     {
         init_routing_data(process_index);
@@ -77,7 +77,7 @@ TEST_F(router_fixture, multiple_real_topology_test) {
     size_t process_index = 0;
     size_t thread_index = 0;
 
-    constexpr ccl::device_group_split_type topology = ccl::device_group_split_type::thread;
+    constexpr ccl::group_split_type topology = ccl::group_split_type::thread;
     constexpr ccl::device_topology_type class_id = ccl::device_topology_type::ring;
 
     {
@@ -144,7 +144,7 @@ TEST_F(router_fixture, multiple_real_virtual_topology_test) {
     size_t process_index = 0;
     size_t thread_index = 0;
 
-    constexpr ccl::device_group_split_type topology = ccl::device_group_split_type::thread;
+    constexpr ccl::group_split_type topology = ccl::group_split_type::thread;
     constexpr ccl::device_topology_type class_id = ccl::device_topology_type::ring;
 
     {
@@ -219,7 +219,7 @@ TEST_F(router_fixture, two_inaccessible_group_scaleup_test) {
     comm_addr.comm_rank = 0;
     comm_addr.comm_size = 1;
 
-    constexpr ccl::device_group_split_type topology = ccl::device_group_split_type::thread;
+    constexpr ccl::group_split_type topology = ccl::group_split_type::thread;
     //device_group_torn_apart_ring;
     constexpr ccl::device_topology_type class_id = ccl::device_topology_type::ring;
     {
@@ -313,7 +313,7 @@ TEST_F(router_fixture, two_inaccessible_devices_topology_test) {
     comm_addr.comm_rank = 0;
     comm_addr.comm_size = 1;
 
-    constexpr ccl::device_group_split_type topology = ccl::device_group_split_type::thread;
+    constexpr ccl::group_split_type topology = ccl::group_split_type::thread;
     //device_group_torn_apart_ring;
     constexpr ccl::device_topology_type class_id = ccl::device_topology_type::ring;
     {
@@ -391,7 +391,7 @@ TEST_F(router_fixture, two_inaccessible_asym_groups_topology_test) {
     comm_addr.comm_rank = 0;
     comm_addr.comm_size = 1;
 
-    constexpr ccl::device_group_split_type topology = ccl::device_group_split_type::thread;
+    constexpr ccl::group_split_type topology = ccl::group_split_type::thread;
     //device_group_torn_apart_ring;
     constexpr ccl::device_topology_type class_id = ccl::device_topology_type::ring;
     {
@@ -484,7 +484,7 @@ TEST_F(router_fixture, two_inaccessible_real_virtual_groups_topology_test) {
     comm_addr.comm_rank = 0;
     comm_addr.comm_size = 1;
 
-    constexpr ccl::device_group_split_type topology = ccl::device_group_split_type::thread;
+    constexpr ccl::group_split_type topology = ccl::group_split_type::thread;
     //device_group_torn_apart_ring;
     constexpr ccl::device_topology_type class_id = ccl::device_topology_type::ring;
     {

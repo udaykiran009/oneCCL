@@ -22,7 +22,7 @@ struct device_community_container {
         storage = item;
     }
 
-    template <ccl::device_group_split_type group_id>
+    template <ccl::group_split_type group_id>
     void register_device_by_id(const ccl::device_index_type& device_id,
                                ccl::context_comm_addr& registered_addr);
 };
@@ -57,12 +57,12 @@ struct device_community_container<ccl::device_topology_type::ring> {
         torn_apart_rings.push_back(std::move(item));
     }
 
-    template <ccl::device_group_split_type group_id>
+    template <ccl::group_split_type group_id>
     void register_device_by_id(const ccl::device_index_type& device_id,
                                ccl::context_comm_addr& registered_addr);
 };
 
-template <ccl::device_group_split_type group_id, ccl::device_topology_type... class_id>
+template <ccl::group_split_type group_id, ccl::device_topology_type... class_id>
 class device_group_community_holder {
 public:
     using device_topologies_t = std::tuple<device_community_container<class_id>...>;

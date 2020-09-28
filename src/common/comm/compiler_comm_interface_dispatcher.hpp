@@ -15,7 +15,7 @@ namespace ccl {
 struct gpu_comm_attr;
 #endif
 struct communicator_interface;
-class device_comm_split_attr;
+class comm_split_attr;
 
 using communicator_interface_ptr = std::shared_ptr<communicator_interface>;
 
@@ -30,8 +30,8 @@ struct communicator_interface_dispatcher {
     virtual ccl::device_index_type get_device_path() const = 0;
     virtual device_t get_device() = 0;
     virtual context_t get_context() = 0;
-    virtual const device_comm_split_attr& get_comm_split_attr() const = 0;
-    virtual device_group_split_type get_topology_type() const = 0;
+    virtual const comm_split_attr& get_comm_split_attr() const = 0;
+    virtual group_split_type get_topology_type() const = 0;
     virtual device_topology_type get_topology_class() const = 0;
 
     // create communicator for device & cpu types (from device class)
@@ -42,7 +42,7 @@ struct communicator_interface_dispatcher {
     static communicator_interface_ptr create_communicator_impl(const DeviceType& device,
                                                                size_t thread_idx,
                                                                size_t process_idx,
-                                                               const device_comm_split_attr& attr,
+                                                               const comm_split_attr& attr,
                                                                std::shared_ptr<atl_wrapper> atl);
 
     // create communicator for device & cpu types (from device index)
@@ -53,15 +53,27 @@ struct communicator_interface_dispatcher {
     static communicator_interface_ptr create_communicator_impl(DeviceType device_id,
                                                                size_t thread_idx,
                                                                size_t process_idx,
-                                                               const device_comm_split_attr& attr,
+                                                               const comm_split_attr& attr,
                                                                std::shared_ptr<atl_wrapper> atl);
+
+    // create communicator for host
+    static communicator_interface_ptr create_communicator_impl();
+
+    // create communicator for host
+    static communicator_interface_ptr create_communicator_impl(const size_t size,
+                                                               shared_ptr_class<kvs_interface> kvs);
+
+    // create communicator for host
+    static communicator_interface_ptr create_communicator_impl(const size_t size,
+                                                               const size_t rank,
+                                                               shared_ptr_class<kvs_interface> kvs);
 
 private:
     static communicator_interface_ptr create_communicator_from_unified_device(
         unified_device_type&& device_id,
         size_t thread_idx,
         size_t process_idx,
-        const device_comm_split_attr& attr,
+        const comm_split_attr& attr,
         std::shared_ptr<atl_wrapper> atl);
 };
 } // namespace ccl

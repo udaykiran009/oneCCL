@@ -19,7 +19,7 @@ static std::mutex global_fence_mutex;
 namespace native {
 template <class native_type,
           class gpu_comm_impl,
-          ccl::device_group_split_type group_id,
+          ccl::group_split_type group_id,
           ccl::device_topology_type class_id,
           ccl_coll_type type_op>
 class base_gpu_entry : public sched_entry {
@@ -40,7 +40,7 @@ public:
         return type_op;
     }
 
-    static constexpr ccl::device_group_split_type get_topology() {
+    static constexpr ccl::group_split_type get_topology() {
         return group_id;
     }
 
@@ -119,7 +119,7 @@ public:
             //if(std::is_same<gpu_comm_impl, ccl_gpu_comm>::value)
             if (gpu_comm_impl::type_idx() == ccl_gpu_comm::type_idx() or
                 gpu_comm_impl::type_idx() == ccl_ipc_source_gpu_comm<ccl_gpu_comm>::type_idx()) {
-                if (group_id == ccl::device_group_split_type::cluster) {
+                if (group_id == ccl::group_split_type::cluster) {
                     //auto c = ccl::environment::instance().create_communicator();
                     //(void)c;
                     //if(c->rank() == 0)
@@ -227,13 +227,15 @@ public:
                     if (gpu_comm_impl::type_idx() == ccl_gpu_comm::type_idx() or
                         gpu_comm_impl::type_idx() ==
                             ccl_ipc_source_gpu_comm<ccl_gpu_comm>::type_idx()) {
-                        if (group_id == ccl::device_group_split_type::cluster) {
-                            auto c = ccl::environment::instance().create_communicator();
-                            if (c.rank() == 0) {
-                                throw ccl::ccl_error(
-                                    std::string("cannot sync queue from real device, error: ") +
-                                    native::to_string(ret));
-                            }
+                        if (group_id == ccl::group_split_type::cluster) {
+                            // TODO: implement process communicator case
+                            throw ccl::ccl_error(std::string(__PRETTY_FUNCTION__) + "TODO: implement process communicator case");
+                            // auto c = ccl::environment::instance().create_communicator();
+                            // if (c.rank() == 0) {
+                                // throw ccl::ccl_error(
+                                //     std::string("cannot sync queue from real device, error: ") +
+                                //     native::to_string(ret));
+                            // }
                         }
                         else {
                             throw ccl::ccl_error(

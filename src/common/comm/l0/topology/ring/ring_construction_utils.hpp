@@ -25,7 +25,7 @@ namespace native {
 namespace details {
 /*REFACTORING*/
 template <class device_t,
-          ccl::device_group_split_type group_id,
+          ccl::group_split_type group_id,
           ccl::device_topology_type class_id,
           class context>
 device_t_ptr<ccl_numa_proxy<device_t>> add_numa_proxy_device(
@@ -91,7 +91,7 @@ inline colored_plain_graph_list create_colored(const plain_graph_list& list, col
 using id_thread_table = std::multimap<ccl::device_index_type, size_t /*thread id*/>;
 
 //TODO use inheritance or policy for indexers!!!
-template <ccl::device_group_split_type group_id, ccl::device_topology_type class_id>
+template <ccl::group_split_type group_id, ccl::device_topology_type class_id>
 struct graph_ring_indexer {
     graph_ring_indexer(std::vector<marked_idx>& id_ring_vector,
                        id_thread_table& thread_id_storage,
@@ -148,7 +148,7 @@ protected:
     size_t ring_id_offset;
 };
 
-template <ccl::device_group_split_type group_id, ccl::device_topology_type class_id>
+template <ccl::group_split_type group_id, ccl::device_topology_type class_id>
 struct colored_graph_ring_indexer {
     static constexpr color_t marked_color = std::numeric_limits<color_t>::max();
 
@@ -323,7 +323,7 @@ inline void separate_ipc_devices(const ccl::process_device_indices_t& ipc_indice
     } while (false);
 }
 
-template <ccl::device_group_split_type group_id, ccl::device_topology_type class_id>
+template <ccl::group_split_type group_id, ccl::device_topology_type class_id>
 struct smart_ring_indexer {
     static constexpr color_t marked_color = std::numeric_limits<color_t>::max();
 
@@ -505,7 +505,7 @@ private:
     }
 };
 
-template <ccl::device_group_split_type group_id, ccl::device_topology_type class_id>
+template <ccl::group_split_type group_id, ccl::device_topology_type class_id>
 struct graph_ring_indexer_ext : public graph_ring_indexer<group_id, class_id> {
     using base = graph_ring_indexer<group_id, class_id>;
     using base::topology;
@@ -581,7 +581,7 @@ private:
     size_t marked_indices_count;
 };
 
-template <ccl::device_group_split_type group_id, ccl::device_topology_type class_id>
+template <ccl::group_split_type group_id, ccl::device_topology_type class_id>
 struct graph_ring_indexer_unique_index : public graph_ring_indexer<group_id, class_id> {
     using base = graph_ring_indexer<group_id, class_id>;
     using base::topology;
@@ -656,7 +656,7 @@ private:
     size_t marked_indices_count;
 };
 
-template <ccl::device_group_split_type group_id, ccl::device_topology_type class_id>
+template <ccl::group_split_type group_id, ccl::device_topology_type class_id>
 struct graph_ring_indexer_unique_index_ext : public graph_ring_indexer<group_id, class_id> {
     using base = graph_ring_indexer<group_id, class_id>;
     using base::topology;
@@ -733,7 +733,7 @@ private:
     size_t marked_indices_count;
 };
 
-template <class device_t, ccl::device_group_split_type group_id, ccl::device_topology_type class_id>
+template <class device_t, ccl::group_split_type group_id, ccl::device_topology_type class_id>
 std::tuple<size_t, device_t_ptr<device_t>> get_device_with_min_rank(
     const specific_indexed_device_storage& indexed_devices,
     const plain_graph& id_ring) {
@@ -755,7 +755,7 @@ std::tuple<size_t, device_t_ptr<device_t>> get_device_with_min_rank(
     return std::tuple<size_t, device_t_ptr<device_t>>{ idx, dev };
 }
 
-template <class device_t, ccl::device_group_split_type group_id, ccl::device_topology_type class_id>
+template <class device_t, ccl::group_split_type group_id, ccl::device_topology_type class_id>
 std::tuple<size_t, device_t_ptr<device_t>> get_device_with_min_rank(
     const specific_indexed_device_storage& indexed_devices,
     const colored_plain_graph& id_ring) {
@@ -781,7 +781,7 @@ std::tuple<size_t, device_t_ptr<device_t>> get_device_with_min_rank(
     return std::tuple<size_t, device_t_ptr<device_t>>{ idx, dev };
 }
 
-template <class device_t, ccl::device_group_split_type group_id, ccl::device_topology_type class_id>
+template <class device_t, ccl::group_split_type group_id, ccl::device_topology_type class_id>
 std::tuple<size_t, device_t_ptr<device_t>> get_device_with_max_rank(
     const specific_indexed_device_storage& indexed_devices,
     const plain_graph& id_ring) {
@@ -803,7 +803,7 @@ std::tuple<size_t, device_t_ptr<device_t>> get_device_with_max_rank(
     return std::tuple<size_t, device_t_ptr<device_t>>{ idx, dev };
 }
 
-template <class device_t, ccl::device_group_split_type group_id, ccl::device_topology_type class_id>
+template <class device_t, ccl::group_split_type group_id, ccl::device_topology_type class_id>
 std::tuple<size_t, device_t_ptr<device_t>> get_device_with_max_rank(
     const specific_indexed_device_storage& indexed_devices,
     const colored_plain_graph& id_ring) {
@@ -829,7 +829,7 @@ std::tuple<size_t, device_t_ptr<device_t>> get_device_with_max_rank(
     return std::tuple<size_t, device_t_ptr<device_t>>{ idx, dev };
 }
 
-template <class device_t, ccl::device_group_split_type group_id, ccl::device_topology_type class_id>
+template <class device_t, ccl::group_split_type group_id, ccl::device_topology_type class_id>
 device_t_ptr<ccl_thread_comm<device_t>> add_concurrent_locker_device(
     size_t next_rank,
     size_t index_offset,
@@ -849,7 +849,7 @@ device_t_ptr<ccl_thread_comm<device_t>> add_concurrent_locker_device(
     return new_concurrent_comm;
 }
 
-template <class device_t, ccl::device_group_split_type topology>
+template <class device_t, ccl::group_split_type topology>
 device_t_ptr<ccl_ipc_source_gpu_comm<device_t>> add_ipc_source_locker_device(
     size_t next_rank,
     size_t index_offset,
@@ -883,7 +883,7 @@ device_t_ptr<ccl_ipc_source_gpu_comm<device_t>> add_ipc_source_locker_device(
 }
 
 template <class device_t,
-          ccl::device_group_split_type group_id,
+          ccl::group_split_type group_id,
           ccl::device_topology_type class_id,
           class context,
           class = typename std::enable_if<
@@ -924,7 +924,7 @@ device_t_ptr<ccl_gpu_scaleup_proxy<device_t>> add_scaleup_device(
 }
 
 template <class device_t,
-          ccl::device_group_split_type group_id,
+          ccl::group_split_type group_id,
           ccl::device_topology_type class_id,
           class context,
           typename std::enable_if<
@@ -968,7 +968,7 @@ device_t_ptr<ccl_gpu_scaleup_proxy<device_t>> add_scaleup_device(
     return ret;
 }
 
-template <ccl::device_group_split_type group_id,
+template <ccl::group_split_type group_id,
           ccl::device_topology_type class_id,
           class context,
           class... device_candidate_t>
@@ -989,7 +989,7 @@ size_t inject_scaleup_device(specific_indexed_device_storage& storage,
 }
 
 template <class device_t,
-          ccl::device_group_split_type group_id,
+          ccl::group_split_type group_id,
           ccl::device_topology_type class_id,
           class context,
           class = typename std::enable_if<
@@ -1029,7 +1029,7 @@ device_t_ptr<ccl_scaleout_proxy<device_t>> add_scaleout_device(
 }
 
 template <class device_t,
-          ccl::device_group_split_type group_id,
+          ccl::group_split_type group_id,
           ccl::device_topology_type class_id,
           class context,
           typename std::enable_if<
@@ -1074,7 +1074,7 @@ device_t_ptr<ccl_scaleout_proxy<device_t>> add_scaleout_device(
     return ret;
 }
 
-template <ccl::device_group_split_type group_id,
+template <ccl::group_split_type group_id,
           ccl::device_topology_type class_id,
           class context,
           class... device_candidate_t>
@@ -1097,7 +1097,7 @@ size_t inject_scaleout_device(specific_indexed_device_storage& storage,
 using ipc_devices_pool = std::map<size_t /*rank*/, device_t_ptr<ccl_ipc_gpu_comm>>;
 
 #if 0
-template<ccl::device_group_split_type group_id, ccl::device_topology_type class_id>
+template<ccl::group_split_type group_id, ccl::device_topology_type class_id>
 inline ipc_devices_pool create_ipc_gpu_comms(id_thread_table assigned_ids_copy,
                                              const plain_graph& id_ring,
                                              device_storage& device_factory,
@@ -1140,7 +1140,7 @@ inline ipc_devices_pool create_ipc_gpu_comms(id_thread_table assigned_ids_copy,
 
 using cluster_ipc_devices_pool = std::map<size_t/*process_id*/, ipc_devices_pool>;
 
-template<ccl::device_group_split_type topology>
+template<ccl::group_split_type topology>
 inline cluster_ipc_devices_pool create_filtered_ipc_gpu_comms(const colored_plain_graph& id_ring,
                                                      const ccl::process_device_indices_t& ipc_indices,
                                                      size_t process_idx,
@@ -1192,7 +1192,7 @@ inline cluster_ipc_devices_pool create_filtered_ipc_gpu_comms(const colored_plai
 
 
 
-template<ccl::device_group_split_type topology>
+template<ccl::group_split_type topology>
 inline cluster_ipc_devices_pool create_filtered_ipc_destination_gpu_comms(
                                             const colored_plain_graph& id_ring,
                                             const ccl::process_device_indices_t& ipc_indices,
@@ -1241,7 +1241,7 @@ inline cluster_ipc_devices_pool create_filtered_ipc_destination_gpu_comms(
     return ret;
 }
 
-template<ccl::device_group_split_type topology>
+template<ccl::group_split_type topology>
 inline cluster_ipc_devices_pool create_ipc_gpu_comms(const colored_plain_graph& id_ring,
                                                      size_t process_idx,
                                                      device_storage& device_factory,
@@ -1273,7 +1273,7 @@ inline cluster_ipc_devices_pool create_ipc_gpu_comms(const colored_plain_graph& 
 }
 
 
-template<ccl::device_group_split_type topology>
+template<ccl::group_split_type topology>
 inline cluster_ipc_devices_pool create_ipc_gpu_comms(const colored_plain_graph_list& list,
                                                      size_t process_idx,
                                                      device_storage& device_factory,

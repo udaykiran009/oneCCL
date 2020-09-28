@@ -7,7 +7,7 @@
 //TODO L0 Workaround
 
 namespace native {
-template <class native_type, class gpu_comm_impl, ccl::device_group_split_type topology>
+template <class native_type, class gpu_comm_impl, ccl::group_split_type topology>
 class l0_reduce_typed_entry : public base_gpu_entry<native_type,
                                                     gpu_comm_impl,
                                                     topology,
@@ -256,23 +256,25 @@ protected:
                      ", CurIndex: ",
                      cur_index);
             if (cur_index == wait_count /*std::is_same<gpu_comm_impl, ccl_gpu_comm>::value*/) {
-                if (topology == ccl::device_group_split_type::cluster) {
-                    auto c = ccl::environment::instance().create_communicator();
-                    if (c.rank() == 0) {
-                        LOG_INFO("L0 Workaround: one device close list!!!",
-                                 "WaitCount: ",
-                                 wait_count,
-                                 ", ExecCount: ",
-                                 exec_count,
-                                 ", CurIndex: ",
-                                 cur_index);
-                        result = zeCommandListClose(device.get_cmd_list().get());
-                        if (result != ZE_RESULT_SUCCESS) {
-                            LOG_ERROR("zeCommandListClose failed, error: ",
-                                      native::to_string(result));
-                            throw std::runtime_error("zeCommandListClose failed");
-                        }
-                    }
+                if (topology == ccl::group_split_type::cluster) {
+                    // TODO: implement process communicator case
+                    throw ccl::ccl_error(std::string(__PRETTY_FUNCTION__) + "TODO: implement process communicator case");
+                    // auto c = ccl::environment::instance().create_communicator();
+                    // if (c.rank() == 0) {
+                        // LOG_INFO("L0 Workaround: one device close list!!!",
+                        //          "WaitCount: ",
+                        //          wait_count,
+                        //          ", ExecCount: ",
+                        //          exec_count,
+                        //          ", CurIndex: ",
+                        //          cur_index);
+                        // result = zeCommandListClose(device.get_cmd_list().get());
+                        // if (result != ZE_RESULT_SUCCESS) {
+                        //     LOG_ERROR("zeCommandListClose failed, error: ",
+                        //               native::to_string(result));
+                        //     throw std::runtime_error("zeCommandListClose failed");
+                        // }
+                    // }
                 }
                 else {
                     LOG_INFO("L0 Workaround: one device close list!!!",

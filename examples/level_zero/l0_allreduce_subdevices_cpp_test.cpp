@@ -146,13 +146,13 @@ void user_thread_idx(size_t thread_idx, ccl::device_indices_t thread_device_idx,
                                                      global_communicator);
 
     // create device communicator attributes
-    ccl::device_comm_split_attr my_device_comm_attr = group->create_device_comm_attr();
+    ccl::comm_split_attr my_device_comm_attr = group->create_device_comm_attr();
 
     // set preferred device topology (OPTIONAL)
     my_device_comm_attr->set_value<ccl_device_preferred_topology_class>(
                                 ccl::device_topology_type::ring);
     my_device_comm_attr->set_value<ccl_device_preferred_group>(
-                                ccl::device_group_split_type::process);
+                                ccl::group_split_type::process);
     std::cout << "Platform info: " << group->get_context().to_string() << std::endl;
     std::cout << "Create device communicators, expected count: " << thread_device_idx.size()
               << ", preferred topology class: "

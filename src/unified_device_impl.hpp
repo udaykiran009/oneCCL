@@ -104,8 +104,8 @@ typename generic_device_type<CCL_ENABLE_SYCL_FALSE>::ccl_native_t
 generic_device_type<CCL_ENABLE_SYCL_FALSE>::get() noexcept {
     return native::get_runtime_device(device);
 }
-#else
-#error "No compute runtime is configured"
+// #else
+// #error "No compute runtime is configured"
 #endif
 #endif
 } // namespace ccl

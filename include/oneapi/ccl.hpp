@@ -43,7 +43,6 @@ namespace ccl = ::ccl;
 #include "oneapi/ccl/ccl_stream.hpp"
 
 #include "oneapi/ccl/ccl_communicator.hpp"
-#include "oneapi/ccl/ccl_device_communicator.hpp"
 
 namespace ccl {
 /**
@@ -111,44 +110,10 @@ public:
      */
     kvs_t create_kvs(const kvs::addr_t& addr) const;
 
-    /**
-     * Creates a new host communicator with externally provided size, rank and kvs.
-     * Implementation is platform specific and non portable.
-     * @return host communicator
-     */
-    communicator create_communicator() const;
-
-    /**
-     * Creates a new host communicator with user supplied size and kvs.
-     * Rank will be assigned automatically.
-     * @param size user-supplied total number of ranks
-     * @param kvs key-value store for ranks wire-up
-     * @return host communicator
-     */
-    communicator create_communicator(const size_t size,
-                                       shared_ptr_class<kvs_interface> kvs) const;
-
-    /**
-     * Creates a new host communicator with user supplied size, rank and kvs.
-     * @param size user-supplied total number of ranks
-     * @param rank user-supplied rank
-     * @param kvs key-value store for ranks wire-up
-     * @return host communicator
-     */
-    communicator create_communicator(const size_t size,
-                                     const size_t rank,
-                                     shared_ptr_class<kvs_interface> kvs) const;
-
-    /**
-     * Creates @attr which used to split host communicator
-     */
     template <class ...attr_value_pair_t>
-    comm_split_attr create_comm_split_attr(attr_value_pair_t&&...avps) const;
+    comm_split_attr create_device_comm_split_attr(attr_value_pair_t&&...avps) const;
 
 #ifdef MULTI_GPU_SUPPORT
-
-    template <class ...attr_value_pair_t>
-    device_comm_split_attr create_device_comm_split_attr(attr_value_pair_t&&...avps) const;
 
     /**
      * Creates a new device communicators with user supplied size, device indices and kvs.
@@ -161,7 +126,7 @@ public:
      */
     template<class DeviceType,
              class ContextType>
-    vector_class<device_communicator> create_device_communicators(
+    vector_class<communicator> create_device_communicators(
         const size_t devices_size,
         const vector_class<DeviceType>& local_devices,
         ContextType& context,
@@ -177,7 +142,7 @@ public:
      */
     template<class DeviceType,
          class ContextType>
-    vector_class<device_communicator> create_device_communicators(
+    vector_class<communicator> create_device_communicators(
         const size_t cluster_devices_size, /*global devics count*/
         const vector_class<pair_class<rank_t, DeviceType>>& local_rank_device_map,
         ContextType& context,
@@ -186,7 +151,7 @@ public:
 
     template<class DeviceType,
          class ContextType>
-    vector_class<device_communicator> create_device_communicators(
+    vector_class<communicator> create_device_communicators(
         const size_t cluster_devices_size, /*global devics count*/
         const map_class<rank_t, DeviceType>& local_rank_device_map,
         ContextType& context,
@@ -197,8 +162,8 @@ public:
      * @param attrs split attributes for local communicators
      * @return vector of device communicators
      */
-    vector_class<device_communicator> split_device_communicators(
-        const vector_class<pair_class<device_communicator, device_comm_split_attr>>& attrs)
+    vector_class<communicator> split_device_communicators(
+        const vector_class<pair_class<communicator, comm_split_attr>>& attrs)
         const;
 
     /**

@@ -61,7 +61,7 @@ thread_device_group_ring_communicator::allgatherv_impl(const buffer_type* send_b
                                                        const ccl::vector_class<ccl::event>& deps) {
     using namespace native;
 
-    static constexpr ccl::device_group_split_type group_id = base_t::topology_type();
+    static constexpr ccl::group_split_type group_id = base_t::topology_type();
     static constexpr ccl::device_topology_type class_id = base_t::topology_class();
 
     if (!is_ready()) {
@@ -156,7 +156,7 @@ thread_device_group_ring_communicator::allreduce_impl(const buffer_type* send_bu
                                                       const ccl::vector_class<ccl::event>& deps) {
     using namespace native;
 
-    static constexpr ccl::device_group_split_type group_id = base_t::topology_type();
+    static constexpr ccl::group_split_type group_id = base_t::topology_type();
     static constexpr ccl::device_topology_type class_id = base_t::topology_class();
 
     if (!is_ready()) {
@@ -353,7 +353,7 @@ thread_device_group_ring_communicator::alltoallv_impl(const buffer_type* send_bu
                                                       const ccl::alltoallv_attr& attr,
                                                       const ccl::vector_class<ccl::event>& deps) {
     using namespace native;
-    static constexpr ccl::device_group_split_type group_id = base_t::topology_type();
+    static constexpr ccl::group_split_type group_id = base_t::topology_type();
     static constexpr ccl::device_topology_type class_id = base_t::topology_class();
 
     if (!is_ready()) {
@@ -447,7 +447,7 @@ thread_device_group_ring_communicator::broadcast_impl(buffer_type* buf,
                                                       const ccl::vector_class<ccl::event>& deps) {
     using namespace native;
 
-    static constexpr ccl::device_group_split_type group_id = base_t::topology_type();
+    static constexpr ccl::group_split_type group_id = base_t::topology_type();
     static constexpr ccl::device_topology_type class_id = base_t::topology_class();
 
     if (!is_ready()) {
@@ -547,7 +547,7 @@ thread_device_group_ring_communicator::reduce_impl(const buffer_type* send_buf,
                                                    const ccl::vector_class<ccl::event>& deps) {
     using namespace native;
 
-    static constexpr ccl::device_group_split_type group_id = base_t::topology_type();
+    static constexpr ccl::group_split_type group_id = base_t::topology_type();
     static constexpr ccl::device_topology_type class_id = base_t::topology_class();
 
     if (!is_ready()) {

@@ -73,7 +73,7 @@ process_ring_communicator::coll_request_t process_ring_communicator::allreduce_i
     const ccl::vector_class<ccl::event>& deps) {
     using namespace native;
 
-    static constexpr ccl::device_group_split_type group_id = base_t::topology_type();
+    static constexpr ccl::group_split_type group_id = base_t::topology_type();
     static constexpr ccl::device_topology_type class_id = base_t::topology_class();
 
     if (!is_ready()) {

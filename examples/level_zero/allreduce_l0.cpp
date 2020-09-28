@@ -45,7 +45,7 @@ void user_thread_idx(size_t thread_idx,
     std::vector<processing_type> recv_values(COUNT, 0);
 
     // Create device communicators
-    std::vector<ccl::device_communicator> comms =
+    std::vector<ccl::communicator> comms =
         ccl::create_device_communicators(
             total_devices_in_cluster, devices, ctx, kvs_instance);
 
@@ -54,7 +54,7 @@ void user_thread_idx(size_t thread_idx,
     // alloc memory specific to devices
     for (auto& comm : comms) {
         // get native l0* /
-        ccl::device_communicator::ccl_device_t dev = comm.get_device();
+        ccl::communicator::ccl_device_t dev = comm.get_device();
         size_t rank = comm.rank();
 
         // create comm split attr
@@ -163,7 +163,7 @@ void user_thread_idx(size_t thread_idx,
     std::vector<processing_type> recv_values(COUNT, 0);
 
     // Create device communicators
-    std::vector<ccl::device_communicator> comms =
+    std::vector<ccl::communicator> comms =
         ccl::create_device_communicators(
             total_devices_in_cluster, ranked_device_indices, ctx, kvs);
 
@@ -173,7 +173,7 @@ void user_thread_idx(size_t thread_idx,
     // alloc memory specific to devices
     for (auto& comm : comms) {
         // get native l0* /
-        ccl::device_communicator::ccl_device_t dev = comm.get_device();
+        ccl::communicator::ccl_device_t dev = comm.get_device();
         size_t rank = comm.rank();
 
         // wrapped L0-native API for devices: create native buffers
@@ -317,7 +317,7 @@ int main(int argc, char** argv) {
 
 #ifdef CCL_ENABLE_SYCL
     // using cl::sycl::device
-    using device_type = ccl::device_communicator::ccl_device_t;
+    using device_type = ccl::communicator::ccl_device_t;
 #else
     // using ccl device index
     using device_type = ccl::device_index_type;

@@ -33,7 +33,7 @@ public:
         return dependent_entry::type();
     }
 
-    static constexpr ccl::device_group_split_type dependent_topology() {
+    static constexpr ccl::group_split_type dependent_topology() {
         return dependent_entry::get_topology();
     }
 
@@ -100,8 +100,10 @@ public:
                  ", waiting recv_bytes: ",
                  plain_recv_data.size());
 
+        ccl::stream::impl_value_t empty{};
         request = ccl_communicator->allgatherv_impl(
-            (char*)plain_send_data.data(), send_bytes, (char*)plain_recv_data.data(), recv_bytes);
+            (char*)plain_send_data.data(), send_bytes, (char*)plain_recv_data.data(), recv_bytes,
+            empty, ccl::default_allgatherv_attr, {});
         status = ccl_sched_entry_status_started;
 
         //TODO prepare foreign_device_ipc_mem_storage handles array

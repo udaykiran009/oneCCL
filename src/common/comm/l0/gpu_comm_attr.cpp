@@ -50,7 +50,8 @@ bool gpu_comm_attr::sync_group_size(size_t device_group_size) {
     }
 
     // master thread
-    ccl_communicator->barrier_impl();
+    ccl::stream::impl_value_t empty_stream{};
+    ccl_communicator->barrier_impl(empty_stream, ccl::default_barrier_attr, {});
 
     ready = true;
     thread_group_size_cond.notify_all();
@@ -180,7 +181,8 @@ bool gpu_comm_attr::delegate_sync_register_communicator(
         comm_it->second->visit(*this);
     }
 
-    ccl_communicator->barrier_impl();
+    ccl::stream::impl_value_t empty_stream{};
+    ccl_communicator->barrier_impl(empty_stream, ccl::default_barrier_attr, {});
 
     //notify SLAVES thread ready
     barrier.communicator_ready = true;

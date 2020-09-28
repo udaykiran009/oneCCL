@@ -102,10 +102,10 @@
         int result = className.run(typed_param); \
         int result_final = 0; \
         static int glob_idx = 0; \
-        auto comm = ccl::environment::instance().create_communicator(); \
+        auto comm = ccl::create_communicator(); \ // TODO create_communicator must have args
         ccl::request reqs; \
         auto coll_attr = \
-            ccl::environment::instance().create_operation_attr<ccl::allreduce_attr>(); \
+            ccl::create_operation_attr<ccl::allreduce_attr>(); \
         reqs = comm.allreduce(&result, &result_final, 1, ccl::reduction::sum, coll_attr); \
         reqs.wait(); \
         if (result_final > 0) { \
@@ -149,7 +149,7 @@
 #define MAIN_FUNCTION() \
     int main(int argc, char** argv, char* envs[]) { \
         init_test_params(); \
-        ccl::environment::instance(); \
+        ccl::init(); \
         PATCH_OUTPUT_NAME_ARG(argc, argv); \
         testing::InitGoogleTest(&argc, argv); \
         int res = RUN_ALL_TESTS(); \
@@ -165,16 +165,16 @@
 
 void print_err_message(char* err_message, std::ostream& output) {
     int message_len = strlen(err_message);
-    auto comm = ccl::environment::instance().create_communicator();
+    auto comm = ccl::create_communicator(); // TODO create_communicator must have args
     ccl::request reqs;
     ccl::allgatherv_attr coll_attr =
-        ccl::environment::instance().create_operation_attr<ccl::allgatherv_attr>();
+        ccl::create_operation_attr<ccl::allgatherv_attr>();
     int process_count = comm.size();
     int process_idx = comm.rank();
     std::vector<size_t> arr_message_len(process_count, 0);
     int* arr_message_len_copy = new int[process_count];
     std::vector<size_t> displs(process_count, 1);
-    reqs = comm.allgatherv(&message_len, 1, arr_message_len_copy, displs, coll_attr);
+    reqs = ccl::allgatherv(&message_len, 1, arr_message_len_copy, displs, comm, ccl::default_stream, coll_attr);
     reqs.wait();
     std::copy(arr_message_len_copy, arr_message_len_copy + process_count, arr_message_len.begin());
     int full_message_len = std::accumulate(arr_message_len.begin(), arr_message_len.end(), 0);
@@ -185,7 +185,7 @@ void print_err_message(char* err_message, std::ostream& output) {
     }
 
     char* arrerr_message = new char[full_message_len];
-    reqs = comm.allgatherv(err_message, message_len, arrerr_message, arr_message_len, coll_attr);
+    reqs = ccl::allgatherv(err_message, message_len, arrerr_message, arr_message_len, comm, ccl::default_stream, coll_attr);
     reqs.wait();
 
     if (process_idx == 0) {

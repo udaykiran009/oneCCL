@@ -104,11 +104,13 @@ public:
             recv_buf = param.get_recv_buf(new_idx);
 
             param.reqs[buf_idx] =
-                param.global_comm.allgatherv((test_conf.place_type == PT_IN) ? recv_buf : send_buf,
+                ccl::allgatherv((test_conf.place_type == PT_IN) ? recv_buf : send_buf,
                                              count,
                                              recv_buf,
                                              recv_counts,
                                              (ccl_datatype_t)data_type,
+                                             param.global_comm,
+                                             ccl::default_stream,
                                              attr);
         }
     }

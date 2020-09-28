@@ -64,7 +64,7 @@ void set_control_indices(std::vector<expected_indices_tuple>& sequence,
     sequence[thread_id][device_t::type_idx()] = data;
 }
 
-template <class device_t, ccl::device_group_split_type topology, ccl::device_topology_type class_id>
+template <class device_t, ccl::group_split_type topology, ccl::device_topology_type class_id>
 std::pair<bool, std::string> check_device(
     const native::specific_indexed_device_storage& device_group,
     const expected_indices_tuple& exp_idx) {
@@ -118,7 +118,7 @@ std::pair<bool, std::string> check_device(
     return res;
 }
 
-template <ccl::device_group_split_type topology,
+template <ccl::group_split_type topology,
           ccl::device_topology_type class_id = ccl::device_topology_type::ring>
 std::pair<bool, std::string> check_topology(
     const std::unique_ptr<native::specific_indexed_device_storage>& device_group,
@@ -209,7 +209,7 @@ std::pair<bool, std::string> check_topology(
     return { ret, descr };
 }
 
-template <ccl::device_group_split_type topology,
+template <ccl::group_split_type topology,
           ccl::device_topology_type class_id,
           class ctx,
           class tuple>

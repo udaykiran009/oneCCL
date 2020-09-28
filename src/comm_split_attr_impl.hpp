@@ -10,44 +10,19 @@ namespace ccl {
 template <comm_split_attr_id attrId, class Value>
 CCL_API Value comm_split_attr::set(const Value& v) {
     return get_impl()->set_attribute_value(
-        v, details::ccl_host_split_traits<comm_split_attr_id, attrId>{});
+        v, details::ccl_api_type_attr_traits<comm_split_attr_id, attrId>{});
 }
 
 template <comm_split_attr_id attrId>
-CCL_API const typename details::ccl_host_split_traits<comm_split_attr_id, attrId>::type&
+CCL_API const typename details::ccl_api_type_attr_traits<comm_split_attr_id, attrId>::type&
 comm_split_attr::get() const {
     return get_impl()->get_attribute_value(
-        details::ccl_host_split_traits<comm_split_attr_id, attrId>{});
+        details::ccl_api_type_attr_traits<comm_split_attr_id, attrId>{});
 }
 
 template <comm_split_attr_id attrId>
 CCL_API bool comm_split_attr::is_valid() const noexcept {
     return get_impl()->is_valid<attrId>();
 }
-
-#if defined(MULTI_GPU_SUPPORT) || defined(CCL_ENABLE_SYCL)
-
-/**
- * device_comm_split_attr attributes definition
- */
-template <comm_split_attr_id attrId, class Value>
-CCL_API Value device_comm_split_attr::set(const Value& v) {
-    return get_impl()->set_attribute_value(
-        v, details::ccl_device_split_traits<comm_split_attr_id, attrId>{});
-}
-
-template <comm_split_attr_id attrId>
-CCL_API const typename details::ccl_device_split_traits<comm_split_attr_id, attrId>::type&
-device_comm_split_attr::get() const {
-    return get_impl()->get_attribute_value(
-        details::ccl_device_split_traits<comm_split_attr_id, attrId>{});
-}
-
-template <comm_split_attr_id attrId>
-CCL_API bool device_comm_split_attr::is_valid() const noexcept {
-    return get_impl()->is_valid<attrId>();
-}
-
-#endif //#if defined(MULTI_GPU_SUPPORT) || defined(CCL_ENABLE_SYCL)
 
 } // namespace ccl

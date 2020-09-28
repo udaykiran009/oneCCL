@@ -33,7 +33,7 @@
 #include "comm_split_attr_impl.hpp"
 
 //#include "environment.hpp"
-#include "oneapi/ccl/ccl_device_communicator.hpp"
+#include "oneapi/ccl/ccl_communicator.hpp"
 #include "common/comm/l0/comm_context_storage.hpp"
 
 #include "event_impl.hpp"
@@ -82,8 +82,8 @@ TEST(device_communicator_api, device_comm_from_sycl_devices_single_thread) {
     std::shared_ptr<stub_kvs> in_kvs;
 
     // create `out_comms` from in parameters
-    ccl::vector_class<ccl::device_communicator> out_comms =
-        ccl::device_communicator::create_device_communicators(
+    ccl::vector_class<ccl::communicator> out_comms =
+        ccl::communicator::create_device_communicators(
             in_total_devices_size, in_local_rank_device_map, in_ctx, in_kvs);
 
     // check correctness
@@ -182,8 +182,8 @@ void user_thread_function(size_t total_devices_count,
                           std::shared_ptr<stub_kvs> in_kvs,
                           std::atomic<size_t>& total_communicators_count) {
     // blocking API call: wait for all threads from all processes
-    ccl::vector_class<ccl::device_communicator> out_comms =
-        ccl::device_communicator::create_device_communicators(
+    ccl::vector_class<ccl::communicator> out_comms =
+        ccl::communicator::create_device_communicators(
             total_devices_count, in_local_rank_device_map, in_ctx, in_kvs);
 
     // check correctness
@@ -290,8 +290,8 @@ void user_thread_function_splitted_comm(size_t total_devices_count,
                                         std::shared_ptr<stub_kvs> in_kvs,
                                         std::atomic<size_t>& total_communicators_count) {
     // blocking API call: wait for all threads from all processes
-    ccl::vector_class<ccl::device_communicator> out_comms =
-        ccl::device_communicator::create_device_communicators(
+    ccl::vector_class<ccl::communicator> out_comms =
+        ccl::communicator::create_device_communicators(
             total_devices_count, in_local_rank_device_map, in_ctx, in_kvs);
 
     // check correctness
@@ -328,7 +328,7 @@ void user_thread_function_splitted_comm(size_t total_devices_count,
 
         // // split test for current thread local scope
         // auto attr = ccl::create_device_comm_split_attr(
-        //     ccl::attr_val<ccl::comm_split_attr_id::group>(ccl::device_group_split_type::thread));
+        //     ccl::attr_val<ccl::comm_split_attr_id::group>(ccl::group_split_type::thread));
         // auto splitted_comm = dev_comm.split(attr);
 
         // // check splitted_comm correctness

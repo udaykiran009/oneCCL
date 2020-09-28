@@ -41,7 +41,6 @@
 #include "oneapi/ccl/ccl_stream.hpp"
 
 #include "oneapi/ccl/ccl_communicator.hpp"
-#include "oneapi/ccl/ccl_device_communicator.hpp"
 
 namespace ccl {
 
@@ -159,6 +158,47 @@ public:
         return str;
     }
 
+    template <class coll_attribute_type, class... attr_value_pair_t>
+    coll_attribute_type create_operation_attr(attr_value_pair_t&&... avps) const {
+        auto op_attr = create_postponed_api_type<coll_attribute_type>();
+        int expander[]{ (op_attr.template set<attr_value_pair_t::idx()>(avps.val()), 0)... };
+        (void)expander;
+        return op_attr;
+    }
+
+#ifdef CCL_ENABLE_SYCL
+    communicator create_single_device_communicator(
+        size_t comm_size,
+        size_t rank,
+        const cl::sycl::device& device,
+        const cl::sycl::context& context,
+        shared_ptr_class<kvs_interface> kvs) const;
+#endif
+
+//     communicator create_single_device_communicator(size_t world_size,
+//                                      size_t rank,
+//                                      cl::sycl::queue queue,
+//                                      shared_ptr_class<kvs_interface> kvs) const;
+
+//     template<class DeviceSelectorType>
+//     communicator create_single_device_communicator(size_t world_size,
+//                                      size_t rank,
+//                                      const DeviceSelectorType& selector,
+//                                      shared_ptr_class<kvs_interface> kvs) const
+//     {
+//         return create_single_device_communicator(world_size, rank, cl::sycl::device(selector), kvs);
+//     }
+
+// #endif
+
+    template <class... attr_value_pair_t>
+    comm_split_attr create_device_comm_split_attr(attr_value_pair_t&&... avps) const {
+        auto split_attr = create_postponed_api_type<comm_split_attr>();
+        int expander[]{ (split_attr.template set<attr_value_pair_t::idx()>(avps.val()), 0)... };
+        (void)expander;
+        return split_attr;
+    }
+
     /**
      * Creates a new host communicator with externally provided size, rank and kvs.
      * Implementation is platform specific and non portable.
@@ -186,59 +226,6 @@ public:
                                      size_t rank,
                                      shared_ptr_class<kvs_interface> kvs) const;
 
-    template <class coll_attribute_type, class... attr_value_pair_t>
-    coll_attribute_type create_operation_attr(attr_value_pair_t&&... avps) const {
-        auto op_attr = create_postponed_api_type<coll_attribute_type>();
-        int expander[]{ (op_attr.template set<attr_value_pair_t::idx()>(avps.val()), 0)... };
-        (void)expander;
-        return op_attr;
-    }
-
-    /**
-     * Creates @attr which used to split host communicator
-     */
-    template <class... attr_value_pair_t>
-    comm_split_attr create_comm_split_attr(attr_value_pair_t&&... avps) const {
-        auto split_attr = create_postponed_api_type<comm_split_attr>();
-        int expander[]{ (split_attr.template set<attr_value_pair_t::idx()>(avps.val()), 0)... };
-        (void)expander;
-        return split_attr;
-    }
-
-#ifdef CCL_ENABLE_SYCL
-    device_communicator create_single_device_communicator(
-        size_t comm_size,
-        size_t rank,
-        const cl::sycl::device& device,
-        const cl::sycl::context& context,
-        shared_ptr_class<kvs_interface> kvs) const;
-#endif
-
-//     device_communicator create_single_device_communicator(size_t world_size,
-//                                      size_t rank,
-//                                      cl::sycl::queue queue,
-//                                      shared_ptr_class<kvs_interface> kvs) const;
-
-//     template<class DeviceSelectorType>
-//     device_communicator create_single_device_communicator(size_t world_size,
-//                                      size_t rank,
-//                                      const DeviceSelectorType& selector,
-//                                      shared_ptr_class<kvs_interface> kvs) const
-//     {
-//         return create_single_device_communicator(world_size, rank, cl::sycl::device(selector), kvs);
-//     }
-
-// #endif
-#if defined(MULTI_GPU_SUPPORT) || defined(CCL_ENABLE_SYCL)
-
-    template <class... attr_value_pair_t>
-    device_comm_split_attr create_device_comm_split_attr(attr_value_pair_t&&... avps) const {
-        auto split_attr = create_postponed_api_type<device_comm_split_attr>();
-        int expander[]{ (split_attr.template set<attr_value_pair_t::idx()>(avps.val()), 0)... };
-        (void)expander;
-        return split_attr;
-    }
-
     /**
      * Creates a new device communicators with user supplied size, device indices and kvs.
      * Ranks will be assigned automatically.
@@ -249,7 +236,7 @@ public:
      * @return vector of device communicators
      */
     template <class DeviceType, class ContextType>
-    vector_class<device_communicator> create_device_communicators(
+    vector_class<communicator> create_device_communicators(
         size_t comm_size,
         const vector_class<DeviceType>& local_devices,
         ContextType& context,
@@ -264,14 +251,14 @@ public:
      * @return vector of device communicators
      */
     template <class DeviceType, class ContextType>
-    vector_class<device_communicator> create_device_communicators(
+    vector_class<communicator> create_device_communicators(
         size_t comm_size,
         const vector_class<pair_class<rank_t, DeviceType>>& local_rank_device_map,
         ContextType& context,
         shared_ptr_class<kvs_interface> kvs) const;
 
     template <class DeviceType, class ContextType>
-    vector_class<device_communicator> create_device_communicators(
+    vector_class<communicator> create_device_communicators(
         size_t comm_size,
         const map_class<rank_t, DeviceType>& local_rank_device_map,
         ContextType& context,
@@ -282,8 +269,8 @@ public:
      * @param attrs split attributes for local communicators
      * @return vector of device communicators
      */
-    vector_class<device_communicator> split_device_communicators(
-        const vector_class<pair_class<device_communicator, device_comm_split_attr>>& attrs) const;
+    vector_class<communicator> split_device_communicators(
+        const vector_class<pair_class<communicator, comm_split_attr>>& attrs) const;
 
     /**
      * Creates a new stream from @native_stream_type
@@ -344,8 +331,6 @@ public:
         ev.build_from_params();
         return ev;
     }
-
-#endif //#if defined(MULTI_GPU_SUPPORT) || defined(CCL_ENABLE_SYCL)
 
 private:
     environment();

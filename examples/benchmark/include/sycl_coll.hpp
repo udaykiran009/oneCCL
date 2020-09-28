@@ -122,7 +122,7 @@ struct sycl_base_coll : base_coll, private strategy, device_specific_data {
     }
 
     /* global communicator & stream for all cpu collectives */
-    static ccl::device_communicator& comm() {
+    static ccl::communicator& comm() {
         if (!device_specific_data::comm_ptr) {
         }
         return *device_specific_data::comm_ptr;

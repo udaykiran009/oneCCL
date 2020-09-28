@@ -143,7 +143,7 @@ single_device_communicator::coll_request_t single_device_communicator::allreduce
     const ccl::vector_class<ccl::event>& deps) {
     using namespace native;
 
-    static constexpr ccl::device_group_split_type group_id = base_t::topology_type();
+    static constexpr ccl::group_split_type group_id = base_t::topology_type();
     static constexpr ccl::device_topology_type class_id = base_t::topology_class();
 
     if (!is_ready()) {
@@ -250,7 +250,7 @@ single_device_communicator::coll_request_t single_device_communicator::alltoall_
     ccl::stream::impl_value_t& stream,
     const ccl::alltoall_attr& attr,
     const ccl::vector_class<ccl::event>& deps) {
-    static constexpr ccl::device_group_split_type group_id = base_t::topology_type();
+    static constexpr ccl::group_split_type group_id = base_t::topology_type();
     static constexpr ccl::device_topology_type class_id = base_t::topology_class();
 
     if (unlikely(is_ready() == false)) {
@@ -388,7 +388,7 @@ single_device_communicator::coll_request_t single_device_communicator::alltoallv
     ccl::stream::impl_value_t& stream,
     const ccl::alltoallv_attr& attr,
     const ccl::vector_class<ccl::event>& deps) {
-    static constexpr ccl::device_group_split_type group_id = base_t::topology_type();
+    static constexpr ccl::group_split_type group_id = base_t::topology_type();
     static constexpr ccl::device_topology_type class_id = base_t::topology_class();
 
     if (!is_ready()) {
@@ -540,7 +540,7 @@ single_device_communicator::coll_request_t single_device_communicator::broadcast
     ccl::stream::impl_value_t& stream,
     const ccl::broadcast_attr& attr,
     const ccl::vector_class<ccl::event>& deps) {
-    static constexpr ccl::device_group_split_type group_id = base_t::topology_type();
+    static constexpr ccl::group_split_type group_id = base_t::topology_type();
     static constexpr ccl::device_topology_type class_id = base_t::topology_class();
 
     if (!is_ready()) {
@@ -642,7 +642,7 @@ single_device_communicator::coll_request_t single_device_communicator::reduce_im
     ccl::stream::impl_value_t& stream,
     const ccl::reduce_attr& attr,
     const ccl::vector_class<ccl::event>& deps) {
-    static constexpr ccl::device_group_split_type group_id = base_t::topology_type();
+    static constexpr ccl::group_split_type group_id = base_t::topology_type();
     static constexpr ccl::device_topology_type class_id = base_t::topology_class();
 
     if (!is_ready()) {
@@ -797,7 +797,7 @@ single_device_communicator::coll_request_t single_device_communicator::sparse_al
     ccl::stream::impl_value_t& stream,
     const ccl::sparse_allreduce_attr& attr,
     const ccl::vector_class<ccl::event>& deps) {
-    static constexpr ccl::device_group_split_type group_id = base_t::topology_type();
+    static constexpr ccl::group_split_type group_id = base_t::topology_type();
     static constexpr ccl::device_topology_type class_id = base_t::topology_class();
 
     if (!is_ready()) {

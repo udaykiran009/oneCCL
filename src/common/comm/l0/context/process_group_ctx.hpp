@@ -29,11 +29,11 @@ struct process_group_context
     friend class thread_group_ring_topology;
     friend class cluster_group_device_creator;
 
-    static constexpr ccl::device_group_split_type group_id() {
-        return ccl::device_group_split_type::cluster;
+    static constexpr ccl::group_split_type group_id() {
+        return ccl::group_split_type::cluster;
     }
 
-    using topologies = device_group_community_holder<ccl::device_group_split_type::cluster,
+    using topologies = device_group_community_holder<ccl::group_split_type::cluster,
                                                      SUPPORTED_TOPOLOGY_CLASSES_DECL_LIST>;
     using topologies_storage = std::map<size_t, topologies>;
 

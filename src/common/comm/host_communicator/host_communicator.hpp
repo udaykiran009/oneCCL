@@ -15,205 +15,149 @@
 #include "oneapi/ccl/ccl_coll_attr_ids_traits.hpp"
 #include "oneapi/ccl/ccl_coll_attr.hpp"
 
+#include "common/comm/communicator_traits.hpp"
+#include "common/comm/comm_interface.hpp"
+#include "types_generator_defines.hpp"
+
 namespace ccl {
 
 class kvs_interface;
 
-class host_communicator {
+class host_communicator : public ccl::communicator_interface {
 public:
     using coll_request_t = ccl::request;
+    using traits = ccl::host_communicator_traits;
 
-    size_t rank() const;
-    size_t size() const;
+    size_t rank() const override;
+    size_t size() const override;
+
+    // traits
+    bool is_host() const noexcept override {
+        return traits::is_host();
+    }
+
+    bool is_cpu() const noexcept override {
+        return traits::is_cpu();
+    }
+
+    bool is_gpu() const noexcept override {
+        return traits::is_gpu();
+    }
+
+    bool is_accelerator() const noexcept override {
+        return traits::is_accelerator();
+    }
+
+    bool is_ready() const override {
+        return true;
+    }
+
+    const ccl::group_unique_key& get_comm_group_id() const override {
+        return owner_id;
+    }
+
+    void set_comm_group_id(ccl::group_unique_key id) {
+        owner_id = id;
+    }
+
+#ifdef MULTI_GPU_SUPPORT
+    void visit(ccl::gpu_comm_attr& comm_attr) override;
+#endif
+
+    ccl::device_index_type get_device_path() const override;
+    ccl::communicator_interface::device_t get_device() override;
+    ccl::communicator_interface::context_t get_context() override;
+
+    const ccl::comm_split_attr& get_comm_split_attr() const override {
+        return comm_attr;
+    }
+
+    ccl::group_split_type get_topology_type() const override {
+        throw ccl::ccl_error(std::string(__FUNCTION__) + " is not applicable for " + traits::name());
+        return ccl::group_split_type::undetermined;
+    }
+
+    ccl::device_topology_type get_topology_class() const override {
+        throw ccl::ccl_error(std::string(__FUNCTION__) + " is not applicable for " + traits::name());
+        return ccl::device_topology_type::undetermined;
+    }
 
     ccl::unique_ptr_class<host_communicator> split(const comm_split_attr& attr);
 
-    /* allgatherv */
-    coll_request_t allgatherv_impl(const void* send_buf,
-                                   size_t send_count,
-                                   void* recv_buf,
-                                   const vector_class<size_t>& recv_counts,
-                                   ccl::datatype dtype,
-                                   const allgatherv_attr& attr = default_allgatherv_attr);
+    // collectives operation declarations
+    coll_request_t barrier(stream::impl_value_t& op_stream,
+                                const barrier_attr& attr,
+                                const vector_class<event>& deps = {}) override;
+    coll_request_t barrier_impl(stream::impl_value_t& op_stream,
+                                const barrier_attr& attr,
+                                const vector_class<event>& deps = {});
 
-    coll_request_t allgatherv_impl(const void* send_buf,
-                                   size_t send_count,
-                                   const vector_class<void*>& recv_bufs,
-                                   const vector_class<size_t>& recv_counts,
-                                   ccl::datatype dtype,
-                                   const allgatherv_attr& attr = default_allgatherv_attr);
+    // communicator interfaces implementation
+    DEVICE_COMM_INTERFACE_COLL_DEFINITION__VOID;
+    DEVICE_COMM_INTERFACE_COLL_DEFINITION(char);
+    DEVICE_COMM_INTERFACE_COLL_DEFINITION(int);
+    DEVICE_COMM_INTERFACE_COLL_DEFINITION(int64_t);
+    DEVICE_COMM_INTERFACE_COLL_DEFINITION(uint64_t);
+    DEVICE_COMM_INTERFACE_COLL_DEFINITION(float);
+    DEVICE_COMM_INTERFACE_COLL_DEFINITION(double);
 
-    template <class BufferType>
-    coll_request_t allgatherv_impl(const BufferType* send_buf,
-                                   size_t send_count,
-                                   BufferType* recv_buf,
-                                   const vector_class<size_t>& recv_counts,
-                                   const allgatherv_attr& attr = default_allgatherv_attr);
+#ifdef CCL_ENABLE_SYCL
+    DEVICE_COMM_INTERFACE_COLL_CLASS_DEFINITION(cl::sycl::buffer<char COMMA 1>);
+    DEVICE_COMM_INTERFACE_COLL_CLASS_DEFINITION(cl::sycl::buffer<int COMMA 1>);
+    DEVICE_COMM_INTERFACE_COLL_CLASS_DEFINITION(cl::sycl::buffer<int64_t COMMA 1>);
+    DEVICE_COMM_INTERFACE_COLL_CLASS_DEFINITION(cl::sycl::buffer<uint64_t COMMA 1>);
+    DEVICE_COMM_INTERFACE_COLL_CLASS_DEFINITION(cl::sycl::buffer<float COMMA 1>);
+    DEVICE_COMM_INTERFACE_COLL_CLASS_DEFINITION(cl::sycl::buffer<double COMMA 1>);
+#endif //CCL_ENABLE_SYCL
 
-    template <class BufferType>
-    coll_request_t allgatherv_impl(const BufferType* send_buf,
-                                   size_t send_count,
-                                   const vector_class<BufferType*>& recv_bufs,
-                                   const vector_class<size_t>& recv_counts,
-                                   const allgatherv_attr& attr = default_allgatherv_attr);
+    DEVICE_COMM_INTERFACE_SPARSE_DEFINITION__VOID;
+    DEVICE_COMM_INTERFACE_SPARSE_DEFINITION(char, char);
+    DEVICE_COMM_INTERFACE_SPARSE_DEFINITION(char, int);
+    DEVICE_COMM_INTERFACE_SPARSE_DEFINITION(char, ccl::bf16);
+    DEVICE_COMM_INTERFACE_SPARSE_DEFINITION(char, float);
+    DEVICE_COMM_INTERFACE_SPARSE_DEFINITION(char, double);
+    DEVICE_COMM_INTERFACE_SPARSE_DEFINITION(char, int64_t);
+    DEVICE_COMM_INTERFACE_SPARSE_DEFINITION(char, uint64_t);
+    DEVICE_COMM_INTERFACE_SPARSE_DEFINITION(int, char);
+    DEVICE_COMM_INTERFACE_SPARSE_DEFINITION(int, int);
+    DEVICE_COMM_INTERFACE_SPARSE_DEFINITION(int, ccl::bf16);
+    DEVICE_COMM_INTERFACE_SPARSE_DEFINITION(int, float);
+    DEVICE_COMM_INTERFACE_SPARSE_DEFINITION(int, double);
+    DEVICE_COMM_INTERFACE_SPARSE_DEFINITION(int, int64_t);
+    DEVICE_COMM_INTERFACE_SPARSE_DEFINITION(int, uint64_t);
+    DEVICE_COMM_INTERFACE_SPARSE_DEFINITION(int64_t, char);
+    DEVICE_COMM_INTERFACE_SPARSE_DEFINITION(int64_t, int);
+    DEVICE_COMM_INTERFACE_SPARSE_DEFINITION(int64_t, ccl::bf16);
+    DEVICE_COMM_INTERFACE_SPARSE_DEFINITION(int64_t, float);
+    DEVICE_COMM_INTERFACE_SPARSE_DEFINITION(int64_t, double);
+    DEVICE_COMM_INTERFACE_SPARSE_DEFINITION(int64_t, int64_t);
+    DEVICE_COMM_INTERFACE_SPARSE_DEFINITION(int64_t, uint64_t);
+    DEVICE_COMM_INTERFACE_SPARSE_DEFINITION(uint64_t, char);
+    DEVICE_COMM_INTERFACE_SPARSE_DEFINITION(uint64_t, int);
+    DEVICE_COMM_INTERFACE_SPARSE_DEFINITION(uint64_t, ccl::bf16);
+    DEVICE_COMM_INTERFACE_SPARSE_DEFINITION(uint64_t, float);
+    DEVICE_COMM_INTERFACE_SPARSE_DEFINITION(uint64_t, double);
+    DEVICE_COMM_INTERFACE_SPARSE_DEFINITION(uint64_t, int64_t);
+    DEVICE_COMM_INTERFACE_SPARSE_DEFINITION(uint64_t, uint64_t);
 
-    /* allreduce */
-    coll_request_t allreduce_impl(const void* send_buf,
-                                  void* recv_buf,
-                                  size_t count,
-                                  ccl::datatype dtype,
-                                  ccl::reduction rtype,
-                                  const allreduce_attr& attr = default_allreduce_attr);
+#ifdef CCL_ENABLE_SYCL
+    DEVICE_COMM_INTERFACE_SPARSE_CLASS_DEFINITION(cl::sycl::buffer<int COMMA 1>,
+                                                  cl::sycl::buffer<float COMMA 1>);
+    DEVICE_COMM_INTERFACE_SPARSE_CLASS_DEFINITION(cl::sycl::buffer<int COMMA 1>,
+                                                  cl::sycl::buffer<ccl::bf16 COMMA 1>);
 
-    template <class BufferType,
-              class = typename std::enable_if<ccl::is_native_type_supported<BufferType>()>::type>
-    coll_request_t allreduce_impl(const BufferType* send_buf,
-                                  BufferType* recv_buf,
-                                  size_t count,
-                                  ccl::reduction rtype,
-                                  const allreduce_attr& attr = default_allreduce_attr);
+    DEVICE_COMM_INTERFACE_SPARSE_CLASS_DEFINITION(cl::sycl::buffer<int64_t COMMA 1>,
+                                                  cl::sycl::buffer<float COMMA 1>);
+    DEVICE_COMM_INTERFACE_SPARSE_CLASS_DEFINITION(cl::sycl::buffer<int64_t COMMA 1>,
+                                                  cl::sycl::buffer<ccl::bf16 COMMA 1>);
+#endif //CCL_ENABLE_SYCL
 
-    /* alltoall */
-    coll_request_t alltoall_impl(const void* send_buf,
-                                 void* recv_buf,
-                                 size_t count,
-                                 ccl::datatype dtype,
-                                 const alltoall_attr& attr = default_alltoall_attr);
 
-    coll_request_t alltoall_impl(const vector_class<void*>& send_buf,
-                                 const vector_class<void*>& recv_buf,
-                                 size_t count,
-                                 ccl::datatype dtype,
-                                 const alltoall_attr& attr = default_alltoall_attr);
 
-    template <class BufferType,
-              class = typename std::enable_if<ccl::is_native_type_supported<BufferType>()>::type>
-    coll_request_t alltoall_impl(const BufferType* send_buf,
-                                 BufferType* recv_buf,
-                                 size_t count,
-                                 const alltoall_attr& attr = default_alltoall_attr);
-
-    template <class BufferType,
-              class = typename std::enable_if<ccl::is_native_type_supported<BufferType>()>::type>
-    coll_request_t alltoall_impl(const vector_class<BufferType*>& send_buf,
-                                 const vector_class<BufferType*>& recv_buf,
-                                 size_t count,
-                                 const alltoall_attr& attr = default_alltoall_attr);
-
-    /* alltoallv */
-    coll_request_t alltoallv_impl(const void* send_buf,
-                                  const vector_class<size_t>& send_counts,
-                                  void* recv_buf,
-                                  const vector_class<size_t>& recv_counts,
-                                  ccl::datatype dtype,
-                                  const alltoallv_attr& attr = default_alltoallv_attr);
-
-    coll_request_t alltoallv_impl(const vector_class<void*>& send_bufs,
-                                  const vector_class<size_t>& send_counts,
-                                  const vector_class<void*>& recv_bufs,
-                                  const vector_class<size_t>& recv_counts,
-                                  ccl::datatype dtype,
-                                  const alltoallv_attr& attr = default_alltoallv_attr);
-
-    template <class BufferType,
-              class = typename std::enable_if<ccl::is_native_type_supported<BufferType>()>::type>
-    coll_request_t alltoallv_impl(const BufferType* send_buf,
-                                  const vector_class<size_t>& send_counts,
-                                  BufferType* recv_buf,
-                                  const vector_class<size_t>& recv_counts,
-                                  const alltoallv_attr& attr = default_alltoallv_attr);
-
-    template <class BufferType,
-              class = typename std::enable_if<ccl::is_native_type_supported<BufferType>()>::type>
-    coll_request_t alltoallv_impl(const vector_class<BufferType*>& send_bufs,
-                                  const vector_class<size_t>& send_counts,
-                                  const vector_class<BufferType*>& recv_bufs,
-                                  const vector_class<size_t>& recv_counts,
-                                  const alltoallv_attr& attr = default_alltoallv_attr);
-
-    /* barrier */
-    coll_request_t barrier_impl(const barrier_attr& attr = default_barrier_attr);
-
-    /* bcast */
-    coll_request_t broadcast_impl(void* buf,
-                                  size_t count,
-                                  ccl::datatype dtype,
-                                  size_t root,
-                                  const broadcast_attr& attr = default_broadcast_attr);
-
-    template <class BufferType,
-              class = typename std::enable_if<ccl::is_native_type_supported<BufferType>()>::type>
-    coll_request_t broadcast_impl(BufferType* buf,
-                                  size_t count,
-                                  size_t root,
-                                  const broadcast_attr& attr = default_broadcast_attr);
-
-    /* reduce */
-    coll_request_t reduce_impl(const void* send_buf,
-                               void* recv_buf,
-                               size_t count,
-                               ccl::datatype dtype,
-                               ccl::reduction rtype,
-                               size_t root,
-                               const reduce_attr& attr = default_reduce_attr);
-
-    template <class BufferType,
-              class = typename std::enable_if<ccl::is_native_type_supported<BufferType>()>::type>
-    coll_request_t reduce_impl(const BufferType* send_buf,
-                               BufferType* recv_buf,
-                               size_t count,
-                               ccl::reduction rtype,
-                               size_t root,
-                               const reduce_attr& attr = default_reduce_attr);
-
-    /* reduce_scatter */
-    coll_request_t reduce_scatter_impl(
-        const void* send_buf,
-        void* recv_buf,
-        size_t recv_count,
-        ccl::datatype dtype,
-        ccl::reduction rtype,
-        const reduce_scatter_attr& attr = default_reduce_scatter_attr);
-
-    template <class BufferType,
-              class = typename std::enable_if<ccl::is_native_type_supported<BufferType>()>::type>
-    coll_request_t reduce_scatter_impl(
-        const BufferType* send_buf,
-        BufferType* recv_buf,
-        size_t recv_count,
-        ccl::reduction rtype,
-        const reduce_scatter_attr& attr = default_reduce_scatter_attr);
-
-    /* sparse_allreduce */
-    coll_request_t sparse_allreduce_impl(
-        const void* send_ind_buf,
-        size_t send_ind_count,
-        const void* send_val_buf,
-        size_t send_val_count,
-        void* recv_ind_buf,
-        size_t recv_ind_count,
-        void* recv_val_buf,
-        size_t recv_val_count,
-        ccl::datatype ind_dtype,
-        ccl::datatype val_dtype,
-        ccl::reduction rtype,
-        const sparse_allreduce_attr& attr = default_sparse_allreduce_attr);
-
-    template <
-        class index_BufferType,
-        class value_BufferType,
-        class = typename std::enable_if<ccl::is_native_type_supported<value_BufferType>()>::type>
-    coll_request_t sparse_allreduce_impl(
-        const index_BufferType* send_ind_buf,
-        size_t send_ind_count,
-        const value_BufferType* send_val_buf,
-        size_t send_val_count,
-        index_BufferType* recv_ind_buf,
-        size_t recv_ind_count,
-        value_BufferType* recv_val_buf,
-        size_t recv_val_count,
-        ccl::reduction rtype,
-        const sparse_allreduce_attr& attr = default_sparse_allreduce_attr);
+    DEVICE_COMM_IMPL_DECLARATION;
+    DEVICE_COMM_IMPL_CLASS_DECLARATION
+    DEVICE_COMM_IMPL_SPARSE_DECLARATION;
+    DEVICE_COMM_IMPL_SPARSE_CLASS_DECLARATION
 
     host_communicator();
     host_communicator(size_t size, shared_ptr_class<kvs_interface> kvs);
@@ -226,12 +170,22 @@ public:
     ~host_communicator() = default;
     std::shared_ptr<atl_wrapper> get_atl();
 
+    // troubleshooting
+    std::string to_string() const;
+
 private:
     friend struct group_context;
     std::shared_ptr<ccl_comm> comm_impl;
     ccl::comm_split_attr comm_attr;
     size_t comm_rank;
     size_t comm_size;
+    ccl::group_unique_key owner_id;
+    // ccl::unified_device_type device;
+    // ccl::unified_device_context_type context;
+
+    host_communicator* get_impl() {
+        return this;
+    }
 }; // class host_communicator
 
 } // namespace ccl

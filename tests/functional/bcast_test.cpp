@@ -43,7 +43,7 @@ public:
         void* recv_buf;
         size_t count = param.elem_count;
         const ccl_test_conf& test_conf = param.get_conf();
-        auto attr = ccl::environment::instance().create_operation_attr<ccl::broadcast_attr>();
+        auto attr = ccl::create_operation_attr<ccl::broadcast_attr>();
         ccl::datatype data_type = static_cast<ccl::datatype>(test_conf.data_type);
 
         for (size_t buf_idx = 0; buf_idx < param.buffer_count; buf_idx++) {
@@ -52,8 +52,8 @@ public:
 
             recv_buf = param.get_recv_buf(new_idx);
 
-            param.reqs[buf_idx] = param.global_comm.bcast(
-                recv_buf, count, (ccl_datatype_t)data_type, ROOT_PROCESS_IDX, attr);
+            param.reqs[buf_idx] = ccl::broadcast(
+                recv_buf, count, (ccl_datatype_t)data_type, ROOT_PROCESS_IDX, param.global_comm, ccl::default_stream, attr);
         }
     }
 };

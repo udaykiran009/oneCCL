@@ -11,7 +11,7 @@ device_group_ring_communicator::device_group_ring_communicator(
     ccl::unified_device_type&& device,
     size_t thread_idx,
     size_t process_idx,
-    const ccl::device_comm_split_attr& attr)
+    const ccl::comm_split_attr& attr)
         : base_t(std::move(device), thread_idx, process_idx /*, comm_attr*/, attr) {}
 
 void device_group_ring_communicator::visit(ccl::gpu_comm_attr& comm_attr) {

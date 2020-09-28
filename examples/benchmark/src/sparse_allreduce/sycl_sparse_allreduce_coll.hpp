@@ -171,7 +171,7 @@ struct sycl_sparse_allreduce_coll : base_sparse_allreduce_coll<cl::sycl::buffer<
     }
 
     /* global communicator for cpu collectives */
-    static ccl::device_communicator& comm() {
+    static ccl::communicator& comm() {
         if (!device_specific_data::comm_ptr) {
         }
         return *device_specific_data::comm_ptr;

@@ -45,7 +45,6 @@ public:
 private:
     friend class environment;
     friend class communicator;
-    friend class device_communicator;
     friend struct ccl_empty_attr;
     friend struct impl_dispatch;
 
