@@ -91,9 +91,12 @@ public:
     void run_derived(typed_test_param<T>& param) {
         void* send_buf;
         void* recv_buf;
+
         const ccl_test_conf& test_conf = param.get_conf();
+
         auto attr = ccl::create_operation_attr<ccl::alltoallv_attr>();
-        ccl::datatype data_type = static_cast<ccl::datatype>(test_conf.data_type);
+
+        ccl::datatype datatype = get_ccl_lib_datatype(test_conf);
 
         for (size_t buf_idx = 0; buf_idx < param.buffer_count; buf_idx++) {
             size_t new_idx = param.buf_indexes[buf_idx];
@@ -107,7 +110,7 @@ public:
                 send_counts,
                 recv_buf,
                 recv_counts,
-                data_type,
+                datatype,
                 GlobalData::instance().comms[0],
                 ccl::default_stream,
                 attr);

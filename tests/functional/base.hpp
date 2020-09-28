@@ -57,12 +57,11 @@ struct typed_test_param {
         buf_indexes.resize(buffer_count);
     }
 
-    void prepare_coll_attr(ccl::allgatherv_attr& coll_attr, size_t idx);
     template <class coll_attr_type>
     void prepare_coll_attr(coll_attr_type& coll_attr, size_t idx);
 
     std::string create_match_id(size_t buf_idx);
-    bool complete_request(ccl::event reqs);
+    bool complete_request(ccl::event& e);
     void define_start_order();
     bool complete();
     void swap_buffers(size_t iter);
@@ -75,14 +74,14 @@ struct typed_test_param {
     void print(std::ostream& output);
 
     void* get_send_buf(size_t buf_idx) {
-        if (test_conf.data_type == DT_BF16)
+        if (test_conf.datatype == DT_BF16)
             return static_cast<void*>(send_buf_bf16[buf_idx].data());
         else
             return static_cast<void*>(send_buf[buf_idx].data());
     }
 
     void* get_recv_buf(size_t buf_idx) {
-        if (test_conf.data_type == DT_BF16)
+        if (test_conf.datatype == DT_BF16)
             return static_cast<void*>(recv_buf_bf16[buf_idx].data());
         else
             return static_cast<void*>(recv_buf[buf_idx].data());
@@ -123,7 +122,7 @@ class MainTest : public ::testing ::TestWithParam<ccl_test_conf> {
 
 public:
     int test(ccl_test_conf& param) {
-        switch (param.data_type) {
+        switch (param.datatype) {
             case DT_CHAR: return run<char>(param);
             case DT_INT:
                 return run<int>(param);
@@ -138,7 +137,7 @@ public:
             // case DT_UINT64:
             // return TEST_SUCCESS;
             default:
-                EXPECT_TRUE(false) << "Unknown data type: " << param.data_type;
+                EXPECT_TRUE(false) << "Unknown data type: " << param.datatype;
                 return TEST_FAILURE;
         }
     }

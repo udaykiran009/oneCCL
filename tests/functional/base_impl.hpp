@@ -7,14 +7,14 @@ template <typename T>
 template <class coll_attr_type>
 void typed_test_param<T>::prepare_coll_attr(coll_attr_type& coll_attr, size_t idx) {
     coll_attr.template set<ccl::operation_attr_id::priority>(generate_priority_value(idx));
-    coll_attr.template set<ccl::operation_attr_id::to_cache>((int)test_conf.cache_type);
+    coll_attr.template set<ccl::operation_attr_id::to_cache>(test_conf.cache_type == CT_CACHE_1 ? true : false);
 
     char* test_unordered_coll = getenv("CCL_UNORDERED_COLL");
     if (test_unordered_coll && atoi(test_unordered_coll) == 1) {
-        coll_attr.template set<ccl::operation_attr_id::synchronous>(0);
+        coll_attr.template set<ccl::operation_attr_id::synchronous>(false);
     }
     else {
-        coll_attr.template set<ccl::operation_attr_id::synchronous>((int)test_conf.sync_type);
+        coll_attr.template set<ccl::operation_attr_id::synchronous>(test_conf.sync_type == SNCT_SYNC_1 ? true : false);
     }
 
     match_id = create_match_id(idx);
@@ -22,16 +22,11 @@ void typed_test_param<T>::prepare_coll_attr(coll_attr_type& coll_attr, size_t id
 }
 
 template <typename T>
-void typed_test_param<T>::prepare_coll_attr(ccl::allgatherv_attr& coll_attr, size_t idx) {
-    this->template prepare_coll_attr<ccl::allgatherv_attr>(coll_attr, idx);
-}
-
-template <typename T>
 std::string typed_test_param<T>::create_match_id(size_t buf_idx) {
     return (std::to_string(buf_idx) + std::to_string(process_count) + std::to_string(elem_count) +
-            std::to_string(buffer_count) + std::to_string(test_conf.reduction_type) +
+            std::to_string(buffer_count) + std::to_string(test_conf.reduction) +
             std::to_string(test_conf.sync_type) + std::to_string(test_conf.cache_type) +
-            std::to_string(test_conf.size_type) + std::to_string(test_conf.data_type) +
+            std::to_string(test_conf.size_type) + std::to_string(test_conf.datatype) +
             std::to_string(test_conf.completion_type) + std::to_string(test_conf.place_type) +
             std::to_string(test_conf.start_order_type) +
             std::to_string(test_conf.complete_order_type) + std::to_string(test_conf.prolog_type) +
@@ -39,12 +34,12 @@ std::string typed_test_param<T>::create_match_id(size_t buf_idx) {
 }
 
 template <typename T>
-bool typed_test_param<T>::complete_request(ccl::event reqs) {
+bool typed_test_param<T>::complete_request(ccl::event& e) {
     if (test_conf.completion_type == CMPT_TEST) {
-        return reqs.test();
+        return e.test();
     }
     else if (test_conf.completion_type == CMPT_WAIT) {
-        reqs.wait();
+        e.wait();
         return true;
     }
     else {
@@ -161,7 +156,7 @@ int base_test<T>::check_error(typed_test_param<T>& param,
                               size_t elem_idx) {
     double max_error = 0;
 
-    if (param.test_conf.data_type == DT_BF16) {
+    if (param.test_conf.datatype == DT_BF16) {
         /* TODO: handle float and double */
 
         // sources https://www.mcs.anl.gov/papers/P4093-0713_1.pdf
@@ -172,7 +167,7 @@ int base_test<T>::check_error(typed_test_param<T>& param,
         double g = (log_base2 * precision) / (1 - (log_base2 * precision));
         max_error = g * expected;
 #else
-        ASSERT(0, "unexpected data_type %d", param.test_conf.data_type);
+        ASSERT(0, "unexpected data_type %d", param.test_conf.datatype);
 #endif
     }
 
@@ -202,7 +197,7 @@ void base_test<T>::alloc_buffers(typed_test_param<T>& param) {
         param.recv_buf[buf_idx].resize(param.elem_count * param.process_count);
     }
 
-    if (param.test_conf.data_type == DT_BF16) {
+    if (param.test_conf.datatype == DT_BF16) {
         param.send_buf_bf16.resize(param.buffer_count);
         param.recv_buf_bf16.resize(param.buffer_count);
 
@@ -241,22 +236,22 @@ int base_test<T>::run(typed_test_param<T>& param) {
             param.swap_buffers(iter);
             param.define_start_order();
 
-            if (param.test_conf.data_type == DT_BF16) {
+            if (param.test_conf.datatype == DT_BF16) {
 #ifdef CCL_BF16_COMPILER
                 make_bf16_prologue<T>(param, get_recv_buf_size(param));
 #else
-                ASSERT(0, "unexpected data_type %d", param.test_conf.data_type);
+                ASSERT(0, "unexpected data_type %d", param.test_conf.datatype);
 #endif
             }
 
             run_derived(param);
             param.complete();
 
-            if (param.test_conf.data_type == DT_BF16) {
+            if (param.test_conf.datatype == DT_BF16) {
 #ifdef CCL_BF16_COMPILER
                 make_bf16_epilogue<T>(param, get_recv_buf_size(param));
 #else
-                ASSERT(0, "unexpected data_type %d", param.test_conf.data_type);
+                ASSERT(0, "unexpected data_type %d", param.test_conf.datatype);
 #endif
             }
 

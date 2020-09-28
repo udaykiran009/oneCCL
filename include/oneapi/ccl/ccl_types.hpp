@@ -17,10 +17,6 @@
 
 // TODO: tmp enums, refactor core code and remove them
 /************************************************/
-typedef int ccl_datatype_t;
-
-typedef int ccl_reduction_t;
-
 typedef int ccl_status_t;
 #define ccl_status_success               (0)
 #define ccl_status_out_of_resource       (1)
@@ -234,26 +230,6 @@ struct param_traits {};
 
 } //namespace info
 } // namespace ccl
-
-/* TODO: tmp mappings */
-
-/*********************************************************/
-
-#define ccl_dtype_char       (int)(ccl::datatype::int8)
-#define ccl_dtype_int        (int)(ccl::datatype::int32)
-#define ccl_dtype_int64      (int)(ccl::datatype::int64)
-#define ccl_dtype_uint64     (int)(ccl::datatype::uint64)
-#define ccl_dtype_bf16      (int)(ccl::datatype::bfloat16)
-#define ccl_dtype_float      (int)(ccl::datatype::float32)
-#define ccl_dtype_double     (int)(ccl::datatype::float64)
-#define ccl_dtype_last_value (int)(ccl::datatype::last_predefined)
-
-#define ccl_reduction_sum        (int)(ccl::reduction::sum)
-#define ccl_reduction_min        (int)(ccl::reduction::min)
-#define ccl_reduction_max        (int)(ccl::reduction::max)
-#define ccl_reduction_prod       (int)(ccl::reduction::prod)
-#define ccl_reduction_custom     (int)(ccl::reduction::custom)
-#define ccl_reduction_last_value (int)(ccl::reduction::last_value)
 
 // TODO: tmp struct, refactor core code and remove it
 /*********************************************************/

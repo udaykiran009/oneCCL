@@ -1,5 +1,5 @@
 cmake_minimum_required (VERSION 2.8)
-file(GLOB sources "*.NOT_ENABLEDc" "*.NOT_ENABLEDcpp")
+file(GLOB sources "*.c" "*.cpp")
 
 if (DEFINED ENV{CCL_CONFIGURATION})
     set(CCL_CONFIGURATION "$ENV{CCL_CONFIGURATION}")
