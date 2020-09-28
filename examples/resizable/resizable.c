@@ -10,7 +10,7 @@
             } \
             t1 = when(); \
             CCL_CALL(start_cmd); \
-            CCL_CALL(ccl_wait(request)); \
+            CCL_CALL(ccl_wait(event)); \
             t2 = when(); \
             t += (t2 - t1); \
         } \
@@ -110,7 +110,7 @@ int main(int argc, char** argv) {
                                          &attr,
                                          NULL,
                                          NULL,
-                                         &request),
+                                         &event),
                            "regular_allreduce");
             if (opt == resizable_test_reconnect && rank % 2) {
                 ret = 1;

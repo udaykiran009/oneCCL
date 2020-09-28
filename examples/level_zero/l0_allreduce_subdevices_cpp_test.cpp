@@ -212,7 +212,7 @@ void user_thread_idx(size_t thread_idx, ccl::device_indices_t thread_device_idx,
     global_communicator->barrier();
 
     //allreduce
-    std::vector<ccl::request> reqs;
+    std::vector<ccl::event> reqs;
     ccl::attr attr{};
     for(auto &comm : comms)
     {

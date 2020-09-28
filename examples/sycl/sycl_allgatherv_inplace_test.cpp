@@ -94,7 +94,7 @@ int main(int argc, char **argv) {
 
     handle_exception(q);
     /* invoke ccl_allgatherv on the CPU side */
-    /* request in-place operation by providing recvbuf as input */
+    /* event in-place operation by providing recvbuf as input */
     auto attr = ccl::create_operation_attr<ccl::allgatherv_attr>();
     ccl::allgatherv(recvbuf, sendbuf_count, recvbuf, recv_counts, comm, stream, attr).wait();
 

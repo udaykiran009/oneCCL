@@ -221,8 +221,10 @@ CREATE_STREAM_EXT_INSTANTIATION(cl::sycl::device, cl::sycl::context)
     CREATE_DEVICE_INSTANTIATION(ccl::empty_t)
 #endif //CCL_ENABLE_SYCL
 
+/*
 CREATE_EVENT_INSTANTIATION(cl::sycl::event)
 CREATE_EVENT_EXT_INSTANTIATION(cl_event)
+*/
 #else
 #ifdef MULTI_GPU_SUPPORT
 CREATE_DEV_COMM_INSTANTIATION(ccl::device_index_type,

@@ -3,16 +3,16 @@
 #include "oneapi/ccl/ccl_type_traits.hpp"
 #include "oneapi/ccl/ccl_types_policy.hpp"
 
-#include "oneapi/ccl/ccl_event_attr_ids.hpp"
-#include "oneapi/ccl/ccl_event_attr_ids_traits.hpp"
-#include "oneapi/ccl/ccl_event.hpp"
+#include "common/event_internal/ccl_event/ccl_event_attr_ids.hpp"
+#include "common/event_internal/ccl_event/ccl_event_attr_ids_traits.hpp"
+#include "common/event_internal/ccl_event/ccl_event.hpp"
 
-#include "common/event/event.hpp"
+#include "common/event_internal/event_internal.hpp"
 
 namespace ccl {
 
 template <class event_type, class... attr_value_pair_t>
-event event::create_event_from_attr(event_type& native_event_handle,
+event_internal event_internal::create_event_from_attr(event_type& native_event_handle,
                                     typename unified_device_context_type::ccl_native_t context,
                                     attr_value_pair_t&&... avps) {
     ccl::library_version ret{};
@@ -23,7 +23,7 @@ event event::create_event_from_attr(event_type& native_event_handle,
     ret.build_date = CCL_PRODUCT_BUILD_DATE;
     ret.full = CCL_PRODUCT_FULL;
 
-    event str{ event::impl_value_t(new event::impl_t(native_event_handle, context, ret)) };
+    event_internal str{ event_internal::impl_value_t(new event_internal::impl_t(native_event_handle, context, ret)) };
     int expander[]{ (str.template set<attr_value_pair_t::idx()>(avps.val()), 0)... };
     (void)expander;
     str.build_from_params();
@@ -32,7 +32,7 @@ event event::create_event_from_attr(event_type& native_event_handle,
 }
 
 template <class event_handle_type, typename T>
-event event::create_event(event_handle_type native_event_handle,
+event_internal event_internal::create_event(event_handle_type native_event_handle,
                           typename unified_device_context_type::ccl_native_t context) {
     ccl::library_version ret{};
     ret.major = CCL_MAJOR_VERSION;
@@ -42,14 +42,14 @@ event event::create_event(event_handle_type native_event_handle,
     ret.build_date = CCL_PRODUCT_BUILD_DATE;
     ret.full = CCL_PRODUCT_FULL;
 
-    event str{ event::impl_value_t(new event::impl_t(native_event_handle, context, ret)) };
+    event_internal str{ event_internal::impl_value_t(new event_internal::impl_t(native_event_handle, context, ret)) };
     str.build_from_params();
 
     return str;
 }
 
 template <class event_type, typename T>
-event event::create_event(event_type& native_event) {
+event_internal event_internal::create_event(event_type& native_event) {
     ccl::library_version ret{};
     ret.major = CCL_MAJOR_VERSION;
     ret.minor = CCL_MINOR_VERSION;
@@ -58,12 +58,12 @@ event event::create_event(event_type& native_event) {
     ret.build_date = CCL_PRODUCT_BUILD_DATE;
     ret.full = CCL_PRODUCT_FULL;
 
-    return { event::impl_value_t(new event::impl_t(native_event, ret)) };
+    return { event_internal::impl_value_t(new event_internal::impl_t(native_event, ret)) };
 }
 
 template <event_attr_id attrId>
 CCL_API const typename details::ccl_api_type_attr_traits<event_attr_id, attrId>::return_type&
-event::get() const {
+event_internal::get() const {
     return get_impl()->get_attribute_value(
         details::ccl_api_type_attr_traits<event_attr_id, attrId>{});
 }
@@ -71,7 +71,7 @@ event::get() const {
 template<event_attr_id attrId,
              class Value/*,
              typename T*/>
-CCL_API typename ccl::details::ccl_api_type_attr_traits<ccl::event_attr_id, attrId>::return_type event::set(const Value& v)
+CCL_API typename ccl::details::ccl_api_type_attr_traits<ccl::event_attr_id, attrId>::return_type event_internal::set(const Value& v)
 {
     return get_impl()->set_attribute_value(
         v, details::ccl_api_type_attr_traits<event_attr_id, attrId>{});
@@ -80,24 +80,26 @@ CCL_API typename ccl::details::ccl_api_type_attr_traits<ccl::event_attr_id, attr
 } // namespace ccl
 
 /***************************TypeGenerations*********************************************************/
+/*
 #define API_EVENT_CREATION_FORCE_INSTANTIATION(native_event_type) \
-    template CCL_API ccl::event ccl::event::create_event(native_event_type& native_event);
+    template CCL_API ccl::event_internal ccl::event_internal::create_event(native_event_type& native_event);
 
 #define API_EVENT_CREATION_EXT_FORCE_INSTANTIATION(native_event_handle_type) \
-    template CCL_API ccl::event ccl::event::create_event( \
+    template CCL_API ccl::event_internal ccl::event_internal::create_event( \
         native_event_handle_type handle, \
         typename unified_device_context_type::ccl_native_t native_ctx);
 
 #define API_EVENT_FORCE_INSTANTIATION_SET(IN_attrId, IN_Value) \
     template CCL_API typename ccl::details::ccl_api_type_attr_traits<ccl::event_attr_id, \
                                                                      IN_attrId>::return_type \
-    ccl::event::set<IN_attrId, IN_Value>(const IN_Value& v);
+    ccl::event_internal::set<IN_attrId, IN_Value>(const IN_Value& v);
 
 #define API_EVENT_FORCE_INSTANTIATION_GET(IN_attrId) \
     template CCL_API const typename ccl::details:: \
         ccl_api_type_attr_traits<ccl::event_attr_id, IN_attrId>::return_type& \
-        ccl::event::get<IN_attrId>() const;
+        ccl::event_internal::get<IN_attrId>() const;
 
 #define API_EVENT_FORCE_INSTANTIATION(IN_attrId, IN_Value) \
     API_EVENT_FORCE_INSTANTIATION_SET(IN_attrId, IN_Value) \
     API_EVENT_FORCE_INSTANTIATION_GET(IN_attrId)
+*/

@@ -41,7 +41,7 @@ void run_test(size_t thread_idx,
     //allreduce
     ccl::attr attr{};
 
-    ccl::request req =
+    ccl::event req =
         comm->allreduce(mem_send, mem_recv, COUNT, ccl::reduction::sum, &attr, stream);
 
     //wait
@@ -79,7 +79,7 @@ void run_test(size_t thread_idx,
     //allreduce
     ccl::attr attr{};
 
-    ccl::request req =
+    ccl::event req =
         comm->allreduce(mem_send, mem_recv, COUNT, ccl::reduction::sum, &attr, stream);
 
     //wait

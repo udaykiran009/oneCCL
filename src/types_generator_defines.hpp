@@ -5,7 +5,7 @@
  */
 #define DEVICE_COMM_INTERFACE_COLL_DECLARATION__VOID \
 \
-    virtual ccl::request allgatherv(const void* send_buf, \
+    virtual ccl::event allgatherv(const void* send_buf, \
                                     size_t send_count, \
                                     void* recv_buf, \
                                     const ccl::vector_class<size_t>& recv_counts, \
@@ -14,7 +14,7 @@
                                     const ccl::allgatherv_attr& attr, \
                                     const ccl::vector_class<ccl::event>& deps = {}) = 0; \
 \
-    virtual ccl::request allgatherv(const void* send_buf, \
+    virtual ccl::event allgatherv(const void* send_buf, \
                                     size_t send_count, \
                                     const ccl::vector_class<void*>& recv_bufs, \
                                     const ccl::vector_class<size_t>& recv_counts, \
@@ -23,7 +23,7 @@
                                     const ccl::allgatherv_attr& attr, \
                                     const ccl::vector_class<ccl::event>& deps = {}) = 0; \
 \
-    virtual ccl::request allreduce(const void* send_buf, \
+    virtual ccl::event allreduce(const void* send_buf, \
                                    void* recv_buf, \
                                    size_t count, \
                                    ccl::datatype dtype, \
@@ -32,14 +32,14 @@
                                    const ccl::allreduce_attr& attr, \
                                    const ccl::vector_class<ccl::event>& deps = {}) = 0; \
 \
-    virtual ccl::request alltoall(const void* send_buf, \
+    virtual ccl::event alltoall(const void* send_buf, \
                                   void* recv_buf, \
                                   size_t count, \
                                   ccl::datatype dtype, \
                                   ccl::stream::impl_value_t& stream, \
                                   const ccl::alltoall_attr& attr, \
                                   const ccl::vector_class<ccl::event>& deps = {}) = 0; \
-    virtual ccl::request alltoall(const ccl::vector_class<void*>& send_buf, \
+    virtual ccl::event alltoall(const ccl::vector_class<void*>& send_buf, \
                                   const ccl::vector_class<void*>& recv_buf, \
                                   size_t count, \
                                   ccl::datatype dtype, \
@@ -47,7 +47,7 @@
                                   const ccl::alltoall_attr& attr, \
                                   const ccl::vector_class<ccl::event>& deps = {}) = 0; \
 \
-    virtual ccl::request alltoallv(const void* send_buf, \
+    virtual ccl::event alltoallv(const void* send_buf, \
                                    const ccl::vector_class<size_t>& send_counts, \
                                    void* recv_buf, \
                                    const ccl::vector_class<size_t>& recv_counts, \
@@ -56,7 +56,7 @@
                                    const ccl::alltoallv_attr& attr, \
                                    const ccl::vector_class<ccl::event>& deps = {}) = 0; \
 \
-    virtual ccl::request alltoallv(const ccl::vector_class<void*>& send_bufs, \
+    virtual ccl::event alltoallv(const ccl::vector_class<void*>& send_bufs, \
                                    const ccl::vector_class<size_t>& send_counts, \
                                    const ccl::vector_class<void*>& recv_bufs, \
                                    const ccl::vector_class<size_t>& recv_counts, \
@@ -65,7 +65,7 @@
                                    const ccl::alltoallv_attr& attr, \
                                    const ccl::vector_class<ccl::event>& deps = {}) = 0; \
 \
-    virtual ccl::request bcast(void* buf, \
+    virtual ccl::event bcast(void* buf, \
                                size_t count, \
                                ccl::datatype dtype, \
                                size_t root, \
@@ -73,7 +73,7 @@
                                const ccl::broadcast_attr& attr, \
                                const ccl::vector_class<ccl::event>& deps = {}) = 0; \
 \
-    virtual ccl::request reduce(const void* send_buf, \
+    virtual ccl::event reduce(const void* send_buf, \
                                 void* recv_buf, \
                                 size_t count, \
                                 ccl::datatype dtype, \
@@ -83,7 +83,7 @@
                                 const ccl::reduce_attr& attr, \
                                 const ccl::vector_class<ccl::event>& deps = {}) = 0; \
 \
-    virtual ccl::request reduce_scatter(const void* send_buf, \
+    virtual ccl::event reduce_scatter(const void* send_buf, \
                                         void* recv_buf, \
                                         size_t recv_count, \
                                         ccl::datatype dtype, \
@@ -94,7 +94,7 @@
 
 #define DEVICE_COMM_INTERFACE_SPARSE_DECLARATION__VOID \
 \
-    virtual ccl::request sparse_allreduce(const void* send_ind_buf, \
+    virtual ccl::event sparse_allreduce(const void* send_ind_buf, \
                                           size_t send_ind_count, \
                                           const void* send_val_buf, \
                                           size_t send_val_count, \
@@ -111,7 +111,7 @@
 
 #define DEVICE_COMM_INTERFACE_COLL_DECLARATION(type) \
 \
-    virtual ccl::request allgatherv(const type* send_buf, \
+    virtual ccl::event allgatherv(const type* send_buf, \
                                     size_t send_count, \
                                     type* recv_buf, \
                                     const ccl::vector_class<size_t>& recv_counts, \
@@ -119,7 +119,7 @@
                                     const ccl::allgatherv_attr& attr, \
                                     const ccl::vector_class<ccl::event>& deps = {}) = 0; \
 \
-    virtual ccl::request allgatherv(const type* send_buf, \
+    virtual ccl::event allgatherv(const type* send_buf, \
                                     size_t send_count, \
                                     ccl::vector_class<type*>& recv_bufs, \
                                     const ccl::vector_class<size_t>& recv_counts, \
@@ -127,7 +127,7 @@
                                     const ccl::allgatherv_attr& attr, \
                                     const ccl::vector_class<ccl::event>& deps = {}) = 0; \
 \
-    virtual ccl::request allreduce(const type* send_buf, \
+    virtual ccl::event allreduce(const type* send_buf, \
                                    type* recv_buf, \
                                    size_t count, \
                                    ccl::reduction reduction, \
@@ -135,21 +135,21 @@
                                    const ccl::allreduce_attr& attr, \
                                    const ccl::vector_class<ccl::event>& deps = {}) = 0; \
 \
-    virtual ccl::request alltoall(const type* send_buf, \
+    virtual ccl::event alltoall(const type* send_buf, \
                                   type* recv_buf, \
                                   size_t count, \
                                   ccl::stream::impl_value_t& stream, \
                                   const ccl::alltoall_attr& attr, \
                                   const ccl::vector_class<ccl::event>& deps = {}) = 0; \
 \
-    virtual ccl::request alltoall(const ccl::vector_class<type*>& send_buf, \
+    virtual ccl::event alltoall(const ccl::vector_class<type*>& send_buf, \
                                   const ccl::vector_class<type*>& recv_buf, \
                                   size_t count, \
                                   ccl::stream::impl_value_t& stream, \
                                   const ccl::alltoall_attr& attr, \
                                   const ccl::vector_class<ccl::event>& deps = {}) = 0; \
 \
-    virtual ccl::request alltoallv(const type* send_buf, \
+    virtual ccl::event alltoallv(const type* send_buf, \
                                    const ccl::vector_class<size_t>& send_counts, \
                                    type* recv_buf, \
                                    const ccl::vector_class<size_t>& recv_counts, \
@@ -157,7 +157,7 @@
                                    const ccl::alltoallv_attr& attr, \
                                    const ccl::vector_class<ccl::event>& deps = {}) = 0; \
 \
-    virtual ccl::request alltoallv(const ccl::vector_class<type*>& send_bufs, \
+    virtual ccl::event alltoallv(const ccl::vector_class<type*>& send_bufs, \
                                    const ccl::vector_class<size_t>& send_counts, \
                                    const ccl::vector_class<type*>& recv_bufs, \
                                    const ccl::vector_class<size_t>& recv_counts, \
@@ -165,14 +165,14 @@
                                    const ccl::alltoallv_attr& attr, \
                                    const ccl::vector_class<ccl::event>& deps = {}) = 0; \
 \
-    virtual ccl::request bcast(type* buf, \
+    virtual ccl::event bcast(type* buf, \
                                size_t count, \
                                size_t root, \
                                ccl::stream::impl_value_t& stream, \
                                const ccl::broadcast_attr& attr, \
                                const ccl::vector_class<ccl::event>& deps = {}) = 0; \
 \
-    virtual ccl::request reduce(const type* send_buf, \
+    virtual ccl::event reduce(const type* send_buf, \
                                 type* recv_buf, \
                                 size_t count, \
                                 ccl::reduction reduction, \
@@ -181,7 +181,7 @@
                                 const ccl::reduce_attr& attr, \
                                 const ccl::vector_class<ccl::event>& deps = {}) = 0; \
 \
-    virtual ccl::request reduce_scatter(const type* send_buf, \
+    virtual ccl::event reduce_scatter(const type* send_buf, \
                                         type* recv_buf, \
                                         size_t recv_count, \
                                         ccl::reduction reduction, \
@@ -191,7 +191,7 @@
 
 #define DEVICE_COMM_INTERFACE_SPARSE_DECLARATION(index_type, value_type) \
 \
-    virtual ccl::request sparse_allreduce(const index_type* send_ind_buf, \
+    virtual ccl::event sparse_allreduce(const index_type* send_ind_buf, \
                                           size_t send_ind_count, \
                                           const value_type* send_val_buf, \
                                           size_t send_val_count, \
@@ -206,7 +206,7 @@
 
 #define DEVICE_COMM_INTERFACE_COLL_CLASS_DECLARATION(type) \
 \
-    virtual ccl::request allgatherv(const type& send_buf, \
+    virtual ccl::event allgatherv(const type& send_buf, \
                                     size_t send_count, \
                                     type& recv_buf, \
                                     const ccl::vector_class<size_t>& recv_counts, \
@@ -214,7 +214,7 @@
                                     const ccl::allgatherv_attr& attr, \
                                     const ccl::vector_class<ccl::event>& deps = {}) = 0; \
 \
-    virtual ccl::request allgatherv( \
+    virtual ccl::event allgatherv( \
         const type& send_buf, \
         size_t send_count, \
         ccl::vector_class<ccl::reference_wrapper_class<type>>& recv_bufs, \
@@ -223,7 +223,7 @@
         const ccl::allgatherv_attr& attr, \
         const ccl::vector_class<ccl::event>& deps = {}) = 0; \
 \
-    virtual ccl::request allreduce(const type& send_buf, \
+    virtual ccl::event allreduce(const type& send_buf, \
                                    type& recv_buf, \
                                    size_t count, \
                                    ccl::reduction reduction, \
@@ -231,14 +231,14 @@
                                    const ccl::allreduce_attr& attr, \
                                    const ccl::vector_class<ccl::event>& deps = {}) = 0; \
 \
-    virtual ccl::request alltoall(const type& send_buf, \
+    virtual ccl::event alltoall(const type& send_buf, \
                                   type& recv_buf, \
                                   size_t count, \
                                   ccl::stream::impl_value_t& stream, \
                                   const ccl::alltoall_attr& attr, \
                                   const ccl::vector_class<ccl::event>& deps = {}) = 0; \
 \
-    virtual ccl::request alltoall( \
+    virtual ccl::event alltoall( \
         const ccl::vector_class<ccl::reference_wrapper_class<type>>& send_buf, \
         const ccl::vector_class<ccl::reference_wrapper_class<type>>& recv_buf, \
         size_t count, \
@@ -246,7 +246,7 @@
         const ccl::alltoall_attr& attr, \
         const ccl::vector_class<ccl::event>& deps = {}) = 0; \
 \
-    virtual ccl::request alltoallv(const type& send_buf, \
+    virtual ccl::event alltoallv(const type& send_buf, \
                                    const ccl::vector_class<size_t>& send_counts, \
                                    type& recv_buf, \
                                    const ccl::vector_class<size_t>& recv_counts, \
@@ -254,7 +254,7 @@
                                    const ccl::alltoallv_attr& attr, \
                                    const ccl::vector_class<ccl::event>& deps = {}) = 0; \
 \
-    virtual ccl::request alltoallv( \
+    virtual ccl::event alltoallv( \
         const ccl::vector_class<ccl::reference_wrapper_class<type>>& send_bufs, \
         const ccl::vector_class<size_t>& send_counts, \
         const ccl::vector_class<ccl::reference_wrapper_class<type>>& recv_bufs, \
@@ -263,14 +263,14 @@
         const ccl::alltoallv_attr& attr, \
         const ccl::vector_class<ccl::event>& deps = {}) = 0; \
 \
-    virtual ccl::request bcast(type& buf, \
+    virtual ccl::event bcast(type& buf, \
                                size_t count, \
                                size_t root, \
                                ccl::stream::impl_value_t& stream, \
                                const ccl::broadcast_attr& attr, \
                                const ccl::vector_class<ccl::event>& deps = {}) = 0; \
 \
-    virtual ccl::request reduce(const type& send_buf, \
+    virtual ccl::event reduce(const type& send_buf, \
                                 type& recv_buf, \
                                 size_t count, \
                                 ccl::reduction reduction, \
@@ -279,7 +279,7 @@
                                 const ccl::reduce_attr& attr, \
                                 const ccl::vector_class<ccl::event>& deps = {}) = 0; \
 \
-    virtual ccl::request reduce_scatter(const type& send_buf, \
+    virtual ccl::event reduce_scatter(const type& send_buf, \
                                         type& recv_buf, \
                                         size_t recv_count, \
                                         ccl::reduction reduction, \
@@ -289,7 +289,7 @@
 
 #define DEVICE_COMM_INTERFACE_SPARSE_CLASS_DECLARATION(index_type, value_type) \
 \
-    virtual ccl::request sparse_allreduce(const index_type& send_ind_buf, \
+    virtual ccl::event sparse_allreduce(const index_type& send_ind_buf, \
                                           size_t send_ind_count, \
                                           const value_type& send_val_buf, \
                                           size_t send_val_count, \
@@ -307,7 +307,7 @@
  */
 #define DEVICE_COMM_INTERFACE_COLL_DEFINITION__VOID \
 \
-    ccl::request allgatherv(const void* send_buf, \
+    ccl::event allgatherv(const void* send_buf, \
                             size_t send_count, \
                             void* recv_buf, \
                             const ccl::vector_class<size_t>& recv_counts, \
@@ -319,7 +319,7 @@
             send_buf, send_count, recv_buf, recv_counts, dtype, stream, attr, deps); \
     } \
 \
-    ccl::request allgatherv(const void* send_buf, \
+    ccl::event allgatherv(const void* send_buf, \
                             size_t send_count, \
                             const ccl::vector_class<void*>& recv_bufs, \
                             const ccl::vector_class<size_t>& recv_counts, \
@@ -331,7 +331,7 @@
             send_buf, send_count, recv_bufs, recv_counts, dtype, stream, attr, deps); \
     } \
 \
-    ccl::request allreduce(const void* send_buf, \
+    ccl::event allreduce(const void* send_buf, \
                            void* recv_buf, \
                            size_t count, \
                            ccl::datatype dtype, \
@@ -343,7 +343,7 @@
             send_buf, recv_buf, count, dtype, reduction, stream, attr, deps); \
     } \
 \
-    ccl::request alltoall(const void* send_buf, \
+    ccl::event alltoall(const void* send_buf, \
                           void* recv_buf, \
                           size_t count, \
                           ccl::datatype dtype, \
@@ -352,7 +352,7 @@
                           const ccl::vector_class<ccl::event>& deps = {}) override { \
         return get_impl()->alltoall_impl(send_buf, recv_buf, count, dtype, stream, attr, deps); \
     } \
-    ccl::request alltoall(const ccl::vector_class<void*>& send_buf, \
+    ccl::event alltoall(const ccl::vector_class<void*>& send_buf, \
                           const ccl::vector_class<void*>& recv_buf, \
                           size_t count, \
                           ccl::datatype dtype, \
@@ -362,7 +362,7 @@
         return get_impl()->alltoall_impl(send_buf, recv_buf, count, dtype, stream, attr, deps); \
     } \
 \
-    ccl::request alltoallv(const void* send_buf, \
+    ccl::event alltoallv(const void* send_buf, \
                            const ccl::vector_class<size_t>& send_counts, \
                            void* recv_buf, \
                            const ccl::vector_class<size_t>& recv_counts, \
@@ -373,7 +373,7 @@
         return get_impl()->alltoallv_impl( \
             send_buf, send_counts, recv_buf, recv_counts, dtype, stream, attr, deps); \
     } \
-    ccl::request alltoallv(const ccl::vector_class<void*>& send_bufs, \
+    ccl::event alltoallv(const ccl::vector_class<void*>& send_bufs, \
                            const ccl::vector_class<size_t>& send_counts, \
                            const ccl::vector_class<void*>& recv_bufs, \
                            const ccl::vector_class<size_t>& recv_counts, \
@@ -385,7 +385,7 @@
             send_bufs, send_counts, recv_bufs, recv_counts, dtype, stream, attr, deps); \
     } \
 \
-    ccl::request bcast(void* buf, \
+    ccl::event bcast(void* buf, \
                        size_t count, \
                        ccl::datatype dtype, \
                        size_t root, \
@@ -395,7 +395,7 @@
         return get_impl()->broadcast_impl(buf, count, dtype, root, stream, attr, deps); \
     } \
 \
-    ccl::request reduce(const void* send_buf, \
+    ccl::event reduce(const void* send_buf, \
                         void* recv_buf, \
                         size_t count, \
                         ccl::datatype dtype, \
@@ -408,7 +408,7 @@
             send_buf, recv_buf, count, dtype, reduction, root, stream, attr, deps); \
     } \
 \
-    ccl::request reduce_scatter(const void* send_buf, \
+    ccl::event reduce_scatter(const void* send_buf, \
                                 void* recv_buf, \
                                 size_t recv_count, \
                                 ccl::datatype dtype, \
@@ -422,7 +422,7 @@
 
 #define DEVICE_COMM_INTERFACE_SPARSE_DEFINITION__VOID \
 \
-    ccl::request sparse_allreduce(const void* send_ind_buf, \
+    ccl::event sparse_allreduce(const void* send_ind_buf, \
                                   size_t send_ind_count, \
                                   const void* send_val_buf, \
                                   size_t send_val_count, \
@@ -454,7 +454,7 @@
 
 #define DEVICE_COMM_INTERFACE_COLL_DEFINITION(type) \
 \
-    ccl::request allgatherv(const type* send_buf, \
+    ccl::event allgatherv(const type* send_buf, \
                             size_t send_count, \
                             type* recv_buf, \
                             const ccl::vector_class<size_t>& recv_counts, \
@@ -465,7 +465,7 @@
             send_buf, send_count, recv_buf, recv_counts, stream, attr, deps); \
     } \
 \
-    ccl::request allgatherv(const type* send_buf, \
+    ccl::event allgatherv(const type* send_buf, \
                             size_t send_count, \
                             ccl::vector_class<type*>& recv_buf, \
                             const ccl::vector_class<size_t>& recv_counts, \
@@ -476,7 +476,7 @@
             send_buf, send_count, recv_buf, recv_counts, stream, attr, deps); \
     } \
 \
-    ccl::request allreduce(const type* send_buf, \
+    ccl::event allreduce(const type* send_buf, \
                            type* recv_buf, \
                            size_t count, \
                            ccl::reduction reduction, \
@@ -487,7 +487,7 @@
             send_buf, recv_buf, count, reduction, stream, attr, deps); \
     } \
 \
-    ccl::request alltoall(const type* send_buf, \
+    ccl::event alltoall(const type* send_buf, \
                           type* recv_buf, \
                           size_t count, \
                           ccl::stream::impl_value_t& stream, \
@@ -495,7 +495,7 @@
                           const ccl::vector_class<ccl::event>& deps) override { \
         return get_impl()->alltoall_impl(send_buf, recv_buf, count, stream, attr, deps); \
     } \
-    ccl::request alltoall(const ccl::vector_class<type*>& send_buf, \
+    ccl::event alltoall(const ccl::vector_class<type*>& send_buf, \
                           const ccl::vector_class<type*>& recv_buf, \
                           size_t count, \
                           ccl::stream::impl_value_t& stream, \
@@ -504,7 +504,7 @@
         return get_impl()->alltoall_impl(send_buf, recv_buf, count, stream, attr, deps); \
     } \
 \
-    ccl::request alltoallv(const type* send_buf, \
+    ccl::event alltoallv(const type* send_buf, \
                            const ccl::vector_class<size_t>& send_counts, \
                            type* recv_buf, \
                            const ccl::vector_class<size_t>& recv_counts, \
@@ -515,7 +515,7 @@
             send_buf, send_counts, recv_buf, recv_counts, stream, attr, deps); \
     } \
 \
-    ccl::request alltoallv(const ccl::vector_class<type*>& send_bufs, \
+    ccl::event alltoallv(const ccl::vector_class<type*>& send_bufs, \
                            const ccl::vector_class<size_t>& send_counts, \
                            const ccl::vector_class<type*>& recv_bufs, \
                            const ccl::vector_class<size_t>& recv_counts, \
@@ -526,7 +526,7 @@
             send_bufs, send_counts, recv_bufs, recv_counts, stream, attr, deps); \
     } \
 \
-    ccl::request bcast(type* buf, \
+    ccl::event bcast(type* buf, \
                        size_t count, \
                        size_t root, \
                        ccl::stream::impl_value_t& stream, \
@@ -535,7 +535,7 @@
         return get_impl()->broadcast_impl(buf, count, root, stream, attr, deps); \
     } \
 \
-    ccl::request reduce(const type* send_buf, \
+    ccl::event reduce(const type* send_buf, \
                         type* recv_buf, \
                         size_t count, \
                         ccl::reduction reduction, \
@@ -547,7 +547,7 @@
             send_buf, recv_buf, count, reduction, root, stream, attr, deps); \
     } \
 \
-    ccl::request reduce_scatter(const type* send_buf, \
+    ccl::event reduce_scatter(const type* send_buf, \
                                 type* recv_buf, \
                                 size_t recv_count, \
                                 ccl::reduction reduction, \
@@ -560,7 +560,7 @@
 
 #define DEVICE_COMM_INTERFACE_SPARSE_DEFINITION(index_type, value_type) \
 \
-    ccl::request sparse_allreduce(const index_type* send_ind_buf, \
+    ccl::event sparse_allreduce(const index_type* send_ind_buf, \
                                   size_t send_ind_count, \
                                   const value_type* send_val_buf, \
                                   size_t send_val_count, \
@@ -588,7 +588,7 @@
 
 #define DEVICE_COMM_INTERFACE_COLL_CLASS_DEFINITION(type) \
 \
-    ccl::request allgatherv(const type& send_buf, \
+    ccl::event allgatherv(const type& send_buf, \
                             size_t send_count, \
                             type& recv_buf, \
                             const ccl::vector_class<size_t>& recv_counts, \
@@ -599,7 +599,7 @@
             send_buf, send_count, recv_buf, recv_counts, stream, attr, deps); \
     } \
 \
-    ccl::request allgatherv(const type& send_buf, \
+    ccl::event allgatherv(const type& send_buf, \
                             size_t send_count, \
                             ccl::vector_class<ccl::reference_wrapper_class<type>>& recv_buf, \
                             const ccl::vector_class<size_t>& recv_counts, \
@@ -610,7 +610,7 @@
             send_buf, send_count, recv_buf, recv_counts, stream, attr, deps); \
     } \
 \
-    ccl::request allreduce(const type& send_buf, \
+    ccl::event allreduce(const type& send_buf, \
                            type& recv_buf, \
                            size_t count, \
                            ccl::reduction reduction, \
@@ -621,7 +621,7 @@
             send_buf, recv_buf, count, reduction, stream, attr, deps); \
     } \
 \
-    ccl::request alltoall(const type& send_buf, \
+    ccl::event alltoall(const type& send_buf, \
                           type& recv_buf, \
                           size_t count, \
                           ccl::stream::impl_value_t& stream, \
@@ -629,7 +629,7 @@
                           const ccl::vector_class<ccl::event>& deps = {}) override { \
         return get_impl()->alltoall_impl(send_buf, recv_buf, count, stream, attr, deps); \
     } \
-    ccl::request alltoall(const ccl::vector_class<ccl::reference_wrapper_class<type>>& send_buf, \
+    ccl::event alltoall(const ccl::vector_class<ccl::reference_wrapper_class<type>>& send_buf, \
                           const ccl::vector_class<ccl::reference_wrapper_class<type>>& recv_buf, \
                           size_t count, \
                           ccl::stream::impl_value_t& stream, \
@@ -638,7 +638,7 @@
         return get_impl()->alltoall_impl(send_buf, recv_buf, count, stream, attr, deps); \
     } \
 \
-    ccl::request alltoallv(const type& send_buf, \
+    ccl::event alltoallv(const type& send_buf, \
                            const ccl::vector_class<size_t>& send_counts, \
                            type& recv_buf, \
                            const ccl::vector_class<size_t>& recv_counts, \
@@ -649,7 +649,7 @@
             send_buf, send_counts, recv_buf, recv_counts, stream, attr, deps); \
     } \
 \
-    ccl::request alltoallv(const ccl::vector_class<ccl::reference_wrapper_class<type>>& send_buf, \
+    ccl::event alltoallv(const ccl::vector_class<ccl::reference_wrapper_class<type>>& send_buf, \
                            const ccl::vector_class<size_t>& send_counts, \
                            const ccl::vector_class<ccl::reference_wrapper_class<type>>& recv_buf, \
                            const ccl::vector_class<size_t>& recv_counts, \
@@ -660,7 +660,7 @@
             send_buf, send_counts, recv_buf, recv_counts, stream, attr, deps); \
     } \
 \
-    ccl::request bcast(type& buf, \
+    ccl::event bcast(type& buf, \
                        size_t count, \
                        size_t root, \
                        ccl::stream::impl_value_t& stream, \
@@ -669,7 +669,7 @@
         return get_impl()->broadcast_impl(buf, count, root, stream, attr, deps); \
     } \
 \
-    ccl::request reduce(const type& send_buf, \
+    ccl::event reduce(const type& send_buf, \
                         type& recv_buf, \
                         size_t count, \
                         ccl::reduction reduction, \
@@ -681,7 +681,7 @@
             send_buf, recv_buf, count, reduction, root, stream, attr, deps); \
     } \
 \
-    ccl::request reduce_scatter(const type& send_buf, \
+    ccl::event reduce_scatter(const type& send_buf, \
                                 type& recv_buf, \
                                 size_t recv_count, \
                                 ccl::reduction reduction, \
@@ -694,7 +694,7 @@
 
 #define DEVICE_COMM_INTERFACE_SPARSE_CLASS_DEFINITION(index_type, value_type) \
 \
-    ccl::request sparse_allreduce(const index_type& send_ind_buf, \
+    ccl::event sparse_allreduce(const index_type& send_ind_buf, \
                                   size_t send_ind_count, \
                                   const value_type& send_val_buf, \
                                   size_t send_val_count, \
@@ -724,7 +724,7 @@
  * Coll implementations
  */
 #define DEVICE_COMM_IMPL_DECLARATION \
-    ccl::request allgatherv_impl(const void* send_buf, \
+    ccl::event allgatherv_impl(const void* send_buf, \
                                  size_t send_count, \
                                  void* recv_buf, \
                                  const ccl::vector_class<size_t>& recv_counts, \
@@ -732,7 +732,7 @@
                                  ccl::stream::impl_value_t& stream, \
                                  const ccl::allgatherv_attr& attr, \
                                  const ccl::vector_class<ccl::event>& deps); \
-    ccl::request allgatherv_impl(const void* send_buf, \
+    ccl::event allgatherv_impl(const void* send_buf, \
                                  size_t send_count, \
                                  const ccl::vector_class<void*>& recv_bufs, \
                                  const ccl::vector_class<size_t>& recv_counts, \
@@ -742,7 +742,7 @@
                                  const ccl::vector_class<ccl::event>& deps); \
 \
     template <class buffer_type> \
-    ccl::request allgatherv_impl(const buffer_type* send_buf, \
+    ccl::event allgatherv_impl(const buffer_type* send_buf, \
                                  size_t send_count, \
                                  buffer_type* recv_buf, \
                                  const ccl::vector_class<size_t>& recv_counts, \
@@ -750,7 +750,7 @@
                                  const ccl::allgatherv_attr& attr, \
                                  const ccl::vector_class<ccl::event>& deps); \
     template <class buffer_type> \
-    ccl::request allgatherv_impl(const buffer_type* send_buf, \
+    ccl::event allgatherv_impl(const buffer_type* send_buf, \
                                  size_t send_count, \
                                  ccl::vector_class<buffer_type*>& recv_buf, \
                                  const ccl::vector_class<size_t>& recv_counts, \
@@ -758,7 +758,7 @@
                                  const ccl::allgatherv_attr& attr, \
                                  const ccl::vector_class<ccl::event>& deps); \
 \
-    ccl::request allreduce_impl(const void* send_buf, \
+    ccl::event allreduce_impl(const void* send_buf, \
                                 void* recv_buf, \
                                 size_t count, \
                                 ccl::datatype dtype, \
@@ -768,7 +768,7 @@
                                 const ccl::vector_class<ccl::event>& deps); \
 \
     template <class buffer_type> \
-    ccl::request allreduce_impl(const buffer_type* send_buf, \
+    ccl::event allreduce_impl(const buffer_type* send_buf, \
                                 buffer_type* recv_buf, \
                                 size_t count, \
                                 ccl::reduction reduction, \
@@ -776,14 +776,14 @@
                                 const ccl::allreduce_attr& attr, \
                                 const ccl::vector_class<ccl::event>& deps); \
 \
-    ccl::request alltoall_impl(const void* send_buf, \
+    ccl::event alltoall_impl(const void* send_buf, \
                                void* recv_buf, \
                                size_t count, \
                                ccl::datatype dtype, \
                                ccl::stream::impl_value_t& stream, \
                                const ccl::alltoall_attr& attr, \
                                const ccl::vector_class<ccl::event>& deps); \
-    ccl::request alltoall_impl(const ccl::vector_class<void*>& send_buf, \
+    ccl::event alltoall_impl(const ccl::vector_class<void*>& send_buf, \
                                const ccl::vector_class<void*>& recv_buf, \
                                size_t count, \
                                ccl::datatype dtype, \
@@ -792,21 +792,21 @@
                                const ccl::vector_class<ccl::event>& deps); \
 \
     template <class buffer_type> \
-    ccl::request alltoall_impl(const buffer_type* send_buf, \
+    ccl::event alltoall_impl(const buffer_type* send_buf, \
                                buffer_type* recv_buf, \
                                size_t count, \
                                ccl::stream::impl_value_t& stream, \
                                const ccl::alltoall_attr& attr, \
                                const ccl::vector_class<ccl::event>& deps); \
     template <class buffer_type> \
-    ccl::request alltoall_impl(const ccl::vector_class<buffer_type*>& send_buf, \
+    ccl::event alltoall_impl(const ccl::vector_class<buffer_type*>& send_buf, \
                                const ccl::vector_class<buffer_type*>& recv_buf, \
                                size_t count, \
                                ccl::stream::impl_value_t& stream, \
                                const ccl::alltoall_attr& attr, \
                                const ccl::vector_class<ccl::event>& deps); \
 \
-    ccl::request alltoallv_impl(const void* send_buf, \
+    ccl::event alltoallv_impl(const void* send_buf, \
                                 const ccl::vector_class<size_t>& send_counts, \
                                 void* recv_buf, \
                                 const ccl::vector_class<size_t>& recv_counts, \
@@ -814,7 +814,7 @@
                                 ccl::stream::impl_value_t& stream, \
                                 const ccl::alltoallv_attr& attr, \
                                 const ccl::vector_class<ccl::event>& deps); \
-    ccl::request alltoallv_impl(const ccl::vector_class<void*>& send_buf, \
+    ccl::event alltoallv_impl(const ccl::vector_class<void*>& send_buf, \
                                 const ccl::vector_class<size_t>& send_counts, \
                                 ccl::vector_class<void*> recv_buf, \
                                 const ccl::vector_class<size_t>& recv_counts, \
@@ -824,7 +824,7 @@
                                 const ccl::vector_class<ccl::event>& deps); \
 \
     template <class buffer_type> \
-    ccl::request alltoallv_impl(const ccl::vector_class<buffer_type*>& send_buf, \
+    ccl::event alltoallv_impl(const ccl::vector_class<buffer_type*>& send_buf, \
                                 const ccl::vector_class<size_t>& send_counts, \
                                 const ccl::vector_class<buffer_type*>& recv_buf, \
                                 const ccl::vector_class<size_t>& recv_counts, \
@@ -833,7 +833,7 @@
                                 const ccl::vector_class<ccl::event>& deps); \
 \
     template <class buffer_type> \
-    ccl::request alltoallv_impl(const buffer_type* send_buf, \
+    ccl::event alltoallv_impl(const buffer_type* send_buf, \
                                 const ccl::vector_class<size_t>& send_counts, \
                                 buffer_type* recv_buf, \
                                 const ccl::vector_class<size_t>& recv_counts, \
@@ -841,7 +841,7 @@
                                 const ccl::alltoallv_attr& attr, \
                                 const ccl::vector_class<ccl::event>& deps); \
 \
-    ccl::request broadcast_impl(void* buf, \
+    ccl::event broadcast_impl(void* buf, \
                                 size_t count, \
                                 ccl::datatype dtype, \
                                 size_t root, \
@@ -849,14 +849,14 @@
                                 const ccl::broadcast_attr& attr, \
                                 const ccl::vector_class<ccl::event>& deps); \
     template <class buffer_type> \
-    ccl::request broadcast_impl(buffer_type* buf, \
+    ccl::event broadcast_impl(buffer_type* buf, \
                                 size_t count, \
                                 size_t root, \
                                 ccl::stream::impl_value_t& stream, \
                                 const ccl::broadcast_attr& attr, \
                                 const ccl::vector_class<ccl::event>& deps); \
 \
-    ccl::request reduce_impl(const void* send_buf, \
+    ccl::event reduce_impl(const void* send_buf, \
                              void* recv_buf, \
                              size_t count, \
                              ccl::datatype dtype, \
@@ -866,7 +866,7 @@
                              const ccl::reduce_attr& attr, \
                              const ccl::vector_class<ccl::event>& deps); \
     template <class buffer_type> \
-    ccl::request reduce_impl(const buffer_type* send_buf, \
+    ccl::event reduce_impl(const buffer_type* send_buf, \
                              buffer_type* recv_buf, \
                              size_t count, \
                              ccl::reduction reduction, \
@@ -875,7 +875,7 @@
                              const ccl::reduce_attr& attr, \
                              const ccl::vector_class<ccl::event>& deps); \
 \
-    ccl::request reduce_scatter_impl(const void* send_buf, \
+    ccl::event reduce_scatter_impl(const void* send_buf, \
                                      void* recv_buf, \
                                      size_t recv_count, \
                                      ccl::datatype dtype, \
@@ -884,7 +884,7 @@
                                      const ccl::reduce_scatter_attr& attr, \
                                      const ccl::vector_class<ccl::event>& deps); \
     template <class buffer_type> \
-    ccl::request reduce_scatter_impl(const buffer_type* send_buf, \
+    ccl::event reduce_scatter_impl(const buffer_type* send_buf, \
                                      buffer_type* recv_buf, \
                                      size_t recv_count, \
                                      ccl::reduction reduction, \
@@ -893,7 +893,7 @@
                                      const ccl::vector_class<ccl::event>& deps);
 
 #define DEVICE_COMM_IMPL_SPARSE_DECLARATION \
-    ccl::request sparse_allreduce_impl(const void* send_ind_buf, \
+    ccl::event sparse_allreduce_impl(const void* send_ind_buf, \
                                        size_t send_ind_count, \
                                        const void* send_val_buf, \
                                        size_t send_val_count, \
@@ -908,7 +908,7 @@
                                        const ccl::sparse_allreduce_attr& attr, \
                                        const ccl::vector_class<ccl::event>& deps); \
     template <class index_type, class value_type> \
-    ccl::request sparse_allreduce_impl(const index_type* send_ind_buf, \
+    ccl::event sparse_allreduce_impl(const index_type* send_ind_buf, \
                                        size_t send_ind_count, \
                                        const value_type* send_val_buf, \
                                        size_t send_val_count, \
@@ -923,7 +923,7 @@
 
 #define DEVICE_COMM_IMPL_CLASS_DECLARATION \
     template <class buffer_type> \
-    ccl::request allgatherv_impl(const buffer_type& send_buf, \
+    ccl::event allgatherv_impl(const buffer_type& send_buf, \
                                  size_t send_count, \
                                  buffer_type& recv_buf, \
                                  const ccl::vector_class<size_t>& recv_counts, \
@@ -931,7 +931,7 @@
                                  const ccl::allgatherv_attr& attr, \
                                  const ccl::vector_class<ccl::event>& deps); \
     template <class buffer_type> \
-    ccl::request allgatherv_impl( \
+    ccl::event allgatherv_impl( \
         const buffer_type& send_buf, \
         size_t send_count, \
         ccl::vector_class<ccl::reference_wrapper_class<buffer_type>>& recv_buf, \
@@ -941,7 +941,7 @@
         const ccl::vector_class<ccl::event>& deps); \
 \
     template <class buffer_type> \
-    ccl::request allreduce_impl(const buffer_type& send_buf, \
+    ccl::event allreduce_impl(const buffer_type& send_buf, \
                                 buffer_type& recv_buf, \
                                 size_t count, \
                                 ccl::reduction reduction, \
@@ -949,14 +949,14 @@
                                 const ccl::allreduce_attr& attr, \
                                 const ccl::vector_class<ccl::event>& deps); \
     template <class buffer_type> \
-    ccl::request alltoall_impl(const buffer_type& send_buf, \
+    ccl::event alltoall_impl(const buffer_type& send_buf, \
                                buffer_type& recv_buf, \
                                size_t count, \
                                ccl::stream::impl_value_t& stream, \
                                const ccl::alltoall_attr& attr, \
                                const ccl::vector_class<ccl::event>& deps); \
     template <class buffer_type> \
-    ccl::request alltoall_impl( \
+    ccl::event alltoall_impl( \
         const ccl::vector_class<ccl::reference_wrapper_class<buffer_type>>& send_buf, \
         const ccl::vector_class<ccl::reference_wrapper_class<buffer_type>>& recv_buf, \
         size_t count, \
@@ -965,7 +965,7 @@
         const ccl::vector_class<ccl::event>& deps); \
 \
     template <class buffer_type> \
-    ccl::request alltoallv_impl(const buffer_type& send_buf, \
+    ccl::event alltoallv_impl(const buffer_type& send_buf, \
                                 const ccl::vector_class<size_t>& send_counts, \
                                 buffer_type& recv_buf, \
                                 const ccl::vector_class<size_t>& recv_counts, \
@@ -973,7 +973,7 @@
                                 const ccl::alltoallv_attr& attr, \
                                 const ccl::vector_class<ccl::event>& deps); \
     template <class buffer_type> \
-    ccl::request alltoallv_impl( \
+    ccl::event alltoallv_impl( \
         const ccl::vector_class<ccl::reference_wrapper_class<buffer_type>>& send_buf, \
         const ccl::vector_class<size_t>& send_counts, \
         const ccl::vector_class<ccl::reference_wrapper_class<buffer_type>>& recv_buf, \
@@ -983,14 +983,14 @@
         const ccl::vector_class<ccl::event>& deps); \
 \
     template <class buffer_type> \
-    ccl::request broadcast_impl(buffer_type& buf, \
+    ccl::event broadcast_impl(buffer_type& buf, \
                                 size_t count, \
                                 size_t root, \
                                 ccl::stream::impl_value_t& stream, \
                                 const ccl::broadcast_attr& attr, \
                                 const ccl::vector_class<ccl::event>& deps); \
     template <class buffer_type> \
-    ccl::request reduce_impl(const buffer_type& send_buf, \
+    ccl::event reduce_impl(const buffer_type& send_buf, \
                              buffer_type& recv_buf, \
                              size_t count, \
                              ccl::reduction reduction, \
@@ -1000,7 +1000,7 @@
                              const ccl::vector_class<ccl::event>& deps); \
 \
     template <class buffer_type> \
-    ccl::request reduce_scatter_impl(const buffer_type& send_buf, \
+    ccl::event reduce_scatter_impl(const buffer_type& send_buf, \
                                      buffer_type& recv_buf, \
                                      size_t recv_count, \
                                      ccl::reduction reduction, \
@@ -1010,7 +1010,7 @@
 
 #define DEVICE_COMM_IMPL_SPARSE_CLASS_DECLARATION \
     template <class index_type, class value_type> \
-    ccl::request sparse_allreduce_impl(const index_type& send_ind_buf, \
+    ccl::event sparse_allreduce_impl(const index_type& send_ind_buf, \
                                        size_t send_ind_count, \
                                        const value_type& send_val_buf, \
                                        size_t send_val_count, \
@@ -1027,7 +1027,7 @@
  * Force intantiations
  */
 #define DEVICE_COMM_INTERFACE_COLL_CLASS_INSTANTIATIONS(comm_class, type) \
-    template ccl::request comm_class::allgatherv_impl( \
+    template ccl::event comm_class::allgatherv_impl( \
         const type& send_buf, \
         size_t send_count, \
         type& recv_buf, \
@@ -1036,7 +1036,7 @@
         const ccl::allgatherv_attr& attr, \
         const ccl::vector_class<ccl::event>& deps); \
 \
-    template ccl::request comm_class::allreduce_impl(const type& send_buf, \
+    template ccl::event comm_class::allreduce_impl(const type& send_buf, \
                                                      type& recv_buf, \
                                                      size_t count, \
                                                      ccl::reduction reduction, \
@@ -1044,14 +1044,14 @@
                                                      const ccl::allreduce_attr& attr, \
                                                      const ccl::vector_class<ccl::event>& deps); \
 \
-    template ccl::request comm_class::alltoall_impl(const type& send_buf, \
+    template ccl::event comm_class::alltoall_impl(const type& send_buf, \
                                                     type& recv_buf, \
                                                     size_t count, \
                                                     ccl::stream::impl_value_t& stream, \
                                                     const ccl::alltoall_attr& attr, \
                                                     const ccl::vector_class<ccl::event>& deps); \
 \
-    ccl::request alltoall_impl( \
+    ccl::event alltoall_impl( \
         const ccl::vector_class<ccl::reference_wrapper_class<type>>& send_buf, \
         const ccl::vector_class<ccl::reference_wrapper_class<type>>& recv_buf, \
         size_t count, \
@@ -1059,7 +1059,7 @@
         const ccl::alltoall_attr& attr, \
         const ccl::vector_class<ccl::event>& deps); \
 \
-    template ccl::request comm_class::alltoallv_impl<type>( \
+    template ccl::event comm_class::alltoallv_impl<type>( \
         const type& send_buf, \
         const ccl::vector_class<size_t>& send_counts, \
         type& recv_buf, \
@@ -1067,7 +1067,7 @@
         ccl::stream::impl_value_t& stream, \
         const ccl::alltoallv_attr& attr, \
         const ccl::vector_class<ccl::event>& deps); \
-    template ccl::request comm_class::alltoallv_impl<type>( \
+    template ccl::event comm_class::alltoallv_impl<type>( \
         const ccl::vector_class<ccl::reference_wrapper_class<type>>& send_buf, \
         const ccl::vector_class<size_t>& send_counts, \
         const ccl::vector_class<ccl::reference_wrapper_class<type>>& recv_buf, \
@@ -1076,14 +1076,14 @@
         const ccl::alltoallv_attr& attr, \
         const ccl::vector_class<ccl::event>& deps); \
 \
-    template ccl::request comm_class::broadcast_impl(type& buf, \
+    template ccl::event comm_class::broadcast_impl(type& buf, \
                                                      size_t count, \
                                                      size_t root, \
                                                      ccl::stream::impl_value_t& stream, \
                                                      const ccl::broadcast_attr& attr, \
                                                      const ccl::vector_class<ccl::event>& deps); \
 \
-    template ccl::request comm_class::reduce_impl(const type& send_buf, \
+    template ccl::event comm_class::reduce_impl(const type& send_buf, \
                                                   type& recv_buf, \
                                                   size_t count, \
                                                   ccl::reduction reduction, \
@@ -1094,7 +1094,7 @@
 
 #define DEVICE_COMM_INTERFACE_COLL_INSTANTIATIONS(comm_class, type) \
 \
-    template ccl::request comm_class::allgatherv_impl( \
+    template ccl::event comm_class::allgatherv_impl( \
         const type* send_buf, \
         size_t send_count, \
         type* recv_buf, \
@@ -1102,7 +1102,7 @@
         ccl::stream::impl_value_t& stream, \
         const ccl::allgatherv_attr& attr, \
         const ccl::vector_class<ccl::event>& deps); \
-    template ccl::request comm_class::allgatherv_impl( \
+    template ccl::event comm_class::allgatherv_impl( \
         const type* send_buf, \
         size_t send_count, \
         ccl::vector_class<type*>& recv_buf, \
@@ -1111,7 +1111,7 @@
         const ccl::allgatherv_attr& attr, \
         const ccl::vector_class<ccl::event>& deps); \
 \
-    template ccl::request comm_class::allreduce_impl(const type* send_buf, \
+    template ccl::event comm_class::allreduce_impl(const type* send_buf, \
                                                      type* recv_buf, \
                                                      size_t count, \
                                                      ccl::reduction reduction, \
@@ -1119,20 +1119,20 @@
                                                      const ccl::allreduce_attr& attr, \
                                                      const ccl::vector_class<ccl::event>& deps); \
 \
-    template ccl::request comm_class::alltoall_impl(const type* send_buf, \
+    template ccl::event comm_class::alltoall_impl(const type* send_buf, \
                                                     type* recv_buf, \
                                                     size_t count, \
                                                     ccl::stream::impl_value_t& stream, \
                                                     const ccl::alltoall_attr& attr, \
                                                     const ccl::vector_class<ccl::event>& deps); \
-    template ccl::request comm_class::alltoall_impl(const ccl::vector_class<type*>& send_buf, \
+    template ccl::event comm_class::alltoall_impl(const ccl::vector_class<type*>& send_buf, \
                                                     const ccl::vector_class<type*>& recv_buf, \
                                                     size_t count, \
                                                     ccl::stream::impl_value_t& stream, \
                                                     const ccl::alltoall_attr& attr, \
                                                     const ccl::vector_class<ccl::event>& deps); \
 \
-    template ccl::request comm_class::alltoallv_impl<type>( \
+    template ccl::event comm_class::alltoallv_impl<type>( \
         const type* send_buf, \
         const ccl::vector_class<size_t>& send_counts, \
         type* recv_buf, \
@@ -1140,7 +1140,7 @@
         ccl::stream::impl_value_t& stream, \
         const ccl::alltoallv_attr& attr, \
         const ccl::vector_class<ccl::event>& deps); \
-    template ccl::request comm_class::alltoallv_impl<type>( \
+    template ccl::event comm_class::alltoallv_impl<type>( \
         const ccl::vector_class<type*>& send_buf, \
         const ccl::vector_class<size_t>& send_counts, \
         const ccl::vector_class<type*>& recv_buf, \
@@ -1149,14 +1149,14 @@
         const ccl::alltoallv_attr& attr, \
         const ccl::vector_class<ccl::event>& deps); \
 \
-    template ccl::request comm_class::broadcast_impl(type* buf, \
+    template ccl::event comm_class::broadcast_impl(type* buf, \
                                                      size_t count, \
                                                      size_t root, \
                                                      ccl::stream::impl_value_t& stream, \
                                                      const ccl::broadcast_attr& attr, \
                                                      const ccl::vector_class<ccl::event>& deps); \
 \
-    template ccl::request comm_class::reduce_impl(const type* send_buf, \
+    template ccl::event comm_class::reduce_impl(const type* send_buf, \
                                                   type* recv_buf, \
                                                   size_t count, \
                                                   ccl::reduction reduction, \
@@ -1164,7 +1164,7 @@
                                                   ccl::stream::impl_value_t& stream, \
                                                   const ccl::reduce_attr& attr, \
                                                   const ccl::vector_class<ccl::event>& deps); \
-    template ccl::request comm_class::reduce_scatter_impl( \
+    template ccl::event comm_class::reduce_scatter_impl( \
         const type* send_buf, \
         type* recv_buf, \
         size_t recv_count, \
@@ -1175,7 +1175,7 @@
 
 #define DEVICE_COMM_INTERFACE_SPARSE_ALLREDUCE_EXPLICIT_INSTANTIATION( \
     comm_class, index_type, value_type) \
-    template ccl::request comm_class::sparse_allreduce_impl( \
+    template ccl::event comm_class::sparse_allreduce_impl( \
         const index_type* send_ind_buf, \
         size_t send_ind_count, \
         const value_type* send_val_buf, \
@@ -1191,7 +1191,7 @@
 
 #define DEVICE_COMM_INTERFACE_SPARSE_ALLREDUCE_EXPLICIT_CLASS_INSTANTIATION( \
     comm_class, index_type, value_type) \
-    template ccl::request comm_class::sparse_allreduce_impl( \
+    template ccl::event comm_class::sparse_allreduce_impl( \
         const index_type& send_ind_buf, \
         size_t send_ind_count, \
         const value_type& send_val_buf, \

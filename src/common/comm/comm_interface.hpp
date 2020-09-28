@@ -2,7 +2,7 @@
 #include "oneapi/ccl/ccl_types.hpp"
 #include "oneapi/ccl/ccl_type_traits.hpp"
 #include "oneapi/ccl/ccl_types_policy.hpp"
-#include "oneapi/ccl/ccl_request.hpp"
+#include "oneapi/ccl/ccl_event.hpp"
 
 #include "oneapi/ccl/ccl_comm_split_attr_ids.hpp"
 #include "oneapi/ccl/ccl_comm_split_attr_ids_traits.hpp"
@@ -12,9 +12,9 @@
 #include "oneapi/ccl/ccl_stream_attr_ids_traits.hpp"
 #include "oneapi/ccl/ccl_stream.hpp"
 
-#include "oneapi/ccl/ccl_event_attr_ids.hpp"
-#include "oneapi/ccl/ccl_event_attr_ids_traits.hpp"
-#include "oneapi/ccl/ccl_event.hpp"
+#include "common/event_internal/ccl_event/ccl_event_attr_ids.hpp"
+#include "common/event_internal/ccl_event/ccl_event_attr_ids_traits.hpp"
+#include "common/event_internal/ccl_event/ccl_event.hpp"
 
 #include "common/comm/compiler_comm_interface_dispatcher.hpp"
 #include "common/comm/l0/comm_context_id.hpp"
@@ -55,7 +55,7 @@ struct communicator_interface : public communicator_interface_dispatcher {
     virtual const group_unique_key& get_comm_group_id() const = 0;
 
     // collectives operation declarations
-    virtual ccl::request barrier(stream::impl_value_t& op_stream,
+    virtual ccl::event barrier(stream::impl_value_t& op_stream,
                                  const barrier_attr& attr,
                                  const vector_class<event>& deps = {}) = 0;
 

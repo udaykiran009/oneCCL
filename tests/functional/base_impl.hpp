@@ -39,7 +39,7 @@ std::string typed_test_param<T>::create_match_id(size_t buf_idx) {
 }
 
 template <typename T>
-bool typed_test_param<T>::complete_request(ccl::request reqs) {
+bool typed_test_param<T>::complete_request(ccl::event reqs) {
     if (test_conf.completion_type == CMPT_TEST) {
         return reqs.test();
     }

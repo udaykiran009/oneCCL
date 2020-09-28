@@ -103,7 +103,7 @@
         int result_final = 0; \
         static int glob_idx = 0; \
         auto comm = ccl::create_communicator(); \ // TODO create_communicator must have args
-        ccl::request reqs; \
+        ccl::event reqs; \
         auto coll_attr = \
             ccl::create_operation_attr<ccl::allreduce_attr>(); \
         reqs = comm.allreduce(&result, &result_final, 1, ccl::reduction::sum, coll_attr); \
@@ -166,7 +166,7 @@
 void print_err_message(char* err_message, std::ostream& output) {
     int message_len = strlen(err_message);
     auto comm = ccl::create_communicator(); // TODO create_communicator must have args
-    ccl::request reqs;
+    ccl::event reqs;
     ccl::allgatherv_attr coll_attr =
         ccl::create_operation_attr<ccl::allgatherv_attr>();
     int process_count = comm.size();

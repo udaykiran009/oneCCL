@@ -179,7 +179,7 @@ void user_thread_sycl(size_t thread_idx, const cl::sycl::vector_class<cl::sycl::
 
     //allreduce
     ccl::attr attr{};
-    std::vector<ccl::request> reqs;
+    std::vector<ccl::event> reqs;
     for(auto &comm : comms)
     {
         size_t rank = comm->rank();
@@ -316,7 +316,7 @@ void user_thread_idx(size_t thread_idx, ccl::device_indices_t thread_device_idx,
     global_communicator->barrier();
 
     //allreduce
-    std::vector<ccl::request> reqs;
+    std::vector<ccl::event> reqs;
         ccl::attr attr{};
     for(auto &comm : comms)
     {

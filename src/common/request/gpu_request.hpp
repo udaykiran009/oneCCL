@@ -7,7 +7,7 @@
 class ccl_gpu_sched;
 
 namespace ccl {
-class event;
+class event_internal;
 class gpu_request_impl final : public ccl::request_impl {
 public:
     explicit gpu_request_impl(std::unique_ptr<ccl_gpu_sched>&& sched);
@@ -16,7 +16,7 @@ public:
     void wait() override;
     bool test() override;
     bool cancel() override;
-    event& get_event() override;
+    event_internal& get_event() override;
 
 private:
     std::unique_ptr<ccl_gpu_sched> gpu_sched;
@@ -31,7 +31,7 @@ public:
     void wait() override;
     bool test() override;
     bool cancel() override;
-    event& get_event() override;
+    event_internal& get_event() override;
 
 private:
     std::shared_ptr<ccl_gpu_sched> gpu_sched;
@@ -46,7 +46,7 @@ public:
     void wait() override;
     bool test() override;
     bool cancel() override;
-    event& get_event() override;
+    event_internal& get_event() override;
 
 private:
     std::shared_ptr<ccl_gpu_sched> gpu_sched;

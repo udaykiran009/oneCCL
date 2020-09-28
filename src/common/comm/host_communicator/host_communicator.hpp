@@ -10,7 +10,7 @@
 #include "oneapi/ccl/ccl_type_traits.hpp"
 #include "oneapi/ccl/ccl_types_policy.hpp"
 
-#include "oneapi/ccl/ccl_request.hpp"
+#include "oneapi/ccl/ccl_event.hpp"
 #include "oneapi/ccl/ccl_coll_attr_ids.hpp"
 #include "oneapi/ccl/ccl_coll_attr_ids_traits.hpp"
 #include "oneapi/ccl/ccl_coll_attr.hpp"
@@ -25,7 +25,7 @@ class kvs_interface;
 
 class host_communicator : public ccl::communicator_interface {
 public:
-    using coll_request_t = ccl::request;
+    using coll_request_t = ccl::event;
     using traits = ccl::host_communicator_traits;
 
     size_t rank() const override;

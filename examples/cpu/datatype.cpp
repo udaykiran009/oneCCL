@@ -30,7 +30,7 @@ void check_allreduce(const ccl::communicator &comm) {
     const size_t max_dtype_count = 1024;
 
     std::vector<ccl::datatype> dtypes(max_dtype_count);
-    std::vector<ccl::request> reqs(max_dtype_count);
+    std::vector<ccl::event> reqs(max_dtype_count);
     std::vector<std::vector<float>> send_bufs(max_dtype_count);
     std::vector<std::vector<float>> recv_bufs(max_dtype_count);
 

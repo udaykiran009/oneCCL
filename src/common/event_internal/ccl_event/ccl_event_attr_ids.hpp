@@ -1,9 +1,5 @@
 #pragma once
 
-#ifndef CCL_PRODUCT_FULL
-#error "Do not include this file directly. Please include 'ccl.hpp'"
-#endif
-
 class ccl_event;
 namespace ccl {
 /**

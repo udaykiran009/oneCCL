@@ -8,9 +8,9 @@
 
 #include "oneapi/ccl/ccl_type_traits.hpp"
 #include "oneapi/ccl/ccl_types_policy.hpp"
-#include "oneapi/ccl/ccl_event_attr_ids.hpp"
-#include "oneapi/ccl/ccl_event_attr_ids_traits.hpp"
-#include "oneapi/ccl/ccl_event.hpp"
+#include "common/event_internal/ccl_event/ccl_event_attr_ids.hpp"
+#include "common/event_internal/ccl_event/ccl_event_attr_ids_traits.hpp"
+#include "common/event_internal/ccl_event/ccl_event.hpp"
 
 #include "environment.hpp"
 
@@ -27,7 +27,7 @@ TEST(event_api, event_from_sycl_device_context_creation) {
     auto ctx = cl::sycl::context();
     auto ev = cl::sycl::event();
     cl_event h = ev.get();
-    auto str = ccl::event::create_event_from_attr(h, ctx);
+    auto str = ccl::event_internal::create_event_from_attr(h, ctx);
 
     ASSERT_TRUE(str.get<ccl::event_attr_id::version>().full != nullptr);
 }

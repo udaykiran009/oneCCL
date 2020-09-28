@@ -28,13 +28,9 @@
 #include "oneapi/ccl/ccl_device_attr_ids_traits.hpp"
 #include "oneapi/ccl/ccl_device.hpp"
 
-#include "oneapi/ccl/ccl_event_attr_ids.hpp"
-#include "oneapi/ccl/ccl_event_attr_ids_traits.hpp"
-#include "oneapi/ccl/ccl_event.hpp"
-
 #include "oneapi/ccl/ccl_kvs.hpp"
 
-#include "oneapi/ccl/ccl_request.hpp"
+#include "oneapi/ccl/ccl_event.hpp"
 
 #include "oneapi/ccl/ccl_stream_attr_ids.hpp"
 #include "oneapi/ccl/ccl_stream_attr_ids_traits.hpp"
@@ -201,30 +197,30 @@ public:
         return str;
     }
 
-    /**
-     * Creates a new event from @native_event_type
-     * @param native_event the existing handle of event
-     * @return event object
-     */
-    template <class event_type,
-              class = typename std::enable_if<is_event_supported<event_type>()>::type>
-    event create_event(event_type& native_event);
+    // /**
+    //  * Creates a new event from @native_event_type
+    //  * @param native_event the existing handle of event
+    //  * @return event object
+    //  */
+    // template <class event_type,
+    //           class = typename std::enable_if<is_event_supported<event_type>()>::type>
+    // event create_event(event_type& native_event);
 
-    template <class event_handle_type,
-              class = typename std::enable_if<is_event_supported<event_handle_type>()>::type>
-    event create_event(event_handle_type native_event_handle,
-                       typename unified_device_context_type::ccl_native_t context);
+    // template <class event_handle_type,
+    //           class = typename std::enable_if<is_event_supported<event_handle_type>()>::type>
+    // event create_event(event_handle_type native_event_handle,
+    //                    typename unified_device_context_type::ccl_native_t context);
 
-    template <class event_type, class... attr_value_pair_t>
-    event create_event_from_attr(event_type& native_event_handle,
-                                 typename unified_device_context_type::ccl_native_t context,
-                                 attr_value_pair_t&&... avps) {
-        event ev = create_postponed_api_type<event>(native_event_handle, context);
-        int expander[]{ (ev.template set<attr_value_pair_t::idx()>(avps.val()), 0)... };
-        (void)expander;
-        ev.build_from_params();
-        return ev;
-    }
+    // template <class event_type, class... attr_value_pair_t>
+    // event create_event_from_attr(event_type& native_event_handle,
+    //                              typename unified_device_context_type::ccl_native_t context,
+    //                              attr_value_pair_t&&... avps) {
+    //     event ev = create_postponed_api_type<event>(native_event_handle, context);
+    //     int expander[]{ (ev.template set<attr_value_pair_t::idx()>(avps.val()), 0)... };
+    //     (void)expander;
+    //     ev.build_from_params();
+    //     return ev;
+    // }
 
 
 #ifdef CCL_ENABLE_SYCL

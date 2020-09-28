@@ -134,7 +134,7 @@ communicator CCL_API create_communicator(const size_t size,
 /******************** DEVICE COMMUNICATOR ********************/
 
 /* allgatherv */
-CCL_API request allgatherv(const void* send_buf,
+CCL_API event allgatherv(const void* send_buf,
                            size_t send_count,
                            void* recv_buf,
                            const vector_class<size_t>& recv_counts,
@@ -148,7 +148,7 @@ CCL_API request allgatherv(const void* send_buf,
         send_buf, send_count, recv_buf, recv_counts, dtype, disp(op_stream), attr, deps);
 }
 
-CCL_API request allgatherv(const void* send_buf,
+CCL_API event allgatherv(const void* send_buf,
                            size_t send_count,
                            const vector_class<void*>& recv_bufs,
                            const vector_class<size_t>& recv_counts,
@@ -163,7 +163,7 @@ CCL_API request allgatherv(const void* send_buf,
 }
 
 template <class BufferType, typename T>
-request allgatherv(const BufferType* send_buf,
+event allgatherv(const BufferType* send_buf,
                    size_t send_count,
                    BufferType* recv_buf,
                    const vector_class<size_t>& recv_counts,
@@ -177,7 +177,7 @@ request allgatherv(const BufferType* send_buf,
 }
 
 template <class BufferType, typename T>
-request allgatherv(const BufferType* send_buf,
+event allgatherv(const BufferType* send_buf,
                    size_t send_count,
                    vector_class<BufferType*>& recv_bufs,
                    const vector_class<size_t>& recv_counts,
@@ -191,7 +191,7 @@ request allgatherv(const BufferType* send_buf,
 }
 
 template <class BufferObjectType, typename T>
-request allgatherv(const BufferObjectType& send_buf,
+event allgatherv(const BufferObjectType& send_buf,
                    size_t send_count,
                    BufferObjectType& recv_buf,
                    const vector_class<size_t>& recv_counts,
@@ -205,7 +205,7 @@ request allgatherv(const BufferObjectType& send_buf,
 }
 
 template <class BufferObjectType, typename T>
-request allgatherv(const BufferObjectType& send_buf,
+event allgatherv(const BufferObjectType& send_buf,
                    size_t send_count,
                    vector_class<ccl::reference_wrapper_class<BufferObjectType>>& recv_bufs,
                    const vector_class<size_t>& recv_counts,
@@ -219,7 +219,7 @@ request allgatherv(const BufferObjectType& send_buf,
 }
 
 /* allreduce */
-CCL_API request allreduce(const void* send_buf,
+CCL_API event allreduce(const void* send_buf,
                           void* recv_buf,
                           size_t count,
                           datatype dtype,
@@ -234,7 +234,7 @@ CCL_API request allreduce(const void* send_buf,
 }
 
 template <class BufferType, typename T>
-request allreduce(const BufferType* send_buf,
+event allreduce(const BufferType* send_buf,
                   BufferType* recv_buf,
                   size_t count,
                   reduction reduction,
@@ -247,7 +247,7 @@ request allreduce(const BufferType* send_buf,
 }
 
 template <class BufferObjectType, typename T>
-request allreduce(const BufferObjectType& send_buf,
+event allreduce(const BufferObjectType& send_buf,
                   BufferObjectType& recv_buf,
                   size_t count,
                   reduction reduction,
@@ -260,7 +260,7 @@ request allreduce(const BufferObjectType& send_buf,
 }
 
 /* alltoall */
-CCL_API request alltoall(const void* send_buf,
+CCL_API event alltoall(const void* send_buf,
                          void* recv_buf,
                          size_t count,
                          datatype dtype,
@@ -272,7 +272,7 @@ CCL_API request alltoall(const void* send_buf,
     return disp(comm)->alltoall(send_buf, recv_buf, count, dtype, disp(op_stream), attr, deps);
 }
 
-CCL_API request alltoall(const vector_class<void*>& send_buf,
+CCL_API event alltoall(const vector_class<void*>& send_buf,
                          const vector_class<void*>& recv_buf,
                          size_t count,
                          datatype dtype,
@@ -285,7 +285,7 @@ CCL_API request alltoall(const vector_class<void*>& send_buf,
 }
 
 template <class BufferType, typename T>
-request alltoall(const BufferType* send_buf,
+event alltoall(const BufferType* send_buf,
                  BufferType* recv_buf,
                  size_t count,
                  const communicator& comm,
@@ -297,7 +297,7 @@ request alltoall(const BufferType* send_buf,
 }
 
 template <class BufferType, typename T>
-request alltoall(const vector_class<BufferType*>& send_buf,
+event alltoall(const vector_class<BufferType*>& send_buf,
                  const vector_class<BufferType*>& recv_buf,
                  size_t count,
                  const communicator& comm,
@@ -309,7 +309,7 @@ request alltoall(const vector_class<BufferType*>& send_buf,
 }
 
 template <class BufferObjectType, typename T>
-request alltoall(const BufferObjectType& send_buf,
+event alltoall(const BufferObjectType& send_buf,
                  BufferObjectType& recv_buf,
                  size_t count,
                  const communicator& comm,
@@ -321,7 +321,7 @@ request alltoall(const BufferObjectType& send_buf,
 }
 
 template <class BufferObjectType, typename T>
-request alltoall(const vector_class<reference_wrapper_class<BufferObjectType>>& send_buf,
+event alltoall(const vector_class<reference_wrapper_class<BufferObjectType>>& send_buf,
                  const vector_class<reference_wrapper_class<BufferObjectType>>& recv_buf,
                  size_t count,
                  const communicator& comm,
@@ -333,7 +333,7 @@ request alltoall(const vector_class<reference_wrapper_class<BufferObjectType>>& 
 }
 
 /* alltoallv */
-CCL_API request alltoallv(const void* send_buf,
+CCL_API event alltoallv(const void* send_buf,
                           const vector_class<size_t>& send_counts,
                           void* recv_buf,
                           const vector_class<size_t>& recv_counts,
@@ -347,7 +347,7 @@ CCL_API request alltoallv(const void* send_buf,
         send_buf, send_counts, recv_buf, recv_counts, dtype, disp(op_stream), attr, deps);
 }
 
-CCL_API request alltoallv(const vector_class<void*>& send_bufs,
+CCL_API event alltoallv(const vector_class<void*>& send_bufs,
                           const vector_class<size_t>& send_counts,
                           const vector_class<void*>& recv_bufs,
                           const vector_class<size_t>& recv_counts,
@@ -362,7 +362,7 @@ CCL_API request alltoallv(const vector_class<void*>& send_bufs,
 }
 
 template <class BufferType, typename T>
-request alltoallv(const BufferType* send_buf,
+event alltoallv(const BufferType* send_buf,
                   const vector_class<size_t>& send_counts,
                   BufferType* recv_buf,
                   const vector_class<size_t>& recv_counts,
@@ -376,7 +376,7 @@ request alltoallv(const BufferType* send_buf,
 }
 
 template <class BufferType, typename T>
-request alltoallv(const vector_class<BufferType*>& send_bufs,
+event alltoallv(const vector_class<BufferType*>& send_bufs,
                   const vector_class<size_t>& send_counts,
                   const vector_class<BufferType*>& recv_bufs,
                   const vector_class<size_t>& recv_counts,
@@ -390,7 +390,7 @@ request alltoallv(const vector_class<BufferType*>& send_bufs,
 }
 
 template <class BufferObjectType, typename T>
-request alltoallv(const BufferObjectType& send_buf,
+event alltoallv(const BufferObjectType& send_buf,
                   const vector_class<size_t>& send_counts,
                   BufferObjectType& recv_buf,
                   const vector_class<size_t>& recv_counts,
@@ -404,7 +404,7 @@ request alltoallv(const BufferObjectType& send_buf,
 }
 
 template <class BufferObjectType, typename T>
-request alltoallv(const vector_class<reference_wrapper_class<BufferObjectType>>& send_bufs,
+event alltoallv(const vector_class<reference_wrapper_class<BufferObjectType>>& send_bufs,
                   const vector_class<size_t>& send_counts,
                   const vector_class<reference_wrapper_class<BufferObjectType>>& recv_bufs,
                   const vector_class<size_t>& recv_counts,
@@ -418,7 +418,7 @@ request alltoallv(const vector_class<reference_wrapper_class<BufferObjectType>>&
 }
 
 /* barrier */
-CCL_API request barrier(const communicator& comm,
+CCL_API event barrier(const communicator& comm,
                         stream& op_stream,
                         const barrier_attr& attr,
                         const vector_class<event>& deps) {
@@ -427,7 +427,7 @@ CCL_API request barrier(const communicator& comm,
 }
 
 /* broadcast */
-CCL_API request broadcast(void* buf,
+CCL_API event broadcast(void* buf,
                           size_t count,
                           datatype dtype,
                           size_t root,
@@ -440,7 +440,7 @@ CCL_API request broadcast(void* buf,
 }
 
 template <class BufferType, typename T>
-request broadcast(BufferType* buf,
+event broadcast(BufferType* buf,
                   size_t count,
                   size_t root,
                   const communicator& comm,
@@ -454,7 +454,7 @@ request broadcast(BufferType* buf,
 }
 
 template <class BufferObjectType, typename T>
-request broadcast(BufferObjectType& buf,
+event broadcast(BufferObjectType& buf,
                   size_t count,
                   size_t root,
                   const communicator& comm,
@@ -466,7 +466,7 @@ request broadcast(BufferObjectType& buf,
 }
 
 /* reduce */
-CCL_API request reduce(const void* send_buf,
+CCL_API event reduce(const void* send_buf,
                        void* recv_buf,
                        size_t count,
                        datatype dtype,
@@ -482,7 +482,7 @@ CCL_API request reduce(const void* send_buf,
 }
 
 template <class BufferType, typename T>
-request reduce(const BufferType* send_buf,
+event reduce(const BufferType* send_buf,
                BufferType* recv_buf,
                size_t count,
                reduction reduction,
@@ -497,7 +497,7 @@ request reduce(const BufferType* send_buf,
 }
 
 template <class BufferObjectType, typename T>
-request reduce(const BufferObjectType& send_buf,
+event reduce(const BufferObjectType& send_buf,
                BufferObjectType& recv_buf,
                size_t count,
                reduction reduction,
@@ -512,7 +512,7 @@ request reduce(const BufferObjectType& send_buf,
 }
 
 /* reduce_scatter */
-CCL_API request reduce_scatter(const void* send_buf,
+CCL_API event reduce_scatter(const void* send_buf,
                                void* recv_buf,
                                size_t recv_count,
                                datatype dtype,
@@ -527,7 +527,7 @@ CCL_API request reduce_scatter(const void* send_buf,
 }
 
 template <class BufferType, typename T>
-request reduce_scatter(const BufferType* send_buf,
+event reduce_scatter(const BufferType* send_buf,
                        BufferType* recv_buf,
                        size_t recv_count,
                        reduction reduction,
@@ -541,7 +541,7 @@ request reduce_scatter(const BufferType* send_buf,
 }
 
 template <class BufferObjectType, typename T>
-request reduce_scatter(const BufferObjectType& send_buf,
+event reduce_scatter(const BufferObjectType& send_buf,
                        BufferObjectType& recv_buf,
                        size_t recv_count,
                        reduction reduction,
@@ -557,7 +557,7 @@ request reduce_scatter(const BufferObjectType& send_buf,
 namespace preview {
 
 /* sparse_allreduce */
-CCL_API ccl::request sparse_allreduce(const void* send_ind_buf,
+CCL_API ccl::event sparse_allreduce(const void* send_ind_buf,
                                       size_t send_ind_count,
                                       const void* send_val_buf,
                                       size_t send_val_count,
@@ -590,7 +590,7 @@ CCL_API ccl::request sparse_allreduce(const void* send_ind_buf,
 }
 
 template <class IndexBufferType, class ValueBufferType, typename T>
-ccl::request sparse_allreduce(const IndexBufferType* send_ind_buf,
+ccl::event sparse_allreduce(const IndexBufferType* send_ind_buf,
                               size_t send_ind_count,
                               const ValueBufferType* send_val_buf,
                               size_t send_val_count,
@@ -619,7 +619,7 @@ ccl::request sparse_allreduce(const IndexBufferType* send_ind_buf,
 }
 
 // template <class IndexBufferObjectType, class ValueBufferObjectType, typename T>
-// ccl::request
+// ccl::event
 // sparse_allreduce(const IndexBufferObjectType& send_ind_buf,
 //                  size_t send_ind_count,
 //                  const ValueBufferObjectType& send_val_buf,

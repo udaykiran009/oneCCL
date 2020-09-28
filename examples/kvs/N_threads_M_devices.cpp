@@ -55,7 +55,7 @@ void run_test(size_t thread_idx,
 
     //allreduce
     ccl::attr attr{};
-    std::vector<ccl::request> reqs;
+    std::vector<ccl::event> reqs;
     for (auto& comm : comms) {
         size_t rank = comm->rank();
 
@@ -147,7 +147,7 @@ void run_test(size_t thread_idx,
     global_communicator->barrier();
 
     //allreduce
-    std::vector<ccl::request> reqs;
+    std::vector<ccl::event> reqs;
     ccl::attr attr{};
     for (auto &comm : comms) {
         size_t rank = comm->rank();

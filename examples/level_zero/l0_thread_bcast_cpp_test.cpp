@@ -166,7 +166,7 @@ void user_thread_sycl(size_t thread_idx,
 
     //bcast
     ccl::attr attr{};
-    std::vector<std::shared_ptr<ccl::request>> reqs;
+    std::vector<std::shared_ptr<ccl::event>> reqs;
     for (auto& comm : comms) {
         size_t rank = comm->rank();
 
@@ -290,7 +290,7 @@ void user_thread_idx(size_t thread_idx,
     global_communicator->barrier();
 
     //bcast
-    std::vector<std::shared_ptr<ccl::request>> reqs;
+    std::vector<std::shared_ptr<ccl::event>> reqs;
     ccl::attr attr{};
     for (auto& comm : comms) {
         size_t rank = comm->rank();

@@ -14,7 +14,7 @@ size_t host_communicator::size() const {
 
 void host_communicator::barrier_impl() {}
 
-ccl::request host_communicator::barrier_impl(const barrier_attr& attr) {
+ccl::event host_communicator::barrier_impl(const barrier_attr& attr) {
     return {};
 }
 

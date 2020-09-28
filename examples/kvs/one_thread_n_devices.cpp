@@ -74,7 +74,7 @@ int main(int argc, char** argv) {
     }
 
     /* call allreduce for each local devices/ranks */
-    std::vector<ccl::request> reqs;
+    std::vector<ccl::event> reqs;
     for (auto& comm : comms) {
         size_t rank = comm->rank();
         auto& buffers = rank_buf_map.find(rank)->second;

@@ -5,7 +5,7 @@
 #endif
 
 namespace ccl {
-class request;
+class event;
 class kvs_interface;
 using rank_t = size_t;
 
@@ -46,7 +46,7 @@ public:
      */
     using ccl_context_t = typename unified_device_context_type::ccl_native_t;
 
-    using coll_request_t = ccl::request;
+    using coll_request_t = ccl::event;
 
     communicator(communicator&& src);
     communicator& operator=(communicator&& src);

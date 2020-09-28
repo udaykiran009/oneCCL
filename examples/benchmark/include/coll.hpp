@@ -14,7 +14,7 @@ cl::sycl::queue sycl_queue;
 struct base_coll;
 
 using coll_list_t = std::vector<std::shared_ptr<base_coll>>;
-using req_list_t = std::vector<ccl::request>;
+using req_list_t = std::vector<ccl::event>;
 
 typedef struct bench_coll_exec_attr {
 

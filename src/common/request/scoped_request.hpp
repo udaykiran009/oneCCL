@@ -1,12 +1,12 @@
 #pragma once
 #include "oneapi/ccl/ccl_types.hpp"
-#include "oneapi/ccl/ccl_request.hpp"
+#include "oneapi/ccl/ccl_event.hpp"
 #include "common/utils/tuple.hpp"
 
 class ccl_request;
 
 namespace ccl {
-class event;
+class event_internal;
 
 struct chargeable_request : public ccl::request_impl {
     virtual void charge(ccl_request* r) = 0;
@@ -40,7 +40,7 @@ public:
         return impl.cancel();
     }
 
-    event& get_event() override {
+    event_internal& get_event() override {
         return impl.get_event();
     }
 

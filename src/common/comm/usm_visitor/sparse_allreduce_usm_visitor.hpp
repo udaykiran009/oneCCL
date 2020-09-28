@@ -6,7 +6,7 @@
 template <class communicator_impl>
 struct sparse_allreduce_usm_visitor {
     using self_t = communicator_impl;
-    using coll_request_t = ccl::request;
+    using coll_request_t = ccl::event;
 
     self_t* get_self() {
         return static_cast<self_t*>(this);

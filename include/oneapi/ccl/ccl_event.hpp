@@ -4,20 +4,17 @@
 #error "Do not include this file directly. Please include 'ccl.hpp'"
 #endif
 
-class ccl_event;
 namespace ccl {
 
+class request_impl;
+class event_internal;
+
 /**
- * A event object is an abstraction over CPU/GPU events
- * Has no defined public constructor. Use ccl::environment::create_event
- * for event objects creation
+ * event's interface that allows users to track communication operation progress
  */
-/**
- * Stream class
- */
-class event : public ccl_api_base_movable<event, direct_access_policy, ccl_event> {
+class event : public ccl_api_base_movable<event, direct_access_policy, request_impl> {
 public:
-    using base_t = ccl_api_base_movable<event, direct_access_policy, ccl_event>;
+    using base_t = ccl_api_base_movable<event, direct_access_policy, request_impl>;
 
     /**
      * Declare PIMPL type
@@ -29,55 +26,41 @@ public:
      */
     using impl_t = typename impl_value_t::element_type;
 
-    event(event&& src);
-    event& operator=(event&& src);
-    ~event();
+    event() noexcept;
+    event(event&& src) noexcept;
+    event(impl_value_t&& impl) noexcept;
+    ~event() noexcept;
+
+    event& operator=(event&& src) noexcept;
+
+    bool operator==(const event& rhs) const noexcept;
+    bool operator!=(const event& rhs) const noexcept;
 
     /**
-     * Get specific attribute value by @attrId
+     * Blocking wait for operation completion
      */
-    template <event_attr_id attrId>
-    const typename details::ccl_api_type_attr_traits<event_attr_id, attrId>::return_type& get()
-        const;
-
-private:
-    friend class environment;
-    friend class communicator;
-    event(impl_value_t&& impl);
+    void wait();
 
     /**
-     *Parametrized event creation helper
+     * Non-blocking check for operation completion
+     * @retval true if the operation has been completed
+     * @retval false if the operation has not been completed
      */
-    template <event_attr_id attrId,
-              class Value/*,
-              class = typename std::enable_if<is_attribute_value_supported<attrId, Value>()>::type*/>
-    typename ccl::details::ccl_api_type_attr_traits<ccl::event_attr_id, attrId>::return_type set(const Value& v);
-
-    void build_from_params();
-    event(const typename details::ccl_api_type_attr_traits<event_attr_id,
-                                                           event_attr_id::version>::type& version);
+    bool test();
 
     /**
-     * Factory methods
+     * Cancel a pending asynchronous operation
+     * @retval true if the operation has been canceled
+     * @retval false if the operation has not been canceled
      */
-    template <class event_type,
-              class = typename std::enable_if<is_event_supported<event_type>()>::type>
-    static event create_event(event_type& native_event);
+    bool cancel();
 
-    template <class event_handle_type,
-              class = typename std::enable_if<is_event_supported<event_handle_type>()>::type>
-    static event create_event(event_handle_type native_event_handle,
-                              typename unified_device_context_type::ccl_native_t context);
-
-    template <class event_type, class... attr_value_pair_t>
-    static event create_event_from_attr(event_type& native_event_handle,
-                                        typename unified_device_context_type::ccl_native_t context,
-                                        attr_value_pair_t&&... avps);
+    /**
+      * Retrieve event object to be used for synchronization
+      * with computation or other communication operations
+      * @return event object
+      */
+    event_internal& get_event();
 };
-
-template <event_attr_id t, class value_type>
-constexpr auto attr_val(value_type v) -> details::attr_value_tripple<event_attr_id, t, value_type> {
-    return details::attr_value_tripple<event_attr_id, t, value_type>(v);
-}
 
 } // namespace ccl

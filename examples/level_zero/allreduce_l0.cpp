@@ -89,7 +89,7 @@ void user_thread_idx(size_t thread_idx,
     }
 
     //allreduce
-    std::vector<ccl::request> reqs;
+    std::vector<ccl::event> reqs;
     for (auto& comm : comms) {
         size_t rank = comm.rank();
 
@@ -204,7 +204,7 @@ void user_thread_idx(size_t thread_idx,
     }
 
     //allreduce
-    std::vector<ccl::request> reqs;
+    std::vector<ccl::event> reqs;
     for (auto& comm : comms) {
         size_t rank = comm.rank();
         /*

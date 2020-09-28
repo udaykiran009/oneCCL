@@ -49,7 +49,7 @@ int collect_iso = 1;
 void* msg_buffers[MSG_COUNT];
 int msg_priorities[MSG_COUNT];
 int msg_completions[MSG_COUNT];
-ccl::request msg_requests[MSG_COUNT];
+ccl::event msg_requests[MSG_COUNT];
 
 double tmp_start_timer, tmp_stop_timer;
 double iter_start, iter_stop, iter_timer, iter_iso_timer;

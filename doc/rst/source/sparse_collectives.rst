@@ -28,7 +28,7 @@ The ``sparse_allreduce`` function has the following parameters:
 - ``value_dtype`` - data type of elements in ``send_val_buf`` and ``recv_val_buf`` buffers
 - ``reduction`` - the type of reduction operation to be applied
 - ``attributes`` - attributes that customize operation
-- returns ``ccl::request`` object to track the progress of the operation
+- returns ``ccl::event`` object to track the progress of the operation
 
 For ``sparse_allreduce``, a completion callback or an allocation callback is required.
 

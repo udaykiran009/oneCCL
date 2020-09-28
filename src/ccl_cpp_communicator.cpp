@@ -12,15 +12,15 @@
 #include "oneapi/ccl/ccl_comm_split_attr_ids_traits.hpp"
 #include "oneapi/ccl/ccl_comm_split_attr.hpp"
 
-#include "oneapi/ccl/ccl_event_attr_ids.hpp"
-#include "oneapi/ccl/ccl_event_attr_ids_traits.hpp"
-#include "oneapi/ccl/ccl_event.hpp"
+#include "common/event_internal/ccl_event/ccl_event_attr_ids.hpp"
+#include "common/event_internal/ccl_event/ccl_event_attr_ids_traits.hpp"
+#include "common/event_internal/ccl_event/ccl_event.hpp"
 
 #include "oneapi/ccl/ccl_stream_attr_ids.hpp"
 #include "oneapi/ccl/ccl_stream_attr_ids_traits.hpp"
 #include "oneapi/ccl/ccl_stream.hpp"
 
-#include "oneapi/ccl/ccl_request.hpp"
+#include "oneapi/ccl/ccl_event.hpp"
 
 #include "oneapi/ccl/ccl_communicator.hpp"
 #include "common/comm/l0/comm_context_storage.hpp"

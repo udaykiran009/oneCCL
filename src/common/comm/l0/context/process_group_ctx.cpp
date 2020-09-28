@@ -181,7 +181,7 @@ bool process_group_context::build_cluster_affinity_table(
     std::vector<size_t> recv_process_indices_counts(ccl_communicator->size(), 1);
 
     constexpr size_t hostname_indices_requests_count = 2;
-    std::vector<ccl::request> requests;
+    std::vector<ccl::event> requests;
     requests.reserve(hostname_indices_requests_count);
     {
         ccl::stream::impl_value_t empty_stream{};

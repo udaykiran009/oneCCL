@@ -101,7 +101,7 @@ public:
                  plain_recv_data.size());
 
         ccl::stream::impl_value_t empty{};
-        request = ccl_communicator->allgatherv_impl(
+        event = ccl_communicator->allgatherv_impl(
             (char*)plain_send_data.data(), send_bytes, (char*)plain_recv_data.data(), recv_bytes,
             empty, ccl::default_allgatherv_attr, {});
         status = ccl_sched_entry_status_started;
@@ -110,7 +110,7 @@ public:
     }
 
     void update() override {
-        if (request.test()) {
+        if (event.test()) {
             LOG_DEBUG(class_name(),
                       " entry req ",
                       &req,
@@ -279,7 +279,7 @@ private:
     size_t cnt;
     ccl_datatype dtype;
 
-    ccl::communicator::coll_request_t request;
+    ccl::communicator::coll_request_t event;
     atl_req_t req{};
 };
 } // namespace native

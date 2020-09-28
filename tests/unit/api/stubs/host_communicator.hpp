@@ -7,7 +7,7 @@
 #include "oneapi/ccl/ccl_coll_attr_ids_traits.hpp"
 #include "oneapi/ccl/ccl_coll_attr.hpp"
 
-#include "oneapi/ccl/ccl_request.hpp"
+#include "oneapi/ccl/ccl_event.hpp"
 
 #include "atl_wrapper.h"
 
@@ -22,7 +22,7 @@ public:
 
     void barrier_impl();
 
-    ccl::request barrier_impl(const barrier_attr& attr = default_barrier_attr);
+    ccl::event barrier_impl(const barrier_attr& attr = default_barrier_attr);
     std::shared_ptr<atl_wrapper> get_atl();
     std::shared_ptr<ccl_comm> comm_impl;
 };

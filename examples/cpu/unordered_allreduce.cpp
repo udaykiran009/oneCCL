@@ -16,8 +16,8 @@ int main() {
 
     std::vector<std::string> match_ids;
 
-    /* request, operation idx */
-    std::list<std::pair<ccl::request, size_t>> active_ops;
+    /* event, operation idx */
+    std::list<std::pair<ccl::event, size_t>> active_ops;
 
     std::vector<std::vector<float>> send_bufs;
     std::vector<std::vector<float>> recv_bufs;

@@ -16,7 +16,7 @@ public:
                                            ccl::device_topology_type::a2a,
                                            ccl::gpu_communicator_traits>;
 
-    using coll_request_t = ccl::request;
+    using coll_request_t = ccl::event;
 
     process_a2a_communicator(ccl::unified_device_type&& device,
                              size_t thread_idx,

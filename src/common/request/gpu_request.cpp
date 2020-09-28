@@ -37,7 +37,7 @@ bool gpu_request_impl::cancel() {
     throw ccl_error(std::string(__FUNCTION__) + " - is not implemented");
 }
 
-event& gpu_request_impl::get_event() {
+event_internal& gpu_request_impl::get_event() {
     throw ccl_error(std::string(__FUNCTION__) + " - is not implemented");
 }
 
@@ -75,7 +75,7 @@ bool gpu_shared_request_impl::cancel() {
     throw ccl_error(std::string(__FUNCTION__) + " - is not implemented");
 }
 
-event& gpu_shared_request_impl::get_event() {
+event_internal& gpu_shared_request_impl::get_event() {
     throw ccl_error(std::string(__FUNCTION__) + " - is not implemented");
 }
 
@@ -94,7 +94,7 @@ bool gpu_shared_process_request_impl::cancel() {
     throw ccl_error(std::string(__FUNCTION__) + " - is not implemented");
 }
 
-event& gpu_shared_process_request_impl::get_event() {
+event_internal& gpu_shared_process_request_impl::get_event() {
     throw ccl_error(std::string(__FUNCTION__) + " - is not implemented");
 }
 } // namespace ccl
