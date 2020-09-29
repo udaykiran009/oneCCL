@@ -3,11 +3,11 @@
 #include "oneapi/ccl/ccl_type_traits.hpp"
 #include "oneapi/ccl/ccl_types_policy.hpp"
 
-#include "common/event_internal/ccl_event/ccl_event_attr_ids.hpp"
-#include "common/event_internal/ccl_event/ccl_event_attr_ids_traits.hpp"
-#include "common/event_internal/ccl_event/ccl_event.hpp"
+#include "common/event/event_internal/event_internal_attr_ids.hpp"
+#include "common/event/event_internal/event_internal_attr_ids_traits.hpp"
+#include "common/event/event_internal/event_internal.hpp"
 
-#include "common/event_internal/event_internal.hpp"
+#include "common/event/ccl_event.hpp"
 
 namespace ccl {
 
@@ -62,7 +62,7 @@ event_internal event_internal::create_event(event_type& native_event) {
 }
 
 template <event_attr_id attrId>
-CCL_API const typename details::ccl_api_type_attr_traits<event_attr_id, attrId>::return_type&
+const typename details::ccl_api_type_attr_traits<event_attr_id, attrId>::return_type&
 event_internal::get() const {
     return get_impl()->get_attribute_value(
         details::ccl_api_type_attr_traits<event_attr_id, attrId>{});
@@ -71,35 +71,10 @@ event_internal::get() const {
 template<event_attr_id attrId,
              class Value/*,
              typename T*/>
-CCL_API typename ccl::details::ccl_api_type_attr_traits<ccl::event_attr_id, attrId>::return_type event_internal::set(const Value& v)
+typename ccl::details::ccl_api_type_attr_traits<ccl::event_attr_id, attrId>::return_type event_internal::set(const Value& v)
 {
     return get_impl()->set_attribute_value(
         v, details::ccl_api_type_attr_traits<event_attr_id, attrId>{});
 }
 
 } // namespace ccl
-
-/***************************TypeGenerations*********************************************************/
-/*
-#define API_EVENT_CREATION_FORCE_INSTANTIATION(native_event_type) \
-    template CCL_API ccl::event_internal ccl::event_internal::create_event(native_event_type& native_event);
-
-#define API_EVENT_CREATION_EXT_FORCE_INSTANTIATION(native_event_handle_type) \
-    template CCL_API ccl::event_internal ccl::event_internal::create_event( \
-        native_event_handle_type handle, \
-        typename unified_device_context_type::ccl_native_t native_ctx);
-
-#define API_EVENT_FORCE_INSTANTIATION_SET(IN_attrId, IN_Value) \
-    template CCL_API typename ccl::details::ccl_api_type_attr_traits<ccl::event_attr_id, \
-                                                                     IN_attrId>::return_type \
-    ccl::event_internal::set<IN_attrId, IN_Value>(const IN_Value& v);
-
-#define API_EVENT_FORCE_INSTANTIATION_GET(IN_attrId) \
-    template CCL_API const typename ccl::details:: \
-        ccl_api_type_attr_traits<ccl::event_attr_id, IN_attrId>::return_type& \
-        ccl::event_internal::get<IN_attrId>() const;
-
-#define API_EVENT_FORCE_INSTANTIATION(IN_attrId, IN_Value) \
-    API_EVENT_FORCE_INSTANTIATION_SET(IN_attrId, IN_Value) \
-    API_EVENT_FORCE_INSTANTIATION_GET(IN_attrId)
-*/

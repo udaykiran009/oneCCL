@@ -55,8 +55,8 @@ file(GLOB sources "*.c" "*.cpp")
 set (dependencies_sources
              "${PROJECT_SOURCE_DIR}/src/ccl_cpp_utils.cpp"
              "${PROJECT_SOURCE_DIR}/src/common/log/log.cpp"
-             "${PROJECT_SOURCE_DIR}/src/common/event_internal/event_internal.cpp"
-             "${PROJECT_SOURCE_DIR}/src/ccl_cpp_event_internal.cpp"
+             "${PROJECT_SOURCE_DIR}/src/common/event/ccl_event.cpp"
+             "${PROJECT_SOURCE_DIR}/src/common/event/event_internal/event_internal.cpp"
              "${PROJECT_SOURCE_DIR}/tests/unit/api/stubs/spinlock.cpp")
 
 if(MULTI_GPU_SUPPORT)

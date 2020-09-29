@@ -76,7 +76,6 @@ set(CCL_SRC
     ccl_cpp_kvs.cpp
     ccl_cpp_device.cpp
     ccl_cpp_stream.cpp
-    ccl_cpp_event_internal.cpp
     ccl_cpp_context.cpp
     ccl_cpp_utils.cpp
     ccl_empty_attr.cpp
@@ -162,7 +161,8 @@ set(CCL_SRC
     common/context/context.cpp
     common/datatype/datatype.cpp
     common/device/device.cpp
-    common/event_internal/event_internal.cpp
+    common/event/ccl_event.cpp
+    common/event/event_internal/event_internal.cpp
     common/stream/stream.cpp
 
     common/env/env.cpp

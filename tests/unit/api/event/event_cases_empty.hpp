@@ -8,9 +8,9 @@
 
 #include "oneapi/ccl/ccl_type_traits.hpp"
 #include "oneapi/ccl/ccl_types_policy.hpp"
-#include "common/event_internal/ccl_event/ccl_event_attr_ids.hpp"
-#include "common/event_internal/ccl_event/ccl_event_attr_ids_traits.hpp"
-#include "common/event_internal/ccl_event/ccl_event.hpp"
+#include "common/event/event_internal/event_internal_attr_ids.hpp"
+#include "common/event/event_internal/event_internal_attr_ids_traits.hpp"
+#include "common/event/event_internal/event_internal.hpp"
 
 #include "environment.hpp"
 #include "oneapi/ccl/native_device_api/export_api.hpp"

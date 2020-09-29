@@ -17,9 +17,9 @@
 #include "oneapi/ccl/ccl_comm_split_attr_ids_traits.hpp"
 #include "oneapi/ccl/ccl_comm_split_attr.hpp"
 
-#include "common/event_internal/ccl_event/ccl_event_attr_ids.hpp"
-#include "common/event_internal/ccl_event/ccl_event_attr_ids_traits.hpp"
-#include "common/event_internal/ccl_event/ccl_event.hpp"
+#include "common/event/event_internal/event_internal_attr_ids.hpp"
+#include "common/event/event_internal/event_internal_attr_ids_traits.hpp"
+#include "common/event/event_internal/event_internal.hpp"
 
 #include "oneapi/ccl/ccl_stream_attr_ids.hpp"
 #include "oneapi/ccl/ccl_stream_attr_ids_traits.hpp"
@@ -32,11 +32,9 @@
 #include "common/comm/comm_split_common_attr.hpp"
 #include "comm_split_attr_impl.hpp"
 
-//#include "environment.hpp"
 #include "oneapi/ccl/ccl_communicator.hpp"
 #include "common/comm/l0/comm_context_storage.hpp"
 
-#include "event_internal_impl.hpp"
 #include "stream_impl.hpp"
 
 #include "../stubs/kvs.hpp"

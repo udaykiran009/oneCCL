@@ -1,5 +1,5 @@
 #include "common/log/log.hpp"
-#include "common/event_internal/event_internal.hpp"
+#include "common/event/ccl_event.hpp"
 #include "oneapi/ccl/native_device_api/export_api.hpp"
 
 ccl_event::ccl_event(event_native_t& event, const ccl::library_version& version)
