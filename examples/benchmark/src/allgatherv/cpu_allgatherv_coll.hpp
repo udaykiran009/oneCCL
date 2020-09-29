@@ -1,5 +1,4 @@
-#ifndef CPU_ALLGATHERV_COLL_HPP
-#define CPU_ALLGATHERV_COLL_HPP
+#pragma once
 
 #include "cpu_coll.hpp"
 #include "allgatherv_strategy.hpp"
@@ -12,7 +11,7 @@ struct cpu_allgatherv_coll : cpu_base_coll<Dtype, allgatherv_strategy_impl> {
     using coll_base::single_send_buf;
     using coll_base::single_recv_buf;
 
-    cpu_allgatherv_coll(bench_coll_init_attr init_attr)
+    cpu_allgatherv_coll(bench_init_attr init_attr)
             : coll_base(init_attr, 1, coll_base::comm().size(), coll_base::comm().size()) {}
 
     virtual void prepare(size_t elem_count) override {
@@ -58,5 +57,3 @@ struct cpu_allgatherv_coll : cpu_base_coll<Dtype, allgatherv_strategy_impl> {
         }
     }
 };
-
-#endif /* CPU_ALLGATHERV_COLL */

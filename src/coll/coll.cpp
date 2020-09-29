@@ -344,9 +344,8 @@ ccl_status_t ccl_coll_build_allreduce(ccl_sched* sched,
                 sched, send_buf, recv_buf, count, dtype, reduction, comm));
             break;
         case ccl_coll_allreduce_2d:
-            // TODO: Rework to support non global creation
-            //            CCL_CALL(ccl::global_data::get().allreduce_2d_builder->build(
-            //                sched, send_buf, recv_buf, count, dtype, reduction, comm));
+            CCL_CALL(comm->allreduce_2d_builder->build(
+                     sched, send_buf, recv_buf, count, dtype, reduction));
             break;
         default:
             CCL_FATAL("unexpected allreduce_algo ", ccl_coll_algorithm_to_str(algo));
@@ -537,24 +536,40 @@ ccl_status_t ccl_coll_build_reduce(ccl_sched* sched,
 ccl_status_t ccl_coll_build_reduce_scatter(ccl_sched* sched,
                                            ccl_buffer send_buf,
                                            ccl_buffer recv_buf,
-                                           size_t recv_count,
+                                           size_t count,
                                            const ccl_datatype& dtype,
                                            ccl::reduction reduction,
-                                           ccl_comm* comm) {
+                                           ccl_comm* comm,
+                                           bool from_allreduce) {
     ccl_status_t status = ccl_status_success;
 
     ccl_selector_param param;
     param.ctype = ccl_coll_reduce_scatter;
-    param.count = recv_count;
+    param.count = count;
     param.dtype = dtype;
     param.comm = comm;
 
     auto algo = ccl::global_data::get().algorithm_selector->get<ccl_coll_reduce_scatter>(param);
 
     switch (algo) {
+        case ccl_coll_reduce_scatter_direct:
+            if (!from_allreduce)
+            {
+                CCL_CALL(ccl_coll_build_direct_reduce_scatter(
+                    sched, send_buf, recv_buf, count, dtype, reduction, comm));
+                break;
+            }
         case ccl_coll_reduce_scatter_ring:
-            CCL_CALL(ccl_coll_build_ring_reduce_scatter(
-                sched, send_buf, recv_buf, recv_count, dtype, reduction, comm));
+            if (from_allreduce)
+            {
+                CCL_CALL(ccl_coll_build_ring_reduce_scatter(
+                    sched, send_buf, recv_buf, count, dtype, reduction, comm));
+            }
+            else
+            {
+                CCL_CALL(ccl_coll_build_ring_reduce_scatter_block(
+                    sched, send_buf, recv_buf, count, dtype, reduction, comm));
+            }
             break;
         default:
             CCL_FATAL("unexpected reduce_scatter_algo ", ccl_coll_algorithm_to_str(algo));

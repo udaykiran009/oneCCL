@@ -1,5 +1,4 @@
-#ifndef BENCHMARK_HPP
-#define BENCHMARK_HPP
+#pragma once
 
 #include <algorithm>
 #include <chrono>
@@ -507,5 +506,3 @@ void print_user_options(const user_options_t& options,
                   ss.str().c_str(),
                   options.csv_filepath.c_str());
 }
-
-#endif /* BENCHMARK_HPP */

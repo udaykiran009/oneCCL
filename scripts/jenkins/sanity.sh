@@ -378,99 +378,124 @@ run_tests()
                 ;;
            mpi_adjust )
                 export CCL_ATL_TRANSPORT=mpi
-                for allgatherv in "direct" "naive" "flat" "ring"
-                    do
-                        CCL_ALLGATHERV=$allgatherv ctest -VV -C mpi_allgatherv_$allgatherv
-                    done
-                for allreduce in "direct" "rabenseifner" "starlike" "ring" "double_tree" "recursive_doubling"
-                    do
-                        if [ "$allreduce" == "ring" ];
-                        then
-                            CCL_RS_CHUNK_COUNT=2 CCL_ALLREDUCE=$allreduce ctest -VV -C mpi_allreduce_"$allreduce"_chunked
-                        elif [ "$allreduce" == "starlike" ];
-                        then
-                            CCL_CHUNK_COUNT=2 CCL_ALLREDUCE=$allreduce ctest -VV -C mpi_allreduce_"$allreduce"_chunked
-                        fi
-                        CCL_ALLREDUCE=$allreduce ctest -VV -C mpi_allreduce_$allreduce
-                    done
-                for alltoall in "direct" "naive" "scatter" "scatter_barrier"
-                    do
-                        if [ "$alltoall" == "scatter_barrier" ];
-                        then
-                            CCL_ALLTOALL_SCATTER_MAX_OPS=1 CCL_ALLTOALL_SCATTER_PLAIN=1 CCL_CHUNK_COUNT=${worker_count} \
-                                CCL_ALLTOALL=$alltoall ctest -VV -C mpi_alltoall_"$alltoall"_chunked
-                        fi
-                        CCL_ALLTOALL=$alltoall ctest -VV -C mpi_alltoall_$alltoall
-                    done
-                for alltoallv in "direct" "naive" "scatter" "scatter_barrier"
-                    do
-                        if [ "$alltoallv" == "scatter_barrier" ];
-                        then
-                            CCL_ALLTOALL_SCATTER_MAX_OPS=1 CCL_ALLTOALL_SCATTER_PLAIN=1 CCL_CHUNK_COUNT=${worker_count} \
-                                CCL_ALLTOALLV=$alltoallv ctest -VV -C mpi_alltoallv_"$alltoallv"_chunked
-                        fi
-                        CCL_ALLTOALLV=$alltoallv ctest -VV -C mpi_alltoallv_$alltoallv
-                    done
-                for bcast in "direct" "ring" "double_tree" "naive"
-                    do
-                        CCL_BCAST=$bcast ctest -VV -C mpi_bcast_$bcast
-                    done
-                for reduce in "direct" "rabenseifner" "tree"
-                    do
-                        CCL_REDUCE=$reduce ctest -VV -C mpi_reduce_$reduce
-                    done
+                
+                for algo in "direct" "naive" "flat" "ring"
+                do
+                    CCL_ALLGATHERV=$algo ctest -VV -C mpi_allgatherv_$algo
+                done
+
+                for algo in "direct" "rabenseifner" "starlike" "ring" "double_tree" "recursive_doubling"
+                do
+                    if [ "$algo" == "ring" ];
+                    then
+                        CCL_RS_CHUNK_COUNT=2 CCL_ALLREDUCE=$algo ctest -VV -C mpi_allreduce_"$algo"_chunked
+                    elif [ "$algo" == "starlike" ];
+                    then
+                        CCL_CHUNK_COUNT=2 CCL_ALLREDUCE=$algo ctest -VV -C mpi_allreduce_"$algo"_chunked
+                    fi
+                    CCL_ALLREDUCE=$algo ctest -VV -C mpi_allreduce_$algo
+                done
+
+                for algo in "direct" "naive" "scatter" "scatter_barrier"
+                do
+                    if [ "$algo" == "scatter_barrier" ];
+                    then
+                        CCL_ALLTOALL_SCATTER_MAX_OPS=1 CCL_ALLTOALL_SCATTER_PLAIN=1 CCL_CHUNK_COUNT=${worker_count} \
+                            CCL_ALLTOALL=$algo ctest -VV -C mpi_alltoall_"$algo"_chunked
+                    fi
+                    CCL_ALLTOALL=$algo ctest -VV -C mpi_alltoall_$algo
+                done
+
+                for algo in "direct" "naive" "scatter" "scatter_barrier"
+                do
+                    if [ "$algo" == "scatter_barrier" ];
+                    then
+                        CCL_ALLTOALL_SCATTER_MAX_OPS=1 CCL_ALLTOALL_SCATTER_PLAIN=1 CCL_CHUNK_COUNT=${worker_count} \
+                            CCL_ALLTOALLV=$algo ctest -VV -C mpi_alltoallv_"$algo"_chunked
+                    fi
+                    CCL_ALLTOALLV=$algo ctest -VV -C mpi_alltoallv_$algo
+                done
+
+                for algo in "direct" "ring" "double_tree" "naive"
+                do
+                    CCL_BCAST=$algo ctest -VV -C mpi_bcast_$algo
+                done
+
+                for algo in "direct" "rabenseifner" "tree"
+                do
+                    CCL_REDUCE=$algo ctest -VV -C mpi_reduce_$algo
+                done
+
+                for algo in "direct" "ring"
+                do
+                    CCL_REDUCE_SCATTER=$algo ctest -VV -C mpi_reduce_scatter_$algo
+                done
+
                ;;
            ofi_adjust )
+
                 export CCL_ATL_TRANSPORT=ofi
-                for allgatherv in "naive" "flat" "multi_bcast" "ring"
-                    do
-                        CCL_ALLGATHERV=$allgatherv ctest -VV -C mpi_allgatherv_$allgatherv
-                    done
-                for allreduce in "rabenseifner" "starlike" "ring" "ring_rma" "double_tree" "recursive_doubling"
-                    do
-                        if [ "$allreduce" == "ring_rma" ];
-                        then
-                            CCL_RMA=1 CCL_ALLREDUCE=$allreduce ctest -VV -C mpi_allreduce_$allreduce
-                        else
-                            if [ "$allreduce" == "starlike" ];
-                            then
-                                CCL_CHUNK_COUNT=2 CCL_ALLREDUCE=$allreduce ctest -VV -C mpi_allreduce_"$allreduce"_chunked
-                            elif [ "$allreduce" == "ring" ];
-                            then
-                                CCL_RS_CHUNK_COUNT=2 CCL_ALLREDUCE=$allreduce ctest -VV -C mpi_allreduce_"$allreduce"_chunked
-                            elif [ "$allreduce" == "2d" ];
-                            then
-                                CCL_AR2D_CHUNK_COUNT=2 CCL_ALLREDUCE=$allreduce ctest -VV -C mpi_allreduce_"$allreduce"_chunked
-                            fi
-                            CCL_ALLREDUCE=$allreduce ctest -VV -C mpi_allreduce_$allreduce
-                        fi
+
+                for algo in "naive" "flat" "multi_bcast" "ring"
+                do
+                    CCL_ALLGATHERV=$algo ctest -VV -C mpi_allgatherv_$algo
                 done
-                for alltoall in "naive" "scatter" "scatter_barrier"
-                    do
-                        if [ "$alltoall" == "scatter_barrier" ];
+
+                for algo in "rabenseifner" "starlike" "ring" "ring_rma" "double_tree" "recursive_doubling" "2d"
+                do
+                    if [ "$algo" == "ring_rma" ];
+                    then
+                        CCL_RMA=1 CCL_ALLREDUCE=$algo ctest -VV -C mpi_allreduce_$algo
+                    else
+                        if [ "$algo" == "starlike" ];
                         then
-                            CCL_ALLTOALL_SCATTER_MAX_OPS=1 CCL_ALLTOALL_SCATTER_PLAIN=1 CCL_CHUNK_COUNT=${worker_count} \
-                                CCL_ALLTOALL=$alltoall ctest -VV -C mpi_alltoall_"$alltoall"_chunked
-                        fi
-                        CCL_ALLTOALL=$alltoall ctest -VV -C mpi_alltoall_$alltoall
-                    done
-                for alltoallv in "naive" "scatter" "scatter_barrier"
-                    do
-                        if [ "$alltoallv" == "scatter_barrier" ];
+                            CCL_CHUNK_COUNT=2 CCL_ALLREDUCE=$algo ctest -VV -C mpi_allreduce_"$algo"_chunked
+                        elif [ "$algo" == "ring" ];
                         then
-                            CCL_ALLTOALL_SCATTER_MAX_OPS=1 CCL_ALLTOALL_SCATTER_PLAIN=1 CCL_CHUNK_COUNT=${worker_count} \
-                                CCL_ALLTOALLV=$alltoallv ctest -VV -C mpi_alltoallv_"$alltoallv"_chunked
+                            CCL_RS_CHUNK_COUNT=2 CCL_ALLREDUCE=$algo ctest -VV -C mpi_allreduce_"$algo"_chunked
+                        elif [ "$algo" == "2d" ];
+                        then
+                            CCL_AR2D_CHUNK_COUNT=2 CCL_ALLREDUCE=$algo ctest -VV -C mpi_allreduce_"$algo"_chunked
                         fi
-                        CCL_ALLTOALLV=$alltoallv ctest -VV -C mpi_alltoallv_$alltoallv
-                    done
-                for bcast in "ring" "double_tree" "naive"
-                    do
-                        CCL_BCAST=$bcast ctest -VV -C mpi_bcast_$bcast
-                    done
-                for reduce in "rabenseifner" "tree" "double_tree"
-                    do
-                        CCL_REDUCE=$reduce ctest -VV -C mpi_reduce_$reduce
-                    done
+                        CCL_ALLREDUCE=$algo ctest -VV -C mpi_allreduce_$algo
+                    fi
+                done
+
+                for algo in "naive" "scatter" "scatter_barrier"
+                do
+                    if [ "$algo" == "scatter_barrier" ];
+                    then
+                        CCL_ALLTOALL_SCATTER_MAX_OPS=1 CCL_ALLTOALL_SCATTER_PLAIN=1 CCL_CHUNK_COUNT=${worker_count} \
+                            CCL_ALLTOALL=$algo ctest -VV -C mpi_alltoall_"$algo"_chunked
+                    fi
+                    CCL_ALLTOALL=$algo ctest -VV -C mpi_alltoall_$algo
+                done
+
+                for algo in "naive" "scatter" "scatter_barrier"
+                do
+                    if [ "$algo" == "scatter_barrier" ];
+                    then
+                        CCL_ALLTOALL_SCATTER_MAX_OPS=1 CCL_ALLTOALL_SCATTER_PLAIN=1 CCL_CHUNK_COUNT=${worker_count} \
+                            CCL_ALLTOALLV=$algo ctest -VV -C mpi_alltoallv_"$algo"_chunked
+                    fi
+                    CCL_ALLTOALLV=$algo ctest -VV -C mpi_alltoallv_$algo
+                done
+
+                for algo in "ring" "double_tree" "naive"
+                do
+                    CCL_BCAST=$algo ctest -VV -C mpi_bcast_$algo
+                done
+
+                for algo in "rabenseifner" "tree" "double_tree"
+                do
+                    CCL_REDUCE=$algo ctest -VV -C mpi_reduce_$algo
+                done
+
+                for algo in "ring"
+                do
+                    CCL_REDUCE_SCATTER=$algo ctest -VV -C mpi_reduce_scatter_$algo
+                done
+
                ;;
             priority_mode )
                 CCL_ATL_TRANSPORT=mpi CCL_PRIORITY=lifo ctest -VV -C Default

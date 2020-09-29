@@ -149,10 +149,18 @@ ccl_status_t ccl_coll_build_double_tree_op(ccl_sched* sched,
 ccl_status_t ccl_coll_build_ring_reduce_scatter(ccl_sched* sched,
                                                 ccl_buffer send_buf,
                                                 ccl_buffer recv_buf,
-                                                size_t recv_count,
+                                                size_t send_count,
                                                 const ccl_datatype& dtype,
                                                 ccl::reduction reduction,
                                                 ccl_comm* comm);
+
+ccl_status_t ccl_coll_build_ring_reduce_scatter_block(ccl_sched* sched,
+                                                      ccl_buffer send_buf,
+                                                      ccl_buffer recv_buf,
+                                                      size_t recv_count,
+                                                      const ccl_datatype& dtype,
+                                                      ccl::reduction reduction,
+                                                      ccl_comm* comm);
 
 ccl_status_t ccl_coll_build_ring_allgatherv(ccl_sched* sched,
                                             ccl_buffer send_buf,
@@ -224,3 +232,11 @@ ccl_status_t ccl_coll_build_direct_bcast(ccl_sched* sched,
                                          const ccl_datatype& dtype,
                                          size_t root,
                                          ccl_comm* comm);
+
+ccl_status_t ccl_coll_build_direct_reduce_scatter(ccl_sched* sched,
+                                                 ccl_buffer send_buf,
+                                                 ccl_buffer recv_buf,
+                                                 size_t send_count,
+                                                 const ccl_datatype& dtype,
+                                                 ccl::reduction reduction,
+                                                 ccl_comm* comm);

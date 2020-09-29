@@ -32,7 +32,6 @@ class ccl_executor;
 class ccl_sched_cache;
 class ccl_parallelizer;
 class ccl_fusion_manager;
-//class ccl_allreduce_2d_builder;
 struct ccl_group_context;
 
 template <ccl_coll_type... registered_types_id>
@@ -87,7 +86,6 @@ public:
     std::unique_ptr<ccl_parallelizer> parallelizer;
     std::unique_ptr<ccl_fusion_manager> fusion_manager;
     std::unique_ptr<ccl_algorithm_selector_wrapper<CCL_COLL_LIST>> algorithm_selector;
-    //std::unique_ptr<ccl_allreduce_2d_builder> allreduce_2d_builder;
     std::unique_ptr<group_context> global_ctx;
 
     static thread_local bool is_worker_thread;

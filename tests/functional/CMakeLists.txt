@@ -78,11 +78,11 @@ foreach(algo direct; naive; flat; multi_bcast)
 add_test (NAME allgatherv_test_mpi_${algo} CONFIGURATIONS mpi_allgatherv_${algo} COMMAND mpiexec.hydra -l -n 2 -ppn 1 ${CCL_INSTALL_TESTS}/allgatherv_test --gtest_output=xml:${CCL_INSTALL_TESTS}/allgatherv_test_mpi_runtime_adjust_${algo}_report.junit.xml)
 endforeach()
 
-foreach(algo direct; rabenseifner; starlike; ring; ring_rma; double_tree; recursive_doubling;)
+foreach(algo direct; rabenseifner; starlike; ring; ring_rma; double_tree; recursive_doubling; 2d)
 add_test (NAME allreduce_test_mpi_${algo} CONFIGURATIONS mpi_allreduce_${algo} COMMAND mpiexec.hydra -l -n 2 -ppn 1 ${CCL_INSTALL_TESTS}/allreduce_test --gtest_output=xml:${CCL_INSTALL_TESTS}/allreduce_test_mpi_runtime_adjust_${algo}_report.junit.xml)
 endforeach()
 
-foreach(algo starlike; ring;)
+foreach(algo starlike; ring; 2d)
 add_test (NAME allreduce_test_mpi_${algo}_chunked CONFIGURATIONS mpi_allreduce_${algo}_chunked COMMAND mpiexec.hydra -l -n 2 -ppn 1 ${CCL_INSTALL_TESTS}/allreduce_test --gtest_output=xml:${CCL_INSTALL_TESTS}/allreduce_test_mpi_runtime_adjust_${algo}_chunked_report.junit.xml)
 endforeach()
 
@@ -110,4 +110,8 @@ endforeach()
 
 foreach(algo direct; rabenseifner; tree; double_tree)
 add_test (NAME reduce_test_mpi_${algo} CONFIGURATIONS mpi_reduce_${algo} COMMAND mpiexec.hydra -l -n 2 -ppn 1 ${CCL_INSTALL_TESTS}/reduce_test --gtest_output=xml:${CCL_INSTALL_TESTS}/reduce_test_mpi_runtime_adjust_${algo}_report.junit.xml)
+endforeach()
+
+foreach(algo direct; ring)
+add_test (NAME reduce_scatter_test_mpi_${algo} CONFIGURATIONS mpi_reduce_scatter_${algo} COMMAND mpiexec.hydra -l -n 2 -ppn 1 ${CCL_INSTALL_TESTS}/reduce_scatter_test --gtest_output=xml:${CCL_INSTALL_TESTS}/reduce_scatter_test_mpi_runtime_adjust_${algo}_report.junit.xml)
 endforeach()

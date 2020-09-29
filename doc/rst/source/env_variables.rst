@@ -49,6 +49,7 @@ Available collective operations (``<coll_name>``):
 -   ``BARRIER``
 -   ``BCAST``
 -   ``REDUCE``
+-   ``REDUCE_SCATTER``
 -   ``SPARSE_ALLREDUCE``
 
 
@@ -97,6 +98,8 @@ Available algorithms for each collective operation (``<algo_name>``):
      - Double-tree algorithm
    * - ``recursive_doubling``
      - Recursive doubling algorithm
+   * - ``2d``
+     - 2-dimensional algorithm (reduce_scatter+allreduce+allgather)
 
 
 ``ALLTOALL`` algorithms
@@ -170,6 +173,20 @@ Available algorithms for each collective operation (``<algo_name>``):
      - Tree algorithm
    * - ``double_tree``
      - Double-tree algorithm
+
+
+``REDUCE_SCATTER`` algorithms
+++++++++++++++++++++++++
+
+.. list-table:: 
+   :widths: 25 50
+   :align: left
+
+   * - ``direct``
+     - Based on ``MPI_Ireduce_scatter_block``
+   * - ``ring`` 
+     - Use ``CCL_RS_CHUNK_COUNT`` and ``CCL_RS_MIN_CHUNK_SIZE``
+       to control pipelining.
 
 
 ``SPARSE_ALLREDUCE`` algorithms

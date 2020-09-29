@@ -1,5 +1,4 @@
-#ifndef SPARSE_COLL_HPP
-#define SPARSE_COLL_HPP
+#pragma once
 
 #include <algorithm>
 #include <atomic>
@@ -373,5 +372,3 @@ void check_sparse_result(const std::tuple<size_t, size_t>& expected_recv_counts,
     }
 }
 } /* namespace sparse_detail */
-
-#endif /* SPARSE_COLL_HPP */

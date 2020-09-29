@@ -30,6 +30,7 @@ constexpr const char* CCL_ALLTOALLV = "CCL_ALLTOALLV";
 constexpr const char* CCL_BARRIER = "CCL_BARRIER";
 constexpr const char* CCL_BCAST = "CCL_BCAST";
 constexpr const char* CCL_REDUCE = "CCL_REDUCE";
+constexpr const char* CCL_REDUCE_SCATTER = "CCL_REDUCE_SCATTER";
 constexpr const char* CCL_SPARSE_ALLREDUCE = "CCL_SPARSE_ALLREDUCE";
 constexpr const char* CCL_UNORDERED_COLL = "CCL_UNORDERED_COLL";
 
@@ -94,6 +95,9 @@ public:
     void parse();
     void print();
     void set_internal_env();
+
+    bool was_printed;
+    ccl_spinlock print_guard{};
 
     int log_level;
     int sched_dump;

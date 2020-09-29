@@ -1,5 +1,4 @@
-#ifndef REDUCE_STRATEGY_HPP
-#define REDUCE_STRATEGY_HPP
+#pragma once
 
 #include "cpu_coll.hpp"
 #include "reduce_strategy.hpp"
@@ -9,7 +8,7 @@ struct reduce_strategy_impl {
         return "reduce";
     }
 
-    static const ccl::reduce_attr& get_op_attr(const bench_coll_exec_attr& bench_attr) {
+    static const ccl::reduce_attr& get_op_attr(const bench_exec_attr& bench_attr) {
         return bench_attr.get_attr<ccl::reduce_attr>();
     }
 
@@ -18,7 +17,7 @@ struct reduce_strategy_impl {
                         size_t count,
                         const Dtype send_buf,
                         Dtype recv_buf,
-                        const bench_coll_exec_attr& bench_attr,
+                        const bench_exec_attr& bench_attr,
                         req_list_t& reqs,
                         Args&&... args) {
         reqs.push_back(ccl::reduce(send_buf,
@@ -30,5 +29,3 @@ struct reduce_strategy_impl {
                                    std::forward<Args>(args)...));
     }
 };
-
-#endif /* REDUCE_STRATEGY_HPP */

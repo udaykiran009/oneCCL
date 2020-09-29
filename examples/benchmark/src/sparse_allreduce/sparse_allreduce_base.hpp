@@ -1,5 +1,4 @@
-#ifndef SPARSE_ALLREDUCE_BASE_HPP
-#define SPARSE_ALLREDUCE_BASE_HPP
+#pragma once
 
 #include "sparse_allreduce_strategy.hpp"
 
@@ -32,7 +31,7 @@ struct base_sparse_allreduce_coll
     size_t single_recv_vcount{};
     sparse_allreduce_fn_ctx_t single_fn_ctx;
 
-    base_sparse_allreduce_coll(bench_coll_init_attr init_attr, size_t size)
+    base_sparse_allreduce_coll(bench_init_attr init_attr, size_t size)
             : base_coll(init_attr),
               coll_strategy(init_attr.v2i_ratio, size) {
         int result = 0;
@@ -67,5 +66,3 @@ struct base_sparse_allreduce_coll
         return ccl::native_type_info<typename std::remove_pointer<VType>::type>::ccl_datatype_value;
     }
 };
-
-#endif /* SPARSE_ALLREDUCE_BASE_HPP */

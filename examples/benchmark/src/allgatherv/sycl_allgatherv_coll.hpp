@@ -1,5 +1,4 @@
-#ifndef SYCL_ALLGATHERV_COLL_HPP
-#define SYCL_ALLGATHERV_COLL_HPP
+#pragma once
 
 #include "allgatherv_strategy.hpp"
 
@@ -21,7 +20,7 @@ struct sycl_allgatherv_coll : sycl_base_coll<Dtype, allgatherv_strategy_impl> {
     using coll_base::single_recv_buf;
     using coll_base::comm;
 
-    sycl_allgatherv_coll(bench_coll_init_attr init_attr)
+    sycl_allgatherv_coll(bench_init_attr init_attr)
             : coll_base(init_attr, 1, coll_base::comm().size(), coll_base::comm().size()) {}
 
     virtual void prepare(size_t elem_count) override {
@@ -109,5 +108,3 @@ struct sycl_allgatherv_coll : sycl_base_coll<Dtype, allgatherv_strategy_impl> {
 };
 
 #endif /* CCL_ENABLE_SYCL */
-
-#endif /* SYCL_ALLGATHERV_COLL_HPP */

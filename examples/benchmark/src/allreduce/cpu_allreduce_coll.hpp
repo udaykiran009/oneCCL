@@ -1,5 +1,4 @@
-#ifndef CPU_ALLRECUDE_COLL_HPP
-#define CPU_ALLRECUDE_COLL_HPP
+#pragma once
 
 #include "cpu_coll.hpp"
 #include "allreduce_strategy.hpp"
@@ -12,8 +11,8 @@ struct cpu_allreduce_coll : cpu_base_coll<Dtype, allreduce_strategy_impl> {
     using coll_base::single_send_buf;
     using coll_base::single_recv_buf;
 
-    cpu_allreduce_coll(bench_coll_init_attr init_attr)
-            : coll_base(init_attr, coll_base::comm().size(), coll_base::comm().size()) {}
+    cpu_allreduce_coll(bench_init_attr init_attr)
+            : coll_base(init_attr) {}
 
     virtual void prepare(size_t elem_count) override {
         for (size_t b_idx = 0; b_idx < base_coll::get_buf_count(); b_idx++) {
@@ -50,5 +49,3 @@ struct cpu_allreduce_coll : cpu_base_coll<Dtype, allreduce_strategy_impl> {
         }
     }
 };
-
-#endif /* CPU_ALLRECUDE_COLL_HPP */

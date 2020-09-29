@@ -1,5 +1,4 @@
-#ifndef CPU_ALLTOALLV_COLL
-#define CPU_ALLTOALLV_COLL
+#pragma once
 
 #include "cpu_coll.hpp"
 #include "alltoallv_strategy.hpp"
@@ -13,7 +12,7 @@ struct cpu_alltoallv_coll : cpu_base_coll<Dtype, alltoallv_strategy_impl> {
     using coll_base::single_recv_buf;
     using coll_base::comm;
 
-    cpu_alltoallv_coll(bench_coll_init_attr init_attr)
+    cpu_alltoallv_coll(bench_init_attr init_attr)
             : coll_base(init_attr,
                         coll_base::comm().size(),
                         coll_base::comm().size(),
@@ -57,5 +56,3 @@ struct cpu_alltoallv_coll : cpu_base_coll<Dtype, alltoallv_strategy_impl> {
         }
     }
 };
-
-#endif /* CPU_ALLTOALLV_COLL */

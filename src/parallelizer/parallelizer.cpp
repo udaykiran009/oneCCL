@@ -430,12 +430,18 @@ ccl_status_t ccl_parallelizer::process(ccl_master_sched* sched) {
 
                 ccl_coll_entry_param param{};
                 param.ctype = ccl_coll_reduce_scatter;
+
+                bool inplace = (coll_param.send_buf == coll_param.recv_buf) ? true : false;
+                size_t recv_buf_size = coll_param.count * dtype_size;
+                if (inplace)
+                    recv_buf_size *= comm_size;
+
                 param.send_buf = ccl_buffer(&(coll_param.send_buf),
                                             coll_param.count * comm_size * dtype_size,
                                             offsets[idx],
                                             ccl_buffer_type::INDIRECT);
                 param.recv_buf = ccl_buffer(&(coll_param.recv_buf),
-                                            coll_param.count * dtype_size,
+                                            recv_buf_size,
                                             offsets[idx],
                                             ccl_buffer_type::INDIRECT);
                 param.count = counts[idx];

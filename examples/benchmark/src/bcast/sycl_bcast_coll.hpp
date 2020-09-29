@@ -1,5 +1,4 @@
-#ifndef SYCL_BCAST_COLL_HPP
-#define SYCL_BCAST_COLL_HPP
+#pragma once
 
 #include "bcast_strategy.hpp"
 
@@ -19,8 +18,8 @@ struct sycl_bcast_coll : sycl_base_coll<Dtype, bcast_strategy_impl> {
     using coll_base::single_recv_buf;
     using coll_base::comm;
 
-    sycl_bcast_coll(bench_coll_init_attr init_attr)
-            : coll_base(init_attr, coll_base::comm().size(), coll_base::comm().size()) {}
+    sycl_bcast_coll(bench_init_attr init_attr)
+            : coll_base(init_attr) {}
 
     virtual void prepare(size_t elem_count) override {
         size_t local_rank = coll_base::comm().rank();
@@ -74,5 +73,3 @@ struct sycl_bcast_coll : sycl_base_coll<Dtype, bcast_strategy_impl> {
     }
 };
 #endif /* CCL_ENABLE_SYCL */
-
-#endif /* SYCL_BCAST_COLL_HPP */

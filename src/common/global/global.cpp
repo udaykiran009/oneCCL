@@ -1,4 +1,3 @@
-#include "coll/algorithms/allreduce/allreduce_2d.hpp"
 #include "coll/selection/selection.hpp"
 #include "common/comm/atl_tag.hpp"
 #include "common/comm/comm_id_storage.hpp"
@@ -56,9 +55,6 @@ ccl_status_t global_data::init() {
     init_resize_dependent_objects();
     init_resize_independent_objects();
 
-    if (1) //executor->get_global_proc_idx() == 0)
-        env_object.print();
-
     return ccl_status_success;
 }
 
@@ -76,16 +72,6 @@ void global_data::init_resize_dependent_objects() {
 
     comm_ids =
         std::unique_ptr<ccl_comm_id_storage>(new ccl_comm_id_storage(ccl_comm::max_comm_count));
-
-    //    allreduce_2d_builder = std::unique_ptr<ccl_allreduce_2d_builder>(new ccl_allreduce_2d_builder(
-    //        (env_object.allreduce_2d_base_size != CCL_ENV_SIZET_NOT_SPECIFIED)
-    //            ? env_object.allreduce_2d_base_size
-    //            : executor->get_local_proc_count(),
-    //        env_object.allreduce_2d_switch_dims));
-
-    /* TODO: enable back after API update */
-    // if (env_object.default_resizable)
-    //     ccl_set_resize_fn(nullptr);
 }
 
 void global_data::init_resize_independent_objects() {
@@ -100,27 +86,9 @@ void global_data::init_resize_independent_objects() {
     memset(default_coll_attr.get(), 0, sizeof(ccl_coll_attr_t));
 
     bf16_impl_type = ccl_bf16_get_impl_type();
-
-    if (1) { //executor->get_global_proc_idx() == 0) {
-        algorithm_selector->print();
-
-        if (bf16_impl_type != ccl_bf16_none) {
-            LOG_INFO("\n\nBF16 is enabled through ",
-                     (bf16_impl_type == ccl_bf16_avx512bf) ? "AVX512-BF" : "AVX512-F",
-                     "\n");
-        }
-        else {
-#ifdef CCL_BF16_COMPILER
-            LOG_INFO("\n\nBF16 is disabled on HW level\n");
-#else
-            LOG_INFO("\n\nBF16 is disabled on compiler level\n");
-#endif
-        }
-    }
 }
 
 void global_data::reset_resize_dependent_objects() {
-    //    allreduce_2d_builder.reset();
     comm_ids.reset();
     fusion_manager.reset();
     sched_cache.reset();

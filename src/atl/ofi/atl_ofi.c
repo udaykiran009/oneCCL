@@ -1243,6 +1243,16 @@ static atl_status_t atl_ofi_ep_reduce(atl_ep_t* ep,
     return ATL_STATUS_UNSUPPORTED;
 }
 
+static atl_status_t atl_ofi_ep_reduce_scatter(atl_ep_t* ep,
+                                              const void* send_buf,
+                                              void* recv_buf,
+                                              size_t recv_count,
+                                              atl_datatype_t dtype,
+                                              atl_reduction_t op,
+                                              atl_req_t* req) {
+    return ATL_STATUS_UNSUPPORTED;
+}
+
 static atl_status_t atl_ofi_ep_read(atl_ep_t* ep,
                                     void* buf,
                                     size_t len,
@@ -1449,6 +1459,7 @@ static atl_coll_ops_t atl_ofi_ep_coll_ops = {
     .barrier = atl_ofi_ep_barrier,
     .bcast = atl_ofi_ep_bcast,
     .reduce = atl_ofi_ep_reduce,
+    .reduce_scatter = atl_ofi_ep_reduce_scatter,
 };
 
 static atl_rma_ops_t atl_ofi_ep_rma_ops = {

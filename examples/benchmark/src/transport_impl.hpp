@@ -1,4 +1,7 @@
+#pragma once
+
 #include <mpi.h>
+
 #include "base.hpp"
 #include "transport.hpp"
 

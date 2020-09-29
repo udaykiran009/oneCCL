@@ -1,5 +1,4 @@
-#ifndef COLL_HPP
-#define COLL_HPP
+#pragma once
 
 #include "base.hpp"
 #include "config.hpp"
@@ -16,9 +15,9 @@ struct base_coll;
 using coll_list_t = std::vector<std::shared_ptr<base_coll>>;
 using req_list_t = std::vector<ccl::event>;
 
-typedef struct bench_coll_exec_attr {
+typedef struct bench_exec_attr {
 
-    bench_coll_exec_attr() = default;
+    bench_exec_attr() = default;
     template <ccl::operation_attr_id attrId, class value_t>
     struct setter {
         setter(value_t v) : val(v) {}
@@ -70,17 +69,17 @@ typedef struct bench_coll_exec_attr {
 
 private:
     supported_op_attr_t coll_attrs;
-} bench_coll_exec_attr;
+} bench_exec_attr;
 
-typedef struct bench_coll_init_attr {
+typedef struct bench_init_attr {
     size_t buf_count;
     size_t max_elem_count;
     size_t v2i_ratio;
-} bench_coll_init_attr;
+} bench_init_attr;
 
 /* base polymorph collective wrapper class */
 struct base_coll {
-    base_coll(bench_coll_init_attr init_attr) : init_attr(init_attr) {
+    base_coll(bench_init_attr init_attr) : init_attr(init_attr) {
         send_bufs.resize(init_attr.buf_count);
         recv_bufs.resize(init_attr.buf_count);
     }
@@ -99,10 +98,10 @@ struct base_coll {
 
     virtual void start(size_t count,
                        size_t buf_idx,
-                       const bench_coll_exec_attr& attr,
+                       const bench_exec_attr& attr,
                        req_list_t& reqs) = 0;
 
-    virtual void start_single(size_t count, const bench_coll_exec_attr& attr, req_list_t& reqs) = 0;
+    virtual void start_single(size_t count, const bench_exec_attr& attr, req_list_t& reqs) = 0;
 
     /* to get buf_count from initialized private member */
     size_t get_buf_count() const noexcept {
@@ -122,7 +121,7 @@ struct base_coll {
     void* single_recv_buf = nullptr;
 
 private:
-    bench_coll_init_attr init_attr;
+    bench_init_attr init_attr;
 };
 
 struct cpu_specific_data {
@@ -179,5 +178,5 @@ struct device_specific_data {
 device_specific_data::device_communicator_ptr device_specific_data::comm_ptr{};
 ccl::vector_class<ccl::communicator> device_specific_data::comm_array{};
 ccl::shared_ptr_class<ccl::stream> device_specific_data::stream_ptr{};
-#endif //CCL_ENABLE_SYCL
-#endif /* COLL_HPP */
+
+#endif /* CCL_ENABLE_SYCL */

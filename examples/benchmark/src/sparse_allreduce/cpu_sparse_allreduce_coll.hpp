@@ -1,5 +1,4 @@
-#ifndef CPU_SPARSE_ALLREDUCE_COLL_HPP
-#define CPU_SPARSE_ALLREDUCE_COLL_HPP
+#pragma once
 
 template <class VType,
           class IType,
@@ -27,7 +26,7 @@ struct cpu_sparse_allreduce_coll
     using coll_base::single_recv_vcount;
     using coll_base::single_fn_ctx;
 
-    cpu_sparse_allreduce_coll(bench_coll_init_attr init_attr,
+    cpu_sparse_allreduce_coll(bench_init_attr init_attr,
                               size_t sbuf_size_modifier = 1,
                               size_t rbuf_size_modifier = 1)
             : coll_base(init_attr, comm().size()) {
@@ -158,7 +157,7 @@ struct cpu_sparse_allreduce_coll
 
     virtual void start(size_t count,
                        size_t buf_idx,
-                       const bench_coll_exec_attr& attr,
+                       const bench_exec_attr& attr,
                        req_list_t& reqs) override {
         coll_strategy::start_internal(comm(),
                                       send_ibufs[buf_idx],
@@ -177,7 +176,7 @@ struct cpu_sparse_allreduce_coll
     }
 
     virtual void start_single(size_t count,
-                              const bench_coll_exec_attr& attr,
+                              const bench_exec_attr& attr,
                               req_list_t& reqs) override {
         coll_strategy::start_internal(comm(),
                                       single_send_ibuf,
@@ -202,5 +201,3 @@ struct cpu_sparse_allreduce_coll
         return *cpu_specific_data::comm_ptr;
     }
 };
-
-#endif /* CPU_SPARSE_ALLREDUCE_COLL_HPP */

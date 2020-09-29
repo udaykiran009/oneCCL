@@ -2,6 +2,7 @@
 #include <sstream>
 #include <unistd.h>
 
+#include "coll/selection/selection.hpp"
 #include "common/env/env.hpp"
 #include "common/global/global.hpp"
 #include "common/log/log.hpp"
@@ -22,7 +23,9 @@ std::map<ccl_atl_transport, std::string> env_data::atl_transport_names = {
 };
 
 env_data::env_data()
-        : log_level(static_cast<int>(ccl_log_level::ERROR)),
+        : was_printed(false),
+
+          log_level(static_cast<int>(ccl_log_level::ERROR)),
           sched_dump(0),
 
           worker_count(1),
@@ -82,6 +85,7 @@ void env_data::parse() {
     env_2_type(CCL_BARRIER, barrier_algo_raw);
     env_2_type(CCL_BCAST, bcast_algo_raw);
     env_2_type(CCL_REDUCE, reduce_algo_raw);
+    env_2_type(CCL_REDUCE_SCATTER, reduce_scatter_algo_raw);
     env_2_type(CCL_SPARSE_ALLREDUCE, sparse_allreduce_algo_raw);
     env_2_type(CCL_UNORDERED_COLL, enable_unordered_coll);
     if (enable_unordered_coll && atl_transport != ccl_atl_ofi) {
@@ -145,6 +149,14 @@ void env_data::parse() {
 }
 
 void env_data::print() {
+
+    std::lock_guard<ccl_spinlock> lock{ print_guard };
+
+    if (was_printed)
+        return;
+    else
+        was_printed = true;
+
 #ifdef ENABLE_DEBUG
     const char* build_mode = "debug";
 #else
@@ -199,6 +211,8 @@ void env_data::print() {
         CCL_BCAST, ": ", (bcast_algo_raw.length()) ? bcast_algo_raw : CCL_ENV_STR_NOT_SPECIFIED);
     LOG_INFO(
         CCL_REDUCE, ": ", (reduce_algo_raw.length()) ? reduce_algo_raw : CCL_ENV_STR_NOT_SPECIFIED);
+    LOG_INFO(
+        CCL_REDUCE_SCATTER, ": ", (reduce_scatter_algo_raw.length()) ? reduce_scatter_algo_raw : CCL_ENV_STR_NOT_SPECIFIED);
     LOG_INFO(CCL_SPARSE_ALLREDUCE,
              ": ",
              (sparse_allreduce_algo_raw.length()) ? sparse_allreduce_algo_raw
@@ -243,6 +257,26 @@ void env_data::print() {
                  ? std::to_string(alltoall_scatter_max_ops)
                  : CCL_ENV_STR_NOT_SPECIFIED);
     LOG_INFO(CCL_ALLTOALL_SCATTER_PLAIN, ": ", alltoall_scatter_plain);
+
+
+    auto& global_data = ccl::global_data::get();
+    global_data.algorithm_selector->print();
+
+    auto bf16_impl_type = global_data.bf16_impl_type;
+
+    if (bf16_impl_type != ccl_bf16_none) {
+        LOG_INFO("\n\nBF16 is enabled through ",
+                 (bf16_impl_type == ccl_bf16_avx512bf) ? "AVX512-BF" : "AVX512-F",
+                "\n");
+    }
+    else {
+#ifdef CCL_BF16_COMPILER
+       LOG_INFO("\n\nBF16 is disabled on HW level\n");
+#else
+       LOG_INFO("\n\nBF16 is disabled on compiler level\n");
+#endif
+    }
+
 }
 
 void env_data::set_internal_env()

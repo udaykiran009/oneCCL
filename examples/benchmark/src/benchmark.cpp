@@ -14,8 +14,9 @@
 #include "declarations.hpp"
 
 #include "transport_impl.hpp"
+
 void do_regular(const ccl::communicator& comm,
-                bench_coll_exec_attr& bench_attr,
+                bench_exec_attr& bench_attr,
                 coll_list_t& all_colls,
                 req_list_t& reqs,
                 const user_options_t& options) {
@@ -218,7 +219,7 @@ void do_regular(const ccl::communicator& comm,
 }
 
 void do_unordered(const ccl::communicator& comm,
-                  bench_coll_exec_attr& bench_attr,
+                  bench_exec_attr& bench_attr,
                   coll_list_t& all_colls,
                   req_list_t& reqs,
                   const user_options_t& options) {
@@ -317,7 +318,7 @@ void do_unordered(const ccl::communicator& comm,
 }
 
 template <class Dtype>
-void create_cpu_colls(bench_coll_init_attr& init_attr,
+void create_cpu_colls(bench_init_attr& init_attr,
                       user_options_t& options,
                       coll_list_t& colls) {
     using namespace sparse_detail;
@@ -337,17 +338,20 @@ void create_cpu_colls(bench_coll_init_attr& init_attr,
         else if (name == allreduce_strategy_impl::class_name()) {
             colls.emplace_back(new cpu_allreduce_coll<Dtype>(init_attr));
         }
+        else if (name == alltoall_strategy_impl::class_name()) {
+            colls.emplace_back(new cpu_alltoall_coll<Dtype>(init_attr));
+        }
+        else if (name == alltoallv_strategy_impl::class_name()) {
+            colls.emplace_back(new cpu_alltoallv_coll<Dtype>(init_attr));
+        }
         else if (name == bcast_strategy_impl::class_name()) {
             colls.emplace_back(new cpu_bcast_coll<Dtype>(init_attr));
         }
         else if (name == reduce_strategy_impl::class_name()) {
             colls.emplace_back(new cpu_reduce_coll<Dtype>(init_attr));
         }
-        else if (name == alltoall_strategy_impl::class_name()) {
-            colls.emplace_back(new cpu_alltoall_coll<Dtype>(init_attr));
-        }
-        else if (name == alltoallv_strategy_impl::class_name()) {
-            colls.emplace_back(new cpu_alltoallv_coll<Dtype>(init_attr));
+        else if (name == reduce_scatter_strategy_impl::class_name()) {
+            colls.emplace_back(new cpu_reduce_scatter_coll<Dtype>(init_attr));
         }
         else if (name.find(incremental_index_int_sparse_strategy::class_name()) !=
                  std::string::npos) {
@@ -397,7 +401,7 @@ void create_cpu_colls(bench_coll_init_attr& init_attr,
 
 #ifdef CCL_ENABLE_SYCL
 template <class Dtype>
-void create_sycl_colls(bench_coll_init_attr& init_attr,
+void create_sycl_colls(bench_init_attr& init_attr,
                        user_options_t& options,
                        coll_list_t& colls) {
     using incremental_index_int_sparse_strategy =
@@ -429,6 +433,9 @@ void create_sycl_colls(bench_coll_init_attr& init_attr,
         }
         else if (name == reduce_strategy_impl::class_name()) {
             colls.emplace_back(new sycl_reduce_coll<Dtype>(init_attr));
+        }
+        else if (name == reduce_scatter_strategy_impl::class_name()) {
+            colls.emplace_back(new sycl_reduce_scatter_coll<Dtype>(init_attr));
         }
         else if (name.find(incremental_index_int_sparse_strategy::class_name()) !=
                  std::string::npos) {
@@ -492,7 +499,7 @@ void create_sycl_colls(bench_coll_init_attr& init_attr,
 #endif /* CCL_ENABLE_SYCL */
 
 template <class Dtype>
-void create_colls(bench_coll_init_attr& init_attr, user_options_t& options, coll_list_t& colls) {
+void create_colls(bench_init_attr& init_attr, user_options_t& options, coll_list_t& colls) {
     switch (options.backend) {
         case ccl::stream_type::host: create_cpu_colls<Dtype>(init_attr, options, colls); break;
         case ccl::stream_type::gpu:
@@ -511,12 +518,12 @@ void create_colls(bench_coll_init_attr& init_attr, user_options_t& options, coll
  * of that function. */
 class create_colls_func {
 private:
-    bench_coll_init_attr& init_attr;
+    bench_init_attr& init_attr;
     user_options_t& options;
     coll_list_t& colls;
 
 public:
-    create_colls_func(bench_coll_init_attr& init_attr, user_options_t& options, coll_list_t& colls)
+    create_colls_func(bench_init_attr& init_attr, user_options_t& options, coll_list_t& colls)
             : init_attr(init_attr),
               options(options),
               colls(colls) {}
@@ -534,7 +541,7 @@ int main(int argc, char* argv[]) {
     coll_list_t colls;
     req_list_t reqs;
 
-    bench_coll_init_attr init_attr;
+    bench_init_attr init_attr;
 
     if (parse_user_options(argc, argv, options))
         return -1;
@@ -583,7 +590,7 @@ int main(int argc, char* argv[]) {
 
     ccl::communicator& comm = *cpu_specific_data::comm_ptr;
 
-    bench_coll_exec_attr bench_attr{};
+    bench_exec_attr bench_attr{};
     bench_attr.init_all();
 
     print_user_options(options, comm);

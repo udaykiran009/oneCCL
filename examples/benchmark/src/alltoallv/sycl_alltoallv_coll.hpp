@@ -1,5 +1,4 @@
-#ifndef SYCL_ALLTOALLV_COLL_HPP
-#define SYCL_ALLTOALLV_COLL_HPP
+#pragma once
 
 #include "alltoallv_strategy.hpp"
 
@@ -21,7 +20,7 @@ struct sycl_alltoallv_coll : sycl_base_coll<Dtype, alltoallv_strategy_impl> {
     using coll_base::single_recv_buf;
     using coll_base::comm;
 
-    sycl_alltoallv_coll(bench_coll_init_attr init_attr)
+    sycl_alltoallv_coll(bench_init_attr init_attr)
             : coll_base(init_attr,
                         coll_base::comm().size(),
                         coll_base::comm().size(),
@@ -100,5 +99,3 @@ struct sycl_alltoallv_coll : sycl_base_coll<Dtype, alltoallv_strategy_impl> {
     }
 };
 #endif /* CCL_ENABLE_SYCL */
-
-#endif /* SYCL_ALLTOALLV_COLL_HPP */

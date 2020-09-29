@@ -1,5 +1,4 @@
-#ifndef CONFIG_HPP
-#define CONFIG_HPP
+#pragma once
 
 #define ALIGNMENT      (4096)
 #define DTYPE          float
@@ -11,9 +10,9 @@
 #define DEFAULT_LOOP            LOOP_REGULAR
 #define DEFAULT_COLL_LIST \
     "allgatherv,allreduce,alltoall,alltoallv,bcast,reduce," \
-    "sparse_allreduce,sparse_allreduce_bf16," \
+    "reduce_scatter,sparse_allreduce,sparse_allreduce_bf16," \
     "allgatherv,allreduce,alltoall,alltoallv,bcast,reduce," \
-    "sparse_allreduce,sparse_allreduce_bf16"
+    "reduce_scatter,sparse_allreduce,sparse_allreduce_bf16"
 #define DEFAULT_ITERS           (16)
 #define DEFAULT_WARMUP_ITERS    (16)
 #define DEFAULT_BUF_COUNT       (16)
@@ -25,5 +24,3 @@
 #define DEFAULT_DTYPES_LIST     "float"
 #define DEFAULT_REDUCTIONS_LIST "sum"
 #define DEFAULT_CSV_FILEPATH    ""
-
-#endif /* CONFIG_HPP */

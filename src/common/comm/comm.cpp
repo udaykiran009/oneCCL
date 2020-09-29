@@ -1,5 +1,5 @@
-//#include "ccl.h"
 #include "atl/util/pm/pmi_resizable_rt/pmi_resizable/kvs/users_kvs.h"
+#include "exec/exec.hpp"
 #include "common/comm/comm.hpp"
 #include "common/global/global.hpp"
 #include "sched/sched.hpp"
@@ -12,6 +12,19 @@ void ccl_comm::allocate_resources()
         unordered_coll_manager =
             std::unique_ptr<ccl_unordered_coll_manager>(new ccl_unordered_coll_manager(*this));
     }
+
+    auto& env_object = ccl::global_data::env();
+
+    allreduce_2d_builder = std::unique_ptr<ccl_allreduce_2d_builder>(
+      new ccl_allreduce_2d_builder(
+          (env_object.allreduce_2d_base_size != CCL_ENV_SIZET_NOT_SPECIFIED)
+              ? env_object.allreduce_2d_base_size
+               : ccl::global_data::get().executor->get_local_proc_count(),
+           env_object.allreduce_2d_switch_dims,
+           this));
+
+    if (m_rank == 0)
+        env_object.print();
 }
 
 ccl_comm::ccl_comm(size_t rank,
@@ -101,7 +114,7 @@ static ccl_status_t ccl_comm_exchange_colors(std::vector<int>& colors) {
 
 ccl_comm* ccl_comm::create_with_color(int color,
                                       ccl_comm_id_storage* comm_ids,
-                                      const ccl_comm* global_comm) {
+                                      const ccl_comm* parent_comm) {
     throw ccl::exception("unimplemented yet");
 
     if (ccl::global_data::env().atl_transport == ccl_atl_mpi) {
@@ -111,30 +124,31 @@ ccl_comm* ccl_comm::create_with_color(int color,
 
     ccl_status_t status = ccl_status_success;
 
-    std::vector<int> colors(global_comm->size());
-    colors[global_comm->rank()] = color;
+    std::vector<int> colors(parent_comm->size());
+    colors[parent_comm->rank()] = color;
     status = ccl_comm_exchange_colors(colors);
     if (status != ccl_status_success) {
         throw ccl::exception("failed to exchange colors during comm creation");
     }
 
-    return create_with_colors(colors, comm_ids, global_comm);
+    return create_with_colors(colors, comm_ids, parent_comm);
 }
 
 ccl_comm* ccl_comm::create_with_colors(const std::vector<int>& colors,
                                        ccl_comm_id_storage* comm_ids,
-                                       const ccl_comm* global_comm) {
+                                       const ccl_comm* parent_comm,
+                                       bool share_resources) {
     ccl_rank2rank_map rank_map;
     size_t new_comm_size = 0;
     size_t new_comm_rank = 0;
-    int color = colors[global_comm->rank()];
+    int color = colors[parent_comm->rank()];
 
-    for (size_t i = 0; i < global_comm->size(); ++i) {
+    for (size_t i = 0; i < parent_comm->size(); ++i) {
         if (colors[i] == color) {
             LOG_DEBUG("map local rank ", new_comm_size, " to global ", i);
             rank_map.emplace_back(i);
             ++new_comm_size;
-            if (i < global_comm->rank()) {
+            if (i < parent_comm->rank()) {
                 ++new_comm_rank;
             }
         }
@@ -145,13 +159,15 @@ ccl_comm* ccl_comm::create_with_colors(const std::vector<int>& colors,
                              " seems to be exchange issue");
     }
 
-    if (new_comm_size == global_comm->size()) {
+    if (new_comm_size == parent_comm->size()) {
         // exact copy of the global communicator, use empty map
         rank_map.clear();
     }
 
+    printf("create_with_colors new_comm_rank %zu, new_comm_size %zu\n", new_comm_rank, new_comm_size); fflush(stdout);
+
     ccl_comm* comm = new ccl_comm(
-        new_comm_rank, new_comm_size, comm_ids->acquire(), std::move(rank_map), global_comm->atl);
+        new_comm_rank, new_comm_size, comm_ids->acquire(), std::move(rank_map), parent_comm->atl, share_resources);
 
     LOG_DEBUG("new comm: color ",
               color,

@@ -112,8 +112,10 @@ private:
     ccl_comm_id_t acquire_id_impl(ccl_comm_id_t last_used,
                                   ccl_comm_id_t lower_bound,
                                   ccl_comm_id_t upper_bound) {
+        
         //search from the current position till the end
         LOG_DEBUG("last ", last_used, ", low ", lower_bound, " up ", upper_bound);
+
         for (ccl_comm_id_t id = last_used; id < upper_bound; ++id) {
             if (free_ids[id]) {
                 free_ids[id] = false;

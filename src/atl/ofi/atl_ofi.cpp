@@ -175,6 +175,16 @@ atl_status_t atl_ofi::atl_ep_reduce(atl_ep_t* ep,
     return atl_ofi_ep_reduce(ep, send_buf, recv_buf, len, root, dtype, op, req);
 }
 
+atl_status_t atl_ofi::atl_ep_reduce_scatter(atl_ep_t* ep,
+                                            const void* send_buf,
+                                            void* recv_buf,
+                                            size_t recv_len,
+                                            atl_datatype_t dtype,
+                                            atl_reduction_t op,
+                                            atl_req_t* req) {
+    return atl_ofi_ep_reduce_scatter(ep, send_buf, recv_buf, recv_len, dtype, op, req);
+}
+
 atl_status_t atl_ofi::atl_ep_read(atl_ep_t* ep,
                                   void* buf,
                                   size_t len,

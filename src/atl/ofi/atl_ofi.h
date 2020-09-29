@@ -96,6 +96,14 @@ public:
                                atl_reduction_t op,
                                atl_req_t* req) override;
 
+    atl_status_t atl_ep_reduce_scatter(atl_ep_t* ep,
+                                       const void* send_buf,
+                                       void* recv_buf,
+                                       size_t recv_len,
+                                       atl_datatype_t dtype,
+                                       atl_reduction_t op,
+                                       atl_req_t* req) override;
+
     atl_status_t atl_ep_read(atl_ep_t* ep,
                              void* buf,
                              size_t len,

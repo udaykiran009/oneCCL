@@ -72,6 +72,7 @@ enum ccl_coll_reduce_algo {
 };
 
 enum ccl_coll_reduce_scatter_algo {
+    ccl_coll_reduce_scatter_direct,
     ccl_coll_reduce_scatter_ring,
 
     ccl_coll_reduce_scatter_last_value

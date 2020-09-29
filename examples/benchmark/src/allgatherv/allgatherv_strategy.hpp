@@ -1,5 +1,4 @@
-#ifndef ALLGATHERV_STRATEGY_HPP
-#define ALLGATHERV_STRATEGY_HPP
+#pragma once
 
 struct allgatherv_strategy_impl {
     size_t comm_size = 0;
@@ -21,7 +20,7 @@ struct allgatherv_strategy_impl {
         return "allgatherv";
     }
 
-    static const ccl::allgatherv_attr& get_op_attr(const bench_coll_exec_attr& bench_attr) {
+    static const ccl::allgatherv_attr& get_op_attr(const bench_exec_attr& bench_attr) {
         return bench_attr.get_attr<ccl::allgatherv_attr>();
     }
 
@@ -30,7 +29,7 @@ struct allgatherv_strategy_impl {
                         size_t count,
                         const Dtype send_buf,
                         Dtype recv_buf,
-                        const bench_coll_exec_attr& bench_attr,
+                        const bench_exec_attr& bench_attr,
                         req_list_t& reqs,
                         Args&&... args) {
         for (size_t idx = 0; idx < comm_size; idx++) {
@@ -40,5 +39,3 @@ struct allgatherv_strategy_impl {
             ccl::allgatherv(send_buf, count, recv_buf, recv_counts, comm, std::forward<Args>(args)...));
     }
 };
-
-#endif /* ALLGATHER_STRATEGY_HPP */

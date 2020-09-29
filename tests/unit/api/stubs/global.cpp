@@ -4,8 +4,7 @@
 class ccl_executor {};
 class ccl_parallelizer {};
 class ccl_fusion_manager {};
-//class ccl_unordered_coll_manager {};
-//class ccl_allreduce_2d_builder {};
+
 template <ccl_coll_type... registered_types_id>
 class ccl_algorithm_selector_wrapper {};
 
@@ -16,15 +15,12 @@ global_data::global_data() {
 }
 
 global_data::~global_data() {
-    //comm.reset();
     comm_ids.reset();
 }
 
 void global_data::init_resize_dependent_objects() {
     comm_ids =
         std::unique_ptr<ccl_comm_id_storage>(new ccl_comm_id_storage(ccl_comm::max_comm_count));
-
-    //comm = std::make_shared<ccl_comm>(0, 1, comm_ids->acquire(true), global_data::get().atl);
 }
 
 ccl_status_t global_data::init() {

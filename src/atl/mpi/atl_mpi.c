@@ -863,6 +863,32 @@ static atl_status_t atl_mpi_ep_reduce(atl_ep_t* ep,
     return RET2ATL(ret);
 }
 
+static atl_status_t atl_mpi_ep_reduce_scatter(atl_ep_t* ep,
+                                              const void* send_buf,
+                                              void* recv_buf,
+                                              size_t recv_count,
+                                              atl_datatype_t dtype,
+                                              atl_reduction_t op,
+                                              atl_req_t* req) {
+    atl_mpi_ep_t* mpi_ep = container_of(ep, atl_mpi_ep_t, ep);
+
+    atl_mpi_req_t* mpi_req = ((atl_mpi_req_t*)req->internal);
+    mpi_req->comp_state = ATL_MPI_COMP_POSTED;
+
+    MPI_Datatype mpi_dtype = atl2mpi_dtype(dtype);
+    MPI_Op mpi_op = atl2mpi_op(op, mpi_dtype);
+    int ret = MPI_Ireduce_scatter_block(
+        (send_buf && (send_buf == recv_buf)) ? MPI_IN_PLACE : send_buf,
+        recv_buf,
+        recv_count,
+        mpi_dtype,
+        mpi_op,
+        mpi_ep->mpi_comm,
+        &mpi_req->native_req);
+
+    return RET2ATL(ret);
+}
+
 static atl_status_t atl_mpi_ep_read(atl_ep_t* ep,
                                     void* buf,
                                     size_t len,
@@ -958,7 +984,8 @@ static atl_coll_ops_t atl_mpi_ep_coll_ops = { .allgatherv = atl_mpi_ep_allgather
                                               .alltoallv = atl_mpi_ep_alltoallv,
                                               .barrier = atl_mpi_ep_barrier,
                                               .bcast = atl_mpi_ep_bcast,
-                                              .reduce = atl_mpi_ep_reduce };
+                                              .reduce = atl_mpi_ep_reduce,
+                                              .reduce_scatter = atl_mpi_ep_reduce_scatter };
 
 static atl_rma_ops_t atl_mpi_ep_rma_ops = {
     .read = atl_mpi_ep_read,

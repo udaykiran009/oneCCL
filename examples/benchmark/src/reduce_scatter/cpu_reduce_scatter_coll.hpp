@@ -1,45 +1,50 @@
 #pragma once
 
 #include "cpu_coll.hpp"
-#include "alltoall_strategy.hpp"
+#include "reduce_scatter_strategy.hpp"
 
 template <class Dtype>
-struct cpu_alltoall_coll : cpu_base_coll<Dtype, alltoall_strategy_impl> {
-    using coll_base = cpu_base_coll<Dtype, alltoall_strategy_impl>;
+struct cpu_reduce_scatter_coll : cpu_base_coll<Dtype, reduce_scatter_strategy_impl> {
+    using coll_base = cpu_base_coll<Dtype, reduce_scatter_strategy_impl>;
     using coll_base::send_bufs;
     using coll_base::recv_bufs;
     using coll_base::single_send_buf;
     using coll_base::single_recv_buf;
 
-    cpu_alltoall_coll(bench_init_attr init_attr)
-            : coll_base(init_attr, coll_base::comm().size(), coll_base::comm().size()) {}
+    cpu_reduce_scatter_coll(bench_init_attr init_attr)
+            : coll_base(init_attr) {}
 
     virtual void prepare(size_t elem_count) override {
         for (size_t b_idx = 0; b_idx < base_coll::get_buf_count(); b_idx++) {
-            for (size_t idx = 0; idx < coll_base::comm().size(); idx++) {
-                for (size_t e_idx = 0; e_idx < elem_count; e_idx++) {
-                    ((Dtype*)send_bufs[b_idx])[idx * elem_count + e_idx] = coll_base::comm().rank();
-                    ((Dtype*)recv_bufs[b_idx])[idx * elem_count + e_idx] = 0;
-                }
+            for (size_t e_idx = 0; e_idx < elem_count; e_idx++) {
+                ((Dtype*)send_bufs[b_idx])[e_idx] = coll_base::comm().rank();
+                ((Dtype*)recv_bufs[b_idx])[e_idx] = 0;
             }
         }
     }
 
     virtual void finalize(size_t elem_count) override {
         Dtype sbuf_expected = coll_base::comm().rank();
-        Dtype rbuf_expected;
+        Dtype rbuf_expected =
+            (coll_base::comm().size() - 1) * ((float)coll_base::comm().size() / 2);
         Dtype value;
-        size_t comm_size = coll_base::comm().size();
+
+        size_t recv_elem_count = elem_count / coll_base::comm().size();
+
         for (size_t b_idx = 0; b_idx < base_coll::get_buf_count(); b_idx++) {
-            for (size_t e_idx = 0; e_idx < elem_count * comm_size; e_idx++) {
+
+            for (size_t e_idx = 0; e_idx < elem_count; e_idx++) {
+
                 value = ((Dtype*)send_bufs[b_idx])[e_idx];
-                rbuf_expected = e_idx / elem_count;
                 if (value != sbuf_expected) {
                     std::cout << this->name() << " send_bufs: buf_idx " << b_idx << ", elem_idx "
                               << e_idx << ", expected " << sbuf_expected << ", got " << value
                               << std::endl;
                     ASSERT(0, "unexpected value");
                 }
+            }
+
+            for (size_t e_idx = 0; e_idx < recv_elem_count; e_idx++) {
 
                 value = ((Dtype*)recv_bufs[b_idx])[e_idx];
                 if (value != rbuf_expected) {

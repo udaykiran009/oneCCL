@@ -166,6 +166,16 @@ public:
         return transport->atl_ep_reduce(eps[ep_idx], send_buf, recv_buf, len, root, dtype, op, req);
     }
 
+    atl_status_t atl_ep_reduce_scatter(size_t ep_idx,
+                                       const void* send_buf,
+                                       void* recv_buf,
+                                       size_t recv_len,
+                                       atl_datatype_t dtype,
+                                       atl_reduction_t op,
+                                       atl_req_t* req) {
+        return transport->atl_ep_reduce_scatter(eps[ep_idx], send_buf, recv_buf, recv_len, dtype, op, req);
+    }
+
     atl_status_t atl_ep_read(size_t ep_idx,
                              void* buf,
                              size_t len,

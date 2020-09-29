@@ -64,10 +64,11 @@ ccl_status_t ccl_coll_build_reduce(ccl_sched* sched,
 ccl_status_t ccl_coll_build_reduce_scatter(ccl_sched* sched,
                                            ccl_buffer send_buf,
                                            ccl_buffer recv_buf,
-                                           size_t recv_count,
+                                           size_t count,
                                            const ccl_datatype& dtype,
                                            ccl::reduction reduction,
-                                           ccl_comm* comm);
+                                           ccl_comm* comm,
+                                           bool from_allreduce = false);
 
 ccl_status_t ccl_coll_build_sparse_allreduce(ccl_sched* sched,
                                              ccl_buffer send_ind_buf,

@@ -1,5 +1,4 @@
-#ifndef SPARSE_ALLREDUCE_STRATEGY_HPP
-#define SPARSE_ALLREDUCE_STRATEGY_HPP
+#pragma once
 
 template <class type>
 struct type_printer {
@@ -104,7 +103,7 @@ struct sparse_allreduce_strategy_impl {
         return type_printer<IType>::sparse_class_name();
     }
 
-    static const ccl::sparse_allreduce_attr& get_op_attr(const bench_coll_exec_attr& bench_attr) {
+    static const ccl::sparse_allreduce_attr& get_op_attr(const bench_exec_attr& bench_attr) {
         return bench_attr.get_attr<ccl::sparse_allreduce_attr>();
     }
 
@@ -149,7 +148,7 @@ struct sparse_allreduce_strategy_impl {
                         size_t recv_icount,
                         VType recv_vbuf,
                         size_t recv_vcount,
-                        const bench_coll_exec_attr& bench_attr,
+                        const bench_exec_attr& bench_attr,
                         req_list_t& reqs,
                         sparse_allreduce_fn_ctx_t& fn_ctx,
                         Args&&... args) {
@@ -180,10 +179,10 @@ struct sparse_allreduce_strategy_impl {
                                                       bench_attr.reduction,
                                                       comm,
                                                       std::forward<Args>(args)...));
+#else
+        ASSERT(0, "sparse_allreduce is not implemented yet for SYCL case");
 #endif
     }
 
     std::unique_ptr<IndicesDistributor> indices_distributor_impl;
 };
-
-#endif /* SPARSE_ALLREDUCE_STRATEGY_HPP */

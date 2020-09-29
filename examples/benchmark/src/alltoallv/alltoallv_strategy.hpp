@@ -1,5 +1,4 @@
-#ifndef ALLTOALLV_STRATEGY_HPP
-#define ALLTOALLV_STRATEGY_HPP
+#pragma once
 
 struct alltoallv_strategy_impl {
     size_t comm_size = 0;
@@ -20,7 +19,7 @@ struct alltoallv_strategy_impl {
         return "alltoallv";
     }
 
-    static const ccl::alltoallv_attr& get_op_attr(const bench_coll_exec_attr& bench_attr) {
+    static const ccl::alltoallv_attr& get_op_attr(const bench_exec_attr& bench_attr) {
         return bench_attr.get_attr<ccl::alltoallv_attr>();
     }
 
@@ -29,7 +28,7 @@ struct alltoallv_strategy_impl {
                         size_t count,
                         const Dtype send_buf,
                         Dtype recv_buf,
-                        const bench_coll_exec_attr& bench_attr,
+                        const bench_exec_attr& bench_attr,
                         req_list_t& reqs,
                         Args&&... args) {
         for (size_t idx = 0; idx < comm_size; idx++) {
@@ -41,5 +40,3 @@ struct alltoallv_strategy_impl {
             send_buf, send_counts, recv_buf, recv_counts, comm, std::forward<Args>(args)...));
     }
 };
-
-#endif /* ALLTOALLV_STRATEGY_HPP */

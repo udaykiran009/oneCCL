@@ -1,5 +1,4 @@
-#ifndef SYCL_COLL_HPP
-#define SYCL_COLL_HPP
+#pragma once
 
 #include "coll.hpp"
 
@@ -49,7 +48,7 @@ struct sycl_base_coll : base_coll, private strategy, device_specific_data {
     using coll_strategy = strategy;
 
     template <class... Args>
-    sycl_base_coll(bench_coll_init_attr init_attr,
+    sycl_base_coll(bench_init_attr init_attr,
                    size_t sbuf_multiplier,
                    size_t rbuf_multiplier,
                    Args&&... args)
@@ -69,7 +68,7 @@ struct sycl_base_coll : base_coll, private strategy, device_specific_data {
             base_coll::get_single_buf_max_elem_count() * rbuf_multiplier);
     }
 
-    sycl_base_coll(bench_coll_init_attr init_attr) : sycl_base_coll(init_attr, 1, 1) {}
+    sycl_base_coll(bench_init_attr init_attr) : sycl_base_coll(init_attr, 1, 1) {}
 
     virtual ~sycl_base_coll() {
         for (size_t idx = 0; idx < base_coll::get_buf_count(); idx++) {
@@ -86,7 +85,7 @@ struct sycl_base_coll : base_coll, private strategy, device_specific_data {
 
     virtual void start(size_t count,
                        size_t buf_idx,
-                       const bench_coll_exec_attr& attr,
+                       const bench_exec_attr& attr,
                        req_list_t& reqs) override {
         sycl_buffer_t<Dtype>& send_buf = *(static_cast<sycl_buffer_t<Dtype>*>(send_bufs[buf_idx]));
         sycl_buffer_t<Dtype>& recv_buf = *(static_cast<sycl_buffer_t<Dtype>*>(recv_bufs[buf_idx]));
@@ -102,7 +101,7 @@ struct sycl_base_coll : base_coll, private strategy, device_specific_data {
     }
 
     virtual void start_single(size_t count,
-                              const bench_coll_exec_attr& attr,
+                              const bench_exec_attr& attr,
                               req_list_t& reqs) override {
         sycl_buffer_t<Dtype>& send_buf = *(static_cast<sycl_buffer_t<Dtype>*>(single_send_buf));
         sycl_buffer_t<Dtype>& recv_buf = *(static_cast<sycl_buffer_t<Dtype>*>(single_recv_buf));
@@ -135,5 +134,3 @@ struct sycl_base_coll : base_coll, private strategy, device_specific_data {
     }
 };
 #endif /* CCL_ENABLE_SYCL */
-
-#endif /* SYCL_COLL_HPP */

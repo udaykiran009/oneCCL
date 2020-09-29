@@ -4,6 +4,7 @@
 #include <unordered_map>
 
 #include "atl/atl_wrapper.h"
+#include "coll/algorithms/allreduce/allreduce_2d.hpp"
 #include "common/comm/comm_id_storage.hpp"
 #include "common/comm/atl_tag.hpp"
 #include "common/log/log.hpp"
@@ -58,12 +59,13 @@ public:
 
     static ccl_comm* create_with_color(int color,
                                        ccl_comm_id_storage* comm_ids,
-                                       const ccl_comm* global_comm);
+                                       const ccl_comm* parent_comm);
 
     /* version with user-provided colors, allows to skip allgatherv */
     static ccl_comm* create_with_colors(const std::vector<int>& colors,
                                         ccl_comm_id_storage* comm_ids,
-                                        const ccl_comm* global_comm);
+                                        const ccl_comm* parent_comm,
+                                        bool share_resources = false);
 
     std::shared_ptr<ccl_comm> clone_with_new_id(ccl_comm_id_storage::comm_id&& id);
 
@@ -146,6 +148,7 @@ public:
 
     std::shared_ptr<atl_wrapper> atl;
     std::unique_ptr<ccl_unordered_coll_manager> unordered_coll_manager;
+    std::unique_ptr<ccl_allreduce_2d_builder> allreduce_2d_builder;
 
 private:
 

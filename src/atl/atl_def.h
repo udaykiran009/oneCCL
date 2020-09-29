@@ -197,6 +197,13 @@ typedef struct {
                            atl_datatype_t dtype,
                            atl_reduction_t op,
                            atl_req_t* req);
+    atl_status_t (*reduce_scatter)(atl_ep_t* ep,
+                                   const void* send_buf,
+                                   void* recv_buf,
+                                   size_t recv_count,
+                                   atl_datatype_t dtype,
+                                   atl_reduction_t op,
+                                   atl_req_t* req);
 } atl_coll_ops_t;
 
 typedef struct {
