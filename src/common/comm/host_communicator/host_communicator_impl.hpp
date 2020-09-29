@@ -325,9 +325,16 @@ host_communicator::coll_request_t host_communicator::reduce_scatter_impl(
     ccl::stream::impl_value_t& stream,
     const ccl::reduce_scatter_attr& attr,
     const ccl::vector_class<ccl::event>& deps) {
-    // TODO not implemented
-    throw ccl::exception(std::string(__PRETTY_FUNCTION__) + " - is not implemented");
-    return {};
+    ccl_request* req = ccl_reduce_scatter_impl(reinterpret_cast<const void*>(send_buf),
+                                       reinterpret_cast<void*>(recv_buf),
+                                       recv_count,
+                                       ccl::native_type_info<buffer_type>::ccl_datatype_value,
+                                       reduction,
+                                       attr,
+                                       comm_impl.get(),
+                                       nullptr);
+
+    return std::unique_ptr<ccl::request_impl>(new ccl::host_request_impl(req));
 }
 
 template <class buffer_type>

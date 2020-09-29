@@ -64,7 +64,7 @@ ccl_status_t ccl_coll_build_reduce(ccl_sched* sched,
 ccl_status_t ccl_coll_build_reduce_scatter(ccl_sched* sched,
                                            ccl_buffer send_buf,
                                            ccl_buffer recv_buf,
-                                           size_t send_count,
+                                           size_t recv_count,
                                            const ccl_datatype& dtype,
                                            ccl::reduction reduction,
                                            ccl_comm* comm);

@@ -199,6 +199,7 @@ ccl_status_t ccl_parallelizer::process(ccl_master_sched* sched) {
                 CCL_FATAL("unexpected allgatherv_algo ", ag_algo);
             }
             break;
+        case ccl_coll_reduce_scatter: part_count = 1; break;
         case ccl_coll_sparse_allreduce: part_count = 1; break;
         default: CCL_FATAL("unexpected coll_type ", coll_type); break;
     }
@@ -242,6 +243,7 @@ ccl_status_t ccl_parallelizer::process(ccl_master_sched* sched) {
         case ccl_coll_bcast:
         case ccl_coll_reduce:
         case ccl_coll_allreduce:
+        case ccl_coll_reduce_scatter:
         case ccl_coll_sparse_allreduce:
             base_count = coll_param.count / part_count;
             for (idx = 0; idx < counts.size(); idx++) {
@@ -353,6 +355,7 @@ ccl_status_t ccl_parallelizer::process(ccl_master_sched* sched) {
             }
 #endif /* CCL_ENABLE_SYCL */
             break;
+
         case ccl_coll_reduce:
             for (idx = 0; idx < part_count; idx++) {
 #ifdef CCL_ENABLE_SYCL
@@ -405,8 +408,59 @@ ccl_status_t ccl_parallelizer::process(ccl_master_sched* sched) {
                 }
             }
 #endif /* CCL_ENABLE_SYCL */
-
             break;
+
+        case ccl_coll_reduce_scatter:
+            for (idx = 0; idx < part_count; idx++) {
+#ifdef CCL_ENABLE_SYCL
+                /* convert sycl buffer */
+                if (coll_param.stream && coll_param.stream->is_sycl_device_stream()) {
+                    entry_factory::make_entry<sycl_copy_device_to_host_entry>(
+                        part_scheds[0].get(),
+                        ccl_buffer(&(coll_param.sycl_send_buf),
+                                   coll_param.count * comm_size * dtype_size,
+                                   ccl_buffer_type::INDIRECT),
+                        ccl_buffer((void*)coll_param.send_buf, coll_param.count * comm_size * dtype_size),
+                        coll_param.count * comm_size,
+                        dtype,
+                        coll_param.stream);
+                    sched->sync_partial_scheds();
+                }
+#endif /* CCL_ENABLE_SYCL */
+
+                ccl_coll_entry_param param{};
+                param.ctype = ccl_coll_reduce_scatter;
+                param.send_buf = ccl_buffer(&(coll_param.send_buf),
+                                            coll_param.count * comm_size * dtype_size,
+                                            offsets[idx],
+                                            ccl_buffer_type::INDIRECT);
+                param.recv_buf = ccl_buffer(&(coll_param.recv_buf),
+                                            coll_param.count * dtype_size,
+                                            offsets[idx],
+                                            ccl_buffer_type::INDIRECT);
+                param.count = counts[idx];
+                param.dtype = dtype;
+                param.reduction = coll_param.reduction;
+                param.comm = comm;
+                coll_entry_helper::add_coll_entry<ccl_coll_reduce_scatter>(part_scheds[idx].get(), param);
+            }
+#ifdef CCL_ENABLE_SYCL
+            /* convert sycl buffer */
+            if (coll_param.stream && coll_param.stream->is_sycl_device_stream()) {
+                sched->sync_partial_scheds();
+                entry_factory::make_entry<sycl_copy_host_to_device_entry>(
+                    part_scheds[0].get(),
+                    ccl_buffer(coll_param.recv_buf, coll_param.count * dtype_size),
+                    ccl_buffer(&(coll_param.sycl_recv_buf),
+                                coll_param.count * dtype_size,
+                                ccl_buffer_type::INDIRECT),
+                    coll_param.count,
+                    dtype,
+                    coll_param.stream);
+            }
+#endif /* CCL_ENABLE_SYCL */
+            break;
+
         case ccl_coll_allreduce: {
             ccl_parallelizer_prologue_ctx* main_ctx = nullptr;
 

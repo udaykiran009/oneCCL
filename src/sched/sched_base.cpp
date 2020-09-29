@@ -263,6 +263,12 @@ void ccl_sched_base::alloc_buffers_for_sycl_copy() {
                 param.recv_buf = nullptr;
             }
             break;
+        case ccl_coll_reduce_scatter:
+            param.sycl_send_buf = static_cast<ccl_sycl_buffer_t*>((void*)param.send_buf);
+            param.sycl_recv_buf = static_cast<ccl_sycl_buffer_t*>(param.recv_buf);
+            param.send_buf = alloc_buffer(param.count * param.comm->size() * param.dtype.size()).get_ptr();
+            param.recv_buf = alloc_buffer(param.count * param.dtype.size()).get_ptr();
+            break;
         case ccl_coll_sparse_allreduce:
             CCL_FATAL("SYCL stream is not supported for sparse_allreduce yet");
             CCL_ASSERT(0);

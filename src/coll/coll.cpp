@@ -537,7 +537,7 @@ ccl_status_t ccl_coll_build_reduce(ccl_sched* sched,
 ccl_status_t ccl_coll_build_reduce_scatter(ccl_sched* sched,
                                            ccl_buffer send_buf,
                                            ccl_buffer recv_buf,
-                                           size_t send_count,
+                                           size_t recv_count,
                                            const ccl_datatype& dtype,
                                            ccl::reduction reduction,
                                            ccl_comm* comm) {
@@ -545,7 +545,7 @@ ccl_status_t ccl_coll_build_reduce_scatter(ccl_sched* sched,
 
     ccl_selector_param param;
     param.ctype = ccl_coll_reduce_scatter;
-    param.count = send_count;
+    param.count = recv_count;
     param.dtype = dtype;
     param.comm = comm;
 
@@ -554,7 +554,7 @@ ccl_status_t ccl_coll_build_reduce_scatter(ccl_sched* sched,
     switch (algo) {
         case ccl_coll_reduce_scatter_ring:
             CCL_CALL(ccl_coll_build_ring_reduce_scatter(
-                sched, send_buf, recv_buf, send_count, dtype, reduction, comm));
+                sched, send_buf, recv_buf, recv_count, dtype, reduction, comm));
             break;
         default:
             CCL_FATAL("unexpected reduce_scatter_algo ", ccl_coll_algorithm_to_str(algo));

@@ -39,7 +39,6 @@ ccl_status_t CCL_API register_gpu_module_source(const char* path,
                 native::specific_modules_source_data_storage::instance()
                     .load_kernel_source<ccl_coll_allreduce>(path, t_class);
                 break;
-
             case ccl_coll_alltoallv:
                 native::specific_modules_source_data_storage::instance()
                     .load_kernel_source<ccl_coll_alltoallv>(path, t_class);
@@ -51,6 +50,10 @@ ccl_status_t CCL_API register_gpu_module_source(const char* path,
             case ccl_coll_reduce:
                 native::specific_modules_source_data_storage::instance()
                     .load_kernel_source<ccl_coll_reduce>(path, t_class);
+                break;
+            case ccl_coll_reduce_scatter:
+                native::specific_modules_source_data_storage::instance()
+                    .load_kernel_source<ccl_coll_reduce_scatter>(path, t_class);
                 break;
             default: break;
         }

@@ -269,9 +269,6 @@ host_communicator::coll_request_t host_communicator::reduce_scatter_impl(
     ccl::stream::impl_value_t& stream,
     const ccl::reduce_scatter_attr& attr,
     const ccl::vector_class<ccl::event>& deps) {
-    // TODO not fully implemented (need to implement reduce_scatter in parallelizer.cpp)
-    throw ccl::exception(std::string(__PRETTY_FUNCTION__) + " - is not implemented");
-
     ccl_request* req = ccl_reduce_scatter_impl(
         send_buf, recv_buf, recv_count, dtype, reduction, attr, comm_impl.get(), nullptr);
 

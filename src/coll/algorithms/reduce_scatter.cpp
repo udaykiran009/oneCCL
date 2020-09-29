@@ -7,7 +7,7 @@
 ccl_status_t ccl_coll_build_ring_reduce_scatter(ccl_sched* sched,
                                                 ccl_buffer send_buf,
                                                 ccl_buffer recv_buf,
-                                                size_t send_count,
+                                                size_t recv_count,
                                                 const ccl_datatype& dtype,
                                                 ccl::reduction op,
                                                 ccl_comm* comm) {
@@ -29,7 +29,7 @@ ccl_status_t ccl_coll_build_ring_reduce_scatter(ccl_sched* sched,
     size_t src = (comm_size + rank - 1) % comm_size;
     size_t dst = (comm_size + rank + 1) % comm_size;
 
-    size_t count = send_count;
+    size_t count = recv_count * comm_size;
     size_t bytes = count * dtype_size;
 
     size_t chunk_count = (bytes >= ccl::global_data::env().rs_min_chunk_size &&

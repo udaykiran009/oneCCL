@@ -115,7 +115,7 @@
 //    ccl_buffer sbuf = send_buf + chunk_idx * main_chunk_size * dtype_size;
 //    ccl_buffer rbuf = recv_buf + chunk_idx * main_chunk_size * dtype_size;
 //
-//    ccl_coll_build_reduce_scatter(sched, sbuf, rbuf, cnt, dtype, op, first_dim_comm);
+//    ccl_coll_build_reduce_scatter(sched, sbuf, rbuf, cnt / comm->size(), dtype, op, first_dim_comm);
 //    sched->add_barrier();
 //
 //    if (chunk_idx == (chunk_count - 1) || (chunk_count == 1)) {

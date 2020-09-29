@@ -50,6 +50,10 @@ void ccl_sched_key::set(const ccl_coll_param& param, const ccl_coll_attr& attr) 
             f.reduction = param.reduction;
             f.root = param.root;
             break;
+        case ccl_coll_reduce_scatter:
+            f.count1 = param.count;
+            f.reduction = param.reduction;
+            break;
         case ccl_coll_sparse_allreduce:
             f.count1 = param.sparse_param.send_ind_count;
             f.count2 = param.sparse_param.send_val_count;
@@ -83,6 +87,9 @@ bool ccl_sched_key::check(const ccl_coll_param& param, const ccl_coll_attr& attr
         case ccl_coll_reduce:
             result &=
                 (param.count == f.count1 && param.reduction == f.reduction && param.root == f.root);
+            break;
+        case ccl_coll_reduce_scatter:
+            result &= (param.count == f.count1 && param.reduction == f.reduction);
             break;
         case ccl_coll_sparse_allreduce:
             result &= (param.sparse_param.send_ind_count == f.count1 &&
