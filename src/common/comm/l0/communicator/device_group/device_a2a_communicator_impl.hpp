@@ -15,7 +15,7 @@ device_group_a2a_communicator::coll_request_t device_group_a2a_communicator::all
     size_t send_count,
     buffer_type* recv_buf,
     const ccl::vector_class<size_t>& recv_counts,
-    ccl::stream::impl_value_t& stream,
+    const ccl::stream::impl_value_t& stream,
     const ccl::allgatherv_attr& attr,
     const ccl::vector_class<ccl::event>& deps) {
     throw ccl::exception(std::string(__PRETTY_FUNCTION__) + " - is not implemented");
@@ -27,7 +27,7 @@ device_group_a2a_communicator::coll_request_t device_group_a2a_communicator::all
     size_t send_count,
     ccl::vector_class<buffer_type*>& recv_buf,
     const ccl::vector_class<size_t>& recv_counts,
-    ccl::stream::impl_value_t& stream,
+    const ccl::stream::impl_value_t& stream,
     const ccl::allgatherv_attr& attr,
     const ccl::vector_class<ccl::event>& deps) {
     throw ccl::exception(std::string(__PRETTY_FUNCTION__) + " - is not implemented");
@@ -40,7 +40,7 @@ device_group_a2a_communicator::coll_request_t device_group_a2a_communicator::all
     size_t send_count,
     buffer_type& recv_buf,
     const ccl::vector_class<size_t>& recv_counts,
-    ccl::stream::impl_value_t& stream,
+    const ccl::stream::impl_value_t& stream,
     const ccl::allgatherv_attr& attr,
     const ccl::vector_class<ccl::event>& deps) {
     throw ccl::exception(std::string(__PRETTY_FUNCTION__) + " - is not implemented");
@@ -53,7 +53,7 @@ device_group_a2a_communicator::coll_request_t device_group_a2a_communicator::all
     size_t send_count,
     ccl::vector_class<ccl::reference_wrapper_class<buffer_type>>& recv_buf,
     const ccl::vector_class<size_t>& recv_counts,
-    ccl::stream::impl_value_t& stream,
+    const ccl::stream::impl_value_t& stream,
     const ccl::allgatherv_attr& attr,
     const ccl::vector_class<ccl::event>& deps) {
     throw ccl::exception(std::string(__PRETTY_FUNCTION__) + " - is not implemented");
@@ -67,7 +67,7 @@ device_group_a2a_communicator::coll_request_t device_group_a2a_communicator::all
     buffer_type* recv_buf,
     size_t count,
     ccl::reduction reduction,
-    ccl::stream::impl_value_t& stream,
+    const ccl::stream::impl_value_t& stream,
     const ccl::allreduce_attr& attr,
     const ccl::vector_class<ccl::event>& deps) {
     using namespace native;
@@ -147,7 +147,7 @@ device_group_a2a_communicator::coll_request_t device_group_a2a_communicator::all
     buffer_type& recv_buf,
     size_t count,
     ccl::reduction reduction,
-    ccl::stream::impl_value_t& stream,
+    const ccl::stream::impl_value_t& stream,
     const ccl::allreduce_attr& attr,
     const ccl::vector_class<ccl::event>& deps) {
     throw ccl::exception(std::string(__PRETTY_FUNCTION__) + " - is not implemented");
@@ -160,7 +160,7 @@ device_group_a2a_communicator::coll_request_t device_group_a2a_communicator::all
     const buffer_type* send_buf,
     buffer_type* recv_buf,
     size_t count,
-    ccl::stream::impl_value_t& stream,
+    const ccl::stream::impl_value_t& stream,
     const ccl::alltoall_attr& attr,
     const ccl::vector_class<ccl::event>& deps) {
     throw ccl::exception(std::string(__PRETTY_FUNCTION__) + " - is not implemented");
@@ -171,7 +171,7 @@ device_group_a2a_communicator::coll_request_t device_group_a2a_communicator::all
     const ccl::vector_class<buffer_type*>& send_buf,
     const ccl::vector_class<buffer_type*>& recv_buf,
     size_t count,
-    ccl::stream::impl_value_t& stream,
+    const ccl::stream::impl_value_t& stream,
     const ccl::alltoall_attr& attr,
     const ccl::vector_class<ccl::event>& deps) {
     throw ccl::exception(std::string(__PRETTY_FUNCTION__) + " - is not implemented");
@@ -183,7 +183,7 @@ device_group_a2a_communicator::coll_request_t device_group_a2a_communicator::all
     const buffer_type& send_buf,
     buffer_type& recv_buf,
     size_t count,
-    ccl::stream::impl_value_t& stream,
+    const ccl::stream::impl_value_t& stream,
     const ccl::alltoall_attr& attr,
     const ccl::vector_class<ccl::event>& deps) {
     throw ccl::exception(std::string(__PRETTY_FUNCTION__) + " - is not implemented");
@@ -194,7 +194,7 @@ device_group_a2a_communicator::coll_request_t device_group_a2a_communicator::all
     const ccl::vector_class<ccl::reference_wrapper_class<buffer_type>>& send_buf,
     const ccl::vector_class<ccl::reference_wrapper_class<buffer_type>>& recv_buf,
     size_t count,
-    ccl::stream::impl_value_t& stream,
+    const ccl::stream::impl_value_t& stream,
     const ccl::alltoall_attr& attr,
     const ccl::vector_class<ccl::event>& dep) {
     throw ccl::exception(std::string(__PRETTY_FUNCTION__) + " - is not implemented");
@@ -208,7 +208,7 @@ device_group_a2a_communicator::coll_request_t device_group_a2a_communicator::all
     const ccl::vector_class<size_t>& send_counts,
     buffer_type* recv_buf,
     const ccl::vector_class<size_t>& recv_counts,
-    ccl::stream::impl_value_t& stream,
+    const ccl::stream::impl_value_t& stream,
     const ccl::alltoallv_attr& attr,
     const ccl::vector_class<ccl::event>& deps) {
     throw ccl::exception(std::string(__PRETTY_FUNCTION__) + " - is not implemented");
@@ -220,7 +220,7 @@ device_group_a2a_communicator::coll_request_t device_group_a2a_communicator::all
     const ccl::vector_class<size_t>& send_counts,
     const ccl::vector_class<buffer_type*>& recv_buf,
     const ccl::vector_class<size_t>& recv_counts,
-    ccl::stream::impl_value_t& stream,
+    const ccl::stream::impl_value_t& stream,
     const ccl::alltoallv_attr& attr,
     const ccl::vector_class<ccl::event>& dep) {
     throw ccl::exception(std::string(__PRETTY_FUNCTION__) + " - is not implemented");
@@ -233,7 +233,7 @@ device_group_a2a_communicator::coll_request_t device_group_a2a_communicator::all
     const ccl::vector_class<size_t>& send_counts,
     buffer_type& recv_buf,
     const ccl::vector_class<size_t>& recv_counts,
-    ccl::stream::impl_value_t& stream,
+    const ccl::stream::impl_value_t& stream,
     const ccl::alltoallv_attr& attr,
     const ccl::vector_class<ccl::event>& deps) {
     throw ccl::exception(std::string(__PRETTY_FUNCTION__) + " - is not implemented");
@@ -245,7 +245,7 @@ device_group_a2a_communicator::coll_request_t device_group_a2a_communicator::all
     const ccl::vector_class<size_t>& send_counts,
     const ccl::vector_class<ccl::reference_wrapper_class<buffer_type>>& recv_buf,
     const ccl::vector_class<size_t>& recv_counts,
-    ccl::stream::impl_value_t& stream,
+    const ccl::stream::impl_value_t& stream,
     const ccl::alltoallv_attr& attr,
     const ccl::vector_class<ccl::event>& dep) {
     throw ccl::exception(std::string(__PRETTY_FUNCTION__) + " - is not implemented");
@@ -258,7 +258,7 @@ device_group_a2a_communicator::coll_request_t device_group_a2a_communicator::bro
     buffer_type* buf,
     size_t count,
     size_t root,
-    ccl::stream::impl_value_t& stream,
+    const ccl::stream::impl_value_t& stream,
     const ccl::broadcast_attr& attr,
     const ccl::vector_class<ccl::event>& deps) {
     throw ccl::exception(std::string(__PRETTY_FUNCTION__) + " - is not implemented");
@@ -270,7 +270,7 @@ device_group_a2a_communicator::coll_request_t device_group_a2a_communicator::bro
     buffer_type& buf,
     size_t count,
     size_t root,
-    ccl::stream::impl_value_t& stream,
+    const ccl::stream::impl_value_t& stream,
     const ccl::broadcast_attr& attr,
     const ccl::vector_class<ccl::event>& deps) {
     throw ccl::exception(std::string(__PRETTY_FUNCTION__) + " - is not implemented");
@@ -285,7 +285,7 @@ device_group_a2a_communicator::coll_request_t device_group_a2a_communicator::red
     size_t count,
     ccl::reduction reduction,
     size_t root,
-    ccl::stream::impl_value_t& stream,
+    const ccl::stream::impl_value_t& stream,
     const ccl::reduce_attr& attr,
     const ccl::vector_class<ccl::event>& deps) {
     throw ccl::exception(std::string(__PRETTY_FUNCTION__) + " - is not implemented");
@@ -299,7 +299,7 @@ device_group_a2a_communicator::coll_request_t device_group_a2a_communicator::red
     size_t count,
     ccl::reduction reduction,
     size_t root,
-    ccl::stream::impl_value_t& stream,
+    const ccl::stream::impl_value_t& stream,
     const ccl::reduce_attr& attr,
     const ccl::vector_class<ccl::event>& deps) {
     throw ccl::exception(std::string(__PRETTY_FUNCTION__) + " - is not implemented");
@@ -313,7 +313,7 @@ device_group_a2a_communicator::coll_request_t device_group_a2a_communicator::red
     buffer_type* recv_buf,
     size_t recv_count,
     ccl::reduction reduction,
-    ccl::stream::impl_value_t& stream,
+    const ccl::stream::impl_value_t& stream,
     const ccl::reduce_scatter_attr& attr,
     const ccl::vector_class<ccl::event>& deps) {
     throw ccl::exception(std::string(__PRETTY_FUNCTION__) + " - is not implemented");
@@ -325,7 +325,7 @@ device_group_a2a_communicator::coll_request_t device_group_a2a_communicator::red
     buffer_type& recv_buf,
     size_t recv_count,
     ccl::reduction reduction,
-    ccl::stream::impl_value_t& stream,
+    const ccl::stream::impl_value_t& stream,
     const ccl::reduce_scatter_attr& attr,
     const ccl::vector_class<ccl::event>& deps) {
     throw ccl::exception(std::string(__PRETTY_FUNCTION__) + " - is not implemented");
@@ -344,7 +344,7 @@ device_group_a2a_communicator::coll_request_t device_group_a2a_communicator::spa
     value_buffer_type* recv_val_buf,
     size_t recv_val_count,
     ccl::reduction reduction,
-    ccl::stream::impl_value_t& stream,
+    const ccl::stream::impl_value_t& stream,
     const ccl::sparse_allreduce_attr& attr,
     const ccl::vector_class<ccl::event>& deps) {
     throw ccl::exception(std::string(__PRETTY_FUNCTION__) + " - is not implemented");
@@ -362,7 +362,7 @@ device_group_a2a_communicator::coll_request_t device_group_a2a_communicator::spa
     value_buffer_container_type& recv_val_buf,
     size_t recv_val_count,
     ccl::reduction reduction,
-    ccl::stream::impl_value_t& stream,
+    const ccl::stream::impl_value_t& stream,
     const ccl::sparse_allreduce_attr& attr,
     const ccl::vector_class<ccl::event>& deps) {
     throw ccl::exception(std::string(__PRETTY_FUNCTION__) + " - is not implemented");

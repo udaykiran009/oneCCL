@@ -16,7 +16,7 @@ namespace ccl {
  */
 struct impl_dispatch {
     template <class Object>
-    auto operator()(Object& obj) -> decltype(obj.get_impl()) {
+    const typename Object::impl_value_t& operator()(const Object& obj) {
         return obj.get_impl();
     }
 };
@@ -140,7 +140,7 @@ CCL_API event allgatherv(const void* send_buf,
                            const vector_class<size_t>& recv_counts,
                            datatype dtype,
                            const communicator& comm,
-                           stream& op_stream,
+                           const stream& op_stream,
                            const allgatherv_attr& attr,
                            const vector_class<event>& deps) {
     impl_dispatch disp;
@@ -154,7 +154,7 @@ CCL_API event allgatherv(const void* send_buf,
                            const vector_class<size_t>& recv_counts,
                            datatype dtype,
                            const communicator& comm,
-                           stream& op_stream,
+                           const stream& op_stream,
                            const allgatherv_attr& attr,
                            const vector_class<event>& deps) {
     impl_dispatch disp;
@@ -168,7 +168,7 @@ event allgatherv(const BufferType* send_buf,
                    BufferType* recv_buf,
                    const vector_class<size_t>& recv_counts,
                    const communicator& comm,
-                   stream& op_stream,
+                   const stream& op_stream,
                    const allgatherv_attr& attr,
                    const vector_class<event>& deps) {
     impl_dispatch disp;
@@ -182,7 +182,7 @@ event allgatherv(const BufferType* send_buf,
                    vector_class<BufferType*>& recv_bufs,
                    const vector_class<size_t>& recv_counts,
                    const communicator& comm,
-                   stream& op_stream,
+                   const stream& op_stream,
                    const allgatherv_attr& attr,
                    const vector_class<event>& deps) {
     impl_dispatch disp;
@@ -196,7 +196,7 @@ event allgatherv(const BufferObjectType& send_buf,
                    BufferObjectType& recv_buf,
                    const vector_class<size_t>& recv_counts,
                    const communicator& comm,
-                   stream& op_stream,
+                   const stream& op_stream,
                    const allgatherv_attr& attr,
                    const vector_class<event>& deps) {
     impl_dispatch disp;
@@ -210,7 +210,7 @@ event allgatherv(const BufferObjectType& send_buf,
                    vector_class<ccl::reference_wrapper_class<BufferObjectType>>& recv_bufs,
                    const vector_class<size_t>& recv_counts,
                    const communicator& comm,
-                   stream& op_stream,
+                   const stream& op_stream,
                    const allgatherv_attr& attr,
                    const vector_class<event>& deps) {
     impl_dispatch disp;
@@ -225,7 +225,7 @@ CCL_API event allreduce(const void* send_buf,
                           datatype dtype,
                           reduction reduction,
                           const communicator& comm,
-                          stream& op_stream,
+                          const stream& op_stream,
                           const allreduce_attr& attr,
                           const vector_class<event>& deps) {
     impl_dispatch disp;
@@ -239,7 +239,7 @@ event allreduce(const BufferType* send_buf,
                   size_t count,
                   reduction reduction,
                   const communicator& comm,
-                  stream& op_stream,
+                  const stream& op_stream,
                   const allreduce_attr& attr,
                   const vector_class<event>& deps) {
     impl_dispatch disp;
@@ -252,7 +252,7 @@ event allreduce(const BufferObjectType& send_buf,
                   size_t count,
                   reduction reduction,
                   const communicator& comm,
-                  stream& op_stream,
+                  const stream& op_stream,
                   const allreduce_attr& attr,
                   const vector_class<event>& deps) {
     impl_dispatch disp;
@@ -265,7 +265,7 @@ CCL_API event alltoall(const void* send_buf,
                          size_t count,
                          datatype dtype,
                          const communicator& comm,
-                         stream& op_stream,
+                         const stream& op_stream,
                          const alltoall_attr& attr,
                          const vector_class<event>& deps) {
     impl_dispatch disp;
@@ -277,7 +277,7 @@ CCL_API event alltoall(const vector_class<void*>& send_buf,
                          size_t count,
                          datatype dtype,
                          const communicator& comm,
-                         stream& op_stream,
+                         const stream& op_stream,
                          const alltoall_attr& attr,
                          const vector_class<event>& deps) {
     impl_dispatch disp;
@@ -289,7 +289,7 @@ event alltoall(const BufferType* send_buf,
                  BufferType* recv_buf,
                  size_t count,
                  const communicator& comm,
-                 stream& op_stream,
+                 const stream& op_stream,
                  const alltoall_attr& attr,
                  const vector_class<event>& deps) {
     impl_dispatch disp;
@@ -301,7 +301,7 @@ event alltoall(const vector_class<BufferType*>& send_buf,
                  const vector_class<BufferType*>& recv_buf,
                  size_t count,
                  const communicator& comm,
-                 stream& op_stream,
+                 const stream& op_stream,
                  const alltoall_attr& attr,
                  const vector_class<event>& deps) {
     impl_dispatch disp;
@@ -313,7 +313,7 @@ event alltoall(const BufferObjectType& send_buf,
                  BufferObjectType& recv_buf,
                  size_t count,
                  const communicator& comm,
-                 stream& op_stream,
+                 const stream& op_stream,
                  const alltoall_attr& attr,
                  const vector_class<event>& deps) {
     impl_dispatch disp;
@@ -325,7 +325,7 @@ event alltoall(const vector_class<reference_wrapper_class<BufferObjectType>>& se
                  const vector_class<reference_wrapper_class<BufferObjectType>>& recv_buf,
                  size_t count,
                  const communicator& comm,
-                 stream& op_stream,
+                 const stream& op_stream,
                  const alltoall_attr& attr,
                  const vector_class<event>& deps) {
     impl_dispatch disp;
@@ -339,7 +339,7 @@ CCL_API event alltoallv(const void* send_buf,
                           const vector_class<size_t>& recv_counts,
                           datatype dtype,
                           const communicator& comm,
-                          stream& op_stream,
+                          const stream& op_stream,
                           const alltoallv_attr& attr,
                           const vector_class<event>& deps) {
     impl_dispatch disp;
@@ -353,7 +353,7 @@ CCL_API event alltoallv(const vector_class<void*>& send_bufs,
                           const vector_class<size_t>& recv_counts,
                           datatype dtype,
                           const communicator& comm,
-                          stream& op_stream,
+                          const stream& op_stream,
                           const alltoallv_attr& attr,
                           const vector_class<event>& deps) {
     impl_dispatch disp;
@@ -367,7 +367,7 @@ event alltoallv(const BufferType* send_buf,
                   BufferType* recv_buf,
                   const vector_class<size_t>& recv_counts,
                   const communicator& comm,
-                  stream& op_stream,
+                  const stream& op_stream,
                   const alltoallv_attr& attr,
                   const vector_class<event>& deps) {
     impl_dispatch disp;
@@ -381,7 +381,7 @@ event alltoallv(const vector_class<BufferType*>& send_bufs,
                   const vector_class<BufferType*>& recv_bufs,
                   const vector_class<size_t>& recv_counts,
                   const communicator& comm,
-                  stream& op_stream,
+                  const stream& op_stream,
                   const alltoallv_attr& attr,
                   const vector_class<event>& deps) {
     impl_dispatch disp;
@@ -395,7 +395,7 @@ event alltoallv(const BufferObjectType& send_buf,
                   BufferObjectType& recv_buf,
                   const vector_class<size_t>& recv_counts,
                   const communicator& comm,
-                  stream& op_stream,
+                  const stream& op_stream,
                   const alltoallv_attr& attr,
                   const vector_class<event>& deps) {
     impl_dispatch disp;
@@ -409,7 +409,7 @@ event alltoallv(const vector_class<reference_wrapper_class<BufferObjectType>>& s
                   const vector_class<reference_wrapper_class<BufferObjectType>>& recv_bufs,
                   const vector_class<size_t>& recv_counts,
                   const communicator& comm,
-                  stream& op_stream,
+                  const stream& op_stream,
                   const alltoallv_attr& attr,
                   const vector_class<event>& deps) {
     impl_dispatch disp;
@@ -419,7 +419,7 @@ event alltoallv(const vector_class<reference_wrapper_class<BufferObjectType>>& s
 
 /* barrier */
 CCL_API event barrier(const communicator& comm,
-                        stream& op_stream,
+                        const stream& op_stream,
                         const barrier_attr& attr,
                         const vector_class<event>& deps) {
     impl_dispatch disp;
@@ -432,7 +432,7 @@ CCL_API event broadcast(void* buf,
                           datatype dtype,
                           size_t root,
                           const communicator& comm,
-                          stream& op_stream,
+                          const stream& op_stream,
                           const broadcast_attr& attr,
                           const vector_class<event>& deps) {
     impl_dispatch disp;
@@ -444,7 +444,7 @@ event broadcast(BufferType* buf,
                   size_t count,
                   size_t root,
                   const communicator& comm,
-                  stream& op_stream,
+                  const stream& op_stream,
                   const broadcast_attr& attr,
                   const vector_class<event>& deps)
 
@@ -458,7 +458,7 @@ event broadcast(BufferObjectType& buf,
                   size_t count,
                   size_t root,
                   const communicator& comm,
-                  stream& op_stream,
+                  const stream& op_stream,
                   const broadcast_attr& attr,
                   const vector_class<event>& deps) {
     impl_dispatch disp;
@@ -473,7 +473,7 @@ CCL_API event reduce(const void* send_buf,
                        reduction reduction,
                        size_t root,
                        const communicator& comm,
-                       stream& op_stream,
+                       const stream& op_stream,
                        const reduce_attr& attr,
                        const vector_class<event>& deps) {
     impl_dispatch disp;
@@ -488,7 +488,7 @@ event reduce(const BufferType* send_buf,
                reduction reduction,
                size_t root,
                const communicator& comm,
-               stream& op_stream,
+               const stream& op_stream,
                const reduce_attr& attr,
                const vector_class<event>& deps) {
     impl_dispatch disp;
@@ -503,7 +503,7 @@ event reduce(const BufferObjectType& send_buf,
                reduction reduction,
                size_t root,
                const communicator& comm,
-               stream& op_stream,
+               const stream& op_stream,
                const reduce_attr& attr,
                const vector_class<event>& deps) {
     impl_dispatch disp;
@@ -518,7 +518,7 @@ CCL_API event reduce_scatter(const void* send_buf,
                                datatype dtype,
                                reduction reduction,
                                const communicator& comm,
-                               stream& op_stream,
+                               const stream& op_stream,
                                const reduce_scatter_attr& attr,
                                const vector_class<event>& deps) {
     impl_dispatch disp;
@@ -532,7 +532,7 @@ event reduce_scatter(const BufferType* send_buf,
                        size_t recv_count,
                        reduction reduction,
                        const communicator& comm,
-                       stream& op_stream,
+                       const stream& op_stream,
                        const reduce_scatter_attr& attr,
                        const vector_class<event>& deps) {
     impl_dispatch disp;
@@ -546,7 +546,7 @@ event reduce_scatter(const BufferObjectType& send_buf,
                        size_t recv_count,
                        reduction reduction,
                        const communicator& comm,
-                       stream& op_stream,
+                       const stream& op_stream,
                        const reduce_scatter_attr& attr,
                        const vector_class<event>& deps) {
     impl_dispatch disp;
@@ -569,7 +569,7 @@ CCL_API ccl::event sparse_allreduce(const void* send_ind_buf,
                                       ccl::datatype value_dtype,
                                       ccl::reduction reduction,
                                       const ccl::communicator& comm,
-                                      ccl::stream& op_stream,
+                                      const ccl::stream& op_stream,
                                       const ccl::sparse_allreduce_attr& attr,
                                       const ccl::vector_class<ccl::event>& deps) {
     ccl::impl_dispatch disp;
@@ -600,7 +600,7 @@ ccl::event sparse_allreduce(const IndexBufferType* send_ind_buf,
                               size_t recv_val_count,
                               ccl::reduction reduction,
                               const ccl::communicator& comm,
-                              ccl::stream& op_stream,
+                              const ccl::stream& op_stream,
                               const ccl::sparse_allreduce_attr& attr,
                               const ccl::vector_class<ccl::event>& deps) {
     ccl::impl_dispatch disp;
@@ -630,7 +630,7 @@ ccl::event sparse_allreduce(const IndexBufferType* send_ind_buf,
 //                  size_t recv_val_count,
 //                  ccl::reduction reduction,
 //                  const ccl::communicator& comm,
-//                  ccl::stream& op_stream,
+//                  const ccl::stream& op_stream,
 //                  const ccl::sparse_allreduce_attr& attr,
 //                  const ccl::vector_class<ccl::event>& deps)
 // {

@@ -10,7 +10,7 @@
                                     void* recv_buf, \
                                     const ccl::vector_class<size_t>& recv_counts, \
                                     ccl::datatype dtype, \
-                                    ccl::stream::impl_value_t& stream, \
+                                    const ccl::stream::impl_value_t& stream, \
                                     const ccl::allgatherv_attr& attr, \
                                     const ccl::vector_class<ccl::event>& deps = {}) = 0; \
 \
@@ -19,7 +19,7 @@
                                     const ccl::vector_class<void*>& recv_bufs, \
                                     const ccl::vector_class<size_t>& recv_counts, \
                                     ccl::datatype dtype, \
-                                    ccl::stream::impl_value_t& stream, \
+                                    const ccl::stream::impl_value_t& stream, \
                                     const ccl::allgatherv_attr& attr, \
                                     const ccl::vector_class<ccl::event>& deps = {}) = 0; \
 \
@@ -28,7 +28,7 @@
                                    size_t count, \
                                    ccl::datatype dtype, \
                                    ccl::reduction reduction, \
-                                   ccl::stream::impl_value_t& stream, \
+                                   const ccl::stream::impl_value_t& stream, \
                                    const ccl::allreduce_attr& attr, \
                                    const ccl::vector_class<ccl::event>& deps = {}) = 0; \
 \
@@ -36,14 +36,14 @@
                                   void* recv_buf, \
                                   size_t count, \
                                   ccl::datatype dtype, \
-                                  ccl::stream::impl_value_t& stream, \
+                                  const ccl::stream::impl_value_t& stream, \
                                   const ccl::alltoall_attr& attr, \
                                   const ccl::vector_class<ccl::event>& deps = {}) = 0; \
     virtual ccl::event alltoall(const ccl::vector_class<void*>& send_buf, \
                                   const ccl::vector_class<void*>& recv_buf, \
                                   size_t count, \
                                   ccl::datatype dtype, \
-                                  ccl::stream::impl_value_t& stream, \
+                                  const ccl::stream::impl_value_t& stream, \
                                   const ccl::alltoall_attr& attr, \
                                   const ccl::vector_class<ccl::event>& deps = {}) = 0; \
 \
@@ -52,7 +52,7 @@
                                    void* recv_buf, \
                                    const ccl::vector_class<size_t>& recv_counts, \
                                    ccl::datatype dtype, \
-                                   ccl::stream::impl_value_t& stream, \
+                                   const ccl::stream::impl_value_t& stream, \
                                    const ccl::alltoallv_attr& attr, \
                                    const ccl::vector_class<ccl::event>& deps = {}) = 0; \
 \
@@ -61,7 +61,7 @@
                                    const ccl::vector_class<void*>& recv_bufs, \
                                    const ccl::vector_class<size_t>& recv_counts, \
                                    ccl::datatype dtype, \
-                                   ccl::stream::impl_value_t& stream, \
+                                   const ccl::stream::impl_value_t& stream, \
                                    const ccl::alltoallv_attr& attr, \
                                    const ccl::vector_class<ccl::event>& deps = {}) = 0; \
 \
@@ -69,7 +69,7 @@
                                size_t count, \
                                ccl::datatype dtype, \
                                size_t root, \
-                               ccl::stream::impl_value_t& stream, \
+                               const ccl::stream::impl_value_t& stream, \
                                const ccl::broadcast_attr& attr, \
                                const ccl::vector_class<ccl::event>& deps = {}) = 0; \
 \
@@ -79,7 +79,7 @@
                                 ccl::datatype dtype, \
                                 ccl::reduction reduction, \
                                 size_t root, \
-                                ccl::stream::impl_value_t& stream, \
+                                const ccl::stream::impl_value_t& stream, \
                                 const ccl::reduce_attr& attr, \
                                 const ccl::vector_class<ccl::event>& deps = {}) = 0; \
 \
@@ -88,7 +88,7 @@
                                         size_t recv_count, \
                                         ccl::datatype dtype, \
                                         ccl::reduction reduction, \
-                                        ccl::stream::impl_value_t& stream, \
+                                        const ccl::stream::impl_value_t& stream, \
                                         const reduce_scatter_attr& attr, \
                                         const ccl::vector_class<ccl::event>& deps = {}) = 0;
 
@@ -105,7 +105,7 @@
                                           ccl::datatype index_dtype, \
                                           ccl::datatype value_dtype, \
                                           ccl::reduction reduction, \
-                                          ccl::stream::impl_value_t& stream, \
+                                          const ccl::stream::impl_value_t& stream, \
                                           const ccl::sparse_allreduce_attr& attr, \
                                           const ccl::vector_class<ccl::event>& deps = {}) = 0;
 
@@ -115,7 +115,7 @@
                                     size_t send_count, \
                                     type* recv_buf, \
                                     const ccl::vector_class<size_t>& recv_counts, \
-                                    ccl::stream::impl_value_t& stream, \
+                                    const ccl::stream::impl_value_t& stream, \
                                     const ccl::allgatherv_attr& attr, \
                                     const ccl::vector_class<ccl::event>& deps = {}) = 0; \
 \
@@ -123,7 +123,7 @@
                                     size_t send_count, \
                                     ccl::vector_class<type*>& recv_bufs, \
                                     const ccl::vector_class<size_t>& recv_counts, \
-                                    ccl::stream::impl_value_t& stream, \
+                                    const ccl::stream::impl_value_t& stream, \
                                     const ccl::allgatherv_attr& attr, \
                                     const ccl::vector_class<ccl::event>& deps = {}) = 0; \
 \
@@ -131,21 +131,21 @@
                                    type* recv_buf, \
                                    size_t count, \
                                    ccl::reduction reduction, \
-                                   ccl::stream::impl_value_t& stream, \
+                                   const ccl::stream::impl_value_t& stream, \
                                    const ccl::allreduce_attr& attr, \
                                    const ccl::vector_class<ccl::event>& deps = {}) = 0; \
 \
     virtual ccl::event alltoall(const type* send_buf, \
                                   type* recv_buf, \
                                   size_t count, \
-                                  ccl::stream::impl_value_t& stream, \
+                                  const ccl::stream::impl_value_t& stream, \
                                   const ccl::alltoall_attr& attr, \
                                   const ccl::vector_class<ccl::event>& deps = {}) = 0; \
 \
     virtual ccl::event alltoall(const ccl::vector_class<type*>& send_buf, \
                                   const ccl::vector_class<type*>& recv_buf, \
                                   size_t count, \
-                                  ccl::stream::impl_value_t& stream, \
+                                  const ccl::stream::impl_value_t& stream, \
                                   const ccl::alltoall_attr& attr, \
                                   const ccl::vector_class<ccl::event>& deps = {}) = 0; \
 \
@@ -153,7 +153,7 @@
                                    const ccl::vector_class<size_t>& send_counts, \
                                    type* recv_buf, \
                                    const ccl::vector_class<size_t>& recv_counts, \
-                                   ccl::stream::impl_value_t& stream, \
+                                   const ccl::stream::impl_value_t& stream, \
                                    const ccl::alltoallv_attr& attr, \
                                    const ccl::vector_class<ccl::event>& deps = {}) = 0; \
 \
@@ -161,14 +161,14 @@
                                    const ccl::vector_class<size_t>& send_counts, \
                                    const ccl::vector_class<type*>& recv_bufs, \
                                    const ccl::vector_class<size_t>& recv_counts, \
-                                   ccl::stream::impl_value_t& stream, \
+                                   const ccl::stream::impl_value_t& stream, \
                                    const ccl::alltoallv_attr& attr, \
                                    const ccl::vector_class<ccl::event>& deps = {}) = 0; \
 \
     virtual ccl::event bcast(type* buf, \
                                size_t count, \
                                size_t root, \
-                               ccl::stream::impl_value_t& stream, \
+                               const ccl::stream::impl_value_t& stream, \
                                const ccl::broadcast_attr& attr, \
                                const ccl::vector_class<ccl::event>& deps = {}) = 0; \
 \
@@ -177,7 +177,7 @@
                                 size_t count, \
                                 ccl::reduction reduction, \
                                 size_t root, \
-                                ccl::stream::impl_value_t& stream, \
+                                const ccl::stream::impl_value_t& stream, \
                                 const ccl::reduce_attr& attr, \
                                 const ccl::vector_class<ccl::event>& deps = {}) = 0; \
 \
@@ -185,7 +185,7 @@
                                         type* recv_buf, \
                                         size_t recv_count, \
                                         ccl::reduction reduction, \
-                                        ccl::stream::impl_value_t& stream, \
+                                        const ccl::stream::impl_value_t& stream, \
                                         const ccl::reduce_scatter_attr& attr, \
                                         const ccl::vector_class<ccl::event>& deps) = 0;
 
@@ -200,7 +200,7 @@
                                           value_type* recv_val_buf, \
                                           size_t recv_val_count, \
                                           ccl::reduction reduction, \
-                                          ccl::stream::impl_value_t& stream, \
+                                          const ccl::stream::impl_value_t& stream, \
                                           const ccl::sparse_allreduce_attr& attr, \
                                           const ccl::vector_class<ccl::event>& deps = {}) = 0;
 
@@ -210,7 +210,7 @@
                                     size_t send_count, \
                                     type& recv_buf, \
                                     const ccl::vector_class<size_t>& recv_counts, \
-                                    ccl::stream::impl_value_t& stream, \
+                                    const ccl::stream::impl_value_t& stream, \
                                     const ccl::allgatherv_attr& attr, \
                                     const ccl::vector_class<ccl::event>& deps = {}) = 0; \
 \
@@ -219,7 +219,7 @@
         size_t send_count, \
         ccl::vector_class<ccl::reference_wrapper_class<type>>& recv_bufs, \
         const ccl::vector_class<size_t>& recv_counts, \
-        ccl::stream::impl_value_t& stream, \
+        const ccl::stream::impl_value_t& stream, \
         const ccl::allgatherv_attr& attr, \
         const ccl::vector_class<ccl::event>& deps = {}) = 0; \
 \
@@ -227,14 +227,14 @@
                                    type& recv_buf, \
                                    size_t count, \
                                    ccl::reduction reduction, \
-                                   ccl::stream::impl_value_t& stream, \
+                                   const ccl::stream::impl_value_t& stream, \
                                    const ccl::allreduce_attr& attr, \
                                    const ccl::vector_class<ccl::event>& deps = {}) = 0; \
 \
     virtual ccl::event alltoall(const type& send_buf, \
                                   type& recv_buf, \
                                   size_t count, \
-                                  ccl::stream::impl_value_t& stream, \
+                                  const ccl::stream::impl_value_t& stream, \
                                   const ccl::alltoall_attr& attr, \
                                   const ccl::vector_class<ccl::event>& deps = {}) = 0; \
 \
@@ -242,7 +242,7 @@
         const ccl::vector_class<ccl::reference_wrapper_class<type>>& send_buf, \
         const ccl::vector_class<ccl::reference_wrapper_class<type>>& recv_buf, \
         size_t count, \
-        ccl::stream::impl_value_t& stream, \
+        const ccl::stream::impl_value_t& stream, \
         const ccl::alltoall_attr& attr, \
         const ccl::vector_class<ccl::event>& deps = {}) = 0; \
 \
@@ -250,7 +250,7 @@
                                    const ccl::vector_class<size_t>& send_counts, \
                                    type& recv_buf, \
                                    const ccl::vector_class<size_t>& recv_counts, \
-                                   ccl::stream::impl_value_t& stream, \
+                                   const ccl::stream::impl_value_t& stream, \
                                    const ccl::alltoallv_attr& attr, \
                                    const ccl::vector_class<ccl::event>& deps = {}) = 0; \
 \
@@ -259,14 +259,14 @@
         const ccl::vector_class<size_t>& send_counts, \
         const ccl::vector_class<ccl::reference_wrapper_class<type>>& recv_bufs, \
         const ccl::vector_class<size_t>& recv_counts, \
-        ccl::stream::impl_value_t& stream, \
+        const ccl::stream::impl_value_t& stream, \
         const ccl::alltoallv_attr& attr, \
         const ccl::vector_class<ccl::event>& deps = {}) = 0; \
 \
     virtual ccl::event bcast(type& buf, \
                                size_t count, \
                                size_t root, \
-                               ccl::stream::impl_value_t& stream, \
+                               const ccl::stream::impl_value_t& stream, \
                                const ccl::broadcast_attr& attr, \
                                const ccl::vector_class<ccl::event>& deps = {}) = 0; \
 \
@@ -275,7 +275,7 @@
                                 size_t count, \
                                 ccl::reduction reduction, \
                                 size_t root, \
-                                ccl::stream::impl_value_t& stream, \
+                                const ccl::stream::impl_value_t& stream, \
                                 const ccl::reduce_attr& attr, \
                                 const ccl::vector_class<ccl::event>& deps = {}) = 0; \
 \
@@ -283,7 +283,7 @@
                                         type& recv_buf, \
                                         size_t recv_count, \
                                         ccl::reduction reduction, \
-                                        ccl::stream::impl_value_t& stream, \
+                                        const ccl::stream::impl_value_t& stream, \
                                         const ccl::reduce_scatter_attr& attr, \
                                         const ccl::vector_class<ccl::event>& deps = {}) = 0;
 
@@ -298,7 +298,7 @@
                                           value_type& recv_val_buf, \
                                           size_t recv_val_count, \
                                           ccl::reduction reduction, \
-                                          ccl::stream::impl_value_t& stream, \
+                                          const ccl::stream::impl_value_t& stream, \
                                           const ccl::sparse_allreduce_attr& attr, \
                                           const ccl::vector_class<ccl::event>& deps = {}) = 0;
 
@@ -312,7 +312,7 @@
                             void* recv_buf, \
                             const ccl::vector_class<size_t>& recv_counts, \
                             ccl::datatype dtype, \
-                            ccl::stream::impl_value_t& stream, \
+                            const ccl::stream::impl_value_t& stream, \
                             const ccl::allgatherv_attr& attr, \
                             const ccl::vector_class<ccl::event>& deps = {}) override { \
         return get_impl()->allgatherv_impl( \
@@ -324,7 +324,7 @@
                             const ccl::vector_class<void*>& recv_bufs, \
                             const ccl::vector_class<size_t>& recv_counts, \
                             ccl::datatype dtype, \
-                            ccl::stream::impl_value_t& stream, \
+                            const ccl::stream::impl_value_t& stream, \
                             const ccl::allgatherv_attr& attr, \
                             const ccl::vector_class<ccl::event>& deps = {}) override { \
         return get_impl()->allgatherv_impl( \
@@ -336,7 +336,7 @@
                            size_t count, \
                            ccl::datatype dtype, \
                            ccl::reduction reduction, \
-                           ccl::stream::impl_value_t& stream, \
+                           const ccl::stream::impl_value_t& stream, \
                            const ccl::allreduce_attr& attr, \
                            const ccl::vector_class<ccl::event>& deps = {}) override { \
         return get_impl()->allreduce_impl( \
@@ -347,7 +347,7 @@
                           void* recv_buf, \
                           size_t count, \
                           ccl::datatype dtype, \
-                          ccl::stream::impl_value_t& stream, \
+                          const ccl::stream::impl_value_t& stream, \
                           const ccl::alltoall_attr& attr, \
                           const ccl::vector_class<ccl::event>& deps = {}) override { \
         return get_impl()->alltoall_impl(send_buf, recv_buf, count, dtype, stream, attr, deps); \
@@ -356,7 +356,7 @@
                           const ccl::vector_class<void*>& recv_buf, \
                           size_t count, \
                           ccl::datatype dtype, \
-                          ccl::stream::impl_value_t& stream, \
+                          const ccl::stream::impl_value_t& stream, \
                           const ccl::alltoall_attr& attr, \
                           const ccl::vector_class<ccl::event>& deps = {}) override { \
         return get_impl()->alltoall_impl(send_buf, recv_buf, count, dtype, stream, attr, deps); \
@@ -367,7 +367,7 @@
                            void* recv_buf, \
                            const ccl::vector_class<size_t>& recv_counts, \
                            ccl::datatype dtype, \
-                           ccl::stream::impl_value_t& stream, \
+                           const ccl::stream::impl_value_t& stream, \
                            const ccl::alltoallv_attr& attr, \
                            const ccl::vector_class<ccl::event>& deps = {}) override { \
         return get_impl()->alltoallv_impl( \
@@ -378,7 +378,7 @@
                            const ccl::vector_class<void*>& recv_bufs, \
                            const ccl::vector_class<size_t>& recv_counts, \
                            ccl::datatype dtype, \
-                           ccl::stream::impl_value_t& stream, \
+                           const ccl::stream::impl_value_t& stream, \
                            const ccl::alltoallv_attr& attr, \
                            const ccl::vector_class<ccl::event>& deps) override { \
         return get_impl()->alltoallv_impl( \
@@ -389,7 +389,7 @@
                        size_t count, \
                        ccl::datatype dtype, \
                        size_t root, \
-                       ccl::stream::impl_value_t& stream, \
+                       const ccl::stream::impl_value_t& stream, \
                        const ccl::broadcast_attr& attr, \
                        const ccl::vector_class<ccl::event>& deps = {}) override { \
         return get_impl()->broadcast_impl(buf, count, dtype, root, stream, attr, deps); \
@@ -401,7 +401,7 @@
                         ccl::datatype dtype, \
                         ccl::reduction reduction, \
                         size_t root, \
-                        ccl::stream::impl_value_t& stream, \
+                        const ccl::stream::impl_value_t& stream, \
                         const ccl::reduce_attr& attr, \
                         const ccl::vector_class<ccl::event>& deps = {}) override { \
         return get_impl()->reduce_impl( \
@@ -413,7 +413,7 @@
                                 size_t recv_count, \
                                 ccl::datatype dtype, \
                                 ccl::reduction reduction, \
-                                ccl::stream::impl_value_t& stream, \
+                                const ccl::stream::impl_value_t& stream, \
                                 const ccl::reduce_scatter_attr& attr, \
                                 const ccl::vector_class<ccl::event>& deps) override { \
         return get_impl()->reduce_scatter_impl( \
@@ -433,7 +433,7 @@
                                   ccl::datatype index_dtype, \
                                   ccl::datatype value_dtype, \
                                   ccl::reduction reduction, \
-                                  ccl::stream::impl_value_t& stream, \
+                                  const ccl::stream::impl_value_t& stream, \
                                   const ccl::sparse_allreduce_attr& attr, \
                                   const ccl::vector_class<ccl::event>& deps = {}) override { \
         return get_impl()->sparse_allreduce_impl(send_ind_buf, \
@@ -458,7 +458,7 @@
                             size_t send_count, \
                             type* recv_buf, \
                             const ccl::vector_class<size_t>& recv_counts, \
-                            ccl::stream::impl_value_t& stream, \
+                            const ccl::stream::impl_value_t& stream, \
                             const ccl::allgatherv_attr& attr, \
                             const ccl::vector_class<ccl::event>& deps = {}) override { \
         return get_impl()->allgatherv_impl( \
@@ -469,7 +469,7 @@
                             size_t send_count, \
                             ccl::vector_class<type*>& recv_buf, \
                             const ccl::vector_class<size_t>& recv_counts, \
-                            ccl::stream::impl_value_t& stream, \
+                            const ccl::stream::impl_value_t& stream, \
                             const ccl::allgatherv_attr& attr, \
                             const ccl::vector_class<ccl::event>& deps = {}) override { \
         return get_impl()->allgatherv_impl( \
@@ -480,7 +480,7 @@
                            type* recv_buf, \
                            size_t count, \
                            ccl::reduction reduction, \
-                           ccl::stream::impl_value_t& stream, \
+                           const ccl::stream::impl_value_t& stream, \
                            const ccl::allreduce_attr& attr, \
                            const ccl::vector_class<ccl::event>& deps = {}) override { \
         return get_impl()->allreduce_impl( \
@@ -490,7 +490,7 @@
     ccl::event alltoall(const type* send_buf, \
                           type* recv_buf, \
                           size_t count, \
-                          ccl::stream::impl_value_t& stream, \
+                          const ccl::stream::impl_value_t& stream, \
                           const ccl::alltoall_attr& attr, \
                           const ccl::vector_class<ccl::event>& deps) override { \
         return get_impl()->alltoall_impl(send_buf, recv_buf, count, stream, attr, deps); \
@@ -498,7 +498,7 @@
     ccl::event alltoall(const ccl::vector_class<type*>& send_buf, \
                           const ccl::vector_class<type*>& recv_buf, \
                           size_t count, \
-                          ccl::stream::impl_value_t& stream, \
+                          const ccl::stream::impl_value_t& stream, \
                           const ccl::alltoall_attr& attr, \
                           const ccl::vector_class<ccl::event>& deps) override { \
         return get_impl()->alltoall_impl(send_buf, recv_buf, count, stream, attr, deps); \
@@ -508,7 +508,7 @@
                            const ccl::vector_class<size_t>& send_counts, \
                            type* recv_buf, \
                            const ccl::vector_class<size_t>& recv_counts, \
-                           ccl::stream::impl_value_t& stream, \
+                           const ccl::stream::impl_value_t& stream, \
                            const ccl::alltoallv_attr& attr, \
                            const ccl::vector_class<ccl::event>& deps) override { \
         return get_impl()->alltoallv_impl( \
@@ -519,7 +519,7 @@
                            const ccl::vector_class<size_t>& send_counts, \
                            const ccl::vector_class<type*>& recv_bufs, \
                            const ccl::vector_class<size_t>& recv_counts, \
-                           ccl::stream::impl_value_t& stream, \
+                           const ccl::stream::impl_value_t& stream, \
                            const ccl::alltoallv_attr& attr, \
                            const ccl::vector_class<ccl::event>& deps) override { \
         return get_impl()->alltoallv_impl( \
@@ -529,7 +529,7 @@
     ccl::event bcast(type* buf, \
                        size_t count, \
                        size_t root, \
-                       ccl::stream::impl_value_t& stream, \
+                       const ccl::stream::impl_value_t& stream, \
                        const ccl::broadcast_attr& attr, \
                        const ccl::vector_class<ccl::event>& deps) override { \
         return get_impl()->broadcast_impl(buf, count, root, stream, attr, deps); \
@@ -540,7 +540,7 @@
                         size_t count, \
                         ccl::reduction reduction, \
                         size_t root, \
-                        ccl::stream::impl_value_t& stream, \
+                        const ccl::stream::impl_value_t& stream, \
                         const ccl::reduce_attr& attr, \
                         const ccl::vector_class<ccl::event>& deps) override { \
         return get_impl()->reduce_impl( \
@@ -551,7 +551,7 @@
                                 type* recv_buf, \
                                 size_t recv_count, \
                                 ccl::reduction reduction, \
-                                ccl::stream::impl_value_t& stream, \
+                                const ccl::stream::impl_value_t& stream, \
                                 const ccl::reduce_scatter_attr& attr, \
                                 const ccl::vector_class<ccl::event>& deps) override { \
         return get_impl()->reduce_scatter_impl( \
@@ -569,7 +569,7 @@
                                   value_type* recv_val_buf, \
                                   size_t recv_val_count, \
                                   ccl::reduction reduction, \
-                                  ccl::stream::impl_value_t& stream, \
+                                  const ccl::stream::impl_value_t& stream, \
                                   const ccl::sparse_allreduce_attr& attr, \
                                   const ccl::vector_class<ccl::event>& deps = {}) override { \
         return get_impl()->sparse_allreduce_impl(send_ind_buf, \
@@ -592,7 +592,7 @@
                             size_t send_count, \
                             type& recv_buf, \
                             const ccl::vector_class<size_t>& recv_counts, \
-                            ccl::stream::impl_value_t& stream, \
+                            const ccl::stream::impl_value_t& stream, \
                             const ccl::allgatherv_attr& attr, \
                             const ccl::vector_class<ccl::event>& deps = {}) override { \
         return get_impl()->allgatherv_impl( \
@@ -603,7 +603,7 @@
                             size_t send_count, \
                             ccl::vector_class<ccl::reference_wrapper_class<type>>& recv_buf, \
                             const ccl::vector_class<size_t>& recv_counts, \
-                            ccl::stream::impl_value_t& stream, \
+                            const ccl::stream::impl_value_t& stream, \
                             const ccl::allgatherv_attr& attr, \
                             const ccl::vector_class<ccl::event>& deps = {}) override { \
         return get_impl()->allgatherv_impl( \
@@ -614,7 +614,7 @@
                            type& recv_buf, \
                            size_t count, \
                            ccl::reduction reduction, \
-                           ccl::stream::impl_value_t& stream, \
+                           const ccl::stream::impl_value_t& stream, \
                            const ccl::allreduce_attr& attr, \
                            const ccl::vector_class<ccl::event>& deps = {}) override { \
         return get_impl()->allreduce_impl( \
@@ -624,7 +624,7 @@
     ccl::event alltoall(const type& send_buf, \
                           type& recv_buf, \
                           size_t count, \
-                          ccl::stream::impl_value_t& stream, \
+                          const ccl::stream::impl_value_t& stream, \
                           const ccl::alltoall_attr& attr, \
                           const ccl::vector_class<ccl::event>& deps = {}) override { \
         return get_impl()->alltoall_impl(send_buf, recv_buf, count, stream, attr, deps); \
@@ -632,7 +632,7 @@
     ccl::event alltoall(const ccl::vector_class<ccl::reference_wrapper_class<type>>& send_buf, \
                           const ccl::vector_class<ccl::reference_wrapper_class<type>>& recv_buf, \
                           size_t count, \
-                          ccl::stream::impl_value_t& stream, \
+                          const ccl::stream::impl_value_t& stream, \
                           const ccl::alltoall_attr& attr, \
                           const ccl::vector_class<ccl::event>& deps = {}) override { \
         return get_impl()->alltoall_impl(send_buf, recv_buf, count, stream, attr, deps); \
@@ -642,7 +642,7 @@
                            const ccl::vector_class<size_t>& send_counts, \
                            type& recv_buf, \
                            const ccl::vector_class<size_t>& recv_counts, \
-                           ccl::stream::impl_value_t& stream, \
+                           const ccl::stream::impl_value_t& stream, \
                            const ccl::alltoallv_attr& attr, \
                            const ccl::vector_class<ccl::event>& deps = {}) override { \
         return get_impl()->alltoallv_impl( \
@@ -653,7 +653,7 @@
                            const ccl::vector_class<size_t>& send_counts, \
                            const ccl::vector_class<ccl::reference_wrapper_class<type>>& recv_buf, \
                            const ccl::vector_class<size_t>& recv_counts, \
-                           ccl::stream::impl_value_t& stream, \
+                           const ccl::stream::impl_value_t& stream, \
                            const ccl::alltoallv_attr& attr, \
                            const ccl::vector_class<ccl::event>& deps) override { \
         return get_impl()->alltoallv_impl( \
@@ -663,7 +663,7 @@
     ccl::event bcast(type& buf, \
                        size_t count, \
                        size_t root, \
-                       ccl::stream::impl_value_t& stream, \
+                       const ccl::stream::impl_value_t& stream, \
                        const ccl::broadcast_attr& attr, \
                        const ccl::vector_class<ccl::event>& deps = {}) override { \
         return get_impl()->broadcast_impl(buf, count, root, stream, attr, deps); \
@@ -674,7 +674,7 @@
                         size_t count, \
                         ccl::reduction reduction, \
                         size_t root, \
-                        ccl::stream::impl_value_t& stream, \
+                        const ccl::stream::impl_value_t& stream, \
                         const ccl::reduce_attr& attr, \
                         const ccl::vector_class<ccl::event>& deps = {}) override { \
         return get_impl()->reduce_impl( \
@@ -685,7 +685,7 @@
                                 type& recv_buf, \
                                 size_t recv_count, \
                                 ccl::reduction reduction, \
-                                ccl::stream::impl_value_t& stream, \
+                                const ccl::stream::impl_value_t& stream, \
                                 const ccl::reduce_scatter_attr& attr, \
                                 const ccl::vector_class<ccl::event>& deps) override { \
         return get_impl()->reduce_scatter_impl( \
@@ -703,7 +703,7 @@
                                   value_type& recv_val_buf, \
                                   size_t recv_val_count, \
                                   ccl::reduction reduction, \
-                                  ccl::stream::impl_value_t& stream, \
+                                  const ccl::stream::impl_value_t& stream, \
                                   const ccl::sparse_allreduce_attr& attr, \
                                   const ccl::vector_class<ccl::event>& deps = {}) override { \
         return get_impl()->sparse_allreduce_impl(send_ind_buf, \
@@ -729,7 +729,7 @@
                                  void* recv_buf, \
                                  const ccl::vector_class<size_t>& recv_counts, \
                                  ccl::datatype dtype, \
-                                 ccl::stream::impl_value_t& stream, \
+                                 const ccl::stream::impl_value_t& stream, \
                                  const ccl::allgatherv_attr& attr, \
                                  const ccl::vector_class<ccl::event>& deps); \
     ccl::event allgatherv_impl(const void* send_buf, \
@@ -737,7 +737,7 @@
                                  const ccl::vector_class<void*>& recv_bufs, \
                                  const ccl::vector_class<size_t>& recv_counts, \
                                  ccl::datatype dtype, \
-                                 ccl::stream::impl_value_t& stream, \
+                                 const ccl::stream::impl_value_t& stream, \
                                  const ccl::allgatherv_attr& attr, \
                                  const ccl::vector_class<ccl::event>& deps); \
 \
@@ -746,7 +746,7 @@
                                  size_t send_count, \
                                  buffer_type* recv_buf, \
                                  const ccl::vector_class<size_t>& recv_counts, \
-                                 ccl::stream::impl_value_t& stream, \
+                                 const ccl::stream::impl_value_t& stream, \
                                  const ccl::allgatherv_attr& attr, \
                                  const ccl::vector_class<ccl::event>& deps); \
     template <class buffer_type> \
@@ -754,7 +754,7 @@
                                  size_t send_count, \
                                  ccl::vector_class<buffer_type*>& recv_buf, \
                                  const ccl::vector_class<size_t>& recv_counts, \
-                                 ccl::stream::impl_value_t& stream, \
+                                 const ccl::stream::impl_value_t& stream, \
                                  const ccl::allgatherv_attr& attr, \
                                  const ccl::vector_class<ccl::event>& deps); \
 \
@@ -763,7 +763,7 @@
                                 size_t count, \
                                 ccl::datatype dtype, \
                                 ccl::reduction reduction, \
-                                ccl::stream::impl_value_t& stream, \
+                                const ccl::stream::impl_value_t& stream, \
                                 const ccl::allreduce_attr& attr, \
                                 const ccl::vector_class<ccl::event>& deps); \
 \
@@ -772,7 +772,7 @@
                                 buffer_type* recv_buf, \
                                 size_t count, \
                                 ccl::reduction reduction, \
-                                ccl::stream::impl_value_t& stream, \
+                                const ccl::stream::impl_value_t& stream, \
                                 const ccl::allreduce_attr& attr, \
                                 const ccl::vector_class<ccl::event>& deps); \
 \
@@ -780,14 +780,14 @@
                                void* recv_buf, \
                                size_t count, \
                                ccl::datatype dtype, \
-                               ccl::stream::impl_value_t& stream, \
+                               const ccl::stream::impl_value_t& stream, \
                                const ccl::alltoall_attr& attr, \
                                const ccl::vector_class<ccl::event>& deps); \
     ccl::event alltoall_impl(const ccl::vector_class<void*>& send_buf, \
                                const ccl::vector_class<void*>& recv_buf, \
                                size_t count, \
                                ccl::datatype dtype, \
-                               ccl::stream::impl_value_t& stream, \
+                               const ccl::stream::impl_value_t& stream, \
                                const ccl::alltoall_attr& attr, \
                                const ccl::vector_class<ccl::event>& deps); \
 \
@@ -795,14 +795,14 @@
     ccl::event alltoall_impl(const buffer_type* send_buf, \
                                buffer_type* recv_buf, \
                                size_t count, \
-                               ccl::stream::impl_value_t& stream, \
+                               const ccl::stream::impl_value_t& stream, \
                                const ccl::alltoall_attr& attr, \
                                const ccl::vector_class<ccl::event>& deps); \
     template <class buffer_type> \
     ccl::event alltoall_impl(const ccl::vector_class<buffer_type*>& send_buf, \
                                const ccl::vector_class<buffer_type*>& recv_buf, \
                                size_t count, \
-                               ccl::stream::impl_value_t& stream, \
+                               const ccl::stream::impl_value_t& stream, \
                                const ccl::alltoall_attr& attr, \
                                const ccl::vector_class<ccl::event>& deps); \
 \
@@ -811,7 +811,7 @@
                                 void* recv_buf, \
                                 const ccl::vector_class<size_t>& recv_counts, \
                                 ccl::datatype dtype, \
-                                ccl::stream::impl_value_t& stream, \
+                                const ccl::stream::impl_value_t& stream, \
                                 const ccl::alltoallv_attr& attr, \
                                 const ccl::vector_class<ccl::event>& deps); \
     ccl::event alltoallv_impl(const ccl::vector_class<void*>& send_buf, \
@@ -819,7 +819,7 @@
                                 ccl::vector_class<void*> recv_buf, \
                                 const ccl::vector_class<size_t>& recv_counts, \
                                 ccl::datatype dtype, \
-                                ccl::stream::impl_value_t& stream, \
+                                const ccl::stream::impl_value_t& stream, \
                                 const ccl::alltoallv_attr& attr, \
                                 const ccl::vector_class<ccl::event>& deps); \
 \
@@ -828,7 +828,7 @@
                                 const ccl::vector_class<size_t>& send_counts, \
                                 const ccl::vector_class<buffer_type*>& recv_buf, \
                                 const ccl::vector_class<size_t>& recv_counts, \
-                                ccl::stream::impl_value_t& stream, \
+                                const ccl::stream::impl_value_t& stream, \
                                 const ccl::alltoallv_attr& attr, \
                                 const ccl::vector_class<ccl::event>& deps); \
 \
@@ -837,7 +837,7 @@
                                 const ccl::vector_class<size_t>& send_counts, \
                                 buffer_type* recv_buf, \
                                 const ccl::vector_class<size_t>& recv_counts, \
-                                ccl::stream::impl_value_t& stream, \
+                                const ccl::stream::impl_value_t& stream, \
                                 const ccl::alltoallv_attr& attr, \
                                 const ccl::vector_class<ccl::event>& deps); \
 \
@@ -845,14 +845,14 @@
                                 size_t count, \
                                 ccl::datatype dtype, \
                                 size_t root, \
-                                ccl::stream::impl_value_t& stream, \
+                                const ccl::stream::impl_value_t& stream, \
                                 const ccl::broadcast_attr& attr, \
                                 const ccl::vector_class<ccl::event>& deps); \
     template <class buffer_type> \
     ccl::event broadcast_impl(buffer_type* buf, \
                                 size_t count, \
                                 size_t root, \
-                                ccl::stream::impl_value_t& stream, \
+                                const ccl::stream::impl_value_t& stream, \
                                 const ccl::broadcast_attr& attr, \
                                 const ccl::vector_class<ccl::event>& deps); \
 \
@@ -862,7 +862,7 @@
                              ccl::datatype dtype, \
                              ccl::reduction reduction, \
                              size_t root, \
-                             ccl::stream::impl_value_t& stream, \
+                             const ccl::stream::impl_value_t& stream, \
                              const ccl::reduce_attr& attr, \
                              const ccl::vector_class<ccl::event>& deps); \
     template <class buffer_type> \
@@ -871,7 +871,7 @@
                              size_t count, \
                              ccl::reduction reduction, \
                              size_t root, \
-                             ccl::stream::impl_value_t& stream, \
+                             const ccl::stream::impl_value_t& stream, \
                              const ccl::reduce_attr& attr, \
                              const ccl::vector_class<ccl::event>& deps); \
 \
@@ -880,7 +880,7 @@
                                      size_t recv_count, \
                                      ccl::datatype dtype, \
                                      ccl::reduction reduction, \
-                                     ccl::stream::impl_value_t& stream, \
+                                     const ccl::stream::impl_value_t& stream, \
                                      const ccl::reduce_scatter_attr& attr, \
                                      const ccl::vector_class<ccl::event>& deps); \
     template <class buffer_type> \
@@ -888,7 +888,7 @@
                                      buffer_type* recv_buf, \
                                      size_t recv_count, \
                                      ccl::reduction reduction, \
-                                     ccl::stream::impl_value_t& stream, \
+                                     const ccl::stream::impl_value_t& stream, \
                                      const ccl::reduce_scatter_attr& attr, \
                                      const ccl::vector_class<ccl::event>& deps);
 
@@ -904,7 +904,7 @@
                                        ccl::datatype index_dtype, \
                                        ccl::datatype value_dtype, \
                                        ccl::reduction reduction, \
-                                       ccl::stream::impl_value_t& stream, \
+                                       const ccl::stream::impl_value_t& stream, \
                                        const ccl::sparse_allreduce_attr& attr, \
                                        const ccl::vector_class<ccl::event>& deps); \
     template <class index_type, class value_type> \
@@ -917,7 +917,7 @@
                                        value_type* recv_val_buf, \
                                        size_t recv_val_count, \
                                        ccl::reduction reduction, \
-                                       ccl::stream::impl_value_t& stream, \
+                                       const ccl::stream::impl_value_t& stream, \
                                        const ccl::sparse_allreduce_attr& attr, \
                                        const ccl::vector_class<ccl::event>& deps);
 
@@ -927,7 +927,7 @@
                                  size_t send_count, \
                                  buffer_type& recv_buf, \
                                  const ccl::vector_class<size_t>& recv_counts, \
-                                 ccl::stream::impl_value_t& stream, \
+                                 const ccl::stream::impl_value_t& stream, \
                                  const ccl::allgatherv_attr& attr, \
                                  const ccl::vector_class<ccl::event>& deps); \
     template <class buffer_type> \
@@ -936,7 +936,7 @@
         size_t send_count, \
         ccl::vector_class<ccl::reference_wrapper_class<buffer_type>>& recv_buf, \
         const ccl::vector_class<size_t>& recv_counts, \
-        ccl::stream::impl_value_t& stream, \
+        const ccl::stream::impl_value_t& stream, \
         const ccl::allgatherv_attr& attr, \
         const ccl::vector_class<ccl::event>& deps); \
 \
@@ -945,14 +945,14 @@
                                 buffer_type& recv_buf, \
                                 size_t count, \
                                 ccl::reduction reduction, \
-                                ccl::stream::impl_value_t& stream, \
+                                const ccl::stream::impl_value_t& stream, \
                                 const ccl::allreduce_attr& attr, \
                                 const ccl::vector_class<ccl::event>& deps); \
     template <class buffer_type> \
     ccl::event alltoall_impl(const buffer_type& send_buf, \
                                buffer_type& recv_buf, \
                                size_t count, \
-                               ccl::stream::impl_value_t& stream, \
+                               const ccl::stream::impl_value_t& stream, \
                                const ccl::alltoall_attr& attr, \
                                const ccl::vector_class<ccl::event>& deps); \
     template <class buffer_type> \
@@ -960,7 +960,7 @@
         const ccl::vector_class<ccl::reference_wrapper_class<buffer_type>>& send_buf, \
         const ccl::vector_class<ccl::reference_wrapper_class<buffer_type>>& recv_buf, \
         size_t count, \
-        ccl::stream::impl_value_t& stream, \
+        const ccl::stream::impl_value_t& stream, \
         const ccl::alltoall_attr& attr, \
         const ccl::vector_class<ccl::event>& deps); \
 \
@@ -969,7 +969,7 @@
                                 const ccl::vector_class<size_t>& send_counts, \
                                 buffer_type& recv_buf, \
                                 const ccl::vector_class<size_t>& recv_counts, \
-                                ccl::stream::impl_value_t& stream, \
+                                const ccl::stream::impl_value_t& stream, \
                                 const ccl::alltoallv_attr& attr, \
                                 const ccl::vector_class<ccl::event>& deps); \
     template <class buffer_type> \
@@ -978,7 +978,7 @@
         const ccl::vector_class<size_t>& send_counts, \
         const ccl::vector_class<ccl::reference_wrapper_class<buffer_type>>& recv_buf, \
         const ccl::vector_class<size_t>& recv_counts, \
-        ccl::stream::impl_value_t& stream, \
+        const ccl::stream::impl_value_t& stream, \
         const ccl::alltoallv_attr& attr, \
         const ccl::vector_class<ccl::event>& deps); \
 \
@@ -986,7 +986,7 @@
     ccl::event broadcast_impl(buffer_type& buf, \
                                 size_t count, \
                                 size_t root, \
-                                ccl::stream::impl_value_t& stream, \
+                                const ccl::stream::impl_value_t& stream, \
                                 const ccl::broadcast_attr& attr, \
                                 const ccl::vector_class<ccl::event>& deps); \
     template <class buffer_type> \
@@ -995,7 +995,7 @@
                              size_t count, \
                              ccl::reduction reduction, \
                              size_t root, \
-                             ccl::stream::impl_value_t& stream, \
+                             const ccl::stream::impl_value_t& stream, \
                              const ccl::reduce_attr& attr, \
                              const ccl::vector_class<ccl::event>& deps); \
 \
@@ -1004,7 +1004,7 @@
                                      buffer_type& recv_buf, \
                                      size_t recv_count, \
                                      ccl::reduction reduction, \
-                                     ccl::stream::impl_value_t& stream, \
+                                     const ccl::stream::impl_value_t& stream, \
                                      const ccl::reduce_scatter_attr& attr, \
                                      const ccl::vector_class<ccl::event>& deps);
 
@@ -1019,7 +1019,7 @@
                                        value_type& recv_val_buf, \
                                        size_t recv_val_count, \
                                        ccl::reduction reduction, \
-                                       ccl::stream::impl_value_t& stream, \
+                                       const ccl::stream::impl_value_t& stream, \
                                        const ccl::sparse_allreduce_attr& attr, \
                                        const ccl::vector_class<ccl::event>& deps);
 
@@ -1032,7 +1032,7 @@
         size_t send_count, \
         type& recv_buf, \
         const ccl::vector_class<size_t>& recv_counts, \
-        ccl::stream::impl_value_t& stream, \
+        const ccl::stream::impl_value_t& stream, \
         const ccl::allgatherv_attr& attr, \
         const ccl::vector_class<ccl::event>& deps); \
 \
@@ -1040,14 +1040,14 @@
                                                      type& recv_buf, \
                                                      size_t count, \
                                                      ccl::reduction reduction, \
-                                                     ccl::stream::impl_value_t& stream, \
+                                                     const ccl::stream::impl_value_t& stream, \
                                                      const ccl::allreduce_attr& attr, \
                                                      const ccl::vector_class<ccl::event>& deps); \
 \
     template ccl::event comm_class::alltoall_impl(const type& send_buf, \
                                                     type& recv_buf, \
                                                     size_t count, \
-                                                    ccl::stream::impl_value_t& stream, \
+                                                    const ccl::stream::impl_value_t& stream, \
                                                     const ccl::alltoall_attr& attr, \
                                                     const ccl::vector_class<ccl::event>& deps); \
 \
@@ -1055,7 +1055,7 @@
         const ccl::vector_class<ccl::reference_wrapper_class<type>>& send_buf, \
         const ccl::vector_class<ccl::reference_wrapper_class<type>>& recv_buf, \
         size_t count, \
-        ccl::stream::impl_value_t& stream, \
+        const ccl::stream::impl_value_t& stream, \
         const ccl::alltoall_attr& attr, \
         const ccl::vector_class<ccl::event>& deps); \
 \
@@ -1064,7 +1064,7 @@
         const ccl::vector_class<size_t>& send_counts, \
         type& recv_buf, \
         const ccl::vector_class<size_t>& recv_counts, \
-        ccl::stream::impl_value_t& stream, \
+        const ccl::stream::impl_value_t& stream, \
         const ccl::alltoallv_attr& attr, \
         const ccl::vector_class<ccl::event>& deps); \
     template ccl::event comm_class::alltoallv_impl<type>( \
@@ -1072,14 +1072,14 @@
         const ccl::vector_class<size_t>& send_counts, \
         const ccl::vector_class<ccl::reference_wrapper_class<type>>& recv_buf, \
         const ccl::vector_class<size_t>& recv_counts, \
-        ccl::stream::impl_value_t& stream, \
+        const ccl::stream::impl_value_t& stream, \
         const ccl::alltoallv_attr& attr, \
         const ccl::vector_class<ccl::event>& deps); \
 \
     template ccl::event comm_class::broadcast_impl(type& buf, \
                                                      size_t count, \
                                                      size_t root, \
-                                                     ccl::stream::impl_value_t& stream, \
+                                                     const ccl::stream::impl_value_t& stream, \
                                                      const ccl::broadcast_attr& attr, \
                                                      const ccl::vector_class<ccl::event>& deps); \
 \
@@ -1088,7 +1088,7 @@
                                                   size_t count, \
                                                   ccl::reduction reduction, \
                                                   size_t root, \
-                                                  ccl::stream::impl_value_t& stream, \
+                                                  const ccl::stream::impl_value_t& stream, \
                                                   const ccl::reduce_attr& attr, \
                                                   const ccl::vector_class<ccl::event>& deps);
 
@@ -1099,7 +1099,7 @@
         size_t send_count, \
         type* recv_buf, \
         const ccl::vector_class<size_t>& recv_counts, \
-        ccl::stream::impl_value_t& stream, \
+        const ccl::stream::impl_value_t& stream, \
         const ccl::allgatherv_attr& attr, \
         const ccl::vector_class<ccl::event>& deps); \
     template ccl::event comm_class::allgatherv_impl( \
@@ -1107,7 +1107,7 @@
         size_t send_count, \
         ccl::vector_class<type*>& recv_buf, \
         const ccl::vector_class<size_t>& recv_counts, \
-        ccl::stream::impl_value_t& stream, \
+        const ccl::stream::impl_value_t& stream, \
         const ccl::allgatherv_attr& attr, \
         const ccl::vector_class<ccl::event>& deps); \
 \
@@ -1115,20 +1115,20 @@
                                                      type* recv_buf, \
                                                      size_t count, \
                                                      ccl::reduction reduction, \
-                                                     ccl::stream::impl_value_t& stream, \
+                                                     const ccl::stream::impl_value_t& stream, \
                                                      const ccl::allreduce_attr& attr, \
                                                      const ccl::vector_class<ccl::event>& deps); \
 \
     template ccl::event comm_class::alltoall_impl(const type* send_buf, \
                                                     type* recv_buf, \
                                                     size_t count, \
-                                                    ccl::stream::impl_value_t& stream, \
+                                                    const ccl::stream::impl_value_t& stream, \
                                                     const ccl::alltoall_attr& attr, \
                                                     const ccl::vector_class<ccl::event>& deps); \
     template ccl::event comm_class::alltoall_impl(const ccl::vector_class<type*>& send_buf, \
                                                     const ccl::vector_class<type*>& recv_buf, \
                                                     size_t count, \
-                                                    ccl::stream::impl_value_t& stream, \
+                                                    const ccl::stream::impl_value_t& stream, \
                                                     const ccl::alltoall_attr& attr, \
                                                     const ccl::vector_class<ccl::event>& deps); \
 \
@@ -1137,7 +1137,7 @@
         const ccl::vector_class<size_t>& send_counts, \
         type* recv_buf, \
         const ccl::vector_class<size_t>& recv_counts, \
-        ccl::stream::impl_value_t& stream, \
+        const ccl::stream::impl_value_t& stream, \
         const ccl::alltoallv_attr& attr, \
         const ccl::vector_class<ccl::event>& deps); \
     template ccl::event comm_class::alltoallv_impl<type>( \
@@ -1145,14 +1145,14 @@
         const ccl::vector_class<size_t>& send_counts, \
         const ccl::vector_class<type*>& recv_buf, \
         const ccl::vector_class<size_t>& recv_counts, \
-        ccl::stream::impl_value_t& stream, \
+        const ccl::stream::impl_value_t& stream, \
         const ccl::alltoallv_attr& attr, \
         const ccl::vector_class<ccl::event>& deps); \
 \
     template ccl::event comm_class::broadcast_impl(type* buf, \
                                                      size_t count, \
                                                      size_t root, \
-                                                     ccl::stream::impl_value_t& stream, \
+                                                     const ccl::stream::impl_value_t& stream, \
                                                      const ccl::broadcast_attr& attr, \
                                                      const ccl::vector_class<ccl::event>& deps); \
 \
@@ -1161,7 +1161,7 @@
                                                   size_t count, \
                                                   ccl::reduction reduction, \
                                                   size_t root, \
-                                                  ccl::stream::impl_value_t& stream, \
+                                                  const ccl::stream::impl_value_t& stream, \
                                                   const ccl::reduce_attr& attr, \
                                                   const ccl::vector_class<ccl::event>& deps); \
     template ccl::event comm_class::reduce_scatter_impl( \
@@ -1169,7 +1169,7 @@
         type* recv_buf, \
         size_t recv_count, \
         ccl::reduction reduction, \
-        ccl::stream::impl_value_t& stream, \
+        const ccl::stream::impl_value_t& stream, \
         const ccl::reduce_scatter_attr& attr, \
         const ccl::vector_class<ccl::event>& deps);
 
@@ -1185,7 +1185,7 @@
         value_type* recv_val_buf, \
         size_t recv_val_count, \
         ccl::reduction reduction, \
-        ccl::stream::impl_value_t& stream, \
+        const ccl::stream::impl_value_t& stream, \
         const ccl::sparse_allreduce_attr& attr, \
         const ccl::vector_class<ccl::event>& deps);
 
@@ -1201,6 +1201,6 @@
         value_type& recv_val_buf, \
         size_t recv_val_count, \
         ccl::reduction reduction, \
-        ccl::stream::impl_value_t& stream, \
+        const ccl::stream::impl_value_t& stream, \
         const ccl::sparse_allreduce_attr& attr, \
         const ccl::vector_class<ccl::event>& deps);

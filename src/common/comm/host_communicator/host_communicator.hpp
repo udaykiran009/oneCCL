@@ -85,10 +85,10 @@ public:
     ccl::unique_ptr_class<host_communicator> split(const comm_split_attr& attr);
 
     // collectives operation declarations
-    coll_request_t barrier(stream::impl_value_t& op_stream,
+    coll_request_t barrier(const stream::impl_value_t& op_stream,
                                 const barrier_attr& attr,
                                 const vector_class<event>& deps = {}) override;
-    coll_request_t barrier_impl(stream::impl_value_t& op_stream,
+    coll_request_t barrier_impl(const stream::impl_value_t& op_stream,
                                 const barrier_attr& attr,
                                 const vector_class<event>& deps = {});
 

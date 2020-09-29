@@ -15,7 +15,7 @@ thread_device_group_ring_communicator::allgatherv_impl(const buffer_type& send_b
                                                        size_t send_count,
                                                        buffer_type& recv_buf,
                                                        const ccl::vector_class<size_t>& recv_counts,
-                                                       ccl::stream::impl_value_t& stream,
+                                                       const ccl::stream::impl_value_t& stream,
                                                        const ccl::allgatherv_attr& attr,
                                                        const ccl::vector_class<ccl::event>& deps) {
     throw ccl::exception(std::string(__PRETTY_FUNCTION__) + " - is not implemented");
@@ -27,7 +27,7 @@ thread_device_group_ring_communicator::allgatherv_impl(const buffer_type* send_b
                                                        size_t send_count,
                                                        ccl::vector_class<buffer_type*>& recv_buf,
                                                        const ccl::vector_class<size_t>& recv_counts,
-                                                       ccl::stream::impl_value_t& stream,
+                                                       const ccl::stream::impl_value_t& stream,
                                                        const ccl::allgatherv_attr& attr,
 
                                                        const ccl::vector_class<ccl::event>& deps) {
@@ -42,7 +42,7 @@ thread_device_group_ring_communicator::allgatherv_impl(
     size_t send_count,
     ccl::vector_class<ccl::reference_wrapper_class<buffer_type>>& recv_buf,
     const ccl::vector_class<size_t>& recv_counts,
-    ccl::stream::impl_value_t& stream,
+    const ccl::stream::impl_value_t& stream,
     const ccl::allgatherv_attr& attr,
 
     const ccl::vector_class<ccl::event>& deps) {
@@ -56,7 +56,7 @@ thread_device_group_ring_communicator::allgatherv_impl(const buffer_type* send_b
                                                        size_t send_count,
                                                        buffer_type* recv_buf,
                                                        const ccl::vector_class<size_t>& recv_counts,
-                                                       ccl::stream::impl_value_t& stream,
+                                                       const ccl::stream::impl_value_t& stream,
                                                        const ccl::allgatherv_attr& attr,
                                                        const ccl::vector_class<ccl::event>& deps) {
     using namespace native;
@@ -151,7 +151,7 @@ thread_device_group_ring_communicator::allreduce_impl(const buffer_type* send_bu
                                                       buffer_type* recv_buf,
                                                       size_t count,
                                                       ccl::reduction reduction,
-                                                      ccl::stream::impl_value_t& stream,
+                                                      const ccl::stream::impl_value_t& stream,
                                                       const ccl::allreduce_attr& attr,
                                                       const ccl::vector_class<ccl::event>& deps) {
     using namespace native;
@@ -245,7 +245,7 @@ thread_device_group_ring_communicator::allreduce_impl(const buffer_type& send_bu
                                                       buffer_type& recv_buf,
                                                       size_t count,
                                                       ccl::reduction reduction,
-                                                      ccl::stream::impl_value_t& stream,
+                                                      const ccl::stream::impl_value_t& stream,
                                                       const ccl::allreduce_attr& attr,
                                                       const ccl::vector_class<ccl::event>& deps) {
     throw ccl::exception(std::string(__PRETTY_FUNCTION__) + " - is not implemented");
@@ -258,7 +258,7 @@ thread_device_group_ring_communicator::coll_request_t
 thread_device_group_ring_communicator::alltoall_impl(const buffer_type* send_buf,
                                                      buffer_type* recv_buf,
                                                      size_t count,
-                                                     ccl::stream::impl_value_t& stream,
+                                                     const ccl::stream::impl_value_t& stream,
                                                      const ccl::alltoall_attr& attr,
                                                      const ccl::vector_class<ccl::event>& deps) {
     throw ccl::exception(std::string(__PRETTY_FUNCTION__) + " - is not implemented");
@@ -270,7 +270,7 @@ thread_device_group_ring_communicator::alltoall_impl(
     const ccl::vector_class<buffer_type*>& send_buf,
     const ccl::vector_class<buffer_type*>& recv_buf,
     size_t count,
-    ccl::stream::impl_value_t& stream,
+    const ccl::stream::impl_value_t& stream,
     const ccl::alltoall_attr& attr,
     const ccl::vector_class<ccl::event>& deps) {
     throw ccl::exception(std::string(__PRETTY_FUNCTION__) + " - is not implemented");
@@ -282,7 +282,7 @@ thread_device_group_ring_communicator::coll_request_t
 thread_device_group_ring_communicator::alltoall_impl(const buffer_type& send_buf,
                                                      buffer_type& recv_buf,
                                                      size_t count,
-                                                     ccl::stream::impl_value_t& stream,
+                                                     const ccl::stream::impl_value_t& stream,
                                                      const ccl::alltoall_attr& attr,
                                                      const ccl::vector_class<ccl::event>& deps) {
     throw ccl::exception(std::string(__PRETTY_FUNCTION__) + " - is not implemented");
@@ -294,7 +294,7 @@ thread_device_group_ring_communicator::alltoall_impl(
     const ccl::vector_class<ccl::reference_wrapper_class<buffer_type>>& send_buf,
     const ccl::vector_class<ccl::reference_wrapper_class<buffer_type>>& recv_buf,
     size_t count,
-    ccl::stream::impl_value_t& stream,
+    const ccl::stream::impl_value_t& stream,
     const ccl::alltoall_attr& attr,
     const ccl::vector_class<ccl::event>& dep) {
     throw ccl::exception(std::string(__PRETTY_FUNCTION__) + " - is not implemented");
@@ -309,7 +309,7 @@ thread_device_group_ring_communicator::alltoallv_impl(
     const ccl::vector_class<size_t>& send_counts,
     const ccl::vector_class<buffer_type*>& recv_buf,
     const ccl::vector_class<size_t>& recv_counts,
-    ccl::stream::impl_value_t& stream,
+    const ccl::stream::impl_value_t& stream,
     const ccl::alltoallv_attr& attr,
     const ccl::vector_class<ccl::event>& dep) {
     throw ccl::exception(std::string(__PRETTY_FUNCTION__) + " - is not implemented");
@@ -322,7 +322,7 @@ thread_device_group_ring_communicator::alltoallv_impl(const buffer_type& send_bu
                                                       const ccl::vector_class<size_t>& send_counts,
                                                       buffer_type& recv_buf,
                                                       const ccl::vector_class<size_t>& recv_counts,
-                                                      ccl::stream::impl_value_t& stream,
+                                                      const ccl::stream::impl_value_t& stream,
                                                       const ccl::alltoallv_attr& attr,
                                                       const ccl::vector_class<ccl::event>& deps) {
     throw ccl::exception(std::string(__PRETTY_FUNCTION__) + " - is not implemented");
@@ -335,7 +335,7 @@ thread_device_group_ring_communicator::alltoallv_impl(
     const ccl::vector_class<size_t>& send_counts,
     const ccl::vector_class<ccl::reference_wrapper_class<buffer_type>>& recv_buf,
     const ccl::vector_class<size_t>& recv_counts,
-    ccl::stream::impl_value_t& stream,
+    const ccl::stream::impl_value_t& stream,
     const ccl::alltoallv_attr& attr,
 
     const ccl::vector_class<ccl::event>& dep) {
@@ -349,7 +349,7 @@ thread_device_group_ring_communicator::alltoallv_impl(const buffer_type* send_bu
                                                       const ccl::vector_class<size_t>& send_counts,
                                                       buffer_type* recv_buf,
                                                       const ccl::vector_class<size_t>& recv_counts,
-                                                      ccl::stream::impl_value_t& stream,
+                                                      const ccl::stream::impl_value_t& stream,
                                                       const ccl::alltoallv_attr& attr,
                                                       const ccl::vector_class<ccl::event>& deps) {
     using namespace native;
@@ -442,7 +442,7 @@ thread_device_group_ring_communicator::coll_request_t
 thread_device_group_ring_communicator::broadcast_impl(buffer_type* buf,
                                                       size_t count,
                                                       size_t root,
-                                                      ccl::stream::impl_value_t& stream,
+                                                      const ccl::stream::impl_value_t& stream,
                                                       const ccl::broadcast_attr& attr,
                                                       const ccl::vector_class<ccl::event>& deps) {
     using namespace native;
@@ -527,7 +527,7 @@ thread_device_group_ring_communicator::coll_request_t
 thread_device_group_ring_communicator::broadcast_impl(buffer_type& buf,
                                                       size_t count,
                                                       size_t root,
-                                                      ccl::stream::impl_value_t& stream,
+                                                      const ccl::stream::impl_value_t& stream,
                                                       const ccl::broadcast_attr& attr,
                                                       const ccl::vector_class<ccl::event>& deps) {
     throw ccl::exception(std::string(__PRETTY_FUNCTION__) + " - is not implemented");
@@ -542,7 +542,7 @@ thread_device_group_ring_communicator::reduce_impl(const buffer_type* send_buf,
                                                    size_t count,
                                                    ccl::reduction reduction,
                                                    size_t root,
-                                                   ccl::stream::impl_value_t& stream,
+                                                   const ccl::stream::impl_value_t& stream,
                                                    const ccl::reduce_attr& attr,
                                                    const ccl::vector_class<ccl::event>& deps) {
     using namespace native;
@@ -639,7 +639,7 @@ thread_device_group_ring_communicator::reduce_impl(const buffer_type& send_buf,
                                                    size_t count,
                                                    ccl::reduction reduction,
                                                    size_t root,
-                                                   ccl::stream::impl_value_t& stream,
+                                                   const ccl::stream::impl_value_t& stream,
                                                    const ccl::reduce_attr& attr,
                                                    const ccl::vector_class<ccl::event>& deps) {
     throw ccl::exception(std::string(__PRETTY_FUNCTION__) + " - is not implemented");
@@ -654,7 +654,7 @@ thread_device_group_ring_communicator::reduce_scatter_impl(
     buffer_type* recv_buf,
     size_t recv_count,
     ccl::reduction reduction,
-    ccl::stream::impl_value_t& stream,
+    const ccl::stream::impl_value_t& stream,
     const ccl::reduce_scatter_attr& attr,
     const ccl::vector_class<ccl::event>& deps) {
     throw ccl::exception(std::string(__PRETTY_FUNCTION__) + " - is not implemented");
@@ -667,7 +667,7 @@ thread_device_group_ring_communicator::reduce_scatter_impl(
     buffer_type& recv_buf,
     size_t recv_count,
     ccl::reduction reduction,
-    ccl::stream::impl_value_t& stream,
+    const ccl::stream::impl_value_t& stream,
     const ccl::reduce_scatter_attr& attr,
     const ccl::vector_class<ccl::event>& deps) {
     throw ccl::exception(std::string(__PRETTY_FUNCTION__) + " - is not implemented");
@@ -687,7 +687,7 @@ thread_device_group_ring_communicator::sparse_allreduce_impl(
     value_buffer_type* recv_val_buf,
     size_t recv_val_count,
     ccl::reduction reduction,
-    ccl::stream::impl_value_t& stream,
+    const ccl::stream::impl_value_t& stream,
     const ccl::sparse_allreduce_attr& attr,
     const ccl::vector_class<ccl::event>& deps) {
     throw ccl::exception(std::string(__PRETTY_FUNCTION__) + " - is not implemented");
@@ -706,7 +706,7 @@ thread_device_group_ring_communicator::sparse_allreduce_impl(
     value_buffer_container_type& recv_val_buf,
     size_t recv_val_count,
     ccl::reduction reduction,
-    ccl::stream::impl_value_t& stream,
+    const ccl::stream::impl_value_t& stream,
     const ccl::sparse_allreduce_attr& attr,
     const ccl::vector_class<ccl::event>& deps) {
     throw ccl::exception(std::string(__PRETTY_FUNCTION__) + " - is not implemented");

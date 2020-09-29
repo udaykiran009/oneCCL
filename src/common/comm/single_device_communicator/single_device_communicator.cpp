@@ -43,7 +43,7 @@ void single_device_communicator::visit(ccl::gpu_comm_attr& comm_attr) {
 }
 #endif
 single_device_communicator::coll_request_t single_device_communicator::barrier(
-    ccl::stream::impl_value_t& op_stream,
+    const ccl::stream::impl_value_t& op_stream,
     const ccl::barrier_attr& attr,
     const ccl::vector_class<ccl::event>& deps) {
     // TODO what exactly we need to do with 'attr' here?
@@ -62,7 +62,7 @@ single_device_communicator::coll_request_t single_device_communicator::allgather
     void* recv_buf,
     const ccl::vector_class<size_t>& recv_counts,
     ccl::datatype dtype,
-    ccl::stream::impl_value_t& stream,
+    const ccl::stream::impl_value_t& stream,
     const ccl::allgatherv_attr& attr,
     const ccl::vector_class<ccl::event>& deps) {
     coll_request_t req;
@@ -86,7 +86,7 @@ single_device_communicator::coll_request_t single_device_communicator::allgather
     const ccl::vector_class<void*>& recv_bufs,
     const ccl::vector_class<size_t>& recv_counts,
     ccl::datatype dtype,
-    ccl::stream::impl_value_t& stream,
+    const ccl::stream::impl_value_t& stream,
     const ccl::allgatherv_attr& attr,
     const ccl::vector_class<ccl::event>& deps) {
     throw ccl::exception(std::string(__PRETTY_FUNCTION__) + " - is not implemented");
@@ -100,7 +100,7 @@ single_device_communicator::coll_request_t single_device_communicator::allreduce
     size_t count,
     ccl::datatype dtype,
     ccl::reduction reduction,
-    ccl::stream::impl_value_t& stream,
+    const ccl::stream::impl_value_t& stream,
     const ccl::allreduce_attr& attr,
     const ccl::vector_class<ccl::event>& deps) {
     coll_request_t req;
@@ -121,7 +121,7 @@ single_device_communicator::coll_request_t single_device_communicator::alltoall_
     void* recv_buf,
     size_t count,
     ccl::datatype dtype,
-    ccl::stream::impl_value_t& stream,
+    const ccl::stream::impl_value_t& stream,
     const ccl::alltoall_attr& attr,
     const ccl::vector_class<ccl::event>& deps) {
     coll_request_t req;
@@ -139,7 +139,7 @@ single_device_communicator::coll_request_t single_device_communicator::alltoall_
     const ccl::vector_class<void*>& recv_buf,
     size_t count,
     ccl::datatype dtype,
-    ccl::stream::impl_value_t& stream,
+    const ccl::stream::impl_value_t& stream,
     const ccl::alltoall_attr& attr,
     const ccl::vector_class<ccl::event>& deps) {
     throw ccl::exception(std::string(__PRETTY_FUNCTION__) + " - is not implemented");
@@ -153,7 +153,7 @@ single_device_communicator::coll_request_t single_device_communicator::alltoallv
     void* recv_buf,
     const ccl::vector_class<size_t>& recv_counts,
     ccl::datatype dtype,
-    ccl::stream::impl_value_t& stream,
+    const ccl::stream::impl_value_t& stream,
     const ccl::alltoallv_attr& attr,
     const ccl::vector_class<ccl::event>& deps) {
     coll_request_t req;
@@ -177,7 +177,7 @@ single_device_communicator::coll_request_t single_device_communicator::alltoallv
     ccl::vector_class<void*> recv_buf,
     const ccl::vector_class<size_t>& recv_counts,
     ccl::datatype dtype,
-    ccl::stream::impl_value_t& stream,
+    const ccl::stream::impl_value_t& stream,
     const ccl::alltoallv_attr& attr,
     const ccl::vector_class<ccl::event>& dep) {
     throw ccl::exception(std::string(__PRETTY_FUNCTION__) + " - is not implemented");
@@ -190,7 +190,7 @@ single_device_communicator::coll_request_t single_device_communicator::broadcast
     size_t count,
     ccl::datatype dtype,
     size_t root,
-    ccl::stream::impl_value_t& stream,
+    const ccl::stream::impl_value_t& stream,
     const ccl::broadcast_attr& attr,
     const ccl::vector_class<ccl::event>& deps) {
     coll_request_t req;
@@ -209,7 +209,7 @@ single_device_communicator::coll_request_t single_device_communicator::reduce_im
     ccl::datatype dtype,
     ccl::reduction reduction,
     size_t root,
-    ccl::stream::impl_value_t& stream,
+    const ccl::stream::impl_value_t& stream,
     const ccl::reduce_attr& attr,
     const ccl::vector_class<ccl::event>& deps) {
     coll_request_t req;
@@ -236,7 +236,7 @@ single_device_communicator::coll_request_t single_device_communicator::reduce_sc
     size_t recv_count,
     ccl::datatype dtype,
     ccl::reduction reduction,
-    ccl::stream::impl_value_t& stream,
+    const ccl::stream::impl_value_t& stream,
     const ccl::reduce_scatter_attr& attr,
     const ccl::vector_class<ccl::event>& deps) {
     // TODO not implemented
@@ -259,7 +259,7 @@ single_device_communicator::coll_request_t single_device_communicator::sparse_al
     ccl::datatype index_dtype,
     ccl::datatype value_dtype,
     ccl::reduction reduction,
-    ccl::stream::impl_value_t& stream,
+    const ccl::stream::impl_value_t& stream,
     const ccl::sparse_allreduce_attr& attr,
     const ccl::vector_class<ccl::event>& deps) {
     coll_request_t req;

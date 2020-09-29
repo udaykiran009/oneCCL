@@ -17,7 +17,7 @@ namespace ccl {
                                         BufferType* recv_buf, \
                                         const vector_class<size_t>& recv_counts, \
                                         const communicator& comm, \
-                                        stream& op_stream, \
+                                        const stream& op_stream, \
                                         const allgatherv_attr& attr, \
                                         const vector_class<event>& deps); \
 \
@@ -26,7 +26,7 @@ namespace ccl {
                                         vector_class<BufferType*>& recv_bufs, \
                                         const vector_class<size_t>& recv_counts, \
                                         const communicator& comm, \
-                                        stream& op_stream, \
+                                        const stream& op_stream, \
                                         const allgatherv_attr& attr, \
                                         const vector_class<event>& deps); \
 \
@@ -35,7 +35,7 @@ namespace ccl {
                                        size_t count, \
                                        reduction reduction, \
                                        const communicator& comm, \
-                                       stream& op_stream, \
+                                       const stream& op_stream, \
                                        const allreduce_attr& attr, \
                                        const vector_class<event>& deps); \
 \
@@ -43,7 +43,7 @@ namespace ccl {
                                       BufferType* recv_buf, \
                                       size_t count, \
                                       const communicator& comm, \
-                                      stream& op_stream, \
+                                      const stream& op_stream, \
                                       const alltoall_attr& attr, \
                                       const vector_class<event>& deps); \
 \
@@ -51,7 +51,7 @@ namespace ccl {
                                       const vector_class<BufferType*>& recv_buf, \
                                       size_t count, \
                                       const communicator& comm, \
-                                      stream& op_stream, \
+                                      const stream& op_stream, \
                                       const alltoall_attr& attr, \
                                       const vector_class<event>& deps); \
 \
@@ -60,7 +60,7 @@ namespace ccl {
                                        BufferType* recv_buf, \
                                        const vector_class<size_t>& recv_counts, \
                                        const communicator& comm, \
-                                       stream& op_stream, \
+                                       const stream& op_stream, \
                                        const alltoallv_attr& attr, \
                                        const vector_class<event>& deps); \
 \
@@ -69,7 +69,7 @@ namespace ccl {
                                        const vector_class<BufferType*>& recv_bufs, \
                                        const vector_class<size_t>& recv_counts, \
                                        const communicator& comm, \
-                                       stream& op_stream, \
+                                       const stream& op_stream, \
                                        const alltoallv_attr& attr, \
                                        const vector_class<event>& deps); \
 \
@@ -77,7 +77,7 @@ namespace ccl {
                                        size_t count, \
                                        size_t root, \
                                        const communicator& comm, \
-                                       stream& op_stream, \
+                                       const stream& op_stream, \
                                        const broadcast_attr& attr, \
                                        const vector_class<event>& deps); \
 \
@@ -87,7 +87,7 @@ namespace ccl {
                                     reduction reduction, \
                                     size_t root, \
                                     const communicator& comm, \
-                                    stream& op_stream, \
+                                    const stream& op_stream, \
                                     const reduce_attr& attr, \
                                     const vector_class<event>& deps); \
 \
@@ -96,7 +96,7 @@ namespace ccl {
                                             size_t recv_count, \
                                             reduction reduction, \
                                             const communicator& comm, \
-                                            stream& op_stream, \
+                                            const stream& op_stream, \
                                             const reduce_scatter_attr& attr, \
                                             const vector_class<event>& deps);
 
@@ -107,7 +107,7 @@ namespace ccl {
                                         BufferObjectType& recv_buf, \
                                         const vector_class<size_t>& recv_counts, \
                                         const communicator& comm, \
-                                        stream& op_stream, \
+                                        const stream& op_stream, \
                                         const allgatherv_attr& attr, \
                                         const vector_class<event>& deps); \
 \
@@ -117,7 +117,7 @@ namespace ccl {
         vector_class<reference_wrapper_class<BufferObjectType>>& recv_bufs, \
         const vector_class<size_t>& recv_counts, \
         const communicator& comm, \
-        stream& op_stream, \
+        const stream& op_stream, \
         const allgatherv_attr& attr, \
         const vector_class<event>& deps); \
 \
@@ -126,7 +126,7 @@ namespace ccl {
                                        size_t count, \
                                        reduction reduction, \
                                        const communicator& comm, \
-                                       stream& op_stream, \
+                                       const stream& op_stream, \
                                        const allreduce_attr& attr, \
                                        const vector_class<event>& deps); \
 \
@@ -134,7 +134,7 @@ namespace ccl {
                                       BufferObjectType& recv_buf, \
                                       size_t count, \
                                       const communicator& comm, \
-                                      stream& op_stream, \
+                                      const stream& op_stream, \
                                       const alltoall_attr& attr, \
                                       const vector_class<event>& deps); \
 \
@@ -143,7 +143,7 @@ namespace ccl {
         const vector_class<reference_wrapper_class<BufferObjectType>>& recv_buf, \
         size_t count, \
         const communicator& comm, \
-        stream& op_stream, \
+        const stream& op_stream, \
         const alltoall_attr& attr, \
         const vector_class<event>& deps); \
 \
@@ -152,7 +152,7 @@ namespace ccl {
                                        BufferObjectType& recv_buf, \
                                        const vector_class<size_t>& recv_counts, \
                                        const communicator& comm, \
-                                       stream& op_stream, \
+                                       const stream& op_stream, \
                                        const alltoallv_attr& attr, \
                                        const vector_class<event>& deps); \
 \
@@ -162,7 +162,7 @@ namespace ccl {
         const vector_class<reference_wrapper_class<BufferObjectType>>& recv_bufs, \
         const vector_class<size_t>& recv_counts, \
         const communicator& comm, \
-        stream& op_stream, \
+        const stream& op_stream, \
         const alltoallv_attr& attr, \
         const vector_class<event>& deps); \
 \
@@ -170,7 +170,7 @@ namespace ccl {
                                        size_t count, \
                                        size_t root, \
                                        const communicator& comm, \
-                                       stream& op_stream, \
+                                       const stream& op_stream, \
                                        const broadcast_attr& attr, \
                                        const vector_class<event>& deps); \
 \
@@ -180,7 +180,7 @@ namespace ccl {
                                     reduction reduction, \
                                     size_t root, \
                                     const communicator& comm, \
-                                    stream& op_stream, \
+                                    const stream& op_stream, \
                                     const reduce_attr& attr, \
                                     const vector_class<event>& deps); \
 \
@@ -189,7 +189,7 @@ namespace ccl {
                                             size_t recv_count, \
                                             reduction reduction, \
                                             const communicator& comm, \
-                                            stream& op_stream, \
+                                            const stream& op_stream, \
                                             const reduce_scatter_attr& attr, \
                                             const vector_class<event>& deps);
 
@@ -207,7 +207,7 @@ namespace preview {
                                                    size_t recv_val_count, \
                                                    ccl::reduction reduction, \
                                                    const ccl::communicator& comm, \
-                                                   ccl::stream& op_stream, \
+                                                   const ccl::stream& op_stream, \
                                                    const ccl::sparse_allreduce_attr& attr, \
                                                    const ccl::vector_class<ccl::event>& deps);
 
@@ -225,7 +225,7 @@ sparse_allreduce(const index_object_type& send_ind_buf, \
                  size_t recv_val_count, \
                  ccl::reduction reduction, \
                  const ccl::communicator& comm, \
-                 ccl::stream& op_stream, \
+                 const ccl::stream& op_stream, \
                  const ccl::sparse_allreduce_attr& attr, \
                  const ccl::vector_class<event>& deps);
 */

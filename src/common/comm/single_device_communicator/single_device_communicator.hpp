@@ -43,7 +43,7 @@ public:
 #ifdef MULTI_GPU_SUPPORT
     void visit(ccl::gpu_comm_attr& comm_attr) override;
 #endif
-    coll_request_t barrier(ccl::stream::impl_value_t& op_stream,
+    coll_request_t barrier(const ccl::stream::impl_value_t& op_stream,
                            const ccl::barrier_attr& attr,
                            const ccl::vector_class<ccl::event>& deps) override;
 
