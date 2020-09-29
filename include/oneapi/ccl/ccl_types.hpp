@@ -14,6 +14,7 @@
 #include <vector>
 
 #include "oneapi/ccl/ccl_aliases.hpp"
+#include "oneapi/ccl/ccl_exception.hpp"
 
 // TODO: tmp enums, refactor core code and remove them
 /************************************************/
@@ -184,16 +185,6 @@ enum class stream_type : int {
     gpu,
 
     last_value
-};
-
-/**
- * Exception type that may be thrown by ccl API
- */
-class ccl_error : public std::runtime_error {
-public:
-    explicit ccl_error(const std::string& message) : std::runtime_error(message) {}
-
-    explicit ccl_error(const char* message) : std::runtime_error(message) {}
 };
 
 /**

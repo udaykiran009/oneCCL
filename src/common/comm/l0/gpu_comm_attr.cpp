@@ -96,7 +96,7 @@ bool gpu_comm_attr::delegate_sync_register_communicator(
             LOG_ERROR("Attempt to create communicator by new device id: ",
                       comm->get_device_path(),
                       " in fully formed comm_group is unaccepted!");
-            throw ccl_error("cannot create communicator for requested device");
+            throw ccl::exception("cannot create communicator for requested device");
         }
 
         //set rank & size for duplicated communicator

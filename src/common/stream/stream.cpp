@@ -37,7 +37,7 @@ template std::unique_ptr<ccl_stream> stream_provider_dispatcher::create(
 
 void ccl_stream::build_from_params() {
     if (!creation_is_postponed) {
-        throw ccl::ccl_error("error");
+        throw ccl::exception("error");
     }
     try {
 #ifdef CCL_ENABLE_SYCL
@@ -62,7 +62,7 @@ void ccl_stream::build_from_params() {
 #endif
     }
     catch (const std::exception& ex) {
-        throw ccl::ccl_error(std::string("Cannot build ccl_stream from params: ") + ex.what());
+        throw ccl::exception(std::string("Cannot build ccl_stream from params: ") + ex.what());
     }
     creation_is_postponed = false;
 }
@@ -72,7 +72,7 @@ typename ccl_stream::version_traits_t::type ccl_stream::set_attribute_value(
     typename version_traits_t::type val,
     const version_traits_t& t) {
     (void)t;
-    throw ccl::ccl_error("Set value for 'ccl::stream_attr_id::library_version' is not allowed");
+    throw ccl::exception("Set value for 'ccl::stream_attr_id::library_version' is not allowed");
     return version;
 }
 
@@ -86,7 +86,7 @@ typename ccl_stream::native_handle_traits_t::return_type& ccl_stream::get_attrib
     /*
     if (!native_stream_set)
     {
-        throw  ccl::ccl_error("native stream is not set");
+        throw  ccl::exception("native stream is not set");
     }
 */
     return native_stream;
@@ -106,7 +106,7 @@ typename ccl_stream::context_traits_t::return_type& ccl_stream::set_attribute_va
     typename context_traits_t::type val,
     const context_traits_t& t) {
     if (!creation_is_postponed) {
-        throw ccl::ccl_error("Cannot set 'ccl::stream_attr_id::context'`for constructed stream");
+        throw ccl::exception("Cannot set 'ccl::stream_attr_id::context'`for constructed stream");
     }
     std::swap(native_context, val);
     return native_context;
@@ -116,7 +116,7 @@ typename ccl_stream::context_traits_t::return_type& ccl_stream::set_attribute_va
     typename context_traits_t::handle_t val,
     const context_traits_t& t) {
     if (!creation_is_postponed) {
-        throw ccl::ccl_error("Cannot set 'ccl::stream_attr_id::context'`for constructed stream");
+        throw ccl::exception("Cannot set 'ccl::stream_attr_id::context'`for constructed stream");
     }
     native_context = ccl::unified_device_context_type{ val }.get(); //context_traits_t::type
     is_context_enabled = true;
@@ -127,7 +127,7 @@ typename ccl_stream::ordinal_traits_t::type ccl_stream::set_attribute_value(
     typename ordinal_traits_t::type val,
     const ordinal_traits_t& t) {
     if (!creation_is_postponed) {
-        throw ccl::ccl_error("Cannot set 'ccl::stream_attr_id::ordinal'`for constructed stream");
+        throw ccl::exception("Cannot set 'ccl::stream_attr_id::ordinal'`for constructed stream");
     }
     auto old = ordinal_val;
     std::swap(ordinal_val, val);
@@ -143,7 +143,7 @@ typename ccl_stream::index_traits_t::type ccl_stream::set_attribute_value(
     typename index_traits_t::type val,
     const index_traits_t& t) {
     if (!creation_is_postponed) {
-        throw ccl::ccl_error("Cannot set 'ccl::stream_attr_id::index'`for constructed stream");
+        throw ccl::exception("Cannot set 'ccl::stream_attr_id::index'`for constructed stream");
     }
     auto old = index_val;
     std::swap(index_val, val);
@@ -159,7 +159,7 @@ typename ccl_stream::flags_traits_t::type ccl_stream::set_attribute_value(
     typename flags_traits_t::type val,
     const flags_traits_t& t) {
     if (!creation_is_postponed) {
-        throw ccl::ccl_error("Cannot set 'ccl::stream_attr_id::flags'`for constructed stream");
+        throw ccl::exception("Cannot set 'ccl::stream_attr_id::flags'`for constructed stream");
     }
     auto old = flags_val;
     std::swap(flags_val, val);
@@ -175,7 +175,7 @@ typename ccl_stream::mode_traits_t::type ccl_stream::set_attribute_value(
     typename mode_traits_t::type val,
     const mode_traits_t& t) {
     if (!creation_is_postponed) {
-        throw ccl::ccl_error("Cannot set 'ccl::stream_attr_id::mode'`for constructed stream");
+        throw ccl::exception("Cannot set 'ccl::stream_attr_id::mode'`for constructed stream");
     }
     auto old = mode_val;
     std::swap(mode_val, val);
@@ -191,7 +191,7 @@ typename ccl_stream::priority_traits_t::type ccl_stream::set_attribute_value(
     typename priority_traits_t::type val,
     const priority_traits_t& t) {
     if (!creation_is_postponed) {
-        throw ccl::ccl_error("Cannot set 'ccl::stream_attr_id::priority'`for constructed stream");
+        throw ccl::exception("Cannot set 'ccl::stream_attr_id::priority'`for constructed stream");
     }
     auto old = priority_val;
     std::swap(priority_val, val);

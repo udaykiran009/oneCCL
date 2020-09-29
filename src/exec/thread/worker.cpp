@@ -265,7 +265,7 @@ static void* ccl_worker_func(void* args) {
             if (ccl_worker_check_conditions(worker, iter_count, ret))
                 break;
         }
-        catch (ccl::ccl_error& ccl_e) {
+        catch (ccl::exception& ccl_e) {
             CCL_FATAL("worker ", worker->get_idx(), " caught internal exception: ", ccl_e.what());
         }
         catch (std::exception& e) {

@@ -35,7 +35,7 @@ process_ring_communicator::coll_request_t process_ring_communicator::barrier(
     ccl::stream::impl_value_t& stream,
     const ccl::barrier_attr& attr,
     const ccl::vector_class<ccl::event>& deps) {
-    throw ccl::ccl_error(std::string(__PRETTY_FUNCTION__) + " - is not implemented yet");
+    throw ccl::exception(std::string(__PRETTY_FUNCTION__) + " - is not implemented yet");
 }
 
 /* allgatherv */
@@ -48,7 +48,7 @@ process_ring_communicator::coll_request_t process_ring_communicator::allgatherv_
     ccl::stream::impl_value_t& stream,
     const ccl::allgatherv_attr& attr,
     const ccl::vector_class<ccl::event>& deps) {
-    throw ccl::ccl_error(std::string(__PRETTY_FUNCTION__) + " - is not implemented");
+    throw ccl::exception(std::string(__PRETTY_FUNCTION__) + " - is not implemented");
     return {};
 }
 process_ring_communicator::coll_request_t process_ring_communicator::allgatherv_impl(
@@ -61,7 +61,7 @@ process_ring_communicator::coll_request_t process_ring_communicator::allgatherv_
     const ccl::allgatherv_attr& attr,
 
     const ccl::vector_class<ccl::event>& deps) {
-    throw ccl::ccl_error(std::string(__PRETTY_FUNCTION__) + " - is not implemented");
+    throw ccl::exception(std::string(__PRETTY_FUNCTION__) + " - is not implemented");
     return {};
 }
 
@@ -75,7 +75,7 @@ process_ring_communicator::coll_request_t process_ring_communicator::allreduce_i
     ccl::stream::impl_value_t& stream,
     const ccl::allreduce_attr& attr,
     const ccl::vector_class<ccl::event>& deps) {
-    throw ccl::ccl_error(std::string(__PRETTY_FUNCTION__) + " - is not implemented");
+    throw ccl::exception(std::string(__PRETTY_FUNCTION__) + " - is not implemented");
     return {};
 }
 
@@ -88,7 +88,7 @@ process_ring_communicator::coll_request_t process_ring_communicator::alltoall_im
     ccl::stream::impl_value_t& stream,
     const ccl::alltoall_attr& attr,
     const ccl::vector_class<ccl::event>& deps) {
-    throw ccl::ccl_error(std::string(__PRETTY_FUNCTION__) + " - is not implemented");
+    throw ccl::exception(std::string(__PRETTY_FUNCTION__) + " - is not implemented");
     return {};
 }
 process_ring_communicator::coll_request_t process_ring_communicator::alltoall_impl(
@@ -99,7 +99,7 @@ process_ring_communicator::coll_request_t process_ring_communicator::alltoall_im
     ccl::stream::impl_value_t& stream,
     const ccl::alltoall_attr& attr,
     const ccl::vector_class<ccl::event>& deps) {
-    throw ccl::ccl_error(std::string(__PRETTY_FUNCTION__) + " - is not implemented");
+    throw ccl::exception(std::string(__PRETTY_FUNCTION__) + " - is not implemented");
     return {};
 }
 
@@ -113,7 +113,7 @@ process_ring_communicator::coll_request_t process_ring_communicator::alltoallv_i
     ccl::stream::impl_value_t& stream,
     const ccl::alltoallv_attr& attr,
     const ccl::vector_class<ccl::event>& deps) {
-    throw ccl::ccl_error(std::string(__PRETTY_FUNCTION__) + " - is not implemented");
+    throw ccl::exception(std::string(__PRETTY_FUNCTION__) + " - is not implemented");
     return {};
 }
 process_ring_communicator::coll_request_t process_ring_communicator::alltoallv_impl(
@@ -126,7 +126,7 @@ process_ring_communicator::coll_request_t process_ring_communicator::alltoallv_i
     const ccl::alltoallv_attr& attr,
 
     const ccl::vector_class<ccl::event>& dep) {
-    throw ccl::ccl_error(std::string(__PRETTY_FUNCTION__) + " - is not implemented");
+    throw ccl::exception(std::string(__PRETTY_FUNCTION__) + " - is not implemented");
     return {};
 }
 
@@ -139,7 +139,7 @@ process_ring_communicator::coll_request_t process_ring_communicator::broadcast_i
     ccl::stream::impl_value_t& stream,
     const ccl::broadcast_attr& attr,
     const ccl::vector_class<ccl::event>& deps) {
-    throw ccl::ccl_error(std::string(__PRETTY_FUNCTION__) + " - is not implemented");
+    throw ccl::exception(std::string(__PRETTY_FUNCTION__) + " - is not implemented");
     return {};
 }
 
@@ -154,7 +154,7 @@ process_ring_communicator::coll_request_t process_ring_communicator::reduce_impl
     ccl::stream::impl_value_t& stream,
     const ccl::reduce_attr& attr,
     const ccl::vector_class<ccl::event>& deps) {
-    throw ccl::ccl_error(std::string(__PRETTY_FUNCTION__) + " - is not implemented");
+    throw ccl::exception(std::string(__PRETTY_FUNCTION__) + " - is not implemented");
     return {};
 }
 
@@ -168,7 +168,7 @@ process_ring_communicator::coll_request_t process_ring_communicator::reduce_scat
     ccl::stream::impl_value_t& stream,
     const ccl::reduce_scatter_attr& attr,
     const ccl::vector_class<ccl::event>& deps) {
-    throw ccl::ccl_error(std::string(__PRETTY_FUNCTION__) + " - is not implemented");
+    throw ccl::exception(std::string(__PRETTY_FUNCTION__) + " - is not implemented");
     return {};
 }
 
@@ -188,7 +188,7 @@ process_ring_communicator::coll_request_t process_ring_communicator::sparse_allr
     ccl::stream::impl_value_t& stream,
     const ccl::sparse_allreduce_attr& attr,
     const ccl::vector_class<ccl::event>& deps) {
-    throw ccl::ccl_error(std::string(__PRETTY_FUNCTION__) + " - is not implemented");
+    throw ccl::exception(std::string(__PRETTY_FUNCTION__) + " - is not implemented");
     return {};
 }
 

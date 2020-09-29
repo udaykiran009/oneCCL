@@ -150,7 +150,7 @@ public:
                         ze_result_t ret = zeCommandQueueExecuteCommandLists(
                             cmd_queue.get(), 1, device.get_cmd_list().get_ptr(), fence);
                         if (ret != ZE_RESULT_SUCCESS) {
-                            throw ccl::ccl_error(
+                            throw ccl::exception(
                                 std::string("cannot execute command list, error: ") +
                                 std::to_string(ret));
                         }
@@ -183,7 +183,7 @@ public:
                     ze_result_t ret = zeCommandQueueExecuteCommandLists(
                         cmd_queue.get(), 1, device.get_cmd_list().get_ptr(), fence);
                     if (ret != ZE_RESULT_SUCCESS) {
-                        throw ccl::ccl_error(std::string("cannot execute command list, error: ") +
+                        throw ccl::exception(std::string("cannot execute command list, error: ") +
                                              std::to_string(ret));
                     }
                 }
@@ -229,23 +229,23 @@ public:
                             ccl_ipc_source_gpu_comm<ccl_gpu_comm>::type_idx()) {
                         if (group_id == ccl::group_split_type::cluster) {
                             // TODO: implement process communicator case
-                            throw ccl::ccl_error(std::string(__PRETTY_FUNCTION__) + "TODO: implement process communicator case");
+                            throw ccl::exception(std::string(__PRETTY_FUNCTION__) + "TODO: implement process communicator case");
                             // auto c = ccl::environment::instance().create_communicator();
                             // if (c.rank() == 0) {
-                                // throw ccl::ccl_error(
+                                // throw ccl::exception(
                                 //     std::string("cannot sync queue from real device, error: ") +
                                 //     native::to_string(ret));
                             // }
                         }
                         else {
-                            throw ccl::ccl_error(
+                            throw ccl::exception(
                                 std::string("cannot sync queue from real device, error: ") +
                                 native::to_string(ret));
                         }
                     }
                     else {
                         if (ret != ZE_RESULT_ERROR_INVALID_ARGUMENT) {
-                            throw ccl::ccl_error(
+                            throw ccl::exception(
                                 std::string("cannot sync queue from virtual device, error: ") +
                                 native::to_string(ret));
                         }

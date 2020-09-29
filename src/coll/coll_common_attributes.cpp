@@ -11,7 +11,7 @@ typename ccl_operation_attr_impl_t::version_traits_t::return_type
 ccl_operation_attr_impl_t::set_attribute_value(typename version_traits_t::type val,
                                                const version_traits_t& t) {
     (void)t;
-    throw ccl_error("Set value for 'ccl::operation_attr_id::version' is not allowed");
+    throw ccl::exception("Set value for 'ccl::operation_attr_id::version' is not allowed");
     return version;
 }
 

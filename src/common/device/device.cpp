@@ -22,7 +22,7 @@ ccl_device_impl::ccl_device_impl(device_native_handle_t dev_handle,
 
 void ccl_device_impl::build_from_params() {
     if (!creation_is_postponed) {
-        throw ccl::ccl_error("error");
+        throw ccl::exception("error");
     }
 #ifdef CCL_ENABLE_SYCL
     /* TODO unavailbale??
@@ -30,7 +30,7 @@ void ccl_device_impl::build_from_params() {
     std::swap(event_candidate, native_event); //TODO USE attributes fro sycl queue construction
     */
 
-    throw ccl::ccl_error("build_from_attr is not availbale for sycl::device");
+    throw ccl::exception("build_from_attr is not availbale for sycl::device");
 #else
 
     //TODO use attributes
@@ -44,7 +44,7 @@ typename ccl_device_impl::version_traits_t::type ccl_device_impl::set_attribute_
     typename version_traits_t::type val,
     const version_traits_t& t) {
     (void)t;
-    throw ccl::ccl_error("Set value for 'ccl::event_attr_id::library_version' is not allowed");
+    throw ccl::exception("Set value for 'ccl::event_attr_id::library_version' is not allowed");
     return version;
 }
 
@@ -57,7 +57,7 @@ const typename ccl_device_impl::cl_backend_traits_t::return_type& ccl_device_imp
     const cl_backend_traits_t& id) const {
 
     //TODO
-    throw ccl::ccl_error("TODO - Get value for 'ccl::device_attr_id::cl_backend_traits_t' is not inmlemented");
+    throw ccl::exception("TODO - Get value for 'ccl::device_attr_id::cl_backend_traits_t' is not inmlemented");
     static constexpr ccl::cl_backend_type ret{ccl::cl_backend_type::empty_backend};
     return ret;
 }

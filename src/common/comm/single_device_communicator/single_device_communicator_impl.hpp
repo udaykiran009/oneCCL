@@ -71,14 +71,14 @@ single_device_communicator::coll_request_t single_device_communicator::allgather
             comm_impl.get(),
             stream.get());
 #else
-        throw ccl_error(std::string(__PRETTY_FUNCTION__) +
+        throw ccl::exception(std::string(__PRETTY_FUNCTION__) +
                         " - USM convertation is not supported for such configuration");
 #endif
         scoped_req_sycl->charge(req);
         scoped_req = std::move(scoped_req_sycl);
     }
     else {
-        throw ccl::ccl_error(std::string(__PRETTY_FUNCTION__) + "\nsend_buf check result:\n" +
+        throw ccl::exception(std::string(__PRETTY_FUNCTION__) + "\nsend_buf check result:\n" +
                              send_buf_error + "\nrecv_buf check result:\n" + recv_buf_error);
     }
 
@@ -95,7 +95,7 @@ single_device_communicator::coll_request_t single_device_communicator::allgather
     ccl::stream::impl_value_t& stream,
     const ccl::allgatherv_attr& attr,
     const ccl::vector_class<ccl::event>& deps) {
-    throw ccl::ccl_error(std::string(__PRETTY_FUNCTION__) + " - is not implemented");
+    throw ccl::exception(std::string(__PRETTY_FUNCTION__) + " - is not implemented");
     return {};
 }
 
@@ -127,7 +127,7 @@ single_device_communicator::coll_request_t single_device_communicator::allgather
     ccl::stream::impl_value_t& stream,
     const ccl::allgatherv_attr& attr,
     const ccl::vector_class<ccl::event>& deps) {
-    throw ccl::ccl_error(std::string(__PRETTY_FUNCTION__) + " - is not implemented");
+    throw ccl::exception(std::string(__PRETTY_FUNCTION__) + " - is not implemented");
     return {};
 }
 
@@ -147,7 +147,7 @@ single_device_communicator::coll_request_t single_device_communicator::allreduce
     static constexpr ccl::device_topology_type class_id = base_t::topology_class();
 
     if (!is_ready()) {
-        throw ccl::ccl_error(std::string(
+        throw ccl::exception(std::string(
             "Single device communicator for group_id: " + ::to_string(group_id) +
             ", class_id: " + ::to_string(class_id) +
             " is not ready yet. Not all сommunicators are created in group. Please create them before usage"));
@@ -206,14 +206,14 @@ single_device_communicator::coll_request_t single_device_communicator::allreduce
             comm_impl.get(),
             stream.get());
 #else
-        throw ccl_error(std::string(__PRETTY_FUNCTION__) +
+        throw ccl::exception(std::string(__PRETTY_FUNCTION__) +
                         " - USM convertation is not supported for such configuration");
 #endif
         scoped_req_sycl->charge(req);
         scoped_req = std::move(scoped_req_sycl);
     }
     else {
-        throw ccl::ccl_error(std::string(__PRETTY_FUNCTION__) + "\nsend_buf check result:\n" +
+        throw ccl::exception(std::string(__PRETTY_FUNCTION__) + "\nsend_buf check result:\n" +
                              send_buf_error + "\nrecv_buf check result:\n" + recv_buf_error);
     }
 
@@ -254,7 +254,7 @@ single_device_communicator::coll_request_t single_device_communicator::alltoall_
     static constexpr ccl::device_topology_type class_id = base_t::topology_class();
 
     if (unlikely(is_ready() == false)) {
-        throw ccl::ccl_error(std::string(
+        throw ccl::exception(std::string(
             "Single device communicator for group_id: " + ::to_string(group_id) +
             ", class_id: " + ::to_string(class_id) +
             " is not ready yet. Not all сommunicators are created in group. Please create them before usage"));
@@ -276,7 +276,7 @@ single_device_communicator::coll_request_t single_device_communicator::alltoall_
                                return test_value == std::get<assoc_result_index::SUPPORT_MODE>(v);
                            });
     if (!ret) {
-        throw ccl::ccl_error(std::string(__PRETTY_FUNCTION__) + " - invalid USM arguments:\n" +
+        throw ccl::exception(std::string(__PRETTY_FUNCTION__) + " - invalid USM arguments:\n" +
                              ::native::details::to_string(usm_assoc_results) +
                              "\nMixed types are not supported as well");
     }
@@ -322,7 +322,7 @@ single_device_communicator::coll_request_t single_device_communicator::alltoall_
                 comm_impl.get(),
                 stream.get());
 #else
-            throw ccl_error(std::string(__PRETTY_FUNCTION__) +
+            throw ccl::exception(std::string(__PRETTY_FUNCTION__) +
                             " - USM convertation is not supported for such configuration");
 #endif
             scoped_req_sycl->charge(req);
@@ -330,7 +330,7 @@ single_device_communicator::coll_request_t single_device_communicator::alltoall_
             break;
         }
         default:
-            throw ccl::ccl_error(std::string(__PRETTY_FUNCTION__) +
+            throw ccl::exception(std::string(__PRETTY_FUNCTION__) +
                                  " - USM category is not supported for such configuration:\n" +
                                  ::native::details::to_string(usm_assoc_results[0]));
     }
@@ -345,7 +345,7 @@ single_device_communicator::coll_request_t single_device_communicator::alltoall_
     ccl::stream::impl_value_t& stream,
     const ccl::alltoall_attr& attr,
     const ccl::vector_class<ccl::event>& deps) {
-    throw ccl::ccl_error(std::string(__PRETTY_FUNCTION__) + " - is not implemented");
+    throw ccl::exception(std::string(__PRETTY_FUNCTION__) + " - is not implemented");
     return {};
 }
 
@@ -374,7 +374,7 @@ single_device_communicator::coll_request_t single_device_communicator::alltoall_
     ccl::stream::impl_value_t& stream,
     const ccl::alltoall_attr& attr,
     const ccl::vector_class<ccl::event>& dep) {
-    throw ccl::ccl_error(std::string(__PRETTY_FUNCTION__) + " - is not implemented");
+    throw ccl::exception(std::string(__PRETTY_FUNCTION__) + " - is not implemented");
     return {};
 }
 
@@ -392,7 +392,7 @@ single_device_communicator::coll_request_t single_device_communicator::alltoallv
     static constexpr ccl::device_topology_type class_id = base_t::topology_class();
 
     if (!is_ready()) {
-        throw ccl::ccl_error(std::string(
+        throw ccl::exception(std::string(
             "Single device communicator for group_id: " + ::to_string(group_id) +
             ", class_id: " + ::to_string(class_id) +
             " is not ready yet. Not all сommunicators are created in group. Please create them before usage"));
@@ -414,7 +414,7 @@ single_device_communicator::coll_request_t single_device_communicator::alltoallv
                                return test_value == std::get<assoc_result_index::SUPPORT_MODE>(v);
                            });
     if (!ret) {
-        throw ccl::ccl_error(std::string(__PRETTY_FUNCTION__) + " - invalid USM arguments:\n" +
+        throw ccl::exception(std::string(__PRETTY_FUNCTION__) + " - invalid USM arguments:\n" +
                              ::native::details::to_string(usm_assoc_results));
     }
     switch (test_value) {
@@ -470,7 +470,7 @@ single_device_communicator::coll_request_t single_device_communicator::alltoallv
                 comm_impl.get(),
                 stream.get());
 #else
-            throw ccl_error(std::string(__PRETTY_FUNCTION__) +
+            throw ccl::exception(std::string(__PRETTY_FUNCTION__) +
                             " - USM convertation is not supported for such configuration");
 #endif
             scoped_req_sycl->charge(req);
@@ -478,7 +478,7 @@ single_device_communicator::coll_request_t single_device_communicator::alltoallv
             break;
         }
         default:
-            throw ccl::ccl_error(std::string(__PRETTY_FUNCTION__) +
+            throw ccl::exception(std::string(__PRETTY_FUNCTION__) +
                                  " - USM category is not supported for such configuration:\n" +
                                  ::native::details::to_string(usm_assoc_results[0]));
     }
@@ -495,7 +495,7 @@ single_device_communicator::coll_request_t single_device_communicator::alltoallv
     ccl::stream::impl_value_t& stream,
     const ccl::alltoallv_attr& attr,
     const ccl::vector_class<ccl::event>& dep) {
-    throw ccl::ccl_error(std::string(__PRETTY_FUNCTION__) + " - is not implemented");
+    throw ccl::exception(std::string(__PRETTY_FUNCTION__) + " - is not implemented");
     return {};
 }
 
@@ -527,7 +527,7 @@ single_device_communicator::coll_request_t single_device_communicator::alltoallv
     ccl::stream::impl_value_t& stream,
     const ccl::alltoallv_attr& attr,
     const ccl::vector_class<ccl::event>& dep) {
-    throw ccl::ccl_error(std::string(__PRETTY_FUNCTION__) + " - is not implemented");
+    throw ccl::exception(std::string(__PRETTY_FUNCTION__) + " - is not implemented");
     return {};
 }
 
@@ -544,7 +544,7 @@ single_device_communicator::coll_request_t single_device_communicator::broadcast
     static constexpr ccl::device_topology_type class_id = base_t::topology_class();
 
     if (!is_ready()) {
-        throw ccl::ccl_error(std::string(
+        throw ccl::exception(std::string(
             "Single device communicator for group_id: " + ::to_string(group_id) +
             ", class_id: " + ::to_string(class_id) +
             " is not ready yet. Not all сommunicators are created in group. Please create them before usage"));
@@ -597,7 +597,7 @@ single_device_communicator::coll_request_t single_device_communicator::broadcast
                 comm_impl.get(),
                 stream.get());
 #else
-            throw ccl_error(std::string(__PRETTY_FUNCTION__) +
+            throw ccl::exception(std::string(__PRETTY_FUNCTION__) +
                             " - USM convertation is not supported for such configuration");
 #endif
             scoped_req_sycl->charge(req);
@@ -605,7 +605,7 @@ single_device_communicator::coll_request_t single_device_communicator::broadcast
             break;
         }
         default:
-            throw ccl::ccl_error(std::string(__PRETTY_FUNCTION__) +
+            throw ccl::exception(std::string(__PRETTY_FUNCTION__) +
                                  " - USM category is not supported for such configuration:\n" +
                                  ::native::details::to_string(usm_assoc_results[0]));
     }
@@ -646,7 +646,7 @@ single_device_communicator::coll_request_t single_device_communicator::reduce_im
     static constexpr ccl::device_topology_type class_id = base_t::topology_class();
 
     if (!is_ready()) {
-        throw ccl::ccl_error(std::string(
+        throw ccl::exception(std::string(
             "Single device communicator for group_id: " + ::to_string(group_id) +
             ", class_id: " + ::to_string(class_id) +
             " is not ready yet. Not all сommunicators are created in group. Please create them before usage"));
@@ -668,7 +668,7 @@ single_device_communicator::coll_request_t single_device_communicator::reduce_im
                                return test_value == std::get<assoc_result_index::SUPPORT_MODE>(v);
                            });
     if (!ret) {
-        throw ccl::ccl_error(std::string(__PRETTY_FUNCTION__) + " - invalid USM arguments:\n" +
+        throw ccl::exception(std::string(__PRETTY_FUNCTION__) + " - invalid USM arguments:\n" +
                              ::native::details::to_string(usm_assoc_results));
     }
     switch (test_value) {
@@ -717,7 +717,7 @@ single_device_communicator::coll_request_t single_device_communicator::reduce_im
                                 comm_impl.get(),
                                 stream.get());
 #else
-            throw ccl_error(std::string(__PRETTY_FUNCTION__) +
+            throw ccl::exception(std::string(__PRETTY_FUNCTION__) +
                             " - USM convertation is not supported for such configuration");
 #endif
             scoped_req_sycl->charge(req);
@@ -725,7 +725,7 @@ single_device_communicator::coll_request_t single_device_communicator::reduce_im
             break;
         }
         default:
-            throw ccl::ccl_error(std::string(__PRETTY_FUNCTION__) +
+            throw ccl::exception(std::string(__PRETTY_FUNCTION__) +
                                  " - USM category is not supported for such configuration:\n" +
                                  ::native::details::to_string(usm_assoc_results[0]));
     }
@@ -766,7 +766,7 @@ single_device_communicator::coll_request_t single_device_communicator::reduce_sc
     ccl::stream::impl_value_t& stream,
     const ccl::reduce_scatter_attr& attr,
     const ccl::vector_class<ccl::event>& deps) {
-    throw ccl::ccl_error(std::string(__PRETTY_FUNCTION__) + " - is not implemented");
+    throw ccl::exception(std::string(__PRETTY_FUNCTION__) + " - is not implemented");
     return {};
 }
 template <class buffer_type>
@@ -778,7 +778,7 @@ single_device_communicator::coll_request_t single_device_communicator::reduce_sc
     ccl::stream::impl_value_t& stream,
     const ccl::reduce_scatter_attr& attr,
     const ccl::vector_class<ccl::event>& deps) {
-    throw ccl::ccl_error(std::string(__PRETTY_FUNCTION__) + " - is not implemented");
+    throw ccl::exception(std::string(__PRETTY_FUNCTION__) + " - is not implemented");
     return {};
 }
 
@@ -801,7 +801,7 @@ single_device_communicator::coll_request_t single_device_communicator::sparse_al
     static constexpr ccl::device_topology_type class_id = base_t::topology_class();
 
     if (!is_ready()) {
-        throw ccl::ccl_error(std::string(
+        throw ccl::exception(std::string(
             "Single device communicator for group_id: " + ::to_string(group_id) +
             ", class_id: " + ::to_string(class_id) +
             " is not ready yet. Not all сommunicators are created in group. Please create them before usage"));
@@ -824,7 +824,7 @@ single_device_communicator::coll_request_t single_device_communicator::sparse_al
                         return test_value == std::get<assoc_result_index::SUPPORT_MODE>(v);
                     });
     if (!ret) {
-        throw ccl::ccl_error(std::string(__PRETTY_FUNCTION__) + " - invalid USM arguments:\n" +
+        throw ccl::exception(std::string(__PRETTY_FUNCTION__) + " - invalid USM arguments:\n" +
                              ::native::details::to_string(usm_assoc_results));
     }
     switch (test_value) {
@@ -888,7 +888,7 @@ single_device_communicator::coll_request_t single_device_communicator::sparse_al
                 stream.get());
 
 #else
-            throw ccl_error(std::string(__PRETTY_FUNCTION__) +
+            throw ccl::exception(std::string(__PRETTY_FUNCTION__) +
                             " - USM convertation is not supported for such configuration");
 #endif
             scoped_req_sycl->charge(req);
@@ -896,7 +896,7 @@ single_device_communicator::coll_request_t single_device_communicator::sparse_al
             break;
         }
         default:
-            throw ccl::ccl_error(std::string(__PRETTY_FUNCTION__) +
+            throw ccl::exception(std::string(__PRETTY_FUNCTION__) +
                                  " - USM category is not supported for such configuration:\n" +
                                  ::native::details::to_string(usm_assoc_results[0]));
     }

@@ -84,7 +84,7 @@ group_context::comm_group_t group_context::get_existing_group_by_id(
             ss << "Cannot find `comm_group_t` by id: " << unique_id << std::endl;
             const std::string mess = ss.str();
             LOG_ERROR(mess);
-            throw ccl_error(std::string(__FUNCTION__) + " - " + mess);
+            throw ccl::exception(std::string(__FUNCTION__) + " - " + mess);
         }
         else {
             group = ctx_it->second;

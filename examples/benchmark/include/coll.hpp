@@ -129,7 +129,7 @@ struct cpu_specific_data {
     static ccl::shared_ptr_class<ccl::communicator> comm_ptr;
     static void init(size_t size, size_t rank, ccl::shared_ptr_class<ccl::kvs_interface> kvs) {
         if (comm_ptr) {
-            throw ccl::ccl_error(std::string(__FUNCTION__) + " - reinit is not allowed");
+            throw ccl::exception(std::string(__FUNCTION__) + " - reinit is not allowed");
         }
 
         comm_ptr = std::make_shared<ccl::communicator>(
@@ -155,7 +155,7 @@ struct device_specific_data {
                      cl::sycl::context ctx,
                      ccl::shared_ptr_class<ccl::kvs_interface> kvs) {
         if (stream_ptr or comm_ptr or !comm_array.empty()) {
-            throw ccl::ccl_error(std::string(__FUNCTION__) + " - reinit is not allowed");
+            throw ccl::exception(std::string(__FUNCTION__) + " - reinit is not allowed");
         }
 
         comm_array = ccl::create_device_communicators(

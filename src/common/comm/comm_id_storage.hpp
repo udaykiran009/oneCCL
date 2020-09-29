@@ -132,7 +132,7 @@ private:
             }
         }
 
-        throw ccl::ccl_error("no free comm id was found");
+        throw ccl::exception("no free comm id was found");
     }
 
     void release_id(ccl_comm_id_t id) {

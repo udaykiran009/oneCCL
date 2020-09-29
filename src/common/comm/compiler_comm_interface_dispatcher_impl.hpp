@@ -101,12 +101,12 @@ communicator_interface_dispatcher::create_communicator_from_unified_device(
     if (attr.is_valid<ccl::comm_split_attr_id::group>()) {
         preferred_topology_group = attr.get<ccl::comm_split_attr_id::group>();
         if (attr.is_valid<ccl::comm_split_attr_id::color>()) {
-            throw ccl_error(std::string(
+            throw ccl::exception(std::string(
                 "Invalid `comm_split_attr`: both `color` and `group` set. Only one is supported"));
         }
     }
     else if (attr.is_valid<ccl::comm_split_attr_id::color>()) {
-        throw ccl_error(std::string(__FUNCTION__) + " - not implemented for 'color'");
+        throw ccl::exception(std::string(__FUNCTION__) + " - not implemented for 'color'");
     }
 
     // TODO creation host communicator from device
@@ -140,7 +140,7 @@ communicator_interface_dispatcher::create_communicator_from_unified_device(
                         std::move(device_id), thread_idx, process_idx, attr));
 #endif //MULTI_GPU_SUPPORT
                 default:
-                    throw ccl_error(
+                    throw ccl::exception(
                         std::string(
                             "Invalid `comm_split_attr` value for `ccl_device_preferred_group`: ") +
                         ::to_string(preferred_topology_group));
@@ -166,7 +166,7 @@ communicator_interface_dispatcher::create_communicator_from_unified_device(
                         std::move(device_id), thread_idx, process_idx, attr));
 #endif
                 default:
-                    throw ccl_error(
+                    throw ccl::exception(
                         std::string(
                             "Invalid `comm_split_attr` value for `ccl_device_preferred_group`: ") +
                         ::to_string(preferred_topology_group));
@@ -185,7 +185,7 @@ communicator_interface_dispatcher::create_communicator_from_unified_device(
         }
 #endif //MULTI_GPU_SUPPORT
         default: {
-            throw ccl_error(
+            throw ccl::exception(
                 std::string(
                     "Invalid `comm_split_attr` value for `ccl_device_preferred_topology_class`: ") +
                 ::to_string(preferred_topology_class));

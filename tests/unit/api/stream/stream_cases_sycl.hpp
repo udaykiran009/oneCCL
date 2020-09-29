@@ -66,7 +66,7 @@ TEST(stream_api, stream_from_sycl_device_context_creation_with_attr) {
     try {
         str.set<ccl::stream_attr_id::priority>(99);
     }
-    catch (const ccl::ccl_error& ex) {
+    catch (const ccl::exception& ex) {
         catched = true;
     }
     ASSERT_TRUE(catched);

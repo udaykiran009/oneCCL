@@ -263,7 +263,7 @@ protected:
             if (cur_index == wait_count /*std::is_same<gpu_comm_impl, ccl_gpu_comm>::value*/) {
                 if (topology == ccl::group_split_type::cluster) {
                     // TODO: implement process communicator case
-                    throw ccl::ccl_error(std::string(__PRETTY_FUNCTION__) + "TODO: implement process communicator case");
+                    throw ccl::exception(std::string(__PRETTY_FUNCTION__) + "TODO: implement process communicator case");
                     // auto c = ccl::environment::instance().create_communicator();
                     // if (c.rank() == 0) {
                         // LOG_INFO("L0 Workaround: one device close list!!!",

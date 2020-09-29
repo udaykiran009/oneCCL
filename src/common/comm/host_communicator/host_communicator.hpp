@@ -73,12 +73,12 @@ public:
     }
 
     ccl::group_split_type get_topology_type() const override {
-        throw ccl::ccl_error(std::string(__FUNCTION__) + " is not applicable for " + traits::name());
+        throw ccl::exception(std::string(__FUNCTION__) + " is not applicable for " + traits::name());
         return ccl::group_split_type::undetermined;
     }
 
     ccl::device_topology_type get_topology_class() const override {
-        throw ccl::ccl_error(std::string(__FUNCTION__) + " is not applicable for " + traits::name());
+        throw ccl::exception(std::string(__FUNCTION__) + " is not applicable for " + traits::name());
         return ccl::device_topology_type::undetermined;
     }
 

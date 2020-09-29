@@ -23,7 +23,7 @@ public:
     typename version_traits_t::type set_attribute_value(typename version_traits_t::type val,
                                                         const version_traits_t& t) {
         (void)t;
-        throw ccl_error("Set value for 'version' attribute is not allowed");
+        throw ccl::exception("Set value for 'version' attribute is not allowed");
         return version;
     }
 
@@ -35,7 +35,7 @@ public:
     const typename color_traits_t::type& get_attribute_value(
         const traits_t<split_attrs_t, split_attrs_t::color>& id) const {
         if (!is_valid<split_attrs_t::color>()) {
-            throw ccl_error("Trying to get the value of the attribute 'color' which was not set");
+            throw ccl::exception("Trying to get the value of the attribute 'color' which was not set");
         }
         return color;
     }
@@ -55,7 +55,7 @@ public:
 
     const typename group_traits_t::type& get_attribute_value(group_traits_t id) const {
         if (!is_valid<split_attrs_t::group>()) {
-            throw ccl_error("Trying to get the value of the attribute 'group' which was not set");
+            throw ccl::exception("Trying to get the value of the attribute 'group' which was not set");
         }
         return group;
     }

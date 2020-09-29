@@ -86,7 +86,7 @@ stream_provider_dispatcher::stream_provider_dispatcher() {
 
 stream_provider_dispatcher::stream_native_t stream_provider_dispatcher::get_native_stream() const {
     if (!creation_is_postponed) {
-        throw ccl::ccl_error("native stream is not set");
+        throw ccl::exception("native stream is not set");
     }
 
     return native_stream;
@@ -95,7 +95,7 @@ stream_provider_dispatcher::stream_native_t stream_provider_dispatcher::get_nati
 const stream_provider_dispatcher::stream_native_device_t&
 stream_provider_dispatcher::get_native_device() const {
     if (creation_is_postponed) {
-        throw ccl::ccl_error("native device is not set");
+        throw ccl::exception("native device is not set");
     }
     return native_device;
 }
@@ -108,7 +108,7 @@ stream_provider_dispatcher::get_native_device() {
 
 std::string stream_provider_dispatcher::to_string() const {
     if (creation_is_postponed) {
-        throw ccl::ccl_error("native device is not set");
+        throw ccl::exception("native device is not set");
     }
     std::stringstream ss;
 #ifdef CCL_ENABLE_SYCL

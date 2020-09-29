@@ -77,7 +77,7 @@ ccl_comm::ccl_comm(const std::vector<size_t>& local_thread_device_ranks,
 }
 
 static ccl_status_t ccl_comm_exchange_colors(std::vector<int>& colors) {
-    throw ccl::ccl_error("ccl_comm_exchange_colors not implemented yet");
+    throw ccl::exception("ccl_comm_exchange_colors not implemented yet");
 
     // const size_t exchange_count = 1;
     // std::vector<size_t> recv_counts(colors.size(), exchange_count);
@@ -102,10 +102,10 @@ static ccl_status_t ccl_comm_exchange_colors(std::vector<int>& colors) {
 ccl_comm* ccl_comm::create_with_color(int color,
                                       ccl_comm_id_storage* comm_ids,
                                       const ccl_comm* global_comm) {
-    throw ccl::ccl_error("unimplemented yet");
+    throw ccl::exception("unimplemented yet");
 
     if (ccl::global_data::env().atl_transport == ccl_atl_mpi) {
-        throw ccl::ccl_error(
+        throw ccl::exception(
             "MPI transport doesn't support creation of communicator with color yet");
     }
 
@@ -115,7 +115,7 @@ ccl_comm* ccl_comm::create_with_color(int color,
     colors[global_comm->rank()] = color;
     status = ccl_comm_exchange_colors(colors);
     if (status != ccl_status_success) {
-        throw ccl::ccl_error("failed to exchange colors during comm creation");
+        throw ccl::exception("failed to exchange colors during comm creation");
     }
 
     return create_with_colors(colors, comm_ids, global_comm);
@@ -141,7 +141,7 @@ ccl_comm* ccl_comm::create_with_colors(const std::vector<int>& colors,
     }
 
     if (new_comm_size == 0) {
-        throw ccl::ccl_error(std::string("no colors matched to ") + std::to_string(color) +
+        throw ccl::exception(std::string("no colors matched to ") + std::to_string(color) +
                              " seems to be exchange issue");
     }
 

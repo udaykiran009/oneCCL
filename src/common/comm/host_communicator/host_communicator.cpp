@@ -29,7 +29,7 @@ host_communicator::host_communicator(size_t size, shared_ptr_class<kvs_interface
           comm_rank(0),
           comm_size(size) {
     if (size <= 0) {
-        throw ccl_error("Incorrect size value when creating a host communicator");
+        throw ccl::exception("Incorrect size value when creating a host communicator");
     }
 }
 
@@ -38,7 +38,7 @@ host_communicator::host_communicator(size_t size, size_t rank, shared_ptr_class<
           comm_rank(rank),
           comm_size(size) {
     if (rank > size || size <= 0) {
-        throw ccl_error("Incorrect rank or size value when creating a host communicator");
+        throw ccl::exception("Incorrect rank or size value when creating a host communicator");
     }
 
     ccl::global_data& data = ccl::global_data::get();
@@ -76,13 +76,13 @@ ccl::device_index_type host_communicator::get_device_path() const {
 }
 
 ccl::communicator_interface::device_t host_communicator::get_device() {
-    throw ccl::ccl_error(std::string(__FUNCTION__) + " is not applicable for " + traits::name());
+    throw ccl::exception(std::string(__FUNCTION__) + " is not applicable for " + traits::name());
     static ccl::communicator_interface::device_t empty;
     return empty;
 }
 
 ccl::communicator_interface::context_t host_communicator::get_context() {
-    throw ccl::ccl_error(std::string(__FUNCTION__) + " is not applicable for " + traits::name());
+    throw ccl::exception(std::string(__FUNCTION__) + " is not applicable for " + traits::name());
     static ccl::communicator_interface::context_t empty;
     return empty;
 }
@@ -144,7 +144,7 @@ host_communicator::coll_request_t host_communicator::allgatherv_impl(
     const ccl::allgatherv_attr& attr,
     const ccl::vector_class<ccl::event>& deps) {
     // TODO not implemented
-    throw ccl::ccl_error(std::string(__PRETTY_FUNCTION__) + " - is not implemented");
+    throw ccl::exception(std::string(__PRETTY_FUNCTION__) + " - is not implemented");
     return {};
 }
 
@@ -188,7 +188,7 @@ host_communicator::coll_request_t host_communicator::alltoall_impl(
     const ccl::alltoall_attr& attr,
     const ccl::vector_class<ccl::event>& deps) {
     // TODO not implemented
-    throw ccl::ccl_error(std::string(__PRETTY_FUNCTION__) + " - is not implemented");
+    throw ccl::exception(std::string(__PRETTY_FUNCTION__) + " - is not implemented");
     return {};
 }
 
@@ -224,7 +224,7 @@ host_communicator::coll_request_t host_communicator::alltoallv_impl(
     const ccl::alltoallv_attr& attr,
     const ccl::vector_class<ccl::event>& dep) {
     // TODO not implemented
-    throw ccl::ccl_error(std::string(__PRETTY_FUNCTION__) + " - is not implemented");
+    throw ccl::exception(std::string(__PRETTY_FUNCTION__) + " - is not implemented");
     return {};
 }
 
@@ -270,7 +270,7 @@ host_communicator::coll_request_t host_communicator::reduce_scatter_impl(
     const ccl::reduce_scatter_attr& attr,
     const ccl::vector_class<ccl::event>& deps) {
     // TODO not fully implemented (need to implement reduce_scatter in parallelizer.cpp)
-    throw ccl_error(std::string(__PRETTY_FUNCTION__) + " - is not implemented");
+    throw ccl::exception(std::string(__PRETTY_FUNCTION__) + " - is not implemented");
 
     ccl_request* req = ccl_reduce_scatter_impl(
         send_buf, recv_buf, recv_count, dtype, reduction, attr, comm_impl.get(), nullptr);

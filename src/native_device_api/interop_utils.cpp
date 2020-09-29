@@ -84,7 +84,7 @@ int get_platform_type_index(const ccl::unified_device_type::ccl_native_t& device
         index = 3;
     }
     else {
-        throw ccl::ccl_error(std::string(__PRETTY_FUNCTION__) + " - Invalid device type");
+        throw ccl::exception(std::string(__PRETTY_FUNCTION__) + " - Invalid device type");
     }
 #endif
     return index;

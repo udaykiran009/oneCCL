@@ -65,7 +65,7 @@ CCL_API size_t ccl::communicator::size() const {
 CCL_API ccl::communicator ccl::communicator::split(
     const ccl::comm_split_attr& attr) {
     if (!attr.is_valid<ccl::comm_split_attr_id::group>()) {
-        throw ccl_error(std::string(__FUNCTION__) +
+        throw ccl::exception(std::string(__FUNCTION__) +
                         " - TODO `comm_split_attr`: supports `group` only");
     }
     //TODO
@@ -81,7 +81,7 @@ CCL_API ccl::communicator ccl::communicator::split(
 #endif
 #endif
 #else
-    throw ccl_error(std::string(__FUNCTION__) + " - TODO `comm_split_attr`: unsupported");
+    throw ccl::exception(std::string(__FUNCTION__) + " - TODO `comm_split_attr`: unsupported");
     return std::move(*this);
 #endif
 }

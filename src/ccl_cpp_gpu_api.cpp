@@ -78,7 +78,7 @@ CCL_API ccl::comm_group_t ccl::environment::create_comm_group(size_t current_dev
         auto host_comm_impl = std::dynamic_pointer_cast<host_communicator>(parent_comm->pimpl);
         if (!host_comm_impl)
         {
-            throw ccl::ccl_error(std::string(__FUNCTION__) + " - failed, invalid host communicator type");
+            throw ccl::exception(std::string(__FUNCTION__) + " - failed, invalid host communicator type");
         }
 
         group_context::group_unique_key unique_id =

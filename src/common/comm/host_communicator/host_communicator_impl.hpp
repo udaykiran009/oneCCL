@@ -67,7 +67,7 @@ host_communicator::coll_request_t host_communicator::allgatherv_impl(
     const ccl::allgatherv_attr& attr,
     const ccl::vector_class<ccl::event>& deps) {
     // TODO not implemented
-    throw ccl::ccl_error(std::string(__PRETTY_FUNCTION__) + " - is not implemented");
+    throw ccl::exception(std::string(__PRETTY_FUNCTION__) + " - is not implemented");
     return {};
 }
 
@@ -81,7 +81,7 @@ host_communicator::coll_request_t host_communicator::allgatherv_impl(
     const ccl::allgatherv_attr& attr,
     const ccl::vector_class<ccl::event>& deps) {
     // TODO not implemented
-    throw ccl::ccl_error(std::string(__PRETTY_FUNCTION__) + " - is not implemented");
+    throw ccl::exception(std::string(__PRETTY_FUNCTION__) + " - is not implemented");
     return {};
 }
 
@@ -117,7 +117,7 @@ host_communicator::coll_request_t host_communicator::allreduce_impl(
     const ccl::allreduce_attr& attr,
     const ccl::vector_class<ccl::event>& deps) {
     // TODO not implemented
-    throw ccl::ccl_error(std::string(__PRETTY_FUNCTION__) + " - is not implemented");
+    throw ccl::exception(std::string(__PRETTY_FUNCTION__) + " - is not implemented");
     return {};
 }
 
@@ -150,7 +150,7 @@ host_communicator::coll_request_t host_communicator::alltoall_impl(
     const ccl::alltoall_attr& attr,
     const ccl::vector_class<ccl::event>& deps) {
     // TODO not implemented
-    throw ccl::ccl_error(std::string(__PRETTY_FUNCTION__) + " - is not implemented");
+    throw ccl::exception(std::string(__PRETTY_FUNCTION__) + " - is not implemented");
     return {};
 }
 
@@ -163,7 +163,7 @@ host_communicator::coll_request_t host_communicator::alltoall_impl(
     const ccl::alltoall_attr& attr,
     const ccl::vector_class<ccl::event>& deps) {
     // TODO not implemented
-    throw ccl::ccl_error(std::string(__PRETTY_FUNCTION__) + " - is not implemented");
+    throw ccl::exception(std::string(__PRETTY_FUNCTION__) + " - is not implemented");
     return {};
 }
 
@@ -176,7 +176,7 @@ host_communicator::coll_request_t host_communicator::alltoall_impl(
     const ccl::alltoall_attr& attr,
     const ccl::vector_class<ccl::event>& dep) {
     // TODO not implemented
-    throw ccl::ccl_error(std::string(__PRETTY_FUNCTION__) + " - is not implemented");
+    throw ccl::exception(std::string(__PRETTY_FUNCTION__) + " - is not implemented");
     return {};
 }
 
@@ -212,7 +212,7 @@ host_communicator::coll_request_t host_communicator::alltoallv_impl(
     const ccl::alltoallv_attr& attr,
     const ccl::vector_class<ccl::event>& dep) {
     // TODO not implemented
-    throw ccl::ccl_error(std::string(__PRETTY_FUNCTION__) + " - is not implemented");
+    throw ccl::exception(std::string(__PRETTY_FUNCTION__) + " - is not implemented");
     return {};
 }
 
@@ -226,7 +226,7 @@ host_communicator::coll_request_t host_communicator::alltoallv_impl(
     const ccl::alltoallv_attr& attr,
     const ccl::vector_class<ccl::event>& deps) {
     // TODO not implemented
-    throw ccl::ccl_error(std::string(__PRETTY_FUNCTION__) + " - is not implemented");
+    throw ccl::exception(std::string(__PRETTY_FUNCTION__) + " - is not implemented");
     return {};
 }
 template <class buffer_type>
@@ -239,7 +239,7 @@ host_communicator::coll_request_t host_communicator::alltoallv_impl(
     const ccl::alltoallv_attr& attr,
     const ccl::vector_class<ccl::event>& dep) {
     // TODO not implemented
-    throw ccl::ccl_error(std::string(__PRETTY_FUNCTION__) + " - is not implemented");
+    throw ccl::exception(std::string(__PRETTY_FUNCTION__) + " - is not implemented");
     return {};
 }
 
@@ -272,7 +272,7 @@ host_communicator::coll_request_t host_communicator::broadcast_impl(
     const ccl::broadcast_attr& attr,
     const ccl::vector_class<ccl::event>& deps) {
     // TODO not implemented
-    throw ccl::ccl_error(std::string(__PRETTY_FUNCTION__) + " - is not implemented");
+    throw ccl::exception(std::string(__PRETTY_FUNCTION__) + " - is not implemented");
     return {};
 }
 
@@ -311,7 +311,7 @@ host_communicator::coll_request_t host_communicator::reduce_impl(
     const ccl::reduce_attr& attr,
     const ccl::vector_class<ccl::event>& deps) {
     // TODO not implemented
-    throw ccl::ccl_error(std::string(__PRETTY_FUNCTION__) + " - is not implemented");
+    throw ccl::exception(std::string(__PRETTY_FUNCTION__) + " - is not implemented");
     return {};
 }
 
@@ -326,7 +326,7 @@ host_communicator::coll_request_t host_communicator::reduce_scatter_impl(
     const ccl::reduce_scatter_attr& attr,
     const ccl::vector_class<ccl::event>& deps) {
     // TODO not implemented
-    throw ccl::ccl_error(std::string(__PRETTY_FUNCTION__) + " - is not implemented");
+    throw ccl::exception(std::string(__PRETTY_FUNCTION__) + " - is not implemented");
     return {};
 }
 
@@ -340,7 +340,7 @@ host_communicator::coll_request_t host_communicator::reduce_scatter_impl(
     const ccl::reduce_scatter_attr& attr,
     const ccl::vector_class<ccl::event>& deps) {
     // TODO not implemented
-    throw ccl::ccl_error(std::string(__PRETTY_FUNCTION__) + " - is not implemented");
+    throw ccl::exception(std::string(__PRETTY_FUNCTION__) + " - is not implemented");
     return {};
 }
 
@@ -393,7 +393,7 @@ host_communicator::coll_request_t host_communicator::sparse_allreduce_impl(
     const ccl::sparse_allreduce_attr& attr,
     const ccl::vector_class<ccl::event>& deps) {
     // TODO not implemented
-    throw ccl::ccl_error(std::string(__PRETTY_FUNCTION__) + " - is not implemented");
+    throw ccl::exception(std::string(__PRETTY_FUNCTION__) + " - is not implemented");
     return {};
 }
 

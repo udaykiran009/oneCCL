@@ -18,7 +18,7 @@ thread_device_group_ring_communicator::allgatherv_impl(const buffer_type& send_b
                                                        ccl::stream::impl_value_t& stream,
                                                        const ccl::allgatherv_attr& attr,
                                                        const ccl::vector_class<ccl::event>& deps) {
-    throw ccl::ccl_error(std::string(__PRETTY_FUNCTION__) + " - is not implemented");
+    throw ccl::exception(std::string(__PRETTY_FUNCTION__) + " - is not implemented");
     return {};
 }
 template <class buffer_type>
@@ -31,7 +31,7 @@ thread_device_group_ring_communicator::allgatherv_impl(const buffer_type* send_b
                                                        const ccl::allgatherv_attr& attr,
 
                                                        const ccl::vector_class<ccl::event>& deps) {
-    throw ccl::ccl_error(std::string(__PRETTY_FUNCTION__) + " - is not implemented");
+    throw ccl::exception(std::string(__PRETTY_FUNCTION__) + " - is not implemented");
     return {};
 }
 
@@ -46,7 +46,7 @@ thread_device_group_ring_communicator::allgatherv_impl(
     const ccl::allgatherv_attr& attr,
 
     const ccl::vector_class<ccl::event>& deps) {
-    throw ccl::ccl_error(std::string(__PRETTY_FUNCTION__) + " - is not implemented");
+    throw ccl::exception(std::string(__PRETTY_FUNCTION__) + " - is not implemented");
     return {};
 }
 
@@ -65,7 +65,7 @@ thread_device_group_ring_communicator::allgatherv_impl(const buffer_type* send_b
     static constexpr ccl::device_topology_type class_id = base_t::topology_class();
 
     if (!is_ready()) {
-        throw ccl::ccl_error(std::string(
+        throw ccl::exception(std::string(
             "Device communicator for group_id: " + ::to_string(group_id) +
             " is not ready yet. Not all сommunicators are created in group. Please create them before usage"));
     }
@@ -160,7 +160,7 @@ thread_device_group_ring_communicator::allreduce_impl(const buffer_type* send_bu
     static constexpr ccl::device_topology_type class_id = base_t::topology_class();
 
     if (!is_ready()) {
-        throw ccl::ccl_error(std::string(
+        throw ccl::exception(std::string(
             "Device communicator for group_id: " + ::to_string(group_id) +
             " is not ready yet. Not all сommunicators are created in group. Please create them before usage"));
     }
@@ -248,7 +248,7 @@ thread_device_group_ring_communicator::allreduce_impl(const buffer_type& send_bu
                                                       ccl::stream::impl_value_t& stream,
                                                       const ccl::allreduce_attr& attr,
                                                       const ccl::vector_class<ccl::event>& deps) {
-    throw ccl::ccl_error(std::string(__PRETTY_FUNCTION__) + " - is not implemented");
+    throw ccl::exception(std::string(__PRETTY_FUNCTION__) + " - is not implemented");
     return {};
 }
 
@@ -261,7 +261,7 @@ thread_device_group_ring_communicator::alltoall_impl(const buffer_type* send_buf
                                                      ccl::stream::impl_value_t& stream,
                                                      const ccl::alltoall_attr& attr,
                                                      const ccl::vector_class<ccl::event>& deps) {
-    throw ccl::ccl_error(std::string(__PRETTY_FUNCTION__) + " - is not implemented");
+    throw ccl::exception(std::string(__PRETTY_FUNCTION__) + " - is not implemented");
     return {};
 }
 template <class buffer_type>
@@ -273,7 +273,7 @@ thread_device_group_ring_communicator::alltoall_impl(
     ccl::stream::impl_value_t& stream,
     const ccl::alltoall_attr& attr,
     const ccl::vector_class<ccl::event>& deps) {
-    throw ccl::ccl_error(std::string(__PRETTY_FUNCTION__) + " - is not implemented");
+    throw ccl::exception(std::string(__PRETTY_FUNCTION__) + " - is not implemented");
     return {};
 }
 
@@ -285,7 +285,7 @@ thread_device_group_ring_communicator::alltoall_impl(const buffer_type& send_buf
                                                      ccl::stream::impl_value_t& stream,
                                                      const ccl::alltoall_attr& attr,
                                                      const ccl::vector_class<ccl::event>& deps) {
-    throw ccl::ccl_error(std::string(__PRETTY_FUNCTION__) + " - is not implemented");
+    throw ccl::exception(std::string(__PRETTY_FUNCTION__) + " - is not implemented");
     return {};
 }
 template <class buffer_type>
@@ -297,7 +297,7 @@ thread_device_group_ring_communicator::alltoall_impl(
     ccl::stream::impl_value_t& stream,
     const ccl::alltoall_attr& attr,
     const ccl::vector_class<ccl::event>& dep) {
-    throw ccl::ccl_error(std::string(__PRETTY_FUNCTION__) + " - is not implemented");
+    throw ccl::exception(std::string(__PRETTY_FUNCTION__) + " - is not implemented");
     return {};
 }
 
@@ -312,7 +312,7 @@ thread_device_group_ring_communicator::alltoallv_impl(
     ccl::stream::impl_value_t& stream,
     const ccl::alltoallv_attr& attr,
     const ccl::vector_class<ccl::event>& dep) {
-    throw ccl::ccl_error(std::string(__PRETTY_FUNCTION__) + " - is not implemented");
+    throw ccl::exception(std::string(__PRETTY_FUNCTION__) + " - is not implemented");
     return {};
 }
 
@@ -325,7 +325,7 @@ thread_device_group_ring_communicator::alltoallv_impl(const buffer_type& send_bu
                                                       ccl::stream::impl_value_t& stream,
                                                       const ccl::alltoallv_attr& attr,
                                                       const ccl::vector_class<ccl::event>& deps) {
-    throw ccl::ccl_error(std::string(__PRETTY_FUNCTION__) + " - is not implemented");
+    throw ccl::exception(std::string(__PRETTY_FUNCTION__) + " - is not implemented");
     return {};
 }
 template <class buffer_type>
@@ -339,7 +339,7 @@ thread_device_group_ring_communicator::alltoallv_impl(
     const ccl::alltoallv_attr& attr,
 
     const ccl::vector_class<ccl::event>& dep) {
-    throw ccl::ccl_error(std::string(__PRETTY_FUNCTION__) + " - is not implemented");
+    throw ccl::exception(std::string(__PRETTY_FUNCTION__) + " - is not implemented");
     return {};
 }
 
@@ -357,7 +357,7 @@ thread_device_group_ring_communicator::alltoallv_impl(const buffer_type* send_bu
     static constexpr ccl::device_topology_type class_id = base_t::topology_class();
 
     if (!is_ready()) {
-        throw ccl::ccl_error(std::string(
+        throw ccl::exception(std::string(
             "Device communicator for group_id: " + ::to_string(group_id) +
             " is not ready yet. Not all сommunicators are created in group. Please create them before usage"));
     }
@@ -451,7 +451,7 @@ thread_device_group_ring_communicator::broadcast_impl(buffer_type* buf,
     static constexpr ccl::device_topology_type class_id = base_t::topology_class();
 
     if (!is_ready()) {
-        throw ccl::ccl_error(std::string(
+        throw ccl::exception(std::string(
             "Device communicator for group_id: " + ::to_string(group_id) +
             " is not ready yet. Not all сommunicators are created in group. Please create them before usage"));
     }
@@ -530,7 +530,7 @@ thread_device_group_ring_communicator::broadcast_impl(buffer_type& buf,
                                                       ccl::stream::impl_value_t& stream,
                                                       const ccl::broadcast_attr& attr,
                                                       const ccl::vector_class<ccl::event>& deps) {
-    throw ccl::ccl_error(std::string(__PRETTY_FUNCTION__) + " - is not implemented");
+    throw ccl::exception(std::string(__PRETTY_FUNCTION__) + " - is not implemented");
     return {};
 }
 
@@ -551,7 +551,7 @@ thread_device_group_ring_communicator::reduce_impl(const buffer_type* send_buf,
     static constexpr ccl::device_topology_type class_id = base_t::topology_class();
 
     if (!is_ready()) {
-        throw ccl::ccl_error(std::string(
+        throw ccl::exception(std::string(
             "Device communicator for group_id: " + ::to_string(group_id) +
             " is not ready yet. Not all сommunicators are created in group. Please create them before usage"));
     }
@@ -642,7 +642,7 @@ thread_device_group_ring_communicator::reduce_impl(const buffer_type& send_buf,
                                                    ccl::stream::impl_value_t& stream,
                                                    const ccl::reduce_attr& attr,
                                                    const ccl::vector_class<ccl::event>& deps) {
-    throw ccl::ccl_error(std::string(__PRETTY_FUNCTION__) + " - is not implemented");
+    throw ccl::exception(std::string(__PRETTY_FUNCTION__) + " - is not implemented");
     return {};
 }
 
@@ -657,7 +657,7 @@ thread_device_group_ring_communicator::reduce_scatter_impl(
     ccl::stream::impl_value_t& stream,
     const ccl::reduce_scatter_attr& attr,
     const ccl::vector_class<ccl::event>& deps) {
-    throw ccl::ccl_error(std::string(__PRETTY_FUNCTION__) + " - is not implemented");
+    throw ccl::exception(std::string(__PRETTY_FUNCTION__) + " - is not implemented");
     return {};
 }
 template <class buffer_type>
@@ -670,7 +670,7 @@ thread_device_group_ring_communicator::reduce_scatter_impl(
     ccl::stream::impl_value_t& stream,
     const ccl::reduce_scatter_attr& attr,
     const ccl::vector_class<ccl::event>& deps) {
-    throw ccl::ccl_error(std::string(__PRETTY_FUNCTION__) + " - is not implemented");
+    throw ccl::exception(std::string(__PRETTY_FUNCTION__) + " - is not implemented");
     return {};
 }
 
@@ -690,7 +690,7 @@ thread_device_group_ring_communicator::sparse_allreduce_impl(
     ccl::stream::impl_value_t& stream,
     const ccl::sparse_allreduce_attr& attr,
     const ccl::vector_class<ccl::event>& deps) {
-    throw ccl::ccl_error(std::string(__PRETTY_FUNCTION__) + " - is not implemented");
+    throw ccl::exception(std::string(__PRETTY_FUNCTION__) + " - is not implemented");
     return {};
 }
 
@@ -709,6 +709,6 @@ thread_device_group_ring_communicator::sparse_allreduce_impl(
     ccl::stream::impl_value_t& stream,
     const ccl::sparse_allreduce_attr& attr,
     const ccl::vector_class<ccl::event>& deps) {
-    throw ccl::ccl_error(std::string(__PRETTY_FUNCTION__) + " - is not implemented");
+    throw ccl::exception(std::string(__PRETTY_FUNCTION__) + " - is not implemented");
     return {};
 }

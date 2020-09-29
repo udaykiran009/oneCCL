@@ -596,7 +596,7 @@ ccl_status_t ccl_coll_build_sparse_allreduce(ccl_sched* sched,
             send_val_buf.get_ptr());
         assert(send_ind_buf.get_ptr() && send_val_buf.get_ptr());
 
-        throw ccl::ccl_error(
+        throw ccl::exception(
             std::string(__FUNCTION__) + "sparse_allreduce send buffers for indices and values \
             should not be NULL, but got indices buffer = " +
             std::to_string((uintptr_t)send_ind_buf.get_ptr()) +
@@ -611,7 +611,7 @@ ccl_status_t ccl_coll_build_sparse_allreduce(ccl_sched* sched,
                   send_val_count);
         assert(send_ind_count && send_val_count);
 
-        throw ccl::ccl_error(
+        throw ccl::exception(
             std::string(__FUNCTION__) + "sparse_allreduce send buffer count should be \
             greater than zero, but got indices count = " +
             std::to_string(send_ind_count) + ", values count = " + std::to_string(send_val_count));

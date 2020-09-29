@@ -34,7 +34,7 @@ void set_pinning(const ccl::communicator& comm) {
             selected_devices.push_back(device);
     }
     if (selected_devices.size() <= 0) {
-        throw ccl::ccl_error("No selected device found.");
+        throw ccl::exception("No selected device found.");
     }
     size_t idx = comm.rank() % selected_devices.size();
     auto selected_device = selected_devices[idx];

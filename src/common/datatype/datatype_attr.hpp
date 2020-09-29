@@ -21,7 +21,7 @@ public:
     typename version_traits_t::return_type set_attribute_value(typename version_traits_t::type val,
                                                                const version_traits_t& t) {
         (void)t;
-        throw ccl_error("Set value for 'ccl::datatype_attr_id::version' is not allowed");
+        throw ccl::exception("Set value for 'ccl::datatype_attr_id::version' is not allowed");
         return version;
     }
 
@@ -38,7 +38,7 @@ public:
     typename size_traits_t::return_type set_attribute_value(typename size_traits_t::return_type val,
                                                             const size_traits_t& t) {
         if (val <= 0) {
-            throw ccl_error("Size value must be greater than 0");
+            throw ccl::exception("Size value must be greater than 0");
         }
         auto old = datatype_size;
         datatype_size = val;

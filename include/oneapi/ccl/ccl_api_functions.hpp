@@ -129,7 +129,7 @@ template <class event_type,
           class = typename std::enable_if<is_event_supported<event_type>()>::type>
 event create_event(event_type& native_event) {
     // TODO not implemented
-    throw ccl::ccl_error(std::string(__PRETTY_FUNCTION__) + " - is not implemented");
+    throw ccl::exception(std::string(__PRETTY_FUNCTION__) + " - is not implemented");
     return {};
 }
 
@@ -138,7 +138,7 @@ template <class event_handle_type,
 event create_event(event_handle_type native_event_handle,
                    typename unified_device_context_type::ccl_native_t context) {
     // TODO not implemented
-    throw ccl::ccl_error(std::string(__PRETTY_FUNCTION__) + " - is not implemented");
+    throw ccl::exception(std::string(__PRETTY_FUNCTION__) + " - is not implemented");
     return {};
 }
 
@@ -147,7 +147,7 @@ event create_event_from_attr(event_type& native_event_handle,
                              typename unified_device_context_type::ccl_native_t context,
                              attr_value_pair_t&&... avps) {
     // TODO not implemented
-    throw ccl::ccl_error(std::string(__PRETTY_FUNCTION__) + " - is not implemented");
+    throw ccl::exception(std::string(__PRETTY_FUNCTION__) + " - is not implemented");
     return {};
 }
 

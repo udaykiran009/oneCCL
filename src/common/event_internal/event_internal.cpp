@@ -20,7 +20,7 @@ ccl_event::ccl_event(event_native_handle_t event,
 
 void ccl_event::build_from_params() {
     if (!creation_is_postponed) {
-        throw ccl::ccl_error("error");
+        throw ccl::exception("error");
     }
 #ifdef CCL_ENABLE_SYCL
     /* TODO unavailbale??
@@ -28,7 +28,7 @@ void ccl_event::build_from_params() {
     std::swap(event_candidate, native_event); //TODO USE attributes fro sycl queue construction
     */
 
-    throw ccl::ccl_error("build_from_attr is not availbale for sycl::event");
+    throw ccl::exception("build_from_attr is not availbale for sycl::event");
 #else
 
     //TODO use attributes
@@ -42,7 +42,7 @@ typename ccl_event::version_traits_t::type ccl_event::set_attribute_value(
     typename version_traits_t::type val,
     const version_traits_t& t) {
     (void)t;
-    throw ccl::ccl_error("Set value for 'ccl::event_attr_id::library_version' is not allowed");
+    throw ccl::exception("Set value for 'ccl::event_attr_id::library_version' is not allowed");
     return version;
 }
 

@@ -152,7 +152,7 @@ CCL_API vector_class<communicator> communicator::create_device_communicators(
  * @return host communicator
  */
 communicator communicator::create_communicator() {
-    throw ccl_error(std::string(__PRETTY_FUNCTION__) + " - is not implemented");
+    throw ccl::exception(std::string(__PRETTY_FUNCTION__) + " - is not implemented");
 
     LOG_TRACE("Create host communicator");
 
@@ -171,7 +171,7 @@ communicator communicator::create_communicator() {
  */
 communicator communicator::create_communicator(const size_t size,
                                                shared_ptr_class<kvs_interface> kvs) {
-    throw ccl_error(std::string(__PRETTY_FUNCTION__) + " - is not implemented");
+    throw ccl::exception(std::string(__PRETTY_FUNCTION__) + " - is not implemented");
 
     LOG_TRACE("Create host communicator");
 

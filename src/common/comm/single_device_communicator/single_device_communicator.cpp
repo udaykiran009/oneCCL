@@ -89,7 +89,7 @@ single_device_communicator::coll_request_t single_device_communicator::allgather
     ccl::stream::impl_value_t& stream,
     const ccl::allgatherv_attr& attr,
     const ccl::vector_class<ccl::event>& deps) {
-    throw ccl::ccl_error(std::string(__PRETTY_FUNCTION__) + " - is not implemented");
+    throw ccl::exception(std::string(__PRETTY_FUNCTION__) + " - is not implemented");
     return {};
 }
 
@@ -142,7 +142,7 @@ single_device_communicator::coll_request_t single_device_communicator::alltoall_
     ccl::stream::impl_value_t& stream,
     const ccl::alltoall_attr& attr,
     const ccl::vector_class<ccl::event>& deps) {
-    throw ccl::ccl_error(std::string(__PRETTY_FUNCTION__) + " - is not implemented");
+    throw ccl::exception(std::string(__PRETTY_FUNCTION__) + " - is not implemented");
     return {};
 }
 
@@ -180,7 +180,7 @@ single_device_communicator::coll_request_t single_device_communicator::alltoallv
     ccl::stream::impl_value_t& stream,
     const ccl::alltoallv_attr& attr,
     const ccl::vector_class<ccl::event>& dep) {
-    throw ccl::ccl_error(std::string(__PRETTY_FUNCTION__) + " - is not implemented");
+    throw ccl::exception(std::string(__PRETTY_FUNCTION__) + " - is not implemented");
     return {};
 }
 
@@ -240,7 +240,7 @@ single_device_communicator::coll_request_t single_device_communicator::reduce_sc
     const ccl::reduce_scatter_attr& attr,
     const ccl::vector_class<ccl::event>& deps) {
     // TODO not implemented
-    throw ccl_error(std::string(__PRETTY_FUNCTION__) + " - is not implemented");
+    throw ccl::exception(std::string(__PRETTY_FUNCTION__) + " - is not implemented");
 
     ccl_request* req = nullptr;
     return std::unique_ptr<ccl::request_impl>(new ccl::host_request_impl(req));

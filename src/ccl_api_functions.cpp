@@ -104,7 +104,7 @@ communicator create_single_device_communicator(const size_t comm_size,
 vector_class<communicator> split_device_communicators(
     const vector_class<pair_class<communicator, comm_split_attr>>& attrs) {
     // TODO not implemented
-    throw ccl_error(std::string(__PRETTY_FUNCTION__) + " - is not implemented");
+    throw ccl::exception(std::string(__PRETTY_FUNCTION__) + " - is not implemented");
 
     // return environment::instance().split_device_communicators(attrs);
     return {};

@@ -32,10 +32,10 @@ bool host_request_impl::test() {
 }
 
 bool host_request_impl::cancel() {
-    throw ccl_error(std::string(__FUNCTION__) + " - is not implemented");
+    throw ccl::exception(std::string(__FUNCTION__) + " - is not implemented");
 }
 
 event_internal& host_request_impl::get_event() {
-    throw ccl_error(std::string(__FUNCTION__) + " - is not implemented");
+    throw ccl::exception(std::string(__FUNCTION__) + " - is not implemented");
 }
 } // namespace ccl

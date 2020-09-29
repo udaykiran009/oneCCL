@@ -112,7 +112,7 @@ public:
                 err_str = str.str();
             }
             LOG_ERROR(err_str);
-            throw ccl::ccl_error(err_str);
+            throw ccl::exception(err_str);
         }
         std::get<utils::enum_to_underlying(class_id)>(
             std::get<utils::enum_to_underlying(group_id)>(

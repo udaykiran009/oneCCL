@@ -55,19 +55,19 @@ struct sparse_allreduce_usm_visitor {
                 break;
             }
             case ccl::datatype::uint8: {
-                throw ccl::ccl_error(
+                throw ccl::exception(
                     std::string(__PRETTY_FUNCTION__) + " - USM convertation of value_dtype: " +
                     ccl::to_string(value_dtype) + " is not supported for such configuration");
                 break;
             }
             case ccl::datatype::int16: {
-                throw ccl::ccl_error(
+                throw ccl::exception(
                     std::string(__PRETTY_FUNCTION__) + " - USM convertation of value_dtype: " +
                     ccl::to_string(value_dtype) + " is not supported for such configuration");
                 break;
             }
             case ccl::datatype::uint16: {
-                throw ccl::ccl_error(
+                throw ccl::exception(
                     std::string(__PRETTY_FUNCTION__) + " - USM convertation of value_dtype: " +
                     ccl::to_string(value_dtype) + " is not supported for such configuration");
                 break;
@@ -88,7 +88,7 @@ struct sparse_allreduce_usm_visitor {
                 break;
             }
             case ccl::datatype::uint32: {
-                throw ccl::ccl_error(
+                throw ccl::exception(
                     std::string(__PRETTY_FUNCTION__) + " - USM convertation of value_dtype: " +
                     ccl::to_string(value_dtype) + " is not supported for such configuration");
                 break;
@@ -124,7 +124,7 @@ struct sparse_allreduce_usm_visitor {
                 break;
             }
             case ccl::datatype::float16: {
-                throw ccl::ccl_error(
+                throw ccl::exception(
                     std::string(__PRETTY_FUNCTION__) + " - USM convertation of value_dtype: " +
                     ccl::to_string(value_dtype) + " is not supported for such configuration");
                 break;
@@ -160,7 +160,7 @@ struct sparse_allreduce_usm_visitor {
                 break;
             }
             case ccl::datatype::bfloat16: {
-                throw ccl::ccl_error(
+                throw ccl::exception(
                     std::string(__PRETTY_FUNCTION__) +
                     " - USM convertationf bloat16 is not supported for such configuration");
                 break;

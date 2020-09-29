@@ -217,7 +217,7 @@ details::adjacency_matrix ccl_device_platform::calculate_device_access_metric(
         }
     }
     catch (const std::exception& ex) {
-        throw ccl::ccl_error(std::string("Cannot calculate_device_access_metric, error: ") +
+        throw ccl::exception(std::string("Cannot calculate_device_access_metric, error: ") +
                              ex.what() + "\nCurrent platform info:\n" + to_string());
     }
     return result;

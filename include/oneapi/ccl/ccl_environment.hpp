@@ -38,6 +38,8 @@
 
 #include "oneapi/ccl/ccl_communicator.hpp"
 
+#include "oneapi/ccl/ccl_exception.hpp"
+
 namespace ccl {
 
 /**
