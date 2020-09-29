@@ -5,7 +5,6 @@
 #include "comp/bf16/bf16_utils.hpp"
 #include "common/env/env.hpp"
 #include "common/utils/utils.hpp"
-#include "oneapi/ccl/gpu_communicator.hpp"
 #include "common/comm/l0/comm_context_storage.hpp"
 
 #include <memory>

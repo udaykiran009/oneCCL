@@ -95,7 +95,6 @@ function export_ccl_common()
                             "${PROJECT_DIR}/include/ccl.hpp"
                             "${PROJECT_DIR}/include/ccl_config.h"
                             "${PROJECT_DIR}/include/ccl_gpu_modules.h"
-                            "${PROJECT_DIR}/include/gpu_communicator.hpp"
                             )
     echo "Copy ccl library headers"
     copy_files "" ${SourceArray[@]}
