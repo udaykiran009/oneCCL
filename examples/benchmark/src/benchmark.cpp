@@ -54,11 +54,11 @@ void do_regular(const ccl::communicator& comm,
             bench_attr.reduction = reduction_op;
             bench_attr.set<ccl::operation_attr_id::to_cache>(true);
 
+            ccl::barrier(comm);
+
             for (size_t count = options.min_elem_count; count <= options.max_elem_count;
                  count *= 2) {
                 for (size_t iter_idx = 0; iter_idx < options.warmup_iters; iter_idx++) {
-                    ccl::barrier(comm);
-
                     for (size_t coll_idx = 0; coll_idx < colls.size(); coll_idx++) {
                         auto& coll = colls[coll_idx];
                         for (size_t buf_idx = 0; buf_idx < options.buf_count; buf_idx++) {
@@ -82,6 +82,8 @@ void do_regular(const ccl::communicator& comm,
                       options.coll_names.end(),
                       std::ostream_iterator<std::string>{ scolls, " " });
 
+            ccl::barrier(comm);
+
             /* benchmark with multiple equal sized buffer per collective */
             if (options.buf_type == BUF_MULTI) {
                 PRINT_BY_ROOT(comm,
@@ -103,11 +105,12 @@ void do_regular(const ccl::communicator& comm,
                     try {
                         // we store times for each collective separately,
                         // but aggregate over buffers and iterations
-                        std::vector<double> t(colls.size(), 0);
+                        std::vector<double> coll_timers(colls.size(), 0);
                         for (size_t coll_idx = 0; coll_idx < colls.size(); coll_idx++) {
                             ccl::barrier(comm);
 
-                            double t1 = when();
+                            double t1 = 0, t2 = 0, t = 0;
+
                             for (size_t iter_idx = 0; iter_idx < options.iters; iter_idx++) {
                                 auto& coll = colls[coll_idx];
                                 // collective is configured to handle only
@@ -117,6 +120,10 @@ void do_regular(const ccl::communicator& comm,
                                 if (options.check_values) {
                                     coll->prepare(count);
                                 }
+
+                                ccl::barrier(comm);
+
+                                t1 = when();
 
                                 for (size_t buf_idx = 0; buf_idx < options.buf_count; buf_idx++) {
                                     match_id_stream << "coll_" << coll->name()
@@ -132,14 +139,16 @@ void do_regular(const ccl::communicator& comm,
                                 }
                                 reqs.clear();
 
+                                t2 = when();
+                                t += (t2 - t1);
+
                                 if (options.check_values) {
                                     coll->finalize(count);
                                 }
                             }
-                            double t2 = when();
-                            t[coll_idx] += (t2 - t1);
+                            coll_timers[coll_idx] += t;
                         }
-                        print_timings(comm, t, options, count, dtype, reduction_op);
+                        print_timings(comm, coll_timers, options, count, dtype, reduction_op);
                     }
                     catch (const std::exception& ex) {
                         ASSERT(0, "error on count %zu, reason: %s", count, ex.what());
@@ -168,11 +177,16 @@ void do_regular(const ccl::communicator& comm,
                     try {
                         // we store times for each collective separately,
                         // but aggregate over iterations
-                        std::vector<double> t(colls.size(), 0);
-                        double t1 = when();
+                        std::vector<double> coll_timers(colls.size(), 0);
+
+                        double t1 = 0, t2 = 0;
+
                         for (size_t coll_idx = 0; coll_idx < colls.size(); coll_idx++) {
                             auto& coll = colls[coll_idx];
+
                             ccl::barrier(comm);
+
+                            t1 = when();
 
                             for (size_t iter_idx = 0; iter_idx < options.iters; iter_idx++) {
                                 match_id_stream << "coll_" << coll->name()
@@ -185,11 +199,13 @@ void do_regular(const ccl::communicator& comm,
                                 }
                                 reqs.clear();
                             }
-                            double t2 = when();
-                            t[coll_idx] += (t2 - t1);
+
+                            t2 = when();
+
+                            coll_timers[coll_idx] += (t2 - t1);
                         }
 
-                        print_timings(comm, t, options, count, dtype, reduction_op);
+                        print_timings(comm, coll_timers, options, count, dtype, reduction_op);
                     }
                     catch (...) {
                         ASSERT(0, "error on count %zu", count);

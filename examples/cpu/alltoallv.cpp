@@ -27,9 +27,13 @@ void run_collective(const char* cmd_name,
         }
 
         auto start = std::chrono::system_clock::now();
-        auto req = ccl::alltoallv(
-            send_buf.data(), send_counts, recv_buf.data(), recv_counts, comm, ccl::default_stream, attr);
-        req.wait();
+        ccl::alltoallv(send_buf.data(),
+                       send_counts,
+                       recv_buf.data(),
+                       recv_counts,
+                       comm,
+                       ccl::default_stream,
+                       attr).wait();
         exec_time += std::chrono::system_clock::now() - start;
     }
 

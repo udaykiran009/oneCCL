@@ -20,9 +20,12 @@ message(STATUS "tests/functional LIBFABRIC_INCLUDE_DIR: ${LIBFABRIC_INCLUDE_DIR}
 set(CCL_INSTALL_TESTS "$ENV{PWD}")
 enable_testing()
 ADD_SUBDIRECTORY (googletest-release-1.8.1/googletest/)
+
 include_directories(${PROJECT_SOURCE_DIR}/tests/googletest-release-1.8.1/googletest/include ${PROJECT_SOURCE_DIR}/tests/googletest-release-1.8.1/googletest/src)
 include_directories(${CCL_ROOT}/include/${CCL_CONFIGURATION})
 include_directories(${LIBFABRIC_INCLUDE_DIR})
+
+link_directories(${PROJECT_SOURCE_DIR}/mpi/lib)
 link_directories(${CCL_ROOT}/lib/${CCL_CONFIGURATION})
 link_directories(${LIBFABRIC_LIB_DIR})
 

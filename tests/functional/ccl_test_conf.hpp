@@ -109,9 +109,7 @@ typedef enum {
     // DT_UINT64,
     DT_FLOAT,
     DT_DOUBLE,
-#ifdef CCL_BF16_COMPILER
     DT_BF16,
-#endif
 
     DT_LAST
 } ccl_data_type;
@@ -125,9 +123,7 @@ std::map<int, const char*> ccl_data_type_str = {
     // { DT_UINT64, "UINT64" }
     { DT_FLOAT, "DT_FLOAT" },
     { DT_DOUBLE, "DT_DOUBLE" },
-#ifdef CCL_BF16_COMPILER
     { DT_BF16, "DT_BF16" },
-#endif
 };
 
 std::map<int, ccl::datatype> ccl_datatype_values = {
@@ -137,9 +133,7 @@ std::map<int, ccl::datatype> ccl_datatype_values = {
     // { DT_UINT64, ccl::datatype::uint64 },
     { DT_FLOAT, ccl::datatype::float32 },
     { DT_DOUBLE, ccl::datatype::float64 },
-#ifdef CCL_BF16_COMPILER
     { DT_BF16, ccl::datatype::bfloat16 },
-#endif
 };
 
 typedef enum {

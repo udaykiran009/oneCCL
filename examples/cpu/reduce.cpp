@@ -13,15 +13,14 @@ void run_collective(const char* cmd_name,
 
     for (size_t idx = 0; idx < ITERS; ++idx) {
         auto start = std::chrono::system_clock::now();
-        auto req = ccl::reduce(send_buf.data(),
-                               recv_buf.data(),
-                               recv_buf.size(),
-                               ccl::reduction::sum,
-                               COLL_ROOT,
-                               comm,
-                               ccl::default_stream,
-                               attr);
-        req.wait();
+        ccl::reduce(send_buf.data(),
+                    recv_buf.data(),
+                    recv_buf.size(),
+                    ccl::reduction::sum,
+                    COLL_ROOT,
+                    comm,
+                    ccl::default_stream,
+                    attr).wait();
         exec_time += std::chrono::system_clock::now() - start;
     }
 

@@ -1,6 +1,8 @@
 #ifndef DEF_INCLUDED
 #define DEF_INCLUDED
 
+#include <string.h>
+
 //TODO: change exit to something more useful
 #define SET_STR(dst, size, ...) \
     do { \
@@ -81,7 +83,7 @@
 #define INITIAL_RANK_NUM   "0"
 #define MAX_CLEAN_CHECKS   3
 
-#define STR_COPY(dst, src, len) strncpy((dst), (src), (len)-1)
+#define STR_COPY(dst, src, len) { memcpy((dst), (src), (len-1)); dst[len - 1] = '\0'; }
 
 extern char my_hostname[MAX_KVS_VAL_LENGTH];
 

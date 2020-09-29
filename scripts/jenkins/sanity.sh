@@ -195,14 +195,17 @@ set_environment()
         BUILD_COMPILER=/nfs/inn/proj/mpi/pdsd/opt/EM64T-LIN/parallel_studio/parallel_studio_xe_2020.0.088/compilers_and_libraries_2020/linux/bin/intel64/
         C_COMPILER=${BUILD_COMPILER}/icc
         CXX_COMPILER=${BUILD_COMPILER}/icpc
-    else        
+    else
+        SYCL_BUNDLE_ROOT="/nfs/inn/proj/mpi/pdsd/opt/EM64T-LIN/compilers/clang/trunk/compiler/linux"
         if [ -z "${SYCL_BUNDLE_ROOT}" ]
         then
             echo "ERROR: please specify  SYCL_BUNDLE_ROOT, will be used \${SYCL_BUNDLE_ROOT}/setvars.sh"
             exit 1
         fi
-        source  ${SYCL_BUNDLE_ROOT}/setvars.sh
-        BUILD_COMPILER=${SYCL_BUNDLE_ROOT}/compiler/latest/linux/bin
+        #source  ${SYCL_BUNDLE_ROOT}/setvars.sh
+        source /nfs/inn/proj/mpi/pdsd/opt/EM64T-LIN/compilers/clang/trunk/compiler/env/vars.sh intel64
+        #BUILD_COMPILER=${SYCL_BUNDLE_ROOT}/compiler/latest/linux/bin
+        BUILD_COMPILER=/nfs/inn/proj/mpi/pdsd/opt/EM64T-LIN/compilers/clang/trunk/compiler/linux/bin
         C_COMPILER=${BUILD_COMPILER}/clang
         CXX_COMPILER=${BUILD_COMPILER}/clang++
     fi

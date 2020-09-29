@@ -16,8 +16,12 @@ void run_collective(const char* cmd_name,
 
     for (size_t idx = 0; idx < ITERS; ++idx) {
         auto start = std::chrono::system_clock::now();
-        auto req = ccl::broadcast(buf.data(), buf.size(), COLL_ROOT, comm, ccl::default_stream, attr);
-        req.wait();
+        ccl::broadcast(buf.data(),
+                       buf.size(),
+                       COLL_ROOT,
+                       comm,
+                       ccl::default_stream,
+                       attr).wait();
         exec_time += std::chrono::system_clock::now() - start;
     }
 
