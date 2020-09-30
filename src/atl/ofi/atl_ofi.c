@@ -870,7 +870,7 @@ static void atl_ofi_reset(atl_ctx_t* ctx) {
     free(recv_buf);
 }
 
-static atl_status_t atl_ofi_set_env(const atl_attr_t* attr) {
+static atl_status_t atl_ofi_set_env(const atl_attr_t& attr) {
     setenv("FI_PSM2_DELAY", "0", 0);
     setenv("FI_PSM2_LOCK_LEVEL", "1", 0);
     setenv("HFI_NO_CPUAFFINITY", "1", 0);
@@ -887,7 +887,7 @@ static atl_status_t atl_ofi_set_env(const atl_attr_t* attr) {
     return ATL_STATUS_SUCCESS;
 }
 
-static atl_status_t atl_ofi_adjust_env(atl_ofi_ctx_t* ofi_ctx, const atl_attr_t* attr) {
+static atl_status_t atl_ofi_adjust_env(atl_ofi_ctx_t* ofi_ctx, const atl_attr_t& attr) {
     
     atl_ofi_set_env(attr);
 
@@ -900,7 +900,7 @@ static atl_status_t atl_ofi_adjust_env(atl_ofi_ctx_t* ofi_ctx, const atl_attr_t*
     else
         ofi_ctx->prov_env_copy = NULL;
 
-    if (attr->enable_shm) {
+    if (attr.enable_shm) {
         /* add shm provider in the list of allowed providers */
         if (prov_env && !strstr(prov_env, ATL_OFI_SHM_PROV_NAME)) {
             /* whether single provider will be in the final env variable */
@@ -1507,7 +1507,7 @@ static atl_status_t atl_ofi_init(int* argc,
     if (!ofi_ctx)
         return ATL_STATUS_FAILURE;
 
-    atl_ofi_adjust_env(ofi_ctx, attr);
+    atl_ofi_adjust_env(ofi_ctx, *attr);
 
     atl_ctx_t* ctx = &(ofi_ctx->ctx);
 

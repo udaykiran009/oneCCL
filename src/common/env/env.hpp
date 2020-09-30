@@ -22,6 +22,8 @@ constexpr const char* I_MPI_AVAILABLE_CORES_ENV = "I_MPI_PIN_INFO";
 
 constexpr const char* CCL_ATL_TRANSPORT = "CCL_ATL_TRANSPORT";
 constexpr const char* CCL_ATL_SHM = "CCL_ATL_SHM";
+constexpr const char* CCL_ATL_SYNC_COLL = "CCL_ATL_SYNC_COLL";
+constexpr const char* CCL_ATL_EXTRA_EP = "CCL_ATL_EXTRA_EP";
 
 constexpr const char* CCL_ALLGATHERV = "CCL_ALLGATHERV";
 constexpr const char* CCL_ALLREDUCE = "CCL_ALLREDUCE";
@@ -108,6 +110,8 @@ public:
 
     ccl_atl_transport atl_transport;
     int enable_shm;
+    int sync_coll;
+    int extra_ep;
 
     /*
        parsing logic can be quite complex

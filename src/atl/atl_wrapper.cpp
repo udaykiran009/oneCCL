@@ -15,17 +15,19 @@ atl_attr_t atl_wrapper::attr = {
     64, /* tag_bits */
     0xFFFFFFFFFFFFFFFF, /* max_tag */
     0, /* enable_rma */
-    0 /* max_order_waw_size */
+    0, /* max_order_waw_size */
+    0, /* sync_coll */
+    0 /* extra_ep */
 };
 
-void atl_wrapper::set_internal_env(atl_attr_t& attr)
+void atl_wrapper::set_internal_env(const atl_attr_t& attr)
 {
     auto transport_type = ccl::global_data::env().atl_transport;
 
     if (transport_type == ccl_atl_mpi)
-        atl_mpi::atl_set_env(&attr);
+        atl_mpi::atl_set_env(attr);
     else if (transport_type == ccl_atl_ofi)
-        atl_ofi::atl_set_env(&attr);
+        atl_ofi::atl_set_env(attr);
 }
 
 atl_wrapper::atl_wrapper() {
@@ -133,6 +135,8 @@ atl_wrapper::atl_wrapper(size_t dev_count,
 }
 void atl_wrapper::init_transport() {
 
+    LOG_INFO("init ATL, requested ep_count ", attr.ep_count);
+
     transport->atl_init(nullptr, nullptr, &attr, nullptr, pmi);
     eps = transport->atl_get_eps();
     tag = std::unique_ptr<ccl_atl_tag>(new ccl_atl_tag(attr.tag_bits, attr.max_tag));
@@ -151,7 +155,29 @@ void atl_wrapper::init_transport() {
     }
 
     if (rank == 0)
+    {
         tag->print();
+
+        LOG_INFO("\n",
+                 "\nATL parameters:",
+                 "\n  ep_count:           ",
+                 attr.ep_count,
+                 "\n  enable_shm:         ",
+                 attr.enable_shm,
+                 "\n  tag_bits:           ",
+                 attr.tag_bits,
+                 "\n  max_tag:            ",
+                 attr.max_tag,
+                 "\n  enable_rma:         ",
+                 attr.enable_rma,
+                 "\n  max_order_waw_size: ",
+                 attr.max_order_waw_size,
+                 "\n  sync_coll:          ",
+                 attr.sync_coll,
+                 "\n  extra_ep:           ",
+                 attr.extra_ep,
+                 "\n");
+    }
 }
 atl_wrapper::~atl_wrapper() {
     static std::mutex memory_mutex;

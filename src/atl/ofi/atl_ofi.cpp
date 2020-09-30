@@ -1,7 +1,7 @@
 #include "atl_ofi.h"
 #include "atl_ofi.c"
 
-atl_status_t atl_ofi::atl_set_env(atl_attr_t* attr)
+atl_status_t atl_ofi::atl_set_env(const atl_attr_t& attr)
 {
     return atl_ofi_set_env(attr);
 }

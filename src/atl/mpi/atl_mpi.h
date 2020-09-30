@@ -5,7 +5,7 @@ public:
     atl_mpi() = default;
     ~atl_mpi() override;
 
-    static atl_status_t atl_set_env(atl_attr_t* attr);
+    static atl_status_t atl_set_env(const atl_attr_t& attr);
 
     atl_status_t atl_init(int* argc,
                           char*** argv,

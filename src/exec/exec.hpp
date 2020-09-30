@@ -71,11 +71,8 @@ public:
         return local_proc_count;
     }
 
-    const atl_attr_t& get_atl_attr() const {
-        return atl_attr;
-    }
-
     static size_t calculate_atl_ep_count(size_t worker_count);
+    static atl_attr_t generate_atl_attr(const ccl::env_data& env);
 
 private:
 
@@ -85,15 +82,6 @@ private:
     std::unique_ptr<ccl_sched_queue> create_sched_queue(size_t idx, size_t ep_per_worker);
     void do_work();
     void set_local_coord();
-
-    atl_attr_t atl_attr = {
-        1, /* ep_count */
-        1, /* enable_shm */
-        64, /* tag_bits */
-        0xFFFFFFFFFFFFFFFF, /* max_tag */
-        0, /* enable_rma */
-        0 /* max_order_waw_size */
-    };
 
     std::vector<std::unique_ptr<ccl_worker>> workers;
     // TODO: Rework to support listener

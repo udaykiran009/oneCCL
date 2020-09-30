@@ -89,6 +89,8 @@ typedef struct {
     uint64_t max_tag;
     int enable_rma;
     size_t max_order_waw_size;
+    int sync_coll;
+    int extra_ep;
 } atl_attr_t;
 
 typedef struct {

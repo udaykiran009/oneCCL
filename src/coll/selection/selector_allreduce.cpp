@@ -47,7 +47,7 @@ bool ccl_algorithm_selector_helper<ccl_coll_allreduce_algo>::can_use(
     if (algo == ccl_coll_allreduce_rabenseifner && param.count < param.comm->pof2())
         can_use = false;
     else if (algo == ccl_coll_allreduce_ring_rma &&
-             !ccl::global_data::get().executor->get_atl_attr().enable_rma)
+             !atl_wrapper::attr.enable_rma)
         can_use = false;
     else if (algo == ccl_coll_allreduce_starlike && !(param.count / param.comm->size()))
         can_use = false;

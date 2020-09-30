@@ -25,6 +25,25 @@ size_t ccl_executor::calculate_atl_ep_count(size_t worker_count) {
     return ep_count;
 }
 
+atl_attr_t ccl_executor::generate_atl_attr(const ccl::env_data& env) {
+
+    atl_attr_t attr;
+
+    attr.ep_count = calculate_atl_ep_count(env.worker_count);
+    attr.enable_shm = env.enable_shm;
+    /*
+        TODO:
+        executor may be destroyed before cached rma-based schedule made memory deregistration
+        need to refactor global objects dependencies
+        don't use ring_rma till that
+    */
+    attr.enable_rma = 0; // env.enable_rma;
+    attr.sync_coll = env.sync_coll;
+    attr.extra_ep = env.extra_ep;
+
+    return attr;
+}
+
 std::unique_ptr<ccl_sched_queue> ccl_executor::create_sched_queue(size_t idx,
                                                                   size_t ep_per_worker) {
     std::vector<size_t> ep_vec(ep_per_worker);
@@ -34,53 +53,41 @@ std::unique_ptr<ccl_sched_queue> ccl_executor::create_sched_queue(size_t idx,
 }
 
 ccl_executor::ccl_executor(const char* main_addr) {
+
+    auto& env = ccl::global_data::env();
+
     get_worker_idx_fn =
-        (ccl::global_data::env().enable_fusion || ccl::global_data::env().enable_unordered_coll)
+        (env.enable_fusion || env.enable_unordered_coll)
             ? &ccl_executor::get_worker_idx_by_sched_id
             : &ccl_executor::get_worker_idx_round_robin;
 
-    auto worker_count = ccl::global_data::env().worker_count;
-    workers.reserve(worker_count);
-    auto ep_count = calculate_atl_ep_count(worker_count);
+    /* generate ATL attr for all future communicators */
+    atl_wrapper::attr = generate_atl_attr(env);
 
-    atl_attr.ep_count = ep_count;
-    atl_attr.enable_shm = ccl::global_data::env().enable_shm;
-
-    /*
-        TODO:
-        executor may be destroyed before cached rma-based schedule made memory deregistration
-        need to refactor global objects dependencies
-        don't use ring_rma till that
-    */
-    atl_attr.enable_rma = 0; // ccl::global_data::env().enable_rma;
-
-    /* set atl attr for all future communicators */
-    atl_wrapper::attr = atl_attr;
-    LOG_INFO("init ATL, requested ep_count ", atl_attr.ep_count);
-
-    ccl::env_data& env = ccl::global_data::env();
     set_local_coord();
     CCL_THROW_IF_NOT(env.env_2_worker_affinity(get_local_proc_idx(), get_local_proc_count()));
-
     start_workers();
 }
 
 void ccl_executor::start_workers() {
-    auto worker_count = ccl::global_data::env().worker_count;
+
+    auto& env = ccl::global_data::env();
+
+    auto worker_count = env.worker_count;
     auto ep_count = calculate_atl_ep_count(worker_count);
 
-    if (ccl::global_data::env().worker_offload) {
+    if (env.worker_offload) {
         CCL_THROW_IF_NOT(
-            ccl::global_data::env().worker_affinity.size() >= get_local_proc_count() * worker_count,
+            env.worker_affinity.size() >= get_local_proc_count() * worker_count,
             "unexpected worker affinity length ",
-            ccl::global_data::env().worker_affinity.size(),
+            env.worker_affinity.size(),
             ", should be ",
             get_local_proc_count() * worker_count);
     }
 
     size_t ep_per_worker = ep_count / worker_count;
     for (size_t idx = 0; idx < worker_count; idx++) {
-        if (ccl::global_data::env().enable_fusion && idx == 0) {
+        if (env.enable_fusion && idx == 0) {
             LOG_DEBUG("create service worker");
             workers.emplace_back(new ccl_service_worker(idx,
                                                         create_sched_queue(idx, ep_per_worker),
@@ -90,9 +97,9 @@ void ccl_executor::start_workers() {
             workers.emplace_back(new ccl_worker(idx, create_sched_queue(idx, ep_per_worker)));
         }
 
-        if (ccl::global_data::env().worker_offload) {
+        if (env.worker_offload) {
             size_t affinity =
-                ccl::global_data::env().worker_affinity[get_local_proc_idx() * worker_count + idx];
+                env.worker_affinity[get_local_proc_idx() * worker_count + idx];
 
             CCL_THROW_IF_NOT(workers.back()->start(affinity) == ccl_status_success,
                              "failed to start worker # ",
@@ -252,6 +259,7 @@ size_t ccl_executor::get_worker_count() const {
     return workers.size();
 }
 void ccl_executor::set_local_coord() {
+
     // TODO: works only for hydra
     const char* mpi_local_ranks_env = "MPI_LOCALNRANKS";
     const char* mpi_local_id_env = "MPI_LOCALRANKID";
@@ -269,7 +277,7 @@ void ccl_executor::set_local_coord() {
     local_proc_count = 1;
     local_proc_idx = 0;
 
-    LOG_INFO("Warning: ",
+    LOG_INFO("WARNING: ",
              mpi_local_ranks_env,
              " or ",
              mpi_local_id_env,

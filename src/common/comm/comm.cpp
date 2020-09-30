@@ -164,8 +164,6 @@ ccl_comm* ccl_comm::create_with_colors(const std::vector<int>& colors,
         rank_map.clear();
     }
 
-    printf("create_with_colors new_comm_rank %zu, new_comm_size %zu\n", new_comm_rank, new_comm_size); fflush(stdout);
-
     ccl_comm* comm = new ccl_comm(
         new_comm_rank, new_comm_size, comm_ids->acquire(), std::move(rank_map), parent_comm->atl, share_resources);
 

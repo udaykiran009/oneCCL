@@ -23,7 +23,7 @@ using namespace cl::sycl::access;
 
 #define ITERS                (16)
 #define COLL_ROOT            (0)
-#define MSG_SIZE_COUNT (6)
+#define MSG_SIZE_COUNT       (6)
 #define START_MSG_SIZE_POWER (10)
 
 #define PRINT(fmt, ...) printf(fmt "\n", ##__VA_ARGS__);

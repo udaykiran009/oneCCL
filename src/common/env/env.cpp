@@ -33,6 +33,8 @@ env_data::env_data()
 
           atl_transport(ccl_atl_mpi),
           enable_shm(0),
+          sync_coll(0),
+          extra_ep(0),
 
           enable_unordered_coll(0),
 
@@ -77,6 +79,8 @@ void env_data::parse() {
 
     env_2_enum(CCL_ATL_TRANSPORT, atl_transport_names, atl_transport);
     env_2_type(CCL_ATL_SHM, enable_shm);
+    env_2_type(CCL_ATL_SYNC_COLL, sync_coll);
+    env_2_type(CCL_ATL_EXTRA_EP, extra_ep);
 
     env_2_type(CCL_ALLGATHERV, allgatherv_algo_raw);
     env_2_type(CCL_ALLREDUCE, allreduce_algo_raw);
@@ -191,6 +195,8 @@ void env_data::print() {
 
     LOG_INFO(CCL_ATL_TRANSPORT, ": ", str_by_enum(atl_transport_names, atl_transport));
     LOG_INFO(CCL_ATL_SHM, ": ", enable_shm);
+    LOG_DEBUG(CCL_ATL_SYNC_COLL, ": ", sync_coll);
+    LOG_DEBUG(CCL_ATL_EXTRA_EP, ": ", extra_ep);
 
     LOG_INFO(CCL_ALLGATHERV,
              ": ",
@@ -281,8 +287,7 @@ void env_data::print() {
 
 void env_data::set_internal_env()
 {
-    atl_attr_t attr = { 0 };
-    attr.ep_count = ccl_executor::calculate_atl_ep_count(worker_count);
+    auto attr = ccl_executor::generate_atl_attr(*this);
     atl_wrapper::set_internal_env(attr);
 }
 
