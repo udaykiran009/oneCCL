@@ -73,22 +73,8 @@ then
 fi
 
 LIBCCL_SO_VERSION="1.0"
-LIBCCL_ATL_OFI_SO_VERSION="1.0"
-LIBCCL_ATL_MPI_SO_VERSION="1.0"
-LIBCCL_RESIZE_PMI_SO_VERSION="1.0"
-LIBCCL_PMI_SO_VERSION="1.0"
-
 LIBCCL_MAJOR_VERSION=`echo ${LIBCCL_SO_VERSION}|cut -d"." -f1`
-LIBCCL_ATL_OFI_MAJOR_VERSION=`echo ${LIBCCL_ATL_OFI_SO_VERSION}|cut -d"." -f1`
-LIBCCL_ATL_MPI_MAJOR_VERSION=`echo ${LIBCCL_ATL_MPI_SO_VERSION}|cut -d"." -f1`
-LIBCCL_RESIZE_PMI_MAJOR_VERSION=`echo ${LIBCCL_RESIZE_PMI_SO_VERSION}|cut -d"." -f1`
-LIBCCL_PMI_MAJOR_VERSION=`echo ${LIBCCL_PMI_SO_VERSION}|cut -d"." -f1`
-
 LIBCCL_SONAME="libccl.so.${LIBCCL_MAJOR_VERSION}"
-LIBCCL_ATL_OFI_SONAME="libccl_atl_ofi.so.${LIBCCL_ATL_OFI_SO_VERSION}"
-LIBCCL_ATL_MPI_SONAME="libccl_atl_mpi.so.${LIBCCL_ATL_MPI_SO_VERSION}"
-LIBCCL_RESIZE_PMI_SONAME="libpmi_resizable.so.${LIBCCL_RESIZE_PMI_SO_VERSION}"
-LIBCCL_PMI_SONAME="libpmi.so.${LIBCCL_PMI_SO_VERSION}"
 
 #==============================================================================
 #                                Defaults
@@ -253,10 +239,7 @@ build_cpu()
     log cmake .. -DCMAKE_DISABLE_SYCL=1 -DCMAKE_BUILD_TYPE=${BUILD_TYPE} \
     -DCMAKE_C_COMPILER="${C_COMPILER_CPU}" -DCMAKE_CXX_COMPILER="${CXX_COMPILER_CPU}" -DUSE_CODECOV_FLAGS="${CODECOV_FLAGS}" \
     -DLIBFABRIC_DIR="${LIBFABRIC_INSTALL_DIR}" -DLIB_SO_VERSION="${LIBCCL_SO_VERSION}" -DLIB_MAJOR_VERSION="${LIBCCL_MAJOR_VERSION}" \
-    -DLIB_ATL_OFI_SO_VERSION="${LIBCCL_ATL_OFI_SO_VERSION}" -DLIB_ATL_MPI_SO_VERSION="${LIBCCL_ATL_MPI_SO_VERSION}" \
-    -DLIB_ATL_OFI_MAJOR_VERSION="${LIBCCL_ATL_OFI_MAJOR_VERSION}" -DLIB_ATL_MPI_MAJOR_VERSION="${LIBCCL_ATL_MPI_MAJOR_VERSION}" \
-    -DLIB_PMI_SO_VERSION="${LIBCCL_PMI_SO_VERSION}" -DLIB_PMI_MAJOR_VERSION="${LIBCCL_PMI_MAJOR_VERSION}" \
-    -DLIB_RESIZE_PMI_SO_VERSION="${LIBCCL_RESIZE_PMI_SO_VERSION}" -DLIB_RESIZE_PMI_MAJOR_VERSION="${LIBCCL_RESIZE_PMI_MAJOR_VERSION}"
+
     log make -j4 VERBOSE=1 install
     CheckCommandExitCode $? "cpu build failed"
 }
@@ -269,10 +252,7 @@ build_gpu()
     log cmake .. -DCMAKE_DISABLE_SYCL=0 -DCMAKE_BUILD_TYPE=${BUILD_TYPE} \
     -DCMAKE_C_COMPILER="${C_COMPILER_GPU}" -DCMAKE_CXX_COMPILER="${CXX_COMPILER_GPU}" -DUSE_CODECOV_FLAGS="${CODECOV_FLAGS}" \
     -DCOMPUTE_RUNTIME="dpcpp" -DLIBFABRIC_DIR="${LIBFABRIC_INSTALL_DIR}" -DLIB_SO_VERSION="${LIBCCL_SO_VERSION}" -DLIB_MAJOR_VERSION="${LIBCCL_MAJOR_VERSION}" \
-    -DLIB_ATL_OFI_SO_VERSION="${LIBCCL_ATL_OFI_SO_VERSION}" -DLIB_ATL_MPI_SO_VERSION="${LIBCCL_ATL_MPI_SO_VERSION}" \
-    -DLIB_ATL_OFI_MAJOR_VERSION="${LIBCCL_ATL_OFI_MAJOR_VERSION}" -DLIB_ATL_MPI_MAJOR_VERSION="${LIBCCL_ATL_MPI_MAJOR_VERSION}" \
-    -DLIB_PMI_SO_VERSION="${LIBCCL_PMI_SO_VERSION}" -DLIB_PMI_MAJOR_VERSION="${LIBCCL_PMI_MAJOR_VERSION}" \
-    -DLIB_RESIZE_PMI_SO_VERSION="${LIBCCL_RESIZE_PMI_SO_VERSION}" -DLIB_RESIZE_PMI_MAJOR_VERSION="${LIBCCL_RESIZE_PMI_MAJOR_VERSION}"
+
     log make -j4 VERBOSE=1 install
     CheckCommandExitCode $? "gpu build failed"
 }
@@ -292,56 +272,11 @@ post_build()
     ar x libsvml.a svml_i_div4_iface_la.o svml_d_feature_flag_.o \
         svml_i_div4_core_e7la.o svml_i_div4_core_exla.o svml_i_div4_core_h9la.o \
         svml_i_div4_core_y8la.o
-    gcc -shared -fPIE -fPIC -Wl,-z,now -Wl,-z,relro -Wl,-z,noexecstack -Xlinker -x -Xlinker -soname=${LIBCCL_SONAME} -o libccl.so.${LIBCCL_SO_VERSION} *.o
-    CheckCommandExitCode $? "post build failed"
-    rm -rf *.o
-    # libpmi.so libresizable_pmi.so
-    lib_list="libpmi libresizable_pmi"
-
-    cp ${WORKSPACE}/build/_install/lib/libpmi.a ./
-    ar x libpmi.a
-    ar x libirc.a
-    ar x libsvml.a svml_i_div4_iface_la.o svml_d_feature_flag_.o \
-        svml_i_div4_core_e7la.o svml_i_div4_core_exla.o svml_i_div4_core_h9la.o \
-        svml_i_div4_core_y8la.o
-    gcc -shared -fPIE -fPIC -Wl,-z,now -Wl,-z,relro -Wl,-z,noexecstack -Xlinker -x -Xlinker -soname=${LIBCCL_PMI_SONAME} -o libpmi.so.${LIBCCL_PMI_SO_VERSION} *.o 
-    CheckCommandExitCode $? "post build failed"
-    rm -rf *.o
-
-    cp ${WORKSPACE}/build/_install/lib/libresizable_pmi.a ./
-    ar x libresizable_pmi.a
-    ar x libirc.a
-    ar x libsvml.a svml_i_div4_iface_la.o svml_d_feature_flag_.o \
-        svml_i_div4_core_e7la.o svml_i_div4_core_exla.o svml_i_div4_core_h9la.o \
-        svml_i_div4_core_y8la.o
-    gcc -shared -fPIE -fPIC -Wl,-z,now -Wl,-z,relro -Wl,-z,noexecstack -Xlinker -x -Xlinker -soname=${LIBCCL_RESIZE_PMI_SONAME} -o libresizable_pmi.so.${LIBCCL_RESIZE_PMI_SO_VERSION} *.o 
-    CheckCommandExitCode $? "post build failed"
-    rm -rf *.o
-
-    # libccl_atl_mpi.so libccl_atl_ofi.so
-    cp ${WORKSPACE}/build/_install/lib/libccl_atl_mpi.a ./
-    ar x libccl_atl_mpi.a
-    ar x libirc.a
-    ar x libsvml.a svml_i_div4_iface_la.o svml_d_feature_flag_.o \
-        svml_i_div4_core_e7la.o svml_i_div4_core_exla.o svml_i_div4_core_h9la.o \
-        svml_i_div4_core_y8la.o
-    gcc -fPIE -fPIC -Wl,-z,now -Wl,-z,relro -Wl,-z,noexecstack -std=gnu99 -Wall -Werror -D_GNU_SOURCE -fvisibility=internal -O3 -DNDEBUG -std=gnu99 -O3 -shared -Wl,-soname=${LIBCCL_ATL_MPI_SONAME} -o libccl_atl_mpi.so.${LIBCCL_ATL_MPI_SO_VERSION} *.o -L${WORKSPACE}/build/_install/lib/ -lmpi
-    CheckCommandExitCode $? "post build failed"
-    rm -rf *.o
-    cp ${WORKSPACE}/build/_install/lib/libccl_atl_ofi.a ./
-    ar x libccl_atl_ofi.a
-    ar x libirc.a
-    ar x libsvml.a svml_i_div4_iface_la.o svml_d_feature_flag_.o \
-        svml_i_div4_core_e7la.o svml_i_div4_core_exla.o svml_i_div4_core_h9la.o \
-        svml_i_div4_core_y8la.o
-
-    if [ ! -z "${LIBFABRIC_INSTALL_DIR}" ]
+	if [ ! -z "${LIBFABRIC_INSTALL_DIR}" ]
     then
         LDFLAGS="-L${LIBFABRIC_INSTALL_DIR}/lib/"
-    fi
-    LDFLAGS="${LDFLAGS} -L${WORKSPACE}/build/_install/lib/ ${WORKSPACE}/build/_install/lib/libpmi.so.1 ${WORKSPACE}/build/_install/lib/libresizable_pmi.so.1 -lm -lfabric"
-
-    gcc -fPIE -fPIC -Wl,-z,now -Wl,-z,relro -Wl,-z,noexecstack -std=gnu99 -Wall -Werror -D_GNU_SOURCE -fvisibility=internal -O3 -DNDEBUG -std=gnu99 -O3 -shared -Wl,-soname=${LIBCCL_ATL_OFI_SONAME} -o libccl_atl_ofi.so.${LIBCCL_ATL_OFI_SO_VERSION} *.o ${LDFLAGS}
+	fi
+    gcc -shared -fPIE -fPIC -Wl,-z,now -Wl,-z,relro -Wl,-z,noexecstack -Xlinker -x -Xlinker -soname=${LIBCCL_SONAME} -o libccl.so.${LIBCCL_SO_VERSION} *.o ${LDFLAGS} -L${WORKSPACE}/build/_install/lib/ -lmpi -lm -lfabric
     CheckCommandExitCode $? "post build failed"
     rm -rf *.o
 
