@@ -15,9 +15,9 @@ namespace ccl {
 /**
  * Stream class
  */
-class device : public ccl_api_base_movable<device, direct_access_policy, ccl_device_impl> {
+class device : public ccl_api_base_copyable<device, direct_access_policy, ccl_device_impl> {
 public:
-    using base_t = ccl_api_base_movable<device, direct_access_policy, ccl_device_impl>;
+    using base_t = ccl_api_base_copyable<device, direct_access_policy, ccl_device_impl>;
 
     /**
      * Declare PIMPL type
@@ -36,7 +36,9 @@ public:
                                                                 ccl::device_attr_id::native_handle>::return_type;
 
     device(device&& src);
+    device(const device& src);
     device& operator=(device&& src);
+    device& operator=(const device& src);
     ~device();
 
     /**

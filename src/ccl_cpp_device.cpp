@@ -5,6 +5,8 @@ namespace ccl {
 
 CCL_API device::device(device&& src) : base_t(std::move(src)) {}
 
+CCL_API device::device(const device& src) : base_t(src) {}
+
 CCL_API device::device(impl_value_t&& impl) : base_t(std::move(impl)) {}
 
 CCL_API device::~device() {}
@@ -13,6 +15,13 @@ CCL_API device& device::operator=(device&& src) {
     if (src.get_impl() != this->get_impl()) {
         src.get_impl().swap(this->get_impl());
         src.get_impl().reset();
+    }
+    return *this;
+}
+
+CCL_API device& device::operator=(const device& src) {
+    if (src.get_impl() != this->get_impl()) {
+        this->get_impl() = src.get_impl();
     }
     return *this;
 }

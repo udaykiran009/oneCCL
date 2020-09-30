@@ -71,7 +71,7 @@ TEST(device_communicator_api, device_comm_from_device_index) {
                    });
 
     ccl::vector_class<ccl::communicator> comms =
-        ccl::communicator::create_device_communicators(
+        ccl::communicator::create_communicators(
             total_devices_size, local_rank_device_map, ctx, stub_storage);
     ASSERT_EQ(comms.size(), devices.size());
 

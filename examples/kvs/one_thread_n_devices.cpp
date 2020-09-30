@@ -38,7 +38,7 @@ int main(int argc, char** argv) {
         in this version rank-device mapping will happen automatically
         but user can also provide explicit rank-device mapping
     */
-    auto comms = env.create_device_communicators(mpi_size * devices.size(), devices, kvs);
+    auto comms = env.create_communicators(mpi_size * devices.size(), devices, kvs);
 
     /* create SYCL queues and USM buffers */
     std::map<size_t, cl::sycl::queue> rank_queue_map;

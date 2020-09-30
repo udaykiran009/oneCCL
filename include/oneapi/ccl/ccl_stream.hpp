@@ -29,6 +29,12 @@ public:
      */
     using impl_t = typename impl_value_t::element_type;
 
+    /**
+     * Declare native stream type
+     */
+    using native_t = typename details::ccl_api_type_attr_traits<ccl::stream_attr_id,
+                                                                ccl::stream_attr_id::native_handle>::return_type;
+
     ~stream();
 
     stream(stream&& src);
@@ -42,6 +48,11 @@ public:
     const typename details::ccl_api_type_attr_traits<stream_attr_id, attrId>::return_type& get()
         const;
 
+    /**
+     * Get native stream object
+     */
+     native_t& get_native();
+     const native_t& get_native() const;
 private:
     friend class environment;
     friend class communicator;

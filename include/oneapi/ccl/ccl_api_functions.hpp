@@ -237,12 +237,12 @@ communicator create_communicator(size_t size,
  * @return vector of device communicators
  */
 template <class DeviceType, class ContextType>
-vector_class<communicator> create_device_communicators(
+vector_class<communicator> create_communicators(
     size_t comm_size,
     const vector_class<DeviceType>& local_devices,
     ContextType& context,
     shared_ptr_class<kvs_interface> kvs) {
-    return environment::instance().create_device_communicators(
+    return environment::instance().create_communicators(
         comm_size, local_devices, context, kvs);
 }
 
@@ -255,22 +255,22 @@ vector_class<communicator> create_device_communicators(
  * @return vector of device communicators
  */
 template <class DeviceType, class ContextType>
-vector_class<communicator> create_device_communicators(
+vector_class<communicator> create_communicators(
     size_t comm_size,
     const vector_class<pair_class<rank_t, DeviceType>>& local_rank_device_map,
     ContextType& context,
     shared_ptr_class<kvs_interface> kvs) {
-    return environment::instance().create_device_communicators(
+    return environment::instance().create_communicators(
         comm_size, local_rank_device_map, context, kvs);
 }
 
 template <class DeviceType, class ContextType>
-vector_class<communicator> create_device_communicators(
+vector_class<communicator> create_communicators(
     size_t comm_size,
     const map_class<rank_t, DeviceType>& local_rank_device_map,
     ContextType& context,
     shared_ptr_class<kvs_interface> kvs) {
-    return environment::instance().create_device_communicators(
+    return environment::instance().create_communicators(
         comm_size, local_rank_device_map, context, kvs);
 }
 

@@ -125,7 +125,7 @@ public:
      */
     template<class DeviceType,
              class ContextType>
-    vector_class<communicator> create_device_communicators(
+    vector_class<communicator> create_communicators(
         const size_t devices_size,
         const vector_class<DeviceType>& local_devices,
         ContextType& context,
@@ -141,7 +141,7 @@ public:
      */
     template<class DeviceType,
          class ContextType>
-    vector_class<communicator> create_device_communicators(
+    vector_class<communicator> create_communicators(
         const size_t cluster_devices_size, /*global devics count*/
         const vector_class<pair_class<rank_t, DeviceType>>& local_rank_device_map,
         ContextType& context,
@@ -150,7 +150,7 @@ public:
 
     template<class DeviceType,
          class ContextType>
-    vector_class<communicator> create_device_communicators(
+    vector_class<communicator> create_communicators(
         const size_t cluster_devices_size, /*global devics count*/
         const map_class<rank_t, DeviceType>& local_rank_device_map,
         ContextType& context,

@@ -7,6 +7,7 @@ if (CCL_ENABLE_SYCL)
                     ccl_cpp_gpu_api.cpp
 
                     native_device_api/l0/utils.cpp
+                    native_device_api/sycl/export.cpp
                     native_device_api/interop_utils.cpp
                     #common/comm/l0/comm_context.cpp
                     #common/comm/l0/comm_context_storage.cpp
@@ -24,6 +25,7 @@ list (APPEND EXTENSIONS_SRC
                     native_device_api/l0/device.cpp
                     native_device_api/l0/subdevice.cpp
                     native_device_api/l0/driver.cpp
+                    native_device_api/l0/export.cpp
                     native_device_api/l0/platform.cpp
                     native_device_api/l0/utils.cpp
                     native_device_api/l0/primitives.cpp
@@ -81,6 +83,8 @@ set(CCL_SRC
     ccl_empty_attr.cpp
     ccl_empty_coll_attr.cpp
     ccl_empty_stream.cpp
+    native_device_api/sycl_l0/export.cpp
+    native_device_api/empty/export.cpp
     atl/atl.cpp
     atl/atl_wrapper.cpp
     atl/mpi/atl_mpi.cpp

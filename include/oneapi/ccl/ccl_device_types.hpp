@@ -49,6 +49,9 @@ using cluster_device_indices_t = std::map<host_id, process_device_indices_t>;
 struct empty_t{
 };
 template <cl_backend_type config_backend>
+struct backend_info {};
+
+template <cl_backend_type config_backend>
 struct generic_device_type {};
 
 template <cl_backend_type config_backend>

@@ -29,6 +29,17 @@ CCL_API stream& stream::operator=(const stream& src) {
 CCL_API void stream::build_from_params() {
     get_impl()->build_from_params();
 }
+
+CCL_API stream::native_t& stream::get_native()
+{
+    return const_cast<stream::native_t&>(static_cast<const stream*>(this)->get_native());
+}
+
+CCL_API const stream::native_t& stream::get_native() const
+{
+    return get_impl()->get_attribute_value(
+        details::ccl_api_type_attr_traits<ccl::stream_attr_id, ccl::stream_attr_id::native_handle>{});
+}
 } // namespace ccl
 
 #ifdef CCL_ENABLE_SYCL

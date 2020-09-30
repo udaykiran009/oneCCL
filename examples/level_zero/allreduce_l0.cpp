@@ -46,7 +46,7 @@ void user_thread_idx(size_t thread_idx,
 
     // Create device communicators
     std::vector<ccl::communicator> comms =
-        ccl::create_device_communicators(
+        ccl::create_communicators(
             total_devices_in_cluster, devices, ctx, kvs_instance);
 
     std::cout << "Create device communicators, expected count: " << devices.size() << std::endl;
@@ -164,7 +164,7 @@ void user_thread_idx(size_t thread_idx,
 
     // Create device communicators
     std::vector<ccl::communicator> comms =
-        ccl::create_device_communicators(
+        ccl::create_communicators(
             total_devices_in_cluster, ranked_device_indices, ctx, kvs);
 
     std::cout << "Create device communicators, expected count: " << ranked_device_indices.size()

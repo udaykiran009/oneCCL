@@ -170,9 +170,10 @@ typedef void (*sparse_allreduce_alloc_fn)(size_t,
  *  Supported CL backend types
  */
 enum class cl_backend_type : int {
-    empty_backend = 0,
-    dpcpp_sycl,
-    l0,
+    empty_backend = 0x0,
+    dpcpp_sycl = 0x1,
+    l0 = 0x2,
+    dpcpp_sycl_l0 = 0x3,
 
     last_value
 };

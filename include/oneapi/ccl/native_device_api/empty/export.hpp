@@ -11,6 +11,15 @@
 
 namespace ccl
 {
+
+template <>
+struct backend_info<CL_BACKEND_TYPE> {
+    CCL_API static constexpr ccl::cl_backend_type type() {
+        return CL_BACKEND_TYPE; }
+    CCL_API static constexpr const char* name() {
+        return "CL_BACKEND_UNAVAILABLE"; }
+};
+
 template <>
 struct generic_device_type<CL_BACKEND_TYPE> {
     using handle_t = empty_t;

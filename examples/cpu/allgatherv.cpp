@@ -114,11 +114,10 @@ int main() {
     ccl::context ctx = ccl::create_context();
     ccl::device dev = ccl::create_device();
     ccl::stream str = ccl::create_stream();
-    (void)dev;
-    (void)ctx;
     (void)str;
 
-    auto comm = ccl::create_communicator(size, rank, kvs);
+    auto comms = ccl::create_communicators(size, ccl::vector_class<ccl::pair_class<ccl::rank_t, ccl::device>>{{rank,dev}}, ctx, kvs);
+    auto& comm = comms[0];
     auto attr = ccl::create_operation_attr<ccl::allgatherv_attr>();
 
     MSG_LOOP(
@@ -131,7 +130,7 @@ int main() {
 
         for (size_t idx = 0; idx < comm.size(); idx++)
             recv_bufs[idx] = new float[msg_count];
-             
+
         attr.set<ccl::operation_attr_id::to_cache>(false);
         run_collective(
             "warmup_allgatherv", send_buf, recv_buf, recv_counts, comm, attr);

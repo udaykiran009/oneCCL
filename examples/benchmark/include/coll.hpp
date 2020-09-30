@@ -157,7 +157,7 @@ struct device_specific_data {
             throw ccl::exception(std::string(__FUNCTION__) + " - reinit is not allowed");
         }
 
-        comm_array = ccl::create_device_communicators(
+        comm_array = ccl::create_communicators(
             size,
             ccl::vector_class<ccl::pair_class<ccl::rank_t, cl::sycl::device>>{ { rank, device } },
             ctx,

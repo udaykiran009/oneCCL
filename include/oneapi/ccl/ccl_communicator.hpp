@@ -87,25 +87,28 @@ private:
     friend class comm_group;
     friend struct impl_dispatch;
 
+    template<cl_backend_type type>
+    friend struct comm_impl_dispatch_selector;
+
     communicator(impl_value_t&& impl);
 
     // factory methods
     template <class DeviceType, class ContextType>
-    static vector_class<communicator> create_device_communicators(
+    static vector_class<communicator> create_communicators(
         size_t comm_size,
         const vector_class<DeviceType>& local_devices,
         ContextType& context,
         shared_ptr_class<kvs_interface> kvs);
 
     template <class DeviceType, class ContextType>
-    static vector_class<communicator> create_device_communicators(
+    static vector_class<communicator> create_communicators(
         size_t comm_size,
         const vector_class<pair_class<rank_t, DeviceType>>& local_rank_device_map,
         ContextType& context,
         shared_ptr_class<kvs_interface> kvs);
 
     template <class DeviceType, class ContextType>
-    static vector_class<communicator> create_device_communicators(
+    static vector_class<communicator> create_communicators(
         size_t comm_size,
         const map_class<rank_t, DeviceType>& local_rank_device_map,
         ContextType& context,

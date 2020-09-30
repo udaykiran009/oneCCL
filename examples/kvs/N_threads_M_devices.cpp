@@ -20,7 +20,7 @@ void run_test(size_t thread_idx,
     std::map<size_t, std::vector<processing_type_ptr>> memory_storage;
 
     std::vector<ccl::device_communicator_t> comms =
-        ccl::environment::instance().create_device_communicators(size, device_ids, kvs);
+        ccl::environment::instance().create_communicators(size, device_ids, kvs);
 
     // alloc memory specific to devices
     for (auto& comm : comms) {
@@ -109,7 +109,7 @@ void run_test(size_t thread_idx,
     std::vector<processing_type> recv_values(COUNT, 0);
 
     std::vector<ccl::device_communicator_t> comms =
-        ccl::environment::instance().create_device_communicators(size, device_ids, kvs);
+        ccl::environment::instance().create_communicators(size, device_ids, kvs);
 
     // alloc memory specific to devices
     for (auto &comm : comms) {

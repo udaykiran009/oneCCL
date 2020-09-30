@@ -201,6 +201,7 @@ CREATE_OP_ATTR_INSTANTIATION(ccl::comm_split_attr)
 
 CREATE_OP_ATTR_INSTANTIATION(ccl::datatype_attr)
 
+CREATE_DEV_COMM_INSTANTIATION(ccl::device, ccl::context)
 #ifdef CCL_ENABLE_SYCL
 CREATE_DEV_COMM_INSTANTIATION(cl::sycl::device, cl::sycl::context)
 #ifdef MULTI_GPU_SUPPORT

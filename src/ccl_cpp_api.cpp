@@ -120,36 +120,36 @@ comm_split_attr environment::create_device_comm_split_attr(attr_value_pair_t&&..
 
 template<class DeviceType,
              class ContextType>
-vector_class<communicator> CCL_API environment::create_device_communicators(
+vector_class<communicator> CCL_API environment::create_communicators(
         const size_t devices_size,
         const vector_class<DeviceType>& local_devices,
         ContextType& context,
         shared_ptr_class<kvs_interface> kvs) const
 {
-    return communicator::create_device_communicators(devices_size, local_devices, context, kvs);
+    return communicator::create_communicators(devices_size, local_devices, context, kvs);
 }
 
 template<class DeviceType,
          class ContextType>
-vector_class<communicator> CCL_API environment::create_device_communicators(
+vector_class<communicator> CCL_API environment::create_communicators(
         const size_t cluster_devices_size, /*global devics count*/
         const vector_class<pair_class<rank_t, DeviceType>>& local_rank_device_map,
         ContextType& context,
         shared_ptr_class<kvs_interface> kvs)
 {
-    return communicator::create_device_communicators(cluster_devices_size, local_rank_device_map, context, kvs);
+    return communicator::create_communicators(cluster_devices_size, local_rank_device_map, context, kvs);
 }
 
 
 template<class DeviceType,
          class ContextType>
-vector_class<communicator> CCL_API environment::create_device_communicators(
+vector_class<communicator> CCL_API environment::create_communicators(
         const size_t cluster_devices_size, /*global devics count*/
         const map_class<rank_t, DeviceType>& local_rank_device_map,
         ContextType& context,
         shared_ptr_class<kvs_interface> kvs)
 {
-    return communicator::create_device_communicators(cluster_devices_size, local_rank_device_map, context, kvs);
+    return communicator::create_communicators(cluster_devices_size, local_rank_device_map, context, kvs);
 }
 
 

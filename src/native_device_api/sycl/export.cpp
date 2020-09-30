@@ -1,14 +1,35 @@
-#pragma once
+#include "oneapi/ccl/ccl_config.h"
 
-#include "oneapi/ccl/ccl_types.hpp"
+#if defined(CCL_ENABLE_SYCL) and !defined(MULTI_GPU_SUPPORT)
+
+#include "oneapi/ccl/native_device_api/sycl/export.hpp"
 #include "oneapi/ccl/ccl_type_traits.hpp"
 #include "common/log/log.hpp"
 #include "native_device_api/compiler_ccl_wrappers_dispatcher.hpp"
 
 namespace ccl {
 
-#ifdef CCL_ENABLE_SYCL
-/*
+/**
+ * Context
+ */
+generic_device_context_type<cl_backend_type::dpcpp_sycl>::generic_device_context_type() {}
+generic_device_context_type<cl_backend_type::dpcpp_sycl>::generic_device_context_type(ccl_native_t ctx)
+        : context(ctx) {}
+
+generic_device_context_type<cl_backend_type::dpcpp_sycl>::ccl_native_t&
+generic_device_context_type<cl_backend_type::dpcpp_sycl>::get() noexcept {
+    return const_cast<generic_device_context_type<cl_backend_type::dpcpp_sycl>::ccl_native_t&>(
+        static_cast<const generic_device_context_type<cl_backend_type::dpcpp_sycl>*>(this)->get());
+}
+
+const generic_device_context_type<cl_backend_type::dpcpp_sycl>::ccl_native_t&
+generic_device_context_type<cl_backend_type::dpcpp_sycl>::get() const noexcept {
+    return context;
+}
+
+/**
+ * Device
+ */
 CCL_API generic_device_type<cl_backend_type::dpcpp_sycl>::generic_device_type(
     device_index_type id,
     cl::sycl::info::device_type type)
@@ -53,10 +74,7 @@ CCL_API generic_device_type<cl_backend_type::dpcpp_sycl>::generic_device_type(
     LOG_DEBUG("Found devices: ", devices.size());
     auto it =
         std::find_if(devices.begin(), devices.end(), [id](const cl::sycl::device& dev) -> bool {
-#ifdef MULTI_GPU_SUPPORT
-            //TODO -S-
-            return id == native::get_runtime_device(dev)->get_device_path();
-#endif
+            //TODO -S- not implemented
             (void)id;
             return true;
         });
@@ -81,9 +99,6 @@ generic_device_type<cl_backend_type::dpcpp_sycl>::generic_device_type(const cl::
 
 device_index_type generic_device_type<cl_backend_type::dpcpp_sycl>::get_id() const {
     //TODO -S-
-#ifdef MULTI_GPU_SUPPORT
-    return native::get_runtime_device(device)->get_device_path();
-#endif
     return device_index_type{};
 }
 
@@ -91,11 +106,56 @@ typename generic_device_type<cl_backend_type::dpcpp_sycl>::ccl_native_t&
 generic_device_type<cl_backend_type::dpcpp_sycl>::get() noexcept {
     return device;
 }
-*/
-#else
-#ifdef MULTI_GPU_SUPPORT
-// #else
-// #error "No compute runtime is configured"
-#endif
-#endif
-} // namespace ccl
+
+/**
+ * Event
+ */
+generic_event_type<cl_backend_type::dpcpp_sycl>::generic_event_type(ccl_native_t ev) : event(ev) {}
+
+generic_event_type<cl_backend_type::dpcpp_sycl>::ccl_native_t&
+generic_event_type<cl_backend_type::dpcpp_sycl>::get() noexcept {
+    return const_cast<generic_event_type<cl_backend_type::dpcpp_sycl>::ccl_native_t&>(
+        static_cast<const generic_event_type<cl_backend_type::dpcpp_sycl>*>(this)->get());
+}
+
+const generic_event_type<cl_backend_type::dpcpp_sycl>::ccl_native_t&
+generic_event_type<cl_backend_type::dpcpp_sycl>::get() const noexcept {
+    return event;
+}
+
+
+/**
+ * Stream
+ */
+generic_stream_type<cl_backend_type::dpcpp_sycl>::generic_stream_type(ccl_native_t q) : queue(q) {}
+
+generic_stream_type<cl_backend_type::dpcpp_sycl>::ccl_native_t&
+generic_stream_type<cl_backend_type::dpcpp_sycl>::get() noexcept {
+    return const_cast<generic_stream_type<cl_backend_type::dpcpp_sycl>::ccl_native_t&>(
+        static_cast<const generic_stream_type<cl_backend_type::dpcpp_sycl>*>(this)->get());
+}
+
+const generic_stream_type<cl_backend_type::dpcpp_sycl>::ccl_native_t&
+generic_stream_type<cl_backend_type::dpcpp_sycl>::get() const noexcept {
+    return queue;
+}
+
+
+/**
+ * Platform
+ */
+generic_platform_type<cl_backend_type::dpcpp_sycl>::generic_platform_type(ccl_native_t pl)
+        : platform(pl) {}
+
+generic_platform_type<cl_backend_type::dpcpp_sycl>::ccl_native_t&
+generic_platform_type<cl_backend_type::dpcpp_sycl>::get() noexcept {
+    return const_cast<generic_platform_type<cl_backend_type::dpcpp_sycl>::ccl_native_t&>(
+        static_cast<const generic_platform_type<cl_backend_type::dpcpp_sycl>*>(this)->get());
+}
+
+const generic_platform_type<cl_backend_type::dpcpp_sycl>::ccl_native_t&
+generic_platform_type<cl_backend_type::dpcpp_sycl>::get() const noexcept {
+    return platform;
+}
+}
+#endif //CCL_ENABLE_SYCL and !defined(MULTI_GPU_SUPPORT)

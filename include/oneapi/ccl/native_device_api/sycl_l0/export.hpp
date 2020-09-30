@@ -1,7 +1,7 @@
 #pragma once
 #include "oneapi/ccl/ccl_types.hpp"
 
-#define CL_BACKEND_TYPE ccl::cl_backend_type::dpcpp_sycl
+#define CL_BACKEND_TYPE ccl::cl_backend_type::dpcpp_sycl_l0
 #include <CL/sycl.hpp>
 
 namespace ccl
@@ -11,7 +11,7 @@ struct backend_info<CL_BACKEND_TYPE> {
     CCL_API static constexpr ccl::cl_backend_type type() {
         return CL_BACKEND_TYPE; }
     CCL_API static constexpr const char* name() {
-        return "CL_DPCPP_BACKEND"; }
+        return "CL_DPCPP_POWERED_L0_BACKEND"; }
 };
 
 template <>
@@ -49,7 +49,7 @@ struct generic_platform_type<CL_BACKEND_TYPE> {
     using impl_t = handle_t;
     using ccl_native_t = impl_t;
 
-    generic_platform_type(ccl_native_t pl);
+    generic_platform_type(ccl_native_t& pl);
     ccl_native_t& get() noexcept;
     const ccl_native_t& get() const noexcept;
 

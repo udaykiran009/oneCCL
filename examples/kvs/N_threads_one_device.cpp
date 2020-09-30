@@ -15,7 +15,7 @@ void run_test(size_t thread_idx,
     using namespace ::native;
 
     ccl::device_communicator_t comm =
-        ccl::environment::instance().create_device_communicators(size, { device_id }, kvs)[0];
+        ccl::environment::instance().create_communicators(size, { device_id }, kvs)[0];
     size_t rank = comm->rank();
     ccl::communicator::device_native_reference_t dev = comm->get_device();
 
@@ -54,7 +54,7 @@ void run_test(size_t thread_idx,
               std::shared_ptr<ccl::ccl_kvs_interface> kvs) {
     using namespace ::native;
     ccl::device_communicator_t comm =
-        ccl::environment::instance().create_device_communicators(size, { device_id }, kvs)[0];
+        ccl::environment::instance().create_communicators(size, { device_id }, kvs)[0];
     size_t rank = comm->rank();
     ccl::communicator::device_native_reference_t dev = comm->get_device();
 
