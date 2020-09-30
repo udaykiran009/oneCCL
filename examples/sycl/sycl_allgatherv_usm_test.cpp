@@ -68,7 +68,7 @@ int main(int argc, char **argv) {
     /* create SYCL communicator */
     ccl::device dev = ccl::create_device(q.get_device());
     ccl::context ccl_ctx = ccl::create_context(q.get_context());
-    auto communcators = ccl::create_device_communicators(
+    auto communcators = ccl::create_communicators(
         size,
         ccl::vector_class<ccl::pair_class<ccl::rank_t, cl::sycl::device>>{
             { rank, dev.get_native() } },
