@@ -18,14 +18,8 @@ int main(int argc, char **argv) {
         return -1;
     }
 
-    /* create USM polymorphis allocator */
-    usm_polymorphic_allocator<int,
-                              cl::sycl::usm::alloc::host,
-                              cl::sycl::usm::alloc::device,
-                              cl::sycl::usm::alloc::shared>
-        allocator(q);
+    buf_allocator<int> allocator(q);
 
-    /* default type of USM allocation is SHARED */
     cl::sycl::usm::alloc usm_alloc_type = cl::sycl::usm::alloc::shared;
     if (argc > 2) {
         usm_alloc_type = usm_alloc_type_from_string(argv[2]);
@@ -33,6 +27,7 @@ int main(int argc, char **argv) {
 
     int *sendbuf = allocator.allocate(COUNT * size, usm_alloc_type);
     int *recvbuf = allocator.allocate(COUNT * size, usm_alloc_type);
+
     std::vector<size_t> send_counts(size, COUNT);
     std::vector<size_t> recv_counts(size, COUNT);
 
@@ -51,13 +46,13 @@ int main(int argc, char **argv) {
 
     /* create SYCL communicator */
     auto ctx = q.get_context();
-    auto communcators = ccl::create_communicators(
+    auto communicators = ccl::create_communicators(
         size,
         ccl::vector_class<ccl::pair_class<ccl::rank_t, cl::sycl::device>>{
             { rank, q.get_device() } },
         ctx,
         kvs);
-    auto &comm = *communcators.begin();
+    auto &comm = *communicators.begin();
 
     /* create SYCL stream */
     auto stream = ccl::create_stream(q);
@@ -75,7 +70,9 @@ int main(int argc, char **argv) {
 
     /* invoke ccl_alltoall on the CPU side */
     auto attr = ccl::create_operation_attr<ccl::alltoallv_attr>();
+    printf("before alltoallv, sendbuf %p, recvbuf %p\n", sendbuf, recvbuf); fflush(stdout);
     ccl::alltoallv(sendbuf, send_counts, recvbuf, recv_counts, comm, stream, attr).wait();
+    printf("after alltoallv, sendbuf %p, recvbuf %p\n", sendbuf, recvbuf); fflush(stdout);
 
     /* open recvbuf and check its correctness on the target device side */
     cl::sycl::buffer<int, 1> out_recv_buf(COUNT * size);

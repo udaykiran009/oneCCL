@@ -166,7 +166,7 @@ struct device_specific_data {
         comm_ptr =
             device_communicator_ptr(new ccl::communicator(std::move(*comm_array.begin())));
         stream_ptr =
-            std::make_shared<ccl::stream>(ccl::environment::instance().create_stream(sycl_queue));
+            std::make_shared<ccl::stream>(ccl::create_stream(sycl_queue));
     }
 
     static void deinit() {

@@ -5,7 +5,7 @@
 #endif
 
 #if defined(MULTI_GPU_SUPPORT) && defined(CCL_ENABLE_SYCL)
-#include <CL/sycl/backend/Intel_level0.hpp>
+#include <CL/sycl/backend/level_zero.hpp>
 #include "oneapi/ccl/native_device_api/l0/primitives.hpp"
 #endif
 
@@ -22,7 +22,7 @@ size_t get_sycl_device_id(const cl::sycl::device& device) {
     size_t device_id = std::numeric_limits<size_t>::max();
 
     // extract native handle L0
-    auto l0_handle_ptr = device.template get_native<cl::sycl::backend::level0>();
+    auto l0_handle_ptr = device.template get_native<cl::sycl::backend::level_zero>();
     if (!l0_handle_ptr) {
         throw std::runtime_error(std::string(__FUNCTION__) +
                                  " - failed for sycl device: handle is nullptr!");

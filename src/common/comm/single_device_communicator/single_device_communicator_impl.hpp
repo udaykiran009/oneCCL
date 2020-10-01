@@ -756,6 +756,7 @@ single_device_communicator::coll_request_t single_device_communicator::reduce_im
                                        stream_ptr);
     return std::unique_ptr<ccl::request_impl>(new ccl::host_request_impl(req));
 }
+
 /* reduce_scatter */
 template <class buffer_type>
 single_device_communicator::coll_request_t single_device_communicator::reduce_scatter_impl(
@@ -766,9 +767,95 @@ single_device_communicator::coll_request_t single_device_communicator::reduce_sc
     const ccl::stream::impl_value_t& stream,
     const ccl::reduce_scatter_attr& attr,
     const ccl::vector_class<ccl::event>& deps) {
-    throw ccl::exception(std::string(__PRETTY_FUNCTION__) + " - is not implemented");
-    return {};
+    
+    static constexpr ccl::group_split_type group_id = base_t::topology_type();
+    static constexpr ccl::device_topology_type class_id = base_t::topology_class();
+
+    if (!is_ready()) {
+        throw ccl::exception(std::string(
+            "Single device communicator for group_id: " + ::to_string(group_id) +
+            ", class_id: " + ::to_string(class_id) +
+            " is not ready yet. Not all сommunicators are created in group. Please create them before usage"));
+    }
+
+    LOG_DEBUG("device idx: ", get_device_path(), ", rank: (", rank(), "/", size(), ")");
+
+    std::unique_ptr<ccl::chargeable_request> scoped_req;
+    using namespace ::native::details;
+
+    // test USM arguments on validity
+    using reduce_scatter_usm_check_result = multiple_assoc_result<2>;
+    reduce_scatter_usm_check_result usm_assoc_results =
+        check_multiple_assoc_device_memory(get_device(), get_context(), send_buf, recv_buf);
+    usm_support_mode test_value = std::get<assoc_result_index::SUPPORT_MODE>(usm_assoc_results[0]);
+    bool ret = std::all_of(usm_assoc_results.begin(),
+                           usm_assoc_results.end(),
+                           [test_value](const typename reduce_scatter_usm_check_result::value_type& v) {
+                               return test_value == std::get<assoc_result_index::SUPPORT_MODE>(v);
+                           });
+    if (!ret) {
+        throw ccl::exception(std::string(__PRETTY_FUNCTION__) + " - invalid USM arguments:\n" +
+                             ::native::details::to_string(usm_assoc_results));
+    }
+    switch (test_value) {
+        case usm_support_mode::shared: /*the same as `direct` at now*/
+            LOG_TRACE("comm: ", to_string(), " - use USM shared pointers for buffers");
+        case usm_support_mode::direct: {
+            LOG_TRACE("comm: ", to_string(), " - use USM direct pointers for buffers");
+            scoped_req = ccl::details::make_unique_scoped_request<
+                ccl::host_request_impl>(ccl_reduce_scatter_impl(
+                reinterpret_cast<const void*>(send_buf),
+                reinterpret_cast<void*>(recv_buf),
+                recv_count,
+                ccl::native_type_info<buffer_type>::ccl_datatype_value,
+                reduction,
+                attr,
+                comm_impl.get(),
+                nullptr /*TODO fix core part, because stream existance use force cast to sycl::buffer*/
+                /*, stream.get()*/));
+            break;
+        }
+        case need_conversion: {
+            ccl_request* req = nullptr;
+#ifdef CCL_ENABLE_SYCL
+            LOG_TRACE(
+                "comm: ", to_string(), " - use USM pointers convertation to SYCL for both buffers");
+            auto scoped_req_sycl = ccl::details::make_unique_scoped_request<ccl::host_request_impl>(
+                nullptr,
+                /*send_buf*/
+                cl::sycl::buffer<buffer_type>{
+                    send_buf, recv_count, cl::sycl::property::buffer::use_host_ptr{} },
+                /*recv_buf*/
+                cl::sycl::buffer<buffer_type>{
+                    recv_buf, recv_count, cl::sycl::property::buffer::use_host_ptr{} });
+
+            req =
+                ccl_reduce_scatter_impl(reinterpret_cast<const void*>(
+                                    &scoped_req_sycl->template get_arg_by_index<0>() /*send_buf*/),
+                                reinterpret_cast<void*>(
+                                    &scoped_req_sycl->template get_arg_by_index<1>() /*recv_buf*/),
+                                recv_count,
+                                ccl::native_type_info<buffer_type>::ccl_datatype_value,
+                                reduction,
+                                attr,
+                                comm_impl.get(),
+                                stream.get());
+#else
+            throw ccl::exception(std::string(__PRETTY_FUNCTION__) +
+                            " - USM convertation is not supported for such configuration");
+#endif
+            scoped_req_sycl->charge(req);
+            scoped_req = std::move(scoped_req_sycl);
+            break;
+        }
+        default:
+            throw ccl::exception(std::string(__PRETTY_FUNCTION__) +
+                                 " - USM category is not supported for such configuration:\n" +
+                                 ::native::details::to_string(usm_assoc_results[0]));
+    }
+    return std::unique_ptr<ccl::request_impl>(scoped_req.release());
 }
+
 template <class buffer_type>
 single_device_communicator::coll_request_t single_device_communicator::reduce_scatter_impl(
     const buffer_type& send_buf,
@@ -778,8 +865,17 @@ single_device_communicator::coll_request_t single_device_communicator::reduce_sc
     const ccl::stream::impl_value_t& stream,
     const ccl::reduce_scatter_attr& attr,
     const ccl::vector_class<ccl::event>& deps) {
-    throw ccl::exception(std::string(__PRETTY_FUNCTION__) + " - is not implemented");
-    return {};
+    
+    const ccl_stream* stream_ptr = stream.get();
+    ccl_request* req = ccl_reduce_scatter_impl(reinterpret_cast<const void*>(&send_buf),
+                                               reinterpret_cast<void*>(&recv_buf),
+                                               recv_count,
+                                               ccl::native_type_info<buffer_type>::ccl_datatype_value,
+                                               reduction,
+                                               attr,
+                                               comm_impl.get(),
+                                               stream_ptr);
+    return std::unique_ptr<ccl::request_impl>(new ccl::host_request_impl(req));
 }
 
 /* sparse_allreduce */

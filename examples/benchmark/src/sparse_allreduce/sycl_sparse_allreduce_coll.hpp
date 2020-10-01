@@ -132,7 +132,7 @@ struct sycl_sparse_allreduce_coll : base_sparse_allreduce_coll<cl::sycl::buffer<
                        size_t buf_idx,
                        const bench_exec_attr& attr,
                        req_list_t& reqs) override {
-        coll_strategy::start_internal(
+        /*coll_strategy::start_internal(
             comm(),
             *static_cast<const cl::sycl::buffer<IType>*>(send_ibufs[buf_idx]),
             count,
@@ -146,13 +146,13 @@ struct sycl_sparse_allreduce_coll : base_sparse_allreduce_coll<cl::sycl::buffer<
             reqs,
             fn_ctxs[buf_idx],
             stream(),
-            coll_strategy::get_op_attr(attr));
+            coll_strategy::get_op_attr(attr));*/
     }
 
     virtual void start_single(size_t count,
                               const bench_exec_attr& attr,
                               req_list_t& reqs) override {
-        coll_strategy::start_internal(
+        /*coll_strategy::start_internal(
             comm(),
             *static_cast<const cl::sycl::buffer<IType>*>(single_send_ibuf),
             count,
@@ -166,7 +166,7 @@ struct sycl_sparse_allreduce_coll : base_sparse_allreduce_coll<cl::sycl::buffer<
             reqs,
             single_fn_ctx,
             stream(),
-            coll_strategy::get_op_attr(attr));
+            coll_strategy::get_op_attr(attr));*/
     }
 
     /* global communicator for cpu collectives */

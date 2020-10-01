@@ -45,7 +45,7 @@ CCL_API generic_device_type<cl_backend_type::dpcpp_sycl>::generic_device_type(
         std::find_if(platforms.begin(), platforms.end(), [](const cl::sycl::platform& pl) {
             return pl.get_info<cl::sycl::info::platform::name>().find("Level-Zero") !=
                    std::string::npos;
-            //or platform.get_backend() == cl::sycl::backend::level0
+            //or platform.get_backend() == cl::sycl::backend::level_zero
         });
     if (platform_it == platforms.end()) {
         std::stringstream ss;

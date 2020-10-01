@@ -122,9 +122,9 @@ void handle_exception(cl::sycl::queue& q) {
 
 cl::sycl::usm::alloc usm_alloc_type_from_string(const std::string& str) {
     const std::map<std::string, cl::sycl::usm::alloc> names{ {
-        { "HOST", cl::sycl::usm::alloc::host },
-        { "DEVICE", cl::sycl::usm::alloc::device },
-        { "SHARED", cl::sycl::usm::alloc::shared },
+        { "host", cl::sycl::usm::alloc::host },
+        { "device", cl::sycl::usm::alloc::device },
+        { "shared", cl::sycl::usm::alloc::shared },
     } };
 
     auto it = names.find(str);
@@ -138,6 +138,56 @@ cl::sycl::usm::alloc usm_alloc_type_from_string(const std::string& str) {
     }
     return it->second;
 }
+
+template <typename  T>
+struct buf_allocator {
+
+    const size_t alignment = 64;
+
+    buf_allocator(cl::sycl::queue& queue)
+        : queue(queue)
+    {}
+
+    ~buf_allocator() {
+        for (auto& ptr : memory_storage) {
+            deallocate(ptr);
+        }
+    }
+
+    T* allocate(size_t count, cl::sycl::usm::alloc alloc_type) {
+        T* ptr = nullptr;
+        if (alloc_type == cl::sycl::usm::alloc::host)
+            ptr = cl::sycl::aligned_alloc_host<T>(alignment, count, queue);
+        else if (alloc_type == cl::sycl::usm::alloc::device)
+            ptr =  cl::sycl::aligned_alloc_device<T>(alignment, count, queue);
+        else if (alloc_type == cl::sycl::usm::alloc::shared)
+            ptr =  cl::sycl::aligned_alloc_shared<T>(alignment, count, queue);
+        else
+            throw std::runtime_error(std::string(__PRETTY_FUNCTION__) + "unexpected alloc_type");
+
+        auto it = memory_storage.find(ptr);
+        if (it != memory_storage.end()) {
+            throw std::runtime_error(std::string(__PRETTY_FUNCTION__) +
+                                        " - allocator already owns this pointer");
+        }
+        memory_storage.insert(ptr);
+
+        return ptr;
+    }
+
+    void deallocate(T* ptr) {
+        auto it = memory_storage.find(ptr);
+        if (it == memory_storage.end()) {
+            throw std::runtime_error(std::string(__PRETTY_FUNCTION__) +
+                                        " - allocator doesn't own this pointer");
+        }
+        cl::sycl::free(ptr, queue);
+        memory_storage.erase(it);
+    }
+
+    cl::sycl::queue queue;
+    std::set<T*> memory_storage;
+};
 
 template <class data_native_type, cl::sycl::usm::alloc... types>
 struct usm_polymorphic_allocator {
@@ -230,4 +280,5 @@ public:
         ccl_tuple_for_each(allocators, dealloc_impl{ &in_ptr, size, type, this });
     }
 };
+
 #endif /* SYCL_BASE_HPP */

@@ -132,9 +132,9 @@ print_help()
     echo_log "   ------------------------------------------------------------"
     echo_log "    -eng-package|--eng-package"
     echo_log "        Prepare CCL eng-package (gzipped tar archive)"
-    echo_log "    -build_cpu|--build_cpu"
+    echo_log "    -build-cpu|--build-cpu"
     echo_log "        Prepare CCL build with icc/icpc"
-    echo_log "    -build_gpu|--build_gpu"
+    echo_log "    -build-gpu|--build-gpu"
     echo_log "        Prepare CCL build with clang/clang++ with SYCL"
     echo_log "    -pack|--pack"
     echo_log "        Prepare CCL package (gzipped tar archive)"
@@ -175,8 +175,7 @@ check_clang_path()
 {
     if [ -z "${SYCL_BUNDLE_ROOT}" ]
     then
-        #SYCL_BUNDLE_ROOT="/nfs/inn/proj/mpi/pdsd/opt/EM64T-LIN/compilers/clang/latest/linux"
-        SYCL_BUNDLE_ROOT="/nfs/inn/proj/mpi/pdsd/opt/EM64T-LIN/compilers/clang/trunk/compiler/linux"
+        SYCL_BUNDLE_ROOT="/nfs/inn/proj/mpi/pdsd/opt/EM64T-LIN/compilers/clang/latest/linux"
         echo "WARNING: SYCL_BUNDLE_ROOT is not defined, will be used default: $SYCL_BUNDLE_ROOT"
     fi
     source ${SYCL_BUNDLE_ROOT}/../env/vars.sh intel64
@@ -678,7 +677,7 @@ parse_arguments()
             "-install"| "--install")
                 ENABLE_INSTALL="yes"
                 ;;
-            "-help")
+            "-help"|"--help"|"-h"|"-H")
                 print_help
                 exit 0
                 ;;

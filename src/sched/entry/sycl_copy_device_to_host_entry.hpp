@@ -28,6 +28,11 @@ public:
               offset(offset) {}
 
     void start() override {
+
+        // LOG_DEBUG(class_name(), ": in_buf ", in_buf, ", out_buf ", out_buf, ", cnt ", cnt);
+        // cl::sycl::usm::alloc usm_kind = get_pointer_type(in_buf, stream.get().get_context());
+        // CCL_THROW_IF_NOT(usm_kind == cl::sycl::usm::alloc::shared, "usm_kind should be shared");
+
         //fill visitor with actual ccl_buffer data
         auto visitor = make_visitor<cl::sycl::access::mode::read>(
             dtype, cnt, offset, in_buf, [this](void* sycl_pointer, size_t bytes) {

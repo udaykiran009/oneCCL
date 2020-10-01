@@ -26,6 +26,9 @@ public:
               stream(stream) {}
 
     void start() override {
+
+        LOG_DEBUG(class_name(), "in_buf ", in_buf, ", out_buf ", out_buf, ", cnt ", cnt);
+
         //fill visitor with actual ccl_buffer data
         auto visitor = make_visitor<cl::sycl::access::mode::write>(
             dtype, cnt, 0, out_buf, [this](void* sycl_pointer, size_t bytes) {

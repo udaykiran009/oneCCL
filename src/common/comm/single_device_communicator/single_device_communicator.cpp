@@ -243,11 +243,21 @@ single_device_communicator::coll_request_t single_device_communicator::reduce_sc
     const ccl::stream::impl_value_t& stream,
     const ccl::reduce_scatter_attr& attr,
     const ccl::vector_class<ccl::event>& deps) {
-    // TODO not implemented
-    throw ccl::exception(std::string(__PRETTY_FUNCTION__) + " - is not implemented");
-
-    ccl_request* req = nullptr;
-    return std::unique_ptr<ccl::request_impl>(new ccl::host_request_impl(req));
+    
+    coll_request_t req;
+    if (!reduce_scatter_usm_visitor_base_t::visit(
+            req, dtype, send_buf, recv_buf, recv_count, reduction, stream, attr, deps)) {
+        req = coll_request_t(std::unique_ptr<ccl::request_impl>(
+            new ccl::host_request_impl(ccl_reduce_scatter_impl(send_buf,
+                                                       recv_buf,
+                                                       recv_count,
+                                                       dtype,
+                                                       reduction,
+                                                       attr,
+                                                       comm_impl.get(),
+                                                       stream.get()))));
+    }
+    return req;
 }
 
 /* sparse_allreduce */

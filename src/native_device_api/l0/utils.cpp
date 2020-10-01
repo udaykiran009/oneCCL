@@ -6,7 +6,7 @@
 
 #if defined(CCL_ENABLE_SYCL)
 //#ifdef CCL_ENABLE_SYCL
-#include <CL/sycl/backend/Intel_level0.hpp>
+#include <CL/sycl/backend/level_zero.hpp>
 //static cl::sycl::vector_class<cl::sycl::device> gpu_sycl_devices;
 #endif
 

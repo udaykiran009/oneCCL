@@ -211,7 +211,9 @@ void ccl_sched_base::alloc_buffers_for_sycl_copy() {
         return;
 
     LOG_DEBUG("alloc tmp buffers for D2H and H2D copies, coll_type ",
-              ccl_coll_type_to_str(param.ctype));
+              ccl_coll_type_to_str(param.ctype), ", dtype_size ", param.dtype.size(),
+              ", comm_size ", param.comm->size(),
+              ", count ", param.count);
 
     size_t idx, send_count = 0, recv_count = 0;
 

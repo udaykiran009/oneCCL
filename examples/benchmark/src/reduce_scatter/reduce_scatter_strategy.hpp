@@ -23,6 +23,9 @@ struct reduce_scatter_strategy_impl {
 
         size_t recv_count = send_count / comm.size();
 
+        if (recv_count == 0)
+            return;
+
         reqs.push_back(ccl::reduce_scatter(send_buf,
                                            recv_buf,
                                            recv_count,

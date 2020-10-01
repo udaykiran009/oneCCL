@@ -1,4 +1,3 @@
-
 #include "sycl_base.hpp"
 
 int main(int argc, char **argv) {
@@ -17,37 +16,15 @@ int main(int argc, char **argv) {
         return -1;
     }
 
-    int *sendbuf = nullptr;
-    int *recvbuf = nullptr;
+    buf_allocator<int> allocator(q);
 
-    cl::sycl::usm::alloc usm_type = cl::sycl::usm::alloc::device;
-    if (argc > 2 && strcmp(argv[2], "HOST") == 0) {
-        usm_type = cl::sycl::usm::alloc::host;
-        /* create USM */
-        cl::sycl::usm_allocator<int, cl::sycl::usm::alloc::host> allocator{ q };
-        sendbuf = allocator.allocate(COUNT);
-        recvbuf = allocator.allocate(COUNT * size);
+    cl::sycl::usm::alloc usm_alloc_type = cl::sycl::usm::alloc::shared;
+    if (argc > 2) {
+        usm_alloc_type = usm_alloc_type_from_string(argv[2]);
     }
-    else if (argc > 2 && strcmp(argv[2], "DEVICE") == 0) {
-        usm_type = cl::sycl::usm::alloc::device;
-        /* create USM */
-        cl::sycl::usm_allocator<int, cl::sycl::usm::alloc::device> allocator{ q };
-        sendbuf = allocator.allocate(COUNT);
-        recvbuf = allocator.allocate(COUNT * size);
-    }
-    else if (argc > 2 && strcmp(argv[2], "SHARED") == 0) {
-        usm_type = cl::sycl::usm::alloc::shared;
-        cl::sycl::usm_allocator<int, cl::sycl::usm::alloc::shared> allocator{ q };
-        sendbuf = allocator.allocate(COUNT);
-        recvbuf = allocator.allocate(COUNT * size);
-    }
-    else {
-        //default device
-        usm_type = cl::sycl::usm::alloc::device;
-        cl::sycl::usm_allocator<int, cl::sycl::usm::alloc::device> allocator{ q };
-        sendbuf = allocator.allocate(COUNT);
-        recvbuf = allocator.allocate(COUNT * size);
-    }
+
+    int* sendbuf = allocator.allocate(COUNT, usm_alloc_type);
+    int* recvbuf = allocator.allocate(COUNT * size, usm_alloc_type);
 
     cl::sycl::buffer<int, 1> expected_buf(COUNT * size);
     cl::sycl::buffer<int, 1> out_recv_buf(COUNT * size);
@@ -68,13 +45,13 @@ int main(int argc, char **argv) {
     /* create SYCL communicator */
     ccl::device dev = ccl::create_device(q.get_device());
     ccl::context ccl_ctx = ccl::create_context(q.get_context());
-    auto communcators = ccl::create_communicators(
+    auto communicators = ccl::create_communicators(
         size,
         ccl::vector_class<ccl::pair_class<ccl::rank_t, cl::sycl::device>>{
             { rank, dev.get_native() } },
         ccl_ctx.get_native(),
         kvs);
-    auto &comm = *communcators.begin();
+    auto &comm = *communicators.begin();
 
     /* create SYCL stream */
     auto stream = ccl::create_stream(q);

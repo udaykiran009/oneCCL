@@ -196,16 +196,13 @@ set_environment()
         C_COMPILER=${BUILD_COMPILER}/icc
         CXX_COMPILER=${BUILD_COMPILER}/icpc
     else
-        SYCL_BUNDLE_ROOT="/nfs/inn/proj/mpi/pdsd/opt/EM64T-LIN/compilers/clang/trunk/compiler/linux"
         if [ -z "${SYCL_BUNDLE_ROOT}" ]
         then
             echo "ERROR: please specify  SYCL_BUNDLE_ROOT, will be used \${SYCL_BUNDLE_ROOT}/setvars.sh"
             exit 1
         fi
-        #source  ${SYCL_BUNDLE_ROOT}/setvars.sh
-        source /nfs/inn/proj/mpi/pdsd/opt/EM64T-LIN/compilers/clang/trunk/compiler/env/vars.sh intel64
-        #BUILD_COMPILER=${SYCL_BUNDLE_ROOT}/compiler/latest/linux/bin
-        BUILD_COMPILER=/nfs/inn/proj/mpi/pdsd/opt/EM64T-LIN/compilers/clang/trunk/compiler/linux/bin
+        source ${SYCL_BUNDLE_ROOT}/setvars.sh
+        BUILD_COMPILER=${SYCL_BUNDLE_ROOT}/compiler/latest/linux/bin
         C_COMPILER=${BUILD_COMPILER}/clang
         CXX_COMPILER=${BUILD_COMPILER}/clang++
     fi

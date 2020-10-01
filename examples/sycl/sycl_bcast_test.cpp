@@ -35,13 +35,13 @@ int main(int argc, char **argv) {
 
     /* create SYCL communicator */
     auto ctx = q.get_context();
-    auto communcators = ccl::create_communicators(
+    auto communicators = ccl::create_communicators(
         size,
         ccl::vector_class<ccl::pair_class<ccl::rank_t, cl::sycl::device>>{
             { rank, q.get_device() } },
         ctx,
         kvs);
-    auto &comm = *communcators.begin();
+    auto &comm = *communicators.begin();
 
     /* create SYCL stream */
     auto stream = ccl::create_stream(q);
