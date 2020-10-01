@@ -61,8 +61,9 @@ void run_test(const size_t size,
     std::vector<processing_type> recv_values(COUNT, 0);
 
     // wrapped L0-native API for devices: create native buffers
-    auto mem_send = dev->alloc_memory<processing_type>(COUNT, sizeof(processing_type));
-    auto mem_recv = dev->alloc_memory<processing_type>(COUNT, sizeof(processing_type));
+    std::shared_ptr<ccl_context> ctx;
+    auto mem_send = dev->alloc_memory<processing_type>(COUNT, sizeof(processing_type), ctx);
+    auto mem_recv = dev->alloc_memory<processing_type>(COUNT, sizeof(processing_type), ctx);
 
     // wrapped L0-native API for memory: fill device buffers
     mem_send.enqueue_write_sync(send_values);

@@ -2,6 +2,7 @@
 
 #if defined(MULTI_GPU_SUPPORT)
 #include "oneapi/ccl/native_device_api/l0/device.hpp"
+#include "oneapi/ccl/native_device_api/l0/context.hpp"
 
 #if defined(CCL_ENABLE_SYCL)
 //#ifdef CCL_ENABLE_SYCL

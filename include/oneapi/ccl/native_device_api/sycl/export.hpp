@@ -19,7 +19,7 @@ struct generic_device_type<CL_BACKEND_TYPE> {
     using handle_t = cl_device_id;//cl::sycl::device;
     using impl_t = cl::sycl::device;
     using ccl_native_t = impl_t;
-
+    
     generic_device_type(device_index_type id,
                         cl::sycl::info::device_type = cl::sycl::info::device_type::gpu);
     generic_device_type(const cl::sycl::device& device);

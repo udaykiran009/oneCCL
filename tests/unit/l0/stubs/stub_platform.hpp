@@ -23,10 +23,9 @@ struct test_device : public native::ccl_device {
         std::shared_ptr<test_device> dev = std::make_shared<test_device>(std::move(driver));
 
         dev->device_properties.type = ZE_DEVICE_TYPE_GPU;
-        dev->device_properties.version = ZE_DEVICE_PROPERTIES_VERSION_CURRENT;
         dev->device_properties.deviceId =
             std::get<ccl::device_index_enum::device_index_id>(full_device_index);
-        dev->device_properties.isSubdevice = 0;
+        dev->device_properties.flags = ZE_DEVICE_PROPERTY_FLAG_INTEGRATED;
 
         //create default queue
         auto queue_prop = ccl_device::get_default_queue_desc();
@@ -76,10 +75,9 @@ struct test_subdevice : public native::ccl_subdevice {
         std::shared_ptr<test_subdevice> subdev =
             std::make_shared<test_subdevice>(std::move(device), std::move(driver));
         subdev->device_properties.type = ZE_DEVICE_TYPE_GPU;
-        subdev->device_properties.version = ZE_DEVICE_PROPERTIES_VERSION_CURRENT;
         subdev->device_properties.deviceId =
             std::get<ccl::device_index_enum::subdevice_index_id>(full_device_index);
-        subdev->device_properties.isSubdevice = 1;
+        subdev->device_properties.flags = ZE_DEVICE_PROPERTY_FLAG_SUBDEVICE;
 
         //create default queue
         auto queue_prop = ccl_subdevice::get_default_queue_desc();

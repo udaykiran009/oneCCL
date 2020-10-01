@@ -64,6 +64,8 @@ TYPED_TEST_CASE(ring_allgatherv_single_device_fixture, ring_allgatherv_case::Tes
 TYPED_TEST(ring_allgatherv_single_device_fixture, ring_allgatherv_single_device_mt) {
     using namespace native;
 
+    std::shared_ptr<ccl_context> ctx;
+
     // Type of our test
     using native_type = TypeParam;
 
@@ -121,8 +123,8 @@ TYPED_TEST(ring_allgatherv_single_device_fixture, ring_allgatherv_single_device_
             comm_param_storage[thread_idx].push_back(rank_size);
             comm_param_storage[thread_idx].push_back(send_count);
 
-            auto mem_recv_counts = device.alloc_memory<size_t>(num_thread, sizeof(size_t));
-            auto mem_recv_offsets = device.alloc_memory<size_t>(num_thread, sizeof(size_t));
+            auto mem_recv_counts = device.alloc_memory<size_t>(num_thread, sizeof(size_t), ctx);
+            auto mem_recv_offsets = device.alloc_memory<size_t>(num_thread, sizeof(size_t), ctx);
 
             mem_recv_counts.enqueue_write_sync(recv_counts);
             mem_recv_offsets.enqueue_write_sync(recv_offsets);
@@ -132,8 +134,8 @@ TYPED_TEST(ring_allgatherv_single_device_fixture, ring_allgatherv_single_device_
 
             // allocate flags & memory
             // memory
-            auto mem_send = device.alloc_memory<native_type>(send_count, sizeof(native_type));
-            auto mem_recv = device.alloc_memory<native_type>(recv_buffer_size, sizeof(native_type));
+            auto mem_send = device.alloc_memory<native_type>(send_count, sizeof(native_type), ctx);
+            auto mem_recv = device.alloc_memory<native_type>(recv_buffer_size, sizeof(native_type), ctx);
 
             mem_send.enqueue_write_sync(
                 send_values.begin() + recv_offsets[thread_idx],
@@ -145,8 +147,8 @@ TYPED_TEST(ring_allgatherv_single_device_fixture, ring_allgatherv_single_device_
                 thread_idx, num_thread, std::move(mem_send), std::move(mem_recv));
 
             // flags
-            auto left_wrote_2_me_flag = device.alloc_memory<int>(1, sizeof(int));
-            auto ready_for_receive_flag = device.alloc_memory<int>(1, sizeof(int));
+            auto left_wrote_2_me_flag = device.alloc_memory<int>(1, sizeof(int), ctx);
+            auto ready_for_receive_flag = device.alloc_memory<int>(1, sizeof(int), ctx);
             left_wrote_2_me_flag.enqueue_write_sync({ (int)0 });
             ready_for_receive_flag.enqueue_write_sync({ (int)0 });
 
@@ -172,7 +174,11 @@ TYPED_TEST(ring_allgatherv_single_device_fixture, ring_allgatherv_single_device_
     }
 
     // prepare kernels in multithreading environment
-    ze_kernel_desc_t desc = { ZE_KERNEL_DESC_VERSION_CURRENT, ZE_KERNEL_FLAG_NONE };
+    ze_kernel_desc_t desc = {
+        .stype = ZE_STRUCTURE_TYPE_KERNEL_DESC,
+        .pNext = nullptr,
+        .flags = 0,
+    };
     desc.pKernelName = ring_allgatherv_case::param_traits<native_type>::kernel_name;
     std::map<size_t, ze_kernel_handle_t> thread_kernels;
     std::map<size_t, ccl_device::device_queue> thread_queue;
@@ -189,8 +195,8 @@ TYPED_TEST(ring_allgatherv_single_device_fixture, ring_allgatherv_single_device_
             }
 
             thread_kernels.emplace(thread_idx, std::move(handle));
-            thread_queue.emplace(thread_idx, device.create_cmd_queue());
-            thread_cmd_list.emplace(thread_idx, device.create_cmd_list());
+            thread_queue.emplace(thread_idx, device.create_cmd_queue(ctx));
+            thread_cmd_list.emplace(thread_idx, device.create_cmd_list(ctx));
         }
         catch (const std::exception& ex) {
             throw std::runtime_error(std::string("Error: ") + ex.what());

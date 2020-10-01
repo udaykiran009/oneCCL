@@ -70,19 +70,19 @@ public:
 
               temp_buffer(parent_communicator->get_device().template alloc_memory<native_type>(
                   cnt,
-                  sizeof(native_type))),
+                  sizeof(native_type), std::shared_ptr<ccl_context> { })),
               income_data_flag(parent_communicator->get_device()
                                    .template alloc_memory<income_data_flag_gpu_type>(
                                        1,
-                                       sizeof(income_data_flag_gpu_type))),
+                                       sizeof(income_data_flag_gpu_type), std::shared_ptr<ccl_context> { })),
               ready_to_recv_flag(parent_communicator->get_device()
                                      .template alloc_memory<ready_to_recv_flag_gpu_type>(
                                          1,
-                                         sizeof(ready_to_recv_flag_gpu_type))),
+                                         sizeof(ready_to_recv_flag_gpu_type), std::shared_ptr<ccl_context> { })),
               local_barrier_flag(parent_communicator->get_device()
                                      .template alloc_memory<local_barrier_flag_gpu_type>(
                                          1,
-                                         sizeof(local_barrier_flag_gpu_type))) {
+                                         sizeof(local_barrier_flag_gpu_type), std::shared_ptr<ccl_context> { })) {
         recv_buf_typed_entry = recv_buf;
         op_typed_entry = op;
         cnt_entry = cnt;
@@ -206,9 +206,9 @@ public:
         //TODO
         std::vector<ccl_device::device_ipc_memory_handle> ret;
         ret.reserve(3);
-        ret.push_back(owned_device.create_ipc_memory_handle(temp_buffer.get()));
-        ret.push_back(owned_device.create_ipc_memory_handle(income_data_flag.get()));
-        ret.push_back(owned_device.create_ipc_memory_handle(ready_to_recv_flag.get()));
+        ret.push_back(owned_device.create_ipc_memory_handle(temp_buffer.get(), ctx));
+        ret.push_back(owned_device.create_ipc_memory_handle(income_data_flag.get(), ctx));
+        ret.push_back(owned_device.create_ipc_memory_handle(ready_to_recv_flag.get(), ctx));
         return ret;
     }
 
@@ -229,7 +229,7 @@ protected:
                 std::unique_lock<std::mutex> lock(global_mutex);
                 exec_count++;
                 cur_index = exec_count;
-                result = zeCommandListAppendLaunchKernel(device.get_cmd_list().get(),
+                result = zeCommandListAppendLaunchKernel(device.get_cmd_list(ctx).get(),
                                                          main_entry_function.handle,
                                                          &launch_args,
                                                          nullptr,
@@ -289,7 +289,7 @@ protected:
                              exec_count,
                              ", CurIndex: ",
                              cur_index);
-                    result = zeCommandListClose(device.get_cmd_list().get());
+                    result = zeCommandListClose(device.get_cmd_list(ctx).get());
                     if (result != ZE_RESULT_SUCCESS) {
                         LOG_ERROR("zeCommandListClose failed, error: ", native::to_string(result));
                         throw std::runtime_error("zeCommandListClose failed");
@@ -320,7 +320,7 @@ protected:
 
 private:
     bool is_kernel_added = false; //TODO L0 workaround - one dev close list
-
+    std::shared_ptr<ccl_context> ctx;
     ccl_device::device_memory<native_type> temp_buffer;
     ccl_device::device_memory<income_data_flag_gpu_type> income_data_flag;
     ccl_device::device_memory<ready_to_recv_flag_gpu_type> ready_to_recv_flag;

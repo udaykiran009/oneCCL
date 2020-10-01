@@ -83,6 +83,8 @@ TYPED_TEST(ring_alltoallv_single_device_fixture, ring_alltoallv_single_device_mt
     handles_storage<native_type> memory_storage(42 * num_thread);
     handles_storage<int> flags_storage(42 * num_thread);
 
+    std::shared_ptr<ccl_context> ctx;
+
     // check global driver
     auto drv_it = this->local_platform->drivers.find(0);
     UT_ASSERT(drv_it != this->local_platform->drivers.end(), "Driver by idx 0 must exist!");
@@ -153,8 +155,8 @@ TYPED_TEST(ring_alltoallv_single_device_fixture, ring_alltoallv_single_device_mt
             comm_param_storage[thread_idx].push_back(rank_size);
 
             // send
-            auto mem_send_counts = device.alloc_memory<size_t>(num_thread, sizeof(size_t));
-            auto mem_send_offsets = device.alloc_memory<size_t>(num_thread, sizeof(size_t));
+            auto mem_send_counts = device.alloc_memory<size_t>(num_thread, sizeof(size_t), ctx);
+            auto mem_send_offsets = device.alloc_memory<size_t>(num_thread, sizeof(size_t), ctx);
 
             mem_send_counts.enqueue_write_sync(send_counts[thread_idx]);
             mem_send_offsets.enqueue_write_sync(send_offsets[thread_idx]);
@@ -163,8 +165,8 @@ TYPED_TEST(ring_alltoallv_single_device_fixture, ring_alltoallv_single_device_mt
             comm_param_mem_storage[thread_idx].emplace_back(std::move(mem_send_offsets));
 
             // recv
-            auto mem_recv_counts = device.alloc_memory<size_t>(num_thread, sizeof(size_t));
-            auto mem_recv_offsets = device.alloc_memory<size_t>(num_thread, sizeof(size_t));
+            auto mem_recv_counts = device.alloc_memory<size_t>(num_thread, sizeof(size_t), ctx);
+            auto mem_recv_offsets = device.alloc_memory<size_t>(num_thread, sizeof(size_t), ctx);
 
             mem_recv_counts.enqueue_write_sync(recv_counts[thread_idx]);
             mem_recv_offsets.enqueue_write_sync(recv_offsets[thread_idx]);
@@ -175,9 +177,9 @@ TYPED_TEST(ring_alltoallv_single_device_fixture, ring_alltoallv_single_device_mt
             // allocate flags & memory
             // memory
             auto mem_send =
-                device.alloc_memory<native_type>(total_send_sizes[thread_idx], sizeof(native_type));
-            auto mem_recv = device.alloc_memory<native_type>(total_recv_size, sizeof(native_type));
-            auto mem_tmp = device.alloc_memory<native_type>(tmp_buffer_size, sizeof(native_type));
+                device.alloc_memory<native_type>(total_send_sizes[thread_idx], sizeof(native_type), ctx);
+            auto mem_recv = device.alloc_memory<native_type>(total_recv_size, sizeof(native_type), ctx);
+            auto mem_tmp = device.alloc_memory<native_type>(tmp_buffer_size, sizeof(native_type), ctx);
 
             mem_send.enqueue_write_sync(send_values[thread_idx]);
             mem_recv.enqueue_write_sync(recv_values[thread_idx]);
@@ -190,9 +192,9 @@ TYPED_TEST(ring_alltoallv_single_device_fixture, ring_alltoallv_single_device_mt
                                                 std::move(mem_tmp));
 
             // flags
-            auto left_wrote_2_me_flag = device.alloc_memory<int>(1, sizeof(int));
-            auto ready_for_receive_flag = device.alloc_memory<int>(1, sizeof(int));
-            auto proxy_size = device.alloc_memory<int>(1, sizeof(int));
+            auto left_wrote_2_me_flag = device.alloc_memory<int>(1, sizeof(int), ctx);
+            auto ready_for_receive_flag = device.alloc_memory<int>(1, sizeof(int), ctx);
+            auto proxy_size = device.alloc_memory<int>(1, sizeof(int), ctx);
             left_wrote_2_me_flag.enqueue_write_sync({ (int)0 });
             ready_for_receive_flag.enqueue_write_sync({ (int)0 });
             proxy_size.enqueue_write_sync({ (int)0 });
@@ -220,7 +222,11 @@ TYPED_TEST(ring_alltoallv_single_device_fixture, ring_alltoallv_single_device_mt
     }
 
     // prepare kernels in multithreading environment
-    ze_kernel_desc_t desc = { ZE_KERNEL_DESC_VERSION_CURRENT, ZE_KERNEL_FLAG_NONE };
+    ze_kernel_desc_t desc = {
+        .stype = ZE_STRUCTURE_TYPE_KERNEL_DESC,
+        .pNext = nullptr,
+        .flags = 0,
+    };
     desc.pKernelName = ring_alltoallv_case::param_traits<native_type>::kernel_name;
     std::map<size_t, ze_kernel_handle_t> thread_kernels;
     std::map<size_t, ccl_device::device_queue> thread_queue;
@@ -236,8 +242,8 @@ TYPED_TEST(ring_alltoallv_single_device_fixture, ring_alltoallv_single_device_mt
                                          ", error: " + native::to_string(result));
             }
             thread_kernels.emplace(thread_idx, std::move(handle));
-            thread_queue.emplace(thread_idx, device.create_cmd_queue());
-            thread_cmd_list.emplace(thread_idx, device.create_cmd_list());
+            thread_queue.emplace(thread_idx, device.create_cmd_queue(ctx));
+            thread_cmd_list.emplace(thread_idx, device.create_cmd_list(ctx));
         }
         catch (const std::exception& ex) {
             throw std::runtime_error(std::string("Error: ") + ex.what());

@@ -5,6 +5,7 @@
 
 #ifdef MULTI_GPU_SUPPORT
 #include "oneapi/ccl/ccl_gpu_modules.h"
+#include "oneapi/ccl/native_device_api/l0/context.hpp"
 #endif /* MULTI_GPU_SUPPORT */
 
 namespace ccl {}

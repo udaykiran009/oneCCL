@@ -29,7 +29,6 @@ size_t get_sycl_device_id(const cl::sycl::device& device) {
     }
 
     ze_device_properties_t device_properties;
-    device_properties.version = ZE_DEVICE_PROPERTIES_VERSION_CURRENT;
     ze_result_t ret = zeDeviceGetProperties(l0_handle_ptr, &device_properties);
     if (ret != ZE_RESULT_SUCCESS) {
         throw std::runtime_error(

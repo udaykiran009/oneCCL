@@ -1,3 +1,4 @@
+#if 0
 #pragma once
 #include <memory>
 #include <sstream>
@@ -12,7 +13,7 @@
 #include "native_type_traits.hpp"
 
 /* 2) Include explicit definition for native::memory */
-#include "oneapi/ccl/native_device_api/l0/primitives_impl.hpp"
+#include "native_device_api/l0/primitives_impl.hpp"
 
 /* 3) just use it! */
 
@@ -33,6 +34,9 @@ TEST_F(a2a_allreduce_single_device_fixture, a2a_allreduce_single_device_mt) {
     constexpr size_t flag_group_count = 3;
 
     create_module_descr("kernels/a2a_allreduce.spv", true);
+
+    //TODO
+    std::shared_ptr<ccl_context> ctx;
 
     handles_storage<native_type> memory_storage(42 * num_thread);
     handles_storage<int> flags_storage(42 * num_thread);
@@ -73,10 +77,10 @@ TEST_F(a2a_allreduce_single_device_fixture, a2a_allreduce_single_device_mt) {
 
             //allocate flags & memory
             // memory
-            auto mem_send = device.alloc_memory<native_type>(buffer_size, sizeof(native_type));
-            auto mem_recv = device.alloc_memory<native_type>(buffer_size, sizeof(native_type));
+            auto mem_send = device.alloc_memory<native_type>(buffer_size, sizeof(native_type), ctx);
+            auto mem_recv = device.alloc_memory<native_type>(buffer_size, sizeof(native_type), ctx);
             auto temp_recv =
-                device.alloc_memory<native_type>(buffer_size / num_thread, sizeof(native_type));
+                device.alloc_memory<native_type>(buffer_size / num_thread, sizeof(native_type), ctx);
 
             mem_send.enqueue_write_sync(send_values);
             mem_recv.enqueue_write_sync(recv_values);
@@ -94,9 +98,9 @@ TEST_F(a2a_allreduce_single_device_fixture, a2a_allreduce_single_device_mt) {
                                                 std::move(temp_recv));
 
             // flags
-            auto left_wrote_2_me_flag = device.alloc_memory<int>(1, sizeof(int));
-            auto read_for_receive_flag = device.alloc_memory<int>(1, sizeof(int));
-            auto barrier_flag = device.alloc_memory<int>(1, sizeof(int));
+            auto left_wrote_2_me_flag = device.alloc_memory<int>(1, sizeof(int), ctx);
+            auto read_for_receive_flag = device.alloc_memory<int>(1, sizeof(int), ctx);
+            auto barrier_flag = device.alloc_memory<int>(1, sizeof(int), ctx);
             left_wrote_2_me_flag.enqueue_write_sync({ (int)0 });
             read_for_receive_flag.enqueue_write_sync({ (int)0 });
             barrier_flag.enqueue_write_sync({ (int)0 });
@@ -143,12 +147,17 @@ TEST_F(a2a_allreduce_single_device_fixture, a2a_allreduce_single_device_mt) {
 
     //prepare gpu object
     auto a2a_comm_handle =
-        device.alloc_memory<a2a_gpu_comm_data_float>(num_thread, sizeof(a2a_gpu_comm_data_float));
+        device.alloc_memory<a2a_gpu_comm_data_float>(num_thread, sizeof(a2a_gpu_comm_data_float), ctx);
     a2a_comm_handle.enqueue_write_sync(a2a_comm);
 
     //prepare kernels in multithreading environment
-    ze_kernel_desc_t desc = { ZE_KERNEL_DESC_VERSION_CURRENT, ZE_KERNEL_FLAG_NONE };
-    desc.pKernelName = "allreduce_execution_float";
+    ze_kernel_desc_t desc = {
+        .stype = ZE_STRUCTURE_TYPE_KERNEL_DESC,
+        .pNext = nullptr,
+        .flags = 0,
+        .pKernelName = "allreduce_execution_float",
+    };
+
     std::map<size_t, ze_kernel_handle_t> thread_kernels;
     std::map<size_t, ccl_device::device_queue> thread_queue;
     std::map<size_t, ccl_device::device_cmd_list> thread_cmd_list;
@@ -342,3 +351,4 @@ TEST_F(a2a_allreduce_single_device_fixture, a2a_allreduce_single_device_mt) {
     //flags_storage.dump(output);
 }
 } // namespace a2a_single_device_case
+#endif

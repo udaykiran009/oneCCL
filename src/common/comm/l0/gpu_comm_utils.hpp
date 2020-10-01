@@ -66,12 +66,14 @@ private:
                   communicator_type::name_impl())
 
         ze_module_desc_t module_description;
-        module_description.version = ZE_MODULE_DESC_VERSION_CURRENT;
+        module_description.stype = ZE_STRUCTURE_TYPE_MODULE_DESC;
+        module_description.pNext = nullptr;
         module_description.format = ZE_MODULE_FORMAT_IL_SPIRV;
         module_description.inputSize =
             static_cast<uint32_t>(module_data.size()); //Ask L0: why not size_t?
         module_description.pInputModule = module_data.data();
         module_description.pBuildFlags = nullptr;
+        module_description.pConstants = nullptr;
 
         //compile modules TODO ring only
         std::array<std::string, sizeof...(topology_types)> logs{

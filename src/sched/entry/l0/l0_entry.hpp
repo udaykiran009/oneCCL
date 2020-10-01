@@ -71,11 +71,10 @@ public:
         ccl_device &device = parent_communicator->get_device();
         {
             LOG_DEBUG(class_name(), " entry req ", &req, " - create initial gpu primitives");
-
             //TODO make check, that device_stream belong to the device
             auto queue_prop = ccl_device::get_default_queue_desc();
-            auto &cmd_queue = device.get_cmd_queue(queue_prop);
-            fence = device.create_or_get_fence(cmd_queue);
+            auto &cmd_queue = device.get_cmd_queue(queue_prop, ctx);
+            fence = device.create_or_get_fence(cmd_queue, ctx);
         }
         //else
         //{
@@ -134,7 +133,7 @@ public:
                         queue_prop.ordinal = parent_communicator->get_rank(); //TODO SPECIAL FOR VIRTUAL
                     }
                     queue_prop.mode = ZE_COMMAND_QUEUE_MODE_ASYNCHRONOUS;*/
-                        auto &cmd_queue = device.get_cmd_queue(queue_prop);
+                        auto &cmd_queue = device.get_cmd_queue(queue_prop, ctx);
 
                         LOG_DEBUG(class_name(),
                                   " entry req ",
@@ -146,9 +145,9 @@ public:
                                   ", queue:",
                                   cmd_queue.get(),
                                   ", list: ",
-                                  device.get_cmd_list().get());
+                                  device.get_cmd_list(ctx).get());
                         ze_result_t ret = zeCommandQueueExecuteCommandLists(
-                            cmd_queue.get(), 1, device.get_cmd_list().get_ptr(), fence);
+                            cmd_queue.get(), 1, device.get_cmd_list(ctx).get_ptr(), fence);
                         if (ret != ZE_RESULT_SUCCESS) {
                             throw ccl::exception(
                                 std::string("cannot execute command list, error: ") +
@@ -167,7 +166,7 @@ public:
                 queue_prop.ordinal = parent_communicator->get_rank(); //TODO SPECIAL FOR VIRTUAL
             }
             queue_prop.mode = ZE_COMMAND_QUEUE_MODE_ASYNCHRONOUS;*/
-                    auto &cmd_queue = device.get_cmd_queue(queue_prop);
+                    auto &cmd_queue = device.get_cmd_queue(queue_prop, ctx);
 
                     LOG_DEBUG(class_name(),
                               " entry req ",
@@ -179,9 +178,9 @@ public:
                               ", queue:",
                               cmd_queue.get(),
                               ", list: ",
-                              device.get_cmd_list().get());
+                              device.get_cmd_list(ctx).get());
                     ze_result_t ret = zeCommandQueueExecuteCommandLists(
-                        cmd_queue.get(), 1, device.get_cmd_list().get_ptr(), fence);
+                        cmd_queue.get(), 1, device.get_cmd_list(ctx).get_ptr(), fence);
                     if (ret != ZE_RESULT_SUCCESS) {
                         throw ccl::exception(std::string("cannot execute command list, error: ") +
                                              std::to_string(ret));
@@ -207,7 +206,7 @@ public:
                 queue_prop.ordinal = parent_communicator->get_rank(); //TODO SPECIAL FOR VIRTUAL
             }*/
             //queue_prop.mode = ZE_COMMAND_QUEUE_MODE_ASYNCHRONOUS;
-            auto &cmd_queue = device.get_cmd_queue(queue_prop);
+            auto &cmd_queue = device.get_cmd_queue(queue_prop, ctx);
 
             LOG_TRACE(class_name(),
                       " entry req ",
@@ -302,7 +301,7 @@ protected:
     ccl::datatype dtype;
     atl_req_t req{};
     std::shared_ptr<ccl_stream> device_stream;
-
+    std::shared_ptr<ccl_context> ctx;
     // GPU
     bool ready_to_exec = false;
 

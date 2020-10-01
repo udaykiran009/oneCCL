@@ -94,11 +94,13 @@ protected:
         std::vector<uint8_t> binary_module_file;
         try {
             binary_module_file = load_binary_file(module_path);
-            module_description.version = ZE_MODULE_DESC_VERSION_CURRENT;
+            module_description.stype = ZE_STRUCTURE_TYPE_MODULE_DESC;
+            module_description.pNext = nullptr;
             module_description.format = ZE_MODULE_FORMAT_IL_SPIRV;
             module_description.inputSize = static_cast<uint32_t>(binary_module_file.size());
             module_description.pInputModule = binary_module_file.data();
             module_description.pBuildFlags = nullptr;
+            module_description.pConstants = nullptr;
         }
         catch (const std::exception& ex) {
             UT_ASSERT(false, "Cannot load kernel: " << module_path << "\nError: " << ex.what());
@@ -113,11 +115,11 @@ protected:
             auto dev = dev_it.second;
             try {
                 if (!replace) {
-                    device_modules.emplace(dev.get(), dev->create_module(module_description, hash));
+                    device_modules.emplace(dev.get(), dev->create_module(module_description, hash, dev->get_default_device_context()));
                 }
                 else {
                     device_modules.erase(dev.get());
-                    device_modules.emplace(dev.get(), dev->create_module(module_description, hash));
+                    device_modules.emplace(dev.get(), dev->create_module(module_description, hash, dev->get_default_device_context()));
                 }
             }
             catch (const std::exception& ex) {
@@ -133,13 +135,13 @@ protected:
                     if (!replace) {
                         device_modules.emplace(
                             subdev.second.get(),
-                            subdev.second->create_module(module_description, hash));
+                            subdev.second->create_module(module_description, hash, subdev.second->get_default_device_context()));
                     }
                     else {
                         device_modules.erase(subdev.second.get());
                         device_modules.emplace(
                             subdev.second.get(),
-                            subdev.second->create_module(module_description, hash));
+                            subdev.second->create_module(module_description, hash, subdev.second->get_default_device_context()));
                     }
                 }
                 catch (const std::exception& ex) {

@@ -118,8 +118,9 @@ void run_test(size_t thread_idx,
         size_t rank = comm->rank();
 
         // wrapped L0-native API for devices: create native buffers
-        auto mem_send = dev->alloc_memory<processing_type>(COUNT, sizeof(processing_type));
-        auto mem_recv = dev->alloc_memory<processing_type>(COUNT, sizeof(processing_type));
+        std::shared_ptr<ccl_context> ctx;
+        auto mem_send = dev->alloc_memory<processing_type>(COUNT, sizeof(processing_type), ctx);
+        auto mem_recv = dev->alloc_memory<processing_type>(COUNT, sizeof(processing_type), ctx);
 
         // set initial memory
         {

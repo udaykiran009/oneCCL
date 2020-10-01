@@ -177,8 +177,9 @@ void user_thread_idx(size_t thread_idx,
         size_t rank = comm.rank();
 
         // wrapped L0-native API for devices: create native buffers
-        auto mem_send = dev->alloc_memory<processing_type>(COUNT, sizeof(processing_type));
-        auto mem_recv = dev->alloc_memory<processing_type>(COUNT, sizeof(processing_type));
+        std::shared_ptr<ccl_context> ctx;
+        auto mem_send = dev->alloc_memory<processing_type>(COUNT, sizeof(processing_type), ctx);
+        auto mem_recv = dev->alloc_memory<processing_type>(COUNT, sizeof(processing_type), ctx);
 
         // set initial memory
         {
@@ -199,8 +200,8 @@ void user_thread_idx(size_t thread_idx,
 
         // create native stream
         enum { INSERTED_ITER, RESULT };
-        auto queue_it = std::get<INSERTED_ITER>(queues.emplace(rank, dev->create_cmd_queue()));
-        streams.emplace(rank, ccl::create_stream(queue_it->second.get()));
+        auto queue_it = std::get<INSERTED_ITER>(queues.emplace(rank, dev->create_cmd_queue(ctx)));
+        streams.emplace(rank, ccl::environment::instance().create_stream(queue_it->second.get(), ctx));
     }
 
     //allreduce

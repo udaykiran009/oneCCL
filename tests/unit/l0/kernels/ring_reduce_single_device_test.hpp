@@ -142,6 +142,7 @@ TYPED_TEST(ring_reduce_single_device_fixture, ring_reduce_single_device_mt) {
     // Type of our test
     using native_type = typename TypeParam::first_type;
     using op_type = typename TypeParam::second_type;
+    std::shared_ptr<ccl_context> ctx;
 
     // test case data
     const size_t buffer_size = ring_reduce_case::op_traits<native_type, op_type>::buffer_size;
@@ -196,10 +197,10 @@ TYPED_TEST(ring_reduce_single_device_fixture, ring_reduce_single_device_mt) {
 
             //allocate flags & memory
             // memory
-            auto mem_send = device.alloc_memory<native_type>(buffer_size, sizeof(native_type));
-            auto mem_recv = device.alloc_memory<native_type>(buffer_size, sizeof(native_type));
+            auto mem_send = device.alloc_memory<native_type>(buffer_size, sizeof(native_type), ctx);
+            auto mem_recv = device.alloc_memory<native_type>(buffer_size, sizeof(native_type), ctx);
             auto temp_recv =
-                device.alloc_memory<native_type>(buffer_size / num_thread, sizeof(native_type));
+                device.alloc_memory<native_type>(buffer_size / num_thread, sizeof(native_type), ctx);
             mem_send.enqueue_write_sync(send_values[thread_idx]);
             mem_recv.enqueue_write_sync(recv_values);
             temp_recv.enqueue_write_sync(recv_values.begin(),
@@ -216,9 +217,9 @@ TYPED_TEST(ring_reduce_single_device_fixture, ring_reduce_single_device_mt) {
                                                 std::move(temp_recv));
 
             // flags
-            auto left_wrote_2_me_flag = device.alloc_memory<int>(1, sizeof(int));
-            auto read_for_receive_flag = device.alloc_memory<int>(1, sizeof(int));
-            auto barrier_flag = device.alloc_memory<int>(1, sizeof(int));
+            auto left_wrote_2_me_flag = device.alloc_memory<int>(1, sizeof(int), ctx);
+            auto read_for_receive_flag = device.alloc_memory<int>(1, sizeof(int), ctx);
+            auto barrier_flag = device.alloc_memory<int>(1, sizeof(int), ctx);
             left_wrote_2_me_flag.enqueue_write_sync({ (int)0 });
             read_for_receive_flag.enqueue_write_sync({ (int)0 });
             barrier_flag.enqueue_write_sync({ (int)0 });
@@ -246,7 +247,11 @@ TYPED_TEST(ring_reduce_single_device_fixture, ring_reduce_single_device_mt) {
     }
 
     //prepare kernels in multithreading environment
-    ze_kernel_desc_t desc = { ZE_KERNEL_DESC_VERSION_CURRENT, ZE_KERNEL_FLAG_NONE };
+    ze_kernel_desc_t desc = {
+        .stype = ZE_STRUCTURE_TYPE_KERNEL_DESC,
+        .pNext = nullptr,
+        .flags = 0,
+    };
     desc.pKernelName = ring_reduce_case::param_traits<native_type, op_type>::kernel_name;
     std::cout << "KERNEL_NAMEL: " << desc.pKernelName << std::endl;
     std::map<size_t, ze_kernel_handle_t> thread_kernels;
@@ -264,8 +269,8 @@ TYPED_TEST(ring_reduce_single_device_fixture, ring_reduce_single_device_mt) {
             }
 
             thread_kernels.emplace(thread_idx, std::move(handle));
-            thread_queue.emplace(thread_idx, device.create_cmd_queue());
-            thread_cmd_list.emplace(thread_idx, device.create_cmd_list());
+            thread_queue.emplace(thread_idx, device.create_cmd_queue(ctx));
+            thread_cmd_list.emplace(thread_idx, device.create_cmd_list(ctx));
         }
         catch (const std::exception& ex) {
             throw std::runtime_error(std::string("Error: ") + ex.what());

@@ -30,7 +30,11 @@ gpu_module_base::handle gpu_module_base::get() const {
 }
 
 ze_kernel_handle_t gpu_module_base::import_kernel(const std::string& name) {
-    ze_kernel_desc_t desc = { ZE_KERNEL_DESC_VERSION_CURRENT, ZE_KERNEL_FLAG_NONE };
+    ze_kernel_desc_t desc = {
+        .stype = ZE_STRUCTURE_TYPE_KERNEL_DESC,
+        .pNext = nullptr,
+        .flags = 0,
+    };
     desc.pKernelName = name.c_str();
     ze_kernel_handle_t handle;
 

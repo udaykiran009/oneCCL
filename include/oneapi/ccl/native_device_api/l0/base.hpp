@@ -14,18 +14,21 @@
 #endif
 
 namespace native {
+
 /**
  * Base RAII L0 handles wrappper
  * support serialize/deserialize concept
  */
-template <class handle_type, class resource_owner>
+template <class handle_type, class resource_owner, class cl_context>
 class cl_base {
 public:
     friend resource_owner;
-    using self_t = cl_base<handle_type, resource_owner>;
+    using self_t = cl_base<handle_type, resource_owner, cl_context>;
     using handle_t = handle_type;
     using owner_t = resource_owner;
     using owner_ptr_t = std::weak_ptr<resource_owner>;
+    using context_t = cl_context;
+    using context_ptr_t = std::weak_ptr<cl_context>;
 
     cl_base(cl_base&& src) noexcept;
     cl_base& operator=(cl_base&& src) noexcept;
@@ -40,6 +43,7 @@ public:
     handle_t* get_ptr() noexcept;
     const handle_t* get_ptr() const noexcept;
     const owner_ptr_t get_owner() const;
+    const context_ptr_t get_ctx() const;
 
     // serialization/deserialization
     static constexpr size_t get_size_for_serialize();
@@ -51,12 +55,13 @@ public:
     static std::shared_ptr<type> deserialize(const uint8_t** data, size_t& size, helpers&... args);
 
 protected:
-    cl_base(handle_t h, owner_ptr_t parent);
+    cl_base(handle_t h, owner_ptr_t parent, context_ptr_t ctx);
 
     handle_t handle;
 
 private:
     owner_ptr_t owner;
+    context_ptr_t context;
 };
 
 template <class value_type>

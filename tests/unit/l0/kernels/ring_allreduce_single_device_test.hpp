@@ -152,6 +152,8 @@ TYPED_TEST(ring_allreduce_single_device_fixture, ring_allreduce_single_device_mt
     handles_storage<int> flags_storage(flag_group_count * num_thread);
     std::map<size_t, std::vector<size_t>> comm_param_storage;
 
+    std::shared_ptr<ccl_context> ctx;
+
     // check global driver
     auto drv_it = this->local_platform->drivers.find(0);
     UT_ASSERT(drv_it != this->local_platform->drivers.end(), "Driver by idx 0 must exist!");
@@ -187,13 +189,13 @@ TYPED_TEST(ring_allreduce_single_device_fixture, ring_allreduce_single_device_mt
 
             //allocate flags & memory
             // memory
-            auto mem_send = device.alloc_memory<native_type>(buffer_size, sizeof(native_type));
-            auto mem_recv = device.alloc_memory<native_type>(buffer_size, sizeof(native_type));
+            auto mem_send = device.alloc_memory<native_type>(buffer_size, sizeof(native_type), ctx);
+            auto mem_recv = device.alloc_memory<native_type>(buffer_size, sizeof(native_type), ctx);
 
             /* FIXME: use 2x size for tmp buffer for parallel recv and reduce+send */
             /* consider to remove tmp buffer further */
             auto temp_recv =
-                device.alloc_memory<native_type>(2 * buffer_size / num_thread, sizeof(native_type));
+                device.alloc_memory<native_type>(2 * buffer_size / num_thread, sizeof(native_type), ctx);
 
             mem_send.enqueue_write_sync(send_values);
             mem_recv.enqueue_write_sync(recv_values);
@@ -211,9 +213,9 @@ TYPED_TEST(ring_allreduce_single_device_fixture, ring_allreduce_single_device_mt
                                                 std::move(temp_recv));
 
             // flags
-            auto left_wrote_2_me_flag = device.alloc_memory<int>(1, sizeof(int));
-            auto ready_for_receive_flag = device.alloc_memory<int>(1, sizeof(int));
-            auto barrier_flag = device.alloc_memory<int>(1, sizeof(int));
+            auto left_wrote_2_me_flag = device.alloc_memory<int>(1, sizeof(int), ctx);
+            auto ready_for_receive_flag = device.alloc_memory<int>(1, sizeof(int), ctx);
+            auto barrier_flag = device.alloc_memory<int>(1, sizeof(int), ctx);
             left_wrote_2_me_flag.enqueue_write_sync({ (int)0 });
             ready_for_receive_flag.enqueue_write_sync({ (int)0 });
             barrier_flag.enqueue_write_sync({ (int)0 });
@@ -250,7 +252,6 @@ TYPED_TEST(ring_allreduce_single_device_fixture, ring_allreduce_single_device_mt
             {
                 //TODO
                 //device.is_own_memory(mem);
-
                 ze_memory_allocation_properties_t mem_prop;
                 mem_prop.version = ZE_MEMORY_ALLOCATION_PROPERTIES_VERSION_CURRENT;
                 ze_device_handle_t alloc_device_handle{};
@@ -260,7 +261,6 @@ TYPED_TEST(ring_allreduce_single_device_fixture, ring_allreduce_single_device_mt
                     throw std::runtime_error(std::string("Cannot zeDriverGetMemAllocProperties at: ") +
                                              native::to_string(result));
                 }
-
                 if(alloc_device_handle and alloc_device_handle != device.handle)
                 {
                     throw std::runtime_error(std::string("Device handle for memory allocations mismatch detected"));
@@ -275,7 +275,11 @@ TYPED_TEST(ring_allreduce_single_device_fixture, ring_allreduce_single_device_mt
     }
     */
     //prepare kernels in multithreading environment
-    ze_kernel_desc_t desc = { ZE_KERNEL_DESC_VERSION_CURRENT, ZE_KERNEL_FLAG_NONE };
+    ze_kernel_desc_t desc = {
+        .stype = ZE_STRUCTURE_TYPE_KERNEL_DESC,
+        .pNext = nullptr,
+        .flags = 0,
+    };
     desc.pKernelName = ring_allreduce_case::param_traits<native_type, op_type>::kernel_name;
     std::map<size_t, ze_kernel_handle_t> thread_kernels;
     std::map<size_t, ccl_device::device_queue> thread_queue;
@@ -292,8 +296,8 @@ TYPED_TEST(ring_allreduce_single_device_fixture, ring_allreduce_single_device_mt
             }
 
             thread_kernels.emplace(thread_idx, std::move(handle));
-            thread_queue.emplace(thread_idx, device.create_cmd_queue());
-            thread_cmd_list.emplace(thread_idx, device.create_cmd_list());
+            thread_queue.emplace(thread_idx, device.create_cmd_queue(ctx));
+            thread_cmd_list.emplace(thread_idx, device.create_cmd_list(ctx));
         }
         catch (const std::exception& ex) {
             throw std::runtime_error(std::string("Error: ") + ex.what());

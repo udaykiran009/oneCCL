@@ -34,10 +34,13 @@ protected:
     virtual void TearDown() override {}
 };
 
+#if 0
 class communicator_fixture : public testing::Test, public tracer {
 public:
     communicator_fixture() : global_comm(new ccl::communicator(ccl::preview::create_communicator())) {
         ccl::barrier(*global_comm);
+    //communicator_fixture() : global_comm(ccl::environment::instance().create_communicator()) {
+    //    global_comm->barrier();
     }
     ~communicator_fixture() override {}
 
@@ -97,3 +100,4 @@ protected:
 
     void TearDown() override {}
 };
+#endif

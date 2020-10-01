@@ -15,7 +15,8 @@ include_directories(${PROJECT_SOURCE_DIR}/tests/googletest-release-1.8.1/googlet
                     ${PROJECT_SOURCE_DIR}/tests/googletest-release-1.8.1/googletest/src
                     ${PROJECT_SOURCE_DIR}/include
                     ${PROJECT_SOURCE_DIR}/src
-                    ${PROJECT_SOURCE_DIR}/src/atl)
+                    ${PROJECT_SOURCE_DIR}/src/atl
+                    ${PROJECT_SOURCE_DIR}/src/native_device_api/l0)
 
 if (${CMAKE_VERSION} VERSION_LESS 3.1)
 #cmake version below 3.1 does not support CMAKE_C[XX}_STANDARD flags

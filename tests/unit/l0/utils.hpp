@@ -60,7 +60,7 @@ public:
         return m_msg.c_str();
     }
 };
-
+std::shared_ptr<native::ccl_context> ctx;
 template <typename T>
 inline void str_to_array(const char* input, std::vector<T>& output, char delimiter) {
     if (!input) {
@@ -355,6 +355,7 @@ struct handles_storage {
     }
 };
 
+#if 0
 /*IPC handles*/
 template <class T>
 struct ipc_server_handles_storage {
@@ -380,7 +381,7 @@ struct ipc_server_handles_storage {
             std::back_inserter(ipc_cont),
             [](native::ccl_device::device_memory<T>* memory_handle) {
                 auto device_ptr = memory_handle->get_owner().lock();
-                return device_ptr->create_shared_ipc_memory_handle(memory_handle->handle);
+                return device_ptr->create_shared_ipc_memory_handle(memory_handle->handle, ctx);
             });
     }
 
@@ -451,7 +452,7 @@ struct ipc_client_handles_storage {
                 }
 
                 per_thread_storage[thread_id].emplace_back(
-                    owner_device->restore_shared_ipc_memory(std::move(recv_ipc_handle)));
+                    owner_device->restore_shared_ipc_memory(std::move(recv_ipc_handle), std::move(ctx)));
                 restored_handles++;
             }
             catch (const std::exception& ex) {
@@ -467,4 +468,6 @@ struct ipc_client_handles_storage {
         }
         return restored_handles;
     }
+
 };
+#endif

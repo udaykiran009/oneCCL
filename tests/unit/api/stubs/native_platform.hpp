@@ -15,26 +15,27 @@ struct test_device : public native::ccl_device {
     test_device(native::ccl_device::owner_ptr_t&& parent)
             : native::ccl_device(
                   reinterpret_cast<native::ccl_device::handle_t>(new native::ccl_device::handle_t),
-                  std::move(parent),
+                  std::move(parent), std::weak_ptr<native::ccl_context_holder>{ },
                   std::false_type{}) {}
 
     static std::shared_ptr<test_device> create(const ccl::device_index_type& full_device_index,
                                                native::ccl_device::owner_ptr_t&& driver) {
         std::shared_ptr<test_device> dev = std::make_shared<test_device>(std::move(driver));
+        // std::shared_ptr<test_device> context = std::make_shared<test_device>(std::move(ctx));
 
         dev->device_properties.type = ZE_DEVICE_TYPE_GPU;
-        dev->device_properties.version = ZE_DEVICE_PROPERTIES_VERSION_CURRENT;
         dev->device_properties.deviceId =
             std::get<ccl::device_index_enum::device_index_id>(full_device_index);
-        dev->device_properties.isSubdevice = 0;
+        dev->device_properties.flags = ZE_DEVICE_PROPERTY_FLAG_INTEGRATED;
+        
 
         //create default queue
         auto queue_prop = ccl_device::get_default_queue_desc();
         queue_prop.ordinal = 0;
-        dev->cmd_queus.emplace(queue_prop, ccl_device::device_queue{ nullptr, dev->get_ptr() });
+        dev->cmd_queus.emplace(queue_prop, ccl_device::device_queue{ nullptr, dev->get_ptr(), std::weak_ptr<native::ccl_context>{ } });
 
         //create module
-        auto module_ptr = std::make_shared<ccl_device::device_module>(nullptr, dev->get_ptr());
+        auto module_ptr = std::make_shared<ccl_device::device_module>(nullptr, dev->get_ptr(), std::weak_ptr<native::ccl_context>{ });
 
         using mod_integer_type = typename std::underlying_type<ccl_coll_type>::type;
         using top_integer_type = typename std::underlying_type<ccl::group_split_type>::type;
@@ -67,29 +68,30 @@ struct test_subdevice : public native::ccl_subdevice {
                                         new native::ccl_subdevice::handle_t),
                                     std::move(parent),
                                     std::move(driver),
+                                    std::weak_ptr<native::ccl_context_holder>{ },
                                     std::false_type{}) {}
 
     static std::shared_ptr<test_subdevice> create(
         const ccl::device_index_type& full_device_index,
         native::ccl_subdevice::owner_ptr_t&& device,
         typename native::ccl_subdevice::base::owner_ptr_t&& driver) {
+
         std::shared_ptr<test_subdevice> subdev =
             std::make_shared<test_subdevice>(std::move(device), std::move(driver));
         subdev->device_properties.type = ZE_DEVICE_TYPE_GPU;
-        subdev->device_properties.version = ZE_DEVICE_PROPERTIES_VERSION_CURRENT;
         subdev->device_properties.deviceId =
             std::get<ccl::device_index_enum::subdevice_index_id>(full_device_index);
-        subdev->device_properties.isSubdevice = 1;
+        subdev->device_properties.flags = ZE_DEVICE_PROPERTY_FLAG_SUBDEVICE;
 
         //create default queue
         auto queue_prop = ccl_subdevice::get_default_queue_desc();
         queue_prop.ordinal = 0;
         subdev->cmd_queus.emplace(queue_prop,
-                                  ccl_subdevice::device_queue{ nullptr, subdev->get_ptr() });
+                                  ccl_subdevice::device_queue{ nullptr, subdev->get_ptr(), std::weak_ptr<native::ccl_context>{ }});
 
         //create module
         auto module_ptr =
-            std::make_shared<ccl_subdevice::device_module>(nullptr, subdev->get_ptr());
+            std::make_shared<ccl_subdevice::device_module>(nullptr, subdev->get_ptr(), std::weak_ptr<native::ccl_context>{ });
 
         using mod_integer_type = typename std::underlying_type<ccl_coll_type>::type;
         using top_integer_type = typename std::underlying_type<ccl::group_split_type>::type;
@@ -144,6 +146,7 @@ inline void make_stub_devices(const ccl::device_indices_t& stub_indices) {
 
         ccl_device_driver& driver = *(driver_it->second);
         ccl_device_driver::devices_storage_type& devices = driver.devices;
+
         auto device_it = devices.find(device_index);
         if (device_it == devices.end()) {
             auto dev_idx = index;

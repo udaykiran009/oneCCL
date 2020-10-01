@@ -182,8 +182,11 @@ public:
                               native::to_string(recv_ip_handle->get()));
 
                     // create IPC memory object & remember in shared storage
+                    
+                    // TODO: resolve issue to provide ctx correctly
+                    std::shared_ptr<ccl_context> ctx;
                     foreign_device_ipc_mem_storage[ipc_mem_owner].push_back(
-                        ipc_mem_owner->get_device().get_ipc_memory(std::move(recv_ip_handle)));
+                        ipc_mem_owner->get_device().get_ipc_memory(std::move(recv_ip_handle), ctx));
 
                     num_handles++;
                 }
