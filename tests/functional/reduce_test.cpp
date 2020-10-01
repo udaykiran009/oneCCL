@@ -77,7 +77,6 @@ public:
                 reduction,
                 ROOT_PROCESS_IDX,
                 GlobalData::instance().comms[0],
-                ccl::default_stream,
                 attr);
         }
     }

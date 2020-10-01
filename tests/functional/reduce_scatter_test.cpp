@@ -78,7 +78,6 @@ public:
                 datatype,
                 reduction,
                 GlobalData::instance().comms[0],
-                ccl::default_stream,
                 attr);
         }
     }

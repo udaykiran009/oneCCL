@@ -80,7 +80,6 @@ int main() {
                                buf_size,
                                ccl::reduction::sum,
                                comm,
-                               ccl::default_stream,
                                attr),
                 rank_idx);
 

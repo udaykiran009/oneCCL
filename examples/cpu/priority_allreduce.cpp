@@ -98,7 +98,6 @@ void do_iter(size_t iter_idx,
                            ccl::datatype::float32,
                            ccl::reduction::sum,
                            comm,
-                           ccl::default_stream,
                            attr).wait();
             tmp_stop_timer = when();
             msg_iso_timers[idx] += (tmp_stop_timer - tmp_start_timer);
@@ -134,7 +133,6 @@ void do_iter(size_t iter_idx,
                            ccl::datatype::float32,
                            ccl::reduction::sum,
                            comm,
-                           ccl::default_stream,
                            attr);
         tmp_stop_timer = when();
         msg_pure_start_timers[idx] += (tmp_stop_timer - tmp_start_timer);

@@ -53,7 +53,6 @@ void check_allreduce(const ccl::communicator &comm) {
                               dtypes[idx],
                               ccl::reduction::custom,
                               comm,
-                              ccl::default_stream,
                               attr);
     }
 

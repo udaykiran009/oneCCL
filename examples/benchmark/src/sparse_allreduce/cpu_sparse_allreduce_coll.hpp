@@ -171,7 +171,6 @@ struct cpu_sparse_allreduce_coll
                                       attr,
                                       reqs,
                                       fn_ctxs[buf_idx],
-                                      ccl::default_stream,
                                       coll_strategy::get_op_attr(attr));
     }
 
@@ -190,7 +189,6 @@ struct cpu_sparse_allreduce_coll
                                       attr,
                                       reqs,
                                       single_fn_ctx,
-                                      ccl::default_stream,
                                       coll_strategy::get_op_attr(attr));
     }
 

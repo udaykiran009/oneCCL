@@ -32,7 +32,6 @@ void run_collective(const char* cmd_name,
                        recv_buf.data(),
                        recv_counts,
                        comm,
-                       ccl::default_stream,
                        attr).wait();
         exec_time += std::chrono::system_clock::now() - start;
     }

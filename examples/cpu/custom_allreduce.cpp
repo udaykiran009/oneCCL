@@ -488,7 +488,7 @@ int main() {
             attr.set<ccl::operation_attr_id::match_id>(match_id);
             RUN_COLLECTIVE(
                 ccl::allreduce(
-                    send_buf, recv_buf, MSG_SIZE_COUNT, dtype, ccl::reduction::sum, comm, ccl::default_stream, attr),
+                    send_buf, recv_buf, MSG_SIZE_COUNT, dtype, ccl::reduction::sum, comm, attr),
                 fill_fn,
                 check_fn,
                 expected_fn,
@@ -501,7 +501,7 @@ int main() {
             attr.set<ccl::operation_attr_id::prologue_fn>((ccl::prologue_fn)do_prologue_2x);
             RUN_COLLECTIVE(
                 ccl::allreduce(
-                    send_buf, recv_buf, MSG_SIZE_COUNT, dtype, ccl::reduction::sum, comm, ccl::default_stream, attr),
+                    send_buf, recv_buf, MSG_SIZE_COUNT, dtype, ccl::reduction::sum, comm, attr),
                 fill_fn,
                 check_fn,
                 expected_fn,
@@ -515,7 +515,7 @@ int main() {
             attr.set<ccl::operation_attr_id::epilogue_fn>((ccl::epilogue_fn)do_epilogue_2x);
             RUN_COLLECTIVE(
                 ccl::allreduce(
-                    send_buf, recv_buf, MSG_SIZE_COUNT, dtype, ccl::reduction::sum, comm, ccl::default_stream, attr),
+                    send_buf, recv_buf, MSG_SIZE_COUNT, dtype, ccl::reduction::sum, comm, attr),
                 fill_fn,
                 check_fn,
                 expected_fn,
@@ -529,7 +529,7 @@ int main() {
             attr.set<ccl::operation_attr_id::epilogue_fn>((ccl::epilogue_fn)do_epilogue_2x);
             RUN_COLLECTIVE(
                 ccl::allreduce(
-                    send_buf, recv_buf, MSG_SIZE_COUNT, dtype, ccl::reduction::sum, comm, ccl::default_stream, attr),
+                    send_buf, recv_buf, MSG_SIZE_COUNT, dtype, ccl::reduction::sum, comm, attr),
                 fill_fn,
                 check_fn,
                 expected_fn,
@@ -545,7 +545,7 @@ int main() {
         attr.set<ccl::allreduce_attr_id::reduction_fn>((ccl::reduction_fn)do_reduction_sum);
         RUN_COLLECTIVE(
             ccl::allreduce(
-                send_buf, recv_buf, MSG_SIZE_COUNT, dtype, ccl::reduction::custom, comm, ccl::default_stream, attr),
+                send_buf, recv_buf, MSG_SIZE_COUNT, dtype, ccl::reduction::custom, comm, attr),
             fill_fn,
             check_fn,
             expected_fn,
@@ -563,7 +563,7 @@ int main() {
         attr.set<ccl::allreduce_attr_id::reduction_fn>((ccl::reduction_fn)do_reduction_null);
         RUN_COLLECTIVE(
             ccl::allreduce(
-                send_buf, recv_buf, MSG_SIZE_COUNT, dtype, ccl::reduction::custom, comm, ccl::default_stream, attr),
+                send_buf, recv_buf, MSG_SIZE_COUNT, dtype, ccl::reduction::custom, comm, attr),
             fill_fn,
             check_fn,
             expected_fn,
@@ -581,7 +581,7 @@ int main() {
         attr.set<ccl::allreduce_attr_id::reduction_fn>((ccl::reduction_fn)do_reduction_custom);
         RUN_COLLECTIVE(
             ccl::allreduce(
-                send_buf, recv_buf, MSG_SIZE_COUNT, dtype, ccl::reduction::custom, comm, ccl::default_stream, attr),
+                send_buf, recv_buf, MSG_SIZE_COUNT, dtype, ccl::reduction::custom, comm, attr),
             fill_fn,
             check_fn,
             expected_fn,
@@ -596,7 +596,7 @@ int main() {
         attr.set<ccl::allreduce_attr_id::reduction_fn>((ccl::reduction_fn)do_reduction_sum);
         RUN_COLLECTIVE(
             ccl::allreduce(
-                send_buf, recv_buf, MSG_SIZE_COUNT, dtype, ccl::reduction::custom, comm, ccl::default_stream, attr),
+                send_buf, recv_buf, MSG_SIZE_COUNT, dtype, ccl::reduction::custom, comm, attr),
             fill_fn,
             check_fn,
             expected_fn,
@@ -611,7 +611,7 @@ int main() {
         attr.set<ccl::allreduce_attr_id::reduction_fn>((ccl::reduction_fn)do_reduction_sum);
         RUN_COLLECTIVE(
             ccl::allreduce(
-                send_buf, recv_buf, MSG_SIZE_COUNT, dtype, ccl::reduction::custom, comm, ccl::default_stream, attr),
+                send_buf, recv_buf, MSG_SIZE_COUNT, dtype, ccl::reduction::custom, comm, attr),
             fill_fn,
             check_fn,
             expected_fn,
@@ -627,7 +627,7 @@ int main() {
         attr.set<ccl::allreduce_attr_id::reduction_fn>((ccl::reduction_fn)do_reduction_sum);
         RUN_COLLECTIVE(
             ccl::allreduce(
-                send_buf, recv_buf, MSG_SIZE_COUNT, dtype, ccl::reduction::custom, comm, ccl::default_stream, attr),
+                send_buf, recv_buf, MSG_SIZE_COUNT, dtype, ccl::reduction::custom, comm, attr),
             fill_fn,
             check_fn,
             expected_fn,
@@ -646,7 +646,7 @@ int main() {
         attr.set<ccl::allreduce_attr_id::reduction_fn>((ccl::reduction_fn)do_reduction_null);
         RUN_COLLECTIVE(
             ccl::allreduce(
-                send_buf, recv_buf, MSG_SIZE_COUNT, dtype, ccl::reduction::custom, comm, ccl::default_stream, attr),
+                send_buf, recv_buf, MSG_SIZE_COUNT, dtype, ccl::reduction::custom, comm, attr),
             fill_fn,
             check_fn,
             expected_fn,
@@ -664,7 +664,7 @@ int main() {
         attr.set<ccl::allreduce_attr_id::reduction_fn>((ccl::reduction_fn)do_reduction_sum);
         RUN_COLLECTIVE(
             ccl::allreduce(
-                send_buf, recv_buf, MSG_SIZE_COUNT, dtype, ccl::reduction::custom, comm, ccl::default_stream, attr),
+                send_buf, recv_buf, MSG_SIZE_COUNT, dtype, ccl::reduction::custom, comm, attr),
             fill_fn,
             check_fn,
             expected_fn,
@@ -683,7 +683,7 @@ int main() {
         attr.set<ccl::allreduce_attr_id::reduction_fn>((ccl::reduction_fn)do_reduction_custom);
         RUN_COLLECTIVE(
             ccl::allreduce(
-                send_buf, recv_buf, MSG_SIZE_COUNT, dtype, ccl::reduction::custom, comm, ccl::default_stream, attr),
+                send_buf, recv_buf, MSG_SIZE_COUNT, dtype, ccl::reduction::custom, comm, attr),
             fill_fn,
             check_fn,
             expected_fn,

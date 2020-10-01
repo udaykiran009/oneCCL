@@ -113,7 +113,6 @@ public:
                 recv_counts,
                 datatype,
                 GlobalData::instance().comms[0],
-                ccl::default_stream,
                 attr);
         }
     }

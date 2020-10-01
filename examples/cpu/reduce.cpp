@@ -19,7 +19,6 @@ void run_collective(const char* cmd_name,
                     ccl::reduction::sum,
                     COLL_ROOT,
                     comm,
-                    ccl::default_stream,
                     attr).wait();
         exec_time += std::chrono::system_clock::now() - start;
     }

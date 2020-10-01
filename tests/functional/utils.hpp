@@ -105,7 +105,7 @@
         int result_final = 0; \
         static int glob_idx = 0; \
         auto& comm = GlobalData::instance().comms[0]; \
-        ccl::allreduce(&result, &result_final, 1, ccl::reduction::sum, comm, ccl::default_stream).wait(); \
+        ccl::allreduce(&result, &result_final, 1, ccl::reduction::sum, comm).wait(); \
         if (result_final > 0) { \
             print_err_message(className.get_err_message(), output); \
             if (typed_param.process_idx == 0) { \
@@ -190,7 +190,7 @@ void print_err_message(char* err_message, std::ostream& output) {
     std::vector<size_t> arr_message_len(process_count, 0);
     int* arr_message_len_copy = new int[process_count];
     std::vector<size_t> displs(process_count, 1);
-    ccl::allgatherv(&message_len, 1, arr_message_len_copy, displs, comm, ccl::default_stream).wait();
+    ccl::allgatherv(&message_len, 1, arr_message_len_copy, displs, comm).wait();
     std::copy(arr_message_len_copy, arr_message_len_copy + process_count, arr_message_len.begin());
     int full_message_len = std::accumulate(arr_message_len.begin(), arr_message_len.end(), 0);
 
@@ -200,7 +200,7 @@ void print_err_message(char* err_message, std::ostream& output) {
     }
 
     char* arrerr_message = new char[full_message_len];
-    ccl::allgatherv(err_message, message_len, arrerr_message, arr_message_len, comm, ccl::default_stream).wait();
+    ccl::allgatherv(err_message, message_len, arrerr_message, arr_message_len, comm).wait();
 
     if (process_idx == 0) {
         output << arrerr_message;

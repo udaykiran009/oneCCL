@@ -22,7 +22,6 @@ void run_collective(
             recv_buf.data(),
             recv_counts,
             comm,
-            ccl::default_stream,
             attr).wait();
         exec_time += std::chrono::system_clock::now() - start;
     }
@@ -66,7 +65,6 @@ void run_collective_vector(
             recv_bufs,
             recv_counts,
             comm,
-            ccl::default_stream,
             attr).wait();
         exec_time += std::chrono::system_clock::now() - start;
     }

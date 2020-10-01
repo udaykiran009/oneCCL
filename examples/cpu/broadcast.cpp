@@ -20,7 +20,6 @@ void run_collective(const char* cmd_name,
                        buf.size(),
                        COLL_ROOT,
                        comm,
-                       ccl::default_stream,
                        attr).wait();
         exec_time += std::chrono::system_clock::now() - start;
     }

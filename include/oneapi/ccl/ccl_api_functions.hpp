@@ -274,7 +274,7 @@ vector_class<communicator> create_communicators(
         comm_size, local_rank_device_map, context, kvs);
 }
 
-/******************** DEVICE COMMUNICATOR ********************/
+/******************** COMMUNICATOR ********************/
 
 /**
  * Allgatherv is a collective communication operation that collects data from all ranks within a communicator
@@ -300,7 +300,27 @@ event allgatherv(const void* send_buf,
                    const vector_class<size_t>& recv_counts,
                    datatype dtype,
                    const communicator& comm,
-                   const stream& op_stream = default_stream,
+                   const stream& op_stream,
+                   const allgatherv_attr& attr = default_allgatherv_attr,
+                   const vector_class<event>& deps = {});
+
+/**
+ * @param send_buf the buffer with @c send_count elements of @c dtype that stores local data to be gathered
+ * @param send_count number of elements of type @c dtype in @c send_buf
+ * @param recv_buf [out] the buffer to store gathered result, should be large enough to hold values from all ranks
+ * @param recv_counts array with number of elements of type @c dtype to be received from each rank
+ * @param dtype datatype of elements in @c send_buf and @c recv_buf
+ * @param comm the communicator for which the operation will be performed
+ * @param attr optional attributes to customize operation
+ * @param deps optional vector of events that the operation should depend on
+ * @return @ref ccl::event object to track the progress of the operation
+ */
+event allgatherv(const void* send_buf,
+                   size_t send_count,
+                   void* recv_buf,
+                   const vector_class<size_t>& recv_counts,
+                   datatype dtype,
+                   const communicator& comm,
                    const allgatherv_attr& attr = default_allgatherv_attr,
                    const vector_class<event>& deps = {});
 
@@ -322,7 +342,27 @@ event allgatherv(const void* send_buf,
                    const vector_class<size_t>& recv_counts,
                    datatype dtype,
                    const communicator& comm,
-                   const stream& op_stream = default_stream,
+                   const stream& op_stream,
+                   const allgatherv_attr& attr = default_allgatherv_attr,
+                   const vector_class<event>& deps = {});
+
+/**
+ * @param send_buf the buffer with @c send_count elements of @c dtype that stores local data to be gathered
+ * @param send_count number of elements of type @c dtype in @c send_buf
+ * @param recv_bufs [out] array of buffers to store gathered result, one buffer per each rank
+ * @param recv_counts array with number of elements of type @c dtype to be received from each rank
+ * @param dtype datatype of elements in @c send_buf and @c recv_buf
+ * @param comm the communicator for which the operation will be performed
+ * @param attr optional attributes to customize operation
+ * @param deps optional vector of events that the operation should depend on
+ * @return @ref ccl::event object to track the progress of the operation
+ */
+event allgatherv(const void* send_buf,
+                   size_t send_count,
+                   const vector_class<void*>& recv_bufs,
+                   const vector_class<size_t>& recv_counts,
+                   datatype dtype,
+                   const communicator& comm,
                    const allgatherv_attr& attr = default_allgatherv_attr,
                    const vector_class<event>& deps = {});
 
@@ -345,7 +385,28 @@ event allgatherv(const BufferType* send_buf,
                    BufferType* recv_buf,
                    const vector_class<size_t>& recv_counts,
                    const communicator& comm,
-                   const stream& op_stream = default_stream,
+                   const stream& op_stream,
+                   const allgatherv_attr& attr = default_allgatherv_attr,
+                   const vector_class<event>& deps = {});
+
+/**
+ * Type safety version:
+ * @param send_buf the buffer with @c send_count elements of @c BufferType that stores local data to be gathered
+ * @param send_count number of elements of type @c BufferType in @c send_buf
+ * @param recv_buf [out] the buffer to store gathered result, should be large enough to hold values from all ranks
+ * @param recv_counts array with number of elements of type @c BufferType to be received from each rank
+ * @param comm the communicator for which the operation will be performed
+ * @param attr optional attributes to customize operation
+ * @param deps optional vector of events that the operation should depend on
+ * @return @ref ccl::event object to track the progress of the operation
+ */
+template <class BufferType,
+          class = typename std::enable_if<is_native_type_supported<BufferType>(), event>::type>
+event allgatherv(const BufferType* send_buf,
+                   size_t send_count,
+                   BufferType* recv_buf,
+                   const vector_class<size_t>& recv_counts,
+                   const communicator& comm,
                    const allgatherv_attr& attr = default_allgatherv_attr,
                    const vector_class<event>& deps = {});
 
@@ -368,7 +429,28 @@ event allgatherv(const BufferType* send_buf,
                    vector_class<BufferType*>& recv_bufs,
                    const vector_class<size_t>& recv_counts,
                    const communicator& comm,
-                   const stream& op_stream = default_stream,
+                   const stream& op_stream,
+                   const allgatherv_attr& attr = default_allgatherv_attr,
+                   const vector_class<event>& deps = {});
+
+/**
+ * Type safety version:
+ * @param send_buf the buffer with @c send_count elements of @c BufferType that stores local data to be gathered
+ * @param send_count number of elements of type @c BufferType in @c send_buf
+ * @param recv_bufs [out] array of buffers to store gathered result, one buffer per each rank
+ * @param recv_counts array with number of elements of type @c BufferType to be received from each rank
+ * @param comm the communicator for which the operation will be performed
+ * @param attr optional attributes to customize operation
+ * @param deps optional vector of events that the operation should depend on
+ * @return @ref ccl::event object to track the progress of the operation
+ */
+template <class BufferType,
+          class = typename std::enable_if<is_native_type_supported<BufferType>(), event>::type>
+event allgatherv(const BufferType* send_buf,
+                   size_t send_count,
+                   vector_class<BufferType*>& recv_bufs,
+                   const vector_class<size_t>& recv_counts,
+                   const communicator& comm,
                    const allgatherv_attr& attr = default_allgatherv_attr,
                    const vector_class<event>& deps = {});
 
@@ -391,7 +473,28 @@ event allgatherv(const BufferObjectType& send_buf,
                    BufferObjectType& recv_buf,
                    const vector_class<size_t>& recv_counts,
                    const communicator& comm,
-                   const stream& op_stream = default_stream,
+                   const stream& op_stream,
+                   const allgatherv_attr& attr = default_allgatherv_attr,
+                   const vector_class<event>& deps = {});
+
+/**
+ * Type safety version:
+ * @param send_buf the buffer with @c send_count elements of @c dtype that stores local data to be gathered
+ * @param send_count number of elements of type @c dtype in @c send_buf
+ * @param recv_buf [out] the buffer to store gathered result, should be large enough to hold values from all ranks
+ * @param recv_counts array with number of elements of type @c dtype to be received from each rank
+ * @param comm the communicator for which the operation will be performed
+ * @param attr optional attributes to customize operation
+ * @param deps optional vector of events that the operation should depend on
+ * @return @ref ccl::event object to track the progress of the operation
+ */
+template <class BufferObjectType,
+          class = typename std::enable_if<is_class_supported<BufferObjectType>(), event>::type>
+event allgatherv(const BufferObjectType& send_buf,
+                   size_t send_count,
+                   BufferObjectType& recv_buf,
+                   const vector_class<size_t>& recv_counts,
+                   const communicator& comm,
                    const allgatherv_attr& attr = default_allgatherv_attr,
                    const vector_class<event>& deps = {});
 
@@ -414,7 +517,28 @@ event allgatherv(const BufferObjectType& send_buf,
                    vector_class<reference_wrapper_class<BufferObjectType>>& recv_bufs,
                    const vector_class<size_t>& recv_counts,
                    const communicator& comm,
-                   const stream& op_stream = default_stream,
+                   const stream& op_stream,
+                   const allgatherv_attr& attr = default_allgatherv_attr,
+                   const vector_class<event>& deps = {});
+
+/**
+ * Type safety version:
+ * @param send_buf the buffer with @c send_count elements of @c dtype that stores local data to be gathered
+ * @param send_count number of elements of type @c dtype in @c send_buf
+ * @param recv_bufs [out] array of buffers to store gathered result, one buffer per each rank
+ * @param recv_counts array with number of elements of type @c dtype to be received from each rank
+ * @param comm the communicator for which the operation will be performed
+ * @param attr optional attributes to customize operation
+ * @param deps optional vector of events that the operation should depend on
+ * @return @ref ccl::event object to track the progress of the operation
+ */
+template <class BufferObjectType,
+          class = typename std::enable_if<is_class_supported<BufferObjectType>(), event>::type>
+event allgatherv(const BufferObjectType& send_buf,
+                   size_t send_count,
+                   vector_class<reference_wrapper_class<BufferObjectType>>& recv_bufs,
+                   const vector_class<size_t>& recv_counts,
+                   const communicator& comm,
                    const allgatherv_attr& attr = default_allgatherv_attr,
                    const vector_class<event>& deps = {});
 
@@ -441,7 +565,27 @@ event allreduce(const void* send_buf,
                   datatype dtype,
                   reduction rtype,
                   const communicator& comm,
-                  const stream& op_stream = default_stream,
+                  const stream& op_stream,
+                  const allreduce_attr& attr = default_allreduce_attr,
+                  const vector_class<event>& deps = {});
+
+/**
+ * @param send_buf the buffer with @c count elements of @c dtype that stores local data to be reduced
+ * @param recv_buf [out] the buffer to store reduced result, must have the same dimension as @c send_buf
+ * @param count number of elements of type @c dtype in @c send_buf and @c recv_buf
+ * @param dtype datatype of elements in @c send_buf and @c recv_buf
+ * @param rtype type of reduction operation to be applied
+ * @param comm the communicator for which the operation will be performed
+ * @param attr optional attributes to customize operation
+ * @param deps optional vector of events that the operation should depend on
+ * @return @ref ccl::event object to track the progress of the operation
+ */
+event allreduce(const void* send_buf,
+                  void* recv_buf,
+                  size_t count,
+                  datatype dtype,
+                  reduction rtype,
+                  const communicator& comm,
                   const allreduce_attr& attr = default_allreduce_attr,
                   const vector_class<event>& deps = {});
 
@@ -464,7 +608,28 @@ event allreduce(const BufferType* send_buf,
                   size_t count,
                   reduction rtype,
                   const communicator& comm,
-                  const stream& op_stream = default_stream,
+                  const stream& op_stream,
+                  const allreduce_attr& attr = default_allreduce_attr,
+                  const vector_class<event>& deps = {});
+
+/**
+ * Type safety version:
+ * @param send_buf the buffer with @c count elements of @c BufferType that stores local data to be reduced
+ * @param recv_buf [out] the buffer to store reduced result, must have the same dimension as @c send_buf
+ * @param count number of elements of type @c BufferType in @c send_buf and @c recv_buf
+ * @param rtype type of reduction operation to be applied
+ * @param comm the communicator for which the operation will be performed
+ * @param attr optional attributes to customize operation
+ * @param deps optional vector of events that the operation should depend on
+ * @return @ref ccl::event object to track the progress of the operation
+ */
+template <class BufferType,
+          class = typename std::enable_if<is_native_type_supported<BufferType>(), event>::type>
+event allreduce(const BufferType* send_buf,
+                  BufferType* recv_buf,
+                  size_t count,
+                  reduction rtype,
+                  const communicator& comm,
                   const allreduce_attr& attr = default_allreduce_attr,
                   const vector_class<event>& deps = {});
 
@@ -487,7 +652,28 @@ event allreduce(const BufferObjectType& send_buf,
                   size_t count,
                   reduction rtype,
                   const communicator& comm,
-                  const stream& op_stream = default_stream,
+                  const stream& op_stream,
+                  const allreduce_attr& attr = default_allreduce_attr,
+                  const vector_class<event>& deps = {});
+
+/**
+ * Type safety version:
+ * @param send_buf the buffer with @c count elements of @c dtype that stores local data to be reduced
+ * @param recv_buf [out] the buffer to store reduced result, must have the same dimension as @c send_buf
+ * @param count number of elements of type @c dtype in @c send_buf and @c recv_buf
+ * @param rtype type of reduction operation to be applied
+ * @param comm the communicator for which the operation will be performed
+ * @param attr optional attributes to customize operation
+ * @param deps optional vector of events that the operation should depend on
+ * @return @ref ccl::event object to track the progress of the operation
+ */
+template <class BufferObjectType,
+          class = typename std::enable_if<is_class_supported<BufferObjectType>(), event>::type>
+event allreduce(const BufferObjectType& send_buf,
+                  BufferObjectType& recv_buf,
+                  size_t count,
+                  reduction rtype,
+                  const communicator& comm,
                   const allreduce_attr& attr = default_allreduce_attr,
                   const vector_class<event>& deps = {});
 
@@ -515,7 +701,26 @@ event alltoall(const void* send_buf,
                  size_t count,
                  datatype dtype,
                  const communicator& comm,
-                 const stream& op_stream = default_stream,
+                 const stream& op_stream,
+                 const alltoall_attr& attr = default_alltoall_attr,
+                 const vector_class<event>& deps = {});
+
+/**
+ * @param send_buf the buffer with @c count elements of @c dtype that stores local data to be sent
+ * @param recv_buf [out] the buffer to store received result, should be large enough
+ * to hold values from all ranks, i.e. at least @c comm_size * @c count
+ * @param count number of elements of type @c dtype to be send to or to received from each rank
+ * @param dtype datatype of elements in @c send_buf and @c recv_buf
+ * @param comm the communicator for which the operation will be performed
+ * @param attr optional attributes to customize operation
+ * @param deps optional vector of events that the operation should depend on
+ * @return @ref ccl::event object to track the progress of the operation
+ */
+event alltoall(const void* send_buf,
+                 void* recv_buf,
+                 size_t count,
+                 datatype dtype,
+                 const communicator& comm,
                  const alltoall_attr& attr = default_alltoall_attr,
                  const vector_class<event>& deps = {});
 
@@ -535,7 +740,25 @@ event alltoall(const vector_class<void*>& send_buf,
                  size_t count,
                  datatype dtype,
                  const communicator& comm,
-                 const stream& op_stream = default_stream,
+                 const stream& op_stream,
+                 const alltoall_attr& attr = default_alltoall_attr,
+                 const vector_class<event>& deps = {});
+
+/**
+ * @param send_bufs array of buffers with local data to be sent, one buffer per each rank
+ * @param recv_bufs [out] array of buffers to store received result, one buffer per each rank
+ * @param count number of elements of type @c dtype to be send to or to received from each rank
+ * @param dtype datatype of elements in @c send_buf and @c recv_buf
+ * @param comm the communicator for which the operation will be performed
+ * @param attr optional attributes to customize operation
+ * @param deps optional vector of events that the operation should depend on
+ * @return @ref ccl::event object to track the progress of the operation
+ */
+event alltoall(const vector_class<void*>& send_buf,
+                 const vector_class<void*>& recv_buf,
+                 size_t count,
+                 datatype dtype,
+                 const communicator& comm,
                  const alltoall_attr& attr = default_alltoall_attr,
                  const vector_class<event>& deps = {});
 
@@ -557,7 +780,27 @@ event alltoall(const BufferType* send_buf,
                  BufferType* recv_buf,
                  size_t count,
                  const communicator& comm,
-                 const stream& op_stream = default_stream,
+                 const stream& op_stream,
+                 const alltoall_attr& attr = default_alltoall_attr,
+                 const vector_class<event>& deps = {});
+
+/**
+ * Type safety version:
+ * @param send_buf the buffer with @c count elements of @c BufferType that stores local data to be sent
+ * @param recv_buf [out] the buffer to store received result, should be large enough
+ * to hold values from all ranks, i.e. at least @c comm_size * @c count
+ * @param count number of elements to be send to or to received from each rank
+ * @param comm the communicator for which the operation will be performed
+ * @param attr optional attributes to customize operation
+ * @param deps optional vector of events that the operation should depend on
+ * @return @ref ccl::event object to track the progress of the operation
+ */
+template <class BufferType,
+          class = typename std::enable_if<is_native_type_supported<BufferType>(), event>::type>
+event alltoall(const BufferType* send_buf,
+                 BufferType* recv_buf,
+                 size_t count,
+                 const communicator& comm,
                  const alltoall_attr& attr = default_alltoall_attr,
                  const vector_class<event>& deps = {});
 
@@ -578,7 +821,26 @@ event alltoall(const vector_class<BufferType*>& send_buf,
                  const vector_class<BufferType*>& recv_buf,
                  size_t count,
                  const communicator& comm,
-                 const stream& op_stream = default_stream,
+                 const stream& op_stream,
+                 const alltoall_attr& attr = default_alltoall_attr,
+                 const vector_class<event>& deps = {});
+
+/**
+ * Type safety version:
+ * @param send_bufs array of buffers with local data to be sent, one buffer per each rank
+ * @param recv_bufs [out] array of buffers to store received result, one buffer per each rank
+ * @param count number of elements to be send to or to received from each rank
+ * @param comm the communicator for which the operation will be performed
+ * @param attr optional attributes to customize operation
+ * @param deps optional vector of events that the operation should depend on
+ * @return @ref ccl::event object to track the progress of the operation
+ */
+template <class BufferType,
+          class = typename std::enable_if<is_native_type_supported<BufferType>(), event>::type>
+event alltoall(const vector_class<BufferType*>& send_buf,
+                 const vector_class<BufferType*>& recv_buf,
+                 size_t count,
+                 const communicator& comm,
                  const alltoall_attr& attr = default_alltoall_attr,
                  const vector_class<event>& deps = {});
 
@@ -600,7 +862,27 @@ event alltoall(const BufferObjectType& send_buf,
                  BufferObjectType& recv_buf,
                  size_t count,
                  const communicator& comm,
-                 const stream& op_stream = default_stream,
+                 const stream& op_stream,
+                 const alltoall_attr& attr = default_alltoall_attr,
+                 const vector_class<event>& deps = {});
+
+/**
+ * Type safety version:
+ * @param send_buf the buffer with @c count elements of @c dtype that stores local data to be sent
+ * @param recv_buf [out] the buffer to store received result, should be large enough
+ * to hold values from all ranks, i.e. at least @c comm_size * @c count
+ * @param count number of elements to be send to or to received from each rank
+ * @param comm the communicator for which the operation will be performed
+ * @param attr optional attributes to customize operation
+ * @param deps optional vector of events that the operation should depend on
+ * @return @ref ccl::event object to track the progress of the operation
+ */
+template <class BufferObjectType,
+          class = typename std::enable_if<is_class_supported<BufferObjectType>(), event>::type>
+event alltoall(const BufferObjectType& send_buf,
+                 BufferObjectType& recv_buf,
+                 size_t count,
+                 const communicator& comm,
                  const alltoall_attr& attr = default_alltoall_attr,
                  const vector_class<event>& deps = {});
 
@@ -621,7 +903,26 @@ event alltoall(const vector_class<reference_wrapper_class<BufferObjectType>>& se
                  const vector_class<reference_wrapper_class<BufferObjectType>>& recv_buf,
                  size_t count,
                  const communicator& comm,
-                 const stream& op_stream = default_stream,
+                 const stream& op_stream,
+                 const alltoall_attr& attr = default_alltoall_attr,
+                 const vector_class<event>& deps = {});
+
+/**
+ * Type safety version:
+ * @param send_bufs array of buffers with local data to be sent, one buffer per each rank
+ * @param recv_bufs [out] array of buffers to store received result, one buffer per each rank
+ * @param count number of elements to be send to or to received from each rank
+ * @param comm the communicator for which the operation will be performed
+ * @param attr optional attributes to customize operation
+ * @param deps optional vector of events that the operation should depend on
+ * @return @ref ccl::event object to track the progress of the operation
+ */
+template <class BufferObjectType,
+          class = typename std::enable_if<is_class_supported<BufferObjectType>(), event>::type>
+event alltoall(const vector_class<reference_wrapper_class<BufferObjectType>>& send_buf,
+                 const vector_class<reference_wrapper_class<BufferObjectType>>& recv_buf,
+                 size_t count,
+                 const communicator& comm,
                  const alltoall_attr& attr = default_alltoall_attr,
                  const vector_class<event>& deps = {});
 
@@ -650,7 +951,27 @@ event alltoallv(const void* send_buf,
                   const vector_class<size_t>& recv_counts,
                   datatype dtype,
                   const communicator& comm,
-                  const stream& op_stream = default_stream,
+                  const stream& op_stream,
+                  const alltoallv_attr& attr = default_alltoallv_attr,
+                  const vector_class<event>& deps = {});
+
+/**
+ * @param send_buf the buffer with elements of @c dtype that stores local blocks to be sent to each rank
+ * @param send_counts array with number of elements of type @c dtype in send blocks for each rank
+ * @param recv_buf [out] the buffer to store received result, should be large enough to hold blocks from all ranks
+ * @param recv_counts array with number of elements of type @c dtype in receive blocks from each rank
+ * @param dtype datatype of elements in @c send_buf and @c recv_buf
+ * @param comm the communicator for which the operation will be performed
+ * @param attr optional attributes to customize operation
+ * @param deps optional vector of events that the operation should depend on
+ * @return @ref ccl::event object to track the progress of the operation
+ */
+event alltoallv(const void* send_buf,
+                  const vector_class<size_t>& send_counts,
+                  void* recv_buf,
+                  const vector_class<size_t>& recv_counts,
+                  datatype dtype,
+                  const communicator& comm,
                   const alltoallv_attr& attr = default_alltoallv_attr,
                   const vector_class<event>& deps = {});
 
@@ -672,7 +993,27 @@ event alltoallv(const vector_class<void*>& send_bufs,
                   const vector_class<size_t>& recv_counts,
                   datatype dtype,
                   const communicator& comm,
-                  const stream& op_stream = default_stream,
+                  const stream& op_stream,
+                  const alltoallv_attr& attr = default_alltoallv_attr,
+                  const vector_class<event>& deps = {});
+
+/**
+ * @param send_bufs array of buffers to store send blocks, one buffer per each rank
+ * @param send_counts array with number of elements of type @c dtype in send blocks for each rank
+ * @param recv_bufs [out] array of buffers to store receive blocks, one buffer per each rank
+ * @param recv_counts array with number of elements of type @c dtype in receive blocks from each rank
+ * @param dtype datatype of elements in @c send_buf and @c recv_buf
+ * @param comm the communicator for which the operation will be performed
+ * @param attr optional attributes to customize operation
+ * @param deps optional vector of events that the operation should depend on
+ * @return @ref ccl::event object to track the progress of the operation
+ */
+event alltoallv(const vector_class<void*>& send_bufs,
+                  const vector_class<size_t>& send_counts,
+                  const vector_class<void*>& recv_bufs,
+                  const vector_class<size_t>& recv_counts,
+                  datatype dtype,
+                  const communicator& comm,
                   const alltoallv_attr& attr = default_alltoallv_attr,
                   const vector_class<event>& deps = {});
 
@@ -695,7 +1036,28 @@ event alltoallv(const BufferType* send_buf,
                   BufferType* recv_buf,
                   const vector_class<size_t>& recv_counts,
                   const communicator& comm,
-                  const stream& op_stream = default_stream,
+                  const stream& op_stream,
+                  const alltoallv_attr& attr = default_alltoallv_attr,
+                  const vector_class<event>& deps = {});
+
+/**
+ * Type safety version:
+ * @param send_buf the buffer with elements of @c BufferType that stores local blocks to be sent to each rank
+ * @param send_counts array with number of elements of type @c BufferType in send blocks for each rank
+ * @param recv_buf [out] the buffer to store received result, should be large enough to hold blocks from all ranks
+ * @param recv_counts array with number of elements of type @c BufferType in receive blocks from each rank
+ * @param comm the communicator for which the operation will be performed
+ * @param attr optional attributes to customize operation
+ * @param deps optional vector of events that the operation should depend on
+ * @return @ref ccl::event object to track the progress of the operation
+ */
+template <class BufferType,
+          class = typename std::enable_if<is_native_type_supported<BufferType>(), event>::type>
+event alltoallv(const BufferType* send_buf,
+                  const vector_class<size_t>& send_counts,
+                  BufferType* recv_buf,
+                  const vector_class<size_t>& recv_counts,
+                  const communicator& comm,
                   const alltoallv_attr& attr = default_alltoallv_attr,
                   const vector_class<event>& deps = {});
 
@@ -718,7 +1080,28 @@ event alltoallv(const vector_class<BufferType*>& send_bufs,
                   const vector_class<BufferType*>& recv_bufs,
                   const vector_class<size_t>& recv_counts,
                   const communicator& comm,
-                  const stream& op_stream = default_stream,
+                  const stream& op_stream,
+                  const alltoallv_attr& attr = default_alltoallv_attr,
+                  const vector_class<event>& deps = {});
+
+/**
+ * Type safety version:
+ * @param send_bufs array of buffers to store send blocks, one buffer per each rank
+ * @param send_counts array with number of elements of type @c BufferType in send blocks for each rank
+ * @param recv_bufs [out] array of buffers to store receive blocks, one buffer per each rank
+ * @param recv_counts array with number of elements of type @c BufferType in receive blocks from each rank
+ * @param comm the communicator for which the operation will be performed
+ * @param attr optional attributes to customize operation
+ * @param deps optional vector of events that the operation should depend on
+ * @return @ref ccl::event object to track the progress of the operation
+ */
+template <class BufferType,
+          class = typename std::enable_if<is_native_type_supported<BufferType>(), event>::type>
+event alltoallv(const vector_class<BufferType*>& send_bufs,
+                  const vector_class<size_t>& send_counts,
+                  const vector_class<BufferType*>& recv_bufs,
+                  const vector_class<size_t>& recv_counts,
+                  const communicator& comm,
                   const alltoallv_attr& attr = default_alltoallv_attr,
                   const vector_class<event>& deps = {});
 
@@ -741,7 +1124,28 @@ event alltoallv(const BufferObjectType& send_buf,
                   BufferObjectType& recv_buf,
                   const vector_class<size_t>& recv_counts,
                   const communicator& comm,
-                  const stream& op_stream = default_stream,
+                  const stream& op_stream,
+                  const alltoallv_attr& attr = default_alltoallv_attr,
+                  const vector_class<event>& deps = {});
+
+/**
+ * Type safety version:
+ * @param send_buf the buffer with elements of @c dtype that stores local blocks to be sent to each rank
+ * @param send_counts array with number of elements of type @c dtype in send blocks for each rank
+ * @param recv_buf [out] the buffer to store received result, should be large enough to hold blocks from all ranks
+ * @param recv_counts array with number of elements of type @c dtype in receive blocks from each rank
+ * @param comm the communicator for which the operation will be performed
+ * @param attr optional attributes to customize operation
+ * @param deps optional vector of events that the operation should depend on
+ * @return @ref ccl::event object to track the progress of the operation
+ */
+template <class BufferObjectType,
+          class = typename std::enable_if<is_class_supported<BufferObjectType>(), event>::type>
+event alltoallv(const BufferObjectType& send_buf,
+                  const vector_class<size_t>& send_counts,
+                  BufferObjectType& recv_buf,
+                  const vector_class<size_t>& recv_counts,
+                  const communicator& comm,
                   const alltoallv_attr& attr = default_alltoallv_attr,
                   const vector_class<event>& deps = {});
 
@@ -765,14 +1169,38 @@ event alltoallv(const vector_class<reference_wrapper_class<BufferObjectType>>& s
                   const vector_class<reference_wrapper_class<BufferObjectType>>& recv_bufs,
                   const vector_class<size_t>& recv_counts,
                   const communicator& comm,
-                  const stream& op_stream = default_stream,
+                  const stream& op_stream,
+                  const alltoallv_attr& attr = default_alltoallv_attr,
+                  const vector_class<event>& deps = {});
+
+/**
+ * Type safety version:
+ * @param send_bufs array of buffers to store send blocks, one buffer per each rank
+ * @param send_counts array with number of elements of type @c dtype in send blocks for each rank
+ * @param recv_bufs [out] array of buffers to store receive blocks, one buffer per each rank
+ * @param recv_counts array with number of elements of type @c dtype in receive blocks from each rank
+ * @param dtype datatype of elements in @c send_buf and @c recv_buf
+ * @param comm the communicator for which the operation will be performed
+ * @param attr optional attributes to customize operation
+ * @param deps optional vector of events that the operation should depend on
+ * @return @ref ccl::event object to track the progress of the operation
+ */
+template <class BufferObjectType,
+          class = typename std::enable_if<is_class_supported<BufferObjectType>(), event>::type>
+event alltoallv(const vector_class<reference_wrapper_class<BufferObjectType>>& send_bufs,
+                  const vector_class<size_t>& send_counts,
+                  const vector_class<reference_wrapper_class<BufferObjectType>>& recv_bufs,
+                  const vector_class<size_t>& recv_counts,
+                  const communicator& comm,
                   const alltoallv_attr& attr = default_alltoallv_attr,
                   const vector_class<event>& deps = {});
 
 /**
  * Barrier synchronization across all ranks of communicator.
  * Completes after all ranks in the communicator have called it.
- *
+ */
+
+/**
  * @param comm the communicator for which the operation will be performed
  * @param op_stream op_stream associated with the operation
  * @param attr optional attributes to customize operation
@@ -780,7 +1208,17 @@ event alltoallv(const vector_class<reference_wrapper_class<BufferObjectType>>& s
  * @return @ref ccl::event object to track the progress of the operation
  */
 event barrier(const communicator& comm,
-                const stream& op_stream = default_stream,
+                const stream& op_stream,
+                const barrier_attr& attr = default_barrier_attr,
+                const vector_class<event>& deps = {});
+
+/**
+ * @param comm the communicator for which the operation will be performed
+ * @param attr optional attributes to customize operation
+ * @param deps optional vector of events that the operation should depend on
+ * @return @ref ccl::event object to track the progress of the operation
+ */
+event barrier(const communicator& comm,
                 const barrier_attr& attr = default_barrier_attr,
                 const vector_class<event>& deps = {});
 
@@ -806,7 +1244,26 @@ event broadcast(void* buf,
                   datatype dtype,
                   size_t root,
                   const communicator& comm,
-                  const stream& op_stream = default_stream,
+                  const stream& op_stream,
+                  const broadcast_attr& attr = default_broadcast_attr,
+                  const vector_class<event>& deps = {});
+
+/**
+ * @param buf [in,out] the buffer with @c count elements of @c dtype
+ * serves as send buffer for root and as receive buffer for other ranks
+ * @param count number of elements of type @c dtype in @c buf
+ * @param dtype datatype of elements in @c buf
+ * @param root the rank that broadcasts @c buf
+ * @param comm the communicator for which the operation will be performed
+ * @param attr optional attributes to customize operation
+ * @param deps optional vector of events that the operation should depend on
+ * @return @ref ccl::event object to track the progress of the operation
+ */
+event broadcast(void* buf,
+                  size_t count,
+                  datatype dtype,
+                  size_t root,
+                  const communicator& comm,
                   const broadcast_attr& attr = default_broadcast_attr,
                   const vector_class<event>& deps = {});
 
@@ -828,7 +1285,27 @@ event broadcast(BufferType* buf,
                   size_t count,
                   size_t root,
                   const communicator& comm,
-                  const stream& op_stream = default_stream,
+                  const stream& op_stream,
+                  const broadcast_attr& attr = default_broadcast_attr,
+                  const vector_class<event>& deps = {});
+
+/**
+ * Type safety version:
+ * @param buf [in,out] the buffer with @c count elements of @c BufferType
+ * serves as send buffer for root and as receive buffer for other ranks
+ * @param count number of elements of type @c BufferType in @c buf
+ * @param root the rank that broadcasts @c buf
+ * @param comm the communicator for which the operation will be performed
+ * @param attr optional attributes to customize operation
+ * @param deps optional vector of events that the operation should depend on
+ * @return @ref ccl::event object to track the progress of the operation
+ */
+template <class BufferType,
+          class = typename std::enable_if<is_native_type_supported<BufferType>(), event>::type>
+event broadcast(BufferType* buf,
+                  size_t count,
+                  size_t root,
+                  const communicator& comm,
                   const broadcast_attr& attr = default_broadcast_attr,
                   const vector_class<event>& deps = {});
 
@@ -850,7 +1327,27 @@ event broadcast(BufferObjectType& buf,
                   size_t count,
                   size_t root,
                   const communicator& comm,
-                  const stream& op_stream = default_stream,
+                  const stream& op_stream,
+                  const broadcast_attr& attr = default_broadcast_attr,
+                  const vector_class<event>& deps = {});
+
+/**
+ * Type safety version:
+ * @param buf [in,out] the buffer with @c count elements of @c dtype
+ * serves as send buffer for root and as receive buffer for other ranks
+ * @param count number of elements of type @c dtype in @c buf
+ * @param root the rank that broadcasts @c buf
+ * @param comm the communicator for which the operation will be performed
+ * @param attr optional attributes to customize operation
+ * @param deps optional vector of events that the operation should depend on
+ * @return @ref ccl::event object to track the progress of the operation
+ */
+template <class BufferObjectType,
+          class = typename std::enable_if<is_class_supported<BufferObjectType>(), event>::type>
+event broadcast(BufferObjectType& buf,
+                  size_t count,
+                  size_t root,
+                  const communicator& comm,
                   const broadcast_attr& attr = default_broadcast_attr,
                   const vector_class<event>& deps = {});
 
@@ -880,7 +1377,30 @@ event reduce(const void* send_buf,
                reduction rtype,
                size_t root,
                const communicator& comm,
-               const stream& op_stream = default_stream,
+               const stream& op_stream,
+               const reduce_attr& attr = default_reduce_attr,
+               const vector_class<event>& deps = {});
+
+/**
+ * @param send_buf the buffer with @c count elements of @c dtype that stores local data to be reduced
+ * @param recv_buf [out] the buffer to store reduced result, must have the same dimension as @c send_buf.
+ * Used by the @c root rank only, ignored by other ranks.
+ * @param count number of elements of type @c dtype in @c send_buf and @c recv_buf
+ * @param dtype datatype of elements in @c send_buf and @c recv_buf
+ * @param rtype type of reduction operation to be applied
+ * @param root the rank that gets the result of reduction
+ * @param comm the communicator for which the operation will be performed
+ * @param attr optional attributes to customize operation
+ * @param deps optional vector of events that the operation should depend on
+ * @return @ref ccl::event object to track the progress of the operation
+ */
+event reduce(const void* send_buf,
+               void* recv_buf,
+               size_t count,
+               datatype dtype,
+               reduction rtype,
+               size_t root,
+               const communicator& comm,
                const reduce_attr& attr = default_reduce_attr,
                const vector_class<event>& deps = {});
 
@@ -906,7 +1426,31 @@ event reduce(const BufferType* send_buf,
                reduction rtype,
                size_t root,
                const communicator& comm,
-               const stream& op_stream = default_stream,
+               const stream& op_stream,
+               const reduce_attr& attr = default_reduce_attr,
+               const vector_class<event>& deps = {});
+
+/**
+ * Type safety version:
+ * @param send_buf the buffer with @c count elements of @c BufferType that stores local data to be reduced
+ * @param recv_buf [out] the buffer to store reduced result, must have the same dimension as @c send_buf.
+ * Used by the @c root rank only, ignored by other ranks.
+ * @param count number of elements of type @c BufferType in @c send_buf and @c recv_buf
+ * @param rtype type of reduction operation to be applied
+ * @param root the rank that gets the result of reduction
+ * @param comm the communicator for which the operation will be performed
+ * @param attr optional attributes to customize operation
+ * @param deps optional vector of events that the operation should depend on
+ * @return @ref ccl::event object to track the progress of the operation
+ */
+template <class BufferType,
+          class = typename std::enable_if<is_native_type_supported<BufferType>(), event>::type>
+event reduce(const BufferType* send_buf,
+               BufferType* recv_buf,
+               size_t count,
+               reduction rtype,
+               size_t root,
+               const communicator& comm,
                const reduce_attr& attr = default_reduce_attr,
                const vector_class<event>& deps = {});
 
@@ -932,7 +1476,31 @@ event reduce(const BufferObjectType& send_buf,
                reduction rtype,
                size_t root,
                const communicator& comm,
-               const stream& op_stream = default_stream,
+               const stream& op_stream,
+               const reduce_attr& attr = default_reduce_attr,
+               const vector_class<event>& deps = {});
+
+/**
+ * Type safety version:
+ * @param send_buf the buffer with @c count elements of @c dtype that stores local data to be reduced
+ * @param recv_buf [out] the buffer to store reduced result, must have the same dimension as @c send_buf.
+ * Used by the @c root rank only, ignored by other ranks.
+ * @param count number of elements of type @c dtype in @c send_buf and @c recv_buf
+ * @param dtype datatype of elements in @c send_buf and @c recv_buf
+ * @param rtype type of reduction operation to be applied
+ * @param comm the communicator for which the operation will be performed
+ * @param attr optional attributes to customize operation
+ * @param deps optional vector of events that the operation should depend on
+ * @return @ref ccl::event object to track the progress of the operation
+ */
+template <class BufferObjectType,
+          class = typename std::enable_if<is_class_supported<BufferObjectType>(), event>::type>
+event reduce(const BufferObjectType& send_buf,
+               BufferObjectType& recv_buf,
+               size_t count,
+               reduction rtype,
+               size_t root,
+               const communicator& comm,
                const reduce_attr& attr = default_reduce_attr,
                const vector_class<event>& deps = {});
 
@@ -959,7 +1527,27 @@ event reduce_scatter(const void* send_buf,
                        datatype dtype,
                        reduction rtype,
                        const communicator& comm,
-                       const stream& op_stream = default_stream,
+                       const stream& op_stream,
+                       const reduce_scatter_attr& attr = default_reduce_scatter_attr,
+                       const vector_class<event>& deps = {});
+
+/**
+ * @param send_buf the buffer with @c comm_size * @c count elements of @c dtype that stores local data to be reduced
+ * @param recv_buf [out] the buffer to store result block containing @c recv_count elements of type @c dtype
+ * @param recv_count number of elements of type @c dtype in receive block
+ * @param dtype datatype of elements in @c send_buf and @c recv_buf
+ * @param rtype type of reduction operation to be applied
+ * @param comm the communicator for which the operation will be performed
+ * @param attr optional attributes to customize operation
+ * @param deps optional vector of events that the operation should depend on
+ * @return @ref ccl::event object to track the progress of the operation
+ */
+event reduce_scatter(const void* send_buf,
+                       void* recv_buf,
+                       size_t recv_count,
+                       datatype dtype,
+                       reduction rtype,
+                       const communicator& comm,
                        const reduce_scatter_attr& attr = default_reduce_scatter_attr,
                        const vector_class<event>& deps = {});
 
@@ -982,7 +1570,28 @@ event reduce_scatter(const BufferType* send_buf,
                        size_t recv_count,
                        reduction rtype,
                        const communicator& comm,
-                       const stream& op_stream = default_stream,
+                       const stream& op_stream,
+                       const reduce_scatter_attr& attr = default_reduce_scatter_attr,
+                       const vector_class<event>& deps = {});
+
+/**
+ * Type safety version:
+ * @param send_buf the buffer with @c comm_size * @c count elements of @c BufferType that stores local data to be reduced
+ * @param recv_buf [out] the buffer to store result block containing @c recv_count elements of type @c BufferType
+ * @param recv_count number of elements of type @c BufferType in receive block
+ * @param rtype type of reduction operation to be applied
+ * @param comm the communicator for which the operation will be performed
+ * @param attr optional attributes to customize operation
+ * @param deps optional vector of events that the operation should depend on
+ * @return @ref ccl::event object to track the progress of the operation
+ */
+template <class BufferType,
+          class = typename std::enable_if<is_native_type_supported<BufferType>(), event>::type>
+event reduce_scatter(const BufferType* send_buf,
+                       BufferType* recv_buf,
+                       size_t recv_count,
+                       reduction rtype,
+                       const communicator& comm,
                        const reduce_scatter_attr& attr = default_reduce_scatter_attr,
                        const vector_class<event>& deps = {});
 
@@ -1005,7 +1614,28 @@ event reduce_scatter(const BufferObjectType& send_buf,
                        size_t recv_count,
                        reduction rtype,
                        const communicator& comm,
-                       const stream& op_stream = default_stream,
+                       const stream& op_stream,
+                       const reduce_scatter_attr& attr = default_reduce_scatter_attr,
+                       const vector_class<event>& deps = {});
+
+/**
+ * Type safety version:
+ * @param send_buf the buffer with @c comm_size * @c count elements of @c dtype that stores local data to be reduced
+ * @param recv_buf [out] the buffer to store result block containing @c recv_count elements of type @c dtype
+ * @param recv_count number of elements of type @c dtype in receive block
+ * @param rtype type of reduction operation to be applied
+ * @param comm the communicator for which the operation will be performed
+ * @param attr optional attributes to customize operation
+ * @param deps optional vector of events that the operation should depend on
+ * @return @ref ccl::event object to track the progress of the operation
+ */
+template <class BufferObjectType,
+          class = typename std::enable_if<is_class_supported<BufferObjectType>(), event>::type>
+event reduce_scatter(const BufferObjectType& send_buf,
+                       BufferObjectType& recv_buf,
+                       size_t recv_count,
+                       reduction rtype,
+                       const communicator& comm,
                        const reduce_scatter_attr& attr = default_reduce_scatter_attr,
                        const vector_class<event>& deps = {});
 
@@ -1049,7 +1679,41 @@ ccl::event sparse_allreduce(
     ccl::datatype val_dtype,
     ccl::reduction rtype,
     const ccl::communicator& comm,
-    const ccl::stream& op_stream = ccl::default_stream,
+    const ccl::stream& op_stream,
+    const ccl::sparse_allreduce_attr& attr = ccl::default_sparse_allreduce_attr,
+    const ccl::vector_class<ccl::event>& deps = {});
+
+/**
+ * @param send_ind_buf the buffer of indices with @c send_ind_count elements of type @c ind_dtype
+ * @param send_ind_count number of elements of type @c ind_type @c send_ind_buf
+ * @param send_val_buf the buffer of values with @c send_val_count elements of type @c val_dtype
+ * @param send_val_count number of elements of type @c val_type @c send_val_buf
+ * @param recv_ind_buf [out] the buffer to store reduced indices, unused
+ * @param recv_ind_count [out] number of elements in @c recv_ind_buf, unused
+ * @param recv_val_buf [out] the buffer to store reduced values, unused
+ * @param recv_val_count [out] number of elements in @c recv_val_buf, unused
+ * @param ind_dtype datatype of elements in @c send_ind_buf and @c recv_ind_buf
+ * @param val_dtype datatype of elements in @c send_val_buf and @c recv_val_buf
+ * @param rtype type of reduction operation to be applied
+ * @param comm the communicator for which the operation will be performed
+ * @param attr optional attributes to customize operation
+ * @param deps optional vector of events that the operation should depend on
+ * @return @ref ccl::event object to track the progress of the operation
+ */
+
+ccl::event sparse_allreduce(
+    const void* send_ind_buf,
+    size_t send_ind_count,
+    const void* send_val_buf,
+    size_t send_val_count,
+    void* recv_ind_buf,
+    size_t recv_ind_count,
+    void* recv_val_buf,
+    size_t recv_val_count,
+    ccl::datatype ind_dtype,
+    ccl::datatype val_dtype,
+    ccl::reduction rtype,
+    const ccl::communicator& comm,
     const ccl::sparse_allreduce_attr& attr = ccl::default_sparse_allreduce_attr,
     const ccl::vector_class<ccl::event>& deps = {});
 
@@ -1085,7 +1749,41 @@ ccl::event sparse_allreduce(
     size_t recv_val_count,
     ccl::reduction rtype,
     const ccl::communicator& comm,
-    const ccl::stream& op_stream = default_stream,
+    const ccl::stream& op_stream,
+    const ccl::sparse_allreduce_attr& attr = default_sparse_allreduce_attr,
+    const ccl::vector_class<ccl::event>& deps = {});
+
+/**
+ * Type safety version:
+ * @param send_ind_buf the buffer of indices with @c send_ind_count elements of type @c ind_dtype
+ * @param send_ind_count number of elements of type @c ind_type @c send_ind_buf
+ * @param send_val_buf the buffer of values with @c send_val_count elements of type @c val_dtype
+ * @param send_val_count number of elements of type @c val_type @c send_val_buf
+ * @param recv_ind_buf [out] the buffer to store reduced indices, unused
+ * @param recv_ind_count [out] number of elements in @c recv_ind_buf, unused
+ * @param recv_val_buf [out] the buffer to store reduced values, unused
+ * @param recv_val_count [out] number of elements in @c recv_val_buf, unused
+ * @param rtype type of reduction operation to be applied
+ * @param comm the communicator for which the operation will be performed
+ * @param attr optional attributes to customize operation
+ * @param deps optional vector of events that the operation should depend on
+ * @return @ref ccl::event object to track the progress of the operation
+ */
+template <class IndexBufferType,
+          class ValueBufferType,
+          class = typename std::enable_if<ccl::is_native_type_supported<ValueBufferType>(),
+                                          ccl::event>::type>
+ccl::event sparse_allreduce(
+    const IndexBufferType* send_ind_buf,
+    size_t send_ind_count,
+    const ValueBufferType* send_val_buf,
+    size_t send_val_count,
+    IndexBufferType* recv_ind_buf,
+    size_t recv_ind_count,
+    ValueBufferType* recv_val_buf,
+    size_t recv_val_count,
+    ccl::reduction rtype,
+    const ccl::communicator& comm,
     const ccl::sparse_allreduce_attr& attr = default_sparse_allreduce_attr,
     const ccl::vector_class<ccl::event>& deps = {});
 
@@ -1121,7 +1819,40 @@ ccl::event sparse_allreduce(
 //                  size_t recv_val_count,
 //                  ccl::reduction reduction,
 //                  const ccl::communicator& comm,
-//                  const ccl::stream& op_stream = default_stream,
+//                  const ccl::stream& op_stream,
+//                  const ccl::sparse_allreduce_attr& attr = default_sparse_allreduce_attr,
+//                  const ccl::vector_class<ccl::event>& deps = {});
+
+//  * Type safety version:
+//  * @param send_ind_buf the buffer of indices with @c send_ind_count elements of type @c ind_dtype
+//  * @param send_ind_count number of elements of type @c ind_type @c send_ind_buf
+//  * @param send_val_buf the buffer of values with @c send_val_count elements of type @c val_dtype
+//  * @param send_val_count number of elements of type @c val_type @c send_val_buf
+//  * @param recv_ind_buf [out] the buffer to store reduced indices, unused
+//  * @param recv_ind_count [out] number of elements in @c recv_ind_buf, unused
+//  * @param recv_val_buf [out] the buffer to store reduced values, unused
+//  * @param recv_val_count [out] number of elements in @c recv_val_buf, unused
+//  * @param rtype type of reduction operation to be applied
+//  * @param comm the communicator for which the operation will be performed
+//  * @param attr optional attributes to customize operation
+//  * @param deps optional vector of events that the operation should depend on
+//  * @return @ref ccl::event object to track the progress of the operation
+//  */
+// template <class IndexBufferObjectType,
+//           class ValueBufferObjectType,
+//           class = typename std::enable_if<ccl::is_native_type_supported<ValueBufferObjectType>(),
+//                                           ccl::event>::type>
+// ccl::event
+// sparse_allreduce(const IndexBufferObjectType& send_ind_buf,
+//                  size_t send_ind_count,
+//                  const ValueBufferObjectType& send_val_buf,
+//                  size_t send_val_count,
+//                  IndexBufferObjectType& recv_ind_buf,
+//                  size_t recv_ind_count,
+//                  ValueBufferObjectType& recv_val_buf,
+//                  size_t recv_val_count,
+//                  ccl::reduction reduction,
+//                  const ccl::communicator& comm,
 //                  const ccl::sparse_allreduce_attr& attr = default_sparse_allreduce_attr,
 //                  const ccl::vector_class<ccl::event>& deps = {});
 
