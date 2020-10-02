@@ -111,7 +111,7 @@ public:
     kvs_t create_kvs(const kvs::addr_t& addr) const;
 
     template <class ...attr_value_pair_t>
-    comm_split_attr create_device_comm_split_attr(attr_value_pair_t&&...avps) const;
+    comm_split_attr create_comm_split_attr(attr_value_pair_t&&...avps) const;
 
 #ifdef MULTI_GPU_SUPPORT
 

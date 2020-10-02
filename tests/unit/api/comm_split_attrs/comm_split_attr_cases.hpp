@@ -16,7 +16,7 @@
 namespace device_comm_split_attr_suite {
 
 TEST(comm_split_attr, device_comm_split_attr_empty_creation) {
-    ccl::comm_split_attr attr = ccl::create_device_comm_split_attr();
+    ccl::comm_split_attr attr = ccl::create_comm_split_attr();
     ASSERT_TRUE(attr.is_valid<ccl::comm_split_attr_id::version>());
     ASSERT_TRUE(attr.get<ccl::comm_split_attr_id::version>().full != nullptr);
     ASSERT_TRUE(!attr.is_valid<ccl::comm_split_attr_id::color>());
@@ -25,7 +25,7 @@ TEST(comm_split_attr, device_comm_split_attr_empty_creation) {
 
 TEST(comm_split_attr, device_comm_split_attr_color) {
     auto attr =
-        ccl::create_device_comm_split_attr(ccl::attr_val<ccl::comm_split_attr_id::color>(123));
+        ccl::create_comm_split_attr(ccl::attr_val<ccl::comm_split_attr_id::color>(123));
     ASSERT_TRUE(attr.get<ccl::comm_split_attr_id::version>().full != nullptr);
 
     ASSERT_TRUE(attr.is_valid<ccl::comm_split_attr_id::color>());
@@ -38,7 +38,7 @@ TEST(comm_split_attr, device_comm_split_attr_color) {
 }
 
 TEST(comm_split_attr, device_comm_split_attr_group) {
-    auto attr = ccl::create_device_comm_split_attr(
+    auto attr = ccl::create_comm_split_attr(
         ccl::attr_val<ccl::comm_split_attr_id::group>(ccl::group_split_type::thread));
     ASSERT_TRUE(attr.get<ccl::comm_split_attr_id::version>().full != nullptr);
 
@@ -53,7 +53,7 @@ TEST(comm_split_attr, device_comm_split_attr_group) {
 }
 
 TEST(comm_split_attr, copy_on_write_device_comm_split_attr) {
-    auto attr = ccl::create_device_comm_split_attr(
+    auto attr = ccl::create_comm_split_attr(
         ccl::attr_val<ccl::comm_split_attr_id::group>(ccl::group_split_type::thread));
 
     auto original_inner_impl_ptr = attr.get_impl();
@@ -75,7 +75,7 @@ TEST(comm_split_attr, copy_on_write_device_comm_split_attr) {
 }
 
 TEST(comm_split_attr, copy_device_comm_split_attr) {
-    auto attr = ccl::create_device_comm_split_attr();
+    auto attr = ccl::create_comm_split_attr();
     attr.set<ccl::comm_split_attr_id::color>(666);
 
     auto original_inner_impl_ptr = attr.get_impl().get();
@@ -90,7 +90,7 @@ TEST(comm_split_attr, copy_device_comm_split_attr) {
 TEST(comm_split_attr, move_device_comm_split_attr) {
     /* move constructor test */
     auto orig_attr =
-        ccl::create_device_comm_split_attr(ccl::attr_val<ccl::comm_split_attr_id::color>(667));
+        ccl::create_comm_split_attr(ccl::attr_val<ccl::comm_split_attr_id::color>(667));
 
     auto orig_inner_impl_ptr = orig_attr.get_impl().get();
     auto moved_attr = (std::move(orig_attr));
@@ -104,9 +104,9 @@ TEST(comm_split_attr, move_device_comm_split_attr) {
 
     /* move assignment test*/
     auto orig_attr2 =
-        ccl::create_device_comm_split_attr(ccl::attr_val<ccl::comm_split_attr_id::color>(123));
+        ccl::create_comm_split_attr(ccl::attr_val<ccl::comm_split_attr_id::color>(123));
 
-    auto moved_attr2 = ccl::create_device_comm_split_attr();
+    auto moved_attr2 = ccl::create_comm_split_attr();
     moved_attr2 = std::move(orig_attr2);
 
     ASSERT_TRUE(!orig_attr2.get_impl());
@@ -116,7 +116,7 @@ TEST(comm_split_attr, move_device_comm_split_attr) {
 }
 
 TEST(comm_split_attr, device_comm_split_attr_valid) {
-    auto attr = ccl::create_device_comm_split_attr();
+    auto attr = ccl::create_comm_split_attr();
 
     ASSERT_TRUE(!attr.is_valid<ccl::comm_split_attr_id::color>());
     ASSERT_TRUE(!attr.is_valid<ccl::comm_split_attr_id::group>());
@@ -125,7 +125,7 @@ TEST(comm_split_attr, device_comm_split_attr_valid) {
     ASSERT_TRUE(attr.is_valid<ccl::comm_split_attr_id::group>());
     ASSERT_TRUE(!attr.is_valid<ccl::comm_split_attr_id::color>());
 
-    auto attr2 = ccl::create_device_comm_split_attr();
+    auto attr2 = ccl::create_comm_split_attr();
 
     try {
         attr.get<ccl::comm_split_attr_id::color>();

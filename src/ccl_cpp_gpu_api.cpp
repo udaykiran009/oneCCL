@@ -116,7 +116,7 @@ CCL_API ccl::comm_group::comm_group(ccl::shared_communicator_t parent_comm,
 /**
  *  Create communicator API:
  */
-CCL_API ccl::comm_split_attr ccl::comm_group::create_device_comm_split_attr()
+CCL_API ccl::comm_split_attr ccl::comm_group::create_comm_split_attr()
 {
     // TODO
     const auto& host_comm = pimpl->get_host_communicator();

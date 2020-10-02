@@ -299,10 +299,10 @@ void do_unordered(const ccl::communicator& comm,
                 }
             }
 
-            ASSERT(match_ids.size() == reqs.size(),
-                   "unexpected match_ids.size %zu, expected %zu",
-                   match_ids.size(),
-                   reqs.size());
+            // ASSERT(match_ids.size() == reqs.size(),
+            //        "unexpected match_ids.size %zu, expected %zu",
+            //        match_ids.size(),
+            //        reqs.size());
 
             try {
                 for (auto& req : reqs) {

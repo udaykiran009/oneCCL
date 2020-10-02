@@ -113,9 +113,9 @@ communicator CCL_API environment::create_communicator(const size_t size,
 #ifdef MULTI_GPU_SUPPORT
 
 template <class ...attr_value_pair_t>
-comm_split_attr environment::create_device_comm_split_attr(attr_value_pair_t&&...avps) const
+comm_split_attr environment::create_comm_split_attr(attr_value_pair_t&&...avps) const
 {
-    return comm_split_attr::create_device_comm_split_attr(std::forward<attr_value_pair_t>(avps)...);
+    return comm_split_attr::create_comm_split_attr(std::forward<attr_value_pair_t>(avps)...);
 }
 
 template<class DeviceType,

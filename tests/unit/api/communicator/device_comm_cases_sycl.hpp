@@ -325,7 +325,7 @@ void user_thread_function_splitted_comm(size_t total_devices_count,
         dev_comm.allgatherv(tmp, 0, tmp, recv_counts);
 
         // // split test for current thread local scope
-        // auto attr = ccl::create_device_comm_split_attr(
+        // auto attr = ccl::create_comm_split_attr(
         //     ccl::attr_val<ccl::comm_split_attr_id::group>(ccl::group_split_type::thread));
         // auto splitted_comm = dev_comm.split(attr);
 

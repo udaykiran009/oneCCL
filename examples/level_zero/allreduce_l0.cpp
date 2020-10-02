@@ -58,7 +58,7 @@ void user_thread_idx(size_t thread_idx,
         size_t rank = comm.rank();
 
         // create comm split attr
-        auto device_spilt_attr = ccl::create_device_comm_split_attr();
+        auto device_spilt_attr = ccl::create_comm_split_attr();
         (void)device_spilt_attr;
 
         // create stream from device communicator directly

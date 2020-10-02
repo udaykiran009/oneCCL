@@ -20,12 +20,12 @@
 namespace ccl {
 
 host_communicator::host_communicator()
-        : comm_attr(ccl::create_device_comm_split_attr())
+        : comm_attr(ccl::create_comm_split_attr())
 {
 }
 
 host_communicator::host_communicator(size_t size, shared_ptr_class<kvs_interface> kvs)
-        : comm_attr(ccl::create_device_comm_split_attr()),
+        : comm_attr(ccl::create_comm_split_attr()),
           comm_rank(0),
           comm_size(size) {
     if (size <= 0) {
@@ -34,7 +34,7 @@ host_communicator::host_communicator(size_t size, shared_ptr_class<kvs_interface
 }
 
 host_communicator::host_communicator(size_t size, size_t rank, shared_ptr_class<kvs_interface> kvs)
-        : comm_attr(ccl::create_device_comm_split_attr()),
+        : comm_attr(ccl::create_comm_split_attr()),
           comm_rank(rank),
           comm_size(size) {
     if (rank > size || size <= 0) {
@@ -51,7 +51,7 @@ host_communicator::host_communicator(size_t size, size_t rank, shared_ptr_class<
 
 host_communicator::host_communicator(std::shared_ptr<ccl_comm> impl)
         : comm_impl(impl),
-          comm_attr(ccl::create_device_comm_split_attr()),
+          comm_attr(ccl::create_comm_split_attr()),
           comm_rank(impl->rank()),
           comm_size(impl->size()) {}
 

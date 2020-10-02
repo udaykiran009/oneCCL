@@ -74,8 +74,8 @@ communicator create_single_device_communicator(size_t comm_size,
 #endif
 
 template <class... attr_value_pair_t>
-comm_split_attr create_device_comm_split_attr(attr_value_pair_t&&... avps) {
-    return environment::instance().create_device_comm_split_attr(
+comm_split_attr create_comm_split_attr(attr_value_pair_t&&... avps) {
+    return environment::instance().create_comm_split_attr(
     std::forward<attr_value_pair_t>(avps)...);
 }
 

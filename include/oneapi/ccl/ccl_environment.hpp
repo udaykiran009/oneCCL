@@ -251,7 +251,7 @@ public:
 // #endif
 
     template <class... attr_value_pair_t>
-    comm_split_attr create_device_comm_split_attr(attr_value_pair_t&&... avps) const {
+    comm_split_attr create_comm_split_attr(attr_value_pair_t&&... avps) const {
         auto split_attr = create_postponed_api_type<comm_split_attr>();
         int expander[]{ (split_attr.template set<attr_value_pair_t::idx()>(avps.val()), 0)... };
         (void)expander;

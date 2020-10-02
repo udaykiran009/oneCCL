@@ -62,6 +62,10 @@ set(CCL_INSTALL_LICENSE "${CMAKE_INSTALL_PREFIX}/licensing")
 set(CCL_INSTALL_MODULE "${CMAKE_INSTALL_PREFIX}/modulefiles")
 set(CCL_INSTALL_EXAMPLES "${CMAKE_INSTALL_PREFIX}/examples")
 set(CCL_INSTALL_TESTS "${CMAKE_INSTALL_PREFIX}/tests")
+
+
+set(MPI_INCLUDE_DIR "${PROJECT_SOURCE_DIR}/mpi/include/")
+set(MPI_LIB_DIR "${PROJECT_SOURCE_DIR}/mpi/lib/")
 if ( "${LIBFABRIC_DIR}" STREQUAL "")
     set(LIBFABRIC_INCLUDE_DIR "${PROJECT_SOURCE_DIR}/ofi/include")
     set(LIBFABRIC_LIB_DIR "${PROJECT_SOURCE_DIR}/ofi/lib/")
@@ -69,6 +73,13 @@ else()
     set(LIBFABRIC_INCLUDE_DIR "${LIBFABRIC_DIR}/include/")
     set(LIBFABRIC_LIB_DIR "${LIBFABRIC_DIR}/lib")
 endif()
+include_directories(${MPI_INCLUDE_DIR})
+include_directories(${LIBFABRIC_INCLUDE_DIR})
+link_directories(${MPI_LIB_DIR})
+link_directories(${LIBFABRIC_LIB_DIR})
+
+
+
 set(CCL_INSTALL_UNIT_TESTS "${CMAKE_INSTALL_PREFIX}/tests/unit")
 
 set(CMAKE_SKIP_INSTALL_RPATH TRUE)
@@ -248,8 +259,9 @@ endif()
 
 add_subdirectory(examples/benchmark)
 add_subdirectory(examples/common)
-add_subdirectory(tests/functional)
-add_subdirectory(tests/unit)
 if(MULTI_GPU_SUPPORT)
     add_subdirectory(examples/level_zero)
 endif()
+
+add_subdirectory(tests/functional)
+add_subdirectory(tests/unit)

@@ -136,7 +136,7 @@ void check_comm_split_by_color(ccl::communicator& comm, int mpi_size, int mpi_ra
     for (size_t split_by = 2; split_by <= comm.size(); split_by *= 2) {
         int color = comm.rank() % split_by;
         auto attr =
-            ccl::create_device_comm_split_attr(ccl::attr_val<ccl::comm_split_attr_id::color>(color));
+            ccl::create_comm_split_attr(ccl::attr_val<ccl::comm_split_attr_id::color>(color));
         auto new_comm = comm.split(attr);
 
         size_t comm_size = comm.size();
@@ -193,13 +193,13 @@ int main() {
     check_allreduce_on_comm(comm);
     PRINT_BY_ROOT(comm, "PASSED");
 
-    PRINT_BY_ROOT(comm, "\n- Create max number of communicators");
-    check_max_comm_number(comm, kvs, mpi_size, mpi_rank);
-    PRINT_BY_ROOT(comm, "PASSED");
+    // PRINT_BY_ROOT(comm, "\n- Create max number of communicators");
+    // check_max_comm_number(comm, kvs, mpi_size, mpi_rank);
+    // PRINT_BY_ROOT(comm, "PASSED");
 
-    PRINT_BY_ROOT(comm, "\n- Communicator split test");
-    check_comm_split_by_color(comm, mpi_size, mpi_rank);
-    PRINT_BY_ROOT(comm, "PASSED");
+    // PRINT_BY_ROOT(comm, "\n- Communicator split test");
+    // check_comm_split_by_color(comm, mpi_size, mpi_rank);
+    // PRINT_BY_ROOT(comm, "PASSED");
 
     // check_comm_create_identical_color();
 

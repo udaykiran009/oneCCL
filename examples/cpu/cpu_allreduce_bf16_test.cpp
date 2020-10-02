@@ -70,7 +70,6 @@ int main() {
 
     if (is_bf16_enabled() == 0) {
         std::cout << "WARNING: BF16 is disabled, skip test" << std::endl;
-        return 0;
     }
     else {
         std::cout << "BF16 is enabled" << std::endl;
@@ -83,10 +82,10 @@ int main() {
                        comm).wait();
         convert_bf16_to_fp32_arrays(recv_buf_bf16, recv_buf, COUNT);
         CHECK_ERROR(send_buf, recv_buf, comm);
-    }
 
-    if (rank == 0)
-        std::cout << "PASSED" << std::endl;
+        if (rank == 0)
+            std::cout << "PASSED" << std::endl;
+    }
 
     MPI_Finalize();
 
