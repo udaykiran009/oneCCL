@@ -355,7 +355,6 @@ struct handles_storage {
     }
 };
 
-#if 0
 /*IPC handles*/
 template <class T>
 struct ipc_server_handles_storage {
@@ -470,4 +469,3 @@ struct ipc_client_handles_storage {
     }
 
 };
-#endif

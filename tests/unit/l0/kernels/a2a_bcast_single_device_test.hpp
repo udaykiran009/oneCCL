@@ -3,9 +3,8 @@
 #include <sstream>
 
 #define HOST_CTX
+#include "kernels/a2a_helpers.h"
 
-#include "bcast_fixture.hpp"
-#if 0
 /**
  * Add custom types support into native::memory example
  */
@@ -13,9 +12,10 @@
 #include "native_type_traits.hpp"
 
 /* 2) Include explicit definition for native::memory */
-#include "native_device_api/l0/primitives_impl.hpp"
+#include "oneapi/ccl/native_device_api/l0/primitives_impl.hpp"
 
 /* 3) just use it! */
+#include "bcast_fixture.hpp"
 
 namespace a2a_single_device_case {
 
@@ -82,6 +82,7 @@ TYPED_TEST(a2a_bcast_single_device_fixture, a2a_bcast_single_device_mt) {
     using namespace native;
     // Type of our test
     using native_type = TypeParam;
+    ccl_device_driver::create_context() ctx;
 
     // test case data
     const size_t buffer_size = 512;
@@ -91,9 +92,6 @@ TYPED_TEST(a2a_bcast_single_device_fixture, a2a_bcast_single_device_mt) {
     constexpr size_t flag_group_count = 3;
 
     this->create_module_descr("kernels/a2a_bcast.spv", true);
-
-    //TODO: ctx
-    std::shared_ptr<ccl_context> ctx;
 
     handles_storage<native_type> memory_storage(42 * num_thread);
     handles_storage<int> flags_storage(42 * num_thread);
@@ -207,11 +205,16 @@ TYPED_TEST(a2a_bcast_single_device_fixture, a2a_bcast_single_device_mt) {
 
     //prepare gpu object
     auto a2a_comm_handle =
-        device.alloc_memory<a2a_gpu_comm_data_float>(num_thread, sizeof(a2a_gpu_comm_data_float), ctx);
+        device.alloc_memory<typename a2a_bcast_case::param_traits<native_type>::comm_data_type>(
+            num_thread, sizeof(typename a2a_bcast_case::param_traits<native_type>::comm_data_type), ctx);
     a2a_comm_handle.enqueue_write_sync(a2a_comm);
 
     //prepare kernels in multithreading environment
-    ze_kernel_desc_t desc = { ZE_KERNEL_DESC_VERSION_CURRENT, ZE_KERNEL_FLAG_NONE };
+    ze_kernel_desc_t desc = {
+        .stype = ZE_STRUCTURE_TYPE_KERNEL_DESC,
+        .pNext = nullptr,
+        .flags = 0,
+    };
     desc.pKernelName = a2a_bcast_case::param_traits<native_type>::kernel_name;
     std::map<size_t, ze_kernel_handle_t> thread_kernels;
     std::map<size_t, ccl_device::device_queue> thread_queue;
@@ -228,8 +231,8 @@ TYPED_TEST(a2a_bcast_single_device_fixture, a2a_bcast_single_device_mt) {
             }
 
             thread_kernels.emplace(thread_idx, std::move(handle));
-            thread_queue.emplace(thread_idx, device.create_cmd_queue());
-            thread_cmd_list.emplace(thread_idx, device.create_cmd_list());
+            thread_queue.emplace(thread_idx, device.create_cmd_queue(ctx));
+            thread_cmd_list.emplace(thread_idx, device.create_cmd_list(ctx));
         }
         catch (const std::exception& ex) {
             throw std::runtime_error(std::string("Error: ") + ex.what());
@@ -434,4 +437,3 @@ TYPED_TEST(a2a_bcast_single_device_fixture, a2a_bcast_single_device_mt) {
 }
 
 } // namespace a2a_single_device_case
-#endif

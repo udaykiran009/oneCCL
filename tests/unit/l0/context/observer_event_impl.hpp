@@ -1,5 +1,5 @@
 #pragma once
-#if 0
+
 #include "observer_event.hpp"
 #include "sched/gpu_concurrent_sched.hpp"
 
@@ -84,4 +84,3 @@ bool observer_event<TEMPLATE_DEF_ARG>::consume_data() {
 
 #undef TEMPLATE_DECL_ARG
 #undef TEMPLATE_DEF_ARG
-#endif

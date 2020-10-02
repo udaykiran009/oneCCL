@@ -4,7 +4,7 @@
 
 #define HOST_CTX
 #include "kernels/event_declaration.h"
-#if 0
+
 #define private public
 #define protected public
 /**
@@ -90,8 +90,8 @@ TEST_F(shared_context_fixture, observer_event_test) {
                                  ", error: " + native::to_string(result));
     }
 
-    ccl_device::device_queue queue = device.create_cmd_queue(std::shared_ptr<ccl_context> { });
-    ccl_device::device_cmd_list cmd_list = device.create_cmd_list(std::shared_ptr<ccl_context> { });
+    ccl_device::device_queue queue = device.create_cmd_queue(ctx);
+    ccl_device::device_cmd_list cmd_list = device.create_cmd_list(ctx);
 
     //Set args and launch kernel
     size_t job_id = 0;
@@ -415,4 +415,3 @@ TEST_F(shared_context_fixture, observer_event_structure_test)
 
 #endif
 } // namespace context_event_suite
-#endif

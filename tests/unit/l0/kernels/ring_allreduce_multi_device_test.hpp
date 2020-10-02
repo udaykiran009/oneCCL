@@ -1,13 +1,13 @@
 #pragma once
 
 #include "allreduce_fixture.hpp"
-#include "oneapi/ccl/native_device_api/l0/context.hpp"
-#if 0
+
 namespace ring_multi_device_case {
 
 using native_type = float;
 
 TEST_F(ring_allreduce_multi_device_fixture, ring_allreduce_multi_device_mt) {
+    using namespace native;
     // test case data
     const size_t buffer_size = 512;
     const size_t num_thread = 2;
@@ -18,10 +18,8 @@ TEST_F(ring_allreduce_multi_device_fixture, ring_allreduce_multi_device_mt) {
     handles_storage<int> flags_storage(42 * num_thread);
     std::map<size_t, std::vector<size_t>> comm_param_storage;
 
-    //TODO: ctx
-    std::shared_ptr<ccl_context> ctx;
+    ccl_device_driver::create_context() ctx;
 
-    using namespace native;
     // check global driver
     auto drv_it = local_platform->drivers.find(0);
     UT_ASSERT(drv_it != local_platform->drivers.end(), "Driver by idx 0 must exist!");
@@ -297,4 +295,3 @@ TEST_F(ring_allreduce_multi_device_fixture, ring_allreduce_multi_device_mt) {
     memory_storage.dump(output);
 }
 } // namespace ring_multi_device_case
-#endif

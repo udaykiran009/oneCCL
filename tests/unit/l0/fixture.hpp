@@ -84,6 +84,7 @@ public:
     ccl::cluster_device_indices_t global_mask;
     std::shared_ptr<ccl::communicator> global_comm;
 };
+#endif
 
 class shared_context_fixture : public common_fixture {
 protected:
@@ -100,4 +101,4 @@ protected:
 
     void TearDown() override {}
 };
-#endif
+

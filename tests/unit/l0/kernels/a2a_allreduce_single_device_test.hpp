@@ -1,4 +1,3 @@
-#if 0
 #pragma once
 #include <memory>
 #include <sstream>
@@ -13,7 +12,7 @@
 #include "native_type_traits.hpp"
 
 /* 2) Include explicit definition for native::memory */
-#include "native_device_api/l0/primitives_impl.hpp"
+#include "oneapi/ccl/native_device_api/l0/primitives_impl.hpp"
 
 /* 3) just use it! */
 
@@ -25,6 +24,7 @@ using native_type = float;
 
 TEST_F(a2a_allreduce_single_device_fixture, a2a_allreduce_single_device_mt) {
     using namespace native;
+    ccl_device_driver::create_context() ctx;
 
     // test case data
     const size_t buffer_size = 512;
@@ -34,9 +34,6 @@ TEST_F(a2a_allreduce_single_device_fixture, a2a_allreduce_single_device_mt) {
     constexpr size_t flag_group_count = 3;
 
     create_module_descr("kernels/a2a_allreduce.spv", true);
-
-    //TODO
-    std::shared_ptr<ccl_context> ctx;
 
     handles_storage<native_type> memory_storage(42 * num_thread);
     handles_storage<int> flags_storage(42 * num_thread);
@@ -155,9 +152,8 @@ TEST_F(a2a_allreduce_single_device_fixture, a2a_allreduce_single_device_mt) {
         .stype = ZE_STRUCTURE_TYPE_KERNEL_DESC,
         .pNext = nullptr,
         .flags = 0,
-        .pKernelName = "allreduce_execution_float",
     };
-
+    desc.pKernelName = "allreduce_execution_float";
     std::map<size_t, ze_kernel_handle_t> thread_kernels;
     std::map<size_t, ccl_device::device_queue> thread_queue;
     std::map<size_t, ccl_device::device_cmd_list> thread_cmd_list;
@@ -173,8 +169,8 @@ TEST_F(a2a_allreduce_single_device_fixture, a2a_allreduce_single_device_mt) {
             }
 
             thread_kernels.emplace(thread_idx, std::move(handle));
-            thread_queue.emplace(thread_idx, device.create_cmd_queue());
-            thread_cmd_list.emplace(thread_idx, device.create_cmd_list());
+            thread_queue.emplace(thread_idx, device.create_cmd_queue(ctx));
+            thread_cmd_list.emplace(thread_idx, device.create_cmd_list(ctx));
         }
         catch (const std::exception& ex) {
             throw std::runtime_error(std::string("Error: ") + ex.what());
@@ -351,4 +347,3 @@ TEST_F(a2a_allreduce_single_device_fixture, a2a_allreduce_single_device_mt) {
     //flags_storage.dump(output);
 }
 } // namespace a2a_single_device_case
-#endif

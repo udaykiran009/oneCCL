@@ -150,8 +150,7 @@ TYPED_TEST(ring_reduce_scatter_single_device_fixture, ring_reduce_scatter_single
     constexpr size_t mem_group_count = 3;
     constexpr size_t flag_group_count = 3;
 
-    //TODO: ctx
-    std::shared_ptr<ccl_context> ctx;
+    ccl_device_driver::create_context() ctx;
 
     handles_storage<native_type> memory_storage(mem_group_count * num_thread);
     handles_storage<int> flags_storage(flag_group_count * num_thread);

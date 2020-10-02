@@ -1,5 +1,5 @@
 #pragma once
-#if 0
+
 #include <memory>
 #include <sstream>
 
@@ -20,8 +20,7 @@ TEST_F(ring_ipc_allreduce_single_device_fixture, ring_ipc_allreduce_single_devic
     constexpr size_t ipc_mem_group_count = 1;
     constexpr size_t ipc_flag_group_count = 2;
 
-    //TODO: ctx
-    std::shared_ptr<ccl_context> ctx;
+    ccl_device_driver::create_context() ctx;
 
     handles_storage<native_type> memory_storage(42 * num_thread);
     handles_storage<int> flags_storage(42 * num_thread);
@@ -185,7 +184,7 @@ TEST_F(ring_ipc_allreduce_single_device_fixture, ring_ipc_allreduce_single_devic
         .stype = ZE_STRUCTURE_TYPE_KERNEL_DESC,
         .pNext = nullptr,
         .flags = 0,
-        .pKernelName = "allreduce_execution_float",
+        .pKernelName = "ipc_allreduce_execution_float",
     };
 
     std::map<size_t, ze_kernel_handle_t> thread_kernels;
@@ -487,4 +486,3 @@ TEST_F(ring_ipc_allreduce_single_device_fixture, ring_ipc_allreduce_single_devic
 }
 
 } // namespace ring_single_device_case
-#endif

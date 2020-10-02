@@ -1,7 +1,7 @@
 #pragma once
 #include <memory>
 #include <vector>
-#if 0
+
 #include "sched/entry/entry.hpp"
 #include "oneapi/ccl/native_device_api/l0/device.hpp"
 
@@ -53,4 +53,3 @@ private:
     //event_ptr_t producer_event;
     std::vector<element_t> numa_host_data; // TODO
 };
-#endif
