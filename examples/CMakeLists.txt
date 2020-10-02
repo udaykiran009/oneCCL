@@ -76,13 +76,11 @@ if (CCL_BF16_COMPILER)
     endif()
 endif()
 
-include_directories(include)
+include_directories(${I_MPI_ROOT}/include/)
 include_directories(${CCL_ROOT}/include/${CCL_CONFIGURATION})
-include_directories(${I_MPI_ROOT}/include)
-
-link_directories(${CCL_ROOT}/lib/${CCL_CONFIGURATION})
 link_directories(${I_MPI_ROOT}/lib/release_mt)
 link_directories(${I_MPI_ROOT}/libfabric/lib)
+link_directories(${CCL_ROOT}/lib/${CCL_CONFIGURATION})
 
 add_subdirectory(cpu)
 if (${CMAKE_CXX_COMPILER_ID} STREQUAL "Clang")

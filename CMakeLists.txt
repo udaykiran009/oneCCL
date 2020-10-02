@@ -207,18 +207,18 @@ set(CMAKE_CLANG_FLAGS "${CMAKE_CLANG_FLAGS}")
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS}")
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}")
 
-if (MULTI_GPU_SUPPORT)
-    if (NOT ((${COMPUTE_RUNTIME_TARGET_NAME} STREQUAL "ze_loader")
-             OR (${COMPUTE_RUNTIME_TARGET_NAME} STREQUAL "Intel::SYCL")))
-        message( FATAL_ERROR "MULTI_GPU_SUPPORT required COMPUTE_RUNTIME=L0 or DPC++")
+if (COMPUTE_RUNTIME)
+    if ((${COMPUTE_RUNTIME_TARGET_NAME} STREQUAL "ze_loader")
+             OR (${COMPUTE_RUNTIME_TARGET_NAME} STREQUAL "Intel::SYCL"))
+        option(MULTI_GPU_SUPPORT "Enable multi GPU support" ON)
     endif()
-
+endif(COMPUTE_RUNTIME)
+if (MULTI_GPU_SUPPORT)
     option(CCL_GPU_DEVICES_AFFINITY_ENABLE "Enable L0" ON)
     if(CCL_GPU_DEVICES_AFFINITY_ENABLE)
         set(CCL_GPU_DEVICES_AFFINITY_MASK_SIZE 4)
         message ("Set L0 device mask affinity size: ${CCL_GPU_DEVICES_AFFINITY_MASK_SIZE}")
     endif()
-
 endif(MULTI_GPU_SUPPORT)
 
 #generate & install vars.sh

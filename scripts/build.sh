@@ -32,6 +32,7 @@ else
 fi
 
 BOM_DIR="${WORKSPACE}/boms"
+IMPI_DIR="${WORKSPACE}/mpi"
 BOM_LIST_NAME="bom_lists.txt"
 TMP_DIR="${WORKSPACE}/_tmp"
 PACKAGE_DIR="${WORKSPACE}/_package"
@@ -230,6 +231,7 @@ define_gpu_compiler()
 build_cpu()
 {
     define_cpu_compiler
+    export I_MPI_ROOT=$IMPI_DIR
     if [ -z ${BUILD_FOLDER} ]
     then
         BUILD_FOLDER="build"
@@ -246,6 +248,7 @@ build_cpu()
 build_gpu()
 {
     define_gpu_compiler
+    export I_MPI_ROOT=$IMPI_DIR
     rm -rf ${WORKSPACE}/build_gpu
     log mkdir ${WORKSPACE}/build_gpu && cd ${WORKSPACE}/build_gpu && echo ${PWD}
     log cmake .. -DCMAKE_DISABLE_SYCL=0 -DCMAKE_BUILD_TYPE=${BUILD_TYPE} \
@@ -275,6 +278,7 @@ post_build()
     then
         LDFLAGS="-L${LIBFABRIC_INSTALL_DIR}/lib/"
 	fi
+	LDFLAGS=" ${LD_FLAGS} -Wl,-rpath,../../../../mpi/latest/lib/release_mt/"
     gcc -shared -fPIE -fPIC -Wl,-z,now -Wl,-z,relro -Wl,-z,noexecstack -Xlinker -x -Xlinker -soname=${LIBCCL_SONAME} -o libccl.so.${LIBCCL_SO_VERSION} *.o ${LDFLAGS} -L${WORKSPACE}/build/_install/lib/ -lmpi -lm -lfabric
     CheckCommandExitCode $? "post build failed"
     rm -rf *.o
