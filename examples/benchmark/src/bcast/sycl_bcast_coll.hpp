@@ -24,7 +24,7 @@ struct sycl_bcast_coll : sycl_base_coll<Dtype, bcast_strategy_impl> {
     virtual void prepare(size_t elem_count) override {
         size_t local_rank = coll_base::comm().rank();
         for (size_t b_idx = 0; b_idx < base_coll::get_buf_count(); b_idx++) {
-            sycl_queue.submit([&](handler& cgh) {
+            device_data::sycl_queue.submit([&](handler& cgh) {
                 auto recv_buf = (static_cast<sycl_buffer_t<Dtype>*>(recv_bufs[b_idx]));
                 auto recv_buf_acc = recv_buf->template get_access<mode::write>(cgh);
                 cgh.parallel_for<class bcast_buf_fill<Dtype>>(range<1>{elem_count}, [=](item<1> e_idx)
@@ -42,7 +42,7 @@ struct sycl_bcast_coll : sycl_base_coll<Dtype, bcast_strategy_impl> {
         bool unexpected_device_value = false;
 
         for (size_t b_idx = 0; b_idx < base_coll::get_buf_count(); b_idx++) {
-            sycl_queue.submit([&](handler& cgh) {
+            device_data::sycl_queue.submit([&](handler& cgh) {
                 auto recv_buf = (static_cast<sycl_buffer_t<Dtype>*>(recv_bufs[b_idx]));
                 auto recv_buf_acc = recv_buf->template get_access<mode::write>(cgh);
                 cgh.parallel_for<class bcast_buf_check<Dtype>>(range<1>{elem_count}, [=](item<1> e_idx) mutable

@@ -4,7 +4,7 @@
 
 /* cpu-specific base implementation */
 template <class Dtype, class strategy>
-struct cpu_base_coll : base_coll, protected strategy, cpu_specific_data {
+struct cpu_base_coll : base_coll, protected strategy, host_data {
     using coll_strategy = strategy;
 
     template <class... Args>
@@ -83,8 +83,8 @@ struct cpu_base_coll : base_coll, protected strategy, cpu_specific_data {
 
     /* global communicator for all cpu collectives */
     static ccl::communicator& comm() {
-        if (!cpu_specific_data::comm_ptr) {
+        if (!host_data::comm_ptr) {
         }
-        return *cpu_specific_data::comm_ptr;
+        return *host_data::comm_ptr;
     }
 };

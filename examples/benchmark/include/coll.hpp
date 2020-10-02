@@ -2,12 +2,11 @@
 
 #include "base.hpp"
 #include "config.hpp"
+
 #ifdef CCL_ENABLE_SYCL
 #include "sycl_base.hpp"
-
 template <typename Dtype>
 using sycl_buffer_t = cl::sycl::buffer<Dtype, 1>;
-cl::sycl::queue sycl_queue;
 #endif
 
 struct base_coll;
@@ -124,9 +123,10 @@ private:
     bench_init_attr init_attr;
 };
 
-struct cpu_specific_data {
+struct host_data {
     static ccl::shared_ptr_class<ccl::communicator> comm_ptr;
     static void init(size_t size, size_t rank, ccl::shared_ptr_class<ccl::kvs_interface> kvs) {
+
         if (comm_ptr) {
             throw ccl::exception(std::string(__FUNCTION__) + " - reinit is not allowed");
         }
@@ -140,31 +140,37 @@ struct cpu_specific_data {
     }
 };
 
-ccl::shared_ptr_class<ccl::communicator> cpu_specific_data::comm_ptr{};
+ccl::shared_ptr_class<ccl::communicator> host_data::comm_ptr{};
 
 #ifdef CCL_ENABLE_SYCL
-struct device_specific_data {
-    using device_communicator_ptr = ccl::unique_ptr_class<ccl::communicator>;
-    static device_communicator_ptr comm_ptr;
-    static ccl::vector_class<ccl::communicator> comm_array;
+struct device_data {
+
+    static ccl::shared_ptr_class<ccl::communicator> comm_ptr;
     static ccl::shared_ptr_class<ccl::stream> stream_ptr;
+    static cl::sycl::queue sycl_queue;
+
     static void init(size_t size,
                      size_t rank,
                      cl::sycl::device& device,
-                     cl::sycl::context ctx,
+                     cl::sycl::context& ctx,
                      ccl::shared_ptr_class<ccl::kvs_interface> kvs) {
-        if (stream_ptr or comm_ptr or !comm_array.empty()) {
+
+        if (stream_ptr or comm_ptr) {
             throw ccl::exception(std::string(__FUNCTION__) + " - reinit is not allowed");
         }
 
-        comm_array = ccl::create_communicators(
-            size,
-            ccl::vector_class<ccl::pair_class<ccl::rank_t, cl::sycl::device>>{ { rank, device } },
-            ctx,
-            kvs);
-        //single device version
-        comm_ptr =
-            device_communicator_ptr(new ccl::communicator(std::move(*comm_array.begin())));
+        auto ccl_dev = ccl::create_device(device);
+        auto ccl_ctx = ccl::create_context(ctx);
+
+        comm_ptr = std::make_shared<ccl::communicator>(
+            ccl::create_communicator(
+                size, rank,
+                ccl_dev,
+                ccl_ctx,
+                kvs));
+
+        sycl_queue = cl::sycl::queue(device);
+
         stream_ptr =
             std::make_shared<ccl::stream>(ccl::create_stream(sycl_queue));
     }
@@ -175,8 +181,8 @@ struct device_specific_data {
     }
 };
 
-device_specific_data::device_communicator_ptr device_specific_data::comm_ptr{};
-ccl::vector_class<ccl::communicator> device_specific_data::comm_array{};
-ccl::shared_ptr_class<ccl::stream> device_specific_data::stream_ptr{};
+ccl::shared_ptr_class<ccl::communicator> device_data::comm_ptr{};
+ccl::shared_ptr_class<ccl::stream> device_data::stream_ptr{};
+cl::sycl::queue device_data::sycl_queue{};
 
 #endif /* CCL_ENABLE_SYCL */

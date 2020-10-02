@@ -4,12 +4,14 @@
 
 #ifdef CCL_ENABLE_SYCL
 
-void set_pinning(const ccl::communicator& comm) {
+cl::sycl::device get_device(const ccl::communicator& comm) {
+
     // select requested platform by SYCL_BE: L0 or OpenCL
     std::vector<cl::sycl::device> all_devices =
         cl::sycl::device::get_devices(info::device_type::gpu);
     std::vector<cl::sycl::device> selected_devices;
     std::string backend;
+
     if (getenv("SYCL_BE") == nullptr) {
         backend = "Level-Zero";
     }
@@ -32,19 +34,22 @@ void set_pinning(const ccl::communicator& comm) {
         if (found != std::string::npos)
             selected_devices.push_back(device);
     }
+
     if (selected_devices.size() <= 0) {
-        throw ccl::exception("No selected device found.");
+        throw ccl::exception("no selected device found for SYCL backend: " + backend);
     }
+
     size_t idx = comm.rank() % selected_devices.size();
     auto selected_device = selected_devices[idx];
-    sycl_queue = cl::sycl::queue(selected_device);
-    std::cout << "\nRunning on: " << selected_device.get_info<cl::sycl::info::device::name>()
-              << " for device id: " << idx << "\n";
+    std::cout << "\nrunning on: " << selected_device.get_info<cl::sycl::info::device::name>()
+              << ", device index: " << idx << "\n";
+
+    return selected_device;
 }
 
 /* sycl-specific base implementation */
 template <class Dtype, class strategy>
-struct sycl_base_coll : base_coll, private strategy, device_specific_data {
+struct sycl_base_coll : base_coll, private strategy, device_data {
     using coll_strategy = strategy;
 
     template <class... Args>
@@ -122,15 +127,15 @@ struct sycl_base_coll : base_coll, private strategy, device_specific_data {
 
     /* global communicator & stream for all cpu collectives */
     static ccl::communicator& comm() {
-        if (!device_specific_data::comm_ptr) {
+        if (!device_data::comm_ptr) {
         }
-        return *device_specific_data::comm_ptr;
+        return *device_data::comm_ptr;
     }
 
     static ccl::stream& stream() {
-        if (!device_specific_data::stream_ptr) {
+        if (!device_data::stream_ptr) {
         }
-        return *device_specific_data::stream_ptr;
+        return *device_data::stream_ptr;
     }
 };
 #endif /* CCL_ENABLE_SYCL */

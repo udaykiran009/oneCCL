@@ -26,7 +26,7 @@ struct sycl_alltoall_coll : sycl_base_coll<Dtype, alltoall_strategy_impl> {
     virtual void prepare(size_t elem_count) override {
         size_t local_rank = coll_base::comm().rank();
         for (size_t b_idx = 0; b_idx < base_coll::get_buf_count(); b_idx++) {
-            sycl_queue.submit([&](handler& cgh) {
+            device_data::sycl_queue.submit([&](handler& cgh) {
                 auto send_buf = (static_cast<sycl_buffer_t<Dtype>*>(send_bufs[b_idx]));
                 auto recv_buf = (static_cast<sycl_buffer_t<Dtype>*>(recv_bufs[b_idx]));
                 auto send_buf_acc = send_buf->template get_access<mode::write>(cgh);
@@ -46,7 +46,7 @@ struct sycl_alltoall_coll : sycl_base_coll<Dtype, alltoall_strategy_impl> {
         size_t comm_size = coll_base::comm().size();
 
         for (size_t b_idx = 0; b_idx < base_coll::get_buf_count(); b_idx++) {
-            sycl_queue.submit([&](handler& cgh) {
+            device_data::sycl_queue.submit([&](handler& cgh) {
                 auto send_buf = (static_cast<sycl_buffer_t<Dtype>*>(send_bufs[b_idx]));
                 auto recv_buf = (static_cast<sycl_buffer_t<Dtype>*>(recv_bufs[b_idx]));
                 auto send_buf_acc = send_buf->template get_access<mode::write>(cgh);

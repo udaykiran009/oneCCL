@@ -328,8 +328,7 @@ void create_cpu_colls(bench_init_attr& init_attr,
         sparse_allreduce_strategy_impl<ccl::bf16, sparse_detail::incremental_indices_distributor>;
 
     std::stringstream error_messages_stream;
-    //base_coll::comm = ccl::create_communicator();
-    //base_coll::stream = ccl::create_stream();
+
     for (auto names_it = options.coll_names.begin(); names_it != options.coll_names.end();) {
         const std::string& name = *names_it;
         if (name == allgatherv_strategy_impl::class_name()) {
@@ -410,8 +409,6 @@ void create_sycl_colls(bench_init_attr& init_attr,
         sparse_allreduce_strategy_impl<ccl::bf16, sparse_detail::incremental_indices_distributor>;
 
     std::stringstream error_messages_stream;
-    //base_coll::comm = ccl::create_communicator();
-    //base_coll::stream = ccl::create_stream(sycl_queue);
 
     for (auto names_it = options.coll_names.begin(); names_it != options.coll_names.end();) {
         const std::string& name = *names_it;
@@ -501,8 +498,10 @@ void create_sycl_colls(bench_init_attr& init_attr,
 template <class Dtype>
 void create_colls(bench_init_attr& init_attr, user_options_t& options, coll_list_t& colls) {
     switch (options.backend) {
-        case ccl::stream_type::host: create_cpu_colls<Dtype>(init_attr, options, colls); break;
-        case ccl::stream_type::gpu:
+        case BACKEND_HOST:
+            create_cpu_colls<Dtype>(init_attr, options, colls);
+            break;
+        case BACKEND_SYCL:
 #ifdef CCL_ENABLE_SYCL
             create_sycl_colls<Dtype>(init_attr, options, colls);
 #else
@@ -544,32 +543,24 @@ int main(int argc, char* argv[]) {
     bench_init_attr init_attr;
 
     if (parse_user_options(argc, argv, options))
-        return -1;
+        std::terminate();
 
     init_attr.buf_count = options.buf_count;
     init_attr.max_elem_count = options.max_elem_count;
     init_attr.v2i_ratio = options.v2i_ratio;
 
-    cpu_specific_data::init(transport_settings::instance().get_size(),
+    host_data::init(transport_settings::instance().get_size(),
                             transport_settings::instance().get_rank(),
                             transport_settings::instance().get_kvs());
 #ifdef CCL_ENABLE_SYCL
-    //TODO only for gpu
-    if (options.backend == ccl::stream_type::gpu) {
-        std::unique_ptr<cl::sycl::device_selector> selector;
-        switch (options.backend) {
-            case ccl::stream_type::gpu: selector.reset(new cl::sycl::gpu_selector()); break;
-            case ccl::stream_type::cpu: selector.reset(new cl::sycl::cpu_selector()); break;
-            case ccl::stream_type::host: selector.reset(new cl::sycl::host_selector()); break;
-            default: selector.reset(new cl::sycl::default_selector()); break;
-        }
+    if (options.backend == BACKEND_SYCL) {
 
-        cl::sycl::device device(*selector);
-        cl::sycl::context ctx(device);
+        auto dev = get_device(*host_data::comm_ptr);
+        cl::sycl::context ctx(dev);
 
-        device_specific_data::init(transport_settings::instance().get_size(),
+        device_data::init(transport_settings::instance().get_size(),
                                    transport_settings::instance().get_rank(),
-                                   device,
+                                   dev,
                                    ctx,
                                    transport_settings::instance().get_kvs());
     }
@@ -577,7 +568,6 @@ int main(int argc, char* argv[]) {
 
     try {
         ccl_tuple_for_each(launch_dtypes, set_dtypes_func(options.dtypes));
-
         ccl_tuple_for_each(launch_dtypes, create_colls_func(init_attr, options, colls));
     }
     catch (const std::runtime_error& e) {
@@ -588,7 +578,7 @@ int main(int argc, char* argv[]) {
         return -1;
     }
 
-    ccl::communicator& comm = *cpu_specific_data::comm_ptr;
+    ccl::communicator& comm = *host_data::comm_ptr;
 
     bench_exec_attr bench_attr{};
     bench_attr.init_all();
@@ -602,10 +592,6 @@ int main(int argc, char* argv[]) {
     }
 
     ccl::barrier(comm);
-
-#ifdef CCL_ENABLE_SYCL
-    set_pinning(comm);
-#endif
 
     switch (options.loop) {
         case LOOP_REGULAR: {
@@ -637,8 +623,8 @@ int main(int argc, char* argv[]) {
     }
 
 #ifdef CCL_ENABLE_SYCL
-    device_specific_data::deinit();
+    device_data::deinit();
 #endif
-    cpu_specific_data::deinit();
+    host_data::deinit();
     return 0;
 }

@@ -262,7 +262,7 @@ struct comm_impl_dispatch_selector<cl_backend_type::dpcpp_sycl> :
 
         if (dev.is_host())
         {
-            LOG_TRACE("Create host communicator");
+            LOG_DEBUG("Create host communicator");
 
             ccl::communicator_interface_ptr impl =
                 ccl::communicator_interface::create_communicator_impl(cluster_devices_size, local_rank_device_map.begin()->first, kvs);
@@ -272,7 +272,7 @@ struct comm_impl_dispatch_selector<cl_backend_type::dpcpp_sycl> :
             return ret;
         }
 
-        LOG_TRACE("Create single device communicator from SYCL device");
+        LOG_DEBUG("Create single device communicator from SYCL device");
         size_t rank = it->first;
         auto& device = it->second;
         std::shared_ptr<ikvs_wrapper> kvs_wrapper(new users_kvs(kvs));
@@ -435,6 +435,22 @@ struct comm_impl_dispatch_selector<cl_backend_type::dpcpp_sycl_l0> :
                 shared_ptr_class<kvs_interface> kvs) {
 
         base_t::validate_contract(cluster_devices_size, local_rank_device_map.size());
+
+        if (local_rank_device_map.size() == 1)
+        {
+            auto it = local_rank_device_map.begin();
+            const cl::sycl::device& dev = it->second;
+            if (dev.is_host())
+            {
+                LOG_INFO("create host communicator for sycl::device::host");
+
+                ccl::communicator_interface_ptr impl =
+                    ccl::communicator_interface::create_communicator_impl(cluster_devices_size, local_rank_device_map.begin()->first, kvs);
+                ccl::vector_class<ccl::communicator> ret;
+                ret.push_back(ccl::communicator(std::move(impl)) );
+                return ret;
+            }
+        }
 
         //collect ranks
         vector_class<rank_t> local_thread_ranks;

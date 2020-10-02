@@ -2,7 +2,7 @@
 
 #ifdef CCL_ENABLE_SYCL
 
-extern cl::sycl::queue sycl_queue;
+#include "sycl_coll.hpp"
 
 template <class kernel_value_type, class kernel_index_type>
 struct sparse_allreduce_kernel_name_bufs {};
@@ -16,7 +16,7 @@ template <class VType,
 struct sycl_sparse_allreduce_coll : base_sparse_allreduce_coll<cl::sycl::buffer<VType, 1>,
                                                                cl::sycl::buffer<IType, 1>,
                                                                IndicesDistributorType>,
-                                    device_specific_data {
+                                    device_data {
     using sycl_indices_t = cl::sycl::buffer<IType, 1>;
     using sycl_values_t = cl::sycl::buffer<VType, 1>;
     using coll_base =
@@ -55,7 +55,7 @@ struct sycl_sparse_allreduce_coll : base_sparse_allreduce_coll<cl::sycl::buffer<
             recv_vbufs[idx] =
                 new sycl_values_t(max_elem_count * rbuf_size_modifier * comm().size());
 
-            sycl_queue.submit([&](handler& cgh) {
+            device_data::sycl_queue.submit([&](handler& cgh) {
                 auto send_ibuf = (static_cast<sycl_indices_t*>(send_ibufs[idx]));
                 auto send_vbuf = (static_cast<sycl_values_t*>(send_vbufs[idx]));
 
@@ -88,7 +88,7 @@ struct sycl_sparse_allreduce_coll : base_sparse_allreduce_coll<cl::sycl::buffer<
         single_recv_vbuf =
             new sycl_values_t(single_buf_max_elem_count * rbuf_size_modifier * comm().size());
 
-        sycl_queue.submit([&](handler& cgh) {
+        device_data::sycl_queue.submit([&](handler& cgh) {
             auto send_ibuf = (static_cast<sycl_indices_t*>(single_send_ibuf));
             auto send_vbuf = (static_cast<sycl_values_t*>(single_send_vbuf));
 
@@ -171,15 +171,15 @@ struct sycl_sparse_allreduce_coll : base_sparse_allreduce_coll<cl::sycl::buffer<
 
     /* global communicator for cpu collectives */
     static ccl::communicator& comm() {
-        if (!device_specific_data::comm_ptr) {
+        if (!device_data::comm_ptr) {
         }
-        return *device_specific_data::comm_ptr;
+        return *device_data::comm_ptr;
     }
 
     static ccl::stream& stream() {
-        if (!device_specific_data::stream_ptr) {
+        if (!device_data::stream_ptr) {
         }
-        return *device_specific_data::stream_ptr;
+        return *device_data::stream_ptr;
     }
 };
 

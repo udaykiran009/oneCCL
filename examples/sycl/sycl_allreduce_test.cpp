@@ -34,17 +34,12 @@ int main(int argc, char **argv) {
         kvs = ccl::create_kvs(main_addr);
     }
 
-    /* create SYCL communicator */
-    auto ctx = q.get_context();
-    auto communicators = ccl::create_communicators(
-        size,
-        ccl::vector_class<ccl::pair_class<ccl::rank_t, cl::sycl::device>>{
-            { rank, q.get_device() } },
-        ctx,
-        kvs);
-    auto &comm = *communicators.begin();
+    /* create communicator */
+    auto dev = ccl::create_device(q.get_device());
+    auto ctx = ccl::create_context(q.get_context());
+    auto comm = ccl::create_communicator(size, rank, dev, ctx, kvs);
 
-    /* create SYCL stream */
+    /* create stream */
     auto stream = ccl::create_stream(q);
 
     {
@@ -67,9 +62,8 @@ int main(int argc, char **argv) {
 
     handle_exception(q);
 
-    /* invoke ccl_allreduce on the CPU side */
-    auto attr = ccl::create_operation_attr<ccl::allreduce_attr>();
-    ccl::allreduce(sendbuf, recvbuf, COUNT, ccl::reduction::sum, comm, stream, attr).wait();
+    /* invoke allreduce */
+    ccl::allreduce(sendbuf, recvbuf, COUNT, ccl::reduction::sum, comm, stream).wait();
 
     /* open recvbuf and check its correctness on the target device side */
     q.submit([&](handler &cgh) {
@@ -98,5 +92,6 @@ int main(int argc, char **argv) {
     }
 
     MPI_Finalize();
+
     return 0;
 }

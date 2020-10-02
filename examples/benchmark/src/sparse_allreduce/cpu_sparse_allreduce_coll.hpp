@@ -6,7 +6,7 @@ template <class VType,
               sparse_detail::incremental_indices_distributor>
 struct cpu_sparse_allreduce_coll
         : base_sparse_allreduce_coll<VType*, IType*, IndicesDistributorType>,
-          cpu_specific_data {
+          host_data {
     using coll_base = base_sparse_allreduce_coll<VType*, IType*, IndicesDistributorType>;
     using coll_strategy = typename coll_base::coll_strategy;
 
@@ -194,8 +194,8 @@ struct cpu_sparse_allreduce_coll
 
     /* global communicator for cpu collectives */
     static ccl::communicator& comm() {
-        if (!cpu_specific_data::comm_ptr) {
+        if (!host_data::comm_ptr) {
         }
-        return *cpu_specific_data::comm_ptr;
+        return *host_data::comm_ptr;
     }
 };

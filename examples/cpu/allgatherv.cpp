@@ -109,13 +109,9 @@ int main() {
         kvs = ccl::create_kvs(main_addr);
     }
 
-    ccl::context ctx = ccl::create_context();
-    ccl::device dev = ccl::create_device();
-    ccl::stream str = ccl::create_stream();
-    (void)str;
-
-    auto comms = ccl::create_communicators(size, ccl::vector_class<ccl::pair_class<ccl::rank_t, ccl::device>>{{rank,dev}}, ctx, kvs);
-    auto& comm = comms[0];
+    auto dev = ccl::create_device();
+    auto ctx = ccl::create_context();
+    auto comm = ccl::create_communicator(size, rank, dev, ctx, kvs);
     auto attr = ccl::create_operation_attr<ccl::allgatherv_attr>();
 
     MSG_LOOP(

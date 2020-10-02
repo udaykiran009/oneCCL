@@ -55,14 +55,8 @@ public:
      */
     static environment& instance();
 
-    /**
-     * Retrieves the library version
-     */
     ccl::library_version get_library_version() const;
 
-    /**
-     * Creates @attr which used to register custom datatype
-     */
     template <class... attr_value_pair_t>
     datatype_attr create_datatype_attr(attr_value_pair_t&&... avps) const {
         static_assert(sizeof...(avps) > 0, "At least one argument must be specified");
@@ -72,53 +66,13 @@ public:
         return attr;
     }
 
-    /**
-     * Registers custom datatype to be used in communication operations
-     * @param attr datatype attributes
-     * @return datatype handle
-     */
     ccl::datatype register_datatype(const ccl::datatype_attr& attr);
-
-    /**
-     * Deregisters custom datatype
-     * @param dtype custom datatype handle
-     */
     void deregister_datatype(ccl::datatype dtype);
-
-    /**
-     * Retrieves a datatype size in bytes
-     * @param dtype datatype handle
-     * @return datatype size
-     */
     size_t get_datatype_size(ccl::datatype dtype) const;
 
-    /**
-     * Enables job scalability policy
-     * @param callback of @c ccl_resize_fn_t type, which enables scalability policy
-     * (@c nullptr enables default behavior)
-     */
-    //void set_resize_fn(ccl_resize_fn_t callback);
-
-    /**
-     * Creates a main key-value store.
-     * It's address should be distributed using out of band communication mechanism
-     * and be used to create key-value stores on other ranks.
-     * @return kvs object
-     */
     shared_ptr_class<kvs> create_main_kvs() const;
-
-    /**
-     * Creates a new key-value store from main kvs address
-     * @param addr address of main kvs
-     * @return kvs object
-     */
     shared_ptr_class<kvs> create_kvs(const kvs::address_type& addr) const;
 
-    /**
-     * Creates a new device from @native_device_type
-     * @param native_device the existing handle of device
-     * @return device object
-     */
     device create_device(empty_t empty) const;
 
     template <class native_device_type,
@@ -135,11 +89,6 @@ public:
         return str;
     }
 
-    /**
-     * Creates a new device_contex from @native_device_contex_type
-     * @param native_device_context the existing handle of context
-     * @return context object
-     */
     context create_context(empty_t empty) const;
 
     template <class native_device_contex_type,
@@ -164,11 +113,6 @@ public:
         return op_attr;
     }
 
-    /**
-     * Creates a new stream from @native_stream_type
-     * @param native_stream the existing handle of stream
-     * @return stream object
-     */
     template <class native_stream_type,
               class = typename std::enable_if<is_stream_supported<native_stream_type>()>::type>
     stream create_stream(native_stream_type& native_stream);
@@ -199,31 +143,6 @@ public:
         return str;
     }
 
-    // /**
-    //  * Creates a new event from @native_event_type
-    //  * @param native_event the existing handle of event
-    //  * @return event object
-    //  */
-    // template <class event_type,
-    //           class = typename std::enable_if<is_event_supported<event_type>()>::type>
-    // event create_event(event_type& native_event);
-
-    // template <class event_handle_type,
-    //           class = typename std::enable_if<is_event_supported<event_handle_type>()>::type>
-    // event create_event(event_handle_type native_event_handle,
-    //                    typename unified_device_context_type::ccl_native_t context);
-
-    // template <class event_type, class... attr_value_pair_t>
-    // event create_event_from_attr(event_type& native_event_handle,
-    //                              typename unified_device_context_type::ccl_native_t context,
-    //                              attr_value_pair_t&&... avps) {
-    //     event ev = create_postponed_api_type<event>(native_event_handle, context);
-    //     int expander[]{ (ev.template set<attr_value_pair_t::idx()>(avps.val()), 0)... };
-    //     (void)expander;
-    //     ev.build_from_params();
-    //     return ev;
-    // }
-
 
 #ifdef CCL_ENABLE_SYCL
     communicator create_single_device_communicator(
@@ -234,22 +153,6 @@ public:
         shared_ptr_class<kvs_interface> kvs) const;
 #endif
 
-//     communicator create_single_device_communicator(size_t world_size,
-//                                      size_t rank,
-//                                      cl::sycl::queue queue,
-//                                      shared_ptr_class<kvs_interface> kvs) const;
-
-//     template<class DeviceSelectorType>
-//     communicator create_single_device_communicator(size_t world_size,
-//                                      size_t rank,
-//                                      const DeviceSelectorType& selector,
-//                                      shared_ptr_class<kvs_interface> kvs) const
-//     {
-//         return create_single_device_communicator(world_size, rank, cl::sycl::device(selector), kvs);
-//     }
-
-// #endif
-
     template <class... attr_value_pair_t>
     comm_split_attr create_comm_split_attr(attr_value_pair_t&&... avps) const {
         auto split_attr = create_postponed_api_type<comm_split_attr>();
@@ -258,42 +161,12 @@ public:
         return split_attr;
     }
 
-    /**
-     * Creates a new host communicator with externally provided size, rank and kvs.
-     * Implementation is platform specific and non portable.
-     * @return host communicator
-     */
     communicator create_communicator() const;
-
-    /**
-     * Creates a new host communicator with user supplied size and kvs.
-     * Rank will be assigned automatically.
-     * @param size user-supplied total number of ranks
-     * @param kvs key-value store for ranks wire-up
-     * @return host communicator
-     */
     communicator create_communicator(size_t size, shared_ptr_class<kvs_interface> kvs) const;
-
-    /**
-     * Creates a new host communicator with user supplied size, rank and kvs.
-     * @param size user-supplied total number of ranks
-     * @param rank user-supplied rank
-     * @param kvs key-value store for ranks wire-up
-     * @return host communicator
-     */
     communicator create_communicator(size_t size,
                                      size_t rank,
                                      shared_ptr_class<kvs_interface> kvs) const;
 
-    /**
-     * Creates a new device communicators with user supplied size, device indices and kvs.
-     * Ranks will be assigned automatically.
-     * @param comm_size user-supplied total number of ranks
-     * @param local_devices user-supplied device objects for local ranks
-     * @param context context containing the devices
-     * @param kvs key-value store for ranks wire-up
-     * @return vector of device communicators
-     */
     template <class DeviceType, class ContextType>
     vector_class<communicator> create_communicators(
         size_t comm_size,
@@ -301,14 +174,6 @@ public:
         ContextType& context,
         shared_ptr_class<kvs_interface> kvs) const;
 
-    /**
-     * Creates a new device communicators with user supplied size, ranks, device indices and kvs.
-     * @param comm_size user-supplied total number of ranks
-     * @param local_rank_device_map user-supplied mapping of local ranks on devices
-     * @param context context containing the devices
-     * @param kvs key-value store for ranks wire-up
-     * @return vector of device communicators
-     */
     template <class DeviceType, class ContextType>
     vector_class<communicator> create_communicators(
         size_t comm_size,
@@ -323,11 +188,6 @@ public:
         ContextType& context,
         shared_ptr_class<kvs_interface> kvs) const;
 
-    /**
-     * Splits device communicators according to attributes.
-     * @param attrs split attributes for local communicators
-     * @return vector of device communicators
-     */
     vector_class<communicator> split_device_communicators(
         const vector_class<pair_class<communicator, comm_split_attr>>& attrs) const;
 
@@ -338,4 +198,4 @@ private:
     ccl_api_type create_postponed_api_type(args_type... args) const;
 };
 
-} // namespace ccl
+} /* ccl */

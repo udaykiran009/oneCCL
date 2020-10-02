@@ -26,6 +26,7 @@ vector_class<communicator> communicator::create_communicators(
     const vector_class<pair_class<rank_t, DeviceType>>& local_rank_device_map,
     ContextType& context,
     shared_ptr_class<kvs_interface> kvs) {
+
     vector_class<rank_t> local_thread_ranks;
     local_thread_ranks.reserve(local_rank_device_map.size());
     std::transform(

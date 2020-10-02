@@ -6,7 +6,7 @@
 #define ALL_DTYPES_LIST     "char,int,float,double,int64_t,uint64_t"
 #define ALL_REDUCTIONS_LIST "sum,prod,min,max"
 
-#define DEFAULT_BACKEND         ccl::stream_type::host
+#define DEFAULT_BACKEND         BACKEND_HOST
 #define DEFAULT_LOOP            LOOP_REGULAR
 #define DEFAULT_COLL_LIST \
     "allgatherv,allreduce,alltoall,alltoallv,bcast,reduce," \

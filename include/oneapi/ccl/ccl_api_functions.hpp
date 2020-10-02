@@ -6,14 +6,20 @@
 
 namespace ccl {
 
-void init();
+/******************** INIT ********************/
 
-/******************** ENVIRONMENT ********************/
+/**
+ * Initializes the library. Optional for invocation.
+ */
+void init();
 
 /**
  * Retrieves the library version
  */
 library_version get_library_version();
+
+
+/******************** DATATYPE ********************/
 
 /**
  * Creates @attr which used to register custom datatype
@@ -43,6 +49,7 @@ void deregister_datatype(datatype dtype);
  */
 size_t get_datatype_size(datatype dtype);
 
+
 /******************** KVS ********************/
 
 /**
@@ -60,25 +67,8 @@ shared_ptr_class<kvs> create_main_kvs();
  */
 shared_ptr_class<kvs> create_kvs(const kvs::address_type& addr);
 
-template <class coll_attribute_type, class... attr_value_pair_t>
-coll_attribute_type CCL_API create_operation_attr(attr_value_pair_t&&... avps) {
-    return environment::instance().create_operation_attr<coll_attribute_type>(
-        std::forward<attr_value_pair_t>(avps)...);
-}
 
-#ifdef CCL_ENABLE_SYCL
-communicator create_single_device_communicator(size_t comm_size,
-                                                      size_t rank,
-                                                      const cl::sycl::device& device,
-                                                      shared_ptr_class<kvs_interface> kvs);
-#endif
-
-template <class... attr_value_pair_t>
-comm_split_attr create_comm_split_attr(attr_value_pair_t&&... avps) {
-    return environment::instance().create_comm_split_attr(
-    std::forward<attr_value_pair_t>(avps)...);
-}
-
+/******************** DEVICE ********************/
 
 /**
  * Creates a new device from @native_device_type
@@ -100,6 +90,9 @@ device create_device_from_attr(typename unified_device_type::ccl_native_t dev,
         dev, std::forward<attr_value_pair_t>(avps)...);
 }
 
+
+/******************** CONTEXT ********************/
+
 /**
  * Creates a new context from @native_device_contex_type
  * @param native_device_context the existing handle of context
@@ -119,6 +112,8 @@ context create_context_from_attr(typename unified_device_context_type::ccl_nativ
     return environment::instance().create_context_from_attr(
         ctx, std::forward<attr_value_pair_t>(avps)...);
 }
+
+/******************** EVENT ********************/
 
 /**
  * Creates a new event from @native_event_type
@@ -150,6 +145,9 @@ event create_event_from_attr(event_type& native_event_handle,
     throw ccl::exception(std::string(__PRETTY_FUNCTION__) + " - is not implemented");
     return {};
 }
+
+
+/******************** STREAM ********************/
 
 /**
  * Creates a new stream from @native_stream_type
@@ -183,6 +181,22 @@ stream create_stream_from_attr(typename unified_device_type::ccl_native_t device
                                attr_value_pair_t&&... avps) {
     return environment::instance().create_stream_from_attr(
         device, context, std::forward<attr_value_pair_t>(avps)...);
+}
+
+
+/******************** COMMUNICATOR ********************/
+
+// #ifdef CCL_ENABLE_SYCL
+// communicator create_single_device_communicator(size_t comm_size,
+//                                                       size_t rank,
+//                                                       const cl::sycl::device& device,
+//                                                       shared_ptr_class<kvs_interface> kvs);
+// #endif
+
+template <class... attr_value_pair_t>
+comm_split_attr create_comm_split_attr(attr_value_pair_t&&... avps) {
+    return environment::instance().create_comm_split_attr(
+    std::forward<attr_value_pair_t>(avps)...);
 }
 
 namespace preview {
@@ -274,7 +288,31 @@ vector_class<communicator> create_communicators(
         comm_size, local_rank_device_map, context, kvs);
 }
 
-/******************** COMMUNICATOR ********************/
+template <class DeviceType, class ContextType>
+communicator create_communicator(
+    size_t comm_size,
+    rank_t rank,
+    DeviceType& device,
+    ContextType& context,
+    shared_ptr_class<kvs_interface> kvs) {
+
+    auto comms = environment::instance().create_communicators(
+        comm_size, ccl::vector_class<ccl::pair_class<ccl::rank_t, ccl::device>>{{rank,device}}, context, kvs);
+
+    if (comms.size() != 1)
+      throw ccl::exception("unexpected comm vector size");
+
+    return std::move(comms[0]);
+}
+
+
+/******************** OPERATION ********************/
+
+template <class coll_attribute_type, class... attr_value_pair_t>
+coll_attribute_type CCL_API create_operation_attr(attr_value_pair_t&&... avps) {
+    return environment::instance().create_operation_attr<coll_attribute_type>(
+        std::forward<attr_value_pair_t>(avps)...);
+}
 
 /**
  * Allgatherv is a collective communication operation that collects data from all ranks within a communicator
@@ -1787,77 +1825,6 @@ ccl::event sparse_allreduce(
     const ccl::sparse_allreduce_attr& attr = default_sparse_allreduce_attr,
     const ccl::vector_class<ccl::event>& deps = {});
 
-// /**
-//  * Type safety version:
-//  * @param send_ind_buf the buffer of indices with @c send_ind_count elements of type @c ind_dtype
-//  * @param send_ind_count number of elements of type @c ind_type @c send_ind_buf
-//  * @param send_val_buf the buffer of values with @c send_val_count elements of type @c val_dtype
-//  * @param send_val_count number of elements of type @c val_type @c send_val_buf
-//  * @param recv_ind_buf [out] the buffer to store reduced indices, unused
-//  * @param recv_ind_count [out] number of elements in @c recv_ind_buf, unused
-//  * @param recv_val_buf [out] the buffer to store reduced values, unused
-//  * @param recv_val_count [out] number of elements in @c recv_val_buf, unused
-//  * @param rtype type of reduction operation to be applied
-//  * @param comm the communicator for which the operation will be performed
-//  * @param op_stream op_stream associated with the operation
-//  * @param attr optional attributes to customize operation
-//  * @param deps optional vector of events that the operation should depend on
-//  * @return @ref ccl::event object to track the progress of the operation
-//  */
-// template <class IndexBufferObjectType,
-//           class ValueBufferObjectType,
-//           class = typename std::enable_if<ccl::is_native_type_supported<ValueBufferObjectType>(),
-//                                           ccl::event>::type>
-// ccl::event
-// sparse_allreduce(const IndexBufferObjectType& send_ind_buf,
-//                  size_t send_ind_count,
-//                  const ValueBufferObjectType& send_val_buf,
-//                  size_t send_val_count,
-//                  IndexBufferObjectType& recv_ind_buf,
-//                  size_t recv_ind_count,
-//                  ValueBufferObjectType& recv_val_buf,
-//                  size_t recv_val_count,
-//                  ccl::reduction reduction,
-//                  const ccl::communicator& comm,
-//                  const ccl::stream& op_stream,
-//                  const ccl::sparse_allreduce_attr& attr = default_sparse_allreduce_attr,
-//                  const ccl::vector_class<ccl::event>& deps = {});
-
-//  * Type safety version:
-//  * @param send_ind_buf the buffer of indices with @c send_ind_count elements of type @c ind_dtype
-//  * @param send_ind_count number of elements of type @c ind_type @c send_ind_buf
-//  * @param send_val_buf the buffer of values with @c send_val_count elements of type @c val_dtype
-//  * @param send_val_count number of elements of type @c val_type @c send_val_buf
-//  * @param recv_ind_buf [out] the buffer to store reduced indices, unused
-//  * @param recv_ind_count [out] number of elements in @c recv_ind_buf, unused
-//  * @param recv_val_buf [out] the buffer to store reduced values, unused
-//  * @param recv_val_count [out] number of elements in @c recv_val_buf, unused
-//  * @param rtype type of reduction operation to be applied
-//  * @param comm the communicator for which the operation will be performed
-//  * @param attr optional attributes to customize operation
-//  * @param deps optional vector of events that the operation should depend on
-//  * @return @ref ccl::event object to track the progress of the operation
-//  */
-// template <class IndexBufferObjectType,
-//           class ValueBufferObjectType,
-//           class = typename std::enable_if<ccl::is_native_type_supported<ValueBufferObjectType>(),
-//                                           ccl::event>::type>
-// ccl::event
-// sparse_allreduce(const IndexBufferObjectType& send_ind_buf,
-//                  size_t send_ind_count,
-//                  const ValueBufferObjectType& send_val_buf,
-//                  size_t send_val_count,
-//                  IndexBufferObjectType& recv_ind_buf,
-//                  size_t recv_ind_count,
-//                  ValueBufferObjectType& recv_val_buf,
-//                  size_t recv_val_count,
-//                  ccl::reduction reduction,
-//                  const ccl::communicator& comm,
-//                  const ccl::sparse_allreduce_attr& attr = default_sparse_allreduce_attr,
-//                  const ccl::vector_class<ccl::event>& deps = {});
-
 } // namespace preview
-
-// #endif //#if defined(MULTI_GPU_SUPPORT) || defined(CCL_ENABLE_SYCL)
 
 } // namespace ccl

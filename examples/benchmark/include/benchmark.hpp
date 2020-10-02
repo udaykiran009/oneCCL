@@ -53,18 +53,17 @@ constexpr std::initializer_list<ccl::datatype> all_dtypes = {
         } \
     } while (0)
 
-/* specific benchmark dtypes */
+typedef enum { BACKEND_HOST, BACKEND_SYCL } backend_type_t;
 typedef enum { LOOP_REGULAR, LOOP_UNORDERED } loop_type_t;
 typedef enum { BUF_SINGLE, BUF_MULTI } buf_type_t;
 
-#define DEFAULT_BACKEND ccl::stream_type::host
+#define DEFAULT_BACKEND BACKEND_HOST
 #define DEFAULT_LOOP    LOOP_REGULAR
 #define DEFAULT_BUF     BUF_SINGLE
 
-std::map<ccl::stream_type, std::string> backend_names = {
-    std::make_pair(ccl::stream_type::host, "cpu"),
-    std::make_pair(ccl::stream_type::cpu, "sycl_cpu"),
-    std::make_pair(ccl::stream_type::gpu, "sycl") /* TODO: align names */
+std::map<backend_type_t, std::string> backend_names = {
+    std::make_pair(BACKEND_HOST, "host"),
+    std::make_pair(BACKEND_SYCL, "sycl")
 };
 
 std::map<loop_type_t, std::string> loop_names = { std::make_pair(LOOP_REGULAR, "regular"),
@@ -123,7 +122,7 @@ void print_help_usage(const char* app) {
         "\t[-n,--buf_type <buffer type>]: %s\n"
         "\t[-o,--csv_filepath <file to store CSV-formatted data into>]: %s\n"
         "\t[-h,--help]\n\n"
-        "example:\n\t--coll allgatherv,allreduce,sparse_allreduce,sparse_allreduce_bf16 --backend cpu --loop regular\n"
+        "example:\n\t--coll allgatherv,allreduce,sparse_allreduce,sparse_allreduce_bf16 --backend host --loop regular\n"
         "example:\n\t--coll bcast,reduce --backend sycl --loop unordered \n",
         app,
         backend_names[DEFAULT_BACKEND].c_str(),
@@ -190,19 +189,18 @@ int check_supported_options(const std::string& option_name,
     return 0;
 }
 
-int set_backend(const std::string& option_value, ccl::stream_type& backend) {
+int set_backend(const std::string& option_value, backend_type_t& backend) {
     std::string option_name = "backend";
-    std::set<std::string> supported_option_values{ backend_names[ccl::stream_type::host] };
+    std::set<std::string> supported_option_values{ backend_names[BACKEND_HOST] };
 
 #ifdef CCL_ENABLE_SYCL
-    supported_option_values.insert(backend_names[ccl::stream_type::gpu]);
+    supported_option_values.insert(backend_names[BACKEND_SYCL]);
 #endif
 
     if (check_supported_options(option_name, option_value, supported_option_values))
         return -1;
 
-    backend = (option_value == backend_names[ccl::stream_type::gpu]) ? ccl::stream_type::gpu
-                                                                     : ccl::stream_type::host;
+    backend = (option_value == backend_names[BACKEND_SYCL]) ? BACKEND_SYCL : BACKEND_HOST;
 
     return 0;
 }
@@ -238,7 +236,7 @@ int set_buf_type(const std::string& option_value, buf_type_t& buf) {
 
 // leave this dtype here because of tokenize() call
 typedef struct user_options_t {
-    ccl::stream_type backend;
+    backend_type_t backend;
     loop_type_t loop;
     size_t iters;
     size_t warmup_iters;
