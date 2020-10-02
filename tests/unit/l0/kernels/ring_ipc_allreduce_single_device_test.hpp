@@ -20,7 +20,7 @@ TEST_F(ring_ipc_allreduce_single_device_fixture, ring_ipc_allreduce_single_devic
     constexpr size_t ipc_mem_group_count = 1;
     constexpr size_t ipc_flag_group_count = 2;
 
-    ccl_device_driver::create_context() ctx;
+    std::shared_ptr<ccl_context> ctx;
 
     handles_storage<native_type> memory_storage(42 * num_thread);
     handles_storage<int> flags_storage(42 * num_thread);

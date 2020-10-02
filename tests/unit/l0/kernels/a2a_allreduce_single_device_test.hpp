@@ -24,7 +24,7 @@ using native_type = float;
 
 TEST_F(a2a_allreduce_single_device_fixture, a2a_allreduce_single_device_mt) {
     using namespace native;
-    ccl_device_driver::create_context() ctx;
+    std::shared_ptr<ccl_context> ctx;
 
     // test case data
     const size_t buffer_size = 512;

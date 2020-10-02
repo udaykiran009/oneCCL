@@ -72,7 +72,7 @@ TYPED_TEST(ring_bcast_single_device_fixture, ring_bcast_single_device_mt) {
     constexpr size_t mem_group_count = 1; //3;
     constexpr size_t flag_group_count = 3;
 
-    ccl_device_driver::create_context() ctx;
+    std::shared_ptr<ccl_context> ctx;
 
     handles_storage<native_type> memory_storage(mem_group_count * num_thread);
     handles_storage<int> flags_storage(flag_group_count * num_thread);

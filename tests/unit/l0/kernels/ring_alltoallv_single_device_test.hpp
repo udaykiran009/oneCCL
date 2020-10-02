@@ -83,7 +83,7 @@ TYPED_TEST(ring_alltoallv_single_device_fixture, ring_alltoallv_single_device_mt
     handles_storage<native_type> memory_storage(42 * num_thread);
     handles_storage<int> flags_storage(42 * num_thread);
 
-    ccl_device_driver::create_context() ctx;
+    std::shared_ptr<ccl_context> ctx;
 
     // check global driver
     auto drv_it = this->local_platform->drivers.find(0);

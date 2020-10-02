@@ -16,7 +16,7 @@ TEST_F(ring_bcast_multi_device_fixture, ring_bcast_multi_device_mt) {
     handles_storage<int> flags_storage(42 * num_thread);
     std::map<size_t, std::vector<size_t>> comm_param_storage;
 
-    ccl_device_driver::create_context() ctx;
+    std::shared_ptr<ccl_context> ctx;
 
     // check global driver
     auto drv_it = local_platform->drivers.find(0);

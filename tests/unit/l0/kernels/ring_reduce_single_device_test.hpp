@@ -143,7 +143,7 @@ TYPED_TEST(ring_reduce_single_device_fixture, ring_reduce_single_device_mt) {
     using native_type = typename TypeParam::first_type;
     using op_type = typename TypeParam::second_type;
 
-    ccl_device_driver::create_context() ctx;
+    std::shared_ptr<ccl_context> ctx;
 
     // test case data
     const size_t buffer_size = ring_reduce_case::op_traits<native_type, op_type>::buffer_size;

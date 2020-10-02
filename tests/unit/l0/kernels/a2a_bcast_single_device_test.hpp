@@ -82,7 +82,7 @@ TYPED_TEST(a2a_bcast_single_device_fixture, a2a_bcast_single_device_mt) {
     using namespace native;
     // Type of our test
     using native_type = TypeParam;
-    ccl_device_driver::create_context() ctx;
+    std::shared_ptr<ccl_context> ctx;
 
     // test case data
     const size_t buffer_size = 512;
