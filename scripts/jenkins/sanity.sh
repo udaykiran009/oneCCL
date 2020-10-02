@@ -198,8 +198,8 @@ set_environment()
     else
         if [ -z "${SYCL_BUNDLE_ROOT}" ]
         then
-            echo "ERROR: please specify  SYCL_BUNDLE_ROOT, will be used \${SYCL_BUNDLE_ROOT}/setvars.sh"
-            exit 1
+            SYCL_BUNDLE_ROOT="/p/pdsd/scratch/jenkins/artefacts/ccl-nightly/last/inteloneapi/"
+            echo "WARNING: SYCL_BUNDLE_ROOT is not defined, will be used default: $SYCL_BUNDLE_ROOT"
         fi
         source ${SYCL_BUNDLE_ROOT}/setvars.sh
         BUILD_COMPILER=${SYCL_BUNDLE_ROOT}/compiler/latest/linux/bin
