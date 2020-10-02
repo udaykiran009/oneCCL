@@ -175,7 +175,7 @@ check_clang_path()
 {
     if [ -z "${SYCL_BUNDLE_ROOT}" ]
     then
-        SYCL_BUNDLE_ROOT="/nfs/inn/proj/mpi/pdsd/opt/EM64T-LIN/compilers/clang/latest/linux"
+        SYCL_BUNDLE_ROOT="/p/pdsd/scratch/jenkins/artefacts/ccl-nightly/last/inteloneapi/compiler/latest/linux/"
         echo "WARNING: SYCL_BUNDLE_ROOT is not defined, will be used default: $SYCL_BUNDLE_ROOT"
     fi
     source ${SYCL_BUNDLE_ROOT}/../env/vars.sh intel64
