@@ -67,6 +67,7 @@ size_t pmi_simple::get_local_kvs_id() {
     return 0;
 }
 void pmi_simple::set_local_kvs_id(size_t local_kvs_id) {}
+
 pmi_simple::~pmi_simple() {
     if (!is_finalized)
         pmrt_finalize();

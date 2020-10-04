@@ -77,13 +77,25 @@ void pmi_resizable_simple::pmrt_finalize() {
     is_finalized = true;
     free(val_storage);
 
+    printf("pmi_resizable_simple::pmrt_finalize\n"); fflush(stdout);
+
+    if (getenv("CCL_PMI_FORCE_FINALIZE"))
+    {
+        printf("skip pmi_resizable_simple::pmrt_finalize\n"); fflush(stdout);
+        return;
+    }
+
     char kvs_name[MAX_KVS_NAME_LENGTH];
     char kvs_key[MAX_KVS_KEY_LENGTH];
     char kvs_val[MAX_KVS_VAL_LENGTH];
 
+    printf("pmi_resizable_simple::pmrt_finalize: before loop\n"); fflush(stdout);
+
     while (cut_head(kvs_name, kvs_key, kvs_val, ST_CLIENT)) {
         k->kvs_remove_name_key(kvs_name, kvs_key);
     }
+
+    printf("pmi_resizable_simple::pmrt_finalize: after loop\n"); fflush(stdout);
 }
 
 void pmi_resizable_simple::pmrt_barrier() {
