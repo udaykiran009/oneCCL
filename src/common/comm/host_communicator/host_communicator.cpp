@@ -37,9 +37,12 @@ host_communicator::host_communicator(size_t size, size_t rank, shared_ptr_class<
         : comm_attr(ccl::create_comm_split_attr()),
           comm_rank(rank),
           comm_size(size) {
+
     if (rank > size || size <= 0) {
         throw ccl::exception("Incorrect rank or size value when creating a host communicator");
     }
+
+    LOG_DEBUG("host_communicator ctor");
 
     ccl::global_data& data = ccl::global_data::get();
     std::shared_ptr<ikvs_wrapper> kvs_tmp = std::shared_ptr<ikvs_wrapper>(new users_kvs(kvs));

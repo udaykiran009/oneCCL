@@ -214,6 +214,7 @@ struct comm_impl_dispatch_selector<cl_backend_type::dpcpp_sycl> :
 
         auto it = local_rank_device_map.begin();
         const cl::sycl::device& dev = it->second;
+
         if (dev.is_host())
         {
             it = std::find_if_not(local_rank_device_map.begin(), local_rank_device_map.end(),
@@ -252,6 +253,7 @@ struct comm_impl_dispatch_selector<cl_backend_type::dpcpp_sycl> :
             throw ccl::invalid_argument("API", "create_communicators", "mixed collection of `cl::sycl::device` are not supported");
         }
 
+
         if (local_rank_device_map.size() != 1)
         {
             throw ccl::unsupported("API", "create_communicators", "`local_rank_device_map` size: " +
@@ -271,9 +273,13 @@ struct comm_impl_dispatch_selector<cl_backend_type::dpcpp_sycl> :
         //     return ret;
         // }
 
-        LOG_DEBUG("Create single device communicator from SYCL device (sycl and !mgpu)");
+        /* reset iterator after std::find_if_not */
+        it = local_rank_device_map.begin();
         size_t rank = it->first;
         auto& device = it->second;
+
+        LOG_DEBUG("Create single device communicator from SYCL device (sycl and !mgpu), after find_if rank ", rank);
+
         std::shared_ptr<ikvs_wrapper> kvs_wrapper(new users_kvs(kvs));
         std::shared_ptr<atl_wrapper> atl =
         std::shared_ptr<atl_wrapper>(new atl_wrapper(cluster_devices_size, { rank }, kvs_wrapper));

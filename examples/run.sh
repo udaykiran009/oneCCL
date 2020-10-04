@@ -229,7 +229,7 @@ run()
     n=2
     dtype_list="char,int,float"
     reduction_list="sum,max"
-    ccl_base_env="FI_PROVIDER=tcp CCL_YIELD=sleep"
+    ccl_base_env="FI_PROVIDER=tcp CCL_YIELD=sleep CCL_WORKER_OFFLOAD=0"
 
     if [[ ${MODE} = "cpu" ]]
     then
