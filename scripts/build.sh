@@ -98,7 +98,7 @@ set_default_values()
     else
         BUILD_TYPE="Release"
     fi
-    ENABLE_VERBOSE="no"
+    ENABLE_VERBOSE="yes"
     ENABLE_SILENT_INSTALLATION="no"
     ENABLE_BUILD_CPU="no"
     ENABLE_BUILD_GPU="no"
@@ -529,7 +529,7 @@ prepare_staging()
 
                                         if [ ! -f ${DROP_SRC_FILE} ]
                                         then
-                                            echo " NOK" >> ${PACKAGE_LOG}
+                                            echo " NOK: ${DROP_SRC_FILE}" >> ${PACKAGE_LOG}
                                             RES=1
                                             continue
                                         fi

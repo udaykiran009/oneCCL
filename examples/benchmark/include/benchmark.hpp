@@ -448,8 +448,7 @@ int parse_user_options(int& argc,
     }
 
     if (errors > 0) {
-        PRINT("failed to parse user options, errors %d", errors);
-        print_help_usage(argv[0]);
+        PRINT("found %d errors while parsing user options", errors);
         return -1;
     }
 

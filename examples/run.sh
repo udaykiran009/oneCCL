@@ -234,11 +234,11 @@ run()
     if [[ ${MODE} = "cpu" ]]
     then
         dir_list="cpu common benchmark"
-        backend_list="cpu"
+        backend_list="host"
         selectors_list="cpu host default"
     else
         dir_list="cpu common sycl benchmark"
-        backend_list="cpu sycl"
+        backend_list="host sycl"
         selectors_list="cpu host gpu default"
     fi
 
