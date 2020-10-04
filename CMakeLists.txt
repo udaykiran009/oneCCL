@@ -263,5 +263,5 @@ if(MULTI_GPU_SUPPORT)
     add_subdirectory(examples/level_zero)
 endif()
 
-add_subdirectory(tests/functional)
-add_subdirectory(tests/unit)
+#add_subdirectory(tests/functional)
+#add_subdirectory(tests/unit)

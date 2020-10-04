@@ -1,13 +1,18 @@
-
 #include "sycl_base.hpp"
 
-using native_data_t = int32_t;
+using native_dtype = int32_t;
+using namespace std;
+using namespace sycl;
 
 struct custom_data_type {
-    native_data_t arr[sizeof(uint32_t)];
+    native_dtype arr[sizeof(native_dtype)];
 } __attribute__((packed));
 
-int main(int argc, char **argv) {
+int main(int argc, char *argv[]) {
+
+    const size_t count = 10 * 1024 * 1024;
+
+    int i = 0;
     int size = 0;
     int rank = 0;
 
@@ -17,25 +22,25 @@ int main(int argc, char **argv) {
     MPI_Comm_size(MPI_COMM_WORLD, &size);
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
 
-    cl::sycl::queue q;
-    if (create_sycl_queue(argc, argv, q) != 0) {
+    queue q;
+    if (!create_sycl_queue(argc, argv, q)) {
         MPI_Finalize();
         return -1;
     }
 
     buf_allocator<int> allocator(q);
 
-    cl::sycl::usm::alloc usm_alloc_type = cl::sycl::usm::alloc::shared;
+    auto usm_alloc_type = usm::alloc::shared;
     if (argc > 2) {
         usm_alloc_type = usm_alloc_type_from_string(argv[2]);
     }
 
-    int* sendbuf = allocator.allocate(COUNT, usm_alloc_type);
-    int* recvbuf = allocator.allocate(COUNT * size, usm_alloc_type);
+    auto send_buf = allocator.allocate(count, usm_alloc_type);
+    auto recv_buf = allocator.allocate(count * size, usm_alloc_type);
 
-    constexpr size_t actual_data_count = COUNT * sizeof(custom_data_type) / sizeof(native_data_t);
-    cl::sycl::buffer<native_data_t, 1> expected_buf(actual_data_count * size);
-    cl::sycl::buffer<native_data_t, 1> out_recv_buf(actual_data_count * size);
+    constexpr size_t send_count = count * sizeof(custom_data_type) / sizeof(native_dtype);
+    buffer<int> expected_buf(send_count * size);
+    buffer<int> check_buf(send_count * size);
 
     /* create kvs */
     ccl::shared_ptr_class<ccl::kvs> kvs;
@@ -53,74 +58,70 @@ int main(int argc, char **argv) {
     /* create communicator */
     auto dev = ccl::create_device(q.get_device());
     auto ctx = ccl::create_context(q.get_context());
-    auto comm = ccl::create_communicator( size, rank, dev, ctx, kvs);
+    auto comm = ccl::create_communicator(size, rank, dev, ctx, kvs);
 
     /* create stream */
     auto stream = ccl::create_stream(q);
 
-    /* create event */
-    cl::sycl::event e;
-    std::vector<ccl::event> events_list;
-    // events_list.push_back(ccl::create_event(e));
+    vector<size_t> recv_counts(size, send_count);
 
-    std::vector<size_t> recv_counts(size, actual_data_count);
-
-    /* open sendbuf and modify it on the target device side */
-    e = q.submit([&](handler &cgh) {
-        auto expected_acc_buf_dev = expected_buf.get_access<mode::write>(cgh);
-        cgh.parallel_for<class allgatherv_test_sbuf_modify>(
-            range<1>{ actual_data_count }, [=](item<1> id) {
-                size_t index = id[0];
-                static_cast<native_data_t *>(sendbuf)[index] = rank + 1;
-                static_cast<native_data_t *>(recvbuf)[index] = -1;
+    /* open send_buf and modify it on the device side */
+    auto e = q.submit([&](auto &h) {
+        accessor expected_buf_acc(expected_buf, h, write_only);
+        h.parallel_for(send_count, [=](auto id) {
+                static_cast<native_dtype *>(send_buf)[id] = rank + 1;
+                static_cast<native_dtype *>(recv_buf)[id] = -1;
                 for (int i = 0; i < size; i++) {
-                    expected_acc_buf_dev[i * actual_data_count + index] = i + 1;
+                    expected_buf_acc[i * send_count + id] = i + 1;
                 }
             });
     });
 
-    handle_exception(q);
+    /* create dependency vector */
+    vector<ccl::event> events;
+    events.push_back(ccl::create_event(e));
 
-    /* invoke allagtherv */
+    if (!handle_exception(q))
+        return -1;
+
+    /* invoke allgatherv */
     auto attr = ccl::create_operation_attr<ccl::allgatherv_attr>();
-    ccl::allgatherv(sendbuf,
-                    actual_data_count,
-                    recvbuf,
+    ccl::allgatherv(send_buf,
+                    send_count,
+                    recv_buf,
                     recv_counts,
                     ccl::datatype::int32,
                     comm,
                     stream,
                     attr,
-                    events_list)
+                    events)
         .wait();
 
-    /* open recvbuf and check its correctness on the target device side */
-    q.submit([&](handler &cgh) {
-        auto expected_acc_buf_dev = expected_buf.get_access<mode::read>(cgh);
-        auto out_recv_buf_dev = out_recv_buf.get_access<mode::write>(cgh);
-        cgh.parallel_for<class allgatherv_test_rbuf_check>(
-            range<1>{ size * actual_data_count }, [=](item<1> id) {
-                size_t index = id[0];
-                if (static_cast<native_data_t *>(recvbuf)[index] != expected_acc_buf_dev[index]) {
-                    out_recv_buf_dev[index] = -1;
+    /* open recv_buf and check its correctness on the device side */
+    q.submit([&](auto &h) {
+        accessor expected_buf_acc(expected_buf, h, read_only);
+        accessor check_buf_acc(check_buf, h, write_only);
+        h.parallel_for(size * send_count, [=](auto id) {
+                if (static_cast<native_dtype *>(recv_buf)[id] != expected_buf_acc[id]) {
+                    check_buf_acc[id] = -1;
                 }
             });
     });
 
-    handle_exception(q);
+    if (!handle_exception(q))
+        return -1;
 
-    /* print out the result of the test on the CPU side */
+    /* print out the result of the test on the host side */
     if (rank == COLL_ROOT) {
-        auto control_buf_accessed = out_recv_buf.get_access<mode::read>();
-        int i = 0;
-        for (i = 0; i < size * actual_data_count; i++) {
-            if (control_buf_accessed[i] == -1) {
+        host_accessor check_buf_acc(check_buf, read_only);
+        for (i = 0; i < size * send_count; i++) {
+            if (check_buf_acc[i] == -1) {
                 cout << "FAILED";
                 break;
             }
         }
-        if (i == size * actual_data_count) {
-            cout << "PASSED" << std::endl;
+        if (i == size * send_count) {
+            cout << "PASSED\n";
         }
     }
 

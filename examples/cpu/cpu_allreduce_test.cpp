@@ -3,16 +3,16 @@
 
 #include "oneapi/ccl.hpp"
 
-#define COUNT 128
-
 using namespace std;
 
 int main() {
 
-    int i = 0;
+    const size_t count = 4096;
 
-    int send_buf[COUNT];
-    int recv_buf[COUNT];
+    size_t i = 0;
+
+    int send_buf[count];
+    int recv_buf[count];
 
     ccl::init();
 
@@ -39,24 +39,24 @@ int main() {
     size = comm.size();
 
     /* initialize send_buf */
-    for (i = 0; i < COUNT; i++) {
+    for (i = 0; i < count; i++) {
         send_buf[i] = rank;
     }
 
     /* modify send_buf */
-    for (i = 0; i < COUNT; i++) {
+    for (i = 0; i < count; i++) {
         send_buf[i] += 1;
     }
 
-    /* invoke ccl_allreduce */
+    /* invoke allreduce */
     ccl::allreduce(send_buf,
                    recv_buf,
-                   COUNT,
+                   count,
                    ccl::reduction::sum,
                    comm).wait();
 
     /* check correctness of recv_buf */
-    for (i = 0; i < COUNT; i++) {
+    for (i = 0; i < count; i++) {
         if (recv_buf[i] != size * (size + 1) / 2) {
             recv_buf[i] = -1;
         }
@@ -64,14 +64,14 @@ int main() {
 
     /* print out the result of the test */
     if (rank == 0) {
-        for (i = 0; i < COUNT; i++) {
+        for (i = 0; i < count; i++) {
             if (recv_buf[i] == -1) {
-                cout << "FAILED" << endl;
+                cout << "FAILED\n";
                 break;
             }
         }
-        if (i == COUNT) {
-            cout << "PASSED" << endl;
+        if (i == count) {
+            cout << "PASSED\n";
         }
     }
 

@@ -1,7 +1,12 @@
-
 #include "sycl_base.hpp"
 
-int main(int argc, char **argv) {
+using namespace std;
+using namespace sycl;
+
+int main(int argc, char *argv[]) {
+
+    const size_t count = 10 * 1024 * 1024;
+
     int i = 0;
     int size = 0;
     int rank = 0;
@@ -12,24 +17,24 @@ int main(int argc, char **argv) {
     MPI_Comm_size(MPI_COMM_WORLD, &size);
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
 
-    cl::sycl::queue q;
-    if (create_sycl_queue(argc, argv, q) != 0) {
+    queue q;
+    if (!create_sycl_queue(argc, argv, q)) {
         MPI_Finalize();
         return -1;
     }
 
     buf_allocator<int> allocator(q);
 
-    cl::sycl::usm::alloc usm_alloc_type = cl::sycl::usm::alloc::shared;
+    auto usm_alloc_type = usm::alloc::shared;
     if (argc > 2) {
         usm_alloc_type = usm_alloc_type_from_string(argv[2]);
     }
 
-    int *sendbuf = allocator.allocate(COUNT * size, usm_alloc_type);
-    int *recvbuf = allocator.allocate(COUNT * size, usm_alloc_type);
+    auto send_buf = allocator.allocate(count * size, usm_alloc_type);
+    auto recv_buf = allocator.allocate(count * size, usm_alloc_type);
 
-    std::vector<size_t> send_counts(size, COUNT);
-    std::vector<size_t> recv_counts(size, COUNT);
+    vector<size_t> send_counts(size, count);
+    vector<size_t> recv_counts(size, count);
 
     /* create kvs */
     ccl::shared_ptr_class<ccl::kvs> kvs;
@@ -52,45 +57,45 @@ int main(int argc, char **argv) {
     /* create stream */
     auto stream = ccl::create_stream(q);
 
-    q.submit([&](handler &cgh) {
-        cgh.parallel_for<class alltoall_test_sbuf_modify>(range<1>{ COUNT * size },
-                                                          [=](item<1> id) {
-                                                              size_t index = id[0];
-                                                              sendbuf[index] = index / COUNT + 1;
-                                                              recvbuf[index] = -1;
+    q.submit([&](auto &h) {
+        h.parallel_for(count * size,
+                                                          [=](auto id) {
+                                                              send_buf[id] = id / count + 1;
+                                                              recv_buf[id] = -1;
                                                           });
     });
 
-    handle_exception(q);
+    if (!handle_exception(q))
+        return -1;
 
     /* invoke alltoall */
-    ccl::alltoallv(sendbuf, send_counts, recvbuf, recv_counts, comm, stream).wait();
+    ccl::alltoallv(send_buf, send_counts, recv_buf, recv_counts, comm, stream).wait();
 
-    /* open recvbuf and check its correctness on the target device side */
-    cl::sycl::buffer<int, 1> out_recv_buf(COUNT * size);
-    q.submit([&](handler &cgh) {
-        auto out_recv_buf_dev = out_recv_buf.get_access<mode::write>(cgh);
-        cgh.parallel_for<class alltoall_test_rbuf_check>(range<1>{ COUNT * size }, [=](item<1> id) {
-            size_t index = id[0];
-            if (recvbuf[index] != rank + 1) {
-                out_recv_buf_dev[id] = -1;
+    /* open recv_buf and check its correctness on the device side */
+    buffer<int> check_buf(count * size);
+    q.submit([&](auto &h) {
+        accessor check_buf_acc(check_buf, h, write_only);
+        h.parallel_for(count * size, [=](auto id) {
+            if (recv_buf[id] != rank + 1) {
+                check_buf_acc[id] = -1;
             }
         });
     });
 
-    handle_exception(q);
+    if (!handle_exception(q))
+        return -1;
 
-    /* print out the result of the test on the CPU side */
+    /* print out the result of the test on the host side */
     if (rank == COLL_ROOT) {
-        auto host_acc_rbuf_new = out_recv_buf.get_access<mode::read>();
-        for (i = 0; i < COUNT * size; i++) {
-            if (host_acc_rbuf_new[i] == -1) {
-                cout << "FAILED" << std::endl;
+        host_accessor recv_buf_acc(check_buf, read_only);
+        for (i = 0; i < count * size; i++) {
+            if (recv_buf_acc[i] == -1) {
+                cout << "FAILED\n";
                 break;
             }
         }
-        if (i == COUNT * size) {
-            cout << "PASSED" << std::endl;
+        if (i == count * size) {
+            cout << "PASSED\n";
         }
     }
 

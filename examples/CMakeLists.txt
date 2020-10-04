@@ -76,6 +76,7 @@ if (CCL_BF16_COMPILER)
     endif()
 endif()
 
+include_directories(include)
 include_directories(${I_MPI_ROOT}/include/)
 include_directories(${CCL_ROOT}/include/${CCL_CONFIGURATION})
 link_directories(${I_MPI_ROOT}/lib/release_mt)

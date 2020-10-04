@@ -4,14 +4,16 @@
 
 #include "oneapi/ccl.hpp"
 
-#define COUNT 128
+using namespace std;
 
 int main() {
 
-    int i = 0;
-    std::vector<int> send_buf;
-    std::vector<int> recv_buf;
-    std::vector<size_t> recv_counts;
+    const size_t count = 128;
+
+    size_t i = 0;
+    vector<int> send_buf;
+    vector<int> recv_buf;
+    vector<size_t> recv_counts;
 
     ccl::init();
 
@@ -37,24 +39,24 @@ int main() {
     rank = comm.rank();
     size = comm.size();
 
-    send_buf.resize(COUNT, rank);
-    recv_buf.resize(size * COUNT);
-    recv_counts.resize(size, COUNT);
+    send_buf.resize(count, rank);
+    recv_buf.resize(size * count);
+    recv_counts.resize(size, count);
 
     /* modify send_buf */
-    for (i = 0; i < COUNT; i++) {
+    for (i = 0; i < count; i++) {
         send_buf[i] += 1;
     }
 
     /* invoke allgatherv */
     ccl::allgatherv(send_buf.data(),
-                    COUNT,
+                    count,
                     recv_buf.data(),
                     recv_counts,
                     comm).wait();
 
     /* check correctness of recv_buf */
-    for (i = 0; i < COUNT; i++) {
+    for (i = 0; i < count; i++) {
         if (recv_buf[i] != rank + 1) {
             recv_buf[i] = -1;
         }
@@ -62,14 +64,14 @@ int main() {
 
     /* print out the result of the test */
     if (rank == 0) {
-        for (i = 0; i < COUNT; i++) {
+        for (i = 0; i < count; i++) {
             if (recv_buf[i] == -1) {
-                std::cout << "FAILED" << std::endl;
+                cout << "FAILED\n";
                 break;
             }
         }
-        if (i == COUNT) {
-            std::cout << "PASSED" << std::endl;
+        if (i == count) {
+            cout << "PASSED\n";
         }
     }
 

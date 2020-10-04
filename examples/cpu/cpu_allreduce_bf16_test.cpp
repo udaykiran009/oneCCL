@@ -21,26 +21,30 @@
             double max_error = g * expected; \
             if (fabs(max_error) < fabs(expected - recv_buf[i])) { \
                 printf( \
-                    "[%zu] got recvBuf[%zu] = %0.7f, but expected = %0.7f, max_error = %0.16f\n", \
+                    "[%zu] got recv_buf[%zu] = %0.7f, but expected = %0.7f, max_error = %0.16f\n", \
                     comm.rank(), \
                     i, \
                     recv_buf[i], \
                     (float)expected, \
                     (double)max_error); \
-                exit(1); \
+                return -1; \
             } \
         } \
     }
 
+using namespace std;
+
 int main() {
+
+    const size_t count = 4096;
 
     size_t idx = 0;
 
-    float send_buf[COUNT];
-    float recv_buf[COUNT];
+    float send_buf[count];
+    float recv_buf[count];
 
-    short send_buf_bf16[COUNT];
-    short recv_buf_bf16[COUNT];
+    short send_buf_bf16[count];
+    short recv_buf_bf16[count];
 
     ccl::init();
 
@@ -63,28 +67,28 @@ int main() {
 
     auto comm = ccl::create_communicator(size, rank, kvs);
 
-    for (idx = 0; idx < COUNT; idx++) {
+    for (idx = 0; idx < count; idx++) {
         send_buf[idx] = rank + idx;
         recv_buf[idx] = 0.0;
     }
 
     if (is_bf16_enabled() == 0) {
-        std::cout << "WARNING: BF16 is disabled, skip test" << std::endl;
+        cout << "WARNING: BF16 is disabled, skip test\n";
     }
     else {
-        std::cout << "BF16 is enabled" << std::endl;
-        convert_fp32_to_bf16_arrays(send_buf, send_buf_bf16, COUNT);
+        cout << "BF16 is enabled\n";
+        convert_fp32_to_bf16_arrays(send_buf, send_buf_bf16, count);
         ccl::allreduce(send_buf_bf16,
                        recv_buf_bf16,
-                       COUNT,
+                       count,
                        ccl::datatype::bfloat16,
                        ccl::reduction::sum,
                        comm).wait();
-        convert_bf16_to_fp32_arrays(recv_buf_bf16, recv_buf, COUNT);
+        convert_bf16_to_fp32_arrays(recv_buf_bf16, recv_buf, count);
         CHECK_ERROR(send_buf, recv_buf, comm);
 
         if (rank == 0)
-            std::cout << "PASSED" << std::endl;
+            cout << "PASSED\n";
     }
 
     MPI_Finalize();

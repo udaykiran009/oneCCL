@@ -137,17 +137,15 @@ default structure and identifies the file types stored in each sub-directory:
 				|   `-- sycl                                                                                           
 				|       |-- CMakeLists.txt                                                                             
 				|       |-- sycl_allgatherv_test.cpp                                                               
-				|       |-- sycl_allgatherv_test.cpp                                                                   
+				|       |-- sycl_allgatherv_usm_test.cpp                                                                   
 				|       |-- sycl_allreduce_test.cpp                                                                
-				|       |-- sycl_allreduce_test.cpp                                                                    
 				|       |-- sycl_alltoall_test.cpp                                                                 
-				|       |-- sycl_alltoall_test.cpp                                                                     
+				|       |-- sycl_alltoall_usm_test.cpp                                                                     
 				|       |-- sycl_alltoallv_test.cpp                                                                
-				|       |-- sycl_alltoallv_test.cpp                                                                    
-				|       |-- sycl_bcast_test.cpp                                                                    
-				|       |-- sycl_bcast_test.cpp                                                                        
+				|       |-- sycl_alltoallv_usm_test.cpp                                                                    
+				|       |-- sycl_broadcast_test.cpp                                                                    
+				|       |-- sycl_broadcast_usm_test.cpp                                                                        
 				|       |-- sycl_reduce_test.cpp                                                                   
-				|       `-- sycl_reduce_test.cpp                                                                       
 				|-- include                                                                                            
 				|   |-- cpu_gpu_dpcpp                                                                                  
 				|   |   |-- ccl_config.h                                                                               

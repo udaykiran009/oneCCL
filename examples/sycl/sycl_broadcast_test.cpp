@@ -8,9 +8,11 @@ int main(int argc, char *argv[]) {
     const size_t count = 10 * 1024 * 1024;
 
     int i = 0;
-    int j = 0;
     int size = 0;
     int rank = 0;
+
+    queue q;
+    buffer<int> buf(count);
 
     ccl::init();
 
@@ -18,7 +20,6 @@ int main(int argc, char *argv[]) {
     MPI_Comm_size(MPI_COMM_WORLD, &size);
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
 
-    queue q;
     if (!create_sycl_queue(argc, argv, q)) {
         MPI_Finalize();
         return -1;
@@ -45,42 +46,36 @@ int main(int argc, char *argv[]) {
     /* create stream */
     auto stream = ccl::create_stream(q);
 
-    buffer<int> send_buf(count * size);
-    buffer<int> recv_buf(count * size);
-
     {
-        /* open buffers and initialize them on the host side */
-        host_accessor send_buf_acc(send_buf, write_only);
-        host_accessor recv_buf_acc(recv_buf, write_only);
-
-        for (i = 0; i < size; i++) {
-            for (j = 0; j < count; j++) {
-                send_buf_acc[(i * count) + j] = i;
-                recv_buf_acc[(i * count) + j] = -1;
-            }
+        /* open buf and initialize it on the host side */
+        host_accessor send_buf_acc(buf, write_only);
+        for (i = 0; i < count; i++) {
+            if (rank == COLL_ROOT)
+                send_buf_acc[i] = rank;
+            else
+                send_buf_acc[i] = 0;
         }
     }
 
-    /* open send_buf and modify it on the device side */
+    /* open buf and modify it on the device side */
     q.submit([&](auto &h) {
-        accessor send_buf_acc(send_buf, h, write_only);
-        h.parallel_for(count * size,
-                                                          [=](auto id) {
-                                                              send_buf_acc[id] += 1;
-                                                          });
+        accessor send_buf_acc(buf, h, write_only);
+        h.parallel_for(count, [=](auto id) {
+            send_buf_acc[id] += 1;
+        });
     });
 
     if (!handle_exception(q))
         return -1;
 
-    /* invoke alltoall */
-    ccl::alltoall(send_buf, recv_buf, count, comm, stream).wait();
+    /* invoke broadcast */
+    ccl::broadcast(buf, count, COLL_ROOT, comm, stream).wait();
 
-    /* open recv_buf and check its correctness on the device side */
+    /* open buf and check its correctness on the device side */
     q.submit([&](auto &h) {
-        accessor recv_buf_acc(recv_buf, h, write_only);
-        h.parallel_for(count * size, [=](auto id) {
-            if (recv_buf_acc[id] != rank + 1) {
+        accessor recv_buf_acc(buf, h, write_only);
+        h.parallel_for(count, [=](auto id) {
+            if (recv_buf_acc[id] != COLL_ROOT + 1) {
                 recv_buf_acc[id] = -1;
             }
         });
@@ -91,14 +86,14 @@ int main(int argc, char *argv[]) {
 
     /* print out the result of the test on the host side */
     if (rank == COLL_ROOT) {
-        host_accessor recv_buf_acc(recv_buf, read_only);
-        for (i = 0; i < count * size; i++) {
+        host_accessor recv_buf_acc(buf, read_only);
+        for (i = 0; i < count; i++) {
             if (recv_buf_acc[i] == -1) {
                 cout << "FAILED\n";
                 break;
             }
         }
-        if (i == count * size) {
+        if (i == count) {
             cout << "PASSED\n";
         }
     }
