@@ -35,10 +35,11 @@ int main(int argc, char *argv[]) {
         usm_alloc_type = usm_alloc_type_from_string(argv[2]);
     }
 
-    auto send_buf = allocator.allocate(count, usm_alloc_type);
-    auto recv_buf = allocator.allocate(count * size, usm_alloc_type);
-
     constexpr size_t send_count = count * sizeof(custom_data_type) / sizeof(native_dtype);
+
+    auto send_buf = allocator.allocate(send_count, usm_alloc_type);
+    auto recv_buf = allocator.allocate(send_count * size, usm_alloc_type);
+
     buffer<int> expected_buf(send_count * size);
     buffer<int> check_buf(send_count * size);
 
@@ -70,8 +71,8 @@ int main(int argc, char *argv[]) {
         accessor expected_buf_acc(expected_buf, h, write_only);
         h.parallel_for(send_count, [=](auto id) {
                 static_cast<native_dtype *>(send_buf)[id] = rank + 1;
-                static_cast<native_dtype *>(recv_buf)[id] = -1;
                 for (int i = 0; i < size; i++) {
+                    static_cast<native_dtype *>(recv_buf)[id] = -1;
                     expected_buf_acc[i * send_count + id] = i + 1;
                 }
             });
@@ -79,7 +80,7 @@ int main(int argc, char *argv[]) {
 
     /* create dependency vector */
     vector<ccl::event> events;
-    events.push_back(ccl::create_event(e));
+    //events.push_back(ccl::create_event(e));
 
     if (!handle_exception(q))
         return -1;

@@ -81,7 +81,7 @@ public:
     std::shared_ptr<ccl_comm> comm;
     std::unique_ptr<ccl_datatype_storage> dtypes;
     std::unique_ptr<ccl_executor> executor;
-    std::unique_ptr<ccl_coll_attr_t> default_coll_attr;
+    std::unique_ptr<ccl_coll_attr_t> default_coll_attr; // TODO: use ccl_coll_attr
     std::unique_ptr<ccl_sched_cache> sched_cache;
     std::unique_ptr<ccl_parallelizer> parallelizer;
     std::unique_ptr<ccl_fusion_manager> fusion_manager;

@@ -94,7 +94,7 @@ inline bool create_sycl_queue(int argc,
             return false;
         }
         q = queue(*selector, exception_handler);
-        cout << "Provided device type: " << argv[1] << "\nRunning on "
+        cout << "Requested device type: " << argv[1] << "\nRunning on "
                   << q.get_device().get_info<info::device::name>() << "\n";
     }
     else {

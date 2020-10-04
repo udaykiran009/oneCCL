@@ -259,20 +259,19 @@ struct comm_impl_dispatch_selector<cl_backend_type::dpcpp_sycl> :
                                    backend_traits::name());
         }
 
+        // if (dev.is_host() || dev.is_cpu())
+        // {
+        //     LOG_DEBUG("Create host communicator");
 
-        if (dev.is_host())
-        {
-            LOG_DEBUG("Create host communicator");
+        //     ccl::communicator_interface_ptr impl =
+        //         ccl::communicator_interface::create_communicator_impl(cluster_devices_size, local_rank_device_map.begin()->first, kvs);
 
-            ccl::communicator_interface_ptr impl =
-                ccl::communicator_interface::create_communicator_impl(cluster_devices_size, local_rank_device_map.begin()->first, kvs);
+        //     ccl::vector_class<ccl::communicator> ret;
+        //     ret.push_back(ccl::communicator(std::move(impl)));
+        //     return ret;
+        // }
 
-            ccl::vector_class<ccl::communicator> ret;
-            ret.push_back(ccl::communicator(std::move(impl)));
-            return ret;
-        }
-
-        LOG_DEBUG("Create single device communicator from SYCL device");
+        LOG_DEBUG("Create single device communicator from SYCL device (sycl and !mgpu)");
         size_t rank = it->first;
         auto& device = it->second;
         std::shared_ptr<ikvs_wrapper> kvs_wrapper(new users_kvs(kvs));
@@ -439,17 +438,26 @@ struct comm_impl_dispatch_selector<cl_backend_type::dpcpp_sycl_l0> :
         if (local_rank_device_map.size() == 1)
         {
             auto it = local_rank_device_map.begin();
-            const cl::sycl::device& dev = it->second;
-            if (dev.is_host())
-            {
-                LOG_INFO("create host communicator for sycl::device::host");
 
-                ccl::communicator_interface_ptr impl =
-                    ccl::communicator_interface::create_communicator_impl(cluster_devices_size, local_rank_device_map.begin()->first, kvs);
-                ccl::vector_class<ccl::communicator> ret;
-                ret.push_back(ccl::communicator(std::move(impl)) );
-                return ret;
-            }
+            LOG_DEBUG("create single device communicator from SYCL device (sycl and mgpu)");
+
+            size_t rank = it->first;
+            auto& device = it->second;
+            std::shared_ptr<ikvs_wrapper> kvs_wrapper(new users_kvs(kvs));
+            std::shared_ptr<atl_wrapper> atl =
+            std::shared_ptr<atl_wrapper>(new atl_wrapper(cluster_devices_size, { rank }, kvs_wrapper));
+
+            ccl::comm_split_attr attr = create_comm_split_attr(
+            ccl::attr_val<ccl::comm_split_attr_id::group>(ccl::group_split_type::undetermined));
+            ccl::communicator_interface_ptr impl =
+            ccl::communicator_interface::create_communicator_impl(device, rank, cluster_devices_size, attr, atl);
+
+            //TODO use gpu_comm_attr to automatically visit()
+            auto single_dev_comm = std::dynamic_pointer_cast<single_device_communicator>(impl);
+            single_dev_comm->set_context(context);
+            ccl::vector_class<ccl::communicator> ret;
+            ret.push_back(ccl::communicator(std::move(impl)));
+            return ret;
         }
 
         //collect ranks

@@ -42,6 +42,7 @@ host_communicator::coll_request_t host_communicator::allgatherv_impl(
     const ccl::stream::impl_value_t& stream,
     const ccl::allgatherv_attr& attr,
     const ccl::vector_class<ccl::event>& deps) {
+  
     ccl_coll_attr internal_attr(attr);
     internal_attr.vector_buf = 1;
 

@@ -60,16 +60,17 @@ single_device_communicator::coll_request_t single_device_communicator::barrier(
 }
 
 /* allgatherv */
-single_device_communicator::coll_request_t single_device_communicator::allgatherv_impl(
+single_device_communicator::coll_request_t single_device_communicator::allgatherv_base_impl(
     const void* send_buf,
     size_t send_count,
     void* recv_buf,
     const ccl::vector_class<size_t>& recv_counts,
     ccl::datatype dtype,
     const ccl::stream::impl_value_t& stream,
-    const ccl::allgatherv_attr& attr,
+    const ccl_coll_attr& attr,
     const ccl::vector_class<ccl::event>& deps) {
     coll_request_t req;
+
     if (!allgather_usm_visitor_base_t::visit(
             req, dtype, send_buf, send_count, recv_buf, recv_counts, stream, attr, deps)) {
         req = coll_request_t(std::unique_ptr<ccl::request_impl>(
@@ -84,6 +85,21 @@ single_device_communicator::coll_request_t single_device_communicator::allgather
     }
     return req;
 }
+
+single_device_communicator::coll_request_t single_device_communicator::allgatherv_impl(
+    const void* send_buf,
+    size_t send_count,
+    void* recv_buf,
+    const ccl::vector_class<size_t>& recv_counts,
+    ccl::datatype dtype,
+    const ccl::stream::impl_value_t& stream,
+    const ccl::allgatherv_attr& attr,
+    const ccl::vector_class<ccl::event>& deps) {
+    
+    ccl_coll_attr internal_attr(attr);
+    return allgatherv_base_impl(send_buf, send_count, recv_buf, recv_counts, dtype, stream, internal_attr, deps);
+}
+
 single_device_communicator::coll_request_t single_device_communicator::allgatherv_impl(
     const void* send_buf,
     size_t send_count,
@@ -93,8 +109,10 @@ single_device_communicator::coll_request_t single_device_communicator::allgather
     const ccl::stream::impl_value_t& stream,
     const ccl::allgatherv_attr& attr,
     const ccl::vector_class<ccl::event>& deps) {
-    throw ccl::exception(std::string(__PRETTY_FUNCTION__) + " - is not implemented");
-    return {};
+
+    ccl_coll_attr internal_attr(attr);
+    internal_attr.vector_buf = 1;
+    return allgatherv_base_impl(send_buf, send_count, (void*)(recv_bufs.data()), recv_counts, dtype, stream, internal_attr, deps);
 }
 
 /* allreduce */

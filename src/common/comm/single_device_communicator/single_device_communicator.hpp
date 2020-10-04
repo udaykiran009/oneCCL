@@ -1,5 +1,6 @@
 #pragma once
 #if defined(MULTI_GPU_SUPPORT) || defined(CCL_ENABLE_SYCL)
+
 #include "common/comm/single_device_communicator/single_device_base.hpp"
 #include "common/comm/comm.hpp"
 #include "common/comm/usm_visitor/usm_visitors.hpp"

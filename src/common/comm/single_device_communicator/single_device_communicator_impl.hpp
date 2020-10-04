@@ -11,15 +11,17 @@
 #include "coll/coll_common_attributes.hpp"
 
 /* allgatherv */
+
 template <class buffer_type>
-single_device_communicator::coll_request_t single_device_communicator::allgatherv_impl(
+single_device_communicator::coll_request_t single_device_communicator::allgatherv_base_impl(
     const buffer_type* send_buf,
     size_t send_count,
     buffer_type* recv_buf,
     const ccl::vector_class<size_t>& recv_counts,
     const ccl::stream::impl_value_t& stream,
-    const ccl::allgatherv_attr& attr,
+    const ccl_coll_attr& attr,
     const ccl::vector_class<ccl::event>& deps) {
+
     std::unique_ptr<ccl::chargeable_request> scoped_req;
     using namespace ::native::details;
 
@@ -83,20 +85,35 @@ single_device_communicator::coll_request_t single_device_communicator::allgather
     }
 
     return std::unique_ptr<ccl::request_impl>(scoped_req.release());
-    ;
 }
 
 template <class buffer_type>
 single_device_communicator::coll_request_t single_device_communicator::allgatherv_impl(
     const buffer_type* send_buf,
     size_t send_count,
-    ccl::vector_class<buffer_type*>& recv_buf,
+    buffer_type* recv_buf,
     const ccl::vector_class<size_t>& recv_counts,
     const ccl::stream::impl_value_t& stream,
     const ccl::allgatherv_attr& attr,
     const ccl::vector_class<ccl::event>& deps) {
-    throw ccl::exception(std::string(__PRETTY_FUNCTION__) + " - is not implemented");
-    return {};
+
+    ccl_coll_attr internal_attr(attr);
+    return allgatherv_base_impl(send_buf, send_count, recv_buf, recv_counts, stream, internal_attr, deps);
+}
+
+template <class buffer_type>
+single_device_communicator::coll_request_t single_device_communicator::allgatherv_impl(
+    const buffer_type* send_buf,
+    size_t send_count,
+    ccl::vector_class<buffer_type*>& recv_bufs,
+    const ccl::vector_class<size_t>& recv_counts,
+    const ccl::stream::impl_value_t& stream,
+    const ccl::allgatherv_attr& attr,
+    const ccl::vector_class<ccl::event>& deps) {
+
+    ccl_coll_attr internal_attr(attr);
+    internal_attr.vector_buf = 1;
+    return allgatherv_base_impl(send_buf, send_count, (buffer_type*)(recv_bufs.data()), recv_counts, stream, internal_attr, deps);
 }
 
 template <class buffer_type>

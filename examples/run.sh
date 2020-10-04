@@ -307,7 +307,7 @@ run()
                     do
                         if [ "$selector" == "gpu" ];
                         then
-                            ccl_extra_env="SYCL_DEVICE_ALLOWLIST=\"\" SYCL_BE=PI_LEVEL0 ${ccl_transport_env}"
+                            ccl_extra_env="SYCL_DEVICE_ALLOWLIST=\"\" SYCL_BE=PI_LEVEL_ZERO ${ccl_transport_env}"
                             run_example "${ccl_extra_env}" ${dir_name} ${transport} ${example} ${selector}
                         fi
                         ccl_extra_env="SYCL_BE=PI_OPENCL ${ccl_transport_env}"

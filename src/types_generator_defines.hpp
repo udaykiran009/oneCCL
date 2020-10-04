@@ -1,5 +1,7 @@
 #pragma once
 
+#include "coll/coll_param.hpp"
+
 /**
  * Core types generators
  */
@@ -724,6 +726,14 @@
  * Coll implementations
  */
 #define DEVICE_COMM_IMPL_DECLARATION \
+    ccl::event allgatherv_base_impl(const void* send_buf, \
+                                 size_t send_count, \
+                                 void* recv_buf, \
+                                 const ccl::vector_class<size_t>& recv_counts, \
+                                 ccl::datatype dtype, \
+                                 const ccl::stream::impl_value_t& stream, \
+                                 const ccl_coll_attr& attr, \
+                                 const ccl::vector_class<ccl::event>& deps); \
     ccl::event allgatherv_impl(const void* send_buf, \
                                  size_t send_count, \
                                  void* recv_buf, \
@@ -741,6 +751,14 @@
                                  const ccl::allgatherv_attr& attr, \
                                  const ccl::vector_class<ccl::event>& deps); \
 \
+    template <class buffer_type> \
+    ccl::event allgatherv_base_impl(const buffer_type* send_buf, \
+                                 size_t send_count, \
+                                 buffer_type* recv_buf, \
+                                 const ccl::vector_class<size_t>& recv_counts, \
+                                 const ccl::stream::impl_value_t& stream, \
+                                 const ccl_coll_attr& attr, \
+                                 const ccl::vector_class<ccl::event>& deps); \
     template <class buffer_type> \
     ccl::event allgatherv_impl(const buffer_type* send_buf, \
                                  size_t send_count, \

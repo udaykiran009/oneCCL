@@ -16,7 +16,7 @@ cl::sycl::device get_device(const ccl::communicator& comm) {
         backend = "Level-Zero";
     }
     else if (getenv("SYCL_BE") != nullptr) {
-        if (std::strcmp(getenv("SYCL_BE"), "PI_LEVEL0") == 0) {
+        if (std::strcmp(getenv("SYCL_BE"), "PI_LEVEL_ZERO") == 0) {
             backend = "Level-Zero";
         }
         else if (std::strcmp(getenv("SYCL_BE"), "PI_OPENCL") == 0) {
