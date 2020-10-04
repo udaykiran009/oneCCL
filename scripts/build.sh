@@ -225,7 +225,7 @@ define_gpu_compiler()
 {
     check_clang_path
     C_COMPILER_GPU=${SYCL_BUNDLE_ROOT}/bin/clang
-    CXX_COMPILER_GPU=${SYCL_BUNDLE_ROOT}/bin/clang++
+    CXX_COMPILER_GPU=${SYCL_BUNDLE_ROOT}/bin/dpcpp
 }
 
 build_cpu()
