@@ -108,4 +108,5 @@ private:
     size_t barrier_num = 0;
     std::vector<size_t> requested2global;
     size_t local_id;
+    size_t connection_timeout = 120;
 };

@@ -31,6 +31,11 @@ int pmi_resizable_simple::is_pm_resize_enabled() {
 
 atl_status_t pmi_resizable_simple::pmrt_init(const char* main_addr) {
     (void)main_addr;
+    char* connection_timeout_str = getenv("CCL_KVS_GET_TIMEOUT");
+    if (connection_timeout_str)
+    {
+        connection_timeout = atoi(connection_timeout_str);
+    }
     local_id = 0;
     val_storage = (char*)calloc(1, max_vallen);
     if (!val_storage)
@@ -179,8 +184,18 @@ int pmi_resizable_simple::kvs_set_value(const char* kvs_name, const char* key, c
 
 int pmi_resizable_simple::kvs_get_value(const char* kvs_name, const char* key, char* value) {
     std::string result_kvs_name = std::string(kvs_name) + std::to_string(local_id);
-    while (k->kvs_get_value_by_name_key(result_kvs_name.c_str(), key, value) == 0) {
+    time_t start_time;
+    size_t connection_time = 0;
+    start_time = time(NULL);
+    while (k->kvs_get_value_by_name_key(result_kvs_name.c_str(), key, value) == 0 &&
+        connection_time < connection_timeout) {
+        connection_time = time(NULL) - start_time;
     }
+    if (connection_time >= connection_timeout) {
+        printf("KVS get error: timeout limit (%zu > %zu)\n", connection_time, connection_timeout);
+        exit(1);
+    }
+
     return ATL_STATUS_SUCCESS;
 }
 
