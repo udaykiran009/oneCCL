@@ -192,7 +192,8 @@ int pmi_resizable_simple::kvs_get_value(const char* kvs_name, const char* key, c
         connection_time = time(NULL) - start_time;
     }
     if (connection_time >= connection_timeout) {
-        printf("KVS get error: timeout limit (%zu > %zu)\n", connection_time, connection_timeout);
+        printf("KVS get error: timeout limit (%zu > %zu), prefix: %s, key %s\n",
+            connection_time, connection_timeout, result_kvs_name.c_str(), key);
         exit(1);
     }
 

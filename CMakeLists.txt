@@ -214,14 +214,6 @@ if (COMPUTE_RUNTIME)
     endif()
 endif(COMPUTE_RUNTIME)
 
-if (MULTI_GPU_SUPPORT)
-    option(CCL_GPU_DEVICES_AFFINITY_ENABLE "Enable L0" ON)
-    if(CCL_GPU_DEVICES_AFFINITY_ENABLE)
-        set(CCL_GPU_DEVICES_AFFINITY_MASK_SIZE 4)
-        message ("Set L0 device mask affinity size: ${CCL_GPU_DEVICES_AFFINITY_MASK_SIZE}")
-    endif()
-endif(MULTI_GPU_SUPPORT)
-
 #generate & install vars.sh
 configure_file(cmake/vars.sh.in ${CMAKE_CURRENT_BINARY_DIR}/vars.sh @ONLY)
 configure_file(cmake/setvars.sh.in ${CMAKE_CURRENT_BINARY_DIR}/setvars.sh @ONLY)

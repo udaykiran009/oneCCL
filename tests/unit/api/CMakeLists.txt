@@ -18,14 +18,6 @@ if (COMPUTE_RUNTIME)
     add_definitions(${DEFINITIONS})
 endif()
 
-if(MULTI_GPU_SUPPORT)
-    option(CCL_GPU_DEVICES_AFFINITY_ENABLE "Enable L0" ON)
-    if(CCL_GPU_DEVICES_AFFINITY_ENABLE)
-        set(CCL_GPU_DEVICES_AFFINITY_MASK_SIZE 4)
-        message ("Set L0 device mask affinity size: ${CCL_GPU_DEVICES_AFFINITY_MASK_SIZE}")
-    endif()
-endif()
-
 if (MULTI_GPU_SUPPORT)
     list( APPEND native_api_dependencies_sources
              "${UPSTREAM_SOURCE_DIR}/src/native_device_api/l0/base.cpp"
