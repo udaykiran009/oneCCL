@@ -6,6 +6,7 @@ using namespace sycl;
 int main(int argc, char *argv[]) {
 
     const size_t count = 10 * 1024 * 1024;
+    const size_t root_rank = 0;
 
     int i = 0;
     int size = 0;
@@ -70,13 +71,13 @@ int main(int argc, char *argv[]) {
         return -1;
 
     /* invoke reduce */
-    ccl::reduce(send_buf, recv_buf, count, ccl::reduction::sum, COLL_ROOT, comm, stream).wait();
+    ccl::reduce(send_buf, recv_buf, count, ccl::reduction::sum, root_rank, comm, stream).wait();
 
     /* open recv_buf and check its correctness on the device side */
     q.submit([&](auto &h) {
         accessor recv_buf_acc(recv_buf, h, write_only);
         h.parallel_for(count, [=](auto id) {
-            if (rank == COLL_ROOT) {
+            if (rank == root_rank) {
                 if (recv_buf_acc[id] != size * (size + 1) / 2) {
                     recv_buf_acc[id] = -1;
                 }
@@ -93,16 +94,18 @@ int main(int argc, char *argv[]) {
         return -1;
 
     /* print out the result of the test on the host side */
-    host_accessor recv_buf_acc(recv_buf, read_only);
-    if (rank == COLL_ROOT) {
-        for (i = 0; i < count; i++) {
-            if (recv_buf_acc[i] == -1) {
-                cout << "FAILED for rank: " << rank << "\n";
-                break;
+    {
+        if (rank == root_rank) {
+            host_accessor recv_buf_acc(recv_buf, read_only);
+            for (i = 0; i < count; i++) {
+                if (recv_buf_acc[i] == -1) {
+                    cout << "FAILED for rank: " << rank << "\n";
+                    break;
+                }
             }
-        }
-        if (i == count) {
-            cout << "PASSED\n";
+            if (i == count) {
+                cout << "PASSED\n";
+            }
         }
     }
 

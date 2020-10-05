@@ -26,7 +26,7 @@ int main(int argc, char *argv[]) {
         return -1;
     }
 
-    /* create CCL internal KVS */
+    /* create kvs */
     ccl::shared_ptr_class<ccl::kvs> kvs;
     ccl::kvs::address_type main_addr;
     if (rank == 0) {
@@ -85,7 +85,7 @@ int main(int argc, char *argv[]) {
         return -1;
 
     /* print out the result of the test on the host side */
-    if (rank == COLL_ROOT) {
+    {
         host_accessor recv_buf_acc(recv_buf, read_only);
         for (i = 0; i < count; i++) {
             if (recv_buf_acc[i] == -1) {

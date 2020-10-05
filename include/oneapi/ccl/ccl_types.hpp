@@ -146,7 +146,7 @@ typedef void (*epilogue_fn)(const void*,
 typedef void (
     *reduction_fn)(const void*, size_t, void*, size_t*, ccl::datatype, const ccl::fn_context*);
 
-/* idx_buf, idx_count, idx_dtype, val_buf, val_count, val_dtype, fn_context */
+/* idx_buf, idx_count, idx_dtype, val_buf, val_count, val_dtype, user_context */
 typedef void (*sparse_allreduce_completion_fn)(const void*,
                                                size_t,
                                                ccl::datatype,
@@ -155,7 +155,7 @@ typedef void (*sparse_allreduce_completion_fn)(const void*,
                                                ccl::datatype,
                                                const void*);
 
-/* idx_count, idx_dtype, val_count, val_dtype, fn_context, out_idx_buf, out_val_buf */
+/* idx_count, idx_dtype, val_count, val_dtype, user_context, out_idx_buf, out_val_buf */
 typedef void (*sparse_allreduce_alloc_fn)(size_t,
                                           ccl::datatype,
                                           size_t,

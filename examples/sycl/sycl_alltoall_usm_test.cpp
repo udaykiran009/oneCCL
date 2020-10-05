@@ -84,10 +84,10 @@ int main(int argc, char *argv[]) {
         return -1;
 
     /* print out the result of the test on the host side */
-    if (rank == COLL_ROOT) {
-        host_accessor recv_buf_acc(check_buf, read_only);
+    {
+        host_accessor check_buf_acc(check_buf, read_only);
         for (i = 0; i < count * size; i++) {
-            if (recv_buf_acc[i] == -1) {
+            if (check_buf_acc[i] == -1) {
                 cout << "FAILED\n";
                 break;
             }

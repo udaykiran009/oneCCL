@@ -6,6 +6,7 @@ using namespace sycl;
 int main(int argc, char *argv[]) {
 
     const size_t count = 10 * 1024 * 1024;
+    const size_t root_rank = 0;
 
     int i = 0;
     int size = 0;
@@ -31,8 +32,6 @@ int main(int argc, char *argv[]) {
     }
 
     auto buf = allocator.allocate(count, usm_alloc_type);
-    vector<size_t> send_counts(size, count);
-    vector<size_t> recv_counts(size, count);
 
     /* create kvs */
     ccl::shared_ptr_class<ccl::kvs> kvs;
@@ -56,7 +55,6 @@ int main(int argc, char *argv[]) {
     auto stream = ccl::create_stream(q);
 
     /* open buf and modify it on the device side */
-    size_t root_rank = COLL_ROOT;
     q.submit([&](auto &h) {
         h.parallel_for(count, [=](auto id) {
             if (id == root_rank) {
@@ -88,9 +86,9 @@ int main(int argc, char *argv[]) {
 
     /* print out the result of the test on the host side */
     if (rank == root_rank) {
-        host_accessor recv_buf_acc(check_buf, read_only);
+        host_accessor check_buf_acc(check_buf, read_only);
         for (i = 0; i < count; i++) {
-            if (recv_buf_acc[i] == -1) {
+            if (check_buf_acc[i] == -1) {
                 cout << "FAILED\n";
                 break;
             }

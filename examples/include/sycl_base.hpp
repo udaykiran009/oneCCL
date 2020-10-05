@@ -14,8 +14,6 @@
 
 #include "oneapi/ccl.hpp"
 
-#define COLL_ROOT (0)
-
 using namespace std;
 using namespace sycl;
 using namespace sycl::access;
@@ -156,7 +154,7 @@ struct buf_allocator {
         else if (alloc_type == usm::alloc::device)
             ptr =  aligned_alloc_device<T>(alignment, count, q);
         else if (alloc_type == usm::alloc::shared)
-            ptr =  aligned_alloc_shared<T>(alignment, count, q);
+            ptr = aligned_alloc_shared<T>(alignment, count, q);
         else
             throw std::runtime_error(string(__PRETTY_FUNCTION__) + "unexpected alloc_type");
 

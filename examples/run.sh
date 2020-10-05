@@ -229,7 +229,7 @@ run()
     n=2
     dtype_list="char,int,float"
     reduction_list="sum,max"
-    ccl_base_env="FI_PROVIDER=tcp CCL_YIELD=sleep CCL_PMI_FORCE_FINALIZE=1 I_MPI_DEBUG=20 CCL_LOG_LEVEL=1"
+    ccl_base_env="FI_PROVIDER=tcp I_MPI_DEBUG=4 CCL_LOG_LEVEL=1"
 
     if [[ ${MODE} = "cpu" ]]
     then
@@ -247,8 +247,7 @@ run()
     do
         cd $dir_name
         pwd
-        #for transport in "ofi" "mpi";
-        for transport in "mpi";
+        for transport in "ofi" "mpi";
         do
             ccl_transport_env="CCL_ATL_TRANSPORT=${transport} ${ccl_base_env}"
 
