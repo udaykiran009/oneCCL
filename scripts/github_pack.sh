@@ -14,10 +14,8 @@ excluded=".git
 ./doc/README.md
 ./doc/README.txt
 ./doc/cclEULA.txt
-./doc/archive
 ./doc/third_party_programs
 ./doc/copyright
-./doc/spec
 ./examples/run.sh
 ./examples/Makefile
 ./ofi/ofi_update.sh

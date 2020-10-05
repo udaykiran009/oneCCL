@@ -4,8 +4,9 @@
 .. _tgz_file: https://github.com/oneapi-src/oneCCL/releases
 .. highlight:: bash
 
+============
 Installation
-=============
+============
 
 This page explains how to install and configure the |product_full| (|product_short|).
 
