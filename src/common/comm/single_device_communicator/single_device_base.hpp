@@ -37,6 +37,7 @@ public:
     }
 
     typed_single_device_base_communicator(ccl::unified_device_type&& device,
+                                          ccl::unified_device_context_type&& context,
                                           size_t thread_idx,
                                           size_t process_idx,
                                           const ccl::comm_split_attr& attr);

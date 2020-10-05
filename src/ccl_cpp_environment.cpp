@@ -125,11 +125,11 @@ ccl::communicator CCL_API ccl::environment::create_single_device_communicator(
     ccl::comm_split_attr attr = create_comm_split_attr(
         ccl::attr_val<ccl::comm_split_attr_id::group>(ccl::group_split_type::undetermined));
     ccl::communicator_interface_ptr impl =
-        ccl::communicator_interface::create_communicator_impl(device, rank, comm_size, attr, atl);
+        ccl::communicator_interface::create_communicator_impl(device, context, rank, comm_size, attr, atl);
 
     //TODO use gpu_comm_attr to automatically visit()
     auto single_dev_comm = std::dynamic_pointer_cast<single_device_communicator>(impl);
-    single_dev_comm->set_context(context);
+    //single_dev_comm->set_context(context);
     return ccl::communicator(std::move(impl));
 }
 
@@ -153,7 +153,6 @@ ccl::communicator CCL_API ccl::environment::create_communicator(const size_t siz
 
 /***************************TypeGenerations*********************************************************/
 
-#if defined(MULTI_GPU_SUPPORT) || defined(CCL_ENABLE_SYCL)
 template <>
 ccl::stream CCL_API ccl::environment::create_postponed_api_type<
     ccl::stream,
@@ -186,7 +185,6 @@ ccl::environment::create_postponed_api_type<ccl::stream,
 
     return ccl::stream{ stream_provider_dispatcher::create(device, ret) };
 }
-#endif //#if defined(MULTI_GPU_SUPPORT) || defined(CCL_ENABLE_SYCL)
 
 CREATE_OP_ATTR_INSTANTIATION(ccl::allgatherv_attr)
 CREATE_OP_ATTR_INSTANTIATION(ccl::allreduce_attr)
@@ -202,33 +200,21 @@ CREATE_OP_ATTR_INSTANTIATION(ccl::comm_split_attr)
 CREATE_OP_ATTR_INSTANTIATION(ccl::datatype_attr)
 
 CREATE_DEV_COMM_INSTANTIATION(ccl::device, ccl::context)
-#ifdef CCL_ENABLE_SYCL
-CREATE_DEV_COMM_INSTANTIATION(cl::sycl::device, cl::sycl::context)
-#ifdef MULTI_GPU_SUPPORT
-CREATE_DEV_COMM_INSTANTIATION(ccl::device_index_type, cl::sycl::context)
+CREATE_DEV_COMM_INSTANTIATION(typename ccl::unified_device_type::ccl_native_t, typename ccl::unified_device_context_type::ccl_native_t)
+CREATE_DEV_COMM_INSTANTIATION(ccl::device_index_type, typename ccl::unified_device_context_type::ccl_native_t)
+
+CREATE_STREAM_INSTANTIATION(typename ccl::unified_stream_type::ccl_native_t)
+CREATE_STREAM_EXT_INSTANTIATION(typename ccl::unified_device_type::ccl_native_t, typename ccl::unified_device_context_type::ccl_native_t)
+
+CREATE_CONTEXT_INSTANTIATION(typename ccl::unified_device_context_type::ccl_native_t)
+CREATE_DEVICE_INSTANTIATION(typename ccl::unified_device_type::ccl_native_t)
+
+#if !defined(CCL_ENABLE_SYCL) && !defined(MULTI_GPU_SUPPORT)
+    //CREATE_CONTEXT_INSTANTIATION(ccl::empty_t)
+    //CREATE_DEVICE_INSTANTIATION(ccl::empty_t)
+    //#error AAAAA
 #endif
-CREATE_STREAM_INSTANTIATION(cl::sycl::queue)
-CREATE_STREAM_EXT_INSTANTIATION(cl::sycl::device, cl::sycl::context)
-
-#ifdef CCL_ENABLE_SYCL
-    CREATE_CONTEXT_INSTANTIATION(cl::sycl::context)
-#else
-    CREATE_CONTEXT_INSTANTIATION(ccl::empty_t)
-#endif //CCL_ENABLE_SYCL
-
-#ifdef CCL_ENABLE_SYCL
-    CREATE_DEVICE_INSTANTIATION(cl::sycl::device)
-#else
-    CREATE_DEVICE_INSTANTIATION(ccl::empty_t)
-#endif //CCL_ENABLE_SYCL
-
 /*
 CREATE_EVENT_INSTANTIATION(cl::sycl::event)
 CREATE_EVENT_EXT_INSTANTIATION(cl_event)
 */
-#else
-#ifdef MULTI_GPU_SUPPORT
-CREATE_DEV_COMM_INSTANTIATION(ccl::device_index_type,
-                              ccl::unified_device_context_type::ccl_native_t)
-#endif
-#endif

@@ -1,6 +1,5 @@
 #pragma once
 
-#include "common/comm/comm.hpp"
 #include "sched/extra_sched.hpp"
 #include "sched/master_sched.hpp"
 

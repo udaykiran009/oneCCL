@@ -1,3 +1,4 @@
+#if 0
 #pragma once
 #include <memory>
 
@@ -13,8 +14,11 @@
 
 class ccl_comm;
 namespace ccl {
-class host_communicator {
+class host_communicator :  {
 public:
+    host_communicator();
+    host_communicator(size_t, std::shared_ptr<ccl::kvs_interface>);
+    host_communicator(size_t, size_t, std::shared_ptr<ccl::kvs_interface>);
     host_communicator(std::shared_ptr<ccl_comm> impl);
 
     size_t rank() const;
@@ -27,3 +31,4 @@ public:
     std::shared_ptr<ccl_comm> comm_impl;
 };
 } // namespace ccl
+#endif

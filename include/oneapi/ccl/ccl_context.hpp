@@ -15,9 +15,9 @@ namespace ccl {
 /**
  * Stream class
  */
-class context : public ccl_api_base_movable<context, direct_access_policy, ccl_context_impl> {
+class context : public ccl_api_base_copyable<context, direct_access_policy, ccl_context_impl> {
 public:
-    using base_t = ccl_api_base_movable<context, direct_access_policy, ccl_context_impl>;
+    using base_t = ccl_api_base_copyable<context, direct_access_policy, ccl_context_impl>;
 
     /**
      * Declare PIMPL type
@@ -35,6 +35,8 @@ public:
     using native_t = typename details::ccl_api_type_attr_traits<ccl::context_attr_id,
                                                                 ccl::context_attr_id::native_handle>::return_type;
     context(context&& src);
+    context(const context& src);
+    context& operator=(const context& src);
     context& operator=(context&& src);
     ~context();
 

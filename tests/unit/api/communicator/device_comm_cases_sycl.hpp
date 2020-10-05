@@ -111,57 +111,64 @@ TEST(device_communicator_api, device_comm_from_sycl_devices_single_thread) {
         }
 
         curr_rank++;
+        /*
         int* tmp = nullptr;
         ccl::vector_class<size_t> recv_counts;
 
         // tests templates
-        dev_comm.allgatherv(const_cast<const int*>(tmp),
+        ccl::allgatherv(const_cast<const int*>(tmp),
                             size_t(0),
                             tmp,
                             recv_counts,
+                            dev_comm,
                             ccl::default_stream,
                             ccl::default_allgatherv_attr,
                             {});
 
-        dev_comm.allgatherv(const_cast<const int*>(tmp),
+        ccl::allgatherv(const_cast<const int*>(tmp),
                             size_t(0),
                             tmp,
                             recv_counts,
+                            dev_comm,
                             ccl::default_stream,
                             ccl::default_allgatherv_attr);
 
-        dev_comm.allgatherv(
-            const_cast<const int*>(tmp), size_t(0), tmp, recv_counts, ccl::default_stream);
+        ccl::allgatherv(
+            const_cast<const int*>(tmp), size_t(0), tmp, recv_counts, dev_comm, ccl::default_stream);
 
         //test non-templates
-        dev_comm.allgatherv(static_cast<const void*>(tmp),
+        ccl::allgatherv(static_cast<const void*>(tmp),
                             size_t(0),
                             static_cast<void*>(tmp),
                             recv_counts,
                             ccl::datatype::int32,
+                            dev_comm,
                             ccl::default_stream,
                             ccl::default_allgatherv_attr,
                             {});
-        dev_comm.allgatherv(static_cast<const void*>(tmp),
+        ccl::allgatherv(static_cast<const void*>(tmp),
                             size_t(0),
                             static_cast<void*>(tmp),
                             recv_counts,
                             ccl::datatype::int32,
+                            dev_comm,
                             ccl::default_stream,
                             ccl::default_allgatherv_attr);
-        dev_comm.allgatherv(static_cast<const void*>(tmp),
+        ccl::allgatherv(static_cast<const void*>(tmp),
                             size_t(0),
                             static_cast<void*>(tmp),
                             recv_counts,
                             ccl::datatype::int32,
+                            dev_comm,
                             ccl::default_stream);
 
-        dev_comm.allgatherv(static_cast<const void*>(tmp),
+        ccl::allgatherv(static_cast<const void*>(tmp),
                             size_t(0),
                             static_cast<void*>(tmp),
                             recv_counts,
-                            ccl::datatype::int32);
-        /* SFINAE check
+                            ccl::datatype::int32,
+                            dev_comm);
+        / * SFINAE check
         struct NotSupported{};
         dev_comm.allgatherv(reinterpret_cast<const NotSupported*>(tmp),
                             size_t(0),
@@ -190,11 +197,12 @@ void user_thread_function(size_t total_devices_count,
     size_t curr_rank = in_local_rank_device_map.begin()->first;
     ASSERT_EQ(out_comms.size(), in_local_rank_device_map.size());
     for (auto& dev_comm : out_comms) {
+        (void)dev_comm;
         //ASSERT_TRUE(dev_comm.is_ready());
-
+        /*
         int* tmp = nullptr;
         ccl::vector_class<size_t> recv_counts;
-        dev_comm.allgatherv(tmp, 0, tmp, recv_counts);
+        ccl::allgatherv(tmp, 0, tmp, recv_counts, dev_comm);
 
         try {
             ASSERT_EQ(dev_comm.get_context(), in_ctx);
@@ -216,7 +224,7 @@ void user_thread_function(size_t total_devices_count,
         catch (...) {
             //TODO ignore explicit rank setting is allowed in core
         }
-
+        */
         curr_rank++;
     }
 }
@@ -320,9 +328,10 @@ void user_thread_function_splitted_comm(size_t total_devices_count,
         curr_rank++;
 
         // collective test
+        /*
         int* tmp = nullptr;
         ccl::vector_class<size_t> recv_counts;
-        dev_comm.allgatherv(tmp, 0, tmp, recv_counts);
+        ccl::allgatherv(tmp, 0, tmp, recv_counts, dev_comm);
 
         // // split test for current thread local scope
         // auto attr = ccl::create_comm_split_attr(
@@ -346,7 +355,7 @@ void user_thread_function_splitted_comm(size_t total_devices_count,
         // catch (...) {
         //     //TODO ignore explicit rank setting is allowed in core
         // }
-
+        */
         local_thread_rank++;
     }
 }

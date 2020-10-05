@@ -39,6 +39,8 @@ void ccl_stream::build_from_params() {
     if (!creation_is_postponed) {
         throw ccl::exception("error");
     }
+
+    type = ccl_stream_host;
     try {
 #ifdef CCL_ENABLE_SYCL
         if (is_context_enabled) {
@@ -51,6 +53,28 @@ void ccl_stream::build_from_params() {
             std::swap(stream_candidate,
                       native_stream); //TODO USE attributes fro sycl queue construction
         }
+
+        //override type
+        if (native_stream.get_device().is_host())
+        {
+            type = ccl_stream_host;
+        }
+        else if(native_stream.get_device().is_cpu())
+        {
+            type = ccl_stream_cpu;
+        }
+        else if(native_stream.get_device().is_gpu())
+        {
+            type = ccl_stream_gpu;
+        }
+        else
+        {
+            throw ccl::invalid_argument("CORE", "create_stream", std::string("Unsupported SYCL queue's device type for postponed creation:\n") +
+                                        native_stream.get_device().template get_info<cl::sycl::info::device::name>() +
+                                        std::string("Supported types: host, cpu, gpu"));
+        }
+    LOG_INFO("SYCL queue type from postponed creation: ", static_cast<int>(type), " device: ",
+             native_stream.get_device().template get_info<cl::sycl::info::device::name>());
 #else
     #ifdef MULTI_GPU_SUPPORT
         ze_command_queue_desc_t descr =
@@ -58,6 +82,7 @@ void ccl_stream::build_from_params() {
 
         //TODO use attributes
         native_device->create_cmd_queue(descr);
+        type = ccl_stream_gpu;
     #endif
 #endif
     }

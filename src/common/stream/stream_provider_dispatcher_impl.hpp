@@ -15,14 +15,33 @@ std::unique_ptr<ccl_stream> stream_provider_dispatcher::create(
     const ccl::library_version& version) {
     static_assert(std::is_same<NativeStream, stream_native_t>::value, "Unsupported 'NativeStream'");
 
-    ccl_stream_type_t type = ccl_stream_cpu;
+    ccl_stream_type_t type = ccl_stream_host;
 #ifdef CCL_ENABLE_SYCL
-    type = native_stream.get_device().is_host() ? ccl_stream_cpu : ccl_stream_gpu;
-    LOG_INFO("SYCL queue's device is ",
+    if (native_stream.get_device().is_host())
+    {
+        type = ccl_stream_host;
+    }
+    else if(native_stream.get_device().is_cpu())
+    {
+        type = ccl_stream_cpu;
+    }
+    else if(native_stream.get_device().is_gpu())
+    {
+        type = ccl_stream_gpu;
+    }
+    else
+    {
+        throw ccl::invalid_argument("CORE", "create_stream", std::string("Unsupported SYCL queue's device type:\n") +
+                                    native_stream.get_device().template get_info<cl::sycl::info::device::name>() +
+                                    std::string("Supported types: host, cpu, gpu"));
+    }
+    LOG_INFO("SYCL queue type: ", static_cast<int>(type), " device: ",
              native_stream.get_device().template get_info<cl::sycl::info::device::name>());
 #else
-    //L0 at now for GPU only
-    type = ccl_stream_gpu;
+    #if MULTI_GPU_SUPPORT
+        LOG_INFO("L0 queue type: gpu - supported only");
+        type = ccl_stream_gpu;
+    #endif
 #endif /* CCL_ENABLE_SYCL */
 
     return std::unique_ptr<ccl_stream>(new ccl_stream(type, native_stream, version));
@@ -72,6 +91,7 @@ template <class NativeStreamHandle,
               int>::type>
 stream_provider_dispatcher::stream_provider_dispatcher(NativeStreamHandle stream) {
     creation_is_postponed = true;
+    LOG_INFO("Requested postponed stream creation from native handle");
     /*
 #ifdef CCL_ENABLE_SYCL
     native_stream = stream_native_t{stream};
@@ -82,10 +102,11 @@ stream_provider_dispatcher::stream_provider_dispatcher(NativeStreamHandle stream
 
 stream_provider_dispatcher::stream_provider_dispatcher() {
     creation_is_postponed = true;
+    LOG_INFO("Requested postponed stream creation from empty");
 }
 
 stream_provider_dispatcher::stream_native_t stream_provider_dispatcher::get_native_stream() const {
-    if (!creation_is_postponed) {
+    if (creation_is_postponed) {
         throw ccl::exception("native stream is not set");
     }
 

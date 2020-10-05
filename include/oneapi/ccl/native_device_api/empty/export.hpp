@@ -26,7 +26,7 @@ struct generic_device_type<CL_BACKEND_TYPE> {
     using impl_t = native::ccl_device;
     using ccl_native_t = std::shared_ptr<impl_t>;
 
-    generic_device_type();
+    generic_device_type(...);
     void get_id() const noexcept;
     ccl_native_t get() noexcept;
 };

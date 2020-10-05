@@ -6,6 +6,19 @@ namespace ccl {
 /**
  * Base dispatcher for conversion vector to map
  */
+
+template <class Context>
+struct context_extractor
+{
+    static Context& extract(Context &ctx) {return ctx; }
+};
+
+template<>
+struct context_extractor<ccl::context>
+{
+    static typename unified_device_context_type::ccl_native_t& extract(ccl::context &ctx) {return ctx.get_native(); }
+};
+
 template<class impl>
 struct comm_impl_base_dispatch
 {
@@ -48,7 +61,7 @@ struct comm_impl_base_dispatch
             }
             throw ccl::invalid_argument("API", "create_communicators", ss.str());
         }
-        return impl::template create_communicators_selector(cluster_devices_size, converted_map, context, kvs);
+        return impl::template create_communicators_selector(cluster_devices_size, converted_map, context_extractor<ContextType>::extract(context), kvs);
     }
 };
 
@@ -70,7 +83,7 @@ struct comm_impl_dispatch_selector<cl_backend_type::empty_backend> :
                 ContextType& context,
                 shared_ptr_class<kvs_interface> kvs)
     {
-        return base_t::template create_communicators_selector<DeviceType, ContextType>(cluster_devices_size, local_rank_device_map, context, kvs);
+        return base_t::template create_communicators_selector<DeviceType>(cluster_devices_size, local_rank_device_map, context_extractor<ContextType>::extract(context), kvs);
     }
 
     template <class DeviceType, class ContextType>
@@ -96,33 +109,6 @@ struct comm_impl_dispatch_selector<cl_backend_type::empty_backend> :
         ret.push_back(ccl::communicator(std::move(impl)) );
         return ret;
     }
-    /*
-    //collect ranks
-    vector_class<rank_t> local_thread_ranks;
-    local_thread_ranks.reserve(local_rank_device_map.size());
-    std::transform(
-        local_rank_device_map.begin(),
-        local_rank_device_map.end(),
-        std::back_inserter(local_thread_ranks),
-        [](const typename vector_class<pair_class<rank_t, DeviceType>>::value_type& val) {
-            return val.first;
-        });
-
-    vector_class<DeviceType> local_thread_devices;
-    local_thread_devices.reserve(local_rank_device_map.size());
-    std::transform(
-        local_rank_device_map.begin(),
-        local_rank_device_map.end(),
-        std::back_inserter(local_thread_devices),
-        [](const typename vector_class<pair_class<rank_t, DeviceType>>::value_type& val) {
-            return val.second;
-        });
-
-    if ()
-    auto ret = thread_group->create_communicators(local_thread_devices);
-    return ret;
-    return {};
-    */
 };
 #endif
 
@@ -140,7 +126,7 @@ struct comm_impl_dispatch_selector<cl_backend_type::dpcpp_sycl> :
                 ContextType& context,
                 shared_ptr_class<kvs_interface> kvs)
     {
-        return base_t::template create_communicators_selector<DeviceType, ContextType>(cluster_devices_size, local_rank_device_map, context, kvs);
+        return base_t::template create_communicators_selector<DeviceType>(cluster_devices_size, local_rank_device_map, context_extractor<ContextType>::extract(context), kvs);
     }
 
     template <class ContextType>
@@ -159,31 +145,7 @@ struct comm_impl_dispatch_selector<cl_backend_type::dpcpp_sycl> :
                        {
                            return std::make_pair(val.first, ccl::create_from_index(val.second).get());
                        });
-        return create_communicators_selector(cluster_devices_size, converted_device_map, context, kvs);
-        /*
-        //collect ranks
-        vector_class<rank_t> local_thread_ranks;
-        local_thread_ranks.reserve(local_rank_device_map.size());
-        std::transform(local_rank_device_map.begin(),
-                   local_rank_device_map.end(),
-                   std::back_inserter(local_thread_ranks),
-                   [](const typename map_class<rank_t, ccl::device_index_type>::value_type& val) {
-                       return val.first;
-                   });
-        group_context::comm_group_t thread_group =
-            group_context::instance().group_by_kvs(local_thread_ranks, cluster_devices_size, kvs);
-
-        vector_class<ccl::device_index_type> local_thread_devices;
-        local_thread_devices.reserve(local_rank_device_map.size());
-        std::transform(local_rank_device_map.begin(),
-                   local_rank_device_map.end(),
-                   std::back_inserter(local_thread_devices),
-                   [](const typename map_class<rank_t, ccl::device_index_type>::value_type& val) {
-                       return val.second;
-                   });
-
-        auto ret = thread_group->create_communicators(local_thread_devices);
-        return ret;*/
+        return create_communicators_selector(cluster_devices_size, converted_device_map, context_extractor<ContextType>::extract(context), kvs);
     }
 
     template <class ContextType>
@@ -200,7 +162,7 @@ struct comm_impl_dispatch_selector<cl_backend_type::dpcpp_sycl> :
                        {
                            return std::make_pair(val.first, val.second.get_native());
                        });
-        return create_communicators_selector(cluster_devices_size, converted_device_map, context, kvs);
+        return create_communicators_selector(cluster_devices_size, converted_device_map, context_extractor<ContextType>::extract(context), kvs);
     }
 
     template <class ContextType>
@@ -287,11 +249,11 @@ struct comm_impl_dispatch_selector<cl_backend_type::dpcpp_sycl> :
         ccl::comm_split_attr attr = create_comm_split_attr(
         ccl::attr_val<ccl::comm_split_attr_id::group>(ccl::group_split_type::undetermined));
         ccl::communicator_interface_ptr impl =
-        ccl::communicator_interface::create_communicator_impl(device, rank, cluster_devices_size, attr, atl);
+        ccl::communicator_interface::create_communicator_impl(device, context, rank, cluster_devices_size, attr, atl);
 
         //TODO use gpu_comm_attr to automatically visit()
-        auto single_dev_comm = std::dynamic_pointer_cast<single_device_communicator>(impl);
-        single_dev_comm->set_context(context);
+        //auto single_dev_comm = std::dynamic_pointer_cast<single_device_communicator>(impl);
+        //single_dev_comm->set_context(context);
         ccl::vector_class<ccl::communicator> ret;
         ret.push_back(ccl::communicator(std::move(impl)));
         return ret;
@@ -319,7 +281,7 @@ struct comm_impl_dispatch_selector<cl_backend_type::dpcpp_sycl> :
         });
 
     if ()
-    auto ret = thread_group->create_communicators(local_thread_devices);
+    auto ret = thread_group->create_communicators_group(local_thread_devices);
     return ret;
     return {};
     */
@@ -341,7 +303,7 @@ struct comm_impl_dispatch_selector<cl_backend_type::l0> :
                 ContextType& context,
                 shared_ptr_class<kvs_interface> kvs)
     {
-        return base_t::template create_communicators_selector<DeviceType, ContextType>(cluster_devices_size, local_rank_device_map, context, kvs);
+        return base_t::template create_communicators_selector<DeviceType>(cluster_devices_size, local_rank_device_map, context_extractor<ContextType>::extract(context), kvs);
     }
 
     template <class ContextType>
@@ -358,7 +320,7 @@ struct comm_impl_dispatch_selector<cl_backend_type::l0> :
                        {
                            return std::make_pair(val.first, val.second.get_native()->get_device_path());
                        });
-        return create_communicators_selector(cluster_devices_size, converted_device_map, context, kvs);
+        return create_communicators_selector(cluster_devices_size, converted_device_map, context_extractor<ContextType>::extract(context), kvs);
     }
 
     template <class ContextType>
@@ -391,7 +353,7 @@ struct comm_impl_dispatch_selector<cl_backend_type::l0> :
                        return val.second;
                    });
 
-        auto ret = thread_group->create_communicators(local_thread_devices);
+        auto ret = thread_group->create_communicators_group(local_thread_devices, context_extractor<ContextType>::extract(context));
         return ret;
     }
 };
@@ -412,7 +374,7 @@ struct comm_impl_dispatch_selector<cl_backend_type::dpcpp_sycl_l0> :
                 ContextType& context,
                 shared_ptr_class<kvs_interface> kvs)
     {
-        return base_t::template create_communicators_selector<DeviceType, ContextType>(cluster_devices_size, local_rank_device_map, context, kvs);
+        return base_t::template create_communicators_selector<DeviceType>(cluster_devices_size, local_rank_device_map, context_extractor<ContextType>::extract(context), kvs);
     }
 
     template <class ContextType>
@@ -429,7 +391,7 @@ struct comm_impl_dispatch_selector<cl_backend_type::dpcpp_sycl_l0> :
                        {
                            return std::make_pair(val.first, val.second.get_native());
                        });
-        return create_communicators_selector(cluster_devices_size, converted_device_map, context, kvs);
+        return create_communicators_selector(cluster_devices_size, converted_device_map, context_extractor<ContextType>::extract(context), kvs);
     }
 
     template <class ContextType>
@@ -456,11 +418,11 @@ struct comm_impl_dispatch_selector<cl_backend_type::dpcpp_sycl_l0> :
             ccl::comm_split_attr attr = create_comm_split_attr(
             ccl::attr_val<ccl::comm_split_attr_id::group>(ccl::group_split_type::undetermined));
             ccl::communicator_interface_ptr impl =
-            ccl::communicator_interface::create_communicator_impl(device, rank, cluster_devices_size, attr, atl);
+            ccl::communicator_interface::create_communicator_impl(device, context, rank, cluster_devices_size, attr, atl);
 
             //TODO use gpu_comm_attr to automatically visit()
-            auto single_dev_comm = std::dynamic_pointer_cast<single_device_communicator>(impl);
-            single_dev_comm->set_context(context);
+            //auto single_dev_comm = std::dynamic_pointer_cast<single_device_communicator>(impl);
+            //single_dev_comm->set_context(context);
             ccl::vector_class<ccl::communicator> ret;
             ret.push_back(ccl::communicator(std::move(impl)));
             return ret;
@@ -487,7 +449,7 @@ struct comm_impl_dispatch_selector<cl_backend_type::dpcpp_sycl_l0> :
                        return val.second;
                    });
 
-        auto ret = thread_group->create_communicators(local_thread_devices);
+        auto ret = thread_group->create_communicators_group(local_thread_devices, context_extractor<ContextType>::extract(context));
         return ret;
     }
 
@@ -521,7 +483,7 @@ struct comm_impl_dispatch_selector<cl_backend_type::dpcpp_sycl_l0> :
                        return val.second;
                    });
 
-        auto ret = thread_group->create_communicators(local_thread_devices);
+        auto ret = thread_group->create_communicators_group(local_thread_devices, context_extractor<ContextType>::extract(context));
         return ret;
     }
 };

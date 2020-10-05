@@ -1,5 +1,6 @@
 #include "oneapi/ccl.hpp"
 #include "oneapi/ccl/ccl_type_traits.hpp"
+#if defined(MULTI_GPU_SUPPORT) || defined(CCL_ENABLE_SYCL)
 #include "common/comm/single_device_communicator/single_device_communicator_impl.hpp"
 #ifdef MULTI_GPU_SUPPORT
 #include "common/comm/l0/gpu_comm_attr.hpp"
@@ -9,10 +10,11 @@
 using namespace ccl;
 
 single_device_communicator::single_device_communicator(ccl::unified_device_type&& device,
+                                                       ccl::unified_device_context_type&& context,
                                                        size_t thread_idx,
                                                        size_t process_idx,
                                                        const ccl::comm_split_attr& attr)
-        : base_t(std::move(device), thread_idx, process_idx /*, comm_attr*/, attr) {}
+        : base_t(std::move(device), std::move(context), thread_idx, process_idx /*, comm_attr*/, attr) {}
 
 void single_device_communicator::set_ccl_comm(std::shared_ptr<ccl_comm> impl) {
     CCL_ASSERT(!comm_impl, "comm_impl must be nullptr before first udage");
@@ -261,7 +263,7 @@ single_device_communicator::coll_request_t single_device_communicator::reduce_sc
     const ccl::stream::impl_value_t& stream,
     const ccl::reduce_scatter_attr& attr,
     const ccl::vector_class<ccl::event>& deps) {
-    
+
     coll_request_t req;
     if (!reduce_scatter_usm_visitor_base_t::visit(
             req, dtype, send_buf, recv_buf, recv_count, reduction, stream, attr, deps)) {
@@ -453,3 +455,4 @@ DEVICE_COMM_INTERFACE_SPARSE_ALLREDUCE_EXPLICIT_CLASS_INSTANTIATION(
     cl::sycl::buffer<int64_t COMMA 1>,
     cl::sycl::buffer<ccl::bf16 COMMA 1>);
 #endif //CCL_ENABLE_SYCL
+#endif //#if defined(MULTI_GPU_SUPPORT) || defined(CCL_ENABLE_SYCL)

@@ -38,6 +38,7 @@ public:
         sparse_allreduce_usm_visitor<single_device_communicator>;
 
     single_device_communicator(ccl::unified_device_type&& device,
+                               ccl::unified_device_context_type&& context,
                                size_t thread_idx,
                                size_t proces_idx,
                                const ccl::comm_split_attr& attr);

@@ -74,10 +74,12 @@ CCL_API ccl::communicator ccl::communicator::split(
     ccl::group_context::comm_group_t my_group =
         ccl::group_context::instance().get_existing_group_by_id(id);
 #ifdef CCL_ENABLE_SYCL
-    return my_group->create_communicator<cl::sycl::device>(get_device(), attr);
+    auto ctx = get_impl()->get_context();
+    return my_group->create_communicator_from_group<cl::sycl::device>(get_device(), ctx, attr);
 #else
 #ifdef MULTI_GPU_SUPPORT
-    return my_group->create_communicator(get_impl()->get_device_path(), attr);
+    auto ctx = get_impl()->get_context();
+    return my_group->create_communicator_from_group(get_impl()->get_device_path(), ctx, attr);
 #endif
 #endif
 #else
@@ -102,27 +104,16 @@ API_DEVICE_COMM_CREATE_WITH_RANK_IN_VECTOR_EXPLICIT_INSTANTIATION(ccl::device,
                                                                   ccl::context)
 API_DEVICE_COMM_CREATE_WITH_RANK_IN_MAP_EXPLICIT_INSTANTIATION(ccl::device, ccl::context)
 
-#ifdef CCL_ENABLE_SYCL
-API_DEVICE_COMM_CREATE_WO_RANK_EXPLICIT_INSTANTIATION(cl::sycl::device, cl::sycl::context)
-API_DEVICE_COMM_CREATE_WITH_RANK_IN_VECTOR_EXPLICIT_INSTANTIATION(cl::sycl::device,
-                                                                  cl::sycl::context)
-API_DEVICE_COMM_CREATE_WITH_RANK_IN_MAP_EXPLICIT_INSTANTIATION(cl::sycl::device, cl::sycl::context)
+API_DEVICE_COMM_CREATE_WO_RANK_EXPLICIT_INSTANTIATION(typename ccl::unified_device_type::ccl_native_t, typename ccl::unified_device_context_type::ccl_native_t)
+API_DEVICE_COMM_CREATE_WITH_RANK_IN_VECTOR_EXPLICIT_INSTANTIATION(typename ccl::unified_device_type::ccl_native_t, typename ccl::unified_device_context_type::ccl_native_t)
+API_DEVICE_COMM_CREATE_WITH_RANK_IN_MAP_EXPLICIT_INSTANTIATION(typename ccl::unified_device_type::ccl_native_t, typename ccl::unified_device_context_type::ccl_native_t)
 
-API_DEVICE_COMM_CREATE_WO_RANK_EXPLICIT_INSTANTIATION(ccl::device_index_type, cl::sycl::context)
-API_DEVICE_COMM_CREATE_WITH_RANK_IN_VECTOR_EXPLICIT_INSTANTIATION(ccl::device_index_type,
-                                                                  cl::sycl::context)
-API_DEVICE_COMM_CREATE_WITH_RANK_IN_MAP_EXPLICIT_INSTANTIATION(ccl::device_index_type,
-                                                               cl::sycl::context)
-#else
-#ifdef MULTI_GPU_SUPPORT
 API_DEVICE_COMM_CREATE_WO_RANK_EXPLICIT_INSTANTIATION(
     ccl::device_index_type,
-    ccl::unified_device_context_type::ccl_native_t)
+    typename ccl::unified_device_context_type::ccl_native_t)
 API_DEVICE_COMM_CREATE_WITH_RANK_IN_VECTOR_EXPLICIT_INSTANTIATION(
     ccl::device_index_type,
-    ccl::unified_device_context_type::ccl_native_t)
+    typename ccl::unified_device_context_type::ccl_native_t)
 API_DEVICE_COMM_CREATE_WITH_RANK_IN_MAP_EXPLICIT_INSTANTIATION(
     ccl::device_index_type,
-    ccl::unified_device_context_type::ccl_native_t)
-#endif
-#endif
+    typename ccl::unified_device_context_type::ccl_native_t)

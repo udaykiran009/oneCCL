@@ -4,6 +4,7 @@
 namespace ccl {
 
 CCL_API context::context(context&& src) : base_t(std::move(src)) {}
+CCL_API context::context(const context& src) : base_t(src) {}
 
 CCL_API context::context(impl_value_t&& impl) : base_t(std::move(impl)) {}
 
@@ -13,6 +14,13 @@ CCL_API context& context::operator=(context&& src) {
     if (src.get_impl() != this->get_impl()) {
         src.get_impl().swap(this->get_impl());
         src.get_impl().reset();
+    }
+    return *this;
+}
+
+CCL_API context& context::operator=(const context& src) {
+    if (src.get_impl() != this->get_impl()) {
+        this->get_impl() = src.get_impl();
     }
     return *this;
 }

@@ -28,7 +28,7 @@ int main(int argc, char *argv[]) {
         return -1;
     }
 
-    buf_allocator<int> allocator(q);
+    buf_allocator<native_dtype> allocator(q);
 
     auto usm_alloc_type = usm::alloc::shared;
     if (argc > 2) {
@@ -40,8 +40,8 @@ int main(int argc, char *argv[]) {
     auto send_buf = allocator.allocate(send_count, usm_alloc_type);
     auto recv_buf = allocator.allocate(send_count * size, usm_alloc_type);
 
-    buffer<int> expected_buf(send_count * size);
-    buffer<int> check_buf(send_count * size);
+    buffer<native_dtype> expected_buf(send_count * size);
+    buffer<native_dtype> check_buf(send_count * size);
 
     /* create kvs */
     ccl::shared_ptr_class<ccl::kvs> kvs;

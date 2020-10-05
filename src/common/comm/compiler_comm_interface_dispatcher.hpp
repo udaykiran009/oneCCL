@@ -36,10 +36,12 @@ struct communicator_interface_dispatcher {
 
     // create communicator for device & cpu types (from device class)
     template <class DeviceType,
+              class ContextType,
               typename std::enable_if<not std::is_same<typename std::remove_cv<DeviceType>::type,
                                                        device_index_type>::value,
                                       int>::type = 0>
     static communicator_interface_ptr create_communicator_impl(const DeviceType& device,
+                                                               ContextType context,
                                                                size_t thread_idx,
                                                                size_t process_idx,
                                                                const comm_split_attr& attr,
@@ -47,10 +49,12 @@ struct communicator_interface_dispatcher {
 
     // create communicator for device & cpu types (from device index)
     template <class DeviceType,
+              class ContextType,
               typename std::enable_if<
                   std::is_same<typename std::remove_cv<DeviceType>::type, device_index_type>::value,
                   int>::type = 0>
     static communicator_interface_ptr create_communicator_impl(DeviceType device_id,
+                                                               ContextType ctx,
                                                                size_t thread_idx,
                                                                size_t process_idx,
                                                                const comm_split_attr& attr,
@@ -71,6 +75,7 @@ struct communicator_interface_dispatcher {
 private:
     static communicator_interface_ptr create_communicator_from_unified_device(
         unified_device_type&& device_id,
+        unified_device_context_type&& context_id,
         size_t thread_idx,
         size_t process_idx,
         const comm_split_attr& attr,

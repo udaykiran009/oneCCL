@@ -8,6 +8,8 @@
 
 namespace ccl {
 
+generic_device_type<cl_backend_type::empty_backend>::generic_device_type(...) {}
+
 generic_device_context_type<cl_backend_type::empty_backend>::generic_device_context_type(...) {}
 
 generic_device_context_type<cl_backend_type::empty_backend>::ccl_native_t

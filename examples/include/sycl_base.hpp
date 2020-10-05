@@ -143,7 +143,7 @@ struct buf_allocator {
 
     ~buf_allocator() {
         for (auto& ptr : memory_storage) {
-            deallocate(ptr);
+            cl::sycl::free(ptr, q);
         }
     }
 

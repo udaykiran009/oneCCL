@@ -8,10 +8,11 @@ using namespace ccl;
 
 thread_device_group_a2a_communicator::thread_device_group_a2a_communicator(
     ccl::unified_device_type&& device,
+    ccl::unified_device_context_type&& ctx,
     size_t thread_idx,
     size_t process_idx,
     const ccl::comm_split_attr& attr)
-        : base_t(std::move(device), thread_idx, process_idx, /*comm_attr, */ attr) {}
+        : base_t(std::move(device), std::move(ctx), thread_idx, process_idx, /*comm_attr, */ attr) {}
 
 void thread_device_group_a2a_communicator::visit(ccl::gpu_comm_attr& comm_attr) {
     auto process_ctx = comm_attr.get_process_context();

@@ -44,10 +44,10 @@ int main(int argc, char *argv[]) {
     /* create communicator */
     auto dev = ccl::create_device(q.get_device());
     auto ctx = ccl::create_context(q.get_context());
-    auto comm = ccl::create_communicator(size, rank, dev, ctx, kvs);
+    //auto comm = ccl::create_communicator(size, rank, dev, ctx, kvs);
 
     /* create stream */
-    auto stream = ccl::create_stream(q);
+    //auto stream = ccl::create_stream(q);
 
     vector<size_t> recv_counts(size, count);
 
@@ -87,7 +87,7 @@ int main(int argc, char *argv[]) {
 
     /* invoke allagtherv */
     auto attr = ccl::create_operation_attr<ccl::allgatherv_attr>();
-    ccl::allgatherv(send_buf, count, recv_buf, recv_counts, comm, stream, attr, events).wait();
+    //ccl::allgatherv(send_buf, count, recv_buf, recv_counts, comm, stream, attr, events).wait();
 
     /* open recv_buf and check its correctness on the device side */
     q.submit([&](auto &h) {

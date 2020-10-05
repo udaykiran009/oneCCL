@@ -87,4 +87,13 @@ constexpr auto attr_val(value_type v) -> details::attr_value_tripple<device_attr
     return details::attr_value_tripple<device_attr_id, t, value_type>(v);
 }
 
+template<class DeviceType>
+using rank_device_pair_t = ccl::pair_class<size_t, typename std::remove_reference<typename std::remove_cv<DeviceType>::type>::type>;
+
+template <class device_value_type>
+constexpr auto attr_val(size_t rank, device_value_type&& v)
+    -> rank_device_pair_t<device_value_type>{
+    return rank_device_pair_t<device_value_type>{rank, std::forward<device_value_type>(v)};
+}
+
 } // namespace ccl

@@ -9,10 +9,11 @@
 template <TEMPLATE_DECL_ARG>
 typed_single_device_base_communicator<TEMPLATE_DEF_ARG>::typed_single_device_base_communicator(
     ccl::unified_device_type&& owned_device,
+    ccl::unified_device_context_type&& context,
     size_t thread_idx,
     size_t process_idx,
     const ccl::comm_split_attr& attr)
-        : base_communicator(std::move(owned_device),
+        : base_communicator(std::move(owned_device), std::move(context),
                             thread_idx,
                             process_idx /*, comm_attr*/,
                             attr) {

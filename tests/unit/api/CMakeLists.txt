@@ -85,7 +85,4 @@ add_subdirectory(device)
 add_subdirectory(device_context)
 #add_subdirectory(event)
 add_subdirectory(stream)
-
-#if (MULTI_GPU_SUPPORT OR CCL_ENABLE_SYCL)
-#    add_subdirectory(communicator)
-#endif()
+add_subdirectory(communicator)

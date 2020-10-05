@@ -1,5 +1,6 @@
 #include "common/global/global.hpp"
 #include "sched/entry/factory/entry_factory.hpp"
+#include "common/comm/comm.hpp"
 #include "unordered_coll/unordered_coll.hpp"
 
 #include <cstring>
@@ -22,7 +23,7 @@ ccl_unordered_coll_manager::ccl_unordered_coll_manager(ccl_comm& parent_comm) {
                                                   true/*share_resources*/));
 
        CCL_ASSERT(coordination_comm.get(), "coordination_comm is null");
-    
+
        if (parent_comm.rank() == 0)
            LOG_INFO("created unordered collectives manager");
 }
