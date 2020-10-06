@@ -14,7 +14,6 @@ int main() {}
 #include <thread>
 #include <numeric>
 #include "base.hpp"
-#include "oneapi/ccl/ccl_gpu_modules.h"
 #include "oneapi/ccl/native_device_api/export_api.hpp"
 #include "coll/algorithms/algorithms_enum.hpp"
 
@@ -408,13 +407,6 @@ int main(int argc, char** argv) {
         total_devices_in_process += device_group_affinity.size();
         thread_group_affinity[thread_index] = device_group_affinity;
     }
-
-    // Register algorithm from kernel source
-    register_gpu_module_source(
-        "kernels/ring_allgatherv.spv", ccl::device_topology_type::ring, ccl_coll_allgatherv);
-    // register__gpu_module_source("kernels/a2a_allgatherv.spv",
-    //                              ccl::device_topology_type::a2a,
-    //                              ccl_coll_allgatherv);
 
 #ifdef CCL_ENABLE_SYCL
     std::map<size_t, cl::sycl::vector_class<cl::sycl::device>> per_thread_sycl_devices;

@@ -1,7 +1,7 @@
 #include <limits.h>
 #include <unistd.h>
 
-#include "oneapi/ccl/ccl_gpu_modules.h"
+#include "ccl_gpu_module.hpp"
 
 #ifdef MULTI_GPU_SUPPORT
 #include "common/comm/l0/modules/specific_modules_source_data.hpp"
@@ -55,7 +55,11 @@ ccl_status_t CCL_API register_gpu_module_source(const char* path,
                 native::specific_modules_source_data_storage::instance()
                     .load_kernel_source<ccl_coll_reduce_scatter>(path, t_class);
                 break;
-            default: break;
+            default: 
+                throw std::runtime_error(std::string(__PRETTY_FUNCTION__) +
+                                                    " - get unexpected ccl collective type: " +
+                                                    std::to_string(type));
+                break;
         }
     }
     catch (const std::exception& ex) {

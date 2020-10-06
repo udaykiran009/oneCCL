@@ -16,7 +16,6 @@
 
 #include "base.hpp"
 #include "base_utils.hpp"
-#include "oneapi/ccl/ccl_gpu_modules.h"
 #include "oneapi/ccl/native_device_api/export_api.hpp"
 
 #define COUNT     512
@@ -278,9 +277,10 @@ int main(int argc, char** argv) {
     // extract GPU affinities by processes using '#' separator from L0_CLUSTER_AFFINITY_MASK
     utils::str_to_array<std::string>(affinity_env_value, process_group_gpu_affinity, '#');
 
+    // init and register gpu module
     ccl::init();
 
-    //get addresses from MPI
+    // get addresses from MPI
     int mpi_rank = 0, mpi_size = 0;
     MPI_Init(&argc, &argv);
     MPI_Comm_rank(MPI_COMM_WORLD, &mpi_rank);
@@ -377,12 +377,6 @@ int main(int argc, char** argv) {
               << ", for rank: " << mpi_rank << " devices count"
               << total_devices_in_process[mpi_rank] << ", thread count"
               << node_device_indices[mpi_rank].size() << std::endl;
-
-    // Register algorithm from kernel source
-    register_gpu_module_source(
-        "kernels/ring_allreduce.spv", ccl::device_topology_type::ring, ccl_coll_allreduce);
-    register_gpu_module_source(
-        "kernels/a2a_allreduce.spv", ccl::device_topology_type::a2a, ccl_coll_allreduce);
 
     // launch user threads
     const auto& thread_group_affinity = devices_for_mpi_rank;

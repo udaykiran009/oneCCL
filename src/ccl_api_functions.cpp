@@ -7,6 +7,7 @@
 #endif //#if defined(MULTI_GPU_SUPPORT) || defined(CCL_ENABLE_SYCL)
 
 #include "ccl_api_functions_generators.hpp"
+#include "ccl_gpu_module.hpp"
 
 namespace ccl {
 
@@ -21,9 +22,54 @@ struct impl_dispatch {
     }
 };
 
+#ifdef MULTI_GPU_SUPPORT
+/* register a gpu module */
+void register_gpu_module()
+{
+    // allgatherv
+    register_gpu_module_source("kernels/ring_allgatherv.spv",
+                                ccl::device_topology_type::ring,
+                                ccl_coll_allgatherv);
+    // register__gpu_module_source("kernels/a2a_allgatherv.spv",
+    //                             ccl::device_topology_type::a2a,
+    //                             ccl_coll_allgatherv);
+    // alltoallv
+    register_gpu_module_source("kernels/ring_alltoallv.spv",
+                               ccl::device_topology_type::ring,
+                               ccl_coll_alltoallv);
+    // register_gpu_module_source("kernels/a2a_alltoallv.spv",
+    //                             ccl::device_topology_type::a2a,
+    //                             ccl_coll_alltoallv);
+    // allreduce
+    register_gpu_module_source("kernels/ring_allreduce.spv",
+                                ccl::device_topology_type::ring,
+                                ccl_coll_allreduce);
+    register_gpu_module_source("kernels/a2a_allreduce.spv",
+                                ccl::device_topology_type::a2a,
+                                ccl_coll_allreduce);
+    // bcast
+    register_gpu_module_source("kernels/ring_bcast.spv",
+                               ccl::device_topology_type::ring,
+                               ccl_coll_bcast);
+    register_gpu_module_source("kernels/a2a_bcast.spv",
+                               ccl::device_topology_type::a2a,
+                               ccl_coll_bcast);
+    // reduce
+    register_gpu_module_source("kernels/ring_reduce.spv",
+                                ccl::device_topology_type::ring,
+                                ccl_coll_reduce);
+    // register_gpu_module_source("kernels/a2a_reduce.spv",
+    //                            ccl_topology_class_t::a2a_algo_class,
+    //                            ccl_coll_reduce);
+}
+#endif //MULTI_GPU_SUPPORT
+
 void CCL_API init() {
     auto& env = environment::instance();
     (void)env;
+#ifdef MULTI_GPU_SUPPORT
+    register_gpu_module();
+#endif //MULTI_GPU_SUPPORT
 }
 
 /******************** ENVIRONMENT ********************/

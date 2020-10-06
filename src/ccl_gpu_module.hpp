@@ -4,17 +4,7 @@
 #include "coll/algorithms/algorithms_enum.hpp"
 
 #ifdef MULTI_GPU_SUPPORT
-
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 ccl_status_t CCL_API register_gpu_module_source(const char* source,
                                                 ccl::device_topology_type topology_class,
                                                 ccl_coll_type type);
-
-#ifdef __cplusplus
-} /*extern C */
-#endif
-
 #endif //MULTI_GPU_SUPPORT

@@ -15,7 +15,6 @@ int main() {}
 #include <thread>
 #include <numeric>
 #include "base.hpp"
-#include "oneapi/ccl/ccl_gpu_modules.h"
 #include "oneapi/ccl/native_device_api/export_api.hpp"
 
 #define COUNT     512
