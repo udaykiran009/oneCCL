@@ -152,15 +152,15 @@ ccl::communicator CCL_API ccl::environment::create_communicator(const size_t siz
 }
 
 /***************************TypeGenerations*********************************************************/
-
+namespace ccl {
 template <>
-ccl::stream CCL_API ccl::environment::create_postponed_api_type<
-    ccl::stream,
-    typename ccl::unified_device_type::ccl_native_t,
-    typename ccl::unified_device_context_type::ccl_native_t>(
-    typename ccl::unified_device_type::ccl_native_t device,
-    typename ccl::unified_device_context_type::ccl_native_t context) const {
-    ccl::library_version ret{};
+stream CCL_API environment::create_postponed_api_type<
+    stream,
+    typename unified_device_type::ccl_native_t,
+    typename unified_device_context_type::ccl_native_t>(
+    typename unified_device_type::ccl_native_t device,
+    typename unified_device_context_type::ccl_native_t context) const {
+    library_version ret{};
     ret.major = CCL_MAJOR_VERSION;
     ret.minor = CCL_MINOR_VERSION;
     ret.update = CCL_UPDATE_VERSION;
@@ -168,14 +168,14 @@ ccl::stream CCL_API ccl::environment::create_postponed_api_type<
     ret.build_date = CCL_PRODUCT_BUILD_DATE;
     ret.full = CCL_PRODUCT_FULL;
 
-    return ccl::stream{ stream_provider_dispatcher::create(device, context, ret) };
+    return stream{ stream_provider_dispatcher::create(device, context, ret) };
 }
 template <>
-ccl::stream CCL_API
-ccl::environment::create_postponed_api_type<ccl::stream,
-                                            typename ccl::unified_device_type::ccl_native_t>(
-    typename ccl::unified_device_type::ccl_native_t device) const {
-    ccl::library_version ret{};
+stream CCL_API
+environment::create_postponed_api_type<stream,
+                                            typename unified_device_type::ccl_native_t>(
+    typename unified_device_type::ccl_native_t device) const {
+    library_version ret{};
     ret.major = CCL_MAJOR_VERSION;
     ret.minor = CCL_MINOR_VERSION;
     ret.update = CCL_UPDATE_VERSION;
@@ -183,9 +183,9 @@ ccl::environment::create_postponed_api_type<ccl::stream,
     ret.build_date = CCL_PRODUCT_BUILD_DATE;
     ret.full = CCL_PRODUCT_FULL;
 
-    return ccl::stream{ stream_provider_dispatcher::create(device, ret) };
+    return stream{ stream_provider_dispatcher::create(device, ret) };
 }
-
+}
 CREATE_OP_ATTR_INSTANTIATION(ccl::allgatherv_attr)
 CREATE_OP_ATTR_INSTANTIATION(ccl::allreduce_attr)
 CREATE_OP_ATTR_INSTANTIATION(ccl::alltoall_attr)
@@ -209,11 +209,6 @@ CREATE_STREAM_EXT_INSTANTIATION(typename ccl::unified_device_type::ccl_native_t,
 CREATE_CONTEXT_INSTANTIATION(typename ccl::unified_device_context_type::ccl_native_t)
 CREATE_DEVICE_INSTANTIATION(typename ccl::unified_device_type::ccl_native_t)
 
-#if !defined(CCL_ENABLE_SYCL) && !defined(MULTI_GPU_SUPPORT)
-    //CREATE_CONTEXT_INSTANTIATION(ccl::empty_t)
-    //CREATE_DEVICE_INSTANTIATION(ccl::empty_t)
-    //#error AAAAA
-#endif
 /*
 CREATE_EVENT_INSTANTIATION(cl::sycl::event)
 CREATE_EVENT_EXT_INSTANTIATION(cl_event)

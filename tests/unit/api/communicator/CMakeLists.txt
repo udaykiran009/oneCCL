@@ -28,6 +28,8 @@ set (dependencies_sources
              "${PROJECT_SOURCE_DIR}/src/ccl_app_api_coll_attr.cpp"
              "${PROJECT_SOURCE_DIR}/src/ccl_cpp_stream.cpp"
              "${PROJECT_SOURCE_DIR}/src/ccl_cpp_communicator.cpp"
+             "${PROJECT_SOURCE_DIR}/src/ccl_cpp_environment.cpp"
+             "${PROJECT_SOURCE_DIR}/src/ccl_app_api_datatype_attr.cpp"
              "${PROJECT_SOURCE_DIR}/src/ccl_cpp_device.cpp"
              "${PROJECT_SOURCE_DIR}/src/ccl_cpp_context.cpp"
              "${PROJECT_SOURCE_DIR}/src/coll/coll_common_attributes.cpp"
