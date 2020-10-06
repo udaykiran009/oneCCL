@@ -39,7 +39,7 @@ static ip_getting_type_t ip_getting_mode = IGT_K8S;
 
 typedef enum kvs_access_mode {
     AM_CONNECT = -1,
-    AM_DISCONNECT = 1,
+//    AM_DISCONNECT = 1,
     AM_PUT = 2,
     AM_REMOVE = 3,
     AM_GET_COUNT = 4,
@@ -225,7 +225,7 @@ void* kvs_server_init(void* args) {
         exit(EXIT_FAILURE);
     }
 
-    while (!is_stop || clients_count != 0) {
+    while (!is_stop || clients_count > 1) {
         FD_ZERO(&read_fds);
         FD_SET(sock_listener, &read_fds);
         FD_SET(local_sock, &read_fds);
@@ -256,95 +256,89 @@ void* kvs_server_init(void* args) {
                 exit(1);
             }
             is_stop = 1;
-            continue;
         }
-        else {
-            for (i = 0; i < MAX_CLIENT_COUNT; i++) {
-                sd = client_socket[i];
-                if (sd == 0)
+        for (i = 0; i < MAX_CLIENT_COUNT; i++) {
+            sd = client_socket[i];
+            if (sd == 0)
+                continue;
+
+            if (FD_ISSET(sd, &read_fds)) {
+                if ((read(sd, &request, sizeof(kvs_request_t))) == 0) {
+                    close(sd);
+                    client_socket[i] = 0;
+                    clients_count--;
                     continue;
+                }
 
-                if (FD_ISSET(sd, &read_fds)) {
-                    if ((read(sd, &request, sizeof(kvs_request_t))) == 0) {
-                        close(sd);
-                        client_socket[i] = 0;
-                        continue;
+                switch (request.mode) {
+                    case AM_CONNECT: {
+                        clients_count++;
+                        break;
                     }
+                    case AM_PUT: {
+                        put_key(request.name, request.key, request.val, ST_SERVER);
+                        break;
+                    }
+                    case AM_REMOVE: {
+                        remove_val(request.name, request.key, ST_SERVER);
+                        break;
+                    }
+                    case AM_GET_VAL: {
+                        count = get_val(request.name, request.key, request.val, ST_SERVER);
+                        DO_RW_OP(write, client_socket[i], &count, sizeof(size_t));
+                        if (count != 0)
+                            DO_RW_OP(write, client_socket[i], &request, sizeof(kvs_request_t));
+                        break;
+                    }
+                    case AM_GET_COUNT: {
+                        count = get_count(request.name, ST_SERVER);
+                        DO_RW_OP(write, client_socket[i], &count, sizeof(size_t));
+                        break;
+                    }
+                    case AM_GET_REPLICA: {
+                        char* replica_size_str = getenv(CCL_WORLD_SIZE_ENV);
+                        count = (replica_size_str != NULL) ? strtol(replica_size_str, NULL, 10)
+                                                           : clients_count;
+                        DO_RW_OP(write, client_socket[i], &count, sizeof(size_t));
+                        break;
+                    }
+                    case AM_GET_KEYS_VALUES: {
+                        char** kvs_keys = NULL;
+                        char** kvs_values = NULL;
+                        size_t j;
+                        kvs_request_t* answers = NULL;
 
-                    switch (request.mode) {
-                        case AM_CONNECT: {
-                            clients_count++;
-                            break;
-                        }
-                        case AM_DISCONNECT: {
-                            clients_count--;
-                            break;
-                        }
-                        case AM_PUT: {
-                            put_key(request.name, request.key, request.val, ST_SERVER);
-                            break;
-                        }
-                        case AM_REMOVE: {
-                            remove_val(request.name, request.key, ST_SERVER);
-                            break;
-                        }
-                        case AM_GET_VAL: {
-                            count = get_val(request.name, request.key, request.val, ST_SERVER);
-                            DO_RW_OP(write, client_socket[i], &count, sizeof(size_t));
-                            if (count != 0)
-                                DO_RW_OP(write, client_socket[i], &request, sizeof(kvs_request_t));
-                            break;
-                        }
-                        case AM_GET_COUNT: {
-                            count = get_count(request.name, ST_SERVER);
-                            DO_RW_OP(write, client_socket[i], &count, sizeof(size_t));
-                            break;
-                        }
-                        case AM_GET_REPLICA: {
-                            char* replica_size_str = getenv(CCL_WORLD_SIZE_ENV);
-                            count = (replica_size_str != NULL) ? strtol(replica_size_str, NULL, 10)
-                                                               : clients_count;
-                            DO_RW_OP(write, client_socket[i], &count, sizeof(size_t));
-                            break;
-                        }
-                        case AM_GET_KEYS_VALUES: {
-                            char** kvs_keys = NULL;
-                            char** kvs_values = NULL;
-                            size_t j;
-                            kvs_request_t* answers = NULL;
+                        count =
+                            get_keys_values(request.name, &kvs_keys, &kvs_values, ST_SERVER);
 
-                            count =
-                                get_keys_values(request.name, &kvs_keys, &kvs_values, ST_SERVER);
-
-                            DO_RW_OP(write, client_socket[i], &count, sizeof(size_t));
-                            if (count == 0)
-                                break;
-
-                            answers = (kvs_request_t*)calloc(count, sizeof(kvs_request_t));
-                            for (j = 0; j < count; j++) {
-                                STR_COPY(answers[j].name, request.name, MAX_KVS_NAME_LENGTH);
-                                STR_COPY(answers[j].key, kvs_keys[j], MAX_KVS_KEY_LENGTH);
-                                STR_COPY(answers[j].val, kvs_values[j], MAX_KVS_VAL_LENGTH);
-                            }
-
-                            DO_RW_OP(
-                                write, client_socket[i], answers, sizeof(kvs_request_t) * count);
-
-                            free(answers);
-                            for (j = 0; j < count; j++) {
-                                free(kvs_keys[j]);
-                                free(kvs_values[j]);
-                            }
-                            free(kvs_keys);
-                            free(kvs_values);
+                        DO_RW_OP(write, client_socket[i], &count, sizeof(size_t));
+                        if (count == 0)
                             break;
+
+                        answers = (kvs_request_t*)calloc(count, sizeof(kvs_request_t));
+                        for (j = 0; j < count; j++) {
+                            STR_COPY(answers[j].name, request.name, MAX_KVS_NAME_LENGTH);
+                            STR_COPY(answers[j].key, kvs_keys[j], MAX_KVS_KEY_LENGTH);
+                            STR_COPY(answers[j].val, kvs_values[j], MAX_KVS_VAL_LENGTH);
                         }
-                        default: {
-                            if (request.name[0] == '\0')
-                                continue;
-                            printf("server: Unknown request mode - %d.\n", request.mode);
-                            exit(1);
+
+                        DO_RW_OP(
+                            write, client_socket[i], answers, sizeof(kvs_request_t) * count);
+
+                        free(answers);
+                        for (j = 0; j < count; j++) {
+                            free(kvs_keys[j]);
+                            free(kvs_values[j]);
                         }
+                        free(kvs_keys);
+                        free(kvs_values);
+                        break;
+                    }
+                    default: {
+                        if (request.name[0] == '\0')
+                            continue;
+                        printf("server: Unknown request mode - %d.\n", request.mode);
+                        exit(1);
                     }
                 }
             }
@@ -706,9 +700,7 @@ size_t internal_kvs::kvs_init(const char* main_addr) {
 size_t internal_kvs::kvs_finalize(void) {
     kvs_request_t request;
     memset(&request, 0, sizeof(kvs_request_t));
-    request.mode = AM_DISCONNECT;
 
-    DO_RW_OP(write, sock_sender, &request, sizeof(kvs_request_t));
     if (thread != 0) {
         void* exit_code;
         int err;
