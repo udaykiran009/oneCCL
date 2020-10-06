@@ -16,6 +16,9 @@ single_device_communicator::single_device_communicator(ccl::unified_device_type&
                                                        const ccl::comm_split_attr& attr)
         : base_t(std::move(device), std::move(context), thread_idx, process_idx /*, comm_attr*/, attr) {}
 
+single_device_communicator::~single_device_communicator() {
+}
+
 void single_device_communicator::set_ccl_comm(std::shared_ptr<ccl_comm> impl) {
     CCL_ASSERT(!comm_impl, "comm_impl must be nullptr before first udage");
     comm_impl = impl;
@@ -97,7 +100,7 @@ single_device_communicator::coll_request_t single_device_communicator::allgather
     const ccl::stream::impl_value_t& stream,
     const ccl::allgatherv_attr& attr,
     const ccl::vector_class<ccl::event>& deps) {
-    
+
     ccl_coll_attr internal_attr(attr);
     return allgatherv_base_impl(send_buf, send_count, recv_buf, recv_counts, dtype, stream, internal_attr, deps);
 }

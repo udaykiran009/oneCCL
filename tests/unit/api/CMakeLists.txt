@@ -18,7 +18,19 @@ if (COMPUTE_RUNTIME)
     add_definitions(${DEFINITIONS})
 endif()
 
+ if (COMPUTE_RUNTIME)
+     if ((${COMPUTE_RUNTIME_TARGET_NAME} STREQUAL "ze_loader")
+              OR (${COMPUTE_RUNTIME_TARGET_NAME} STREQUAL "Intel::SYCL"))
+        option(MULTI_GPU_SUPPORT "Enable multi GPU support" ON)
+        set(MULTI_GPU_SUPPORT ON)
+        activate_compute_runtime("${UPSTREAM_SOURCE_DIR}/cmake" L0)
+        message ("Enable multi GPU support: ${MULTI_GPU_SUPPORT}")
+        message ("COMPUTE_RUNTIME_TARGET_NAME: ${COMPUTE_RUNTIME_TARGET_NAME}")
+    endif()
+endif(COMPUTE_RUNTIME)
+
 if (MULTI_GPU_SUPPORT)
+message("MULTI_GPU_SUPPORTMULTI_GPU_SUPPORTMULTI_GPU_SUPPORTMULTI_GPU_SUPPORTMULTI_GPU_SUPPORTMULTI_GPU_SUPPORTMULTI_GPU_SUPPORTMULTI_GPU_SUPPORT")
     list( APPEND native_api_dependencies_sources
              "${UPSTREAM_SOURCE_DIR}/src/native_device_api/l0/base.cpp"
              "${UPSTREAM_SOURCE_DIR}/src/native_device_api/l0/device.cpp"
@@ -55,6 +67,8 @@ if(API_UT)
 endif(API_UT)
 
 add_library(native_cl_api_objects OBJECT "${native_api_dependencies_sources}")
+message("!!!!!!!!!!!!! ${COMPUTE_RUNTIME_TARGET_NAME}")
+
 target_include_directories(native_cl_api_objects PUBLIC
                             ${CMAKE_CURRENT_BINARY_DIR}
                             ${UPSTREAM_SOURCE_DIR}/include

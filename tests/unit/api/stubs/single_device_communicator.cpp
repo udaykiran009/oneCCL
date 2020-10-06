@@ -13,9 +13,8 @@ single_device_communicator::single_device_communicator(ccl::unified_device_type&
                                                        const ccl::comm_split_attr& attr)
         : base_t(std::move(device), std::move(ctx), thread_idx, process_idx, /*comm_attr, */ attr) {}
 
-#ifdef MULTI_SPU_SUPPORT
-void single_device_communicator::visit(ccl::gpu_comm_attr& comm_attr) {}
-#endif
+single_device_communicator::~single_device_communicator() {
+}
 
 void single_device_communicator::set_ccl_comm(std::shared_ptr<ccl_comm> impl) {
     comm_impl = impl;
@@ -33,6 +32,7 @@ void single_device_communicator::set_context(const ccl::context& in_context)
     context = in_context.get_native();
 }
 
+void single_device_communicator::visit(ccl::gpu_comm_attr& comm_attr) {}
 ///////////////
 
 #define TEMPLATE_DECL_ARG class comm_impl, class communicator_traits
@@ -67,6 +67,10 @@ typed_single_device_base_communicator<TEMPLATE_DEF_ARG>::typed_single_device_bas
                             thread_idx,
                             process_idx /*, comm_attr*/,
                             attr) {}
+template <TEMPLATE_DECL_ARG>
+std::string typed_single_device_base_communicator<TEMPLATE_DEF_ARG>::to_string() const {
+    return {};
+}
 
 single_device_communicator::coll_request_t single_device_communicator::barrier(
     const ccl::stream::impl_value_t& stream,
@@ -76,6 +80,18 @@ single_device_communicator::coll_request_t single_device_communicator::barrier(
 }
 
 /* allgatherv */
+
+single_device_communicator::coll_request_t single_device_communicator::allgatherv_base_impl(
+    const void* send_buf,
+    size_t send_count,
+    void* recv_buf,
+    const ccl::vector_class<size_t>& recv_counts,
+    ccl::datatype dtype,
+    const ccl::stream::impl_value_t& stream,
+    const ccl_coll_attr& attr,
+    const ccl::vector_class<ccl::event>& deps) {
+    return {};
+}
 single_device_communicator::coll_request_t single_device_communicator::allgatherv_impl(
     const void* send_buf,
     size_t send_count,
@@ -227,6 +243,18 @@ single_device_communicator::coll_request_t single_device_communicator::sparse_al
 }
 
 /* allgatherv */
+
+template <class buffer_type>
+single_device_communicator::coll_request_t single_device_communicator::allgatherv_base_impl(
+    const buffer_type* send_buf,
+    size_t send_count,
+    buffer_type* recv_buf,
+    const ccl::vector_class<size_t>& recv_counts,
+    const ccl::stream::impl_value_t& stream,
+    const ccl_coll_attr& attr,
+    const ccl::vector_class<ccl::event>& deps) {
+    return {};
+}
 template <class buffer_type>
 single_device_communicator::coll_request_t single_device_communicator::allgatherv_impl(
     const buffer_type* send_buf,
