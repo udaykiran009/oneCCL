@@ -174,6 +174,7 @@ set(CCL_SRC
     common/global/global.cpp
     common/log/log.cpp
     common/request/host_request.cpp
+    common/request/native_request.cpp
     common/request/request.cpp
     common/utils/spinlock.cpp
     common/utils/yield.cpp

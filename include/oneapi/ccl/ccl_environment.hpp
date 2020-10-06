@@ -113,6 +113,12 @@ public:
         return op_attr;
     }
 
+    template <class event_type,
+            class = typename std::enable_if<is_event_supported<event_type>()>::type>
+    event create_event(event_type& native_event) {
+        return event::create_from_native(native_event);
+    }
+
     template <class native_stream_type,
               class = typename std::enable_if<is_stream_supported<native_stream_type>()>::type>
     stream create_stream(native_stream_type& native_stream);

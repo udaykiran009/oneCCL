@@ -124,9 +124,7 @@ context create_context_from_attr(typename unified_device_context_type::ccl_nativ
 template <class event_type,
           class = typename std::enable_if<is_event_supported<event_type>()>::type>
 event create_event(event_type& native_event) {
-    // TODO not implemented
-    throw ccl::exception(std::string(__PRETTY_FUNCTION__) + " - is not implemented");
-    return {};
+    return environment::instance().create_event(native_event);
 }
 
 

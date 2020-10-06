@@ -73,7 +73,7 @@ int main(int argc, char *argv[]) {
 
     /* create dependency vector */
     vector<ccl::event> events;
-    //events.push_back(ccl::create_event(e));
+    events.push_back(ccl::create_event(e));
 
     if (!handle_exception(q))
         return -1;

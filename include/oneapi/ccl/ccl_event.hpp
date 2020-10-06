@@ -7,7 +7,6 @@
 namespace ccl {
 
 class request_impl;
-class event_internal;
 
 /**
  * event's interface that allows users to track communication operation progress
@@ -26,6 +25,8 @@ public:
      */
     using impl_t = typename impl_value_t::element_type;
 
+    using native_t = typename unified_event_type::ccl_native_t;
+
     event() noexcept;
     event(event&& src) noexcept;
     event(impl_value_t&& impl) noexcept;
@@ -37,30 +38,43 @@ public:
     bool operator!=(const event& rhs) const noexcept;
 
     /**
+     * Non-blocking check for operation completion
+     * @retval true if the operation has been completed or the event was not initialized
+     * @retval false if the operation has not been completed
+     */
+    explicit operator bool();
+
+    /**
      * Blocking wait for operation completion
      */
     void wait();
 
     /**
      * Non-blocking check for operation completion
-     * @retval true if the operation has been completed
+     * @retval true if the operation has been completed or the event was not initialized
      * @retval false if the operation has not been completed
      */
     bool test();
 
     /**
      * Cancel a pending asynchronous operation
-     * @retval true if the operation has been canceled
+     * @retval true if the operation has been canceled or the event was not initialized
      * @retval false if the operation has not been canceled
      */
     bool cancel();
 
     /**
-      * Retrieve event object to be used for synchronization
+      * Retrieve a native event object to be used for synchronization
       * with computation or other communication operations
-      * @return event object
+      * @return pointer to native event object
       */
-    event_internal& get_event();
+    native_t& get_native();
+    const native_t& get_native() const;
+
+private:
+    friend class environment;
+
+    static event create_from_native(native_t& native_event);
 };
 
 } // namespace ccl

@@ -6,7 +6,6 @@
 class ccl_request;
 
 namespace ccl {
-class event_internal;
 
 struct chargeable_request : public ccl::request_impl {
     virtual void charge(ccl_request* r) = 0;
@@ -40,8 +39,8 @@ public:
         return impl.cancel();
     }
 
-    event_internal& get_event() override {
-        return impl.get_event();
+    event::native_t& get_native() override {
+        throw ccl::exception(std::string(__FUNCTION__) + " - is not implemented");
     }
 
     // scoped interface
@@ -49,6 +48,7 @@ public:
     typename std::tuple_element<index, scoped_args_storage_t>::type& get_arg_by_index() {
         return std::get<index>(storage);
     }
+
     void charge(ccl_request* r) override {
         impl_t charged_req(r);
         std::swap(impl, charged_req);
@@ -108,5 +108,6 @@ std::unique_ptr<ccl::chargeable_request> make_and_charge_scoped_request(
     typed_arg->charge_by_op(op, std::forward<non_scoped_args>(elapsed_args)...);
     return typed_arg;
 }
+
 } // namespace details
 } // namespace ccl

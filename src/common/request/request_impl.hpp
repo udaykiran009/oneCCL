@@ -1,15 +1,16 @@
 #pragma once
 
-namespace ccl {
+#include "oneapi/ccl/native_device_api/export_api.hpp"
+#include "oneapi/ccl/ccl_event.hpp"
 
-class event_internal;
+namespace ccl {
 
 class request_impl {
 public:
     virtual void wait() = 0;
     virtual bool test() = 0;
     virtual bool cancel() = 0;
-    virtual event_internal& get_event() = 0;
+    virtual event::native_t& get_native() = 0;
     virtual ~request_impl() = default;
 };
 
