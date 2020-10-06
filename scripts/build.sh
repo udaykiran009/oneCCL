@@ -218,7 +218,7 @@ define_cpu_compiler()
     then
         check_clang_path
         C_COMPILER_CPU=${SYCL_BUNDLE_ROOT}/bin/clang
-        CXX_COMPILER_CPU=${SYCL_BUNDLE_ROOT}/bin/clang++
+        CXX_COMPILER_CPU=${SYCL_BUNDLE_ROOT}/bin/dpcpp
     fi
 }
 define_gpu_compiler()
@@ -279,7 +279,8 @@ post_build()
         LDFLAGS="-L${LIBFABRIC_INSTALL_DIR}/lib/"
 	fi
 	LDFLAGS=" ${LD_FLAGS} -Wl,-rpath,../../../../mpi/latest/lib/release_mt/"
-    gcc -shared -fPIE -fPIC -Wl,-z,now -Wl,-z,relro -Wl,-z,noexecstack -Xlinker -x -Xlinker -soname=${LIBCCL_SONAME} -o libccl.so.${LIBCCL_SO_VERSION} *.o ${LDFLAGS} -L${WORKSPACE}/build/_install/lib/ -lmpi -lm -lfabric
+	# fPIE -fPIC -Wl,-z,now -Wl,-z,relro -Wl,-z,noexecstack -std=gnu99 -Wall -Werror -D_GNU_SOURCE -fvisibility=internal -O3 -DNDEBUG -std=gnu99 -O3 -shared
+    gcc -fPIE -fPIC -Wl,-z,now -Wl,-z,relro -Wl,-z,noexecstack -std=gnu99 -Wall -Werror -D_GNU_SOURCE -fvisibility=internal -O3 -DNDEBUG -std=gnu99 -O3 -shared -Wl,-soname=${LIBCCL_SONAME} -o libccl.so.${LIBCCL_SO_VERSION} *.o ${LDFLAGS} -L${WORKSPACE}/build/_install/lib/ -lmpi -lm -lfabric
     CheckCommandExitCode $? "post build failed"
     rm -rf *.o
 
@@ -529,7 +530,7 @@ prepare_staging()
 
                                         if [ ! -f ${DROP_SRC_FILE} ]
                                         then
-                                            echo " NOK: ${DROP_SRC_FILE}" >> ${PACKAGE_LOG}
+                                            echo " NOK: ${DROP_SRC_FILE}"  >> ${PACKAGE_LOG}
                                             RES=1
                                             continue
                                         fi

@@ -131,7 +131,7 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 if (COMPUTE_RUNTIME)
     activate_compute_runtime("${CMAKE_CURRENT_LIST_DIR}/cmake" ${COMPUTE_RUNTIME})
-
+	set(PARENT_COMPUTE_RUNTIME_TARGET_NAME ${COMPUTE_RUNTIME_TARGET_NAME})
     if (${CCL_ENABLE_SYCL_V} STREQUAL 1)
         option (CCL_ENABLE_SYCL "Enable CCL SYCL runtime" ON)
         message(STATUS "Enable CCL SYCL runtime")
@@ -199,7 +199,7 @@ set(CCL_BUILD_DIR ${CMAKE_CURRENT_BINARY_DIR}/src)
 
 enable_testing()
 
-set (EXTERNAL_LIBS "")
+set(EXTERNAL_LIBS "")
 set(EXAMPLES_INC_DIRS ${PROJECT_SOURCE_DIR}/include ${PROJECT_SOURCE_DIR}/examples/include ${PROJECT_SOURCE_DIR}/mpi/include)
 
 # allow `deprecated`
@@ -210,9 +210,29 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}")
 if (COMPUTE_RUNTIME)
     if ((${COMPUTE_RUNTIME_TARGET_NAME} STREQUAL "ze_loader")
              OR (${COMPUTE_RUNTIME_TARGET_NAME} STREQUAL "Intel::SYCL"))
-        option(MULTI_GPU_SUPPORT "Enable multi GPU support" ON)
+        set(MULTI_GPU_SUPPORT ON)
+		activate_compute_runtime("${CMAKE_CURRENT_LIST_DIR}/cmake" L0)
+		message ("Enable multi GPU support: ${MULTI_GPU_SUPPORT}")
+		message ("COMPUTE_RUNTIME_TARGET_NAME: ${COMPUTE_RUNTIME_TARGET_NAME}")
     endif()
 endif(COMPUTE_RUNTIME)
+
+if (MULTI_GPU_SUPPORT)
+    option(CCL_GPU_DEVICES_AFFINITY_ENABLE "Enable L0" ON)
+    if(CCL_GPU_DEVICES_AFFINITY_ENABLE)
+        set(CCL_GPU_DEVICES_AFFINITY_MASK_SIZE 4)
+        message ("Set L0 device mask affinity size: ${CCL_GPU_DEVICES_AFFINITY_MASK_SIZE}")
+    endif()
+endif(MULTI_GPU_SUPPORT)
+
+if (CCL_ENABLE_SYCL)
+    if (${PARENT_COMPUTE_RUNTIME_TARGET_NAME} STREQUAL "Intel::SYCL")
+        set (CCL_ENABLE_SYCL_CHECK_CONTRACT "#if defined(__cplusplus)\n#if !defined(__clang__) || __clang_major__ < 9 || !defined(CL_SYCL_LANGUAGE_VERSION)\n#error This version of CCL configured only for oneAPI DPC++ Compiler\n#endif\n#endif")
+    else(${PARENT_COMPUTE_RUNTIME_TARGET_NAME} STREQUAL "Codeplay::ComputeCpp")
+        set (CCL_ENABLE_SYCL_CHECK_CONTRACT "#if defined(__cplusplus)\n#if !defined(__clang__) || __clang_major__ < 6\n#error This version of CCL configured only for oneAPI DPC++ Compiler\n#endif\n#endif")
+    endif()
+    add_subdirectory(examples/sycl)
+endif()
 
 #generate & install vars.sh
 configure_file(cmake/vars.sh.in ${CMAKE_CURRENT_BINARY_DIR}/vars.sh @ONLY)
@@ -240,15 +260,6 @@ include_directories(${CMAKE_CURRENT_BINARY_DIR}/include)
 #include other CMakeLists
 add_subdirectory(src)
 add_subdirectory(examples/cpu)
-
-if (CCL_ENABLE_SYCL)
-    if (${COMPUTE_RUNTIME_TARGET_NAME} STREQUAL "Intel::SYCL")
-        set (CCL_ENABLE_SYCL_CHECK_CONTRACT "#if defined(__cplusplus)\n#if !defined(__clang__) || __clang_major__ < 9 || !defined(CL_SYCL_LANGUAGE_VERSION)\n#error This version of CCL configured only for oneAPI DPC++ Compiler\n#endif\n#endif")
-    else(${COMPUTE_RUNTIME_TARGET_NAME} STREQUAL "Codeplay::ComputeCpp")
-        set (CCL_ENABLE_SYCL_CHECK_CONTRACT "#if defined(__cplusplus)\n#if !defined(__clang__) || __clang_major__ < 6\n#error This version of CCL configured only for oneAPI DPC++ Compiler\n#endif\n#endif")
-    endif()
-    add_subdirectory(examples/sycl)
-endif()
 
 add_subdirectory(examples/benchmark)
 add_subdirectory(examples/common)
