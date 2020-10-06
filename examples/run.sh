@@ -257,12 +257,10 @@ run()
                     grep -v 'unordered_allreduce' |
                     grep -v 'custom_allreduce' |
                     grep -v 'datatype' |
-                    grep -v 'allreduce_rs' |
                     grep -v 'communicator' |
                     grep -v 'sparse_allreduce'`
             else
                 examples_to_run=`find . -type f -executable -printf '%P\n' |
-                    grep -v -e '\(^allreduce_rs$\|^platform_info$\)' |
                     grep -v 'sparse_allreduce'`
             fi
 

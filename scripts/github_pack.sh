@@ -17,11 +17,10 @@ excluded=".git
 ./doc/third_party_programs
 ./doc/copyright
 ./examples/run.sh
-./examples/Makefile
+./internal
 ./ofi/ofi_update.sh
 ./ccl_public
 ./ccl_oneapi
-./examples/level_zero
 ./src/kernels
 ./tests/unit"
 

@@ -231,7 +231,6 @@ if (CCL_ENABLE_SYCL)
     else(${PARENT_COMPUTE_RUNTIME_TARGET_NAME} STREQUAL "Codeplay::ComputeCpp")
         set (CCL_ENABLE_SYCL_CHECK_CONTRACT "#if defined(__cplusplus)\n#if !defined(__clang__) || __clang_major__ < 6\n#error This version of CCL configured only for oneAPI DPC++ Compiler\n#endif\n#endif")
     endif()
-    add_subdirectory(examples/sycl)
 endif()
 
 #generate & install vars.sh
@@ -258,13 +257,13 @@ include_directories(${CMAKE_CURRENT_BINARY_DIR}/include)
 
 
 #include other CMakeLists
-add_subdirectory(src)
-add_subdirectory(examples/cpu)
 
+add_subdirectory(src)
 add_subdirectory(examples/benchmark)
 add_subdirectory(examples/common)
-if(MULTI_GPU_SUPPORT)
-    add_subdirectory(examples/level_zero)
+add_subdirectory(examples/cpu)
+if (CCL_ENABLE_SYCL)
+    add_subdirectory(examples/sycl)
 endif()
 
 add_subdirectory(tests/functional)
