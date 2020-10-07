@@ -29,13 +29,6 @@ ccl_device_driver::context_storage_type ccl_device_driver::get_driver_contexts()
     return get_ctx().lock();
 }
 
-// template<class Key, class T>
-// std::shared_ptr<std::map<Key,T>>
-// make_shared_map(std::initializer_list<typename std::map<Key,T>::value_type> il)
-// {
-//     return std::make_shared<std::map<Key,T>>(il);
-// }
-
 ccl_device_driver::indexed_driver_handles ccl_device_driver::get_handles(
     const ccl::device_indices_t& requested_driver_indexes /* = indices()*/) {
     uint32_t driver_count = 0;
@@ -68,7 +61,6 @@ ccl_device_driver::indexed_driver_handles ccl_device_driver::get_handles(
     return ret;
 }
 
-
 CCL_API std::shared_ptr<ccl_device_driver> ccl_device_driver::create(
     handle_t h,
     uint32_t id,
@@ -97,8 +89,7 @@ CCL_API std::shared_ptr<ccl_device_driver> ccl_device_driver::create(
     auto ctx = platform.lock()->get_platform_contexts();
     std::shared_ptr<ccl_device_driver> driver =
         std::make_shared<ccl_device_driver>(h, id, std::move(platform), ctx);
-    
-   driver->create_context();
+    driver->create_context();
 
     auto collected_devices_list = ccl_device::get_handles(*driver, rank_device_affinity);
     try {
@@ -118,8 +109,6 @@ CCL_API std::shared_ptr<ccl_device_driver> ccl_device_driver::create(
                 }
                 driver->devices.emplace(
                     val.first, ccl_device::create(val.second, driver->get_ptr(), per_driver_index));
-
-
             }
         }
     }
@@ -242,10 +231,6 @@ CCL_API ccl::device_mask_t ccl_device_driver::get_device_mask(
 }
 
 std::shared_ptr<ccl_context> ccl_device_driver::create_context() {
-
-
-
-
     ze_result_t status = ZE_RESULT_SUCCESS;
     ze_context_handle_t context;
     ze_context_desc_t context_desc = {

@@ -34,10 +34,10 @@ constexpr bool is_context_supported() {
                          typename std::remove_reference<native_context>::type>::type>::type>::is_supported();
 }
 
-/**  
- * Export common native API supported types  
- */  
-API_CLASS_TYPE_INFO(empty_t);  
+/**
+ * Export common native API supported types
+ */
+API_CLASS_TYPE_INFO(empty_t);
 API_CLASS_TYPE_INFO(typename unified_device_type::ccl_native_t)
 API_CLASS_TYPE_INFO(typename unified_device_context_type::ccl_native_t);
 API_CLASS_TYPE_INFO(typename unified_stream_type::ccl_native_t);

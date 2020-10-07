@@ -5,7 +5,6 @@
 #include "oneapi/ccl/native_device_api/l0/primitives.hpp"
 #include "oneapi/ccl/native_device_api/l0/utils.hpp"
 
-
 namespace native {
 struct ccl_device_platform;
 struct ccl_device_driver;

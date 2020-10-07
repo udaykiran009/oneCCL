@@ -14,7 +14,6 @@
 #endif
 
 namespace native {
-
 /**
  * Base RAII L0 handles wrappper
  * support serialize/deserialize concept

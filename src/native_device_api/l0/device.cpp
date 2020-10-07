@@ -376,7 +376,6 @@ CCL_API void* ccl_device::device_alloc_memory(size_t bytes_count,
     ze_result_t
         ret = //zeDriverAllocSharedMem(get_owner()->handle, handle, flags, ordinal, ZE_HOST_MEM_ALLOC_FLAG_DEFAULT, bytes_count, alignment, &out_ptr);
         //zeDriverAllocHostMem(get_owner()->handle, ZE_HOST_MEM_ALLOC_FLAG_DEFAULT, bytes_count, alignment, &out_ptr);
-        // TODO L0: migration l0 0.9 -> l0 1.0, add params
         zeMemAllocShared(
             ctx->get(), &mem_descr, &host_descr, bytes_count, alignment, handle, &out_ptr);
     if (ret != ZE_RESULT_SUCCESS) {
@@ -448,7 +447,7 @@ CCL_API ccl_device::device_ipc_memory_handle ccl_device::create_ipc_memory_handl
     }
 
     ze_result_t ret = zeMemGetIpcHandle(
-        ctx->get(), device_mem_ptr, &ipc_handle); //TODO -- use device handle?
+        ctx->get(), device_mem_ptr, &ipc_handle);
     if (ret != ZE_RESULT_SUCCESS) {
         throw std::runtime_error(std::string("cannot get ipc mem handle, error: ") +
                                  native::to_string(ret));
@@ -470,7 +469,7 @@ ccl_device::create_shared_ipc_memory_handle(void* device_mem_ptr, std::shared_pt
     }
 
     ze_result_t ret = zeMemGetIpcHandle(
-        ctx->get(), device_mem_ptr, &ipc_handle); //TODO -- use device handle?
+        ctx->get(), device_mem_ptr, &ipc_handle);
     if (ret != ZE_RESULT_SUCCESS) {
         throw std::runtime_error(std::string("cannot get ipc mem handle, error: ") +
                                  native::to_string(ret));

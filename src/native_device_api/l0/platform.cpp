@@ -147,7 +147,6 @@ std::shared_ptr<ccl_context> ccl_device_platform::create_context(std::shared_ptr
     return driver->create_context();
 }
 
-
 void CCL_API ccl_device_platform::on_delete(ze_driver_handle_t& sub_device_handle,
                                             ze_context_handle_t& context) {
     // status = zeContextDestroy(context);

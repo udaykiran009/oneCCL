@@ -5,7 +5,6 @@
 #include "oneapi/ccl/native_device_api/l0/utils.hpp"
 
 namespace native {
-
 struct ccl_device_platform : std::enable_shared_from_this<ccl_device_platform> {
     using driver_ptr = std::shared_ptr<ccl_device_driver>;
     using const_driver_ptr = std::shared_ptr<ccl_device_driver>;
@@ -29,7 +28,6 @@ struct ccl_device_platform : std::enable_shared_from_this<ccl_device_platform> {
     ccl_device_driver::const_device_ptr get_device(const ccl::device_index_type& path) const;
 
     std::shared_ptr<ccl_context> create_context(std::shared_ptr<ccl_device_driver> driver);
-
     context_storage_type get_platform_contexts();
 
     std::string to_string() const;

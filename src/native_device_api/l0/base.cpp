@@ -4,8 +4,6 @@
 #include "oneapi/ccl/native_device_api/l0/base_impl.hpp"
 
 namespace native {
-ze_context_handle_t CL_CONTEXT_STOP = nullptr;
-
 std::string CCL_API to_string(const ze_result_t result) {
     switch (result) {
         case ZE_RESULT_SUCCESS: return "ZE_RESULT_SUCCESS";

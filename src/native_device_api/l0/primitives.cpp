@@ -30,7 +30,6 @@ CCL_API void copy_memory_to_device_sync_unsafe(void* dst,
     //list_description.flags = ZE_COMMAND_LIST_FLAG_MAXIMIZE_THROUGHPUT;  TODO may be &= for flags???
     auto cmd_list = device->create_cmd_list(ctx, list_description);
 
-    // TODO L0: migration l0 0.9 -> l0 1.0, add params
     ze_result_t ret =
         zeCommandListAppendMemoryCopy(cmd_list.get(), dst, src, size, nullptr, 0, nullptr);
     if (ret != ZE_RESULT_SUCCESS) {
