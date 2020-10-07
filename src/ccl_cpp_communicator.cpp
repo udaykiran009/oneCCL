@@ -62,30 +62,8 @@ CCL_API size_t ccl::communicator::size() const {
     return static_cast<size_t> (get_impl()->get_comm_group_id());
 }*/
 
-CCL_API ccl::communicator ccl::communicator::split(
-    const ccl::comm_split_attr& attr) {
-    if (!attr.is_valid<ccl::comm_split_attr_id::group>()) {
-        throw ccl::exception(std::string(__FUNCTION__) +
-                        " - TODO `comm_split_attr`: supports `group` only");
-    }
-    //TODO
-#ifdef MULTI_GPU_SUPPORT
-    auto id = get_impl()->get_comm_group_id();
-    ccl::group_context::comm_group_t my_group =
-        ccl::group_context::instance().get_existing_group_by_id(id);
-#ifdef CCL_ENABLE_SYCL
-    auto ctx = get_impl()->get_context();
-    return my_group->create_communicator_from_group<cl::sycl::device>(get_device(), ctx, attr);
-#else
-#ifdef MULTI_GPU_SUPPORT
-    auto ctx = get_impl()->get_context();
-    return my_group->create_communicator_from_group(get_impl()->get_device_path(), ctx, attr);
-#endif
-#endif
-#else
-    throw ccl::exception(std::string(__FUNCTION__) + " - TODO `comm_split_attr`: unsupported");
-    return std::move(*this);
-#endif
+CCL_API ccl::communicator ccl::communicator::split(const ccl::comm_split_attr& attr) {
+    return get_impl()->split(attr);
 }
 
 CCL_API ccl::communicator::ccl_device_t ccl::communicator::get_device() {

@@ -16,6 +16,10 @@ single_device_communicator::single_device_communicator(ccl::unified_device_type&
 single_device_communicator::~single_device_communicator() {
 }
 
+std::shared_ptr<ccl::communicator_interface> single_device_communicator::split(const ccl::comm_split_attr& attr) {
+    return {};
+}
+
 void single_device_communicator::set_ccl_comm(std::shared_ptr<ccl_comm> impl) {
     comm_impl = impl;
 

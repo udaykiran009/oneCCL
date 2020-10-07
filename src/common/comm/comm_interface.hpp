@@ -54,6 +54,8 @@ struct communicator_interface : public communicator_interface_dispatcher {
 
     virtual const group_unique_key& get_comm_group_id() const = 0;
 
+    virtual std::shared_ptr<ccl::communicator_interface> split(const ccl::comm_split_attr& attr) = 0;
+
     // collectives operation declarations
     virtual ccl::event barrier(const stream::impl_value_t& op_stream,
                                  const barrier_attr& attr,

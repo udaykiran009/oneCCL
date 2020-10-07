@@ -25,6 +25,7 @@ host_communicator::coll_request_t host_communicator::barrier_impl(
 std::shared_ptr<atl_wrapper> host_communicator::get_atl() {
     return {};
 }
+
 } // namespace ccl
 
 #endif
@@ -112,8 +113,8 @@ ccl::communicator_interface::context_t host_communicator::get_context() {
     throw ccl::exception(std::string(__FUNCTION__) + " is not applicable for " + traits::name());
 }
 
-ccl::unique_ptr_class<host_communicator> host_communicator::split(const comm_split_attr& attr) {
-   return {};
+std::shared_ptr<communicator_interface> host_communicator::split(const comm_split_attr& attr) {
+    return {};
 }
 
 host_communicator::coll_request_t host_communicator::barrier(

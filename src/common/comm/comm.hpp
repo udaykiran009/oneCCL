@@ -57,10 +57,6 @@ public:
 
     ~ccl_comm() = default;
 
-    static ccl_comm* create_with_color(int color,
-                                       ccl_comm_id_storage* comm_ids,
-                                       const ccl_comm* parent_comm);
-
     /* version with user-provided colors, allows to skip allgatherv */
     static ccl_comm* create_with_colors(const std::vector<int>& colors,
                                         ccl_comm_id_storage* comm_ids,

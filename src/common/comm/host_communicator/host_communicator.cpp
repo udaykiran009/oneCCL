@@ -13,6 +13,8 @@
 #include "util/pm/pmi_resizable_rt/pmi_resizable/kvs/ikvs_wrapper.h"
 #include "atl/atl_wrapper.h"
 
+#include "common/comm/comm.hpp"
+
 #ifdef MULTI_GPU_SUPPORT
 #include "common/comm/l0/gpu_comm_attr.hpp"
 #endif
@@ -90,14 +92,50 @@ ccl::communicator_interface::context_t host_communicator::get_context() {
     return empty;
 }
 
-ccl::unique_ptr_class<host_communicator> host_communicator::split(const comm_split_attr& attr) {
+void host_communicator::exchange_colors(std::vector<int>& colors) {
+    size_t send_count = 1;
+    vector_class<size_t> recv_counts(colors.size(), send_count);
+    auto attr = create_operation_attr<allgatherv_attr>(
+        attr_val<operation_attr_id::to_cache>(false));
+
+    this->allgatherv_impl(colors.data(),
+                          send_count,
+                          colors.data(),
+                          recv_counts,
+                          {},
+                          attr,
+                          {}).wait();
+}
+
+ccl_comm* host_communicator::create_with_color(int color,
+                                               ccl_comm_id_storage* comm_ids,
+                                               const ccl_comm* parent_comm) {
+    if (ccl::global_data::env().atl_transport == ccl_atl_mpi) {
+        throw ccl::exception(
+            "MPI transport doesn't support creation of communicator with color yet");
+    }
+
+    std::vector<int> colors(this->size());
+    colors[this->rank()] = color;
+    this->exchange_colors(colors);
+
+    // TODO we can replace this func with own
+    return ccl_comm::create_with_colors(colors, comm_ids, parent_comm, true);
+}
+
+std::shared_ptr<communicator_interface> host_communicator::split(const comm_split_attr& attr) {
+    if (!attr.is_valid<comm_split_attr_id::color>()) {
+        throw ccl::exception(std::string(__FUNCTION__) +
+                        " - 'Color' split attribute for host communicator is not set");
+    }
+
     ccl::global_data& data = ccl::global_data::get();
-    auto new_comm = ccl_comm::create_with_color(
+    auto new_comm = this->create_with_color(
         attr.get<ccl::comm_split_attr_id::color>(), data.comm_ids.get(), comm_impl.get());
 
     comm_attr = attr;
 
-    return unique_ptr_class<host_communicator>(
+    return std::shared_ptr<host_communicator>(
         new host_communicator(std::shared_ptr<ccl_comm>(new_comm)));
 }
 

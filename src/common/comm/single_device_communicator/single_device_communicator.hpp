@@ -42,7 +42,11 @@ public:
                                size_t thread_idx,
                                size_t proces_idx,
                                const ccl::comm_split_attr& attr);
+
     ~single_device_communicator();
+
+    std::shared_ptr<ccl::communicator_interface> split(const ccl::comm_split_attr& attr) override;
+
 #ifdef MULTI_GPU_SUPPORT
     void visit(ccl::gpu_comm_attr& comm_attr) override;
 #endif

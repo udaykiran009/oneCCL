@@ -197,9 +197,9 @@ int main() {
     // check_max_comm_number(comm, kvs, mpi_size, mpi_rank);
     // PRINT_BY_ROOT(comm, "PASSED");
 
-    // PRINT_BY_ROOT(comm, "\n- Communicator split test");
-    // check_comm_split_by_color(comm, mpi_size, mpi_rank);
-    // PRINT_BY_ROOT(comm, "PASSED");
+    PRINT_BY_ROOT(comm, "\n- Communicator split test");
+    check_comm_split_by_color(comm, mpi_size, mpi_rank);
+    PRINT_BY_ROOT(comm, "PASSED");
 
     // check_comm_create_identical_color();
 

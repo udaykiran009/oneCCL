@@ -46,5 +46,11 @@ std::string typed_base_communicator<TEMPLATE_DEF_ARG>::to_string() const {
     return {};
 }
 
+template <TEMPLATE_DECL_ARG>
+std::shared_ptr<ccl::communicator_interface>
+typed_base_communicator<TEMPLATE_DEF_ARG>::split(const ccl::comm_split_attr& attr) {
+    return {};
+}
+
 #undef TEMPLATE_DECL_ARG
 #undef TEMPLATE_DEF_ARG

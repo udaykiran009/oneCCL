@@ -82,7 +82,7 @@ public:
         return ccl::device_topology_type::undetermined;
     }
 
-    ccl::unique_ptr_class<host_communicator> split(const comm_split_attr& attr);
+    std::shared_ptr<communicator_interface> split(const comm_split_attr& attr) override;
 
     // collectives operation declarations
     coll_request_t barrier(const stream::impl_value_t& op_stream,
@@ -186,6 +186,11 @@ private:
     host_communicator* get_impl() {
         return this;
     }
+
+    void exchange_colors(std::vector<int>& colors);
+    ccl_comm* create_with_color(int color,
+                                ccl_comm_id_storage* comm_ids,
+                                const ccl_comm* parent_comm);
 }; // class host_communicator
 
 } // namespace ccl
