@@ -16,17 +16,16 @@ int main(int argc, char *argv[]) {
 
     ccl::init();
 
-    MPI_Init(NULL, NULL);
-    MPI_Comm_size(MPI_COMM_WORLD, &size);
-    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
-
     queue q;
     if (!create_sycl_queue(argc, argv, q)) {
-        MPI_Finalize();
         return -1;
     }
 
     /* create kvs */
+    MPI_Init(NULL, NULL);
+    MPI_Comm_size(MPI_COMM_WORLD, &size);
+    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+
     ccl::shared_ptr_class<ccl::kvs> kvs;
     ccl::kvs::address_type main_addr;
     if (rank == 0) {
@@ -47,6 +46,7 @@ int main(int argc, char *argv[]) {
     /* create stream */
     auto stream = ccl::create_stream(q);
 
+    /* create buffers */
     send_buf_count = count + rank;
     recv_buf_count = count * size + ((size - 1) * size) / 2;
 
@@ -118,7 +118,7 @@ int main(int argc, char *argv[]) {
         host_accessor recv_buf_acc(recv_buf, read_only);
         for (i = 0; i < recv_buf_count; i++) {
             if (recv_buf_acc[i] == -1) {
-                cout << "FAILED";
+                cout << "FAILED\n";
                 break;
             }
         }

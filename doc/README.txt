@@ -124,9 +124,7 @@ default structure and identifies the file types stored in each sub-directory:
 				|   |   |-- datatype.cpp                                                                               
 				|   |   |-- priority_allreduce.cpp                                                                     
 				|   |   |-- reduce.cpp                                                                                 
-				|   |   |-- reduce_cpp.cpp                                                                             
-				|   |   |-- sparse_allreduce.cpp                                                                       
-				|   |   |-- sparse_test_algo.hpp                                                                       
+				|   |   |-- reduce_cpp.cpp                                                                                  
 				|   |   `-- unordered_allreduce.cpp                                                                    
 				|   |-- include                                                                                        
 				|   |   |-- base.h                                                                                     
@@ -139,6 +137,8 @@ default structure and identifies the file types stored in each sub-directory:
 				|       |-- sycl_allgatherv_test.cpp                                                               
 				|       |-- sycl_allgatherv_usm_test.cpp                                                                   
 				|       |-- sycl_allreduce_test.cpp                                                                
+				|       |-- sycl_allreduce_usm_test.cpp                                                                
+				|       |-- sycl_allreduce_inplace_usm_test.cpp                                                                
 				|       |-- sycl_alltoall_test.cpp                                                                 
 				|       |-- sycl_alltoall_usm_test.cpp                                                                     
 				|       |-- sycl_alltoallv_test.cpp                                                                

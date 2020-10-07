@@ -18,13 +18,8 @@ int main(int argc, char *argv[]) {
 
     ccl::init();
 
-    MPI_Init(NULL, NULL);
-    MPI_Comm_size(MPI_COMM_WORLD, &size);
-    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
-
     queue q;
     if (!create_sycl_queue(argc, argv, q)) {
-        MPI_Finalize();
         return -1;
     }
 
@@ -35,15 +30,15 @@ int main(int argc, char *argv[]) {
         usm_alloc_type = usm_alloc_type_from_string(argv[2]);
     }
 
-    constexpr size_t send_count = count * sizeof(custom_data_type) / sizeof(native_dtype);
-
-    auto send_buf = allocator.allocate(send_count, usm_alloc_type);
-    auto recv_buf = allocator.allocate(send_count * size, usm_alloc_type);
-
-    buffer<native_dtype> expected_buf(send_count * size);
-    buffer<native_dtype> check_buf(send_count * size);
+    if (!check_sycl_usm(q, usm_alloc_type)) {
+        return -1;
+    }
 
     /* create kvs */
+    MPI_Init(NULL, NULL);
+    MPI_Comm_size(MPI_COMM_WORLD, &size);
+    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+
     ccl::shared_ptr_class<ccl::kvs> kvs;
     ccl::kvs::address_type main_addr;
     if (rank == 0) {
@@ -64,9 +59,18 @@ int main(int argc, char *argv[]) {
     /* create stream */
     auto stream = ccl::create_stream(q);
 
+    /* create buffers */
+    constexpr size_t send_count = count * sizeof(custom_data_type) / sizeof(native_dtype);
+
+    auto send_buf = allocator.allocate(send_count, usm_alloc_type);
+    auto recv_buf = allocator.allocate(send_count * size, usm_alloc_type);
+
+    buffer<native_dtype> expected_buf(send_count * size);
+    buffer<native_dtype> check_buf(send_count * size);
+
     vector<size_t> recv_counts(size, send_count);
 
-    /* open send_buf and modify it on the device side */
+    /* open buffers and modify them on the device side */
     auto e = q.submit([&](auto &h) {
         accessor expected_buf_acc(expected_buf, h, write_only);
         h.parallel_for(send_count, [=](auto id) {
@@ -117,7 +121,7 @@ int main(int argc, char *argv[]) {
         host_accessor check_buf_acc(check_buf, read_only);
         for (i = 0; i < size * send_count; i++) {
             if (check_buf_acc[i] == -1) {
-                cout << "FAILED";
+                cout << "FAILED\n";
                 break;
             }
         }

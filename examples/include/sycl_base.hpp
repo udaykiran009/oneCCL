@@ -39,6 +39,25 @@ inline bool has_accelerator() {
     return false;
 }
 
+inline bool check_sycl_usm(queue& q, usm::alloc alloc_type) {
+
+    bool ret = true;
+
+    device d = q.get_device();
+
+    if ((alloc_type == usm::alloc::host) && (d.is_gpu() || d.is_accelerator()))
+        ret = false;
+
+    if ((alloc_type == usm::alloc::device) && !(d.is_gpu() || d.is_accelerator()))
+        ret = false;
+
+    if (!ret) {
+        cout << "Incompatible device type and USM type\n";
+    }
+
+    return ret;
+}
+
 inline bool create_sycl_queue(int argc,
                               char* argv[],
                               queue& q) {

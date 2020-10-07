@@ -229,7 +229,7 @@ run()
     n=2
     dtype_list="char,int,float"
     reduction_list="sum,max"
-    ccl_base_env="FI_PROVIDER=tcp I_MPI_DEBUG=4 CCL_LOG_LEVEL=1"
+    ccl_base_env="FI_PROVIDER=tcp"
 
     if [[ ${MODE} = "cpu" ]]
     then
@@ -303,13 +303,37 @@ run()
                 then
                     for selector in $selectors_list
                     do
-                        if [ "$selector" == "gpu" ];
+                        if [[ "${example}" == *"_usm_"* ]]
                         then
-                            ccl_extra_env="SYCL_DEVICE_ALLOWLIST=\"\" SYCL_BE=PI_LEVEL_ZERO ${ccl_transport_env}"
-                            run_example "${ccl_extra_env}" ${dir_name} ${transport} ${example} ${selector}
+                            usm_list="host device shared"
+                        else
+                            usm_list="default"
                         fi
-                        ccl_extra_env="SYCL_BE=PI_OPENCL ${ccl_transport_env}"
-                        run_example "${ccl_extra_env}" ${dir_name} ${transport} ${example} ${selector}
+
+                        echo "usm_list: $usm_list"
+
+                        for usm in $usm_list
+                        do
+                            if [ "$usm" == "host" ] && [ "$selector" == "gpu" ];
+                            then
+                                continue
+                            fi
+
+                            if [ "$usm" == "device" ] && [ "$selector" != "gpu" ];
+                            then
+                                continue
+                            fi
+
+                            echo "selector $selector, usm $usm"
+
+                            if [ "$selector" == "gpu" ];
+                            then
+                                ccl_extra_env="SYCL_DEVICE_ALLOWLIST=\"\" SYCL_BE=PI_LEVEL_ZERO ${ccl_transport_env}"
+                                run_example "${ccl_extra_env}" ${dir_name} ${transport} ${example} "${selector} ${usm}"
+                            fi
+                            ccl_extra_env="SYCL_BE=PI_OPENCL ${ccl_transport_env}"
+                            run_example "${ccl_extra_env}" ${dir_name} ${transport} ${example} "${selector} ${usm}"
+                        done
                     done
                 else
                     if [[ "${example}" == *"communicator"* ]]

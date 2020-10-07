@@ -55,45 +55,30 @@ int main(int argc, char *argv[]) {
     auto stream = ccl::create_stream(q);
 
     /* create buffers */
-    auto send_buf = allocator.allocate(count, usm_alloc_type);
-    auto recv_buf = allocator.allocate(count * size, usm_alloc_type);
-
-    buffer<int> expected_buf(count * size);
-    buffer<int> check_buf(count * size);
-    vector<size_t> recv_counts(size, count);
+    auto buf = allocator.allocate(count, usm_alloc_type);
 
     /* open buffers and modify them on the device side */
     auto e = q.submit([&](auto &h) {
-        accessor expected_buf_acc(expected_buf, h, write_only);
         h.parallel_for(count, [=](auto id) {
-            send_buf[id] = rank + 1;
-            recv_buf[id] = -1;
-            for (int i = 0; i < size; i++) {
-                expected_buf_acc[i * count + id] = i + 1;
-            }
+            buf[id] = rank + 1;
         });
     });
-
-    /* create dependency vector */
-    vector<ccl::event> events;
-    events.push_back(ccl::create_event(e));
 
     if (!handle_exception(q))
         return -1;
 
-    /* invoke allagtherv */
-    auto attr = ccl::create_operation_attr<ccl::allgatherv_attr>();
-    ccl::allgatherv(send_buf, count, recv_buf, recv_counts, comm, stream, attr, events).wait();
+    /* invoke allreduce */
+    ccl::allreduce(buf, buf, count, ccl::reduction::sum, comm, stream).wait();
 
     /* open recv_buf and check its correctness on the device side */
+    buffer<int> check_buf(count);
     q.submit([&](auto &h) {
-        accessor expected_buf_acc(expected_buf, h, read_only);
         accessor check_buf_acc(check_buf, h, write_only);
-        h.parallel_for(size * count, [=](auto id) {
-                if (recv_buf[id] != expected_buf_acc[id]) {
-                    check_buf_acc[id] = -1;
-                }
-            });
+        h.parallel_for(count, [=](auto id) {
+            if (buf[id] != size * (size + 1) / 2) {
+                check_buf_acc[id] = -1;
+            }
+        });
     });
 
     if (!handle_exception(q))
@@ -102,13 +87,13 @@ int main(int argc, char *argv[]) {
     /* print out the result of the test on the host side */
     {
         host_accessor check_buf_acc(check_buf, read_only);
-        for (i = 0; i < size * count; i++) {
+        for (i = 0; i < count; i++) {
             if (check_buf_acc[i] == -1) {
                 cout << "FAILED\n";
                 break;
             }
         }
-        if (i == size * count) {
+        if (i == count) {
             cout << "PASSED\n";
         }
     }

@@ -14,21 +14,16 @@ int main(int argc, char *argv[]) {
 
     ccl::init();
 
-    MPI_Init(NULL, NULL);
-    MPI_Comm_size(MPI_COMM_WORLD, &size);
-    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
-
-    buffer<int> send_buf(count);
-    buffer<int> expected_buf(count * size);
-    buffer<int> recv_buf(size * count);
-
     queue q;
     if (!create_sycl_queue(argc, argv, q)) {
-        MPI_Finalize();
         return -1;
     }
 
     /* create kvs */
+    MPI_Init(NULL, NULL);
+    MPI_Comm_size(MPI_COMM_WORLD, &size);
+    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+
     ccl::shared_ptr_class<ccl::kvs> kvs;
     ccl::kvs::address_type main_addr;
     if (rank == 0) {
@@ -48,6 +43,11 @@ int main(int argc, char *argv[]) {
 
     /* create stream */
     auto stream = ccl::create_stream(q);
+
+    /* create buffers */
+    buffer<int> send_buf(count);
+    buffer<int> expected_buf(count * size);
+    buffer<int> recv_buf(size * count);
 
     vector<size_t> recv_counts(size, count);
 
@@ -80,7 +80,7 @@ int main(int argc, char *argv[]) {
 
     /* create dependency vector */
     vector<ccl::event> events;
-    events.push_back(ccl::create_event(e));
+    //events.push_back(ccl::create_event(e));
 
     if (!handle_exception(q))
         return -1;
@@ -108,7 +108,7 @@ int main(int argc, char *argv[]) {
         host_accessor recv_buf_acc(recv_buf, read_only);
         for (i = 0; i < size * count; i++) {
             if (recv_buf_acc[i] == -1) {
-                cout << "FAILED";
+                cout << "FAILED\n";
                 break;
             }
         }

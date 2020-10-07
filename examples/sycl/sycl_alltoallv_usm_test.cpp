@@ -13,13 +13,8 @@ int main(int argc, char *argv[]) {
 
     ccl::init();
 
-    MPI_Init(NULL, NULL);
-    MPI_Comm_size(MPI_COMM_WORLD, &size);
-    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
-
     queue q;
     if (!create_sycl_queue(argc, argv, q)) {
-        MPI_Finalize();
         return -1;
     }
 
@@ -30,13 +25,15 @@ int main(int argc, char *argv[]) {
         usm_alloc_type = usm_alloc_type_from_string(argv[2]);
     }
 
-    auto send_buf = allocator.allocate(count * size, usm_alloc_type);
-    auto recv_buf = allocator.allocate(count * size, usm_alloc_type);
-
-    vector<size_t> send_counts(size, count);
-    vector<size_t> recv_counts(size, count);
+    if (!check_sycl_usm(q, usm_alloc_type)) {
+        return -1;
+    }
 
     /* create kvs */
+    MPI_Init(NULL, NULL);
+    MPI_Comm_size(MPI_COMM_WORLD, &size);
+    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+
     ccl::shared_ptr_class<ccl::kvs> kvs;
     ccl::kvs::address_type main_addr;
     if (rank == 0) {
@@ -57,6 +54,14 @@ int main(int argc, char *argv[]) {
     /* create stream */
     auto stream = ccl::create_stream(q);
 
+    /* create buffers */
+    auto send_buf = allocator.allocate(count * size, usm_alloc_type);
+    auto recv_buf = allocator.allocate(count * size, usm_alloc_type);
+
+    vector<size_t> send_counts(size, count);
+    vector<size_t> recv_counts(size, count);
+
+    /* open buffers and modify them on the device side */
     q.submit([&](auto &h) {
         h.parallel_for(count * size,
                                                           [=](auto id) {
