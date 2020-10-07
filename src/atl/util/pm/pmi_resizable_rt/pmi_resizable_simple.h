@@ -92,6 +92,7 @@ private:
     void get_my_proc_num_and_proc_count();
     void get_local_thread_num();
     void make_requested_info();
+    void remove_initial_data();
     void make_map_requested2global();
     size_t dev_count;
     size_t requested_rank_num;

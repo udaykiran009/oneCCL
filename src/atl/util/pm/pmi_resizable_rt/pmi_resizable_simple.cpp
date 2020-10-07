@@ -60,6 +60,8 @@ void pmi_resizable_simple::make_requested_info() {
     register_my_proc_name();
     get_my_proc_num_and_proc_count();
     get_local_thread_num();
+    remove_initial_data();
+    pmrt_barrier();
 }
 
 atl_status_t pmi_resizable_simple::pmrt_main_addr_reserv(char* main_addr) {
@@ -338,4 +340,9 @@ void pmi_resizable_simple::set_local_kvs_id(size_t local_kvs_id) {
 pmi_resizable_simple::~pmi_resizable_simple() {
     if (!is_finalized)
         pmrt_finalize();
+}
+void pmi_resizable_simple::remove_initial_data() {
+    std::string result_kvs_name = std::string(DEVICES_PER_THREAD) + std::to_string(0);
+    remove_val(result_kvs_name.c_str(), std::to_string(ranks[0]).c_str(), ST_CLIENT);
+    k->kvs_remove_name_key(result_kvs_name.c_str(), std::to_string(ranks[0]).c_str());
 }
