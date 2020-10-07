@@ -237,7 +237,7 @@ run()
         backend_list="host"
         selectors_list="cpu host default"
     else
-        dir_list="cpu common sycl benchmark"
+        dir_list="cpu common sycl"
         backend_list="host sycl"
         selectors_list="cpu host gpu default"
     fi

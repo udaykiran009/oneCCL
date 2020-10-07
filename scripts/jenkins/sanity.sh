@@ -553,8 +553,8 @@ EOF
 #==============================================================================
 
 set_default_values
-set_impi_environment
 set_environment
+set_impi_environment
 
 clean_nodes
 while [ $# -ne 0 ]
