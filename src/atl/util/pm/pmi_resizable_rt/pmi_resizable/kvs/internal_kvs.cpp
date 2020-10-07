@@ -196,6 +196,7 @@ void* kvs_server_init(void* args) {
     fd_set read_fds;
     int i, client_socket[MAX_CLIENT_COUNT], max_sd, sd;
     int so_reuse = 1;
+    int ret = 0;
 #ifdef SO_REUSEPORT
     setsockopt(sock_listener, SOL_SOCKET, SO_REUSEPORT, &so_reuse, sizeof(so_reuse));
 #else
@@ -247,7 +248,8 @@ void* kvs_server_init(void* args) {
         }
 
         if (FD_ISSET(local_sock, &read_fds)) {
-            if ((read(local_sock, &request, sizeof(kvs_request_t))) == 0) {
+            DO_RW_OP_1(read, local_sock, &request,sizeof(kvs_request_t), ret);
+            if (ret == 0) {
                 close(local_sock);
                 local_sock = 0;
             }
@@ -263,7 +265,8 @@ void* kvs_server_init(void* args) {
                 continue;
 
             if (FD_ISSET(sd, &read_fds)) {
-                if ((read(sd, &request, sizeof(kvs_request_t))) == 0) {
+                DO_RW_OP_1(read, sd, &request,sizeof(kvs_request_t), ret);
+                if (ret == 0) {
                     close(sd);
                     client_socket[i] = 0;
                     clients_count--;

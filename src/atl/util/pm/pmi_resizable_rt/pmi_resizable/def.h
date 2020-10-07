@@ -40,6 +40,25 @@
         } \
     } while (0)
 
+
+#define DO_RW_OP_1(op, fd, buf, size, res) \
+    do { \
+        size_t shift = 0; \
+        res = 0; \
+        do { \
+            res = op(fd, (char*)buf + shift, size - shift); \
+            if (res == -1) { \
+                if (errno != EINTR) { \
+                    printf("read/write error: %s\n", strerror(errno)); \
+                    exit(EXIT_FAILURE); \
+                } \
+            }\
+            else { \
+                shift += res; \
+            } \
+        } while (shift != size && res != 0); \
+    } while (0)
+
 #define BARRIER_NUM_MAX         1024
 #define MAX_KVS_KEY_LENGTH      130
 #define MAX_KVS_VAL_LENGTH      130
