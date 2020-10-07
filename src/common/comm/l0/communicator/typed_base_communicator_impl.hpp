@@ -8,20 +8,6 @@
 #include "common/comm/l0/comm_context_storage.hpp"
 #include "common/comm/l0/comm_context.hpp"
 
-namespace ccl {
-/**
- * A structure that is a friend of the passed object
- * and which allows access to the internal representation of this object
- */
-struct impl_dispatch {
-    template <class Object>
-    typename Object::impl_value_t& operator()(Object& obj) {
-        return obj.get_impl();
-    }
-};
-
-}
-
 #define TEMPLATE_DECL_ARG \
     class comm_impl, ccl::group_split_type topology, ccl::device_topology_type class_id, \
         class communicator_traits
@@ -137,7 +123,7 @@ std::string typed_base_communicator<TEMPLATE_DEF_ARG>::to_string() const {
 }
 
 template <TEMPLATE_DECL_ARG>
-std::shared_ptr<ccl::communicator_interface>
+ccl::communicator_interface_ptr
 typed_base_communicator<TEMPLATE_DEF_ARG>::split(const ccl::comm_split_attr& attr) {
     if (!attr.is_valid<ccl::comm_split_attr_id::group>()) {
         throw ccl::exception(std::string(__FUNCTION__) +
@@ -150,13 +136,11 @@ typed_base_communicator<TEMPLATE_DEF_ARG>::split(const ccl::comm_split_attr& att
             ccl::group_context::instance().get_existing_group_by_id(id);
         #ifdef CCL_ENABLE_SYCL
             auto ctx = get_impl()->get_context();
-            auto new_comm = my_group->create_communicator_from_group<cl::sycl::device>(get_device(), ctx, attr);
-            return ccl::impl_dispatch{}(new_comm);
+            return my_group->create_communicator_from_group<cl::sycl::device>(get_device(), ctx, attr);
         #else
             #ifdef MULTI_GPU_SUPPORT
                 auto ctx = get_impl()->get_context();
-                auto new_comm = my_group->create_communicator_from_group(get_impl()->get_device_path(), ctx, attr);
-                return ccl::impl_dispatch{}(new_comm);
+                return my_group->create_communicator_from_group(get_impl()->get_device_path(), ctx, attr);
             #endif
         #endif
     #else

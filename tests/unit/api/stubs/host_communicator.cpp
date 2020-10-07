@@ -1,35 +1,4 @@
 #include "common/comm/host_communicator/host_communicator.hpp"
-#if 0
-class ccl_comm;
-namespace ccl {
-
-host_communicator::host_communicator() : comm_attr(ccl::ccl_empty_attr{}) {}
-host_communicator::host_communicator(size_t, std::shared_ptr<ccl::kvs_interface>) : comm_attr(ccl::comm_split_attr(ccl::ccl_empty_attr{})) {}
-host_communicator::host_communicator(size_t, size_t, std::shared_ptr<ccl::kvs_interface>): comm_attr(ccl::comm_split_attr(ccl::ccl_empty_attr{})) {}
-host_communicator::host_communicator(std::shared_ptr<ccl_comm> impl) : comm_impl(impl), comm_attr(ccl::comm_split_attr(ccl::ccl_empty_attr{})) {}
-size_t host_communicator::rank() const {
-    return 0;
-}
-
-size_t host_communicator::size() const {
-    return 1;
-}
-
-host_communicator::coll_request_t host_communicator::barrier_impl(
-    const ccl::stream::impl_value_t& op_stream,
-    const ccl::barrier_attr& attr,
-    const ccl::vector_class<ccl::event>& deps) {
-        return {};}
-
-
-std::shared_ptr<atl_wrapper> host_communicator::get_atl() {
-    return {};
-}
-
-} // namespace ccl
-
-#endif
-/////////////////////
 #include "oneapi/ccl/ccl_types.hpp"
 #include "oneapi/ccl/ccl_type_traits.hpp"
 #include "oneapi/ccl/ccl_types_policy.hpp"
@@ -39,20 +8,7 @@ std::shared_ptr<atl_wrapper> host_communicator::get_atl() {
 
 #include "oneapi/ccl/ccl_event.hpp"
 #include "common/global/global.hpp"
-//#include "common/comm/host_communicator/host_communicator_impl.hpp"
-/*#include "oneapi/ccl/ccl_comm_split_attr_ids.hpp"
-#include "oneapi/ccl/ccl_comm_split_attr_ids_traits.hpp"
-#include "oneapi/ccl/ccl_comm_split_attr.hpp"
 
-#include "common/request/request.hpp"
-#include "common/event/impls/host_event.hpp"
-#include "coll/coll.hpp"
-#include "coll/coll_common_attributes.hpp"
-#include "coll/ccl_allgather_op_attr.hpp"
-
-#include "util/pm/pmi_resizable_rt/pmi_resizable/kvs/ikvs_wrapper.h"
-#include "atl/atl_wrapper.h"
-*/
 #ifdef MULTI_GPU_SUPPORT
 #include "common/comm/l0/gpu_comm_attr.hpp"
 #endif
@@ -113,7 +69,7 @@ ccl::communicator_interface::context_t host_communicator::get_context() {
     throw ccl::exception(std::string(__FUNCTION__) + " is not applicable for " + traits::name());
 }
 
-std::shared_ptr<communicator_interface> host_communicator::split(const comm_split_attr& attr) {
+ccl::communicator_interface_ptr host_communicator::split(const comm_split_attr& attr) {
     return {};
 }
 

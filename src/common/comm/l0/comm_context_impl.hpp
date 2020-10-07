@@ -1,23 +1,12 @@
 #include "oneapi/ccl/ccl_types.hpp"
 #include "oneapi/ccl/ccl_kvs.hpp"
 #include "common/log/log.hpp"
-#include "common/comm/comm_interface.hpp"
 #include "common/comm/host_communicator/host_communicator.hpp"
 #include "common/comm/l0/gpu_comm_attr.hpp"
 #include "common/comm/l0/comm_context.hpp"
 
 namespace ccl {
-/**
- *  Create communicator API:
- */
-/*
- ccl::comm_split_attr ccl::comm_group::create_comm_split_attr()
-{
-    // TODO
-    const auto& host_comm = pimpl->get_host_communicator();
-    return ccl::comm_split_attr{new ccl::ccl_device_attr(*(host_comm->get_comm_split_attr()))};
-}
-*/
+
 /*
  *  Single device communicator creation
  */
@@ -26,7 +15,7 @@ template <class DeviceType,
           typename std::enable_if<not std::is_same<typename std::remove_cv<DeviceType>::type,
                                                    ccl::device_index_type>::value,
                                   int>::type>
-ccl::communicator ccl::comm_group::create_communicator_from_group(
+ccl::communicator_interface_ptr ccl::comm_group::create_communicator_from_group(
     const DeviceType& device,
     ContextType& context,
     const ccl::comm_split_attr& attr /* = comm_device_attr_t()*/) {
@@ -59,7 +48,7 @@ ccl::communicator ccl::comm_group::create_communicator_from_group(
         // registering device in group - is non blocking operation, until it is not the last device
         pimpl->sync_register_communicator(impl);
     }
-    return communicator(std::move(impl));
+    return impl;
 }
 
 template <class DeviceType,
@@ -67,7 +56,7 @@ template <class DeviceType,
           typename std::enable_if<std::is_same<typename std::remove_cv<DeviceType>::type,
                                                ccl::device_index_type>::value,
                                   int>::type>
-ccl::communicator ccl::comm_group::create_communicator_from_group(
+ccl::communicator_interface_ptr ccl::comm_group::create_communicator_from_group(
     const DeviceType& device_id,
     ContextType& context,
     const ccl::comm_split_attr& attr /* = nullptr*/) {
@@ -78,7 +67,7 @@ ccl::communicator ccl::comm_group::create_communicator_from_group(
         device_id, context, pimpl->thread_id, host_comm->rank(), attr, host_comm->get_atl());
     // registering device in group - is non blocking operation, until it is not the last device
     pimpl->sync_register_communicator(impl);
-    return ccl::communicator(std::move(impl));
+    return impl;
 }
 
 /**
@@ -106,7 +95,7 @@ std::vector<ccl::communicator> ccl::comm_group::create_communicators_group(
     comms.reserve(indices_count);
     std::transform(
         first, last, std::back_inserter(comms), [this, attr, &context](const iterator_value_type& device_id) {
-            return create_communicator_from_group<iterator_value_type, ContextType>(device_id, context, attr);
+            return ccl::communicator(create_communicator_from_group<iterator_value_type, ContextType>(device_id, context, attr));
         });
     return comms;
 }
@@ -140,5 +129,5 @@ std::vector<ccl::communicator> ccl::comm_group::create_communicators_group(
         const type& devices, context_type& ctx, ccl::comm_split_attr attr);
 
 #define COMM_CREATOR_INDEXED_INSTANTIATION_TYPE(type, context_type) \
-    template ccl::communicator ccl::comm_group::create_communicator_from_group( \
+    template ccl::communicator_interface_ptr ccl::comm_group::create_communicator_from_group( \
         const type& device, context_type& context, const ccl::comm_split_attr& attr);

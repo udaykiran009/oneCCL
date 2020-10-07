@@ -144,7 +144,7 @@ CCL_API vector_class<communicator> communicator::create_communicators(
 #endif
 }
 
-/*CCL_API bool ccl::communicator::is_ready() const
+/*CCL_API bool communicator::is_ready() const
 {
     return get_impl()->is_ready();
 }*/
@@ -159,10 +159,10 @@ communicator communicator::create_communicator() {
 
     LOG_DEBUG("Create host communicator");
 
-    ccl::communicator_interface_ptr impl =
-        ccl::communicator_interface::create_communicator_impl();
+    communicator_interface_ptr impl =
+        communicator_interface::create_communicator_impl();
 
-    return ccl::communicator(std::move(impl));
+    return communicator(std::move(impl));
 }
 
 /**
@@ -178,10 +178,10 @@ communicator communicator::create_communicator(const size_t size,
 
     LOG_DEBUG("Create host communicator");
 
-    ccl::communicator_interface_ptr impl =
-        ccl::communicator_interface::create_communicator_impl(size, kvs);
+    communicator_interface_ptr impl =
+        communicator_interface::create_communicator_impl(size, kvs);
 
-    return ccl::communicator(std::move(impl));
+    return communicator(std::move(impl));
 }
 
 /**
@@ -197,10 +197,10 @@ communicator communicator::create_communicator(const size_t size,
     
     LOG_DEBUG("Create host communicator: size ", size, ", rank ", rank);
 
-    ccl::communicator_interface_ptr impl =
-        ccl::communicator_interface::create_communicator_impl(size, rank, kvs);
+    communicator_interface_ptr impl =
+        communicator_interface::create_communicator_impl(size, rank, kvs);
 
-    return ccl::communicator(std::move(impl));
+    return communicator(std::move(impl));
 }
 
 } // namespace ccl

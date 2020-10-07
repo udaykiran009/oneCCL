@@ -82,7 +82,7 @@ public:
         return ccl::device_topology_type::undetermined;
     }
 
-    std::shared_ptr<communicator_interface> split(const comm_split_attr& attr) override;
+    ccl::communicator_interface_ptr split(const comm_split_attr& attr) override;
 
     // collectives operation declarations
     coll_request_t barrier(const stream::impl_value_t& op_stream,

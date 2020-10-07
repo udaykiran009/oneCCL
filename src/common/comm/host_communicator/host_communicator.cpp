@@ -123,7 +123,7 @@ ccl_comm* host_communicator::create_with_color(int color,
     return ccl_comm::create_with_colors(colors, comm_ids, parent_comm, true);
 }
 
-std::shared_ptr<communicator_interface> host_communicator::split(const comm_split_attr& attr) {
+ccl::communicator_interface_ptr host_communicator::split(const comm_split_attr& attr) {
     if (!attr.is_valid<comm_split_attr_id::color>()) {
         throw ccl::exception(std::string(__FUNCTION__) +
                         " - 'Color' split attribute for host communicator is not set");

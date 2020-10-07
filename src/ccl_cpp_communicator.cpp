@@ -34,6 +34,7 @@
 #include "communicator_impl.hpp"
 
 namespace ccl {
+
 CCL_API communicator::communicator(impl_value_t&& impl) : base_t(std::move(impl)) {}
 
 CCL_API communicator::communicator(communicator&& src)
@@ -47,30 +48,30 @@ CCL_API communicator& communicator::operator=(communicator&& src) {
     return *this;
 }
 
-CCL_API ccl::communicator::~communicator() {}
+CCL_API communicator::~communicator() {}
 
-CCL_API size_t ccl::communicator::rank() const {
+CCL_API size_t communicator::rank() const {
     return get_impl()->rank();
 }
 
-CCL_API size_t ccl::communicator::size() const {
+CCL_API size_t communicator::size() const {
     return get_impl()->size();
 }
 
-/*CCL_API size_t ccl::communicator::get_group_unique_id() const
+/*CCL_API size_t communicator::get_group_unique_id() const
 {
     return static_cast<size_t> (get_impl()->get_comm_group_id());
 }*/
 
-CCL_API ccl::communicator ccl::communicator::split(const ccl::comm_split_attr& attr) {
-    return get_impl()->split(attr);
+CCL_API communicator communicator::split(const comm_split_attr& attr) {
+    return communicator(get_impl()->split(attr));
 }
 
-CCL_API ccl::communicator::ccl_device_t ccl::communicator::get_device() {
+CCL_API communicator::ccl_device_t communicator::get_device() {
     return get_impl()->get_device();
 }
 
-CCL_API ccl::communicator::ccl_context_t ccl::communicator::get_context() {
+CCL_API communicator::ccl_context_t communicator::get_context() {
     return get_impl()->get_context();
 }
 

@@ -50,7 +50,7 @@ public:
         return traits::is_accelerator();
     }
 
-    std::shared_ptr<ccl::communicator_interface> split(const ccl::comm_split_attr& attr) override;
+    ccl::communicator_interface_ptr split(const ccl::comm_split_attr& attr) override;
 
     typed_base_communicator(ccl::unified_device_type&& device,
                             ccl::unified_device_context_type&& ctx,
