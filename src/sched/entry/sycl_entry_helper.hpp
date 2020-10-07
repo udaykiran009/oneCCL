@@ -30,28 +30,23 @@ struct sycl_buffer_reader_visitor {
                       __PRETTY_FUNCTION__);
 
             size_t bytes = requested_cnt * requested_dtype.size();
-            /*
-            auto out_buf_acc = static_cast<specific_sycl_buffer*>(requested_buf.get_ptr(bytes))
-                                   ->template get_access<access_mode>();
-            void* out_pointer = out_buf_acc.get_pointer();
-            LOG_DEBUG("requested_cnt: ",
-                      requested_cnt,
-                      ", requested_dtype.size(): ",
-                      requested_dtype.size(),
-                      ", requested_offset: ",
-                      requested_offset,
-                      ", bytes: ",
-                      bytes,
-                      ", out_buf_acc.get_count(): ",
-                      out_buf_acc.get_count());
-            CCL_ASSERT(requested_cnt <= out_buf_acc.get_count());
-            callback((char*)out_pointer + requested_offset, bytes);
-            * */
             auto out_buf_acc = static_cast<specific_sycl_buffer*>(requested_buf.get_ptr(bytes));
             auto* dst_ptr = static_cast<typename specific_sycl_buffer::value_type*>(to_buf.get_ptr(bytes));
             {
                 specific_sycl_buffer sycl_out(dst_ptr, requested_cnt);
-                size_t offset = requested_offset;
+                LOG_DEBUG("requested_cnt: ",
+                      requested_cnt,
+                      ", requested_dtype.size(): ",
+                      requested_dtype.size(),
+                      ", requested_offset in bytes: ",
+                      requested_offset,
+                      ", bytes: ",
+                      bytes,
+                      ", src_buf.get_count(): ",
+                      out_buf_acc->get_count(),
+                      ", dst_buf.get_count(): ",
+                      sycl_out.get_count());
+                size_t offset = requested_offset / requested_dtype.size();
                 auto e = q.submit([&](cl::sycl::handler &cgh) {
                     auto recv_buf_acc = sycl_out.template get_access<cl::sycl::access::mode::write>(cgh);
                     auto in_buf_acc = out_buf_acc-> template get_access<cl::sycl::access::mode::read>(cgh);
@@ -144,6 +139,18 @@ struct sycl_buffer_writer_visitor {
             //size_t total_bytes = requested_cnt * requested_dtype.size();
             {
                 specific_sycl_buffer sycl_in(in_buf_host, requested_cnt);
+                LOG_DEBUG("requested_cnt: ",
+                      requested_cnt,
+                      ", requested_dtype.size(): ",
+                      requested_dtype.size(),
+                      ", requested_offset in bytes: ",
+                      requested_offset,
+                      ", bytes: ",
+                      bytes,
+                      ", src_buf.get_count(): ",
+                      sycl_in.get_count(),
+                      ", dst_buf.get_count(): ",
+                      dst_ptr->get_count());
                 size_t offset = requested_offset;
                 auto e = q.submit([&](cl::sycl::handler &cgh) {
                     auto send_buf_acc = sycl_in.template get_access<cl::sycl::access::mode::read>(cgh);

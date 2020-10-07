@@ -456,7 +456,7 @@ single_device_communicator::coll_request_t single_device_communicator::alltoallv
             ccl_request* req = nullptr;
 #ifdef CCL_ENABLE_SYCL
             size_t send_total_size =
-                std::accumulate(send_counts.begin(), recv_counts.end(), size_t{});
+                std::accumulate(send_counts.begin(), send_counts.end(), size_t{});
             size_t recv_total_size =
                 std::accumulate(recv_counts.begin(), recv_counts.end(), size_t{});
             LOG_TRACE(
@@ -784,7 +784,7 @@ single_device_communicator::coll_request_t single_device_communicator::reduce_sc
     const ccl::stream::impl_value_t& stream,
     const ccl::reduce_scatter_attr& attr,
     const ccl::vector_class<ccl::event>& deps) {
-    
+
     static constexpr ccl::group_split_type group_id = base_t::topology_type();
     static constexpr ccl::device_topology_type class_id = base_t::topology_class();
 
@@ -882,7 +882,7 @@ single_device_communicator::coll_request_t single_device_communicator::reduce_sc
     const ccl::stream::impl_value_t& stream,
     const ccl::reduce_scatter_attr& attr,
     const ccl::vector_class<ccl::event>& deps) {
-    
+
     const ccl_stream* stream_ptr = stream.get();
     ccl_request* req = ccl_reduce_scatter_impl(reinterpret_cast<const void*>(&send_buf),
                                                reinterpret_cast<void*>(&recv_buf),
