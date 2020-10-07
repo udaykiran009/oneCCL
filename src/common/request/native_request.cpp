@@ -8,9 +8,7 @@ native_request_impl::native_request_impl(event::native_t& native_event, ccl::lib
 }
 
 native_request_impl::~native_request_impl() {
-    if (!completed) {
-        LOG_ERROR("not completed event is destroyed");
-    }
+
 }
 
 void native_request_impl::wait() {
