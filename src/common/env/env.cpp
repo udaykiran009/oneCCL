@@ -66,7 +66,8 @@ env_data::env_data()
           alltoall_scatter_max_ops(CCL_ENV_SIZET_NOT_SPECIFIED),
           alltoall_scatter_plain(0),
 
-          default_resizable(0) {}
+          default_resizable(0),
+          kernel_path() {}
 
 void env_data::parse() {
     env_2_type(CCL_LOG_LEVEL, log_level);
@@ -150,6 +151,8 @@ void env_data::parse() {
     env_2_type(CCL_DEFAULT_RESIZABLE, default_resizable);
     CCL_THROW_IF_NOT(
         default_resizable <= 2, "incorrect ", CCL_DEFAULT_RESIZABLE, " ", default_resizable);
+
+    env_2_type(CCL_COLL_KERNELS_PATH, kernel_path);
 }
 
 void env_data::print() {
@@ -264,6 +267,9 @@ void env_data::print() {
                  : CCL_ENV_STR_NOT_SPECIFIED);
     LOG_INFO(CCL_ALLTOALL_SCATTER_PLAIN, ": ", alltoall_scatter_plain);
 
+    LOG_INFO(CCL_COLL_KERNELS_PATH,
+             ": ",
+             (kernel_path.length()) ? kernel_path : CCL_ENV_STR_NOT_SPECIFIED);
 
     auto& global_data = ccl::global_data::get();
     global_data.algorithm_selector->print();

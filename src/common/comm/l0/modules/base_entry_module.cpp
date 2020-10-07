@@ -6,6 +6,8 @@
 #include "coll/coll.hpp"
 #include "oneapi/ccl/native_device_api/export_api.hpp"
 #include "common/comm/l0/modules/base_entry_module.hpp"
+#include "oneapi/ccl/native_device_api/l0/context.hpp"
+
 namespace native {
 gpu_module_base::gpu_module_base(handle module_handle) : module(module_handle) {}
 

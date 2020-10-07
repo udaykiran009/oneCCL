@@ -66,6 +66,8 @@ constexpr const char* CCL_ALLTOALL_SCATTER_PLAIN = "CCL_ALLTOALL_SCATTER_PLAIN";
 
 constexpr const char* CCL_DEFAULT_RESIZABLE = "CCL_DEFAULT_RESIZABLE";
 
+constexpr const char* CCL_COLL_KERNELS_PATH = "CCL_COLL_KERNELS_PATH";
+
 enum ccl_priority_mode {
     ccl_priority_none,
     ccl_priority_direct,
@@ -158,6 +160,7 @@ public:
     int alltoall_scatter_plain;
 
     size_t default_resizable;
+    std::string kernel_path;
 
     template <class T>
     static int env_2_type(const char* env_name, T& val) {

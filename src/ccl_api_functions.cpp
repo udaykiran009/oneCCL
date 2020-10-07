@@ -7,6 +7,7 @@
 #endif //#if defined(MULTI_GPU_SUPPORT) || defined(CCL_ENABLE_SYCL)
 
 #include "ccl_api_functions_generators.hpp"
+#include "common/global/global.hpp"
 #include "ccl_gpu_module.hpp"
 
 namespace ccl {
@@ -24,38 +25,53 @@ struct impl_dispatch {
 
 #ifdef MULTI_GPU_SUPPORT
 /* register a gpu module */
-void register_gpu_module()
+void register_gpu_module(std::string kernel_dir_path)
 {
     // allgatherv
-    register_gpu_module_source("kernels/ring_allgatherv.spv",
+    if (!kernel_dir_path.empty())
+    {
+        if(*kernel_dir_path.rbegin() != '/')
+        {
+            kernel_dir_path += '/';
+        }
+    }
+    LOG_INFO("SPV Kernels found directory: ", kernel_dir_path);
+    std::string kernel_path = kernel_dir_path + "ring_allgatherv.spv";
+    register_gpu_module_source(kernel_path.c_str(),
                                 ccl::device_topology_type::ring,
                                 ccl_coll_allgatherv);
     // register__gpu_module_source("kernels/a2a_allgatherv.spv",
     //                             ccl::device_topology_type::a2a,
     //                             ccl_coll_allgatherv);
     // alltoallv
-    register_gpu_module_source("kernels/ring_alltoallv.spv",
+    kernel_path = kernel_dir_path + "ring_alltoallv.spv";
+    register_gpu_module_source(kernel_path.c_str(),
                                ccl::device_topology_type::ring,
                                ccl_coll_alltoallv);
     // register_gpu_module_source("kernels/a2a_alltoallv.spv",
     //                             ccl::device_topology_type::a2a,
     //                             ccl_coll_alltoallv);
     // allreduce
-    register_gpu_module_source("kernels/ring_allreduce.spv",
+    kernel_path = kernel_dir_path + "ring_allreduce.spv";
+    register_gpu_module_source(kernel_path.c_str(),
                                 ccl::device_topology_type::ring,
                                 ccl_coll_allreduce);
-    register_gpu_module_source("kernels/a2a_allreduce.spv",
+    kernel_path = kernel_dir_path + "a2a_allreduce.spv";
+    register_gpu_module_source(kernel_path.c_str(),
                                 ccl::device_topology_type::a2a,
                                 ccl_coll_allreduce);
     // bcast
-    register_gpu_module_source("kernels/ring_bcast.spv",
+    kernel_path = kernel_dir_path + "ring_bcast.spv";
+    register_gpu_module_source(kernel_path.c_str(),
                                ccl::device_topology_type::ring,
                                ccl_coll_bcast);
-    register_gpu_module_source("kernels/a2a_bcast.spv",
+    kernel_path = kernel_dir_path + "a2a_bcast.spv";
+    register_gpu_module_source(kernel_path.c_str(),
                                ccl::device_topology_type::a2a,
                                ccl_coll_bcast);
     // reduce
-    register_gpu_module_source("kernels/ring_reduce.spv",
+    kernel_path = kernel_dir_path + "ring_reduce.spv";
+    register_gpu_module_source(kernel_path.c_str(),
                                 ccl::device_topology_type::ring,
                                 ccl_coll_reduce);
     // register_gpu_module_source("kernels/a2a_reduce.spv",
@@ -68,7 +84,13 @@ void CCL_API init() {
     auto& env = environment::instance();
     (void)env;
 #ifdef MULTI_GPU_SUPPORT
-    register_gpu_module();
+    const auto& env_object = ccl::global_data::env();
+
+    //WA
+    if (!env_object.kernel_path.empty())
+    {
+        register_gpu_module(env_object.kernel_path);
+    }
 #endif //MULTI_GPU_SUPPORT
 }
 
