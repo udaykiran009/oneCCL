@@ -4,8 +4,8 @@
 
 #include "oneapi/ccl/native_device_api/interop_utils.hpp"
 #include "common/request/request.hpp"
-#include "common/request/host_request.hpp"
-#include "common/request/scoped_request.hpp"
+#include "common/event/impls/host_event.hpp"
+#include "common/event/impls/scoped_event.hpp"
 
 #include "coll/coll.hpp"
 #include "coll/coll_common_attributes.hpp"
@@ -22,7 +22,7 @@ single_device_communicator::coll_request_t single_device_communicator::allgather
     const ccl_coll_attr& attr,
     const ccl::vector_class<ccl::event>& deps) {
 
-    std::unique_ptr<ccl::chargeable_request> scoped_req;
+    std::unique_ptr<ccl::chargeable_event> scoped_req;
     using namespace ::native::details;
 
     usm_support_mode send_buf_result, recv_buf_result;
@@ -36,8 +36,8 @@ single_device_communicator::coll_request_t single_device_communicator::allgather
         (recv_buf_result == usm_support_mode::direct or
          recv_buf_result == usm_support_mode::shared)) {
         LOG_TRACE("comm: ", to_string(), " - use USM direct pointers for both buffers");
-        scoped_req = ccl::details::make_unique_scoped_request<
-            ccl::host_request_impl>(ccl_allgatherv_impl(
+        scoped_req = ccl::details::make_unique_scoped_event<
+            ccl::host_event_impl>(ccl_allgatherv_impl(
             reinterpret_cast<const void*>(send_buf),
             send_count,
             reinterpret_cast<void*>(recv_buf),
@@ -53,7 +53,7 @@ single_device_communicator::coll_request_t single_device_communicator::allgather
         size_t recv_total_size = std::accumulate(recv_counts.begin(), recv_counts.end(), size_t{});
         ccl_request* req = nullptr;
 #ifdef CCL_ENABLE_SYCL
-        auto scoped_req_sycl = ccl::details::make_unique_scoped_request<ccl::host_request_impl>(
+        auto scoped_req_sycl = ccl::details::make_unique_scoped_event<ccl::host_event_impl>(
             nullptr,
             /*send_buf*/
             cl::sycl::buffer<buffer_type>{
@@ -84,7 +84,7 @@ single_device_communicator::coll_request_t single_device_communicator::allgather
                              send_buf_error + "\nrecv_buf check result:\n" + recv_buf_error);
     }
 
-    return std::unique_ptr<ccl::request_impl>(scoped_req.release());
+    return std::unique_ptr<ccl::event_impl>(scoped_req.release());
 }
 
 template <class buffer_type>
@@ -133,7 +133,7 @@ single_device_communicator::coll_request_t single_device_communicator::allgather
                                            attr,
                                            comm_impl.get(),
                                            stream.get());
-    return std::unique_ptr<ccl::request_impl>(new ccl::host_request_impl(req));
+    return std::unique_ptr<ccl::event_impl>(new ccl::host_event_impl(req));
 }
 template <class buffer_type>
 single_device_communicator::coll_request_t single_device_communicator::allgatherv_impl(
@@ -172,7 +172,7 @@ single_device_communicator::coll_request_t single_device_communicator::allreduce
 
     LOG_DEBUG("device idx: ", get_device_path(), ", rank: (", rank(), "/", size(), ")");
 
-    std::unique_ptr<ccl::chargeable_request> scoped_req;
+    std::unique_ptr<ccl::chargeable_event> scoped_req;
     using namespace ::native::details;
 
     usm_support_mode send_buf_result, recv_buf_result;
@@ -186,8 +186,8 @@ single_device_communicator::coll_request_t single_device_communicator::allreduce
         (recv_buf_result == usm_support_mode::direct or
          recv_buf_result == usm_support_mode::shared)) {
         LOG_TRACE("comm: ", to_string(), " - use USM direct pointers for both buffers");
-        scoped_req = ccl::details::make_unique_scoped_request<
-            ccl::host_request_impl>(ccl_allreduce_impl(
+        scoped_req = ccl::details::make_unique_scoped_event<
+            ccl::host_event_impl>(ccl_allreduce_impl(
             reinterpret_cast<const void*>(send_buf),
             reinterpret_cast<void*>(recv_buf),
             count,
@@ -203,7 +203,7 @@ single_device_communicator::coll_request_t single_device_communicator::allreduce
         ccl_request* req = nullptr;
         LOG_TRACE("comm: ", to_string(), " - use USM pointers convertation for both buffers");
 #ifdef CCL_ENABLE_SYCL
-        auto scoped_req_sycl = ccl::details::make_unique_scoped_request<ccl::host_request_impl>(
+        auto scoped_req_sycl = ccl::details::make_unique_scoped_event<ccl::host_event_impl>(
             nullptr,
             /*send_buf*/
             cl::sycl::buffer<buffer_type>{
@@ -234,7 +234,7 @@ single_device_communicator::coll_request_t single_device_communicator::allreduce
                              send_buf_error + "\nrecv_buf check result:\n" + recv_buf_error);
     }
 
-    return std::unique_ptr<ccl::request_impl>(scoped_req.release());
+    return std::unique_ptr<ccl::event_impl>(scoped_req.release());
     ;
 }
 
@@ -255,7 +255,7 @@ single_device_communicator::coll_request_t single_device_communicator::allreduce
                                           attr,
                                           comm_impl.get(),
                                           stream.get());
-    return std::unique_ptr<ccl::request_impl>(new ccl::host_request_impl(req));
+    return std::unique_ptr<ccl::event_impl>(new ccl::host_event_impl(req));
 }
 
 /* alltoall */
@@ -279,7 +279,7 @@ single_device_communicator::coll_request_t single_device_communicator::alltoall_
 
     LOG_DEBUG("device idx: ", get_device_path(), ", rank: (", rank(), "/", size(), ")");
 
-    std::unique_ptr<ccl::chargeable_request> scoped_req;
+    std::unique_ptr<ccl::chargeable_event> scoped_req;
     using namespace ::native::details;
 
     // test USM arguments on validity
@@ -302,8 +302,8 @@ single_device_communicator::coll_request_t single_device_communicator::alltoall_
             LOG_TRACE("comm: ", to_string(), " - use USM shared pointers for buffers");
         case usm_support_mode::direct: {
             LOG_TRACE("comm: ", to_string(), " - use USM direct pointers for buffers");
-            scoped_req = ccl::details::make_unique_scoped_request<
-                ccl::host_request_impl>(ccl_alltoall_impl(
+            scoped_req = ccl::details::make_unique_scoped_event<
+                ccl::host_event_impl>(ccl_alltoall_impl(
                 reinterpret_cast<const void*>(send_buf),
                 reinterpret_cast<void*>(recv_buf),
                 count,
@@ -319,7 +319,7 @@ single_device_communicator::coll_request_t single_device_communicator::alltoall_
 #ifdef CCL_ENABLE_SYCL
             LOG_TRACE(
                 "comm: ", to_string(), " - use USM pointers convertation to SYCL for both buffers");
-            auto scoped_req_sycl = ccl::details::make_unique_scoped_request<ccl::host_request_impl>(
+            auto scoped_req_sycl = ccl::details::make_unique_scoped_event<ccl::host_event_impl>(
                 nullptr,
                 /*send_buf*/
                 cl::sycl::buffer<buffer_type>{
@@ -351,7 +351,7 @@ single_device_communicator::coll_request_t single_device_communicator::alltoall_
                                  " - USM category is not supported for such configuration:\n" +
                                  ::native::details::to_string(usm_assoc_results[0]));
     }
-    return std::unique_ptr<ccl::request_impl>(scoped_req.release());
+    return std::unique_ptr<ccl::event_impl>(scoped_req.release());
     ;
 }
 template <class buffer_type>
@@ -381,7 +381,7 @@ single_device_communicator::coll_request_t single_device_communicator::alltoall_
                                          attr,
                                          comm_impl.get(),
                                          stream.get());
-    return std::unique_ptr<ccl::request_impl>(new ccl::host_request_impl(req));
+    return std::unique_ptr<ccl::event_impl>(new ccl::host_event_impl(req));
 }
 template <class buffer_type>
 single_device_communicator::coll_request_t single_device_communicator::alltoall_impl(
@@ -417,7 +417,7 @@ single_device_communicator::coll_request_t single_device_communicator::alltoallv
 
     LOG_DEBUG("device idx: ", get_device_path(), ", rank: (", rank(), "/", size(), ")");
 
-    std::unique_ptr<ccl::chargeable_request> scoped_req;
+    std::unique_ptr<ccl::chargeable_event> scoped_req;
     using namespace ::native::details;
 
     // test USM arguments on validity
@@ -439,8 +439,8 @@ single_device_communicator::coll_request_t single_device_communicator::alltoallv
             LOG_TRACE("comm: ", to_string(), " - use USM shared pointers for buffers");
         case usm_support_mode::direct: {
             LOG_TRACE("comm: ", to_string(), " - use USM direct pointers for buffers");
-            scoped_req = ccl::details::make_unique_scoped_request<
-                ccl::host_request_impl>(ccl_alltoallv_impl(
+            scoped_req = ccl::details::make_unique_scoped_event<
+                ccl::host_event_impl>(ccl_alltoallv_impl(
                 reinterpret_cast<const void*>(send_buf),
                 send_counts.data(),
                 reinterpret_cast<void*>(recv_buf),
@@ -466,7 +466,7 @@ single_device_communicator::coll_request_t single_device_communicator::alltoallv
                 send_total_size,
                 ", recv_total_size: ",
                 recv_total_size);
-            auto scoped_req_sycl = ccl::details::make_unique_scoped_request<ccl::host_request_impl>(
+            auto scoped_req_sycl = ccl::details::make_unique_scoped_event<ccl::host_event_impl>(
                 nullptr,
                 /*send_buf*/
                 cl::sycl::buffer<buffer_type>{
@@ -499,7 +499,7 @@ single_device_communicator::coll_request_t single_device_communicator::alltoallv
                                  " - USM category is not supported for such configuration:\n" +
                                  ::native::details::to_string(usm_assoc_results[0]));
     }
-    return std::unique_ptr<ccl::request_impl>(scoped_req.release());
+    return std::unique_ptr<ccl::event_impl>(scoped_req.release());
     ;
 }
 
@@ -533,7 +533,7 @@ single_device_communicator::coll_request_t single_device_communicator::alltoallv
                                           attr,
                                           comm_impl.get(),
                                           stream.get());
-    return std::unique_ptr<ccl::request_impl>(new ccl::host_request_impl(req));
+    return std::unique_ptr<ccl::event_impl>(new ccl::host_event_impl(req));
 }
 template <class buffer_type>
 single_device_communicator::coll_request_t single_device_communicator::alltoallv_impl(
@@ -569,7 +569,7 @@ single_device_communicator::coll_request_t single_device_communicator::broadcast
 
     LOG_DEBUG("device idx: ", get_device_path(), ", rank: (", rank(), "/", size(), ")");
 
-    std::unique_ptr<ccl::chargeable_request> scoped_req;
+    std::unique_ptr<ccl::chargeable_event> scoped_req;
     using namespace ::native::details;
 
     // test USM arguments on validity
@@ -582,8 +582,8 @@ single_device_communicator::coll_request_t single_device_communicator::broadcast
             LOG_TRACE("comm: ", to_string(), " - use USM shared pointers for buffers");
         case usm_support_mode::direct: {
             LOG_TRACE("comm: ", to_string(), " - use USM direct pointers for buffers");
-            scoped_req = ccl::details::make_unique_scoped_request<
-                ccl::host_request_impl>(ccl_broadcast_impl(
+            scoped_req = ccl::details::make_unique_scoped_event<
+                ccl::host_event_impl>(ccl_broadcast_impl(
                 reinterpret_cast<void*>(buf),
                 count,
                 ccl::native_type_info<buffer_type>::ccl_datatype_value,
@@ -599,7 +599,7 @@ single_device_communicator::coll_request_t single_device_communicator::broadcast
 #ifdef CCL_ENABLE_SYCL
             LOG_TRACE(
                 "comm: ", to_string(), " - use USM pointers convertation to SYCL for both buffers");
-            auto scoped_req_sycl = ccl::details::make_unique_scoped_request<ccl::host_request_impl>(
+            auto scoped_req_sycl = ccl::details::make_unique_scoped_event<ccl::host_event_impl>(
                 nullptr,
                 /*buf*/
                 cl::sycl::buffer<buffer_type>{
@@ -626,7 +626,7 @@ single_device_communicator::coll_request_t single_device_communicator::broadcast
                                  " - USM category is not supported for such configuration:\n" +
                                  ::native::details::to_string(usm_assoc_results[0]));
     }
-    return std::unique_ptr<ccl::request_impl>(scoped_req.release());
+    return std::unique_ptr<ccl::event_impl>(scoped_req.release());
     ;
 }
 
@@ -645,7 +645,7 @@ single_device_communicator::coll_request_t single_device_communicator::broadcast
                                           attr,
                                           comm_impl.get(),
                                           stream.get());
-    return std::unique_ptr<ccl::request_impl>(new ccl::host_request_impl(req));
+    return std::unique_ptr<ccl::event_impl>(new ccl::host_event_impl(req));
 }
 
 /* reduce */
@@ -671,7 +671,7 @@ single_device_communicator::coll_request_t single_device_communicator::reduce_im
 
     LOG_DEBUG("device idx: ", get_device_path(), ", rank: (", rank(), "/", size(), ")");
 
-    std::unique_ptr<ccl::chargeable_request> scoped_req;
+    std::unique_ptr<ccl::chargeable_event> scoped_req;
     using namespace ::native::details;
 
     // test USM arguments on validity
@@ -693,8 +693,8 @@ single_device_communicator::coll_request_t single_device_communicator::reduce_im
             LOG_TRACE("comm: ", to_string(), " - use USM shared pointers for buffers");
         case usm_support_mode::direct: {
             LOG_TRACE("comm: ", to_string(), " - use USM direct pointers for buffers");
-            scoped_req = ccl::details::make_unique_scoped_request<
-                ccl::host_request_impl>(ccl_reduce_impl(
+            scoped_req = ccl::details::make_unique_scoped_event<
+                ccl::host_event_impl>(ccl_reduce_impl(
                 reinterpret_cast<const void*>(send_buf),
                 reinterpret_cast<void*>(recv_buf),
                 count,
@@ -712,7 +712,7 @@ single_device_communicator::coll_request_t single_device_communicator::reduce_im
 #ifdef CCL_ENABLE_SYCL
             LOG_TRACE(
                 "comm: ", to_string(), " - use USM pointers convertation to SYCL for both buffers");
-            auto scoped_req_sycl = ccl::details::make_unique_scoped_request<ccl::host_request_impl>(
+            auto scoped_req_sycl = ccl::details::make_unique_scoped_event<ccl::host_event_impl>(
                 nullptr,
                 /*send_buf*/
                 cl::sycl::buffer<buffer_type>{
@@ -746,7 +746,7 @@ single_device_communicator::coll_request_t single_device_communicator::reduce_im
                                  " - USM category is not supported for such configuration:\n" +
                                  ::native::details::to_string(usm_assoc_results[0]));
     }
-    return std::unique_ptr<ccl::request_impl>(scoped_req.release());
+    return std::unique_ptr<ccl::event_impl>(scoped_req.release());
     ;
 }
 
@@ -771,7 +771,7 @@ single_device_communicator::coll_request_t single_device_communicator::reduce_im
                                        attr,
                                        comm_impl.get(),
                                        stream_ptr);
-    return std::unique_ptr<ccl::request_impl>(new ccl::host_request_impl(req));
+    return std::unique_ptr<ccl::event_impl>(new ccl::host_event_impl(req));
 }
 
 /* reduce_scatter */
@@ -797,7 +797,7 @@ single_device_communicator::coll_request_t single_device_communicator::reduce_sc
 
     LOG_DEBUG("device idx: ", get_device_path(), ", rank: (", rank(), "/", size(), ")");
 
-    std::unique_ptr<ccl::chargeable_request> scoped_req;
+    std::unique_ptr<ccl::chargeable_event> scoped_req;
     using namespace ::native::details;
 
     // test USM arguments on validity
@@ -819,8 +819,8 @@ single_device_communicator::coll_request_t single_device_communicator::reduce_sc
             LOG_TRACE("comm: ", to_string(), " - use USM shared pointers for buffers");
         case usm_support_mode::direct: {
             LOG_TRACE("comm: ", to_string(), " - use USM direct pointers for buffers");
-            scoped_req = ccl::details::make_unique_scoped_request<
-                ccl::host_request_impl>(ccl_reduce_scatter_impl(
+            scoped_req = ccl::details::make_unique_scoped_event<
+                ccl::host_event_impl>(ccl_reduce_scatter_impl(
                 reinterpret_cast<const void*>(send_buf),
                 reinterpret_cast<void*>(recv_buf),
                 recv_count,
@@ -837,7 +837,7 @@ single_device_communicator::coll_request_t single_device_communicator::reduce_sc
 #ifdef CCL_ENABLE_SYCL
             LOG_TRACE(
                 "comm: ", to_string(), " - use USM pointers convertation to SYCL for both buffers");
-            auto scoped_req_sycl = ccl::details::make_unique_scoped_request<ccl::host_request_impl>(
+            auto scoped_req_sycl = ccl::details::make_unique_scoped_event<ccl::host_event_impl>(
                 nullptr,
                 /*send_buf*/
                 cl::sycl::buffer<buffer_type>{
@@ -870,7 +870,7 @@ single_device_communicator::coll_request_t single_device_communicator::reduce_sc
                                  " - USM category is not supported for such configuration:\n" +
                                  ::native::details::to_string(usm_assoc_results[0]));
     }
-    return std::unique_ptr<ccl::request_impl>(scoped_req.release());
+    return std::unique_ptr<ccl::event_impl>(scoped_req.release());
 }
 
 template <class buffer_type>
@@ -892,7 +892,7 @@ single_device_communicator::coll_request_t single_device_communicator::reduce_sc
                                                attr,
                                                comm_impl.get(),
                                                stream_ptr);
-    return std::unique_ptr<ccl::request_impl>(new ccl::host_request_impl(req));
+    return std::unique_ptr<ccl::event_impl>(new ccl::host_event_impl(req));
 }
 
 /* sparse_allreduce */
@@ -922,7 +922,7 @@ single_device_communicator::coll_request_t single_device_communicator::sparse_al
 
     LOG_DEBUG("device idx: ", get_device_path(), ", rank: (", rank(), "/", size(), ")");
 
-    std::unique_ptr<ccl::chargeable_request> scoped_req;
+    std::unique_ptr<ccl::chargeable_event> scoped_req;
     using namespace ::native::details;
 
     // test USM arguments on validity
@@ -945,8 +945,8 @@ single_device_communicator::coll_request_t single_device_communicator::sparse_al
             LOG_TRACE("comm: ", to_string(), " - use USM shared pointers for buffers");
         case usm_support_mode::direct: {
             LOG_TRACE("comm: ", to_string(), " - use USM direct pointers for buffers");
-            scoped_req = ccl::details::make_unique_scoped_request<
-                ccl::host_request_impl>(ccl_sparse_allreduce_impl(
+            scoped_req = ccl::details::make_unique_scoped_event<
+                ccl::host_event_impl>(ccl_sparse_allreduce_impl(
                 (const void*)send_ind_buf,
                 send_ind_count,
                 (const void*)send_val_buf,
@@ -970,7 +970,7 @@ single_device_communicator::coll_request_t single_device_communicator::sparse_al
             LOG_TRACE("comm: ",
                       to_string(),
                       " - use USM pointers convertation to SYCL for every buffers");
-            auto scoped_req_sycl = ccl::details::make_unique_scoped_request<ccl::host_request_impl>(
+            auto scoped_req_sycl = ccl::details::make_unique_scoped_event<ccl::host_event_impl>(
                 nullptr,
                 /*send_ind_buf*/
                 cl::sycl::buffer<index_buffer_type>{
@@ -1013,7 +1013,7 @@ single_device_communicator::coll_request_t single_device_communicator::sparse_al
                                  " - USM category is not supported for such configuration:\n" +
                                  ::native::details::to_string(usm_assoc_results[0]));
     }
-    return std::unique_ptr<ccl::request_impl>(scoped_req.release());
+    return std::unique_ptr<ccl::event_impl>(scoped_req.release());
     ;
 }
 
@@ -1048,5 +1048,5 @@ single_device_communicator::coll_request_t single_device_communicator::sparse_al
         attr,
         comm_impl.get(),
         stream_ptr);
-    return std::unique_ptr<ccl::request_impl>(new ccl::host_request_impl(req));
+    return std::unique_ptr<ccl::event_impl>(new ccl::host_event_impl(req));
 }

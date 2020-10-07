@@ -1,12 +1,12 @@
 #include "oneapi/ccl/ccl_types.hpp"
 #include "oneapi/ccl/ccl_types_policy.hpp"
-#include "common/request/request_impl.hpp"
-#include "common/request/empty_request.hpp"
-#include "common/request/native_request.hpp"
+#include "common/event/impls/event_impl.hpp"
+#include "common/event/impls/empty_event.hpp"
+#include "common/event/impls/native_event.hpp"
 
 namespace ccl {
 
-CCL_API event::event() noexcept : base_t(impl_value_t(new empty_request_impl())) {}
+CCL_API event::event() noexcept : base_t(impl_value_t(new empty_event_impl())) {}
 CCL_API event::event(event&& src) noexcept : base_t(std::move(src)) {}
 CCL_API event::event(impl_value_t&& impl) noexcept : base_t(std::move(impl)) {}
 CCL_API event::~event() noexcept {}
@@ -60,7 +60,7 @@ event CCL_API event::create_from_native(native_t& native_event) {
     version.full = CCL_PRODUCT_FULL;
 
     return impl_value_t(
-        new native_request_impl(native_event, version)
+        new native_event_impl(native_event, version)
     );
 }
 

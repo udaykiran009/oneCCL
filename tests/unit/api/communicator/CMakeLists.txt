@@ -49,7 +49,7 @@ set (dependencies_sources
              "${PROJECT_SOURCE_DIR}/src/ccl_cpp_context.cpp"
              "${PROJECT_SOURCE_DIR}/src/common/event/ccl_event.cpp"
              "${PROJECT_SOURCE_DIR}/src/common/event/event_internal/event_internal.cpp"
-             "${PROJECT_SOURCE_DIR}/src/common/request/native_request.cpp"
+             "${PROJECT_SOURCE_DIR}/src/common/event/impls/native_event.cpp"
              "${PROJECT_SOURCE_DIR}/src/common/stream/stream.cpp"
              "${PROJECT_SOURCE_DIR}/src/common/comm/comm.cpp"
              "${PROJECT_SOURCE_DIR}/src/common/comm/comm_interface.cpp"

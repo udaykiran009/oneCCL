@@ -6,14 +6,14 @@
 
 namespace ccl {
 
-class request_impl;
+class event_impl;
 
 /**
  * event's interface that allows users to track communication operation progress
  */
-class event : public ccl_api_base_movable<event, direct_access_policy, request_impl> {
+class event : public ccl_api_base_movable<event, direct_access_policy, event_impl> {
 public:
-    using base_t = ccl_api_base_movable<event, direct_access_policy, request_impl>;
+    using base_t = ccl_api_base_movable<event, direct_access_policy, event_impl>;
 
     /**
      * Declare PIMPL type

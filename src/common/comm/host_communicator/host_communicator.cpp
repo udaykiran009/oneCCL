@@ -5,7 +5,7 @@
 #include "oneapi/ccl/ccl_comm_split_attr.hpp"
 
 #include "common/request/request.hpp"
-#include "common/request/host_request.hpp"
+#include "common/event/impls/host_event.hpp"
 #include "coll/coll.hpp"
 #include "coll/coll_common_attributes.hpp"
 #include "coll/ccl_allgather_op_attr.hpp"
@@ -118,7 +118,7 @@ host_communicator::coll_request_t host_communicator::barrier_impl(
 
     // TODO what exactly we need to return here? ccl_barrier_impl() is void func
     ccl_request* req = nullptr;
-    return std::unique_ptr<ccl::request_impl>(new ccl::host_request_impl(req));
+    return std::unique_ptr<ccl::event_impl>(new ccl::host_event_impl(req));
 }
 
 /* allgatherv */
@@ -134,7 +134,7 @@ host_communicator::coll_request_t host_communicator::allgatherv_impl(
     ccl_request* req = ccl_allgatherv_impl(
         send_buf, send_count, recv_buf, recv_counts.data(), dtype, attr, comm_impl.get(), nullptr);
 
-    return std::unique_ptr<ccl::request_impl>(new ccl::host_request_impl(req));
+    return std::unique_ptr<ccl::event_impl>(new ccl::host_event_impl(req));
 }
 
 host_communicator::coll_request_t host_communicator::allgatherv_impl(
@@ -164,7 +164,7 @@ host_communicator::coll_request_t host_communicator::allreduce_impl(
     ccl_request* req =
         ccl_allreduce_impl(send_buf, recv_buf, count, dtype, reduction, attr, comm_impl.get(), nullptr);
 
-    return std::unique_ptr<ccl::request_impl>(new ccl::host_request_impl(req));
+    return std::unique_ptr<ccl::event_impl>(new ccl::host_event_impl(req));
 }
 
 /* alltoall */
@@ -179,7 +179,7 @@ host_communicator::coll_request_t host_communicator::alltoall_impl(
     ccl_request* req =
         ccl_alltoall_impl(send_buf, recv_buf, count, dtype, attr, comm_impl.get(), nullptr);
 
-    return std::unique_ptr<ccl::request_impl>(new ccl::host_request_impl(req));
+    return std::unique_ptr<ccl::event_impl>(new ccl::host_event_impl(req));
 }
 
 host_communicator::coll_request_t host_communicator::alltoall_impl(
@@ -214,7 +214,7 @@ host_communicator::coll_request_t host_communicator::alltoallv_impl(
                                           comm_impl.get(),
                                           nullptr);
 
-    return std::unique_ptr<ccl::request_impl>(new ccl::host_request_impl(req));
+    return std::unique_ptr<ccl::event_impl>(new ccl::host_event_impl(req));
 }
 
 host_communicator::coll_request_t host_communicator::alltoallv_impl(
@@ -242,7 +242,7 @@ host_communicator::coll_request_t host_communicator::broadcast_impl(
     const ccl::vector_class<ccl::event>& deps) {
     ccl_request* req = ccl_broadcast_impl(buf, count, dtype, root, attr, comm_impl.get(), nullptr);
 
-    return std::unique_ptr<ccl::request_impl>(new ccl::host_request_impl(req));
+    return std::unique_ptr<ccl::event_impl>(new ccl::host_event_impl(req));
 }
 
 /* reduce */
@@ -259,7 +259,7 @@ host_communicator::coll_request_t host_communicator::reduce_impl(
     ccl_request* req = ccl_reduce_impl(
         send_buf, recv_buf, count, dtype, reduction, root, attr, comm_impl.get(), nullptr);
 
-    return std::unique_ptr<ccl::request_impl>(new ccl::host_request_impl(req));
+    return std::unique_ptr<ccl::event_impl>(new ccl::host_event_impl(req));
 }
 
 /* reduce_scatter */
@@ -275,7 +275,7 @@ host_communicator::coll_request_t host_communicator::reduce_scatter_impl(
     ccl_request* req = ccl_reduce_scatter_impl(
         send_buf, recv_buf, recv_count, dtype, reduction, attr, comm_impl.get(), nullptr);
 
-    return std::unique_ptr<ccl::request_impl>(new ccl::host_request_impl(req));
+    return std::unique_ptr<ccl::event_impl>(new ccl::host_event_impl(req));
 }
 
 /* sparse_allreduce */
@@ -309,7 +309,7 @@ host_communicator::coll_request_t host_communicator::sparse_allreduce_impl(
                                                  comm_impl.get(),
                                                  nullptr);
 
-    return std::unique_ptr<ccl::request_impl>(new ccl::host_request_impl(req));
+    return std::unique_ptr<ccl::event_impl>(new ccl::host_event_impl(req));
 }
 
 std::shared_ptr<atl_wrapper> host_communicator::get_atl() {

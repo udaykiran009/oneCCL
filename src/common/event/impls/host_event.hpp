@@ -1,16 +1,16 @@
 #pragma once
 #include "oneapi/ccl/ccl_types.hpp"
 #include "oneapi/ccl/ccl_types_policy.hpp"
-#include "common/request/request_impl.hpp"
+#include "common/event/impls/event_impl.hpp"
 
 class ccl_request;
 
 namespace ccl {
 
-class host_request_impl final : public ccl::request_impl {
+class host_event_impl final : public event_impl {
 public:
-    explicit host_request_impl(ccl_request* r);
-    ~host_request_impl() override;
+    explicit host_event_impl(ccl_request* r);
+    ~host_event_impl() override;
 
     void wait() override;
     bool test() override;

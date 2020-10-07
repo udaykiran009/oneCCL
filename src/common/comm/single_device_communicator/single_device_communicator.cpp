@@ -61,7 +61,7 @@ single_device_communicator::coll_request_t single_device_communicator::barrier(
 
     // TODO what exactly we need to return here? ccl_barrier_impl() is void func
     ccl_request* req = nullptr;
-    return std::unique_ptr<ccl::request_impl>(new ccl::host_request_impl(req));
+    return std::unique_ptr<ccl::event_impl>(new ccl::host_event_impl(req));
 }
 
 /* allgatherv */
@@ -78,8 +78,8 @@ single_device_communicator::coll_request_t single_device_communicator::allgather
 
     if (!allgather_usm_visitor_base_t::visit(
             req, dtype, send_buf, send_count, recv_buf, recv_counts, stream, attr, deps)) {
-        req = coll_request_t(std::unique_ptr<ccl::request_impl>(
-            new ccl::host_request_impl(ccl_allgatherv_impl(reinterpret_cast<const void*>(send_buf),
+        req = coll_request_t(std::unique_ptr<ccl::event_impl>(
+            new ccl::host_event_impl(ccl_allgatherv_impl(reinterpret_cast<const void*>(send_buf),
                                                            send_count,
                                                            reinterpret_cast<void*>(recv_buf),
                                                            recv_counts.data(),
@@ -136,7 +136,7 @@ single_device_communicator::coll_request_t single_device_communicator::allreduce
             req, dtype, send_buf, recv_buf, count, reduction, stream, attr, deps)) {
         // no predefined convertation from USM, assumed CUSTOM_TYPE
         req = coll_request_t(std::unique_ptr<
-                             ccl::request_impl>(new ccl::host_request_impl(ccl_allreduce_impl(
+                             ccl::event_impl>(new ccl::host_event_impl(ccl_allreduce_impl(
             send_buf, recv_buf, count, dtype, reduction, attr, comm_impl.get(), stream.get()))));
     }
     return req;
@@ -155,7 +155,7 @@ single_device_communicator::coll_request_t single_device_communicator::alltoall_
     if (!alltoall_usm_visitor_base_t::visit(
             req, dtype, send_buf, recv_buf, count, stream, attr, deps)) {
         req = coll_request_t(
-            std::unique_ptr<ccl::request_impl>(new ccl::host_request_impl(ccl_alltoall_impl(
+            std::unique_ptr<ccl::event_impl>(new ccl::host_event_impl(ccl_alltoall_impl(
                 send_buf, recv_buf, count, dtype, attr, comm_impl.get(), stream.get()))));
     }
     return req;
@@ -186,8 +186,8 @@ single_device_communicator::coll_request_t single_device_communicator::alltoallv
     coll_request_t req;
     if (!alltoallv_usm_visitor_base_t::visit(
             req, dtype, send_buf, send_counts, recv_buf, recv_counts, stream, attr, deps)) {
-        req = coll_request_t(std::unique_ptr<ccl::request_impl>(
-            new ccl::host_request_impl(ccl_alltoallv_impl(send_buf,
+        req = coll_request_t(std::unique_ptr<ccl::event_impl>(
+            new ccl::host_event_impl(ccl_alltoallv_impl(send_buf,
                                                           send_counts.data(),
                                                           recv_buf,
                                                           recv_counts.data(),
@@ -222,7 +222,7 @@ single_device_communicator::coll_request_t single_device_communicator::broadcast
     const ccl::vector_class<ccl::event>& deps) {
     coll_request_t req;
     if (!broadcast_usm_visitor_base_t::visit(req, dtype, buf, count, root, stream, attr, deps)) {
-        req = coll_request_t(std::unique_ptr<ccl::request_impl>(new ccl::host_request_impl(
+        req = coll_request_t(std::unique_ptr<ccl::event_impl>(new ccl::host_event_impl(
             ccl_broadcast_impl(buf, count, dtype, root, attr, comm_impl.get(), stream.get()))));
     }
     return req;
@@ -242,8 +242,8 @@ single_device_communicator::coll_request_t single_device_communicator::reduce_im
     coll_request_t req;
     if (!reduce_usm_visitor_base_t::visit(
             req, dtype, send_buf, recv_buf, count, reduction, root, stream, attr, deps)) {
-        req = coll_request_t(std::unique_ptr<ccl::request_impl>(
-            new ccl::host_request_impl(ccl_reduce_impl(send_buf,
+        req = coll_request_t(std::unique_ptr<ccl::event_impl>(
+            new ccl::host_event_impl(ccl_reduce_impl(send_buf,
                                                        recv_buf,
                                                        count,
                                                        dtype,
@@ -270,8 +270,8 @@ single_device_communicator::coll_request_t single_device_communicator::reduce_sc
     coll_request_t req;
     if (!reduce_scatter_usm_visitor_base_t::visit(
             req, dtype, send_buf, recv_buf, recv_count, reduction, stream, attr, deps)) {
-        req = coll_request_t(std::unique_ptr<ccl::request_impl>(
-            new ccl::host_request_impl(ccl_reduce_scatter_impl(send_buf,
+        req = coll_request_t(std::unique_ptr<ccl::event_impl>(
+            new ccl::host_event_impl(ccl_reduce_scatter_impl(send_buf,
                                                        recv_buf,
                                                        recv_count,
                                                        dtype,
@@ -315,8 +315,8 @@ single_device_communicator::coll_request_t single_device_communicator::sparse_al
                                                     stream,
                                                     attr,
                                                     deps)) {
-        req = coll_request_t(std::unique_ptr<ccl::request_impl>(
-            new ccl::host_request_impl(ccl_sparse_allreduce_impl(send_ind_buf,
+        req = coll_request_t(std::unique_ptr<ccl::event_impl>(
+            new ccl::host_event_impl(ccl_sparse_allreduce_impl(send_ind_buf,
                                                                  send_ind_count,
                                                                  send_val_buf,
                                                                  send_val_count,

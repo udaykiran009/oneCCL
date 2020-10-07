@@ -1,17 +1,13 @@
-#include "common/request/native_request.hpp"
+#include "common/event/impls/native_event.hpp"
 #include "common/log/log.hpp"
 
 namespace ccl {
 
-native_request_impl::native_request_impl(event::native_t& native_event, ccl::library_version version)
+native_event_impl::native_event_impl(event::native_t& native_event, ccl::library_version version)
     : ev(new ccl_event(native_event, version)) {
 }
 
-native_request_impl::~native_request_impl() {
-
-}
-
-void native_request_impl::wait() {
+void native_event_impl::wait() {
     if (!completed) {
         #ifdef CCL_ENABLE_SYCL
             auto native_event = ev->get_attribute_value(
@@ -25,18 +21,18 @@ void native_request_impl::wait() {
     }
 }
 
-bool native_request_impl::test() {
+bool native_event_impl::test() {
     if (!completed) {
         throw ccl::exception(std::string(__FUNCTION__) + " - is not implemented");
     }
     return completed;
 }
 
-bool native_request_impl::cancel() {
+bool native_event_impl::cancel() {
     throw ccl::exception(std::string(__FUNCTION__) + " - is not implemented");
 }
 
-event::native_t& native_request_impl::get_native() {
+event::native_t& native_event_impl::get_native() {
     return ev->get_attribute_value(
                     details::ccl_api_type_attr_traits<ccl::event_attr_id,
                     ccl::event_attr_id::native_handle>{});

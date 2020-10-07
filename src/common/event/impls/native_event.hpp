@@ -1,15 +1,15 @@
 #pragma once
 #include "oneapi/ccl/ccl_types.hpp"
 #include "oneapi/ccl/ccl_types_policy.hpp"
-#include "common/request/request_impl.hpp"
+#include "common/event/impls/event_impl.hpp"
 #include "common/event/ccl_event.hpp"
 
 namespace ccl {
 
-class native_request_impl final : public request_impl {
+class native_event_impl final : public event_impl {
 public:
-    explicit native_request_impl(event::native_t& native_event, ccl::library_version version);
-    ~native_request_impl() override;
+    explicit native_event_impl(event::native_t& native_event, ccl::library_version version);
+    ~native_event_impl() override = default;
 
     void wait() override;
     bool test() override;

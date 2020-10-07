@@ -3,8 +3,8 @@
 
 #include "oneapi/ccl/native_device_api/interop_utils.hpp"
 #include "common/request/request.hpp"
-#include "common/request/host_request.hpp"
-#include "common/request/scoped_request.hpp"
+#include "common/event/impls/host_event.hpp"
+#include "common/event/impls/scoped_event.hpp"
 
 #include "coll/coll.hpp"
 #include "coll/coll_common_attributes.hpp"
@@ -30,7 +30,7 @@ host_communicator::coll_request_t host_communicator::allgatherv_impl(
                                            comm_impl.get(),
                                            nullptr);
 
-    return std::unique_ptr<ccl::request_impl>(new ccl::host_request_impl(req));
+    return std::unique_ptr<ccl::event_impl>(new ccl::host_event_impl(req));
 }
 
 template <class buffer_type>
@@ -55,7 +55,7 @@ host_communicator::coll_request_t host_communicator::allgatherv_impl(
                                            comm_impl.get(),
                                            nullptr);
 
-    return std::unique_ptr<ccl::request_impl>(new ccl::host_request_impl(req));
+    return std::unique_ptr<ccl::event_impl>(new ccl::host_event_impl(req));
 }
 
 template <class buffer_type>
@@ -105,7 +105,7 @@ host_communicator::coll_request_t host_communicator::allreduce_impl(
                                           comm_impl.get(),
                                           nullptr);
 
-    return std::unique_ptr<ccl::request_impl>(new ccl::host_request_impl(req));
+    return std::unique_ptr<ccl::event_impl>(new ccl::host_event_impl(req));
 }
 
 template <class buffer_type>
@@ -139,7 +139,7 @@ host_communicator::coll_request_t host_communicator::alltoall_impl(
                                          comm_impl.get(),
                                          nullptr);
 
-    return std::unique_ptr<ccl::request_impl>(new ccl::host_request_impl(req));
+    return std::unique_ptr<ccl::event_impl>(new ccl::host_event_impl(req));
 }
 
 template <class buffer_type>
@@ -200,7 +200,7 @@ host_communicator::coll_request_t host_communicator::alltoallv_impl(
                                           comm_impl.get(),
                                           nullptr);
 
-    return std::unique_ptr<ccl::request_impl>(new ccl::host_request_impl(req));
+    return std::unique_ptr<ccl::event_impl>(new ccl::host_event_impl(req));
 }
 
 template <class buffer_type>
@@ -261,7 +261,7 @@ host_communicator::coll_request_t host_communicator::broadcast_impl(
                                           comm_impl.get(),
                                           nullptr);
 
-    return std::unique_ptr<ccl::request_impl>(new ccl::host_request_impl(req));
+    return std::unique_ptr<ccl::event_impl>(new ccl::host_event_impl(req));
 }
 
 template <class buffer_type>
@@ -298,7 +298,7 @@ host_communicator::coll_request_t host_communicator::reduce_impl(
                                        comm_impl.get(),
                                        nullptr);
 
-    return std::unique_ptr<ccl::request_impl>(new ccl::host_request_impl(req));
+    return std::unique_ptr<ccl::event_impl>(new ccl::host_event_impl(req));
 }
 
 template <class buffer_type>
@@ -335,7 +335,7 @@ host_communicator::coll_request_t host_communicator::reduce_scatter_impl(
                                        comm_impl.get(),
                                        nullptr);
 
-    return std::unique_ptr<ccl::request_impl>(new ccl::host_request_impl(req));
+    return std::unique_ptr<ccl::event_impl>(new ccl::host_event_impl(req));
 }
 
 template <class buffer_type>
@@ -383,7 +383,7 @@ host_communicator::coll_request_t host_communicator::sparse_allreduce_impl(
                                   comm_impl.get(),
                                   nullptr);
 
-    return std::unique_ptr<ccl::request_impl>(new ccl::host_request_impl(req));
+    return std::unique_ptr<ccl::event_impl>(new ccl::host_event_impl(req));
 }
 
 template <class index_buffer_container_type, class value_buffer_container_type>

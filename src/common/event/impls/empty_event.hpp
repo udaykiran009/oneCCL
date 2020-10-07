@@ -1,13 +1,13 @@
 #pragma once
 #include "oneapi/ccl/ccl_types.hpp"
 #include "oneapi/ccl/ccl_types_policy.hpp"
-#include "common/request/request_impl.hpp"
+#include "common/event/impls/event_impl.hpp"
 
 namespace ccl {
 
-class empty_request_impl final : public request_impl {
+class empty_event_impl final : public event_impl {
 public:
-    empty_request_impl() = default;
+    empty_event_impl() = default;
 
     void wait() override {
 
@@ -25,9 +25,7 @@ public:
         throw ccl::exception(std::string(__FUNCTION__) + " - no native event for empty event");
     }
 
-    ~empty_request_impl() override {
-
-    }
+    ~empty_event_impl() override = default;
 };
 
 } // namespace ccl

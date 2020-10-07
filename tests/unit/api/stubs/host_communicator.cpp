@@ -44,7 +44,7 @@ std::shared_ptr<atl_wrapper> host_communicator::get_atl() {
 #include "oneapi/ccl/ccl_comm_split_attr.hpp"
 
 #include "common/request/request.hpp"
-#include "common/request/host_request.hpp"
+#include "common/event/impls/host_event.hpp"
 #include "coll/coll.hpp"
 #include "coll/coll_common_attributes.hpp"
 #include "coll/ccl_allgather_op_attr.hpp"

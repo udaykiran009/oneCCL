@@ -33,7 +33,7 @@ list (APPEND EXTENSIONS_SRC
                     native_device_api/interop_utils.cpp
                     sched/gpu_sched.cpp
                     sched/gpu_concurrent_sched.cpp
-                    common/request/gpu_request.cpp
+                    common/event/impls/gpu_event.cpp
 
                     common/comm/l0/comm_context.cpp
                     common/comm/l0/comm_context_storage.cpp
@@ -173,8 +173,8 @@ set(CCL_SRC
     common/env/env.cpp
     common/global/global.cpp
     common/log/log.cpp
-    common/request/host_request.cpp
-    common/request/native_request.cpp
+    common/event/impls/host_event.cpp
+    common/event/impls/native_event.cpp
     common/request/request.cpp
     common/utils/spinlock.cpp
     common/utils/yield.cpp

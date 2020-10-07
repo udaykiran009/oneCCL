@@ -24,7 +24,7 @@ class single_device_communicator
 public:
     using base_t = typed_single_device_base_communicator<single_device_communicator,
                                                          ccl::gpu_communicator_traits>;
-    //TODO -S- Use request_impl for all communicator impl!
+    //TODO -S- Use event_impl for all communicator impl!
     using coll_request_t = ccl::event;
     using allgather_usm_visitor_base_t = allgather_usm_visitor<single_device_communicator>;
     using allreduce_usm_visitor_base_t = allreduce_usm_visitor<single_device_communicator>;

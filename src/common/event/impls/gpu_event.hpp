@@ -2,16 +2,16 @@
 #include <memory>
 
 #include "oneapi/ccl.hpp"
-#include "common/request/request_impl.hpp"
+#include "common/event/impls/event_impl.hpp"
 
 class ccl_gpu_sched;
 
 namespace ccl {
 
-class gpu_request_impl final : public ccl::request_impl {
+class gpu_event_impl final : public event_impl {
 public:
-    explicit gpu_request_impl(std::unique_ptr<ccl_gpu_sched>&& sched);
-    ~gpu_request_impl();
+    explicit gpu_event_impl(std::unique_ptr<ccl_gpu_sched>&& sched);
+    ~gpu_event_impl();
 
     void wait() override;
     bool test() override;
@@ -23,10 +23,10 @@ private:
     bool completed = false;
 };
 
-class gpu_shared_request_impl final : public ccl::request_impl {
+class gpu_shared_event_impl final : public event_impl {
 public:
-    explicit gpu_shared_request_impl(std::shared_ptr<ccl_gpu_sched>&& sched);
-    ~gpu_shared_request_impl();
+    explicit gpu_shared_event_impl(std::shared_ptr<ccl_gpu_sched>&& sched);
+    ~gpu_shared_event_impl();
 
     void wait() override;
     bool test() override;
@@ -38,10 +38,10 @@ private:
     bool completed = false;
 };
 
-class gpu_shared_process_request_impl final : public ccl::request_impl {
+class gpu_shared_process_event_impl final : public event_impl {
 public:
-    explicit gpu_shared_process_request_impl(std::shared_ptr<ccl_gpu_sched>&& sched);
-    ~gpu_shared_process_request_impl();
+    explicit gpu_shared_process_event_impl(std::shared_ptr<ccl_gpu_sched>&& sched);
+    ~gpu_shared_process_event_impl();
 
     void wait() override;
     bool test() override;

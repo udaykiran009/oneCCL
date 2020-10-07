@@ -5,13 +5,13 @@
 
 namespace ccl {
 
-class request_impl {
+class event_impl {
 public:
     virtual void wait() = 0;
     virtual bool test() = 0;
     virtual bool cancel() = 0;
     virtual event::native_t& get_native() = 0;
-    virtual ~request_impl() = default;
+    virtual ~event_impl() = default;
 };
 
 } // namespace ccl

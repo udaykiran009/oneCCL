@@ -6,7 +6,7 @@
 #include "common/comm/l0/device_community.hpp"
 #include "common/comm/l0/context/thread_group_ctx.hpp"
 #include "common/comm/l0/scheduler/thread_group_scheduler.hpp"
-#include "common/request/gpu_request.hpp"
+#include "common/event/impls/gpu_event.hpp"
 
 /* allgatherv */
 template <class buffer_type>
@@ -140,8 +140,8 @@ thread_device_group_ring_communicator::allgatherv_impl(const buffer_type* send_b
     if (schedule) {
         LOG_DEBUG("Device group finalized");
     }
-    return std::unique_ptr<ccl::request_impl>(
-        new ccl::gpu_shared_request_impl(std::move(schedule)));
+    return std::unique_ptr<ccl::event_impl>(
+        new ccl::gpu_shared_event_impl(std::move(schedule)));
 }
 
 /* allreduce */
@@ -235,8 +235,8 @@ thread_device_group_ring_communicator::allreduce_impl(const buffer_type* send_bu
     if (schedule) {
         LOG_DEBUG("Device group finalized");
     }
-    return std::unique_ptr<ccl::request_impl>(
-        new ccl::gpu_shared_request_impl(std::move(schedule)));
+    return std::unique_ptr<ccl::event_impl>(
+        new ccl::gpu_shared_event_impl(std::move(schedule)));
 }
 
 template <class buffer_type>
@@ -432,8 +432,8 @@ thread_device_group_ring_communicator::alltoallv_impl(const buffer_type* send_bu
     if (schedule) {
         LOG_DEBUG("Device group finalized");
     }
-    return std::unique_ptr<ccl::request_impl>(
-        new ccl::gpu_shared_request_impl(std::move(schedule)));
+    return std::unique_ptr<ccl::event_impl>(
+        new ccl::gpu_shared_event_impl(std::move(schedule)));
 }
 
 /* bcast */
@@ -518,8 +518,8 @@ thread_device_group_ring_communicator::broadcast_impl(buffer_type* buf,
     if (schedule) {
         LOG_DEBUG("Device group finalized");
     }
-    return std::unique_ptr<ccl::request_impl>(
-        new ccl::gpu_shared_request_impl(std::move(schedule)));
+    return std::unique_ptr<ccl::event_impl>(
+        new ccl::gpu_shared_event_impl(std::move(schedule)));
 }
 
 template <class buffer_type>
@@ -628,8 +628,8 @@ thread_device_group_ring_communicator::reduce_impl(const buffer_type* send_buf,
         LOG_DEBUG("Device group finalized");
     }
 
-    return std::unique_ptr<ccl::request_impl>(
-        new ccl::gpu_shared_request_impl(std::move(schedule)));
+    return std::unique_ptr<ccl::event_impl>(
+        new ccl::gpu_shared_event_impl(std::move(schedule)));
 }
 
 template <class buffer_type>
