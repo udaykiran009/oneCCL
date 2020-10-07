@@ -247,7 +247,7 @@ run()
     do
         cd $dir_name
         pwd
-        for transport in "ofi" "mpi";
+        for transport in "mpi";
         do
             ccl_transport_env="CCL_ATL_TRANSPORT=${transport} ${ccl_base_env}"
 
