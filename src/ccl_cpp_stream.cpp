@@ -42,18 +42,11 @@ CCL_API const stream::native_t& stream::get_native() const
 }
 } // namespace ccl
 
+API_STREAM_CREATION_FORCE_INSTANTIATION(typename ccl::unified_stream_type::ccl_native_t)
+API_STREAM_CREATION_EXT_FORCE_INSTANTIATION(typename ccl::unified_device_type::ccl_native_t, typename ccl::unified_device_context_type::ccl_native_t)
 #ifdef CCL_ENABLE_SYCL
-API_STREAM_CREATION_FORCE_INSTANTIATION(cl::sycl::queue)
 API_STREAM_CREATION_FORCE_INSTANTIATION(cl_command_queue)
-API_STREAM_CREATION_EXT_FORCE_INSTANTIATION(cl::sycl::device, cl::sycl::context)
 #else
-#ifdef MULTI_GPU_SUPPORT
-API_STREAM_CREATION_FORCE_INSTANTIATION(
-    native::cl_base<ze_command_queue_handle_t COMMA native::ccl_device>)
-API_STREAM_CREATION_FORCE_INSTANTIATION(
-    ccl::shared_ptr_class<native::cl_base<ze_command_queue_handle_t COMMA native::ccl_device>>)
-API_STREAM_CREATION_FORCE_INSTANTIATION(ccl::shared_ptr_class<native::ccl_device>)
-#endif
 //API_STREAM_CREATION_FORCE_INSTANTIATION(ccl::empty_t)
 #endif
 

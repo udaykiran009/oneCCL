@@ -18,7 +18,7 @@ namespace device_suite {
 
 TEST(device_api, device_from_empty) {
 
-    static typename ccl::unified_device_type::handle_t default_native_device;
+    static typename ccl::unified_device_type::ccl_native_t default_native_device;
 
     auto str = ccl::device::create_device(default_native_device);
     ASSERT_TRUE(str.get<ccl::device_attr_id::version>().full != nullptr);

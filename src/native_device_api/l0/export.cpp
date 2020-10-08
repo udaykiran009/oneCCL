@@ -11,17 +11,13 @@ namespace ccl {
  * Context
  */
 generic_device_context_type<cl_backend_type::l0>::generic_device_context_type() {}
-generic_device_context_type<cl_backend_type::l0>::generic_device_context_type(handle_t ctx)
-        : context() {
-    //TODO context
-    (void)ctx;
-
-    throw;
+generic_device_context_type<cl_backend_type::l0>::generic_device_context_type(ccl_native_t ctx)
+        : context(ctx) {
 }
 
-generic_device_context_type<cl_backend_type::l0>::ccl_native_t
+generic_device_context_type<cl_backend_type::l0>::ccl_native_t&
 generic_device_context_type<cl_backend_type::l0>::get() noexcept {
-    return /*const_cast<generic_device_context_type<cl_backend_type::l0>::ccl_native_t>*/ (
+    return const_cast<generic_device_context_type<cl_backend_type::l0>::ccl_native_t &>(
         static_cast<const generic_device_context_type<cl_backend_type::l0>*>(this)->get());
 }
 
@@ -37,6 +33,10 @@ generic_device_context_type<cl_backend_type::l0>::get() const noexcept {
  */
 generic_device_type<cl_backend_type::l0>::generic_device_type(device_index_type id)
         : device(id) {}
+
+generic_device_type<cl_backend_type::l0>::generic_device_type(ccl_native_t dev)
+        : device(dev->get_device_path()) {
+}
 
 device_index_type generic_device_type<cl_backend_type::l0>::get_id() const noexcept {
     return device;
@@ -54,9 +54,9 @@ generic_device_type<cl_backend_type::l0>::get() noexcept {
 generic_event_type<cl_backend_type::l0>::generic_event_type(handle_t e)
         : event(/*TODO use ccl_device_context to create event*/) {}
 
-generic_event_type<cl_backend_type::l0>::ccl_native_t
+generic_event_type<cl_backend_type::l0>::ccl_native_t &
 generic_event_type<cl_backend_type::l0>::get() noexcept {
-    return const_cast<generic_event_type<cl_backend_type::l0>::ccl_native_t>(
+    return const_cast<generic_event_type<cl_backend_type::l0>::ccl_native_t &>(
         static_cast<const generic_event_type<cl_backend_type::l0>*>(this)->get());
 }
 
@@ -72,9 +72,9 @@ generic_event_type<cl_backend_type::l0>::get() const noexcept {
 generic_stream_type<cl_backend_type::l0>::generic_stream_type(handle_t q)
         : queue(/*TODO use ccl_device to create event*/) {}
 
-generic_stream_type<cl_backend_type::l0>::ccl_native_t
+generic_stream_type<cl_backend_type::l0>::ccl_native_t&
 generic_stream_type<cl_backend_type::l0>::get() noexcept {
-    return const_cast<generic_stream_type<cl_backend_type::l0>::ccl_native_t>(
+    return const_cast<generic_stream_type<cl_backend_type::l0>::ccl_native_t&>(
         static_cast<const generic_stream_type<cl_backend_type::l0>*>(this)->get());
 }
 
@@ -87,9 +87,9 @@ generic_stream_type<cl_backend_type::l0>::get() const noexcept {
 /**
  * Platform
  */
-generic_platform_type<cl_backend_type::l0>::ccl_native_t
+generic_platform_type<cl_backend_type::l0>::ccl_native_t&
 generic_platform_type<cl_backend_type::l0>::get() noexcept {
-    return const_cast<generic_platform_type<cl_backend_type::l0>::ccl_native_t>(
+    return const_cast<generic_platform_type<cl_backend_type::l0>::ccl_native_t&>(
         static_cast<const generic_platform_type<cl_backend_type::l0>*>(this)->get());
 }
 

@@ -29,7 +29,7 @@ TEST(stream_api, stream_from_device_creation) {
 
 TEST(stream_api, stream_from_device_context_creation) {
     auto dev = native::get_platform().get_device(ccl::from_string("[0:6459]"));
-    auto ctx = std::make_shared<native::ccl_context>(); //TODO stub at moment
+    auto ctx = native::get_platform().get_driver(0)->create_context();
     auto str = ccl::stream::create_stream_from_attr(dev, ctx);
 
     ASSERT_TRUE(str.get<ccl::stream_attr_id::version>().full != nullptr);
@@ -43,7 +43,8 @@ TEST(stream_api, stream_from_device_context_creation) {
 
 TEST(stream_api, stream_creation_from_native) {
     auto dev = native::get_platform().get_device(ccl::from_string("[0:6459]"));
-    auto queue = dev->create_cmd_queue();
+    auto ctx = native::get_platform().get_driver(0)->create_context();
+    auto queue = dev->create_cmd_queue(ctx);
 
     //TODO HACK
     typename ccl::unified_stream_type::ccl_native_t *s =

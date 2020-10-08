@@ -327,6 +327,23 @@ struct comm_impl_dispatch_selector<cl_backend_type::l0> :
     template <class ContextType>
     static vector_class<communicator> create_communicators_selector(
                 const size_t cluster_devices_size, /*global devices count*/
+                const map_class<rank_t, typename unified_device_type::ccl_native_t>& local_rank_device_map,
+                ContextType& context,
+                shared_ptr_class<kvs_interface> kvs) {
+
+        map_class<rank_t, ccl::device_index_type> converted_device_map;
+        std::transform(local_rank_device_map.begin(), local_rank_device_map.end(),
+                       std::inserter(converted_device_map, converted_device_map.end()),
+                       [](const typename map_class<rank_t, typename unified_device_type::ccl_native_t>::value_type& val)
+                       {
+                           return std::make_pair(val.first, val.second->get_device_path());
+                       });
+        return create_communicators_selector(cluster_devices_size, converted_device_map, context_extractor<ContextType>::extract(context), kvs);
+    }
+
+    template <class ContextType>
+    static vector_class<communicator> create_communicators_selector(
+                const size_t cluster_devices_size, /*global devices count*/
                 const map_class<rank_t, ccl::device_index_type>& local_rank_device_map,
                 ContextType& context,
                 shared_ptr_class<kvs_interface> kvs) {

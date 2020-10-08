@@ -52,7 +52,7 @@ TEST(device_communicator_api, device_comm_from_device_index) {
     size_t total_devices_size = 4;
     ccl::vector_class<ccl::device_index_type> devices{ total_devices_size,
                                                        ccl::from_string("[0:6459]") };
-    auto ctx = std::make_shared<native::ccl_context>(); //TODO stub at moment
+    auto ctx = native::get_platform().get_driver(0)->create_context();
     std::shared_ptr<stub_kvs> stub_storage;
 
     ccl::vector_class<ccl::pair_class<size_t, ccl::device_index_type>> local_rank_device_map;

@@ -238,7 +238,10 @@ std::shared_ptr<ccl_context> ccl_device_driver::create_context() {
 
     auto platform = get_owner();
     status = zeContextCreate(handle, &context_desc, &context);
-    assert(status == ZE_RESULT_SUCCESS);
+    if (status != ZE_RESULT_SUCCESS) {
+        throw std::runtime_error(std::string("zeContextCreate, error: ") +
+                                 native::to_string(status));
+    }
 
     std::vector<std::weak_ptr<ccl_context>> vec;
     auto ctx_holder = get_ctx().lock();

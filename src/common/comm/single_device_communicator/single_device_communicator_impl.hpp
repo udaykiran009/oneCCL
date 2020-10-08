@@ -50,9 +50,8 @@ single_device_communicator::coll_request_t single_device_communicator::allgather
     }
     else if (send_buf_result == usm_support_mode::need_conversion and
              recv_buf_result == usm_support_mode::need_conversion) {
-        size_t recv_total_size = std::accumulate(recv_counts.begin(), recv_counts.end(), size_t{});
-        ccl_request* req = nullptr;
 #ifdef CCL_ENABLE_SYCL
+        size_t recv_total_size = std::accumulate(recv_counts.begin(), recv_counts.end(), size_t{});
         auto scoped_req_sycl = ccl::details::make_unique_scoped_event<ccl::host_event_impl>(
             nullptr,
             /*send_buf*/
@@ -62,7 +61,7 @@ single_device_communicator::coll_request_t single_device_communicator::allgather
             cl::sycl::buffer<buffer_type>{
                 recv_buf, recv_total_size, cl::sycl::property::buffer::use_host_ptr{} });
 
-        req = ccl_allgatherv_impl(
+        ccl_request* req = ccl_allgatherv_impl(
             reinterpret_cast<const void*>(
                 &scoped_req_sycl->template get_arg_by_index<0>() /*send_buf*/),
             send_count,
@@ -72,12 +71,13 @@ single_device_communicator::coll_request_t single_device_communicator::allgather
             attr,
             comm_impl.get(),
             stream.get());
+
+        scoped_req_sycl->charge(req);
+        scoped_req = std::move(scoped_req_sycl);
 #else
         throw ccl::exception(std::string(__PRETTY_FUNCTION__) +
                         " - USM convertation is not supported for such configuration");
 #endif
-        scoped_req_sycl->charge(req);
-        scoped_req = std::move(scoped_req_sycl);
     }
     else {
         throw ccl::exception(std::string(__PRETTY_FUNCTION__) + "\nsend_buf check result:\n" +
@@ -200,7 +200,6 @@ single_device_communicator::coll_request_t single_device_communicator::allreduce
     }
     else if (send_buf_result == usm_support_mode::need_conversion and
              recv_buf_result == usm_support_mode::need_conversion) {
-        ccl_request* req = nullptr;
         LOG_TRACE("comm: ", to_string(), " - use USM pointers convertation for both buffers");
 #ifdef CCL_ENABLE_SYCL
         auto scoped_req_sycl = ccl::details::make_unique_scoped_event<ccl::host_event_impl>(
@@ -212,7 +211,7 @@ single_device_communicator::coll_request_t single_device_communicator::allreduce
             cl::sycl::buffer<buffer_type>{
                 recv_buf, count, cl::sycl::property::buffer::use_host_ptr{} });
 
-        req = ccl_allreduce_impl(
+        ccl_request* req = ccl_allreduce_impl(
             reinterpret_cast<const void*>(
                 &scoped_req_sycl->template get_arg_by_index<0>() /*send_buf*/),
             reinterpret_cast<void*>(&scoped_req_sycl->template get_arg_by_index<1>() /*recv_buf*/),
@@ -222,12 +221,13 @@ single_device_communicator::coll_request_t single_device_communicator::allreduce
             attr,
             comm_impl.get(),
             stream.get());
+
+        scoped_req_sycl->charge(req);
+        scoped_req = std::move(scoped_req_sycl);
 #else
         throw ccl::exception(std::string(__PRETTY_FUNCTION__) +
                         " - USM convertation is not supported for such configuration");
 #endif
-        scoped_req_sycl->charge(req);
-        scoped_req = std::move(scoped_req_sycl);
     }
     else {
         throw ccl::exception(std::string(__PRETTY_FUNCTION__) + "\nsend_buf check result:\n" +
@@ -315,7 +315,6 @@ single_device_communicator::coll_request_t single_device_communicator::alltoall_
             break;
         }
         case need_conversion: {
-            ccl_request* req = nullptr;
 #ifdef CCL_ENABLE_SYCL
             LOG_TRACE(
                 "comm: ", to_string(), " - use USM pointers convertation to SYCL for both buffers");
@@ -328,7 +327,7 @@ single_device_communicator::coll_request_t single_device_communicator::alltoall_
                 cl::sycl::buffer<buffer_type>{
                     recv_buf, count * size(), cl::sycl::property::buffer::use_host_ptr{} });
 
-            req = ccl_alltoall_impl(
+            ccl_request* req = ccl_alltoall_impl(
                 reinterpret_cast<const void*>(
                     &scoped_req_sycl->template get_arg_by_index<0>() /*send_buf*/),
                 reinterpret_cast<void*>(
@@ -338,12 +337,13 @@ single_device_communicator::coll_request_t single_device_communicator::alltoall_
                 attr,
                 comm_impl.get(),
                 stream.get());
+
+            scoped_req_sycl->charge(req);
+            scoped_req = std::move(scoped_req_sycl);
 #else
             throw ccl::exception(std::string(__PRETTY_FUNCTION__) +
                             " - USM convertation is not supported for such configuration");
 #endif
-            scoped_req_sycl->charge(req);
-            scoped_req = std::move(scoped_req_sycl);
             break;
         }
         default:
@@ -453,7 +453,6 @@ single_device_communicator::coll_request_t single_device_communicator::alltoallv
             break;
         }
         case need_conversion: {
-            ccl_request* req = nullptr;
 #ifdef CCL_ENABLE_SYCL
             size_t send_total_size =
                 std::accumulate(send_counts.begin(), send_counts.end(), size_t{});
@@ -475,7 +474,7 @@ single_device_communicator::coll_request_t single_device_communicator::alltoallv
                 cl::sycl::buffer<buffer_type>{
                     recv_buf, recv_total_size, cl::sycl::property::buffer::use_host_ptr{} });
 
-            req = ccl_alltoallv_impl(
+            ccl_request* req = ccl_alltoallv_impl(
                 reinterpret_cast<const void*>(
                     &scoped_req_sycl->template get_arg_by_index<0>() /*send_buf*/),
                 send_counts.data(),
@@ -486,12 +485,13 @@ single_device_communicator::coll_request_t single_device_communicator::alltoallv
                 attr,
                 comm_impl.get(),
                 stream.get());
+
+            scoped_req_sycl->charge(req);
+            scoped_req = std::move(scoped_req_sycl);
 #else
             throw ccl::exception(std::string(__PRETTY_FUNCTION__) +
                             " - USM convertation is not supported for such configuration");
 #endif
-            scoped_req_sycl->charge(req);
-            scoped_req = std::move(scoped_req_sycl);
             break;
         }
         default:
@@ -595,7 +595,6 @@ single_device_communicator::coll_request_t single_device_communicator::broadcast
             break;
         }
         case need_conversion: {
-            ccl_request* req = nullptr;
 #ifdef CCL_ENABLE_SYCL
             LOG_TRACE(
                 "comm: ", to_string(), " - use USM pointers convertation to SYCL for both buffers");
@@ -605,7 +604,7 @@ single_device_communicator::coll_request_t single_device_communicator::broadcast
                 cl::sycl::buffer<buffer_type>{
                     buf, count, cl::sycl::property::buffer::use_host_ptr{} });
 
-            req = ccl_broadcast_impl(
+            ccl_request* req = ccl_broadcast_impl(
                 reinterpret_cast<void*>(&scoped_req_sycl->template get_arg_by_index<0>() /*buf*/),
                 count,
                 ccl::native_type_info<buffer_type>::ccl_datatype_value,
@@ -613,12 +612,13 @@ single_device_communicator::coll_request_t single_device_communicator::broadcast
                 attr,
                 comm_impl.get(),
                 stream.get());
+
+            scoped_req_sycl->charge(req);
+            scoped_req = std::move(scoped_req_sycl);
 #else
             throw ccl::exception(std::string(__PRETTY_FUNCTION__) +
                             " - USM convertation is not supported for such configuration");
 #endif
-            scoped_req_sycl->charge(req);
-            scoped_req = std::move(scoped_req_sycl);
             break;
         }
         default:
@@ -708,7 +708,6 @@ single_device_communicator::coll_request_t single_device_communicator::reduce_im
             break;
         }
         case need_conversion: {
-            ccl_request* req = nullptr;
 #ifdef CCL_ENABLE_SYCL
             LOG_TRACE(
                 "comm: ", to_string(), " - use USM pointers convertation to SYCL for both buffers");
@@ -721,7 +720,7 @@ single_device_communicator::coll_request_t single_device_communicator::reduce_im
                 cl::sycl::buffer<buffer_type>{
                     recv_buf, count, cl::sycl::property::buffer::use_host_ptr{} });
 
-            req =
+            ccl_request* req =
                 ccl_reduce_impl(reinterpret_cast<const void*>(
                                     &scoped_req_sycl->template get_arg_by_index<0>() /*send_buf*/),
                                 reinterpret_cast<void*>(
@@ -733,12 +732,12 @@ single_device_communicator::coll_request_t single_device_communicator::reduce_im
                                 attr,
                                 comm_impl.get(),
                                 stream.get());
+            scoped_req_sycl->charge(req);
+            scoped_req = std::move(scoped_req_sycl);
 #else
             throw ccl::exception(std::string(__PRETTY_FUNCTION__) +
                             " - USM convertation is not supported for such configuration");
 #endif
-            scoped_req_sycl->charge(req);
-            scoped_req = std::move(scoped_req_sycl);
             break;
         }
         default:
@@ -833,7 +832,6 @@ single_device_communicator::coll_request_t single_device_communicator::reduce_sc
             break;
         }
         case need_conversion: {
-            ccl_request* req = nullptr;
 #ifdef CCL_ENABLE_SYCL
             LOG_TRACE(
                 "comm: ", to_string(), " - use USM pointers convertation to SYCL for both buffers");
@@ -846,7 +844,7 @@ single_device_communicator::coll_request_t single_device_communicator::reduce_sc
                 cl::sycl::buffer<buffer_type>{
                     recv_buf, recv_count, cl::sycl::property::buffer::use_host_ptr{} });
 
-            req =
+            ccl_request* req =
                 ccl_reduce_scatter_impl(reinterpret_cast<const void*>(
                                     &scoped_req_sycl->template get_arg_by_index<0>() /*send_buf*/),
                                 reinterpret_cast<void*>(
@@ -857,12 +855,13 @@ single_device_communicator::coll_request_t single_device_communicator::reduce_sc
                                 attr,
                                 comm_impl.get(),
                                 stream.get());
+            scoped_req_sycl->charge(req);
+            scoped_req = std::move(scoped_req_sycl);
 #else
             throw ccl::exception(std::string(__PRETTY_FUNCTION__) +
                             " - USM convertation is not supported for such configuration");
 #endif
-            scoped_req_sycl->charge(req);
-            scoped_req = std::move(scoped_req_sycl);
+
             break;
         }
         default:
@@ -965,7 +964,6 @@ single_device_communicator::coll_request_t single_device_communicator::sparse_al
             break;
         }
         case need_conversion: {
-            ccl_request* req = nullptr;
 #ifdef CCL_ENABLE_SYCL
             LOG_TRACE("comm: ",
                       to_string(),
@@ -984,7 +982,7 @@ single_device_communicator::coll_request_t single_device_communicator::sparse_al
                 /*recv_val_buf*/
                 cl::sycl::buffer<value_buffer_type>{
                     recv_val_buf, recv_val_count, cl::sycl::property::buffer::use_host_ptr{} });
-            req = ccl_sparse_allreduce_impl(
+            ccl_request* req = ccl_sparse_allreduce_impl(
                 reinterpret_cast<const void*>(&scoped_req_sycl->template get_arg_by_index<0>()),
                 send_ind_count,
                 reinterpret_cast<const void*>(&scoped_req_sycl->template get_arg_by_index<1>()),
@@ -1000,12 +998,12 @@ single_device_communicator::coll_request_t single_device_communicator::sparse_al
                 comm_impl.get(),
                 stream.get());
 
+            scoped_req_sycl->charge(req);
+            scoped_req = std::move(scoped_req_sycl);
 #else
             throw ccl::exception(std::string(__PRETTY_FUNCTION__) +
                             " - USM convertation is not supported for such configuration");
 #endif
-            scoped_req_sycl->charge(req);
-            scoped_req = std::move(scoped_req_sycl);
             break;
         }
         default:
