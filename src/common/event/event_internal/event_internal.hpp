@@ -1,5 +1,6 @@
 #pragma once
 
+#if 0
 class ccl_event;
 namespace ccl {
 
@@ -77,3 +78,5 @@ constexpr auto attr_val(value_type v) -> details::attr_value_tripple<event_attr_
 }
 
 } // namespace ccl
+
+#endif

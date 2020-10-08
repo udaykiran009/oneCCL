@@ -12,10 +12,6 @@
 #include "oneapi/ccl/ccl_stream_attr_ids_traits.hpp"
 #include "oneapi/ccl/ccl_stream.hpp"
 
-#include "common/event/event_internal/event_internal_attr_ids.hpp"
-#include "common/event/event_internal/event_internal_attr_ids_traits.hpp"
-#include "common/event/event_internal/event_internal.hpp"
-
 #include "common/comm/compiler_comm_interface_dispatcher.hpp"
 #include "common/comm/l0/comm_context_id.hpp"
 

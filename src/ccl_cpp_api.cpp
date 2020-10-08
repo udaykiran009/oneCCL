@@ -8,7 +8,6 @@
 
 #include "common/comm/l0/comm_context_storage.hpp"
 
-#include "common/event/event_internal/event_internal_impl.hpp"
 #include "stream_impl.hpp"
 
 #include "common/global/global.hpp"

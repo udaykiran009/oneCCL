@@ -1,5 +1,6 @@
 #include "common/event/event_internal/event_internal_impl.hpp"
 
+#if 0
 namespace ccl {
 
 event_internal::event_internal(event_internal&& src) : base_t(std::move(src)) {}
@@ -20,3 +21,4 @@ void event_internal::build_from_params() {
     get_impl()->build_from_params();
 }
 } // namespace ccl
+#endif

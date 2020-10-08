@@ -48,7 +48,6 @@ set (dependencies_sources
              "${PROJECT_SOURCE_DIR}/src/common/context/context.cpp"
              "${PROJECT_SOURCE_DIR}/src/ccl_cpp_context.cpp"
              "${PROJECT_SOURCE_DIR}/src/common/event/ccl_event.cpp"
-             "${PROJECT_SOURCE_DIR}/src/common/event/event_internal/event_internal.cpp"
              "${PROJECT_SOURCE_DIR}/src/common/event/impls/native_event.cpp"
              "${PROJECT_SOURCE_DIR}/src/common/stream/stream.cpp"
              "${PROJECT_SOURCE_DIR}/src/common/comm/comm.cpp"

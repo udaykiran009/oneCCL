@@ -1,10 +1,13 @@
 #pragma once
+
+#if 0
+
 #include "oneapi/ccl/ccl_types.hpp"
 #include "oneapi/ccl/ccl_type_traits.hpp"
 #include "oneapi/ccl/ccl_types_policy.hpp"
 
-#include "common/event/event_internal/event_internal_attr_ids.hpp"
-#include "common/event/event_internal/event_internal_attr_ids_traits.hpp"
+#include "common/event/ccl_event_attr_ids.hpp"
+#include "common/event/ccl_event_attr_ids_traits.hpp"
 #include "common/event/event_internal/event_internal.hpp"
 
 #include "common/event/ccl_event.hpp"
@@ -78,3 +81,5 @@ typename ccl::details::ccl_api_type_attr_traits<ccl::event_attr_id, attrId>::ret
 }
 
 } // namespace ccl
+
+#endif
