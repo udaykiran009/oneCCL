@@ -13,12 +13,6 @@ include(${PROJECT_SOURCE_DIR}/cmake/helpers.cmake)
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g")
 if(COMPUTE_RUNTIME)
     activate_compute_runtime("${PROJECT_SOURCE_DIR}/cmake" ${COMPUTE_RUNTIME})
-
-    if (${CCL_ENABLE_SYCL_V} STREQUAL 1)
-        option (CCL_ENABLE_SYCL "Enable CCL SYCL runtime" ON)
-        message(STATUS "Enable CCL SYCL runtime")
-    endif()
-
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${COMPUTE_RUNTIME_FLAGS}")
     add_definitions(${DEFINITIONS})
 endif()
@@ -45,25 +39,9 @@ include_directories(${PROJECT_SOURCE_DIR}/tests/functional/googletest-release-1.
 file(GLOB sources "*.c" "*.cpp")
 
 set (dependencies_sources
-             "${PROJECT_SOURCE_DIR}/src/ccl_cpp_utils.cpp"
-             "${PROJECT_SOURCE_DIR}/src/common/log/log.cpp"
-             "${PROJECT_SOURCE_DIR}/src/common/event/ccl_event.cpp"
-             "${PROJECT_SOURCE_DIR}/src/common/event/event_internal/event_internal.cpp"
-             "${PROJECT_SOURCE_DIR}/tests/unit/api/stubs/spinlock.cpp")
-
-if(MULTI_GPU_SUPPORT)
-    list( APPEND dependencies_sources
-             "${PROJECT_SOURCE_DIR}/src/native_device_api/l0/base.cpp"
-             "${PROJECT_SOURCE_DIR}/src/native_device_api/l0/device.cpp"
-             "${PROJECT_SOURCE_DIR}/src/native_device_api/l0/driver.cpp"
-             "${PROJECT_SOURCE_DIR}/src/native_device_api/l0/context.cpp"
-             "${PROJECT_SOURCE_DIR}/src/native_device_api/l0/platform.cpp"
-             "${PROJECT_SOURCE_DIR}/src/native_device_api/l0/subdevice.cpp"
-             "${PROJECT_SOURCE_DIR}/src/native_device_api/l0/primitives.cpp"
-             "${PROJECT_SOURCE_DIR}/src/native_device_api/l0/utils.cpp"
-             "${PROJECT_SOURCE_DIR}/src/native_device_api/interop_utils.cpp"
-             )
-endif()
+             "${PROJECT_SOURCE_DIR}/src/ccl_app_api_event.cpp"
+             "${PROJECT_SOURCE_DIR}/src/common/event/impls/native_event.cpp"
+             "${PROJECT_SOURCE_DIR}/src/common/event/ccl_event.cpp")
 
 foreach(src ${sources})
     get_filename_component(executable ${src} NAME_WE)
