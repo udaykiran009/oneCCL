@@ -46,80 +46,7 @@ void check_max_comm_number(const ccl::communicator& comm,
     } while (true);
 
     PRINT_BY_ROOT(comm, "created %zu communicators", user_comms);
-    // PRINT_BY_ROOT(comm, "try to create one more communicator, it should fail");
-
-    // try
-    // {
-    //     auto comm = ccl::environment::instance().create_communicator();
-    //     printf("FAILED\n");
-    //     throw std::runtime_error("extra communicator has been created");
-    // }
-    // catch(...)
-    // {}
-
-    // PRINT_BY_ROOT(comm, "free one comm, try to create again");
-    // size_t comm_idx = user_comms / 2;
-
-    // try
-    // {
-    //     communicators[comm_idx].reset();
-    // }
-    // catch (...)
-    // {
-    //     printf("FAILED\n");
-    //     throw std::runtime_error("can't free communicator");
-    // }
-
-    // try
-    // {
-    //     communicators[comm_idx] = ccl::environment::instance().create_communicator();
-    // }
-    // catch (...)
-    // {
-    //     printf("FAILED\n");
-    //     throw std::runtime_error("can't create communicator after free");
-    // }
 }
-
-// void check_comm_create_identical_color()
-// {
-//     size_t comm_size{};
-//     size_t comm_rank{};
-
-//     PRINT_BY_ROOT(global_comm,
-//         "create comm as a copy of the global one by settings identical colors");
-
-//     ccl::comm_attr_t comm_attr = ccl::environment::instance().create_host_comm_attr();
-//     comm_attr->set_value<ccl_host_color>(123);
-//     auto comm = ccl::environment::instance().create_communicator(comm_attr);
-
-//     comm_size = comm->size();
-//     comm_rank = comm->rank();
-
-//     if (comm_size != global_comm->size())
-//     {
-//         printf("FAILED\n");
-//         throw std::runtime_error("mismatch in size, expected " +
-//             to_string(global_comm->size()) +
-//             " received " + to_string(comm_size));
-//     }
-
-//     if (comm_rank != global_comm->rank())
-//     {
-//         printf("FAILED\n");
-//         throw std::runtime_error("mismatch in rank, expected " +
-//             to_string(global_comm->rank()) +
-//             " received " + to_string(comm_rank));
-//     }
-
-//     PRINT_BY_ROOT(global_comm,
-//         "global comm: rank = %zu, size = %zu; "
-//         "new comm: rank = %zu, size = %zu",
-//         global_comm->rank(), global_comm->size(),
-//         comm_rank, comm_size);
-
-//     check_allreduce_on_comm(comm);
-// }
 
 bool isPowerOfTwo(unsigned int x) {
     return x && !(x & (x - 1));
@@ -168,6 +95,11 @@ void check_comm_split_by_color(ccl::communicator& comm, int mpi_size, int mpi_ra
 
 int main() {
 
+    /**
+     * The example only works with CCL_ATL_TRANSPORT=ofi
+     */
+    setenv("CCL_ATL_TRANSPORT", "ofi", 0);
+
     ccl::init();
 
     int mpi_size, mpi_rank;
@@ -200,8 +132,6 @@ int main() {
     PRINT_BY_ROOT(comm, "\n- Communicator split test");
     check_comm_split_by_color(comm, mpi_size, mpi_rank);
     PRINT_BY_ROOT(comm, "PASSED");
-
-    // check_comm_create_identical_color();
 
     MPI_Finalize();
 

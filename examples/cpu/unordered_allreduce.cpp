@@ -9,6 +9,11 @@
 
 int main() {
 
+    /**
+     * The example only works with CCL_ATL_TRANSPORT=ofi
+     */
+    setenv("CCL_ATL_TRANSPORT", "ofi", 0);
+
     setenv("CCL_UNORDERED_COLL", "1", 1);
 
     const size_t buf_size = 1024;

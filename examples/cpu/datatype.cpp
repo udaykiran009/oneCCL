@@ -111,6 +111,11 @@ void check_create_and_free() {
 
 int main() {
 
+    /**
+     * The example only works with CCL_ATL_TRANSPORT=ofi
+     */
+    setenv("CCL_ATL_TRANSPORT", "ofi", 0);
+
     ccl::init();
 
     int size, rank;
