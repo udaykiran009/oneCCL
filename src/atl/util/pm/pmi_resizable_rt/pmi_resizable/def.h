@@ -22,9 +22,8 @@
         } \
     } while (0)
 
-#define DO_RW_OP(op, fd, buf, size) \
+#define DO_RW_OP(op, fd, buf, size, memory_mutex) \
     do { \
-        static std::mutex memory_mutex; \
         { \
             std::lock_guard<std::mutex> lock(memory_mutex); \
             ssize_t res = 0; \
