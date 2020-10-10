@@ -61,8 +61,11 @@ int main(int argc, char *argv[]) {
     /* open buffers and modify them on the device side */
     q.submit([&](auto &h) {
         h.parallel_for(count, [=](auto id) {
-            if (id == root_rank) {
-                buf[id] = root_rank;
+            if (rank == root_rank) {
+                buf[id] = root_rank + 10;
+            }
+            else {
+                buf[id] = 0;
             }
             buf[id] += 1;
         });
@@ -79,7 +82,7 @@ int main(int argc, char *argv[]) {
     q.submit([&](auto &h) {
         accessor check_buf_acc(check_buf, h, write_only);
         h.parallel_for(count, [=](auto id) {
-            if (buf[id] != root_rank + 1) {
+            if (buf[id] != root_rank + 11) {
                 check_buf_acc[id] = -1;
             }
         });
@@ -89,17 +92,15 @@ int main(int argc, char *argv[]) {
         return -1;
 
     /* print out the result of the test on the host side */
-    if (rank == root_rank) {
-        host_accessor check_buf_acc(check_buf, read_only);
-        for (i = 0; i < count; i++) {
-            if (check_buf_acc[i] == -1) {
-                cout << "FAILED\n";
-                break;
-            }
+    host_accessor check_buf_acc(check_buf, read_only);
+    for (i = 0; i < count; i++) {
+        if (check_buf_acc[i] == -1) {
+            cout << "FAILED\n";
+            break;
         }
-        if (i == count) {
-            cout << "PASSED\n";
-        }
+    }
+    if (i == count) {
+        cout << "PASSED\n";
     }
 
     MPI_Finalize();

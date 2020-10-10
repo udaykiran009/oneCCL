@@ -380,7 +380,7 @@ int parse_user_options(int& argc,
     int errors = 0;
 
     // values needed by getopt
-    const char* const short_options = "b:e:i:w:p:f:t:c:v:l:d:r:n:o:h:";
+    const char* const short_options = "b:e:i:w:p:f:t:c:v:l:d:r:n:o:h";
     struct option getopt_options[] = {
         { "backend", required_argument, 0, 'b' },
         { "loop", required_argument, 0, 'e' },
@@ -451,6 +451,13 @@ int parse_user_options(int& argc,
         PRINT("found %d errors while parsing user options", errors);
         return -1;
     }
+
+    /* adjust user options */
+    if (!options.min_elem_count)
+        options.min_elem_count = 1;
+
+    if (options.max_elem_count < options.min_elem_count)
+        options.max_elem_count = options.min_elem_count;
 
     return 0;
 }

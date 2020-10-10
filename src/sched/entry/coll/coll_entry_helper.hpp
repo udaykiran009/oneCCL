@@ -32,7 +32,7 @@ public:
                         for direct MPI algo with prologue will use regular coll_entry
                         to simplify work with postponed fields
                     */
-                    sched->strict_start_order = true;
+                    sched->strict_order = true;
                 }
                 else {
                     /* otherwise will place entry directly into schedule due to performance reasons */

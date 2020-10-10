@@ -23,7 +23,7 @@ void ccl_worker::add(ccl_sched* sched) {
     CCL_ASSERT(!sched->bin);
     CCL_ASSERT(sched->get_in_bin_status() != ccl_sched_in_bin_added);
 
-    if (sched->strict_start_order) {
+    if (sched->strict_order) {
         /* to keep valid non-completed req until safe releasing */
         sched->req->increase_counter(1);
         strict_sched_queue->add(sched);

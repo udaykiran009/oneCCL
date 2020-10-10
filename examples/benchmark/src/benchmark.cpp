@@ -543,8 +543,8 @@ int main(int argc, char* argv[]) {
     bench_init_attr init_attr;
 
     if (parse_user_options(argc, argv, options)) {
-        PRINT("failed to parse user options");
         print_help_usage(argv[0]);
+        return -1;
     }
 
     init_attr.buf_count = options.buf_count;

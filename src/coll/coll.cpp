@@ -641,9 +641,9 @@ ccl_status_t ccl_coll_build_sparse_allreduce(ccl_sched* sched,
         /*
             for now all sparse_allreduce algorithms
             may contains direct collective entries (allreduce/allgatherv)
-            which should be executed in strict_start_order mode
+            which should be executed in strict_order mode
         */
-        sched->strict_start_order = true;
+        sched->strict_order = true;
     }
 
     auto algo = ccl::global_data::get().algorithm_selector->get<ccl_coll_sparse_allreduce>(param);

@@ -52,7 +52,7 @@ int main(int argc, char *argv[]) {
         host_accessor send_buf_acc(buf, write_only);
         for (i = 0; i < count; i++) {
             if (rank == root_rank)
-                send_buf_acc[i] = rank;
+                send_buf_acc[i] = rank + 10;
             else
                 send_buf_acc[i] = 0;
         }
@@ -76,7 +76,7 @@ int main(int argc, char *argv[]) {
     q.submit([&](auto &h) {
         accessor recv_buf_acc(buf, h, write_only);
         h.parallel_for(count, [=](auto id) {
-            if (recv_buf_acc[id] != root_rank + 1) {
+            if (recv_buf_acc[id] != root_rank + 11) {
                 recv_buf_acc[id] = -1;
             }
         });
@@ -86,17 +86,15 @@ int main(int argc, char *argv[]) {
         return -1;
 
     /* print out the result of the test on the host side */
-    if (rank == root_rank) {
-        host_accessor recv_buf_acc(buf, read_only);
-        for (i = 0; i < count; i++) {
-            if (recv_buf_acc[i] == -1) {
-                cout << "FAILED\n";
-                break;
-            }
+    host_accessor recv_buf_acc(buf, read_only);
+    for (i = 0; i < count; i++) {
+        if (recv_buf_acc[i] == -1) {
+            cout << "FAILED\n";
+            break;
         }
-        if (i == count) {
-            cout << "PASSED\n";
-        }
+    }
+    if (i == count) {
+        cout << "PASSED\n";
     }
 
     MPI_Finalize();
