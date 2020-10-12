@@ -230,7 +230,7 @@ CCL_API ccl::device_mask_t ccl_device_driver::get_device_mask(
     return ret;
 }
 
-std::shared_ptr<ccl_context> ccl_device_driver::create_context() {
+CCL_API std::shared_ptr<ccl_context> ccl_device_driver::create_context() {
     ze_result_t status = ZE_RESULT_SUCCESS;
     ze_context_handle_t context;
     ze_context_desc_t context_desc = {

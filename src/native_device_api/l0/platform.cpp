@@ -138,7 +138,7 @@ CCL_API void ccl_device_platform::init_drivers(
     }
 }
 
-CCL_API 
+CCL_API
 ccl_device_platform::context_storage_type ccl_device_platform::get_platform_contexts() {
     return context;
 }
@@ -155,7 +155,7 @@ void CCL_API ccl_device_platform::on_delete(ze_driver_handle_t& sub_device_handl
 
 void CCL_API ccl_device_platform::on_delete(ze_context_handle_t& handle,
                                             ze_context_handle_t& context){
-    
+
 }
 
 CCL_API ccl_device_platform::const_driver_ptr ccl_device_platform::get_driver(
@@ -177,7 +177,7 @@ CCL_API ccl_device_platform::driver_ptr ccl_device_platform::get_driver(ccl::ind
     return it->second;
 }
 
-const ccl_device_platform::driver_storage_type& ccl_device_platform::get_drivers() const noexcept {
+CCL_API const ccl_device_platform::driver_storage_type& ccl_device_platform::get_drivers() const noexcept {
     return drivers;
 }
 

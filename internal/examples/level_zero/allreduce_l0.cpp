@@ -39,7 +39,6 @@ void user_thread_idx(size_t thread_idx,
 
     device_queue_map device_queue;
     rank_allocated_memory memory_storage;
-    //native_queue_storage  queues;
     stream_storage streams;
     std::vector<processing_type> send_values(COUNT);
     std::iota(send_values.begin(), send_values.end(), 1);
@@ -150,7 +149,7 @@ void user_thread_idx(size_t thread_idx,
 #else
 template <class processing_type>
 void user_thread_idx(size_t thread_idx,
-                     std::vector<std::pair<size_t, ccl::device_index_type>>& ranked_device_indices,
+                     std::vector<std::pair<size_t, ccl::device_index_type>> ranked_device_indices,
                      std::shared_ptr<::native::ccl_context> ctx,
                      size_t total_devices_in_cluster,
                      std::shared_ptr<ccl::kvs_interface> kvs) {
@@ -166,11 +165,9 @@ void user_thread_idx(size_t thread_idx,
     // test data
     using allocated_memory_array = std::vector<ccl_device::device_memory<processing_type>>;
     using rank_allocated_memory = std::map<size_t, allocated_memory_array>;
-    using native_queue_storage = std::map<size_t, ccl_device::device_queue>;
     using stream_storage = std::map<size_t, ccl::stream>;
 
     rank_allocated_memory memory_storage;
-    native_queue_storage queues;
     stream_storage streams;
     std::vector<processing_type> send_values(COUNT);
     std::iota(send_values.begin(), send_values.end(), 1);
@@ -191,7 +188,6 @@ void user_thread_idx(size_t thread_idx,
         size_t rank = comm.rank();
 
         // wrapped L0-native API for devices: create native buffers
-        std::shared_ptr<ccl_context> ctx;
         auto mem_send = dev->alloc_memory<processing_type>(COUNT, sizeof(processing_type), ctx);
         auto mem_recv = dev->alloc_memory<processing_type>(COUNT, sizeof(processing_type), ctx);
 
@@ -213,9 +209,8 @@ void user_thread_idx(size_t thread_idx,
         memory_storage[rank].push_back(std::move(mem_recv));
 
         // create native stream
-        enum { INSERTED_ITER, RESULT };
-        auto queue_it = std::get<INSERTED_ITER>(queues.emplace(rank, dev->create_cmd_queue(ctx)));
-        streams.emplace(rank, ccl::environment::instance().create_stream(queue_it->second.get(), ctx));
+        auto str = std::make_shared<native::ccl_device::device_queue>(dev->create_cmd_queue(ctx));
+        streams.emplace(rank, ccl::create_stream(str));
     }
 
     //allreduce
@@ -229,11 +224,14 @@ void user_thread_idx(size_t thread_idx,
             abort();
         }*/
         allocated_memory_array& mem_objects = memory_storage.find(rank)->second;
-        reqs.push_back(comm.allreduce(mem_objects[0].get(),
+
+        auto& stream = streams.find(rank)->second;
+        reqs.push_back(ccl::allreduce(mem_objects[0].get(),
                                       mem_objects[1].get(),
                                       mem_objects[1].count(),
                                       ccl::reduction::sum,
-                                      streams[rank]));
+                                      comm,
+                                      stream));
     }
 
     //wait
@@ -405,7 +403,16 @@ int main(int argc, char** argv) {
     //auto ctx = cl::sycl::context(devices_in_process);
     auto ctx = cl::sycl::context(*devices_in_process.begin()); //use single device
 #else
-    auto ctx = std::make_shared<::native::ccl_context>(); //TODO stub at moment
+    const auto& drivers = native::get_platform().get_drivers();
+    if (drivers.empty())
+    {
+        std::cerr << "No drivers in L0 native paltform. Exit" << std::endl;
+        return -1;
+    }
+
+    // get GPU driver, it's only one driver at the moment
+    auto gpu_driver = drivers.begin()->second;
+    auto ctx = gpu_driver->create_context();
 #endif
     for (auto thread_affinity_it = thread_group_affinity.begin();
          thread_affinity_it != thread_group_affinity.end();
