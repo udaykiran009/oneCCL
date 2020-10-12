@@ -52,7 +52,7 @@ bool isPowerOfTwo(unsigned int x) {
     return x && !(x & (x - 1));
 }
 
-void check_comm_split_by_color(ccl::communicator& comm, int mpi_size, int mpi_rank) {
+void check_comm_split_by_color(ccl::communicator& comm) {
     if (!isPowerOfTwo(comm.size())) {
         PRINT_BY_ROOT(
             comm,
@@ -89,8 +89,82 @@ void check_comm_split_by_color(ccl::communicator& comm, int mpi_size, int mpi_ra
                       new_comm_rank,
                       new_comm_size);
 
+        PRINT_BY_ROOT(comm, " - allreduce test on a new communicator");
         check_allreduce_on_comm(new_comm);
     }
+}
+
+void check_comm_split_identical(ccl::communicator& comm) {
+    if (!isPowerOfTwo(comm.size())) {
+        PRINT_BY_ROOT(
+            comm,
+            "split comm by color: number of processes should be a power of 2 for test purpose");
+        return;
+    }
+
+    for (size_t split_by = 2; split_by <= comm.size(); split_by *= 2) {
+        int color = comm.rank() % split_by;
+        auto attr =
+            ccl::create_comm_split_attr(ccl::attr_val<ccl::comm_split_attr_id::color>(color));
+        auto new_comm1 = comm.split(attr);
+        auto new_comm2 = comm.split(attr);
+
+        if (new_comm1.size() != new_comm2.size()) {
+            printf("FAILED (split)\n");
+
+            throw std::runtime_error("the sizes of new communicators are not equal. Comm #1 size " +
+                                     std::to_string(new_comm1.size()) + " Comm #2 size " +
+                                     std::to_string(new_comm2.size()));
+        }
+
+        if (new_comm1.rank() != new_comm2.rank()) {
+            printf("FAILED (split)\n");
+
+            throw std::runtime_error("the sizes of new communicators are not equal. Comm #1 rank " +
+                                     std::to_string(new_comm1.rank()) + " Comm #2 rank " +
+                                     std::to_string(new_comm2.rank()));
+        }
+
+        PRINT_BY_ROOT(comm,
+                      "comm #1: rank = %zu, size = %zu; "
+                      "comm #2: rank = %zu, size = %zu",
+                      new_comm1.rank(),
+                      new_comm1.size(),
+                      new_comm2.rank(),
+                      new_comm2.size());
+    }
+}
+
+void check_comm_split_identical_color(ccl::communicator& comm) {
+    auto attr = ccl::create_comm_split_attr(ccl::attr_val<ccl::comm_split_attr_id::color>(123));
+    auto new_comm = comm.split(attr);
+
+    if (new_comm.size() != comm.size()) {
+        printf("FAILED (split)\n");
+
+        throw std::runtime_error("the sizes of new communicator and base communicator are not equal. New comm size " +
+                                    std::to_string(new_comm.size()) + " Base comm size " +
+                                    std::to_string(comm.size()));
+    }
+
+    if (new_comm.rank() != comm.rank()) {
+        printf("FAILED (split)\n");
+
+        throw std::runtime_error("the sizes of new communicator and base communicator are not equal. New comm rank " +
+                                    std::to_string(new_comm.rank()) + " Base comm rank " +
+                                    std::to_string(comm.rank()));
+    }
+
+    PRINT_BY_ROOT(comm,
+                    "base comm: rank = %zu, size = %zu; "
+                    "new comm: rank = %zu, size = %zu",
+                    comm.rank(),
+                    new_comm.size(),
+                    comm.rank(),
+                    new_comm.size());
+
+    PRINT_BY_ROOT(comm, " - allreduce test on a new communicator");
+    check_allreduce_on_comm(new_comm);
 }
 
 int main() {
@@ -130,7 +204,15 @@ int main() {
     // PRINT_BY_ROOT(comm, "PASSED");
 
     PRINT_BY_ROOT(comm, "\n- Communicator split test");
-    check_comm_split_by_color(comm, mpi_size, mpi_rank);
+    check_comm_split_by_color(comm);
+    PRINT_BY_ROOT(comm, "PASSED");
+
+    PRINT_BY_ROOT(comm, "\n- Communicator identical split test");
+    check_comm_split_identical(comm);
+    PRINT_BY_ROOT(comm, "PASSED");
+
+    PRINT_BY_ROOT(comm, "\n- Communicator identical color split test");
+    check_comm_split_identical_color(comm);
     PRINT_BY_ROOT(comm, "PASSED");
 
     MPI_Finalize();
