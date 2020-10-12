@@ -62,7 +62,6 @@ set (dependencies_sources
              "${PROJECT_SOURCE_DIR}/tests/unit/api/stubs/global.cpp"
              "${PROJECT_SOURCE_DIR}/tests/unit/api/stubs/env.cpp"
              "${PROJECT_SOURCE_DIR}/tests/unit/api/stubs/cache.cpp"
-             "${PROJECT_SOURCE_DIR}/tests/unit/api/stubs/ccl.cpp"
              "${PROJECT_SOURCE_DIR}/tests/unit/api/stubs/datatype.cpp"
              "${PROJECT_SOURCE_DIR}/tests/unit/api/stubs/native_runtime_utils.cpp"
              "${PROJECT_SOURCE_DIR}/tests/unit/api/stubs/atl_wrapper.cpp"
