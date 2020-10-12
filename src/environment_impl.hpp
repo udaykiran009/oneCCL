@@ -30,6 +30,8 @@
 
 namespace ccl {
 
+namespace details {
+
 //Device
 template <class native_device_type, typename T>
 device CCL_API environment::create_device(native_device_type&& native_device) const {
@@ -133,55 +135,58 @@ ccl_api_type CCL_API environment::create_postponed_api_type(args_type... args) c
     //static_assert(std::is_constructible<ccl_api_type, args_type..., ccl::library_version>::value, "Cannot construct `ccl_api_type` from given `args_type...`");
     return ccl_api_type(std::forward<args_type>(args)..., ret);
 }
+
+} // namespace details
+
 } // namespace ccl
 
 /***************************TypeGenerations*********************************************************/
 #define CREATE_OP_ATTR_INSTANTIATION(Attr) \
-    template Attr CCL_API ccl::environment::create_postponed_api_type<Attr>() const;
+    template Attr CCL_API ccl::details::environment::create_postponed_api_type<Attr>() const;
 
 #define CREATE_DEV_COMM_INSTANTIATION(DeviceType, ContextType) \
     template ccl::vector_class<ccl::communicator> CCL_API \
-    ccl::environment::create_communicators<DeviceType, ContextType>( \
+    ccl::details::environment::create_communicators<DeviceType, ContextType>( \
         const size_t devices_size, \
         const ccl::vector_class<DeviceType>& local_devices, \
         ContextType& context, \
         ccl::shared_ptr_class<ccl::kvs_interface> kvs) const; \
 \
     template ccl::vector_class<ccl::communicator> CCL_API \
-    ccl::environment::create_communicators<DeviceType, ContextType>( \
+    ccl::details::environment::create_communicators<DeviceType, ContextType>( \
         const size_t cluster_devices_size, \
         const ccl::vector_class<ccl::pair_class<ccl::rank_t, DeviceType>>& local_devices, \
         ContextType& context, \
         ccl::shared_ptr_class<ccl::kvs_interface> kvs) const; \
 \
     template ccl::vector_class<ccl::communicator> CCL_API \
-    ccl::environment::create_communicators<DeviceType, ContextType>( \
+    ccl::details::environment::create_communicators<DeviceType, ContextType>( \
         const size_t cluster_devices_size, \
         const ccl::map_class<ccl::rank_t, DeviceType>& local_devices, \
         ContextType& context, \
         ccl::shared_ptr_class<ccl::kvs_interface> kvs) const;
 
 #define CREATE_STREAM_INSTANTIATION(native_stream_type) \
-    template ccl::stream CCL_API ccl::environment::create_stream(native_stream_type& native_stream);
+    template ccl::stream CCL_API ccl::details::environment::create_stream(native_stream_type& native_stream);
 
 #define CREATE_STREAM_EXT_INSTANTIATION(device_type, native_context_type) \
-    template ccl::stream CCL_API ccl::environment::create_stream(device_type& device, \
+    template ccl::stream CCL_API ccl::details::environment::create_stream(device_type& device, \
                                                                  native_context_type& native_ctx);
 
 #define CREATE_CONTEXT_INSTANTIATION(native_context_type) \
-    template ccl::context CCL_API ccl::environment::create_context(native_context_type&& native_ctx) const; \
-    template ccl::context CCL_API ccl::environment::create_context(native_context_type& native_ctx) const;
+    template ccl::context CCL_API ccl::details::environment::create_context(native_context_type&& native_ctx) const; \
+    template ccl::context CCL_API ccl::details::environment::create_context(native_context_type& native_ctx) const;
 
 #define CREATE_DEVICE_INSTANTIATION(native_device_type) \
-    template ccl::device CCL_API ccl::environment::create_device(native_device_type&& native_device) const; \
-    template ccl::device CCL_API ccl::environment::create_device(native_device_type& native_device) const;
+    template ccl::device CCL_API ccl::details::environment::create_device(native_device_type&& native_device) const; \
+    template ccl::device CCL_API ccl::details::environment::create_device(native_device_type& native_device) const;
 
 /*
 #define CREATE_EVENT_INSTANTIATION(native_event_type) \
-    template ccl::event CCL_API ccl::environment::create_event(native_event_type& native_event);
+    template ccl::event CCL_API ccl::details::environment::create_event(native_event_type& native_event);
 
 #define CREATE_EVENT_EXT_INSTANTIATION(event_handle_type) \
-    template ccl::event CCL_API ccl::environment::create_event( \
+    template ccl::event CCL_API ccl::details::environment::create_event( \
         event_handle_type native_event_handle, \
         typename unified_device_context_type::ccl_native_t context);
 */

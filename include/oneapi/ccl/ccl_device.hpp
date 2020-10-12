@@ -7,9 +7,13 @@
 class ccl_device_impl;
 namespace ccl {
 
+namespace details {
+    class environment; // friend-zone
+}
+
 /**
  * A device object is an abstraction over CPU/GPU device
- * Has no defined public constructor. Use ccl::environment::create_device
+ * Has no defined public constructor. Use ccl::create_device
  * for device objects creation
  */
 /**
@@ -54,7 +58,7 @@ public:
      native_t& get_native();
      const native_t& get_native() const;
 private:
-    friend class environment;
+    friend class details::environment;
     friend class communicator;
     device(impl_value_t&& impl);
 

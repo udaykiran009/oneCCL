@@ -10,8 +10,11 @@
 #include "coll/coll_common_attributes.hpp"
 
 namespace ccl {
-class environment; //friend-zone
+    namespace details {
+        class environment; //friend-zone
+    }
 }
+
 /*
 ccl_status_t CCL_API ccl_stream_create(ccl_stream_type_t type,
                                           void* native_stream,
@@ -20,7 +23,7 @@ ccl_status_t CCL_API ccl_stream_create(ccl_stream_type_t type,
 class alignas(CACHELINE_SIZE) ccl_stream : public stream_provider_dispatcher {
 public:
     friend class stream_provider_dispatcher;
-    friend class ccl::environment;
+    friend class ccl::details::environment;
     /*
     friend ccl_status_t CCL_API ccl_stream_create(ccl_stream_type_t type,
                                void* native_stream,

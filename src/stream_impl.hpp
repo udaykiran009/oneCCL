@@ -10,7 +10,7 @@
 #include "common/stream/stream.hpp"
 
 namespace ccl {
-/* TODO temporary function for UT compilation: would be part of ccl::environment in final*/
+/* TODO temporary function for UT compilation: would be part of ccl::details::environment in final*/
 template <class... attr_value_pair_t>
 stream stream::create_stream_from_attr(typename unified_device_type::ccl_native_t device,
                                        attr_value_pair_t&&... avps) {

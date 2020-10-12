@@ -14,26 +14,29 @@
 #include "common/comm/single_device_communicator/single_device_communicator.hpp"
 
 namespace ccl {
-CCL_API ccl::environment::environment() {
+
+namespace details {
+
+CCL_API environment::environment() {
     static auto result = global_data::get().init();
     CCL_CHECK_AND_THROW(result, "failed to initialize CCL");
 }
 
-CCL_API ccl::environment::~environment() {}
+CCL_API environment::~environment() {}
 
-CCL_API ccl::environment& ccl::environment::instance() {
-    static ccl::environment env;
+CCL_API environment& environment::instance() {
+    static environment env;
     return env;
 }
 
-// void CCL_API ccl::environment::set_resize_fn(ccl_resize_fn_t callback)
+// void CCL_API environment::set_resize_fn(ccl_resize_fn_t callback)
 // {
 //     ccl_status_t result = ccl_set_resize_fn(callback);
 //     CCL_CHECK_AND_THROW(result, "failed to set resize callback");
 //     return;
 // }
 
-ccl::library_version CCL_API ccl::environment::get_library_version() const {
+ccl::library_version CCL_API environment::get_library_version() const {
     ccl::library_version ret;
 
     ret.major = CCL_MAJOR_VERSION;
@@ -48,7 +51,7 @@ ccl::library_version CCL_API ccl::environment::get_library_version() const {
 /*
 static ccl::stream& get_empty_stream()
 {
-    static ccl::stream_t empty_stream  = ccl::environment::instance().create_stream();
+    static ccl::stream_t empty_stream  = environment::instance().create_stream();
     return empty_stream;
 }
 */
@@ -107,10 +110,12 @@ size_t CCL_API environment::get_datatype_size(ccl::datatype dtype) const {
     return ccl::global_data::get().dtypes->get(dtype).size();
 }
 
+} // namespace details
+
 } // namespace ccl
 
 #ifdef CCL_ENABLE_SYCL
-ccl::communicator CCL_API ccl::environment::create_single_device_communicator(
+ccl::communicator CCL_API ccl::details::environment::create_single_device_communicator(
     const size_t comm_size,
     const size_t rank,
     const cl::sycl::device& device,
@@ -136,16 +141,16 @@ ccl::communicator CCL_API ccl::environment::create_single_device_communicator(
 #endif
 
 //Communicator
-ccl::communicator CCL_API ccl::environment::create_communicator() const {
+ccl::communicator CCL_API ccl::details::environment::create_communicator() const {
     return ccl::communicator::create_communicator();
 }
 
-ccl::communicator CCL_API ccl::environment::create_communicator(const size_t size,
+ccl::communicator CCL_API ccl::details::environment::create_communicator(const size_t size,
                                                       ccl::shared_ptr_class<ccl::kvs_interface> kvs) const {
     return ccl::communicator::create_communicator(size, kvs);
 }
 
-ccl::communicator CCL_API ccl::environment::create_communicator(const size_t size,
+ccl::communicator CCL_API ccl::details::environment::create_communicator(const size_t size,
                                                       const size_t rank,
                                                       ccl::shared_ptr_class<ccl::kvs_interface> kvs) const {
     return ccl::communicator::create_communicator(size, rank, kvs);
@@ -153,6 +158,9 @@ ccl::communicator CCL_API ccl::environment::create_communicator(const size_t siz
 
 /***************************TypeGenerations*********************************************************/
 namespace ccl {
+
+namespace details {
+
 template <>
 stream CCL_API environment::create_postponed_api_type<
     stream,
@@ -185,7 +193,10 @@ environment::create_postponed_api_type<stream,
 
     return stream{ stream_provider_dispatcher::create(device, ret) };
 }
+
 }
+}
+
 CREATE_OP_ATTR_INSTANTIATION(ccl::allgatherv_attr)
 CREATE_OP_ATTR_INSTANTIATION(ccl::allreduce_attr)
 CREATE_OP_ATTR_INSTANTIATION(ccl::alltoall_attr)

@@ -6,6 +6,10 @@
 
 namespace ccl {
 
+namespace details {
+    class environment; // friend-zone
+}
+
 class CCL_API kvs_interface {
 public:
 
@@ -31,7 +35,7 @@ public:
     void set(const string_class& key, const vector_class<char>& data) const override;
 
 private:
-    friend class environment;
+    friend class details::environment;
 
     kvs();
     kvs(const address_type& addr);

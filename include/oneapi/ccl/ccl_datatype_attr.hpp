@@ -6,6 +6,10 @@
 
 namespace ccl {
 
+namespace details {
+    class environment;
+}
+
 class ccl_datatype_attr_impl;
 
 class datatype_attr : public ccl_api_base_copyable<datatype_attr,
@@ -48,7 +52,7 @@ public:
         const;
 
 private:
-    friend class environment;
+    friend class details::environment;
     datatype_attr(
         const typename details::ccl_api_type_attr_traits<datatype_attr_id,
                                                          datatype_attr_id::version>::return_type&

@@ -6,6 +6,10 @@
 
 namespace ccl {
 
+namespace details {
+    class environment;
+}
+
 class ccl_allgatherv_attr_impl_t;
 class ccl_allreduce_attr_impl_t;
 class ccl_alltoall_attr_impl_t;
@@ -68,7 +72,7 @@ public:
         const;
 
 private:
-    friend class environment;
+    friend class details::environment;
     friend struct ccl_empty_attr;
     allgatherv_attr(
         const typename details::ccl_api_type_attr_traits<operation_attr_id,
@@ -127,7 +131,7 @@ public:
         const;
 
 private:
-    friend class environment;
+    friend class details::environment;
     friend struct ccl_empty_attr;
     allreduce_attr(
         const typename details::ccl_api_type_attr_traits<operation_attr_id,
@@ -185,7 +189,7 @@ public:
         const;
 
 private:
-    friend class environment;
+    friend class details::environment;
     friend struct ccl_empty_attr;
     alltoall_attr(
         const typename details::ccl_api_type_attr_traits<operation_attr_id,
@@ -244,7 +248,7 @@ public:
         const;
 
 private:
-    friend class environment;
+    friend class details::environment;
     friend struct ccl_empty_attr;
     alltoallv_attr(
         const typename details::ccl_api_type_attr_traits<operation_attr_id,
@@ -302,7 +306,7 @@ public:
         const;
 
 private:
-    friend class environment;
+    friend class details::environment;
     friend struct ccl_empty_attr;
     barrier_attr(const typename details::ccl_api_type_attr_traits<operation_attr_id,
                                                                   operation_attr_id::version>::type&
@@ -361,7 +365,7 @@ public:
         const;
 
 private:
-    friend class environment;
+    friend class details::environment;
     friend struct ccl_empty_attr;
     broadcast_attr(
         const typename details::ccl_api_type_attr_traits<operation_attr_id,
@@ -419,7 +423,7 @@ public:
         const;
 
 private:
-    friend class environment;
+    friend class details::environment;
     friend struct ccl_empty_attr;
     reduce_attr(const typename details::ccl_api_type_attr_traits<operation_attr_id,
                                                                  operation_attr_id::version>::type&
@@ -477,7 +481,7 @@ public:
         const;
 
 private:
-    friend class environment;
+    friend class details::environment;
     friend struct ccl_empty_attr;
     reduce_scatter_attr(
         const typename details::ccl_api_type_attr_traits<operation_attr_id,
@@ -537,7 +541,7 @@ public:
         const;
 
 private:
-    friend class environment;
+    friend class details::environment;
     friend struct ccl_empty_attr;
     sparse_allreduce_attr(
         const typename details::ccl_api_type_attr_traits<operation_attr_id,
@@ -616,7 +620,7 @@ constexpr auto attr_val(value_type v)
     return details::attr_value_tripple<operation_attr_id, t, value_type>(v);
 }
 
-/* TODO temporary function for UT compilation: would be part of ccl::environment in final*/
+/* TODO temporary function for UT compilation: would be part of ccl::details::environment in final*/
 template <class coll_attribute_type, class... attr_value_pair_t>
 coll_attribute_type create_coll_attr(attr_value_pair_t&&... avps);
 } // namespace ccl

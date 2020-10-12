@@ -6,6 +6,10 @@
 
 namespace ccl {
 
+namespace details {
+    class environment;
+}
+
 class ccl_comm_split_attr_impl;
 struct ccl_empty_attr;
 
@@ -56,7 +60,7 @@ public:
     bool is_valid() const noexcept;
 
 private:
-    friend class environment;
+    friend class details::environment;
     comm_split_attr(
         const typename details::ccl_api_type_attr_traits<comm_split_attr_id,
                                                         comm_split_attr_id::version>::type&

@@ -7,9 +7,13 @@
 class ccl_stream;
 namespace ccl {
 
+namespace details {
+    class environment; // friend-zone
+}
+
 /**
  * A stream object is an abstraction over CPU/GPU streams
- * Has no defined public constructor. Use ccl::environment::create_stream
+ * Has no defined public constructor. Use ccl::create_stream
  * for stream objects creation
  */
 /**
@@ -54,7 +58,7 @@ public:
      native_t& get_native();
      const native_t& get_native() const;
 private:
-    friend class environment;
+    friend class details::environment;
     friend class communicator;
     friend struct ccl_empty_attr;
     friend struct impl_dispatch;

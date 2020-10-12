@@ -7,9 +7,13 @@
 class ccl_context_impl;
 namespace ccl {
 
+namespace details {
+    class environment; // friend-zone
+}
+
 /**
  * A context object is an abstraction over CPU/GPU context
- * Has no defined public constructor. Use ccl::environment::create_context
+ * Has no defined public constructor. Use ccl::create_context
  * for context objects creation
  */
 /**
@@ -53,7 +57,7 @@ public:
      native_t& get_native();
      const native_t& get_native() const;
 private:
-    friend class environment;
+    friend class details::environment;
     friend class communicator;
     friend class device_context_communicator;
     context(impl_value_t&& impl);

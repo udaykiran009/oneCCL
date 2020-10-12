@@ -4,9 +4,13 @@
 class ccl_event;
 namespace ccl {
 
+namespace details {
+    class environment; // friend-zone
+}
+
 /**
  * A event object is an abstraction over CPU/GPU events
- * Has no defined public constructor. Use ccl::environment::create_event
+ * Has no defined public constructor. Use ccl::create_event
  * for event objects creation
  */
 /**
@@ -38,7 +42,7 @@ public:
         const;
 
 private:
-    friend class environment;
+    friend class details::environment;
     friend class communicator;
     event_internal(impl_value_t&& impl);
 

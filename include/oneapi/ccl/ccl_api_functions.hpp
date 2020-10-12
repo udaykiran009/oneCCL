@@ -27,7 +27,7 @@ library_version get_library_version();
  */
 template <class... attr_value_pair_t>
 datatype_attr CCL_API create_datatype_attr(attr_value_pair_t&&... avps) {
-    return environment::instance().create_datatype_attr(std::forward<attr_value_pair_t>(avps)...);
+    return details::environment::instance().create_datatype_attr(std::forward<attr_value_pair_t>(avps)...);
 }
 
 /**
@@ -81,13 +81,13 @@ device create_device();
 template <class native_device_type,
           class = typename std::enable_if<is_device_supported<native_device_type>()>::type>
 device create_device(native_device_type&& native_device) {
-    return environment::instance().create_device(std::forward<native_device_type>(native_device));
+    return details::environment::instance().create_device(std::forward<native_device_type>(native_device));
 }
 
 template <class... attr_value_pair_t>
 device create_device_from_attr(typename unified_device_type::ccl_native_t dev,
                                attr_value_pair_t&&... avps) {
-    return environment::instance().create_device_from_attr(
+    return details::environment::instance().create_device_from_attr(
         dev, std::forward<attr_value_pair_t>(avps)...);
 }
 
@@ -104,13 +104,13 @@ context create_context();
 template <class native_device_context_type,
           class = typename std::enable_if<is_context_supported<native_device_context_type>()>::type>
 context create_context(native_device_context_type&& native_device_context) {
-    return environment::instance().create_context(std::forward<native_device_context_type>(native_device_context));
+    return details::environment::instance().create_context(std::forward<native_device_context_type>(native_device_context));
 }
 
 template <class... attr_value_pair_t>
 context create_context_from_attr(typename unified_device_context_type::ccl_native_t ctx,
                                attr_value_pair_t&&... avps) {
-    return environment::instance().create_context_from_attr(
+    return details::environment::instance().create_context_from_attr(
         ctx, std::forward<attr_value_pair_t>(avps)...);
 }
 
@@ -124,7 +124,7 @@ context create_context_from_attr(typename unified_device_context_type::ccl_nativ
 template <class event_type,
           class = typename std::enable_if<is_event_supported<event_type>()>::type>
 event create_event(event_type& native_event) {
-    return environment::instance().create_event(native_event);
+    return details::environment::instance().create_event(native_event);
 }
 
 
@@ -140,19 +140,19 @@ stream create_stream();
 template <class native_stream_type,
           class = typename std::enable_if<is_stream_supported<native_stream_type>()>::type>
 stream create_stream(native_stream_type& native_stream) {
-    return environment::instance().create_stream(native_stream);
+    return details::environment::instance().create_stream(native_stream);
 }
 
 template <class native_stream_type, class native_context_type,
           class = typename std::enable_if<is_stream_supported<native_stream_type>()>::type>
 stream create_stream(native_stream_type& native_stream, native_context_type& native_ctx) {
-    return environment::instance().create_stream(native_stream, native_ctx);
+    return details::environment::instance().create_stream(native_stream, native_ctx);
 }
 
 template <class... attr_value_pair_t>
 stream create_stream_from_attr(typename unified_device_type::ccl_native_t device,
                                attr_value_pair_t&&... avps) {
-    return environment::instance().create_stream_from_attr(
+    return details::environment::instance().create_stream_from_attr(
         device, std::forward<attr_value_pair_t>(avps)...);
 }
 
@@ -160,7 +160,7 @@ template <class... attr_value_pair_t>
 stream create_stream_from_attr(typename unified_device_type::ccl_native_t device,
                                typename unified_device_context_type::ccl_native_t context,
                                attr_value_pair_t&&... avps) {
-    return environment::instance().create_stream_from_attr(
+    return details::environment::instance().create_stream_from_attr(
         device, context, std::forward<attr_value_pair_t>(avps)...);
 }
 
@@ -169,7 +169,7 @@ stream create_stream_from_attr(typename unified_device_type::ccl_native_t device
 
 template <class... attr_value_pair_t>
 comm_split_attr create_comm_split_attr(attr_value_pair_t&&... avps) {
-    return environment::instance().create_comm_split_attr(
+    return details::environment::instance().create_comm_split_attr(
     std::forward<attr_value_pair_t>(avps)...);
 }
 
@@ -229,7 +229,7 @@ vector_class<communicator> create_communicators(
     const vector_class<DeviceType>& local_devices,
     ContextType& context,
     shared_ptr_class<kvs_interface> kvs) {
-    return environment::instance().create_communicators(
+    return details::environment::instance().create_communicators(
         size, local_devices, context, kvs);
 }
 
@@ -247,7 +247,7 @@ vector_class<communicator> create_communicators(
     const vector_class<pair_class<rank_t, DeviceType>>& local_rank_device_map,
     ContextType& context,
     shared_ptr_class<kvs_interface> kvs) {
-    return environment::instance().create_communicators(
+    return details::environment::instance().create_communicators(
         size, local_rank_device_map, context, kvs);
 }
 
@@ -257,7 +257,7 @@ vector_class<communicator> create_communicators(
     const map_class<rank_t, DeviceType>& local_rank_device_map,
     ContextType& context,
     shared_ptr_class<kvs_interface> kvs) {
-    return environment::instance().create_communicators(
+    return details::environment::instance().create_communicators(
         size, local_rank_device_map, context, kvs);
 }
 
@@ -269,7 +269,7 @@ communicator create_communicator(
     ContextType& context,
     shared_ptr_class<kvs_interface> kvs) {
 
-    auto comms = environment::instance().create_communicators(
+    auto comms = details::environment::instance().create_communicators(
         size, ccl::vector_class<ccl::pair_class<ccl::rank_t, ccl::device>>{{rank,device}}, context, kvs);
 
     if (comms.size() != 1)
@@ -287,7 +287,7 @@ communicator create_communicator(
  */
 template <class coll_attribute_type, class... attr_value_pair_t>
 coll_attribute_type CCL_API create_operation_attr(attr_value_pair_t&&... avps) {
-    return environment::instance().create_operation_attr<coll_attribute_type>(
+    return details::environment::instance().create_operation_attr<coll_attribute_type>(
         std::forward<attr_value_pair_t>(avps)...);
 }
 

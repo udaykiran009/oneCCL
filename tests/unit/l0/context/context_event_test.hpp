@@ -33,7 +33,7 @@ static const size_t buffer_size = 1024024;
 using native_type = float;
 
 TEST_F(shared_context_fixture, observer_event_test) {
-    ccl::environment::instance();
+    ccl::details::environment::instance();
 
     using namespace native;
     
@@ -217,7 +217,7 @@ TEST_F(shared_context_fixture, observer_event_test) {
 #if 0
 TEST_F(shared_context_fixture, observer_event_structure_test)
 {
-    ccl::environment::instance();
+    ccl::details::environment::instance();
 
     using namespace native;
 

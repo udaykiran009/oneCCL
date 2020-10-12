@@ -7,12 +7,14 @@
 #include "common/utils/utils.hpp"
 
 namespace ccl {
-class environment; //friend-zone
+    namespace details {
+        class environment; // friend-zone
+    }
 }
 
 class alignas(CACHELINE_SIZE) ccl_event {
 public:
-    friend class ccl::environment;
+    friend class ccl::details::environment;
     using event_native_handle_t = typename ccl::unified_event_type::handle_t;
     using event_native_t = typename ccl::unified_event_type::ccl_native_t;
 

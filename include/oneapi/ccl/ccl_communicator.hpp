@@ -5,15 +5,21 @@
 #endif
 
 namespace ccl {
+
+namespace details {
+    class environment; // friend-zone
+}
+
 class event;
 class kvs_interface;
 using rank_t = size_t;
 
 struct communicator_interface;
+
 /**
- * A device communicator that permits device communication operations
+ * A communicator that permits communication operations
  * Has no defined public constructor.
- * Use ccl::environment::create_device_communicator for communicator objects creation.
+ * Use ccl::create_communicator for communicator objects creation.
  */
 class communicator final : public ccl_api_base_movable<communicator,
                                                               direct_access_policy,
@@ -83,7 +89,7 @@ public:
     communicator split(const comm_split_attr& attr);
 
 private:
-    friend class environment;
+    friend class details::environment;
     friend class comm_group;
     friend struct impl_dispatch;
 
