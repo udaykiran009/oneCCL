@@ -4,8 +4,6 @@ set (EXTENSIONS_SRC)
 
 if (CCL_ENABLE_SYCL)
     list (APPEND EXTENSIONS_SRC
-                    ccl_cpp_gpu_api.cpp
-
                     native_device_api/l0/utils.cpp
                     native_device_api/sycl/export.cpp
                     native_device_api/interop_utils.cpp
@@ -17,7 +15,6 @@ endif(CCL_ENABLE_SYCL)
 
 if (MULTI_GPU_SUPPORT)
 list (APPEND EXTENSIONS_SRC
-                    ccl_cpp_gpu_api.cpp
                     ccl_gpu_modules.cpp
                     ccl_cpp_utils.cpp
 
@@ -67,8 +64,6 @@ list (APPEND EXTENSIONS_SRC
 endif(MULTI_GPU_SUPPORT)
 
 set(CCL_SRC
-    ccl.cpp
-    ccl_cpp_api.cpp
     ccl_cpp_communicator.cpp
     ccl_cpp_environment.cpp
     ccl_api_functions.cpp
