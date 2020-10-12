@@ -326,8 +326,7 @@ void do_reduction_sum(const void* in_buf,
                       ccl::datatype dtype,
                       const ccl::fn_context* context) {
     size_t dtype_size;
-    auto& env = ccl::environment::instance();
-    dtype_size = env.get_datatype_size(dtype);
+    dtype_size = ccl::get_datatype_size(dtype);
 
     ASSERT((dtype == ccl::datatype::int8) || (dtype == ccl::datatype::float32) ||
                (dtype == custom_dtype),
@@ -364,8 +363,7 @@ void do_reduction_null(const void* in_buf,
                        ccl::datatype dtype,
                        const ccl::fn_context* context) {
     size_t dtype_size;
-    auto& env = ccl::environment::instance();
-    dtype_size = env.get_datatype_size(dtype);
+    dtype_size = ccl::get_datatype_size(dtype);
 
     ASSERT((dtype == ccl::datatype::int8) || (dtype == ccl::datatype::float32) ||
                (dtype == custom_dtype),
@@ -401,8 +399,7 @@ void do_reduction_custom(const void* in_buf,
                          ccl::datatype dtype,
                          const ccl::fn_context* context) {
     size_t dtype_size;
-    auto& env = ccl::environment::instance();
-    dtype_size = env.get_datatype_size(dtype);
+    dtype_size = ccl::get_datatype_size(dtype);
 
     ASSERT((dtype == ccl::datatype::float32) || (dtype == custom_dtype),
            "unexpected in_dtype %d",
@@ -439,22 +436,20 @@ int main() {
     MPI_Comm_size(MPI_COMM_WORLD, &size);
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
 
-    auto& env = ccl::environment::instance();
-
     ccl::shared_ptr_class<ccl::kvs> kvs;
     ccl::kvs::address_type main_addr;
     if (rank == 0) {
-        kvs = env.create_main_kvs();
+        kvs = ccl::create_main_kvs();
         main_addr = kvs->get_address();
         MPI_Bcast((void*)main_addr.data(), main_addr.size(), MPI_BYTE, 0, MPI_COMM_WORLD);
     }
     else {
         MPI_Bcast((void*)main_addr.data(), main_addr.size(), MPI_BYTE, 0, MPI_COMM_WORLD);
-        kvs = env.create_kvs(main_addr);
+        kvs = ccl::create_kvs(main_addr);
     }
 
-    auto comm = env.create_communicator(size, rank, kvs);
-    auto attr = env.create_operation_attr<ccl::allreduce_attr>();
+    auto comm = ccl::create_communicator(size, rank, kvs);
+    auto attr = ccl::create_operation_attr<ccl::allreduce_attr>();
 
     float float_send_buf[MSG_SIZE_COUNT];
     float float_recv_buf[MSG_SIZE_COUNT];
