@@ -23,7 +23,7 @@ namespace datatype_attr_suite {
 TEST(datatype_attr, datatype_attr_empty_creation) {
     ccl::datatype_attr attr = ccl::create_datatype_attr();
     ASSERT_TRUE(attr.get<ccl::datatype_attr_id::version>().full != nullptr);
-    ASSERT_EQ(attr.get<ccl::datatype_attr_id::size>(), 0);
+    ASSERT_EQ(attr.get<ccl::datatype_attr_id::size>(), 1);
 }
 
 TEST(datatype_attr, copy_datatype_attr) {
