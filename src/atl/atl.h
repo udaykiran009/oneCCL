@@ -311,5 +311,6 @@ public:
     virtual atl_status_t atl_ep_poll(atl_ep_t* ep) = 0;
 
     virtual atl_status_t atl_ep_check(atl_ep_t* ep, int* is_completed, atl_req_t* req) = 0;
+    virtual bool is_inited() = 0;
 };
 #endif

@@ -282,7 +282,7 @@ protected:
                     // }
                 }
                 else {
-                    LOG_INFO("L0 Workaround: one device close list!!!",
+                    LOG_INFO("L0 Workaround: one device close list!!!\n",
                              "WaitCount: ",
                              wait_count,
                              ", ExecCount: ",

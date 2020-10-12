@@ -55,8 +55,15 @@ size_t property_p2p_rating_calculator(const native::ccl_device& lhs,
     ze_device_p2p_properties_t p2p = lhs.get_p2p_properties(rhs);
     if (p2p.flags & ZE_DEVICE_P2P_PROPERTY_FLAG_ACCESS)
         return weight;
-    else
-        return 0;
+    else {
+        ze_bool_t access;
+        ze_result_t ret = zeDeviceCanAccessPeer(lhs.handle, rhs.handle, &access);
+        if (ret != ZE_RESULT_SUCCESS) {
+            throw std::runtime_error(std::string("Cannot execute zeDeviceCanAccessPeer, error: ") +
+                                     native::to_string(ret));
+        }
+        return access ? weight : 0;
+    }
 }
 
 std::string to_string(const plain_graph& cont) {

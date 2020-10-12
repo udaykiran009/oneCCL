@@ -28,8 +28,15 @@ details::cross_device_rating property_p2p_rating_calculator(const native::ccl_de
     ze_device_p2p_properties_t p2p = lhs.get_p2p_properties(rhs);
     if (p2p.flags & ZE_DEVICE_P2P_PROPERTY_FLAG_ACCESS)
         return weight;
-    else
-        return 0;
+    else {
+        ze_bool_t access;
+        ze_result_t ret = zeDeviceCanAccessPeer(lhs.handle, rhs.handle, &access);
+        if (ret != ZE_RESULT_SUCCESS) {
+            throw std::runtime_error(std::string("Cannot execute zeDeviceCanAccessPeer, error: ") +
+                                     native::to_string(ret));
+        }
+        return access ? weight : 0;
+    }
 }
 
 CCL_API
@@ -272,7 +279,10 @@ CCL_API ccl::device_index_type ccl_device::get_device_path() const {
 
 CCL_API ze_device_p2p_properties_t
 ccl_device::get_p2p_properties(const ccl_device& remote_device) const {
-    ze_device_p2p_properties_t pP2PProperties;
+    ze_device_p2p_properties_t pP2PProperties = {
+        .stype = ZE_STRUCTURE_TYPE_DEVICE_P2P_PROPERTIES,
+        .pNext = nullptr
+    };
     ze_result_t ret = zeDeviceGetP2PProperties(handle, remote_device.handle, &pP2PProperties);
     if (ret != ZE_RESULT_SUCCESS) {
         throw std::runtime_error(std::string("Cannot execute zeDeviceGetP2PProperties, error: ") +

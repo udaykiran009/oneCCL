@@ -61,7 +61,7 @@ void pmi_resizable_simple::make_requested_info() {
     get_my_proc_num_and_proc_count();
     get_local_thread_num();
     remove_initial_data();
-    pmrt_barrier();
+    pmrt_barrier_full();
 }
 
 atl_status_t pmi_resizable_simple::pmrt_main_addr_reserv(char* main_addr) {
@@ -116,7 +116,42 @@ void pmi_resizable_simple::pmrt_barrier() {
     if (barrier_num > BARRIER_NUM_MAX)
         barrier_num = 0;
 }
+void pmi_resizable_simple::pmrt_barrier_full() {
+    size_t min_barrier_num;
+    char barrier_num_str[INT_STR_SIZE];
 
+    SET_STR(barrier_num_str, INT_STR_SIZE, SIZE_T_TEMPLATE, barrier_num_full);
+
+    kvs_set_value(KVS_BARRIER_FULL, std::to_string(requested_thread_num).c_str(), barrier_num_str);
+
+    min_barrier_num = get_barrier_full_idx();
+    while (min_barrier_num != barrier_num) {
+        min_barrier_num = get_barrier_idx();
+    }
+
+    barrier_num_full++;
+    if (barrier_num_full > BARRIER_NUM_MAX)
+        barrier_num_full = 0;
+}
+
+size_t pmi_resizable_simple::get_barrier_full_idx() {
+    size_t thread_count = devises_per_thread.size();
+
+    kvs_get_value(KVS_BARRIER_FULL, std::to_string(0).c_str(), val_storage);
+
+    size_t min_barrier_idx = atoi(val_storage);
+    size_t barrier_idx;
+    for (size_t i = 1; i < thread_count; i++) {
+        kvs_get_value(KVS_BARRIER_FULL, std::to_string(i).c_str(), val_storage);
+
+        barrier_idx = atoi(val_storage);
+
+        if (min_barrier_idx > barrier_idx)
+            min_barrier_idx = barrier_idx;
+    }
+
+    return min_barrier_idx;
+}
 atl_status_t pmi_resizable_simple::pmrt_kvs_put(char* kvs_key,
                                                 size_t proc_idx,
                                                 const void* kvs_val,
@@ -299,7 +334,7 @@ void pmi_resizable_simple::make_map_requested2global() {
     char process_name[MAX_KVS_VAL_LENGTH];
     size_t size = get_size();
     requested2global.resize(size);
-    pmrt_barrier();
+    pmrt_barrier_full();
     for (size_t i = 0; i < size; i++) {
         kvs_get_value(REQUESTED_RANK_TO_NAME, std::to_string(i).c_str(), process_name);
         if (kvs_iget_value(GLOBAL_NAME_TO_RANK, process_name, global_rank_str) == 0) {
@@ -321,7 +356,7 @@ void pmi_resizable_simple::make_map_requested2global() {
         }
         requested2global[i] = atoi(global_rank_str);
     }
-    pmrt_barrier();
+    pmrt_barrier_full();
 }
 
 size_t pmi_resizable_simple::get_local_kvs_id() {

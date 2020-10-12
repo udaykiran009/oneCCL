@@ -35,6 +35,12 @@ host_communicator::host_communicator(size_t size, size_t rank, shared_ptr_class<
           comm_size(size) {
 }
 
+host_communicator::host_communicator(std::shared_ptr<atl_wrapper> atl)
+        : comm_attr(ccl::ccl_empty_attr{}),
+          comm_rank(0),
+          comm_size(0) {
+}
+
 host_communicator::host_communicator(std::shared_ptr<ccl_comm> impl)
         : comm_impl(impl),
           comm_attr(ccl::ccl_empty_attr{}),

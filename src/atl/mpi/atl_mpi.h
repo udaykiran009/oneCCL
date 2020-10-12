@@ -137,8 +137,13 @@ public:
     size_t get_size() {
         return ctx->coord.global_count;
     }
+    bool is_inited() override
+    {
+        return inited;
+    }
 
 private:
     atl_ctx_t* ctx = nullptr;
     bool is_finalized{ false };
+    bool inited { false };
 };

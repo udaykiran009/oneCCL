@@ -101,7 +101,7 @@ communicator_interface_dispatcher::create_communicator_from_unified_device(
     std::shared_ptr<atl_wrapper> atl) {
     // TODO ring by default at now. Choose preferred a2a if availbale
     ccl::device_topology_type preferred_topology_class = ccl::device_topology_type::ring;
-    ccl::group_split_type preferred_topology_group = ccl::group_split_type::cluster;
+    ccl::group_split_type preferred_topology_group = ccl::group_split_type::process;
 
     // read comm split attributes
     if (attr.is_valid<ccl::comm_split_attr_id::group>()) {

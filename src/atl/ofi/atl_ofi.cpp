@@ -11,6 +11,7 @@ atl_status_t atl_ofi::atl_init(int* argc,
                                atl_attr_t* attr,
                                const char* main_addr,
                                std::unique_ptr<ipmi>& pmi) {
+    inited = true;
     return atl_ofi_init(argc, argv, attr, &ctx, main_addr, pmi.get());
 }
 

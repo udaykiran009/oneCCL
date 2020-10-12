@@ -134,7 +134,12 @@ public:
 
     atl_status_t atl_finalize() override;
 
+    bool is_inited() override
+    {
+        return inited;
+    }
 private:
     atl_ctx_t* ctx = nullptr;
     bool is_finalized{ false };
+    bool inited{ false };
 };

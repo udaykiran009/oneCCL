@@ -35,7 +35,9 @@ void user_thread_idx(size_t thread_idx,
     using rank_allocated_memory = std::map<size_t, allocated_memory_array>;
     //using native_queue_storage       = std::map<size_t, ccl_device::device_queue>;
     using stream_storage = std::map<size_t, ccl::stream>;
+    using device_queue_map = std::map<size_t, cl::sycl::queue>;
 
+    device_queue_map device_queue;
     rank_allocated_memory memory_storage;
     //native_queue_storage  queues;
     stream_storage streams;
@@ -60,10 +62,16 @@ void user_thread_idx(size_t thread_idx,
         auto device_spilt_attr = ccl::create_comm_split_attr();
         (void)device_spilt_attr;
 
+        /* TODO: it is a temporary change. In the previous code,
+         * there is ccl::create_stream() seg fault issue. NEED TO FIX THAT.
+         */
+
         // create stream from device communicator directly
-        streams.emplace(rank, comm.create_stream());
-        const cl::sycl::queue& q =
-            streams.find(rank)->second.get<ccl::stream_attr_id::native_handle>();
+        // const cl::sycl::queue& q =
+        //     streams.find(rank)->second.get<ccl::stream_attr_id::native_handle>();
+
+        cl::sycl::queue q(dev);
+        streams.emplace(rank, ccl::create_stream(q));
 
         // allocate memory
         processing_type* mem_send = static_cast<processing_type*>(
@@ -97,20 +105,20 @@ void user_thread_idx(size_t thread_idx,
         {
             std::cerr << "Communicator by rank: " << rank << " should be ready already" << std::endl;
             abort();
-        }
-*/
+        }*/
+
         allocated_memory_array& mem_objects = memory_storage.find(rank)->second;
 
         // create operation attributes
         auto attr = ccl::create_operation_attr<ccl::allreduce_attr>();
-
+        auto& stream = streams.find(rank)->second;
         // invoke operation
         reqs.push_back(ccl::allreduce(mem_objects[0],
                                       mem_objects[1],
                                       COUNT,
                                       ccl::reduction::sum,
                                       comm,
-                                      streams.find(rank)->second,
+                                      stream,
                                       attr));
     }
 
@@ -147,6 +155,13 @@ void user_thread_idx(size_t thread_idx,
                      size_t total_devices_in_cluster,
                      std::shared_ptr<ccl::kvs_interface> kvs) {
     using namespace ::native;
+
+    /*
+     *
+     * This branch is not working, it is clearly L0 branch, since L0 v0.9 -> L0 v1.0.
+     * Fix and remove the comment.
+     *
+     */
 
     // test data
     using allocated_memory_array = std::vector<ccl_device::device_memory<processing_type>>;
@@ -212,8 +227,7 @@ void user_thread_idx(size_t thread_idx,
         {
             std::cerr << "Communicator by rank: " << rank << " should be ready already" << std::endl;
             abort();
-        }
-*/
+        }*/
         allocated_memory_array& mem_objects = memory_storage.find(rank)->second;
         reqs.push_back(comm.allreduce(mem_objects[0].get(),
                                       mem_objects[1].get(),
@@ -412,9 +426,10 @@ int main(int argc, char** argv) {
         std::cout << "Launch thread: " << thread_id
                   << " with expected local thread device communicators count: " << devices.size()
                   << std::endl;
+
         thread_group.emplace_back(&user_thread_idx<float>,
                                   thread_id,
-                                  std::cref(ranked_devices),
+                                  ranked_devices,
                                   ctx,
                                   total_device_in_cluster,
                                   kvs_instance);

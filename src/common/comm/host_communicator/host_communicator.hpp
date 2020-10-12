@@ -18,6 +18,7 @@
 #include "common/comm/communicator_traits.hpp"
 #include "common/comm/comm_interface.hpp"
 #include "types_generator_defines.hpp"
+#include "atl/atl_wrapper.h"
 
 namespace ccl {
 
@@ -162,6 +163,7 @@ public:
     host_communicator();
     host_communicator(size_t size, shared_ptr_class<kvs_interface> kvs);
     host_communicator(size_t size, size_t rank, shared_ptr_class<kvs_interface> kvs);
+    host_communicator(std::shared_ptr<atl_wrapper> atl);
     host_communicator(std::shared_ptr<ccl_comm> impl);
     host_communicator(host_communicator& src) = delete;
     host_communicator(host_communicator&& src) = default;

@@ -12,6 +12,7 @@ atl_status_t atl_mpi::atl_init(int* argc,
                                const char* main_addr,
                                std::unique_ptr<ipmi>& pmi) {
     (void)pmi;
+    inited = true;
     return atl_mpi_init(argc, argv, attr, &ctx, main_addr);
 }
 

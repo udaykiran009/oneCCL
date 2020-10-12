@@ -4,6 +4,7 @@
 
 #include "common/utils/spinlock.hpp"
 #include "common/comm/atl_tag.hpp"
+#include "atl/atl_wrapper.h"
 
 namespace ccl {
 class host_communicator;
@@ -29,7 +30,7 @@ struct group_context {
     comm_group_t group_by_kvs(const std::vector<size_t>& local_thread_device_group_ranks,
                               size_t cluster_device_group_size,
                               std::shared_ptr<kvs_interface> kvs);
-    comm_group_t group_by_comm(std::shared_ptr<host_communicator> host_comm);
+    comm_group_t group_by_comm(std::shared_ptr<atl_wrapper> atl);
     comm_group_t get_existing_group_by_id(const group_unique_key& id);
     static group_context& instance();
 

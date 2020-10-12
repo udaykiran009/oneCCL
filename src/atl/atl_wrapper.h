@@ -224,6 +224,10 @@ public:
         return threads_count;
     }
 
+    /*
+     * How many devices in the current process
+     * + all threads of the process
+     */
     size_t get_devices_per_rank_count() {
         return devices_per_rank_count;
     }
@@ -234,6 +238,14 @@ public:
 
     size_t get_size() {
         return size;
+    }
+
+    /*
+     * TODO: Temporary change.
+     * Need to define correct to unique id
+     */
+    size_t get_id() {
+        return 0;
     }
 
     /* static ATL attr for all transport instances

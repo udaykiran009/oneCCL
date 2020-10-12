@@ -86,6 +86,7 @@ private:
     int kvs_get_value(const char* kvs_name, const char* key, char* value);
     int kvs_iget_value(const char* kvs_name, const char* key, char* value);
     size_t get_barrier_idx();
+    size_t get_barrier_full_idx();
     void register_my_first_rank_and_dev_count();
     void get_requested_thread_num_and_threads_count();
     void register_my_proc_name();
@@ -94,6 +95,7 @@ private:
     void make_requested_info();
     void remove_initial_data();
     void make_map_requested2global();
+    void pmrt_barrier_full();
     size_t dev_count;
     size_t requested_rank_num;
     size_t requested_thread_num;
@@ -107,6 +109,7 @@ private:
     size_t max_vallen;
     char* val_storage = nullptr;
     size_t barrier_num = 0;
+    size_t barrier_num_full = 0;
     std::vector<size_t> requested2global;
     size_t local_id;
     size_t connection_timeout = 120;

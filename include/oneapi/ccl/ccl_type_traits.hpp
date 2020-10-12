@@ -26,23 +26,29 @@ struct native_type_info {
     static constexpr bool is_class = false;
 };
 
-#define CCL_TYPE_TRAITS(ccl_type_id, dtype, dtype_size) \
+#define CCL_TYPE_TRAITS(ccl_type_id, dtype, dtype_size, name_in_kernel) \
     template <> \
     struct type_info<ccl_type_id> \
             : public ccl_type_info_export<dtype, dtype_size, ccl_type_id, false, true> { \
         static constexpr const char* name() { \
             return #dtype; \
         } \
+        static constexpr const char* name_for_kernel() { \
+            return #name_in_kernel; \
+        } \
     }; \
     template <> \
     struct native_type_info<dtype> : public type_info<ccl_type_id> {};
 
-#define CCL_CLASS_TYPE_TRAITS(ccl_type_id, dtype, sizeof_dtype) \
+#define CCL_CLASS_TYPE_TRAITS(ccl_type_id, dtype, sizeof_dtype, name_in_kernel) \
     template <> \
     struct native_type_info<dtype> \
             : public ccl_type_info_export<dtype, sizeof_dtype, ccl_type_id, true, true> { \
         static constexpr const char* name() { \
             return #dtype; \
+        } \
+        static constexpr const char* name_for_kernel() { \
+            return #name_in_kernel; \
         } \
     };
 
@@ -58,22 +64,22 @@ using bf16 = uint16_t;
 /**
  * Enumeration of supported CCL API data types
  */
-CCL_TYPE_TRAITS(ccl::datatype::int8, char, sizeof(char))
-CCL_TYPE_TRAITS(ccl::datatype::int32, int, sizeof(int))
-CCL_TYPE_TRAITS(ccl::datatype::bfloat16, bf16, sizeof(bf16))
-CCL_TYPE_TRAITS(ccl::datatype::float32, float, sizeof(float))
-CCL_TYPE_TRAITS(ccl::datatype::float64, double, sizeof(double))
-CCL_TYPE_TRAITS(ccl::datatype::int64, int64_t, sizeof(int64_t))
-CCL_TYPE_TRAITS(ccl::datatype::uint64, uint64_t, sizeof(uint64_t))
+CCL_TYPE_TRAITS(ccl::datatype::int8, char, sizeof(char), int8_t)
+CCL_TYPE_TRAITS(ccl::datatype::int32, int, sizeof(int), int32_t)
+CCL_TYPE_TRAITS(ccl::datatype::bfloat16, bf16, sizeof(bf16), bf16)
+CCL_TYPE_TRAITS(ccl::datatype::float32, float, sizeof(float), float32_t)
+CCL_TYPE_TRAITS(ccl::datatype::float64, double, sizeof(double), float64_t)
+CCL_TYPE_TRAITS(ccl::datatype::int64, int64_t, sizeof(int64_t), int64_t)
+CCL_TYPE_TRAITS(ccl::datatype::uint64, uint64_t, sizeof(uint64_t), uint64_t)
 
 #ifdef CCL_ENABLE_SYCL
-CCL_CLASS_TYPE_TRAITS(ccl::datatype::int8, cl::sycl::buffer<char COMMA 1>, sizeof(char))
-CCL_CLASS_TYPE_TRAITS(ccl::datatype::int32, cl::sycl::buffer<int COMMA 1>, sizeof(int))
-CCL_CLASS_TYPE_TRAITS(ccl::datatype::bfloat16, cl::sycl::buffer<bf16 COMMA 1>, sizeof(bf16))
-CCL_CLASS_TYPE_TRAITS(ccl::datatype::int64, cl::sycl::buffer<int64_t COMMA 1>, sizeof(int64_t))
-CCL_CLASS_TYPE_TRAITS(ccl::datatype::uint64, cl::sycl::buffer<uint64_t COMMA 1>, sizeof(uint64_t))
-CCL_CLASS_TYPE_TRAITS(ccl::datatype::float32, cl::sycl::buffer<float COMMA 1>, sizeof(float))
-CCL_CLASS_TYPE_TRAITS(ccl::datatype::float64, cl::sycl::buffer<double COMMA 1>, sizeof(double))
+CCL_CLASS_TYPE_TRAITS(ccl::datatype::int8, cl::sycl::buffer<char COMMA 1>, sizeof(char), int8_t)
+CCL_CLASS_TYPE_TRAITS(ccl::datatype::int32, cl::sycl::buffer<int COMMA 1>, sizeof(int), int32_t)
+CCL_CLASS_TYPE_TRAITS(ccl::datatype::bfloat16, cl::sycl::buffer<bf16 COMMA 1>, sizeof(bf16), bf16)
+CCL_CLASS_TYPE_TRAITS(ccl::datatype::int64, cl::sycl::buffer<int64_t COMMA 1>, sizeof(int64_t), float32_t)
+CCL_CLASS_TYPE_TRAITS(ccl::datatype::uint64, cl::sycl::buffer<uint64_t COMMA 1>, sizeof(uint64_t), float64_t)
+CCL_CLASS_TYPE_TRAITS(ccl::datatype::float32, cl::sycl::buffer<float COMMA 1>, sizeof(float), int64_t)
+CCL_CLASS_TYPE_TRAITS(ccl::datatype::float64, cl::sycl::buffer<double COMMA 1>, sizeof(double), uint64_t)
 #endif //CCL_ENABLE_SYCL
 
 /**

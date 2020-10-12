@@ -24,18 +24,22 @@
 
 #define DO_RW_OP(op, fd, buf, size) \
     do { \
-        ssize_t res = 0; \
-        size_t shift = 0; \
-        while (shift != size) { \
-            res = op(fd, (char*)buf + shift, size - shift); \
-            if (res == -1) { \
-                if (errno != EINTR) { \
-                    printf("read/write error: %s\n", strerror(errno)); \
-                    exit(EXIT_FAILURE); \
+        static std::mutex memory_mutex; \
+        { \
+            std::lock_guard<std::mutex> lock(memory_mutex); \
+            ssize_t res = 0; \
+            size_t shift = 0; \
+            while (shift != size) { \
+                res = op(fd, (char*)buf + shift, size - shift); \
+                if (res == -1) { \
+                    if (errno != EINTR) { \
+                        printf("read/write error: %s\n", strerror(errno)); \
+                        exit(EXIT_FAILURE); \
+                    } \
                 } \
-            } \
-            else { \
-                shift += res; \
+                else { \
+                    shift += res; \
+                } \
             } \
         } \
     } while (0)
@@ -81,6 +85,7 @@
 
 #define KVS_NAME    "CCL_POD_ADDR"
 #define KVS_BARRIER "CCL_BARRIER"
+#define KVS_BARRIER_FULL "CCL_BARRIER_FULL"
 
 #define KVS_IDX               "IDX"
 #define KVS_UP                "CCL_UP"

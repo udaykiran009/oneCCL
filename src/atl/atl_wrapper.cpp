@@ -110,18 +110,23 @@ atl_wrapper::atl_wrapper(size_t dev_count,
 
     switch (transport_type)
     {
-        case ccl_atl_ofi:
+        case ccl_atl_ofi: {
+            size_t transorts_count = transports.size();
             pmi = std::unique_ptr<ipmi>(new pmi_resizable_simple(dev_count, ranks, k));
 
             if (pmi->get_thread() == 0) {
                 transports.push_back(std::shared_ptr<iatl>(new atl_ofi()));
             }
-            pmi->pmrt_barrier();
+            //TODO: Rework it on barrier
+            while (transorts_count == transports.size()) {
+                ccl_yield(ccl::global_data::env().yield_type);
+            }
             static std::mutex memory_mutex;
             {
                 std::lock_guard<std::mutex> lock(memory_mutex);
                 transport = transports.back();
             }
+        }
             break;
         case ccl_atl_mpi:
              transport = std::shared_ptr<iatl>(new atl_mpi());
@@ -136,8 +141,12 @@ atl_wrapper::atl_wrapper(size_t dev_count,
 void atl_wrapper::init_transport() {
 
     LOG_INFO("init ATL, requested ep_count ", attr.ep_count);
-
-    transport->atl_init(nullptr, nullptr, &attr, nullptr, pmi);
+    static std::mutex memory_mutex;
+    {
+        std::lock_guard<std::mutex> lock(memory_mutex);
+        if (!transport->is_inited())
+            transport->atl_init(nullptr, nullptr, &attr, nullptr, pmi);
+    }
     eps = transport->atl_get_eps();
     tag = std::unique_ptr<ccl_atl_tag>(new ccl_atl_tag(attr.tag_bits, attr.max_tag));
 

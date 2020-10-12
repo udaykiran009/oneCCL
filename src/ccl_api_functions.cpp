@@ -36,44 +36,51 @@ void register_gpu_module(std::string kernel_dir_path)
         }
     }
     LOG_INFO("SPV Kernels found directory: ", kernel_dir_path);
-    std::string kernel_path = kernel_dir_path + "ring_allgatherv.spv";
-    register_gpu_module_source(kernel_path.c_str(),
-                                ccl::device_topology_type::ring,
-                                ccl_coll_allgatherv);
+
+    /*
+     * TODO:
+     * Important: Fix kernels data types generations, then uncoment
+     * the registration module.
+     */
+
+    // std::string kernel_path = kernel_dir_path + "ring_allgatherv.spv";
+    // register_gpu_module_source(kernel_path.c_str(),
+    //                             ccl::device_topology_type::ring,
+    //                             ccl_coll_allgatherv);
     // register__gpu_module_source("kernels/a2a_allgatherv.spv",
     //                             ccl::device_topology_type::a2a,
     //                             ccl_coll_allgatherv);
     // alltoallv
-    kernel_path = kernel_dir_path + "ring_alltoallv.spv";
-    register_gpu_module_source(kernel_path.c_str(),
-                               ccl::device_topology_type::ring,
-                               ccl_coll_alltoallv);
+    // std::string kernel_path = kernel_dir_path + "ring_alltoallv.spv";
+    // register_gpu_module_source(kernel_path.c_str(),
+    //                            ccl::device_topology_type::ring,
+    //                            ccl_coll_alltoallv);
     // register_gpu_module_source("kernels/a2a_alltoallv.spv",
     //                             ccl::device_topology_type::a2a,
     //                             ccl_coll_alltoallv);
     // allreduce
-    kernel_path = kernel_dir_path + "ring_allreduce.spv";
+     std::string  kernel_path = kernel_dir_path + "ring_allreduce.spv";
     register_gpu_module_source(kernel_path.c_str(),
                                 ccl::device_topology_type::ring,
                                 ccl_coll_allreduce);
-    kernel_path = kernel_dir_path + "a2a_allreduce.spv";
-    register_gpu_module_source(kernel_path.c_str(),
-                                ccl::device_topology_type::a2a,
-                                ccl_coll_allreduce);
-    // bcast
-    kernel_path = kernel_dir_path + "ring_bcast.spv";
-    register_gpu_module_source(kernel_path.c_str(),
-                               ccl::device_topology_type::ring,
-                               ccl_coll_bcast);
-    kernel_path = kernel_dir_path + "a2a_bcast.spv";
-    register_gpu_module_source(kernel_path.c_str(),
-                               ccl::device_topology_type::a2a,
-                               ccl_coll_bcast);
-    // reduce
-    kernel_path = kernel_dir_path + "ring_reduce.spv";
-    register_gpu_module_source(kernel_path.c_str(),
-                                ccl::device_topology_type::ring,
-                                ccl_coll_reduce);
+    // kernel_path = kernel_dir_path + "a2a_allreduce.spv";
+    // register_gpu_module_source(kernel_path.c_str(),
+    //                             ccl::device_topology_type::a2a,
+    //                             ccl_coll_allreduce);
+    // // bcast
+    // kernel_path = kernel_dir_path + "ring_bcast.spv";
+    // register_gpu_module_source(kernel_path.c_str(),
+    //                            ccl::device_topology_type::ring,
+    //                            ccl_coll_bcast);
+    // kernel_path = kernel_dir_path + "a2a_bcast.spv";
+    // register_gpu_module_source(kernel_path.c_str(),
+    //                            ccl::device_topology_type::a2a,
+    //                            ccl_coll_bcast);
+    // // reduce
+    // kernel_path = kernel_dir_path + "ring_reduce.spv";
+    // register_gpu_module_source(kernel_path.c_str(),
+    //                             ccl::device_topology_type::ring,
+    //                             ccl_coll_reduce);
     // register_gpu_module_source("kernels/a2a_reduce.spv",
     //                            ccl_topology_class_t::a2a_algo_class,
     //                            ccl_coll_reduce);
