@@ -16,6 +16,7 @@
 #include "oneapi/ccl/ccl_communicator.hpp"
 
 #include "oneapi/ccl/native_device_api/export_api.hpp"
+#include "common/utils/version.hpp"
 
 #ifdef CCL_ENABLE_SYCL
 #include <CL/sycl.hpp>
@@ -124,16 +125,11 @@ environment::create_communicators(const size_t comm_size,
 
 template <class ccl_api_type, class... args_type>
 ccl_api_type CCL_API environment::create_postponed_api_type(args_type... args) const {
-    ccl::library_version ret{};
-    ret.major = CCL_MAJOR_VERSION;
-    ret.minor = CCL_MINOR_VERSION;
-    ret.update = CCL_UPDATE_VERSION;
-    ret.product_status = CCL_PRODUCT_STATUS;
-    ret.build_date = CCL_PRODUCT_BUILD_DATE;
-    ret.full = CCL_PRODUCT_FULL;
+    auto version = utils::get_library_version();
+
     // TODO: ccl_api_type is private constructor, so `static_cast`  fails always. Fix it
     //static_assert(std::is_constructible<ccl_api_type, args_type..., ccl::library_version>::value, "Cannot construct `ccl_api_type` from given `args_type...`");
-    return ccl_api_type(std::forward<args_type>(args)..., ret);
+    return ccl_api_type(std::forward<args_type>(args)..., version);
 }
 
 } // namespace details

@@ -8,21 +8,16 @@
 #include "oneapi/ccl/ccl_stream_attr_ids_traits.hpp"
 #include "oneapi/ccl/ccl_stream.hpp"
 #include "common/stream/stream.hpp"
+#include "common/utils/version.hpp"
 
 namespace ccl {
 /* TODO temporary function for UT compilation: would be part of ccl::details::environment in final*/
 template <class... attr_value_pair_t>
 stream stream::create_stream_from_attr(typename unified_device_type::ccl_native_t device,
                                        attr_value_pair_t&&... avps) {
-    ccl::library_version ret{};
-    ret.major = CCL_MAJOR_VERSION;
-    ret.minor = CCL_MINOR_VERSION;
-    ret.update = CCL_UPDATE_VERSION;
-    ret.product_status = CCL_PRODUCT_STATUS;
-    ret.build_date = CCL_PRODUCT_BUILD_DATE;
-    ret.full = CCL_PRODUCT_FULL;
+    auto version = utils::get_library_version();
 
-    stream str{ stream_provider_dispatcher::create(device, ret) };
+    stream str{ stream_provider_dispatcher::create(device, version) };
     int expander[]{ (str.template set<attr_value_pair_t::idx()>(avps.val()), 0)... };
     (void)expander;
     str.build_from_params();
@@ -33,15 +28,9 @@ template <class... attr_value_pair_t>
 stream stream::create_stream_from_attr(typename unified_device_type::ccl_native_t device,
                                        typename unified_device_context_type::ccl_native_t context,
                                        attr_value_pair_t&&... avps) {
-    ccl::library_version ret{};
-    ret.major = CCL_MAJOR_VERSION;
-    ret.minor = CCL_MINOR_VERSION;
-    ret.update = CCL_UPDATE_VERSION;
-    ret.product_status = CCL_PRODUCT_STATUS;
-    ret.build_date = CCL_PRODUCT_BUILD_DATE;
-    ret.full = CCL_PRODUCT_FULL;
+    auto version = utils::get_library_version();
 
-    stream str{ stream_provider_dispatcher::create(device, context, ret) };
+    stream str{ stream_provider_dispatcher::create(device, context, version) };
     int expander[]{ (str.template set<attr_value_pair_t::idx()>(avps.val()), 0)... };
     (void)expander;
     str.build_from_params();
@@ -50,26 +39,14 @@ stream stream::create_stream_from_attr(typename unified_device_type::ccl_native_
 
 template <class native_stream_type, typename T>
 stream stream::create_stream(native_stream_type& native_stream) {
-    ccl::library_version ret{};
-    ret.major = CCL_MAJOR_VERSION;
-    ret.minor = CCL_MINOR_VERSION;
-    ret.update = CCL_UPDATE_VERSION;
-    ret.product_status = CCL_PRODUCT_STATUS;
-    ret.build_date = CCL_PRODUCT_BUILD_DATE;
-    ret.full = CCL_PRODUCT_FULL;
-    return { stream_provider_dispatcher::create(native_stream, ret) };
+    auto version = utils::get_library_version();
+    return { stream_provider_dispatcher::create(native_stream, version) };
 }
 
 template <class device_type, class native_context_type, typename T>
 stream stream::create_stream(device_type& device, native_context_type& native_ctx) {
-    ccl::library_version ret{};
-    ret.major = CCL_MAJOR_VERSION;
-    ret.minor = CCL_MINOR_VERSION;
-    ret.update = CCL_UPDATE_VERSION;
-    ret.product_status = CCL_PRODUCT_STATUS;
-    ret.build_date = CCL_PRODUCT_BUILD_DATE;
-    ret.full = CCL_PRODUCT_FULL;
-    return { stream_provider_dispatcher::create(device, native_ctx, ret) };
+    auto version = utils::get_library_version();
+    return { stream_provider_dispatcher::create(device, native_ctx, version) };
 }
 
 template <stream_attr_id attrId>

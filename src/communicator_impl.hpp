@@ -44,15 +44,9 @@ event create_event_from_attr(event_type& native_event_handle,
                              typename unified_device_context_type::ccl_native_t context,
                              attr_value_pair_t&&...avps)
 {
-    ccl::library_version ret {};
-    ret.major = CCL_MAJOR_VERSION;
-    ret.minor = CCL_MINOR_VERSION;
-    ret.update = CCL_UPDATE_VERSION;
-    ret.product_status = CCL_PRODUCT_STATUS;
-    ret.build_date = CCL_PRODUCT_BUILD_DATE;
-    ret.full = CCL_PRODUCT_FULL;
+    auto version = utils::get_library_version();
 
-    event str {event::impl_value_t(new event::impl_t(native_event_handle, context, ret))};
+    event str {event::impl_value_t(new event::impl_t(native_event_handle, context, version))};
     int expander [] {(str.template set<attr_value_pair_t::idx()>(avps.val()), 0)...};
     str.build_from_params();
 

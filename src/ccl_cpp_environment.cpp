@@ -1,6 +1,7 @@
 #include "environment_impl.hpp"
 #include "common/global/global.hpp"
 #include "exec/exec.hpp"
+#include "common/utils/version.hpp"
 
 #if defined(MULTI_GPU_SUPPORT) || defined(CCL_ENABLE_SYCL)
 #include "common/comm/l0/comm_context.hpp"
@@ -37,17 +38,9 @@ CCL_API environment& environment::instance() {
 // }
 
 ccl::library_version CCL_API environment::get_library_version() const {
-    ccl::library_version ret;
-
-    ret.major = CCL_MAJOR_VERSION;
-    ret.minor = CCL_MINOR_VERSION;
-    ret.update = CCL_UPDATE_VERSION;
-    ret.product_status = CCL_PRODUCT_STATUS;
-    ret.build_date = CCL_PRODUCT_BUILD_DATE;
-    ret.full = CCL_PRODUCT_FULL;
-
-    return ret;
+    return utils::get_library_version();
 }
+
 /*
 static ccl::stream& get_empty_stream()
 {
@@ -168,34 +161,23 @@ stream CCL_API environment::create_postponed_api_type<
     typename unified_device_context_type::ccl_native_t>(
     typename unified_device_type::ccl_native_t device,
     typename unified_device_context_type::ccl_native_t context) const {
-    library_version ret{};
-    ret.major = CCL_MAJOR_VERSION;
-    ret.minor = CCL_MINOR_VERSION;
-    ret.update = CCL_UPDATE_VERSION;
-    ret.product_status = CCL_PRODUCT_STATUS;
-    ret.build_date = CCL_PRODUCT_BUILD_DATE;
-    ret.full = CCL_PRODUCT_FULL;
+    auto version = utils::get_library_version();
 
-    return stream{ stream_provider_dispatcher::create(device, context, ret) };
+    return stream{ stream_provider_dispatcher::create(device, context, version) };
 }
+
 template <>
 stream CCL_API
 environment::create_postponed_api_type<stream,
                                             typename unified_device_type::ccl_native_t>(
     typename unified_device_type::ccl_native_t device) const {
-    library_version ret{};
-    ret.major = CCL_MAJOR_VERSION;
-    ret.minor = CCL_MINOR_VERSION;
-    ret.update = CCL_UPDATE_VERSION;
-    ret.product_status = CCL_PRODUCT_STATUS;
-    ret.build_date = CCL_PRODUCT_BUILD_DATE;
-    ret.full = CCL_PRODUCT_FULL;
+    auto version = utils::get_library_version();
 
-    return stream{ stream_provider_dispatcher::create(device, ret) };
+    return stream{ stream_provider_dispatcher::create(device, version) };
 }
 
-}
-}
+} // namespace details
+} // namespace ccl
 
 CREATE_OP_ATTR_INSTANTIATION(ccl::allgatherv_attr)
 CREATE_OP_ATTR_INSTANTIATION(ccl::allreduce_attr)

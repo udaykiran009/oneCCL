@@ -11,6 +11,7 @@
 #include "common/event/event_internal/event_internal.hpp"
 
 #include "common/event/ccl_event.hpp"
+#include "common/utils/version.hpp"
 
 namespace ccl {
 
@@ -18,15 +19,9 @@ template <class event_type, class... attr_value_pair_t>
 event_internal event_internal::create_event_from_attr(event_type& native_event_handle,
                                     typename unified_device_context_type::ccl_native_t context,
                                     attr_value_pair_t&&... avps) {
-    ccl::library_version ret{};
-    ret.major = CCL_MAJOR_VERSION;
-    ret.minor = CCL_MINOR_VERSION;
-    ret.update = CCL_UPDATE_VERSION;
-    ret.product_status = CCL_PRODUCT_STATUS;
-    ret.build_date = CCL_PRODUCT_BUILD_DATE;
-    ret.full = CCL_PRODUCT_FULL;
+    auto version = utils::get_library_version();
 
-    event_internal str{ event_internal::impl_value_t(new event_internal::impl_t(native_event_handle, context, ret)) };
+    event_internal str{ event_internal::impl_value_t(new event_internal::impl_t(native_event_handle, context, version)) };
     int expander[]{ (str.template set<attr_value_pair_t::idx()>(avps.val()), 0)... };
     (void)expander;
     str.build_from_params();
@@ -37,15 +32,9 @@ event_internal event_internal::create_event_from_attr(event_type& native_event_h
 template <class event_handle_type, typename T>
 event_internal event_internal::create_event(event_handle_type native_event_handle,
                           typename unified_device_context_type::ccl_native_t context) {
-    ccl::library_version ret{};
-    ret.major = CCL_MAJOR_VERSION;
-    ret.minor = CCL_MINOR_VERSION;
-    ret.update = CCL_UPDATE_VERSION;
-    ret.product_status = CCL_PRODUCT_STATUS;
-    ret.build_date = CCL_PRODUCT_BUILD_DATE;
-    ret.full = CCL_PRODUCT_FULL;
+    auto version = utils::get_library_version();
 
-    event_internal str{ event_internal::impl_value_t(new event_internal::impl_t(native_event_handle, context, ret)) };
+    event_internal str{ event_internal::impl_value_t(new event_internal::impl_t(native_event_handle, context, version)) };
     str.build_from_params();
 
     return str;
@@ -53,15 +42,9 @@ event_internal event_internal::create_event(event_handle_type native_event_handl
 
 template <class event_type, typename T>
 event_internal event_internal::create_event(event_type& native_event) {
-    ccl::library_version ret{};
-    ret.major = CCL_MAJOR_VERSION;
-    ret.minor = CCL_MINOR_VERSION;
-    ret.update = CCL_UPDATE_VERSION;
-    ret.product_status = CCL_PRODUCT_STATUS;
-    ret.build_date = CCL_PRODUCT_BUILD_DATE;
-    ret.full = CCL_PRODUCT_FULL;
+    auto version = utils::get_library_version();
 
-    return { event_internal::impl_value_t(new event_internal::impl_t(native_event, ret)) };
+    return { event_internal::impl_value_t(new event_internal::impl_t(native_event, version)) };
 }
 
 template <event_attr_id attrId>

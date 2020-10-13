@@ -8,6 +8,7 @@
 #include "common/log/log.hpp"
 #include "exec/exec.hpp"
 #include "oneapi/ccl/ccl_environment.hpp"
+#include "common/utils/version.hpp"
 
 namespace ccl {
 
@@ -173,13 +174,7 @@ void env_data::print() {
 #endif
     LOG_INFO("build mode : ", build_mode);
 
-    ccl::library_version version;
-    version.major = CCL_MAJOR_VERSION;
-    version.minor = CCL_MINOR_VERSION;
-    version.update = CCL_UPDATE_VERSION;
-    version.product_status = CCL_PRODUCT_STATUS;
-    version.build_date = CCL_PRODUCT_BUILD_DATE;
-    version.full = CCL_PRODUCT_FULL;
+    auto version = utils::get_library_version();
 
     LOG_INFO("version : ", version.full);
 

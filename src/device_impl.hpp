@@ -8,21 +8,16 @@
 #include "oneapi/ccl/ccl_device.hpp"
 
 #include "common/device/device.hpp"
+#include "common/utils/version.hpp"
 
 namespace ccl {
 
 template <class device_type, class... attr_value_pair_t>
 CCL_API device device::create_device_from_attr(device_type& native_device_handle,
                                        attr_value_pair_t&&... avps) {
-    ccl::library_version ret{};
-    ret.major = CCL_MAJOR_VERSION;
-    ret.minor = CCL_MINOR_VERSION;
-    ret.update = CCL_UPDATE_VERSION;
-    ret.product_status = CCL_PRODUCT_STATUS;
-    ret.build_date = CCL_PRODUCT_BUILD_DATE;
-    ret.full = CCL_PRODUCT_FULL;
+    auto version = utils::get_library_version();
 
-    device str{ device::impl_value_t(new device::impl_t(native_device_handle, ret)) };
+    device str{ device::impl_value_t(new device::impl_t(native_device_handle, version)) };
     int expander[]{ (str.template set<attr_value_pair_t::idx()>(avps.val()), 0)... };
     (void)expander;
     str.build_from_params();
@@ -32,15 +27,9 @@ CCL_API device device::create_device_from_attr(device_type& native_device_handle
 
 template <class device_type, typename T>
 CCL_API device device::create_device(device_type&& native_device) {
-    ccl::library_version ret{};
-    ret.major = CCL_MAJOR_VERSION;
-    ret.minor = CCL_MINOR_VERSION;
-    ret.update = CCL_UPDATE_VERSION;
-    ret.product_status = CCL_PRODUCT_STATUS;
-    ret.build_date = CCL_PRODUCT_BUILD_DATE;
-    ret.full = CCL_PRODUCT_FULL;
+    auto version = utils::get_library_version();
 
-    return { device::impl_value_t(new device::impl_t(std::forward<device_type>(native_device), ret)) };
+    return { device::impl_value_t(new device::impl_t(std::forward<device_type>(native_device), version)) };
 }
 
 template <device_attr_id attrId>

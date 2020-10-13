@@ -3,6 +3,7 @@
 #include "common/event/impls/event_impl.hpp"
 #include "common/event/impls/empty_event.hpp"
 #include "common/event/impls/native_event.hpp"
+#include "common/utils/version.hpp"
 
 namespace ccl {
 
@@ -51,13 +52,7 @@ CCL_API const event::native_t& event::get_native() const {
 }
 
 event CCL_API event::create_from_native(native_t& native_event) {
-    library_version version;
-    version.major = CCL_MAJOR_VERSION;
-    version.minor = CCL_MINOR_VERSION;
-    version.update = CCL_UPDATE_VERSION;
-    version.product_status = CCL_PRODUCT_STATUS;
-    version.build_date = CCL_PRODUCT_BUILD_DATE;
-    version.full = CCL_PRODUCT_FULL;
+    auto version = utils::get_library_version();
 
     return impl_value_t(
         new native_event_impl(native_event, version)

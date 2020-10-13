@@ -8,20 +8,16 @@
 #include "oneapi/ccl/ccl_context.hpp"
 
 #include "common/context/context.hpp"
+#include "common/utils/version.hpp"
+
 namespace ccl {
 
 template <class device_context_type, class... attr_value_pair_t>
 CCL_API context context::create_context_from_attr(device_context_type& native_device_context_handle,
                                        attr_value_pair_t&&... avps) {
-    ccl::library_version ret{};
-    ret.major = CCL_MAJOR_VERSION;
-    ret.minor = CCL_MINOR_VERSION;
-    ret.update = CCL_UPDATE_VERSION;
-    ret.product_status = CCL_PRODUCT_STATUS;
-    ret.build_date = CCL_PRODUCT_BUILD_DATE;
-    ret.full = CCL_PRODUCT_FULL;
+    auto version = utils::get_library_version();
 
-    context str{ context::impl_value_t(new context::impl_t(native_device_context_handle, ret)) };
+    context str{ context::impl_value_t(new context::impl_t(native_device_context_handle, version)) };
     int expander[]{ (str.template set<attr_value_pair_t::idx()>(avps.val()), 0)... };
     (void)expander;
     str.build_from_params();
@@ -31,15 +27,9 @@ CCL_API context context::create_context_from_attr(device_context_type& native_de
 
 template <class device_context_type, typename T>
 CCL_API context context::create_context(device_context_type&& native_device_context) {
-    ccl::library_version ret{};
-    ret.major = CCL_MAJOR_VERSION;
-    ret.minor = CCL_MINOR_VERSION;
-    ret.update = CCL_UPDATE_VERSION;
-    ret.product_status = CCL_PRODUCT_STATUS;
-    ret.build_date = CCL_PRODUCT_BUILD_DATE;
-    ret.full = CCL_PRODUCT_FULL;
+    auto version = utils::get_library_version();
 
-    return { context::impl_value_t(new context::impl_t(std::forward<device_context_type>(native_device_context), ret)) };
+    return { context::impl_value_t(new context::impl_t(std::forward<device_context_type>(native_device_context), version)) };
 }
 
 template <context_attr_id attrId>
