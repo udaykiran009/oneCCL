@@ -82,9 +82,6 @@ void global_data::init_resize_independent_objects() {
 
     algorithm_selector->init();
 
-    default_coll_attr.reset(new ccl_coll_attr_t{});
-    memset(default_coll_attr.get(), 0, sizeof(ccl_coll_attr_t));
-
     bf16_impl_type = ccl_bf16_get_impl_type();
 }
 
@@ -98,7 +95,6 @@ void global_data::reset_resize_dependent_objects() {
 void global_data::reset_resize_independent_objects() {
     parallelizer.reset();
     algorithm_selector.reset();
-    default_coll_attr.reset();
 }
 
 } /* namespace ccl */

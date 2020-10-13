@@ -41,8 +41,6 @@ struct ccl_coll_attr {
     ccl_coll_attr() = default;
     ccl_coll_attr(const ccl_coll_attr&) = default;
     ccl_coll_attr& operator=(const ccl_coll_attr&) = default;
-    ccl_coll_attr(const ccl_coll_attr_t* attr);
-    ccl_coll_attr& operator=(const ccl_coll_attr_t* attr);
 
     //TODO temporary solution for type convertation, ccl_coll_attr would be depreacated
     ccl_coll_attr(const ccl::allgatherv_attr& attr);

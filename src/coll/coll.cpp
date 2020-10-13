@@ -49,31 +49,6 @@
     to->to_cache = from.get<ccl::operation_attr_id::to_cache>(); \
     to->match_id = from.get<ccl::operation_attr_id::match_id>();
 
-ccl_coll_attr::ccl_coll_attr(const ccl_coll_attr_t* attr) {
-    *this = attr ?: ccl::global_data::get().default_coll_attr.get();
-}
-
-ccl_coll_attr& ccl_coll_attr::operator=(const ccl_coll_attr_t* attr) {
-    prologue_fn = attr->prologue_fn;
-    epilogue_fn = attr->epilogue_fn;
-    reduction_fn = attr->reduction_fn;
-    priority = attr->priority;
-    synchronous = attr->synchronous;
-    to_cache = attr->to_cache && attr->match_id && attr->match_id[0];
-    vector_buf = attr->vector_buf;
-    match_id = (attr->match_id ? attr->match_id : "");
-
-    sparse_allreduce_completion_fn = attr->sparse_allreduce_completion_fn;
-    sparse_allreduce_alloc_fn = attr->sparse_allreduce_alloc_fn;
-    sparse_allreduce_fn_ctx = attr->sparse_allreduce_fn_ctx;
-    sparse_coalesce_mode = attr->sparse_coalesce_mode;
-
-    if (to_cache != attr->to_cache)
-        LOG_INFO("collective caching is requested but no match_id is provided, disable caching");
-
-    return *this;
-}
-
 //TODO temporary solution for type convertation, ccl_coll_attr would be depreacated
 ccl_coll_attr::ccl_coll_attr(const ccl::allgatherv_attr& attr) {
     COPY_COMMON_OP_ATTRS(attr, this);

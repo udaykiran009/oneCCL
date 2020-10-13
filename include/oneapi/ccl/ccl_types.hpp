@@ -223,44 +223,4 @@ struct param_traits {};
 } //namespace info
 } // namespace ccl
 
-// TODO: tmp struct, refactor core code and remove it
-/*********************************************************/
-
-/** Extendable list of collective attributes. */
-typedef struct {
-    /**
-     * Callbacks into application code
-     * for pre-/post-processing data
-     * and custom reduction operation
-     */
-    ccl::prologue_fn prologue_fn;
-    ccl::epilogue_fn epilogue_fn;
-    ccl::reduction_fn reduction_fn;
-
-    /* Priority for collective operation */
-    size_t priority;
-
-    /* Blocking/non-blocking */
-    int synchronous;
-
-    /* Persistent/non-persistent */
-    int to_cache;
-
-    /* Treat buffer as vector/regular - applicable for allgatherv only */
-    int vector_buf;
-
-    /**
-     * Id of the operation. If specified, new communicator will be created and collective
-     * operations with the same @b match_id will be executed in the same order.
-     */
-    const char* match_id;
-
-    /* Sparse allreduce specific */
-    ccl::sparse_allreduce_completion_fn sparse_allreduce_completion_fn;
-    ccl::sparse_allreduce_alloc_fn sparse_allreduce_alloc_fn;
-    const void* sparse_allreduce_fn_ctx;
-    ccl::sparse_coalesce_mode sparse_coalesce_mode;
-
-} ccl_coll_attr_t;
-
 #include "oneapi/ccl/ccl_device_types.hpp"
