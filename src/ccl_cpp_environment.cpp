@@ -30,14 +30,14 @@ CCL_API environment& environment::instance() {
     return env;
 }
 
-// void CCL_API environment::set_resize_fn(ccl_resize_fn_t callback)
+// void environment::set_resize_fn(ccl_resize_fn_t callback)
 // {
 //     ccl_status_t result = ccl_set_resize_fn(callback);
 //     CCL_CHECK_AND_THROW(result, "failed to set resize callback");
 //     return;
 // }
 
-ccl::library_version CCL_API environment::get_library_version() const {
+ccl::library_version environment::get_library_version() const {
     return utils::get_library_version();
 }
 
@@ -53,29 +53,29 @@ static ccl::stream& get_empty_stream()
  * Factory methods
  */
 // KVS
-shared_ptr_class<kvs> CCL_API environment::create_main_kvs() const {
+shared_ptr_class<kvs> environment::create_main_kvs() const {
     return std::shared_ptr<kvs>(new kvs);
 }
 
-shared_ptr_class<kvs> CCL_API environment::create_kvs(const kvs::address_type& addr) const {
+shared_ptr_class<kvs> environment::create_kvs(const kvs::address_type& addr) const {
     return std::shared_ptr<kvs>(new kvs(addr));
 }
 
 // device
-device CCL_API environment::create_device(empty_t empty) const
+device environment::create_device(empty_t empty) const
 {
     static typename ccl::unified_device_type::ccl_native_t default_native_device;
     return device::create_device(default_native_device);
 }
 
 // context
-context CCL_API environment::create_context(empty_t empty) const
+context environment::create_context(empty_t empty) const
 {
     static typename ccl::unified_device_context_type::ccl_native_t default_native_context;
     return context::create_context(default_native_context);
 }
 
-ccl::datatype CCL_API environment::register_datatype(const ccl::datatype_attr& attr) {
+ccl::datatype environment::register_datatype(const ccl::datatype_attr& attr) {
     while (unlikely(ccl::global_data::get().executor->is_locked)) {
         std::this_thread::yield();
     }
@@ -85,7 +85,7 @@ ccl::datatype CCL_API environment::register_datatype(const ccl::datatype_attr& a
     return ccl::global_data::get().dtypes->create(attr);
 }
 
-void CCL_API environment::deregister_datatype(ccl::datatype dtype) {
+void environment::deregister_datatype(ccl::datatype dtype) {
     while (unlikely(ccl::global_data::get().executor->is_locked)) {
         std::this_thread::yield();
     }
@@ -95,7 +95,7 @@ void CCL_API environment::deregister_datatype(ccl::datatype dtype) {
     ccl::global_data::get().dtypes->free(dtype);
 }
 
-size_t CCL_API environment::get_datatype_size(ccl::datatype dtype) const {
+size_t environment::get_datatype_size(ccl::datatype dtype) const {
     while (unlikely(ccl::global_data::get().executor->is_locked)) {
         std::this_thread::yield();
     }
@@ -108,7 +108,7 @@ size_t CCL_API environment::get_datatype_size(ccl::datatype dtype) const {
 } // namespace ccl
 
 #ifdef CCL_ENABLE_SYCL
-ccl::communicator CCL_API ccl::details::environment::create_single_device_communicator(
+ccl::communicator ccl::details::environment::create_single_device_communicator(
     const size_t comm_size,
     const size_t rank,
     const cl::sycl::device& device,
@@ -134,16 +134,16 @@ ccl::communicator CCL_API ccl::details::environment::create_single_device_commun
 #endif
 
 //Communicator
-ccl::communicator CCL_API ccl::details::environment::create_communicator() const {
+ccl::communicator ccl::details::environment::create_communicator() const {
     return ccl::communicator::create_communicator();
 }
 
-ccl::communicator CCL_API ccl::details::environment::create_communicator(const size_t size,
+ccl::communicator ccl::details::environment::create_communicator(const size_t size,
                                                       ccl::shared_ptr_class<ccl::kvs_interface> kvs) const {
     return ccl::communicator::create_communicator(size, kvs);
 }
 
-ccl::communicator CCL_API ccl::details::environment::create_communicator(const size_t size,
+ccl::communicator ccl::details::environment::create_communicator(const size_t size,
                                                       const size_t rank,
                                                       ccl::shared_ptr_class<ccl::kvs_interface> kvs) const {
     return ccl::communicator::create_communicator(size, rank, kvs);
