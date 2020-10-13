@@ -228,7 +228,7 @@ install(FILES
 add_library(ccl-static STATIC $<TARGET_OBJECTS:ccl-objects>)
 set_target_properties(ccl-static PROPERTIES OUTPUT_NAME ccl)
 set_target_properties(ccl-static PROPERTIES ARCHIVE_OUTPUT_DIRECTORY ${CCL_BUILD_DIR})
-install(TARGETS ccl-static ARCHIVE DESTINATION ${CCL_INSTALL_LIB})
+install(TARGETS ccl-static ARCHIVE DESTINATION ${CCL_INSTALL_LIB} OPTIONAL)
 
 if(MULTI_GPU_SUPPORT)
     message("Turn on L0 multi-gpu unit tests")
