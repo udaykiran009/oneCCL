@@ -15,7 +15,7 @@ function show_help()
             \t\t-p: generate files for IPC \n\
             \t\t-g: generate files for TOPOLOGY (not implemented yet)\n\
             \t\t-c: compile an example. Must launch with the specific mode, i.e.: \n\
-            \t\t\tit'll complie for single device\n\
+            \t\t\tIt'll complie for single device\n\
             \t\t\texport.sh -c -s dst_dir OR export.sh -cs dst_dir\n\n\
             \t\t-h: show help\n\n\
             \t\tNote: For successful compiling It requires 'level_zero' include/lib paths.\n\
@@ -85,21 +85,20 @@ function copy_dirs()
 
 function export_ccl_common()
 {
-    declare -a SourceArray=("${PROJECT_DIR}/include/native_device_api/export_api.hpp"
-                            "${PROJECT_DIR}/include/ccl_types.hpp"
-                            "${PROJECT_DIR}/include/ccl_types.h"
-                            "${PROJECT_DIR}/include/ccl_type_traits.hpp"
-                            "${PROJECT_DIR}/include/ccl_device_types.hpp"
-                            "${PROJECT_DIR}/include/ccl_device_types.h"
-                            "${PROJECT_DIR}/include/ccl_device_type_traits.hpp"
-                            "${PROJECT_DIR}/include/ccl.hpp"
-                            "${PROJECT_DIR}/include/ccl_config.h"
+    declare -a SourceArray=("${PROJECT_DIR}/include/oneapi/ccl.hpp"
+                            "${PROJECT_DIR}/include/oneapi/ccl/ccl_config.h"
+                            "${PROJECT_DIR}/src/common/log/log.hpp"
+                            "${PROJECT_DIR}/include/oneapi/ccl/native_device_api/export_api.hpp"
+                            "${PROJECT_DIR}/include/oneapi/ccl/ccl_types.hpp"
+                            "${PROJECT_DIR}/include/oneapi/ccl/ccl_type_traits.hpp"
+                            "${PROJECT_DIR}/include/oneapi/ccl/ccl_device_types.hpp"
+                            "${PROJECT_DIR}/include/oneapi/ccl/ccl_device_type_traits.hpp"
                             )
     echo "Copy ccl library headers"
     copy_files "" ${SourceArray[@]}
 
-    declare -a SourceDirsArray=("${PROJECT_DIR}/include/native_device_api"
-                                "${PROJECT_DIR}/src/native_device_api")
+    declare -a SourceDirsArray=("${PROJECT_DIR}/include/oneapi/ccl/native_device_api"
+                                "${PROJECT_DIR}/src/native_device_api/l0")
 
     echo "Copy ccl library directories"
     copy_dirs "" ${SourceDirsArray[@]}
@@ -115,8 +114,11 @@ function export_test_common()
                             "${SCRIPT_DIR}/utils.hpp"
                             "${SCRIPT_DIR}/fixture.hpp"
                             "${SCRIPT_DIR}/base_fixture.hpp"
+                            "${SCRIPT_DIR}/kernel_storage.hpp"
                             )
     cp "${PROJECT_DIR}/src/ccl_utils.cpp" "${export_dir}/native_device_api/l0/"
+    cp "${PROJECT_DIR}/src/native_device_api/l0/export.cpp" "${export_dir}/native_device_api/l0/"
+
     echo "Copy common UT headers"
     copy_files "" ${SourceArray[@]}
 }
@@ -137,10 +139,11 @@ function compile()
 {
     cd ${export_dir}
     echo "Compiling..."
-    g++ -g -DSTANDALONE_UT -DUT_DEBUG -I${INCLUDE_PATH_TO_LEVEL_ZERO} \
+    g++ -g -DMULTI_GPU_SUPPORT=1 -DSTANDALONE_UT -DUT_DEBUG -I${INCLUDE_PATH_TO_LEVEL_ZERO} \
     -I./ native_device_api/l0/*.cpp -L${LIB_PATH_TO_LEVEL_ZERO} -lze_loader \
     -L/usr/lib/ -lpthread  -pthread \
     ./$input_name -o ./$out_name
+    echo "Done compiling"
 }
 
 function main()
@@ -148,39 +151,35 @@ function main()
     mkdir -p ${export_dir}
 
     if $has_s_option; then
-        echo "kernels_single_dev test"
-        out_name='kernels_single_dev'
+        echo "kernel_ring_single_device_suite test"
+        out_name='kernel_ring_single_device_suite'
 
-        declare -a TestSource=("${SCRIPT_DIR}/kernel_single_dev_suite.cpp" )
+        declare -a TestSource=("${SCRIPT_DIR}/kernel_ring_single_device_suite.cpp" )
         copy_files "" ${TestSource[@]}
 
-        input_name="kernel_single_dev_suite.cpp"
-        # TODO: copy specific stuff
+        input_name="kernel_ring_single_device_suite.cpp"
         copy_all_stuff
     fi
 
     if $has_m_option; then
-        echo "kernels_multi_dev_test"
-        echo -e "\tWarning: Multi device suite requires optional changes:\n\
-                  i.e. namespace issue (add them like into kernel_single_dev_suite.cpp)\n\
-                  Fixed them before !COMPILING!
-                  But the files, you want for compiling, will be grabbed into the folder."
-        out_name="kernels_multi_dev"
-        declare -a TestSource=("${SCRIPT_DIR}/kernel_multi_dev_suite.cpp" )
+        echo "kernel_ring_multi_device_suite"
+
+        out_name="kernel_ring_multi_device_suite"
+        declare -a TestSource=("${SCRIPT_DIR}/kernel_ring_multi_device_suite.cpp" )
         copy_files "" ${TestSource[@]}
 
-        input_name="kernel_multi_dev_suite.cpp"
+        input_name="kernel_ring_multi_device_suite.cpp"
         copy_all_stuff
     fi
 
     if $has_t_option; then
-        echo "kernels_multi_tile test"
-        out_name="kernels_multi_tile"
+        echo "kernel_ring_single_device_multi_tile_suite test"
+        out_name="kernel_ring_single_device_multi_tile_suite"
 
-        declare -a TestSource=("${SCRIPT_DIR}/kernel_multi_tile_suite.cpp" )
+        declare -a TestSource=("${SCRIPT_DIR}/kernel_ring_single_device_multi_tile_suite.cpp" )
         copy_files "" ${TestSource[@]}
 
-        input_name="kernel_multi_tile_suite.cpp"
+        input_name="kernel_ring_single_device_multi_tile_suite.cpp"
         copy_all_stuff
     fi
 
