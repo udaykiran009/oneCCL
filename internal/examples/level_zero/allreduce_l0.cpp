@@ -74,9 +74,9 @@ void user_thread_idx(size_t thread_idx,
 
         // allocate memory
         processing_type* mem_send = static_cast<processing_type*>(
-            cl::sycl::aligned_alloc_device(sizeof(processing_type), COUNT, q));
+            cl::sycl::aligned_alloc_device(alignof(processing_type), COUNT * sizeof(processing_type), q));
         processing_type* mem_recv = static_cast<processing_type*>(
-            cl::sycl::aligned_alloc_device(sizeof(processing_type), COUNT, q));
+            cl::sycl::aligned_alloc_device(alignof(processing_type), COUNT * sizeof(processing_type), q));
 
         // set initial memory
         {
