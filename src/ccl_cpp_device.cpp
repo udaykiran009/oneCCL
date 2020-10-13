@@ -38,7 +38,7 @@ CCL_API device::native_t& device::get_native()
 CCL_API const device::native_t& device::get_native() const
 {
     return get_impl()->get_attribute_value(
-        details::ccl_api_type_attr_traits<ccl::device_attr_id, ccl::device_attr_id::native_handle>{});
+        detail::ccl_api_type_attr_traits<ccl::device_attr_id, ccl::device_attr_id::native_handle>{});
 }
 } // namespace ccl
 

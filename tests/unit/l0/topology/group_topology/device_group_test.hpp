@@ -22,7 +22,7 @@ TEST_F(router_fixture, real_virtual_topology_test) {
         device_group_ring_topology top(*tg_comm->get_device_group_ctx(thread_index),
                                        *pg_comm->gpu_device_storage);
         std::stringstream ss;
-        native::details::adjacency_matrix matrix =
+        native::detail::adjacency_matrix matrix =
             device_group_ring_topology::build_p2p_capability_matrix(
                 ss, get_device_affinity(thread_index), all_p2p_accessible);
         output << ss.str() << "\nResult matrix:\n" << matrix << std::endl;
@@ -38,7 +38,7 @@ TEST_F(router_fixture, real_virtual_topology_test) {
         std::tie(res, descr) = check_id_ring(
             matrix,
             get_device_affinity(thread_index),
-            native::details::plain_graph{ ccl::device_index_type(0, 0, ccl::unused_index_value),
+            native::detail::plain_graph{ ccl::device_index_type(0, 0, ccl::unused_index_value),
                                           ccl::device_index_type(0, 0, ccl::unused_index_value),
                                           ccl::device_index_type(0, 0, ccl::unused_index_value) });
         UT_ASSERT(res == true, descr);
@@ -89,7 +89,7 @@ TEST_F(router_fixture, multiple_real_topology_test) {
         device_group_ring_topology top(*tg_comm->get_device_group_ctx(thread_index),
                                        *pg_comm->gpu_device_storage);
         std::stringstream ss;
-        native::details::adjacency_matrix matrix =
+        native::detail::adjacency_matrix matrix =
             device_group_ring_topology::build_p2p_capability_matrix(
                 ss, get_device_affinity(thread_index), all_p2p_accessible);
         output << ss.str() << "\nResult matrix:\n" << matrix << std::endl;
@@ -105,7 +105,7 @@ TEST_F(router_fixture, multiple_real_topology_test) {
         std::tie(res, descr) = check_id_ring(
             matrix,
             get_device_affinity(thread_index),
-            native::details::plain_graph{ ccl::device_index_type(0, 0, ccl::unused_index_value),
+            native::detail::plain_graph{ ccl::device_index_type(0, 0, ccl::unused_index_value),
                                           ccl::device_index_type(0, 1, ccl::unused_index_value),
                                           ccl::device_index_type(0, 2, ccl::unused_index_value) });
         UT_ASSERT(res == true, descr);
@@ -158,7 +158,7 @@ TEST_F(router_fixture, multiple_real_virtual_topology_test) {
                                        *pg_comm->gpu_device_storage);
         {
             std::stringstream ss;
-            native::details::adjacency_matrix matrix =
+            native::detail::adjacency_matrix matrix =
                 device_group_ring_topology::build_p2p_capability_matrix(
                     ss, get_device_affinity(thread_index), all_p2p_accessible);
             output << ss.str() << "\nResult matrix:\n" << matrix << std::endl;
@@ -177,7 +177,7 @@ TEST_F(router_fixture, multiple_real_virtual_topology_test) {
             std::tie(res, descr) =
                 check_id_ring(matrix,
                               get_device_affinity(thread_index),
-                              native::details::plain_graph{
+                              native::detail::plain_graph{
                                   ccl::device_index_type(0, 0, ccl::unused_index_value),
                                   ccl::device_index_type(0, 2, ccl::unused_index_value),
                                   ccl::device_index_type(0, 2, ccl::unused_index_value),
@@ -208,7 +208,7 @@ TEST_F(router_fixture, multiple_real_virtual_topology_test) {
 TEST_F(router_fixture, two_inaccessible_group_scaleup_test) {
     using namespace utils;
     using namespace native;
-    using namespace native::details;
+    using namespace native::detail;
 
     size_t process_index = 0;
     size_t thread_index = 0;
@@ -302,7 +302,7 @@ TEST_F(router_fixture, two_inaccessible_group_scaleup_test) {
 TEST_F(router_fixture, two_inaccessible_devices_topology_test) {
     using namespace utils;
     using namespace native;
-    using namespace native::details;
+    using namespace native::detail;
 
     size_t process_index = 0;
     size_t thread_index = 0;
@@ -380,7 +380,7 @@ TEST_F(router_fixture, two_inaccessible_devices_topology_test) {
 TEST_F(router_fixture, two_inaccessible_asym_groups_topology_test) {
     using namespace utils;
     using namespace native;
-    using namespace native::details;
+    using namespace native::detail;
 
     size_t process_index = 0;
     size_t thread_index = 0;
@@ -473,7 +473,7 @@ TEST_F(router_fixture, two_inaccessible_asym_groups_topology_test) {
 TEST_F(router_fixture, two_inaccessible_real_virtual_groups_topology_test) {
     using namespace utils;
     using namespace native;
-    using namespace native::details;
+    using namespace native::detail;
 
     size_t process_index = 0;
     size_t thread_index = 0;

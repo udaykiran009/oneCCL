@@ -7,7 +7,7 @@
 class ccl_device_impl;
 namespace ccl {
 
-namespace details {
+namespace detail {
     class environment; // friend-zone
 }
 
@@ -36,7 +36,7 @@ public:
     /**
      * Declare native device type
      */
-    using native_t = typename details::ccl_api_type_attr_traits<ccl::device_attr_id,
+    using native_t = typename detail::ccl_api_type_attr_traits<ccl::device_attr_id,
                                                                 ccl::device_attr_id::native_handle>::return_type;
 
     device(device&& src);
@@ -49,7 +49,7 @@ public:
      * Get specific attribute value by @attrId
      */
     template <device_attr_id attrId>
-    const typename details::ccl_api_type_attr_traits<device_attr_id, attrId>::return_type& get()
+    const typename detail::ccl_api_type_attr_traits<device_attr_id, attrId>::return_type& get()
         const;
 
     /**
@@ -58,7 +58,7 @@ public:
      native_t& get_native();
      const native_t& get_native() const;
 private:
-    friend class details::environment;
+    friend class detail::environment;
     friend class communicator;
     device(impl_value_t&& impl);
 
@@ -68,10 +68,10 @@ private:
     template <device_attr_id attrId,
               class Value/*,
               class = typename std::enable_if<is_attribute_value_supported<attrId, Value>()>::type*/>
-    typename ccl::details::ccl_api_type_attr_traits<ccl::device_attr_id, attrId>::return_type set(const Value& v);
+    typename ccl::detail::ccl_api_type_attr_traits<ccl::device_attr_id, attrId>::return_type set(const Value& v);
 
     void build_from_params();
-    device(const typename details::ccl_api_type_attr_traits<device_attr_id,
+    device(const typename detail::ccl_api_type_attr_traits<device_attr_id,
                                                            device_attr_id::version>::type& version);
 
     /**
@@ -87,8 +87,8 @@ private:
 };
 
 template <device_attr_id t, class value_type>
-constexpr auto attr_val(value_type v) -> details::attr_value_tripple<device_attr_id, t, value_type> {
-    return details::attr_value_tripple<device_attr_id, t, value_type>(v);
+constexpr auto attr_val(value_type v) -> detail::attr_value_tripple<device_attr_id, t, value_type> {
+    return detail::attr_value_tripple<device_attr_id, t, value_type>(v);
 }
 
 template<class DeviceType>

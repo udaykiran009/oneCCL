@@ -33,19 +33,19 @@ CCL_API device device::create_device(device_type&& native_device) {
 }
 
 template <device_attr_id attrId>
-CCL_API const typename details::ccl_api_type_attr_traits<device_attr_id, attrId>::return_type&
+CCL_API const typename detail::ccl_api_type_attr_traits<device_attr_id, attrId>::return_type&
 device::get() const {
     return get_impl()->get_attribute_value(
-        details::ccl_api_type_attr_traits<device_attr_id, attrId>{});
+        detail::ccl_api_type_attr_traits<device_attr_id, attrId>{});
 }
 
 template<device_attr_id attrId,
              class Value/*,
              typename T*/>
-CCL_API typename ccl::details::ccl_api_type_attr_traits<ccl::device_attr_id, attrId>::return_type device::set(const Value& v)
+CCL_API typename ccl::detail::ccl_api_type_attr_traits<ccl::device_attr_id, attrId>::return_type device::set(const Value& v)
 {
     return get_impl()->set_attribute_value(
-        v, details::ccl_api_type_attr_traits<device_attr_id, attrId>{});
+        v, detail::ccl_api_type_attr_traits<device_attr_id, attrId>{});
 }
 
 } // namespace ccl
@@ -56,12 +56,12 @@ CCL_API typename ccl::details::ccl_api_type_attr_traits<ccl::device_attr_id, att
     template CCL_API ccl::device ccl::device::create_device(native_device_type& dev);
 
 #define API_DEVICE_FORCE_INSTANTIATION_SET(IN_attrId, IN_Value) \
-    template CCL_API typename ccl::details::ccl_api_type_attr_traits<ccl::device_attr_id, \
+    template CCL_API typename ccl::detail::ccl_api_type_attr_traits<ccl::device_attr_id, \
                                                                      IN_attrId>::return_type \
     ccl::device::set<IN_attrId, IN_Value>(const IN_Value& v);
 
 #define API_DEVICE_FORCE_INSTANTIATION_GET(IN_attrId) \
-    template CCL_API const typename ccl::details:: \
+    template CCL_API const typename ccl::detail:: \
         ccl_api_type_attr_traits<ccl::device_attr_id, IN_attrId>::return_type& \
         ccl::device::get<IN_attrId>() const;
 

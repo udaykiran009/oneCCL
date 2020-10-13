@@ -48,19 +48,19 @@ event_internal event_internal::create_event(event_type& native_event) {
 }
 
 template <event_attr_id attrId>
-const typename details::ccl_api_type_attr_traits<event_attr_id, attrId>::return_type&
+const typename detail::ccl_api_type_attr_traits<event_attr_id, attrId>::return_type&
 event_internal::get() const {
     return get_impl()->get_attribute_value(
-        details::ccl_api_type_attr_traits<event_attr_id, attrId>{});
+        detail::ccl_api_type_attr_traits<event_attr_id, attrId>{});
 }
 
 template<event_attr_id attrId,
              class Value/*,
              typename T*/>
-typename ccl::details::ccl_api_type_attr_traits<ccl::event_attr_id, attrId>::return_type event_internal::set(const Value& v)
+typename ccl::detail::ccl_api_type_attr_traits<ccl::event_attr_id, attrId>::return_type event_internal::set(const Value& v)
 {
     return get_impl()->set_attribute_value(
-        v, details::ccl_api_type_attr_traits<event_attr_id, attrId>{});
+        v, detail::ccl_api_type_attr_traits<event_attr_id, attrId>{});
 }
 
 } // namespace ccl

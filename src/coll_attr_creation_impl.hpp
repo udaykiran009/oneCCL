@@ -5,7 +5,7 @@
 #include "common/utils/version.hpp"
 
 namespace ccl {
-/* TODO temporary function for UT compilation: would be part of ccl::details::environment in final*/
+/* TODO temporary function for UT compilation: would be part of ccl::detail::environment in final*/
 template <class coll_attribute_type, class... attr_value_pair_t>
 coll_attribute_type create_coll_attr(attr_value_pair_t&&... avps) {
     auto version = utils::get_library_version();

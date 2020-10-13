@@ -111,7 +111,7 @@ bool process_group_context::sync_barrier(const ccl::device_indices_t& thread_dev
     {
         const ccl::process_device_indices_t& node_mask = get_node_afinity_indices(get_host_id());
         std::stringstream ss;
-        details::adjacency_matrix p2p_dependency_graph =
+        detail::adjacency_matrix p2p_dependency_graph =
             ally_process_topology.build_p2p_capability_matrix(ss, node_mask);
         ss << "\nMatrix\n" << p2p_dependency_graph << std::endl;
         if (!ally_process_topology.build_all(ss,
@@ -226,14 +226,14 @@ bool process_group_context::build_cluster_affinity_table(
     LOG_DEBUG("Memory required for device indices size: ", total_device_indices_count, " count");
 
     //Serialize own devices path data
-    auto serialized_indices = details::serialize::device_path_serializer::serialize_indices(
+    auto serialized_indices = detail::serialize::device_path_serializer::serialize_indices(
         process_aggregated_device_indices);
     // TODO assert(serialized_indices.size() == receive_process_indices_sizes[process_idx] && "Indices unexpected count");
 
     decltype(serialized_indices) affinity_indices;
     std::vector<char> hostnames;
     auto indices_count_to_bytes_converter = [](size_t elements) -> size_t {
-        return elements * details::serialize::device_path_serializable::device_index_size();
+        return elements * detail::serialize::device_path_serializable::device_index_size();
     };
 
     try {
@@ -320,7 +320,7 @@ bool process_group_context::build_cluster_affinity_table(
         }
 
         //get affinity
-        ccl::device_indices_t rank_indices = details::serialize::device_path_deserializer::
+        ccl::device_indices_t rank_indices = detail::serialize::device_path_deserializer::
             deserialize_indices<std::multiset, ccl::device_index_type>(
                 affinity_mask_from_iterator,
                 affinity_mask_from_iterator + receive_process_indices_sizes[rank_index]);
@@ -591,9 +591,9 @@ std::vector<ccl::device_indices_t> process_group_context::get_ipc_device_indices
 }
 
 void process_group_context::collect_cluster_colored_plain_graphs(
-    const details::colored_plain_graph_list& send_graph,
-    details::global_sorted_colored_plain_graphs& received_graphs) {
-    using namespace details::serialize;
+    const detail::colored_plain_graph_list& send_graph,
+    detail::global_sorted_colored_plain_graphs& received_graphs) {
+    using namespace detail::serialize;
 
     LOG_DEBUG("Collect cluster colored plain graphs, my process index: ",
               process_idx,
@@ -659,7 +659,7 @@ void process_group_context::collect_cluster_colored_plain_graphs(
     LOG_DEBUG("Deserialize recv_cluster_graphs");
     try {
         for (process_num = 0; process_num < ccl_communicator->size(); process_num++) {
-            details::colored_plain_graph_list graph =
+            detail::colored_plain_graph_list graph =
                 device_path_deserializer::deserialize_colored_graph_list_indices(
                     recv_cluster_graphs, deserialized_bytes, offset_bytes);
             LOG_DEBUG("Process index: ",

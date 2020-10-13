@@ -6,7 +6,7 @@
 
 namespace ccl {
 
-namespace details {
+namespace detail {
     class environment; // friend-zone
 }
 
@@ -76,7 +76,7 @@ public:
     const native_t& get_native() const;
 
 private:
-    friend class details::environment;
+    friend class detail::environment;
 
     static event create_from_native(native_t& native_event);
 };

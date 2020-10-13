@@ -6,7 +6,7 @@
 
 namespace ccl {
 
-namespace details {
+namespace detail {
     class environment;
 }
 
@@ -48,21 +48,21 @@ public:
      * Get specific attribute value by @attrId
      */
     template <datatype_attr_id attrId>
-    const typename details::ccl_api_type_attr_traits<datatype_attr_id, attrId>::return_type& get()
+    const typename detail::ccl_api_type_attr_traits<datatype_attr_id, attrId>::return_type& get()
         const;
 
 private:
-    friend class details::environment;
+    friend class detail::environment;
     datatype_attr(
-        const typename details::ccl_api_type_attr_traits<datatype_attr_id,
+        const typename detail::ccl_api_type_attr_traits<datatype_attr_id,
                                                          datatype_attr_id::version>::return_type&
             version);
 };
 
 template <datatype_attr_id t, class value_type>
 constexpr auto attr_val(value_type v)
-    -> details::attr_value_tripple<datatype_attr_id, t, value_type> {
-    return details::attr_value_tripple<datatype_attr_id, t, value_type>(v);
+    -> detail::attr_value_tripple<datatype_attr_id, t, value_type> {
+    return detail::attr_value_tripple<datatype_attr_id, t, value_type>(v);
 }
 
 } // namespace ccl

@@ -7,7 +7,7 @@
 
 namespace native {
 
-namespace details {
+namespace detail {
 /*
 struct splice_devices
 {
@@ -74,6 +74,6 @@ struct printer {
     }
     std::map<size_t, std::string> device_rank_descr;
 };
-} // namespace details
+} // namespace detail
 
 } // namespace native

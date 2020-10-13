@@ -37,7 +37,7 @@ struct device_attr_impl
 
 
 namespace ccl {
-/* TODO temporary function for UT compilation: would be part of ccl::details::environment in final
+/* TODO temporary function for UT compilation: would be part of ccl::detail::environment in final
 template <class event_type,
           class ...attr_value_pair_t>
 event create_event_from_attr(event_type& native_event_handle,

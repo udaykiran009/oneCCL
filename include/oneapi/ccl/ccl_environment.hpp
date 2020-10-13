@@ -42,7 +42,7 @@
 
 namespace ccl {
 
-namespace details {
+namespace detail {
 
 /**
  * CCL environment singleton
@@ -206,6 +206,6 @@ private:
     ccl_api_type create_postponed_api_type(args_type... args) const;
 };
 
-} // namespace details
+} // namespace detail
 
 } // namespace ccl

@@ -4,7 +4,7 @@
 
 namespace ccl {
 
-/* TODO temporary function for UT compilation: would be part of ccl::details::environment in final*/
+/* TODO temporary function for UT compilation: would be part of ccl::detail::environment in final*/
 template <class... attr_value_pair_t>
 datatype_attr create_datatype_attr(attr_value_pair_t&&... avps) {
     ccl::library_version ret{};

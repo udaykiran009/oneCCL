@@ -119,7 +119,7 @@ public:
             if (gpu_comm_impl::type_idx() == ccl_gpu_comm::type_idx() or
                 gpu_comm_impl::type_idx() == ccl_ipc_source_gpu_comm<ccl_gpu_comm>::type_idx()) {
                 if (group_id == ccl::group_split_type::cluster) {
-                    //auto c = ccl::details::environment::instance().create_communicator();
+                    //auto c = ccl::detail::environment::instance().create_communicator();
                     //(void)c;
                     //if(c->rank() == 0)
                     {
@@ -229,7 +229,7 @@ public:
                         if (group_id == ccl::group_split_type::cluster) {
                             // TODO: implement process communicator case
                             throw ccl::exception(std::string(__PRETTY_FUNCTION__) + "TODO: implement process communicator case");
-                            // auto c = ccl::details::environment::instance().create_communicator();
+                            // auto c = ccl::detail::environment::instance().create_communicator();
                             // if (c.rank() == 0) {
                                 // throw ccl::exception(
                                 //     std::string("cannot sync queue from real device, error: ") +

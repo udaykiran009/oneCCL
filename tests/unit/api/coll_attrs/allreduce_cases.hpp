@@ -24,7 +24,7 @@ TEST(coll_attr, allreduce_copy_on_write_attr) {
 
     //set new val
     {
-        ccl::details::function_holder<ccl::reduction_fn> check_val{ stub_reduction };
+        ccl::detail::function_holder<ccl::reduction_fn> check_val{ stub_reduction };
         attr.set<ccl::allreduce_attr_id::reduction_fn>((ccl::reduction_fn)stub_reduction);
         ASSERT_EQ(attr.get<ccl::allreduce_attr_id::reduction_fn>().get(), check_val.get());
     }
@@ -34,7 +34,7 @@ TEST(coll_attr, allreduce_copy_on_write_attr) {
     ASSERT_EQ(
         original_inner_impl_ptr
             ->get_attribute_value(
-                ccl::details::ccl_api_type_attr_traits<ccl::allreduce_attr_id,
+                ccl::detail::ccl_api_type_attr_traits<ccl::allreduce_attr_id,
                                                        ccl::allreduce_attr_id::reduction_fn>{})
             .get(),
         function);

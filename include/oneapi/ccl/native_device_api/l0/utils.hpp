@@ -7,7 +7,7 @@
 namespace native {
 
 struct ccl_device;
-namespace details {
+namespace detail {
 
 /*
  * Boolean matrix represents P2P device capable connectivity 'cross_device_rating'
@@ -36,5 +36,5 @@ using p2p_rating_function =
     std::function<cross_device_rating(const ccl_device&, const ccl_device&)>;
 
 cross_device_rating binary_p2p_rating_calculator(const ccl_device& lhs, const ccl_device& rhs);
-} // namespace details
+} // namespace detail
 } // namespace native

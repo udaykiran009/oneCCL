@@ -211,10 +211,10 @@ std::string CCL_API ccl_device_platform::to_string() const {
     return out.str();
 }
 
-details::adjacency_matrix ccl_device_platform::calculate_device_access_metric(
+detail::adjacency_matrix ccl_device_platform::calculate_device_access_metric(
     const ccl::device_indices_t& indices,
-    details::p2p_rating_function func) const {
-    details::adjacency_matrix result;
+    detail::p2p_rating_function func) const {
+    detail::adjacency_matrix result;
 
     try {
         // diagonal matrix, assume symmetric cross device access
@@ -227,7 +227,7 @@ details::adjacency_matrix ccl_device_platform::calculate_device_access_metric(
                 ccl_device_driver::const_device_ptr lhs_dev = get_device(*lhs_it);
                 ccl_device_driver::const_device_ptr rhs_dev = get_device(*rhs_it);
 
-                details::cross_device_rating rating = func(*lhs_dev, *rhs_dev);
+                detail::cross_device_rating rating = func(*lhs_dev, *rhs_dev);
                 result[*lhs_it][*rhs_it] = rating;
                 result[*rhs_it][*lhs_it] = rating;
             }

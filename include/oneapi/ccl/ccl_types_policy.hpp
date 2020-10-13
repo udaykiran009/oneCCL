@@ -173,7 +173,7 @@ protected:
 private:
     impl_value_t pimpl;
 };
-namespace details {
+namespace detail {
 template <class attr, attr id>
 struct ccl_api_type_attr_traits {};
 
@@ -194,5 +194,5 @@ private:
     value_t m_val;
 };
 
-} // namespace details
+} // namespace detail
 } // namespace ccl

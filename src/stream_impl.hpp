@@ -11,7 +11,7 @@
 #include "common/utils/version.hpp"
 
 namespace ccl {
-/* TODO temporary function for UT compilation: would be part of ccl::details::environment in final*/
+/* TODO temporary function for UT compilation: would be part of ccl::detail::environment in final*/
 template <class... attr_value_pair_t>
 stream stream::create_stream_from_attr(typename unified_device_type::ccl_native_t device,
                                        attr_value_pair_t&&... avps) {
@@ -50,23 +50,23 @@ stream stream::create_stream(device_type& device, native_context_type& native_ct
 }
 
 template <stream_attr_id attrId>
-CCL_API const typename details::ccl_api_type_attr_traits<stream_attr_id, attrId>::return_type&
+CCL_API const typename detail::ccl_api_type_attr_traits<stream_attr_id, attrId>::return_type&
 stream::get() const {
     return get_impl()->get_attribute_value(
-        details::ccl_api_type_attr_traits<stream_attr_id, attrId>{});
+        detail::ccl_api_type_attr_traits<stream_attr_id, attrId>{});
 }
 
 template<stream_attr_id attrId,
              class Value/*,
              typename T*/>
-CCL_API typename details::ccl_api_type_attr_traits<stream_attr_id, attrId>::return_type stream::set(const Value& v)
+CCL_API typename detail::ccl_api_type_attr_traits<stream_attr_id, attrId>::return_type stream::set(const Value& v)
 {
     return get_impl()->set_attribute_value(
-        v, details::ccl_api_type_attr_traits<stream_attr_id, attrId>{});
+        v, detail::ccl_api_type_attr_traits<stream_attr_id, attrId>{});
 }
 
 /*
-stream::stream(const typename details::ccl_api_type_attr_traits<stream_attr_id, stream_attr_id::version>::type& version) :
+stream::stream(const typename detail::ccl_api_type_attr_traits<stream_attr_id, stream_attr_id::version>::type& version) :
         base_t(stream_provider_dispatcher::create(version))
 {
 }*/
@@ -81,12 +81,12 @@ stream::stream(const typename details::ccl_api_type_attr_traits<stream_attr_id, 
                                                             native_context_type& native_ctx);
 
 #define API_STREAM_FORCE_INSTANTIATION_SET(IN_attrId, IN_Value) \
-    template CCL_API typename ccl::details::ccl_api_type_attr_traits<ccl::stream_attr_id, \
+    template CCL_API typename ccl::detail::ccl_api_type_attr_traits<ccl::stream_attr_id, \
                                                                      IN_attrId>::return_type \
     ccl::stream::set<IN_attrId, IN_Value>(const IN_Value& v);
 
 #define API_STREAM_FORCE_INSTANTIATION_GET(IN_attrId) \
-    template CCL_API const typename ccl::details:: \
+    template CCL_API const typename ccl::detail:: \
         ccl_api_type_attr_traits<ccl::stream_attr_id, IN_attrId>::return_type& \
         ccl::stream::get<IN_attrId>() const;
 

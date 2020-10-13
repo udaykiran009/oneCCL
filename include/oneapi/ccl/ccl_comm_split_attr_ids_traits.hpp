@@ -6,7 +6,7 @@
 
 namespace ccl {
 
-namespace details {
+namespace detail {
 
 template <>
 struct ccl_api_type_attr_traits<comm_split_attr_id, comm_split_attr_id::version> {
@@ -23,6 +23,6 @@ struct ccl_api_type_attr_traits<comm_split_attr_id, comm_split_attr_id::group> {
     using type = group_split_type;
 };
 
-} // namespace details
+} // namespace detail
 
 } // namespace ccl

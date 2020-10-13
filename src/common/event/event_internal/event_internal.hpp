@@ -4,7 +4,7 @@
 class ccl_event;
 namespace ccl {
 
-namespace details {
+namespace detail {
     class environment; // friend-zone
 }
 
@@ -38,11 +38,11 @@ public:
      * Get specific attribute value by @attrId
      */
     template <event_attr_id attrId>
-    const typename details::ccl_api_type_attr_traits<event_attr_id, attrId>::return_type& get()
+    const typename detail::ccl_api_type_attr_traits<event_attr_id, attrId>::return_type& get()
         const;
 
 private:
-    friend class details::environment;
+    friend class detail::environment;
     friend class communicator;
     event_internal(impl_value_t&& impl);
 
@@ -52,10 +52,10 @@ private:
     template <event_attr_id attrId,
               class Value/*,
               class = typename std::enable_if<is_attribute_value_supported<attrId, Value>()>::type*/>
-    typename ccl::details::ccl_api_type_attr_traits<ccl::event_attr_id, attrId>::return_type set(const Value& v);
+    typename ccl::detail::ccl_api_type_attr_traits<ccl::event_attr_id, attrId>::return_type set(const Value& v);
 
     void build_from_params();
-    event_internal(const typename details::ccl_api_type_attr_traits<event_attr_id,
+    event_internal(const typename detail::ccl_api_type_attr_traits<event_attr_id,
                                                            event_attr_id::version>::type& version);
 
     /**
@@ -77,8 +77,8 @@ private:
 };
 
 template <event_attr_id t, class value_type>
-constexpr auto attr_val(value_type v) -> details::attr_value_tripple<event_attr_id, t, value_type> {
-    return details::attr_value_tripple<event_attr_id, t, value_type>(v);
+constexpr auto attr_val(value_type v) -> detail::attr_value_tripple<event_attr_id, t, value_type> {
+    return detail::attr_value_tripple<event_attr_id, t, value_type>(v);
 }
 
 } // namespace ccl

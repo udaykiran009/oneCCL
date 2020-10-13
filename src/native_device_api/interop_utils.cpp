@@ -10,7 +10,7 @@
 #endif
 
 namespace native {
-namespace details {
+namespace detail {
 #if defined(MULTI_GPU_SUPPORT) && defined(CCL_ENABLE_SYCL)
 
 size_t get_sycl_device_id(const cl::sycl::device& device) {
@@ -141,5 +141,5 @@ std::string to_string(const assoc_retult& res) {
     }
     return ss.str();
 }
-} // namespace details
+} // namespace detail
 } // namespace native

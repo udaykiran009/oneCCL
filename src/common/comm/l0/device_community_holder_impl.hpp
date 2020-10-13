@@ -48,7 +48,7 @@ device_group_community_holder<TEMPLATE_DEF_ARG>::get_community() {
 template <TEMPLATE_DECL_ARG>
 std::string device_group_community_holder<TEMPLATE_DEF_ARG>::to_string() const {
     std::stringstream ss;
-    details::device_community_container_print_helper<group_id> p(ss);
+    detail::device_community_container_print_helper<group_id> p(ss);
     ccl_tuple_for_each(typed_communities, p);
     return ss.str();
 }

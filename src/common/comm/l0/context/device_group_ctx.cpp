@@ -39,7 +39,7 @@ std::shared_ptr<device_group_context> device_group_context::create(
                   " build RING topology. Log:\n ",
                   ss.str());
 
-        /*        native::details::printer<device_group_ring_topology::type()> p;
+        /*        native::detail::printer<device_group_ring_topology::type()> p;
         ccl_tuple_for_each(ring_device_topology->get_device_storage(), p);
         LOG_INFO("Device Group ", context_addr.to_string(), " RING topology:\n", p.to_string());
 */
@@ -59,7 +59,7 @@ std::shared_ptr<device_group_context> device_group_context::create(
             abort();
         }
         LOG_DEBUG("Device Group Context for ", context_addr.to_string(), " build RING topology. Log:\n ", ss.str());
-        native::details::printer<device_group_ring_topology::type()> p;
+        native::detail::printer<device_group_ring_topology::type()> p;
         ccl_tuple_for_each(ring_device_topology->get_device_storage(), p);
         LOG_INFO("Device Group ", context_addr.to_string(), " RING topology:\n", p.to_string());
         LOG_INFO("Device Group ", context_addr.to_string(), " A2A topology:\nTODO!");

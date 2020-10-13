@@ -28,7 +28,7 @@ template <size_t pos>
 using stub_arg = kernel_arg<pos, arg_no_access_policy<pos>>;
 
 // utilities
-namespace details {
+namespace detail {
 struct args_printer {
     args_printer(std::stringstream& ss) : out(ss) {}
 
@@ -73,5 +73,5 @@ private:
         }
     }
 };
-} // namespace details
+} // namespace detail
 } // namespace native

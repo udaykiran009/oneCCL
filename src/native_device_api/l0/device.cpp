@@ -22,7 +22,7 @@ uint32_t get_device_properties_from_handle(ccl_device::handle_t handle) {
     return device_properties.deviceId;
 }
 
-details::cross_device_rating property_p2p_rating_calculator(const native::ccl_device& lhs,
+detail::cross_device_rating property_p2p_rating_calculator(const native::ccl_device& lhs,
                                                             const native::ccl_device& rhs,
                                                             size_t weight) {
     ze_device_p2p_properties_t p2p = lhs.get_p2p_properties(rhs);

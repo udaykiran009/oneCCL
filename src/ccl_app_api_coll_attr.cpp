@@ -14,11 +14,11 @@ namespace ccl {
 
 #define API_FORCE_INSTANTIATION_SET(class_name, IN_attrType, IN_attrId, IN_Value) \
     template CCL_API \
-        typename details::ccl_api_type_attr_traits<IN_attrType, IN_attrId>::return_type \
+        typename detail::ccl_api_type_attr_traits<IN_attrType, IN_attrId>::return_type \
         class_name::set<IN_attrId, IN_Value>(const IN_Value& v);
 
 #define API_FORCE_INSTANTIATION_GET(class_name, IN_attrType, IN_attrId) \
-    template CCL_API const typename details::ccl_api_type_attr_traits<IN_attrType, \
+    template CCL_API const typename detail::ccl_api_type_attr_traits<IN_attrType, \
                                                                       IN_attrId>::return_type& \
     class_name::get<IN_attrId>() const;
 
@@ -54,7 +54,7 @@ CCL_API allgatherv_attr::allgatherv_attr(allgatherv_attr&& src) : base_t(std::mo
 CCL_API allgatherv_attr::allgatherv_attr(const allgatherv_attr& src) : base_t(src) {}
 
 CCL_API allgatherv_attr::allgatherv_attr(
-    const typename details::ccl_api_type_attr_traits<operation_attr_id,
+    const typename detail::ccl_api_type_attr_traits<operation_attr_id,
                                                      operation_attr_id::version>::type& version)
         : base_t(std::shared_ptr<impl_t>(new impl_t(version))) {}
 
@@ -68,7 +68,7 @@ CCL_API allreduce_attr::allreduce_attr(allreduce_attr&& src) : base_t(std::move(
 CCL_API allreduce_attr::allreduce_attr(const allreduce_attr& src) : base_t(src) {}
 
 CCL_API allreduce_attr::allreduce_attr(
-    const typename details::ccl_api_type_attr_traits<operation_attr_id,
+    const typename detail::ccl_api_type_attr_traits<operation_attr_id,
                                                      operation_attr_id::version>::type& version)
         : base_t(std::shared_ptr<impl_t>(new impl_t(version))) {}
 
@@ -82,7 +82,7 @@ CCL_API alltoall_attr::alltoall_attr(alltoall_attr&& src) : base_t(std::move(src
 CCL_API alltoall_attr::alltoall_attr(const alltoall_attr& src) : base_t(src) {}
 
 CCL_API alltoall_attr::alltoall_attr(
-    const typename details::ccl_api_type_attr_traits<operation_attr_id,
+    const typename detail::ccl_api_type_attr_traits<operation_attr_id,
                                                      operation_attr_id::version>::type& version)
         : base_t(std::shared_ptr<impl_t>(new impl_t(version))) {}
 
@@ -96,7 +96,7 @@ CCL_API alltoallv_attr::alltoallv_attr(alltoallv_attr&& src) : base_t(std::move(
 CCL_API alltoallv_attr::alltoallv_attr(const alltoallv_attr& src) : base_t(src) {}
 
 CCL_API alltoallv_attr::alltoallv_attr(
-    const typename details::ccl_api_type_attr_traits<operation_attr_id,
+    const typename detail::ccl_api_type_attr_traits<operation_attr_id,
                                                      operation_attr_id::version>::type& version)
         : base_t(std::shared_ptr<impl_t>(new impl_t(version))) {}
 
@@ -110,7 +110,7 @@ CCL_API barrier_attr::barrier_attr(barrier_attr&& src) : base_t(std::move(src)) 
 CCL_API barrier_attr::barrier_attr(const barrier_attr& src) : base_t(src) {}
 
 CCL_API barrier_attr::barrier_attr(
-    const typename details::ccl_api_type_attr_traits<operation_attr_id,
+    const typename detail::ccl_api_type_attr_traits<operation_attr_id,
                                                      operation_attr_id::version>::type& version)
         : base_t(std::shared_ptr<impl_t>(new impl_t(version))) {}
 
@@ -124,7 +124,7 @@ CCL_API broadcast_attr::broadcast_attr(broadcast_attr&& src) : base_t(std::move(
 CCL_API broadcast_attr::broadcast_attr(const broadcast_attr& src) : base_t(src) {}
 
 CCL_API broadcast_attr::broadcast_attr(
-    const typename details::ccl_api_type_attr_traits<operation_attr_id,
+    const typename detail::ccl_api_type_attr_traits<operation_attr_id,
                                                      operation_attr_id::version>::type& version)
         : base_t(std::shared_ptr<impl_t>(new impl_t(version))) {}
 
@@ -138,7 +138,7 @@ CCL_API reduce_attr::reduce_attr(reduce_attr&& src) : base_t(std::move(src)) {}
 CCL_API reduce_attr::reduce_attr(const reduce_attr& src) : base_t(src) {}
 
 CCL_API reduce_attr::reduce_attr(
-    const typename details::ccl_api_type_attr_traits<operation_attr_id,
+    const typename detail::ccl_api_type_attr_traits<operation_attr_id,
                                                      operation_attr_id::version>::type& version)
         : base_t(std::shared_ptr<impl_t>(new impl_t(version))) {}
 
@@ -153,7 +153,7 @@ CCL_API reduce_scatter_attr::reduce_scatter_attr(reduce_scatter_attr&& src)
 CCL_API reduce_scatter_attr::reduce_scatter_attr(const reduce_scatter_attr& src) : base_t(src) {}
 
 CCL_API reduce_scatter_attr::reduce_scatter_attr(
-    const typename details::ccl_api_type_attr_traits<operation_attr_id,
+    const typename detail::ccl_api_type_attr_traits<operation_attr_id,
                                                      operation_attr_id::version>::type& version)
         : base_t(std::shared_ptr<impl_t>(new impl_t(version))) {}
 
@@ -169,7 +169,7 @@ CCL_API sparse_allreduce_attr::sparse_allreduce_attr(const sparse_allreduce_attr
         : base_t(src) {}
 
 CCL_API sparse_allreduce_attr::sparse_allreduce_attr(
-    const typename details::ccl_api_type_attr_traits<operation_attr_id,
+    const typename detail::ccl_api_type_attr_traits<operation_attr_id,
                                                      operation_attr_id::version>::type& version)
         : base_t(std::shared_ptr<impl_t>(new impl_t(version))) {}
 
@@ -180,13 +180,13 @@ CCL_API const void* sparse_allreduce_attr::set<sparse_allreduce_attr_id::fn_ctx,
     const void* const& v) {
     return get_impl()->set_attribute_value(
         v,
-        details::ccl_api_type_attr_traits<sparse_allreduce_attr_id,
+        detail::ccl_api_type_attr_traits<sparse_allreduce_attr_id,
                                           sparse_allreduce_attr_id::fn_ctx>{});
 }
 template <>
 CCL_API const void* const& sparse_allreduce_attr::get<sparse_allreduce_attr_id::fn_ctx>() const {
     return get_impl()->get_attribute_value(
-        details::ccl_api_type_attr_traits<sparse_allreduce_attr_id,
+        detail::ccl_api_type_attr_traits<sparse_allreduce_attr_id,
                                           sparse_allreduce_attr_id::fn_ctx>{});
 }
 

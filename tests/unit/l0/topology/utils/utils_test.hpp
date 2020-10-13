@@ -4,8 +4,8 @@
 
 namespace topology_suite {
 TEST(INDICES_SERIALIZE, indices_serialize_deserialize_vector_test) {
-    using namespace native::details;
-    using namespace native::details::serialize;
+    using namespace native::detail;
+    using namespace native::detail::serialize;
 
     using tested_container_t = std::vector<ccl::device_index_type>;
 
@@ -22,14 +22,14 @@ TEST(INDICES_SERIALIZE, indices_serialize_deserialize_vector_test) {
 
     if (before != after) {
         ASSERT_TRUE(false) << "Containers content differ:\nBefore:\t"
-                           << native::details::to_string(before) << "\nAfter:\t"
-                           << native::details::to_string(after);
+                           << native::detail::to_string(before) << "\nAfter:\t"
+                           << native::detail::to_string(after);
     }
 }
 
 TEST(INDICES_SERIALIZE, indices_serialize_deserialize_vector_with_offset_test) {
-    using namespace native::details;
-    using namespace native::details::serialize;
+    using namespace native::detail;
+    using namespace native::detail::serialize;
 
     using tested_container_t = std::vector<ccl::device_index_type>;
 
@@ -57,14 +57,14 @@ TEST(INDICES_SERIALIZE, indices_serialize_deserialize_vector_with_offset_test) {
 
     if (before != after) {
         ASSERT_TRUE(false) << "Containers content differ:\nBefore:\t"
-                           << native::details::to_string(before) << "\nAfter:\t"
-                           << native::details::to_string(after);
+                           << native::detail::to_string(before) << "\nAfter:\t"
+                           << native::detail::to_string(after);
     }
 }
 
 TEST(INDICES_SERIALIZE, indices_serialize_deserialize_graph_list_test) {
-    using namespace native::details;
-    using namespace native::details::serialize;
+    using namespace native::detail;
+    using namespace native::detail::serialize;
 
     plain_graph_list before{ { { ccl::device_index_type(0, 0, ccl::unused_index_value),
                                  ccl::device_index_type(0, 1, ccl::unused_index_value),
@@ -86,20 +86,20 @@ TEST(INDICES_SERIALIZE, indices_serialize_deserialize_graph_list_test) {
     if (deserialized_bytes != serialized.size()) {
         ASSERT_TRUE(false) << "Not all data deserialized: " << deserialized_bytes
                            << ", expected: " << serialized.size() << "\nBefore:\t"
-                           << native::details::to_string(before) << "\nAfter:\t"
-                           << native::details::to_string(after);
+                           << native::detail::to_string(before) << "\nAfter:\t"
+                           << native::detail::to_string(after);
     }
 
     if (before != after) {
         ASSERT_TRUE(false) << "graph lists content differ:\nBefore:\t"
-                           << native::details::to_string(before) << "\nAfter:\t"
-                           << native::details::to_string(after);
+                           << native::detail::to_string(before) << "\nAfter:\t"
+                           << native::detail::to_string(after);
     }
 }
 
 TEST(INDICES_SERIALIZE, indices_serialize_deserialize_cluster_graph_list_test) {
-    using namespace native::details;
-    using namespace native::details::serialize;
+    using namespace native::detail;
+    using namespace native::detail::serialize;
 
     global_sorted_plain_graphs before{
         { 0,
@@ -148,14 +148,14 @@ TEST(INDICES_SERIALIZE, indices_serialize_deserialize_cluster_graph_list_test) {
 
     if (before != after) {
         ASSERT_TRUE(false) << "cluster graph lists content differ:\nBefore:\t"
-                           << native::details::to_string(before) << "\nAfter:\t"
-                           << native::details::to_string(after);
+                           << native::detail::to_string(before) << "\nAfter:\t"
+                           << native::detail::to_string(after);
     }
 }
 
 TEST(COLORED_INDICES_SERIALIZE, colored_indices_serialize_deserialize_vector_test) {
-    using namespace native::details;
-    using namespace native::details::serialize;
+    using namespace native::detail;
+    using namespace native::detail::serialize;
 
     using tested_container_t = colored_plain_graph;
 
@@ -172,14 +172,14 @@ TEST(COLORED_INDICES_SERIALIZE, colored_indices_serialize_deserialize_vector_tes
 
     if (before != after) {
         ASSERT_TRUE(false) << "Containers content differ:\nBefore:\t"
-                           << native::details::to_string(before) << "\nAfter:\t"
-                           << native::details::to_string(after);
+                           << native::detail::to_string(before) << "\nAfter:\t"
+                           << native::detail::to_string(after);
     }
 }
 
 TEST(COLORED_INDICES_SERIALIZE, colored_indices_serialize_deserialize_vector_with_offset_test) {
-    using namespace native::details;
-    using namespace native::details::serialize;
+    using namespace native::detail;
+    using namespace native::detail::serialize;
 
     using tested_container_t = colored_plain_graph;
 
@@ -207,14 +207,14 @@ TEST(COLORED_INDICES_SERIALIZE, colored_indices_serialize_deserialize_vector_wit
 
     if (before != after) {
         ASSERT_TRUE(false) << "Containers content differ:\nBefore:\t"
-                           << native::details::to_string(before) << "\nAfter:\t"
-                           << native::details::to_string(after);
+                           << native::detail::to_string(before) << "\nAfter:\t"
+                           << native::detail::to_string(after);
     }
 }
 
 TEST(COLORED_INDICES_SERIALIZE, colored_indices_serialize_deserialize_graph_list_test) {
-    using namespace native::details;
-    using namespace native::details::serialize;
+    using namespace native::detail;
+    using namespace native::detail::serialize;
 
     colored_plain_graph_list before{
         { { { 1, ccl::device_index_type(0, 0, ccl::unused_index_value) },
@@ -239,20 +239,20 @@ TEST(COLORED_INDICES_SERIALIZE, colored_indices_serialize_deserialize_graph_list
     if (deserialized_bytes != serialized.size()) {
         ASSERT_TRUE(false) << "Not all data deserialized: " << deserialized_bytes
                            << ", expected: " << serialized.size() << "\nBefore:\t"
-                           << native::details::to_string(before) << "\nAfter:\t"
-                           << native::details::to_string(after);
+                           << native::detail::to_string(before) << "\nAfter:\t"
+                           << native::detail::to_string(after);
     }
 
     if (before != after) {
         ASSERT_TRUE(false) << "graph lists content differ:\nBefore:\t"
-                           << native::details::to_string(before) << "\nAfter:\t"
-                           << native::details::to_string(after);
+                           << native::detail::to_string(before) << "\nAfter:\t"
+                           << native::detail::to_string(after);
     }
 }
 
 TEST(COLORED_INDICES_SERIALIZE, colored_indices_serialize_deserialize_cluster_graph_list_test) {
-    using namespace native::details;
-    using namespace native::details::serialize;
+    using namespace native::detail;
+    using namespace native::detail::serialize;
 
     global_sorted_colored_plain_graphs before{
         { 0,
@@ -301,8 +301,8 @@ TEST(COLORED_INDICES_SERIALIZE, colored_indices_serialize_deserialize_cluster_gr
 
     if (before != after) {
         ASSERT_TRUE(false) << "cluster graph lists content differ:\nBefore:\t"
-                           << native::details::to_string(before) << "\nAfter:\t"
-                           << native::details::to_string(after);
+                           << native::detail::to_string(before) << "\nAfter:\t"
+                           << native::detail::to_string(after);
     }
 }
 } // namespace topology_suite

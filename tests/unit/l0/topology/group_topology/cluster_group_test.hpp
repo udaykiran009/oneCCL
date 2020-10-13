@@ -16,7 +16,7 @@ static ccl::device_index_type dev_7(0, 7, ccl::unused_index_value);
 
 TEST_F(router_fixture, cluster_simple_scaleup_test) {
     using namespace native;
-    using namespace native::details;
+    using namespace native::detail;
     using namespace utils;
 
     constexpr ccl::group_split_type topology = ccl::group_split_type::cluster;
@@ -47,7 +47,7 @@ TEST_F(router_fixture, cluster_simple_scaleup_test) {
         };
 
         // stub for real device connectivity
-        native::details::p2p_rating_function rating_function =
+        native::detail::p2p_rating_function rating_function =
             std::bind(utils::test_custom_p2p_ping,
                       std::placeholders::_1,
                       std::placeholders::_2,
@@ -77,7 +77,7 @@ TEST_F(router_fixture, cluster_simple_scaleup_test) {
             device_group_ring_topology device_top(dev_group_ctx, *pg_comm->gpu_device_storage);
 
             std::stringstream ss;
-            native::details::adjacency_matrix matrix =
+            native::detail::adjacency_matrix matrix =
                 device_group_ring_topology::build_p2p_capability_matrix(
                     ss, group_indices_affinity, rating_function);
             device_top.build(ss, dev_group_ctx.context_addr, group_indices_affinity, matrix);
@@ -143,7 +143,7 @@ TEST_F(router_fixture, cluster_simple_scaleup_test) {
 
 TEST_F(router_fixture, cluster_simple_scaleout_test) {
     using namespace native;
-    using namespace native::details;
+    using namespace native::detail;
     using namespace utils;
 
     constexpr ccl::group_split_type topology = ccl::group_split_type::cluster;
@@ -177,7 +177,7 @@ TEST_F(router_fixture, cluster_simple_scaleout_test) {
         };
 
         // stub for real device connectivity
-        native::details::p2p_rating_function rating_function =
+        native::detail::p2p_rating_function rating_function =
             std::bind(utils::test_custom_p2p_ping,
                       std::placeholders::_1,
                       std::placeholders::_2,
@@ -207,7 +207,7 @@ TEST_F(router_fixture, cluster_simple_scaleout_test) {
             device_group_ring_topology device_top(dev_group_ctx, *pg_comm->gpu_device_storage);
 
             std::stringstream ss;
-            native::details::adjacency_matrix matrix =
+            native::detail::adjacency_matrix matrix =
                 device_group_ring_topology::build_p2p_capability_matrix(
                     ss, group_indices_affinity, rating_function);
             device_top.build(ss, dev_group_ctx.context_addr, group_indices_affinity, matrix);
@@ -273,7 +273,7 @@ TEST_F(router_fixture, cluster_simple_scaleout_test) {
 
 TEST_F(router_fixture, cluster_simple_scaleup_scaleout_test) {
     using namespace native;
-    using namespace native::details;
+    using namespace native::detail;
     using namespace utils;
 
     constexpr ccl::group_split_type topology = ccl::group_split_type::cluster;
@@ -309,7 +309,7 @@ TEST_F(router_fixture, cluster_simple_scaleup_scaleout_test) {
         };
 
         // stub for real device connectivity
-        native::details::p2p_rating_function rating_function =
+        native::detail::p2p_rating_function rating_function =
             std::bind(utils::test_custom_p2p_ping,
                       std::placeholders::_1,
                       std::placeholders::_2,
@@ -343,7 +343,7 @@ TEST_F(router_fixture, cluster_simple_scaleup_scaleout_test) {
             device_group_ring_topology device_top(dev_group_ctx, *pg_comm->gpu_device_storage);
 
             std::stringstream ss;
-            native::details::adjacency_matrix matrix =
+            native::detail::adjacency_matrix matrix =
                 device_group_ring_topology::build_p2p_capability_matrix(
                     ss, group_indices_affinity, rating_function);
             device_top.build(ss, dev_group_ctx.context_addr, group_indices_affinity, matrix);
@@ -410,7 +410,7 @@ TEST_F(router_fixture, cluster_simple_scaleup_scaleout_test) {
 /*************With NUMA**********************/
 TEST_F(router_fixture, cluster_numa_scaleup_test) {
     using namespace native;
-    using namespace native::details;
+    using namespace native::detail;
     using namespace utils;
 
     constexpr ccl::group_split_type topology = ccl::group_split_type::cluster;
@@ -479,7 +479,7 @@ TEST_F(router_fixture, cluster_numa_scaleup_test) {
                                               { dev_5, 1 } } } };
 
         // stub for real device connectivity
-        native::details::p2p_rating_function rating_function =
+        native::detail::p2p_rating_function rating_function =
             std::bind(utils::test_custom_p2p_ping,
                       std::placeholders::_1,
                       std::placeholders::_2,
@@ -510,7 +510,7 @@ TEST_F(router_fixture, cluster_numa_scaleup_test) {
             device_group_ring_topology device_top(dev_group_ctx, *pg_comm->gpu_device_storage);
 
             std::stringstream ss;
-            native::details::adjacency_matrix matrix =
+            native::detail::adjacency_matrix matrix =
                 device_group_ring_topology::build_p2p_capability_matrix(
                     ss, group_indices_affinity, rating_function);
             device_top.build(ss, dev_group_ctx.context_addr, group_indices_affinity, matrix);
@@ -582,7 +582,7 @@ TEST_F(router_fixture, cluster_numa_scaleup_test) {
 
 TEST_F(router_fixture, cluster_numa_scaleout_test) {
     using namespace native;
-    using namespace native::details;
+    using namespace native::detail;
     using namespace utils;
 
     constexpr ccl::group_split_type topology = ccl::group_split_type::cluster;
@@ -653,7 +653,7 @@ TEST_F(router_fixture, cluster_numa_scaleout_test) {
                                               { dev_5, 1 } } } };
 
         // stub for real device connectivity
-        native::details::p2p_rating_function rating_function =
+        native::detail::p2p_rating_function rating_function =
             std::bind(utils::test_custom_p2p_ping,
                       std::placeholders::_1,
                       std::placeholders::_2,
@@ -684,7 +684,7 @@ TEST_F(router_fixture, cluster_numa_scaleout_test) {
             device_group_ring_topology device_top(dev_group_ctx, *pg_comm->gpu_device_storage);
 
             std::stringstream ss;
-            native::details::adjacency_matrix matrix =
+            native::detail::adjacency_matrix matrix =
                 device_group_ring_topology::build_p2p_capability_matrix(
                     ss, group_indices_affinity, rating_function);
             device_top.build(ss, dev_group_ctx.context_addr, group_indices_affinity, matrix);
@@ -756,7 +756,7 @@ TEST_F(router_fixture, cluster_numa_scaleout_test) {
 
 TEST_F(router_fixture, cluster_numa_scaleup_scale_out_test) {
     using namespace native;
-    using namespace native::details;
+    using namespace native::detail;
     using namespace utils;
 
     constexpr ccl::group_split_type topology = ccl::group_split_type::cluster;
@@ -840,7 +840,7 @@ TEST_F(router_fixture, cluster_numa_scaleup_scale_out_test) {
                                               { dev_6, 1 } } } };
 
         // stub for real device connectivity
-        native::details::p2p_rating_function rating_function =
+        native::detail::p2p_rating_function rating_function =
             std::bind(utils::test_custom_p2p_ping,
                       std::placeholders::_1,
                       std::placeholders::_2,
@@ -877,7 +877,7 @@ TEST_F(router_fixture, cluster_numa_scaleup_scale_out_test) {
             device_group_ring_topology device_top(dev_group_ctx, *pg_comm->gpu_device_storage);
 
             std::stringstream ss;
-            native::details::adjacency_matrix matrix =
+            native::detail::adjacency_matrix matrix =
                 device_group_ring_topology::build_p2p_capability_matrix(
                     ss, group_indices_affinity, rating_function);
             device_top.build(ss, dev_group_ctx.context_addr, group_indices_affinity, matrix);

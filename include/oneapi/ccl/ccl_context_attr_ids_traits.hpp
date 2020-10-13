@@ -5,7 +5,7 @@
 #endif
 
 namespace ccl {
-namespace details {
+namespace detail {
 
 /**
  * Traits for context attributes specializations

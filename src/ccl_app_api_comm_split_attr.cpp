@@ -14,7 +14,7 @@ namespace ccl {
 #define API_FORCE_INSTANTIATION(class_name, IN_attrId, IN_Value, OUT_Traits_Value) \
     template CCL_API IN_Value class_name::set<IN_attrId, IN_Value>(const IN_Value& v); \
 \
-    template CCL_API const typename details::OUT_Traits_Value<comm_split_attr_id, \
+    template CCL_API const typename detail::OUT_Traits_Value<comm_split_attr_id, \
                                                               IN_attrId>::type& \
     class_name::get<IN_attrId>() const; \
 \
@@ -32,7 +32,7 @@ CCL_API comm_split_attr::comm_split_attr(const comm_split_attr& src)
         : base_t(src) {}
 
 CCL_API comm_split_attr::comm_split_attr(
-    const typename details::ccl_api_type_attr_traits<comm_split_attr_id,
+    const typename detail::ccl_api_type_attr_traits<comm_split_attr_id,
                                                   comm_split_attr_id::version>::type& version)
         : base_t(std::shared_ptr<impl_t>(new impl_t(version))) {}
 

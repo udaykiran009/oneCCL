@@ -6,7 +6,7 @@ namespace topology_graph_resolver {
 TEST_F(router_fixture, thread_graph_resolver_test) {
     using namespace utils;
     using namespace native;
-    using namespace native::details;
+    using namespace native::detail;
 
     {
         output << "TEST: two inaccessible devices" << std::endl;

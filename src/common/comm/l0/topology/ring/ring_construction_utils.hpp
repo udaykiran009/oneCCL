@@ -22,7 +22,7 @@
 
 namespace native {
 
-namespace details {
+namespace detail {
 /*REFACTORING*/
 template <class device_t,
           ccl::group_split_type group_id,
@@ -1307,5 +1307,5 @@ inline std::vector<size_t> get_ipc_proceses(const cluster_ipc_devices_pool& ipc_
     return ipc_processes_id;
 }
 #endif
-} // namespace details
+} // namespace detail
 } // namespace native

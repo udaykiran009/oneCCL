@@ -6,7 +6,7 @@
 
 namespace ccl {
 
-namespace details {
+namespace detail {
     class environment;
 }
 
@@ -54,22 +54,22 @@ public:
      * Get specific attribute value by @attrId
      */
     template <comm_split_attr_id attrId>
-    const typename details::ccl_api_type_attr_traits<comm_split_attr_id, attrId>::type& get() const;
+    const typename detail::ccl_api_type_attr_traits<comm_split_attr_id, attrId>::type& get() const;
 
     template <comm_split_attr_id attrId>
     bool is_valid() const noexcept;
 
 private:
-    friend class details::environment;
+    friend class detail::environment;
     comm_split_attr(
-        const typename details::ccl_api_type_attr_traits<comm_split_attr_id,
+        const typename detail::ccl_api_type_attr_traits<comm_split_attr_id,
                                                         comm_split_attr_id::version>::type&
             version);
 };
 
 template <comm_split_attr_id t, class value_type>
 constexpr auto attr_val(value_type v)
-    -> details::attr_value_tripple<comm_split_attr_id, t, value_type> {
-    return details::attr_value_tripple<comm_split_attr_id, t, value_type>(v);
+    -> detail::attr_value_tripple<comm_split_attr_id, t, value_type> {
+    return detail::attr_value_tripple<comm_split_attr_id, t, value_type>(v);
 }
 } // namespace ccl

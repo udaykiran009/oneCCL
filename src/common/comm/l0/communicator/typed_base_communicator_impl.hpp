@@ -115,7 +115,7 @@ native::indexed_device_container<device_t>& typed_base_communicator<TEMPLATE_DEF
 */
 template <TEMPLATE_DECL_ARG>
 std::string typed_base_communicator<TEMPLATE_DEF_ARG>::to_string() const {
-    native::details::printer<self_t::topology_type(), self_t::topology_class()> p;
+    native::detail::printer<self_t::topology_type(), self_t::topology_class()> p;
     ccl_tuple_for_each(device_community_impl->get_device_storage(), p);
     return std::string("Rank (") + std::to_string(rank()) + "/" + std::to_string(size()) +
            "\nGroup id: " + ::to_string(self_t::topology_type()) +

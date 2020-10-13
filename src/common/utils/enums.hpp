@@ -4,7 +4,7 @@
 #include <type_traits>
 
 namespace utils {
-namespace details {
+namespace detail {
 struct failure_callback {
     template <class T>
     static const char *invoke(T val, const char *message) noexcept {
@@ -12,7 +12,7 @@ struct failure_callback {
         return message;
     }
 };
-} // namespace details
+} // namespace detail
 
 template <int Limit>
 struct enum_to_str {

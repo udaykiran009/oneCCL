@@ -6,7 +6,7 @@
 #endif
 
 namespace native {
-namespace details {
+namespace detail {
 
 #ifdef CCL_ENABLE_SYCL
 size_t get_sycl_device_id(const cl::sycl::device& dev);
@@ -49,5 +49,5 @@ std::string to_string(const multiple_assoc_result<N>& res) {
     return ss.str();
 }
 #endif //defined(MULTI_GPU_SUPPORT) || defined(CCL_ENABLE_SYCL)
-} // namespace details
+} // namespace detail
 } // namespace native

@@ -33,19 +33,19 @@ CCL_API context context::create_context(device_context_type&& native_device_cont
 }
 
 template <context_attr_id attrId>
-CCL_API const typename details::ccl_api_type_attr_traits<context_attr_id, attrId>::return_type&
+CCL_API const typename detail::ccl_api_type_attr_traits<context_attr_id, attrId>::return_type&
 context::get() const {
     return get_impl()->get_attribute_value(
-        details::ccl_api_type_attr_traits<context_attr_id, attrId>{});
+        detail::ccl_api_type_attr_traits<context_attr_id, attrId>{});
 }
 
 template<context_attr_id attrId,
              class Value/*,
              typename T*/>
-CCL_API typename ccl::details::ccl_api_type_attr_traits<ccl::context_attr_id, attrId>::return_type context::set(const Value& v)
+CCL_API typename ccl::detail::ccl_api_type_attr_traits<ccl::context_attr_id, attrId>::return_type context::set(const Value& v)
 {
     return get_impl()->set_attribute_value(
-        v, details::ccl_api_type_attr_traits<context_attr_id, attrId>{});
+        v, detail::ccl_api_type_attr_traits<context_attr_id, attrId>{});
 }
 
 } // namespace ccl
@@ -56,12 +56,12 @@ CCL_API typename ccl::details::ccl_api_type_attr_traits<ccl::context_attr_id, at
     template CCL_API ccl::context ccl::context::create_context(native_device_context_type& ctx);    \
 
 #define API_DEVICE_CONTEXT_FORCE_INSTANTIATION_SET(IN_attrId, IN_Value) \
-    template CCL_API typename ccl::details::ccl_api_type_attr_traits<ccl::context_attr_id, \
+    template CCL_API typename ccl::detail::ccl_api_type_attr_traits<ccl::context_attr_id, \
                                                                      IN_attrId>::return_type \
     ccl::context::set<IN_attrId, IN_Value>(const IN_Value& v);
 
 #define API_DEVICE_CONTEXT_FORCE_INSTANTIATION_GET(IN_attrId) \
-    template CCL_API const typename ccl::details:: \
+    template CCL_API const typename ccl::detail:: \
         ccl_api_type_attr_traits<ccl::context_attr_id, IN_attrId>::return_type& \
         ccl::context::get<IN_attrId>() const;
 

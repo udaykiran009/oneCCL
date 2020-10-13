@@ -7,7 +7,7 @@
 #endif
 namespace ccl {
 CCL_API stream::stream(
-    const typename details::ccl_api_type_attr_traits<stream_attr_id, stream_attr_id::version>::type&
+    const typename detail::ccl_api_type_attr_traits<stream_attr_id, stream_attr_id::version>::type&
         version)
         : base_t(impl_value_t()) {}
 
@@ -38,7 +38,7 @@ CCL_API stream::native_t& stream::get_native()
 CCL_API const stream::native_t& stream::get_native() const
 {
     return get_impl()->get_attribute_value(
-        details::ccl_api_type_attr_traits<ccl::stream_attr_id, ccl::stream_attr_id::native_handle>{});
+        detail::ccl_api_type_attr_traits<ccl::stream_attr_id, ccl::stream_attr_id::native_handle>{});
 }
 } // namespace ccl
 

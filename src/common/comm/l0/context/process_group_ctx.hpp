@@ -117,8 +117,8 @@ struct process_group_context
     virtual /*TODO use stub*/
         void
         collect_cluster_colored_plain_graphs(
-            const details::colored_plain_graph_list& send_graph,
-            details::global_sorted_colored_plain_graphs& received_graphs);
+            const detail::colored_plain_graph_list& send_graph,
+            detail::global_sorted_colored_plain_graphs& received_graphs);
 
 private:
     bool delegate_sync(const ccl::device_indices_t& thread_device_indices,

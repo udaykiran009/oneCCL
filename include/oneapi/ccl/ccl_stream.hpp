@@ -7,7 +7,7 @@
 class ccl_stream;
 namespace ccl {
 
-namespace details {
+namespace detail {
     class environment; // friend-zone
 }
 
@@ -36,7 +36,7 @@ public:
     /**
      * Declare native stream type
      */
-    using native_t = typename details::ccl_api_type_attr_traits<ccl::stream_attr_id,
+    using native_t = typename detail::ccl_api_type_attr_traits<ccl::stream_attr_id,
                                                                 ccl::stream_attr_id::native_handle>::return_type;
 
     ~stream();
@@ -49,7 +49,7 @@ public:
      * Get specific attribute value by @attrId
      */
     template <stream_attr_id attrId>
-    const typename details::ccl_api_type_attr_traits<stream_attr_id, attrId>::return_type& get()
+    const typename detail::ccl_api_type_attr_traits<stream_attr_id, attrId>::return_type& get()
         const;
 
     /**
@@ -58,7 +58,7 @@ public:
      native_t& get_native();
      const native_t& get_native() const;
 private:
-    friend class details::environment;
+    friend class detail::environment;
     friend class communicator;
     friend struct ccl_empty_attr;
     friend struct impl_dispatch;
@@ -80,11 +80,11 @@ private:
     template <stream_attr_id attrId,
               class Value/*,
               class = typename std::enable_if<is_attribute_value_supported<attrId, Value>()>::type*/>
-    typename details::ccl_api_type_attr_traits<stream_attr_id, attrId>::return_type set(const Value& v);
+    typename detail::ccl_api_type_attr_traits<stream_attr_id, attrId>::return_type set(const Value& v);
 
     void build_from_params();
     stream(
-        const typename details::ccl_api_type_attr_traits<stream_attr_id,
+        const typename detail::ccl_api_type_attr_traits<stream_attr_id,
                                                          stream_attr_id::version>::type& version);
 
     /**
@@ -112,8 +112,8 @@ private:
 
 template <stream_attr_id t, class value_type>
 constexpr auto attr_val(value_type v)
-    -> details::attr_value_tripple<stream_attr_id, t, value_type> {
-    return details::attr_value_tripple<stream_attr_id, t, value_type>(v);
+    -> detail::attr_value_tripple<stream_attr_id, t, value_type> {
+    return detail::attr_value_tripple<stream_attr_id, t, value_type>(v);
 }
 
 /**

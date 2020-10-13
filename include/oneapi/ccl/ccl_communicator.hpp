@@ -6,7 +6,7 @@
 
 namespace ccl {
 
-namespace details {
+namespace detail {
     class environment; // friend-zone
 }
 
@@ -89,7 +89,7 @@ public:
     communicator split(const comm_split_attr& attr);
 
 private:
-    friend class details::environment;
+    friend class detail::environment;
     friend class comm_group;
     friend struct impl_dispatch;
 

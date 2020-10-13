@@ -5,7 +5,7 @@
 #endif
 
 namespace ccl {
-namespace details {
+namespace detail {
 
 template <>
 struct ccl_api_type_attr_traits<datatype_attr_id, datatype_attr_id::version> {
@@ -19,6 +19,6 @@ struct ccl_api_type_attr_traits<datatype_attr_id, datatype_attr_id::size> {
     using return_type = type;
 };
 
-} // namespace details
+} // namespace detail
 
 } // namespace ccl

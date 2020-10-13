@@ -83,7 +83,7 @@ private:
     impl_t impl;
 };
 
-namespace details {
+namespace detail {
 template <class event_impl_t, class... scoped_args>
 std::unique_ptr<scoped_event_impl<event_impl_t, scoped_args...>> make_unique_scoped_event(
     ccl_request* r,
@@ -113,5 +113,5 @@ std::unique_ptr<chargeable_event> make_and_charge_scoped_event(
     return typed_arg;
 }
 
-} // namespace details
+} // namespace detail
 } // namespace ccl

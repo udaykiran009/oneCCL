@@ -45,7 +45,7 @@ struct kernel_data_storage {
     std::string to_string() const {
         std::stringstream ss;
         ss << "handle: " << handle << "\n{\n";
-        details::args_printer func(ss);
+        detail::args_printer func(ss);
         ccl_tuple_for_each(args, func);
         ss << "}" << std::endl;
         return ss.str();

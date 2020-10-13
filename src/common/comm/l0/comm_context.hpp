@@ -22,7 +22,7 @@
 
 namespace ccl {
 
-namespace details {
+namespace detail {
     class environment; // friend-zone
 }
 
@@ -32,7 +32,7 @@ using shared_communicator_t = std::shared_ptr<host_communicator>;
 
 class comm_group {
 public:
-    friend class details::environment;
+    friend class detail::environment;
     friend struct group_context;
 
     using context_t = typename unified_device_context_type::ccl_native_t;

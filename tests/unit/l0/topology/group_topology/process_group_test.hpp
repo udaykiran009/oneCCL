@@ -15,12 +15,12 @@ allied_process_group_ring_topology_mock(size_t process_idx,
     allied_process_group_ring_topology(process_idx, process_num, ctx, devs, cluster_rank_offset, cluster_size)
 {}
 
-native::details::global_plain_graphs
+native::detail::global_plain_graphs
         merge_allied_nodes_plain_graphs(std::ostream& out,
                                         const ccl::cluster_device_indices_t &cluster_indices,
                                         size_t process_index,
-                                        const native::details::global_sorted_plain_graphs& cluster_graphs,
-                                        native::details::p2p_rating_function ping) override
+                                        const native::detail::global_sorted_plain_graphs& cluster_graphs,
+                                        native::detail::p2p_rating_function ping) override
 {
     out << "<UNIT_TEST mock:" << __PRETTY_FUNCTION__ << ">" << std::endl;
 
@@ -41,8 +41,8 @@ native::details::global_plain_graphs
                 throw std::runtime_error(std::string("failed: mock overrided_cluster_graphs_to_merge") +
                                                      " - contains unexpected graphs for process: " +
                                                     std::to_string(initial.first) + "\nExpected:\n" +
-                                                    native::details::to_string(overrided_cluster_graphs_to_check) +
-                                                    "\n,Got:\n" + native::details::to_string(cluster_graphs));
+                                                    native::detail::to_string(overrided_cluster_graphs_to_check) +
+                                                    "\n,Got:\n" + native::detail::to_string(cluster_graphs));
             }
         }
         return allied_process_group_ring_topology::merge_allied_nodes_plain_graphs(out, cluster_indices,
@@ -57,13 +57,13 @@ native::details::global_plain_graphs
                                                                                ping);
 }
 
-native::details::global_colored_plain_graphs
+native::detail::global_colored_plain_graphs
                     merge_allied_nodes_in_colored_plain_graphs(std::ostream& out,
                                                                const ccl::cluster_device_indices_t &cluster_indices,
                                                                size_t process_index,
                                                                size_t process_count,
-                                                               const native::details::global_sorted_colored_plain_graphs& cluster_graphs,
-                                                               native::details::p2p_rating_function ping) override
+                                                               const native::detail::global_sorted_colored_plain_graphs& cluster_graphs,
+                                                               native::detail::p2p_rating_function ping) override
 {
     out << "<UNIT_TEST mock:" << __PRETTY_FUNCTION__ << ">" << std::endl;
 
@@ -84,8 +84,8 @@ native::details::global_colored_plain_graphs
                 throw std::runtime_error(std::string("failed: mock overrided_colored_cluster_graphs_to_merge") +
                                                      " - contains unexpected graphs for process: " +
                                                     std::to_string(initial.first) + "\nExpected:\n" +
-                                                    native::details::to_string(overrided_colored_cluster_graphs_to_check) +
-                                                    "\n,Got:\n" + native::details::to_string(cluster_graphs));
+                                                    native::detail::to_string(overrided_colored_cluster_graphs_to_check) +
+                                                    "\n,Got:\n" + native::detail::to_string(cluster_graphs));
             }
         }
         return allied_process_group_ring_topology::merge_allied_nodes_in_colored_plain_graphs(out, cluster_indices,
@@ -104,7 +104,7 @@ native::details::global_colored_plain_graphs
 
 ccl::process_device_indices_t create_scaleout_devices_in_graphs_for_process(size_t process_index,
                                                                     size_t cluster_size,
-                                                                    native::details::global_sorted_plain_graphs& cluster_graphs,
+                                                                    native::detail::global_sorted_plain_graphs& cluster_graphs,
                                                                     std::ostream& out) override
 {
     out << "<UNIT_TEST mock:" << __PRETTY_FUNCTION__ << ">" << std::endl;
@@ -126,8 +126,8 @@ ccl::process_device_indices_t create_scaleout_devices_in_graphs_for_process(size
                 throw std::runtime_error(std::string("failed: mock overrided_merged_cluster_graphs_to_check") +
                                                      " - contains unexpected graphs for process: " +
                                                     std::to_string(initial.first) + "\nExpected:\n" +
-                                                    native::details::to_string(overrided_merged_cluster_graphs_to_check) +
-                                                    "\n,Got:\n" + native::details::to_string(cluster_graphs));
+                                                    native::detail::to_string(overrided_merged_cluster_graphs_to_check) +
+                                                    "\n,Got:\n" + native::detail::to_string(cluster_graphs));
             }
         }
         cluster_graphs = overrided_merged_cluster_graphs_to_replace;
@@ -144,8 +144,8 @@ ccl::process_device_indices_t
                     create_scaleout_devices_in_colored_graphs_for_process(
                                         size_t process_index,
                                         size_t cluster_size,
-                                        native::details::global_sorted_colored_plain_graphs& cluster_graphs,
-                                        native::details::global_sorted_colored_plain_graphs& initial_cluster_graphs,
+                                        native::detail::global_sorted_colored_plain_graphs& cluster_graphs,
+                                        native::detail::global_sorted_colored_plain_graphs& initial_cluster_graphs,
                                         std::ostream& out) override
 {
     out << "<UNIT_TEST mock:" << __PRETTY_FUNCTION__ << ">" << std::endl;
@@ -167,8 +167,8 @@ ccl::process_device_indices_t
                 throw std::runtime_error(std::string("failed: mock overrided_colored_merged_cluster_graphs_to_check") +
                                                      " - contains unexpected graphs for process: " +
                                                     std::to_string(initial.first) + "\nExpected:\n" +
-                                                    native::details::to_string(overrided_colored_merged_cluster_graphs_to_check) +
-                                                    "\n,Got:\n" + native::details::to_string(cluster_graphs));
+                                                    native::detail::to_string(overrided_colored_merged_cluster_graphs_to_check) +
+                                                    "\n,Got:\n" + native::detail::to_string(cluster_graphs));
             }
         }
         cluster_graphs = overrided_colored_merged_cluster_graphs_to_replace;
@@ -183,8 +183,8 @@ ccl::process_device_indices_t
 }
 
 void set_mock_cluster_graphs_to_merge(
-        std::initializer_list<typename native::details::global_sorted_plain_graphs::value_type> to_check,
-        std::initializer_list<typename native::details::global_sorted_plain_graphs::value_type> to_replace = {})
+        std::initializer_list<typename native::detail::global_sorted_plain_graphs::value_type> to_check,
+        std::initializer_list<typename native::detail::global_sorted_plain_graphs::value_type> to_replace = {})
 {
     overrided_cluster_graphs_to_check = to_check;
     overrided_cluster_graphs_to_replace = to_replace;
@@ -195,8 +195,8 @@ void set_mock_cluster_graphs_to_merge(
 }
 
 void set_mock_colored_cluster_graphs_to_merge(
-        std::initializer_list<typename native::details::global_sorted_colored_plain_graphs::value_type> to_check,
-        std::initializer_list<typename native::details::global_sorted_colored_plain_graphs::value_type> to_replace = {})
+        std::initializer_list<typename native::detail::global_sorted_colored_plain_graphs::value_type> to_check,
+        std::initializer_list<typename native::detail::global_sorted_colored_plain_graphs::value_type> to_replace = {})
 {
     overrided_colored_cluster_graphs_to_check = to_check;
     overrided_colored_cluster_graphs_to_replace = to_replace;
@@ -207,8 +207,8 @@ void set_mock_colored_cluster_graphs_to_merge(
 }
 
 void set_mock_merged_cluster_graphs(
-        std::initializer_list<typename native::details::global_sorted_plain_graphs::value_type> to_check,
-        std::initializer_list<typename native::details::global_sorted_plain_graphs::value_type> to_replace = {})
+        std::initializer_list<typename native::detail::global_sorted_plain_graphs::value_type> to_check,
+        std::initializer_list<typename native::detail::global_sorted_plain_graphs::value_type> to_replace = {})
 {
     overrided_merged_cluster_graphs_to_check = to_check;
     overrided_merged_cluster_graphs_to_replace = to_replace;
@@ -219,8 +219,8 @@ void set_mock_merged_cluster_graphs(
 }
 
 void set_mock_merged_colored_cluster_graphs(
-        std::initializer_list<typename native::details::global_sorted_colored_plain_graphs::value_type> to_check,
-        std::initializer_list<typename native::details::global_sorted_colored_plain_graphs::value_type> to_replace = {})
+        std::initializer_list<typename native::detail::global_sorted_colored_plain_graphs::value_type> to_check,
+        std::initializer_list<typename native::detail::global_sorted_colored_plain_graphs::value_type> to_replace = {})
 {
     overrided_colored_merged_cluster_graphs_to_check = to_check;
     overrided_colored_merged_cluster_graphs_to_replace = to_replace;
@@ -231,15 +231,15 @@ void set_mock_merged_colored_cluster_graphs(
 }
 
 private:
-    native::details::global_sorted_plain_graphs overrided_cluster_graphs_to_check;
-    native::details::global_sorted_plain_graphs overrided_cluster_graphs_to_replace;
-    native::details::global_sorted_colored_plain_graphs overrided_colored_cluster_graphs_to_check;
-    native::details::global_sorted_colored_plain_graphs overrided_colored_cluster_graphs_to_replace;
+    native::detail::global_sorted_plain_graphs overrided_cluster_graphs_to_check;
+    native::detail::global_sorted_plain_graphs overrided_cluster_graphs_to_replace;
+    native::detail::global_sorted_colored_plain_graphs overrided_colored_cluster_graphs_to_check;
+    native::detail::global_sorted_colored_plain_graphs overrided_colored_cluster_graphs_to_replace;
 
-    native::details::global_sorted_plain_graphs overrided_merged_cluster_graphs_to_check;
-    native::details::global_sorted_plain_graphs overrided_merged_cluster_graphs_to_replace;
-    native::details::global_sorted_colored_plain_graphs overrided_colored_merged_cluster_graphs_to_check;
-    native::details::global_sorted_colored_plain_graphs overrided_colored_merged_cluster_graphs_to_replace;
+    native::detail::global_sorted_plain_graphs overrided_merged_cluster_graphs_to_check;
+    native::detail::global_sorted_plain_graphs overrided_merged_cluster_graphs_to_replace;
+    native::detail::global_sorted_colored_plain_graphs overrided_colored_merged_cluster_graphs_to_check;
+    native::detail::global_sorted_colored_plain_graphs overrided_colored_merged_cluster_graphs_to_replace;
 
 };
 
@@ -282,7 +282,7 @@ TEST_F(router_fixture, single_process_group_single_threads_single_device_topolog
         bool res;
         std::string descr;
         std::stringstream ss;
-        native::details::adjacency_matrix matrix =
+        native::detail::adjacency_matrix matrix =
                 allied_process_group_ring_topology::build_p2p_capability_matrix(ss,
                                                                                 params.total_node_mask);
 
@@ -361,7 +361,7 @@ TEST_F(router_fixture, ally_process_group_topology_test)
                                                 params.cluster_device_size);
 
         std::stringstream ss;
-        native::details::adjacency_matrix matrix =
+        native::detail::adjacency_matrix matrix =
                     allied_process_group_ring_topology::build_p2p_capability_matrix(ss,
                                                                                     params.total_node_mask);
         output << ss.str() <<"\nResult matrix:\n" << matrix <<  std::endl;
@@ -451,7 +451,7 @@ TEST_F(router_fixture, ally_process_group_topology_test)
                                                     params.cluster_device_size);
 
         std::stringstream ss;
-        native::details::adjacency_matrix matrix =
+        native::detail::adjacency_matrix matrix =
                 allied_process_group_ring_topology::build_p2p_capability_matrix(ss,
                                                                                 params.total_node_mask);
         output << ss.str() <<"\nResult matrix:\n" << matrix <<  std::endl;
@@ -609,7 +609,7 @@ TEST_F(router_fixture, ally_process_group_topology_test)
                                                     params.cluster_device_size);
 
         std::stringstream ss;
-        native::details::adjacency_matrix matrix =
+        native::detail::adjacency_matrix matrix =
                     allied_process_group_ring_topology::build_p2p_capability_matrix(ss,
                                                                                     params.total_node_mask);
         output << ss.str() <<"\nResult matrix:\n" << matrix <<  std::endl;
@@ -700,7 +700,7 @@ TEST_F(router_fixture, inter_process_scale_up_process_group_topology_test)
 {
     using namespace utils;
     using namespace native;
-    using namespace native::details;
+    using namespace native::detail;
 
     size_t process_index = 0;
 
@@ -891,7 +891,7 @@ TEST_F(router_fixture, several_processes_with_inner_scale_up_in_process_group_to
 {
     using namespace utils;
     using namespace native;
-    using namespace native::details;
+    using namespace native::detail;
 
     size_t process_index = 1;
 
@@ -1183,7 +1183,7 @@ TEST_F(router_fixture, scale_up_scale_out_process_group_topology_test)
 {
     using namespace utils;
     using namespace native;
-    using namespace native::details;
+    using namespace native::detail;
 
     size_t process_index = 0;
 

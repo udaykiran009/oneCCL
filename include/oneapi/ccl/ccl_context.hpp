@@ -7,7 +7,7 @@
 class ccl_context_impl;
 namespace ccl {
 
-namespace details {
+namespace detail {
     class environment; // friend-zone
 }
 
@@ -36,7 +36,7 @@ public:
     /**
      * Declare native context type
      */
-    using native_t = typename details::ccl_api_type_attr_traits<ccl::context_attr_id,
+    using native_t = typename detail::ccl_api_type_attr_traits<ccl::context_attr_id,
                                                                 ccl::context_attr_id::native_handle>::return_type;
     context(context&& src);
     context(const context& src);
@@ -48,7 +48,7 @@ public:
      * Get specific attribute value by @attrId
      */
     template <context_attr_id attrId>
-    const typename details::ccl_api_type_attr_traits<context_attr_id, attrId>::return_type& get()
+    const typename detail::ccl_api_type_attr_traits<context_attr_id, attrId>::return_type& get()
         const;
 
     /**
@@ -57,7 +57,7 @@ public:
      native_t& get_native();
      const native_t& get_native() const;
 private:
-    friend class details::environment;
+    friend class detail::environment;
     friend class communicator;
     friend class device_context_communicator;
     context(impl_value_t&& impl);
@@ -68,10 +68,10 @@ private:
     template <context_attr_id attrId,
               class Value/*,
               class = typename std::enable_if<is_attribute_value_supported<attrId, Value>()>::type*/>
-    typename ccl::details::ccl_api_type_attr_traits<ccl::context_attr_id, attrId>::return_type set(const Value& v);
+    typename ccl::detail::ccl_api_type_attr_traits<ccl::context_attr_id, attrId>::return_type set(const Value& v);
 
     void build_from_params();
-    context(const typename details::ccl_api_type_attr_traits<context_attr_id,
+    context(const typename detail::ccl_api_type_attr_traits<context_attr_id,
                                                            context_attr_id::version>::type& version);
 
     /**
@@ -87,8 +87,8 @@ private:
 };
 
 template <context_attr_id t, class value_type>
-constexpr auto attr_val(value_type v) -> details::attr_value_tripple<context_attr_id, t, value_type> {
-    return details::attr_value_tripple<context_attr_id, t, value_type>(v);
+constexpr auto attr_val(value_type v) -> detail::attr_value_tripple<context_attr_id, t, value_type> {
+    return detail::attr_value_tripple<context_attr_id, t, value_type>(v);
 }
 
 } // namespace ccl

@@ -88,7 +88,7 @@ void register_gpu_module(std::string kernel_dir_path)
 #endif //MULTI_GPU_SUPPORT
 
 void CCL_API init() {
-    auto& env = details::environment::instance();
+    auto& env = detail::environment::instance();
     (void)env;
 #ifdef MULTI_GPU_SUPPORT
     const auto& env_object = ccl::global_data::env();
@@ -104,43 +104,43 @@ void CCL_API init() {
 /******************** ENVIRONMENT ********************/
 
 library_version CCL_API get_library_version() {
-    return details::environment::instance().get_library_version();
+    return detail::environment::instance().get_library_version();
 }
 
 /* datatype */
 datatype CCL_API register_datatype(const datatype_attr& attr) {
-    return details::environment::instance().register_datatype(attr);
+    return detail::environment::instance().register_datatype(attr);
 }
 
 void CCL_API deregister_datatype(datatype dtype) {
-    return details::environment::instance().deregister_datatype(dtype);
+    return detail::environment::instance().deregister_datatype(dtype);
 }
 
 size_t CCL_API get_datatype_size(datatype dtype) {
-    return details::environment::instance().get_datatype_size(dtype);
+    return detail::environment::instance().get_datatype_size(dtype);
 }
 
 /* KVS */
 shared_ptr_class<kvs> CCL_API create_main_kvs() {
-    return details::environment::instance().create_main_kvs();
+    return detail::environment::instance().create_main_kvs();
 }
 
 shared_ptr_class<kvs> CCL_API create_kvs(const kvs::address_type& addr) {
-    return details::environment::instance().create_kvs(addr);
+    return detail::environment::instance().create_kvs(addr);
 }
 
 /* device */
 device CCL_API create_device()
 {
     static empty_t empty {};
-    return details::environment::instance().create_device(empty);
+    return detail::environment::instance().create_device(empty);
 }
 
 /* context */
 context CCL_API create_context()
 {
     static empty_t empty {};
-    return details::environment::instance().create_context(empty);
+    return detail::environment::instance().create_context(empty);
 }
 
 /* stream */
@@ -155,7 +155,7 @@ communicator create_single_device_communicator(const size_t comm_size,
                                                       const cl::sycl::device& device,
                                                       const cl::sycl::context& context,
                                                       shared_ptr_class<kvs_interface> kvs) {
-    return details::environment::instance().create_single_device_communicator(
+    return detail::environment::instance().create_single_device_communicator(
         comm_size, rank, device, context, kvs);
 }
 #endif // CCL_ENABLE_SYCL
@@ -171,7 +171,7 @@ communicator create_single_device_communicator(const size_t comm_size,
 //                                     const DeviceSelectorType& selector,
 //                                     shared_ptr_class<kvs_interface> kvs) const
 // {
-//     return return details::environment::instance().create_single_device_communicator(world_size, rank, cl::sycl::device(selector), kvs);
+//     return return detail::environment::instance().create_single_device_communicator(world_size, rank, cl::sycl::device(selector), kvs);
 // }
 
 #if defined(MULTI_GPU_SUPPORT) || defined(CCL_ENABLE_SYCL)
@@ -181,7 +181,7 @@ vector_class<communicator> split_device_communicators(
     // TODO not implemented
     throw ccl::exception(std::string(__PRETTY_FUNCTION__) + " - is not implemented");
 
-    // return details::environment::instance().split_device_communicators(attrs);
+    // return detail::environment::instance().split_device_communicators(attrs);
     return {};
 }
 
@@ -191,11 +191,11 @@ namespace preview {
 
 /* communicator */
 communicator CCL_API create_communicator() {
-    return details::environment::instance().create_communicator();
+    return detail::environment::instance().create_communicator();
 }
 
 communicator CCL_API create_communicator(const size_t size, shared_ptr_class<kvs_interface> kvs) {
-    return details::environment::instance().create_communicator(size, kvs);
+    return detail::environment::instance().create_communicator(size, kvs);
 }
 
 } // namespace preview
@@ -203,7 +203,7 @@ communicator CCL_API create_communicator(const size_t size, shared_ptr_class<kvs
 communicator CCL_API create_communicator(const size_t size,
                                          const size_t rank,
                                          shared_ptr_class<kvs_interface> kvs) {
-    return details::environment::instance().create_communicator(size, rank, kvs);
+    return detail::environment::instance().create_communicator(size, rank, kvs);
 }
 
 /******************** COMMUNICATOR ********************/

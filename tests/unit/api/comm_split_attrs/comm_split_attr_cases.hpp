@@ -69,7 +69,7 @@ TEST(comm_split_attr, copy_on_write_device_comm_split_attr) {
     ASSERT_EQ(
         std::static_pointer_cast<ccl::ccl_comm_split_attr_impl>(original_inner_impl_ptr)
             ->get_attribute_value(
-                ccl::details::ccl_api_type_attr_traits<ccl::comm_split_attr_id,
+                ccl::detail::ccl_api_type_attr_traits<ccl::comm_split_attr_id,
                                                       ccl::comm_split_attr_id::group>{}),
         ccl::group_split_type::thread);
 }

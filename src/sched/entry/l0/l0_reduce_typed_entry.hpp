@@ -259,7 +259,7 @@ protected:
                 if (topology == ccl::group_split_type::cluster) {
                     // TODO: implement process communicator case
                     throw ccl::exception(std::string(__PRETTY_FUNCTION__) + "TODO: implement process communicator case");
-                    // auto c = ccl::details::environment::instance().create_communicator();
+                    // auto c = ccl::detail::environment::instance().create_communicator();
                     // if (c.rank() == 0) {
                         // LOG_INFO("L0 Workaround: one device close list!!!",
                         //          "WaitCount: ",

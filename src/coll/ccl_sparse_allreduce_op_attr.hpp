@@ -11,12 +11,12 @@ public:
     using base_t = ccl_operation_attr_impl_t;
 
     ccl_sparse_allreduce_attr_impl_t(
-        const typename details::ccl_api_type_attr_traits<operation_attr_id,
+        const typename detail::ccl_api_type_attr_traits<operation_attr_id,
                                                          ccl::operation_attr_id::version>::type&
             version);
 
     using sparse_allreduce_completion_fn_traits =
-        details::ccl_api_type_attr_traits<sparse_allreduce_attr_id,
+        detail::ccl_api_type_attr_traits<sparse_allreduce_attr_id,
                                           sparse_allreduce_attr_id::completion_fn>;
     typename sparse_allreduce_completion_fn_traits::return_type set_attribute_value(
         typename sparse_allreduce_completion_fn_traits::type val,
@@ -25,7 +25,7 @@ public:
         const sparse_allreduce_completion_fn_traits& id) const;
 
     using sparse_allreduce_alloc_fn_traits =
-        details::ccl_api_type_attr_traits<sparse_allreduce_attr_id,
+        detail::ccl_api_type_attr_traits<sparse_allreduce_attr_id,
                                           sparse_allreduce_attr_id::alloc_fn>;
     typename sparse_allreduce_alloc_fn_traits::return_type set_attribute_value(
         typename sparse_allreduce_alloc_fn_traits::type val,
@@ -34,7 +34,7 @@ public:
         const sparse_allreduce_alloc_fn_traits& id) const;
 
     using sparse_allreduce_fn_ctx_traits =
-        details::ccl_api_type_attr_traits<sparse_allreduce_attr_id,
+        detail::ccl_api_type_attr_traits<sparse_allreduce_attr_id,
                                           sparse_allreduce_attr_id::fn_ctx>;
     typename sparse_allreduce_fn_ctx_traits::return_type set_attribute_value(
         typename sparse_allreduce_fn_ctx_traits::type val,
@@ -43,7 +43,7 @@ public:
         const sparse_allreduce_fn_ctx_traits& id) const;
 
     using sparse_coalesce_mode_traits =
-        details::ccl_api_type_attr_traits<sparse_allreduce_attr_id,
+        detail::ccl_api_type_attr_traits<sparse_allreduce_attr_id,
                                           sparse_allreduce_attr_id::coalesce_mode>;
     typename sparse_coalesce_mode_traits::return_type set_attribute_value(
         typename sparse_coalesce_mode_traits::type val,

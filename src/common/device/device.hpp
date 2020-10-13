@@ -25,7 +25,7 @@ public:
 
     //Export Attributes
     using version_traits_t =
-        ccl::details::ccl_api_type_attr_traits<ccl::device_attr_id, ccl::device_attr_id::version>;
+        ccl::detail::ccl_api_type_attr_traits<ccl::device_attr_id, ccl::device_attr_id::version>;
     typename version_traits_t::type set_attribute_value(typename version_traits_t::type val,
                                                         const version_traits_t& t);
     const typename version_traits_t::return_type& get_attribute_value(
@@ -33,11 +33,11 @@ public:
 
 
     using cl_backend_traits_t =
-        ccl::details::ccl_api_type_attr_traits<ccl::device_attr_id, ccl::device_attr_id::cl_backend>;
+        ccl::detail::ccl_api_type_attr_traits<ccl::device_attr_id, ccl::device_attr_id::cl_backend>;
     const typename cl_backend_traits_t::return_type& get_attribute_value(const cl_backend_traits_t& id) const;
 
     using native_handle_traits_t =
-        ccl::details::ccl_api_type_attr_traits<ccl::device_attr_id,
+        ccl::detail::ccl_api_type_attr_traits<ccl::device_attr_id,
                                                ccl::device_attr_id::native_handle>;
     typename native_handle_traits_t::return_type& get_attribute_value(
         const native_handle_traits_t& id);

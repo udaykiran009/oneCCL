@@ -1,7 +1,7 @@
 #pragma once
 
 namespace ccl {
-namespace details {
+namespace detail {
 
 /**
  * Traits for stream attributes specializations
@@ -37,5 +37,5 @@ struct ccl_api_type_attr_traits<event_attr_id, event_attr_id::command_execution_
     using return_type = type;
 };
 
-} // namespace details
+} // namespace detail
 } // namespace ccl

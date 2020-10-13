@@ -38,9 +38,9 @@ struct ccl_device_platform : std::enable_shared_from_this<ccl_device_platform> {
         const ccl::device_indices_t& indices = ccl::device_indices_t());
     //static std::shared_ptr<ccl_device_platform> create(const device_affinity_per_driver& affinities);
 
-    details::adjacency_matrix calculate_device_access_metric(
+    detail::adjacency_matrix calculate_device_access_metric(
         const ccl::device_indices_t& indices = ccl::device_indices_t(),
-        details::p2p_rating_function func = details::binary_p2p_rating_calculator) const;
+        detail::p2p_rating_function func = detail::binary_p2p_rating_calculator) const;
 
 private:
     ccl_device_platform();

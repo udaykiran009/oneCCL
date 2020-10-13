@@ -6,7 +6,7 @@
 
 namespace ccl {
 
-namespace details {
+namespace detail {
     class environment;
 }
 
@@ -54,28 +54,28 @@ public:
     template <allgatherv_attr_id attrId,
               class Value/*,
               class = typename std::enable_if<is_attribute_value_supported<attrId, Value>()>::type*/>
-    typename details::ccl_api_type_attr_traits<allgatherv_attr_id, attrId>::return_type set(const Value& v);
+    typename detail::ccl_api_type_attr_traits<allgatherv_attr_id, attrId>::return_type set(const Value& v);
 
     template <operation_attr_id attrId,
               class Value/*,
               class = typename std::enable_if<is_attribute_value_supported<attrId, Value>()>::type*/>
-    typename details::ccl_api_type_attr_traits<operation_attr_id, attrId>::return_type set(const Value& v);
+    typename detail::ccl_api_type_attr_traits<operation_attr_id, attrId>::return_type set(const Value& v);
     /**
      * Get specific attribute value by @attrId
      */
     template <allgatherv_attr_id attrId>
-    const typename details::ccl_api_type_attr_traits<allgatherv_attr_id, attrId>::return_type& get()
+    const typename detail::ccl_api_type_attr_traits<allgatherv_attr_id, attrId>::return_type& get()
         const;
 
     template <operation_attr_id attrId>
-    const typename details::ccl_api_type_attr_traits<operation_attr_id, attrId>::return_type& get()
+    const typename detail::ccl_api_type_attr_traits<operation_attr_id, attrId>::return_type& get()
         const;
 
 private:
-    friend class details::environment;
+    friend class detail::environment;
     friend struct ccl_empty_attr;
     allgatherv_attr(
-        const typename details::ccl_api_type_attr_traits<operation_attr_id,
+        const typename detail::ccl_api_type_attr_traits<operation_attr_id,
                                                          operation_attr_id::version>::type&
             version);
 };
@@ -112,29 +112,29 @@ public:
     template <allreduce_attr_id attrId,
               class Value/*,
               class = typename std::enable_if<is_attribute_value_supported<attrId, Value>()>::type*/>
-    typename details::ccl_api_type_attr_traits<allreduce_attr_id, attrId>::return_type set(const Value& v);
+    typename detail::ccl_api_type_attr_traits<allreduce_attr_id, attrId>::return_type set(const Value& v);
 
     template <operation_attr_id attrId,
               class Value/*,
               class = typename std::enable_if<is_attribute_value_supported<attrId, Value>()>::type*/>
-    typename details::ccl_api_type_attr_traits<operation_attr_id, attrId>::return_type set(const Value& v);
+    typename detail::ccl_api_type_attr_traits<operation_attr_id, attrId>::return_type set(const Value& v);
 
     /**
      * Get specific attribute value by @attrId
      */
     template <allreduce_attr_id attrId>
-    const typename details::ccl_api_type_attr_traits<allreduce_attr_id, attrId>::return_type& get()
+    const typename detail::ccl_api_type_attr_traits<allreduce_attr_id, attrId>::return_type& get()
         const;
 
     template <operation_attr_id attrId>
-    const typename details::ccl_api_type_attr_traits<operation_attr_id, attrId>::return_type& get()
+    const typename detail::ccl_api_type_attr_traits<operation_attr_id, attrId>::return_type& get()
         const;
 
 private:
-    friend class details::environment;
+    friend class detail::environment;
     friend struct ccl_empty_attr;
     allreduce_attr(
-        const typename details::ccl_api_type_attr_traits<operation_attr_id,
+        const typename detail::ccl_api_type_attr_traits<operation_attr_id,
                                                          operation_attr_id::version>::type&
             version);
 };
@@ -170,29 +170,29 @@ public:
     template <alltoall_attr_id attrId,
               class Value/*,
               class = typename std::enable_if<is_attribute_value_supported<attrId, Value>()>::type*/>
-    typename details::ccl_api_type_attr_traits<alltoall_attr_id, attrId>::return_type set(const Value& v);
+    typename detail::ccl_api_type_attr_traits<alltoall_attr_id, attrId>::return_type set(const Value& v);
 
     template <operation_attr_id attrId,
               class Value/*,
               class = typename std::enable_if<is_attribute_value_supported<attrId, Value>()>::type*/>
-    typename details::ccl_api_type_attr_traits<operation_attr_id, attrId>::return_type set(const Value& v);
+    typename detail::ccl_api_type_attr_traits<operation_attr_id, attrId>::return_type set(const Value& v);
 
     /**
      * Get specific attribute value by @attrId
      */
     template <alltoall_attr_id attrId>
-    const typename details::ccl_api_type_attr_traits<alltoall_attr_id, attrId>::return_type& get()
+    const typename detail::ccl_api_type_attr_traits<alltoall_attr_id, attrId>::return_type& get()
         const;
 
     template <operation_attr_id attrId>
-    const typename details::ccl_api_type_attr_traits<operation_attr_id, attrId>::return_type& get()
+    const typename detail::ccl_api_type_attr_traits<operation_attr_id, attrId>::return_type& get()
         const;
 
 private:
-    friend class details::environment;
+    friend class detail::environment;
     friend struct ccl_empty_attr;
     alltoall_attr(
-        const typename details::ccl_api_type_attr_traits<operation_attr_id,
+        const typename detail::ccl_api_type_attr_traits<operation_attr_id,
                                                          operation_attr_id::version>::type&
             version);
 };
@@ -229,29 +229,29 @@ public:
     template <alltoallv_attr_id attrId,
               class Value/*,
               class = typename std::enable_if<is_attribute_value_supported<attrId, Value>()>::type*/>
-    typename details::ccl_api_type_attr_traits<alltoallv_attr_id, attrId>::return_type set(const Value& v);
+    typename detail::ccl_api_type_attr_traits<alltoallv_attr_id, attrId>::return_type set(const Value& v);
 
     template <operation_attr_id attrId,
               class Value/*,
               class = typename std::enable_if<is_attribute_value_supported<attrId, Value>()>::type*/>
-    typename details::ccl_api_type_attr_traits<operation_attr_id, attrId>::return_type set(const Value& v);
+    typename detail::ccl_api_type_attr_traits<operation_attr_id, attrId>::return_type set(const Value& v);
 
     /**
      * Get specific attribute value by @attrId
      */
     template <alltoallv_attr_id attrId>
-    const typename details::ccl_api_type_attr_traits<alltoallv_attr_id, attrId>::return_type& get()
+    const typename detail::ccl_api_type_attr_traits<alltoallv_attr_id, attrId>::return_type& get()
         const;
 
     template <operation_attr_id attrId>
-    const typename details::ccl_api_type_attr_traits<operation_attr_id, attrId>::return_type& get()
+    const typename detail::ccl_api_type_attr_traits<operation_attr_id, attrId>::return_type& get()
         const;
 
 private:
-    friend class details::environment;
+    friend class detail::environment;
     friend struct ccl_empty_attr;
     alltoallv_attr(
-        const typename details::ccl_api_type_attr_traits<operation_attr_id,
+        const typename detail::ccl_api_type_attr_traits<operation_attr_id,
                                                          operation_attr_id::version>::type&
             version);
 };
@@ -287,28 +287,28 @@ public:
     template <barrier_attr_id attrId,
               class Value/*,
               class = typename std::enable_if<is_attribute_value_supported<attrId, Value>()>::type*/>
-    typename details::ccl_api_type_attr_traits<barrier_attr_id, attrId>::return_type set(const Value& v);
+    typename detail::ccl_api_type_attr_traits<barrier_attr_id, attrId>::return_type set(const Value& v);
 
     template <operation_attr_id attrId,
               class Value/*,
               class = typename std::enable_if<is_attribute_value_supported<attrId, Value>()>::type*/>
-    typename details::ccl_api_type_attr_traits<operation_attr_id, attrId>::return_type set(const Value& v);
+    typename detail::ccl_api_type_attr_traits<operation_attr_id, attrId>::return_type set(const Value& v);
 
     /**
      * Get specific attribute value by @attrId
      */
     template <barrier_attr_id attrId>
-    const typename details::ccl_api_type_attr_traits<barrier_attr_id, attrId>::return_type& get()
+    const typename detail::ccl_api_type_attr_traits<barrier_attr_id, attrId>::return_type& get()
         const;
 
     template <operation_attr_id attrId>
-    const typename details::ccl_api_type_attr_traits<operation_attr_id, attrId>::return_type& get()
+    const typename detail::ccl_api_type_attr_traits<operation_attr_id, attrId>::return_type& get()
         const;
 
 private:
-    friend class details::environment;
+    friend class detail::environment;
     friend struct ccl_empty_attr;
-    barrier_attr(const typename details::ccl_api_type_attr_traits<operation_attr_id,
+    barrier_attr(const typename detail::ccl_api_type_attr_traits<operation_attr_id,
                                                                   operation_attr_id::version>::type&
                      version);
     ;
@@ -346,29 +346,29 @@ public:
     template <broadcast_attr_id attrId,
               class Value/*,
               class = typename std::enable_if<is_attribute_value_supported<attrId, Value>()>::type*/>
-    typename details::ccl_api_type_attr_traits<broadcast_attr_id, attrId>::return_type set(const Value& v);
+    typename detail::ccl_api_type_attr_traits<broadcast_attr_id, attrId>::return_type set(const Value& v);
 
     template <operation_attr_id attrId,
               class Value/*,
               class = typename std::enable_if<is_attribute_value_supported<attrId, Value>()>::type*/>
-    typename details::ccl_api_type_attr_traits<operation_attr_id, attrId>::return_type set(const Value& v);
+    typename detail::ccl_api_type_attr_traits<operation_attr_id, attrId>::return_type set(const Value& v);
 
     /**
      * Get specific attribute value by @attrId
      */
     template <broadcast_attr_id attrId>
-    const typename details::ccl_api_type_attr_traits<broadcast_attr_id, attrId>::return_type& get()
+    const typename detail::ccl_api_type_attr_traits<broadcast_attr_id, attrId>::return_type& get()
         const;
 
     template <operation_attr_id attrId>
-    const typename details::ccl_api_type_attr_traits<operation_attr_id, attrId>::return_type& get()
+    const typename detail::ccl_api_type_attr_traits<operation_attr_id, attrId>::return_type& get()
         const;
 
 private:
-    friend class details::environment;
+    friend class detail::environment;
     friend struct ccl_empty_attr;
     broadcast_attr(
-        const typename details::ccl_api_type_attr_traits<operation_attr_id,
+        const typename detail::ccl_api_type_attr_traits<operation_attr_id,
                                                          operation_attr_id::version>::type&
             version);
 };
@@ -404,28 +404,28 @@ public:
     template <reduce_attr_id attrId,
               class Value/*,
               class = typename std::enable_if<is_attribute_value_supported<attrId, Value>()>::type*/>
-    typename details::ccl_api_type_attr_traits<reduce_attr_id, attrId>::return_type set(const Value& v);
+    typename detail::ccl_api_type_attr_traits<reduce_attr_id, attrId>::return_type set(const Value& v);
 
     template <operation_attr_id attrId,
               class Value/*,
               class = typename std::enable_if<is_attribute_value_supported<attrId, Value>()>::type*/>
-    typename details::ccl_api_type_attr_traits<operation_attr_id, attrId>::return_type set(const Value& v);
+    typename detail::ccl_api_type_attr_traits<operation_attr_id, attrId>::return_type set(const Value& v);
 
     /**
      * Get specific attribute value by @attrId
      */
     template <reduce_attr_id attrId>
-    const typename details::ccl_api_type_attr_traits<reduce_attr_id, attrId>::return_type& get()
+    const typename detail::ccl_api_type_attr_traits<reduce_attr_id, attrId>::return_type& get()
         const;
 
     template <operation_attr_id attrId>
-    const typename details::ccl_api_type_attr_traits<operation_attr_id, attrId>::return_type& get()
+    const typename detail::ccl_api_type_attr_traits<operation_attr_id, attrId>::return_type& get()
         const;
 
 private:
-    friend class details::environment;
+    friend class detail::environment;
     friend struct ccl_empty_attr;
-    reduce_attr(const typename details::ccl_api_type_attr_traits<operation_attr_id,
+    reduce_attr(const typename detail::ccl_api_type_attr_traits<operation_attr_id,
                                                                  operation_attr_id::version>::type&
                     version);
 };
@@ -462,29 +462,29 @@ public:
     template <reduce_scatter_attr_id attrId,
               class Value/*,
               class = typename std::enable_if<is_attribute_value_supported<attrId, Value>()>::type*/>
-    typename details::ccl_api_type_attr_traits<reduce_scatter_attr_id, attrId>::return_type set(const Value& v);
+    typename detail::ccl_api_type_attr_traits<reduce_scatter_attr_id, attrId>::return_type set(const Value& v);
 
     template <operation_attr_id attrId,
               class Value/*,
               class = typename std::enable_if<is_attribute_value_supported<attrId, Value>()>::type*/>
-    typename details::ccl_api_type_attr_traits<operation_attr_id, attrId>::return_type set(const Value& v);
+    typename detail::ccl_api_type_attr_traits<operation_attr_id, attrId>::return_type set(const Value& v);
 
     /**
      * Get specific attribute value by @attrId
      */
     template <reduce_scatter_attr_id attrId>
-    const typename details::ccl_api_type_attr_traits<reduce_scatter_attr_id, attrId>::return_type&
+    const typename detail::ccl_api_type_attr_traits<reduce_scatter_attr_id, attrId>::return_type&
     get() const;
 
     template <operation_attr_id attrId>
-    const typename details::ccl_api_type_attr_traits<operation_attr_id, attrId>::return_type& get()
+    const typename detail::ccl_api_type_attr_traits<operation_attr_id, attrId>::return_type& get()
         const;
 
 private:
-    friend class details::environment;
+    friend class detail::environment;
     friend struct ccl_empty_attr;
     reduce_scatter_attr(
-        const typename details::ccl_api_type_attr_traits<operation_attr_id,
+        const typename detail::ccl_api_type_attr_traits<operation_attr_id,
                                                          operation_attr_id::version>::type&
             version);
     ;
@@ -522,29 +522,29 @@ public:
     template <sparse_allreduce_attr_id attrId,
               class Value/*,
               class = typename std::enable_if<is_attribute_value_supported<attrId, Value>()>::type*/>
-    typename details::ccl_api_type_attr_traits<sparse_allreduce_attr_id, attrId>::return_type set(const Value& v);
+    typename detail::ccl_api_type_attr_traits<sparse_allreduce_attr_id, attrId>::return_type set(const Value& v);
 
     template <operation_attr_id attrId,
               class Value/*,
               class = typename std::enable_if<is_attribute_value_supported<attrId, Value>()>::type*/>
-    typename details::ccl_api_type_attr_traits<operation_attr_id, attrId>::return_type set(const Value& v);
+    typename detail::ccl_api_type_attr_traits<operation_attr_id, attrId>::return_type set(const Value& v);
 
     /**
      * Get specific attribute value by @attrId
      */
     template <sparse_allreduce_attr_id attrId>
-    const typename details::ccl_api_type_attr_traits<sparse_allreduce_attr_id, attrId>::return_type&
+    const typename detail::ccl_api_type_attr_traits<sparse_allreduce_attr_id, attrId>::return_type&
     get() const;
 
     template <operation_attr_id attrId>
-    const typename details::ccl_api_type_attr_traits<operation_attr_id, attrId>::return_type& get()
+    const typename detail::ccl_api_type_attr_traits<operation_attr_id, attrId>::return_type& get()
         const;
 
 private:
-    friend class details::environment;
+    friend class detail::environment;
     friend struct ccl_empty_attr;
     sparse_allreduce_attr(
-        const typename details::ccl_api_type_attr_traits<operation_attr_id,
+        const typename detail::ccl_api_type_attr_traits<operation_attr_id,
                                                          operation_attr_id::version>::type&
             version);
     ;
@@ -568,59 +568,59 @@ extern barrier_attr default_barrier_attr;
  */
 template <allgatherv_attr_id t, class value_type>
 constexpr auto attr_val(value_type v)
-    -> details::attr_value_tripple<allgatherv_attr_id, t, value_type> {
-    return details::attr_value_tripple<allgatherv_attr_id, t, value_type>(v);
+    -> detail::attr_value_tripple<allgatherv_attr_id, t, value_type> {
+    return detail::attr_value_tripple<allgatherv_attr_id, t, value_type>(v);
 }
 
 template <allreduce_attr_id t, class value_type>
 constexpr auto attr_val(value_type v)
-    -> details::attr_value_tripple<allreduce_attr_id, t, value_type> {
-    return details::attr_value_tripple<allreduce_attr_id, t, value_type>(v);
+    -> detail::attr_value_tripple<allreduce_attr_id, t, value_type> {
+    return detail::attr_value_tripple<allreduce_attr_id, t, value_type>(v);
 }
 
 template <alltoall_attr_id t, class value_type>
 constexpr auto attr_val(value_type v)
-    -> details::attr_value_tripple<alltoall_attr_id, t, value_type> {
-    return details::attr_value_tripple<alltoall_attr_id, t, value_type>(v);
+    -> detail::attr_value_tripple<alltoall_attr_id, t, value_type> {
+    return detail::attr_value_tripple<alltoall_attr_id, t, value_type>(v);
 }
 
 template <alltoallv_attr_id t, class value_type>
 constexpr auto attr_val(value_type v)
-    -> details::attr_value_tripple<alltoallv_attr_id, t, value_type> {
-    return details::attr_value_tripple<alltoallv_attr_id, t, value_type>(v);
+    -> detail::attr_value_tripple<alltoallv_attr_id, t, value_type> {
+    return detail::attr_value_tripple<alltoallv_attr_id, t, value_type>(v);
 }
 
 template <broadcast_attr_id t, class value_type>
 constexpr auto attr_val(value_type v)
-    -> details::attr_value_tripple<broadcast_attr_id, t, value_type> {
-    return details::attr_value_tripple<broadcast_attr_id, t, value_type>(v);
+    -> detail::attr_value_tripple<broadcast_attr_id, t, value_type> {
+    return detail::attr_value_tripple<broadcast_attr_id, t, value_type>(v);
 }
 
 template <reduce_attr_id t, class value_type>
 constexpr auto attr_val(value_type v)
-    -> details::attr_value_tripple<reduce_attr_id, t, value_type> {
-    return details::attr_value_tripple<reduce_attr_id, t, value_type>(v);
+    -> detail::attr_value_tripple<reduce_attr_id, t, value_type> {
+    return detail::attr_value_tripple<reduce_attr_id, t, value_type>(v);
 }
 
 template <reduce_scatter_attr_id t, class value_type>
 constexpr auto attr_val(value_type v)
-    -> details::attr_value_tripple<reduce_scatter_attr_id, t, value_type> {
-    return details::attr_value_tripple<reduce_scatter_attr_id, t, value_type>(v);
+    -> detail::attr_value_tripple<reduce_scatter_attr_id, t, value_type> {
+    return detail::attr_value_tripple<reduce_scatter_attr_id, t, value_type>(v);
 }
 
 template <sparse_allreduce_attr_id t, class value_type>
 constexpr auto attr_val(value_type v)
-    -> details::attr_value_tripple<sparse_allreduce_attr_id, t, value_type> {
-    return details::attr_value_tripple<sparse_allreduce_attr_id, t, value_type>(v);
+    -> detail::attr_value_tripple<sparse_allreduce_attr_id, t, value_type> {
+    return detail::attr_value_tripple<sparse_allreduce_attr_id, t, value_type>(v);
 }
 
 template <operation_attr_id t, class value_type>
 constexpr auto attr_val(value_type v)
-    -> details::attr_value_tripple<operation_attr_id, t, value_type> {
-    return details::attr_value_tripple<operation_attr_id, t, value_type>(v);
+    -> detail::attr_value_tripple<operation_attr_id, t, value_type> {
+    return detail::attr_value_tripple<operation_attr_id, t, value_type>(v);
 }
 
-/* TODO temporary function for UT compilation: would be part of ccl::details::environment in final*/
+/* TODO temporary function for UT compilation: would be part of ccl::detail::environment in final*/
 template <class coll_attribute_type, class... attr_value_pair_t>
 coll_attribute_type create_coll_attr(attr_value_pair_t&&... avps);
 } // namespace ccl

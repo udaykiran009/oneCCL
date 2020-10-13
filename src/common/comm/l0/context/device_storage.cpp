@@ -52,7 +52,7 @@ std::shared_ptr<specific_plain_device_storage> device_storage::create_devices_by
 }
 
 size_t device_storage::get_storage_size() const {
-    return details::get_aggregated_size<specific_device_storage, SUPPORTED_DEVICES_DECL_LIST>(
+    return detail::get_aggregated_size<specific_device_storage, SUPPORTED_DEVICES_DECL_LIST>(
         gpu_device_storage); /*
         return get_size<ccl_gpu_comm>() +
                get_size<ccl_ipc_gpu_comm>() +
@@ -68,7 +68,7 @@ size_t device_storage::get_storage_size() const {
     template<class DeviceType, class ...Types>
     size_t get_aggregated_size() const
     {
-        return get_size<DeviceType>() + details::get_aggregated_size_helper<Types...>(gpu_device_storage);
+        return get_size<DeviceType>() + detail::get_aggregated_size_helper<Types...>(gpu_device_storage);
     }
 */
 } // namespace native

@@ -11,7 +11,7 @@ void native_event_impl::wait() {
     if (!completed) {
         #ifdef CCL_ENABLE_SYCL
             auto native_event = ev->get_attribute_value(
-                                        details::ccl_api_type_attr_traits<ccl::event_attr_id,
+                                        detail::ccl_api_type_attr_traits<ccl::event_attr_id,
                                         ccl::event_attr_id::native_handle>{});
             native_event.wait();
         #else
@@ -34,7 +34,7 @@ bool native_event_impl::cancel() {
 
 event::native_t& native_event_impl::get_native() {
     return ev->get_attribute_value(
-                    details::ccl_api_type_attr_traits<ccl::event_attr_id,
+                    detail::ccl_api_type_attr_traits<ccl::event_attr_id,
                     ccl::event_attr_id::native_handle>{});
 }
 

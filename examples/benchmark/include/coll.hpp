@@ -54,7 +54,7 @@ typedef struct bench_exec_attr {
     }
 
     template <ccl::operation_attr_id attrId, class Value>
-    typename ccl::details::ccl_api_type_attr_traits<ccl::operation_attr_id, attrId>::return_type
+    typename ccl::detail::ccl_api_type_attr_traits<ccl::operation_attr_id, attrId>::return_type
     set(const Value& v) {
         ccl_tuple_for_each(coll_attrs, setter<attrId, Value>(v));
         return v;

@@ -78,7 +78,7 @@ struct device_community {
         }
 
         // find device in topology and obtain its rank/sie
-        details::rank_getter<group_id, schema_id> initializer(device_id, registered_device_id);
+        detail::rank_getter<group_id, schema_id> initializer(device_id, registered_device_id);
         ccl_tuple_for_each(get_device_storage(), initializer);
 
         // copy shared data from community addr
@@ -96,7 +96,7 @@ struct device_community {
     std::string to_string() const {
         std::stringstream result;
         result << "Topology: " << ::to_string(schema_id) << "\n";
-        native::details::printer<group_id, schema_id> p;
+        native::detail::printer<group_id, schema_id> p;
         if (devices) {
             ccl_tuple_for_each(*devices, p);
             result << p.to_string();

@@ -13,11 +13,11 @@
 #include "oneapi/ccl/native_device_api/l0/utils.hpp"
 
 namespace native {
-namespace details {
+namespace detail {
 static ccl_device_driver::device_ptr get_runtime_device_impl(const ccl::device_index_type& path) {
     return get_platform().get_device(path);
 }
-} // namespace details
+} // namespace detail
 
 template <class DeviceType,
           typename std::enable_if<not std::is_same<typename std::remove_cv<DeviceType>::type,
@@ -29,11 +29,11 @@ CCL_API ccl_device_driver::device_ptr get_runtime_device(const DeviceType& devic
     size_t driver_idx = 0; // limitation for OPENCL/SYCL
     size_t device_id = 0;
 #ifdef CCL_ENABLE_SYCL
-    device_id = native::details::get_sycl_device_id(device);
+    device_id = native::detail::get_sycl_device_id(device);
 #endif
     ccl::device_index_type path(driver_idx, device_id, ccl::unused_index_value);
 
-    return details::get_runtime_device_impl(path);
+    return detail::get_runtime_device_impl(path);
 }
 
 template <class DeviceType,
@@ -41,7 +41,7 @@ template <class DeviceType,
                                                ccl::device_index_type>::value,
                                   int>::type = 0>
 CCL_API ccl_device_driver::device_ptr get_runtime_device(const DeviceType& device) {
-    return details::get_runtime_device_impl(device);
+    return detail::get_runtime_device_impl(device);
 }
 
 } // namespace native

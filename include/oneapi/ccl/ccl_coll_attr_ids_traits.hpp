@@ -6,7 +6,7 @@
 
 namespace ccl {
 
-namespace details {
+namespace detail {
 template <class T>
 class function_holder {
 public:
@@ -129,5 +129,5 @@ struct ccl_api_type_attr_traits<sparse_allreduce_attr_id, sparse_allreduce_attr_
 /**
  * Traits specialization for barrier op attributes
  */
-} // namespace details
+} // namespace detail
 } // namespace ccl

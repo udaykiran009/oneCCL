@@ -11,7 +11,7 @@ namespace topology_suite
 TEST_F(router_fixture, simple_merge_test)
 {
     using namespace native;
-    using namespace native::details;
+    using namespace native::detail;
 
     {
         stub::make_stub_devices({
@@ -328,7 +328,7 @@ TEST_F(router_fixture, simple_merge_test)
                 ccl::process_device_indices_t ipc_src_local;
                 ccl::process_device_indices_t ipc_dst_local;
 
-                native::details::separate_ipc_devices(ipc_devices[pr_index], pr_index,
+                native::detail::separate_ipc_devices(ipc_devices[pr_index], pr_index,
                                      proces_num, graph, ipc_src_local,
                                      ipc_dst_local);
 
@@ -410,7 +410,7 @@ TEST_F(router_fixture, simple_merge_test)
 TEST_F(router_fixture, simple_multithreaded_merge_test)
 {
     using namespace native;
-    using namespace native::details;
+    using namespace native::detail;
 
     {
         size_t process_index = 1;
@@ -753,7 +753,7 @@ TEST_F(router_fixture, simple_multithreaded_merge_test)
 TEST_F(router_fixture, simple_scaleout_test)
 {
     using namespace native;
-    using namespace native::details;
+    using namespace native::detail;
 
     {
         size_t process_index = 1;
@@ -1030,7 +1030,7 @@ TEST_F(router_fixture, simple_scaleout_test)
 TEST_F(router_fixture, simple_scaleout_multithreaded_merge_test)
 {
     using namespace native;
-    using namespace native::details;
+    using namespace native::detail;
 
     {
         size_t process_index = 1;
@@ -1362,7 +1362,7 @@ TEST_F(router_fixture, simple_scaleout_multithreaded_merge_test)
 TEST_F(router_fixture, symmetric_scaleout_test)
 {
     using namespace native;
-    using namespace native::details;
+    using namespace native::detail;
 
     {
         size_t process_index = 1;
@@ -1750,7 +1750,7 @@ TEST_F(router_fixture, symmetric_scaleout_test)
 TEST_F(router_fixture, symmetric_scaleout_multithreaded_merge_test)
 {
     using namespace native;
-    using namespace native::details;
+    using namespace native::detail;
 
     {
         size_t process_index = 1;
@@ -2182,7 +2182,7 @@ TEST_F(router_fixture, symmetric_scaleout_multithreaded_merge_test)
 TEST_F(router_fixture, unsymmetric_scaleout_test)
 {
     using namespace native;
-    using namespace native::details;
+    using namespace native::detail;
 
     {
         size_t process_index = 1;

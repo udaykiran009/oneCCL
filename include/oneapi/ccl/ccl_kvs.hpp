@@ -6,7 +6,7 @@
 
 namespace ccl {
 
-namespace details {
+namespace detail {
     class environment; // friend-zone
 }
 
@@ -35,7 +35,7 @@ public:
     void set(const string_class& key, const vector_class<char>& data) const override;
 
 private:
-    friend class details::environment;
+    friend class detail::environment;
 
     kvs();
     kvs(const address_type& addr);

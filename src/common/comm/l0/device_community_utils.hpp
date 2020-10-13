@@ -1,7 +1,7 @@
 #pragma once
 
 namespace native {
-namespace details {
+namespace detail {
 
 /**
  *
@@ -102,5 +102,5 @@ size_t rank_getter<group_id, class_id>::get_assigned_rank() const {
     }
     return rank;
 }
-} // namespace details
+} // namespace detail
 } // namespace native

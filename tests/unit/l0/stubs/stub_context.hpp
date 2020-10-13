@@ -24,8 +24,8 @@ struct process_context : public native::process_group_context {
 
     // stubs override
     void collect_cluster_colored_plain_graphs(
-        const native::details::colored_plain_graph_list& send_graph,
-        native::details::global_sorted_colored_plain_graphs& received_graphs) override {
+        const native::detail::colored_plain_graph_list& send_graph,
+        native::detail::global_sorted_colored_plain_graphs& received_graphs) override {
         if (!stub_received_graphs.empty()) {
             received_graphs = stub_received_graphs;
         }
@@ -36,10 +36,10 @@ struct process_context : public native::process_group_context {
 
     // impls
     void set_collect_cluster_colored_plain_graphs(
-        native::details::global_sorted_colored_plain_graphs received_graphs) {
+        native::detail::global_sorted_colored_plain_graphs received_graphs) {
         stub_received_graphs = received_graphs;
     }
 
-    native::details::global_sorted_colored_plain_graphs stub_received_graphs;
+    native::detail::global_sorted_colored_plain_graphs stub_received_graphs;
 };
 } // namespace stub

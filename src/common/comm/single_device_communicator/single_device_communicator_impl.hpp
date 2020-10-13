@@ -23,20 +23,20 @@ single_device_communicator::coll_request_t single_device_communicator::allgather
     const ccl::vector_class<ccl::event>& deps) {
 
     std::unique_ptr<ccl::chargeable_event> scoped_req;
-    using namespace ::native::details;
+    using namespace ::native::detail;
 
     usm_support_mode send_buf_result, recv_buf_result;
     std::string send_buf_error, recv_buf_error;
     std::tie(send_buf_result, std::ignore, send_buf_error) =
-        ::native::details::check_assoc_device_memory(send_buf, get_device(), get_context());
+        ::native::detail::check_assoc_device_memory(send_buf, get_device(), get_context());
     std::tie(recv_buf_result, std::ignore, recv_buf_error) =
-        ::native::details::check_assoc_device_memory(recv_buf, get_device(), get_context());
+        ::native::detail::check_assoc_device_memory(recv_buf, get_device(), get_context());
     if ((send_buf_result == usm_support_mode::direct or
          send_buf_result == usm_support_mode::shared) and
         (recv_buf_result == usm_support_mode::direct or
          recv_buf_result == usm_support_mode::shared)) {
         LOG_TRACE("comm: ", to_string(), " - use USM direct pointers for both buffers");
-        scoped_req = ccl::details::make_unique_scoped_event<
+        scoped_req = ccl::detail::make_unique_scoped_event<
             ccl::host_event_impl>(ccl_allgatherv_impl(
             reinterpret_cast<const void*>(send_buf),
             send_count,
@@ -52,7 +52,7 @@ single_device_communicator::coll_request_t single_device_communicator::allgather
              recv_buf_result == usm_support_mode::need_conversion) {
 #ifdef CCL_ENABLE_SYCL
         size_t recv_total_size = std::accumulate(recv_counts.begin(), recv_counts.end(), size_t{});
-        auto scoped_req_sycl = ccl::details::make_unique_scoped_event<ccl::host_event_impl>(
+        auto scoped_req_sycl = ccl::detail::make_unique_scoped_event<ccl::host_event_impl>(
             nullptr,
             /*send_buf*/
             cl::sycl::buffer<buffer_type>{
@@ -173,20 +173,20 @@ single_device_communicator::coll_request_t single_device_communicator::allreduce
     LOG_DEBUG("device idx: ", get_device_path(), ", rank: (", rank(), "/", size(), ")");
 
     std::unique_ptr<ccl::chargeable_event> scoped_req;
-    using namespace ::native::details;
+    using namespace ::native::detail;
 
     usm_support_mode send_buf_result, recv_buf_result;
     std::string send_buf_error, recv_buf_error;
     std::tie(send_buf_result, std::ignore, send_buf_error) =
-        ::native::details::check_assoc_device_memory(send_buf, get_device(), get_context());
+        ::native::detail::check_assoc_device_memory(send_buf, get_device(), get_context());
     std::tie(recv_buf_result, std::ignore, recv_buf_error) =
-        ::native::details::check_assoc_device_memory(recv_buf, get_device(), get_context());
+        ::native::detail::check_assoc_device_memory(recv_buf, get_device(), get_context());
     if ((send_buf_result == usm_support_mode::direct or
          send_buf_result == usm_support_mode::shared) and
         (recv_buf_result == usm_support_mode::direct or
          recv_buf_result == usm_support_mode::shared)) {
         LOG_TRACE("comm: ", to_string(), " - use USM direct pointers for both buffers");
-        scoped_req = ccl::details::make_unique_scoped_event<
+        scoped_req = ccl::detail::make_unique_scoped_event<
             ccl::host_event_impl>(ccl_allreduce_impl(
             reinterpret_cast<const void*>(send_buf),
             reinterpret_cast<void*>(recv_buf),
@@ -202,7 +202,7 @@ single_device_communicator::coll_request_t single_device_communicator::allreduce
              recv_buf_result == usm_support_mode::need_conversion) {
         LOG_TRACE("comm: ", to_string(), " - use USM pointers convertation for both buffers");
 #ifdef CCL_ENABLE_SYCL
-        auto scoped_req_sycl = ccl::details::make_unique_scoped_event<ccl::host_event_impl>(
+        auto scoped_req_sycl = ccl::detail::make_unique_scoped_event<ccl::host_event_impl>(
             nullptr,
             /*send_buf*/
             cl::sycl::buffer<buffer_type>{
@@ -280,7 +280,7 @@ single_device_communicator::coll_request_t single_device_communicator::alltoall_
     LOG_DEBUG("device idx: ", get_device_path(), ", rank: (", rank(), "/", size(), ")");
 
     std::unique_ptr<ccl::chargeable_event> scoped_req;
-    using namespace ::native::details;
+    using namespace ::native::detail;
 
     // test USM arguments on validity
     using alltoall_usm_check_result = multiple_assoc_result<2>;
@@ -294,7 +294,7 @@ single_device_communicator::coll_request_t single_device_communicator::alltoall_
                            });
     if (!ret) {
         throw ccl::exception(std::string(__PRETTY_FUNCTION__) + " - invalid USM arguments:\n" +
-                             ::native::details::to_string(usm_assoc_results) +
+                             ::native::detail::to_string(usm_assoc_results) +
                              "\nMixed types are not supported as well");
     }
     switch (test_value) {
@@ -302,7 +302,7 @@ single_device_communicator::coll_request_t single_device_communicator::alltoall_
             LOG_TRACE("comm: ", to_string(), " - use USM shared pointers for buffers");
         case usm_support_mode::direct: {
             LOG_TRACE("comm: ", to_string(), " - use USM direct pointers for buffers");
-            scoped_req = ccl::details::make_unique_scoped_event<
+            scoped_req = ccl::detail::make_unique_scoped_event<
                 ccl::host_event_impl>(ccl_alltoall_impl(
                 reinterpret_cast<const void*>(send_buf),
                 reinterpret_cast<void*>(recv_buf),
@@ -318,7 +318,7 @@ single_device_communicator::coll_request_t single_device_communicator::alltoall_
 #ifdef CCL_ENABLE_SYCL
             LOG_TRACE(
                 "comm: ", to_string(), " - use USM pointers convertation to SYCL for both buffers");
-            auto scoped_req_sycl = ccl::details::make_unique_scoped_event<ccl::host_event_impl>(
+            auto scoped_req_sycl = ccl::detail::make_unique_scoped_event<ccl::host_event_impl>(
                 nullptr,
                 /*send_buf*/
                 cl::sycl::buffer<buffer_type>{
@@ -349,7 +349,7 @@ single_device_communicator::coll_request_t single_device_communicator::alltoall_
         default:
             throw ccl::exception(std::string(__PRETTY_FUNCTION__) +
                                  " - USM category is not supported for such configuration:\n" +
-                                 ::native::details::to_string(usm_assoc_results[0]));
+                                 ::native::detail::to_string(usm_assoc_results[0]));
     }
     return std::unique_ptr<ccl::event_impl>(scoped_req.release());
     ;
@@ -418,7 +418,7 @@ single_device_communicator::coll_request_t single_device_communicator::alltoallv
     LOG_DEBUG("device idx: ", get_device_path(), ", rank: (", rank(), "/", size(), ")");
 
     std::unique_ptr<ccl::chargeable_event> scoped_req;
-    using namespace ::native::details;
+    using namespace ::native::detail;
 
     // test USM arguments on validity
     using alltoallv_usm_check_result = multiple_assoc_result<2>;
@@ -432,14 +432,14 @@ single_device_communicator::coll_request_t single_device_communicator::alltoallv
                            });
     if (!ret) {
         throw ccl::exception(std::string(__PRETTY_FUNCTION__) + " - invalid USM arguments:\n" +
-                             ::native::details::to_string(usm_assoc_results));
+                             ::native::detail::to_string(usm_assoc_results));
     }
     switch (test_value) {
         case usm_support_mode::shared: /*the same as `direct` at now*/
             LOG_TRACE("comm: ", to_string(), " - use USM shared pointers for buffers");
         case usm_support_mode::direct: {
             LOG_TRACE("comm: ", to_string(), " - use USM direct pointers for buffers");
-            scoped_req = ccl::details::make_unique_scoped_event<
+            scoped_req = ccl::detail::make_unique_scoped_event<
                 ccl::host_event_impl>(ccl_alltoallv_impl(
                 reinterpret_cast<const void*>(send_buf),
                 send_counts.data(),
@@ -465,7 +465,7 @@ single_device_communicator::coll_request_t single_device_communicator::alltoallv
                 send_total_size,
                 ", recv_total_size: ",
                 recv_total_size);
-            auto scoped_req_sycl = ccl::details::make_unique_scoped_event<ccl::host_event_impl>(
+            auto scoped_req_sycl = ccl::detail::make_unique_scoped_event<ccl::host_event_impl>(
                 nullptr,
                 /*send_buf*/
                 cl::sycl::buffer<buffer_type>{
@@ -497,7 +497,7 @@ single_device_communicator::coll_request_t single_device_communicator::alltoallv
         default:
             throw ccl::exception(std::string(__PRETTY_FUNCTION__) +
                                  " - USM category is not supported for such configuration:\n" +
-                                 ::native::details::to_string(usm_assoc_results[0]));
+                                 ::native::detail::to_string(usm_assoc_results[0]));
     }
     return std::unique_ptr<ccl::event_impl>(scoped_req.release());
     ;
@@ -570,7 +570,7 @@ single_device_communicator::coll_request_t single_device_communicator::broadcast
     LOG_DEBUG("device idx: ", get_device_path(), ", rank: (", rank(), "/", size(), ")");
 
     std::unique_ptr<ccl::chargeable_event> scoped_req;
-    using namespace ::native::details;
+    using namespace ::native::detail;
 
     // test USM arguments on validity
     using broadcast_usm_check_result = multiple_assoc_result<1>;
@@ -582,7 +582,7 @@ single_device_communicator::coll_request_t single_device_communicator::broadcast
             LOG_TRACE("comm: ", to_string(), " - use USM shared pointers for buffers");
         case usm_support_mode::direct: {
             LOG_TRACE("comm: ", to_string(), " - use USM direct pointers for buffers");
-            scoped_req = ccl::details::make_unique_scoped_event<
+            scoped_req = ccl::detail::make_unique_scoped_event<
                 ccl::host_event_impl>(ccl_broadcast_impl(
                 reinterpret_cast<void*>(buf),
                 count,
@@ -598,7 +598,7 @@ single_device_communicator::coll_request_t single_device_communicator::broadcast
 #ifdef CCL_ENABLE_SYCL
             LOG_TRACE(
                 "comm: ", to_string(), " - use USM pointers convertation to SYCL for both buffers");
-            auto scoped_req_sycl = ccl::details::make_unique_scoped_event<ccl::host_event_impl>(
+            auto scoped_req_sycl = ccl::detail::make_unique_scoped_event<ccl::host_event_impl>(
                 nullptr,
                 /*buf*/
                 cl::sycl::buffer<buffer_type>{
@@ -624,7 +624,7 @@ single_device_communicator::coll_request_t single_device_communicator::broadcast
         default:
             throw ccl::exception(std::string(__PRETTY_FUNCTION__) +
                                  " - USM category is not supported for such configuration:\n" +
-                                 ::native::details::to_string(usm_assoc_results[0]));
+                                 ::native::detail::to_string(usm_assoc_results[0]));
     }
     return std::unique_ptr<ccl::event_impl>(scoped_req.release());
     ;
@@ -672,7 +672,7 @@ single_device_communicator::coll_request_t single_device_communicator::reduce_im
     LOG_DEBUG("device idx: ", get_device_path(), ", rank: (", rank(), "/", size(), ")");
 
     std::unique_ptr<ccl::chargeable_event> scoped_req;
-    using namespace ::native::details;
+    using namespace ::native::detail;
 
     // test USM arguments on validity
     using reduce_usm_check_result = multiple_assoc_result<2>;
@@ -686,14 +686,14 @@ single_device_communicator::coll_request_t single_device_communicator::reduce_im
                            });
     if (!ret) {
         throw ccl::exception(std::string(__PRETTY_FUNCTION__) + " - invalid USM arguments:\n" +
-                             ::native::details::to_string(usm_assoc_results));
+                             ::native::detail::to_string(usm_assoc_results));
     }
     switch (test_value) {
         case usm_support_mode::shared: /*the same as `direct` at now*/
             LOG_TRACE("comm: ", to_string(), " - use USM shared pointers for buffers");
         case usm_support_mode::direct: {
             LOG_TRACE("comm: ", to_string(), " - use USM direct pointers for buffers");
-            scoped_req = ccl::details::make_unique_scoped_event<
+            scoped_req = ccl::detail::make_unique_scoped_event<
                 ccl::host_event_impl>(ccl_reduce_impl(
                 reinterpret_cast<const void*>(send_buf),
                 reinterpret_cast<void*>(recv_buf),
@@ -711,7 +711,7 @@ single_device_communicator::coll_request_t single_device_communicator::reduce_im
 #ifdef CCL_ENABLE_SYCL
             LOG_TRACE(
                 "comm: ", to_string(), " - use USM pointers convertation to SYCL for both buffers");
-            auto scoped_req_sycl = ccl::details::make_unique_scoped_event<ccl::host_event_impl>(
+            auto scoped_req_sycl = ccl::detail::make_unique_scoped_event<ccl::host_event_impl>(
                 nullptr,
                 /*send_buf*/
                 cl::sycl::buffer<buffer_type>{
@@ -743,7 +743,7 @@ single_device_communicator::coll_request_t single_device_communicator::reduce_im
         default:
             throw ccl::exception(std::string(__PRETTY_FUNCTION__) +
                                  " - USM category is not supported for such configuration:\n" +
-                                 ::native::details::to_string(usm_assoc_results[0]));
+                                 ::native::detail::to_string(usm_assoc_results[0]));
     }
     return std::unique_ptr<ccl::event_impl>(scoped_req.release());
     ;
@@ -797,7 +797,7 @@ single_device_communicator::coll_request_t single_device_communicator::reduce_sc
     LOG_DEBUG("device idx: ", get_device_path(), ", rank: (", rank(), "/", size(), ")");
 
     std::unique_ptr<ccl::chargeable_event> scoped_req;
-    using namespace ::native::details;
+    using namespace ::native::detail;
 
     // test USM arguments on validity
     using reduce_scatter_usm_check_result = multiple_assoc_result<2>;
@@ -811,14 +811,14 @@ single_device_communicator::coll_request_t single_device_communicator::reduce_sc
                            });
     if (!ret) {
         throw ccl::exception(std::string(__PRETTY_FUNCTION__) + " - invalid USM arguments:\n" +
-                             ::native::details::to_string(usm_assoc_results));
+                             ::native::detail::to_string(usm_assoc_results));
     }
     switch (test_value) {
         case usm_support_mode::shared: /*the same as `direct` at now*/
             LOG_TRACE("comm: ", to_string(), " - use USM shared pointers for buffers");
         case usm_support_mode::direct: {
             LOG_TRACE("comm: ", to_string(), " - use USM direct pointers for buffers");
-            scoped_req = ccl::details::make_unique_scoped_event<
+            scoped_req = ccl::detail::make_unique_scoped_event<
                 ccl::host_event_impl>(ccl_reduce_scatter_impl(
                 reinterpret_cast<const void*>(send_buf),
                 reinterpret_cast<void*>(recv_buf),
@@ -835,7 +835,7 @@ single_device_communicator::coll_request_t single_device_communicator::reduce_sc
 #ifdef CCL_ENABLE_SYCL
             LOG_TRACE(
                 "comm: ", to_string(), " - use USM pointers convertation to SYCL for both buffers");
-            auto scoped_req_sycl = ccl::details::make_unique_scoped_event<ccl::host_event_impl>(
+            auto scoped_req_sycl = ccl::detail::make_unique_scoped_event<ccl::host_event_impl>(
                 nullptr,
                 /*send_buf*/
                 cl::sycl::buffer<buffer_type>{
@@ -867,7 +867,7 @@ single_device_communicator::coll_request_t single_device_communicator::reduce_sc
         default:
             throw ccl::exception(std::string(__PRETTY_FUNCTION__) +
                                  " - USM category is not supported for such configuration:\n" +
-                                 ::native::details::to_string(usm_assoc_results[0]));
+                                 ::native::detail::to_string(usm_assoc_results[0]));
     }
     return std::unique_ptr<ccl::event_impl>(scoped_req.release());
 }
@@ -922,7 +922,7 @@ single_device_communicator::coll_request_t single_device_communicator::sparse_al
     LOG_DEBUG("device idx: ", get_device_path(), ", rank: (", rank(), "/", size(), ")");
 
     std::unique_ptr<ccl::chargeable_event> scoped_req;
-    using namespace ::native::details;
+    using namespace ::native::detail;
 
     // test USM arguments on validity
     using sparse_allreduce_usm_check_result = multiple_assoc_result<4>;
@@ -937,14 +937,14 @@ single_device_communicator::coll_request_t single_device_communicator::sparse_al
                     });
     if (!ret) {
         throw ccl::exception(std::string(__PRETTY_FUNCTION__) + " - invalid USM arguments:\n" +
-                             ::native::details::to_string(usm_assoc_results));
+                             ::native::detail::to_string(usm_assoc_results));
     }
     switch (test_value) {
         case usm_support_mode::shared: /*the same as `direct` at now*/
             LOG_TRACE("comm: ", to_string(), " - use USM shared pointers for buffers");
         case usm_support_mode::direct: {
             LOG_TRACE("comm: ", to_string(), " - use USM direct pointers for buffers");
-            scoped_req = ccl::details::make_unique_scoped_event<
+            scoped_req = ccl::detail::make_unique_scoped_event<
                 ccl::host_event_impl>(ccl_sparse_allreduce_impl(
                 (const void*)send_ind_buf,
                 send_ind_count,
@@ -968,7 +968,7 @@ single_device_communicator::coll_request_t single_device_communicator::sparse_al
             LOG_TRACE("comm: ",
                       to_string(),
                       " - use USM pointers convertation to SYCL for every buffers");
-            auto scoped_req_sycl = ccl::details::make_unique_scoped_event<ccl::host_event_impl>(
+            auto scoped_req_sycl = ccl::detail::make_unique_scoped_event<ccl::host_event_impl>(
                 nullptr,
                 /*send_ind_buf*/
                 cl::sycl::buffer<index_buffer_type>{
@@ -1009,7 +1009,7 @@ single_device_communicator::coll_request_t single_device_communicator::sparse_al
         default:
             throw ccl::exception(std::string(__PRETTY_FUNCTION__) +
                                  " - USM category is not supported for such configuration:\n" +
-                                 ::native::details::to_string(usm_assoc_results[0]));
+                                 ::native::detail::to_string(usm_assoc_results[0]));
     }
     return std::unique_ptr<ccl::event_impl>(scoped_req.release());
     ;

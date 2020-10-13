@@ -9,7 +9,7 @@ namespace native {
  * Declarations
  *
  */
-namespace details {
+namespace detail {
 /**
  * class for pretty topology printing
  */
@@ -27,14 +27,14 @@ struct device_community_container_print_helper {
 private:
     std::ostream& output;
 };
-} // namespace details
+} // namespace detail
 
 /**
  *
  * Definitions
  *
  */
-namespace details {
+namespace detail {
 
 /**
  * class for pretty topology printing definition
@@ -67,5 +67,5 @@ void device_community_container_print_helper<group_id>::operator()(
         output << "\t\t" << topology_container.torn_apart_rings[i]->template to_string<group_id>();
     }
 }
-} // namespace details
+} // namespace detail
 } // namespace native

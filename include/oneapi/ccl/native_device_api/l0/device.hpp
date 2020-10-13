@@ -12,7 +12,7 @@ struct ccl_subdevice;
 struct ccl_device;
 struct ccl_context;
 
-details::cross_device_rating property_p2p_rating_calculator(const ccl_device& lhs,
+detail::cross_device_rating property_p2p_rating_calculator(const ccl_device& lhs,
                                                             const ccl_device& rhs,
                                                             size_t weight);
 

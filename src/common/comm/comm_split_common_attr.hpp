@@ -115,11 +115,11 @@ protected:
  * Device implementation
  */
 class ccl_comm_split_attr_impl
-        : public ccl_base_comm_split_attr_impl<details::ccl_api_type_attr_traits,
+        : public ccl_base_comm_split_attr_impl<detail::ccl_api_type_attr_traits,
                                                comm_split_attr_id> {
 public:
     using base_t =
-        ccl_base_comm_split_attr_impl<details::ccl_api_type_attr_traits, comm_split_attr_id>;
+        ccl_base_comm_split_attr_impl<detail::ccl_api_type_attr_traits, comm_split_attr_id>;
 
     template <class traits_t>
     const typename traits_t::type& get_attribute_value(const traits_t& id) const {

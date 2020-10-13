@@ -35,6 +35,6 @@ bool process_group_context::sync_barrier(const ccl::device_indices_t& thread_dev
 }
 
 void process_group_context::collect_cluster_colored_plain_graphs(
-    const details::colored_plain_graph_list& send_graph,
-    details::global_sorted_colored_plain_graphs& received_graphs) {}
+    const detail::colored_plain_graph_list& send_graph,
+    detail::global_sorted_colored_plain_graphs& received_graphs) {}
 } // namespace native

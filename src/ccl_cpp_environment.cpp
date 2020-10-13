@@ -16,7 +16,7 @@
 
 namespace ccl {
 
-namespace details {
+namespace detail {
 
 CCL_API environment::environment() {
     static auto result = global_data::get().init();
@@ -103,12 +103,12 @@ size_t environment::get_datatype_size(ccl::datatype dtype) const {
     return ccl::global_data::get().dtypes->get(dtype).size();
 }
 
-} // namespace details
+} // namespace detail
 
 } // namespace ccl
 
 #ifdef CCL_ENABLE_SYCL
-ccl::communicator ccl::details::environment::create_single_device_communicator(
+ccl::communicator ccl::detail::environment::create_single_device_communicator(
     const size_t comm_size,
     const size_t rank,
     const cl::sycl::device& device,
@@ -134,16 +134,16 @@ ccl::communicator ccl::details::environment::create_single_device_communicator(
 #endif
 
 //Communicator
-ccl::communicator ccl::details::environment::create_communicator() const {
+ccl::communicator ccl::detail::environment::create_communicator() const {
     return ccl::communicator::create_communicator();
 }
 
-ccl::communicator ccl::details::environment::create_communicator(const size_t size,
+ccl::communicator ccl::detail::environment::create_communicator(const size_t size,
                                                       ccl::shared_ptr_class<ccl::kvs_interface> kvs) const {
     return ccl::communicator::create_communicator(size, kvs);
 }
 
-ccl::communicator ccl::details::environment::create_communicator(const size_t size,
+ccl::communicator ccl::detail::environment::create_communicator(const size_t size,
                                                       const size_t rank,
                                                       ccl::shared_ptr_class<ccl::kvs_interface> kvs) const {
     return ccl::communicator::create_communicator(size, rank, kvs);
@@ -152,7 +152,7 @@ ccl::communicator ccl::details::environment::create_communicator(const size_t si
 /***************************TypeGenerations*********************************************************/
 namespace ccl {
 
-namespace details {
+namespace detail {
 
 template <>
 stream CCL_API environment::create_postponed_api_type<
@@ -176,7 +176,7 @@ environment::create_postponed_api_type<stream,
     return stream{ stream_provider_dispatcher::create(device, version) };
 }
 
-} // namespace details
+} // namespace detail
 } // namespace ccl
 
 CREATE_OP_ATTR_INSTANTIATION(ccl::allgatherv_attr)
