@@ -19,7 +19,7 @@
 
 namespace stub {
 struct process_context : public native::process_group_context {
-    process_context(std::shared_ptr<ccl::communicator> communicator)
+    process_context(std::shared_ptr<ccl::host_communicator> communicator)
             : native::process_group_context(communicator) {}
 
     // stubs override
@@ -29,9 +29,10 @@ struct process_context : public native::process_group_context {
         if (!stub_received_graphs.empty()) {
             received_graphs = stub_received_graphs;
         }
-
+/*
         native::process_group_context::collect_cluster_colored_plain_graphs(send_graph,
                                                                             received_graphs);
+*/
     }
 
     // impls

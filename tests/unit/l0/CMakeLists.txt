@@ -45,7 +45,7 @@ foreach(libs ${DEPENDENCIES})
     get_target_property(CCL_STATIC_PATH ccl-ut-static ARCHIVE_OUTPUT_DIRECTORY)
     get_target_property(UNIT_TEST_INCLUDE ccl-ut-static INTERFACE_INCLUDE_DIRECTORIES)
 
-    link_directories($ENV{CCL_ROOT}/lib ${CCL_STATIC_PATH})
+    link_directories($ENV{CCL_ROOT}/lib ${CCL_STATIC_PATH} ${PROJECT_SOURCE_DIR}/mpi/lib ${MPI_LIB_DIR} ${LIBFABRIC_LIB_DIR})
     include_directories(${UNIT_TEST_INCLUDE})
 endforeach()
 
@@ -58,7 +58,7 @@ foreach(src ${sources})
     get_filename_component(executable ${src} NAME_WE)
     add_executable(${executable} ${src})
     add_dependencies(${executable} ${DEPENDENCIES})
-    target_link_libraries(${executable} PUBLIC ${ADD_LIBS} ccl-ut-static 
+    target_link_libraries(${executable} PUBLIC ${ADD_LIBS} ccl-ut-static
                                                ${COMPUTE_RUNTIME_TARGET_NAME}
-                                               dl)
+                                               dl mpi fabric)
 endforeach()

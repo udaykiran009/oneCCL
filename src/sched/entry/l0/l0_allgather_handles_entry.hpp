@@ -47,6 +47,7 @@ public:
                                std::shared_ptr<gpu_comm> comm,
                                std::shared_ptr<ccl::host_communicator> ccl_comm,
                                device_storage& global_device_storage,
+                               ccl_driver_context_ptr in_ctx,
                                std::vector<ccl_device::device_ipc_memory_handle>&& send_data)
             : base_coll_entry(sched),
               comm_addr(
@@ -182,7 +183,7 @@ public:
                               native::to_string(recv_ip_handle->get()));
 
                     // create IPC memory object & remember in shared storage
-                    
+
                     // TODO: resolve issue to provide ctx correctly
                     std::shared_ptr<ccl_context> ctx;
                     foreign_device_ipc_mem_storage[ipc_mem_owner].push_back(

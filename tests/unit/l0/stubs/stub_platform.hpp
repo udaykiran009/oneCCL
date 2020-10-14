@@ -12,28 +12,33 @@
 
 namespace stub {
 struct test_device : public native::ccl_device {
-    test_device(native::ccl_device::owner_ptr_t&& parent)
+    test_device(native::ccl_device::owner_ptr_t&& parent, native::ccl_device::context_storage_type ctx)
             : native::ccl_device(
                   reinterpret_cast<native::ccl_device::handle_t>(new native::ccl_device::handle_t),
                   std::move(parent),
+                  ctx,
                   std::false_type{}) {}
 
     static std::shared_ptr<test_device> create(const ccl::device_index_type& full_device_index,
-                                               native::ccl_device::owner_ptr_t&& driver) {
-        std::shared_ptr<test_device> dev = std::make_shared<test_device>(std::move(driver));
+                                               native::ccl_device::owner_ptr_t&& driver,
+                                               native::ccl_device::context_storage_type ctx_holder) {
+        std::shared_ptr<test_device> dev = std::make_shared<test_device>(std::move(driver), ctx_holder);
 
         dev->device_properties.type = ZE_DEVICE_TYPE_GPU;
         dev->device_properties.deviceId =
             std::get<ccl::device_index_enum::device_index_id>(full_device_index);
         dev->device_properties.flags = ZE_DEVICE_PROPERTY_FLAG_INTEGRATED;
 
+        //get default ctx
+        std::shared_ptr<native::ccl_context> def_ctx = dev->get_default_device_context();
+
         //create default queue
-        auto queue_prop = ccl_device::get_default_queue_desc();
+        auto queue_prop = native::ccl_device::get_default_queue_desc();
         queue_prop.ordinal = 0;
-        dev->cmd_queus.emplace(queue_prop, ccl_device::device_queue{ nullptr, dev->get_ptr() });
+        dev->cmd_queus.emplace(queue_prop, ccl_device::device_queue{ nullptr, dev->get_ptr(), def_ctx });
 
         //create module
-        auto module_ptr = std::make_shared<ccl_device::device_module>(nullptr, dev->get_ptr());
+        auto module_ptr = std::make_shared<ccl_device::device_module>(nullptr, dev->get_ptr(), def_ctx);
 
         using mod_integer_type = typename std::underlying_type<ccl_coll_type>::type;
         using top_integer_type = typename std::underlying_type<ccl::group_split_type>::type;
@@ -61,33 +66,38 @@ struct test_device : public native::ccl_device {
 
 struct test_subdevice : public native::ccl_subdevice {
     test_subdevice(native::ccl_subdevice::owner_ptr_t&& parent,
-                   typename native::ccl_subdevice::base::owner_ptr_t&& driver)
+                   typename native::ccl_subdevice::base::owner_ptr_t&& driver, native::ccl_subdevice::context_storage_type ctx)
             : native::ccl_subdevice(reinterpret_cast<native::ccl_subdevice::handle_t>(
                                         new native::ccl_subdevice::handle_t),
                                     std::move(parent),
                                     std::move(driver),
+                                    ctx,
                                     std::false_type{}) {}
 
     static std::shared_ptr<test_subdevice> create(
         const ccl::device_index_type& full_device_index,
         native::ccl_subdevice::owner_ptr_t&& device,
-        typename native::ccl_subdevice::base::owner_ptr_t&& driver) {
+        typename native::ccl_subdevice::base::owner_ptr_t&& driver,
+        native::ccl_subdevice::context_storage_type ctx_holder) {
         std::shared_ptr<test_subdevice> subdev =
-            std::make_shared<test_subdevice>(std::move(device), std::move(driver));
+            std::make_shared<test_subdevice>(std::move(device), std::move(driver), ctx_holder);
         subdev->device_properties.type = ZE_DEVICE_TYPE_GPU;
         subdev->device_properties.deviceId =
             std::get<ccl::device_index_enum::subdevice_index_id>(full_device_index);
         subdev->device_properties.flags = ZE_DEVICE_PROPERTY_FLAG_SUBDEVICE;
 
+        //get default ctx
+        std::shared_ptr<native::ccl_context> def_ctx = subdev->get_default_device_context();
+
         //create default queue
         auto queue_prop = ccl_subdevice::get_default_queue_desc();
         queue_prop.ordinal = 0;
         subdev->cmd_queus.emplace(queue_prop,
-                                  ccl_subdevice::device_queue{ nullptr, subdev->get_ptr() });
+                                  ccl_subdevice::device_queue{ nullptr, subdev->get_ptr(), def_ctx });
 
         //create module
         auto module_ptr =
-            std::make_shared<ccl_subdevice::device_module>(nullptr, subdev->get_ptr());
+            std::make_shared<ccl_subdevice::device_module>(nullptr, subdev->get_ptr(), def_ctx);
 
         using mod_integer_type = typename std::underlying_type<ccl_coll_type>::type;
         using top_integer_type = typename std::underlying_type<ccl::group_split_type>::type;
@@ -141,13 +151,15 @@ inline void make_stub_devices(const ccl::device_indices_t& stub_indices) {
         }
 
         ccl_device_driver& driver = *(driver_it->second);
+
+        ccl_device_driver::context_storage_type ctx = driver.get_driver_contexts();
         ccl_device_driver::devices_storage_type& devices = driver.devices;
         auto device_it = devices.find(device_index);
         if (device_it == devices.end()) {
             auto dev_idx = index;
             std::get<device_index_enum::subdevice_index_id>(dev_idx) = unused_index_value;
             device_it =
-                devices.emplace(device_index, test_device::create(dev_idx, driver.get_ptr())).first;
+                devices.emplace(device_index, test_device::create(dev_idx, driver.get_ptr(), ctx)).first;
         }
 
         ccl::index_type subdevice_index = std::get<device_index_enum::subdevice_index_id>(index);
@@ -162,7 +174,7 @@ inline void make_stub_devices(const ccl::device_indices_t& stub_indices) {
             subdevice_it =
                 subdevices
                     .emplace(subdevice_index,
-                             test_subdevice::create(index, device.get_ptr(), driver.get_ptr()))
+                             test_subdevice::create(index, device.get_ptr(), driver.get_ptr(), ctx))
                     .first;
         }
     }

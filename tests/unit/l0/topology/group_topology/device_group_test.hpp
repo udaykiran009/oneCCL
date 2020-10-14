@@ -4,7 +4,7 @@
 
 namespace topology_suite {
 
-TEST_F(router_fixture, real_virtual_topology_test) {
+TEST_F(router_fixture, device_group_real_virtual_topology_test) {
     using namespace utils;
     using namespace native;
 
@@ -13,7 +13,6 @@ TEST_F(router_fixture, real_virtual_topology_test) {
 
     constexpr ccl::group_split_type topology = ccl::group_split_type::thread;
     constexpr ccl::device_topology_type class_id = ccl::device_topology_type::ring;
-    {
         init_routing_data(process_index);
         create_devices_by_affinity(thread_index,
                                    { ccl::device_index_type(0, 0, ccl::unused_index_value),
@@ -68,9 +67,9 @@ TEST_F(router_fixture, real_virtual_topology_test) {
             expected_indices_tuple(
                 { optional_indices{ true, { 0 }, {} }, optional_indices{ true, { 1, 2 }, {} } }));
         UT_ASSERT(res, descr);
-    }
 }
-TEST_F(router_fixture, multiple_real_topology_test) {
+
+TEST_F(router_fixture, device_group_multiple_real_topology_test) {
     using namespace utils;
     using namespace native;
 
@@ -80,7 +79,6 @@ TEST_F(router_fixture, multiple_real_topology_test) {
     constexpr ccl::group_split_type topology = ccl::group_split_type::thread;
     constexpr ccl::device_topology_type class_id = ccl::device_topology_type::ring;
 
-    {
         init_routing_data(process_index);
         create_devices_by_affinity(thread_index,
                                    { ccl::device_index_type(0, 0, ccl::unused_index_value),
@@ -134,10 +132,87 @@ TEST_F(router_fixture, multiple_real_topology_test) {
                 ->devices,
             expected_indices_tuple({ optional_indices{ true, { 0, 1, 2 }, {} } }));
         UT_ASSERT(res, descr);
-    }
 }
 
-TEST_F(router_fixture, multiple_real_virtual_topology_test) {
+TEST_F(router_fixture, device_group_multiple_groups_multiple_real_topology_test) {
+    using namespace utils;
+    using namespace native;
+
+    size_t process_index = 0;
+    size_t groups_count = 3;
+
+    constexpr ccl::group_split_type topology = ccl::group_split_type::thread;
+    constexpr ccl::device_topology_type class_id = ccl::device_topology_type::ring;
+
+        init_routing_data(process_index);
+        size_t device_index_iterator = 0;
+
+    native::thread_group_context& fixture_thread_group_ctx = *(this->get_thread_group_ctx());
+
+        // initialize device indices for each group and create empty device_group_ctx's
+        for(size_t groups_index = 0; groups_index < groups_count; groups_index++)
+        {
+            create_devices_by_affinity(groups_index,
+                                   { ccl::device_index_type(0, device_index_iterator++, ccl::unused_index_value),
+                                     ccl::device_index_type(0, device_index_iterator++, ccl::unused_index_value), });
+        }
+
+        // build topology for each deice group
+        device_index_iterator = 0;
+        for (size_t groups_index = 0; groups_index < groups_count; groups_index++)
+        {
+            device_storage local_group_device_storage;
+            device_group_ring_topology top(*fixture_thread_group_ctx.get_device_group_ctx(groups_index),
+                                           local_group_device_storage);
+            std::stringstream ss;
+            native::details::adjacency_matrix matrix =
+                device_group_ring_topology::build_p2p_capability_matrix(
+                ss, this->get_device_affinity(groups_index), all_p2p_accessible);
+
+            //check matrix
+            bool res;
+            std::string descr;
+
+            std::tie(res, descr) =
+                        check_id_ring(matrix, this->get_device_affinity(groups_index),
+                                      native::details::plain_graph{
+                                                ccl::device_index_type(0, device_index_iterator + 0, ccl::unused_index_value),
+                                                ccl::device_index_type(0, device_index_iterator + 1, ccl::unused_index_value) });
+            UT_ASSERT(res == true, descr);
+
+            try {
+                res = top.build(ss,
+                                fixture_thread_group_ctx.thread_device_group_ctx[groups_index]->context_addr,
+                                this->get_device_affinity(groups_index),
+                                matrix);
+            }
+            catch (const std::exception& ex) {
+                res = false;
+                ss << "Cannot build topology: " << ex.what();
+            }
+
+            output << "TOP result:\n "<< ss.str();
+
+            if (!res) {
+                UT_ASSERT(res, "Cannot build topology: " << ss.str());
+            }
+
+            //Check topology
+            std::tie(res, descr) = check_topology<topology>(
+                fixture_thread_group_ctx.get_device_group_ctx(groups_index)
+                    ->get_group_topology<class_id>()
+                    .get_topology(0)
+                    ->devices,
+                expected_indices_tuple({ optional_indices{ true, { 0, 1 }, {} } }));
+            UT_ASSERT(res, descr);
+
+            device_index_iterator += 2;
+        }
+}
+
+
+
+TEST_F(router_fixture, device_group_multiple_real_virtual_topology_test) {
     using namespace utils;
     using namespace native;
 
@@ -147,7 +222,6 @@ TEST_F(router_fixture, multiple_real_virtual_topology_test) {
     constexpr ccl::group_split_type topology = ccl::group_split_type::thread;
     constexpr ccl::device_topology_type class_id = ccl::device_topology_type::ring;
 
-    {
         init_routing_data(process_index);
         create_devices_by_affinity(thread_index,
                                    { ccl::device_index_type(0, 0, ccl::unused_index_value),
@@ -202,10 +276,9 @@ TEST_F(router_fixture, multiple_real_virtual_topology_test) {
                                          optional_indices{ true, { 2 }, {} } }));
             UT_ASSERT(res, descr);
         }
-    }
 }
 
-TEST_F(router_fixture, two_inaccessible_group_scaleup_test) {
+TEST_F(router_fixture, device_group_two_inaccessible_group_scaleup_test) {
     using namespace utils;
     using namespace native;
     using namespace native::detail;
@@ -222,7 +295,6 @@ TEST_F(router_fixture, two_inaccessible_group_scaleup_test) {
     constexpr ccl::group_split_type topology = ccl::group_split_type::thread;
     //device_group_torn_apart_ring;
     constexpr ccl::device_topology_type class_id = ccl::device_topology_type::ring;
-    {
         init_routing_data(process_index);
         fill_indices_data(thread_index,
                           { ccl::device_index_type(0, 0, ccl::unused_index_value),
@@ -296,10 +368,9 @@ TEST_F(router_fixture, two_inaccessible_group_scaleup_test) {
                                          optional_indices{ false, {}, {} } }));
             UT_ASSERT(res, descr);
         }
-    }
 }
 
-TEST_F(router_fixture, two_inaccessible_devices_topology_test) {
+TEST_F(router_fixture, device_group_two_inaccessible_devices_topology_test) {
     using namespace utils;
     using namespace native;
     using namespace native::detail;
@@ -377,7 +448,7 @@ TEST_F(router_fixture, two_inaccessible_devices_topology_test) {
     }
 }
 
-TEST_F(router_fixture, two_inaccessible_asym_groups_topology_test) {
+TEST_F(router_fixture, device_group_two_inaccessible_asym_groups_topology_test) {
     using namespace utils;
     using namespace native;
     using namespace native::detail;
@@ -470,7 +541,7 @@ TEST_F(router_fixture, two_inaccessible_asym_groups_topology_test) {
         }
     }
 }
-TEST_F(router_fixture, two_inaccessible_real_virtual_groups_topology_test) {
+TEST_F(router_fixture, device_group_two_inaccessible_real_virtual_groups_topology_test) {
     using namespace utils;
     using namespace native;
     using namespace native::detail;

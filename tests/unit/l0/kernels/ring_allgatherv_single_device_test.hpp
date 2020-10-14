@@ -173,6 +173,23 @@ TYPED_TEST(ring_allgatherv_single_device_fixture, ring_allgatherv_single_device_
         flags_storage.rotate_shared_data(thread_idx, num_thread, flag_group_count);
     }
 
+    /*Check ordinals*/
+    uint32_t cmdqueueGroupCount = 0;
+    zeDeviceGetCommandQueueGroupProperties(device.get(), &cmdqueueGroupCount, nullptr);
+
+    std::vector<ze_command_queue_group_properties_t> properties(cmdqueueGroupCount);
+    ze_command_queue_group_properties_t* cmdqueueGroupProperties = properties.data();
+    zeDeviceGetCommandQueueGroupProperties(device.get(), &cmdqueueGroupCount, cmdqueueGroupProperties);
+
+
+    // Find a command queue type that support compute
+    std::vector<uint32_t> ordinals;
+    for( uint32_t i = 0; i < cmdqueueGroupCount; ++i ) {
+        if( cmdqueueGroupProperties[ i ].flags & ZE_COMMAND_QUEUE_GROUP_PROPERTY_FLAG_COMPUTE ) {
+            ordinals.push_back(i);
+        }
+    }
+
     // prepare kernels in multithreading environment
     ze_kernel_desc_t desc = {
         .stype = ZE_STRUCTURE_TYPE_KERNEL_DESC,
@@ -195,8 +212,18 @@ TYPED_TEST(ring_allgatherv_single_device_fixture, ring_allgatherv_single_device_
             }
 
             thread_kernels.emplace(thread_idx, std::move(handle));
-            thread_queue.emplace(thread_idx, device.create_cmd_queue(ctx));
-            thread_cmd_list.emplace(thread_idx, device.create_cmd_list(ctx));
+
+            auto queue_prop = device.get_default_queue_desc();
+            /*
+            queue_prop.flags |= ZE_COMMAND_QUEUE_FLAG_EXPLICIT_ONLY ;
+            queue_prop.index = thread_idx;
+            queue_prop.ordinal = 0;
+            */
+            thread_queue.emplace(thread_idx, device.create_cmd_queue(ctx, queue_prop));
+
+            auto list_prop = device.get_default_list_desc();
+            //list_prop.flags |= ZE_COMMAND_LIST_FLAG_EXPLICIT_ONLY ;
+            thread_cmd_list.emplace(thread_idx, device.create_cmd_list(ctx, list_prop));
         }
         catch (const std::exception& ex) {
             throw std::runtime_error(std::string("Error: ") + ex.what());

@@ -114,7 +114,7 @@ TEST_F(router_fixture, thread_group_topology_test) {
     }
 }
 
-TEST_F(router_fixture, same_device_topology_test) {
+TEST_F(router_fixture, thread_group_same_device_topology_test) {
     using namespace utils;
     using namespace native;
 
@@ -235,7 +235,6 @@ TEST_F(router_fixture, thread_group_topology_scaleup_test) {
 
     init_routing_data(process_index);
     {
-        output << "TEST: two inaccessible devices for two threads" << std::endl;
         //emulate last thread barrier creation
         //prepare context
         tg_comm->per_thread_indices = ccl::process_device_indices_t{
@@ -335,7 +334,7 @@ TEST_F(router_fixture, thread_group_topology_scaleup_test) {
     }
 }
 
-TEST_F(router_fixture, two_inaccessible_groups_topology_scaleup_test) {
+TEST_F(router_fixture, thread_group_two_inaccessible_groups_topology_scaleup_test) {
     using namespace utils;
     using namespace native;
     using namespace native::detail;
@@ -460,7 +459,7 @@ TEST_F(router_fixture, two_inaccessible_groups_topology_scaleup_test) {
     }
 }
 
-TEST_F(router_fixture, local_group_inaccessible_devices_topology_scaleup_test) {
+TEST_F(router_fixture, thread_group_local_group_inaccessible_devices_topology_scaleup_test) {
     using namespace utils;
     using namespace native;
     using namespace native::detail;
@@ -473,7 +472,6 @@ TEST_F(router_fixture, local_group_inaccessible_devices_topology_scaleup_test) {
 
     init_routing_data(process_index);
     {
-        output << "TEST: local group inaccessible devices to merge for two threads" << std::endl;
         //emulate last thread barrier creation
         //prepare context
         tg_comm->per_thread_indices = ccl::process_device_indices_t{

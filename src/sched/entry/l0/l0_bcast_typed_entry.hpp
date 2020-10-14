@@ -49,12 +49,14 @@ public:
     l0_bcast_typed_entry(ccl_sched* sched,
                          std::shared_ptr<gpu_comm_impl> comm,
                          specific_indexed_device_storage& available_devices,
+                         ccl_driver_context_ptr in_ctx,
                          ccl_buffer buf,
                          size_t cnt,
                          size_t root,
                          std::shared_ptr<ccl_stream> device_stream = std::shared_ptr<ccl_stream>())
             : base(sched,
                    comm,
+                   in_ctx,
                    buf,
                    ccl::native_type_info<native_type>::ccl_type_value,
                    device_stream),
@@ -143,7 +145,7 @@ public:
         /* TRY To APPEND Kernel HERE!!! Not in update
          *
          * ze_result_t result = zeCommandListAppendLaunchKernel(exec_cmd_list->handle, main_entry_function.handle, &launch_args, nullptr, 0, nullptr);
-      
+
 
         / * result = zeCommandListClose(exec_cmd_list->handle);
         if(result != ZE_RESULT_SUCCESS)

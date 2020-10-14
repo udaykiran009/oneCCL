@@ -3,13 +3,11 @@
 
 namespace topology_graph_resolver {
 
-TEST_F(router_fixture, thread_graph_resolver_test) {
+TEST_F(router_fixture, thread_graph_resolver_test_devices_2_not_p2p) {
     using namespace utils;
     using namespace native;
     using namespace native::detail;
 
-    {
-        output << "TEST: two inaccessible devices" << std::endl;
         ccl::process_device_indices_t indices{
             { 0,
               {
@@ -62,10 +60,13 @@ TEST_F(router_fixture, thread_graph_resolver_test) {
                   ccl::device_index_type(0, 0, ccl::unused_index_value),
               },
               { ccl::device_index_type(0, 1, ccl::unused_index_value) } });
-    }
+}
 
-    {
-        output << "TEST: for merge two groups" << std::endl;
+TEST_F(router_fixture, thread_graph_resolver_test_merge_2_groups) {
+    using namespace utils;
+    using namespace native;
+    using namespace native::details;
+
         ccl::process_device_indices_t indices{
             { 0,
               {
@@ -172,6 +173,5 @@ TEST_F(router_fixture, thread_graph_resolver_test) {
                 ccl::device_index_type(0, 3, ccl::unused_index_value),
                 ccl::device_index_type(0, 4, ccl::unused_index_value),
                 ccl::device_index_type(0, 5, ccl::unused_index_value) } });
-    }
 }
 } // namespace topology_graph_resolver

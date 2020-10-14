@@ -179,6 +179,7 @@ void user_thread_idx(size_t thread_idx,
             total_devices_in_cluster, ranked_device_indices, ctx, kvs);
 
     std::cout << "Create device communicators, expected count: " << ranked_device_indices.size()
+              << ", context: " << ctx.get()
               << std::endl;
 
     // alloc memory specific to devices
@@ -412,7 +413,7 @@ int main(int argc, char** argv) {
 
     // get GPU driver, it's only one driver at the moment
     auto gpu_driver = drivers.begin()->second;
-    auto ctx = gpu_driver->create_context();
+    decltype(gpu_driver->create_context()) ctx;/*default context*/ // = gpu_driver->create_context();
 #endif
     for (auto thread_affinity_it = thread_group_affinity.begin();
          thread_affinity_it != thread_group_affinity.end();

@@ -2,7 +2,6 @@
 #include <initializer_list>
 #include "../topology_utils.hpp"
 
-#if 0
 namespace topology_suite
 {
 struct allied_process_group_ring_topology_mock : public native::allied_process_group_ring_topology
@@ -1420,4 +1419,3 @@ TEST_F(router_fixture, scale_up_scale_out_process_group_topology_test)
     }
 }
 }
-#endif

@@ -18,6 +18,7 @@
 
 #include "common/comm/l0/modules/modules_source_data.hpp"
 #include "common/comm/l0/context/device_storage.hpp"
+#include "common/comm/host_communicator/host_communicator.hpp"
 #undef protected
 #undef private
 
@@ -55,7 +56,7 @@ public:
         process_idx = proc_idx;
 
         pg_comm.reset(
-            new stub::process_context(std::make_shared<ccl::communicator>(ccl::create_communicator())));
+            new stub::process_context(std::shared_ptr<ccl::host_communicator>(new ccl::host_communicator)));  //TODO use rank & size
         tg_comm = pg_comm->thread_group_ctx.get();
     }
 
@@ -125,6 +126,11 @@ public:
 
     native::thread_group_context* tg_comm;
     std::unique_ptr<stub::process_context> pg_comm;
+
+    native::thread_group_context* get_thread_group_ctx()
+    {
+        return tg_comm;
+    }
 
     struct process_creator_params {
         ccl::process_device_indices_t total_node_mask;

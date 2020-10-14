@@ -37,5 +37,5 @@ struct ccl_context_holder
         return nullptr;
     }
 };
-
+using ccl_driver_context_ptr = std::shared_ptr<ccl_context>;
 } // namespace native

@@ -23,6 +23,7 @@ void gpu_module_base::release() {
 
     if (module) {
         zeModuleDestroy(module);
+        module = nullptr;
     }
     functions.clear();
 }

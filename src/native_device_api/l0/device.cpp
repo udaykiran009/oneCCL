@@ -349,7 +349,7 @@ CCL_API ccl_device::device_queue ccl_device::create_cmd_queue(std::shared_ptr<cc
     return device_queue(hCommandQueue, get_ptr(), ctx);
 }
 
-CCL_API ze_fence_handle_t ccl_device::create_or_get_fence(const device_queue& queue, 
+CCL_API ze_fence_handle_t ccl_device::create_or_get_fence(const device_queue& queue,
                                                           std::shared_ptr<ccl_context> ctx) {
     //TODO not optimal
     std::unique_lock<std::mutex> lock(queue_mutex);
@@ -386,8 +386,8 @@ CCL_API void* ccl_device::device_alloc_memory(size_t bytes_count,
     ze_result_t
         ret = //zeDriverAllocSharedMem(get_owner()->handle, handle, flags, ordinal, ZE_HOST_MEM_ALLOC_FLAG_DEFAULT, bytes_count, alignment, &out_ptr);
         //zeDriverAllocHostMem(get_owner()->handle, ZE_HOST_MEM_ALLOC_FLAG_DEFAULT, bytes_count, alignment, &out_ptr);
-        zeMemAllocShared(
-            ctx->get(), &mem_descr, &host_descr, bytes_count, alignment, handle, &out_ptr);
+        zeMemAllocDevice(
+            ctx->get(), &mem_descr, /*&host_descr, */bytes_count, alignment, handle, &out_ptr);
     if (ret != ZE_RESULT_SUCCESS) {
         throw std::runtime_error(std::string("cannot allocate memory, error: ") +
                                  std::to_string(ret));
@@ -631,6 +631,8 @@ ccl_device::create_cmd_list(std::shared_ptr<ccl_context> ctx,
 
 CCL_API ccl_device::device_cmd_list& ccl_device::get_cmd_list(std::shared_ptr<ccl_context> ctx,
     const ze_command_list_desc_t& properties /* = get_default_list_desc()*/) {
+
+    std::unique_lock<std::mutex> lock(list_mutex);
     auto it = cmd_lists.find(properties);
     if (it == cmd_lists.end()) {
         it = cmd_lists.emplace(properties, create_cmd_list( ctx, properties)).first;

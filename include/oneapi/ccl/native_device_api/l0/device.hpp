@@ -195,6 +195,7 @@ private:
     std::map<ze_command_queue_desc_t, device_queue, command_queue_desc_comparator> cmd_queus;
     std::map<ze_command_queue_handle_t, device_queue_fence> queue_fences;
 
+    std::mutex list_mutex;
     std::map<ze_command_list_desc_t, device_cmd_list, command_list_desc_comparator> cmd_lists;
     sub_devices_container_type sub_devices;
 

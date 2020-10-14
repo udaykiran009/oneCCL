@@ -16,6 +16,51 @@
 #include <unistd.h>
 static std::mutex global_fence_mutex;
 
+#define ENTRY_LOG_TRACE(...)                                       \
+if (unlikely(logger.get_log_level() >= ccl_log_level::TRACE)) {    \
+    do {                                                           \
+        std::stringstream ss;                                      \
+        this->dump_detail(ss);                                     \
+        logger.trace("|TRACE| ",  basedir_static(__FILE__),        \
+                         ":",                                      \
+                         __LINE__,                                 \
+                         "  ",                                     \
+                         ss.str(),                                 \
+                         " - ",                                    \
+                         ##__VA_ARGS__);                           \
+    } while(0);                                                    \
+}
+
+#define ENTRY_LOG_DEBUG(...)                                       \
+if (unlikely(logger.get_log_level() >= ccl_log_level::DEBUG)) {    \
+    do {                                                           \
+        std::stringstream ss;                                      \
+        this->dump_detail(ss);                                     \
+        logger.debug("|DEBUG| ",  basedir_static(__FILE__),        \
+                         ":",                                      \
+                         __LINE__,                                 \
+                         "  ",                                     \
+                         ss.str(),                                 \
+                         " - ",                                    \
+                         ##__VA_ARGS__);                           \
+    } while(0);                                                    \
+}
+
+#define ENTRY_LOG_INFO(...)                                        \
+if (unlikely(logger.get_log_level() >= ccl_log_level::INFO)) {     \
+    do {                                                           \
+        std::stringstream ss;                                      \
+        this->dump_detail(ss);                                     \
+        logger.info("|INFO| ",  basedir_static(__FILE__),          \
+                         ":",                                      \
+                         __LINE__,                                 \
+                         "  ",                                     \
+                         ss.str(),                                 \
+                         " - ",                                    \
+                         ##__VA_ARGS__);                           \
+    } while(0);                                                    \
+}
+
 namespace native {
 template <class native_type,
           class gpu_comm_impl,
@@ -34,7 +79,6 @@ public:
     friend class ccl_virtual_gpu_comm;
     static constexpr const char *class_name() noexcept {
         return ccl_coll_type_to_str(type_op);
-        ;
     }
     static constexpr ccl_coll_type type() noexcept {
         return type_op;
@@ -51,6 +95,7 @@ public:
     base_gpu_entry() = delete;
     base_gpu_entry(ccl_sched *sched,
                    std::shared_ptr<gpu_comm> comm,
+                   ccl_driver_context_ptr in_ctx,
                    const ccl_buffer send_buf,
                    ccl::datatype dtype_in,
                    std::shared_ptr<ccl_stream> &stream)
@@ -60,21 +105,23 @@ public:
                             ->template get_comm_data<get_topology(), get_topology_class()>()),
               send_buf(send_buf),
               dtype(dtype_in),
-              device_stream(stream) {
+              device_stream(stream),
+              ctx(in_ctx) {
     }
 
     virtual ~base_gpu_entry() {}
 
     virtual void start() override {
-        LOG_DEBUG(class_name(), " entry req ", &req, ", rank: ", comm_addr.to_string());
 
         ccl_device &device = parent_communicator->get_device();
         {
-            LOG_DEBUG(class_name(), " entry req ", &req, " - create initial gpu primitives");
             //TODO make check, that device_stream belong to the device
             auto queue_prop = ccl_device::get_default_queue_desc();
             auto &cmd_queue = device.get_cmd_queue(queue_prop, ctx);
             fence = device.create_or_get_fence(cmd_queue, ctx);
+
+            ENTRY_LOG_DEBUG("start base entry initialization, ctx: ", ctx.get(),
+                            ", queue: ", cmd_queue.get(), ", fence: ", fence);
         }
         //else
         //{
@@ -109,6 +156,7 @@ public:
         //make sure, that kernel ready for launch
 
         status = ccl_sched_entry_status_started;
+        ENTRY_LOG_DEBUG ("started");
     }
 
     bool submit_for_execution() {
@@ -118,14 +166,20 @@ public:
             //if(std::is_same<gpu_comm_impl, ccl_gpu_comm>::value)
             if (gpu_comm_impl::type_idx() == ccl_gpu_comm::type_idx() or
                 gpu_comm_impl::type_idx() == ccl_ipc_source_gpu_comm<ccl_gpu_comm>::type_idx()) {
+
+                ccl_device &device = parent_communicator->get_device();
+                auto queue_prop = ccl_device::get_default_queue_desc();
+                auto& cmd_queue = device.get_cmd_queue(queue_prop, ctx);
+                auto& cmd_list = device.get_cmd_list(ctx);
+                ENTRY_LOG_DEBUG("Start submit for execution: main device: ", parent_communicator->to_string(),
+                                ", queue: ", cmd_queue.get(),
+                                ", list: ", cmd_list.get());
                 if (group_id == ccl::group_split_type::cluster) {
                     //auto c = ccl::detail::environment::instance().create_communicator();
                     //(void)c;
                     //if(c->rank() == 0)
                     {
                         // Execute command list in command queue
-                        ccl_device &device = parent_communicator->get_device();
-                        auto queue_prop = ccl_device::get_default_queue_desc();
                         //TODO SPECIAL FOR VIRTUAL
                         /*
                     if(std::is_same<gpu_comm, ccl_virtual_gpu_comm>::value)
@@ -133,21 +187,9 @@ public:
                         queue_prop.ordinal = parent_communicator->get_rank(); //TODO SPECIAL FOR VIRTUAL
                     }
                     queue_prop.mode = ZE_COMMAND_QUEUE_MODE_ASYNCHRONOUS;*/
-                        auto &cmd_queue = device.get_cmd_queue(queue_prop, ctx);
 
-                        LOG_DEBUG(class_name(),
-                                  " entry req ",
-                                  &req,
-                                  ", rank: ",
-                                  comm_addr.to_string(),
-                                  " - ready for execution on: ",
-                                  device.handle,
-                                  ", queue:",
-                                  cmd_queue.get(),
-                                  ", list: ",
-                                  device.get_cmd_list(ctx).get());
                         ze_result_t ret = zeCommandQueueExecuteCommandLists(
-                            cmd_queue.get(), 1, device.get_cmd_list(ctx).get_ptr(), fence);
+                            cmd_queue.get(), 1, cmd_list.get_ptr(), fence);
                         if (ret != ZE_RESULT_SUCCESS) {
                             throw ccl::exception(
                                 std::string("cannot execute command list, error: ") +
@@ -156,38 +198,18 @@ public:
                     }
                 }
                 else {
-                    // Execute command list in command queue
-                    ccl_device &device = parent_communicator->get_device();
-                    auto queue_prop = ccl_device::get_default_queue_desc();
-                    //TODO SPECIAL FOR VIRTUAL
-                    /*
-            if(std::is_same<gpu_comm, ccl_virtual_gpu_comm>::value)
-            {
-                queue_prop.ordinal = parent_communicator->get_rank(); //TODO SPECIAL FOR VIRTUAL
-            }
-            queue_prop.mode = ZE_COMMAND_QUEUE_MODE_ASYNCHRONOUS;*/
-                    auto &cmd_queue = device.get_cmd_queue(queue_prop, ctx);
-
-                    LOG_DEBUG(class_name(),
-                              " entry req ",
-                              &req,
-                              ", rank: ",
-                              comm_addr.to_string(),
-                              " - ready for execution on: ",
-                              device.handle,
-                              ", queue:",
-                              cmd_queue.get(),
-                              ", list: ",
-                              device.get_cmd_list(ctx).get());
+                   /*-S-
                     ze_result_t ret = zeCommandQueueExecuteCommandLists(
-                        cmd_queue.get(), 1, device.get_cmd_list(ctx).get_ptr(), fence);
+                        cmd_queue.get(), 1, cmd_list.get_ptr(), fence);
                     if (ret != ZE_RESULT_SUCCESS) {
                         throw ccl::exception(std::string("cannot execute command list, error: ") +
                                              std::to_string(ret));
                     }
+                    */
                 }
             }
         }
+        ENTRY_LOG_TRACE("submission result: ", ready_to_exec);
         return ready_to_exec;
     }
 
@@ -199,26 +221,15 @@ public:
             //wait execution
             ccl_device &device = parent_communicator->get_device();
             auto queue_prop = ccl_device::get_default_queue_desc();
-            //TODO SPECIAL FOR VIRTUAL
-            /*
-            if(std::is_same<gpu_comm, ccl_virtual_gpu_comm>::value)
-            {
-                queue_prop.ordinal = parent_communicator->get_rank(); //TODO SPECIAL FOR VIRTUAL
-            }*/
-            //queue_prop.mode = ZE_COMMAND_QUEUE_MODE_ASYNCHRONOUS;
             auto &cmd_queue = device.get_cmd_queue(queue_prop, ctx);
 
-            LOG_TRACE(class_name(),
-                      " entry req ",
-                      &req,
-                      ", rank: ",
-                      comm_addr.to_string(),
-                      " waiting for finished execution, queue: ",
-                      cmd_queue.get());
+            ENTRY_LOG_TRACE(" waiting for finished execution, queue: ",
+                            cmd_queue.get());
             /* TODO fence!
             ze_result_t ret = zeCommandQueueSynchronize(cmd_queue.handle,
                                                           std::numeric_limits<uint32_t>::max());*/
             ze_result_t ret = zeFenceQueryStatus(fence);
+            ENTRY_LOG_TRACE("Fence query status: ", native::to_string(ret), ", queue: ", cmd_queue.get());
             if (ret != ZE_RESULT_SUCCESS) {
                 if (ret != ZE_RESULT_NOT_READY) {
                     //TODO L0 workaround: Virtual Device may execute this part before fence actually queued
@@ -250,22 +261,10 @@ public:
                         }
                     }
                 }
-                LOG_TRACE(class_name(),
-                          " entry req ",
-                          &req,
-                          ", rank: ",
-                          comm_addr.to_string(),
-                          " not completed yet, reason: ",
-                          native::to_string(ret));
             }
             else {
                 status = ccl_sched_entry_status_complete;
-                LOG_DEBUG(class_name(),
-                          " entry req ",
-                          &req,
-                          ", rank: ",
-                          comm_addr.to_string(),
-                          " completed");
+                ENTRY_LOG_DEBUG(" Completed on queue: ", cmd_queue.get());
             }
         }
     }
@@ -281,33 +280,26 @@ public:
 protected:
     virtual bool finalize_entry() = 0;
     virtual void dump_detail(std::stringstream &str) const override {
-        ccl_logger::format(str,
-                           class_name(),
-                           ", dt ",
-                           ccl::global_data::get().dtypes->name(dtype),
-                           ", send_buf ",
-                           send_buf,
-                           ", comm_id ",
-                           sched->coll_param.comm->id(),
-                           ", req ",
-                           &req,
-                           "\n");
+        ccl_logger::format(str, "{",
+                           name(),
+                           ", addr: ",
+                           comm_addr.to_string(),
+                           "}");
     }
 
 protected:
+    ccl_driver_context_ptr get_ctx() const {
+        return ctx;
+    }
+
     std::shared_ptr<gpu_comm> parent_communicator;
     topology_addr<group_id, class_id> comm_addr;
     ccl_buffer send_buf;
     ccl::datatype dtype;
     atl_req_t req{};
     std::shared_ptr<ccl_stream> device_stream;
-    std::shared_ptr<ccl_context> ctx;
     // GPU
     bool ready_to_exec = false;
-
-    //std::unique_ptr<ccl_device::device_cmd_list> copy_send_cmd_list;
-    //std::unique_ptr<ccl_device::device_cmd_list> copy_recv_cmd_list;
-    //std::unique_ptr<ccl_device::device_cmd_list> exec_cmd_list;
     ze_fence_handle_t fence;
 
     //TODO
@@ -462,6 +454,8 @@ protected:
     }
 
     std::unique_ptr<base_connector_interface<kernel_main_typed>> kernel_router;
+private:
+    ccl_driver_context_ptr ctx;
 };
 
 } // namespace native

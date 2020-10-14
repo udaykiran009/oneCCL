@@ -4,7 +4,7 @@
 #include "../../stubs/stub_platform.hpp"
 #include "common/comm/l0/topology/ring/ring_construction_utils.hpp"
 
-#if 0
+
 namespace topology_suite
 {
 
@@ -2575,4 +2575,3 @@ TEST_F(router_fixture, unsymmetric_scaleout_test)
 }
 
 }
-#endif

@@ -3,13 +3,12 @@
 
 namespace topology_graph_resolver {
 
-TEST_F(router_fixture, graph_resolver_test) {
+TEST_F(router_fixture, graph_resolver_default_creator_test) {
     using namespace utils;
     using namespace native;
     using namespace native::detail;
 
     {
-        output << "Default graph creator test" << std::endl;
         ccl::device_indices_t indices{ ccl::device_index_type(0, 0, ccl::unused_index_value),
                                        ccl::device_index_type(0, 0, ccl::unused_index_value),
                                        ccl::device_index_type(0, 0, ccl::unused_index_value) };
@@ -33,9 +32,13 @@ TEST_F(router_fixture, graph_resolver_test) {
         plain_graph_list graph = graph_list_resolver(custom_matrix, indices);
         UT_ASSERT(graph.size() == 1, "plain graph list size should be 1");
     }
+}
 
-    {
-        output << "Two inaccessible groups with two devices graph test" << std::endl;
+TEST_F(router_fixture, graph_resolver_creator_test_devices_2_per_groups_2_non_p2p) {
+    using namespace utils;
+    using namespace native;
+    using namespace native::details;
+
         ccl::device_indices_t indices{ ccl::device_index_type(0, 0, ccl::unused_index_value),
                                        ccl::device_index_type(0, 1, ccl::unused_index_value),
                                        ccl::device_index_type(0, 2, ccl::unused_index_value),
@@ -92,10 +95,13 @@ TEST_F(router_fixture, graph_resolver_test) {
                 ccl::device_index_type(0, 1, ccl::unused_index_value) },
               { ccl::device_index_type(0, 2, ccl::unused_index_value),
                 ccl::device_index_type(0, 3, ccl::unused_index_value) } });
-    }
 
-    {
-        output << "Two inaccessible devices graph test" << std::endl;
+}
+
+TEST_F(router_fixture, graph_resolver_creator_test_devices_2_per_groups_1_non_p2p) {
+    using namespace utils;
+    using namespace native;
+    using namespace native::details;
         ccl::device_indices_t indices{ ccl::device_index_type(0, 0, ccl::unused_index_value),
                                        ccl::device_index_type(0, 1, ccl::unused_index_value) };
         stub::make_stub_devices(indices);
@@ -134,10 +140,12 @@ TEST_F(router_fixture, graph_resolver_test) {
             graphs,
             { { ccl::device_index_type(0, 0, ccl::unused_index_value) },
               { ccl::device_index_type(0, 1, ccl::unused_index_value) } });
-    }
+}
 
-    {
-        output << "multiple inaccessible groups with assimmetric devices graph test" << std::endl;
+TEST_F(router_fixture, graph_resolver_creator_test_devices_10_per_groups_multi_assymmetric_p2p) {
+    using namespace utils;
+    using namespace native;
+    using namespace native::details;
         ccl::device_indices_t indices{ ccl::device_index_type(0, 0, ccl::unused_index_value),
                                        ccl::device_index_type(0, 1, ccl::unused_index_value),
                                        ccl::device_index_type(0, 2, ccl::unused_index_value),
@@ -295,10 +303,12 @@ TEST_F(router_fixture, graph_resolver_test) {
                 ccl::device_index_type(0, 6, ccl::unused_index_value) },
               { ccl::device_index_type(0, 7, ccl::unused_index_value) },
               { ccl::device_index_type(0, 8, ccl::unused_index_value) } });
-    }
+}
 
-    {
-        output << "Two inaccessible groups with two subdevices graph test" << std::endl;
+TEST_F(router_fixture, graph_resolver_creator_test_subdevices_2_per_groups_2_non_p2p) {
+    using namespace utils;
+    using namespace native;
+    using namespace native::details;
         ccl::device_indices_t indices{ ccl::device_index_type(0, 0, 0),
                                        ccl::device_index_type(0, 0, 1),
                                        ccl::device_index_type(0, 1, 0),
@@ -399,7 +409,6 @@ TEST_F(router_fixture, graph_resolver_test) {
                 { ccl::device_index_type(0, 1, 0), 1 },
                 { ccl::device_index_type(0, 1, 1), 1 } } },
         };
-        std::cout << get_platform().to_string() << std::endl;
         std::stringstream ss;
         adjacency_matrix matrix;
         try {
@@ -433,6 +442,5 @@ TEST_F(router_fixture, graph_resolver_test) {
             graphs,
             { { ccl::device_index_type(0, 0, 0), ccl::device_index_type(0, 0, 1) },
               { ccl::device_index_type(0, 1, 0), ccl::device_index_type(0, 1, 1) } });
-    }
 }
 } // namespace topology_graph_resolver
