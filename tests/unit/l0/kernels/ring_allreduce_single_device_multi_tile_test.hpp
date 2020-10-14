@@ -100,7 +100,7 @@ TEST_F(ring_allreduce_single_device_multi_tile_fixture, ring_allreduce_single_de
         .stype = ZE_STRUCTURE_TYPE_KERNEL_DESC,
         .pNext = nullptr,
         .flags = 0,
-        .pKernelName = "allreduce_execution_float",
+        .pKernelName = "allreduce_execution_float32_t_add", // TODO for other datatypes, reductions
     };
 
     std::map<size_t, ze_kernel_handle_t> thread_kernels;
@@ -149,8 +149,8 @@ TEST_F(ring_allreduce_single_device_multi_tile_fixture, ring_allreduce_single_de
         auto& comm_handles = comm_param_storage.find(thread_idx)->second;
 
         ccl_device::device_queue& queue = thread_queue.find(thread_idx)->second;
-        //ccl_device::device_cmd_list& list = thread_cmd_list.find(thread_idx)->second;
-        ccl_device::device_cmd_list& list = thread_cmd_list.find(0)->second;
+        ccl_device::device_cmd_list& list = thread_cmd_list.find(thread_idx)->second;
+        //ccl_device::device_cmd_list& list = thread_cmd_list.find(0)->second;
 
         std::unique_ptr<std::stringstream> out_ptr(new std::stringstream());
         std::stringstream* raw_out = out_ptr.get();

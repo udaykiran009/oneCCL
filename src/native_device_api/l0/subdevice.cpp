@@ -20,7 +20,7 @@ uint32_t get_subdevice_properties_from_handle(ccl_device::handle_t handle) {
         throw std::runtime_error(std::string(__PRETTY_FUNCTION__) +
                                  "- invalid device type, got device, but subdevice requested");
     }
-    return device_properties.deviceId;
+    return device_properties.subdeviceId;
 }
 
 CCL_API
