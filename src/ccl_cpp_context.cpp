@@ -25,6 +25,18 @@ CCL_API context& context::operator=(const context& src) {
     return *this;
 }
 
+bool CCL_API context::operator==(const context& rhs) const noexcept {
+    return this->get_impl() == rhs.get_impl();
+}
+
+bool CCL_API context::operator!=(const context& rhs) const noexcept {
+    return this->get_impl() != rhs.get_impl();
+}
+
+bool CCL_API context::operator<(const context& rhs) const noexcept {
+    return this->get_impl() < rhs.get_impl();
+}
+
 CCL_API void context::build_from_params() {
     get_impl()->build_from_params();
 }

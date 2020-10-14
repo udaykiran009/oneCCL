@@ -86,7 +86,8 @@ TEST(device_communicator_api, device_comm_from_sycl_devices_single_thread) {
     for (auto& dev_comm : out_comms) {
         //ASSERT_TRUE(dev_comm.is_ready());
         try {
-            ASSERT_EQ(dev_comm.get_context(), in_ctx);
+            auto ccl_context = dev_comm.get_context();
+            ASSERT_EQ(ccl_context.get_native(), in_ctx);
         }
         catch (...) {
             //TODO ignore util L0 1.0
@@ -306,7 +307,8 @@ void user_thread_function_splitted_comm(size_t total_devices_count,
     for (auto& dev_comm : out_comms) {
         // check dev_comm correctness
         //ASSERT_TRUE(dev_comm.is_ready());
-        ASSERT_EQ(dev_comm.get_context(), in_ctx);
+        auto ccl_context = dev_comm.get_context();
+        ASSERT_EQ(ccl_context.get_native(), in_ctx);
 
         try {
             EXPECT_EQ(dev_comm.size(), total_devices_count);

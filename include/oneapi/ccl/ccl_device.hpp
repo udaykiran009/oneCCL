@@ -45,6 +45,11 @@ public:
     device& operator=(const device& src);
     ~device();
 
+    bool operator==(const device& rhs) const noexcept;
+    bool operator!=(const device& rhs) const noexcept;
+    bool operator<(const device& rhs) const noexcept;
+
+
     /**
      * Get specific attribute value by @attrId
      */

@@ -16,6 +16,14 @@
 #include "oneapi/ccl/ccl_stream_attr_ids_traits.hpp"
 #include "oneapi/ccl/ccl_stream.hpp"
 
+#include "oneapi/ccl/ccl_device_attr_ids.hpp"
+#include "oneapi/ccl/ccl_device_attr_ids_traits.hpp"
+#include "oneapi/ccl/ccl_device.hpp"
+
+#include "oneapi/ccl/ccl_context_attr_ids.hpp"
+#include "oneapi/ccl/ccl_context_attr_ids_traits.hpp"
+#include "oneapi/ccl/ccl_context.hpp"
+
 #include "oneapi/ccl/ccl_event.hpp"
 
 #include "oneapi/ccl/ccl_communicator.hpp"
@@ -63,12 +71,12 @@ CCL_API communicator communicator::split(const comm_split_attr& attr) {
     return communicator(get_impl()->split(attr));
 }
 
-CCL_API communicator::ccl_device_t communicator::get_device() {
-    return get_impl()->get_device();
+CCL_API device communicator::get_device() {
+    return device::create_device(get_impl()->get_device());
 }
 
-CCL_API communicator::ccl_context_t communicator::get_context() {
-    return get_impl()->get_context();
+CCL_API context communicator::get_context() {
+    return context::create_context(get_impl()->get_context());
 }
 
 } // namespace ccl

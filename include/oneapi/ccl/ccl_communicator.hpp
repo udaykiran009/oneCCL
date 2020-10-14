@@ -10,6 +10,8 @@ namespace detail {
     class environment; // friend-zone
 }
 
+class device;
+class context;
 class event;
 class kvs_interface;
 using rank_t = size_t;
@@ -73,12 +75,12 @@ public:
     /**
      * Retrieves underlying device, which was used as communicator construction argument
      */
-    ccl_device_t get_device();
+    device get_device();
 
     /**
      * Retrieves underlying context, which was used as communicator construction argument
      */
-    ccl_context_t get_context();
+    context get_context();
 
     template <class... attr_value_pair_t>
     stream create_stream(attr_value_pair_t&&... avps) {

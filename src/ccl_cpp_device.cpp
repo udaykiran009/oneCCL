@@ -26,6 +26,18 @@ CCL_API device& device::operator=(const device& src) {
     return *this;
 }
 
+bool CCL_API device::operator==(const device& rhs) const noexcept {
+    return this->get_impl() == rhs.get_impl();
+}
+
+bool CCL_API device::operator!=(const device& rhs) const noexcept {
+    return this->get_impl() != rhs.get_impl();
+}
+
+bool CCL_API device::operator<(const device& rhs) const noexcept {
+    return this->get_impl() < rhs.get_impl();
+}
+
 CCL_API void device::build_from_params() {
     get_impl()->build_from_params();
 }

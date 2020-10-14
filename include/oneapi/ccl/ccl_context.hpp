@@ -44,6 +44,10 @@ public:
     context& operator=(context&& src);
     ~context();
 
+    bool operator==(const context& rhs) const noexcept;
+    bool operator!=(const context& rhs) const noexcept;
+    bool operator<(const context& rhs) const noexcept;
+
     /**
      * Get specific attribute value by @attrId
      */
