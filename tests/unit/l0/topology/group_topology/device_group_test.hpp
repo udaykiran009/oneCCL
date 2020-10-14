@@ -165,7 +165,7 @@ TEST_F(router_fixture, device_group_multiple_groups_multiple_real_topology_test)
             device_group_ring_topology top(*fixture_thread_group_ctx.get_device_group_ctx(groups_index),
                                            local_group_device_storage);
             std::stringstream ss;
-            native::details::adjacency_matrix matrix =
+            native::detail::adjacency_matrix matrix =
                 device_group_ring_topology::build_p2p_capability_matrix(
                 ss, this->get_device_affinity(groups_index), all_p2p_accessible);
 
@@ -175,7 +175,7 @@ TEST_F(router_fixture, device_group_multiple_groups_multiple_real_topology_test)
 
             std::tie(res, descr) =
                         check_id_ring(matrix, this->get_device_affinity(groups_index),
-                                      native::details::plain_graph{
+                                      native::detail::plain_graph{
                                                 ccl::device_index_type(0, device_index_iterator + 0, ccl::unused_index_value),
                                                 ccl::device_index_type(0, device_index_iterator + 1, ccl::unused_index_value) });
             UT_ASSERT(res == true, descr);

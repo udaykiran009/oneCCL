@@ -65,7 +65,7 @@ TEST_F(router_fixture, thread_graph_resolver_test_devices_2_not_p2p) {
 TEST_F(router_fixture, thread_graph_resolver_test_merge_2_groups) {
     using namespace utils;
     using namespace native;
-    using namespace native::details;
+    using namespace native::detail;
 
         ccl::process_device_indices_t indices{
             { 0,

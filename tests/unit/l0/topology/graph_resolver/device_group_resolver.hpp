@@ -37,7 +37,7 @@ TEST_F(router_fixture, graph_resolver_default_creator_test) {
 TEST_F(router_fixture, graph_resolver_creator_test_devices_2_per_groups_2_non_p2p) {
     using namespace utils;
     using namespace native;
-    using namespace native::details;
+    using namespace native::detail;
 
         ccl::device_indices_t indices{ ccl::device_index_type(0, 0, ccl::unused_index_value),
                                        ccl::device_index_type(0, 1, ccl::unused_index_value),
@@ -101,7 +101,7 @@ TEST_F(router_fixture, graph_resolver_creator_test_devices_2_per_groups_2_non_p2
 TEST_F(router_fixture, graph_resolver_creator_test_devices_2_per_groups_1_non_p2p) {
     using namespace utils;
     using namespace native;
-    using namespace native::details;
+    using namespace native::detail;
         ccl::device_indices_t indices{ ccl::device_index_type(0, 0, ccl::unused_index_value),
                                        ccl::device_index_type(0, 1, ccl::unused_index_value) };
         stub::make_stub_devices(indices);
@@ -145,7 +145,7 @@ TEST_F(router_fixture, graph_resolver_creator_test_devices_2_per_groups_1_non_p2
 TEST_F(router_fixture, graph_resolver_creator_test_devices_10_per_groups_multi_assymmetric_p2p) {
     using namespace utils;
     using namespace native;
-    using namespace native::details;
+    using namespace native::detail;
         ccl::device_indices_t indices{ ccl::device_index_type(0, 0, ccl::unused_index_value),
                                        ccl::device_index_type(0, 1, ccl::unused_index_value),
                                        ccl::device_index_type(0, 2, ccl::unused_index_value),
@@ -308,7 +308,7 @@ TEST_F(router_fixture, graph_resolver_creator_test_devices_10_per_groups_multi_a
 TEST_F(router_fixture, graph_resolver_creator_test_subdevices_2_per_groups_2_non_p2p) {
     using namespace utils;
     using namespace native;
-    using namespace native::details;
+    using namespace native::detail;
         ccl::device_indices_t indices{ ccl::device_index_type(0, 0, 0),
                                        ccl::device_index_type(0, 0, 1),
                                        ccl::device_index_type(0, 1, 0),
