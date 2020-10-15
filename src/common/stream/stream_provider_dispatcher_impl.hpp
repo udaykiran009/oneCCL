@@ -11,19 +11,19 @@ std::unique_ptr<ccl_stream> stream_provider_dispatcher::create(
     stream_native_t& native_stream,
     const ccl::library_version& version) {
 
-    ccl_stream_type_t type = ccl_stream_host;
+    stream_type type = stream_type::host;
 #ifdef CCL_ENABLE_SYCL
     if (native_stream.get_device().is_host())
     {
-        type = ccl_stream_host;
+        type = stream_type::host;
     }
     else if(native_stream.get_device().is_cpu())
     {
-        type = ccl_stream_cpu;
+        type = stream_type::cpu;
     }
     else if(native_stream.get_device().is_gpu())
     {
-        type = ccl_stream_gpu;
+        type = stream_type::gpu;
     }
     else
     {
@@ -43,7 +43,7 @@ std::unique_ptr<ccl_stream> stream_provider_dispatcher::create(
 #else
     #ifdef MULTI_GPU_SUPPORT
         LOG_INFO("L0 queue type: gpu - supported only");
-        type = ccl_stream_gpu;
+        type = stream_type::gpu;
         std::unique_ptr<ccl_stream> ret(new ccl_stream(type, native_stream, version));
         ret->native_device.second = native_stream->get_owner().lock();
         ret->native_device.first = true;
@@ -61,7 +61,7 @@ std::unique_ptr<ccl_stream> stream_provider_dispatcher::create(
 std::unique_ptr<ccl_stream> stream_provider_dispatcher::create(
     stream_native_handle_t native_stream,
     const ccl::library_version& version) {
-    return std::unique_ptr<ccl_stream>(new ccl_stream(ccl_stream_gpu, native_stream, version));
+    return std::unique_ptr<ccl_stream>(new ccl_stream(stream_type::gpu, native_stream, version));
 }
 
 // Postponed creation from device
@@ -69,7 +69,7 @@ std::unique_ptr<ccl_stream> stream_provider_dispatcher::create(
     stream_native_device_t device,
     const ccl::library_version& version) {
 
-    auto ret = std::unique_ptr<ccl_stream>(new ccl_stream(ccl_stream_gpu, version));
+    auto ret = std::unique_ptr<ccl_stream>(new ccl_stream(stream_type::gpu, version));
     ret->native_device.second = device;
     ret->native_device.first = true;
     return ret;

@@ -4,26 +4,26 @@
 #include "oneapi/ccl/native_device_api/export_api.hpp"
 #include "unified_context_impl.hpp"
 
-ccl_stream::ccl_stream(ccl_stream_type_t stream_type,
+ccl_stream::ccl_stream(stream_type type,
                stream_native_t& stream,
                const ccl::library_version& version)
-            : type(stream_type),
+            : type(type),
               version(version) {
     native_stream = stream;
 }
 
-ccl_stream::ccl_stream(ccl_stream_type_t stream_type,
+ccl_stream::ccl_stream(stream_type type,
                stream_native_handle_t handle,
                const ccl::library_version& version)
-            : type(stream_type),
+            : type(type),
               version(version) {
      creation_is_postponed = true;
      (void)handle;
      throw std::runtime_error(std::string(__PRETTY_FUNCTION__) + " - unsupported ");
 }
 
-ccl_stream::ccl_stream(ccl_stream_type_t stream_type, const ccl::library_version& version)
-            : type(stream_type),
+ccl_stream::ccl_stream(stream_type type, const ccl::library_version& version)
+            : type(type),
               version(version) {
     creation_is_postponed = true;
     LOG_DEBUG("Scheduled postponed stream creation");
@@ -35,7 +35,7 @@ void ccl_stream::build_from_params() {
         throw ccl::exception(std::string(__FUNCTION__) + " - incorrect usage, strem is not sheduled for postponed creation");
     }
 
-    type = ccl_stream_host;
+    type = stream_type::host;
     try {
 #ifdef CCL_ENABLE_SYCL
         if (native_context.first) {
@@ -69,15 +69,15 @@ void ccl_stream::build_from_params() {
         //override type
         if (native_stream.get_device().is_host())
         {
-            type = ccl_stream_host;
+            type = stream_type::host;
         }
         else if(native_stream.get_device().is_cpu())
         {
-            type = ccl_stream_cpu;
+            type = stream_type::cpu;
         }
         else if(native_stream.get_device().is_gpu())
         {
-            type = ccl_stream_gpu;
+            type = stream_type::gpu;
         }
         else
         {
@@ -122,7 +122,7 @@ void ccl_stream::build_from_params() {
                                      " context is empty and device is empty too.");
         }
 
-        type = ccl_stream_gpu;
+        type = stream_type::gpu;
     #endif
 #endif
     }

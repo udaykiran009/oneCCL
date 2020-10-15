@@ -16,7 +16,7 @@ namespace ccl {
 }
 
 /*
-ccl_status_t CCL_API ccl_stream_create(ccl_stream_type_t type,
+ccl_status_t CCL_API ccl_stream_create(stream_type type,
                                           void* native_stream,
                                           ccl_stream_t* stream);
 */
@@ -25,7 +25,7 @@ public:
     friend class stream_provider_dispatcher;
     friend class ccl::detail::environment;
     /*
-    friend ccl_status_t CCL_API ccl_stream_create(ccl_stream_type_t type,
+    friend ccl_status_t CCL_API ccl_stream_create(stream_type type,
                                void* native_stream,
                                ccl_stream_t* stream);*/
     using stream_native_t = stream_provider_dispatcher::stream_native_t;
@@ -39,11 +39,12 @@ public:
 
     using stream_provider_dispatcher::get_native_stream;
 
-    ccl_stream_type_t get_type() const {
+    stream_type get_type() const {
         return type;
     }
+
     bool is_sycl_device_stream() const {
-        return (type == ccl_stream_cpu || type == ccl_stream_gpu);
+        return (type == stream_type::cpu || type == stream_type::gpu);
     }
 
     static std::unique_ptr<ccl_stream> create(stream_native_t& native_stream,
@@ -120,17 +121,17 @@ public:
     void build_from_params();
 
 private:
-    ccl_stream(ccl_stream_type_t stream_type,
+    ccl_stream(stream_type type,
                stream_native_t& native_stream,
                const ccl::library_version& version);
 
-    ccl_stream(ccl_stream_type_t stream_type,
+    ccl_stream(stream_type type,
                stream_native_handle_t native_stream,
                const ccl::library_version& version);
 
-    ccl_stream(ccl_stream_type_t stream_type, const ccl::library_version& version);
+    ccl_stream(stream_type type, const ccl::library_version& version);
 
-    ccl_stream_type_t type;
+    stream_type type;
     const ccl::library_version version;
     typename ordinal_traits_t::return_type ordinal_val;
     typename index_traits_t::return_type index_val;

@@ -9,6 +9,17 @@
 
 #include "oneapi/ccl/ccl_type_traits.hpp"
 
+/**
+ * Supported stream types
+ */
+enum class stream_type : int {
+    host = 0,
+    cpu,
+    gpu,
+
+    last_value
+};
+
 class ccl_stream;
 class stream_provider_dispatcher {
 public:

@@ -26,15 +26,6 @@ typedef int ccl_status_t;
 #define ccl_status_runtime_error         (4)
 #define ccl_status_blocked_due_to_resize (5)
 #define ccl_status_last_value            (6)
-
-/** Stream types. */
-typedef enum {
-    ccl_stream_host = 0,
-    ccl_stream_cpu = 1,
-    ccl_stream_gpu = 2,
-
-    ccl_stream_last_value
-} ccl_stream_type_t;
 /************************************************/
 
 namespace ccl {
@@ -158,16 +149,6 @@ enum class cl_backend_type : int {
     dpcpp_sycl = 0x1,
     l0 = 0x2,
     dpcpp_sycl_l0 = 0x3,
-
-    last_value
-};
-/**
- * Supported stream types
- */
-enum class stream_type : int {
-    host = 0,
-    cpu,
-    gpu,
 
     last_value
 };
