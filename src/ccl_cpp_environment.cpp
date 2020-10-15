@@ -201,8 +201,3 @@ CREATE_STREAM_EXT_INSTANTIATION(typename ccl::unified_device_type::ccl_native_t,
 
 CREATE_CONTEXT_INSTANTIATION(typename ccl::unified_device_context_type::ccl_native_t)
 CREATE_DEVICE_INSTANTIATION(typename ccl::unified_device_type::ccl_native_t)
-
-/*
-CREATE_EVENT_INSTANTIATION(cl::sycl::event)
-CREATE_EVENT_EXT_INSTANTIATION(cl_event)
-*/

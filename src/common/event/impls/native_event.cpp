@@ -3,8 +3,8 @@
 
 namespace ccl {
 
-native_event_impl::native_event_impl(event::native_t& native_event, ccl::library_version version)
-    : ev(new ccl_event(native_event, version)) {
+native_event_impl::native_event_impl(std::unique_ptr<ccl_event> ev)
+    : ev(std::move(ev)) {
 }
 
 void native_event_impl::wait() {

@@ -30,6 +30,8 @@ public:
     using impl_t = typename impl_value_t::element_type;
 
     using native_t = typename unified_event_type::ccl_native_t;
+    using native_handle_t = typename unified_event_type::handle_t;
+    using context_t = typename unified_device_context_type::ccl_native_t;
 
     event() noexcept;
     event(event&& src) noexcept;
@@ -79,6 +81,8 @@ private:
     friend class detail::environment;
 
     static event create_from_native(native_t& native_event);
+    static event create_from_native(native_handle_t native_event_handle,
+                                    context_t context);
 };
 
 } // namespace ccl

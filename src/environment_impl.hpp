@@ -57,20 +57,6 @@ stream CCL_API environment::create_stream(native_stream_type& native_stream,
     return stream::create_stream(native_stream, native_ctx);
 }
 
-// //Event
-// template <class event_type, typename T>
-// event CCL_API environment::create_event(event_type& native_event) {
-//     return event::create_event(native_event);
-// }
-
-// template <class event_handle_type, typename T>
-// event CCL_API
-// environment::create_event(event_handle_type native_event_handle,
-//                           typename unified_device_context_type::ccl_native_t context) {
-//     return event::create_event(native_event_handle, context);
-// }
-
-
 //Device communicator
 template <class DeviceType, class ContextType>
 vector_class<communicator> CCL_API
@@ -176,13 +162,3 @@ ccl_api_type CCL_API environment::create_postponed_api_type(args_type... args) c
 #define CREATE_DEVICE_INSTANTIATION(native_device_type) \
     template ccl::device CCL_API ccl::detail::environment::create_device(native_device_type&& native_device) const; \
     template ccl::device CCL_API ccl::detail::environment::create_device(native_device_type& native_device) const;
-
-/*
-#define CREATE_EVENT_INSTANTIATION(native_event_type) \
-    template ccl::event CCL_API ccl::detail::environment::create_event(native_event_type& native_event);
-
-#define CREATE_EVENT_EXT_INSTANTIATION(event_handle_type) \
-    template ccl::event CCL_API ccl::detail::environment::create_event( \
-        event_handle_type native_event_handle, \
-        typename unified_device_context_type::ccl_native_t context);
-*/

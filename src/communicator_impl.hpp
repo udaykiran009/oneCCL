@@ -37,22 +37,6 @@ struct device_attr_impl
 
 
 namespace ccl {
-/* TODO temporary function for UT compilation: would be part of ccl::detail::environment in final
-template <class event_type,
-          class ...attr_value_pair_t>
-event create_event_from_attr(event_type& native_event_handle,
-                             typename unified_device_context_type::ccl_native_t context,
-                             attr_value_pair_t&&...avps)
-{
-    auto version = utils::get_library_version();
-
-    event str {event::impl_value_t(new event::impl_t(native_event_handle, context, version))};
-    int expander [] {(str.template set<attr_value_pair_t::idx()>(avps.val()), 0)...};
-    str.build_from_params();
-
-    return str;
-}
-*/
 
 template <class DeviceType, class ContextType>
 CCL_API vector_class<communicator> communicator::create_communicators(
