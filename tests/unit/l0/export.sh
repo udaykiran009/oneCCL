@@ -12,8 +12,9 @@ function show_help()
             \t\t-s: generate files for SINGLE device \n\
             \t\t-m: generate files for MULTI device \n\
             \t\t-t: generate files for MULTI TILE device \n\
-            \t\t-p: generate files for IPC \n\
+            \t\t-i: generate files for IPC \n\
             \t\t-g: generate files for TOPOLOGY (not implemented yet)\n\
+            \t\t-p: make a tar archive with the final folder\n\
             \t\t-c: compile an example. Must launch with the specific mode, i.e.: \n\
             \t\t\tIt'll complie for single device\n\
             \t\t\texport.sh -c -s dst_dir OR export.sh -cs dst_dir\n\n\
@@ -21,19 +22,24 @@ function show_help()
             \t\tNote: For successful compiling It requires 'level_zero' include/lib paths.\n\
             \t\tIn order to change the paths, please, modify these variables in the script:\n\
             \t\tINCLUDE_PATH_TO_LEVEL_ZERO, LIB_PATH_TO_LEVEL_ZERO\n\n\n\
-            \tIMPORTANT: launch this script from 'mlsl2/tests/unit/l0/'\n\
+            \tIMPORTANT: launch this script from 'mlsl2/tests/unit/l0/' in case of grabbing data\n\
             \tSee some exaples to launch:\n\
-            \texport.sh -cs dst_dir, export.sh -cm dst_dir, export.sh -s dst_dir and etc.\n"
+            \t\t 1. export.sh -cs dst_dir, export.sh -cm dst_dir, export.sh -s dst_dir and etc.\n\
+            \t\t 2. export.sh -csp dst_dir - compile single_device_suite and pack it into archive\n\
+            \n\
+            \tCompiling string: g++ -g -DMULTI_GPU_SUPPORT=1 -DSTANDALONE_UT -DUT_DEBUG -I${INCLUDE_PATH_TO_LEVEL_ZERO} -I./ native_device_api/l0/*.cpp \n\
+            \t\t\t -L${LIB_PATH_TO_LEVEL_ZERO} -lze_loader -W -w -L/usr/lib/ -lpthread  -pthread ./input_name -o ./out_name\n"
     }
 
 out_name=""
 input_name=""
-has_c_option=false
-has_s_option=false
-has_m_option=false
-has_t_option=false
-has_p_option=false
-has_g_option=false
+has_c_option=false # compile
+has_s_option=false # single device
+has_m_option=false # multi device
+has_t_option=false # multi tile device
+has_i_option=false # ipc device
+has_g_option=false # topology
+has_p_option=false # pack
 while getopts :hcasmtpg opt; do
     case $opt in
         h) show_help; exit ;;
@@ -41,8 +47,9 @@ while getopts :hcasmtpg opt; do
         s) has_s_option=true ;; # single device
         m) has_m_option=true ;; # multi device
         t) has_t_option=true ;; # multi tile device
-        p) has_p_option=true ;; # ipc device
+        i) has_i_option=true ;; # ipc device
         g) has_g_option=true ;; # topology
+        p) has_p_option=true ;; # pack
         :) echo "Missing argument for option -$OPTARG"; exit 1;;
        \?) echo "Unknown option -$OPTARG"; exit 1;;
     esac
@@ -78,27 +85,32 @@ function copy_dirs()
     for dir in "${list[@]}";
     do
         to_dir=`basename "${dir}"`
-        echo "Copy $dir to destination: ${export_dir}/${dir_suffix}/${to_dir}"
+        echo "Copy $dir -------> to destination: ${export_dir}/${dir_suffix}/${to_dir}"
         cp -Tr ${dir} "${export_dir}/${dir_suffix}/${to_dir}"
     done
 }
 
 function export_ccl_common()
 {
-    declare -a SourceArray=("${PROJECT_DIR}/include/oneapi/ccl.hpp"
+     declare -a SourceArray=("${PROJECT_DIR}/include/oneapi/ccl.hpp"
                             "${PROJECT_DIR}/include/oneapi/ccl/ccl_config.h"
-                            "${PROJECT_DIR}/src/common/log/log.hpp"
-                            "${PROJECT_DIR}/include/oneapi/ccl/native_device_api/export_api.hpp"
                             "${PROJECT_DIR}/include/oneapi/ccl/ccl_types.hpp"
                             "${PROJECT_DIR}/include/oneapi/ccl/ccl_type_traits.hpp"
                             "${PROJECT_DIR}/include/oneapi/ccl/ccl_device_types.hpp"
                             "${PROJECT_DIR}/include/oneapi/ccl/ccl_device_type_traits.hpp"
+                            "${PROJECT_DIR}/include/oneapi/ccl/ccl_environment.hpp"
                             )
     echo "Copy ccl library headers"
     copy_files "" ${SourceArray[@]}
 
     declare -a SourceDirsArray=("${PROJECT_DIR}/include/oneapi/ccl/native_device_api"
-                                "${PROJECT_DIR}/src/native_device_api/l0")
+                                "${PROJECT_DIR}/include/oneapi/ccl/native_device_api/l0"
+                                "${PROJECT_DIR}/src/native_device_api/l0"
+                                "${PROJECT_DIR}/src/native_device_api"
+                                "${PROJECT_DIR}/src/common"
+                                #"${PROJECT_DIR}/tests/functional/googletest-release-1.8.1"
+                                "${PROJECT_DIR}/include/oneapi"
+                                )
 
     echo "Copy ccl library directories"
     copy_dirs "" ${SourceDirsArray[@]}
@@ -139,11 +151,31 @@ function compile()
 {
     cd ${export_dir}
     echo "Compiling..."
-    g++ -g -DMULTI_GPU_SUPPORT=1 -DSTANDALONE_UT -DUT_DEBUG -I${INCLUDE_PATH_TO_LEVEL_ZERO} \
+    # Note: -W -w disable g++ warnings
+
+     output=$(g++ -g -DMULTI_GPU_SUPPORT=1 -DSTANDALONE_UT -DUT_DEBUG -I${INCLUDE_PATH_TO_LEVEL_ZERO} \
     -I./ native_device_api/l0/*.cpp -L${LIB_PATH_TO_LEVEL_ZERO} -lze_loader \
     -L/usr/lib/ -lpthread  -pthread \
-    ./$input_name -o ./$out_name
-    echo "Done compiling"
+    ./$input_name -o ./$out_name 2>&1)
+
+    if [[ $? != 0 ]]; then
+        # There was an error, display the error in $output
+        echo -e "Error:\n$output"
+    else
+        echo -e "Compiling done"
+    fi
+}
+
+function make_archive()
+{
+    echo "Start making archive from ${SCRIPT_DIR}/${export_dir}"
+    cd "${SCRIPT_DIR}"
+    output=$(tar cvfz export_dir.tar.gz ./${export_dir} 2>&1)
+    if [[ $? != 0 ]]; then
+        echo -e "Error:\n$output"
+    else
+        echo -e "Archive is done. Finale name of archive: export_dir.tar.gz"
+    fi
 }
 
 function main()
@@ -183,7 +215,7 @@ function main()
         copy_all_stuff
     fi
 
-    if $has_p_option; then
+    if $has_i_option; then
         echo "kernels_ipc_test"
         out_name="kernels_ipc_test"
 
@@ -208,4 +240,7 @@ if $has_c_option; then
     compile
 fi
 
+if $has_p_option; then
+    make_archive
+fi
 exit 0
