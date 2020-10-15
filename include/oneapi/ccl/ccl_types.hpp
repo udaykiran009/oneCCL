@@ -27,19 +27,6 @@ typedef int ccl_status_t;
 #define ccl_status_blocked_due_to_resize (5)
 #define ccl_status_last_value            (6)
 
-/** Resize action types. */
-typedef enum ccl_resize_action {
-    /* Wait additional changes for number of ranks */
-    ccl_ra_wait = 0,
-    /* Run with current number of ranks */
-    ccl_ra_run = 1,
-    /* Finalize work */
-    ccl_ra_finalize = 2,
-} ccl_resize_action_t;
-
-/* comm_size */
-typedef ccl_resize_action_t (*ccl_resize_fn_t)(size_t comm_size);
-
 /** Stream types. */
 typedef enum {
     ccl_stream_host = 0,
@@ -120,9 +107,6 @@ typedef struct {
 */
 
 enum class sparse_coalesce_mode : int { regular = 0, disable = 1, keep_precision = 2 };
-
-/* comm_size */
-typedef ccl_resize_action_t (*ccl_resize_fn_t)(size_t comm_size);
 
 /* in_buf, in_count, in_dtype, out_buf, out_count, out_dtype, context */
 typedef void (*prologue_fn)(const void*,
