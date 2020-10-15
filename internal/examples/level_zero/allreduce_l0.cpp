@@ -54,7 +54,7 @@ void user_thread_idx(size_t thread_idx,
     // alloc memory specific to devices
     for (auto& comm : comms) {
         // get native l0* /
-        ccl::communicator::ccl_device_t dev = comm.get_device();
+        ccl::communicator::ccl_device_t dev = comm.get_device().get_native();
         size_t rank = comm.rank();
 
         // create comm split attr
@@ -185,7 +185,7 @@ void user_thread_idx(size_t thread_idx,
     // alloc memory specific to devices
     for (auto& comm : comms) {
         // get native l0* /
-        ccl::communicator::ccl_device_t dev = comm.get_device();
+        ccl::communicator::ccl_device_t dev = comm.get_device().get_native();
         size_t rank = comm.rank();
 
         // wrapped L0-native API for devices: create native buffers

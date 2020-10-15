@@ -59,6 +59,7 @@ struct ccl_device_driver : public cl_base<ze_driver_handle_t, ccl_device_platfor
     const_device_ptr get_device(const ccl::device_index_type& path) const;
 
     std::shared_ptr<ccl_context> create_context();
+    std::shared_ptr<ccl_context> create_context_from_handle(ccl_context::handle_t);
 
     std::string to_string(const std::string& prefix = std::string()) const;
 

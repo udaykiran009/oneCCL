@@ -236,20 +236,21 @@ CCL_API std::shared_ptr<ccl_context> ccl_device_driver::create_context() {
     ze_context_desc_t context_desc = {
       ZE_STRUCTURE_TYPE_CONTEXT_DESC, nullptr, 0};
 
-    auto platform = get_owner();
     status = zeContextCreate(handle, &context_desc, &context);
     if (status != ZE_RESULT_SUCCESS) {
         throw std::runtime_error(std::string("zeContextCreate, error: ") +
                                  native::to_string(status));
     }
 
-    std::vector<std::weak_ptr<ccl_context>> vec;
-    auto ctx_holder = get_ctx().lock();
-    auto &table = ctx_holder->map_context;
-    auto ret = std::make_shared<ccl_context>(context, std::move(platform));
-    table[this].push_back(ret);
+    return create_context_from_handle(context);
+}
 
-    return ret;
+CCL_API std::shared_ptr<ccl_context> ccl_device_driver::create_context_from_handle(ccl_context::handle_t h)
+{
+    auto platform = get_owner();
+    auto ctx_holder = get_ctx().lock();
+
+    return ctx_holder->emplace(this, std::make_shared<ccl_context>(h, std::move(platform)));
 }
 
 void CCL_API ccl_device_driver::on_delete(ze_device_handle_t& sub_device_handle,

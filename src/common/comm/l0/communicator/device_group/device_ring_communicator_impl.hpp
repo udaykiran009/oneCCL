@@ -117,7 +117,7 @@ device_group_ring_communicator::coll_request_t device_group_ring_communicator::a
                        ->submit_entry<gpu_allreduce_entry, ccl_sched_add_back, group_id, class_id>(
                            *community,
                            real_device_it->second,
-                           this->get_context(),
+                           this->get_native_context(),
                            send_entry_buffer,
                            recv_entry_buffer,
                            count,
@@ -136,7 +136,7 @@ device_group_ring_communicator::coll_request_t device_group_ring_communicator::a
                     ->submit_entry<gpu_allreduce_entry, ccl_sched_add_back, group_id, class_id>(
                         *community,
                         virtual_device_it->second,
-                        this->get_context(),
+                        this->get_native_context(),
                         send_entry_buffer,
                         recv_entry_buffer,
                         count,

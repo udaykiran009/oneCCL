@@ -600,14 +600,14 @@ ccl_device::context_storage_type ccl_device::get_device_contexts() {
 CCL_API
 std::shared_ptr<ccl_context> ccl_device::get_default_device_context() {
     auto ctx_holder = get_device_contexts();
-    if (ctx_holder->map_context.empty())
+    auto driver = get_owner().lock();
+
+    auto& contexts_storage = ctx_holder->get_context_storage(driver.get());
+    auto acc = contexts_storage.access();
+    if (acc.get().empty())
         throw std::runtime_error(std::string(__PRETTY_FUNCTION__) +
                                  " - no default driver in context map");
-    auto &default_driver_ptr = *ctx_holder->map_context.begin();
-    if (default_driver_ptr.second.empty())
-        throw std::runtime_error(std::string(__PRETTY_FUNCTION__) +
-                                 " - no default context for default driver");
-    auto ctx = *default_driver_ptr.second.begin();
+    auto ctx = *acc.get().begin();
 
     return ctx;
 }

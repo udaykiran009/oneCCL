@@ -2,6 +2,7 @@
 
 #include "common/comm/l0/communicator/base_communicator.hpp"
 #include "common/comm/l0/device_community_holder.hpp"
+#include "native_device_api/compiler_ccl_wrappers_dispatcher.hpp"
 
 /*
 namespace native
@@ -65,6 +66,11 @@ public:
                               native::device_community_container<class_id>& community);
 
     bool is_ready() const override;
+
+    native::ccl_driver_context_ptr get_native_context()
+    {
+        return native::get_runtime_context(context.get());
+    }
 
     // communicator interfaces implementation
     DEVICE_COMM_INTERFACE_COLL_DEFINITION__VOID;
