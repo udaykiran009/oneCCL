@@ -7,6 +7,7 @@
 #include "kernels/ring_reduce_single_device_test.hpp"
 #include "kernels/ring_reduce_scatter_single_device_test.hpp"
 
+
 int main(int ac, char* av[]) {
     set_test_device_indices(getenv("L0_CLUSTER_AFFINITY_MASK"));
 #ifndef STANDALONE_UT
@@ -39,6 +40,7 @@ int main(int ac, char* av[]) {
         TypedTest_ring_reduce_scatter_single_device_mt t;
         t.start();
     }
+
     {
         TypedTest_ring_alltoallv_single_device_mt t;
         t.start();

@@ -1,5 +1,6 @@
 #pragma once
 #include <memory>
+#include <cstdint>
 #include <sstream>
 
 #include "allreduce_fixture.hpp"
@@ -11,6 +12,16 @@ namespace ring_allreduce_case {
 using bf16 = ushort;
 using float32_t = float;
 using float64_t = double;
+
+float bf16_to_fp32(bf16 val) {
+  uint32_t temp = static_cast<uint32_t>(val) << 16;
+  return *(reinterpret_cast<float *>(&temp));
+}
+
+bf16 fp32_to_bf16(float val) {
+  // Truncate for now
+  return (reinterpret_cast<bf16 *>(&val))[1];
+}
 
 template <class T>
 struct my_add {
@@ -48,6 +59,42 @@ struct my_max {
     static constexpr T init = std::numeric_limits<T>::min();
 };
 
+template <class T>
+struct my_bf16add {
+    T operator()(const T& lhs, const T& rhs) const {
+        return fp32_to_bf16(bf16_to_fp32(lhs) + bf16_to_fp32(rhs));
+    }
+
+    static constexpr T init = 0;
+};
+
+template <class T>
+struct my_bf16mult {
+    T operator()(const T& lhs, const T& rhs) const {
+        return fp32_to_bf16(bf16_to_fp32(lhs) * bf16_to_fp32(rhs));
+    }
+
+    static constexpr T init = 1;
+};
+
+template <class T>
+struct my_bf16min {
+    T operator()(const T& lhs, const T& rhs) const {
+        return fp32_to_bf16(std::min(bf16_to_fp32(lhs), bf16_to_fp32(rhs)));
+    }
+
+    static constexpr T init = 0x7f7f;
+};
+
+template <class T>
+struct my_bf16max {
+    T operator()(const T& lhs, const T& rhs) const {
+        return fp32_to_bf16(std::max(bf16_to_fp32(lhs), bf16_to_fp32(rhs)));
+    }
+
+    static constexpr T init = 0xff7f;
+};
+
 #define DEFINE_PAIR(T, Op) \
     std::pair<T, Op>
 
@@ -56,6 +103,12 @@ struct my_max {
     DEFINE_PAIR(T, my_mult<T>), \
     DEFINE_PAIR(T, my_max<T>),  \
     DEFINE_PAIR(T, my_min<T>)
+
+#define DEFINE_BF16TYPE(T)          \
+    DEFINE_PAIR(T, my_bf16add<T>),  \
+    DEFINE_PAIR(T, my_bf16mult<T>), \
+    DEFINE_PAIR(T, my_bf16max<T>),  \
+    DEFINE_PAIR(T, my_bf16min<T>)
 
 // For test we use enumerate over all the types and the ops and get pairs of <T, Op>.
 using TestTypes = ::testing::Types<
@@ -71,7 +124,7 @@ using TestTypes = ::testing::Types<
 //  DEFINE_TYPE(float16_t),
     DEFINE_TYPE(float32_t),
     DEFINE_TYPE(float64_t),
-    DEFINE_TYPE(bf16) */
+    DEFINE_TYPE(bf16)*/
     DEFINE_PAIR(int8_t, my_add<int8_t>),
     DEFINE_PAIR(uint8_t, my_mult<uint8_t>),
     DEFINE_PAIR(int16_t, my_min<int16_t>),
@@ -82,8 +135,9 @@ using TestTypes = ::testing::Types<
     DEFINE_PAIR(uint64_t, my_max<uint64_t>),
 //  DEFINE_PAIR(float16_t, my_add<float16_t>),
     DEFINE_PAIR(float32_t, my_mult<float32_t>),
-    DEFINE_PAIR(float64_t, my_min<float64_t>),
-    DEFINE_PAIR(bf16, my_max<bf16>)
+    DEFINE_PAIR(bf16, my_bf16add<bf16>),
+    DEFINE_PAIR(bf16, my_bf16max<bf16>),
+    DEFINE_PAIR(float64_t, my_min<float64_t>)
 >;
 
 template <class T, class Op>
@@ -116,20 +170,30 @@ struct param_traits;
                                                         \
     /*DEFINE_KERNEL_TYPE(float16_t, OpName)*/           \
     DEFINE_KERNEL_TYPE(float32_t, OpName)               \
-    DEFINE_KERNEL_TYPE(float64_t, OpName)               \
-    /* TODO: Enable once bf16 is not aliased to ushort  \
-        or remove if it's kept as this */               \
-    /*DEFINE_KERNEL_TYPE(bf16, OpName)*/                \
+    DEFINE_KERNEL_TYPE(float64_t, OpName)
+
+// We don't want to generate kernel types for my_bf16add
+// except unless if the operands are bf16 - so we redefine
+// the macro purely for bf16 operands.
+#define DEFINE_KERNEL_TYPES_FOR_BF16OP(OpName)          \
+    DEFINE_KERNEL_TYPE(bf16, OpName)
 
 DEFINE_KERNEL_TYPES_FOR_OP(add);
 DEFINE_KERNEL_TYPES_FOR_OP(mult);
 DEFINE_KERNEL_TYPES_FOR_OP(min);
 DEFINE_KERNEL_TYPES_FOR_OP(max);
 
+DEFINE_KERNEL_TYPES_FOR_BF16OP(bf16add);
+DEFINE_KERNEL_TYPES_FOR_BF16OP(bf16mult);
+DEFINE_KERNEL_TYPES_FOR_BF16OP(bf16min);
+DEFINE_KERNEL_TYPES_FOR_BF16OP(bf16max);
+
 #undef DEFINE_KERNEL_TYPE
 #undef DEFINE_TYPE
 #undef DEFINE_PAIR
 #undef DEFINE_KERNEL_TYPES_FOR_OP
+#undef DEFINE_BF16TYPE
+#undef DEFINE_KERNEL_TYPES_FOR_BF16OP
 
 }
 

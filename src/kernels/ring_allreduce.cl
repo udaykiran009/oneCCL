@@ -372,9 +372,21 @@ __kernel void allreduce_execution_##Name##_##OpName(size_t my_rank,             
     DEFINE_KERNEL(float32_t, float4, 4, __##OpName##_##float4, OpName)      \
     DEFINE_KERNEL(float64_t, double4, 4, __##OpName##_##double4, OpName)    \
     /* TODO: implement support for missing types*/                          \
-    /*DEFINE_KERNEL(float16_t, half, 1, __##OpName##_##half, OpName)*/      \
-    /* TODO: replace once bf16 support is fully implemented */              \
-    DEFINE_KERNEL(bf16, ushort, 1, __##OpName##_##bf16, OpName)
+    /*DEFINE_KERNEL(float16_t, half, 1, __##OpName##_##half, OpName)*/
+
+#define DEFINE_KERNELS_WITH_BF16OP(OpName)                                  \
+    DEFINE_KERNEL(bf16, ushort, 1, __##OpName##_##ushort, OpName)
+
+float __bf16_to_fp32(ushort V) {
+    uint temp = convert_uint(V) << 16;
+    return as_float(temp);
+}
+
+ushort __fp32_to_bf16(float V) {
+    // Truncate for now TODO: Proper rounding
+    ushort2 temp = as_ushort2(V);
+    return temp.s1;
+}
 
 #define DEFINE_ADD_OP(T)                                    \
     T __add_##T(T lhs, T rhs) {                             \
@@ -396,11 +408,37 @@ __kernel void allreduce_execution_##Name##_##OpName(size_t my_rank,             
         return max(lhs, rhs);                               \
     }
 
+#define DEFINE_BF16ADD_OP(T)                                                   \
+    T __bf16add_##T(T lhs, T rhs) {                                            \
+        return __fp32_to_bf16(__bf16_to_fp32(lhs) + __bf16_to_fp32(rhs));      \
+    }
+
+#define DEFINE_BF16MULT_OP(T)                                                  \
+    T __bf16mult_##T(T lhs, T rhs) {                                           \
+        return __fp32_to_bf16(__bf16_to_fp32(lhs) * __bf16_to_fp32(rhs));      \
+    }
+
+#define DEFINE_BF16MIN_OP(T)                                                   \
+    T __bf16min_##T(T lhs, T rhs) {                                            \
+        return __fp32_to_bf16(min(__bf16_to_fp32(lhs), __bf16_to_fp32(rhs)));  \
+    }
+
+#define DEFINE_BF16MAX_OP(T)                                                   \
+    T __bf16max_##T(T lhs, T rhs) {                                            \
+        return __fp32_to_bf16(max(__bf16_to_fp32(lhs), __bf16_to_fp32(rhs)));  \
+    }
+
 #define DEFINE_OPS(T)                                       \
     DEFINE_ADD_OP(T)                                        \
     DEFINE_MULT_OP(T)                                       \
     DEFINE_MIN_OP(T)                                        \
     DEFINE_MAX_OP(T)
+
+#define DEFINE_BF16OPS(T)                                   \
+    DEFINE_BF16ADD_OP(T)                                    \
+    DEFINE_BF16MULT_OP(T)                                   \
+    DEFINE_BF16MIN_OP(T)                                    \
+    DEFINE_BF16MAX_OP(T)
 
 // Define Op function for each supported type(use vector types for some of them as required by the kernel)
 DEFINE_OPS(char4)
@@ -417,8 +455,8 @@ DEFINE_OPS(ulong4)
 
 DEFINE_OPS(float4)
 DEFINE_OPS(double4)
-// Uses integer ops for now since bf16 is aliased to ushort for now
-DEFINE_OPS(bf16)
+
+DEFINE_BF16OPS(ushort)
 // TODO: Enable when half is supported
 /*DEFINE_OPS(half)*/
 
@@ -427,6 +465,11 @@ DEFINE_KERNELS_WITH_OP(add)
 DEFINE_KERNELS_WITH_OP(mult)
 DEFINE_KERNELS_WITH_OP(min)
 DEFINE_KERNELS_WITH_OP(max)
+
+DEFINE_KERNELS_WITH_BF16OP(bf16add)
+DEFINE_KERNELS_WITH_BF16OP(bf16mult)
+DEFINE_KERNELS_WITH_BF16OP(bf16min)
+DEFINE_KERNELS_WITH_BF16OP(bf16max)
 
 // numa
 // TODO: vecsize
