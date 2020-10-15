@@ -24,7 +24,8 @@ set (dependencies_sources
              "${PROJECT_SOURCE_DIR}/src/common/log/log.cpp"
              "${PROJECT_SOURCE_DIR}/src/common/device/device.cpp"
              "${PROJECT_SOURCE_DIR}/src/ccl_cpp_device.cpp"
-             "${PROJECT_SOURCE_DIR}/tests/unit/api/stubs/spinlock.cpp")
+             "${PROJECT_SOURCE_DIR}/tests/unit/api/stubs/spinlock.cpp"
+             "${PROJECT_SOURCE_DIR}/src/common/utils/version.cpp")
 
 foreach(src ${sources})
     get_filename_component(executable ${src} NAME_WE)

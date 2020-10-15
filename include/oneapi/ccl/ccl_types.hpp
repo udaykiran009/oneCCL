@@ -30,16 +30,6 @@ typedef int ccl_status_t;
 
 namespace ccl {
 
-/** Library version description. */
-typedef struct {
-    unsigned int major;
-    unsigned int minor;
-    unsigned int update;
-    const char* product_status;
-    const char* build_date;
-    const char* full;
-} library_version;
-
 /**
  * Supported reduction operations
  */
@@ -139,8 +129,6 @@ typedef void (*sparse_allreduce_alloc_fn)(size_t,
                                           void**,
                                           void**);
 
-// using datatype_attr_t = ccl_datatype_attr_t;
-
 /**
  *  Supported CL backend types
  */
@@ -152,6 +140,17 @@ enum class cl_backend_type : int {
 
     last_value
 };
+
+/** Library version description */
+typedef struct {
+    unsigned int major;
+    unsigned int minor;
+    unsigned int update;
+    const char* product_status;
+    const char* build_date;
+    const char* full;
+    cl_backend_type cl_backend;
+} library_version;
 
 /**
  * Type traits, which describes how-to types would be interpretered by ccl API

@@ -44,8 +44,8 @@ include_directories(${PROJECT_SOURCE_DIR}/tests/functional/googletest-release-1.
 file(GLOB sources "*.c" "*.cpp")
 
 set (dependencies_sources
-#             "${PROJECT_SOURCE_DIR}/src/ccl_empty_attr.cpp"
-             "${PROJECT_SOURCE_DIR}/src/ccl_app_api_datatype_attr.cpp")
+             "${PROJECT_SOURCE_DIR}/src/ccl_app_api_datatype_attr.cpp"
+             "${PROJECT_SOURCE_DIR}/src/common/utils/version.cpp")
 
 foreach(src ${sources})
     get_filename_component(executable ${src} NAME_WE)

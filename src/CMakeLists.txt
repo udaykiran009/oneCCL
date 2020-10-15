@@ -172,6 +172,7 @@ set(CCL_SRC
     common/event/impls/native_event.cpp
     common/request/request.cpp
     common/utils/spinlock.cpp
+    common/utils/version.cpp
     common/utils/yield.cpp
     ${EXTENSIONS_SRC})
 

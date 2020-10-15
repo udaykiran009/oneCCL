@@ -36,7 +36,8 @@ set (dependencies_sources
              "${PROJECT_SOURCE_DIR}/src/coll/ccl_reduce_op_attr.cpp"
              "${PROJECT_SOURCE_DIR}/src/coll/ccl_reduce_scatter_op_attr.cpp"
              "${PROJECT_SOURCE_DIR}/src/coll/ccl_sparse_allreduce_op_attr.cpp"
-             "${PROJECT_SOURCE_DIR}/src/coll/ccl_barrier_op_attr.cpp")
+             "${PROJECT_SOURCE_DIR}/src/coll/ccl_barrier_op_attr.cpp"
+             "${PROJECT_SOURCE_DIR}/src/common/utils/version.cpp")
 
 foreach(src ${sources})
     get_filename_component(executable ${src} NAME_WE)

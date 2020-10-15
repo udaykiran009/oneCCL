@@ -66,6 +66,7 @@ set (dependencies_sources
              "${PROJECT_SOURCE_DIR}/tests/unit/api/stubs/native_runtime_utils.cpp"
              "${PROJECT_SOURCE_DIR}/tests/unit/api/stubs/atl_wrapper.cpp"
              "${PROJECT_SOURCE_DIR}/tests/unit/api/stubs/ccl_unordered_coll_manager.cpp"
+             "${PROJECT_SOURCE_DIR}/src/common/utils/version.cpp"
              "${PROJECT_SOURCE_DIR}/tests/unit/api/stubs/ccl_allreduce_2d_builder.cpp")
 set(specific_sources)
 if(MULTI_GPU_SUPPORT)
