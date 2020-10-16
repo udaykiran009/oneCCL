@@ -38,11 +38,11 @@ struct base_communicator : public ccl::communicator_interface {
         return device.get_id();
     }
 
-    ccl::communicator_interface::device_t get_device() override {
+    ccl::communicator_interface::device_t get_device() const override {
         return device.get();
     }
 
-    ccl::communicator_interface::context_t get_context() override {
+    ccl::communicator_interface::context_t get_context() const override {
         return context.get();
     }
 

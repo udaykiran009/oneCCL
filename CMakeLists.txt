@@ -32,6 +32,7 @@ if (${CMAKE_BUILD_TYPE_CASE_INSENSITIVE} STREQUAL "debug")
     set(USE_SECURITY_FLAGS FALSE)
 endif()
 
+option(BUILD_TESTS "Build tests (functional and unit tests)" TRUE)
 option(USE_CODECOV_FLAGS "Calculate code coverage" FALSE)
 option(WITH_ASAN "Use address sanitizer, can only be used in Debug build" FALSE)
 
@@ -43,6 +44,7 @@ if(CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT)
 endif()
 
 #show build info
+message(STATUS "Build tests: ${BUILD_TESTS}")
 message(STATUS "Installation directory: ${CMAKE_INSTALL_PREFIX}")
 message(STATUS "Build type: ${CMAKE_BUILD_TYPE_CASE_INSENSITIVE}")
 message(STATUS "C compiler : ${CMAKE_C_COMPILER}")
@@ -266,5 +268,7 @@ if (CCL_ENABLE_SYCL)
     add_subdirectory(examples/sycl)
 endif()
 
-add_subdirectory(tests/functional)
-add_subdirectory(tests/unit)
+if (BUILD_TESTS)
+    add_subdirectory(tests/functional)
+    add_subdirectory(tests/unit)
+endif()

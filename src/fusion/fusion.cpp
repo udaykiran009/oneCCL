@@ -297,7 +297,7 @@ ccl_master_sched* ccl_fusion_manager::build_sched() {
 
 #ifdef CCL_ENABLE_SYCL
             if (stream && stream->is_sycl_device_stream())
-                entry_factory::make_entry<sycl_copy_device_to_host_entry>(
+                entry_factory::make_entry<sycl_copy_d2h_entry>(
                     part_scheds[idx].get(),
                     ccl_buffer(&(exec_queue[global_copy_idx]->coll_param.sycl_send_buf),
                                exec_queue[global_copy_idx]->coll_param.count * dtype_size,
@@ -335,7 +335,7 @@ ccl_master_sched* ccl_fusion_manager::build_sched() {
 
 #ifdef CCL_ENABLE_SYCL
             if (stream && stream->is_sycl_device_stream())
-                entry_factory::make_entry<sycl_copy_host_to_device_entry>(
+                entry_factory::make_entry<sycl_copy_h2d_entry>(
                     part_scheds[idx].get(),
                     ccl_buffer(fusion_buf, buf_cache.get_buf_size(), offset),
                     ccl_buffer(&(exec_queue[global_copy_idx]->coll_param.sycl_recv_buf),

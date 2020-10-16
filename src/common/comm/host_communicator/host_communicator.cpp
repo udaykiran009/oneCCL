@@ -101,13 +101,13 @@ ccl::device_index_type host_communicator::get_device_path() const {
                                    ccl::unused_index_value };
 }
 
-ccl::communicator_interface::device_t host_communicator::get_device() {
+ccl::communicator_interface::device_t host_communicator::get_device() const {
     throw ccl::exception(std::string(__FUNCTION__) + " is not applicable for " + traits::name());
     static ccl::communicator_interface::device_t empty;
     return empty;
 }
 
-ccl::communicator_interface::context_t host_communicator::get_context() {
+ccl::communicator_interface::context_t host_communicator::get_context() const {
     throw ccl::exception(std::string(__FUNCTION__) + " is not applicable for " + traits::name());
     static ccl::communicator_interface::context_t empty;
     return empty;

@@ -3,8 +3,6 @@
 
 #include <CL/sycl.hpp>
 #include <iostream>
-#include <string>
-#include <iostream>
 #include <map>
 #include <mpi.h>
 #include <set>
@@ -73,52 +71,57 @@ inline bool create_sycl_queue(int argc,
         }
     };
 
-    unique_ptr<device_selector> selector;
-    if (argc >= 2) {
-        if (strcmp(argv[1], "cpu") == 0) {
-            selector.reset(new cpu_selector());
-        }
-        else if (strcmp(argv[1], "gpu") == 0) {
-            if (has_gpu()) {
-                selector.reset(new gpu_selector());
+    try {
+        unique_ptr<device_selector> selector;
+        if (argc >= 2) {
+            if (strcmp(argv[1], "cpu") == 0) {
+                selector.reset(new cpu_selector());
             }
-            else if (has_accelerator()) {
+            else if (strcmp(argv[1], "gpu") == 0) {
+                if (has_gpu()) {
+                    selector.reset(new gpu_selector());
+                }
+                else if (has_accelerator()) {
+                    selector.reset(new host_selector());
+                    cout
+                        << "Accelerator is the first in device list, but unavailable for multiprocessing, host_selector has been created instead of default_selector.\n";
+                }
+                else {
+                    selector.reset(new default_selector());
+                    cout
+                        << "GPU is unavailable, default_selector has been created instead of gpu_selector.\n";
+                }
+            }
+            else if (strcmp(argv[1], "host") == 0) {
                 selector.reset(new host_selector());
-                cout
-                    << "Accelerator is the first in device list, but unavailable for multiprocessing, host_selector has been created instead of default_selector.\n";
+            }
+            else if (strcmp(argv[1], "default") == 0) {
+                if (!has_accelerator()) {
+                    selector.reset(new default_selector());
+                }
+                else {
+                    selector.reset(new host_selector());
+                    cout
+                        << "Accelerator is the first in device list, but unavailable for multiprocessing, host_selector has been created instead of default_selector.\n";
+                }
             }
             else {
-                selector.reset(new default_selector());
-                cout
-                    << "GPU is unavailable, default_selector has been created instead of gpu_selector.\n";
+                cerr << "Please provide device type: cpu | gpu | host | default\n";
+                return false;
             }
-        }
-        else if (strcmp(argv[1], "host") == 0) {
-            selector.reset(new host_selector());
-        }
-        else if (strcmp(argv[1], "default") == 0) {
-            if (!has_accelerator()) {
-                selector.reset(new default_selector());
-            }
-            else {
-                selector.reset(new host_selector());
-                cout
-                    << "Accelerator is the first in device list, but unavailable for multiprocessing, host_selector has been created instead of default_selector.\n";
-            }
+            q = queue(*selector, exception_handler);
+            cout << "Requested device type: " << argv[1] << "\nRunning on "
+                      << q.get_device().get_info<info::device::name>() << "\n";
         }
         else {
             cerr << "Please provide device type: cpu | gpu | host | default\n";
             return false;
         }
-        q = queue(*selector, exception_handler);
-        cout << "Requested device type: " << argv[1] << "\nRunning on "
-                  << q.get_device().get_info<info::device::name>() << "\n";
-    }
-    else {
-        cerr << "Please provide device type: cpu | gpu | host | default\n";
+        return true;
+    } catch (...) {
+        cerr << "No device of requested type available\n";
         return false;
     }
-    return true;
 }
 
 bool handle_exception(queue& q) {
@@ -183,6 +186,14 @@ struct buf_allocator {
                                         " - allocator already owns this pointer");
         }
         memory_storage.insert(ptr);
+
+        auto pointer_type = cl::sycl::get_pointer_type(ptr, q.get_context());
+        if (pointer_type != alloc_type)
+            throw std::runtime_error(string(__PRETTY_FUNCTION__)
+                + "pointer_type "
+                + std::to_string((int)pointer_type)
+                + " doesn't match with requested "
+                + std::to_string((int)alloc_type));
 
         return ptr;
     }

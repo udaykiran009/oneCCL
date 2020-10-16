@@ -550,10 +550,14 @@ int main(int argc, char* argv[]) {
     init_attr.buf_count = options.buf_count;
     init_attr.max_elem_count = options.max_elem_count;
     init_attr.v2i_ratio = options.v2i_ratio;
+    init_attr.sycl_mem_type = options.sycl_mem_type;
+    init_attr.sycl_usm_type = options.sycl_usm_type;
+
+    /* TODO: handle options.ranks_per_proc */
 
     host_data::init(transport_settings::instance().get_size(),
-                            transport_settings::instance().get_rank(),
-                            transport_settings::instance().get_kvs());
+                    std::vector<size_t> { (size_t)(transport_settings::instance().get_rank()) },
+                    transport_settings::instance().get_kvs());
 #ifdef CCL_ENABLE_SYCL
     if (options.backend == BACKEND_SYCL) {
 
@@ -561,10 +565,10 @@ int main(int argc, char* argv[]) {
         cl::sycl::context ctx(dev);
 
         device_data::init(transport_settings::instance().get_size(),
-                                   transport_settings::instance().get_rank(),
-                                   dev,
-                                   ctx,
-                                   transport_settings::instance().get_kvs());
+                          std::vector<size_t> { (size_t)(transport_settings::instance().get_rank()) },
+                          std::vector<cl::sycl::device> { dev },
+                          ctx,
+                          transport_settings::instance().get_kvs());
     }
 #endif
 

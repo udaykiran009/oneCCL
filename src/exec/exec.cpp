@@ -260,29 +260,29 @@ size_t ccl_executor::get_worker_count() const {
 }
 void ccl_executor::set_local_coord() {
 
-    // TODO: works only for hydra
-    const char* mpi_local_ranks_env = "MPI_LOCALNRANKS";
-    const char* mpi_local_id_env = "MPI_LOCALRANKID";
+    /* hydra specific env variables */
+    const char idx_env_name[] = "MPI_LOCALRANKID";
+    const char count_env_name[] = "MPI_LOCALNRANKS";
 
-    char* local_count = getenv(mpi_local_ranks_env);
-    if (local_count) {
-        char* local_id = getenv(mpi_local_id_env);
-        if (local_id) {
-            local_proc_count = std::atoi(local_count);
-            local_proc_idx = std::atoi(local_id);
-            return;
-        }
-    }
+    char* idx_env = getenv(idx_env_name);
+    char* count_env = getenv(count_env_name);
 
-    local_proc_count = 1;
-    local_proc_idx = 0;
+    if (!(idx_env && count_env)) {
 
-    LOG_INFO("WARNING: ",
-             mpi_local_ranks_env,
+        local_proc_idx = 0;
+        local_proc_count = 1;
+
+        LOG_INFO("WARNING: ",
+             idx_env_name,
              " or ",
-             mpi_local_id_env,
-             " not found. Use default: ",
-             local_proc_count,
-             " , ",
-             local_proc_idx);
+             count_env_name,
+             " not found. Use default: local_proc_idx ",
+             local_proc_idx,
+             " , local_proc_count ",
+             local_proc_count);
+    }
+    else {
+        local_proc_idx = std::atoi(idx_env);
+        local_proc_count = std::atoi(count_env);
+    }
 }

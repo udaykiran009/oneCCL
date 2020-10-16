@@ -28,8 +28,8 @@ struct communicator_interface_dispatcher {
 #endif //MULTI_GPU_SUPPORT
 
     virtual ccl::device_index_type get_device_path() const = 0;
-    virtual device_t get_device() = 0;
-    virtual context_t get_context() = 0;
+    virtual device_t get_device() const = 0;
+    virtual context_t get_context() const = 0;
     virtual const comm_split_attr& get_comm_split_attr() const = 0;
     virtual group_split_type get_topology_type() const = 0;
     virtual device_topology_type get_topology_class() const = 0;

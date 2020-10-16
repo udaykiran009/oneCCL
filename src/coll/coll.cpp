@@ -818,6 +818,7 @@ ccl_request* ccl_broadcast_impl(void* buf,
                                 const ccl_coll_attr& attr,
                                 ccl_comm* comm,
                                 const ccl_stream* stream) {
+
     ccl_coll_param param{};
 
     param.ctype = ccl_coll_bcast;

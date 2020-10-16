@@ -71,11 +71,11 @@ CCL_API communicator communicator::split(const comm_split_attr& attr) {
     return communicator(get_impl()->split(attr));
 }
 
-CCL_API device communicator::get_device() {
+CCL_API device communicator::get_device() const {
     return device::create_device(get_impl()->get_device());
 }
 
-CCL_API context communicator::get_context() {
+CCL_API context communicator::get_context() const {
     return context::create_context(get_impl()->get_context());
 }
 

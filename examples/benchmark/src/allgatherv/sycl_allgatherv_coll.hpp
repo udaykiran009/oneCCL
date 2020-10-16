@@ -24,38 +24,46 @@ struct sycl_allgatherv_coll : sycl_base_coll<Dtype, allgatherv_strategy_impl> {
             : coll_base(init_attr, 1, coll_base::comm().size(), coll_base::comm().size()) {}
 
     virtual void prepare(size_t elem_count) override {
+
+        if (base_coll::get_sycl_mem_type() != SYCL_MEM_BUF)
+            return;
+
         size_t local_rank = coll_base::comm().rank();
         size_t local_size = coll_base::comm().size();
 
         for (size_t b_idx = 0; b_idx < base_coll::get_buf_count(); b_idx++) {
-            device_data::sycl_queue.submit([&](handler& cgh) {
+            device_data::sycl_queue.submit([&](handler& h) {
                 auto send_buf = (static_cast<sycl_buffer_t<Dtype>*>(send_bufs[b_idx]));
                 auto recv_buf = (static_cast<sycl_buffer_t<Dtype>*>(recv_bufs[b_idx]));
-                auto send_buf_acc = send_buf->template get_access<mode::write>(cgh);
-                auto recv_buf_acc = recv_buf->template get_access<mode::write>(cgh);
-                cgh.parallel_for<class allatherv_buf_fill<Dtype>>(range<1>{elem_count}, [=](item<1> e_idx)
+                auto send_buf_acc = send_buf->template get_access<mode::write>(h);
+                auto recv_buf_acc = recv_buf->template get_access<mode::write>(h);
+                h.parallel_for<class allatherv_buf_fill<Dtype>>(range<1>{elem_count}, [=](item<1> e_idx)
                 {
                     send_buf_acc[e_idx] = local_rank;
                     for (size_t idx = 0; idx < local_size; idx++) {
                         recv_buf_acc[idx * elem_count + e_idx.get_id(0)] = 0;
                     }
                 });
-            });
+            }).wait();
         }
     }
 
     virtual void finalize(size_t elem_count) override {
+
+        if (base_coll::get_sycl_mem_type() != SYCL_MEM_BUF)
+            return;
+
         bool unexpected_device_value = false;
         size_t local_size = coll_base::comm().size();
         Dtype sbuf_expected = coll_base::comm().rank();
 
         for (size_t b_idx = 0; b_idx < base_coll::get_buf_count(); b_idx++) {
-            device_data::sycl_queue.submit([&](handler& cgh) {
+            device_data::sycl_queue.submit([&](handler& h) {
                 auto send_buf = (static_cast<sycl_buffer_t<Dtype>*>(send_bufs[b_idx]));
                 auto recv_buf = (static_cast<sycl_buffer_t<Dtype>*>(recv_bufs[b_idx]));
-                auto send_buf_acc = send_buf->template get_access<mode::write>(cgh);
-                auto recv_buf_acc = recv_buf->template get_access<mode::write>(cgh);
-                cgh.parallel_for<class allgatherv_buf_check<Dtype>>(range<1>{elem_count}, [=](item<1> e_idx) mutable
+                auto send_buf_acc = send_buf->template get_access<mode::read>(h);
+                auto recv_buf_acc = recv_buf->template get_access<mode::read>(h);
+                h.parallel_for<class allgatherv_buf_check<Dtype>>(range<1>{elem_count}, [=](item<1> e_idx) mutable
                 {
                     Dtype value = send_buf_acc[e_idx];
                     if (value != sbuf_expected)
@@ -68,15 +76,15 @@ struct sycl_allgatherv_coll : sycl_base_coll<Dtype, allgatherv_strategy_impl> {
                             unexpected_device_value = true;
                     }
                 });
-            });
+            }).wait();
         }
 
         Dtype value;
         for (size_t b_idx = 0; b_idx < base_coll::get_buf_count(); b_idx++) {
             auto send_buf = (static_cast<sycl_buffer_t<Dtype>*>(send_bufs[b_idx]));
             auto recv_buf = (static_cast<sycl_buffer_t<Dtype>*>(recv_bufs[b_idx]));
-            auto send_buf_acc = send_buf->template get_access<mode::write>();
-            auto recv_buf_acc = recv_buf->template get_access<mode::write>();
+            auto send_buf_acc = send_buf->template get_access<mode::read>();
+            auto recv_buf_acc = recv_buf->template get_access<mode::read>();
 
             for (size_t e_idx = 0; e_idx < elem_count; e_idx++) {
                 value = send_buf_acc[e_idx];

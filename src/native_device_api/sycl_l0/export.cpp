@@ -110,6 +110,11 @@ generic_device_type<cl_backend_type::dpcpp_sycl_l0>::get() noexcept {
     return device;
 }
 
+const typename generic_device_type<cl_backend_type::dpcpp_sycl_l0>::ccl_native_t&
+generic_device_type<cl_backend_type::dpcpp_sycl_l0>::get() const noexcept {
+    return device;
+}
+
 
 /**
  * Event

@@ -311,7 +311,7 @@ ccl_status_t ccl_parallelizer::process(ccl_master_sched* sched) {
             /* convert sycl buffer */
             if (coll_param.stream && coll_param.stream->is_sycl_device_stream()) {
                 if (comm->rank() == coll_param.root) {
-                    entry_factory::make_entry<sycl_copy_device_to_host_entry>(
+                    entry_factory::make_entry<sycl_copy_d2h_entry>(
                         part_scheds[0].get(),
                         ccl_buffer(&(coll_param.sycl_buf),
                                    coll_param.count * dtype_size,
@@ -341,7 +341,7 @@ ccl_status_t ccl_parallelizer::process(ccl_master_sched* sched) {
             /* convert sycl buffer */
             if (coll_param.stream && coll_param.stream->is_sycl_device_stream()) {
                 sched->sync_partial_scheds();
-                entry_factory::make_entry<sycl_copy_host_to_device_entry>(
+                entry_factory::make_entry<sycl_copy_h2d_entry>(
                     part_scheds[0].get(),
                     ccl_buffer(coll_param.buf, coll_param.count * dtype_size),
                     ccl_buffer(&(coll_param.sycl_buf),
@@ -359,7 +359,7 @@ ccl_status_t ccl_parallelizer::process(ccl_master_sched* sched) {
 #ifdef CCL_ENABLE_SYCL
                 /* convert sycl buffer */
                 if (coll_param.stream && coll_param.stream->is_sycl_device_stream()) {
-                    entry_factory::make_entry<sycl_copy_device_to_host_entry>(
+                    entry_factory::make_entry<sycl_copy_d2h_entry>(
                         part_scheds[0].get(),
                         ccl_buffer(&(coll_param.sycl_send_buf),
                                    coll_param.count * dtype_size,
@@ -394,7 +394,7 @@ ccl_status_t ccl_parallelizer::process(ccl_master_sched* sched) {
             if (coll_param.stream && coll_param.stream->is_sycl_device_stream()) {
                 sched->sync_partial_scheds();
                 if (comm->rank() == coll_param.root) {
-                    entry_factory::make_entry<sycl_copy_host_to_device_entry>(
+                    entry_factory::make_entry<sycl_copy_h2d_entry>(
                         part_scheds[0].get(),
                         ccl_buffer(coll_param.recv_buf, coll_param.count * dtype_size),
                         ccl_buffer(&(coll_param.sycl_recv_buf),
@@ -413,7 +413,7 @@ ccl_status_t ccl_parallelizer::process(ccl_master_sched* sched) {
 #ifdef CCL_ENABLE_SYCL
                 /* convert sycl buffer */
                 if (coll_param.stream && coll_param.stream->is_sycl_device_stream()) {
-                    entry_factory::make_entry<sycl_copy_device_to_host_entry>(
+                    entry_factory::make_entry<sycl_copy_d2h_entry>(
                         part_scheds[0].get(),
                         ccl_buffer(&(coll_param.sycl_send_buf),
                                    coll_param.count * comm_size * dtype_size,
@@ -452,7 +452,7 @@ ccl_status_t ccl_parallelizer::process(ccl_master_sched* sched) {
             /* convert sycl buffer */
             if (coll_param.stream && coll_param.stream->is_sycl_device_stream()) {
                 sched->sync_partial_scheds();
-                entry_factory::make_entry<sycl_copy_host_to_device_entry>(
+                entry_factory::make_entry<sycl_copy_h2d_entry>(
                     part_scheds[0].get(),
                     ccl_buffer(coll_param.recv_buf, coll_param.count * dtype_size),
                     ccl_buffer(&(coll_param.sycl_recv_buf),
@@ -471,7 +471,7 @@ ccl_status_t ccl_parallelizer::process(ccl_master_sched* sched) {
 #ifdef CCL_ENABLE_SYCL
             /* convert sycl buffer */
             if (coll_param.stream && coll_param.stream->is_sycl_device_stream()) {
-                entry_factory::make_entry<sycl_copy_device_to_host_entry>(
+                entry_factory::make_entry<sycl_copy_d2h_entry>(
                     part_scheds[0].get(),
                     ccl_buffer(&(coll_param.sycl_send_buf),
                                coll_param.count * dtype_size,
@@ -612,7 +612,7 @@ ccl_status_t ccl_parallelizer::process(ccl_master_sched* sched) {
             /* convert sycl buffer */
             if (coll_param.stream && coll_param.stream->is_sycl_device_stream()) {
                 sched->sync_partial_scheds();
-                entry_factory::make_entry<sycl_copy_host_to_device_entry>(
+                entry_factory::make_entry<sycl_copy_h2d_entry>(
                     part_scheds[0].get(),
                     ccl_buffer(coll_param.recv_buf, coll_param.count * dtype_size),
                     ccl_buffer(&(coll_param.sycl_recv_buf),
@@ -633,11 +633,11 @@ ccl_status_t ccl_parallelizer::process(ccl_master_sched* sched) {
                 size_t sycl_buf_offset = 0;
                 if (coll_param.sycl_send_buf == coll_param.sycl_recv_buf) {
                     for (int i = 0; i < my_rank; i++) {
-                        sycl_buf_offset += coll_param.recv_counts[i] * dtype_size;
+                        sycl_buf_offset += coll_param.recv_counts[i];
                     }
                     LOG_TRACE("sycl_buf_offset = ", sycl_buf_offset);
                 }
-                entry_factory::make_entry<sycl_copy_device_to_host_entry>(
+                entry_factory::make_entry<sycl_copy_d2h_entry>(
                     part_scheds[0].get(),
                     ccl_buffer(&(coll_param.sycl_send_buf),
                                coll_param.send_count * dtype_size,
@@ -775,7 +775,7 @@ ccl_status_t ccl_parallelizer::process(ccl_master_sched* sched) {
             /* convert sycl buffer */
             if (coll_param.stream && coll_param.stream->is_sycl_device_stream()) {
                 sched->sync_partial_scheds();
-                entry_factory::make_entry<sycl_copy_host_to_device_entry>(
+                entry_factory::make_entry<sycl_copy_h2d_entry>(
                     part_scheds[0].get(),
                     ccl_buffer(coll_param.recv_buf, ag_recv_bytes),
                     ccl_buffer(
@@ -792,7 +792,7 @@ ccl_status_t ccl_parallelizer::process(ccl_master_sched* sched) {
 #ifdef CCL_ENABLE_SYCL
             /* convert sycl buffer */
             if (coll_param.stream && coll_param.stream->is_sycl_device_stream()) {
-                entry_factory::make_entry<sycl_copy_device_to_host_entry>(
+                entry_factory::make_entry<sycl_copy_d2h_entry>(
                     part_scheds[0].get(),
                     ccl_buffer(
                         &(coll_param.sycl_send_buf), a2av_send_bytes, ccl_buffer_type::INDIRECT),
@@ -841,7 +841,7 @@ ccl_status_t ccl_parallelizer::process(ccl_master_sched* sched) {
             /* convert sycl buffer */
             if (coll_param.stream && coll_param.stream->is_sycl_device_stream()) {
                 sched->sync_partial_scheds();
-                entry_factory::make_entry<sycl_copy_host_to_device_entry>(
+                entry_factory::make_entry<sycl_copy_h2d_entry>(
                     part_scheds[0].get(),
                     ccl_buffer(coll_param.recv_buf, a2av_recv_bytes),
                     ccl_buffer(

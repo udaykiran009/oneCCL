@@ -75,12 +75,12 @@ public:
     /**
      * Retrieves underlying device, which was used as communicator construction argument
      */
-    device get_device();
+    device get_device() const;
 
     /**
      * Retrieves underlying context, which was used as communicator construction argument
      */
-    context get_context();
+    context get_context() const;
 
     template <class... attr_value_pair_t>
     stream create_stream(attr_value_pair_t&&... avps) {

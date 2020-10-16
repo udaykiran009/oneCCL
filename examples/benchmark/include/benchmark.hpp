@@ -26,82 +26,6 @@ using namespace cl::sycl::access;
 #include "coll.hpp"
 #include "sparse_allreduce/sparse_detail.hpp"
 
-/* specific benchmark variables */
-// TODO: add ccl::bf16
-constexpr std::initializer_list<ccl::datatype> all_dtypes = {
-    ccl::datatype::int8,    ccl::datatype::int32, ccl::datatype::float32,
-    ccl::datatype::float64, ccl::datatype::int64, ccl::datatype::uint64
-};
-
-/* specific benchmark defines */
-
-#define PRINT(fmt, ...) printf(fmt "\n", ##__VA_ARGS__);
-
-#ifndef PRINT_BY_ROOT
-#define PRINT_BY_ROOT(comm, fmt, ...) \
-    if (comm.rank() == 0) { \
-        printf(fmt "\n", ##__VA_ARGS__); \
-    }
-#endif //PRINT_BY_ROOT
-
-#define ASSERT(cond, fmt, ...) \
-    do { \
-        if (!(cond)) { \
-            printf("FAILED\n"); \
-            fprintf(stderr, "ASSERT '%s' FAILED " fmt "\n", #cond, ##__VA_ARGS__); \
-            throw std::runtime_error("ASSERT FAILED"); \
-        } \
-    } while (0)
-
-typedef enum { BACKEND_HOST, BACKEND_SYCL } backend_type_t;
-typedef enum { LOOP_REGULAR, LOOP_UNORDERED } loop_type_t;
-typedef enum { BUF_SINGLE, BUF_MULTI } buf_type_t;
-
-#define DEFAULT_BACKEND BACKEND_HOST
-#define DEFAULT_LOOP    LOOP_REGULAR
-#define DEFAULT_BUF     BUF_SINGLE
-
-std::map<backend_type_t, std::string> backend_names = {
-    std::make_pair(BACKEND_HOST, "host"),
-    std::make_pair(BACKEND_SYCL, "sycl")
-};
-
-std::map<loop_type_t, std::string> loop_names = { std::make_pair(LOOP_REGULAR, "regular"),
-                                                  std::make_pair(LOOP_UNORDERED, "unordered") };
-
-std::map<buf_type_t, std::string> buf_names = { std::make_pair(BUF_MULTI, "multi"),
-                                                std::make_pair(BUF_SINGLE, "single") };
-
-// TODO: add ccl::bf16
-std::map<ccl::datatype, std::string> dtype_names = {
-    std::make_pair(ccl::datatype::int8, "char"),
-    std::make_pair(ccl::datatype::int32, "int"),
-    std::make_pair(ccl::datatype::float32, "float"),
-    std::make_pair(ccl::datatype::float64, "double"),
-    std::make_pair(ccl::datatype::int64, "int64"),
-    std::make_pair(ccl::datatype::uint64, "uint64"),
-};
-
-std::map<ccl::reduction, std::string> reduction_names = {
-    std::make_pair(ccl::reduction::sum, "sum"),
-    std::make_pair(ccl::reduction::prod, "prod"),
-    std::make_pair(ccl::reduction::min, "min"),
-    std::make_pair(ccl::reduction::max, "max"),
-};
-
-// variables for setting dtypes to launch benchmark
-// TODO: add ccl::bf16
-template <class native_type>
-using checked_dtype_t = std::pair<bool, native_type>;
-using supported_dtypes_t = std::tuple<checked_dtype_t<char>,
-                                      checked_dtype_t<int>,
-                                      checked_dtype_t<float>,
-                                      checked_dtype_t<double>,
-                                      checked_dtype_t<int64_t>,
-                                      checked_dtype_t<uint64_t>>;
-supported_dtypes_t launch_dtypes;
-
-/* specific benchmark functions */
 void print_help_usage(const char* app) {
     PRINT(
         "\nUSAGE:\n"
@@ -109,7 +33,6 @@ void print_help_usage(const char* app) {
         "OPTIONS:\n"
         "\t[-b,--backend <backend>]: %s\n"
         "\t[-e,--loop <execution loop>]: %s\n"
-        "\t[-l,--coll <collectives list>]: %s\n"
         "\t[-i,--iters <iteration count>]: %d\n"
         "\t[-w,--warmup_iters <warm up iteration count>]: %d\n"
         "\t[-p,--buf_count <number of parallel operations within single collective>]: %d\n"
@@ -117,9 +40,13 @@ void print_help_usage(const char* app) {
         "\t[-t,--max_elem_count <maximum number of elements for single collective>]: %d\n"
         "\t[-c,--check <check result correctness>]: %d\n"
         "\t[-v,--v2i_ratio <values to indices ratio in sparse_allreduce>]: %d\n"
+        "\t[-n,--buf_type <buffer type>]: %s\n"
+        "\t[-m,--sycl_mem_type <sycl memory type>]: %s\n"
+        "\t[-u,--sycl_usm_type <sycl usm type>]: %s\n"
+        "\t[-k,--ranks_per_proc <rank count per process>]: %d\n"
+        "\t[-l,--coll <collectives list>]: %s\n"
         "\t[-d,--dtype <datatypes list/all>]: %s\n"
         "\t[-r,--reduction <reductions list/all>]: %s\n"
-        "\t[-n,--buf_type <buffer type>]: %s\n"
         "\t[-o,--csv_filepath <file to store CSV-formatted data into>]: %s\n"
         "\t[-h,--help]\n\n"
         "example:\n\t--coll allgatherv,allreduce,sparse_allreduce,sparse_allreduce_bf16 --backend host --loop regular\n"
@@ -127,7 +54,6 @@ void print_help_usage(const char* app) {
         app,
         backend_names[DEFAULT_BACKEND].c_str(),
         loop_names[DEFAULT_LOOP].c_str(),
-        DEFAULT_COLL_LIST,
         DEFAULT_ITERS,
         DEFAULT_WARMUP_ITERS,
         DEFAULT_BUF_COUNT,
@@ -135,9 +61,13 @@ void print_help_usage(const char* app) {
         DEFAULT_MAX_ELEM_COUNT,
         DEFAULT_CHECK_VALUES,
         DEFAULT_V2I_RATIO,
+        buf_names[DEFAULT_BUF_TYPE].c_str(),
+        sycl_mem_names[DEFAULT_SYCL_MEM_TYPE].c_str(),
+        sycl_usm_names[DEFAULT_SYCL_USM_TYPE].c_str(),
+        DEFAULT_RANKS_PER_PROC,
+        DEFAULT_COLL_LIST,
         DEFAULT_DTYPES_LIST,
         DEFAULT_REDUCTIONS_LIST,
-        buf_names[DEFAULT_BUF_TYPE].c_str(),
         DEFAULT_CSV_FILEPATH);
 }
 
@@ -234,6 +164,30 @@ int set_buf_type(const std::string& option_value, buf_type_t& buf) {
     return 0;
 }
 
+int set_sycl_mem_type(const std::string& option_value, sycl_mem_type_t& mem) {
+    std::string option_name = "sycl_mem_type";
+    std::set<std::string> supported_option_values{ sycl_mem_names[SYCL_MEM_USM], sycl_mem_names[SYCL_MEM_BUF] };
+
+    if (check_supported_options(option_name, option_value, supported_option_values))
+        return -1;
+
+    mem = (option_value == sycl_mem_names[SYCL_MEM_USM]) ? SYCL_MEM_USM : SYCL_MEM_BUF;
+
+    return 0;
+}
+
+int set_sycl_usm_type(const std::string& option_value, sycl_usm_type_t& usm) {
+    std::string option_name = "sycl_usm_type";
+    std::set<std::string> supported_option_values{ sycl_usm_names[SYCL_USM_SHARED], sycl_usm_names[SYCL_USM_DEVICE] };
+
+    if (check_supported_options(option_name, option_value, supported_option_values))
+        return -1;
+
+    usm = (option_value == sycl_usm_names[SYCL_USM_SHARED]) ? SYCL_USM_SHARED : SYCL_USM_DEVICE;
+
+    return 0;
+}
+
 // leave this dtype here because of tokenize() call
 typedef struct user_options_t {
     backend_type_t backend;
@@ -246,6 +200,9 @@ typedef struct user_options_t {
     int check_values;
     buf_type_t buf_type;
     size_t v2i_ratio;
+    sycl_mem_type_t sycl_mem_type;
+    sycl_usm_type_t sycl_usm_type;
+    size_t ranks_per_proc;
     std::list<std::string> coll_names;
     std::list<std::string> dtypes;
     std::list<std::string> reductions;
@@ -254,7 +211,6 @@ typedef struct user_options_t {
     user_options_t() {
         backend = DEFAULT_BACKEND;
         loop = DEFAULT_LOOP;
-        coll_names = tokenize(DEFAULT_COLL_LIST, ',');
         iters = DEFAULT_ITERS;
         warmup_iters = DEFAULT_WARMUP_ITERS;
         buf_count = DEFAULT_BUF_COUNT;
@@ -263,11 +219,33 @@ typedef struct user_options_t {
         check_values = DEFAULT_CHECK_VALUES;
         buf_type = DEFAULT_BUF_TYPE;
         v2i_ratio = DEFAULT_V2I_RATIO;
+        sycl_mem_type = DEFAULT_SYCL_MEM_TYPE;
+        sycl_usm_type = DEFAULT_SYCL_USM_TYPE;
+        ranks_per_proc = DEFAULT_RANKS_PER_PROC;
+        coll_names = tokenize(DEFAULT_COLL_LIST, ',');
         dtypes = tokenize(DEFAULT_DTYPES_LIST, ',');
         reductions = tokenize(DEFAULT_REDUCTIONS_LIST, ',');
         csv_filepath = std::string(DEFAULT_CSV_FILEPATH);
     }
 } user_options_t;
+
+double when(void) {
+    struct timeval tv;
+    static struct timeval tv_base;
+    static int is_first = 1;
+
+    if (gettimeofday(&tv, NULL)) {
+        perror("gettimeofday");
+        return 0;
+    }
+
+    if (is_first) {
+        tv_base = tv;
+        is_first = 0;
+    }
+
+    return (double)(tv.tv_sec - tv_base.tv_sec) * 1.0e6 + (double)(tv.tv_usec - tv_base.tv_usec);
+}
 
 /* placing print_timings() here is because of declaration of user_options_t */
 // FIXME FS: what?
@@ -356,7 +334,6 @@ void print_timings(const ccl::communicator& comm,
     ccl::barrier(comm);
 }
 
-/* specific benchmark functors */
 class set_dtypes_func {
 private:
     const std::list<std::string>& dtypes;
@@ -380,7 +357,7 @@ int parse_user_options(int& argc,
     int errors = 0;
 
     // values needed by getopt
-    const char* const short_options = "b:e:i:w:p:f:t:c:v:l:d:r:n:o:h";
+    const char* const short_options = "b:e:i:w:p:f:t:c:v:n:o:m:u:k:l:d:r:h";
     struct option getopt_options[] = {
         { "backend", required_argument, 0, 'b' },
         { "loop", required_argument, 0, 'e' },
@@ -391,10 +368,13 @@ int parse_user_options(int& argc,
         { "max_elem_count", required_argument, 0, 't' },
         { "check", required_argument, 0, 'c' },
         { "v2i_ratio", required_argument, 0, 'v' },
+        { "buf_type", required_argument, 0, 'n' },
+        { "sycl_mem_type", required_argument, 0, 'm' },
+        { "sycl_usm_type", required_argument, 0, 'u' },
+        { "ranks", required_argument, 0, 'k' },
         { "coll", required_argument, 0, 'l' },
         { "dtype", required_argument, 0, 'd' },
         { "reduction", required_argument, 0, 'r' },
-        { "buf_type", required_argument, 0, 'n' },
         { "csv_filepath", required_argument, 0, 'o' },
         { "help", no_argument, 0, 'h' },
         { 0, 0, 0, 0 } // required at end of array.
@@ -417,6 +397,19 @@ int parse_user_options(int& argc,
             case 't': options.max_elem_count = atoll(optarg); break;
             case 'c': options.check_values = atoi(optarg); break;
             case 'v': options.v2i_ratio = atoll(optarg); break;
+            case 'n':
+                if (set_buf_type(optarg, options.buf_type))
+                    errors++;
+                break;
+             case 'm':
+                if (set_sycl_mem_type(optarg, options.sycl_mem_type))
+                    errors++;
+                break;
+            case 'u':
+                if (set_sycl_usm_type(optarg, options.sycl_usm_type))
+                    errors++;
+                break;
+            case 'k': options.ranks_per_proc = atoll(optarg); break;
             case 'l': options.coll_names = tokenize(optarg, ','); break;
             case 'd':
                 if (strcmp("all", optarg) == 0) {
@@ -431,10 +424,6 @@ int parse_user_options(int& argc,
                 }
                 else
                     options.reductions = tokenize(optarg, ',');
-                break;
-            case 'n':
-                if (set_buf_type(optarg, options.buf_type))
-                    errors++;
                 break;
             case 'o': options.csv_filepath = std::string(optarg); break;
             case 'h': print_help_usage(argv[0]); return -1;
@@ -480,6 +469,8 @@ void print_user_options(const user_options_t& options,
     std::string backend_str = find_str_val(backend_names, options.backend);
     std::string loop_str = find_str_val(loop_names, options.loop);
     std::string buf_type_str = find_str_val(buf_names, options.buf_type);
+    std::string sycl_mem_type_str = find_str_val(sycl_mem_names, options.sycl_mem_type);
+    std::string sycl_usm_type_str = find_str_val(sycl_usm_names, options.sycl_usm_type);
 
     PRINT_BY_ROOT(comm,
                   "options:"
@@ -492,8 +483,11 @@ void print_user_options(const user_options_t& options,
                   "\n  min_elem_count: %zu"
                   "\n  max_elem_count: %zu"
                   "\n  check:          %d"
-                  "\n  buf_type:       %s"
                   "\n  v2i_ratio:      %zu"
+                  "\n  buf_type:       %s"
+                  "\n  sycl_mem_type:  %s"
+                  "\n  sycl_usm_type:  %s"
+                  "\n  ranks_per_proc: %zu"
                   "\n  %s"
                   "\n  csv_filepath:   %s",
                   comm.size(),
@@ -505,8 +499,11 @@ void print_user_options(const user_options_t& options,
                   options.min_elem_count,
                   options.max_elem_count,
                   options.check_values,
-                  buf_type_str.c_str(),
                   options.v2i_ratio,
+                  buf_type_str.c_str(),
+                  sycl_mem_type_str.c_str(),
+                  sycl_usm_type_str.c_str(),
+                  options.ranks_per_proc,
                   ss.str().c_str(),
                   options.csv_filepath.c_str());
 }

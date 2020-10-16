@@ -29,7 +29,8 @@ struct generic_device_type<CL_BACKEND_TYPE> {
     template<class T>
     generic_device_type(T&& not_used) {(void)not_used;};
     void get_id() const noexcept;
-    ccl_native_t get() noexcept;
+    ccl_native_t& get() noexcept;
+    const ccl_native_t& get() const noexcept;
 };
 
 template <>

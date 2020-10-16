@@ -2,7 +2,6 @@
 
 #include <mpi.h>
 
-#include "base.hpp"
 #include "transport.hpp"
 
 transport_settings::transport_settings() {

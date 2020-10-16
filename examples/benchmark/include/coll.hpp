@@ -4,10 +4,11 @@
 #include "config.hpp"
 
 #ifdef CCL_ENABLE_SYCL
-#include "sycl_base.hpp"
 template <typename Dtype>
 using sycl_buffer_t = cl::sycl::buffer<Dtype, 1>;
 #endif
+
+#define COLL_ROOT (0)
 
 struct base_coll;
 
@@ -74,6 +75,8 @@ typedef struct bench_init_attr {
     size_t buf_count;
     size_t max_elem_count;
     size_t v2i_ratio;
+    sycl_mem_type_t sycl_mem_type;
+    sycl_usm_type_t sycl_usm_type;
 } bench_init_attr;
 
 /* base polymorph collective wrapper class */
@@ -106,11 +109,21 @@ struct base_coll {
     size_t get_buf_count() const noexcept {
         return init_attr.buf_count;
     }
+
     size_t get_max_elem_count() const noexcept {
         return init_attr.max_elem_count;
     }
+
     size_t get_single_buf_max_elem_count() const noexcept {
         return init_attr.buf_count * init_attr.max_elem_count;
+    }
+
+    sycl_mem_type_t get_sycl_mem_type() const noexcept {
+        return init_attr.sycl_mem_type;
+    }
+
+    sycl_usm_type_t get_sycl_usm_type() const noexcept {
+        return init_attr.sycl_usm_type;
     }
 
     std::vector<void*> send_bufs;
@@ -125,14 +138,20 @@ private:
 
 struct host_data {
     static ccl::shared_ptr_class<ccl::communicator> comm_ptr;
-    static void init(size_t size, size_t rank, ccl::shared_ptr_class<ccl::kvs_interface> kvs) {
+    static void init(size_t size,
+                     const std::vector<size_t>& ranks,
+                     ccl::shared_ptr_class<ccl::kvs_interface> kvs) {
 
         if (comm_ptr) {
             throw ccl::exception(std::string(__FUNCTION__) + " - reinit is not allowed");
         }
 
-        comm_ptr = std::make_shared<ccl::communicator>(
-            ccl::create_communicator(size, rank, kvs));
+        if (ranks.size() == 1)
+            comm_ptr = std::make_shared<ccl::communicator>(
+                ccl::create_communicator(size, ranks[0], kvs));
+        // else
+        //     comm_ptr = std::make_shared<ccl::communicator>(
+        //         ccl::create_communicators(size, ranks, kvs));
     }
 
     static void deinit() {
@@ -150,8 +169,8 @@ struct device_data {
     static cl::sycl::queue sycl_queue;
 
     static void init(size_t size,
-                     size_t rank,
-                     cl::sycl::device& device,
+                     const std::vector<size_t>& ranks,
+                     const std::vector<cl::sycl::device>& devices,
                      cl::sycl::context& ctx,
                      ccl::shared_ptr_class<ccl::kvs_interface> kvs) {
 
@@ -159,20 +178,28 @@ struct device_data {
             throw ccl::exception(std::string(__FUNCTION__) + " - reinit is not allowed");
         }
 
-        auto ccl_dev = ccl::create_device(device);
+        ASSERT(ranks.size() == devices.size(), "ranks and devices sizes should match");
+
+        cl::sycl::device dev = devices[0];
+        auto ccl_dev = ccl::create_device(dev);
         auto ccl_ctx = ccl::create_context(ctx);
 
-        comm_ptr = std::make_shared<ccl::communicator>(
-            ccl::create_communicator(
-                size, rank,
-                ccl_dev,
-                ccl_ctx,
-                kvs));
+        if (ranks.size() == 1) {
+            comm_ptr = std::make_shared<ccl::communicator>(
+                ccl::create_communicator(
+                    size, ranks[0],
+                    ccl_dev,
+                    ccl_ctx,
+                    kvs));
 
-        sycl_queue = cl::sycl::queue(device);
+            sycl_queue = cl::sycl::queue(ctx, devices[0]);
 
-        stream_ptr =
-            std::make_shared<ccl::stream>(ccl::create_stream(sycl_queue));
+            stream_ptr =
+                std::make_shared<ccl::stream>(ccl::create_stream(sycl_queue));
+        }
+        // else {
+
+        // }
     }
 
     static void deinit() {

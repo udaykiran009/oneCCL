@@ -1,20 +1,18 @@
 #pragma once
 
 struct allgatherv_strategy_impl {
+
     size_t comm_size = 0;
     std::vector<size_t> recv_counts;
+
     allgatherv_strategy_impl(size_t size) : comm_size(size) {
         recv_counts.resize(size);
-        //int result = posix_memalign((void**)&recv_counts, ALIGNMENT, comm_size * sizeof(size_t));
-        //(void)result;
     }
 
     allgatherv_strategy_impl(const allgatherv_strategy_impl&) = delete;
     allgatherv_strategy_impl& operator=(const allgatherv_strategy_impl&) = delete;
 
-    ~allgatherv_strategy_impl() {
-        //free(recv_counts);
-    }
+    ~allgatherv_strategy_impl() {}
 
     static constexpr const char* class_name() {
         return "allgatherv";

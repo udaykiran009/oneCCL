@@ -253,6 +253,7 @@ host_communicator::coll_request_t host_communicator::broadcast_impl(
     const ccl::stream::impl_value_t& stream,
     const ccl::broadcast_attr& attr,
     const ccl::vector_class<ccl::event>& deps) {
+
     ccl_request* req = ccl_broadcast_impl(reinterpret_cast<void*>(buf),
                                           count,
                                           ccl::native_type_info<buffer_type>::ccl_datatype_value,

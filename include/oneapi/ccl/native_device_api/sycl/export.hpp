@@ -25,6 +25,7 @@ struct generic_device_type<CL_BACKEND_TYPE> {
     generic_device_type(const cl::sycl::device& device);
     device_index_type get_id() const;
     ccl_native_t& get() noexcept;
+    const ccl_native_t& get() const noexcept;
 
     cl::sycl::device device;
 };

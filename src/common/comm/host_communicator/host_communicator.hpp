@@ -66,8 +66,8 @@ public:
 #endif
 
     ccl::device_index_type get_device_path() const override;
-    ccl::communicator_interface::device_t get_device() override;
-    ccl::communicator_interface::context_t get_context() override;
+    ccl::communicator_interface::device_t get_device() const override;
+    ccl::communicator_interface::context_t get_context() const override;
 
     const ccl::comm_split_attr& get_comm_split_attr() const override {
         return comm_attr;

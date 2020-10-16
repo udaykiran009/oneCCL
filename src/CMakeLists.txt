@@ -145,6 +145,7 @@ set(CCL_SRC
     sched/entry/coll/coll_entry_helper.cpp
     sched/entry/entry.cpp
     sched/entry/factory/chunked_entry_factory.cpp
+    sched/entry/sycl_entry_helper.cpp
     exec/exec.cpp
     exec/thread/base_thread.cpp
     exec/thread/listener.cpp

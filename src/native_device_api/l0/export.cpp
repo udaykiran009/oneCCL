@@ -42,8 +42,13 @@ device_index_type generic_device_type<cl_backend_type::l0>::get_id() const noexc
     return device;
 }
 
-typename generic_device_type<cl_backend_type::l0>::ccl_native_t
+typename generic_device_type<cl_backend_type::l0>::ccl_native_t&
 generic_device_type<cl_backend_type::l0>::get() noexcept {
+    return native::get_runtime_device(device);
+}
+
+const typename generic_device_type<cl_backend_type::l0>::ccl_native_t&
+generic_device_type<cl_backend_type::l0>::get() const noexcept {
     return native::get_runtime_device(device);
 }
 

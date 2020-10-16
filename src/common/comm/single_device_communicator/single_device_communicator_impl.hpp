@@ -51,29 +51,17 @@ single_device_communicator::coll_request_t single_device_communicator::allgather
     else if (send_buf_result == usm_support_mode::need_conversion and
              recv_buf_result == usm_support_mode::need_conversion) {
 #ifdef CCL_ENABLE_SYCL
-        size_t recv_total_size = std::accumulate(recv_counts.begin(), recv_counts.end(), size_t{});
-        auto scoped_req_sycl = ccl::detail::make_unique_scoped_event<ccl::host_event_impl>(
-            nullptr,
-            /*send_buf*/
-            cl::sycl::buffer<buffer_type>{
-                send_buf, send_count, cl::sycl::property::buffer::use_host_ptr{} },
-            /*recv_buf*/
-            cl::sycl::buffer<buffer_type>{
-                recv_buf, recv_total_size, cl::sycl::property::buffer::use_host_ptr{} });
-
-        ccl_request* req = ccl_allgatherv_impl(
+        scoped_req = ccl::detail::make_unique_scoped_event<
+                ccl::host_event_impl>(ccl_allgatherv_impl(
             reinterpret_cast<const void*>(
-                &scoped_req_sycl->template get_arg_by_index<0>() /*send_buf*/),
+                send_buf),
             send_count,
-            reinterpret_cast<void*>(&scoped_req_sycl->template get_arg_by_index<1>() /*recv_buf*/),
+            reinterpret_cast<void*>(recv_buf),
             recv_counts.data(),
             ccl::native_type_info<buffer_type>::ccl_datatype_value,
             attr,
             comm_impl.get(),
-            stream.get());
-
-        scoped_req_sycl->charge(req);
-        scoped_req = std::move(scoped_req_sycl);
+            stream.get()));
 #else
         throw ccl::exception(std::string(__PRETTY_FUNCTION__) +
                         " - USM convertation is not supported for such configuration");
@@ -202,28 +190,16 @@ single_device_communicator::coll_request_t single_device_communicator::allreduce
              recv_buf_result == usm_support_mode::need_conversion) {
         LOG_TRACE("comm: ", to_string(), " - use USM pointers convertation for both buffers");
 #ifdef CCL_ENABLE_SYCL
-        auto scoped_req_sycl = ccl::detail::make_unique_scoped_event<ccl::host_event_impl>(
-            nullptr,
-            /*send_buf*/
-            cl::sycl::buffer<buffer_type>{
-                send_buf, count, cl::sycl::property::buffer::use_host_ptr{} },
-            /*recv_buf*/
-            cl::sycl::buffer<buffer_type>{
-                recv_buf, count, cl::sycl::property::buffer::use_host_ptr{} });
-
-        ccl_request* req = ccl_allreduce_impl(
-            reinterpret_cast<const void*>(
-                &scoped_req_sycl->template get_arg_by_index<0>() /*send_buf*/),
-            reinterpret_cast<void*>(&scoped_req_sycl->template get_arg_by_index<1>() /*recv_buf*/),
+        scoped_req = ccl::detail::make_unique_scoped_event<
+                ccl::host_event_impl>(ccl_allreduce_impl(
+            reinterpret_cast<const void*>(send_buf),
+            reinterpret_cast<void*>(recv_buf),
             count,
             ccl::native_type_info<buffer_type>::ccl_datatype_value,
             reduction,
             attr,
             comm_impl.get(),
-            stream.get());
-
-        scoped_req_sycl->charge(req);
-        scoped_req = std::move(scoped_req_sycl);
+            stream.get()));
 #else
         throw ccl::exception(std::string(__PRETTY_FUNCTION__) +
                         " - USM convertation is not supported for such configuration");
@@ -318,28 +294,16 @@ single_device_communicator::coll_request_t single_device_communicator::alltoall_
 #ifdef CCL_ENABLE_SYCL
             LOG_TRACE(
                 "comm: ", to_string(), " - use USM pointers convertation to SYCL for both buffers");
-            auto scoped_req_sycl = ccl::detail::make_unique_scoped_event<ccl::host_event_impl>(
-                nullptr,
-                /*send_buf*/
-                cl::sycl::buffer<buffer_type>{
-                    send_buf, count * size(), cl::sycl::property::buffer::use_host_ptr{} },
-                /*recv_buf*/
-                cl::sycl::buffer<buffer_type>{
-                    recv_buf, count * size(), cl::sycl::property::buffer::use_host_ptr{} });
 
-            ccl_request* req = ccl_alltoall_impl(
-                reinterpret_cast<const void*>(
-                    &scoped_req_sycl->template get_arg_by_index<0>() /*send_buf*/),
-                reinterpret_cast<void*>(
-                    &scoped_req_sycl->template get_arg_by_index<1>() /*recv_buf*/),
+            scoped_req = ccl::detail::make_unique_scoped_event<
+                ccl::host_event_impl>(ccl_alltoall_impl(
+                reinterpret_cast<const void*>(send_buf),
+                reinterpret_cast<void*>(recv_buf),
                 count,
                 ccl::native_type_info<buffer_type>::ccl_datatype_value,
                 attr,
                 comm_impl.get(),
-                stream.get());
-
-            scoped_req_sycl->charge(req);
-            scoped_req = std::move(scoped_req_sycl);
+                stream.get()));
 #else
             throw ccl::exception(std::string(__PRETTY_FUNCTION__) +
                             " - USM convertation is not supported for such configuration");
@@ -454,40 +418,17 @@ single_device_communicator::coll_request_t single_device_communicator::alltoallv
         }
         case need_conversion: {
 #ifdef CCL_ENABLE_SYCL
-            size_t send_total_size =
-                std::accumulate(send_counts.begin(), send_counts.end(), size_t{});
-            size_t recv_total_size =
-                std::accumulate(recv_counts.begin(), recv_counts.end(), size_t{});
-            LOG_TRACE(
-                "comm: ",
-                to_string(),
-                " - use USM pointers convertation to SYCL for both buffers, send_total_size: ",
-                send_total_size,
-                ", recv_total_size: ",
-                recv_total_size);
-            auto scoped_req_sycl = ccl::detail::make_unique_scoped_event<ccl::host_event_impl>(
-                nullptr,
-                /*send_buf*/
-                cl::sycl::buffer<buffer_type>{
-                    send_buf, send_total_size, cl::sycl::property::buffer::use_host_ptr{} },
-                /*recv_buf*/
-                cl::sycl::buffer<buffer_type>{
-                    recv_buf, recv_total_size, cl::sycl::property::buffer::use_host_ptr{} });
 
-            ccl_request* req = ccl_alltoallv_impl(
-                reinterpret_cast<const void*>(
-                    &scoped_req_sycl->template get_arg_by_index<0>() /*send_buf*/),
+            scoped_req = ccl::detail::make_unique_scoped_event<
+                ccl::host_event_impl>(ccl_alltoallv_impl(
+                reinterpret_cast<const void*>(send_buf),
                 send_counts.data(),
-                reinterpret_cast<void*>(
-                    &scoped_req_sycl->template get_arg_by_index<1>() /*recv_buf*/),
+                reinterpret_cast<void*>(recv_buf),
                 recv_counts.data(),
                 ccl::native_type_info<buffer_type>::ccl_datatype_value,
                 attr,
                 comm_impl.get(),
-                stream.get());
-
-            scoped_req_sycl->charge(req);
-            scoped_req = std::move(scoped_req_sycl);
+                stream.get()));
 #else
             throw ccl::exception(std::string(__PRETTY_FUNCTION__) +
                             " - USM convertation is not supported for such configuration");
@@ -576,7 +517,9 @@ single_device_communicator::coll_request_t single_device_communicator::broadcast
     using broadcast_usm_check_result = multiple_assoc_result<1>;
     broadcast_usm_check_result usm_assoc_results =
         check_multiple_assoc_device_memory(get_device(), get_context(), buf);
+
     usm_support_mode test_value = std::get<assoc_result_index::SUPPORT_MODE>(usm_assoc_results[0]);
+
     switch (test_value) {
         case usm_support_mode::shared: /*the same as `direct` at now*/
             LOG_TRACE("comm: ", to_string(), " - use USM shared pointers for buffers");
@@ -598,23 +541,16 @@ single_device_communicator::coll_request_t single_device_communicator::broadcast
 #ifdef CCL_ENABLE_SYCL
             LOG_TRACE(
                 "comm: ", to_string(), " - use USM pointers convertation to SYCL for both buffers");
-            auto scoped_req_sycl = ccl::detail::make_unique_scoped_event<ccl::host_event_impl>(
-                nullptr,
-                /*buf*/
-                cl::sycl::buffer<buffer_type>{
-                    buf, count, cl::sycl::property::buffer::use_host_ptr{} });
 
-            ccl_request* req = ccl_broadcast_impl(
-                reinterpret_cast<void*>(&scoped_req_sycl->template get_arg_by_index<0>() /*buf*/),
+            scoped_req = ccl::detail::make_unique_scoped_event<
+                ccl::host_event_impl>(ccl_broadcast_impl(
+                reinterpret_cast<void*>(buf),
                 count,
                 ccl::native_type_info<buffer_type>::ccl_datatype_value,
                 root,
                 attr,
                 comm_impl.get(),
-                stream.get());
-
-            scoped_req_sycl->charge(req);
-            scoped_req = std::move(scoped_req_sycl);
+                stream.get()));
 #else
             throw ccl::exception(std::string(__PRETTY_FUNCTION__) +
                             " - USM convertation is not supported for such configuration");
@@ -626,6 +562,7 @@ single_device_communicator::coll_request_t single_device_communicator::broadcast
                                  " - USM category is not supported for such configuration:\n" +
                                  ::native::detail::to_string(usm_assoc_results[0]));
     }
+
     return std::unique_ptr<ccl::event_impl>(scoped_req.release());
     ;
 }
@@ -711,29 +648,18 @@ single_device_communicator::coll_request_t single_device_communicator::reduce_im
 #ifdef CCL_ENABLE_SYCL
             LOG_TRACE(
                 "comm: ", to_string(), " - use USM pointers convertation to SYCL for both buffers");
-            auto scoped_req_sycl = ccl::detail::make_unique_scoped_event<ccl::host_event_impl>(
-                nullptr,
-                /*send_buf*/
-                cl::sycl::buffer<buffer_type>{
-                    send_buf, count, cl::sycl::property::buffer::use_host_ptr{} },
-                /*recv_buf*/
-                cl::sycl::buffer<buffer_type>{
-                    recv_buf, count, cl::sycl::property::buffer::use_host_ptr{} });
 
-            ccl_request* req =
-                ccl_reduce_impl(reinterpret_cast<const void*>(
-                                    &scoped_req_sycl->template get_arg_by_index<0>() /*send_buf*/),
-                                reinterpret_cast<void*>(
-                                    &scoped_req_sycl->template get_arg_by_index<1>() /*recv_buf*/),
+            scoped_req = ccl::detail::make_unique_scoped_event<
+                ccl::host_event_impl>(
+                ccl_reduce_impl(reinterpret_cast<const void*>(send_buf),
+                                reinterpret_cast<void*>(recv_buf),
                                 count,
                                 ccl::native_type_info<buffer_type>::ccl_datatype_value,
                                 reduction,
                                 root,
                                 attr,
                                 comm_impl.get(),
-                                stream.get());
-            scoped_req_sycl->charge(req);
-            scoped_req = std::move(scoped_req_sycl);
+                                stream.get()));
 #else
             throw ccl::exception(std::string(__PRETTY_FUNCTION__) +
                             " - USM convertation is not supported for such configuration");
@@ -835,28 +761,18 @@ single_device_communicator::coll_request_t single_device_communicator::reduce_sc
 #ifdef CCL_ENABLE_SYCL
             LOG_TRACE(
                 "comm: ", to_string(), " - use USM pointers convertation to SYCL for both buffers");
-            auto scoped_req_sycl = ccl::detail::make_unique_scoped_event<ccl::host_event_impl>(
-                nullptr,
-                /*send_buf*/
-                cl::sycl::buffer<buffer_type>{
-                    send_buf, recv_count, cl::sycl::property::buffer::use_host_ptr{} },
-                /*recv_buf*/
-                cl::sycl::buffer<buffer_type>{
-                    recv_buf, recv_count, cl::sycl::property::buffer::use_host_ptr{} });
 
-            ccl_request* req =
-                ccl_reduce_scatter_impl(reinterpret_cast<const void*>(
-                                    &scoped_req_sycl->template get_arg_by_index<0>() /*send_buf*/),
+            scoped_req = ccl::detail::make_unique_scoped_event<
+                ccl::host_event_impl>(ccl_reduce_scatter_impl(reinterpret_cast<const void*>(
+                                    send_buf),
                                 reinterpret_cast<void*>(
-                                    &scoped_req_sycl->template get_arg_by_index<1>() /*recv_buf*/),
+                                    recv_buf),
                                 recv_count,
                                 ccl::native_type_info<buffer_type>::ccl_datatype_value,
                                 reduction,
                                 attr,
                                 comm_impl.get(),
-                                stream.get());
-            scoped_req_sycl->charge(req);
-            scoped_req = std::move(scoped_req_sycl);
+                                stream.get()));
 #else
             throw ccl::exception(std::string(__PRETTY_FUNCTION__) +
                             " - USM convertation is not supported for such configuration");
@@ -968,38 +884,23 @@ single_device_communicator::coll_request_t single_device_communicator::sparse_al
             LOG_TRACE("comm: ",
                       to_string(),
                       " - use USM pointers convertation to SYCL for every buffers");
-            auto scoped_req_sycl = ccl::detail::make_unique_scoped_event<ccl::host_event_impl>(
-                nullptr,
-                /*send_ind_buf*/
-                cl::sycl::buffer<index_buffer_type>{
-                    send_ind_buf, send_ind_count, cl::sycl::property::buffer::use_host_ptr{} },
-                /*send_val_buf*/
-                cl::sycl::buffer<value_buffer_type>{
-                    send_val_buf, send_val_count, cl::sycl::property::buffer::use_host_ptr{} },
-                /*recv_ind_buf*/
-                cl::sycl::buffer<index_buffer_type>{
-                    recv_ind_buf, recv_ind_count, cl::sycl::property::buffer::use_host_ptr{} },
-                /*recv_val_buf*/
-                cl::sycl::buffer<value_buffer_type>{
-                    recv_val_buf, recv_val_count, cl::sycl::property::buffer::use_host_ptr{} });
-            ccl_request* req = ccl_sparse_allreduce_impl(
-                reinterpret_cast<const void*>(&scoped_req_sycl->template get_arg_by_index<0>()),
+
+            scoped_req = ccl::detail::make_unique_scoped_event<
+                ccl::host_event_impl>(ccl_sparse_allreduce_impl(
+                reinterpret_cast<const void*>(send_ind_buf),
                 send_ind_count,
-                reinterpret_cast<const void*>(&scoped_req_sycl->template get_arg_by_index<1>()),
+                reinterpret_cast<const void*>(send_val_buf),
                 send_val_count,
-                reinterpret_cast<void*>(&scoped_req_sycl->template get_arg_by_index<2>()),
+                reinterpret_cast<void*>(recv_ind_buf),
                 recv_ind_count,
-                reinterpret_cast<void*>(&scoped_req_sycl->template get_arg_by_index<3>()),
+                reinterpret_cast<void*>(recv_val_buf),
                 recv_val_count,
                 ccl::native_type_info<index_buffer_type>::ccl_datatype_value,
                 ccl::native_type_info<value_buffer_type>::ccl_datatype_value,
                 reduction,
                 attr,
                 comm_impl.get(),
-                stream.get());
-
-            scoped_req_sycl->charge(req);
-            scoped_req = std::move(scoped_req_sycl);
+                stream.get()));
 #else
             throw ccl::exception(std::string(__PRETTY_FUNCTION__) +
                             " - USM convertation is not supported for such configuration");

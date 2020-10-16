@@ -55,19 +55,19 @@ struct sycl_sparse_allreduce_coll : base_sparse_allreduce_coll<cl::sycl::buffer<
             recv_vbufs[idx] =
                 new sycl_values_t(max_elem_count * rbuf_size_modifier * comm().size());
 
-            device_data::sycl_queue.submit([&](handler& cgh) {
+            device_data::sycl_queue.submit([&](handler& h) {
                 auto send_ibuf = (static_cast<sycl_indices_t*>(send_ibufs[idx]));
                 auto send_vbuf = (static_cast<sycl_values_t*>(send_vbufs[idx]));
 
                 auto recv_ibuf = (static_cast<sycl_indices_t*>(recv_ibufs[idx]));
                 auto recv_vbuf = (static_cast<sycl_values_t*>(recv_vbufs[idx]));
 
-                auto send_ibuf_acc = send_ibuf->template get_access<mode::write>(cgh);
-                auto send_vbuf_acc = send_vbuf->template get_access<mode::write>(cgh);
-                auto recv_ibuf_acc = recv_ibuf->template get_access<mode::write>(cgh);
-                auto recv_vbuf_acc = recv_vbuf->template get_access<mode::write>(cgh);
+                auto send_ibuf_acc = send_ibuf->template get_access<mode::write>(h);
+                auto send_vbuf_acc = send_vbuf->template get_access<mode::write>(h);
+                auto recv_ibuf_acc = recv_ibuf->template get_access<mode::write>(h);
+                auto recv_vbuf_acc = recv_vbuf->template get_access<mode::write>(h);
 
-                cgh.parallel_for<struct sparse_allreduce_kernel_name_bufs<VType, IType>>
+                h.parallel_for<struct sparse_allreduce_kernel_name_bufs<VType, IType>>
                         (range<1>{max_elem_count*comm().size()}, [=](item<1> e_idx)
                 {
                     if (e_idx.get_linear_id() < max_elem_count) {
@@ -77,7 +77,7 @@ struct sycl_sparse_allreduce_coll : base_sparse_allreduce_coll<cl::sycl::buffer<
                     recv_ibuf_acc[e_idx] = 0;
                     recv_vbuf_acc[e_idx] = 0;
                 });
-            });
+            }).wait();
         }
 
         single_send_ibuf = new sycl_indices_t(single_buf_max_elem_count * sbuf_size_modifier);
@@ -88,20 +88,20 @@ struct sycl_sparse_allreduce_coll : base_sparse_allreduce_coll<cl::sycl::buffer<
         single_recv_vbuf =
             new sycl_values_t(single_buf_max_elem_count * rbuf_size_modifier * comm().size());
 
-        device_data::sycl_queue.submit([&](handler& cgh) {
+        device_data::sycl_queue.submit([&](handler& h) {
             auto send_ibuf = (static_cast<sycl_indices_t*>(single_send_ibuf));
             auto send_vbuf = (static_cast<sycl_values_t*>(single_send_vbuf));
 
             auto recv_ibuf = (static_cast<sycl_indices_t*>(single_recv_ibuf));
             auto recv_vbuf = (static_cast<sycl_values_t*>(single_recv_vbuf));
 
-            auto send_ibuf_acc = send_ibuf->template get_access<mode::write>(cgh);
-            auto send_vbuf_acc = send_vbuf->template get_access<mode::write>(cgh);
+            auto send_ibuf_acc = send_ibuf->template get_access<mode::write>(h);
+            auto send_vbuf_acc = send_vbuf->template get_access<mode::write>(h);
 
-            auto recv_ibuf_acc = recv_ibuf->template get_access<mode::write>(cgh);
-            auto recv_vbuf_acc = recv_vbuf->template get_access<mode::write>(cgh);
+            auto recv_ibuf_acc = recv_ibuf->template get_access<mode::write>(h);
+            auto recv_vbuf_acc = recv_vbuf->template get_access<mode::write>(h);
 
-            cgh.parallel_for<struct sparse_allreduce_kernel_name_single_bufs<VType, IType>>
+            h.parallel_for<struct sparse_allreduce_kernel_name_single_bufs<VType, IType>>
                     (range<1>{ single_buf_max_elem_count * comm().size() }, [=](item<1> e_idx)
             {
                 if (e_idx.get_linear_id() < single_buf_max_elem_count) {
@@ -111,7 +111,7 @@ struct sycl_sparse_allreduce_coll : base_sparse_allreduce_coll<cl::sycl::buffer<
                 recv_ibuf_acc[e_idx] = 0;
                 recv_vbuf_acc[e_idx] = 0;
             });
-        });
+        }).wait();
 
         for (size_t idx = 0; idx < base_coll::get_buf_count(); idx++) {
             fn_ctxs[idx].recv_ibuf = (void**)(&(recv_ibufs[idx]));
