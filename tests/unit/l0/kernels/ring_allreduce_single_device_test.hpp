@@ -246,6 +246,8 @@ TYPED_TEST(ring_allreduce_single_device_fixture, ring_allreduce_single_device_mt
             size_t rank_idx = thread_idx;
             size_t rank_size = num_thread;
             size_t elem_count = buffer_size;
+            this->output << "Device id" << ccl::to_string(device.get_device_path()) <<    \
+                            ", rank id" << rank_idx << std::endl;
 
             comm_param_storage[thread_idx].push_back(rank_idx);
             comm_param_storage[thread_idx].push_back(rank_size);
