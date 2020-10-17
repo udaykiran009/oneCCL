@@ -19,7 +19,7 @@ int main() {
     const size_t buf_size = 1024;
     const size_t iter_count = 64;
 
-    std::vector<std::string> match_ids;
+    std::vector<ccl::string_class> match_ids;
 
     /* event, operation idx */
     std::list<std::pair<ccl::event, size_t>> active_ops;

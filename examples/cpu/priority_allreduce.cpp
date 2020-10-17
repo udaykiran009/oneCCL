@@ -89,7 +89,7 @@ void do_iter(size_t iter_idx,
         for (idx = 0; idx < MSG_COUNT; idx++) {
             sprintf(match_id, "%zu", idx);
 
-            attr.set<ccl::operation_attr_id::match_id>(std::string(match_id));
+            attr.set<ccl::operation_attr_id::match_id>(ccl::string_class(match_id));
 
             tmp_start_timer = when();
             ccl::allreduce(msg_buffers[idx],
@@ -122,7 +122,7 @@ void do_iter(size_t iter_idx,
 
         sprintf(match_id, "%zu", idx);
 
-        attr.set<ccl::operation_attr_id::match_id>(std::string(match_id));
+        attr.set<ccl::operation_attr_id::match_id>(ccl::string_class(match_id));
 
         msg_starts[idx] = when();
         tmp_start_timer = when();

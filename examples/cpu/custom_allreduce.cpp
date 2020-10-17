@@ -9,7 +9,7 @@
 
 int size, rank;
 ccl::datatype custom_dtype;
-std::string global_match_id;
+ccl::string_class global_match_id;
 
 typedef void (*expected_fn_t)(void*, size_t);
 typedef void (*fill_fn_t)(void*, size_t, size_t);
@@ -461,9 +461,9 @@ int main() {
     char custom_send_buf[MSG_SIZE_COUNT * CUSTOM_DTYPE_SIZE];
     char custom_recv_buf[MSG_SIZE_COUNT * CUSTOM_DTYPE_SIZE];
 
-    std::string base_match_id = attr.get<ccl::operation_attr_id::match_id>();
+    ccl::string_class base_match_id = attr.get<ccl::operation_attr_id::match_id>();
     attr.set<ccl::operation_attr_id::to_cache>(true);
-    std::string match_id;
+    ccl::string_class match_id;
 
     for (size_t idx = 0; idx < 2; idx++) {
         if (rank == 0)

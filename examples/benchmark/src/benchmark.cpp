@@ -66,7 +66,7 @@ void do_regular(const ccl::communicator& comm,
                             match_id_stream << "coll_" << coll->name()
                                             << "_" << coll_idx << "_count_" << count 
                                             << "_buf_" << buf_idx;
-                            bench_attr.set<ccl::operation_attr_id::match_id>(match_id_stream.str());
+                            bench_attr.set<ccl::operation_attr_id::match_id>(ccl::string_class(match_id_stream.str()));
                             match_id_stream.str("");
                             coll->start(count, buf_idx, bench_attr, reqs);
                         }
@@ -130,7 +130,7 @@ void do_regular(const ccl::communicator& comm,
                                     match_id_stream << "coll_" << coll->name()
                                                     << "_" << coll_idx << "_count_" << count 
                                                     << "_buf_" << buf_idx;
-                                    bench_attr.set<ccl::operation_attr_id::match_id>(match_id_stream.str());
+                                    bench_attr.set<ccl::operation_attr_id::match_id>(ccl::string_class(match_id_stream.str()));
                                     match_id_stream.str("");
                                     coll->start(count, buf_idx, bench_attr, reqs);
                                 }
@@ -192,7 +192,7 @@ void do_regular(const ccl::communicator& comm,
                             for (size_t iter_idx = 0; iter_idx < options.iters; iter_idx++) {
                                 match_id_stream << "coll_" << coll->name()
                                                 << "_" << coll_idx << "_single_count_" << count;
-                                bench_attr.set<ccl::operation_attr_id::match_id>(match_id_stream.str());
+                                bench_attr.set<ccl::operation_attr_id::match_id>(ccl::string_class(match_id_stream.str()));
                                 match_id_stream.str("");
                                 coll->start_single(count, bench_attr, reqs);
                                 for (auto& req : reqs) {
@@ -224,7 +224,7 @@ void do_unordered(const ccl::communicator& comm,
                   req_list_t& reqs,
                   const user_options_t& options) {
 
-    std::set<std::string> match_ids;
+    std::set<ccl::string_class> match_ids;
     std::stringstream match_id_stream;
 
     for (auto dtype : all_dtypes) {
@@ -269,7 +269,7 @@ void do_unordered(const ccl::communicator& comm,
                                 match_id_stream << "coll_" << coll->name()
                                                 << "_" << coll_idx << "_count_" << count 
                                                 << "_buf_" << buf_idx;
-                                bench_attr.set<ccl::operation_attr_id::match_id>(match_id_stream.str());
+                                bench_attr.set<ccl::operation_attr_id::match_id>(ccl::string_class(match_id_stream.str()));
                                 match_ids.insert(match_id_stream.str());
                                 match_id_stream.str("");
                                 coll->start(count, buf_idx, bench_attr, reqs);
@@ -286,7 +286,7 @@ void do_unordered(const ccl::communicator& comm,
                                 match_id_stream << "coll_" << coll->name()
                                                 << "_" << real_coll_idx << "_count_" << count 
                                                 << "_buf_" << real_buf_idx;
-                                bench_attr.set<ccl::operation_attr_id::match_id>(match_id_stream.str());
+                                bench_attr.set<ccl::operation_attr_id::match_id>(ccl::string_class(match_id_stream.str()));
                                 match_ids.insert(match_id_stream.str());
                                 match_id_stream.str("");
                                 coll->start(count, real_buf_idx, bench_attr, reqs);

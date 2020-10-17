@@ -6,7 +6,7 @@ TEST(coll_attr, allgather_attr_creation) {
 }
 
 TEST(coll_attr, allgather_attr_creation_match_id) {
-    std::string match_id("aaaa");
+    ccl_string match_id("aaaa");
     auto attr = ccl::create_coll_attr<ccl::allgatherv_attr>(
         ccl::attr_val<ccl::operation_attr_id::match_id>(match_id));
 

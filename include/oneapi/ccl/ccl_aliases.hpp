@@ -10,6 +10,7 @@
 #include <tuple>
 #include <utility>
 #include <vector>
+#include "ccl_string.hpp"
 
 namespace ccl {
 template <class T, class Alloc = std::allocator<T>>
@@ -18,7 +19,7 @@ using vector_class = std::vector<T, Alloc>;
 template <class T, std::size_t N>
 using array_class = std::array<T, N>;
 
-using string_class = std::string;
+using string_class = ccl_string;
 
 template <class R, class... ArgTypes>
 using function_class = std::function<R(ArgTypes...)>;
