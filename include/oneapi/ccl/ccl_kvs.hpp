@@ -37,8 +37,8 @@ public:
 private:
     friend class detail::environment;
 
-    kvs();
-    kvs(const address_type& addr);
+    kvs(const kvs_attr& attr);
+    kvs(const address_type& addr, const kvs_attr& attr);
     const kvs_impl& get_impl();
 
     address_type addr;

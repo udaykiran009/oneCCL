@@ -12,6 +12,10 @@
 #include "oneapi/ccl/ccl_coll_attr_ids_traits.hpp"
 #include "oneapi/ccl/ccl_coll_attr.hpp"
 
+#include "oneapi/ccl/ccl_comm_attr_ids.hpp"
+#include "oneapi/ccl/ccl_comm_attr_ids_traits.hpp"
+#include "oneapi/ccl/ccl_comm_attr.hpp"
+
 #include "oneapi/ccl/ccl_comm_split_attr_ids.hpp"
 #include "oneapi/ccl/ccl_comm_split_attr_ids_traits.hpp"
 #include "oneapi/ccl/ccl_comm_split_attr.hpp"
@@ -27,6 +31,10 @@
 #include "oneapi/ccl/ccl_device_attr_ids.hpp"
 #include "oneapi/ccl/ccl_device_attr_ids_traits.hpp"
 #include "oneapi/ccl/ccl_device.hpp"
+
+#include "oneapi/ccl/ccl_kvs_attr_ids.hpp"
+#include "oneapi/ccl/ccl_kvs_attr_ids_traits.hpp"
+#include "oneapi/ccl/ccl_kvs_attr.hpp"
 
 #include "oneapi/ccl/ccl_kvs.hpp"
 
@@ -72,8 +80,16 @@ public:
     void deregister_datatype(ccl::datatype dtype);
     size_t get_datatype_size(ccl::datatype dtype) const;
 
-    shared_ptr_class<kvs> create_main_kvs() const;
-    shared_ptr_class<kvs> create_kvs(const kvs::address_type& addr) const;
+    template <class... attr_value_pair_t>
+    kvs_attr create_kvs_attr(attr_value_pair_t&&... avps) const {
+        auto kvs_create_attr = create_postponed_api_type<kvs_attr>();
+        int expander[]{ (kvs_create_attr.template set<attr_value_pair_t::idx()>(avps.val()), 0)... };
+        (void)expander;
+        return kvs_create_attr;
+    }
+
+    shared_ptr_class<kvs> create_main_kvs(const kvs_attr& attr) const;
+    shared_ptr_class<kvs> create_kvs(const kvs::address_type& addr, const kvs_attr& attr) const;
 
     device create_device(empty_t empty) const;
 
@@ -176,32 +192,44 @@ public:
         return split_attr;
     }
 
-    communicator create_communicator() const;
-    communicator create_communicator(size_t size, shared_ptr_class<kvs_interface> kvs) const;
+    template <class... attr_value_pair_t>
+    comm_attr create_comm_attr(attr_value_pair_t&&... avps) const {
+        auto comm_create_attr = create_postponed_api_type<comm_attr>();
+        int expander[]{ (comm_create_attr.template set<attr_value_pair_t::idx()>(avps.val()), 0)... };
+        (void)expander;
+        return comm_create_attr;
+    }
+
+    communicator create_communicator(const comm_attr& attr) const;
+    communicator create_communicator(size_t size, shared_ptr_class<kvs_interface> kvs, const comm_attr& attr) const;
     communicator create_communicator(size_t size,
                                      size_t rank,
-                                     shared_ptr_class<kvs_interface> kvs) const;
+                                     shared_ptr_class<kvs_interface> kvs,
+                                     const comm_attr& attr) const;
 
     template <class DeviceType, class ContextType>
     vector_class<communicator> create_communicators(
         size_t comm_size,
         const vector_class<DeviceType>& local_devices,
         ContextType& context,
-        shared_ptr_class<kvs_interface> kvs) const;
+        shared_ptr_class<kvs_interface> kvs,
+        const comm_attr& attr) const;
 
     template <class DeviceType, class ContextType>
     vector_class<communicator> create_communicators(
         size_t comm_size,
         const vector_class<pair_class<rank_t, DeviceType>>& local_rank_device_map,
         ContextType& context,
-        shared_ptr_class<kvs_interface> kvs) const;
+        shared_ptr_class<kvs_interface> kvs,
+        const comm_attr& attr) const;
 
     template <class DeviceType, class ContextType>
     vector_class<communicator> create_communicators(
         size_t comm_size,
         const map_class<rank_t, DeviceType>& local_rank_device_map,
         ContextType& context,
-        shared_ptr_class<kvs_interface> kvs) const;
+        shared_ptr_class<kvs_interface> kvs,
+        const comm_attr& attr) const;
 
     vector_class<communicator> split_device_communicators(
         const vector_class<pair_class<communicator, comm_split_attr>>& attrs) const;

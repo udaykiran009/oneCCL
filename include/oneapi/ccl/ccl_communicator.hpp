@@ -122,12 +122,14 @@ private:
         ContextType& context,
         shared_ptr_class<kvs_interface> kvs);
 
-    static communicator create_communicator();
+    static communicator create_communicator(const comm_attr& attr);
     static communicator create_communicator(size_t size,
-                                            shared_ptr_class<kvs_interface> kvs);
+                                            shared_ptr_class<kvs_interface> kvs,
+                                            const comm_attr& attr);
     static communicator create_communicator(size_t size,
                                             size_t rank,
-                                            shared_ptr_class<kvs_interface> kvs);
+                                            shared_ptr_class<kvs_interface> kvs,
+                                            const comm_attr& attr);
 };
 
 } // namespace ccl

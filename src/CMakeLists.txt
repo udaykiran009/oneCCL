@@ -68,8 +68,10 @@ set(CCL_SRC
     ccl_cpp_environment.cpp
     ccl_api_functions.cpp
     ccl_app_api_coll_attr.cpp
+    ccl_app_api_comm_attr.cpp
     ccl_app_api_comm_split_attr.cpp
     ccl_app_api_datatype_attr.cpp
+    ccl_app_api_kvs_attr.cpp
     ccl_app_api_event.cpp
     ccl_cpp_kvs.cpp
     ccl_cpp_device.cpp
@@ -78,6 +80,8 @@ set(CCL_SRC
     ccl_cpp_utils.cpp
     ccl_empty_attr.cpp
     ccl_empty_coll_attr.cpp
+    ccl_empty_comm_attr.cpp
+    ccl_empty_kvs_attr.cpp
     ccl_empty_stream.cpp
     native_device_api/sycl_l0/export.cpp
     native_device_api/empty/export.cpp

@@ -121,12 +121,12 @@ size_t CCL_API get_datatype_size(datatype dtype) {
 }
 
 /* KVS */
-shared_ptr_class<kvs> CCL_API create_main_kvs() {
-    return detail::environment::instance().create_main_kvs();
+shared_ptr_class<kvs> CCL_API create_main_kvs(const kvs_attr& attr) {
+    return detail::environment::instance().create_main_kvs(attr);
 }
 
-shared_ptr_class<kvs> CCL_API create_kvs(const kvs::address_type& addr) {
-    return detail::environment::instance().create_kvs(addr);
+shared_ptr_class<kvs> CCL_API create_kvs(const kvs::address_type& addr, const kvs_attr& attr) {
+    return detail::environment::instance().create_kvs(addr, attr);
 }
 
 /* device */
@@ -190,20 +190,21 @@ vector_class<communicator> split_device_communicators(
 namespace preview {
 
 /* communicator */
-communicator CCL_API create_communicator() {
-    return detail::environment::instance().create_communicator();
+communicator CCL_API create_communicator(const comm_attr& attr) {
+    return detail::environment::instance().create_communicator(attr);
 }
 
-communicator CCL_API create_communicator(const size_t size, shared_ptr_class<kvs_interface> kvs) {
-    return detail::environment::instance().create_communicator(size, kvs);
+communicator CCL_API create_communicator(const size_t size, shared_ptr_class<kvs_interface> kvs, const comm_attr& attr) {
+    return detail::environment::instance().create_communicator(size, kvs, attr);
 }
 
 } // namespace preview
 
 communicator CCL_API create_communicator(const size_t size,
                                          const size_t rank,
-                                         shared_ptr_class<kvs_interface> kvs) {
-    return detail::environment::instance().create_communicator(size, rank, kvs);
+                                         shared_ptr_class<kvs_interface> kvs,
+                                         const comm_attr& attr) {
+    return detail::environment::instance().create_communicator(size, rank, kvs, attr);
 }
 
 /******************** COMMUNICATOR ********************/

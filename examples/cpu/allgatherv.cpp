@@ -99,19 +99,21 @@ int main() {
 
     ccl::shared_ptr_class<ccl::kvs> kvs;
     ccl::kvs::address_type main_addr;
+    auto kvs_attr = ccl::create_kvs_attr();
     if (rank == 0) {
-        kvs = ccl::create_main_kvs();
+        kvs = ccl::create_main_kvs(kvs_attr);
         main_addr = kvs->get_address();
         MPI_Bcast((void*)main_addr.data(), main_addr.size(), MPI_BYTE, 0, MPI_COMM_WORLD);
     }
     else {
         MPI_Bcast((void*)main_addr.data(), main_addr.size(), MPI_BYTE, 0, MPI_COMM_WORLD);
-        kvs = ccl::create_kvs(main_addr);
+        kvs = ccl::create_kvs(main_addr, kvs_attr);
     }
 
     auto dev = ccl::create_device();
     auto ctx = ccl::create_context();
-    auto comm = ccl::create_communicator(size, rank, dev, ctx, kvs);
+    auto comm_attr = ccl::create_comm_attr();
+    auto comm = ccl::create_communicator(size, rank, dev, ctx, kvs, comm_attr);
     auto attr = ccl::create_operation_attr<ccl::allgatherv_attr>();
 
     MSG_LOOP(

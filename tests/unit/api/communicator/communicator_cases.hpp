@@ -25,6 +25,9 @@
 
 #include "coll/coll_attributes.hpp"
 
+#include "common/comm/comm_common_attr.hpp"
+#include "comm_attr_impl.hpp"
+
 #include "common/comm/comm_split_common_attr.hpp"
 #include "comm_split_attr_impl.hpp"
 

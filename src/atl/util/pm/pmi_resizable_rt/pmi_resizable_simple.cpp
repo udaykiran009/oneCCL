@@ -40,6 +40,7 @@ atl_status_t pmi_resizable_simple::pmrt_init(const char* main_addr) {
     val_storage = (char*)calloc(1, max_vallen);
     if (!val_storage)
         return ATL_STATUS_FAILURE;
+    /*TODO: add sort, ranks should be continiusly*/
     if (ranks[0] == 0) {
         size_t tmp_local_id = get_local_kvs_id();
         tmp_local_id++;

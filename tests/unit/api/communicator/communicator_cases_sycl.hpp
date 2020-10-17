@@ -13,6 +13,10 @@
 #include "oneapi/ccl/ccl_coll_attr_ids_traits.hpp"
 #include "oneapi/ccl/ccl_coll_attr.hpp"
 
+#include "oneapi/ccl/ccl_comm_attr_ids.hpp"
+#include "oneapi/ccl/ccl_comm_attr_ids_traits.hpp"
+#include "oneapi/ccl/ccl_comm_attr.hpp"
+
 #include "oneapi/ccl/ccl_comm_split_attr_ids.hpp"
 #include "oneapi/ccl/ccl_comm_split_attr_ids_traits.hpp"
 #include "oneapi/ccl/ccl_comm_split_attr.hpp"
@@ -24,6 +28,9 @@
 #include "oneapi/ccl/ccl_event.hpp"
 
 #include "coll/coll_attributes.hpp"
+
+#include "common/comm/comm_common_attr.hpp"
+#include "comm_attr_impl.hpp"
 
 #include "common/comm/comm_split_common_attr.hpp"
 #include "comm_split_attr_impl.hpp"

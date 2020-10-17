@@ -53,20 +53,25 @@ size_t get_datatype_size(datatype dtype);
 
 /******************** KVS ********************/
 
+template <class... attr_value_pair_t>
+kvs_attr create_kvs_attr(attr_value_pair_t&&... avps) {
+    return detail::environment::instance().create_kvs_attr(
+        std::forward<attr_value_pair_t>(avps)...);
+}
 /**
  * Creates a main key-value store.
  * It's address should be distributed using out of band communication mechanism
  * and be used to create key-value stores on other ranks.
  * @return kvs object
  */
-shared_ptr_class<kvs> create_main_kvs();
+shared_ptr_class<kvs> create_main_kvs(const kvs_attr& attr = default_kvs_attr);
 
 /**
  * Creates a new key-value store from main kvs address
  * @param addr address of main kvs
  * @return kvs object
  */
-shared_ptr_class<kvs> create_kvs(const kvs::address_type& addr);
+shared_ptr_class<kvs> create_kvs(const kvs::address_type& addr, const kvs_attr& attr = default_kvs_attr);
 
 
 /******************** DEVICE ********************/
@@ -186,6 +191,11 @@ comm_split_attr create_comm_split_attr(attr_value_pair_t&&... avps) {
     std::forward<attr_value_pair_t>(avps)...);
 }
 
+template <class... attr_value_pair_t>
+comm_attr create_comm_attr(attr_value_pair_t&&... avps) {
+    return detail::environment::instance().create_comm_attr(
+        std::forward<attr_value_pair_t>(avps)...);
+}
 namespace preview {
 
 /**
@@ -202,7 +212,7 @@ vector_class<communicator> split_device_communicators(
  * Implementation is platform specific and non portable.
  * @return communicator
  */
-communicator create_communicator();
+communicator create_communicator(const comm_attr& attr = default_comm_attr);
 
 /**
  * Creates a new communicator with user supplied size and kvs.
@@ -211,7 +221,7 @@ communicator create_communicator();
  * @param kvs key-value store for ranks wire-up
  * @return communicator
  */
-communicator create_communicator(size_t size, shared_ptr_class<kvs_interface> kvs);
+communicator create_communicator(size_t size, shared_ptr_class<kvs_interface> kvs, const comm_attr& attr = default_comm_attr);
 
 } // namespace preview
 
@@ -225,7 +235,8 @@ communicator create_communicator(size_t size, shared_ptr_class<kvs_interface> kv
  */
 communicator create_communicator(size_t size,
                                  size_t rank,
-                                 shared_ptr_class<kvs_interface> kvs);
+                                 shared_ptr_class<kvs_interface> kvs,
+                                 const comm_attr& attr = default_comm_attr);
 
 /**
  * Creates a new communicators with user supplied size, locao devices and kvs.
@@ -241,9 +252,10 @@ vector_class<communicator> create_communicators(
     size_t size,
     const vector_class<DeviceType>& local_devices,
     ContextType& context,
-    shared_ptr_class<kvs_interface> kvs) {
+    shared_ptr_class<kvs_interface> kvs,
+    const comm_attr& attr = default_comm_attr) {
     return detail::environment::instance().create_communicators(
-        size, local_devices, context, kvs);
+        size, local_devices, context, kvs, attr);
 }
 
 /**
@@ -259,9 +271,10 @@ vector_class<communicator> create_communicators(
     size_t size,
     const vector_class<pair_class<rank_t, DeviceType>>& local_rank_device_map,
     ContextType& context,
-    shared_ptr_class<kvs_interface> kvs) {
+    shared_ptr_class<kvs_interface> kvs,
+    const comm_attr& attr = default_comm_attr) {
     return detail::environment::instance().create_communicators(
-        size, local_rank_device_map, context, kvs);
+        size, local_rank_device_map, context, kvs, attr);
 }
 
 template <class DeviceType, class ContextType>
@@ -269,9 +282,10 @@ vector_class<communicator> create_communicators(
     size_t size,
     const map_class<rank_t, DeviceType>& local_rank_device_map,
     ContextType& context,
-    shared_ptr_class<kvs_interface> kvs) {
+    shared_ptr_class<kvs_interface> kvs,
+    const comm_attr& attr = default_comm_attr) {
     return detail::environment::instance().create_communicators(
-        size, local_rank_device_map, context, kvs);
+        size, local_rank_device_map, context, kvs, attr);
 }
 
 template <class DeviceType, class ContextType>
@@ -280,10 +294,11 @@ communicator create_communicator(
     rank_t rank,
     DeviceType& device,
     ContextType& context,
-    shared_ptr_class<kvs_interface> kvs) {
+    shared_ptr_class<kvs_interface> kvs,
+    const comm_attr& attr = default_comm_attr) {
 
     auto comms = detail::environment::instance().create_communicators(
-        size, ccl::vector_class<ccl::pair_class<ccl::rank_t, ccl::device>>{{rank,device}}, context, kvs);
+        size, ccl::vector_class<ccl::pair_class<ccl::rank_t, ccl::device>>{{rank,device}}, context, kvs, attr);
 
     if (comms.size() != 1)
       throw ccl::exception("unexpected comm vector size");

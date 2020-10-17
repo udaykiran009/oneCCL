@@ -53,12 +53,12 @@ static ccl::stream& get_empty_stream()
  * Factory methods
  */
 // KVS
-shared_ptr_class<kvs> environment::create_main_kvs() const {
-    return std::shared_ptr<kvs>(new kvs);
+shared_ptr_class<kvs> environment::create_main_kvs(const kvs_attr& attr) const {
+    return std::shared_ptr<kvs>(new kvs(attr));
 }
 
-shared_ptr_class<kvs> environment::create_kvs(const kvs::address_type& addr) const {
-    return std::shared_ptr<kvs>(new kvs(addr));
+shared_ptr_class<kvs> environment::create_kvs(const kvs::address_type& addr, const kvs_attr& attr) const {
+    return std::shared_ptr<kvs>(new kvs(addr, attr));
 }
 
 // device
@@ -134,19 +134,21 @@ ccl::communicator ccl::detail::environment::create_single_device_communicator(
 #endif
 
 //Communicator
-ccl::communicator ccl::detail::environment::create_communicator() const {
-    return ccl::communicator::create_communicator();
+ccl::communicator ccl::detail::environment::create_communicator(const comm_attr& attr) const {
+    return ccl::communicator::create_communicator(attr);
 }
 
 ccl::communicator ccl::detail::environment::create_communicator(const size_t size,
-                                                      ccl::shared_ptr_class<ccl::kvs_interface> kvs) const {
-    return ccl::communicator::create_communicator(size, kvs);
+                                                      ccl::shared_ptr_class<ccl::kvs_interface> kvs,
+                                                      const comm_attr& attr) const {
+    return ccl::communicator::create_communicator(size, kvs, attr);
 }
 
 ccl::communicator ccl::detail::environment::create_communicator(const size_t size,
                                                       const size_t rank,
-                                                      ccl::shared_ptr_class<ccl::kvs_interface> kvs) const {
-    return ccl::communicator::create_communicator(size, rank, kvs);
+                                                      ccl::shared_ptr_class<ccl::kvs_interface> kvs,
+                                                      const comm_attr& attr) const {
+    return ccl::communicator::create_communicator(size, rank, kvs, attr);
 }
 
 /***************************TypeGenerations*********************************************************/
@@ -188,9 +190,13 @@ CREATE_OP_ATTR_INSTANTIATION(ccl::reduce_attr)
 CREATE_OP_ATTR_INSTANTIATION(ccl::reduce_scatter_attr)
 CREATE_OP_ATTR_INSTANTIATION(ccl::sparse_allreduce_attr)
 
+CREATE_OP_ATTR_INSTANTIATION(ccl::comm_attr)
+
 CREATE_OP_ATTR_INSTANTIATION(ccl::comm_split_attr)
 
 CREATE_OP_ATTR_INSTANTIATION(ccl::datatype_attr)
+
+CREATE_OP_ATTR_INSTANTIATION(ccl::kvs_attr)
 
 CREATE_DEV_COMM_INSTANTIATION(ccl::device, ccl::context)
 CREATE_DEV_COMM_INSTANTIATION(typename ccl::unified_device_type::ccl_native_t, typename ccl::unified_device_context_type::ccl_native_t)

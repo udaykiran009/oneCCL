@@ -132,7 +132,7 @@ CCL_API vector_class<communicator> communicator::create_communicators(
  * Implementation is platform specific and non portable.
  * @return host communicator
  */
-communicator communicator::create_communicator() {
+communicator communicator::create_communicator(const comm_attr& attr) {
     throw ccl::exception(std::string(__PRETTY_FUNCTION__) + " - is not implemented");
 
     LOG_DEBUG("Create host communicator");
@@ -151,7 +151,8 @@ communicator communicator::create_communicator() {
  * @return host communicator
  */
 communicator communicator::create_communicator(const size_t size,
-                                               shared_ptr_class<kvs_interface> kvs) {
+                                               shared_ptr_class<kvs_interface> kvs,
+                                               const comm_attr& attr) {
     throw ccl::exception(std::string(__PRETTY_FUNCTION__) + " - is not implemented");
 
     LOG_DEBUG("Create host communicator");
@@ -171,7 +172,8 @@ communicator communicator::create_communicator(const size_t size,
  */
 communicator communicator::create_communicator(const size_t size,
                                                const size_t rank,
-                                               shared_ptr_class<kvs_interface> kvs) {
+                                               shared_ptr_class<kvs_interface> kvs,
+                                               const comm_attr& attr) {
     
     LOG_DEBUG("Create host communicator: size ", size, ", rank ", rank);
 

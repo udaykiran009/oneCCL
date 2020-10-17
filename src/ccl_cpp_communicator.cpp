@@ -8,6 +8,10 @@
 #include "oneapi/ccl/ccl_coll_attr_ids_traits.hpp"
 #include "oneapi/ccl/ccl_coll_attr.hpp"
 
+#include "oneapi/ccl/ccl_comm_attr_ids.hpp"
+#include "oneapi/ccl/ccl_comm_attr_ids_traits.hpp"
+#include "oneapi/ccl/ccl_comm_attr.hpp"
+
 #include "oneapi/ccl/ccl_comm_split_attr_ids.hpp"
 #include "oneapi/ccl/ccl_comm_split_attr_ids_traits.hpp"
 #include "oneapi/ccl/ccl_comm_split_attr.hpp"

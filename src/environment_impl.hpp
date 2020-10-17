@@ -3,6 +3,9 @@
 
 #include "coll/coll_attributes.hpp"
 
+#include "common/comm/comm_common_attr.hpp"
+#include "comm_attr_impl.hpp"
+
 #include "common/comm/comm_split_common_attr.hpp"
 #include "comm_split_attr_impl.hpp"
 
@@ -63,7 +66,8 @@ vector_class<communicator> CCL_API
 environment::create_communicators(const size_t devices_size,
                                          const vector_class<DeviceType>& local_devices,
                                          ContextType& context,
-                                         shared_ptr_class<kvs_interface> kvs) const {
+                                         shared_ptr_class<kvs_interface> kvs,
+                                         const comm_attr& attr) const {
     return communicator::create_communicators(
         devices_size, local_devices, context, kvs);
 }
@@ -73,7 +77,8 @@ vector_class<communicator> CCL_API environment::create_communicators(
     const size_t comm_size,
     const vector_class<pair_class<rank_t, DeviceType>>& local_rank_device_map,
     ContextType& context,
-    shared_ptr_class<kvs_interface> kvs) const {
+    shared_ptr_class<kvs_interface> kvs,
+    const comm_attr& attr) const {
 
     return communicator::create_communicators(
         comm_size, local_rank_device_map, context, kvs);
@@ -94,7 +99,8 @@ vector_class<communicator> CCL_API
 environment::create_communicators(const size_t comm_size,
                                          const map_class<rank_t, DeviceType>& local_rank_device_map,
                                          ContextType& context,
-                                         shared_ptr_class<kvs_interface> kvs) const {
+                                         shared_ptr_class<kvs_interface> kvs,
+                                         const comm_attr& attr) const {
     return communicator::create_communicators(
         comm_size, local_rank_device_map, context, kvs);
 /*
@@ -132,21 +138,24 @@ ccl_api_type CCL_API environment::create_postponed_api_type(args_type... args) c
         const size_t devices_size, \
         const ccl::vector_class<DeviceType>& local_devices, \
         ContextType& context, \
-        ccl::shared_ptr_class<ccl::kvs_interface> kvs) const; \
+        ccl::shared_ptr_class<ccl::kvs_interface> kvs, \
+        const comm_attr& attr) const; \
 \
     template ccl::vector_class<ccl::communicator> CCL_API \
     ccl::detail::environment::create_communicators<DeviceType, ContextType>( \
         const size_t cluster_devices_size, \
         const ccl::vector_class<ccl::pair_class<ccl::rank_t, DeviceType>>& local_devices, \
         ContextType& context, \
-        ccl::shared_ptr_class<ccl::kvs_interface> kvs) const; \
+        ccl::shared_ptr_class<ccl::kvs_interface> kvs, \
+        const comm_attr& attr) const; \
 \
     template ccl::vector_class<ccl::communicator> CCL_API \
     ccl::detail::environment::create_communicators<DeviceType, ContextType>( \
         const size_t cluster_devices_size, \
         const ccl::map_class<ccl::rank_t, DeviceType>& local_devices, \
         ContextType& context, \
-        ccl::shared_ptr_class<ccl::kvs_interface> kvs) const;
+        ccl::shared_ptr_class<ccl::kvs_interface> kvs, \
+        const comm_attr& attr) const;
 
 #define CREATE_STREAM_INSTANTIATION(native_stream_type) \
     template ccl::stream CCL_API ccl::detail::environment::create_stream(native_stream_type& native_stream);

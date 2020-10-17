@@ -30,10 +30,10 @@ void ccl::kvs::set(const ccl::string_class& key, const ccl::vector_class<char>& 
     (void)data;
 }
 
-ccl::kvs::kvs() {
+ccl::kvs::kvs(const kvs_attr& attr) {
 }
 
-ccl::kvs::kvs(const ccl::kvs::address_type& addr) {
+ccl::kvs::kvs(const ccl::kvs::address_type& addr, const kvs_attr& attr) {
     (void) addr;
 }
 const ccl::kvs_impl& ccl::kvs::get_impl() {
