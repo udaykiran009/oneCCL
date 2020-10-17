@@ -14,7 +14,7 @@ ccl::library_version get_library_version() {
     version.product_status = CCL_PRODUCT_STATUS;
     version.build_date = CCL_PRODUCT_BUILD_DATE;
     version.full = CCL_PRODUCT_FULL;
-    version.cl_backend = CL_BACKEND_TYPE;
+    version.cl_backend_name = ccl::backend_traits::name();
 
     return version;
 }

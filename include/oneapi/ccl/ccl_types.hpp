@@ -149,7 +149,7 @@ typedef struct {
     const char* product_status;
     const char* build_date;
     const char* full;
-    cl_backend_type cl_backend;
+    string_class cl_backend_name;
 } library_version;
 
 /**
