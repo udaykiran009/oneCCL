@@ -77,17 +77,23 @@ typedef struct {
     const size_t offset;
 } fn_context;
 
-/* Sparse coalesce modes */
-/* Use this variable to set sparse_allreduce coalescing mode:
-   ccl_sparse_coalesce_regular run regular coalesce funtion;
-   ccl_sparse_coalesce_disable disables coalesce function in sparse_allreduce,
-                               allgathered data is returned;
-   ccl_sparse_coalesce_keep_precision on every local reduce bf16 data is
-                               converted to fp32, reduced and then converted
-                               back to bf16.
-*/
+/**
+ * Sparse coalesce modes
+ * 
+ * Use this variable to set sparse_allreduce coalescing mode:
+ * regular        - run regular coalesce funtion;
+ * disable        - disables coalesce function in sparse_allreduce,
+ *                  allgathered data is returned;
+ * keep_precision - on every local reduce bf16 data is converted to fp32,
+ *                  reduced and then converted back to bf16.
+ */
+enum class sparse_coalesce_mode : int {
+    regular = 0,
+    disable,
+    keep_precision,
 
-enum class sparse_coalesce_mode : int { regular = 0, disable = 1, keep_precision = 2 };
+    last_value
+};
 
 /* in_buf, in_count, in_dtype, out_buf, out_count, out_dtype, context */
 typedef void (*prologue_fn)(const void*,
@@ -130,7 +136,7 @@ typedef void (*sparse_allreduce_alloc_fn)(size_t,
                                           void**);
 
 /**
- *  Supported CL backend types
+ * Supported CL backend types
  */
 enum class cl_backend_type : int {
     empty_backend = 0x0,
@@ -141,7 +147,9 @@ enum class cl_backend_type : int {
     last_value
 };
 
-/** Library version description */
+/**
+ * Library version description
+ */
 typedef struct {
     unsigned int major;
     unsigned int minor;
