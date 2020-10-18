@@ -80,7 +80,7 @@ void env_data::parse() {
     CCL_THROW_IF_NOT(worker_count >= 1, "incorrect ", CCL_WORKER_COUNT, " ", worker_count);
     env_2_type(CCL_WORKER_OFFLOAD, worker_offload);
 
-    env_2_enum(CCL_ATL_TRANSPORT, atl_transport_names, atl_transport);
+    env_2_atl_transport();
     env_2_type(CCL_ATL_SHM, enable_shm);
     env_2_type(CCL_ATL_SYNC_COLL, sync_coll);
     env_2_type(CCL_ATL_EXTRA_EP, extra_ep);
@@ -398,6 +398,22 @@ int env_data::env_2_worker_affinity(size_t local_proc_idx, size_t local_proc_cou
 
     CCL_FREE(affinity_copy);
     return read_env;
+}
+
+void env_data::env_2_atl_transport() {
+    if (!getenv(CCL_ATL_TRANSPORT) && !with_mpirun()) {
+
+        LOG_INFO("Did not find MPI-launcher specific variables, switch to ATL/OFI\n"
+          "To force enable ATL/MPI set CCL_ATL_TRANSPORT=mpi");
+
+        atl_transport = ccl_atl_ofi;
+    }
+    else
+        env_2_enum(CCL_ATL_TRANSPORT, atl_transport_names, atl_transport);
+}
+
+bool env_data::with_mpirun() {
+    return (getenv("MPI_LOCALRANKID") || getenv("MPI_LOCALNRANKS")) ? true : false;
 }
 
 } /* namespace ccl */

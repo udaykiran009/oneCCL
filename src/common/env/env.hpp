@@ -210,10 +210,13 @@ public:
         }
     }
 
+    static bool with_mpirun();
+
     static std::map<ccl_priority_mode, std::string> priority_mode_names;
     static std::map<ccl_atl_transport, std::string> atl_transport_names;
 
     int env_2_worker_affinity(size_t local_proc_idx, size_t local_proc_count);
+    void env_2_atl_transport();
 
 private:
     int env_2_worker_affinity_auto(size_t local_proc_idx, size_t workers_per_process);
