@@ -10,7 +10,7 @@
 #include "comm_attr_impl.hpp"
 
 namespace ccl {
-#define COMMA ,
+
 #define API_FORCE_INSTANTIATION(class_name, IN_attrId, IN_Value, OUT_Traits_Value) \
     template CCL_API IN_Value class_name::set<IN_attrId, IN_Value>(const IN_Value& v); \
 \
@@ -50,11 +50,12 @@ CCL_API comm_attr& comm_attr::operator=(comm_attr&& src) {
     }
     return *this;
 }
+
 API_FORCE_INSTANTIATION(comm_attr,
                         comm_attr_id::version,
                         ccl::library_version,
                         ccl_api_type_attr_traits)
 
 #undef API_FORCE_INSTANTIATION
-#undef COMMA
+
 } // namespace ccl

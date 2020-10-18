@@ -10,7 +10,7 @@
 #include "kvs_attr_impl.hpp"
 
 namespace ccl {
-#define kvsA ,
+
 #define API_FORCE_INSTANTIATION(class_name, IN_attrId, IN_Value, OUT_Traits_Value) \
     template CCL_API IN_Value class_name::set<IN_attrId, IN_Value>(const IN_Value& v); \
 \
@@ -50,11 +50,12 @@ CCL_API kvs_attr& kvs_attr::operator=(kvs_attr&& src) {
     }
     return *this;
 }
+
 API_FORCE_INSTANTIATION(kvs_attr,
                         kvs_attr_id::version,
                         ccl::library_version,
                         ccl_api_type_attr_traits)
 
 #undef API_FORCE_INSTANTIATION
-#undef kvsA
+
 } // namespace ccl

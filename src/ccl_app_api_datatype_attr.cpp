@@ -11,7 +11,6 @@
 
 namespace ccl {
 
-#define COMMA ,
 #define API_FORCE_SETTER_INSTANTIATION(class_name, IN_attrId, IN_Value, OUT_Traits_Value) \
     template CCL_API IN_Value class_name::set<IN_attrId, IN_Value>(const IN_Value& v);
 
@@ -67,6 +66,5 @@ API_FORCE_GETTER_INSTANTIATION(datatype_attr,
 
 #undef API_FORCE_SETTER_INSTANTIATION
 #undef API_FORCE_GETTER_INSTANTIATION
-#undef COMMA
 
 } // namespace ccl

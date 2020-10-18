@@ -10,7 +10,7 @@
 #include "comm_split_attr_impl.hpp"
 
 namespace ccl {
-#define COMMA ,
+
 #define API_FORCE_INSTANTIATION(class_name, IN_attrId, IN_Value, OUT_Traits_Value) \
     template CCL_API IN_Value class_name::set<IN_attrId, IN_Value>(const IN_Value& v); \
 \
@@ -50,6 +50,7 @@ CCL_API comm_split_attr& comm_split_attr::operator=(comm_split_attr&& src) {
     }
     return *this;
 }
+
 API_FORCE_INSTANTIATION(comm_split_attr,
                         comm_split_attr_id::color,
                         int,
@@ -64,5 +65,5 @@ API_FORCE_INSTANTIATION(comm_split_attr,
                         ccl_api_type_attr_traits)
 
 #undef API_FORCE_INSTANTIATION
-#undef COMMA
+
 } // namespace ccl

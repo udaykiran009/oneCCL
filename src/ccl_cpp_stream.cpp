@@ -2,9 +2,6 @@
 #include "stream_impl.hpp"
 #include "oneapi/ccl/native_device_api/export_api.hpp"
 
-#ifndef COMMA
-#define COMMA ,
-#endif
 namespace ccl {
 CCL_API stream::stream(
     const typename detail::ccl_api_type_attr_traits<stream_attr_id, stream_attr_id::version>::type&
@@ -62,5 +59,3 @@ API_STREAM_FORCE_INSTANTIATION(ccl::stream_attr_id::index, uint32_t);
 API_STREAM_FORCE_INSTANTIATION(ccl::stream_attr_id::flags, size_t);
 API_STREAM_FORCE_INSTANTIATION(ccl::stream_attr_id::mode, size_t);
 API_STREAM_FORCE_INSTANTIATION(ccl::stream_attr_id::priority, size_t);
-
-#undef COMMA
