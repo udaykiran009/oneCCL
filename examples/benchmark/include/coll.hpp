@@ -180,8 +180,7 @@ struct device_data {
 
         ASSERT(ranks.size() == devices.size(), "ranks and devices sizes should match");
 
-        cl::sycl::device dev = devices[0];
-        auto ccl_dev = ccl::create_device(dev);
+        auto ccl_dev = ccl::create_device(devices[0]);
         auto ccl_ctx = ccl::create_context(ctx);
 
         if (ranks.size() == 1) {

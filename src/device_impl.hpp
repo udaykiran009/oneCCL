@@ -53,7 +53,8 @@ CCL_API typename ccl::detail::ccl_api_type_attr_traits<ccl::device_attr_id, attr
 /***************************TypeGenerations*********************************************************/
 #define API_DEVICE_CREATION_FORCE_INSTANTIATION(native_device_type) \
     template CCL_API ccl::device ccl::device::create_device(native_device_type&& dev); \
-    template CCL_API ccl::device ccl::device::create_device(native_device_type& dev);
+    template CCL_API ccl::device ccl::device::create_device(native_device_type& dev); \
+    template CCL_API ccl::device ccl::device::create_device(const native_device_type& dev);
 
 #define API_DEVICE_FORCE_INSTANTIATION_SET(IN_attrId, IN_Value) \
     template CCL_API typename ccl::detail::ccl_api_type_attr_traits<ccl::device_attr_id, \

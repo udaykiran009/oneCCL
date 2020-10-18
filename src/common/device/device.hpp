@@ -18,6 +18,7 @@ public:
     ccl_device_impl& operator=(const ccl_device_impl& other) = delete;
 
     ccl_device_impl(device_native_t& dev, const ccl::library_version& version);
+    ccl_device_impl(const device_native_t& dev, const ccl::library_version& version);
     ccl_device_impl(device_native_t&& dev, const ccl::library_version& version);
     ccl_device_impl(device_native_handle_t dev_handle,
                     const ccl::library_version& version);

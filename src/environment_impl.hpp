@@ -166,8 +166,10 @@ ccl_api_type CCL_API environment::create_postponed_api_type(args_type... args) c
 
 #define CREATE_CONTEXT_INSTANTIATION(native_context_type) \
     template ccl::context CCL_API ccl::detail::environment::create_context(native_context_type&& native_ctx) const; \
-    template ccl::context CCL_API ccl::detail::environment::create_context(native_context_type& native_ctx) const;
+    template ccl::context CCL_API ccl::detail::environment::create_context(native_context_type& native_ctx) const; \
+    template ccl::context CCL_API ccl::detail::environment::create_context(const native_context_type& native_ctx) const;
 
 #define CREATE_DEVICE_INSTANTIATION(native_device_type) \
     template ccl::device CCL_API ccl::detail::environment::create_device(native_device_type&& native_device) const; \
-    template ccl::device CCL_API ccl::detail::environment::create_device(native_device_type& native_device) const;
+    template ccl::device CCL_API ccl::detail::environment::create_device(native_device_type& native_device) const; \
+    template ccl::device CCL_API ccl::detail::environment::create_device(const native_device_type& native_device) const;

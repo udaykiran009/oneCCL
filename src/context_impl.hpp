@@ -54,6 +54,7 @@ CCL_API typename ccl::detail::ccl_api_type_attr_traits<ccl::context_attr_id, att
 #define API_DEVICE_CONTEXT_CREATION_FORCE_INSTANTIATION(native_device_context_type) \
     template CCL_API ccl::context ccl::context::create_context(native_device_context_type&& ctx);   \
     template CCL_API ccl::context ccl::context::create_context(native_device_context_type& ctx);    \
+    template CCL_API ccl::context ccl::context::create_context(const native_device_context_type& ctx);
 
 #define API_DEVICE_CONTEXT_FORCE_INSTANTIATION_SET(IN_attrId, IN_Value) \
     template CCL_API typename ccl::detail::ccl_api_type_attr_traits<ccl::context_attr_id, \
