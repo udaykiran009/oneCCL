@@ -15,8 +15,7 @@ template <class VType,
               sparse_detail::incremental_indices_distributor>
 struct sycl_sparse_allreduce_coll : base_sparse_allreduce_coll<cl::sycl::buffer<VType, 1>,
                                                                cl::sycl::buffer<IType, 1>,
-                                                               IndicesDistributorType>,
-                                    device_data {
+                                                               IndicesDistributorType> {
     using sycl_indices_t = cl::sycl::buffer<IType, 1>;
     using sycl_values_t = cl::sycl::buffer<VType, 1>;
     using coll_base =
@@ -42,83 +41,85 @@ struct sycl_sparse_allreduce_coll : base_sparse_allreduce_coll<cl::sycl::buffer<
     sycl_sparse_allreduce_coll(bench_init_attr init_attr,
                                size_t sbuf_size_modifier = 1,
                                size_t rbuf_size_modifier = 1)
-            : coll_base(init_attr, comm().size()) {
-        size_t max_elem_count = base_coll::get_max_elem_count();
-        size_t single_buf_max_elem_count = base_coll::get_single_buf_max_elem_count();
+            : coll_base(init_attr, transport_data::get_comm_size()) {
+        // size_t max_elem_count = base_coll::get_max_elem_count();
+        // size_t single_buf_max_elem_count = base_coll::get_single_buf_max_elem_count();
 
-        for (size_t idx = 0; idx < base_coll::get_buf_count(); idx++) {
-            send_ibufs[idx] = new sycl_indices_t(max_elem_count * sbuf_size_modifier);
-            send_vbufs[idx] = new sycl_values_t(max_elem_count * sbuf_size_modifier);
+        // size_t comm_size = transport_data::get_comm_size();
 
-            recv_ibufs[idx] =
-                new sycl_indices_t(max_elem_count * rbuf_size_modifier * comm().size());
-            recv_vbufs[idx] =
-                new sycl_values_t(max_elem_count * rbuf_size_modifier * comm().size());
+        // for (size_t idx = 0; idx < base_coll::get_buf_count(); idx++) {
+        //     send_ibufs[idx] = new sycl_indices_t(max_elem_count * sbuf_size_modifier);
+        //     send_vbufs[idx] = new sycl_values_t(max_elem_count * sbuf_size_modifier);
 
-            device_data::sycl_queue.submit([&](handler& h) {
-                auto send_ibuf = (static_cast<sycl_indices_t*>(send_ibufs[idx]));
-                auto send_vbuf = (static_cast<sycl_values_t*>(send_vbufs[idx]));
+        //     recv_ibufs[idx] =
+        //         new sycl_indices_t(max_elem_count * rbuf_size_modifier * comm_size);
+        //     recv_vbufs[idx] =
+        //         new sycl_values_t(max_elem_count * rbuf_size_modifier * comm_size);
 
-                auto recv_ibuf = (static_cast<sycl_indices_t*>(recv_ibufs[idx]));
-                auto recv_vbuf = (static_cast<sycl_values_t*>(recv_vbufs[idx]));
+        //     stream.get_native().submit([&](handler& h) {
+        //         auto send_ibuf = (static_cast<sycl_indices_t*>(send_ibufs[idx]));
+        //         auto send_vbuf = (static_cast<sycl_values_t*>(send_vbufs[idx]));
 
-                auto send_ibuf_acc = send_ibuf->template get_access<mode::write>(h);
-                auto send_vbuf_acc = send_vbuf->template get_access<mode::write>(h);
-                auto recv_ibuf_acc = recv_ibuf->template get_access<mode::write>(h);
-                auto recv_vbuf_acc = recv_vbuf->template get_access<mode::write>(h);
+        //         auto recv_ibuf = (static_cast<sycl_indices_t*>(recv_ibufs[idx]));
+        //         auto recv_vbuf = (static_cast<sycl_values_t*>(recv_vbufs[idx]));
 
-                h.parallel_for<struct sparse_allreduce_kernel_name_bufs<VType, IType>>
-                        (range<1>{max_elem_count*comm().size()}, [=](item<1> e_idx)
-                {
-                    if (e_idx.get_linear_id() < max_elem_count) {
-                        send_ibuf_acc[e_idx] = 0;
-                        send_vbuf_acc[e_idx] = 0;
-                    }
-                    recv_ibuf_acc[e_idx] = 0;
-                    recv_vbuf_acc[e_idx] = 0;
-                });
-            }).wait();
-        }
+        //         auto send_ibuf_acc = send_ibuf->template get_access<mode::write>(h);
+        //         auto send_vbuf_acc = send_vbuf->template get_access<mode::write>(h);
+        //         auto recv_ibuf_acc = recv_ibuf->template get_access<mode::write>(h);
+        //         auto recv_vbuf_acc = recv_vbuf->template get_access<mode::write>(h);
 
-        single_send_ibuf = new sycl_indices_t(single_buf_max_elem_count * sbuf_size_modifier);
-        single_send_vbuf = new sycl_values_t(single_buf_max_elem_count * sbuf_size_modifier);
+        //         h.parallel_for<struct sparse_allreduce_kernel_name_bufs<VType, IType>>
+        //                 (range<1>{max_elem_count*comm_size}, [=](item<1> e_idx)
+        //         {
+        //             if (e_idx.get_linear_id() < max_elem_count) {
+        //                 send_ibuf_acc[e_idx] = 0;
+        //                 send_vbuf_acc[e_idx] = 0;
+        //             }
+        //             recv_ibuf_acc[e_idx] = 0;
+        //             recv_vbuf_acc[e_idx] = 0;
+        //         });
+        //     }).wait();
+        // }
 
-        single_recv_ibuf =
-            new sycl_indices_t(single_buf_max_elem_count * rbuf_size_modifier * comm().size());
-        single_recv_vbuf =
-            new sycl_values_t(single_buf_max_elem_count * rbuf_size_modifier * comm().size());
+        // single_send_ibuf = new sycl_indices_t(single_buf_max_elem_count * sbuf_size_modifier);
+        // single_send_vbuf = new sycl_values_t(single_buf_max_elem_count * sbuf_size_modifier);
 
-        device_data::sycl_queue.submit([&](handler& h) {
-            auto send_ibuf = (static_cast<sycl_indices_t*>(single_send_ibuf));
-            auto send_vbuf = (static_cast<sycl_values_t*>(single_send_vbuf));
+        // single_recv_ibuf =
+        //     new sycl_indices_t(single_buf_max_elem_count * rbuf_size_modifier * comm_size);
+        // single_recv_vbuf =
+        //     new sycl_values_t(single_buf_max_elem_count * rbuf_size_modifier * comm_size);
 
-            auto recv_ibuf = (static_cast<sycl_indices_t*>(single_recv_ibuf));
-            auto recv_vbuf = (static_cast<sycl_values_t*>(single_recv_vbuf));
+        // stream.get_native().submit([&](handler& h) {
+        //     auto send_ibuf = (static_cast<sycl_indices_t*>(single_send_ibuf));
+        //     auto send_vbuf = (static_cast<sycl_values_t*>(single_send_vbuf));
 
-            auto send_ibuf_acc = send_ibuf->template get_access<mode::write>(h);
-            auto send_vbuf_acc = send_vbuf->template get_access<mode::write>(h);
+        //     auto recv_ibuf = (static_cast<sycl_indices_t*>(single_recv_ibuf));
+        //     auto recv_vbuf = (static_cast<sycl_values_t*>(single_recv_vbuf));
 
-            auto recv_ibuf_acc = recv_ibuf->template get_access<mode::write>(h);
-            auto recv_vbuf_acc = recv_vbuf->template get_access<mode::write>(h);
+        //     auto send_ibuf_acc = send_ibuf->template get_access<mode::write>(h);
+        //     auto send_vbuf_acc = send_vbuf->template get_access<mode::write>(h);
 
-            h.parallel_for<struct sparse_allreduce_kernel_name_single_bufs<VType, IType>>
-                    (range<1>{ single_buf_max_elem_count * comm().size() }, [=](item<1> e_idx)
-            {
-                if (e_idx.get_linear_id() < single_buf_max_elem_count) {
-                    send_ibuf_acc[e_idx] = 0;
-                    send_vbuf_acc[e_idx] = 0;
-                }
-                recv_ibuf_acc[e_idx] = 0;
-                recv_vbuf_acc[e_idx] = 0;
-            });
-        }).wait();
+        //     auto recv_ibuf_acc = recv_ibuf->template get_access<mode::write>(h);
+        //     auto recv_vbuf_acc = recv_vbuf->template get_access<mode::write>(h);
 
-        for (size_t idx = 0; idx < base_coll::get_buf_count(); idx++) {
-            fn_ctxs[idx].recv_ibuf = (void**)(&(recv_ibufs[idx]));
-            fn_ctxs[idx].recv_vbuf = (void**)(&(recv_vbufs[idx]));
-        }
-        single_fn_ctx.recv_ibuf = (void**)(&single_recv_ibuf);
-        single_fn_ctx.recv_vbuf = (void**)(&single_recv_vbuf);
+        //     h.parallel_for<struct sparse_allreduce_kernel_name_single_bufs<VType, IType>>
+        //             (range<1>{ single_buf_max_elem_count * comm_size }, [=](item<1> e_idx)
+        //     {
+        //         if (e_idx.get_linear_id() < single_buf_max_elem_count) {
+        //             send_ibuf_acc[e_idx] = 0;
+        //             send_vbuf_acc[e_idx] = 0;
+        //         }
+        //         recv_ibuf_acc[e_idx] = 0;
+        //         recv_vbuf_acc[e_idx] = 0;
+        //     });
+        // }).wait();
+
+        // for (size_t idx = 0; idx < base_coll::get_buf_count(); idx++) {
+        //     fn_ctxs[idx].recv_ibuf = (void**)(&(recv_ibufs[idx]));
+        //     fn_ctxs[idx].recv_vbuf = (void**)(&(recv_vbufs[idx]));
+        // }
+        // single_fn_ctx.recv_ibuf = (void**)(&single_recv_ibuf);
+        // single_fn_ctx.recv_vbuf = (void**)(&single_recv_vbuf);
     }
 
     virtual void prepare(size_t elem_count) override {
@@ -126,6 +127,22 @@ struct sycl_sparse_allreduce_coll : base_sparse_allreduce_coll<cl::sycl::buffer<
     }
 
     virtual void finalize(size_t elem_count) override {
+        // TODO not implemented yet
+    }
+
+    virtual void prepare_internal(size_t elem_count,
+                         ccl::communicator& comm,
+                         ccl::stream& stream,
+                         size_t rank_idx) override {
+
+        // TODO not implemented yet
+    }
+
+    virtual void finalize_internal(size_t elem_count,
+                          ccl::communicator& comm,
+                          ccl::stream& stream,
+                          size_t rank_idx) override {
+
         // TODO not implemented yet
     }
     virtual void start(size_t count,
@@ -167,19 +184,6 @@ struct sycl_sparse_allreduce_coll : base_sparse_allreduce_coll<cl::sycl::buffer<
             single_fn_ctx,
             stream(),
             coll_strategy::get_op_attr(attr));*/
-    }
-
-    /* global communicator for cpu collectives */
-    static ccl::communicator& comm() {
-        if (!device_data::comm_ptr) {
-        }
-        return *device_data::comm_ptr;
-    }
-
-    static ccl::stream& stream() {
-        if (!device_data::stream_ptr) {
-        }
-        return *device_data::stream_ptr;
     }
 };
 

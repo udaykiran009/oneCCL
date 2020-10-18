@@ -4,7 +4,7 @@
 namespace ccl {
 
 ccl::library_version ccl_empty_attr::version{
-    utils::get_library_version()
+    //utils::get_library_version()
 };
 
 template <class attr>

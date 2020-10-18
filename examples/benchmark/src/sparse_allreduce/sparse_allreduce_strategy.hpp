@@ -138,8 +138,8 @@ struct sparse_allreduce_strategy_impl {
         return std::tuple<size_t, size_t>(indices_count, indices_count * vdim_count);
     }
 
-    template <class VType, class comm_t, class... Args>
-    void start_internal(comm_t& comm,
+    template <class VType, class... Args>
+    void start_internal(ccl::communicator& comm,
                         const IType send_ibuf,
                         size_t send_icount,
                         const VType send_vbuf,

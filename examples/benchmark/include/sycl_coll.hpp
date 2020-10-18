@@ -9,16 +9,19 @@
 
 #ifdef CCL_ENABLE_SYCL
 
+#include <CL/sycl.hpp>
+
 using namespace sycl;
 using namespace sycl::access;
 
-cl::sycl::device get_device(const ccl::communicator& comm) {
+std::vector<cl::sycl::queue> get_sycl_queues(std::vector<size_t>& ranks) {
 
     /* select requested platform by SYCL_BE: L0 or OpenCL */
     std::vector<cl::sycl::device> all_devices =
         cl::sycl::device::get_devices(info::device_type::gpu);
     std::vector<cl::sycl::device> platform_devices;
     std::vector<cl::sycl::device> selected_devices;
+    std::vector<cl::sycl::queue> selected_queues;
     std::string backend;
 
     if (getenv("SYCL_BE") == nullptr) {
@@ -80,12 +83,15 @@ cl::sycl::device get_device(const ccl::communicator& comm) {
 
     printf("selected_devices count %zu\n", selected_devices.size());
 
-    size_t idx = comm.rank() % selected_devices.size();
-    auto selected_device = selected_devices[idx];
-    std::cout << "\nrunning on: " << selected_device.get_info<cl::sycl::info::device::name>()
-              << ", device index: " << idx << "\n";
+    for (auto rank : ranks) {
+        size_t idx = rank % selected_devices.size();
+        auto device = selected_devices[idx];
+        std::cout << "\nrunning on: " << device.get_info<cl::sycl::info::device::name>()
+                  << ", device index: " << idx << "\n";
+        selected_queues.push_back(cl::sycl::queue(device));
+    }
 
-    return selected_device;
+    return selected_queues;
 }
 
 usm::alloc usm_alloc_type_from_string(const std::string& str) {
@@ -163,7 +169,7 @@ struct buf_allocator {
 
 /* sycl-specific base implementation */
 template <class Dtype, class strategy>
-struct sycl_base_coll : base_coll, private strategy, device_data {
+struct sycl_base_coll : base_coll, private strategy {
     using coll_strategy = strategy;
 
     template <class... Args>
@@ -172,45 +178,54 @@ struct sycl_base_coll : base_coll, private strategy, device_data {
                    size_t rbuf_multiplier,
                    Args&&... args)
             : base_coll(init_attr),
-              coll_strategy(std::forward<Args>(args)...),
-              allocator(device_data::sycl_queue) {
+              coll_strategy(std::forward<Args>(args)...) {
 
-        if (base_coll::get_sycl_mem_type() == SYCL_MEM_USM) {
+        auto& transport = transport_data::instance();
+        auto streams = transport.get_streams();
 
-            sycl::usm::alloc usm_alloc_type;
-            auto bench_alloc_type = base_coll::get_sycl_usm_type();
-            if (bench_alloc_type == SYCL_USM_SHARED)
-                usm_alloc_type = usm::alloc::shared;
-            else if (bench_alloc_type == SYCL_USM_DEVICE)
-                usm_alloc_type = usm::alloc::device;
-            else
-                ASSERT(0, "unexpected bench_alloc_type %d", bench_alloc_type);
+        for (size_t rank_idx = 0; rank_idx < base_coll::get_ranks_per_proc(); rank_idx++) {
 
-            for (size_t idx = 0; idx < base_coll::get_buf_count(); idx++) {
-                send_bufs[idx] = allocator.allocate(
-                    base_coll::get_max_elem_count() * sbuf_multiplier, usm_alloc_type);
-                recv_bufs[idx] = allocator.allocate(
-                    base_coll::get_max_elem_count() * rbuf_multiplier, usm_alloc_type);
+            if (base_coll::get_sycl_mem_type() == SYCL_MEM_USM) {
+
+                allocators.push_back(buf_allocator<Dtype>(streams[rank_idx].get_native()));
+
+                auto& allocator = allocators[rank_idx];
+
+                sycl::usm::alloc usm_alloc_type;
+                auto bench_alloc_type = base_coll::get_sycl_usm_type();
+                if (bench_alloc_type == SYCL_USM_SHARED)
+                    usm_alloc_type = usm::alloc::shared;
+                else if (bench_alloc_type == SYCL_USM_DEVICE)
+                    usm_alloc_type = usm::alloc::device;
+                else
+                    ASSERT(0, "unexpected bench_alloc_type %d", bench_alloc_type);
+
+                for (size_t idx = 0; idx < base_coll::get_buf_count(); idx++) {
+                    send_bufs[idx][rank_idx] = allocator.allocate(
+                        base_coll::get_max_elem_count() * sbuf_multiplier, usm_alloc_type);
+                    recv_bufs[idx][rank_idx] = allocator.allocate(
+                        base_coll::get_max_elem_count() * rbuf_multiplier, usm_alloc_type);
+                }
+
+                single_send_buf[rank_idx] = allocator.allocate(
+                    base_coll::get_single_buf_max_elem_count() * sbuf_multiplier, usm_alloc_type);
+                single_recv_buf[rank_idx] = allocator.allocate(
+                    base_coll::get_single_buf_max_elem_count() * rbuf_multiplier, usm_alloc_type);
             }
+            else {
+                for (size_t idx = 0; idx < base_coll::get_buf_count(); idx++) {
+                    send_bufs[idx][rank_idx] =
+                        new cl::sycl::buffer<Dtype, 1>(base_coll::get_max_elem_count() * sbuf_multiplier);
+                    recv_bufs[idx][rank_idx] =
+                        new cl::sycl::buffer<Dtype, 1>(base_coll::get_max_elem_count() * rbuf_multiplier);
+                }
 
-            single_send_buf = allocator.allocate(
-                base_coll::get_single_buf_max_elem_count() * sbuf_multiplier, usm_alloc_type);
-            single_recv_buf = allocator.allocate(
-                base_coll::get_single_buf_max_elem_count() * rbuf_multiplier, usm_alloc_type);
-        }
-        else {
-            for (size_t idx = 0; idx < base_coll::get_buf_count(); idx++) {
-                send_bufs[idx] =
-                    new cl::sycl::buffer<Dtype, 1>(base_coll::get_max_elem_count() * sbuf_multiplier);
-                recv_bufs[idx] =
-                    new cl::sycl::buffer<Dtype, 1>(base_coll::get_max_elem_count() * rbuf_multiplier);
+                single_send_buf[rank_idx] = new cl::sycl::buffer<Dtype, 1>(
+                    base_coll::get_single_buf_max_elem_count() * sbuf_multiplier);
+
+                single_recv_buf[rank_idx] = new cl::sycl::buffer<Dtype, 1>(
+                    base_coll::get_single_buf_max_elem_count() * rbuf_multiplier);
             }
-
-            single_send_buf = new cl::sycl::buffer<Dtype, 1>(
-                base_coll::get_single_buf_max_elem_count() * sbuf_multiplier);
-
-            single_recv_buf = new cl::sycl::buffer<Dtype, 1>(
-                base_coll::get_single_buf_max_elem_count() * rbuf_multiplier);
         }
     }
 
@@ -218,13 +233,16 @@ struct sycl_base_coll : base_coll, private strategy, device_data {
 
     virtual ~sycl_base_coll() {
 
-        if (base_coll::get_sycl_mem_type() == SYCL_MEM_BUF) {
-            for (size_t idx = 0; idx < base_coll::get_buf_count(); idx++) {
-                delete static_cast<sycl_buffer_t<Dtype>*>(send_bufs[idx]);
-                delete static_cast<sycl_buffer_t<Dtype>*>(recv_bufs[idx]);
+        for (size_t rank_idx = 0; rank_idx < base_coll::get_ranks_per_proc(); rank_idx++) {
+
+            if (base_coll::get_sycl_mem_type() == SYCL_MEM_BUF) {
+                for (size_t idx = 0; idx < base_coll::get_buf_count(); idx++) {
+                    delete static_cast<sycl_buffer_t<Dtype>*>(send_bufs[idx][rank_idx]);
+                    delete static_cast<sycl_buffer_t<Dtype>*>(recv_bufs[idx][rank_idx]);
+                }
+                delete static_cast<sycl_buffer_t<Dtype>*>(single_send_buf[rank_idx]);
+                delete static_cast<sycl_buffer_t<Dtype>*>(single_recv_buf[rank_idx]);
             }
-            delete static_cast<sycl_buffer_t<Dtype>*>(single_send_buf);
-            delete static_cast<sycl_buffer_t<Dtype>*>(single_recv_buf);
         }
     }
 
@@ -232,36 +250,70 @@ struct sycl_base_coll : base_coll, private strategy, device_data {
         return coll_strategy::class_name();
     }
 
+    virtual void prepare(size_t elem_count) override {
+        auto& transport = transport_data::instance();
+        auto& comms = transport.get_device_comms();
+        auto streams = transport.get_streams();
+        size_t ranks_per_proc = base_coll::get_ranks_per_proc();
+
+        for (size_t rank_idx = 0; rank_idx < ranks_per_proc; rank_idx++) {
+            prepare_internal(elem_count,
+                                   comms[rank_idx],
+                                   streams[rank_idx],
+                                   rank_idx);
+        }
+    }
+
+    virtual void finalize(size_t elem_count) override {
+        auto& transport = transport_data::instance();
+        auto& comms = transport.get_device_comms();
+        auto streams = transport.get_streams();
+        size_t ranks_per_proc = base_coll::get_ranks_per_proc();
+
+        for (size_t rank_idx = 0; rank_idx < ranks_per_proc; rank_idx++) {
+            finalize_internal(elem_count,
+                                    comms[rank_idx],
+                                    streams[rank_idx],
+                                    rank_idx);
+        }
+    }
+
     virtual void start(size_t count,
                        size_t buf_idx,
                        const bench_exec_attr& attr,
                        req_list_t& reqs) override {
 
-        if (base_coll::get_sycl_mem_type() == SYCL_MEM_USM) {
+        auto& transport = transport_data::instance();
+        auto& comms = transport.get_device_comms();
+        auto streams = transport.get_streams();
+        size_t ranks_per_proc = base_coll::get_ranks_per_proc();
 
-            coll_strategy::start_internal(
-                comm(),
-                count,
-                static_cast<Dtype*>(send_bufs[buf_idx]),
-                static_cast<Dtype*>(recv_bufs[buf_idx]),
-                attr,
-                reqs,
-                stream(),
-                coll_strategy::get_op_attr(attr));
-        }
-        else
-        {
-            sycl_buffer_t<Dtype>& send_buf = *(static_cast<sycl_buffer_t<Dtype>*>(send_bufs[buf_idx]));
-            sycl_buffer_t<Dtype>& recv_buf = *(static_cast<sycl_buffer_t<Dtype>*>(recv_bufs[buf_idx]));
-            coll_strategy::template start_internal<sycl_buffer_t<Dtype>&>(
-                comm(),
-                count,
-                send_buf,
-                recv_buf,
-                attr,
-                reqs,
-                stream(),
-                coll_strategy::get_op_attr(attr));
+        for (size_t rank_idx = 0; rank_idx < ranks_per_proc; rank_idx++) {
+
+            if (base_coll::get_sycl_mem_type() == SYCL_MEM_USM) {
+                coll_strategy::start_internal(
+                    comms[rank_idx],
+                    count,
+                    static_cast<Dtype*>(send_bufs[buf_idx][rank_idx]),
+                    static_cast<Dtype*>(recv_bufs[buf_idx][rank_idx]),
+                    attr,
+                    reqs,
+                    streams[rank_idx],
+                    coll_strategy::get_op_attr(attr));
+            }
+            else {
+                sycl_buffer_t<Dtype>& send_buf = *(static_cast<sycl_buffer_t<Dtype>*>(send_bufs[buf_idx][rank_idx]));
+                sycl_buffer_t<Dtype>& recv_buf = *(static_cast<sycl_buffer_t<Dtype>*>(recv_bufs[buf_idx][rank_idx]));
+                coll_strategy::template start_internal<sycl_buffer_t<Dtype>&>(
+                    comms[rank_idx],
+                    count,
+                    send_buf,
+                    recv_buf,
+                    attr,
+                    reqs,
+                    streams[rank_idx],
+                    coll_strategy::get_op_attr(attr));
+            }
         }
     }
 
@@ -269,30 +321,38 @@ struct sycl_base_coll : base_coll, private strategy, device_data {
                               const bench_exec_attr& attr,
                               req_list_t& reqs) override {
 
-        if (base_coll::get_sycl_mem_type() == SYCL_MEM_USM) {
-            coll_strategy::start_internal(
-                comm(),
-                count,
-                static_cast<Dtype*>(single_send_buf),
-                static_cast<Dtype*>(single_recv_buf),
-                attr,
-                reqs,
-                stream(),
-                coll_strategy::get_op_attr(attr));
-        }
-        else
-        {
-            sycl_buffer_t<Dtype>& send_buf = *(static_cast<sycl_buffer_t<Dtype>*>(single_send_buf));
-            sycl_buffer_t<Dtype>& recv_buf = *(static_cast<sycl_buffer_t<Dtype>*>(single_recv_buf));
-            coll_strategy::template start_internal<sycl_buffer_t<Dtype>&>(
-                comm(),
-                count,
-                send_buf,
-                recv_buf,
-                attr,
-                reqs,
-                stream(),
-                coll_strategy::get_op_attr(attr));
+        auto& transport = transport_data::instance();
+        auto& comms = transport.get_device_comms();
+        auto streams = transport.get_streams();
+        size_t ranks_per_proc = base_coll::get_ranks_per_proc();
+
+        for (size_t rank_idx = 0; rank_idx < ranks_per_proc; rank_idx++) {
+
+            if (base_coll::get_sycl_mem_type() == SYCL_MEM_USM) {
+                coll_strategy::start_internal(
+                    comms[rank_idx],
+                    count,
+                    static_cast<Dtype*>(single_send_buf[rank_idx]),
+                    static_cast<Dtype*>(single_recv_buf[rank_idx]),
+                    attr,
+                    reqs,
+                    streams[rank_idx],
+                    coll_strategy::get_op_attr(attr));
+            }
+            else
+            {
+                sycl_buffer_t<Dtype>& send_buf = *(static_cast<sycl_buffer_t<Dtype>*>(single_send_buf[rank_idx]));
+                sycl_buffer_t<Dtype>& recv_buf = *(static_cast<sycl_buffer_t<Dtype>*>(single_recv_buf[rank_idx]));
+                coll_strategy::template start_internal<sycl_buffer_t<Dtype>&>(
+                    comms[rank_idx],
+                    count,
+                    send_buf,
+                    recv_buf,
+                    attr,
+                    reqs,
+                    streams[rank_idx],
+                    coll_strategy::get_op_attr(attr));
+            }
         }
     }
 
@@ -300,20 +360,8 @@ struct sycl_base_coll : base_coll, private strategy, device_data {
         return ccl::native_type_info<typename std::remove_pointer<Dtype>::type>::ccl_datatype_value;
     }
 
-    /* global communicator & stream for all cpu collectives */
-    static ccl::communicator& comm() {
-        if (!device_data::comm_ptr) {
-        }
-        return *device_data::comm_ptr;
-    }
-
-    static ccl::stream& stream() {
-        if (!device_data::stream_ptr) {
-        }
-        return *device_data::stream_ptr;
-    }
-
 private:
-    buf_allocator<Dtype> allocator;
+    std::vector<buf_allocator<Dtype>> allocators;
 };
+
 #endif /* CCL_ENABLE_SYCL */

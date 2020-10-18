@@ -247,14 +247,24 @@ double when(void) {
     return (double)(tv.tv_sec - tv_base.tv_sec) * 1.0e6 + (double)(tv.tv_usec - tv_base.tv_usec);
 }
 
+
+void bench_barrier(std::vector<ccl::communicator>& comms) {
+    for (auto& comm : comms) {
+        ccl::barrier(comm);
+    }
+}
+
 /* placing print_timings() here is because of declaration of user_options_t */
 // FIXME FS: what?
-void print_timings(const ccl::communicator& comm,
+void print_timings(std::vector<ccl::communicator>& comms,
                    const std::vector<double>& timer,
                    const user_options_t& options,
                    const size_t elem_count,
                    ccl::datatype dtype,
                    ccl::reduction op) {
+
+    auto& comm = comms[0];
+
     const size_t buf_count = options.buf_type == BUF_SINGLE ? 1 : options.buf_count;
     const size_t ncolls = options.coll_names.size();
     std::vector<double> all_timers(ncolls * comm.size());
@@ -264,7 +274,14 @@ void print_timings(const ccl::communicator& comm,
     for (idx = 0; idx < comm.size(); idx++)
         recv_counts[idx] = ncolls;
 
-    ccl::allgatherv(timer.data(), ncolls, all_timers.data(), recv_counts, comm).wait();
+    std::vector<ccl::event> events;
+    for (auto& c : comms) {
+        events.push_back(ccl::allgatherv(timer.data(), ncolls, all_timers.data(), recv_counts, c));
+    }
+
+    for (auto& event : events) {
+        event.wait();
+    }
 
     if (comm.rank() == 0) {
         std::vector<double> timers(comm.size(), 0);
@@ -331,7 +348,8 @@ void print_timings(const ccl::communicator& comm,
             }
         }
     }
-    ccl::barrier(comm);
+    
+    bench_barrier(comms);
 }
 
 class set_dtypes_func {

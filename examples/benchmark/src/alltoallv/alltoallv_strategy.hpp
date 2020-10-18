@@ -23,8 +23,8 @@ struct alltoallv_strategy_impl {
         return bench_attr.get_attr<ccl::alltoallv_attr>();
     }
 
-    template <class Dtype, class comm_t, class... Args>
-    void start_internal(comm_t& comm,
+    template <class Dtype, class... Args>
+    void start_internal(ccl::communicator& comm,
                         size_t count,
                         const Dtype send_buf,
                         Dtype recv_buf,
