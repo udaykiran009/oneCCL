@@ -5,9 +5,6 @@
 
 namespace ccl {
 
-//TODO I do not want to rename 90% f code at now
-using group_split_type = group_split_type;
-
 #define SUPPORTED_HW_TOPOLOGIES_DECL_LIST \
     ccl::group_split_type::thread, ccl::group_split_type::process, \
         ccl::group_split_type::cluster
