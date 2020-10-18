@@ -231,7 +231,7 @@ public:
         shared_ptr_class<kvs_interface> kvs,
         const comm_attr& attr) const;
 
-    vector_class<communicator> split_device_communicators(
+    vector_class<communicator> split_communicators(
         const vector_class<pair_class<communicator, comm_split_attr>>& attrs) const;
 
 private:

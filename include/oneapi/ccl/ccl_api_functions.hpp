@@ -199,11 +199,11 @@ comm_attr create_comm_attr(attr_value_pair_t&&... avps) {
 namespace preview {
 
 /**
- * Splits device communicators according to attributes.
+ * Splits communicators according to attributes.
  * @param attrs split attributes for local communicators
- * @return vector of device communicators
+ * @return vector of communicators
  */
-vector_class<communicator> split_device_communicators(
+vector_class<communicator> split_communicators(
     const vector_class<pair_class<communicator, comm_split_attr>>& attrs);
 
 
