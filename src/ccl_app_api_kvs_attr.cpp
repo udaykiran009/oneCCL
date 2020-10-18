@@ -24,7 +24,7 @@ namespace ccl {
  * kvs_attr attributes definition
  */
 CCL_API kvs_attr::kvs_attr(ccl_empty_attr)
-    : base_t(std::shared_ptr<impl_t>(new impl_t(ccl_empty_attr::version))) {}
+    : base_t(impl_value_t(new impl_t(ccl_empty_attr::version))) {}
 CCL_API kvs_attr::kvs_attr(kvs_attr&& src)
     : base_t(std::move(src)) {}
 
@@ -34,7 +34,7 @@ CCL_API kvs_attr::kvs_attr(const kvs_attr& src)
 CCL_API kvs_attr::kvs_attr(
     const typename detail::ccl_api_type_attr_traits<kvs_attr_id,
         kvs_attr_id::version>::return_type& version)
-    : base_t(std::shared_ptr<impl_t>(new impl_t(version))) {}
+    : base_t(impl_value_t(new impl_t(version))) {}
 
 CCL_API kvs_attr::~kvs_attr() noexcept {}
 

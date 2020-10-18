@@ -24,7 +24,7 @@ namespace ccl {
  * comm_attr attributes definition
  */
 CCL_API comm_attr::comm_attr(ccl_empty_attr)
-    : base_t(std::shared_ptr<impl_t>(new impl_t(ccl_empty_attr::version))) {}
+    : base_t(impl_value_t(new impl_t(ccl_empty_attr::version))) {}
 CCL_API comm_attr::comm_attr(comm_attr&& src)
     : base_t(std::move(src)) {}
 
@@ -34,7 +34,7 @@ CCL_API comm_attr::comm_attr(const comm_attr& src)
 CCL_API comm_attr::comm_attr(
     const typename detail::ccl_api_type_attr_traits<comm_attr_id,
         comm_attr_id::version>::return_type& version)
-    : base_t(std::shared_ptr<impl_t>(new impl_t(version))) {}
+    : base_t(impl_value_t(new impl_t(version))) {}
 
 CCL_API comm_attr::~comm_attr() noexcept {}
 

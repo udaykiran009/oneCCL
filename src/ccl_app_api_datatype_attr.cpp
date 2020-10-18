@@ -30,7 +30,7 @@ CCL_API datatype_attr::datatype_attr(
     const typename detail::ccl_api_type_attr_traits<datatype_attr_id,
                                                      datatype_attr_id::version>::return_type&
         version)
-        : base_t(std::shared_ptr<impl_t>(new impl_t(version))) {}
+        : base_t(impl_value_t(new impl_t(version))) {}
 
 CCL_API datatype_attr::~datatype_attr() noexcept {}
 
