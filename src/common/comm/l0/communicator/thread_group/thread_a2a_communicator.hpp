@@ -19,7 +19,7 @@ public:
     using coll_request_t = ccl::event;
 
     thread_device_group_a2a_communicator(ccl::unified_device_type&& device,
-                                         ccl::unified_device_context_type&& ctx,
+                                         ccl::unified_context_type&& ctx,
                                          size_t thread_idx,
                                          size_t proces_idx,
                                          const ccl::comm_split_attr& attr);

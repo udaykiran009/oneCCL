@@ -115,11 +115,11 @@ protected:
             auto dev = dev_it.second;
             try {
                 if (!replace) {
-                    device_modules.emplace(dev.get(), dev->create_module(module_description, hash, dev->get_default_device_context()));
+                    device_modules.emplace(dev.get(), dev->create_module(module_description, hash, dev->get_default_context()));
                 }
                 else {
                     device_modules.erase(dev.get());
-                    device_modules.emplace(dev.get(), dev->create_module(module_description, hash, dev->get_default_device_context()));
+                    device_modules.emplace(dev.get(), dev->create_module(module_description, hash, dev->get_default_context()));
                 }
             }
             catch (const std::exception& ex) {
@@ -135,13 +135,13 @@ protected:
                     if (!replace) {
                         device_modules.emplace(
                             subdev.second.get(),
-                            subdev.second->create_module(module_description, hash, subdev.second->get_default_device_context()));
+                            subdev.second->create_module(module_description, hash, subdev.second->get_default_context()));
                     }
                     else {
                         device_modules.erase(subdev.second.get());
                         device_modules.emplace(
                             subdev.second.get(),
-                            subdev.second->create_module(module_description, hash, subdev.second->get_default_device_context()));
+                            subdev.second->create_module(module_description, hash, subdev.second->get_default_context()));
                     }
                 }
                 catch (const std::exception& ex) {

@@ -183,7 +183,7 @@ private:
     size_t comm_size;
     ccl::group_unique_key owner_id;
     // ccl::unified_device_type device;
-    // ccl::unified_device_context_type context;
+    // ccl::unified_context_type context;
 
     host_communicator* get_impl() {
         return this;

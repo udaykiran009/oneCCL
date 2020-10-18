@@ -26,7 +26,7 @@ public:
     using stream_native_handle_t = typename ccl::unified_stream_type::handle_t;
     using stream_native_t = typename ccl::unified_stream_type::ccl_native_t;
     using stream_native_device_t = typename ccl::unified_device_type::ccl_native_t;;
-    using stream_native_context_t = typename ccl::unified_device_context_type::ccl_native_t;
+    using stream_native_context_t = typename ccl::unified_context_type::ccl_native_t;
 
     stream_native_t get_native_stream() const;
     const stream_native_device_t& get_native_device() const;

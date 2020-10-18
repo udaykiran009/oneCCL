@@ -66,7 +66,7 @@ private:
     template <class... attr_value_pair_t>
     friend stream create_stream_from_attr(
         typename unified_device_type::ccl_native_t device,
-        typename unified_device_context_type::ccl_native_t context,
+        typename unified_context_type::ccl_native_t context,
         attr_value_pair_t&&... avps);
     template <class... attr_value_pair_t>
     friend stream create_stream_from_attr(typename unified_device_type::ccl_native_t device,
@@ -106,7 +106,7 @@ private:
     template <class... attr_value_pair_t>
     static stream create_stream_from_attr(
         typename unified_device_type::ccl_native_t device,
-        typename unified_device_context_type::ccl_native_t context,
+        typename unified_context_type::ccl_native_t context,
         attr_value_pair_t&&... avps);
 };
 

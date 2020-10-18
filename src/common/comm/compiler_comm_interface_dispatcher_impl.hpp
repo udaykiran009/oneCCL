@@ -63,7 +63,7 @@ communicator_interface_ptr communicator_interface_dispatcher::create_communicato
                   "Unsupported 'DeviceType'");
 
     return communicator_interface_dispatcher::create_communicator_from_unified_device(
-        unified_device_type(device), unified_device_context_type(context), thread_idx, process_idx, attr, atl);
+        unified_device_type(device), unified_context_type(context), thread_idx, process_idx, attr, atl);
 }
 
 template <class DeviceType,
@@ -81,7 +81,7 @@ communicator_interface_ptr communicator_interface_dispatcher::create_communicato
 #ifdef CCL_ENABLE_SYCL
     return communicator_interface_dispatcher::create_communicator_from_unified_device(
         unified_device_type(device_id, cl::sycl::info::device_type::gpu),
-        unified_device_context_type(context),
+        unified_context_type(context),
         thread_idx,
         process_idx,
         attr,
@@ -90,14 +90,14 @@ communicator_interface_ptr communicator_interface_dispatcher::create_communicato
 //.    static_assert(std::is_same<typename unified_device_type::handle_t, DeviceType>::value,
 //                  "Unsupported 'DeviceType'");
     return communicator_interface_dispatcher::create_communicator_from_unified_device(
-        unified_device_type(device_id), unified_device_context_type(context), thread_idx, process_idx, attr, atl);
+        unified_device_type(device_id), unified_context_type(context), thread_idx, process_idx, attr, atl);
 #endif
 }
 
 communicator_interface_ptr
 communicator_interface_dispatcher::create_communicator_from_unified_device(
     ccl::unified_device_type&& device_id,
-    ccl::unified_device_context_type&& context,
+    ccl::unified_context_type&& context,
     size_t thread_idx,
     size_t process_idx,
     const ccl::comm_split_attr& attr,

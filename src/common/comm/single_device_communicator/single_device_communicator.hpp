@@ -38,7 +38,7 @@ public:
         sparse_allreduce_usm_visitor<single_device_communicator>;
 
     single_device_communicator(ccl::unified_device_type&& device,
-                               ccl::unified_device_context_type&& context,
+                               ccl::unified_context_type&& context,
                                size_t thread_idx,
                                size_t proces_idx,
                                const ccl::comm_split_attr& attr);
@@ -62,7 +62,7 @@ public:
     void set_ccl_comm(std::shared_ptr<ccl_comm> imp);
 
     //TODO use visit() to set `context`
-    void set_context(const ccl::unified_device_context_type::ccl_native_t& context);
+    void set_context(const ccl::unified_context_type::ccl_native_t& context);
     void set_context(const ccl::context& context);
 private:
     std::shared_ptr<ccl_comm> comm_impl;

@@ -97,7 +97,7 @@ size_t get_platform_type_index(const ccl::unified_device_type::ccl_native_t& dev
 #if defined(MULTI_GPU_SUPPORT) || defined(CCL_ENABLE_SYCL)
 assoc_retult check_assoc_device_memory(const void* mem,
                                        const ccl::unified_device_type::ccl_native_t& device,
-                                       const ccl::unified_device_context_type::ccl_native_t& ctx) {
+                                       const ccl::unified_context_type::ccl_native_t& ctx) {
     assoc_retult ret{ usm_support_mode::direct, mem, "" };
 
 #ifdef CCL_ENABLE_SYCL

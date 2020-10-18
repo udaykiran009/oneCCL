@@ -35,7 +35,7 @@ public:
     friend class detail::environment;
     friend struct group_context;
 
-    using context_t = typename unified_device_context_type::ccl_native_t;
+    using context_t = typename unified_context_type::ccl_native_t;
 
     ~comm_group();
     /**
@@ -84,7 +84,7 @@ public:
     /**
      * Return device context allocated during group creation
      */
-    //device_context_native_const_reference_t get_context() const;
+    //context_native_const_reference_t get_context() const;
 
     bool sync_group_size(size_t device_group_size);
     /*

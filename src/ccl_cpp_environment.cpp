@@ -71,7 +71,7 @@ device environment::create_device(empty_t empty) const
 // context
 context environment::create_context(empty_t empty) const
 {
-    static typename ccl::unified_device_context_type::ccl_native_t default_native_context;
+    static typename ccl::unified_context_type::ccl_native_t default_native_context;
     return context::create_context(default_native_context);
 }
 
@@ -160,9 +160,9 @@ template <>
 stream CCL_API environment::create_postponed_api_type<
     stream,
     typename unified_device_type::ccl_native_t,
-    typename unified_device_context_type::ccl_native_t>(
+    typename unified_context_type::ccl_native_t>(
     typename unified_device_type::ccl_native_t device,
-    typename unified_device_context_type::ccl_native_t context) const {
+    typename unified_context_type::ccl_native_t context) const {
     auto version = utils::get_library_version();
 
     return stream{ stream_provider_dispatcher::create(device, context, version) };
@@ -199,11 +199,11 @@ CREATE_OP_ATTR_INSTANTIATION(ccl::datatype_attr)
 CREATE_OP_ATTR_INSTANTIATION(ccl::kvs_attr)
 
 CREATE_DEV_COMM_INSTANTIATION(ccl::device, ccl::context)
-CREATE_DEV_COMM_INSTANTIATION(typename ccl::unified_device_type::ccl_native_t, typename ccl::unified_device_context_type::ccl_native_t)
-CREATE_DEV_COMM_INSTANTIATION(ccl::device_index_type, typename ccl::unified_device_context_type::ccl_native_t)
+CREATE_DEV_COMM_INSTANTIATION(typename ccl::unified_device_type::ccl_native_t, typename ccl::unified_context_type::ccl_native_t)
+CREATE_DEV_COMM_INSTANTIATION(ccl::device_index_type, typename ccl::unified_context_type::ccl_native_t)
 
 CREATE_STREAM_INSTANTIATION(typename ccl::unified_stream_type::ccl_native_t)
-CREATE_STREAM_EXT_INSTANTIATION(typename ccl::unified_device_type::ccl_native_t, typename ccl::unified_device_context_type::ccl_native_t)
+CREATE_STREAM_EXT_INSTANTIATION(typename ccl::unified_device_type::ccl_native_t, typename ccl::unified_context_type::ccl_native_t)
 
-CREATE_CONTEXT_INSTANTIATION(typename ccl::unified_device_context_type::ccl_native_t)
+CREATE_CONTEXT_INSTANTIATION(typename ccl::unified_context_type::ccl_native_t)
 CREATE_DEVICE_INSTANTIATION(typename ccl::unified_device_type::ccl_native_t)

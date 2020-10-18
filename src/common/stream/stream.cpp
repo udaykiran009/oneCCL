@@ -190,7 +190,7 @@ typename ccl_stream::context_traits_t::return_type& ccl_stream::set_attribute_va
     if (!creation_is_postponed) {
         throw ccl::exception("Cannot set 'ccl::stream_attr_id::context'`for constructed stream");
     }
-    native_context.second = ccl::unified_device_context_type{ val }.get(); //context_traits_t::type
+    native_context.second = ccl::unified_context_type{ val }.get(); //context_traits_t::type
     native_context.first = true;
     return native_context.second;
 }*/

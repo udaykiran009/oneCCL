@@ -32,8 +32,8 @@ struct ccl_api_type_attr_traits<stream_attr_id, stream_attr_id::device> {
 
 template <>
 struct ccl_api_type_attr_traits<stream_attr_id, stream_attr_id::context> {
-    using type = typename unified_device_context_type::ccl_native_t;
-    using handle_t = typename unified_device_context_type::handle_t;
+    using type = typename unified_context_type::ccl_native_t;
+    using handle_t = typename unified_context_type::handle_t;
     using return_type = type;
 };
 

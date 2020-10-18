@@ -68,11 +68,11 @@ private:
     template <class event_handle_type,
               class = typename std::enable_if<is_event_supported<event_handle_type>()>::type>
     static event_internal create_event(event_handle_type native_event_handle,
-                              typename unified_device_context_type::ccl_native_t context);
+                              typename unified_context_type::ccl_native_t context);
 
     template <class event_type, class... attr_value_pair_t>
     static event_internal create_event_from_attr(event_type& native_event_handle,
-                                        typename unified_device_context_type::ccl_native_t context,
+                                        typename unified_context_type::ccl_native_t context,
                                         attr_value_pair_t&&... avps);
 };
 

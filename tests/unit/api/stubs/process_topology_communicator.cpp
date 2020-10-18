@@ -9,7 +9,7 @@
 using namespace ccl;
 
 process_a2a_communicator::process_a2a_communicator(ccl::unified_device_type&& device,
-                                                   ccl::unified_device_context_type&& ctx,
+                                                   ccl::unified_context_type&& ctx,
                                                    size_t thread_idx,
                                                    size_t process_idx,
                                                    const ccl::comm_split_attr& attr)
@@ -568,7 +568,7 @@ DEVICE_COMM_INTERFACE_SPARSE_ALLREDUCE_EXPLICIT_CLASS_INSTANTIATION(
 
 ////////////////////////////////////////////////////////////
 process_ring_communicator::process_ring_communicator(ccl::unified_device_type&& device,
-                                                     ccl::unified_device_context_type&& context,
+                                                     ccl::unified_context_type&& context,
                                                      size_t thread_idx,
                                                      size_t process_idx,
                                                      const ccl::comm_split_attr& attr)

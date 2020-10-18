@@ -54,8 +54,8 @@ CCL_API const context::native_t& context::get_native() const
 } // namespace ccl
 
 
-API_DEVICE_CONTEXT_CREATION_FORCE_INSTANTIATION(typename ccl::unified_device_context_type::ccl_native_t)
+API_CONTEXT_CREATION_FORCE_INSTANTIATION(typename ccl::unified_context_type::ccl_native_t)
 
-API_DEVICE_CONTEXT_FORCE_INSTANTIATION(ccl::context_attr_id::version, ccl::library_version);
-API_DEVICE_CONTEXT_FORCE_INSTANTIATION_GET(ccl::context_attr_id::cl_backend);
-API_DEVICE_CONTEXT_FORCE_INSTANTIATION_GET(ccl::context_attr_id::native_handle);
+API_CONTEXT_FORCE_INSTANTIATION(ccl::context_attr_id::version, ccl::library_version);
+API_CONTEXT_FORCE_INSTANTIATION_GET(ccl::context_attr_id::cl_backend);
+API_CONTEXT_FORCE_INSTANTIATION_GET(ccl::context_attr_id::native_handle);

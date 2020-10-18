@@ -31,7 +31,7 @@ public:
 
     using native_t = typename unified_event_type::ccl_native_t;
     using native_handle_t = typename unified_event_type::handle_t;
-    using context_t = typename unified_device_context_type::ccl_native_t;
+    using context_t = typename unified_context_type::ccl_native_t;
 
     event() noexcept;
     event(event&& src) noexcept;

@@ -101,19 +101,19 @@ device create_device_from_attr(typename unified_device_type::ccl_native_t dev,
 
 /**
  * Creates a new context from @native_device_contex_type
- * @param native_device_context the existing handle of context
+ * @param native_context the existing handle of context
  * @return context object
  */
 context create_context();
 
-template <class native_device_context_type,
-          class = typename std::enable_if<is_context_supported<native_device_context_type>()>::type>
-context create_context(native_device_context_type&& native_device_context) {
-    return detail::environment::instance().create_context(std::forward<native_device_context_type>(native_device_context));
+template <class native_context_type,
+          class = typename std::enable_if<is_context_supported<native_context_type>()>::type>
+context create_context(native_context_type&& native_context) {
+    return detail::environment::instance().create_context(std::forward<native_context_type>(native_context));
 }
 
 template <class... attr_value_pair_t>
-context create_context_from_attr(typename unified_device_context_type::ccl_native_t ctx,
+context create_context_from_attr(typename unified_context_type::ccl_native_t ctx,
                                attr_value_pair_t&&... avps) {
     return detail::environment::instance().create_context_from_attr(
         ctx, std::forward<attr_value_pair_t>(avps)...);
@@ -176,7 +176,7 @@ stream create_stream_from_attr(typename unified_device_type::ccl_native_t device
 
 template <class... attr_value_pair_t>
 stream create_stream_from_attr(typename unified_device_type::ccl_native_t device,
-                               typename unified_device_context_type::ccl_native_t context,
+                               typename unified_context_type::ccl_native_t context,
                                attr_value_pair_t&&... avps) {
     return detail::environment::instance().create_stream_from_attr(
         device, context, std::forward<attr_value_pair_t>(avps)...);

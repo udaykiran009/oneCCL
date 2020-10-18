@@ -3,9 +3,9 @@
 #include "oneapi/ccl/ccl_config.h"
 
 #ifdef CCL_ENABLE_SYCL
-#include "device_context_cases_sycl.hpp"
+#include "context_cases_sycl.hpp"
 #else
-#include "device_context_cases_empty.hpp"
+#include "context_cases_empty.hpp"
 #endif
 
 int main(int ac, char* av[]) {

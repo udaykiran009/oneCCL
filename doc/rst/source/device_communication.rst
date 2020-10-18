@@ -17,7 +17,7 @@ Consider a simple oneCCL ``allreduce`` example for GPU:
 
 .. code:: cpp
 
-    auto ccl_device_context = ccl::create_context(sycl_context);
+    auto ccl_context = ccl::create_context(sycl_context);
     auto ccl_device = ccl::create_device(sycl_device);
 
     auto comms = ccl::create_communicators(

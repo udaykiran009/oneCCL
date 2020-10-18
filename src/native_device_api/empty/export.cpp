@@ -8,14 +8,14 @@
 
 namespace ccl {
 
-generic_device_context_type<cl_backend_type::empty_backend>::ccl_native_t
-generic_device_context_type<cl_backend_type::empty_backend>::get() noexcept {
-    return /*const_cast<generic_device_context_type<cl_backend_type::l0>::ccl_native_t>*/ (
-        static_cast<const generic_device_context_type<cl_backend_type::empty_backend>*>(this)->get());
+generic_context_type<cl_backend_type::empty_backend>::ccl_native_t
+generic_context_type<cl_backend_type::empty_backend>::get() noexcept {
+    return /*const_cast<generic_context_type<cl_backend_type::l0>::ccl_native_t>*/ (
+        static_cast<const generic_context_type<cl_backend_type::empty_backend>*>(this)->get());
 }
 
-const generic_device_context_type<cl_backend_type::empty_backend>::ccl_native_t&
-generic_device_context_type<cl_backend_type::empty_backend>::get() const noexcept {
+const generic_context_type<cl_backend_type::empty_backend>::ccl_native_t&
+generic_context_type<cl_backend_type::empty_backend>::get() const noexcept {
     //TODO
     return context; //native::get_platform();
 }

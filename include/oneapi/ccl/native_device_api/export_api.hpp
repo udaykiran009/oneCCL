@@ -34,7 +34,7 @@
 namespace ccl {
 using backend_traits = backend_info<CL_BACKEND_TYPE>;
 using unified_device_type = generic_device_type<CL_BACKEND_TYPE>;
-using unified_device_context_type = generic_device_context_type<CL_BACKEND_TYPE>;
+using unified_context_type = generic_context_type<CL_BACKEND_TYPE>;
 using unified_platform_type = generic_platform_type<CL_BACKEND_TYPE>;
 using unified_stream_type = generic_stream_type<CL_BACKEND_TYPE>;
 using unified_event_type = generic_event_type<CL_BACKEND_TYPE>;

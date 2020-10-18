@@ -111,10 +111,10 @@ public:
 
     template <class native_device_contex_type,
               class = typename std::enable_if<is_device_supported<native_device_contex_type>()>::type>
-    context create_context(native_device_contex_type&& native_device_context) const;
+    context create_context(native_device_contex_type&& native_context) const;
 
     template <class... attr_value_pair_t>
-    context create_context_from_attr(typename unified_device_context_type::ccl_native_t ctx,
+    context create_context_from_attr(typename unified_context_type::ccl_native_t ctx,
                                    attr_value_pair_t&&... avps) const {
         context str = create_postponed_api_type<context>(ctx);
         int expander[]{ (str.template set<attr_value_pair_t::idx()>(avps.val()), 0)... };
@@ -165,7 +165,7 @@ public:
 
     template <class... attr_value_pair_t>
     stream create_stream_from_attr(typename unified_device_type::ccl_native_t device,
-                                   typename unified_device_context_type::ccl_native_t context,
+                                   typename unified_context_type::ccl_native_t context,
                                    attr_value_pair_t&&... avps) {
         stream str = create_postponed_api_type<stream>(device, context);
         int expander[]{ (str.template set<attr_value_pair_t::idx()>(avps.val()), 0)... };

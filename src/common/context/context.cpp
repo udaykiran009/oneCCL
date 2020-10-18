@@ -2,25 +2,25 @@
 #include "common/context/context.hpp"
 #include "oneapi/ccl/native_device_api/export_api.hpp"
 
-ccl_context_impl::ccl_context_impl(device_context_native_t& ctx, const ccl::library_version& version)
+ccl_context_impl::ccl_context_impl(context_native_t& ctx, const ccl::library_version& version)
     : version(version),
-    native_device_context(ctx)
+    native_context(ctx)
 {
 }
 
-ccl_context_impl::ccl_context_impl(const device_context_native_t& ctx, const ccl::library_version& version)
+ccl_context_impl::ccl_context_impl(const context_native_t& ctx, const ccl::library_version& version)
     : version(version),
-    native_device_context(ctx)
+    native_context(ctx)
 {
 }
 
-ccl_context_impl::ccl_context_impl(device_context_native_t&& ctx, const ccl::library_version& version)
+ccl_context_impl::ccl_context_impl(context_native_t&& ctx, const ccl::library_version& version)
     : version(version),
-    native_device_context(std::move(ctx))
+    native_context(std::move(ctx))
 {
 }
 
-ccl_context_impl::ccl_context_impl(device_context_native_handle_t ctx_handle,
+ccl_context_impl::ccl_context_impl(context_native_handle_t ctx_handle,
                     const ccl::library_version& version)
     : version(version)
 {
@@ -70,5 +70,5 @@ const typename ccl_context_impl::cl_backend_traits_t::return_type& ccl_context_i
 
 typename ccl_context_impl::native_handle_traits_t::return_type& ccl_context_impl::get_attribute_value(
     const native_handle_traits_t& id) {
-    return native_device_context;
+    return native_context;
 }

@@ -12,7 +12,7 @@
 template <TEMPLATE_DECL_ARG>
 typed_base_communicator<TEMPLATE_DEF_ARG>::typed_base_communicator(
     ccl::unified_device_type&& owned_device,
-    ccl::unified_device_context_type&& ctx,
+    ccl::unified_context_type&& ctx,
     size_t thread_idx,
     size_t process_idx,
     const ccl::comm_split_attr& attr)

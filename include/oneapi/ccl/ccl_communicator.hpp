@@ -52,7 +52,7 @@ public:
     /**
      * Declare communicator device context native type
      */
-    using ccl_context_t = typename unified_device_context_type::ccl_native_t;
+    using ccl_context_t = typename unified_context_type::ccl_native_t;
 
     using coll_request_t = ccl::event;
 

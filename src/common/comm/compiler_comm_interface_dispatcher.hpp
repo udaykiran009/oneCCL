@@ -21,7 +21,7 @@ using communicator_interface_ptr = std::shared_ptr<communicator_interface>;
 
 struct communicator_interface_dispatcher {
     using device_t = typename ccl::unified_device_type::ccl_native_t;
-    using context_t = typename ccl::unified_device_context_type::ccl_native_t;
+    using context_t = typename ccl::unified_context_type::ccl_native_t;
 
 #ifdef MULTI_GPU_SUPPORT
     virtual void visit(ccl::gpu_comm_attr& comm_attr) = 0;
@@ -75,7 +75,7 @@ struct communicator_interface_dispatcher {
 private:
     static communicator_interface_ptr create_communicator_from_unified_device(
         unified_device_type&& device_id,
-        unified_device_context_type&& context_id,
+        unified_context_type&& context_id,
         size_t thread_idx,
         size_t process_idx,
         const comm_split_attr& attr,

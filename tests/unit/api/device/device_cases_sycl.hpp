@@ -33,7 +33,7 @@ TEST(device_api, device_from_sycl_device_creation) {
     ASSERT_EQ(str.get_native(), dev);
 }
 
-TEST(device_api, device_from_sycl_device_context_creation) {
+TEST(device_api, device_from_sycl_context_creation) {
     auto dev = cl::sycl::device();
     if (!dev.is_host())
     {

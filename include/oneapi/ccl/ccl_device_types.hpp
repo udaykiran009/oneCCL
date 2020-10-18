@@ -56,7 +56,7 @@ template <cl_backend_type config_backend>
 struct generic_device_type {};
 
 template <cl_backend_type config_backend>
-struct generic_device_context_type {};
+struct generic_context_type {};
 
 template <cl_backend_type config_backend>
 struct generic_platform_type {};

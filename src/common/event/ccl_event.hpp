@@ -18,8 +18,8 @@ public:
     using event_native_handle_t = typename ccl::unified_event_type::handle_t;
     using event_native_t = typename ccl::unified_event_type::ccl_native_t;
 
-    using event_native_context_handle_t = typename ccl::unified_device_context_type::handle_t;
-    using event_native_context_t = typename ccl::unified_device_context_type::ccl_native_t;
+    using event_native_context_handle_t = typename ccl::unified_context_type::handle_t;
+    using event_native_context_t = typename ccl::unified_context_type::ccl_native_t;
 
     ccl_event() = delete;
     ccl_event(const ccl_event& other) = delete;

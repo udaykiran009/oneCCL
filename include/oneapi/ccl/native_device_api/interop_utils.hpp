@@ -22,7 +22,7 @@ enum assoc_result_index { SUPPORT_MODE = 0, POINTER_VALUE, ERROR_CAUSE };
 #if defined(MULTI_GPU_SUPPORT) || defined(CCL_ENABLE_SYCL)
 assoc_retult check_assoc_device_memory(const void* mem,
                                        const ccl::unified_device_type::ccl_native_t& device,
-                                       const ccl::unified_device_context_type::ccl_native_t& ctx);
+                                       const ccl::unified_context_type::ccl_native_t& ctx);
 
 #endif //defined(MULTI_GPU_SUPPORT) || defined(CCL_ENABLE_SYCL)
 std::string to_string(const assoc_retult& res);
@@ -33,7 +33,7 @@ using multiple_assoc_result = std::array<assoc_retult, N>;
 
 template <class... mem_type>
 auto check_multiple_assoc_device_memory(const ccl::unified_device_type::ccl_native_t& device,
-                                        const ccl::unified_device_context_type::ccl_native_t& ctx,
+                                        const ccl::unified_context_type::ccl_native_t& ctx,
                                         const mem_type*... mem)
     -> multiple_assoc_result<sizeof...(mem)> {
     multiple_assoc_result<sizeof...(mem)> ret{ check_assoc_device_memory(mem, device, ctx)... };

@@ -44,8 +44,8 @@ device CCL_API environment::create_device(native_device_type&& native_device) co
 
 //Device context
 template <class native_device_contex_type, typename T>
-context CCL_API environment::create_context(native_device_contex_type&& native_device_context) const {
-    return context::create_context(std::forward<native_device_contex_type>(native_device_context));
+context CCL_API environment::create_context(native_device_contex_type&& native_context) const {
+    return context::create_context(std::forward<native_device_contex_type>(native_context));
 }
 
 //Stream

@@ -10,17 +10,17 @@
 class ccl_context_impl
 {
 public:
-    using device_context_native_handle_t = typename ccl::unified_device_context_type::handle_t;
-    using device_context_native_t = typename ccl::unified_device_context_type::ccl_native_t;
+    using context_native_handle_t = typename ccl::unified_context_type::handle_t;
+    using context_native_t = typename ccl::unified_context_type::ccl_native_t;
 
     ccl_context_impl() = delete;
     ccl_context_impl(const ccl_context_impl& other) = delete;
     ccl_context_impl& operator=(const ccl_context_impl& other) = delete;
 
-    ccl_context_impl(device_context_native_t& ctx, const ccl::library_version& version);
-    ccl_context_impl(const device_context_native_t& ctx, const ccl::library_version& version);
-    ccl_context_impl(device_context_native_t&& ctx, const ccl::library_version& version);
-    ccl_context_impl(device_context_native_handle_t ctx_handle,
+    ccl_context_impl(context_native_t& ctx, const ccl::library_version& version);
+    ccl_context_impl(const context_native_t& ctx, const ccl::library_version& version);
+    ccl_context_impl(context_native_t&& ctx, const ccl::library_version& version);
+    ccl_context_impl(context_native_handle_t ctx_handle,
                     const ccl::library_version& version);
     ~ccl_context_impl() = default;
 
@@ -47,6 +47,6 @@ public:
 
 private:
     const ccl::library_version version;
-    device_context_native_t native_device_context;
+    context_native_t native_context;
     bool creation_is_postponed{ false };
 };

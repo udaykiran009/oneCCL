@@ -17,7 +17,7 @@ struct context_extractor
 template<>
 struct context_extractor<ccl::context>
 {
-    static typename unified_device_context_type::ccl_native_t& extract(ccl::context &ctx) {return ctx.get_native(); }
+    static typename unified_context_type::ccl_native_t& extract(ccl::context &ctx) {return ctx.get_native(); }
 };
 
 template<class impl>

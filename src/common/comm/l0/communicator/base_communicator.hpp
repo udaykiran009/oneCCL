@@ -9,7 +9,7 @@ struct base_communicator : public ccl::communicator_interface {
     //TODO using group_comm_storage = native::specific_indexed_device_storage;
 
     base_communicator(ccl::unified_device_type&& owned_device,
-                      ccl::unified_device_context_type&& owned_ctx,
+                      ccl::unified_context_type&& owned_ctx,
                       size_t thread_idx,
                       size_t process_idx,
                       const ccl::comm_split_attr& attr)
@@ -69,7 +69,7 @@ struct base_communicator : public ccl::communicator_interface {
     }
 */
     ccl::unified_device_type device;
-    ccl::unified_device_context_type context;
+    ccl::unified_context_type context;
     size_t thread_id;
     size_t process_id;
     const ccl::comm_split_attr comm_attr;

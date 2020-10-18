@@ -1,4 +1,4 @@
-set (executable "device_context_suite")
+set (executable "context_suite")
 
 
 enable_testing()

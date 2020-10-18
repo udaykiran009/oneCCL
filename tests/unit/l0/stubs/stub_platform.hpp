@@ -30,7 +30,7 @@ struct test_device : public native::ccl_device {
         dev->device_properties.flags = ZE_DEVICE_PROPERTY_FLAG_INTEGRATED;
 
         //get default ctx
-        std::shared_ptr<native::ccl_context> def_ctx = dev->get_default_device_context();
+        std::shared_ptr<native::ccl_context> def_ctx = dev->get_default_context();
 
         //create default queue
         auto queue_prop = native::ccl_device::get_default_queue_desc();
@@ -87,7 +87,7 @@ struct test_subdevice : public native::ccl_subdevice {
         subdev->device_properties.flags = ZE_DEVICE_PROPERTY_FLAG_SUBDEVICE;
 
         //get default ctx
-        std::shared_ptr<native::ccl_context> def_ctx = subdev->get_default_device_context();
+        std::shared_ptr<native::ccl_context> def_ctx = subdev->get_default_context();
 
         //create default queue
         auto queue_prop = ccl_subdevice::get_default_queue_desc();

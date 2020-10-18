@@ -27,7 +27,7 @@ TEST(stream_api, stream_from_device_creation) {
     ASSERT_EQ(assigned_dev.get(), dev.get());
 }
 
-TEST(stream_api, stream_from_device_context_creation) {
+TEST(stream_api, stream_from_context_creation) {
     auto dev = native::get_platform().get_device(ccl::from_string("[0:6459]"));
     auto ctx = native::get_platform().get_driver(0)->create_context();
     auto str = ccl::stream::create_stream_from_attr(dev, ctx);

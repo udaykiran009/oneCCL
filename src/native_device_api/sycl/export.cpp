@@ -12,18 +12,18 @@ namespace ccl {
 /**
  * Context
  */
-generic_device_context_type<cl_backend_type::dpcpp_sycl>::generic_device_context_type() {}
-generic_device_context_type<cl_backend_type::dpcpp_sycl>::generic_device_context_type(ccl_native_t ctx)
+generic_context_type<cl_backend_type::dpcpp_sycl>::generic_context_type() {}
+generic_context_type<cl_backend_type::dpcpp_sycl>::generic_context_type(ccl_native_t ctx)
         : context(ctx) {}
 
-generic_device_context_type<cl_backend_type::dpcpp_sycl>::ccl_native_t&
-generic_device_context_type<cl_backend_type::dpcpp_sycl>::get() noexcept {
-    return const_cast<generic_device_context_type<cl_backend_type::dpcpp_sycl>::ccl_native_t&>(
-        static_cast<const generic_device_context_type<cl_backend_type::dpcpp_sycl>*>(this)->get());
+generic_context_type<cl_backend_type::dpcpp_sycl>::ccl_native_t&
+generic_context_type<cl_backend_type::dpcpp_sycl>::get() noexcept {
+    return const_cast<generic_context_type<cl_backend_type::dpcpp_sycl>::ccl_native_t&>(
+        static_cast<const generic_context_type<cl_backend_type::dpcpp_sycl>*>(this)->get());
 }
 
-const generic_device_context_type<cl_backend_type::dpcpp_sycl>::ccl_native_t&
-generic_device_context_type<cl_backend_type::dpcpp_sycl>::get() const noexcept {
+const generic_context_type<cl_backend_type::dpcpp_sycl>::ccl_native_t&
+generic_context_type<cl_backend_type::dpcpp_sycl>::get() const noexcept {
     return context;
 }
 

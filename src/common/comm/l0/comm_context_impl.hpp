@@ -114,10 +114,10 @@ std::vector<ccl::communicator> ccl::comm_group::create_communicators_group(
         device_ids.begin(), device_ids.end(), context, attr);
 }
 /*
- ccl::comm_group::device_context_native_const_reference_t ccl::comm_group::get_context() const
+ ccl::comm_group::context_native_const_reference_t ccl::comm_group::get_context() const
 {
     //TODO use PIMPL as context provider
-    static unified_device_context_type context;
+    static unified_context_type context;
     return context.get();
 }
 */

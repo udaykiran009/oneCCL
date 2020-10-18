@@ -14,9 +14,9 @@
 
 #include "context_impl.hpp"
 
-namespace device_context_suite {
+namespace context_suite {
 
-TEST(device_context_api, device_dontext_api_from_sycl_context_creation) {
+TEST(context_api, device_dontext_api_from_sycl_context_creation) {
     auto dev = cl::sycl::device();
     auto ctx = cl::sycl::context(dev);
     auto str = ccl::context::create_context(ctx);
@@ -25,7 +25,7 @@ TEST(device_context_api, device_dontext_api_from_sycl_context_creation) {
     ASSERT_EQ(str.get_native(), ctx);
 }
 
-TEST(device_context_api, device_context_api_from_sycl_context_attr_creation) {
+TEST(context_api, context_api_from_sycl_context_attr_creation) {
     auto ctx = cl::sycl::context();
     cl_context h = ctx.get();
     auto str = ccl::context::create_context_from_attr(h);
@@ -33,6 +33,6 @@ TEST(device_context_api, device_context_api_from_sycl_context_attr_creation) {
     ASSERT_TRUE(str.get<ccl::context_attr_id::version>().full != nullptr);
 }
 
-} // namespace device_context_suite
+} // namespace context_suite
 #undef protected
 #undef private

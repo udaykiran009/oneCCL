@@ -7,7 +7,7 @@
 using namespace ccl;
 
 single_device_communicator::single_device_communicator(ccl::unified_device_type&& device,
-                                                       ccl::unified_device_context_type&& ctx,
+                                                       ccl::unified_context_type&& ctx,
                                                        size_t thread_idx,
                                                        size_t process_idx,
                                                        const ccl::comm_split_attr& attr)
@@ -28,7 +28,7 @@ void single_device_communicator::set_ccl_comm(std::shared_ptr<ccl_comm> impl) {
 }
 
 void single_device_communicator::set_context(
-    const ccl::unified_device_context_type::ccl_native_t& in_context) {
+    const ccl::unified_context_type::ccl_native_t& in_context) {
     context = in_context;
 }
 void single_device_communicator::set_context(const ccl::context& in_context)
@@ -63,7 +63,7 @@ typed_single_device_base_communicator<TEMPLATE_DEF_ARG>::get_topology_class() co
 template <TEMPLATE_DECL_ARG>
 typed_single_device_base_communicator<TEMPLATE_DEF_ARG>::typed_single_device_base_communicator(
     ccl::unified_device_type&& owned_device,
-    ccl::unified_device_context_type&& ctx,
+    ccl::unified_context_type&& ctx,
     size_t thread_idx,
     size_t process_idx,
     const ccl::comm_split_attr& attr)

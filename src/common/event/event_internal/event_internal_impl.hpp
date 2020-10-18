@@ -17,7 +17,7 @@ namespace ccl {
 
 template <class event_type, class... attr_value_pair_t>
 event_internal event_internal::create_event_from_attr(event_type& native_event_handle,
-                                    typename unified_device_context_type::ccl_native_t context,
+                                    typename unified_context_type::ccl_native_t context,
                                     attr_value_pair_t&&... avps) {
     auto version = utils::get_library_version();
 
@@ -31,7 +31,7 @@ event_internal event_internal::create_event_from_attr(event_type& native_event_h
 
 template <class event_handle_type, typename T>
 event_internal event_internal::create_event(event_handle_type native_event_handle,
-                          typename unified_device_context_type::ccl_native_t context) {
+                          typename unified_context_type::ccl_native_t context) {
     auto version = utils::get_library_version();
 
     event_internal str{ event_internal::impl_value_t(new event_internal::impl_t(native_event_handle, context, version)) };

@@ -10,7 +10,7 @@
 using namespace ccl;
 
 single_device_communicator::single_device_communicator(ccl::unified_device_type&& device,
-                                                       ccl::unified_device_context_type&& context,
+                                                       ccl::unified_context_type&& context,
                                                        size_t thread_idx,
                                                        size_t process_idx,
                                                        const ccl::comm_split_attr& attr)
@@ -35,7 +35,7 @@ void single_device_communicator::set_ccl_comm(std::shared_ptr<ccl_comm> impl) {
 
 //TODO use visit() to set `context`
 void single_device_communicator::set_context(
-    const ccl::unified_device_context_type::ccl_native_t& in_context) {
+    const ccl::unified_context_type::ccl_native_t& in_context) {
     context = in_context;
 }
 void single_device_communicator::set_context(const ccl::context& in_context)

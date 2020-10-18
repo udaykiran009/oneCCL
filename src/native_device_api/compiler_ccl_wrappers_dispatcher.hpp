@@ -69,7 +69,7 @@ template native::ccl_device_driver::device_ptr native::get_runtime_device(
     const ccl::device_index_type& path);
 
 template native::ccl_driver_context_ptr native::get_runtime_context(
-    const ccl::unified_device_context_type::ccl_native_t& ctx);
+    const ccl::unified_context_type::ccl_native_t& ctx);
 
 #ifdef CCL_ENABLE_SYCL
 template native::ccl_device_driver::device_ptr native::get_runtime_device(

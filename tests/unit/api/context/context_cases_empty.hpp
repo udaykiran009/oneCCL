@@ -14,11 +14,11 @@
 
 #include "context_impl.hpp"
 
-namespace device_context_suite {
+namespace context_suite {
 
-TEST(device_ontext_api, device_context_from_empty) {
+TEST(context_api, context_from_empty) {
 
-    static typename ccl::unified_device_context_type::ccl_native_t default_native_context;
+    static typename ccl::unified_context_type::ccl_native_t default_native_context;
 
     auto str = ccl::context::create_context(default_native_context);
     ASSERT_TRUE(str.get<ccl::context_attr_id::version>().full != nullptr);

@@ -8,7 +8,7 @@ using namespace ccl;
 
 thread_device_group_ring_communicator::thread_device_group_ring_communicator(
     ccl::unified_device_type&& device,
-    ccl::unified_device_context_type&& ctx,
+    ccl::unified_context_type&& ctx,
     size_t thread_idx,
     size_t process_idx,
     const ccl::comm_split_attr& attr)

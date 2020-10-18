@@ -337,7 +337,7 @@ CCL_API ccl_device::device_queue ccl_device::create_cmd_queue(std::shared_ptr<cc
     const ze_command_queue_desc_t& properties /* = get_default_queue_desc()*/) {
 
     if(!ctx) {
-        ctx = get_default_device_context();
+        ctx = get_default_context();
     }
 
     ze_command_queue_handle_t hCommandQueue;
@@ -380,7 +380,7 @@ CCL_API void* ccl_device::device_alloc_memory(size_t bytes_count,
                                               std::shared_ptr<ccl_context> ctx) {
     void* out_ptr = nullptr;
     if(!ctx) {
-        ctx = get_default_device_context();
+        ctx = get_default_context();
     }
 
     ze_result_t
@@ -403,7 +403,7 @@ CCL_API void* ccl_device::device_alloc_shared_memory(size_t bytes_count,
                                                      std::shared_ptr<ccl_context> ctx) {
     void* out_ptr = nullptr;
     if(!ctx) {
-        ctx = get_default_device_context();
+        ctx = get_default_context();
     }
 
     ze_result_t ret = zeMemAllocShared(
@@ -440,7 +440,7 @@ CCL_API void ccl_device::device_free_memory(void* mem_handle, std::shared_ptr<cc
         return;
     }
     if(!ctx) {
-        ctx = get_default_device_context();
+        ctx = get_default_context();
     }
 
     if (zeMemFree(ctx->get(), mem_handle) != ZE_RESULT_SUCCESS) {
@@ -453,7 +453,7 @@ CCL_API ccl_device::device_ipc_memory_handle ccl_device::create_ipc_memory_handl
     ze_ipc_mem_handle_t ipc_handle;
 
     if(!ctx) {
-        ctx = get_default_device_context();
+        ctx = get_default_context();
     }
 
     ze_result_t ret = zeMemGetIpcHandle(
@@ -475,7 +475,7 @@ ccl_device::create_shared_ipc_memory_handle(void* device_mem_ptr, std::shared_pt
     }
 
     if(!ctx) {
-        ctx = get_default_device_context();
+        ctx = get_default_context();
     }
 
     ze_result_t ret = zeMemGetIpcHandle(
@@ -521,7 +521,7 @@ CCL_API ccl_device::device_ipc_memory ccl_device::get_ipc_memory(
     ip_memory_elem_t ipc_memory{};
 
     if(!ctx) {
-        ctx = get_default_device_context();
+        ctx = get_default_context();
     }
 
     ze_result_t ret = zeMemOpenIpcHandle(
@@ -548,7 +548,7 @@ CCL_API std::shared_ptr<ccl_device::device_ipc_memory> ccl_device::restore_share
     ip_memory_elem_t ipc_memory{};
 
     if(!ctx) {
-        ctx = get_default_device_context();
+        ctx = get_default_context();
     }
 
     ze_result_t ret = zeMemOpenIpcHandle(
@@ -593,13 +593,13 @@ CCL_API ccl_device::device_queue& ccl_device::get_cmd_queue(
 }
 
 CCL_API
-ccl_device::context_storage_type ccl_device::get_device_contexts() {
+ccl_device::context_storage_type ccl_device::get_contexts() {
     return get_ctx().lock();
 }
 
 CCL_API
-std::shared_ptr<ccl_context> ccl_device::get_default_device_context() {
-    auto ctx_holder = get_device_contexts();
+std::shared_ptr<ccl_context> ccl_device::get_default_context() {
+    auto ctx_holder = get_contexts();
     auto driver = get_owner().lock();
 
     auto& contexts_storage = ctx_holder->get_context_storage(driver.get());
@@ -617,7 +617,7 @@ ccl_device::create_cmd_list(std::shared_ptr<ccl_context> ctx,
                             const ze_command_list_desc_t& properties) {
     // Create a command queue
     if(!ctx) {
-        ctx = get_default_device_context();
+        ctx = get_default_context();
     }
 
     ze_command_list_handle_t hCommandList;
@@ -653,7 +653,7 @@ CCL_API ccl_device::device_module_ptr ccl_device::create_module(const ze_module_
     ze_module_build_log_handle_t build_log = nullptr;
 
     if(!ctx) {
-        ctx = get_default_device_context();
+        ctx = get_default_context();
     }
 
     ze_result_t result = zeModuleCreate(ctx->get(), handle, &descr, &module, &build_log);

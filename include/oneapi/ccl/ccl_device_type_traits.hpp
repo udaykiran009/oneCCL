@@ -39,7 +39,7 @@ constexpr bool is_context_supported() {
  */
 API_CLASS_TYPE_INFO(empty_t);
 API_CLASS_TYPE_INFO(typename unified_device_type::ccl_native_t)
-API_CLASS_TYPE_INFO(typename unified_device_context_type::ccl_native_t);
+API_CLASS_TYPE_INFO(typename unified_context_type::ccl_native_t);
 API_CLASS_TYPE_INFO(typename unified_stream_type::ccl_native_t);
 API_CLASS_TYPE_INFO(typename unified_event_type::ccl_native_t);
 

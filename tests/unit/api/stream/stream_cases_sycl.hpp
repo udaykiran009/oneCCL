@@ -40,7 +40,7 @@ TEST(stream_api, stream_from_sycl_device_creation) {
     ASSERT_TRUE(str.get<ccl::stream_attr_id::version>().full != nullptr);
 }
 
-TEST(stream_api, stream_from_sycl_device_context_creation) {
+TEST(stream_api, stream_from_sycl_context_creation) {
     auto dev = cl::sycl::device();
     auto ctx = cl::sycl::context(dev);
     auto str = ccl::stream::create_stream_from_attr(dev, ctx);
@@ -48,7 +48,7 @@ TEST(stream_api, stream_from_sycl_device_context_creation) {
     ASSERT_TRUE(str.get<ccl::stream_attr_id::version>().full != nullptr);
 }
 
-TEST(stream_api, stream_from_sycl_device_context_creation_with_attr) {
+TEST(stream_api, stream_from_sycl_context_creation_with_attr) {
     auto dev = cl::sycl::device();
     auto ctx = cl::sycl::context(dev);
     auto str =

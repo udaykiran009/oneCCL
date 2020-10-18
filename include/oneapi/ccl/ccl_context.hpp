@@ -63,7 +63,7 @@ public:
 private:
     friend class detail::environment;
     friend class communicator;
-    friend class device_context_communicator;
+    friend class context_communicator;
     context(impl_value_t&& impl);
 
     /**
@@ -81,12 +81,12 @@ private:
     /**
      * Factory methods
      */
-    template <class device_context_type,
-              class = typename std::enable_if<is_context_supported<device_context_type>()>::type>
-    static context create_context(device_context_type&& native_device_context);
+    template <class context_type,
+              class = typename std::enable_if<is_context_supported<context_type>()>::type>
+    static context create_context(context_type&& native_context);
 
-    template <class device_context_handle_type, class... attr_value_pair_t>
-    static context create_context_from_attr(device_context_handle_type& native_device_context_handle,
+    template <class context_handle_type, class... attr_value_pair_t>
+    static context create_context_from_attr(context_handle_type& native_context_handle,
                                         attr_value_pair_t&&... avps);
 };
 

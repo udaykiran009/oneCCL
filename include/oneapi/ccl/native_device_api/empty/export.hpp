@@ -34,13 +34,13 @@ struct generic_device_type<CL_BACKEND_TYPE> {
 };
 
 template <>
-struct generic_device_context_type<CL_BACKEND_TYPE> {
+struct generic_context_type<CL_BACKEND_TYPE> {
     using handle_t = empty_t;
     using impl_t = native::ccl_context;
     using ccl_native_t = std::shared_ptr<impl_t>;
 
     template<class T>
-    generic_device_context_type(T&& not_used) {(void)not_used;};
+    generic_context_type(T&& not_used) {(void)not_used;};
     ccl_native_t get() noexcept;
     const ccl_native_t& get() const noexcept;
 

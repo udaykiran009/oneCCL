@@ -74,7 +74,7 @@ struct ccl_device : public cl_base<ze_device_handle_t, ccl_device_driver, ccl_co
         return this->shared_from_this();
     }
 
-    context_storage_type get_device_contexts();
+    context_storage_type get_contexts();
     sub_devices_container_type& get_subdevices();
     const sub_devices_container_type& get_subdevices() const;
 
@@ -170,7 +170,7 @@ struct ccl_device : public cl_base<ze_device_handle_t, ccl_device_driver, ccl_co
     virtual size_t serialize(std::vector<uint8_t>& out,
                              size_t from_pos,
                              size_t expected_size) const;
-    std::shared_ptr<ccl_context> get_default_device_context();
+    std::shared_ptr<ccl_context> get_default_context();
 
 private:
     ccl_device(handle_t h, owner_ptr_t&& parent, std::weak_ptr<ccl_context_holder>&& ctx, std::false_type);
