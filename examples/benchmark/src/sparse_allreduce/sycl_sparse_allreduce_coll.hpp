@@ -4,11 +4,6 @@
 
 #include "sycl_coll.hpp"
 
-template <class kernel_value_type, class kernel_index_type>
-struct sparse_allreduce_kernel_name_bufs {};
-template <class kernel_value_type, class kernel_index_type>
-struct sparse_allreduce_kernel_name_single_bufs {};
-
 template <class VType,
           class IType,
           template <class> class IndicesDistributorType =
@@ -68,8 +63,7 @@ struct sycl_sparse_allreduce_coll : base_sparse_allreduce_coll<cl::sycl::buffer<
         //         auto recv_ibuf_acc = recv_ibuf->template get_access<mode::write>(h);
         //         auto recv_vbuf_acc = recv_vbuf->template get_access<mode::write>(h);
 
-        //         h.parallel_for<struct sparse_allreduce_kernel_name_bufs<VType, IType>>
-        //                 (range<1>{max_elem_count*comm_size}, [=](item<1> e_idx)
+        //         h.parallel_for(range<1>{max_elem_count*comm_size}, [=](item<1> e_idx)
         //         {
         //             if (e_idx.get_linear_id() < max_elem_count) {
         //                 send_ibuf_acc[e_idx] = 0;
@@ -102,8 +96,7 @@ struct sycl_sparse_allreduce_coll : base_sparse_allreduce_coll<cl::sycl::buffer<
         //     auto recv_ibuf_acc = recv_ibuf->template get_access<mode::write>(h);
         //     auto recv_vbuf_acc = recv_vbuf->template get_access<mode::write>(h);
 
-        //     h.parallel_for<struct sparse_allreduce_kernel_name_single_bufs<VType, IType>>
-        //             (range<1>{ single_buf_max_elem_count * comm_size }, [=](item<1> e_idx)
+        //     h.parallel_for(range<1>{ single_buf_max_elem_count * comm_size }, [=](item<1> e_idx)
         //     {
         //         if (e_idx.get_linear_id() < single_buf_max_elem_count) {
         //             send_ibuf_acc[e_idx] = 0;

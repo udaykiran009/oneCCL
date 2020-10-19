@@ -6,18 +6,6 @@
 #include "sycl_coll.hpp"
 
 template <class Dtype>
-class allreduce_fill_usm {};
-
-template <class Dtype>
-class allreduce_fill_buf {};
-
-template <class Dtype>
-class allreduce_check_usm {};
-
-template <class Dtype>
-class allreduce_check_buf {};
-
-template <class Dtype>
 struct sycl_allreduce_coll : sycl_base_coll<Dtype, allreduce_strategy_impl> {
     using coll_base = sycl_base_coll<Dtype, allreduce_strategy_impl>;
     using coll_base::send_bufs;
@@ -42,7 +30,7 @@ struct sycl_allreduce_coll : sycl_base_coll<Dtype, allreduce_strategy_impl> {
                 e = stream.get_native().submit([&](handler& h) {
                     auto send_buf_acc = static_cast<Dtype*>(send_bufs[b_idx][rank_idx]);
                     auto recv_buf_acc = static_cast<Dtype*>(recv_bufs[b_idx][rank_idx]);
-                    h.parallel_for<class allreduce_fill_usm<Dtype>>(range<1>{elem_count}, [=](item<1> e_idx)
+                    h.parallel_for(range<1>{elem_count}, [=](item<1> e_idx)
                     {
                         send_buf_acc[e_idx] = local_rank;
                         recv_buf_acc[e_idx] = 0;
@@ -55,7 +43,7 @@ struct sycl_allreduce_coll : sycl_base_coll<Dtype, allreduce_strategy_impl> {
                     auto recv_buf = (static_cast<sycl_buffer_t<Dtype>*>(recv_bufs[b_idx][rank_idx]));
                     auto send_buf_acc = send_buf->template get_access<mode::write>(h);
                     auto recv_buf_acc = recv_buf->template get_access<mode::write>(h);
-                    h.parallel_for<class allreduce_fill_buf<Dtype>>(range<1>{elem_count}, [=](item<1> e_idx)
+                    h.parallel_for(range<1>{elem_count}, [=](item<1> e_idx)
                     {
                         send_buf_acc[e_idx] = local_rank;
                         recv_buf_acc[e_idx] = 0;
@@ -85,7 +73,7 @@ struct sycl_allreduce_coll : sycl_base_coll<Dtype, allreduce_strategy_impl> {
                 e = stream.get_native().submit([&](handler& h) {
                     auto send_buf_acc = static_cast<Dtype*>(send_bufs[b_idx][rank_idx]);
                     auto recv_buf_acc = static_cast<Dtype*>(recv_bufs[b_idx][rank_idx]);
-                    h.parallel_for<class allreduce_check_usm<Dtype>>(range<1>{elem_count}, [=](item<1> e_idx) mutable
+                    h.parallel_for(range<1>{elem_count}, [=](item<1> e_idx) mutable
                     {
                         Dtype value = send_buf_acc[e_idx];
                         if (value != sbuf_expected)
@@ -103,7 +91,7 @@ struct sycl_allreduce_coll : sycl_base_coll<Dtype, allreduce_strategy_impl> {
                     auto recv_buf = (static_cast<sycl_buffer_t<Dtype>*>(recv_bufs[b_idx][rank_idx]));
                     auto send_buf_acc = send_buf->template get_access<mode::read>(h);
                     auto recv_buf_acc = recv_buf->template get_access<mode::read>(h);
-                    h.parallel_for<class allreduce_check_buf<Dtype>>(range<1>{elem_count}, [=](item<1> e_idx) mutable
+                    h.parallel_for(range<1>{elem_count}, [=](item<1> e_idx) mutable
                     {
                         Dtype value = send_buf_acc[e_idx];
                         if (value != sbuf_expected)

@@ -6,12 +6,6 @@
 #include "sycl_coll.hpp"
 
 template <class Dtype>
-class reduce_buf_check {};
-
-template <class Dtype>
-class reduce_buf_fill {};
-
-template <class Dtype>
 struct sycl_reduce_coll : sycl_base_coll<Dtype, reduce_strategy_impl> {
     using coll_base = sycl_base_coll<Dtype, reduce_strategy_impl>;
     using coll_base::send_bufs;
@@ -37,7 +31,7 @@ struct sycl_reduce_coll : sycl_base_coll<Dtype, reduce_strategy_impl> {
                 auto recv_buf = (static_cast<sycl_buffer_t<Dtype>*>(recv_bufs[b_idx][rank_idx]));
                 auto send_buf_acc = send_buf->template get_access<mode::write>(h);
                 auto recv_buf_acc = recv_buf->template get_access<mode::write>(h);
-                h.parallel_for<class reduce_buf_fill<Dtype>>(range<1>{elem_count}, [=](item<1> e_idx)
+                h.parallel_for(range<1>{elem_count}, [=](item<1> e_idx)
                 {
                     send_buf_acc[e_idx] = local_rank;
                     recv_buf_acc[e_idx] = 0;
@@ -66,7 +60,7 @@ struct sycl_reduce_coll : sycl_base_coll<Dtype, reduce_strategy_impl> {
                 auto recv_buf = (static_cast<sycl_buffer_t<Dtype>*>(recv_bufs[b_idx][rank_idx]));
                 auto send_buf_acc = send_buf->template get_access<mode::read>(h);
                 auto recv_buf_acc = recv_buf->template get_access<mode::read>(h);
-                h.parallel_for<class reduce_buf_check<Dtype>>(range<1>{elem_count}, [=](item<1> e_idx) mutable
+                h.parallel_for(range<1>{elem_count}, [=](item<1> e_idx) mutable
                 {
                     Dtype value = send_buf_acc[e_idx];
                     if (value != sbuf_expected)

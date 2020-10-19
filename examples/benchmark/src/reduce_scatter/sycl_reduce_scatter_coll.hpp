@@ -6,15 +6,6 @@
 #include "sycl_coll.hpp"
 
 template <class Dtype>
-class reduce_scatter_sbuf_check {};
-
-template <class Dtype>
-class reduce_scatter_rbuf_check {};
-
-template <class Dtype>
-class reduce_scatter_buf_fill {};
-
-template <class Dtype>
 struct sycl_reduce_scatter_coll : sycl_base_coll<Dtype, reduce_scatter_strategy_impl> {
     using coll_base = sycl_base_coll<Dtype, reduce_scatter_strategy_impl>;
     using coll_base::send_bufs;
@@ -40,7 +31,7 @@ struct sycl_reduce_scatter_coll : sycl_base_coll<Dtype, reduce_scatter_strategy_
                 auto recv_buf = (static_cast<sycl_buffer_t<Dtype>*>(recv_bufs[b_idx][rank_idx]));
                 auto send_buf_acc = send_buf->template get_access<mode::write>(h);
                 auto recv_buf_acc = recv_buf->template get_access<mode::write>(h);
-                h.parallel_for<class reduce_scatter_buf_fill<Dtype>>(range<1>{elem_count}, [=](item<1> e_idx)
+                h.parallel_for(range<1>{elem_count}, [=](item<1> e_idx)
                 {
                     send_buf_acc[e_idx] = local_rank;
                     recv_buf_acc[e_idx] = 0;
@@ -68,7 +59,7 @@ struct sycl_reduce_scatter_coll : sycl_base_coll<Dtype, reduce_scatter_strategy_
             stream.get_native().submit([&](handler& h) {
                 auto send_buf = (static_cast<sycl_buffer_t<Dtype>*>(send_bufs[b_idx][rank_idx]));
                 auto send_buf_acc = send_buf->template get_access<mode::read>(h);
-                h.parallel_for<class reduce_scatter_sbuf_check<Dtype>>(range<1>{elem_count}, [=](item<1> e_idx) mutable
+                h.parallel_for(range<1>{elem_count}, [=](item<1> e_idx) mutable
                 {
                     Dtype value = send_buf_acc[e_idx];
                     if (value != sbuf_expected)
@@ -79,7 +70,7 @@ struct sycl_reduce_scatter_coll : sycl_base_coll<Dtype, reduce_scatter_strategy_
             stream.get_native().submit([&](handler& h) {
                 auto recv_buf = (static_cast<sycl_buffer_t<Dtype>*>(recv_bufs[b_idx][rank_idx]));
                 auto recv_buf_acc = recv_buf->template get_access<mode::read>(h);
-                h.parallel_for<class reduce_scatter_rbuf_check<Dtype>>(range<1>{recv_elem_count}, [=](item<1> e_idx) mutable
+                h.parallel_for(range<1>{recv_elem_count}, [=](item<1> e_idx) mutable
                 {
                     Dtype value = recv_buf_acc[e_idx];
                     if (value != rbuf_expected)

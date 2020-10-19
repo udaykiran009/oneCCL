@@ -6,12 +6,6 @@
 #include "sycl_coll.hpp"
 
 template <class Dtype>
-class bcast_buf_check {};
-
-template <class Dtype>
-class bcast_buf_fill {};
-
-template <class Dtype>
 struct sycl_bcast_coll : sycl_base_coll<Dtype, bcast_strategy_impl> {
     using coll_base = sycl_base_coll<Dtype, bcast_strategy_impl>;
     using coll_base::recv_bufs;
@@ -33,7 +27,7 @@ struct sycl_bcast_coll : sycl_base_coll<Dtype, bcast_strategy_impl> {
             stream.get_native().submit([&](handler& h) {
                 auto recv_buf = (static_cast<sycl_buffer_t<Dtype>*>(recv_bufs[b_idx][rank_idx]));
                 auto recv_buf_acc = recv_buf->template get_access<mode::write>(h);
-                h.parallel_for<class bcast_buf_fill<Dtype>>(range<1>{elem_count}, [=](item<1> e_idx)
+                h.parallel_for(range<1>{elem_count}, [=](item<1> e_idx)
                 {
                     if (local_rank == COLL_ROOT)
                         recv_buf_acc[e_idx] = e_idx.get_id(0);
@@ -58,7 +52,7 @@ struct sycl_bcast_coll : sycl_base_coll<Dtype, bcast_strategy_impl> {
             stream.get_native().submit([&](handler& h) {
                 auto recv_buf = (static_cast<sycl_buffer_t<Dtype>*>(recv_bufs[b_idx][rank_idx]));
                 auto recv_buf_acc = recv_buf->template get_access<mode::read>(h);
-                h.parallel_for<class bcast_buf_check<Dtype>>(range<1>{elem_count}, [=](item<1> e_idx) mutable
+                h.parallel_for(range<1>{elem_count}, [=](item<1> e_idx) mutable
                 {
                     if (recv_buf_acc[e_idx] != e_idx.get_id(0))
                         unexpected_device_value = true;
