@@ -409,22 +409,22 @@ ushort __fp32_to_bf16(float V) {
     }
 
 #define DEFINE_BF16ADD_OP(T)                                                   \
-    T __bf16add_##T(T lhs, T rhs) {                                            \
+    T __add_##T(T lhs, T rhs) {                                            \
         return __fp32_to_bf16(__bf16_to_fp32(lhs) + __bf16_to_fp32(rhs));      \
     }
 
 #define DEFINE_BF16MULT_OP(T)                                                  \
-    T __bf16mult_##T(T lhs, T rhs) {                                           \
+    T __mult_##T(T lhs, T rhs) {                                           \
         return __fp32_to_bf16(__bf16_to_fp32(lhs) * __bf16_to_fp32(rhs));      \
     }
 
 #define DEFINE_BF16MIN_OP(T)                                                   \
-    T __bf16min_##T(T lhs, T rhs) {                                            \
+    T __min_##T(T lhs, T rhs) {                                            \
         return __fp32_to_bf16(min(__bf16_to_fp32(lhs), __bf16_to_fp32(rhs)));  \
     }
 
 #define DEFINE_BF16MAX_OP(T)                                                   \
-    T __bf16max_##T(T lhs, T rhs) {                                            \
+    T __max_##T(T lhs, T rhs) {                                            \
         return __fp32_to_bf16(max(__bf16_to_fp32(lhs), __bf16_to_fp32(rhs)));  \
     }
 
@@ -466,10 +466,10 @@ DEFINE_KERNELS_WITH_OP(mult)
 DEFINE_KERNELS_WITH_OP(min)
 DEFINE_KERNELS_WITH_OP(max)
 
-DEFINE_KERNELS_WITH_BF16OP(bf16add)
-DEFINE_KERNELS_WITH_BF16OP(bf16mult)
-DEFINE_KERNELS_WITH_BF16OP(bf16min)
-DEFINE_KERNELS_WITH_BF16OP(bf16max)
+DEFINE_KERNELS_WITH_BF16OP(add)
+DEFINE_KERNELS_WITH_BF16OP(mult)
+DEFINE_KERNELS_WITH_BF16OP(min)
+DEFINE_KERNELS_WITH_BF16OP(max)
 
 // numa
 // TODO: vecsize
