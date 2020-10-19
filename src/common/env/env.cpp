@@ -403,8 +403,8 @@ int env_data::env_2_worker_affinity(size_t local_proc_idx, size_t local_proc_cou
 void env_data::env_2_atl_transport() {
     if (!getenv(CCL_ATL_TRANSPORT) && !with_mpirun()) {
 
-        LOG_INFO("Did not find MPI-launcher specific variables, switch to ATL/OFI\n"
-          "To force enable ATL/MPI set CCL_ATL_TRANSPORT=mpi");
+        LOG_INFO("\n\nDid not find MPI-launcher specific variables, switch to ATL/OFI"
+          "\nTo force enable ATL/MPI set CCL_ATL_TRANSPORT=mpi\n");
 
         atl_transport = ccl_atl_ofi;
     }
@@ -413,7 +413,10 @@ void env_data::env_2_atl_transport() {
 }
 
 bool env_data::with_mpirun() {
-    return (getenv("MPI_LOCALRANKID") || getenv("MPI_LOCALNRANKS")) ? true : false;
+    return (getenv("MPI_LOCALRANKID") ||
+            getenv("MPI_LOCALNRANKS") ||
+            getenv("PMI_RANK") ||
+            getenv("PMI_SIZE")) ? true : false;
 }
 
 } /* namespace ccl */
