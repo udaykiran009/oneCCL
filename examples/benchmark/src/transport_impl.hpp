@@ -4,7 +4,6 @@
 #include "sycl_coll.hpp"
 #endif /* CCL_ENABLE_SYCL */
 
-#include "base.hpp"
 #include "transport.hpp"
 
 transport_data::transport_data() {

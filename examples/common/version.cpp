@@ -15,7 +15,7 @@ int main() {
            CCL_PRODUCT_FULL);
 
     printf("\nRuntime CCL library version:\nmajor: %d\nminor: %d\nupdate: %d\n"
-           "Product: %s\nBuild date: %s\nFull: %s\nCl_backend name: %s\n",
+           "Product: %s\nBuild date: %s\nFull: %s\ncl_backend name: %s\n",
            version.major,
            version.minor,
            version.update,

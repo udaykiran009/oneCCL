@@ -1,8 +1,8 @@
 #pragma once
 
-#include "base.hpp"
 #include "config.hpp"
 #include "transport.hpp"
+#include "types.hpp"
 
 #ifdef CCL_ENABLE_SYCL
 template <typename Dtype>

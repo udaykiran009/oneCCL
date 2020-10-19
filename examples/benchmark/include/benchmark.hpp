@@ -247,7 +247,6 @@ double when(void) {
     return (double)(tv.tv_sec - tv_base.tv_sec) * 1.0e6 + (double)(tv.tv_usec - tv_base.tv_usec);
 }
 
-
 void bench_barrier(std::vector<ccl::communicator>& comms) {
     for (auto& comm : comms) {
         ccl::barrier(comm);
