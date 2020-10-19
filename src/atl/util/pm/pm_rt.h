@@ -50,7 +50,7 @@ atl_status_t resizable_pmirt_init(size_t *proc_idx,
                                   pm_rt_desc_t **pmrt_desc,
                                   const char *main_addr);
 atl_status_t resizable_pmirt_set_resize_function(atl_resize_fn_t resize_fn);
-atl_status_t resizable_pmirt_main_addr_reserv(char *main_addr);
+atl_status_t resizable_pmirt_main_addr_reserve(char *main_addr);
 
 
 static inline int is_pm_resize_enabled() {
@@ -86,8 +86,8 @@ static inline atl_status_t pmrt_init(size_t *proc_idx,
     }
 }
 
-static inline atl_status_t pmrt_main_addr_reserv(char *main_addr) {
-    return resizable_pmirt_main_addr_reserv(main_addr);
+static inline atl_status_t pmrt_main_addr_reserve(char *main_addr) {
+    return resizable_pmirt_main_addr_reserve(main_addr);
 }
 
 static inline atl_status_t pmrt_set_resize_function(atl_resize_fn_t user_checker) {
@@ -137,7 +137,7 @@ public:
 
     virtual int is_pm_resize_enabled() = 0;
 
-    virtual atl_status_t pmrt_main_addr_reserv(char *main_addr) = 0;
+    virtual atl_status_t pmrt_main_addr_reserve(char *main_addr) = 0;
 
     virtual atl_status_t pmrt_set_resize_function(atl_resize_fn_t resize_fn) = 0;
 
@@ -163,15 +163,15 @@ public:
 
     virtual size_t get_size() = 0;
 
-    virtual size_t get_thread() = 0;
+    virtual size_t get_local_thread_idx() = 0;
 
     virtual size_t get_local_kvs_id() = 0;
 
     virtual void set_local_kvs_id(size_t local_kvs_id) = 0;
 
-    virtual size_t get_threads_count() = 0;
+    virtual size_t get_threads_per_process() = 0;
 
-    virtual size_t get_devices_per_rank_count() = 0;
+    virtual size_t get_ranks_per_process() = 0;
 };
 #endif
 #endif /* PM_RT_H */

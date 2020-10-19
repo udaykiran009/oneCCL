@@ -245,8 +245,8 @@ err_resizable:
     return ATL_STATUS_FAILURE;
 }
 
-atl_status_t resizable_pmirt_main_addr_reserv(char *main_addr) {
-    int ret = PMIR_Main_Addr_Reserv(main_addr);
+atl_status_t resizable_pmirt_main_addr_reserve(char *main_addr) {
+    int ret = PMIR_Main_Addr_Reserve(main_addr);
 
     if (ret)
         return ATL_STATUS_FAILURE;

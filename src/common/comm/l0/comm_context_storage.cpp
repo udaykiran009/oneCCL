@@ -43,10 +43,10 @@ group_context::comm_group_t group_context::group_by_comm(std::shared_ptr<atl_wra
 
     LOG_INFO("\n",
          "\nATL info:",
-         "\n  threads count:                    ",
-         atl->get_threads_count(),
-         "\n  devices per rank count:           ",
-         atl->get_devices_per_rank_count(),
+         "\n  threads per process:                    ",
+         atl->get_threads_per_process(),
+         "\n  ranks per process:           ",
+         atl->get_ranks_per_process(),
          "\n  atl size:                         ",
          atl->get_size(),
          "\n  rank:                             ",
@@ -59,8 +59,8 @@ group_context::comm_group_t group_context::group_by_comm(std::shared_ptr<atl_wra
     {
         // mutex
         std::unique_lock<ccl_spinlock> lock(mutex);
-        size_t threads_count = atl->get_threads_count();
-        size_t on_process_ranks_count = atl->get_devices_per_rank_count();
+        size_t threads_per_process = atl->get_threads_per_process();
+        size_t ranks_per_process = atl->get_ranks_per_process();
         group_context::group_unique_key unique_id = atl->get_id();
 
         auto ctx_it = communicator_group_map.find(unique_id);
@@ -68,16 +68,16 @@ group_context::comm_group_t group_context::group_by_comm(std::shared_ptr<atl_wra
             std::shared_ptr<host_communicator> host_comm =
                         std::make_shared<host_communicator>(atl);
             group.reset(
-                new ccl::comm_group(host_comm, threads_count, on_process_ranks_count, unique_id));
+                new ccl::comm_group(host_comm, threads_per_process, ranks_per_process, unique_id));
             communicator_group_map.insert({ unique_id, group });
             LOG_INFO("Comm group: ",
                      static_cast<void*>(group.get()),
                      " has been created for unique_id: ",
                      unique_id,
-                     ", expected thread count: ",
-                     threads_count,
-                     ", on process rank count: ",
-                     on_process_ranks_count);
+                     ", expected threads per process: ",
+                     threads_per_process,
+                     ", ranks per process: ",
+                     ranks_per_process);
         }
         else {
             group = ctx_it->second;

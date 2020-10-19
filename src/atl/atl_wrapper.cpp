@@ -103,7 +103,7 @@ atl_wrapper::atl_wrapper(std::shared_ptr<ikvs_wrapper> k) {
     init_transport();
 }
 
-atl_wrapper::atl_wrapper(size_t dev_count,
+atl_wrapper::atl_wrapper(size_t total_rank_count,
                          const std::vector<size_t> &ranks,
                          std::shared_ptr<ikvs_wrapper> k) {
     auto transport_type = ccl::global_data::env().atl_transport;
@@ -112,9 +112,9 @@ atl_wrapper::atl_wrapper(size_t dev_count,
     {
         case ccl_atl_ofi: {
             size_t transorts_count = transports.size();
-            pmi = std::unique_ptr<ipmi>(new pmi_resizable_simple(dev_count, ranks, k));
+            pmi = std::unique_ptr<ipmi>(new pmi_resizable_simple(total_rank_count, ranks, k));
 
-            if (pmi->get_thread() == 0) {
+            if (pmi->get_local_thread_idx() == 0) {
                 transports.push_back(std::shared_ptr<iatl>(new atl_ofi()));
             }
             //TODO: Rework it on barrier
@@ -151,14 +151,14 @@ void atl_wrapper::init_transport() {
     tag = std::unique_ptr<ccl_atl_tag>(new ccl_atl_tag(attr.tag_bits, attr.max_tag));
 
     if (pmi) {
-        threads_count = pmi->get_threads_count();
-        devices_per_rank_count = pmi->get_devices_per_rank_count();
+        threads_per_process = pmi->get_threads_per_process();
+        ranks_per_process = pmi->get_ranks_per_process();
         rank = pmi->get_rank();
         size = pmi->get_size();
     }
     else {
-        threads_count = 1;
-        devices_per_rank_count = 1;
+        threads_per_process = 1;
+        ranks_per_process = 1;
         rank = static_cast<atl_mpi *>(transport.get())->get_rank();
         size = static_cast<atl_mpi *>(transport.get())->get_size();
     }

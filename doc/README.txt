@@ -122,6 +122,7 @@ default structure and identifies the file types stored in each sub-directory:
 				|   |   |-- cpu_allreduce_test.c                                                                       
 				|   |   |-- custom_allreduce.cpp                                                                       
 				|   |   |-- datatype.cpp                                                                               
+				|   |   |-- external_kvs.cpp                                                                               
 				|   |   |-- priority_allreduce.cpp                                                                     
 				|   |   |-- reduce.cpp                                                                                 
 				|   |   |-- reduce_cpp.cpp                                                                                  

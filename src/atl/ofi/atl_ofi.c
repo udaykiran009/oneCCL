@@ -1871,7 +1871,7 @@ err:
 ATL_OFI_INI {
     atl_transport->name = "ofi";
     atl_transport->init = atl_ofi_init;
-    atl_transport->main_addr_reserv = atl_ofi_main_addr_reserv;
+    atl_transport->reserve_addr = atl_ofi_main_addr_reserve;
     return ATL_STATUS_SUCCESS;
 }
 #endif

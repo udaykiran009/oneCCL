@@ -199,7 +199,7 @@ void pmi_resizable::Hard_finilize(int sig) {
         old_act.sa_handler(sig);
 }
 
-int pmi_resizable::PMIR_Main_Addr_Reserv(char* main_addr) {
+int pmi_resizable::PMIR_Main_Addr_Reserve(char* main_addr) {
     h->main_server_address_reserve(main_addr);
     return 0;
 }
@@ -365,7 +365,7 @@ size_t pmi_resizable::get_size() {
     return size;
 }
 
-size_t pmi_resizable::get_thread() {
+size_t pmi_resizable::get_local_thread_idx() {
     return 0;
 }
 size_t pmi_resizable::get_local_kvs_id() {

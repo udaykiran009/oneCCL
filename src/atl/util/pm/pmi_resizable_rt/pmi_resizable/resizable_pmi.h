@@ -31,7 +31,7 @@ typedef enum {
 } kvs_resize_action_t;
 typedef kvs_resize_action_t (*pmir_resize_fn_t)(size_t comm_size);
 
-int PMIR_API PMIR_Main_Addr_Reserv(char* main_addr);
+int PMIR_API PMIR_Main_Addr_Reserve(char* main_addr);
 
 int PMIR_API PMIR_Init(const char* main_addr);
 

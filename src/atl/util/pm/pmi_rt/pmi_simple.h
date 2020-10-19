@@ -8,7 +8,7 @@ public:
 
     int is_pm_resize_enabled() override;
 
-    atl_status_t pmrt_main_addr_reserv(char *main_addr) override;
+    atl_status_t pmrt_main_addr_reserve(char *main_addr) override;
 
     atl_status_t pmrt_set_resize_function(atl_resize_fn_t resize_fn) override;
 
@@ -34,17 +34,17 @@ public:
 
     size_t get_size() override;
 
-    size_t get_thread() override;
+    size_t get_local_thread_idx() override;
 
     size_t get_local_kvs_id() override;
 
     void set_local_kvs_id(size_t local_kvs_id) override;
 
-    size_t get_threads_count() override {
+    size_t get_threads_per_process() override {
         return 1;
     }
 
-    size_t get_devices_per_rank_count() override {
+    size_t get_ranks_per_process() override {
         return 1;
     }
 

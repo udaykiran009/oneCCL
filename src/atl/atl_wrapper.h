@@ -19,7 +19,7 @@ public:
     ~atl_wrapper();
     atl_wrapper();
     atl_wrapper(std::shared_ptr<ikvs_wrapper> k);
-    atl_wrapper(size_t dev_count,
+    atl_wrapper(size_t total_rank_count,
                 const std::vector<size_t>& ranks,
                 std::shared_ptr<ikvs_wrapper> k);
 
@@ -31,11 +31,11 @@ public:
     //        return transport->atl_init(argc, argv, att, main_addr, pmi);
     //    }
 
-    atl_status_t atl_main_addr_reserv(char* main_addr) {
+    atl_status_t atl_main_addr_reserve(char* main_addr) {
         if (!pmi)
             return ATL_STATUS_UNSUPPORTED;
 
-        return pmi->pmrt_main_addr_reserv(main_addr);
+        return pmi->pmrt_main_addr_reserve(main_addr);
         ;
     }
 
@@ -220,16 +220,12 @@ public:
         return transport->atl_ep_check(eps[ep_idx], is_completed, req);
     }
 
-    size_t get_threads_count() {
-        return threads_count;
+    size_t get_threads_per_process() {
+        return threads_per_process;
     }
 
-    /*
-     * How many devices in the current process
-     * + all threads of the process
-     */
-    size_t get_devices_per_rank_count() {
-        return devices_per_rank_count;
+    size_t get_ranks_per_process() {
+        return ranks_per_process;
     }
 
     size_t get_rank() {
@@ -261,8 +257,8 @@ private:
     
 
     atl_ep_t** eps = nullptr;
-    size_t threads_count;
-    size_t devices_per_rank_count;
+    size_t threads_per_process;
+    size_t ranks_per_process;
     size_t rank;
     size_t size;
     void init_transport();

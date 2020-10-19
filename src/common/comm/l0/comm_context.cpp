@@ -6,10 +6,10 @@
 
 namespace ccl {
 comm_group::comm_group(shared_communicator_t parent_comm,
-                       size_t threads_count,
-                       size_t on_process_ranks_count,
+                       size_t threads_per_process,
+                       size_t ranks_per_process,
                        group_unique_key id)
-        : pimpl(new gpu_comm_attr(parent_comm, threads_count, on_process_ranks_count, id)){};
+        : pimpl(new gpu_comm_attr(parent_comm, threads_per_process, ranks_per_process, id)){};
 
 bool comm_group::sync_group_size(size_t device_group_size) {
     return pimpl->sync_group_size(device_group_size);

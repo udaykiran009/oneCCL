@@ -1318,14 +1318,14 @@ err_init:
     return ATL_STATUS_FAILURE;
 }
 
-atl_status_t atl_mpi_main_addr_reserv(char* main_addr) {
+atl_status_t atl_mpi_main_addr_reserve(char* main_addr) {
     return ATL_STATUS_UNSUPPORTED;
 }
 
 ATL_MPI_INI {
     atl_transport->name = "mpi";
     atl_transport->init = atl_mpi_init;
-    atl_transport->main_addr_reserv = atl_mpi_main_addr_reserv;
+    atl_transport->reserve_addr = atl_mpi_main_addr_reserve;
     return ATL_STATUS_SUCCESS;
 }
 #ifdef __cplusplus

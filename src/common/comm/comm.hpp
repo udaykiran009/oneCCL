@@ -85,7 +85,7 @@ public:
         return thread_number;
     }
 
-    size_t on_process_ranks_count() const noexcept {
+    size_t ranks_per_process() const noexcept {
         return on_process_ranks_number;
     }
 

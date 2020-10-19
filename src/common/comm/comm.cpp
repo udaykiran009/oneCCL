@@ -78,8 +78,8 @@ ccl_comm::ccl_comm(const std::vector<size_t>& local_thread_device_ranks,
     atl = std::shared_ptr<atl_wrapper>(
         new atl_wrapper(cluster_devices_count, local_thread_device_ranks, kvs_wrapper));
 
-    thread_number = atl->get_threads_count();
-    on_process_ranks_number = atl->get_devices_per_rank_count();
+    thread_number = atl->get_threads_per_process();
+    on_process_ranks_number = atl->get_ranks_per_process();
 
     reset(atl->get_rank(), atl->get_size());
 

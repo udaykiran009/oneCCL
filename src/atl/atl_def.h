@@ -117,7 +117,7 @@ typedef struct {
     const char* name;
     atl_status_t (
         *init)(int* argc, char*** argv, atl_attr_t* attr, atl_ctx_t** ctx, const char* main_addr);
-    atl_status_t (*main_addr_reserv)(char* main_addr);
+    atl_status_t (*reserve_addr)(char* main_addr);
 } atl_transport_t;
 
 typedef struct {

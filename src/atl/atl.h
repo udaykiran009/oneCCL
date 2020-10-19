@@ -14,7 +14,7 @@ atl_status_t atl_init(const char* transport_name,
                       atl_ctx_t** ctx,
                       const char* main_addr);
 
-void atl_main_addr_reserv(char* main_addr);
+void atl_main_addr_reserve(char* main_addr);
 
 static inline atl_status_t atl_finalize(atl_ctx_t* ctx) {
     return ctx->ops->finalize(ctx);
