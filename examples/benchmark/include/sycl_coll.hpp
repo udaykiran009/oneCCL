@@ -58,27 +58,32 @@ std::vector<cl::sycl::queue> get_sycl_queues(std::vector<size_t>& ranks) {
         size_t max_sub_devices = device.template get_info<cl::sycl::info::device::partition_max_sub_devices>();
         printf("max_sub_devices %zu\n", max_sub_devices);
 
-        if (max_sub_devices > 0) {
-            printf("it is parent-device, max_sub_devices %zu\n", max_sub_devices);
-
-            auto sub_devices = device.create_sub_devices<info::partition_property::partition_equally>(max_sub_devices);
-            ASSERT(max_sub_devices == sub_devices.size(),
-                "unexpected sub-devices count %zu, expected %zu", sub_devices.size(), max_sub_devices);
-
-            selected_devices.insert(selected_devices.end(), sub_devices.begin(), sub_devices.end());
+        std::vector<sycl::device> sub_devices;
+        try {
+            sub_devices =
+                device.create_sub_devices<cl::sycl::info::partition_property::partition_by_affinity_domain>(
+                    info::partition_affinity_domain::next_partitionable);
+            printf("created sub_devices\n");
 
             for (const auto& sub_device : sub_devices) {
                 ASSERT(sub_device.template get_info<cl::sycl::info::device::parent_device>() == device,
                     "unexpected sub-device's parent");
 
-                ASSERT(sub_device.template get_info<cl::sycl::info::device::partition_max_sub_devices>() == 0,
-                    "unexpected additional level of sub-devices");
+                max_sub_devices = sub_device.template get_info<cl::sycl::info::device::partition_max_sub_devices>();
+                printf("max_sub_devices for child: %zu\n", max_sub_devices);
             }
+
+            sub_devices = std::vector<cl::sycl::device>(1, device);
+            printf("partition property is not supported, but create_sub_devices doesn't throw exception yet\n"
+                "use parent_device as sub_device\n");
         }
-        else {
-            printf("it is child-device, max_sub_devices %zu\n", max_sub_devices);
-            selected_devices.push_back(device);
+        catch (std::exception& e) {
+            sub_devices = std::vector<cl::sycl::device>(1, device);
+            printf("partition property is not supported, use parent_device as sub_device\n");
         }
+
+        printf("sub_devices size %zu\n", sub_devices.size());
+        selected_devices.insert(selected_devices.end(), sub_devices.begin(), sub_devices.end());
     }
 
     printf("selected_devices count %zu\n", selected_devices.size());
