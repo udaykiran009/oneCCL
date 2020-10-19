@@ -17,7 +17,7 @@ enum device_topology_type : int {
     ring,
     a2a,
 
-    last_value
+    last_class_value
 };
 
 using process_id = size_t;
