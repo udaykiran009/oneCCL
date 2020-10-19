@@ -25,55 +25,55 @@ typedef struct {
     size_t dtype_size;
 } ccl_parallelizer_sparse_callback_ctx;
 
-ccl_status_t ccl_parallelizer_sparse_callback_get_buf(const void* ctx, void* field_ptr) {
+ccl::status ccl_parallelizer_sparse_callback_get_buf(const void* ctx, void* field_ptr) {
     ccl_parallelizer_sparse_callback_ctx* cctx = (ccl_parallelizer_sparse_callback_ctx*)ctx;
     ccl_buffer* buf_ptr = (ccl_buffer*)field_ptr;
     buf_ptr->set(cctx->buf, cctx->count * cctx->dtype_size, 0);
-    return ccl_status_success;
+    return ccl::status::success;
 }
 
-ccl_status_t ccl_parallelizer_sparse_callback_get_count(const void* ctx, void* field_ptr) {
+ccl::status ccl_parallelizer_sparse_callback_get_count(const void* ctx, void* field_ptr) {
     ccl_parallelizer_sparse_callback_ctx* cctx = (ccl_parallelizer_sparse_callback_ctx*)ctx;
     size_t* count_ptr = (size_t*)field_ptr;
     *count_ptr = cctx->count;
-    return ccl_status_success;
+    return ccl::status::success;
 }
 
-ccl_status_t ccl_parallelizer_prologue_get_buf(const void* ctx, void* field_ptr) {
+ccl::status ccl_parallelizer_prologue_get_buf(const void* ctx, void* field_ptr) {
     ccl_parallelizer_prologue_ctx* pctx = (ccl_parallelizer_prologue_ctx*)ctx;
     ccl_buffer* buf_ptr = (ccl_buffer*)field_ptr;
     size_t dtype_size = ccl::global_data::get().dtypes->get(pctx->dt_idx).size();
     buf_ptr->set(pctx->buf,
                  pctx->count * dtype_size,
                  pctx->part_idx * (pctx->count / pctx->part_count) * dtype_size);
-    return ccl_status_success;
+    return ccl::status::success;
 }
 
-ccl_status_t ccl_parallelizer_prologue_get_count(const void* ctx, void* field_ptr) {
+ccl::status ccl_parallelizer_prologue_get_count(const void* ctx, void* field_ptr) {
     ccl_parallelizer_prologue_ctx* pctx = (ccl_parallelizer_prologue_ctx*)ctx;
     size_t count = pctx->count / pctx->part_count;
     if (pctx->part_idx == (pctx->part_count - 1))
         count += pctx->count % pctx->part_count;
     size_t* count_ptr = (size_t*)field_ptr;
     *count_ptr = count;
-    return ccl_status_success;
+    return ccl::status::success;
 }
 
-ccl_status_t ccl_parallelizer_prologue_get_dtype(const void* ctx, void* field_ptr) {
+ccl::status ccl_parallelizer_prologue_get_dtype(const void* ctx, void* field_ptr) {
     ccl_parallelizer_prologue_ctx* pctx = (ccl_parallelizer_prologue_ctx*)ctx;
     ccl_datatype* dtype_ptr = (ccl_datatype*)field_ptr;
     *dtype_ptr = ccl::global_data::get().dtypes->get(pctx->dt_idx);
-    return ccl_status_success;
+    return ccl::status::success;
 }
 
-ccl_status_t ccl_parallelizer::process(ccl_master_sched* sched) {
+ccl::status ccl_parallelizer::process(ccl_master_sched* sched) {
     /* TODO: split on per-collective classes */
 
     CCL_ASSERT(sched);
 
     ccl::global_data& data = ccl::global_data::get();
 
-    ccl_status_t status = ccl_status_success;
+    ccl::status status = ccl::status::success;
     size_t part_count = 1, idx, base_count, dtype_size, comm_size, my_rank;
 
     ccl_coll_param& coll_param = sched->coll_param;

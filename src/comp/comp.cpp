@@ -34,17 +34,17 @@
         } \
     } while (0)
 
-ccl_status_t ccl_comp_copy(const void* in_buf,
+ccl::status ccl_comp_copy(const void* in_buf,
                            void* out_buf,
                            size_t count,
                            const ccl_datatype& dtype) {
     CCL_ASSERT(in_buf, "in_buf is null");
     CCL_ASSERT(out_buf, "out_buf is null");
     CCL_MEMCPY(out_buf, in_buf, count * dtype.size());
-    return ccl_status_success;
+    return ccl::status::success;
 }
 
-ccl_status_t ccl_comp_reduce(const void* in_buf,
+ccl::status ccl_comp_reduce(const void* in_buf,
                              size_t in_count,
                              void* inout_buf,
                              size_t* out_count,
@@ -55,7 +55,7 @@ ccl_status_t ccl_comp_reduce(const void* in_buf,
     if (reduction == ccl::reduction::custom) {
         CCL_THROW_IF_NOT(reduction_fn, "custom reduction requires user callback");
         reduction_fn(in_buf, in_count, inout_buf, out_count, dtype.idx(), context);
-        return ccl_status_success;
+        return ccl::status::success;
     }
 
     size_t i;
@@ -73,10 +73,10 @@ ccl_status_t ccl_comp_reduce(const void* in_buf,
         case ccl::datatype::uint64: CCL_REDUCE(uint64_t); break;
         default: CCL_FATAL("unexpected value ", dtype.idx()); break;
     }
-    return ccl_status_success;
+    return ccl::status::success;
 }
 
-ccl_status_t ccl_comp_batch_reduce(const void* in_buf,
+ccl::status ccl_comp_batch_reduce(const void* in_buf,
                                    const std::vector<size_t>& offsets,
                                    size_t in_count,
                                    void* inout_buf,
@@ -122,7 +122,7 @@ ccl_status_t ccl_comp_batch_reduce(const void* in_buf,
         }
     }
 
-    return ccl_status_success;
+    return ccl::status::success;
 }
 
 const char* ccl_reduction_to_str(ccl::reduction type) {

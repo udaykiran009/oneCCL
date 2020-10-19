@@ -16,7 +16,7 @@ namespace ccl {
 }
 
 /*
-ccl_status_t CCL_API ccl_stream_create(stream_type type,
+ccl::status CCL_API ccl_stream_create(stream_type type,
                                           void* native_stream,
                                           ccl_stream_t* stream);
 */
@@ -25,7 +25,7 @@ public:
     friend class stream_provider_dispatcher;
     friend class ccl::detail::environment;
     /*
-    friend ccl_status_t CCL_API ccl_stream_create(stream_type type,
+    friend ccl::status CCL_API ccl_stream_create(stream_type type,
                                void* native_stream,
                                ccl_stream_t* stream);*/
     using stream_native_t = stream_provider_dispatcher::stream_native_t;

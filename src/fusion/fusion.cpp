@@ -5,23 +5,23 @@
 
 #define CCL_FUSION_CHECK_SCHEDS_ITERS (1024)
 
-ccl_status_t complete_user_request(const void* ctx) {
+ccl::status complete_user_request(const void* ctx) {
     ccl_master_sched* sched = (ccl_master_sched*)ctx;
     LOG_DEBUG("complete fusion request: ", static_cast<ccl_request*>(sched));
     sched->complete();
-    return ccl_status_success;
+    return ccl::status::success;
 }
 
-ccl_status_t release_fusion_buf(const void* ctx) {
+ccl::status release_fusion_buf(const void* ctx) {
     void* buf = (void*)ctx;
 
     if (ccl::global_data::get().fusion_manager)
         ccl::global_data::get().fusion_manager->release_buffer(buf);
 
-    return ccl_status_success;
+    return ccl::status::success;
 }
 
-ccl_status_t release_fusion_buf_for_cached_sched(ccl_sched* sched, const void* ctx) {
+ccl::status release_fusion_buf_for_cached_sched(ccl_sched* sched, const void* ctx) {
     return release_fusion_buf(ctx);
 }
 

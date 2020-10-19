@@ -212,16 +212,16 @@ void ccl_unordered_coll_manager::start_coordination(const std::string& match_id)
             }
             ccl_buffer* buf_ptr = (ccl_buffer*)field_ptr;
             buf_ptr->set(ctx->match_id_value, ctx->match_id_size);
-            return ccl_status_success;
+            return ccl::status::success;
         },
         ctx);
 
     entry->set_field_fn<ccl_sched_entry_field_cnt>(
-        [](const void* fn_ctx, void* field_ptr) -> ccl_status_t {
+        [](const void* fn_ctx, void* field_ptr) -> ccl::status {
             auto ctx = static_cast<ccl_unordered_coll_ctx*>(const_cast<void*>(fn_ctx));
             auto count_ptr = static_cast<size_t*>(field_ptr);
             *count_ptr = ctx->match_id_size;
-            return ccl_status_success;
+            return ccl::status::success;
         },
         ctx);
 
@@ -242,10 +242,10 @@ void ccl_unordered_coll_manager::start_coordination(const std::string& match_id)
     /* 4. start post actions (create communicator and start postponed schedules) */
     entry_factory::make_entry<function_entry>(
         service_sched.get(),
-        [](const void* func_ctx) -> ccl_status_t {
+        [](const void* func_ctx) -> ccl::status {
             auto ctx = static_cast<ccl_unordered_coll_ctx*>(const_cast<void*>(func_ctx));
             ctx->manager->start_post_coordination_actions(ctx);
-            return ccl_status_success;
+            return ccl::status::success;
         },
         ctx);
 

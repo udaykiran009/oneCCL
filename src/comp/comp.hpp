@@ -3,11 +3,11 @@
 #include "common/datatype/datatype.hpp"
 #include "oneapi/ccl/ccl_types.hpp"
 
-ccl_status_t ccl_comp_copy(const void* in_buf,
+ccl::status ccl_comp_copy(const void* in_buf,
                            void* out_buf,
                            size_t count,
                            const ccl_datatype& dtype);
-ccl_status_t ccl_comp_reduce(const void* in_buf,
+ccl::status ccl_comp_reduce(const void* in_buf,
                              size_t in_count,
                              void* inout_buf,
                              size_t* out_count,
@@ -15,7 +15,7 @@ ccl_status_t ccl_comp_reduce(const void* in_buf,
                              ccl::reduction reduction,
                              ccl::reduction_fn reduction_fn,
                              const ccl::fn_context* context = nullptr);
-ccl_status_t ccl_comp_batch_reduce(const void* in_buf,
+ccl::status ccl_comp_batch_reduce(const void* in_buf,
                                    const std::vector<size_t>& offsets,
                                    size_t in_count,
                                    void* inout_buf,

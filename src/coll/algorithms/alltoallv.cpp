@@ -11,7 +11,7 @@
 #include "sched/entry/factory/chunked_entry_factory.hpp"
 #include "sched/entry/factory/entry_factory.hpp"
 
-ccl_status_t ccl_coll_build_direct_alltoallv(ccl_sched* sched,
+ccl::status ccl_coll_build_direct_alltoallv(ccl_sched* sched,
                                              ccl_buffer send_buf,
                                              const size_t* send_counts,
                                              ccl_buffer recv_buf,
@@ -22,10 +22,10 @@ ccl_status_t ccl_coll_build_direct_alltoallv(ccl_sched* sched,
 
     entry_factory::make_entry<alltoallv_entry>(
         sched, send_buf, send_counts, recv_buf, recv_counts, dtype, comm);
-    return ccl_status_success;
+    return ccl::status::success;
 }
 
-ccl_status_t ccl_coll_add_scatter_alltoallv_barriers(std::vector<ccl_sched*>& scheds,
+ccl::status ccl_coll_add_scatter_alltoallv_barriers(std::vector<ccl_sched*>& scheds,
                                                      size_t sched_idx) {
     ssize_t max_ops = ccl::global_data::env().alltoall_scatter_max_ops;
 
@@ -41,10 +41,10 @@ ccl_status_t ccl_coll_add_scatter_alltoallv_barriers(std::vector<ccl_sched*>& sc
         }
     }
 
-    return ccl_status_success;
+    return ccl::status::success;
 }
 
-ccl_status_t ccl_coll_calculate_alltoallv_counts(const ccl_coll_param& coll_param,
+ccl::status ccl_coll_calculate_alltoallv_counts(const ccl_coll_param& coll_param,
                                                  std::vector<size_t>& send_counts,
                                                  std::vector<size_t>& recv_counts,
                                                  std::vector<size_t>& send_offsets,
@@ -96,10 +96,10 @@ ccl_status_t ccl_coll_calculate_alltoallv_counts(const ccl_coll_param& coll_para
               ", total_recv_bytes ",
               total_recv_bytes);
 
-    return ccl_status_success;
+    return ccl::status::success;
 }
 
-ccl_status_t ccl_coll_build_naive_alltoallv(ccl_master_sched* main_sched,
+ccl::status ccl_coll_build_naive_alltoallv(ccl_master_sched* main_sched,
                                             std::vector<ccl_sched*>& scheds,
                                             const ccl_coll_param& coll_param) {
     LOG_DEBUG("build naive alltoallv");
@@ -188,10 +188,10 @@ ccl_status_t ccl_coll_build_naive_alltoallv(ccl_master_sched* main_sched,
         }
     }
 
-    return ccl_status_success;
+    return ccl::status::success;
 }
 
-ccl_status_t ccl_coll_build_scatter_alltoallv(ccl_master_sched* main_sched,
+ccl::status ccl_coll_build_scatter_alltoallv(ccl_master_sched* main_sched,
                                               std::vector<ccl_sched*>& scheds,
                                               const ccl_coll_param& coll_param) {
     LOG_DEBUG("build scatter alltoall");
@@ -290,7 +290,7 @@ ccl_status_t ccl_coll_build_scatter_alltoallv(ccl_master_sched* main_sched,
     }
 
     if (!inplace)
-        return ccl_status_success;
+        return ccl::status::success;
 
     main_sched->sync_partial_scheds();
 
@@ -310,10 +310,10 @@ ccl_status_t ccl_coll_build_scatter_alltoallv(ccl_master_sched* main_sched,
                                               dtype);
     }
 
-    return ccl_status_success;
+    return ccl::status::success;
 }
 
-ccl_status_t ccl_coll_build_scatter_barrier_alltoallv(ccl_master_sched* main_sched,
+ccl::status ccl_coll_build_scatter_barrier_alltoallv(ccl_master_sched* main_sched,
                                                       std::vector<ccl_sched*>& scheds,
                                                       const ccl_coll_param& coll_param) {
     LOG_DEBUG("build scatter_barrier alltoallv");
@@ -432,7 +432,7 @@ ccl_status_t ccl_coll_build_scatter_barrier_alltoallv(ccl_master_sched* main_sch
     }
 
     if (!inplace)
-        return ccl_status_success;
+        return ccl::status::success;
 
     main_sched->sync_partial_scheds();
 
@@ -452,5 +452,5 @@ ccl_status_t ccl_coll_build_scatter_barrier_alltoallv(ccl_master_sched* main_sch
                                               dtype);
     }
 
-    return ccl_status_success;
+    return ccl::status::success;
 }

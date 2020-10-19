@@ -33,16 +33,16 @@ void ccl_worker::add(ccl_sched* sched) {
     }
 }
 
-ccl_status_t ccl_worker::do_work(size_t& processed_count) {
+ccl::status ccl_worker::do_work(size_t& processed_count) {
     do_work_counter++;
 
     auto ret = process_strict_sched_queue();
-    if (ret != ccl_status_success)
+    if (ret != ccl::status::success)
         return ret;
 
     ret = process_sched_queue(processed_count,
                               (do_work_counter % CCL_WORKER_PROCESS_ALL_ITERS) ? false : true);
-    if (ret != ccl_status_success)
+    if (ret != ccl::status::success)
         return ret;
 
 #ifdef ENABLE_DEBUG
@@ -51,13 +51,13 @@ ccl_status_t ccl_worker::do_work(size_t& processed_count) {
     }
 #endif
 
-    return ccl_status_success;
+    return ccl::status::success;
 }
 
-ccl_status_t ccl_worker::process_strict_sched_queue() {
+ccl::status ccl_worker::process_strict_sched_queue() {
     auto& queue = strict_sched_queue->peek();
     if (queue.empty())
-        return ccl_status_success;
+        return ccl::status::success;
 
     size_t erased_scheds = 0;
 
@@ -99,7 +99,7 @@ ccl_status_t ccl_worker::process_strict_sched_queue() {
                 and return to strict starting for current operation on the next call
             */
             std::vector<ccl_sched*>(sched_it, queue.end()).swap(queue);
-            return ccl_status_success;
+            return ccl::status::success;
         }
         else {
             /* now it is safe to release this sched */
@@ -109,16 +109,16 @@ ccl_status_t ccl_worker::process_strict_sched_queue() {
 
     queue.clear();
 
-    return ccl_status_success;
+    return ccl::status::success;
 }
 
-ccl_status_t ccl_worker::process_sched_queue(size_t& completed_sched_count, bool process_all) {
+ccl::status ccl_worker::process_sched_queue(size_t& completed_sched_count, bool process_all) {
     completed_sched_count = 0;
     if (process_all) {
         auto bins = sched_queue->peek_all();
 
         if (bins.empty())
-            return ccl_status_success;
+            return ccl::status::success;
 
         size_t completed_sched_count_local = 0;
         for (auto& bin : bins) {
@@ -129,17 +129,17 @@ ccl_status_t ccl_worker::process_sched_queue(size_t& completed_sched_count, bool
         if (completed_sched_count)
             LOG_DEBUG("process_all, completed_sched_count ", completed_sched_count);
 
-        return ccl_status_success;
+        return ccl::status::success;
     }
     else {
         ccl_sched_bin* bin = sched_queue->peek();
         if (!bin)
-            return ccl_status_success;
+            return ccl::status::success;
         return process_sched_bin(bin, completed_sched_count);
     }
 }
 
-ccl_status_t ccl_worker::process_sched_bin(ccl_sched_bin* bin, size_t& completed_sched_count) {
+ccl::status ccl_worker::process_sched_bin(ccl_sched_bin* bin, size_t& completed_sched_count) {
     CCL_ASSERT(bin);
     completed_sched_count = 0;
 
@@ -159,7 +159,7 @@ ccl_status_t ccl_worker::process_sched_bin(ccl_sched_bin* bin, size_t& completed
 
     //    if (ccl::global_data::get().is_ft_enabled) {
     //        if (atl_status != ATL_STATUS_SUCCESS)
-    //            return ccl_status_blocked_due_to_resize;
+    //            return ccl::status::blocked_due_to_resize;
     //    }
     //    else {
     //        CCL_THROW_IF_NOT(atl_status == ATL_STATUS_SUCCESS, "bad status ", atl_status);
@@ -198,7 +198,7 @@ ccl_status_t ccl_worker::process_sched_bin(ccl_sched_bin* bin, size_t& completed
         }
     }
 
-    return ccl_status_success;
+    return ccl::status::success;
 }
 
 void ccl_worker::clear_queue() {
@@ -217,7 +217,7 @@ static inline bool ccl_worker_check_conditions(ccl_worker* worker,
     }
 
     if (ccl::global_data::get().is_ft_enabled &&
-        unlikely(do_work_status == ccl_status_blocked_due_to_resize ||
+        unlikely(do_work_status == ccl::status::blocked_due_to_resize ||
                  iter_count % CCL_WORKER_CHECK_UPDATE_ITERS == 0)) {
         if (worker->should_lock.load(std::memory_order_acquire)) {
             worker->clear_queue();
@@ -253,7 +253,7 @@ static void* ccl_worker_func(void* args) {
     size_t processed_count = 0;
     size_t max_spin_count = ccl::global_data::env().spin_count;
     size_t spin_count = max_spin_count;
-    ccl_status_t ret;
+    ccl::status ret;
 
     ccl::global_data::get().is_worker_thread = true;
     worker->started = true;

@@ -9,7 +9,7 @@
 #include "sched/entry/factory/chunked_entry_factory.hpp"
 #include "sched/entry/factory/entry_factory.hpp"
 
-ccl_status_t ccl_coll_build_direct_allreduce(ccl_sched* sched,
+ccl::status ccl_coll_build_direct_allreduce(ccl_sched* sched,
                                              ccl_buffer send_buf,
                                              ccl_buffer recv_buf,
                                              size_t count,
@@ -19,10 +19,10 @@ ccl_status_t ccl_coll_build_direct_allreduce(ccl_sched* sched,
     LOG_DEBUG("build direct allreduce");
 
     entry_factory::make_entry<allreduce_entry>(sched, send_buf, recv_buf, count, dtype, op, comm);
-    return ccl_status_success;
+    return ccl::status::success;
 }
 
-ccl_status_t ccl_coll_build_rabenseifner_allreduce(ccl_sched* sched,
+ccl::status ccl_coll_build_rabenseifner_allreduce(ccl_sched* sched,
                                                    ccl_buffer send_buf,
                                                    ccl_buffer recv_buf,
                                                    size_t count,
@@ -32,7 +32,7 @@ ccl_status_t ccl_coll_build_rabenseifner_allreduce(ccl_sched* sched,
     LOG_DEBUG("build Rabenseifner's allreduce");
     CCL_ASSERT(sched != nullptr, "empty sched");
 
-    ccl_status_t status = ccl_status_success;
+    ccl::status status = ccl::status::success;
     int comm_size, rank, newrank, pof2, rem;
     int i, send_idx, recv_idx, last_idx, mask, newdst, dst, send_cnt, recv_cnt;
     int *cnts = NULL, *disps = NULL;
@@ -254,7 +254,7 @@ ccl_status_t ccl_coll_build_rabenseifner_allreduce(ccl_sched* sched,
     return status;
 }
 
-ccl_status_t ccl_coll_build_recursive_doubling_allreduce(ccl_sched* sched,
+ccl::status ccl_coll_build_recursive_doubling_allreduce(ccl_sched* sched,
                                                          ccl_buffer send_buf,
                                                          ccl_buffer recv_buf,
                                                          size_t count,
@@ -263,7 +263,7 @@ ccl_status_t ccl_coll_build_recursive_doubling_allreduce(ccl_sched* sched,
                                                          ccl_comm* comm) {
     LOG_DEBUG("build recursive_doubling allreduce");
 
-    ccl_status_t status = ccl_status_success;
+    ccl::status status = ccl::status::success;
 
     int pof2, rem, comm_size, rank;
     int newrank, mask, newdst, dst;
@@ -363,7 +363,7 @@ ccl_status_t ccl_coll_build_recursive_doubling_allreduce(ccl_sched* sched,
     return status;
 }
 
-ccl_status_t ccl_coll_build_starlike_allreduce(ccl_sched* sched,
+ccl::status ccl_coll_build_starlike_allreduce(ccl_sched* sched,
                                                ccl_buffer send_buf,
                                                ccl_buffer recv_buf,
                                                size_t count,
@@ -372,7 +372,7 @@ ccl_status_t ccl_coll_build_starlike_allreduce(ccl_sched* sched,
                                                ccl_comm* comm) {
     LOG_DEBUG("build starlike allreduce");
 
-    ccl_status_t status = ccl_status_success;
+    ccl::status status = ccl::status::success;
     size_t comm_size = comm->size();
     size_t this_rank = comm->rank();
     size_t* buffer_counts =
@@ -443,7 +443,7 @@ ccl_status_t ccl_coll_build_starlike_allreduce(ccl_sched* sched,
     return status;
 }
 
-ccl_status_t ccl_coll_build_ring_allreduce(ccl_sched* sched,
+ccl::status ccl_coll_build_ring_allreduce(ccl_sched* sched,
                                            ccl_buffer send_buf,
                                            ccl_buffer recv_buf,
                                            size_t count,
@@ -461,7 +461,7 @@ ccl_status_t ccl_coll_build_ring_allreduce(ccl_sched* sched,
                      " recv ",
                      recv_buf);
 
-    ccl_status_t status = ccl_status_success;
+    ccl::status status = ccl::status::success;
 
     ccl_coll_build_ring_reduce_scatter(sched, send_buf, recv_buf, count, dtype, op, comm);
 

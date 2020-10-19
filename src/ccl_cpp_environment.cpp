@@ -32,7 +32,7 @@ CCL_API environment& environment::instance() {
 
 // void environment::set_resize_fn(ccl_resize_fn_t callback)
 // {
-//     ccl_status_t result = ccl_set_resize_fn(callback);
+//     ccl::status result = ccl_set_resize_fn(callback);
 //     CCL_CHECK_AND_THROW(result, "failed to set resize callback");
 //     return;
 // }

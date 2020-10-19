@@ -101,7 +101,7 @@ void ccl_executor::start_workers() {
             size_t affinity =
                 env.worker_affinity[get_local_proc_idx() * worker_count + idx];
 
-            CCL_THROW_IF_NOT(workers.back()->start(affinity) == ccl_status_success,
+            CCL_THROW_IF_NOT(workers.back()->start(affinity) == ccl::status::success,
                              "failed to start worker # ",
                              idx);
 
@@ -128,7 +128,7 @@ ccl_executor::~ccl_executor() {
 
     for (size_t idx = 0; idx < workers.size(); idx++) {
         if (ccl::global_data::env().worker_offload) {
-            if (workers[idx]->stop() != ccl_status_success) {
+            if (workers[idx]->stop() != ccl::status::success) {
                 LOG_ERROR("failed to stop worker # ", idx);
             }
             else
@@ -181,10 +181,10 @@ void ccl_executor::update_workers() {
 }
 
 // TODO: Rework to support listener
-//ccl_status_t ccl_executor::create_listener(ccl_resize_fn_t resize_func) {
+//ccl::status ccl_executor::create_listener(ccl_resize_fn_t resize_func) {
 //    if (listener) {
 //        LOG_ERROR("attempt to create listener twice");
-//        return ccl_status_runtime_error;
+//        return ccl::status::runtime_error;
 //    }
 //
 //    if (resize_func != NULL)
@@ -201,7 +201,7 @@ void ccl_executor::update_workers() {
 //
 //    LOG_DEBUG("started listener");
 //
-//    return ccl_status_success;
+//    return ccl::status::success;
 //}
 
 void ccl_executor::start(ccl_extra_sched* extra_sched) {

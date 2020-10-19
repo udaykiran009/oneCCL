@@ -12,7 +12,7 @@
 class ccl_sched;
 class ccl_request;
 
-ccl_status_t ccl_coll_build_allgatherv(ccl_sched* sched,
+ccl::status ccl_coll_build_allgatherv(ccl_sched* sched,
                                        ccl_buffer send_buf,
                                        size_t send_count,
                                        ccl_buffer recv_buf,
@@ -20,7 +20,7 @@ ccl_status_t ccl_coll_build_allgatherv(ccl_sched* sched,
                                        const ccl_datatype& dtype,
                                        ccl_comm* comm);
 
-ccl_status_t ccl_coll_build_allreduce(ccl_sched* sched,
+ccl::status ccl_coll_build_allreduce(ccl_sched* sched,
                                       ccl_buffer send_buf,
                                       ccl_buffer recv_buf,
                                       size_t count,
@@ -28,14 +28,14 @@ ccl_status_t ccl_coll_build_allreduce(ccl_sched* sched,
                                       ccl::reduction reduction,
                                       ccl_comm* comm);
 
-ccl_status_t ccl_coll_build_alltoall(ccl_sched* sched,
+ccl::status ccl_coll_build_alltoall(ccl_sched* sched,
                                      ccl_buffer send_buf,
                                      ccl_buffer recv_buf,
                                      size_t count,
                                      const ccl_datatype& dtype,
                                      ccl_comm* comm);
 
-ccl_status_t ccl_coll_build_alltoallv(ccl_sched* sched,
+ccl::status ccl_coll_build_alltoallv(ccl_sched* sched,
                                       ccl_buffer send_buf,
                                       const size_t* send_counts,
                                       ccl_buffer recv_buf,
@@ -43,16 +43,16 @@ ccl_status_t ccl_coll_build_alltoallv(ccl_sched* sched,
                                       const ccl_datatype& dtype,
                                       ccl_comm* comm);
 
-ccl_status_t ccl_coll_build_barrier(ccl_sched* sched, ccl_comm* comm);
+ccl::status ccl_coll_build_barrier(ccl_sched* sched, ccl_comm* comm);
 
-ccl_status_t ccl_coll_build_bcast(ccl_sched* sched,
+ccl::status ccl_coll_build_bcast(ccl_sched* sched,
                                   ccl_buffer buf,
                                   size_t count,
                                   const ccl_datatype& dtype,
                                   size_t root,
                                   ccl_comm* comm);
 
-ccl_status_t ccl_coll_build_reduce(ccl_sched* sched,
+ccl::status ccl_coll_build_reduce(ccl_sched* sched,
                                    ccl_buffer send_buf,
                                    ccl_buffer recv_buf,
                                    size_t count,
@@ -61,7 +61,7 @@ ccl_status_t ccl_coll_build_reduce(ccl_sched* sched,
                                    size_t root,
                                    ccl_comm* comm);
 
-ccl_status_t ccl_coll_build_reduce_scatter(ccl_sched* sched,
+ccl::status ccl_coll_build_reduce_scatter(ccl_sched* sched,
                                            ccl_buffer send_buf,
                                            ccl_buffer recv_buf,
                                            size_t count,
@@ -70,7 +70,7 @@ ccl_status_t ccl_coll_build_reduce_scatter(ccl_sched* sched,
                                            ccl_comm* comm,
                                            bool from_allreduce = false);
 
-ccl_status_t ccl_coll_build_sparse_allreduce(ccl_sched* sched,
+ccl::status ccl_coll_build_sparse_allreduce(ccl_sched* sched,
                                              ccl_buffer send_ind_buf,
                                              size_t send_ind_count,
                                              ccl_buffer send_val_buf,

@@ -3,107 +3,107 @@
 #include "sched/entry/factory/entry_factory.hpp"
 #include "exec/exec.hpp"
 
-ccl_status_t rma_ring_allreduce_reset_sync_flag(const void* ctx) {
+ccl::status rma_ring_allreduce_reset_sync_flag(const void* ctx) {
     ccl_rma_ring_allreduce_handler* ar_handler = (ccl_rma_ring_allreduce_handler*)ctx;
     ar_handler->sync_flag = 0;
-    return ccl_status_success;
+    return ccl::status::success;
 }
 
-ccl_status_t rma_ring_allreduce_reset_dst_ready_flag(const void* ctx) {
+ccl::status rma_ring_allreduce_reset_dst_ready_flag(const void* ctx) {
     ccl_rma_ring_allreduce_handler* ar_handler = (ccl_rma_ring_allreduce_handler*)ctx;
     ar_handler->dst_ready_flag = 0;
-    return ccl_status_success;
+    return ccl::status::success;
 }
 
-ccl_status_t rma_ring_allreduce_get_remote_sync_flag_mr(const void* ctx, void* field_ptr) {
+ccl::status rma_ring_allreduce_get_remote_sync_flag_mr(const void* ctx, void* field_ptr) {
     ccl_rma_ring_allreduce_handler* ar_handler = (ccl_rma_ring_allreduce_handler*)ctx;
     atl_mr_t* mr = &(ar_handler->remote_sync_flag_mr);
     atl_mr_t** mr_ptr = (atl_mr_t**)field_ptr;
     *mr_ptr = mr;
-    return ccl_status_success;
+    return ccl::status::success;
 }
 
-ccl_status_t rma_ring_allreduce_get_sync_flag_mr(const void* ctx, void* field_ptr) {
+ccl::status rma_ring_allreduce_get_sync_flag_mr(const void* ctx, void* field_ptr) {
     ccl_rma_ring_allreduce_handler* ar_handler = (ccl_rma_ring_allreduce_handler*)ctx;
     atl_mr_t* mr = ar_handler->sync_flag_mr;
     atl_mr_t** mr_ptr = (atl_mr_t**)field_ptr;
     *mr_ptr = mr;
-    return ccl_status_success;
+    return ccl::status::success;
 }
 
-ccl_status_t rma_ring_allreduce_get_sync_flags_mr(const void* ctx, void* field_ptr) {
+ccl::status rma_ring_allreduce_get_sync_flags_mr(const void* ctx, void* field_ptr) {
     ccl_rma_ring_allreduce_handler* ar_handler = (ccl_rma_ring_allreduce_handler*)ctx;
     atl_mr_t* mr = ar_handler->sync_flags_mr;
     atl_mr_t** mr_ptr = (atl_mr_t**)field_ptr;
     *mr_ptr = mr;
-    return ccl_status_success;
+    return ccl::status::success;
 }
 
-ccl_status_t rma_ring_allreduce_get_send_buf_mr(const void* ctx, void* field_ptr) {
+ccl::status rma_ring_allreduce_get_send_buf_mr(const void* ctx, void* field_ptr) {
     ccl_rma_ring_allreduce_handler* ar_handler = (ccl_rma_ring_allreduce_handler*)ctx;
     atl_mr_t* mr = ar_handler->send_buf_mr;
     atl_mr_t** mr_ptr = (atl_mr_t**)field_ptr;
     *mr_ptr = mr;
-    return ccl_status_success;
+    return ccl::status::success;
 }
 
-ccl_status_t rma_ring_allreduce_get_recv_buf_mr(const void* ctx, void* field_ptr) {
+ccl::status rma_ring_allreduce_get_recv_buf_mr(const void* ctx, void* field_ptr) {
     ccl_rma_ring_allreduce_handler* ar_handler = (ccl_rma_ring_allreduce_handler*)ctx;
     atl_mr_t* mr = ar_handler->recv_buf_mr;
     atl_mr_t** mr_ptr = (atl_mr_t**)field_ptr;
     *mr_ptr = mr;
-    return ccl_status_success;
+    return ccl::status::success;
 }
 
-ccl_status_t rma_ring_allreduce_get_tmp_buf_mr(const void* ctx, void* field_ptr) {
+ccl::status rma_ring_allreduce_get_tmp_buf_mr(const void* ctx, void* field_ptr) {
     ccl_rma_ring_allreduce_handler* ar_handler = (ccl_rma_ring_allreduce_handler*)ctx;
     atl_mr_t* mr = ar_handler->tmp_buf_mr;
     atl_mr_t** mr_ptr = (atl_mr_t**)field_ptr;
     *mr_ptr = mr;
-    return ccl_status_success;
+    return ccl::status::success;
 }
 
-ccl_status_t rma_ring_allreduce_get_dst_ready_flag_mr(const void* ctx, void* field_ptr) {
+ccl::status rma_ring_allreduce_get_dst_ready_flag_mr(const void* ctx, void* field_ptr) {
     ccl_rma_ring_allreduce_handler* ar_handler = (ccl_rma_ring_allreduce_handler*)ctx;
     atl_mr_t* mr = ar_handler->dst_ready_flag_mr;
     atl_mr_t** mr_ptr = (atl_mr_t**)field_ptr;
     *mr_ptr = mr;
-    return ccl_status_success;
+    return ccl::status::success;
 }
 
-ccl_status_t rma_ring_allreduce_get_dst_ready_value_mr(const void* ctx, void* field_ptr) {
+ccl::status rma_ring_allreduce_get_dst_ready_value_mr(const void* ctx, void* field_ptr) {
     ccl_rma_ring_allreduce_handler* ar_handler = (ccl_rma_ring_allreduce_handler*)ctx;
     atl_mr_t* mr = ar_handler->dst_ready_value_mr;
     atl_mr_t** mr_ptr = (atl_mr_t**)field_ptr;
     *mr_ptr = mr;
-    return ccl_status_success;
+    return ccl::status::success;
 }
 
-ccl_status_t rma_ring_allreduce_get_remote_dst_ready_flag_mr(const void* ctx, void* field_ptr) {
+ccl::status rma_ring_allreduce_get_remote_dst_ready_flag_mr(const void* ctx, void* field_ptr) {
     ccl_rma_ring_allreduce_handler* ar_handler = (ccl_rma_ring_allreduce_handler*)ctx;
     atl_mr_t* mr = &(ar_handler->remote_dst_ready_flag_mr);
     atl_mr_t** mr_ptr = (atl_mr_t**)field_ptr;
     *mr_ptr = mr;
-    return ccl_status_success;
+    return ccl::status::success;
 }
 
-ccl_status_t rma_ring_allreduce_get_remote_rs_dst_buf_mr(const void* ctx, void* field_ptr) {
+ccl::status rma_ring_allreduce_get_remote_rs_dst_buf_mr(const void* ctx, void* field_ptr) {
     ccl_rma_ring_allreduce_handler* ar_handler = (ccl_rma_ring_allreduce_handler*)ctx;
     atl_mr_t* mr = &(ar_handler->remote_rs_dst_buf_mr);
     atl_mr_t** mr_ptr = (atl_mr_t**)field_ptr;
     *mr_ptr = mr;
-    return ccl_status_success;
+    return ccl::status::success;
 }
 
-ccl_status_t rma_ring_allreduce_get_remote_recv_buf_mr(const void* ctx, void* field_ptr) {
+ccl::status rma_ring_allreduce_get_remote_recv_buf_mr(const void* ctx, void* field_ptr) {
     ccl_rma_ring_allreduce_handler* ar_handler = (ccl_rma_ring_allreduce_handler*)ctx;
     atl_mr_t* mr = &(ar_handler->remote_recv_buf_mr);
     atl_mr_t** mr_ptr = (atl_mr_t**)field_ptr;
     *mr_ptr = mr;
-    return ccl_status_success;
+    return ccl::status::success;
 }
 
-ccl_status_t ccl_coll_build_ring_rma_allreduce(ccl_sched* sched,
+ccl::status ccl_coll_build_ring_rma_allreduce(ccl_sched* sched,
                                                ccl_buffer send_buf,
                                                ccl_buffer recv_buf,
                                                size_t count,
@@ -121,7 +121,7 @@ ccl_status_t ccl_coll_build_ring_rma_allreduce(ccl_sched* sched,
                      ", recv ",
                      recv_buf);
 
-    ccl_status_t status = ccl_status_success;
+    ccl::status status = ccl::status::success;
     size_t comm_size, rank;
     size_t dtype_size = dtype.size();
     size_t idx = 0;
@@ -134,7 +134,7 @@ ccl_status_t ccl_coll_build_ring_rma_allreduce(ccl_sched* sched,
             entry_factory::make_entry<copy_entry>(sched, send_buf, recv_buf, count, dtype);
             sched->add_barrier();
         }
-        return ccl_status_success;
+        return ccl::status::success;
     }
 
     ccl_rma_ring_allreduce_handler* ar_handler =

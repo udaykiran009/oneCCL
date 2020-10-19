@@ -8,7 +8,7 @@
 #include "coll/algorithms/algorithms.hpp"
 #include "sched/entry/factory/entry_factory.hpp"
 
-ccl_status_t ccl_coll_build_direct_reduce_scatter(ccl_sched* sched,
+ccl::status ccl_coll_build_direct_reduce_scatter(ccl_sched* sched,
                                                  ccl_buffer send_buf,
                                                  ccl_buffer recv_buf,
                                                  size_t recv_count,
@@ -20,10 +20,10 @@ ccl_status_t ccl_coll_build_direct_reduce_scatter(ccl_sched* sched,
 
     entry_factory::make_entry<reduce_scatter_entry>(
         sched, send_buf, recv_buf, recv_count, dtype, reduction, comm);
-    return ccl_status_success;
+    return ccl::status::success;
 }
 
-ccl_status_t ccl_coll_build_ring_reduce_scatter_block(ccl_sched* sched,
+ccl::status ccl_coll_build_ring_reduce_scatter_block(ccl_sched* sched,
                                                       ccl_buffer send_buf,
                                                       ccl_buffer recv_buf,
                                                       size_t recv_count,
@@ -43,7 +43,7 @@ ccl_status_t ccl_coll_build_ring_reduce_scatter_block(ccl_sched* sched,
     LOG_DEBUG("build ring reduce_scatter_block: ",
               inplace ? "in-place" : "out-of-place");
 
-    ccl_status_t status = ccl_status_success;
+    ccl::status status = ccl::status::success;
     size_t comm_size, rank, idx;
     size_t dtype_size = dtype.size();
 
@@ -53,7 +53,7 @@ ccl_status_t ccl_coll_build_ring_reduce_scatter_block(ccl_sched* sched,
     rank = comm->rank();
 
     if (recv_count == 0) {
-        return ccl_status_success;
+        return ccl::status::success;
     }
 
     if (!inplace) {
@@ -149,7 +149,7 @@ ccl_status_t ccl_coll_build_ring_reduce_scatter_block(ccl_sched* sched,
 }
 
 /* behaves like reduce_scatter_block but last block may contain more elements */
-ccl_status_t ccl_coll_build_ring_reduce_scatter(ccl_sched* sched,
+ccl::status ccl_coll_build_ring_reduce_scatter(ccl_sched* sched,
                                                 ccl_buffer send_buf,
                                                 ccl_buffer recv_buf,
                                                 size_t send_count,
@@ -167,7 +167,7 @@ ccl_status_t ccl_coll_build_ring_reduce_scatter(ccl_sched* sched,
                      " recv ",
                      recv_buf);
 
-    ccl_status_t status = ccl_status_success;
+    ccl::status status = ccl::status::success;
     size_t comm_size, rank;
     size_t dtype_size = dtype.size();
 
@@ -206,7 +206,7 @@ ccl_status_t ccl_coll_build_ring_reduce_scatter(ccl_sched* sched,
             entry_factory::make_entry<copy_entry>(sched, send_buf, recv_buf, count, dtype);
             sched->add_barrier();
         }
-        return ccl_status_success;
+        return ccl::status::success;
     }
 
     ccl_buffer tmp_buf;

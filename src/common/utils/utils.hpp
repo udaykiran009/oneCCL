@@ -30,7 +30,7 @@
 #define CCL_CALL(expr) \
     do { \
         status = (expr); \
-        CCL_ASSERT(status == ccl_status_success, "bad status ", status); \
+        CCL_ASSERT(status == ccl::status::success, "bad status ", status); \
     } while (0)
 
 #define unlikely(x_) __builtin_expect(!!(x_), 0)

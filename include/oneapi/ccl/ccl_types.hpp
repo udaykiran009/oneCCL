@@ -16,19 +16,19 @@
 #include "oneapi/ccl/ccl_aliases.hpp"
 #include "oneapi/ccl/ccl_exception.hpp"
 
-// TODO: tmp enums, refactor core code and remove them
-/************************************************/
-typedef int ccl_status_t;
-#define ccl_status_success               (0)
-#define ccl_status_out_of_resource       (1)
-#define ccl_status_invalid_arguments     (2)
-#define ccl_status_unimplemented         (3)
-#define ccl_status_runtime_error         (4)
-#define ccl_status_blocked_due_to_resize (5)
-#define ccl_status_last_value            (6)
-/************************************************/
-
 namespace ccl {
+
+// TODO: refactor core code and remove this enum?
+enum status : int {
+    success = 0,
+    out_of_resource,
+    invalid_arguments,
+    unimplemented,
+    runtime_error,
+    blocked_due_to_resize,
+
+    last_value
+};
 
 /**
  * Supported reduction operations

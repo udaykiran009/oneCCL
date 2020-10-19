@@ -57,7 +57,7 @@ public:
     size_t get_worker_count() const;
 
     // TODO: Rework to support listener
-    //    ccl_status_t create_listener(ccl_resize_fn_t resize_func);
+    //    ccl::status create_listener(ccl_resize_fn_t resize_func);
     void update_workers();
     void lock_workers();
     void unlock_workers();

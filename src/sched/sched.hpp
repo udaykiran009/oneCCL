@@ -18,7 +18,7 @@ enum ccl_sched_in_bin_status {
     ccl_sched_in_bin_erased
 };
 
-typedef ccl_status_t (*ccl_sched_finalize_fn_t)(ccl_sched*, const void*);
+typedef ccl::status (*ccl_sched_finalize_fn_t)(ccl_sched*, const void*);
 
 class ccl_extra_sched;
 

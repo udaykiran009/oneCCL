@@ -107,7 +107,7 @@ public:
             ccl_buffer reduce_inout_buf =
                 (result_buf_type == ccl_recv_reduce_local_buf) ? inout_buf : comm_buf;
 
-            ccl_status_t comp_status = ccl_comp_reduce(reduce_in_buf.get_ptr(bytes),
+            ccl::status comp_status = ccl_comp_reduce(reduce_in_buf.get_ptr(bytes),
                                                        in_cnt,
                                                        reduce_inout_buf.get_ptr(bytes),
                                                        out_cnt,
@@ -116,7 +116,7 @@ public:
                                                        fn,
                                                        &context);
 
-            CCL_ASSERT(comp_status == ccl_status_success, "bad status ", comp_status);
+            CCL_ASSERT(comp_status == ccl::status::success, "bad status ", comp_status);
             status = ccl_sched_entry_status_complete;
             LOG_DEBUG("completed REDUCE in RECV_REDUCE entry");
         }

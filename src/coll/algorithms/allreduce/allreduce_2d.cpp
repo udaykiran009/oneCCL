@@ -147,7 +147,7 @@ static void ccl_allreduce_2d_add_reduce_scatter_allreduce_allgather(ccl_sched* s
    }
 }
 
-ccl_status_t ccl_allreduce_2d_builder::build(ccl_sched* sched,
+ccl::status ccl_allreduce_2d_builder::build(ccl_sched* sched,
                                             ccl_buffer send_buf,
                                             ccl_buffer recv_buf,
                                             size_t count,
@@ -161,7 +161,7 @@ ccl_status_t ccl_allreduce_2d_builder::build(ccl_sched* sched,
                     " recv ",
                     recv_buf);
 
-   ccl_status_t status = ccl_status_success;
+   ccl::status status = ccl::status::success;
 
    size_t chunk_count = ccl::global_data::env().ar2d_chunk_count;
 

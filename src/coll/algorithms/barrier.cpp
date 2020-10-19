@@ -7,17 +7,17 @@
 #include "coll/algorithms/algorithms.hpp"
 #include "sched/entry/factory/entry_factory.hpp"
 
-ccl_status_t ccl_coll_build_direct_barrier(ccl_sched* sched, ccl_comm* comm) {
+ccl::status ccl_coll_build_direct_barrier(ccl_sched* sched, ccl_comm* comm) {
     LOG_DEBUG("build direct barrier");
 
     entry_factory::make_entry<barrier_entry>(sched, comm);
-    return ccl_status_success;
+    return ccl::status::success;
 }
 
-ccl_status_t ccl_coll_build_dissemination_barrier(ccl_sched* sched, ccl_comm* comm) {
+ccl::status ccl_coll_build_dissemination_barrier(ccl_sched* sched, ccl_comm* comm) {
     LOG_DEBUG("build dissemination barrier");
 
-    ccl_status_t status = ccl_status_success;
+    ccl::status status = ccl::status::success;
     int size, rank, src, dst, mask;
     size = comm->size();
     rank = comm->rank();

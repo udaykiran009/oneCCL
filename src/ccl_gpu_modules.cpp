@@ -8,7 +8,7 @@
 #include "common/comm/l0/device_group_routing_schema.hpp"
 #include "coll/algorithms/algorithms_enum.hpp"
 
-ccl_status_t CCL_API register_gpu_module_source(const char* path,
+ccl::status CCL_API register_gpu_module_source(const char* path,
                                                 ccl::device_topology_type topology_class,
                                                 ccl_coll_type type) {
     ccl::device_topology_type t_class = static_cast<ccl::device_topology_type>(topology_class);
@@ -65,7 +65,7 @@ ccl_status_t CCL_API register_gpu_module_source(const char* path,
     catch (const std::exception& ex) {
         LOG_ERROR("Cannot preload kernel source by path: ", path, ", error: ", ex.what());
         CCL_ASSERT(false);
-        return ccl_status_runtime_error;
+        return ccl::status::runtime_error;
     }
 
     LOG_INFO("gpu kernel source by type \"",
@@ -73,7 +73,7 @@ ccl_status_t CCL_API register_gpu_module_source(const char* path,
              "\", topology class: \"",
              to_string(t_class),
              "\" loaded succesfully");
-    return ccl_status_success;
+    return ccl::status::success;
 }
 
 #endif //MULTI_GPU_SUPPORT

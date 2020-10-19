@@ -13,15 +13,15 @@
 #define COMMON_CATCH_BLOCK() \
     catch (ccl::exception & ccl_e) { \
         LOG_ERROR("ccl internal error: ", ccl_e.what()); \
-        return ccl_status_invalid_arguments; \
+        return ccl::status::invalid_arguments; \
     } \
     catch (std::exception & e) { \
         LOG_ERROR("error: ", e.what()); \
-        return ccl_status_runtime_error; \
+        return ccl::status::runtime_error; \
     } \
     catch (...) { \
         LOG_ERROR("general error"); \
-        return ccl_status_runtime_error; \
+        return ccl::status::runtime_error; \
     }
 
 class ccl_comm;
@@ -67,8 +67,8 @@ public:
 
     ~global_data();
 
-    ccl_status_t init();
-    ccl_status_t reset();
+    ccl::status init();
+    ccl::status reset();
 
     static global_data& get();
     static env_data& env();
@@ -107,7 +107,7 @@ private:
     { \
         do { \
             if (unlikely(ccl::global_data::get().executor->is_locked)) { \
-                return ccl_status_blocked_due_to_resize; \
+                return ccl::status::blocked_due_to_resize; \
             } \
         } while (0); \
     }

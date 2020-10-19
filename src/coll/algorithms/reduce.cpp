@@ -36,7 +36,7 @@
            n.(1+(p-1)/p).gamma
 */
 
-ccl_status_t ccl_coll_build_direct_reduce(ccl_sched* sched,
+ccl::status ccl_coll_build_direct_reduce(ccl_sched* sched,
                                           ccl_buffer send_buf,
                                           ccl_buffer recv_buf,
                                           size_t count,
@@ -48,10 +48,10 @@ ccl_status_t ccl_coll_build_direct_reduce(ccl_sched* sched,
 
     entry_factory::make_entry<reduce_entry>(
         sched, send_buf, recv_buf, count, dtype, reduction, root, comm);
-    return ccl_status_success;
+    return ccl::status::success;
 }
 
-ccl_status_t ccl_coll_build_rabenseifner_reduce(ccl_sched* sched,
+ccl::status ccl_coll_build_rabenseifner_reduce(ccl_sched* sched,
                                                 ccl_buffer send_buf,
                                                 ccl_buffer recv_buf,
                                                 size_t count,
@@ -61,7 +61,7 @@ ccl_status_t ccl_coll_build_rabenseifner_reduce(ccl_sched* sched,
                                                 ccl_comm* comm) {
     LOG_DEBUG("build Rabenseifner's reduce");
 
-    ccl_status_t status = ccl_status_success;
+    ccl::status status = ccl::status::success;
 
     int i, j, comm_size, rank, local_root, pof2;
     int rem, dst, new_rank, new_dst, mask, send_idx, recv_idx, last_idx;
@@ -332,7 +332,7 @@ ccl_status_t ccl_coll_build_rabenseifner_reduce(ccl_sched* sched,
     return status;
 }
 
-ccl_status_t ccl_coll_build_binomial_reduce(ccl_sched* sched,
+ccl::status ccl_coll_build_binomial_reduce(ccl_sched* sched,
                                             ccl_buffer send_buf,
                                             ccl_buffer recv_buf,
                                             size_t count,
@@ -342,7 +342,7 @@ ccl_status_t ccl_coll_build_binomial_reduce(ccl_sched* sched,
                                             ccl_comm* comm) {
     LOG_DEBUG("build binomial reduce");
 
-    ccl_status_t status = ccl_status_success;
+    ccl::status status = ccl::status::success;
 
     int comm_size, rank, local_root;
     int mask, relrank, source, lroot;

@@ -23,10 +23,10 @@ void global_data::init_resize_dependent_objects() {
         std::unique_ptr<ccl_comm_id_storage>(new ccl_comm_id_storage(ccl_comm::max_comm_count));
 }
 
-ccl_status_t global_data::init() {
+ccl::status global_data::init() {
     init_resize_dependent_objects();
 
-    return ccl_status_success;
+    return ccl::status::success;
 }
 
 global_data& global_data::get() {

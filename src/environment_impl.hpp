@@ -27,7 +27,7 @@
 
 #define CCL_CHECK_AND_THROW(result, diagnostic) \
     do { \
-        if (result != ccl_status_success) { \
+        if (result != ccl::status::success) { \
             throw ccl::exception(diagnostic); \
         } \
     } while (0);

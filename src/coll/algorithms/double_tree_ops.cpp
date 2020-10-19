@@ -128,7 +128,7 @@ static void reduce_bcast_tree(const ccl_bin_tree& tree,
     }
 }
 
-ccl_status_t ccl_coll_build_double_tree_op(ccl_sched* sched,
+ccl::status ccl_coll_build_double_tree_op(ccl_sched* sched,
                                            ccl_coll_type coll_type,
                                            ccl_buffer send_buf,
                                            ccl_buffer recv_buf,
@@ -137,7 +137,7 @@ ccl_status_t ccl_coll_build_double_tree_op(ccl_sched* sched,
                                            ccl::reduction op,
                                            const ccl_double_tree& dtree,
                                            ccl_comm* comm) {
-    ccl_status_t status = ccl_status_success;
+    ccl::status status = ccl::status::success;
 
     LOG_DEBUG("build double tree ", ccl_coll_type_to_str(coll_type));
 

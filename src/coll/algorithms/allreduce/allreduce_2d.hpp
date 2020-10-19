@@ -16,7 +16,7 @@ public:
    ccl_allreduce_2d_builder& operator=(const ccl_allreduce_2d_builder&) = delete;
    ccl_allreduce_2d_builder& operator=(ccl_allreduce_2d_builder&&) = delete;
 
-   ccl_status_t build(ccl_sched* sched,
+   ccl::status build(ccl_sched* sched,
                       ccl_buffer send_buf,
                       ccl_buffer recv_buf,
                       size_t count,

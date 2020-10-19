@@ -2,7 +2,7 @@
 #include "sched/entry/factory/chunked_entry_factory.hpp"
 #include "sched/entry/factory/entry_factory.hpp"
 
-ccl_status_t ccl_coll_build_direct_allgatherv(ccl_sched* sched,
+ccl::status ccl_coll_build_direct_allgatherv(ccl_sched* sched,
                                               ccl_buffer send_buf,
                                               size_t send_count,
                                               ccl_buffer recv_buf,
@@ -13,10 +13,10 @@ ccl_status_t ccl_coll_build_direct_allgatherv(ccl_sched* sched,
 
     entry_factory::make_entry<allgatherv_entry>(
         sched, send_buf, send_count, recv_buf, recv_counts, dtype, comm);
-    return ccl_status_success;
+    return ccl::status::success;
 }
 
-ccl_status_t ccl_coll_build_naive_allgatherv(ccl_sched* sched,
+ccl::status ccl_coll_build_naive_allgatherv(ccl_sched* sched,
                                              ccl_buffer send_buf,
                                              size_t send_count,
                                              ccl_buffer recv_buf,
@@ -29,7 +29,7 @@ ccl_status_t ccl_coll_build_naive_allgatherv(ccl_sched* sched,
     size_t this_rank = comm->rank();
     size_t dtype_size = dtype.size();
     size_t* offsets = static_cast<size_t*>(CCL_MALLOC(comm_size * sizeof(size_t), "offsets"));
-    ccl_status_t status = ccl_status_success;
+    ccl::status status = ccl::status::success;
 
     offsets[0] = 0;
     for (size_t rank_idx = 1; rank_idx < comm_size; ++rank_idx) {
@@ -57,7 +57,7 @@ ccl_status_t ccl_coll_build_naive_allgatherv(ccl_sched* sched,
     return status;
 }
 
-ccl_status_t ccl_coll_build_ring_allgatherv(ccl_sched* sched,
+ccl::status ccl_coll_build_ring_allgatherv(ccl_sched* sched,
                                             ccl_buffer send_buf,
                                             size_t send_count,
                                             ccl_buffer recv_buf,
@@ -66,7 +66,7 @@ ccl_status_t ccl_coll_build_ring_allgatherv(ccl_sched* sched,
                                             ccl_comm* comm) {
     LOG_DEBUG("build ring allgatherv, send_count ", send_count);
 
-    ccl_status_t status = ccl_status_success;
+    ccl::status status = ccl::status::success;
     size_t comm_size, rank;
     size_t dtype_size = dtype.size();
     size_t idx = 0;
