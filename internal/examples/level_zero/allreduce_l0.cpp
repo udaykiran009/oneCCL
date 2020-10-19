@@ -74,9 +74,9 @@ void user_thread_idx(size_t thread_idx,
 
         // allocate memory
         processing_type* mem_send = static_cast<processing_type*>(
-            cl::sycl::aligned_alloc_device(alignof(processing_type), COUNT * sizeof(processing_type), q));
+            cl::sycl::aligned_alloc_shared(alignof(processing_type), COUNT * sizeof(processing_type), q));
         processing_type* mem_recv = static_cast<processing_type*>(
-            cl::sycl::aligned_alloc_device(alignof(processing_type), COUNT * sizeof(processing_type), q));
+            cl::sycl::aligned_alloc_shared(alignof(processing_type), COUNT * sizeof(processing_type), q));
 
         // set initial memory
         {
@@ -84,7 +84,7 @@ void user_thread_idx(size_t thread_idx,
 
             std::lock_guard<std::mutex> lock(memory_mutex);
 
-            // TODO fill USM pointers
+            std::iota(mem_send, mem_send + COUNT, 1);
         }
 
         if (memory_storage[rank].empty()) {
@@ -112,8 +112,8 @@ void user_thread_idx(size_t thread_idx,
         auto attr = ccl::create_operation_attr<ccl::allreduce_attr>();
         auto& stream = streams.find(rank)->second;
         // invoke operation
-        reqs.push_back(ccl::allreduce(mem_objects[0].get(),
-                                      mem_objects[1].get(),
+        reqs.push_back(ccl::allreduce(mem_objects[0],
+                                      mem_objects[1],
                                       COUNT,
                                       ccl::reduction::sum,
                                       comm,
@@ -126,25 +126,22 @@ void user_thread_idx(size_t thread_idx,
         req.wait();
     }
 
-//gpu_comm->barrier(stream);
-//printout
-#if 0
+    //printout
     static std::mutex printout_mutex;
     {
         std::unique_lock<std::mutex> lock(printout_mutex);
-        for(auto &dev_it : memory_storage)
-        {
+        for (auto& dev_it : memory_storage) {
             size_t rank = dev_it.first;
             const auto& handles = dev_it.second;
-            std::cout << "rank : "  << rank << std::endl;
-            for(const auto& mem : handles)
-            {
-                // TODO: check correctness
+            std::cout << "rank : " << rank << std::endl;
+            for (const auto& mem : handles) {
+                // std::vector<processing_type> tmp = mem.enqueue_read_sync();
+                std::copy(
+                    mem, mem + COUNT, std::ostream_iterator<processing_type>(std::cout, ","));
                 std::cout << "\n\n" << std::endl;
             }
         }
     }
-#endif
 }
 #else
 template <class processing_type>
