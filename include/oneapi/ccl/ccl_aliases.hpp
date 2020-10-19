@@ -19,7 +19,7 @@ using vector_class = std::vector<T, Alloc>;
 template <class T, std::size_t N>
 using array_class = std::array<T, N>;
 
-using string_class = ccl_string;
+using string_class = ccl::string;
 
 template <class R, class... ArgTypes>
 using function_class = std::function<R(ArgTypes...)>;

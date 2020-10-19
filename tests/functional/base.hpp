@@ -46,7 +46,7 @@ struct typed_test_param {
     std::vector<std::vector<short>> recv_buf_bf16;
 
     std::vector<ccl::event> reqs;
-    ccl_string match_id;
+    ccl::string_class match_id;
 
     typed_test_param(ccl_test_conf tconf)
             : test_conf(tconf),
