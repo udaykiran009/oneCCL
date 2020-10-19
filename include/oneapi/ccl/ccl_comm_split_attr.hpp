@@ -61,12 +61,21 @@ public:
 
 private:
     friend class detail::environment;
+    friend struct ccl_empty_attr;
     comm_split_attr(
         const typename detail::ccl_api_type_attr_traits<comm_split_attr_id,
                                                         comm_split_attr_id::version>::type&
             version);
 };
 
+/**
+ * Declare extern empty attributes
+ */
+extern comm_split_attr default_comm_split_attr;
+
+/**
+ * Fabric helpers
+ */
 template <comm_split_attr_id t, class value_type>
 constexpr auto attr_val(value_type v)
     -> detail::attr_value_tripple<comm_split_attr_id, t, value_type> {

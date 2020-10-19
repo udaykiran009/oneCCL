@@ -81,6 +81,7 @@ set(CCL_SRC
     ccl_empty_attr.cpp
     ccl_empty_coll_attr.cpp
     ccl_empty_comm_attr.cpp
+    ccl_empty_comm_split_attr.cpp
     ccl_empty_kvs_attr.cpp
     ccl_empty_stream.cpp
     native_device_api/sycl_l0/export.cpp
