@@ -162,7 +162,7 @@ stream CCL_API environment::create_postponed_api_type<
     typename unified_device_type::ccl_native_t,
     typename unified_context_type::ccl_native_t>(
     typename unified_device_type::ccl_native_t device,
-    typename unified_context_type::ccl_native_t context) const {
+    typename unified_context_type::ccl_native_t context) {
     auto version = utils::get_library_version();
 
     return stream{ stream_provider_dispatcher::create(device, context, version) };
@@ -172,7 +172,7 @@ template <>
 stream CCL_API
 environment::create_postponed_api_type<stream,
                                             typename unified_device_type::ccl_native_t>(
-    typename unified_device_type::ccl_native_t device) const {
+    typename unified_device_type::ccl_native_t device) {
     auto version = utils::get_library_version();
 
     return stream{ stream_provider_dispatcher::create(device, version) };
@@ -180,6 +180,8 @@ environment::create_postponed_api_type<stream,
 
 } // namespace detail
 } // namespace ccl
+
+CREATE_OP_ATTR_INSTANTIATION(ccl::init_attr)
 
 CREATE_OP_ATTR_INSTANTIATION(ccl::allgatherv_attr)
 CREATE_OP_ATTR_INSTANTIATION(ccl::allreduce_attr)

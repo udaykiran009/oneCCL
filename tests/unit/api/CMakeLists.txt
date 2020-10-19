@@ -81,6 +81,7 @@ if(COMPUTE_RUNTIME)
 endif(COMPUTE_RUNTIME)
 
 
+add_subdirectory(init_attrs)
 add_subdirectory(coll_attrs)
 add_subdirectory(comm_split_attrs)
 add_subdirectory(datatype_attrs)

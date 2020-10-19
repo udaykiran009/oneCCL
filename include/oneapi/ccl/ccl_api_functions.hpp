@@ -8,10 +8,16 @@ namespace ccl {
 
 /******************** INIT ********************/
 
+template <class... attr_value_pair_t>
+init_attr create_init_attr(attr_value_pair_t&&... avps) {
+    return detail::environment::create_init_attr(
+        std::forward<attr_value_pair_t>(avps)...);
+}
+
 /**
  * Initializes the library. Optional for invocation.
  */
-void init();
+void init(const init_attr& attr = default_init_attr);
 
 /**
  * Retrieves the library version

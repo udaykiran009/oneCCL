@@ -73,6 +73,7 @@ set(CCL_SRC
     ccl_app_api_datatype_attr.cpp
     ccl_app_api_kvs_attr.cpp
     ccl_app_api_event.cpp
+    ccl_app_api_init_attr.cpp
     ccl_cpp_kvs.cpp
     ccl_cpp_device.cpp
     ccl_cpp_stream.cpp
@@ -81,6 +82,7 @@ set(CCL_SRC
     ccl_empty_attr.cpp
     ccl_empty_coll_attr.cpp
     ccl_empty_comm_attr.cpp
+    ccl_empty_init_attr.cpp
     ccl_empty_comm_split_attr.cpp
     ccl_empty_kvs_attr.cpp
     ccl_empty_stream.cpp

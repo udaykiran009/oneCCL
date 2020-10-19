@@ -116,7 +116,7 @@ environment::create_communicators(const size_t comm_size,
 }
 
 template <class ccl_api_type, class... args_type>
-ccl_api_type CCL_API environment::create_postponed_api_type(args_type... args) const {
+ccl_api_type CCL_API environment::create_postponed_api_type(args_type... args) {
     auto version = utils::get_library_version();
 
     // TODO: ccl_api_type is private constructor, so `static_cast`  fails always. Fix it
@@ -130,7 +130,7 @@ ccl_api_type CCL_API environment::create_postponed_api_type(args_type... args) c
 
 /***************************TypeGenerations*********************************************************/
 #define CREATE_OP_ATTR_INSTANTIATION(Attr) \
-    template Attr CCL_API ccl::detail::environment::create_postponed_api_type<Attr>() const;
+    template Attr CCL_API ccl::detail::environment::create_postponed_api_type<Attr>();
 
 #define CREATE_DEV_COMM_INSTANTIATION(DeviceType, ContextType) \
     template ccl::vector_class<ccl::communicator> CCL_API \

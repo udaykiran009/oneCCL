@@ -87,7 +87,7 @@ void register_gpu_module(std::string kernel_dir_path)
 }
 #endif //MULTI_GPU_SUPPORT
 
-void CCL_API init() {
+void CCL_API init(const init_attr& attr) {
     auto& env = detail::environment::instance();
     (void)env;
 #ifdef MULTI_GPU_SUPPORT

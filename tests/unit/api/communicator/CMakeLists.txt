@@ -25,6 +25,7 @@ set (dependencies_sources
              "${PROJECT_SOURCE_DIR}/src/ccl_empty_coll_attr.cpp"
              "${PROJECT_SOURCE_DIR}/src/ccl_empty_stream.cpp"
              "${PROJECT_SOURCE_DIR}/src/ccl_app_api_comm_attr.cpp"
+             "${PROJECT_SOURCE_DIR}/src/ccl_app_api_init_attr.cpp"
              "${PROJECT_SOURCE_DIR}/src/ccl_app_api_kvs_attr.cpp"
              "${PROJECT_SOURCE_DIR}/src/ccl_app_api_comm_split_attr.cpp"
              "${PROJECT_SOURCE_DIR}/src/ccl_app_api_coll_attr.cpp"

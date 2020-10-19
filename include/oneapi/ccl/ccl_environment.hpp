@@ -32,6 +32,10 @@
 #include "oneapi/ccl/ccl_device_attr_ids_traits.hpp"
 #include "oneapi/ccl/ccl_device.hpp"
 
+#include "oneapi/ccl/ccl_init_attr_ids.hpp"
+#include "oneapi/ccl/ccl_init_attr_ids_traits.hpp"
+#include "oneapi/ccl/ccl_init_attr.hpp"
+
 #include "oneapi/ccl/ccl_kvs_attr_ids.hpp"
 #include "oneapi/ccl/ccl_kvs_attr_ids_traits.hpp"
 #include "oneapi/ccl/ccl_kvs_attr.hpp"
@@ -66,6 +70,14 @@ public:
     static environment& instance();
 
     ccl::library_version get_library_version() const;
+
+    template <class... attr_value_pair_t>
+    static init_attr create_init_attr(attr_value_pair_t&&... avps) {
+        auto init_create_attr = create_postponed_api_type<init_attr>();
+        int expander[]{ (init_create_attr.template set<attr_value_pair_t::idx()>(avps.val()), 0)... };
+        (void)expander;
+        return init_create_attr;
+    }
 
     template <class... attr_value_pair_t>
     datatype_attr create_datatype_attr(attr_value_pair_t&&... avps) const {
@@ -238,7 +250,7 @@ private:
     environment();
 
     template <class ccl_api_type, class... args_type>
-    ccl_api_type create_postponed_api_type(args_type... args) const;
+    static ccl_api_type create_postponed_api_type(args_type... args);
 };
 
 } // namespace detail
