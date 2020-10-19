@@ -12,141 +12,133 @@
 #include <thread>
 #include <numeric>
 
-#include <mpi.h>
-
 #include "base.hpp"
 #include "base_utils.hpp"
 #include "oneapi/ccl/native_device_api/export_api.hpp"
 
-#define COUNT     512
+#define COUNT     512 //(10*1024*1024)
 #define COLL_ROOT (0)
 
-#ifdef CCL_ENABLE_SYCL
-template <class processing_type>
-void user_thread_idx(size_t thread_idx,
-                     const std::vector<std::pair<size_t, cl::sycl::device>>& devices,
-                     cl::sycl::context ctx,
-                     size_t total_devices_in_cluster,
-                     std::shared_ptr<ccl::kvs_interface> kvs_instance) {
+int gpu_topology_type = 1; //0 - between devices in single thread
+    //1 - between multiple threads in single process
+    //2 - between nultiple processes
+
+/*#ifdef CCL_ENABLE_SYCL
+void user_thread_sycl(size_t thread_idx,
+                      const cl::sycl::vector_class<cl::sycl::device>& devices,
+                      size_t total_devices_in_process) {
     using namespace ::native;
 
-    // test data
-    using allocated_memory_array = std::vector<processing_type*>;
-    using rank_allocated_memory = std::map<size_t, allocated_memory_array>;
-    //using native_queue_storage       = std::map<size_t, ccl_device::device_queue>;
-    using stream_storage = std::map<size_t, ccl::stream>;
-    using device_queue_map = std::map<size_t, cl::sycl::queue>;
+    // test data storages
+    std::map<size_t, cl::sycl::queue> device_queue_map;
+    std::map<size_t, ccl::stream_t> rank_stream_map;
+    std::map<size_t, std::vector<processing_type_ptr>> memory_storage;
+    size_t root = 0; // reduce
 
-    device_queue_map device_queue;
-    rank_allocated_memory memory_storage;
-    stream_storage streams;
-    std::vector<processing_type> send_values(COUNT);
-    std::iota(send_values.begin(), send_values.end(), 1);
-    std::vector<processing_type> recv_values(COUNT, 0);
+    // API
 
-    // Create device communicators
-    std::vector<ccl::communicator> comms =
-        ccl::create_communicators(
-            total_devices_in_cluster, devices, ctx, kvs_instance);
+    // create 'global_communicator' for wire-up processes in cluster
+    ccl::shared_communicator_t global_communicator(
+        ccl::create_communicator());
 
-    std::cout << "Create device communicators, expected count: " << devices.size() << std::endl;
+    // create 'comm_group' for wire-up threads in processes
+    ccl::comm_group_t group = ccl::create_comm_group(
+        devices.size(), total_devices_in_process, global_communicator);
+
+    // create device communicator attributes
+    ccl::device_comm_attr_t my_device_comm_attr = group->create_device_comm_attr();
+
+    // set preferred device topology (OPTIONAL)
+    my_device_comm_attr->set_value<ccl_device_preferred_topology_class>(
+        ccl::device_topology_type::ring);
+    std::cout << "Create device communicators, expected count: " << devices.size()
+              << ", preferred topology: "
+              << my_device_comm_attr->get_value<ccl_device_preferred_topology_class>() << std::endl;
+
+    // Create communicators (auto rank balancing, based on ids): container based API
+    std::vector<ccl::communicator_t> comms =
+        group->create_communicators(devices, my_device_comm_attr);
 
     // alloc memory specific to devices
     for (auto& comm : comms) {
-        // get native l0* /
-        ccl::communicator::ccl_device_t dev = comm.get_device().get_native();
-        size_t rank = comm.rank();
+        ccl::communicator::device_native_reference_t dev = comm->get_device();
+        size_t rank = comm->rank();
 
-        // create comm split attr
-        auto device_spilt_attr = ccl::create_comm_split_attr();
-        (void)device_spilt_attr;
-
-        /* TODO: it is a temporary change. In the previous code,
-         * there is ccl::create_stream() seg fault issue. NEED TO FIX THAT.
-         */
-
-        // create stream from device communicator directly
-        // const cl::sycl::queue& q =
-        //     streams.find(rank)->second.get<ccl::stream_attr_id::native_handle>();
-
+        // create stream
         cl::sycl::queue q(dev);
-        streams.emplace(rank, ccl::create_stream(q));
+        device_queue_map[rank] = q;
+        rank_stream_map[rank] = ccl::create_stream(q);
 
         // allocate memory
         processing_type* mem_send = static_cast<processing_type*>(
-            cl::sycl::aligned_alloc_device(alignof(processing_type), COUNT * sizeof(processing_type), q));
+            cl::sycl::aligned_alloc_device(sizeof(processing_type), COUNT, q));
         processing_type* mem_recv = static_cast<processing_type*>(
-            cl::sycl::aligned_alloc_device(alignof(processing_type), COUNT * sizeof(processing_type), q));
+            cl::sycl::aligned_alloc_device(sizeof(processing_type), COUNT, q));
+
+        if (!mem_send or !mem_recv) {
+            std::cerr << "Cannot allocate USM! Abort" << std::endl;
+            abort();
+        }
 
         // set initial memory
-        {
-            static std::mutex memory_mutex;
-
-            std::lock_guard<std::mutex> lock(memory_mutex);
-
-            // TODO fill USM pointers
-        }
-
+        std::iota(mem_send, mem_send + COUNT, 1);
+        std::fill(mem_recv, mem_recv + COUNT, 0);
         if (memory_storage[rank].empty()) {
-            memory_storage[rank].reserve(100);
+            memory_storage[rank].reserve(2);
         }
-        memory_storage[rank].push_back(std::move(mem_send));
-        memory_storage[rank].push_back(std::move(mem_recv));
+        memory_storage[rank].push_back(mem_send);
+        memory_storage[rank].push_back(mem_recv);
     }
 
-    //allreduce
-    std::vector<ccl::event> reqs;
-    for (auto& comm : comms) {
-        size_t rank = comm.rank();
+    global_communicator->barrier();
 
-        /*
-        if (!comm.is_ready())
-        {
-            std::cerr << "Communicator by rank: " << rank << " should be ready already" << std::endl;
+    // reduce
+    std::vector<std::shared_ptr<ccl::event>> reqs;
+    ccl::attr attr{};
+    for (auto& comm : comms) {
+        size_t rank = comm->rank();
+
+        if (!comm->is_ready()) {
+            std::cerr << "Communicator by rank: " << rank << " should be ready already"
+                      << std::endl;
             abort();
-        }*/
+        }
 
         allocated_memory_array& mem_objects = memory_storage.find(rank)->second;
-
-        // create operation attributes
-        auto attr = ccl::create_operation_attr<ccl::allreduce_attr>();
-        auto& stream = streams.find(rank)->second;
-        // invoke operation
-        reqs.push_back(ccl::allreduce(mem_objects[0].get(),
-                                      mem_objects[1].get(),
-                                      COUNT,
-                                      ccl::reduction::sum,
-                                      comm,
-                                      stream,
-                                      attr));
+        reqs.push_back(comm->reduce(mem_objects[0].get(),
+                                    mem_objects[1].get(),
+                                    mem_objects[1].count(),
+                                    ccl::reduction::sum,
+                                    root,
+                                    &attr,
+                                    streams[rank]));
     }
+    // end reduce
 
     //wait
     for (auto& req : reqs) {
-        req.wait();
+        req->wait();
     }
 
-//gpu_comm->barrier(stream);
-//printout
-#if 0
+    //gpu_comm->barrier(stream);
+    //printout
     static std::mutex printout_mutex;
     {
         std::unique_lock<std::mutex> lock(printout_mutex);
-        for(auto &dev_it : memory_storage)
-        {
+        for (auto& dev_it : memory_storage) {
             size_t rank = dev_it.first;
             const auto& handles = dev_it.second;
-            std::cout << "rank : "  << rank << std::endl;
-            for(const auto& mem : handles)
-            {
-                // TODO: check correctness
+            std::cout << "rank : " << rank << std::endl;
+            for (const auto& data : handles) {
+                std::vector<processing_type> tmp(data, data + COUNT);
+                std::copy(
+                    tmp.begin(), tmp.end(), std::ostream_iterator<processing_type>(std::cout, ","));
                 std::cout << "\n\n" << std::endl;
             }
         }
     }
-#endif
 }
-#else
+#else*/
 template <class processing_type>
 void user_thread_idx(size_t thread_idx,
                      std::vector<std::pair<size_t, ccl::device_index_type>> ranked_device_indices,
@@ -159,6 +151,7 @@ void user_thread_idx(size_t thread_idx,
     using allocated_memory_array = std::vector<ccl_device::device_memory<processing_type>>;
     using rank_allocated_memory = std::map<size_t, allocated_memory_array>;
     using stream_storage = std::map<size_t, ccl::stream>;
+    size_t root = 0; // reduce
 
     rank_allocated_memory memory_storage;
     stream_storage streams;
@@ -219,13 +212,15 @@ void user_thread_idx(size_t thread_idx,
         }*/
         allocated_memory_array& mem_objects = memory_storage.find(rank)->second;
 
+        // auto attr = ccl::create_operation_attr<ccl::reduce_attr>();
         auto& stream = streams.find(rank)->second;
-        reqs.push_back(ccl::allreduce(mem_objects[0].get(),
-                                      mem_objects[1].get(),
-                                      mem_objects[1].count(),
-                                      ccl::reduction::sum,
-                                      comm,
-                                      stream));
+        reqs.push_back(ccl::reduce(mem_objects[0].get(),
+                                   mem_objects[1].get(),
+                                   mem_objects[1].count(),
+                                   ccl::reduction::sum,
+                                   root,
+                                   comm,
+                                   stream));
     }
 
     //wait
@@ -251,10 +246,10 @@ void user_thread_idx(size_t thread_idx,
         }
     }
 }
-#endif
+// #endif
 
 int main(int argc, char** argv) {
-    using namespace ::native;
+     using namespace ::native;
     setenv("L0_CLUSTER_AFFINITY_MASK", "[0:0],[0:0]|[0:0],[0:0]", 0);
     const char* affinity_env_value = getenv("L0_CLUSTER_AFFINITY_MASK");
 

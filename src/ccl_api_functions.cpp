@@ -27,7 +27,6 @@ struct impl_dispatch {
 /* register a gpu module */
 void register_gpu_module(std::string kernel_dir_path)
 {
-    // allgatherv
     if (!kernel_dir_path.empty())
     {
         if(*kernel_dir_path.rbegin() != '/')
@@ -43,11 +42,13 @@ void register_gpu_module(std::string kernel_dir_path)
      * the registration module.
      */
 
-    // std::string kernel_path = kernel_dir_path + "ring_allgatherv.spv";
+    // allgatherv
+    std::string kernel_path = kernel_dir_path + "ring_allgatherv.spv";
+    register_gpu_module_source(kernel_path.c_str(),
+                                ccl::device_topology_type::ring,
+                                ccl_coll_allgatherv);
+    // kernel_path = kernel_dir_path + "a2a_allgatherv.spv";
     // register_gpu_module_source(kernel_path.c_str(),
-    //                             ccl::device_topology_type::ring,
-    //                             ccl_coll_allgatherv);
-    // register__gpu_module_source("kernels/a2a_allgatherv.spv",
     //                             ccl::device_topology_type::a2a,
     //                             ccl_coll_allgatherv);
     // alltoallv
@@ -59,7 +60,7 @@ void register_gpu_module(std::string kernel_dir_path)
     //                             ccl::device_topology_type::a2a,
     //                             ccl_coll_alltoallv);
     // allreduce
-     std::string  kernel_path = kernel_dir_path + "ring_allreduce.spv";
+    kernel_path = kernel_dir_path + "ring_allreduce.spv";
     register_gpu_module_source(kernel_path.c_str(),
                                 ccl::device_topology_type::ring,
                                 ccl_coll_allreduce);
@@ -68,20 +69,20 @@ void register_gpu_module(std::string kernel_dir_path)
     //                             ccl::device_topology_type::a2a,
     //                             ccl_coll_allreduce);
     // // bcast
-    // kernel_path = kernel_dir_path + "ring_bcast.spv";
-    // register_gpu_module_source(kernel_path.c_str(),
-    //                            ccl::device_topology_type::ring,
-    //                            ccl_coll_bcast);
+    kernel_path = kernel_dir_path + "ring_bcast.spv";
+    register_gpu_module_source(kernel_path.c_str(),
+                                ccl::device_topology_type::ring,
+                                ccl_coll_bcast);
     // kernel_path = kernel_dir_path + "a2a_bcast.spv";
     // register_gpu_module_source(kernel_path.c_str(),
     //                            ccl::device_topology_type::a2a,
     //                            ccl_coll_bcast);
-    // // reduce
-    // kernel_path = kernel_dir_path + "ring_reduce.spv";
+    kernel_path = kernel_dir_path + "ring_reduce.spv";
+    register_gpu_module_source(kernel_path.c_str(),
+                                ccl::device_topology_type::ring,
+                                ccl_coll_reduce);
+    // kernel_path = kernel_dir_path + "a2a_reduce.spv";
     // register_gpu_module_source(kernel_path.c_str(),
-    //                             ccl::device_topology_type::ring,
-    //                             ccl_coll_reduce);
-    // register_gpu_module_source("kernels/a2a_reduce.spv",
     //                            ccl::device_topology_type::a2a,
     //                            ccl_coll_reduce);
 }

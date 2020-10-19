@@ -56,16 +56,15 @@ public:
     }
 
     l0_allreduce_typed_entry() = delete;
-    l0_allreduce_typed_entry(
-        ccl_sched* sched,
-        std::shared_ptr<gpu_comm_impl> comm,
-        specific_indexed_device_storage& available_devices,
-        ccl_driver_context_ptr in_ctx,
-        const ccl_buffer send_buf,
-        ccl_buffer recv_buf,
-        size_t cnt,
-        ccl::reduction op,
-        std::shared_ptr<ccl_stream> device_stream = std::shared_ptr<ccl_stream>())
+    l0_allreduce_typed_entry(ccl_sched* sched,
+                             std::shared_ptr<gpu_comm_impl> comm,
+                             specific_indexed_device_storage& available_devices,
+                             ccl_driver_context_ptr in_ctx,
+                             const ccl_buffer send_buf,
+                             ccl_buffer recv_buf,
+                             size_t cnt,
+                             ccl::reduction op,
+                             std::shared_ptr<ccl_stream> device_stream = std::shared_ptr<ccl_stream>())
             : base(sched,
                    comm,
                    in_ctx,
@@ -74,8 +73,8 @@ public:
                    device_stream),
 
               temp_buffer(parent_communicator->get_device().template alloc_memory<native_type>(
-                  cnt,
-                  sizeof(native_type), get_ctx())),
+                                    cnt,
+                                    sizeof(native_type), get_ctx())),
               income_data_flag(parent_communicator->get_device()
                                    .template alloc_memory<income_data_flag_gpu_type>(
                                        1,
@@ -238,7 +237,7 @@ protected:
                                                      &launch_args,
                                                      nullptr,
                                                      0,
-                                                    nullptr);
+                                                     nullptr);
             if (result != ZE_RESULT_SUCCESS) {
                     LOG_ERROR("zeCommandListAppendLaunchKernel failed, error: ", to_string(result));
                     throw std::runtime_error("zeCommandListAppendLaunchKernel failed");
