@@ -9,21 +9,16 @@ namespace ccl {
  * Push the following code into something similar with 'ccl_device_types.hpp'
  */
 
-/** Device topology group. */
-typedef enum {
-    device_group = 0,
-    thread_group = 1,
-    process_group = 2,
+/**
+ * Supported device topology type
+ */
+enum device_topology_type : int {
+    undetermined = -1,
+    ring,
+    a2a,
 
-    ccl_topology_group_last_value
-} ccl_topology_group_t;
-
-enum device_topology_type { undetermined = -1, ring, a2a, last_class_value };
-
-// TODO: tmp mapping
-#define ring_algo_class               device_topology_type::ring
-#define a2a_algo_class                device_topology_type::a2a
-#define ccl_topology_class_last_value device_topology_type::last_class_value
+    last_value
+};
 
 using process_id = size_t;
 using host_id = std::string;

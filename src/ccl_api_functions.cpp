@@ -82,7 +82,7 @@ void register_gpu_module(std::string kernel_dir_path)
     //                             ccl::device_topology_type::ring,
     //                             ccl_coll_reduce);
     // register_gpu_module_source("kernels/a2a_reduce.spv",
-    //                            ccl_topology_class_t::a2a_algo_class,
+    //                            ccl::device_topology_type::a2a,
     //                            ccl_coll_reduce);
 }
 #endif //MULTI_GPU_SUPPORT

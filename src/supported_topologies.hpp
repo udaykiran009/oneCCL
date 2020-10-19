@@ -25,7 +25,7 @@ inline std::string to_string(ccl::group_split_type type) {
         .choose(type, "INVALID_VALUE");
 }
 
-using device_topology_type_names = utils::enum_to_str<ccl::device_topology_type::last_class_value>;
+using device_topology_type_names = utils::enum_to_str<ccl::device_topology_type::last_value>;
 inline std::string to_string(ccl::device_topology_type class_value) {
     return device_topology_type_names({ "RING_CLASS", "A2A_CLASS" })
         .choose(class_value, "INVALID_VALUE");
