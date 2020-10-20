@@ -148,11 +148,18 @@ struct op_traits {
 template <class T, class Op>
 struct param_traits;
 
-#define DEFINE_KERNEL_TYPE(T, Op) \
-    template <> \
-    struct param_traits<T, my_##Op<T>> { \
-        static constexpr const char* kernel_name = "allreduce_execution_" # T "_" #Op; \
-        using op_type = my_##Op<T>; \
+#define DEFINE_KERNEL_TYPE(T, Op)                                                       \
+    template <>                                                                         \
+    struct param_traits<T, my_##Op<T>> {                                                \
+        static constexpr const char* kernel_name = "allreduce_execution_" # T "_" #Op;  \
+        using op_type = my_##Op<T>;                                                     \
+    };
+
+#define DEFINE_KERNEL_BF16_TYPE(T, Op)                                                  \
+    template <>                                                                         \
+    struct param_traits<T, my_##T##Op<T>> {                                             \
+        static constexpr const char* kernel_name = "allreduce_execution_" # T "_" #Op;  \
+        using op_type = my_##T##Op<T>;                                                  \
     };
 
 #define DEFINE_KERNEL_TYPES_FOR_OP(OpName)              \
@@ -176,19 +183,20 @@ struct param_traits;
 // except unless if the operands are bf16 - so we redefine
 // the macro purely for bf16 operands.
 #define DEFINE_KERNEL_TYPES_FOR_BF16OP(OpName)          \
-    DEFINE_KERNEL_TYPE(bf16, OpName)
+    DEFINE_KERNEL_BF16_TYPE(bf16, OpName)
 
 DEFINE_KERNEL_TYPES_FOR_OP(add);
 DEFINE_KERNEL_TYPES_FOR_OP(mult);
 DEFINE_KERNEL_TYPES_FOR_OP(min);
 DEFINE_KERNEL_TYPES_FOR_OP(max);
 
-DEFINE_KERNEL_TYPES_FOR_BF16OP(bf16add);
-DEFINE_KERNEL_TYPES_FOR_BF16OP(bf16mult);
-DEFINE_KERNEL_TYPES_FOR_BF16OP(bf16min);
-DEFINE_KERNEL_TYPES_FOR_BF16OP(bf16max);
+DEFINE_KERNEL_TYPES_FOR_BF16OP(add);
+DEFINE_KERNEL_TYPES_FOR_BF16OP(mult);
+DEFINE_KERNEL_TYPES_FOR_BF16OP(min);
+DEFINE_KERNEL_TYPES_FOR_BF16OP(max);
 
 #undef DEFINE_KERNEL_TYPE
+#undef DEFINE_KERNEL_BF16_TYPE
 #undef DEFINE_TYPE
 #undef DEFINE_PAIR
 #undef DEFINE_KERNEL_TYPES_FOR_OP
