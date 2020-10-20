@@ -2,13 +2,13 @@
 
 namespace ccl {
 
-/******************** DEVICE COMMUNICATOR ********************/
+/******************** COMMUNICATOR ********************/
 
 /**
  * Generating API types for collective operations
- * of the device communicator class (communicator)
+ * of the communicator class (communicator)
  */
-#define API_DEVICE_COMM_OP_PTR_EXPLICIT_INSTANTIATION(BufferType) \
+#define API_COMM_OP_PTR_EXPLICIT_INSTANTIATION(BufferType) \
 \
     template event CCL_API allgatherv(const BufferType* send_buf, \
                                         size_t send_count, \
@@ -176,7 +176,7 @@ namespace ccl {
                                             const reduce_scatter_attr& attr, \
                                             const vector_class<event>& deps);
 
-#define API_DEVICE_COMM_OP_REF_EXPLICIT_INSTANTIATION(BufferObjectType) \
+#define API_COMM_OP_REF_EXPLICIT_INSTANTIATION(BufferObjectType) \
 \
     template event CCL_API allgatherv(const BufferObjectType& send_buf, \
                                         size_t send_count, \
@@ -352,7 +352,7 @@ namespace ccl {
 
 namespace preview {
 
-#define API_DEVICE_COMM_SPARSE_OP_PTR_EXPLICIT_INSTANTIATION(index_type, value_type) \
+#define API_COMM_SPARSE_OP_PTR_EXPLICIT_INSTANTIATION(index_type, value_type) \
 \
     template ccl::event CCL_API sparse_allreduce(const index_type* send_ind_buf, \
                                                    size_t send_ind_count, \
@@ -382,7 +382,7 @@ namespace preview {
                                                    const ccl::vector_class<ccl::event>& deps);
 
 /*
-#define API_DEVICE_COMM_SPARSE_OP_REF_EXPLICIT_INSTANTIATION(index_object_type, value_object_type) \
+#define API_COMM_SPARSE_OP_REF_EXPLICIT_INSTANTIATION(index_object_type, value_object_type) \
 \
 template ccl::event CCL_API \
 sparse_allreduce(const index_object_type& send_ind_buf, \
