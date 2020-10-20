@@ -2,8 +2,6 @@
 
 namespace ccl {
 
-#define CREATE_OP_ATTR_INSTANTIATION(attr) template attr CCL_API create_operation_attr<attr>();
-
 /******************** DEVICE COMMUNICATOR ********************/
 
 /**
