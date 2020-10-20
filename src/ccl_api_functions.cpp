@@ -52,10 +52,10 @@ void register_gpu_module(std::string kernel_dir_path)
     //                             ccl::device_topology_type::a2a,
     //                             ccl_coll_allgatherv);
     // alltoallv
-    // std::string kernel_path = kernel_dir_path + "ring_alltoallv.spv";
-    // register_gpu_module_source(kernel_path.c_str(),
-    //                            ccl::device_topology_type::ring,
-    //                            ccl_coll_alltoallv);
+    kernel_path = kernel_dir_path + "ring_alltoallv.spv";
+    register_gpu_module_source(kernel_path.c_str(),
+                               ccl::device_topology_type::ring,
+                               ccl_coll_alltoallv);
     // register_gpu_module_source("kernels/a2a_alltoallv.spv",
     //                             ccl::device_topology_type::a2a,
     //                             ccl_coll_alltoallv);

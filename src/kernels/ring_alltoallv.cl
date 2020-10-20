@@ -301,128 +301,46 @@ DEFINE_KERNEL(float64_t, double4, 4)
 DEFINE_KERNEL(bf16, ushort, 1)
 
 // numa
-__kernel void alltoallv_execution_numa_char(size_t my_rank,
-                                            size_t comm_size,
-                                            size_t elems_count,
-                                            const __global char4* input_buffer,
-                                            __global char4* output_buffer,
-
-                                            __global char4* tmp_buffer,
-                                            __global volatile int* left_wrote_to_me_flag,
-                                            __global volatile int* i_ready_to_receive_flag,
-
-                                            __global volatile int* local_barrier_flag,
-
-                                            __global char4* right_temp_buffer,
-                                            __global volatile int* i_send_to_right_flag,
-                                            __global volatile int* right_ready_to_recv_flag) {
-    return;
+// TODO: vecsize
+#define DEFINE_KERNEL_NUMA(Name, T)                                                                         \
+__kernel void alltoallv_execution_numa_##Name(size_t my_rank, /*0*/                                         \
+                                        size_t comm_size, /*1*/                                             \
+                                                                                                            \
+                                        __global size_t* send_elem_counts, /*2*/                            \
+                                        __global size_t* send_elem_offsets, /*3*/                           \
+                                        __global size_t* recv_elem_counts, /*4*/                            \
+                                        __global size_t* recv_elem_offsets, /*5*/                           \
+                                                                                                            \
+                                        const __global T* input_buffer, /*6*/                               \
+                                        __global T* output_buffer, /*7*/                                    \
+                                        __global T* tmp_buffer, /*8*/                                       \
+                                        __global T* right_temp_buffer, /*9*/                                \
+                                                                                                            \
+                                        __global volatile int* left_wrote_to_me_flag, /*10*/                \
+                                        __global volatile int* i_ready_to_receive_flag, /*11*/              \
+                                        __global volatile int* proxy_size_flag, /*12*/                      \
+                                        __global volatile int* i_send_to_right_flag, /*13*/                 \
+                                        __global volatile int* right_ready_to_recv_flag, /*14*/             \
+                                        __global volatile int* right_proxy_size_flag /*15*/                 \
+) {                                                                                                         \
+    return; \
 }
 
-__kernel void alltoallv_execution_numa_int(size_t my_rank,
-                                           size_t comm_size,
-                                           size_t elems_count,
-                                           const __global int4* input_buffer,
-                                           __global int4* output_buffer,
+DEFINE_KERNEL_NUMA(int8_t, char4)
+DEFINE_KERNEL_NUMA(uint8_t, uchar4)
 
-                                           __global int4* tmp_buffer,
-                                           __global volatile int* left_wrote_to_me_flag,
-                                           __global volatile int* i_ready_to_receive_flag,
+DEFINE_KERNEL_NUMA(int16_t, short4)
+DEFINE_KERNEL_NUMA(uint16_t, ushort4)
 
-                                           __global volatile int* local_barrier_flag,
+DEFINE_KERNEL_NUMA(int32_t, int4)
+DEFINE_KERNEL_NUMA(uint32_t, uint4)
 
-                                           __global int4* right_temp_buffer,
-                                           __global volatile int* i_send_to_right_flag,
-                                           __global volatile int* right_ready_to_recv_flag) {
-    return;
-}
+DEFINE_KERNEL_NUMA(int64_t, long4)
+DEFINE_KERNEL_NUMA(uint64_t, ulong4)
 
-__kernel void alltoallv_execution_numa_bf16(size_t my_rank,
-                                             size_t comm_size,
-                                             size_t elems_count,
-                                             const __global bf16* input_buffer,
-                                             __global bf16* output_buffer,
+DEFINE_KERNEL_NUMA(float32_t, float4)
+DEFINE_KERNEL_NUMA(float64_t, double4)
+// TODO: implement support for missing types
+//DEFINE_KERNEL(float16_t, half, 1)
 
-                                             __global bf16* tmp_buffer,
-                                             __global volatile int* left_wrote_to_me_flag,
-                                             __global volatile int* i_ready_to_receive_flag,
-
-                                             __global volatile int* local_barrier_flag,
-
-                                             __global bf16* right_temp_buffer,
-                                             __global volatile int* i_send_to_right_flag,
-                                             __global volatile int* right_ready_to_recv_flag) {
-    return;
-}
-
-__kernel void alltoallv_execution_numa_float(size_t my_rank,
-                                             size_t comm_size,
-                                             size_t elems_count,
-                                             const __global float4* input_buffer,
-                                             __global float4* output_buffer,
-
-                                             __global float4* tmp_buffer,
-                                             __global volatile int* left_wrote_to_me_flag,
-                                             __global volatile int* i_ready_to_receive_flag,
-
-                                             __global volatile int* local_barrier_flag,
-
-                                             __global float4* right_temp_buffer,
-                                             __global volatile int* i_send_to_right_flag,
-                                             __global volatile int* right_ready_to_recv_flag) {
-    return;
-}
-
-__kernel void alltoallv_execution_numa_double(size_t my_rank,
-                                              size_t comm_size,
-                                              size_t elems_count,
-                                              const __global double4* input_buffer,
-                                              __global double4* output_buffer,
-
-                                              __global double4* tmp_buffer,
-                                              __global volatile int* left_wrote_to_me_flag,
-                                              __global volatile int* i_ready_to_receive_flag,
-
-                                              __global volatile int* local_barrier_flag,
-
-                                              __global double4* right_temp_buffer,
-                                              __global volatile int* i_send_to_right_flag,
-                                              __global volatile int* right_ready_to_recv_flag) {
-    return;
-}
-
-__kernel void alltoallv_execution_numa_int64_t(size_t my_rank,
-                                               size_t comm_size,
-                                               size_t elems_count,
-                                               const __global long4* input_buffer,
-                                               __global long4* output_buffer,
-
-                                               __global long4* tmp_buffer,
-                                               __global volatile int* left_wrote_to_me_flag,
-                                               __global volatile int* i_ready_to_receive_flag,
-
-                                               __global volatile int* local_barrier_flag,
-
-                                               __global long4* right_temp_buffer,
-                                               __global volatile int* i_send_to_right_flag,
-                                               __global volatile int* right_ready_to_recv_flag) {
-    return;
-}
-
-__kernel void alltoallv_execution_numa_uint64_t(size_t my_rank,
-                                                size_t comm_size,
-                                                size_t elems_count,
-                                                const __global ulong4* input_buffer,
-                                                __global ulong4* output_buffer,
-
-                                                __global ulong4* tmp_buffer,
-                                                __global volatile int* left_wrote_to_me_flag,
-                                                __global volatile int* i_ready_to_receive_flag,
-
-                                                __global volatile int* local_barrier_flag,
-
-                                                __global ulong4* right_temp_buffer,
-                                                __global volatile int* i_send_to_right_flag,
-                                                __global volatile int* right_ready_to_recv_flag) {
-    return;
-}
+DEFINE_KERNEL_NUMA(bf16, ushort)
