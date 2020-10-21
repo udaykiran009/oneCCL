@@ -99,4 +99,13 @@ double when(void) {
     return (double)(tv.tv_sec - tv_base.tv_sec) * 1.0e6 + (double)(tv.tv_usec - tv_base.tv_usec);
 }
 
+void mpi_finalize() {
+
+    int is_finalized = 0;
+    MPI_Finalized(&is_finalized);
+
+    if (!is_finalized)
+        MPI_Finalize();
+}
+
 #endif /* BASE_HPP */

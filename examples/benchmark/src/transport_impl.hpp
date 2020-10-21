@@ -90,14 +90,14 @@ std::vector<ccl::stream>& transport_data::get_streams() {
 
 #include <CL/sycl.hpp>
 
-void transport_data::init_device_comms(size_t ranks_per_proc) {
+void transport_data::init_device_comms(sycl_dev_type_t dev_type, size_t ranks_per_proc) {
 
     std::vector<size_t> local_ranks;
     for (size_t idx = 0; idx < ranks_per_proc; idx++) {
         local_ranks.push_back(rank * ranks_per_proc + idx);
     }
 
-    auto sycl_queues = get_sycl_queues(local_ranks);
+    auto sycl_queues = get_sycl_queues(dev_type, local_ranks);
 
     ASSERT(!sycl_queues.empty(), "queues should contain at least one queue");
     ASSERT(ranks_per_proc == sycl_queues.size(), "ranks and queues sizes should match");

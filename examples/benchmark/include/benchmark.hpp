@@ -21,6 +21,7 @@ using namespace cl::sycl;
 using namespace cl::sycl::access;
 #endif /* CCL_ENABLE_SYCL */
 
+#include "base.hpp"
 #include "base_utils.hpp"
 #include "bf16.hpp"
 #include "coll.hpp"
@@ -41,6 +42,7 @@ void print_help_usage(const char* app) {
         "\t[-c,--check <check result correctness>]: %d\n"
         "\t[-v,--v2i_ratio <values to indices ratio in sparse_allreduce>]: %d\n"
         "\t[-n,--buf_type <buffer type>]: %s\n"
+        "\t[-m,--sycl_dev_type <sycl device type>]: %s\n"
         "\t[-m,--sycl_mem_type <sycl memory type>]: %s\n"
         "\t[-u,--sycl_usm_type <sycl usm type>]: %s\n"
         "\t[-k,--ranks_per_proc <rank count per process>]: %d\n"
@@ -62,6 +64,7 @@ void print_help_usage(const char* app) {
         DEFAULT_CHECK_VALUES,
         DEFAULT_V2I_RATIO,
         buf_names[DEFAULT_BUF_TYPE].c_str(),
+        sycl_dev_names[DEFAULT_SYCL_DEV_TYPE].c_str(),
         sycl_mem_names[DEFAULT_SYCL_MEM_TYPE].c_str(),
         sycl_usm_names[DEFAULT_SYCL_USM_TYPE].c_str(),
         DEFAULT_RANKS_PER_PROC,
@@ -164,6 +167,25 @@ int set_buf_type(const std::string& option_value, buf_type_t& buf) {
     return 0;
 }
 
+int set_sycl_dev_type(const std::string& option_value, sycl_dev_type_t& dev) {
+    std::string option_name = "sycl_dev_type";
+    std::set<std::string> supported_option_values{ sycl_dev_names[SYCL_DEV_HOST],
+                                                   sycl_dev_names[SYCL_DEV_CPU],
+                                                   sycl_dev_names[SYCL_DEV_GPU] };
+
+    if (check_supported_options(option_name, option_value, supported_option_values))
+        return -1;
+
+    if (option_value == sycl_dev_names[SYCL_DEV_HOST])
+        dev = SYCL_DEV_HOST;
+    else if (option_value == sycl_dev_names[SYCL_DEV_CPU])
+        dev = SYCL_DEV_CPU;
+    else if (option_value == sycl_dev_names[SYCL_DEV_GPU])
+        dev = SYCL_DEV_GPU;
+
+    return 0;
+}
+
 int set_sycl_mem_type(const std::string& option_value, sycl_mem_type_t& mem) {
     std::string option_name = "sycl_mem_type";
     std::set<std::string> supported_option_values{ sycl_mem_names[SYCL_MEM_USM], sycl_mem_names[SYCL_MEM_BUF] };
@@ -200,6 +222,7 @@ typedef struct user_options_t {
     int check_values;
     buf_type_t buf_type;
     size_t v2i_ratio;
+    sycl_dev_type_t sycl_dev_type;
     sycl_mem_type_t sycl_mem_type;
     sycl_usm_type_t sycl_usm_type;
     size_t ranks_per_proc;
@@ -219,6 +242,7 @@ typedef struct user_options_t {
         check_values = DEFAULT_CHECK_VALUES;
         buf_type = DEFAULT_BUF_TYPE;
         v2i_ratio = DEFAULT_V2I_RATIO;
+        sycl_dev_type = DEFAULT_SYCL_DEV_TYPE;
         sycl_mem_type = DEFAULT_SYCL_MEM_TYPE;
         sycl_usm_type = DEFAULT_SYCL_USM_TYPE;
         ranks_per_proc = DEFAULT_RANKS_PER_PROC;
@@ -229,28 +253,21 @@ typedef struct user_options_t {
     }
 } user_options_t;
 
-double when(void) {
-    struct timeval tv;
-    static struct timeval tv_base;
-    static int is_first = 1;
-
-    if (gettimeofday(&tv, NULL)) {
-        perror("gettimeofday");
-        return 0;
-    }
-
-    if (is_first) {
-        tv_base = tv;
-        is_first = 0;
-    }
-
-    return (double)(tv.tv_sec - tv_base.tv_sec) * 1.0e6 + (double)(tv.tv_usec - tv_base.tv_usec);
-}
-
 void bench_barrier(std::vector<ccl::communicator>& comms) {
     for (auto& comm : comms) {
         ccl::barrier(comm);
     }
+}
+
+size_t get_iter_count(size_t msg_size, size_t max_iter_count) {
+    size_t n, res = max_iter_count;
+    n = msg_size >> 18;
+    while (n) {
+        res >>= 1;
+        n >>= 1;
+    }
+    res = std::max(res, size_t(4) /* min iter_count */ );
+    return res;
 }
 
 /* placing print_timings() here is because of declaration of user_options_t */
@@ -268,6 +285,9 @@ void print_timings(std::vector<ccl::communicator>& comms,
     const size_t ncolls = options.coll_names.size();
     std::vector<double> all_timers(ncolls * comm.size());
     std::vector<size_t> recv_counts(comm.size());
+
+    size_t iter_count =
+        get_iter_count(elem_count * ccl::get_datatype_size(dtype), options.iters);
 
     size_t idx;
     for (idx = 0; idx < comm.size(); idx++)
@@ -294,13 +314,13 @@ void print_timings(std::vector<ccl::communicator>& comms,
         for (idx = 0; idx < comm.size(); idx++) {
             avg_timer += timers[idx];
         }
-        avg_timer /= (options.iters * comm.size());
+        avg_timer /= (iter_count * comm.size());
         avg_timer_per_buf = avg_timer / buf_count;
 
         double stddev_timer = 0;
         double sum = 0;
         for (idx = 0; idx < comm.size(); idx++) {
-            double val = timers[idx] / options.iters;
+            double val = timers[idx] / iter_count;
             sum += (val - avg_timer) * (val - avg_timer);
         }
         stddev_timer = sqrt(sum / comm.size()) / avg_timer * 100;
@@ -332,7 +352,7 @@ void print_timings(std::vector<ccl::communicator>& comms,
                     }
                 }
                 for (size_t c = 0; c < ncolls; ++c) {
-                    avg_timer[c] /= (options.iters * comm.size());
+                    avg_timer[c] /= (iter_count * comm.size());
                 }
 
                 int idx = 0;
@@ -373,8 +393,8 @@ int parse_user_options(int& argc,
     int ch;
     int errors = 0;
 
-    // values needed by getopt
-    const char* const short_options = "b:e:i:w:p:f:t:c:v:n:o:m:u:k:l:d:r:h";
+    const char* const short_options = "b:e:i:w:p:f:t:c:v:n:o:a:m:u:k:l:d:r:h";
+
     struct option getopt_options[] = {
         { "backend", required_argument, 0, 'b' },
         { "loop", required_argument, 0, 'e' },
@@ -386,6 +406,7 @@ int parse_user_options(int& argc,
         { "check", required_argument, 0, 'c' },
         { "v2i_ratio", required_argument, 0, 'v' },
         { "buf_type", required_argument, 0, 'n' },
+        { "sycl_dev_type", required_argument, 0, 'a' },
         { "sycl_mem_type", required_argument, 0, 'm' },
         { "sycl_usm_type", required_argument, 0, 'u' },
         { "ranks", required_argument, 0, 'k' },
@@ -400,12 +421,16 @@ int parse_user_options(int& argc,
     while ((ch = getopt_long(argc, argv, short_options, getopt_options, NULL)) != -1) {
         switch (ch) {
             case 'b':
-                if (set_backend(optarg, options.backend))
+                if (set_backend(optarg, options.backend)) {
+                    PRINT("failed to parse 'backend' option");
                     errors++;
+                }
                 break;
             case 'e':
-                if (set_loop(optarg, options.loop))
+                if (set_loop(optarg, options.loop)) {
+                    PRINT("failed to parse 'loop' option");
                     errors++;
+                }
                 break;
             case 'i': options.iters = atoll(optarg); break;
             case 'w': options.warmup_iters = atoll(optarg); break;
@@ -415,16 +440,28 @@ int parse_user_options(int& argc,
             case 'c': options.check_values = atoi(optarg); break;
             case 'v': options.v2i_ratio = atoll(optarg); break;
             case 'n':
-                if (set_buf_type(optarg, options.buf_type))
+                if (set_buf_type(optarg, options.buf_type)) {
+                    PRINT("failed to parse 'buf_type' option");
                     errors++;
+                }
                 break;
-             case 'm':
-                if (set_sycl_mem_type(optarg, options.sycl_mem_type))
+            case 'a':
+                if (set_sycl_dev_type(optarg, options.sycl_dev_type)) {
+                    PRINT("failed to parse 'sycl_dev_type' option");
                     errors++;
+                }
+                break;
+            case 'm':
+                if (set_sycl_mem_type(optarg, options.sycl_mem_type)) {
+                    PRINT("failed to parse 'sycl_mem_type' option");
+                    errors++;
+                }
                 break;
             case 'u':
-                if (set_sycl_usm_type(optarg, options.sycl_usm_type))
+                if (set_sycl_usm_type(optarg, options.sycl_usm_type)) {
+                    PRINT("failed to parse 'sycl_usm_type' option");
                     errors++;
+                }
                 break;
             case 'k': options.ranks_per_proc = atoll(optarg); break;
             case 'l': options.coll_names = tokenize(optarg, ','); break;
@@ -443,8 +480,11 @@ int parse_user_options(int& argc,
                     options.reductions = tokenize(optarg, ',');
                 break;
             case 'o': options.csv_filepath = std::string(optarg); break;
-            case 'h': print_help_usage(argv[0]); return -1;
-            default: errors++; break;
+            case 'h': return -1;
+            default:
+                PRINT("failed to parse unknown option");
+                errors++;
+                break;
         }
     }
 
@@ -486,6 +526,8 @@ void print_user_options(const user_options_t& options,
     std::string backend_str = find_str_val(backend_names, options.backend);
     std::string loop_str = find_str_val(loop_names, options.loop);
     std::string buf_type_str = find_str_val(buf_names, options.buf_type);
+
+    std::string sycl_dev_type_str = find_str_val(sycl_dev_names, options.sycl_dev_type);
     std::string sycl_mem_type_str = find_str_val(sycl_mem_names, options.sycl_mem_type);
     std::string sycl_usm_type_str = find_str_val(sycl_usm_names, options.sycl_usm_type);
 
@@ -502,6 +544,7 @@ void print_user_options(const user_options_t& options,
                   "\n  check:          %d"
                   "\n  v2i_ratio:      %zu"
                   "\n  buf_type:       %s"
+                  "\n  sycl_dev_type:  %s"
                   "\n  sycl_mem_type:  %s"
                   "\n  sycl_usm_type:  %s"
                   "\n  ranks_per_proc: %zu"
@@ -518,6 +561,7 @@ void print_user_options(const user_options_t& options,
                   options.check_values,
                   options.v2i_ratio,
                   buf_type_str.c_str(),
+                  sycl_dev_type_str.c_str(),
                   sycl_mem_type_str.c_str(),
                   sycl_usm_type_str.c_str(),
                   options.ranks_per_proc,

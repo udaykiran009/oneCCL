@@ -6,6 +6,7 @@
 #include <string>
 
 #include "coll.hpp"
+#include "sycl_base.hpp" /* from examples/include */
 
 #ifdef CCL_ENABLE_SYCL
 
@@ -14,163 +15,22 @@
 using namespace sycl;
 using namespace sycl::access;
 
-std::vector<cl::sycl::queue> get_sycl_queues(std::vector<size_t>& ranks) {
+std::vector<cl::sycl::queue> get_sycl_queues(sycl_dev_type_t dev_type,
+                                             std::vector<size_t>& ranks) {
 
-    /* select requested platform by SYCL_BE: L0 or OpenCL */
-    std::vector<cl::sycl::device> all_devices =
-        cl::sycl::device::get_devices(info::device_type::gpu);
-    std::vector<cl::sycl::device> platform_devices;
-    std::vector<cl::sycl::device> selected_devices;
-    std::vector<cl::sycl::queue> selected_queues;
-    std::string backend;
-
-    if (getenv("SYCL_BE") == nullptr) {
-        backend = "Level-Zero";
-    }
-    else if (getenv("SYCL_BE") != nullptr) {
-        if (std::strcmp(getenv("SYCL_BE"), "PI_LEVEL_ZERO") == 0) {
-            backend = "Level-Zero";
-        }
-        else if (std::strcmp(getenv("SYCL_BE"), "PI_OPENCL") == 0) {
-            backend = "OpenCL";
-        }
-        else {
-            throw std::runtime_error("invalid backend: " + std::string(getenv("SYCL_BE")));
-        }
-    }
-
-    /* filter by platform */
-    for (const auto& device : all_devices) {
-        auto platform = device.get_platform();
-        auto platform_name = platform.get_info<cl::sycl::info::platform::name>();
-        std::size_t found = platform_name.find(backend);
-        if (found != std::string::npos)
-            platform_devices.push_back(device);
-    }
-
-    if (platform_devices.size() <= 0) {
-        throw ccl::exception("no selected device found for SYCL backend: " + backend);
-    }
-
-    /* filter by sub-devices */
-    for (const auto& device : platform_devices) {
-
-        size_t max_sub_devices = device.template get_info<cl::sycl::info::device::partition_max_sub_devices>();
-        printf("max_sub_devices %zu\n", max_sub_devices);
-
-        std::vector<sycl::device> sub_devices;
-        try {
-            sub_devices =
-                device.create_sub_devices<cl::sycl::info::partition_property::partition_by_affinity_domain>(
-                    info::partition_affinity_domain::next_partitionable);
-            printf("created sub_devices\n");
-
-            for (const auto& sub_device : sub_devices) {
-                ASSERT(sub_device.template get_info<cl::sycl::info::device::parent_device>() == device,
-                    "unexpected sub-device's parent");
-
-                max_sub_devices = sub_device.template get_info<cl::sycl::info::device::partition_max_sub_devices>();
-                printf("max_sub_devices for child: %zu\n", max_sub_devices);
-            }
-
-            sub_devices = std::vector<cl::sycl::device>(1, device);
-            printf("partition property is not supported, but create_sub_devices doesn't throw exception yet\n"
-                "use parent_device as sub_device\n");
-        }
-        catch (std::exception& e) {
-            sub_devices = std::vector<cl::sycl::device>(1, device);
-            printf("partition property is not supported, use parent_device as sub_device\n");
-        }
-
-        printf("sub_devices size %zu\n", sub_devices.size());
-        selected_devices.insert(selected_devices.end(), sub_devices.begin(), sub_devices.end());
-    }
-
-    printf("selected_devices count %zu\n", selected_devices.size());
+    std::vector<cl::sycl::queue> queues;
 
     for (auto rank : ranks) {
-        size_t idx = rank % selected_devices.size();
-        auto device = selected_devices[idx];
-        std::cout << "\nrunning on: " << device.get_info<cl::sycl::info::device::name>()
-                  << ", device index: " << idx << "\n";
-        selected_queues.push_back(cl::sycl::queue(device));
+        sycl::queue q;
+        std::string dev_type_name = sycl_dev_names[dev_type];
+        ASSERT(create_sycl_queue_from_device_type(dev_type_name, rank, q),
+            "failed to create SYCL queue for dev_type %s and for rank %zu",
+            dev_type_name.c_str(), rank);
+        queues.push_back(q);
     }
 
-    return selected_queues;
+    return queues;
 }
-
-usm::alloc usm_alloc_type_from_string(const std::string& str) {
-    const std::map<std::string, usm::alloc> names{ {
-        { "host", usm::alloc::host },
-        { "device", usm::alloc::device },
-        { "shared", usm::alloc::shared },
-    } };
-
-    auto it = names.find(str);
-    if (it == names.end()) {
-        std::stringstream ss;
-        ss << "Invalid USM type requested: " << str << "\nSupported types are:\n";
-        for (const auto& v : names) {
-            ss << v.first << ", ";
-        }
-        throw std::runtime_error(ss.str());
-    }
-    return it->second;
-}
-
-template <typename T>
-struct buf_allocator {
-
-    const size_t alignment = 64;
-
-    buf_allocator(queue& q)
-        : q(q)
-    {}
-
-    ~buf_allocator() {
-        for (auto& ptr : memory_storage) {
-            cl::sycl::free(ptr, q);
-        }
-    }
-
-    T* allocate(size_t count, usm::alloc alloc_type) {
-        T* ptr = nullptr;
-        if (alloc_type == usm::alloc::host)
-            ptr = aligned_alloc_host<T>(alignment, count, q);
-        else if (alloc_type == usm::alloc::device)
-            ptr = aligned_alloc_device<T>(alignment, count, q);
-        else if (alloc_type == usm::alloc::shared)
-            ptr = aligned_alloc_shared<T>(alignment, count, q);
-        else
-            throw std::runtime_error(std::string(__PRETTY_FUNCTION__) + "unexpected alloc_type");
-
-        auto it = memory_storage.find(ptr);
-        if (it != memory_storage.end()) {
-            throw std::runtime_error(std::string(__PRETTY_FUNCTION__) +
-                                        " - allocator already owns this pointer");
-        }
-        memory_storage.insert(ptr);
-
-        auto pointer_type = cl::sycl::get_pointer_type(ptr, q.get_context());
-        ASSERT(pointer_type == alloc_type, "pointer_type %d doesn't match with requested %d",
-            pointer_type, alloc_type);
-
-        return ptr;
-    }
-
-    void deallocate(T* ptr) {
-        auto it = memory_storage.find(ptr);
-        if (it == memory_storage.end()) {
-            throw std::runtime_error(std::string(__PRETTY_FUNCTION__) +
-                                        " - allocator doesn't own this pointer");
-        }
-        free(ptr, q);
-        memory_storage.erase(it);
-    }
-
-    sycl::queue q;
-    std::set<T*> memory_storage;
-};
 
 /* sycl-specific base implementation */
 template <class Dtype, class strategy>

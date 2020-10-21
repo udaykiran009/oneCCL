@@ -60,9 +60,16 @@ void do_regular(std::vector<ccl::communicator>& host_comms,
 
             for (size_t count = options.min_elem_count; count <= options.max_elem_count;
                  count *= 2) {
-                for (size_t iter_idx = 0; iter_idx < options.warmup_iters; iter_idx++) {
-                    for (size_t coll_idx = 0; coll_idx < colls.size(); coll_idx++) {
-                        auto& coll = colls[coll_idx];
+
+                for (size_t coll_idx = 0; coll_idx < colls.size(); coll_idx++) {
+
+                    auto& coll = colls[coll_idx];
+
+                    size_t iter_count =
+                        get_iter_count(count * ccl::get_datatype_size(coll->get_dtype()), options.warmup_iters);
+
+                    for (size_t iter_idx = 0; iter_idx < iter_count; iter_idx++) {
+
                         for (size_t buf_idx = 0; buf_idx < options.buf_count; buf_idx++) {
                             match_id_stream << "coll_" << coll->name()
                                             << "_" << coll_idx << "_count_" << count 
@@ -71,11 +78,12 @@ void do_regular(std::vector<ccl::communicator>& host_comms,
                             match_id_stream.str("");
                             coll->start(count, buf_idx, bench_attr, reqs);
                         }
+
+                        for (auto& req : reqs) {
+                            req.wait();
+                        }
+                        reqs.clear();
                     }
-                    for (auto& req : reqs) {
-                        req.wait();
-                    }
-                    reqs.clear();
                 }
             }
 
@@ -109,13 +117,18 @@ void do_regular(std::vector<ccl::communicator>& host_comms,
                         // but aggregate over buffers and iterations
                         std::vector<double> coll_timers(colls.size(), 0);
                         for (size_t coll_idx = 0; coll_idx < colls.size(); coll_idx++) {
-                            
+
+                            auto& coll = colls[coll_idx];
+
                             bench_barrier(host_comms);
 
                             double t1 = 0, t2 = 0, t = 0;
 
-                            for (size_t iter_idx = 0; iter_idx < options.iters; iter_idx++) {
-                                auto& coll = colls[coll_idx];
+                            size_t iter_count =
+                                get_iter_count(count * ccl::get_datatype_size(coll->get_dtype()), options.iters);
+
+                            for (size_t iter_idx = 0; iter_idx < iter_count; iter_idx++) {
+
                                 // collective is configured to handle only
                                 // options.buf_count many buffers/executions 'at once'.
                                 // -> check cannot combine executions over iterations
@@ -185,18 +198,24 @@ void do_regular(std::vector<ccl::communicator>& host_comms,
                         double t1 = 0, t2 = 0;
 
                         for (size_t coll_idx = 0; coll_idx < colls.size(); coll_idx++) {
+
                             auto& coll = colls[coll_idx];
+
+                            size_t iter_count =
+                                get_iter_count(count * ccl::get_datatype_size(coll->get_dtype()), options.iters);
 
                             bench_barrier(host_comms);
 
                             t1 = when();
 
-                            for (size_t iter_idx = 0; iter_idx < options.iters; iter_idx++) {
+                            for (size_t iter_idx = 0; iter_idx < iter_count; iter_idx++) {
                                 match_id_stream << "coll_" << coll->name()
                                                 << "_" << coll_idx << "_single_count_" << count;
                                 bench_attr.set<ccl::operation_attr_id::match_id>(ccl::string_class(match_id_stream.str()));
                                 match_id_stream.str("");
+
                                 coll->start_single(count, bench_attr, reqs);
+
                                 for (auto& req : reqs) {
                                     req.wait();
                                 }
@@ -560,7 +579,7 @@ int main(int argc, char* argv[]) {
 
 #ifdef CCL_ENABLE_SYCL
     if (options.backend == BACKEND_SYCL) {
-        transport.init_device_comms(options.ranks_per_proc);
+        transport.init_device_comms(options.sycl_dev_type, options.ranks_per_proc);
     }
 #endif
 

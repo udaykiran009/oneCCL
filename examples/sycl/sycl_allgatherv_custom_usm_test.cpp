@@ -18,8 +18,14 @@ int main(int argc, char *argv[]) {
 
     ccl::init();
 
+    MPI_Init(NULL, NULL);
+    MPI_Comm_size(MPI_COMM_WORLD, &size);
+    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+
+    atexit(mpi_finalize);
+
     queue q;
-    if (!create_sycl_queue(argc, argv, q)) {
+    if (!create_sycl_queue(argc, argv, rank, q)) {
         return -1;
     }
 
@@ -35,10 +41,6 @@ int main(int argc, char *argv[]) {
     }
 
     /* create kvs */
-    MPI_Init(NULL, NULL);
-    MPI_Comm_size(MPI_COMM_WORLD, &size);
-    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
-
     ccl::shared_ptr_class<ccl::kvs> kvs;
     ccl::kvs::address_type main_addr;
     if (rank == 0) {
@@ -129,8 +131,6 @@ int main(int argc, char *argv[]) {
             cout << "PASSED\n";
         }
     }
-
-    MPI_Finalize();
 
     return 0;
 }

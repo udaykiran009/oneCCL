@@ -4,6 +4,7 @@
 #include <vector>
 
 #include "oneapi/ccl.hpp"
+#include "types.hpp"
 
 class transport_data {
 
@@ -23,7 +24,7 @@ public:
     std::vector<ccl::stream>& get_streams();
 
 #ifdef CCL_ENABLE_SYCL
-    void init_device_comms(size_t ranks_per_proc);
+    void init_device_comms(sycl_dev_type_t dev_type, size_t ranks_per_proc);
     std::vector<ccl::communicator>& get_device_comms();
 #endif /* CCL_ENABLE_SYCL */
 

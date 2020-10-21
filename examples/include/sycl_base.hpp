@@ -8,6 +8,7 @@
 #include <set>
 #include <string>
 
+#include "base.hpp"
 #include "base_utils.hpp"
 
 #include "oneapi/ccl.hpp"
@@ -56,9 +57,118 @@ inline bool check_sycl_usm(queue& q, usm::alloc alloc_type) {
     return ret;
 }
 
-inline bool create_sycl_queue(int argc,
-                              char* argv[],
-                              queue& q) {
+std::string get_preferred_platform_name() {
+
+    std::string backend;
+    std::string result("unknown");
+
+    if (getenv("SYCL_BE") == nullptr) {
+        backend = "Level-Zero";
+    }
+    else if (getenv("SYCL_BE") != nullptr) {
+        if (std::strcmp(getenv("SYCL_BE"), "PI_LEVEL_ZERO") == 0) {
+            backend = "Level-Zero";
+        }
+        else if (std::strcmp(getenv("SYCL_BE"), "PI_OPENCL") == 0) {
+            backend = "OpenCL";
+        }
+        else {
+            throw std::runtime_error("invalid backend: " + std::string(getenv("SYCL_BE")));
+        }
+    }
+
+    auto plaform_list = sycl::platform::get_platforms();
+
+    for (const auto& platform : plaform_list) {
+
+        auto platform_name = platform.get_info<sycl::info::platform::name>();
+        if (platform_name.find(backend) != std::string::npos) {
+            result = platform_name;
+            break;
+        }
+    }
+
+    return result;
+}
+
+std::vector<sycl::device> create_sycl_gpu_devices() {
+
+    std::vector<sycl::device> result;
+    auto plaform_list = sycl::platform::get_platforms();
+    auto preferred_platform_name = get_preferred_platform_name();
+
+    cout << "preferred platform: " << preferred_platform_name << "\n";
+
+    for (const auto& platform : plaform_list) {
+
+        auto platform_name = platform.get_info<sycl::info::platform::name>();
+
+        cout << "platform: " << platform_name << "\n";
+
+        if (platform_name.compare(preferred_platform_name) != 0)
+            continue;
+
+        auto device_list = platform.get_devices();
+
+        for (const auto& device : device_list) {
+
+            auto device_name = device.get_info<cl::sycl::info::device::name>();
+
+            if (!device.is_gpu()) {
+                cout << "device " << device_name << " is not GPU, skipping\n";
+                continue;
+            }
+
+            auto part_props = device.get_info<info::device::partition_properties>();
+
+            if (std::find(part_props.begin(),
+                          part_props.end(),
+                          info::partition_property::partition_by_affinity_domain) == part_props.end()) {
+                cout << "device " << device_name << " does not support partition by affinity domain\n";
+                result.push_back(device);
+                continue;
+            }
+
+            auto part_affinity_domains = device.get_info<info::device::partition_affinity_domains>();
+
+            if (std::find(part_affinity_domains.begin(),
+                          part_affinity_domains.end(),
+                          info::partition_affinity_domain::next_partitionable) == part_affinity_domains.end()) {
+                cout << "device " << device_name << " does not support next_partitionable affinity domain\n";
+                result.push_back(device);
+                continue;
+            }
+
+            cout << "device " << device_name << " should provide "
+                 << device.template get_info<info::device::partition_max_sub_devices>() << " sub-devices\n";
+
+            auto sub_devices = device.create_sub_devices<
+                  info::partition_property::partition_by_affinity_domain>(
+                    info::partition_affinity_domain::next_partitionable);
+
+            if (sub_devices.empty()) {
+                /* TODO: remove when SYCL/L0 sub-devices will be supported */
+                result.push_back(device);
+                continue;
+            }
+
+            cout << "device " << device_name << " provides " << sub_devices.size() << " sub-devices\n";
+            result.insert(result.end(), sub_devices.begin(), sub_devices.end());
+        }
+    }
+
+    if (result.empty()) {
+        throw std::runtime_error("no GPU devices found");
+    }
+
+    cout << "found: " << result.size() << " GPU devices\n";
+
+    return result;
+}
+
+bool create_sycl_queue_from_device_type(const std::string& device_type,
+                                        int rank,
+                                        queue& q) {
 
     auto exception_handler = [&](exception_list elist) {
         for (exception_ptr const& e : elist) {
@@ -72,37 +182,42 @@ inline bool create_sycl_queue(int argc,
     };
 
     try {
-        unique_ptr<device_selector> selector;
-        if (argc >= 2) {
-            if (strcmp(argv[1], "cpu") == 0) {
+        if ((device_type.compare("gpu") == 0) && has_gpu()) {
+            /* special handling due to multi-tile case */
+            auto devices = create_sycl_gpu_devices();
+            auto device = devices[rank % devices.size()];
+            q = queue(device, exception_handler);
+        }
+        else {
+            unique_ptr<device_selector> selector;
+
+            if (device_type.compare("cpu") == 0) {
                 selector.reset(new cpu_selector());
             }
-            else if (strcmp(argv[1], "gpu") == 0) {
-                if (has_gpu()) {
-                    selector.reset(new gpu_selector());
-                }
-                else if (has_accelerator()) {
+            else if (device_type.compare("gpu") == 0) {
+                if (has_accelerator()) {
                     selector.reset(new host_selector());
                     cout
-                        << "Accelerator is the first in device list, but unavailable for multiprocessing, host_selector has been created instead of default_selector.\n";
+                        << "Accelerator is the first in device list, but unavailable for multiprocessing "
+                        << "host_selector has been created instead of default_selector.\n";
                 }
                 else {
                     selector.reset(new default_selector());
-                    cout
-                        << "GPU is unavailable, default_selector has been created instead of gpu_selector.\n";
+                    cout << "GPU is unavailable, default_selector has been created instead of gpu_selector.\n";
                 }
             }
-            else if (strcmp(argv[1], "host") == 0) {
+            else if (device_type.compare("host") == 0) {
                 selector.reset(new host_selector());
             }
-            else if (strcmp(argv[1], "default") == 0) {
+            else if (device_type.compare("default") == 0) {
                 if (!has_accelerator()) {
                     selector.reset(new default_selector());
                 }
                 else {
                     selector.reset(new host_selector());
                     cout
-                        << "Accelerator is the first in device list, but unavailable for multiprocessing, host_selector has been created instead of default_selector.\n";
+                        << "Accelerator is the first in device list, but unavailable for multiprocessing "
+                        << " host_selector has been created instead of default_selector.\n";
                 }
             }
             else {
@@ -110,16 +225,30 @@ inline bool create_sycl_queue(int argc,
                 return false;
             }
             q = queue(*selector, exception_handler);
-            cout << "Requested device type: " << argv[1] << "\nRunning on "
-                      << q.get_device().get_info<info::device::name>() << "\n";
         }
-        else {
-            cerr << "Please provide device type: cpu | gpu | host | default\n";
-            return false;
-        }
-        return true;
-    } catch (...) {
+    }
+    catch (...) {
         cerr << "No device of requested type available\n";
+        return false;
+    }
+
+    cout << "Requested device type: " << device_type
+         << "\nRunning on " << q.get_device().get_info<info::device::name>() << "\n";
+
+    return true;
+}
+
+inline bool create_sycl_queue(int argc,
+                              char* argv[],
+                              int rank,
+                              queue& q) {
+
+    if (argc >= 2) {
+        std::string device_type = argv[1];
+        return create_sycl_queue_from_device_type(device_type, rank, q);
+    }
+    else {
+        cerr << "Please provide device type: cpu | gpu | host | default\n";
         return false;
     }
 }
@@ -165,7 +294,7 @@ struct buf_allocator {
 
     ~buf_allocator() {
         for (auto& ptr : memory_storage) {
-            cl::sycl::free(ptr, q);
+            sycl::free(ptr, q);
         }
     }
 
@@ -187,7 +316,7 @@ struct buf_allocator {
         }
         memory_storage.insert(ptr);
 
-        auto pointer_type = cl::sycl::get_pointer_type(ptr, q.get_context());
+        auto pointer_type = sycl::get_pointer_type(ptr, q.get_context());
         if (pointer_type != alloc_type)
             throw std::runtime_error(string(__PRETTY_FUNCTION__)
                 + "pointer_type "
