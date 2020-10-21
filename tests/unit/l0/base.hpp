@@ -21,6 +21,17 @@ struct Types {
 };
 } // namespace testing
 
+
+#define TEST(fixture, test_name)                       \
+    struct Test_##test_name {                 \
+        void invoke();                                  \
+        void start() {                                  \
+            invoke();                                   \
+        }                                               \
+    };                                                  \
+    void Test_##test_name::invoke()
+
+
 #define TEST_F(fixture, test_name)                      \
     struct Test_##test_name : public fixture {          \
         void invoke();                                  \

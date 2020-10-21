@@ -8,7 +8,18 @@
 #include <string>
 
 #include "utils.hpp"
-#include "oneapi/ccl.hpp"
+#ifdef STANDALONE_UT
+namespace ccl {
+template <class type>
+struct native_type_info {
+    static constexpr bool is_supported = false;
+    static constexpr bool is_class = false;
+};
+}
+#else
+#include "oneapi/ccl/ccl_type_traits.hpp"
+#endif
+
 #define UT_DEBUG
 
 #ifdef UT_DEBUG

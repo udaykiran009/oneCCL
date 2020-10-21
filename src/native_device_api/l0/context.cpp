@@ -5,8 +5,6 @@
 #include "oneapi/ccl/native_device_api/l0/driver.hpp"
 #include "oneapi/ccl/native_device_api/l0/platform.hpp"
 
-#include "native_device_api/compiler_ccl_wrappers_dispatcher.hpp"
-
 namespace native {
 
   ccl_context::ccl_context(handle_t h, owner_ptr_t&& platform):

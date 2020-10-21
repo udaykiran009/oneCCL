@@ -7,11 +7,12 @@
 
 #include "oneapi/ccl/native_device_api/l0/base_impl.hpp"
 #include "oneapi/ccl/native_device_api/l0/device.hpp"
+#include "oneapi/ccl/native_device_api/l0/subdevice.hpp"
 #include "oneapi/ccl/native_device_api/l0/primitives_impl.hpp"
 #include "oneapi/ccl/native_device_api/l0/driver.hpp"
 #include "oneapi/ccl/native_device_api/l0/platform.hpp"
 
-#include "native_device_api/compiler_ccl_wrappers_dispatcher.hpp"
+//#include "native_device_api/compiler_ccl_wrappers_dispatcher.hpp"
 
 namespace native {
 uint32_t get_driver_properties(ccl_device_driver::handle_t handle) {
@@ -173,7 +174,7 @@ CCL_API ccl_device_driver::const_device_ptr ccl_device_driver::get_device(
                                  ". Total devices count: " + std::to_string(devices.size()));
     }
 
-    const device_ptr found_device_ptr = device_it->second;
+    const_device_ptr found_device_ptr = device_it->second;
     ccl::index_type subdevice_index = std::get<ccl::device_index_enum::subdevice_index_id>(path);
     if (ccl::unused_index_value == subdevice_index) {
         return found_device_ptr;

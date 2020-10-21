@@ -11,7 +11,7 @@ int main(int ac, char* av[]) {
 #else
     {
         using namespace native_api_test;
-        Test_subdevice_2_tiles_test t;
+        Test_platform_info t;
         t.start();
     }
     return 0;
