@@ -12,44 +12,66 @@ public:
 
     ~string() {
         delete [] storage;
-        storage = 0;
-        length = 0;
+        storage = nullptr;
+        len = 0;
     }
 
     string() {
-        storage = new char[1];
-        storage[0] = '\0';
-        length = 0;
+        storage = new char{ '\0' };
+        len = 0;
     }
 
     string(const char* str) {
-        length = strlen(str);
-        storage = new char[length + 1];
-        strncpy(storage, str, length);
-        storage[length] = '\0';
+        len = strlen(str);
+        storage = new char[len + 1];
+        memcpy(storage, str, len * sizeof(char));
+        storage[len] = '\0';
     }
 
     string(const string& str) {
-        length = str.length;
-        storage = new char[length + 1];
-        strncpy(storage, str.storage, length);
-        storage[length] = '\0';
+        len = str.len;
+        storage = new char[len + 1];
+        memcpy(storage, str.storage, len * sizeof(char));
+        storage[len] = '\0';
+    }
+
+    string(string&& str) noexcept {
+        len = str.len;
+        storage = str.storage;
+        str.len = 0;
+        str.storage = nullptr;
     }
 
     string(const std::string& str){
-        length = str.length();
-        storage = new char[length + 1];
-        strncpy(storage, str.c_str(), length);
-        storage[length] = '\0';
+        len = str.length();
+        storage = new char[len + 1];
+        memcpy(storage, str.c_str(), len * sizeof(char));
+        storage[len] = '\0';
     }
 
     string& operator= (const string& str) {
-        length = str.length;
-        delete [] storage;
-        storage = new char[length + 1];
-        strncpy(storage, str.storage, length);
-        storage[length] = '\0';
+        if (this != &str) {
+            if (len != str.len) {
+                len = str.len;
+                delete [] storage;
+                storage = new char[len + 1];
+            }
+            memcpy(storage, str.storage, len * sizeof(char));
+            storage[len] = '\0';
+        }
         return *this;
+    }
+
+    string& operator=(string&& str) noexcept {
+        len = str.len;
+        storage = str.storage;
+        str.len = 0;
+        str.storage = nullptr;
+        return *this;
+    }
+
+    size_t length() const {
+        return len;
     }
 
     const char* c_str() const {
@@ -67,13 +89,17 @@ public:
     }
 
     string operator+ (const char* str) {
-        char* tmp_str = new char[length + strlen(str) + 1];
-        strncpy(tmp_str, storage, length);
-        strncpy(&tmp_str[length], str, strlen(str));
-        tmp_str[length + strlen(str)] = '\0';
-        string res(tmp_str);
-        delete[] tmp_str;
-        return res;
+        auto str_len = strlen(str);
+        if (str_len > 0) {
+            auto new_storage = new char[len + str_len + 1];
+            memcpy(new_storage, storage, len * sizeof(char));
+            memcpy(&new_storage[len], str, str_len * sizeof(char));
+            new_storage[len + str_len] = '\0';
+            string res(new_storage);
+            delete[] new_storage;
+            return res;
+        }
+        return string(storage);
     }
 
     string operator+ (const string& str) {
@@ -109,7 +135,7 @@ public:
     }
 
 private:
-    size_t length;
+    size_t len;
     char* storage;
 };
 
