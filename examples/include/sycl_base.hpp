@@ -57,10 +57,10 @@ inline bool check_sycl_usm(queue& q, usm::alloc alloc_type) {
     return ret;
 }
 
-std::string get_preferred_platform_name() {
+std::string get_preferred_gpu_platform_name() {
 
     std::string backend;
-    std::string result("unknown");
+    std::string result;
 
     if (getenv("SYCL_BE") == nullptr) {
         backend = "Level-Zero";
@@ -82,11 +82,33 @@ std::string get_preferred_platform_name() {
     for (const auto& platform : plaform_list) {
 
         auto platform_name = platform.get_info<sycl::info::platform::name>();
-        if (platform_name.find(backend) != std::string::npos) {
-            result = platform_name;
-            break;
+
+        auto devices = platform.get_devices();
+        auto gpu_dev =
+            std::find_if(devices.begin(),
+                         devices.end(),
+                         [](const sycl::device& d) {
+                            return d.is_gpu();
+                         });
+
+        if (gpu_dev == devices.end()) {
+            cout << "platform [" << platform_name
+                 << "] does not contain GPU devices, skipping\n";
+            continue;
         }
+
+        if (platform_name.find(backend) == std::string::npos) {
+            cout << "platform [" << platform_name
+                 << "] does not match with requested "
+                 << backend << ", skipping\n";
+            continue;
+        }
+
+        result = platform_name;
     }
+
+    if (result.empty())
+        throw std::runtime_error("can not find preferred GPU platform");
 
     return result;
 }
@@ -95,15 +117,15 @@ std::vector<sycl::device> create_sycl_gpu_devices() {
 
     std::vector<sycl::device> result;
     auto plaform_list = sycl::platform::get_platforms();
-    auto preferred_platform_name = get_preferred_platform_name();
+    auto preferred_platform_name = get_preferred_gpu_platform_name();
 
-    cout << "preferred platform: " << preferred_platform_name << "\n";
+    cout << "preferred platform: [" << preferred_platform_name << "]\n";
 
     for (const auto& platform : plaform_list) {
 
         auto platform_name = platform.get_info<sycl::info::platform::name>();
 
-        cout << "platform: " << platform_name << "\n";
+        cout << "platform: [" << platform_name << "]\n";
 
         if (platform_name.compare(preferred_platform_name) != 0)
             continue;
@@ -115,7 +137,7 @@ std::vector<sycl::device> create_sycl_gpu_devices() {
             auto device_name = device.get_info<cl::sycl::info::device::name>();
 
             if (!device.is_gpu()) {
-                cout << "device " << device_name << " is not GPU, skipping\n";
+                cout << "  device [" << device_name << "] is not GPU, skipping\n";
                 continue;
             }
 
@@ -124,7 +146,9 @@ std::vector<sycl::device> create_sycl_gpu_devices() {
             if (std::find(part_props.begin(),
                           part_props.end(),
                           info::partition_property::partition_by_affinity_domain) == part_props.end()) {
-                cout << "device " << device_name << " does not support partition by affinity domain\n";
+                cout << "  device [" << device_name
+                     << "] does not support partition by affinity domain"
+                     << ", use root device\n";
                 result.push_back(device);
                 continue;
             }
@@ -134,13 +158,16 @@ std::vector<sycl::device> create_sycl_gpu_devices() {
             if (std::find(part_affinity_domains.begin(),
                           part_affinity_domains.end(),
                           info::partition_affinity_domain::next_partitionable) == part_affinity_domains.end()) {
-                cout << "device " << device_name << " does not support next_partitionable affinity domain\n";
+                cout << "  device [" << device_name
+                     << "] does not support next_partitionable affinity domain"
+                     << ", use root device\n";
                 result.push_back(device);
                 continue;
             }
 
-            cout << "device " << device_name << " should provide "
-                 << device.template get_info<info::device::partition_max_sub_devices>() << " sub-devices\n";
+            cout << "  device [" << device_name << "] should provide "
+                 << device.template get_info<info::device::partition_max_sub_devices>()
+                 << " sub-devices\n";
 
             auto sub_devices = device.create_sub_devices<
                   info::partition_property::partition_by_affinity_domain>(
@@ -152,8 +179,15 @@ std::vector<sycl::device> create_sycl_gpu_devices() {
                 continue;
             }
 
-            cout << "device " << device_name << " provides " << sub_devices.size() << " sub-devices\n";
+            cout << "  device [" << device_name << "] provides "
+                 << sub_devices.size()
+                 << " sub-devices\n";
             result.insert(result.end(), sub_devices.begin(), sub_devices.end());
+
+            for (auto idx = 0; idx <sub_devices.size(); idx++) {
+                cout << "    sub-device " << idx
+                     << ": [" << sub_devices[idx].get_info<cl::sycl::info::device::name>() << "]\n";
+            }
         }
     }
 
@@ -161,7 +195,7 @@ std::vector<sycl::device> create_sycl_gpu_devices() {
         throw std::runtime_error("no GPU devices found");
     }
 
-    cout << "found: " << result.size() << " GPU devices\n";
+    cout << "found: " << result.size() << " GPU device(s)\n";
 
     return result;
 }
@@ -187,6 +221,9 @@ bool create_sycl_queue_from_device_type(const std::string& device_type,
             auto devices = create_sycl_gpu_devices();
             auto device = devices[rank % devices.size()];
             q = queue(device, exception_handler);
+            cout << "created SYCL queue from GPU device ["
+                 << device.get_info<cl::sycl::info::device::name>()
+                 << "], rank " << rank << "\n";
         }
         else {
             unique_ptr<device_selector> selector;
@@ -233,7 +270,7 @@ bool create_sycl_queue_from_device_type(const std::string& device_type,
     }
 
     cout << "Requested device type: " << device_type
-         << "\nRunning on " << q.get_device().get_info<info::device::name>() << "\n";
+         << "\nRunning on [" << q.get_device().get_info<info::device::name>() << "]\n";
 
     return true;
 }
