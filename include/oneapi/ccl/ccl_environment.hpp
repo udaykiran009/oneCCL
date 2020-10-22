@@ -79,6 +79,17 @@ public:
         return init_create_attr;
     }
 
+    template <class coll_attribute_type, class... attr_value_pair_t>
+    static coll_attribute_type create_operation_attr(attr_value_pair_t&&... avps) {
+        auto op_attr = create_postponed_api_type<coll_attribute_type>();
+        int expander[]{ (op_attr.template set<attr_value_pair_t::idx()>(avps.val()), 0)... };
+        (void)expander;
+        return op_attr;
+    }
+
+
+    /******************** DATATYPE ********************/
+
     template <class... attr_value_pair_t>
     static ccl::datatype_attr create_datatype_attr(attr_value_pair_t&&... avps) {
         static_assert(sizeof...(avps) > 0, "At least one argument must be specified");
@@ -92,6 +103,9 @@ public:
     void deregister_datatype(ccl::datatype dtype);
     size_t get_datatype_size(ccl::datatype dtype) const;
 
+
+    /******************** KVS ********************/
+
     template <class... attr_value_pair_t>
     static ccl::kvs_attr create_kvs_attr(attr_value_pair_t&&... avps) {
         auto kvs_create_attr = create_postponed_api_type<kvs_attr>();
@@ -102,6 +116,9 @@ public:
 
     shared_ptr_class<kvs> create_main_kvs(const kvs_attr& attr) const;
     shared_ptr_class<kvs> create_kvs(const kvs::address_type& addr, const kvs_attr& attr) const;
+
+
+    /******************** DEVICE ********************/
 
     device create_device(empty_t empty) const;
 
@@ -119,6 +136,9 @@ public:
         return str;
     }
 
+
+    /******************** CONTEXT ********************/
+
     context create_context(empty_t empty) const;
 
     template <class native_device_contex_type,
@@ -135,13 +155,8 @@ public:
         return str;
     }
 
-    template <class coll_attribute_type, class... attr_value_pair_t>
-    static coll_attribute_type create_operation_attr(attr_value_pair_t&&... avps) {
-        auto op_attr = create_postponed_api_type<coll_attribute_type>();
-        int expander[]{ (op_attr.template set<attr_value_pair_t::idx()>(avps.val()), 0)... };
-        (void)expander;
-        return op_attr;
-    }
+
+    /******************** EVENT ********************/
 
     template <class event_type,
               class = typename std::enable_if<is_event_supported<event_type>()>::type>
@@ -155,6 +170,9 @@ public:
                        event::context_t& context) {
         return event::create_from_native(native_event_handle, context);
     }
+
+
+    /******************** STREAM ********************/
 
     template <class native_stream_type,
               class = typename std::enable_if<is_stream_supported<native_stream_type>()>::type>
@@ -186,6 +204,8 @@ public:
         return str;
     }
 
+
+    /******************** COMMUNICATOR ********************/
 
 #ifdef CCL_ENABLE_SYCL
     communicator create_single_device_communicator(

@@ -36,19 +36,24 @@ namespace ccl {
 
 namespace detail {
 
-//Device
+/******************** DEVICE ********************/
+
 template <class native_device_type, typename T>
 device CCL_API environment::create_device(native_device_type&& native_device) const {
     return device::create_device(std::forward<native_device_type>(native_device));
 }
 
-//Device context
+
+/******************** CONTEXT ********************/
+
 template <class native_device_contex_type, typename T>
 context CCL_API environment::create_context(native_device_contex_type&& native_context) const {
     return context::create_context(std::forward<native_device_contex_type>(native_context));
 }
 
-//Stream
+
+/******************** STREAM ********************/
+
 template <class native_stream_type, typename T>
 stream CCL_API environment::create_stream(native_stream_type& native_stream) {
     return stream::create_stream(native_stream);
@@ -60,7 +65,9 @@ stream CCL_API environment::create_stream(native_stream_type& native_stream,
     return stream::create_stream(native_stream, native_ctx);
 }
 
-//Device communicator
+
+/******************** COMMUNICATOR ********************/
+
 template <class DeviceType, class ContextType>
 vector_class<communicator> CCL_API
 environment::create_communicators(const size_t devices_size,
@@ -119,7 +126,9 @@ environment::create_communicators(const size_t comm_size,
 
 } // namespace ccl
 
-/***************************TypeGenerations*********************************************************/
+
+/******************** TypeGenerations ********************/
+
 #define CREATE_DEV_COMM_INSTANTIATION(DeviceType, ContextType) \
     template ccl::vector_class<ccl::communicator> CCL_API \
     ccl::detail::environment::create_communicators<DeviceType, ContextType>( \

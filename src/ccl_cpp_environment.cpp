@@ -8,8 +8,6 @@
 #include "common/comm/comm_interface.hpp"
 #endif //#if defined(MULTI_GPU_SUPPORT) || defined(CCL_ENABLE_SYCL)
 
-//#include "ccl.h"    //TODO datatypes
-
 #include <memory>
 
 #include "common/comm/single_device_communicator/single_device_communicator.hpp"
@@ -30,29 +28,13 @@ CCL_API environment& environment::instance() {
     return env;
 }
 
-// void environment::set_resize_fn(ccl_resize_fn_t callback)
-// {
-//     ccl::status result = ccl_set_resize_fn(callback);
-//     CCL_CHECK_AND_THROW(result, "failed to set resize callback");
-//     return;
-// }
-
 ccl::library_version CCL_API environment::get_library_version() {
     return utils::get_library_version();
 }
 
-/*
-static ccl::stream& get_empty_stream()
-{
-    static ccl::stream_t empty_stream  = environment::instance().create_stream();
-    return empty_stream;
-}
-*/
 
-/**
- * Factory methods
- */
-// KVS
+/******************** KVS ********************/
+
 shared_ptr_class<kvs> environment::create_main_kvs(const kvs_attr& attr) const {
     return std::shared_ptr<kvs>(new kvs(attr));
 }
@@ -61,19 +43,26 @@ shared_ptr_class<kvs> environment::create_kvs(const kvs::address_type& addr, con
     return std::shared_ptr<kvs>(new kvs(addr, attr));
 }
 
-// device
+
+/******************** DEVICE ********************/
+
 device environment::create_device(empty_t empty) const
 {
     static typename ccl::unified_device_type::ccl_native_t default_native_device;
     return device::create_device(default_native_device);
 }
 
-// context
+
+/******************** CONTEXT ********************/
+
 context environment::create_context(empty_t empty) const
 {
     static typename ccl::unified_context_type::ccl_native_t default_native_context;
     return context::create_context(default_native_context);
 }
+
+
+/******************** DATATYPE ********************/
 
 ccl::datatype environment::register_datatype(const ccl::datatype_attr& attr) {
     while (unlikely(ccl::global_data::get().executor->is_locked)) {
@@ -103,6 +92,9 @@ size_t environment::get_datatype_size(ccl::datatype dtype) const {
     return ccl::global_data::get().dtypes->get(dtype).size();
 }
 
+
+/******************** STREAM ********************/
+
 stream CCL_API environment::create_stream(typename unified_device_type::ccl_native_t device) {
     auto version = utils::get_library_version();
     return stream{ stream_provider_dispatcher::create(device, version) };
@@ -114,12 +106,10 @@ stream CCL_API environment::create_stream(typename unified_device_type::ccl_nati
     return stream{ stream_provider_dispatcher::create(device, context, version) };
 }
 
-} // namespace detail
-
-} // namespace ccl
+/******************** COMMUNICATOR ********************/
 
 #ifdef CCL_ENABLE_SYCL
-ccl::communicator ccl::detail::environment::create_single_device_communicator(
+ccl::communicator environment::create_single_device_communicator(
     const size_t comm_size,
     const size_t rank,
     const cl::sycl::device& device,
@@ -141,34 +131,42 @@ ccl::communicator ccl::detail::environment::create_single_device_communicator(
     //single_dev_comm->set_context(context);
     return ccl::communicator(std::move(impl));
 }
-
 #endif
 
-//Communicator
-ccl::communicator ccl::detail::environment::create_communicator(const comm_attr& attr) const {
+ccl::communicator environment::create_communicator(const comm_attr& attr) const {
     return ccl::communicator::create_communicator(attr);
 }
 
-ccl::communicator ccl::detail::environment::create_communicator(const size_t size,
-                                                      ccl::shared_ptr_class<ccl::kvs_interface> kvs,
-                                                      const comm_attr& attr) const {
+ccl::communicator environment::create_communicator(const size_t size,
+                                                   ccl::shared_ptr_class<ccl::kvs_interface> kvs,
+                                                   const comm_attr& attr) const {
     return ccl::communicator::create_communicator(size, kvs, attr);
 }
 
-ccl::communicator ccl::detail::environment::create_communicator(const size_t size,
-                                                      const size_t rank,
-                                                      ccl::shared_ptr_class<ccl::kvs_interface> kvs,
-                                                      const comm_attr& attr) const {
+ccl::communicator environment::create_communicator(const size_t size,
+                                                   const size_t rank,
+                                                   ccl::shared_ptr_class<ccl::kvs_interface> kvs,
+                                                   const comm_attr& attr) const {
     return ccl::communicator::create_communicator(size, rank, kvs, attr);
 }
 
-/***************************TypeGenerations*********************************************************/
-CREATE_DEV_COMM_INSTANTIATION(ccl::device, ccl::context)
-CREATE_DEV_COMM_INSTANTIATION(typename ccl::unified_device_type::ccl_native_t, typename ccl::unified_context_type::ccl_native_t)
-CREATE_DEV_COMM_INSTANTIATION(ccl::device_index_type, typename ccl::unified_context_type::ccl_native_t)
+} // namespace detail
+
+} // namespace ccl
+
+
+/******************** TypeGenerations ********************/
+
+CREATE_DEV_COMM_INSTANTIATION(ccl::device,
+                              ccl::context)
+CREATE_DEV_COMM_INSTANTIATION(typename ccl::unified_device_type::ccl_native_t,
+                              typename ccl::unified_context_type::ccl_native_t)
+CREATE_DEV_COMM_INSTANTIATION(ccl::device_index_type,
+                              typename ccl::unified_context_type::ccl_native_t)
 
 CREATE_STREAM_INSTANTIATION(typename ccl::unified_stream_type::ccl_native_t)
-CREATE_STREAM_EXT_INSTANTIATION(typename ccl::unified_device_type::ccl_native_t, typename ccl::unified_context_type::ccl_native_t)
+CREATE_STREAM_EXT_INSTANTIATION(typename ccl::unified_device_type::ccl_native_t,
+                                typename ccl::unified_context_type::ccl_native_t)
 
 CREATE_CONTEXT_INSTANTIATION(typename ccl::unified_context_type::ccl_native_t)
 CREATE_DEVICE_INSTANTIATION(typename ccl::unified_device_type::ccl_native_t)
