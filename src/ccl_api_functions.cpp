@@ -105,7 +105,7 @@ void CCL_API init(const init_attr& attr) {
 /******************** ENVIRONMENT ********************/
 
 library_version CCL_API get_library_version() {
-    return detail::environment::instance().get_library_version();
+    return detail::environment::get_library_version();
 }
 
 /* datatype */

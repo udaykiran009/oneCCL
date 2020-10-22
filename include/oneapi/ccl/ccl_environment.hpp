@@ -69,7 +69,7 @@ public:
      */
     static environment& instance();
 
-    ccl::library_version get_library_version() const;
+    static ccl::library_version get_library_version();
 
     template <class... attr_value_pair_t>
     static init_attr create_init_attr(attr_value_pair_t&&... avps) {
@@ -250,7 +250,10 @@ private:
     environment();
 
     template <class ccl_api_type, class... args_type>
-    static ccl_api_type create_postponed_api_type(args_type... args);
+    static ccl_api_type create_postponed_api_type(args_type... args) {
+        auto version = get_library_version();
+        return ccl_api_type(std::forward<args_type>(args)..., version);
+    }
 };
 
 } // namespace detail

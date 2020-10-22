@@ -37,7 +37,7 @@ CCL_API environment& environment::instance() {
 //     return;
 // }
 
-ccl::library_version environment::get_library_version() const {
+ccl::library_version CCL_API environment::get_library_version() {
     return utils::get_library_version();
 }
 

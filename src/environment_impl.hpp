@@ -115,15 +115,6 @@ environment::create_communicators(const size_t comm_size,
 */
 }
 
-template <class ccl_api_type, class... args_type>
-ccl_api_type CCL_API environment::create_postponed_api_type(args_type... args) {
-    auto version = utils::get_library_version();
-
-    // TODO: ccl_api_type is private constructor, so `static_cast`  fails always. Fix it
-    //static_assert(std::is_constructible<ccl_api_type, args_type..., ccl::library_version>::value, "Cannot construct `ccl_api_type` from given `args_type...`");
-    return ccl_api_type(std::forward<args_type>(args)..., version);
-}
-
 } // namespace detail
 
 } // namespace ccl
