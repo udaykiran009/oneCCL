@@ -7,16 +7,20 @@
 namespace ccl {
 
 class kvs_impl {
+
 public:
+
     kvs_impl() {
         inter_kvs = std::shared_ptr<internal_kvs>(new internal_kvs());
         inter_kvs->kvs_main_server_address_reserve(addr.data());
         inter_kvs->kvs_init(addr.data());
     }
+
     kvs_impl(const kvs::address_type& addr) : addr(addr) {
         inter_kvs = std::shared_ptr<internal_kvs>(new internal_kvs());
         inter_kvs->kvs_init(addr.data());
     }
+
     kvs::address_type get_addr() {
         return addr;
     }

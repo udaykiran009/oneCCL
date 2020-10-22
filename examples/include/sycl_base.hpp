@@ -115,6 +115,9 @@ std::string get_preferred_gpu_platform_name() {
 
 std::vector<sycl::device> create_sycl_gpu_devices() {
 
+    constexpr char dev_prefix[] = "--";
+    constexpr char sub_dev_prefix[] = "----";
+
     std::vector<sycl::device> result;
     auto plaform_list = sycl::platform::get_platforms();
     auto preferred_platform_name = get_preferred_gpu_platform_name();
@@ -125,10 +128,10 @@ std::vector<sycl::device> create_sycl_gpu_devices() {
 
         auto platform_name = platform.get_info<sycl::info::platform::name>();
 
-        cout << "platform: [" << platform_name << "]\n";
-
         if (platform_name.compare(preferred_platform_name) != 0)
             continue;
+
+        cout << "platform: [" << platform_name << "]\n";
 
         auto device_list = platform.get_devices();
 
@@ -137,7 +140,9 @@ std::vector<sycl::device> create_sycl_gpu_devices() {
             auto device_name = device.get_info<cl::sycl::info::device::name>();
 
             if (!device.is_gpu()) {
-                cout << "  device [" << device_name << "] is not GPU, skipping\n";
+                cout << dev_prefix
+                     << "device [" << device_name
+                     << "] is not GPU, skipping\n";
                 continue;
             }
 
@@ -146,7 +151,8 @@ std::vector<sycl::device> create_sycl_gpu_devices() {
             if (std::find(part_props.begin(),
                           part_props.end(),
                           info::partition_property::partition_by_affinity_domain) == part_props.end()) {
-                cout << "  device [" << device_name
+                cout << dev_prefix
+                     << "device [" << device_name
                      << "] does not support partition by affinity domain"
                      << ", use root device\n";
                 result.push_back(device);
@@ -158,14 +164,16 @@ std::vector<sycl::device> create_sycl_gpu_devices() {
             if (std::find(part_affinity_domains.begin(),
                           part_affinity_domains.end(),
                           info::partition_affinity_domain::next_partitionable) == part_affinity_domains.end()) {
-                cout << "  device [" << device_name
+                cout << dev_prefix
+                     << "device [" << device_name
                      << "] does not support next_partitionable affinity domain"
                      << ", use root device\n";
                 result.push_back(device);
                 continue;
             }
 
-            cout << "  device [" << device_name << "] should provide "
+            cout << dev_prefix
+                 << "device [" << device_name << "] should provide "
                  << device.template get_info<info::device::partition_max_sub_devices>()
                  << " sub-devices\n";
 
@@ -175,17 +183,23 @@ std::vector<sycl::device> create_sycl_gpu_devices() {
 
             if (sub_devices.empty()) {
                 /* TODO: remove when SYCL/L0 sub-devices will be supported */
+                cout << dev_prefix
+                     << "device [" << device_name
+                     << "] does not provide sub-devices"
+                     << ", use root device\n";
                 result.push_back(device);
                 continue;
             }
 
-            cout << "  device [" << device_name << "] provides "
+            cout << dev_prefix
+                 << "device [" << device_name << "] provides "
                  << sub_devices.size()
                  << " sub-devices\n";
             result.insert(result.end(), sub_devices.begin(), sub_devices.end());
 
             for (auto idx = 0; idx <sub_devices.size(); idx++) {
-                cout << "    sub-device " << idx
+                cout << sub_dev_prefix
+                     << "sub-device " << idx
                      << ": [" << sub_devices[idx].get_info<cl::sycl::info::device::name>() << "]\n";
             }
         }

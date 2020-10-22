@@ -230,10 +230,12 @@ void* kvs_server_init(void* args) {
     }
 
     while (!is_stop || clients_count > 1) {
+
         FD_ZERO(&read_fds);
         FD_SET(sock_listener, &read_fds);
         FD_SET(local_sock, &read_fds);
         max_sd = sock_listener;
+
         for (i = 0; i < MAX_CLIENT_COUNT; i++) {
             sd = client_socket[i];
 
@@ -243,11 +245,19 @@ void* kvs_server_init(void* args) {
             if (sd > max_sd)
                 max_sd = sd;
         }
+
         if (local_sock > max_sd)
             max_sd = local_sock;
-        if ((select(max_sd + 1, &read_fds, NULL, NULL, NULL) < 0) && (errno != EINTR)) {
-            perror("select");
-            exit(EXIT_FAILURE);
+
+        if (select(max_sd + 1, &read_fds, NULL, NULL, NULL) < 0) {
+            if (errno != EINTR) {
+                perror("select");
+                exit(EXIT_FAILURE);
+            }
+            else {
+                /* restart select */
+                continue;
+            }
         }
 
         if (FD_ISSET(local_sock, &read_fds)) {
@@ -262,7 +272,9 @@ void* kvs_server_init(void* args) {
             }
             is_stop = 1;
         }
+
         for (i = 0; i < MAX_CLIENT_COUNT; i++) {
+
             sd = client_socket[i];
             if (sd == 0)
                 continue;
