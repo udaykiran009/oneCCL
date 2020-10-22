@@ -24,10 +24,10 @@ group_context::comm_group_t group_context::group_by_kvs(
                                                     local_thread_device_group_ranks,
                                                     kvs_wrap));
     LOG_INFO("Thread released by barrier");
-    std::cout <<"Check cluster_device_group_size: " << cluster_device_group_size << \
-              " "<< local_thread_device_group_ranks.size() <<std::endl;
+    LOG_INFO("Cluster_device_group size: ", cluster_device_group_size,
+             "\nThread device group ranks size: ", local_thread_device_group_ranks.size());
     for (size_t i = 0; i < local_thread_device_group_ranks.size(); i++){
-         std::cout <<"Check local_thread_device_group_ranks: " << local_thread_device_group_ranks[i] << std::endl;
+         LOG_INFO("\nLocal thread device group ranks: ", local_thread_device_group_ranks[i]);
     }
     // register group slot in global context table, based on communicator id
     comm_group_t group = group_context::group_by_comm(atl);

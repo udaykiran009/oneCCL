@@ -3,7 +3,6 @@ cmake_minimum_required (VERSION 2.8)
 set(PROJECT_NAME "oneCCL internal examples")
 
 project(${PROJECT_NAME})
-
 include(${PROJECT_SOURCE_DIR}/../../cmake/helpers.cmake)
 
 if (DEFINED ENV{CCL_CONFIGURATION})
@@ -53,7 +52,7 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${CXX_COMPILER_FLAGS} -Wall -Werror -D_G
 set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} ${CXX_COMPILER_FLAGS} -O0 -g -DENABLE_DEBUG")
 set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} ${CXX_COMPILER_FLAGS} -O3")
 set(CMAKE_CXX_FLAGS_RELWITHDEBINFO "${CMAKE_CXX_FLAGS_RELWITHDEBINFO} ${CXX_COMPILER_FLAGS} -O2 -g")
-set(CMAKE_CXX_STANDARD 11)
+set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 include_directories(include)
@@ -70,12 +69,15 @@ if (COMPUTE_RUNTIME)
     list(APPEND CCL_INC_DIRS ${COMPUTE_RUNTIME_INCLUDE_DIRS})
     list(APPEND EXTERNAL_LIBS ${COMPUTE_RUNTIME_LIBRARIES})
 
-    if ((${COMPUTE_RUNTIME_TARGET_NAME} STREQUAL "ze_loader")
-             OR (${COMPUTE_RUNTIME_TARGET_NAME} STREQUAL "Intel::SYCL"))
-        set(MULTI_GPU_SUPPORT ON)
-        message ("Enable multi GPU support: ${MULTI_GPU_SUPPORT}")
-        message ("COMPUTE_RUNTIME_TARGET_NAME: ${COMPUTE_RUNTIME_TARGET_NAME}")
-        add_subdirectory(level_zero)
+    set(MULTI_GPU_SUPPORT ON)
+    message ("Enable multi GPU support: ${MULTI_GPU_SUPPORT}")
+    message ("COMPUTE_RUNTIME_TARGET_NAME: ${COMPUTE_RUNTIME_TARGET_NAME}")
+
+    if ((${COMPUTE_RUNTIME_TARGET_NAME} STREQUAL "Intel::SYCL"))
+        add_subdirectory(level_zero/sycl)
+    endif()
+    if(${COMPUTE_RUNTIME_TARGET_NAME} STREQUAL "ze_loader")
+        add_subdirectory(level_zero/l0)
     endif()
 endif()
 
