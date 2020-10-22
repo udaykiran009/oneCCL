@@ -57,7 +57,8 @@ void run_collective(const char* cmd_name,
 
 int main() {
 
-    ccl::init();
+    ccl::init_attr init_attr = ccl::create_init_attr();
+    ccl::init(init_attr);
 
     int size, rank;
     MPI_Init(NULL, NULL);
