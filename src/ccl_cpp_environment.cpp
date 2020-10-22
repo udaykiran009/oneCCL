@@ -103,6 +103,17 @@ size_t environment::get_datatype_size(ccl::datatype dtype) const {
     return ccl::global_data::get().dtypes->get(dtype).size();
 }
 
+stream CCL_API environment::create_stream(typename unified_device_type::ccl_native_t device) {
+    auto version = utils::get_library_version();
+    return stream{ stream_provider_dispatcher::create(device, version) };
+}
+
+stream CCL_API environment::create_stream(typename unified_device_type::ccl_native_t device,
+                                          typename unified_context_type::ccl_native_t context) {
+    auto version = utils::get_library_version();
+    return stream{ stream_provider_dispatcher::create(device, context, version) };
+}
+
 } // namespace detail
 
 } // namespace ccl
@@ -152,54 +163,6 @@ ccl::communicator ccl::detail::environment::create_communicator(const size_t siz
 }
 
 /***************************TypeGenerations*********************************************************/
-namespace ccl {
-
-namespace detail {
-
-template <>
-stream CCL_API environment::create_postponed_api_type<
-    stream,
-    typename unified_device_type::ccl_native_t,
-    typename unified_context_type::ccl_native_t>(
-    typename unified_device_type::ccl_native_t device,
-    typename unified_context_type::ccl_native_t context) {
-    auto version = utils::get_library_version();
-
-    return stream{ stream_provider_dispatcher::create(device, context, version) };
-}
-
-template <>
-stream CCL_API
-environment::create_postponed_api_type<stream,
-                                            typename unified_device_type::ccl_native_t>(
-    typename unified_device_type::ccl_native_t device) {
-    auto version = utils::get_library_version();
-
-    return stream{ stream_provider_dispatcher::create(device, version) };
-}
-
-} // namespace detail
-} // namespace ccl
-
-CREATE_OP_ATTR_INSTANTIATION(ccl::init_attr)
-
-CREATE_OP_ATTR_INSTANTIATION(ccl::allgatherv_attr)
-CREATE_OP_ATTR_INSTANTIATION(ccl::allreduce_attr)
-CREATE_OP_ATTR_INSTANTIATION(ccl::alltoall_attr)
-CREATE_OP_ATTR_INSTANTIATION(ccl::alltoallv_attr)
-CREATE_OP_ATTR_INSTANTIATION(ccl::broadcast_attr)
-CREATE_OP_ATTR_INSTANTIATION(ccl::reduce_attr)
-CREATE_OP_ATTR_INSTANTIATION(ccl::reduce_scatter_attr)
-CREATE_OP_ATTR_INSTANTIATION(ccl::sparse_allreduce_attr)
-
-CREATE_OP_ATTR_INSTANTIATION(ccl::comm_attr)
-
-CREATE_OP_ATTR_INSTANTIATION(ccl::comm_split_attr)
-
-CREATE_OP_ATTR_INSTANTIATION(ccl::datatype_attr)
-
-CREATE_OP_ATTR_INSTANTIATION(ccl::kvs_attr)
-
 CREATE_DEV_COMM_INSTANTIATION(ccl::device, ccl::context)
 CREATE_DEV_COMM_INSTANTIATION(typename ccl::unified_device_type::ccl_native_t, typename ccl::unified_context_type::ccl_native_t)
 CREATE_DEV_COMM_INSTANTIATION(ccl::device_index_type, typename ccl::unified_context_type::ccl_native_t)

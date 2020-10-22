@@ -120,9 +120,6 @@ environment::create_communicators(const size_t comm_size,
 } // namespace ccl
 
 /***************************TypeGenerations*********************************************************/
-#define CREATE_OP_ATTR_INSTANTIATION(Attr) \
-    template Attr CCL_API ccl::detail::environment::create_postponed_api_type<Attr>();
-
 #define CREATE_DEV_COMM_INSTANTIATION(DeviceType, ContextType) \
     template ccl::vector_class<ccl::communicator> CCL_API \
     ccl::detail::environment::create_communicators<DeviceType, ContextType>( \

@@ -32,8 +32,8 @@ library_version get_library_version();
  * @return an attribute object
  */
 template <class... attr_value_pair_t>
-datatype_attr CCL_API create_datatype_attr(attr_value_pair_t&&... avps) {
-    return detail::environment::instance().create_datatype_attr(std::forward<attr_value_pair_t>(avps)...);
+datatype_attr create_datatype_attr(attr_value_pair_t&&... avps) {
+    return detail::environment::create_datatype_attr(std::forward<attr_value_pair_t>(avps)...);
 }
 
 /**
@@ -61,7 +61,7 @@ size_t get_datatype_size(datatype dtype);
 
 template <class... attr_value_pair_t>
 kvs_attr create_kvs_attr(attr_value_pair_t&&... avps) {
-    return detail::environment::instance().create_kvs_attr(
+    return detail::environment::create_kvs_attr(
         std::forward<attr_value_pair_t>(avps)...);
 }
 /**
@@ -156,13 +156,13 @@ stream create_stream(native_stream_type& native_stream) {
 
 template <class... attr_value_pair_t>
 comm_split_attr create_comm_split_attr(attr_value_pair_t&&... avps) {
-    return detail::environment::instance().create_comm_split_attr(
+    return detail::environment::create_comm_split_attr(
     std::forward<attr_value_pair_t>(avps)...);
 }
 
 template <class... attr_value_pair_t>
 comm_attr create_comm_attr(attr_value_pair_t&&... avps) {
-    return detail::environment::instance().create_comm_attr(
+    return detail::environment::create_comm_attr(
         std::forward<attr_value_pair_t>(avps)...);
 }
 
@@ -285,7 +285,7 @@ communicator create_communicator(
  */
 template <class coll_attribute_type, class... attr_value_pair_t>
 coll_attribute_type CCL_API create_operation_attr(attr_value_pair_t&&... avps) {
-    return detail::environment::instance().create_operation_attr<coll_attribute_type>(
+    return detail::environment::create_operation_attr<coll_attribute_type>(
         std::forward<attr_value_pair_t>(avps)...);
 }
 

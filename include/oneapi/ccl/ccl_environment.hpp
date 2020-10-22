@@ -72,7 +72,7 @@ public:
     static ccl::library_version get_library_version();
 
     template <class... attr_value_pair_t>
-    static init_attr create_init_attr(attr_value_pair_t&&... avps) {
+    static ccl::init_attr create_init_attr(attr_value_pair_t&&... avps) {
         auto init_create_attr = create_postponed_api_type<init_attr>();
         int expander[]{ (init_create_attr.template set<attr_value_pair_t::idx()>(avps.val()), 0)... };
         (void)expander;
@@ -80,7 +80,7 @@ public:
     }
 
     template <class... attr_value_pair_t>
-    datatype_attr create_datatype_attr(attr_value_pair_t&&... avps) const {
+    static ccl::datatype_attr create_datatype_attr(attr_value_pair_t&&... avps) {
         static_assert(sizeof...(avps) > 0, "At least one argument must be specified");
         auto attr = create_postponed_api_type<datatype_attr>();
         int expander[]{ (attr.template set<attr_value_pair_t::idx()>(avps.val()), 0)... };
@@ -93,7 +93,7 @@ public:
     size_t get_datatype_size(ccl::datatype dtype) const;
 
     template <class... attr_value_pair_t>
-    kvs_attr create_kvs_attr(attr_value_pair_t&&... avps) const {
+    static ccl::kvs_attr create_kvs_attr(attr_value_pair_t&&... avps) {
         auto kvs_create_attr = create_postponed_api_type<kvs_attr>();
         int expander[]{ (kvs_create_attr.template set<attr_value_pair_t::idx()>(avps.val()), 0)... };
         (void)expander;
@@ -136,7 +136,7 @@ public:
     }
 
     template <class coll_attribute_type, class... attr_value_pair_t>
-    coll_attribute_type create_operation_attr(attr_value_pair_t&&... avps) const {
+    static coll_attribute_type create_operation_attr(attr_value_pair_t&&... avps) {
         auto op_attr = create_postponed_api_type<coll_attribute_type>();
         int expander[]{ (op_attr.template set<attr_value_pair_t::idx()>(avps.val()), 0)... };
         (void)expander;
@@ -168,7 +168,7 @@ public:
     template <class... attr_value_pair_t>
     stream create_stream_from_attr(typename unified_device_type::ccl_native_t device,
                                    attr_value_pair_t&&... avps) {
-        stream str = create_postponed_api_type<stream>(device);
+        stream str = create_stream(device);
         int expander[]{ (str.template set<attr_value_pair_t::idx()>(avps.val()), 0)... };
         (void)expander;
         str.build_from_params();
@@ -179,7 +179,7 @@ public:
     stream create_stream_from_attr(typename unified_device_type::ccl_native_t device,
                                    typename unified_context_type::ccl_native_t context,
                                    attr_value_pair_t&&... avps) {
-        stream str = create_postponed_api_type<stream>(device, context);
+        stream str = create_stream(device, context);
         int expander[]{ (str.template set<attr_value_pair_t::idx()>(avps.val()), 0)... };
         (void)expander;
         str.build_from_params();
@@ -197,7 +197,7 @@ public:
 #endif
 
     template <class... attr_value_pair_t>
-    comm_split_attr create_comm_split_attr(attr_value_pair_t&&... avps) const {
+    static comm_split_attr create_comm_split_attr(attr_value_pair_t&&... avps) {
         auto split_attr = create_postponed_api_type<comm_split_attr>();
         int expander[]{ (split_attr.template set<attr_value_pair_t::idx()>(avps.val()), 0)... };
         (void)expander;
@@ -205,7 +205,7 @@ public:
     }
 
     template <class... attr_value_pair_t>
-    comm_attr create_comm_attr(attr_value_pair_t&&... avps) const {
+    static comm_attr create_comm_attr(attr_value_pair_t&&... avps) {
         auto comm_create_attr = create_postponed_api_type<comm_attr>();
         int expander[]{ (comm_create_attr.template set<attr_value_pair_t::idx()>(avps.val()), 0)... };
         (void)expander;
@@ -254,6 +254,11 @@ private:
         auto version = get_library_version();
         return ccl_api_type(std::forward<args_type>(args)..., version);
     }
+
+    stream create_stream(typename unified_device_type::ccl_native_t device);
+
+    stream create_stream(typename unified_device_type::ccl_native_t device,
+                         typename unified_context_type::ccl_native_t context);
 };
 
 } // namespace detail
