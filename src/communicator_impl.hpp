@@ -53,7 +53,7 @@ using rank_t = size_t;
 
 template <class DeviceType, class ContextType>
 CCL_API vector_class<communicator> communicator::create_communicators(
-    const size_t cluster_devices_size, /*global devics count*/
+    const size_t cluster_devices_size, /*global devices count*/
     const vector_class<pair_class<rank_t, DeviceType>>& local_rank_device_map,
     ContextType& context,
     shared_ptr_class<kvs_interface> kvs) {
@@ -89,7 +89,7 @@ CCL_API vector_class<communicator> communicator::create_communicators(
 
 template <class DeviceType, class ContextType>
 CCL_API vector_class<communicator> communicator::create_communicators(
-    const size_t cluster_devices_size, /*global devics count*/
+    const size_t cluster_devices_size, /*global devices count*/
     const map_class<rank_t, DeviceType>& local_rank_device_map,
     ContextType& context,
     shared_ptr_class<kvs_interface> kvs)

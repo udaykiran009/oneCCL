@@ -116,7 +116,7 @@ void transport_data::init_device_comms(sycl_dev_type_t dev_type, size_t ranks_pe
             "all sycl queues should be from the same sycl context");
     }
 
-    device_comms = ccl::create_communicators(size, r2d_map, context, kvs);
+    device_comms = ccl::create_communicators(size * ranks_per_proc, r2d_map, context, kvs);
 
      ASSERT(device_comms.size() == ranks_per_proc,
         "unexpected device_comms size %zu, expected %zu", device_comms.size(), ranks_per_proc);

@@ -41,7 +41,7 @@ struct comm_impl_base_dispatch
 
     template <class DeviceType, class ContextType>
     static vector_class<communicator> create_communicators_selector(
-                const size_t cluster_devices_size, /*global devics count*/
+                const size_t cluster_devices_size, /*global devices count*/
                 const vector_class<pair_class<rank_t, DeviceType>>& local_rank_device_map,
                 ContextType& context,
                 shared_ptr_class<kvs_interface> kvs) {
@@ -79,7 +79,7 @@ struct comm_impl_dispatch_selector<cl_backend_type::empty_backend> :
 
     template <class DeviceType, class ContextType>
     static vector_class<communicator> create_communicators_selector(
-                const size_t cluster_devices_size, /*global devics count*/
+                const size_t cluster_devices_size, /*global devices count*/
                 const vector_class<pair_class<rank_t, DeviceType>>& local_rank_device_map,
                 ContextType& context,
                 shared_ptr_class<kvs_interface> kvs)
@@ -89,7 +89,7 @@ struct comm_impl_dispatch_selector<cl_backend_type::empty_backend> :
 
     template <class DeviceType, class ContextType>
     static vector_class<communicator> create_communicators_selector(
-                const size_t cluster_devices_size, /*global devics count*/
+                const size_t cluster_devices_size, /*global devices count*/
                 const map_class<rank_t, DeviceType>& local_rank_device_map,
                 ContextType& context,
                 shared_ptr_class<kvs_interface> kvs) {
@@ -122,7 +122,7 @@ struct comm_impl_dispatch_selector<cl_backend_type::dpcpp_sycl> :
 
     template <class DeviceType, class ContextType>
     static vector_class<communicator> create_communicators_selector(
-                const size_t cluster_devices_size, /*global devics count*/
+                const size_t cluster_devices_size, /*global devices count*/
                 const vector_class<pair_class<rank_t, DeviceType>>& local_rank_device_map,
                 ContextType& context,
                 shared_ptr_class<kvs_interface> kvs)
@@ -299,7 +299,7 @@ struct comm_impl_dispatch_selector<cl_backend_type::l0> :
 
     template <class DeviceType, class ContextType>
     static vector_class<communicator> create_communicators_selector(
-                const size_t cluster_devices_size, /*global devics count*/
+                const size_t cluster_devices_size, /*global devices count*/
                 const vector_class<pair_class<rank_t, DeviceType>>& local_rank_device_map,
                 ContextType& context,
                 shared_ptr_class<kvs_interface> kvs)
@@ -387,7 +387,7 @@ struct comm_impl_dispatch_selector<cl_backend_type::dpcpp_sycl_l0> :
 
     template <class DeviceType, class ContextType>
     static vector_class<communicator> create_communicators_selector(
-                const size_t cluster_devices_size, /*global devics count*/
+                const size_t cluster_devices_size, /*global devices count*/
                 const vector_class<pair_class<rank_t, DeviceType>>& local_rank_device_map,
                 ContextType& context,
                 shared_ptr_class<kvs_interface> kvs)

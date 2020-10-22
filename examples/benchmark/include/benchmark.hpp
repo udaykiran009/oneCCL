@@ -42,7 +42,7 @@ void print_help_usage(const char* app) {
         "\t[-c,--check <check result correctness>]: %d\n"
         "\t[-v,--v2i_ratio <values to indices ratio in sparse_allreduce>]: %d\n"
         "\t[-n,--buf_type <buffer type>]: %s\n"
-        "\t[-m,--sycl_dev_type <sycl device type>]: %s\n"
+        "\t[-a,--sycl_dev_type <sycl device type>]: %s\n"
         "\t[-m,--sycl_mem_type <sycl memory type>]: %s\n"
         "\t[-u,--sycl_usm_type <sycl usm type>]: %s\n"
         "\t[-k,--ranks_per_proc <rank count per process>]: %d\n"

@@ -209,7 +209,7 @@ communicator create_communicator(size_t size,
                                  const comm_attr& attr = default_comm_attr);
 
 /**
- * Creates a new communicators with user supplied size, locao devices and kvs.
+ * Creates a new communicators with user supplied size, local devices and kvs.
  * Ranks will be assigned automatically.
  * @param size user-supplied total number of ranks
  * @param local_devices user-supplied device objects for local ranks
