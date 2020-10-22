@@ -103,6 +103,7 @@ set_default_values()
     ENABLE_BUILD_CPU="no"
     ENABLE_BUILD_GPU="no"
     ENABLE_INSTALL="no"
+    MAKE_JOB_COUNT=4
 }
 #==============================================================================
 #                                Functions
@@ -147,6 +148,9 @@ print_help()
     echo_log "        Install package"
     echo_log "    -verbose|--verbose"
     echo_log "        Enable verbose output"
+    echo_log "    -job-count <num>|--job-count <num>"
+    echo_log "        Specify number of parallel make threads"
+    echo_log "        The value 'max' will set the maximum available number of threads"
     echo_log "   ------------------------------------------------------------"
     echo_log "    -h|-H|-help|--help"
     echo_log "        Print help information"
@@ -241,7 +245,7 @@ build_cpu()
     -DCMAKE_C_COMPILER="${C_COMPILER_CPU}" -DCMAKE_CXX_COMPILER="${CXX_COMPILER_CPU}" -DUSE_CODECOV_FLAGS="${CODECOV_FLAGS}" \
     -DLIBFABRIC_DIR="${LIBFABRIC_INSTALL_DIR}" -DLIB_SO_VERSION="${LIBCCL_SO_VERSION}" -DLIB_MAJOR_VERSION="${LIBCCL_MAJOR_VERSION}" \
 
-    log make -j4 VERBOSE=1 install
+    log make -j$MAKE_JOB_COUNT VERBOSE=1 install
     CheckCommandExitCode $? "cpu build failed"
 }
 
@@ -255,7 +259,7 @@ build_gpu()
     -DCMAKE_C_COMPILER="${C_COMPILER_GPU}" -DCMAKE_CXX_COMPILER="${CXX_COMPILER_GPU}" -DUSE_CODECOV_FLAGS="${CODECOV_FLAGS}" \
     -DCOMPUTE_RUNTIME="dpcpp" -DLIBFABRIC_DIR="${LIBFABRIC_INSTALL_DIR}" -DLIB_SO_VERSION="${LIBCCL_SO_VERSION}" -DLIB_MAJOR_VERSION="${LIBCCL_MAJOR_VERSION}" \
 
-    log make -j4 VERBOSE=1 install
+    log make -j$MAKE_JOB_COUNT VERBOSE=1 install
     CheckCommandExitCode $? "gpu build failed"
 }
 
@@ -682,6 +686,15 @@ parse_arguments()
             "-install"| "--install")
                 ENABLE_INSTALL="yes"
                 ;;
+            "-job-count"| "--job-count")
+                if [[ $2 == "max" ]]; then
+                    MAKE_JOB_COUNT=$(nproc)
+                    shift
+                elif [[ $2 == ?(-)+([0-9]) ]]; then
+                    MAKE_JOB_COUNT=$2
+                    shift
+                fi
+                ;;
             "-help"|"--help"|"-h"|"-H")
                 print_help
                 exit 0
@@ -705,6 +718,7 @@ parse_arguments()
     echo_log "ENABLE_DEBUG_BUILD        = ${ENABLE_DEBUG_BUILD}"
     echo_log "ENABLE_PRE_DROP           = ${ENABLE_PRE_DROP}"
     echo_log "ENABLE_INSTALL            = ${ENABLE_INSTALL}"
+    echo_log "MAKE_JOB_COUNT            = ${MAKE_JOB_COUNT}"
     echo_log "-----------------------------------------------------------"
 
     TIMESTAMP_START=`date +%s`
