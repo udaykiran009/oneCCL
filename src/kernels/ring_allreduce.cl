@@ -1,4 +1,5 @@
 #include "common_helpers.h"
+#include "lp.h"
 
 #pragma OPENCL EXTENSION cl_intel_subgroups : enable
 #pragma OPENCL EXTENSION cl_khr_subgroups : enable
@@ -376,17 +377,6 @@ __kernel void allreduce_execution_##Name##_##OpName(size_t my_rank,             
 
 #define DEFINE_KERNELS_WITH_BF16OP(OpName)                                  \
     DEFINE_KERNEL(bf16, ushort, 1, __##OpName##_##ushort, OpName)
-
-float __bf16_to_fp32(ushort V) {
-    uint temp = convert_uint(V) << 16;
-    return as_float(temp);
-}
-
-ushort __fp32_to_bf16(float V) {
-    // Truncate for now TODO: Proper rounding
-    ushort2 temp = as_ushort2(V);
-    return temp.s1;
-}
 
 #define DEFINE_ADD_OP(T)                                    \
     T __add_##T(T lhs, T rhs) {                             \

@@ -4,6 +4,7 @@
 #include <sstream>
 
 #include "allreduce_fixture.hpp"
+#include "../lp.hpp"
 
 namespace ring_single_device_case {
 
@@ -12,16 +13,6 @@ namespace ring_allreduce_case {
 using bf16 = ushort;
 using float32_t = float;
 using float64_t = double;
-
-float bf16_to_fp32(bf16 val) {
-  uint32_t temp = static_cast<uint32_t>(val) << 16;
-  return *(reinterpret_cast<float *>(&temp));
-}
-
-bf16 fp32_to_bf16(float val) {
-  // Truncate for now
-  return (reinterpret_cast<bf16 *>(&val))[1];
-}
 
 template <class T>
 struct my_add {
