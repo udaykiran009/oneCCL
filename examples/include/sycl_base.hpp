@@ -214,31 +214,14 @@ std::vector<sycl::device> create_sycl_gpu_devices() {
     return result;
 }
 
-bool create_sycl_queue_from_device_type(const std::string& device_type,
-                                        int rank,
-                                        queue& q) {
+sycl::context create_sycl_context(const std::string& device_type) {
 
-    auto exception_handler = [&](exception_list elist) {
-        for (exception_ptr const& e : elist) {
-            try {
-                rethrow_exception(e);
-            }
-            catch (std::exception const& e) {
-                cout << "failure\n";
-            }
-        }
-    };
+    std::vector<sycl::device> devices;
 
     try {
         if ((device_type.compare("gpu") == 0) && has_gpu()) {
-            /* special handling due to multi-tile case */
-            auto devices = create_sycl_gpu_devices();
-            auto device = devices[rank % devices.size()];
-            /* TODO: add explciit context */
-            q = queue(device, exception_handler);
-            cout << "created SYCL queue from GPU device ["
-                 << device.get_info<cl::sycl::info::device::name>()
-                 << "], rank " << rank << "\n";
+            /* special handling to cover multi-tile case */
+            devices = create_sycl_gpu_devices();
         }
         else {
             unique_ptr<device_selector> selector;
@@ -273,21 +256,29 @@ bool create_sycl_queue_from_device_type(const std::string& device_type,
                 }
             }
             else {
-                cerr << "Please provide device type: cpu | gpu | host | default\n";
-                return false;
+                throw std::runtime_error("Please provide device type: cpu | gpu | host | default");
             }
-            q = queue(*selector, exception_handler);
+            devices.push_back(sycl::device(*selector));
         }
     }
     catch (...) {
-        cerr << "No device of requested type available\n";
-        return false;
+        throw std::runtime_error("No devices of requested type available");
     }
 
-    cout << "Requested device type: " << device_type
-         << "\nRunning on [" << q.get_device().get_info<info::device::name>() << "]\n";
+    if (devices.empty()) {
+        throw std::runtime_error("No devices of requested type available");
+    }
 
-    return true;
+    sycl::context result(devices);
+
+    cout << "Created context from devices of type: " << device_type << "\n";
+    cout << "Devices [" << devices.size() << "]:\n";
+
+    for (size_t idx = 0; idx < devices.size(); idx++) {
+        cout << "[" << idx << "]: [" << devices[idx].get_info<info::device::name>() << "]\n";
+     }
+
+    return result;
 }
 
 inline bool create_sycl_queue(int argc,
@@ -295,9 +286,27 @@ inline bool create_sycl_queue(int argc,
                               int rank,
                               queue& q) {
 
+    auto exception_handler = [&](exception_list elist) {
+        for (exception_ptr const& e : elist) {
+            try {
+                rethrow_exception(e);
+            }
+            catch (std::exception const& e) {
+                cout << "failure\n";
+            }
+        }
+    };
+
     if (argc >= 2) {
-        std::string device_type = argv[1];
-        return create_sycl_queue_from_device_type(device_type, rank, q);
+        try {
+            auto ctx = create_sycl_context(argv[1]);
+            q = sycl::queue(ctx.get_devices()[0], exception_handler);
+            return true;
+        }
+        catch (std::exception& e) {
+            cerr << e.what() << "\n";
+            return false;
+        }
     }
     else {
         cerr << "Please provide device type: cpu | gpu | host | default\n";

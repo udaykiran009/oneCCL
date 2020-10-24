@@ -60,41 +60,13 @@ struct cpu_base_coll : base_coll, protected strategy {
         return coll_strategy::class_name();
     }
 
-    virtual void prepare(size_t elem_count) override {
-        auto& transport = transport_data::instance();
-        auto& comms = transport.get_host_comms();
-        auto streams = transport.get_streams();
-        size_t ranks_per_proc = base_coll::get_ranks_per_proc();
-
-        for (size_t rank_idx = 0; rank_idx < ranks_per_proc; rank_idx++) {
-            prepare_internal(elem_count,
-                             comms[rank_idx],
-                             streams[rank_idx],
-                             rank_idx);
-        }
-    }
-
-    virtual void finalize(size_t elem_count) override {
-        auto& transport = transport_data::instance();
-        auto& comms = transport.get_host_comms();
-        auto streams = transport.get_streams();
-        size_t ranks_per_proc = base_coll::get_ranks_per_proc();
-
-        for (size_t rank_idx = 0; rank_idx < ranks_per_proc; rank_idx++) {
-            finalize_internal(elem_count,
-                              comms[rank_idx],
-                              streams[rank_idx],
-                              rank_idx);
-        }
-    }
-
     virtual void start(size_t count,
                        size_t buf_idx,
                        const bench_exec_attr& attr,
                        req_list_t& reqs) override {
 
         auto& transport = transport_data::instance();
-        auto& comms = transport.get_host_comms();
+        auto& comms = transport.get_comms();
         size_t ranks_per_proc = base_coll::get_ranks_per_proc();
 
         for (size_t rank_idx = 0; rank_idx < ranks_per_proc; rank_idx++) {
@@ -113,7 +85,7 @@ struct cpu_base_coll : base_coll, protected strategy {
                               req_list_t& reqs) override {
 
         auto& transport = transport_data::instance();
-        auto& comms = transport.get_host_comms();
+        auto& comms = transport.get_comms();
         size_t ranks_per_proc = base_coll::get_ranks_per_proc();
 
         for (size_t rank_idx = 0; rank_idx < ranks_per_proc; rank_idx++) {

@@ -14,15 +14,13 @@
 #include "declarations.hpp"
 #include "transport_impl.hpp"
 
-void do_regular(std::vector<ccl::communicator>& host_comms,
+void do_regular(ccl::communicator& service_comm,
                 bench_exec_attr& bench_attr,
                 coll_list_t& all_colls,
                 req_list_t& reqs,
                 const user_options_t& options) {
 
     std::stringstream match_id_stream;
-
-    auto& host_comm = host_comms[0];
 
     for (auto dtype : all_dtypes) {
         coll_list_t colls;
@@ -46,17 +44,17 @@ void do_regular(std::vector<ccl::communicator>& host_comms,
                 continue;
 
             PRINT_BY_ROOT(
-                host_comm, "\ndtype: %s\nreduction: %s\n", dtype_name.c_str(), reduction.c_str());
+                service_comm, "\ndtype: %s\nreduction: %s\n", dtype_name.c_str(), reduction.c_str());
 
             reqs.reserve(colls.size() * options.buf_count);
 
             /* warm up */
-            PRINT_BY_ROOT(host_comm, "do warm up");
+            PRINT_BY_ROOT(service_comm, "do warm up");
 
             bench_attr.reduction = reduction_op;
             bench_attr.set<ccl::operation_attr_id::to_cache>(true);
 
-            bench_barrier(host_comms);
+            ccl::barrier(service_comm);
 
             for (size_t count = options.min_elem_count; count <= options.max_elem_count;
                  count *= 2) {
@@ -92,19 +90,19 @@ void do_regular(std::vector<ccl::communicator>& host_comms,
                       options.coll_names.end(),
                       std::ostream_iterator<std::string>{ scolls, " " });
 
-            bench_barrier(host_comms);
+            ccl::barrier(service_comm);
 
             /* benchmark with multiple equal sized buffer per collective */
             if (options.buf_type == BUF_MULTI) {
-                PRINT_BY_ROOT(host_comm,
+                PRINT_BY_ROOT(service_comm,
                               "do multi-buffers benchmark\n"
                               "#------------------------------------------------------------\n"
                               "# Benchmarking: %s\n"
-                              "# ranks: %zu\n"
+                              "# processes: %zu\n"
                               "#------------------------------------------------------------\n"
                               "%10s %13s %18s %11s",
                               scolls.str().c_str(),
-                              host_comm.size(),
+                              service_comm.size(),
                               "#bytes",
                               "avg[usec]",
                               "avg_per_buf[usec]",
@@ -120,7 +118,7 @@ void do_regular(std::vector<ccl::communicator>& host_comms,
 
                             auto& coll = colls[coll_idx];
 
-                            bench_barrier(host_comms);
+                            ccl::barrier(service_comm);
 
                             double t1 = 0, t2 = 0, t = 0;
 
@@ -137,7 +135,7 @@ void do_regular(std::vector<ccl::communicator>& host_comms,
                                     coll->prepare(count);
                                 }
 
-                                bench_barrier(host_comms);
+                                ccl::barrier(service_comm);
 
                                 t1 = when();
 
@@ -164,7 +162,7 @@ void do_regular(std::vector<ccl::communicator>& host_comms,
                             }
                             coll_timers[coll_idx] += t;
                         }
-                        print_timings(host_comms, coll_timers, options, count, dtype, reduction_op);
+                        print_timings(service_comm, coll_timers, options, count, dtype, reduction_op);
                     }
                     catch (const std::exception& ex) {
                         ASSERT(0, "error on count %zu, reason: %s", count, ex.what());
@@ -173,15 +171,15 @@ void do_regular(std::vector<ccl::communicator>& host_comms,
             }
             else {
                 /* benchmark with single buffer per collective */
-                PRINT_BY_ROOT(host_comm,
+                PRINT_BY_ROOT(service_comm,
                               "do single-buffer benchmark\n"
                               "#--------------------------------------\n"
                               "# Benchmarking: %s\n"
-                              "# ranks: %zu\n"
+                              "# processes: %zu\n"
                               "#--------------------------------------\n"
                               "%10s %12s %11s",
                               scolls.str().c_str(),
-                              host_comm.size(),
+                              service_comm.size(),
                               "#bytes",
                               "avg[usec]",
                               "stddev[%]");
@@ -204,7 +202,7 @@ void do_regular(std::vector<ccl::communicator>& host_comms,
                             size_t iter_count =
                                 get_iter_count(count * ccl::get_datatype_size(coll->get_dtype()), options.iters);
 
-                            bench_barrier(host_comms);
+                            ccl::barrier(service_comm);
 
                             t1 = when();
 
@@ -227,19 +225,19 @@ void do_regular(std::vector<ccl::communicator>& host_comms,
                             coll_timers[coll_idx] += (t2 - t1);
                         }
 
-                        print_timings(host_comms, coll_timers, options, count, dtype, reduction_op);
+                        print_timings(service_comm, coll_timers, options, count, dtype, reduction_op);
                     }
                     catch (...) {
                         ASSERT(0, "error on count %zu", count);
                     }
                 }
-                PRINT_BY_ROOT(host_comm, "PASSED\n");
+                PRINT_BY_ROOT(service_comm, "PASSED\n");
             }
         }
     }
 }
 
-void do_unordered(std::vector<ccl::communicator>& host_comms,
+void do_unordered(ccl::communicator& service_comm,
                   bench_exec_attr& bench_attr,
                   coll_list_t& all_colls,
                   req_list_t& reqs,
@@ -247,8 +245,6 @@ void do_unordered(std::vector<ccl::communicator>& host_comms,
 
     std::set<ccl::string_class> match_ids;
     std::stringstream match_id_stream;
-
-    auto& host_comm = host_comms[0];
 
     for (auto dtype : all_dtypes) {
         coll_list_t colls;
@@ -272,13 +268,13 @@ void do_unordered(std::vector<ccl::communicator>& host_comms,
                 continue;
 
             PRINT_BY_ROOT(
-                host_comm, "\ndtype: %s\nreduction: %s\n", dtype_name.c_str(), reduction.c_str());
+                service_comm, "\ndtype: %s\nreduction: %s\n", dtype_name.c_str(), reduction.c_str());
 
-            size_t rank = host_comm.rank();
+            size_t rank = service_comm.rank();
 
             reqs.reserve(colls.size() * options.buf_count * (log2(options.max_elem_count) + 1));
 
-            PRINT_BY_ROOT(host_comm, "do unordered test");
+            PRINT_BY_ROOT(service_comm, "do unordered test");
             bench_attr.reduction = reduction_op;
             bench_attr.set<ccl::operation_attr_id::to_cache>(true);
 
@@ -335,7 +331,7 @@ void do_unordered(std::vector<ccl::communicator>& host_comms,
             catch (...) {
                 ASSERT(0, "error on coll completion");
             }
-            PRINT_BY_ROOT(host_comm, "PASSED\n");
+            PRINT_BY_ROOT(service_comm, "PASSED\n");
         }
     }
 }
@@ -574,17 +570,9 @@ int main(int argc, char* argv[]) {
     }
 
     auto& transport = transport_data::instance();
+    transport.init_comms(options);
 
-    transport.init_host_comms(options.ranks_per_proc);
-
-#ifdef CCL_ENABLE_SYCL
-    if (options.backend == BACKEND_SYCL) {
-        transport.init_device_comms(options.sycl_dev_type, options.ranks_per_proc);
-    }
-#endif
-
-    std::vector<ccl::communicator>& host_comms = transport.get_host_comms();
-    ccl::communicator& comm = host_comms[0];
+    ccl::communicator& service_comm = transport.get_service_comm();
 
     init_attr.buf_count = options.buf_count;
     init_attr.max_elem_count = options.max_elem_count;
@@ -608,20 +596,20 @@ int main(int argc, char* argv[]) {
     bench_exec_attr bench_attr{};
     bench_attr.init_all();
 
-    print_user_options(options, comm);
+    print_user_options(options, service_comm);
 
     if (options.coll_names.empty()) {
-        PRINT_BY_ROOT(comm, "empty coll list");
+        PRINT_BY_ROOT(service_comm, "empty coll list");
         print_help_usage(argv[0]);
         return -1;
     }
 
-    bench_barrier(host_comms);
+    ccl::barrier(service_comm);
 
     switch (options.loop) {
         case LOOP_REGULAR: {
             // open and truncate CSV file if csv-output is requested
-            if (comm.rank() == 0 && !options.csv_filepath.empty()) {
+            if (service_comm.rank() == 0 && !options.csv_filepath.empty()) {
                 std::ofstream csvf;
                 csvf.open(options.csv_filepath, std::ios::trunc);
                 if (!csvf.is_open()) {
@@ -634,14 +622,14 @@ int main(int argc, char* argv[]) {
                      << std::endl;
                 csvf.close();
             }
-            bench_barrier(host_comms);
-            do_regular(host_comms, bench_attr, colls, reqs, options);
+            ccl::barrier(service_comm);
+            do_regular(service_comm, bench_attr, colls, reqs, options);
             break;
         }
         case LOOP_UNORDERED: {
             // no timing is printed or exported here
-            bench_barrier(host_comms);
-            do_unordered(host_comms, bench_attr, colls, reqs, options);
+            ccl::barrier(service_comm);
+            do_unordered(service_comm, bench_attr, colls, reqs, options);
             break;
         }
         default: ASSERT(0, "unknown loop %d", options.loop); break;

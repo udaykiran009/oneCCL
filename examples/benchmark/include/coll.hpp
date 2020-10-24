@@ -103,8 +103,33 @@ struct base_coll {
         return nullptr;
     };
 
-    virtual void prepare(size_t elem_count) = 0;
-    virtual void finalize(size_t elem_count) = 0;
+    virtual void prepare(size_t elem_count) {
+        auto& transport = transport_data::instance();
+        auto& comms = transport.get_comms();
+        auto streams = transport.get_streams();
+        size_t ranks_per_proc = base_coll::get_ranks_per_proc();
+
+        for (size_t rank_idx = 0; rank_idx < ranks_per_proc; rank_idx++) {
+            prepare_internal(elem_count,
+                             comms[rank_idx],
+                             streams[rank_idx],
+                             rank_idx);
+        }
+    }
+
+    virtual void finalize(size_t elem_count) {
+        auto& transport = transport_data::instance();
+        auto& comms = transport.get_comms();
+        auto streams = transport.get_streams();
+        size_t ranks_per_proc = base_coll::get_ranks_per_proc();
+
+        for (size_t rank_idx = 0; rank_idx < ranks_per_proc; rank_idx++) {
+            finalize_internal(elem_count,
+                              comms[rank_idx],
+                              streams[rank_idx],
+                              rank_idx);
+        }
+    }
 
     virtual void prepare_internal(size_t elem_count,
                          ccl::communicator& comm,

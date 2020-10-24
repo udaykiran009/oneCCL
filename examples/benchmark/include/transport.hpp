@@ -17,16 +17,10 @@ public:
     int get_size() const noexcept;
 
     ccl::shared_ptr_class<ccl::kvs> get_kvs();
-
-    void init_host_comms(size_t ranks_per_proc);
-    std::vector<ccl::communicator>& get_host_comms();
-
+    ccl::communicator& get_service_comm();
+    void init_comms(user_options_t& options);
+    std::vector<ccl::communicator>& get_comms();
     std::vector<ccl::stream>& get_streams();
-
-#ifdef CCL_ENABLE_SYCL
-    void init_device_comms(sycl_dev_type_t dev_type, size_t ranks_per_proc);
-    std::vector<ccl::communicator>& get_device_comms();
-#endif /* CCL_ENABLE_SYCL */
 
 private:
 
@@ -37,13 +31,11 @@ private:
     int size;
 
     std::vector<size_t> local_ranks;
-    ccl::shared_ptr_class<ccl::kvs> kvs;
-    std::vector<ccl::communicator> host_comms;
-    std::vector<ccl::stream> streams;
 
-#ifdef CCL_ENABLE_SYCL
-    std::vector<ccl::communicator> device_comms;
-#endif /* CCL_ENABLE_SYCL */
+    ccl::shared_ptr_class<ccl::kvs> kvs;
+    std::vector<ccl::communicator> service_comms;
+    std::vector<ccl::communicator> comms;
+    std::vector<ccl::stream> streams;
 
     void init_by_mpi();
     void deinit_by_mpi();

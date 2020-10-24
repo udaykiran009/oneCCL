@@ -136,7 +136,7 @@ struct cpu_sparse_allreduce_coll
     virtual void prepare(size_t elem_count) override {
 
         auto& transport = transport_data::instance();
-        auto& comms = transport.get_host_comms();
+        auto& comms = transport.get_comms();
         size_t ranks_per_proc = base_coll::get_ranks_per_proc();
 
         for (size_t rank_idx = 0; rank_idx < ranks_per_proc; rank_idx++) {
@@ -162,7 +162,7 @@ struct cpu_sparse_allreduce_coll
     virtual void finalize(size_t elem_count) override {
 
         auto& transport = transport_data::instance();
-        auto& comms = transport.get_host_comms();
+        auto& comms = transport.get_comms();
         size_t ranks_per_proc = base_coll::get_ranks_per_proc();
 
         for (size_t rank_idx = 0; rank_idx < ranks_per_proc; rank_idx++) {
@@ -190,7 +190,7 @@ struct cpu_sparse_allreduce_coll
                        req_list_t& reqs) override {
 
         auto& transport = transport_data::instance();
-        auto& comms = transport.get_host_comms();
+        auto& comms = transport.get_comms();
         size_t ranks_per_proc = base_coll::get_ranks_per_proc();
 
         for (size_t rank_idx = 0; rank_idx < ranks_per_proc; rank_idx++) {
@@ -218,7 +218,7 @@ struct cpu_sparse_allreduce_coll
                               req_list_t& reqs) override {
 
         auto& transport = transport_data::instance();
-        auto& comms = transport.get_host_comms();
+        auto& comms = transport.get_comms();
         size_t ranks_per_proc = base_coll::get_ranks_per_proc();
 
         for (size_t rank_idx = 0; rank_idx < ranks_per_proc; rank_idx++) {

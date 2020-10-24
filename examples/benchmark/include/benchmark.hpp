@@ -74,16 +74,6 @@ void print_help_usage(const char* app) {
         DEFAULT_CSV_FILEPATH);
 }
 
-std::list<std::string> tokenize(const std::string& input, char delimeter) {
-    std::stringstream ss(input);
-    std::list<std::string> ret;
-    std::string value;
-    while (std::getline(ss, value, delimeter)) {
-        ret.push_back(value);
-    }
-    return ret;
-}
-
 template <class Dtype, class Container>
 std::string find_str_val(Container& mp, const Dtype& key) {
     typename std::map<Dtype, std::string>::iterator it;
@@ -210,76 +200,28 @@ int set_sycl_usm_type(const std::string& option_value, sycl_usm_type_t& usm) {
     return 0;
 }
 
-// leave this dtype here because of tokenize() call
-typedef struct user_options_t {
-    backend_type_t backend;
-    loop_type_t loop;
-    size_t iters;
-    size_t warmup_iters;
-    size_t buf_count;
-    size_t min_elem_count;
-    size_t max_elem_count;
-    int check_values;
-    buf_type_t buf_type;
-    size_t v2i_ratio;
-    sycl_dev_type_t sycl_dev_type;
-    sycl_mem_type_t sycl_mem_type;
-    sycl_usm_type_t sycl_usm_type;
-    size_t ranks_per_proc;
-    std::list<std::string> coll_names;
-    std::list<std::string> dtypes;
-    std::list<std::string> reductions;
-    std::string csv_filepath;
+size_t get_iter_count(size_t bytes, size_t max_iter_count) {
 
-    user_options_t() {
-        backend = DEFAULT_BACKEND;
-        loop = DEFAULT_LOOP;
-        iters = DEFAULT_ITERS;
-        warmup_iters = DEFAULT_WARMUP_ITERS;
-        buf_count = DEFAULT_BUF_COUNT;
-        min_elem_count = DEFAULT_MIN_ELEM_COUNT;
-        max_elem_count = DEFAULT_MAX_ELEM_COUNT;
-        check_values = DEFAULT_CHECK_VALUES;
-        buf_type = DEFAULT_BUF_TYPE;
-        v2i_ratio = DEFAULT_V2I_RATIO;
-        sycl_dev_type = DEFAULT_SYCL_DEV_TYPE;
-        sycl_mem_type = DEFAULT_SYCL_MEM_TYPE;
-        sycl_usm_type = DEFAULT_SYCL_USM_TYPE;
-        ranks_per_proc = DEFAULT_RANKS_PER_PROC;
-        coll_names = tokenize(DEFAULT_COLL_LIST, ',');
-        dtypes = tokenize(DEFAULT_DTYPES_LIST, ',');
-        reductions = tokenize(DEFAULT_REDUCTIONS_LIST, ',');
-        csv_filepath = std::string(DEFAULT_CSV_FILEPATH);
-    }
-} user_options_t;
-
-void bench_barrier(std::vector<ccl::communicator>& comms) {
-    for (auto& comm : comms) {
-        ccl::barrier(comm);
-    }
-}
-
-size_t get_iter_count(size_t msg_size, size_t max_iter_count) {
     size_t n, res = max_iter_count;
-    n = msg_size >> 18;
+    n = bytes >> 18;
     while (n) {
         res >>= 1;
         n >>= 1;
     }
-    res = std::max(res, size_t(4) /* min iter_count */ );
+
+    if (!res && max_iter_count)
+        res = 1;
+
     return res;
 }
 
-/* placing print_timings() here is because of declaration of user_options_t */
-// FIXME FS: what?
-void print_timings(std::vector<ccl::communicator>& comms,
-                   const std::vector<double>& timer,
+/* timer array contains one number per collective, one collective corresponds to rank_per_proc ranks */
+void print_timings(ccl::communicator& comm,
+                   const std::vector<double>& local_timers,
                    const user_options_t& options,
                    const size_t elem_count,
                    ccl::datatype dtype,
                    ccl::reduction op) {
-
-    auto& comm = comms[0];
 
     const size_t buf_count = options.buf_type == BUF_SINGLE ? 1 : options.buf_count;
     const size_t ncolls = options.coll_names.size();
@@ -293,22 +235,17 @@ void print_timings(std::vector<ccl::communicator>& comms,
     for (idx = 0; idx < comm.size(); idx++)
         recv_counts[idx] = ncolls;
 
-    std::vector<ccl::event> events;
-    for (auto& c : comms) {
-        events.push_back(ccl::allgatherv(timer.data(), ncolls, all_timers.data(), recv_counts, c));
-    }
-
-    for (auto& event : events) {
-        event.wait();
-    }
+    ccl::allgatherv(local_timers.data(), ncolls, all_timers.data(), recv_counts, comm).wait();
 
     if (comm.rank() == 0) {
+
         std::vector<double> timers(comm.size(), 0);
         for (size_t r = 0; r < comm.size(); ++r) {
             for (size_t c = 0; c < ncolls; ++c) {
                 timers[r] += all_timers[r * ncolls + c];
             }
         }
+
         double avg_timer(0);
         double avg_timer_per_buf(0);
         for (idx = 0; idx < comm.size(); idx++) {
@@ -323,6 +260,7 @@ void print_timings(std::vector<ccl::communicator>& comms,
             double val = timers[idx] / iter_count;
             sum += (val - avg_timer) * (val - avg_timer);
         }
+
         stddev_timer = sqrt(sum / comm.size()) / avg_timer * 100;
         if (options.buf_type == BUF_SINGLE) {
             printf("%10zu %12.2lf %11.1lf\n",
@@ -342,15 +280,20 @@ void print_timings(std::vector<ccl::communicator>& comms,
         // we write one line per collop, dtype and reduction
         // hence average is per collop, not the aggregate over all
         if (!options.csv_filepath.empty()) {
+
             std::ofstream csvf;
             csvf.open(options.csv_filepath, std::ios::app);
+
             if (csvf.is_open()) {
+
                 std::vector<double> avg_timer(ncolls, 0);
+
                 for (size_t r = 0; r < comm.size(); ++r) {
                     for (size_t c = 0; c < ncolls; ++c) {
                         avg_timer[c] += all_timers[r * ncolls + c];
                     }
                 }
+
                 for (size_t c = 0; c < ncolls; ++c) {
                     avg_timer[c] /= (iter_count * comm.size());
                 }
@@ -367,8 +310,8 @@ void print_timings(std::vector<ccl::communicator>& comms,
             }
         }
     }
-    
-    bench_barrier(comms);
+
+    ccl::barrier(comm);
 }
 
 class set_dtypes_func {
@@ -533,7 +476,7 @@ void print_user_options(const user_options_t& options,
 
     PRINT_BY_ROOT(comm,
                   "options:"
-                  "\n  ranks:          %zu"
+                  "\n  processes:      %zu"
                   "\n  backend:        %s"
                   "\n  loop:           %s"
                   "\n  iters:          %zu"

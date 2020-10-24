@@ -20,13 +20,18 @@ std::vector<cl::sycl::queue> get_sycl_queues(sycl_dev_type_t dev_type,
 
     std::vector<cl::sycl::queue> queues;
 
+    auto ctx = create_sycl_context(sycl_dev_names[dev_type]);
+    auto devices = ctx.get_devices();
+
+    ASSERT(!devices.empty(), "empty device array");
+
     for (auto rank : ranks) {
-        sycl::queue q;
-        std::string dev_type_name = sycl_dev_names[dev_type];
-        ASSERT(create_sycl_queue_from_device_type(dev_type_name, rank, q),
-            "failed to create SYCL queue for dev_type %s and for rank %zu",
-            dev_type_name.c_str(), rank);
-        queues.push_back(q);
+        queues.push_back(sycl::queue(ctx, devices[rank % devices.size()]));
+    }
+
+    auto first_ctx = queues[0].get_context();
+    for (size_t idx = 0; idx < queues.size(); idx++) {
+        ASSERT(first_ctx == queues[idx].get_context(), "context should be the same %zu", idx);
     }
 
     return queues;
@@ -115,41 +120,13 @@ struct sycl_base_coll : base_coll, private strategy {
         return coll_strategy::class_name();
     }
 
-    virtual void prepare(size_t elem_count) override {
-        auto& transport = transport_data::instance();
-        auto& comms = transport.get_device_comms();
-        auto streams = transport.get_streams();
-        size_t ranks_per_proc = base_coll::get_ranks_per_proc();
-
-        for (size_t rank_idx = 0; rank_idx < ranks_per_proc; rank_idx++) {
-            prepare_internal(elem_count,
-                                   comms[rank_idx],
-                                   streams[rank_idx],
-                                   rank_idx);
-        }
-    }
-
-    virtual void finalize(size_t elem_count) override {
-        auto& transport = transport_data::instance();
-        auto& comms = transport.get_device_comms();
-        auto streams = transport.get_streams();
-        size_t ranks_per_proc = base_coll::get_ranks_per_proc();
-
-        for (size_t rank_idx = 0; rank_idx < ranks_per_proc; rank_idx++) {
-            finalize_internal(elem_count,
-                                    comms[rank_idx],
-                                    streams[rank_idx],
-                                    rank_idx);
-        }
-    }
-
     virtual void start(size_t count,
                        size_t buf_idx,
                        const bench_exec_attr& attr,
                        req_list_t& reqs) override {
 
         auto& transport = transport_data::instance();
-        auto& comms = transport.get_device_comms();
+        auto& comms = transport.get_comms();
         auto streams = transport.get_streams();
         size_t ranks_per_proc = base_coll::get_ranks_per_proc();
 
@@ -187,7 +164,7 @@ struct sycl_base_coll : base_coll, private strategy {
                               req_list_t& reqs) override {
 
         auto& transport = transport_data::instance();
-        auto& comms = transport.get_device_comms();
+        auto& comms = transport.get_comms();
         auto streams = transport.get_streams();
         size_t ranks_per_proc = base_coll::get_ranks_per_proc();
 

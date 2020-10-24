@@ -88,3 +88,55 @@ using supported_dtypes_t = std::tuple<checked_dtype_t<char>,
                                       checked_dtype_t<int64_t>,
                                       checked_dtype_t<uint64_t>>;
 supported_dtypes_t launch_dtypes;
+
+std::list<std::string> tokenize(const std::string& input, char delimeter) {
+    std::stringstream ss(input);
+    std::list<std::string> ret;
+    std::string value;
+    while (std::getline(ss, value, delimeter)) {
+        ret.push_back(value);
+    }
+    return ret;
+}
+
+typedef struct user_options_t {
+    backend_type_t backend;
+    loop_type_t loop;
+    size_t iters;
+    size_t warmup_iters;
+    size_t buf_count;
+    size_t min_elem_count;
+    size_t max_elem_count;
+    int check_values;
+    buf_type_t buf_type;
+    size_t v2i_ratio;
+    sycl_dev_type_t sycl_dev_type;
+    sycl_mem_type_t sycl_mem_type;
+    sycl_usm_type_t sycl_usm_type;
+    size_t ranks_per_proc;
+    std::list<std::string> coll_names;
+    std::list<std::string> dtypes;
+    std::list<std::string> reductions;
+    std::string csv_filepath;
+
+    user_options_t() {
+        backend = DEFAULT_BACKEND;
+        loop = DEFAULT_LOOP;
+        iters = DEFAULT_ITERS;
+        warmup_iters = DEFAULT_WARMUP_ITERS;
+        buf_count = DEFAULT_BUF_COUNT;
+        min_elem_count = DEFAULT_MIN_ELEM_COUNT;
+        max_elem_count = DEFAULT_MAX_ELEM_COUNT;
+        check_values = DEFAULT_CHECK_VALUES;
+        buf_type = DEFAULT_BUF_TYPE;
+        v2i_ratio = DEFAULT_V2I_RATIO;
+        sycl_dev_type = DEFAULT_SYCL_DEV_TYPE;
+        sycl_mem_type = DEFAULT_SYCL_MEM_TYPE;
+        sycl_usm_type = DEFAULT_SYCL_USM_TYPE;
+        ranks_per_proc = DEFAULT_RANKS_PER_PROC;
+        coll_names = tokenize(DEFAULT_COLL_LIST, ',');
+        dtypes = tokenize(DEFAULT_DTYPES_LIST, ',');
+        reductions = tokenize(DEFAULT_REDUCTIONS_LIST, ',');
+        csv_filepath = std::string(DEFAULT_CSV_FILEPATH);
+    }
+} user_options_t;
