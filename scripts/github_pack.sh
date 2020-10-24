@@ -22,6 +22,7 @@ excluded=".git
 ./ccl_public
 ./ccl_oneapi
 ./src/kernels
+./src/kernels/rne.h
 ./tests/unit"
 
 count=0

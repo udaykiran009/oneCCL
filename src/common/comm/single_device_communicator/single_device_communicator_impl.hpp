@@ -158,7 +158,8 @@ single_device_communicator::coll_request_t single_device_communicator::allreduce
             " is not ready yet. Not all сommunicators are created in group. Please create them before usage"));
     }
 
-    LOG_DEBUG("device idx: ", get_device_path(), ", rank: (", rank(), "/", size(), ")");
+    /* TODO: fix get_device_path */
+    //LOG_DEBUG("device idx: ", get_device_path(), ", rank: (", rank(), "/", size(), ")");
 
     std::unique_ptr<ccl::chargeable_event> scoped_req;
     using namespace ::native::detail;
@@ -253,7 +254,8 @@ single_device_communicator::coll_request_t single_device_communicator::alltoall_
             " is not ready yet. Not all сommunicators are created in group. Please create them before usage"));
     }
 
-    LOG_DEBUG("device idx: ", get_device_path(), ", rank: (", rank(), "/", size(), ")");
+    /* TODO: fix get_device_path */
+    //LOG_DEBUG("device idx: ", get_device_path(), ", rank: (", rank(), "/", size(), ")");
 
     std::unique_ptr<ccl::chargeable_event> scoped_req;
     using namespace ::native::detail;
@@ -379,7 +381,8 @@ single_device_communicator::coll_request_t single_device_communicator::alltoallv
             " is not ready yet. Not all сommunicators are created in group. Please create them before usage"));
     }
 
-    LOG_DEBUG("device idx: ", get_device_path(), ", rank: (", rank(), "/", size(), ")");
+    /* TODO: fix get_device_path */
+    //LOG_DEBUG("device idx: ", get_device_path(), ", rank: (", rank(), "/", size(), ")");
 
     std::unique_ptr<ccl::chargeable_event> scoped_req;
     using namespace ::native::detail;
@@ -508,7 +511,8 @@ single_device_communicator::coll_request_t single_device_communicator::broadcast
             " is not ready yet. Not all сommunicators are created in group. Please create them before usage"));
     }
 
-    LOG_DEBUG("device idx: ", get_device_path(), ", rank: (", rank(), "/", size(), ")");
+    /* TODO: fix get_device_path */
+    //LOG_DEBUG("device idx: ", get_device_path(), ", rank: (", rank(), "/", size(), ")");
 
     std::unique_ptr<ccl::chargeable_event> scoped_req;
     using namespace ::native::detail;
@@ -606,7 +610,8 @@ single_device_communicator::coll_request_t single_device_communicator::reduce_im
             " is not ready yet. Not all сommunicators are created in group. Please create them before usage"));
     }
 
-    LOG_DEBUG("device idx: ", get_device_path(), ", rank: (", rank(), "/", size(), ")");
+    /* TODO: fix get_device_path */
+    //LOG_DEBUG("device idx: ", get_device_path(), ", rank: (", rank(), "/", size(), ")");
 
     std::unique_ptr<ccl::chargeable_event> scoped_req;
     using namespace ::native::detail;
@@ -720,7 +725,8 @@ single_device_communicator::coll_request_t single_device_communicator::reduce_sc
             " is not ready yet. Not all сommunicators are created in group. Please create them before usage"));
     }
 
-    LOG_DEBUG("device idx: ", get_device_path(), ", rank: (", rank(), "/", size(), ")");
+    /* TODO: fix get_device_path */
+    //LOG_DEBUG("device idx: ", get_device_path(), ", rank: (", rank(), "/", size(), ")");
 
     std::unique_ptr<ccl::chargeable_event> scoped_req;
     using namespace ::native::detail;
@@ -835,7 +841,8 @@ single_device_communicator::coll_request_t single_device_communicator::sparse_al
             " is not ready yet. Not all сommunicators are created in group. Please create them before usage"));
     }
 
-    LOG_DEBUG("device idx: ", get_device_path(), ", rank: (", rank(), "/", size(), ")");
+    /* TODO: fix get_device_path */
+    //LOG_DEBUG("device idx: ", get_device_path(), ", rank: (", rank(), "/", size(), ")");
 
     std::unique_ptr<ccl::chargeable_event> scoped_req;
     using namespace ::native::detail;

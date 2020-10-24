@@ -115,8 +115,8 @@ std::string get_preferred_gpu_platform_name() {
 
 std::vector<sycl::device> create_sycl_gpu_devices() {
 
-    constexpr char dev_prefix[] = "--";
-    constexpr char sub_dev_prefix[] = "----";
+    constexpr char dev_prefix[] = "-- ";
+    constexpr char sub_dev_prefix[] = "---- ";
 
     std::vector<sycl::device> result;
     auto plaform_list = sycl::platform::get_platforms();
@@ -234,6 +234,7 @@ bool create_sycl_queue_from_device_type(const std::string& device_type,
             /* special handling due to multi-tile case */
             auto devices = create_sycl_gpu_devices();
             auto device = devices[rank % devices.size()];
+            /* TODO: add explciit context */
             q = queue(device, exception_handler);
             cout << "created SYCL queue from GPU device ["
                  << device.get_info<cl::sycl::info::device::name>()
