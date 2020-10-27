@@ -373,6 +373,18 @@ usm::alloc usm_alloc_type_from_string(const string& str) {
     return it->second;
 }
 
+std::pair<usm::alloc, std::string> take_usm_type(const int argc, char* str_type) {
+    std::map<usm::alloc, std::string> map_usm_type;
+    auto usm_alloc_type = usm::alloc::shared;
+    auto str_usm_alloc_type = "shared";
+    if (argc > 1) {
+        str_usm_alloc_type = str_type;
+        usm_alloc_type = usm_alloc_type_from_string(str_usm_alloc_type);
+    }
+
+    return std::make_pair(usm_alloc_type, str_usm_alloc_type);
+}
+
 template <typename  T>
 struct buf_allocator {
 

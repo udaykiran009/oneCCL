@@ -74,10 +74,10 @@ if (COMPUTE_RUNTIME)
     message ("COMPUTE_RUNTIME_TARGET_NAME: ${COMPUTE_RUNTIME_TARGET_NAME}")
 
     if ((${COMPUTE_RUNTIME_TARGET_NAME} STREQUAL "Intel::SYCL"))
-        add_subdirectory(level_zero/sycl)
+        add_subdirectory(sycl)
     endif()
     if(${COMPUTE_RUNTIME_TARGET_NAME} STREQUAL "ze_loader")
-        add_subdirectory(level_zero/l0)
+        add_subdirectory(l0)
     endif()
 endif()
 

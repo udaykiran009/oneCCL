@@ -1,4 +1,4 @@
-    #include <algorithm>
+#include <algorithm>
 #include <iostream>
 #include <vector>
 #include <map>
@@ -59,7 +59,6 @@ void user_thread_idx(size_t thread_idx,
         auto& alloc_ptr = allocators.find(rank)->second;
 
         /* create buffers */
-        // auto usm_alloc_type = usm::alloc::shared;
         auto send_buf = alloc_ptr->allocate(COUNT, usm_alloc_type);
         auto recv_buf = alloc_ptr->allocate(COUNT, usm_alloc_type);
 
@@ -142,16 +141,6 @@ void user_thread_idx(size_t thread_idx,
 
 int main(int argc, char** argv) {
     using namespace ::native;
-    setenv("L0_CLUSTER_AFFINITY_MASK", "[0:0],[0:0]|[0:0],[0:0]", 0);
-    const char* affinity_env_value = getenv("L0_CLUSTER_AFFINITY_MASK");
-
-    auto usm_alloc_type = usm::alloc::shared;
-    auto str_usm_alloc_type = "shared";
-    if (argc > 1) {
-        str_usm_alloc_type = argv[1];
-        usm_alloc_type = usm_alloc_type_from_string(argv[1]);
-    }
-    std::cout << "USM allocation type: " << str_usm_alloc_type << std::endl;
 
     //Use:
     // SYCL_BE=PI_OTHER SYCL_PI_TRACE=1 ZE_DEBUG=1  SYCL_DEVICE_WHITE_LIST="" CCL_LOG_LEVEL=1 gdb examples/level_zero/l0_thread_allreduce_cpp_test
@@ -163,20 +152,20 @@ int main(int argc, char** argv) {
      *
      *  "0,1,2|3,4,5#6,7,8|9,10,11"    per host group separation
      */
-    std::vector<std::thread> thread_group;
+    setenv("L0_CLUSTER_AFFINITY_MASK", "[0:0],[0:0]|[0:0],[0:0]", 0);
+    const char* affinity_env_value = getenv("L0_CLUSTER_AFFINITY_MASK");
+
+    /* take usm allocation type, default: shared */
+    auto pair_usm_type = take_usm_type(argc, argv[1]);
+    std::cout << "USM allocation type: "<< pair_usm_type.second << std::endl;
+    /* extract GPU affinities by processes using '#' separator from L0_CLUSTER_AFFINITY_MASK */
     std::vector<std::string> process_group_gpu_affinity;
-    std::map<size_t, std::vector<std::string>> thread_group_gpu_affinity_per_process;
-
-    using thread_device_indices_t = ccl::process_device_indices_t;
-    std::map<size_t, thread_device_indices_t> node_device_indices;
-
-    // extract GPU affinities by processes using '#' separator from L0_CLUSTER_AFFINITY_MASK
     utils::str_to_array<std::string>(affinity_env_value, process_group_gpu_affinity, '#');
 
-    // init and register gpu module
+    /* init and register gpu module */
     ccl::init();
 
-    // get addresses from MPI
+    /* get addresses from MPI */
     int mpi_rank = 0, mpi_size = 0;
     MPI_Init(&argc, &argv);
     MPI_Comm_rank(MPI_COMM_WORLD, &mpi_rank);
@@ -188,97 +177,64 @@ int main(int argc, char** argv) {
                   << std::endl;
         return -1;
     }
-
     std::cout << "MPI process rank: " << mpi_rank << ", size: " << mpi_size << std::endl;
 
-    // build CCL internal KVS
-    std::shared_ptr<ccl::kvs> kvs_instance;
-    ccl::kvs::address_type main_addr;
-    if (mpi_rank == 0) {
-        kvs_instance = ccl::create_main_kvs();
-        main_addr = kvs_instance->get_address();
+    /* build CCL internal KVS */
+    auto kvs_instance = utils::build_kvs(mpi_rank);
 
-        std::cout << "Master KVS  hast build on addr: " /*<< main_addr*/ << std::endl;
-        MPI_Bcast((void*)main_addr.data(), main_addr.size(), MPI_BYTE, 0, MPI_COMM_WORLD);
-    }
-    else {
-        MPI_Bcast((void*)main_addr.data(), main_addr.size(), MPI_BYTE, 0, MPI_COMM_WORLD);
-        kvs_instance = ccl::create_kvs(main_addr);
-
-        std::cout << "Slave KVS hast connected on addr: " /* << main_addr*/ << std::endl;
-    }
-
-    size_t total_device_in_cluster = 0;
-    std::cout << "Expected process count: " << process_group_gpu_affinity.size() << std::endl;
-    std::vector<size_t> total_devices_in_process(process_group_gpu_affinity.size(), 0);
-
+    /* parse/init data */
     using device_type = ccl::communicator::ccl_device_t;
 
     std::map<size_t, std::vector<device_type>> devices_for_mpi_rank;
-
+    std::map<size_t, ccl::process_device_indices_t> node_device_indices;
+    std::map<size_t, std::vector<std::string>> thread_group_gpu_affinity_per_process;
+    size_t total_device_in_cluster = 0;
     size_t device_rank_for_mpi_rank_id_offset = 0;
+
+    std::cout << "Expected process count: " << process_group_gpu_affinity.size() << std::endl;
+    std::vector<size_t> total_devices_in_process(process_group_gpu_affinity.size(), 0);
+
     for (size_t process_index = 0; process_index < process_group_gpu_affinity.size();
          process_index++) {
-        // extract  GPU affinities by thread inside process using '|' separator from L0_CLUSTER_AFFINITY_MASK
+
+        /* extract  GPU affinities by thread inside process using '|' separator from L0_CLUSTER_AFFINITY_MASK */
         utils::str_to_array<std::string>(process_group_gpu_affinity[process_index].c_str(),
                                          thread_group_gpu_affinity_per_process[process_index],
-                                         '|');
+                                        '|');
 
         const std::vector<std::string>& thread_gpu_affinity =
             thread_group_gpu_affinity_per_process.find(process_index)->second;
-        thread_device_indices_t thread_group_affinity;
 
-        if (process_index == static_cast<size_t>(mpi_rank)) {
-            device_rank_for_mpi_rank_id_offset = total_device_in_cluster;
-        }
+        device_rank_for_mpi_rank_id_offset = utils::take_mpi_rank_id_offest(process_index, mpi_size,
+                                                                            total_device_in_cluster);
 
         std::cout << "For process by id: " << process_index
                   << ", expected threads in process count: " << thread_gpu_affinity.size()
                   << std::endl;
-        for (size_t thread_index = 0; thread_index < thread_gpu_affinity.size(); thread_index++) {
-            ccl::device_indices_t device_group_affinity;
-            utils::str_to_mset<ccl::device_index_type>(
-                thread_gpu_affinity[thread_index].c_str(), device_group_affinity, ',');
 
-            std::cout << " Extracted GPU indices for thread by id: " << thread_index
-                      << ", devices in threads count: " << device_group_affinity.size()
-                      << std::endl;
-            total_device_in_cluster += device_group_affinity.size();
-            total_devices_in_process[process_index] += device_group_affinity.size();
-
-            thread_group_affinity[thread_index] = device_group_affinity;
-
-            if (process_index == static_cast<size_t>(mpi_rank)) {
-                for (auto device_vendor_id : device_group_affinity) {
-                    devices_for_mpi_rank[thread_index].push_back(
-                        ccl::create_from_index(device_vendor_id).device);
-
-                }
-            }
-        }
-
-        node_device_indices[process_index] = thread_group_affinity;
+        node_device_indices[process_index] = utils::extract_indices_for_threads(process_index,
+                                                                                mpi_rank,
+                                                                                thread_gpu_affinity,
+                                                                                total_device_in_cluster,
+                                                                                total_devices_in_process,
+                                                                                devices_for_mpi_rank);
     }
 
-    // calculate total devices for cluster
+    /* calculate total devices for cluster */
     std::cout << "Devices in cluster count: " << total_device_in_cluster
               << ", for rank: " << mpi_rank << " devices count"
               << total_devices_in_process[mpi_rank] << ", thread count"
               << node_device_indices[mpi_rank].size() << std::endl;
 
-    // launch user threads
-    const auto& thread_group_affinity = devices_for_mpi_rank;
-    std::vector<device_type> devices_in_process;
-    for (auto& thread_devices : devices_for_mpi_rank) {
-        devices_in_process.insert(
-            devices_in_process.end(), thread_devices.second.begin(), thread_devices.second.end());
-    }
+    auto devices_in_process = utils::set_union_devices_in_current_process(devices_for_mpi_rank);
 
     //TODO: terminate called after throwing an instance of 'cl::sycl::invalid_parameter_error'
     //what():  Can't add devices across platforms to a single context. -33 (CL_INVALID_DEVICE)
     //auto ctx = cl::sycl::context(devices_in_process);
     auto ctx = cl::sycl::context(*devices_in_process.begin()); //use single device
 
+    const auto& thread_group_affinity = devices_for_mpi_rank;
+    std::vector<std::thread> thread_group;
     for (auto thread_affinity_it = thread_group_affinity.begin();
          thread_affinity_it != thread_group_affinity.end();
          ++thread_affinity_it) {
@@ -305,10 +261,10 @@ int main(int argc, char** argv) {
                                   ctx,
                                   total_device_in_cluster,
                                   kvs_instance,
-                                  usm_alloc_type);
+                                  pair_usm_type.first);
     }
 
-    //wait finishing
+    /* wait finishing */
     for (auto& t : thread_group) {
         t.join();
     }

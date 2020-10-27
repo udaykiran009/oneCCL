@@ -12,24 +12,23 @@
 #include <thread>
 #include <numeric>
 
-#include <mpi.h>
-
 #include "base.hpp"
 #include "base_utils.hpp"
 #include "oneapi/ccl/native_device_api/export_api.hpp"
 
-#define COUNT     512
-#define COLL_ROOT (0)
 
+#define COUNT     512 //(10*1024*1024)
+#define COLL_ROOT (0)
 
 template <class processing_type>
 void user_thread_idx(size_t thread_idx,
-                     std::vector<std::pair<size_t, ccl::device_index_type>> ranked_device_indices,
-                     std::shared_ptr<::native::ccl_context> ctx,
-                     size_t total_devices_in_cluster,
-                     std::shared_ptr<ccl::kvs_interface> kvs) {
+                    std::vector<std::pair<size_t, ccl::device_index_type>> ranked_device_indices,
+                    std::shared_ptr<::native::ccl_context> ctx,
+                    size_t total_devices_in_cluster,
+                    std::shared_ptr<ccl::kvs_interface> kvs) {
     using namespace ::native;
 
+    /* TODO: Check its functionality */
     // test data
     using allocated_memory_array = std::vector<ccl_device::device_memory<processing_type>>;
     using rank_allocated_memory = std::map<size_t, allocated_memory_array>;
@@ -40,7 +39,9 @@ void user_thread_idx(size_t thread_idx,
     std::vector<processing_type> send_values(COUNT);
     std::iota(send_values.begin(), send_values.end(), 1);
     std::vector<processing_type> recv_values(COUNT, 0);
+    size_t root = 1;
 
+    // API
     // Create device communicators
     std::vector<ccl::communicator> comms =
         ccl::create_communicators(
@@ -57,8 +58,7 @@ void user_thread_idx(size_t thread_idx,
         size_t rank = comm.rank();
 
         // wrapped L0-native API for devices: create native buffers
-        auto mem_send = dev->alloc_memory<processing_type>(COUNT, sizeof(processing_type), ctx);
-        auto mem_recv = dev->alloc_memory<processing_type>(COUNT, sizeof(processing_type), ctx);
+        auto mem_buf = dev->alloc_memory<processing_type>(COUNT, sizeof(processing_type), ctx);
 
         // set initial memory
         {
@@ -67,38 +67,41 @@ void user_thread_idx(size_t thread_idx,
             std::lock_guard<std::mutex> lock(memory_mutex);
 
             // wrapped L0-native API for memory: fill device buffers
-            mem_send.enqueue_write_sync(send_values);
-            mem_recv.enqueue_write_sync(recv_values);
+            if (rank == root) {
+                mem_buf.enqueue_write_sync(send_values);
+            }
+            else {
+                mem_buf.enqueue_write_sync(recv_values);
+            }
         }
 
         if (memory_storage[rank].empty()) {
             memory_storage[rank].reserve(100);
         }
-        memory_storage[rank].push_back(std::move(mem_send));
-        memory_storage[rank].push_back(std::move(mem_recv));
+        memory_storage[rank].push_back(std::move(mem_buf));
 
         // create native stream
         auto str = std::make_shared<native::ccl_device::device_queue>(dev->create_cmd_queue(ctx));
         streams.emplace(rank, ccl::create_stream(str));
     }
 
-    //allreduce
+    //bcast
     std::vector<ccl::event> reqs;
     for (auto& comm : comms) {
         size_t rank = comm.rank();
-        /*
-        if (!comm.is_ready())
-        {
-            std::cerr << "Communicator by rank: " << rank << " should be ready already" << std::endl;
+
+        /*if (!comm->is_ready()) {
+            std::cerr << "Communicator by rank: " << rank << " should be ready already"
+                      << std::endl;
             abort();
         }*/
-        allocated_memory_array& mem_objects = memory_storage.find(rank)->second;
 
+        allocated_memory_array& mem_objects = memory_storage.find(rank)->second;
         auto& stream = streams.find(rank)->second;
-        reqs.push_back(ccl::allreduce(mem_objects[0].get(),
-                                      mem_objects[1].get(),
-                                      mem_objects[1].count(),
-                                      ccl::reduction::sum,
+
+        reqs.push_back(ccl::broadcast(mem_objects[0].get(),
+                                      mem_objects[0].count(),
+                                      root,
                                       comm,
                                       stream));
     }
@@ -126,7 +129,6 @@ void user_thread_idx(size_t thread_idx,
         }
     }
 }
-#endif
 
 int main(int argc, char** argv) {
     using namespace ::native;
@@ -237,8 +239,7 @@ int main(int argc, char** argv) {
             if (process_index == static_cast<size_t>(mpi_rank)) {
                 for (auto device_vendor_id : device_group_affinity) {
                     devices_for_mpi_rank[thread_index].push_back(
-                    device_vendor_id);
-
+                        device_vendor_id);
                 }
             }
         }
@@ -259,7 +260,6 @@ int main(int argc, char** argv) {
         devices_in_process.insert(
             devices_in_process.end(), thread_devices.second.begin(), thread_devices.second.end());
     }
-
     const auto& drivers = native::get_platform().get_drivers();
     if (drivers.empty())
     {
@@ -304,5 +304,5 @@ int main(int argc, char** argv) {
         t.join();
     }
 
-    return 0;
 }
+

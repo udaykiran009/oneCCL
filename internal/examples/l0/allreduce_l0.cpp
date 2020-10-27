@@ -1,4 +1,3 @@
-
 #include <algorithm>
 #include <iostream>
 #include <stdio.h>
@@ -13,148 +12,24 @@
 #include <thread>
 #include <numeric>
 
+#include <mpi.h>
+
 #include "base.hpp"
 #include "base_utils.hpp"
 #include "oneapi/ccl/native_device_api/export_api.hpp"
 
-
-#define COUNT     512 //(10*1024*1024)
+#define COUNT     512
 #define COLL_ROOT (0)
 
-int gpu_topology_type = 1; //0 - between devices in single thread
-    //1 - between multiple threads in single process
-    //2 - between nultiple processes
 
-#ifdef CCL_ENABLE_SYCL
 template <class processing_type>
 void user_thread_idx(size_t thread_idx,
-                     const std::vector<std::pair<size_t, cl::sycl::device>>& devices,
-                     cl::sycl::context ctx,
+                     std::vector<std::pair<size_t, ccl::device_index_type>> ranked_device_indices,
+                     std::shared_ptr<::native::ccl_context> ctx,
                      size_t total_devices_in_cluster,
-                     std::shared_ptr<ccl::kvs_interface> kvs_instance) {
+                     std::shared_ptr<ccl::kvs_interface> kvs) {
     using namespace ::native;
-
-    // test data
-    using allocated_memory_array = std::vector<processing_type*>;
-    using rank_allocated_memory = std::map<size_t, allocated_memory_array>;
-    //using native_queue_storage       = std::map<size_t, ccl_device::device_queue>;
-    using stream_storage = std::map<size_t, ccl::stream>;
-    using device_queue_map = std::map<size_t, cl::sycl::queue>;
-
-    device_queue_map device_queue;
-    rank_allocated_memory memory_storage;
-    stream_storage streams;
-    std::vector<processing_type> send_values(COUNT);
-    std::iota(send_values.begin(), send_values.end(), 1);
-    std::vector<processing_type> recv_values(COUNT, 0);
-    size_t root = 1;
-
-    // Create device communicators
-    std::vector<ccl::communicator> comms =
-        ccl::create_communicators(
-            total_devices_in_cluster, devices, ctx, kvs_instance);
-
-    std::cout << "Create device communicators, expected count: " << devices.size() << std::endl;
-
-    // alloc memory specific to devices
-    for (auto& comm : comms) {
-        // get native l0* /
-        ccl::communicator::ccl_device_t dev = comm.get_device().get_native();
-        size_t rank = comm.rank();
-
-        // create comm split attr
-        auto device_spilt_attr = ccl::create_comm_split_attr();
-        (void)device_spilt_attr;
-
-        /* TODO: it is a temporary change. In the previous code,
-         * there is ccl::create_stream() seg fault issue. NEED TO FIX THAT.
-         */
-
-        // create stream from device communicator directly
-        // const cl::sycl::queue& q =
-        //     streams.find(rank)->second.get<ccl::stream_attr_id::native_handle>();
-
-        cl::sycl::queue q(dev);
-        streams.emplace(rank, ccl::create_stream(q));
-
-        // allocate memory
-        // wrapped L0-native API for devices: create native buffers
-        processing_type* mem_buf = static_cast<processing_type*>(
-            cl::sycl::aligned_alloc_shared(alignof(processing_type), COUNT * sizeof(processing_type), q));
-
-        // set initial memory
-        {
-            static std::mutex memory_mutex;
-
-            std::lock_guard<std::mutex> lock(memory_mutex);
-
-            if (rank == root) {
-               std::iota(mem_buf, mem_buf + COUNT, 1);
-            }
-        }
-
-        if (memory_storage[rank].empty()) {
-            memory_storage[rank].reserve(100);
-        }
-        memory_storage[rank].push_back(std::move(mem_buf));
-    }
-
-    //broadcast
-    std::vector<ccl::event> reqs;
-    for (auto& comm : comms) {
-        size_t rank = comm.rank();
-
-        /*
-        if (!comm.is_ready())
-        {
-            std::cerr << "Communicator by rank: " << rank << " should be ready already" << std::endl;
-            abort();
-        }*/
-
-        allocated_memory_array& mem_objects = memory_storage.find(rank)->second;
-
-        // create operation attributes
-        auto attr = ccl::create_operation_attr<ccl::broadcast_attr>();
-        auto& stream = streams.find(rank)->second;
-        // invoke operation
-        reqs.push_back(ccl::broadcast(mem_objects[0],
-                                      COUNT,
-                                      root,
-                                      comm,
-                                      stream));
-    }
-
-    //wait
-    for (auto& req : reqs) {
-        req.wait();
-    }
-
-    //printout
-    static std::mutex printout_mutex;
-    {
-        std::unique_lock<std::mutex> lock(printout_mutex);
-        for (auto& dev_it : memory_storage) {
-            size_t rank = dev_it.first;
-            const auto& handles = dev_it.second;
-            std::cout << "rank : " << rank << std::endl;
-            for (const auto& mem : handles) {
-                // std::vector<processing_type> tmp = mem.enqueue_read_sync();
-                std::copy(
-                    mem, mem + COUNT, std::ostream_iterator<processing_type>(std::cout, ","));
-                std::cout << "\n\n" << std::endl;
-            }
-        }
-    }
-}
-#else //CCL_ENABLE_SYCL
-template <class processing_type>
-void user_thread_idx(size_t thread_idx,
-                    std::vector<std::pair<size_t, ccl::device_index_type>> ranked_device_indices,
-                    std::shared_ptr<::native::ccl_context> ctx,
-                    size_t total_devices_in_cluster,
-                    std::shared_ptr<ccl::kvs_interface> kvs) {
-    using namespace ::native;
-
+    /* TODO: Check its functionality */
     // test data
     using allocated_memory_array = std::vector<ccl_device::device_memory<processing_type>>;
     using rank_allocated_memory = std::map<size_t, allocated_memory_array>;
@@ -165,9 +40,7 @@ void user_thread_idx(size_t thread_idx,
     std::vector<processing_type> send_values(COUNT);
     std::iota(send_values.begin(), send_values.end(), 1);
     std::vector<processing_type> recv_values(COUNT, 0);
-    size_t root = 1;
 
-    // API
     // Create device communicators
     std::vector<ccl::communicator> comms =
         ccl::create_communicators(
@@ -184,7 +57,8 @@ void user_thread_idx(size_t thread_idx,
         size_t rank = comm.rank();
 
         // wrapped L0-native API for devices: create native buffers
-        auto mem_buf = dev->alloc_memory<processing_type>(COUNT, sizeof(processing_type), ctx);
+        auto mem_send = dev->alloc_memory<processing_type>(COUNT, sizeof(processing_type), ctx);
+        auto mem_recv = dev->alloc_memory<processing_type>(COUNT, sizeof(processing_type), ctx);
 
         // set initial memory
         {
@@ -193,41 +67,38 @@ void user_thread_idx(size_t thread_idx,
             std::lock_guard<std::mutex> lock(memory_mutex);
 
             // wrapped L0-native API for memory: fill device buffers
-            if (rank == root) {
-                mem_buf.enqueue_write_sync(send_values);
-            }
-            else {
-                mem_buf.enqueue_write_sync(recv_values);
-            }
+            mem_send.enqueue_write_sync(send_values);
+            mem_recv.enqueue_write_sync(recv_values);
         }
 
         if (memory_storage[rank].empty()) {
             memory_storage[rank].reserve(100);
         }
-        memory_storage[rank].push_back(std::move(mem_buf));
+        memory_storage[rank].push_back(std::move(mem_send));
+        memory_storage[rank].push_back(std::move(mem_recv));
 
         // create native stream
         auto str = std::make_shared<native::ccl_device::device_queue>(dev->create_cmd_queue(ctx));
         streams.emplace(rank, ccl::create_stream(str));
     }
 
-    //bcast
+    //allreduce
     std::vector<ccl::event> reqs;
     for (auto& comm : comms) {
         size_t rank = comm.rank();
-
-        /*if (!comm->is_ready()) {
-            std::cerr << "Communicator by rank: " << rank << " should be ready already"
-                      << std::endl;
+        /*
+        if (!comm.is_ready())
+        {
+            std::cerr << "Communicator by rank: " << rank << " should be ready already" << std::endl;
             abort();
         }*/
-
         allocated_memory_array& mem_objects = memory_storage.find(rank)->second;
-        auto& stream = streams.find(rank)->second;
 
-        reqs.push_back(ccl::broadcast(mem_objects[0].get(),
-                                      mem_objects[0].count(),
-                                      root,
+        auto& stream = streams.find(rank)->second;
+        reqs.push_back(ccl::allreduce(mem_objects[0].get(),
+                                      mem_objects[1].get(),
+                                      mem_objects[1].count(),
+                                      ccl::reduction::sum,
                                       comm,
                                       stream));
     }
@@ -326,13 +197,9 @@ int main(int argc, char** argv) {
     std::cout << "Expected process count: " << process_group_gpu_affinity.size() << std::endl;
     std::vector<size_t> total_devices_in_process(process_group_gpu_affinity.size(), 0);
 
-#ifdef CCL_ENABLE_SYCL
-    // using cl::sycl::device
-    using device_type = ccl::communicator::ccl_device_t;
-#else
     // using ccl device index
     using device_type = ccl::device_index_type;
-#endif
+
     std::map<size_t, std::vector<device_type>> devices_for_mpi_rank;
 
     size_t device_rank_for_mpi_rank_id_offset = 0;
@@ -370,11 +237,8 @@ int main(int argc, char** argv) {
             if (process_index == static_cast<size_t>(mpi_rank)) {
                 for (auto device_vendor_id : device_group_affinity) {
                     devices_for_mpi_rank[thread_index].push_back(
-#ifdef CCL_ENABLE_SYCL
-                        ccl::create_from_index(device_vendor_id).device);
-#else
-                        device_vendor_id);
-#endif
+                    device_vendor_id);
+
                 }
             }
         }
@@ -395,12 +259,7 @@ int main(int argc, char** argv) {
         devices_in_process.insert(
             devices_in_process.end(), thread_devices.second.begin(), thread_devices.second.end());
     }
-#ifdef CCL_ENABLE_SYCL
-    //TODO: terminate called after throwing an instance of 'cl::sycl::invalid_parameter_error'
-    //what():  Can't add devices across platforms to a single context. -33 (CL_INVALID_DEVICE)
-    //auto ctx = cl::sycl::context(devices_in_process);
-    auto ctx = cl::sycl::context(*devices_in_process.begin()); //use single device
-#else
+
     const auto& drivers = native::get_platform().get_drivers();
     if (drivers.empty())
     {
@@ -411,7 +270,7 @@ int main(int argc, char** argv) {
     // get GPU driver, it's only one driver at the moment
     auto gpu_driver = drivers.begin()->second;
     decltype(gpu_driver->create_context()) ctx;/*default context*/ // = gpu_driver->create_context();
-#endif
+
     for (auto thread_affinity_it = thread_group_affinity.begin();
          thread_affinity_it != thread_group_affinity.end();
          ++thread_affinity_it) {
@@ -445,5 +304,5 @@ int main(int argc, char** argv) {
         t.join();
     }
 
+    return 0;
 }
-
