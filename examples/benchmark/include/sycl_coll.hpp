@@ -16,18 +16,9 @@ using namespace sycl;
 using namespace sycl::access;
 
 std::vector<cl::sycl::queue> get_sycl_queues(sycl_dev_type_t dev_type,
-                                             std::vector<size_t>& ranks) {
+                                             const std::vector<size_t>& ranks) {
 
-    std::vector<cl::sycl::queue> queues;
-
-    auto ctx = create_sycl_context(sycl_dev_names[dev_type]);
-    auto devices = ctx.get_devices();
-
-    ASSERT(!devices.empty(), "empty device array");
-
-    for (auto rank : ranks) {
-        queues.push_back(sycl::queue(ctx, devices[rank % devices.size()]));
-    }
+    auto queues = create_sycl_queues(sycl_dev_names[dev_type], ranks);
 
     auto first_ctx = queues[0].get_context();
     for (size_t idx = 0; idx < queues.size(); idx++) {

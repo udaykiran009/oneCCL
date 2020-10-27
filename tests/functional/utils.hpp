@@ -167,7 +167,7 @@
             MPI_Bcast((void*)main_addr.data(), main_addr.size(), MPI_BYTE, 0, MPI_COMM_WORLD); \
             gd.kvs = ccl::create_kvs(main_addr); \
         } \
-        gd.comms.push_back(ccl::create_communicator(size, rank, gd.kvs)); \
+        gd.comms.emplace_back(ccl::create_communicator(size, rank, gd.kvs)); \
         PATCH_OUTPUT_NAME_ARG(argc, argv); \
         testing::InitGoogleTest(&argc, argv); \
         int res = RUN_ALL_TESTS(); \

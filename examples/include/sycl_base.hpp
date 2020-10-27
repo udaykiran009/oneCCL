@@ -92,15 +92,15 @@ std::string get_preferred_gpu_platform_name() {
                          });
 
         if (gpu_dev == devices.end()) {
-            cout << "platform [" << platform_name
-                 << "] does not contain GPU devices, skipping\n";
+            // cout << "platform [" << platform_name
+            //      << "] does not contain GPU devices, skipping\n";
             continue;
         }
 
         if (platform_name.find(backend) == std::string::npos) {
-            cout << "platform [" << platform_name
-                 << "] does not match with requested "
-                 << backend << ", skipping\n";
+            // cout << "platform [" << platform_name
+            //      << "] does not match with requested "
+            //      << backend << ", skipping\n";
             continue;
         }
 
@@ -214,7 +214,8 @@ std::vector<sycl::device> create_sycl_gpu_devices() {
     return result;
 }
 
-sycl::context create_sycl_context(const std::string& device_type) {
+std::vector<sycl::queue> create_sycl_queues(const std::string& device_type,
+                                            const std::vector<size_t>& ranks) {
 
     std::vector<sycl::device> devices;
 
@@ -269,22 +270,27 @@ sycl::context create_sycl_context(const std::string& device_type) {
         throw std::runtime_error("No devices of requested type available");
     }
 
-    sycl::context result(devices);
+    std::vector<sycl::device> rank_devices;
 
-    cout << "Created context from devices of type: " << device_type << "\n";
-    cout << "Devices [" << devices.size() << "]:\n";
+    for (size_t idx = 0; idx < ranks.size(); idx++) {
+        rank_devices.push_back(devices[ranks[idx] % devices.size()]);
+    }
 
-    for (size_t idx = 0; idx < devices.size(); idx++) {
-        cout << "[" << idx << "]: [" << devices[idx].get_info<info::device::name>() << "]\n";
-     }
+    if (rank_devices.empty()) {
+        throw std::runtime_error("No devices of requested type available for specified ranks");
+    }
 
-    return result;
-}
+    sycl::context ctx;
 
-inline bool create_sycl_queue(int argc,
-                              char* argv[],
-                              int rank,
-                              queue& q) {
+    try {
+        ctx = sycl::context(rank_devices);
+    }
+    catch (sycl::runtime_error&) {
+        size_t preferred_idx = (ranks.back() / ranks.size()) % devices.size();
+        cout << "Can not create context from all rank devices of type: " << device_type
+             << ", create context from single device, idx " << preferred_idx << "\n";
+        ctx = sycl::context(devices[preferred_idx]);
+    }
 
     auto exception_handler = [&](exception_list elist) {
         for (exception_ptr const& e : elist) {
@@ -297,10 +303,33 @@ inline bool create_sycl_queue(int argc,
         }
     };
 
+    auto ctx_devices = ctx.get_devices();
+
+    if (ctx_devices.empty()) {
+        throw std::runtime_error("No devices of requested type available in context");
+    }
+
+    std::vector<sycl::queue> queues;
+
+    cout << "Created context from devices of type: " << device_type << "\n";
+    cout << "Devices [" << ctx_devices.size() << "]:\n";
+
+    for (size_t idx = 0; idx < ctx_devices.size(); idx++) {
+        cout << "[" << idx << "]: [" << ctx_devices[idx].get_info<info::device::name>() << "]\n";
+        queues.push_back(sycl::queue(ctx_devices[idx], exception_handler));
+     }
+
+    return queues;
+}
+
+inline bool create_sycl_queue(int argc,
+                              char* argv[],
+                              int rank,
+                              queue& q) {
     if (argc >= 2) {
         try {
-            auto ctx = create_sycl_context(argv[1]);
-            q = sycl::queue(ctx.get_devices()[0], exception_handler);
+            std::vector<size_t> ranks = { (size_t)rank };
+            q = create_sycl_queues(argv[1], ranks)[0];
             return true;
         }
         catch (std::exception& e) {
