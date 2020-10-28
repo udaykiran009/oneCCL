@@ -519,6 +519,41 @@ run_tests()
     esac
 }
 
+run_unit_tests(){
+    echo "RUNNING UNIT TESTS"
+    #ctest -VV -C kernel_ring_single_device_suite
+    echo -e "Running unit tests"
+    mkdir -p build
+    cd ./build
+    
+    . /p/pdsd/scratch/jenkins/artefacts//ccl-nightly/last/inteloneapi/setvars.sh
+    . /p/pdsd/scratch/Uploads/IMPI/linux/functional_testing/impi/2021.1-beta09/env/vars.sh -i_mpi_library_kind=release_mt
+   
+    echo -e "Compiling unit tests"
+    build_output=$(cmake -DMULTI_GPU_SUPPORT=1 -DCMAKE_C_COMPILER=clang \
+                   -DCMAKE_CXX_COMPILER=dpcpp -DCOMPUTE_RUNTIME=dpcpp ..  \
+                   && make -j8 && make install 2>&1)
+    if [[ $? != 0 ]]; then
+        # There was an error, display the error in $output
+        echo -e "Error:\n$build_output"
+        exit 1
+    else
+        echo -e "Compiling unit tests done"
+    fi
+
+    echo -e "Making link to ../src/kernels"
+    ln -s ../src/kernels kernels
+    echo -e "Made link"
+
+    echo -e "Running unit tests"
+    output=$(L0_CLUSTER_AFFINITY_MASK="[0:39882],[0:39882]|[0:39882],[0:39882]" \
+        ./tests/unit/l0/kernel_ring_single_device_suite | tee >&2 | grep 'FAILED')
+    if [ $? != 0 ]; then
+        exit 1
+    fi
+    echo -e "End running unit tests"
+}
+
 clean_nodes() {
     echo "Start cleaning nodes..."
     if [ -z "${I_MPI_HYDRA_HOST_FILE}" ]
@@ -551,7 +586,6 @@ EOF
 #==============================================================================
 #                              MAIN
 #==============================================================================
-
 set_default_values
 set_environment
 set_impi_environment
@@ -568,6 +602,10 @@ do
         run_modulefile_tests
         shift
         ;;
+    "-unit_tests" )
+        run_unit_tests
+        shift
+        ;;
     *)
         echo "WARNING: example testing not started"
         exit 0
@@ -575,6 +613,7 @@ do
         ;;
     esac
 done
+
 make_tests
 run_tests
 clean_nodes
