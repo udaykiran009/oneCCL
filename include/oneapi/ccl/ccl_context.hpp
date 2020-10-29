@@ -6,10 +6,12 @@
 
 class ccl_context_impl;
 namespace ccl {
-
 namespace detail {
-    class environment; // friend-zone
+    class environment;
 }
+
+namespace v1 {
+class communicator;
 
 /**
  * A context object is an abstraction over CPU/GPU context
@@ -36,8 +38,8 @@ public:
     /**
      * Declare native context type
      */
-    using native_t = typename detail::ccl_api_type_attr_traits<ccl::context_attr_id,
-                                                                ccl::context_attr_id::native_handle>::return_type;
+    using native_t = typename detail::ccl_api_type_attr_traits<context_attr_id,
+                                                               context_attr_id::native_handle>::return_type;
     context(context&& src);
     context(const context& src);
     context& operator=(const context& src);
@@ -61,9 +63,8 @@ public:
      native_t& get_native();
      const native_t& get_native() const;
 private:
-    friend class detail::environment;
-    friend class communicator;
-    friend class context_communicator;
+    friend class ccl::detail::environment;
+    friend class ccl::v1::communicator;
     context(impl_value_t&& impl);
 
     /**
@@ -72,7 +73,7 @@ private:
     template <context_attr_id attrId,
               class Value/*,
               class = typename std::enable_if<is_attribute_value_supported<attrId, Value>()>::type*/>
-    typename ccl::detail::ccl_api_type_attr_traits<ccl::context_attr_id, attrId>::return_type set(const Value& v);
+    typename detail::ccl_api_type_attr_traits<context_attr_id, attrId>::return_type set(const Value& v);
 
     void build_from_params();
     context(const typename detail::ccl_api_type_attr_traits<context_attr_id,
@@ -94,5 +95,10 @@ template <context_attr_id t, class value_type>
 constexpr auto attr_val(value_type v) -> detail::attr_value_tripple<context_attr_id, t, value_type> {
     return detail::attr_value_tripple<context_attr_id, t, value_type>(v);
 }
+
+} // namespace v1
+
+using v1::context;
+using v1::attr_val;
 
 } // namespace ccl

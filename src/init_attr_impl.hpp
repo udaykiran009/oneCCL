@@ -35,6 +35,8 @@ protected:
 
 
 
+namespace v1 {
+
 /**
  * init_attr attributes definition
  */
@@ -50,5 +52,7 @@ init_attr::get() const {
     return get_impl()->get_attribute_value(
         detail::ccl_api_type_attr_traits<init_attr_id, attrId>{});
 }
+
+} // namespace v1
 
 } // namespace ccl

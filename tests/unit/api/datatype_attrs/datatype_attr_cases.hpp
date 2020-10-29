@@ -21,27 +21,27 @@
 namespace datatype_attr_suite {
 
 TEST(datatype_attr, datatype_attr_empty_creation) {
-    ccl::datatype_attr attr = ccl::create_datatype_attr();
-    ASSERT_TRUE(attr.get<ccl::datatype_attr_id::version>().full != nullptr);
-    ASSERT_EQ(attr.get<ccl::datatype_attr_id::size>(), 1);
+    ccl::v1::datatype_attr attr = ccl::v1::create_datatype_attr();
+    ASSERT_TRUE(attr.get<ccl::v1::datatype_attr_id::version>().full != nullptr);
+    ASSERT_EQ(attr.get<ccl::v1::datatype_attr_id::size>(), 1);
 }
 
 TEST(datatype_attr, copy_datatype_attr) {
-    auto attr = ccl::create_datatype_attr();
-    attr.set<ccl::datatype_attr_id::size>(666);
+    auto attr = ccl::v1::create_datatype_attr();
+    attr.set<ccl::v1::datatype_attr_id::size>(666);
 
     auto original_inner_impl_ptr = attr.get_impl().get();
     auto attr2 = attr;
     auto copied_inner_impl_ptr = attr2.get_impl().get();
     ASSERT_TRUE(original_inner_impl_ptr != copied_inner_impl_ptr);
     ASSERT_TRUE(attr.get_impl());
-    ASSERT_TRUE(attr2.get<ccl::datatype_attr_id::version>().full != nullptr);
-    ASSERT_EQ(attr2.get<ccl::datatype_attr_id::size>(), 666);
+    ASSERT_TRUE(attr2.get<ccl::v1::datatype_attr_id::version>().full != nullptr);
+    ASSERT_EQ(attr2.get<ccl::v1::datatype_attr_id::size>(), 666);
 }
 
 TEST(datatype_attr, move_datatype_attr) {
     /* move constructor test */
-    auto orig_attr = ccl::create_datatype_attr();
+    auto orig_attr = ccl::v1::create_datatype_attr();
 
     auto orig_inner_impl_ptr = orig_attr.get_impl().get();
     auto moved_attr = (std::move(orig_attr));
@@ -52,8 +52,8 @@ TEST(datatype_attr, move_datatype_attr) {
     ASSERT_TRUE(!orig_attr.get_impl());
 
     /* move assignment test*/
-    auto orig_attr2 = ccl::create_datatype_attr();
-    auto moved_attr2 = ccl::create_datatype_attr();
+    auto orig_attr2 = ccl::v1::create_datatype_attr();
+    auto moved_attr2 = ccl::v1::create_datatype_attr();
     moved_attr2 = std::move(orig_attr2);
 
     ASSERT_TRUE(moved_attr2.get_impl());
@@ -61,13 +61,13 @@ TEST(datatype_attr, move_datatype_attr) {
 }
 
 TEST(datatype_attr, datatype_attr_empty_size) {
-    auto attr = ccl::create_datatype_attr(ccl::attr_val<ccl::datatype_attr_id::size>(123));
-    ASSERT_TRUE(attr.get<ccl::datatype_attr_id::version>().full != nullptr);
+    auto attr = ccl::v1::create_datatype_attr(ccl::v1::attr_val<ccl::v1::datatype_attr_id::size>(123));
+    ASSERT_TRUE(attr.get<ccl::v1::datatype_attr_id::version>().full != nullptr);
 
-    ASSERT_EQ(attr.get<ccl::datatype_attr_id::size>(), 123);
+    ASSERT_EQ(attr.get<ccl::v1::datatype_attr_id::size>(), 123);
 
-    auto old_value = attr.set<ccl::datatype_attr_id::size>(1234);
-    ASSERT_EQ(attr.get<ccl::datatype_attr_id::size>(), 1234);
+    auto old_value = attr.set<ccl::v1::datatype_attr_id::size>(1234);
+    ASSERT_EQ(attr.get<ccl::v1::datatype_attr_id::size>(), 1234);
     ASSERT_EQ(old_value, 123);
 }
 

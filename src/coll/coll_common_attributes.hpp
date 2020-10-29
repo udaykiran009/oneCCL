@@ -11,7 +11,7 @@ struct ccl_operation_attr_impl_t {
      * `version` operations
      */
     using version_traits_t =
-        detail::ccl_api_type_attr_traits<operation_attr_id, ccl::operation_attr_id::version>;
+        detail::ccl_api_type_attr_traits<operation_attr_id, operation_attr_id::version>;
     const typename version_traits_t::return_type& get_attribute_value(
         const version_traits_t& id) const;
 
@@ -22,7 +22,7 @@ struct ccl_operation_attr_impl_t {
      * `prologue_fn` operations
      */
     using prologue_fn_traits_t =
-        detail::ccl_api_type_attr_traits<operation_attr_id, ccl::operation_attr_id::prologue_fn>;
+        detail::ccl_api_type_attr_traits<operation_attr_id, operation_attr_id::prologue_fn>;
     const typename prologue_fn_traits_t::return_type& get_attribute_value(
         const prologue_fn_traits_t& id) const;
 
@@ -34,7 +34,7 @@ struct ccl_operation_attr_impl_t {
      * `epilogue_fn` operations
      */
     using epilogue_fn_traits_t =
-        detail::ccl_api_type_attr_traits<operation_attr_id, ccl::operation_attr_id::epilogue_fn>;
+        detail::ccl_api_type_attr_traits<operation_attr_id, operation_attr_id::epilogue_fn>;
     const typename epilogue_fn_traits_t::return_type& get_attribute_value(
         const epilogue_fn_traits_t& id) const;
 
@@ -46,7 +46,7 @@ struct ccl_operation_attr_impl_t {
      * `priority` operations
      */
     using priority_traits_t =
-        detail::ccl_api_type_attr_traits<operation_attr_id, ccl::operation_attr_id::priority>;
+        detail::ccl_api_type_attr_traits<operation_attr_id, operation_attr_id::priority>;
     const typename priority_traits_t::return_type& get_attribute_value(
         const priority_traits_t& id) const;
 
@@ -58,7 +58,7 @@ struct ccl_operation_attr_impl_t {
      * `synchronous` operations
      */
     using synchronous_traits_t =
-        detail::ccl_api_type_attr_traits<operation_attr_id, ccl::operation_attr_id::synchronous>;
+        detail::ccl_api_type_attr_traits<operation_attr_id, operation_attr_id::synchronous>;
     const typename synchronous_traits_t::return_type& get_attribute_value(
         const synchronous_traits_t& id) const;
 
@@ -70,7 +70,7 @@ struct ccl_operation_attr_impl_t {
      * `to_cache` operations
      */
     using to_cache_traits_t =
-        detail::ccl_api_type_attr_traits<operation_attr_id, ccl::operation_attr_id::to_cache>;
+        detail::ccl_api_type_attr_traits<operation_attr_id, operation_attr_id::to_cache>;
     const typename to_cache_traits_t::return_type& get_attribute_value(
         const to_cache_traits_t& id) const;
 
@@ -82,7 +82,7 @@ struct ccl_operation_attr_impl_t {
      * `match_id` operations
      */
     using match_id_traits_t =
-        detail::ccl_api_type_attr_traits<operation_attr_id, ccl::operation_attr_id::match_id>;
+        detail::ccl_api_type_attr_traits<operation_attr_id, operation_attr_id::match_id>;
     const typename match_id_traits_t::return_type& get_attribute_value(
         const match_id_traits_t& id) const;
 

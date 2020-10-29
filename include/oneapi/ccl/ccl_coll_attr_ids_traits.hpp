@@ -130,4 +130,5 @@ struct ccl_api_type_attr_traits<sparse_allreduce_attr_id, sparse_allreduce_attr_
  * Traits specialization for barrier op attributes
  */
 } // namespace detail
+
 } // namespace ccl

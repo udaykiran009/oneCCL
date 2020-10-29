@@ -20,16 +20,19 @@ struct ccl_device;
 }
 
 namespace ccl {
+namespace v1 {
+    class allgatherv_attr;
+    class allreduce_attr;
+    class alltoall_attr;
+    class alltoallv_attr;
+    class barrier_attr;
+    class broadcast_attr;
+    class reduce_attr;
+    class reduce_scatter_attr;
+    class sparse_allreduce_attr;
+}
+
 struct gpu_comm_attr;
-class allgatherv_attr;
-class allreduce_attr;
-class alltoall_attr;
-class alltoallv_attr;
-class barrier_attr;
-class broadcast_attr;
-class reduce_attr;
-class reduce_scatter_attr;
-class sparse_allreduce_attr;
 } // namespace ccl
 
 #include "types_generator_defines.hpp"

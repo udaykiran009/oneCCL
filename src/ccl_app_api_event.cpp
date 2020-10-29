@@ -7,6 +7,8 @@
 
 namespace ccl {
 
+namespace v1 {
+
 CCL_API event::event() noexcept : base_t(impl_value_t(new empty_event_impl())) {}
 CCL_API event::event(event&& src) noexcept : base_t(std::move(src)) {}
 CCL_API event::event(impl_value_t&& impl) noexcept : base_t(std::move(impl)) {}
@@ -76,5 +78,7 @@ event CCL_API event::create_from_native(native_handle_t native_event_handle,
         new native_event_impl(std::move(ev))
     );
 }
+
+} // namespace v1
 
 } // namespace ccl

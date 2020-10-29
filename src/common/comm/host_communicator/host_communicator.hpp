@@ -22,7 +22,9 @@
 
 namespace ccl {
 
+namespace v1 {
 class kvs_interface;
+}
 
 class host_communicator : public ccl::communicator_interface {
 public:

@@ -3,9 +3,12 @@
 #if 0
 class ccl_event;
 namespace ccl {
-
 namespace detail {
-    class environment; // friend-zone
+    class environment;
+}
+
+namespace v1 {
+class communicator;
 }
 
 /**
@@ -42,8 +45,8 @@ public:
         const;
 
 private:
-    friend class detail::environment;
-    friend class communicator;
+    friend class ccl::detail::environment;
+    friend class ccl::v1::communicator;
     event_internal(impl_value_t&& impl);
 
     /**
@@ -76,10 +79,14 @@ private:
                                         attr_value_pair_t&&... avps);
 };
 
+namespace v1 {
+
 template <event_attr_id t, class value_type>
-constexpr auto attr_val(value_type v) -> detail::attr_value_tripple<event_attr_id, t, value_type> {
-    return detail::attr_value_tripple<event_attr_id, t, value_type>(v);
+constexpr auto attr_val(value_type v) -> v1::detail::attr_value_tripple<event_attr_id, t, value_type> {
+    return v1::detail::attr_value_tripple<event_attr_id, t, value_type>(v);
 }
+
+} // namespace v1
 
 } // namespace ccl
 

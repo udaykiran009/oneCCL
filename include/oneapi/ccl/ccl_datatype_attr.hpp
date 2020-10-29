@@ -5,12 +5,13 @@
 #endif
 
 namespace ccl {
-
 namespace detail {
     class environment;
 }
 
 class ccl_datatype_attr_impl;
+
+namespace v1 {
 
 class datatype_attr : public ccl_api_base_copyable<datatype_attr,
                                                    copy_on_write_access_policy,
@@ -52,7 +53,7 @@ public:
         const;
 
 private:
-    friend class detail::environment;
+    friend class ccl::detail::environment;
     datatype_attr(
         const typename detail::ccl_api_type_attr_traits<datatype_attr_id,
                                                          datatype_attr_id::version>::return_type&
@@ -64,5 +65,10 @@ constexpr auto attr_val(value_type v)
     -> detail::attr_value_tripple<datatype_attr_id, t, value_type> {
     return detail::attr_value_tripple<datatype_attr_id, t, value_type>(v);
 }
+
+} // namespace v1
+
+using v1::datatype_attr;
+using v1::attr_val;
 
 } // namespace ccl

@@ -5,6 +5,9 @@
 #include "common/utils/version.hpp"
 
 namespace ccl {
+
+namespace v1 {
+
 /* TODO temporary function for UT compilation: would be part of ccl::detail::environment in final*/
 template <class coll_attribute_type, class... attr_value_pair_t>
 coll_attribute_type create_coll_attr(attr_value_pair_t&&... avps) {
@@ -15,4 +18,7 @@ coll_attribute_type create_coll_attr(attr_value_pair_t&&... avps) {
     (void)expander;
     return coll_attr;
 }
+
+} // namespace v1
+
 } // namespace ccl

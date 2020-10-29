@@ -11,11 +11,13 @@
 
 namespace ccl {
 
+namespace v1 {
+
 #define API_FORCE_SETTER_INSTANTIATION(class_name, IN_attrId, IN_Value, OUT_Traits_Value) \
     template CCL_API IN_Value class_name::set<IN_attrId, IN_Value>(const IN_Value& v);
 
 #define API_FORCE_GETTER_INSTANTIATION(class_name, IN_attrId, IN_Value, OUT_Traits_Value) \
-    template CCL_API const typename detail::OUT_Traits_Value<datatype_attr_id, \
+    template CCL_API const typename OUT_Traits_Value<datatype_attr_id, \
                                                               IN_attrId>::return_type& \
     class_name::get<IN_attrId>() const;
 
@@ -50,21 +52,23 @@ CCL_API datatype_attr& datatype_attr::operator=(datatype_attr&& src) {
 API_FORCE_SETTER_INSTANTIATION(datatype_attr,
                                datatype_attr_id::size,
                                int,
-                               ccl_api_type_attr_traits);
+                               detail::ccl_api_type_attr_traits);
 API_FORCE_SETTER_INSTANTIATION(datatype_attr,
                                datatype_attr_id::size,
                                size_t,
-                               ccl_api_type_attr_traits);
+                               detail::ccl_api_type_attr_traits);
 API_FORCE_GETTER_INSTANTIATION(datatype_attr,
                                datatype_attr_id::size,
                                size_t,
-                               ccl_api_type_attr_traits);
+                               detail::ccl_api_type_attr_traits);
 API_FORCE_GETTER_INSTANTIATION(datatype_attr,
                                datatype_attr_id::version,
                                ccl::library_version,
-                               ccl_api_type_attr_traits);
+                               detail::ccl_api_type_attr_traits);
 
 #undef API_FORCE_SETTER_INSTANTIATION
 #undef API_FORCE_GETTER_INSTANTIATION
+
+} // namespace v1
 
 } // namespace ccl

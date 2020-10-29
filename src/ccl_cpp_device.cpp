@@ -3,6 +3,8 @@
 
 namespace ccl {
 
+namespace v1 {
+
 CCL_API device::device(device&& src) : base_t(std::move(src)) {}
 
 CCL_API device::device(const device& src) : base_t(src) {}
@@ -50,8 +52,11 @@ CCL_API device::native_t& device::get_native()
 CCL_API const device::native_t& device::get_native() const
 {
     return get_impl()->get_attribute_value(
-        detail::ccl_api_type_attr_traits<ccl::device_attr_id, ccl::device_attr_id::native_handle>{});
+        detail::ccl_api_type_attr_traits<device_attr_id, device_attr_id::native_handle>{});
 }
+
+} // namespace v1
+
 } // namespace ccl
 
 API_DEVICE_CREATION_FORCE_INSTANTIATION(typename ccl::unified_device_type::ccl_native_t)

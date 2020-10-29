@@ -10,6 +10,9 @@
 #include "coll/coll_attributes.hpp"
 
 namespace ccl {
+
+namespace v1 {
+
 #define COMMA ,
 
 #define API_FORCE_INSTANTIATION_SET(class_name, IN_attrType, IN_attrId, IN_Value) \
@@ -233,4 +236,7 @@ API_FORCE_INSTANTIATION(sparse_allreduce_attr,
 #undef API_FORCE_INSTANTIATION
 #undef COMMON_API_FORCE_INSTANTIATION
 #undef COMMA
+
+} // namespace v1
+
 } // namespace ccl

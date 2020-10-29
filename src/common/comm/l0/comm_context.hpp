@@ -21,9 +21,8 @@
 #include "common/comm/comm_interface.hpp"
 
 namespace ccl {
-
 namespace detail {
-    class environment; // friend-zone
+    class environment;
 }
 
 class host_communicator;
@@ -32,7 +31,7 @@ using shared_communicator_t = std::shared_ptr<host_communicator>;
 
 class comm_group {
 public:
-    friend class detail::environment;
+    friend class ccl::detail::environment;
     friend struct group_context;
 
     using context_t = typename unified_context_type::ccl_native_t;

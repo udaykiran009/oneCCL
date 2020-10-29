@@ -6,6 +6,9 @@
 
 class ccl_stream;
 namespace ccl {
+
+namespace v1 {
+
 /**
  * Stream attribute ids
  */
@@ -23,5 +26,9 @@ enum class stream_attr_id : int {
 
     last_value
 };
+
+} // namespace v1
+
+using v1::stream_attr_id;
 
 } // namespace ccl

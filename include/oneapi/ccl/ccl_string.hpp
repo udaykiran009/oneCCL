@@ -6,6 +6,8 @@
 
 namespace ccl {
 
+namespace v1 {
+
 class string
 {
 public:
@@ -138,5 +140,9 @@ private:
     size_t len;
     char* storage;
 };
+
+} // namespace v1
+
+using v1::string;
 
 } // namespace ccl

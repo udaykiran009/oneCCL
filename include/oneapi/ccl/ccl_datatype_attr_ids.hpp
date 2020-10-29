@@ -6,6 +6,8 @@
 
 namespace ccl {
 
+namespace v1 {
+
 enum class datatype_attr_id : int {
     version,
 
@@ -14,4 +16,8 @@ enum class datatype_attr_id : int {
     last_value
 };
 
-}
+} // namespace v1
+
+using v1::datatype_attr_id;
+
+} // namespace ccl

@@ -64,7 +64,7 @@ context environment::create_context(empty_t empty) const
 
 /******************** DATATYPE ********************/
 
-ccl::datatype environment::register_datatype(const ccl::datatype_attr& attr) {
+ccl::datatype environment::register_datatype(const datatype_attr& attr) {
     while (unlikely(ccl::global_data::get().executor->is_locked)) {
         std::this_thread::yield();
     }
@@ -109,45 +109,45 @@ stream CCL_API environment::create_stream(typename unified_device_type::ccl_nati
 /******************** COMMUNICATOR ********************/
 
 #ifdef CCL_ENABLE_SYCL
-ccl::communicator environment::create_single_device_communicator(
+communicator environment::create_single_device_communicator(
     const size_t comm_size,
     const size_t rank,
     const cl::sycl::device& device,
     const cl::sycl::context& context,
-    ccl::shared_ptr_class<ccl::kvs_interface> kvs) const {
+    ccl::shared_ptr_class<kvs_interface> kvs) const {
     LOG_TRACE("Create single device communicator from SYCL device");
 
     std::shared_ptr<ikvs_wrapper> kvs_wrapper(new users_kvs(kvs));
     std::shared_ptr<atl_wrapper> atl =
         std::shared_ptr<atl_wrapper>(new atl_wrapper(comm_size, { rank }, kvs_wrapper));
 
-    ccl::comm_split_attr attr = create_comm_split_attr(
-        ccl::attr_val<ccl::comm_split_attr_id::group>(ccl::group_split_type::undetermined));
+    comm_split_attr attr = create_comm_split_attr(
+        attr_val<comm_split_attr_id::group>(group_split_type::undetermined));
     ccl::communicator_interface_ptr impl =
         ccl::communicator_interface::create_communicator_impl(device, context, rank, comm_size, attr, atl);
 
     //TODO use gpu_comm_attr to automatically visit()
     auto single_dev_comm = std::dynamic_pointer_cast<single_device_communicator>(impl);
     //single_dev_comm->set_context(context);
-    return ccl::communicator(std::move(impl));
+    return communicator(std::move(impl));
 }
 #endif
 
-ccl::communicator environment::create_communicator(const comm_attr& attr) const {
-    return ccl::communicator::create_communicator(attr);
+communicator environment::create_communicator(const comm_attr& attr) const {
+    return communicator::create_communicator(attr);
 }
 
-ccl::communicator environment::create_communicator(const size_t size,
-                                                   ccl::shared_ptr_class<ccl::kvs_interface> kvs,
+communicator environment::create_communicator(const size_t size,
+                                                   ccl::shared_ptr_class<kvs_interface> kvs,
                                                    const comm_attr& attr) const {
-    return ccl::communicator::create_communicator(size, kvs, attr);
+    return communicator::create_communicator(size, kvs, attr);
 }
 
-ccl::communicator environment::create_communicator(const size_t size,
+communicator environment::create_communicator(const size_t size,
                                                    const size_t rank,
-                                                   ccl::shared_ptr_class<ccl::kvs_interface> kvs,
+                                                   ccl::shared_ptr_class<kvs_interface> kvs,
                                                    const comm_attr& attr) const {
-    return ccl::communicator::create_communicator(size, rank, kvs, attr);
+    return communicator::create_communicator(size, rank, kvs, attr);
 }
 
 } // namespace detail

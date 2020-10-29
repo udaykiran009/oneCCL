@@ -5,6 +5,9 @@
 #endif
 
 namespace ccl {
+
+namespace v1 {
+
 /**
  * Context attribute ids
  */
@@ -15,5 +18,9 @@ enum class context_attr_id : int {
 
     last_value
 };
+
+} // namespace v1
+
+using v1::context_attr_id;
 
 } // namespace ccl

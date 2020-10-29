@@ -6,10 +6,14 @@
 
 class ccl_stream;
 namespace ccl {
-
 namespace detail {
-    class environment; // friend-zone
+    class environment;
 }
+
+namespace v1 {
+struct ccl_empty_attr;
+class communicator;
+struct impl_dispatch;
 
 /**
  * A stream object is an abstraction over CPU/GPU streams
@@ -36,8 +40,8 @@ public:
     /**
      * Declare native stream type
      */
-    using native_t = typename detail::ccl_api_type_attr_traits<ccl::stream_attr_id,
-                                                                ccl::stream_attr_id::native_handle>::return_type;
+    using native_t = typename detail::ccl_api_type_attr_traits<stream_attr_id,
+                                                                stream_attr_id::native_handle>::return_type;
 
     ~stream();
 
@@ -58,10 +62,10 @@ public:
      native_t& get_native();
      const native_t& get_native() const;
 private:
-    friend class detail::environment;
-    friend class communicator;
-    friend struct ccl_empty_attr;
-    friend struct impl_dispatch;
+    friend class ccl::detail::environment;
+    friend class ccl::v1::communicator;
+    friend struct ccl::ccl_empty_attr;
+    friend struct ccl::v1::impl_dispatch;
 
     template <class... attr_value_pair_t>
     friend stream create_stream_from_attr(
@@ -110,14 +114,21 @@ private:
         attr_value_pair_t&&... avps);
 };
 
+/**
+ * Declare extern empty attributes
+ */
+extern stream default_stream;
+
 template <stream_attr_id t, class value_type>
 constexpr auto attr_val(value_type v)
     -> detail::attr_value_tripple<stream_attr_id, t, value_type> {
     return detail::attr_value_tripple<stream_attr_id, t, value_type>(v);
 }
 
-/**
- * Declare extern empty attributes
- */
-extern stream default_stream;
+} // namespace v1
+
+using v1::stream;
+using v1::default_stream;
+using v1::attr_val;
+
 } // namespace ccl

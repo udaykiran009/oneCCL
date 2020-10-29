@@ -11,11 +11,14 @@ namespace native {
 struct ccl_device;
 }
 namespace ccl {
+namespace v1 {
+    class comm_split_attr;
+}
+
 #ifdef MULTI_GPU_SUPPORT
 struct gpu_comm_attr;
 #endif
 struct communicator_interface;
-class comm_split_attr;
 
 using communicator_interface_ptr = std::shared_ptr<communicator_interface>;
 

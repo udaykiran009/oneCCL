@@ -59,6 +59,8 @@ private:
     kvs::address_type addr;
 };
 
+namespace v1 {
+
 kvs::address_type CCL_API kvs::get_address() const {
     return pimpl->get_addr();
 }
@@ -84,5 +86,7 @@ CCL_API kvs::kvs(const kvs_attr& attr) {
 }
 
 CCL_API kvs::~kvs() {}
+
+} // namespace v1
 
 } // namespace ccl

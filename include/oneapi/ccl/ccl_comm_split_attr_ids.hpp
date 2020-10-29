@@ -6,6 +6,8 @@
 
 namespace ccl {
 
+namespace v1 {
+
 enum class comm_split_attr_id : int {
     version,
 
@@ -27,5 +29,10 @@ enum class
 
         last_value
     };
+
+} // namespace v1
+
+using v1::comm_split_attr_id;
+using v1::group_split_type;
 
 } // namespace ccl

@@ -16,7 +16,9 @@
 using ccl_rank2rank_map = std::vector<size_t>;
 
 namespace ccl {
-class kvs_interface;
+namespace v1 {
+    class kvs_interface;
+}
 }
 
 class alignas(CACHELINE_SIZE) ccl_comm {

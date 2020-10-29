@@ -12,6 +12,8 @@
 
 namespace ccl {
 
+namespace v1 {
+
 /**
  * A structure that is a friend of the passed object
  * and which allows access to the internal representation of this object
@@ -188,18 +190,22 @@ vector_class<communicator> split_device_communicators(
 
 #endif //#if defined(MULTI_GPU_SUPPORT) || defined(CCL_ENABLE_SYCL)
 
+} // namespace v1
+
 namespace preview {
 
 /* communicator */
 communicator CCL_API create_communicator(const comm_attr& attr) {
-    return detail::environment::instance().create_communicator(attr);
+    return ccl::detail::environment::instance().create_communicator(attr);
 }
 
 communicator CCL_API create_communicator(const size_t size, shared_ptr_class<kvs_interface> kvs, const comm_attr& attr) {
-    return detail::environment::instance().create_communicator(size, kvs, attr);
+    return ccl::detail::environment::instance().create_communicator(size, kvs, attr);
 }
 
 } // namespace preview
+
+namespace v1 {
 
 communicator CCL_API create_communicator(const size_t size,
                                          const size_t rank,
@@ -1002,6 +1008,8 @@ event reduce_scatter(const BufferObjectType& send_buf,
         send_buf, recv_buf, recv_count, reduction, disp(default_stream), attr, deps);
 }
 
+} // namespace v1
+
 namespace preview {
 
 /* sparse_allreduce */
@@ -1176,6 +1184,8 @@ ccl::event sparse_allreduce(const IndexBufferType* send_ind_buf,
 
 } // namespace preview
 
+namespace v1 {
+
 // API force instantiations for Operations
 API_COMM_OP_PTR_EXPLICIT_INSTANTIATION(int8_t);
 API_COMM_OP_PTR_EXPLICIT_INSTANTIATION(uint8_t);
@@ -1206,6 +1216,8 @@ API_COMM_OP_REF_EXPLICIT_INSTANTIATION(cl::sycl::buffer<double COMMA 1>);
 
 #undef COMMA
 #endif // CCL_ENABLE_SYCL
+
+} // namespace v1
 
 namespace preview {
 

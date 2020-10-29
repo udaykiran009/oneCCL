@@ -7,9 +7,12 @@
 #include "atl/atl_wrapper.h"
 
 namespace ccl {
+namespace v1 {
+class kvs_interface;
+}
+
 class host_communicator;
 class comm_group;
-class kvs_interface;
 
 struct group_context {
     /* TODO

@@ -12,6 +12,8 @@
 
 namespace ccl {
 
+namespace v1 {
+
 template <class context_type, class... attr_value_pair_t>
 CCL_API context context::create_context_from_attr(context_type& native_context_handle,
                                        attr_value_pair_t&&... avps) {
@@ -42,11 +44,13 @@ context::get() const {
 template<context_attr_id attrId,
              class Value/*,
              typename T*/>
-CCL_API typename ccl::detail::ccl_api_type_attr_traits<ccl::context_attr_id, attrId>::return_type context::set(const Value& v)
+CCL_API typename detail::ccl_api_type_attr_traits<context_attr_id, attrId>::return_type context::set(const Value& v)
 {
     return get_impl()->set_attribute_value(
         v, detail::ccl_api_type_attr_traits<context_attr_id, attrId>{});
 }
+
+} // namesapce v1
 
 } // namespace ccl
 
@@ -62,8 +66,8 @@ CCL_API typename ccl::detail::ccl_api_type_attr_traits<ccl::context_attr_id, att
     ccl::context::set<IN_attrId, IN_Value>(const IN_Value& v);
 
 #define API_CONTEXT_FORCE_INSTANTIATION_GET(IN_attrId) \
-    template CCL_API const typename ccl::detail:: \
-        ccl_api_type_attr_traits<ccl::context_attr_id, IN_attrId>::return_type& \
+    template CCL_API const typename \
+        ccl::detail::ccl_api_type_attr_traits<ccl::context_attr_id, IN_attrId>::return_type& \
         ccl::context::get<IN_attrId>() const;
 
 #define API_CONTEXT_FORCE_INSTANTIATION(IN_attrId, IN_Value) \

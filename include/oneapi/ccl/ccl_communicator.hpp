@@ -5,18 +5,25 @@
 #endif
 
 namespace ccl {
-
 namespace detail {
-    class environment; // friend-zone
+    class environment;
 }
 
-class device;
-class context;
-class event;
-class kvs_interface;
-using rank_t = size_t;
-
 struct communicator_interface;
+
+template<cl_backend_type type>
+struct comm_impl_dispatch_selector;
+
+class comm_group;
+
+namespace v1 {
+class event;
+class context;
+class device;
+class kvs_interface;
+struct impl_dispatch;
+
+using rank_t = size_t;
 
 /**
  * A communicator that permits communication operations
@@ -89,12 +96,12 @@ public:
     communicator split(const comm_split_attr& attr);
 
 private:
-    friend class detail::environment;
-    friend class comm_group;
-    friend struct impl_dispatch;
+    friend class ccl::detail::environment;
+    friend class ccl::comm_group;
+    friend struct ccl::v1::impl_dispatch;
 
     template<cl_backend_type type>
-    friend struct comm_impl_dispatch_selector;
+    friend struct ccl::comm_impl_dispatch_selector;
 
     communicator(impl_value_t&& impl);
 
@@ -129,5 +136,10 @@ private:
                                             shared_ptr_class<kvs_interface> kvs,
                                             const comm_attr& attr);
 };
+
+} // namespace v1
+
+using v1::communicator;
+using v1::rank_t;
 
 } // namespace ccl

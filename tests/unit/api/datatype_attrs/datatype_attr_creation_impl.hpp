@@ -4,6 +4,8 @@
 
 namespace ccl {
 
+namespace v1 {
+
 /* TODO temporary function for UT compilation: would be part of ccl::detail::environment in final*/
 template <class... attr_value_pair_t>
 datatype_attr create_datatype_attr(attr_value_pair_t&&... avps) {
@@ -14,5 +16,7 @@ datatype_attr create_datatype_attr(attr_value_pair_t&&... avps) {
     (void)expander;
     return attr;
 }
+
+} // namespace v1
 
 } // namespace ccl

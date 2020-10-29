@@ -2,6 +2,8 @@
 
 namespace ccl {
 
+namespace v1 {
+
 /******************** COMMUNICATOR ********************/
 
 /**
@@ -349,6 +351,8 @@ namespace ccl {
                                             const communicator& comm, \
                                             const reduce_scatter_attr& attr, \
                                             const vector_class<event>& deps);
+
+} // namespace v1
 
 namespace preview {
 

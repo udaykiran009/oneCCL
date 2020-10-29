@@ -3,6 +3,9 @@
 #include "oneapi/ccl/native_device_api/export_api.hpp"
 
 namespace ccl {
+
+namespace v1 {
+
 CCL_API stream::stream(
     const typename detail::ccl_api_type_attr_traits<stream_attr_id, stream_attr_id::version>::type&
         version)
@@ -35,8 +38,11 @@ CCL_API stream::native_t& stream::get_native()
 CCL_API const stream::native_t& stream::get_native() const
 {
     return get_impl()->get_attribute_value(
-        detail::ccl_api_type_attr_traits<ccl::stream_attr_id, ccl::stream_attr_id::native_handle>{});
+        detail::ccl_api_type_attr_traits<stream_attr_id, stream_attr_id::native_handle>{});
 }
+
+} // namespace v1
+
 } // namespace ccl
 
 API_STREAM_CREATION_FORCE_INSTANTIATION(typename ccl::unified_stream_type::ccl_native_t)

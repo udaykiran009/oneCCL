@@ -9,6 +9,8 @@
 
 namespace ccl {
 
+namespace v1 {
+
 template <class attr>
 CCL_API attr ccl_empty_attr::create_empty() {
     return attr{ ccl_empty_attr::version };
@@ -25,5 +27,7 @@ CCL_API reduce_scatter_attr default_reduce_scatter_attr =
     ccl_empty_attr::create_empty<reduce_scatter_attr>();
 CCL_API sparse_allreduce_attr default_sparse_allreduce_attr =
     ccl_empty_attr::create_empty<sparse_allreduce_attr>();
+
+} // namespace v1
 
 } // namespace ccl

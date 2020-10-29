@@ -5,12 +5,14 @@
 #endif
 
 namespace ccl {
-
 namespace detail {
     class environment;
 }
 
 class init_attr_impl;
+
+namespace v1 {
+
 struct ccl_empty_attr;
 
 class init_attr : public ccl_api_base_copyable<init_attr,
@@ -54,8 +56,8 @@ public:
                                                     attrId>::return_type& get() const;
 
 private:
-    friend class detail::environment;
-    friend struct ccl_empty_attr;
+    friend class ccl::detail::environment;
+    friend struct ccl::ccl_empty_attr;
     init_attr(
         const typename detail::ccl_api_type_attr_traits<init_attr_id,
                                                         init_attr_id::version>::return_type&
@@ -67,6 +69,7 @@ private:
  */
 extern init_attr default_init_attr;
 
+
 /**
  * Fabric helpers
  */
@@ -75,5 +78,11 @@ constexpr auto attr_val(value_type v)
     -> detail::attr_value_tripple<init_attr_id, t, value_type> {
     return detail::attr_value_tripple<init_attr_id, t, value_type>(v);
 }
+
+} // namespace v1
+
+using v1::init_attr;
+using v1::default_init_attr;
+using v1::attr_val;
 
 } // namespace ccl

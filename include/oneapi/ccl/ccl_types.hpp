@@ -177,12 +177,16 @@ struct ccl_type_info_export {
     static constexpr bool is_supported = supported;
 };
 
+namespace v1 {
 struct ccl_empty_attr {
     static ccl::library_version version;
 
     template <class attr>
     static attr create_empty();
 };
+}
+
+using v1::ccl_empty_attr;
 
 /**
  * API object attributes traits

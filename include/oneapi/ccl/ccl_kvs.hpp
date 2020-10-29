@@ -5,10 +5,13 @@
 #endif
 
 namespace ccl {
-
 namespace detail {
-    class environment; // friend-zone
+    class environment;
 }
+
+class kvs_impl;
+
+namespace v1 {
 
 class CCL_API kvs_interface {
 public:
@@ -20,7 +23,6 @@ public:
     virtual void set(const string_class& key, const vector_class<char>& data) const = 0;
 };
 
-class kvs_impl;
 class CCL_API kvs final : public kvs_interface {
 public:
     static constexpr size_t address_max_size = 256;
@@ -35,7 +37,7 @@ public:
     void set(const string_class& key, const vector_class<char>& data) const override;
 
 private:
-    friend class detail::environment;
+    friend class ccl::detail::environment;
 
     kvs(const kvs_attr& attr);
     kvs(const address_type& addr, const kvs_attr& attr);
@@ -44,4 +46,10 @@ private:
     address_type addr;
     unique_ptr_class<kvs_impl> pimpl;
 };
+
+} // namespace v1
+
+using v1::kvs_interface;
+using v1::kvs;
+
 } // namespace ccl

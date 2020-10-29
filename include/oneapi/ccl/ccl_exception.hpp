@@ -6,6 +6,8 @@
 
 namespace ccl {
 
+namespace v1 {
+
 class exception : public std::exception {
     std::string msg;
 
@@ -34,40 +36,49 @@ public:
     }
 };
 
-class invalid_argument : public ccl::exception {
+class invalid_argument : public exception {
 public:
     invalid_argument(const std::string &domain, const std::string &function,
                      const std::string &info = "")
-            : ccl::exception(domain, function, "invalid argument " + info) {}
+            : exception(domain, function, "invalid argument " + info) {}
 };
 
-class host_bad_alloc : public ccl::exception {
+class host_bad_alloc : public exception {
 public:
     host_bad_alloc(const std::string &domain, const std::string &function)
-            : ccl::exception(domain, function, "cannot allocate memory on host") {}
+            : exception(domain, function, "cannot allocate memory on host") {}
 };
 
-// class device_bad_alloc : public ccl::exception {
+// class device_bad_alloc : public exception {
 // public:
 //     device_bad_alloc(const std::string &domain, const std::string &function,
 //                      const cl::sycl::device &device)
-//             : ccl::exception(
+//             : exception(
 //                   domain, function,
 //                   "cannot allocate memory on " + device.get_info<cl::sycl::info::device::name>()) {}
 // };
 
-class unimplemented : public ccl::exception {
+class unimplemented : public exception {
 public:
     unimplemented(const std::string &domain, const std::string &function,
                   const std::string &info = "")
-            : ccl::exception(domain, function, "function is not implemented " + info) {}
+            : exception(domain, function, "function is not implemented " + info) {}
 };
 
-class unsupported : public ccl::exception {
+class unsupported : public exception {
 public:
     unsupported(const std::string &domain, const std::string &function,
                   const std::string &info = "")
-            : ccl::exception(domain, function, "function is not supported " + info) {}
+            : exception(domain, function, "function is not supported " + info) {}
 };
 
-}
+} // namespace v1
+
+using v1::exception;
+using v1::invalid_argument;
+using v1::host_bad_alloc;
+// using v1::device_bad_alloc;
+using v1::unimplemented;
+using v1::unsupported;
+
+} // namespace ccl

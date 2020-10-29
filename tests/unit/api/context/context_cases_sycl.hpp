@@ -19,18 +19,18 @@ namespace context_suite {
 TEST(context_api, device_dontext_api_from_sycl_context_creation) {
     auto dev = cl::sycl::device();
     auto ctx = cl::sycl::context(dev);
-    auto str = ccl::context::create_context(ctx);
+    auto str = ccl::v1::context::create_context(ctx);
 
-    ASSERT_TRUE(str.get<ccl::context_attr_id::version>().full != nullptr);
+    ASSERT_TRUE(str.get<ccl::v1::context_attr_id::version>().full != nullptr);
     ASSERT_EQ(str.get_native(), ctx);
 }
 
 TEST(context_api, context_api_from_sycl_context_attr_creation) {
     auto ctx = cl::sycl::context();
     cl_context h = ctx.get();
-    auto str = ccl::context::create_context_from_attr(h);
+    auto str = ccl::v1::context::create_context_from_attr(h);
 
-    ASSERT_TRUE(str.get<ccl::context_attr_id::version>().full != nullptr);
+    ASSERT_TRUE(str.get<ccl::v1::context_attr_id::version>().full != nullptr);
 }
 
 } // namespace context_suite

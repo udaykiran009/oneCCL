@@ -83,8 +83,8 @@ TEST(device_communicator_api, device_comm_from_sycl_devices_single_thread) {
     std::shared_ptr<stub_kvs> in_kvs;
 
     // create `out_comms` from in parameters
-    ccl::vector_class<ccl::communicator> out_comms =
-        ccl::communicator::create_communicators(
+    ccl::vector_class<ccl::v1::communicator> out_comms =
+        ccl::v1::communicator::create_communicators(
             in_total_devices_size, in_local_rank_device_map, in_ctx, in_kvs);
 
     // check correctness
@@ -125,8 +125,8 @@ TEST(device_communicator_api, device_comm_from_sycl_devices_single_thread) {
                             tmp,
                             recv_counts,
                             dev_comm,
-                            ccl::default_stream,
-                            ccl::default_allgatherv_attr,
+                            ccl::v1::default_stream,
+                            ccl::v1::default_allgatherv_attr,
                             {});
 
         ccl::allgatherv(const_cast<const int*>(tmp),
@@ -134,11 +134,11 @@ TEST(device_communicator_api, device_comm_from_sycl_devices_single_thread) {
                             tmp,
                             recv_counts,
                             dev_comm,
-                            ccl::default_stream,
-                            ccl::default_allgatherv_attr);
+                            ccl::v1::default_stream,
+                            ccl::v1::default_allgatherv_attr);
 
         ccl::allgatherv(
-            const_cast<const int*>(tmp), size_t(0), tmp, recv_counts, dev_comm, ccl::default_stream);
+            const_cast<const int*>(tmp), size_t(0), tmp, recv_counts, dev_comm, ccl::v1::default_stream);
 
         //test non-templates
         ccl::allgatherv(static_cast<const void*>(tmp),
@@ -147,8 +147,8 @@ TEST(device_communicator_api, device_comm_from_sycl_devices_single_thread) {
                             recv_counts,
                             ccl::datatype::int32,
                             dev_comm,
-                            ccl::default_stream,
-                            ccl::default_allgatherv_attr,
+                            ccl::v1::default_stream,
+                            ccl::v1::default_allgatherv_attr,
                             {});
         ccl::allgatherv(static_cast<const void*>(tmp),
                             size_t(0),
@@ -156,15 +156,15 @@ TEST(device_communicator_api, device_comm_from_sycl_devices_single_thread) {
                             recv_counts,
                             ccl::datatype::int32,
                             dev_comm,
-                            ccl::default_stream,
-                            ccl::default_allgatherv_attr);
+                            ccl::v1::default_stream,
+                            ccl::v1::default_allgatherv_attr);
         ccl::allgatherv(static_cast<const void*>(tmp),
                             size_t(0),
                             static_cast<void*>(tmp),
                             recv_counts,
                             ccl::datatype::int32,
                             dev_comm,
-                            ccl::default_stream);
+                            ccl::v1::default_stream);
 
         ccl::allgatherv(static_cast<const void*>(tmp),
                             size_t(0),
@@ -191,8 +191,8 @@ void user_thread_function(size_t total_devices_count,
                           std::shared_ptr<stub_kvs> in_kvs,
                           std::atomic<size_t>& total_communicators_count) {
     // blocking API call: wait for all threads from all processes
-    ccl::vector_class<ccl::communicator> out_comms =
-        ccl::communicator::create_communicators(
+    ccl::vector_class<ccl::v1::communicator> out_comms =
+        ccl::v1::communicator::create_communicators(
             total_devices_count, in_local_rank_device_map, in_ctx, in_kvs);
 
     // check correctness
@@ -300,8 +300,8 @@ void user_thread_function_splitted_comm(size_t total_devices_count,
                                         std::shared_ptr<stub_kvs> in_kvs,
                                         std::atomic<size_t>& total_communicators_count) {
     // blocking API call: wait for all threads from all processes
-    ccl::vector_class<ccl::communicator> out_comms =
-        ccl::communicator::create_communicators(
+    ccl::vector_class<ccl::v1::communicator> out_comms =
+        ccl::v1::communicator::create_communicators(
             total_devices_count, in_local_rank_device_map, in_ctx, in_kvs);
 
     // check correctness
@@ -340,7 +340,7 @@ void user_thread_function_splitted_comm(size_t total_devices_count,
 
         // // split test for current thread local scope
         // auto attr = ccl::create_comm_split_attr(
-        //     ccl::attr_val<ccl::comm_split_attr_id::group>(ccl::group_split_type::thread));
+        //     ccl::v1::attr_val<ccl::v1::comm_split_attr_id::group>(ccl::v1::group_split_type::thread));
         // auto splitted_comm = dev_comm.split(attr);
 
         // // check splitted_comm correctness

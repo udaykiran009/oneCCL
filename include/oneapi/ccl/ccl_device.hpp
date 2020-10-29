@@ -6,10 +6,12 @@
 
 class ccl_device_impl;
 namespace ccl {
-
 namespace detail {
-    class environment; // friend-zone
+    class environment;
 }
+
+namespace v1 {
+class communicator;
 
 /**
  * A device object is an abstraction over CPU/GPU device
@@ -36,8 +38,8 @@ public:
     /**
      * Declare native device type
      */
-    using native_t = typename detail::ccl_api_type_attr_traits<ccl::device_attr_id,
-                                                                ccl::device_attr_id::native_handle>::return_type;
+    using native_t = typename detail::ccl_api_type_attr_traits<device_attr_id,
+                                                               device_attr_id::native_handle>::return_type;
 
     device(device&& src);
     device(const device& src);
@@ -63,8 +65,8 @@ public:
      native_t& get_native();
      const native_t& get_native() const;
 private:
-    friend class detail::environment;
-    friend class communicator;
+    friend class ccl::detail::environment;
+    friend class ccl::v1::communicator;
     device(impl_value_t&& impl);
 
     /**
@@ -73,7 +75,7 @@ private:
     template <device_attr_id attrId,
               class Value/*,
               class = typename std::enable_if<is_attribute_value_supported<attrId, Value>()>::type*/>
-    typename ccl::detail::ccl_api_type_attr_traits<ccl::device_attr_id, attrId>::return_type set(const Value& v);
+    typename detail::ccl_api_type_attr_traits<device_attr_id, attrId>::return_type set(const Value& v);
 
     void build_from_params();
     device(const typename detail::ccl_api_type_attr_traits<device_attr_id,
@@ -104,5 +106,11 @@ constexpr auto attr_val(size_t rank, device_value_type&& v)
     -> rank_device_pair_t<device_value_type>{
     return rank_device_pair_t<device_value_type>{rank, std::forward<device_value_type>(v)};
 }
+
+} // namespace v1
+
+using v1::device;
+using v1::attr_val;
+using v1::rank_device_pair_t;
 
 } // namespace ccl

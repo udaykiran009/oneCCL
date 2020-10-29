@@ -5,12 +5,14 @@
 #endif
 
 namespace ccl {
-
 namespace detail {
-class environment;
+    class environment;
 }
 
 class ccl_kvs_attr_impl;
+
+namespace v1 {
+
 struct ccl_empty_attr;
 
 /**
@@ -60,14 +62,15 @@ public:
     bool is_valid() const noexcept;
 
 private:
-    friend class detail::environment;
-    friend struct ccl_empty_attr;
+    friend class ccl::detail::environment;
+    friend struct ccl::v1::ccl_empty_attr;
 
     kvs_attr(
         const typename detail::ccl_api_type_attr_traits<kvs_attr_id,
             kvs_attr_id::version>::return_type&
         version);
 };
+
 extern kvs_attr default_kvs_attr;
 
 template <kvs_attr_id t, class value_type>
@@ -75,4 +78,11 @@ constexpr auto attr_val(value_type v)
 -> detail::attr_value_tripple<kvs_attr_id, t, value_type> {
     return detail::attr_value_tripple<kvs_attr_id, t, value_type>(v);
 }
+
+} // namespace v1
+
+using v1::kvs_attr;
+using v1::default_kvs_attr;
+using v1::attr_val;
+
 } // namespace ccl

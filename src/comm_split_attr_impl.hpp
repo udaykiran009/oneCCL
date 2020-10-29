@@ -4,6 +4,8 @@
 
 namespace ccl {
 
+namespace v1 {
+
 /**
  * comm_split_attr attributes definition
  */
@@ -24,5 +26,7 @@ template <comm_split_attr_id attrId>
 CCL_API bool comm_split_attr::is_valid() const noexcept {
     return get_impl()->is_valid<attrId>();
 }
+
+} // namespace v1
 
 } // namespace ccl

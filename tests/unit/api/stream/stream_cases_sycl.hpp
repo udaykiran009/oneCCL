@@ -18,9 +18,9 @@ namespace stream_suite {
 
 TEST(stream_api, stream_from_sycl_queue) {
     auto q = cl::sycl::queue();
-    auto str = ccl::stream::create_stream(q);
+    auto str = ccl::v1::stream::create_stream(q);
 
-    ASSERT_TRUE(str.get<ccl::stream_attr_id::version>().full != nullptr);
+    ASSERT_TRUE(str.get<ccl::v1::stream_attr_id::version>().full != nullptr);
 }
 
 TEST(stream_api, stream_from_sycl_queue_handle) {
@@ -29,42 +29,42 @@ TEST(stream_api, stream_from_sycl_queue_handle) {
     auto ctx = cl::sycl::context(dev);
     //cl_command_queue h = q.get();
 
-    auto str = ccl::stream::create_stream(dev, ctx);
+    auto str = ccl::v1::stream::create_stream(dev, ctx);
 
-    ASSERT_TRUE(str.get<ccl::stream_attr_id::version>().full != nullptr);
+    ASSERT_TRUE(str.get<ccl::v1::stream_attr_id::version>().full != nullptr);
 }
 TEST(stream_api, stream_from_sycl_device_creation) {
     auto dev = cl::sycl::device();
-    auto str = ccl::stream::create_stream_from_attr(dev);
+    auto str = ccl::v1::stream::create_stream_from_attr(dev);
 
-    ASSERT_TRUE(str.get<ccl::stream_attr_id::version>().full != nullptr);
+    ASSERT_TRUE(str.get<ccl::v1::stream_attr_id::version>().full != nullptr);
 }
 
 TEST(stream_api, stream_from_sycl_context_creation) {
     auto dev = cl::sycl::device();
     auto ctx = cl::sycl::context(dev);
-    auto str = ccl::stream::create_stream_from_attr(dev, ctx);
+    auto str = ccl::v1::stream::create_stream_from_attr(dev, ctx);
 
-    ASSERT_TRUE(str.get<ccl::stream_attr_id::version>().full != nullptr);
+    ASSERT_TRUE(str.get<ccl::v1::stream_attr_id::version>().full != nullptr);
 }
 
 TEST(stream_api, stream_from_sycl_context_creation_with_attr) {
     auto dev = cl::sycl::device();
     auto ctx = cl::sycl::context(dev);
     auto str =
-        ccl::stream::create_stream_from_attr(dev,
+        ccl::v1::stream::create_stream_from_attr(dev,
                                              ctx,
-                                             ccl::attr_val<ccl::stream_attr_id::ordinal>(1),
-                                             ccl::attr_val<ccl::stream_attr_id::priority>(100));
+                                             ccl::v1::attr_val<ccl::v1::stream_attr_id::ordinal>(1),
+                                             ccl::v1::attr_val<ccl::v1::stream_attr_id::priority>(100));
 
-    ASSERT_TRUE(str.get<ccl::stream_attr_id::version>().full != nullptr);
+    ASSERT_TRUE(str.get<ccl::v1::stream_attr_id::version>().full != nullptr);
 
-    ASSERT_EQ(str.get<ccl::stream_attr_id::ordinal>(), 1);
-    ASSERT_EQ(str.get<ccl::stream_attr_id::priority>(), 100);
+    ASSERT_EQ(str.get<ccl::v1::stream_attr_id::ordinal>(), 1);
+    ASSERT_EQ(str.get<ccl::v1::stream_attr_id::priority>(), 100);
 
     bool catched = false;
     try {
-        str.set<ccl::stream_attr_id::priority>(99);
+        str.set<ccl::v1::stream_attr_id::priority>(99);
     }
     catch (const ccl::exception& ex) {
         catched = true;

@@ -6,6 +6,8 @@
 
 namespace ccl {
 
+namespace v1 {
+
 /******************** INIT ********************/
 
 template <class... attr_value_pair_t>
@@ -166,6 +168,8 @@ comm_attr create_comm_attr(attr_value_pair_t&&... avps) {
         std::forward<attr_value_pair_t>(avps)...);
 }
 
+} // namespace v1
+
 namespace preview {
 
 /**
@@ -195,6 +199,7 @@ communicator create_communicator(size_t size, shared_ptr_class<kvs_interface> kv
 
 } // namespace preview
 
+namespace v1 {
 
 /**
  * Creates a new communicator with user supplied size, rank and kvs.
@@ -1082,6 +1087,8 @@ event reduce_scatter(const BufferObjectType& send_buf,
                        const reduce_scatter_attr& attr = default_reduce_scatter_attr,
                        const vector_class<event>& deps = {});
 
+} // namespace v1
+
 namespace preview {
 
 /**
@@ -1159,7 +1166,7 @@ ccl::event sparse_allreduce(
     ccl::reduction rtype,
     const ccl::communicator& comm,
     const ccl::stream& stream,
-    const ccl::sparse_allreduce_attr& attr = default_sparse_allreduce_attr,
+    const ccl::sparse_allreduce_attr& attr = ccl::default_sparse_allreduce_attr,
     const ccl::vector_class<ccl::event>& deps = {});
 
 /* Type safety version */
@@ -1178,9 +1185,11 @@ ccl::event sparse_allreduce(
     size_t recv_val_count,
     ccl::reduction rtype,
     const ccl::communicator& comm,
-    const ccl::sparse_allreduce_attr& attr = default_sparse_allreduce_attr,
+    const ccl::sparse_allreduce_attr& attr = ccl::default_sparse_allreduce_attr,
     const ccl::vector_class<ccl::event>& deps = {});
 
 } // namespace preview
+
+using namespace v1;
 
 } // namespace ccl

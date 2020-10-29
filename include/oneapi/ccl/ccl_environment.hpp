@@ -72,7 +72,7 @@ public:
     static ccl::library_version get_library_version();
 
     template <class... attr_value_pair_t>
-    static ccl::init_attr create_init_attr(attr_value_pair_t&&... avps) {
+    static init_attr create_init_attr(attr_value_pair_t&&... avps) {
         auto init_create_attr = create_postponed_api_type<init_attr>();
         int expander[]{ (init_create_attr.template set<attr_value_pair_t::idx()>(avps.val()), 0)... };
         (void)expander;
@@ -91,7 +91,7 @@ public:
     /******************** DATATYPE ********************/
 
     template <class... attr_value_pair_t>
-    static ccl::datatype_attr create_datatype_attr(attr_value_pair_t&&... avps) {
+    static datatype_attr create_datatype_attr(attr_value_pair_t&&... avps) {
         static_assert(sizeof...(avps) > 0, "At least one argument must be specified");
         auto attr = create_postponed_api_type<datatype_attr>();
         int expander[]{ (attr.template set<attr_value_pair_t::idx()>(avps.val()), 0)... };
@@ -99,7 +99,7 @@ public:
         return attr;
     }
 
-    ccl::datatype register_datatype(const ccl::datatype_attr& attr);
+    ccl::datatype register_datatype(const datatype_attr& attr);
     void deregister_datatype(ccl::datatype dtype);
     size_t get_datatype_size(ccl::datatype dtype) const;
 
@@ -107,7 +107,7 @@ public:
     /******************** KVS ********************/
 
     template <class... attr_value_pair_t>
-    static ccl::kvs_attr create_kvs_attr(attr_value_pair_t&&... avps) {
+    static kvs_attr create_kvs_attr(attr_value_pair_t&&... avps) {
         auto kvs_create_attr = create_postponed_api_type<kvs_attr>();
         int expander[]{ (kvs_create_attr.template set<attr_value_pair_t::idx()>(avps.val()), 0)... };
         (void)expander;

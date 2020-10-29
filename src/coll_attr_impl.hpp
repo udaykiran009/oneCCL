@@ -5,6 +5,8 @@
 
 namespace ccl {
 
+namespace v1 {
+
 template<allgatherv_attr_id attrId,
              class Value/*,
              typename T*/>
@@ -318,4 +320,7 @@ barrier_attr::get() const {
     return get_impl().get()->get_attribute_value(
         detail::ccl_api_type_attr_traits<operation_attr_id, attrId>{});
 }
+
+} // namespace v1
+
 } // namespace ccl

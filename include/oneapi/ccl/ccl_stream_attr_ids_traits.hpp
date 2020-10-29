@@ -5,6 +5,7 @@
 #endif
 
 namespace ccl {
+
 namespace detail {
 
 /**
@@ -68,4 +69,5 @@ struct ccl_api_type_attr_traits<stream_attr_id, stream_attr_id::priority> {
 };
 
 } // namespace detail
+
 } // namespace ccl

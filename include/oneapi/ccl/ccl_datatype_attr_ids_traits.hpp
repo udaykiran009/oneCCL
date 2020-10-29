@@ -5,6 +5,7 @@
 #endif
 
 namespace ccl {
+
 namespace detail {
 
 template <>

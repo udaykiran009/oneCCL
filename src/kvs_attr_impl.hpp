@@ -4,6 +4,8 @@
 
 namespace ccl {
 
+namespace v1 {
+
 /**
  * kvs_attr attributes definition
  */
@@ -24,5 +26,7 @@ template <kvs_attr_id attrId>
 CCL_API bool kvs_attr::is_valid() const noexcept {
     return get_impl()->is_valid<attrId>();
 }
+
+} // namespace v1
 
 } // namespace ccl

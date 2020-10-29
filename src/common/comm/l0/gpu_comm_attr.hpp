@@ -16,8 +16,10 @@ struct thread_group_context;
 } // namespace native
 
 namespace ccl {
+namespace v1 {
+    class communicator;
+}
 class host_communicator;
-class communicator;
 struct communicator_interface;
 struct context_comm_addr {
     size_t thread_idx = 0;

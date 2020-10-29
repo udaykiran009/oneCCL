@@ -6,6 +6,8 @@
 
 namespace ccl {
 
+namespace v1 {
+
 /**
  * Common operation attributes id
  */
@@ -95,4 +97,18 @@ enum class barrier_attr_id : int {
 
     last_value
 };
+
+} // namespace v1
+
+using v1::operation_attr_id;
+using v1::allgatherv_attr_id;
+using v1::allreduce_attr_id;
+using v1::alltoall_attr_id;
+using v1::alltoallv_attr_id;
+using v1::broadcast_attr_id;
+using v1::reduce_attr_id;
+using v1::reduce_scatter_attr_id;
+using v1::sparse_allreduce_attr_id;
+using v1::barrier_attr_id;
+
 } // namespace ccl

@@ -5,6 +5,9 @@
 #endif
 
 namespace ccl {
+
+namespace v1 {
+
 /**
  * Device attribute ids
  */
@@ -15,5 +18,9 @@ enum class device_attr_id : int {
 
     last_value
 };
+
+} // namespace v1
+
+using v1::device_attr_id;
 
 } // namespace ccl

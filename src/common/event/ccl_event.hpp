@@ -8,7 +8,7 @@
 
 namespace ccl {
     namespace detail {
-        class environment; // friend-zone
+        class environment;
     }
 }
 

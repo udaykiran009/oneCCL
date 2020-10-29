@@ -12,7 +12,7 @@ public:
 
     ccl_sparse_allreduce_attr_impl_t(
         const typename detail::ccl_api_type_attr_traits<operation_attr_id,
-                                                         ccl::operation_attr_id::version>::type&
+                                                            operation_attr_id::version>::type&
             version);
 
     using sparse_allreduce_completion_fn_traits =

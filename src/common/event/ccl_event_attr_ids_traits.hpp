@@ -1,6 +1,7 @@
 #pragma once
 
 namespace ccl {
+
 namespace detail {
 
 /**

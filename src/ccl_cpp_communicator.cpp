@@ -43,6 +43,8 @@
 
 namespace ccl {
 
+namespace v1 {
+
 CCL_API communicator::communicator(impl_value_t&& impl) : base_t(std::move(impl)) {}
 
 CCL_API communicator::communicator(communicator&& src)
@@ -82,6 +84,8 @@ CCL_API device communicator::get_device() const {
 CCL_API context communicator::get_context() const {
     return context::create_context(get_impl()->get_context());
 }
+
+} // namespace v1
 
 } // namespace ccl
 

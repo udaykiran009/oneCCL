@@ -20,16 +20,16 @@ TEST(device_api, device_from_empty) {
 
     static typename ccl::unified_device_type::ccl_native_t default_native_device;
 
-    auto str = ccl::device::create_device(default_native_device);
-    ASSERT_TRUE(str.get<ccl::device_attr_id::version>().full != nullptr);
+    auto str = ccl::v1::device::create_device(default_native_device);
+    ASSERT_TRUE(str.get<ccl::v1::device_attr_id::version>().full != nullptr);
     ASSERT_EQ(str.get_native(), default_native_device);
 }
 
 TEST(device_api, device_from_sycl_device_creation) {
     auto dev = cl::sycl::device();
-    auto str = ccl::device::create_device(dev);
+    auto str = ccl::v1::device::create_device(dev);
 
-    ASSERT_TRUE(str.get<ccl::device_attr_id::version>().full != nullptr);
+    ASSERT_TRUE(str.get<ccl::v1::device_attr_id::version>().full != nullptr);
     ASSERT_EQ(str.get_native(), dev);
 }
 
@@ -38,9 +38,9 @@ TEST(device_api, device_from_sycl_context_creation) {
     if (!dev.is_host())
     {
         cl_device_id h = dev.get();
-        auto str = ccl::device::create_device_from_attr(h);
+        auto str = ccl::v1::device::create_device_from_attr(h);
 
-        ASSERT_TRUE(str.get<ccl::device_attr_id::version>().full != nullptr);
+        ASSERT_TRUE(str.get<ccl::v1::device_attr_id::version>().full != nullptr);
     }
 }
 

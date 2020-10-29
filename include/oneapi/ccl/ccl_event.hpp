@@ -5,12 +5,13 @@
 #endif
 
 namespace ccl {
-
 namespace detail {
-    class environment; // friend-zone
+    class environment;
 }
 
 class event_impl;
+
+namespace v1 {
 
 /**
  * event's interface that allows users to track communication operation progress
@@ -78,11 +79,15 @@ public:
     const native_t& get_native() const;
 
 private:
-    friend class detail::environment;
+    friend class ccl::detail::environment;
 
     static event create_from_native(native_t& native_event);
     static event create_from_native(native_handle_t native_event_handle,
                                     context_t context);
 };
+
+} // namespace v1
+
+using v1::event;
 
 } // namespace ccl

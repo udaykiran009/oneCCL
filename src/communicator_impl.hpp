@@ -38,6 +38,8 @@ struct device_attr_impl
 
 namespace ccl {
 
+namespace v1 {
+
 template <class DeviceType, class ContextType>
 CCL_API vector_class<communicator> communicator::create_communicators(
     const size_t cluster_devices_size,
@@ -182,6 +184,8 @@ communicator communicator::create_communicator(const size_t size,
 
     return communicator(std::move(impl));
 }
+
+} // namespace v1
 
 } // namespace ccl
 
