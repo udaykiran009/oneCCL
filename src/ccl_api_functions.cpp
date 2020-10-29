@@ -1,3 +1,4 @@
+#include "oneapi/ccl/ccl_types.hpp"
 #include "oneapi/ccl/ccl_environment.hpp"
 #include "oneapi/ccl/ccl_api_functions.hpp"
 #include "common/comm/host_communicator/host_communicator.hpp"

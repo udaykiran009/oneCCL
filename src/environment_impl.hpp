@@ -1,4 +1,5 @@
 #pragma once
+#include "oneapi/ccl/ccl_types.hpp"
 #include "oneapi/ccl/ccl_environment.hpp"
 
 #include "coll/coll_attributes.hpp"
