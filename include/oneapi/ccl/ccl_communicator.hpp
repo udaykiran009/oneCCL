@@ -17,7 +17,6 @@ struct comm_impl_dispatch_selector;
 class comm_group;
 
 namespace v1 {
-class event;
 class context;
 class device;
 class kvs_interface;
