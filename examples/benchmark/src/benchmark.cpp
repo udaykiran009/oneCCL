@@ -43,6 +43,9 @@ void do_regular(ccl::communicator& service_comm,
             if (!find_key_val(reduction_op, reduction_names, reduction))
                 continue;
 
+            PRINT_BY_ROOT(
+                service_comm, "\ndtype: %s\nreduction: %s\n", dtype_name.c_str(), reduction.c_str());
+
             reqs.reserve(colls.size() * options.buf_count);
 
             /* warm up */
