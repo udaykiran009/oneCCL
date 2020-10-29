@@ -32,15 +32,16 @@ using cluster_aggregated_device_mask_t = std::map<host_id, process_aggregated_de
 
 using index_type = uint32_t;
 static constexpr index_type unused_index_value = std::numeric_limits<index_type>::max(); //TODO
+
 //TODO implement class instead
 using device_index_type = std::tuple<index_type, index_type, index_type>;
 enum device_index_enum { driver_index_id, device_index_id, subdevice_index_id };
 std::string to_string(const device_index_type& device_id);
 device_index_type from_string(const std::string& device_id_str);
 
-using device_indices_t = std::multiset<device_index_type>;
-using process_device_indices_t = std::map<process_id, device_indices_t>;
-using cluster_device_indices_t = std::map<host_id, process_device_indices_t>;
+using device_indices_type = std::multiset<device_index_type>;
+using process_device_indices_type = std::map<process_id, device_indices_type>;
+using cluster_device_indices_type = std::map<host_id, process_device_indices_type>;
 
 struct empty_t{
 };

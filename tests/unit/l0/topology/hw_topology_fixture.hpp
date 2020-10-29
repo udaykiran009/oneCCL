@@ -60,18 +60,18 @@ public:
         tg_comm = pg_comm->thread_group_ctx.get();
     }
 
-    void fill_indices_data(size_t thread_idx, ccl::device_indices_t data) {
+    void fill_indices_data(size_t thread_idx, ccl::device_indices_type data) {
         idx[thread_idx] = data;
         stub::make_stub_devices(data);
     }
 
     void create_devices_by_affinity(
         size_t thread_idx,
-        std::initializer_list<typename ccl::device_indices_t::value_type> data) {
-        create_devices_by_affinity(thread_idx, ccl::device_indices_t(data));
+        std::initializer_list<typename ccl::device_indices_type::value_type> data) {
+        create_devices_by_affinity(thread_idx, ccl::device_indices_type(data));
     }
 
-    void create_devices_by_affinity(size_t thread_idx, ccl::device_indices_t data) {
+    void create_devices_by_affinity(size_t thread_idx, ccl::device_indices_type data) {
         using namespace native;
 
         fill_indices_data(thread_idx, data);
@@ -111,7 +111,7 @@ public:
         }
     }
 
-    const ccl::device_indices_t& get_device_affinity(size_t thread_id) const {
+    const ccl::device_indices_type& get_device_affinity(size_t thread_id) const {
         auto it = idx.find(thread_id);
         if (it == idx.end()) {
             set_error(__PRETTY_FUNCTION__);
@@ -133,7 +133,7 @@ public:
     }
 
     struct process_creator_params {
-        ccl::process_device_indices_t total_node_mask;
+        ccl::process_device_indices_type total_node_mask;
         size_t process_index;
         size_t cluster_device_rank_offset;
         size_t cluster_device_size;
@@ -143,8 +143,8 @@ public:
 
     process_creator_params prepare_process_params(
         size_t process_index,
-        std::initializer_list<typename ccl::process_device_indices_t::value_type> thread_indices,
-        std::initializer_list<typename ccl::process_device_indices_t::value_type>
+        std::initializer_list<typename ccl::process_device_indices_type::value_type> thread_indices,
+        std::initializer_list<typename ccl::process_device_indices_type::value_type>
             total_cluster_indices,
         const std::map<size_t, ccl::host_id>& process_to_cluster_table =
             std::map<size_t, std::string>{}) {
@@ -186,5 +186,5 @@ public:
     }
 
 private:
-    std::map<size_t, ccl::device_indices_t> idx;
+    std::map<size_t, ccl::device_indices_type> idx;
 };

@@ -23,7 +23,7 @@ CCL_API ccl_device_platform& get_platform() {
 }
 
 CCL_API std::shared_ptr<ccl_device_platform> ccl_device_platform::create(
-    const ccl::device_indices_t& indices /* = device_indices_per_driver()*/) {
+    const ccl::device_indices_type& indices /* = device_indices_per_driver()*/) {
     std::shared_ptr<ccl_device_platform> platform(new ccl_device_platform);
     platform->init_drivers(indices);
     return platform;
@@ -73,7 +73,7 @@ CCL_API void ccl_device_platform::init_drivers(const device_affinity_per_driver&
 }
 */
 CCL_API void ccl_device_platform::init_drivers(
-    const ccl::device_indices_t& driver_device_affinities /* = device_indices_per_driver()*/) {
+    const ccl::device_indices_type& driver_device_affinities /* = device_indices_per_driver()*/) {
     /* TODO - do we need that?
 
 #ifdef CCL_ENABLE_SYCL
@@ -112,7 +112,7 @@ CCL_API void ccl_device_platform::init_drivers(
             }
             else {
                 //collect device_index only for drvier specific index
-                ccl::device_indices_t per_driver_index;
+                ccl::device_indices_type per_driver_index;
                 for (const auto& affitinity : driver_device_affinities) {
                     if (std::get<ccl::device_index_enum::driver_index_id>(affitinity) ==
                         val.first) {
@@ -212,16 +212,16 @@ std::string CCL_API ccl_device_platform::to_string() const {
 }
 
 detail::adjacency_matrix ccl_device_platform::calculate_device_access_metric(
-    const ccl::device_indices_t& indices,
+    const ccl::device_indices_type& indices,
     detail::p2p_rating_function func) const {
     detail::adjacency_matrix result;
 
     try {
         // diagonal matrix, assume symmetric cross device access
-        for (typename ccl::device_indices_t::const_iterator lhs_it = indices.begin();
+        for (typename ccl::device_indices_type::const_iterator lhs_it = indices.begin();
              lhs_it != indices.end();
              ++lhs_it) {
-            for (typename ccl::device_indices_t::const_iterator rhs_it = lhs_it;
+            for (typename ccl::device_indices_type::const_iterator rhs_it = lhs_it;
                  rhs_it != indices.end();
                  ++rhs_it) {
                 ccl_device_driver::const_device_ptr lhs_dev = get_device(*lhs_it);

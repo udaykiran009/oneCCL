@@ -1,5 +1,4 @@
-#ifndef TRAITS_H_
-#define TRAITS_H_
+#pragma once
 
 #include <tuple>
 #include <type_traits>
@@ -8,13 +7,14 @@
 #include <CL/sycl.hpp>
 #endif
 
+#include "oneapi/ccl/ccl_lp_types.hpp"
 #include "oneapi/ccl/ccl_types.hpp"
 
 namespace ccl {
 /**
  * Base type-trait helpers for "unknown" types
  */
-template <ccl::datatype ccl_type_id>
+template <ccl::datatype type>
 struct type_info {
     static constexpr bool is_supported = false;
     static constexpr bool is_class = false;
@@ -26,61 +26,59 @@ struct native_type_info {
     static constexpr bool is_class = false;
 };
 
-#define CCL_TYPE_TRAITS(ccl_type_id, dtype, dtype_size, name_in_kernel) \
+#define CCL_TYPE_TRAITS(ccl_type, cpp_type, bytes, str) \
     template <> \
-    struct type_info<ccl_type_id> \
-            : public ccl_type_info_export<dtype, dtype_size, ccl_type_id, false, true> { \
+    struct type_info<ccl_type> \
+            : public ccl_type_info_export<cpp_type, bytes, ccl_type, false, true> { \
         static constexpr const char* name() { \
-            return #dtype; \
-        } \
-        static constexpr const char* name_for_kernel() { \
-            return #name_in_kernel; \
+            return #str; \
         } \
     }; \
     template <> \
-    struct native_type_info<dtype> : public type_info<ccl_type_id> {};
+    struct native_type_info<cpp_type> : public type_info<ccl_type> {};
 
-#define CCL_CLASS_TYPE_TRAITS(ccl_type_id, dtype, sizeof_dtype, name_in_kernel) \
+#define CCL_CLASS_TYPE_TRAITS(ccl_type, cpp_type, bytes, str) \
     template <> \
-    struct native_type_info<dtype> \
-            : public ccl_type_info_export<dtype, sizeof_dtype, ccl_type_id, true, true> { \
+    struct native_type_info<cpp_type> \
+            : public ccl_type_info_export<cpp_type, bytes, ccl_type, true, true> { \
         static constexpr const char* name() { \
-            return #dtype; \
-        } \
-        static constexpr const char* name_for_kernel() { \
-            return #name_in_kernel; \
+            return #str; \
         } \
     };
 
 #define COMMA ,
 
-/*struct bf16_impl
-{
-    uint16_t data;
-} __attribute__((packed));*/
-
-using bf16 = uint16_t;
-
 /**
  * Enumeration of supported CCL API data types
  */
-CCL_TYPE_TRAITS(ccl::datatype::int8, char, sizeof(char), int8_t)
-CCL_TYPE_TRAITS(ccl::datatype::int32, int, sizeof(int), int32_t)
-CCL_TYPE_TRAITS(ccl::datatype::bfloat16, bf16, sizeof(bf16), bf16)
-CCL_TYPE_TRAITS(ccl::datatype::float32, float, sizeof(float), float32_t)
-CCL_TYPE_TRAITS(ccl::datatype::float64, double, sizeof(double), float64_t)
-CCL_TYPE_TRAITS(ccl::datatype::int64, int64_t, sizeof(int64_t), int64_t)
-CCL_TYPE_TRAITS(ccl::datatype::uint64, uint64_t, sizeof(uint64_t), uint64_t)
+
+CCL_TYPE_TRAITS(ccl::datatype::int8, int8_t, sizeof(int8_t), int8)
+CCL_TYPE_TRAITS(ccl::datatype::uint8, uint8_t, sizeof(uint8_t), uint8)
+CCL_TYPE_TRAITS(ccl::datatype::int16, int16_t, sizeof(int16_t), int16)
+CCL_TYPE_TRAITS(ccl::datatype::uint16, uint16_t, sizeof(uint16_t), uint16)
+CCL_TYPE_TRAITS(ccl::datatype::int32, int32_t, sizeof(int32_t), int32)
+CCL_TYPE_TRAITS(ccl::datatype::uint32, uint32_t, sizeof(uint32_t), uint32)
+CCL_TYPE_TRAITS(ccl::datatype::int64, int64_t, sizeof(int64_t), int64)
+CCL_TYPE_TRAITS(ccl::datatype::uint64, uint64_t, sizeof(uint64_t), uint64)
+CCL_TYPE_TRAITS(ccl::datatype::float16, float16, sizeof(float16), float16)
+CCL_TYPE_TRAITS(ccl::datatype::float32, float, sizeof(float), float32)
+CCL_TYPE_TRAITS(ccl::datatype::float64, double, sizeof(double), float64)
+CCL_TYPE_TRAITS(ccl::datatype::bfloat16, bfloat16, sizeof(bfloat16), bfloat16)
 
 #ifdef CCL_ENABLE_SYCL
-CCL_CLASS_TYPE_TRAITS(ccl::datatype::int8, cl::sycl::buffer<char COMMA 1>, sizeof(char), int8_t)
-CCL_CLASS_TYPE_TRAITS(ccl::datatype::int32, cl::sycl::buffer<int COMMA 1>, sizeof(int), int32_t)
-CCL_CLASS_TYPE_TRAITS(ccl::datatype::bfloat16, cl::sycl::buffer<bf16 COMMA 1>, sizeof(bf16), bf16)
-CCL_CLASS_TYPE_TRAITS(ccl::datatype::int64, cl::sycl::buffer<int64_t COMMA 1>, sizeof(int64_t), float32_t)
-CCL_CLASS_TYPE_TRAITS(ccl::datatype::uint64, cl::sycl::buffer<uint64_t COMMA 1>, sizeof(uint64_t), float64_t)
-CCL_CLASS_TYPE_TRAITS(ccl::datatype::float32, cl::sycl::buffer<float COMMA 1>, sizeof(float), int64_t)
-CCL_CLASS_TYPE_TRAITS(ccl::datatype::float64, cl::sycl::buffer<double COMMA 1>, sizeof(double), uint64_t)
-#endif //CCL_ENABLE_SYCL
+CCL_CLASS_TYPE_TRAITS(ccl::datatype::int8, cl::sycl::buffer<int8_t COMMA 1>, sizeof(int8_t), int8)
+CCL_CLASS_TYPE_TRAITS(ccl::datatype::uint8, cl::sycl::buffer<uint8_t COMMA 1>, sizeof(uint8_t), uint8)
+CCL_CLASS_TYPE_TRAITS(ccl::datatype::int16, cl::sycl::buffer<int16_t COMMA 1>, sizeof(int16_t), int16)
+CCL_CLASS_TYPE_TRAITS(ccl::datatype::uint16, cl::sycl::buffer<uint16_t COMMA 1>, sizeof(uint16_t), uint16)
+CCL_CLASS_TYPE_TRAITS(ccl::datatype::int32, cl::sycl::buffer<int32_t COMMA 1>, sizeof(int32_t), int32)
+CCL_CLASS_TYPE_TRAITS(ccl::datatype::uint32, cl::sycl::buffer<uint32_t COMMA 1>, sizeof(uint32_t), uint32)
+CCL_CLASS_TYPE_TRAITS(ccl::datatype::int64, cl::sycl::buffer<int64_t COMMA 1>, sizeof(int64_t), int64)
+CCL_CLASS_TYPE_TRAITS(ccl::datatype::uint64, cl::sycl::buffer<uint64_t COMMA 1>, sizeof(uint64_t), uint64)
+CCL_CLASS_TYPE_TRAITS(ccl::datatype::float16, cl::sycl::buffer<float16 COMMA 1>, sizeof(float16), float16)
+CCL_CLASS_TYPE_TRAITS(ccl::datatype::float32, cl::sycl::buffer<float COMMA 1>, sizeof(float), float32)
+CCL_CLASS_TYPE_TRAITS(ccl::datatype::float64, cl::sycl::buffer<double COMMA 1>, sizeof(double), float64)
+CCL_CLASS_TYPE_TRAITS(ccl::datatype::bfloat16, cl::sycl::buffer<bfloat16 COMMA 1>, sizeof(bfloat16), bfloat16)
+#endif /* CCL_ENABLE_SYCL */
 
 /**
  * Checks for supporting @c type in ccl API
@@ -118,5 +116,5 @@ constexpr bool is_class_supported() {
 }
 
 } // namespace ccl
+
 #include "oneapi/ccl/ccl_device_type_traits.hpp"
-#endif //TRAITS_H_

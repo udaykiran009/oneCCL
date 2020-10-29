@@ -6,7 +6,6 @@
 template <class communicator_impl>
 struct sparse_allreduce_usm_visitor {
     using self_t = communicator_impl;
-    using coll_request_t = ccl::event;
 
     self_t* get_self() {
         return static_cast<self_t*>(this);
@@ -18,7 +17,7 @@ struct sparse_allreduce_usm_visitor {
     }
 
     template <class... Args>
-    bool visit(coll_request_t& req,
+    bool visit(ccl::event& req,
                ccl::datatype index_dtype,
                ccl::datatype value_dtype,
                const void* send_ind_buf,
@@ -37,6 +36,9 @@ struct sparse_allreduce_usm_visitor {
                   ccl::to_string(value_dtype),
                   " , handle: ",
                   utils::enum_to_underlying(value_dtype));
+
+        CCL_THROW("unexpected path");
+
         switch (value_dtype) //TODO -S- value only
         {
             case ccl::datatype::int8: {

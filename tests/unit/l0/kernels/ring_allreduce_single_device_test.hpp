@@ -1,202 +1,23 @@
 #pragma once
+
 #include <memory>
 #include <cstdint>
 #include <sstream>
 
 #include "allreduce_fixture.hpp"
-#include "../lp.hpp"
+
+DEFINE_KERNEL_TYPES_FOR_OP_BF16(allreduce, add);
+DEFINE_KERNEL_TYPES_FOR_OP_BF16(allreduce, mult);
+DEFINE_KERNEL_TYPES_FOR_OP_BF16(allreduce, min);
+DEFINE_KERNEL_TYPES_FOR_OP_BF16(allreduce, max);
 
 namespace ring_single_device_case {
 
 namespace ring_allreduce_case {
 
-using bf16 = ushort;
-using float32_t = float;
-using float64_t = double;
-
-template <class T>
-struct my_add {
-    T operator()(const T& lhs, const T& rhs) const {
-        return lhs + rhs;
-    }
-
-    static constexpr T init = 0;
-};
-
-template <class T>
-struct my_mult {
-    T operator()(const T& lhs, const T& rhs) const {
-        return lhs * rhs;
-    }
-
-    static constexpr T init = 1;
-};
-
-template <class T>
-struct my_min {
-    T operator()(const T& lhs, const T& rhs) const {
-        return std::min(lhs, rhs);
-    }
-
-    static constexpr T init = std::numeric_limits<T>::max();
-};
-
-template <class T>
-struct my_max {
-    T operator()(const T& lhs, const T& rhs) const {
-        return std::max(lhs, rhs);
-    }
-
-    static constexpr T init = std::numeric_limits<T>::min();
-};
-
-template <class T>
-struct my_bf16add {
-    T operator()(const T& lhs, const T& rhs) const {
-        return fp32_to_bf16(bf16_to_fp32(lhs) + bf16_to_fp32(rhs));
-    }
-
-    static constexpr T init = 0;
-};
-
-template <class T>
-struct my_bf16mult {
-    T operator()(const T& lhs, const T& rhs) const {
-        return fp32_to_bf16(bf16_to_fp32(lhs) * bf16_to_fp32(rhs));
-    }
-
-    static constexpr T init = 1;
-};
-
-template <class T>
-struct my_bf16min {
-    T operator()(const T& lhs, const T& rhs) const {
-        return fp32_to_bf16(std::min(bf16_to_fp32(lhs), bf16_to_fp32(rhs)));
-    }
-
-    static constexpr T init = 0x7f7f;
-};
-
-template <class T>
-struct my_bf16max {
-    T operator()(const T& lhs, const T& rhs) const {
-        return fp32_to_bf16(std::max(bf16_to_fp32(lhs), bf16_to_fp32(rhs)));
-    }
-
-    static constexpr T init = 0xff7f;
-};
-
-#define DEFINE_PAIR(T, Op) \
-    std::pair<T, Op>
-
-#define DEFINE_TYPE(T)          \
-    DEFINE_PAIR(T, my_add<T>),  \
-    DEFINE_PAIR(T, my_mult<T>), \
-    DEFINE_PAIR(T, my_max<T>),  \
-    DEFINE_PAIR(T, my_min<T>)
-
-#define DEFINE_BF16TYPE(T)          \
-    DEFINE_PAIR(T, my_bf16add<T>),  \
-    DEFINE_PAIR(T, my_bf16mult<T>), \
-    DEFINE_PAIR(T, my_bf16max<T>),  \
-    DEFINE_PAIR(T, my_bf16min<T>)
-
-// For test we use enumerate over all the types and the ops and get pairs of <T, Op>.
-using TestTypes = ::testing::Types<
-// Reduce the number of tested typed in order to speedup test
-/*  DEFINE_TYPE(int8_t),
-    DEFINE_TYPE(uint8_t),
-    DEFINE_TYPE(int16_t),
-    DEFINE_TYPE(uint16_t),
-    DEFINE_TYPE(int32_t),
-    DEFINE_TYPE(uint32_t),
-    DEFINE_TYPE(int64_t),
-    DEFINE_TYPE(uint64_t),
-//  DEFINE_TYPE(float16_t),
-    DEFINE_TYPE(float32_t),
-    DEFINE_TYPE(float64_t),
-    DEFINE_TYPE(bf16)*/
-    DEFINE_PAIR(int8_t, my_add<int8_t>),
-    DEFINE_PAIR(uint8_t, my_mult<uint8_t>),
-    DEFINE_PAIR(int16_t, my_min<int16_t>),
-    DEFINE_PAIR(uint16_t, my_max<uint16_t>),
-    DEFINE_PAIR(int32_t, my_add<int32_t>),
-    DEFINE_PAIR(uint32_t, my_mult<uint32_t>),
-    DEFINE_PAIR(int64_t, my_min<int64_t>),
-    DEFINE_PAIR(uint64_t, my_max<uint64_t>),
-//  DEFINE_PAIR(float16_t, my_add<float16_t>),
-    DEFINE_PAIR(float32_t, my_mult<float32_t>),
-    DEFINE_PAIR(bf16, my_bf16add<bf16>),
-    DEFINE_PAIR(bf16, my_bf16max<bf16>),
-    DEFINE_PAIR(float64_t, my_min<float64_t>)
->;
-
-template <class T, class Op>
-struct op_traits {
-    static constexpr size_t buffer_size = 512;
-};
-
-template <class T, class Op>
-struct param_traits;
-
-#define DEFINE_KERNEL_TYPE(T, Op)                                                       \
-    template <>                                                                         \
-    struct param_traits<T, my_##Op<T>> {                                                \
-        static constexpr const char* kernel_name = "allreduce_execution_" # T "_" #Op;  \
-        using op_type = my_##Op<T>;                                                     \
-    };
-
-#define DEFINE_KERNEL_BF16_TYPE(T, Op)                                                  \
-    template <>                                                                         \
-    struct param_traits<T, my_##T##Op<T>> {                                             \
-        static constexpr const char* kernel_name = "allreduce_execution_" # T "_" #Op;  \
-        using op_type = my_##T##Op<T>;                                                  \
-    };
-
-#define DEFINE_KERNEL_TYPES_FOR_OP(OpName)              \
-    DEFINE_KERNEL_TYPE(int8_t, OpName)                  \
-    DEFINE_KERNEL_TYPE(uint8_t, OpName)                 \
-                                                        \
-    DEFINE_KERNEL_TYPE(int16_t, OpName)                 \
-    DEFINE_KERNEL_TYPE(uint16_t, OpName)                \
-                                                        \
-    DEFINE_KERNEL_TYPE(int32_t, OpName)                 \
-    DEFINE_KERNEL_TYPE(uint32_t, OpName)                \
-                                                        \
-    DEFINE_KERNEL_TYPE(int64_t, OpName)                 \
-    DEFINE_KERNEL_TYPE(uint64_t, OpName)                \
-                                                        \
-    /*DEFINE_KERNEL_TYPE(float16_t, OpName)*/           \
-    DEFINE_KERNEL_TYPE(float32_t, OpName)               \
-    DEFINE_KERNEL_TYPE(float64_t, OpName)
-
-// We don't want to generate kernel types for my_bf16add
-// except unless if the operands are bf16 - so we redefine
-// the macro purely for bf16 operands.
-#define DEFINE_KERNEL_TYPES_FOR_BF16OP(OpName)          \
-    DEFINE_KERNEL_BF16_TYPE(bf16, OpName)
-
-DEFINE_KERNEL_TYPES_FOR_OP(add);
-DEFINE_KERNEL_TYPES_FOR_OP(mult);
-DEFINE_KERNEL_TYPES_FOR_OP(min);
-DEFINE_KERNEL_TYPES_FOR_OP(max);
-
-DEFINE_KERNEL_TYPES_FOR_BF16OP(add);
-DEFINE_KERNEL_TYPES_FOR_BF16OP(mult);
-DEFINE_KERNEL_TYPES_FOR_BF16OP(min);
-DEFINE_KERNEL_TYPES_FOR_BF16OP(max);
-
-#undef DEFINE_KERNEL_TYPE
-#undef DEFINE_KERNEL_BF16_TYPE
-#undef DEFINE_TYPE
-#undef DEFINE_PAIR
-#undef DEFINE_KERNEL_TYPES_FOR_OP
-#undef DEFINE_BF16TYPE
-#undef DEFINE_KERNEL_TYPES_FOR_BF16OP
-
 }
 
-TYPED_TEST_CASE(ring_allreduce_single_device_fixture, ring_allreduce_case::TestTypes);
+TYPED_TEST_CASE(ring_allreduce_single_device_fixture, TestTypesAndOpsAllreduce);
 
 TYPED_TEST(ring_allreduce_single_device_fixture, ring_allreduce_single_device_mt) {
     using namespace native;
@@ -345,7 +166,7 @@ TYPED_TEST(ring_allreduce_single_device_fixture, ring_allreduce_single_device_mt
         .pNext = nullptr,
         .flags = 0,
     };
-    desc.pKernelName = ring_allreduce_case::param_traits<native_type, op_type>::kernel_name;
+    desc.pKernelName = allreduce_param_traits<native_type, op_type>::kernel_name;
     std::map<size_t, ze_kernel_handle_t> thread_kernels;
     std::map<size_t, ccl_device::device_queue> thread_queue;
     std::map<size_t, ccl_device::device_cmd_list> thread_cmd_list;
@@ -371,8 +192,8 @@ TYPED_TEST(ring_allreduce_single_device_fixture, ring_allreduce_single_device_mt
 
     //printout
     auto& out = this->output;
-    out << "L0 memory handles: " << std::endl;
-    memory_storage.dump(out, true);
+    // out << "L0 memory handles: " << std::endl;
+    // memory_storage.dump(out, true);
 
     //Set args and launch kernel
     std::mutex thread_lock; //workaround
@@ -586,12 +407,12 @@ TYPED_TEST(ring_allreduce_single_device_fixture, ring_allreduce_single_device_mt
 
                 constexpr auto op = op_type{};
 
-                native_type totalVal = op.init;
+                native_type totalVal = op.init();
                 for (size_t i = 0; i < num_thread; ++i) {
                     totalVal = op(totalVal, static_cast<native_type>(corr_val));
                 }
 
-                if (!(value == totalVal)) {
+                if (value != totalVal) {
                     return false;
                 }
 

@@ -20,7 +20,7 @@
         } \
     } while (0)
 
-// TODO: add ccl::bf16
+// TODO: add ccl::bfloat16
 constexpr std::initializer_list<ccl::datatype> all_dtypes = {
     ccl::datatype::int8,    ccl::datatype::int32, ccl::datatype::float32,
     ccl::datatype::float64, ccl::datatype::int64, ccl::datatype::uint64
@@ -61,14 +61,14 @@ std::map<sycl_usm_type_t, std::string> sycl_usm_names = {
     std::make_pair(SYCL_USM_DEVICE, "device")
 };
 
-// TODO: add ccl::bf16
+// TODO: add ccl::bfloat16
 std::map<ccl::datatype, std::string> dtype_names = {
-    std::make_pair(ccl::datatype::int8, "char"),
-    std::make_pair(ccl::datatype::int32, "int"),
-    std::make_pair(ccl::datatype::float32, "float"),
-    std::make_pair(ccl::datatype::float64, "double"),
+    std::make_pair(ccl::datatype::int8, "int8"),
+    std::make_pair(ccl::datatype::int32, "int32"),
     std::make_pair(ccl::datatype::int64, "int64"),
     std::make_pair(ccl::datatype::uint64, "uint64"),
+    std::make_pair(ccl::datatype::float32, "float32"),
+    std::make_pair(ccl::datatype::float64, "float64")
 };
 
 std::map<ccl::reduction, std::string> reduction_names = {
@@ -77,17 +77,6 @@ std::map<ccl::reduction, std::string> reduction_names = {
     std::make_pair(ccl::reduction::min, "min"),
     std::make_pair(ccl::reduction::max, "max"),
 };
-
-// TODO: add ccl::bf16
-template <class native_type>
-using checked_dtype_t = std::pair<bool, native_type>;
-using supported_dtypes_t = std::tuple<checked_dtype_t<char>,
-                                      checked_dtype_t<int>,
-                                      checked_dtype_t<float>,
-                                      checked_dtype_t<double>,
-                                      checked_dtype_t<int64_t>,
-                                      checked_dtype_t<uint64_t>>;
-supported_dtypes_t launch_dtypes;
 
 std::list<std::string> tokenize(const std::string& input, char delimeter) {
     std::stringstream ss(input);

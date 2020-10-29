@@ -252,24 +252,25 @@ __kernel void allgatherv_execution_## Name(size_t my_rank,                      
                                                                                                         \
 }
 
-DEFINE_KERNEL(int8_t, char4, 4)
-DEFINE_KERNEL(uint8_t, uchar4, 4)
+DEFINE_KERNEL(int8, char4, 4)
+DEFINE_KERNEL(uint8, uchar4, 4)
 
-DEFINE_KERNEL(int16_t, short4, 4)
-DEFINE_KERNEL(uint16_t, ushort4, 4)
+DEFINE_KERNEL(int16, short4, 4)
+DEFINE_KERNEL(uint16, ushort4, 4)
 
-DEFINE_KERNEL(int32_t, int4, 4)
-DEFINE_KERNEL(uint32_t, uint4, 4)
+DEFINE_KERNEL(int32, int4, 4)
+DEFINE_KERNEL(uint32, uint4, 4)
 
-DEFINE_KERNEL(int64_t, long4, 4)
-DEFINE_KERNEL(uint64_t, ulong4, 4)
+DEFINE_KERNEL(int64, long4, 4)
+DEFINE_KERNEL(uint64, ulong4, 4)
 
-DEFINE_KERNEL(float32_t, float4, 4)
-DEFINE_KERNEL(float64_t, double4, 4)
+DEFINE_KERNEL(float32, float4, 4)
+DEFINE_KERNEL(float64, double4, 4)
+
 // TODO: implement support for missing types
-//DEFINE_KERNEL(float16_t, half, 1)
+//DEFINE_KERNEL(float16, half, 1)
 
-DEFINE_KERNEL(bf16, ushort, 1)
+DEFINE_KERNEL(bfloat16, ushort, 1)
 
 // numa
 #define DEFINE_KERNEL_NUMA(Name, T, VecSize)                                                                 \
@@ -292,21 +293,22 @@ __kernel void allgatherv_execution_numa_## Name(size_t my_rank,                 
     return; \
 }
 
-DEFINE_KERNEL_NUMA(int8_t, char4, 4)
-DEFINE_KERNEL_NUMA(uint8_t, uchar4, 4)
+DEFINE_KERNEL_NUMA(int8, char4, 4)
+DEFINE_KERNEL_NUMA(uint8, uchar4, 4)
 
-DEFINE_KERNEL_NUMA(int16_t, short4, 4)
-DEFINE_KERNEL_NUMA(uint16_t, ushort4, 4)
+DEFINE_KERNEL_NUMA(int16, short4, 4)
+DEFINE_KERNEL_NUMA(uint16, ushort4, 4)
 
-DEFINE_KERNEL_NUMA(int32_t, int4, 4)
-DEFINE_KERNEL_NUMA(uint32_t, uint4, 4)
+DEFINE_KERNEL_NUMA(int32, int4, 4)
+DEFINE_KERNEL_NUMA(uint32, uint4, 4)
 
-DEFINE_KERNEL_NUMA(int64_t, long4, 4)
-DEFINE_KERNEL_NUMA(uint64_t, ulong4, 4)
+DEFINE_KERNEL_NUMA(int64, long4, 4)
+DEFINE_KERNEL_NUMA(uint64, ulong4, 4)
 
-DEFINE_KERNEL_NUMA(float32_t, float4, 4)
-DEFINE_KERNEL_NUMA(float64_t, double4, 4)
+DEFINE_KERNEL_NUMA(float32, float4, 4)
+DEFINE_KERNEL_NUMA(float64, double4, 4)
+
 // TODO: implement support for missing types
-//DEFINE_KERNEL_NUMA(float16_t, half, 1)
+//DEFINE_KERNEL_NUMA(float16, half, 1)
 
-DEFINE_KERNEL_NUMA(bf16, ushort, 1)
+DEFINE_KERNEL_NUMA(bfloat16, ushort, 1)

@@ -5,7 +5,7 @@
 namespace native {
 thread_group_context::~thread_group_context() {}
 
-bool thread_group_context::sync_barrier(const ccl::device_indices_t& device_indices_t,
+bool thread_group_context::sync_barrier(const ccl::device_indices_type& device_indices_t,
                                         ccl::context_comm_addr& comm_addr,
                                         device_storage& devices) {
     //check on group creation final condition
@@ -31,18 +31,18 @@ bool thread_group_context::sync_barrier(const ccl::device_indices_t& device_indi
 }
 
 void thread_group_context::aggregate_device_indices(size_t thread_id,
-                                                    const ccl::device_indices_t& new_indices) {}
+                                                    const ccl::device_indices_type& new_indices) {}
 
-const ccl::process_device_indices_t& thread_group_context::get_thread_group_device_indices() const {
+const ccl::process_device_indices_type& thread_group_context::get_thread_group_device_indices() const {
     return per_thread_indices;
 }
 
-const ccl::device_indices_t& thread_group_context::get_device_group_indices(
+const ccl::device_indices_type& thread_group_context::get_device_group_indices(
     size_t thread_id) const {
     auto it = per_thread_indices.find(thread_id);
     if (it == per_thread_indices.end()) {
         LOG_ERROR("Cannot find device group for thread: ", thread_id, ". Empty indices");
-        static const ccl::device_indices_t empty;
+        static const ccl::device_indices_type empty;
         return empty;
     }
     return it->second;

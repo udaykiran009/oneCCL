@@ -321,12 +321,15 @@ struct handles_storage {
                   const size_t& thread_idx,
                   CheckFunctor lambda,
                   Args&&... params) {
+
+        using std::to_string;
+
         auto check_lambda = std::bind(lambda, std::forward<Args>(params)..., std::placeholders::_1);
         auto it = std::find_if_not(vec.begin(), vec.end(), check_lambda);
         if (it != vec.end())
-            throw check_on_exception(std::to_string(std::distance(vec.begin(), it)),
-                                     std::to_string(*it),
-                                     std::to_string(thread_idx));
+            throw check_on_exception(to_string(std::distance(vec.begin(), it)),
+                                     to_string(*it),
+                                     to_string(thread_idx));
     }
 
     template <class CheckFunctor, class... Args>

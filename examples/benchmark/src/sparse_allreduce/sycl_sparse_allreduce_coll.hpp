@@ -1,3 +1,5 @@
+#if 0
+
 #pragma once
 
 #ifdef CCL_ENABLE_SYCL
@@ -181,3 +183,5 @@ struct sycl_sparse_allreduce_coll : base_sparse_allreduce_coll<cl::sycl::buffer<
 };
 
 #endif /* CCL_ENABLE_SYCL */
+
+#endif

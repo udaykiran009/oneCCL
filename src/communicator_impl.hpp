@@ -186,7 +186,7 @@ communicator communicator::create_communicator(const size_t size,
 } // namespace ccl
 
 /***************************TypeGenerations*********************************************************/
-#define API_DEVICE_COMM_CREATE_WO_RANK_EXPLICIT_INSTANTIATION(DeviceType, ContextType) \
+#define API_COMM_CREATE_WO_RANK_EXPLICIT_INSTANTIATION(DeviceType, ContextType) \
     template ccl::vector_class<ccl::communicator> CCL_API \
     ccl::communicator::create_communicators( \
         const size_t comm_size, \
@@ -194,7 +194,7 @@ communicator communicator::create_communicator(const size_t size,
         ContextType& context, \
         ccl::shared_ptr_class<ccl::kvs_interface> kvs);
 
-#define API_DEVICE_COMM_CREATE_WITH_RANK_IN_VECTOR_EXPLICIT_INSTANTIATION(DeviceType, ContextType) \
+#define API_COMM_CREATE_WITH_RANK_IN_VECTOR_EXPLICIT_INSTANTIATION(DeviceType, ContextType) \
     template ccl::vector_class<ccl::communicator> CCL_API \
     ccl::communicator::create_communicators( \
         const size_t comm_size, \
@@ -202,7 +202,7 @@ communicator communicator::create_communicator(const size_t size,
         ContextType& context, \
         ccl::shared_ptr_class<ccl::kvs_interface> kvs);
 
-#define API_DEVICE_COMM_CREATE_WITH_RANK_IN_MAP_EXPLICIT_INSTANTIATION(DeviceType, ContextType) \
+#define API_COMM_CREATE_WITH_RANK_IN_MAP_EXPLICIT_INSTANTIATION(DeviceType, ContextType) \
     template ccl::vector_class<ccl::communicator> CCL_API \
     ccl::communicator::create_communicators( \
         const size_t comm_size, \

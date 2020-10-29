@@ -6,7 +6,6 @@
 template <class communicator_impl>
 struct allgather_usm_visitor {
     using self_t = communicator_impl;
-    using coll_request_t = ccl::event;
 
     self_t* get_self() {
         return static_cast<self_t*>(this);
@@ -17,7 +16,7 @@ struct allgather_usm_visitor {
     }
 
     template <class... Args>
-    bool visit(coll_request_t& req,
+    bool visit(ccl::event& req,
                ccl::datatype dtype,
                const void* send_buf,
                size_t send_count,
@@ -30,6 +29,9 @@ struct allgather_usm_visitor {
                   ccl::to_string(dtype),
                   " , handle: ",
                   utils::enum_to_underlying(dtype));
+
+        CCL_THROW("unexpected path");
+
         switch (dtype) {
             case ccl::datatype::int8: {
                 using type = char;

@@ -56,7 +56,7 @@ void user_thread_idx(size_t thread_idx,
 
     // alloc memory specific to devices
     for (auto& comm : comms) {
-        ccl::communicator::ccl_device_t dev = comm.get_device().get_native();
+        ccl::communicator::device_type dev = comm.get_device().get_native();
         size_t rank = comm.rank();
 
         // create comm split attr
@@ -179,7 +179,7 @@ void user_thread_idx(size_t thread_idx,
     // alloc memory specific to devices
     for (auto& comm : comms) {
         // get native l0* /
-        ccl::communicator::ccl_device_t dev = comm.get_device().get_native();
+        ccl::communicator::device_type dev = comm.get_device().get_native();
         size_t rank = comm.rank();
 
         // wrapped L0-native API for devices: create native buffers
@@ -280,7 +280,7 @@ int main(int argc, char** argv) {
     std::vector<std::string> process_group_gpu_affinity;
     std::map<size_t, std::vector<std::string>> thread_group_gpu_affinity_per_process;
 
-    using thread_device_indices_t = ccl::process_device_indices_t;
+    using thread_device_indices_t = ccl::process_device_indices_type;
     std::map<size_t, thread_device_indices_t> node_device_indices;
 
     // extract GPU affinities by processes using '#' separator from L0_CLUSTER_AFFINITY_MASK
@@ -327,7 +327,7 @@ int main(int argc, char** argv) {
 
 #ifdef CCL_ENABLE_SYCL
     // using cl::sycl::device
-    using device_type = ccl::communicator::ccl_device_t;
+    using device_type = ccl::communicator::device_type;
 #else
     // using ccl device index
     using device_type = ccl::device_index_type;
@@ -354,7 +354,7 @@ int main(int argc, char** argv) {
                   << ", expected threads in process count: " << thread_gpu_affinity.size()
                   << std::endl;
         for (size_t thread_index = 0; thread_index < thread_gpu_affinity.size(); thread_index++) {
-            ccl::device_indices_t device_group_affinity;
+            ccl::device_indices_type device_group_affinity;
             utils::str_to_mset<ccl::device_index_type>(
                 thread_gpu_affinity[thread_index].c_str(), device_group_affinity, ',');
 

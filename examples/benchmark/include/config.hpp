@@ -20,12 +20,12 @@
 
 #define DEFAULT_COLL_LIST \
     "allgatherv,allreduce,alltoall,alltoallv,bcast,reduce," \
-    "reduce_scatter,sparse_allreduce,sparse_allreduce_bf16," \
+    "reduce_scatter," \
     "allgatherv,allreduce,alltoall,alltoallv,bcast,reduce," \
-    "reduce_scatter,sparse_allreduce,sparse_allreduce_bf16"
-#define DEFAULT_DTYPES_LIST     "float"
+    "reduce_scatter"
+#define DEFAULT_DTYPES_LIST     "float32"
 #define DEFAULT_REDUCTIONS_LIST "sum"
 #define DEFAULT_CSV_FILEPATH    ""
 
-#define ALL_DTYPES_LIST     "char,int,float,double,int64_t,uint64_t"
+#define ALL_DTYPES_LIST     "int8,int32,int64,uint64,float32,float64"
 #define ALL_REDUCTIONS_LIST "sum,prod,min,max"

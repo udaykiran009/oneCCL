@@ -190,7 +190,7 @@ struct sycl_base_coll : base_coll, private strategy {
     }
 
     ccl::datatype get_dtype() const override final {
-        return ccl::native_type_info<typename std::remove_pointer<Dtype>::type>::ccl_datatype_value;
+        return ccl::native_type_info<typename std::remove_pointer<Dtype>::type>::dtype;
     }
 
 private:

@@ -5,7 +5,7 @@ enable_testing()
 message ("PROJECT_SOURCE_DIR: ${PROJECT_SOURCE_DIR}")
 
 if(MULTI_GPU_SUPPORT)
-    set (DEFINITIONS "-DDEVICE_COMM_SUPPORT")
+    set (DEFINITIONS "-DCOMM_SUPPORT")
 endif()
 
 

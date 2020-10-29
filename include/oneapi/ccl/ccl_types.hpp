@@ -172,8 +172,7 @@ struct ccl_type_info_export {
     using native_type = ntype_t;
     using ccl_type = std::integral_constant<ccl::datatype, ccl_type_v>;
     static constexpr size_t size = size_of_type;
-    static constexpr ccl::datatype ccl_type_value = ccl_type::value;
-    static constexpr datatype ccl_datatype_value = static_cast<datatype>(ccl_type_value);
+    static constexpr datatype dtype = static_cast<enum datatype>(ccl_type::value);
     static constexpr bool is_class = iclass;
     static constexpr bool is_supported = supported;
 };

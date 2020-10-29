@@ -1,4 +1,5 @@
 #pragma once
+
 #include "common/comm/l0/modules/base_entry_module.hpp"
 #include "common/utils/tuple.hpp"
 
@@ -16,7 +17,7 @@ struct kernel_entry_initializer {
     void operator()(typed_kernel& kernel) {
         kernel.handle =
             functor(std::string(typed_kernel::name()) + "_" +
-                    ccl::native_type_info<typename typed_kernel::processing_type>::name_for_kernel());
+                    ccl::native_type_info<typename typed_kernel::processing_type>::name());
     }
 
 private:
@@ -34,7 +35,7 @@ struct kernel_entry_initializer <ccl_coll_allreduce> {
     void operator()(typed_kernel& kernel) {
         kernel.handle =
             functor(std::string(typed_kernel::name()) + "_" +
-                    ccl::native_type_info<typename typed_kernel::processing_type>::name_for_kernel() + "_add");
+                    ccl::native_type_info<typename typed_kernel::processing_type>::name() + "_add");
     }
 private:
     loader_t functor;
@@ -51,7 +52,7 @@ struct kernel_entry_initializer <ccl_coll_reduce> {
     void operator()(typed_kernel& kernel) {
         kernel.handle =
             functor(std::string(typed_kernel::name()) + "_" +
-                    ccl::native_type_info<typename typed_kernel::processing_type>::name_for_kernel() + "_add");
+                    ccl::native_type_info<typename typed_kernel::processing_type>::name() + "_add");
     }
 
 private:

@@ -227,12 +227,12 @@ protected:
 };
 
 static constexpr color_t marked_color = std::numeric_limits<color_t>::max();
-inline void separate_ipc_devices(const ccl::process_device_indices_t& ipc_indices,
+inline void separate_ipc_devices(const ccl::process_device_indices_type& ipc_indices,
                                  size_t process_idx,
                                  size_t process_num,
                                  const colored_plain_graph& id_array,
-                                 ccl::process_device_indices_t& ipc_src_indices,
-                                 ccl::process_device_indices_t& ipc_dst_indices,
+                                 ccl::process_device_indices_type& ipc_src_indices,
+                                 ccl::process_device_indices_type& ipc_dst_indices,
                                  color_t exclude_color = marked_color) {
     // find right ipcs
     do {
@@ -333,8 +333,8 @@ struct smart_ring_indexer {
                        size_t process_device_rank_offset,
                        device_storage& device_factory,
                        specific_indexed_device_storage& device_topology,
-                       const ccl::process_device_indices_t& ipc_device,
-                       const ccl::process_device_indices_t& scaleout_device_indices)
+                       const ccl::process_device_indices_type& ipc_device,
+                       const ccl::process_device_indices_type& scaleout_device_indices)
             : id_array(id_ring_vector),
               process_idx(process_id),
               process_num(process_count),
@@ -460,9 +460,9 @@ protected:
     size_t device_index_offset;
     device_storage& factory;
     specific_indexed_device_storage& topology;
-    ccl::process_device_indices_t ipc_src_indices;
-    ccl::process_device_indices_t ipc_dst_indices;
-    const ccl::process_device_indices_t& scaleout_indices;
+    ccl::process_device_indices_type ipc_src_indices;
+    ccl::process_device_indices_type ipc_dst_indices;
+    const ccl::process_device_indices_type& scaleout_indices;
     size_t marked_indices_count;
 
 private:
@@ -1142,7 +1142,7 @@ using cluster_ipc_devices_pool = std::map<size_t/*process_id*/, ipc_devices_pool
 
 template<ccl::group_split_type topology>
 inline cluster_ipc_devices_pool create_filtered_ipc_gpu_comms(const colored_plain_graph& id_ring,
-                                                     const ccl::process_device_indices_t& ipc_indices,
+                                                     const ccl::process_device_indices_type& ipc_indices,
                                                      size_t process_idx,
                                                      size_t process_size,
                                                      device_storage& device_factory)
@@ -1195,7 +1195,7 @@ inline cluster_ipc_devices_pool create_filtered_ipc_gpu_comms(const colored_plai
 template<ccl::group_split_type topology>
 inline cluster_ipc_devices_pool create_filtered_ipc_destination_gpu_comms(
                                             const colored_plain_graph& id_ring,
-                                            const ccl::process_device_indices_t& ipc_indices,
+                                            const ccl::process_device_indices_type& ipc_indices,
                                             size_t process_idx,
                                             size_t process_size,
                                             device_storage& device_factory,

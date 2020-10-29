@@ -5,136 +5,17 @@
 
 #include "reduce_scatter_fixture.hpp"
 
+DEFINE_KERNEL_TYPES_FOR_OP(reduce_scatter, add);
+DEFINE_KERNEL_TYPES_FOR_OP(reduce_scatter, mult);
+DEFINE_KERNEL_TYPES_FOR_OP(reduce_scatter, min);
+DEFINE_KERNEL_TYPES_FOR_OP(reduce_scatter, max);
+
 namespace ring_single_device_case {
 
 namespace ring_reduce_scatter_case {
-
-using bf16 = ushort;
-using float32_t = float;
-using float64_t = double;
-
-template <class T>
-struct my_add {
-    T operator()(const T& lhs, const T& rhs) const {
-        return lhs + rhs;
-    }
-
-    static constexpr T init = 0;
-};
-
-template <class T>
-struct my_mult {
-    T operator()(const T& lhs, const T& rhs) const {
-        return lhs * rhs;
-    }
-
-    static constexpr T init = 1;
-};
-
-template <class T>
-struct my_min {
-    T operator()(const T& lhs, const T& rhs) const {
-        return std::min(lhs, rhs);
-    }
-
-    static constexpr T init = std::numeric_limits<T>::max();
-};
-
-template <class T>
-struct my_max {
-    T operator()(const T& lhs, const T& rhs) const {
-        return std::max(lhs, rhs);
-    }
-
-    static constexpr T init = std::numeric_limits<T>::min();
-};
-
-#define DEFINE_PAIR(T, Op) \
-    std::pair<T, Op>
-
-#define DEFINE_TYPE(T)           \
-    DEFINE_PAIR(T, my_add<T>),   \
-    DEFINE_PAIR(T, my_mult<T>),  \
-    DEFINE_PAIR(T, my_min<T>),   \
-    DEFINE_PAIR(T, my_max<T>)
-
-// For test we use enumerate over all the types and the ops and get pairs of <T, Op>.
-using TestTypes = ::testing::Types<
-// Reduce the number of tested typed in order to speedup test
-/*  DEFINE_TYPE(int8_t),
-    DEFINE_TYPE(uint8_t),
-    DEFINE_TYPE(int16_t),
-    DEFINE_TYPE(uint16_t),
-    DEFINE_TYPE(int32_t),
-    DEFINE_TYPE(uint32_t),
-    DEFINE_TYPE(int64_t),
-    DEFINE_TYPE(uint64_t),
-//  DEFINE_TYPE(float16_t),
-    DEFINE_TYPE(float32_t),
-    DEFINE_TYPE(float64_t),
-    DEFINE_TYPE(bf16) */
-    DEFINE_PAIR(int8_t, my_add<int8_t>),
-    DEFINE_PAIR(uint8_t, my_mult<uint8_t>),
-    DEFINE_PAIR(int16_t, my_min<int16_t>),
-    DEFINE_PAIR(uint16_t, my_max<uint16_t>),
-    DEFINE_PAIR(int32_t, my_add<int32_t>),
-    DEFINE_PAIR(uint32_t, my_mult<uint32_t>),
-    DEFINE_PAIR(int64_t, my_min<int64_t>),
-    DEFINE_PAIR(uint64_t, my_max<uint64_t>),
-//  DEFINE_PAIR(float16_t, my_add<float16_t>),
-    DEFINE_PAIR(float32_t, my_mult<float32_t>),
-    DEFINE_PAIR(float64_t, my_min<float64_t>),
-    DEFINE_PAIR(bf16, my_max<bf16>)
->;
-
-template <class T, class Op>
-struct op_traits {
-    static constexpr size_t buffer_size = 512;
-};
-
-template <class T, class Op>
-struct param_traits;
-
-#define DEFINE_KERNEL_TYPE(T, Op) \
-    template <> \
-    struct param_traits<T, my_##Op<T>> { \
-        static constexpr const char* kernel_name = "reduce_scatter_execution_" # T "_" #Op; \
-        using op_type = my_##Op<T>; \
-    };
-
-#define DEFINE_KERNEL_TYPES_FOR_OP(OpName)              \
-    DEFINE_KERNEL_TYPE(int8_t, OpName)                  \
-    DEFINE_KERNEL_TYPE(uint8_t, OpName)                 \
-                                                        \
-    DEFINE_KERNEL_TYPE(int16_t, OpName)                 \
-    DEFINE_KERNEL_TYPE(uint16_t, OpName)                \
-                                                        \
-    DEFINE_KERNEL_TYPE(int32_t, OpName)                 \
-    DEFINE_KERNEL_TYPE(uint32_t, OpName)                \
-                                                        \
-    DEFINE_KERNEL_TYPE(int64_t, OpName)                 \
-    DEFINE_KERNEL_TYPE(uint64_t, OpName)                \
-                                                        \
-    /*DEFINE_KERNEL_TYPE(float16_t, OpName)*/           \
-    DEFINE_KERNEL_TYPE(float32_t, OpName)               \
-    DEFINE_KERNEL_TYPE(float64_t, OpName)               \
-    /* TODO: Enable once bf16 is not aliased to ushort  \
-        or remove if it's kept as this */               \
-    /*DEFINE_KERNEL_TYPE(bf16, OpName)*/                \
-
-DEFINE_KERNEL_TYPES_FOR_OP(add);
-DEFINE_KERNEL_TYPES_FOR_OP(mult);
-DEFINE_KERNEL_TYPES_FOR_OP(min);
-DEFINE_KERNEL_TYPES_FOR_OP(max);
-
-#undef DEFINE_KERNEL_TYPE
-#undef DEFINE_TYPE
-#undef DEFINE_PAIR
-#undef DEFINE_KERNEL_TYPES_FOR_OP
-
 }
 
-TYPED_TEST_CASE(ring_reduce_scatter_single_device_fixture, ring_reduce_scatter_case::TestTypes);
+TYPED_TEST_CASE(ring_reduce_scatter_single_device_fixture, TestTypesAndOps);
 
 TYPED_TEST(ring_reduce_scatter_single_device_fixture, ring_reduce_scatter_single_device_mt) {
     using namespace native;
@@ -248,7 +129,7 @@ TYPED_TEST(ring_reduce_scatter_single_device_fixture, ring_reduce_scatter_single
         .pNext = nullptr,
         .flags = 0,
     };
-    desc.pKernelName = ring_reduce_scatter_case::param_traits<native_type, op_type>::kernel_name;
+    desc.pKernelName = reduce_scatter_param_traits<native_type, op_type>::kernel_name;
     std::map<size_t, ze_kernel_handle_t> thread_kernels;
     std::map<size_t, ccl_device::device_queue> thread_queue;
     std::map<size_t, ccl_device::device_cmd_list> thread_cmd_list;
@@ -274,8 +155,8 @@ TYPED_TEST(ring_reduce_scatter_single_device_fixture, ring_reduce_scatter_single
 
     //printout
     auto& out = this->output;
-    out << "L0 memory handles: " << std::endl;
-    memory_storage.dump(out, true);
+    // out << "L0 memory handles: " << std::endl;
+    // memory_storage.dump(out, true);
 
     //Set args and launch kernel
     std::mutex thread_lock; //workaround
@@ -462,7 +343,7 @@ TYPED_TEST(ring_reduce_scatter_single_device_fixture, ring_reduce_scatter_single
 
                 constexpr auto op = op_type{};
 
-                native_type totalVal = op.init;
+                native_type totalVal = op.init();
                 for (size_t i = 0; i < num_thread; ++i) {
                     totalVal = op(totalVal, static_cast<native_type>(corr_val));
                 }

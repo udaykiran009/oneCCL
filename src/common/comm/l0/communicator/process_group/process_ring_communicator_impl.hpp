@@ -10,7 +10,7 @@
 
 /* allgatherv */
 template <class buffer_type>
-process_ring_communicator::coll_request_t process_ring_communicator::allgatherv_impl(
+ccl::event process_ring_communicator::allgatherv_impl(
     const buffer_type* send_buf,
     size_t send_count,
     buffer_type* recv_buf,
@@ -22,7 +22,7 @@ process_ring_communicator::coll_request_t process_ring_communicator::allgatherv_
     return {};
 }
 template <class buffer_type>
-process_ring_communicator::coll_request_t process_ring_communicator::allgatherv_impl(
+ccl::event process_ring_communicator::allgatherv_impl(
     const buffer_type* send_buf,
     size_t send_count,
     ccl::vector_class<buffer_type*>& recv_buf,
@@ -36,7 +36,7 @@ process_ring_communicator::coll_request_t process_ring_communicator::allgatherv_
 }
 
 template <class buffer_type>
-process_ring_communicator::coll_request_t process_ring_communicator::allgatherv_impl(
+ccl::event process_ring_communicator::allgatherv_impl(
     const buffer_type& send_buf,
     size_t send_count,
     buffer_type& recv_buf,
@@ -48,7 +48,7 @@ process_ring_communicator::coll_request_t process_ring_communicator::allgatherv_
     return {};
 }
 template <class buffer_type>
-process_ring_communicator::coll_request_t process_ring_communicator::allgatherv_impl(
+ccl::event process_ring_communicator::allgatherv_impl(
     const buffer_type& send_buf,
     size_t send_count,
     ccl::vector_class<ccl::reference_wrapper_class<buffer_type>>& recv_buf,
@@ -63,7 +63,7 @@ process_ring_communicator::coll_request_t process_ring_communicator::allgatherv_
 
 /* allreduce */
 template <class buffer_type>
-process_ring_communicator::coll_request_t process_ring_communicator::allreduce_impl(
+ccl::event process_ring_communicator::allreduce_impl(
     const buffer_type* send_buf,
     buffer_type* recv_buf,
     size_t count,
@@ -216,7 +216,7 @@ process_ring_communicator::coll_request_t process_ring_communicator::allreduce_i
 }
 
 template <class buffer_type>
-process_ring_communicator::coll_request_t process_ring_communicator::allreduce_impl(
+ccl::event process_ring_communicator::allreduce_impl(
     const buffer_type& send_buf,
     buffer_type& recv_buf,
     size_t count,
@@ -230,7 +230,7 @@ process_ring_communicator::coll_request_t process_ring_communicator::allreduce_i
 
 /* alltoall */
 template <class buffer_type>
-process_ring_communicator::coll_request_t process_ring_communicator::alltoall_impl(
+ccl::event process_ring_communicator::alltoall_impl(
     const buffer_type* send_buf,
     buffer_type* recv_buf,
     size_t count,
@@ -241,7 +241,7 @@ process_ring_communicator::coll_request_t process_ring_communicator::alltoall_im
     return {};
 }
 template <class buffer_type>
-process_ring_communicator::coll_request_t process_ring_communicator::alltoall_impl(
+ccl::event process_ring_communicator::alltoall_impl(
     const ccl::vector_class<buffer_type*>& send_buf,
     const ccl::vector_class<buffer_type*>& recv_buf,
     size_t count,
@@ -254,7 +254,7 @@ process_ring_communicator::coll_request_t process_ring_communicator::alltoall_im
 }
 
 template <class buffer_type>
-process_ring_communicator::coll_request_t process_ring_communicator::alltoall_impl(
+ccl::event process_ring_communicator::alltoall_impl(
     const buffer_type& send_buf,
     buffer_type& recv_buf,
     size_t count,
@@ -265,7 +265,7 @@ process_ring_communicator::coll_request_t process_ring_communicator::alltoall_im
     return {};
 }
 template <class buffer_type>
-process_ring_communicator::coll_request_t process_ring_communicator::alltoall_impl(
+ccl::event process_ring_communicator::alltoall_impl(
     const ccl::vector_class<ccl::reference_wrapper_class<buffer_type>>& send_buf,
     const ccl::vector_class<ccl::reference_wrapper_class<buffer_type>>& recv_buf,
     size_t count,
@@ -279,7 +279,7 @@ process_ring_communicator::coll_request_t process_ring_communicator::alltoall_im
 
 /* alltoallv */
 template <class buffer_type>
-process_ring_communicator::coll_request_t process_ring_communicator::alltoallv_impl(
+ccl::event process_ring_communicator::alltoallv_impl(
     const buffer_type* send_buf,
     const ccl::vector_class<size_t>& send_counts,
     buffer_type* recv_buf,
@@ -291,7 +291,7 @@ process_ring_communicator::coll_request_t process_ring_communicator::alltoallv_i
     return {};
 }
 template <class buffer_type>
-process_ring_communicator::coll_request_t process_ring_communicator::alltoallv_impl(
+ccl::event process_ring_communicator::alltoallv_impl(
     const ccl::vector_class<buffer_type*>& send_buf,
     const ccl::vector_class<size_t>& send_counts,
     const ccl::vector_class<buffer_type*>& recv_buf,
@@ -305,7 +305,7 @@ process_ring_communicator::coll_request_t process_ring_communicator::alltoallv_i
 }
 
 template <class buffer_type>
-process_ring_communicator::coll_request_t process_ring_communicator::alltoallv_impl(
+ccl::event process_ring_communicator::alltoallv_impl(
     const buffer_type& send_buf,
     const ccl::vector_class<size_t>& send_counts,
     buffer_type& recv_buf,
@@ -317,7 +317,7 @@ process_ring_communicator::coll_request_t process_ring_communicator::alltoallv_i
     return {};
 }
 template <class buffer_type>
-process_ring_communicator::coll_request_t process_ring_communicator::alltoallv_impl(
+ccl::event process_ring_communicator::alltoallv_impl(
     const ccl::vector_class<ccl::reference_wrapper_class<buffer_type>>& send_buf,
     const ccl::vector_class<size_t>& send_counts,
     const ccl::vector_class<ccl::reference_wrapper_class<buffer_type>>& recv_buf,
@@ -332,7 +332,7 @@ process_ring_communicator::coll_request_t process_ring_communicator::alltoallv_i
 
 /* bcast */
 template <class buffer_type>
-process_ring_communicator::coll_request_t process_ring_communicator::broadcast_impl(
+ccl::event process_ring_communicator::broadcast_impl(
     buffer_type* buf,
     size_t count,
     size_t root,
@@ -344,7 +344,7 @@ process_ring_communicator::coll_request_t process_ring_communicator::broadcast_i
 }
 
 template <class buffer_type>
-process_ring_communicator::coll_request_t process_ring_communicator::broadcast_impl(
+ccl::event process_ring_communicator::broadcast_impl(
     buffer_type& buf,
     size_t count,
     size_t root,
@@ -357,7 +357,7 @@ process_ring_communicator::coll_request_t process_ring_communicator::broadcast_i
 
 /* reduce */
 template <class buffer_type>
-process_ring_communicator::coll_request_t process_ring_communicator::reduce_impl(
+ccl::event process_ring_communicator::reduce_impl(
     const buffer_type* send_buf,
     buffer_type* recv_buf,
     size_t count,
@@ -371,7 +371,7 @@ process_ring_communicator::coll_request_t process_ring_communicator::reduce_impl
 }
 
 template <class buffer_type>
-process_ring_communicator::coll_request_t process_ring_communicator::reduce_impl(
+ccl::event process_ring_communicator::reduce_impl(
     const buffer_type& send_buf,
     buffer_type& recv_buf,
     size_t count,
@@ -385,7 +385,7 @@ process_ring_communicator::coll_request_t process_ring_communicator::reduce_impl
 }
 /* reduce_scatter */
 template <class buffer_type>
-process_ring_communicator::coll_request_t process_ring_communicator::reduce_scatter_impl(
+ccl::event process_ring_communicator::reduce_scatter_impl(
     const buffer_type* send_buf,
     buffer_type* recv_buf,
     size_t recv_count,
@@ -397,7 +397,7 @@ process_ring_communicator::coll_request_t process_ring_communicator::reduce_scat
     return {};
 }
 template <class buffer_type>
-process_ring_communicator::coll_request_t process_ring_communicator::reduce_scatter_impl(
+ccl::event process_ring_communicator::reduce_scatter_impl(
     const buffer_type& send_buf,
     buffer_type& recv_buf,
     size_t recv_count,
@@ -411,7 +411,7 @@ process_ring_communicator::coll_request_t process_ring_communicator::reduce_scat
 
 /* sparse_allreduce */
 template <class index_buffer_type, class value_buffer_type>
-process_ring_communicator::coll_request_t process_ring_communicator::sparse_allreduce_impl(
+ccl::event process_ring_communicator::sparse_allreduce_impl(
     const index_buffer_type* send_ind_buf,
     size_t send_ind_count,
     const value_buffer_type* send_val_buf,
@@ -429,7 +429,7 @@ process_ring_communicator::coll_request_t process_ring_communicator::sparse_allr
 }
 
 template <class index_buffer_container_type, class value_buffer_container_type>
-process_ring_communicator::coll_request_t process_ring_communicator::sparse_allreduce_impl(
+ccl::event process_ring_communicator::sparse_allreduce_impl(
     const index_buffer_container_type& send_ind_buf,
     size_t send_ind_count,
     const value_buffer_container_type& send_val_buf,

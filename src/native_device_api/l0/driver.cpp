@@ -31,7 +31,7 @@ ccl_device_driver::context_storage_type ccl_device_driver::get_driver_contexts()
 }
 
 ccl_device_driver::indexed_driver_handles ccl_device_driver::get_handles(
-    const ccl::device_indices_t& requested_driver_indexes /* = indices()*/) {
+    const ccl::device_indices_type& requested_driver_indexes /* = indices()*/) {
     uint32_t driver_count = 0;
     ze_result_t err = zeDriverGet(&driver_count, nullptr);
     if (err != ZE_RESULT_SUCCESS) {
@@ -86,7 +86,7 @@ CCL_API std::shared_ptr<ccl_device_driver> ccl_device_driver::create(
     handle_t h,
     uint32_t id,
     owner_ptr_t&& platform,
-    const ccl::device_indices_t& rank_device_affinity /* = ccl::device_indices_t()*/) {
+    const ccl::device_indices_type& rank_device_affinity /* = ccl::device_indices_type()*/) {
     auto ctx = platform.lock()->get_platform_contexts();
     std::shared_ptr<ccl_device_driver> driver =
         std::make_shared<ccl_device_driver>(h, id, std::move(platform), ctx);
@@ -101,7 +101,7 @@ CCL_API std::shared_ptr<ccl_device_driver> ccl_device_driver::create(
             }
             else {
                 //collect device_index only for drvier specific index
-                ccl::device_indices_t per_driver_index;
+                ccl::device_indices_type per_driver_index;
                 for (const auto& affitinity : rank_device_affinity) {
                     if (std::get<ccl::device_index_enum::device_index_id>(affitinity) ==
                         val.first) {
@@ -200,9 +200,9 @@ CCL_API uint32_t ccl_device_driver::get_driver_id() const noexcept {
     return driver_id;
 }
 
-CCL_API ccl::device_indices_t ccl_device_driver::get_device_indices(
+CCL_API ccl::device_indices_type ccl_device_driver::get_device_indices(
     const ccl::device_mask_t& mask) {
-    ccl::device_indices_t ret;
+    ccl::device_indices_type ret;
     std::cerr << __PRETTY_FUNCTION__ << " NOT IMPLEMENTED" << std::endl;
     abort();
     /*
@@ -218,7 +218,7 @@ CCL_API ccl::device_indices_t ccl_device_driver::get_device_indices(
 }
 
 CCL_API ccl::device_mask_t ccl_device_driver::get_device_mask(
-    const ccl::device_indices_t& device_idx) {
+    const ccl::device_indices_type& device_idx) {
     ccl::device_mask_t ret;
     std::cerr << __PRETTY_FUNCTION__ << " NOT IMPLEMENTED" << std::endl;
     abort();

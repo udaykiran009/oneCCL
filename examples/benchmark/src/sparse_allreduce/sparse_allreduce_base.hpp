@@ -78,7 +78,7 @@ struct base_sparse_allreduce_coll
     }
 
     ccl::datatype get_dtype() const override final {
-        return ccl::native_type_info<typename std::remove_pointer<VType>::type>::ccl_datatype_value;
+        return ccl::native_type_info<typename std::remove_pointer<VType>::type>::dtype;
     }
 
     virtual void prepare_internal(size_t elem_count,

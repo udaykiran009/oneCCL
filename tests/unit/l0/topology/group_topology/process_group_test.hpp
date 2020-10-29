@@ -16,7 +16,7 @@ allied_process_group_ring_topology_mock(size_t process_idx,
 
 native::detail::global_plain_graphs
         merge_allied_nodes_plain_graphs(std::ostream& out,
-                                        const ccl::cluster_device_indices_t &cluster_indices,
+                                        const ccl::cluster_device_indices_type &cluster_indices,
                                         size_t process_index,
                                         const native::detail::global_sorted_plain_graphs& cluster_graphs,
                                         native::detail::p2p_rating_function ping) override
@@ -58,7 +58,7 @@ native::detail::global_plain_graphs
 
 native::detail::global_colored_plain_graphs
                     merge_allied_nodes_in_colored_plain_graphs(std::ostream& out,
-                                                               const ccl::cluster_device_indices_t &cluster_indices,
+                                                               const ccl::cluster_device_indices_type &cluster_indices,
                                                                size_t process_index,
                                                                size_t process_count,
                                                                const native::detail::global_sorted_colored_plain_graphs& cluster_graphs,
@@ -101,7 +101,7 @@ native::detail::global_colored_plain_graphs
                                                                                ping);
 }
 
-ccl::process_device_indices_t create_scaleout_devices_in_graphs_for_process(size_t process_index,
+ccl::process_device_indices_type create_scaleout_devices_in_graphs_for_process(size_t process_index,
                                                                     size_t cluster_size,
                                                                     native::detail::global_sorted_plain_graphs& cluster_graphs,
                                                                     std::ostream& out) override
@@ -139,7 +139,7 @@ ccl::process_device_indices_t create_scaleout_devices_in_graphs_for_process(size
                                                                             out);
 }
 
-ccl::process_device_indices_t
+ccl::process_device_indices_type
                     create_scaleout_devices_in_colored_graphs_for_process(
                                         size_t process_index,
                                         size_t cluster_size,
@@ -285,7 +285,7 @@ TEST_F(router_fixture, single_process_group_single_threads_single_device_topolog
                 allied_process_group_ring_topology::build_p2p_capability_matrix(ss,
                                                                                 params.total_node_mask);
 
-        std::vector<ccl::device_indices_t> ipc_device_indices =
+        std::vector<ccl::device_indices_type> ipc_device_indices =
                 process_group_context::get_ipc_device_indices_for_id(process_index, params.total_node_mask);
         UT_ASSERT(ipc_device_indices.empty(), "ipc_device_indices should be empty for single node case");
 
@@ -366,7 +366,7 @@ TEST_F(router_fixture, ally_process_group_topology_test)
         output << ss.str() <<"\nResult matrix:\n" << matrix <<  std::endl;
         ss.clear();
 
-        std::vector<ccl::device_indices_t> ipc_device_indices =
+        std::vector<ccl::device_indices_type> ipc_device_indices =
                 process_group_context::get_ipc_device_indices_for_id(process_index,
                                                                      params.total_node_mask);
         UT_ASSERT(ipc_device_indices.empty(), "ipc_device_indices should be empty for single node case");
@@ -456,7 +456,7 @@ TEST_F(router_fixture, ally_process_group_topology_test)
         output << ss.str() <<"\nResult matrix:\n" << matrix <<  std::endl;
         ss.clear();
 
-        std::vector<ccl::device_indices_t> ipc_device_indices =
+        std::vector<ccl::device_indices_type> ipc_device_indices =
                 process_group_context::get_ipc_device_indices_for_id(process_index,
                                                                      params.total_node_mask);
         UT_ASSERT(ipc_device_indices.size() == 1, "one ipc_device_indices should be");
@@ -614,7 +614,7 @@ TEST_F(router_fixture, ally_process_group_topology_test)
         output << ss.str() <<"\nResult matrix:\n" << matrix <<  std::endl;
         ss.clear();
 
-        std::vector<ccl::device_indices_t> ipc_device_indices =
+        std::vector<ccl::device_indices_type> ipc_device_indices =
                     process_group_context::get_ipc_device_indices_for_id(process_index,
                                                                          params.total_node_mask);
         UT_ASSERT(ipc_device_indices.size() == 1, "three ipc_device_indices should be");
@@ -797,7 +797,7 @@ TEST_F(router_fixture, inter_process_scale_up_process_group_topology_test)
         }
         ss.clear();
 
-        std::vector<ccl::device_indices_t> ipc_device_indices =
+        std::vector<ccl::device_indices_type> ipc_device_indices =
                 process_group_context::get_ipc_device_indices_for_id(process_index,
                                                                      params.total_node_mask);
         UT_ASSERT(ipc_device_indices.empty(),
@@ -1001,7 +1001,7 @@ TEST_F(router_fixture, several_processes_with_inner_scale_up_in_process_group_to
         }
         ss.clear();
 
-        std::vector<ccl::device_indices_t> ipc_device_indices =
+        std::vector<ccl::device_indices_type> ipc_device_indices =
                 process_group_context::get_ipc_device_indices_for_id(process_index,
                                                                      params.total_node_mask);
         UT_ASSERT(!ipc_device_indices.empty(),
@@ -1304,7 +1304,7 @@ TEST_F(router_fixture, scale_up_scale_out_process_group_topology_test)
         }
         ss.clear();
 
-        std::vector<ccl::device_indices_t> ipc_device_indices =
+        std::vector<ccl::device_indices_type> ipc_device_indices =
                 process_group_context::get_ipc_device_indices_for_id(process_index,
                                                                      params.total_node_mask);
         UT_ASSERT(ipc_device_indices[0].size() == 1, "one ipc_device_index");

@@ -227,7 +227,7 @@ run()
 
     ppn=1
     n=2
-    dtype_list="char,int,float"
+    dtype_list="int8,int32,float32"
     reduction_list="sum,max"
     ccl_base_env="FI_PROVIDER=tcp"
 

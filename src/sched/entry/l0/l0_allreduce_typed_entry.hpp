@@ -69,7 +69,7 @@ public:
                    comm,
                    in_ctx,
                    send_buf,
-                   ccl::native_type_info<native_type>::ccl_type_value,
+                   ccl::native_type_info<native_type>::dtype,
                    device_stream),
 
               temp_buffer(parent_communicator->get_device().template alloc_memory<native_type>(

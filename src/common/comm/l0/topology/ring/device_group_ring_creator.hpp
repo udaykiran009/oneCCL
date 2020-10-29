@@ -26,7 +26,7 @@ public:
                                                          const ccl_device& rhs);
     static detail::adjacency_matrix build_p2p_capability_matrix(
         std::ostream& out,
-        const ccl::device_indices_t& group_device_indices,
+        const ccl::device_indices_type& group_device_indices,
         detail::p2p_rating_function ping = default_property_p2p_rating_calculator);
 
     static detail::adjacency_matrix build_p2p_capability_matrix(
@@ -39,32 +39,32 @@ public:
                const detail::adjacency_matrix& matrix);
     bool build(std::ostream& out,
                const ccl::context_comm_addr& comm_addr,
-               const ccl::device_indices_t& group_device_indices,
+               const ccl::device_indices_type& group_device_indices,
                const detail::adjacency_matrix& matrix);
 
 private:
     bool build_specific(std::ostream& out,
                         const ccl::context_comm_addr& comm_addr,
-                        const ccl::device_indices_t& group_device_indices,
+                        const ccl::device_indices_type& group_device_indices,
                         const detail::plain_graph& graph,
                         const detail::adjacency_matrix& matrix);
 
     template <ccl::device_topology_type topology_type>
     bool build_specific_topology(std::ostream& out,
                                  const ccl::context_comm_addr& comm_addr,
-                                 const ccl::device_indices_t& group_device_indices,
+                                 const ccl::device_indices_type& group_device_indices,
                                  const detail::plain_graph& graph);
 
     bool build_scale_up_specific(std::ostream& out,
                                  const ccl::context_comm_addr& comm_addr,
-                                 const ccl::device_indices_t& group_device_indices,
+                                 const ccl::device_indices_type& group_device_indices,
                                  const detail::plain_graph_list& graph_list,
                                  const detail::adjacency_matrix& matrix);
 
     template <ccl::device_topology_type topology_type>
     bool build_scale_up_specific_topology(std::ostream& out,
                                           const ccl::context_comm_addr& comm_addr,
-                                          const ccl::device_indices_t& group_device_indices,
+                                          const ccl::device_indices_type& group_device_indices,
                                           const detail::plain_graph_list& graph);
 };
 } // namespace native

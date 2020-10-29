@@ -109,14 +109,14 @@ void str_to_mset(const char* input,
 using processing_type = float;
 using processing_type_ptr = float*;
 #ifdef CCL_ENABLE_SYCL
-void user_thread_idx(size_t thread_idx, ccl::device_indices_t thread_device_idx, size_t total_devices_in_process)
+void user_thread_idx(size_t thread_idx, ccl::device_indices_type thread_device_idx, size_t total_devices_in_process)
 {
     (void)thread_idx;
     (void)thread_device_idx;
     (void)total_devices_in_process;
 }
 #else
-void user_thread_idx(size_t thread_idx, ccl::device_indices_t thread_device_idx, size_t total_devices_in_process)
+void user_thread_idx(size_t thread_idx, ccl::device_indices_type thread_device_idx, size_t total_devices_in_process)
 {
     using namespace ::native;
 
@@ -315,11 +315,11 @@ int main(int argc, char** argv)
     std::cout << "Users Thread Count: " <<  thread_gpu_affinity.size() << std::endl;
 
     // get thread device affinity
-    ccl::process_device_indices_t thread_group_affinity;
+    ccl::process_device_indices_type thread_group_affinity;
     size_t total_devices_in_process = 0;
     for(size_t thread_index = 0; thread_index < thread_gpu_affinity.size(); thread_index++)
     {
-        ccl::device_indices_t device_group_affinity;
+        ccl::device_indices_type device_group_affinity;
         str_to_mset<ccl::device_index_type>(thread_gpu_affinity[thread_index].c_str(), device_group_affinity, ',');
 
         total_devices_in_process += device_group_affinity.size();
@@ -334,7 +334,7 @@ int main(int argc, char** argv)
     for(auto thread_affinity_it = thread_group_affinity.begin(); thread_affinity_it != thread_group_affinity.end(); ++thread_affinity_it)
     {
         size_t thread_id;
-        ccl::device_indices_t devices;
+        ccl::device_indices_type devices;
         std::tie(thread_id, devices) = *thread_affinity_it;
 
         std::cout << "Launch thread: " << thread_id << " with expected device communicators count: " << devices.size() << std::endl;

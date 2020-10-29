@@ -174,21 +174,16 @@
         }                                                                                                           \
 }
 
-DEFINE_KERNEL(int8_t, char)
-DEFINE_KERNEL(uint8_t, uchar)
-
-DEFINE_KERNEL(int16_t, short)
-DEFINE_KERNEL(uint16_t, ushort)
-
-DEFINE_KERNEL(int32_t, int)
-DEFINE_KERNEL(uint32_t, uint)
-
-DEFINE_KERNEL(int64_t, long)
-DEFINE_KERNEL(uint64_t, ulong)
-
-DEFINE_KERNEL(float32_t, float)
-DEFINE_KERNEL(float64_t, double)
+DEFINE_KERNEL(int8, int8_t)
+DEFINE_KERNEL(uint8, uint8_t)
+DEFINE_KERNEL(int16, int16_t)
+DEFINE_KERNEL(uint16, uint16_t)
+DEFINE_KERNEL(int32, int32_t)
+DEFINE_KERNEL(uint32, uint32_t)
+DEFINE_KERNEL(int64, int64_t)
+DEFINE_KERNEL(uint64, uint64_t)
+DEFINE_KERNEL(float32, float)
+DEFINE_KERNEL(float64, double)
 // TODO: implement support for missing types
-//DEFINE_KERNEL(float16_t, half)
-
-DEFINE_KERNEL(bf16, ushort)
+//DEFINE_KERNEL(float16, half)
+DEFINE_KERNEL(bfloat16, ushort)

@@ -211,7 +211,7 @@ indexed_storage<value_type> merge_indexed_values(const IndexedContainer& indexes
 }
 
 template <ccl::device_index_enum index_id, class value_type, class value_type_index_extractor>
-indexed_storage<value_type> collect_indexed_data(const ccl::device_indices_t& indexes,
+indexed_storage<value_type> collect_indexed_data(const ccl::device_indices_type& indexes,
                                                  std::vector<value_type>& collected_values,
                                                  value_type_index_extractor functor) {
     indexed_storage<value_type> ret;

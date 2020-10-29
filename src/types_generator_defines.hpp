@@ -5,7 +5,7 @@
 /**
  * Core types generators
  */
-#define DEVICE_COMM_INTERFACE_COLL_DECLARATION__VOID \
+#define COMM_INTERFACE_COLL_DECLARATION__VOID \
 \
     virtual ccl::event allgatherv(const void* send_buf, \
                                     size_t send_count, \
@@ -91,10 +91,10 @@
                                         ccl::datatype dtype, \
                                         ccl::reduction reduction, \
                                         const ccl::stream::impl_value_t& stream, \
-                                        const reduce_scatter_attr& attr, \
+                                        const ccl::reduce_scatter_attr& attr, \
                                         const ccl::vector_class<ccl::event>& deps = {}) = 0;
 
-#define DEVICE_COMM_INTERFACE_SPARSE_DECLARATION__VOID \
+#define COMM_INTERFACE_SPARSE_DECLARATION__VOID \
 \
     virtual ccl::event sparse_allreduce(const void* send_ind_buf, \
                                           size_t send_ind_count, \
@@ -111,7 +111,7 @@
                                           const ccl::sparse_allreduce_attr& attr, \
                                           const ccl::vector_class<ccl::event>& deps = {}) = 0;
 
-#define DEVICE_COMM_INTERFACE_COLL_DECLARATION(type) \
+#define COMM_INTERFACE_COLL_DECLARATION(type) \
 \
     virtual ccl::event allgatherv(const type* send_buf, \
                                     size_t send_count, \
@@ -191,7 +191,7 @@
                                         const ccl::reduce_scatter_attr& attr, \
                                         const ccl::vector_class<ccl::event>& deps) = 0;
 
-#define DEVICE_COMM_INTERFACE_SPARSE_DECLARATION(index_type, value_type) \
+#define COMM_INTERFACE_SPARSE_DECLARATION(index_type, value_type) \
 \
     virtual ccl::event sparse_allreduce(const index_type* send_ind_buf, \
                                           size_t send_ind_count, \
@@ -206,7 +206,7 @@
                                           const ccl::sparse_allreduce_attr& attr, \
                                           const ccl::vector_class<ccl::event>& deps = {}) = 0;
 
-#define DEVICE_COMM_INTERFACE_COLL_CLASS_DECLARATION(type) \
+#define COMM_INTERFACE_COLL_CLASS_DECLARATION(type) \
 \
     virtual ccl::event allgatherv(const type& send_buf, \
                                     size_t send_count, \
@@ -289,7 +289,7 @@
                                         const ccl::reduce_scatter_attr& attr, \
                                         const ccl::vector_class<ccl::event>& deps = {}) = 0;
 
-#define DEVICE_COMM_INTERFACE_SPARSE_CLASS_DECLARATION(index_type, value_type) \
+#define COMM_INTERFACE_SPARSE_CLASS_DECLARATION(index_type, value_type) \
 \
     virtual ccl::event sparse_allreduce(const index_type& send_ind_buf, \
                                           size_t send_ind_count, \
@@ -307,7 +307,7 @@
 /**
  * Specific coll instantiation
  */
-#define DEVICE_COMM_INTERFACE_COLL_DEFINITION__VOID \
+#define COMM_INTERFACE_COLL_DEFINITION__VOID \
 \
     ccl::event allgatherv(const void* send_buf, \
                             size_t send_count, \
@@ -422,7 +422,7 @@
             send_buf, recv_buf, recv_count, dtype, reduction, stream, attr, deps); \
     }
 
-#define DEVICE_COMM_INTERFACE_SPARSE_DEFINITION__VOID \
+#define COMM_INTERFACE_SPARSE_DEFINITION__VOID \
 \
     ccl::event sparse_allreduce(const void* send_ind_buf, \
                                   size_t send_ind_count, \
@@ -454,7 +454,7 @@
                                                  deps); \
     }
 
-#define DEVICE_COMM_INTERFACE_COLL_DEFINITION(type) \
+#define COMM_INTERFACE_COLL_DEFINITION(type) \
 \
     ccl::event allgatherv(const type* send_buf, \
                             size_t send_count, \
@@ -560,7 +560,7 @@
             send_buf, recv_buf, recv_count, reduction, stream, attr, deps); \
     }
 
-#define DEVICE_COMM_INTERFACE_SPARSE_DEFINITION(index_type, value_type) \
+#define COMM_INTERFACE_SPARSE_DEFINITION(index_type, value_type) \
 \
     ccl::event sparse_allreduce(const index_type* send_ind_buf, \
                                   size_t send_ind_count, \
@@ -588,7 +588,7 @@
                                                  deps); \
     }
 
-#define DEVICE_COMM_INTERFACE_COLL_CLASS_DEFINITION(type) \
+#define COMM_INTERFACE_COLL_CLASS_DEFINITION(type) \
 \
     ccl::event allgatherv(const type& send_buf, \
                             size_t send_count, \
@@ -694,7 +694,7 @@
             send_buf, recv_buf, recv_count, reduction, stream, attr, deps); \
     }
 
-#define DEVICE_COMM_INTERFACE_SPARSE_CLASS_DEFINITION(index_type, value_type) \
+#define COMM_INTERFACE_SPARSE_CLASS_DEFINITION(index_type, value_type) \
 \
     ccl::event sparse_allreduce(const index_type& send_ind_buf, \
                                   size_t send_ind_count, \
@@ -725,7 +725,7 @@
 /**
  * Coll implementations
  */
-#define DEVICE_COMM_IMPL_DECLARATION \
+#define COMM_IMPL_DECLARATION \
     ccl::event allgatherv_base_impl(const void* send_buf, \
                                  size_t send_count, \
                                  void* recv_buf, \
@@ -910,7 +910,7 @@
                                      const ccl::reduce_scatter_attr& attr, \
                                      const ccl::vector_class<ccl::event>& deps);
 
-#define DEVICE_COMM_IMPL_SPARSE_DECLARATION \
+#define COMM_IMPL_SPARSE_DECLARATION \
     ccl::event sparse_allreduce_impl(const void* send_ind_buf, \
                                        size_t send_ind_count, \
                                        const void* send_val_buf, \
@@ -939,7 +939,7 @@
                                        const ccl::sparse_allreduce_attr& attr, \
                                        const ccl::vector_class<ccl::event>& deps);
 
-#define DEVICE_COMM_IMPL_CLASS_DECLARATION \
+#define COMM_IMPL_CLASS_DECLARATION \
     template <class buffer_type> \
     ccl::event allgatherv_impl(const buffer_type& send_buf, \
                                  size_t send_count, \
@@ -1026,7 +1026,7 @@
                                      const ccl::reduce_scatter_attr& attr, \
                                      const ccl::vector_class<ccl::event>& deps);
 
-#define DEVICE_COMM_IMPL_SPARSE_CLASS_DECLARATION \
+#define COMM_IMPL_SPARSE_CLASS_DECLARATION \
     template <class index_type, class value_type> \
     ccl::event sparse_allreduce_impl(const index_type& send_ind_buf, \
                                        size_t send_ind_count, \
@@ -1044,7 +1044,7 @@
 /**
  * Force intantiations
  */
-#define DEVICE_COMM_INTERFACE_COLL_CLASS_INSTANTIATIONS(comm_class, type) \
+#define COMM_INTERFACE_COLL_CLASS_INSTANTIATIONS(comm_class, type) \
     template ccl::event comm_class::allgatherv_impl( \
         const type& send_buf, \
         size_t send_count, \
@@ -1110,7 +1110,7 @@
                                                   const ccl::reduce_attr& attr, \
                                                   const ccl::vector_class<ccl::event>& deps);
 
-#define DEVICE_COMM_INTERFACE_COLL_INSTANTIATIONS(comm_class, type) \
+#define COMM_INTERFACE_COLL_INSTANTIATIONS(comm_class, type) \
 \
     template ccl::event comm_class::allgatherv_impl( \
         const type* send_buf, \
@@ -1191,7 +1191,7 @@
         const ccl::reduce_scatter_attr& attr, \
         const ccl::vector_class<ccl::event>& deps);
 
-#define DEVICE_COMM_INTERFACE_SPARSE_ALLREDUCE_EXPLICIT_INSTANTIATION( \
+#define COMM_INTERFACE_SPARSE_ALLREDUCE_EXPLICIT_INSTANTIATION( \
     comm_class, index_type, value_type) \
     template ccl::event comm_class::sparse_allreduce_impl( \
         const index_type* send_ind_buf, \
@@ -1207,7 +1207,7 @@
         const ccl::sparse_allreduce_attr& attr, \
         const ccl::vector_class<ccl::event>& deps);
 
-#define DEVICE_COMM_INTERFACE_SPARSE_ALLREDUCE_EXPLICIT_CLASS_INSTANTIATION( \
+#define COMM_INTERFACE_SPARSE_ALLREDUCE_EXPLICIT_CLASS_INSTANTIATION( \
     comm_class, index_type, value_type) \
     template ccl::event comm_class::sparse_allreduce_impl( \
         const index_type& send_ind_buf, \

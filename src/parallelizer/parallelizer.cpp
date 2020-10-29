@@ -300,7 +300,7 @@ ccl::status ccl_parallelizer::process(ccl_master_sched* sched) {
             for (idx = 0; idx < part_count; idx++) {
                 ccl_coll_entry_param param{};
                 param.ctype = ccl_coll_barrier;
-                param.dtype = ccl_datatype_char;
+                param.dtype = ccl_datatype_int8;
                 param.comm = comm;
                 coll_entry_helper::add_coll_entry<ccl_coll_barrier>(part_scheds[idx].get(), param);
             }
@@ -520,7 +520,7 @@ ccl::status ccl_parallelizer::process(ccl_master_sched* sched) {
                         ccl_buffer(main_ctx, sizeof(ccl_parallelizer_prologue_ctx)),
                         ccl_buffer(part_ctx, sizeof(ccl_parallelizer_prologue_ctx)),
                         sizeof(void*) + sizeof(size_t) + sizeof(ccl::datatype),
-                        ccl_datatype_char);
+                        ccl_datatype_int8);
                 }
             }
 
@@ -543,7 +543,7 @@ ccl::status ccl_parallelizer::process(ccl_master_sched* sched) {
                     param.send_buf = ccl_buffer();
                     param.recv_buf = ccl_buffer();
                     param.count = 0;
-                    param.dtype = ccl_datatype_char;
+                    param.dtype = ccl_datatype_int8;
                 }
                 param.reduction = coll_param.reduction;
                 param.comm = comm;
@@ -574,7 +574,7 @@ ccl::status ccl_parallelizer::process(ccl_master_sched* sched) {
                                                                      coll_param.count * dtype_size,
                                                                      ccl_buffer_type::INDIRECT),
                                                           0, /* count */
-                                                          ccl_datatype_char);
+                                                          ccl_datatype_int8);
                 entry->set_field_fn<ccl_sched_entry_field_in_buf>(
                     ccl_parallelizer_prologue_get_buf, main_ctx, false);
                 entry->set_field_fn<ccl_sched_entry_field_cnt>(

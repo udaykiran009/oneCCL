@@ -1,3 +1,5 @@
+#if 0
+
 #pragma once
 
 template <class type>
@@ -8,7 +10,7 @@ struct type_printer {
 };
 
 template <>
-struct type_printer<ccl::bf16> {
+struct type_printer<ccl::bfloat16> {
     static constexpr const char* sparse_class_name() {
         return "sparse_allreduce_bf16";
     }
@@ -182,3 +184,5 @@ struct sparse_allreduce_strategy_impl {
 
     std::unique_ptr<IndicesDistributor> indices_distributor_impl;
 };
+
+#endif

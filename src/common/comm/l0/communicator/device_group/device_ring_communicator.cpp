@@ -30,7 +30,7 @@ void device_group_ring_communicator::visit(ccl::gpu_comm_attr& comm_attr) {
     this->set_comm_group_id(comm_attr.get_unique_id());
 }
 
-device_group_ring_communicator::coll_request_t device_group_ring_communicator::barrier(
+ccl::event device_group_ring_communicator::barrier(
     const ccl::stream::impl_value_t& stream,
     const ccl::barrier_attr& attr,
     const ccl::vector_class<ccl::event>& deps) {
@@ -38,7 +38,7 @@ device_group_ring_communicator::coll_request_t device_group_ring_communicator::b
 }
 
 /* allgatherv */
-device_group_ring_communicator::coll_request_t device_group_ring_communicator::allgatherv_impl(
+ccl::event device_group_ring_communicator::allgatherv_impl(
     const void* send_buf,
     size_t send_count,
     void* recv_buf,
@@ -50,7 +50,7 @@ device_group_ring_communicator::coll_request_t device_group_ring_communicator::a
     throw ccl::exception(std::string(__PRETTY_FUNCTION__) + " - is not implemented");
     return {};
 }
-device_group_ring_communicator::coll_request_t device_group_ring_communicator::allgatherv_impl(
+ccl::event device_group_ring_communicator::allgatherv_impl(
     const void* send_buf,
     size_t send_count,
     const ccl::vector_class<void*>& recv_bufs,
@@ -64,7 +64,7 @@ device_group_ring_communicator::coll_request_t device_group_ring_communicator::a
 }
 
 /* allreduce */
-device_group_ring_communicator::coll_request_t device_group_ring_communicator::allreduce_impl(
+ccl::event device_group_ring_communicator::allreduce_impl(
     const void* send_buf,
     void* recv_buf,
     size_t count,
@@ -78,7 +78,7 @@ device_group_ring_communicator::coll_request_t device_group_ring_communicator::a
 }
 
 /* alltoall */
-device_group_ring_communicator::coll_request_t device_group_ring_communicator::alltoall_impl(
+ccl::event device_group_ring_communicator::alltoall_impl(
     const void* send_buf,
     void* recv_buf,
     size_t count,
@@ -89,7 +89,7 @@ device_group_ring_communicator::coll_request_t device_group_ring_communicator::a
     throw ccl::exception(std::string(__PRETTY_FUNCTION__) + " - is not implemented");
     return {};
 }
-device_group_ring_communicator::coll_request_t device_group_ring_communicator::alltoall_impl(
+ccl::event device_group_ring_communicator::alltoall_impl(
     const ccl::vector_class<void*>& send_buf,
     const ccl::vector_class<void*>& recv_buf,
     size_t count,
@@ -102,7 +102,7 @@ device_group_ring_communicator::coll_request_t device_group_ring_communicator::a
 }
 
 /* alltoallv */
-device_group_ring_communicator::coll_request_t device_group_ring_communicator::alltoallv_impl(
+ccl::event device_group_ring_communicator::alltoallv_impl(
     const void* send_buf,
     const ccl::vector_class<size_t>& send_counts,
     void* recv_buf,
@@ -114,7 +114,7 @@ device_group_ring_communicator::coll_request_t device_group_ring_communicator::a
     throw ccl::exception(std::string(__PRETTY_FUNCTION__) + " - is not implemented");
     return {};
 }
-device_group_ring_communicator::coll_request_t device_group_ring_communicator::alltoallv_impl(
+ccl::event device_group_ring_communicator::alltoallv_impl(
     const ccl::vector_class<void*>& send_buf,
     const ccl::vector_class<size_t>& send_counts,
     ccl::vector_class<void*> recv_buf,
@@ -129,7 +129,7 @@ device_group_ring_communicator::coll_request_t device_group_ring_communicator::a
 }
 
 /* bcast */
-device_group_ring_communicator::coll_request_t device_group_ring_communicator::broadcast_impl(
+ccl::event device_group_ring_communicator::broadcast_impl(
     void* buf,
     size_t count,
     ccl::datatype dtype,
@@ -142,7 +142,7 @@ device_group_ring_communicator::coll_request_t device_group_ring_communicator::b
 }
 
 /* reduce */
-device_group_ring_communicator::coll_request_t device_group_ring_communicator::reduce_impl(
+ccl::event device_group_ring_communicator::reduce_impl(
     const void* send_buf,
     void* recv_buf,
     size_t count,
@@ -157,7 +157,7 @@ device_group_ring_communicator::coll_request_t device_group_ring_communicator::r
 }
 
 /* reduce_scatter */
-device_group_ring_communicator::coll_request_t device_group_ring_communicator::reduce_scatter_impl(
+ccl::event device_group_ring_communicator::reduce_scatter_impl(
     const void* send_buf,
     void* recv_buf,
     size_t recv_count,
@@ -171,7 +171,7 @@ device_group_ring_communicator::coll_request_t device_group_ring_communicator::r
 }
 
 /* sparse_allreduce */
-device_group_ring_communicator::coll_request_t
+ccl::event
 device_group_ring_communicator::sparse_allreduce_impl(const void* send_ind_buf,
                                                       size_t send_ind_count,
                                                       const void* send_val_buf,
@@ -190,129 +190,7 @@ device_group_ring_communicator::sparse_allreduce_impl(const void* send_ind_buf,
     return {};
 }
 
-DEVICE_COMM_INTERFACE_COLL_INSTANTIATIONS(device_group_ring_communicator, char);
-DEVICE_COMM_INTERFACE_COLL_INSTANTIATIONS(device_group_ring_communicator, int);
-DEVICE_COMM_INTERFACE_COLL_INSTANTIATIONS(device_group_ring_communicator, int64_t);
-DEVICE_COMM_INTERFACE_COLL_INSTANTIATIONS(device_group_ring_communicator, uint64_t);
-DEVICE_COMM_INTERFACE_COLL_INSTANTIATIONS(device_group_ring_communicator, float);
-DEVICE_COMM_INTERFACE_COLL_INSTANTIATIONS(device_group_ring_communicator, double);
-
+COMM_INTERFACE_COLL_INSTANTIATION(device_group_ring_communicator);
 #ifdef CCL_ENABLE_SYCL
-DEVICE_COMM_INTERFACE_COLL_CLASS_INSTANTIATIONS(device_group_ring_communicator,
-                                                cl::sycl::buffer<char COMMA 1>);
-DEVICE_COMM_INTERFACE_COLL_CLASS_INSTANTIATIONS(device_group_ring_communicator,
-                                                cl::sycl::buffer<int COMMA 1>);
-DEVICE_COMM_INTERFACE_COLL_CLASS_INSTANTIATIONS(device_group_ring_communicator,
-                                                cl::sycl::buffer<int64_t COMMA 1>);
-DEVICE_COMM_INTERFACE_COLL_CLASS_INSTANTIATIONS(device_group_ring_communicator,
-                                                cl::sycl::buffer<uint64_t COMMA 1>);
-DEVICE_COMM_INTERFACE_COLL_CLASS_INSTANTIATIONS(device_group_ring_communicator,
-                                                cl::sycl::buffer<float COMMA 1>);
-DEVICE_COMM_INTERFACE_COLL_CLASS_INSTANTIATIONS(device_group_ring_communicator,
-                                                cl::sycl::buffer<double COMMA 1>);
-#endif //CCL_ENABLE_SYCL
-
-DEVICE_COMM_INTERFACE_SPARSE_ALLREDUCE_EXPLICIT_INSTANTIATION(device_group_ring_communicator,
-                                                              char,
-                                                              char);
-DEVICE_COMM_INTERFACE_SPARSE_ALLREDUCE_EXPLICIT_INSTANTIATION(device_group_ring_communicator,
-                                                              char,
-                                                              int);
-DEVICE_COMM_INTERFACE_SPARSE_ALLREDUCE_EXPLICIT_INSTANTIATION(device_group_ring_communicator,
-                                                              char,
-                                                              ccl::bf16);
-DEVICE_COMM_INTERFACE_SPARSE_ALLREDUCE_EXPLICIT_INSTANTIATION(device_group_ring_communicator,
-                                                              char,
-                                                              float);
-DEVICE_COMM_INTERFACE_SPARSE_ALLREDUCE_EXPLICIT_INSTANTIATION(device_group_ring_communicator,
-                                                              char,
-                                                              double);
-DEVICE_COMM_INTERFACE_SPARSE_ALLREDUCE_EXPLICIT_INSTANTIATION(device_group_ring_communicator,
-                                                              char,
-                                                              int64_t);
-DEVICE_COMM_INTERFACE_SPARSE_ALLREDUCE_EXPLICIT_INSTANTIATION(device_group_ring_communicator,
-                                                              char,
-                                                              uint64_t);
-DEVICE_COMM_INTERFACE_SPARSE_ALLREDUCE_EXPLICIT_INSTANTIATION(device_group_ring_communicator,
-                                                              int,
-                                                              char);
-DEVICE_COMM_INTERFACE_SPARSE_ALLREDUCE_EXPLICIT_INSTANTIATION(device_group_ring_communicator,
-                                                              int,
-                                                              int);
-DEVICE_COMM_INTERFACE_SPARSE_ALLREDUCE_EXPLICIT_INSTANTIATION(device_group_ring_communicator,
-                                                              int,
-                                                              ccl::bf16);
-DEVICE_COMM_INTERFACE_SPARSE_ALLREDUCE_EXPLICIT_INSTANTIATION(device_group_ring_communicator,
-                                                              int,
-                                                              float);
-DEVICE_COMM_INTERFACE_SPARSE_ALLREDUCE_EXPLICIT_INSTANTIATION(device_group_ring_communicator,
-                                                              int,
-                                                              double);
-DEVICE_COMM_INTERFACE_SPARSE_ALLREDUCE_EXPLICIT_INSTANTIATION(device_group_ring_communicator,
-                                                              int,
-                                                              int64_t);
-DEVICE_COMM_INTERFACE_SPARSE_ALLREDUCE_EXPLICIT_INSTANTIATION(device_group_ring_communicator,
-                                                              int,
-                                                              uint64_t);
-DEVICE_COMM_INTERFACE_SPARSE_ALLREDUCE_EXPLICIT_INSTANTIATION(device_group_ring_communicator,
-                                                              int64_t,
-                                                              char);
-DEVICE_COMM_INTERFACE_SPARSE_ALLREDUCE_EXPLICIT_INSTANTIATION(device_group_ring_communicator,
-                                                              int64_t,
-                                                              int);
-DEVICE_COMM_INTERFACE_SPARSE_ALLREDUCE_EXPLICIT_INSTANTIATION(device_group_ring_communicator,
-                                                              int64_t,
-                                                              ccl::bf16);
-DEVICE_COMM_INTERFACE_SPARSE_ALLREDUCE_EXPLICIT_INSTANTIATION(device_group_ring_communicator,
-                                                              int64_t,
-                                                              float);
-DEVICE_COMM_INTERFACE_SPARSE_ALLREDUCE_EXPLICIT_INSTANTIATION(device_group_ring_communicator,
-                                                              int64_t,
-                                                              double);
-DEVICE_COMM_INTERFACE_SPARSE_ALLREDUCE_EXPLICIT_INSTANTIATION(device_group_ring_communicator,
-                                                              int64_t,
-                                                              int64_t);
-DEVICE_COMM_INTERFACE_SPARSE_ALLREDUCE_EXPLICIT_INSTANTIATION(device_group_ring_communicator,
-                                                              int64_t,
-                                                              uint64_t);
-DEVICE_COMM_INTERFACE_SPARSE_ALLREDUCE_EXPLICIT_INSTANTIATION(device_group_ring_communicator,
-                                                              uint64_t,
-                                                              char);
-DEVICE_COMM_INTERFACE_SPARSE_ALLREDUCE_EXPLICIT_INSTANTIATION(device_group_ring_communicator,
-                                                              uint64_t,
-                                                              int);
-DEVICE_COMM_INTERFACE_SPARSE_ALLREDUCE_EXPLICIT_INSTANTIATION(device_group_ring_communicator,
-                                                              uint64_t,
-                                                              ccl::bf16);
-DEVICE_COMM_INTERFACE_SPARSE_ALLREDUCE_EXPLICIT_INSTANTIATION(device_group_ring_communicator,
-                                                              uint64_t,
-                                                              float);
-DEVICE_COMM_INTERFACE_SPARSE_ALLREDUCE_EXPLICIT_INSTANTIATION(device_group_ring_communicator,
-                                                              uint64_t,
-                                                              double);
-DEVICE_COMM_INTERFACE_SPARSE_ALLREDUCE_EXPLICIT_INSTANTIATION(device_group_ring_communicator,
-                                                              uint64_t,
-                                                              int64_t);
-DEVICE_COMM_INTERFACE_SPARSE_ALLREDUCE_EXPLICIT_INSTANTIATION(device_group_ring_communicator,
-                                                              uint64_t,
-                                                              uint64_t);
-
-#ifdef CCL_ENABLE_SYCL
-DEVICE_COMM_INTERFACE_SPARSE_ALLREDUCE_EXPLICIT_CLASS_INSTANTIATION(
-    device_group_ring_communicator,
-    cl::sycl::buffer<int COMMA 1>,
-    cl::sycl::buffer<float COMMA 1>);
-DEVICE_COMM_INTERFACE_SPARSE_ALLREDUCE_EXPLICIT_CLASS_INSTANTIATION(
-    device_group_ring_communicator,
-    cl::sycl::buffer<int COMMA 1>,
-    cl::sycl::buffer<ccl::bf16 COMMA 1>);
-
-DEVICE_COMM_INTERFACE_SPARSE_ALLREDUCE_EXPLICIT_CLASS_INSTANTIATION(
-    device_group_ring_communicator,
-    cl::sycl::buffer<int64_t COMMA 1>,
-    cl::sycl::buffer<float COMMA 1>);
-DEVICE_COMM_INTERFACE_SPARSE_ALLREDUCE_EXPLICIT_CLASS_INSTANTIATION(
-    device_group_ring_communicator,
-    cl::sycl::buffer<int64_t COMMA 1>,
-    cl::sycl::buffer<ccl::bf16 COMMA 1>);
-#endif //CCL_ENABLE_SYCL
+SYCL_COMM_INTERFACE_COLL_INSTANTIATION(device_group_ring_communicator);
+#endif /* CCL_ENABLE_SYCL */

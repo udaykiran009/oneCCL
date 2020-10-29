@@ -6,7 +6,7 @@ namespace cluster_utils {
 
 inline global_sorted_plain_graphs extract_full_node_plain_graphs(
     std::ostream& out,
-    const ccl::cluster_device_indices_t& cluster_indices,
+    const ccl::cluster_device_indices_type& cluster_indices,
     const std::string& hostname,
     const detail::global_sorted_plain_graphs& cluster_graphs) {
     detail::global_sorted_plain_graphs ret;
@@ -19,7 +19,7 @@ inline global_sorted_plain_graphs extract_full_node_plain_graphs(
     }
 
     //iterate over all allied processes on the same host
-    const ccl::process_device_indices_t& processes = node_it->second;
+    const ccl::process_device_indices_type& processes = node_it->second;
     out << "Find processes count: " << processes.size() << " on node: " << hostname << std::endl;
     for (const auto& process_val : processes) {
         auto process_id = process_val.first;

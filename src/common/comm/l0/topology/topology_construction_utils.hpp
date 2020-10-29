@@ -42,17 +42,17 @@ void fill_adjacency_matrix_for_single_device_in_devices_by_cond(
         std::function<bool(const ccl::device_index_type&)>());
 
 plain_graph graph_resolver(const adjacency_matrix& matrix,
-                           const ccl::device_indices_t& device_indexes);
+                           const ccl::device_indices_type& device_indexes);
 plain_graph graph_resolver(const adjacency_matrix& matrix,
-                           const ccl::process_device_indices_t& per_process_device_indexes);
+                           const ccl::process_device_indices_type& per_process_device_indexes);
 plain_graph graph_resolver(const adjacency_matrix& matrix,
                            const ccl::process_aggregated_device_mask_t& per_process_device_masks);
 
 plain_graph_list graph_list_resolver(const adjacency_matrix& matrix,
-                                     const ccl::device_indices_t& device_indexes);
+                                     const ccl::device_indices_type& device_indexes);
 plain_graph_list graph_list_resolver(
     const adjacency_matrix& matrix,
-    const ccl::process_device_indices_t& per_process_device_indexes,
+    const ccl::process_device_indices_type& per_process_device_indexes,
     detail::p2p_rating_function ping);
 
 plain_graph_list graph_list_resolver(

@@ -60,17 +60,22 @@ ccl::status ccl_comp_reduce(const void* in_buf,
 
     size_t i;
     switch (dtype.idx()) {
-        case ccl::datatype::int8: CCL_REDUCE(char); break;
-        case ccl::datatype::int32: CCL_REDUCE(int); break;
+        case ccl::datatype::int8: CCL_REDUCE(int8_t); break;
+        case ccl::datatype::uint8: CCL_REDUCE(uint8_t); break;
+        case ccl::datatype::int16: CCL_REDUCE(int16_t); break;
+        case ccl::datatype::uint16: CCL_REDUCE(uint16_t); break;
+        case ccl::datatype::int32: CCL_REDUCE(int32_t); break;
+        case ccl::datatype::uint32: CCL_REDUCE(uint32_t); break;
+        case ccl::datatype::int64: CCL_REDUCE(int64_t); break;
+        case ccl::datatype::uint64: CCL_REDUCE(uint64_t); break;
+        case ccl::datatype::float16: CCL_FATAL("FP16 is unsupported yet"); break;
+        case ccl::datatype::float32: CCL_REDUCE(float); break;
+        case ccl::datatype::float64: CCL_REDUCE(double); break;
         case ccl::datatype::bfloat16:
             if (ccl::global_data::get().bf16_impl_type == ccl_bf16_none)
                 CCL_FATAL("CCL doesn't support reductions in BF16 on this CPU");
             ccl_bf16_reduce(in_buf, in_count, inout_buf, out_count, reduction);
             break;
-        case ccl::datatype::float32: CCL_REDUCE(float); break;
-        case ccl::datatype::float64: CCL_REDUCE(double); break;
-        case ccl::datatype::int64: CCL_REDUCE(int64_t); break;
-        case ccl::datatype::uint64: CCL_REDUCE(uint64_t); break;
         default: CCL_FATAL("unexpected value ", dtype.idx()); break;
     }
     return ccl::status::success;

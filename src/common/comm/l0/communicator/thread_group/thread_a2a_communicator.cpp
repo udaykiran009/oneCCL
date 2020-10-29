@@ -37,7 +37,7 @@ size_t thread_device_group_ring_communicator::group_size() const
 
 }
 */
-thread_device_group_a2a_communicator::coll_request_t thread_device_group_a2a_communicator::barrier(
+ccl::event thread_device_group_a2a_communicator::barrier(
     const ccl::stream::impl_value_t& stream,
     const ccl::barrier_attr& attr,
     const ccl::vector_class<ccl::event>& deps) {
@@ -45,7 +45,7 @@ thread_device_group_a2a_communicator::coll_request_t thread_device_group_a2a_com
 }
 
 /* allgatherv */
-thread_device_group_a2a_communicator::coll_request_t
+ccl::event
 thread_device_group_a2a_communicator::allgatherv_impl(const void* send_buf,
                                                       size_t send_count,
                                                       void* recv_buf,
@@ -57,7 +57,7 @@ thread_device_group_a2a_communicator::allgatherv_impl(const void* send_buf,
     throw ccl::exception(std::string(__PRETTY_FUNCTION__) + " - is not implemented");
     return {};
 }
-thread_device_group_a2a_communicator::coll_request_t
+ccl::event
 thread_device_group_a2a_communicator::allgatherv_impl(const void* send_buf,
                                                       size_t send_count,
                                                       const ccl::vector_class<void*>& recv_bufs,
@@ -72,7 +72,7 @@ thread_device_group_a2a_communicator::allgatherv_impl(const void* send_buf,
 }
 
 /* allreduce */
-thread_device_group_a2a_communicator::coll_request_t
+ccl::event
 thread_device_group_a2a_communicator::allreduce_impl(const void* send_buf,
                                                      void* recv_buf,
                                                      size_t count,
@@ -86,7 +86,7 @@ thread_device_group_a2a_communicator::allreduce_impl(const void* send_buf,
 }
 
 /* alltoall */
-thread_device_group_a2a_communicator::coll_request_t
+ccl::event
 thread_device_group_a2a_communicator::alltoall_impl(const void* send_buf,
                                                     void* recv_buf,
                                                     size_t count,
@@ -97,7 +97,7 @@ thread_device_group_a2a_communicator::alltoall_impl(const void* send_buf,
     throw ccl::exception(std::string(__PRETTY_FUNCTION__) + " - is not implemented");
     return {};
 }
-thread_device_group_a2a_communicator::coll_request_t
+ccl::event
 thread_device_group_a2a_communicator::alltoall_impl(const ccl::vector_class<void*>& send_buf,
                                                     const ccl::vector_class<void*>& recv_buf,
                                                     size_t count,
@@ -110,7 +110,7 @@ thread_device_group_a2a_communicator::alltoall_impl(const ccl::vector_class<void
 }
 
 /* alltoallv */
-thread_device_group_a2a_communicator::coll_request_t
+ccl::event
 thread_device_group_a2a_communicator::alltoallv_impl(const void* send_buf,
                                                      const ccl::vector_class<size_t>& send_counts,
                                                      void* recv_buf,
@@ -122,7 +122,7 @@ thread_device_group_a2a_communicator::alltoallv_impl(const void* send_buf,
     throw ccl::exception(std::string(__PRETTY_FUNCTION__) + " - is not implemented");
     return {};
 }
-thread_device_group_a2a_communicator::coll_request_t
+ccl::event
 thread_device_group_a2a_communicator::alltoallv_impl(const ccl::vector_class<void*>& send_buf,
                                                      const ccl::vector_class<size_t>& send_counts,
                                                      ccl::vector_class<void*> recv_buf,
@@ -137,7 +137,7 @@ thread_device_group_a2a_communicator::alltoallv_impl(const ccl::vector_class<voi
 }
 
 /* bcast */
-thread_device_group_a2a_communicator::coll_request_t
+ccl::event
 thread_device_group_a2a_communicator::broadcast_impl(void* buf,
                                                      size_t count,
                                                      ccl::datatype dtype,
@@ -150,7 +150,7 @@ thread_device_group_a2a_communicator::broadcast_impl(void* buf,
 }
 
 /* reduce */
-thread_device_group_a2a_communicator::coll_request_t
+ccl::event
 thread_device_group_a2a_communicator::reduce_impl(const void* send_buf,
                                                   void* recv_buf,
                                                   size_t count,
@@ -165,7 +165,7 @@ thread_device_group_a2a_communicator::reduce_impl(const void* send_buf,
 }
 
 /* reduce_scatter */
-thread_device_group_a2a_communicator::coll_request_t
+ccl::event
 thread_device_group_a2a_communicator::reduce_scatter_impl(
     const void* send_buf,
     void* recv_buf,
@@ -180,7 +180,7 @@ thread_device_group_a2a_communicator::reduce_scatter_impl(
 }
 
 /* sparse_allreduce */
-thread_device_group_a2a_communicator::coll_request_t
+ccl::event
 thread_device_group_a2a_communicator::sparse_allreduce_impl(
     const void* send_ind_buf,
     size_t send_ind_count,
@@ -200,129 +200,7 @@ thread_device_group_a2a_communicator::sparse_allreduce_impl(
     return {};
 }
 
-DEVICE_COMM_INTERFACE_COLL_INSTANTIATIONS(thread_device_group_a2a_communicator, char);
-DEVICE_COMM_INTERFACE_COLL_INSTANTIATIONS(thread_device_group_a2a_communicator, int);
-DEVICE_COMM_INTERFACE_COLL_INSTANTIATIONS(thread_device_group_a2a_communicator, int64_t);
-DEVICE_COMM_INTERFACE_COLL_INSTANTIATIONS(thread_device_group_a2a_communicator, uint64_t);
-DEVICE_COMM_INTERFACE_COLL_INSTANTIATIONS(thread_device_group_a2a_communicator, float);
-DEVICE_COMM_INTERFACE_COLL_INSTANTIATIONS(thread_device_group_a2a_communicator, double);
-
+COMM_INTERFACE_COLL_INSTANTIATION(thread_device_group_a2a_communicator);
 #ifdef CCL_ENABLE_SYCL
-DEVICE_COMM_INTERFACE_COLL_CLASS_INSTANTIATIONS(thread_device_group_a2a_communicator,
-                                                cl::sycl::buffer<char COMMA 1>);
-DEVICE_COMM_INTERFACE_COLL_CLASS_INSTANTIATIONS(thread_device_group_a2a_communicator,
-                                                cl::sycl::buffer<int COMMA 1>);
-DEVICE_COMM_INTERFACE_COLL_CLASS_INSTANTIATIONS(thread_device_group_a2a_communicator,
-                                                cl::sycl::buffer<int64_t COMMA 1>);
-DEVICE_COMM_INTERFACE_COLL_CLASS_INSTANTIATIONS(thread_device_group_a2a_communicator,
-                                                cl::sycl::buffer<uint64_t COMMA 1>);
-DEVICE_COMM_INTERFACE_COLL_CLASS_INSTANTIATIONS(thread_device_group_a2a_communicator,
-                                                cl::sycl::buffer<float COMMA 1>);
-DEVICE_COMM_INTERFACE_COLL_CLASS_INSTANTIATIONS(thread_device_group_a2a_communicator,
-                                                cl::sycl::buffer<double COMMA 1>);
-#endif //CCL_ENABLE_SYCL
-
-DEVICE_COMM_INTERFACE_SPARSE_ALLREDUCE_EXPLICIT_INSTANTIATION(thread_device_group_a2a_communicator,
-                                                              char,
-                                                              char);
-DEVICE_COMM_INTERFACE_SPARSE_ALLREDUCE_EXPLICIT_INSTANTIATION(thread_device_group_a2a_communicator,
-                                                              char,
-                                                              int);
-DEVICE_COMM_INTERFACE_SPARSE_ALLREDUCE_EXPLICIT_INSTANTIATION(thread_device_group_a2a_communicator,
-                                                              char,
-                                                              ccl::bf16);
-DEVICE_COMM_INTERFACE_SPARSE_ALLREDUCE_EXPLICIT_INSTANTIATION(thread_device_group_a2a_communicator,
-                                                              char,
-                                                              float);
-DEVICE_COMM_INTERFACE_SPARSE_ALLREDUCE_EXPLICIT_INSTANTIATION(thread_device_group_a2a_communicator,
-                                                              char,
-                                                              double);
-DEVICE_COMM_INTERFACE_SPARSE_ALLREDUCE_EXPLICIT_INSTANTIATION(thread_device_group_a2a_communicator,
-                                                              char,
-                                                              int64_t);
-DEVICE_COMM_INTERFACE_SPARSE_ALLREDUCE_EXPLICIT_INSTANTIATION(thread_device_group_a2a_communicator,
-                                                              char,
-                                                              uint64_t);
-DEVICE_COMM_INTERFACE_SPARSE_ALLREDUCE_EXPLICIT_INSTANTIATION(thread_device_group_a2a_communicator,
-                                                              int,
-                                                              char);
-DEVICE_COMM_INTERFACE_SPARSE_ALLREDUCE_EXPLICIT_INSTANTIATION(thread_device_group_a2a_communicator,
-                                                              int,
-                                                              int);
-DEVICE_COMM_INTERFACE_SPARSE_ALLREDUCE_EXPLICIT_INSTANTIATION(thread_device_group_a2a_communicator,
-                                                              int,
-                                                              ccl::bf16);
-DEVICE_COMM_INTERFACE_SPARSE_ALLREDUCE_EXPLICIT_INSTANTIATION(thread_device_group_a2a_communicator,
-                                                              int,
-                                                              float);
-DEVICE_COMM_INTERFACE_SPARSE_ALLREDUCE_EXPLICIT_INSTANTIATION(thread_device_group_a2a_communicator,
-                                                              int,
-                                                              double);
-DEVICE_COMM_INTERFACE_SPARSE_ALLREDUCE_EXPLICIT_INSTANTIATION(thread_device_group_a2a_communicator,
-                                                              int,
-                                                              int64_t);
-DEVICE_COMM_INTERFACE_SPARSE_ALLREDUCE_EXPLICIT_INSTANTIATION(thread_device_group_a2a_communicator,
-                                                              int,
-                                                              uint64_t);
-DEVICE_COMM_INTERFACE_SPARSE_ALLREDUCE_EXPLICIT_INSTANTIATION(thread_device_group_a2a_communicator,
-                                                              int64_t,
-                                                              char);
-DEVICE_COMM_INTERFACE_SPARSE_ALLREDUCE_EXPLICIT_INSTANTIATION(thread_device_group_a2a_communicator,
-                                                              int64_t,
-                                                              int);
-DEVICE_COMM_INTERFACE_SPARSE_ALLREDUCE_EXPLICIT_INSTANTIATION(thread_device_group_a2a_communicator,
-                                                              int64_t,
-                                                              ccl::bf16);
-DEVICE_COMM_INTERFACE_SPARSE_ALLREDUCE_EXPLICIT_INSTANTIATION(thread_device_group_a2a_communicator,
-                                                              int64_t,
-                                                              float);
-DEVICE_COMM_INTERFACE_SPARSE_ALLREDUCE_EXPLICIT_INSTANTIATION(thread_device_group_a2a_communicator,
-                                                              int64_t,
-                                                              double);
-DEVICE_COMM_INTERFACE_SPARSE_ALLREDUCE_EXPLICIT_INSTANTIATION(thread_device_group_a2a_communicator,
-                                                              int64_t,
-                                                              int64_t);
-DEVICE_COMM_INTERFACE_SPARSE_ALLREDUCE_EXPLICIT_INSTANTIATION(thread_device_group_a2a_communicator,
-                                                              int64_t,
-                                                              uint64_t);
-DEVICE_COMM_INTERFACE_SPARSE_ALLREDUCE_EXPLICIT_INSTANTIATION(thread_device_group_a2a_communicator,
-                                                              uint64_t,
-                                                              char);
-DEVICE_COMM_INTERFACE_SPARSE_ALLREDUCE_EXPLICIT_INSTANTIATION(thread_device_group_a2a_communicator,
-                                                              uint64_t,
-                                                              int);
-DEVICE_COMM_INTERFACE_SPARSE_ALLREDUCE_EXPLICIT_INSTANTIATION(thread_device_group_a2a_communicator,
-                                                              uint64_t,
-                                                              ccl::bf16);
-DEVICE_COMM_INTERFACE_SPARSE_ALLREDUCE_EXPLICIT_INSTANTIATION(thread_device_group_a2a_communicator,
-                                                              uint64_t,
-                                                              float);
-DEVICE_COMM_INTERFACE_SPARSE_ALLREDUCE_EXPLICIT_INSTANTIATION(thread_device_group_a2a_communicator,
-                                                              uint64_t,
-                                                              double);
-DEVICE_COMM_INTERFACE_SPARSE_ALLREDUCE_EXPLICIT_INSTANTIATION(thread_device_group_a2a_communicator,
-                                                              uint64_t,
-                                                              int64_t);
-DEVICE_COMM_INTERFACE_SPARSE_ALLREDUCE_EXPLICIT_INSTANTIATION(thread_device_group_a2a_communicator,
-                                                              uint64_t,
-                                                              uint64_t);
-
-#ifdef CCL_ENABLE_SYCL
-DEVICE_COMM_INTERFACE_SPARSE_ALLREDUCE_EXPLICIT_CLASS_INSTANTIATION(
-    thread_device_group_a2a_communicator,
-    cl::sycl::buffer<int COMMA 1>,
-    cl::sycl::buffer<float COMMA 1>);
-DEVICE_COMM_INTERFACE_SPARSE_ALLREDUCE_EXPLICIT_CLASS_INSTANTIATION(
-    thread_device_group_a2a_communicator,
-    cl::sycl::buffer<int COMMA 1>,
-    cl::sycl::buffer<ccl::bf16 COMMA 1>);
-
-DEVICE_COMM_INTERFACE_SPARSE_ALLREDUCE_EXPLICIT_CLASS_INSTANTIATION(
-    thread_device_group_a2a_communicator,
-    cl::sycl::buffer<int64_t COMMA 1>,
-    cl::sycl::buffer<float COMMA 1>);
-DEVICE_COMM_INTERFACE_SPARSE_ALLREDUCE_EXPLICIT_CLASS_INSTANTIATION(
-    thread_device_group_a2a_communicator,
-    cl::sycl::buffer<int64_t COMMA 1>,
-    cl::sycl::buffer<ccl::bf16 COMMA 1>);
-#endif //CCL_ENABLE_SYCL
+SYCL_COMM_INTERFACE_COLL_INSTANTIATION(thread_device_group_a2a_communicator);
+#endif /* CCL_ENABLE_SYCL */

@@ -17,7 +17,7 @@ detail::adjacency_matrix thread_group_ring_topology::build_p2p_capability_matrix
     std::ostream& out,
     const ccl::process_aggregated_device_mask_t& per_thread_device_masks,
     detail::p2p_rating_function ping) {
-    ccl::process_device_indices_t per_thread_device_indices;
+    ccl::process_device_indices_type per_thread_device_indices;
     for (const auto& mask : per_thread_device_masks) {
         per_thread_device_indices.insert(
             { mask.first, ccl_device_driver::get_device_indices(mask.second) });
@@ -28,7 +28,7 @@ detail::adjacency_matrix thread_group_ring_topology::build_p2p_capability_matrix
 
 detail::adjacency_matrix thread_group_ring_topology::build_p2p_capability_matrix(
     std::ostream& out,
-    const ccl::process_device_indices_t& per_thread_device_indices,
+    const ccl::process_device_indices_type& per_thread_device_indices,
     detail::p2p_rating_function ping) {
     // Build adjacency matrix with P2P capability:
     // Rows & columnn is a device IDs ( froms 0 to CCL_GPU_DEVICES_AFFINITY_MASK_SIZE)
@@ -44,12 +44,12 @@ detail::adjacency_matrix thread_group_ring_topology::build_p2p_capability_matrix
     out << "Build adjacency matrix by: " << thread_group_ring_topology::name()
         << " - threads count: " << per_thread_device_indices.size() << std::endl;
 
-    ccl::device_indices_t aggregated_thread_indices = std::accumulate(
+    ccl::device_indices_type aggregated_thread_indices = std::accumulate(
         per_thread_device_indices.begin(),
         per_thread_device_indices.end(),
-        ccl::device_indices_t(),
-        [](ccl::device_indices_t& partial_mask,
-           const std::pair<size_t, ccl::device_indices_t>& thread_mask) {
+        ccl::device_indices_type(),
+        [](ccl::device_indices_type& partial_mask,
+           const std::pair<size_t, ccl::device_indices_type>& thread_mask) {
             partial_mask.insert(thread_mask.second.begin(), thread_mask.second.end());
             return partial_mask;
         });
@@ -66,7 +66,7 @@ detail::adjacency_matrix thread_group_ring_topology::build_p2p_capability_matrix
 bool thread_group_ring_topology::build(
     std::ostream& out,
     const ccl::context_comm_addr& comm_addr,
-    const ccl::process_device_indices_t& per_thread_device_indices,
+    const ccl::process_device_indices_type& per_thread_device_indices,
     const detail::adjacency_matrix& matrix,
     detail::p2p_rating_function ping) {
     out << "\n/*************\"" << thread_group_ring_topology::name()
@@ -98,7 +98,7 @@ bool thread_group_ring_topology::build(
     const ccl::process_aggregated_device_mask_t& per_thread_device_masks,
     const detail::adjacency_matrix& matrix,
     detail::p2p_rating_function ping) {
-    ccl::process_device_indices_t per_thread_device_indices;
+    ccl::process_device_indices_type per_thread_device_indices;
     for (const auto& mask : per_thread_device_masks) {
         per_thread_device_indices.insert(
             { mask.first, ccl_device_driver::get_device_indices(mask.second) });
@@ -110,7 +110,7 @@ bool thread_group_ring_topology::build(
 bool thread_group_ring_topology::build_specific(
     std::ostream& out,
     const ccl::context_comm_addr& comm_addr,
-    const ccl::process_device_indices_t& per_thread_device_indices,
+    const ccl::process_device_indices_type& per_thread_device_indices,
     const detail::plain_graph& id_ring) {
     size_t ring_index = 0;
     constexpr ccl::device_topology_type class_id = ccl::device_topology_type::ring;
@@ -239,7 +239,7 @@ bool thread_group_ring_topology::build_specific(
 bool thread_group_ring_topology::build_scale_up_specific(
     std::ostream& out,
     const ccl::context_comm_addr& comm_addr,
-    const ccl::process_device_indices_t& per_thread_device_indicess,
+    const ccl::process_device_indices_type& per_thread_device_indicess,
     const detail::plain_graph_list& graph_list) {
     size_t ring_index = 0;
     constexpr ccl::device_topology_type class_id = ccl::device_topology_type::ring;
@@ -318,7 +318,7 @@ bool thread_group_ring_topology::build_scale_up_specific(
     std::map<size_t /*graph_num*/, size_t /*offset*/>
         index_offset_for_graphs; // calculate indexed devices count in each graph
 
-    ccl::device_indices_t total_device_indices;
+    ccl::device_indices_type total_device_indices;
     for (const auto& graph : graph_list) {
         total_device_indices.insert(graph.begin(), graph.end());
     }

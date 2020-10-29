@@ -5,7 +5,7 @@
 #include "common/utils/enums.hpp"
 #include "exec/exec.hpp"
 
-ccl_datatype ccl_datatype_char;
+ccl_datatype ccl_datatype_int8;
 
 ccl::datatype& operator++(ccl::datatype& d) {
     using IntType = typename std::underlying_type<ccl::datatype>::type;
@@ -34,7 +34,7 @@ ccl_datatype_storage::ccl_datatype_storage() {
 
     for (ccl::datatype idx = ccl::datatype::int8; idx <= ccl::datatype::last_predefined; idx++) {
         /* fill table with predefined datatypes */
-        size = (idx == ccl::datatype::int8)       ? sizeof(char)
+        size = (idx == ccl::datatype::int8)       ? sizeof(int8_t)
                : (idx == ccl::datatype::uint8)    ? sizeof(uint8_t)
                : (idx == ccl::datatype::int16)    ? sizeof(int16_t)
                : (idx == ccl::datatype::uint16)   ? sizeof(uint16_t)
@@ -57,10 +57,10 @@ ccl_datatype_storage::ccl_datatype_storage() {
                    : (idx == ccl::datatype::uint32)   ? "UINT32"
                    : (idx == ccl::datatype::int64)    ? "INT64"
                    : (idx == ccl::datatype::uint64)   ? "UINT64"
-                   : (idx == ccl::datatype::float16)  ? "FLOAT16"
-                   : (idx == ccl::datatype::float32)  ? "FLOAT"
-                   : (idx == ccl::datatype::float64)  ? "DOUBLE"
-                   : (idx == ccl::datatype::bfloat16) ? "BFLOAT16"
+                   : (idx == ccl::datatype::float16)  ? "FP16"
+                   : (idx == ccl::datatype::float32)  ? "FP32"
+                   : (idx == ccl::datatype::float64)  ? "FP64"
+                   : (idx == ccl::datatype::bfloat16) ? "BF16"
                                                       : 0;
 
         create_internal(predefined_table, idx, size, name_str);
@@ -79,7 +79,7 @@ ccl_datatype_storage::ccl_datatype_storage() {
                          name_str);
     }
 
-    ccl_datatype_char = get(ccl::datatype::int8);
+    ccl_datatype_int8 = get(ccl::datatype::int8);
 }
 
 ccl_datatype_storage::~ccl_datatype_storage() {

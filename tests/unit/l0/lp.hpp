@@ -1,39 +1,48 @@
 #define once
 
-using bf16 = ushort;
+#include "oneapi/ccl/ccl_lp_types.hpp"
 
-#ifdef LIFT_EMBARGO
+using bfloat16 = ccl::bfloat16;
 
-#include "../../../src/comp/bf16/bf16.hpp"
+#ifdef CCL_GPU_BF16_TRUNCATE
 
-bf16 fp32_to_bf16(float val) {
-  // Host-side conversion with RNE rounding - call routines from bf16.hpp
-  void *fp32_val_ptr = reinterpret_cast<void *>(&val);
-  ushort res = 0;
-  void *bf16_res_ptr = reinterpret_cast<void *>(&res);
-  ccl_convert_fp32_to_bf16_arrays(fp32_val_ptr, bf16_res_ptr, 1);
-  return res;
+bfloat16 fp32_to_bf16(float val) {
+  // Truncate
+  //bfloat16 res(0);
+  // uint32_t int_val = val >> 16;
+  // return bfloat16(int_val);
+  //return (reinterpret_cast<bfloat16*>(&val))[1];
+
+  uint16_t int_val = 0;
+  memcpy(&int_val, &val + 2, 2);
+  return bfloat16(int_val);
 }
 
-float bf16_to_fp32(bf16 val) {
-  // Host-side conversion - call routines from bf16.hpp
-  void *bf16_val_ptr = reinterpret_cast<void *>(&val);
-  float res = 0.0;
-  float *fp32_res_ptr = &res;
-  ccl_convert_bf16_to_fp32_arrays(bf16_val_ptr, fp32_res_ptr, 1);
-  return res;
+float bf16_to_fp32(bfloat16 val) {
+  uint32_t temp = static_cast<uint32_t>(val.data) << 16;
+  return *(reinterpret_cast<float *>(&temp));
 }
 
 #else
 
-float bf16_to_fp32(bf16 val) {
-  uint32_t temp = static_cast<uint32_t>(val) << 16;
-  return *(reinterpret_cast<float *>(&temp));
+#include "../../../src/comp/bf16/bf16.hpp"
+
+bfloat16 fp32_to_bf16(float val) {
+  // Host-side conversion with RNE rounding - call routines from bf16.hpp
+  void *fp32_val_ptr = reinterpret_cast<void *>(&val);
+  bfloat16 res(0);
+  void *bf16_res_ptr = reinterpret_cast<void *>(&res.data);
+  ccl_convert_fp32_to_bf16_arrays(fp32_val_ptr, bf16_res_ptr, 1);
+  return res;
 }
 
-bf16 fp32_to_bf16(float val) {
-  // Truncate
-  return (reinterpret_cast<bf16 *>(&val))[1];
+float bf16_to_fp32(bfloat16 val) {
+  // Host-side conversion - call routines from bf16.hpp
+  void *bf16_val_ptr = reinterpret_cast<void *>(&val.data);
+  float res = 0.0;
+  float *fp32_res_ptr = &res;
+  ccl_convert_bf16_to_fp32_arrays(bf16_val_ptr, fp32_res_ptr, 1);
+  return res;
 }
 
 #endif

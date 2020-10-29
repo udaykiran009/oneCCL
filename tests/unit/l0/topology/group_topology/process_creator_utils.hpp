@@ -240,7 +240,7 @@ TEST_F(router_fixture, simple_merge_test)
             }
         }
 
-        std::map<size_t, ccl::process_device_indices_t> scaleout_devices;
+        std::map<size_t, ccl::process_device_indices_type> scaleout_devices;
         for (size_t pr_index = 0; pr_index < proces_num; pr_index++)
         {
             scaleout_devices[pr_index] =
@@ -253,7 +253,7 @@ TEST_F(router_fixture, simple_merge_test)
             UT_ASSERT(scaleout_devices[pr_index].empty(), "No scaleup devices failed");
         }
 
-        std::map<size_t, ccl::process_device_indices_t> ipc_devices;
+        std::map<size_t, ccl::process_device_indices_type> ipc_devices;
         for (size_t pr_index = 0; pr_index < proces_num; pr_index++)
         {
             ipc_devices[pr_index] =
@@ -266,7 +266,7 @@ TEST_F(router_fixture, simple_merge_test)
             UT_ASSERT(!ipc_devices[pr_index].empty(), "Not empty ipc devices failed");
         }
         {
-            std::map<size_t, ccl::process_device_indices_t> to_check{
+            std::map<size_t, ccl::process_device_indices_type> to_check{
                         {0,
                             {
                                 {1,
@@ -317,16 +317,16 @@ TEST_F(router_fixture, simple_merge_test)
         }
 
         /**/
-        std::map<size_t, ccl::process_device_indices_t> ipc_src;
-        std::map<size_t, ccl::process_device_indices_t> ipc_dst;
+        std::map<size_t, ccl::process_device_indices_type> ipc_src;
+        std::map<size_t, ccl::process_device_indices_type> ipc_dst;
         for (size_t pr_index = 0; pr_index < proces_num; pr_index++)
         {
             const colored_plain_graph_list &local_rings =
                         final_global_merged_cluster_graphs[pr_index];
             for (const colored_plain_graph& graph : local_rings)
             {
-                ccl::process_device_indices_t ipc_src_local;
-                ccl::process_device_indices_t ipc_dst_local;
+                ccl::process_device_indices_type ipc_src_local;
+                ccl::process_device_indices_type ipc_dst_local;
 
                 native::detail::separate_ipc_devices(ipc_devices[pr_index], pr_index,
                                      proces_num, graph, ipc_src_local,
@@ -337,7 +337,7 @@ TEST_F(router_fixture, simple_merge_test)
             }
         }
         {
-            std::map<size_t, ccl::process_device_indices_t> to_check_src{
+            std::map<size_t, ccl::process_device_indices_type> to_check_src{
                         {0,
                             {
                                 {0,
@@ -365,7 +365,7 @@ TEST_F(router_fixture, simple_merge_test)
                                 },
                             }
                         }};
-            std::map<size_t, ccl::process_device_indices_t> to_check_dst{
+            std::map<size_t, ccl::process_device_indices_type> to_check_dst{
                         {0,
                             {
                                 {1,
@@ -653,7 +653,7 @@ TEST_F(router_fixture, simple_multithreaded_merge_test)
             final_global_merged_cluster_graphs[pr_index] = local_final_rings;
         }
 
-        std::map<size_t, ccl::process_device_indices_t> scaleout_devices;
+        std::map<size_t, ccl::process_device_indices_type> scaleout_devices;
         for (size_t pr_index = 0; pr_index < proces_num; pr_index++)
         {
             scaleout_devices[pr_index] =
@@ -665,7 +665,7 @@ TEST_F(router_fixture, simple_multithreaded_merge_test)
                                                                 ss);
         }
         {
-            std::map<size_t, ccl::process_device_indices_t> to_check{
+            std::map<size_t, ccl::process_device_indices_type> to_check{
                         {0,
                             {
                             }
@@ -685,7 +685,7 @@ TEST_F(router_fixture, simple_multithreaded_merge_test)
             }
         }
 
-        std::map<size_t, ccl::process_device_indices_t> ipc_devices;
+        std::map<size_t, ccl::process_device_indices_type> ipc_devices;
         for (size_t pr_index = 0; pr_index < proces_num; pr_index++)
         {
             ipc_devices[pr_index] =
@@ -698,7 +698,7 @@ TEST_F(router_fixture, simple_multithreaded_merge_test)
             UT_ASSERT(!ipc_devices[pr_index].empty(), "Not empty ipc devices failed");
         }
         {
-            std::map<size_t, ccl::process_device_indices_t> to_check{
+            std::map<size_t, ccl::process_device_indices_type> to_check{
                         {0,
                             {
                                 {1,
@@ -929,7 +929,7 @@ TEST_F(router_fixture, simple_scaleout_test)
             }
         }
 
-        std::map<size_t, ccl::process_device_indices_t> scaleout_devices;
+        std::map<size_t, ccl::process_device_indices_type> scaleout_devices;
         for (size_t pr_index = 0; pr_index < proces_num; pr_index++)
         {
             scaleout_devices[pr_index] =
@@ -942,7 +942,7 @@ TEST_F(router_fixture, simple_scaleout_test)
             UT_ASSERT(!scaleout_devices[pr_index].empty(), "Not emptyscaleup devices failed");
         }
         {
-            std::map<size_t, ccl::process_device_indices_t> to_check{
+            std::map<size_t, ccl::process_device_indices_type> to_check{
                         {0,
                             {
                                 {1,
@@ -992,7 +992,7 @@ TEST_F(router_fixture, simple_scaleout_test)
             }
         }
 
-        std::map<size_t, ccl::process_device_indices_t> ipc_devices;
+        std::map<size_t, ccl::process_device_indices_type> ipc_devices;
         for (size_t pr_index = 0; pr_index < proces_num; pr_index++)
         {
             ipc_devices[pr_index] =
@@ -1005,7 +1005,7 @@ TEST_F(router_fixture, simple_scaleout_test)
             UT_ASSERT(ipc_devices[pr_index].empty(), "No ipc devices failed");
         }
         {
-            std::map<size_t, ccl::process_device_indices_t> to_check{
+            std::map<size_t, ccl::process_device_indices_type> to_check{
                         {0,
                             {
                             }
@@ -1263,7 +1263,7 @@ TEST_F(router_fixture, simple_scaleout_multithreaded_merge_test)
             final_global_merged_cluster_graphs[pr_index] = local_final_rings;
         }
 
-        std::map<size_t, ccl::process_device_indices_t> scaleout_devices;
+        std::map<size_t, ccl::process_device_indices_type> scaleout_devices;
         for (size_t pr_index = 0; pr_index < proces_num; pr_index++)
         {
             scaleout_devices[pr_index] =
@@ -1275,7 +1275,7 @@ TEST_F(router_fixture, simple_scaleout_multithreaded_merge_test)
                                                                 ss);
         }
         {
-            std::map<size_t, ccl::process_device_indices_t> to_check{
+            std::map<size_t, ccl::process_device_indices_type> to_check{
                         {0,
                             {
                                 {1,
@@ -1325,7 +1325,7 @@ TEST_F(router_fixture, simple_scaleout_multithreaded_merge_test)
             }
         }
 
-        std::map<size_t, ccl::process_device_indices_t> ipc_devices;
+        std::map<size_t, ccl::process_device_indices_type> ipc_devices;
         for (size_t pr_index = 0; pr_index < proces_num; pr_index++)
         {
             ipc_devices[pr_index] =
@@ -1337,7 +1337,7 @@ TEST_F(router_fixture, simple_scaleout_multithreaded_merge_test)
                                                                 ss);
         }
         {
-            std::map<size_t, ccl::process_device_indices_t> to_check{
+            std::map<size_t, ccl::process_device_indices_type> to_check{
                         {0,
                             {
                             }
@@ -1632,7 +1632,7 @@ TEST_F(router_fixture, symmetric_scaleout_test)
             }
         }
 
-        std::map<size_t, ccl::process_device_indices_t> scaleout_devices;
+        std::map<size_t, ccl::process_device_indices_type> scaleout_devices;
         for (size_t pr_index = 0; pr_index < proces_num; pr_index++)
         {
             scaleout_devices[pr_index] =
@@ -1645,7 +1645,7 @@ TEST_F(router_fixture, symmetric_scaleout_test)
             UT_ASSERT(!scaleout_devices[pr_index].empty(), "Not emptyscaleup devices failed");
         }
         {
-            std::map<size_t, ccl::process_device_indices_t> to_check{
+            std::map<size_t, ccl::process_device_indices_type> to_check{
                         {0,
                             {
                                 {3,
@@ -1689,7 +1689,7 @@ TEST_F(router_fixture, symmetric_scaleout_test)
             }
         }
 
-        std::map<size_t, ccl::process_device_indices_t> ipc_devices;
+        std::map<size_t, ccl::process_device_indices_type> ipc_devices;
         for (size_t pr_index = 0; pr_index < proces_num; pr_index++)
         {
             ipc_devices[pr_index] =
@@ -1701,7 +1701,7 @@ TEST_F(router_fixture, symmetric_scaleout_test)
                                                                 ss);
         }
         {
-            std::map<size_t, ccl::process_device_indices_t> to_check{
+            std::map<size_t, ccl::process_device_indices_type> to_check{
                         {0,
                             {
                                 {1,
@@ -2065,7 +2065,7 @@ TEST_F(router_fixture, symmetric_scaleout_multithreaded_merge_test)
             final_global_merged_cluster_graphs[pr_index] = local_final_rings;
         }
 
-        std::map<size_t, ccl::process_device_indices_t> scaleout_devices;
+        std::map<size_t, ccl::process_device_indices_type> scaleout_devices;
         for (size_t pr_index = 0; pr_index < proces_num; pr_index++)
         {
             scaleout_devices[pr_index] =
@@ -2077,7 +2077,7 @@ TEST_F(router_fixture, symmetric_scaleout_multithreaded_merge_test)
                                                                 ss);
         }
         {
-            std::map<size_t, ccl::process_device_indices_t> to_check{
+            std::map<size_t, ccl::process_device_indices_type> to_check{
                         {0,
                             {
                             }
@@ -2111,7 +2111,7 @@ TEST_F(router_fixture, symmetric_scaleout_multithreaded_merge_test)
             }
         }
 
-        std::map<size_t, ccl::process_device_indices_t> ipc_devices;
+        std::map<size_t, ccl::process_device_indices_type> ipc_devices;
         for (size_t pr_index = 0; pr_index < proces_num; pr_index++)
         {
             ipc_devices[pr_index] =
@@ -2123,7 +2123,7 @@ TEST_F(router_fixture, symmetric_scaleout_multithreaded_merge_test)
                                                                 ss);
         }
         {
-            std::map<size_t, ccl::process_device_indices_t> to_check{
+            std::map<size_t, ccl::process_device_indices_type> to_check{
                         {0,
                             {
                                 {process_index,
@@ -2460,7 +2460,7 @@ TEST_F(router_fixture, unsymmetric_scaleout_test)
             }
         }
 
-        std::map<size_t, ccl::process_device_indices_t> scaleout_devices;
+        std::map<size_t, ccl::process_device_indices_type> scaleout_devices;
         for (size_t pr_index = 0; pr_index < proces_num; pr_index++)
         {
             scaleout_devices[pr_index] =
@@ -2472,7 +2472,7 @@ TEST_F(router_fixture, unsymmetric_scaleout_test)
                                                                 ss);
         }
         {
-            std::map<size_t, ccl::process_device_indices_t> to_check{
+            std::map<size_t, ccl::process_device_indices_type> to_check{
                         {0,
                             {
                                 {3,
@@ -2516,7 +2516,7 @@ TEST_F(router_fixture, unsymmetric_scaleout_test)
             }
         }
 
-                std::map<size_t, ccl::process_device_indices_t> ipc_devices;
+                std::map<size_t, ccl::process_device_indices_type> ipc_devices;
         for (size_t pr_index = 0; pr_index < proces_num; pr_index++)
         {
             ipc_devices[pr_index] =
@@ -2528,7 +2528,7 @@ TEST_F(router_fixture, unsymmetric_scaleout_test)
                                                                 ss);
         }
         {
-            std::map<size_t, ccl::process_device_indices_t> to_check{
+            std::map<size_t, ccl::process_device_indices_type> to_check{
                         {0,
                             {
                                 {process_index,

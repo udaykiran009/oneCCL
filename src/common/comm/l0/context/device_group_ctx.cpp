@@ -14,7 +14,7 @@ namespace native {
 
 std::shared_ptr<device_group_context> device_group_context::create(
     const ccl::context_comm_addr& comm_addr,
-    const ccl::device_indices_t& group_device_ids,
+    const ccl::device_indices_type& group_device_ids,
     device_storage& devices) {
     std::shared_ptr<device_group_context> ret(
         new device_group_context(comm_addr, group_device_ids));
@@ -72,7 +72,7 @@ std::shared_ptr<device_group_context> device_group_context::create(
 }
 
 device_group_context::device_group_context(const ccl::context_comm_addr& comm_addr,
-                                           const ccl::device_indices_t& group_device_ids)
+                                           const ccl::device_indices_type& group_device_ids)
         : scaling_context_base(),
           device_indices(group_device_ids),
           context_addr(comm_addr) {
@@ -82,7 +82,7 @@ device_group_context::device_group_context(const ccl::context_comm_addr& comm_ad
 
 device_group_context::~device_group_context() {}
 
-const ccl::device_indices_t& device_group_context::get_group_device_indices() const {
+const ccl::device_indices_type& device_group_context::get_group_device_indices() const {
     return device_indices;
 }
 

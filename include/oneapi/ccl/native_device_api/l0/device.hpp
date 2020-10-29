@@ -60,11 +60,11 @@ struct ccl_device : public cl_base<ze_device_handle_t, ccl_device_driver, ccl_co
 
     static indexed_handles get_handles(
         const ccl_device_driver& driver,
-        const ccl::device_indices_t& indexes = ccl::device_indices_t());
+        const ccl::device_indices_type& indexes = ccl::device_indices_type());
     static std::shared_ptr<ccl_device> create(
         handle_t h,
         owner_ptr_t&& driver,
-        const ccl::device_indices_t& indexes = ccl::device_indices_t());
+        const ccl::device_indices_type& indexes = ccl::device_indices_type());
 
     std::shared_ptr<ccl_device> get_ptr() {
         return this->shared_from_this();

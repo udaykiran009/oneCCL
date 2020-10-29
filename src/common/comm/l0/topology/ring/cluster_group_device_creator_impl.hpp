@@ -26,7 +26,7 @@ inline size_t cluster_group_device_creator::default_property_p2p_rating_calculat
 
 inline detail::adjacency_matrix cluster_group_device_creator::build_p2p_capability_matrix(
     std::ostream& out,
-    const ccl::process_device_indices_t& single_node_device_indices,
+    const ccl::process_device_indices_type& single_node_device_indices,
     detail::p2p_rating_function ping) {
     // Build adjacency matrix with P2P capability:
     // Rows & columnn is a device IDs ( froms 0 to CCL_GPU_DEVICES_AFFINITY_MASK_SIZE)
@@ -49,7 +49,7 @@ inline detail::adjacency_matrix cluster_group_device_creator::build_p2p_capabili
 inline bool cluster_group_device_creator::build_all(
     std::ostream& out,
     const ccl::context_comm_addr& comm_addr,
-    const ccl::process_device_indices_t& cur_process_per_thread_device_indices,
+    const ccl::process_device_indices_type& cur_process_per_thread_device_indices,
     const detail::adjacency_matrix& single_node_matrix,
     detail::p2p_rating_function ping) {
     out << "\n/************* \"" << cluster_group_device_creator::name()
@@ -103,12 +103,12 @@ inline bool cluster_group_device_creator::build_all(
     ipc_devices_on_node.reserve(context.cluster_gpu_indices.size());
     processes_on_node.reserve(context.cluster_gpu_indices.size());
 
-    ccl::device_indices_t ipc_devices_candidates;
+    ccl::device_indices_type ipc_devices_candidates;
     for (const auto& node_conf : context.cluster_gpu_indices) {
         const ccl::host_id& hostname = node_conf.first;
-        const ccl::process_device_indices_t& processes = node_conf.second;
+        const ccl::process_device_indices_type& processes = node_conf.second;
 
-        ccl::device_indices_t node_device_intersection; //shared devics
+        ccl::device_indices_type node_device_intersection; //shared devics
 
         // each node should have the same processes count
         if (!processes_on_node.empty()) {
@@ -123,7 +123,7 @@ inline bool cluster_group_device_creator::build_all(
 
         //find shared devices for processes on node.
         for (auto it = processes.begin(); it != processes.end() && symm_test; ++it) {
-            ccl::device_indices_t result_intersection;
+            ccl::device_indices_type result_intersection;
             std::set_intersection(it->second.begin(),
                                   it->second.end(),
                                   node_device_intersection.begin(),
@@ -291,7 +291,7 @@ template <ccl::device_topology_type class_id>
 inline bool cluster_group_device_creator::build_impl(
     std::ostream& out,
     const ccl::context_comm_addr& comm_addr,
-    const ccl::process_device_indices_t& cur_process_per_thread_device_indices,
+    const ccl::process_device_indices_type& cur_process_per_thread_device_indices,
     const detail::adjacency_matrix& single_node_matrix,
     const std::vector<std::vector<detail::colored_indexed_data<size_t>>>& syntetic_devices,
     detail::colored_plain_graph_list& graph_list,

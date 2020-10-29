@@ -1,63 +1,18 @@
 #pragma once
+
 #include <memory>
 #include <sstream>
 #include "alltoallv_fixture.hpp"
+
+DEFINE_KERNEL_TYPES(alltoallv)
 
 namespace ring_single_device_case {
 
 namespace ring_alltoallv_case {
 
-using bf16 = ushort;
-using float32_t = float;
-using float64_t = double;
-
-using TestTypes = ::testing::Types<
-    int8_t,
-    uint8_t,
-    int16_t,
-    uint16_t,
-    int32_t,
-    uint32_t,
-    int64_t,
-    uint64_t,
-/*  float16_t, */
-    float32_t,
-    float64_t,
-    bf16
->;
-
-template <class T>
-struct param_traits;
-
-#define DEFINE_KERNEL_TYPE(T) \
-    template <> \
-    struct param_traits<T> { \
-        static constexpr const char* kernel_name = "alltoallv_execution_" #T; \
-    };
-
-DEFINE_KERNEL_TYPE(int8_t)
-DEFINE_KERNEL_TYPE(uint8_t)
-
-DEFINE_KERNEL_TYPE(int16_t)
-DEFINE_KERNEL_TYPE(uint16_t)
-
-DEFINE_KERNEL_TYPE(int32_t)
-DEFINE_KERNEL_TYPE(uint32_t)
-
-DEFINE_KERNEL_TYPE(int64_t)
-DEFINE_KERNEL_TYPE(uint64_t)
-
-/*DEFINE_KERNEL_TYPE(float16_t)*/
-DEFINE_KERNEL_TYPE(float32_t)
-DEFINE_KERNEL_TYPE(float64_t)
-// TODO: Enable once bf16 is not aliased to ushort or remove if it's kept as this
-/*DEFINE_KERNEL_TYPE(bf16)*/
-
-#undef DEFINE_KERNEL_TYPE
-
 }
 
-TYPED_TEST_CASE(ring_alltoallv_single_device_fixture, ring_alltoallv_case::TestTypes);
+TYPED_TEST_CASE(ring_alltoallv_single_device_fixture, TestTypes);
 
 TYPED_TEST(ring_alltoallv_single_device_fixture, ring_alltoallv_single_device_mt) {
     using namespace native;
@@ -227,7 +182,7 @@ TYPED_TEST(ring_alltoallv_single_device_fixture, ring_alltoallv_single_device_mt
         .pNext = nullptr,
         .flags = 0,
     };
-    desc.pKernelName = ring_alltoallv_case::param_traits<native_type>::kernel_name;
+    desc.pKernelName = alltoallv_param_traits<native_type>::kernel_name;
     std::map<size_t, ze_kernel_handle_t> thread_kernels;
     std::map<size_t, ccl_device::device_queue> thread_queue;
     std::map<size_t, ccl_device::device_cmd_list> thread_cmd_list;
@@ -252,8 +207,8 @@ TYPED_TEST(ring_alltoallv_single_device_fixture, ring_alltoallv_single_device_mt
 
     //printout
     auto& out = this->output;
-    out << "L0 memory handles: " << std::endl;
-    memory_storage.dump(out, true);
+    // out << "L0 memory handles: " << std::endl;
+    // memory_storage.dump(out, true);
 
     //Set args and launch kernel
     std::mutex thread_lock; //workaround

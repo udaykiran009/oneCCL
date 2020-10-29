@@ -17,7 +17,7 @@ TEST_F(router_fixture, thread_group_topology_test) {
     {
         //emulate last thread barrier creation
         //prepare context
-        tg_comm->per_thread_indices = ccl::process_device_indices_t{
+        tg_comm->per_thread_indices = ccl::process_device_indices_type{
             { 0,
               { ccl::device_index_type(0, 0, ccl::unused_index_value),
                 ccl::device_index_type(0, 0, ccl::unused_index_value),
@@ -32,7 +32,7 @@ TEST_F(router_fixture, thread_group_topology_test) {
             create_devices_by_affinity(thread_id,
                                        tg_comm->per_thread_indices.find(thread_id)->second);
 
-            const ccl::device_indices_t& group_indices_affinity = get_device_affinity(thread_id);
+            const ccl::device_indices_type& group_indices_affinity = get_device_affinity(thread_id);
             device_group_context& dev_group_ctx = *tg_comm->get_device_group_ctx(thread_id);
             device_group_ring_topology device_top(dev_group_ctx, *pg_comm->gpu_device_storage);
 
@@ -129,7 +129,7 @@ TEST_F(router_fixture, thread_group_same_device_topology_test) {
     {
         //emulate last thread barrier creation
         //prepare context
-        tg_comm->per_thread_indices = ccl::process_device_indices_t{
+        tg_comm->per_thread_indices = ccl::process_device_indices_type{
             { 0,
               { ccl::device_index_type(0, 0, ccl::unused_index_value),
                 ccl::device_index_type(0, 0, ccl::unused_index_value),
@@ -145,7 +145,7 @@ TEST_F(router_fixture, thread_group_same_device_topology_test) {
             create_devices_by_affinity(thread_id,
                                        tg_comm->per_thread_indices.find(thread_id)->second);
 
-            const ccl::device_indices_t& group_indices_affinity = get_device_affinity(thread_id);
+            const ccl::device_indices_type& group_indices_affinity = get_device_affinity(thread_id);
             device_group_context& dev_group_ctx = *tg_comm->get_device_group_ctx(thread_id);
             device_group_ring_topology device_top(dev_group_ctx, *pg_comm->gpu_device_storage);
 
@@ -237,7 +237,7 @@ TEST_F(router_fixture, thread_group_topology_scaleup_test) {
     {
         //emulate last thread barrier creation
         //prepare context
-        tg_comm->per_thread_indices = ccl::process_device_indices_t{
+        tg_comm->per_thread_indices = ccl::process_device_indices_type{
             { 0,
               {
                   ccl::device_index_type(0, 0, ccl::unused_index_value),
@@ -263,7 +263,7 @@ TEST_F(router_fixture, thread_group_topology_scaleup_test) {
             create_devices_by_affinity(thread_id,
                                        tg_comm->per_thread_indices.find(thread_id)->second);
 
-            const ccl::device_indices_t& group_indices_affinity = get_device_affinity(thread_id);
+            const ccl::device_indices_type& group_indices_affinity = get_device_affinity(thread_id);
             device_group_context& dev_group_ctx = *tg_comm->get_device_group_ctx(thread_id);
             device_group_ring_topology device_top(dev_group_ctx, *pg_comm->gpu_device_storage);
 
@@ -349,7 +349,7 @@ TEST_F(router_fixture, thread_group_two_inaccessible_groups_topology_scaleup_tes
     {
         //emulate last thread barrier creation
         //prepare context
-        tg_comm->per_thread_indices = ccl::process_device_indices_t{
+        tg_comm->per_thread_indices = ccl::process_device_indices_type{
             { 0,
               { ccl::device_index_type(0, 0, ccl::unused_index_value),
                 ccl::device_index_type(0, 1, ccl::unused_index_value) } },
@@ -387,7 +387,7 @@ TEST_F(router_fixture, thread_group_two_inaccessible_groups_topology_scaleup_tes
             create_devices_by_affinity(thread_id,
                                        tg_comm->per_thread_indices.find(thread_id)->second);
 
-            const ccl::device_indices_t& group_indices_affinity = get_device_affinity(thread_id);
+            const ccl::device_indices_type& group_indices_affinity = get_device_affinity(thread_id);
             device_group_context& dev_group_ctx = *tg_comm->get_device_group_ctx(thread_id);
             device_group_ring_topology device_top(dev_group_ctx, *pg_comm->gpu_device_storage);
 
@@ -474,7 +474,7 @@ TEST_F(router_fixture, thread_group_local_group_inaccessible_devices_topology_sc
     {
         //emulate last thread barrier creation
         //prepare context
-        tg_comm->per_thread_indices = ccl::process_device_indices_t{
+        tg_comm->per_thread_indices = ccl::process_device_indices_type{
             { 0,
               {
                   ccl::device_index_type(0, 0, ccl::unused_index_value),
@@ -510,7 +510,7 @@ TEST_F(router_fixture, thread_group_local_group_inaccessible_devices_topology_sc
             create_devices_by_affinity(thread_id,
                                        tg_comm->per_thread_indices.find(thread_id)->second);
 
-            const ccl::device_indices_t& group_indices_affinity = get_device_affinity(thread_id);
+            const ccl::device_indices_type& group_indices_affinity = get_device_affinity(thread_id);
             device_group_context& dev_group_ctx = *tg_comm->get_device_group_ctx(thread_id);
             device_group_ring_topology device_top(dev_group_ctx, *pg_comm->gpu_device_storage);
 

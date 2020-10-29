@@ -79,13 +79,13 @@ ccl::communicator_interface_ptr host_communicator::split(const comm_split_attr& 
     return {};
 }
 
-host_communicator::coll_request_t host_communicator::barrier(
+ccl::event host_communicator::barrier(
     const ccl::stream::impl_value_t& op_stream,
     const ccl::barrier_attr& attr,
     const ccl::vector_class<ccl::event>& deps) {return {};
 }
 
-host_communicator::coll_request_t host_communicator::barrier_impl(
+ccl::event host_communicator::barrier_impl(
     const ccl::stream::impl_value_t& op_stream,
     const ccl::barrier_attr& attr,
     const ccl::vector_class<ccl::event>& deps) {
@@ -93,7 +93,7 @@ host_communicator::coll_request_t host_communicator::barrier_impl(
 }
 
 /* allgatherv */
-host_communicator::coll_request_t host_communicator::allgatherv_impl(
+ccl::event host_communicator::allgatherv_impl(
     const void* send_buf,
     size_t send_count,
     void* recv_buf,
@@ -105,7 +105,7 @@ host_communicator::coll_request_t host_communicator::allgatherv_impl(
     return {};
 }
 
-host_communicator::coll_request_t host_communicator::allgatherv_impl(
+ccl::event host_communicator::allgatherv_impl(
     const void* send_buf,
     size_t send_count,
     const ccl::vector_class<void*>& recv_bufs,
@@ -120,7 +120,7 @@ host_communicator::coll_request_t host_communicator::allgatherv_impl(
 }
 
 /* allreduce */
-host_communicator::coll_request_t host_communicator::allreduce_impl(
+ccl::event host_communicator::allreduce_impl(
     const void* send_buf,
     void* recv_buf,
     size_t count,
@@ -133,7 +133,7 @@ host_communicator::coll_request_t host_communicator::allreduce_impl(
 }
 
 /* alltoall */
-host_communicator::coll_request_t host_communicator::alltoall_impl(
+ccl::event host_communicator::alltoall_impl(
     const void* send_buf,
     void* recv_buf,
     size_t count,
@@ -143,7 +143,7 @@ host_communicator::coll_request_t host_communicator::alltoall_impl(
     const ccl::vector_class<ccl::event>& deps) {return {};
 }
 
-host_communicator::coll_request_t host_communicator::alltoall_impl(
+ccl::event host_communicator::alltoall_impl(
     const ccl::vector_class<void*>& send_buf,
     const ccl::vector_class<void*>& recv_buf,
     size_t count,
@@ -155,7 +155,7 @@ host_communicator::coll_request_t host_communicator::alltoall_impl(
 }
 
 /* alltoallv */
-host_communicator::coll_request_t host_communicator::alltoallv_impl(
+ccl::event host_communicator::alltoallv_impl(
     const void* send_buf,
     const ccl::vector_class<size_t>& send_counts,
     void* recv_buf,
@@ -166,7 +166,7 @@ host_communicator::coll_request_t host_communicator::alltoallv_impl(
     const ccl::vector_class<ccl::event>& deps) {return {};
 }
 
-host_communicator::coll_request_t host_communicator::alltoallv_impl(
+ccl::event host_communicator::alltoallv_impl(
     const ccl::vector_class<void*>& send_buf,
     const ccl::vector_class<size_t>& send_counts,
     ccl::vector_class<void*> recv_buf,
@@ -179,7 +179,7 @@ host_communicator::coll_request_t host_communicator::alltoallv_impl(
 }
 
 /* bcast */
-host_communicator::coll_request_t host_communicator::broadcast_impl(
+ccl::event host_communicator::broadcast_impl(
     void* buf,
     size_t count,
     ccl::datatype dtype,
@@ -190,7 +190,7 @@ host_communicator::coll_request_t host_communicator::broadcast_impl(
 }
 
 /* reduce */
-host_communicator::coll_request_t host_communicator::reduce_impl(
+ccl::event host_communicator::reduce_impl(
     const void* send_buf,
     void* recv_buf,
     size_t count,
@@ -203,7 +203,7 @@ host_communicator::coll_request_t host_communicator::reduce_impl(
 }
 
 /* reduce_scatter */
-host_communicator::coll_request_t host_communicator::reduce_scatter_impl(
+ccl::event host_communicator::reduce_scatter_impl(
     const void* send_buf,
     void* recv_buf,
     size_t recv_count,
@@ -215,7 +215,7 @@ host_communicator::coll_request_t host_communicator::reduce_scatter_impl(
 }
 
 /* sparse_allreduce */
-host_communicator::coll_request_t host_communicator::sparse_allreduce_impl(
+ccl::event host_communicator::sparse_allreduce_impl(
     const void* send_ind_buf,
     size_t send_ind_count,
     const void* send_val_buf,
@@ -234,7 +234,7 @@ host_communicator::coll_request_t host_communicator::sparse_allreduce_impl(
 
 /* allgatherv */
 template <class buffer_type>
-host_communicator::coll_request_t host_communicator::allgatherv_impl(
+ccl::event host_communicator::allgatherv_impl(
     const buffer_type* send_buf,
     size_t send_count,
     buffer_type* recv_buf,
@@ -245,7 +245,7 @@ host_communicator::coll_request_t host_communicator::allgatherv_impl(
     return {};
 }
 template <class buffer_type>
-host_communicator::coll_request_t host_communicator::allgatherv_impl(
+ccl::event host_communicator::allgatherv_impl(
     const buffer_type* send_buf,
     size_t send_count,
     ccl::vector_class<buffer_type*>& recv_buf,
@@ -258,7 +258,7 @@ host_communicator::coll_request_t host_communicator::allgatherv_impl(
 }
 
 template <class buffer_type>
-host_communicator::coll_request_t host_communicator::allgatherv_impl(
+ccl::event host_communicator::allgatherv_impl(
     const buffer_type& send_buf,
     size_t send_count,
     buffer_type& recv_buf,
@@ -269,7 +269,7 @@ host_communicator::coll_request_t host_communicator::allgatherv_impl(
     return {};
 }
 template <class buffer_type>
-host_communicator::coll_request_t host_communicator::allgatherv_impl(
+ccl::event host_communicator::allgatherv_impl(
     const buffer_type& send_buf,
     size_t send_count,
     ccl::vector_class<ccl::reference_wrapper_class<buffer_type>>& recv_buf,
@@ -283,7 +283,7 @@ host_communicator::coll_request_t host_communicator::allgatherv_impl(
 
 /* allreduce */
 template <class buffer_type>
-host_communicator::coll_request_t host_communicator::allreduce_impl(
+ccl::event host_communicator::allreduce_impl(
     const buffer_type* send_buf,
     buffer_type* recv_buf,
     size_t count,
@@ -295,7 +295,7 @@ host_communicator::coll_request_t host_communicator::allreduce_impl(
 }
 
 template <class buffer_type>
-host_communicator::coll_request_t host_communicator::allreduce_impl(
+ccl::event host_communicator::allreduce_impl(
     const buffer_type& send_buf,
     buffer_type& recv_buf,
     size_t count,
@@ -308,7 +308,7 @@ host_communicator::coll_request_t host_communicator::allreduce_impl(
 
 /* alltoall */
 template <class buffer_type>
-host_communicator::coll_request_t host_communicator::alltoall_impl(
+ccl::event host_communicator::alltoall_impl(
     const buffer_type* send_buf,
     buffer_type* recv_buf,
     size_t count,
@@ -318,7 +318,7 @@ host_communicator::coll_request_t host_communicator::alltoall_impl(
     return {};
 }
 template <class buffer_type>
-host_communicator::coll_request_t host_communicator::alltoall_impl(
+ccl::event host_communicator::alltoall_impl(
     const ccl::vector_class<buffer_type*>& send_buf,
     const ccl::vector_class<buffer_type*>& recv_buf,
     size_t count,
@@ -330,7 +330,7 @@ host_communicator::coll_request_t host_communicator::alltoall_impl(
 }
 
 template <class buffer_type>
-host_communicator::coll_request_t host_communicator::alltoall_impl(
+ccl::event host_communicator::alltoall_impl(
     const buffer_type& send_buf,
     buffer_type& recv_buf,
     size_t count,
@@ -340,7 +340,7 @@ host_communicator::coll_request_t host_communicator::alltoall_impl(
     return {};
 }
 template <class buffer_type>
-host_communicator::coll_request_t host_communicator::alltoall_impl(
+ccl::event host_communicator::alltoall_impl(
     const ccl::vector_class<ccl::reference_wrapper_class<buffer_type>>& send_buf,
     const ccl::vector_class<ccl::reference_wrapper_class<buffer_type>>& recv_buf,
     size_t count,
@@ -353,7 +353,7 @@ host_communicator::coll_request_t host_communicator::alltoall_impl(
 
 /* alltoallv */
 template <class buffer_type>
-host_communicator::coll_request_t host_communicator::alltoallv_impl(
+ccl::event host_communicator::alltoallv_impl(
     const buffer_type* send_buf,
     const ccl::vector_class<size_t>& send_counts,
     buffer_type* recv_buf,
@@ -364,7 +364,7 @@ host_communicator::coll_request_t host_communicator::alltoallv_impl(
     return {};
 }
 template <class buffer_type>
-host_communicator::coll_request_t host_communicator::alltoallv_impl(
+ccl::event host_communicator::alltoallv_impl(
     const ccl::vector_class<buffer_type*>& send_buf,
     const ccl::vector_class<size_t>& send_counts,
     const ccl::vector_class<buffer_type*>& recv_buf,
@@ -377,7 +377,7 @@ host_communicator::coll_request_t host_communicator::alltoallv_impl(
 }
 
 template <class buffer_type>
-host_communicator::coll_request_t host_communicator::alltoallv_impl(
+ccl::event host_communicator::alltoallv_impl(
     const buffer_type& send_buf,
     const ccl::vector_class<size_t>& send_counts,
     buffer_type& recv_buf,
@@ -388,7 +388,7 @@ host_communicator::coll_request_t host_communicator::alltoallv_impl(
     return {};
 }
 template <class buffer_type>
-host_communicator::coll_request_t host_communicator::alltoallv_impl(
+ccl::event host_communicator::alltoallv_impl(
     const ccl::vector_class<ccl::reference_wrapper_class<buffer_type>>& send_buf,
     const ccl::vector_class<size_t>& send_counts,
     const ccl::vector_class<ccl::reference_wrapper_class<buffer_type>>& recv_buf,
@@ -402,7 +402,7 @@ host_communicator::coll_request_t host_communicator::alltoallv_impl(
 
 /* bcast */
 template <class buffer_type>
-host_communicator::coll_request_t host_communicator::broadcast_impl(
+ccl::event host_communicator::broadcast_impl(
     buffer_type* buf,
     size_t count,
     size_t root,
@@ -413,7 +413,7 @@ host_communicator::coll_request_t host_communicator::broadcast_impl(
 }
 
 template <class buffer_type>
-host_communicator::coll_request_t host_communicator::broadcast_impl(
+ccl::event host_communicator::broadcast_impl(
     buffer_type& buf,
     size_t count,
     size_t root,
@@ -425,7 +425,7 @@ host_communicator::coll_request_t host_communicator::broadcast_impl(
 
 /* reduce */
 template <class buffer_type>
-host_communicator::coll_request_t host_communicator::reduce_impl(
+ccl::event host_communicator::reduce_impl(
     const buffer_type* send_buf,
     buffer_type* recv_buf,
     size_t count,
@@ -438,7 +438,7 @@ host_communicator::coll_request_t host_communicator::reduce_impl(
 }
 
 template <class buffer_type>
-host_communicator::coll_request_t host_communicator::reduce_impl(
+ccl::event host_communicator::reduce_impl(
     const buffer_type& send_buf,
     buffer_type& recv_buf,
     size_t count,
@@ -451,7 +451,7 @@ host_communicator::coll_request_t host_communicator::reduce_impl(
 }
 /* reduce_scatter */
 template <class buffer_type>
-host_communicator::coll_request_t host_communicator::reduce_scatter_impl(
+ccl::event host_communicator::reduce_scatter_impl(
     const buffer_type* send_buf,
     buffer_type* recv_buf,
     size_t recv_count,
@@ -462,7 +462,7 @@ host_communicator::coll_request_t host_communicator::reduce_scatter_impl(
     return {};
 }
 template <class buffer_type>
-host_communicator::coll_request_t host_communicator::reduce_scatter_impl(
+ccl::event host_communicator::reduce_scatter_impl(
     const buffer_type& send_buf,
     buffer_type& recv_buf,
     size_t recv_count,
@@ -475,7 +475,7 @@ host_communicator::coll_request_t host_communicator::reduce_scatter_impl(
 
 /* sparse_allreduce */
 template <class index_buffer_type, class value_buffer_type>
-host_communicator::coll_request_t host_communicator::sparse_allreduce_impl(
+ccl::event host_communicator::sparse_allreduce_impl(
     const index_buffer_type* send_ind_buf,
     size_t send_ind_count,
     const value_buffer_type* send_val_buf,
@@ -492,7 +492,7 @@ host_communicator::coll_request_t host_communicator::sparse_allreduce_impl(
 }
 
 template <class index_buffer_container_type, class value_buffer_container_type>
-host_communicator::coll_request_t host_communicator::sparse_allreduce_impl(
+ccl::event host_communicator::sparse_allreduce_impl(
     const index_buffer_container_type& send_ind_buf,
     size_t send_ind_count,
     const value_buffer_container_type& send_val_buf,
@@ -514,129 +514,9 @@ std::shared_ptr<atl_wrapper> host_communicator::get_atl() {
 std::string host_communicator::to_string() const {return {};
 }
 
-DEVICE_COMM_INTERFACE_COLL_INSTANTIATIONS(host_communicator, char);
-DEVICE_COMM_INTERFACE_COLL_INSTANTIATIONS(host_communicator, int);
-DEVICE_COMM_INTERFACE_COLL_INSTANTIATIONS(host_communicator, int64_t);
-DEVICE_COMM_INTERFACE_COLL_INSTANTIATIONS(host_communicator, uint64_t);
-DEVICE_COMM_INTERFACE_COLL_INSTANTIATIONS(host_communicator, float);
-DEVICE_COMM_INTERFACE_COLL_INSTANTIATIONS(host_communicator, double);
-
+COMM_INTERFACE_COLL_INSTANTIATION(host_communicator);
 #ifdef CCL_ENABLE_SYCL
-DEVICE_COMM_INTERFACE_COLL_CLASS_INSTANTIATIONS(host_communicator,
-                                                cl::sycl::buffer<char COMMA 1>);
-DEVICE_COMM_INTERFACE_COLL_CLASS_INSTANTIATIONS(host_communicator,
-                                                cl::sycl::buffer<int COMMA 1>);
-DEVICE_COMM_INTERFACE_COLL_CLASS_INSTANTIATIONS(host_communicator,
-                                                cl::sycl::buffer<int64_t COMMA 1>);
-DEVICE_COMM_INTERFACE_COLL_CLASS_INSTANTIATIONS(host_communicator,
-                                                cl::sycl::buffer<uint64_t COMMA 1>);
-DEVICE_COMM_INTERFACE_COLL_CLASS_INSTANTIATIONS(host_communicator,
-                                                cl::sycl::buffer<float COMMA 1>);
-DEVICE_COMM_INTERFACE_COLL_CLASS_INSTANTIATIONS(host_communicator,
-                                                cl::sycl::buffer<double COMMA 1>);
-#endif //CCL_ENABLE_SYCL
-
-DEVICE_COMM_INTERFACE_SPARSE_ALLREDUCE_EXPLICIT_INSTANTIATION(host_communicator,
-                                                              char,
-                                                              char);
-DEVICE_COMM_INTERFACE_SPARSE_ALLREDUCE_EXPLICIT_INSTANTIATION(host_communicator,
-                                                              char,
-                                                              int);
-DEVICE_COMM_INTERFACE_SPARSE_ALLREDUCE_EXPLICIT_INSTANTIATION(host_communicator,
-                                                              char,
-                                                              ccl::bf16);
-DEVICE_COMM_INTERFACE_SPARSE_ALLREDUCE_EXPLICIT_INSTANTIATION(host_communicator,
-                                                              char,
-                                                              float);
-DEVICE_COMM_INTERFACE_SPARSE_ALLREDUCE_EXPLICIT_INSTANTIATION(host_communicator,
-                                                              char,
-                                                              double);
-DEVICE_COMM_INTERFACE_SPARSE_ALLREDUCE_EXPLICIT_INSTANTIATION(host_communicator,
-                                                              char,
-                                                              int64_t);
-DEVICE_COMM_INTERFACE_SPARSE_ALLREDUCE_EXPLICIT_INSTANTIATION(host_communicator,
-                                                              char,
-                                                              uint64_t);
-DEVICE_COMM_INTERFACE_SPARSE_ALLREDUCE_EXPLICIT_INSTANTIATION(host_communicator,
-                                                              int,
-                                                              char);
-DEVICE_COMM_INTERFACE_SPARSE_ALLREDUCE_EXPLICIT_INSTANTIATION(host_communicator, int, int);
-DEVICE_COMM_INTERFACE_SPARSE_ALLREDUCE_EXPLICIT_INSTANTIATION(host_communicator,
-                                                              int,
-                                                              ccl::bf16);
-DEVICE_COMM_INTERFACE_SPARSE_ALLREDUCE_EXPLICIT_INSTANTIATION(host_communicator,
-                                                              int,
-                                                              float);
-DEVICE_COMM_INTERFACE_SPARSE_ALLREDUCE_EXPLICIT_INSTANTIATION(host_communicator,
-                                                              int,
-                                                              double);
-DEVICE_COMM_INTERFACE_SPARSE_ALLREDUCE_EXPLICIT_INSTANTIATION(host_communicator,
-                                                              int,
-                                                              int64_t);
-DEVICE_COMM_INTERFACE_SPARSE_ALLREDUCE_EXPLICIT_INSTANTIATION(host_communicator,
-                                                              int,
-                                                              uint64_t);
-DEVICE_COMM_INTERFACE_SPARSE_ALLREDUCE_EXPLICIT_INSTANTIATION(host_communicator,
-                                                              int64_t,
-                                                              char);
-DEVICE_COMM_INTERFACE_SPARSE_ALLREDUCE_EXPLICIT_INSTANTIATION(host_communicator,
-                                                              int64_t,
-                                                              int);
-DEVICE_COMM_INTERFACE_SPARSE_ALLREDUCE_EXPLICIT_INSTANTIATION(host_communicator,
-                                                              int64_t,
-                                                              ccl::bf16);
-DEVICE_COMM_INTERFACE_SPARSE_ALLREDUCE_EXPLICIT_INSTANTIATION(host_communicator,
-                                                              int64_t,
-                                                              float);
-DEVICE_COMM_INTERFACE_SPARSE_ALLREDUCE_EXPLICIT_INSTANTIATION(host_communicator,
-                                                              int64_t,
-                                                              double);
-DEVICE_COMM_INTERFACE_SPARSE_ALLREDUCE_EXPLICIT_INSTANTIATION(host_communicator,
-                                                              int64_t,
-                                                              int64_t);
-DEVICE_COMM_INTERFACE_SPARSE_ALLREDUCE_EXPLICIT_INSTANTIATION(host_communicator,
-                                                              int64_t,
-                                                              uint64_t);
-DEVICE_COMM_INTERFACE_SPARSE_ALLREDUCE_EXPLICIT_INSTANTIATION(host_communicator,
-                                                              uint64_t,
-                                                              char);
-DEVICE_COMM_INTERFACE_SPARSE_ALLREDUCE_EXPLICIT_INSTANTIATION(host_communicator,
-                                                              uint64_t,
-                                                              int);
-DEVICE_COMM_INTERFACE_SPARSE_ALLREDUCE_EXPLICIT_INSTANTIATION(host_communicator,
-                                                              uint64_t,
-                                                              ccl::bf16);
-DEVICE_COMM_INTERFACE_SPARSE_ALLREDUCE_EXPLICIT_INSTANTIATION(host_communicator,
-                                                              uint64_t,
-                                                              float);
-DEVICE_COMM_INTERFACE_SPARSE_ALLREDUCE_EXPLICIT_INSTANTIATION(host_communicator,
-                                                              uint64_t,
-                                                              double);
-DEVICE_COMM_INTERFACE_SPARSE_ALLREDUCE_EXPLICIT_INSTANTIATION(host_communicator,
-                                                              uint64_t,
-                                                              int64_t);
-DEVICE_COMM_INTERFACE_SPARSE_ALLREDUCE_EXPLICIT_INSTANTIATION(host_communicator,
-                                                              uint64_t,
-                                                              uint64_t);
-
-#ifdef CCL_ENABLE_SYCL
-DEVICE_COMM_INTERFACE_SPARSE_ALLREDUCE_EXPLICIT_CLASS_INSTANTIATION(
-    host_communicator,
-    cl::sycl::buffer<int COMMA 1>,
-    cl::sycl::buffer<float COMMA 1>);
-DEVICE_COMM_INTERFACE_SPARSE_ALLREDUCE_EXPLICIT_CLASS_INSTANTIATION(
-    host_communicator,
-    cl::sycl::buffer<int COMMA 1>,
-    cl::sycl::buffer<ccl::bf16 COMMA 1>);
-
-DEVICE_COMM_INTERFACE_SPARSE_ALLREDUCE_EXPLICIT_CLASS_INSTANTIATION(
-    host_communicator,
-    cl::sycl::buffer<int64_t COMMA 1>,
-    cl::sycl::buffer<float COMMA 1>);
-DEVICE_COMM_INTERFACE_SPARSE_ALLREDUCE_EXPLICIT_CLASS_INSTANTIATION(
-    host_communicator,
-    cl::sycl::buffer<int64_t COMMA 1>,
-    cl::sycl::buffer<ccl::bf16 COMMA 1>);
-#endif //CCL_ENABLE_SYCL
+SYCL_COMM_INTERFACE_COLL_INSTANTIATION(host_communicator);
+#endif /* CCL_ENABLE_SYCL */
 
 } // namespace ccl

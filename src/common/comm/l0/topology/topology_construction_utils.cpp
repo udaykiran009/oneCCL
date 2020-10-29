@@ -287,7 +287,7 @@ adjacency_matrix create_adjacency_matrix_for_devices(
 }
 
 plain_graph graph_resolver(const adjacency_matrix& matrix,
-                           const ccl::device_indices_t& device_indexes) {
+                           const ccl::device_indices_type& device_indexes) {
     plain_graph ids_ring;
 
     std::multimap<ccl::device_index_type, bool> marked_indices;
@@ -375,7 +375,7 @@ plain_graph graph_resolver(const adjacency_matrix& matrix,
 }
 
 plain_graph graph_resolver(const adjacency_matrix& matrix,
-                           const ccl::process_device_indices_t& per_process_device_indexes) {
+                           const ccl::process_device_indices_type& per_process_device_indexes) {
     plain_graph ids_ring;
 
     for (const auto& thread_group_val : per_process_device_indexes) {
@@ -400,7 +400,7 @@ plain_graph graph_resolver(const adjacency_matrix& matrix,
 
 /* graph list creation utils */
 plain_graph_list graph_list_resolver(const adjacency_matrix& matrix,
-                                     const ccl::device_indices_t& device_indexes) {
+                                     const ccl::device_indices_type& device_indexes) {
     plain_graph_list isles;
 
     using marked_storage = std::multimap<ccl::device_index_type, bool>;
@@ -703,7 +703,7 @@ colored_plain_graph_list merge_graph_lists_stable_for_process(
 
 plain_graph_list graph_list_resolver(
     const adjacency_matrix& matrix,
-    const ccl::process_device_indices_t& per_process_device_indexes,
+    const ccl::process_device_indices_type& per_process_device_indexes,
     detail::p2p_rating_function ping) {
     std::list<plain_graph_list> lists;
     for (const auto& thread_group_val : per_process_device_indexes) {

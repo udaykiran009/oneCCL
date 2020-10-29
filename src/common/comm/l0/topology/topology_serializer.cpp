@@ -536,10 +536,10 @@ ccl::device_index_type device_path_deserializer::extract_index(raw_data_t::const
     return path;
 }
 /*
-ccl::device_indices_t device_path_deserializer::operator()(const std::vector<unsigned char>& raw_data)
+ccl::device_indices_type device_path_deserializer::operator()(const std::vector<unsigned char>& raw_data)
 {
     size_t elem_count = base::get_indices_count(raw_data.size());
-    ccl::device_indices_t data;
+    ccl::device_indices_type data;
     constexpr auto offset = sizeof(ccl::index_type) / sizeof(unsigned char);
     for(auto raw_data_it = raw_data.begin(); raw_data_it != raw_data.end(); )
     {

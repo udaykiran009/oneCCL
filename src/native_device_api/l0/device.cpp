@@ -43,7 +43,7 @@ CCL_API
 std::shared_ptr<ccl_device> ccl_device::create(
     handle_t handle,
     owner_ptr_t&& driver,
-    const ccl::device_indices_t& indexes /* = ccl::device_indices_t()*/) {
+    const ccl::device_indices_type& indexes /* = ccl::device_indices_type()*/) {
     // TODO - dirty code
     owner_ptr_t shared_driver(std::move(driver));
     std::shared_ptr<ccl_device> device =
@@ -90,7 +90,7 @@ std::shared_ptr<ccl_device> ccl_device::create(
 CCL_API
 ccl_device::indexed_handles ccl_device::get_handles(
     const ccl_device_driver& driver,
-    const ccl::device_indices_t& requested_device_indexes /* = indices()*/) {
+    const ccl::device_indices_type& requested_device_indexes /* = indices()*/) {
     uint32_t devices_count = 0;
     ze_result_t err = zeDeviceGet(driver.handle, &devices_count, nullptr);
     if (err != ZE_RESULT_SUCCESS) {
@@ -110,7 +110,7 @@ ccl_device::indexed_handles ccl_device::get_handles(
 
     //filter indices by driver id
     auto parent_id = driver.get_driver_id();
-    ccl::device_indices_t filtered_ids;
+    ccl::device_indices_type filtered_ids;
     if (!requested_device_indexes.empty()) {
         for (const auto& index : requested_device_indexes) {
             if (std::get<ccl::device_index_enum::driver_index_id>(index) == parent_id) {

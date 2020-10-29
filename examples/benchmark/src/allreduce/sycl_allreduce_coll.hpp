@@ -59,8 +59,13 @@ struct sycl_allreduce_coll : sycl_base_coll<Dtype, allreduce_strategy_impl> {
                           ccl::communicator& comm,
                           ccl::stream& stream,
                           size_t rank_idx) override {
+        
+        sycl::buffer<int> unexpected_device_value(1);
+        {
+            host_accessor unexpected_val_acc(unexpected_device_value, write_only);
+            unexpected_val_acc[0] = 0;
+        }
 
-        bool unexpected_device_value = false;
         Dtype sbuf_expected = comm.rank();
         Dtype rbuf_expected =
             (comm.size() - 1) * ((float)comm.size() / 2);
@@ -73,15 +78,16 @@ struct sycl_allreduce_coll : sycl_base_coll<Dtype, allreduce_strategy_impl> {
                 e = stream.get_native().submit([&](handler& h) {
                     auto send_buf_acc = static_cast<Dtype*>(send_bufs[b_idx][rank_idx]);
                     auto recv_buf_acc = static_cast<Dtype*>(recv_bufs[b_idx][rank_idx]);
-                    h.parallel_for(range<1>{elem_count}, [=](item<1> e_idx) mutable
+                    auto unexpected_val_acc = unexpected_device_value.template get_access<mode::write>(h);
+                    h.parallel_for(range<1>{elem_count}, [=](item<1> e_idx)
                     {
                         Dtype value = send_buf_acc[e_idx];
                         if (value != sbuf_expected)
-                            unexpected_device_value = true;
+                            unexpected_val_acc[0] = 1;
 
                         value = recv_buf_acc[e_idx];
                         if (value != rbuf_expected)
-                            unexpected_device_value = true;
+                            unexpected_val_acc[0] = 1;
                     });
                 });
             }
@@ -91,23 +97,27 @@ struct sycl_allreduce_coll : sycl_base_coll<Dtype, allreduce_strategy_impl> {
                     auto recv_buf = (static_cast<sycl_buffer_t<Dtype>*>(recv_bufs[b_idx][rank_idx]));
                     auto send_buf_acc = send_buf->template get_access<mode::read>(h);
                     auto recv_buf_acc = recv_buf->template get_access<mode::read>(h);
-                    h.parallel_for(range<1>{elem_count}, [=](item<1> e_idx) mutable
+                    auto unexpected_val_acc = unexpected_device_value.template get_access<mode::write>(h);
+                    h.parallel_for(range<1>{elem_count}, [=](item<1> e_idx)
                     {
                         Dtype value = send_buf_acc[e_idx];
                         if (value != sbuf_expected)
-                            unexpected_device_value = true;
+                            unexpected_val_acc[0] = 1;
 
                         value = recv_buf_acc[e_idx];
                         if (value != rbuf_expected)
-                            unexpected_device_value = true;
+                            unexpected_val_acc[0] = 1;
                     });
                 });
             }
             e.wait();
         }
 
-        if (unexpected_device_value)
-            ASSERT(0, "unexpected value on device");
+        {
+            host_accessor unexpected_val_acc(unexpected_device_value, read_only);
+            if (unexpected_val_acc[0])
+                ASSERT(0, "unexpected value on device");
+        }
 
         if (base_coll::get_sycl_mem_type() == SYCL_MEM_USM)
             return;

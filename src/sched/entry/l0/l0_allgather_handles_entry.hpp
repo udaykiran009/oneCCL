@@ -103,7 +103,7 @@ public:
 
         ccl::stream::impl_value_t empty{};
         event = ccl_communicator->allgatherv_impl(
-            (char*)plain_send_data.data(), send_bytes, (char*)plain_recv_data.data(), recv_bytes,
+            (int8_t*)plain_send_data.data(), send_bytes, (int8_t*)plain_recv_data.data(), recv_bytes,
             empty, ccl::default_allgatherv_attr, {});
         status = ccl_sched_entry_status_started;
 
@@ -283,7 +283,7 @@ private:
     size_t cnt;
     ccl_datatype dtype;
 
-    ccl::communicator::coll_request_t event;
+    ccl::event event;
     atl_req_t req{};
 };
 } // namespace native

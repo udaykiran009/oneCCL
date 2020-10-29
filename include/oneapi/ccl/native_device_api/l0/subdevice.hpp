@@ -23,7 +23,7 @@ struct ccl_subdevice : public ccl_device {
     // factory
     static indexed_handles get_handles(
         const ccl_device& device,
-        const ccl::device_indices_t& requested_indices = ccl::device_indices_t());
+        const ccl::device_indices_type& requested_indices = ccl::device_indices_type());
     static std::shared_ptr<ccl_subdevice> create(handle_t h,
                                                  owner_ptr_t&& device,
                                                  base::owner_ptr_t&& driver);

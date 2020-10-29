@@ -59,7 +59,7 @@ public:
                    comm,
                    in_ctx,
                    buf,
-                   ccl::native_type_info<native_type>::ccl_type_value,
+                   ccl::native_type_info<native_type>::dtype,
                    device_stream),
 
               income_data_flag(parent_communicator->get_device()

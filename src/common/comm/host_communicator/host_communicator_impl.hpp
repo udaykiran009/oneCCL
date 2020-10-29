@@ -13,7 +13,7 @@ namespace ccl {
 
 /* allgatherv */
 template <class buffer_type>
-host_communicator::coll_request_t host_communicator::allgatherv_impl(
+ccl::event host_communicator::allgatherv_impl(
     const buffer_type* send_buf,
     size_t send_count,
     buffer_type* recv_buf,
@@ -25,7 +25,7 @@ host_communicator::coll_request_t host_communicator::allgatherv_impl(
                                            send_count,
                                            reinterpret_cast<void*>(recv_buf),
                                            recv_counts.data(),
-                                           ccl::native_type_info<buffer_type>::ccl_datatype_value,
+                                           ccl::native_type_info<buffer_type>::dtype,
                                            attr,
                                            comm_impl.get(),
                                            nullptr);
@@ -34,7 +34,7 @@ host_communicator::coll_request_t host_communicator::allgatherv_impl(
 }
 
 template <class buffer_type>
-host_communicator::coll_request_t host_communicator::allgatherv_impl(
+ccl::event host_communicator::allgatherv_impl(
     const buffer_type* send_buf,
     size_t send_count,
     ccl::vector_class<buffer_type*>& recv_buf,
@@ -50,7 +50,7 @@ host_communicator::coll_request_t host_communicator::allgatherv_impl(
                                            send_count,
                                            (void*)(recv_buf.data()),
                                            recv_counts.data(),
-                                           ccl::native_type_info<buffer_type>::ccl_datatype_value,
+                                           ccl::native_type_info<buffer_type>::dtype,
                                            internal_attr,
                                            comm_impl.get(),
                                            nullptr);
@@ -59,7 +59,7 @@ host_communicator::coll_request_t host_communicator::allgatherv_impl(
 }
 
 template <class buffer_type>
-host_communicator::coll_request_t host_communicator::allgatherv_impl(
+ccl::event host_communicator::allgatherv_impl(
     const buffer_type& send_buf,
     size_t send_count,
     buffer_type& recv_buf,
@@ -73,7 +73,7 @@ host_communicator::coll_request_t host_communicator::allgatherv_impl(
 }
 
 template <class buffer_type>
-host_communicator::coll_request_t host_communicator::allgatherv_impl(
+ccl::event host_communicator::allgatherv_impl(
     const buffer_type& send_buf,
     size_t send_count,
     ccl::vector_class<ccl::reference_wrapper_class<buffer_type>>& recv_buf,
@@ -88,7 +88,7 @@ host_communicator::coll_request_t host_communicator::allgatherv_impl(
 
 /* allreduce */
 template <class buffer_type>
-host_communicator::coll_request_t host_communicator::allreduce_impl(
+ccl::event host_communicator::allreduce_impl(
     const buffer_type* send_buf,
     buffer_type* recv_buf,
     size_t count,
@@ -99,7 +99,7 @@ host_communicator::coll_request_t host_communicator::allreduce_impl(
     ccl_request* req = ccl_allreduce_impl(reinterpret_cast<const void*>(send_buf),
                                           reinterpret_cast<void*>(recv_buf),
                                           count,
-                                          ccl::native_type_info<buffer_type>::ccl_datatype_value,
+                                          ccl::native_type_info<buffer_type>::dtype,
                                           reduction,
                                           attr,
                                           comm_impl.get(),
@@ -109,7 +109,7 @@ host_communicator::coll_request_t host_communicator::allreduce_impl(
 }
 
 template <class buffer_type>
-host_communicator::coll_request_t host_communicator::allreduce_impl(
+ccl::event host_communicator::allreduce_impl(
     const buffer_type& send_buf,
     buffer_type& recv_buf,
     size_t count,
@@ -124,7 +124,7 @@ host_communicator::coll_request_t host_communicator::allreduce_impl(
 
 /* alltoall */
 template <class buffer_type>
-host_communicator::coll_request_t host_communicator::alltoall_impl(
+ccl::event host_communicator::alltoall_impl(
     const buffer_type* send_buf,
     buffer_type* recv_buf,
     size_t count,
@@ -134,7 +134,7 @@ host_communicator::coll_request_t host_communicator::alltoall_impl(
     ccl_request* req = ccl_alltoall_impl(reinterpret_cast<const void*>(send_buf),
                                          reinterpret_cast<void*>(recv_buf),
                                          count,
-                                         ccl::native_type_info<buffer_type>::ccl_datatype_value,
+                                         ccl::native_type_info<buffer_type>::dtype,
                                          attr,
                                          comm_impl.get(),
                                          nullptr);
@@ -143,7 +143,7 @@ host_communicator::coll_request_t host_communicator::alltoall_impl(
 }
 
 template <class buffer_type>
-host_communicator::coll_request_t host_communicator::alltoall_impl(
+ccl::event host_communicator::alltoall_impl(
     const ccl::vector_class<buffer_type*>& send_buf,
     const ccl::vector_class<buffer_type*>& recv_buf,
     size_t count,
@@ -156,7 +156,7 @@ host_communicator::coll_request_t host_communicator::alltoall_impl(
 }
 
 template <class buffer_type>
-host_communicator::coll_request_t host_communicator::alltoall_impl(
+ccl::event host_communicator::alltoall_impl(
     const buffer_type& send_buf,
     buffer_type& recv_buf,
     size_t count,
@@ -169,7 +169,7 @@ host_communicator::coll_request_t host_communicator::alltoall_impl(
 }
 
 template <class buffer_type>
-host_communicator::coll_request_t host_communicator::alltoall_impl(
+ccl::event host_communicator::alltoall_impl(
     const ccl::vector_class<ccl::reference_wrapper_class<buffer_type>>& send_buf,
     const ccl::vector_class<ccl::reference_wrapper_class<buffer_type>>& recv_buf,
     size_t count,
@@ -183,7 +183,7 @@ host_communicator::coll_request_t host_communicator::alltoall_impl(
 
 /* alltoallv */
 template <class buffer_type>
-host_communicator::coll_request_t host_communicator::alltoallv_impl(
+ccl::event host_communicator::alltoallv_impl(
     const buffer_type* send_buf,
     const ccl::vector_class<size_t>& send_counts,
     buffer_type* recv_buf,
@@ -195,7 +195,7 @@ host_communicator::coll_request_t host_communicator::alltoallv_impl(
                                           send_counts.data(),
                                           reinterpret_cast<void*>(recv_buf),
                                           recv_counts.data(),
-                                          ccl::native_type_info<buffer_type>::ccl_datatype_value,
+                                          ccl::native_type_info<buffer_type>::dtype,
                                           attr,
                                           comm_impl.get(),
                                           nullptr);
@@ -204,7 +204,7 @@ host_communicator::coll_request_t host_communicator::alltoallv_impl(
 }
 
 template <class buffer_type>
-host_communicator::coll_request_t host_communicator::alltoallv_impl(
+ccl::event host_communicator::alltoallv_impl(
     const ccl::vector_class<buffer_type*>& send_buf,
     const ccl::vector_class<size_t>& send_counts,
     const ccl::vector_class<buffer_type*>& recv_buf,
@@ -218,7 +218,7 @@ host_communicator::coll_request_t host_communicator::alltoallv_impl(
 }
 
 template <class buffer_type>
-host_communicator::coll_request_t host_communicator::alltoallv_impl(
+ccl::event host_communicator::alltoallv_impl(
     const buffer_type& send_buf,
     const ccl::vector_class<size_t>& send_counts,
     buffer_type& recv_buf,
@@ -231,7 +231,7 @@ host_communicator::coll_request_t host_communicator::alltoallv_impl(
     return {};
 }
 template <class buffer_type>
-host_communicator::coll_request_t host_communicator::alltoallv_impl(
+ccl::event host_communicator::alltoallv_impl(
     const ccl::vector_class<ccl::reference_wrapper_class<buffer_type>>& send_buf,
     const ccl::vector_class<size_t>& send_counts,
     const ccl::vector_class<ccl::reference_wrapper_class<buffer_type>>& recv_buf,
@@ -246,7 +246,7 @@ host_communicator::coll_request_t host_communicator::alltoallv_impl(
 
 /* bcast */
 template <class buffer_type>
-host_communicator::coll_request_t host_communicator::broadcast_impl(
+ccl::event host_communicator::broadcast_impl(
     buffer_type* buf,
     size_t count,
     size_t root,
@@ -256,7 +256,7 @@ host_communicator::coll_request_t host_communicator::broadcast_impl(
 
     ccl_request* req = ccl_broadcast_impl(reinterpret_cast<void*>(buf),
                                           count,
-                                          ccl::native_type_info<buffer_type>::ccl_datatype_value,
+                                          ccl::native_type_info<buffer_type>::dtype,
                                           root,
                                           attr,
                                           comm_impl.get(),
@@ -266,7 +266,7 @@ host_communicator::coll_request_t host_communicator::broadcast_impl(
 }
 
 template <class buffer_type>
-host_communicator::coll_request_t host_communicator::broadcast_impl(
+ccl::event host_communicator::broadcast_impl(
     buffer_type& buf,
     size_t count,
     size_t root,
@@ -280,7 +280,7 @@ host_communicator::coll_request_t host_communicator::broadcast_impl(
 
 /* reduce */
 template <class buffer_type>
-host_communicator::coll_request_t host_communicator::reduce_impl(
+ccl::event host_communicator::reduce_impl(
     const buffer_type* send_buf,
     buffer_type* recv_buf,
     size_t count,
@@ -292,7 +292,7 @@ host_communicator::coll_request_t host_communicator::reduce_impl(
     ccl_request* req = ccl_reduce_impl(reinterpret_cast<const void*>(send_buf),
                                        reinterpret_cast<void*>(recv_buf),
                                        count,
-                                       ccl::native_type_info<buffer_type>::ccl_datatype_value,
+                                       ccl::native_type_info<buffer_type>::dtype,
                                        reduction,
                                        root,
                                        attr,
@@ -303,7 +303,7 @@ host_communicator::coll_request_t host_communicator::reduce_impl(
 }
 
 template <class buffer_type>
-host_communicator::coll_request_t host_communicator::reduce_impl(
+ccl::event host_communicator::reduce_impl(
     const buffer_type& send_buf,
     buffer_type& recv_buf,
     size_t count,
@@ -319,7 +319,7 @@ host_communicator::coll_request_t host_communicator::reduce_impl(
 
 /* reduce_scatter */
 template <class buffer_type>
-host_communicator::coll_request_t host_communicator::reduce_scatter_impl(
+ccl::event host_communicator::reduce_scatter_impl(
     const buffer_type* send_buf,
     buffer_type* recv_buf,
     size_t recv_count,
@@ -330,7 +330,7 @@ host_communicator::coll_request_t host_communicator::reduce_scatter_impl(
     ccl_request* req = ccl_reduce_scatter_impl(reinterpret_cast<const void*>(send_buf),
                                        reinterpret_cast<void*>(recv_buf),
                                        recv_count,
-                                       ccl::native_type_info<buffer_type>::ccl_datatype_value,
+                                       ccl::native_type_info<buffer_type>::dtype,
                                        reduction,
                                        attr,
                                        comm_impl.get(),
@@ -340,7 +340,7 @@ host_communicator::coll_request_t host_communicator::reduce_scatter_impl(
 }
 
 template <class buffer_type>
-host_communicator::coll_request_t host_communicator::reduce_scatter_impl(
+ccl::event host_communicator::reduce_scatter_impl(
     const buffer_type& send_buf,
     buffer_type& recv_buf,
     size_t recv_count,
@@ -355,7 +355,7 @@ host_communicator::coll_request_t host_communicator::reduce_scatter_impl(
 
 /* sparse_allreduce */
 template <class index_buffer_type, class value_buffer_type>
-host_communicator::coll_request_t host_communicator::sparse_allreduce_impl(
+ccl::event host_communicator::sparse_allreduce_impl(
     const index_buffer_type* send_ind_buf,
     size_t send_ind_count,
     const value_buffer_type* send_val_buf,
@@ -377,8 +377,8 @@ host_communicator::coll_request_t host_communicator::sparse_allreduce_impl(
                                   recv_ind_count,
                                   (void*)recv_val_buf,
                                   recv_val_count,
-                                  ccl::native_type_info<index_buffer_type>::ccl_datatype_value,
-                                  ccl::native_type_info<value_buffer_type>::ccl_datatype_value,
+                                  ccl::native_type_info<index_buffer_type>::dtype,
+                                  ccl::native_type_info<value_buffer_type>::dtype,
                                   reduction,
                                   attr,
                                   comm_impl.get(),
@@ -388,7 +388,7 @@ host_communicator::coll_request_t host_communicator::sparse_allreduce_impl(
 }
 
 template <class index_buffer_container_type, class value_buffer_container_type>
-host_communicator::coll_request_t host_communicator::sparse_allreduce_impl(
+ccl::event host_communicator::sparse_allreduce_impl(
     const index_buffer_container_type& send_ind_buf,
     size_t send_ind_count,
     const value_buffer_container_type& send_val_buf,

@@ -36,7 +36,7 @@ private:
 };
 
 /* frequently used in multiple places */
-extern ccl_datatype ccl_datatype_char;
+extern ccl_datatype ccl_datatype_int8;
 
 struct ccl_datatype_hasher
 {

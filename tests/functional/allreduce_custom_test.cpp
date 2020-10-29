@@ -512,7 +512,7 @@ public:
         const ccl_test_conf& test_conf = param.get_conf();
         glob_match_id.resize(param.buffer_count);
 
-        if (test_conf.datatype == DT_BF16)
+        if (test_conf.datatype == DT_BFLOAT16)
         {
             printf("WARNING! BF16 is not supported for custom reduction, test skipped");
             return result;

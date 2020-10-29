@@ -41,7 +41,7 @@ TEST_F(communicator_fixture, build_allied_processes_affinity_mask) {
     size_t proces_idx = get_fixture_rank();
     size_t size = get_fixture_size();
     (void)size;
-    ccl::process_device_indices_t process_mask{
+    ccl::process_device_indices_type process_mask{
         { 0,
           { ccl::device_index_type(0, 0, ccl::unused_index_value),
             ccl::device_index_type(0, 0, ccl::unused_index_value),
@@ -60,11 +60,11 @@ TEST_F(communicator_fixture, build_allied_processes_affinity_mask) {
         process_group_context p_group_comm(ccl_comm);
 
         UT_ASSERT(!p_group_comm.get_host_id().empty(), "Hostname is empty");
-        ccl::cluster_device_indices_t cluster_mask;
+        ccl::cluster_device_indices_type cluster_mask;
         std::string case_name = p_group_comm.get_host_id();
 
         cluster_mask.insert({ case_name,
-                              ccl::process_device_indices_t{
+                              ccl::process_device_indices_type{
                                   { proces_idx, process_mask.find(proces_idx)->second } } });
 
         output << "initialize global mask for host: " << p_group_comm.get_host_id()
@@ -98,11 +98,11 @@ TEST_F(communicator_fixture, build_allied_processes_affinity_mask) {
         }
 
         UT_ASSERT(!p_group_comm.get_host_id().empty(), "Hostname is empty");
-        ccl::cluster_device_indices_t cluster_mask;
+        ccl::cluster_device_indices_type cluster_mask;
         std::string case_name = p_group_comm.get_host_id();
 
         cluster_mask.insert({ case_name,
-                              ccl::process_device_indices_t{
+                              ccl::process_device_indices_type{
                                   { proces_idx, process_mask.find(proces_idx)->second } } });
 
         output << "initialize global mask for host: " << p_group_comm.get_host_id()

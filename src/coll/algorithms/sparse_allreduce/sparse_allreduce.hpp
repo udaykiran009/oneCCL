@@ -69,19 +69,8 @@
             case ccl::datatype::float32: \
                 CCL_SPARSE_ALLREDUCE_SELECT_ALGO(itype, float, algo); \
                 break; \
-            case ccl::datatype::float64: \
-                CCL_SPARSE_ALLREDUCE_SELECT_ALGO(itype, double, algo); \
-                break; \
-            case ccl::datatype::int8: CCL_SPARSE_ALLREDUCE_SELECT_ALGO(itype, char, algo); break; \
-            case ccl::datatype::int32: CCL_SPARSE_ALLREDUCE_SELECT_ALGO(itype, int, algo); break; \
-            case ccl::datatype::int64: \
-                CCL_SPARSE_ALLREDUCE_SELECT_ALGO(itype, int64_t, algo); \
-                break; \
-            case ccl::datatype::uint64: \
-                CCL_SPARSE_ALLREDUCE_SELECT_ALGO(itype, uint64_t, algo); \
-                break; \
             case ccl::datatype::bfloat16: \
-                CCL_SPARSE_ALLREDUCE_SELECT_ALGO(itype, ccl::bf16, algo); \
+                CCL_SPARSE_ALLREDUCE_SELECT_ALGO(itype, ccl::bfloat16, algo); \
                 break; \
             default: \
                 CCL_FATAL("value datatype ", \
@@ -157,7 +146,7 @@
         param_nnz.recv_buf = ccl_buffer(sa_handler->recv_counts, sizeof(size_t) * comm_size); \
         param_nnz.send_count = sizeof(size_t); \
         param_nnz.recv_counts = sa_handler->size_per_rank; \
-        param_nnz.dtype = ccl_datatype_char; \
+        param_nnz.dtype = ccl_datatype_int8; \
         param_nnz.comm = comm; \
 \
         entry_factory::make_entry<coll_entry>(sched, param_nnz); \
@@ -165,7 +154,7 @@
     } while (0)
 
 template <typename vtype>
-typename std::enable_if<!std::is_same<vtype, ccl::bf16>::value, vtype>::type get_mask(
+typename std::enable_if<!std::is_same<vtype, ccl::bfloat16>::value, vtype>::type get_mask(
     ccl::reduction op) {
     switch (op) {
         case ccl::reduction::sum: return 0;
@@ -180,13 +169,13 @@ typename std::enable_if<!std::is_same<vtype, ccl::bf16>::value, vtype>::type get
 }
 
 template <typename vtype>
-typename std::enable_if<std::is_same<vtype, ccl::bf16>::value, vtype>::type get_mask(
+typename std::enable_if<std::is_same<vtype, ccl::bfloat16>::value, vtype>::type get_mask(
     ccl::reduction op) {
     switch (op) {
-        case ccl::reduction::sum: return 0;
-        case ccl::reduction::prod: return CCL_BF16_ONE;
-        case ccl::reduction::min: return CCL_BF16_MAX;
-        case ccl::reduction::max: return CCL_BF16_MIN;
+        case ccl::reduction::sum: return ccl::bfloat16(0);
+        case ccl::reduction::prod: return ccl::bfloat16(CCL_BF16_ONE);
+        case ccl::reduction::min: return ccl::bfloat16(CCL_BF16_MAX);
+        case ccl::reduction::max: return ccl::bfloat16(CCL_BF16_MIN);
         case ccl::reduction::custom:
             CCL_FATAL("custom reduction is not supported for sparse_allreduce/mask algorithm");
             return ccl::status::invalid_arguments;
@@ -356,11 +345,11 @@ ccl::status sparse_reduce_ring(const void* ctx) {
         ccl_comp_copy(snd_i,
                       buf_i.data(),
                       sa_handler->itype_size * sa_handler->dst_count[0],
-                      ccl_datatype_char);
+                      ccl_datatype_int8);
         ccl_comp_copy(snd_v,
                       buf_v.data(),
                       sa_handler->vtype_size * sa_handler->dst_count[1],
-                      ccl_datatype_char);
+                      ccl_datatype_int8);
 
         size_t idx_offset = 0;
         for (auto id : unique_indices_ids) {
@@ -394,13 +383,13 @@ ccl::status sparse_reduce_ring(const void* ctx) {
         ccl_comp_copy(buf_i.data(),
                       (i_type*)(sa_handler->dst_buf),
                       sa_handler->itype_size * merge_idx_len,
-                      ccl_datatype_char);
+                      ccl_datatype_int8);
 
         ccl_comp_copy(
             buf_v.data(),
             (v_type*)((char*)(sa_handler->dst_buf) + sa_handler->itype_size * merge_idx_len),
             sa_handler->vtype_size * merge_idx_len * sa_handler->val_dim_cnt,
-            ccl_datatype_char);
+            ccl_datatype_int8);
 
         sa_handler->dst_count[0] = merge_idx_len;
         sa_handler->dst_count[1] = merge_idx_len * sa_handler->val_dim_cnt;
@@ -410,7 +399,7 @@ ccl::status sparse_reduce_ring(const void* ctx) {
     ccl_comp_copy(sa_handler->recv_buf,
                   sa_handler->send_tmp_buf,
                   idx_size + sa_handler->send_count[1] * sa_handler->vtype_size,
-                  ccl_datatype_char);
+                  ccl_datatype_int8);
 
     sa_handler->iter++;
 
@@ -579,13 +568,13 @@ ccl::status ccl_coll_build_sparse_allreduce_ring(ccl_sched* sched,
         for (size_t i = 0; i < comm_size - 1; i++) {
             /* send local data to the right neighbour */
             send_entry* se = entry_factory::make_entry<send_entry>(
-                sched, ccl_buffer(), 0, ccl_datatype_char, send_to, comm);
+                sched, ccl_buffer(), 0, ccl_datatype_int8, send_to, comm);
             se->set_field_fn<ccl_sched_entry_field_buf>(sparse_get_send_buf_ring, sa_handler);
             se->set_field_fn<ccl_sched_entry_field_cnt>(sparse_get_send_count_ring, sa_handler);
 
             /* receive data from the left neighbour */
             recv_entry* re = entry_factory::make_entry<recv_entry>(
-                sched, ccl_buffer(), 0, ccl_datatype_char, recv_from, comm);
+                sched, ccl_buffer(), 0, ccl_datatype_int8, recv_from, comm);
             re->set_field_fn<ccl_sched_entry_field_buf>(sparse_get_recv_buf_ring, sa_handler);
             re->set_field_fn<ccl_sched_entry_field_cnt>(sparse_get_recv_count_ring, sa_handler);
             sched->add_barrier();
@@ -659,7 +648,7 @@ ccl::status sparse_create_matrix_mask(const void* ctx) {
     ccl_comp_copy(matrix,
                   (char*)sa_handler->dst_buf + idx_cnt * sa_handler->itype_size,
                   matrix_size,
-                  ccl_datatype_char);
+                  ccl_datatype_int8);
 
     CCL_FREE(matrix);
     sa_handler->iv_map->clear();

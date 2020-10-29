@@ -153,6 +153,7 @@ default structure and identifies the file types stored in each sub-directory:
 				|   |   |-- ccl_device_type_traits.hpp                                                                 
 				|   |   |-- ccl.h                                                                                      
 				|   |   |-- ccl.hpp                                                                                    
+				|   |   |-- ccl_lp_types.hpp                                                                              
 				|   |   |-- ccl_types.h                                                                                
 				|   |   |-- ccl_types.hpp                                                                              
 				|   |   `-- ccl_type_traits.hpp                                                                        
@@ -161,6 +162,7 @@ default structure and identifies the file types stored in each sub-directory:
 				|       |-- ccl_device_type_traits.hpp                                                                 
 				|       |-- ccl.h                                                                                      
 				|       |-- ccl.hpp                                                                                    
+				|       |-- ccl_lp_types.h                                                                                
 				|       |-- ccl_types.h                                                                                
 				|       |-- ccl_types.hpp                                                                              
 				|       `-- ccl_type_traits.hpp                                                                        

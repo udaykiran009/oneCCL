@@ -103,7 +103,7 @@ ccl::status ccl_coll_build_scatter_for_bcast(ccl_sched* sched,
                 entry_factory::make_entry<recv_entry>(sched,
                                                       tmp_buf + relative_rank * scatter_size,
                                                       recv_size,
-                                                      ccl_datatype_char,
+                                                      ccl_datatype_int8,
                                                       src,
                                                       comm);
                 sched->add_barrier();
@@ -133,7 +133,7 @@ ccl::status ccl_coll_build_scatter_for_bcast(ccl_sched* sched,
                     sched,
                     tmp_buf + scatter_size * (relative_rank + mask),
                     send_size,
-                    ccl_datatype_char,
+                    ccl_datatype_int8,
                     dst,
                     comm);
                 sched->add_barrier();
@@ -204,10 +204,10 @@ ccl::status ccl_coll_build_scatter_ring_allgather_bcast(ccl_sched* sched,
             right_count = 0;
         right_disp = rel_j * scatter_size;
         entry_factory::make_entry<send_entry>(
-            sched, tmp_buf + right_disp, right_count, ccl_datatype_char, right, comm);
+            sched, tmp_buf + right_disp, right_count, ccl_datatype_int8, right, comm);
         /* sendrecv, no barrier here */
         entry_factory::make_entry<recv_entry>(
-            sched, tmp_buf + left_disp, left_count, ccl_datatype_char, left, comm);
+            sched, tmp_buf + left_disp, left_count, ccl_datatype_int8, left, comm);
         sched->add_barrier();
 
         j = jnext;

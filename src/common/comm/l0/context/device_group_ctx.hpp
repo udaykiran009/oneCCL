@@ -42,7 +42,7 @@ struct device_group_context : numa_ctx<device_group_context, SUPPORTED_TOPOLOGY_
     using topologies = device_group_community_holder<ccl::group_split_type::thread,
                                                      SUPPORTED_TOPOLOGY_CLASSES_DECL_LIST>;
 
-    ccl::device_indices_t device_indices;
+    ccl::device_indices_type device_indices;
     topologies device_topology;
 
     template <ccl::device_topology_type class_id>
@@ -55,9 +55,9 @@ struct device_group_context : numa_ctx<device_group_context, SUPPORTED_TOPOLOGY_
 
     static std::shared_ptr<device_group_context> create(
         const ccl::context_comm_addr& comm_addr,
-        const ccl::device_indices_t& group_device_ids,
+        const ccl::device_indices_type& group_device_ids,
         device_storage& devices);
-    const ccl::device_indices_t& get_group_device_indices() const;
+    const ccl::device_indices_type& get_group_device_indices() const;
 
     ccl::context_comm_addr context_addr;
     std::unique_ptr<device_group_scheduler> scheduler_impl;
@@ -67,6 +67,6 @@ struct device_group_context : numa_ctx<device_group_context, SUPPORTED_TOPOLOGY_
 
 private:
     device_group_context(const ccl::context_comm_addr& comm_addr,
-                         const ccl::device_indices_t& device_mask);
+                         const ccl::device_indices_type& device_mask);
 };
 } // namespace native

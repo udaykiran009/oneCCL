@@ -29,8 +29,8 @@ ccl::status ccl_coll_build_dissemination_barrier(ccl_sched* sched, ccl_comm* com
     while (mask < size) {
         dst = (rank + mask) % size;
         src = (rank - mask + size) % size;
-        entry_factory::make_entry<send_entry>(sched, ccl_buffer(), 0, ccl_datatype_char, dst, comm);
-        entry_factory::make_entry<recv_entry>(sched, ccl_buffer(), 0, ccl_datatype_char, src, comm);
+        entry_factory::make_entry<send_entry>(sched, ccl_buffer(), 0, ccl_datatype_int8, dst, comm);
+        entry_factory::make_entry<recv_entry>(sched, ccl_buffer(), 0, ccl_datatype_int8, src, comm);
         sched->add_barrier();
         mask <<= 1;
     }

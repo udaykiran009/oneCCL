@@ -10,7 +10,7 @@ namespace utils {
 
 std::pair<bool, std::string> check_adj_matrix(
     const native::detail::adjacency_matrix& matrix,
-    const ccl::device_indices_t& idx,
+    const ccl::device_indices_type& idx,
     native::detail::cross_device_rating expected_self,
     native::detail::cross_device_rating expected_other = 0) {
     //check matrix
@@ -266,7 +266,7 @@ std::pair<bool, std::string> check_ring_multiple_topologies(
 }
 
 std::pair<bool, std::string> check_id_ring(native::detail::adjacency_matrix matrix,
-                                           const ccl::device_indices_t& idx,
+                                           const ccl::device_indices_type& idx,
                                            const native::detail::plain_graph& expected) {
     bool ret = true;
     std::string err;

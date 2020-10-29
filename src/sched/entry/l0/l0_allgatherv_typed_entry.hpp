@@ -64,7 +64,7 @@ public:
                    comm,
                    in_ctx,
                    send_buf,
-                   ccl::native_type_info<native_type>::ccl_type_value,
+                   ccl::native_type_info<native_type>::dtype,
                    device_stream),
               // left_wrote_to_me_flag
               income_data_flag(parent_communicator->get_device()

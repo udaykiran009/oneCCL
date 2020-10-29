@@ -5,7 +5,7 @@ namespace native {
 
 std::shared_ptr<specific_plain_device_storage> device_storage::create_devices_by_indices(
     size_t thread_id,
-    const ccl::device_indices_t& indices) {
+    const ccl::device_indices_type& indices) {
     std::shared_ptr<specific_plain_device_storage> out_devices =
         std::make_shared<specific_plain_device_storage>();
     size_t index_in_group = 0;

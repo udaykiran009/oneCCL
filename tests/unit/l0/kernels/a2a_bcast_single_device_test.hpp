@@ -21,62 +21,32 @@ namespace a2a_single_device_case {
 
 namespace a2a_bcast_case {
 
-using bf16 = ushort;
-using float32_t = float;
-using float64_t = double;
-
-using TestTypes = ::testing::Types<
-// In order to match type of a2a_gpu_comm_data we need to use
-// char, instead of int8_t and other types which set explicit signess
-// TODO: find out a better way to align the types
-/*    int8_t, */ char,
-    uint8_t,
-/*    int16_t, */ short,
-    uint16_t,
-/*  int32_t,  */ int,
-    uint32_t,
-/*    int64_t, */ long,
-    uint64_t,
-/*  float16_t, */
-    float32_t,
-    float64_t,
-    bf16
->;
-
 template <class T>
-struct param_traits;
+struct a2a_param_traits;
 
-#define DEFINE_KERNEL_TYPE(Name, T) \
+#define DEFINE_KERNEL_TYPE_A2A(NAME, T) \
     template <> \
-    struct param_traits<T> { \
-        static constexpr const char* kernel_name = "bcast_execution_" #Name; \
-        using comm_data_type = a2a_gpu_comm_data_##T; \
+    struct a2a_param_traits<T> { \
+        static constexpr const char* kernel_name = "bcast_execution_" #NAME; \
+        using comm_data_type = a2a_gpu_comm_data_##NAME; \
     };
 
-DEFINE_KERNEL_TYPE(int8_t, char)
-DEFINE_KERNEL_TYPE(uint8_t, uchar)
-
-DEFINE_KERNEL_TYPE(int16_t, short)
-DEFINE_KERNEL_TYPE(uint16_t, ushort)
-
-DEFINE_KERNEL_TYPE(int32_t, int)
-DEFINE_KERNEL_TYPE(uint32_t, uint)
-
-DEFINE_KERNEL_TYPE(int64_t, long)
-DEFINE_KERNEL_TYPE(uint64_t, ulong)
-
-/*DEFINE_KERNEL_TYPE(float16_t)*/
-DEFINE_KERNEL_TYPE(float32_t, float)
-DEFINE_KERNEL_TYPE(float64_t, double)
-
-// Disable for now since we already have a specialization for ushort
-// DEFINE_KERNEL_TYPE(bf16, ushort)
-
-#undef DEFINE_KERNEL_TYPE
+DEFINE_KERNEL_TYPE_A2A(int8, int8_t)
+DEFINE_KERNEL_TYPE_A2A(uint8, uint8_t)
+DEFINE_KERNEL_TYPE_A2A(int16, int16_t)
+DEFINE_KERNEL_TYPE_A2A(uint16, uint16_t)
+DEFINE_KERNEL_TYPE_A2A(int32, int32_t)
+DEFINE_KERNEL_TYPE_A2A(uint32, uint32_t)
+DEFINE_KERNEL_TYPE_A2A(int64, int64_t)
+DEFINE_KERNEL_TYPE_A2A(uint64, uint64_t)
+/*DEFINE_KERNEL_TYPE_A2A(float16, ushort)*/
+DEFINE_KERNEL_TYPE_A2A(float32, float)
+DEFINE_KERNEL_TYPE_A2A(float64, double)
+// DEFINE_KERNEL_TYPE_A2A(bfloat16, ushort)
 
 }
 
-TYPED_TEST_CASE(a2a_bcast_single_device_fixture, a2a_bcast_case::TestTypes);
+TYPED_TEST_CASE(a2a_bcast_single_device_fixture, TestTypes);
 
 TYPED_TEST(a2a_bcast_single_device_fixture, a2a_bcast_single_device_mt) {
     using namespace native;
@@ -191,7 +161,7 @@ TYPED_TEST(a2a_bcast_single_device_fixture, a2a_bcast_single_device_mt) {
     typename handles_storage<int>::thread_handles_container rank_flags =
         flags_storage.collect_handles_by_index({ 0, 1 });
 
-    std::vector<typename a2a_bcast_case::param_traits<native_type>::comm_data_type> a2a_comm(num_thread);
+    std::vector<typename a2a_bcast_case::a2a_param_traits<native_type>::comm_data_type> a2a_comm(num_thread);
 
     //Register memory handles to A2A
     for (size_t thread_id = 0; thread_id < rank_mem.size(); thread_id++) {
@@ -205,8 +175,8 @@ TYPED_TEST(a2a_bcast_single_device_fixture, a2a_bcast_single_device_mt) {
 
     //prepare gpu object
     auto a2a_comm_handle =
-        device.alloc_memory<typename a2a_bcast_case::param_traits<native_type>::comm_data_type>(
-            num_thread, sizeof(typename a2a_bcast_case::param_traits<native_type>::comm_data_type), ctx);
+        device.alloc_memory<typename a2a_bcast_case::a2a_param_traits<native_type>::comm_data_type>(
+            num_thread, sizeof(typename a2a_bcast_case::a2a_param_traits<native_type>::comm_data_type), ctx);
     a2a_comm_handle.enqueue_write_sync(a2a_comm);
 
     //prepare kernels in multithreading environment
@@ -215,7 +185,7 @@ TYPED_TEST(a2a_bcast_single_device_fixture, a2a_bcast_single_device_mt) {
         .pNext = nullptr,
         .flags = 0,
     };
-    desc.pKernelName = a2a_bcast_case::param_traits<native_type>::kernel_name;
+    desc.pKernelName = a2a_bcast_case::a2a_param_traits<native_type>::kernel_name;
     std::map<size_t, ze_kernel_handle_t> thread_kernels;
     std::map<size_t, ccl_device::device_queue> thread_queue;
     std::map<size_t, ccl_device::device_cmd_list> thread_cmd_list;
@@ -241,9 +211,9 @@ TYPED_TEST(a2a_bcast_single_device_fixture, a2a_bcast_single_device_mt) {
 
     auto& out = this->output;
     //printout
-    out << "L0 memory handles: " << std::endl;
-    memory_storage.dump(out, true);
-    memory_storage.dump_by_index(out, 0 /*secv_mem*/);
+    // out << "L0 memory handles: " << std::endl;
+    // memory_storage.dump(out, true);
+    // memory_storage.dump_by_index(out, 0 /*secv_mem*/);
 
     //Set args and launch kernel
     std::mutex thread_lock; //workaround

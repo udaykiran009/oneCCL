@@ -389,7 +389,7 @@ ccl::status ccl_coll_build_barrier(ccl_sched* sched, ccl_comm* comm) {
     ccl_selector_param param;
     param.ctype = ccl_coll_barrier;
     param.count = 0;
-    param.dtype = ccl_datatype_char;
+    param.dtype = ccl_datatype_int8;
     param.comm = comm;
 
     auto algo = ccl::global_data::get().algorithm_selector->get<ccl_coll_barrier>(param);
@@ -568,7 +568,7 @@ ccl::status ccl_coll_build_sparse_allreduce(ccl_sched* sched,
     ccl_selector_param param;
     param.ctype = ccl_coll_sparse_allreduce;
     param.count = 0;
-    param.dtype = ccl_datatype_char;
+    param.dtype = ccl_datatype_int8;
     param.comm = comm;
     param.sparse_coalesce_mode = sched->coll_attr.sparse_coalesce_mode;
     param.sparse_allreduce_alloc_fn = sched->coll_attr.sparse_allreduce_alloc_fn;
@@ -648,17 +648,11 @@ ccl::status ccl_coll_build_sparse_allreduce(ccl_sched* sched,
               ccl_reduction_to_str(reduction));
 
     switch (index_dtype.idx()) {
-        case ccl::datatype::int8:
-            CCL_SPARSE_ALLREDUCE_SELECT_V_DTYPE(char, value_dtype, algo);
-            break;
         case ccl::datatype::int32:
-            CCL_SPARSE_ALLREDUCE_SELECT_V_DTYPE(int, value_dtype, algo);
+            CCL_SPARSE_ALLREDUCE_SELECT_V_DTYPE(int32_t, value_dtype, algo);
             break;
         case ccl::datatype::int64:
             CCL_SPARSE_ALLREDUCE_SELECT_V_DTYPE(int64_t, value_dtype, algo);
-            break;
-        case ccl::datatype::uint64:
-            CCL_SPARSE_ALLREDUCE_SELECT_V_DTYPE(uint64_t, value_dtype, algo);
             break;
         default:
             CCL_FATAL("index datatype ",
@@ -794,7 +788,7 @@ void ccl_barrier_impl(ccl_comm* comm, const ccl_stream* stream) {
     ccl_coll_param param{};
 
     param.ctype = ccl_coll_barrier;
-    param.dtype = ccl_datatype_char;
+    param.dtype = ccl_datatype_int8;
     param.stream = stream;
     param.comm = comm;
 

@@ -32,7 +32,7 @@ if (${CMAKE_BUILD_TYPE_CASE_INSENSITIVE} STREQUAL "debug")
     set(USE_SECURITY_FLAGS FALSE)
 endif()
 
-option(BUILD_TESTS "Build tests (functional and unit tests)" TRUE)
+option(BUILD_UT "Build unit tests" TRUE)
 option(USE_CODECOV_FLAGS "Calculate code coverage" FALSE)
 option(WITH_ASAN "Use address sanitizer, can only be used in Debug build" FALSE)
 
@@ -44,7 +44,7 @@ if(CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT)
 endif()
 
 #show build info
-message(STATUS "Build tests: ${BUILD_TESTS}")
+message(STATUS "Build unit tests: ${BUILD_UT}")
 message(STATUS "Installation directory: ${CMAKE_INSTALL_PREFIX}")
 message(STATUS "Build type: ${CMAKE_BUILD_TYPE_CASE_INSENSITIVE}")
 message(STATUS "C compiler : ${CMAKE_C_COMPILER}")
@@ -197,6 +197,9 @@ if (CCL_BF16_COMPILER)
     endif()
 endif()
 
+add_definitions(-DCCL_GPU_BF16_TRUNCATE)
+set(CCL_GPU_BF16_TRUNCATE ON)
+
 set(CCL_BUILD_DIR ${CMAKE_CURRENT_BINARY_DIR}/src)
 
 enable_testing()
@@ -229,7 +232,7 @@ endif(MULTI_GPU_SUPPORT)
 
 if (CCL_ENABLE_SYCL)
     if (${PARENT_COMPUTE_RUNTIME_TARGET_NAME} STREQUAL "Intel::SYCL")
-        set (CCL_ENABLE_SYCL_CHECK_CONTRACT "#if defined(__cplusplus)\n#if !defined(__clang__) || __clang_major__ < 9 || !defined(CL_SYCL_LANGUAGE_VERSION)\n#error This version of CCL configured only for oneAPI DPC++ Compiler\n#endif\n#endif")
+        set (CCL_ENABLE_SYCL_CHECK_CONTRACT "#if defined(__cplusplus)\n#if !defined(__clang__) || __clang_major__ < 9 || !defined(SYCL_LANGUAGE_VERSION)\n#error This version of CCL configured only for oneAPI DPC++ Compiler\n#endif\n#endif")
     else(${PARENT_COMPUTE_RUNTIME_TARGET_NAME} STREQUAL "Codeplay::ComputeCpp")
         set (CCL_ENABLE_SYCL_CHECK_CONTRACT "#if defined(__cplusplus)\n#if !defined(__clang__) || __clang_major__ < 6\n#error This version of CCL configured only for oneAPI DPC++ Compiler\n#endif\n#endif")
     endif()
@@ -268,7 +271,8 @@ if (CCL_ENABLE_SYCL)
     add_subdirectory(examples/sycl)
 endif()
 
-if (BUILD_TESTS)
-    add_subdirectory(tests/functional)
+add_subdirectory(tests/functional)
+
+if (BUILD_UT)
     add_subdirectory(tests/unit)
 endif()

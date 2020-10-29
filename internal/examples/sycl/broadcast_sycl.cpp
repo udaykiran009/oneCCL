@@ -184,10 +184,10 @@ int main(int argc, char** argv) {
     auto kvs_instance = utils::build_kvs(mpi_rank);
 
     /* parse/init data */
-    using device_type = ccl::communicator::ccl_device_t;
+    using device_type = ccl::communicator::device_type;
 
     std::map<size_t, std::vector<device_type>> devices_for_mpi_rank;
-    std::map<size_t, ccl::process_device_indices_t> node_device_indices;
+    std::map<size_t, ccl::process_device_indices_type> node_device_indices;
     std::map<size_t, std::vector<std::string>> thread_group_gpu_affinity_per_process;
     size_t total_device_in_cluster = 0;
     size_t device_rank_for_mpi_rank_id_offset = 0;

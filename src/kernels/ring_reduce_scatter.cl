@@ -273,24 +273,24 @@ __kernel void reduce_scatter_execution_##Name##_##OpName(size_t my_rank,        
 // Macro to define kernels for a specific operation for all the supported types.
 // Note: for op function we use convention __<OpName>_<type>, where type is the actual type(e.g. int4, float)
 #define DEFINE_KERNELS_WITH_OP(OpName)                                      \
-    DEFINE_KERNEL(int8_t, char4, 4, __##OpName##_##char4, OpName)           \
-    DEFINE_KERNEL(uint8_t, uchar4, 4, __##OpName##_##uchar4, OpName)        \
+    DEFINE_KERNEL(int8, char4, 4, __##OpName##_##char4, OpName)           \
+    DEFINE_KERNEL(uint8, uchar4, 4, __##OpName##_##uchar4, OpName)        \
                                                                             \
-    DEFINE_KERNEL(int16_t, short4, 4, __##OpName##_##short4, OpName)        \
-    DEFINE_KERNEL(uint16_t, ushort4, 4, __##OpName##_##ushort4, OpName)     \
+    DEFINE_KERNEL(int16, short4, 4, __##OpName##_##short4, OpName)        \
+    DEFINE_KERNEL(uint16, ushort4, 4, __##OpName##_##ushort4, OpName)     \
                                                                             \
-    DEFINE_KERNEL(int32_t, int4, 4, __##OpName##_##int4, OpName)            \
-    DEFINE_KERNEL(uint32_t, uint4, 4, __##OpName##_##uint4, OpName)         \
+    DEFINE_KERNEL(int32, int4, 4, __##OpName##_##int4, OpName)            \
+    DEFINE_KERNEL(uint32, uint4, 4, __##OpName##_##uint4, OpName)         \
                                                                             \
-    DEFINE_KERNEL(int64_t, long4, 4, __##OpName##_##long4, OpName)          \
-    DEFINE_KERNEL(uint64_t, ulong4, 4, __##OpName##_##ulong4, OpName)       \
+    DEFINE_KERNEL(int64, long4, 4, __##OpName##_##long4, OpName)          \
+    DEFINE_KERNEL(uint64, ulong4, 4, __##OpName##_##ulong4, OpName)       \
                                                                             \
-    DEFINE_KERNEL(float32_t, float4, 4, __##OpName##_##float4, OpName)      \
-    DEFINE_KERNEL(float64_t, double4, 4, __##OpName##_##double4, OpName)    \
+    DEFINE_KERNEL(float32, float4, 4, __##OpName##_##float4, OpName)      \
+    DEFINE_KERNEL(float64, double4, 4, __##OpName##_##double4, OpName)    \
     /* TODO: implement support for missing types*/                          \
-    /*DEFINE_KERNEL(float16_t, half, 1, __##OpName##_##half, OpName)*/      \
-    /* TODO: replace once bf16 support is fully implemented */              \
-    DEFINE_KERNEL(bf16, ushort, 1, __##OpName##_##bf16, OpName)
+    /*DEFINE_KERNEL(float16, half, 1, __##OpName##_##half, OpName)*/      \
+    /* TODO: replace once bfloat16 support is fully implemented */              \
+    DEFINE_KERNEL(bfloat16, ushort, 1, __##OpName##_##bfloat16, OpName)
 
 #define DEFINE_ADD_OP(T)                                    \
     T __add_##T(T lhs, T rhs) {                             \
@@ -334,8 +334,8 @@ DEFINE_OPS(ulong4)
 
 DEFINE_OPS(float4)
 DEFINE_OPS(double4)
-// Uses integer ops for now since bf16 is aliased to ushort for now
-DEFINE_OPS(bf16)
+// Uses integer ops for now since bfloat16 is aliased to ushort for now
+DEFINE_OPS(bfloat16)
 // TODO: Enable when half is supported
 /*DEFINE_OPS(half)*/
 
@@ -344,133 +344,3 @@ DEFINE_KERNELS_WITH_OP(add)
 DEFINE_KERNELS_WITH_OP(mult)
 DEFINE_KERNELS_WITH_OP(min)
 DEFINE_KERNELS_WITH_OP(max)
-
-// numa
-__kernel void reduce_scatter_execution_numa_char(size_t my_rank,
-                                                 size_t comm_size,
-                                                 size_t elems_count,
-                                                 const __global char4* input_buffer,
-                                                 __global char4* output_buffer,
-
-                                                 __global char4* tmp_buffer,
-                                                 __global volatile int* left_wrote_to_me_flag,
-                                                 __global volatile int* i_ready_to_receive_flag,
-
-                                                 __global volatile int* local_barrier_flag,
-
-                                                 __global char4* right_temp_buffer,
-                                                 __global volatile int* i_send_to_right_flag,
-                                                 __global volatile int* right_ready_to_recv_flag) {
-    return;
-}
-
-__kernel void reduce_scatter_execution_numa_int(size_t my_rank,
-                                                size_t comm_size,
-                                                size_t elems_count,
-                                                const __global int4* input_buffer,
-                                                __global int4* output_buffer,
-
-                                                __global int4* tmp_buffer,
-                                                __global volatile int* left_wrote_to_me_flag,
-                                                __global volatile int* i_ready_to_receive_flag,
-
-                                                __global volatile int* local_barrier_flag,
-
-                                                __global int4* right_temp_buffer,
-                                                __global volatile int* i_send_to_right_flag,
-                                                __global volatile int* right_ready_to_recv_flag) {
-    return;
-}
-
-__kernel void reduce_scatter_execution_numa_bf16(size_t my_rank,
-                                                  size_t comm_size,
-                                                  size_t elems_count,
-                                                  const __global bf16* input_buffer,
-                                                  __global bf16* output_buffer,
-
-                                                  __global bf16* tmp_buffer,
-                                                  __global volatile int* left_wrote_to_me_flag,
-                                                  __global volatile int* i_ready_to_receive_flag,
-
-                                                  __global volatile int* local_barrier_flag,
-
-                                                  __global bf16* right_temp_buffer,
-                                                  __global volatile int* i_send_to_right_flag,
-                                                  __global volatile int* right_ready_to_recv_flag) {
-    return;
-}
-
-__kernel void reduce_scatter_execution_numa_float(size_t my_rank,
-                                                  size_t comm_size,
-                                                  size_t elems_count,
-                                                  const __global float4* input_buffer,
-                                                  __global float4* output_buffer,
-
-                                                  __global float4* tmp_buffer,
-                                                  __global volatile int* left_wrote_to_me_flag,
-                                                  __global volatile int* i_ready_to_receive_flag,
-
-                                                  __global volatile int* local_barrier_flag,
-
-                                                  __global float4* right_temp_buffer,
-                                                  __global volatile int* i_send_to_right_flag,
-                                                  __global volatile int* right_ready_to_recv_flag) {
-    return;
-}
-
-__kernel void reduce_scatter_execution_numa_double(
-    size_t my_rank,
-    size_t comm_size,
-    size_t elems_count,
-    const __global double4* input_buffer,
-    __global double4* output_buffer,
-
-    __global double4* tmp_buffer,
-    __global volatile int* left_wrote_to_me_flag,
-    __global volatile int* i_ready_to_receive_flag,
-
-    __global volatile int* local_barrier_flag,
-
-    __global double4* right_temp_buffer,
-    __global volatile int* i_send_to_right_flag,
-    __global volatile int* right_ready_to_recv_flag) {
-    return;
-}
-
-__kernel void reduce_scatter_execution_numa_int64_t(
-    size_t my_rank,
-    size_t comm_size,
-    size_t elems_count,
-    const __global long4* input_buffer,
-    __global long4* output_buffer,
-
-    __global long4* tmp_buffer,
-    __global volatile int* left_wrote_to_me_flag,
-    __global volatile int* i_ready_to_receive_flag,
-
-    __global volatile int* local_barrier_flag,
-
-    __global long4* right_temp_buffer,
-    __global volatile int* i_send_to_right_flag,
-    __global volatile int* right_ready_to_recv_flag) {
-    return;
-}
-
-__kernel void reduce_scatter_execution_numa_uint64_t(
-    size_t my_rank,
-    size_t comm_size,
-    size_t elems_count,
-    const __global ulong4* input_buffer,
-    __global ulong4* output_buffer,
-
-    __global ulong4* tmp_buffer,
-    __global volatile int* left_wrote_to_me_flag,
-    __global volatile int* i_ready_to_receive_flag,
-
-    __global volatile int* local_barrier_flag,
-
-    __global ulong4* right_temp_buffer,
-    __global volatile int* i_send_to_right_flag,
-    __global volatile int* right_ready_to_recv_flag) {
-    return;
-}

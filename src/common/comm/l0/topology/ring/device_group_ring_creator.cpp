@@ -15,7 +15,7 @@ size_t device_group_ring_topology::default_property_p2p_rating_calculator(const 
 
 detail::adjacency_matrix device_group_ring_topology::build_p2p_capability_matrix(
     std::ostream& out,
-    const ccl::device_indices_t& group_device_indices,
+    const ccl::device_indices_type& group_device_indices,
     detail::p2p_rating_function ping) {
     // Build adjacency matrix between devices using `ping` function:
     // Default ping function is checking P2P access capabilities in a way:
@@ -47,7 +47,7 @@ detail::adjacency_matrix device_group_ring_topology::build_p2p_capability_matrix
 
 bool device_group_ring_topology::build(std::ostream& out,
                                        const ccl::context_comm_addr& comm_addr,
-                                       const ccl::device_indices_t& group_device_indices,
+                                       const ccl::device_indices_type& group_device_indices,
                                        const detail::adjacency_matrix& matrix) {
     out << "\n/*************\"" << device_group_ring_topology::name() << "\"*************/\n"
         << std::endl;
@@ -85,7 +85,7 @@ template <ccl::device_topology_type class_id>
 bool device_group_ring_topology::build_specific_topology(
     std::ostream& out,
     const ccl::context_comm_addr& comm_addr,
-    const ccl::device_indices_t& group_device_indices,
+    const ccl::device_indices_type& group_device_indices,
     const detail::plain_graph& graph) {
     out << "Start building topology: " << ::to_string(class_id) << ", for graph:\n";
     out << detail::to_string(graph);
@@ -118,7 +118,7 @@ bool device_group_ring_topology::build_specific_topology(
 
 bool device_group_ring_topology::build_specific(std::ostream& out,
                                                 const ccl::context_comm_addr& comm_addr,
-                                                const ccl::device_indices_t& group_device_indices,
+                                                const ccl::device_indices_type& group_device_indices,
                                                 const detail::plain_graph& graph,
                                                 const detail::adjacency_matrix& matrix) {
     bool result = build_specific_topology<ccl::device_topology_type::ring>(
@@ -147,7 +147,7 @@ template <ccl::device_topology_type class_id>
 bool device_group_ring_topology::build_scale_up_specific_topology(
     std::ostream& out,
     const ccl::context_comm_addr& comm_addr,
-    const ccl::device_indices_t& group_device_indices,
+    const ccl::device_indices_type& group_device_indices,
     const detail::plain_graph_list& graph_list) {
     out << "Start building topology: " << ::to_string(class_id)
         << ", for graphs: " << graph_list.size() << "\n";
@@ -159,7 +159,7 @@ bool device_group_ring_topology::build_scale_up_specific_topology(
 
     // create all required device wrappers
     // these wrappers would be used for ALL context at the next iteration
-    ccl::device_indices_t total_device_indices;
+    ccl::device_indices_type total_device_indices;
     for (const auto& graph : graph_list) {
         total_device_indices.insert(graph.begin(), graph.end());
     }
@@ -249,7 +249,7 @@ bool device_group_ring_topology::build_scale_up_specific_topology(
 bool device_group_ring_topology::build_scale_up_specific(
     std::ostream& out,
     const ccl::context_comm_addr& comm_addr,
-    const ccl::device_indices_t& group_device_indices,
+    const ccl::device_indices_type& group_device_indices,
     const detail::plain_graph_list& graph_list,
     const detail::adjacency_matrix& matrix) {
     bool result = build_scale_up_specific_topology<ccl::device_topology_type::ring>(

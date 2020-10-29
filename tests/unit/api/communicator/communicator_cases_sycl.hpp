@@ -57,7 +57,7 @@ TEST(device_communicator_api, device_comm_from_sycl_devices_single_thread) {
     // fill stub parameters
     ccl_comm::ccl_comm_reset_thread_barrier();
     ccl::group_context::instance().communicator_group_map.clear();
-    ccl::device_indices_t indices{ ccl::device_index_type(0, 0, ccl::unused_index_value),
+    ccl::device_indices_type indices{ ccl::device_index_type(0, 0, ccl::unused_index_value),
                                    ccl::device_index_type(0, 0, ccl::unused_index_value),
                                    ccl::device_index_type(0, 0, ccl::unused_index_value) };
     stub::make_stub_devices(indices);
@@ -242,7 +242,7 @@ TEST(device_communicator_api, device_comm_from_sycl_devices_multiple_threads) {
     ccl_logger::set_log_level(static_cast<ccl_log_level>(3));
     constexpr size_t thread_count = 3;
     for (size_t i = 0; i < thread_count; i++) {
-        ccl::device_indices_t indices{ ccl::device_index_type(0, i, ccl::unused_index_value) };
+        ccl::device_indices_type indices{ ccl::device_index_type(0, i, ccl::unused_index_value) };
         stub::make_stub_devices(indices);
     }
 
@@ -374,7 +374,7 @@ TEST(device_communicator_api, device_comm_from_sycl_devices_multiple_threads_wit
     ccl_logger::set_log_level(static_cast<ccl_log_level>(3));
     constexpr size_t thread_count = 3;
     for (size_t i = 0; i < thread_count; i++) {
-        ccl::device_indices_t indices{ ccl::device_index_type(0, i, ccl::unused_index_value) };
+        ccl::device_indices_type indices{ ccl::device_index_type(0, i, ccl::unused_index_value) };
         stub::make_stub_devices(indices);
     }
 

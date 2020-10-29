@@ -123,7 +123,7 @@ struct test_subdevice : public native::ccl_subdevice {
     }
 };
 
-inline void make_stub_devices(const ccl::device_indices_t& stub_indices) {
+inline void make_stub_devices(const ccl::device_indices_type& stub_indices) {
     using namespace native;
     using namespace ccl;
 
@@ -180,7 +180,7 @@ inline void make_stub_devices(const ccl::device_indices_t& stub_indices) {
     }
 }
 
-inline void make_stub_devices(const ccl::process_device_indices_t& stub_indices) {
+inline void make_stub_devices(const ccl::process_device_indices_type& stub_indices) {
     for (const auto& pr_indices : stub_indices) {
         make_stub_devices(pr_indices.second);
     }

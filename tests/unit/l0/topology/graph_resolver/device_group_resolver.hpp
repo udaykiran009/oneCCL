@@ -9,7 +9,7 @@ TEST_F(router_fixture, graph_resolver_default_creator_test) {
     using namespace native::detail;
 
     {
-        ccl::device_indices_t indices{ ccl::device_index_type(0, 0, ccl::unused_index_value),
+        ccl::device_indices_type indices{ ccl::device_index_type(0, 0, ccl::unused_index_value),
                                        ccl::device_index_type(0, 0, ccl::unused_index_value),
                                        ccl::device_index_type(0, 0, ccl::unused_index_value) };
         stub::make_stub_devices(indices);
@@ -39,7 +39,7 @@ TEST_F(router_fixture, graph_resolver_creator_test_devices_2_per_groups_2_non_p2
     using namespace native;
     using namespace native::detail;
 
-        ccl::device_indices_t indices{ ccl::device_index_type(0, 0, ccl::unused_index_value),
+        ccl::device_indices_type indices{ ccl::device_index_type(0, 0, ccl::unused_index_value),
                                        ccl::device_index_type(0, 1, ccl::unused_index_value),
                                        ccl::device_index_type(0, 2, ccl::unused_index_value),
                                        ccl::device_index_type(0, 3, ccl::unused_index_value) };
@@ -102,7 +102,7 @@ TEST_F(router_fixture, graph_resolver_creator_test_devices_2_per_groups_1_non_p2
     using namespace utils;
     using namespace native;
     using namespace native::detail;
-        ccl::device_indices_t indices{ ccl::device_index_type(0, 0, ccl::unused_index_value),
+        ccl::device_indices_type indices{ ccl::device_index_type(0, 0, ccl::unused_index_value),
                                        ccl::device_index_type(0, 1, ccl::unused_index_value) };
         stub::make_stub_devices(indices);
 
@@ -146,7 +146,7 @@ TEST_F(router_fixture, graph_resolver_creator_test_devices_10_per_groups_multi_a
     using namespace utils;
     using namespace native;
     using namespace native::detail;
-        ccl::device_indices_t indices{ ccl::device_index_type(0, 0, ccl::unused_index_value),
+        ccl::device_indices_type indices{ ccl::device_index_type(0, 0, ccl::unused_index_value),
                                        ccl::device_index_type(0, 1, ccl::unused_index_value),
                                        ccl::device_index_type(0, 2, ccl::unused_index_value),
                                        ccl::device_index_type(0, 3, ccl::unused_index_value),
@@ -309,11 +309,11 @@ TEST_F(router_fixture, graph_resolver_creator_test_subdevices_2_per_groups_2_non
     using namespace utils;
     using namespace native;
     using namespace native::detail;
-        ccl::device_indices_t indices{ ccl::device_index_type(0, 0, 0),
+        ccl::device_indices_type indices{ ccl::device_index_type(0, 0, 0),
                                        ccl::device_index_type(0, 0, 1),
                                        ccl::device_index_type(0, 1, 0),
                                        ccl::device_index_type(0, 1, 1) };
-        ccl::device_indices_t full_stub_indices = indices;
+        ccl::device_indices_type full_stub_indices = indices;
         full_stub_indices.insert({ ccl::device_index_type(0, 0, 0),
                                    ccl::device_index_type(0, 0, 1),
                                    ccl::device_index_type(0, 1, 0),

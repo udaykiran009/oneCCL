@@ -32,11 +32,11 @@ public:
 
     static detail::adjacency_matrix build_p2p_capability_matrix(
         std::ostream& out,
-        const ccl::process_device_indices_t& single_node_device_indices,
+        const ccl::process_device_indices_type& single_node_device_indices,
         detail::p2p_rating_function ping = default_property_p2p_rating_calculator);
     bool build_all(std::ostream& out,
                    const ccl::context_comm_addr& comm_addr,
-                   const ccl::process_device_indices_t& cur_process_per_thread_device_indices,
+                   const ccl::process_device_indices_type& cur_process_per_thread_device_indices,
                    const detail::adjacency_matrix& single_node_matrix,
                    detail::p2p_rating_function ping = default_property_p2p_rating_calculator);
 
@@ -44,7 +44,7 @@ public:
     bool build_impl(
         std::ostream& out,
         const ccl::context_comm_addr& comm_addr,
-        const ccl::process_device_indices_t& cur_process_per_thread_device_indices,
+        const ccl::process_device_indices_type& cur_process_per_thread_device_indices,
         const detail::adjacency_matrix& single_node_matrix,
         const std::vector<std::vector<detail::colored_indexed_data<size_t>>>& syntetic_devices,
         detail::colored_plain_graph_list& graph_list,

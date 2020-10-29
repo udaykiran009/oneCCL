@@ -189,19 +189,19 @@ inline size_t take_mpi_rank_id_offest(const size_t mpi_rank_in_cluster,
         return total_device_in_cluster;
 }
 
-ccl::process_device_indices_t extract_indices_for_threads(const size_t  mpi_rank_in_cluster,
+ccl::process_device_indices_type extract_indices_for_threads(const size_t  mpi_rank_in_cluster,
                                                           const int current_mpi_rank,
                                                           std::vector<std::string> thread_gpu_affinity,
                                                           size_t& total_device_in_cluster,
                                                           std::vector<size_t>& total_devices_in_process,
                                                           std::map<size_t,
-                                                                 std::vector<ccl::communicator::ccl_device_t>>&
+                                                                 std::vector<ccl::communicator::device_type>>&
                                                                                         devices_for_current_mpi_rank) {
 
-    ccl::process_device_indices_t thread_group_affinity;
+    ccl::process_device_indices_type thread_group_affinity;
 
     for (size_t thread_index = 0; thread_index < thread_gpu_affinity.size(); thread_index++) {
-                    ccl::device_indices_t device_group_affinity;
+                    ccl::device_indices_type device_group_affinity;
         str_to_mset<ccl::device_index_type>(
             thread_gpu_affinity[thread_index].c_str(), device_group_affinity, ',');
 
@@ -222,10 +222,10 @@ ccl::process_device_indices_t extract_indices_for_threads(const size_t  mpi_rank
     return thread_group_affinity;
 }
 
-std::vector<ccl::communicator::ccl_device_t> set_union_devices_in_current_process(const std::map<size_t,
-                                                                      std::vector<ccl::communicator::ccl_device_t>>&
+std::vector<ccl::communicator::device_type> set_union_devices_in_current_process(const std::map<size_t,
+                                                                      std::vector<ccl::communicator::device_type>>&
                                                                                              devices_for_mpi_rank) {
-    std::vector<ccl::communicator::ccl_device_t> devices_in_process;
+    std::vector<ccl::communicator::device_type> devices_in_process;
     for (auto& thread_devices : devices_for_mpi_rank) {
         devices_in_process.insert(
             devices_in_process.end(), thread_devices.second.begin(), thread_devices.second.end());

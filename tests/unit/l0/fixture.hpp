@@ -44,7 +44,7 @@ public:
     }
     ~communicator_fixture() override {}
 
-    void initialize_global_mask(ccl::cluster_device_indices_t new_mask) {
+    void initialize_global_mask(ccl::cluster_device_indices_type new_mask) {
         global_mask.swap(new_mask);
     }
 
@@ -60,11 +60,11 @@ public:
         return global_comm;
     }
 
-    const ccl::cluster_device_indices_t& get_global_mask() const {
+    const ccl::cluster_device_indices_type& get_global_mask() const {
         return global_mask;
     }
 
-    const ccl::device_indices_t& get_process_mask(const std::string& hostname,
+    const ccl::device_indices_type& get_process_mask(const std::string& hostname,
                                                   size_t process_order) {
         auto node_it = global_mask.find(hostname);
         if (node_it == global_mask.end()) {
@@ -81,7 +81,7 @@ public:
         }
         return proc_it->second;
     }
-    ccl::cluster_device_indices_t global_mask;
+    ccl::cluster_device_indices_type global_mask;
     std::shared_ptr<ccl::communicator> global_comm;
 };
 #endif

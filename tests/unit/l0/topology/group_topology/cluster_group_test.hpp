@@ -72,7 +72,7 @@ TEST_F(router_fixture, cluster_simple_scaleup_test) {
 
         // build device group context at first
         for (size_t thread_id : params.thread_ids) {
-            const ccl::device_indices_t& group_indices_affinity = get_device_affinity(thread_id);
+            const ccl::device_indices_type& group_indices_affinity = get_device_affinity(thread_id);
             device_group_context& dev_group_ctx = *tg_comm->get_device_group_ctx(thread_id);
             device_group_ring_topology device_top(dev_group_ctx, *pg_comm->gpu_device_storage);
 
@@ -202,7 +202,7 @@ TEST_F(router_fixture, cluster_simple_scaleout_test) {
 
         // build device group context at first
         for (size_t thread_id : params.thread_ids) {
-            const ccl::device_indices_t& group_indices_affinity = get_device_affinity(thread_id);
+            const ccl::device_indices_type& group_indices_affinity = get_device_affinity(thread_id);
             device_group_context& dev_group_ctx = *tg_comm->get_device_group_ctx(thread_id);
             device_group_ring_topology device_top(dev_group_ctx, *pg_comm->gpu_device_storage);
 
@@ -338,7 +338,7 @@ TEST_F(router_fixture, cluster_simple_scaleup_scaleout_test) {
 
         // build device group context at first
         for (size_t thread_id : params.thread_ids) {
-            const ccl::device_indices_t& group_indices_affinity = get_device_affinity(thread_id);
+            const ccl::device_indices_type& group_indices_affinity = get_device_affinity(thread_id);
             device_group_context& dev_group_ctx = *tg_comm->get_device_group_ctx(thread_id);
             device_group_ring_topology device_top(dev_group_ctx, *pg_comm->gpu_device_storage);
 
@@ -505,7 +505,7 @@ TEST_F(router_fixture, cluster_numa_scaleup_test) {
 
         // build device group context at first
         for (size_t thread_id : params.thread_ids) {
-            const ccl::device_indices_t& group_indices_affinity = get_device_affinity(thread_id);
+            const ccl::device_indices_type& group_indices_affinity = get_device_affinity(thread_id);
             device_group_context& dev_group_ctx = *tg_comm->get_device_group_ctx(thread_id);
             device_group_ring_topology device_top(dev_group_ctx, *pg_comm->gpu_device_storage);
 
@@ -679,7 +679,7 @@ TEST_F(router_fixture, cluster_numa_scaleout_test) {
 
         // build device group context at first
         for (size_t thread_id : params.thread_ids) {
-            const ccl::device_indices_t& group_indices_affinity = get_device_affinity(thread_id);
+            const ccl::device_indices_type& group_indices_affinity = get_device_affinity(thread_id);
             device_group_context& dev_group_ctx = *tg_comm->get_device_group_ctx(thread_id);
             device_group_ring_topology device_top(dev_group_ctx, *pg_comm->gpu_device_storage);
 
@@ -872,7 +872,7 @@ TEST_F(router_fixture, cluster_numa_scaleup_scale_out_test) {
 
         // build device group context at first
         for (size_t thread_id : params.thread_ids) {
-            const ccl::device_indices_t& group_indices_affinity = get_device_affinity(thread_id);
+            const ccl::device_indices_type& group_indices_affinity = get_device_affinity(thread_id);
             device_group_context& dev_group_ctx = *tg_comm->get_device_group_ctx(thread_id);
             device_group_ring_topology device_top(dev_group_ctx, *pg_comm->gpu_device_storage);
 

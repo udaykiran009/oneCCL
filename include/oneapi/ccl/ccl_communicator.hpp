@@ -47,14 +47,12 @@ public:
      * Type allows to get underlying device type,
      * which was used as communicator construction argument
      */
-    using ccl_device_t = typename unified_device_type::ccl_native_t;
+    using device_type = typename unified_device_type::ccl_native_t;
 
     /**
      * Declare communicator device context native type
      */
-    using ccl_context_t = typename unified_context_type::ccl_native_t;
-
-    using coll_request_t = ccl::event;
+    using context_type = typename unified_context_type::ccl_native_t;
 
     communicator(communicator&& src);
     communicator& operator=(communicator&& src);

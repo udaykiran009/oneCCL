@@ -103,37 +103,52 @@ std::map<int, const char*> ccl_epilog_type_str = { { ETYPE_NULL, "ETYPE_NULL" },
 };
 
 typedef enum {
-    DT_CHAR = 0,
-    DT_INT,
-    // DT_INT64,
-    // DT_UINT64,
-    DT_FLOAT,
-    DT_DOUBLE,
-    DT_BF16,
+    DT_INT8 = 0,
+    /*DT_UINT8,*/
+    DT_INT16,
+    /*DT_UINT16,*/
+    DT_INT32,
+    /*DT_UINT32,
+    DT_INT64,
+    DT_UINT64,
+    DT_FLOAT16,*/
+    DT_FLOAT32,
+    /*DT_FLOAT64,*/
+    DT_BFLOAT16,
 
     DT_LAST
 } ccl_data_type;
-ccl_data_type first_ccl_data_type = DT_CHAR;
+ccl_data_type first_ccl_data_type = DT_INT8;
 ccl_data_type last_ccl_data_type = DT_LAST;
 
 std::map<int, const char*> ccl_data_type_str = {
-    { DT_CHAR, "DT_CHAR" },
-    { DT_INT, "DT_INT" },
-    // { DT_INT64, "INT64" },
-    // { DT_UINT64, "UINT64" }
-    { DT_FLOAT, "DT_FLOAT" },
-    { DT_DOUBLE, "DT_DOUBLE" },
-    { DT_BF16, "DT_BF16" },
+    { DT_INT8, "DT_INT8" },
+    /*{ DT_UINT8, "DT_UINT8" },*/
+    { DT_INT16, "DT_INT16" },
+    /*{ DT_UINT16, "DT_UINT16" },*/
+    { DT_INT32, "DT_INT32" },
+    /*{ DT_UINT32, "DT_UINT32" },
+    { DT_INT64, "DT_INT64" },
+    { DT_UINT64, "DT_UINT64" },
+    { DT_FLOAT16, "DT_FLOAT16" },*/
+    { DT_FLOAT32, "DT_FLOAT32" },
+    /*{ DT_FLOAT64, "DT_FLOAT64" },*/
+    { DT_BFLOAT16, "DT_BFLOAT16" },
 };
 
 std::map<int, ccl::datatype> ccl_datatype_values = {
-    { DT_CHAR, ccl::datatype::int8 },
-    { DT_INT, ccl::datatype::int32 },
-    // { DT_INT64, ccl::datatype::int64 },
-    // { DT_UINT64, ccl::datatype::uint64 },
-    { DT_FLOAT, ccl::datatype::float32 },
-    { DT_DOUBLE, ccl::datatype::float64 },
-    { DT_BF16, ccl::datatype::bfloat16 },
+    { DT_INT8, ccl::datatype::int8 },
+    /*{ DT_UINT8, ccl::datatype::uint8 },*/
+    { DT_INT16, ccl::datatype::int16 },
+    /*{ DT_UINT16, ccl::datatype::uint16 },*/
+    { DT_INT32, ccl::datatype::int32 },
+    /*{ DT_UINT32, ccl::datatype::uint32 },
+    { DT_INT64, ccl::datatype::int64 },
+    { DT_UINT64, ccl::datatype::uint64 },
+    { DT_FLOAT16, ccl::datatype::float16 },*/
+    { DT_FLOAT32, ccl::datatype::float32 },
+    /*{ DT_FLOAT64, ccl::datatype::float64 },*/
+    { DT_BFLOAT16, ccl::datatype::bfloat16 },
 };
 
 typedef enum {
@@ -275,7 +290,7 @@ size_t calculate_test_count() {
 
     if (test_data_type_enabled && atoi(test_data_type_enabled) == 0) {
         test_count /= last_ccl_data_type;
-        first_ccl_data_type = static_cast<ccl_data_type>(DT_FLOAT);
+        first_ccl_data_type = static_cast<ccl_data_type>(DT_FLOAT32);
         last_ccl_data_type = static_cast<ccl_data_type>(first_ccl_data_type + 1);
     }
 
@@ -388,7 +403,7 @@ void init_test_params() {
                             for (ccl_data_type data_type = first_ccl_data_type;
                                  data_type < last_ccl_data_type;
                                  data_type++) {
-                                if (data_type == DT_BF16 && !is_bf16_enabled())
+                                if (data_type == DT_BFLOAT16 && !is_bf16_enabled())
                                     continue;
 
                                 for (ccl_completion_type completion_type =

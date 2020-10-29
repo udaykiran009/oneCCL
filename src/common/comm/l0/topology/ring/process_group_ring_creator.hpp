@@ -44,7 +44,7 @@ public:
                                                           detail::p2p_rating_function ping =
                                                                         default_property_p2p_rating_calculator);
     static detail::adjacency_matrix build_p2p_capability_matrix(std::ostream& out,
-                                                          const ccl::process_device_indices_t& node_device_indices,
+                                                          const ccl::process_device_indices_type& node_device_indices,
                                                            detail::p2p_rating_function ping =
                                                                         default_property_p2p_rating_calculator);
     bool build(std::ostream& out,
@@ -54,48 +54,48 @@ public:
                detail::p2p_rating_function ping = default_property_p2p_rating_calculator);
 
     bool build(std::ostream& out,
-               const ccl::process_device_indices_t& per_thread_device_indices,
-               const std::vector<ccl::device_indices_t>& ipc_device_indices,
+               const ccl::process_device_indices_type& per_thread_device_indices,
+               const std::vector<ccl::device_indices_type>& ipc_device_indices,
                const detail::adjacency_matrix& matrix,
                detail::p2p_rating_function ping = default_property_p2p_rating_calculator);
 
     bool build_all(std::ostream& out,
-                   const ccl::process_device_indices_t& per_thread_device_indices,
-                   const std::vector<ccl::device_indices_t>& ipc_device_indices,
+                   const ccl::process_device_indices_type& per_thread_device_indices,
+                   const std::vector<ccl::device_indices_type>& ipc_device_indices,
                    const detail::adjacency_matrix& matrix,
                    detail::p2p_rating_function ping = default_property_p2p_rating_calculator);
 private:
     bool build_specific(std::ostream& out,
-                        const ccl::process_device_indices_t& per_thread_device_indices,
+                        const ccl::process_device_indices_type& per_thread_device_indices,
                         const detail::plain_graph& graph);
     bool build_specific(std::ostream& out,
-                        const ccl::process_device_indices_t& per_thread_device_indices,
+                        const ccl::process_device_indices_type& per_thread_device_indices,
                         const detail::plain_graph_list& graph_list);
     bool build_specific(std::ostream& out,
-                        const ccl::process_device_indices_t& per_thread_device_indices,
-                        const ccl::device_indices_t& scaleout_device_indices,
+                        const ccl::process_device_indices_type& per_thread_device_indices,
+                        const ccl::device_indices_type& scaleout_device_indices,
                         const detail::plain_graph_list& graph_list);
 
     bool build_specific_colored(std::ostream& out,
-                        const ccl::process_device_indices_t& per_thread_device_indices,
-                        const ccl::process_device_indices_t& ipc_device_indices,
+                        const ccl::process_device_indices_type& per_thread_device_indices,
+                        const ccl::process_device_indices_type& ipc_device_indices,
                         detail::colored_plain_graph& graph,
                         const std::map<size_t, size_t>& process_device_rank_offset);
     bool build_specific_scale_up(std::ostream& out,
-                        const ccl::process_device_indices_t& per_thread_device_indices,
-                        const ccl::process_device_indices_t& ipc_device_indices,
+                        const ccl::process_device_indices_type& per_thread_device_indices,
+                        const ccl::process_device_indices_type& ipc_device_indices,
                         detail::colored_plain_graph_list& graph_list,
                         const std::map<size_t, size_t>& process_device_rank_offset);
     bool build_specific_scale_up_out(std::ostream& out,
-                        const ccl::process_device_indices_t& per_thread_device_indices,
-                        const ccl::process_device_indices_t& scaleout_device_indices,
-                        const ccl::process_device_indices_t& ipc_device_indices,
+                        const ccl::process_device_indices_type& per_thread_device_indices,
+                        const ccl::process_device_indices_type& scaleout_device_indices,
+                        const ccl::process_device_indices_type& ipc_device_indices,
                         detail::colored_plain_graph_list& graph_list,
                         const std::map<size_t, size_t>& process_device_rank_offset);
 
     detail::plain_graph_list
             create_my_process_graphs(std::ostream& out,
-                                     const ccl::process_device_indices_t& per_thread_device_indices,
+                                     const ccl::process_device_indices_type& per_thread_device_indices,
                                      const detail::adjacency_matrix& matrix,
                                      detail::p2p_rating_function ping = default_property_p2p_rating_calculator);
 
@@ -110,13 +110,13 @@ private:
                                                          const detail::colored_plain_graph_list& my_process_graph);
 
     virtual detail::global_plain_graphs merge_allied_nodes_plain_graphs(std::ostream& out,
-                                                                 const ccl::cluster_device_indices_t &cluster_indices,
+                                                                 const ccl::cluster_device_indices_type &cluster_indices,
                                                                  size_t process_index,
                                                                  const detail::global_sorted_plain_graphs& cluster_graphs,
                                                                  detail::p2p_rating_function ping = default_property_p2p_rating_calculator);
     virtual detail::global_colored_plain_graphs
                     merge_allied_nodes_in_colored_plain_graphs(std::ostream& out,
-                                                               const ccl::cluster_device_indices_t &cluster_indices,
+                                                               const ccl::cluster_device_indices_type &cluster_indices,
                                                                size_t process_index,
                                                                size_t process_count,
                                                                const detail::global_sorted_colored_plain_graphs& cluster_graphs,
@@ -134,20 +134,20 @@ private:
                                         const detail::colored_plain_graph_list& original_graph_list,
                                         std::ostream& out);
 
-    virtual ccl::process_device_indices_t
+    virtual ccl::process_device_indices_type
                     create_scaleout_devices_in_graphs_for_process(
                                         size_t process_index,
                                         size_t cluster_size,
                                         detail::global_sorted_plain_graphs& cluster_graphs,
                                         std::ostream& out);
-    virtual ccl::process_device_indices_t
+    virtual ccl::process_device_indices_type
                     create_scaleout_devices_in_colored_graphs_for_process(
                                         size_t process_index,
                                         size_t cluster_size,
                                         detail::global_sorted_colored_plain_graphs& cluster_graphs,
                                         detail::global_sorted_colored_plain_graphs& initial_cluster_graphs,
                                         std::ostream& out);
-    virtual ccl::process_device_indices_t
+    virtual ccl::process_device_indices_type
                     create_ipc_devices_in_colored_graphs_for_process(
                                         size_t process_idx,
                                         size_t cluster_size,
@@ -156,8 +156,8 @@ private:
                                         std::ostream& out);
 
     detail::global_sorted_plain_graphs global_graph_list_resolver(const detail::adjacency_matrix& matrix,
-                                                       const ccl::process_device_indices_t& per_process_device_indexes,
-                                                       const ccl::process_device_indices_t& foreign_processes_device_indexes,
+                                                       const ccl::process_device_indices_type& per_process_device_indexes,
+                                                       const ccl::process_device_indices_type& foreign_processes_device_indexes,
                                                        detail::p2p_rating_function ping);
 };
 }

@@ -1,3 +1,5 @@
+#if 0
+
 #pragma once
 
 template <class VType,
@@ -241,3 +243,5 @@ struct cpu_sparse_allreduce_coll
         }
     }
 };
+
+#endif

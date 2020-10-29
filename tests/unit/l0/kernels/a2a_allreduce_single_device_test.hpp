@@ -130,7 +130,7 @@ TEST_F(a2a_allreduce_single_device_fixture, a2a_allreduce_single_device_mt) {
     typename handles_storage<int>::thread_handles_container rank_flags =
         flags_storage.collect_handles_by_index({ 0, 1 });
 
-    std::vector<a2a_gpu_comm_data_float> a2a_comm(num_thread);
+    std::vector<a2a_gpu_comm_data_float32> a2a_comm(num_thread);
 
     //Register memory handles to A2A
     for (size_t thread_id = 0; thread_id < rank_mem.size(); thread_id++) {
@@ -144,7 +144,7 @@ TEST_F(a2a_allreduce_single_device_fixture, a2a_allreduce_single_device_mt) {
 
     //prepare gpu object
     auto a2a_comm_handle =
-        device.alloc_memory<a2a_gpu_comm_data_float>(num_thread, sizeof(a2a_gpu_comm_data_float), ctx);
+        device.alloc_memory<a2a_gpu_comm_data_float32>(num_thread, sizeof(a2a_gpu_comm_data_float32), ctx);
     a2a_comm_handle.enqueue_write_sync(a2a_comm);
 
     //prepare kernels in multithreading environment

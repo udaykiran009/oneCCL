@@ -201,7 +201,7 @@ ccl::status ccl_coll_build_ring_rma_allreduce(ccl_sched* sched,
             sched,
             ccl_buffer(&ar_handler->tmp_buf_mr, sizeof(atl_mr_t)),
             sizeof(atl_mr_t),
-            ccl_datatype_char,
+            ccl_datatype_int8,
             ar_handler->src_peer,
             comm);
         e->set_field_fn<ccl_sched_entry_field_buf>(rma_ring_allreduce_get_tmp_buf_mr, ar_handler);
@@ -211,7 +211,7 @@ ccl::status ccl_coll_build_ring_rma_allreduce(ccl_sched* sched,
             sched,
             ccl_buffer(&ar_handler->recv_buf_mr, sizeof(atl_mr_t)),
             sizeof(atl_mr_t),
-            ccl_datatype_char,
+            ccl_datatype_int8,
             ar_handler->src_peer,
             comm);
         e->set_field_fn<ccl_sched_entry_field_buf>(rma_ring_allreduce_get_recv_buf_mr, ar_handler);
@@ -220,7 +220,7 @@ ccl::status ccl_coll_build_ring_rma_allreduce(ccl_sched* sched,
         sched,
         ccl_buffer(&ar_handler->recv_buf_mr, sizeof(atl_mr_t)),
         sizeof(atl_mr_t),
-        ccl_datatype_char,
+        ccl_datatype_int8,
         ar_handler->src_peer,
         comm);
     e->set_field_fn<ccl_sched_entry_field_buf>(rma_ring_allreduce_get_recv_buf_mr, ar_handler);
@@ -229,7 +229,7 @@ ccl::status ccl_coll_build_ring_rma_allreduce(ccl_sched* sched,
         sched,
         ccl_buffer(&ar_handler->sync_flag_mr, sizeof(atl_mr_t)),
         sizeof(atl_mr_t),
-        ccl_datatype_char,
+        ccl_datatype_int8,
         ar_handler->src_peer,
         comm);
     e->set_field_fn<ccl_sched_entry_field_buf>(rma_ring_allreduce_get_sync_flag_mr, ar_handler);
@@ -238,21 +238,21 @@ ccl::status ccl_coll_build_ring_rma_allreduce(ccl_sched* sched,
         sched,
         ccl_buffer(&ar_handler->remote_rs_dst_buf_mr, sizeof(atl_mr_t)),
         sizeof(atl_mr_t),
-        ccl_datatype_char,
+        ccl_datatype_int8,
         ar_handler->dst_peer,
         comm);
     entry_factory::make_entry<recv_entry>(
         sched,
         ccl_buffer(&ar_handler->remote_recv_buf_mr, sizeof(atl_mr_t)),
         sizeof(atl_mr_t),
-        ccl_datatype_char,
+        ccl_datatype_int8,
         ar_handler->dst_peer,
         comm);
     entry_factory::make_entry<recv_entry>(
         sched,
         ccl_buffer(&ar_handler->remote_sync_flag_mr, sizeof(atl_mr_t)),
         sizeof(atl_mr_t),
-        ccl_datatype_char,
+        ccl_datatype_int8,
         ar_handler->dst_peer,
         comm);
 
@@ -261,7 +261,7 @@ ccl::status ccl_coll_build_ring_rma_allreduce(ccl_sched* sched,
             sched,
             ccl_buffer(ar_handler->dst_ready_flag_mr, sizeof(atl_mr_t)),
             sizeof(atl_mr_t),
-            ccl_datatype_char,
+            ccl_datatype_int8,
             ar_handler->dst_peer,
             comm);
         e->set_field_fn<ccl_sched_entry_field_buf>(rma_ring_allreduce_get_dst_ready_flag_mr,
@@ -270,7 +270,7 @@ ccl::status ccl_coll_build_ring_rma_allreduce(ccl_sched* sched,
             sched,
             ccl_buffer(&ar_handler->remote_dst_ready_flag_mr, sizeof(atl_mr_t)),
             sizeof(atl_mr_t),
-            ccl_datatype_char,
+            ccl_datatype_int8,
             ar_handler->src_peer,
             comm);
     }
@@ -286,7 +286,7 @@ ccl::status ccl_coll_build_ring_rma_allreduce(ccl_sched* sched,
             ccl_buffer(&ar_handler->dst_ready_value, sizeof(uint64_t)),
             (atl_mr_t*)nullptr, /* src_mr */
             sizeof(uint64_t),
-            ccl_datatype_char,
+            ccl_datatype_int8,
             ar_handler->src_peer,
             (atl_mr_t*)nullptr, /* dst_mr */
             0 /* dst_buf_offset */,
@@ -347,7 +347,7 @@ ccl::status ccl_coll_build_ring_rma_allreduce(ccl_sched* sched,
             ccl_buffer(&ar_handler->sync_flags[idx], sizeof(uint64_t)),
             (atl_mr_t*)nullptr, /* src_mr */
             sizeof(uint64_t),
-            ccl_datatype_char,
+            ccl_datatype_int8,
             ar_handler->dst_peer,
             (atl_mr_t*)nullptr, /* dst_mr */
             0 /* dst_buf_offset */,
@@ -408,7 +408,7 @@ ccl::status ccl_coll_build_ring_rma_allreduce(ccl_sched* sched,
             ccl_buffer(&ar_handler->sync_flags[flag_idx_offset + idx], sizeof(uint64_t)),
             (atl_mr_t*)nullptr, /* src_mr */
             sizeof(uint64_t),
-            ccl_datatype_char,
+            ccl_datatype_int8,
             ar_handler->dst_peer,
             (atl_mr_t*)nullptr, /* dst_mr */
             0 /* dst_buf_offset */,

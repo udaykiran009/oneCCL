@@ -28,7 +28,7 @@ bool process_group_context::sync_barrier(const ccl::device_mask_t& thread_device
     return sync_barrier(ccl_device_driver::get_device_indices(thread_device_mask), comm_addr);
 }
 
-bool process_group_context::sync_barrier(const ccl::device_indices_t& thread_device_indices,
+bool process_group_context::sync_barrier(const ccl::device_indices_type& thread_device_indices,
                                          ccl::context_comm_addr& comm_addr) {
     // sync all threads at first - blocking operation
     return thread_group_ctx->sync_barrier(thread_device_indices, comm_addr, *gpu_device_storage);

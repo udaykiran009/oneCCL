@@ -40,7 +40,6 @@ void print_help_usage(const char* app) {
         "\t[-f,--min_elem_count <minimum number of elements for single collective>]: %d\n"
         "\t[-t,--max_elem_count <maximum number of elements for single collective>]: %d\n"
         "\t[-c,--check <check result correctness>]: %d\n"
-        "\t[-v,--v2i_ratio <values to indices ratio in sparse_allreduce>]: %d\n"
         "\t[-n,--buf_type <buffer type>]: %s\n"
         "\t[-a,--sycl_dev_type <sycl device type>]: %s\n"
         "\t[-m,--sycl_mem_type <sycl memory type>]: %s\n"
@@ -51,7 +50,7 @@ void print_help_usage(const char* app) {
         "\t[-r,--reduction <reductions list/all>]: %s\n"
         "\t[-o,--csv_filepath <file to store CSV-formatted data into>]: %s\n"
         "\t[-h,--help]\n\n"
-        "example:\n\t--coll allgatherv,allreduce,sparse_allreduce,sparse_allreduce_bf16 --backend host --loop regular\n"
+        "example:\n\t--coll allgatherv,allreduce --backend host --loop regular\n"
         "example:\n\t--coll bcast,reduce --backend sycl --loop unordered \n",
         app,
         backend_names[DEFAULT_BACKEND].c_str(),
@@ -62,7 +61,6 @@ void print_help_usage(const char* app) {
         DEFAULT_MIN_ELEM_COUNT,
         DEFAULT_MAX_ELEM_COUNT,
         DEFAULT_CHECK_VALUES,
-        DEFAULT_V2I_RATIO,
         buf_names[DEFAULT_BUF_TYPE].c_str(),
         sycl_dev_names[DEFAULT_SYCL_DEV_TYPE].c_str(),
         sycl_mem_names[DEFAULT_SYCL_MEM_TYPE].c_str(),
@@ -313,22 +311,6 @@ void print_timings(ccl::communicator& comm,
 
     ccl::barrier(comm);
 }
-
-class set_dtypes_func {
-private:
-    const std::list<std::string>& dtypes;
-
-public:
-    set_dtypes_func(const std::list<std::string>& dtypes) : dtypes(dtypes) {}
-
-    template <class Dtype>
-    void operator()(checked_dtype_t<Dtype>& val) {
-        auto it = std::find(dtypes.begin(), dtypes.end(), ccl::native_type_info<Dtype>::name());
-        if (it != std::end(dtypes)) {
-            val.first = true;
-        }
-    }
-};
 
 int parse_user_options(int& argc,
                        char**(&argv),
