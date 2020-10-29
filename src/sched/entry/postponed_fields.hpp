@@ -7,6 +7,7 @@
 #include "oneapi/ccl/ccl_types.hpp"
 #include "common/log/log.hpp"
 #include "common/utils/tuple.hpp"
+#include "internal_types.hpp"
 
 enum ccl_sched_entry_field_id {
     ccl_sched_entry_field_buf,

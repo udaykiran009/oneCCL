@@ -9,6 +9,8 @@
 
 #include "coll/coll_common_attributes.hpp"
 
+#include "internal_types.hpp"
+
 class ccl_sched;
 class ccl_request;
 

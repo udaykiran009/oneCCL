@@ -6,6 +6,7 @@
 #include "common/env/env.hpp"
 #include "common/utils/utils.hpp"
 #include "common/comm/l0/comm_context_storage.hpp"
+#include "internal_types.hpp"
 
 #include <memory>
 #include <thread>

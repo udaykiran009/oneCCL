@@ -2,6 +2,7 @@
 
 #include "oneapi/ccl/ccl_types.hpp"
 #include "coll/algorithms/algorithms_enum.hpp"
+#include "internal_types.hpp"
 
 #ifdef MULTI_GPU_SUPPORT
 ccl::status CCL_API register_gpu_module_source(const char* source,

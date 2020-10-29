@@ -2,6 +2,7 @@
 
 #include "exec/thread/worker.hpp"
 #include "fusion/fusion.hpp"
+#include "internal_types.hpp"
 
 class ccl_service_worker : public ccl_worker {
 public:

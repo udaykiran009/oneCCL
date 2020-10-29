@@ -2,6 +2,7 @@
 
 #include "sched/master_sched.hpp"
 #include "sched/sched.hpp"
+#include "internal_types.hpp"
 
 #include <map>
 #include <type_traits>

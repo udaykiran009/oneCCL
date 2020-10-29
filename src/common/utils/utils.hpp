@@ -17,6 +17,7 @@
 #include <vector>
 
 #include "common/utils/spinlock.hpp"
+#include "internal_types.hpp"
 
 /* common */
 

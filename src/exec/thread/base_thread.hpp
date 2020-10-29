@@ -4,6 +4,7 @@
 #include <pthread.h>
 
 #include "common/log/log.hpp"
+#include "internal_types.hpp"
 
 #define CCL_UNDEFINED_CPU_ID (-1)
 

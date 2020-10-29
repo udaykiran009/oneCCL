@@ -3,6 +3,7 @@
 #include "exec/thread/base_thread.hpp"
 #include "sched/queue/strict_queue.hpp"
 #include "sched/queue/queue.hpp"
+#include "internal_types.hpp"
 
 #include <memory>
 #include <list>

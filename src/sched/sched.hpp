@@ -1,5 +1,6 @@
 #pragma once
 #include "sched/sched_base.hpp"
+#include "internal_types.hpp"
 
 //todo: sequence diagram
 //workflow:

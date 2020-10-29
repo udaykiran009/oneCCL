@@ -4,6 +4,7 @@
 #include "common/datatype/datatype.hpp"
 #include "common/utils/utils.hpp"
 #include "sched/entry/postponed_fields.hpp"
+#include "internal_types.hpp"
 #include <chrono>
 #include <memory>
 

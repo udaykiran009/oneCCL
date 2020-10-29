@@ -21,6 +21,8 @@
 #include "oneapi/ccl/native_device_api/export_api.hpp"
 #include "common/utils/version.hpp"
 
+#include "internal_types.hpp"
+
 #ifdef CCL_ENABLE_SYCL
 #include <CL/sycl.hpp>
 #endif

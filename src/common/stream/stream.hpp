@@ -8,6 +8,7 @@
 #include "common/stream/stream_provider_dispatcher.hpp"
 
 #include "coll/coll_common_attributes.hpp"
+#include "internal_types.hpp"
 
 namespace ccl {
     namespace detail {

@@ -1,6 +1,7 @@
 #pragma once
 
 #include "sched/master_sched.hpp"
+#include "internal_types.hpp"
 
 class ccl_parallelizer {
 public:

@@ -6,6 +6,7 @@
 #include "common/request/request.hpp"
 #include "exec/thread/listener.hpp"
 #include "sched/extra_sched.hpp"
+#include "internal_types.hpp"
 
 #include <memory>
 #include <vector>
