@@ -264,11 +264,10 @@ DEFINE_KERNEL(uint32, uint4, 4)
 DEFINE_KERNEL(int64, long4, 4)
 DEFINE_KERNEL(uint64, ulong4, 4)
 
+// TODO: implement support for missing types
+DEFINE_KERNEL(float16, float16, 1)
 DEFINE_KERNEL(float32, float4, 4)
 DEFINE_KERNEL(float64, double4, 4)
-
-// TODO: implement support for missing types
-//DEFINE_KERNEL(float16, half, 1)
 
 DEFINE_KERNEL(bfloat16, ushort, 1)
 
@@ -305,10 +304,9 @@ DEFINE_KERNEL_NUMA(uint32, uint4, 4)
 DEFINE_KERNEL_NUMA(int64, long4, 4)
 DEFINE_KERNEL_NUMA(uint64, ulong4, 4)
 
+// TODO: implement support for missing types
+DEFINE_KERNEL_NUMA(float16, float16, 1)
 DEFINE_KERNEL_NUMA(float32, float4, 4)
 DEFINE_KERNEL_NUMA(float64, double4, 4)
-
-// TODO: implement support for missing types
-//DEFINE_KERNEL_NUMA(float16, half, 1)
 
 DEFINE_KERNEL_NUMA(bfloat16, ushort, 1)

@@ -81,7 +81,7 @@
                                       size_t comm_size,                                                             \
                                       size_t elems_count,                                                           \
                                       const __global T *input_buffer,                                               \
-                                      __global a2a_gpu_comm_data_##T *comm_matrix,                                  \
+                                      __global a2a_gpu_comm_data_##Name *comm_matrix,                               \
                                       size_t root) {                                                                \
         size_t wg_id = get_group_id(0);                                                                             \
         size_t wg_size = get_local_size(0);                                                                         \
@@ -182,8 +182,8 @@ DEFINE_KERNEL(int32, int32_t)
 DEFINE_KERNEL(uint32, uint32_t)
 DEFINE_KERNEL(int64, int64_t)
 DEFINE_KERNEL(uint64, uint64_t)
+// TODO: implement support for missing types
+DEFINE_KERNEL(float16, float16)
 DEFINE_KERNEL(float32, float)
 DEFINE_KERNEL(float64, double)
-// TODO: implement support for missing types
-//DEFINE_KERNEL(float16, half)
 DEFINE_KERNEL(bfloat16, ushort)

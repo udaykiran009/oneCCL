@@ -175,16 +175,18 @@ using TestTypes = ::testing::Types<
     DEFINE_PAIR(T, my_min<T>),   \
     DEFINE_PAIR(T, my_max<T>)
 
+// Note: don't use float with mult op as the rounding error gets
+// noticeable quite fast
 using TestTypesAndOps = ::testing::Types<
-    /*DEFINE_PAIR(int8_t, my_add<int8_t>),
-    DEFINE_PAIR(uint8_t, my_mult<uint8_t>),
+    DEFINE_PAIR(int8_t, my_add<int8_t>),
+    /*DEFINE_PAIR(uint8_t, my_mult<uint8_t>), */
     DEFINE_PAIR(int16_t, my_min<int16_t>),
-    DEFINE_PAIR(uint16_t, my_max<uint16_t>),
-    DEFINE_PAIR(int32_t, my_add<int32_t>),
+    /*DEFINE_PAIR(uint16_t, my_max<uint16_t>),
+    DEFINE_PAIR(int32_t, my_add<int32_t>),*/
     DEFINE_PAIR(uint32_t, my_mult<uint32_t>),
-    DEFINE_PAIR(int64_t, my_min<int64_t>),
+    /*DEFINE_PAIR(int64_t, my_min<int64_t>),
     DEFINE_PAIR(uint64_t, my_max<uint64_t>),*/
-    DEFINE_PAIR(float, my_mult<float>)/*,
+    DEFINE_PAIR(float, my_max<float>)/*,
     DEFINE_PAIR(double, my_min<double>)*/
 >;
 

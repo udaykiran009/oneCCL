@@ -273,23 +273,23 @@ __kernel void reduce_scatter_execution_##Name##_##OpName(size_t my_rank,        
 // Macro to define kernels for a specific operation for all the supported types.
 // Note: for op function we use convention __<OpName>_<type>, where type is the actual type(e.g. int4, float)
 #define DEFINE_KERNELS_WITH_OP(OpName)                                      \
-    DEFINE_KERNEL(int8, char4, 4, __##OpName##_##char4, OpName)           \
-    DEFINE_KERNEL(uint8, uchar4, 4, __##OpName##_##uchar4, OpName)        \
+    DEFINE_KERNEL(int8, char4, 4, __##OpName##_##char4, OpName)             \
+    DEFINE_KERNEL(uint8, uchar4, 4, __##OpName##_##uchar4, OpName)          \
                                                                             \
-    DEFINE_KERNEL(int16, short4, 4, __##OpName##_##short4, OpName)        \
-    DEFINE_KERNEL(uint16, ushort4, 4, __##OpName##_##ushort4, OpName)     \
+    DEFINE_KERNEL(int16, short4, 4, __##OpName##_##short4, OpName)          \
+    DEFINE_KERNEL(uint16, ushort4, 4, __##OpName##_##ushort4, OpName)       \
                                                                             \
-    DEFINE_KERNEL(int32, int4, 4, __##OpName##_##int4, OpName)            \
-    DEFINE_KERNEL(uint32, uint4, 4, __##OpName##_##uint4, OpName)         \
+    DEFINE_KERNEL(int32, int4, 4, __##OpName##_##int4, OpName)              \
+    DEFINE_KERNEL(uint32, uint4, 4, __##OpName##_##uint4, OpName)           \
                                                                             \
-    DEFINE_KERNEL(int64, long4, 4, __##OpName##_##long4, OpName)          \
-    DEFINE_KERNEL(uint64, ulong4, 4, __##OpName##_##ulong4, OpName)       \
+    DEFINE_KERNEL(int64, long4, 4, __##OpName##_##long4, OpName)            \
+    DEFINE_KERNEL(uint64, ulong4, 4, __##OpName##_##ulong4, OpName)         \
                                                                             \
-    DEFINE_KERNEL(float32, float4, 4, __##OpName##_##float4, OpName)      \
-    DEFINE_KERNEL(float64, double4, 4, __##OpName##_##double4, OpName)    \
     /* TODO: implement support for missing types*/                          \
-    /*DEFINE_KERNEL(float16, half, 1, __##OpName##_##half, OpName)*/      \
-    /* TODO: replace once bfloat16 support is fully implemented */              \
+    DEFINE_KERNEL(float16, float16, 1, __##OpName##_##float16, OpName)      \
+    DEFINE_KERNEL(float32, float4, 4, __##OpName##_##float4, OpName)        \
+    DEFINE_KERNEL(float64, double4, 4, __##OpName##_##double4, OpName)      \
+                                                                            \
     DEFINE_KERNEL(bfloat16, ushort, 1, __##OpName##_##bfloat16, OpName)
 
 #define DEFINE_ADD_OP(T)                                    \
@@ -336,8 +336,8 @@ DEFINE_OPS(float4)
 DEFINE_OPS(double4)
 // Uses integer ops for now since bfloat16 is aliased to ushort for now
 DEFINE_OPS(bfloat16)
-// TODO: Enable when half is supported
-/*DEFINE_OPS(half)*/
+// TODO: Enable and check support
+DEFINE_OPS(float16)
 
 // Define the actual kernels
 DEFINE_KERNELS_WITH_OP(add)

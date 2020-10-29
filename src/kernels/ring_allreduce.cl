@@ -358,22 +358,22 @@ __kernel void allreduce_execution_##Name##_##OpName(size_t my_rank,             
 // Macro to define kernels for a specific operation for all the supported types.
 // Note: for op function we use convention __<OpName>_<type>, where type is the actual type(e.g. int4, float)
 #define DEFINE_KERNELS_WITH_OP(OpName)                                      \
-    DEFINE_KERNEL(int8, char4, 4, __##OpName##_##char4, OpName)           \
-    DEFINE_KERNEL(uint8, uchar4, 4, __##OpName##_##uchar4, OpName)        \
+    DEFINE_KERNEL(int8, char4, 4, __##OpName##_##char4, OpName)             \
+    DEFINE_KERNEL(uint8, uchar4, 4, __##OpName##_##uchar4, OpName)          \
                                                                             \
-    DEFINE_KERNEL(int16, short4, 4, __##OpName##_##short4, OpName)        \
-    DEFINE_KERNEL(uint16, ushort4, 4, __##OpName##_##ushort4, OpName)     \
+    DEFINE_KERNEL(int16, short4, 4, __##OpName##_##short4, OpName)          \
+    DEFINE_KERNEL(uint16, ushort4, 4, __##OpName##_##ushort4, OpName)       \
                                                                             \
-    DEFINE_KERNEL(int32, int4, 4, __##OpName##_##int4, OpName)            \
-    DEFINE_KERNEL(uint32, uint4, 4, __##OpName##_##uint4, OpName)         \
+    DEFINE_KERNEL(int32, int4, 4, __##OpName##_##int4, OpName)              \
+    DEFINE_KERNEL(uint32, uint4, 4, __##OpName##_##uint4, OpName)           \
                                                                             \
-    DEFINE_KERNEL(int64, long4, 4, __##OpName##_##long4, OpName)          \
-    DEFINE_KERNEL(uint64, ulong4, 4, __##OpName##_##ulong4, OpName)       \
+    DEFINE_KERNEL(int64, long4, 4, __##OpName##_##long4, OpName)            \
+    DEFINE_KERNEL(uint64, ulong4, 4, __##OpName##_##ulong4, OpName)         \
                                                                             \
-    DEFINE_KERNEL(float32, float4, 4, __##OpName##_##float4, OpName)      \
-    DEFINE_KERNEL(float64, double4, 4, __##OpName##_##double4, OpName)    \
     /* TODO: implement support for missing types*/                          \
-    /*DEFINE_KERNEL(float16, half, 1, __##OpName##_##half, OpName)*/
+    DEFINE_KERNEL(float16, float16, 1, __##OpName##_##float16, OpName)      \
+    DEFINE_KERNEL(float32, float4, 4, __##OpName##_##float4, OpName)        \
+    DEFINE_KERNEL(float64, double4, 4, __##OpName##_##double4, OpName)      \
 
 #define DEFINE_KERNELS_WITH_BF16OP(OpName)                                  \
     DEFINE_KERNEL(bfloat16, ushort, 1, __##OpName##_##ushort, OpName)
@@ -448,7 +448,7 @@ DEFINE_OPS(double4)
 
 DEFINE_BF16OPS(ushort)
 // TODO: Enable when half is supported
-/*DEFINE_OPS(half)*/
+DEFINE_OPS(float16)
 
 // Define the actual kernels
 DEFINE_KERNELS_WITH_OP(add)
@@ -494,10 +494,9 @@ DEFINE_KERNEL_NUMA(uint32, uint4, __add_uint4, add)
 DEFINE_KERNEL_NUMA(int64, long4, __add_long4, add)
 DEFINE_KERNEL_NUMA(uint64, ulong4, __add_ulong4, add)
 
+// TODO: implement support for missing types
+DEFINE_KERNEL_NUMA(float16, float16, __add_float16, add)
 DEFINE_KERNEL_NUMA(float32, float4, __add_float4, add)
 DEFINE_KERNEL_NUMA(float64, double4, __add_double4, add)
 
-// TODO: implement support for missing types
-//DEFINE_KERNEL_NUMA(float16, half, 1)
-
-DEFINE_KERNEL_NUMA(bfloa16, ushort, __add_ushort, add)
+DEFINE_KERNEL_NUMA(bfloat16, ushort, __add_ushort, add)

@@ -49,6 +49,11 @@ TYPED_TEST(ring_reduce_single_device_fixture, ring_reduce_single_device_mt) {
     std::vector<size_t> thread_indices;
 
     // device memory stencil data
+    // Fill the data in the following order:
+    // 0: 1 4 6 ...
+    // 1: 2 3 5 ...
+    // i.e. on each iteration different thread has min and max value
+    // This allows to better test min/max ops.
     std::map<size_t, std::vector<native_type>> send_values;
     for (size_t thread_idx = 0; thread_idx < num_thread; thread_idx++) {
         size_t mult = 0;
@@ -378,7 +383,8 @@ TYPED_TEST(ring_reduce_single_device_fixture, ring_reduce_single_device_mt) {
 
                     native_type totalVal = op.init();
                     for (size_t i = 0; i < num_thread; ++i) {
-                        totalVal = op(totalVal, static_cast<native_type>(corr_val * ((i % num_thread) + 1)));
+                        auto val = corr_val * (i % num_thread + 1);
+                        totalVal = op(totalVal,  static_cast<native_type>(val));
                     }
 
                     if (!(value == totalVal)) {
