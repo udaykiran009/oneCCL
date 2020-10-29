@@ -606,6 +606,11 @@ do
         run_unit_tests
         shift
         ;;
+    "-functional_tests" )
+        make_tests
+        run_tests
+        shift
+        ;;
     *)
         echo "WARNING: example testing not started"
         exit 0
@@ -613,8 +618,5 @@ do
         ;;
     esac
 done
-
-make_tests
-run_tests
 clean_nodes
 
