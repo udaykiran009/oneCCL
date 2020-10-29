@@ -474,7 +474,7 @@ void print_user_options(const user_options_t& options,
                   "\n  sycl_usm_type:  %s"
                   "\n  ranks_per_proc: %zu"
                   "\n  %s"
-                  "\n  csv_filepath:   %s",
+                  "\n  csv_filepath:   %s\n",
                   comm.size(),
                   backend_str.c_str(),
                   loop_str.c_str(),

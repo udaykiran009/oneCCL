@@ -49,9 +49,6 @@ public:
             base::template get_gpu_module_unsafe<module_type, group_id, class_id, gpu_module_t>(
                 registered_modules);
         assert(ptr);
-        if (not std::is_same<native_data_type, float>::value) {
-            throw std::runtime_error(std::string(__PRETTY_FUNCTION__) + "Only float is supported");
-        }
         return ptr->template get_main_function<native_data_type>();
     }
 
