@@ -170,7 +170,6 @@ set(CCL_SRC
     common/datatype/datatype.cpp
     common/device/device.cpp
     common/event/ccl_event.cpp
-    common/event/event_internal/event_internal.cpp
     common/stream/stream.cpp
 
     common/env/env.cpp
